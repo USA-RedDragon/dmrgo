@@ -2,12 +2,8 @@ package rf
 
 import "math"
 
-// lagrangeTabN is the number of steps of the time between two samples at
-// which lagrangeTab holds the weights of lagrange6.
 const lagrangeTabN = 16
 
-// lagrangeTab holds, for i from 0 to lagrangeTabN, the weights of
-// lagrange6 at mu i/lagrangeTabN for a, b, p0, p1, p2 and p3.
 var lagrangeTab = [lagrangeTabN + 1][6]float32{
 	{0.0, 0.0, 0.0, 1.0, 0.0, 0.0},
 	{-0.0020731687545776367, 0.015391707420349121, -0.05975604057312012, 1.015852689743042, 0.033861756324768066, -0.0032769441604614258},
@@ -28,11 +24,6 @@ var lagrangeTab = [lagrangeTabN + 1][6]float32{
 	{0.0, 0.0, 0.0, 0.0, 1.0, 0.0},
 }
 
-// lagrangeAt is lagrange6 with mu rounded to a step of lagrangeTab: six
-// multiplies in place of about forty operations. It rounds by adding
-// 1.5*2^23, which leaves the step in the low bits of the float, as a
-// conversion to int32 that checks the range takes some twenty
-// instructions on the M4.
 func lagrangeAt(a, b, p0, p1, p2, p3, mu float32) float32 {
 	i := min(max(int32(math.Float32bits(mu*lagrangeTabN+0x1.8p23)-0x4B400000), 0), lagrangeTabN)
 	c := &lagrangeTab[i]

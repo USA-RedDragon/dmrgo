@@ -11,22 +11,13 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 )
 
-// Limits of the superframe tracker.
 const (
-	// damagedSyncDistance is the largest SYNC distance of a burst A or a
-	// data burst that only the slot timing finds.
 	damagedSyncDistance = 8
-	// voiceSyncDistance is the largest SYNC distance of a burst A at a slot
-	// where the timing of the call expects one.
-	voiceSyncDistance = 16
-	// pendingSlots is how many slots a burst without a SYNC waits for a
-	// later burst to place it in a superframe.
-	pendingSlots = 14
-	// noSlot marks an unset slot number.
-	noSlot = math.MinInt64
+	voiceSyncDistance   = 16
+	pendingSlots        = 14
+	noSlot              = math.MinInt64
 )
 
-// slotRec is a detected slot that the tracker places.
 type slotRec struct {
 	index   int64
 	seconds float64
@@ -40,15 +31,8 @@ type slotRec struct {
 	stream  int
 }
 
-// llr8 holds the log-likelihood ratios of a burst as int8 multiples of 1/4,
-// saturated at about 32: the soft decoders take ratios in units of 1/8, and
-// at 1/4 with that limit the sweep of every tier stays the same, at half
-// the bytes.
 type llr8 [layer2.BurstBits]int8
 
-// set stores the ratios of v, rounded half away from 0 and saturated at
-// +-127, so that a ratio keeps its sign and the store leans to neither bit
-// value.
 func (l *llr8) set(v *[layer2.BurstBits]int16) {
 	for i, x := range v {
 		h := (int32(x) + 1) >> 1
@@ -59,41 +43,28 @@ func (l *llr8) set(v *[layer2.BurstBits]int16) {
 	}
 }
 
-// get writes the stored ratios into v.
 func (l *llr8) get(v *[layer2.BurstBits]int16) {
 	for i, q := range l {
 		v[i] = int16(q) * 2
 	}
 }
 
-// trackEntry is a slot waiting in the tracker's queue.
 type trackEntry struct {
 	rec      slotRec
 	out      received
 	resolved bool
 	keep     bool
-	// hold keeps a burst B to D of a superframe until its burst E, so that
-	// the embedded LC decode can correct the fragments of all four, and
-	// elcOK marks the fragment of a decoded embedded LC.
-	hold  bool
-	elcOK bool
+	hold     bool
+	elcOK    bool
 }
 
-// chanTrack is the superframe state of one TDMA channel.
 type chanTrack struct {
-	sf  int64
-	hdr int64
-	// acc sums the log-likelihood ratios of the embedded LC fragments of
-	// the superframes of the current call, which all carry the same LC.
+	sf   int64
+	hdr  int64
 	acc  [4][embBits]int16
 	accN int
 }
 
-// tracker places the bursts of a stream: data bursts and bursts A by their
-// SYNC, bursts B to F by the slot timing after a burst A, and bursts A
-// whose SYNC is damaged where the timing of the call expects one (after a
-// voice LC or PI header, every 360 ms in a call, or before a burst B or E
-// whose EMB decodes clean). It emits them in time order.
 type tracker struct {
 	q      []trackEntry
 	head   int
@@ -106,17 +77,12 @@ type tracker struct {
 	es     [4]*trackEntry
 }
 
-// newTracker returns a tracker with an empty queue. The slots of a stream
-// arrive in order, and add pops every entry more than pendingSlots slots
-// older than the newest, so the queue holds at most pendingSlots+2.
 func newTracker() *tracker {
 	t := &tracker{q: make([]trackEntry, pendingSlots+2)}
 	t.reset(false)
 	return t
 }
 
-// reset empties the queue and the superframe state for a new stream, BS
-// sourced when bs.
 func (t *tracker) reset(bs bool) {
 	t.head, t.n = 0, 0
 	t.bs = bs
@@ -126,10 +92,8 @@ func (t *tracker) reset(bs bool) {
 	t.votes = [16]int{}
 }
 
-// at returns queued entry i, the oldest first.
 func (t *tracker) at(i int) *trackEntry { return &t.q[(t.head+i)%len(t.q)] }
 
-// find returns the queued entry of slot index, or nil.
 func (t *tracker) find(index int64) *trackEntry {
 	for i := range t.n {
 		if e := t.at(i); e.rec.index == index {
@@ -139,7 +103,6 @@ func (t *tracker) find(index int64) *trackEntry {
 	return nil
 }
 
-// colorCode returns the color code most clean data bursts carried.
 func (t *tracker) colorCode() (enums.ColorCode, bool) {
 	best := 0
 	for i, v := range &t.votes {
@@ -150,7 +113,6 @@ func (t *tracker) colorCode() (enums.ColorCode, bool) {
 	return enums.ColorCode(best), t.votes[best] > 0
 }
 
-// add places one slot and emits the bursts that are resolved.
 func (t *tracker) add(rec *slotRec, emit func(*received)) {
 	if t.n == len(t.q) {
 		t.pop(emit)
@@ -166,8 +128,6 @@ func (t *tracker) add(rec *slotRec, emit func(*received)) {
 	}
 }
 
-// pop removes the oldest entry and emits its burst when it is kept,
-// repaired first.
 func (t *tracker) pop(emit func(*received)) {
 	e := t.at(0)
 	if !e.resolved {
@@ -184,15 +144,12 @@ func (t *tracker) pop(emit func(*received)) {
 	t.n--
 }
 
-// flush emits every queued burst.
 func (t *tracker) flush(emit func(*received)) {
 	for t.n > 0 {
 		t.pop(emit)
 	}
 }
 
-// resolveLeftover keeps a burst that nothing placed only as a data burst
-// within damagedSyncDistance of the data SYNC.
 func (t *tracker) resolveLeftover(e *trackEntry) {
 	_, data, _ := e.rec.src.SyncPatterns()
 	if d := syncDist(e.rec.data, data); d <= damagedSyncDistance {
@@ -201,12 +158,10 @@ func (t *tracker) resolveLeftover(e *trackEntry) {
 	e.resolved = true
 }
 
-// syncDist returns the Hamming distance of the SYNC field of b from p.
 func syncDist(b layer2.RawBurst, p enums.SyncPattern) int {
 	return bits.OnesCount64(ibits.Field(b[:], framer.SyncOffset, framer.SyncBits) ^ uint64(p))
 }
 
-// setA makes entry e a burst A at SYNC distance d and starts a superframe.
 func (t *tracker) setA(e *trackEntry, c *chanTrack, d int, timed bool) {
 	voice, _, _ := e.rec.src.SyncPatterns()
 	e.out.distance, e.out.sync = d, voice
@@ -217,7 +172,6 @@ func (t *tracker) setA(e *trackEntry, c *chanTrack, d int, timed bool) {
 	c.sf = e.rec.index
 }
 
-// classify places entry e, the newest slot.
 func (t *tracker) classify(e *trackEntry) {
 	idx := e.rec.index
 	c := &t.ch[((idx%2)+2)%2]
@@ -257,8 +211,6 @@ func (t *tracker) classify(e *trackEntry) {
 	t.lateEntry(e, c)
 }
 
-// noteData records the color code of a clean data burst and the slot of a
-// voice LC or PI header.
 func (t *tracker) noteData(e *trackEntry, c *chanTrack) {
 	st := e.out.data.SlotType()
 	if st.FEC.Uncorrectable {
@@ -272,10 +224,6 @@ func (t *tracker) noteData(e *trackEntry, c *chanTrack) {
 	}
 }
 
-// backfill places the queued slots of the superframe before the burst A in
-// e: the slot 360 ms before e becomes a burst A when it can be one, and the
-// queued slots between them become bursts B to F. When that burst A was not
-// received, a slot becomes a burst B to F only when its EMB fits.
 func (t *tracker) backfill(e *trackEntry, c *chanTrack) {
 	a := e.rec.index - 2*layer2.VoiceBurstsPerSuperframe
 	saved := c.sf
@@ -291,8 +239,6 @@ func (t *tracker) backfill(e *trackEntry, c *chanTrack) {
 	c.sf = saved
 }
 
-// fillFrom places the queued slots B to F of the superframe whose burst A
-// is at slot a, each only when its EMB fits its position if check.
 func (t *tracker) fillFrom(a int64, c *chanTrack, check bool) {
 	for n := 1; n < layer2.VoiceBurstsPerSuperframe; n++ {
 		x := t.find(a + int64(2*n))
@@ -311,8 +257,6 @@ func (t *tracker) fillFrom(a int64, c *chanTrack, check bool) {
 	}
 }
 
-// embFits reports whether the EMB of entry e decodes with at most one
-// correction, the color code of the stream and the LCSS of position pos.
 func (t *tracker) embFits(e *trackEntry, pos enums.VoiceBurstType) bool {
 	cc, ok := t.colorCode()
 	emb := e.rec.data.EMB()
@@ -320,8 +264,6 @@ func (t *tracker) embFits(e *trackEntry, pos enums.VoiceBurstType) bool {
 	return ok && !emb.FEC.Uncorrectable && emb.FEC.ErrorsCorrected <= 1 && emb.ColorCode == cc && emb.LCSS == want
 }
 
-// place makes entry e the voice burst at pos. Bursts B to D wait for the
-// burst E of their superframe, which decodes the embedded LC of all four.
 func (t *tracker) place(e *trackEntry, c *chanTrack, pos enums.VoiceBurstType) {
 	e.out.voice = pos
 	e.resolved, e.keep = true, true
@@ -346,10 +288,6 @@ func (t *tracker) place(e *trackEntry, c *chanTrack, pos enums.VoiceBurstType) {
 	}
 }
 
-// lateEntry places a slot by its EMB: a burst B or E whose EMB decodes with
-// at most one correction and the color code of the stream starts the
-// superframe one or four frames before it, when the slot there can be a
-// burst A. Otherwise the slot waits.
 func (t *tracker) lateEntry(e *trackEntry, c *chanTrack) {
 	cc, ok := t.colorCode()
 	if !ok {

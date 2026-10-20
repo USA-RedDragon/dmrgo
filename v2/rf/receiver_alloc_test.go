@@ -8,10 +8,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 )
 
-// TestAllocsReceiver checks that Write and WriteBaseband of every tier
-// allocate nothing in steady state, over a BS outbound voice call in
-// chunks of 16 KiB, while the receiver locks, follows the stream and emits
-// bursts.
 func TestAllocsReceiver(t *testing.T) {
 	cfg := testConfig()
 	cfg.BSSourced, cfg.Superframes = true, 2
@@ -55,9 +51,6 @@ func TestAllocsReceiver(t *testing.T) {
 	}
 }
 
-// TestAllocsReceiverRAM checks that New of each tier in
-// rxbenchPath keeps at most 10 percent more heap than the baseline. It
-// reads the heap of the whole process, so it does not run in parallel.
 func TestAllocsReceiverRAM(t *testing.T) {
 	b, err := os.ReadFile(rxbenchPath)
 	if err != nil {

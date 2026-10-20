@@ -13,8 +13,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// softFECTables holds the soft FEC tables of tables_gen.go as
-// deriveSoftFEC derives them from the library encoders.
 type softFECTables struct {
 	small    [softSmallCount]softSmallCode
 	c2       [layer2.VoiceSlotsPerBurst][softAMBEC2]int16
@@ -28,9 +26,6 @@ type softFECTables struct {
 	colH     [gridRows]uint8
 }
 
-// deriveSoftFEC derives every soft FEC table from the library encoders. It
-// returns an error when a library encoder has a layout that the decoders
-// do not expect.
 func deriveSoftFEC() (*softFECTables, error) {
 	t := &softFECTables{}
 	if err := t.deriveAMBE(); err != nil {
@@ -99,16 +94,10 @@ func deriveSoftFEC() (*softFECTables, error) {
 	return t, nil
 }
 
-// errSoftDerive is returned when a code table cannot be derived from the
-// library encoders.
 var errSoftDerive = errors.New("soft FEC: cannot derive code tables")
 
-// softEncoder returns the field image of info word info: the bits of the
-// burst, or of the fields, that carry its codeword.
 type softEncoder func(info uint32) ([]unpacked.Bit, error)
 
-// newSoftSmallCode derives a code from enc by encoding the zero info word and
-// each unit vector. Image positions where skip is set are not code bits.
 func newSoftSmallCode(k, t int, enc softEncoder, skip []bool) (softSmallCode, error) {
 	c := softSmallCode{k: k, t: t}
 	zero, err := enc(0)
@@ -144,7 +133,6 @@ func newSoftSmallCode(k, t int, enc softEncoder, skip []bool) (softSmallCode, er
 	return c, nil
 }
 
-// softMask returns the bits of img at pos, pos[j] at 1<<j.
 func softMask[T int | int16](img []unpacked.Bit, pos []T) uint32 {
 	var m uint32
 	for j, p := range pos {
@@ -155,15 +143,12 @@ func softMask[T int | int16](img []unpacked.Bit, pos []T) uint32 {
 	return m
 }
 
-// softBurstImage returns the bits of r as a field image.
 func softBurstImage(r *layer2.RawBurst) []unpacked.Bit {
 	var b [264]unpacked.Bit
 	unpacked.UnpackAt(b[:], r[:], 0)
 	return b[:]
 }
 
-// softAMBEEncoder returns the encoder of a frame in voice slot s whose bits
-// at from to from+11 hold info word info, with frame bit from at bit 11.
 func softAMBEEncoder(s, from int) softEncoder {
 	return func(info uint32) ([]unpacked.Bit, error) {
 		var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
@@ -180,10 +165,6 @@ func softAMBEEncoder(s, from int) softEncoder {
 	}
 }
 
-// deriveAMBE derives the AMBE+2 tables from layer2.RawBurst.SetAMBEFrames:
-// the Golay(24,12) code C0 and the Golay(23,12) code C1 without its
-// scrambling of each voice slot, where info bit 11-i is frame bit i, and
-// frame bit 12+i for C1, and the burst position of uncoded frame bit 24+i.
 func (t *softFECTables) deriveAMBE() error {
 	for s := range layer2.VoiceSlotsPerBurst {
 		c0, c1 := &t.small[softAMBECode+2*softSmallID(s)], &t.small[softAMBECode+2*softSmallID(s)+1]
@@ -236,9 +217,6 @@ func (t *softFECTables) deriveAMBE() error {
 	return nil
 }
 
-// newSoftOSDCode derives a linear code from enc, where enc(0) encodes the
-// zero info word, which must give the zero codeword, and enc(i+1) encodes
-// unit vector i.
 func newSoftOSDCode(k, t int, enc softEncoder) (*softOSDCode, error) {
 	c := &softOSDCode{k: k, t: t}
 	zero, err := enc(0)
@@ -291,9 +269,6 @@ func newSoftOSDCode(k, t int, enc softEncoder) (*softOSDCode, error) {
 	return c, nil
 }
 
-// softBPTCEncoder encodes info bit i of BPTC(196,96) into a burst: data bit
-// i for i below 96 and R(i-96) above. The info word is the bit number plus
-// one, and 0 encodes the zero block.
 func softBPTCEncoder(info uint32) ([]unpacked.Bit, error) {
 	var r layer2.RawBurst
 	if info == 0 {
@@ -314,8 +289,6 @@ func softBPTCEncoder(info uint32) ([]unpacked.Bit, error) {
 	return softBurstImage(&r), nil
 }
 
-// softShortLCEncoder encodes Short LC info word info (0 or unit vector
-// info-1) into the 96 bits of four CACH fields in transmit order.
 func softShortLCEncoder(info uint32) ([]unpacked.Bit, error) {
 	var in [softShortLCInfo]unpacked.Bit
 	if i := int(info) - 1; i >= 0 && i < len(in) {
@@ -336,8 +309,6 @@ func softShortLCEncoder(info uint32) ([]unpacked.Bit, error) {
 	return img, nil
 }
 
-// softEmbFragments returns the image of four embedded signalling fields in
-// four bursts, burst i at 264i.
 func softEmbFragments(frags [4][4]byte) []unpacked.Bit {
 	img := make([]unpacked.Bit, 0, 4*softBurstBits)
 	for _, f := range frags {
@@ -348,8 +319,6 @@ func softEmbFragments(frags [4][4]byte) []unpacked.Bit {
 	return img
 }
 
-// softEmbLCEncoder encodes embedded LC info word info (0 or unit vector
-// info-1 of the 77 BPTC info bits) into the image of four bursts.
 func softEmbLCEncoder(info uint32) ([]unpacked.Bit, error) {
 	var in [softEmbLCInfo]unpacked.Bit
 	if i := int(info) - 1; i >= 0 && i < len(in) {
@@ -364,8 +333,6 @@ func softEmbLCEncoder(info uint32) ([]unpacked.Bit, error) {
 	return softEmbFragments(frags), nil
 }
 
-// newSoftEmbLC derives the LC and checksum layout of the embedded LC code
-// from layer2.EncodeEmbeddedLC.
 func newSoftEmbLC(code *softOSDCode) (softEmbLC, error) {
 	var e softEmbLC
 	for _, p := range code.pos[:code.n] {
@@ -419,8 +386,6 @@ func newSoftEmbLC(code *softOSDCode) (softEmbLC, error) {
 	return e, nil
 }
 
-// softTrellisImage returns the burst image of the 48 tribits t, tribit k
-// holding data bits 3k to 3k+2 most significant bit first.
 func softTrellisImage(t *[softTrellisSteps - 1]int) []unpacked.Bit {
 	var p [18]byte
 	for k, v := range t {
@@ -436,10 +401,6 @@ func softTrellisImage(t *[softTrellisSteps - 1]int) []unpacked.Bit {
 	return softBurstImage(&r)
 }
 
-// newSoftTrellis derives the trellis tables from
-// layer2.RawBurst.SetRate34Payload. pos holds the burst positions of the 196
-// information bits, as the BPTC(196,96) code finds them: one trellis bit is 1
-// in every codeword, so the trellis images alone do not find it.
 func newSoftTrellis(pos *[softTrellisBits]int16) (*softTrellis, error) {
 	tr := &softTrellis{pos: *pos}
 	pairs, err := tr.pairs()
@@ -459,8 +420,6 @@ func newSoftTrellis(pos *[softTrellisBits]int16) (*softTrellis, error) {
 	return tr, nil
 }
 
-// pairs returns the two dibits, as indexes of codeword bit pairs, of each
-// trellis step. Tribit k changes the dibits of steps k and k+1.
 func (tr *softTrellis) pairs() (*[softTrellisSteps][2]int, error) {
 	var t [softTrellisSteps - 1]int
 	zero := softTrellisImage(&t)
@@ -513,8 +472,6 @@ func (tr *softTrellis) pairs() (*[softTrellisSteps][2]int, error) {
 	return &pairs, nil
 }
 
-// stepBits returns the codeword bits of step k, the dibits of pairs in
-// order, or swapped.
 func stepBits(pairs *[softTrellisSteps][2]int, k int, swap bool) [4]uint8 {
 	a, b := uint8(pairs[k][0]&0x7f), uint8(pairs[k][1]&0x7f)
 	if swap {
@@ -523,8 +480,6 @@ func stepBits(pairs *[softTrellisSteps][2]int, k int, swap bool) [4]uint8 {
 	return [4]uint8{2 * a, 2*a + 1, 2 * b, 2*b + 1}
 }
 
-// read encodes tribit in after tribit s at step k, every other tribit 0,
-// and returns the bits of the step as a 4-bit label.
 func (tr *softTrellis) read(pairs *[softTrellisSteps][2]int, k int, swap bool, s, in int) int {
 	var t [softTrellisSteps - 1]int
 	for i := range t {
@@ -546,9 +501,6 @@ func (tr *softTrellis) read(pairs *[softTrellisSteps][2]int, k int, swap bool, s
 	return l
 }
 
-// order sets the step bits of step k to the dibit order whose labels match
-// tr.label, and reports whether one does. Step 0 starts in state 0 and the
-// tail step 48 has input 0.
 func (tr *softTrellis) order(pairs *[softTrellisSteps][2]int, k int) bool {
 	for _, swap := range [2]bool{false, true} {
 		ok := true
@@ -568,9 +520,6 @@ func (tr *softTrellis) order(pairs *[softTrellisSteps][2]int, k int) bool {
 	return false
 }
 
-// infoBits sets t.info to the burst bits that BPTC(196,96) or a Rate 1
-// block use, and t.bptcInfo to the place of each BPTC bit among them, the
-// information bit of BPTC(196,96) codeword bit j, which has no R(3).
 func (t *softFECTables) infoBits() error {
 	c := &t.osd[softBPTCCode]
 	var used [softBurstBits]bool
@@ -608,7 +557,6 @@ func (t *softFECTables) infoBits() error {
 	return nil
 }
 
-// cachBits is the inverse of cachBytes.
 func cachBits(p [3]byte) [layer2.CACHBits]unpacked.Bit {
 	var b [layer2.CACHBits]unpacked.Bit
 	for i := range b {
@@ -617,21 +565,16 @@ func cachBits(p [3]byte) [layer2.CACHBits]unpacked.Bit {
 	return b
 }
 
-// cachPayload returns the 17-bit CACH payload word f packed as
-// layer2.CACH.Payload holds it.
 func cachPayload(f uint32) [3]byte {
 	p := f << 7
 	return [3]byte{byte(p >> 16 & 0xFF), byte(p >> 8 & 0xFF), byte(p & 0x80)}
 }
 
-// cachPayloadWord is the inverse of cachPayload.
 func cachPayloadWord(p [3]byte) uint32 {
 	return uint32(p[0])<<9 | uint32(p[1])<<1 | uint32(p[2])>>7
 }
 
-// gridChecks returns the columns that each parity check of the row code
-// covers, and the rows that each check of the column code covers (ETSI TS
-// 102 361-1 clause B.1.1).
+// ETSI TS 102 361-1 clause B.1.1
 func gridChecks() (row, col [4]uint16) {
 	row = [4]uint16{
 		1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<5 | 1<<7 | 1<<8 | 1<<11,
@@ -648,9 +591,6 @@ func gridChecks() (row, col [4]uint16) {
 	return row, col
 }
 
-// gridLayout lays out the BPTC(196,96) grid on the burst bits t.info of
-// the 196 information bits: grid cell i, from 1, is information bit 181i
-// mod 196. It checks the layout against the codewords of the code.
 func (t *softFECTables) gridLayout() error {
 	for r := range gridRows {
 		for c := range gridCols {
@@ -688,34 +628,26 @@ func (t *softFECTables) gridLayout() error {
 	return nil
 }
 
-// bits returns the burst positions of the code bits of code id.
 func (id softSmallID) bits() []int16 {
 	c := &softSmallCodes[id]
 	return c.pos[:c.n]
 }
 
-// code returns the tables of code id.
 func (id softOSDID) code() *softOSDCode {
 	return &softOSDCodes[id]
 }
 
-// softAMBEView holds the codes of a voice slot: the ids and tables of C0
-// and C1, and the burst positions of the uncoded bits.
 type softAMBEView struct {
 	id0, id1 softSmallID
 	c0, c1   *softSmallCode
 	c2       *[softAMBEC2]int16
 }
 
-// softAMBESlot returns the codes of voice slot s.
 func softAMBESlot(s int) softAMBEView {
 	id0 := softAMBECode + 2*softSmallID(s)
 	return softAMBEView{id0: id0, id1: id0 + 1, c0: &softSmallCodes[id0], c1: &softSmallCodes[id0+1], c2: &softAMBEC2Pos[s]}
 }
 
-// gridIsCodeword reports whether every row and column of the grid in img,
-// with the cells at pos and the syndromes rowH and colH, has a zero
-// syndrome.
 func gridIsCodeword(pos *[gridRows][gridCols]int16, rowH *[gridCols]uint8, colH *[gridRows]uint8, img *[softBurstBits]unpacked.Bit) bool {
 	var col [gridCols]uint8
 	for r := range gridRows {

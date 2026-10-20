@@ -11,8 +11,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// TestSoftGridComponent checks the max-log BCJR of the row and column codes
-// against the best codeword with each bit value, found by enumeration.
 func TestSoftGridComponent(t *testing.T) {
 	t.Parallel()
 	d := newSoftDecoder()
@@ -71,10 +69,6 @@ func TestSoftGridComponent(t *testing.T) {
 	}
 }
 
-// TestDecodeBPTCGrid checks that the grid decode corrects a CSBK with four
-// confidently wrong bits in four rows and columns, which a row and column
-// code each correct, and that ordered statistics, which trusts them, does
-// not.
 func TestDecodeBPTCGrid(t *testing.T) {
 	t.Parallel()
 	d := newSoftDecoder()

@@ -19,18 +19,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// cmpFrame is a frame that a receiver recovered, at Seconds.
 type cmpFrame struct {
 	sec  float64
 	data layer2.RawBurst
 }
 
-// TestMMDVMCompare runs an MS-sourced TDMA voice call through the
-// discriminator at a sweep of C/N and decodes it with the DiscReceiver and
-// with the MMDVM DMR DMO receiver at DMRGO_MMDVM, a host build of the
-// firmware code. It prints, per C/N, the voice bursts whose three AMBE frames
-// get exact, whose AMBE parts C0 and C1 are exact, and the LC headers and
-// terminators.
 func TestMMDVMCompare(t *testing.T) {
 	t.Parallel()
 	bin := os.Getenv("DMRGO_MMDVM")
@@ -56,8 +49,6 @@ func TestMMDVMCompare(t *testing.T) {
 			x := msBaseband(fm, env, 400, cn, uint64(seed+1))
 			a24 := discAudio(x, 24000)
 			path := filepath.Join(dir, "a.s16")
-			// MMDVM takes the discriminator with the other sign, as a
-			// modem without RXInvert does.
 			if err := writeS16(path, a24, -8); err != nil {
 				t.Fatal(err)
 			}
@@ -87,12 +78,8 @@ func TestMMDVMCompare(t *testing.T) {
 	}
 }
 
-// msPad is the length in seconds of the noise on each side of the
-// transmission of msBaseband.
 const msPad = 0.3
 
-// msBaseband returns the complex baseband of an MS transmission with msPad
-// seconds of noise on each side, at offsetHz and C/N cn in 12.5 kHz.
 func msBaseband(fm, env []float64, offsetHz, cn float64, seed uint64) []complex64 {
 	p := int(msPad * basebandRate)
 	x := make([]complex64, len(fm)+2*p)
@@ -119,8 +106,6 @@ func writeS16(path string, a []int16, gain int) error {
 	return os.WriteFile(path, b, 0o600)
 }
 
-// runMMDVM returns the frames of the mmdvmrx build bin on the audio at path,
-// timed by the sample that completed each.
 func runMMDVM(ctx context.Context, bin, path string, cc int) ([]cmpFrame, error) {
 	out, err := exec.CommandContext(ctx, bin, path, strconv.Itoa(cc)).Output()
 	if err != nil {
@@ -145,7 +130,6 @@ func runMMDVM(ctx context.Context, bin, path string, cc int) ([]cmpFrame, error)
 	return fr, nil
 }
 
-// oursFrames returns the bursts of a DiscReceiver on the audio a at hz.
 func oursFrames(t *testing.T, a []int16, hz int) []cmpFrame {
 	t.Helper()
 	var fr []cmpFrame
@@ -163,8 +147,6 @@ func oursFrames(t *testing.T, a []int16, hz int) []cmpFrame {
 	return fr
 }
 
-// burstKind returns whether burst i of the n of a voice call is voice, and
-// whether it is the LC header or the terminator.
 func burstKind(_ layer2.RawBurst, i, n int) (voice, hdr bool) {
 	if i == 0 || i == n-1 {
 		return false, true
@@ -185,10 +167,6 @@ func countKinds(bursts []layer2.RawBurst) (nv, nh int) {
 	return nv, nh
 }
 
-// scoreCompare matches the frames to the truth bursts, after the time
-// offset that lines up the most frames, and counts the voice bursts whose
-// AMBE frames and the headers and terminators whose BPTC payload decode
-// exactly.
 func scoreCompare(bursts []layer2.RawBurst, truth []float64, got []cmpFrame) (voice, hdr, c01 int) {
 	bestN, bestOff := -1, 0.0
 	for _, g := range got[:min(len(got), 20)] {
@@ -240,7 +218,6 @@ func scoreCompare(bursts []layer2.RawBurst, truth []float64, got []cmpFrame) (vo
 	return voice, hdr, c01
 }
 
-// nearest returns the truth burst within 5 ms of sec, or -1.
 func nearest(truth []float64, sec float64) int {
 	i := int(math.Round((sec - truth[0]) / (2 * slotSeconds)))
 	if i < 0 || i >= len(truth) || math.Abs(sec-truth[i]) > 0.005 {

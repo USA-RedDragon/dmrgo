@@ -2,10 +2,6 @@ package rf
 
 import "math"
 
-// atan2f returns atan2(y, x) in single precision, within 1.2e-5 radians,
-// from an odd minimax polynomial of degree 9 for atan on [0, 1]. A single
-// precision FPU, such as that of a Cortex-M4F, runs it in hardware, where
-// math.Atan2 runs in software.
 func atan2f(y, x float32) float32 {
 	ax, ay := x, y
 	if ax < 0 {
@@ -17,8 +13,6 @@ func atan2f(y, x float32) float32 {
 	if ax == 0 && ay == 0 {
 		return 0
 	}
-	// One division: the compiler computes both quotients when each
-	// branch has its own.
 	swap := ay > ax
 	n, d := ay, ax
 	if swap {
@@ -39,12 +33,10 @@ func atan2f(y, x float32) float32 {
 	return r
 }
 
-// sqrtf returns the square root of x in single precision.
 func sqrtf(x float32) float32 {
 	return float32(math.Sqrt(float64(x)))
 }
 
-// roundf returns x rounded to the nearest integer, halves away from zero.
 func roundf(x float32) float32 {
 	if x < 0 {
 		return float32(int32(x - 0.5))
@@ -52,9 +44,6 @@ func roundf(x float32) float32 {
 	return float32(int32(x + 0.5))
 }
 
-// log32 returns the natural logarithm of x > 0, within about 1e-5, in
-// single precision: the exponent of x, and the series of atanh for its
-// mantissa.
 func log32(x float32) float32 {
 	b := math.Float32bits(x)
 	e := float32(int32(b>>23&0xff) - 127)
@@ -64,9 +53,6 @@ func log32(x float32) float32 {
 	return e*math.Ln2 + 2*t*(1+t2*(1.0/3+t2*(1.0/5+t2*(1.0/7))))
 }
 
-// max32 and min32 return the larger and the smaller of a and b, for
-// operands that are not NaN. Unlike the builtins they ignore NaN and the
-// sign of zero, which makes them a few instructions on a microcontroller.
 func max32(a, b float32) float32 {
 	if a > b {
 		return a
@@ -81,7 +67,6 @@ func min32(a, b float32) float32 {
 	return b
 }
 
-// abs32 returns the absolute value of x.
 func abs32(x float32) float32 {
 	if x < 0 {
 		return -x
@@ -89,7 +74,6 @@ func abs32(x float32) float32 {
 	return x
 }
 
-// pow2 returns 2 to the power e, for e from -126 to 127, and 0 below.
 func pow2(e int32) float32 {
 	b := e + 127
 	if b <= 0 || b > 254 {
@@ -98,7 +82,6 @@ func pow2(e int32) float32 {
 	return math.Float32frombits(uint32(b) << 23)
 }
 
-// sat8 returns x rounded to the nearest integer and saturated to int8.
 func sat8(x float32) int8 {
 	switch {
 	case x >= math.MaxInt8:
@@ -111,10 +94,6 @@ func sat8(x float32) int8 {
 	return int8(x + 0.5)
 }
 
-// sincosf returns the sine and cosine of x in single precision, within
-// about 1e-6 for |x| up to a few thousand radians: x is reduced to within
-// pi/4 of a multiple of pi/2, and the polynomials of the Cephes sinf and
-// cosf take the rest.
 func sincosf(x float32) (sin, cos float32) {
 	const (
 		twoOverPi = 0.63661977

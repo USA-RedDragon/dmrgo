@@ -9,17 +9,11 @@ import (
 	"testing"
 )
 
-// impairedFM returns the deviation freq scaled by 1+dev and the envelope
-// env as baseband at offsetHz, faded by Rayleigh fading of Doppler fd Hz
-// when fd is above 0, with noise at a C/N of cn dB in 12.5 kHz of the mean
-// power, and benchPad of noise before and after, as noisyFM does.
 func impairedFM(freq, env []float64, offsetHz, dev, fd, cn float64, seed uint64) []complex64 {
 	pad := int(benchPad * basebandRate)
 	x := make([]complex64, len(freq)+2*pad)
 	rng := rand.New(rand.NewPCG(seed, seed+1))
 	sigma := math.Sqrt(basebandRate/(math.Pow(10, cn/10)*12500)) / math.Sqrt2
-	// A sum of rays from angles spread around the receiver, each of the
-	// same power, at a random phase.
 	const rays = 32
 	var dop, phase [rays]float64
 	for i := range rays {
@@ -46,16 +40,6 @@ func impairedFM(freq, env []float64, offsetHz, dev, fd, cn float64, seed uint64)
 	return x
 }
 
-// TestTierImpaired checks that the coherent tiers on I/Q recover at least
-// what Tier0 does, for each payload, summed over seeds, on direct mode
-// traffic whose transmissions start between symbol boundaries, from a
-// transmitter whose deviation is 10% off either way, and through Rayleigh
-// fading of 50 Hz Doppler, at C/N points from the 90% point of Tier0 for
-// exact voice frames up. The coherent stage then has to fit the
-// modulation index of the stream, and to leave the uncoded bits to the
-// core where the FEC shows that it makes fewer errors. Tiers decide some
-// bursts differently by chance, so a tier may fall short by 1% of the
-// truth, or 2 items, as in TestTierOrder.
 func TestTierImpaired(t *testing.T) {
 	t.Parallel()
 	if testing.Short() {

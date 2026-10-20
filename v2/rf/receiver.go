@@ -53,7 +53,7 @@ const (
 	Tier4
 )
 
-// Parameters of the DMR 4FSK signal (ETSI TS 102 361-1 clause 10.2).
+// ETSI TS 102 361-1 clause 10.2
 const (
 	symbolRate   = 4800
 	deviationHz  = 648.0
@@ -66,87 +66,34 @@ const (
 	slotSeconds  = 0.030
 )
 
-// Geometry and limits of the receiver, in samples at basebandRate unless
-// noted.
 const (
-	slotSymbols  = 144
-	slotSamplesN = slotSymbols * samplesPerSy
-	syncFirstSym = cachSymbols + 54
-	// maxGapSlots is the most slots between two anchors that one trellis
-	// run covers, and exactGapSlots the most for the exact-phase trellis.
-	maxGapSlots   = 7
-	exactGapSlots = 3
-	// searchStep is the spacing of the positions the SYNC search tries.
-	searchStep = 2
-	// lockMetric is the coherent SYNC metric at which the search locks.
-	lockMetric = 0.4
-	// discLock is the discriminator SYNC correlation at which the search of
-	// the engine without the trellis locks.
-	discLock = 0.9
-	// anchorMetric is the share of the expected SYNC metric at which a slot
-	// counts as an anchor.
-	anchorMetric = 0.45
-	// levelGain is the weight of each anchor in the level and noise
-	// estimates, high enough to follow a receiver gain that settles, and
-	// levelJump the ratio of the power of an anchor to the level at which
-	// the estimates start again from the anchor.
-	levelGain = 0.5
-	levelJump = 4.0
-	// msQuietSlots is the number of slots in a row without carrier that
-	// end the stream of an MS, which sends in every other slot: a radio
-	// that keys up again a moment later has a new timing.
-	msQuietSlots = 6
-	// msPresence is the ratio of the mean power of a slot of an MS to that
-	// of the slot before it, which it does not send in, at which the
-	// carrier counts as on.
-	msPresence = 4.0
-	// presenceFactor is the ratio of the mean power of a slot to the noise
-	// power at which the carrier counts as on.
+	slotSymbols    = 144
+	slotSamplesN   = slotSymbols * samplesPerSy
+	syncFirstSym   = cachSymbols + 54
+	maxGapSlots    = 7
+	exactGapSlots  = 3
+	searchStep     = 2
+	lockMetric     = 0.4
+	discLock       = 0.9
+	anchorMetric   = 0.45
+	levelGain      = 0.5
+	levelJump      = 4.0
+	msQuietSlots   = 6
+	msPresence     = 4.0
 	presenceFactor = 1.5
-	// bsPresence is the share of the carrier power above the noise power
-	// at which a slot of a BS stream counts as on. The carrier of a BS
-	// stream is on in every slot, and below 0 dB Eb/N0 the test of
-	// presenceFactor dropped most of its bursts. A slot counts as on when
-	// it passes either test: r.amp follows only the anchors, and a burst
-	// in a fade far below that level but well above the noise is on.
-	bsPresence = 0.5
-	// lockSpanHz is the carrier error, in Hz, that the receiver searches
-	// at lock: the spectrum estimate is no closer than that.
-	lockSpanHz = 300.0
-	// wideChunk is the number of baseband samples that the receiver filters
-	// before it searches or follows the stream again.
-	wideChunk = 128
-	// trellisWin is the number of symbols of a block of the trellis of the
-	// coherent tiers, and trellisLook the symbols of lookahead of its
-	// backward pass. Eight symbols of lookahead give the same sweep as
-	// whole runs.
-	trellisWin  = 64
-	trellisLook = 8
-	// warmSlots is the number of slots after the first anchor that the
-	// receiver detects twice, the first time only to settle the carrier
-	// estimate.
-	warmSlots = 6
-	// lostSlots is the number of slots without carrier after which the
-	// receiver unlocks.
-	lostSlots = 24
-	// timingForget and freqForget weigh the old measurements in the timing
-	// fit and the carrier estimate per anchor.
-	timingForget = 0.97
-	freqForget   = 0.9
-	// timingSigma is the standard deviation, in samples, of the timing
-	// of one anchor that the timing fit assumes, and periodSigma that of
-	// the slot period of a stream about slotSamplesN, about 200 ppm: the
-	// fit weighs the period of its anchors against slotSamplesN with
-	// them, so that two anchors close together do not set a period that
-	// misses the next anchor.
-	timingSigma = 0.5
-	periodSigma = 0.3
-	// timingPrior is the weight of slotSamplesN in the period of the fit,
-	// in anchors one slot from the mean slot of the fit.
-	timingPrior = timingSigma * timingSigma / (periodSigma * periodSigma)
-	// maxTauSpan is the most samples that measure searches the SYNC of
-	// a slot around where the timing fit puts it.
-	maxTauSpan = 5.0
+	bsPresence     = 0.5
+	lockSpanHz     = 300.0
+	wideChunk      = 128
+	trellisWin     = 64
+	trellisLook    = 8
+	warmSlots      = 6
+	lostSlots      = 24
+	timingForget   = 0.97
+	freqForget     = 0.9
+	timingSigma    = 0.5
+	periodSigma    = 0.3
+	timingPrior    = timingSigma * timingSigma / (periodSigma * periodSigma)
+	maxTauSpan     = 5.0
 )
 
 // BasebandRate is the sample rate of the complex baseband that
@@ -184,8 +131,7 @@ type Config struct {
 	// pointer and not a value, because TinyGo passes a struct value one
 	// element per stack slot.
 	OnBurst func(*Burst)
-	// opt, when not nil, replaces the settings of the tier.
-	opt *options
+	opt     *options
 }
 
 // ConfigError reports a Config that New cannot use.
@@ -199,8 +145,6 @@ func (e *ConfigError) Error() string {
 	return "rf: Config." + e.Field + " is out of range"
 }
 
-// anchorInfo is the measurement of a slot whose SYNC field holds a known
-// pattern.
 type anchorInfo struct {
 	pattern enums.SyncPattern
 	metric  float64
@@ -209,15 +153,12 @@ type anchorInfo struct {
 	noise   float64
 }
 
-// slotState is one slot of a locked stream on its way through detection.
 type slotState struct {
-	index   int64
-	start   float64
-	present bool
-	anchor  bool
-	a       anchorInfo
-	// hasPrior is set while a refinement detects the slot again with the
-	// log priors of engine.prior.
+	index    int64
+	start    float64
+	present  bool
+	anchor   bool
+	a        anchorInfo
 	hasPrior bool
 }
 
@@ -233,31 +174,25 @@ type Receiver struct {
 	iql  *iqLowRx
 }
 
-// engine is the receiver of every tier. It keeps the samples of a number
-// of slots and detects the slots between the anchors of a stream.
 type engine struct {
-	cfg  Config
-	opt  options
-	fe   *frontEnd
-	wide []complex64
-	// inChunk is the most input bytes whose baseband samples fit in wide.
-	inChunk int
-	carry   byteCarry
-	chz     *channelizer
-	spec    *spectrum
-	search  *syncSearch
-	model   *cpmModel
-	tr      *trellis
-	xt      *xtrellis
-	maxRun  int
-	lp      []float32
-	slp     []float32
-	buf     []complex64
-	tapp    []float32
-	// scr holds the ring samples that fillRange interpolates from.
-	scr []complex64
-	// runG, runDir, runSteps, runLo and runHi describe the trellis run
-	// that runSamples, runPrior and runKeep serve.
+	cfg                Config
+	opt                options
+	fe                 *frontEnd
+	wide               []complex64
+	inChunk            int
+	carry              byteCarry
+	chz                *channelizer
+	spec               *spectrum
+	search             *syncSearch
+	model              *cpmModel
+	tr                 *trellis
+	xt                 *xtrellis
+	maxRun             int
+	lp                 []float32
+	slp                []float32
+	buf                []complex64
+	tapp               []float32
+	scr                []complex64
 	runG, runLo, runHi symRef
 	runDir, runSteps   int
 	tk                 *tracker
@@ -285,7 +220,6 @@ type engine struct {
 	amp       float64
 	noise     float64
 	offEnergy float64
-	// quiet counts the slots in a row without carrier.
 	quiet     int
 	devScale  float64
 	dcHz      float64
@@ -296,61 +230,30 @@ type engine struct {
 	slots    []slotState
 	first    int64
 	lastAnch int64
-	// doneAt is the channel sample where the last stream ended, before
-	// which the search does not go again, nor the lookback of a lock.
-	doneAt int64
-	// scanAt is the next channel sample that scanStale tries.
-	scanAt int64
-	// finRec holds the record of the slot that finish hands the tracker,
-	// which TinyGo puts on the heap for every slot as a local, and emitFn
-	// is emit as a func value made once.
-	finRec slotRec
-	emitFn func(*received)
-	// llrBuf holds the ratios of a burst that fill264 sets.
-	llrBuf [layer2.BurstBits]int16
-	// syms holds the detection of the slots on their way to the tracker,
-	// as many as the gap that the first detection after a lock spans, and
-	// refined that of the slots that a refinement detects again, from
-	// refLo, while refining.
+	doneAt   int64
+	scanAt   int64
+	finRec   slotRec
+	emitFn   func(*received)
+	llrBuf   [layer2.BurstBits]int16
 	syms     symStore
 	refined  symStore
 	refining bool
 	refLo    int64
-	// prior holds the log priors of the digits of each symbol of the slot
-	// that a refinement detects again, from its decoded FEC.
-	prior []float32
+	prior    []float32
 
-	streams int
-	rep     *repairer
-	// scratchRec holds a slot record while repairEntry detects a voice
-	// burst again, and known the burst bits it fixed, for the tiers that
-	// refine.
-	scratchRec *slotRec
-	known      *[layer2.BurstBits]bool
-	// data holds the ratios of repairData, for the tiers that detect a
-	// data burst again.
-	data *dataPass
-	// freqTot holds the anchor scores of the carrier offsets of bestFreq.
-	freqTot []float64
-	h       float64
-	// hg holds the buffers of options.HGate.
-	hg *hGate
-	// llrScale is options.LLRScale, 1 for 0.
-	llrScale float32
-	// offsetHz and devHz are the carrier offset and the outer deviation
-	// of the last locked stream.
-	offsetHz float64
-	devHz    float64
-	// cb holds the burst that emit hands OnBurst.
-	cb Burst
-	// side is the evidence of options.Comb of the burst that OnBurst takes.
-	side combSide
-	// scout is set in the first pass of options.TwoPass and frozen in the
-	// second, which detects the slots from passStart to passEnd again with
-	// the estimates of passRecs; passSeg is set when the stream goes on
-	// after passEnd. pend is set when scanStale ended a stream whose
-	// second pass is to come, with the search position pendAt and the end
-	// pendDone to set when it ends.
+	streams                      int
+	rep                          *repairer
+	scratchRec                   *slotRec
+	known                        *[layer2.BurstBits]bool
+	data                         *dataPass
+	freqTot                      []float64
+	h                            float64
+	hg                           *hGate
+	llrScale                     float32
+	offsetHz                     float64
+	devHz                        float64
+	cb                           Burst
+	side                         combSide
 	scout, frozen, passSeg, pend bool
 	passStart, passEnd           int64
 	pendAt, pendDone             int64
@@ -402,9 +305,6 @@ func New(cfg Config) (*Receiver, error) {
 	return &Receiver{e: newEngine(cfg, opt)}, nil
 }
 
-// checkConfig fills the defaults of cfg and returns a *ConfigError when a
-// field is out of range. low is set when cfg.opt takes I/Q at the rate of
-// a radio chip.
 func checkConfig(cfg *Config) (low bool, err error) {
 	if cfg.Tier == TierDefault {
 		cfg.Tier = Tier0
@@ -438,7 +338,6 @@ func checkConfig(cfg *Config) (low bool, err error) {
 	return low, nil
 }
 
-// newEngine returns the receiver of cfg with the settings opt.
 func newEngine(cfg Config, opt options) *engine {
 	r := &engine{cfg: cfg, opt: opt, candAt: -1, h: 0.27, doneAt: math.MinInt64, llrScale: opt.LLRScale}
 	if r.llrScale == 0 {
@@ -579,7 +478,6 @@ func (r *Receiver) Write(iq []byte) []Burst {
 		return r.cb.write(iq)
 	}
 	if r.iql != nil {
-		// iqLowRx takes only WriteBaseband.
 		return nil
 	}
 	if r.iq0 != nil {
@@ -636,7 +534,6 @@ func (r *Receiver) Flush() []Burst {
 	return r.e.flush()
 }
 
-// write processes the I/Q bytes of Receiver.Write.
 func (r *engine) write(iq []byte) []Burst {
 	r.out = r.out[:0]
 	pair, iq := r.carry.split(iq)
@@ -645,7 +542,6 @@ func (r *engine) write(iq []byte) []Burst {
 	return r.out
 }
 
-// bytes processes whole I/Q pairs of bytes.
 func (r *engine) bytes(iq []byte) {
 	for len(iq) > 0 {
 		n := min(len(iq), r.inChunk) &^ 1
@@ -658,7 +554,6 @@ func (r *engine) bytes(iq []byte) {
 	}
 }
 
-// writeBaseband processes the samples of Receiver.WriteBaseband.
 func (r *engine) writeBaseband(x []complex64) []Burst {
 	r.out = r.out[:0]
 	for len(x) > 0 {
@@ -669,9 +564,6 @@ func (r *engine) writeBaseband(x []complex64) []Burst {
 	return r.out
 }
 
-// push runs wide baseband samples through the spectrum estimate, which
-// only an unlocked receiver uses and so only it runs, and through the
-// channel filters, then searches or follows the stream.
 func (r *engine) push(x []complex64) {
 	for _, v := range x {
 		if !r.locked && r.spec.push(v) && r.spec.OK {
@@ -690,14 +582,10 @@ func (r *engine) push(x []complex64) {
 	r.step(false)
 }
 
-// tuneOK reports whether the channel may move to the carrier offset hz:
-// with the IQTuneMaxHz knob, only within it, so that the spectrum
-// estimate of a stronger channel next to the wanted one does not take it.
 func (r *engine) tuneOK(hz float64) bool {
 	return r.opt.IQTuneMaxHz <= 0 || math.Abs(hz) <= float64(r.opt.IQTuneMaxHz)
 }
 
-// flush finishes the stream at its end and returns the remaining bursts.
 func (r *engine) flush() []Burst {
 	r.out = r.out[:0]
 	for range slotSamplesN {
@@ -712,8 +600,6 @@ func (r *engine) flush() []Burst {
 	return r.out
 }
 
-// emit hands burst x to OnBurst, or appends it to the bursts that Write
-// returns.
 func (r *engine) emit(x *received) {
 	r.side = x.side
 	if r.cfg.OnBurst != nil {
@@ -727,7 +613,6 @@ func (r *engine) emit(x *received) {
 	}
 }
 
-// step searches or follows the stream over the samples that arrived.
 func (r *engine) step(end bool) {
 	for {
 		if !r.locked {
@@ -742,10 +627,6 @@ func (r *engine) step(end bool) {
 	}
 }
 
-// searchStep tries the next search positions and reports whether it locked.
-// The discriminator tier first waits for a spectrum estimate that finds a
-// signal and tunes the channel to it: it never tunes while locked, and a
-// carrier offset through its prefilter cost it 1 dB or more.
 func (r *engine) searchStep() bool {
 	ch := &r.chz.ch
 	if from := max(r.chz.oldest()+slotSamplesN, r.doneAt); r.searchAt < from {
@@ -809,16 +690,11 @@ func (r *engine) searchStep() bool {
 	}
 }
 
-// alignSearch returns the first channel sample from t at which the
-// coherent search can start, a multiple of the decimation of the channel
-// ring.
 func (r *engine) alignSearch(t int64) int64 {
 	d := int64(r.search.dec)
 	return t + (d-(t%d+d)%d)%d
 }
 
-// lock starts following a stream whose SYNC starts (center of its first
-// symbol) at channel sample t.
 func (r *engine) lock(t float64, src int, data bool, hz float64) {
 	r.locked, r.scanAt = true, 0
 	r.spec.reset()
@@ -875,11 +751,6 @@ func (r *engine) lock(t float64, src int, data bool, hz float64) {
 	}
 }
 
-// warmFreq sets the carrier estimate and the modulation index from the
-// slots from 0 to j at the timing of the slot fit: the values that
-// maximize the sum of their squared SYNC correlations, searched in turn.
-// The discriminator detection does not use the carrier estimate, so for it
-// warmFreq only reports the deviation.
 func (r *engine) warmFreq(j int64) {
 	if !r.opt.Coherent {
 		r.devHz = 3 * deviationHz * r.devScale
@@ -903,10 +774,6 @@ func (r *engine) warmFreq(j int64) {
 	r.fw = 1 / (1 - freqForget)
 }
 
-// searchFreq sets the carrier estimate to the frequency, from center-span
-// to center+span in steps of step, with the best anchorScore up to slot j.
-// A wide search first takes steps 20 times as large, then searches one of
-// them around the best.
 func (r *engine) searchFreq(j int64, center, span, step float64) {
 	if span > 20*step {
 		coarse := 20 * step
@@ -915,11 +782,6 @@ func (r *engine) searchFreq(j int64, center, span, step float64) {
 	r.freq = r.bestFreq(j, center, span, step)
 }
 
-// bestFreq returns the frequency, from center-span to center+span in steps
-// of step, with the best sum over the slots from 0 to j of the better SYNC
-// metric of the voice and data patterns, at the timing of the slot fit. It
-// interpolates each slot once and removes each carrier offset from the
-// interpolated samples.
 func (r *engine) bestFreq(j int64, center, span, step float64) float64 {
 	tot := r.freqTot[:int(math.Round(2*span/step))+1]
 	clear(tot)
@@ -948,10 +810,6 @@ func (r *engine) bestFreq(j int64, center, span, step float64) float64 {
 	return center - span + float64(best)*step
 }
 
-// anchorScore returns the sum over the slots from 0 to j of the better
-// SYNC metric of the voice and data patterns, at the timing of the slot
-// fit and the current carrier estimate. It does not use the anchors that
-// the warm pass found, which a wrong lock frequency makes wrong.
 func (r *engine) anchorScore(j int64) float64 {
 	var tot float64
 	voice, data, _ := sourceAt(r.src).SyncPatterns()
@@ -966,7 +824,6 @@ func (r *engine) anchorScore(j int64) float64 {
 	return tot
 }
 
-// setH sets the modulation index of the SYNC waveforms and of the trellis.
 func (r *engine) setH(h float64) {
 	r.h = h
 	r.search.setH(h, &r.pulse)
@@ -979,9 +836,6 @@ func (r *engine) setH(h float64) {
 	r.devHz = 3 * deviationHz * h / 0.27
 }
 
-// syncSamples interpolates the SYNC field of slot s, shifted by tau
-// samples, into r.corrX with the residual carrier removed, and returns its
-// energy.
 func (r *engine) syncSamples(s *slotState, tau float64) float64 {
 	ch := &r.chz.ch
 	dec := r.search.dec
@@ -1002,15 +856,10 @@ func (r *engine) syncSamples(s *slotState, tau float64) float64 {
 	return float64(e)
 }
 
-// syncStart returns the channel sample of the first sample that
-// syncSamples interpolates.
 func (r *engine) syncStart(s *slotState, tau float64) float64 {
 	return r.symTime(s.index, syncFirstSym+syncEdge) + tau - float64(r.search.sps/2*r.search.dec)
 }
 
-// syncMetricAt returns the SYNC metric of pattern p, as syncCorr, over
-// r.corrX, interpolated without the carrier from channel sample t0 and of
-// energy e, with the carrier at offset f removed.
 func (r *engine) syncMetricAt(p enums.SyncPattern, e, t0, f float64) float64 {
 	if e == 0 {
 		return 0
@@ -1025,24 +874,18 @@ func (r *engine) syncMetricAt(p enums.SyncPattern, e, t0, f float64) float64 {
 	return float64(real(c)*real(c)+imag(c)*imag(c)) / (e * float64(r.search.span))
 }
 
-// slotTime returns the channel sample of the center of the first CACH
-// symbol of slot j.
 func (r *engine) slotTime(j int64) float64 {
 	return r.t0 + float64(j)*r.period
 }
 
-// symTime returns the channel sample of the center of symbol k (0 to 143,
-// CACH first) of slot j.
 func (r *engine) symTime(j int64, k int) float64 {
 	return r.slotTime(j) + float64(k)*r.period/slotSymbols
 }
 
-// slot returns the state of slot j in the ring of slot states.
 func (r *engine) slot(j int64) *slotState {
 	return &r.slots[r.slotPos(j)]
 }
 
-// resetSlot clears the state of slot j and returns it.
 func (r *engine) resetSlot(j int64) *slotState {
 	s := r.slot(j)
 	*s = slotState{index: j, start: r.slotTime(j)}
@@ -1051,14 +894,10 @@ func (r *engine) resetSlot(j int64) *slotState {
 	return s
 }
 
-// slotPos returns the position of slot j in the ring of slot states.
 func (r *engine) slotPos(j int64) int {
 	return floorMod(j, len(r.slots))
 }
 
-// floorMod returns j modulo n, from 0 to n-1. Slot numbers count from the
-// lock of a stream, so j fits 32 bits and a 32-bit CPU divides it as an
-// int instead of in software.
 func floorMod(j int64, n int) int {
 	x := int(j) % n
 	if x < 0 {
@@ -1067,35 +906,25 @@ func floorMod(j int64, n int) int {
 	return x
 }
 
-// symStore holds, for each symbol of a number of slots, the digit with the
-// highest log-APP, the log-likelihood ratios of its two bits, and the
-// distance from the start of the trellis run that set them.
 type symStore struct {
-	slots int
-	digit []int8
-	llr   []int16
-	have  []int16
-	// own holds the slot whose symbols each place holds.
-	own []int64
-	// scale multiplies the ratios that set stores.
-	scale float32
-	// logmap sums the digits of each bit exactly.
+	slots  int
+	digit  []int8
+	llr    []int16
+	have   []int16
+	own    []int64
+	scale  float32
 	logmap bool
 }
 
-// newSymStore returns a store of n slots whose ratios set scales by scale.
 func newSymStore(n int, scale float32) symStore {
 	return symStore{slots: n, digit: make([]int8, n*slotSymbols), llr: make([]int16, 2*n*slotSymbols), have: make([]int16, n*slotSymbols),
 		own: make([]int64, n), scale: scale}
 }
 
-// base returns the store index of the first symbol of slot j, which shares
-// its place with every slot a multiple of slots away.
 func (st *symStore) base(j int64) int {
 	return floorMod(j, st.slots) * slotSymbols
 }
 
-// clear resets n symbols from store index p, with run distance have.
 func (st *symStore) clear(p, n int, have int16) {
 	clear(st.digit[p : p+n])
 	clear(st.llr[2*p : 2*(p+n)])
@@ -1104,7 +933,6 @@ func (st *symStore) clear(p, n int, have int16) {
 	}
 }
 
-// set stores the four log-APPs a of the symbol at store index p.
 func (st *symStore) set(p int, a []float32) {
 	best := 0
 	for v := 1; v < 4; v++ {
@@ -1120,16 +948,12 @@ func (st *symStore) set(p int, a []float32) {
 	st.llr[2*p], st.llr[2*p+1] = dibitLLR(a, st.scale)
 }
 
-// dibitLLRExact is dibitLLR with the exact sum of the two digits of each
-// bit value.
 func dibitLLRExact(a []float32, scale float32) (int16, int16) {
 	b0 := logAdd(a[2], a[3]) - logAdd(a[0], a[1])
 	b1 := logAdd(a[1], a[2]) - logAdd(a[0], a[3])
 	return satLLR(scale * b0), satLLR(scale * b1)
 }
 
-// symsOf returns the store that holds slot s and the store index of its
-// first symbol: the refinement store while a refinement detects s again.
 func (r *engine) symsOf(s *slotState) (*symStore, int) {
 	if j := s.index; r.refining && j >= r.refLo && j < r.refLo+int64(r.refined.slots) {
 		return &r.refined, int(j-r.refLo) * slotSymbols
@@ -1137,9 +961,6 @@ func (r *engine) symsOf(s *slotState) (*symStore, int) {
 	return &r.syms, r.syms.base(s.index)
 }
 
-// followStep measures the next slot once its samples and a lookahead have
-// arrived, and detects the slots between anchors. It reports whether it
-// made progress.
 func (r *engine) followStep(end bool) bool {
 	if r.frozen && r.next >= r.passEnd {
 		r.endPass()
@@ -1191,9 +1012,6 @@ func (r *engine) followStep(end bool) bool {
 	return true
 }
 
-// checkStream ends the stream after slot j when its carrier is gone, or
-// moves the search to a SYNC off its slots, or ends the warm pass or the
-// first pass of options.TwoPass when they are done.
 func (r *engine) checkStream(j int64) {
 	switch {
 	case r.lost >= lostSlots || r.lastAnch == math.MinInt64 && j >= 6 || !r.bs && r.quiet >= msQuietSlots:
@@ -1206,11 +1024,6 @@ func (r *engine) checkStream(j int64) {
 	}
 }
 
-// endWarm ends the warm pass at slot j: it sets the carrier estimate from
-// the slots up to j and starts the detection again from the first slot.
-// The timing fit starts again too, as the detection measures the anchors
-// of the warm pass again, and the same anchor twice in the fit made a
-// period from two anchors two slots apart.
 func (r *engine) endWarm(j int64) {
 	r.warmFreq(j)
 	r.warm = false
@@ -1219,10 +1032,6 @@ func (r *engine) endWarm(j int64) {
 	r.fit = [5]float64{}
 }
 
-// stale reports whether the stream may have moved by slot j: a BS stream
-// without a SYNC for staleSlots, or an MS stream without one for more than
-// a superframe, as a repeater or a radio that keys up again with a new
-// timing sends, or one whose timing jumps.
 func (r *engine) stale(j int64) bool {
 	if r.lastAnch == math.MinInt64 || j < 0 {
 		return false
@@ -1233,9 +1042,6 @@ func (r *engine) stale(j int64) bool {
 	return j-r.lastAnch > 2*layer2.VoiceBurstsPerSuperframe+1
 }
 
-// scanStale searches the slots of a stale stream up to slot j for a SYNC
-// off its slots, and when it finds one, ends the stream and moves the
-// search there. It reports whether it ended the stream.
 func (r *engine) scanStale(j int64) bool {
 	ch := &r.chz.ch
 	from := max(r.scanAt, int64(r.slotTime(r.lastAnch+1)), r.chz.oldest()+slotSamplesN)
@@ -1266,9 +1072,6 @@ func (r *engine) scanStale(j int64) bool {
 	return true
 }
 
-// offGrid reports whether a SYNC that the search finds at channel sample
-// t lies off the slots of the stream by more than a symbol: for an MS,
-// which sends in one slot of two, off the slots of its bursts.
 func (r *engine) offGrid(t int64) bool {
 	k := float64(t-syncEdge*samplesPerSy) - float64(syncFirstSym*samplesPerSy) - r.slotTime(r.lastAnch)
 	n := r.period
@@ -1282,7 +1085,6 @@ func (r *engine) offGrid(t int64) bool {
 	return k > samplesPerSy && k < n-samplesPerSy
 }
 
-// finishStream detects the slots that are still pending and unlocks.
 func (r *engine) finishStream() {
 	if r.warm {
 		r.endWarm(r.next - 1)
@@ -1323,8 +1125,6 @@ func (r *engine) finishStream() {
 	r.tk.flush(r.emitFn)
 }
 
-// measure classifies the SYNC field of slot s, measures its timing,
-// carrier and level when it is an anchor, and tests the carrier.
 func (r *engine) measure(s *slotState) {
 	if !r.opt.Coherent {
 		r.measureDisc(s)
@@ -1357,8 +1157,6 @@ func (r *engine) measure(s *slotState) {
 		s.present = energy > min(presenceFactor*r.noise, r.noise+bsPresence*r.amp*r.amp)
 	}
 	if !r.bs && r.lastAnch != math.MinInt64 {
-		// The slots between the bursts of an MS hold its noise, which a
-		// burst stands above at any gain of the input.
 		if (s.index-r.lastAnch)&1 != 0 {
 			r.offEnergy = energy
 		} else if r.offEnergy > 0 && energy > msPresence*r.offEnergy {
@@ -1377,8 +1175,6 @@ func (r *engine) measure(s *slotState) {
 	r.passAnchor(s, bestTau)
 	r.timing(s, bestTau)
 	if g := (best.amp / r.amp) * (best.amp / r.amp); r.amp == 0 || g > levelJump || g < 1/levelJump {
-		// The first anchor, or the gain of the input moved: the levels
-		// start from the anchor.
 		r.amp, r.noise = best.amp, best.noise
 	} else {
 		r.amp = (1-levelGain)*r.amp + levelGain*best.amp
@@ -1386,10 +1182,6 @@ func (r *engine) measure(s *slotState) {
 	}
 }
 
-// tauSpan returns how far, in channel samples, measure searches the SYNC
-// of slot j around where the timing fit puts it: three standard
-// deviations of the prediction of the fit, up to the step of 0.25 samples
-// of the search, at least 1.5 and at most maxTauSpan samples.
 func (r *engine) tauSpan(j int64) float64 {
 	f0, f1, f2 := r.fit[0], r.fit[1], r.fit[2]+timingPrior
 	det := f0*f2 - f1*f1
@@ -1401,10 +1193,6 @@ func (r *engine) tauSpan(j int64) float64 {
 	return min(max(1.5, math.Ceil(4*3*math.Sqrt(v))/4), maxTauSpan)
 }
 
-// timing adds the SYNC of anchor slot s, tau samples from where the fit
-// put it, to the fit of the slot timing: a line through the anchors, with
-// old anchors forgotten and the period weighed against slotSamplesN by
-// timingPrior. The first anchor moves the timing halfway to it.
 func (r *engine) timing(s *slotState, tau float64) {
 	k := s.index
 	r.fit[0] = timingForget*r.fit[0] + 1
@@ -1425,8 +1213,6 @@ func (r *engine) timing(s *slotState, tau float64) {
 	s.start = r.slotTime(k)
 }
 
-// syncCorr correlates r.corrX, the SYNC field samples of energy e, with the
-// waveform of pattern p.
 func (r *engine) syncCorr(p enums.SyncPattern, e float64) anchorInfo {
 	if e == 0 {
 		return anchorInfo{pattern: p}
@@ -1444,20 +1230,15 @@ func (r *engine) syncCorr(p enums.SyncPattern, e float64) anchorInfo {
 	return anchorInfo{pattern: p, metric: a * a / (e * span), rot: rot, amp: amp, noise: noise}
 }
 
-// rotAt returns the rotation that removes the residual carrier at channel
-// sample t.
 func (r *engine) rotAt(t float64) complex128 {
 	return complex128(turn(-r.freq * t / basebandRate))
 }
 
-// turn returns e^(2*pi*j*c) in single precision, from the fraction of the
-// cycles c.
 func turn(c float64) complex64 {
 	s, co := sincosf(float32(2 * math.Pi * (c - math.Round(c))))
 	return complex(co, s)
 }
 
-// slotEnergy returns the mean power over the burst of slot s.
 func (r *engine) slotEnergy(s *slotState) float64 {
 	n := burstSymbols * samplesPerSy
 	if !r.opt.Coherent {
@@ -1476,9 +1257,6 @@ func (r *engine) slotEnergy(s *slotState) float64 {
 	return float64(e) / float64(n)
 }
 
-// detectUpTo detects the symbols of the slots from r.first to j and hands
-// them to the tracker: up to j-1 when slot j is an anchor, whose second
-// half the next gap detects, and up to j otherwise.
 func (r *engine) detectUpTo(j int64) {
 	if j < r.first {
 		return
@@ -1502,8 +1280,6 @@ func (r *engine) detectUpTo(j int64) {
 	r.first = last + 1
 }
 
-// detectBurst detects and finishes slot s of a stream whose carrier is off
-// between bursts.
 func (r *engine) detectBurst(s *slotState) {
 	if s.present {
 		if !r.opt.Coherent {
@@ -1518,8 +1294,6 @@ func (r *engine) detectBurst(s *slotState) {
 	r.first = s.index + 1
 }
 
-// finish turns the detected symbols of slot s into a received burst for
-// the tracker.
 func (r *engine) finish(s *slotState) {
 	if !s.present {
 		return
@@ -1542,8 +1316,6 @@ func (r *engine) finish(s *slotState) {
 	r.tk.add(rec, r.emitFn)
 }
 
-// fill264 sets the hard bits and log-likelihood ratios of rec, burst and
-// CACH, from the detected symbols of slot s.
 func (r *engine) fill264(s *slotState, rec *slotRec) {
 	rec.data = layer2.RawBurst{}
 	st, p := r.symsOf(s)
@@ -1562,19 +1334,12 @@ func (r *engine) fill264(s *slotState, rec *slotRec) {
 	rec.llr.set(&r.llrBuf)
 }
 
-// dibitLLR returns the log-likelihood ratios of the two bits of a symbol
-// from its four log-APPs (digits 0 to 3 for symbols -3, -1, +1, +3; dibits
-// 11, 10, 00, 01), positive for bit 0, times scale, in units of 1/8,
-// saturated.
 func dibitLLR(a []float32, scale float32) (int16, int16) {
 	b0 := max32(a[2], a[3]) - max32(a[0], a[1])
 	b1 := max32(a[1], a[2]) - max32(a[0], a[3])
 	return satLLR(scale * b0), satLLR(scale * b1)
 }
 
-// satLLR returns v in units of 1/8, saturated to the int16 range, and at
-// least one unit from 0 with the sign of v, so that the decoders that read
-// a hard decision from the sign keep it.
 func satLLR(v float32) int16 {
 	v = max32(min32(8*v, 32000), -32000)
 	i := int16(v)
@@ -1589,9 +1354,6 @@ func satLLR(v float32) int16 {
 	return i
 }
 
-// refine starts a refinement of the slots from lo, which detects them into
-// the refinement store, from their detection on the way to the tracker,
-// and leaves that as it is.
 func (r *engine) refine(lo int64) {
 	r.refining, r.refLo = true, lo
 	st := &r.syms
@@ -1607,9 +1369,6 @@ func (r *engine) refine(lo int64) {
 	}
 }
 
-// repairEntry repairs the FEC fields of entry e and, for a voice burst whose
-// slot the ring still holds, detects the burst again with the repaired bits
-// as priors, then repairs it again with the new log-likelihood ratios.
 func (r *engine) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 	r.rep.repair(e, cc, ccOK)
 	j := e.rec.index
@@ -1658,8 +1417,6 @@ func (r *engine) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 	r.rep.repair(e, cc, ccOK)
 }
 
-// dataPass holds the ratios of repairData: the extrinsic ratios of the
-// grid decode, in nats, the channel ratios and the ratios of a burst.
 type dataPass struct {
 	ext  [layer2.BurstBits]float32
 	ch   [layer2.BurstBits]int16
@@ -1667,12 +1424,6 @@ type dataPass struct {
 	next [layer2.BurstBits]int16
 }
 
-// repairData detects the BPTC(196,96) data burst of entry e again with
-// the extrinsic information of the grid decode of its LLRs as bit priors,
-// weighed by options.DataPrior, and repairs it with the new channel
-// information and the grid's, up to options.DataPasses times or until it
-// passes its check. The other fields of the burst keep their first
-// detection, which the priors of a wrong block would only make worse.
 func (r *engine) repairData(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 	j := e.rec.index
 	w := r.opt.DataPrior
@@ -1707,8 +1458,6 @@ func (r *engine) repairData(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 	}
 }
 
-// bitPrior returns the log prior, in nats, of bit value b from the
-// log-likelihood ratio l, positive for 0: l/2 for 0 and -l/2 for 1.
 func bitPrior(l float32, b unpacked.Bit) float32 {
 	if b == 0 {
 		return l / 2
@@ -1716,10 +1465,6 @@ func bitPrior(l float32, b unpacked.Bit) float32 {
 	return -l / 2
 }
 
-// redetect detects slot j again with the priors in r.prior, between the
-// anchors on either side of it in a BS stream, into r.scratchRec, and
-// reports whether it could. The carrier estimate stays as it is, as the
-// priors would bias it.
 func (r *engine) redetect(j int64) bool {
 	s := r.slot(j)
 	s.hasPrior = true

@@ -18,21 +18,12 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// rxbenchPath holds the sweep results that cmd/rxbench renders into the
-// README. Regenerate with DMRRF_RXBENCH=full go test -run TestRxBench .
 const rxbenchPath = "testdata/rxbench.json"
 
-// benchPayloads lists the payload types of a sweep, in the order of the
-// README tables. rate1_bit counts the payload bits of the rate 1 blocks
-// instead of frames, and ambe_u the bits u2 and u3 of each AMBE+2 frame,
-// which no FEC protects, each bit of a burst that the receiver misses as
-// wrong.
 func benchPayloads() []string {
 	return []string{"ambe", "ambe_c0c1", "ambe_u", "rate12", "rate34", "rate1", "csbk", "lc", "header", "elc", "emb", "slottype", "sync", "rate1_bit"}
 }
 
-// benchSlot is one slot of the sweep stream and what a receiver should
-// recover from it.
 type benchSlot struct {
 	burst layer2.RawBurst
 	kind  string
@@ -41,9 +32,6 @@ type benchSlot struct {
 	sf    int
 }
 
-// benchStream builds a BS outbound stream: a group voice call of n
-// superframes on TS2 and data on TS1 (rate 1/2, rate 3/4 and rate 1
-// packets and preamble CSBKs).
 func benchStream(t testing.TB, n int) ([]rftx.BSSlot, []benchSlot) {
 	t.Helper()
 	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, BS: 314926, Group: true, Wakeups: 1, Message: "DMRGO RXBENCH", Superframes: n, BSSourced: true, Slot: 1, Preambles: 2}
@@ -100,20 +88,17 @@ func benchStream(t testing.TB, n int) ([]rftx.BSSlot, []benchSlot) {
 	return slots, truth
 }
 
-// benchScore counts the frames of one payload type.
 type benchScore struct {
 	Truth int `json:"truth"`
 	Exact int `json:"exact"`
 }
 
-// benchPoint is the score of all payload types at one C/N.
 type benchPoint struct {
 	CN       float64                `json:"cn"`
 	Seeds    int                    `json:"seeds,omitempty"`
 	Payloads map[string]*benchScore `json:"payloads"`
 }
 
-// benchTier is the sweep of one tier.
 type benchTier struct {
 	Mode         string       `json:"mode"`
 	Tier         int          `json:"tier"`
@@ -125,13 +110,11 @@ type benchTier struct {
 	FalsePerHour float64      `json:"false_per_hour,omitempty"`
 }
 
-// benchData is the content of rxbenchPath.
 type benchData struct {
 	Machine string      `json:"machine"`
 	Tiers   []benchTier `json:"tiers"`
 }
 
-// find returns the sweep of the receiver e, and whether d has it.
 func (d *benchData) find(e benchEntry) (benchTier, bool) {
 	for _, t := range d.Tiers {
 		if t.Mode == e.mode && t.Tier == e.number() {
@@ -141,17 +124,14 @@ func (d *benchData) find(e benchEntry) (benchTier, bool) {
 	return benchTier{}, false
 }
 
-// benchPad is the noise before and after the stream, in seconds.
 const benchPad = 0.3
 
-// benchScorer accumulates the scores of one sweep case.
 type benchScorer struct {
 	sc    map[string]*benchScore
 	frags map[int][4][4]byte
 	nfrag map[int]int
 }
 
-// add counts one truth item of payload type k, exact when ok.
 func (s *benchScorer) add(k string, ok bool) {
 	s.sc[k].Truth++
 	if ok {
@@ -159,7 +139,6 @@ func (s *benchScorer) add(k string, ok bool) {
 	}
 }
 
-// voice scores the voice burst i of truth against data.
 func (s *benchScorer) voice(truth []benchSlot, i int, r Burst, data layer2.RawBurst, have bool) {
 	ts := truth[i]
 	want, _ := ts.burst.AMBEFrames()
@@ -167,7 +146,6 @@ func (s *benchScorer) voice(truth []benchSlot, i int, r Burst, data layer2.RawBu
 	for k := range want {
 		s.add("ambe", have && gotF[k] == want[k])
 		s.add("ambe_c0c1", have && slices.Equal(gotF[k][:3], want[k][:3]))
-		// u2 and u3 are bits 24 to 48 of the 49 of the frame.
 		for q := 24; q < 49; q++ {
 			m := byte(0x80) >> (q % 8)
 			s.add("ambe_u", have && gotF[k][q/8]&m == want[k][q/8]&m)
@@ -196,8 +174,6 @@ func (s *benchScorer) voice(truth []benchSlot, i int, r Burst, data layer2.RawBu
 	}
 }
 
-// benchDataKey returns the payload type name of data type dt, or "" when
-// the sweep does not score its payload.
 func benchDataKey(dt enums.DataType) string {
 	switch dt {
 	case enums.DataTypeCSBK:
@@ -217,7 +193,6 @@ func benchDataKey(dt enums.DataType) string {
 	}
 }
 
-// data scores the data burst ts against data.
 func (s *benchScorer) data(ts benchSlot, r Burst, data layer2.RawBurst, have bool) {
 	okST := have && data.SlotType() == ts.burst.SlotType()
 	s.add("slottype", okST)
@@ -250,7 +225,6 @@ func (s *benchScorer) data(ts benchSlot, r Burst, data layer2.RawBurst, have boo
 	s.add(k, ok)
 }
 
-// scoreBench scores the bursts got against the truth of the stream.
 func scoreBench(truth []benchSlot, got []Burst) map[string]*benchScore {
 	s := benchScorer{sc: map[string]*benchScore{}, frags: map[int][4][4]byte{}, nfrag: map[int]int{}}
 	for _, n := range benchPayloads() {
@@ -277,36 +251,25 @@ func scoreBench(truth []benchSlot, got []Burst) map[string]*benchScore {
 	return s.sc
 }
 
-// benchCase is one run of a sweep.
 type benchCase struct {
 	cn   float64
 	seed uint64
 }
 
-// The input modes of the sweep.
 const (
-	// benchAudio runs a receiver on the FM discriminator audio of the
-	// noisy signal.
 	benchAudio = "audio"
-	// benchIQ runs a receiver on the noisy I/Q samples.
-	benchIQ = "iq"
+	benchIQ    = "iq"
 )
 
-// benchEntry is one receiver of the sweep: an input mode and a tier.
 type benchEntry struct {
 	mode string
 	tier Tier
 }
 
-// number returns n for the tier of e, TierN.
 func (e benchEntry) number() int { return int(e.tier - Tier0) }
 
-// name returns the name of e in DMRRF_RXBENCH_TIERS, such as audio0.
 func (e benchEntry) name() string { return e.mode + strconv.Itoa(e.number()) }
 
-// benchEntries lists the receivers of the sweep, in the order of the
-// README: the tiers of the Pareto front of each input, and the phase
-// trellis of Tier3. Tier4 is for offline decoding.
 func benchEntries() []benchEntry {
 	return []benchEntry{
 		{benchAudio, Tier0}, {benchAudio, Tier1}, {benchAudio, Tier2},
@@ -314,8 +277,6 @@ func benchEntries() []benchEntry {
 	}
 }
 
-// receiveAudioTier runs the discriminator audio a at benchAudioHz through a
-// DiscReceiver of tier t.
 func receiveAudioTier(t testing.TB, a []int16, tier Tier) []Burst {
 	t.Helper()
 	var out []Burst
@@ -330,13 +291,8 @@ func receiveAudioTier(t testing.TB, a []int16, tier Tier) []Burst {
 	return out
 }
 
-// benchAudioHz is the sample rate of the discriminator audio of Tier 0,
-// which the sweep runs through a DiscReceiver.
 const benchAudioHz = 9600
 
-// benchReceive runs the baseband x through the receiver of e: in audio
-// mode a DiscReceiver on the FM discriminator audio of x at benchAudioHz,
-// in I/Q mode a Receiver of its tier on x.
 func benchReceive(t testing.TB, x []complex64, e benchEntry) []Burst {
 	if e.mode == benchAudio {
 		return receiveAudioTier(t, discAudio(x, benchAudioHz), e.tier)
@@ -344,8 +300,6 @@ func benchReceive(t testing.TB, x []complex64, e benchEntry) []Burst {
 	return receiveBaseband(x, e.tier)
 }
 
-// runBench receives the stream at each case with the receiver e on all cores and
-// returns the points, summed over seeds.
 func runBench(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, e benchEntry, cases []benchCase) []benchPoint {
 	t.Helper()
 	res := make([]map[string]*benchScore, len(cases))
@@ -386,8 +340,6 @@ func runBench(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, e benchEntry
 	return out
 }
 
-// fastCases returns the cases of the CI sweep of e: a few C/N points near
-// where its voice frames start to decode.
 func fastCases(e benchEntry) []benchCase {
 	cns := []float64{5, 7, 9}
 	switch {
@@ -403,7 +355,6 @@ func fastCases(e benchEntry) []benchCase {
 	return out
 }
 
-// fullCases returns the cases of the README sweep.
 func fullCases() []benchCase {
 	var out []benchCase
 	for cn := -2.0; cn <= 12; cn += 0.5 {
@@ -414,26 +365,16 @@ func fullCases() []benchCase {
 	return out
 }
 
-// deepPayloads lists the payload types of the README graphs, which the
-// generator sweep follows down to low error rates.
 func deepPayloads() []string {
 	return []string{"ambe", "rate12", "rate34", "csbk", "elc", "rate1_bit"}
 }
 
-// Limits of the deep points of the generator sweep.
 const (
-	// deepErrors is the number of errors at which a payload type of a point
-	// needs no more seeds.
-	deepErrors = 20
-	// deepBatch is the number of seeds that each round of a deep point adds.
-	deepBatch = 32
-	// deepFirstSeed is the first seed of the deep rounds, after the seeds of
-	// fullCases.
+	deepErrors    = 20
+	deepBatch     = 32
 	deepFirstSeed = 1000
 )
 
-// deepStreams returns the most streams that a deep point of e runs, set by
-// its compute cost.
 func deepStreams(e benchEntry) int {
 	switch {
 	case e.mode == benchIQ && e.tier == Tier2:
@@ -444,12 +385,6 @@ func deepStreams(e benchEntry) int {
 	return 4096
 }
 
-// deepen adds seeds to the points of a full sweep where a graphed payload
-// type has fewer than deepErrors errors, so that the error rate curves
-// reach about 1e-4. It adds rounds of deepBatch seeds to a point until each
-// such payload type has deepErrors errors or the point has run
-// deepStreams streams. A payload type that ends a point with no errors
-// needs no deeper points above it.
 func deepen(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, e benchEntry, pts []benchPoint) []benchPoint {
 	t.Helper()
 	done := map[string]bool{}
@@ -496,8 +431,6 @@ func deepen(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, e benchEntry, 
 	return pts
 }
 
-// falsePerHour returns the bursts that e reports from 5 minutes of noise,
-// per hour.
 func falsePerHour(e benchEntry) float64 {
 	const seconds = 300
 	n, total := 0, 0
@@ -525,12 +458,6 @@ func falsePerHour(e benchEntry) float64 {
 	return float64(n) * 3600 * basebandRate / float64(total)
 }
 
-// receiverRAM returns the bytes that the receiver of e keeps, with
-// OnBurst set, as a microcontroller runs it: for audio Tier0 the size of a
-// DiscReceiver, all of its state, which needs no heap; for audio Tier1 that
-// and the heap of its soft stages; for the I/Q tiers the heap of a
-// Receiver at the baseband input rate. The heap is that of the whole
-// process, so it takes the least of a few tries.
 func receiverRAM(e benchEntry) int {
 	if e.mode == benchAudio && e.tier == Tier0 {
 		return int(unsafe.Sizeof(DiscReceiver{}))
@@ -542,8 +469,6 @@ func receiverRAM(e benchEntry) int {
 	return least
 }
 
-// heapOfNew returns the growth of the heap of the process across a New of
-// the receiver of e.
 func heapOfNew(e benchEntry) int {
 	var a, b runtime.MemStats
 	runtime.GC()
@@ -564,9 +489,6 @@ func heapOfNew(e benchEntry) int {
 	return int(b.HeapAlloc) - int(a.HeapAlloc)
 }
 
-// steadyAllocs returns the allocations per WriteBaseband of 16 KiB of x
-// with e, after the first chunk. It counts the mallocs of the whole
-// process, so the full sweep calls it while nothing else runs.
 func steadyAllocs(x []complex64, e benchEntry) float64 {
 	const chunk = 1 << 14
 	if e.mode == benchAudio {
@@ -584,8 +506,6 @@ func steadyAllocs(x []complex64, e benchEntry) float64 {
 	return float64(b.Mallocs-a.Mallocs) / float64(n)
 }
 
-// discSteadyAllocs returns the allocations per Write of 4 KiB of the audio
-// a with a DiscReceiver at benchAudioHz, after the first chunk.
 func discSteadyAllocs(a []int16, tier Tier) float64 {
 	const chunk = 1 << 11
 	r, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: tier, OnBurst: func(*Burst) {}})
@@ -603,12 +523,6 @@ func discSteadyAllocs(a []int16, tier Tier) float64 {
 	return float64(m1.Mallocs-m0.Mallocs) / float64(n)
 }
 
-// TestRxBench receives a BS outbound stream with every payload type at a
-// few C/N points per tier below Tier4, which is for offline decoding,
-// and checks the frame recovery against the baseline in rxbenchPath. With
-// DMRRF_RXBENCH=full it runs the README sweep instead and rewrites
-// rxbenchPath, only for the tiers in DMRRF_RXBENCH_TIERS when it is set,
-// and with DMRRF_RXBENCH=fast it rewrites only the CI points.
 func TestRxBench(t *testing.T) {
 	t.Parallel()
 	full := os.Getenv("DMRRF_RXBENCH") == "full"
@@ -668,15 +582,11 @@ func TestRxBench(t *testing.T) {
 	}
 }
 
-// benchTierSelected reports whether DMRRF_RXBENCH_TIERS, a comma-separated
-// list of names such as audio0 and iq1, names e, or is empty.
 func benchTierSelected(e benchEntry) bool {
 	v := os.Getenv("DMRRF_RXBENCH_TIERS")
 	return v == "" || slices.Contains(strings.Split(v, ","), e.name())
 }
 
-// checkBench fails when the recovery of a payload type at a C/N of the CI
-// sweep falls more than 5 percent under the baseline.
 func checkBench(t *testing.T, e benchEntry, want, got []benchPoint) {
 	t.Helper()
 	for _, w := range want {

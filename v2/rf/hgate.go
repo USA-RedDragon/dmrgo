@@ -2,21 +2,14 @@ package rf
 
 import "slices"
 
-// Grid and bootstrap of options.HGate.
 const (
-	// hGateLo and hGateStep set the modulation indexes that options.HGate
-	// scores: hGateN of them from hGateLo.
 	hGateLo   = 0.21
 	hGateStep = 0.0025
 	hGateN    = 49
-	// hGateBoot is the number of bootstrap resamples of the anchors.
 	hGateBoot = 400
-	// hGateMin is the fewest anchors of an estimate by default.
-	hGateMin = 4
+	hGateMin  = 4
 )
 
-// hGate holds the SYNC scores of each anchor at each modulation index of
-// the grid, and the bootstrap estimates.
 type hGate struct {
 	sc   []float32
 	tot  [hGateN]float64
@@ -24,12 +17,9 @@ type hGate struct {
 	cnt  []uint16
 	rng  uint64
 	nmax int
-	// keep holds the SYNC waveforms of the search while gateH scores.
 	keep []complex64
 }
 
-// newHGate returns the buffers for up to slots anchors and the SYNC
-// waveforms of search s.
 func newHGate(slots int, s *syncSearch) *hGate {
 	return &hGate{
 		sc: make([]float32, slots*hGateN), est: make([]float64, hGateBoot), cnt: make([]uint16, slots),
@@ -37,8 +27,6 @@ func newHGate(slots int, s *syncSearch) *hGate {
 	}
 }
 
-// best returns the grid index of the largest total of the scores of the n
-// anchors, each weighted by its count in w, or by 1 when w is nil.
 func (g *hGate) best(n int, w []uint16) int {
 	clear(g.tot[:])
 	for i := range n {
@@ -63,10 +51,6 @@ func (g *hGate) best(n int, w []uint16) int {
 	return b
 }
 
-// gateH estimates the modulation index from the SYNC fields of the anchors
-// of the first pass from slot lo to hi, at the timing fit and the carrier
-// of the second pass, and sets it when the bootstrap interval of the
-// estimate is more than options.HGate away from 0.27.
 func (r *engine) gateH(lo, hi int64) {
 	g := r.hg
 	saved := r.freq
@@ -103,9 +87,6 @@ func (r *engine) gateH(lo, hi int64) {
 	r.setH(est)
 }
 
-// interval returns the modulation index of the best total score of the n
-// anchors, and the 95% interval of the same estimate over hGateBoot
-// resamples of the anchors.
 func (g *hGate) interval(n int) (est, lo, hi float64) {
 	g.rng = 0x9e3779b97f4a7c15
 	for b := range g.est {

@@ -6,11 +6,6 @@ import (
 	"testing"
 )
 
-// TestTunePhaseContinuous checks that the channel samples that tune
-// filters again from the wide ring have the phase of the oscillator at
-// their own sample, so that a tone at the new frequency comes out as one
-// constant phase, also when the ring does not start on a multiple of 1024
-// samples.
 func TestTunePhaseContinuous(t *testing.T) {
 	t.Parallel()
 	const hz = 1000.0

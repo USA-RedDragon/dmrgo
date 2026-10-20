@@ -5,10 +5,6 @@ import (
 	"testing"
 )
 
-// TestScanPair checks that the template of a data SYNC is the conjugate of
-// that of the voice SYNC of its source, that scanPair gives the sums of
-// the segment correlations of the plain loop bit for bit, and that it
-// leaves a source only when neither share can reach the threshold.
 func TestScanPair(t *testing.T) {
 	t.Parallel()
 	o := tierOptions(Tier2)

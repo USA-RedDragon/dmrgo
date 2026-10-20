@@ -2,8 +2,6 @@ package rf
 
 import "testing"
 
-// TestAllocsTier1Weak checks that Tier1 allocates nothing in steady state
-// on each input on a weak stream, whose bursts it detects coherently.
 func TestAllocsTier1Weak(t *testing.T) {
 	slots, _ := benchStream(t, 3)
 	x := noisyBaseband(slots, 1400, 4, 1)

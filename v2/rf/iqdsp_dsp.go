@@ -4,9 +4,6 @@ package rf
 
 import "device/arm"
 
-// The multiplies of iqdsp.go as the DSP instructions of the Cortex-M4,
-// for the chips of fir96_dsp.go.
-
 func smuad(x, y uint32) int32 {
 	return int32(arm.AsmFull("smuad {}, {x}, {y}", map[string]interface{}{"x": uintptr(x), "y": uintptr(y)}))
 }

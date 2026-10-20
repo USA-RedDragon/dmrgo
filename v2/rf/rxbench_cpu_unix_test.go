@@ -4,7 +4,6 @@ package rf
 
 import "syscall"
 
-// cpuSeconds returns the CPU time of the process while f runs alone.
 func cpuSeconds(f func()) float64 {
 	var a, b syscall.Rusage
 	_ = syscall.Getrusage(syscall.RUSAGE_SELF, &a)

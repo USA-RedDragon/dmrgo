@@ -5,12 +5,6 @@ import (
 	"testing"
 )
 
-// TestMSKeyUpStrobes receives direct mode calls, each its own transmission
-// at another sample phase, at 60 dB C/N on Tier 0 audio, and checks that
-// the timing loop holds through the slot after the first burst of each
-// stream, where the MS sends nothing: the strobes of the second burst
-// start at the timing that the first ended with, from the fit of their
-// errors to the slope of the symbols around them.
 func TestMSKeyUpStrobes(t *testing.T) {
 	t.Parallel()
 	fm, env, _ := directCalls(t, 6)
@@ -48,9 +42,6 @@ func TestMSKeyUpStrobes(t *testing.T) {
 	}
 }
 
-// strobeLag fits the errors of the strobes of r from k0 to k1 from their
-// nearest levels s to dc + tau*(s[k+1]-s[k-1]) + g*s by least squares and
-// returns tau, which is near the timing error in symbols.
 func strobeLag(r *DiscReceiver, k0, k1 int64) float64 {
 	lv := func(k int64) (float64, float64) {
 		v := float64((r.sym(k) - r.dcHz) / (r.devScale * deviationHz))

@@ -2,52 +2,26 @@ package rf
 
 import "math"
 
-// iq0Chunk is the number of baseband samples that iq0Rx.write converts
-// from bytes at once, on the stack: 256 bytes, the largest local that
-// TinyGo puts on a stack of 32 KB or less.
 const iq0Chunk = 32
 
-// iq0LowHz is the lowest I/Q rate that New takes for options.IQFront 4, as
-// the decimated output of a radio chip; discRate/2 is the other.
 const iq0LowHz = 9600
 
-// iq0Rx is the I/Q receiver of options.IQFront 4, for microcontrollers:
-// the boxcar of iq0Front over each decimation, without the oscillator, and
-// the DiscReceiver core. The oscillator does not turn the samples: it
-// takes its frequency from the phase step of each output instead, and
-// turns the sum of the products of a block once. It keeps only the state
-// that the front needs, so that it adds little to the RAM of the core.
 type iq0Rx struct {
-	d     DiscReceiver
-	audio []int16
-	out   []Burst
-	// prev is the last output of the boxcar, and acc and pow sum the
-	// products of the outputs with the conjugate of the ones before and
-	// their power over the block of the oscillator.
-	prev complex64
-	acc  complex64
-	pow  float32
-	// afcAvg is the mean of the sums of the blocks since the oscillator
-	// last moved, in the frame of the oscillator.
+	d      DiscReceiver
+	audio  []int16
+	out    []Burst
+	prev   complex64
+	acc    complex64
+	pow    float32
 	afcAvg complex64
-	// step turns a sum of products into the frame of the oscillator, hz.
-	step complex64
-	hz   float32
-	// k turns a phase step into input units of the core, and sub is the
-	// oscillator in those units.
+	step   complex64
+	hz     float32
 	k, sub float32
 	afcN   int
 	decim  int
-	// unit is the number of samples at basebandRate per input sample, in
-	// which afcN counts: 1, or above 1 for I/Q below basebandRate.
-	unit int
-	// box sums the phase samples of the decimation that the last call
-	// did not end.
-	box   complex64
-	phase int
-	// poly, above 1, is the number of decimations of the lowpass of pl
-	// in place of the boxcar, which keeps its state apart so that the
-	// boxcar does not hold it.
+	unit   int
+	box    complex64
+	phase  int
 	poly   int
 	pl     *iq0Poly
 	dc     dcBlock
@@ -55,18 +29,12 @@ type iq0Rx struct {
 	signed bool
 }
 
-// iq0Poly is the lowpass of iq0Rx over poly decimations, with the taps of
-// iq0Lowpass: psum holds the sums of the decimation so far for the output
-// j decimations ahead, and pacc the sums of the outputs after the next
-// one.
 type iq0Poly struct {
 	psum  [iq0MaxPoly]complex64
 	pacc  [iq0MaxPoly - 1]complex64
 	ptaps [iq0MaxPoly][iq0MaxDecim]float32
 }
 
-// newIQ0Receiver returns the Receiver of cfg with the lean front of
-// options.IQFront.
 func newIQ0Receiver(cfg Config, opt options) *Receiver {
 	if opt.IQFront == 4 {
 		return &Receiver{iq0: newIQ0Rx(cfg, opt)}
@@ -74,7 +42,6 @@ func newIQ0Receiver(cfg Config, opt options) *Receiver {
 	return &Receiver{iqd: newIQ0(cfg, opt)}
 }
 
-// newIQ0Rx returns the receiver of cfg with options.IQFront 4.
 func newIQ0Rx(cfg Config, opt options) *iq0Rx {
 	hz := opt.IQHz
 	if hz == 0 {
@@ -120,7 +87,6 @@ func newIQ0Rx(cfg Config, opt options) *iq0Rx {
 	return r
 }
 
-// write processes the I/Q bytes of Receiver.Write.
 func (r *iq0Rx) write(iq []byte) []Burst {
 	r.out = r.out[:0]
 	pair, iq := r.carry.split(iq)
@@ -147,7 +113,6 @@ func (r *iq0Rx) write(iq []byte) []Burst {
 	return r.out
 }
 
-// writeBaseband processes the samples of Receiver.WriteBaseband.
 func (r *iq0Rx) writeBaseband(x []complex64) []Burst {
 	r.out = r.out[:0]
 	r.run(x)
@@ -156,7 +121,6 @@ func (r *iq0Rx) writeBaseband(x []complex64) []Burst {
 	return r.out
 }
 
-// run runs x through the front, the oscillator and the core.
 func (r *iq0Rx) run(x []complex64) {
 	dec := r.decim
 	for len(x) > 0 {
@@ -178,7 +142,6 @@ func (r *iq0Rx) run(x []complex64) {
 	}
 }
 
-// push takes one sample v of a decimation that a call cuts.
 func (r *iq0Rx) push(v complex64) {
 	p := r.phase
 	if r.poly <= 1 {
@@ -207,8 +170,6 @@ func (r *iq0Rx) push(v complex64) {
 	r.one(y)
 }
 
-// polyRun is boxRun for the lowpass over poly decimations.
-//
 //go:noinline
 func (r *iq0Rx) polyRun(x []complex64) {
 	dec := r.decim
@@ -254,7 +215,6 @@ func (r *iq0Rx) polyRun(x []complex64) {
 	r.pl.pacc[0], r.pl.pacc[1] = a0, a1
 }
 
-// one takes the boxcar sum y of a decimation, as boxRun does.
 func (r *iq0Rx) one(y complex64) {
 	pr, pi := real(r.prev), imag(r.prev)
 	yr, yi := real(y), imag(y)
@@ -270,8 +230,6 @@ func (r *iq0Rx) one(y complex64) {
 	r.next()
 }
 
-// next hands the core the buffer when it is full, and moves the
-// oscillator at the end of its block.
 func (r *iq0Rx) next() {
 	if len(r.audio) == cap(r.audio) {
 		r.d.write(r.audio)
@@ -283,10 +241,6 @@ func (r *iq0Rx) next() {
 	}
 }
 
-// boxRun runs whole decimations x through the boxcar and appends the
-// frequency of each output to the buffer of the core, which has room for
-// them.
-//
 //go:noinline
 func (r *iq0Rx) boxRun(x []complex64) {
 	dec := r.decim
@@ -342,8 +296,6 @@ func (r *iq0Rx) boxRun(x []complex64) {
 	r.prev, r.acc, r.pow = complex(pr, pi), complex(ar, ai), pow
 }
 
-// follow is iqRx.follow for the lean front: it moves the oscillator at the
-// end of each block.
 func (r *iq0Rx) follow() {
 	acc := r.acc * r.step
 	p := r.pow
@@ -387,7 +339,6 @@ func (r *iq0Rx) follow() {
 	}
 }
 
-// tune is iqRx.tune for the lean front.
 func (r *iq0Rx) tune(hz, dc float32) {
 	f := &r.d.f
 	scale := f.gain * iqUnitsPerHz
@@ -413,7 +364,6 @@ func (r *iq0Rx) tune(hz, dc float32) {
 	}
 }
 
-// flush finishes the stream at its end and returns the remaining bursts.
 func (r *iq0Rx) flush() []Burst {
 	r.out = r.out[:0]
 	r.d.write(r.audio)
@@ -422,11 +372,6 @@ func (r *iq0Rx) flush() []Burst {
 	return r.out
 }
 
-// iq0Freq returns the input sample of the core for the product c, d of an
-// output with the conjugate of the one before: the arctangent of atanLean
-// by k, less the oscillator sub, within half, a half turn by k, of 0, and
-// rounded. It takes the quadrants by few branches and rounds without a
-// float conversion, which TinyGo checks for range.
 func iq0Freq(c, d, k, sub, half float32) int16 {
 	ax, ay := abs32(d), abs32(c)
 	n, m := ay, ax
@@ -447,9 +392,6 @@ func iq0Freq(c, d, k, sub, half float32) int16 {
 	return int16(max(min(roundBits(wrapHalf(v*k-sub, half)), math.MaxInt16), math.MinInt16))
 }
 
-// wrapHalf returns u, a phase step less the oscillator in units of which
-// half is a half turn, as the step of the oscillator frame: within half
-// of 0.
 func wrapHalf(u, half float32) float32 {
 	if u < -half {
 		return u + 2*half

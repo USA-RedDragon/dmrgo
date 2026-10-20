@@ -7,17 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 )
 
-// useAudio replaces the samples of f with the signal turned by the noise
-// of the phase of the discriminator audio at hz: the phase of the I/Q
-// after the IF filter of discAudio less that of the noiseless signal
-// through it, low-passed as its anti-alias filter low-passes the
-// frequency. The genie thus knows how the filters turn the phase of the
-// signal, as a receiver that models them would, and sees the noise of the
-// audio, its clicks smeared by the anti-alias filter, but not the
-// amplitude of the I/Q. It detects by the metric of the I/Q, not by the
-// likelihood of the audio, so its error rates bound those of the best
-// receiver of the audio with its knowledge from above. The scale of the
-// metric is that of white noise that spreads as the turns do in it.
 func (f *floorSignal) useAudio(slots []rftx.BSSlot, hz int) {
 	fm, env := rftx.ModulateBS(slots)
 	pad := int(benchPad * basebandRate)
@@ -34,7 +23,6 @@ func (f *floorSignal) useAudio(slots []rftx.BSSlot, hz int) {
 			}
 		}
 	}
-	// The noise of the phase after the IF filter, unwrapped.
 	h := audioIFTaps()
 	th := make([]float64, n)
 	prev := 0.0
@@ -74,12 +62,6 @@ func (f *floorSignal) useAudio(slots []rftx.BSSlot, hz int) {
 	f.scale = 1 / matchedNoise(x, s, f.base, pad+len(fm))
 }
 
-// matchedNoise returns the variance per component of the white noise that
-// spreads as the noise of x about s does in the metric of the genie: over
-// the change of the signal that a doublet of symbol changes, one symbol up
-// and the next down, makes at each symbol of the signal, whose first
-// impulse is at sample base, before sample end. On the I/Q it is the
-// variance of the noise.
 func matchedNoise(x, s []complex128, base, end int) float64 {
 	taps := rftx.RRCTaps()
 	step := make([]float64, len(taps)+samplesPerSy)
@@ -101,8 +83,6 @@ func matchedNoise(x, s []complex128, base, end int) float64 {
 	}
 	var sum, sum2 float64
 	cnt := 0
-	// The doublet of the symbol whose impulse is at base+2*samplesPerSy,
-	// past the ramp of the signal.
 	for c := base + 2*samplesPerSy - len(taps)/2; c+len(q) < end; c += samplesPerSy {
 		var t float64
 		for k, v := range q {

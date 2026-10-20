@@ -8,13 +8,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// awarePath holds the code-aware curves that cmd/rxbench draws with the
-// floor. Regenerate with DMRRF_AWARE=full go test -run TestRxAware .
 const awarePath = "testdata/rxbench_aware.json"
 
-// awareState is the state of the code-aware receiver of floorEval: its
-// soft decoders, with the settings of the coherent tiers, and the
-// embedded LC ratios that it combines over superframes.
 type awareState struct {
 	dec  *softDecoder
 	acc  [4][embBits]int16
@@ -24,7 +19,6 @@ type awareState struct {
 	ch   [softBurstBits]int16
 }
 
-// awareDescriptions describes the receiver of each payload in awarePath.
 func awareDescriptions() map[string]string {
 	const det = "exact bitwise detection of the payload with the genie, then "
 	return map[string]string{
@@ -44,8 +38,6 @@ func awareDescriptions() map[string]string {
 	}
 }
 
-// knownLLRs sets the ratios of the bits of slot i outside the free bits to
-// the transmitted bits, at full confidence.
 func (e *floorEval) knownLLRs(i int) {
 	tb := e.truth[i].burst
 	for p := range softBurstBits {
@@ -59,16 +51,12 @@ func (e *floorEval) knownLLRs(i int) {
 	}
 }
 
-// awareDetect runs the exact genie detection of the free bits of slot i and
-// sets e.llr of every bit of the burst.
 func (e *floorEval) awareDetect(i int, pos ...[]int16) {
 	e.setFree(pos...)
 	e.detect(i, false)
 	e.knownLLRs(i)
 }
 
-// awareStream scores every field of the stream in f with the code-aware
-// receiver.
 func (e *floorEval) awareStream() {
 	e.sc = map[string]*benchScore{}
 	e.conv = map[string][]float64{}
@@ -94,7 +82,6 @@ func (e *floorEval) awareStream() {
 	}
 }
 
-// awareVoice scores the fields of voice burst i.
 func (e *floorEval) awareVoice(i int, cc enums.ColorCode) {
 	ts := e.truth[i]
 	d := e.aw.dec
@@ -129,10 +116,6 @@ func (e *floorEval) awareVoice(i int, cc enums.ColorCode) {
 	}
 }
 
-// awareAMBE returns frame f of voice burst i as the coherent tiers decode
-// it from genie detection of the bits at pos: the AMBE+2 decode, then the
-// decode of a detection again with the C0 and C1 codewords of that decode
-// as priors of RefinePrior nats.
 func (e *floorEval) awareAMBE(i, f int, pos ...[]int16) vocoder.AMBEFrame {
 	d := e.aw.dec
 	e.awareDetect(i, pos...)
@@ -161,10 +144,6 @@ func (e *floorEval) awareAMBE(i, f int, pos ...[]int16) vocoder.AMBEFrame {
 	return got[f]
 }
 
-// awareELC keeps the genie ratios of the embedded LC fragment of voice
-// burst i and, at burst E, decodes the embedded LC of the superframe as
-// the tiers do: summed with the ratios of the earlier superframes while
-// they decode, from this superframe alone otherwise.
 func (e *floorEval) awareELC(i int, ts benchSlot) {
 	a := e.aw
 	e.awareDetect(i, seqInts(embFirstBit, embBits))
@@ -204,7 +183,6 @@ func (e *floorEval) awareELC(i int, ts benchSlot) {
 	e.add("elc", ok && !res.Uncorrectable && lc == wantLC)
 }
 
-// awareData scores the fields of data burst i.
 func (e *floorEval) awareData(i int, cc enums.ColorCode) {
 	ts := e.truth[i]
 	d := e.aw.dec
@@ -240,12 +218,6 @@ func (e *floorEval) awareData(i int, cc enums.ColorCode) {
 	e.add(k, ok && okST)
 }
 
-// awareBPTC decodes the BPTC(196,96) payload of data burst i of data type
-// dt as the coherent tiers do, from genie detection: by ordered statistics,
-// again over the grid when a checked block fails its check, and up to two
-// passes of detection again with the extrinsic information of the grid
-// decode as priors weighed by 0.7, while the block fails its check or,
-// without one, needed corrections. The genie gives the reserved bits.
 func (e *floorEval) awareBPTC(i int, dt enums.DataType) bool {
 	const passes, w = 2, 0.7
 	a := e.aw
@@ -302,9 +274,6 @@ func (e *floorEval) awareBPTC(i int, dt enums.DataType) bool {
 	return ok
 }
 
-// awareRate1 scores the rate 1 payload of data burst i and its bits by the
-// hard decisions of exact bitwise detection, with a genie trellis of
-// window 2 as rate1 uses.
 func (e *floorEval) awareRate1(i int) bool {
 	if e.g2 == nil {
 		e.g2 = newGenieTrellis(2, 2*slotSymbols)

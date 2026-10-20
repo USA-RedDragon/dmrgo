@@ -9,78 +9,43 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// combMatchSeconds is the most that the times of two bursts of the same
-// slot differ between the two receivers of combRx.
 const combMatchSeconds = 0.003
 
-// combT2Hold is the time, in seconds, after which the Tier2 receiver of
-// combRx emits no more bursts.
 const combT2Hold = 1.0
 
-// combCleanGain is the weight of each frame in which the two receivers of
-// combRx differ in combRx.clean, and combCleanShare the share of clean
-// frames above which CombMode 12 takes a clean frame of Tier2.
 const (
 	combCleanGain  = 1.0 / 16
 	combCleanShare = 0.5
 )
 
-// combSide is the evidence of a burst that a receiver hands combRx beside
-// the burst.
 type combSide struct {
-	// flips, when hasFlips, is the number of bits of C0 and C1 of each
-	// voice slot that soft-decision decoding changed in the first
-	// detection of the coherent receiver, before a refinement detected the
-	// burst again.
 	flips    [layer2.VoiceSlotsPerBurst]uint8
 	hasFlips bool
-	// coreC2 has bit i set when voice slot i of a Tier2 burst took C2 and
-	// C3 of the discriminator core in place of the coherent detection, and
-	// coreN is the number of bits of C0 and C1 of each slot in which the
-	// core differs from the decode (softExt.uncoded).
-	coreC2 uint8
-	coreN  [layer2.VoiceSlotsPerBurst]uint8
+	coreC2   uint8
+	coreN    [layer2.VoiceSlotsPerBurst]uint8
 }
 
-// combBurst is a burst that combRx holds, with its evidence.
 type combBurst struct {
 	b Burst
 	s combSide
 }
 
-// combRx runs the coherent receiver of a tier and the Tier2 receiver on the
-// same input, and emits each slot once: the burst of the coherent receiver
-// with the AMBE frames that options.CombMode selects taken from Tier2, or
-// the burst of the receiver that alone has one (options.Comb).
 type combRx struct {
-	t3   *engine
-	t2   *iqRx
-	ext  *softExt
-	on   func(*Burst)
-	out  []Burst
-	pend [2][]combBurst
-	// now is the input time in seconds; perByte that of an input byte.
+	t3           *engine
+	t2           *iqRx
+	ext          *softExt
+	on           func(*Burst)
+	out          []Burst
+	pend         [2][]combBurst
 	now, perByte float64
 	mode         int
 	hold         float64
-	// last is the time of the last burst that left.
-	last float64
-	// err3 and err2 are the mean numbers of bits of C0 and C1 of a voice
-	// frame that the soft decode of each receiver changed.
-	err3, err2 float32
-	// clean is the mean, over the voice frames in which the two receivers
-	// differ, of the share that are clean: the frames differ in one bit
-	// and the frame of Tier2 equals its own hard decisions, so that its
-	// decode changed no bit. Noise puts errors in the frames of both, so
-	// that the frame of Tier2 then often has some or the frames differ in
-	// more bits; a coherent receiver that errs on a clean signal, as with a
-	// deviation off the nominal one, differs in one bit while Tier2 has no
-	// error.
-	clean float32
-	cb    Burst
+	last         float64
+	err3, err2   float32
+	clean        float32
+	cb           Burst
 }
 
-// combT2Options returns the settings of the Tier2 receiver of combRx.
 func combT2Options(o *options) options {
 	t := tierOptions(Tier2)
 	t.ExtLookback = 8
@@ -95,7 +60,6 @@ func combT2Options(o *options) options {
 	return t
 }
 
-// newComb returns the combRx of cfg with the coherent settings opt.
 func newComb(cfg Config, opt options) *combRx {
 	c := &combRx{last: math.Inf(-1), on: cfg.OnBurst, mode: opt.CombMode, perByte: 0.5 / cfg.Rate}
 	n := opt.passSlots() + 4*cfg.LookbackSlots + 512
@@ -124,7 +88,6 @@ func newComb(cfg Config, opt options) *combRx {
 	return c
 }
 
-// add takes burst b of receiver i with its evidence s.
 func (c *combRx) add(i int, b *Burst, s *combSide) {
 	if len(c.pend[i]) == cap(c.pend[i]) {
 		c.release(c.pend[i][0].b.Seconds + slotSeconds)
@@ -161,8 +124,6 @@ func (c *combRx) flush() []Burst {
 	return c.out
 }
 
-// horizon returns the time before which neither receiver emits a burst
-// any more.
 func (c *combRx) horizon() float64 {
 	h := c.now - combT2Hold
 	e := c.t3
@@ -184,9 +145,6 @@ func bySeconds(a, b combBurst) int {
 	return 0
 }
 
-// release emits, in time order, the bursts before h. Two bursts of the
-// same slot leave together once either is before h, and a burst of a slot
-// that has left already is dropped, so that each slot leaves once.
 func (c *combRx) release(h float64) {
 	a, b := c.pend[0], c.pend[1]
 	slices.SortFunc(a, bySeconds)
@@ -231,7 +189,6 @@ func (c *combRx) emit(b *Burst) {
 	}
 }
 
-// isVoice reports whether b carries AMBE frames.
 func isVoice(b *Burst) bool {
 	if b.Voice != enums.VoiceBurstUnknown {
 		return true
@@ -240,8 +197,6 @@ func isVoice(b *Burst) bool {
 	return known && kind == layer2.KindVoice && b.Distance >= 0
 }
 
-// slotFlips returns, for each voice slot of x, the bits of C0 and C1 that
-// its soft decode changed.
 func slotFlips(x *combBurst) [layer2.VoiceSlotsPerBurst]int {
 	var f [layer2.VoiceSlotsPerBurst]int
 	switch {
@@ -257,8 +212,6 @@ func slotFlips(x *combBurst) [layer2.VoiceSlotsPerBurst]int {
 	return f
 }
 
-// voiceFlips returns, for each voice slot, the bits of C0 and C1 in which
-// d and x differ.
 func voiceFlips(d, x *layer2.RawBurst) [layer2.VoiceSlotsPerBurst]uint8 {
 	var f [layer2.VoiceSlotsPerBurst]uint8
 	for i := range f {
@@ -272,8 +225,6 @@ func voiceFlips(d, x *layer2.RawBurst) [layer2.VoiceSlotsPerBurst]uint8 {
 	return f
 }
 
-// pick returns the burst of the slot that x, of the coherent receiver, and
-// y, of Tier2, both hold.
 func (c *combRx) pick(x, y *combBurst) *Burst {
 	a, b := &x.b, &y.b
 	switch c.mode {
@@ -340,9 +291,6 @@ func (c *combRx) pick(x, y *combBurst) *Burst {
 	return &c.cb
 }
 
-// track moves the error rates of the coherent receiver and of Tier2 by
-// the flips fa and fb of the slots that either decodes with few errors,
-// and reports whether Tier2 is the cleaner.
 func (c *combRx) track(fa, fb *[layer2.VoiceSlotsPerBurst]int) bool {
 	for i := range fa {
 		if min(fa[i], fb[i]) <= extErrMax {
@@ -353,8 +301,6 @@ func (c *combRx) track(fa, fb *[layer2.VoiceSlotsPerBurst]int) bool {
 	return c.err2 < extCoreShare*c.err3
 }
 
-// frameDist returns the number of bits in which voice frames x and y
-// differ.
 func frameDist(x, y *[9]byte) int {
 	n := 0
 	for i := range x {

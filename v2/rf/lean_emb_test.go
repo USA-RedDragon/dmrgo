@@ -7,11 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// TestLeanEMBAfterData checks that a burst without a SYNC whose EMB places
-// it, as noise does about once in a thousand bursts, starts no superframe
-// after a data burst of its channel, but does in a call that the receiver
-// joins late, after a voice LC header whose burst A it missed, and after
-// an idle burst of a BS, whose carrier stays on.
 func TestLeanEMBAfterData(t *testing.T) {
 	t.Parallel()
 	const cc = 7
@@ -57,7 +52,6 @@ func TestLeanEMBAfterData(t *testing.T) {
 			}
 			j += 2
 		}
-		// The burst after a header is its burst B or later.
 		j += 2
 		b := emb
 		got := r.classify(&b, j)

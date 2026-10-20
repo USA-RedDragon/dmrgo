@@ -13,12 +13,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// msStream builds direct mode traffic on TS2: n rounds of a group voice
-// call of two superframes, a rate 1/2 and a rate 3/4 packet and preamble
-// CSBKs, each its own transmission with 0.3 s of no carrier after it. Each
-// transmission starts jitter symbols times its number, modulo 1, after the
-// slot boundary. It returns the deviation and the envelope at
-// basebandRate, and the truth of each slot as benchStream does.
 func msStream(t testing.TB, n int, jitter float64) ([]float64, []float64, []benchSlot) {
 	t.Helper()
 	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, Group: true, Wakeups: 1, Message: "DMRGO TIER ORDER", Superframes: 2, Preambles: 2, Slot: 1}
@@ -76,20 +70,13 @@ func msStream(t testing.TB, n int, jitter float64) ([]float64, []float64, []benc
 	return freq, env, truth
 }
 
-// scoreMS scores the bursts got of the direct mode traffic of msStream
-// against its truth, as scoreBench does.
 func scoreMS(truth []benchSlot, got []Burst) map[string]*benchScore {
-	// A direct mode burst has no CACH before it, which scoreBench places it
-	// after.
 	for i := range got {
 		got[i].Seconds += float64(cachSymbols) / symbolRate
 	}
 	return scoreBench(truth, got)
 }
 
-// noisyFM returns the deviation freq and the envelope env as baseband at
-// offsetHz with noise at a C/N of cn dB in 12.5 kHz, with benchPad of noise
-// before and after, as noisyBaseband does.
 func noisyFM(freq, env []float64, offsetHz, cn float64, seed uint64) []complex64 {
 	pad := int(benchPad * basebandRate)
 	x := make([]complex64, len(freq)+2*pad)
@@ -107,26 +94,16 @@ func noisyFM(freq, env []float64, offsetHz, cn float64, seed uint64) []complex64
 	return x
 }
 
-// tierOrderPayloads are the payloads whose recovery TestTierOrder compares.
 func tierOrderPayloads() []string {
 	return []string{"ambe_c0c1", "ambe", "rate12", "rate34", "csbk", "lc", "elc"}
 }
 
-// tierOrderCase is one stream of TestTierOrder: its scenario, and the
-// truth and the baseband of one C/N and seed.
 type tierOrderCase struct {
 	scenario string
 	truth    []benchSlot
 	x        []complex64
 }
 
-// TestTierOrder checks that each tier recovers at least what the tier
-// below it does, on each input, for each payload, summed over a few C/N
-// points around the 90% points and over seeds: on the BS stream of the
-// sweep and on direct mode traffic. Tiers that share a stage decide some
-// bursts differently by chance, so a tier may fall short by 1% of the
-// truth, or 2 items. The direct mode traffic is also checked with
-// transmissions that start between symbol boundaries.
 func TestTierOrder(t *testing.T) {
 	t.Parallel()
 	if testing.Short() {

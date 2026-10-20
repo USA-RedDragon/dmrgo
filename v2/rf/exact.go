@@ -2,28 +2,13 @@ package rf
 
 import "math"
 
-// Layout of the exact-phase trellis.
 const (
-	// phaseStates is the number of carrier phases of the exact-phase
-	// trellis by default: a symbol a turns the phase by 27*a of them, which
-	// is 0.27*pi*a.
-	phaseStates = 200
-	// driftPenalty is the cost, in nats, of a step of one phase state.
+	phaseStates  = 200
 	driftPenalty = 3
-	// exactBeam is how far under the best state a state can be and still
-	// extend paths: in nats, or in branch metrics of the step when those are
-	// larger.
-	exactBeam = 40
-	// anchorKappa is the concentration, in nats, of the prior on the
-	// carrier phase that an anchor gives the first state.
-	anchorKappa = 20
+	exactBeam    = 40
+	anchorKappa  = 20
 )
 
-// xtrellis is a max-log BCJR detector over the windows of a cpmModel and
-// the carrier phase: its state is the window of 2d symbols and one of np
-// phases, so paths merge only with the same phase. A symbol a turns the
-// phase by step*a phases, the nearest to 0.27*pi*a. Its buffers hold up
-// to maxSteps symbol intervals.
 type xtrellis struct {
 	m        *cpmModel
 	maxSteps int
@@ -34,42 +19,23 @@ type xtrellis struct {
 	corr     []complex64
 	top      []float32
 	beam     []float32
-	// row is the row of the cosine and sine of each phase in phaseCos and
-	// phaseSin: 0 for phaseStates phases and 1 for 52.
-	row int
-	// off holds the phase states that each leaving symbol digit turns.
-	off [4]int
-	// lp and slp hold the digit priors as in trellis.
-	lp  []float32
-	slp []float32
-	// logmap sums the paths exactly instead of taking the best.
-	logmap bool
-	// pen is the cost of a drift step and drifts the number of drift
-	// steps after each symbol.
-	pen    float32
-	drifts int
-	// jump, when above 0, is the cost of a step from the best phase of a
-	// state to any other phase. With fade, the cost of the step after
-	// symbol k is jump times the square of the lesser correlation of
-	// symbols k and k+1 over their mean, held in jk.
-	jump float32
-	fade bool
-	// below, when above 0, allows the fade jump only where the lesser
-	// correlation over the mean is under it.
-	below float32
-	jk    []float32
+	row      int
+	off      [4]int
+	lp       []float32
+	slp      []float32
+	logmap   bool
+	pen      float32
+	drifts   int
+	jump     float32
+	fade     bool
+	below    float32
+	jk       []float32
 }
 
-// jacobian holds log(1+exp(-i/8)) for i from 0 to 96, and zeros up to a
-// power of two so that a masked index needs no bounds check.
 var jacobian = [128]float32{0.69314718, 0.63259904, 0.57593942, 0.52312326, 0.47407698, 0.42870068, 0.38687101, 0.34844458, 0.31326169, 0.28115014, 0.25192908, 0.22541265, 0.20141328, 0.17974464, 0.16022415, 0.14267506, 0.12692801, 0.11282228, 0.10020656, 0.088939465, 0.078889734, 0.0699362, 0.061967589, 0.054882179, 0.048587352, 0.042999079, 0.038041372, 0.0336457, 0.029750418, 0.026300195, 0.023245464, 0.020541901, 0.018149928, 0.016034256, 0.014163457, 0.01250957, 0.011047745, 0.009755911, 0.0086144838, 0.0076060944, 0.0067153485, 0.0059286084, 0.0052337982, 0.004620229, 0.0040784433, 0.0036000751, 0.0031777265, 0.0028048569, 0.0024756851, 0.002185102, 0.0019285932, 0.0017021703, 0.0015023102, 0.001325901, 0.0011701947, 0.0010327642, 0.00091146645, 0.00080440939, 0.00070992233, 0.00062653039, 0.00055293148, 0.00048797616, 0.0004306498, 0.00038005673, 0.00033540637, 0.00029600092, 0.00026122444, 0.00023053329, 0.00020344767, 0.00017954409, 0.00015844877, 0.00013983185, 0.00012340219, 0.00010890284, 9.6107034e-05, 8.4814638e-05, 7.4849029e-05, 6.6054326e-05, 5.8292965e-05, 5.1443537e-05, 4.5398899e-05, 4.0064495e-05, 3.5356876e-05, 3.1202398e-05, 2.753607e-05, 2.4300536e-05, 2.1445178e-05, 1.8925327e-05, 1.6701561e-05, 1.4739091e-05, 1.3007213e-05, 1.1478834e-05, 1.0130042e-05, 8.9397363e-06, 7.8892937e-06, 6.9622805e-06, 6.1441935e-06}
 
-// jacobianSlope holds jacobian[i+1]-jacobian[i] in float32, so that the
-// interpolation in logAdd gives the same value with one load less.
 var jacobianSlope = [128]float32{-0.060548127, -0.05665964, -0.052816153, -0.049046278, -0.0453763, -0.041829675, -0.03842643, -0.035182893, -0.032111555, -0.029221058, -0.026516423, -0.023999378, -0.021668628, -0.019520491, -0.017549098, -0.01574704, -0.014105737, -0.012615718, -0.011267096, -0.010049731, -0.008953534, -0.007968612, -0.007085409, -0.006294828, -0.0055882744, -0.0049577057, -0.004395671, -0.0038952827, -0.0034502223, -0.0030547325, -0.0027035624, -0.0023919735, -0.0021156706, -0.0018707998, -0.0016538864, -0.0014618253, -0.0012918338, -0.0011414271, -0.00100839, -0.0008907458, -0.00078673987, -0.0006948104, -0.0006135693, -0.00054178573, -0.00047836802, -0.00042234873, -0.00037286943, -0.00032917177, -0.00029058312, -0.00025650894, -0.0002264228, -0.0001998602, -0.00017640914, -0.00015570631, -0.0001374305, -0.00012129778, -0.00010705704, -9.448704e-05, -8.339196e-05, -7.359893e-05, -6.49553e-05, -5.7326368e-05, -5.059305e-05, -4.465037e-05, -3.940545e-05, -3.4776487e-05, -3.069114e-05, -2.7085625e-05, -2.3903573e-05, -2.1095315e-05, -1.861692e-05, -1.6429665e-05, -1.4499354e-05, -1.2795805e-05, -1.1292395e-05, -9.96561e-06, -8.794705e-06, -7.761359e-06, -6.8494264e-06, -6.04464e-06, -5.334401e-06, -4.707621e-06, -4.154477e-06, -3.6663278e-06, -3.2355347e-06, -2.8553586e-06, -2.5198497e-06, -2.2237673e-06, -1.9624695e-06, -1.731878e-06, -1.5283795e-06, -1.3487916e-06, -1.1903057e-06, -1.0504427e-06, -9.2701293e-07, -8.180873e-07}
 
-// logAdd returns log(exp(a)+exp(b)), with the correction term interpolated
-// in jacobian, within 5e-4 nats.
 func logAdd(a, b float32) float32 {
 	if a < b {
 		a, b = b, a
@@ -83,8 +49,6 @@ func logAdd(a, b float32) float32 {
 	return a + jacobian[i&127] + f*jacobianSlope[i&127]
 }
 
-// newXTrellis returns an exact-phase trellis over model m with np carrier
-// phases, phaseStates or 52, for runs of up to maxSteps symbol intervals.
 func newXTrellis(m *cpmModel, np, maxSteps int) *xtrellis {
 	n := m.states * np
 	t := &xtrellis{
@@ -103,8 +67,6 @@ func newXTrellis(m *cpmModel, np, maxSteps int) *xtrellis {
 	return t
 }
 
-// setH sets the phase turn of a symbol to the nearest step for
-// modulation index h.
 func (t *xtrellis) setH(h float64) {
 	t.step = int(math.Round(h / 2 * float64(t.np)))
 	for v := range t.off {
@@ -112,9 +74,6 @@ func (t *xtrellis) setH(h float64) {
 	}
 }
 
-// forward relaxes dst[i] with src[i] plus the branch metric at phase lo+i,
-// skipping sources under thr, and returns top raised to the best value it
-// wrote.
 func (t *xtrellis) forward(src, dst []float32, lo int, re, im, bonus, thr, top float32) float32 {
 	dst = dst[:len(src)]
 	cos, sin := phaseCos[t.row][lo:lo+len(src)], phaseSin[t.row][lo:lo+len(src)]
@@ -141,9 +100,6 @@ func (t *xtrellis) forward(src, dst []float32, lo int, re, im, bonus, thr, top f
 	return top
 }
 
-// backward relaxes dst[i] with the branch metric plus beta[i], and returns
-// best raised to the highest src[i] plus that, skipping the states whose
-// forward metric src[i] is under thr, as no likely path passes them.
 func (t *xtrellis) backward(src, beta, dst []float32, lo int, re, im, bonus, thr, best float32) float32 {
 	beta, dst = beta[:len(src)], dst[:len(src)]
 	cos, sin := phaseCos[t.row][lo:lo+len(src)], phaseSin[t.row][lo:lo+len(src)]
@@ -173,15 +129,10 @@ func (t *xtrellis) backward(src, beta, dst []float32, lo int, re, im, bonus, thr
 	return best
 }
 
-// phaseAfter returns the phase state after symbol digit v leaves the window
-// at phase p.
 func (t *xtrellis) phaseAfter(p, v int) int {
 	return ((p+t.step*(2*v-3))%t.np + t.np) % t.np
 }
 
-// run detects as trellis.run does, with the carrier phase rot0 before
-// symbol 0 as a prior of kappa nats instead of a fixed phase; kappa 0 means
-// an unknown phase.
 func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa float32, app []float32) {
 	m := t.m
 	sps, ns := m.sps, m.states
@@ -284,9 +235,6 @@ func (t *xtrellis) run(x []complex64, steps int, rot0 complex64, scale, kappa fl
 	t.beta = beta
 }
 
-// jumpCosts sets jk from the correlation magnitudes that it holds for the
-// steps symbols, whose sum is sum, to the cost of the phase jump after
-// each symbol.
 func (t *xtrellis) jumpCosts(steps int, sum float32) {
 	jk := t.jk[:steps]
 	if !t.fade || sum <= 0 {
@@ -311,9 +259,6 @@ func (t *xtrellis) jumpCosts(steps int, sum float32) {
 	}
 }
 
-// drift lets each state take the metric of its neighbor phases at a cost
-// of driftPenalty, so that a path follows a carrier phase that drifts by up
-// to one phase state per symbol.
 func (t *xtrellis) drift(m []float32, ns int, jump float32) {
 	for s := range ns {
 		b := m[s*t.np : (s+1)*t.np]

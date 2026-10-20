@@ -5,7 +5,6 @@ import (
 	"unsafe"
 )
 
-// TestAllocsSoftDecoders checks that no decode allocates and logs the table sizes.
 func TestAllocsSoftDecoders(t *testing.T) {
 	d := newSoftDecoder()
 	in := newSoftBenchInputs(t, 3)

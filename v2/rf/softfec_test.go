@@ -17,18 +17,13 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// softTestScale is the LLR of a noiseless bit in the tests.
 const softTestScale = 1024
 
-// softChannel maps bits to BPSK symbols, +1 for 0 and -1 for 1, adds white
-// Gaussian noise at an Es/N0 per coded bit and returns y*softTestScale as
-// the LLR, which is the true LLR 2y/sigma^2 up to a constant factor.
 type softChannel struct {
 	rng   *rand.Rand
 	sigma float64
 }
 
-// newSoftChannel returns a channel at esn0 dB with a fixed seed.
 func newSoftChannel(seed uint64, esn0 float64) *softChannel {
 	return &softChannel{
 		rng:   rand.New(rand.NewPCG(seed, uint64(esn0*100)+7)),
@@ -36,7 +31,6 @@ func newSoftChannel(seed uint64, esn0 float64) *softChannel {
 	}
 }
 
-// llrs writes the LLRs of bits into dst.
 func (c *softChannel) llrs(bits []unpacked.Bit, dst []int16) {
 	for i, b := range bits {
 		y := 1 - 2*float64(b&1)
@@ -47,7 +41,6 @@ func (c *softChannel) llrs(bits []unpacked.Bit, dst []int16) {
 	}
 }
 
-// softHardBurst returns the hard decisions of 264 LLRs as a burst.
 func softHardBurst(llr *[softBurstBits]int16) layer2.RawBurst {
 	var bits [softBurstBits]unpacked.Bit
 	for i, v := range llr {
@@ -58,8 +51,6 @@ func softHardBurst(llr *[softBurstBits]int16) layer2.RawBurst {
 	return [33]byte(unpacked.Pack(bits[:]))
 }
 
-// softSigns returns LLRs of magnitude 1 with the signs of llr, the input of
-// a hard-decision ML decode.
 func softSigns(llr *[softBurstBits]int16) *[softBurstBits]int16 {
 	var s [softBurstBits]int16
 	for i, v := range llr {
@@ -71,9 +62,6 @@ func softSigns(llr *[softBurstBits]int16) *[softBurstBits]int16 {
 	return &s
 }
 
-// softFER runs trials frames at each SNR. run returns for each column the
-// number of frame errors of one trial of units frames. It logs the table of
-// frame error rates and returns the error counts by SNR and column.
 func softFER(t *testing.T, name string, snrs []float64, trials, units int, cols []string,
 	run func(ch *softChannel) []int,
 ) [][]int {
@@ -103,8 +91,6 @@ func softFER(t *testing.T, name string, snrs []float64, trials, units int, cols 
 	return counts
 }
 
-// softCheckFER fails the test unless column soft has no more errors than
-// column hard at every SNR, and at most ratio times as many at SNR index mid.
 func softCheckFER(t *testing.T, counts [][]int, hard, soft, mid int, ratio float64) {
 	t.Helper()
 	for i, row := range counts {
@@ -117,8 +103,6 @@ func softCheckFER(t *testing.T, counts [][]int, hard, soft, mid int, ratio float
 	}
 }
 
-// softCost returns the sum of the LLRs at the positions pos where r has a 1
-// bit, the cost that an ML decoder minimizes.
 func softCost(r *layer2.RawBurst, llr []int16, pos []int16) int64 {
 	var c int64
 	for _, q := range pos {
@@ -129,7 +113,6 @@ func softCost(r *layer2.RawBurst, llr []int16, pos []int16) int64 {
 	return c
 }
 
-// softBool returns 1 for true.
 func softBool(b bool) int {
 	if b {
 		return 1
@@ -137,7 +120,6 @@ func softBool(b bool) int {
 	return 0
 }
 
-// softRandomFrames returns three random AMBE+2 frames.
 func softRandomFrames(rng *rand.Rand) [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame {
 	var f [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
 	for i := range f {
@@ -150,7 +132,6 @@ func softRandomFrames(rng *rand.Rand) [layer2.VoiceSlotsPerBurst]vocoder.AMBEFra
 	return f
 }
 
-// softFrameErrors counts the frames whose C0 and C1 bits differ.
 func softFrameErrors(got, want *[layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame) int {
 	n := 0
 	for i := range got {
@@ -161,7 +142,6 @@ func softFrameErrors(got, want *[layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame) in
 	return n
 }
 
-// TestSoftAMBE checks the AMBE+2 decode against the library hard decoder.
 func TestSoftAMBE(t *testing.T) {
 	t.Parallel()
 	d := newSoftDecoder()
@@ -204,7 +184,6 @@ func TestSoftAMBE(t *testing.T) {
 	softCheckFER(t, counts, 0, 2, 2, 0.7)
 }
 
-// softBPTCPayload returns a random CSBK payload with its CRC.
 func softBPTCPayload(t testing.TB, rng *rand.Rand) [12]byte {
 	var p [12]byte
 	for i := range 10 {
@@ -216,8 +195,6 @@ func softBPTCPayload(t testing.TB, rng *rand.Rand) [12]byte {
 	return p
 }
 
-// TestSoftBPTC checks the BPTC(196,96) Chase and OSD decodes against the
-// library hard decoder.
 func TestSoftBPTC(t *testing.T) {
 	t.Parallel()
 	d := newSoftDecoder()
@@ -305,8 +282,6 @@ func TestSoftBPTC(t *testing.T) {
 	softCheckFER(t, counts, 0, 6, 2, 0.5)
 }
 
-// TestSoftRate34 checks that the Viterbi decode is ML and compares it with
-// the library hard decoder.
 func TestSoftRate34(t *testing.T) {
 	t.Parallel()
 	d := newSoftDecoder()
@@ -423,8 +398,6 @@ func TestSoftRate34(t *testing.T) {
 	softCheckFER(t, counts, 1, 2, 1, 0.5)
 }
 
-// TestSoftEMBAndSlotType checks the EMB and slot type decodes against the
-// library hard decoders.
 func TestSoftEMBAndSlotType(t *testing.T) {
 	t.Parallel()
 	d := newSoftDecoder()
@@ -475,8 +448,6 @@ func TestSoftEMBAndSlotType(t *testing.T) {
 	softCheckFER(t, counts, 4, 5, 1, 1)
 }
 
-// softCACH returns the four CACH fields, in transmit order, that carry the
-// Short LC info bits info with random TACTs.
 func softCACH(t testing.TB, rng *rand.Rand, info [softShortLCInfo]unpacked.Bit) ([4][layer2.CACHBits]unpacked.Bit, [4]pdu.TACT) {
 	var out [4][layer2.CACHBits]unpacked.Bit
 	var tacts [4]pdu.TACT
@@ -493,7 +464,6 @@ func softCACH(t testing.TB, rng *rand.Rand, info [softShortLCInfo]unpacked.Bit) 
 	return out, tacts
 }
 
-// softShortLCInfoBits returns random Short LC info bits with their CRC-8.
 func softShortLCInfoBits(rng *rand.Rand) [softShortLCInfo]unpacked.Bit {
 	var info [softShortLCInfo]unpacked.Bit
 	for i := range softShortLCData {
@@ -503,13 +473,10 @@ func softShortLCInfoBits(rng *rand.Rand) [softShortLCInfo]unpacked.Bit {
 	return info
 }
 
-// softSameTACT reports whether two TACTs have the same fields.
 func softSameTACT(a, b pdu.TACT) bool {
 	return a.AccessType == b.AccessType && a.TDMAChannel == b.TDMAChannel && a.LCSS == b.LCSS
 }
 
-// TestSoftCACH checks the TACT and Short LC decodes against the library hard
-// decoders.
 func TestSoftCACH(t *testing.T) {
 	t.Parallel()
 	d := newSoftDecoder()
@@ -584,8 +551,6 @@ func TestSoftCACH(t *testing.T) {
 	}
 }
 
-// softEmbBursts returns the four bursts B to E that carry lc, with every
-// other bit zero.
 func softEmbBursts(lc [9]byte) [4]layer2.RawBurst {
 	var r [4]layer2.RawBurst
 	for i, f := range layer2.EncodeEmbeddedLC(lc) {
@@ -594,7 +559,6 @@ func softEmbBursts(lc [9]byte) [4]layer2.RawBurst {
 	return r
 }
 
-// softRandomLC returns 9 random LC octets.
 func softRandomLC(rng *rand.Rand) [9]byte {
 	var lc [9]byte
 	for i := range lc {
@@ -603,8 +567,6 @@ func softRandomLC(rng *rand.Rand) [9]byte {
 	return lc
 }
 
-// TestSoftEmbeddedLC checks the embedded LC decode, with one copy and with
-// two combined copies, against the library hard decoder.
 func TestSoftEmbeddedLC(t *testing.T) {
 	t.Parallel()
 	d := newSoftDecoder()
@@ -673,7 +635,6 @@ func TestSoftEmbeddedLC(t *testing.T) {
 	softCheckFER(t, counts, len(cols)-2, len(cols)-1, 1, 1)
 }
 
-// TestSoftCombine checks the saturation of softCombine.
 func TestSoftCombine(t *testing.T) {
 	t.Parallel()
 	dst := []int16{30000, -30000, 5, -5}
@@ -683,14 +644,12 @@ func TestSoftCombine(t *testing.T) {
 	}
 }
 
-// softBenchInputs holds noisy LLRs for every decoder.
 type softBenchInputs struct {
 	voice, bptc, rate34, emb [softBurstBits]int16
 	cach                     [4][layer2.CACHBits]int16
 	lc                       [4][softBurstBits]int16
 }
 
-// newSoftBenchInputs returns noisy LLRs at esn0 dB for every decoder.
 func newSoftBenchInputs(tb testing.TB, esn0 float64) *softBenchInputs {
 	tb.Helper()
 	ch := newSoftChannel(11, esn0)
@@ -723,7 +682,6 @@ func newSoftBenchInputs(tb testing.TB, esn0 float64) *softBenchInputs {
 	return in
 }
 
-// softBenchCases returns the decoders under test as functions of the inputs.
 func softBenchCases(d *softDecoder, in *softBenchInputs) []struct {
 	name string
 	run  func()
@@ -758,7 +716,6 @@ func softBenchCases(d *softDecoder, in *softBenchInputs) []struct {
 	}
 }
 
-// BenchmarkSoftFEC times each decode at 3 dB.
 func BenchmarkSoftFEC(b *testing.B) {
 	d := newSoftDecoder()
 	in := newSoftBenchInputs(b, 3)
@@ -772,8 +729,6 @@ func BenchmarkSoftFEC(b *testing.B) {
 	}
 }
 
-// TestSoftAMBEScramble checks the C1 scrambling mask of every C0 info word
-// against the C1 bits of the burst that SetAMBEFrames makes of it.
 func TestSoftAMBEScramble(t *testing.T) {
 	t.Parallel()
 	c := softAMBESlot(0).c1
@@ -789,9 +744,6 @@ func TestSoftAMBEScramble(t *testing.T) {
 	}
 }
 
-// TestSoftOSDReprocess checks that the reprocessing keeps the same list,
-// costs and scored count as refOSD, with nibble and byte tables, on noisy
-// codewords of every OSD code.
 func TestSoftOSDReprocess(t *testing.T) {
 	t.Parallel()
 	rng := rand.New(rand.NewPCG(5, 6))
@@ -831,8 +783,6 @@ func TestSoftOSDReprocess(t *testing.T) {
 	}
 }
 
-// refOSD is osd as it scored every pattern over all n code bits, the
-// reference of TestSoftOSDReprocess.
 func (id softOSDID) refOSD(s *softOSDScratch, order, window, listMax int) {
 	c := &softOSDCodes[id]
 	k := c.k
@@ -881,8 +831,6 @@ func (id softOSDID) refOSD(s *softOSDScratch, order, window, listMax int) {
 	}
 }
 
-// refTry scores cw over all its bits from s.tab, adds it to the list and
-// checks it when it beats the best accepted codeword.
 func (s *softOSDScratch) refTry(cw *[softOSDWords]uint64) {
 	bound := int32(math.MaxInt32)
 	if s.list.n == s.list.max {
@@ -903,9 +851,6 @@ func (s *softOSDScratch) refTry(cw *[softOSDWords]uint64) {
 	}
 }
 
-// TestSoftOSDCleanWords checks that an OSD decode of a short code after one
-// of BPTC(196,96) on the same scratch lists codewords with no bits past the
-// code: stale words of the longer code once counted in errors.
 func TestSoftOSDCleanWords(t *testing.T) {
 	t.Parallel()
 	rng := rand.New(rand.NewPCG(7, 8))

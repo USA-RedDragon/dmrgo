@@ -2,12 +2,6 @@ package rf
 
 import "testing"
 
-// TestTier1Weak receives the sweep stream below the 90% points of Tier0, at
-// 3.2 dB Eb/N0 on I/Q and 4.2 dB on audio, and checks that Tier1, which
-// detects each burst that is not clear again coherently, recovers far
-// more rate 1/2 blocks and more C0 and C1 of the voice frames than Tier0:
-// there the noise of the discriminator has no correlation from symbol to
-// symbol, and its clicks set the error rate.
 func TestTier1Weak(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 10)

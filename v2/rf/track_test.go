@@ -6,9 +6,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// TestLLR8Symmetric checks that the 8-bit store of a burst rounds a ratio
-// and its negation to negated values and keeps the sign of every nonzero
-// ratio, so that it leans to neither bit value.
 func TestLLR8Symmetric(t *testing.T) {
 	t.Parallel()
 	var v [layer2.BurstBits]int16

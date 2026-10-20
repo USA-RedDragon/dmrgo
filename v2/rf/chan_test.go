@@ -6,9 +6,6 @@ import (
 	"testing"
 )
 
-// TestRingRotateCompact fills a compact ring past its size with a count of
-// samples that is not a whole number of blocks, rotates it, and checks that
-// every sample it holds turned by its age.
 func TestRingRotateCompact(t *testing.T) {
 	t.Parallel()
 	r := newRing(64, 1, true)
@@ -36,9 +33,6 @@ func TestRingRotateCompact(t *testing.T) {
 	}
 }
 
-// TestQringAdd shifts the samples of a discriminator ring by amounts that
-// are not whole steps and checks that every sample moves by the sum, to
-// within the rounding of its own quantization.
 func TestQringAdd(t *testing.T) {
 	t.Parallel()
 	r := newQring(50, discStepHz)

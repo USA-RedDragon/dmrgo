@@ -11,11 +11,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// TestLeanGapNoise checks that the noise in the gaps between the
-// transmissions of an MS does not anchor the stream. Without a carrier the
-// discriminator noise matches a SYNC now and then with few clicks; such an
-// anchor moved the slots and the levels of the stream, and the first burst
-// of the next transmission was lost at 17 dB C/N.
 func TestLeanGapNoise(t *testing.T) {
 	t.Parallel()
 	cfg := testConfig()
@@ -61,11 +56,6 @@ func TestLeanGapNoise(t *testing.T) {
 	}
 }
 
-// TestLeanGapNoiseSpread checks that noCarrier takes a slot of an MS
-// stream as noise when its SYNC field spreads by 1.05 steps, six times as
-// much as the anchors of the stream, with 32 clicks. Such noise in a gap
-// anchored Tier0 on audio at 13 dB C/N, and the voice LC header and first
-// voice bursts of the next call were lost.
 func TestLeanGapNoiseSpread(t *testing.T) {
 	t.Parallel()
 	p := enums.SyncMSSourcedData
@@ -119,13 +109,6 @@ func TestLeanGapNoiseSpread(t *testing.T) {
 	}
 }
 
-// TestLeanReplayNoise checks that noCarrier counts the clicks of a slot
-// before the lock that a stage decodes again, whose symbols lie far
-// before the last. It takes the slot as noise when its SYNC field spreads
-// by 1.6 steps, 7 times as much as the SYNC of the lock, with 50 clicks,
-// and as a weak SYNC when that is 1.5 times. The ring of the core then
-// holds only that slot, and noCarrier once counted no clicks there, so
-// that the noise before a transmission anchored.
 func TestLeanReplayNoise(t *testing.T) {
 	t.Parallel()
 	p := enums.SyncMSSourcedVoice

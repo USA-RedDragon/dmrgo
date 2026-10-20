@@ -6,28 +6,14 @@ import (
 	"slices"
 )
 
-// Limits of the spectrum estimator.
 const (
-	// fftSize is the length of the transform of the spectrum estimator, 2
-	// to the power fftBits.
-	fftSize = 1 << fftBits
-	fftBits = 8
-	// specFrames is the number of half-overlapped frames in one estimate.
+	fftSize    = 1 << fftBits
+	fftBits    = 8
 	specFrames = 96
-	// specBlocks is the most estimates of specFrames frames, the newest,
-	// that a longer estimate sums when the newest alone finds no signal: a
-	// weak signal that is on part of the time, as an MS in direct mode,
-	// stands above the noise of one estimate only at a few dB C/N. It
-	// tries the newest 2, 4 and so on, so that a signal that starts is not
-	// summed with the noise before it.
 	specBlocks = 8
-	// channelHz is the occupied bandwidth that the estimator looks for.
-	channelHz = 12500.0
+	channelHz  = 12500.0
 )
 
-// fftTransform replaces x, fftSize samples, by its discrete Fourier
-// transform, in place by radix 2 with the twiddles fftTwiddles,
-// e^(-2*pi*j*i/fftSize) at index i.
 func fftTransform(x []complex64) {
 	for i := range fftSize {
 		if r := int(bits.Reverse(uint(i)) >> (bits.UintSize - fftBits)); i < r {
@@ -46,45 +32,29 @@ func fftTransform(x []complex64) {
 	}
 }
 
-// spectrum estimates the carrier frequency and the C/N of the strongest
-// channel-wide signal in the wide baseband from a Welch power spectrum.
-// specWindow holds the window from its middle out: sample i and fftSize-i
-// take specWindow[min(i, fftSize-i)].
 type spectrum struct {
-	// rate is the sample rate, and pass the number of bins on each side of
-	// 0 Hz in the passband of the front end.
-	rate float64
-	pass int
-	// hist holds the samples of the frame, and save the second half while
-	// the transform runs in hist.
-	hist   []complex64
-	save   []complex64
-	fill   int
-	power  []float32
-	frames int
-	// blocks holds the power of the last nblocks estimates of specFrames
-	// frames, the newest at blocks[head-1].
+	rate    float64
+	pass    int
+	hist    []complex64
+	save    []complex64
+	fill    int
+	power   []float32
+	frames  int
 	blocks  [specBlocks][]float32
 	head    int
 	nblocks int
-	// sorted holds the power of the passband bins in increasing order.
-	sorted []float32
-	// Hz, CN and OK hold the last estimate: carrier offset, C/N in dB in
-	// 12.5 kHz, and whether a signal stands above the noise.
-	Hz, CN float64
-	OK     bool
-	ready  bool
+	sorted  []float32
+	Hz, CN  float64
+	OK      bool
+	ready   bool
 }
 
-// reset drops the frames of the estimate in progress, so that the next
-// estimate holds only frames after the reset.
 func (s *spectrum) reset() {
 	clear(s.power)
 	s.frames, s.fill, s.ready = 0, 0, false
 	s.nblocks = 0
 }
 
-// newSpectrum returns an estimator of samples at rate with no frames yet.
 func newSpectrum(rate float64) *spectrum {
 	pass := int(wideHz*rate/basebandRate) * fftSize / int(rate)
 	s := &spectrum{rate: rate, pass: pass, hist: make([]complex64, fftSize), save: make([]complex64, fftSize/2),
@@ -95,8 +65,6 @@ func newSpectrum(rate float64) *spectrum {
 	return s
 }
 
-// push adds one wide baseband sample and reports whether a new estimate is
-// ready.
 func (s *spectrum) push(v complex64) bool {
 	s.hist[s.fill] = v
 	s.fill++
@@ -128,9 +96,6 @@ func (s *spectrum) push(v complex64) bool {
 	return false
 }
 
-// estimateBlocks keeps the power of the estimate of specFrames frames that
-// just ended and estimates from it, and while no signal shows, from the
-// sum of it and the blocks before it, 2, 4 and so on up to specBlocks.
 func (s *spectrum) estimateBlocks() {
 	copy(s.blocks[s.head], s.power)
 	s.head = (s.head + 1) % specBlocks
@@ -149,9 +114,6 @@ func (s *spectrum) estimateBlocks() {
 	s.ready = true
 }
 
-// estimate finds the channel-wide span with the most power above a low
-// percentile of the passband bins, then the noise floor as the mean of the
-// passband bins away from that span, and the centroid of the excess.
 func (s *spectrum) estimate() {
 	bin := s.rate / fftSize
 	passBins := s.pass

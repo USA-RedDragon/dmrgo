@@ -2,29 +2,14 @@ package rf
 
 import "math"
 
-// Limits of the discriminator tier.
 const (
-	// sincTaps is the length of the fractional delay interpolator.
-	sincTaps = 16
-	// discAnchor is the discriminator SYNC correlation of an anchor.
-	discAnchor = 0.6
-	// levelForget weighs the old level estimates per anchor.
-	levelForget = 0.8
-	// discAnchorBits is the most bits of the sliced SYNC field of an
-	// anchor that differ from its pattern, so that a field such as the
-	// embedded signalling of a voice burst E that correlates with the
-	// pattern through noise does not count as an anchor.
-	discAnchorBits = 12
-	// discFirstSpread is the largest RMS distance of the SYNC samples of
-	// the first anchor of a stream from the levels that it fits, in units
-	// of the spacing of the levels. The first anchor sets the levels that
-	// the other anchors are checked against, and a SYNC correlation
-	// through noise fits levels far from its samples.
+	sincTaps        = 16
+	discAnchor      = 0.6
+	levelForget     = 0.8
+	discAnchorBits  = 12
 	discFirstSpread = 0.35
 )
 
-// discSyncErrors returns the number of bits where the sliced symbols of
-// the SYNC field of slot s, tau samples off, differ from syms.
 func (r *engine) discSyncErrors(s *slotState, tau float64, syms *[syncSymbols]int8) int {
 	step := r.devScale * deviationHz
 	n := 0
@@ -37,8 +22,6 @@ func (r *engine) discSyncErrors(s *slotState, tau float64, syms *[syncSymbols]in
 	return n
 }
 
-// sliceSymbol returns the symbol level nearest to x, in units of the
-// deviation of level 1.
 func sliceSymbol[T float32 | float64](x T) int8 {
 	switch {
 	case x >= 2:
@@ -51,22 +34,16 @@ func sliceSymbol[T float32 | float64](x T) int8 {
 	return -3
 }
 
-// symbolBitErrors returns the number of bits where the dibits of symbols a
-// and b differ.
 func symbolBitErrors(a, b int8) int {
 	a0, a1 := dibitOfDigit(int(a+3) / 2)
 	b0, b1 := dibitOfDigit(int(b+3) / 2)
 	return int(a0^b0) + int(a1^b1)
 }
 
-// symLag returns the discriminator sample that matches channel sample t.
 func (r *engine) symLag(t float64) float64 {
 	return r.chz.symIndex(t)
 }
 
-// measureDisc classifies the SYNC field of slot s on the discriminator
-// output and, for an anchor, updates the timing, the carrier offset and
-// the deviation scale from it.
 func (r *engine) measureDisc(s *slotState) {
 	var best float32
 	bestTau := 0.0
@@ -132,10 +109,6 @@ func (r *engine) measureDisc(s *slotState) {
 	}
 }
 
-// discDetect sets the symbol log-likelihoods of slot s from the
-// discriminator output, as Gaussian around the four levels, with a click
-// outlier of options.DiscOutlier spread over the basebandRate Hz of the
-// discriminator range as their floor.
 func (r *engine) discDetect(s *slotState) {
 	v := math.Max(r.discNoise, 1)
 	g := -1 / float32(2*v)

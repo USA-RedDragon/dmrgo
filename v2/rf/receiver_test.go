@@ -12,9 +12,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// noisyBaseband modulates a BS outbound stream at basebandRate with a
-// carrier offset, white Gaussian noise at C/N cn dB in 12.5 kHz and 0.3 s
-// of noise before and after.
 func noisyBaseband(slots []rftx.BSSlot, offsetHz, cn float64, seed uint64) []complex64 {
 	fm, env := rftx.ModulateBS(slots)
 	pad := int(0.3 * basebandRate)
@@ -33,12 +30,10 @@ func noisyBaseband(slots []rftx.BSSlot, offsetHz, cn float64, seed uint64) []com
 	return x
 }
 
-// basebandStream is noisyBaseband at 40 dB.
 func basebandStream(slots []rftx.BSSlot, offsetHz float64) []complex64 {
 	return noisyBaseband(slots, offsetHz, 40, 1)
 }
 
-// receiveBaseband runs x through a receiver of tier t.
 func receiveBaseband(x []complex64, t Tier) []Burst {
 	r := mustNew(Config{Rate: basebandRate, Tier: t})
 	var out []Burst
@@ -48,8 +43,6 @@ func receiveBaseband(x []complex64, t Tier) []Burst {
 	return append(out, r.Flush()...)
 }
 
-// exactFrames counts the AMBE+2 frames of the voice bursts of slots that
-// got decodes exactly, matching the bursts by time.
 func exactFrames(slots []rftx.BSSlot, got []Burst) (exact, total int) {
 	const pad = 0.3
 	ramp := (slotSeconds - burstSeconds) / 2
@@ -82,12 +75,8 @@ func exactFrames(slots []rftx.BSSlot, got []Burst) (exact, total int) {
 	return exact, total
 }
 
-// AMBEFrameValue is the 49 bits of an AMBE+2 frame as a number.
 type AMBEFrameValue = uint64
 
-// TestReceiverTiersAtLowSNR receives a BS outbound voice call at 3 dB C/N
-// and checks that Tier0, Tier2 and Tier3 each recover more
-// AMBE+2 frames exactly than the tier below.
 func TestReceiverTiersAtLowSNR(t *testing.T) {
 	t.Parallel()
 	cfg := testConfig()
@@ -108,10 +97,6 @@ func TestReceiverTiersAtLowSNR(t *testing.T) {
 	}
 }
 
-// TestReceiverHalfRate receives a BS outbound voice call at 12 dB C/N as
-// baseband at BasebandRate and, averaged over pairs of samples, at half
-// that rate, and checks that Tier0 recovers about as many AMBE+2 frames
-// from each.
 func TestReceiverHalfRate(t *testing.T) {
 	t.Parallel()
 	cfg := testConfig()
@@ -142,8 +127,6 @@ func TestReceiverHalfRate(t *testing.T) {
 	}
 }
 
-// TestReceiverOnBurst checks that a receiver with OnBurst hands it the
-// bursts that the returned slices hold without it, and returns none.
 func TestReceiverOnBurst(t *testing.T) {
 	t.Parallel()
 	cfg := testConfig()
@@ -176,8 +159,6 @@ func TestReceiverOnBurst(t *testing.T) {
 	}
 }
 
-// BenchmarkReceiver times each tier on a BS outbound voice call at 6 dB
-// C/N, in nanoseconds per second of signal, with its allocations.
 func BenchmarkReceiver(b *testing.B) {
 	cfg := testConfig()
 	cfg.BSSourced, cfg.Superframes, cfg.Slot = true, 2, 1
@@ -203,8 +184,6 @@ func BenchmarkReceiver(b *testing.B) {
 	}
 }
 
-// TestReceiverWithoutWarmUp receives a BS outbound voice call at 20 dB C/N
-// with WarmUp off and checks that the coherent receiver still decodes it.
 func TestReceiverWithoutWarmUp(t *testing.T) {
 	t.Parallel()
 	cfg := testConfig()
@@ -228,10 +207,6 @@ func TestReceiverWithoutWarmUp(t *testing.T) {
 	}
 }
 
-// TestReceiverKeyUp receives two BS outbound streams at 15 dB C/N with
-// 0.75 s of noise and a new slot timing between them, as a repeater that
-// keys up again sends, and checks that each tier detects a burst of the
-// second within 150 ms of its start.
 func TestReceiverKeyUp(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 2)
@@ -257,9 +232,6 @@ func TestReceiverKeyUp(t *testing.T) {
 	}
 }
 
-// resampleFM returns the deviation freq and the envelope env of a
-// transmitter whose clock runs ppm parts per million fast, by linear
-// interpolation.
 func resampleFM(freq, env []float64, ppm float64) ([]float64, []float64) {
 	r := 1 + ppm*1e-6
 	n := int(float64(len(freq)-1) / r)
@@ -274,10 +246,6 @@ func resampleFM(freq, env []float64, ppm float64) ([]float64, []float64) {
 	return f, e
 }
 
-// directCalls builds n direct mode voice calls of two superframes on TS2
-// without wakeup bursts, each its own transmission from 0 to 9 samples
-// after a slot boundary, with 0.3 s of no carrier after it, and returns
-// them as msStream does.
 func directCalls(t testing.TB, n int) ([]float64, []float64, []benchSlot) {
 	t.Helper()
 	cfg := rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, Group: true, Superframes: 2, Slot: 1}
@@ -318,14 +286,6 @@ func directCalls(t testing.TB, n int) ([]float64, []float64, []benchSlot) {
 	return freq, env, truth
 }
 
-// TestReceiverDirectModeTiming receives direct mode voice calls at 5 dB
-// C/N, which have a SYNC in the header and in every sixth voice burst,
-// from transmitters whose clocks are off by 0 and 200 ppm, and checks that
-// Tier3 recovers C0 and C1 of nearly every voice frame. The coherent tier
-// added the anchors of the warm pass to its timing fit twice and fit the
-// period from four of them, two slots apart: the period missed by a few
-// tenths of a sample per slot, the timing by samples at the next SYNC, and
-// it recovered 98% and 85% of the frames.
 func TestReceiverDirectModeTiming(t *testing.T) {
 	t.Parallel()
 	fm, env, truth := directCalls(t, 4)
@@ -347,12 +307,6 @@ func TestReceiverDirectModeTiming(t *testing.T) {
 	}
 }
 
-// TestReceiverTwoPass receives the direct mode calls of
-// TestReceiverDirectModeTiming at 5 dB C/N from a transmitter whose clock
-// is 200 ppm fast with options.TwoPass, and checks that it recovers C0 and
-// C1 of every voice frame, and more frames whole than Tier3 does: the
-// second pass detects the first superframe of each call with the period
-// that the anchors of the whole call show.
 func TestReceiverTwoPass(t *testing.T) {
 	t.Parallel()
 	fm, env, truth := directCalls(t, 4)

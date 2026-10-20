@@ -16,10 +16,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// rxItem is one burst of a test transmission that a receiver should
-// recover: its bits, its time in the transmission, its TDMA channel, and
-// whether it carries a SYNC. Voice bursts count their three AMBE+2 frames,
-// data bursts their payload.
 type rxItem struct {
 	burst layer2.RawBurst
 	at    float64
@@ -28,15 +24,12 @@ type rxItem struct {
 	sync  bool
 }
 
-// rxTx is a transmission at basebandRate: its deviation and envelope, the
-// bursts it carries, and the times at which calls after the first start.
 type rxTx struct {
 	fm, env []float64
 	items   []rxItem
 	starts  []float64
 }
 
-// rxBS returns the BS outbound stream of benchStream with n superframes.
 func rxBS(t testing.TB, n int) rxTx {
 	slots, truth := benchStream(t, n)
 	fm, env := rftx.ModulateBS(slots)
@@ -52,15 +45,10 @@ func rxBS(t testing.TB, n int) rxTx {
 	return rxTx{fm: fm, env: env, items: items}
 }
 
-// rxMS returns an MS-sourced transmission on one slot of two, as a radio
-// in direct mode sends it: a group voice call of n superframes and a rate
-// 3/4 data packet.
 func rxMS(t testing.TB, n int) rxTx {
 	return rxMSCall(t, n, "data34")
 }
 
-// rxMSCall returns an MS-sourced transmission of a group voice call of n
-// superframes and the data packet of sequence data.
 func rxMSCall(t testing.TB, n int, data string) rxTx {
 	t.Helper()
 	cfg := rftx.SeqConfig{ColorCode: 3, Source: 3191868, Dest: 9, Group: true, Message: "DMRGO MS", Superframes: n, Slot: 1}
@@ -96,9 +84,6 @@ func rxMSCall(t testing.TB, n int, data string) rxTx {
 	return rxTx{fm: fm, env: env, items: items}
 }
 
-// rxMSCalls returns n MS calls of rxMSCall, of a superframe and a rate 1
-// packet each, 0.3 s apart, each starting at another of the ten samples
-// of a symbol, as radios key up at any time.
 func rxMSCalls(t testing.TB, n int) rxTx {
 	one := rxMSCall(t, 1, "data1")
 	var out rxTx
@@ -122,56 +107,27 @@ func rxMSCalls(t testing.TB, n int) rxTx {
 	return out
 }
 
-// rxCond is one condition of the robustness matrix: what the channel and
-// the front end do to a transmission.
 type rxCond struct {
-	name string
-	// cw is the seconds of unmodulated carrier before the transmission,
-	// zero the seconds of samples of 0 before the noise, and pad the
-	// seconds of noise before and after it.
-	cw, zero, pad float64
-	// offsetHz is the carrier offset and driftHz its change per second.
-	offsetHz, driftHz float64
-	// ppm is the error of the symbol clock of the transmitter.
-	ppm float64
-	// stepDB changes the gain of the input, signal and noise, in the
-	// middle of the transmission, and fadeDB the level of the signal
-	// alone.
-	stepDB, fadeDB float64
-	// late, when above 0, starts the input in the second superframe of
-	// the voice call, a fraction of a slot before voice burst late, 1 for
-	// A to 6 for F.
-	late int
-	// gap repeats the transmission after that many seconds of noise, with
-	// a new slot timing.
-	gap float64
-	// jump inserts that many seconds of carrier, or removes them when
-	// below 0, in the middle of the transmission, so that the slot timing
-	// jumps without a gap.
-	jump float64
-	// level scales the input. bytes feeds it as 8-bit unsigned I/Q at
-	// rxByteRate with full scale 1 and the DC offset dc.
-	level float64
-	bytes bool
-	dc    complex128
-	// audio holds the gain and DC offset of the discriminator audio of the
-	// audio tiers, applied after discAudio.
-	audioGain, audioDC float64
-	// iqOnly and audioOnly limit the condition to one input, and highCN
-	// to the high C/N, where a fade of fadeDB leaves the signal above the
-	// floor of every receiver.
+	name                      string
+	cw, zero, pad             float64
+	offsetHz, driftHz         float64
+	ppm                       float64
+	stepDB, fadeDB            float64
+	late                      int
+	gap                       float64
+	jump                      float64
+	level                     float64
+	bytes                     bool
+	dc                        complex128
+	audioGain, audioDC        float64
 	iqOnly, audioOnly, highCN bool
 }
 
-// rxByteRate is the sample rate of the 8-bit I/Q of the matrix, and
-// rampSamples the samples of the ramp of a burst at basebandRate.
 const (
 	rxByteRate  = 240000
 	rampSamples = (slotSamplesN - burstSymbols*samplesPerSy) / 2
 )
 
-// rxConds returns the conditions of the matrix. The first is the clean
-// start that sets the floor of the others.
 func rxConds() []rxCond {
 	base := rxCond{pad: 0.3, level: 1, audioGain: 1}
 	var out []rxCond
@@ -205,7 +161,6 @@ func rxConds() []rxCond {
 	for _, hz := range []float64{1000, 3000, -3000} {
 		add(fmt.Sprintf("offset %+.0f Hz", hz), func(c *rxCond) { c.offsetHz = hz })
 	}
-	// A crystal that warms as the transmitter keys up drifts by far less.
 	add("drift 100 Hz/s", func(c *rxCond) { c.offsetHz, c.driftHz = -150, 100 })
 	for _, p := range []float64{50, -50, 200, -200} {
 		add(fmt.Sprintf("clock %+.0f ppm", p), func(c *rxCond) { c.ppm = p })
@@ -222,27 +177,21 @@ func rxConds() []rxCond {
 	return out
 }
 
-// rxInput is a test input: the samples of the receiver of one input mode
-// and the bursts it carries, at their times in the input.
 type rxInput struct {
 	x      []complex64
 	iq     []byte
 	audio  []int16
 	items  []rxItem
 	events []float64
-	// jump is the time of the jump of rxCond.jump, or 0.
-	jump float64
+	jump   float64
 }
 
-// rxSeed returns a seed from the name of a case.
 func rxSeed(s string) uint64 {
 	h := fnv.New64a()
 	h.Write([]byte(s))
 	return h.Sum64()
 }
 
-// rxLate returns the time in tx at which a late start of rxCond.late
-// starts the input.
 func rxLate(tx rxTx, late int) float64 {
 	var a []float64
 	for _, it := range tx.items {
@@ -253,15 +202,12 @@ func rxLate(tx rxTx, late int) float64 {
 	return a[1] + float64(late-1)*2*slotSeconds - (slotSeconds-burstSeconds)/2 - 0.0113
 }
 
-// rxLine is the timeline of the transmitter of rxBuild at basebandRate:
-// its frequency and envelope, items and events, in seconds.
 type rxLine struct {
 	fm, env []float64
 	items   []rxItem
 	events  []float64
 }
 
-// shift moves the items from sample from on by d seconds.
 func (l *rxLine) shift(from int, d float64) {
 	for i := range l.items {
 		if l.items[i].at*basebandRate >= float64(from) {
@@ -270,8 +216,6 @@ func (l *rxLine) shift(from int, d float64) {
 	}
 }
 
-// jump inserts d seconds of carrier at a slot boundary near the middle, or
-// deletes -d seconds there, with the items in them.
 func (l *rxLine) jump(d float64) {
 	mid := (len(l.fm)/2)/slotSamplesN*slotSamplesN + rampSamples
 	n := int(math.Abs(d) * basebandRate)
@@ -293,11 +237,7 @@ func (l *rxLine) jump(d float64) {
 	l.events = append(l.events, float64(mid)/basebandRate)
 }
 
-// rekey sends the timeline again after gap seconds without carrier, its
-// items on other channels, and its starts as events.
 func (l *rxLine) rekey(gap float64, starts []float64) {
-	// Gaps of whole symbols less three samples, so that the timing of the
-	// symbols moves too.
 	g := int(gap*basebandRate) + 337
 	n := len(l.fm)
 	second := slices.Clone(l.items)
@@ -314,8 +254,6 @@ func (l *rxLine) rekey(gap float64, starts []float64) {
 	}
 }
 
-// lead puts cw seconds of carrier without modulation before the timeline,
-// which holds through the ramp of its first burst.
 func (l *rxLine) lead(cw float64) {
 	k := int(cw * basebandRate)
 	l.fm = append(make([]float64, k), l.fm...)
@@ -329,9 +267,6 @@ func (l *rxLine) lead(cw float64) {
 	}
 }
 
-// rxBuild builds the input of condition c at C/N cn from tx: the timeline
-// of the transmitter at basebandRate, then the channel at the rate of the
-// input mode.
 func rxBuild(tx rxTx, c rxCond, cn float64, audio bool, seed uint64) rxInput {
 	l := rxLine{fm: slices.Clone(tx.fm), env: slices.Clone(tx.env), items: slices.Clone(tx.items)}
 	if c.jump != 0 {
@@ -427,14 +362,11 @@ func rxBuild(tx rxTx, c rxCond, cn float64, audio bool, seed uint64) rxInput {
 	return in
 }
 
-// rxRecv is a receiver of the matrix: an entry of benchEntries, or with
-// half set the I/Q tier at BasebandRate/2, with the complex front end.
 type rxRecv struct {
 	benchEntry
 	half bool
 }
 
-// name returns the name of r in the table of the matrix.
 func (r rxRecv) name() string {
 	if r.half {
 		return r.benchEntry.name() + "h"
@@ -442,9 +374,6 @@ func (r rxRecv) name() string {
 	return r.benchEntry.name()
 }
 
-// rxRecvs lists the receivers of the matrix: both audio tiers, the I/Q
-// tiers up to Tier3, and Tier0 and Tier1 at BasebandRate/2. Tier4 is
-// Tier3 with a wider trellis, at 50 times the compute.
 func rxRecvs() []rxRecv {
 	var out []rxRecv
 	for _, e := range benchEntries() {
@@ -453,7 +382,6 @@ func rxRecvs() []rxRecv {
 	return append(out, rxRecv{benchEntry{benchIQ, Tier0}, true}, rxRecv{benchEntry{benchIQ, Tier1}, true})
 }
 
-// rxReceive runs the input through the receiver e.
 func rxReceive(t testing.TB, in rxInput, e rxRecv) []Burst {
 	cfg := Config{Tier: e.tier}
 	if e.half {
@@ -471,8 +399,6 @@ func rxReceive(t testing.TB, in rxInput, e rxRecv) []Burst {
 		}
 		return append(out, r.Flush()...)
 	case e.half:
-		// The pairs of samples averaged: a filter and a decimation to
-		// BasebandRate/2, as a radio front end at that rate gives.
 		h := make([]complex64, len(in.x)/2)
 		for i := range h {
 			h[i] = (in.x[2*i] + in.x[2*i+1]) / 2
@@ -487,17 +413,11 @@ func rxReceive(t testing.TB, in rxInput, e rxRecv) []Burst {
 	return receiveBaseband(in.x, e.tier)
 }
 
-// rxScore is what one receiver recovered from one input.
 type rxScore struct {
 	exact, total int
-	// found is the delay after each event of the input to the first item
-	// recovered exactly, and bound the delay to the third item with a
-	// SYNC after it, which found must not pass.
 	found, bound []float64
 }
 
-// rxMatch scores got against the items of in: an item counts when a burst
-// starts within 2 ms of it with the same payload.
 func rxMatch(in rxInput, got []Burst) rxScore {
 	got = slices.Clone(got)
 	slices.SortFunc(got, func(a, b Burst) int { return int(math.Copysign(1, a.Seconds-b.Seconds)) })
@@ -539,9 +459,6 @@ func rxMatch(in rxInput, got []Burst) rxScore {
 	return sc
 }
 
-// rxPayloads returns the number of payloads of it that b holds exactly:
-// the AMBE+2 frames of a voice burst, or 1 for the payload and slot type of
-// a data burst.
 func rxPayloads(it rxItem, b *Burst) int {
 	data, _ := b.Decoded()
 	if it.voice {
@@ -579,9 +496,6 @@ func rxPayloads(it rxItem, b *Burst) int {
 	return 0
 }
 
-// rxEligible returns the items of in that a receiver must recover: on
-// each channel, those from the first with a SYNC, and none after a jump
-// before the next with a SYNC.
 func rxEligible(in rxInput) rxInput {
 	seen := map[int]bool{}
 	out := in
@@ -602,22 +516,15 @@ func rxEligible(in rxInput) rxInput {
 	return out
 }
 
-// rxStreams are the transmissions of the matrix.
 func rxStreams(t testing.TB) map[string]rxTx {
 	return map[string]rxTx{"bs": rxBS(t, 3), "ms": rxMS(t, 3), "msj": rxMSCalls(t, 4)}
 }
 
-// rxFloor is the share of the recovery of the clean start that every
-// condition must reach, and rxCleanFloor the recovery that the clean start
-// itself must reach, at 12 dB C/N and above.
 const (
 	rxFloor      = 0.9
 	rxCleanFloor = 0.95
 )
 
-// rxKnown are the cells of the matrix that fail for a known cause that
-// no fix covers yet, by the name of the case and the receiver. The test
-// logs them, and logs those of them that pass.
 var rxKnown = map[string]string{
 	"msj/40 dB/offset -3000 Hz/iq0": rxKnownAFC,
 	"msj/12 dB/offset -3000 Hz/iq0": rxKnownAFC,
@@ -629,7 +536,6 @@ var rxKnown = map[string]string{
 	"ms/40 dB/late E/iq2":           rxKnownGain,
 }
 
-// The causes of rxKnown.
 const (
 	rxKnownAFC = "the oscillator of Tier 0 at 3 kHz off takes about three moves of 50 ms to pull in, " +
 		"and the two SYNCs of the first call of an MS come while it moves"
@@ -639,7 +545,6 @@ const (
 		"between them before it locks, and a scale in the SYNC of the late entry loses it, as on main"
 )
 
-// rxResult is one cell of the matrix.
 type rxResult struct {
 	stream, cond, recv string
 	cn                 float64
@@ -648,13 +553,6 @@ type rxResult struct {
 	pass, known        bool
 }
 
-// TestRxRobust receives each stream of rxStreams through each condition
-// of rxConds at 40 and 12 dB C/N with each receiver of rxRecvs, and
-// checks that each recovers at least rxFloor of what it recovers from a
-// clean start at the same C/N, and recovers a burst after each event of
-// the input (the start of the signal, a step, a jump, a key-up) before
-// the third burst with a SYNC after it. DMRRF_ROBUST names a file for the
-// table of results.
 func TestRxRobust(t *testing.T) {
 	t.Parallel()
 	streams := rxStreams(t)
@@ -746,7 +644,6 @@ func TestRxRobust(t *testing.T) {
 	}
 }
 
-// rxSecs formats seconds to the millisecond.
 func rxSecs(v []float64) string {
 	s := make([]string, len(v))
 	for i, x := range v {
@@ -755,8 +652,6 @@ func rxSecs(v []float64) string {
 	return "[" + strings.Join(s, " ") + "]"
 }
 
-// rxTable returns the results as a table: a row per stream, C/N and
-// condition, a column per receiver, each cell the recovery or FAIL.
 func rxTable(res []rxResult) string {
 	es := rxRecvs()
 	recvs := make([]string, 0, len(es))

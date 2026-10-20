@@ -5,16 +5,11 @@ import (
 	"testing"
 )
 
-// Settings of discAudio: the gain of its converter, in units per Hz, and
-// its offset in units.
 const (
 	audioGain   = 0.6
 	audioOffset = 300
 )
 
-// audioIFTaps returns the taps of the IF filter of discAudio at basebandRate:
-// a Hamming-windowed low pass with its cutoff at 6.25 kHz, half a 12.5 kHz
-// channel.
 func audioIFTaps() []float64 {
 	const n = 31
 	h := make([]float64, n)
@@ -30,12 +25,6 @@ func audioIFTaps() []float64 {
 	return h
 }
 
-// discAudio returns the output of an FM receiver for the baseband x at
-// basebandRate, sampled at hz: the IF filter of audioIFTaps, a limiter
-// and discriminator at basebandRate, the anti-alias filter of a converter
-// at hz, with its cutoff at 0.42 hz, and the converter with gain audioGain
-// and offset audioOffset. Below the FM threshold its output has the clicks
-// of a real one.
 func discAudio(x []complex64, hz int) []int16 {
 	h := audioIFTaps()
 	step := basebandRate / hz
@@ -62,8 +51,6 @@ func discAudio(x []complex64, hz int) []int16 {
 	return out
 }
 
-// lowpassTaps returns n taps of a Hamming-windowed low pass with cutoff
-// fc, a fraction of the sample rate, and unit gain at DC.
 func lowpassTaps(n int, fc float64) []float64 {
 	h := make([]float64, n)
 	var sum float64
@@ -82,8 +69,6 @@ func lowpassTaps(n int, fc float64) []float64 {
 	return h
 }
 
-// receiveAudio runs the discriminator samples a at hz through a
-// DiscReceiver.
 func receiveAudio(t testing.TB, a []int16, hz int, opt *options) []Burst {
 	t.Helper()
 	var out []Burst
@@ -105,8 +90,6 @@ func TestDiscReceiverLoopback(t *testing.T) {
 	for _, hz := range []int{24000, 12000, 9600} {
 		sc := scoreBench(truth, receiveAudio(t, discAudio(x, hz), hz, nil))
 		for _, k := range []string{"ambe", "csbk", "rate12", "rate34", "sync", "emb", "slottype"} {
-			// The receiver locks to the SYNC of the first slot, which it
-			// does not decode.
 			miss := 0
 			if k == "sync" || k == "slottype" {
 				miss = 1
@@ -172,10 +155,6 @@ func TestDiscReceiverInitAppend(t *testing.T) {
 	}
 }
 
-// TestRescaleSigns fills the ring of a searching DiscReceiver with strong
-// symbols, scales its input down by 64, as levels does when a strong signal
-// follows a weak one, and checks that the signs of the SYNC symbols that
-// follow match the BS voice SYNC.
 func TestRescaleSigns(t *testing.T) {
 	t.Parallel()
 	var r DiscReceiver
@@ -197,10 +176,6 @@ func TestRescaleSigns(t *testing.T) {
 	}
 }
 
-// TestRescaleTiming runs a searching DiscReceiver on matched filter samples
-// of the outer deviation, scales its input down by 16, as levels does when
-// a strong signal follows a weak one, and checks that the power that
-// normalizes the timing error follows the scaled samples at once.
 func TestRescaleTiming(t *testing.T) {
 	t.Parallel()
 	var r DiscReceiver
@@ -222,8 +197,6 @@ func TestRescaleTiming(t *testing.T) {
 	}
 }
 
-// TestRingPosWrap checks that the ring positions of the symbols run on
-// past 1<<32 symbols, about 10 days of a lock.
 func TestRingPosWrap(t *testing.T) {
 	t.Parallel()
 	for k := int64(1<<32 - 3*leanRing); k < 1<<32+3*leanRing; k++ {
@@ -236,9 +209,6 @@ func TestRingPosWrap(t *testing.T) {
 	}
 }
 
-// TestDiscReceiverRingWrap receives a stream whose symbol count passes
-// 1<<32 halfway through, and checks that each tier gives the bursts of a
-// receiver whose count starts at 0.
 func TestDiscReceiverRingWrap(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 6)
@@ -266,9 +236,6 @@ func TestDiscReceiverRingWrap(t *testing.T) {
 	}
 }
 
-// TestLevelUp checks that options.LevelUp scales up an input whose RMS is
-// between half of discInputRMSHz and discInputRMSHz/discLevelUp, which the
-// level control otherwise keeps.
 func TestLevelUp(t *testing.T) {
 	t.Parallel()
 	x := make([]int16, 8*frontBlock)

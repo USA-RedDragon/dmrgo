@@ -7,8 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-// dspTables holds the filter, window, waveform and phase tables of
-// tables_gen.go as deriveDSP derives them.
 type dspTables struct {
 	interp    [interpPhases + 1][sincTaps]float32
 	chanTaps  [chanTaps]float32
@@ -35,7 +33,6 @@ type dspTables struct {
 	cos, sin  [2][phaseStates]float32
 }
 
-// deriveDSP derives the tables of dspTables.
 func deriveDSP() *dspTables {
 	t := &dspTables{}
 	for i := range t.ones8 {
@@ -80,8 +77,6 @@ func deriveDSP() *dspTables {
 		p := -2 * math.Pi * float64(i) / fftSize
 		im := float32(math.Sin(p))
 		if im == 0 {
-			// A constant has no negative zero, and the sign of a zero
-			// twiddle part does not change the power spectrum.
 			im = 0
 		}
 		t.twiddles[i] = complex(float32(math.Cos(p)), im)
@@ -129,9 +124,6 @@ func deriveDSP() *dspTables {
 	return t
 }
 
-// syncTemplates sets the templates of source src, whose voice SYNC has the
-// symbols voice, in t.templates at the given row, for the channel ring at
-// every dec channel samples.
 func (t *dspTables) syncTemplates(row, dec, src int, voice *[syncSymbols]int8) {
 	sps, span := samplesPerSy/dec, syncSpan/dec
 	syms := make([]int, syncSymbols)
@@ -153,13 +145,10 @@ func (t *dspTables) syncTemplates(row, dec, src int, voice *[syncSymbols]int8) {
 	}
 }
 
-// rrcTapsAt returns rrcTaps for sps samples per symbol.
 func rrcTapsAt(sps float64) []float64 {
 	return rrcTapsSpan(sps, rrcSpan)
 }
 
-// rrcTapsSpan returns rrcTaps for sps samples per symbol, span symbols on
-// each side.
 func rrcTapsSpan(sps float64, span int) []float64 {
 	n := int(2*float64(span)*sps) + 1
 	h := make([]float64, n)
@@ -174,7 +163,6 @@ func rrcTapsSpan(sps float64, span int) []float64 {
 	return h
 }
 
-// rrcPulse returns the root raised cosine pulse at t symbols.
 func rrcPulse(t float64) float64 {
 	switch {
 	case t == 0:
@@ -186,9 +174,6 @@ func rrcPulse(t float64) float64 {
 		(math.Pi * t * (1 - (4*rrcAlpha*t)*(4*rrcAlpha*t)))
 }
 
-// refPhase returns the phase at each sample of the symbols syms when
-// symbols before and after them are 0: n*sps samples, sample j of symbol k
-// at offset j-sps/2 from its center, phase 0 before the first symbol.
 func refPhase(syms []int, sps int, h float64) []float64 {
 	taps := rrcTapsAt(float64(sps))
 	half := len(taps) / 2
@@ -221,8 +206,6 @@ func refPhase(syms []int, sps int, h float64) []float64 {
 	return out
 }
 
-// kaiserLowpass returns a Kaiser windowed sinc low-pass of n taps with
-// cutoff fc (a fraction of the sample rate) and unity DC gain.
 func kaiserLowpass(n int, fc, beta float64) []float32 {
 	h := make([]float32, n)
 	var sum float64

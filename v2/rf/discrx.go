@@ -5,26 +5,15 @@ import (
 	"unsafe"
 )
 
-// Layout of the discriminator front end.
 const (
-	// discInputRMSHz is the RMS, in Hz, to which a DiscReceiver scales its
-	// input, and discMeanGain the weight of each block in its mean.
 	discInputRMSHz = 2000
 	discMeanGain   = 0.1
-	// audio12Taps and audio96Taps are the lengths of the matched filters at
-	// 12 kHz (2.5 samples per symbol), discSpan symbols on each side, and
-	// 9.6 kHz (2 samples per symbol), audio96Span symbols on each side.
-	audio96Span = discSpan
-	audio12Taps = discSpan*discSPS + 1
-	audio96Taps = 4*audio96Span + 1
-	// discLevelUp is the least ratio of discInputRMSHz to the input RMS
-	// at which the level control scales the input up with
-	// options.LevelUp.
-	discLevelUp = 1.41
-	// audioMaxK and audioMaxOff limit audioFront.k and off, to gains of
-	// 64 Hz per input unit and offsets of 2 MHz.
-	audioMaxK   = 1<<15 - 1
-	audioMaxOff = 1<<30 - 1<<16
+	audio96Span    = discSpan
+	audio12Taps    = discSpan*discSPS + 1
+	audio96Taps    = 4*audio96Span + 1
+	discLevelUp    = 1.41
+	audioMaxK      = 1<<15 - 1
+	audioMaxOff    = 1<<30 - 1<<16
 )
 
 // DiscConfig sets up a DiscReceiver.
@@ -49,8 +38,7 @@ type DiscConfig struct {
 	// rebuilds from the samples, in place of the detection of Tier1, at
 	// about 15 times its CPU time.
 	Tier Tier
-	// opt, when not nil, replaces the settings of the tier.
-	opt *options
+	opt  *options
 }
 
 // DiscReceiver recovers DMR bursts from the output of an FM discriminator,
@@ -64,8 +52,6 @@ type DiscReceiver struct {
 	f audioFront
 }
 
-// The errors of Init. Each is a static value, so that Init does not
-// allocate.
 var (
 	errDiscHz       = &ConfigError{Field: "Hz"}
 	errDiscMaxWrite = &ConfigError{Field: "MaxWrite"}
@@ -152,7 +138,6 @@ func (r *DiscReceiver) Init(cfg DiscConfig) error {
 	return nil
 }
 
-// hz returns the input rate of r.
 func (r *DiscReceiver) hz() int {
 	switch {
 	case r.f.half:
@@ -163,9 +148,6 @@ func (r *DiscReceiver) hz() int {
 	return discRate / 2
 }
 
-// growBursts returns dst with room for n more bursts. It grows dst by
-// append alone, which the allocation gate follows as growth of dst; each
-// append at least doubles the capacity.
 func growBursts(dst []Burst, n int) []Burst {
 	for cap(dst)-len(dst) < n {
 		dst = append(dst[:cap(dst)], Burst{})[:len(dst)]
@@ -173,7 +155,6 @@ func growBursts(dst []Burst, n int) []Burst {
 	return dst
 }
 
-// maxBursts returns the most bursts that n input samples complete.
 func (r *DiscReceiver) maxBursts(n int) int {
 	return 4*n*symbolRate/(slotSymbols*r.inputHz()) + 16
 }
@@ -184,7 +165,6 @@ func (r *DiscReceiver) maxBursts(n int) int {
 func (r *DiscReceiver) AppendBursts(dst []Burst, x []int16) []Burst {
 	dst = growBursts(dst, r.maxBursts(len(x)))
 	keep, n := r.out, len(dst)
-	// The core fills the room after dst.
 	r.out = dst[n:n]
 	r.write(x)
 	m := len(r.out)
@@ -216,7 +196,6 @@ func (r *DiscReceiver) Flush() []Burst {
 func (r *DiscReceiver) AppendFlush(dst []Burst) []Burst {
 	dst = growBursts(dst, r.maxBursts(slotSymbols*discSPS))
 	keep, n := r.out, len(dst)
-	// The core fills the room after dst.
 	r.out = dst[n:n]
 	r.flush()
 	m := len(r.out)
@@ -224,9 +203,6 @@ func (r *DiscReceiver) AppendFlush(dst []Burst) []Burst {
 	return dst[:n+m]
 }
 
-// flush writes a slot of idle input, in whole parts of 64 samples, and
-// ends the stream. It writes them 16 at a time, which keeps the stack of
-// a microcontroller small.
 func (r *DiscReceiver) flush() {
 	var idle [16]int16
 	v := int16(max32(min32(r.f.dc/r.f.gain, 32767), -32768))
@@ -241,20 +217,11 @@ func (r *DiscReceiver) flush() {
 	}
 }
 
-// run runs the samples x through the front end, the symbol timing and
-// the core. It is the leanTiming.push of the matched filter samples, fused
-// into one loop that keeps the last six samples, the time of the next
-// strobe and the state of the lock in locals: the core sees them only
-// around levels and symbol, which can retune or lock. The samples are kept
-// as cubic takes them, s3 the last, and the linear interpolation runs
-// between s2 and s3.
 func (r *DiscReceiver) run(x []int16) {
 	if !r.front96 {
 		r.runAll(x)
 		return
 	}
-	// The slots decode here, so that the frame of run96 is not on the
-	// stack while they do.
 	for {
 		i, _ := r.run96(x, 0, nil)
 		x = x[i:]
@@ -266,22 +233,14 @@ func (r *DiscReceiver) run(x []int16) {
 	}
 }
 
-// runAll is run at every rate. It is not inlined, so that run keeps a
-// small frame.
-//
 //go:noinline
 func (r *DiscReceiver) runAll(x []int16) {
 	f, tm := &r.f, &r.tm
 	sa, sb, s0, s1, s2, s3, t := tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t
-	// dn counts the matched filter samples after r.n.
 	var dn int32
-	// kh and kq are the head of the ring of kept samples and the sample
-	// whose pair is not stored yet: the loop stores two samples at once.
 	kh, kq := r.acqHead, r.acqLow
 	buf, an := r.acqBuf()
 	cubic, half, slow := tm.cubic, f.half, f.slow
-	// search is set while the receiver searches, and keep while it keeps
-	// the matched filter samples.
 	search, keep := !r.locked, !r.locked || r.hunt
 	for _, v := range x {
 		if search {
@@ -309,15 +268,9 @@ func (r *DiscReceiver) runAll(x []int16) {
 			acc = f.mf12(u)
 		}
 		y := float32(acc) * (rrcStepHz / 32768.0)
-		// A discriminator gives no carrier power, so the core takes a
-		// burst as present from its anchors.
 		dn++
 		sa, sb, s0, s1, s2, s3 = sb, s0, s1, s2, s3, y
 		if keep {
-			// acc is in Q15 of rrcStepHz, twice discStepHz, so this is y
-			// in units of discStepHz, rounded.
-			// Samples beyond int8 wrap: they are noise without a carrier,
-			// which no SYNC follows.
 			q := int16(int8((acc + 1<<13) >> 14))
 			if kh&1 == 0 {
 				kq = q
@@ -334,7 +287,6 @@ func (r *DiscReceiver) runAll(x []int16) {
 			var xv float32
 			if cubic {
 				xv = cubicAt(tm.six, sa, sb, s0, s1, s2, s3, 1+at)
-				// The cubic strobes are one sample late.
 				at--
 			} else {
 				xv = s3 + at*(s3-s2)
@@ -349,8 +301,6 @@ func (r *DiscReceiver) runAll(x []int16) {
 				r.acqHead, r.acqLow = kh, kq
 				r.symbol(tm.last, at)
 				sa, sb, s0, s1, s2, s3, t, kq = tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
-				// A slot can start or end the search of a lock, which
-				// keeps the samples in another ring.
 				kh = r.acqHead
 				buf, an = r.acqBuf()
 				search, keep = !r.locked, !r.locked || r.hunt
@@ -363,32 +313,19 @@ func (r *DiscReceiver) runAll(x []int16) {
 }
 
 const (
-	// run96Strobe picks the interpolator of the strobes of run96 that
-	// are not linear midpoints: 0 by the options, 1 Catmull-Rom and 3 the
-	// cubic Lagrange polynomial through s0 to s3, 2 linear between s1 and
-	// s2.
 	run96Strobe = 0
 )
 
-// The bits of the state of run96, which state96 returns.
 const (
-	// st96Search is set before a lock, and st96Keep while the receiver
-	// keeps the samples: before a lock and in a hunt.
 	st96Search = 1 << iota
 	st96Keep
-	// st96Raw is st96Search with RawSearch.
 	st96Raw
-	// st96Lock is a lock with RawSearch 2, and st96Quiet one that does not
-	// hunt.
 	st96Lock
 	st96Quiet
-	// st96LinMid is LinearMid, and st96Tab StrobeTab.
 	st96LinMid
 	st96Tab
 )
 
-// state96 returns the state of the receiver for run96, which keeps it in
-// one local in place of a local for each flag.
 func (r *DiscReceiver) state96() uint8 {
 	var st uint8
 	if r.mid96&mid96Tab != 0 {
@@ -417,26 +354,11 @@ func (r *DiscReceiver) state96() uint8 {
 	return st
 }
 
-// run96 is run for the matched filter at 9.6 kHz with cubic strobes, from
-// sample i0 of x. It keeps the gain, the offset and the head of the
-// filter in locals, and loads them again after the calls that can change
-// them. It returns the end of the samples of x that it took: all of x, or
-// those up to the symbol that ends a slot, which it leaves to run. The
-// core of an iqLowRx has x in iqLowRx.buf, and run96 refills it from the
-// I/Q samples in when it ends, with fill: then the end is in the last
-// fill, and run96 also returns the samples of in that it filled. It is not
-// inlined; see run.
-//
 //go:noinline
 func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 	f, tm := &r.f, &r.tm
 	sa, sb, s0, s1, s2, s3, t := tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t
-	// i0 is the sample after r.n, and fed the samples of in that fill
-	// put into x.
 	fed := 0
-	// n is the end of the samples in x, which fill moves up to cap(x): x
-	// and in themselves stay one value each, so that the compiler sees that
-	// run96 keeps no pointer into them.
 	n := len(x)
 	kh, kq := r.acqHead, r.acqLow
 	buf, an := r.acqBuf()
@@ -447,15 +369,8 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 	if h >= audio96Taps {
 		h = 0
 	}
-	// Pass i runs the strobes of sample i-1, then takes sample i. The
-	// strobes of the first pass are those that the last sample of the
-	// call before left, when a slot ended there.
 	for i := i0; ; i++ {
 		if st&st96Raw != 0 && t <= 0 {
-			// The search takes the samples as they come, the symbols and
-			// the midpoints in turn, without the timing loop: a lock samples
-			// its SYNC again. It runs before the loop below, so that the
-			// compiler does not compute the cubic of the loop for it.
 			t = tm.step
 			if tm.mid {
 				tm.half, tm.mid = s2, false
@@ -479,13 +394,8 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 			}
 		}
 		if t <= 0 {
-			// The strobes, in a loop that the compiler does not enter for
-			// the samples without one.
 			for {
 				if st&st96Raw != 0 {
-					// The search takes the samples as they come, the
-					// symbols and the midpoints in turn, without the
-					// timing loop: a lock samples its SYNC again.
 					t = tm.step
 					if tm.mid {
 						tm.half, tm.mid = s2, false
@@ -535,8 +445,6 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 					xv = lagrange6(sa, sb, s0, s1, s2, s3, mu)
 				}
 				at--
-				// tm.strobe, written out: TinyGo does not inline it in two
-				// loops.
 				sym := true
 				switch {
 				case tm.mm:
@@ -569,8 +477,6 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 					}
 				}
 				if sym && st&st96Quiet != 0 {
-					// A lock that does not hunt: run96 stores its locals
-					// only at the end of the slot.
 					r.lockPush(tm.last, at)
 					if r.ns != r.slotEnd {
 						if t > 0 {
@@ -610,8 +516,6 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 						r.symbol(tm.last, at)
 					}
 					if r.slotDue {
-						// Every local is in r: run decodes the slot and
-						// calls run96 again.
 						return i, fed
 					}
 					sa, sb, s0, s1, s2, s3, t, kq = tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
@@ -639,7 +543,6 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 			n, i, i0 = m, -1, 0
 			continue
 		}
-		// i is below n, which is at most cap(x).
 		v := *(*int16)(unsafe.Add(unsafe.Pointer(unsafe.SliceData(x)), 2*i))
 		if st&st96Search != 0 {
 			f.sum += int32(v)
@@ -655,8 +558,6 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 			}
 		}
 		u := int8(max(min((int32(v)*k-off)>>16, 127), -128))
-		// h is below audio96Taps: the ring stores and the window need no
-		// index checks.
 		p := unsafe.Add(unsafe.Pointer(hist), h)
 		*(*int8)(p), *(*int8)(unsafe.Add(p, audio96Taps)) = u, u
 		if h++; h >= audio96Taps {
@@ -698,18 +599,10 @@ func (r *DiscReceiver) DeviationHz() float64 {
 	return float64(float32(r.devHz) / r.f.gain)
 }
 
-// levels ends a block of frontBlock samples that came while the receiver
-// searched. It scales the input to discInputRMSHz when it is off by more
-// than a factor of 2, and moves the DC offset that the front end removes
-// to the mean input when they differ by more than leanSearchHz. A locked
-// stream keeps both, and the SYNC fits of the core follow it. It is not
-// inlined, so that the code of every sample stays small.
-//
 //go:noinline
 func (r *DiscReceiver) levels() {
 	f := &r.f
 	m := float32(f.sum) / frontBlock
-	// sq is not negative; the halves convert without a 64-bit helper.
 	sq := float32(uint32(f.sq>>32))*(1<<32) + float32(uint32(f.sq))
 	v := sq/frontBlock - m*m
 	f.sum, f.sq, f.n = 0, 0, 0
@@ -726,8 +619,6 @@ func (r *DiscReceiver) levels() {
 	}
 }
 
-// scaleAudio multiplies the gain of the audio front end by g, with the
-// offsets in Hz and the samples that the front end and the core hold.
 func (r *leanCore) scaleAudio(g float32) {
 	f := r.audio
 	f.gain *= g
@@ -740,47 +631,30 @@ func (r *leanCore) scaleAudio(g float32) {
 	r.rescale(g)
 }
 
-// audioFront is the front end of a DiscReceiver: the gain that scales the
-// input to Hz, the removal of the DC offset dc, the half-band filter of
-// discHalfQ15 for 24 kHz input, and the matched filter.
 type audioFront struct {
-	// gain is Hz per input unit and dc the offset in Hz that the front end
-	// removes, and k and off them in units of rrcStepHz, in Q16, limited
-	// so that int32 holds u*k-off for every input u. sum, sq and n
-	// accumulate the input samples of the block of levels, and mean is the
-	// mean input in Hz.
-	gain float32
-	dc   float32
-	k    int32
-	off  int32
-	sum  int32
-	sq   int64
-	n    int
-	mean float32
-	// half selects the half-band filter, for 24 kHz input, and slow the
-	// matched filter at 9.6 kHz.
-	half bool
-	slow bool
-	// rrcHist holds the matched filter history twice, so that the last
-	// taps are rrcHist[rrcHead:], oldest first, and hbHist the ring of the
-	// half-band filter, with odd set between its outputs.
+	gain    float32
+	dc      float32
+	k       int32
+	off     int32
+	sum     int32
+	sq      int64
+	n       int
+	mean    float32
+	half    bool
+	slow    bool
 	rrcHist [2 * audio12Taps]int8
 	rrcHead int
 	hbHist  [halfTaps]int8
 	hbHead  int
 	odd     bool
-	// up is options.LevelUp.
-	up bool
+	up      bool
 }
 
-// refresh sets k and off from gain and dc.
 func (f *audioFront) refresh() {
 	f.k = int32(max(min(f.gain/rrcStepHz*65536+0.5, audioMaxK), 0))
 	f.off = int32(max(min(f.dc/rrcStepHz*65536, audioMaxOff), -audioMaxOff)) - 32768
 }
 
-// scale multiplies the samples that the filters hold by g. A sample that
-// the quantizer clipped stays clipped.
 func (f *audioFront) scale(g float32) {
 	for i, h := range &f.rrcHist {
 		f.rrcHist[i] = scaleSat8(h, g)
@@ -790,7 +664,6 @@ func (f *audioFront) scale(g float32) {
 	}
 }
 
-// scaleSat8 returns h*g as sat8 does, and h at a limit of int8 as it is.
 func scaleSat8(h int8, g float32) int8 {
 	if h == math.MaxInt8 || h == math.MinInt8 {
 		return h
@@ -798,15 +671,12 @@ func scaleSat8(h int8, g float32) int8 {
 	return sat8(float32(h) * g)
 }
 
-// retuneFront moves the offset that f removes to hz and adds -d to the
-// samples that its filters hold.
 func (f *audioFront) retuneFront(hz, d float32) {
 	f.dc = hz
 	f.refresh()
 	f.shiftHist(d)
 }
 
-// shiftHist adds -d to the samples that the filters of f hold.
 func (f *audioFront) shiftHist(d float32) {
 	for i, v := range &f.rrcHist {
 		f.rrcHist[i] = sat8(float32(v) - d/rrcStepHz)
@@ -816,14 +686,10 @@ func (f *audioFront) shiftHist(d float32) {
 	}
 }
 
-// quantize returns the input sample u in Hz less the DC offset, in units
-// of rrcStepHz.
 func (f *audioFront) quantize(u int16) int8 {
 	return int8(max(min((int32(u)*f.k-f.off)>>16, 127), -128))
 }
 
-// halfBand takes one quantized sample v at 24 kHz and returns the
-// half-band filter sample at 12 kHz when v completes one.
 func (f *audioFront) halfBand(v int8) (int8, bool) {
 	h := f.hbHead
 	f.hbHist[h] = v
@@ -842,13 +708,9 @@ func (f *audioFront) halfBand(v int8) (int8, bool) {
 	return int8(max(min((acc+1<<14)>>15, 127), -128)), true
 }
 
-// mf96 takes one sample v at 9.6 kHz and returns the matched filter
-// sample in Q15.
 func (f *audioFront) mf96(v int8) int32 {
 	h := f.rrcHead
 	if h >= audio96Taps {
-		// Never; it bounds h, so that the compiler drops the index
-		// checks.
 		h = 0
 	}
 	f.rrcHist[h], f.rrcHist[h+audio96Taps] = v, v
@@ -859,12 +721,9 @@ func (f *audioFront) mf96(v int8) int32 {
 	return fir96((*[audio96Taps]int8)(f.rrcHist[h : h+audio96Taps]))
 }
 
-// mf12 takes one sample v at 12 kHz and returns the matched filter sample
-// in Q15.
 func (f *audioFront) mf12(v int8) int32 {
 	h := f.rrcHead
 	if h >= audio12Taps {
-		// Never; as in mf96.
 		h = 0
 	}
 	f.rrcHist[h], f.rrcHist[h+audio12Taps] = v, v
@@ -875,9 +734,6 @@ func (f *audioFront) mf12(v int8) int32 {
 	return fir12((*[audio12Taps]int8)(f.rrcHist[h : h+audio12Taps]))
 }
 
-// ringAt returns the index of sample k, oldest first, of the half-band ring
-// whose oldest sample is at h. It is not a closure, which TinyGo would
-// allocate on every call when it does not inline it.
 func ringAt(h, k int) int {
 	if k += h; k >= halfTaps {
 		k -= halfTaps
@@ -885,9 +741,6 @@ func ringAt(h, k int) int {
 	return k
 }
 
-// fir12 returns the matched filter output in Q15 of the samples w at
-// 12 kHz, oldest first. The taps are written out, so that TinyGo folds
-// them into the code at every -opt.
 func fir12(w *[audio12Taps]int8) int32 {
 	return int32(audioRRCQ15[10])*int32(w[10]) +
 		int32(audioRRCQ15[0])*(int32(w[0])+int32(w[20])) +

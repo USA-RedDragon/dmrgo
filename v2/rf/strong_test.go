@@ -6,21 +6,12 @@ import (
 	"testing"
 )
 
-// strongCase is a stream of TestStrongSignalExact: its input mode, its
-// stream, and the seeds of the noise that once lost or broke a burst.
 type strongCase struct {
 	mode  string
 	ms    bool
 	seeds []uint64
 }
 
-// TestStrongSignalExact checks that Tier 0 recovers every burst of a stream
-// at a C/N of 30 dB bit exact, among them the first burst after the carrier
-// comes up, which the symbol timing can sample about half a symbol off and
-// the oscillator of I/Q could have moved away from on the noise before, and
-// the first burst of a transmission of an MS on the slots of the lock of
-// the one before, whose SYNC can end between two of its symbols, or after
-// the noise of a discriminator without a carrier matched a SYNC there.
 func TestStrongSignalExact(t *testing.T) {
 	t.Parallel()
 	const cn = 30
@@ -75,7 +66,6 @@ func TestStrongSignalExact(t *testing.T) {
 	wg.Wait()
 	for _, r := range res {
 		for _, p := range benchPayloads() {
-			// The scorer counts the SYNC of BS-sourced bursts only.
 			if s := r.sc[p]; s.Exact != s.Truth && (p != "sync" || !r.c.ms) {
 				t.Errorf("%s ms %v seed %d: %s %d of %d exact", r.c.mode, r.c.ms, r.seed, p, s.Exact, s.Truth)
 			}

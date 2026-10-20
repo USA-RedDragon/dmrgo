@@ -8,9 +8,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 )
 
-// fadedBaseband is the transmission fm, env with 0.3 s of noise on each
-// side, 1200 Hz off, through a Rayleigh fader of Doppler fd Hz with a Jakes
-// spectrum and unit mean power, at C/N cn.
 func fadedBaseband(fm, env []float64, fd, cn float64, seed uint64) []complex64 {
 	pad := int(0.3 * basebandRate)
 	x := make([]complex64, len(fm)+2*pad)
@@ -41,11 +38,6 @@ func fadedBaseband(fm, env []float64, fd, cn float64, seed uint64) []complex64 {
 	return x
 }
 
-// TestReceiverFading receives a voice call through Rayleigh fading at a
-// C/N where only the deepest fades take bursts, from a BS and from an MS,
-// and checks that the coherent tiers recover C0 and C1 of nearly every
-// AMBE+2 frame. The level of the receiver follows only the anchors, so a
-// voice burst in a fade must not count as off.
 func TestReceiverFading(t *testing.T) {
 	t.Parallel()
 	cfg := testConfig()

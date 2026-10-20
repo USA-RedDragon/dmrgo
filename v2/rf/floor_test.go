@@ -11,40 +11,22 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// floorTheta is the phase turn of a symbol of value 1, 0.27 pi.
 const floorTheta = 0.27 * math.Pi
 
-// floorPhases is the number of carrier phases of the genie trellis: a
-// symbol a turns the phase by 27a of them, exactly.
 const floorPhases = 200
 
-// floorSignal is one noisy BS outbound stream and what a genie knows of it:
-// the transmitted symbols, the timing and the carrier.
 type floorSignal struct {
-	// y holds the noisy samples with the carrier removed.
-	y []complex128
-	// zp holds the prefix sums of conj(y)*s, s the noiseless signal with
-	// the carrier removed: zp[i] sums samples 0 to i-1.
-	zp []complex128
-	// zv holds conj(y)*s per sample.
-	zv []complex128
-	// sym holds the transmitted symbols, slot i symbol k at 144i+k.
-	sym []int8
-	// scale is the log-likelihood of Re(conj(y)*s) per unit: 1/sigma^2 of
-	// each noise component.
+	y     []complex128
+	zp    []complex128
+	zv    []complex128
+	sym   []int8
 	scale float64
-	// base is the sample of the impulse of symbol 0.
-	base int
-	// hcum holds the phase of a symbol of value 1 at sample offset m-80
-	// from its impulse, in units of floorTheta.
-	hcum []float64
+	base  int
+	hcum  []float64
 }
 
-// floorOffsetHz is the carrier offset of the sweep stream.
 const floorOffsetHz = 1400
 
-// newFloorSignal builds the signal of noisyBaseband(slots, floorOffsetHz,
-// cn, seed), sample for sample, with the noiseless reference beside it.
 func newFloorSignal(slots []rftx.BSSlot, cn float64, seed uint64) *floorSignal {
 	fm, env := rftx.ModulateBS(slots)
 	pad := int(benchPad * basebandRate)
@@ -89,11 +71,8 @@ func newFloorSignal(slots []rftx.BSSlot, cn float64, seed uint64) *floorSignal {
 	return f
 }
 
-// center returns the sample of the impulse of stream symbol n.
 func (f *floorSignal) center(n int) int { return f.base + samplesPerSy*n }
 
-// h returns the phase, in units of floorTheta, of a symbol of value 1 at
-// sample offset off from its impulse.
 func (f *floorSignal) h(off int) float64 {
 	half := len(f.hcum) / 2
 	switch i := off + half; {
@@ -106,16 +85,10 @@ func (f *floorSignal) h(off int) float64 {
 	}
 }
 
-// floorChange is a change of stream symbol n by d.
 type floorChange struct {
 	n, d int
 }
 
-// delta returns the log-likelihood of the signal with the symbol changes
-// ch, in increasing symbol order, minus that of the transmitted signal,
-// exactly: the changes turn the phase of every later sample. With tail
-// false, the samples after the last change window do not count, as for a
-// receiver that does not know the carrier phase after the change.
 func (f *floorSignal) delta(ch []floorChange, tail bool) float64 {
 	if len(ch) == 0 {
 		return 0
@@ -158,28 +131,19 @@ func (f *floorSignal) delta(ch []floorChange, tail bool) float64 {
 	return sum * f.scale
 }
 
-// genieTrellis is a BCJR detector over a span of stream symbols that a
-// genie knows except for the free digits of some symbols: its state is the
-// window of 2d symbols and the carrier phase, one of floorPhases, so the
-// phase is exact and only the frequency pulse of the free symbols is cut
-// to the window. The known symbols outside the window enter with their
-// whole pulse.
 type genieTrellis struct {
-	// logZ is the log of the sum, or the max when max-log, of the path
-	// metrics of the last run, the tail included.
-	logZ  float64
-	m     *cpmModel
-	d, ns int
-	alpha []float32
-	beta  []float32
-	nb    []float32
-	cos   [floorPhases]float32
-	sin   [floorPhases]float32
-	corr  []complex64
-	ws    []int
-	ws2   []int
-	yc    []complex128
-	// f, n0, mask, maxlog and prior are the arguments of the current run.
+	logZ   float64
+	m      *cpmModel
+	d, ns  int
+	alpha  []float32
+	beta   []float32
+	nb     []float32
+	cos    [floorPhases]float32
+	sin    [floorPhases]float32
+	corr   []complex64
+	ws     []int
+	ws2    []int
+	yc     []complex128
 	f      *floorSignal
 	n0     int
 	mask   func(int) uint8
@@ -187,8 +151,6 @@ type genieTrellis struct {
 	prior  []float32
 }
 
-// newGenieTrellis returns a genie trellis with a window of d symbols on
-// each side for spans of up to maxSteps symbols.
 func newGenieTrellis(d, maxSteps int) *genieTrellis {
 	m := newCPMModel(d, samplesPerSy)
 	g := &genieTrellis{m: m, d: d, ns: m.states}
@@ -204,16 +166,10 @@ func newGenieTrellis(d, maxSteps int) *genieTrellis {
 	return g
 }
 
-// floorBeam is how far under the best state, in nats, a state still
-// extends paths.
 const floorBeam = 50
 
-// logAddSteps is the number of table steps per nat of floorLogAdd.
 const logAddSteps = 32
 
-// logAddTable holds log(1+e^-x) at the upper end of each step of x, so
-// that floorLogAdd never exceeds the exact sum: the floor's output density then
-// stays a sub-probability.
 var logAddTable = func() [24 * logAddSteps]float32 {
 	var t [24 * logAddSteps]float32
 	for i := range t {
@@ -222,7 +178,6 @@ var logAddTable = func() [24 * logAddSteps]float32 {
 	return t
 }()
 
-// floorLogAdd returns log(e^a + e^b), rounded down by at most 1/64 nat.
 func floorLogAdd(a, b float32) float32 {
 	if a < b {
 		a, b = b, a
@@ -234,11 +189,8 @@ func floorLogAdd(a, b float32) float32 {
 	return a + logAddTable[int(x)]
 }
 
-// digitOf returns the trellis digit of symbol value v.
 func digitOf(v int8) int { return (int(v) + 3) / 2 }
 
-// phaseBefore returns the carrier phase state that the symbols before
-// stream symbol n turn.
 func (f *floorSignal) phaseBefore(n int) int {
 	var p int
 	for _, v := range f.sym[:n] {
@@ -247,8 +199,6 @@ func (f *floorSignal) phaseBefore(n int) int {
 	return ((p % floorPhases) + floorPhases) % floorPhases
 }
 
-// windowOf returns the trellis state of the digits of stream symbols from
-// to to-1.
 func (f *floorSignal) windowOf(from, to int) int {
 	var w int
 	for n := from; n < to; n++ {
@@ -257,7 +207,6 @@ func (f *floorSignal) windowOf(from, to int) int {
 	return w
 }
 
-// wrapPhase returns phase state q in 0 to floorPhases-1.
 func wrapPhase(q int) int {
 	switch {
 	case q < 0:
@@ -268,7 +217,6 @@ func wrapPhase(q int) int {
 	return q
 }
 
-// add relaxes dst with v: the max when max-log, the log sum otherwise.
 func (g *genieTrellis) add(dst *float32, v float32) {
 	if g.maxlog {
 		*dst = max(*dst, v)
@@ -277,8 +225,6 @@ func (g *genieTrellis) add(dst *float32, v float32) {
 	*dst = floorLogAdd(*dst, v)
 }
 
-// windows returns the windows of 2d+1 digits around symbol interval m
-// that the allowed digits permit.
 func (g *genieTrellis) windows(m int) []int {
 	g.ws = append(g.ws[:0], 0)
 	for n := m - g.d; n <= m+g.d; n++ {
@@ -296,9 +242,6 @@ func (g *genieTrellis) windows(m int) []int {
 	return g.ws
 }
 
-// correct sets g.yc to the samples of intervals n0 to n1-1 with the phase
-// of the known symbols outside each window removed, those before it
-// counting as complete in the state's phase.
 func (g *genieTrellis) correct(n1 int) {
 	f, d, sps := g.f, g.d, samplesPerSy
 	span := rrcSpan + d + 1
@@ -323,7 +266,6 @@ func (g *genieTrellis) correct(n1 int) {
 	}
 }
 
-// correlate sets g.corr of the windows ws of interval m.
 func (g *genieTrellis) correlate(m int, ws []int) {
 	sps := samplesPerSy
 	yc := g.yc[(m-g.n0)*sps : (m-g.n0+1)*sps]
@@ -337,8 +279,6 @@ func (g *genieTrellis) correlate(m int, ws []int) {
 	}
 }
 
-// forward extends the paths of step k and returns the best metric it
-// wrote, given top, the best metric of step k.
 func (g *genieTrellis) forward(k int, top float32) float32 {
 	S := g.ns * floorPhases
 	ws := g.windows(g.n0 + k)
@@ -372,8 +312,6 @@ func (g *genieTrellis) forward(k int, top float32) float32 {
 	return ntop
 }
 
-// backward computes the backward metrics of step k from those of step
-// k+1 in g.beta, and the log-APPs of the newest digit of the step.
 func (g *genieTrellis) backward(k int, app []float32) {
 	S := g.ns * floorPhases
 	ws := g.windows(g.n0 + k)
@@ -420,9 +358,6 @@ func (g *genieTrellis) backward(k int, app []float32) {
 	g.beta, g.nb = nb, g.beta
 }
 
-// tailInit sets the backward metrics after the last step: only the true
-// window of the symbols after the span, and, with tail, the samples after
-// the span with the phase that each state ends at. It then sets g.logZ.
 func (g *genieTrellis) tailInit(n1 int, tail bool) {
 	f, d := g.f, g.d
 	S := g.ns * floorPhases
@@ -458,14 +393,6 @@ func (g *genieTrellis) tailInit(n1 int, tail bool) {
 	g.logZ = z
 }
 
-// run detects stream symbols n0+d to n1+d-1 over symbol intervals n0 to
-// n1-1. mask(n) gives the allowed digits of symbol n as a 4-bit set; the
-// symbols n0-d to n0+d-1 and n1-d to n1+d-1 must have only their true
-// digit allowed. prior, when not nil, holds log priors of the digits of
-// the detected symbols, as app. With tail, the samples after the span
-// count with the carrier phase that each path ends at. The log-APPs of
-// the digits of symbol n0+d+k go to app[4k:4k+4], max-log when maxlog,
-// exact otherwise.
 func (g *genieTrellis) run(f *floorSignal, n0, n1 int, mask func(int) uint8, maxlog, tail bool, prior, app []float32) {
 	g.f, g.n0, g.mask, g.maxlog, g.prior = f, n0, mask, maxlog, prior
 	S := g.ns * floorPhases
@@ -485,8 +412,6 @@ func (g *genieTrellis) run(f *floorSignal, n0, n1 int, mask func(int) uint8, max
 	}
 }
 
-// burstChanges appends the symbol changes of burst c against the burst of
-// slot i in f to ch.
 func (f *floorSignal) burstChanges(ch []floorChange, i int, c *layer2.RawBurst) []floorChange {
 	syms := rftx.SymbolsFromBurst(*c)
 	for k, v := range syms {

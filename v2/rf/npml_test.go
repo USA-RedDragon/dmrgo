@@ -2,11 +2,6 @@ package rf
 
 import "testing"
 
-// TestTier1Voice receives a BS stream at 8.2 dB Eb/N0, below the 90% point
-// of whole voice frames of Tier0, as discriminator audio at 9.6 kHz and as
-// I/Q, and checks that Tier1, which detects each burst with the
-// correlation of the noise of its symbols, recovers more whole voice
-// frames than Tier0: their C2 and C3 bits have no FEC.
 func TestTier1Voice(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 10)

@@ -9,33 +9,19 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 )
 
-// Layout of the coherent SYNC search.
 const (
-	// syncSymbols is the number of SYNC symbols.
-	syncSymbols = framer.SyncBits / 2
-	// syncEdge is the number of SYNC symbols at each end that the search
-	// leaves out, as the unknown symbols next to them change their waveform.
-	syncEdge = 2
-	// syncSpan is the number of channel samples that the coherent search
-	// correlates.
-	syncSpan = (syncSymbols - 2*syncEdge) * samplesPerSy
-	// numSources is the number of SYNC sources the receiver knows.
-	numSources = 4
-	// searchFreqs is the number of carrier offsets, searchStepHz apart
-	// around the estimate of the spectrum, at which the search correlates.
+	syncSymbols  = framer.SyncBits / 2
+	syncEdge     = 2
+	syncSpan     = (syncSymbols - 2*syncEdge) * samplesPerSy
+	numSources   = 4
 	searchFreqs  = 3
 	searchStepHz = 200.0
-	// preBlocks is the number of blocks that the screen of the coherent
-	// search combines without phase, and preMetric the screen metric under
-	// which the search skips a position.
-	preBlocks = 4
-	preMetric = 0.25
+	preBlocks    = 4
+	preMetric    = 0.25
 )
 
-// searchHzAt returns search offset i.
 func searchHzAt(i int) float64 { return float64(i-searchFreqs/2) * searchStepHz }
 
-// sources lists the SYNC sources in the order of the templates.
 func sourceAt(i int) layer2.SyncSource {
 	switch i {
 	case 0:
@@ -48,7 +34,6 @@ func sourceAt(i int) layer2.SyncSource {
 	return layer2.SyncSourceDirectTS2
 }
 
-// syncSyms returns the 24 symbols of the SYNC pattern p.
 func syncSyms(p enums.SyncPattern, out *[syncSymbols]int8) {
 	for k := range syncSymbols {
 		d := uint8(uint64(p) >> (2 * (syncSymbols - 1 - k)) & 3)
@@ -56,7 +41,7 @@ func syncSyms(p enums.SyncPattern, out *[syncSymbols]int8) {
 	}
 }
 
-// symbolOf returns the symbol of a dibit (ETSI TS 102 361-1 Table 10.3).
+// ETSI TS 102 361-1 Table 10.3
 func symbolOf(b0, b1 unpacked.Bit) int8 {
 	switch b0<<1 | b1 {
 	case 0b01:
@@ -69,39 +54,17 @@ func symbolOf(b0, b1 unpacked.Bit) int8 {
 	return -3
 }
 
-// syncSearch finds SYNC patterns in the channel ring by coherent correlation
-// with the waveform of the voice SYNC of each source over syncBlocks blocks,
-// combined without phase. The data SYNC of a source has the negated symbols
-// of its voice SYNC, so its waveform is the conjugate and the same products
-// give both correlations. syncDev holds the voice SYNC symbols of each
-// source less their mean, and syncDevSq the sum of their squares, for the
-// discriminator correlation. syncTemplates holds, at row dec-1, the
-// conjugate waveform of the voice SYNC of source src at the nominal
-// modulation index, sampled every dec channel samples and turned by search
-// offset fi, at index fi*numSources+src. syncPatterns holds every SYNC
-// pattern.
 type syncSearch struct {
-	// dec is the number of channel samples per sample of the channel ring,
-	// sps the ring samples per symbol and span the ring samples that the
-	// search correlates.
 	dec, sps, span int
-	// dx holds the discriminator symbols that discAt correlates.
-	dx [syncSymbols]float32
-	// xs holds the window of the last search twice, from xs[xh], and
-	// xFirst its first ring sample, when xOK.
-	xs     []complex64
-	xh     int
-	xFirst int64
-	xOK    bool
-	full   []float64
-	// conj holds e^-j*phase of the waveform of each pattern of
-	// syncPatterns over the correlated span.
-	conj [2*numSources + 1][]complex64
+	dx             [syncSymbols]float32
+	xs             []complex64
+	xh             int
+	xFirst         int64
+	xOK            bool
+	full           []float64
+	conj           [2*numSources + 1][]complex64
 }
 
-// newSyncSearch returns a search for the discriminator, or when coherent
-// for the channel ring at every dec channel samples, 1 or 2, with the
-// waveforms of every SYNC pattern at the nominal modulation index.
 func newSyncSearch(coherent bool, dec int) *syncSearch {
 	s := &syncSearch{}
 	if !coherent {
@@ -118,8 +81,6 @@ func newSyncSearch(coherent bool, dec int) *syncSearch {
 	return s
 }
 
-// setH recomputes the waveforms of the SYNC patterns for modulation index h
-// with the phase pulse p.
 func (s *syncSearch) setH(h float64, p *phasePulse) {
 	var syms [syncSymbols]int8
 	var in [syncSymbols]int
@@ -135,8 +96,6 @@ func (s *syncSearch) setH(h float64, p *phasePulse) {
 	}
 }
 
-// conjOf returns e^-j*phase of SYNC pattern p over the correlated span, or
-// nil for an unknown pattern.
 func (s *syncSearch) conjOf(p enums.SyncPattern) []complex64 {
 	for i, q := range &syncPatterns {
 		if q == p {
@@ -146,21 +105,13 @@ func (s *syncSearch) conjOf(p enums.SyncPattern) []complex64 {
 	return nil
 }
 
-// syncHit is one coherent SYNC correlation.
 type syncHit struct {
-	// Metric is the squared normalized correlation, 0 to 1.
 	Metric float32
-	// Data is true for the data SYNC, false for the voice SYNC.
-	Data bool
-	// Source indexes sourceAt.
+	Data   bool
 	Source int
-	// Hz is the carrier offset that the phases of the blocks show.
-	Hz float64
+	Hz     float64
 }
 
-// at correlates the samples from channel sample start, a multiple of dec
-// at the center of the first correlated SYNC symbol, with every template of
-// nsrc sources at each search frequency.
 func (s *syncSearch) at(r *ring, start int64, nsrc int) syncHit {
 	var best syncHit
 	x := s.window(r, start/int64(s.dec)-int64(s.sps/2))
@@ -197,13 +148,6 @@ func (s *syncSearch) at(r *ring, start int64, nsrc int) syncHit {
 	return best
 }
 
-// screen returns the best metric over nsrc sources of the window x of
-// energy etot at the middle search offset, its preBlocks blocks combined
-// without phase. The combined metric is at least the coherent one at the
-// same offset, and an offset turns a block less than the whole span. That
-// does not bound it for every window, but on DMR signals from -3 to 40 dB
-// C/N at offsets to 450 Hz no position whose coherent metric reached
-// lockMetric at any search offset screened under 0.31.
 func (s *syncSearch) screen(x []complex64, etot float32, nsrc int) float32 {
 	n := len(x) / preBlocks
 	var best float32
@@ -227,9 +171,6 @@ func (s *syncSearch) screen(x []complex64, etot float32, nsrc int) float32 {
 	return best / (etot * float32(n))
 }
 
-// window returns the span ring samples from first. The search steps one
-// ring sample at a time, so the window of the last search less its first
-// sample, and the next ring sample, give the window of the next.
 func (s *syncSearch) window(r *ring, first int64) []complex64 {
 	n := s.span
 	if s.xOK && first == s.xFirst+1 {
@@ -248,9 +189,6 @@ func (s *syncSearch) window(r *ring, first int64) []complex64 {
 	return s.xs[s.xh : s.xh+n]
 }
 
-// discAt returns the square of the correlation coefficient of the
-// discriminator symbols at base+u, base+u+step, ... with the voice SYNC of
-// each source, the best source and whether its sign shows the data SYNC.
 func (s *syncSearch) discAt(r *qring, base int64, u, step float32, nsrc int) (rho2 float32, src int, data bool) {
 	x := s.dx[:]
 	if stride := int(step); u == 0 && float32(stride) == step {

@@ -2,10 +2,6 @@ package rf
 
 import "testing"
 
-// TestCohExtVoice receives a BS stream at 5.2 dB Eb/N0 through iqRx with
-// softExt, with and without the coherent stage, and checks that coherent
-// detection again recovers far more whole voice frames: their C2 and C3
-// bits have no FEC, so only the detection fixes them.
 func TestCohExtVoice(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 10)

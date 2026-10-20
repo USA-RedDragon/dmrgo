@@ -2,39 +2,17 @@ package rf
 
 import "math"
 
-// Limits of the front end.
 const (
-	// cicOrder is the order of the integer decimator.
-	cicOrder = 3
-	// resamplePhases is the number of polyphase branches of the resampler.
+	cicOrder       = 3
 	resamplePhases = 256
-	// resampleTaps is the length of each polyphase branch.
-	resampleTaps = 72
-	// wideHz is the edge of the passband of the front end.
-	wideHz = 17000.0
-	// dcSeconds is the time constant of the DC offset removal, long against
-	// the mean of the complex envelope of a burst.
-	dcSeconds = 1
-	// dcStartSeconds is the shortest time that the DC offset estimate
-	// averages over at the start of a stream, so that it does not take a
-	// carrier near 0 Hz for the offset.
+	resampleTaps   = 72
+	wideHz         = 17000.0
+	dcSeconds      = 1
 	dcStartSeconds = 0.01
-	// dcFastSeconds is the time constant of the short estimate of the DC
-	// offset that tells the long one when the mean of the input moves.
-	dcFastSeconds = 0.05
-	// dcMove is the ratio of the squared distance of the two estimates to
-	// the power of the input less the offset at which the long estimate
-	// starts again from the short one. The mean of a burst puts the short
-	// estimate up to about 0.22 of the amplitude off.
-	dcMove = 0.1
+	dcFastSeconds  = 0.05
+	dcMove         = 0.1
 )
 
-// dcBlock removes the DC offset of the I/Q of a receiver: the mean of the
-// input over dcSeconds. A carrier at 0 Hz is DC too, and the mean of a
-// carrier without modulation holds its value for a long time after the
-// modulation starts, so the mean starts again from the short estimate
-// over dcFastSeconds when the two move apart by dcMove of the power of the
-// input.
 type dcBlock struct {
 	dc, fast    complex64
 	pow         float32
@@ -43,7 +21,6 @@ type dcBlock struct {
 	start, cap  float32
 }
 
-// init sets d for input at rate.
 func (d *dcBlock) init(rate float64) {
 	d.slow = float32(1 / (dcSeconds * rate))
 	d.quick = float32(1 / (dcFastSeconds * rate))
@@ -51,7 +28,6 @@ func (d *dcBlock) init(rate float64) {
 	d.cap = float32(dcSeconds * rate)
 }
 
-// remove returns v less the DC offset estimate, after it adds v to it.
 func (d *dcBlock) remove(v complex64) complex64 {
 	d.n = min(d.n+1, d.cap)
 	d.m = min(d.m+1, d.cap)
@@ -67,17 +43,12 @@ func (d *dcBlock) remove(v complex64) complex64 {
 	return v - d.dc
 }
 
-// byteCarry holds the I byte of a pair that the bytes of a Write end
-// within, for the Write after it.
 type byteCarry struct {
 	pair [2]byte
 	odd  byte
 	held bool
 }
 
-// split returns the pair that completes the byte that c holds, empty
-// without one, and the whole pairs of iq after it, and holds the last byte
-// of iq when they leave it over.
 func (c *byteCarry) split(iq []byte) (pair, rest []byte) {
 	if c.held && len(iq) > 0 {
 		c.pair, c.held = [2]byte{c.odd, iq[0]}, false
@@ -90,13 +61,6 @@ func (c *byteCarry) split(iq []byte) (pair, rest []byte) {
 	return pair, iq
 }
 
-// frontEnd turns interleaved 8-bit I/Q at the input rate into complex
-// baseband at the output rate, basebandRate or discRate, flat to wideHz
-// times the share of basebandRate that the output rate is: a removal of
-// the receiver's DC offset, a CIC decimator by an integer factor to at
-// least four times the output rate, and a polyphase resampler to the
-// output rate, which input at the output rate skips. It keeps its state between calls and
-// allocates only in newFrontEnd.
 type frontEnd struct {
 	signed bool
 	dec    int
@@ -113,8 +77,6 @@ type frontEnd struct {
 	dc     dcBlock
 }
 
-// newFrontEnd returns a front end for input at rate, signed (HackRF) or
-// unsigned (rtl_sdr) 8-bit I/Q, with output at out.
 func newFrontEnd(rate float64, signed bool, out float64) *frontEnd {
 	dec := max(int(rate/(4*out)), 1)
 	mid := rate / float64(dec)
@@ -143,7 +105,6 @@ func newFrontEnd(rate float64, signed bool, out float64) *frontEnd {
 	return f
 }
 
-// bessel0 returns the modified Bessel function of the first kind of order 0.
 func bessel0(x float64) float64 {
 	s, t := 1.0, 1.0
 	for k := 1; k < 50; k++ {
@@ -156,9 +117,6 @@ func bessel0(x float64) float64 {
 	return s
 }
 
-// process converts the I/Q pairs of in and appends the baseband samples to
-// out, which must have room for len(in)/2/(rate/output rate)+2 samples, and
-// returns the number written.
 func (f *frontEnd) process(in []byte, out []complex64) int {
 	w := 0
 	for i := 0; i+1 < len(in); i += 2 {
@@ -209,7 +167,6 @@ func (f *frontEnd) process(in []byte, out []complex64) int {
 	return w
 }
 
-// signed8 returns the two's complement value of octet b.
 func signed8(b byte) int64 {
 	v := int64(b)
 	if v > 127 {

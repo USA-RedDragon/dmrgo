@@ -6,8 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// TestSymbolBitErrors checks the dibit distance of every pair of symbols
-// against the dibit map of ETSI TS 102 361-1 Table 10.3.
+// ETSI TS 102 361-1 Table 10.3
 func TestSymbolBitErrors(t *testing.T) {
 	t.Parallel()
 	for _, a := range []int8{-3, -1, 1, 3} {

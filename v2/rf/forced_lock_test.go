@@ -8,11 +8,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// TestForcedLockHeader checks that Tier2 decodes the voice LC header of a
-// call after noise. The coherent scan forces a lock at the carrier start,
-// in the header before its SYNC, and the lock ends unanchored at the next
-// slot. The core kept no samples while it was locked, so that the search
-// could not sample the header again and found the call one burst late.
 func TestForcedLockHeader(t *testing.T) {
 	t.Parallel()
 	cfg := testConfig()

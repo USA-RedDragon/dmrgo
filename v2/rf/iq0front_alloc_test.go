@@ -2,8 +2,6 @@ package rf
 
 import "testing"
 
-// TestAllocsIQ0 checks that the lean front allocates nothing per
-// WriteBaseband.
 func TestAllocsIQ0(t *testing.T) {
 	slots, _ := benchStream(t, 6)
 	x := noisyBaseband(slots, 1400, 10, 5)

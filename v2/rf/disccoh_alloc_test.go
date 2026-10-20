@@ -2,9 +2,6 @@ package rf
 
 import "testing"
 
-// TestAllocsDiscTier2 checks that AppendBursts of a Tier2 DiscReceiver
-// allocates nothing once its buffer has room, over a stream that it locks
-// to and detects coherently.
 func TestAllocsDiscTier2(t *testing.T) {
 	slots, _ := benchStream(t, 3)
 	a := discAudio(noisyBaseband(slots, 1400, 10, 1), 9600)

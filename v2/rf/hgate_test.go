@@ -5,9 +5,6 @@ import (
 	"testing"
 )
 
-// TestHGateInterval checks that the estimate of options.HGate finds the
-// peak of the anchor scores and that its interval is narrow only when the
-// noise is low.
 func TestHGateInterval(t *testing.T) {
 	t.Parallel()
 	g := newHGate(64, newSyncSearch(true, 1))

@@ -9,8 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 )
 
-// TestFloorDelta checks the exact likelihood change of a few symbol
-// changes against a full modulation of the changed stream.
 func TestFloorDelta(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 1)
@@ -44,8 +42,6 @@ func TestFloorDelta(t *testing.T) {
 	}
 }
 
-// carrierPhase returns the carrier phase that noisyBaseband adds at sample
-// i of n.
 func carrierPhase(i, n int, offsetHz float64) float64 {
 	pad := int(benchPad * basebandRate)
 	k := i - pad
@@ -56,8 +52,6 @@ func carrierPhase(i, n int, offsetHz float64) float64 {
 	return 2 * math.Pi * offsetHz * float64(k+1) / basebandRate
 }
 
-// directDelta returns the log-likelihood of x under the stream mod minus
-// that under slots, from a full modulation of each.
 func directDelta(f *floorSignal, x []complex64, slots, mod []rftx.BSSlot) float64 {
 	sig := func(s []rftx.BSSlot) []complex128 {
 		fm, env := rftx.ModulateBS(s)
@@ -79,8 +73,6 @@ func directDelta(f *floorSignal, x []complex64, slots, mod []rftx.BSSlot) float6
 	return d * f.scale
 }
 
-// TestFloorNoiseless checks that at a C/N of 14 dB no candidate beats a
-// transmitted field.
 func TestFloorNoiseless(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 2)

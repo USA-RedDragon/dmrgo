@@ -6,37 +6,23 @@ import (
 	"slices"
 )
 
-// ambeSearch is the state of the C0 and C1 search of floorEval.
 type ambeSearch struct {
-	// pn holds the C1 scrambling mask of each C0 info word.
-	pn [1 << softAMBEC0]uint32
-	// sym holds the stream symbols with a candidate written in.
-	sym []int8
-	m   floorModel
-	// syms holds the burst symbols that carry C0 or C1 bits, and src the
-	// code (1 for C0, 2 for C1, 0 for none) and code bit of each of their
-	// two bits.
-	syms []int
-	src  [][2][2]int
-	// best holds the highest model metric seen of each C0 info word.
-	best [1 << softAMBEC0]float64
-	// found holds the candidates with a higher model metric than the
-	// transmitted value, whose metric is base.
-	found []ambeCand
-	base  float64
-	// t0 and t1 are the transmitted C0 and C1 info words.
+	pn     [1 << softAMBEC0]uint32
+	sym    []int8
+	m      floorModel
+	syms   []int
+	src    [][2][2]int
+	best   [1 << softAMBEC0]float64
+	found  []ambeCand
+	base   float64
 	t0, t1 uint32
 }
 
-// ambeCand is a C0 and C1 info word pair and its model metric.
 type ambeCand struct {
 	i0, i1 uint32
 	m      float64
 }
 
-// eval returns the model metric of frame f of voice burst i with C0 info
-// word i0 and C1 info word i1 and records it when it beats the
-// transmitted value.
 func (a *ambeSearch) eval(e *floorEval, i int, sl *softAMBEView, i0, i1 uint32) float64 {
 	cw := [3]uint32{0, smallCodeword(sl.c0, i0), smallCodeword(sl.c1, i1) ^ a.pn[i0]}
 	tb := &e.truth[i].burst
@@ -61,8 +47,6 @@ func (a *ambeSearch) eval(e *floorEval, i int, sl *softAMBEView, i0, i1 uint32) 
 	return m
 }
 
-// ascend changes i0, then i1, each to its value of the highest model
-// metric with the other fixed, while the metric improves.
 func (a *ambeSearch) ascend(e *floorEval, i int, sl *softAMBEView, i0, i1 uint32) {
 	top := a.eval(e, i, sl, i0, i1)
 	for range 4 {
@@ -83,8 +67,6 @@ func (a *ambeSearch) ascend(e *floorEval, i int, sl *softAMBEView, i0, i1 uint32
 	}
 }
 
-// setup sets the symbols, the model and the transmitted info words of the
-// search of frame f of voice burst i.
 func (a *ambeSearch) setup(e *floorEval, i int, sl *softAMBEView) {
 	a.sym = append(a.sym[:0], e.f.sym...)
 	e.setModel(i, &a.m)
@@ -130,14 +112,6 @@ func (a *ambeSearch) setup(e *floorEval, i int, sl *softAMBEView) {
 	a.base = a.eval(e, i, sl, a.t0, a.t1)
 }
 
-// c0c1Search reports whether the maximum likelihood search over C0 and C1
-// of frame f of voice burst i, the genie giving C2 and C3, finds a value
-// more likely than the transmitted one by the exact likelihood. It needs
-// the genie detection of C0 and C1 in e.llr and e.app. It ranks by the
-// model metric: each C0 value with the 8 C1 values of the lowest bit cost
-// given that C0, all C1 values for the 16 C0 values that rank best, then
-// the best C0 and C1 in turn while the metric improves, from the best
-// value and from the transmitted one.
 func (e *floorEval) c0c1Search(i, f int) bool {
 	v := softAMBESlot(f)
 	sl := &v
@@ -214,21 +188,14 @@ func (e *floorEval) c0c1Search(i, f int) bool {
 	return false
 }
 
-// trellisSearch is the state of the rate 3/4 search of floorEval.
 type trellisSearch struct {
-	sym []int8
-	m   floorModel
-	// t holds the inputs of the current path, the state after step k
-	// being t[k].
-	t    [softTrellisSteps]int
-	base float64
-	// found holds the paths with a higher model metric than the
-	// transmitted one, whose metric is base.
+	sym   []int8
+	m     floorModel
+	t     [softTrellisSteps]int
+	base  float64
 	found [][softTrellisSteps]int
 }
 
-// setStep writes the codeword bits of step k of path a.t into the stream
-// symbols of slot i.
 func (a *trellisSearch) setStep(tr *softTrellis, i, k int) {
 	state := 0
 	if k > 0 {
@@ -247,7 +214,6 @@ func (a *trellisSearch) setStep(tr *softTrellis, i, k int) {
 	}
 }
 
-// flipSymbol returns symbol value v with dibit bit b (0 or 1) flipped.
 func flipSymbol(v int8, b int) int8 {
 	if b == 0 {
 		return -v
@@ -258,8 +224,6 @@ func flipSymbol(v int8, b int) int8 {
 	return -4 - v
 }
 
-// change sets the inputs of steps k to k+len(in)-1 of the path to in and
-// old to the inputs they replace, and writes the changed steps.
 func (a *trellisSearch) change(tr *softTrellis, i, k int, in, old []int) {
 	for x, v := range in {
 		old[x] = a.t[k+x]
@@ -270,9 +234,6 @@ func (a *trellisSearch) change(tr *softTrellis, i, k int, in, old []int) {
 	}
 }
 
-// climb changes one or two inputs of the path at a time, keeping each
-// change that raises the model metric, for up to sweeps passes over the
-// path, and records the paths that beat the transmitted one.
 func (a *trellisSearch) climb(tr *softTrellis, i int, sweeps int) {
 	cur := a.m.metric(a.sym)
 	var in, old [2]int
@@ -304,10 +265,6 @@ func (a *trellisSearch) climb(tr *softTrellis, i int, sweeps int) {
 	}
 }
 
-// rate34Search reports whether the maximum likelihood search over the
-// rate 3/4 paths of data burst i finds a path more likely than the
-// transmitted one by the exact likelihood. From the transmitted path it
-// changes one or two inputs at a time while the model metric improves.
 func (e *floorEval) rate34Search(i int) bool {
 	tr := (&softTrellisTables)
 	a := e.ts

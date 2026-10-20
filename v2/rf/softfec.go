@@ -17,76 +17,43 @@ import (
 )
 
 const (
-	// softBurstBits is the number of bits in a burst.
-	softBurstBits = 264
-	// softSmallMaxN is the largest codeword length of a softSmallCode.
-	softSmallMaxN = 24
-	// softSmallMaxK is the largest number of info bits of a softSmallCode.
-	softSmallMaxK = 12
-	// softOSDMaxN is the largest codeword length of a softOSDCode.
-	softOSDMaxN = 196
-	// softOSDMaxK is the largest number of info bits of a softOSDCode.
-	softOSDMaxK = 99
-	// softOSDWords is the number of 64-bit words of a softOSDCode codeword.
-	softOSDWords = 4
-	// softOSDNibbles is the number of cost tables of a softOSDCode codeword,
-	// one per 4 bits.
-	softOSDNibbles = 49
-	// softTabLen is the length of the cost tables of one decode: three
-	// tables of 8 bits for a softSmallCode or the tables of 4 bits for a
-	// softOSDCode. The decodes run one at a time and share the tables.
-	softTabLen = max(3*256, softOSDNibbles*16)
-	// softListMax is the largest candidate list of a decode.
-	softListMax = 8
-	// softChaseMax is the largest number of bits that the Chase decode flips.
-	softChaseMax = 16
-	// softBPTCData is the number of data bits of BPTC(196,96).
-	softBPTCData = 96
-	// softBPTCInfo is the number of BPTC(196,96) data and reserved bits.
-	softBPTCInfo = 99
-	// softTrellisBits is the number of coded bits of a rate 3/4 block.
-	softTrellisBits = 196
-	// softTrellisSteps is the number of trellis steps, 48 tribits and the tail.
-	softTrellisSteps = 49
-	// softTrellisStates is the number of trellis states.
+	softBurstBits     = 264
+	softSmallMaxN     = 24
+	softSmallMaxK     = 12
+	softOSDMaxN       = 196
+	softOSDMaxK       = 99
+	softOSDWords      = 4
+	softOSDNibbles    = 49
+	softTabLen        = max(3*256, softOSDNibbles*16)
+	softListMax       = 8
+	softChaseMax      = 16
+	softBPTCData      = 96
+	softBPTCInfo      = 99
+	softTrellisBits   = 196
+	softTrellisSteps  = 49
 	softTrellisStates = 8
-	// softAMBEC0 is the number of info bits of AMBE+2 C0 and of C1.
-	softAMBEC0 = 12
-	// softAMBEC2 is the number of uncoded bits of an AMBE+2 frame.
-	softAMBEC2 = 25
-	// softShortLCInfo is the number of Short LC info bits, 28 data and a CRC-8.
-	softShortLCInfo = 36
-	// softShortLCData is the number of Short LC data bits before the CRC-8.
-	softShortLCData = 28
-	// softEmbLCInfo is the number of embedded LC info bits, 72 LC and a checksum.
-	softEmbLCInfo = 77
-	// softEmbLCBits is the number of LC bits of an embedded LC.
-	softEmbLCBits = 72
-	// softEmbLCChecksum is the number of checksum bits of an embedded LC.
+	softAMBEC0        = 12
+	softAMBEC2        = 25
+	softShortLCInfo   = 36
+	softShortLCData   = 28
+	softEmbLCInfo     = 77
+	softEmbLCBits     = 72
 	softEmbLCChecksum = 5
-	// softInf is the path metric of an unreachable trellis state.
-	softInf = math.MaxInt32 / 4
+	softInf           = math.MaxInt32 / 4
 )
 
-// softSmallID names a code of softSmallCodes.
 type softSmallID uint8
 
-// Codes of softSmallCodes.
 const (
 	softSlotTypeCode softSmallID = iota
 	softEMBCode
 	softTACTCode
-	// softAMBECode is the code C0 of voice slot 0. C0 of voice slot s is
-	// softAMBECode+2s, and its C1 without the scrambling the code after it.
 	softAMBECode
 	softSmallCount = softAMBECode + 2*layer2.VoiceSlotsPerBurst
 )
 
-// softOSDID names a code of softOSDCodes.
 type softOSDID uint8
 
-// Codes of softOSDCodes: BPTC(196,96), the BPTC(68,36) of a Short LC, and
-// the BPTC(128,77) of an embedded LC over four bursts, burst i at 264i.
 const (
 	softBPTCCode softOSDID = iota
 	softShortLCCode
@@ -94,23 +61,17 @@ const (
 	softOSDCount
 )
 
-// softTop is a list of the lowest-cost candidates of a softSmallCode search,
-// in increasing cost order.
 type softTop struct {
-	// n is the number of candidates and max the list size.
 	n, max int
-	// cost, info and cw hold candidate i at index i.
-	cost [softListMax]int32
-	info [softListMax]uint32
-	cw   [softListMax]uint32
+	cost   [softListMax]int32
+	info   [softListMax]uint32
+	cw     [softListMax]uint32
 }
 
-// reset empties the list and sets its size to size, from 1 to softListMax.
 func (t *softTop) reset(size int) {
 	t.n, t.max = 0, max(1, min(size, softListMax))
 }
 
-// worst returns the cost that a candidate must beat to enter the list.
 func (t *softTop) worst() int32 {
 	if t.n < t.max {
 		return math.MaxInt32
@@ -118,7 +79,6 @@ func (t *softTop) worst() int32 {
 	return t.cost[t.n-1]
 }
 
-// add inserts a candidate when it is among the max lowest costs.
 func (t *softTop) add(cost int32, info, cw uint32) {
 	if t.n == t.max && cost >= t.cost[t.n-1] {
 		return
@@ -132,23 +92,14 @@ func (t *softTop) add(cost int32, info, cw uint32) {
 	t.n = min(t.n+1, t.max)
 }
 
-// softSmallCode is an (n, k) binary block code with n at most 24 and k at
-// most 12 that search decodes by scoring every codeword.
 type softSmallCode struct {
-	// n is the codeword length and k the number of info bits.
 	n, k int
-	// t is the number of bit errors that the code always corrects.
-	t int
-	// pos holds the LLR index of codeword bit j, in increasing order.
-	pos [softSmallMaxN]int16
-	// base is the codeword of the zero info word, codeword bit j at 1<<j.
+	t    int
+	pos  [softSmallMaxN]int16
 	base uint32
-	// rows holds the codeword change of info bit i.
 	rows [softSmallMaxK]uint32
 }
 
-// softTables fills tab[256b+m] with the sum of l[8b+i] over the set bits i
-// of m, for the tables that cover l.
 func softTables(tab *[softTabLen]int32, l []int32) {
 	at := func(j int) int32 {
 		if j < len(l) {
@@ -170,8 +121,6 @@ func softTables(tab *[softTabLen]int32, l []int32) {
 	}
 }
 
-// softNibbleTables fills tab[16b+m] with the sum of l[4b+i] over the set
-// bits i of m, for the tables that cover l.
 func softNibbleTables(tab *[softTabLen]int32, l []int32) {
 	for b := 0; b*4 < len(l); b++ {
 		t := (*[16]int32)(tab[16*b:])
@@ -186,8 +135,6 @@ func softNibbleTables(tab *[softTabLen]int32, l []int32) {
 	}
 }
 
-// softByteTables fills tab[256b+m] with the sum of l[8b+i] over the set
-// bits i of m, for the tables that cover l.
 func softByteTables(tab *[softParWords * 8 * 256]int32, l []int32) {
 	for b := 0; b*8 < len(l); b++ {
 		t := (*[256]int32)(tab[256*b:])
@@ -202,8 +149,6 @@ func softByteTables(tab *[softParWords * 8 * 256]int32, l []int32) {
 	}
 }
 
-// gather copies the LLRs of the code bits into l and returns the hard
-// decision codeword.
 func (id softSmallID) gather(llr []int16, l *[softSmallMaxN]int32) uint32 {
 	c := &softSmallCodes[id]
 	var hard uint32
@@ -217,9 +162,6 @@ func (id softSmallID) gather(llr []int16, l *[softSmallMaxN]int32) uint32 {
 	return hard
 }
 
-// search scores every codeword whose info bits under fixed equal want, with
-// off XORed into the codeword, and keeps the lowest costs in top. The cost of
-// a codeword is the sum of the LLRs of its 1 bits, from tab.
 func (id softSmallID) search(tab *[softTabLen]int32, off, fixed, want uint32, top *softTop) {
 	c := &softSmallCodes[id]
 	var free [16]int
@@ -247,18 +189,12 @@ func (id softSmallID) search(tab *[softTabLen]int32, off, fixed, want uint32, to
 	}
 }
 
-// softSmallScratch is the per-call state of the softSmallCode decodes.
 type softSmallScratch struct {
-	// l holds the LLRs of the code bits.
-	l [softSmallMaxN]int32
-	// tab holds the cost tables of the code bits.
-	tab *[softTabLen]int32
-	// top and top1 hold candidate lists.
+	l         [softSmallMaxN]int32
+	tab       *[softTabLen]int32
 	top, top1 softTop
 }
 
-// decode returns the lowest-cost codeword of c, its info word and the number
-// of bits where it differs from the hard decisions.
 func (s *softSmallScratch) decode(c softSmallID, llr []int16, fixed, want uint32) (info, cw uint32, errs int) {
 	hard := c.gather(llr, &s.l)
 	softTables(s.tab, s.l[:softSmallCodes[c].n])
@@ -267,15 +203,10 @@ func (s *softSmallScratch) decode(c softSmallID, llr []int16, fixed, want uint32
 	return s.top.info[0], s.top.cw[0], bits.OnesCount32(s.top.cw[0] ^ hard)
 }
 
-// softResult returns the fec.Result of a decode without a check: errs bit
-// errors in n bits, uncorrectable beyond the t errors the code always
-// corrects.
 func softResult(n, errs, t int) fec.Result {
 	return fec.Result{BitsChecked: n, ErrorsCorrected: errs, Uncorrectable: errs > t}
 }
 
-// softPut sets bit p of r, in transmit order, to 1 when one is true and to 0
-// when it is false.
 func softPut[T int | int16](r *layer2.RawBurst, p T, one bool) {
 	m := byte(0x80) >> (p % 8)
 	if one {
@@ -285,7 +216,6 @@ func softPut[T int | int16](r *layer2.RawBurst, p T, one bool) {
 	}
 }
 
-// softPutSmall writes codeword cw of c into the burst r.
 func softPutSmall(r *layer2.RawBurst, id softSmallID, cw uint32) {
 	c := &softSmallCodes[id]
 	for j := range c.n {
@@ -293,9 +223,6 @@ func softPutSmall(r *layer2.RawBurst, id softSmallID, cw uint32) {
 	}
 }
 
-// softAMBEPN returns the C1 scrambling mask, on the C1 bits, of C0 info
-// word v: the C1 bits of the slot that ambe.Encode makes of a frame whose C0
-// is v and whose other bits are 0.
 func softAMBEPN(v uint32) uint32 {
 	var f [7]byte
 	f[0], f[1] = byte(v>>(softAMBEC0-8)&0xff), byte(v<<(16-softAMBEC0)&0xff)
@@ -308,40 +235,25 @@ func softAMBEPN(v uint32) uint32 {
 	return m
 }
 
-// softOSDCode is a binary linear (n, k) block code with n at most 196 and k
-// at most 99 for ordered statistics decoding.
 type softOSDCode struct {
-	// n is the codeword length and k the number of info bits.
 	n, k int
-	// t is the number of bit errors that the code always corrects.
-	t int
-	// pos holds the image index of codeword bit j, in increasing order.
-	pos [softOSDMaxN]int16
-	// rows holds the codeword of each of the k info bits.
+	t    int
+	pos  [softOSDMaxN]int16
 	rows [softOSDMaxK][softOSDWords]uint64
-	// sys holds a codeword bit that equals info bit i.
-	sys [softOSDMaxK]int16
+	sys  [softOSDMaxK]int16
 }
 
-// softOSDList is a list of the lowest-cost codewords of a decode, in
-// increasing cost order.
 type softOSDList struct {
-	// n is the number of candidates and max the list size.
 	n, max int
-	// cost and cw hold candidate i at index i.
-	cost [softListMax]int32
-	cw   [softListMax][softOSDWords]uint64
-	// scored is the number of codewords scored since reset.
+	cost   [softListMax]int32
+	cw     [softListMax][softOSDWords]uint64
 	scored int
 }
 
-// reset empties the list and sets its size to size, from 1 to softListMax.
 func (t *softOSDList) reset(size int) {
 	t.n, t.max, t.scored = 0, max(1, min(size, softListMax)), 0
 }
 
-// add inserts cw when it is among the max lowest costs and not in the list,
-// and reports whether it did.
 func (t *softOSDList) add(cost int32, cw *[softOSDWords]uint64) bool {
 	t.scored++
 	if t.n == t.max && cost >= t.cost[t.n-1] {
@@ -362,55 +274,31 @@ func (t *softOSDList) add(cost int32, cw *[softOSDWords]uint64) bool {
 	return true
 }
 
-// softOSDScratch is the per-call state of the OSD and Chase decodes.
 type softOSDScratch struct {
-	// l holds the LLRs of the code bits and mag their magnitudes.
-	l, mag [softOSDMaxN]int32
-	// order holds the code bits by decreasing reliability.
-	order [softOSDMaxN]int16
-	// hard holds the hard decisions of the code bits.
-	hard [softOSDWords]uint64
-	// work holds the generator rows in systematic form on pivot[i].
-	work  [softOSDMaxK][softOSDWords]uint64
-	pivot [softOSDMaxK]int16
-	// tab holds the tables of the LLR magnitudes of the code bits, 4 bits
-	// per table.
-	tab *[softTabLen]int32
-	// list holds the best candidates.
-	list softOSDList
-	// accept is the check of the decode, nil for none.
-	accept func(cw *[softOSDWords]uint64) bool
-	// cand holds the candidate codewords of the reprocessing and pmag the
-	// LLR magnitudes of the basis bits.
-	cand [2][softOSDWords]uint64
-	pmag [softOSDMaxK]int32
-	// pass is the cost of the best accepted codeword, floor the cost of the
-	// hard decisions, and nw the words of a codeword.
+	l, mag      [softOSDMaxN]int32
+	order       [softOSDMaxN]int16
+	hard        [softOSDWords]uint64
+	work        [softOSDMaxK][softOSDWords]uint64
+	pivot       [softOSDMaxK]int16
+	tab         *[softTabLen]int32
+	list        softOSDList
+	accept      func(cw *[softOSDWords]uint64) bool
+	cand        [2][softOSDWords]uint64
+	pmag        [softOSDMaxK]int32
 	pass, floor int32
 	nw          int
-	// chase holds the Chase test pattern bits and bits the hard decisions of
-	// the 196 information bits.
-	chase [softChaseMax]int16
-	bits  [softTrellisBits]unpacked.Bit
-	// btab, when not nil, holds byte tables of the non-basis bits in place
-	// of the nibble tables in tab.
-	btab *[softParWords * 8 * 256]int32
-	// par holds the non-basis code bits in reliability order, pm their
-	// magnitudes, prow the work rows and phard the hard decisions on them,
-	// bit p for par[p].
-	par   [softOSDMaxN]int16
-	pm    [softOSDMaxN]int32
-	prow  [softOSDMaxK][softParWords]uint64
-	phard [softParWords]uint64
-	pcand [4][softParWords]uint64
+	chase       [softChaseMax]int16
+	bits        [softTrellisBits]unpacked.Bit
+	btab        *[softParWords * 8 * 256]int32
+	par         [softOSDMaxN]int16
+	pm          [softOSDMaxN]int32
+	prow        [softOSDMaxK][softParWords]uint64
+	phard       [softParWords]uint64
+	pcand       [4][softParWords]uint64
 }
 
-// softParWords is the number of words that hold the non-basis bits of a
-// softOSDCode codeword.
 const softParWords = 2
 
-// first returns the index of the first candidate in the list that s.accept
-// accepts, and false with index 0 when s.accept is nil or accepts none.
 func (s *softOSDScratch) first() (int, bool) {
 	for i := 0; s.accept != nil && i < s.list.n; i++ {
 		if s.accept(&s.list.cw[i]) {
@@ -420,7 +308,6 @@ func (s *softOSDScratch) first() (int, bool) {
 	return 0, false
 }
 
-// prepare takes the LLRs in s.l of the n code bits and sets s.hard and s.mag.
 func (s *softOSDScratch) prepare(n int) {
 	s.hard = [softOSDWords]uint64{}
 	for j := range n {
@@ -433,14 +320,6 @@ func (s *softOSDScratch) prepare(n int) {
 	}
 }
 
-// osd decodes the LLRs in s.l with ordered statistics decoding: it reduces
-// the generator to the most reliable basis and scores the hard decision of
-// the basis with every pattern of up to order flips, and order 3 within the
-// window least reliable basis bits. It keeps the best listMax codewords in
-// s.list (Fossorier and Lin, IEEE Trans. Inf. Theory 41(5), 1995). A pattern
-// whose flipped basis bits alone cost more than the worst listed codeword,
-// or than the best codeword that s.accept accepts, cannot change the first
-// accepted codeword of the list, so it is skipped.
 func (id softOSDID) osd(s *softOSDScratch, order, window, listMax int) {
 	n := softOSDCodes[id].n
 	s.prepare(n)
@@ -448,10 +327,6 @@ func (id softOSDID) osd(s *softOSDScratch, order, window, listMax int) {
 	id.reprocess(s, order, window, listMax)
 }
 
-// reprocess scores the hard decision of the basis and its flip patterns
-// into s.list. A pattern flips its basis bits and so costs their
-// magnitudes, and only the non-basis bits need the tables: it scores
-// those, packed into softParWords words with the most reliable first.
 func (id softOSDID) reprocess(s *softOSDScratch, order, window, listMax int) {
 	c := &softOSDCodes[id]
 	k, np := c.k, c.n-c.k
@@ -533,14 +408,10 @@ func (id softOSDID) reprocess(s *softOSDScratch, order, window, listMax int) {
 	}
 }
 
-// pflip sets dst to src with packed row i added.
 func (s *softOSDScratch) pflip(dst, src *[softParWords]uint64, i int) {
 	dst[0], dst[1] = src[0]^s.prow[i][0], src[1]^s.prow[i][1]
 }
 
-// try scores the pattern of basis rows a, b and x (-1 for none), whose
-// non-basis bits are pc and whose basis bits cost flips, adds its codeword
-// to the list and checks it when it beats the best accepted codeword.
 func (s *softOSDScratch) try(pc *[softParWords]uint64, flips int32, a, b, x int) {
 	bound := int32(math.MaxInt32)
 	if s.list.n == s.list.max {
@@ -579,9 +450,6 @@ func (s *softOSDScratch) try(pc *[softParWords]uint64, flips int32, a, b, x int)
 	}
 }
 
-// basis sorts the code bits by reliability and reduces the generator rows
-// into s.work, row i with its only basis bit at s.pivot[i], taking the most
-// reliable independent bits first.
 func (id softOSDID) basis(s *softOSDScratch) {
 	c := &softOSDCodes[id]
 	n, k, nw := c.n, c.k, (c.n+63)/64
@@ -618,15 +486,12 @@ func (id softOSDID) basis(s *softOSDScratch) {
 	}
 }
 
-// flip sets dst to src with work row i added.
 func (s *softOSDScratch) flip(dst, src *[softOSDWords]uint64, i int) {
 	for x := range s.nw {
 		dst[x] = src[x] ^ s.work[i][x]
 	}
 }
 
-// thr returns the discrepancy that a pattern must stay under to change the
-// first accepted codeword of the list.
 func (s *softOSDScratch) thr() int32 {
 	t := s.pass
 	if s.list.n == s.list.max {
@@ -638,7 +503,6 @@ func (s *softOSDScratch) thr() int32 {
 	return t - s.floor
 }
 
-// errors returns the number of bits where cw differs from the hard decisions.
 func (s *softOSDScratch) errors(cw *[softOSDWords]uint64) int {
 	e := 0
 	for x := range cw {
@@ -647,21 +511,15 @@ func (s *softOSDScratch) errors(cw *[softOSDWords]uint64) int {
 	return e
 }
 
-// softBit reports whether bit j of cw is set.
 func softBit[T int | int16](cw *[softOSDWords]uint64, j T) bool {
 	return cw[j>>6]>>(j&63)&1 != 0
 }
 
-// softBPTCResult is a decoded BPTC(196,96) block.
 type softBPTCResult struct {
-	// Payload holds the 96 data bits, most significant bit first.
-	Payload [12]byte
-	// Reserved holds R(0) to R(2), R(i) in bit i.
+	Payload  [12]byte
 	Reserved uint8
 }
 
-// softBPTCOf returns the BPTC data and reserved bits of BPTC(196,96)
-// codeword cw.
 func softBPTCOf(cw *[softOSDWords]uint64) softBPTCResult {
 	c := &softOSDCodes[softBPTCCode]
 	var r softBPTCResult
@@ -678,77 +536,41 @@ func softBPTCOf(cw *[softOSDWords]uint64) softBPTCResult {
 	return r
 }
 
-// softEmbLC holds the place of the LC and checksum bits among the info bits
-// of the embedded LC code softEmbLCCode.
 type softEmbLC struct {
-	// lc holds the info bit of LC bit j, most significant bit first.
 	lc [softEmbLCBits]int16
-	// cs holds the info bit of checksum bit c, bit 0 least significant.
 	cs [softEmbLCChecksum]int16
 }
 
-// softTrellis holds the rate 3/4 trellis tables.
 type softTrellis struct {
-	// pos holds the burst position of codeword bit j, in increasing order.
-	pos [softTrellisBits]int16
-	// step holds the codeword bits of the 4-bit label of step k, label most
-	// significant bit first.
-	step [softTrellisSteps][4]uint8
-	// label holds the label of input tribit in from state s.
+	pos   [softTrellisBits]int16
+	step  [softTrellisSteps][4]uint8
 	label [softTrellisStates][softTrellisStates]uint8
 }
 
-// softDecoder holds the tables and scratch of the soft-decision FEC
-// decoders. An LLR is positive when bit 0 is more likely, with a magnitude
-// in proportion to the log-likelihood ratio, and the decoders do not depend
-// on the scale. The decodes do not allocate. A softDecoder is not safe for
-// concurrent use.
 type softDecoder struct {
-	// AMBECandidates is the number of best C0 codewords that the AMBE+2
-	// decode tries with C1. 1 decodes C0 and C1 one after the other.
-	AMBECandidates int
-	// ChaseBits is the number of least reliable bits, 0 to 16, that the BPTC
-	// Chase decode flips, 2^ChaseBits hard decodes.
-	ChaseBits int
-	// OSDOrder is the OSD order, 0 to 3, and OSDWindow the number of least
-	// reliable basis bits that order 3 uses.
-	OSDOrder, OSDWindow int
-	// GridIters is the number of row and column passes of decodeBPTCGrid,
-	// and GridWeight the weight of the extrinsic information that one
-	// component passes to the other.
-	GridIters  int
-	GridWeight float32
-	// BPTCList, ShortLCList and EmbLCList are the numbers of best candidates
-	// that the BPTC(196,96) decodes with a check, the Short LC decode and the
-	// embedded LC decode try. A longer list corrects more blocks and passes
-	// more wrong ones through a weak check such as the 5-bit LC checksum.
+	AMBECandidates                   int
+	ChaseBits                        int
+	OSDOrder, OSDWindow              int
+	GridIters                        int
+	GridWeight                       float32
 	BPTCList, ShortLCList, EmbLCList int
 
-	// grid holds the scratch of decodeBPTCGrid, small and osd the scratch
-	// of the other decodes, tab their cost tables, and prev the Viterbi
-	// survivors.
-	grid  softGrid
-	small softSmallScratch
-	osd   softOSDScratch
-	tab   [softTabLen]int32
-	prev  [softTrellisSteps][softTrellisStates]uint8
-	// gridPost holds the a posteriori ratios of decodeBPTCGrid.
-	gridPost [softBurstBits]int16
-	// check is the BPTC check of the current decode, and acceptBPTC and
-	// acceptShortLC are the checks of the OSD codewords.
+	grid                      softGrid
+	small                     softSmallScratch
+	osd                       softOSDScratch
+	tab                       [softTabLen]int32
+	prev                      [softTrellisSteps][softTrellisStates]uint8
+	gridPost                  [softBurstBits]int16
 	check                     func([12]byte) bool
 	acceptBPTC, acceptShortLC func(cw *[softOSDWords]uint64) bool
 }
 
-// setBytes gives the decoder the byte tables of opt.OSDBytes.
 func (d *softDecoder) setBytes(opt *options) {
 	if opt.OSDBytes {
 		d.osd.btab = new([softParWords * 8 * 256]int32)
 	}
 }
 
-// newSoftDecoder returns a decoder over the code tables that the library
-// encoders give (tables_gen.go).
 func newSoftDecoder() *softDecoder {
 	d := &softDecoder{AMBECandidates: 4, ChaseBits: 6, OSDOrder: 2, BPTCList: softListMax, ShortLCList: 4, EmbLCList: 2, GridIters: 4, GridWeight: 0.7}
 	d.small.tab, d.osd.tab = &d.tab, &d.tab
@@ -766,18 +588,10 @@ func newSoftDecoder() *softDecoder {
 	return d
 }
 
-// softTACT returns the TACT of info word info: AT in bit 3, TC in bit 2 and
-// the LCSS in bits 1 and 0.
 func softTACT(info uint32) pdu.TACT {
 	return pdu.TACT{AccessType: info&8 != 0, TDMAChannel: info&4 != 0, LCSS: enums.LCSS(info & 3)}
 }
 
-// decodeAMBE decodes the three AMBE+2 frames of a voice burst from its 264
-// LLRs. C0 and C1 are soft ML; C2 is hard. The AMBECandidates best C0
-// codewords are tried with their C1 scrambling, and the pair with the lowest
-// total cost wins; a C0 codeword is skipped once no C1 can beat the best
-// pair, so the result is the joint ML pair whenever the list is long
-// enough. When out is not nil, the corrected bits are written into it.
 func (d *softDecoder) decodeAMBE(llr *[softBurstBits]int16, out *layer2.RawBurst) ([layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame, fec.Result) {
 	var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
 	var res fec.Result
@@ -851,9 +665,6 @@ func (d *softDecoder) decodeAMBE(llr *[softBurstBits]int16, out *layer2.RawBurst
 	return frames, res
 }
 
-// decodeSlotType decodes the Golay(20,8) slot type of a burst from its 264
-// LLRs by scoring all 256 codewords, or the 16 of color code cc when
-// ccKnown. When out is not nil, the corrected codeword is written into it.
 func (d *softDecoder) decodeSlotType(llr *[softBurstBits]int16, cc enums.ColorCode, ccKnown bool, out *layer2.RawBurst) (pdu.SlotTypeInfo, fec.Result) {
 	var fixed, want uint32
 	if ccKnown {
@@ -867,9 +678,6 @@ func (d *softDecoder) decodeSlotType(llr *[softBurstBits]int16, cc enums.ColorCo
 	return pdu.SlotTypeInfo(info & 0xff), softResult(c.n, errs, c.t)
 }
 
-// decodeEMB decodes the QR(16,7) EMB of a burst from its 264 LLRs by scoring
-// all 128 codewords, or the 8 of color code cc when ccKnown. When out is not
-// nil, the corrected codeword is written into it.
 func (d *softDecoder) decodeEMB(llr *[softBurstBits]int16, cc enums.ColorCode, ccKnown bool, out *layer2.RawBurst) (pdu.EMBInfo, fec.Result) {
 	var fixed, want uint32
 	if ccKnown {
@@ -883,9 +691,6 @@ func (d *softDecoder) decodeEMB(llr *[softBurstBits]int16, cc enums.ColorCode, c
 	return pdu.EMBInfo(info << 1 & 0xfe), softResult(c.n, errs, c.t)
 }
 
-// decodeTACT decodes the Hamming(7,4) TACT of a CACH from its 24 LLRs in
-// transmit order by scoring all 16 codewords. When out is not nil, the
-// corrected TACT bits are written into it.
 func (d *softDecoder) decodeTACT(llr *[layer2.CACHBits]int16, out *[layer2.CACHBits]unpacked.Bit) (pdu.TACT, fec.Result) {
 	info, cw, errs := d.small.decode(softTACTCode, llr[:], 0, 0)
 	c := &softSmallCodes[softTACTCode]
@@ -899,7 +704,6 @@ func (d *softDecoder) decodeTACT(llr *[layer2.CACHBits]int16, out *[layer2.CACHB
 	return t, t.FEC
 }
 
-// softRate34Payload packs 48 tribits into the 144 data bits.
 func softRate34Payload(t *[softTrellisSteps]int) [18]byte {
 	var p [18]byte
 	for k := range softTrellisSteps - 1 {
@@ -913,11 +717,6 @@ func softRate34Payload(t *[softTrellisSteps]int) [18]byte {
 	return p
 }
 
-// decodeRate34 decodes a rate 3/4 trellis block from the 264 LLRs of its
-// burst with an 8-state soft-decision Viterbi decoder that starts and ends
-// in state 0, which is maximum likelihood. Uncorrectable is set when a path
-// that ends in another state has a lower cost, as trellis.Decode does. When
-// out is not nil, the codeword of the decoded data is written into it.
 func (d *softDecoder) decodeRate34(llr *[softBurstBits]int16, out *layer2.RawBurst) ([18]byte, fec.Result) {
 	tr := &softTrellisTables
 	l := &d.osd.l
@@ -973,8 +772,6 @@ func (d *softDecoder) decodeRate34(llr *[softBurstBits]int16, out *layer2.RawBur
 	return softRate34Payload(&t), res
 }
 
-// bptcLLRs copies the LLRs of the BPTC(196,96) bits of a burst into the
-// scratch.
 func (d *softDecoder) bptcLLRs(llr *[softBurstBits]int16) {
 	c := &softOSDCodes[softBPTCCode]
 	for j := range c.n {
@@ -982,9 +779,6 @@ func (d *softDecoder) bptcLLRs(llr *[softBurstBits]int16) {
 	}
 }
 
-// bptcPick returns the first candidate in the scratch list that check
-// accepts, or the first candidate when check is nil or accepts none, and
-// writes its codeword into out when out is not nil.
 func (d *softDecoder) bptcPick(check func([12]byte) bool, out *layer2.RawBurst) (softBPTCResult, fec.Result) {
 	s, c := &d.osd, &softOSDCodes[softBPTCCode]
 	pick, ok := s.first()
@@ -1002,7 +796,6 @@ func (d *softDecoder) bptcPick(check func([12]byte) bool, out *layer2.RawBurst) 
 	return softBPTCOf(cw), res
 }
 
-// bptcCheck sets the check of a BPTC decode and returns its list size.
 func (d *softDecoder) bptcCheck(check func([12]byte) bool) int {
 	d.check = check
 	if check == nil {
@@ -1013,11 +806,6 @@ func (d *softDecoder) bptcCheck(check func([12]byte) bool) int {
 	return d.BPTCList
 }
 
-// decodeBPTCOSD decodes a BPTC(196,96) block from the 264 LLRs of its burst
-// with ordered statistics decoding of order OSDOrder. With a check, it keeps
-// the BPTCList best codewords and returns the best one that check accepts,
-// with Uncorrectable set when check accepts none. When out is not nil, the
-// corrected codeword is written into it.
 func (d *softDecoder) decodeBPTCOSD(llr *[softBurstBits]int16, check func([12]byte) bool, out *layer2.RawBurst) (softBPTCResult, fec.Result) {
 	if d.bptcHard(llr, check) {
 		return d.bptcPick(check, out)
@@ -1027,10 +815,6 @@ func (d *softDecoder) decodeBPTCOSD(llr *[softBurstBits]int16, check func([12]by
 	return d.bptcPick(check, out)
 }
 
-// bptcHard reports whether the hard decisions of the BPTC(196,96) bits of
-// the 264 LLRs llr form a codeword that check accepts, any codeword when
-// check is nil, and then leaves it as the one candidate for bptcPick. No
-// other codeword costs as little, so every soft decode picks it too.
 func (d *softDecoder) bptcHard(llr *[softBurstBits]int16, check func([12]byte) bool) bool {
 	s, c := &d.osd, &softOSDCodes[softBPTCCode]
 	var packed [25]byte
@@ -1067,11 +851,6 @@ func (d *softDecoder) bptcHard(llr *[softBurstBits]int16, check func([12]byte) b
 	return true
 }
 
-// decodeBPTCGrid decodes a BPTC(196,96) block from the 264 LLRs of its
-// burst by GridIters passes of row and column decoding of the grid, then
-// by ordered statistics from the a posteriori ratios. It corrects blocks
-// with confidently wrong bits, which ordered statistics alone takes into
-// its most reliable basis. check and out work as in decodeBPTCOSD.
 func (d *softDecoder) decodeBPTCGrid(llr *[softBurstBits]int16, check func([12]byte) bool, out *layer2.RawBurst) (softBPTCResult, fec.Result) {
 	d.grid.decode(llr, d.GridIters, d.GridWeight)
 	d.gridPost = [softBurstBits]int16{}
@@ -1079,19 +858,11 @@ func (d *softDecoder) decodeBPTCGrid(llr *[softBurstBits]int16, check func([12]b
 	return d.decodeBPTCOSD(&d.gridPost, check, out)
 }
 
-// bptcExtrinsic sets ext to the extrinsic log-likelihood ratios, in nats,
-// of the BPTC(196,96) bits of a burst from its 264 LLRs, by GridIters
-// passes of the grid decode, and to 0 elsewhere.
 func (d *softDecoder) bptcExtrinsic(llr *[softBurstBits]int16, ext *[softBurstBits]float32) {
 	d.grid.decode(llr, d.GridIters, d.GridWeight)
 	d.grid.extrinsic(ext)
 }
 
-// decodeBPTCChase decodes a BPTC(196,96) block from the 264 LLRs of its
-// burst with a Chase-II decoder: it flips every pattern of the ChaseBits
-// least reliable bits, decodes each with the library hard decoder and keeps
-// the codeword with the lowest soft cost. It needs no cost tables, so it
-// suits a small MCU. check works as in decodeBPTCOSD.
 func (d *softDecoder) decodeBPTCChase(llr *[softBurstBits]int16, check func([12]byte) bool, out *layer2.RawBurst) (softBPTCResult, fec.Result) {
 	if d.bptcHard(llr, check) {
 		return d.bptcPick(check, out)
@@ -1154,10 +925,6 @@ func (d *softDecoder) decodeBPTCChase(llr *[softBurstBits]int16, check func([12]
 	return d.bptcPick(check, out)
 }
 
-// softBPTCCheck returns the check of a BPTC(196,96) payload of data type dt
-// for decodeBPTCOSD and decodeBPTCChase: the RS(12,9) parity of a Full LC,
-// as pdu.FullLCParityOK checks it, or the CRC-CCITT of a single block, each
-// with the mask of dt. It returns nil for a data type without either.
 func softBPTCCheck(dt enums.DataType) func([12]byte) bool {
 	switch {
 	case dt.CarriesFullLC():
@@ -1176,12 +943,6 @@ func softBPTCCheck(dt enums.DataType) func([12]byte) bool {
 	}
 }
 
-// decodeShortLC decodes a Short LC from the LLRs of the four CACH fields
-// that carry it, in transmit order, with ordered statistics decoding of
-// order OSDOrder over BPTC(68,36). It keeps the ShortLCList best codewords and
-// returns the 36 info bits (28 data bits and the CRC-8) of the best one
-// whose CRC-8 matches, with Uncorrectable set when none does. When out is
-// not nil, the corrected payload bits are written into it.
 func (d *softDecoder) decodeShortLC(llr *[4][layer2.CACHBits]int16, out *[4][layer2.CACHBits]unpacked.Bit) ([softShortLCInfo]unpacked.Bit, fec.Result) {
 	c, s := &softOSDCodes[softShortLCCode], &d.osd
 	for j := range c.n {
@@ -1205,7 +966,6 @@ func (d *softDecoder) decodeShortLC(llr *[4][layer2.CACHBits]int16, out *[4][lay
 	return info, fec.Result{BitsChecked: c.n, ErrorsCorrected: s.errors(cw), Uncorrectable: !ok}
 }
 
-// softShortLCOf returns the 36 Short LC info bits of codeword cw.
 func softShortLCOf(cw *[softOSDWords]uint64) [softShortLCInfo]unpacked.Bit {
 	c := &softOSDCodes[softShortLCCode]
 	var info [softShortLCInfo]unpacked.Bit
@@ -1217,12 +977,6 @@ func softShortLCOf(cw *[softOSDWords]uint64) [softShortLCInfo]unpacked.Bit {
 	return info
 }
 
-// decodeEmbeddedLC decodes an embedded LC from the 264 LLRs of each of the
-// four voice bursts B to E that carry it, with ordered statistics decoding
-// of order OSDOrder over BPTC(128,77). It keeps the EmbLCList best codewords
-// and returns the LC of the best one whose 5-bit checksum matches, with
-// Uncorrectable set when none does. When out is not nil, the corrected
-// embedded signalling fields are written into its bursts.
 func (d *softDecoder) decodeEmbeddedLC(llr *[4][softBurstBits]int16, out *[4]layer2.RawBurst) ([9]byte, fec.Result) {
 	var frags [4][embBits]int16
 	for i := range frags {
@@ -1231,8 +985,6 @@ func (d *softDecoder) decodeEmbeddedLC(llr *[4][softBurstBits]int16, out *[4]lay
 	return d.decodeEmbeddedFrags(&frags, out)
 }
 
-// decodeEmbeddedFrags decodes an embedded LC as decodeEmbeddedLC does,
-// from the LLRs of the embedded signalling fragment of each burst only.
 func (d *softDecoder) decodeEmbeddedFrags(llr *[4][embBits]int16, out *[4]layer2.RawBurst) ([9]byte, fec.Result) {
 	c, s := &softOSDCodes[softEmbLCCode], &d.osd
 	for j := range c.n {
@@ -1252,8 +1004,6 @@ func (d *softDecoder) decodeEmbeddedFrags(llr *[4][embBits]int16, out *[4]layer2
 	return softEmbLCOf(cw), fec.Result{BitsChecked: c.n, ErrorsCorrected: s.errors(cw), Uncorrectable: !ok}
 }
 
-// softEmbLCAccept reports whether the 5-bit checksum of embedded LC
-// codeword cw matches its LC.
 func softEmbLCAccept(cw *[softOSDWords]uint64) bool {
 	c := &softOSDCodes[softEmbLCCode]
 	var cs uint8
@@ -1265,7 +1015,6 @@ func softEmbLCAccept(cw *[softOSDWords]uint64) bool {
 	return crc.CheckChecksum5(softEmbLCOf(cw), cs)
 }
 
-// softEmbLCOf returns the 9 LC octets of embedded LC codeword cw.
 func softEmbLCOf(cw *[softOSDWords]uint64) [9]byte {
 	c := &softOSDCodes[softEmbLCCode]
 	var lc [9]byte
@@ -1277,9 +1026,6 @@ func softEmbLCOf(cw *[softOSDWords]uint64) [9]byte {
 	return lc
 }
 
-// softCombine adds the LLRs of src to dst, saturated to the int16 range, to
-// combine repeats of one codeword, such as identical voice LC headers or the
-// embedded LC of consecutive superframes.
 func softCombine(dst, src []int16) {
 	for i := range min(len(dst), len(src)) {
 		dst[i] = int16(max(math.MinInt16, min(math.MaxInt16, int32(dst[i])+int32(src[i]))))

@@ -5,13 +5,8 @@ import (
 	"testing"
 )
 
-// tinyGoMaxStackAlloc is the largest allocation that TinyGo moves from the
-// heap to the stack on a target with the default stack size of the
-// Cortex-M targets.
 const tinyGoMaxStackAlloc = 256
 
-// tinyGoARMSize returns the size of t with the layout of LLVM on 32-bit
-// ARM, where a type of 8 bytes aligns to 8.
 func tinyGoARMSize(tb testing.TB, t reflect.Type) int {
 	off := 0
 	for i := range t.NumField() {
@@ -33,10 +28,6 @@ func tinyGoARMSize(tb testing.TB, t reflect.Type) int {
 	return (off + 7) / 8 * 8
 }
 
-// TestOptionsSize checks that a copy of options stays on the stack under
-// TinyGo. A DiscReceiver with options on the heap does not fold its
-// settings into its code: the Tier 0 microcontroller build then links the
-// float64 math.Log of the click floor and grows by 8 KiB of flash.
 func TestOptionsSize(t *testing.T) {
 	t.Parallel()
 	if n := tinyGoARMSize(t, reflect.TypeFor[options]()); n > tinyGoMaxStackAlloc {

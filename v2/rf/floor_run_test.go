@@ -16,19 +16,12 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 )
 
-// floorPoint is the floor evaluation of every payload at one C/N, summed
-// over seeds: the counts of the likelihood test and the information
-// densities of the converse.
 type floorPoint struct {
 	CN     float64                `json:"cn"`
 	Counts map[string]*benchScore `json:"counts"`
 	Conv   map[string][]float64   `json:"conv"`
 }
 
-// anyFER returns the 4FSK floor of payload k at p: the converse bound on
-// the information densities of k, or Fano's inequality on those of the
-// rate 1 block for the rate 1 bits, and the number of items it counts. ok
-// is false when p has no densities of k.
 func (p *floorPoint) anyFER(k string) (float64, int, bool) {
 	u := p.Conv[k]
 	if len(u) == 0 {
@@ -40,10 +33,6 @@ func (p *floorPoint) anyFER(k string) (float64, int, bool) {
 	return convBound(u), len(u), true
 }
 
-// dmrFER returns the DMR floor of payload k at p: the larger of the error
-// rate of the likelihood test, that of the slot type for a data payload
-// that needs it, and the 4FSK floor, which bounds every code. ok is false
-// when p has no items of k.
 func (p *floorPoint) dmrFER(k string) (float64, int, bool) {
 	var v float64
 	n := 0
@@ -60,11 +49,6 @@ func (p *floorPoint) dmrFER(k string) (float64, int, bool) {
 	return v, n, n > 0
 }
 
-// floorRun computes the floors of the sweep stream at each case on workers
-// goroutines, with a genie trellis of window d, or the error rates of the
-// code-aware receiver when aware, on the I/Q or, when audioHz is not 0, on
-// the discriminator audio at that rate, and returns the points summed over
-// seeds.
 func floorRun(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, cases []benchCase, d int, tail bool, only map[string]bool, workers int, aware bool, audioHz int) []floorPoint {
 	t.Helper()
 	type result struct {
@@ -125,13 +109,6 @@ func floorRun(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, cases []benc
 	return out
 }
 
-// TestFloorProbe prints the error rate of the likelihood test of the
-// payloads and their 4FSK floor on a grid, for the settings in
-// DMRRF_FLOOR_PROBE: window, tail (A or B), seeds, the C/N grid
-// lo:hi:step and optionally the payloads joined by +. With
-// DMRRF_FLOOR_AWARE set it prints the code-aware receiver instead, and
-// with DMRRF_FLOOR_AUDIO set to a rate it gives the genie the
-// discriminator audio at that rate in place of the I/Q, as useAudio does.
 func TestFloorProbe(t *testing.T) {
 	t.Parallel()
 	spec := os.Getenv("DMRRF_FLOOR_PROBE")

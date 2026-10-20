@@ -2,8 +2,6 @@ package rf
 
 import "testing"
 
-// TestAllocsIQDisc checks that iqRx with softExt allocates nothing per
-// WriteBaseband on a locked stream, with OnBurst and without.
 func TestAllocsIQDisc(t *testing.T) {
 	slots, _ := benchStream(t, 6)
 	x := noisyBaseband(slots, 1400, 10, 5)

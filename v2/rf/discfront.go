@@ -2,32 +2,17 @@ package rf
 
 import "math"
 
-// Layout of the discriminator front end.
 const (
-	// discRate is the sample rate of the discriminator path, in Hz.
 	discRate = basebandRate / 2
-	// halfTaps is the length of the half-band decimator from basebandRate
-	// to discRate, halfSide the number of its taps on each side of the
-	// center that are not 0, and halfBeta the Kaiser window parameter.
 	halfTaps = 11
 	halfSide = (halfTaps/2 + 1) / 2
 	halfBeta = 6
-	// preTaps is the length of the prefilter at discRate.
-	preTaps = 17
-	// discSpan is the number of symbols on each side of the matched
-	// filter of the discriminator.
+	preTaps  = 17
 	discSpan = 4
-	// discSPS is the number of discriminator samples per symbol.
-	discSPS = samplesPerSy / 2
-	// rrcTaps is the length of the matched filter of the discriminator.
-	rrcTaps = 2*discSpan*discSPS + 1
+	discSPS  = samplesPerSy / 2
+	rrcTaps  = 2*discSpan*discSPS + 1
 )
 
-// discFront turns complex baseband at basebandRate, or at discRate when
-// half, into the FM discriminator output at discRate after the RRC matched
-// filter, in Hz of deviation: a half-band decimator, which input at
-// discRate skips, an oscillator that moves the carrier to 0 Hz, the
-// prefilter, the discriminator and the matched filter.
 type discFront struct {
 	half    bool
 	odd     bool
@@ -39,27 +24,15 @@ type discFront struct {
 	preHist [2 * preTaps]complex64
 	preHead int
 	prev    complex64
-	// lag is the product of the last prefilter output and the conjugate
-	// of the one before, whose phase the discriminator turns into Hz.
-	lag   complex64
-	fHist [2 * rrcTaps]float32
-	fHead int
+	lag     complex64
+	fHist   [2 * rrcTaps]float32
+	fHead   int
 }
 
-// newDiscFront returns a front end for input at discRate when half, at
-// basebandRate otherwise. Its taps are discHalfTaps, discPreTaps, with the
-// cutoff discCutHz, and discRRCTaps.
 func newDiscFront(half bool) *discFront {
 	return &discFront{half: half, ncoRot: 1, ncoStep: 1}
 }
 
-// center returns the input sample, at basebandRate, at the center of
-// discriminator sample 0; sample m is centered 2m input samples later.
-// The half-band output of input 2m+1 has its center halfTaps/2 samples
-// earlier, the prefilter output preTaps-1 input samples earlier still, the
-// discriminator output one input sample before that, and the matched
-// filter output discSpan symbols before that. Input at discRate puts
-// discriminator sample m at input sample 2m before its filters.
 func (f *discFront) center() int64 {
 	c := -int64(preTaps-1) - 1 - discSpan*samplesPerSy
 	if !f.half {
@@ -68,15 +41,11 @@ func (f *discFront) center() int64 {
 	return c
 }
 
-// tune sets the oscillator to remove a carrier at hz, from the next sample.
 func (f *discFront) tune(hz float64) {
 	p := -2 * math.Pi * hz / discRate
 	f.ncoStep = complex(float32(math.Cos(p)), float32(math.Sin(p)))
 }
 
-// push takes one input sample and reports whether it completed a
-// discriminator sample, which it returns, with the power of the prefilter
-// output.
 func (f *discFront) push(v complex64) (s, power float32, ok bool) {
 	if !f.half {
 		f.hbHist[f.hbHead] = v

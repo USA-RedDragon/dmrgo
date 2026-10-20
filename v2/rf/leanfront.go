@@ -2,35 +2,17 @@ package rf
 
 import "math"
 
-// Layout of the 16-bit front end.
 const (
-	// frontRMS is the RMS of the input, in 8-bit units, that the gain
-	// control of leanFront keeps, and frontBlock the number of input
-	// samples of each of its measurements.
-	frontRMS   = 24
-	frontBlock = 256
-	// frontRelease is the number of blocks that the input must stay weak
-	// before the gain control raises the gain: more than the slot between
-	// two bursts of an MS at the input rate of discRate.
+	frontRMS     = 24
+	frontBlock   = 256
 	frontRelease = 4
-	// rrcStepHz is the resolution of the discriminator samples that the
-	// matched filter holds.
-	rrcStepHz = 128
+	rrcStepHz    = 128
 )
 
-// leanFront is discFront for the streaming receiver, with its filter
-// history held as 8-bit samples in rings and its taps in Q15: discHalfQ15,
-// center tap first, discPreQ15 and discRRCQ15, each up to its center tap. A
-// gain control scales the input to frontRMS. It returns the powers and lag
-// products in units of the input.
 type leanFront struct {
-	half bool
-	odd  bool
-	// quiet counts the blocks in a row whose input calls for a higher
-	// gain.
-	quiet uint8
-	// skip is set after an output of the discriminator that the matched
-	// filter does not follow.
+	half    bool
+	odd     bool
+	quiet   uint8
 	skip    bool
 	gain    float32
 	inv2    float32
@@ -49,15 +31,11 @@ type leanFront struct {
 	rrcHead int
 }
 
-// init sets up the front end for input at discRate when half, at
-// basebandRate otherwise.
 func (f *leanFront) init(half bool) {
 	*f = leanFront{half: half, ncoRot: 1, ncoStep: 1, gain: frontRMS}
 	f.inv2 = 1 / (f.gain * f.gain)
 }
 
-// center returns the input sample at the center of discriminator sample
-// 0, as discFront.center.
 func (f *leanFront) center() int64 {
 	c := -int64(preTaps-1) - 1 - discSpan*samplesPerSy
 	if !f.half {
@@ -66,21 +44,17 @@ func (f *leanFront) center() int64 {
 	return c
 }
 
-// tune sets the oscillator to remove a carrier at hz, from the next sample.
 func (f *leanFront) tune(hz float64) {
 	p := -2 * math.Pi * hz / discRate
 	f.ncoStep = complex(float32(math.Cos(p)), float32(math.Sin(p)))
 }
 
-// shift adds d Hz to the discriminator samples that the matched filter
-// holds.
 func (f *leanFront) shift(d float32) {
 	for i, v := range &f.rrcHist {
 		f.rrcHist[i] = sat8(float32(v) + d/rrcStepHz)
 	}
 }
 
-// at2 returns sample k of the ring h whose oldest sample is at head.
 func at2(h [][2]int8, head, k int) [2]int8 {
 	if k += head; k >= len(h) {
 		k -= len(h)
@@ -88,16 +62,10 @@ func at2(h [][2]int8, head, k int) [2]int8 {
 	return h[k]
 }
 
-// push takes one input sample and reports whether it completed a
-// discriminator sample, which it returns, with the power of the prefilter
-// output.
 func (f *leanFront) push(v complex64) (s, power float32, ok bool) {
 	f.gAcc += real(v)*real(v) + imag(v)*imag(v)
 	if f.gN++; f.gN == frontBlock {
 		if rms := sqrtf(f.gAcc / frontBlock); rms > 0 {
-			// The gain falls at once, but rises only after the input stays
-			// weak for frontRelease blocks: the noise between the
-			// bursts of an MS would clip the start of the next burst.
 			switch g := frontRMS / rms; {
 			case g < f.gain/2, g > 2*f.gain && f.quiet+1 >= frontRelease:
 				f.gain, f.quiet = g, 0
@@ -155,9 +123,6 @@ func (f *leanFront) push(v complex64) (s, power float32, ok bool) {
 	if f.rrcHead++; f.rrcHead == rrcTaps {
 		f.rrcHead = 0
 	}
-	// The matched filter keeps the discriminator samples at discRate and
-	// gives every other output, at half of it: as at the 12 kHz of
-	// iqRx, the core samples the SYNC again from few enough of them.
 	if f.skip = !f.skip; f.skip {
 		return 0, 0, false
 	}

@@ -9,8 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
-// Example receives a BS outbound voice call from complex baseband and
-// counts its voice bursts by superframe position.
 func Example() {
 	built, err := rftx.Sequence("voice", rftx.SeqConfig{ColorCode: 7, Source: 3191868, Dest: 9, BS: 314926, Group: true, Wakeups: 1,
 		Superframes: 2, BSSourced: true, Slot: 1})

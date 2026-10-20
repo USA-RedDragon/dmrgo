@@ -6,12 +6,6 @@ import (
 	"testing"
 )
 
-// TestRawSearchOffset receives the streams of rxStreams at 12 dB C/N with
-// the carrier ±3000 Hz off, through Tier 0 on audio with RawSearch 0 and
-// 2. The search on the raw samples must lock to the first burst that the
-// timing loop locks to and recover what rxRobust asks of a condition. The
-// two differ only in the timing of the lock by a fraction of a sample, and
-// so in single frames at the noise floor, in either direction.
 func TestRawSearchOffset(t *testing.T) {
 	t.Parallel()
 	streams := rxStreams(t)

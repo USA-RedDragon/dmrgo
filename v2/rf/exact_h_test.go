@@ -2,9 +2,6 @@ package rf
 
 import "testing"
 
-// TestXTrellisSetH checks that setH turns the phase of each symbol by the
-// nearest step to the modulation index, and that the default step is that
-// of 0.27.
 func TestXTrellisSetH(t *testing.T) {
 	t.Parallel()
 	m := newCPMModel(1, 10)
@@ -27,8 +24,6 @@ func TestXTrellisSetH(t *testing.T) {
 	}
 }
 
-// TestXTrellisJumpCosts checks that the fade jump cost falls with the
-// square of the lesser correlation of two symbols over the mean.
 func TestXTrellisJumpCosts(t *testing.T) {
 	t.Parallel()
 	x := newXTrellis(newCPMModel(1, 10), 52, 4)

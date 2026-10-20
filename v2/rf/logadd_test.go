@@ -5,8 +5,6 @@ import (
 	"testing"
 )
 
-// TestLogAdd checks logAdd against the exact log-sum over a span of
-// differences.
 func TestLogAdd(t *testing.T) {
 	t.Parallel()
 	var worst float64
@@ -24,9 +22,6 @@ func TestLogAdd(t *testing.T) {
 	}
 }
 
-// TestJacobianSlope checks that jacobianSlope holds the float32 differences
-// of jacobian, so that logAdd interpolates as with the differences taken at
-// run time.
 func TestJacobianSlope(t *testing.T) {
 	t.Parallel()
 	for i := range 96 {

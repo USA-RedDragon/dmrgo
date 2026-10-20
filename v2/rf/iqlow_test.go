@@ -7,9 +7,6 @@ import (
 	"testing"
 )
 
-// lowIQ returns the baseband x at basebandRate as a radio chip delivers it
-// at hz: a 255-tap Kaiser-windowed sinc (beta 8) with its -6 dB point at
-// 0.45 hz, centered, and every basebandRate/hz-th output.
 func lowIQ(x []complex64, hz int) []complex64 {
 	const n, beta = 255, 8.0
 	fc := 0.45 * float64(hz) / basebandRate
@@ -48,11 +45,6 @@ func lowIQ(x []complex64, hz int) []complex64 {
 	return y
 }
 
-// TestLowIQISI checks that a LowIQReceiver at 9.6 kHz decodes every voice
-// frame of a long BS outbound call at 1400 Hz offset at 25 dB. Without
-// cancelISI, a +1 between two +3 symbols, which the phase step at 9.6 kHz
-// and the filter of the chip near the signal spread, lost a frame or more
-// per call.
 func TestLowIQISI(t *testing.T) {
 	t.Parallel()
 	if testing.Short() {
@@ -76,7 +68,6 @@ func TestLowIQISI(t *testing.T) {
 	}
 }
 
-// TestLowIQConfig checks the errors of LowIQReceiver.Init.
 func TestLowIQConfig(t *testing.T) {
 	t.Parallel()
 	var r LowIQReceiver
@@ -99,10 +90,6 @@ func TestLowIQConfig(t *testing.T) {
 	}
 }
 
-// TestIQLowHalfRun checks that iqLowRx.halfRun gives the frequency of a
-// tone within 2 units of iqUnitsPerHz and the error of the rounding of the
-// input, at frequencies up to 0.49 of the rate, at any phase and at
-// amplitudes from 64 to full scale.
 func TestIQLowHalfRun(t *testing.T) {
 	t.Parallel()
 	var r iqLowRx
@@ -156,9 +143,6 @@ func TestMod64(t *testing.T) {
 	}
 }
 
-// TestIQLowRecip checks the ratio and the angle of halfRun with
-// iqLowRecip: the step of iqLowAtan64 stays below 64 and the angle is
-// within 0.02 rad of the arctangent.
 func TestIQLowRecip(t *testing.T) {
 	t.Parallel()
 	seed := uint32(1)

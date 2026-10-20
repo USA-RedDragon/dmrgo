@@ -15,21 +15,15 @@ import (
 	"testing"
 )
 
-// updateTables makes TestTablesGenerated write tables_gen.go.
 var updateTables = flag.Bool("update", false, "rewrite tables_gen.go from the table derivations")
 
-// tablesFile is the file of the generated tables.
 const tablesFile = "tables_gen.go"
 
-// genTable is a table of tables_gen.go: a package variable and its value.
 type genTable struct {
 	name string
 	v    any
 }
 
-// TestTablesGenerated derives every table of tables_gen.go and fails when
-// the file holds other values. With -update it writes the file instead, as
-// go generate ./... in the root module does.
 func TestTablesGenerated(t *testing.T) {
 	t.Parallel()
 	src, err := renderTables()
@@ -51,7 +45,6 @@ func TestTablesGenerated(t *testing.T) {
 	}
 }
 
-// derivedTables returns every table of tables_gen.go, from its derivation.
 func derivedTables() ([]genTable, error) {
 	f, err := deriveSoftFEC()
 	if err != nil {
@@ -96,7 +89,6 @@ func derivedTables() ([]genTable, error) {
 	}, nil
 }
 
-// renderTables returns the formatted source of tables_gen.go.
 func renderTables() ([]byte, error) {
 	tabs, err := derivedTables()
 	if err != nil {
@@ -121,10 +113,6 @@ func renderTables() ([]byte, error) {
 	return format.Source([]byte(b.String()))
 }
 
-// renderValue writes v as a Go expression: a composite literal with its
-// type when typed, or with the type elided, as an element of an array.
-// Zero struct fields and trailing zero array elements are left out. It
-// fails for a value that a constant cannot hold, such as a negative zero.
 func renderValue(b *strings.Builder, v reflect.Value, typed bool) error {
 	switch v.Kind() {
 	case reflect.Struct:
@@ -202,8 +190,6 @@ func renderValue(b *strings.Builder, v reflect.Value, typed bool) error {
 	return nil
 }
 
-// renderFloat returns the shortest decimal form of x that reads back
-// exactly as a float of the given number of bits.
 func renderFloat(x float64, bits int) (string, error) {
 	if math.IsNaN(x) || math.IsInf(x, 0) || x == 0 && math.Signbit(x) {
 		return "", fmt.Errorf("%v has no constant", x)
@@ -211,11 +197,8 @@ func renderFloat(x float64, bits int) (string, error) {
 	return strconv.FormatFloat(x, 'g', -1, bits), nil
 }
 
-// rfPath is the import path of package rf.
 const rfPath = "github.com/USA-RedDragon/dmrgo/v2/rf"
 
-// typeImports adds to set the packages other than rf of the named types
-// that t and the types of its elements and fields have.
 func typeImports(t reflect.Type, set map[string]bool) {
 	if p := t.PkgPath(); p != "" && p != rfPath {
 		set[p] = true
@@ -231,7 +214,6 @@ func typeImports(t reflect.Type, set map[string]bool) {
 	}
 }
 
-// typeName returns the name of t in package rf.
 func typeName(t reflect.Type) string {
 	if t.Name() != "" && t.PkgPath() != rfPath {
 		return t.String()

@@ -5,7 +5,6 @@ import (
 	"syscall"
 )
 
-// threadCPUSeconds returns the CPU time of the thread that runs f.
 func threadCPUSeconds(f func()) float64 {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()

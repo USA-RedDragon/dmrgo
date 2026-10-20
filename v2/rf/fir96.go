@@ -2,9 +2,6 @@
 
 package rf
 
-// fir96 returns the matched filter output in Q15 of the samples w at
-// 9.6 kHz, oldest first. The taps are written out, so that TinyGo folds
-// them into the code at every -opt.
 func fir96(w *[audio96Taps]int8) int32 {
 	return int32(audio96RRCQ15[8])*int32(w[8]) +
 		int32(audio96RRCQ15[0])*(int32(w[0])+int32(w[16])) +

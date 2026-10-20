@@ -12,13 +12,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// exactKinds is the number of burst kinds of exactBurst: every data type,
-// then voice bursts A to F.
 const exactKinds = int(enums.DataTypeReserved) + 6
 
-// exactBurst returns a burst of kind i of exactKinds with color code cc and
-// random content, its SYNC and voice burst position, and a CACH with a
-// valid TACT.
 func exactBurst(t *testing.T, rng *rand.Rand, i int, cc enums.ColorCode) (layer2.RawBurst, [3]byte, enums.SyncPattern, enums.VoiceBurstType) {
 	t.Helper()
 	var r layer2.RawBurst
@@ -91,8 +86,6 @@ func exactBurst(t *testing.T, rng *rand.Rand, i int, cc enums.ColorCode) (layer2
 	return r, cach, sync, voice
 }
 
-// leanHard sets the CACH and Data of b to the hard decisions that
-// leanCore.burst makes of the slot of r that starts at ring index 0.
 func leanHard(r *leanCore, b *Burst) {
 	thr := 2 * r.llrDev
 	var acc byte
@@ -116,11 +109,6 @@ func leanHard(r *leanCore, b *Burst) {
 	}
 }
 
-// TestLeanRepairRecorded repairs a rate 1/2 data burst that Tier0 detected
-// without a bit error, from the symbols that it held. Its front end had
-// clipped the outer levels of the SYNC, so that the fit gave a noise
-// variance of 0, and every symbol off the outer levels has both levels of
-// each pair at the outlier floor. The repair must leave the burst as it is.
 func TestLeanRepairRecorded(t *testing.T) {
 	t.Parallel()
 	ring := [slotSymbols]int8{
@@ -144,11 +132,6 @@ func TestLeanRepairRecorded(t *testing.T) {
 	}
 }
 
-// TestLeanRepairKeepsExact repairs bursts of every data type and voice
-// bursts that the core detected without a bit error, with the symbols at
-// their levels or anywhere in their decision regions, and likelihoods from
-// a noisy fit to one without noise, with and without the outlier floor,
-// and checks that the repair leaves every bit as it is.
 func TestLeanRepairKeepsExact(t *testing.T) {
 	t.Parallel()
 	rng := rand.New(rand.NewPCG(5, 6))
@@ -198,11 +181,6 @@ func TestLeanRepairKeepsExact(t *testing.T) {
 	}
 }
 
-// TestSoftRepairKeepsExact decodes bursts of every data type and voice
-// bursts from ratios with the signs of their bits at any magnitude from 1,
-// as the stages of Tier1 and the repair of Tier2 and Tier3 get them, with
-// each of their decoders, and checks that each decode leaves the burst as
-// it is.
 func TestSoftRepairKeepsExact(t *testing.T) {
 	t.Parallel()
 	rng := rand.New(rand.NewPCG(7, 8))

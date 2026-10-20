@@ -10,12 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// TestIQDiscBurstyOffset receives MS voice calls, whose carrier is on in
-// one slot of two, at a carrier offset of 900 Hz through the I/Q tiers
-// that run iqRx, and checks that the parts C0 and C1 of every voice frame
-// of every call decode: the oscillator moves while the core searches,
-// often right before the first SYNC of a call, and the core must follow
-// the move.
 func TestIQDiscBurstyOffset(t *testing.T) {
 	t.Parallel()
 	cfg := testConfig()
@@ -51,12 +45,6 @@ func TestIQDiscBurstyOffset(t *testing.T) {
 	}
 }
 
-// TestIQDiscDataBias receives MS rate 1 data calls on the carrier through
-// the I/Q tiers that run iqRx, and checks that the oscillator stays on the
-// carrier and that every rate 1 block is exact. Rate 1 data has no
-// whitening, and the ASCII of its payload moves the mean frequency of a
-// block by about 360 Hz: a move of the oscillator on that mean put a step
-// into the middle of a burst, where a block without FEC lost a bit.
 func TestIQDiscDataBias(t *testing.T) {
 	t.Parallel()
 	cfg := testConfig()
@@ -116,7 +104,6 @@ func TestIQDiscDataBias(t *testing.T) {
 	}
 }
 
-// voiceFrames returns the AMBE+2 frames of the voice bursts of bs.
 func voiceFrames(bs []Burst) []uint64 {
 	var out []uint64
 	for i := range bs {
@@ -137,8 +124,6 @@ func voiceFrames(bs []Burst) []uint64 {
 	return out
 }
 
-// c0c1InOrder returns the number of frames of want whose parts C0 and C1,
-// the first 24 bits, which the Golay codes protect, got holds in order.
 func c0c1InOrder(want, got []uint64) int {
 	n, next := 0, 0
 	for _, v := range got {
@@ -152,15 +137,6 @@ func c0c1InOrder(want, got []uint64) int {
 	return n
 }
 
-// TestIQDiscAdjacent receives MS voice calls, whose carrier is on in one
-// slot of two and 300 Hz above the channel, next to a continuous BS
-// stream 12.5 kHz above them and 40 dB stronger, through iqRx. In the gaps
-// between the bursts the edge of the channel filter holds only the other
-// channel, which pulls the mean frequency onto it. The test checks that
-// the parts C0 and C1 of every voice frame decode, that the oscillator,
-// held within 2500 Hz and moved only by the SYNC fits while locked, stays
-// within iqAFCLockHz of the carrier, and that without the hold the mean
-// moves it farther toward the other channel.
 func TestIQDiscAdjacent(t *testing.T) {
 	t.Parallel()
 	for _, held := range []bool{false, true} {
@@ -182,10 +158,6 @@ func TestIQDiscAdjacent(t *testing.T) {
 	}
 }
 
-// TestEngineAdjacent receives the streams of TestIQDiscAdjacent on Tier3,
-// with its channel held within 2500 Hz and a channel filter to 6 kHz, and
-// checks that C0 and C1 of every voice frame decode; its own channel
-// filter, flat to 7.5 kHz, lets the other channel in.
 func TestEngineAdjacent(t *testing.T) {
 	t.Parallel()
 	for _, held := range []bool{false, true} {
@@ -203,11 +175,6 @@ func TestEngineAdjacent(t *testing.T) {
 	}
 }
 
-// adjacentReceive receives the MS voice calls of TestIQDiscAdjacent at
-// offsetHz next to the stronger BS stream on tier with the settings o. It
-// returns the number of voice frames whose C0 and C1 decode in order, the
-// number sent, and the largest distance in Hz of the I/Q oscillator from
-// the carrier while the core is locked, 0 without iqRx.
 func adjacentReceive(t *testing.T, tier Tier, o *options, offsetHz float64) (n, want int, off float32) {
 	t.Helper()
 	cfg := testConfig()
@@ -255,7 +222,6 @@ func adjacentReceive(t *testing.T, tier Tier, o *options, offsetHz float64) (n, 
 	return c0c1InOrder(frames, voiceFrames(out)), len(frames), off
 }
 
-// iqDiscReceive runs the baseband x through iqRx at hz with OnBurst.
 func iqDiscReceive(x []complex64, hz int) []Burst {
 	o := discOptions()
 	o.IQDisc, o.IQHz = true, hz
@@ -268,10 +234,6 @@ func iqDiscReceive(x []complex64, hz int) []Burst {
 	return out
 }
 
-// TestIQDiscLoopback receives a strong BS stream with a 1400 Hz carrier
-// offset through iqRx at both discriminator rates and checks that every
-// voice frame and data block after the first slot decodes, and that the
-// oscillator found the offset.
 func TestIQDiscLoopback(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 6)
@@ -279,8 +241,6 @@ func TestIQDiscLoopback(t *testing.T) {
 	for _, hz := range []int{discRate, discRate / 2} {
 		sc := scoreBench(truth, iqDiscReceive(x, hz))
 		for _, k := range []string{"ambe", "rate12", "rate34", "csbk", "emb", "slottype"} {
-			// The receiver locks to the SYNC of the first slot, which it
-			// does not decode.
 			if s := sc[k]; s.Truth-s.Exact > 3 {
 				t.Errorf("%d Hz: %s %d of %d exact", hz, k, s.Exact, s.Truth)
 			}

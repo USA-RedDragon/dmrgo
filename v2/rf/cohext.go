@@ -9,196 +9,99 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// Layout of cohStage.
 const (
-	// cohSPS is the number of channel filter samples per symbol of iqRx at
-	// 24 kHz, the rate of the trellis.
-	cohSPS = discRate / symbolRate
-	// cohHist is the length of the ring of channel filter samples, a power
-	// of 2 that holds a slot and the delay of the core.
-	cohHist = 1 << 13
-	// cohKnown is the number of known symbols from which a run starts: the
-	// four of an EMB half, or the 24 of a SYNC.
+	cohSPS   = discRate / symbolRate
+	cohHist  = 1 << 13
 	cohKnown = 4
-	// cohLook is the lookahead of the trellis of a stage whose
-	// options.CohWin sets its blocks.
-	cohLook = 8
+	cohLook  = 8
 )
 
-// cohStage detects each burst again coherently from the channel filter
-// samples of iqRx, at the symbol timing of the core: a trellis over a
-// window of three symbols that carries the carrier phase with each
-// survivor, as the engine of Tier3 detects, run forward and backward from the
-// known symbols of the burst, its SYNC or the EMB that the core decoded.
-// It replaces the log-likelihood ratios of the core for the decoders of
-// softExt. On discriminator audio, discPhase rebuilds the ring from the
-// samples of the DiscReceiver.
 type cohStage struct {
-	// rx is the receiver of the ring on I/Q, or ph on audio, and f the
-	// front end of its DiscReceiver.
-	rx *iqRx
-	ph *discPhase
-	f  *audioFront
-	// trialing scales the phase of the samples of an audio ring by
-	// 1+trial, for the fit of its deviation.
-	trial    float64
-	trialing bool
-	// amp and noise hold the levels of each scale of scaleFit.
-	amp, noise [cohFitScales]float64
-	// easySNR is the SNR of the levels from which a burst is easy:
-	// cohEasySNR, or discEasySNR on an audio ring.
-	easySNR float64
-	// skipSNR, when above 0, is the SNR of the levels from which detect
-	// leaves a burst to the ratios of the core, and locked marks a stage
-	// that verifies no SYNC of the search.
-	skipSNR float64
-	locked  bool
-	model   *cpmModel
-	tr      *trellis
-	mu      float32
-	llrK    float32
-	buf     []complex64
-	// runs holds the correlations of the runs of the burst under detection,
-	// which its detections again with priors repeat, runAt the one under way
-	// and gen the detection.
-	runs  [cohRuns]cohRunCorr
-	runAt int
-	gen   int
-	// symX holds the samples of slot symbols -slotSymbols on that fill
-	// made forward in time, symbol k where symAt[k+slotSymbols] is
-	// symStamp, for symKey.
-	symX     []complex64
-	symAt    []uint32
-	symStamp uint32
-	symKey   cohSymKey
-	known    [slotSymbols]int8
-	isK      [slotSymbols]bool
-	app      [slotSymbols][4]float32
-	dist     [slotSymbols]int
-	// The run under way: its first symbol in the slot, its direction and
-	// steps, the time of slot symbol 0 in samples of the ring and the
-	// carrier rotation per sample.
-	g0    int
-	dir   int
-	steps int
-	t0    float64
-	// dt is the offset of the core's symbol timing that the SYNC of the
-	// bursts finds, in ring samples, followed from burst to burst, and
-	// relock marks a stream whose first SYNC sets it.
-	dt     float64
-	relock bool
-	// budget is the work, in trellis steps, that the stage may spend for
-	// each slot on a stream that is not clear, 0 for any, credit the work
-	// that it holds at slot budgetSlot, and work the trellis steps that
-	// it ran.
-	budget float64
-	// voiceOnly detects only the voice bursts again.
-	voiceOnly  bool
-	credit     float64
-	budgetSlot int64
-	work       int64
-	// fitOnly marks a burst whose SYNC only fits the carrier, the timing
-	// and the levels, which the core decodes.
-	fitOnly bool
-	// noNext leaves out the run of a BS burst from its SYNC into the slot
-	// before, noCross the run from the SYNC of the slot before into the
-	// burst, and crossVoice runs it only into the voice bursts B to F,
-	// which have no SYNC.
+	rx                          *iqRx
+	ph                          *discPhase
+	f                           *audioFront
+	trial                       float64
+	trialing                    bool
+	amp, noise                  [cohFitScales]float64
+	easySNR                     float64
+	skipSNR                     float64
+	locked                      bool
+	model                       *cpmModel
+	tr                          *trellis
+	mu                          float32
+	llrK                        float32
+	buf                         []complex64
+	runs                        [cohRuns]cohRunCorr
+	runAt                       int
+	gen                         int
+	symX                        []complex64
+	symAt                       []uint32
+	symStamp                    uint32
+	symKey                      cohSymKey
+	known                       [slotSymbols]int8
+	isK                         [slotSymbols]bool
+	app                         [slotSymbols][4]float32
+	dist                        [slotSymbols]int
+	g0                          int
+	dir                         int
+	steps                       int
+	t0                          float64
+	dt                          float64
+	relock                      bool
+	budget                      float64
+	voiceOnly                   bool
+	credit                      float64
+	budgetSlot                  int64
+	work                        int64
+	fitOnly                     bool
 	noNext, noCross, crossVoice bool
 	verifyScan                  float64
 	totalHz                     float64
-	// freq is the carrier offset of the stream, in Hz, that the SYNC of
-	// the bursts fits, from the DC offset of the core at the first.
-	freq   float64
-	freqOK bool
-	nFit   int
-	// fitVar is the variance of freq, in Hz squared.
-	fitVar float64
-	// The burst under detection: the scale of the trellis metric, its
-	// known runs, and the bit priors of its detection again.
-	scale    float32
-	ampAvg   float64
-	noiseAvg float64
-	// easy marks a burst whose levels are clear enough that it runs only
-	// from its own known symbols.
-	easy     bool
-	segs     [2][2]int
-	nseg     int
-	prior    [slotSymbols][4]float32
-	hasPrior bool
-	// prevOK marks a burst whose first half and SYNC field run again from
-	// the SYNC of the slot before, prevSyms at slot symbol prevK0, and
-	// cross that run; lastT0 and lastSync are the time of symbol 0 and the
-	// SYNC of the last burst, 0 for none.
-	prevOK   bool
-	cross    bool
-	prevK0   int
-	prevSyms [syncSymbols]int8
-	lastT0   float64
-	lastSync enums.SyncPattern
-	// bs marks a burst of a BS stream. The backward run of a burst with a
-	// SYNC of one goes on into the second half of the slot before, whose
-	// log-APPs it keeps in next, and nextOK marks them; qllr holds the
-	// ratios of each burst of the queue of softExt, for the second half
-	// of the burst before to take them.
-	bs     bool
-	next   [cohNext][4]float32
-	nextOK bool
-	// mine holds the bit priors of the second half of the last burst,
-	// slot mineSlot, that its detection again set, and carry those of the
-	// slot before the burst under detection, for its backward run there.
-	mine     [cohNext][4]float32
-	mineOK   bool
-	mineSlot int64
-	carry    [cohNext][4]float32
-	carryOK  bool
-	qllr     [extQueue][layer2.BurstBits]int16
-	// priorK gives the known symbols their prior: for a SYNC, not for an
-	// EMB that the core decoded.
-	priorK bool
-	sps    float64
-	// div is the number of baseband samples per ring sample, rate the
-	// rate of the ring, and step the ring samples per sample of the model.
-	div, rate, step float64
-	// The SYNC scan: the templates of the voice and the data SYNC of each
-	// of nsrc sources, nil on a ring that scan does not run on, and the
-	// ring samples under test.
-	scanTpl *[4][2][cohScanLen]complex64
-	scanX   [cohScanLen]complex64
-	nsrc    int
-	// peakOK marks a SYNC that scan found ending at core symbol peakAt,
-	// of source peakSrc, whose share peakRho a later symbol may top.
-	peakOK   bool
-	peakAt   int64
-	peakRho  float64
-	peakSrc  int
-	peakData bool
-	base     int64
-	// hFit is the modulation index that the SYNC fits of the streams
-	// measured on I/Q, hVar the variance of its log, and hNew marks a
-	// stream that no fit measured yet.
-	hFit float64
-	hVar float64
-	hNew bool
-	// size is the length of the ring, options.cohRing.
-	size int64
+	freq                        float64
+	freqOK                      bool
+	nFit                        int
+	fitVar                      float64
+	scale                       float32
+	ampAvg                      float64
+	noiseAvg                    float64
+	easy                        bool
+	segs                        [2][2]int
+	nseg                        int
+	prior                       [slotSymbols][4]float32
+	hasPrior                    bool
+	prevOK                      bool
+	cross                       bool
+	prevK0                      int
+	prevSyms                    [syncSymbols]int8
+	lastT0                      float64
+	lastSync                    enums.SyncPattern
+	bs                          bool
+	next                        [cohNext][4]float32
+	nextOK                      bool
+	mine                        [cohNext][4]float32
+	mineOK                      bool
+	mineSlot                    int64
+	carry                       [cohNext][4]float32
+	carryOK                     bool
+	qllr                        [extQueue][layer2.BurstBits]int16
+	priorK                      bool
+	sps                         float64
+	div, rate, step             float64
+	scanTpl                     *[4][2][cohScanLen]complex64
+	scanX                       [cohScanLen]complex64
+	nsrc                        int
+	peakOK                      bool
+	peakAt                      int64
+	peakRho                     float64
+	peakSrc                     int
+	peakData                    bool
+	base                        int64
+	hFit                        float64
+	hVar                        float64
+	hNew                        bool
+	size                        int64
 }
 
-// Settings of cohStage.fitIndex. cohSyncIndex is the share of the
-// modulation index of a signal that the fit of its SYNC measures: the
-// channel filter rounds the phase of the outer symbols of the SYNC, so that
-// a model of a lower index fits it best, by 2.3% from 1 to 12 dB C/N in
-// the sweep. The variance of the log of the index starts at cohIndexStart,
-// a deviation 5% off, and grows by cohIndexWalk at each stream, which may
-// come from another transmitter. A fit of a SYNC whose waveform explains
-// the share rho of the power of its samples has the variance cohIndexVar0
-// plus cohIndexVar times (1-rho)/rho, the noise over the signal, as the
-// sweep measured from 1 to 12 dB C/N. The model takes the fit when it
-// moves by cohIndexMove, as a share. The model keeps the nominal index
-// cohIndex while the fit is within cohIndexNear of it: on the XPR 8400
-// recordings, whose deviation the sweep cannot copy, the fit settles 1.5%
-// above the nominal index, and the model there decodes fewer exact voice
-// frames than at the nominal one.
 const (
 	cohIndex      = 0.27
 	cohIndexNear  = 0.03
@@ -210,8 +113,6 @@ const (
 	cohIndexMove  = 0.002
 )
 
-// newCohStage returns the coherent stage of iqRx r, with the settings
-// opt.
 func newCohStage(r *iqRx, opt *options) *cohStage {
 	s := newCohStageOf(opt)
 	s.rx, s.f = r, &r.d.f
@@ -228,7 +129,6 @@ func newCohStage(r *iqRx, opt *options) *cohStage {
 	return s
 }
 
-// setRing sets the ring of s to div baseband samples per ring sample.
 func (s *cohStage) setRing(div float64) {
 	s.div, s.rate = div, basebandRate/div
 	s.dt = cohDT
@@ -239,14 +139,10 @@ func (s *cohStage) setRing(div float64) {
 	s.step = s.sps / float64(s.model.sps)
 }
 
-// ringTime returns the time of symbol k of the core, in samples of the
-// ring.
 func (s *cohStage) ringTime(c *leanCore, k int64) float64 {
 	return symTime(c, k) * 2 / s.div
 }
 
-// newCohStageOf returns a coherent stage with the settings opt, without
-// its ring.
 func newCohStageOf(opt *options) *cohStage {
 	sps := cohSPS
 	if opt.CohSPS != 0 {
@@ -274,33 +170,16 @@ func newCohStageOf(opt *options) *cohStage {
 	return s
 }
 
-// Layout of the coherent SYNC scan: the samples of the waveform of a SYNC
-// that it correlates, without the first and last symbol, in segments that
-// it adds without their phase, so that a carrier offset of a few hundred
-// Hz does not cancel them, and the sample offsets it tries around the
-// timing of the core.
 const (
-	cohScanLen  = (syncSymbols - 2) * cohSPS
-	cohScanSegs = 4
-	cohScanOff  = 2
-	// cohScanRho is the least share of the power of the samples that the
-	// waveform of a SYNC must explain for scan.
-	cohScanRho = 0.45
-	// cohScanWait is the number of symbols after a peak that scan waits
-	// for a higher one.
-	cohScanWait = 3
-	// cohScanSeg is the length of a segment, and cohScanBound the margin
-	// over the bound of the power of a segment's correlation, for the
-	// rounding of its float32 sum.
+	cohScanLen   = (syncSymbols - 2) * cohSPS
+	cohScanSegs  = 4
+	cohScanOff   = 2
+	cohScanRho   = 0.45
+	cohScanWait  = 3
 	cohScanSeg   = cohScanLen / cohScanSegs
 	cohScanBound = 1.001
 )
 
-// scanPair returns the summed powers of the segment correlations of x
-// with the template tpl of a voice SYNC and with its conjugate, which is
-// the template of the data SYNC of the same source. It reports false,
-// after three segments, when neither can reach thr with rest, a bound
-// of the power of the last segment.
 func scanPair(x []complex64, tpl *[cohScanLen]complex64, rest, thr float64) (mv, md float64, ok bool) {
 	for g := range cohScanSegs {
 		if g == cohScanSegs-1 && max(mv, md)+rest < thr {
@@ -308,8 +187,6 @@ func scanPair(x []complex64, tpl *[cohScanLen]complex64, rest, thr float64) (mv,
 		}
 		var cv, cd complex64
 		for j := g * cohScanSeg; j < (g+1)*cohScanSeg; j++ {
-			// The products in float64, as the compiler multiplies
-			// complex64, so that the sums are those of x*tpl.
 			a, b := float64(real(x[j])), float64(imag(x[j]))
 			p, q := float64(real(tpl[j])), float64(imag(tpl[j]))
 			ap, bq, aq, bp := a*p, b*q, a*q, b*p
@@ -322,8 +199,6 @@ func scanPair(x []complex64, tpl *[cohScanLen]complex64, rest, thr float64) (mv,
 	return mv, md, true
 }
 
-// scanTemplate writes the conjugate waveform of SYNC p, symbols 1 to 22,
-// at cohSPS samples per symbol, into tpl.
 func (s *cohStage) scanTemplate(p enums.SyncPattern, tpl *[cohScanLen]complex64) {
 	m := s.model
 	var syms [syncSymbols]int8
@@ -342,17 +217,12 @@ func (s *cohStage) scanTemplate(p enums.SyncPattern, tpl *[cohScanLen]complex64)
 	}
 }
 
-// scan tests whether the last symbols of the core c end the SYNC of a
-// source, at a few sample offsets around the timing of the core, by the
-// share of the power of the ring samples that its waveform explains.
 func (s *cohStage) scan(c *leanCore) (int, bool, int64, bool) {
 	hist, n, lo := s.ring()
 	if s.scanTpl == nil || n < s.size/2 || s.step != 1 || s.div != 2 {
 		return 0, false, 0, false
 	}
 	sps := float64(samplesPerSy) / 2
-	// The first sample of symbol 1 of the SYNC that ends at the last
-	// symbol.
 	t := symTime(c, c.ns-1) + s.dt - float64(syncSymbols-2)*sps - float64(cohSPS/2)
 	b0 := int64(math.Round(t))
 	if b0-cohScanOff < lo || b0+cohScanOff+cohScanLen > n {
@@ -373,8 +243,6 @@ func (s *cohStage) scan(c *leanCore) (int, bool, int64, bool) {
 		if e == 0 {
 			continue
 		}
-		// A share under cohScanRho or best is not taken, so a source whose
-		// last segment cannot lift it there is left after three.
 		rest := (e - e3) * cohScanSeg * cohScanBound
 		k := cohScanSegs / (e * cohScanLen)
 		ns := -1.0
@@ -396,9 +264,6 @@ func (s *cohStage) scan(c *leanCore) (int, bool, int64, bool) {
 			}
 		}
 	}
-	// The SYNC ends at the symbol where the share peaks over cohScanWait
-	// symbols: a side lobe a symbol off falls short of it.
-	// A peak older than that is from before the core last locked.
 	if s.peakOK && c.ns-1-s.peakAt > 2*cohScanWait {
 		s.peakOK = false
 	}
@@ -414,10 +279,6 @@ func (s *cohStage) scan(c *leanCore) (int, bool, int64, bool) {
 	return s.peakSrc, s.peakData, back, true
 }
 
-// scanShare returns the largest share of the power of the ring samples
-// that the waveform of SYNC p explains in the segments of scan, at the
-// sample offsets of scan around the timing of the core, for a SYNC that
-// ends at the last symbol of c. It returns 1 when it cannot test p.
 func (s *cohStage) scanShare(c *leanCore, p enums.SyncPattern) float64 {
 	hist, n, lo := s.ring()
 	if n < s.size/2 || s.step != 1 || s.div != 2 {
@@ -459,16 +320,11 @@ func (s *cohStage) scanShare(c *leanCore, p enums.SyncPattern) float64 {
 	return best
 }
 
-// symTime returns the time of symbol k of the core, in samples of the
-// ring of channel filter samples. The DiscReceiver counts its input
-// samples, one per ring sample, as two baseband samples.
 func symTime(c *leanCore, k int64) float64 {
 	t := float64(c.mfStep*(c.n-1)+c.center-(c.ns-1-k)*samplesPerSy) + float64(c.mfStep)*float64(c.lastAt)
 	return t / 2
 }
 
-// ring returns the ring of samples, the number of samples it took and the
-// oldest that it holds.
 func (s *cohStage) ring() ([]complex64, int64, int64) {
 	if p := s.ph; p != nil {
 		return p.hist, p.n, max(p.lo, p.n-s.size)
@@ -476,8 +332,6 @@ func (s *cohStage) ring() ([]complex64, int64, int64) {
 	return s.rx.yHist, s.rx.yN, s.rx.yN - s.size
 }
 
-// ringAt returns sample k of the ring hist, which holds the samples lo to
-// n, and 0 for a sample outside it.
 func (s *cohStage) ringAt(hist []complex64, k, lo, n int64) complex64 {
 	if k < 0 || k < lo || k >= n {
 		return 0
@@ -485,8 +339,6 @@ func (s *cohStage) ringAt(hist []complex64, k, lo, n int64) complex64 {
 	return hist[k&(s.size-1)]
 }
 
-// sample returns the ring sample at time t, interpolated by Catmull-Rom;
-// fill rotates it by the carrier residual.
 func (s *cohStage) sample(t float64) complex64 {
 	if s.trialing || s.ph != nil && s.ph.lazy {
 		return s.ph.trialAt(t, s.t0, s.trial, s.totalHz)
@@ -499,11 +351,6 @@ func (s *cohStage) sample(t float64) complex64 {
 	return p1 + 0.5*c*(p2-p0+c*(2*p0-5*p1+4*p2-p3+c*(3*(p1-p2)+p3-p0)))
 }
 
-// phaseAt returns the phase, in radians, that removes the carrier left in
-// the ring sample at time t: the carrier offset less the frequency that
-// the oscillator removed there, summed from the time of slot symbol 0.
-// The oscillator moves at most a few times a second, so the sum runs over
-// a few pieces.
 func (s *cohStage) phaseAt(t float64) float64 {
 	r := s.rx
 	a, b := s.t0, t
@@ -518,7 +365,6 @@ func (s *cohStage) phaseAt(t float64) float64 {
 	for a < b {
 		n := int64(math.Floor(a))
 		hz := s.totalHz - float64(r.ncoAt(n))
-		// The next move after n, if one comes before b.
 		end := b
 		for i := 0; i < min(r.nTunes, iqTunes); i++ {
 			if tn := float64(r.tunes[(r.nTunes-1-i)%iqTunes].n); tn > a && tn < end {
@@ -531,11 +377,6 @@ func (s *cohStage) phaseAt(t float64) float64 {
 	return -2 * math.Pi * sign * ph / s.rate
 }
 
-// fill writes the samples of slot symbols k0 to k1-1 of the run into x,
-// as engine.fillRange: time reversed and conjugated for a backward run.
-// The samples of a symbol forward in time are the same for every run and
-// level of a burst, so it keeps them while the ring and the timing and
-// carrier of the burst stay.
 func (s *cohStage) fill(k0, k1 int, x []complex64) {
 	sps := s.model.sps
 	if s.dir < 0 || s.trialing || s.ph != nil && s.ph.lazy {
@@ -573,10 +414,6 @@ func (s *cohStage) fill(k0, k1 int, x []complex64) {
 	}
 }
 
-// cohSymKey is what the samples of a symbol that fill keeps depend on:
-// the detection, the time of slot symbol 0 and the carrier offset, the
-// samples of the ring, the scale and DC offset of an audio ring, and the
-// moves of the oscillator of an I/Q ring and its frequency, in unit.
 type cohSymKey struct {
 	gen      int
 	t0, hz   float64
@@ -585,7 +422,6 @@ type cohSymKey struct {
 	tunes    int
 }
 
-// fillSym writes the sps samples of slot symbol k of the run into x.
 func (s *cohStage) fillSym(k int, x []complex64) {
 	sps := s.model.sps
 	tc := s.t0 + float64(k)*s.sps
@@ -595,8 +431,6 @@ func (s *cohStage) fillSym(k int, x []complex64) {
 		start = tc + float64(sps/2)*step - 2/s.div
 		step = -step
 	}
-	// The carrier phase moves linearly over the samples of a symbol,
-	// but across a move of the oscillator.
 	ph0 := s.phaseAt(start)
 	dph := (s.phaseAt(start+float64(sps-1)*step) - ph0) / float64(sps-1)
 	sn, cs := math.Sincos(ph0)
@@ -613,8 +447,6 @@ func (s *cohStage) fillSym(k int, x []complex64) {
 	}
 }
 
-// runSamples writes the samples of the run into x, unless the trellis
-// holds the correlations of the run, which are all it takes from them.
 func (s *cohStage) runSamples(k0, k1 int, x []complex64) {
 	if s.tr.rowsOK {
 		return
@@ -625,16 +457,11 @@ func (s *cohStage) runSamples(k0, k1 int, x []complex64) {
 	r.gen, r.g0, r.dir, r.t0, r.hz, r.k0, r.k1 = s.gen, s.g0, s.dir, s.t0, s.totalHz, k0, k1
 }
 
-// cohRuns is the most runs of the trellis that detect makes for a burst,
-// and cohSymN the number of slot symbols, from -slotSymbols, whose samples
-// fill keeps.
 const (
 	cohRuns = 3
 	cohSymN = 2*slotSymbols + cohShift + 4*runMargin
 )
 
-// cohRunCorr holds the template correlations of the samples of a run,
-// and the run, detection and carrier that they are of.
 type cohRunCorr struct {
 	corr   []complex64
 	gen    int
@@ -644,8 +471,6 @@ type cohRunCorr struct {
 	k0, k1 int
 }
 
-// holds reports whether r holds the correlations of intervals k0 to k1-1
-// of the run of s under way.
 func (r *cohRunCorr) holds(s *cohStage, k0, k1 int) bool {
 	return r.gen == s.gen && r.g0 == s.g0 && r.dir == s.dir && r.t0 == s.t0 && r.hz == s.totalHz && r.k0 == k0 && r.k1 >= k1
 }
@@ -688,11 +513,6 @@ func (s *cohStage) runKeep(k int, app []float32) {
 	if j < cachSymbols || j >= slotSymbols {
 		return
 	}
-	// The run from the SYNC of the slot before and the backward run of
-	// the burst detect the first half and the SYNC field from both sides:
-	// their mean log-APPs spread less than either, as the engine of Tier3 detects
-	// across the slots. The EMB of a burst B to F, where its own runs
-	// start, gains the most.
 	if s.cross {
 		if j >= syncFirstSym+syncSymbols || s.dist[j] == math.MaxInt {
 			return
@@ -712,11 +532,6 @@ func (s *cohStage) runKeep(k int, app []float32) {
 	s.dist[j] = dist
 }
 
-// Settings of the fine timing of cohStage: the offset of the symbol
-// timing of the core that it starts from, in ring samples, on a ring at
-// 24 kHz and at 12 kHz, the offsets it tries around the last, and at the
-// first SYNC of a stream, in samples at 24 kHz, and the weight of each
-// SYNC in it.
 const (
 	cohDT     = 1.0
 	cohDT12   = -0.4
@@ -726,19 +541,10 @@ const (
 	cohDTGain = 0.2
 )
 
-// fineTime moves t0 to the offset of the symbol timing, within cohDTSpan
-// of dt, at which the known symbols k0 to k1 correlate best, and returns
-// the move. The caller moves dt by it when the symbols are a SYNC: the
-// move of a field that holds none is noise.
 func (s *cohStage) fineTime(k0, k1 int) float64 {
 	return s.timeIn(k0, k1, cohDTSpan)
 }
 
-// syncTime returns the move of dt that the SYNC of a burst, the known
-// symbols k0 to k1, fits, and moves t0 by its fine timing. The timing of
-// the core relative to the ring can jump at a lock: when the first SYNC of
-// a stream does not fit at dt, the offset within cohDTWide at which it
-// fits best sets it, if the SYNC fits there.
 func (s *cohStage) syncTime(k0, k1 int) float64 {
 	relock := s.relock
 	s.relock = false
@@ -754,19 +560,13 @@ func (s *cohStage) syncTime(k0, k1 int) float64 {
 	return cohDTGain * s.fineTime(k0, k1)
 }
 
-// rho returns the share of the power of the known symbols k0 to k1 at t0
-// that their waveform explains.
 func (s *cohStage) rho(k0, k1 int) float64 {
 	a, n := s.levels(k0, k1)
 	return a * a / (a*a + max(n, 0))
 }
 
-// cohRelockRho is the least share of the power of the first SYNC of a
-// stream that its waveform explains at dt for the fine timing to follow
-// it from there.
 const cohRelockRho = 0.5
 
-// timeIn is fineTime within span samples at 24 kHz of dt.
 func (s *cohStage) timeIn(k0, k1 int, span float64) float64 {
 	t0, best, bestD := s.t0, -1.0, 0.0
 	for d := -span; d <= span+1e-9; d += cohDTStep {
@@ -779,17 +579,6 @@ func (s *cohStage) timeIn(k0, k1 int, span float64) float64 {
 	return bestD * 2 / s.div
 }
 
-// cohFreqGain is the least weight of each fit of the carrier offset, from
-// a SYNC or from the detected symbols of a burst, and cohFreqSpan the
-// most, in Hz, that the fits move it from the mean frequency of the I/Q
-// samples. The first fit may move it by up to cohFreqFirst: a lock can
-// come while the oscillator still pulls in, so that the mean is far off.
-// The fits weigh by their variance against that of the offset, as a
-// Kalman filter: cohFreqVar, in Hz squared, for the mean frequency, and
-// cohFitVar over the square of the SNR of the SYNC for the fit of 24
-// symbols, which the sweep measured from -0.5 to 4.5 dB Eb/N0. The
-// variance of the offset grows by cohFreqWalk before each burst, as its
-// carrier drifts: a crystal that warms by 100 Hz/s.
 const (
 	cohFreqGain  = 0.03
 	cohFreqSpan  = 200
@@ -799,17 +588,6 @@ const (
 	cohFreqWalk  = 10
 )
 
-// track sets the carrier offset of the runs from that of the SYNC fits of
-// the stream, or, until a SYNC fits it, from the offset of the stream when
-// it is more than cohFreqSpan away: the fits of the bursts that the ring
-// took while the oscillator pulled in can be far off, and a wrong offset
-// makes the next fits wrong. The offset of a locked stream is that of the
-// SYNC fits of the core, and of another the mean frequency of the I/Q
-// samples, which the symbols of a burst move by hundreds of Hz for the
-// bursts of a voice call or of rate 1 data, and noise pulls toward the
-// oscillator. After a fit the offset of the stream counts only when it is
-// more than cohFreqFirst away, which no fit moves: the oscillator was far
-// off at the lock.
 func (s *cohStage) track() {
 	var hz float64
 	var locked bool
@@ -829,25 +607,16 @@ func (s *cohStage) track() {
 	s.totalHz = s.freq
 }
 
-// lost reports whether the ring, whose oldest sample is lo, no longer
-// holds the burst at t0, or holds audio that clipped there, whose phase is
-// lost: the core detects the burst.
 func (s *cohStage) lost(lo int64) bool {
 	p := s.ph
 	return s.t0-s.sps < float64(lo) || p != nil && p.clipped(s.t0-s.sps, s.t0+slotSymbols*s.sps)
 }
 
-// lock forgets the bursts of the stream before a lock: the runs from the
-// SYNC of the slot before and the priors of its second half are of a
-// stream with another timing.
 func (s *cohStage) lock() {
 	s.lastT0, s.lastSync, s.mineOK, s.relock, s.hNew = 0, 0, false, true, true
 	s.hVar += cohIndexWalk
 }
 
-// freqFit returns the carrier offset, in Hz, left in the ring samples of
-// the known symbols k0 to k1: the phase step from symbol to symbol of
-// their correlations with their waveform, less the phase of the symbols.
 func (s *cohStage) freqFit(k0, k1 int) float64 {
 	acc := s.freqAcc(k0, k1)
 	if acc == 0 {
@@ -856,9 +625,6 @@ func (s *cohStage) freqFit(k0, k1 int) float64 {
 	return cmplx.Phase(acc) * symbolRate / (2 * math.Pi)
 }
 
-// freqAcc returns the sum of the products of the correlations of the
-// known symbols k0 to k1 with the conjugate of the one before, whose phase
-// freqFit takes.
 func (s *cohStage) freqAcc(k0, k1 int) complex128 {
 	m := s.model
 	s.g0, s.dir = k0, 1
@@ -889,10 +655,6 @@ func (s *cohStage) freqAcc(k0, k1 int) complex128 {
 	return acc
 }
 
-// trackBurst fits the carrier offset again from every symbol of the burst
-// that detect detected last, whose bits fixed holds after its FEC, as the
-// engine of Tier3 tracks the carrier from the symbols it detected: the
-// SYNC of one burst fits it too coarsely for the trellis.
 func (s *cohStage) trackBurst(fixed *layer2.RawBurst) {
 	for k := range burstSymbols {
 		p := 2 * k
@@ -924,18 +686,11 @@ func (s *cohStage) trackBurst(fixed *layer2.RawBurst) {
 	s.totalHz = s.freq
 }
 
-// cohKnownPrior is the log prior, in nats, of a known symbol, and
-// cohRefinePrior that of each bit that the FEC of a voice burst fixed, for
-// its detection again.
 const (
 	cohKnownPrior  = 4
 	cohRefinePrior = 20
 )
 
-// detect detects burst b of the core c, whose fields the core decoded,
-// coherently, and writes the log-likelihood ratios of its 264 bits into
-// llr. It reports false when the burst has too few known symbols, or the
-// ring no longer holds it.
 func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) bool {
 	if s.f.gain <= 0 {
 		return false
@@ -965,14 +720,6 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	}
 	if nseg == 1 {
 		s.dt += s.syncTime(segs[0][0], segs[0][1])
-		// The mean of the first fits, then a slow average: the offset that
-		// the fits start from is no fit.
-		// The noise of a fit falls with the square of the SNR of the SYNC
-		// at the offset that it fits. A far fit counts when the SYNC fits
-		// that offset, and better than the offset before: at a low C/N the
-		// fit of one SYNC is noise, but a lock can come while the
-		// oscillator still pulls in, so that the offset is far off. It
-		// starts the fits again.
 		a0, n0 := s.levels(segs[0][0], segs[0][1])
 		fit := s.freqFit(segs[0][0], segs[0][1])
 		f0 := s.freq
@@ -997,7 +744,6 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 		}
 		s.fitDeviation(segs[0][0], segs[0][1], f0+fit-s.freq)
 	}
-	// The phase of a lazy audio ring is noise until a fit sets its scale.
 	if p := s.ph; p != nil && p.lazy && !p.cal {
 		return false
 	}
@@ -1007,8 +753,6 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	s.scale = float32(2 * s.ampAvg / s.noiseAvg)
 	s.easy = s.ampAvg*s.ampAvg/s.noiseAvg >= s.easySNR
 	s.segs, s.nseg, s.hasPrior = segs, nseg, false
-	// The carrier of a BS stream stays on, so the first half and the SYNC
-	// field of a burst after one with a SYNC run again from that SYNC.
 	s.prevOK = false
 	if c.bs && s.lastSync != 0 {
 		k := int(math.Round((s.lastT0-s.t0)/s.sps)) + syncFirstSym
@@ -1024,9 +768,6 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 	return !s.fitOnly && s.runAll(llr)
 }
 
-// knownSegs sets the known symbols of burst b: its SYNC, or the two halves
-// of the EMB that the core decoded. It returns their runs and the number
-// of runs, 0 for a burst with neither.
 func (s *cohStage) knownSegs(b *Burst) (segs [2][2]int, nseg int) {
 	clear(s.isK[:])
 	if _, _, ok := layer2.SyncSourceOf(b.Sync); ok && b.Distance >= 0 {
@@ -1047,16 +788,11 @@ func (s *cohStage) knownSegs(b *Burst) (segs [2][2]int, nseg int) {
 		}
 		segs[0] = [2]int{syncFirstSym, syncFirstSym + 3}
 		segs[1] = [2]int{syncFirstSym + syncSymbols - 4, syncFirstSym + syncSymbols - 1}
-		// The EMB that the core decoded sets the phase of the runs, but
-		// gives no priors, so that the decode of the EMB from the new
-		// ratios does not repeat a wrong one.
 		nseg, s.priorK = 2, false
 	}
 	return segs, nseg
 }
 
-// average adds the levels of the known runs segs[:nseg] of the burst to
-// their mean over the bursts, and reports false when they have none.
 func (s *cohStage) average(segs [2][2]int, nseg int) bool {
 	var amp, noise float64
 	for _, sg := range segs[:nseg] {
@@ -1067,8 +803,6 @@ func (s *cohStage) average(segs [2][2]int, nseg int) bool {
 	if amp <= 0 || noise <= 0 {
 		return false
 	}
-	// The levels of a few known symbols are noisy at a low C/N: they
-	// average over the bursts, each by its known symbols.
 	n := float64(segs[nseg-1][1] - segs[0][0] + 1)
 	if nseg == 2 {
 		n = float64(segs[0][1] - segs[0][0] + 1 + segs[1][1] - segs[1][0] + 1)
@@ -1083,12 +817,6 @@ func (s *cohStage) average(segs [2][2]int, nseg int) bool {
 	return true
 }
 
-// quiet reports whether the stream is clear enough, by the levels of the
-// bursts before, that detect leaves the burst to the ratios of the core,
-// once cohQuietFits SYNC fits set its carrier and timing. The levels then
-// follow the SYNC seg of a burst at the timing and the carrier offset of
-// the stream, and the fits wait, as they move little at that SNR; nseg is
-// 2 for the EMB of a burst without a SYNC.
 func (s *cohStage) quiet(c *leanCore, seg [2]int, nseg int, b *Burst) bool {
 	if !s.clear(c) {
 		if s.fitOnly || s.spend(b.Slot) {
@@ -1108,11 +836,6 @@ func (s *cohStage) quiet(c *leanCore, seg [2]int, nseg int, b *Burst) bool {
 	return true
 }
 
-// spend reports whether the credit of the stage holds a coherent
-// detection of the burst of slot j: the credit grows by budget for each
-// slot, up to cohBudgetMax slots of it, and the caller takes the work of
-// each burst from it, so that a weak stream costs at most budget for each
-// slot. A budget of 0 holds every burst.
 func (s *cohStage) spend(j int64) bool {
 	if s.budget <= 0 {
 		return true
@@ -1124,12 +847,8 @@ func (s *cohStage) spend(j int64) bool {
 	return s.credit > 0
 }
 
-// cohBudgetMax is the most slots of budget that the credit of a stage
-// holds.
 const cohBudgetMax = 6
 
-// clear reports whether the levels of the bursts before and of the core c
-// show a clear stream, whose bursts the core detects and places.
 func (s *cohStage) clear(c *leanCore) bool {
 	if s.skipSNR <= 0 {
 		return false
@@ -1137,45 +856,22 @@ func (s *cohStage) clear(c *leanCore) bool {
 	return c.dev*c.dev >= cohClearCore*c.discVar || s.nFit >= cohQuietFits && s.ampAvg*s.ampAvg >= s.skipSNR*s.noiseAvg && c.dev*c.dev >= cohQuietCore*c.discVar
 }
 
-// cohQuietFits is the number of SYNC fits of the carrier after which a
-// clear stream leaves its bursts to the core, and cohQuietCore the least
-// SNR of the levels of the core, the square of the deviation of level 1
-// over the noise variance, for it: the core detects and places the bursts
-// by its own levels, which can take some bursts to settle after a lock.
-// From cohClearCore the core alone shows a clear stream: a transmitter
-// whose phase strays from the model, as one whose modulator passes no low
-// frequencies, then loses no burst to the coherent detection.
 const (
 	cohQuietFits = 4
 	cohQuietCore = 4
 	cohClearCore = 16
 )
 
-// cohLevelSyms is the number of known symbols that the levels of the
-// trellis average over.
 const cohLevelSyms = 48
 
-// cohEasySNR is the SNR of the levels, the power of the signal over that of
-// the noise, from which a burst runs only from its own known symbols and
-// detects no voice burst again: about 7 dB Eb/N0, 1.5 dB above the
-// Eb/N0 of 90% of every payload, where those runs gain nothing.
 const cohEasySNR = 6
 
-// cohShift is the most symbols by which the timing of the core may move
-// the slot before.
 const cohShift = 3
 
-// cohMaxRun is the most intervals of a run of the trellis: the run from
-// the SYNC of the slot before across the first half of the burst.
 const cohMaxRun = slotSymbols + syncSymbols + cohShift + runMargin
 
-// cohNext is the number of symbols of the second half of a slot, after
-// its SYNC field.
 const cohNext = slotSymbols - syncFirstSym - syncSymbols
 
-// nextInto averages the ratios of the second half of the slot before the
-// last burst that detect detected, in llr, with those of the run from the
-// SYNC of the last burst, as runKeep averages the first half.
 func (s *cohStage) nextInto(llr *[layer2.BurstBits]int16) {
 	for i := range cohNext {
 		p := 2 * (syncFirstSym + syncSymbols + i - cachSymbols)
@@ -1185,8 +881,6 @@ func (s *cohStage) nextInto(llr *[layer2.BurstBits]int16) {
 	}
 }
 
-// prevAt returns the symbol of the SYNC of the slot before at slot symbol
-// j, and whether it is one.
 func (s *cohStage) prevAt(j int) (int8, bool) {
 	i := j - s.prevK0
 	if !s.prevOK || i < 0 || i >= syncSymbols {
@@ -1195,15 +889,8 @@ func (s *cohStage) prevAt(j int) (int8, bool) {
 	return s.prevSyms[i], true
 }
 
-// cohPlaceRho is the least share of the power of the SYNC field that its
-// waveform must explain for place to take it as a SYNC.
 const cohPlaceRho = 0.3
 
-// place tests the SYNC field of burst b of slot j, which the core could
-// not place, coherently against the voice and the data SYNC of the
-// stream, and places it as the burst of the one whose waveform explains
-// most of its power, when that is at least cohPlaceRho of it. On a clear
-// stream a burst that the core does not place has no SYNC.
 func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
 	if s.f.gain <= 0 || !s.freqOK || s.clear(c) {
 		return false
@@ -1246,28 +933,13 @@ func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
 	return true
 }
 
-// cohVerifyRho is the least share of the power of a SYNC field that its
-// waveform must explain for verify, and cohVerifyPre the least at the
-// timing of the core, before the fine timing.
 const (
 	cohVerifyRho = 0.35
 	cohVerifyPre = 0.2
 )
 
-// cohResidual is the most share of the power of a SYNC field that its
-// waveform may leave for verify and scan on I/Q, in multiples of the share
-// of the noise in the power of its samples. A SYNC leaves the noise and
-// the error of the model: from -2 to 4 dB C/N, at most 3 times the noise.
-// The data of a burst whose symbols match a SYNC in most signs leaves half
-// of the signal or more: from 8 dB C/N, over 4 times the noise. The share
-// of the power alone passes such data once the carrier offset is known, as
-// after an unmodulated carrier or at the start of a stream.
 const cohResidual = 4
 
-// noiseShare returns the share of the noise in the power of the samples x,
-// by the M2M4 estimate: the FM carrier has a constant envelope, so that the
-// mean square of its power is the square of the mean, while that of noise
-// is twice it.
 func noiseShare(x []complex64) float64 {
 	var p, p2 float64
 	for _, v := range x {
@@ -1283,10 +955,6 @@ func noiseShare(x []complex64) float64 {
 	return 1 - math.Sqrt(max(2*p*p-p2, 0))/p
 }
 
-// verify reports whether the last symbols of the core c end SYNC p by
-// the coherent test of place: the ring samples of the SYNC field against
-// its waveform, at the carrier offset that the oscillator and the core
-// give, or that the stream had.
 func (s *cohStage) verify(c *leanCore, p enums.SyncPattern) bool {
 	f := s.f
 	if f.gain <= 0 {
@@ -1310,15 +978,11 @@ func (s *cohStage) verify(c *leanCore, p enums.SyncPattern) bool {
 	if s.seedDeviation(c, syncFirstSym, syncFirstSym+syncSymbols-1) {
 		s.verifyHz()
 	}
-	// Most candidates of the search on noise fail at the timing of the
-	// core already, which the fine timing would test six times more.
 	if amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1); amp <= 0 || amp*amp/(amp*amp+max(noise, 0)) < cohVerifyPre {
 		return false
 	}
 	d := s.fineTime(syncFirstSym, syncFirstSym+syncSymbols-1)
 	amp, noise := s.levels(syncFirstSym, syncFirstSym+syncSymbols-1)
-	// The ring of audio holds phasors of unit power, whose envelope shows
-	// no noise.
 	rho := amp * amp / (amp*amp + max(noise, 0))
 	if amp <= 0 || rho < cohVerifyRho || s.ph == nil && 1-rho > cohResidual*noiseShare(s.buf[:syncSymbols*s.model.sps]) {
 		return false
@@ -1327,8 +991,6 @@ func (s *cohStage) verify(c *leanCore, p enums.SyncPattern) bool {
 	return true
 }
 
-// verifyHz sets the carrier offset of verify: that of the stream, or
-// before the first fit the one that the oscillator and the core give.
 func (s *cohStage) verifyHz() {
 	s.totalHz = s.freq
 	switch {
@@ -1341,10 +1003,6 @@ func (s *cohStage) verifyHz() {
 	}
 }
 
-// runAll runs the trellis forward from the start of the first known run
-// of the burst to its end, and backward from the end of the last to its
-// start, and writes the log-likelihood ratios into llr. It reports false
-// when a symbol got none.
 func (s *cohStage) runAll(llr *[layer2.BurstBits]int16) bool {
 	for i := range s.dist {
 		s.dist[i] = math.MaxInt
@@ -1375,17 +1033,12 @@ func (s *cohStage) runAll(llr *[layer2.BurstBits]int16) bool {
 	return true
 }
 
-// refineData detects the data burst again with the bit priors w*ext, the
-// extrinsic ratios of its grid decode weighed by w, and writes the new
-// ratios into llr.
 func (s *cohStage) refineData(ext *[layer2.BurstBits]float32, w float32, llr *[layer2.BurstBits]int16) bool {
 	clear(s.prior[:])
 	for k := range burstSymbols {
 		lp := &s.prior[cachSymbols+k]
 		for d := range 4 {
 			b0, b1 := dibitOfDigit(d)
-			// The ratios of the trellis are llrK times its metric, as
-			// the engine of Tier3 divides its priors by its LLRScale.
 			lp[d] = (bitPrior(w*ext[2*k], b0) + bitPrior(w*ext[2*k+1], b1)) / s.llrK
 		}
 	}
@@ -1397,9 +1050,6 @@ func (s *cohStage) refineData(ext *[layer2.BurstBits]float32, w float32, llr *[l
 	return ok
 }
 
-// refine detects the voice burst again with the bits of fixed that known
-// marks, which its FEC fixed, as priors of cohRefinePrior nats, and writes
-// the new log-likelihood ratios into llr.
 func (s *cohStage) refine(fixed *layer2.RawBurst, known *[layer2.BurstBits]bool, llr *[layer2.BurstBits]int16) bool {
 	clear(s.prior[:])
 	for k := range burstSymbols {
@@ -1430,8 +1080,6 @@ func (s *cohStage) refine(fixed *layer2.RawBurst, known *[layer2.BurstBits]bool,
 	return ok
 }
 
-// run runs the trellis n symbols from slot symbol g in direction dir, from
-// the phase of the known symbols at g.
 func (s *cohStage) run(g, n, dir int, scale float32) {
 	m := s.model
 	d := m.d
@@ -1456,9 +1104,6 @@ func (s *cohStage) run(g, n, dir int, scale float32) {
 	s.tr.run(s, s.steps, rot, scale, s.mu)
 }
 
-// levels returns the amplitude and the noise variance of the ring samples
-// from the known symbols k0 to k1 of the slot, against their waveform at
-// the phase that fits them best.
 func (s *cohStage) levels(k0, k1 int) (amp, noise float64) {
 	m := s.model
 	s.g0, s.dir = k0, 1

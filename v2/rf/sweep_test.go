@@ -8,69 +8,45 @@ import (
 	"testing"
 )
 
-// sweepJob is the input of TestSweepWorker: one receiver variant and the
-// cases to receive with it. cmd/rxsweep writes it.
 type sweepJob struct {
-	// Tier is the base tier, and Opt the JSON of the options fields that
-	// replace the settings of the tier.
-	Tier int             `json:"tier"`
-	Opt  json.RawMessage `json:"opt,omitempty"`
-	// Lookback is Config.LookbackSlots.
-	Lookback int `json:"lookback"`
-	// Hz is Config.BasebandHz: 48000, or 24000 for the mean of each pair
-	// of samples, or with Disc DiscConfig.Hz. 0 means the default rate.
-	Hz int `json:"hz,omitempty"`
-	// Superframes is the length of the voice call of the stream.
-	Superframes int `json:"superframes"`
-	// Offset is the carrier offset in Hz.
-	Offset float64 `json:"offset"`
-	// Cases are the C/N and noise seeds to receive.
-	Cases []sweepCase `json:"cases"`
-	// Cost also measures the RAM, the allocations and the false bursts.
-	Cost bool `json:"cost,omitempty"`
-	// Disc receives the stream through discAudio with a DiscReceiver.
-	Disc bool `json:"disc,omitempty"`
-	// Stream is "ms" for the direct mode traffic of msStream, of
-	// Superframes/3 rounds, in place of the BS stream of benchStream.
-	Stream string `json:"stream,omitempty"`
+	Tier        int             `json:"tier"`
+	Opt         json.RawMessage `json:"opt,omitempty"`
+	Lookback    int             `json:"lookback"`
+	Hz          int             `json:"hz,omitempty"`
+	Superframes int             `json:"superframes"`
+	Offset      float64         `json:"offset"`
+	Cases       []sweepCase     `json:"cases"`
+	Cost        bool            `json:"cost,omitempty"`
+	Disc        bool            `json:"disc,omitempty"`
+	Stream      string          `json:"stream,omitempty"`
 }
 
-// sweepCase is one stream of a job.
 type sweepCase struct {
 	CN   float64 `json:"cn"`
 	Seed uint64  `json:"seed"`
 }
 
-// sweepCaseResult is the score and CPU time of one case.
 type sweepCaseResult struct {
 	sweepCase
-	Payloads map[string]*benchScore `json:"payloads"`
-	// CPUSeconds is the thread CPU time of the receiver over the stream of
-	// Seconds seconds.
-	CPUSeconds float64 `json:"cpu_seconds"`
-	Seconds    float64 `json:"seconds"`
+	Payloads   map[string]*benchScore `json:"payloads"`
+	CPUSeconds float64                `json:"cpu_seconds"`
+	Seconds    float64                `json:"seconds"`
 }
 
-// sweepCost is the cost of a variant apart from its CPU time.
 type sweepCost struct {
-	RAMBytes     int     `json:"ram_bytes"`
-	Allocs       float64 `json:"allocs"`
-	FalsePerHour float64 `json:"false_per_hour"`
-	// SearchNsPerSecond is the CPU time per second of noise.
+	RAMBytes          int     `json:"ram_bytes"`
+	Allocs            float64 `json:"allocs"`
+	FalsePerHour      float64 `json:"false_per_hour"`
 	SearchNsPerSecond float64 `json:"search_ns_per_second"`
 }
 
-// sweepResult is the output of TestSweepWorker.
 type sweepResult struct {
 	Cases []sweepCaseResult `json:"cases"`
 	Cost  *sweepCost        `json:"cost,omitempty"`
 }
 
-// config returns the Config of the job.
 func (j *sweepJob) config(t testing.TB) Config {
 	t.Helper()
-	// Tier 0 of a space is the discriminator core alone, which the opt of
-	// a variant builds on; tier n above it is Tier0+n.
 	tier := Tier0 + Tier(j.Tier)
 	o := discOptions()
 	if j.Tier > 0 {
@@ -98,7 +74,6 @@ func (j *sweepJob) hz() int {
 	return j.Hz
 }
 
-// input returns x at the input rate of the job.
 func (j *sweepJob) input(x []complex64) []complex64 {
 	if j.hz() == basebandRate {
 		return x
@@ -110,20 +85,16 @@ func (j *sweepJob) input(x []complex64) []complex64 {
 	return y
 }
 
-// sweepRx is the receiver of a job: a Receiver that takes baseband, or a
-// DiscReceiver that takes its discAudio.
 type sweepRx struct {
 	r *Receiver
 	d *DiscReceiver
 }
 
-// sweepInput is a stream converted for a sweepRx.
 type sweepInput struct {
 	x []complex64
 	a []int16
 }
 
-// newRx returns the receiver of the job with the settings of cfg.
 func (j *sweepJob) newRx(cfg Config) sweepRx {
 	if j.Disc {
 		d, err := NewDisc(DiscConfig{Hz: j.audioHz(), OnBurst: cfg.OnBurst, opt: cfg.opt})
@@ -138,7 +109,6 @@ func (j *sweepJob) newRx(cfg Config) sweepRx {
 	return sweepRx{r: mustNew(cfg)}
 }
 
-// convert returns the input of the receiver for the baseband x of the job.
 func (s sweepRx) convert(j *sweepJob, x []complex64) sweepInput {
 	if s.d != nil {
 		return sweepInput{a: discAudio(x, j.audioHz())}
@@ -146,10 +116,8 @@ func (s sweepRx) convert(j *sweepJob, x []complex64) sweepInput {
 	return sweepInput{x: j.input(x)}
 }
 
-// len returns the number of samples of in.
 func (in sweepInput) len() int { return len(in.x) + len(in.a) }
 
-// write feeds samples lo to hi of in to the receiver in writes of 4096.
 func (s sweepRx) write(in sweepInput, lo, hi int) {
 	for k := lo; k < hi; k += 4096 {
 		e := min(k+4096, hi)
@@ -169,7 +137,6 @@ func (s sweepRx) flush() {
 	}
 }
 
-// rate returns the sample rate of the input of the receiver of the job.
 func (j *sweepJob) rate() int {
 	if j.Disc {
 		return j.audioHz()
@@ -177,8 +144,6 @@ func (j *sweepJob) rate() int {
 	return j.hz()
 }
 
-// audioHz returns the sample rate of the discriminator samples of a Disc
-// job: Hz, or 24000 when it is 0.
 func (j *sweepJob) audioHz() int {
 	if j.Hz == 0 {
 		return discRate
@@ -186,8 +151,6 @@ func (j *sweepJob) audioHz() int {
 	return j.Hz
 }
 
-// receive runs the baseband x through the receiver of the job and returns
-// the bursts, the thread CPU time and the input seconds.
 func (j *sweepJob) receive(cfg Config, x []complex64) ([]Burst, float64, float64) {
 	var out []Burst
 	cfg.OnBurst = func(b *Burst) { out = append(out, *b) }
@@ -200,8 +163,6 @@ func (j *sweepJob) receive(cfg Config, x []complex64) ([]Burst, float64, float64
 	return out, cpu, float64(in.len()) / float64(j.rate())
 }
 
-// TestSweepWorker runs the job in the file DMRRF_SWEEP_JOB and writes the
-// result to DMRRF_SWEEP_OUT. cmd/rxsweep runs it.
 func TestSweepWorker(t *testing.T) {
 	t.Parallel()
 	path := os.Getenv("DMRRF_SWEEP_JOB")
@@ -262,10 +223,6 @@ func TestSweepWorker(t *testing.T) {
 	}
 }
 
-// sweepCosts measures the RAM of the receiver of the job (the bytes that
-// its constructor allocates), its allocations per write on a locked stream
-// at 10 dB, and its false bursts and CPU time on 5 minutes of noise. It
-// runs before anything else, alone.
 func sweepCosts(t testing.TB, j *sweepJob, cfg Config) *sweepCost {
 	var c sweepCost
 	var a, b runtime.MemStats

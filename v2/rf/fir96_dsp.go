@@ -7,13 +7,6 @@ import (
 	"unsafe"
 )
 
-// fir96 returns the matched filter output in Q15 of the samples w at
-// 9.6 kHz, oldest first, with the DSP instructions of the Cortex-M4: it
-// loads four samples a word, adds the mirrored pairs two at a time and
-// multiplies them by two taps at once. The sums are those of the portable
-// fir96, so the output is the same. The build tags list the chips of
-// TinyGo with a Cortex-M4, M7 or M33 core with them; the tag dmrgo_dsp
-// selects it for another.
 func fir96(w *[audio96Taps]int8) int32 {
 	c := &audio96RRCQ15
 	c02 := uint32(uint16(c[0])) | uint32(uint16(c[2]))<<16

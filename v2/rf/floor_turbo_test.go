@@ -12,9 +12,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 )
 
-// detectSoft runs the exact genie BCJR over the free bits of slot i with
-// the bit log priors pri, in nats, positive for 0, and sets out to the a
-// posteriori log-likelihood ratios of the free bits.
 func (e *floorEval) detectSoft(i int, pri, out *[softBurstBits]float32) {
 	d := e.g.d
 	n0, n1, mask := e.span(i)
@@ -55,8 +52,6 @@ func (e *floorEval) detectSoft(i int, pri, out *[softBurstBits]float32) {
 	}
 }
 
-// halfPrior returns the log prior of a bit value from its log-likelihood
-// ratio l: l/2 for 0 and -l/2 for 1.
 func halfPrior(l float32, zero bool) float32 {
 	if zero {
 		return l / 2
@@ -64,17 +59,10 @@ func halfPrior(l float32, zero bool) float32 {
 	return -l / 2
 }
 
-// toLLR returns l in nats as an int16 log-likelihood ratio in units of 1/8.
 func toLLR(l float32) int16 {
 	return satLLR(float32(math.Max(-4000, math.Min(4000, float64(l)))))
 }
 
-// bptcTurbo decodes the BPTC payload of data burst i of data type dt from
-// genie LLRs, separately (one pass) and by iterative detection and
-// decoding over iters passes with extrinsic weight alpha, and reports
-// whether each picks the transmitted payload. A pass stops the iteration
-// when its best codeword passes the check of dt, or, without a check,
-// agrees with the detected bits.
 func (e *floorEval) bptcTurbo(i int, dt enums.DataType, iters int, alpha float32) (sep, turbo bool) {
 	check := softBPTCCheck(dt)
 	d := e.dec
@@ -149,13 +137,8 @@ func (e *floorEval) bptcTurbo(i int, dt enums.DataType, iters int, alpha float32
 	return sep, turbo
 }
 
-// floorPriorMax caps the bit priors of the iterative search, in nats.
 const floorPriorMax = 30
 
-// TestFloorTurbo measures, with the genie, BPTC decoding from one
-// detection pass against iterative detection and decoding. Set
-// DMRRF_FLOOR_TURBO to alpha,grid passes,grid weight,passes,C/N list
-// joined by +.
 func TestFloorTurbo(t *testing.T) {
 	t.Parallel()
 	spec := os.Getenv("DMRRF_FLOOR_TURBO")

@@ -50,8 +50,6 @@ func (b *Burst) Decoded() (layer2.RawBurst, [3]byte) {
 // Timed reports whether the burst was placed by timing instead of a SYNC.
 func (b *Burst) Timed() bool { return b.Distance < 0 }
 
-// received is a burst on its way through the tracker, with the CACH bits
-// unpacked.
 type received struct {
 	data      layer2.RawBurst
 	seconds   float64
@@ -69,7 +67,6 @@ type received struct {
 	side      combSide
 }
 
-// put writes x into b.
 func (x *received) put(b *Burst) {
 	*b = Burst{Data: x.data, Seconds: x.seconds, Distance: x.distance, Sync: x.sync, Voice: x.voice, CACH: cachBytes(x.cach), HasCACH: x.hasCACH,
 		BS: x.bs, Stream: x.stream, Slot: x.slot, Fixed: x.fixed, FixedCACH: cachBytes(x.fixedCACH), HasFixed: x.hasFixed}

@@ -2,8 +2,6 @@ package rf
 
 import "testing"
 
-// receiveDisc runs the discriminator audio a at hz through a DiscReceiver
-// of tier t.
 func receiveDisc(t testing.TB, a []int16, hz int, tier Tier) []Burst {
 	t.Helper()
 	var out []Burst
@@ -18,8 +16,6 @@ func receiveDisc(t testing.TB, a []int16, hz int, tier Tier) []Burst {
 	return out
 }
 
-// TestDiscTier2Loopback checks that Tier2 recovers every burst of a stream
-// at 30 dB at each input rate.
 func TestDiscTier2Loopback(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 6)
@@ -38,11 +34,6 @@ func TestDiscTier2Loopback(t *testing.T) {
 	}
 }
 
-// TestDiscTier2Weak receives a stream at 4.2 dB Eb/N0, below the 90%
-// points of Tier0, and checks that Tier2, which detects each burst again
-// on the carrier phase that it rebuilds from the audio, recovers far more
-// C0 and C1 of the voice frames and rate 1/2 blocks than Tier0, which has
-// no coherent stage, at each input rate.
 func TestDiscTier2Weak(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 10)

@@ -11,32 +11,24 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-// fuzzBursts is the most bursts that a fuzz run keeps, and fuzzMaxBytes
-// the most input bytes that a fuzz run of the receivers takes: 0.7 s of
-// I/Q at 48 kHz, so that a run of Tier3 stays short.
 const (
 	fuzzBursts   = 4096
 	fuzzMaxBytes = 1 << 16
 )
 
-// fuzzSink collects the bursts of a fuzz run in a buffer that it does not
-// grow, so that collecting them does not allocate.
 type fuzzSink struct {
 	b []Burst
 	n int
 }
 
-// newFuzzSink returns a sink for fuzzBursts bursts.
 func newFuzzSink() *fuzzSink { return &fuzzSink{b: make([]Burst, fuzzBursts)} }
 
-// add keeps the bursts of bs.
 func (s *fuzzSink) add(bs []Burst) {
 	for i := range bs {
 		s.one(&bs[i])
 	}
 }
 
-// one keeps burst b.
 func (s *fuzzSink) one(b *Burst) {
 	if s.n < len(s.b) {
 		s.b[s.n] = *b
@@ -44,11 +36,8 @@ func (s *fuzzSink) one(b *Burst) {
 	s.n++
 }
 
-// bursts returns the bursts that s kept.
 func (s *fuzzSink) bursts() []Burst { return s.b[:min(s.n, len(s.b))] }
 
-// mallocs returns the heap allocations of the process while f runs, on
-// one CPU, as testing.AllocsPerRun counts them, but without a run before.
 func mallocs(f func()) uint64 {
 	defer runtime.GOMAXPROCS(runtime.GOMAXPROCS(1))
 	var a, b runtime.MemStats
@@ -58,9 +47,6 @@ func mallocs(f func()) uint64 {
 	return b.Mallocs - a.Mallocs
 }
 
-// quiet returns the least allocations of up to three calls of run, each
-// on a new receiver: an allocation of the receiver repeats in each, and one
-// of the runtime or of the testing package in the background does not.
 func quiet(run func() uint64) uint64 {
 	n := run()
 	for i := 0; i < 2 && n != 0; i++ {
@@ -69,8 +55,6 @@ func quiet(run func() uint64) uint64 {
 	return n
 }
 
-// fuzzChunks splits n items into chunks of 1 to most items, from seed;
-// seed 0 gives chunks of most.
 func fuzzChunks(n, most int, seed uint64) []int {
 	var out []int
 	rng := rand.New(rand.NewPCG(seed, seed>>1|1))
@@ -89,10 +73,6 @@ func fuzzChunks(n, most int, seed uint64) []int {
 	return out
 }
 
-// fuzzConfig returns a valid Config from the fuzzed values: any tier but
-// Tier4, whose New takes about 100 MB and whose detection runs at 50 times
-// the compute of Tier3, a rate from the baseband rate to five times it,
-// and the other fields over their ranges.
 func fuzzConfig(tier, half, flags uint8, rate uint16, maxWrite uint32, lookback uint8) Config {
 	cfg := Config{Tier: Tier0 + Tier(tier%4), Signed: flags&1 != 0}
 	if half%2 == 1 && cfg.Tier <= Tier1 {
@@ -114,11 +94,6 @@ func fuzzConfig(tier, half, flags uint8, rate uint16, maxWrite uint32, lookback 
 	return cfg
 }
 
-// checkBursts fails t when a burst of bs is out of range for an input of
-// seconds: a Distance from -1 to 48, a known Sync, a Voice position from
-// unknown to F, a Stream from 1, a time inside the input, and a time
-// that, for each TDMA channel of each stream, does not go back and
-// matches its Slot.
 func checkBursts(t *testing.T, bs []Burst, seconds float64) {
 	t.Helper()
 	type key struct {
@@ -152,7 +127,6 @@ func checkBursts(t *testing.T, bs []Burst, seconds float64) {
 	}
 }
 
-// sameBursts fails t when a and b differ.
 func sameBursts(t *testing.T, what string, a, b []Burst) {
 	t.Helper()
 	if len(a) != len(b) {
@@ -165,8 +139,6 @@ func sameBursts(t *testing.T, what string, a, b []Burst) {
 	}
 }
 
-// fuzzSeedIQ returns 8-bit I/Q at 48 kHz of a BS outbound stream at 20 dB
-// C/N, for the seed corpus.
 func fuzzSeedIQ(tb testing.TB, signed bool) []byte {
 	slots, _ := benchStream(tb, 1)
 	x := noisyBaseband(slots, 900, 20, 9)
@@ -182,10 +154,6 @@ func fuzzSeedIQ(tb testing.TB, signed bool) []byte {
 	return out
 }
 
-// FuzzReceiverWrite feeds fuzzed bytes to Write of a fuzzed Config, in
-// fuzzed chunks of up to MaxWrite bytes, and checks that it does not
-// panic, allocates nothing after New, returns bursts in range, and returns
-// the same bursts as the bytes in chunks of MaxWrite.
 func FuzzReceiverWrite(f *testing.F) {
 	f.Add(uint8(0), uint8(0), uint8(0), uint16(0), uint32(0), uint8(0), uint64(0), fuzzSeedIQ(f, false))
 	f.Add(uint8(1), uint8(1), uint8(7), uint16(1000), uint32(4095), uint8(4), uint64(3), fuzzSeedIQ(f, true))
@@ -242,9 +210,6 @@ func FuzzReceiverWrite(f *testing.F) {
 	})
 }
 
-// fuzzSamples returns the complex samples of b: pairs of int16 scaled by
-// 2^-scale, or with raw set the float32 bits as they are, NaN and
-// infinities too.
 func fuzzSamples(b []byte, scale uint8, raw bool) []complex64 {
 	if raw {
 		x := make([]complex64, len(b)/8)
@@ -263,8 +228,6 @@ func fuzzSamples(b []byte, scale uint8, raw bool) []complex64 {
 	return x
 }
 
-// fuzzSeedBaseband returns the samples of a BS outbound stream at 20 dB
-// C/N as fuzzSamples reads them at scale 14.
 func fuzzSeedBaseband(tb testing.TB) []byte {
 	slots, _ := benchStream(tb, 1)
 	x := noisyBaseband(slots, -700, 20, 11)
@@ -276,8 +239,6 @@ func fuzzSeedBaseband(tb testing.TB) []byte {
 	return out
 }
 
-// FuzzReceiverBaseband feeds fuzzed samples to WriteBaseband of a fuzzed
-// Config, in fuzzed chunks, and checks what FuzzReceiverWrite checks.
 func FuzzReceiverBaseband(f *testing.F) {
 	seed := fuzzSeedBaseband(f)
 	f.Add(uint8(0), uint8(0), uint8(0), uint8(12), false, uint64(0), seed)
@@ -323,8 +284,6 @@ func FuzzReceiverBaseband(f *testing.F) {
 	})
 }
 
-// fuzzSeedAudio returns the discriminator audio at hz of a BS outbound
-// stream at 20 dB C/N as little-endian int16.
 func fuzzSeedAudio(tb testing.TB, hz int) []byte {
 	slots, _ := benchStream(tb, 1)
 	a := discAudio(noisyBaseband(slots, 500, 20, 13), hz)
@@ -335,10 +294,6 @@ func fuzzSeedAudio(tb testing.TB, hz int) []byte {
 	return out
 }
 
-// FuzzDiscReceiver feeds fuzzed discriminator samples to a DiscReceiver of
-// a fuzzed DiscConfig, set up by NewDisc or Init, through Write,
-// AppendBursts or OnBurst in fuzzed chunks, and checks what
-// FuzzReceiverWrite checks.
 func FuzzDiscReceiver(f *testing.F) {
 	f.Add(uint8(0), uint8(0), uint8(0), uint16(0), uint64(0), fuzzSeedAudio(f, 24000))
 	f.Add(uint8(1), uint8(1), uint8(1), uint16(100), uint64(3), fuzzSeedAudio(f, 12000))
@@ -413,11 +368,6 @@ func FuzzDiscReceiver(f *testing.F) {
 	})
 }
 
-// FuzzRxSignal builds a BS or MS transmission through a channel of
-// fuzzed carrier offset, drift, clock error, level, C/N, unmodulated
-// carrier before it, a repeat after a gap and a timing jump, receives it
-// with a fuzzed receiver of rxRecvs, and checks the floors of
-// TestRxRobust against the clean start at the same C/N.
 func FuzzRxSignal(f *testing.F) {
 	f.Add(uint8(0), uint8(2), int16(0), int8(0), int8(0), int8(0), uint8(30), uint8(0), uint8(0), int8(0), uint64(1))
 	f.Add(uint8(1), uint8(4), int16(1200), int8(20), int8(-50), int8(10), uint8(20), uint8(5), uint8(3), int8(2), uint64(2))

@@ -6,10 +6,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-// TestSoftExtEmbeddedLC receives a BS stream through a DiscReceiver with and
-// without softExt at 6.2 dB Eb/N0, where the hard decisions of the
-// embedded LC fragments rarely decode, and checks that the soft decoding
-// of the four fragments of each superframe recovers most of them.
 func TestSoftExtEmbeddedLC(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 10)
@@ -36,11 +32,6 @@ func TestSoftExtEmbeddedLC(t *testing.T) {
 	}
 }
 
-// TestSoftExtLookbackClicks receives a BS stream through DiscReceivers of
-// Tier0 and Tier1 at 10.2 dB Eb/N0 and checks that Tier1 recovers every
-// rate 1/2 block that Tier0 does: the clicks of the noise before the lock,
-// which the lookback slots run through, must not floor the ratios of the
-// first bursts of the stream.
 func TestSoftExtLookbackClicks(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 30)
@@ -52,11 +43,6 @@ func TestSoftExtLookbackClicks(t *testing.T) {
 	}
 }
 
-// TestSoftExtLookback enters a BS stream at a voice burst B, with no SYNC
-// before it, and checks that softExt with lookback decodes the slots
-// before the first SYNC that the core locks to, which the core alone
-// loses: voice bursts B, C and D place by the EMB of burst B once the
-// first run of the lookback slots knows the color code.
 func TestSoftExtLookback(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 6)
@@ -71,8 +57,6 @@ func TestSoftExtLookback(t *testing.T) {
 		t.Fatal("no voice burst B in the stream")
 	}
 	a := discAudio(noisyBaseband(slots[start:], 1400, 20, 7), benchAudioHz)
-	// first returns the time of the first burst, and of the first voice
-	// burst B.
 	first := func(lookback int) (start, b float64) {
 		start, b = -1, -1
 		r, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: Tier0, OnBurst: func(x *Burst) {

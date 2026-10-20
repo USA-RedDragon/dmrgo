@@ -2,10 +2,6 @@ package rf
 
 import "testing"
 
-// TestAllocsLowIQ checks that a LowIQReceiver in caller memory allocates
-// nothing in Init and WriteBaseband and, with the settings of the audio
-// Tier 0 core, decodes every voice frame of a BS outbound call at 1400 Hz
-// offset at 30 dB, at 9.6 and 12 kHz.
 func TestAllocsLowIQ(t *testing.T) {
 	slots, _ := benchStream(t, 3)
 	x := noisyBaseband(slots, 1400, 30, 1)

@@ -2,51 +2,20 @@ package rf
 
 import "math"
 
-// Layout of the discriminator of iqRx.
 const (
-	// iqTaps is the length of the channel filter of iqDisc.
-	iqTaps = 31
-	// iqUnitsPerHz is the scale of the discriminator samples that iqRx
-	// hands the DiscReceiver.
-	iqUnitsPerHz = 2
-	// iqAFCBlock is the number of baseband samples between the moves of
-	// the oscillator, and iqAFCLockHz the least carrier offset that moves
-	// it while the core is locked.
-	iqAFCBlock  = basebandRate / 20
-	iqAFCLockHz = 100
-	// While the core searches, an offset of at least iqAFCPullHz in one
-	// block moves the oscillator. The symbols of a block spread its mean
-	// frequency by about 100 Hz, so below that the oscillator moves when
-	// the mean over the blocks, by iqAFCAvgGain, is iqAFCFineHz off.
-	iqAFCPullHz  = 300
-	iqAFCFineHz  = 60
-	iqAFCAvgGain = 0.25
-	// The payload of one MS burst does not average to 0 Hz: it moved the
-	// mean of a block by 730 Hz on a carrier without offset. Below
-	// iqAFCJumpHz a pull needs two blocks that agree, as a carrier offset
-	// holds from block to block; a key-up onto a carrier further off
-	// pulls at once.
-	iqAFCJumpHz = 1000
-	// iqAFCCoherence is the least magnitude of the sum of the products of
-	// a block, over the power of its channel filter samples, at which it
-	// moves the oscillator while the core searches. Noise alone gives 0.33
-	// to 0.47, and its mean frequency is noise that would walk the
-	// oscillator away from where the next carrier comes; a DMR carrier
-	// gives 0.73 to 0.82, and 0.49 to 0.62 at a C/N of -3 dB.
+	iqTaps         = 31
+	iqUnitsPerHz   = 2
+	iqAFCBlock     = basebandRate / 20
+	iqAFCLockHz    = 100
+	iqAFCPullHz    = 300
+	iqAFCFineHz    = 60
+	iqAFCAvgGain   = 0.25
+	iqAFCJumpHz    = 1000
 	iqAFCCoherence = 0.48
 )
 
-// iqDisc is the FM discriminator of the I/Q tiers: an oscillator that
-// removes the carrier, a channel filter to discCutHz that decimates the
-// baseband by decim, and the frequency of each output sample, from the
-// phase of its product with the conjugate of the one before. With a
-// half-band stage, the channel filter runs at half the baseband rate.
-// With options.IQFront above 0 it is the lean front of iq0Front in place
-// of the channel filter, and taps is nil.
 type iqDisc struct {
-	decim int
-	// step is the decimation of the channel filter, decim without the
-	// half-band stage and decim/2 with it.
+	decim   int
 	step    int
 	taps    []float32
 	hist    []complex64
@@ -58,16 +27,8 @@ type iqDisc struct {
 	ncoRot  complex64
 	ncoN    int
 	hz      float32
-	// acc sums the products of the output samples with the conjugate of
-	// the ones before since the last move of the oscillator, and pw the
-	// power of the output samples.
-	acc complex64
-	pw  float32
-	// With afc set, accAvg sums the products of the sums of the last
-	// len(afc) output samples, a moving average that keeps out of the
-	// estimate the edges of the channel, where another channel leaks in,
-	// and pwAvg their power; afcSum is the sum, afcPrev the one before,
-	// afcHead the oldest.
+	acc     complex64
+	pw      float32
 	accAvg  complex64
 	pwAvg   float32
 	afc     []complex64
@@ -77,10 +38,6 @@ type iqDisc struct {
 	iq0Front
 }
 
-// iqFilter is the design of the filters of iqDisc: the length, Kaiser
-// window and cutoff of the channel filter, and the length of the
-// half-band stage. The zero value is the Hamming window of iqTaps taps to
-// discCutHz at the baseband rate.
 type iqFilter struct {
 	taps  int
 	beta  float64
@@ -89,9 +46,6 @@ type iqFilter struct {
 	afc   int
 }
 
-// iqHalf is a half-band filter that decimates by 2: every other tap but
-// the center one is 0, so it holds only the center tap and the others of
-// one side.
 type iqHalf struct {
 	center float32
 	side   []float32
@@ -100,7 +54,6 @@ type iqHalf struct {
 	phase  int
 }
 
-// init sets up h with n taps, n+1 a multiple of 4; n 0 leaves it off.
 func (h *iqHalf) init(n int) {
 	*h = iqHalf{}
 	if n == 0 {
@@ -119,8 +72,6 @@ func (h *iqHalf) init(n int) {
 	}
 }
 
-// push takes sample v and reports whether it completed an output sample,
-// which it returns.
 func (h *iqHalf) push(v complex64) (complex64, bool) {
 	n := len(h.hist) / 2
 	h.hist[h.head], h.hist[h.head+n] = v, v
@@ -140,9 +91,6 @@ func (h *iqHalf) push(v complex64) (complex64, bool) {
 	return y, true
 }
 
-// windowTaps returns n taps of a windowed sinc low pass with cutoff fc, a
-// fraction of the sample rate: a Kaiser window of beta, or Hamming with
-// beta 0. They are not normalized.
 func windowTaps(n int, fc, beta float64) []float64 {
 	h := make([]float64, n)
 	for i := range h {
@@ -161,8 +109,6 @@ func windowTaps(n int, fc, beta float64) []float64 {
 	return h
 }
 
-// init sets up d to decimate by decim with the filters of f, with the
-// oscillator at 0 Hz.
 func (d *iqDisc) init(decim int, f iqFilter) {
 	*d = iqDisc{decim: decim, step: decim, ncoRot: 1, ncoStep: 1}
 	n, fc, rate := iqTaps, discCutHz, float64(basebandRate)
@@ -181,8 +127,6 @@ func (d *iqDisc) init(decim int, f iqFilter) {
 	}
 	d.taps = make([]float32, n)
 	d.hist = make([]complex64, 2*n)
-	// The taps round to float32 before the division by their sum, as the
-	// filter of iqTaps always has.
 	var sum float64
 	for i, v := range windowTaps(n, fc/rate, f.beta) {
 		d.taps[i] = float32(v)
@@ -193,7 +137,6 @@ func (d *iqDisc) init(decim int, f iqFilter) {
 	}
 }
 
-// tune moves the oscillator to remove a carrier at hz.
 func (d *iqDisc) tune(hz float32) {
 	if d.taps == nil {
 		d.tuneLean(hz)
@@ -204,8 +147,6 @@ func (d *iqDisc) tune(hz float32) {
 	d.ncoStep = complex(float32(math.Cos(p)), float32(math.Sin(p)))
 }
 
-// push takes baseband sample v and reports whether it completed an output
-// sample, whose frequency in Hz and channel filter sample it returns.
 func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 	if d.taps == nil {
 		return d.pushLean(v)
@@ -223,7 +164,6 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 			return 0, 0, false
 		}
 	}
-	// The history is held twice, so that the taps read one run.
 	n := len(d.taps)
 	d.hist[d.head], d.hist[d.head+n] = w, w
 	if d.head++; d.head == n {
@@ -235,9 +175,6 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 	d.phase = 0
 	var re, im float32
 	if n == iqTaps {
-		// The taps and the history are read through pointers: a range
-		// over an array copies it, and TinyGo copies it again on every
-		// pass of the loop.
 		h := (*[iqTaps]complex64)(d.hist[d.head : d.head+iqTaps])
 		for k, t := range (*[iqTaps]float32)(d.taps) {
 			re += t * real(h[k])
@@ -260,8 +197,6 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 		d.afcSum += y - d.afc[d.afcHead]
 		d.afc[d.afcHead] = y
 		if d.afcHead++; d.afcHead == len(d.afc) {
-			// The sum starts again from the samples, so that the rounding
-			// of its updates does not add up.
 			d.afcHead, d.afcSum = 0, 0
 			for _, a := range d.afc {
 				d.afcSum += a
@@ -274,18 +209,13 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 	return atan2f(imag(p), real(p)) * (float32(basebandRate/d.decim) / (2 * math.Pi)), y, true
 }
 
-// iqTunes is the number of moves of the oscillator that iqRx keeps.
 const iqTunes = 16
 
-// iqTune is a move of the oscillator of iqRx: the channel filter sample
-// from which it holds, and the frequency it removes.
 type iqTune struct {
 	n  int64
 	hz float32
 }
 
-// ncoAt returns the frequency that the oscillator removed at channel
-// filter sample n, as far back as the moves that r keeps.
 func (r *iqRx) ncoAt(n int64) float32 {
 	hz := r.conv.hz
 	for i := 0; i < min(r.nTunes, iqTunes); i++ {
@@ -293,8 +223,6 @@ func (r *iqRx) ncoAt(n int64) float32 {
 		if t.n <= n {
 			return hz
 		}
-		// Before this move, the oscillator was at the frequency of the
-		// move before it, or 0.
 		hz = 0
 		if j := r.nTunes - 2 - i; j >= 0 && i+1 < iqTunes {
 			hz = r.tunes[j%iqTunes].hz
@@ -303,49 +231,29 @@ func (r *iqRx) ncoAt(n int64) float32 {
 	return hz
 }
 
-// iqRx is the receiver of Tier 1 on I/Q: iqDisc before the DiscReceiver
-// of Tier 0, so that I/Q runs the same core as discriminator audio. The
-// oscillator follows the carrier, so that the channel filter holds it, and
-// the DC offset that the DiscReceiver removes moves with it.
 type iqRx struct {
-	fe      *frontEnd
-	wide    []complex64
-	inChunk int
-	carry   byteCarry
-	dc      dcBlock
-	signed  bool
-	conv    iqDisc
-	d       DiscReceiver
-	audio   []int16
-	afcN    int
-	// afcAvg is the mean of the sums of iqDisc over the blocks since the
-	// oscillator last moved, while the core searches.
-	afcAvg complex64
-	// afcPull is the carrier offset of the last block while the core
-	// searches, from the oscillator now, or 0 when that block moved
-	// nothing or had no carrier.
-	afcPull float32
-	out     []Burst
-	// yHist holds the last options.cohRing channel filter samples for the
-	// coherent stage, yN of them so far; nil without it.
-	yHist []complex64
-	yN    int64
-	// tunes holds the last moves of the oscillator, the channel filter
-	// sample from which each holds and its frequency, for the coherent
-	// stage, nil without it; nTunes counts them.
-	tunes  *[iqTunes]iqTune
-	nTunes int
-	// maxHz, when above 0, bounds the oscillator to the carrier offsets
-	// within it, so that it does not follow a carrier of another channel.
-	maxHz float32
-	// syncOnly moves the oscillator while the core is locked only by the
-	// carrier offset of its SYNC fits, not by the mean frequency.
-	syncOnly bool
-	// pullAgree is options.IQPullAgree.
+	fe        *frontEnd
+	wide      []complex64
+	inChunk   int
+	carry     byteCarry
+	dc        dcBlock
+	signed    bool
+	conv      iqDisc
+	d         DiscReceiver
+	audio     []int16
+	afcN      int
+	afcAvg    complex64
+	afcPull   float32
+	out       []Burst
+	yHist     []complex64
+	yN        int64
+	tunes     *[iqTunes]iqTune
+	nTunes    int
+	maxHz     float32
+	syncOnly  bool
 	pullAgree bool
 }
 
-// newIQRx returns the receiver of cfg with the settings opt.
 func newIQRx(cfg Config, opt options) *iqRx {
 	r := &iqRx{signed: cfg.Signed}
 	r.dc.init(float64(cfg.BasebandHz))
@@ -397,8 +305,6 @@ func newIQRx(cfg Config, opt options) *iqRx {
 	return r
 }
 
-// sample runs one baseband sample through the discriminator, and hands
-// the core a buffer of its output when it fills.
 func (r *iqRx) sample(v complex64) {
 	if r.afcN++; r.afcN == iqAFCBlock {
 		r.afcN = 0
@@ -421,28 +327,13 @@ func (r *iqRx) sample(v complex64) {
 	}
 }
 
-// follow moves the oscillator to the carrier offset: the mean frequency
-// of the channel filter samples while the core searches, and the DC
-// offset that the DiscReceiver measures while it is locked.
 func (r *iqRx) follow() {
 	acc, pw := r.conv.acc, r.conv.pw
 	if r.conv.afc != nil && !r.d.locked {
-		// While the core searches, the moving average keeps the edges of
-		// the channel out of the estimate. It pulls the estimate of an
-		// offset toward 0, so the SYNC fits of a lock check it against
-		// the mean of the samples themselves.
 		acc, pw = r.conv.accAvg, r.conv.pwAvg
 	}
 	r.conv.acc, r.conv.pw, r.conv.accAvg, r.conv.pwAvg = 0, 0, 0, 0
-	// Below the FM threshold the clicks pull the mean of the
-	// discriminator toward 0 Hz. The phase of the sum of the products is
-	// the mean frequency of the carrier, which noise pulls toward the
-	// oscillator only by its share of the power. The symbols of a block
-	// do not average to 0 Hz, so its mean over the blocks, avg, spreads
-	// less.
 	est := r.conv.hzOf(acc)
-	// The lean front passes white noise, whose mean frequency is
-	// anywhere in its band: a block without a carrier moves nothing.
 	quiet := r.conv.taps == nil && r.conv.quiet(acc)
 	switch {
 	case quiet:
@@ -452,34 +343,18 @@ func (r *iqRx) follow() {
 		r.afcAvg += complex(iqAFCAvgGain, 0) * (acc - r.afcAvg)
 	}
 	avg := r.conv.hzOf(r.afcAvg)
-	// The samples that the DiscReceiver has not taken yet can scale its
-	// input, move its offset or lock it, and the move must see that. The
-	// bursts that they complete see the mean of their block.
 	r.d.write(r.audio)
 	r.audio = r.audio[:0]
 	f := &r.d.f
 	if f.gain <= 0 {
 		return
 	}
-	// The DiscReceiver counts f.gain of its Hz per input unit.
 	scale := f.gain * iqUnitsPerHz
 	if r.d.locked {
 		r.afcPull = 0
-		// A lock can come while the oscillator still pulls in, and the
-		// channel filter then pulls both the mean frequency and the SYNC
-		// fits toward the oscillator, by different shares, so that they
-		// disagree: the mean pulls in. The payload of a data burst is not
-		// whitened, so its symbols can move the mean by more than
-		// iqAFCPullHz, as the ASCII of rate 1 data does: the SYNC fits
-		// must then show an offset the same way. Otherwise the SYNC fits
-		// of a false lock measure any offset, so the mean frequency must
-		// agree with them.
 		hz := (f.dc + r.d.dcHz) / scale
 		switch {
 		case abs32(avg) >= iqAFCPullHz && !r.syncOnly && abs32(hz) >= iqAFCLockHz && hz*avg > 0:
-			// The channel filter pulled the mean of the blocks before
-			// toward the oscillator by more than it pulls the mean after
-			// the move: the mean starts again, as while the core searches.
 			r.afcAvg = 0
 			r.tune(avg, f.dc-avg*scale)
 		case abs32(hz) >= iqAFCLockHz && abs32(hz-avg) < iqAFCPullHz:
@@ -488,7 +363,6 @@ func (r *iqRx) follow() {
 		return
 	}
 	if real(acc)*real(acc)+imag(acc)*imag(acc) < iqAFCCoherence*iqAFCCoherence*pw*pw {
-		// No carrier: the mean starts again with the next one.
 		r.afcAvg, r.afcPull = 0, 0
 		return
 	}
@@ -504,22 +378,16 @@ func (r *iqRx) follow() {
 		r.tune(est, 0)
 	case abs32(avg) >= iqAFCFineHz:
 		if r.pullAgree && abs32(avg) >= iqAFCPullHz {
-			// The first block of a carrier: a pull.
 			r.afcAvg = 0
 		}
 		r.tune(avg, 0)
 	}
 }
 
-// hzOf returns the frequency of the phase of a sum of the products of
-// output samples with the conjugate of the ones before.
 func (d *iqDisc) hzOf(acc complex64) float32 {
 	return atan2f(imag(acc), real(acc)) * (float32(basebandRate/d.decim) / (2 * math.Pi))
 }
 
-// tune moves the oscillator by hz, and sets the DC offset that the
-// DiscReceiver removes to dc, in its units. The caller hands the
-// DiscReceiver the samples before the move first.
 func (r *iqRx) tune(hz, dc float32) {
 	f := &r.d.f
 	scale := f.gain * iqUnitsPerHz
@@ -532,16 +400,8 @@ func (r *iqRx) tune(hz, dc float32) {
 		r.nTunes++
 	}
 	r.afcPull -= hz
-	// The mean of the blocks moves with the oscillator.
 	p := -2 * math.Pi * float64(hz) / float64(basebandRate/r.conv.decim)
 	r.afcAvg *= complex(float32(math.Cos(p)), float32(math.Sin(p)))
-	// A move while locked keeps the input of the core. A move while it
-	// searches moves the input by -d, and the values that the core holds
-	// move with it, so that the front end removes tuneHz from all of
-	// them. The mean frequency of the block measured the carrier, which
-	// the move takes out, so that the mean input is then dc: the mean of
-	// the blocks before does not move with the oscillator, as most of
-	// them are noise, whose mean does not follow the oscillator.
 	d := hz*scale + dc - f.dc
 	if r.d.locked {
 		f.mean += dc - f.dc
@@ -556,7 +416,6 @@ func (r *iqRx) tune(hz, dc float32) {
 	}
 }
 
-// writeBaseband processes the samples of Receiver.WriteBaseband.
 func (r *iqRx) writeBaseband(x []complex64) []Burst {
 	if r.conv.taps == nil {
 		return r.writeLean(x)
@@ -569,10 +428,6 @@ func (r *iqRx) writeBaseband(x []complex64) []Burst {
 	return r.out
 }
 
-// drain hands the core the samples that it has not taken yet, at the end
-// of a Write. With the coherent stage it keeps them until the buffer
-// fills or the oscillator moves, so that the samples that the stage sees
-// ahead of the core do not depend on how the input splits into Writes.
 func (r *iqRx) drain() {
 	if r.yHist != nil {
 		return
@@ -581,7 +436,6 @@ func (r *iqRx) drain() {
 	r.audio = r.audio[:0]
 }
 
-// write processes the I/Q bytes of Receiver.Write.
 func (r *iqRx) write(iq []byte) []Burst {
 	r.out = r.out[:0]
 	pair, iq := r.carry.split(iq)
@@ -591,7 +445,6 @@ func (r *iqRx) write(iq []byte) []Burst {
 	return r.out
 }
 
-// bytes processes whole I/Q pairs of bytes.
 func (r *iqRx) bytes(iq []byte) {
 	if r.fe == nil {
 		for i := 0; i+1 < len(iq); i += 2 {
@@ -612,8 +465,6 @@ func (r *iqRx) bytes(iq []byte) {
 	}
 }
 
-// byteSample returns the I/Q bytes i and q at the baseband rate as a
-// complex sample, less their DC offset, as leanRx.byteSample does.
 func (r *iqRx) byteSample(i, q byte) complex64 {
 	var v complex64
 	if r.signed {
@@ -624,7 +475,6 @@ func (r *iqRx) byteSample(i, q byte) complex64 {
 	return r.dc.remove(v)
 }
 
-// flush finishes the stream at its end and returns the remaining bursts.
 func (r *iqRx) flush() []Burst {
 	r.out = r.out[:0]
 	r.d.write(r.audio)

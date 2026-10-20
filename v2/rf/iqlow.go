@@ -7,36 +7,15 @@ import (
 )
 
 const (
-	// iqLowBuf is the number of discriminator samples that iqLowRx hands
-	// the core at once.
-	iqLowBuf = 32
-	// iqLowPack is the number of complex64 samples that
-	// iqLowRx.writeBaseband packs at once on its stack.
-	iqLowPack = 16
-	// iqLowScale is the value of 1 in the pairs of int16 that
-	// iqLowRx.writeBaseband makes of complex64 samples.
-	iqLowScale = 4096
-	// iqLowShift is the right shift of the products that iqLowRx sums over
-	// the block of the oscillator, so that a block at 12 kHz at full
-	// scale does not overflow.
-	iqLowShift = 10
-	// iqLowISI is the part of the levels of the symbols before and after
-	// that cancelISI takes from each symbol. The phase step over a sample
-	// at 9.6 kHz averages the frequency over half a symbol, and a radio
-	// chip that decimates to 9.6 kHz cuts the band of a signal off its
-	// center, which spread each symbol into its neighbors.
-	iqLowISI = 0.04
-	// iqLowAtanNear takes the angle of halfRun from iqLowAtan64, without
-	// interpolation.
+	iqLowBuf      = 32
+	iqLowPack     = 16
+	iqLowScale    = 4096
+	iqLowShift    = 10
+	iqLowISI      = 0.04
 	iqLowAtanNear = false
-	// iqLowRecip takes the ratio of halfRun by a multiply with
-	// iqLowRecip64 in place of a division, and its angle as
-	// iqLowAtanNear does.
-	iqLowRecip = false
+	iqLowRecip    = false
 )
 
-// iqLowRecip64 holds, for i from 0 to 63, 2^21/(65+i) rounded down: 2^46
-// over the top of the step i of 2^25 above 2^31.
 var iqLowRecip64 = [64]uint16{
 	32263, 31775, 31300, 30840, 30393, 29959, 29537, 29127, 28728, 28339, 27962, 27594, 27235, 26886, 26546, 26214,
 	25890, 25575, 25266, 24966, 24672, 24385, 24105, 23831, 23563, 23301, 23045, 22795, 22550, 22310, 22075, 21845,
@@ -44,8 +23,6 @@ var iqLowRecip64 = [64]uint16{
 	18558, 18396, 18236, 18078, 17924, 17772, 17623, 17476, 17331, 17189, 17050, 16912, 16777, 16644, 16513, 16384,
 }
 
-// iqLowAtan64 holds, for i from 0 to 63, the arctangent of (i+0.5)/64 in
-// units of 2^-16 of a turn.
 var iqLowAtan64 = [64]uint16{
 	81, 244, 407, 570, 732, 894, 1056, 1217, 1377, 1537, 1696, 1854, 2012, 2168, 2324, 2478,
 	2632, 2784, 2935, 3085, 3233, 3380, 3526, 3670, 3813, 3955, 4095, 4233, 4370, 4505, 4639, 4771,
@@ -53,9 +30,6 @@ var iqLowAtan64 = [64]uint16{
 	6764, 6867, 6968, 7068, 7166, 7262, 7358, 7451, 7544, 7635, 7724, 7812, 7899, 7984, 8068, 8151,
 }
 
-// iqLowAtan holds, for i from 0 to 15, the arctangent of i/16 in units of
-// 2^-16 of a turn in the low half, and the step to that of (i+1)/16 in
-// the high half.
 var iqLowAtan = [16]uint32{
 	0x028B0000, 0x0286028B, 0x027C0511, 0x026E078D, 0x025C09FB, 0x02470C57, 0x02300E9E, 0x021610CE,
 	0x01FC12E4, 0x01E214E0, 0x01C816C2, 0x01AE188A, 0x01951A38, 0x017D1BCD, 0x01661D4A, 0x01501EB0,
@@ -72,18 +46,12 @@ type LowIQConfig struct {
 	opt     *options
 }
 
-// LowIQReceiver is the Tier 0 receiver for complex baseband at the rate of
-// its core, 9.6 or 12 kHz, that a radio chip, or a converter with
-// hardware decimation, filtered to the channel and decimated. It takes the
-// phase step of each sample in the frame of its oscillator and runs the
-// DiscReceiver core on it, with the matched filter of the core as the
-// only filter. It does not allocate, so that it can live in memory of the
-// caller.
+// LowIQReceiver is the Tier 0 receiver for complex baseband at 9.6 or 12
+// kHz that is already filtered to the channel. It does not allocate.
 type LowIQReceiver struct {
 	r iqLowRx
 }
 
-// errLowIQ is the error of LowIQReceiver.Init for a Config out of range.
 var (
 	errLowIQHz      = &ConfigError{Field: "Hz"}
 	errLowIQOnBurst = &ConfigError{Field: "OnBurst"}
@@ -121,32 +89,18 @@ func (r *LowIQReceiver) WriteIQ16(x []uint32) {
 // Flush finishes the stream at its end.
 func (r *LowIQReceiver) Flush() { r.r.flush() }
 
-// iqLowRx is the receiver of LowIQReceiver, and of New with options.IQLow:
-// the phase step of each sample less the step of the oscillator, and the
-// DiscReceiver core.
 type iqLowRx struct {
-	// d is the first field: iqLowOf finds the receiver from its core.
-	d DiscReceiver
-	// q is the last sample.
-	q uint32
-	// ar, ai and pow sum the products of each sample and the conjugate of
-	// the one before, and the power of the samples, over the block of the
-	// oscillator, shifted by iqLowShift.
+	d           DiscReceiver
+	q           uint32
 	ar, ai, pow int32
-	// afcAvg is the mean of the sums of the blocks since the oscillator
-	// last moved, in its frame.
-	afcAvg complex64
-	// step is the phase step of the oscillator, hz, per sample, in units
-	// of 2^-32 of a turn, a multiple of 2^16.
-	step int32
-	hz   float32
-	afcN int16
-	n    uint8
-	buf  [iqLowBuf]int16
+	afcAvg      complex64
+	step        int32
+	hz          float32
+	afcN        int16
+	n           uint8
+	buf         [iqLowBuf]int16
 }
 
-// init sets up r for I/Q at hz with the settings opt, nil for those of
-// discOptions.
 func (r *iqLowRx) init(hz int, on func(*Burst), opt *options) error {
 	*r = iqLowRx{}
 	err := r.d.Init(DiscConfig{Hz: hz, OnBurst: on, opt: opt})
@@ -154,8 +108,6 @@ func (r *iqLowRx) init(hz int, on func(*Burst), opt *options) error {
 	return err
 }
 
-// newIQLowRx returns the receiver of New for cfg at a BasebandHz of the
-// core. Without OnBurst the core keeps the bursts of a call in d.out.
 func newIQLowRx(cfg Config, opt options) *iqLowRx {
 	r := &iqLowRx{}
 	if err := r.init(cfg.BasebandHz, cfg.OnBurst, &opt); err != nil {
@@ -167,12 +119,8 @@ func newIQLowRx(cfg Config, opt options) *iqLowRx {
 	return r
 }
 
-// block returns the number of samples of the block of the oscillator,
-// iqAFCBlock at basebandRate.
 func (r *iqLowRx) block() int { return iqAFCBlock * r.d.hz() / basebandRate }
 
-// writeBaseband processes the samples of Receiver.WriteBaseband as the
-// pairs of WriteIQ16, with 1 as iqLowScale.
 func (r *iqLowRx) writeBaseband(x []complex64) []Burst {
 	r.d.out = r.d.out[:0]
 	var b [iqLowPack]uint32
@@ -187,12 +135,10 @@ func (r *iqLowRx) writeBaseband(x []complex64) []Burst {
 	return r.d.out
 }
 
-// q15 returns v times iqLowScale, rounded and clipped to ±32767.
 func q15(v float32) int32 {
 	return roundBits(min(max(v*iqLowScale, -32767), 32767))
 }
 
-// run processes the samples x and adds the bursts they complete to d.out.
 func (r *iqLowRx) run(x []uint32) {
 	block := r.block()
 	if r.d.iqLow && r.d.front96 {
@@ -225,8 +171,6 @@ func (r *iqLowRx) run(x []uint32) {
 	}
 }
 
-// feed runs the core on x, which fill hands it through buf, and decodes
-// the slots that end, as DiscReceiver.run does.
 func (r *iqLowRx) feed(x []uint32) {
 	r.n = 0
 	j, k := 0, 0
@@ -242,13 +186,8 @@ func (r *iqLowRx) feed(x []uint32) {
 	}
 }
 
-// iqLowOf returns the iqLowRx whose core is r, for a core with iqLow.
 func iqLowOf(r *DiscReceiver) *iqLowRx { return (*iqLowRx)(unsafe.Pointer(r)) }
 
-// fill puts the phase steps of the first samples of x into buf for
-// run96 and returns their number, 0 for no x. It is not inlined, so that
-// run96 keeps a small frame.
-//
 //go:noinline
 func (r *iqLowRx) fill(x []uint32) int {
 	m := min(len(x), iqLowBuf)
@@ -258,15 +197,6 @@ func (r *iqLowRx) fill(x []uint32) int {
 	return m
 }
 
-// halfRun appends the phase step of each sample of x, less the step of
-// the oscillator, to buf, which has room for them. The dot product d and
-// the cross product c of the sample and the one before are DSP dual
-// multiplies. The angle is that of the octant of (|d|, |c|), from the
-// ratio of the smaller to the larger, both shifted to the top bit, below
-// 1, by a table of 16 steps with linear interpolation, within 0.0004 rad,
-// and the fold to the full turn. Less the oscillator, it wraps in the top
-// 16 bits of a word, and buf holds it as the frequency in iqUnitsPerHz.
-//
 //go:noinline
 func (r *iqLowRx) halfRun(x []uint32) {
 	out := r.buf[r.n : int(r.n)+len(x)]
@@ -291,9 +221,6 @@ func (r *iqLowRx) halfRun(x []uint32) {
 		z := uint(bits.LeadingZeros32(ax | 1))
 		var a int32
 		if iqLowRecip {
-			// ax<<z is at least 2^31: its 6 bits below the top bit pick
-			// the reciprocal of the top of its step, so that the ratio
-			// stays below 1.
 			x := ax << z
 			t := ((ay << z) >> 16 * uint32(iqLowRecip64[x>>25&63])) >> 24
 			a = int32(iqLowAtan64[t&63])
@@ -321,11 +248,6 @@ func (r *iqLowRx) halfRun(x []uint32) {
 	r.ar, r.ai, r.pow = ar, ai, pow
 }
 
-// follow is iq0Rx.follow for iqLowRx, with its sums turned to the frame of
-// the oscillator. The core has taken the samples of the block before it runs.
-// It is not inlined, so that its frame is not on the stack while the core
-// runs.
-//
 //go:noinline
 func (r *iqLowRx) follow() {
 	s, c := sincosf(float32(r.step) * (-2 * math.Pi / (1 << 32)))
@@ -369,7 +291,6 @@ func (r *iqLowRx) follow() {
 	}
 }
 
-// tune is iq0Rx.tune for iqLowRx.
 func (r *iqLowRx) tune(hz, dc float32) {
 	f := &r.d.f
 	scale := f.gain * iqUnitsPerHz
@@ -392,7 +313,6 @@ func (r *iqLowRx) tune(hz, dc float32) {
 	}
 }
 
-// flush finishes the stream at its end.
 func (r *iqLowRx) flush() []Burst {
 	r.d.out = r.d.out[:0]
 	if !r.d.iqLow || !r.d.front96 {

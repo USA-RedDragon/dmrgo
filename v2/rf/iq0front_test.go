@@ -5,8 +5,6 @@ import (
 	"testing"
 )
 
-// iq0Receive runs the baseband x through the lean front of opt in writes
-// of chunk samples, and returns the bursts and the oscillator at the end.
 func iq0Receive(x []complex64, o options, chunk int) ([]Burst, float32) {
 	var out []Burst
 	r := mustNew(Config{Rate: basebandRate, Tier: Tier0, opt: &o, OnBurst: func(b *Burst) { out = append(out, *b) }})
@@ -23,8 +21,6 @@ func iq0Receive(x []complex64, o options, chunk int) ([]Burst, float32) {
 	return out, hz
 }
 
-// iq0Options returns the settings of the lean front with front, at hz.
-// Front 5 stands for front 4 with the boxcar.
 func iq0Options(front, hz int) options {
 	o := discOptions()
 	o.IQDisc, o.IQHz, o.IQFront, o.IQPoly, o.IQBuf = true, hz, front, 3, 64
@@ -34,10 +30,6 @@ func iq0Options(front, hz int) options {
 	return o
 }
 
-// TestIQ0Loopback receives a strong BS stream with a 1400 Hz carrier
-// offset through each lean front at both rates, and checks that every
-// voice frame and data block after the first slot decodes, and that the
-// oscillator found the offset.
 func TestIQ0Loopback(t *testing.T) {
 	t.Parallel()
 	slots, truth := benchStream(t, 6)
@@ -58,9 +50,6 @@ func TestIQ0Loopback(t *testing.T) {
 	}
 }
 
-// TestIQ0Writes checks that the bursts of the lean front do not depend on
-// how the input splits into writes, on a weak stream with a carrier
-// offset, whose bursts carry errors.
 func TestIQ0Writes(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 6)

@@ -5,9 +5,6 @@ import (
 	"testing"
 )
 
-// TestAnchorZero checks that the anchor rotation of samples that are all
-// zero, as outside the ring, is finite: a NaN rotation made logAdd of the
-// LogMAP trellis index with int(NaN) and panic.
 func TestAnchorZero(t *testing.T) {
 	t.Parallel()
 	m := newCPMModel(1, 5)

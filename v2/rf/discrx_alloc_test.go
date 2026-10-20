@@ -2,10 +2,6 @@ package rf
 
 import "testing"
 
-// TestAllocsDiscReceiver checks that Init and AppendBursts of a
-// DiscReceiver in caller memory allocate nothing, with a buffer that has
-// room for the bursts, over a BS outbound voice call that the receiver
-// locks to.
 func TestAllocsDiscReceiver(t *testing.T) {
 	slots, _ := benchStream(t, 3)
 	a := discAudio(noisyBaseband(slots, 1400, 20, 1), 9600)

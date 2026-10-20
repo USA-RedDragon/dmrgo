@@ -5,36 +5,20 @@ import (
 	"math/cmplx"
 )
 
-// Limits of the coherent detection between anchors.
 const (
-	// ddWindow is the window of the decision-directed carrier estimate, in
-	// symbols.
-	ddWindow = 12
-	// runMargin is the number of symbols a trellis run goes past the last
-	// symbol it detects, so that the APPs of that symbol see its whole
-	// waveform.
-	runMargin = 4
-	// phaseBank is the number of carrier phases tried where no anchor gives
-	// one.
-	phaseBank = 8
-	// fillChunk is the number of symbols whose ring samples fillRange loads
-	// at once.
-	fillChunk = trellisWin + trellisLook
-	// noRun is the run distance of a symbol that no trellis run set.
-	noRun = math.MaxInt16
-	// maxPulseSpan is the most symbols on each side of a symbol that its
-	// phase pulse reaches.
+	ddWindow     = 12
+	runMargin    = 4
+	phaseBank    = 8
+	fillChunk    = trellisWin + trellisLook
+	noRun        = math.MaxInt16
 	maxPulseSpan = rrcSpan + 1
 )
 
-// symRef is a symbol of a stream: slot and symbol within the slot.
 type symRef struct {
 	slot int64
 	k    int
 }
 
-// add returns the symbol n symbols after g. The division of an int keeps a
-// 64-bit one, which a 32-bit CPU runs in software, out of the detection.
 func (g symRef) add(n int) symRef {
 	x := g.k + n
 	q := x / slotSymbols
@@ -44,12 +28,10 @@ func (g symRef) add(n int) symRef {
 	return symRef{slot: g.slot + int64(q), k: x - q*slotSymbols}
 }
 
-// diff returns the number of symbols from h to g.
 func (g symRef) diff(h symRef) int {
 	return int((g.slot-h.slot)*slotSymbols) + g.k - h.k
 }
 
-// anchorSym returns the SYNC symbol of an anchor at stream symbol g.
 func (r *engine) anchorSym(g symRef) (int, bool) {
 	s := r.slot(g.slot)
 	if s.index != g.slot || !s.anchor || g.k < syncFirstSym || g.k >= syncFirstSym+syncSymbols {
@@ -60,9 +42,6 @@ func (r *engine) anchorSym(g symRef) (int, bool) {
 	return int(syms[g.k-syncFirstSym]), true
 }
 
-// symPrior writes the log priors of the four digits of stream symbol g:
-// options.KnownPrior for the expected symbol of an anchor's SYNC, plus the bit
-// priors that a refinement set on its slot.
 func (r *engine) symPrior(g symRef, lp []float32) {
 	clear(lp)
 	if a, ok := r.anchorSym(g); ok {
@@ -77,16 +56,10 @@ func (r *engine) symPrior(g symRef, lp []float32) {
 	}
 }
 
-// fill aligns n symbols from g into r.buf, as fillRange.
 func (r *engine) fill(g symRef, n int, rev bool) {
 	r.fillRange(g, 0, n, rev, r.buf)
 }
 
-// fillRange aligns the symbols i0 to i1-1 from g into x, forward in time or
-// backward (time reversed and conjugated, which is the waveform of the
-// reversed symbols). The discrete phase of the model sums the frequency up
-// to and including each sample, so the reversed waveform matches it one
-// model sample earlier, and fillRange takes the reversed samples there.
 func (r *engine) fillRange(g symRef, i0, i1 int, rev bool, x []complex64) {
 	ch := &r.chz.ch
 	dir := 1
@@ -125,10 +98,6 @@ func (r *engine) fillRange(g symRef, i0, i1 int, rev bool, x []complex64) {
 	}
 }
 
-// loadChunk loads into r.scr the ring samples that n trellis samples need,
-// the first at ring position base+u, sample j of symbol i at
-// base+u+i*du+j*su, and returns the ring position of r.scr[0] and the
-// loaded samples.
 func (r *engine) loadChunk(base int64, u, du, su float32, n int, rev bool) (int64, []complex64) {
 	sps := r.model.sps
 	span := float32(n/sps)*abs32(du) + float32(sps)*abs32(su)
@@ -142,28 +111,19 @@ func (r *engine) loadChunk(base int64, u, du, su float32, n int, rev bool) (int6
 	return first, r.scr[:m]
 }
 
-// runSamples writes the samples of the intervals k0 to k1-1 of the current
-// trellis run into x.
 func (r *engine) runSamples(k0, k1 int, x []complex64) {
 	d := r.model.d
 	r.fillRange(r.runG, k0+d, k1+d, r.runDir < 0, x)
 }
 
-// runPrior writes the log priors of the newest symbol of interval k of the
-// current trellis run.
 func (r *engine) runPrior(k int, lp []float32) {
 	r.symPrior(r.runG.add(r.runDir*(k+2*r.model.d)), lp)
 }
 
-// runKeep keeps the log-APPs of interval k of the current trellis run for
-// its symbol when no run nearer that symbol set them.
 func (r *engine) runKeep(k int, app []float32) {
 	r.keepAPP(r.runG, r.runDir, k, r.runSteps, app, r.runLo, r.runHi)
 }
 
-// keepAPP keeps app, the log-APPs of interval k of a run of steps
-// intervals from g in direction dir, for its symbol between lo and hi when
-// no run nearer that symbol set them.
 func (r *engine) keepAPP(g symRef, dir, k, steps int, app []float32, lo, hi symRef) {
 	d := r.model.d
 	if k >= steps-d {
@@ -186,9 +146,6 @@ func (r *engine) keepAPP(g symRef, dir, k, steps int, app []float32, lo, hi symR
 	st.have[p+h.k] = int16(dist)
 }
 
-// run detects n symbols from g (forward or backward) with the trellis,
-// starting from the known symbols at g when there are enough, and keeps the
-// APPs of symbols nearer this start than the ones they have.
 func (r *engine) run(g symRef, n int, rev bool, lo, hi symRef) {
 	m := r.model
 	d, sps := m.d, m.sps
@@ -241,15 +198,10 @@ func (r *engine) run(g symRef, n int, rev bool, lo, hi symRef) {
 	}
 }
 
-// discard drops the log-APPs of a trellis run.
 type discard struct{ *engine }
 
-// runKeep drops app.
 func (discard) runKeep(int, []float32) {}
 
-// bankRun runs the trellis from an unknown state with phaseBank carrier
-// phases and keeps the APPs of the run whose best path scores highest. The
-// exact-phase trellis takes an unknown phase in one run.
 func (r *engine) bankRun(steps int, scale float32) {
 	sps, d := r.model.sps, r.model.d
 	if r.xt != nil {
@@ -269,11 +221,6 @@ func (r *engine) bankRun(steps int, scale float32) {
 	r.tr.run(r, steps, rot, scale, r.opt.PSPGain)
 }
 
-// coherentGap detects the symbols of slots first to j: forward from the
-// anchor of slot first, if any, and backward from the anchor of slot j, if
-// any, or from the first slot with phaseBank carrier phases when neither
-// has one. With both anchors, each run stops trellisLook symbols past the
-// middle, as each symbol keeps the APPs of the nearer run.
 func (r *engine) coherentGap(first, j int64, final bool) {
 	r.passAt(first + (j-first)/2)
 	if r.amp == 0 || r.noise == 0 {
@@ -316,9 +263,6 @@ func (r *engine) coherentGap(first, j int64, final bool) {
 	}
 }
 
-// coherentBurst detects the burst of slot j alone, for a stream whose
-// carrier is off between bursts: forward and backward from its SYNC, or
-// with phaseBank carrier phases when it has none.
 func (r *engine) coherentBurst(j int64) {
 	r.passAt(j)
 	if r.amp == 0 || r.noise == 0 {
@@ -345,12 +289,6 @@ func (r *engine) coherentBurst(j int64) {
 	}
 }
 
-// trackCarrier updates the carrier estimate from the phase drift of the
-// received symbols of lo to hi against the waveform of their decisions,
-// over windows of ddWindow symbols. The waveform phase of a sample sums the
-// phase pulse of the decisions within the span of the pulse and the whole
-// phase steps of the decisions before it, as refPhaseInto does for the
-// symbols from lo.
 func (r *engine) trackCarrier(lo, hi symRef) {
 	n := hi.diff(lo) + 1
 	if n < 3*ddWindow {
@@ -422,8 +360,6 @@ func (r *engine) trackCarrier(lo, hi symRef) {
 	r.freq += math.Max(g, 0.2) * hz
 }
 
-// decision returns the symbol, -3 to 3, with the highest log-APP of stream
-// symbol h.
 func (r *engine) decision(h symRef) int {
 	st, p := r.symsOf(r.slot(h.slot))
 	return 2*int(st.digit[p+h.k]) - 3
