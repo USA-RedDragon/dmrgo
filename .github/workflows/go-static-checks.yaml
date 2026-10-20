@@ -18,6 +18,7 @@ jobs:
       matrix:
         module:
           - v2
+          - v2/capi
           - cmd/dmrgen
           - cmd/speccheck
           - cmd/tablegen
@@ -27,7 +28,7 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Install libcodec2
-        if: matrix.module == 'v2'
+        if: matrix.module == 'v2' || matrix.module == 'v2/capi'
         run: sudo apt-get update && sudo apt-get install -y libcodec2-dev pkg-config
       - run: go generate ./...
       - name: golangci-lint

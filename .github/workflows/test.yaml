@@ -64,6 +64,32 @@ jobs:
       - name: Check the allocation table of the README against the gate
         run: DMRGO_README=check go test -C v2 -run TestHeapAllocations ./internal/allocgate
 
+  capi:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+
+      - name: Install libcodec2
+        run: sudo apt-get update && sudo apt-get install -y libcodec2-dev pkg-config
+
+      - run: go generate ./...
+
+      - name: Go tests of the C API
+        run: go test -C v2/capi -race ./...
+
+      - name: Build libdmrgo and run the C test program
+        run: make -C v2/capi test
+
+      - name: Build libdmrgo without libcodec2
+        run: go build -C v2/capi -tags nocodec2 -buildmode=c-shared -o build/libdmrgo-nocodec2.so .
+
   tinygo:
     runs-on: ubuntu-24.04
     container:
