@@ -3,38 +3,21 @@ package csbk
 import (
 	"math"
 	"time"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/pcg"
 )
 
-type pcg struct {
-	state uint64
+const pcgStream = 721347520444481703
+
+func seedPCG(seed uint64) pcg.Source {
+	return pcg.NewStream(seed, pcgStream)
 }
 
-const (
-	pcgMultiplier = 6364136223846793005
-	pcgIncrement  = 1442695040888963407
-)
-
-func seedPCG(seed uint64) pcg {
-	var p pcg
-	p.next()
-	p.state += seed
-	p.next()
-	return p
-}
-
-func (p *pcg) next() uint32 {
-	old := p.state
-	p.state = old*pcgMultiplier + pcgIncrement
-	x := uint32((old>>18 ^ old) >> 27 & 0xFFFFFFFF)
-	rot := uint32(old >> 59 & 31)
-	return x>>rot | x<<((32-rot)&31)
-}
-
-func (p *pcg) duration(maxDur time.Duration) time.Duration {
+func holdoff(p *pcg.Source, maxDur time.Duration) time.Duration {
 	if maxDur <= 0 {
 		return 0
 	}
-	v := int64(p.next()&0x7FFFFFFF)<<32 | int64(p.next())
+	v := int64(p.Uint32()&0x7FFFFFFF)<<32 | int64(p.Uint32())
 	m := int64(maxDur)
 	if m < math.MaxInt64 {
 		m++

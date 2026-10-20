@@ -7,10 +7,7 @@ import (
 
 func TestReferenceVector(t *testing.T) {
 	t.Parallel()
-	s := Source{inc: 54<<1 | 1}
-	s.Uint32()
-	s.state += 42
-	s.Uint32()
+	s := NewStream(42, 54)
 	want := []uint32{0xa15c02b7, 0x7b47f409, 0xba1d3330, 0x83d2f293, 0xbfa4784b, 0xcbed606e}
 	for i, w := range want {
 		if got := s.Uint32(); got != w {
