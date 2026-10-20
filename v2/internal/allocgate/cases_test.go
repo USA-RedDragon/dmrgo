@@ -27,8 +27,17 @@ func TestGateCases(t *testing.T) {
 
 func TestDstGrowthCases(t *testing.T) {
 	t.Parallel()
+	dstGrowthCases(t, "./internal/allocgate/testdata/growth")
+}
 
-	gt := newGate(t, []string{"./internal/allocgate/testdata/growth"})
+func TestScratchCases(t *testing.T) {
+	t.Parallel()
+	dstGrowthCases(t, "./internal/allocgate/testdata/scratch/...")
+}
+
+func dstGrowthCases(t *testing.T, pattern string) {
+	t.Helper()
+	gt := newGate(t, []string{pattern})
 	n := 0
 	for _, d := range gt.p.declaredFuncs() {
 		name := d.fn.Name()

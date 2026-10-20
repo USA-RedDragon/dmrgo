@@ -427,7 +427,7 @@ func (gt *gate) rules() []*rule {
 			}
 			return true, ""
 		}},
-		{name: "dst growth", what: "An exported function or method that takes a slice dst and returns a slice of the same type", when: "Only to grow dst when dst has no room. The caller sizes dst.", match: gt.growsDst},
+		{name: "dst growth", what: "An exported function or method that takes a slice dst and returns a slice of the same type", when: "Only to grow dst when dst has no room. The caller sizes dst. A machine built from other machines may also pass each of them an unexported field sliced to [:0] that its New makes with capacity MaxX of that machine's package, whose fuzz test checks that bound.", match: gt.growsDst},
 		{name: "allocating wrapper", what: "An exported X with an exported twin AppendX or XInto that does not allocate", when: "X allocates the slice, string or struct it returns; the twin writes into storage of the caller.", match: func(r root) (bool, string) {
 			if r.decl == nil {
 				return false, ""
