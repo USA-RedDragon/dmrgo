@@ -308,9 +308,7 @@ func (s *FullLinkControl) String() string {
 	return _ret
 }
 
-// decodeFLCGroupVoice decodes an FLCGroupVoice. data holds the 56 bits of
-// the PDU packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-2 clause 7.1.1.1, Table 7.1)
+// ETSI TS 102 361-2 clause 7.1.1.1, Table 7.1
 func decodeFLCGroupVoice(data [7]byte) FLCGroupVoice {
 	var result FLCGroupVoice
 	var _serviceOptionsBytes [1]byte
@@ -354,9 +352,7 @@ func (s *FLCGroupVoice) String() string {
 	return "FLCGroupVoice{ ServiceOptions: " + s.ServiceOptions.String() + ", GroupAddress: " + text.Int(int64(s.GroupAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeFLCUnitToUnit decodes an FLCUnitToUnit. data holds the 56 bits of
-// the PDU packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-2 clause 7.1.1.2, Table 7.2)
+// ETSI TS 102 361-2 clause 7.1.1.2, Table 7.2
 func decodeFLCUnitToUnit(data [7]byte) FLCUnitToUnit {
 	var result FLCUnitToUnit
 	var _serviceOptionsBytes [1]byte
@@ -400,9 +396,7 @@ func (s *FLCUnitToUnit) String() string {
 	return "FLCUnitToUnit{ ServiceOptions: " + s.ServiceOptions.String() + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeFLCGPSInfo decodes an FLCGPSInfo. data holds the 56 bits of the PDU
-// packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-2 clause 7.1.1.3, Table 7.3)
+// ETSI TS 102 361-2 clause 7.1.1.3, Table 7.3
 func decodeFLCGPSInfo(data [7]byte) FLCGPSInfo {
 	var result FLCGPSInfo
 	result.Reserved = uint8(uint64(data[0]) >> 4)
@@ -452,9 +446,7 @@ func (s *FLCGPSInfo) String() string {
 	return "FLCGPSInfo{ Reserved: " + text.Int(int64(s.Reserved)) + ", PositionError: " + s.PositionError.String() + ", Longitude: " + text.Fixed(s.Longitude) + ", Latitude: " + text.Fixed(s.Latitude) + " }"
 }
 
-// decodeFLCTalkerAliasHeader decodes an FLCTalkerAliasHeader. data holds the
-// 56 bits of the PDU packed, the first bit in the most significant bit of
-// data[0]. (ETSI TS 102 361-2 clause 7.1.1.4, Table 7.4)
+// ETSI TS 102 361-2 clause 7.1.1.4, Table 7.4
 func decodeFLCTalkerAliasHeader(data [7]byte) FLCTalkerAliasHeader {
 	var result FLCTalkerAliasHeader
 	result.TalkerAliasDataFormat = layer3.TalkerAliasDataFormat(uint64(data[0]) >> 6)
@@ -496,9 +488,7 @@ func (s *FLCTalkerAliasHeader) String() string {
 	return "FLCTalkerAliasHeader{ TalkerAliasDataFormat: " + s.TalkerAliasDataFormat.String() + ", TalkerAliasDataLength: " + text.Int(int64(s.TalkerAliasDataLength)) + ", TalkerAliasData: " + text.Uint(uint64(s.TalkerAliasData)) + " }"
 }
 
-// decodeFLCTalkerAliasBlock decodes an FLCTalkerAliasBlock. data holds the
-// 56 bits of the PDU packed, the first bit in the most significant bit of
-// data[0]. (ETSI TS 102 361-2 clause 7.1.1.5, Table 7.5)
+// ETSI TS 102 361-2 clause 7.1.1.5, Table 7.5
 func decodeFLCTalkerAliasBlock(data [7]byte) FLCTalkerAliasBlock {
 	var result FLCTalkerAliasBlock
 	copy(result.TalkerAliasData[0:7], data[0:7])
@@ -520,10 +510,7 @@ func (s *FLCTalkerAliasBlock) String() string {
 	return "FLCTalkerAliasBlock{ TalkerAliasData: " + text.Bytes(s.TalkerAliasData[:]) + " }"
 }
 
-// decodeFLCTerminatorDataLinkControl decodes an
-// FLCTerminatorDataLinkControl. data holds the 56 bits of the PDU packed,
-// the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-3 clause 7.1.1.1, Table 7.1)
+// ETSI TS 102 361-3 clause 7.1.1.1, Table 7.1
 func decodeFLCTerminatorDataLinkControl(data [7]byte) FLCTerminatorDataLinkControl {
 	var result FLCTerminatorDataLinkControl
 	result.LLIDDestination = uint32(uint64(data[0])<<16 | uint64(data[1])<<8 | uint64(data[2]))
@@ -584,8 +571,6 @@ func (s *FLCTerminatorDataLinkControl) String() string {
 	return "FLCTerminatorDataLinkControl{ LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", GroupOrIndividual: " + text.Bool(s.GroupOrIndividual) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", Reserved: " + text.Bool(s.Reserved) + ", ReSynchronizeFlag: " + text.Bool(s.ReSynchronizeFlag) + ", SendSequenceNumber: " + text.Int(int64(s.SendSequenceNumber)) + " }"
 }
 
-// The errors of the Encode methods. Each is a static value, so that an
-// Encode that fails does not allocate.
 var (
 	errFullLinkControlPayloads  = errors.New("FullLinkControl: more than one payload field is set")
 	errFullLinkControlFLCORange = &dmrgo.FieldRangeError{

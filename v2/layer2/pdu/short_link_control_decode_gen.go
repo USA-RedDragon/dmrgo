@@ -17,9 +17,7 @@ import (
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
-// decodeShortLCNullMessage decodes a ShortLCNullMessage. data holds the 24
-// bits of the PDU packed, the first bit in the most significant bit of
-// data[0]. (ETSI TS 102 361-2 clause 7.1.3.1)
+// ETSI TS 102 361-2 clause 7.1.3.1
 func decodeShortLCNullMessage(data [3]byte) ShortLCNullMessage {
 	var result ShortLCNullMessage
 	result.Reserved = uint32(uint64(data[0])<<16 | uint64(data[1])<<8 | uint64(data[2]))
@@ -47,9 +45,7 @@ func (s *ShortLCNullMessage) String() string {
 	return "ShortLCNullMessage{ Reserved: " + text.Int(int64(s.Reserved)) + " }"
 }
 
-// decodeShortLCActivityUpdate decodes a ShortLCActivityUpdate. data holds
-// the 24 bits of the PDU packed, the first bit in the most significant bit
-// of data[0]. (ETSI TS 102 361-2 clause 7.1.3.2)
+// ETSI TS 102 361-2 clause 7.1.3.2
 func decodeShortLCActivityUpdate(data [3]byte) ShortLCActivityUpdate {
 	var result ShortLCActivityUpdate
 	result.TS1ActivityID = enums.ActivityID(uint64(data[0]) >> 4)
@@ -83,9 +79,7 @@ func (s *ShortLCActivityUpdate) String() string {
 	return "ShortLCActivityUpdate{ TS1ActivityID: " + s.TS1ActivityID.String() + ", TS2ActivityID: " + s.TS2ActivityID.String() + ", HashTS1: " + text.Int(int64(s.HashTS1)) + ", HashTS2: " + text.Int(int64(s.HashTS2)) + " }"
 }
 
-// decodeShortLCCSysParms decodes a ShortLCCSysParms. data holds the 24 bits
-// of the PDU packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clause 7.1.2.1)
+// ETSI TS 102 361-4 clause 7.1.2.1
 func decodeShortLCCSysParms(data [3]byte) ShortLCCSysParms {
 	var result ShortLCCSysParms
 	result.MODEL = uint8(uint64(data[0]) >> 6)
@@ -128,9 +122,7 @@ func (s *ShortLCCSysParms) String() string {
 	return "ShortLCCSysParms{ MODEL: " + text.Int(int64(s.MODEL)) + ", NetSiteRaw: " + text.Int(int64(s.NetSiteRaw)) + ", Reg: " + text.Bool(s.Reg) + ", CommonSlotCounter: " + text.Int(int64(s.CommonSlotCounter)) + " }"
 }
 
-// decodeShortLCPSysParms decodes a ShortLCPSysParms. data holds the 24 bits
-// of the PDU packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clause 7.1.2.2)
+// ETSI TS 102 361-4 clause 7.1.2.2
 func decodeShortLCPSysParms(data [3]byte) ShortLCPSysParms {
 	var result ShortLCPSysParms
 	result.MODEL = uint8(uint64(data[0]) >> 6)
@@ -346,8 +338,6 @@ func (s *ShortLC) String() string {
 	return _ret
 }
 
-// The errors of the Encode methods. Each is a static value, so that an
-// Encode that fails does not allocate.
 var (
 	errShortLCNullMessageReservedRange = &dmrgo.FieldRangeError{
 		Bits:  24,

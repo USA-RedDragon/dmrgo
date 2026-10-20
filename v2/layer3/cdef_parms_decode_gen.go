@@ -69,8 +69,6 @@ func (s *CdefParms) String() string {
 	return "CdefParms{ Channel: " + text.Int(int64(s.Channel)) + ", TXMHz: " + text.Int(int64(s.TXMHz)) + ", TXKHz: " + text.Int(int64(s.TXKHz)) + ", RXMHz: " + text.Int(int64(s.RXMHz)) + ", RXKHz: " + text.Int(int64(s.RXKHz)) + " }"
 }
 
-// The errors of the Encode methods. Each is a static value, so that an
-// Encode that fails does not allocate.
 var (
 	errCdefParmsChannelRange = &dmrgo.FieldRangeError{
 		Bits:  12,

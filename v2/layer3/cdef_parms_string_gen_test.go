@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// fmtString returns the text that String must return, from fmt.
 func (s *CdefParms) fmtString() string {
 	return fmt.Sprintf("CdefParms{ Channel: %d, TXMHz: %d, TXKHz: %d, RXMHz: %d, RXKHz: %d }", s.Channel, s.TXMHz, s.TXKHz, s.RXMHz, s.RXKHz)
 }

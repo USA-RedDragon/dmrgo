@@ -57,8 +57,6 @@ func (s *ServiceOptions) String() string {
 	return "ServiceOptions{ IsEmergency: " + text.Bool(s.IsEmergency) + ", IsPrivacy: " + text.Bool(s.IsPrivacy) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", IsBroadcast: " + text.Bool(s.IsBroadcast) + ", IsOpenVoiceCallMode: " + text.Bool(s.IsOpenVoiceCallMode) + ", PriorityLevel: " + text.Int(int64(s.PriorityLevel)) + " }"
 }
 
-// The errors of the Encode methods. Each is a static value, so that an
-// Encode that fails does not allocate.
 var (
 	errServiceOptionsReservedRange = &dmrgo.FieldRangeError{
 		Bits:  2,

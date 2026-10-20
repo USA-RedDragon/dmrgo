@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// fmtString returns the text that String must return, from fmt.
 func (s *MBCHeader) fmtString() string {
 	_ret := "MBCHeader{ "
 	_ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, FID: %d, ", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.FID)
@@ -45,7 +44,6 @@ func TestMBCHeaderStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*MBCHeader).String, (*MBCHeader).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *MBCContinuation) fmtString() string {
 	return fmt.Sprintf("MBCContinuation{ LastBlock: %t, Data: %x }", s.LastBlock, s.Data)
 }
@@ -55,7 +53,6 @@ func TestMBCContinuationStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*MBCContinuation).String, (*MBCContinuation).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *CGAPContinuation) fmtString() string {
 	return fmt.Sprintf("CGAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, Reserved1: %d, ColorCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.Reserved1, s.ColorCode, s.Cdeftype, s.Reserved2, s.CdefParms.String())
 }
@@ -65,7 +62,6 @@ func TestCGAPContinuationStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*CGAPContinuation).String, (*CGAPContinuation).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *MVAPContinuation) fmtString() string {
 	return fmt.Sprintf("MVAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, Reserved1: %d, ColorCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.Reserved1, s.ColorCode, s.Cdeftype, s.Reserved2, s.CdefParms.String())
 }
@@ -75,7 +71,6 @@ func TestMVAPContinuationStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*MVAPContinuation).String, (*MVAPContinuation).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *BCAPContinuation) fmtString() string {
 	return fmt.Sprintf("BCAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, Reserved1: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.Reserved1, s.Cdeftype, s.Reserved2, s.CdefParms.String())
 }
@@ -85,7 +80,6 @@ func TestBCAPContinuationStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*BCAPContinuation).String, (*BCAPContinuation).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *VNAPContinuation) fmtString() string {
 	return fmt.Sprintf("VNAPContinuation{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, Reserved1: %d, ColorCode: %d, Cdeftype: %d, Reserved2: %d, CdefParms: %s }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.Reserved1, s.ColorCode, s.Cdeftype, s.Reserved2, s.CdefParms.String())
 }

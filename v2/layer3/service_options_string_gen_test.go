@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// fmtString returns the text that String must return, from fmt.
 func (s *ServiceOptions) fmtString() string {
 	return fmt.Sprintf("ServiceOptions{ IsEmergency: %t, IsPrivacy: %t, Reserved: %d, IsBroadcast: %t, IsOpenVoiceCallMode: %t, PriorityLevel: %d }", s.IsEmergency, s.IsPrivacy, s.Reserved, s.IsBroadcast, s.IsOpenVoiceCallMode, s.PriorityLevel)
 }

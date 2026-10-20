@@ -385,9 +385,7 @@ func (s *MBCContinuation) String() string {
 	return "MBCContinuation{ LastBlock: " + text.Bool(s.LastBlock) + ", Data: " + text.Hex(s.Data[:]) + " }"
 }
 
-// decodeCGAPContinuation decodes a CGAPContinuation. data holds the 96 bits
-// of the PDU packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clause 7.1.1.1.2, Table 7.16)
+// ETSI TS 102 361-4 clause 7.1.1.1.2, Table 7.16
 func decodeCGAPContinuation(data [12]byte) CGAPContinuation {
 	var result CGAPContinuation
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], uint16(data[10])<<8|uint16(data[11]))
@@ -452,9 +450,7 @@ func (s *CGAPContinuation) String() string {
 	return "CGAPContinuation{ FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + ", Reserved1: " + text.Int(int64(s.Reserved1)) + ", ColorCode: " + text.Int(int64(s.ColorCode)) + ", Cdeftype: " + text.Int(int64(s.Cdeftype)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", CdefParms: " + s.CdefParms.String() + " }"
 }
 
-// decodeMVAPContinuation decodes an MVAPContinuation. data holds the 96 bits
-// of the PDU packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clause 7.1.1.1.3.1, Table 7.18)
+// ETSI TS 102 361-4 clause 7.1.1.1.3.1, Table 7.18
 func decodeMVAPContinuation(data [12]byte) MVAPContinuation {
 	var result MVAPContinuation
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], uint16(data[10])<<8|uint16(data[11]))
@@ -519,9 +515,7 @@ func (s *MVAPContinuation) String() string {
 	return "MVAPContinuation{ FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + ", Reserved1: " + text.Int(int64(s.Reserved1)) + ", ColorCode: " + text.Int(int64(s.ColorCode)) + ", Cdeftype: " + text.Int(int64(s.Cdeftype)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", CdefParms: " + s.CdefParms.String() + " }"
 }
 
-// decodeBCAPContinuation decodes a BCAPContinuation. data holds the 96 bits
-// of the PDU packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clause 7.1.1.1.5.1, Table 7.21)
+// ETSI TS 102 361-4 clause 7.1.1.1.5.1, Table 7.21
 func decodeBCAPContinuation(data [12]byte) BCAPContinuation {
 	var result BCAPContinuation
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], uint16(data[10])<<8|uint16(data[11]))
@@ -578,9 +572,7 @@ func (s *BCAPContinuation) String() string {
 	return "BCAPContinuation{ FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + ", Reserved1: " + text.Int(int64(s.Reserved1)) + ", Cdeftype: " + text.Int(int64(s.Cdeftype)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", CdefParms: " + s.CdefParms.String() + " }"
 }
 
-// decodeVNAPContinuation decodes a VNAPContinuation. data holds the 96 bits
-// of the PDU packed, the first bit in the most significant bit of data[0].
-// (ETSI TS 102 361-4 clause 7.2.19.3.1, Table 7.72)
+// ETSI TS 102 361-4 clause 7.2.19.3.1, Table 7.72
 func decodeVNAPContinuation(data [12]byte) VNAPContinuation {
 	var result VNAPContinuation
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], uint16(data[10])<<8|uint16(data[11]))
@@ -645,8 +637,6 @@ func (s *VNAPContinuation) String() string {
 	return "VNAPContinuation{ FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + ", Reserved1: " + text.Int(int64(s.Reserved1)) + ", ColorCode: " + text.Int(int64(s.ColorCode)) + ", Cdeftype: " + text.Int(int64(s.Cdeftype)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", CdefParms: " + s.CdefParms.String() + " }"
 }
 
-// The errors of the Encode methods. Each is a static value, so that an
-// Encode that fails does not allocate.
 var (
 	errMBCHeaderPayloads    = errors.New("MBCHeader: more than one payload field is set")
 	errMBCHeaderOpcodeRange = &dmrgo.FieldRangeError{

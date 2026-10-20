@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// fmtString returns the text that String must return, from fmt.
 func (s *SlotType) fmtString() string {
 	return fmt.Sprintf("SlotType{ ColorCode: %d, DataType: %v, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t} }", s.ColorCode, s.DataType, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 }

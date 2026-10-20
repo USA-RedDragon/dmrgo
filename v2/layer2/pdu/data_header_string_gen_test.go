@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// fmtString returns the text that String must return, from fmt.
 func (s *UnconfirmedDataHeader) fmtString() string {
 	return fmt.Sprintf("UnconfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, Reserved2: %d, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.Reserved2, s.FragmentSequenceNumber)
 }
@@ -18,7 +17,6 @@ func TestUnconfirmedDataHeaderStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*UnconfirmedDataHeader).String, (*UnconfirmedDataHeader).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *DataHeader) fmtString() string {
 	_ret := "DataHeader{ "
 	_ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, Format: %d, AppendedBlocks: %d, ", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.Format, s.AppendedBlocks)
@@ -51,7 +49,6 @@ func TestDataHeaderStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*DataHeader).String, (*DataHeader).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *ConfirmedDataHeader) fmtString() string {
 	return fmt.Sprintf("ConfirmedDataHeader{ Group: %t, ResponseRequested: %t, Reserved: %t, PadOctetCount: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ReSynchronizeFlag: %t, SendSequenceNumber: %d, FragmentSequenceNumber: %d }", s.Group, s.ResponseRequested, s.Reserved, s.PadOctetCount, s.SAP, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ReSynchronizeFlag, s.SendSequenceNumber, s.FragmentSequenceNumber)
 }
@@ -61,7 +58,6 @@ func TestConfirmedDataHeaderStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*ConfirmedDataHeader).String, (*ConfirmedDataHeader).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *ResponsePacketHeader) fmtString() string {
 	return fmt.Sprintf("ResponsePacketHeader{ Reserved: %t, ResponseRequested: %t, Reserved2: %d, SAP: %d, Reserved3: %d, LLIDDestination: %d, LLIDSource: %d, FullMessageFlag: %t, BlocksToFollow: %d, ResponseClass: %d, ResponseType: %d, ResponseStatus: %d }", s.Reserved, s.ResponseRequested, s.Reserved2, s.SAP, s.Reserved3, s.LLIDDestination, s.LLIDSource, s.FullMessageFlag, s.BlocksToFollow, s.ResponseClass, s.ResponseType, s.ResponseStatus)
 }
@@ -71,7 +67,6 @@ func TestResponsePacketHeaderStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*ResponsePacketHeader).String, (*ResponsePacketHeader).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *DefinedDataHeader) fmtString() string {
 	return fmt.Sprintf("DefinedDataHeader{ Group: %t, ResponseRequested: %t, AppendedBlocks: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, DefinedData: %d, SARQ: %t, FullMessageFlag: %t, BitPadding: %d }", s.Group, s.ResponseRequested, s.AppendedBlocks, s.SAP, s.LLIDDestination, s.LLIDSource, s.DefinedData, s.SARQ, s.FullMessageFlag, s.BitPadding)
 }
@@ -81,7 +76,6 @@ func TestDefinedDataHeaderStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*DefinedDataHeader).String, (*DefinedDataHeader).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *RawDataHeader) fmtString() string {
 	return fmt.Sprintf("RawDataHeader{ Group: %t, ResponseRequested: %t, AppendedBlocks: %d, SAP: %d, LLIDDestination: %d, LLIDSource: %d, SourcePort: %d, DestinationPort: %d, SARQ: %t, FullMessageFlag: %t, BitPadding: %d }", s.Group, s.ResponseRequested, s.AppendedBlocks, s.SAP, s.LLIDDestination, s.LLIDSource, s.SourcePort, s.DestinationPort, s.SARQ, s.FullMessageFlag, s.BitPadding)
 }
@@ -91,7 +85,6 @@ func TestRawDataHeaderStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*RawDataHeader).String, (*RawDataHeader).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *StatusPrecodedHeader) fmtString() string {
 	return fmt.Sprintf("StatusPrecodedHeader{ Group: %t, ResponseRequested: %t, SAP: %d, LLIDDestination: %d, LLIDSource: %d, SourcePort: %d, DestinationPort: %d, StatusPrecoded: %d }", s.Group, s.ResponseRequested, s.SAP, s.LLIDDestination, s.LLIDSource, s.SourcePort, s.DestinationPort, s.StatusPrecoded)
 }
@@ -101,7 +94,6 @@ func TestStatusPrecodedHeaderStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*StatusPrecodedHeader).String, (*StatusPrecodedHeader).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *UDTHeader) fmtString() string {
 	return fmt.Sprintf("UDTHeader{ Group: %t, ResponseRequested: %t, Emergency: %t, OptionFlag: %t, SAP: %d, UDTFormat: %d, LLIDDestination: %d, LLIDSource: %d, PadNibble: %d, Reserved: %t, AppendedBlocks: %d, SupplementaryFlag: %t, ProtectFlag: %t, Opcode: %d }", s.Group, s.ResponseRequested, s.Emergency, s.OptionFlag, s.SAP, s.UDTFormat, s.LLIDDestination, s.LLIDSource, s.PadNibble, s.Reserved, s.AppendedBlocks, s.SupplementaryFlag, s.ProtectFlag, s.Opcode)
 }
@@ -111,7 +103,6 @@ func TestUDTHeaderStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*UDTHeader).String, (*UDTHeader).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *ProprietaryHeader) fmtString() string {
 	return fmt.Sprintf("ProprietaryHeader{ SAP: %d, MFID: %d, ManufacturerData: %v }", s.SAP, s.MFID, s.ManufacturerData)
 }

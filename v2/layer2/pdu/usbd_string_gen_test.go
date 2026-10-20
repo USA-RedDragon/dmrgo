@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// fmtString returns the text that String must return, from fmt.
 func (s *UnifiedSingleBlockData) fmtString() string {
 	return fmt.Sprintf("UnifiedSingleBlockData{ FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ServiceType: %d, Payload: %x }", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.ServiceType, s.Payload)
 }

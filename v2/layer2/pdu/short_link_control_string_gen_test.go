@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// fmtString returns the text that String must return, from fmt.
 func (s *ShortLCNullMessage) fmtString() string {
 	return fmt.Sprintf("ShortLCNullMessage{ Reserved: %d }", s.Reserved)
 }
@@ -18,7 +17,6 @@ func TestShortLCNullMessageStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*ShortLCNullMessage).String, (*ShortLCNullMessage).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *ShortLCActivityUpdate) fmtString() string {
 	return fmt.Sprintf("ShortLCActivityUpdate{ TS1ActivityID: %v, TS2ActivityID: %v, HashTS1: %d, HashTS2: %d }", s.TS1ActivityID, s.TS2ActivityID, s.HashTS1, s.HashTS2)
 }
@@ -28,7 +26,6 @@ func TestShortLCActivityUpdateStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*ShortLCActivityUpdate).String, (*ShortLCActivityUpdate).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *ShortLCCSysParms) fmtString() string {
 	return fmt.Sprintf("ShortLCCSysParms{ MODEL: %d, NetSiteRaw: %d, Reg: %t, CommonSlotCounter: %d }", s.MODEL, s.NetSiteRaw, s.Reg, s.CommonSlotCounter)
 }
@@ -38,7 +35,6 @@ func TestShortLCCSysParmsStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*ShortLCCSysParms).String, (*ShortLCCSysParms).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *ShortLCPSysParms) fmtString() string {
 	return fmt.Sprintf("ShortLCPSysParms{ MODEL: %d, NetSiteRaw: %d, PayloadChannelType: %t, CommonSlotCounter: %d }", s.MODEL, s.NetSiteRaw, s.PayloadChannelType, s.CommonSlotCounter)
 }
@@ -48,7 +44,6 @@ func TestShortLCPSysParmsStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*ShortLCPSysParms).String, (*ShortLCPSysParms).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
 func (s *ShortLC) fmtString() string {
 	_ret := "ShortLC{ "
 	_ret += fmt.Sprintf("SLCO: %v, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.SLCO, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
