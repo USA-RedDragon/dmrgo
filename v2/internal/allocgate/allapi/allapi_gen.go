@@ -41,6 +41,7 @@ import (
 	shortdata "github.com/USA-RedDragon/dmrgo/v2/shortdata"
 	sms "github.com/USA-RedDragon/dmrgo/v2/sms"
 	transport_dmrd "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
+	transport_dmrd_auth "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
 	trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
 	vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
@@ -1040,6 +1041,10 @@ var api = [...]any{
 	transport_dmrd.FrameType.String,
 	transport_dmrd.HBRPConfigOf,
 	transport_dmrd.ParseDMRPlusOptions,
+	(*transport_dmrd_auth.Bridge).Sign,
+	(*transport_dmrd_auth.Bridge).Verify,
+	transport_dmrd_auth.NewBridge,
+	transport_dmrd_auth.Token,
 	(*trunk.Access).Applies,
 	(*trunk.CapacityPlusFollower).Burst,
 	(*trunk.CapacityPlusFollower).Call,

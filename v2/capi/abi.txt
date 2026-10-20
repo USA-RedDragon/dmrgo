@@ -1067,6 +1067,12 @@ sym int dmrgo_ars_registration_string(dmrgo_ars_registration_t *self, char *out,
 sym int dmrgo_ars_response_append_binary(dmrgo_ars_response_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_ars_response_string(dmrgo_ars_response_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_ars_type_string(dmrgo_ars_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_auth_bridge_free(dmrgo_auth_bridge_t *self);
+sym int dmrgo_auth_bridge_new(dmrgo_auth_bridge_t **out);
+sym int dmrgo_auth_bridge_sign(dmrgo_auth_bridge_t *self, const uint8_t *p, size_t p_len);
+sym int dmrgo_auth_bridge_verify(dmrgo_auth_bridge_t *self, const uint8_t *p, size_t p_len, bool *out);
+sym int dmrgo_auth_new_bridge(const uint8_t *key, size_t key_len, dmrgo_auth_bridge_t **out);
+sym int dmrgo_auth_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, uint8_t out[32]);
 sym int dmrgo_bs_activation_string(dmrgo_bs_activation_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_bs_cach_first(dmrgo_bs_cach_t *self, bool *out);
 sym int dmrgo_bs_cach_free(dmrgo_bs_cach_t *self);
