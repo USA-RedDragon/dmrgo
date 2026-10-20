@@ -16,6 +16,26 @@ Put a resampler before the block for other sample rates, as `examples/dmrgo_rx_f
 
 The module contains no AMBE+2 vocoder. To get audio of AMBE+2 calls, give the block the path of a separately installed decoder library that exports the functions that `python/dmrgo/ambe.py` describes.
 
+## Screenshots
+
+`examples/dmrgo_rx_gui.grc` plays a recording in a loop and shows the input spectrum, the decoded audio and the decoded calls.
+
+The flowgraph in GNU Radio Companion:
+
+![The dmrgo_rx_gui flowgraph in GNU Radio Companion](docs/flowgraph.png)
+
+The properties of the DMR Receiver block:
+
+![The DMR Receiver properties dialog](docs/properties.png)
+
+A recording of a group call through a Motorola XPR 8400 repeater. The call is AMBE+2 and no AMBE+2 decoder library is set, so the audio output is silent:
+
+![Live decode of an XPR 8400 voice call](docs/live_xpr8400.png)
+
+A Codec2 call in direct mode, with its audio on the audio output:
+
+![Live decode of a Codec2 call with audio](docs/live_codec2.png)
+
 ## Build
 
 The build needs Go, a C compiler, libcodec2 and GNU Radio 3.10. It builds libdmrgo from `../v2/capi`; set `-DDMRGO_LIBRARY=<path>` to use a library that is already built.
