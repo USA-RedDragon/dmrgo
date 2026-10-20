@@ -641,7 +641,9 @@ type IQConfig struct {
 	// PredKern picks the kernels of ShapePred: 0 fitted to the optimizer
 	// of Shape alone, 1 to the sum of the correction of kernels 0 and of
 	// the optimizer with the ACP weight that starts from it, 2 the same
-	// fit to 6 of the 15 products of symbols, for 40% of the work.
+	// fit to 6 of the 15 products of symbols, for 40% of the work, 3 as
+	// 1 with kernels 1 and the optimizer with the ACP and alternate
+	// channel weights.
 	PredKern int
 	// PredGain scales the correction of ShapePred; 0 means 1.
 	PredGain float64
@@ -802,6 +804,8 @@ func NewIQ(cfg IQConfig) (*IQ, error) {
 			q.pred.kern = &shapeKernB
 		case 2:
 			q.pred.kc = &shapeKernC
+		case 3:
+			q.pred.kern = &shapeKernD
 		}
 		if cfg.PredGain > 0 {
 			q.pred.gain = cfg.PredGain
