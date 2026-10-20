@@ -42,9 +42,10 @@ func (s *MBCHeader) DataType() enums.DataType {
 	return enums.DataTypeMBCHeader
 }
 
-// MBCContinuation is a continuation block of a Multi Block Control (MBC) PDU
-// (ETSI TS 102 361-1 clause 7.4.1). DecodeMBCContinuation does not check the
-// last-block CRC: check it with MBCLastBlockCRCOK over all continuation blocks.
+// MBCContinuation is a continuation block of a Multi Block Control (MBC) PDU.
+// DecodeMBCContinuation does not check the last-block CRC: check it with
+// MBCLastBlockCRCOK over all continuation blocks.
+// (ETSI TS 102 361-1 clause 7.4.1)
 type MBCContinuation struct {
 	LastBlock bool `dmr:"bit:0"` // LB bit, true for the last block, which holds the CRC
 
@@ -70,9 +71,10 @@ func (s *MBCContinuation) packed() [12]byte {
 	return data
 }
 
-// AsCGAP decodes the block as the CG_AP continuation of a grant MBC (ETSI TS
-// 102 361-4 Table 7.16). The FEC field of the result reports the last-block
-// CRC, which applies only when this is the one continuation block of the MBC.
+// AsCGAP decodes the block as the CG_AP continuation of a grant MBC. The FEC
+// field of the result reports the last-block CRC, which applies only when
+// this is the one continuation block of the MBC.
+// (ETSI TS 102 361-4 Table 7.16)
 func (s *MBCContinuation) AsCGAP() CGAPContinuation {
 	return decodeCGAPContinuation(s.packed())
 }
@@ -125,8 +127,8 @@ func MBCLastBlockCRCOK(blocks ...[12]byte) bool {
 
 // SetMBCLastBlockCRC writes the last-block CRC-CCITT into bits 80 to 95 of
 // the last of blocks, which holds every continuation block of the MBC in
-// order, packed as MBCLastBlockCRCOK takes them (ETSI TS 102 361-1 clause
-// 7.4.0). It does nothing for no blocks.
+// order, packed as MBCLastBlockCRCOK takes them. It does nothing for no
+// blocks. (ETSI TS 102 361-1 clause 7.4.0)
 func SetMBCLastBlockCRC(blocks [][12]byte) {
 	if len(blocks) == 0 {
 		return

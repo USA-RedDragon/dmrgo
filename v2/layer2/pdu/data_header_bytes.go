@@ -3,10 +3,10 @@ package pdu
 import "github.com/USA-RedDragon/dmrgo/v2/enums"
 
 // DataHeaderBytes is the 12-octet BPTC(196,96) payload of a data header
-// burst, as layer2.RawBurst.BPTCPayload returns it (ETSI TS 102 361-1 clause
-// 9.2). Its methods read or write one field in place and leave every other
-// bit as it is. The setters do not update the CRC: call Reseal after the
-// last edit, or the header fails its CRC check.
+// burst, as layer2.RawBurst.BPTCPayload returns it. Its methods read or write
+// one field in place and leave every other bit as it is. The setters do not
+// update the CRC: call Reseal after the last edit, or the header fails its
+// CRC check. (ETSI TS 102 361-1 clause 9.2)
 type DataHeaderBytes [12]byte
 
 // Format returns the Format, the low 4 bits of octet 0.

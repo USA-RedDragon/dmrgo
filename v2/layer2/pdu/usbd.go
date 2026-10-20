@@ -10,8 +10,8 @@ import (
 // 361-1 clause 9.3.43).
 type ServiceType uint8
 
-// ServiceType values (ETSI TS 102 361-1 Table 9.55). Values 0b0001 to 0b0111
-// are reserved.
+// ServiceType values. Values 0b0001 to 0b0111 are reserved.
+// (ETSI TS 102 361-1 Table 9.55)
 const (
 	ServiceTypeLIP                   ServiceType = 0b0000 // Location Information Protocol
 	ServiceTypeManufacturerSpecific1 ServiceType = 0b1000 // manufacturer specific service 1

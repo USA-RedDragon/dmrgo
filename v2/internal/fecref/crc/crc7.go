@@ -6,9 +6,9 @@ import (
 
 const crc7Poly = 0x27 // x⁵ + x² + x + 1 (low 7 bits of G₇(x))
 
-// CRC7 computes the CRC-7 of bits with the generator polynomial
-// x⁷ + x⁵ + x² + x + 1, initial value 0 and no final inversion (ETSI TS 102
-// 361-1 clause B.3.13). The caller applies the CRC mask of clause B.3.12.
+// CRC7 computes the CRC-7 of bits with the generator polynomial x⁷ + x⁵ + x²
+// + x + 1, initial value 0 and no final inversion. The caller applies the CRC
+// mask of clause B.3.12. (ETSI TS 102 361-1 clause B.3.13)
 func CRC7(bits []unpacked.Bit) uint8 {
 	var crc uint8
 

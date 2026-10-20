@@ -3,9 +3,10 @@ package enums
 import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
 // FeatureSetID is the 8-bit Feature set ID (FID) of a full LC or CSBK. 0 is
-// the standardized feature set and 4 to 127 identify a manufacturer (ETSI TS
-// 102 361-1 clause 9.3.5, Table 9.21). ETSI publishes the manufacturer list
-// at http://www.etsi.org/images/files/DMRcodes/dmrs-mfid.xls.
+// the standardized feature set and 4 to 127 identify a manufacturer. ETSI
+// publishes the manufacturer list at
+// http://www.etsi.org/images/files/DMRcodes/dmrs-mfid.xls.
+// (ETSI TS 102 361-1 clause 9.3.5, Table 9.21)
 type FeatureSetID byte
 
 // The FeatureSetID values.

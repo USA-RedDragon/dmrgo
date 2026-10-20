@@ -11,9 +11,9 @@ import (
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
-// DecodePIHeader decodes a PIHeader (ETSI TS 102 361-1 clause 6.2). data
-// holds the 96 bits of the PDU packed, the first bit in the most significant
-// bit of data[0].
+// DecodePIHeader decodes a PIHeader. data holds the 96 bits of the PDU
+// packed, the first bit in the most significant bit of data[0].
+// (ETSI TS 102 361-1 clause 6.2)
 func DecodePIHeader(data [12]byte) PIHeader {
 	var result PIHeader
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0x6969)
@@ -26,8 +26,8 @@ func DecodePIHeader(data [12]byte) PIHeader {
 	return result
 }
 
-// Encode encodes a PIHeader (ETSI TS 102 361-1 clause 6.2). It returns the
-// 96 bits packed, the first bit in the most significant bit of byte 0.
+// Encode encodes a PIHeader. It returns the 96 bits packed, the first bit in
+// the most significant bit of byte 0. (ETSI TS 102 361-1 clause 6.2)
 func (s *PIHeader) Encode() ([12]byte, error) {
 	var data [12]byte
 	data[0] = byte(uint64(s.AlgorithmID))

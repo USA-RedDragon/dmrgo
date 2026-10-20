@@ -19,11 +19,11 @@ type Message struct {
 	// DataType is the rate of the data blocks, or 0 without blocks.
 	DataType enums.DataType
 	// Data is the user data. The pad octets of a U_HEAD or C_HEAD packet are
-	// removed when the header is a first try (Full Message Flag set). A
-	// packet that a later try started, because the first header was lost,
-	// keeps them, as only a first try counts them (ETSI TS 102 361-1 clause
-	// 9.3.20). A short data packet keeps all octets before the CRC; its Bit
-	// Padding is in the header.
+	// removed when the header is a first try (Full Message Flag set). A packet
+	// that a later try started, because the first header was lost, keeps them,
+	// as only a first try counts them. A short data packet keeps all octets
+	// before the CRC; its Bit Padding is in the header.
+	// (ETSI TS 102 361-1 clause 9.3.20)
 	Data []byte
 	// CRC is the received message CRC.
 	CRC uint32

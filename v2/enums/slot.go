@@ -1,8 +1,8 @@
 package enums
 
-// Slot is a TDMA channel of a carrier, also called a time slot (ETSI TS 102
-// 361-1 clause 5.1.1). The values match the Channel field of a framer burst.
-// The zero value is SlotUnknown.
+// Slot is a TDMA channel of a carrier, also called a time slot. The values
+// match the Channel field of a framer burst. The zero value is SlotUnknown.
+// (ETSI TS 102 361-1 clause 5.1.1)
 type Slot uint8
 
 // The Slot values.

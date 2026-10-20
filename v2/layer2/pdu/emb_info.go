@@ -7,12 +7,11 @@ import (
 )
 
 // EMBInfo is the 7 information bits of an EMB PDU without the QR(16,7,6)
-// parity, in bits 7 to 1 of one octet as IPSC carries them (ETSI TS 102
-// 361-1 clause 9.1.2, Table 9.3). Bit 0 is not an EMB bit: the getters and
-// Codeword ignore it and the setters keep it. A setter returns a
-// *dmrgo.FieldRangeError, and changes nothing, when its value does not fit
-// its bits. For example, CC 1 with LCSS 1
-// is 0x12.
+// parity, in bits 7 to 1 of one octet as IPSC carries them. Bit 0 is not an
+// EMB bit: the getters and Codeword ignore it and the setters keep it. A
+// setter returns a *dmrgo.FieldRangeError, and changes nothing, when its
+// value does not fit its bits. For example, CC 1 with LCSS 1 is 0x12.
+// (ETSI TS 102 361-1 clause 9.1.2, Table 9.3)
 type EMBInfo byte
 
 // ColorCode returns the 4-bit color code, bits 7 to 4.

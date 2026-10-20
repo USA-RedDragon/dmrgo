@@ -38,10 +38,10 @@ type FullLinkControl struct {
 }
 
 // Addresses returns the 24-bit target and source addresses of a Grp_V_Ch_Usr
-// (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC (ETSI TS 102 361-2 Tables 7.1 and 7.2).
-// It reads RawPayload when no payload field is set, so, as MMDVMHost does, it
-// also returns best-effort addresses from a manufacturer FID LC with these
-// FLCOs. ok is false for other FLCOs.
+// (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC. It reads RawPayload when no payload
+// field is set, so, as MMDVMHost does, it also returns best-effort addresses
+// from a manufacturer FID LC with these FLCOs. ok is false for other FLCOs.
+// (ETSI TS 102 361-2 Tables 7.1 and 7.2)
 func (s *FullLinkControl) Addresses() (target, source uint32, ok bool) {
 	if s.FLCO == enums.FLCOGroupVoiceChannelUser && s.GroupVoice != nil {
 		return s.GroupVoice.GroupAddress, s.GroupVoice.SourceAddress, true
@@ -88,11 +88,11 @@ func (s *FullLinkControl) SetAddresses(target, source uint32) error {
 }
 
 // NewVoiceLC returns the DataTypeVoiceLCHeader standard FID Full LC of a
-// voice call: Grp_V_Ch_Usr when group is true, else UU_V_Ch_Usr (ETSI TS 102
-// 361-2 Tables 7.1 and 7.2), with Service Options so. MMDVMHost sends the
-// zero value and Motorola IPSC layer3.MotorolaServiceOptions. It returns a
-// *dmrgo.FieldRangeError when an address does not fit in 24 bits. It allocates
-// the payload struct of the LC.
+// voice call: Grp_V_Ch_Usr when group is true, else UU_V_Ch_Usr, with Service
+// Options so. MMDVMHost sends the zero value and Motorola IPSC
+// layer3.MotorolaServiceOptions. It returns a *dmrgo.FieldRangeError when an
+// address does not fit in 24 bits. It allocates the payload struct of the LC.
+// (ETSI TS 102 361-2 Tables 7.1 and 7.2)
 func NewVoiceLC(group bool, target, source uint32, so layer3.ServiceOptions) (FullLinkControl, error) {
 	if err := checkAddresses(target, source, errFullLinkControlTargetRange, errFullLinkControlSourceRange); err != nil {
 		return FullLinkControl{}, err

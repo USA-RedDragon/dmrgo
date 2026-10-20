@@ -11,9 +11,9 @@ import (
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
-// DecodeTACT decodes a TACT (ETSI TS 102 361-1 clause 9.1.4). data holds the
-// 7 bits of the PDU packed, the first bit in the most significant bit of
-// data[0]. The least significant bit of data[0] is ignored.
+// DecodeTACT decodes a TACT. data holds the 7 bits of the PDU packed, the
+// first bit in the most significant bit of data[0]. The least significant
+// bit of data[0] is ignored. (ETSI TS 102 361-1 clause 9.1.4)
 func DecodeTACT(data [1]byte) TACT {
 	var result TACT
 	var _cw uint8
@@ -27,9 +27,9 @@ func DecodeTACT(data [1]byte) TACT {
 	return result
 }
 
-// Encode encodes a TACT (ETSI TS 102 361-1 clause 9.1.4). It returns the 7
-// bits packed, the first bit in the most significant bit of byte 0. The
-// least significant bit of byte 0 is 0.
+// Encode encodes a TACT. It returns the 7 bits packed, the first bit in the
+// most significant bit of byte 0. The least significant bit of byte 0 is 0.
+// (ETSI TS 102 361-1 clause 9.1.4)
 func (s *TACT) Encode() ([1]byte, error) {
 	var data [1]byte
 	if s.AccessType {

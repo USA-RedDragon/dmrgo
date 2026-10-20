@@ -7,9 +7,9 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// CSBKOpcode is the 6-bit CSBK opcode (CSBKO) of a CSBK or MBC header
-// (ETSI TS 102 361-4 Table B.1). The UDT header opcodes, such as C_UDTHD,
-// are UDTOpcode values: they are sent in a data header burst (UDTHeader).
+// CSBKOpcode is the 6-bit CSBK opcode (CSBKO) of a CSBK or MBC header. The
+// UDT header opcodes, such as C_UDTHD, are UDTOpcode values: they are sent in
+// a data header burst (UDTHeader). (ETSI TS 102 361-4 Table B.1)
 type CSBKOpcode byte
 
 // The CSBK opcodes of Tier II (ETSI TS 102 361-2 clause 7.1.2) and Tier III
@@ -269,9 +269,10 @@ type PrivateDataGrantMultiItemPDU struct {
 	SourceAddress   uint32 `dmr:"bits:40-63"` // 24-bit source address
 }
 
-// TalkgroupDataGrantMultiItemPDU is the multi-item talkgroup data channel grant
-// (TD_GRANT_MI) CSBK payload (ETSI TS 102 361-4 clause 7.1.1.1.1). DecodeCSBK
-// keeps it in RawPayload (opcode 0x38): use CSBK.AsTalkgroupDataGrantMultiItem.
+// TalkgroupDataGrantMultiItemPDU is the multi-item talkgroup data channel
+// grant (TD_GRANT_MI) CSBK payload. DecodeCSBK keeps it in RawPayload (opcode
+// 0x38): use CSBK.AsTalkgroupDataGrantMultiItem.
+// (ETSI TS 102 361-4 clause 7.1.1.1.1)
 //
 //dmr:subpdu
 type TalkgroupDataGrantMultiItemPDU struct {
@@ -315,9 +316,9 @@ type AlohaPDU struct {
 	MSAddress    uint32 `dmr:"bits:40-63"` // 24-bit individual MS address
 }
 
-// BroadcastPDU is the announcement (C_BCAST) CSBK payload (ETSI TS 102 361-4
-// clause 7.1.1.1.5, Table 7.20). The layout of BroadcastParms1 and
-// BroadcastParms2 depends on AnnouncementType (ETSI TS 102 361-4 clause 7.2.19).
+// BroadcastPDU is the announcement (C_BCAST) CSBK payload. The layout of
+// BroadcastParms1 and BroadcastParms2 depends on AnnouncementType.
+// (ETSI TS 102 361-4 clause 7.1.1.1.5, Table 7.20, clause 7.2.19)
 type BroadcastPDU struct {
 	AnnouncementType enums.AnnouncementType `dmr:"bits:0-4,enum"` // which system parameters are broadcast
 	BroadcastParms1  uint16                 `dmr:"bits:5-18"`     // 14 bits whose layout depends on AnnouncementType
@@ -554,9 +555,9 @@ func (s *CSBK) setOpcode0x38(payload [8]byte, hint Opcode0x38Hint) {
 }
 
 // NewBSOutboundActivation returns the BS_Dwn_Act CSBK, with LastBlock set,
-// that an MS sends to wake up the BS with address bs (ETSI TS 102 361-2
-// clause 7.1.2.1). It returns a *dmrgo.FieldRangeError when an address does
-// not fit in 24 bits.
+// that an MS sends to wake up the BS with address bs. It returns a
+// *dmrgo.FieldRangeError when an address does not fit in 24 bits.
+// (ETSI TS 102 361-2 clause 7.1.2.1)
 func NewBSOutboundActivation(bs, source uint32) (CSBK, error) {
 	s := CSBK{LastBlock: true}
 	err := s.SetBSOutboundActivation(BSOutboundActivationPDU{BSAddress: bs, SourceAddress: source})

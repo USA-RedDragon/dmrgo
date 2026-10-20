@@ -11,9 +11,9 @@ import (
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
-// DecodeEmbeddedSignalling decodes an EmbeddedSignalling (ETSI TS 102 361-1
-// clause 9.1.2). data holds the 16 bits of the PDU packed, the first bit in
-// the most significant bit of data[0].
+// DecodeEmbeddedSignalling decodes an EmbeddedSignalling. data holds the 16
+// bits of the PDU packed, the first bit in the most significant bit of
+// data[0]. (ETSI TS 102 361-1 clause 9.1.2)
 func DecodeEmbeddedSignalling(data [2]byte) EmbeddedSignalling {
 	var result EmbeddedSignalling
 	var _cw uint16
@@ -29,9 +29,9 @@ func DecodeEmbeddedSignalling(data [2]byte) EmbeddedSignalling {
 	return result
 }
 
-// Encode encodes an EmbeddedSignalling (ETSI TS 102 361-1 clause 9.1.2). It
-// returns the 16 bits packed, the first bit in the most significant bit of
-// byte 0.
+// Encode encodes an EmbeddedSignalling. It returns the 16 bits packed, the
+// first bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-1 clause 9.1.2)
 func (s *EmbeddedSignalling) Encode() ([2]byte, error) {
 	var data [2]byte
 	if uint64(s.ColorCode)>>4 != 0 {

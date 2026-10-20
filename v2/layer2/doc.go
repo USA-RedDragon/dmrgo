@@ -1,7 +1,7 @@
 // Package layer2 decodes 33-octet DMR bursts into a Burst model and encodes
-// them back (ETSI TS 102 361-1 clause 6 and clause 9). It also handles the
-// embedded LC, the CACH and Short LC, the Reverse Channel, and the voice
-// superframe. The PDUs that the bursts carry are in package pdu.
+// them back. It also handles the embedded LC, the CACH and Short LC, the
+// Reverse Channel, and the voice superframe. The PDUs that the bursts carry
+// are in package pdu. (ETSI TS 102 361-1 clause 6 and clause 9)
 //
 // # Bursts
 //

@@ -9,10 +9,10 @@ import (
 // per ETSI TS 102 361-1 Table B.21.
 const crc9MaskRate34 uint16 = 0x1FF
 
-// Rate34Data is a rate 3/4 coded packet data block (R_3_4_DATA) (ETSI TS 102
-// 361-1 clause 9.2.2). Unconfirmed data uses all 144 bits as user data. The
-// Confirmed methods read the 7-bit DBSN, the 9-bit CRC-9 and the 128 user
-// data bits of a confirmed block (Table 9.11), and SetConfirmed writes them.
+// Rate34Data is a rate 3/4 coded packet data block (R_3_4_DATA). Unconfirmed
+// data uses all 144 bits as user data. The Confirmed methods read the 7-bit
+// DBSN, the 9-bit CRC-9 and the 128 user data bits of a confirmed block, and
+// SetConfirmed writes them. (ETSI TS 102 361-1 clause 9.2.2, Table 9.11)
 type Rate34Data struct {
 	Data [18]byte `dmr:"bits:0-143,packed"` // the 144 block bits, most significant bit first
 }

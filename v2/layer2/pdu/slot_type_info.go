@@ -7,11 +7,11 @@ import (
 )
 
 // SlotTypeInfo is the 8 information bits of a SLOT PDU without the
-// Golay(20,8) parity, as IPSC carries them: the color code in the high 4
-// bits and the Data Type in the low 4 bits (ETSI TS 102 361-1 clause 9.1.3,
-// Table 9.4). For example, CC 1 with a CSBK is 0x13, whose codeword is
-// 0x132b2. A setter returns a *dmrgo.FieldRangeError, and changes nothing,
-// when its value does not fit its bits.
+// Golay(20,8) parity, as IPSC carries them: the color code in the high 4 bits
+// and the Data Type in the low 4 bits. For example, CC 1 with a CSBK is 0x13,
+// whose codeword is 0x132b2. A setter returns a *dmrgo.FieldRangeError, and
+// changes nothing, when its value does not fit its bits.
+// (ETSI TS 102 361-1 clause 9.1.3, Table 9.4)
 type SlotTypeInfo byte
 
 // ColorCode returns the 4-bit color code, the high 4 bits.

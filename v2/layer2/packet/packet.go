@@ -174,17 +174,16 @@ func (b *Builder) Segment(header pdu.DataHeader, payload []byte, rate enums.Data
 }
 
 // Retry builds the later try of the confirmed packet p that a SACK with
-// response data rd asks for: a copy of the header of p with the Full
-// Message Flag clear and the block count set to the number of blocks it
-// resends, then block i of p for each DBSN i that rd flags, in DBSN order.
-// A nil rd resends every block, as after a NACK or a missing response. The
-// header keeps N(S) and the other fields of the first try (ETSI TS 102
-// 361-1 clause 9.3.20, ETSI TS 102 361-3 clause 5.4). p is a C_HEAD, or a
-// DD_HEAD or R_HEAD with SARQ set, with the blocks Segment makes. Retry
-// returns an error that wraps ErrFormat for another header, and
-// ErrNoRetryBlocks when rd flags no block of p. The Packet points to the
-// blocks of p and to storage of b, apart from that of Segment and
-// NewResponse, and is valid until the next Retry.
+// response data rd asks for: a copy of the header of p with the Full Message
+// Flag clear and the block count set to the number of blocks it resends, then
+// block i of p for each DBSN i that rd flags, in DBSN order. A nil rd resends
+// every block, as after a NACK or a missing response. The header keeps N(S)
+// and the other fields of the first try. p is a C_HEAD, or a DD_HEAD or
+// R_HEAD with SARQ set, with the blocks Segment makes. Retry returns an error
+// that wraps ErrFormat for another header, and ErrNoRetryBlocks when rd flags
+// no block of p. The Packet points to the blocks of p and to storage of b,
+// apart from that of Segment and NewResponse, and is valid until the next
+// Retry. (ETSI TS 102 361-1 clause 9.3.20, ETSI TS 102 361-3 clause 5.4)
 func (b *Builder) Retry(p *Packet, rd *ResponseData) (Packet, error) {
 	h := p.Header
 	n := 0

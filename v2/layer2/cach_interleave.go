@@ -15,9 +15,9 @@ var cachInterleaveTable = [CACHBits]int{
 }
 
 // CACHDeinterleave converts a 24-bit CACH field from transmit order to the
-// logical order that DecodeCACH takes: AT, TC, LCSS, Hamming parity, then
-// the 17 payload bits (ETSI TS 102 361-1 clause B.4.1, Figure B.9). Both
-// hold the bits packed, the first bit in the most significant bit of byte 0.
+// logical order that DecodeCACH takes: AT, TC, LCSS, Hamming parity, then the
+// 17 payload bits. Both hold the bits packed, the first bit in the most
+// significant bit of byte 0. (ETSI TS 102 361-1 clause B.4.1, Figure B.9)
 func CACHDeinterleave(tx [3]byte) [3]byte {
 	var logical [3]byte
 	for i, to := range cachDeinterleaveTable {

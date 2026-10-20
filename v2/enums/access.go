@@ -1,7 +1,7 @@
 package enums
 
-// Access is the channel access policy of a transmission (ETSI TS 102 361-1
-// clause 5.2.1.6). The zero value is AccessPoliteOwnCC.
+// Access is the channel access policy of a transmission. The zero value is
+// AccessPoliteOwnCC. (ETSI TS 102 361-1 clause 5.2.1.6)
 type Access uint8
 
 // The Access values.

@@ -5,9 +5,9 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// TACT is the TDMA Access Channel Type PDU (ETSI TS 102 361-1 clause 9.1.4).
-// Each CACH burst carries one: AT, TC and LCSS, then 3 Hamming(7,4,3) parity
-// bits.
+// TACT is the TDMA Access Channel Type PDU. Each CACH burst carries one: AT,
+// TC and LCSS, then 3 Hamming(7,4,3) parity bits.
+// (ETSI TS 102 361-1 clause 9.1.4)
 //
 //dmr:fec hamming_7_4_3
 type TACT struct {

@@ -24,12 +24,12 @@ var ErrNilFactory = errors.New("vocoder: codec factory is nil")
 var ErrRegistryFull = errors.New("vocoder: codec registry is full")
 
 // Codec converts between 8 kHz 16-bit mono PCM and the 72 raw on-air bits of
-// one of the three vocoder frames of a DMR voice burst (ETSI TS 102 361-1
-// clause 6.1), packed, the first bit in the most significant bit of byte 0,
-// as layer2.RawBurst.VoiceSlots returns them. The implementation applies any
-// FEC, scrambling or interleaving that the vocoder needs. A Codec is not
-// safe for concurrent use unless its documentation says so. Close releases
-// its resources.
+// one of the three vocoder frames of a DMR voice burst, packed, the first bit
+// in the most significant bit of byte 0, as layer2.RawBurst.VoiceSlots
+// returns them. The implementation applies any FEC, scrambling or
+// interleaving that the vocoder needs. A Codec is not safe for concurrent use
+// unless its documentation says so. Close releases its resources.
+// (ETSI TS 102 361-1 clause 6.1)
 type Codec interface {
 	io.Closer
 

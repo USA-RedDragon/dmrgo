@@ -1,15 +1,15 @@
 // Package pdu decodes the layer 2 PDUs of ETSI TS 102 361 from their
 // information bits into structs and encodes the structs back into bits: CSBK,
-// MBC, Full LC, Short LC, data headers, PI header, slot type, EMB and the data
-// blocks (ETSI TS 102 361-1 clause 9).
+// MBC, Full LC, Short LC, data headers, PI header, slot type, EMB and the
+// data blocks.
 //
 // DecodeX decodes a PDU and X.Encode encodes it. cmd/dmrgen generates most of
 // these functions from the dmr struct tags. The payloads of a CSBK, MBC, Full
 // LC, Short LC or data header decode with their parent, which sets the
-// payload field of its opcode, so they have no DecodeX of their own.
-// DecodeX allocates the payload struct that the field points to.
-// DecodeXInto decodes into a caller's struct and points the field into a
-// caller's XPayloads, so that a reused pair decodes without allocating.
+// payload field of its opcode, so they have no DecodeX of their own. DecodeX
+// allocates the payload struct that the field points to. DecodeXInto decodes
+// into a caller's struct and points the field into a caller's XPayloads, so
+// that a reused pair decodes without allocating. (ETSI TS 102 361-1 clause 9)
 //
 // # Bit order
 //

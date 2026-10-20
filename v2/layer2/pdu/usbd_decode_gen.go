@@ -11,9 +11,9 @@ import (
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
-// DecodeUnifiedSingleBlockData decodes a UnifiedSingleBlockData (ETSI TS 102
-// 361-1 clause 8.2.3.1). data holds the 96 bits of the PDU packed, the first
-// bit in the most significant bit of data[0].
+// DecodeUnifiedSingleBlockData decodes a UnifiedSingleBlockData. data holds
+// the 96 bits of the PDU packed, the first bit in the most significant bit
+// of data[0]. (ETSI TS 102 361-1 clause 8.2.3.1)
 func DecodeUnifiedSingleBlockData(data [12]byte) UnifiedSingleBlockData {
 	var result UnifiedSingleBlockData
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0x3333)
@@ -22,9 +22,9 @@ func DecodeUnifiedSingleBlockData(data [12]byte) UnifiedSingleBlockData {
 	return result
 }
 
-// Encode encodes a UnifiedSingleBlockData (ETSI TS 102 361-1 clause
-// 8.2.3.1). It returns the 96 bits packed, the first bit in the most
-// significant bit of byte 0.
+// Encode encodes a UnifiedSingleBlockData. It returns the 96 bits packed,
+// the first bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-1 clause 8.2.3.1)
 func (s *UnifiedSingleBlockData) Encode() ([12]byte, error) {
 	var data [12]byte
 	if uint64(s.ServiceType)>>4 != 0 {

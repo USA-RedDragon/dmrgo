@@ -4,8 +4,8 @@ const crc7Poly = 0x27 // x⁵ + x² + x + 1 (low 7 bits of G₇(x))
 
 // CRC7 computes the CRC-7 of the first n bits of data, the first bit most
 // significant, with the generator polynomial x⁷ + x⁵ + x² + x + 1, initial
-// value 0 and no final inversion (ETSI TS 102 361-1 clause B.3.13). The
-// caller applies the CRC mask of clause B.3.12.
+// value 0 and no final inversion. The caller applies the CRC mask of clause
+// B.3.12. (ETSI TS 102 361-1 clause B.3.13)
 func CRC7(data []byte, n int) uint8 {
 	return crc8Reg(data, n, &crc7_0xA7, crc7Poly<<1) >> 1
 }

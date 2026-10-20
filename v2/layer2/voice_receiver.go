@@ -7,9 +7,9 @@ import (
 )
 
 // VoiceReceiver tracks the superframe position of the voice bursts of one
-// logical channel and reassembles the embedded Full LC of bursts B to E
-// (ETSI TS 102 361-1 clause 5.1.2.1, clause 7.1.3). The zero VoiceReceiver
-// is ready to use. It is not safe for concurrent use.
+// logical channel and reassembles the embedded Full LC of bursts B to E. The
+// zero VoiceReceiver is ready to use. It is not safe for concurrent use.
+// (ETSI TS 102 361-1 clause 5.1.2.1, clause 7.1.3)
 type VoiceReceiver struct {
 	// Strict selects the strict decode of DecodeEmbeddedLC for the embedded
 	// LC. Reset keeps it.

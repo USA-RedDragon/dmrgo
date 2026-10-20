@@ -15,8 +15,8 @@ import (
 // DecodeEmbedded decodes the 77 information bits (72 LC bits and a 5-bit
 // checksum) from the fragments of voice bursts B to E, in that order. They
 // are rows 0 to 6, columns 0 to 10 of the encode matrix in row-major order,
-// so the checksum bits are the last bit of rows 2 to 6 (ETSI TS 102 361-1
-// Figure B.3). It is DecodeEmbeddedWithCheck with a nil check.
+// so the checksum bits are the last bit of rows 2 to 6. It is
+// DecodeEmbeddedWithCheck with a nil check. (ETSI TS 102 361-1 Figure B.3)
 func DecodeEmbedded(fragments [4][32]unpacked.Bit) ([77]unpacked.Bit, fec.Result) {
 	return DecodeEmbeddedWithCheck(fragments, nil)
 }

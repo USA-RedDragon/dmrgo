@@ -9,10 +9,10 @@ import (
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
-// DecodeCdefParms decodes a CdefParms (ETSI TS 102 361-4 clause 7.2.42,
-// Table 7.103). data holds the 58 bits of the PDU packed, the first bit in
-// the most significant bit of data[0]. The low 6 bits of data[7] are
-// ignored.
+// DecodeCdefParms decodes a CdefParms. data holds the 58 bits of the PDU
+// packed, the first bit in the most significant bit of data[0]. The low 6
+// bits of data[7] are ignored. (ETSI TS 102 361-4 clause 7.2.42,
+// Table 7.103)
 func DecodeCdefParms(data [8]byte) CdefParms {
 	var result CdefParms
 	result.Channel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
@@ -23,9 +23,9 @@ func DecodeCdefParms(data [8]byte) CdefParms {
 	return result
 }
 
-// Encode encodes a CdefParms (ETSI TS 102 361-4 clause 7.2.42, Table 7.103).
-// It returns the 58 bits packed, the first bit in the most significant bit
-// of byte 0. The low 6 bits of byte 7 are 0.
+// Encode encodes a CdefParms. It returns the 58 bits packed, the first bit
+// in the most significant bit of byte 0. The low 6 bits of byte 7 are 0.
+// (ETSI TS 102 361-4 clause 7.2.42, Table 7.103)
 func (s *CdefParms) Encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.Channel)>>12 != 0 {

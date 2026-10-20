@@ -8,8 +8,8 @@ import (
 )
 
 // ShortLCAssembler collects the signalling payloads of 4 CACHs and decodes
-// the Short LC PDU they carry (ETSI TS 102 361-1 clause 7.1.4). The zero
-// ShortLCAssembler is ready to use.
+// the Short LC PDU they carry. The zero ShortLCAssembler is ready to use.
+// (ETSI TS 102 361-1 clause 7.1.4)
 type ShortLCAssembler struct {
 	fragments [4][3]byte
 	count     int

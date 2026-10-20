@@ -12,10 +12,10 @@ import (
 )
 
 // RawBurst is a 33-octet burst in transmit bit order, the form
-// NewBurstFromBytes takes (ETSI TS 102 361-1 Annex E). Its methods read or
-// write one field and leave every other bit as it is; they do not classify
-// the burst. The getters have value receivers and the setters have pointer
-// receivers.
+// NewBurstFromBytes takes. Its methods read or write one field and leave
+// every other bit as it is; they do not classify the burst. The getters have
+// value receivers and the setters have pointer receivers.
+// (ETSI TS 102 361-1 Annex E)
 type RawBurst [33]byte
 
 // field returns the a-bit field at first and the b-bit field at second as

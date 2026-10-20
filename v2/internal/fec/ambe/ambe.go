@@ -1,8 +1,8 @@
 // Package ambe applies the AMBE+2 frame FEC of a 72-bit DMR vocoder slot:
 // Golay(24,12) on the first 12 of the 49 vocoder bits, PN-scrambled
 // Golay(23,12) on the next 12, and the last 25 bits unprotected, interleaved
-// into the slot (ETSI TS 102 361-1 clause 6.1). A slot is packed most
-// significant bit first in 9 bytes, and a frame of 49 bits in 7 bytes.
+// into the slot. A slot is packed most significant bit first in 9 bytes, and
+// a frame of 49 bits in 7 bytes. (ETSI TS 102 361-1 clause 6.1)
 package ambe
 
 import (

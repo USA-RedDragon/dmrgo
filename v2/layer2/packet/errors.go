@@ -21,13 +21,12 @@ var (
 	ErrTooLong = errors.New("payload needs too many blocks")
 	// ErrNoHeader is returned for a data block that no header announced.
 	ErrNoHeader = errors.New("data block without a header")
-	// ErrRateChange is returned when the data type changes within a packet
-	// (ETSI TS 102 361-1 clause 8.2.2.1). The partial packet is discarded.
+	// ErrRateChange is returned when the data type changes within a packet. The
+	// partial packet is discarded. (ETSI TS 102 361-1 clause 8.2.2.1)
 	ErrRateChange = errors.New("data type changed within a packet")
-	// ErrHeaderCRC is returned for a data header whose CRC-CCITT failed
-	// (ETSI TS 102 361-1 clause B.3.8). The Assembler drops the header and
-	// keeps the packet in progress, as MMDVMHost does. It wraps
-	// fec.ErrUncorrectable.
+	// ErrHeaderCRC is returned for a data header whose CRC-CCITT failed. The
+	// Assembler drops the header and keeps the packet in progress, as MMDVMHost
+	// does. It wraps fec.ErrUncorrectable. (ETSI TS 102 361-1 clause B.3.8)
 	ErrHeaderCRC = fmt.Errorf("data header CRC does not match: %w", fec.ErrUncorrectable)
 	// ErrMessageCRC is returned with the Message whose message CRC failed.
 	// It wraps fec.ErrUncorrectable.

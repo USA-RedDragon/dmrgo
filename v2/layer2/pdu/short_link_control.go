@@ -20,8 +20,8 @@ type ShortLCActivityUpdate struct {
 	HashTS2       byte             `dmr:"bits:16-23"`    // 8-bit address hash for timeslot 2
 }
 
-// ShortLCCSysParms is the C_SYS_Parms Short LC payload (ETSI TS 102 361-4
-// clause 7.1.2.1). NetID, SiteID and SysCode split NetSiteRaw by MODEL.
+// ShortLCCSysParms is the C_SYS_Parms Short LC payload. NetID, SiteID and
+// SysCode split NetSiteRaw by MODEL. (ETSI TS 102 361-4 clause 7.1.2.1)
 type ShortLCCSysParms struct {
 	MODEL             uint8  `dmr:"bits:0-1"`   // network model (NetworkModel)
 	NetSiteRaw        uint16 `dmr:"bits:2-13"`  // NET and SITE, split by MODEL
@@ -29,8 +29,8 @@ type ShortLCCSysParms struct {
 	CommonSlotCounter uint16 `dmr:"bits:15-23"` // 9-bit Common_Slot_Counter
 }
 
-// netSiteBits returns the NET field width for a MODEL value per
-// ETSI TS 102 361-4 Table 6.5. The SITE field takes the remaining bits.
+// netSiteBits returns the NET field width for a MODEL value. The SITE field
+// takes the remaining bits. (ETSI TS 102 361-4 Table 6.5)
 func netSiteBits(model uint8) int {
 	switch model {
 	case 0:
@@ -46,10 +46,9 @@ func netSiteBits(model uint8) int {
 
 const netSiteLen = 12
 
-// NetID returns the network ID based on the MODEL field
-// (ETSI TS 102 361-4 Table 6.5): Tiny 9 bits, Small 7 bits,
-// Large 4 bits, Huge 2 bits. It returns a *dmrgo.FieldRangeError when MODEL
-// or NetSiteRaw does not fit its bits.
+// NetID returns the network ID based on the MODEL field: Tiny 9 bits, Small 7
+// bits, Large 4 bits, Huge 2 bits. It returns a *dmrgo.FieldRangeError when
+// MODEL or NetSiteRaw does not fit its bits. (ETSI TS 102 361-4 Table 6.5)
 func (s *ShortLCCSysParms) NetID() (uint16, error) {
 	if err := checkNetSite(s.MODEL, s.NetSiteRaw, errShortLCCSysParmsMODELRange, errShortLCCSysParmsNetSiteRawRange); err != nil {
 		return 0, err
@@ -57,9 +56,9 @@ func (s *ShortLCCSysParms) NetID() (uint16, error) {
 	return netID(s.MODEL, s.NetSiteRaw), nil
 }
 
-// SiteID returns the site ID based on the MODEL field
-// (ETSI TS 102 361-4 Table 6.5): Tiny 3 bits, Small 5 bits,
-// Large 8 bits, Huge 10 bits. It returns the errors of NetID.
+// SiteID returns the site ID based on the MODEL field: Tiny 3 bits, Small 5
+// bits, Large 8 bits, Huge 10 bits. It returns the errors of NetID.
+// (ETSI TS 102 361-4 Table 6.5)
 func (s *ShortLCCSysParms) SiteID() (uint16, error) {
 	if err := checkNetSite(s.MODEL, s.NetSiteRaw, errShortLCCSysParmsMODELRange, errShortLCCSysParmsNetSiteRawRange); err != nil {
 		return 0, err
@@ -75,8 +74,8 @@ func siteID(model uint8, netSite uint16) uint16 {
 	return netSite & (1<<(netSiteLen-netSiteBits(model)) - 1)
 }
 
-// ShortLCPSysParms is the P_SYS_Parms Short LC payload (ETSI TS 102 361-4
-// clause 7.1.2.2). NetID, SiteID and SysCode split NetSiteRaw by MODEL.
+// ShortLCPSysParms is the P_SYS_Parms Short LC payload. NetID, SiteID and
+// SysCode split NetSiteRaw by MODEL. (ETSI TS 102 361-4 clause 7.1.2.2)
 type ShortLCPSysParms struct {
 	MODEL              uint8  `dmr:"bits:0-1"`   // network model (NetworkModel)
 	NetSiteRaw         uint16 `dmr:"bits:2-13"`  // NET and SITE, split by MODEL
@@ -102,8 +101,9 @@ func (s *ShortLCPSysParms) SiteID() (uint16, error) {
 	return siteID(s.MODEL, s.NetSiteRaw), nil
 }
 
-// ShortLC is the Short Link Control (Short LC) PDU (ETSI TS 102 361-1 clause
-// 9.1.7). Encode returns an error unless SLCO selects the one payload field that is set.
+// ShortLC is the Short Link Control (Short LC) PDU. Encode returns an error
+// unless SLCO selects the one payload field that is set.
+// (ETSI TS 102 361-1 clause 9.1.7)
 //
 //dmr:crc crc_8
 //dmr:input_size 36
