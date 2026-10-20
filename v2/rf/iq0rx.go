@@ -3,8 +3,9 @@ package rf
 import "math"
 
 // iq0Chunk is the number of baseband samples that iq0Rx.write converts
-// from bytes at once, on the stack.
-const iq0Chunk = 40
+// from bytes at once, on the stack: 256 bytes, the largest local that
+// TinyGo puts on a stack of 32 KB or less.
+const iq0Chunk = 32
 
 // iq0LowHz is the lowest I/Q rate that New takes for options.IQFront 4, as
 // the decimated output of a radio chip; discRate/2 is the other.
