@@ -64,7 +64,11 @@ type cohStage struct {
 	scale                       float32
 	ampAvg                      float64
 	noiseAvg                    float64
+	symAvg                      float64
+	lastSym                     float64
 	easy                        bool
+	symNoise                    uint8
+	symSums                     [syncSymbols]complex128
 	segs                        [2][2]int
 	nseg                        int
 	prior                       [slotSymbols][4]float32
@@ -150,7 +154,7 @@ func newCohStageOf(opt *options) *cohStage {
 	}
 	m := newCPMModel(1, sps)
 	s := &cohStage{model: m, hFit: cohIndex * cohSyncIndex, hVar: cohIndexStart, hNew: true, mu: opt.PSPGain, llrK: opt.LLRScale, dt: cohDT, easySNR: cohEasySNR, skipSNR: opt.CohSkipSNR, locked: opt.CohLocked, budget: opt.CohBudget,
-		noNext: opt.CohNoNext, noCross: opt.CohNoCross, crossVoice: opt.CohCrossVoice, voiceOnly: opt.CohVoiceOnly, verifyScan: opt.CohVerifyScan}
+		noNext: opt.CohNoNext, noCross: opt.CohNoCross, crossVoice: opt.CohCrossVoice, voiceOnly: opt.CohVoiceOnly, verifyScan: opt.CohVerifyScan, symNoise: opt.CohSymNoise}
 	if s.llrK == 0 {
 		s.llrK = 1
 	}
@@ -751,6 +755,9 @@ func (s *cohStage) detect(c *leanCore, b *Burst, llr *[layer2.BurstBits]int16) b
 		return false
 	}
 	s.scale = float32(2 * s.ampAvg / s.noiseAvg)
+	if s.symNoise > 0 && s.symAvg > 0 {
+		s.scale = float32(s.symNoise) / 16 * float32(2*s.ampAvg/s.symAvg)
+	}
 	s.easy = s.ampAvg*s.ampAvg/s.noiseAvg >= s.easySNR
 	s.segs, s.nseg, s.hasPrior = segs, nseg, false
 	s.prevOK = false
@@ -794,11 +801,12 @@ func (s *cohStage) knownSegs(b *Burst) (segs [2][2]int, nseg int) {
 }
 
 func (s *cohStage) average(segs [2][2]int, nseg int) bool {
-	var amp, noise float64
+	var amp, noise, sym float64
 	for _, sg := range segs[:nseg] {
 		a, v := s.levels(sg[0], sg[1])
 		amp += a / float64(nseg)
 		noise += v / float64(nseg)
+		sym += s.lastSym / float64(nseg)
 	}
 	if amp <= 0 || noise <= 0 {
 		return false
@@ -808,11 +816,12 @@ func (s *cohStage) average(segs [2][2]int, nseg int) bool {
 		n = float64(segs[0][1] - segs[0][0] + 1 + segs[1][1] - segs[1][0] + 1)
 	}
 	if s.ampAvg == 0 {
-		s.ampAvg, s.noiseAvg = amp, noise
+		s.ampAvg, s.noiseAvg, s.symAvg = amp, noise, sym
 	} else {
 		g := n / (n + cohLevelSyms)
 		s.ampAvg += g * (amp - s.ampAvg)
 		s.noiseAvg += g * (noise - s.noiseAvg)
+		s.symAvg += g * (sym - s.symAvg)
 	}
 	return true
 }
@@ -830,6 +839,7 @@ func (s *cohStage) quiet(c *leanCore, seg [2]int, nseg int, b *Burst) bool {
 			g := float64(syncSymbols) / (syncSymbols + cohLevelSyms)
 			s.ampAvg += g * (amp - s.ampAvg)
 			s.noiseAvg += g * (noise - s.noiseAvg)
+			s.symAvg += g * (s.lastSym - s.symAvg)
 		}
 	}
 	s.lastSync = 0
@@ -1115,6 +1125,8 @@ func (s *cohStage) levels(k0, k1 int) (amp, noise float64) {
 	s.fill(0, n, s.buf)
 	var c complex128
 	var e float64
+	cs := &s.symSums
+	*cs = [syncSymbols]complex128{}
 	ph := 0.0
 	cnt := 0
 	for k := range n - 2*m.d {
@@ -1125,7 +1137,9 @@ func (s *cohStage) levels(k0, k1 int) (amp, noise float64) {
 		rot := cmplx.Exp(complex(0, -ph))
 		for j := range m.sps {
 			x := complex128(s.buf[(k+m.d)*m.sps+j])
-			c += x * complex128(m.tpl[w*m.sps+j]) * rot
+			v := x * complex128(m.tpl[w*m.sps+j]) * rot
+			c += v
+			cs[k] += v
 			e += real(x)*real(x) + imag(x)*imag(x)
 			cnt++
 		}
@@ -1136,5 +1150,14 @@ func (s *cohStage) levels(k0, k1 int) (amp, noise float64) {
 	}
 	amp = cmplx.Abs(c) / float64(cnt)
 	noise = e/float64(cnt) - amp*amp
+	if s.symNoise > 0 && amp > 0 {
+		u := c / complex(cmplx.Abs(c), 0) * complex(amp*float64(m.sps), 0)
+		var q float64
+		for _, v := range cs[:n-2*m.d] {
+			d := v - u
+			q += real(d)*real(d) + imag(d)*imag(d)
+		}
+		s.lastSym = q / float64(cnt)
+	}
 	return amp, noise
 }

@@ -76,6 +76,7 @@ type options struct {
 	IQCutAuto                            bool
 	CohVoiceOnly                         bool
 	CohSignMiss                          uint8
+	CohSymNoise                          uint8
 	MidTiming                            bool
 	HuntLinMid                           bool
 	StrobeTab                            bool
