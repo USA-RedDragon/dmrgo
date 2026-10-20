@@ -26,6 +26,22 @@ const (
 	aoptFarDb = 20.0
 )
 
+// Weights of the audio optimizer on the receivers of EN 300 113 Annex C
+// at the widest tolerances, as optACP and optALT: above 0, the power that
+// the adjacent (aoptACP) or alternate (aoptALT) channel limit counts
+// weighs as much as that of Mask D at that many dB.
+const (
+	aoptACP = 0.0
+	aoptALT = 0.0
+)
+
+const (
+	// aoptAnyRate makes the audio optimizer take every rate: its radio
+	// model runs at the rate times the least power of two that reaches
+	// radioHz.
+	aoptAnyRate = false
+)
+
 // aoptimizer is the optimizer of IQConfig.Shape for audio: it adds a
 // correction to the deviation that lowers the power of the FM signal of
 // the radio outside the channel, weighted by Emission Mask D. The
@@ -37,7 +53,8 @@ type aoptimizer struct {
 	up        int
 	settle    int
 	delay     int
-	hz        float64
+	hz, rhz   float64
+	k2        float64
 	wts       []float64
 	f, x      []float64
 	lp        []float64
@@ -60,6 +77,9 @@ type aoptimizer struct {
 // aoptRate reports whether the audio optimizer takes the rate hz: radioHz
 // is hz times a power of two.
 func aoptRate(hz int) bool {
+	if aoptAnyRate && hz > 0 {
+		return true
+	}
 	if hz <= 0 || radioHz%hz != 0 {
 		return false
 	}
@@ -70,9 +90,16 @@ func aoptRate(hz int) bool {
 // newAudioOpt returns an aoptimizer for audio at hz, which aoptRate
 // takes, with iters iterations per block.
 func newAudioOpt(iters, hz int) *aoptimizer {
-	up := radioHz / hz
+	up := 1
+	for hz*up < radioHz {
+		up *= 2
+	}
+	rhz := float64(hz * up)
 	n := aoptWin * up
-	o := &aoptimizer{iters: iters, up: up, hz: float64(hz)}
+	o := &aoptimizer{iters: iters, up: up, hz: float64(hz), rhz: rhz, k2: 2 * math.Pi / radioHz}
+	if up*hz != radioHz {
+		o.k2 = 2 * math.Pi / rhz
+	}
 	w := 2 * math.Pi * radioLowpassHz
 	al := w / math.Sqrt2
 	hold := 1 / float64(hz)
@@ -86,10 +113,10 @@ func newAudioOpt(iters, hz int) *aoptimizer {
 	o.settle = int(math.Ceil((36/al+hold)*float64(hz))) + 1
 	o.wts = make([]float64, up*o.settle)
 	for p := range up {
-		end := float64(p+1) / radioHz
+		end := float64(p+1) / rhz
 		for j := range o.settle {
 			t := end + float64(j)*hold
-			o.wts[p*o.settle+j] = (rise(t) - rise(t-1.0/radioHz)) * radioHz
+			o.wts[p*o.settle+j] = (rise(t) - rise(t-1/rhz)) * rhz
 		}
 	}
 	sym := hz / gcd(hz, 4800)
@@ -116,9 +143,9 @@ func newAudioOpt(iters, hz int) *aoptimizer {
 	o.w2 = make([]float64, n)
 	o.taper = make([]float64, n)
 	for k := range n {
-		fk := float64(k) * radioHz / float64(n)
+		fk := float64(k) * rhz / float64(n)
 		if k >= n/2 {
-			fk -= radioHz
+			fk -= rhz
 		}
 		if a := math.Abs(fk); a > optFromHz {
 			db := optMaskAttn(a)
@@ -126,6 +153,12 @@ func newAudioOpt(iters, hz int) *aoptimizer {
 				db += aoptFarDb
 			}
 			o.w2[k] = math.Pow(10, db/10)
+			if aoptACP > 0 {
+				o.w2[k] += math.Pow(10, (aoptACP-optAnnexC(a, 12500))/10)
+			}
+			if aoptALT > 0 {
+				o.w2[k] += math.Pow(10, (aoptALT-optAnnexC(a, 25000))/10)
+			}
 		}
 		o.taper[k] = 0.5 - 0.5*math.Cos(2*math.Pi*(float64(k)+0.5)/float64(n))
 	}
@@ -237,7 +270,7 @@ func (o *aoptimizer) eval(w0 int, x, g []float64) float64 {
 	n := len(o.re)
 	re, im := o.re, o.im
 	var ph float64
-	k2 := 2 * math.Pi / radioHz
+	k2 := o.k2
 	for t := range n {
 		k, p := t/o.up, t%o.up
 		w := o.wts[p*L : p*L+L]
