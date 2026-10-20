@@ -360,34 +360,9 @@ type engine struct {
 // New returns a Receiver sized by cfg. It allocates every buffer of the
 // Receiver. It returns a *ConfigError when a field of cfg is out of range.
 func New(cfg Config) (*Receiver, error) {
-	if cfg.Tier == TierDefault {
-		cfg.Tier = Tier0
-	}
-	if cfg.Tier < Tier0 || cfg.Tier > Tier4 {
-		return nil, &ConfigError{Field: "Tier"}
-	}
-	low := cfg.opt != nil && cfg.opt.IQFront == 4 && cfg.opt.IQDisc && (cfg.BasebandHz == iq0LowHz || cfg.BasebandHz == discRate/2)
-	switch {
-	case cfg.BasebandHz == 0:
-		cfg.BasebandHz = basebandRate
-	case cfg.BasebandHz == discRate && cfg.Tier <= Tier1, cfg.BasebandHz == basebandRate, low:
-	default:
-		return nil, &ConfigError{Field: "BasebandHz"}
-	}
-	switch {
-	case cfg.Rate == 0:
-		cfg.Rate = float64(cfg.BasebandHz)
-	case !(cfg.Rate >= float64(cfg.BasebandHz)) || cfg.Rate > 1e9:
-		return nil, &ConfigError{Field: "Rate"}
-	}
-	if cfg.MaxWrite < 0 {
-		return nil, &ConfigError{Field: "MaxWrite"}
-	}
-	if cfg.LookbackSlots < 0 || cfg.Tier == Tier0 && cfg.LookbackSlots > 0 {
-		return nil, &ConfigError{Field: "LookbackSlots"}
-	}
-	if cfg.MaxWrite == 0 {
-		cfg.MaxWrite = 1 << 16
+	low, err := checkConfig(&cfg)
+	if err != nil {
+		return nil, err
 	}
 	opt := tierOptions(cfg.Tier)
 	if cfg.Tier == Tier1 || cfg.Tier == Tier2 {
@@ -425,6 +400,42 @@ func New(cfg Config) (*Receiver, error) {
 		return &Receiver{e: c.t3, cb: c}, nil
 	}
 	return &Receiver{e: newEngine(cfg, opt)}, nil
+}
+
+// checkConfig fills the defaults of cfg and returns a *ConfigError when a
+// field is out of range. low is set when cfg.opt takes I/Q at the rate of
+// a radio chip.
+func checkConfig(cfg *Config) (low bool, err error) {
+	if cfg.Tier == TierDefault {
+		cfg.Tier = Tier0
+	}
+	if cfg.Tier < Tier0 || cfg.Tier > Tier4 {
+		return false, &ConfigError{Field: "Tier"}
+	}
+	low = cfg.opt != nil && cfg.opt.IQFront == 4 && cfg.opt.IQDisc && (cfg.BasebandHz == iq0LowHz || cfg.BasebandHz == discRate/2)
+	switch {
+	case cfg.BasebandHz == 0:
+		cfg.BasebandHz = basebandRate
+	case cfg.BasebandHz == discRate && cfg.Tier <= Tier1, cfg.BasebandHz == basebandRate, low:
+	default:
+		return false, &ConfigError{Field: "BasebandHz"}
+	}
+	switch {
+	case cfg.Rate == 0:
+		cfg.Rate = float64(cfg.BasebandHz)
+	case !(cfg.Rate >= float64(cfg.BasebandHz)) || cfg.Rate > 1e9:
+		return false, &ConfigError{Field: "Rate"}
+	}
+	if cfg.MaxWrite < 0 {
+		return false, &ConfigError{Field: "MaxWrite"}
+	}
+	if cfg.LookbackSlots < 0 || cfg.Tier == Tier0 && cfg.LookbackSlots > 0 {
+		return false, &ConfigError{Field: "LookbackSlots"}
+	}
+	if cfg.MaxWrite == 0 {
+		cfg.MaxWrite = 1 << 16
+	}
+	return low, nil
 }
 
 // newEngine returns the receiver of cfg with the settings opt.

@@ -298,13 +298,7 @@ func (c *combRx) pick(x, y *combBurst) *Burst {
 		raw = b.Data.VoiceSlots()
 	}
 	clean := fb[0]+fb[1]+fb[2] == 0
-	for i := range fa {
-		if min(fa[i], fb[i]) <= extErrMax {
-			c.err3 += extErrGain * (float32(fa[i]) - c.err3)
-			c.err2 += extErrGain * (float32(fb[i]) - c.err2)
-		}
-	}
-	cleaner := c.err2 < extCoreShare*c.err3
+	cleaner := c.track(&fa, &fb)
 	for i := range fa {
 		core := y.s.coreC2>>i&1 != 0
 		take := false
@@ -344,6 +338,19 @@ func (c *combRx) pick(x, y *combBurst) *Burst {
 	}
 	c.cb.Fixed.SetVoiceSlots(out)
 	return &c.cb
+}
+
+// track moves the error rates of the coherent receiver and of Tier2 by
+// the flips fa and fb of the slots that either decodes with few errors,
+// and reports whether Tier2 is the cleaner.
+func (c *combRx) track(fa, fb *[layer2.VoiceSlotsPerBurst]int) bool {
+	for i := range fa {
+		if min(fa[i], fb[i]) <= extErrMax {
+			c.err3 += extErrGain * (float32(fa[i]) - c.err3)
+			c.err2 += extErrGain * (float32(fb[i]) - c.err2)
+		}
+	}
+	return c.err2 < extCoreShare*c.err3
 }
 
 // frameDist returns the number of bits in which voice frames x and y
