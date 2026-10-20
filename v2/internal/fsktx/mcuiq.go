@@ -1,5 +1,7 @@
 package fsktx
 
+import "unsafe"
+
 // The cosine table of MCUIQ: cosTableBits bits of phase index a turn, a
 // quarter turn more lets the sine be the negative cosine a quarter on, and
 // tier0IQWide, with tier0IQFine, makes cosTable 32-bit: the cosine at 16
@@ -211,6 +213,21 @@ func cosSin(phase uint32) (int16, int16) {
 	return int16(c), int16(-ns)
 }
 
+// putIQ writes the cosine and sine of phase to d. With tier0IQWide it
+// writes them as one word, I in the low half, for a little-endian target.
+func putIQ(d *[2]int16, phase uint32) {
+	if tier0IQFine && tier0IQWide {
+		i := phase >> cosShift
+		m := int32(uint64(phase<<cosTableBits)*cosFracWide>>32) - cosFracWide/2
+		sn, c := int32(cosTable[i]), int32(cosTable[i+cosQuarter])
+		co := c - int32(int64(sn)*int64(m)>>32)
+		si := sn + int32(int64(c)*int64(m)>>32)
+		*(*uint32)(unsafe.Pointer(d)) = uint32(si)&0xffff0000 | uint32(co)>>16
+		return
+	}
+	d[0], d[1] = cosSin(phase)
+}
+
 // cosFrac is 2 pi 2^24 over the entries of cosTable, rounded, and
 // cosFracWide 2 pi 2^32 over them, for a table of 2^10 entries or more.
 const (
@@ -235,7 +252,7 @@ func (m *MCUIQ) steady0(dst []int16) {
 		prev = w
 		d := dst[2*p : 2*p+2 : 2*p+2]
 		phase += uint32(v)
-		d[0], d[1] = cosSin(phase)
+		putIQ((*[2]int16)(d), phase)
 	}
 	m.phase, m.prev = phase, prev
 }
@@ -252,9 +269,9 @@ func (m *MCUIQ) steady1(dst []int16) {
 		prev = w
 		d := dst[4*p : 4*p+4 : 4*p+4]
 		phase += uint32(v)
-		d[0], d[1] = cosSin(phase)
+		putIQ((*[2]int16)(d[0:2]), phase)
 		phase += uint32(v + dw)
-		d[2], d[3] = cosSin(phase)
+		putIQ((*[2]int16)(d[2:4]), phase)
 	}
 	m.phase, m.prev = phase, prev
 }
@@ -273,7 +290,7 @@ func (m *MCUIQ) steady2(dst []int16) {
 		for j := 0; j < 8; j += 2 {
 			v += dw
 			phase += uint32(v)
-			d[j], d[j+1] = cosSin(phase)
+			putIQ((*[2]int16)(d[j:j+2]), phase)
 		}
 	}
 	m.phase, m.prev = phase, prev
@@ -293,7 +310,7 @@ func (m *MCUIQ) steady3(dst []int16) {
 		for j := 0; j < 16; j += 2 {
 			v += dw
 			phase += uint32(v)
-			d[j], d[j+1] = cosSin(phase)
+			putIQ((*[2]int16)(d[j:j+2]), phase)
 		}
 	}
 	m.phase, m.prev = phase, prev
