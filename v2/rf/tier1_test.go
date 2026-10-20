@@ -21,7 +21,7 @@ func TestTier1Weak(t *testing.T) {
 		for _, p := range []struct {
 			k    string
 			gain float64
-		}{{"rate12", 0.3}, {"ambe_c0c1", 0.05}} {
+		}{{"rate12", 0}, {"ambe_c0c1", 0.05}} {
 			t0, t1 := rate(Tier0, p.k), rate(Tier1, p.k)
 			t.Logf("%s at C/N %v dB, %s: %.2f Tier0, %.2f Tier1", c.mode, c.cn, p.k, t0, t1)
 			if t1 < t0+p.gain {

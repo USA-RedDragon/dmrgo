@@ -36,7 +36,7 @@ type DiscConfig struct {
 	// Tier1 for NewDisc, and Tier0 for Init, which does not allocate the
 	// stages of the higher tiers, and under TinyGo, which has neither.
 	// Tier2 detects the bursts again coherently, on the carrier phase that
-	// it rebuilds from the samples, at about 4 times the CPU time of Tier1.
+	// it rebuilds from the samples, at about 5 times the CPU time of Tier1.
 	// Tier3 adds four passes over each data burst, at about twice the CPU
 	// time of Tier2, and is measured at 24 kHz.
 	Tier  Tier

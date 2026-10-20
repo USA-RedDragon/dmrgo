@@ -131,10 +131,10 @@ func iqLowOptions() options {
 func discTierOptions(t Tier) options {
 	switch t {
 	case Tier1:
-		return tier1Options(discOptions())
+		return tier1Options(disc0Options())
 	case Tier2:
 		o := tier2Options(discOptions())
-		o.CohNoCross, o.CohNoNext, o.CohBudget, o.CohSymNoise = true, true, 300, 8
+		o.CohNoCross, o.CohNoNext, o.CohBudget, o.CohSymNoise = true, true, 400, 8
 		return o
 	case Tier3:
 		o := tier2Options(discOptions())
