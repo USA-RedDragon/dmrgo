@@ -42,7 +42,7 @@ func TestConfigDefaults(t *testing.T) {
 		want    Config
 		wantErr error
 	}{
-		{Config{}, Config{Mode: Mode2400, FID: DefaultFID}, nil},
+		{Config{}, Config{Mode: ModeAuto, FID: DefaultFID}, nil},
 		{Config{Mode: Mode3200}, Config{Mode: Mode3200, FID: DefaultFID}, nil},
 		{Config{Mode: Mode2400, FID: 0x7E}, Config{Mode: Mode2400, FID: 0x7E}, nil},
 		{Config{Mode: 1300}, Config{}, ErrUnsupportedMode},

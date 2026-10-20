@@ -13,8 +13,9 @@
 // vocoder frame, so a 60 ms voice burst carries three. The Codec2 bytes go
 // MSB first at the start of the 9-byte frame and the remaining bits are zero.
 // There is no FEC, scrambling or interleaving. Calls are marked with the
-// Feature set ID 0xC2 in the Full LC. The FID does not identify the Codec2
-// mode, so both ends must agree on it out of band.
+// Feature set ID 0xC2 in the Full LC. Nothing on the air identifies the
+// Codec2 mode, so by default (ModeAuto) the decoder detects it from the
+// padding: Mode2400 leaves bytes 6 to 8 zero and Mode3200 only byte 8.
 //
 // The package does not register itself. A program that creates codecs by
 // name registers it once, before vocoder.New:

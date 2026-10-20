@@ -111,6 +111,7 @@ sym #define DMRGO_CODEC2_DEFAULT_FID ((dmrgo_enums_feature_set_id_t)194)
 sym #define DMRGO_CODEC2_FRAME_SAMPLES 160
 sym #define DMRGO_CODEC2_MODE2400 ((dmrgo_codec2_mode_t)2400)
 sym #define DMRGO_CODEC2_MODE3200 ((dmrgo_codec2_mode_t)3200)
+sym #define DMRGO_CODEC2_MODE_AUTO ((dmrgo_codec2_mode_t)0)
 sym #define DMRGO_CODEC2_NAME "codec2"
 sym #define DMRGO_CONSTANTS_ADDRESS_NULL 0
 sym #define DMRGO_CONSTANTS_ALL_MSID 16777215
@@ -748,6 +749,7 @@ sym int dmrgo_codec2_codec_append_decode(dmrgo_codec2_codec_t *self, int16_t *ds
 sym int dmrgo_codec2_codec_append_decode_need(dmrgo_codec2_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
 sym int dmrgo_codec2_codec_close(dmrgo_codec2_codec_t *self);
 sym int dmrgo_codec2_codec_decode(dmrgo_codec2_codec_t *self, const uint8_t slot[9], int16_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_codec2_codec_decode_mode(dmrgo_codec2_codec_t *self, dmrgo_codec2_mode_t *out);
 sym int dmrgo_codec2_codec_decode_need(dmrgo_codec2_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
 sym int dmrgo_codec2_codec_encode(dmrgo_codec2_codec_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
 sym int dmrgo_codec2_codec_fid(dmrgo_codec2_codec_t *self, dmrgo_enums_feature_set_id_t *out);
@@ -755,6 +757,7 @@ sym int dmrgo_codec2_codec_frame_samples(dmrgo_codec2_codec_t *self, int64_t *ou
 sym int dmrgo_codec2_codec_free(dmrgo_codec2_codec_t *self);
 sym int dmrgo_codec2_codec_mode(dmrgo_codec2_codec_t *self, dmrgo_codec2_mode_t *out);
 sym int dmrgo_codec2_codec_new(dmrgo_codec2_codec_t **out);
+sym int dmrgo_codec2_codec_reset(dmrgo_codec2_codec_t *self);
 sym int dmrgo_codec2_codec_silence(dmrgo_codec2_codec_t *self, uint8_t out[9]);
 sym int dmrgo_codec2_new(const dmrgo_codec2_config_t *cfg, dmrgo_codec2_codec_t **out);
 sym int dmrgo_codec2_new_factory(const dmrgo_codec2_config_t *cfg, dmrgo_vocoder_register_factory_fn_t *out);

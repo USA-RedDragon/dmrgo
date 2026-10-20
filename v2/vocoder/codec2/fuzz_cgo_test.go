@@ -23,6 +23,15 @@ func FuzzCodec2(f *testing.F) {
 				pcm[i] = int16(binary.LittleEndian.Uint16(samples[2*i:]))
 			}
 		}
+		auto := newCodec(t, Config{})
+		for range 2 {
+			if out, err := auto.Decode(slot); err != nil || len(out) != FrameSamples {
+				t.Fatalf("ModeAuto: Decode(%x) = %d samples, %v", slot, len(out), err)
+			}
+		}
+		if m := auto.DecodeMode(); m != ModeAuto {
+			t.Fatalf("ModeAuto: DecodeMode %d after 2 frames", m)
+		}
 		for _, mode := range allModes() {
 			n := mode.frameBytes()
 			a := newCodec(t, Config{Mode: mode})
