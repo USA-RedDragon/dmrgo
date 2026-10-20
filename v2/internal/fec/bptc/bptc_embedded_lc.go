@@ -20,9 +20,9 @@ import (
 // checksum) from the fragments of voice bursts B to E, in that order, each
 // with its first bit most significant. The information bits are rows 0 to 6,
 // columns 0 to 10 of the encode matrix in row-major order, so the checksum
-// bits are the last bit of rows 2 to 6 (ETSI TS 102 361-1 Figure B.3). It
-// returns them packed, the first bit most significant. It is
-// DecodeEmbeddedWithCheck with a nil check.
+// bits are the last bit of rows 2 to 6. It returns them packed, the first bit
+// most significant. It is DecodeEmbeddedWithCheck with a nil check.
+// (ETSI TS 102 361-1 Figure B.3)
 func DecodeEmbedded(fragments [4]uint32) ([10]byte, fec.Result) {
 	return DecodeEmbeddedWithCheck(fragments, nil)
 }

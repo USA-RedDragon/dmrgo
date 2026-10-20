@@ -4,9 +4,9 @@
 package layer3
 
 // CdefParms is the Channel Definition Parameters (Cdeftype 0) information
-// element, which carries the absolute TX and RX frequencies in 58 bits (ETSI
-// TS 102 361-4 clause 7.2.42, Table 7.103). The field names are the IE names
-// of the spec, and TXKHz and RXKHz count 125 Hz steps.
+// element, which carries the absolute TX and RX frequencies in 58 bits. The
+// field names are the IE names of the spec, and TXKHz and RXKHz count 125 Hz
+// steps. (ETSI TS 102 361-4 clause 7.2.42, Table 7.103)
 type CdefParms struct {
 	Channel uint16 `dmr:"bits:0-11"`  // logical channel number
 	TXMHz   uint16 `dmr:"bits:12-21"` // transmit frequency, whole MHz

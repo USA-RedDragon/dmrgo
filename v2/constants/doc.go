@@ -1,13 +1,13 @@
 // Package constants defines the DMR timers, counters and addresses as Go
 // constants: time.Duration values for timers and plain integers for counters
-// and addresses (ETSI TS 102 361-2 Annex A, ETSI TS 102 361-3 Annex A,
-// ETSI TS 102 361-4 Annex A).
+// and addresses.
 //
 // Annex A of ETSI TS 102 361-2 and ETSI TS 102 361-3 gives its values in
 // clauses, so those citations name a clause. Annex A of ETSI TS 102 361-4
 // gives its values in Tables A.1 to A.8. A name that ends in Default is a
 // value that the library chose, inside the range of the spec where the spec
-// gives a range.
+// gives a range. (ETSI TS 102 361-2 Annex A, ETSI TS 102 361-3 Annex A,
+// ETSI TS 102 361-4 Annex A)
 //
 // # Call timer tokens
 //

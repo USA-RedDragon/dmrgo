@@ -20,10 +20,10 @@ import (
 	"math"
 )
 
-// DecodeFullLinkControl decodes a FullLinkControl (ETSI TS 102 361-1 clause
-// 9.1.6). data holds the 96 bits of the PDU packed, the first bit in the
-// most significant bit of data[0]. It allocates the payload struct that the
-// dispatch field points to; DecodeFullLinkControlInto does not.
+// DecodeFullLinkControl decodes a FullLinkControl. data holds the 96 bits of
+// the PDU packed, the first bit in the most significant bit of data[0]. It
+// allocates the payload struct that the dispatch field points to;
+// DecodeFullLinkControlInto does not. (ETSI TS 102 361-1 clause 9.1.6)
 func DecodeFullLinkControl(data [12]byte, burstDataType enums.DataType) FullLinkControl {
 	var result FullLinkControl
 	result.BurstDataType = burstDataType
@@ -148,9 +148,9 @@ func DecodeFullLinkControlInto(dst *FullLinkControl, p *FullLinkControlPayloads,
 	}
 }
 
-// Encode encodes a FullLinkControl (ETSI TS 102 361-1 clause 9.1.6). It
-// returns the 96 bits packed, the first bit in the most significant bit of
-// byte 0.
+// Encode encodes a FullLinkControl. It returns the 96 bits packed, the first
+// bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-1 clause 9.1.6)
 func (s *FullLinkControl) Encode() ([12]byte, error) {
 	var data [12]byte
 	_payload := ""
@@ -308,9 +308,9 @@ func (s *FullLinkControl) String() string {
 	return _ret
 }
 
-// decodeFLCGroupVoice decodes an FLCGroupVoice (ETSI TS 102 361-2 clause
-// 7.1.1.1, Table 7.1). data holds the 56 bits of the PDU packed, the first
-// bit in the most significant bit of data[0].
+// decodeFLCGroupVoice decodes an FLCGroupVoice. data holds the 56 bits of
+// the PDU packed, the first bit in the most significant bit of data[0].
+// (ETSI TS 102 361-2 clause 7.1.1.1, Table 7.1)
 func decodeFLCGroupVoice(data [7]byte) FLCGroupVoice {
 	var result FLCGroupVoice
 	var _serviceOptionsBytes [1]byte
@@ -321,9 +321,9 @@ func decodeFLCGroupVoice(data [7]byte) FLCGroupVoice {
 	return result
 }
 
-// Encode encodes an FLCGroupVoice (ETSI TS 102 361-2 clause 7.1.1.1, Table
-// 7.1). It returns the 56 bits packed, the first bit in the most significant
-// bit of byte 0.
+// Encode encodes an FLCGroupVoice. It returns the 56 bits packed, the first
+// bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-2 clause 7.1.1.1, Table 7.1)
 func (s *FLCGroupVoice) Encode() ([7]byte, error) {
 	var data [7]byte
 	_serviceOptionsBytes, err := s.ServiceOptions.Encode()
@@ -354,9 +354,9 @@ func (s *FLCGroupVoice) String() string {
 	return "FLCGroupVoice{ ServiceOptions: " + s.ServiceOptions.String() + ", GroupAddress: " + text.Int(int64(s.GroupAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeFLCUnitToUnit decodes an FLCUnitToUnit (ETSI TS 102 361-2 clause
-// 7.1.1.2, Table 7.2). data holds the 56 bits of the PDU packed, the first
-// bit in the most significant bit of data[0].
+// decodeFLCUnitToUnit decodes an FLCUnitToUnit. data holds the 56 bits of
+// the PDU packed, the first bit in the most significant bit of data[0].
+// (ETSI TS 102 361-2 clause 7.1.1.2, Table 7.2)
 func decodeFLCUnitToUnit(data [7]byte) FLCUnitToUnit {
 	var result FLCUnitToUnit
 	var _serviceOptionsBytes [1]byte
@@ -367,9 +367,9 @@ func decodeFLCUnitToUnit(data [7]byte) FLCUnitToUnit {
 	return result
 }
 
-// Encode encodes an FLCUnitToUnit (ETSI TS 102 361-2 clause 7.1.1.2, Table
-// 7.2). It returns the 56 bits packed, the first bit in the most significant
-// bit of byte 0.
+// Encode encodes an FLCUnitToUnit. It returns the 56 bits packed, the first
+// bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-2 clause 7.1.1.2, Table 7.2)
 func (s *FLCUnitToUnit) Encode() ([7]byte, error) {
 	var data [7]byte
 	_serviceOptionsBytes, err := s.ServiceOptions.Encode()
@@ -400,9 +400,9 @@ func (s *FLCUnitToUnit) String() string {
 	return "FLCUnitToUnit{ ServiceOptions: " + s.ServiceOptions.String() + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
-// decodeFLCGPSInfo decodes an FLCGPSInfo (ETSI TS 102 361-2 clause 7.1.1.3,
-// Table 7.3). data holds the 56 bits of the PDU packed, the first bit in the
-// most significant bit of data[0].
+// decodeFLCGPSInfo decodes an FLCGPSInfo. data holds the 56 bits of the PDU
+// packed, the first bit in the most significant bit of data[0].
+// (ETSI TS 102 361-2 clause 7.1.1.3, Table 7.3)
 func decodeFLCGPSInfo(data [7]byte) FLCGPSInfo {
 	var result FLCGPSInfo
 	result.Reserved = uint8(uint64(data[0]) >> 4)
@@ -412,9 +412,9 @@ func decodeFLCGPSInfo(data [7]byte) FLCGPSInfo {
 	return result
 }
 
-// Encode encodes an FLCGPSInfo (ETSI TS 102 361-2 clause 7.1.1.3, Table
-// 7.3). It returns the 56 bits packed, the first bit in the most significant
-// bit of byte 0.
+// Encode encodes an FLCGPSInfo. It returns the 56 bits packed, the first bit
+// in the most significant bit of byte 0. (ETSI TS 102 361-2 clause 7.1.1.3,
+// Table 7.3)
 func (s *FLCGPSInfo) Encode() ([7]byte, error) {
 	var data [7]byte
 	if uint64(s.Reserved)>>4 != 0 {
@@ -452,9 +452,9 @@ func (s *FLCGPSInfo) String() string {
 	return "FLCGPSInfo{ Reserved: " + text.Int(int64(s.Reserved)) + ", PositionError: " + s.PositionError.String() + ", Longitude: " + text.Fixed(s.Longitude) + ", Latitude: " + text.Fixed(s.Latitude) + " }"
 }
 
-// decodeFLCTalkerAliasHeader decodes an FLCTalkerAliasHeader (ETSI TS 102
-// 361-2 clause 7.1.1.4, Table 7.4). data holds the 56 bits of the PDU
-// packed, the first bit in the most significant bit of data[0].
+// decodeFLCTalkerAliasHeader decodes an FLCTalkerAliasHeader. data holds the
+// 56 bits of the PDU packed, the first bit in the most significant bit of
+// data[0]. (ETSI TS 102 361-2 clause 7.1.1.4, Table 7.4)
 func decodeFLCTalkerAliasHeader(data [7]byte) FLCTalkerAliasHeader {
 	var result FLCTalkerAliasHeader
 	result.TalkerAliasDataFormat = layer3.TalkerAliasDataFormat(uint64(data[0]) >> 6)
@@ -463,9 +463,9 @@ func decodeFLCTalkerAliasHeader(data [7]byte) FLCTalkerAliasHeader {
 	return result
 }
 
-// Encode encodes an FLCTalkerAliasHeader (ETSI TS 102 361-2 clause 7.1.1.4,
-// Table 7.4). It returns the 56 bits packed, the first bit in the most
-// significant bit of byte 0.
+// Encode encodes an FLCTalkerAliasHeader. It returns the 56 bits packed, the
+// first bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-2 clause 7.1.1.4, Table 7.4)
 func (s *FLCTalkerAliasHeader) Encode() ([7]byte, error) {
 	var data [7]byte
 	if uint64(s.TalkerAliasDataFormat)>>2 != 0 {
@@ -496,18 +496,18 @@ func (s *FLCTalkerAliasHeader) String() string {
 	return "FLCTalkerAliasHeader{ TalkerAliasDataFormat: " + s.TalkerAliasDataFormat.String() + ", TalkerAliasDataLength: " + text.Int(int64(s.TalkerAliasDataLength)) + ", TalkerAliasData: " + text.Uint(uint64(s.TalkerAliasData)) + " }"
 }
 
-// decodeFLCTalkerAliasBlock decodes an FLCTalkerAliasBlock (ETSI TS 102
-// 361-2 clause 7.1.1.5, Table 7.5). data holds the 56 bits of the PDU
-// packed, the first bit in the most significant bit of data[0].
+// decodeFLCTalkerAliasBlock decodes an FLCTalkerAliasBlock. data holds the
+// 56 bits of the PDU packed, the first bit in the most significant bit of
+// data[0]. (ETSI TS 102 361-2 clause 7.1.1.5, Table 7.5)
 func decodeFLCTalkerAliasBlock(data [7]byte) FLCTalkerAliasBlock {
 	var result FLCTalkerAliasBlock
 	copy(result.TalkerAliasData[0:7], data[0:7])
 	return result
 }
 
-// Encode encodes an FLCTalkerAliasBlock (ETSI TS 102 361-2 clause 7.1.1.5,
-// Table 7.5). It returns the 56 bits packed, the first bit in the most
-// significant bit of byte 0.
+// Encode encodes an FLCTalkerAliasBlock. It returns the 56 bits packed, the
+// first bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-2 clause 7.1.1.5, Table 7.5)
 func (s *FLCTalkerAliasBlock) Encode() ([7]byte, error) {
 	var data [7]byte
 	copy(data[0:7], s.TalkerAliasData[0:7])
@@ -520,9 +520,10 @@ func (s *FLCTalkerAliasBlock) String() string {
 	return "FLCTalkerAliasBlock{ TalkerAliasData: " + text.Bytes(s.TalkerAliasData[:]) + " }"
 }
 
-// decodeFLCTerminatorDataLinkControl decodes an FLCTerminatorDataLinkControl
-// (ETSI TS 102 361-3 clause 7.1.1.1, Table 7.1). data holds the 56 bits of
-// the PDU packed, the first bit in the most significant bit of data[0].
+// decodeFLCTerminatorDataLinkControl decodes an
+// FLCTerminatorDataLinkControl. data holds the 56 bits of the PDU packed,
+// the first bit in the most significant bit of data[0].
+// (ETSI TS 102 361-3 clause 7.1.1.1, Table 7.1)
 func decodeFLCTerminatorDataLinkControl(data [7]byte) FLCTerminatorDataLinkControl {
 	var result FLCTerminatorDataLinkControl
 	result.LLIDDestination = uint32(uint64(data[0])<<16 | uint64(data[1])<<8 | uint64(data[2]))
@@ -536,9 +537,9 @@ func decodeFLCTerminatorDataLinkControl(data [7]byte) FLCTerminatorDataLinkContr
 	return result
 }
 
-// Encode encodes an FLCTerminatorDataLinkControl (ETSI TS 102 361-3 clause
-// 7.1.1.1, Table 7.1). It returns the 56 bits packed, the first bit in the
-// most significant bit of byte 0.
+// Encode encodes an FLCTerminatorDataLinkControl. It returns the 56 bits
+// packed, the first bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-3 clause 7.1.1.1, Table 7.1)
 func (s *FLCTerminatorDataLinkControl) Encode() ([7]byte, error) {
 	var data [7]byte
 	if uint64(s.LLIDDestination)>>24 != 0 {

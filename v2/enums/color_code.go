@@ -2,10 +2,10 @@ package enums
 
 import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
-// ColorCode is the 4-bit color code of a slot type or EMB (ETSI TS 102 361-1
-// clause 9.3.1). A ColorCode from NewColorCode is 0 to 15. The encoders,
-// setters and builders that take a ColorCode return a
-// *dmrgo.FieldRangeError for one above 15.
+// ColorCode is the 4-bit color code of a slot type or EMB. A ColorCode from
+// NewColorCode is 0 to 15. The encoders, setters and builders that take a
+// ColorCode return a *dmrgo.FieldRangeError for one above 15.
+// (ETSI TS 102 361-1 clause 9.3.1)
 type ColorCode uint8
 
 // NewColorCode returns v as a ColorCode. It returns a *ColorCodeError when v

@@ -7,7 +7,7 @@
 // ETSI TS 102 361-1 clause 9.2.12, Table 9.17C
 // ETSI TS 102 361-1 clause 9.2.11, Table 9.17B
 // ETSI TS 102 361-1 clause 9.2.10, Table 9.17A
-// ETSI TS 102 361-1 clause 9.2.13, Table 9.17D
+// ETSI TS 102 361-1 clause 9.2.13, Table 9.17D, ETSI TS 102 361-4 Tables 7.24 and 7.28
 // ETSI TS 102 361-1 clause 9.2.9, Table 9.17
 
 package pdu
@@ -20,9 +20,9 @@ import (
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
-// decodeUnconfirmedDataHeader decodes an UnconfirmedDataHeader (ETSI TS 102
-// 361-1 clause 9.2.6). data holds the 80 bits of the PDU packed, the first
-// bit in the most significant bit of data[0].
+// decodeUnconfirmedDataHeader decodes an UnconfirmedDataHeader. data holds
+// the 80 bits of the PDU packed, the first bit in the most significant bit
+// of data[0]. (ETSI TS 102 361-1 clause 9.2.6)
 func decodeUnconfirmedDataHeader(data [10]byte) UnconfirmedDataHeader {
 	var result UnconfirmedDataHeader
 	result.Group = data[0]&0x80 != 0
@@ -43,9 +43,9 @@ func decodeUnconfirmedDataHeader(data [10]byte) UnconfirmedDataHeader {
 	return result
 }
 
-// Encode encodes an UnconfirmedDataHeader (ETSI TS 102 361-1 clause 9.2.6).
-// It returns the 80 bits packed, the first bit in the most significant bit
-// of byte 0.
+// Encode encodes an UnconfirmedDataHeader. It returns the 80 bits packed,
+// the first bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-1 clause 9.2.6)
 func (s *UnconfirmedDataHeader) Encode() ([10]byte, error) {
 	var data [10]byte
 	if s.Group {
@@ -106,10 +106,10 @@ func (s *UnconfirmedDataHeader) String() string {
 	return "UnconfirmedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Reserved: " + text.Bool(s.Reserved) + ", PadOctetCount: " + text.Int(int64(s.PadOctetCount)) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BlocksToFollow: " + text.Int(int64(s.BlocksToFollow)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", FragmentSequenceNumber: " + text.Int(int64(s.FragmentSequenceNumber)) + " }"
 }
 
-// DecodeDataHeader decodes a DataHeader (ETSI TS 102 361-1 clause 9.2). data
-// holds the 96 bits of the PDU packed, the first bit in the most significant
-// bit of data[0]. It allocates the payload struct that the dispatch field
-// points to; DecodeDataHeaderInto does not.
+// DecodeDataHeader decodes a DataHeader. data holds the 96 bits of the PDU
+// packed, the first bit in the most significant bit of data[0]. It allocates
+// the payload struct that the dispatch field points to; DecodeDataHeaderInto
+// does not. (ETSI TS 102 361-1 clause 9.2)
 func DecodeDataHeader(data [12]byte) DataHeader {
 	var result DataHeader
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xCCCC)
@@ -216,8 +216,8 @@ func DecodeDataHeaderInto(dst *DataHeader, p *DataHeaderPayloads, data [12]byte)
 	}
 }
 
-// Encode encodes a DataHeader (ETSI TS 102 361-1 clause 9.2). It returns the
-// 96 bits packed, the first bit in the most significant bit of byte 0.
+// Encode encodes a DataHeader. It returns the 96 bits packed, the first bit
+// in the most significant bit of byte 0. (ETSI TS 102 361-1 clause 9.2)
 func (s *DataHeader) Encode() ([12]byte, error) {
 	var data [12]byte
 	_payload := ""
@@ -390,9 +390,9 @@ func (s *DataHeader) String() string {
 	return _ret
 }
 
-// decodeConfirmedDataHeader decodes a ConfirmedDataHeader (ETSI TS 102 361-1
-// clause 9.2.1, Table 9.10). data holds the 80 bits of the PDU packed, the
-// first bit in the most significant bit of data[0].
+// decodeConfirmedDataHeader decodes a ConfirmedDataHeader. data holds the 80
+// bits of the PDU packed, the first bit in the most significant bit of
+// data[0]. (ETSI TS 102 361-1 clause 9.2.1, Table 9.10)
 func decodeConfirmedDataHeader(data [10]byte) ConfirmedDataHeader {
 	var result ConfirmedDataHeader
 	result.Group = data[0]&0x80 != 0
@@ -414,9 +414,9 @@ func decodeConfirmedDataHeader(data [10]byte) ConfirmedDataHeader {
 	return result
 }
 
-// Encode encodes a ConfirmedDataHeader (ETSI TS 102 361-1 clause 9.2.1,
-// Table 9.10). It returns the 80 bits packed, the first bit in the most
-// significant bit of byte 0.
+// Encode encodes a ConfirmedDataHeader. It returns the 80 bits packed, the
+// first bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-1 clause 9.2.1, Table 9.10)
 func (s *ConfirmedDataHeader) Encode() ([10]byte, error) {
 	var data [10]byte
 	if s.Group {
@@ -480,9 +480,9 @@ func (s *ConfirmedDataHeader) String() string {
 	return "ConfirmedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Reserved: " + text.Bool(s.Reserved) + ", PadOctetCount: " + text.Int(int64(s.PadOctetCount)) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BlocksToFollow: " + text.Int(int64(s.BlocksToFollow)) + ", ReSynchronizeFlag: " + text.Bool(s.ReSynchronizeFlag) + ", SendSequenceNumber: " + text.Int(int64(s.SendSequenceNumber)) + ", FragmentSequenceNumber: " + text.Int(int64(s.FragmentSequenceNumber)) + " }"
 }
 
-// decodeResponsePacketHeader decodes a ResponsePacketHeader (ETSI TS 102
-// 361-1 clause 9.2.4, Table 9.13). data holds the 80 bits of the PDU packed,
-// the first bit in the most significant bit of data[0].
+// decodeResponsePacketHeader decodes a ResponsePacketHeader. data holds the
+// 80 bits of the PDU packed, the first bit in the most significant bit of
+// data[0]. (ETSI TS 102 361-1 clause 9.2.4, Table 9.13)
 func decodeResponsePacketHeader(data [10]byte) ResponsePacketHeader {
 	var result ResponsePacketHeader
 	result.Reserved = data[0]&0x80 != 0
@@ -500,9 +500,9 @@ func decodeResponsePacketHeader(data [10]byte) ResponsePacketHeader {
 	return result
 }
 
-// Encode encodes a ResponsePacketHeader (ETSI TS 102 361-1 clause 9.2.4,
-// Table 9.13). It returns the 80 bits packed, the first bit in the most
-// significant bit of byte 0.
+// Encode encodes a ResponsePacketHeader. It returns the 80 bits packed, the
+// first bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-1 clause 9.2.4, Table 9.13)
 func (s *ResponsePacketHeader) Encode() ([10]byte, error) {
 	var data [10]byte
 	if s.Reserved {
@@ -566,9 +566,9 @@ func (s *ResponsePacketHeader) String() string {
 	return "ResponsePacketHeader{ Reserved: " + text.Bool(s.Reserved) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", SAP: " + text.Int(int64(s.SAP)) + ", Reserved3: " + text.Int(int64(s.Reserved3)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BlocksToFollow: " + text.Int(int64(s.BlocksToFollow)) + ", ResponseClass: " + text.Int(int64(s.ResponseClass)) + ", ResponseType: " + text.Int(int64(s.ResponseType)) + ", ResponseStatus: " + text.Int(int64(s.ResponseStatus)) + " }"
 }
 
-// decodeDefinedDataHeader decodes a DefinedDataHeader (ETSI TS 102 361-1
-// clause 9.2.12, Table 9.17C). data holds the 80 bits of the PDU packed, the
-// first bit in the most significant bit of data[0].
+// decodeDefinedDataHeader decodes a DefinedDataHeader. data holds the 80
+// bits of the PDU packed, the first bit in the most significant bit of
+// data[0]. (ETSI TS 102 361-1 clause 9.2.12, Table 9.17C)
 func decodeDefinedDataHeader(data [10]byte) DefinedDataHeader {
 	var result DefinedDataHeader
 	result.Group = data[0]&0x80 != 0
@@ -588,9 +588,9 @@ func decodeDefinedDataHeader(data [10]byte) DefinedDataHeader {
 	return result
 }
 
-// Encode encodes a DefinedDataHeader (ETSI TS 102 361-1 clause 9.2.12, Table
-// 9.17C). It returns the 80 bits packed, the first bit in the most
-// significant bit of byte 0.
+// Encode encodes a DefinedDataHeader. It returns the 80 bits packed, the
+// first bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-1 clause 9.2.12, Table 9.17C)
 func (s *DefinedDataHeader) Encode() ([10]byte, error) {
 	var data [10]byte
 	if s.Group {
@@ -644,9 +644,9 @@ func (s *DefinedDataHeader) String() string {
 	return "DefinedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", DefinedData: " + text.Int(int64(s.DefinedData)) + ", SARQ: " + text.Bool(s.SARQ) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BitPadding: " + text.Int(int64(s.BitPadding)) + " }"
 }
 
-// decodeRawDataHeader decodes a RawDataHeader (ETSI TS 102 361-1 clause
-// 9.2.11, Table 9.17B). data holds the 80 bits of the PDU packed, the first
-// bit in the most significant bit of data[0].
+// decodeRawDataHeader decodes a RawDataHeader. data holds the 80 bits of the
+// PDU packed, the first bit in the most significant bit of data[0].
+// (ETSI TS 102 361-1 clause 9.2.11, Table 9.17B)
 func decodeRawDataHeader(data [10]byte) RawDataHeader {
 	var result RawDataHeader
 	result.Group = data[0]&0x80 != 0
@@ -667,9 +667,9 @@ func decodeRawDataHeader(data [10]byte) RawDataHeader {
 	return result
 }
 
-// Encode encodes a RawDataHeader (ETSI TS 102 361-1 clause 9.2.11, Table
-// 9.17B). It returns the 80 bits packed, the first bit in the most
-// significant bit of byte 0.
+// Encode encodes a RawDataHeader. It returns the 80 bits packed, the first
+// bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-1 clause 9.2.11, Table 9.17B)
 func (s *RawDataHeader) Encode() ([10]byte, error) {
 	var data [10]byte
 	if s.Group {
@@ -727,9 +727,9 @@ func (s *RawDataHeader) String() string {
 	return "RawDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", SourcePort: " + text.Int(int64(s.SourcePort)) + ", DestinationPort: " + text.Int(int64(s.DestinationPort)) + ", SARQ: " + text.Bool(s.SARQ) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BitPadding: " + text.Int(int64(s.BitPadding)) + " }"
 }
 
-// decodeStatusPrecodedHeader decodes a StatusPrecodedHeader (ETSI TS 102
-// 361-1 clause 9.2.10, Table 9.17A). data holds the 80 bits of the PDU
-// packed, the first bit in the most significant bit of data[0].
+// decodeStatusPrecodedHeader decodes a StatusPrecodedHeader. data holds the
+// 80 bits of the PDU packed, the first bit in the most significant bit of
+// data[0]. (ETSI TS 102 361-1 clause 9.2.10, Table 9.17A)
 func decodeStatusPrecodedHeader(data [10]byte) StatusPrecodedHeader {
 	var result StatusPrecodedHeader
 	result.Group = data[0]&0x80 != 0
@@ -743,9 +743,9 @@ func decodeStatusPrecodedHeader(data [10]byte) StatusPrecodedHeader {
 	return result
 }
 
-// Encode encodes a StatusPrecodedHeader (ETSI TS 102 361-1 clause 9.2.10,
-// Table 9.17A). It returns the 80 bits packed, the first bit in the most
-// significant bit of byte 0.
+// Encode encodes a StatusPrecodedHeader. It returns the 80 bits packed, the
+// first bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-1 clause 9.2.10, Table 9.17A)
 func (s *StatusPrecodedHeader) Encode() ([10]byte, error) {
 	var data [10]byte
 	if s.Group {
@@ -799,9 +799,10 @@ func (s *StatusPrecodedHeader) String() string {
 	return "StatusPrecodedHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", SourcePort: " + text.Int(int64(s.SourcePort)) + ", DestinationPort: " + text.Int(int64(s.DestinationPort)) + ", StatusPrecoded: " + text.Int(int64(s.StatusPrecoded)) + " }"
 }
 
-// decodeUDTHeader decodes a UDTHeader (ETSI TS 102 361-1 clause 9.2.13,
-// Table 9.17D). data holds the 80 bits of the PDU packed, the first bit in
-// the most significant bit of data[0].
+// decodeUDTHeader decodes a UDTHeader. data holds the 80 bits of the PDU
+// packed, the first bit in the most significant bit of data[0].
+// (ETSI TS 102 361-1 clause 9.2.13, Table 9.17D,
+// ETSI TS 102 361-4 Tables 7.24 and 7.28)
 func decodeUDTHeader(data [10]byte) UDTHeader {
 	var result UDTHeader
 	result.Group = data[0]&0x80 != 0
@@ -821,9 +822,9 @@ func decodeUDTHeader(data [10]byte) UDTHeader {
 	return result
 }
 
-// Encode encodes a UDTHeader (ETSI TS 102 361-1 clause 9.2.13, Table 9.17D).
-// It returns the 80 bits packed, the first bit in the most significant bit
-// of byte 0.
+// Encode encodes a UDTHeader. It returns the 80 bits packed, the first bit
+// in the most significant bit of byte 0. (ETSI TS 102 361-1 clause 9.2.13,
+// Table 9.17D, ETSI TS 102 361-4 Tables 7.24 and 7.28)
 func (s *UDTHeader) Encode() ([10]byte, error) {
 	var data [10]byte
 	if s.Group {
@@ -891,9 +892,9 @@ func (s *UDTHeader) String() string {
 	return "UDTHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Emergency: " + text.Bool(s.Emergency) + ", OptionFlag: " + text.Bool(s.OptionFlag) + ", SAP: " + text.Int(int64(s.SAP)) + ", UDTFormat: " + text.Int(int64(s.UDTFormat)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", PadNibble: " + text.Int(int64(s.PadNibble)) + ", Reserved: " + text.Bool(s.Reserved) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", SupplementaryFlag: " + text.Bool(s.SupplementaryFlag) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + " }"
 }
 
-// decodeProprietaryHeader decodes a ProprietaryHeader (ETSI TS 102 361-1
-// clause 9.2.9, Table 9.17). data holds the 80 bits of the PDU packed, the
-// first bit in the most significant bit of data[0].
+// decodeProprietaryHeader decodes a ProprietaryHeader. data holds the 80
+// bits of the PDU packed, the first bit in the most significant bit of
+// data[0]. (ETSI TS 102 361-1 clause 9.2.9, Table 9.17)
 func decodeProprietaryHeader(data [10]byte) ProprietaryHeader {
 	var result ProprietaryHeader
 	result.SAP = enums.ServiceAccessPointID(uint64(data[0]) >> 4)
@@ -902,9 +903,9 @@ func decodeProprietaryHeader(data [10]byte) ProprietaryHeader {
 	return result
 }
 
-// Encode encodes a ProprietaryHeader (ETSI TS 102 361-1 clause 9.2.9, Table
-// 9.17). It returns the 80 bits packed, the first bit in the most
-// significant bit of byte 0.
+// Encode encodes a ProprietaryHeader. It returns the 80 bits packed, the
+// first bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-1 clause 9.2.9, Table 9.17)
 func (s *ProprietaryHeader) Encode() ([10]byte, error) {
 	var data [10]byte
 	if uint64(s.SAP)>>4 != 0 {

@@ -222,14 +222,27 @@ func errorsNew(text string) Code {
 }
 
 // docObject returns the object of a generated doc sentence: the struct name
-// with its article, the citation in parentheses and a final period.
+// with its article and a final period.
 func docObject(pdu parse.PDUStruct) string {
-	s := article(pdu.Name) + " " + pdu.Name
-	if pdu.SpecRef != "" {
-		s += " (" + pdu.SpecRef + ")"
-	}
-	return s + "."
+	return article(pdu.Name) + " " + pdu.Name + "."
 }
+
+// docCite returns the citation that ends a generated doc comment, with a
+// leading space, or "" when the struct has none. Its spaces other than those
+// after a comma are glue, so that comment does not break a reference.
+func docCite(pdu parse.PDUStruct) string {
+	if pdu.SpecRef == "" {
+		return ""
+	}
+	parts := strings.Split(pdu.SpecRef, ", ")
+	for i, p := range parts {
+		parts[i] = strings.ReplaceAll(p, " ", glue)
+	}
+	return " (" + strings.Join(parts, ", ") + ")"
+}
+
+// glue joins two words that comment keeps on one line.
+const glue = "\x1f"
 
 // article returns "an" when name is read with a leading vowel sound, else
 // "a". An acronym such as MBC or FLC is read by its letter names.
@@ -307,12 +320,13 @@ func encodeDoc(n int) string {
 	return s
 }
 
-// comment adds text to f as comment lines of at most 77 columns.
+// comment adds text to f as comment lines of at most 77 columns. It does
+// not break a line at glue.
 func comment(f *File, text string) {
 	line := ""
 	for _, w := range strings.Fields(text) {
 		if line != "" && len(line)+1+len(w) > 74 {
-			f.Comment(line)
+			f.Comment(strings.ReplaceAll(line, glue, " "))
 			line = ""
 		}
 		if line != "" {
@@ -321,7 +335,7 @@ func comment(f *File, text string) {
 		line += w
 	}
 	if line != "" {
-		f.Comment(line)
+		f.Comment(strings.ReplaceAll(line, glue, " "))
 	}
 }
 
@@ -339,13 +353,13 @@ func emitDecodeBytes(f *File, pdu parse.PDUStruct, into bool, codec *FECCodecInf
 		f.Comment("The payload stays valid until the next decode into p. dst and p must")
 		f.Comment("not be nil.")
 	case into:
-		comment(f, name+" decodes "+docObject(pdu)+" "+decodeDoc(inputSize)+" It decodes into dst and points the dispatch field of dst into p.")
+		comment(f, name+" decodes "+docObject(pdu)+" "+decodeDoc(inputSize)+" It decodes into dst and points the dispatch field of dst into p."+docCite(pdu))
 	default:
 		text := name + " decodes " + docObject(pdu) + " " + decodeDoc(inputSize)
 		if len(dispatchPayloads(pdu)) > 0 {
 			text += " It allocates the payload struct that the dispatch field points to; " + name + "Into does not."
 		}
-		comment(f, text)
+		comment(f, text+docCite(pdu))
 	}
 
 	var params []Code
@@ -618,8 +632,8 @@ func emitCRCCheck(g *Group, pdu parse.PDUStruct, inputSize int) error {
 }
 
 // emitFECMask XORs the FEC parity bytes of buf with the mask selected by the
-// dmr:fec_mask field of src (ETSI TS 102 361-1 clause B.3.12, Table B.21). If
-// noMask is not nil, it is emitted for a field value with no mask.
+// dmr:fec_mask field of src. If noMask is not nil, it is emitted for a field
+// value with no mask. (ETSI TS 102 361-1 clause B.3.12, Table B.21)
 func emitFECMask(g *Group, pdu parse.PDUStruct, codec *FECCodecInfo, src *Statement, buf string, noMask Code) error {
 	if pdu.FECMask == nil {
 		return nil
@@ -1215,7 +1229,7 @@ func emitEncode(f *File, pdu parse.PDUStruct, ev *errVars) error {
 	}
 	enc := encoder{pdu: pdu, bytes: packedSize(outputSize), errs: ev}
 
-	comment(f, "Encode encodes "+docObject(pdu)+" "+encodeDoc(outputSize))
+	comment(f, "Encode encodes "+docObject(pdu)+" "+encodeDoc(outputSize)+docCite(pdu))
 	var genErr error
 	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id(encodeFnName).Params().Params(
 		Index(Lit(enc.bytes)).Byte(),

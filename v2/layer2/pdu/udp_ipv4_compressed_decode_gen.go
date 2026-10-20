@@ -10,9 +10,9 @@ import (
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
-// DecodeUDPIPv4CompressedHeader decodes a UDPIPv4CompressedHeader (ETSI TS
-// 102 361-3 clause 7.2.3, Table 7.14). data holds the 72 bits of the PDU
-// packed, the first bit in the most significant bit of data[0].
+// DecodeUDPIPv4CompressedHeader decodes a UDPIPv4CompressedHeader. data
+// holds the 72 bits of the PDU packed, the first bit in the most significant
+// bit of data[0]. (ETSI TS 102 361-3 clause 7.2.3, Table 7.14)
 func DecodeUDPIPv4CompressedHeader(data [9]byte) UDPIPv4CompressedHeader {
 	var result UDPIPv4CompressedHeader
 	result.IPv4Identification = uint16(uint64(data[0])<<8 | uint64(data[1]))
@@ -30,9 +30,9 @@ func DecodeUDPIPv4CompressedHeader(data [9]byte) UDPIPv4CompressedHeader {
 	return result
 }
 
-// Encode encodes a UDPIPv4CompressedHeader (ETSI TS 102 361-3 clause 7.2.3,
-// Table 7.14). It returns the 72 bits packed, the first bit in the most
-// significant bit of byte 0.
+// Encode encodes a UDPIPv4CompressedHeader. It returns the 72 bits packed,
+// the first bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-3 clause 7.2.3, Table 7.14)
 func (s *UDPIPv4CompressedHeader) Encode() ([9]byte, error) {
 	var data [9]byte
 	_valIPv4Identification := uint64(s.IPv4Identification)

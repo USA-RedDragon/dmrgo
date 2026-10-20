@@ -452,8 +452,10 @@ type EmbeddedSignalling struct {
 		t.Errorf("header is not a Go generated-code line:\n%s", out)
 	}
 	assertContains(t, out,
-		"// DecodeUDTHeader decodes a UDTHeader (ETSI TS 102 361-1 Table 9.17D).",
-		"// Encode encodes an EmbeddedSignalling (ETSI TS 102 361-1 clause 9.1.2).",
+		"// DecodeUDTHeader decodes a UDTHeader. data holds",
+		"// (ETSI TS 102 361-1 Table 9.17D)\nfunc DecodeUDTHeader(",
+		"// Encode encodes an EmbeddedSignalling. It returns",
+		"// (ETSI TS 102 361-1 clause 9.1.2)\nfunc (s *EmbeddedSignalling) Encode(",
 		"// ETSI TS 102 361-1 clause 9.1.2\n",
 	)
 }

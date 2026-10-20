@@ -7,10 +7,10 @@ import (
 	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 )
 
-// CRCMask returns the Data Type CRC Mask for dt and its width in bits: 24
-// for an RS(12,9) parity, 16 for a CRC-CCITT and 9 for a CRC-9 (ETSI TS 102
-// 361-1 clause B.3.12, Table B.21). ok is false for MBC Continuation, Idle
-// and reserved data types, which have no mask.
+// CRCMask returns the Data Type CRC Mask for dt and its width in bits: 24 for
+// an RS(12,9) parity, 16 for a CRC-CCITT and 9 for a CRC-9. ok is false for
+// MBC Continuation, Idle and reserved data types, which have no mask.
+// (ETSI TS 102 361-1 clause B.3.12, Table B.21)
 func CRCMask(dt enums.DataType) (mask uint32, width int, ok bool) {
 	switch dt {
 	case enums.DataTypeVoiceLCHeader:
@@ -41,9 +41,9 @@ func CRCMask(dt enums.DataType) (mask uint32, width int, ok bool) {
 }
 
 // Codeword returns the 12-octet on-air codeword of l in a burst of dt: l
-// followed by its RS(12,9) parity XORed with the mask of dt (ETSI TS 102
-// 361-1 clause 9.1.6, clause B.3.6). It returns an error unless
-// dt.CarriesFullLC reports true.
+// followed by its RS(12,9) parity XORed with the mask of dt. It returns an
+// error unless dt.CarriesFullLC reports true.
+// (ETSI TS 102 361-1 clause 9.1.6, clause B.3.6)
 func (l LCBytes) Codeword(dt enums.DataType) ([12]byte, error) {
 	mask, err := fullLCMask(dt)
 	if err != nil {

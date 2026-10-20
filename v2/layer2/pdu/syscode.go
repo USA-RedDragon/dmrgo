@@ -34,9 +34,9 @@ func (m NetworkModel) SiteBits() (int, error) {
 }
 
 // SysCode is the 16-bit C_SYScode: MODEL (2 bits), NET and SITE (12 bits
-// split by MODEL), then PAR (2 bits) (ETSI TS 102 361-4 clause 6.3.2.2.1.1,
-// Figure 6.15). C_SYS_Parms and P_SYS_Parms in the CACH carry only the 14
-// most significant bits, without PAR (ETSI TS 102 361-4 clause 5.1.1).
+// split by MODEL), then PAR (2 bits). C_SYS_Parms and P_SYS_Parms in the CACH
+// carry only the 14 most significant bits, without PAR.
+// (ETSI TS 102 361-4 clause 6.3.2.2.1.1, Figure 6.15, clause 5.1.1)
 type SysCode struct {
 	Model NetworkModel // network model
 	Net   uint16       // NET, NetBits wide

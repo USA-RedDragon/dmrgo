@@ -7,10 +7,10 @@ import (
 )
 
 // LCBytes is the 72 LC bits of a Full LC without RS(12,9) parity, as
-// FullLinkControl.Bytes returns them (ETSI TS 102 361-1 clause 9.1.6). Its
-// methods read or write one field in place and leave every other bit as it
-// is. After an edit, Codeword gives the new codeword and
-// layer2.EncodeEmbeddedLC the new embedded LC.
+// FullLinkControl.Bytes returns them. Its methods read or write one field in
+// place and leave every other bit as it is. After an edit, Codeword gives the
+// new codeword and layer2.EncodeEmbeddedLC the new embedded LC.
+// (ETSI TS 102 361-1 clause 9.1.6)
 type LCBytes [9]byte
 
 // NewVoiceLCBytes returns the LC octets of the voice call LC that NewVoiceLC

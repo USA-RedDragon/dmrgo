@@ -11,9 +11,9 @@ import (
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
-// DecodeSlotType decodes a SlotType (ETSI TS 102 361-1 clause 9.1.3). data
-// holds the 20 bits of the PDU packed, the first bit in the most significant
-// bit of data[0]. The low 4 bits of data[2] are ignored.
+// DecodeSlotType decodes a SlotType. data holds the 20 bits of the PDU
+// packed, the first bit in the most significant bit of data[0]. The low 4
+// bits of data[2] are ignored. (ETSI TS 102 361-1 clause 9.1.3)
 func DecodeSlotType(data [3]byte) SlotType {
 	var result SlotType
 	var _cw uint32
@@ -29,9 +29,9 @@ func DecodeSlotType(data [3]byte) SlotType {
 	return result
 }
 
-// Encode encodes a SlotType (ETSI TS 102 361-1 clause 9.1.3). It returns the
-// 20 bits packed, the first bit in the most significant bit of byte 0. The
-// low 4 bits of byte 2 are 0.
+// Encode encodes a SlotType. It returns the 20 bits packed, the first bit in
+// the most significant bit of byte 0. The low 4 bits of byte 2 are 0.
+// (ETSI TS 102 361-1 clause 9.1.3)
 func (s *SlotType) Encode() ([3]byte, error) {
 	var data [3]byte
 	if uint64(s.ColorCode)>>4 != 0 {

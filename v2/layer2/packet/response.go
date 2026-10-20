@@ -85,10 +85,10 @@ func (r Response) String() string {
 	return fmt.Sprintf("Unknown Response (class %d, type %d)", r.Class(), r.Type())
 }
 
-// ResponseData is the selective retry bitmap of the C_RDATA PDU (ETSI TS
-// 102 361-1 clause 8.2.2.3, Table 9.14). The zero value retries nothing. On
-// air flag i is bit i%8 of octet i/8, where bit 0 is the least significant,
-// and is 1 for a received block (ETSI TS 102 361-1 Figure 8.17).
+// ResponseData is the selective retry bitmap of the C_RDATA PDU. The zero
+// value retries nothing. On air flag i is bit i%8 of octet i/8, where bit 0
+// is the least significant, and is 1 for a received block.
+// (ETSI TS 102 361-1 clause 8.2.2.3, Table 9.14, Figure 8.17)
 type ResponseData struct {
 	Retry [127]bool // Retry[i] is set to ask for the block with DBSN i again
 }

@@ -43,11 +43,11 @@ func (s SyncSource) SyncPatterns() (voice, data enums.SyncPattern, ok bool) {
 	return 0, 0, false
 }
 
-// SyncSourceOf returns the source and the burst kind of the SYNC pattern p
-// (ETSI TS 102 361-1 Table 9.2): KindVoice or KindData for the voice and
-// data patterns, and SyncSourceMS with KindReverseChannel for the
-// MS-sourced RC pattern. It is the inverse of SyncSource.SyncPatterns. ok
-// is false for enums.SyncNone, the reserved pattern and any other value.
+// SyncSourceOf returns the source and the burst kind of the SYNC pattern p:
+// KindVoice or KindData for the voice and data patterns, and SyncSourceMS
+// with KindReverseChannel for the MS-sourced RC pattern. It is the inverse of
+// SyncSource.SyncPatterns. ok is false for enums.SyncNone, the reserved
+// pattern and any other value. (ETSI TS 102 361-1 Table 9.2)
 func SyncSourceOf(p enums.SyncPattern) (src SyncSource, k Kind, ok bool) {
 	switch p {
 	case enums.SyncBSSourcedVoice:

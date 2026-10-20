@@ -9,9 +9,9 @@ import (
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
-// DecodeServiceOptions decodes a ServiceOptions (ETSI TS 102 361-2 clause
-// 7.2.1). data holds the 8 bits of the PDU packed, the first bit in the most
-// significant bit of data[0].
+// DecodeServiceOptions decodes a ServiceOptions. data holds the 8 bits of
+// the PDU packed, the first bit in the most significant bit of data[0].
+// (ETSI TS 102 361-2 clause 7.2.1)
 func DecodeServiceOptions(data [1]byte) ServiceOptions {
 	var result ServiceOptions
 	result.IsEmergency = data[0]&0x80 != 0
@@ -23,9 +23,9 @@ func DecodeServiceOptions(data [1]byte) ServiceOptions {
 	return result
 }
 
-// Encode encodes a ServiceOptions (ETSI TS 102 361-2 clause 7.2.1). It
-// returns the 8 bits packed, the first bit in the most significant bit of
-// byte 0.
+// Encode encodes a ServiceOptions. It returns the 8 bits packed, the first
+// bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-2 clause 7.2.1)
 func (s *ServiceOptions) Encode() ([1]byte, error) {
 	var data [1]byte
 	if s.IsEmergency {

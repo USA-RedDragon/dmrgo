@@ -1,6 +1,6 @@
 // Package dmrgo decodes and encodes DMR (Digital Mobile Radio) bursts and
-// PDUs (ETSI TS 102 361 parts 1 to 4). This package holds only the module
-// overview. The code is in the packages listed below.
+// PDUs. This package holds only the module overview. The code is in the
+// packages listed below. (ETSI TS 102 361 parts 1 to 4)
 //
 // # Getting started
 //

@@ -7,9 +7,9 @@ import (
 
 // CSBKBytes is the 12-octet BPTC(196,96) payload of a CSBK burst, as
 // layer2.RawBurst.BPTCPayload returns it: 80 CSBK bits and the CRC-CCITT
-// XORed with the CSBK mask 0xA5A5 (ETSI TS 102 361-1 clause 9.1.8). Its
-// methods read or write one field in place. The setters do not update the
-// CRC: call Reseal after the last edit.
+// XORed with the CSBK mask 0xA5A5. Its methods read or write one field in
+// place. The setters do not update the CRC: call Reseal after the last edit.
+// (ETSI TS 102 361-1 clause 9.1.8)
 type CSBKBytes [12]byte
 
 // Opcode returns the 6-bit CSBKO, the low 6 bits of octet 0.
@@ -99,10 +99,10 @@ func (c CSBKBytes) groupBit() (octet int, mask byte, ok bool) {
 	}
 }
 
-// Group reports whether the target address is a talkgroup, from the Group
-// bit of Pre_CSBK or the G/I bit of P_CLEAR, P_PROTECT, C_AHOY and P_AHOY
-// (ETSI TS 102 361-2 Table 7.7 and ETSI TS 102 361-4 clause 7.1.1). ok is
+// Group reports whether the target address is a talkgroup, from the Group bit
+// of Pre_CSBK or the G/I bit of P_CLEAR, P_PROTECT, C_AHOY and P_AHOY. ok is
 // false for every other CSBK and for any FID other than the standard FID.
+// (ETSI TS 102 361-2 Table 7.7, ETSI TS 102 361-4 clause 7.1.1)
 func (c CSBKBytes) Group() (group, ok bool) {
 	o, m, ok := c.groupBit()
 	if !ok {

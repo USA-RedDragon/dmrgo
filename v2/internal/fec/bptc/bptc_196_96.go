@@ -1,8 +1,9 @@
 // Package bptc encodes and decodes the block product turbo codes of DMR:
 // BPTC(196,96) for full bursts, the BPTC(128,77) of the embedded signalling,
-// the CACH Short LC BPTC and the single burst BPTC (ETSI TS 102 361-1 clauses
-// B.1 and B.2). The codecs take and return packed bits: a bit vector in bytes
-// or a k-bit value in an unsigned integer, the first bit most significant.
+// the CACH Short LC BPTC and the single burst BPTC. The codecs take and
+// return packed bits: a bit vector in bytes or a k-bit value in an unsigned
+// integer, the first bit most significant.
+// (ETSI TS 102 361-1 clauses B.1 and B.2)
 package bptc
 
 import (
@@ -52,8 +53,8 @@ func columnSyndromes(rows *[13]uint16) [4]uint16 {
 // Decode196 deinterleaves a BPTC(196,96) block of 196 packed information
 // bits, corrects it with the row and column Hamming codes and returns the 96
 // data bits packed, the corrected reserved bits R(0) to R(2), R(i) in bit i,
-// and a fec.Result (ETSI TS 102 361-1 clause B.1.1). R(3) has no FEC and is
-// not returned. Bits 196 to 199 of info are ignored.
+// and a fec.Result. R(3) has no FEC and is not returned. Bits 196 to 199 of
+// info are ignored. (ETSI TS 102 361-1 clause B.1.1)
 func Decode196(info [25]byte) ([12]byte, uint8, fec.Result) {
 	rows := Rows(info)
 	return DecodeRows(&rows)

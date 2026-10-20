@@ -1,7 +1,7 @@
-// Package trellis encodes and decodes the rate 3/4 trellis code that
-// protects rate 3/4 data blocks (ETSI TS 102 361-1 clause B.2.4). A block is
-// 196 information bits packed most significant bit first in 25 bytes, and
-// carries 144 data bits packed in 18 bytes.
+// Package trellis encodes and decodes the rate 3/4 trellis code that protects
+// rate 3/4 data blocks. A block is 196 information bits packed most
+// significant bit first in 25 bytes, and carries 144 data bits packed in 18
+// bytes. (ETSI TS 102 361-1 clause B.2.4)
 package trellis
 
 import (

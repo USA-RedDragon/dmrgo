@@ -18,10 +18,10 @@ import (
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// DecodeMBCHeader decodes an MBCHeader (ETSI TS 102 361-1 clause 7.4.1).
-// data holds the 96 bits of the PDU packed, the first bit in the most
-// significant bit of data[0]. It allocates the payload struct that the
-// dispatch field points to; DecodeMBCHeaderInto does not.
+// DecodeMBCHeader decodes an MBCHeader. data holds the 96 bits of the PDU
+// packed, the first bit in the most significant bit of data[0]. It allocates
+// the payload struct that the dispatch field points to; DecodeMBCHeaderInto
+// does not. (ETSI TS 102 361-1 clause 7.4.1)
 func DecodeMBCHeader(data [12]byte) MBCHeader {
 	var result MBCHeader
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xAAAA)
@@ -142,8 +142,8 @@ func DecodeMBCHeaderInto(dst *MBCHeader, p *MBCHeaderPayloads, data [12]byte) {
 	}
 }
 
-// Encode encodes an MBCHeader (ETSI TS 102 361-1 clause 7.4.1). It returns
-// the 96 bits packed, the first bit in the most significant bit of byte 0.
+// Encode encodes an MBCHeader. It returns the 96 bits packed, the first bit
+// in the most significant bit of byte 0. (ETSI TS 102 361-1 clause 7.4.1)
 func (s *MBCHeader) Encode() ([12]byte, error) {
 	var data [12]byte
 	_payload := ""
@@ -354,9 +354,9 @@ func (s *MBCHeader) String() string {
 	return _ret
 }
 
-// DecodeMBCContinuation decodes an MBCContinuation (ETSI TS 102 361-1 clause
-// 7.4.1). data holds the 96 bits of the PDU packed, the first bit in the
-// most significant bit of data[0].
+// DecodeMBCContinuation decodes an MBCContinuation. data holds the 96 bits
+// of the PDU packed, the first bit in the most significant bit of data[0].
+// (ETSI TS 102 361-1 clause 7.4.1)
 func DecodeMBCContinuation(data [12]byte) MBCContinuation {
 	var result MBCContinuation
 	result.LastBlock = data[0]&0x80 != 0
@@ -364,9 +364,9 @@ func DecodeMBCContinuation(data [12]byte) MBCContinuation {
 	return result
 }
 
-// Encode encodes an MBCContinuation (ETSI TS 102 361-1 clause 7.4.1). It
-// returns the 96 bits packed, the first bit in the most significant bit of
-// byte 0.
+// Encode encodes an MBCContinuation. It returns the 96 bits packed, the
+// first bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-1 clause 7.4.1)
 func (s *MBCContinuation) Encode() ([12]byte, error) {
 	var data [12]byte
 	if s.LastBlock {
@@ -385,9 +385,9 @@ func (s *MBCContinuation) String() string {
 	return "MBCContinuation{ LastBlock: " + text.Bool(s.LastBlock) + ", Data: " + text.Hex(s.Data[:]) + " }"
 }
 
-// decodeCGAPContinuation decodes a CGAPContinuation (ETSI TS 102 361-4
-// clause 7.1.1.1.2, Table 7.16). data holds the 96 bits of the PDU packed,
-// the first bit in the most significant bit of data[0].
+// decodeCGAPContinuation decodes a CGAPContinuation. data holds the 96 bits
+// of the PDU packed, the first bit in the most significant bit of data[0].
+// (ETSI TS 102 361-4 clause 7.1.1.1.2, Table 7.16)
 func decodeCGAPContinuation(data [12]byte) CGAPContinuation {
 	var result CGAPContinuation
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], uint16(data[10])<<8|uint16(data[11]))
@@ -404,9 +404,9 @@ func decodeCGAPContinuation(data [12]byte) CGAPContinuation {
 	return result
 }
 
-// Encode encodes a CGAPContinuation (ETSI TS 102 361-4 clause 7.1.1.1.2,
-// Table 7.16). It returns the 96 bits packed, the first bit in the most
-// significant bit of byte 0.
+// Encode encodes a CGAPContinuation. It returns the 96 bits packed, the
+// first bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-4 clause 7.1.1.1.2, Table 7.16)
 func (s *CGAPContinuation) Encode() ([12]byte, error) {
 	var data [12]byte
 	if s.LastBlock {
@@ -452,9 +452,9 @@ func (s *CGAPContinuation) String() string {
 	return "CGAPContinuation{ FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + ", Reserved1: " + text.Int(int64(s.Reserved1)) + ", ColorCode: " + text.Int(int64(s.ColorCode)) + ", Cdeftype: " + text.Int(int64(s.Cdeftype)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", CdefParms: " + s.CdefParms.String() + " }"
 }
 
-// decodeMVAPContinuation decodes an MVAPContinuation (ETSI TS 102 361-4
-// clause 7.1.1.1.3.1, Table 7.18). data holds the 96 bits of the PDU packed,
-// the first bit in the most significant bit of data[0].
+// decodeMVAPContinuation decodes an MVAPContinuation. data holds the 96 bits
+// of the PDU packed, the first bit in the most significant bit of data[0].
+// (ETSI TS 102 361-4 clause 7.1.1.1.3.1, Table 7.18)
 func decodeMVAPContinuation(data [12]byte) MVAPContinuation {
 	var result MVAPContinuation
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], uint16(data[10])<<8|uint16(data[11]))
@@ -471,9 +471,9 @@ func decodeMVAPContinuation(data [12]byte) MVAPContinuation {
 	return result
 }
 
-// Encode encodes an MVAPContinuation (ETSI TS 102 361-4 clause 7.1.1.1.3.1,
-// Table 7.18). It returns the 96 bits packed, the first bit in the most
-// significant bit of byte 0.
+// Encode encodes an MVAPContinuation. It returns the 96 bits packed, the
+// first bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-4 clause 7.1.1.1.3.1, Table 7.18)
 func (s *MVAPContinuation) Encode() ([12]byte, error) {
 	var data [12]byte
 	if s.LastBlock {
@@ -519,9 +519,9 @@ func (s *MVAPContinuation) String() string {
 	return "MVAPContinuation{ FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + ", Reserved1: " + text.Int(int64(s.Reserved1)) + ", ColorCode: " + text.Int(int64(s.ColorCode)) + ", Cdeftype: " + text.Int(int64(s.Cdeftype)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", CdefParms: " + s.CdefParms.String() + " }"
 }
 
-// decodeBCAPContinuation decodes a BCAPContinuation (ETSI TS 102 361-4
-// clause 7.1.1.1.5.1, Table 7.21). data holds the 96 bits of the PDU packed,
-// the first bit in the most significant bit of data[0].
+// decodeBCAPContinuation decodes a BCAPContinuation. data holds the 96 bits
+// of the PDU packed, the first bit in the most significant bit of data[0].
+// (ETSI TS 102 361-4 clause 7.1.1.1.5.1, Table 7.21)
 func decodeBCAPContinuation(data [12]byte) BCAPContinuation {
 	var result BCAPContinuation
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], uint16(data[10])<<8|uint16(data[11]))
@@ -537,9 +537,9 @@ func decodeBCAPContinuation(data [12]byte) BCAPContinuation {
 	return result
 }
 
-// Encode encodes a BCAPContinuation (ETSI TS 102 361-4 clause 7.1.1.1.5.1,
-// Table 7.21). It returns the 96 bits packed, the first bit in the most
-// significant bit of byte 0.
+// Encode encodes a BCAPContinuation. It returns the 96 bits packed, the
+// first bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-4 clause 7.1.1.1.5.1, Table 7.21)
 func (s *BCAPContinuation) Encode() ([12]byte, error) {
 	var data [12]byte
 	if s.LastBlock {
@@ -578,9 +578,9 @@ func (s *BCAPContinuation) String() string {
 	return "BCAPContinuation{ FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + ", Reserved1: " + text.Int(int64(s.Reserved1)) + ", Cdeftype: " + text.Int(int64(s.Cdeftype)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", CdefParms: " + s.CdefParms.String() + " }"
 }
 
-// decodeVNAPContinuation decodes a VNAPContinuation (ETSI TS 102 361-4
-// clause 7.2.19.3.1, Table 7.72). data holds the 96 bits of the PDU packed,
-// the first bit in the most significant bit of data[0].
+// decodeVNAPContinuation decodes a VNAPContinuation. data holds the 96 bits
+// of the PDU packed, the first bit in the most significant bit of data[0].
+// (ETSI TS 102 361-4 clause 7.2.19.3.1, Table 7.72)
 func decodeVNAPContinuation(data [12]byte) VNAPContinuation {
 	var result VNAPContinuation
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], uint16(data[10])<<8|uint16(data[11]))
@@ -597,9 +597,9 @@ func decodeVNAPContinuation(data [12]byte) VNAPContinuation {
 	return result
 }
 
-// Encode encodes a VNAPContinuation (ETSI TS 102 361-4 clause 7.2.19.3.1,
-// Table 7.72). It returns the 96 bits packed, the first bit in the most
-// significant bit of byte 0.
+// Encode encodes a VNAPContinuation. It returns the 96 bits packed, the
+// first bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-4 clause 7.2.19.3.1, Table 7.72)
 func (s *VNAPContinuation) Encode() ([12]byte, error) {
 	var data [12]byte
 	if s.LastBlock {
