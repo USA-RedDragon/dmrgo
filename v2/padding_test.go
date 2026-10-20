@@ -10,18 +10,12 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// paddingCase is a field of bits that is not a whole number of bytes: run
-// decodes the random input p, whose padding bits are 0, and padded, the same
-// bits with padding bits set, and returns both results and the bytes that
-// an encode of the first writes.
 type paddingCase struct {
 	name string
 	bits int
 	run  func(p, padded []byte) (plain, set any, enc []byte)
 }
 
-// TestPaddingBits checks the padding rule of the packed API: a decode
-// ignores the low bits of the last byte, and an encode writes them as 0.
 func TestPaddingBits(t *testing.T) {
 	t.Parallel()
 

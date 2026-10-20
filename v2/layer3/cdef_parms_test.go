@@ -44,7 +44,7 @@ func TestCdefParms_FrequencyCalculation(t *testing.T) {
 	parms := &layer3.CdefParms{
 		Channel: 1,
 		TXMHz:   440,
-		TXKHz:   4000, // 4000 steps of 125 Hz is 0.5 MHz
+		TXKHz:   4000,
 		RXMHz:   445,
 		RXKHz:   4000,
 	}

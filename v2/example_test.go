@@ -10,8 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// Example decodes a captured Voice LC Header burst, reads the call addresses
-// from its Full LC, and encodes the burst back to the same 33 bytes.
 func Example() {
 	raw := [33]byte{
 		68, 75, 3, 135, 36, 66, 12, 240, 21, 240,
@@ -37,7 +35,6 @@ func Example() {
 	// true <nil>
 }
 
-// ExampleFieldRangeError finds the field that an Encode method rejected.
 func ExampleFieldRangeError() {
 	lc := pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,

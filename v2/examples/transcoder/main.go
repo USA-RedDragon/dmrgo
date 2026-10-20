@@ -54,8 +54,6 @@ func syncSource(p enums.SyncPattern) (layer2.SyncSource, bool) {
 	return 0, false
 }
 
-// receive decodes one voice transmission: the Full LC of the Voice LC Header,
-// the voice slots, their AMBE+2 frames and the number of embedded LCs.
 func receive(bursts []layer2.RawBurst) (call, error) {
 	var c call
 	var rx layer2.VoiceReceiver

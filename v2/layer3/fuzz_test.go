@@ -6,26 +6,19 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// cdefMask is the 58 bits of a CdefParms in its 8 octets.
 var cdefMask = [8]byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xC0}
 
-// FuzzLayer3 checks the layer 3 decoders on any octets: Service Options and
-// CdefParms keep every bit through Decode and Encode, Byte matches Encode,
-// the frequency helpers agree, and String does not panic for any value of
-// the layer 3 enums.
 func FuzzLayer3(f *testing.F) {
 	layer3Seeds(func(data []byte) { f.Add(data) })
 	f.Fuzz(fuzzLayer3)
 }
 
-// layer3Seeds calls add with each seed of FuzzLayer3.
 func layer3Seeds(add func(data []byte)) {
 	add([]byte{0x20, 0x01, 0x6D, 0x80, 0x00, 0x5B, 0x60, 0x00, 0x00})
 	add([]byte{0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF})
 	add([]byte{0xC3, 0x00, 0x1A, 0x2B, 0x3C, 0x4D, 0x5E, 0x6F, 0x80})
 }
 
-// fuzzLayer3 is the body of FuzzLayer3.
 func fuzzLayer3(t *testing.T, data []byte) {
 	var in [9]byte
 	copy(in[:], data)

@@ -53,8 +53,6 @@ func run(w io.Writer, dataDir string) error {
 	return nil
 }
 
-// capture feeds every burst of a capture to an Assembler and prints each
-// reassembled message.
 func capture(w io.Writer, path string) error {
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -88,8 +86,6 @@ func capture(w io.Writer, path string) error {
 	return nil
 }
 
-// utf16Text returns the longest run of UTF-16LE printable ASCII in p. The SMS
-// text follows vendor headers that differ between the captures.
 func utf16Text(p []byte) string {
 	var best, cur []byte
 	for i := 0; i+1 < len(p); i += 2 {
@@ -108,8 +104,6 @@ func utf16Text(p []byte) string {
 	return string(best)
 }
 
-// unconfirmed sends a text message behind a UDP/IPv4 compressed header as an
-// unconfirmed rate 1/2 packet and reassembles it from the coded bursts.
 func unconfirmed(w io.Writer) error {
 	udp := pdu.UDPIPv4CompressedHeader{IPv4Identification: 0x1234, SPID: enums.SPIDTextMessage, DPID: enums.DPIDTextMessage}
 	udpHeader, err := udp.Encode()
@@ -144,9 +138,6 @@ func unconfirmed(w io.Writer) error {
 	return nil
 }
 
-// confirmed sends a confirmed rate 3/4 packet with one block that passes the
-// trellis decoder but fails its CRC-9. The receiver asks for it again with a
-// SACK, the sender retries it, and the receiver acknowledges the packet.
 func confirmed(w io.Writer) error {
 	lip := []byte("LIP: 41.878,-87.629,hdg=90,v=12")
 	h := pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
@@ -231,8 +222,6 @@ func confirmed(w io.Writer) error {
 	return nil
 }
 
-// receive decodes bursts and adds them to a until it returns a message or an
-// error.
 func receive(a *packet.Assembler, bursts []layer2.RawBurst) (packet.Message, error) {
 	for i, raw := range bursts {
 		var b layer2.Burst

@@ -25,7 +25,6 @@ type summary struct {
 	err                 error
 }
 
-// follower runs the bursts through a voice.Receiver, 60 ms apart.
 type follower struct {
 	rx     *voice.Receiver
 	tx     *voice.Transmitter
@@ -59,7 +58,6 @@ func (f *follower) count(s *summary) {
 	}
 }
 
-// relay counts the bursts that the Transmitter relays at f.now.
 func (f *follower) relay(s *summary) {
 	f.outs = f.tx.Tick(f.now, f.outs[:0])
 	for i := range f.outs {

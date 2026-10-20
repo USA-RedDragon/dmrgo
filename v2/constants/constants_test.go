@@ -202,8 +202,7 @@ func TestTrunkingGatewayAddresses_AnnexA8(t *testing.T) {
 	}
 }
 
-// TestTrunkingIdentifiers_AnnexA8 checks every DMR ID and value of ETSI TS
-// 102 361-4 Table A.8.
+// ETSI TS 102 361-4 Table A.8
 func TestTrunkingIdentifiers_AnnexA8(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -248,9 +247,7 @@ func TestTrunkingIdentifiers_AnnexA8(t *testing.T) {
 	}
 }
 
-// TestCallTimerTokens_AnnexA2toA5 checks the call timers against the tokens
-// of ETSI TS 102 361-4 Tables A.2 to A.5: token 510 is 2315 min, token 30 is
-// 35 min, token 4094 is 3976 min, token 24 is 120 s and token 6 is 10 s.
+// ETSI TS 102 361-4 Tables A.2 to A.5
 func TestCallTimerTokens_AnnexA2toA5(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

@@ -56,7 +56,6 @@ func loadBursts(path string) ([]layer2.RawBurst, error) {
 	return out, nil
 }
 
-// inbound is what the bridge keeps of a received call.
 type inbound struct {
 	lc        pdu.FullLinkControl
 	colorCode enums.ColorCode
@@ -111,7 +110,6 @@ func transmit(in inbound) ([]layer2.RawBurst, error) {
 	return append(out, tail...), nil
 }
 
-// verified summarizes the decode of the rewritten stream.
 type verified struct {
 	lcBursts, lcAccepted  int
 	embedded, embeddedNew int
@@ -204,8 +202,6 @@ func bridgeVoice(w io.Writer, path string) error {
 	return nil
 }
 
-// toGroupCall turns a group or private call LC into a group call to
-// talkgroup newTarget from newSource, keeping its service options.
 func toGroupCall(lc *pdu.FullLinkControl) error {
 	if lc.FID != enums.FIDStandardized {
 		return fmt.Errorf("cannot rewrite an LC of FID %s", lc.FID)
