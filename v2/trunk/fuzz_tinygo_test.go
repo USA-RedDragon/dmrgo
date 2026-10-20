@@ -10,4 +10,8 @@ func TestFuzzCorpus(t *testing.T) {
 	for _, in := range fuzzSeeds() {
 		runFollower(t, pool, in)
 	}
+	msPool := newMSPool(t)
+	for _, in := range msSeeds() {
+		runMS(t, msPool, in)
+	}
 }
