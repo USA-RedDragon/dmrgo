@@ -63,6 +63,11 @@ type optimizer struct {
 }
 
 func newOptimizer(iters int) *optimizer {
+	return newOptimizerACP(iters, optACP)
+}
+
+// newOptimizerACP is newOptimizer with acp in place of optACP.
+func newOptimizerACP(iters int, acp float64) *optimizer {
 	o := &optimizer{iters: iters}
 	o.f = make([]float64, optRing)
 	o.psi = make([]float64, optRing)
@@ -98,8 +103,8 @@ func newOptimizer(iters int) *optimizer {
 			o.inband[k] = 1
 		case a > optFromHz:
 			o.w2[k] = math.Pow(10, optMaskAttn(a)/10)
-			if optACP > 0 {
-				o.w2[k] += math.Pow(10, (optACP-optAnnexC(a))/10)
+			if acp > 0 {
+				o.w2[k] += math.Pow(10, (acp-optAnnexC(a))/10)
 			}
 		}
 		o.taper[k] = 0.5 - 0.5*math.Cos(2*math.Pi*(float64(k)+0.5)/optWin)
