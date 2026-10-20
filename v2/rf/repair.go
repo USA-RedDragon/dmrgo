@@ -18,6 +18,7 @@ type repairer struct {
 	llr            [layer2.BurstBits]int16
 	sum            [4][embBits]int16
 	bursts         [4]layer2.RawBurst
+	raw            bool
 }
 
 const (
@@ -49,7 +50,9 @@ func (p *repairer) repair(e *trackEntry, cc enums.ColorCode, ccOK bool) {
 	_, kind, known := layer2.SyncSourceOf(out.sync)
 	switch {
 	case out.voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice:
-		p.soft.decodeAMBE(llr, &out.fixed)
+		if !p.raw {
+			p.soft.decodeAMBE(llr, &out.fixed)
+		}
 		if out.voice != enums.VoiceBurstUnknown && out.voice != enums.VoiceBurstA {
 			p.soft.decodeEMB(llr, cc, ccOK, &out.fixed)
 		}
@@ -91,7 +94,7 @@ func (p *repairer) voiceBits(e *trackEntry, known *[layer2.BurstBits]bool) bool 
 	clear(known[:])
 	out := &e.out
 	_, kind, ok := layer2.SyncSourceOf(out.sync)
-	if out.voice == enums.VoiceBurstUnknown && (!ok || kind != layer2.KindVoice) {
+	if out.voice == enums.VoiceBurstUnknown && (!ok || kind != layer2.KindVoice) || p.raw {
 		return false
 	}
 	for id := softAMBECode; id < softSmallCount; id++ {
@@ -127,24 +130,29 @@ func (p *repairer) embeddedLC(c *chanTrack, es *[4]*trackEntry) {
 		p.bursts[i] = e.out.fixed
 	}
 	ok := false
+	var lc [9]byte
 	if c.accN > 0 {
 		for i := range p.sum {
 			p.sum[i] = c.acc[i]
 			softCombine(p.sum[i][:], p.cur[i][:])
 		}
-		_, res := p.soft.decodeEmbeddedFrags(&p.sum, &p.bursts)
+		l, res := p.soft.decodeEmbeddedFrags(&p.sum, &p.bursts)
 		if ok = !res.Uncorrectable; ok {
+			lc = l
 			c.acc = p.sum
 			c.accN = min(c.accN+1, maxCombine)
 		}
 	}
 	if !ok {
-		_, res := p.soft.decodeEmbeddedFrags(&p.cur, &p.bursts)
-		ok = !res.Uncorrectable
+		l, res := p.soft.decodeEmbeddedFrags(&p.cur, &p.bursts)
+		ok, lc = !res.Uncorrectable, l
 		c.acc, c.accN = p.cur, 1
 	}
 	if !ok {
 		return
+	}
+	if r, voice := rawVoiceLC(lc[:]); voice {
+		c.raw = r
 	}
 	for i, e := range es {
 		e.out.fixed = p.bursts[i]

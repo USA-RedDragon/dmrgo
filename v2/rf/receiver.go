@@ -1370,7 +1370,12 @@ func (r *engine) refine(lo int64) {
 }
 
 func (r *engine) repairEntry(e *trackEntry, cc enums.ColorCode, ccOK bool) {
+	c := &r.tk.ch[((e.rec.index%2)+2)%2]
+	r.rep.raw = c.raw
 	r.rep.repair(e, cc, ccOK)
+	if _, kind, known := layer2.SyncSourceOf(e.out.sync); known && kind == layer2.KindData {
+		noteCallLC(&c.raw, &e.out.fixed, r.rep.checks[enums.DataTypeVoiceLCHeader])
+	}
 	j := e.rec.index
 	s := r.slot(j)
 	if r.data != nil && s.index == j && r.rep.bptcRetry {

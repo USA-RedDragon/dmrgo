@@ -33,6 +33,8 @@ type Burst struct {
 	Slot   int64
 	// Fixed and FixedCACH hold Data and CACH with each FEC field replaced
 	// by the codeword that soft-decision decoding picked, when HasFixed.
+	// The voice slots of a call whose voice LC has FID 0xC2 (Codec2) carry
+	// no FEC and keep the bits of Data, from the LC that gives the FID on.
 	Fixed     layer2.RawBurst
 	FixedCACH [3]byte
 	HasFixed  bool

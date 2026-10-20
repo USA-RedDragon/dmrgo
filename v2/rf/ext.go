@@ -38,6 +38,7 @@ type extChan struct {
 	accN  int
 	late  [extLate]lateBurst
 	lateN int
+	raw   bool
 }
 
 type softExt struct {
@@ -156,7 +157,7 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 		if x.stages&(extAMBE|extELC) != 0 {
 			x.fill(c, &b.Data)
 		}
-		if x.stages&extAMBE != 0 {
+		if x.stages&extAMBE != 0 && !ch.raw {
 			x.soft.decodeAMBE(&x.llr, out)
 		}
 		if x.stages&extELC != 0 {
@@ -167,6 +168,7 @@ func (x *softExt) burst(c *leanCore, b *Burst) {
 		if x.stages&extOSD != 0 {
 			x.data(c, b)
 		}
+		noteCallLC(&ch.raw, out, x.checks[enums.DataTypeVoiceLCHeader])
 	default:
 		ch.have = 0
 	}
@@ -203,6 +205,7 @@ func (x *softExt) cohBurst(c *leanCore, b *Burst, ch *extChan, cc enums.ColorCod
 		hold = x.fragment(ch, b)
 	} else {
 		ch.have, ch.accN = 0, 0
+		noteCallLC(&ch.raw, &b.Fixed, x.checks[enums.DataTypeVoiceLCHeader])
 	}
 	i := x.push(c, b, hold)
 	x.coh.qllr[i], x.qcoh[i], x.qcore[i] = x.llr, true, data
@@ -408,7 +411,7 @@ func isVoiceBurst(b *Burst) bool {
 
 func (x *softExt) voiceKnown(b *Burst) bool {
 	_, kind, ok := layer2.SyncSourceOf(b.Sync)
-	if b.Voice == enums.VoiceBurstUnknown && (!ok || kind != layer2.KindVoice) {
+	if b.Voice == enums.VoiceBurstUnknown && (!ok || kind != layer2.KindVoice) || x.ch[b.Slot&1].raw {
 		return false
 	}
 	clear(x.known[:])
@@ -439,8 +442,10 @@ func (x *softExt) repairAll(c *leanCore, b *Burst, cc enums.ColorCode, ccOK bool
 	_, kind, known := layer2.SyncSourceOf(b.Sync)
 	switch {
 	case b.Voice != enums.VoiceBurstUnknown || known && kind == layer2.KindVoice:
-		x.soft.decodeAMBE(&x.llr, out)
-		x.work += extWorkAMBE
+		if !x.ch[b.Slot&1].raw {
+			x.soft.decodeAMBE(&x.llr, out)
+			x.work += extWorkAMBE
+		}
 		if b.Voice != enums.VoiceBurstUnknown && b.Voice != enums.VoiceBurstA {
 			x.soft.decodeEMB(&x.llr, cc, ccOK, out)
 		}
@@ -514,24 +519,33 @@ func (x *softExt) embeddedLC(ch *extChan, e int64) {
 		x.out[i] = b.Fixed
 	}
 	ok := false
+	var lc [9]byte
 	if ch.accN > 0 {
 		for i := range x.sum {
 			x.sum[i] = ch.acc[i]
 			softCombine(x.sum[i][:], ch.frag[i][:])
 		}
-		if _, res := x.soft.decodeEmbeddedFrags(&x.sum, &x.out); !res.Uncorrectable {
-			ok = true
+		if l, res := x.soft.decodeEmbeddedFrags(&x.sum, &x.out); !res.Uncorrectable {
+			ok, lc = true, l
 			ch.acc, ch.accN = x.sum, min(ch.accN+1, maxCombine)
 		}
 	}
 	if !ok {
-		_, res := x.soft.decodeEmbeddedFrags(&ch.frag, &x.out)
-		ok = !res.Uncorrectable
+		l, res := x.soft.decodeEmbeddedFrags(&ch.frag, &x.out)
+		ok, lc = !res.Uncorrectable, l
 		ch.acc, ch.accN = ch.frag, 1
+	}
+	if ok {
+		if r, voice := rawVoiceLC(lc[:]); voice {
+			ch.raw = r
+		}
 	}
 	for i, b := range ps {
 		if ok {
 			b.Fixed = x.out[i]
+		}
+		if ch.raw {
+			keepVoiceSlots(&b.Fixed, &b.Data)
 		}
 	}
 	x.release(ch)
@@ -791,6 +805,7 @@ func (x *softExt) end(c *leanCore) {
 	x.ch[0].have, x.ch[1].have = 0, 0
 	x.ch[0].accN, x.ch[1].accN = 0, 0
 	x.ch[0].lateN, x.ch[1].lateN = 0, 0
+	x.ch[0].raw, x.ch[1].raw = false, false
 	x.drain(c, false, 0)
 }
 
@@ -815,7 +830,7 @@ func (x *softExt) uncoded(b *Burst, core, coh *layer2.RawBurst, update bool) {
 		}
 		return
 	}
-	if b.Voice == enums.VoiceBurstUnknown && (!known || kind != layer2.KindVoice) {
+	if b.Voice == enums.VoiceBurstUnknown && (!known || kind != layer2.KindVoice) || x.ch[b.Slot&1].raw {
 		return
 	}
 	var nCore, nCoh [layer2.VoiceSlotsPerBurst]int
