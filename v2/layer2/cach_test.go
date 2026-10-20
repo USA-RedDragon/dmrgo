@@ -96,8 +96,6 @@ func TestCACH_TACTErrorCorrection(t *testing.T) {
 	}
 }
 
-// TestCACH_EncodeRejectsPayloadPadding checks that Encode returns a
-// *dmrgo.FieldRangeError when one of the padding bits of Payload is set.
 func TestCACH_EncodeRejectsPayloadPadding(t *testing.T) {
 	t.Parallel()
 	for i := layer2.CACHPayloadBits; i < 8*len(layer2.CACH{}.Payload); i++ {

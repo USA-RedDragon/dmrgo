@@ -155,8 +155,6 @@ func TestBurstEncode_HandBuiltData(t *testing.T) {
 	}
 }
 
-// The BurstDataType of a Full LC selects its RS(12,9) mask, so it must
-// match the slot type of the burst.
 func TestBurstEncode_FullLCDataTypeMustMatchSlotType(t *testing.T) {
 	t.Parallel()
 
@@ -182,8 +180,6 @@ func (c *customData) String() string            { return "custom" }
 func (c *customData) DataType() enums.DataType  { return enums.DataTypeRate12 }
 func (c *customData) Encode() ([12]byte, error) { return c.info, nil }
 
-// TestBurstEncode_CustomData checks that Burst.Encode and BuildBurst reject
-// a Data type from outside package pdu, even one with an Encode method.
 func TestBurstEncode_CustomData(t *testing.T) {
 	t.Parallel()
 
@@ -241,10 +237,6 @@ func TestBurstEncode_DataErrors(t *testing.T) {
 	}
 }
 
-// A decoded burst, here a CSBK whose CRC failed, encodes the decoded
-// payload while its Data is unchanged or nil, so a bridge can still forward
-// it; a data type that carries a different number of information bits is an
-// error.
 func TestBurstEncode_DecodedPayloadWithoutData(t *testing.T) {
 	t.Parallel()
 

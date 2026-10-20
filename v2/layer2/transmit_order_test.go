@@ -87,8 +87,7 @@ func TestTransmitOrder_EMBFieldWidths(t *testing.T) {
 	}
 }
 
-// TestTransmitOrder_StandaloneRCFields checks the standalone RC burst field
-// bounds against the symbol labels (ETSI TS 102 361-1 Table E.12).
+// ETSI TS 102 361-1 Table E.12
 func TestTransmitOrder_StandaloneRCFields(t *testing.T) {
 	t.Parallel()
 
@@ -114,8 +113,7 @@ func TestTransmitOrder_StandaloneRCFields(t *testing.T) {
 	}
 }
 
-// dibitLabel returns the label of dibit symbol idx: L66 to L1, then R1 to
-// R66 (ETSI TS 102 361-1 Annex E).
+// ETSI TS 102 361-1 Annex E
 func dibitLabel(idx int) string {
 	if idx < 66 {
 		return "L" + strconv.Itoa(66-idx)

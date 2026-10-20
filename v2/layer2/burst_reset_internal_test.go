@@ -10,7 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// fillNonZero sets v, a settable value, to a value that is not zero.
 func fillNonZero(t *testing.T, v reflect.Value) {
 	t.Helper()
 	switch v.Kind() {
@@ -38,9 +37,6 @@ func fillNonZero(t *testing.T, v reflect.Value) {
 	}
 }
 
-// TestBurstReset fills every field of a Burst and checks that reset zeroes
-// all but the decode store, so that a field added to Burst without a line in
-// reset fails here.
 func TestBurstReset(t *testing.T) {
 	t.Parallel()
 

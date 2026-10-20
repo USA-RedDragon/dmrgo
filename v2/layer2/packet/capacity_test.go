@@ -9,9 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 )
 
-// TestCapacity checks that a Builder and an Assembler take packets up to the
-// block count of NewBuilder and NewAssembler, and return ErrTooLong beyond
-// it and for the zero value.
 func TestCapacity(t *testing.T) {
 	t.Parallel()
 

@@ -110,9 +110,6 @@ func (s *SysCode) Unpack14(v uint16) error {
 	return nil
 }
 
-// checkNetSite returns modelErr when the MODEL field of a Short LC does not
-// fit in 2 bits, or netSiteErr when its NET and SITE field does not fit in
-// 12.
 func checkNetSite(model uint8, netSite uint16, modelErr, netSiteErr error) error {
 	switch {
 	case model>>2 != 0:
@@ -123,8 +120,6 @@ func checkNetSite(model uint8, netSite uint16, modelErr, netSiteErr error) error
 	return nil
 }
 
-// sysCodeFromShortLC returns the SysCode of the MODEL and NET and SITE
-// fields of a Short LC, with the errors of checkNetSite.
 func sysCodeFromShortLC(model uint8, netSite uint16, modelErr, netSiteErr error) (SysCode, error) {
 	var s SysCode
 	if err := checkNetSite(model, netSite, modelErr, netSiteErr); err != nil {
@@ -167,8 +162,6 @@ func (s *ShortLCPSysParms) SetSysCode(c SysCode) error {
 	return nil
 }
 
-// sysCodeNetRange returns the error of a NET that does not fit in the NET
-// bits of model m.
 func sysCodeNetRange(m NetworkModel) error {
 	switch m {
 	case NetworkModelTiny:
@@ -182,8 +175,6 @@ func sysCodeNetRange(m NetworkModel) error {
 	}
 }
 
-// sysCodeSiteRange returns the error of a SITE that does not fit in the
-// SITE bits of model m.
 func sysCodeSiteRange(m NetworkModel) error {
 	switch m {
 	case NetworkModelTiny:
@@ -197,15 +188,12 @@ func sysCodeSiteRange(m NetworkModel) error {
 	}
 }
 
-// The Type of the SYSCODE errors, and the Field of NET and SITE.
 const (
 	sysCodeType = "SysCode"
 	sysCodeNet  = "Net"
 	sysCodeSite = "Site"
 )
 
-// The errors of a SYSCODE field whose value does not fit in its bits. NET
-// and SITE have one for each network model, which sets their widths.
 var (
 	errSysCode14Range        = &dmrgo.FieldRangeError{Type: sysCodeType, Field: "Unpack14", Bits: 14}
 	errNetworkModelRange     = &dmrgo.FieldRangeError{Type: "pdu", Field: "NetworkModel", Bits: 2}

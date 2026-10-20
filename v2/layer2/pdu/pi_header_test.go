@@ -7,8 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// piHeaderVector is a captured PI header (ok-dmrlib test vector) with a
-// valid CRC-CCITT under mask 0x6969.
 func piHeaderVector() [12]byte {
 	return [12]byte{0x21, 0x10, 0x02, 0x17, 0x7A, 0xFC, 0x73, 0x00, 0x00, 0x09, 0x0D, 0xDA}
 }
@@ -43,7 +41,6 @@ func TestPIHeader_DecodeVector(t *testing.T) {
 func TestPIHeader_CRCMask(t *testing.T) {
 	t.Parallel()
 	data := piHeaderVector()
-	// Removing the 0x6969 mask must make the CRC fail.
 	data[10] ^= 0x69
 	data[11] ^= 0x69
 	if fecResult := pdu.DecodePIHeader(data).FEC; !fecResult.Uncorrectable {
@@ -66,8 +63,6 @@ func TestPIHeader_RoundTrip(t *testing.T) {
 	}
 }
 
-// Raw holds the 80 bits before the CRC for non-DMRA layouts, and encoding
-// uses the named fields only.
 func TestPIHeader_Raw(t *testing.T) {
 	t.Parallel()
 	vector := piHeaderVector()

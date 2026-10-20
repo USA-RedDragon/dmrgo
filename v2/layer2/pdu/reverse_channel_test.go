@@ -10,12 +10,9 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// buildRCInfoBits constructs a valid 11-bit RC PDU with correct CRC-7.
 func buildRCInfoBits(payload byte) [2]byte {
 	var info [2]byte
-	// Payload: bits 0-3 (MSB-first)
 	bits.SetField(info[:], 0, 4, uint64(payload&0x0F))
-	// CRC-7 with mask 0x7A
 	crcVal := crc.CRC7(info[:], 4) ^ pdu.CRC7MaskRC
 	bits.SetField(info[:], 4, 7, uint64(crcVal))
 	return info
@@ -36,7 +33,6 @@ func TestReverseChannel_DecodeEncode_RoundTrip(t *testing.T) {
 			continue
 		}
 
-		// Re-encode and verify round-trip
 		encoded, err := rc.Encode()
 		if err != nil {
 			t.Fatalf("payload=%d: unexpected error: %v", payload, err)
@@ -51,7 +47,6 @@ func TestReverseChannel_CRCFailure(t *testing.T) {
 	t.Parallel()
 	info := buildRCInfoBits(5)
 
-	// Corrupt a CRC bit
 	info[0] ^= 0x01
 
 	fecResult := pdu.DecodeReverseChannel(info).FEC

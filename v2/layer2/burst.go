@@ -104,22 +104,14 @@ type Burst struct {
 	raw             RawBurst
 	decodedDataType enums.DataType
 	decodedEMB      bool
-	// payload holds the payloadBits information bits that the payload code
-	// of a decoded data burst returned, packed.
-	payload     [25]byte
-	payloadBits int
-	// decodedCoded is the coding of the decoded CSBK, Full LC, data header or
-	// MBC header, for Encode, which must not decode these again: their
-	// payload structs would allocate.
+	payload         [25]byte
+	payloadBits     int
 	decodedCoded    [12]byte
 	hasDecodedCoded bool
 	store           decodeStore
 	noCopy          noCopy
 }
 
-// decodeStore holds the PDUs that a Burst decodes into, and the payload
-// structs that their dispatch fields point to, so that a Burst decodes
-// without allocating.
 type decodeStore struct {
 	csbk              pdu.CSBK
 	csbkPayloads      pdu.CSBKPayloads
@@ -138,9 +130,6 @@ type decodeStore struct {
 	prFill            pdu.PRFill
 }
 
-// reset sets every field of b to its zero value, except the decode store,
-// which the next decode overwrites, and sets the raw burst to data. It
-// does not copy the store, as *b = Burst{} would.
 func (b *Burst) reset(data RawBurst) {
 	b.Kind = KindUnknown
 	b.SyncPattern, b.NearestSync, b.SyncDistance = 0, 0, 0
@@ -222,9 +211,6 @@ func (b *Burst) DecodeFromBytesWith(data RawBurst, opts *DecodeOptions) error {
 	return joinColorCode(err)
 }
 
-// decode takes the options by value: under TinyGo a pointer to options
-// that DecodeFromBytes makes would otherwise go to the heap when decode is
-// not inlined.
 func (b *Burst) decode(opts DecodeOptions) error {
 	threshold := opts.SyncThreshold
 	switch {
@@ -292,8 +278,6 @@ func (b *Burst) decodeVoice(pos enums.VoiceBurstType, sync enums.SyncPattern) {
 	b.VoiceSlots = b.raw.VoiceSlots()
 }
 
-// setEmbedded sets the EMB emb and the embedded data field of a burst with
-// HasEmbeddedSignalling, and the RC PDU when the field carries one.
 func (b *Burst) setEmbedded(emb pdu.EmbeddedSignalling) {
 	data := b.raw.EmbeddedData()
 	b.EmbeddedSignalling = emb
@@ -305,10 +289,6 @@ func (b *Burst) setEmbedded(emb pdu.EmbeddedSignalling) {
 	}
 }
 
-// decodeData decodes a data burst. The center is the nearest data SYNC
-// pattern, unless that is more than threshold and damagedSyncDistance bits
-// off and the center decodes as an EMB with the color code of the slot
-// type: then the burst carries embedded signalling.
 func (b *Burst) decodeData(dataType *enums.DataType, threshold int) error {
 	b.Kind = KindData
 	b.SlotType = b.raw.SlotType()
@@ -347,24 +327,14 @@ func (b *Burst) decodeData(dataType *enums.DataType, threshold int) error {
 	return err
 }
 
-// Limits of isEmbeddedDataBurst. The BPTC(196,96) decoder accepts about 9%
-// of random blocks, but each with 16 or more corrections, so the BPTC limit
-// keeps voice out.
 const (
 	embeddedDataMaxSlotTypeErrors = 2
 	embeddedDataMaxBPTCErrors     = 8
 )
 
-// damagedSyncDistance is the largest Hamming distance at which the center of
-// a data burst is taken as a data SYNC pattern with bit errors. The
-// MS-sourced data SYNC pattern is 2 bits from an EMB codeword, but an EMB
-// with random embedded data comes this close to a data SYNC pattern in only
-// about 0.14% of bursts.
 const damagedSyncDistance = 12
 
-// isEmbeddedDataBurst reports whether a burst without a SYNC pattern is a
-// data burst that carries an EMB and embedded data in place of the SYNC
-// (ETSI TS 102 361-1 clause 6.4.2).
+// ETSI TS 102 361-1 clause 6.4.2
 func (b *Burst) isEmbeddedDataBurst() bool {
 	if _, d := b.nearestSync(dataSyncPatterns); d <= damagedSyncDistance {
 		return false
@@ -394,10 +364,7 @@ func (b *Burst) isEmbeddedDataBurst() bool {
 	return false
 }
 
-// opcode0x38Hint returns the likely meaning of CSBK opcode 0x38 in a burst
-// with SYNC pattern sync: an MS sends BS_Dwn_Act and a TSCC sends TD_GRANT_MI.
-// Only a BS sends a data burst with an EMB in place of the SYNC (ETSI TS 102
-// 361-1 clause 6.4.2).
+// ETSI TS 102 361-1 clause 6.4.2
 func opcode0x38Hint(sync enums.SyncPattern) pdu.Opcode0x38Hint {
 	switch sync {
 	case enums.SyncMSSourcedData:
@@ -422,9 +389,7 @@ func isSyncPattern(sync enums.SyncPattern) bool {
 	return isDataSync(sync) || isVoiceSync(sync) || sync == enums.SyncMSSourcedRC || sync == enums.SyncReserved
 }
 
-// decodeStandaloneRC decodes a standalone inbound RC burst. An RC burst
-// always carries an RC PDU, so PI does not gate RC decoding (ETSI TS 102
-// 361-1 clause 6.4.1, Table E.12).
+// ETSI TS 102 361-1 clause 6.4.1, Table E.12
 func (b *Burst) decodeStandaloneRC() {
 	b.Kind, b.SyncPattern = KindReverseChannel, enums.SyncMSSourcedRC
 	b.EmbeddedSignalling = b.raw.StandaloneRCEMB()
@@ -452,8 +417,6 @@ func (b *Burst) encodeStandaloneRC() (RawBurst, error) {
 	return r, nil
 }
 
-// embCodeword returns the QR(16,7) codeword of EmbeddedSignalling, or an
-// error when one of its fields does not fit.
 func (b *Burst) embCodeword() (uint16, error) {
 	emb, err := b.EmbeddedSignalling.Encode()
 	if err != nil {
@@ -462,9 +425,6 @@ func (b *Burst) embCodeword() (uint16, error) {
 	return uint16(emb[0])<<8 | uint16(emb[1]), nil
 }
 
-// embeddedData returns the 32 bits of the embedded signalling data field,
-// packed: the coded ReverseChannel when HasReverseChannel reports true, and
-// EmbeddedSignallingData otherwise.
 func (b *Burst) embeddedData() ([4]byte, error) {
 	if !b.HasReverseChannel() {
 		return b.EmbeddedSignallingData, nil
@@ -505,9 +465,6 @@ func (b *Burst) SetAMBEFrames(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame) erro
 	return nil
 }
 
-// deinterleave decodes the packed information bits info of a data burst of
-// dataType into b.payload with the payload code, and returns the number of
-// payload bits and the code's result.
 func (b *Burst) deinterleave(info [25]byte, dataType enums.DataType) (int, fec.Result) {
 	switch dataType {
 	case enums.DataTypeRate34:
@@ -538,9 +495,7 @@ func (b *Burst) deinterleave(info [25]byte, dataType enums.DataType) (int, fec.R
 	return 196, fec.Result{}
 }
 
-// rate1Info returns the 196 information bits of a Rate 1 burst that carries
-// the 192 data bits of data, with bits 96 to 99 zero (ETSI TS 102 361-1
-// Table B.10B).
+// ETSI TS 102 361-1 Table B.10B
 func rate1Info(data *[25]byte) [25]byte {
 	var info [25]byte
 	copy(info[:12], data[:12])
@@ -576,9 +531,6 @@ func (b *Burst) String() string {
 	return ret + " }"
 }
 
-// decodePayload decodes the packed information bits payload of a data burst
-// of data type dt and SYNC pattern sync into st. The fec.Result is zero for
-// the data blocks, whose only code is the payload code.
 func decodePayload(st *decodeStore, dt enums.DataType, payload *[25]byte, sync enums.SyncPattern) (Data, fec.Result, error) {
 	if dt.IsReserved() {
 		return nil, fec.Result{}, reservedDataTypeError{dt}
@@ -710,9 +662,6 @@ func (b *Burst) checkCentre() error {
 	return errKindSync
 }
 
-// dataInfoBits returns, packed, Data coded for the slot type data type or,
-// when Data is nil or codes to the same bits as the PDU that DecodeFromBytes
-// decoded, the payload that DecodeFromBytes decoded.
 func (b *Burst) dataInfoBits() ([25]byte, error) {
 	dt := b.SlotType.DataType
 	decoded := b.payloadBits > 0 && dt == b.decodedDataType
@@ -735,10 +684,6 @@ func (b *Burst) dataInfoBits() ([25]byte, error) {
 	}
 }
 
-// decodedCodesTo reports whether the PDU that DecodeFromBytes decoded from
-// the payload codes to the 96 packed information bits want. A Rate 1/2,
-// Rate 3/4 or Rate 1 PDU keeps every information bit, so it codes to the
-// payload, which the caller compares.
 func (b *Burst) decodedCodesTo(want [12]byte) bool {
 	switch b.decodedDataType {
 	case enums.DataTypeCSBK, enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC, enums.DataTypeDataHeader,
@@ -767,9 +712,6 @@ func (b *Burst) decodedCodesTo(want [12]byte) bool {
 	return err == nil && want == coded
 }
 
-// encodeData returns the data type of d and its information bits, packed.
-// d must be a non-nil pointer to a Data type of package pdu. Unless anyType
-// is set, it returns errDataType when the data type of d is not dataType.
 func encodeData(d Data, dataType enums.DataType, anyType bool) (enums.DataType, [25]byte, error) {
 	var info [25]byte
 	dt, ok, err := pduInfo(d, &info)
@@ -784,11 +726,6 @@ func encodeData(d Data, dataType enums.DataType, anyType bool) (enums.DataType, 
 	return dt, info, nil
 }
 
-// pduInfo writes the information bits of d, packed, to info and returns the
-// data type of d and the error of its Encode method. ok is false, and err
-// says why, when d is nil, a nil pointer or not a Data type of package pdu.
-// The type switches of pduInfo and bptcInfo call no method of another type,
-// so d does not escape.
 func pduInfo(d Data, info *[25]byte) (enums.DataType, bool, error) {
 	switch p := d.(type) {
 	case nil:
@@ -815,7 +752,6 @@ func pduInfo(d Data, info *[25]byte) (enums.DataType, bool, error) {
 	return 0, false, errNilPointerData
 }
 
-// bptcInfo is pduInfo for the BPTC(196,96) coded Data types.
 func bptcInfo(d Data, info *[25]byte) (enums.DataType, bool, error) {
 	var dt enums.DataType
 	var c [12]byte
@@ -906,10 +842,6 @@ func bptcInfo(d Data, info *[25]byte) (enums.DataType, bool, error) {
 	return dt, true, err
 }
 
-// encodeDataBits codes the information bits of a data burst with
-// BPTC(196,96), the Rate 3/4 trellis or Rate 1 as the slot type data type
-// selects, and returns the 196 coded bits packed. R(3) and the Rate 1 pad
-// bits are zero.
 func (b *Burst) encodeDataBits() ([25]byte, error) {
 	info, err := b.dataInfoBits()
 	if err != nil {

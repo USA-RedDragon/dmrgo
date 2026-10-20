@@ -9,9 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// realVoiceLCHeader is an on-air Voice LC Header codeword (UU_V_Ch_Usr,
-// target 9990, source 3191868). Its RS(12,9) parity is cb5957 once the
-// 0x969696 Data Type CRC Mask is removed.
 const realVoiceLCHeader = "03000000270630b43c5dcfc1"
 
 func hex12(t *testing.T, s string) [12]byte {
@@ -23,8 +20,7 @@ func hex12(t *testing.T, s string) [12]byte {
 	return [12]byte(raw)
 }
 
-// ETSI TS 102 361-1 B.3.12, Table B.21: the mask is XORed into the parity
-// only, and only for Voice LC Header and Terminator with LC.
+// ETSI TS 102 361-1; Table B.21
 func TestFLC_DataTypeMaskAppliedToParity(t *testing.T) {
 	t.Parallel()
 
@@ -58,8 +54,6 @@ func TestFLC_DataTypeMaskAppliedToParity(t *testing.T) {
 	}
 }
 
-// RS-protected Full LC is sent only in a Voice LC Header or a Terminator
-// with LC, so encoding with any other data type is an error.
 func TestFLC_EncodeRejectsUnmaskedDataType(t *testing.T) {
 	t.Parallel()
 
@@ -95,8 +89,6 @@ func TestFLC_DecodeRealVoiceLCHeader(t *testing.T) {
 	}
 }
 
-// Depends on a correct RS(12,9) decoder: a wrong mask leaves three bad
-// parity bytes, which RS(12,9) cannot correct.
 func TestFLC_DecodeRealVoiceLCHeaderWithWrongMaskFails(t *testing.T) {
 	t.Parallel()
 
@@ -108,7 +100,6 @@ func TestFLC_DecodeRealVoiceLCHeaderWithWrongMaskFails(t *testing.T) {
 	}
 }
 
-// Depends on a correct RS(12,9) encoder.
 func TestFLC_EncodeRealVoiceLCHeader(t *testing.T) {
 	t.Parallel()
 

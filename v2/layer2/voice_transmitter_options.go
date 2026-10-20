@@ -42,9 +42,6 @@ func NewVoiceTransmitter(opts *VoiceTransmitterOptions) (*VoiceTransmitter, erro
 	return t, nil
 }
 
-// noVoiceTransmitterOptions is the zero VoiceTransmitterOptions, which Reset
-// uses for a nil opts and only reads. A composite literal would be on the
-// heap under TinyGo.
 var noVoiceTransmitterOptions VoiceTransmitterOptions
 
 // Reset starts a new transmission with opts, as NewVoiceTransmitter does,

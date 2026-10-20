@@ -46,8 +46,6 @@ func DecodeCACHField(onAir [3]byte) CACH {
 	return DecodeCACH(CACHDeinterleave(onAir))
 }
 
-// errCACHPayloadRange is the error of an Encode whose Payload has a padding
-// bit set.
 var errCACHPayloadRange = &dmrgo.FieldRangeError{Type: "CACH", Field: "Payload", Bits: CACHPayloadBits}
 
 // Encode encodes a CACH struct into a 24-bit field in logical order, packed

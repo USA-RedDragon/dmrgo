@@ -12,17 +12,14 @@ import (
 func TestRate12Data_DecodeFromBits(t *testing.T) {
 	t.Parallel()
 
-	// Build 96 info bits representing known packed data
 	var infoBits [12]byte
 
-	// Set byte 0 = 0xAB: 10101011
 	bits.SetBit(infoBits[:], 0, 1)
 	bits.SetBit(infoBits[:], 2, 1)
 	bits.SetBit(infoBits[:], 4, 1)
 	bits.SetBit(infoBits[:], 6, 1)
 	bits.SetBit(infoBits[:], 7, 1)
 
-	// Set byte 1 = 0xCD: 11001101
 	bits.SetBit(infoBits[:], 8, 1)
 	bits.SetBit(infoBits[:], 9, 1)
 	bits.SetBit(infoBits[:], 12, 1)
@@ -36,7 +33,6 @@ func TestRate12Data_DecodeFromBits(t *testing.T) {
 	if rt.Data[1] != 0xCD {
 		t.Errorf("Data[1] = 0x%02X, want 0xCD", rt.Data[1])
 	}
-	// Remaining bytes should be zero
 	for i := 2; i < 12; i++ {
 		if rt.Data[i] != 0 {
 			t.Errorf("Data[%d] = 0x%02X, want 0x00", i, rt.Data[i])
@@ -119,8 +115,7 @@ func TestRate12Data_Confirmed_RoundTrip(t *testing.T) {
 	}
 }
 
-// The CRC-9 covers user data then DBSN (TS 102 361-1 B.3.10) with the
-// Table B.21 mask, placed MSB-first in octet 0 bit 0 and octet 1.
+// TS 102 361-1; Table B.21
 func TestRate12Data_Confirmed_CRC9Layout(t *testing.T) {
 	t.Parallel()
 

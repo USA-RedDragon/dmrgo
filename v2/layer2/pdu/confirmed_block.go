@@ -2,12 +2,8 @@ package pdu
 
 import "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 
-// Confirmed data blocks (ETSI TS 102 361-1 Tables 9.11, 9.15A, 9.18) start
-// with a 7-bit DBSN in octet 0 bits 7-1, then the CRC-9 with its MSB in
-// octet 0 bit 0 and the rest in octet 1 (clause B.3.10), then user data.
+// ETSI TS 102 361-1 Tables 9.11, 9.15; clause B.3.10
 
-// confirmedMaxCRC9Octets is the CRC-9 input of the largest confirmed block
-// in octets: the 22 user data octets of a rate 1 block and the 7 DBSN bits.
 const confirmedMaxCRC9Octets = 22 + 1
 
 func confirmedDBSN(block []byte) uint8 {
@@ -18,8 +14,7 @@ func confirmedCRC9(block []byte) uint16 {
 	return uint16(block[0]&1)<<8 | uint16(block[1])
 }
 
-// computeConfirmedCRC9 computes the masked CRC-9 over the user data followed
-// by the 7 DBSN bits, which is the M(x) order given in clause B.3.10.
+// clause B.3.10
 func computeConfirmedCRC9(dbsn uint8, userData []byte, mask uint16) uint16 {
 	var buf [confirmedMaxCRC9Octets]byte
 	n := copy(buf[:], userData)

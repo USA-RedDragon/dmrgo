@@ -95,15 +95,12 @@ func DecodeEMBCodeword(cw uint16) (EMBInfo, fec.Result) {
 	return info, s.FEC
 }
 
-// The Field of the FieldRangeErrors of the setters of EMBInfo, SlotTypeInfo
-// and the confirmed data blocks.
 const (
 	fieldColorCode = "ColorCode"
 	fieldLCSS      = "LCSS"
 	fieldDBSN      = "DBSN"
 )
 
-// The errors of the EMBInfo setters.
 var (
 	errEMBInfoColorCodeRange = &dmrgo.FieldRangeError{Type: "EMBInfo", Field: fieldColorCode, Bits: 4}
 	errEMBInfoLCSSRange      = &dmrgo.FieldRangeError{Type: "EMBInfo", Field: fieldLCSS, Bits: 2}

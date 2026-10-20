@@ -10,9 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// TestAllocsBurstDecode checks that a decode of any 33 octets into a reused
-// Burst allocates nothing, with or without options, on the captures, the
-// FuzzBurstDecode corpus, damaged captures and random octets.
 func TestAllocsBurstDecode(t *testing.T) {
 	frames := captureFrames(t)
 	frames = append(frames, fuzzCorpus(t, "FuzzBurstDecode")...)

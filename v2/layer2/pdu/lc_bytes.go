@@ -52,8 +52,6 @@ func (l *LCBytes) SetFLCO(f enums.FLCO) error {
 	return nil
 }
 
-// errLCBytesFLCORange is the error of a SetFLCO whose FLCO does not fit in
-// 6 bits.
 var errLCBytesFLCORange = &dmrgo.FieldRangeError{Type: "LCBytes", Field: "FLCO", Bits: 6}
 
 // ProtectFlag returns the PF bit, bit 0 of octet 0.

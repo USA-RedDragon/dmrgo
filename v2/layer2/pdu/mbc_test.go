@@ -9,8 +9,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// buildMBCHeaderBits returns the 96 information bits of an MBC header with
-// the CRC-CCITT and the MBC header mask 0xAAAA (ETSI TS 102 361-1 Table B.21).
+// ETSI TS 102 361-1 Table B.21
 func buildMBCHeaderBits(lb bool, pf bool, opcode byte, fid byte, data [8]byte) [12]byte {
 	var info [12]byte
 
@@ -31,8 +30,6 @@ func buildMBCHeaderBits(lb bool, pf bool, opcode byte, fid byte, data [8]byte) [
 	return info
 }
 
-// buildMBCContinuationBits returns the 96 information bits of an MBC
-// continuation block, without a CRC.
 func buildMBCContinuationBits(lb bool, data [12]byte) [12]byte {
 	var info [12]byte
 	if lb {

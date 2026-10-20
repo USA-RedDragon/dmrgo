@@ -7,8 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// ExampleLCBytes_Codeword builds the RS(12,9) codeword of a Terminator with LC
-// from the 9 LC octets.
 func ExampleLCBytes_Codeword() {
 	lc := pdu.LCBytes{0x00, 0x00, 0x00, 0x00, 0x00, 0x5b, 0x00, 0x30, 0x39}
 	cw, err := lc.Codeword(enums.DataTypeVoiceLCHeader)
@@ -30,8 +28,6 @@ func ExampleLCBytes_Codeword() {
 	// true 1
 }
 
-// ExampleDecodeCSBK encodes a preamble CSBK with its CRC, decodes it back,
-// and reads the payload field that its opcode selects.
 func ExampleDecodeCSBK() {
 	in := pdu.CSBK{
 		LastBlock:   true,

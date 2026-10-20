@@ -83,8 +83,6 @@ func DecodeFullLCCodeword(cw [12]byte, dt enums.DataType) ([9]byte, fec.Result, 
 	return lc, res, nil
 }
 
-// noFullLCError is the error for a data type that carries no RS(12,9) Full
-// LC. It is a one-byte value, so that returning it does not allocate.
 type noFullLCError enums.DataType
 
 // Error returns the message of e. It allocates the message.
@@ -92,8 +90,6 @@ func (e noFullLCError) Error() string {
 	return "data type " + enums.DataType(e).String() + " carries no RS(12,9) Full LC"
 }
 
-// noBlockCRCError is the error for a data type that has no single-block
-// CRC-CCITT, a one-byte value as noFullLCError is.
 type noBlockCRCError enums.DataType
 
 // Error returns the message of e. It allocates the message.

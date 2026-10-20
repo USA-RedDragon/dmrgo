@@ -9,8 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// buildContinuationBits96 returns the 96 information bits of a last MBC
-// continuation block with the given PF, CSBKO, color code and CdefParms bits.
 func buildContinuationBits96(pf bool, csbko byte, colourCode byte, cdefParms [8]byte) [12]byte {
 	var data [12]byte
 
@@ -22,8 +20,7 @@ func buildContinuationBits96(pf bool, csbko byte, colourCode byte, cdefParms [8]
 	bits.SetField(data[:], 12, 4, uint64(colourCode))
 	bits.Copy(data[:], 22, cdefParms[:], 0, 58)
 
-	// The last-block CRC-CCITT covers bits 0 to 79 and has no mask
-	// (ETSI TS 102 361-1 clause 7.4.0, Table B.21).
+	// ETSI TS 102 361-1 clause 7.4.0, Table B.21
 	c := crc.CCITT(data[:10])
 	bits.SetField(data[:], 80, 16, uint64(c))
 

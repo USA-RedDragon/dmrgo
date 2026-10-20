@@ -8,8 +8,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// ExampleNewPacket splits a payload into a header and data blocks and
-// reassembles them.
 func ExampleNewPacket() {
 	header := pdu.DataHeader{
 		Format: pdu.FormatUnconfirmed,

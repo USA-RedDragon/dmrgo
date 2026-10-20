@@ -29,8 +29,7 @@ type ShortLCCSysParms struct {
 	CommonSlotCounter uint16 `dmr:"bits:15-23"` // 9-bit Common_Slot_Counter
 }
 
-// netSiteBits returns the NET field width for a MODEL value. The SITE field
-// takes the remaining bits. (ETSI TS 102 361-4 Table 6.5)
+// ETSI TS 102 361-4 Table 6.5
 func netSiteBits(model uint8) int {
 	switch model {
 	case 0:

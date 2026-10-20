@@ -10,9 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// TestBuilder_RetrySACK sends a confirmed packet whose blocks 1 and 3 fail
-// their CRC-9, decodes the SACK, and resends the blocks it flags with
-// Builder.Retry.
 func TestBuilder_RetrySACK(t *testing.T) {
 	t.Parallel()
 
@@ -69,8 +66,6 @@ func TestBuilder_RetrySACK(t *testing.T) {
 	}
 }
 
-// TestBuilder_RetryAll resends a whole packet, as after a NACK, to an
-// Assembler that lost the first header.
 func TestBuilder_RetryAll(t *testing.T) {
 	t.Parallel()
 

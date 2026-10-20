@@ -60,8 +60,6 @@ func (s *MBCContinuation) DataType() enums.DataType {
 	return enums.DataTypeMBCContinuation
 }
 
-// packed returns the 96 bits of the block packed most significant bit
-// first.
 func (s *MBCContinuation) packed() [12]byte {
 	var data [12]byte
 	if s.LastBlock {
@@ -97,7 +95,6 @@ func (s *MBCContinuation) AsVNAP() VNAPContinuation {
 	return decodeVNAPContinuation(s.packed())
 }
 
-// mbcLastBlockCRC computes the last-block CRC-CCITT of blocks.
 func mbcLastBlockCRC(blocks ...[12]byte) uint16 {
 	if len(blocks) == 0 {
 		return 0

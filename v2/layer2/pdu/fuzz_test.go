@@ -13,7 +13,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// captureBursts returns the bursts of the captures in layer2/testdata.
 func captureBursts(tb testing.TB) []layer2.RawBurst {
 	tb.Helper()
 	files, err := filepath.Glob("../testdata/*.bin")
@@ -33,7 +32,6 @@ func captureBursts(tb testing.TB) []layer2.RawBurst {
 	return out
 }
 
-// isDataSync reports whether p is a data SYNC pattern.
 func isDataSync(p enums.SyncPattern) bool {
 	switch p {
 	case enums.SyncBSSourcedData, enums.SyncMSSourcedData, enums.SyncTDMA1Data, enums.SyncTDMA2Data:
@@ -43,8 +41,6 @@ func isDataSync(p enums.SyncPattern) bool {
 	}
 }
 
-// fecOf returns the FEC field of the struct that v points to, or the zero
-// Result when it has none.
 func fecOf(v any) fec.Result {
 	f := reflect.ValueOf(v).Elem().FieldByName("FEC")
 	if !f.IsValid() {
@@ -54,18 +50,12 @@ func fecOf(v any) fec.Result {
 	return r
 }
 
-// clearFEC zeroes the FEC field of the struct that v points to, when it has
-// one.
 func clearFEC(v any) {
 	if f := reflect.ValueOf(v).Elem().FieldByName("FEC"); f.IsValid() {
 		f.Set(reflect.Zero(f.Type()))
 	}
 }
 
-// checkCodec decodes in, encodes the result and decodes that again. It
-// fails t unless the decoded value encodes, the encoding decodes without
-// errors to the same value (FEC cleared) and encodes to the same octets. It
-// returns the encoding of the decoded in.
 func checkCodec[B comparable, T any](t *testing.T, name string, in B, dec func(B) T, enc func(*T) (B, error), str func(*T) string) B {
 	t.Helper()
 	v := dec(in)
@@ -90,9 +80,6 @@ func checkCodec[B comparable, T any](t *testing.T, name string, in B, dec func(B
 	return out
 }
 
-// checkInto fails t unless decoding in with into, over a destination that
-// holds the decode of other, gives the value that dec returns, without an
-// allocation.
 func checkInto[B any, T any, P any](t *testing.T, name string, in, other B, dec func(B) T, into func(*T, *P, B)) {
 	t.Helper()
 	var dst T
@@ -108,7 +95,6 @@ func checkInto[B any, T any, P any](t *testing.T, name string, in, other B, dec 
 	}
 }
 
-// invert returns b with every bit flipped.
 func invert(b [12]byte) [12]byte {
 	for i := range b {
 		b[i] = ^b[i]
@@ -116,9 +102,6 @@ func invert(b [12]byte) [12]byte {
 	return b
 }
 
-// bptcKinds are the PDUs of a 12-octet BPTC(196,96) payload that
-// FuzzBPTCPDU checks, by kind. The last four kinds are views of an MBC
-// continuation block.
 var bptcKinds = [...]enums.DataType{
 	enums.DataTypeVoiceLCHeader,
 	enums.DataTypeTerminatorWithLC,
@@ -136,23 +119,13 @@ var bptcKinds = [...]enums.DataType{
 	enums.DataTypeMBCContinuation,
 }
 
-// sealFlag in the kind byte of FuzzBPTCPDU seals the payload first.
 const sealFlag = 0x80
 
-// FuzzBPTCPDU checks the decoders and encoders of the PDUs of a 12-octet
-// BPTC(196,96) payload on any payload: each decoded PDU encodes, the
-// encoding decodes back to the same PDU without errors, and the Into
-// decoders match the plain decoders without allocating. With the seal flag
-// it first seals the payload with Seal and checks that the PDU keeps every
-// bit (Encode(Decode(x)) == x), and that an error in one octet, given by
-// octets 12 and 13 of data, is corrected or detected. The Idle kind checks
-// the Full LC octets of DecodeFullLinkControlBytes and IsPRFill.
 func FuzzBPTCPDU(f *testing.F) {
 	bptcSeeds(f, func(kind uint8, data []byte) { f.Add(kind, data) })
 	f.Fuzz(fuzzBPTCPDU)
 }
 
-// bptcSeeds calls add with each seed of FuzzBPTCPDU.
 func bptcSeeds(tb testing.TB, add func(kind uint8, data []byte)) {
 	for _, b := range captureBursts(tb) {
 		if p, _ := b.Sync(); !isDataSync(p) {
@@ -183,7 +156,6 @@ func bptcSeeds(tb testing.TB, add func(kind uint8, data []byte)) {
 	}
 }
 
-// fuzzBPTCPDU is the body of FuzzBPTCPDU.
 func fuzzBPTCPDU(t *testing.T, kind uint8, data []byte) {
 	var in [12]byte
 	copy(in[:], data)
@@ -244,10 +216,6 @@ func fuzzBPTCPDU(t *testing.T, kind uint8, data []byte) {
 	}
 }
 
-// sealBPTC rewrites the check bits of the payload p of a burst of dt and
-// reports whether p is then a valid codeword whose PDU keeps every bit: an
-// MBC continuation gets the last-block CRC of a one-block MBC, and a Rate
-// 1/2 block, which has no check bits, is always one.
 func sealBPTC(t *testing.T, p *[12]byte, dt enums.DataType) bool {
 	t.Helper()
 	switch {
@@ -270,10 +238,6 @@ func sealBPTC(t *testing.T, p *[12]byte, dt enums.DataType) bool {
 	return true
 }
 
-// checkMBCViews fails t unless the CG_AP, MV_AP, BC_AP and VN_AP views of
-// the MBC continuation block in encode its first 80 bits as out, the
-// encoding of the block, and their last-block CRC result agrees with
-// MBCLastBlockCRCOK.
 func checkMBCViews(t *testing.T, in, out [12]byte) {
 	t.Helper()
 	c := pdu.DecodeMBCContinuation(in)
@@ -288,10 +252,6 @@ func checkMBCViews(t *testing.T, in, out [12]byte) {
 	}
 }
 
-// checkOctetError fails t unless the decoder of kind k reports the error
-// e in octet at of the valid codeword in: the RS(12,9) of a Full LC corrects
-// it and counts its bits, and a CRC-CCITT, which detects every burst of up
-// to 16 bits, rejects it.
 func checkOctetError(t *testing.T, k int, in [12]byte, at int, e byte) {
 	t.Helper()
 	bad := in
@@ -337,8 +297,6 @@ func checkOctetError(t *testing.T, k int, in [12]byte, at int, e byte) {
 	}
 }
 
-// checkCSBKViews fails t unless each payload view of the RawPayload of the
-// CSBK block b that applies, set back with its setter, encodes to b.
 func checkCSBKViews(t *testing.T, b [12]byte) {
 	t.Helper()
 	c := pdu.DecodeCSBK(b)
@@ -372,8 +330,6 @@ func checkCSBKViews(t *testing.T, b [12]byte) {
 	}
 }
 
-// checkConfirmed fails t unless a Rate 1/2 block made confirmed from the
-// DBSN and user data of in reads them back and passes its CRC-9.
 func checkConfirmed(t *testing.T, in [12]byte) {
 	t.Helper()
 	r := pdu.DecodeRate12Data(in)
@@ -390,9 +346,6 @@ func checkConfirmed(t *testing.T, in [12]byte) {
 	}
 }
 
-// checkFullLCBytes fails t unless the Full LC of the 9 LC octets lc
-// round-trips through Bytes and matches the codeword decoder of both data
-// types that carry a Full LC.
 func checkFullLCBytes(t *testing.T, lc [9]byte) {
 	t.Helper()
 	v, err := pdu.DecodeFullLinkControlBytes(lc)

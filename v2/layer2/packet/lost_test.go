@@ -12,8 +12,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// lost returns the Message of a.Lost, or nil when the packet did not
-// complete.
 func lost(a *packet.Assembler) (*packet.Message, error) {
 	m, done, err := a.Lost()
 	if !done {
@@ -22,9 +20,6 @@ func lost(a *packet.Assembler) (*packet.Message, error) {
 	return &m, err
 }
 
-// sendLosing feeds the header and blocks of p to a, and calls Lost in place
-// of each block whose index is in drop. It returns the result of the last
-// block.
 func sendLosing(t *testing.T, a *packet.Assembler, p packet.Packet, drop ...int) (*packet.Message, error) {
 	t.Helper()
 	if m, err := add(a, encodeHeader(t, &p.Header)); m != nil || err != nil {
@@ -45,9 +40,6 @@ func sendLosing(t *testing.T, a *packet.Assembler, p packet.Packet, drop ...int)
 	return m, err
 }
 
-// TestAssembler_LostConfirmedBlock loses one block burst of a confirmed
-// packet. Without Lost the Assembler would wait for the block forever and
-// offer no SACK.
 func TestAssembler_LostConfirmedBlock(t *testing.T) {
 	t.Parallel()
 
@@ -89,9 +81,6 @@ func TestAssembler_LostConfirmedBlock(t *testing.T) {
 	}
 }
 
-// TestAssembler_LostUnconfirmedBlock loses a middle block and the last block
-// of an unconfirmed packet. Each attempt ends at its last block with
-// ErrMessageCRC.
 func TestAssembler_LostUnconfirmedBlock(t *testing.T) {
 	t.Parallel()
 

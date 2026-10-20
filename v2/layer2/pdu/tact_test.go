@@ -10,7 +10,6 @@ import (
 
 func TestTACT_DecodeEncode_RoundTrip(t *testing.T) {
 	t.Parallel()
-	// Build a valid TACT codeword: AT=1, TC=0, LCSS=01 (FirstFragmentLC)
 	codeword := [1]byte{hamming.Encode743(0b1001) << 1}
 
 	tact := pdu.DecodeTACT(codeword)
@@ -28,7 +27,6 @@ func TestTACT_DecodeEncode_RoundTrip(t *testing.T) {
 		t.Errorf("expected LCSS=FirstFragmentLC, got %d", tact.LCSS)
 	}
 
-	// Re-encode and verify round-trip
 	encoded := must(tact.Encode())
 	if encoded != codeword {
 		t.Errorf("round-trip failed: encoded %v != original %v", encoded, codeword)
@@ -37,7 +35,6 @@ func TestTACT_DecodeEncode_RoundTrip(t *testing.T) {
 
 func TestTACT_DecodeEncode_AllCombinations(t *testing.T) {
 	t.Parallel()
-	// There are only 16 possible 4-bit data values
 	for i := 0; i < 16; i++ {
 		codeword := [1]byte{hamming.Encode743(uint8(i)) << 1}
 
@@ -59,7 +56,6 @@ func TestTACT_SingleBitError(t *testing.T) {
 	t.Parallel()
 	codeword := [1]byte{hamming.Encode743(0b0110) << 1}
 
-	// Flip each bit position and verify correction
 	for pos := 0; pos < 7; pos++ {
 		corrupted := codeword
 		corrupted[0] ^= 0x80 >> pos
@@ -73,7 +69,6 @@ func TestTACT_SingleBitError(t *testing.T) {
 		if fecResult.ErrorsCorrected != 1 {
 			t.Errorf("bit %d: expected 1 error corrected, got %d", pos, fecResult.ErrorsCorrected)
 		}
-		// Verify corrected data matches original
 		if tact.TDMAChannel != true || tact.AccessType != false {
 			t.Errorf("bit %d: corrected data doesn't match original", pos)
 		}

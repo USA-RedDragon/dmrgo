@@ -12,16 +12,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// FuzzTalkerAlias checks that an alias that EncodeTalkerAlias accepts comes
-// back unchanged through the encoded Full LCs, TalkerAlias and a
-// TalkerAliasAssembler fed the LCs in any order with repeats, and that the
-// assembler takes any decoded Full LC without a panic.
 func FuzzTalkerAlias(f *testing.F) {
 	talkerAliasSeeds(func(alias string, format, order uint8, extra []byte) { f.Add(alias, format, order, extra) })
 	f.Fuzz(fuzzTalkerAlias)
 }
 
-// talkerAliasSeeds calls add with each seed of FuzzTalkerAlias.
 func talkerAliasSeeds(add func(alias string, format, order uint8, extra []byte)) {
 	add("N0CALL", uint8(layer3.TalkerAliasSevenBit), uint8(0), []byte{})
 	add("Jacob McSwain KI5VMF", uint8(layer3.TalkerAliasISOEightBit), uint8(0x1B), []byte{})
@@ -30,7 +25,6 @@ func talkerAliasSeeds(add func(alias string, format, order uint8, extra []byte))
 	add("", uint8(layer3.TalkerAliasUTF8), uint8(0), []byte{0x10, 0x00, 0xC0, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46})
 }
 
-// fuzzTalkerAlias is the body of FuzzTalkerAlias.
 func fuzzTalkerAlias(t *testing.T, alias string, format, order uint8, extra []byte) {
 	tf := layer3.TalkerAliasDataFormat(format % 4)
 	lcs, err := pdu.EncodeTalkerAlias(alias, tf)
@@ -92,10 +86,6 @@ func fuzzTalkerAlias(t *testing.T, alias string, format, order uint8, extra []by
 	}
 }
 
-// FuzzSysCode checks that Unpack and Pack of a C_SYScode, and Unpack14 and
-// Pack14 of its CACH form, are inverses, that Pack refuses exactly the
-// fields that do not fit, that the Short LC SysCode setters round-trip, and
-// that AddressHash matches the reference CRC-8.
 func FuzzSysCode(f *testing.F) {
 	sysCodeSeeds(func(v uint16, model uint8, net, site uint16, par uint8, id uint32) {
 		f.Add(v, model, net, site, par, id)
@@ -103,13 +93,11 @@ func FuzzSysCode(f *testing.F) {
 	f.Fuzz(fuzzSysCode)
 }
 
-// sysCodeSeeds calls add with each seed of FuzzSysCode.
 func sysCodeSeeds(add func(v uint16, model uint8, net, site uint16, par uint8, id uint32)) {
 	add(uint16(0x8E21), uint8(2), uint16(5), uint16(0x55), uint8(1), uint32(3120101))
 	add(uint16(0xFFFF), uint8(4), uint16(0x3FF), uint16(0x1000), uint8(4), uint32(1<<24))
 }
 
-// fuzzSysCode is the body of FuzzSysCode.
 func fuzzSysCode(t *testing.T, v uint16, model uint8, net, site uint16, par uint8, id uint32) {
 	var s pdu.SysCode
 	s.Unpack(v)

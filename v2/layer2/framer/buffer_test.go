@@ -10,8 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// testStream returns the bursts of voice.bin with random bits between them,
-// packed. The last byte is padded with 0 bits.
 func testStream(t *testing.T, r *rand.Rand) []byte {
 	t.Helper()
 	data, err := os.ReadFile("../testdata/voice.bin")
@@ -38,16 +36,12 @@ func testStream(t *testing.T, r *rand.Rand) []byte {
 	return stream
 }
 
-// testConfigs are the Framer configurations of the buffer tests.
 var testConfigs = []Config{
 	{Threshold: -1, Period: SlotPeriod},
 	{Threshold: -1, CACH: true},
 	{Threshold: 0, MaxMisses: 1},
 }
 
-// TestFramer_BufferBound checks that fewer than a CACH, a burst and a byte
-// stay in the buffer between writes, that the buffer never grows, and that a
-// write finds the bursts that the same bytes written one at a time find.
 func TestFramer_BufferBound(t *testing.T) {
 	t.Parallel()
 	r := rand.New(rand.NewSource(5))
@@ -81,11 +75,6 @@ func TestFramer_BufferBound(t *testing.T) {
 	}
 }
 
-// TestFramer_BitPieces writes the stream in pieces of any number of bits,
-// with random bits after the nbits of each piece, and cut at each bit of
-// its last byte. It checks that the Framer finds the bursts that a write of
-// the whole bytes finds, up to the end of the stream, and that the buffer
-// keeps its bound.
 func TestFramer_BitPieces(t *testing.T) {
 	t.Parallel()
 	r := rand.New(rand.NewSource(6))

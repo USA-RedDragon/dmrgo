@@ -85,8 +85,6 @@ func NewAssembler(maxBlocks int) *Assembler {
 	return &Assembler{blocks: make([]byte, max(0, min(maxBlocks, maxBlocksPerPacket))*maxBlockOctets)}
 }
 
-// store holds copies of the headers and the response data that a Message
-// points to.
 type store struct {
 	unconfirmed    pdu.UnconfirmedDataHeader
 	confirmed      pdu.ConfirmedDataHeader
@@ -100,7 +98,6 @@ type store struct {
 	responseData   ResponseData
 }
 
-// copyHeader sets *dst to *src with each sub-header copied into s.
 func (s *store) copyHeader(dst, src *pdu.DataHeader) {
 	*dst = *src
 	if src.UnconfirmedDataHeader != nil {
@@ -239,11 +236,6 @@ func (a *Assembler) addHeader(h *pdu.DataHeader) (Message, bool, error) {
 	return a.finishIfEmpty()
 }
 
-// isRetry reports whether h starts a retry of the confirmed or SARQ packet
-// in progress: the same format, SAP and LLIDs, the same N(S) for a C_HEAD,
-// and the same Defined Data format or ports for short data. A header with F
-// set, the first try of a packet, is a retry only after all blocks of the
-// attempt arrived, as a sender may mark a full resend as a first try.
 func (a *Assembler) isRetry(h *pdu.DataHeader) bool {
 	if !a.active || !a.confirmed || h.Format != a.msg.Header.Format || fullMessage(h) && a.count < a.expect {
 		return false
@@ -308,9 +300,6 @@ func (a *Assembler) addBlock(b block, usable bool) (Message, bool, error) {
 	return Message{}, false, ErrBlocksMissing
 }
 
-// storeBlock copies the octets of b to their place in the packet: arrival
-// index idx for an unconfirmed block, the DBSN for a confirmed block with a
-// good CRC-9.
 func (a *Assembler) storeBlock(idx int, b block) {
 	if !a.confirmed {
 		if idx < a.total {
@@ -331,15 +320,10 @@ func (a *Assembler) storeBlock(idx int, b block) {
 	a.valid[dbsn], a.bad[dbsn] = ok, !ok
 }
 
-// acceptBadCRC reports whether AcceptBadCRC applies to the packet in
-// progress: it does not to a packet that a later try started, whose size
-// only a good message CRC confirms.
 func (a *Assembler) acceptBadCRC() bool {
 	return a.AcceptBadCRC && fullMessage(&a.msg.Header)
 }
 
-// allPresent reports whether every block of the packet has arrived, with a
-// good CRC-9 or, with AcceptBadCRC, a bad one.
 func (a *Assembler) allPresent() bool {
 	for i, ok := range a.valid[:a.total] {
 		if !ok && !a.bad[i] {
@@ -432,8 +416,6 @@ func (a *Assembler) finish() (Message, bool, error) {
 	return m, true, err
 }
 
-// fill sets the Data, CRC and Response of m from the block octets buf and
-// checks the message CRC, or the CRC of the response data.
 func (a *Assembler) fill(m *Message, buf []byte, complete bool) error {
 	if m.Header.Format == pdu.FormatResponsePacket {
 		if len(buf) != 12 && len(buf) != 24 {

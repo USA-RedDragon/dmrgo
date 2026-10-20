@@ -12,8 +12,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// transmission returns the header, n voice bursts and the terminator of a
-// transmission of lc.
 func transmission(t *testing.T, lc pdu.FullLinkControl, n int) []layer2.RawBurst {
 	t.Helper()
 	tx := must(layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 3, Source: layer2.SyncSourceMS, Silence: silenceSlot()}))
@@ -112,8 +110,6 @@ func TestVoiceReceiver_LateEntry(t *testing.T) {
 	}
 }
 
-// A lost burst C shifts the position of burst D to C and discards the
-// embedded LC at burst E. Burst A of the next superframe resynchronizes.
 func TestVoiceReceiver_LostBurst(t *testing.T) {
 	t.Parallel()
 
@@ -148,9 +144,6 @@ func TestVoiceReceiver_UncorrectableLC(t *testing.T) {
 	}
 }
 
-// TestVoiceReceiver_Strict checks that a Strict receiver rejects an error in
-// the column parity row of the embedded LC, which the default corrects, and
-// that Reset keeps Strict.
 func TestVoiceReceiver_Strict(t *testing.T) {
 	t.Parallel()
 
@@ -191,8 +184,6 @@ func TestVoiceReceiver_DataBurstResets(t *testing.T) {
 	}
 }
 
-// A burst E with an uncorrectable EMB still completes the embedded LC,
-// which the BPTC and checksum check.
 func TestVoiceReceiver_UncorrectableEMB(t *testing.T) {
 	t.Parallel()
 
@@ -212,10 +203,6 @@ func TestVoiceReceiver_UncorrectableEMB(t *testing.T) {
 	}
 }
 
-// TestVoiceReceiver_Captures labels the superframes of the captures and
-// decodes their embedded LC. The superframe of voice.bin without its burst A
-// resynchronizes on its LCSS First burst, and the lone burst A of
-// parrot_kerchunk.bin is followed by a complete superframe.
 func TestVoiceReceiver_Captures(t *testing.T) {
 	t.Parallel()
 

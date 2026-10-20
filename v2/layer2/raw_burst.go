@@ -18,14 +18,10 @@ import (
 // (ETSI TS 102 361-1 Annex E)
 type RawBurst [33]byte
 
-// field returns the a-bit field at first and the b-bit field at second as
-// one value, the first field most significant.
 func (r *RawBurst) field(first, a, second, b int) uint64 {
 	return bits.Field(r[:], first, a)<<b | bits.Field(r[:], second, b)
 }
 
-// setField writes the high a bits of the a+b-bit value v at first and the
-// low b bits at second.
 func (r *RawBurst) setField(first, a, second, b int, v uint64) {
 	bits.SetField(r[:], first, a, v>>b)
 	bits.SetField(r[:], second, b, v)
@@ -48,7 +44,6 @@ func (r *RawBurst) SetSync(p enums.SyncPattern) error {
 	return nil
 }
 
-// setSync writes the 48 bits of p into the burst center.
 func (r *RawBurst) setSync(p enums.SyncPattern) {
 	bits.SetField(r[:], syncStart, syncEnd-syncStart, uint64(p))
 }
@@ -73,8 +68,6 @@ func (r *RawBurst) SetSlotType(st pdu.SlotType) error {
 	return nil
 }
 
-// info returns the 196 information bits, burst bits 0 to 97 and 166 to 263,
-// packed.
 func (r *RawBurst) info() [25]byte {
 	var p [25]byte
 	copy(p[:12], r[:12])
@@ -83,7 +76,6 @@ func (r *RawBurst) info() [25]byte {
 	return p
 }
 
-// setInfo writes the 196 packed information bits p.
 func (r *RawBurst) setInfo(p *[25]byte) {
 	copy(r[:12], p[:12])
 	bits.Copy(r[:], 96, p[:], 96, 2)
@@ -313,8 +305,6 @@ func BuildVoiceBurst(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame, pos enums.Voi
 		return RawBurst{}, err
 	}
 	if pos == enums.VoiceBurstA {
-		// Go does not specify whether "return r, r.SetSync(voice)" reads r
-		// before or after the call.
 		err := r.SetSync(voice)
 		return r, err
 	}

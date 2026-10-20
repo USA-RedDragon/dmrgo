@@ -10,11 +10,11 @@ func TestUDPIPv4CompressedHeader_RoundTrip(t *testing.T) {
 	t.Parallel()
 	original := pdu.UDPIPv4CompressedHeader{
 		IPv4Identification:      0xABCD,
-		SAID:                    0, // Radio Network
-		DAID:                    2, // Group Network
-		HeaderCompressionOpcode: 0, // UDP/IPv4
-		SPID:                    1, // Text Message (5016)
-		DPID:                    2, // Location Protocol (5017)
+		SAID:                    0,
+		DAID:                    2,
+		HeaderCompressionOpcode: 0,
+		SPID:                    1,
+		DPID:                    2,
 		ExtendedHeader1:         0x1234,
 		ExtendedHeader2:         0x5678,
 	}

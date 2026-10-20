@@ -15,9 +15,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// capturedEmbeddedLC is the embedded LC of every superframe in
-// testdata/voice.bin and testdata/parrot_kerchunk.bin: UU_V_Ch_Usr from
-// 3191868 to 9990.
 var capturedEmbeddedLC = []byte{0x03, 0x00, 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C}
 
 func capturedFragments() [4][32]unpacked.Bit {
@@ -101,8 +98,6 @@ func TestEmbeddedLC_RoundTrip(t *testing.T) {
 	}
 }
 
-// The Full LC decode of an embedded LC reports the embedded LC FEC result,
-// with nothing added by the Full LC decode, and keeps every LC bit.
 func TestEmbeddedFullLinkControl_ReportsEmbeddedFEC(t *testing.T) {
 	t.Parallel()
 
@@ -144,8 +139,6 @@ func TestEmbeddedFullLinkControl_ReportsEmbeddedFEC(t *testing.T) {
 	}
 }
 
-// A BPTC codeword whose checksum bits do not match its LC decodes cleanly
-// in the BPTC but must be reported as uncorrectable.
 func TestEmbeddedLC_ChecksumMismatch(t *testing.T) {
 	t.Parallel()
 
@@ -166,11 +159,6 @@ func TestEmbeddedLC_ChecksumMismatch(t *testing.T) {
 	}
 }
 
-// TestEmbeddedLCStrict_MMDVMHostVectors checks the strict DecodeEmbeddedLC
-// against CDMREmbeddedData::decodeEmbeddedData of MMDVMHost 0acb758. Each
-// vector is an LC, its 128 transmitted bits with 1 to 6 bit errors, and
-// whether MMDVMHost accepts it. MMDVMHost returns the original LC for every
-// vector it accepts.
 func TestEmbeddedLCStrict_MMDVMHostVectors(t *testing.T) {
 	t.Parallel()
 
@@ -223,9 +211,6 @@ func TestEmbeddedLCStrict_MMDVMHostVectors(t *testing.T) {
 	}
 }
 
-// TestEmbeddedLC_FiveErrors checks that the checksum picks between equally
-// near codewords: with 5 random bit errors DecodeEmbeddedLC recovers nearly
-// every LC and returns almost no wrong LC.
 func TestEmbeddedLC_FiveErrors(t *testing.T) {
 	t.Parallel()
 

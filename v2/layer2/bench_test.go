@@ -11,8 +11,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// benchBursts returns 64 bursts of data type dt with random payloads, sealed
-// where dt has a CRC or RS(12,9) parity.
 func benchBursts(b *testing.B, dt enums.DataType) []layer2.RawBurst {
 	b.Helper()
 	r := rand.New(rand.NewSource(int64(dt) + 1))

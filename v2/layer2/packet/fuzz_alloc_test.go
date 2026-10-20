@@ -4,9 +4,6 @@ package packet_test
 
 import "testing"
 
-// TestAllocsRoundTrip replays the seeds of FuzzRoundTrip, which segment,
-// retry, encode, decode and reassemble packets over a damaged channel, and
-// checks that a session with reused storage does not allocate.
 func TestAllocsRoundTrip(t *testing.T) {
 	s := newSession()
 	for i, seed := range roundTripSeeds(t) {

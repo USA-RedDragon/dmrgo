@@ -55,9 +55,7 @@ func TestFLCGPSInfo_DecodeTwosComplement(t *testing.T) {
 	t.Parallel()
 
 	var data [7]byte
-	// Longitude bits 7-31: 1 followed by zeros = -2^24 steps = -180 degrees.
 	bits.SetBit(data[:], 7, 1)
-	// Latitude bits 32-55: all ones = -1 step.
 	bits.SetField(data[:], 32, 24, 1<<24-1)
 	out := pdu.DecodeFLCGPSInfo(data)
 	if out.Longitude != -180 {
@@ -88,8 +86,6 @@ func TestFLCGPSInfo_EncodeTwosComplement(t *testing.T) {
 	}
 }
 
-// Values at the top of each range have no code of their own. Longitude
-// wraps to -180, the same meridian, and latitude takes the largest code.
 func TestFLCGPSInfo_EncodeRangeEdges(t *testing.T) {
 	t.Parallel()
 

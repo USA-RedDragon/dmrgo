@@ -5,8 +5,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-// crc9MaskRate34 is the CRC-9 mask for Rate 3/4 Data Continuation
-// per ETSI TS 102 361-1 Table B.21.
+// ETSI TS 102 361-1 Table B.21
 const crc9MaskRate34 uint16 = 0x1FF
 
 // Rate34Data is a rate 3/4 coded packet data block (R_3_4_DATA). Unconfirmed
@@ -57,6 +56,4 @@ func (s *Rate34Data) SetConfirmed(dbsn uint8, userData [16]byte) error {
 	return nil
 }
 
-// errRate34DataDBSNRange is the error of a SetConfirmed whose DBSN does
-// not fit in 7 bits.
 var errRate34DataDBSNRange = &dmrgo.FieldRangeError{Type: "Rate34Data", Field: fieldDBSN, Bits: 7}

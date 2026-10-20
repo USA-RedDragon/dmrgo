@@ -131,8 +131,6 @@ func TestBurstEncode_RejectsBurstWithoutSync(t *testing.T) {
 	}
 }
 
-// A voice burst encodes its vocoder frames from the SYNC pattern and the
-// embedded signalling alone; VoiceBurst does not select the payload.
 func TestBurstEncode_VoiceIgnoresVoiceBurst(t *testing.T) {
 	t.Parallel()
 

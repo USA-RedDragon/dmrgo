@@ -11,10 +11,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// ASELSAN Tier III bursts from a recording of a BS (CC 2) that sends every
-// sixth burst of a channel with an EMB (PI 0, LCSS single fragment) and a
-// Null embedded field in place of the data SYNC. They decode with 0 FEC
-// corrections. aselsanCSBKSync is the same C_BCAST CSBK with the SYNC.
 const (
 	aselsanCSBKSync  = "7fcade72ca00d2684509878048ddff57d75df5dc60a27631607a3c638fd79f3767"
 	aselsanCSBKEMB   = "7fcade72ca00d2684509878048d2100000000b7c60a27631607a3c638fd79f3767"

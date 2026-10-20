@@ -101,9 +101,6 @@ type VoiceTransmitter struct {
 	terminated bool
 }
 
-// lcDataBurst returns the Voice LC Header or Terminator with LC burst of
-// lc for a VoiceTransmitter. It calls the Encode method of the concrete
-// type, so that lc does not escape to the heap.
 func lcDataBurst(lc *pdu.FullLinkControl, dataType enums.DataType, colorCode enums.ColorCode, src SyncSource) (RawBurst, error) {
 	l := *lc
 	l.BurstDataType = dataType
@@ -226,7 +223,6 @@ func (t *VoiceTransmitter) AddBurst(slots [VoiceSlotsPerBurst][9]byte) (RawBurst
 	return burst, nil
 }
 
-// appendSlot adds one slot and appends the burst that it completes to dst.
 func (t *VoiceTransmitter) appendSlot(dst []RawBurst, slot *[9]byte) ([]RawBurst, error) {
 	burst, done, err := t.addSlot(slot)
 	if err != nil || !done {
@@ -235,7 +231,6 @@ func (t *VoiceTransmitter) appendSlot(dst []RawBurst, slot *[9]byte) ([]RawBurst
 	return append(dst, burst), nil
 }
 
-// addSlot adds one slot and returns the burst that it completes, if any.
 func (t *VoiceTransmitter) addSlot(slot *[9]byte) (RawBurst, bool, error) {
 	t.slots[t.pending] = *slot
 	t.pending++

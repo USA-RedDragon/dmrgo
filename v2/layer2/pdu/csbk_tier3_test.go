@@ -767,12 +767,11 @@ type netSiteModelCase struct {
 	wantSite  uint16
 }
 
-// netSitePattern is 0b1100_1010_0101 in NetSiteRaw order.
 func netSitePattern() uint16 {
 	return 0b1100_1010_0101
 }
 
-// netSiteModelCases follows ETSI TS 102 361-4 Table 6.5.
+// ETSI TS 102 361-4 Table 6.5
 func netSiteModelCases() []netSiteModelCase {
 	return []netSiteModelCase{
 		{"Tiny", 0, 0b110010100, 0b101},
@@ -818,9 +817,7 @@ func TestShortLC_PSysParms_NetSite_Models(t *testing.T) {
 	}
 }
 
-// TestCSBK_UDTHeaderOpcodes_NotCSBK checks that opcodes 0x1A and 0x1B
-// (C_UDTHD and C_UDTHU) are unknown CSBK opcodes, because they are sent in a
-// data header burst (ETSI TS 102 361-4 Table 7.2).
+// ETSI TS 102 361-4 Table 7.2
 func TestCSBK_UDTHeaderOpcodes_NotCSBK(t *testing.T) {
 	t.Parallel()
 

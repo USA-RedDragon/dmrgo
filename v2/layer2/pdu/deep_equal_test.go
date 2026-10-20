@@ -9,8 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// TestDecodedEqualsBuilt checks that a decoded PDU, with its FEC result
-// cleared, is reflect.DeepEqual to the value it was built from.
 func TestDecodedEqualsBuilt(t *testing.T) {
 	t.Parallel()
 

@@ -8,10 +8,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// The Motorola CSBKs below are octets 0 to 11 of CSBK bursts that an XPR
-// 8400 repeater relayed over IPSC on 2026-10-16: radio 3140598 (0x2FEBF6)
-// checked and alerted radio 3191868 (0x30B43C), which answered. Each one
-// passes its CRC.
 const (
 	motoRadioCheckRequest = "a41000002febf630b43c0637"
 	motoRadioCheckAnswer  = "a41000802febf630b43cadce"

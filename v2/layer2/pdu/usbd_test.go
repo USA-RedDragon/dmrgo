@@ -11,9 +11,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// buildUSBDBits constructs the 96 packed bits of a USBD PDU.
-// serviceType is 4 bits, payload holds 76 bits from its first bit.
-// CRC-CCITT is computed and XOR-masked with mask 0x3333 (ETSI TS 102 361-1 clause B.3.8).
+// ETSI TS 102 361-1 clause B.3.8
 func buildUSBDBits(serviceType byte, payload [10]byte) [12]byte {
 	var data [12]byte
 

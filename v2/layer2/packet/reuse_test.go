@@ -26,7 +26,6 @@ func loadRaw(t *testing.T, path string) []layer2.RawBurst {
 	return out
 }
 
-// deepCopy returns h with each sub-header copied.
 func deepCopy(h pdu.DataHeader) pdu.DataHeader {
 	v := reflect.ValueOf(&h).Elem()
 	for i := range v.NumField() {
@@ -39,8 +38,6 @@ func deepCopy(h pdu.DataHeader) pdu.DataHeader {
 	return h
 }
 
-// TestAssembler_ReusedBurst decodes each capture twice into one Burst and
-// checks that both packets come out the same from the reused storage.
 func TestAssembler_ReusedBurst(t *testing.T) {
 	t.Parallel()
 
@@ -73,8 +70,6 @@ func TestAssembler_ReusedBurst(t *testing.T) {
 	}
 }
 
-// TestAssembler_HeaderInPlace adds headers whose sub-header the caller then
-// changes in place, as a reused decoder does.
 func TestAssembler_HeaderInPlace(t *testing.T) {
 	t.Parallel()
 
@@ -262,8 +257,6 @@ func TestResponseData_Append(t *testing.T) {
 	}
 }
 
-// TestAssembler_ResponseLength sends a C_RHEAD with three blocks, which is
-// not a valid C_RDATA length.
 func TestAssembler_ResponseLength(t *testing.T) {
 	t.Parallel()
 

@@ -12,8 +12,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// samplesPerValue is the number of random payloads per forced discriminator
-// value.
 const samplesPerValue = 200
 
 func randomPayload(rng *rand.Rand, n int) []byte {
@@ -42,29 +40,22 @@ func withRS(t *testing.T, data []byte, mask uint32) [12]byte {
 	return cw
 }
 
-// forceOpcode sets the 6-bit CSBKO or FLCO in octet 0 and the FID in octet 1.
 func forceOpcode(b []byte, opcode int, fid byte) {
 	b[0] = b[0]&0xC0 | byte(opcode)
 	b[1] = fid
 }
 
-// manufacturerFID returns a random non-zero FID.
 func manufacturerFID(rng *rand.Rand) byte {
 	return byte(1 + rng.UintN(255))
 }
 
 type roundTrip struct {
-	name string
-	// values is the number of forced discriminator values; build gets each
-	// value samplesPerValue times.
+	name   string
 	values int
 	build  func(rng *rand.Rand, value int) [12]byte
 	trip   func([12]byte) ([12]byte, fec.Result, error)
 }
 
-// TestPDURoundTripKeepsEveryBit forces every discriminator value (FLCO and
-// CSBKO with the SFID and with a manufacturer FID, Format with and without
-// appended blocks) so that rare payload variants are reached.
 func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 	t.Parallel()
 
@@ -123,8 +114,6 @@ func TestPDURoundTripKeepsEveryBit(t *testing.T) {
 				b := randomPayload(rng, 10)
 				b[0] = b[0]&0xF0 | byte(v/2)
 				if v%2 == 0 {
-					// Appended Blocks = 0 (octet 0 bits 5-4, octet 1 bits 3-0)
-					// selects SP_HEAD for Format 0b1110.
 					b[0] &^= 0x30
 					b[1] &^= 0x0F
 				}

@@ -9,9 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// lcBurst builds a BS-sourced data burst that carries the BPTC(196,96)
-// payload p with a slot type of color code cc and data type dt, which may be
-// reserved.
 func lcBurst(p [12]byte, dt enums.DataType, cc enums.ColorCode) ([33]byte, error) {
 	var r layer2.RawBurst
 	if err := r.SetSync(enums.SyncBSSourcedData); err != nil {

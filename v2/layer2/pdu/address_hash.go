@@ -20,6 +20,4 @@ func AddressHash(id uint32) (uint8, error) {
 	return crc.CRC8(b[:], 24), nil
 }
 
-// errAddressHashRange is the error of an AddressHash whose id does not fit
-// in 24 bits.
 var errAddressHashRange = &dmrgo.FieldRangeError{Type: "pdu", Field: "AddressHash", Bits: 24}

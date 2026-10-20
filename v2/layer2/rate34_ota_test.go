@@ -6,12 +6,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// rate34Sent is a Rate 3/4 data burst that an XPR 8400 repeater sent over the
-// air on 2026-10-15.
 const rate34Sent = "2c3c2a3cf259f24919d542edde1dff57d75df5d7d42efea77a2f9de704bf0f2c4e"
 
-// TestRate34OverTheAir decodes two receptions of rate34Sent with symbol
-// errors: one with +1 received as -3 (2 bits), one with +3 received as +1.
 func TestRate34OverTheAir(t *testing.T) {
 	t.Parallel()
 
@@ -33,10 +29,6 @@ func TestRate34OverTheAir(t *testing.T) {
 	}
 }
 
-// TestRate34SingleDibitErrors sets each information dibit of rate34Sent to
-// each other value. A 1-step error always decodes to the sent payload. A 2
-// or 3-step error can make the burst at least as close to another block,
-// because two blocks can differ in only 2 dibits (see the trellis tests).
 func TestRate34SingleDibitErrors(t *testing.T) {
 	t.Parallel()
 

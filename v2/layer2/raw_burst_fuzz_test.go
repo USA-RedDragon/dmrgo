@@ -11,28 +11,23 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// fuzzSyncPatterns are the SYNC patterns that RawBurst.SetSync accepts.
 var fuzzSyncPatterns = [...]enums.SyncPattern{
 	enums.SyncBSSourcedVoice, enums.SyncBSSourcedData, enums.SyncMSSourcedVoice, enums.SyncMSSourcedData,
 	enums.SyncMSSourcedRC, enums.SyncTDMA1Voice, enums.SyncTDMA1Data, enums.SyncTDMA2Voice, enums.SyncTDMA2Data,
 	enums.SyncReserved,
 }
 
-// fuzzVals holds the field values that a fuzz input gives, padded with
-// zeros, and hands them out in order.
 type fuzzVals struct {
 	b [96]byte
 	i int
 }
 
-// newFuzzVals returns the values of v.
 func newFuzzVals(v []byte) *fuzzVals {
 	f := &fuzzVals{}
 	copy(f.b[:], v)
 	return f
 }
 
-// next returns the next n values.
 func (f *fuzzVals) next(n int) []byte {
 	if f.i+n > len(f.b) {
 		f.i = 0
@@ -41,12 +36,10 @@ func (f *fuzzVals) next(n int) []byte {
 	return f.b[f.i-n : f.i]
 }
 
-// u8 returns the next value.
 func (f *fuzzVals) u8() byte {
 	return f.next(1)[0]
 }
 
-// burstMask returns a RawBurst with the burst bits [lo, hi) of each range set.
 func burstMask(ranges ...[2]int) layer2.RawBurst {
 	var m layer2.RawBurst
 	for _, r := range ranges {
@@ -57,8 +50,6 @@ func burstMask(ranges ...[2]int) layer2.RawBurst {
 	return m
 }
 
-// changedOutside returns the first burst bit outside mask in which a and b
-// differ, or -1.
 func changedOutside(a, b, mask layer2.RawBurst) int {
 	for i := range 264 {
 		if bits.Bit(mask[:], i) == 0 && bits.Bit(a[:], i) != bits.Bit(b[:], i) {
@@ -68,13 +59,10 @@ func changedOutside(a, b, mask layer2.RawBurst) int {
 	return -1
 }
 
-// clean reports whether res corrected nothing and is not uncorrectable.
 func clean(res fec.Result) bool {
 	return res.ErrorsCorrected == 0 && !res.Uncorrectable
 }
 
-// ambeFrames returns three AMBE+2 frames from v, with the padding bits of
-// each frame clear.
 func ambeFrames(v []byte) [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame {
 	var frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
 	for i := range frames {
@@ -84,13 +72,10 @@ func ambeFrames(v []byte) [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame {
 	return frames
 }
 
-// rawFieldSeed is one seed of FuzzRawBurstFields.
 type rawFieldSeed struct {
 	raw, v []byte
 }
 
-// rawFieldSeeds returns the seeds of FuzzRawBurstFields: each burst of the
-// captures in testdata, with one of a few field value sets.
 func rawFieldSeeds(tb testing.TB) []rawFieldSeed {
 	tb.Helper()
 	vals := [][]byte{
@@ -106,15 +91,12 @@ func rawFieldSeeds(tb testing.TB) []rawFieldSeed {
 	return seeds
 }
 
-// rawFields holds the bit masks of the RawBurst fields and the burst that
-// FuzzRawBurstFields edits.
 type rawFields struct {
 	sync, slotType, info, rate1, emb, embedded, rcEMB, rcData, voice layer2.RawBurst
 	orig                                                             layer2.RawBurst
 }
 
-// newRawFields returns the field masks, from the burst bit ranges of ETSI TS
-// 102 361-1 Annex E.
+// ETSI TS 102 361-1 Annex E
 func newRawFields() *rawFields {
 	return &rawFields{
 		sync:     burstMask([2]int{layer2.SyncStart, layer2.SyncEnd}),
@@ -129,7 +111,6 @@ func newRawFields() *rawFields {
 	}
 }
 
-// within fails t when r differs from the original burst outside mask.
 func (fs *rawFields) within(t *testing.T, name string, r, mask layer2.RawBurst) {
 	t.Helper()
 	if i := changedOutside(fs.orig, r, mask); i >= 0 {
@@ -137,7 +118,6 @@ func (fs *rawFields) within(t *testing.T, name string, r, mask layer2.RawBurst) 
 	}
 }
 
-// checkSync checks SetSync with a SYNC pattern and with another value.
 func (fs *rawFields) checkSync(t *testing.T, vals *fuzzVals) {
 	t.Helper()
 	r := fs.orig
@@ -160,7 +140,6 @@ func (fs *rawFields) checkSync(t *testing.T, vals *fuzzVals) {
 	}
 }
 
-// checkSlotType checks SetSlotType with any color code and data type.
 func (fs *rawFields) checkSlotType(t *testing.T, vals *fuzzVals) {
 	t.Helper()
 	r := fs.orig
@@ -181,8 +160,6 @@ func (fs *rawFields) checkSlotType(t *testing.T, vals *fuzzVals) {
 	}
 }
 
-// checkPayloads checks the BPTC(196,96), reserved bit, Rate 3/4 and Rate 1
-// setters.
 func (fs *rawFields) checkPayloads(t *testing.T, vals *fuzzVals) {
 	t.Helper()
 	r := fs.orig
@@ -229,7 +206,6 @@ func (fs *rawFields) checkPayloads(t *testing.T, vals *fuzzVals) {
 	fs.within(t, "SetRate1Payload", r, fs.rate1)
 }
 
-// checkEMBs checks SetEMB and SetStandaloneRCEMB with any EMB fields.
 func (fs *rawFields) checkEMBs(t *testing.T, vals *fuzzVals) {
 	t.Helper()
 	e := vals.u8()
@@ -259,7 +235,6 @@ func (fs *rawFields) checkEMBs(t *testing.T, vals *fuzzVals) {
 	}
 }
 
-// checkWords checks the embedded data and standalone RC data setters.
 func (fs *rawFields) checkWords(t *testing.T, vals *fuzzVals) {
 	t.Helper()
 	word := [4]byte(vals.next(4))
@@ -277,8 +252,6 @@ func (fs *rawFields) checkWords(t *testing.T, vals *fuzzVals) {
 	fs.within(t, "SetStandaloneRCData", r, fs.rcData)
 }
 
-// checkVoice checks SetVoiceSlots and SetAMBEFrames, with and without a
-// padding bit set.
 func (fs *rawFields) checkVoice(t *testing.T, vals *fuzzVals) {
 	t.Helper()
 	r := fs.orig
@@ -305,11 +278,6 @@ func (fs *rawFields) checkVoice(t *testing.T, vals *fuzzVals) {
 	}
 }
 
-// check checks each setter of RawBurst on the burst raw with the field
-// values v: the getter of the field returns the value set, with a clean FEC
-// result, the setter changes no bit outside its field, a setter that
-// returns an error changes nothing, and setting a field to what its getter
-// returns changes nothing.
 func (fs *rawFields) check(t *testing.T, raw, v []byte) {
 	if len(raw) != 33 {
 		return
@@ -334,8 +302,6 @@ func (fs *rawFields) check(t *testing.T, raw, v []byte) {
 	}
 }
 
-// FuzzRawBurstFields checks the setters of RawBurst on any burst with any
-// field values, as rawFields.check describes.
 func FuzzRawBurstFields(f *testing.F) {
 	for _, s := range rawFieldSeeds(f) {
 		f.Add(s.raw, s.v)

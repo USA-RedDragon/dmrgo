@@ -13,8 +13,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// withoutFEC returns a copy of the struct that d points to, with its FEC field
-// zero, for a comparison of the decoded fields.
 func withoutFEC(d any) any {
 	v := reflect.ValueOf(d).Elem()
 	c := reflect.New(v.Type()).Elem()
@@ -25,7 +23,6 @@ func withoutFEC(d any) any {
 	return c.Interface()
 }
 
-// dataEncodeErr returns the error of the Encode method of d.
 func dataEncodeErr(d layer2.Data) error {
 	var err error
 	switch e := d.(type) {
@@ -41,15 +38,11 @@ func dataEncodeErr(d layer2.Data) error {
 	return err
 }
 
-// dataSeed is one seed of FuzzBuildBurst and FuzzMMDVMHostSeal.
 type dataSeed struct {
 	dt, cc, src byte
 	payload     []byte
 }
 
-// dataSeeds returns the data type, color code and payload of each data
-// burst of the captures in testdata, and a reserved data type with a color
-// code and a source out of range.
 func dataSeeds(tb testing.TB) []dataSeed {
 	tb.Helper()
 	var seeds []dataSeed
@@ -76,11 +69,6 @@ func dataSeeds(tb testing.TB) []dataSeed {
 	return append(seeds, dataSeed{byte(enums.DataTypeReserved), 16, 4, []byte{1, 2, 3}})
 }
 
-// buildPayload builds a data burst of dt that carries p with BuildDataBurst,
-// BuildRate34DataBurst or BuildRate1DataBurst, checks that it fails only for
-// an unknown source, a reserved data type or, with a *dmrgo.FieldRangeError,
-// a color code out of range, and checks that the getters return p, the
-// SYNC and the slot type. ok is false when the build failed.
 func buildPayload(t *testing.T, p *[24]byte, dt enums.DataType, cc enums.ColorCode, src layer2.SyncSource) (layer2.RawBurst, bool) {
 	t.Helper()
 	_, sync, srcOK := src.SyncPatterns()
@@ -132,16 +120,11 @@ func buildPayload(t *testing.T, p *[24]byte, dt enums.DataType, cc enums.ColorCo
 	return r, true
 }
 
-// mmdvmChecked are the data types whose CRC or parity MMDVMHost checks.
 var mmdvmChecked = []enums.DataType{
 	enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC, enums.DataTypeCSBK, enums.DataTypeMBCHeader,
 	enums.DataTypeDataHeader,
 }
 
-// checkBuildBurst builds a burst of d with BuildBurst and checks that it
-// fails only when d does not encode, and that the burst decodes clean to
-// d, the slot type and the data SYNC of src, passes the MMDVMHost checks
-// and encodes back to itself.
 func checkBuildBurst(t *testing.T, d layer2.Data, cc enums.ColorCode, src layer2.SyncSource) {
 	t.Helper()
 	_, sync, _ := src.SyncPatterns()
@@ -176,7 +159,6 @@ func checkBuildBurst(t *testing.T, d layer2.Data, cc enums.ColorCode, src layer2
 	}
 }
 
-// checkBuilders is the property of FuzzBuildBurst.
 func checkBuilders(t *testing.T, dtv, ccv, srcv byte, payload []byte) {
 	var p [24]byte
 	copy(p[:], payload)
@@ -198,12 +180,6 @@ func checkBuilders(t *testing.T, dtv, ccv, srcv byte, payload []byte) {
 	}
 }
 
-// FuzzBuildBurst builds a data burst of any data type from any payload,
-// decodes the PDU that it carries, and builds a burst of that PDU with
-// BuildBurst. The payload getters return the payloads that the builders
-// took, BuildBurst fails only for a PDU that does not encode, a color code
-// out of range or an unknown source, and the burst it builds decodes clean
-// to the same PDU, slot type and SYNC and encodes back to itself.
 func FuzzBuildBurst(f *testing.F) {
 	for _, s := range dataSeeds(f) {
 		f.Add(s.dt, s.cc, s.src, s.payload)
@@ -211,7 +187,6 @@ func FuzzBuildBurst(f *testing.F) {
 	f.Fuzz(checkBuilders)
 }
 
-// checkMMDVMHostSeal is the property of FuzzMMDVMHostSeal.
 func checkMMDVMHostSeal(t *testing.T, dtv, _, _ byte, payload []byte) {
 	var p [12]byte
 	copy(p[:], payload)
@@ -238,9 +213,6 @@ func checkMMDVMHostSeal(t *testing.T, dtv, _, _ byte, payload []byte) {
 	}
 }
 
-// FuzzMMDVMHostSeal checks that MMDVMHostSeal makes any payload one that
-// MMDVMHostAccepts takes, that sealing again changes nothing, and that a
-// failed seal leaves the payload as it is.
 func FuzzMMDVMHostSeal(f *testing.F) {
 	for _, s := range dataSeeds(f) {
 		f.Add(s.dt, s.cc, s.src, s.payload)
@@ -248,7 +220,6 @@ func FuzzMMDVMHostSeal(f *testing.F) {
 	f.Fuzz(checkMMDVMHostSeal)
 }
 
-// voiceBurstSeed is one seed of FuzzBuildVoiceBurst.
 type voiceBurstSeed struct {
 	frames   []byte
 	pos, emb byte
@@ -256,8 +227,6 @@ type voiceBurstSeed struct {
 	src      byte
 }
 
-// voiceBurstSeeds returns the seeds of FuzzBuildVoiceBurst: one frame at
-// each position, valid or not.
 func voiceBurstSeeds() []voiceBurstSeed {
 	seeds := make([]voiceBurstSeed, 8)
 	for pos := range seeds {
@@ -266,7 +235,6 @@ func voiceBurstSeeds() []voiceBurstSeed {
 	return seeds
 }
 
-// checkBuildVoiceBurst is the property of FuzzBuildVoiceBurst.
 func checkBuildVoiceBurst(t *testing.T, framesv []byte, posv, embv byte, embedded []byte, srcv byte) {
 	var fv [21]byte
 	copy(fv[:], framesv)
@@ -324,10 +292,6 @@ func checkBuildVoiceBurst(t *testing.T, framesv []byte, posv, embv byte, embedde
 	}
 }
 
-// FuzzBuildVoiceBurst checks that BuildVoiceBurst fails only for a position
-// that is not A to F, an unknown source or a color code out of range, and
-// that the burst it builds decodes, at its position, to the AMBE+2 frames,
-// EMB and embedded data that it took, and encodes back to itself.
 func FuzzBuildVoiceBurst(f *testing.F) {
 	for _, s := range voiceBurstSeeds() {
 		f.Add(s.frames, s.pos, s.emb, s.embedded, s.src)
@@ -335,7 +299,6 @@ func FuzzBuildVoiceBurst(f *testing.F) {
 	f.Fuzz(checkBuildVoiceBurst)
 }
 
-// checkCallLC checks that b, decoded with err, carries lc in a burst of dt.
 func checkCallLC(t *testing.T, b *layer2.Burst, err error, lc pdu.FullLinkControl, dt enums.DataType) {
 	t.Helper()
 	lc.BurstDataType = dt
@@ -345,15 +308,12 @@ func checkCallLC(t *testing.T, b *layer2.Burst, err error, lc pdu.FullLinkContro
 	}
 }
 
-// transmitterSeed is one seed of FuzzVoiceTransmitter.
 type transmitterSeed struct {
 	lc      []byte
 	cc, src byte
 	frames  []byte
 }
 
-// transmitterSeeds returns the seeds of FuzzVoiceTransmitter: a group voice
-// LC with no frames, one frame and 20 frames.
 func transmitterSeeds() []transmitterSeed {
 	lc := groupLC(enums.FIDStandardized)
 	lc.BurstDataType = enums.DataTypeVoiceLCHeader
@@ -365,7 +325,6 @@ func transmitterSeeds() []transmitterSeed {
 	}
 }
 
-// checkVoiceTransmitter is the property of FuzzVoiceTransmitter.
 func checkVoiceTransmitter(t *testing.T, lcv []byte, ccv, srcv byte, framesv []byte) {
 	var cw [12]byte
 	copy(cw[:], lcv)
@@ -457,12 +416,6 @@ func checkVoiceTransmitter(t *testing.T, lcv []byte, ccv, srcv byte, framesv []b
 	}
 }
 
-// FuzzVoiceTransmitter sends any AMBE+2 frames with any Full LC through a
-// VoiceTransmitter and receives the bursts with a VoiceReceiver. The
-// transmitter fails only for an LC that does not encode, a color code out
-// of range or an unknown source; the headers decode to the LC, each
-// superframe gives the LC as its embedded LC, the positions run A to F, and
-// the frames come back in order, then the silence padding.
 func FuzzVoiceTransmitter(f *testing.F) {
 	for _, s := range transmitterSeeds() {
 		f.Add(s.lc, s.cc, s.src, s.frames)
