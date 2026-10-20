@@ -14,4 +14,8 @@ func TestFuzzCorpus(t *testing.T) {
 	for _, in := range msSeeds() {
 		runMS(t, msPool, in)
 	}
+	inPool := newInboundPool(t)
+	for _, in := range tsccSeeds() {
+		runTSCC(t, inPool, in)
+	}
 }
