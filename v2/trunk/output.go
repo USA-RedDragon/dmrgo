@@ -11,7 +11,7 @@ import (
 
 // MaxOutputs is the most outputs that one call of a Follower or MS method
 // appends.
-const MaxOutputs = 8
+const MaxOutputs = 10
 
 // OutputKind is the kind of an Output.
 type OutputKind uint8

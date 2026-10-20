@@ -87,6 +87,8 @@ type Follower struct {
 	hangtime  time.Duration
 	sysErrMax int
 
+	self uint32
+
 	state     State
 	started   bool
 	huntIdx   int
@@ -109,23 +111,29 @@ type Follower struct {
 // whose fields do not fit. It allocates the Follower, and its Burst unless
 // cfg.Scratch is set.
 func NewFollower(cfg *FollowerConfig) (*Follower, error) {
+	f := &Follower{}
+	if err := f.init(cfg); err != nil {
+		return nil, err
+	}
+	return f, nil
+}
+
+func (f *Follower) init(cfg *FollowerConfig) error {
 	if cfg == nil {
 		cfg = &FollowerConfig{}
 	}
 	if cfg.HuntLen < 0 || cfg.HuntLen > MaxChannels {
-		return nil, errHunt
+		return errHunt
 	}
 	if cfg.TalkgroupsLen < 0 || cfg.TalkgroupsLen > MaxTalkgroups {
-		return nil, errTalkgroups
+		return errTalkgroups
 	}
-	f := &Follower{
-		talk: cfg.Talkgroups, talkLen: cfg.TalkgroupsLen, indiv: cfg.Individual, data: cfg.Data, noFollow: cfg.NoFollow,
-		noSignal: cfg.NoSignal, inactive: cfg.Inactive, hangtime: cfg.Hangtime, sysErrMax: cfg.SysErrors,
-	}
+	f.talk, f.talkLen, f.indiv, f.data, f.noFollow = cfg.Talkgroups, cfg.TalkgroupsLen, cfg.Individual, cfg.Data, cfg.NoFollow
+	f.noSignal, f.inactive, f.hangtime, f.sysErrMax = cfg.NoSignal, cfg.Inactive, cfg.Hangtime, cfg.SysErrors
 	f.ctl.b = cfg.Scratch
 	if cfg.SysCode != nil {
 		if _, err := cfg.SysCode.Pack(); err != nil {
-			return nil, errSysCode
+			return errSysCode
 		}
 		f.ctl.want, f.ctl.hasWant = *cfg.SysCode, true
 	}
@@ -134,7 +142,7 @@ func NewFollower(cfg *FollowerConfig) (*Follower, error) {
 	}
 	for i := range cfg.HuntLen {
 		if f.ctl.hunt.Add(HuntEntry{Channel: cfg.Hunt[i]}) != nil {
-			return nil, errHunt
+			return errHunt
 		}
 	}
 	f.ctl.useHunt = cfg.HuntLen > 0
@@ -153,7 +161,7 @@ func NewFollower(cfg *FollowerConfig) (*Follower, error) {
 	if f.ctl.b == nil {
 		f.ctl.b = layer2.NewBurst()
 	}
-	return f, nil
+	return nil
 }
 
 // State returns the state of the Follower.
@@ -359,15 +367,18 @@ func (f *Follower) wants(now time.Duration, g *Grant) bool {
 	if f.hasClear && now-f.clearedAt < clearHold && sameCall(&f.cleared, g) {
 		return false
 	}
+	if f.self != 0 && (g.Source == f.self || !g.Group && g.Target == f.self) {
+		return !g.Data() || f.data
+	}
 	switch {
 	case g.Data():
 		if !f.data {
 			return false
 		}
 	case !g.Group:
-		return f.indiv
+		return f.indiv && (f.self == 0 || g.Target == f.self || g.Source == f.self)
 	}
-	if !g.Group || f.talkLen == 0 {
+	if !g.Group || f.talkLen == 0 && f.self == 0 {
 		return true
 	}
 	for i := range f.talkLen {

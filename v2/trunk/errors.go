@@ -21,10 +21,18 @@ var (
 	ErrChannelNumber = errors.New("trunk: channel number out of range")
 	// ErrPlanFull is returned when a ChannelPlan or HuntList has no room.
 	ErrPlanFull = errors.New("trunk: table full")
+	// ErrBusy is returned by MS.Call while a registration or call request
+	// runs.
+	ErrBusy = errors.New("trunk: request in progress")
+	// ErrNotOnControl is returned by MS.Call when the MS is not on a
+	// confirmed TSCC.
+	ErrNotOnControl = errors.New("trunk: not on a TSCC")
 )
 
 var (
 	errHunt       error = &ConfigError{Field: "Hunt"}
 	errTalkgroups error = &ConfigError{Field: "Talkgroups"}
 	errSysCode    error = &ConfigError{Field: "SysCode"}
+	errAddress    error = &ConfigError{Field: "Address"}
+	errTarget     error = &ConfigError{Field: "target"}
 )
