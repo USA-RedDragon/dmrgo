@@ -191,7 +191,10 @@ func renderTables() ([]byte, error) {
 
 // corrIQFile holds the correction of tier0IQCorr in Hz, fitted from the
 // phase optimizer of Tier2: C symbols of context ending K symbols before
-// the newest, for a pulse of 16 symbols on each side, at 48 kHz.
+// the newest, for a pulse of 16 symbols on each side, at 48 kHz. With L,
+// the sum of L tables, table k for the context k symbols newer; with
+// Sym, only the rows whose oldest symbol is -3 or -1, as the correction of
+// the negated symbols is the negated correction.
 const corrIQFile = "testdata/mcorriq-c4.json"
 
 // renderCorrIQ writes corrIQ and its context, each two phases in a word
@@ -205,7 +208,7 @@ func renderCorrIQ(b *bytes.Buffer) error {
 		}
 	}
 	if !tier0IQCorr {
-		fmt.Fprintf(b, "const (\ncorrIQSyms = 1\ncorrIQSkip = 0\n)\n\nvar corrIQ [4][%d]int32\n\n", (l+1)/2)
+		fmt.Fprintf(b, "const (\ncorrIQSyms = 1\ncorrIQSkip = 0\ncorrIQLen = 1\ncorrIQSym = false\n)\n\nvar corrIQ [1][4][%d]int32\n\n", (l+1)/2)
 		return nil
 	}
 	raw, err := os.ReadFile(corrIQFile)
@@ -213,24 +216,35 @@ func renderCorrIQ(b *bytes.Buffer) error {
 		return err
 	}
 	var c struct {
-		C, K int
-		Hz   []float64
+		C, K, L int
+		Sym     bool
+		Hz      []float64
 	}
 	if err := json.Unmarshal(raw, &c); err != nil {
 		return err
 	}
+	c.L = max(c.L, 1)
+	rows := 1 << (2 * c.C)
+	if c.Sym {
+		rows /= 2
+	}
 	skip := c.K - 16 + span
-	if l != 10 || skip < 0 || len(c.Hz) != 10<<(2*c.C) {
+	if l != 10 || skip-c.L+1 < 0 || skip+c.C > 16 || len(c.Hz) != 10*rows*c.L {
 		return fmt.Errorf("%s: bad context or rate", corrIQFile)
 	}
-	fmt.Fprintf(b, "const (\ncorrIQSyms = %d\ncorrIQSkip = %d\n)\n\n", c.C, skip)
-	fmt.Fprintf(b, "var corrIQ = [%d][5]int32{\n", 1<<(2*c.C))
-	for i := range 1 << (2 * c.C) {
-		b.WriteString("{")
-		for g := range 5 {
-			lo := int32(int16(math.Round(c.Hz[i*10+2*g] * tableUnits / 1944)))
-			hi := int32(int16(math.Round(c.Hz[i*10+2*g+1] * tableUnits / 1944)))
-			fmt.Fprintf(b, "%d,", lo+hi<<16)
+	fmt.Fprintf(b, "const (\ncorrIQSyms = %d\ncorrIQSkip = %d\ncorrIQLen = %d\ncorrIQSym = %v\n)\n\n", c.C, skip, c.L, c.Sym)
+	fmt.Fprintf(b, "var corrIQ = [%d][%d][5]int32{\n", c.L, rows)
+	for k := range c.L {
+		b.WriteString("{\n")
+		for i := range rows {
+			b.WriteString("{")
+			for g := range 5 {
+				o := (k*rows+i)*10 + 2*g
+				lo := int32(int16(math.Round(c.Hz[o] * tableUnits / 1944)))
+				hi := int32(int16(math.Round(c.Hz[o+1] * tableUnits / 1944)))
+				fmt.Fprintf(b, "%d,", lo+hi<<16)
+			}
+			b.WriteString("},\n")
 		}
 		b.WriteString("},\n")
 	}

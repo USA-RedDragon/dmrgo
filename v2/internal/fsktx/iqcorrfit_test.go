@@ -66,6 +66,13 @@ func TestIQCorrDump(t *testing.T) {
 	for i := range len(y0) - optDelay {
 		b = binary.LittleEndian.AppendUint32(b, math.Float32bits(float32(y1[i+optDelay]-y0[i])))
 	}
+	b0 := make([]byte, 0, 4*len(y0))
+	for _, v := range y0[:len(y0)-optDelay] {
+		b0 = binary.LittleEndian.AppendUint32(b0, math.Float32bits(float32(v)))
+	}
+	if err := os.WriteFile(filepath.Join(dir, "iq_base.f32"), b0, 0o600); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.WriteFile(filepath.Join(dir, "iq_syms.bin"), sy, 0o600); err != nil {
 		t.Fatal(err)
 	}
