@@ -9,9 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
-// TestReceiver_ShortSequence runs a call of 300 voice bursts whose 8-bit
-// DMRD sequence number wraps, then a sequence that jumps back by more than
-// a few bursts, as after a transport restart.
 func TestReceiver_ShortSequence(t *testing.T) {
 	t.Parallel()
 
@@ -34,9 +31,6 @@ func TestReceiver_ShortSequence(t *testing.T) {
 	}
 }
 
-// TestReceiver_BunchedArrival gets the voice bursts of a call in pairs, as
-// from a serial port read without sequence numbers. Only a burst with the
-// same bits as the one before it is a duplicate.
 func TestReceiver_BunchedArrival(t *testing.T) {
 	t.Parallel()
 
@@ -56,9 +50,6 @@ func TestReceiver_BunchedArrival(t *testing.T) {
 	}
 }
 
-// TestReceiver_HeaderAfterLateEntry gets voice of one call without its LC,
-// then the header of another call. The stats of the new call start at its
-// header.
 func TestReceiver_HeaderAfterLateEntry(t *testing.T) {
 	t.Parallel()
 
@@ -75,8 +66,6 @@ func TestReceiver_HeaderAfterLateEntry(t *testing.T) {
 	}
 }
 
-// TestReceiver_UndecodableHint gives a burst that does not decode, with a
-// Hint that ends the call.
 func TestReceiver_UndecodableHint(t *testing.T) {
 	t.Parallel()
 
@@ -104,8 +93,6 @@ func TestReceiver_UndecodableHint(t *testing.T) {
 	}
 }
 
-// TestReceiver_DecodedBurstA checks that ReceiverConfig.ColorCode does not
-// drop a burst A given to Decoded.
 func TestReceiver_DecodedBurstA(t *testing.T) {
 	t.Parallel()
 
@@ -121,8 +108,6 @@ func TestReceiver_DecodedBurstA(t *testing.T) {
 	}
 }
 
-// TestReceiver_LateEntryHangEnds has Lost off, and gets one voice burst
-// without an LC in the hang time. The hang time still ends.
 func TestReceiver_LateEntryHangEnds(t *testing.T) {
 	t.Parallel()
 

@@ -19,9 +19,6 @@ import (
 
 const slot = 60 * time.Millisecond
 
-// input is one burst for a Receiver, at a time, with a Hint. lost marks a
-// call of Receiver.Lost instead of a burst, and decoded a call of
-// Receiver.Decoded.
 type input struct {
 	at      time.Duration
 	raw     layer2.RawBurst
@@ -30,9 +27,6 @@ type input struct {
 	decoded *layer2.Burst
 }
 
-// feed runs the inputs through rx, then a Tick at tick when tick is not
-// negative, and returns every event. It fails when one call appends more
-// than MaxEvents.
 func feed(t *testing.T, rx *voice.Receiver, in []input, tick time.Duration) []voice.Event {
 	t.Helper()
 	var all []voice.Event
@@ -57,7 +51,6 @@ func feed(t *testing.T, rx *voice.Receiver, in []input, tick time.Duration) []vo
 	return all
 }
 
-// timed returns the bursts as inputs 60 ms apart from start, with hint h.
 func timed(bursts []layer2.RawBurst, start time.Duration, h layer2.Hint) []input {
 	out := make([]input, len(bursts))
 	for i, b := range bursts {
@@ -66,8 +59,6 @@ func timed(bursts []layer2.RawBurst, start time.Duration, h layer2.Hint) []input
 	return out
 }
 
-// kinds returns one letter per event: S CallStart, V Voice, M Embedded, T
-// TalkerAlias, P PIHeader, E CallEnd, s SessionStart, e SessionEnd.
 func kinds(events []voice.Event) string {
 	var b strings.Builder
 	for _, e := range events {
@@ -76,8 +67,6 @@ func kinds(events []voice.Event) string {
 	return b.String()
 }
 
-// positions returns the superframe position of each voice event, with ?
-// for an unknown one.
 func positions(events []voice.Event) string {
 	var b strings.Builder
 	for _, e := range events {
@@ -93,8 +82,6 @@ func positions(events []voice.Event) string {
 	return b.String()
 }
 
-// lostCounts returns Event.Lost of each voice event that has one, by the
-// index of the voice event.
 func lostCounts(events []voice.Event) map[int]int {
 	out := map[int]int{}
 	n := 0
@@ -110,7 +97,6 @@ func lostCounts(events []voice.Event) map[int]int {
 	return out
 }
 
-// find returns the events of kind k.
 func find(events []voice.Event, k voice.EventKind) []voice.Event {
 	var out []voice.Event
 	for _, e := range events {
@@ -130,7 +116,6 @@ func newReceiver(t *testing.T, cfg *voice.ReceiverConfig) *voice.Receiver {
 	return rx
 }
 
-// groupLC returns the LC of a group call from source to target.
 func groupLC(t *testing.T, target, source uint32) pdu.FullLinkControl {
 	t.Helper()
 	lc, err := pdu.NewVoiceLC(true, target, source, layer3.ServiceOptions{})
@@ -140,9 +125,6 @@ func groupLC(t *testing.T, target, source uint32) pdu.FullLinkControl {
 	return lc
 }
 
-// transmission returns the bursts of a call with lc and superframes of
-// voice from a BS: the Voice LC Header, the voice bursts and the
-// Terminator with LC. opts, when set, adds to the options.
 func transmission(t *testing.T, lc pdu.FullLinkControl, superframes int, opts func(*layer2.VoiceTransmitterOptions)) []layer2.RawBurst {
 	t.Helper()
 	o := layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Silence: vocoder.AMBESilenceSlot()}
@@ -167,7 +149,6 @@ func transmission(t *testing.T, lc pdu.FullLinkControl, superframes int, opts fu
 	return out
 }
 
-// loadBin returns the bursts of a capture in layer2/testdata.
 func loadBin(t testing.TB, name string) []layer2.RawBurst {
 	t.Helper()
 	data, err := os.ReadFile("../layer2/testdata/" + name)
@@ -181,8 +162,6 @@ func loadBin(t testing.TB, name string) []layer2.RawBurst {
 	return out
 }
 
-// loadGolden returns the bursts of sequence name of the golden
-// file: bursts that an XPR 8400 repeater accepted over the air.
 func loadGolden(t *testing.T, name string) []layer2.RawBurst {
 	t.Helper()
 	if err != nil {
@@ -208,8 +187,6 @@ func loadGolden(t *testing.T, name string) []layer2.RawBurst {
 	return out
 }
 
-// loadWeak returns the TS2 bursts of testdata/xpr8400_bs_voice_weak.txt
-// with their times.
 func loadWeak(t testing.TB) []input {
 	t.Helper()
 	f, err := os.Open("testdata/xpr8400_bs_voice_weak.txt")

@@ -39,8 +39,6 @@ func EncodeAMBE72(info AMBEFrame) ([9]byte, error) {
 	return ambe.Encode(info), nil
 }
 
-// errAMBEFrameRange is the error of an EncodeAMBE72 whose frame has a
-// padding bit set.
 var errAMBEFrameRange = &dmrgo.FieldRangeError{Type: "vocoder", Field: "AMBEFrame", Bits: 49}
 
 // DecodeAMBE72 reverses EncodeAMBE72 and corrects the bit errors that the

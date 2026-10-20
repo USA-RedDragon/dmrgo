@@ -23,7 +23,6 @@ func vburst(t *testing.T, pos int) layer2.RawBurst {
 	return b[1+pos]
 }
 
-// Stop during the padding after T_TO is lost: the Transmitter stays in TimedOut.
 func TestRegression_StopDuringTimeoutPadding(t *testing.T) {
 	t.Parallel()
 
@@ -54,7 +53,6 @@ func TestRegression_StopDuringTimeoutPadding(t *testing.T) {
 	}
 }
 
-// Reset keeps the EndLost reason of a relayed call; the next source call ends EndLost.
 func TestRegression_ResetKeepsReason(t *testing.T) {
 	t.Parallel()
 
@@ -71,7 +69,6 @@ func TestRegression_ResetKeepsReason(t *testing.T) {
 	}
 }
 
-// A relayed PI Header that comes after the first extra header is never sent.
 func TestRegression_RelayPILate(t *testing.T) {
 	t.Parallel()
 
@@ -103,7 +100,6 @@ func TestRegression_RelayPILate(t *testing.T) {
 	}
 }
 
-// Next relayed call after a superseded one: one empty slot before its first header.
 func TestRegression_NextCallGap(t *testing.T) {
 	t.Parallel()
 
@@ -135,7 +131,6 @@ func TestRegression_NextCallGap(t *testing.T) {
 	}
 }
 
-// Voice of the pending next call that comes while the old call pads is dropped.
 func TestRegression_NextCallVoiceDropped(t *testing.T) {
 	t.Parallel()
 
@@ -159,7 +154,6 @@ func TestRegression_NextCallVoiceDropped(t *testing.T) {
 	}
 }
 
-// One lost burst between ticks gives two fills and one burst of extra delay for the rest of the call.
 func TestRegression_RelayLostDoubleFill(t *testing.T) {
 	t.Parallel()
 
@@ -190,7 +184,6 @@ func TestRegression_RelayLostDoubleFill(t *testing.T) {
 	}
 }
 
-// Stop with a deep queue: T_TO is not checked while the queue drains.
 func TestRegression_StopIgnoresTimeout(t *testing.T) {
 	t.Parallel()
 
@@ -207,8 +200,6 @@ func TestRegression_StopIgnoresTimeout(t *testing.T) {
 	}
 }
 
-// A PI Header in a sequenced transport: the header anchor does not move to it,
-// so burst A reports one lost burst.
 func TestRegression_PIHeaderSeqLost(t *testing.T) {
 	t.Parallel()
 
@@ -232,8 +223,6 @@ func TestRegression_PIHeaderSeqLost(t *testing.T) {
 	}
 }
 
-// A bridge rewrites the target (PROPOSALS 4.5 example 2). The headers and
-// terminator carry the new target, the embedded LC the old one.
 func TestRegression_RewriteEmbedded(t *testing.T) {
 	t.Parallel()
 
@@ -270,7 +259,6 @@ func TestRegression_RewriteEmbedded(t *testing.T) {
 	}
 }
 
-// The PI Header of a call that waits for the end of the call before it is dropped.
 func TestRegression_PendingPI(t *testing.T) {
 	t.Parallel()
 
@@ -303,7 +291,6 @@ func TestRegression_PendingPI(t *testing.T) {
 	}
 }
 
-// GPS that does not encode: Start succeeds and the GPS LC is silently not sent.
 func TestRegression_BadGPS(t *testing.T) {
 	t.Parallel()
 

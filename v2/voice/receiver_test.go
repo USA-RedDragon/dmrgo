@@ -10,8 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
-// TestReceiver_Call follows a call with a header, three superframes and a
-// terminator, then the hang time.
 func TestReceiver_Call(t *testing.T) {
 	t.Parallel()
 
@@ -65,10 +63,6 @@ func repeat(s string, n int) string {
 	return out
 }
 
-// TestReceiver_LateEntry joins a call at burst D: voice comes with an
-// unknown origin until burst E of the next superframe completes the
-// embedded LC. The first burst has a Continuation LCSS, which fits C and
-// D, so its position is unknown.
 func TestReceiver_LateEntry(t *testing.T) {
 	t.Parallel()
 
@@ -89,9 +83,6 @@ func TestReceiver_LateEntry(t *testing.T) {
 	}
 }
 
-// TestReceiver_Golden runs the voice sequences of the golden file,
-// bursts that a real repeater accepted: one with a header and one that
-// starts without a header.
 func TestReceiver_Golden(t *testing.T) {
 	t.Parallel()
 
@@ -119,9 +110,6 @@ func TestReceiver_Golden(t *testing.T) {
 	}
 }
 
-// TestReceiver_Captures runs the voice captures of layer2/testdata. In
-// voice.bin a superframe lost its burst A; in parrot_kerchunk.bin a lone
-// burst A comes before a new superframe.
 func TestReceiver_Captures(t *testing.T) {
 	t.Parallel()
 
@@ -161,9 +149,6 @@ func mapsEqual(a, b map[int]int) bool {
 	return true
 }
 
-// TestReceiver_WeakCapture runs a weak real capture from an XPR 8400: three
-// Voice LC Headers, one superframe and a terminator. The second and third
-// headers are duplicates.
 func TestReceiver_WeakCapture(t *testing.T) {
 	t.Parallel()
 

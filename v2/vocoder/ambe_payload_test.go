@@ -10,8 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// ipscSilence is the AMBE_DATA of voice burst A in DMRlink
-// documents/voice_burst_decoding.txt: three AMBE+2 silence frames.
 const ipscSilence = "f801a99f8ce0be006a67e3382f801a99f8ce08"
 
 func TestAMBEVoice_IPSCCapture(t *testing.T) {
@@ -64,8 +62,6 @@ func TestAMBEVoice_RoundTrip(t *testing.T) {
 	}
 }
 
-// TestAMBEVoiceFlags_BadBits checks bits 49 and 99, the bad flags of frames
-// 2 and 3 (ipsc2hbpc GV_BAD2_BIT and GV_BAD3_BIT).
 func TestAMBEVoiceFlags_BadBits(t *testing.T) {
 	t.Parallel()
 
@@ -108,8 +104,6 @@ func TestAMBEVoiceFlags_RoundTrip(t *testing.T) {
 	}
 }
 
-// TestAMBEVoice_VoiceBurst checks the payload of the first voice burst of
-// layer2/testdata/voice.bin against the PackAMBEVoice of dmrgo v0.0.1.
 func TestAMBEVoice_VoiceBurst(t *testing.T) {
 	t.Parallel()
 

@@ -7,9 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// TestQRadioLinkBurstLayout rebuilds a voice burst the way QRadioLink does
-// (DMRControl::getTxAudio and DMRFrame::setVoice) and checks that the three
-// 9-byte frames land in the burst's voice bits in order.
 func TestQRadioLinkBurstLayout(t *testing.T) {
 	t.Parallel()
 

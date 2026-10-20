@@ -304,8 +304,6 @@ func (t *Transmitter) Start(at time.Duration, c Call, opts *CallOptions) error {
 	return t.begin(at, &c, opts, false)
 }
 
-// begin sets up the call c at the time at. keep keeps the queue, which
-// holds voice of c that came while the call before it ended.
 func (t *Transmitter) begin(at time.Duration, c *Call, opts *CallOptions, keep bool) error {
 	if err := t.setLC(c); err != nil {
 		return err
@@ -335,7 +333,6 @@ func (t *Transmitter) begin(at time.Duration, c *Call, opts *CallOptions, keep b
 	return nil
 }
 
-// setLC sets the call LC from c.
 func (t *Transmitter) setLC(c *Call) error {
 	lc := c.LC
 	if got, ok := callOf(lc, OriginHeader); !ok || !got.sameParties(c) || got.Options != c.Options || got.FID != c.FID {
@@ -352,7 +349,6 @@ func (t *Transmitter) setLC(c *Call) error {
 	return nil
 }
 
-// setExtras encodes the talker alias and GPS LCs of opts.
 func (t *Transmitter) setExtras(opts *CallOptions) error {
 	t.nTA = 0
 	if opts.TalkerAlias != "" {
@@ -374,8 +370,6 @@ func (t *Transmitter) setExtras(opts *CallOptions) error {
 	return nil
 }
 
-// extra returns embedded LC i of the rotation: the talker alias LCs, then
-// GPS.
 func (t *Transmitter) extra(i int) *pdu.FullLinkControl {
 	if i < t.nTA {
 		return &t.ta[i]
@@ -503,8 +497,6 @@ func (t *Transmitter) Tick(now time.Duration, dst []Output) []Output {
 	return dst
 }
 
-// ownSlots returns the number of queued slots of the current call. The
-// queue can also hold voice of the relayed call that comes next.
 func (t *Transmitter) ownSlots() int {
 	if t.hasNext {
 		return t.oldSlots
@@ -512,14 +504,12 @@ func (t *Transmitter) ownSlots() int {
 	return t.length
 }
 
-// dropOwn drops the queued slots of the current call.
 func (t *Transmitter) dropOwn() {
 	n := t.ownSlots()
 	t.head, t.length = (t.head+n)%len(t.queue), t.length-n
 	t.oldSlots = 0
 }
 
-// header fills o with the next Voice LC Header or the PI Header.
 func (t *Transmitter) header(o *Output) {
 	switch {
 	case t.sent >= t.headers && t.piPending() && t.vopts.PIHeader != nil:
@@ -535,10 +525,6 @@ func (t *Transmitter) header(o *Output) {
 	t.sent++
 }
 
-// headersDone reports whether the header group is complete, and moves to
-// TransmitterVoice when it is. A relayed call whose voice has not come yet
-// sends more Voice LC Headers, up to MaxHeaders, as the source of the call
-// does.
 func (t *Transmitter) headersDone() bool {
 	if t.sent < t.headers || t.piPending() {
 		return false
@@ -550,12 +536,10 @@ func (t *Transmitter) headersDone() bool {
 	return true
 }
 
-// piPending reports whether a PI Header waits to be sent.
 func (t *Transmitter) piPending() bool {
 	return (t.vopts.PIHeader != nil || t.hasRelayPI) && !t.piSent
 }
 
-// voice fills o with the next voice burst, from the queue or silence.
 func (t *Transmitter) voice(o *Output) {
 	if t.pos == 0 {
 		t.startSuperframe()
@@ -588,9 +572,6 @@ func (t *Transmitter) voice(o *Output) {
 	}
 }
 
-// startSuperframe sets the embedded LC of the superframe that starts:
-// relayed fragments, else every other superframe a talker alias or GPS
-// LC, else the call LC.
 func (t *Transmitter) startSuperframe() {
 	switch {
 	case t.hasCarry:
@@ -603,8 +584,6 @@ func (t *Transmitter) startSuperframe() {
 	t.superframe++
 }
 
-// terminator fills o with a Terminator with LC, and appends OutputEnded
-// after the last one.
 func (t *Transmitter) terminator(o *Output, out []Output) []Output {
 	o.Burst, o.DataType = t.vt.Terminator(), enums.DataTypeTerminatorWithLC
 	t.sent++
@@ -624,8 +603,6 @@ func (t *Transmitter) terminator(o *Output, out []Output) []Output {
 	return t.finish(out, reason)
 }
 
-// finish appends OutputEnded with reason, and starts a relayed call that
-// waited.
 func (t *Transmitter) finish(out []Output, reason EndReason) []Output {
 	var o *Output
 	out, o = appendOutput(out, OutputEnded, t.due)
@@ -689,8 +666,6 @@ func (t *Transmitter) Relay(now time.Duration, e *Event) error {
 	return nil
 }
 
-// recolor returns the PI Header burst b with the color code and SYNC of the
-// Transmitter.
 func (t *Transmitter) recolor(b *layer2.RawBurst) layer2.RawBurst {
 	r := *b
 	_ = r.SetSlotType(pdu.SlotType{ColorCode: t.cc, DataType: enums.DataTypePIHeader})
@@ -699,8 +674,6 @@ func (t *Transmitter) recolor(b *layer2.RawBurst) layer2.RawBurst {
 	return r
 }
 
-// relayStart starts the relayed call c, or keeps it for the end of a call
-// that is ending.
 func (t *Transmitter) relayStart(now time.Duration, c *Call) error {
 	switch t.state {
 	case TransmitterIdle:
@@ -717,8 +690,6 @@ func (t *Transmitter) relayStart(now time.Duration, c *Call) error {
 	return ErrBusy
 }
 
-// relayVoice queues the vocoder slots of a relayed voice event, after the
-// fills for the bursts lost before it.
 func (t *Transmitter) relayVoice(e *Event) {
 	next := t.hasNext && e.Call.sameParties(&t.next)
 	active := t.relay && !t.stopping && (t.state == TransmitterHeader || t.state == TransmitterVoice)
@@ -761,10 +732,6 @@ func (t *Transmitter) relayVoice(e *Event) {
 	}
 }
 
-// collect keeps the embedded fragments of bursts B to E of a received
-// superframe, and carries them to the next superframe when they decode
-// and are not a call LC other than the one sent, so that a call whose
-// addresses the consumer changed keeps them.
 func (t *Transmitter) collect(e *Event) {
 	idx, ok := e.Position.Index()
 	switch {
@@ -792,11 +759,6 @@ func (t *Transmitter) collect(e *Event) {
 	}
 }
 
-// appendOutput appends an Output of kind k due at due to out and returns
-// the extended slice and the new Output. It grows out only when out lacks
-// the capacity. It is not inlined, so that the growth stays in a function
-// whose name tells that it appends.
-//
 //go:noinline
 func appendOutput(out []Output, k OutputKind, due time.Duration) ([]Output, *Output) {
 	if len(out) < cap(out) {

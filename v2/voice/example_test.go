@@ -9,8 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
-// ExampleReceiver follows the call in a capture of one logical channel,
-// with the bursts 60 ms apart, and prints its events.
 func ExampleReceiver() {
 	data, err := os.ReadFile("../layer2/testdata/parrot_kerchunk.bin")
 	if err != nil {

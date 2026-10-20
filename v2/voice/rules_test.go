@@ -18,8 +18,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
-// TestReceiver_EmbeddedData sends a talker alias header, a talker alias
-// block and GPS in the embedded LC of superframes 1 to 3.
 func TestReceiver_EmbeddedData(t *testing.T) {
 	t.Parallel()
 
@@ -53,10 +51,6 @@ func TestReceiver_EmbeddedData(t *testing.T) {
 	}
 }
 
-// TestReceiver_XPR8400 runs the TS2 bursts of a real XPR 8400 outbound
-// stream, with the slot from the CACH and the time from the sample number.
-// Bursts without a SYNC that the RF receiver placed by timing are placed by
-// their EMB here.
 func TestReceiver_XPR8400(t *testing.T) {
 	t.Parallel()
 
@@ -100,8 +94,6 @@ func TestReceiver_XPR8400(t *testing.T) {
 	}
 }
 
-// TestReceiver_Timers ends a call after Lost without a burst, and a late
-// entry that never learns its LC.
 func TestReceiver_Timers(t *testing.T) {
 	t.Parallel()
 
@@ -138,7 +130,6 @@ func TestReceiver_Timers(t *testing.T) {
 	}
 }
 
-// TestReceiver_Ends checks the ends of a call other than the terminator.
 func TestReceiver_Ends(t *testing.T) {
 	t.Parallel()
 
@@ -179,8 +170,6 @@ func TestReceiver_Ends(t *testing.T) {
 	}
 }
 
-// TestReceiver_Stream ends a call when the transport stream changes, and
-// starts the next one from its header.
 func TestReceiver_Stream(t *testing.T) {
 	t.Parallel()
 
@@ -196,8 +185,6 @@ func TestReceiver_Stream(t *testing.T) {
 	}
 }
 
-// TestReceiver_Superseded starts a new talker without a terminator, once
-// with a header and once with the embedded LC only (V3).
 func TestReceiver_Superseded(t *testing.T) {
 	t.Parallel()
 
@@ -222,7 +209,6 @@ func TestReceiver_Superseded(t *testing.T) {
 	}
 }
 
-// TestReceiver_Hang checks the call hang time rules.
 func TestReceiver_Hang(t *testing.T) {
 	t.Parallel()
 
@@ -266,8 +252,6 @@ func TestReceiver_Hang(t *testing.T) {
 	}
 }
 
-// TestReceiver_Expect starts a call from Expect, then learns its LC from a
-// header with the same addresses, without an event.
 func TestReceiver_Expect(t *testing.T) {
 	t.Parallel()
 
@@ -296,7 +280,6 @@ func TestReceiver_Expect(t *testing.T) {
 	}
 }
 
-// TestReceiver_Duplicates repeats a header and a voice burst.
 func TestReceiver_Duplicates(t *testing.T) {
 	t.Parallel()
 
@@ -316,8 +299,6 @@ func TestReceiver_Duplicates(t *testing.T) {
 	}
 }
 
-// network returns bursts 60 ms apart with HomeBrew-like hints: a
-// sequence number that counts every burst from seq, and a stream ID.
 func network(bursts []layer2.RawBurst, seq uint16) []input {
 	in := timed(bursts, 0, layer2.Hint{})
 	for i := range in {
@@ -326,8 +307,6 @@ func network(bursts []layer2.RawBurst, seq uint16) []input {
 	return in
 }
 
-// TestReceiver_Sequence places network bursts by their sequence number,
-// with lost and late bursts and jitter in the arrival time.
 func TestReceiver_Sequence(t *testing.T) {
 	t.Parallel()
 
@@ -358,9 +337,6 @@ func TestReceiver_Sequence(t *testing.T) {
 	}
 }
 
-// TestReceiver_TransportPosition places bursts by Hint.VoiceBurst and
-// checks that a burst without its SYNC where the sequence number predicts A
-// is placed at B.
 func TestReceiver_TransportPosition(t *testing.T) {
 	t.Parallel()
 
@@ -389,9 +365,6 @@ func TestReceiver_TransportPosition(t *testing.T) {
 	}
 }
 
-// TestReceiver_WeakEnd sets the IPSC weak end flag on a burst in the middle
-// of a call. The call goes on, and the next burst is placed by its own
-// evidence only.
 func TestReceiver_WeakEnd(t *testing.T) {
 	t.Parallel()
 
@@ -407,9 +380,6 @@ func TestReceiver_WeakEnd(t *testing.T) {
 	}
 }
 
-// TestReceiver_Faults drops each burst of voice.bin in turn, and checks
-// that the call still starts and ends once, that the lost burst is
-// counted, and that every other burst keeps its position.
 func TestReceiver_Faults(t *testing.T) {
 	t.Parallel()
 
@@ -437,8 +407,6 @@ func TestReceiver_Faults(t *testing.T) {
 	}
 }
 
-// TestReceiver_Fuzz feeds random bursts, hints and times, and checks that
-// no call appends more than MaxEvents.
 func TestReceiver_Fuzz(t *testing.T) {
 	t.Parallel()
 

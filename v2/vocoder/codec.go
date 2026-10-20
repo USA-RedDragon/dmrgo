@@ -63,8 +63,6 @@ type AppendDecoder interface {
 // MaxCodecs is the number of codec factories that Register can hold.
 const MaxCodecs = 8
 
-// registry holds the registered codec factories, in the order of
-// registration, in fixed storage.
 type registry struct {
 	mu        sync.RWMutex
 	n         int

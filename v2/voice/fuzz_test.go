@@ -18,11 +18,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
-// maxScriptOps is the most operations of one receiver script, so that one
-// fuzz input stays fast.
 const maxScriptOps = 512
 
-// opKind is the kind of one operation of a receiver script.
 type opKind uint8
 
 const (
@@ -34,7 +31,6 @@ const (
 	opReset
 )
 
-// scriptOp is one operation of a receiver script, at the time at.
 type scriptOp struct {
 	kind  opKind
 	at    time.Duration
@@ -44,8 +40,6 @@ type scriptOp struct {
 	until time.Duration
 }
 
-// script is a parsed receiver fuzz input: the config of the Receiver and
-// the Transmitter that relays its events, and the operations.
 type script struct {
 	cfg    voice.ReceiverConfig
 	cc     enums.ColorCode
@@ -54,13 +48,11 @@ type script struct {
 	badCfg bool
 }
 
-// byteReader reads a fuzz input one byte at a time, and 0 past its end.
 type byteReader struct {
 	data []byte
 	i    int
 }
 
-// next returns the next byte, or 0 past the end.
 func (r *byteReader) next() byte {
 	if r.i >= len(r.data) {
 		return 0
@@ -69,13 +61,10 @@ func (r *byteReader) next() byte {
 	return r.data[r.i-1]
 }
 
-// done reports whether every byte has been read.
 func (r *byteReader) done() bool {
 	return r.i >= len(r.data)
 }
 
-// step returns the time that the byte d advances a script by: one slot
-// period for most values, and early, late and long gaps for the rest.
 func step(d byte) time.Duration {
 	switch {
 	case d < 64:
@@ -88,8 +77,6 @@ func step(d byte) time.Duration {
 	return time.Duration(d-192) * 100 * time.Millisecond
 }
 
-// configTime returns the Lost or Hang config value of mode m and byte b: the
-// default, off, or a fuzzed time.
 func configTime(m, b byte) time.Duration {
 	switch m & 3 {
 	case 1:
@@ -102,15 +89,11 @@ func configTime(m, b byte) time.Duration {
 	return 0
 }
 
-// pool is the bursts that a receiver script picks from: real captures and
-// a transmission with a PI Header, a talker alias and GPS, with the index
-// where each part starts.
 type pool struct {
 	bursts []layer2.RawBurst
 	starts []int
 }
 
-// newPool returns the burst pool of the receiver fuzzers.
 func newPool(t testing.TB) *pool {
 	t.Helper()
 	p := &pool{}
@@ -156,8 +139,6 @@ func newPool(t testing.TB) *pool {
 	return p
 }
 
-// parseScript reads a receiver script from data, as FuzzReceiver
-// describes it.
 func parseScript(data []byte, p *pool) script {
 	r := byteReader{data: data}
 	var s script
@@ -236,9 +217,6 @@ func parseScript(data []byte, p *pool) script {
 	return s
 }
 
-// readHint reads the Hint of a burst: three bytes of flags, the step of the
-// sequence number, and the position and data type. seq and stream carry
-// the sequence number and stream ID from one burst to the next.
 func readHint(r *byteReader, seq *uint16, stream *uint32, seqBits byte) layer2.Hint {
 	h0, h1, h2 := r.next(), r.next(), r.next()
 	if h0&0x80 != 0 {
@@ -260,19 +238,13 @@ func readHint(r *byteReader, seq *uint16, stream *uint32, seqBits byte) layer2.H
 	}
 }
 
-// scriptSeed is a builder of receiver scripts for the seed corpus.
 type scriptSeed []byte
 
-// burst adds a pool burst, skip bursts after the one before, after dt,
-// with the hint bytes h.
 func (s scriptSeed) burst(skip, dt byte, h ...byte) scriptSeed {
 	h = append(h, 0, 0, 0)
 	return append(s, 0, dt, skip<<5, h[0], h[1], h[2])
 }
 
-// seeds returns the seed corpus of FuzzReceiver: each capture replayed in
-// time order, with transport sequence numbers, with losses, duplicates and
-// late entry, with timers, and through a color code filter.
 func seeds(p *pool) [][]byte {
 	out := make([][]byte, 0, 2*len(p.starts)+2)
 	for part := range p.starts {
@@ -313,9 +285,6 @@ func seeds(p *pool) [][]byte {
 	return out
 }
 
-// eventChecker checks that the events of one Receiver are well formed: a
-// call starts before it ends, voice belongs to the open call or to a late
-// entry, positions are in range, and the Stats of a call count its voice.
 type eventChecker struct {
 	open          bool
 	call          voice.Call
@@ -327,18 +296,14 @@ type eventChecker struct {
 	maySessionEnd bool
 }
 
-// reset forgets the state, as Receiver.Reset does.
 func (c *eventChecker) reset() {
 	*c = eventChecker{}
 }
 
-// sameParties reports whether a and b have the same call type and
-// addresses.
 func sameParties(a, b *voice.Call) bool {
 	return a.Group == b.Group && a.Target == b.Target && a.Source == b.Source
 }
 
-// check checks the events that one method call of rx at now returned.
 func (c *eventChecker) check(t *testing.T, rx *voice.Receiver, now time.Duration, events []voice.Event) {
 	t.Helper()
 	if len(events) > voice.MaxEvents {
@@ -355,8 +320,6 @@ func (c *eventChecker) check(t *testing.T, rx *voice.Receiver, now time.Duration
 	}
 }
 
-// member checks that the event e belongs to the open call, or to a late
-// entry with an unknown call when no call is open.
 func (c *eventChecker) member(t *testing.T, now time.Duration, e *voice.Event) {
 	t.Helper()
 	switch {
@@ -367,7 +330,6 @@ func (c *eventChecker) member(t *testing.T, now time.Duration, e *voice.Event) {
 	}
 }
 
-// event checks one event.
 func (c *eventChecker) event(t *testing.T, now time.Duration, e *voice.Event) {
 	t.Helper()
 	switch e.Kind {
@@ -406,7 +368,6 @@ func (c *eventChecker) event(t *testing.T, now time.Duration, e *voice.Event) {
 	}
 }
 
-// start checks a call start.
 func (c *eventChecker) start(t *testing.T, now time.Duration, e *voice.Event) {
 	t.Helper()
 	if c.open {
@@ -425,7 +386,6 @@ func (c *eventChecker) start(t *testing.T, now time.Duration, e *voice.Event) {
 	c.open, c.call, c.voiceInCall, c.lostInCall, c.lostSat = true, e.Call, 0, 0, false
 }
 
-// end checks a call end and its Stats.
 func (c *eventChecker) end(t *testing.T, now time.Duration, e *voice.Event) {
 	t.Helper()
 	if !c.open || !sameParties(&e.Call, &c.call) {
@@ -451,8 +411,6 @@ func (c *eventChecker) end(t *testing.T, now time.Duration, e *voice.Event) {
 	c.session, c.maySessionEnd = e.Call, true
 }
 
-// relayChecker ticks a Transmitter that relays the events of a Receiver,
-// checks its outputs, and runs them through a second Receiver.
 type relayChecker struct {
 	tx      *voice.Transmitter
 	rx      *voice.Receiver
@@ -463,7 +421,6 @@ type relayChecker struct {
 	inTx    bool
 }
 
-// run ticks the Transmitter up to now.
 func (r *relayChecker) run(t *testing.T, now time.Duration) {
 	t.Helper()
 	for {
@@ -498,13 +455,6 @@ func (r *relayChecker) run(t *testing.T, now time.Duration) {
 	}
 }
 
-// FuzzReceiver runs a script of bursts, transport events and timers
-// through a Receiver, relays its events through a Transmitter into a
-// second Receiver, and checks that both Receivers keep their events well
-// formed. The script is six config bytes (flags, color code, Lost, Hang,
-// SeqBits, first capture), then operations: a burst of the pool with a
-// skip, bit flips and a Hint, arbitrary burst bits, Decoded, Lost, Tick,
-// Expect and Reset, each after a fuzzed time step.
 func FuzzReceiver(f *testing.F) {
 	p := newPool(f)
 	for _, s := range seeds(p) {
@@ -515,8 +465,6 @@ func FuzzReceiver(f *testing.F) {
 	})
 }
 
-// runScript runs the receiver script data and checks the events, as
-// FuzzReceiver describes.
 func runScript(t *testing.T, p *pool, data []byte) {
 	t.Helper()
 	s := parseScript(data, p)
@@ -558,8 +506,6 @@ func runScript(t *testing.T, p *pool, data []byte) {
 	}
 }
 
-// runOp runs the script operation op on rx and appends the events to dst.
-// scratch is the Burst that a Decoded operation decodes into.
 func runOp(rx *voice.Receiver, scratch *layer2.Burst, op *scriptOp, dst []voice.Event) []voice.Event {
 	switch op.kind {
 	case opBurst:
@@ -581,7 +527,6 @@ func runOp(rx *voice.Receiver, scratch *layer2.Burst, op *scriptOp, dst []voice.
 	return dst
 }
 
-// roundTrip is a parsed FuzzTransmitterRoundTrip input.
 type roundTrip struct {
 	cfg     voice.TransmitterConfig
 	call    voice.Call
@@ -594,7 +539,6 @@ type roundTrip struct {
 	errs    bool
 }
 
-// parseRoundTrip reads a FuzzTransmitterRoundTrip input.
 func parseRoundTrip(data []byte) roundTrip {
 	r := byteReader{data: data}
 	var rt roundTrip
@@ -638,15 +582,12 @@ func parseRoundTrip(data []byte) roundTrip {
 	return rt
 }
 
-// sent is one burst of a Transmitter, with the frames of a voice burst
-// and its index among the voice bursts.
 type sent struct {
 	out    voice.Output
 	frames [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame
 	voice  int
 }
 
-// transmit runs the call of rt through tx and returns its bursts.
 func transmit(t *testing.T, tx *voice.Transmitter, rt *roundTrip) []sent {
 	t.Helper()
 	var all []sent
@@ -687,13 +628,6 @@ func transmit(t *testing.T, tx *voice.Transmitter, rt *roundTrip) []sent {
 	}
 }
 
-// FuzzTransmitterRoundTrip sends a call of fuzzed AMBE+2 frames, call
-// fields, headers, PI Header, talker alias and GPS with a Transmitter,
-// drops the bursts that a fuzzed mask selects, and runs the rest through a
-// Receiver, with or without transport sequence numbers. Each voice event
-// must be the next burst that arrived, at its superframe position, with
-// the frames that were sent and the count of voice bursts lost before it;
-// a call that a header starts must have the call fields and end once.
 func FuzzTransmitterRoundTrip(f *testing.F) {
 	for _, s := range roundTripSeeds() {
 		f.Add(s)
@@ -701,10 +635,6 @@ func FuzzTransmitterRoundTrip(f *testing.F) {
 	f.Fuzz(runRoundTrip)
 }
 
-// roundTripSeeds returns the seed corpus of FuzzTransmitterRoundTrip: a
-// call without voice, one superframe with a talker alias, ten superframes,
-// with losses, with sequence numbers, with a loss that ends the call, and
-// with bit errors.
 func roundTripSeeds() [][]byte {
 	call := []byte{0x00, 0x22, 0x00, 0x04, 0x01, 0x00, 0x0C, 0x1C, 0x30, 0xB4, 0x3C}
 	frames := make([]byte, 0, 7*60)
@@ -727,8 +657,6 @@ func roundTripSeeds() [][]byte {
 	}
 }
 
-// runRoundTrip runs the round trip data, as FuzzTransmitterRoundTrip
-// describes.
 func runRoundTrip(t *testing.T, data []byte) {
 	rt := parseRoundTrip(data)
 	tx, err := voice.NewTransmitter(&rt.cfg)
@@ -744,9 +672,6 @@ func runRoundTrip(t *testing.T, data []byte) {
 	checkRoundTrip(t, &rt, transmit(t, tx, &rt))
 }
 
-// dropped reports whether the mask drops burst i. Without bit errors the
-// mask has one bit per burst, and with them one byte, whose high bit drops
-// the burst.
 func (rt *roundTrip) dropped(i int) bool {
 	if rt.errs {
 		return i < len(rt.drop) && rt.drop[i]&0x80 != 0
@@ -754,10 +679,6 @@ func (rt *roundTrip) dropped(i int) bool {
 	return i/8 < len(rt.drop) && rt.drop[i/8]&(0x80>>(i%8)) != 0
 }
 
-// damage returns burst b of a round trip with the bit error that byte i of
-// the mask selects: one bit of the SYNC of burst A, of the EMB of bursts B
-// to F, or of the BPTC(196,96) info bits of a data burst, which the FEC of
-// each corrects.
 func (rt *roundTrip) damage(i int, b *sent) layer2.RawBurst {
 	raw := b.out.Burst
 	if !rt.errs || i >= len(rt.drop) || rt.drop[i]&0x40 == 0 {
@@ -781,19 +702,12 @@ func (rt *roundTrip) damage(i int, b *sent) layer2.RawBurst {
 	return raw
 }
 
-// segment is a part of a round trip between gaps of DefaultLost or more,
-// after which the Receiver ends the call: the events of the part and the
-// headers and terminators that arrived in it.
 type segment struct {
 	events      []voice.Event
 	headers     int
 	terminators int
 }
 
-// delivery is what reached the Receiver of a round trip and what it
-// returned. heard is the vocoder slots of its voice events of a known
-// call, and relayed the slots of the voice bursts that are not fills of a
-// Transmitter that relays its events.
 type delivery struct {
 	segments []segment
 	arrived  []arrival
@@ -801,9 +715,6 @@ type delivery struct {
 	relayed  [][9]byte
 }
 
-// deliver runs the bursts that the mask of rt keeps through a Receiver,
-// with the event checks. Before a gap of DefaultLost it ticks the Receiver
-// at the end of the call, and it ends with a Tick after the hang time.
 func deliver(t *testing.T, rt *roundTrip, bursts []sent) delivery {
 	t.Helper()
 	rx := newReceiver(t, nil)
@@ -888,8 +799,6 @@ func deliver(t *testing.T, rt *roundTrip, bursts []sent) delivery {
 	return d
 }
 
-// checkRoundTrip runs the bursts that the mask of rt keeps through a
-// Receiver and checks the events against what was sent.
 func checkRoundTrip(t *testing.T, rt *roundTrip, bursts []sent) {
 	t.Helper()
 	d := deliver(t, rt, bursts)
@@ -926,7 +835,6 @@ func checkRoundTrip(t *testing.T, rt *roundTrip, bursts []sent) {
 	}
 }
 
-// lossy reports whether the mask of rt drops a burst.
 func (rt *roundTrip) lossy() bool {
 	if rt.errs {
 		return slices.ContainsFunc(rt.drop, func(b byte) bool { return b&0x80 != 0 })
@@ -934,8 +842,6 @@ func (rt *roundTrip) lossy() bool {
 	return slices.ContainsFunc(rt.drop, func(b byte) bool { return b != 0 })
 }
 
-// checkSegment checks the call starts and ends of the segment seg of a
-// round trip. last reports the last segment, which the terminator ends.
 func checkSegment(t *testing.T, rt *roundTrip, seg *segment, last bool, starts, ends []voice.Event) {
 	t.Helper()
 	if seg.headers > 0 && (len(starts) != 1 || starts[0].Call.Origin != voice.OriginHeader) {
@@ -963,16 +869,6 @@ func checkSegment(t *testing.T, rt *roundTrip, seg *segment, last bool, starts, 
 	}
 }
 
-// arrival is a voice burst that reached the Receiver. loose reports that a
-// header with a sequence number was lost since the last burst whose own
-// evidence places it, so that the sequence number cannot tell burst C from
-// D: the Receiver cannot know that the header took a number. raw is the
-// burst as received, with its bit error. first reports
-// the first voice burst after a gap that ended the call, whose lost bursts
-// the Receiver cannot count, unless afterHeader reports that a Voice LC
-// Header, or a PI Header after one, arrived before it and no data burst
-// after that header was lost: then the Receiver counts the voice bursts
-// lost since the header.
 type arrival struct {
 	*sent
 	raw         layer2.RawBurst
@@ -981,8 +877,6 @@ type arrival struct {
 	afterHeader bool
 }
 
-// checkVoice checks voice event k against arrived[k], the k-th voice burst
-// that arrived.
 func checkVoice(t *testing.T, k int, e *voice.Event, arrived []arrival) {
 	t.Helper()
 	b := arrived[k]
@@ -1021,7 +915,6 @@ func checkVoice(t *testing.T, k int, e *voice.Event, arrived []arrival) {
 	}
 }
 
-// corpusFiles returns the inputs in testdata/fuzz/name.
 func corpusFiles(t *testing.T, name string) [][]byte {
 	t.Helper()
 	files, err := filepath.Glob(filepath.Join("testdata/fuzz", name, "*"))

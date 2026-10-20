@@ -12,11 +12,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// ambeSections returns the slot bits of the Golay(24,12) section A, the
-// Golay(23,12) section B and the unprotected section C. Slot bit c+4j is
-// bit j of interleave column c, and the sections fill the columns in order:
-// A the 18 bits of column 0 and 6 of column 1, B the other 12 of column 1
-// and 11 of column 2, and C the rest.
 func ambeSections() (a, b, c [9]byte) {
 	for k := range 72 {
 		i := 18*(k%4) + k/4
@@ -32,7 +27,6 @@ func ambeSections() (a, b, c [9]byte) {
 	return a, b, c
 }
 
-// ones returns the number of bits set in x and m.
 func ones(x, m [9]byte) int {
 	n := 0
 	for i := range x {
@@ -41,13 +35,11 @@ func ones(x, m [9]byte) int {
 	return n
 }
 
-// ambe72Seed is one seed of FuzzAMBE72.
 type ambe72Seed struct {
 	data []byte
 	mask []byte
 }
 
-// ambe72Seeds returns the seeds of FuzzAMBE72.
 func ambe72Seeds(tb testing.TB) []ambe72Seed {
 	var seeds []ambe72Seed
 	for i, slot := range voiceSlots(tb) {
@@ -70,7 +62,6 @@ func ambe72Seeds(tb testing.TB) []ambe72Seed {
 	return seeds
 }
 
-// checkAMBE72 checks the properties of FuzzAMBE72 for one input.
 func checkAMBE72(t testing.TB, data []byte, mask []byte) {
 	t.Helper()
 	secA, secB, secC := ambeSections()
@@ -137,13 +128,6 @@ func checkAMBE72(t testing.TB, data []byte, mask []byte) {
 	}
 }
 
-// FuzzAMBE72 encodes a fuzzed AMBE+2 frame, adds the error pattern mask to
-// the slot and decodes. With up to 3 errors in each of sections A and B the
-// frame comes back with the errors of C in its C bits, and ErrorsCorrected
-// counts the errors of A and B. 4 errors in A set Uncorrectable, and up to 3
-// in A decode the bits of A whatever B holds. Section C always passes
-// through, a decode without Uncorrectable re-encodes ErrorsCorrected bits
-// from the slot, and both functions agree with the reference codec.
 func FuzzAMBE72(f *testing.F) {
 	for _, s := range ambe72Seeds(f) {
 		f.Add(s.data, s.mask)
@@ -153,7 +137,6 @@ func FuzzAMBE72(f *testing.F) {
 	})
 }
 
-// ambeVoiceSeed is one seed of FuzzAMBEVoice.
 type ambeVoiceSeed struct {
 	f1      []byte
 	f2      []byte
@@ -162,7 +145,6 @@ type ambeVoiceSeed struct {
 	payload []byte
 }
 
-// ambeVoiceSeeds returns the seeds of FuzzAMBEVoice.
 func ambeVoiceSeeds() []ambeVoiceSeed {
 	silence := vocoder.AMBESilence()
 	ones := []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
@@ -172,7 +154,6 @@ func ambeVoiceSeeds() []ambeVoiceSeed {
 	}
 }
 
-// checkAMBEVoice checks the properties of FuzzAMBEVoice for one input.
 func checkAMBEVoice(t testing.TB, f1, f2, f3 []byte, flags uint8, payload []byte) {
 	t.Helper()
 	var frames [3]vocoder.AMBEFrame
@@ -228,11 +209,6 @@ func checkAMBEVoice(t testing.TB, f1, f2, f3 []byte, flags uint8, payload []byte
 	}
 }
 
-// FuzzAMBEVoice packs three fuzzed frames and bad flags into the IPSC AMBE
-// payload and unpacks them again, and unpacks a fuzzed payload and packs it
-// again. The frames and the flags of frames 2 and 3 round-trip, a frame
-// with a padding bit set is an error, and a payload keeps only its frame
-// and flag bits.
 func FuzzAMBEVoice(f *testing.F) {
 	for _, s := range ambeVoiceSeeds() {
 		f.Add(s.f1, s.f2, s.f3, s.flags, s.payload)

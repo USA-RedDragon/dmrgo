@@ -33,8 +33,6 @@ type Call struct {
 	Stream uint32
 }
 
-// callOf returns the Call of the LC octets lc, and ok false when lc is not
-// a Grp_V_Ch_Usr or UU_V_Ch_Usr LC.
 func callOf(lc pdu.LCBytes, origin Origin) (c Call, ok bool) {
 	target, source, ok := lc.Addresses()
 	if !ok {
@@ -52,13 +50,10 @@ func callOf(lc pdu.LCBytes, origin Origin) (c Call, ok bool) {
 	}, true
 }
 
-// sameParties reports whether c and o have the same target, source and
-// call type.
 func (c *Call) sameParties(o *Call) bool {
 	return c.Group == o.Group && c.Target == o.Target && c.Source == o.Source
 }
 
-// idleName is the name of EndIdle and of the idle states.
 const idleName = "Idle"
 
 // Origin is where a Receiver learned the identity of a call.

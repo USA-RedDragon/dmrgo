@@ -9,12 +9,6 @@ import (
 	"testing"
 )
 
-// FuzzCodec2 decodes a fuzzed slot and encodes fuzzed samples with
-// libcodec2 in each mode. Decode returns FrameSamples samples without error,
-// Encode leaves the bits after the Codec2 frame 0, and Encode rejects a
-// frame of another length. libcodec2 draws the noise of its synthesis from
-// one generator for all its states, so two decodes of the same slot can
-// differ.
 func FuzzCodec2(f *testing.F) {
 	f.Add([]byte{0xB9, 0xE8, 0x81, 0x52, 0x61, 0x73, 0x00, 0x2A, 0x6B}, voicedBytes())
 	f.Add(make([]byte, 9), []byte{})
@@ -47,7 +41,6 @@ func FuzzCodec2(f *testing.F) {
 	})
 }
 
-// voicedBytes returns one frame of voiced as little-endian bytes.
 func voicedBytes() []byte {
 	pcm := voiced(1)
 	out := make([]byte, 2*len(pcm))
