@@ -9,31 +9,25 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-// tableSyncPatterns are the SYNC patterns of ETSI TS 102 361-1 Table 9.2.
+// ETSI TS 102 361-1 Table 9.2
 var tableSyncPatterns = []enums.SyncPattern{
 	enums.SyncBSSourcedVoice, enums.SyncBSSourcedData, enums.SyncMSSourcedVoice,
 	enums.SyncMSSourcedData, enums.SyncMSSourcedRC, enums.SyncTDMA1Voice,
 	enums.SyncTDMA1Data, enums.SyncTDMA2Voice, enums.SyncTDMA2Data, enums.SyncReserved,
 }
 
-// FuzzEnums checks the parsers and names of the enums on any value:
-// NearestSyncPattern returns a Table 9.2 pattern at the least Hamming
-// distance, NewColorCode accepts exactly 0 to 15, VoiceBurstAt and Index
-// are inverses, the Valid methods agree with the names, and no String
-// panics or returns an empty name.
+// Table 9.2
 func FuzzEnums(f *testing.F) {
 	enumSeeds(func(v uint64, i int) { f.Add(v, i) })
 	f.Fuzz(fuzzEnums)
 }
 
-// enumSeeds calls add with each seed of FuzzEnums.
 func enumSeeds(add func(v uint64, i int)) {
 	add(uint64(enums.SyncBSSourcedVoice), 3)
 	add(uint64(enums.SyncMSSourcedData^0x100401), 0)
 	add(uint64(0xFFFFFFFFFFFFFFFF), -1)
 }
 
-// fuzzEnums is the body of FuzzEnums.
 func fuzzEnums(t *testing.T, v uint64, i int) {
 	field := [6]byte{byte(v >> 40), byte(v >> 32), byte(v >> 24), byte(v >> 16), byte(v >> 8), byte(v)}
 	p, d := enums.NearestSyncPattern(field)
@@ -52,8 +46,6 @@ func fuzzEnums(t *testing.T, v uint64, i int) {
 	checkNames(t, uint8(v))
 }
 
-// checkVoiceBursts fails t unless VoiceBurstAt of i and Index are inverses
-// and the LCSS of the VoiceBurstType b exists exactly for bursts B to F.
 func checkVoiceBursts(t *testing.T, b uint8, i int) {
 	t.Helper()
 	vb, ok := enums.VoiceBurstAt(i)
@@ -70,8 +62,6 @@ func checkVoiceBursts(t *testing.T, b uint8, i int) {
 	}
 }
 
-// checkByteEnums fails t unless NewColorCode, Slot.Other and the DataType
-// predicates are consistent for b.
 func checkByteEnums(t *testing.T, b uint8) {
 	t.Helper()
 	cc, err := enums.NewColorCode(b)
@@ -89,8 +79,6 @@ func checkByteEnums(t *testing.T, b uint8) {
 	}
 }
 
-// checkNames fails t unless the Valid method of each one-octet ID enum
-// agrees with its name for b and no String of b is empty.
 func checkNames(t *testing.T, b uint8) {
 	t.Helper()
 	valid := []struct {

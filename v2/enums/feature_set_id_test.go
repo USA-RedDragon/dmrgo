@@ -10,7 +10,7 @@ func TestFeatureSetIDString_KnownIDs(t *testing.T) {
 
 	tests := []struct {
 		fsid     FeatureSetID
-		contains string // substring that should appear in the name
+		contains string
 	}{
 		{FIDStandardized, "Standardized"},
 		{FIDFlydeMicro, "Flyde"},

@@ -7,9 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-// fuzzResult reads one Result from the first 5 bytes of data: 2 bytes of
-// BitsChecked, 2 bytes of ErrorsCorrected and 1 byte whose low bit is
-// Uncorrectable. Bytes past the end of data read as 0.
 func fuzzResult(data []byte) (fec.Result, []byte) {
 	var b [5]byte
 	n := copy(b[:], data)
@@ -20,7 +17,6 @@ func fuzzResult(data []byte) (fec.Result, []byte) {
 	}, data[n:]
 }
 
-// checkCombine checks Err, HasErrors and Combine on the Results r.
 func checkCombine(t *testing.T, r [5]fec.Result) {
 	t.Helper()
 	for _, x := range r {
@@ -52,8 +48,6 @@ func checkCombine(t *testing.T, r [5]fec.Result) {
 	}
 }
 
-// checkBER checks BurstFECStats.Aggregate and BERCalculator on the Results
-// r, which are the layers of one burst in BurstFECStats field order.
 func checkBER(t *testing.T, r [5]fec.Result) {
 	t.Helper()
 	stats := fec.BurstFECStats{SlotType: r[0], EMB: r[1], Payload: r[2], PDU: r[3], RC: r[4]}
@@ -113,12 +107,6 @@ func checkBER(t *testing.T, r [5]fec.Result) {
 	}
 }
 
-// FuzzResult builds five Results from fuzzed bytes and checks Combine,
-// Err, HasErrors, BurstFECStats.Aggregate and BERCalculator against their
-// definitions: Combine adds counts and ORs Uncorrectable, is commutative
-// and associative with the zero Result as identity, Aggregate leaves out
-// the PDU bit count only, and BER is the sum of corrected errors over the
-// sum of checked bits as a percentage.
 func FuzzResult(f *testing.F) {
 	f.Add([]byte{})
 	f.Add([]byte{0, 20, 0, 1, 0, 0, 16, 0, 2, 0, 0, 196, 0, 3, 0, 0, 96, 0, 5, 0, 0, 32, 0, 6, 0})

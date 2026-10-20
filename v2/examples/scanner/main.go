@@ -104,8 +104,6 @@ func loadBursts(path string) ([]layer2.RawBurst, error) {
 	return out, nil
 }
 
-// generatedCall returns a group call whose embedded LC rotates through the
-// voice LC, the talker alias header and block, and a GPS position.
 func generatedCall() ([]layer2.RawBurst, error) {
 	rotation, err := pdu.EncodeTalkerAlias("KF5XYZ Jacob", layer3.TalkerAliasSevenBit)
 	if err != nil {
@@ -148,11 +146,6 @@ func generatedCall() ([]layer2.RawBurst, error) {
 	return append(append(out, voice...), tail...), nil
 }
 
-// buildStream interleaves the two time slots with a CACH before every
-// burst, fills the shorter one with idle bursts, prepends junk bits and
-// flips bits at random. It returns the n bits of the stream packed, the
-// first bit in the most significant bit of byte 0, and the number of bits
-// it flipped.
 func buildStream(ts1, ts2 []layer2.RawBurst) (stream []byte, n, flipped int, err error) {
 	idle, err := layer2.BuildBurst(&pdu.PRFill{}, colorCode, layer2.SyncSourceBS)
 	if err != nil {
@@ -300,8 +293,6 @@ func (c *channel) summary(w io.Writer) {
 		p[enums.VoiceBurstE], p[enums.VoiceBurstF], p[enums.VoiceBurstUnknown], c.lcErrors, c.ambe.BER())
 }
 
-// xorshift is a xorshift64 generator with a fixed seed, so the junk bits,
-// bit errors and write sizes are the same on every run.
 type xorshift uint64
 
 func (x *xorshift) next() uint64 {

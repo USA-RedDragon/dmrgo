@@ -49,9 +49,6 @@ func loadBursts(path string) ([]layer2.RawBurst, error) {
 
 func flip(p *layer2.RawBurst, i int) { p[i/8] ^= 0x80 >> (i % 8) }
 
-// addRFErrors flips one bit per FEC layer that the burst carries: a BPTC bit
-// of a data burst, the first bit of vocoder slot 0, which is Golay coded,
-// and an EMB bit of an embedded signalling burst.
 func addRFErrors(p *layer2.RawBurst) (burstFEC, ambe int) {
 	var b layer2.Burst
 	_ = b.DecodeFromBytes(*p)
@@ -182,8 +179,6 @@ func checkRegenerated(bursts []layer2.RawBurst, captured []layer2.RawBurst, fram
 	return clean, framesOK, identical
 }
 
-// rewriteTarget sets the target address of a Voice LC Header payload in
-// place and reseals it, as a hotspot does when it maps a talkgroup.
 func rewriteTarget(header [33]byte, target uint32) (before, after, sameAsCodeword bool, decoded uint32, err error) {
 	p, _ := layer2.RawBurst(header).BPTCPayload()
 	lc := pdu.LCBytes(p[:9])
@@ -220,11 +215,6 @@ func rewriteTarget(header [33]byte, target uint32) (before, after, sameAsCodewor
 	return
 }
 
-// run processes voice.bin from dataDir and prints the results to w. The AMBE
-// FEC corrects 3 more errors than are injected because burst 20 of the
-// capture has them on the air, so its regenerated burst differs from the
-// capture. The capture also lost a burst A at burst 49, which shifts the
-// regenerated superframes after it.
 func run(w io.Writer, dataDir string) error {
 	captured, err := loadBursts(filepath.Join(dataDir, "voice.bin"))
 	if err != nil {

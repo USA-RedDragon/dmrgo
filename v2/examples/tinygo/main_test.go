@@ -8,10 +8,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
-// TestRun checks the decode, re-encode and call results, and that a run makes no
-// heap garbage. Under TinyGo, run it with -stack-size=8KB, the default of the
-// pico and esp32c3 targets, because TinyGo puts a local on the heap when it
-// is larger than 256 bytes at that stack size.
 func TestRun(t *testing.T) {
 	t.Parallel()
 

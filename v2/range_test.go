@@ -15,7 +15,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
-// must returns v, and panics when err is not nil.
 func must[T any](v T, err error) T {
 	if err != nil {
 		panic(err)
@@ -23,16 +22,11 @@ func must[T any](v T, err error) T {
 	return v
 }
 
-// isRangeError reports whether err is the *dmrgo.FieldRangeError of field
-// typ.field in n bits.
 func isRangeError(err error, typ, field string, n int) bool {
 	var rangeErr *dmrgo.FieldRangeError
 	return errors.As(err, &rangeErr) && rangeErr.Type == typ && rangeErr.Field == field && rangeErr.Bits == n
 }
 
-// paddingRejectCase is an encoder whose input holds a field of bits that is
-// not a whole number of bytes: run encodes the field p and returns the
-// error, which for a set padding bit is the FieldRangeError of typ.field.
 type paddingRejectCase struct {
 	name       string
 	bits       int
@@ -40,9 +34,6 @@ type paddingRejectCase struct {
 	run        func(t *testing.T, p []byte) error
 }
 
-// TestEncodeRejectsPaddingBits checks that each encoder returns the
-// *dmrgo.FieldRangeError of the field when one padding bit of its input is
-// set, and no error when none is.
 func TestEncodeRejectsPaddingBits(t *testing.T) {
 	t.Parallel()
 
@@ -107,8 +98,6 @@ func TestEncodeRejectsPaddingBits(t *testing.T) {
 	}
 }
 
-// TestDecodeAMBE72WritesZeroPadding checks that DecodeAMBE72 returns frames
-// whose padding bits are 0, which EncodeAMBE72 takes.
 func TestDecodeAMBE72WritesZeroPadding(t *testing.T) {
 	t.Parallel()
 
@@ -128,9 +117,6 @@ func TestDecodeAMBE72WritesZeroPadding(t *testing.T) {
 	}
 }
 
-// rangeCase is a call of an encoder written by hand with a value that does
-// not fit its bits, which must return the FieldRangeError of typ.field in
-// bits bits.
 type rangeCase struct {
 	name       string
 	typ, field string
@@ -138,8 +124,6 @@ type rangeCase struct {
 	run        func() error
 }
 
-// TestEncodeRejectsOutOfRangeValues checks that the encoders written by hand
-// return the *dmrgo.FieldRangeError of a value that does not fit its bits.
 func TestEncodeRejectsOutOfRangeValues(t *testing.T) {
 	t.Parallel()
 
@@ -224,9 +208,6 @@ func TestEncodeRejectsOutOfRangeValues(t *testing.T) {
 	}
 }
 
-// TestSettersRejectOutOfRangeValues checks that each setter returns the
-// *dmrgo.FieldRangeError of a value that does not fit its bits, or of a set
-// padding bit, and leaves its target as it was.
 func TestSettersRejectOutOfRangeValues(t *testing.T) {
 	t.Parallel()
 
@@ -300,10 +281,6 @@ func TestSettersRejectOutOfRangeValues(t *testing.T) {
 	}
 }
 
-// TestSetAddressesErrors checks that each SetAddresses returns the
-// *dmrgo.FieldRangeError of a target or source over 24 bits and
-// pdu.ErrNoAddresses for a PDU without address fields, and leaves the PDU
-// as it was.
 func TestSetAddressesErrors(t *testing.T) {
 	t.Parallel()
 
@@ -396,7 +373,6 @@ func TestSetAddressesErrors(t *testing.T) {
 	}
 }
 
-// noErr panics when err is not nil.
 func noErr(err error) {
 	if err != nil {
 		panic(err)
