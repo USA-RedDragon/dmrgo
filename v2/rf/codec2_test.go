@@ -104,14 +104,14 @@ func TestReceiverCodec2Call(t *testing.T) {
 					}
 					seen[k] = true
 					data, _ := b.Decoded()
+					if late && k == 0 {
+						data = b.Data
+					}
 					s := data.VoiceSlots()
 					copy(slots[layer2.VoiceSlotsPerBurst*k:], s[:])
 				}
 				bad := 0
 				for i := range want {
-					if late && i < layer2.VoiceSlotsPerBurst {
-						continue
-					}
 					if !seen[i/layer2.VoiceSlotsPerBurst] || slots[i] != want[i] {
 						bad++
 					}

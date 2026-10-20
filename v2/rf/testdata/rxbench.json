@@ -4001,7 +4001,7 @@
      "payloads": {
       "ambe": {
        "truth": 108,
-       "exact": 44
+       "exact": 43
       },
       "ambe_c0c1": {
        "truth": 108,
@@ -4071,7 +4071,7 @@
       },
       "ambe_u": {
        "truth": 2700,
-       "exact": 2673
+       "exact": 2672
       },
       "csbk": {
        "truth": 6,
@@ -5996,7 +5996,7 @@
      "payloads": {
       "ambe": {
        "truth": 108,
-       "exact": 107
+       "exact": 106
       },
       "ambe_c0c1": {
        "truth": 108,
@@ -6004,7 +6004,7 @@
       },
       "ambe_u": {
        "truth": 2700,
-       "exact": 2699
+       "exact": 2698
       },
       "csbk": {
        "truth": 6,
@@ -7991,19 +7991,19 @@
      "payloads": {
       "ambe": {
        "truth": 108,
-       "exact": 69
+       "exact": 68
       },
       "ambe_c0c1": {
        "truth": 108,
-       "exact": 92
+       "exact": 93
       },
       "ambe_u": {
        "truth": 2700,
-       "exact": 2612
+       "exact": 2609
       },
       "csbk": {
        "truth": 6,
-       "exact": 6
+       "exact": 5
       },
       "elc": {
        "truth": 6,
@@ -8015,11 +8015,11 @@
       },
       "header": {
        "truth": 13,
-       "exact": 11
+       "exact": 12
       },
       "lc": {
        "truth": 2,
-       "exact": 2
+       "exact": 1
       },
       "rate1": {
        "truth": 3,
@@ -8027,7 +8027,7 @@
       },
       "rate12": {
        "truth": 14,
-       "exact": 10
+       "exact": 11
       },
       "rate1_bit": {
        "truth": 576,
@@ -8039,11 +8039,11 @@
       },
       "slottype": {
        "truth": 44,
-       "exact": 42
+       "exact": 43
       },
       "sync": {
        "truth": 50,
-       "exact": 48
+       "exact": 49
       }
      }
     },
@@ -8053,7 +8053,7 @@
      "payloads": {
       "ambe": {
        "truth": 108,
-       "exact": 101
+       "exact": 99
       },
       "ambe_c0c1": {
        "truth": 108,
@@ -8061,7 +8061,7 @@
       },
       "ambe_u": {
        "truth": 2700,
-       "exact": 2692
+       "exact": 2690
       },
       "csbk": {
        "truth": 6,

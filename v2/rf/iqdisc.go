@@ -142,9 +142,46 @@ func (d *iqDisc) tune(hz float32) {
 		d.tuneLean(hz)
 		return
 	}
+	d.turn(2 * math.Pi * (hz - d.hz) / basebandRate)
 	d.hz = hz
 	p := -2 * math.Pi * float64(hz) / basebandRate
 	d.ncoStep = complex(float32(math.Cos(p)), float32(math.Sin(p)))
+}
+
+func turnBy(w float32, age int) complex64 {
+	s, c := sincosf(w * float32(age))
+	return complex(c, s)
+}
+
+func (d *iqDisc) turn(w float32) {
+	age0, per := 1, 1
+	h := &d.half
+	nh := len(h.hist) / 2
+	if h.side != nil {
+		age0, per = nh-nh/2+h.phase, 2
+	}
+	n := len(d.taps)
+	ref := age0 + per*(d.phase+n-1-n/2)
+	for r := range nh {
+		j := (h.head - 1 - r + nh) % nh
+		h.hist[j] *= turnBy(w, r+1-ref)
+		h.hist[j+nh] = h.hist[j]
+	}
+	for r := range n {
+		j := (d.head - 1 - r + n) % n
+		d.hist[j] *= turnBy(w, age0+per*r-ref)
+		d.hist[j+n] = d.hist[j]
+	}
+	d.ncoRot *= turnBy(w, -ref)
+	if m := len(d.afc); m > 0 {
+		d.afcSum = 0
+		for r := range m {
+			j := (d.afcHead - 1 - r + m) % m
+			d.afc[j] *= turnBy(w, r*d.decim)
+			d.afcSum += d.afc[j]
+		}
+		d.afcPrev = d.afcSum
+	}
 }
 
 func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
@@ -396,7 +433,7 @@ func (r *iqRx) tune(hz, dc float32) {
 	}
 	r.conv.tune(r.conv.hz + hz)
 	if r.tunes != nil {
-		r.tunes[r.nTunes%iqTunes] = iqTune{n: r.yN, hz: r.conv.hz}
+		r.tunes[r.nTunes%iqTunes] = iqTune{n: r.yN - 1, hz: r.conv.hz}
 		r.nTunes++
 	}
 	r.afcPull -= hz

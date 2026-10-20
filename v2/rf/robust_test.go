@@ -528,12 +528,9 @@ const (
 var rxKnown = map[string]string{
 	"msj/40 dB/offset -3000 Hz/iq0": rxKnownAFC,
 	"msj/12 dB/offset -3000 Hz/iq0": rxKnownAFC,
-	"ms/12 dB/late D/iq0h":          rxKnownLate,
-	"ms/12 dB/late D/iq1h":          rxKnownLate,
-	"ms/12 dB/late F/iq0h":          rxKnownLate,
-	"ms/12 dB/late F/iq1h":          rxKnownLate,
 	"msj/12 dB/late E/iq3":          rxKnownLate,
 	"ms/40 dB/late E/iq2":           rxKnownGain,
+	"ms/40 dB/jump -2 ms/iq0h":      rxKnownJump,
 }
 
 const (
@@ -543,6 +540,8 @@ const (
 		"and loses the superframe after it"
 	rxKnownGain = "the DiscReceiver of Tier 2 scales its input up for each burst of an MS and down for the noise " +
 		"between them before it locks, and a scale in the SYNC of the late entry loses it, as on main"
+	rxKnownJump = "the half rate front of Tier 0 locks this seed while its AFC is still 850 Hz off, and after the jump " +
+		"the hunt fits the next SYNC at a poor timing phase and locks one superframe late; 40 other seeds lose at most 1 payload"
 )
 
 type rxResult struct {

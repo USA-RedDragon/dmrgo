@@ -275,8 +275,18 @@ type leanRx struct {
 }
 
 func (f *leanFront) retuneFront(hz, d float32) {
+	f.turn(2 * math.Pi * d / discRate)
 	f.tune(float64(hz))
 	f.shift(-d)
+}
+
+func (f *leanFront) turn(w float32) {
+	for r := range preTaps {
+		j := (f.preHead - 1 - r + preTaps) % preTaps
+		v := complex(float32(f.preHist[j][0]), float32(f.preHist[j][1])) * turnBy(w, r+1)
+		f.preHist[j] = [2]int8{sat8(real(v)), sat8(imag(v))}
+	}
+	f.prev *= turnBy(w, preTaps-preTaps/2)
 }
 
 func newLean(cfg Config, opt options) *leanRx {
