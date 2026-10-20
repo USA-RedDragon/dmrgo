@@ -178,7 +178,7 @@ const (
 	cohScanLen   = (syncSymbols - 2) * cohSPS
 	cohScanSegs  = 4
 	cohScanOff   = 2
-	cohScanRho   = 0.45
+	cohScanRho   = 0.47
 	cohScanWait  = 3
 	cohScanSeg   = cohScanLen / cohScanSegs
 	cohScanBound = 1.001
@@ -944,7 +944,7 @@ func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
 }
 
 const (
-	cohVerifyRho = 0.35
+	cohVerifyRho = 0.37
 	cohVerifyPre = 0.2
 )
 
