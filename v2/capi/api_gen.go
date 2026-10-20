@@ -36,6 +36,7 @@ import (
 	g_shortdata "github.com/USA-RedDragon/dmrgo/v2/shortdata"
 	g_sms "github.com/USA-RedDragon/dmrgo/v2/sms"
 	g_transport_dmrd "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
+	g_transport_dmrd_auth "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
 	g_trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
 	g_vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	g_vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
@@ -6975,6 +6976,18 @@ func get_location_Decoder(p *C.dmrgo_location_decoder_t) *h_location_Decoder {
 
 func new_location_Decoder(v *g_location.Decoder) *C.dmrgo_location_decoder_t {
 	return (*C.dmrgo_location_decoder_t)(newHandle(&h_location_Decoder{v: v}))
+}
+
+type h_transport_dmrd_auth_Bridge struct {
+	v *g_transport_dmrd_auth.Bridge
+}
+
+func get_transport_dmrd_auth_Bridge(p *C.dmrgo_auth_bridge_t) *h_transport_dmrd_auth_Bridge {
+	return lookup[*h_transport_dmrd_auth_Bridge](unsafe.Pointer(p))
+}
+
+func new_transport_dmrd_auth_Bridge(v *g_transport_dmrd_auth.Bridge) *C.dmrgo_auth_bridge_t {
+	return (*C.dmrgo_auth_bridge_t)(newHandle(&h_transport_dmrd_auth_Bridge{v: v}))
 }
 
 type h_trunk_CapacityPlusFollower struct {
@@ -30901,6 +30914,115 @@ func dmrgo_dmrd_talker_alias_string(c_self *C.dmrgo_dmrd_talker_alias_t, c_out *
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_auth_bridge_new
+func dmrgo_auth_bridge_new(c_out **C.dmrgo_auth_bridge_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_transport_dmrd_auth_Bridge(new(g_transport_dmrd_auth.Bridge))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_auth_bridge_free
+func dmrgo_auth_bridge_free(c_self *C.dmrgo_auth_bridge_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_transport_dmrd_auth_Bridge(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_auth_bridge_sign
+func dmrgo_auth_bridge_sign(c_self *C.dmrgo_auth_bridge_t, c_p *C.uint8_t, c_p_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_transport_dmrd_auth_Bridge(c_self)
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	r0 := h.v.Sign(a_p)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_auth_bridge_verify
+func dmrgo_auth_bridge_verify(c_self *C.dmrgo_auth_bridge_t, c_p *C.uint8_t, c_p_len C.size_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_transport_dmrd_auth_Bridge(c_self)
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	r0 := h.v.Verify(a_p)
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_auth_new_bridge
+func dmrgo_auth_new_bridge(c_key *C.uint8_t, c_key_len C.size_t, c_out **C.dmrgo_auth_bridge_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_key == nil && c_key_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_key []byte
+	a_key = unsafe.Slice((*byte)(unsafe.Pointer(c_key)), int(c_key_len))
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_transport_dmrd_auth.NewBridge(a_key)
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_transport_dmrd_auth_Bridge(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_auth_token
+func dmrgo_auth_token(c_d C.dmrgo_dmrd_dialect_t, c_salt C.uint32_t, c_password *C.uint8_t, c_password_len C.size_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_password == nil && c_password_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_password []byte
+	a_password = unsafe.Slice((*byte)(unsafe.Pointer(c_password)), int(c_password_len))
+	r0, r1 := g_transport_dmrd_auth.Token(g_transport_dmrd.Dialect(c_d), uint32(c_salt), a_password)
+	_ = r0
+	if c_out != nil {
+		*(*[32]byte)(unsafe.Pointer(&(*(*[32]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }

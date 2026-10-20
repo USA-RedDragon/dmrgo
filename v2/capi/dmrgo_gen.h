@@ -445,6 +445,8 @@ typedef struct dmrgo_dmrd_option_value_t dmrgo_dmrd_option_value_t;
 typedef struct dmrgo_dmrd_position_t dmrgo_dmrd_position_t;
 /* Go: dmrd.TalkerAlias. TalkerAlias is a DMRA message of DialectMMDVM: one talker alias block that a repeater heard, in the 19-octet form that DMRGateway builds toward a master. */
 typedef struct dmrgo_dmrd_talker_alias_t dmrgo_dmrd_talker_alias_t;
+/* Go: auth.Bridge. Bridge holds an OpenBridge key and the hash state that signing with it needs. */
+typedef struct dmrgo_auth_bridge_t dmrgo_auth_bridge_t;
 /* Go: trunk.Access. Access is the random access control of the last C_ALOHA of a TSCC (ETSI TS 102 361-4 clause 6.2.1.1, Table 7.19). */
 typedef struct dmrgo_trunk_access_t dmrgo_trunk_access_t;
 /* Go: trunk.CapacityPlusConfig. CapacityPlusConfig configures NewCapacityPlusFollower. */
@@ -6580,6 +6582,18 @@ int dmrgo_dmrd_position_string(dmrgo_dmrd_position_t *self, char *out, size_t ou
 int dmrgo_dmrd_talker_alias_append_binary(dmrgo_dmrd_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.TalkerAlias.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_talker_alias_string(dmrgo_dmrd_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* dmrgo_auth_bridge_new makes a zero auth.Bridge. */
+int dmrgo_auth_bridge_new(dmrgo_auth_bridge_t **out);
+/* dmrgo_auth_bridge_free frees the handle. self may be NULL. */
+int dmrgo_auth_bridge_free(dmrgo_auth_bridge_t *self);
+/* Go: auth.Bridge.Sign. Sign writes the signature of the OpenBridge packet p, as dmrd.Bridge.AppendBinary and dmrd.BridgeControl.AppendBinary encode it, into its last octets: HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over the octets before the hash of a DMRE packet. */
+int dmrgo_auth_bridge_sign(dmrgo_auth_bridge_t *self, const uint8_t *p, size_t p_len);
+/* Go: auth.Bridge.Verify. Verify reports whether the OpenBridge packet p carries the signature of the key, as Sign would write it. */
+int dmrgo_auth_bridge_verify(dmrgo_auth_bridge_t *self, const uint8_t *p, size_t p_len, bool *out);
+/* Go: auth.NewBridge. NewBridge returns a Bridge for key, the passphrase of the OpenBridge link as plain octets. */
+int dmrgo_auth_new_bridge(const uint8_t *key, size_t key_len, dmrgo_auth_bridge_t **out);
+/* Go: auth.Token. Token returns the login token of an RPTK message for the salt of the master and the password: SHA-256 of the salt and the password. */
+int dmrgo_auth_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, uint8_t out[32]);
 /* Go: trunk.Access.Applies. Applies reports whether the C_ALOHA population subdivision lets the MS with address ms make a random access (ETSI TS 102 361-4 clause 6.2.1.1.1). */
 int dmrgo_trunk_access_applies(dmrgo_trunk_access_t *self, uint32_t ms, bool emergency, bool *out);
 /* dmrgo_trunk_capacity_plus_follower_new makes a zero trunk.CapacityPlusFollower. */

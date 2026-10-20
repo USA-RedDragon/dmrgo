@@ -18,6 +18,12 @@
 		dmrgo_ars_response_append_binary;
 		dmrgo_ars_response_string;
 		dmrgo_ars_type_string;
+		dmrgo_auth_bridge_free;
+		dmrgo_auth_bridge_new;
+		dmrgo_auth_bridge_sign;
+		dmrgo_auth_bridge_verify;
+		dmrgo_auth_new_bridge;
+		dmrgo_auth_token;
 		dmrgo_bs_activation_string;
 		dmrgo_bs_cach_first;
 		dmrgo_bs_cach_free;
