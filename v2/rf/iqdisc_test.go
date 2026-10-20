@@ -254,3 +254,31 @@ func TestIQDiscLoopback(t *testing.T) {
 		t.Errorf("oscillator at %.0f Hz, want about 1400", got)
 	}
 }
+
+func TestIQAFCAvgChunks(t *testing.T) {
+	t.Parallel()
+	x := fuzzSamples(fuzzSeedBaseband(t), 12, false)
+	for _, m := range []int{3, 5} {
+		o := tierOptions(Tier0)
+		o.IQAFCAvg = m
+		run := func(seed uint64) []Burst {
+			r := mustNew(Config{opt: &o})
+			var out []Burst
+			p := 0
+			for _, k := range fuzzChunks(len(x), 1<<14, seed) {
+				out = append(out, must(r.WriteBaseband(x[p:p+k]))...)
+				p += k
+			}
+			return append(out, r.Flush()...)
+		}
+		a, b := run(0), run(1)
+		if len(a) == 0 || len(a) != len(b) {
+			t.Fatalf("IQAFCAvg %d: %d bursts in one chunk, %d in chunks", m, len(a), len(b))
+		}
+		for i := range a {
+			if a[i] != b[i] {
+				t.Errorf("IQAFCAvg %d: burst %d differs in chunks", m, i)
+			}
+		}
+	}
+}

@@ -469,7 +469,7 @@ func (r *iqRx) writeBaseband(x []complex64) []Burst {
 }
 
 func (r *iqRx) drain() {
-	if r.yHist != nil {
+	if r.yHist != nil || r.conv.afc != nil {
 		return
 	}
 	r.d.write(r.audio)
