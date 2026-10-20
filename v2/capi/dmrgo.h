@@ -75,6 +75,7 @@ enum dmrgo_status {
 
 
 
+
 #ifndef DMRGO_NO_PROTOTYPES
 
 /* dmrgo_abi_version returns DMRGO_ABI_VERSION of the library. The ABI
