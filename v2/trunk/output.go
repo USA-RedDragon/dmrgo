@@ -123,6 +123,15 @@ const (
 	ReasonCancelled
 	// ReasonMove is a C_MOVE to another TSCC.
 	ReasonMove
+	// ReasonQuality is a TSCC whose signal level or bit error rate is
+	// below the thresholds of the MS.
+	ReasonQuality
+	// ReasonDenied is a TSCC in a SYS_AREA that denied the registration of
+	// the MS.
+	ReasonDenied
+	// ReasonParked is a P_PROTECT ILLEGALLY_PARKED for an MS that is
+	// neither the source nor the target of the call.
+	ReasonParked
 )
 
 // String returns the name of the Reason.
@@ -152,6 +161,12 @@ func (r Reason) String() string {
 		return "Cancelled"
 	case ReasonMove:
 		return "Move"
+	case ReasonQuality:
+		return "Quality"
+	case ReasonDenied:
+		return "Denied"
+	case ReasonParked:
+		return "Parked"
 	}
 	return unknownName
 }

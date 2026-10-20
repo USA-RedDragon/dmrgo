@@ -14,13 +14,25 @@ const frame = 60 * time.Millisecond
 
 const maxAddress = 0xFFFCDF
 
+const berWindow = 32
+
+// MaxDenied is the number of entries of the denied registration list of
+// an MS.
+const MaxDenied = 8
+
+// DefaultMaxBERPermille is the bit error rate of the TSCC, in parts per
+// thousand of the FEC-checked bits of the last 32 TSCC bursts, above which
+// an MS leaves the TSCC, when MSConfig.MaxBERPermille is 0. The spec leaves
+// the threshold to the manufacturer. (ETSI TS 102 361-4 clause 6.3.2.3)
+const DefaultMaxBERPermille = 50
+
 // MSConfig configures NewMS. Address is required.
 type MSConfig struct {
 	// Address is the 24-bit individual address of the MS, 1 to 0xFFFCDF.
 	Address uint32
 	// Talkgroups holds the first TalkgroupsLen talkgroups whose calls the
-	// MS follows. Its own calls and the individual calls to it are always
-	// followed.
+	// MS follows and whose radio checks it answers. Its own calls and the
+	// individual calls to it are always followed.
 	Talkgroups [MaxTalkgroups]uint32
 	// TalkgroupsLen is the number of entries of Talkgroups in use.
 	TalkgroupsLen int
@@ -43,15 +55,41 @@ type MSConfig struct {
 	NoRegistration bool
 	// RandomTimeout is TRand_TC, the longest time of a random access. 0
 	// means constants.TRandTCDefault, and a negative value turns the timer
-	// off (ETSI TS 102 361-4 clause 6.2.1.1.7).
+	// off. (ETSI TS 102 361-4 clause 6.2.1.1.7)
 	RandomTimeout time.Duration
-	// CallTimeout is TP_Timer, the longest time from a call request to its
-	// grant. 0 means constants.TPTimerDefault, and a negative value turns
-	// the timer off.
+	// CallTimeout is TP_Timer, the longest wait for the grant of a service
+	// that needs a payload channel. 0 means constants.TPTimerDefault, and a
+	// negative value turns the timer off.
 	CallTimeout time.Duration
+	// RegTimeout is TNP_Timer, the longest wait for the answer to a
+	// registration after an intermediate acknowledgement. 0 means
+	// constants.TNPTimerDefault, and a negative value turns the timer off.
+	RegTimeout time.Duration
 	// Pending is T_Pending, the time a called MS waits for the grant after
 	// it accepted a C_AHOY. 0 means constants.TPendingDefault.
 	Pending time.Duration
+	// Dereg is T_Dereg, the longest wait for the answer to a
+	// de-registration. 0 means constants.TDeregDefault.
+	Dereg time.Duration
+	// DeniedLife is T_DENREG, how long a Reg_Denied keeps the MS off a
+	// SYS_AREA. 0 means constants.TDenRegDefault, and a negative value
+	// keeps the entry until Reset.
+	DeniedLife time.Duration
+	// DMRLA is the number of most significant SITE bits in the SYS_AREA of
+	// the registration and denied records. 0 means constants.DMRLADefault.
+	DMRLA int
+	// MinLevelHunt, when set, is the signal level that Quality reports
+	// below which the MS does not confirm a TSCC, as L_Lower_SHort.
+	MinLevelHunt *int
+	// MinLevelIdle, when set, is the signal level below which the MS
+	// leaves a confirmed TSCC.
+	MinLevelIdle *int
+	// MaxBERPermille is the bit error rate of the TSCC above which the MS
+	// leaves it. 0 means DefaultMaxBERPermille, and a negative value turns
+	// the check off.
+	MaxBERPermille int
+	// AcceptRAS is as in FollowerConfig.
+	AcceptRAS bool
 	// NoSignal is T_Nosig, as in FollowerConfig.
 	NoSignal time.Duration
 	// Inactive is TV_Inactive, as in FollowerConfig.
@@ -68,6 +106,7 @@ const (
 	raIdle raState = iota
 	raWaitSlot
 	raWaitResp
+	raWaitAloha
 )
 
 type request uint8
@@ -75,28 +114,59 @@ type request uint8
 const (
 	reqNone request = iota
 	reqRegister
+	reqDereg
 	reqCall
 )
 
+type sysArea struct {
+	model pdu.NetworkModel
+	net   uint16
+	area  uint16
+}
+
+type deniedEntry struct {
+	area    sysArea
+	until   time.Duration
+	forever bool
+	used    bool
+}
+
 // MS is a Tier III mobile station: it hunts for and follows a TSCC as a
-// Follower does, registers when the TSCC asks for it, makes talkgroup and
-// individual voice calls by random access, answers the C_AHOY of an
-// individual call (OACSU), and ends its own calls with P_MAINT (ETSI TS
-// 102 361-4 clauses 6.2, 6.4.4 and 6.6.1 to 6.6.2). The consumer sends the
-// voice of a granted call with a voice.Transmitter with the MS SYNC.
-// Make it with NewMS. An MS is not safe for concurrent use and must not be
-// copied; go vet reports a copy.
+// Follower does, registers and de-registers, makes voice and packet data
+// calls by random access, answers C_AHOY and P_AHOY, follows C_MOVE and
+// P_PROTECT, and ends its own calls with P_MAINT (ETSI TS 102 361-4
+// clauses 6.2 to 6.6). The consumer sends the voice of a granted call with
+// a voice.Transmitter with the MS SYNC. Make it with NewMS. An MS is not
+// safe for concurrent use and must not be copied; go vet reports a copy.
 type MS struct {
-	f          Follower
-	addr       uint32
-	slot       enums.Slot
-	rng        pcg
-	noReg      bool
-	randTO     time.Duration
-	callTO     time.Duration
-	pendingTO  time.Duration
+	f         Follower
+	addr      uint32
+	slot      enums.Slot
+	rng       pcg
+	noReg     bool
+	randTO    time.Duration
+	callTO    time.Duration
+	regTO     time.Duration
+	pendingTO time.Duration
+	deregTO   time.Duration
+	deniedTO  time.Duration
+	dmrla     int
+	minHunt   int
+	minIdle   int
+	hasHunt   bool
+	hasIdle   bool
+	maxBER    int
+
+	off        bool
 	registered bool
-	regSys     pdu.SysCode
+	regArea    sysArea
+	denied     [MaxDenied]deniedEntry
+	level      int
+	hasLevel   bool
+	berErr     [berWindow]int
+	berBits    [berWindow]int
+	berIdx     int
+	berN       int
 
 	ra         raState
 	frames     int
@@ -104,7 +174,8 @@ type MS struct {
 	raStart    time.Duration
 	req        request
 	reqUntil   time.Duration
-	waitGrant  bool
+	waitAnswer bool
+	deregEnd   time.Duration
 	kind       enums.ServiceKind
 	target     uint32
 	options    uint8
@@ -116,6 +187,7 @@ type MS struct {
 	tx      pdu.CSBK
 	txRand  pdu.RandomAccessPDU
 	txAck   pdu.AckInboundPDU
+	txAckP  pdu.AckInboundPayloadPDU
 	txMaint pdu.MaintenancePDU
 	noCopy  noCopy
 }
@@ -127,30 +199,56 @@ func NewMS(cfg *MSConfig) (*MS, error) {
 	if cfg == nil || cfg.Address == 0 || cfg.Address > maxAddress {
 		return nil, errAddress
 	}
-	m := &MS{addr: cfg.Address, slot: cfg.Slot, noReg: cfg.NoRegistration, randTO: cfg.RandomTimeout, callTO: cfg.CallTimeout, pendingTO: cfg.Pending}
+	if cfg.DMRLA < 0 || cfg.DMRLA > 10 {
+		return nil, errDMRLA
+	}
+	m := &MS{
+		addr: cfg.Address, slot: cfg.Slot, noReg: cfg.NoRegistration, randTO: cfg.RandomTimeout, callTO: cfg.CallTimeout,
+		regTO: cfg.RegTimeout, pendingTO: cfg.Pending, deregTO: cfg.Dereg, deniedTO: cfg.DeniedLife, dmrla: cfg.DMRLA, maxBER: cfg.MaxBERPermille,
+	}
 	err := m.f.init(&FollowerConfig{
 		SysCode: cfg.SysCode, Hunt: cfg.Hunt, HuntLen: cfg.HuntLen, Plan: cfg.Plan, Talkgroups: cfg.Talkgroups,
-		TalkgroupsLen: cfg.TalkgroupsLen, Individual: true, NoSignal: cfg.NoSignal, Inactive: cfg.Inactive,
-		Hangtime: cfg.Hangtime, Scratch: cfg.Scratch,
+		TalkgroupsLen: cfg.TalkgroupsLen, Individual: true, Data: true, NoSignal: cfg.NoSignal, Inactive: cfg.Inactive,
+		Hangtime: cfg.Hangtime, AcceptRAS: cfg.AcceptRAS, Scratch: cfg.Scratch,
 	})
 	if err != nil {
 		return nil, err
 	}
 	m.f.self = cfg.Address
+	if cfg.MinLevelHunt != nil {
+		m.minHunt, m.hasHunt = *cfg.MinLevelHunt, true
+	}
+	if cfg.MinLevelIdle != nil {
+		m.minIdle, m.hasIdle = *cfg.MinLevelIdle, true
+	}
 	if m.slot == enums.SlotUnknown {
 		m.slot = enums.Slot1
 	}
-	if m.randTO == 0 {
-		m.randTO = constants.TRandTCDefault
-	}
-	if m.callTO == 0 {
-		m.callTO = constants.TPTimerDefault
-	}
+	m.randTO = orDefault(m.randTO, constants.TRandTCDefault)
+	m.callTO = orDefault(m.callTO, constants.TPTimerDefault)
+	m.regTO = orDefault(m.regTO, constants.TNPTimerDefault)
+	m.deniedTO = orDefault(m.deniedTO, constants.TDenRegDefault)
 	if m.pendingTO <= 0 {
 		m.pendingTO = constants.TPendingDefault
 	}
+	if m.deregTO <= 0 {
+		m.deregTO = constants.TDeregDefault
+	}
+	if m.dmrla == 0 {
+		m.dmrla = constants.DMRLADefault
+	}
+	if m.maxBER == 0 {
+		m.maxBER = DefaultMaxBERPermille
+	}
 	m.rng.seed(cfg.Seed)
 	return m, nil
+}
+
+func orDefault(d, def time.Duration) time.Duration {
+	if d == 0 {
+		return def
+	}
+	return d
 }
 
 // State returns the channel state of the MS.
@@ -163,46 +261,127 @@ func (m *MS) Site() Site {
 	return m.f.ctl.site
 }
 
-// Registered reports whether the TSCC that the MS is on accepted its
-// registration.
-func (m *MS) Registered() bool {
-	return m.registered && m.f.ctl.site.HasSysCode && m.regSys == m.f.ctl.site.SysCode
+// UDT returns the UDT delivery of the last OutputUDT, as Follower.UDT
+// does.
+func (m *MS) UDT() *UDT {
+	return &m.f.ctl.udt
 }
 
-// Busy reports whether a registration or call request runs.
+// Registered reports whether the MS holds a registration record for the
+// SYS_AREA of the TSCC that it is on.
+func (m *MS) Registered() bool {
+	return m.registered && m.f.ctl.site.HasSysCode && m.regArea == m.areaOf(m.f.ctl.site.SysCode)
+}
+
+// Busy reports whether a registration, de-registration or call request
+// runs.
 func (m *MS) Busy() bool {
 	return m.req != reqNone
 }
 
-// Reset forgets the site, the registration and any request, as after
-// NewMS. It keeps the config.
+// Off reports whether the MS completed PowerOff. An MS that is off
+// ignores every input until Reset.
+func (m *MS) Off() bool {
+	return m.off
+}
+
+// Reset forgets the site, the registration, the denied list and any
+// request, as after NewMS. It keeps the config.
 func (m *MS) Reset() {
 	m.f.Reset()
-	m.registered, m.ra, m.req, m.pending, m.ownCall, m.waitGrant = false, raIdle, reqNone, false, false, false
+	m.off, m.registered, m.ra, m.req, m.pending, m.ownCall, m.waitAnswer = false, false, raIdle, reqNone, false, false, false
+	m.denied = [MaxDenied]deniedEntry{}
+	m.berN, m.berIdx, m.hasLevel = 0, 0, false
 }
 
 // Call asks the TSCC for a voice call to the talkgroup or MS target, by
 // random access. The outputs follow from Burst and Tick: OutputGrant and
-// OutputTune for the grant, or OutputRefused. It returns ErrNotOnControl
-// when the MS is not on a confirmed TSCC, ErrBusy while another request
-// runs, and a *ConfigError for a target or options out of range.
+// OutputTune for the grant, or OutputRefused. An emergency call uses the
+// emergency random access of ETSI TS 102 361-4 clause 6.2.1.1.9. It
+// returns ErrNotOnControl when the MS is not on a confirmed TSCC, ErrBusy
+// while another request runs, ErrNotRegistered when the TSCC asks for a
+// registration that the MS does not hold, and a *ConfigError for a target
+// or options out of range.
 func (m *MS) Call(now time.Duration, group bool, target uint32, opts layer3.VoiceServiceOptions) error {
-	if m.f.state != StateControl {
-		return ErrNotOnControl
-	}
-	if m.req != reqNone {
-		return ErrBusy
+	kind := enums.ServiceIndividualVoice
+	if group {
+		kind = enums.ServiceTalkgroupVoice
 	}
 	field, err := opts.Field()
-	if err != nil || target == 0 || target > 0xFFFFFF {
+	if err != nil {
 		return errTarget
 	}
-	m.kind = enums.ServiceIndividualVoice
+	return m.request(now, kind, target, field, opts.IsEmergency)
+}
+
+// CallData asks the TSCC for a packet data call to the talkgroup or MS
+// target, as Call does. The consumer sends the data on the granted
+// channel with data.Sender.
+func (m *MS) CallData(now time.Duration, group bool, target uint32, opts layer3.DataServiceOptions) error {
+	kind := enums.ServiceIndividualPacketData
 	if group {
-		m.kind = enums.ServiceTalkgroupVoice
+		kind = enums.ServiceTalkgroupPacketData
 	}
-	m.startAccess(now, reqCall, target, field, opts.IsEmergency)
+	field, err := opts.Field()
+	if err != nil {
+		return errTarget
+	}
+	return m.request(now, kind, target, field, opts.IsEmergency)
+}
+
+func (m *MS) request(now time.Duration, kind enums.ServiceKind, target uint32, field uint8, emergency bool) error {
+	switch {
+	case m.off || m.f.state != StateControl:
+		return ErrNotOnControl
+	case m.req != reqNone:
+		return ErrBusy
+	case target == 0 || target > 0xFFFFFF:
+		return errTarget
+	case m.f.ctl.site.Reg && !m.noReg && !m.Registered():
+		return ErrNotRegistered
+	}
+	m.kind = kind
+	m.startAccess(now, reqCall, target, field, emergency)
 	return nil
+}
+
+// PowerOff de-registers the MS before it is switched off: it sends the
+// de-registration by random access and appends OutputPowerOff when the
+// TSCC accepts it or after T_Dereg (ETSI TS 102 361-4 clause 6.4.6). An MS
+// that holds no registration appends OutputPowerOff at once. It allocates
+// only when dst has no room for MaxOutputs outputs.
+func (m *MS) PowerOff(now time.Duration, dst []Output) []Output {
+	dst = m.timers(now, dst)
+	if m.off || m.req == reqDereg {
+		return dst
+	}
+	if m.req != reqNone {
+		dst = m.fail(ReasonCancelled, 0, dst)
+	}
+	if m.f.state != StateControl || !m.Registered() {
+		m.off = true
+		return append(dst, Output{Kind: OutputPowerOff})
+	}
+	m.registered = false
+	opts, _ := layer3.RegistrationServiceOptions{}.Field()
+	m.kind = enums.ServiceRegistration
+	m.startAccess(now, reqDereg, constants.GatewayREGI, opts, false)
+	m.deregEnd = now + m.deregTO
+	return dst
+}
+
+// Quality gives the MS the signal level of the TSCC, in the units of
+// MSConfig.MinLevelHunt and MinLevelIdle, for the confirmation of a TSCC
+// and for leaving it (ETSI TS 102 361-4 clauses 6.3.2.3 and 6.3.3.1). It
+// appends the outputs to dst, and allocates only when dst has no room for
+// MaxOutputs outputs.
+func (m *MS) Quality(now time.Duration, level int, dst []Output) []Output {
+	dst = m.timers(now, dst)
+	m.level, m.hasLevel = level, true
+	if m.f.state == StateControl && m.hasIdle && level < m.minIdle && m.req == reqNone {
+		return m.leaveTSCC(now, ReasonQuality, dst)
+	}
+	return dst
 }
 
 // Cancel stops the running request. It appends OutputRefused with
@@ -210,7 +389,7 @@ func (m *MS) Call(now time.Duration, group bool, target uint32, opts layer3.Voic
 // for MaxOutputs outputs.
 func (m *MS) Cancel(now time.Duration, dst []Output) []Output {
 	dst = m.timers(now, dst)
-	if m.req == reqNone {
+	if m.req == reqNone || m.req == reqDereg {
 		return dst
 	}
 	return m.fail(ReasonCancelled, 0, dst)
@@ -242,16 +421,25 @@ func (m *MS) EndCall(now time.Duration, dst []Output) []Output {
 // should be set; random access needs the CACH, for its AT bit. It
 // allocates only when dst has no room for MaxOutputs outputs.
 func (m *MS) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *layer2.CACH, dst []Output) []Output {
+	if m.off {
+		return dst
+	}
 	dst = m.timers(now, dst)
 	before := m.f.state
 	n := len(dst)
 	dst = m.f.Burst(now, raw, h, cach, dst)
 	dst = m.follow(now, before, dst, n)
-	if m.f.state != StateControl || before != StateControl {
+	switch {
+	case m.f.state == StatePayload && before == StatePayload:
+		return m.payload(now, &h, dst)
+	case m.f.state != StateControl || before != StateControl:
 		return dst
 	}
+	if m.f.ctl.b.Kind == layer2.KindData && m.f.ctl.okData() && m.berBurst() {
+		return m.leaveTSCC(now, ReasonQuality, dst)
+	}
 	dst = m.addressed(now, &h, dst)
-	if h.Slot == enums.SlotUnknown || h.Slot == m.slot {
+	if m.f.state == StateControl && (h.Slot == enums.SlotUnknown || h.Slot == m.slot) {
 		dst = m.frame(now, cach, dst)
 	}
 	return dst
@@ -260,6 +448,9 @@ func (m *MS) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach 
 // Lost tells the MS that the receiver lost the signal, as Follower.Lost
 // does. It allocates only when dst has no room for MaxOutputs outputs.
 func (m *MS) Lost(now time.Duration, dst []Output) []Output {
+	if m.off {
+		return dst
+	}
 	dst = m.timers(now, dst)
 	n := len(dst)
 	before := m.f.state
@@ -271,23 +462,46 @@ func (m *MS) Lost(now time.Duration, dst []Output) []Output {
 // dst. A Tick before Deadline does nothing. It allocates only when dst has
 // no room for MaxOutputs outputs.
 func (m *MS) Tick(now time.Duration, dst []Output) []Output {
+	if m.off {
+		return dst
+	}
 	return m.timers(now, dst)
 }
 
 // Deadline returns the time at which the MS needs a Tick. ok is false
 // when no timer runs.
 func (m *MS) Deadline() (at time.Duration, ok bool) {
+	if m.off {
+		return 0, false
+	}
 	at, ok = m.f.Deadline()
-	if m.ra == raWaitSlot && m.randTO > 0 && (!ok || m.raStart+m.randTO < at) {
-		at, ok = m.raStart+m.randTO, true
+	if m.ra == raWaitSlot && m.randTO > 0 {
+		at, ok = earliest(at, ok, m.raStart+m.randTO)
 	}
-	if m.waitGrant && m.callTO > 0 && (!ok || m.reqUntil < at) {
-		at, ok = m.reqUntil, true
+	if m.waitAnswer && m.answerTO() > 0 {
+		at, ok = earliest(at, ok, m.reqUntil)
 	}
-	if m.pending && (!ok || m.pendingEnd < at) {
-		at, ok = m.pendingEnd, true
+	if m.req == reqDereg {
+		at, ok = earliest(at, ok, m.deregEnd)
+	}
+	if m.pending {
+		at, ok = earliest(at, ok, m.pendingEnd)
 	}
 	return at, ok
+}
+
+func earliest(at time.Duration, ok bool, t time.Duration) (time.Duration, bool) {
+	if !ok || t < at {
+		return t, true
+	}
+	return at, ok
+}
+
+func (m *MS) answerTO() time.Duration {
+	if m.req == reqRegister {
+		return m.regTO
+	}
+	return m.callTO
 }
 
 func (m *MS) timers(now time.Duration, out []Output) []Output {
@@ -295,11 +509,27 @@ func (m *MS) timers(now time.Duration, out []Output) []Output {
 	before := m.f.state
 	out = m.f.timers(now, out)
 	out = m.follow(now, before, out, n)
-	if m.ra == raWaitSlot && m.randTO > 0 && now >= m.raStart+m.randTO {
-		out = m.fail(ReasonNoAnswer, 0, out)
+	if m.req == reqDereg && now >= m.deregEnd {
+		m.done()
+		m.off = true
+		return append(out, Output{Kind: OutputPowerOff, Reason: ReasonTimeout})
 	}
-	if m.waitGrant && m.callTO > 0 && now >= m.reqUntil {
+	if m.ra == raWaitSlot && m.randTO > 0 && now >= m.raStart+m.randTO && m.req == reqDereg {
+		m.ra = raIdle
+	}
+	if m.ra == raWaitSlot && m.randTO > 0 && now >= m.raStart+m.randTO {
+		sent := m.retries > 0
+		out = m.fail(ReasonNoAnswer, 0, out)
+		if sent && m.f.state == StateControl {
+			out = m.leaveTSCC(now, ReasonNoAnswer, out)
+		}
+	}
+	if m.waitAnswer && m.answerTO() > 0 && now >= m.reqUntil {
+		reg := m.req == reqRegister
 		out = m.fail(ReasonTimeout, 0, out)
+		if reg && m.f.state == StateControl {
+			out = m.leaveTSCC(now, ReasonTimeout, out)
+		}
 	}
 	if m.pending && now >= m.pendingEnd {
 		m.pending = false
@@ -311,18 +541,28 @@ func (m *MS) follow(now time.Duration, before State, out []Output, n int) []Outp
 	for i := n; i < len(out); i++ {
 		switch o := &out[i]; o.Kind {
 		case OutputSite:
+			if before == StateHunting {
+				m.berN, m.berIdx = 0, 0
+				if m.isDenied(now) {
+					return m.leaveTSCC(now, ReasonDenied, out)
+				}
+				if m.hasHunt && m.hasLevel && m.level < m.minHunt {
+					return m.leaveTSCC(now, ReasonQuality, out)
+				}
+			}
 			if m.req == reqNone && !m.noReg && m.f.ctl.site.Reg && !m.Registered() {
+				m.kind = enums.ServiceRegistration
 				m.startAccess(now, reqRegister, constants.GatewayREGI, regOptions(), false)
 			}
 		case OutputLost:
-			if m.req != reqNone {
-				return m.fail(ReasonNoSignal, 0, out)
+			if m.aborts() {
+				out = m.fail(ReasonNoSignal, 0, out)
 			}
 		case OutputTune:
 			if before == StateControl && m.f.state == StatePayload {
 				g := &m.f.call
 				m.ownCall = g.Source == m.addr
-				if m.req == reqCall && m.ownCall {
+				if m.req == reqCall && (m.ownCall || g.Target == m.addr) {
 					m.done()
 				}
 				m.pending = false
@@ -333,139 +573,87 @@ func (m *MS) follow(now time.Duration, before State, out []Output, n int) []Outp
 	return out
 }
 
+func (m *MS) aborts() bool {
+	return m.req != reqNone && m.req != reqDereg && (m.req != reqCall || !m.waitAnswer)
+}
+
+func (m *MS) leaveTSCC(now time.Duration, reason Reason, out []Output) []Output {
+	if m.aborts() {
+		out = m.fail(reason, 0, out)
+	}
+	m.ra = raIdle
+	return m.f.lose(now, reason, out)
+}
+
 func regOptions() uint8 {
 	v, _ := layer3.RegistrationServiceOptions{Register: true}.Field()
 	return v
 }
 
-func (m *MS) startAccess(now time.Duration, req request, target uint32, options uint8, emergency bool) {
-	if req == reqRegister {
-		m.kind = enums.ServiceRegistration
+func (m *MS) areaOf(sc pdu.SysCode) sysArea {
+	bits, err := sc.Model.SiteBits()
+	if err != nil {
+		return sysArea{}
 	}
-	m.req, m.target, m.options, m.emergency = req, target, options, emergency
-	m.ra, m.frames, m.retries, m.raStart, m.waitGrant = raWaitSlot, 1, 0, now, false
+	a := sc.Site
+	if m.dmrla < bits {
+		a >>= bits - m.dmrla
+	}
+	return sysArea{model: sc.Model, net: sc.Net, area: a}
 }
 
-func (m *MS) frame(now time.Duration, cach *layer2.CACH, out []Output) []Output {
-	switch m.ra {
-	case raIdle:
-		return out
-	case raWaitResp:
-		m.frames--
-		if m.frames > 0 {
-			return out
+func (m *MS) isDenied(now time.Duration) bool {
+	area := m.areaOf(m.f.ctl.site.SysCode)
+	for i := range m.denied {
+		d := &m.denied[i]
+		if !d.used {
+			continue
 		}
-		if m.retries >= m.maxRetries() || (m.randTO > 0 && now >= m.raStart+m.randTO) {
-			return m.fail(ReasonNoAnswer, 0, out)
+		if !d.forever && now >= d.until {
+			d.used = false
+			continue
 		}
-		m.ra, m.frames = raWaitSlot, m.rng.between(m.f.ctl.site.Access.Backoff.Frames())
-		return out
-	case raWaitSlot:
+		if d.area == area {
+			return true
+		}
 	}
-	m.frames--
-	if m.frames > 0 {
-		return out
-	}
-	if !m.mayAccess(cach) {
-		m.frames = m.rng.between(m.f.ctl.site.Access.Backoff.Frames())
-		return out
-	}
-	m.txRand = pdu.RandomAccessPDU{ServiceOptions: m.options, ServiceKind: uint8(m.kind), TargetAddress: m.target, SourceAddress: m.addr}
-	m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKRandomAccess, RandomAccessPDU: &m.txRand}
-	m.retries++
-	m.ra, m.frames = raWaitResp, m.f.ctl.site.Access.NRandWait.Frames()+1
-	return m.send(now+frame, m.slot, out)
+	return false
 }
 
-func (m *MS) mayAccess(cach *layer2.CACH) bool {
-	s := &m.f.ctl.site
-	if cach == nil || cach.TACT.FEC.Uncorrectable || cach.TACT.AccessType || !s.HasAccess {
+func (m *MS) deny(now time.Duration) {
+	e := deniedEntry{area: m.areaOf(m.f.ctl.site.SysCode), until: now + m.deniedTO, forever: m.deniedTO < 0, used: true}
+	oldest := 0
+	for i := range m.denied {
+		if !m.denied[i].used {
+			m.denied[i] = e
+			return
+		}
+		if !m.denied[i].forever && m.denied[i].until < m.denied[oldest].until {
+			oldest = i
+		}
+	}
+	m.denied[oldest] = e
+}
+
+func (m *MS) berBurst() bool {
+	if m.maxBER < 0 {
 		return false
 	}
-	if !s.Access.Applies(m.addr, m.emergency) {
+	r := m.f.ctl.b.FEC.Aggregate()
+	errs := r.ErrorsCorrected
+	if r.Uncorrectable {
+		errs = r.BitsChecked
+	}
+	m.berErr[m.berIdx], m.berBits[m.berIdx] = errs, r.BitsChecked
+	m.berIdx = (m.berIdx + 1) % berWindow
+	if m.berN < berWindow {
+		m.berN++
 		return false
 	}
-	return m.emergency || s.Access.Function.Invites(m.kind)
-}
-
-func (m *MS) maxRetries() int {
-	if m.emergency {
-		return constants.NRandNE
+	var e, b int
+	for i := range berWindow {
+		e += m.berErr[i]
+		b += m.berBits[i]
 	}
-	return constants.NRandNR
-}
-
-func (m *MS) addressed(now time.Duration, h *layer2.Hint, out []Output) []Output {
-	b := m.f.ctl.b
-	if !m.f.ctl.okData() {
-		return out
-	}
-	c, ok := b.Data.(*pdu.CSBK)
-	if !ok || c.FID != enums.FIDStandardized {
-		return out
-	}
-	switch {
-	case c.AckOutboundPDU != nil && c.AckOutboundPDU.TargetAddress == m.addr:
-		return m.answer(now, enums.AckReason(c.AckOutboundPDU.ReasonCode), out)
-	case c.AhoyPDU != nil && c.AhoyPDU.TargetAddress == m.addr && !c.AhoyPDU.GroupIndividual:
-		return m.ahoy(now, c.AhoyPDU, h, out)
-	}
-	return out
-}
-
-func (m *MS) answer(now time.Duration, r enums.AckReason, out []Output) []Output {
-	if m.req == reqNone {
-		return out
-	}
-	m.ra = raIdle
-	switch r.Type() {
-	case enums.AckNACK:
-		return m.fail(ReasonNack, r, out)
-	case enums.AckACK:
-		if m.req == reqRegister {
-			m.registered, m.regSys = true, m.f.ctl.site.SysCode
-			m.done()
-			return append(out, Output{Kind: OutputRegistered, Ack: r})
-		}
-		m.waitGrant, m.reqUntil = true, now+m.callTO
-	case enums.AckQACK, enums.AckWACK:
-		m.waitGrant, m.reqUntil = true, now+m.callTO
-	}
-	return out
-}
-
-func (m *MS) ahoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Output) []Output {
-	if enums.ServiceKind(a.ServiceKind) != enums.ServiceIndividualVoice || m.req != reqNone {
-		return out
-	}
-	out = append(out, Output{Kind: OutputAhoy, Grant: Grant{Service: enums.ServiceIndividualVoice, Target: a.TargetAddress, Source: a.SourceAddress}})
-	m.txAck = pdu.AckInboundPDU{ReasonCode: byte(enums.ReasonMSAccepted), TargetAddress: a.SourceAddress, AdditionalInfo: m.addr}
-	m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInbound, AckInboundPDU: &m.txAck}
-	slot := h.Slot
-	if slot == enums.SlotUnknown {
-		slot = m.slot
-	}
-	m.pending, m.pendingEnd = true, now+m.pendingTO
-	return m.send(now+frame, slot, out)
-}
-
-func (m *MS) send(due time.Duration, slot enums.Slot, out []Output) []Output {
-	p, err := m.tx.Encode()
-	if err != nil {
-		return out
-	}
-	raw, err := layer2.BuildDataBurst(p, enums.DataTypeCSBK, m.f.ctl.site.ColorCode, layer2.SyncSourceMS)
-	if err != nil {
-		return out
-	}
-	return append(out, Output{Kind: OutputBurst, Burst: raw, Slot: slot, Due: due})
-}
-
-func (m *MS) done() {
-	m.req, m.ra, m.waitGrant = reqNone, raIdle, false
-}
-
-func (m *MS) fail(reason Reason, ack enums.AckReason, out []Output) []Output {
-	m.done()
-	return append(out, Output{Kind: OutputRefused, Reason: reason, Ack: ack})
+	return b > 0 && e*1000 > b*m.maxBER
 }
