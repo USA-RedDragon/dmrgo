@@ -202,9 +202,9 @@ func responseBursts(sack bool, cfg SeqConfig) ([]layer2.RawBurst, []string, erro
 	return b, info, err
 }
 
-// preambleBursts returns Preambles Pre_CSBKs (ETSI TS 102 361-2 clause
-// 7.1.2.5) followed by a confirmed rate 1/2 packet. The CSBK Blocks to
-// Follow counts the preambles still to come and the bursts of the packet.
+// preambleBursts returns Preambles Pre_CSBKs followed by a confirmed rate 1/2
+// packet. The CSBK Blocks to Follow counts the preambles still to come and
+// the bursts of the packet. (ETSI TS 102 361-2 clause 7.1.2.5)
 func preambleBursts(cfg SeqConfig) ([]layer2.RawBurst, error) {
 	data, err := DataBursts("data12", cfg)
 	if err != nil {

@@ -120,8 +120,8 @@ func siteBursts(cfg SeqConfig, lead, callEnd, end int) ([]layer2.RawBurst, error
 
 // controlStream lays the control channel bursts out on TS1 with idle bursts
 // on TS2. Every CACH carries a C_SYS_Parms Short LC with the site's system
-// code and a Common_Slot_Counter that increments every Short LC (ETSI TS
-// 102 361-4 clause 5.1.3). The TACT AT bit is 0 (idle) in every CACH.
+// code and a Common_Slot_Counter that increments every Short LC. The TACT AT
+// bit is 0 (idle) in every CACH. (ETSI TS 102 361-4 clause 5.1.3)
 func controlStream(bursts []layer2.RawBurst, cc enums.ColorCode) ([]BSSlot, error) {
 	idle, err := IdleBurst(cc)
 	if err != nil {

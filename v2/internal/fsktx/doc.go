@@ -1,9 +1,9 @@
-// Package fsktx modulates DMR 4FSK for a transmitter (ETSI TS 102 361-1
-// clause 10.2): the deviation signal that drives the modulator input of an
-// FM radio, as int16 audio, and complex I/Q for a software radio. Dibits
-// turns the bytes of a burst or a CACH into symbols; each modulator then
-// takes one symbol at a time, -3, -1, +1, +3, or 0 for no modulation, and
-// writes the samples of the symbol period that it completes.
+// Package fsktx modulates DMR 4FSK for a transmitter: the deviation signal
+// that drives the modulator input of an FM radio, as int16 audio, and complex
+// I/Q for a software radio. Dibits turns the bytes of a burst or a CACH into
+// symbols; each modulator then takes one symbol at a time, -3, -1, +1, +3, or
+// 0 for no modulation, and writes the samples of the symbol period that it
+// completes.
 //
 // The tiers come from the Pareto front of a sweep of the modulator
 // designs in CPU, RAM and an RF score, the Eb/N0 penalty at the rf
@@ -20,7 +20,7 @@
 //   - Tier2 shapes in float64 over sixteen symbols on each side and IQ uses
 //     float64 sine and cosine.
 //
-// The constructors NewAudio and NewIQ allocate the modulator; Init sets up
-// a Tier0 modulator in memory of the caller. No method allocates, except
-// the Append methods to grow dst.
+// The constructors NewAudio and NewIQ allocate the modulator; Init sets up a
+// Tier0 modulator in memory of the caller. No method allocates, except the
+// Append methods to grow dst. (ETSI TS 102 361-1 clause 10.2)
 package fsktx

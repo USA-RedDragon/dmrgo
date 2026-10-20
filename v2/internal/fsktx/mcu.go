@@ -144,12 +144,11 @@ func (k *shaperMAC) symbol(s int8) int {
 
 // MCUAudio is the Tier0 modulator of the deviation signal that drives the
 // modulator input of an FM radio, as MMDVM modems drive it: the
-// root-raised-cosine pulse of ETSI TS 102 361-1 clause 10.2.2.2, by a
-// fixed-point multiply and accumulate per sample over the taps of an
-// AudioTable in read-only memory. It keeps 96 bytes of state, allocates
-// nothing and fits a microcontroller: Init sets it up in memory of the
-// caller, such as a package variable. An MCUAudio is not safe for
-// concurrent use.
+// root-raised-cosine pulse, by a fixed-point multiply and accumulate per
+// sample over the taps of an AudioTable in read-only memory. It keeps 96
+// bytes of state, allocates nothing and fits a microcontroller: Init sets it
+// up in memory of the caller, such as a package variable. An MCUAudio is not
+// safe for concurrent use. (ETSI TS 102 361-1 clause 10.2.2.2)
 type MCUAudio struct {
 	k      shaperMAC
 	scale  int32
@@ -159,9 +158,9 @@ type MCUAudio struct {
 // Init sets up m for table t at level units for a run of symbol +3 (1944
 // Hz), from 1 to 16000, around offset units: the worst run of symbols
 // reaches 1.9 times level from offset, which must fit int16. A 12-bit DAC
-// takes level 1080 and offset 2048. The deviation test of ETSI TS 102
-// 361-1 clause 10.2.2.3 should give 2749 Hz peak through the radio. On an
-// error m stays as it was; otherwise it starts with no modulation.
+// takes level 1080 and offset 2048. The deviation test should give 2749 Hz
+// peak through the radio. On an error m stays as it was; otherwise it starts
+// with no modulation. (ETSI TS 102 361-1 clause 10.2.2.3)
 func (m *MCUAudio) Init(t AudioTable, level, offset int) error {
 	switch {
 	case t.shape == nil:

@@ -159,8 +159,8 @@ type BSSlot struct {
 
 // ModulateBS turns a BS outbound stream into deviation and envelope. The
 // carrier is continuous: each 30 ms slot is 144 symbols, 12 of CACH and 132
-// of burst (ETSI TS 102 361-1 clause 6.3), with a ramp before the first slot
-// and after the last.
+// of burst, with a ramp before the first slot and after the last.
+// (ETSI TS 102 361-1 clause 6.3)
 func ModulateBS(slots []BSSlot) (freq, env []float64) {
 	if len(slots) == 0 {
 		return nil, nil
