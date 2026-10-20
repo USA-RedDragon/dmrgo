@@ -123,11 +123,7 @@ func (m *MCUIQ) Symbol(dst []int16, s int8) int {
 		m.hist[i] = m.hist[i]<<8 | m.hist[i-1]>>24
 	}
 	m.hist[0] = m.hist[0]<<8 | 5*c + m.hist[0]&255/5
-	var acc [len(tapsIQLUT[0][0])]int32
-	if tier0IQCorr {
-		m.corr(c, &acc)
-	}
-	m.shape(&acc)
+	m.shape(c)
 	dst = dst[:n]
 	switch {
 	case m.on && m.env == m.ramp:
@@ -155,9 +151,14 @@ func (m *MCUIQ) Symbol(dst []int16, s int8) int {
 
 // shape writes the deviation of the samples of the symbol period that
 // the symbols of hist complete to buf, in output units: for each two
-// phases, acc plus the sum of the words of tapsIQLUT of each two symbols.
-// The sums are those of tapsIQ.
-func (m *MCUIQ) shape(acc *[len(tapsIQLUT[0][0])]int32) {
+// phases, the sum of the words of tapsIQLUT of each two symbols, plus with
+// tier0IQCorr the correction of corr for the newest symbol of code c. The
+// sums are those of tapsIQ.
+func (m *MCUIQ) shape(c uint32) {
+	var acc [len(tapsIQLUT[0][0])]int32
+	if tier0IQCorr {
+		acc = m.corr(c)
+	}
 	for j := range tapsIQLUT {
 		t := &tapsIQLUT[j][m.hist[j/2]>>(16*(j%2))&31]
 		for g := range acc {
@@ -349,35 +350,36 @@ func (m *MCUIQ) ramping(dst []int16) {
 	m.phase, m.prev, m.env, m.envQ, m.envR = phase, prev, env, q, r
 }
 
-// corr takes the symbol of code c into the context and adds to acc the
+// corr takes the symbol of code c into the context and returns the
 // correction in the words of tapsIQLUT: for each table k of corrIQ, the
-// row of the context k symbols newer than corrIQSkip, none for a context
-// with a symbol 0. With corrIQSym a context whose oldest symbol is +1 or
-// +3 takes the negated row of the negated symbols.
-func (m *MCUIQ) corr(c uint32, acc *[len(tapsIQLUT[0][0])]int32) {
+// row of the context k symbols newer than corrIQSkip, none while any of
+// these contexts has a symbol 0. With corrIQSym a context whose oldest
+// symbol is +1 or +3 takes the negated row of the negated symbols.
+func (m *MCUIQ) corr(c uint32) (acc [len(tapsIQLUT[0][0])]int32) {
 	const mask = 1<<(2*corrIQSyms) - 1
+	const span = corrIQSyms + corrIQLen - 1
 	z := uint32(0)
 	if c == 4 {
 		z, c = 1, 0
 	}
-	m.codes = m.codes<<2 | c
-	m.zeros = m.zeros<<1 | z
+	codes, zeros := m.codes<<2|c, m.zeros<<1|z
+	m.codes, m.zeros = codes, zeros
+	if zeros>>(corrIQSkip-corrIQLen+1)&(1<<span-1) != 0 {
+		return acc
+	}
 	for k := range corrIQLen {
-		sh := uint32(corrIQSkip - k)
-		if m.zeros>>sh&(1<<corrIQSyms-1) != 0 {
-			continue
-		}
-		i := m.codes >> (2 * sh) & mask
+		i := codes >> uint32(2*(corrIQSkip-k)) & mask
 		if corrIQSym && i > mask/2 {
-			t := &corrIQ[k][i^mask]
+			t := &corrIQ[k][(i^mask)&uint32(len(corrIQ[0])-1)]
 			for g := range acc {
 				acc[g] -= t[g]
 			}
 			continue
 		}
-		t := &corrIQ[k][i]
+		t := &corrIQ[k][i&uint32(len(corrIQ[0])-1)]
 		for g := range acc {
 			acc[g] += t[g]
 		}
 	}
+	return acc
 }
