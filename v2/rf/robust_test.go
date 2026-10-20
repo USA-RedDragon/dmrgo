@@ -525,12 +525,7 @@ const (
 	rxCleanFloor = 0.95
 )
 
-var rxKnown = map[string]string{
-	"ms/40 dB/jump -2 ms/iq0h": rxKnownJump,
-}
-
-const rxKnownJump = "the half rate front of Tier 0 locks this seed while its AFC is still 850 Hz off, and after the jump " +
-	"the hunt fits the next SYNC at a poor timing phase and locks one superframe late; 40 other seeds lose at most 1 payload"
+var rxKnown = map[string]string{}
 
 type rxResult struct {
 	stream, cond, recv string

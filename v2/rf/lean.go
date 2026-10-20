@@ -271,7 +271,7 @@ type leanRx struct {
 	bLag     complex64
 	bN       int32
 	floor    float32
-	noiseLag complex64
+	noiseCoh complex64
 }
 
 func (f *leanFront) retuneFront(hz, d float32) {
@@ -925,10 +925,12 @@ func (r *leanRx) block(p float32) {
 		r.floor *= leanFloorRise
 	}
 	if pw <= leanPresent*r.floor {
-		r.noiseLag = 0.9*r.noiseLag + 0.1*lag
+		if pw > 0 {
+			r.noiseCoh = 0.9*r.noiseCoh + complex(0.1/pw, 0)*lag
+		}
 		return
 	}
-	lag -= r.noiseLag
+	lag -= r.noiseCoh * complex(r.floor, 0)
 	if hz := atan2f(imag(lag), real(lag)) * (discRate / (2 * math.Pi)); abs32(hz) > leanSearchHz {
 		r.retune(hz)
 	}
