@@ -129,8 +129,9 @@ func (c *combRx) add(i int, b *Burst, s *combSide) {
 	if len(c.pend[i]) == cap(c.pend[i]) {
 		c.release(c.pend[i][0].b.Seconds + slotSeconds)
 	}
-	if len(c.pend[i]) < cap(c.pend[i]) {
-		c.pend[i] = append(c.pend[i], combBurst{b: *b, s: *s})
+	if n := len(c.pend[i]); n < cap(c.pend[i]) {
+		c.pend[i] = c.pend[i][:n+1]
+		c.pend[i][n] = combBurst{b: *b, s: *s}
 	}
 }
 
@@ -224,8 +225,9 @@ func (c *combRx) emit(b *Burst) {
 		c.on(b)
 		return
 	}
-	if len(c.out) < cap(c.out) {
-		c.out = append(c.out, *b)
+	if n := len(c.out); n < cap(c.out) {
+		c.out = c.out[:n+1]
+		c.out[n] = *b
 	}
 }
 
