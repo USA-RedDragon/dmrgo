@@ -247,7 +247,8 @@ type Event struct {
 	Lost uint8
 	// LC is the embedded LC of an EventEmbedded.
 	LC pdu.FullLinkControl
-	// Text is the alias of an EventTalkerAlias, in UTF-8.
+	// Text is the alias of an EventTalkerAlias, in UTF-8, at most
+	// pdu.TalkerAliasMaxText bytes.
 	Text []byte
 	// Reason is why the call ended.
 	Reason EndReason
