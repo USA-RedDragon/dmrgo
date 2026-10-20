@@ -375,8 +375,9 @@ func objectiveKeys(rows []*row) []string {
 
 // payloadKeys returns the keys of reportPayloads.
 func payloadKeys() []string {
-	var out []string
-	for _, p := range reportPayloads() {
+	payloads := reportPayloads()
+	out := make([]string, 0, len(payloads))
+	for _, p := range payloads {
 		out = append(out, p[0])
 	}
 	return out
