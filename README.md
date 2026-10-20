@@ -184,20 +184,22 @@ The example prints its counts on the serial console once a second.
 
 | Metric | Count |
 | --- | --- |
-| Total sections | 126 |
-| Verified (tests pass) | 126 |
+| Total sections | 130 |
+| Verified (tests pass) | 130 |
 | Failing (tests fail) | 0 |
 | Untested (has source, no tests) | 0 |
 | Unimplemented | 0 |
 
-**Overall: 126/126 verified (100.0%)**
+**Overall: 130/130 verified (100.0%)**
 
 ### ETSI TS 102 361-1: Air Interface Protocol
 
-64 sections: 64 verified, 0 failing, 0 untested, 0 unimplemented.
+66 sections: 66 verified, 0 failing, 0 untested, 0 unimplemented.
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
+| 5.2.2.2.4 | MS TX_Wakeup_Message | verified | 2/2 passed | `v2/csbk/wakeup.go` |
+| 5.2.2.3 | Non-time critical CSBK ACK/NACK channel access | verified | 2/2 passed | `v2/csbk/sender.go` |
 | 6.1 | Vocoder socket | verified | 23/23 passed | `v2/layer2/burst.go`, `v2/vocoder/frame.go`, `v2/internal/fec/ambe/ambe.go`, `v2/vocoder/codec.go`, `v2/layer2/voice_superframe.go`, `v2/internal/fec/golay/golay_23_12_7.go`, `v2/internal/fec/golay/golay_24_12_8.go`, `v2/enums/voice_burst_types.go` |
 | 6.2 | Data and control | verified | 6/6 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/pi_header.go`, `v2/layer2/voice_transmitter_options.go` |
 | 6.3 | Common Announcement Channel burst | verified | 5/5 passed | `v2/layer2/cach.go`, `v2/layer2/pdu/tact.go` |
@@ -265,10 +267,12 @@ The example prints its counts on the serial console once a second.
 
 ### ETSI TS 102 361-2: DMR Voice and Generic Services and Facilities
 
-36 sections: 36 verified, 0 failing, 0 untested, 0 unimplemented.
+38 sections: 38 verified, 0 failing, 0 untested, 0 unimplemented.
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
+| 5.1.2 | Feature Not Supported (FNS) signalling | verified | 2/2 passed | `v2/csbk/responder.go` |
+| 5.2.2.3 | MS Individual call channel access | verified | 3/3 passed | `v2/csbk/requester.go` |
 | 5.4.2 | Inband positioning data service | verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go` |
 | 5.4.3 | Inband talker alias data service | verified | 5/5 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer3/talker_alias_data_format.go`, `v2/layer2/pdu/talker_alias.go` |
 | 6.1 | Transmit timeout | verified | 2/2 passed | `v2/constants/constants.go` |
@@ -293,7 +297,7 @@ The example prints its counts on the serial console once a second.
 | 7.2.4 | Service Type | verified | 2/2 passed | `v2/layer2/pdu/csbk.go` |
 | 7.2.5 | Source Type | verified | 5/5 passed | `v2/layer3/source_type.go`, `v2/layer2/pdu/csbk.go` |
 | 7.2.6 | Additional Information Field | verified | 5/5 passed | `v2/layer3/additional_information_field.go`, `v2/layer2/pdu/csbk.go` |
-| 7.2.7 | CSBK Blocks to Follow (CBF) | verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
+| 7.2.7 | CSBK Blocks to Follow (CBF) | verified | 4/4 passed | `v2/layer2/pdu/csbk.go`, `v2/csbk/preambles.go` |
 | 7.2.8 | Identifier (ID) | verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/csbk.go` |
 | 7.2.15 | Position Error | verified | 3/3 passed | `v2/layer3/position_error.go` |
 | 7.2.16 | Longitude | verified | 5/5 passed | `v2/layer2/pdu/full_link_control.go` |

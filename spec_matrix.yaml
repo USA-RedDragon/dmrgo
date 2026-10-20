@@ -68,11 +68,36 @@ ignore_files:
   - v2/voice/position.go
   - v2/voice/receiver.go
   - v2/voice/transmitter.go
+  - v2/csbk/decode.go
+  - v2/csbk/errors.go
+  - v2/csbk/nocopy.go
+  - v2/csbk/output.go
+  - v2/csbk/rand.go
 
 documents:
   - id: "TS-102-361-1"
     title: "ETSI TS 102 361-1: Air Interface Protocol"
     sections:
+      - section: "5.2.2.2.4"
+        title: "MS TX_Wakeup_Message"
+        source_files:
+          - v2/csbk/wakeup.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/csbk
+            names:
+              - TestWakeupMatchesXPRGolden
+              - TestWakeupOutbound
+
+      - section: "5.2.2.3"
+        title: "Non-time critical CSBK ACK/NACK channel access"
+        source_files:
+          - v2/csbk/sender.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/csbk
+            names:
+              - TestRequesterChannelAccess
+              - TestResponderDenied
+
       - section: "6.1"
         title: "Vocoder socket"
         source_files:
@@ -1229,6 +1254,27 @@ documents:
   - id: "TS-102-361-2"
     title: "ETSI TS 102 361-2: DMR Voice and Generic Services and Facilities"
     sections:
+      - section: "5.1.2"
+        title: "Feature Not Supported (FNS) signalling"
+        source_files:
+          - v2/csbk/responder.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/csbk
+            names:
+              - TestResponderFNS
+              - TestResponderAnswersLikeAnyTone
+
+      - section: "5.2.2.3"
+        title: "MS Individual call channel access"
+        source_files:
+          - v2/csbk/requester.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/csbk
+            names:
+              - TestOACSU
+              - TestRequesterRetries
+              - TestRequesterTakesAnyToneAnswers
+
       - section: "5.4.2"
         title: "Inband positioning data service"
         source_files:
@@ -1542,10 +1588,16 @@ documents:
         title: "CSBK Blocks to Follow (CBF)"
         source_files:
           - v2/layer2/pdu/csbk.go
+          - v2/csbk/preambles.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestCSBK_PreamblePDU_Decode
+          - package: github.com/USA-RedDragon/dmrgo/v2/csbk
+            names:
+              - TestPreamblesData
+              - TestPreamblesJoinXPROutbound
+              - TestPreamblesJoinAnyToneInbound
 
       - section: "7.2.8"
         title: "Identifier (ID)"
