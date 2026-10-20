@@ -23,6 +23,7 @@ type Message struct {
 	// that a later try started, because the first header was lost, keeps them,
 	// as only a first try counts them. A short data packet keeps all octets
 	// before the CRC; its Bit Padding is in the header.
+	// It holds at most 3048 bytes: 127 blocks of at most 24 octets.
 	// (ETSI TS 102 361-1 clause 9.3.20)
 	Data []byte
 	// CRC is the received message CRC.
@@ -343,7 +344,8 @@ func (a *Assembler) allValid() bool {
 }
 
 // Missing returns the DBSNs of the current confirmed packet that have not
-// arrived with a good CRC-9. It allocates the slice; AppendMissing does not.
+// arrived with a good CRC-9. It returns at most 127 block numbers. It
+// allocates the slice; AppendMissing does not.
 func (a *Assembler) Missing() []int {
 	n := a.total
 	if a.hasBlocks {
@@ -361,7 +363,8 @@ func (a *Assembler) Missing() []int {
 }
 
 // AppendMissing appends the DBSNs that Missing returns to dst and returns
-// the extended slice. It does not allocate when dst has room.
+// the extended slice. It does not allocate when dst has room for 127 block
+// numbers.
 func (a *Assembler) AppendMissing(dst []int) []int {
 	for i, ok := range a.valid[:a.total] {
 		if !ok || !a.hasBlocks {

@@ -22,7 +22,7 @@ const crcOctets = 4
 // for the matching pdu Encode function.
 type Packet struct {
 	Header pdu.DataHeader // the data header that starts the packet
-	Blocks []layer2.Data  // the data blocks that follow the header
+	Blocks []layer2.Data  // the data blocks that follow the header, at most 127 blocks
 }
 
 // ETSI TS 102 361-1 clause 8.2.2.1, clause 8.2.2.2

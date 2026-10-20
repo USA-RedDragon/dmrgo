@@ -149,8 +149,8 @@ func (c *Codec) Encode(pcm []int16) ([9]byte, error) {
 }
 
 // Decode decodes one 72-bit frame into FrameSamples samples. The bits after
-// the Codec2 frame are ignored. It allocates the samples; AppendDecode does
-// not.
+// the Codec2 frame are ignored. It returns at most FrameSamples() samples.
+// It allocates the samples; AppendDecode does not.
 func (c *Codec) Decode(slot [9]byte) ([]int16, error) {
 	if c.dec == nil {
 		return nil, ErrClosed

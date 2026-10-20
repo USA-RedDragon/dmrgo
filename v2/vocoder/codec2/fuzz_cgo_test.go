@@ -29,6 +29,9 @@ func FuzzCodec2(f *testing.F) {
 			if out, err := a.Decode(slot); err != nil || len(out) != FrameSamples {
 				t.Fatalf("mode %d: Decode(%x) = %d samples, %v", mode, slot, len(out), err)
 			}
+			if out, err := a.AppendDecode(make([]int16, 3), slot); err != nil || len(out) != 3+a.FrameSamples() {
+				t.Fatalf("mode %d: AppendDecode(%x) = %d samples, %v", mode, slot, len(out), err)
+			}
 
 			enc, err := a.Encode(pcm)
 			if err != nil || slices.ContainsFunc(enc[n:], func(b byte) bool { return b != 0 }) {

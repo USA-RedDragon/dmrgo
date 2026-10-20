@@ -96,8 +96,8 @@ func (t *VoiceTransmitter) Reset(opts *VoiceTransmitterOptions) error {
 }
 
 // Headers returns the bursts sent before the first voice burst: the Voice
-// LC Header, then the PI Header when the options set one. It allocates the
-// slice; AppendHeaders does not.
+// LC Header, then the PI Header when the options set one. It returns at
+// most 2 bursts. It allocates the slice; AppendHeaders does not.
 func (t *VoiceTransmitter) Headers() []RawBurst {
 	return t.AppendHeaders(make([]RawBurst, 0, 2))
 }

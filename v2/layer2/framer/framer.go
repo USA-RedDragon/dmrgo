@@ -185,7 +185,11 @@ func (f *Framer) Locked() bool {
 // or nil when they complete none. The next write continues at the bit after
 // them, so a piece can end inside a byte. The bits of stream after the
 // first nbits are ignored, and nbits is clamped to [0, 8*len(stream)]. It
-// allocates the slice; AppendBursts does not.
+// returns at most 2*(min(nbits,8*len(stream))/layer2.BurstBits+1)
+// bursts: the bursts of one call end at new bits, and only a burst found
+// after the lock is lost can end less than layer2.BurstBits after the burst
+// before it, so of two gaps in a row at least one is layer2.BurstBits or
+// more. It allocates the slice; AppendBursts does not.
 func (f *Framer) Write(stream []byte, nbits int) []Burst {
 	return f.AppendBursts(nil, stream, nbits)
 }
@@ -193,7 +197,7 @@ func (f *Framer) Write(stream []byte, nbits int) []Burst {
 // AppendBursts adds the first nbits bits of stream as Write does, with
 // nbits clamped to [0, 8*len(stream)], appends the bursts they complete to
 // dst and returns the extended slice. It allocates only when dst has no
-// room for the bursts.
+// room for 2*(min(nbits,8*len(stream))/layer2.BurstBits+1) bursts.
 func (f *Framer) AppendBursts(dst []Burst, stream []byte, nbits int) []Burst {
 	nbits = clampBits(stream, nbits)
 	for from := 0; from < nbits && f.n < cap(f.buf)*8; {

@@ -248,7 +248,8 @@ func (a *TalkerAliasAssembler) Reset() {
 // Add adds a Full LC. LCs that are not SFID Talker Alias header or block
 // LCs are ignored. ok is true when the alias is complete; it is reported
 // once for each new alias. err is set when a complete alias does not
-// decode. It allocates the string; AppendAdd does not.
+// decode. It returns at most TalkerAliasMaxText bytes of alias. It
+// allocates the string; AppendAdd does not.
 func (a *TalkerAliasAssembler) Add(lc *FullLinkControl) (alias string, ok bool, err error) {
 	var buf [TalkerAliasMaxText]byte
 	n, ok, err := a.AddInto(&buf, lc)
@@ -257,7 +258,8 @@ func (a *TalkerAliasAssembler) Add(lc *FullLinkControl) (alias string, ok bool, 
 
 // AppendAdd adds lc as Add does, and appends the alias that Add returns to
 // dst as UTF-8 instead of returning it as a string. It returns dst unchanged
-// when Add returns an empty alias. It allocates only when dst has no room.
+// when Add returns an empty alias. It allocates only when dst has no room
+// for TalkerAliasMaxText bytes.
 func (a *TalkerAliasAssembler) AppendAdd(dst []byte, lc *FullLinkControl) (alias []byte, ok bool, err error) {
 	var buf [TalkerAliasMaxText]byte
 	n, ok, err := a.AddInto(&buf, lc)
