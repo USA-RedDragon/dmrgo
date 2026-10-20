@@ -1,7 +1,8 @@
-// Package trunk follows and takes part in DMR Tier III trunked sites: the
-// channel tables of a site, a Follower that follows the calls of a site
-// without transmitting, and an MS that registers and makes calls by random
-// access (ETSI TS 102 361-4 clauses 6.2 to 6.6).
+// Package trunk follows, takes part in and runs DMR Tier III trunked
+// sites: the channel tables of a site, a Follower that follows the calls
+// of a site without transmitting, an MS that registers and makes calls by
+// random access, and a TSCC that runs a single site with its payload
+// channels (ETSI TS 102 361-4 clauses 6.2 to 6.6).
 //
 // The machines are state machines without I/O. Each method takes the time
 // now, on a monotonic clock that the caller picks, and appends outputs to a
@@ -17,5 +18,7 @@
 // a Voice LC Header, so a consumer that decodes the voice of a grant passes
 // Grant.Call to voice.Receiver.Expect and feeds the bursts of the granted
 // slot to that Receiver. An MS sends the bursts of OutputBurst at their
-// Due time, and the voice of its own calls with a voice.Transmitter.
+// Due time, and the voice of its own calls with a voice.Transmitter. A
+// TSCC takes the inbound bursts of its carriers and sends one burst with
+// its CACH per carrier and 30 ms slot on Tick.
 package trunk

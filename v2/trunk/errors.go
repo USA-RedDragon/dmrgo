@@ -33,10 +33,13 @@ var (
 )
 
 var (
-	errHunt       error = &ConfigError{Field: "Hunt"}
-	errTalkgroups error = &ConfigError{Field: "Talkgroups"}
-	errSysCode    error = &ConfigError{Field: "SysCode"}
-	errAddress    error = &ConfigError{Field: "Address"}
-	errTarget     error = &ConfigError{Field: "target"}
-	errDMRLA      error = &ConfigError{Field: "DMRLA"}
+	errHunt          error = &ConfigError{Field: "Hunt"}
+	errTalkgroups    error = &ConfigError{Field: "Talkgroups"}
+	errSysCode       error = &ConfigError{Field: "SysCode"}
+	errAddress       error = &ConfigError{Field: "Address"}
+	errTarget        error = &ConfigError{Field: "target"}
+	errDMRLA         error = &ConfigError{Field: "DMRLA"}
+	errColorCode     error = &ConfigError{Field: "ColorCode"}
+	errChannels      error = &ConfigError{Field: "Payload"}
+	errRegistrations error = &ConfigError{Field: "MaxRegistrations"}
 )
