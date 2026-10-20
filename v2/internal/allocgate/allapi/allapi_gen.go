@@ -9,6 +9,7 @@ import (
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	bs "github.com/USA-RedDragon/dmrgo/v2/bs"
 	csbk "github.com/USA-RedDragon/dmrgo/v2/csbk"
+	data "github.com/USA-RedDragon/dmrgo/v2/data"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	fec "github.com/USA-RedDragon/dmrgo/v2/fec"
 	internal_bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
@@ -21,6 +22,7 @@ import (
 	internal_fec_quadraticresidue "github.com/USA-RedDragon/dmrgo/v2/internal/fec/quadraticresidue"
 	internal_fec_reedsolomon "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
 	internal_fec_trellis "github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
+	internal_pcg "github.com/USA-RedDragon/dmrgo/v2/internal/pcg"
 	internal_text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	layer2 "github.com/USA-RedDragon/dmrgo/v2/layer2"
 	layer2_framer "github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
@@ -108,6 +110,31 @@ var api = [...]any{
 	csbk.Result.String,
 	csbk.Service.String,
 	csbk.WakeupState.String,
+	(*data.ConfigError).Error,
+	(*data.Receiver).Burst,
+	(*data.Receiver).Deadline,
+	(*data.Receiver).Decoded,
+	(*data.Receiver).Lost,
+	(*data.Receiver).Reset,
+	(*data.Receiver).State,
+	(*data.Receiver).Tick,
+	(*data.Sender).Burst,
+	(*data.Sender).Cancel,
+	(*data.Sender).Channel,
+	(*data.Sender).Deadline,
+	(*data.Sender).Decoded,
+	(*data.Sender).Reset,
+	(*data.Sender).Send,
+	(*data.Sender).State,
+	(*data.Sender).Tick,
+	data.EndReason.String,
+	data.EventKind.String,
+	data.NewReceiver,
+	data.NewSender,
+	data.OutputKind.String,
+	data.Result.String,
+	data.SenderState.String,
+	data.State.String,
 	(*enums.ColorCodeError).Error,
 	enums.Access.String,
 	enums.AckReason.FromTS,
@@ -229,6 +256,9 @@ var api = [...]any{
 	internal_fec_reedsolomon.Encode,
 	internal_fec_trellis.Decode,
 	internal_fec_trellis.Encode,
+	(*internal_pcg.Source).Duration,
+	(*internal_pcg.Source).Uint32,
+	internal_pcg.New,
 	internal_text.Bool,
 	internal_text.Bytes,
 	internal_text.Digits,
