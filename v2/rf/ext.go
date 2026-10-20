@@ -1079,7 +1079,10 @@ func (x *softExt) uncoded(b *Burst, core, coh *layer2.RawBurst, update bool) {
 	}
 	x.cur.coreC2 = 0
 	for i := range layer2.VoiceSlotsPerBurst {
-		x.cur.coreN[i] = uint8(min(nCore[i], 255))
+		x.cur.coreN[i] = 255
+		if n := nCore[i]; n >= 0 && n < 255 {
+			x.cur.coreN[i] = uint8(n)
+		}
 		if !x.coreCleaner() || nCore[i] > nCoh[i] {
 			continue
 		}
