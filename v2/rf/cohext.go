@@ -43,6 +43,8 @@ type cohStage struct {
 	// 1+trial, for the fit of its deviation.
 	trial    float64
 	trialing bool
+	// amp and noise hold the levels of each scale of scaleFit.
+	amp, noise [cohFitScales]float64
 	// easySNR is the SNR of the levels from which a burst is easy:
 	// cohEasySNR, or discEasySNR on an audio ring.
 	easySNR float64
@@ -474,6 +476,15 @@ func (s *cohStage) ring() ([]complex64, int64, int64) {
 	return s.rx.yHist, s.rx.yN, s.rx.yN - s.size
 }
 
+// ringAt returns sample k of the ring hist, which holds the samples lo to
+// n, and 0 for a sample outside it.
+func (s *cohStage) ringAt(hist []complex64, k, lo, n int64) complex64 {
+	if k < 0 || k < lo || k >= n {
+		return 0
+	}
+	return hist[k&(s.size-1)]
+}
+
 // sample returns the ring sample at time t, interpolated by Catmull-Rom;
 // fill rotates it by the carrier residual.
 func (s *cohStage) sample(t float64) complex64 {
@@ -483,13 +494,7 @@ func (s *cohStage) sample(t float64) complex64 {
 	hist, n, lo := s.ring()
 	i := int64(math.Floor(t))
 	mu := float32(t - float64(i))
-	at := func(k int64) complex64 {
-		if k < 0 || k < lo || k >= n {
-			return 0
-		}
-		return hist[k&(s.size-1)]
-	}
-	p0, p1, p2, p3 := at(i-1), at(i), at(i+1), at(i+2)
+	p0, p1, p2, p3 := s.ringAt(hist, i-1, lo, n), s.ringAt(hist, i, lo, n), s.ringAt(hist, i+1, lo, n), s.ringAt(hist, i+2, lo, n)
 	c := complex(mu, 0)
 	return p1 + 0.5*c*(p2-p0+c*(2*p0-5*p1+4*p2-p3+c*(3*(p1-p2)+p3-p0)))
 }
@@ -737,20 +742,23 @@ func (s *cohStage) fineTime(k0, k1 int) float64 {
 func (s *cohStage) syncTime(k0, k1 int) float64 {
 	relock := s.relock
 	s.relock = false
-	rho := func() float64 {
-		a, n := s.levels(k0, k1)
-		return a * a / (a*a + max(n, 0))
-	}
 	if t0 := s.t0; relock {
-		if r0 := rho(); r0 < cohRelockRho {
+		if r0 := s.rho(k0, k1); r0 < cohRelockRho {
 			d := s.timeIn(k0, k1, cohDTWide)
-			if r := rho(); r >= cohPlaceRho && r > r0 {
+			if r := s.rho(k0, k1); r >= cohPlaceRho && r > r0 {
 				return d
 			}
 			s.t0 = t0
 		}
 	}
 	return cohDTGain * s.fineTime(k0, k1)
+}
+
+// rho returns the share of the power of the known symbols k0 to k1 at t0
+// that their waveform explains.
+func (s *cohStage) rho(k0, k1 int) float64 {
+	a, n := s.levels(k0, k1)
+	return a * a / (a*a + max(n, 0))
 }
 
 // cohRelockRho is the least share of the power of the first SYNC of a
