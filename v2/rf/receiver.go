@@ -174,6 +174,8 @@ type Receiver struct {
 	iq0  *iq0Rx
 	cb   *combRx
 	iql  *iqLowRx
+	slot int
+	held int
 }
 
 type engine struct {
@@ -265,6 +267,22 @@ type engine struct {
 // New returns a Receiver sized by cfg. It allocates every buffer of the
 // Receiver. It returns a *ConfigError when a field of cfg is out of range.
 func New(cfg Config) (*Receiver, error) {
+	r, err := newReceiver(cfg)
+	if err != nil {
+		return nil, err
+	}
+	hz := cfg.BasebandHz
+	if hz == 0 {
+		hz = basebandRate
+	}
+	r.slot, r.held = hz*3/100, 16
+	if r.e != nil {
+		r.held += 2 * len(r.e.slots)
+	}
+	return r, nil
+}
+
+func newReceiver(cfg Config) (*Receiver, error) {
 	low, err := checkConfig(&cfg)
 	if err != nil {
 		return nil, err
@@ -472,9 +490,39 @@ func (r *Receiver) DeviationHz() float64 {
 	return r.e.devHz
 }
 
+// MaxBursts returns the most bursts that one call can return for a call
+// of samples I/Q samples. Write returns at most r.MaxBursts((len(iq)+1)/2)
+// bursts, WriteBaseband at most r.MaxBursts(len(x)) and Flush at most
+// r.MaxBursts(0), and all three return none when Config.OnBurst is set. It
+// does not allocate.
+func (r *Receiver) MaxBursts(samples int) int {
+	c := cap(r.outBuf())
+	if r.cb != nil || c == 0 {
+		return c
+	}
+	return min(c, 4*(max(samples, 0)/r.slot+2)+r.held)
+}
+
+func (r *Receiver) outBuf() []Burst {
+	switch {
+	case r.cb != nil:
+		return r.cb.out
+	case r.iql != nil:
+		return r.iql.d.out
+	case r.iq0 != nil:
+		return r.iq0.out
+	case r.iqd != nil:
+		return r.iqd.out
+	case r.lean != nil:
+		return r.lean.out
+	default:
+		return r.e.out
+	}
+}
+
 // Write processes interleaved 8-bit I/Q at Config.Rate and returns the
-// bursts that are complete. The returned slice is valid until the next
-// call.
+// bursts that are complete. It returns at most r.MaxBursts((len(iq)+1)/2)
+// bursts. The returned slice is valid until the next call.
 func (r *Receiver) Write(iq []byte) []Burst {
 	if r.cb != nil {
 		return r.cb.write(iq)
@@ -495,8 +543,9 @@ func (r *Receiver) Write(iq []byte) []Burst {
 }
 
 // WriteBaseband processes complex baseband samples at Config.BasebandHz, as
-// a radio front end delivers them, in place of Write. The returned slice is
-// valid until the next call.
+// a radio front end delivers them, in place of Write. It returns at most
+// r.MaxBursts(len(x)) bursts. The returned slice is valid until the next
+// call.
 func (r *Receiver) WriteBaseband(x []complex64) []Burst {
 	if r.cb != nil {
 		return r.cb.writeBaseband(x)
@@ -517,6 +566,7 @@ func (r *Receiver) WriteBaseband(x []complex64) []Burst {
 }
 
 // Flush finishes the stream at its end and returns the remaining bursts.
+// It returns at most r.MaxBursts(0) bursts.
 func (r *Receiver) Flush() []Burst {
 	if r.cb != nil {
 		return r.cb.flush()
