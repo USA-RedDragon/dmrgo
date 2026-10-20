@@ -17,6 +17,7 @@ type grower struct {
 	d             *declFunc
 	param, result int
 	calls         map[string]bool
+	scratch       map[string]bool
 	appends       bool
 }
 
@@ -139,8 +140,9 @@ type bodyScan struct {
 }
 
 type growerCall struct {
-	g    *grower
-	call *ast.CallExpr
+	g       *grower
+	call    *ast.CallExpr
+	scratch string
 }
 
 func newBodyScan(gt *gate, g *grower, set map[string]*grower, notGrower map[string]string) *bodyScan {
@@ -163,7 +165,7 @@ func newBodyScan(gt *gate, g *grower, set map[string]*grower, notGrower map[stri
 			}
 		}
 	}
-	g.calls = map[string]bool{}
+	g.calls, g.scratch = map[string]bool{}, map[string]bool{}
 	return sc
 }
 
@@ -306,8 +308,24 @@ func (sc *bodyScan) call(n *ast.CallExpr) {
 		sc.why = append(sc.why, fmt.Sprintf("%s: it calls %s, which can allocate and is not a grower (%s)", sc.at(n), fn.FullName(), w))
 		return
 	}
+	why := ""
+	if callee.param < len(n.Args) && isFieldSlice(n.Args[callee.param]) {
+		if why = sc.gt.boundedScratch(sc.info, n.Args[callee.param], callee); why == "" {
+			sc.g.scratch[sym] = true
+			return
+		}
+	}
 	sc.g.calls[sym] = true
-	sc.calls = append(sc.calls, growerCall{callee, n})
+	sc.calls = append(sc.calls, growerCall{callee, n, why})
+}
+
+func isFieldSlice(e ast.Expr) bool {
+	se, ok := ast.Unparen(e).(*ast.SliceExpr)
+	if !ok {
+		return false
+	}
+	_, ok = ast.Unparen(se.X).(*ast.SelectorExpr)
+	return ok
 }
 
 func (sc *bodyScan) derive() {
@@ -338,7 +356,11 @@ func (sc *bodyScan) verify() {
 	}
 	for _, c := range sc.calls {
 		if c.g.param >= len(c.call.Args) || !sc.dv.expr(c.call.Args[c.g.param], 0) {
-			sc.why = append(sc.why, fmt.Sprintf("%s: it passes %s a slice that the gate cannot prove is %s or derived from it", sc.at(c.call), c.g.d.fn.Name(), name))
+			w := fmt.Sprintf("%s: it passes %s a slice that the gate cannot prove is %s or derived from it", sc.at(c.call), c.g.d.fn.Name(), name)
+			if c.scratch != "" {
+				w += ", or a bounded scratch slice: " + c.scratch
+			}
+			sc.why = append(sc.why, w)
 		}
 	}
 	sig := sc.g.d.fn.Signature()
@@ -452,6 +474,10 @@ func (gt *gate) growsOnlyDst(sym string) (bool, string) {
 				if !slices.ContainsFunc(slices.Collect(maps.Keys(inl)), func(s string) bool { return gt.grow[s].appends }) {
 					return false, fmt.Sprintf("%s calls %s, but neither it nor a grower that it calls appends, so the growth comes from code that the gate did not check", x, y)
 				}
+			case gt.grow[y] != nil && !inl[y] && scratchOf(gt.grow, inl)[y]:
+				if ok, w := gt.growsOnlyDst(y); !ok {
+					return false, fmt.Sprintf("%s passes a bounded scratch slice to %s, which does not grow only that slice: %s", x, y, w)
+				}
 			case gt.grow[y] != nil && inl[y]:
 				if !seen[y] {
 					seen[y] = true
@@ -469,6 +495,30 @@ func (gt *gate) growsOnlyDst(sym string) (bool, string) {
 		}
 	}
 	return true, ""
+}
+
+func scratchOf(grow map[string]*grower, inl map[string]bool) map[string]bool {
+	out := map[string]bool{}
+	var q []string
+	for s := range inl {
+		for c := range grow[s].scratch {
+			if !out[c] {
+				out[c] = true
+				q = append(q, c)
+			}
+		}
+	}
+	for len(q) > 0 {
+		n := q[len(q)-1]
+		q = q[:len(q)-1]
+		for c := range grow[n].calls {
+			if !out[c] {
+				out[c] = true
+				q = append(q, c)
+			}
+		}
+	}
+	return out
 }
 
 func (gt *gate) growsDst(r root) (bool, string) {

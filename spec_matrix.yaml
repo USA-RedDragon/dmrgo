@@ -21,6 +21,9 @@ ignore_files:
   - v2/internal/allocgate/testdata/copies/copies.go
   - v2/internal/allocgate/testdata/generics/generics.go
   - v2/internal/allocgate/testdata/growth/growth.go
+  - v2/internal/allocgate/testdata/scratch/engine/engine.go
+  - v2/internal/allocgate/testdata/scratch/machine/machine.go
+  - v2/internal/allocgate/testdata/scratch/nofuzz/nofuzz.go
   - v2/layer2/nocopy.go
   - v2/layer2/packet/nocopy.go
   - v2/voice/nocopy.go
