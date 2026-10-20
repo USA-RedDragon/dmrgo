@@ -19881,6 +19881,52 @@ func dmrgo_pdu_udp_ipv4_compressed_header_encode(c_self *C.dmrgo_pdu_udp_ipv4_co
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_udp_ipv4_compressed_header_octets
+func dmrgo_pdu_udp_ipv4_compressed_header_octets(c_self *C.dmrgo_pdu_udp_ipv4_compressed_header_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.UDPIPv4CompressedHeader
+	x = *(*g_layer2_pdu.UDPIPv4CompressedHeader)(unsafe.Pointer(&(*c_self)))
+	r0 := x.Octets()
+	*(*g_layer2_pdu.UDPIPv4CompressedHeader)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_udp_ipv4_compressed_header_ports
+func dmrgo_pdu_udp_ipv4_compressed_header_ports(c_self *C.dmrgo_pdu_udp_ipv4_compressed_header_t, c_source *C.uint16_t, c_destination *C.uint16_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.UDPIPv4CompressedHeader
+	x = *(*g_layer2_pdu.UDPIPv4CompressedHeader)(unsafe.Pointer(&(*c_self)))
+	r0, r1 := x.Ports()
+	*(*g_layer2_pdu.UDPIPv4CompressedHeader)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	_ = r1
+	if c_source != nil {
+		*c_source = C.uint16_t(r0)
+	}
+	if c_destination != nil {
+		*c_destination = C.uint16_t(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_udp_ipv4_compressed_header_string
 func dmrgo_pdu_udp_ipv4_compressed_header_string(c_self *C.dmrgo_pdu_udp_ipv4_compressed_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)

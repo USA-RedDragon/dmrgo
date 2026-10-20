@@ -4443,6 +4443,10 @@ int dmrgo_pdu_talkgroup_voice_grant_pdu_encode(dmrgo_pdu_talkgroup_voice_grant_p
 int dmrgo_pdu_talkgroup_voice_grant_pdu_string(dmrgo_pdu_talkgroup_voice_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.UDPIPv4CompressedHeader.Encode. Encode encodes a UDPIPv4CompressedHeader. */
 int dmrgo_pdu_udp_ipv4_compressed_header_encode(dmrgo_pdu_udp_ipv4_compressed_header_t *self, uint8_t out[9]);
+/* Go: pdu.UDPIPv4CompressedHeader.Octets. Octets returns the length of the compressed header: 5 octets, plus 2 for each port that an Extended Header carries because its SPID or DPID is 0. */
+int dmrgo_pdu_udp_ipv4_compressed_header_octets(dmrgo_pdu_udp_ipv4_compressed_header_t *self, int64_t *out);
+/* Go: pdu.UDPIPv4CompressedHeader.Ports. Ports returns the UDP source and destination ports: the port of the SPID or DPID, or the port in an Extended Header when the SPID or DPID is 0. */
+int dmrgo_pdu_udp_ipv4_compressed_header_ports(dmrgo_pdu_udp_ipv4_compressed_header_t *self, uint16_t *source, uint16_t *destination);
 /* Go: pdu.UDPIPv4CompressedHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_udp_ipv4_compressed_header_string(dmrgo_pdu_udp_ipv4_compressed_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.UDTHeader.Encode. Encode encodes a UDTHeader. */

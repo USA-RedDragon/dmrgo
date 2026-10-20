@@ -331,14 +331,14 @@ The example prints its counts on the serial console once a second.
 | 5.3 | Unconfirmed data DLL bearer service | verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
 | 5.4 | Confirmed data DLL bearer service | verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
 | 5.5 | UDP/IPv4 data | verified | 6/6 passed | `v2/layer2/pdu/udp_ipv4_compressed.go`, `v2/enums/said.go`, `v2/enums/daid.go`, `v2/enums/spid.go`, `v2/enums/dpid.go` |
-| 5.6 | UDP/IPv4 header compression | verified | 1/1 passed | `v2/layer2/pdu/udp_ipv4_compressed.go`, `v2/enums/said.go`, `v2/enums/daid.go`, `v2/enums/spid.go`, `v2/enums/dpid.go` |
+| 5.6 | UDP/IPv4 header compression | verified | 2/2 passed | `v2/layer2/pdu/udp_ipv4_compressed.go`, `v2/enums/said.go`, `v2/enums/daid.go`, `v2/enums/spid.go`, `v2/enums/dpid.go` |
 | 6.1 | Defined Data | verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
 | 6.2 | Raw data | verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
 | 6.3 | Status/precoded data | verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
 | 6.4 | Short data confirmed response | verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
 | 7.1.1 | Full Link Control (FULL LC) PDUs | verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go` |
 | 7.1.1.1 | Terminator Data Link Control PDU | verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go`, `v2/enums/flco.go` |
-| 7.2 | UDP/IPv4 Compressed Header | verified | 1/1 passed | `v2/layer2/pdu/udp_ipv4_compressed.go` |
+| 7.2 | UDP/IPv4 Compressed Header | verified | 2/2 passed | `v2/layer2/pdu/udp_ipv4_compressed.go` |
 | A | PDP timers and constants in DMR | verified | 2/2 passed | `v2/constants/constants.go` |
 | B.1 | PDP Full Link Control Opcode list | verified | 1/1 passed | `v2/enums/flco.go`, `v2/layer2/pdu/full_link_control.go` |
 

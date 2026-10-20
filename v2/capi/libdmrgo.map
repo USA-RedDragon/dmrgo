@@ -715,6 +715,8 @@
 		dmrgo_pdu_talkgroup_voice_grant_pdu_encode;
 		dmrgo_pdu_talkgroup_voice_grant_pdu_string;
 		dmrgo_pdu_udp_ipv4_compressed_header_encode;
+		dmrgo_pdu_udp_ipv4_compressed_header_octets;
+		dmrgo_pdu_udp_ipv4_compressed_header_ports;
 		dmrgo_pdu_udp_ipv4_compressed_header_string;
 		dmrgo_pdu_udt_header_encode;
 		dmrgo_pdu_udt_header_string;

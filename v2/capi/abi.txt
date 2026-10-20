@@ -1422,6 +1422,8 @@ sym int dmrgo_pdu_talkgroup_data_grant_pdu_string(dmrgo_pdu_talkgroup_data_grant
 sym int dmrgo_pdu_talkgroup_voice_grant_pdu_encode(dmrgo_pdu_talkgroup_voice_grant_pdu_t *self, uint8_t out[8]);
 sym int dmrgo_pdu_talkgroup_voice_grant_pdu_string(dmrgo_pdu_talkgroup_voice_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_pdu_udp_ipv4_compressed_header_encode(dmrgo_pdu_udp_ipv4_compressed_header_t *self, uint8_t out[9]);
+sym int dmrgo_pdu_udp_ipv4_compressed_header_octets(dmrgo_pdu_udp_ipv4_compressed_header_t *self, int64_t *out);
+sym int dmrgo_pdu_udp_ipv4_compressed_header_ports(dmrgo_pdu_udp_ipv4_compressed_header_t *self, uint16_t *source, uint16_t *destination);
 sym int dmrgo_pdu_udp_ipv4_compressed_header_string(dmrgo_pdu_udp_ipv4_compressed_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_pdu_udt_header_encode(dmrgo_pdu_udt_header_t *self, uint8_t out[10]);
 sym int dmrgo_pdu_udt_header_string(dmrgo_pdu_udt_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
