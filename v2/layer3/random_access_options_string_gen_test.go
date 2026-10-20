@@ -8,7 +8,6 @@ import (
 	"testing"
 )
 
-// fmtString returns the text that String must return, from fmt.
 func (s *VoiceServiceOptions) fmtString() string {
 	return fmt.Sprintf("VoiceServiceOptions{ IsEmergency: %t, IsPrivacy: %t, IsSuppData: %t, IsBroadcast: %t, Reserved: %t, PriorityLevel: %d }", s.IsEmergency, s.IsPrivacy, s.IsSuppData, s.IsBroadcast, s.Reserved, s.PriorityLevel)
 }
@@ -18,7 +17,15 @@ func TestVoiceServiceOptionsStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*VoiceServiceOptions).String, (*VoiceServiceOptions).fmtString)
 }
 
-// fmtString returns the text that String must return, from fmt.
+func (s *DataServiceOptions) fmtString() string {
+	return fmt.Sprintf("DataServiceOptions{ IsEmergency: %t, IsPrivacy: %t, IsSuppData: %t, HiRate: %t, MultiItem: %t, PriorityLevel: %d }", s.IsEmergency, s.IsPrivacy, s.IsSuppData, s.HiRate, s.MultiItem, s.PriorityLevel)
+}
+
+func TestDataServiceOptionsStringMatchesFmt(t *testing.T) {
+	t.Parallel()
+	texttest.Check(t, (*DataServiceOptions).String, (*DataServiceOptions).fmtString)
+}
+
 func (s *RegistrationServiceOptions) fmtString() string {
 	return fmt.Sprintf("RegistrationServiceOptions{ Reserved: %t, IsPrivacy: %t, IPInform: %t, PowerSave: %d, Register: %t }", s.Reserved, s.IsPrivacy, s.IPInform, s.PowerSave, s.Register)
 }

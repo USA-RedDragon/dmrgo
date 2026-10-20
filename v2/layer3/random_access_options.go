@@ -15,6 +15,25 @@ type VoiceServiceOptions struct {
 	PriorityLevel uint8 `dmr:"bits:5-6"` // 0 is normal, 1 to 3 are priorities 1 to 3 (3 is highest)
 }
 
+// DataServiceOptions is the 7-bit Service_Options of a Tier III packet
+// data service request, in the high bits of the octet as for
+// VoiceServiceOptions. (ETSI TS 102 361-4 clause 7.2.13.2, Table 7.53)
+type DataServiceOptions struct {
+	IsEmergency   bool  `dmr:"bit:0"`    // emergency service
+	IsPrivacy     bool  `dmr:"bit:1"`    // privacy, which ETSI TS 102 361-4 does not define
+	IsSuppData    bool  `dmr:"bit:2"`    // a Supplementary Data Transfer Service is asked for the call
+	HiRate        bool  `dmr:"bit:3"`    // the payload channel uses dual slot data timing
+	MultiItem     bool  `dmr:"bit:4"`    // multi-item data, false for single item data
+	PriorityLevel uint8 `dmr:"bits:5-6"` // 0 is normal, 1 to 3 are priorities 1 to 3 (3 is highest)
+}
+
+// Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the
+// errors of Encode.
+func (s DataServiceOptions) Field() (uint8, error) {
+	b, err := s.Encode()
+	return b[0] >> 1, err
+}
+
 // RegistrationServiceOptions is the 7-bit Service_Options of a Tier III
 // registration request, in the high bits of the octet as for
 // VoiceServiceOptions (ETSI TS 102 361-4 clause 7.2.13.4, Table 7.55).
