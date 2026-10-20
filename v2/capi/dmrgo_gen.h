@@ -346,6 +346,15 @@ typedef struct dmrgo_vocoder_register_factory_fn_t dmrgo_vocoder_register_factor
 typedef struct dmrgo_codec2_codec_t dmrgo_codec2_codec_t;
 /* Go: codec2.Config. Config selects how a Codec encodes and decodes. */
 typedef struct dmrgo_codec2_config_t dmrgo_codec2_config_t;
+/* Go: dvsi.Codec. Codec is a vocoder.Codec that runs on a DVSI chip at the DMR AMBE+2 rate. */
+typedef struct dmrgo_dvsi_codec_t dmrgo_dvsi_codec_t;
+/* Go: dvsi.Config. Config selects how New sets up the chip. */
+typedef struct dmrgo_dvsi_config_t dmrgo_dvsi_config_t;
+/* Go: dvsi.Packet. Packet is one parsed packet. */
+typedef struct dmrgo_dvsi_packet_t dmrgo_dvsi_packet_t;
+/* Go: dvsi.Port. Port carries packets to and from a chip. */
+typedef struct dmrgo_dvsi_port_t dmrgo_dvsi_port_t;
+typedef struct dmrgo_dvsi_port_vtable_t dmrgo_dvsi_port_vtable_t;
 /* Go: voice.Call. Call is the identity of a voice call, from its LC. */
 typedef struct dmrgo_voice_call_t dmrgo_voice_call_t;
 /* Go: voice.CallOptions. CallOptions are per-call settings of Transmitter.Start. */
@@ -493,6 +502,10 @@ typedef uint8_t dmrgo_trunk_state_t;
 typedef uint8_t dmrgo_trunk_tscc_output_kind_t;
 /* Go: codec2.Mode. Mode is a Codec2 bit rate in bits per second. */
 typedef int64_t dmrgo_codec2_mode_t;
+/* Go: dvsi.Field. Field is a field identifier, the first byte of a field (AMBE-3000R manual Table 31). */
+typedef uint8_t dmrgo_dvsi_field_t;
+/* Go: dvsi.PacketType. PacketType is the fourth byte of a packet (AMBE-3000R manual Table 29). */
+typedef uint8_t dmrgo_dvsi_packet_type_t;
 /* Go: voice.EndReason. EndReason is why a call ended. */
 typedef uint8_t dmrgo_voice_end_reason_t;
 /* Go: voice.EventKind. EventKind is the kind of an Event. */
@@ -1839,6 +1852,25 @@ struct dmrgo_codec2_config_t {
 	dmrgo_enums_feature_set_id_t fid;
 };
 
+struct dmrgo_dvsi_config_t {
+	int64_t channel;
+	int64_t timeout;
+	bool no_reset;
+	bool no_parity;
+};
+
+struct dmrgo_dvsi_packet_t {
+	dmrgo_dvsi_packet_type_t type_;
+	uint8_t *fields;
+	size_t fields_len;
+};
+
+struct dmrgo_dvsi_port_vtable_t {
+	uintptr_t user;
+	int (*read)(uintptr_t user, uint8_t *p, size_t p_len, int64_t *out);
+	int (*write)(uintptr_t user, const uint8_t *p, size_t p_len, int64_t *out);
+};
+
 struct dmrgo_voice_call_options_t {
 	bool has_pi_header;
 	dmrgo_pdu_pi_header_t pi_header;
@@ -1935,6 +1967,8 @@ struct dmrgo_voice_output_t {
 #define DMRGO_CSBK_WAKEUP_LOST_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 #define DMRGO_CSBK_WAKEUP_OUTBOUND_SYNC_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 #define DMRGO_CSBK_WAKEUP_TICK_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
+#define DMRGO_DVSI_CODEC_PRODUCT_MAX_ITEMS (DMRGO_DVSI_MAX_PRODUCT_LEN)
+#define DMRGO_DVSI_CODEC_VERSION_MAX_ITEMS (DMRGO_DVSI_MAX_VERSION_LEN)
 #define DMRGO_ERR_BS_CONFIG_ERROR (-101)
 #define DMRGO_ERR_BS_SLOT (-107)
 #define DMRGO_ERR_CODEC2_CLOSED (-143)
@@ -1944,6 +1978,19 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ERR_CSBK_BUSY (-108)
 #define DMRGO_ERR_CSBK_CONFIG_ERROR (-102)
 #define DMRGO_ERR_CSBK_NO_ADDRESSES (-109)
+#define DMRGO_ERR_DVSI_BITS (-155)
+#define DMRGO_ERR_DVSI_CHANNEL (-156)
+#define DMRGO_ERR_DVSI_CLOSED (-157)
+#define DMRGO_ERR_DVSI_FIELD (-158)
+#define DMRGO_ERR_DVSI_INCOMPLETE (-159)
+#define DMRGO_ERR_DVSI_LENGTH (-160)
+#define DMRGO_ERR_DVSI_PARITY (-161)
+#define DMRGO_ERR_DVSI_PORT (-162)
+#define DMRGO_ERR_DVSI_SAMPLES (-163)
+#define DMRGO_ERR_DVSI_START (-164)
+#define DMRGO_ERR_DVSI_STATUS (-165)
+#define DMRGO_ERR_DVSI_TIMEOUT (-166)
+#define DMRGO_ERR_DVSI_TYPE (-167)
 #define DMRGO_ERR_ENUMS_COLOR_CODE_ERROR (-103)
 #define DMRGO_ERR_FEC_UNCORRECTABLE (-110)
 #define DMRGO_ERR_FIELD_RANGE_ERROR (-100)
@@ -3047,6 +3094,60 @@ struct dmrgo_voice_output_t {
 #define DMRGO_CODEC2_MODE_AUTO ((dmrgo_codec2_mode_t)0)
 /* Go: codec2.Name. Name is the name to register the codec under in the vocoder registry. */
 #define DMRGO_CODEC2_NAME "codec2"
+/* Go: dvsi.DefaultTimeout. DefaultTimeout is the time a Codec waits for a reply when Config.Timeout is zero. */
+#define DMRGO_DVSI_DEFAULT_TIMEOUT 500000000
+/* Go: dvsi.FieldChannel0. the next fields are for channel 0 */
+#define DMRGO_DVSI_FIELD_CHANNEL0 ((dmrgo_dvsi_field_t)64)
+/* Go: dvsi.FieldChannel1. the next fields are for channel 1 (AMBE-3003) */
+#define DMRGO_DVSI_FIELD_CHANNEL1 ((dmrgo_dvsi_field_t)65)
+/* Go: dvsi.FieldChannel2. the next fields are for channel 2 (AMBE-3003) */
+#define DMRGO_DVSI_FIELD_CHANNEL2 ((dmrgo_dvsi_field_t)66)
+/* Go: dvsi.FieldInit. initialize the encoder (bit 0) and decoder (bit 1) */
+#define DMRGO_DVSI_FIELD_INIT ((dmrgo_dvsi_field_t)11)
+/* Go: dvsi.FieldParityMode. turn the parity field on (1) or off (0) */
+#define DMRGO_DVSI_FIELD_PARITY_MODE ((dmrgo_dvsi_field_t)63)
+/* Go: dvsi.FieldProdID. product identification query */
+#define DMRGO_DVSI_FIELD_PROD_ID ((dmrgo_dvsi_field_t)48)
+/* Go: dvsi.FieldRateP. six rate control words for the current channel */
+#define DMRGO_DVSI_FIELD_RATE_P ((dmrgo_dvsi_field_t)10)
+/* Go: dvsi.FieldReady. sent by the chip when it is ready after a reset */
+#define DMRGO_DVSI_FIELD_READY ((dmrgo_dvsi_field_t)57)
+/* Go: dvsi.FieldReset. reset with the configuration pins */
+#define DMRGO_DVSI_FIELD_RESET ((dmrgo_dvsi_field_t)51)
+/* Go: dvsi.FieldVerString. version string query */
+#define DMRGO_DVSI_FIELD_VER_STRING ((dmrgo_dvsi_field_t)49)
+/* Go: dvsi.FrameBits. FrameBits is the number of channel bits in one DMR AMBE+2 frame with FEC. */
+#define DMRGO_DVSI_FRAME_BITS 72
+/* Go: dvsi.FrameSamples. FrameSamples is the number of 8 kHz samples in one 20 ms frame. */
+#define DMRGO_DVSI_FRAME_SAMPLES 160
+/* Go: dvsi.HeaderLen. HeaderLen is the length of the packet header: StartByte, the 2-byte LENGTH, most significant byte first, and the packet type. */
+#define DMRGO_DVSI_HEADER_LEN 4
+/* Go: dvsi.MaxBits. MinBits and MaxBits bound the bits of a CHAND field (AMBE-3000R manual Table 106). */
+#define DMRGO_DVSI_MAX_BITS 192
+/* Go: dvsi.MaxChannel. MaxChannel is the highest channel number: the AMBE-3003 has channels 0 to 2, the AMBE-3000R only channel 0 (AMBE-3003 manual Table 27). */
+#define DMRGO_DVSI_MAX_CHANNEL 2
+/* Go: dvsi.MaxLength. MaxLength is the largest LENGTH that Parse accepts. */
+#define DMRGO_DVSI_MAX_LENGTH 384
+/* Go: dvsi.MaxPacketLen. MaxPacketLen is the length of the longest packet that Parse accepts. */
+#define DMRGO_DVSI_MAX_PACKET_LEN 388
+/* Go: dvsi.MaxProductLen. MaxProductLen and MaxVersionLen are the longest product name and version string that a Codec keeps (AMBE-3000R manual Tables 67 and 69). */
+#define DMRGO_DVSI_MAX_PRODUCT_LEN 16
+/* Go: dvsi.MaxSamples. MinSamples and MaxSamples bound the samples of a SPEECHD field (AMBE-3000R manual Table 98). */
+#define DMRGO_DVSI_MAX_SAMPLES 164
+/* Go: dvsi.MaxVersionLen. MaxProductLen and MaxVersionLen are the longest product name and version string that a Codec keeps (AMBE-3000R manual Tables 67 and 69). */
+#define DMRGO_DVSI_MAX_VERSION_LEN 48
+/* Go: dvsi.MinBits. MinBits and MaxBits bound the bits of a CHAND field (AMBE-3000R manual Table 106). */
+#define DMRGO_DVSI_MIN_BITS 40
+/* Go: dvsi.MinSamples. MinSamples and MaxSamples bound the samples of a SPEECHD field (AMBE-3000R manual Table 98). */
+#define DMRGO_DVSI_MIN_SAMPLES 156
+/* Go: dvsi.StartByte. StartByte is the first byte of every packet (AMBE-3000R manual section 6.5.1). */
+#define DMRGO_DVSI_START_BYTE 97
+/* Go: dvsi.TypeChannel. channel bits to decode, or encoded by the chip */
+#define DMRGO_DVSI_TYPE_CHANNEL ((dmrgo_dvsi_packet_type_t)1)
+/* Go: dvsi.TypeControl. configuration requests and their responses */
+#define DMRGO_DVSI_TYPE_CONTROL ((dmrgo_dvsi_packet_type_t)0)
+/* Go: dvsi.TypeSpeech. speech samples to encode, or decoded by the chip */
+#define DMRGO_DVSI_TYPE_SPEECH ((dmrgo_dvsi_packet_type_t)2)
 /* Go: voice.DefaultLost. DefaultLost is the time without a burst after which a Receiver ends a call, when ReceiverConfig.Lost is 0. */
 #define DMRGO_VOICE_DEFAULT_LOST 1000000000
 /* Go: voice.DefaultQueue. DefaultQueue is the number of vocoder slots that a Transmitter buffers when TransmitterConfig.Queue is 0: three bursts. */
@@ -4832,6 +4933,66 @@ int dmrgo_codec2_codec_silence(dmrgo_codec2_codec_t *self, uint8_t out[9]);
 int dmrgo_codec2_new(const dmrgo_codec2_config_t *cfg, dmrgo_codec2_codec_t **out);
 /* Go: codec2.NewFactory. NewFactory returns a vocoder codec factory that creates a Codec with cfg. */
 int dmrgo_codec2_new_factory(const dmrgo_codec2_config_t *cfg, dmrgo_vocoder_register_factory_fn_t *out);
+/* Go: dvsi.AppendChannel. AppendChannel appends a channel packet that asks the chip to decode bits channel bits, packed MSB first in data, which must hold (bits+7)/8 bytes (AMBE-3000R manual Table 106). */
+int dmrgo_dvsi_append_channel(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t channel, const uint8_t *data, size_t data_len, int64_t bits, bool parity);
+/* Go: dvsi.AppendParityMode. AppendParityMode appends a control packet with a PKT_PARITYMODE field that turns the parity field of later packets on or off. */
+int dmrgo_dvsi_append_parity_mode(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, bool on, bool parity);
+/* Go: dvsi.AppendQuery. AppendQuery appends a control packet with PKT_PRODID and PKT_VERSTRING fields. */
+int dmrgo_dvsi_append_query(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, bool parity);
+/* Go: dvsi.AppendRateDMR. AppendRateDMR appends a control packet that sets the channel to the DMR AMBE+2 rate, 3600 bit/s with 2450 bit/s of speech and 1150 bit/s of FEC, with the rate control words 0x0431 0x0754 0x2400 0x0000 0x0000 0x6F48 in a PKT_RATEP field, and then initializes its encoder and decoder with a PKT_INIT field (AMBE-3000R manual Tables 43, 46 and 115, rate index 33). */
+int dmrgo_dvsi_append_rate_dmr(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t channel, bool parity);
+/* Go: dvsi.AppendReset. AppendReset appends a control packet with a PKT_RESET field, which resets the chip to its power-up state. */
+int dmrgo_dvsi_append_reset(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, bool parity);
+/* Go: dvsi.AppendSpeech. AppendSpeech appends a speech packet that asks the chip to encode pcm, 8 kHz 16-bit samples, each sent most significant byte first (AMBE-3000R manual Table 98). */
+int dmrgo_dvsi_append_speech(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t channel, const int16_t *pcm, size_t pcm_len, bool parity);
+/* dmrgo_dvsi_codec_new makes a zero dvsi.Codec. */
+int dmrgo_dvsi_codec_new(dmrgo_dvsi_codec_t **out);
+/* dmrgo_dvsi_codec_free frees the handle. self may be NULL. */
+int dmrgo_dvsi_codec_free(dmrgo_dvsi_codec_t *self);
+/* dmrgo_dvsi_codec_append_decode_need sets *items and *arena to the room that dmrgo_dvsi_codec_append_decode needs for these arguments, without a change to the handle. */
+int dmrgo_dvsi_codec_append_decode_need(dmrgo_dvsi_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
+/* Go: dvsi.Codec.AppendDecode. AppendDecode decodes one 72-bit frame as Decode does, appends the FrameSamples samples to dst and returns the extended slice; dst needs room for FrameSamples more samples. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dvsi_codec_append_decode_need gives. */
+int dmrgo_dvsi_codec_append_decode(dmrgo_dvsi_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
+/* Go: dvsi.Codec.Close. Close marks the Codec closed; later Encode and Decode calls return ErrClosed. */
+int dmrgo_dvsi_codec_close(dmrgo_dvsi_codec_t *self);
+/* dmrgo_dvsi_codec_decode_need sets *items and *arena to the room that dmrgo_dvsi_codec_decode needs for these arguments, without a change to the handle. */
+int dmrgo_dvsi_codec_decode_need(dmrgo_dvsi_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
+/* Go: dvsi.Codec.Decode. Decode has the chip decode one 72-bit frame with FEC into FrameSamples samples. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dvsi_codec_decode_need gives. */
+int dmrgo_dvsi_codec_decode(dmrgo_dvsi_codec_t *self, const uint8_t slot[9], int16_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: dvsi.Codec.Encode. Encode has the chip encode exactly FrameSamples samples into one 72-bit frame with FEC. */
+int dmrgo_dvsi_codec_encode(dmrgo_dvsi_codec_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
+/* Go: dvsi.Codec.FID. FID returns enums.FIDStandardized, the Feature set ID of calls with the ETSI standard vocoder, AMBE+2. */
+int dmrgo_dvsi_codec_fid(dmrgo_dvsi_codec_t *self, dmrgo_enums_feature_set_id_t *out);
+/* Go: dvsi.Codec.FrameSamples. FrameSamples returns FrameSamples. */
+int dmrgo_dvsi_codec_frame_samples(dmrgo_dvsi_codec_t *self, int64_t *out);
+/* dmrgo_dvsi_codec_product_need sets *items and *arena to the room that dmrgo_dvsi_codec_product needs for these arguments, without a change to the handle. */
+int dmrgo_dvsi_codec_product_need(dmrgo_dvsi_codec_t *self, size_t *items, size_t *arena);
+/* Go: dvsi.Codec.Product. Product returns the product name that the chip reported in New, such as "AMBE3000R". It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dvsi_codec_product_need gives (DMRGO_DVSI_CODEC_PRODUCT_MAX_ITEMS items). */
+int dmrgo_dvsi_codec_product(dmrgo_dvsi_codec_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: dvsi.Codec.Silence. Silence returns vocoder.AMBESilenceSlot. */
+int dmrgo_dvsi_codec_silence(dmrgo_dvsi_codec_t *self, uint8_t out[9]);
+/* dmrgo_dvsi_codec_version_need sets *items and *arena to the room that dmrgo_dvsi_codec_version needs for these arguments, without a change to the handle. */
+int dmrgo_dvsi_codec_version_need(dmrgo_dvsi_codec_t *self, size_t *items, size_t *arena);
+/* Go: dvsi.Codec.Version. Version returns the version string that the chip reported in New. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dvsi_codec_version_need gives (DMRGO_DVSI_CODEC_VERSION_MAX_ITEMS items). */
+int dmrgo_dvsi_codec_version(dmrgo_dvsi_codec_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: dvsi.New. New sets up the chip behind port for the DMR AMBE+2 rate and returns a Codec for it. */
+int dmrgo_dvsi_new(dmrgo_dvsi_port_t *port, const dmrgo_dvsi_config_t *cfg, dmrgo_dvsi_codec_t **out);
+/* Go: dvsi.Packet.AppendChannelData. AppendChannelData appends the bits of the CHAND field of a channel packet, packed MSB first, to dst and returns the extended slice, the number of bits and the channel of the field. */
+int dmrgo_dvsi_packet_append_channel_data(const dmrgo_dvsi_packet_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t *out1, int64_t *out2);
+/* Go: dvsi.Packet.AppendSamples. AppendSamples appends the samples of the SPEECHD field of a speech packet to dst and returns the extended slice and the channel of the field. */
+int dmrgo_dvsi_packet_append_samples(const dmrgo_dvsi_packet_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t *out1);
+/* Go: dvsi.Packet.Response. Response returns the data of response field f of a control packet: the status byte, 0 for success, for most fields, the text without its terminating zero byte for FieldProdID and FieldVerString, and no bytes for FieldReady. */
+int dmrgo_dvsi_packet_response(const dmrgo_dvsi_packet_t *self, dmrgo_dvsi_field_t f, uint8_t *out0, size_t out0_cap, size_t *out0_len, size_t *out0_need, bool *out1);
+/* Go: dvsi.Parse. Parse parses the packet at the start of b and returns it with its length in bytes. */
+int dmrgo_dvsi_parse(const uint8_t *b, size_t b_len, bool parity, dmrgo_dvsi_packet_t *out0, int64_t *out1, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* dmrgo_dvsi_port_free frees the handle. self may be NULL. */
+int dmrgo_dvsi_port_free(dmrgo_dvsi_port_t *self);
+/* Go: dvsi.Port.Read. Read reads bytes from the chip into p. */
+int dmrgo_dvsi_port_read(dmrgo_dvsi_port_t *self, uint8_t *p, size_t p_len, int64_t *out);
+/* Go: dvsi.Port.Write. Write writes the bytes of p to the chip. */
+int dmrgo_dvsi_port_write(dmrgo_dvsi_port_t *self, const uint8_t *p, size_t p_len, int64_t *out);
+/* dmrgo_dvsi_port_from_vtable makes a Port whose methods call the functions of vt with vt->user. */
+int dmrgo_dvsi_port_from_vtable(const dmrgo_dvsi_port_vtable_t *vt, dmrgo_dvsi_port_t **out);
 /* Go: voice.ConfigError.Error. Error returns the message of e. */
 int dmrgo_voice_config_error_error(dmrgo_voice_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* dmrgo_voice_config_error_last sets *ok when the last error of this thread holds a voice.ConfigError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */

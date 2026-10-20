@@ -62,6 +62,10 @@ ignore_files:
   - v2/vocoder/codec2/codec2_cgo.go
   - v2/vocoder/codec2/codec2_stub.go
   - v2/vocoder/codec2/detect.go
+  - v2/vocoder/dvsi/codec.go
+  - v2/vocoder/dvsi/errors.go
+  - v2/vocoder/dvsi/packet.go
+  - v2/internal/dvsisim/sim.go
   - v2/layer2/errors.go
   - v2/layer2/packet/errors.go
   - v2/layer2/pdu/errors.go

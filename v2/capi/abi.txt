@@ -52,6 +52,19 @@ code DMRGO_ERR_VOICE_TIMED_OUT -150
 code DMRGO_ERR_NMEA_CHECKSUM -152
 code DMRGO_ERR_NMEA_FIELD -153
 code DMRGO_ERR_NMEA_SENTENCE -154
+code DMRGO_ERR_DVSI_BITS -155
+code DMRGO_ERR_DVSI_CHANNEL -156
+code DMRGO_ERR_DVSI_CLOSED -157
+code DMRGO_ERR_DVSI_FIELD -158
+code DMRGO_ERR_DVSI_INCOMPLETE -159
+code DMRGO_ERR_DVSI_LENGTH -160
+code DMRGO_ERR_DVSI_PARITY -161
+code DMRGO_ERR_DVSI_PORT -162
+code DMRGO_ERR_DVSI_SAMPLES -163
+code DMRGO_ERR_DVSI_START -164
+code DMRGO_ERR_DVSI_STATUS -165
+code DMRGO_ERR_DVSI_TIMEOUT -166
+code DMRGO_ERR_DVSI_TYPE -167
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -264,6 +277,35 @@ sym #define DMRGO_CSBK_WAKEUP_OUTBOUND_SYNC_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 sym #define DMRGO_CSBK_WAKEUP_SENDING ((dmrgo_csbk_wakeup_state_t)1)
 sym #define DMRGO_CSBK_WAKEUP_TICK_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 sym #define DMRGO_CSBK_WAKEUP_WAITING ((dmrgo_csbk_wakeup_state_t)2)
+sym #define DMRGO_DVSI_CODEC_PRODUCT_MAX_ITEMS (DMRGO_DVSI_MAX_PRODUCT_LEN)
+sym #define DMRGO_DVSI_CODEC_VERSION_MAX_ITEMS (DMRGO_DVSI_MAX_VERSION_LEN)
+sym #define DMRGO_DVSI_DEFAULT_TIMEOUT 500000000
+sym #define DMRGO_DVSI_FIELD_CHANNEL0 ((dmrgo_dvsi_field_t)64)
+sym #define DMRGO_DVSI_FIELD_CHANNEL1 ((dmrgo_dvsi_field_t)65)
+sym #define DMRGO_DVSI_FIELD_CHANNEL2 ((dmrgo_dvsi_field_t)66)
+sym #define DMRGO_DVSI_FIELD_INIT ((dmrgo_dvsi_field_t)11)
+sym #define DMRGO_DVSI_FIELD_PARITY_MODE ((dmrgo_dvsi_field_t)63)
+sym #define DMRGO_DVSI_FIELD_PROD_ID ((dmrgo_dvsi_field_t)48)
+sym #define DMRGO_DVSI_FIELD_RATE_P ((dmrgo_dvsi_field_t)10)
+sym #define DMRGO_DVSI_FIELD_READY ((dmrgo_dvsi_field_t)57)
+sym #define DMRGO_DVSI_FIELD_RESET ((dmrgo_dvsi_field_t)51)
+sym #define DMRGO_DVSI_FIELD_VER_STRING ((dmrgo_dvsi_field_t)49)
+sym #define DMRGO_DVSI_FRAME_BITS 72
+sym #define DMRGO_DVSI_FRAME_SAMPLES 160
+sym #define DMRGO_DVSI_HEADER_LEN 4
+sym #define DMRGO_DVSI_MAX_BITS 192
+sym #define DMRGO_DVSI_MAX_CHANNEL 2
+sym #define DMRGO_DVSI_MAX_LENGTH 384
+sym #define DMRGO_DVSI_MAX_PACKET_LEN 388
+sym #define DMRGO_DVSI_MAX_PRODUCT_LEN 16
+sym #define DMRGO_DVSI_MAX_SAMPLES 164
+sym #define DMRGO_DVSI_MAX_VERSION_LEN 48
+sym #define DMRGO_DVSI_MIN_BITS 40
+sym #define DMRGO_DVSI_MIN_SAMPLES 156
+sym #define DMRGO_DVSI_START_BYTE 97
+sym #define DMRGO_DVSI_TYPE_CHANNEL ((dmrgo_dvsi_packet_type_t)1)
+sym #define DMRGO_DVSI_TYPE_CONTROL ((dmrgo_dvsi_packet_type_t)0)
+sym #define DMRGO_DVSI_TYPE_SPEECH ((dmrgo_dvsi_packet_type_t)2)
 sym #define DMRGO_ENUMS_ACCESS_IMPOLITE ((dmrgo_enums_access_t)2)
 sym #define DMRGO_ENUMS_ACCESS_POLITE_ALL ((dmrgo_enums_access_t)1)
 sym #define DMRGO_ENUMS_ACCESS_POLITE_OWN_C_C ((dmrgo_enums_access_t)0)
@@ -455,6 +497,19 @@ sym #define DMRGO_ERR_CODEC2_UNSUPPORTED_MODE (-146)
 sym #define DMRGO_ERR_CSBK_BUSY (-108)
 sym #define DMRGO_ERR_CSBK_CONFIG_ERROR (-102)
 sym #define DMRGO_ERR_CSBK_NO_ADDRESSES (-109)
+sym #define DMRGO_ERR_DVSI_BITS (-155)
+sym #define DMRGO_ERR_DVSI_CHANNEL (-156)
+sym #define DMRGO_ERR_DVSI_CLOSED (-157)
+sym #define DMRGO_ERR_DVSI_FIELD (-158)
+sym #define DMRGO_ERR_DVSI_INCOMPLETE (-159)
+sym #define DMRGO_ERR_DVSI_LENGTH (-160)
+sym #define DMRGO_ERR_DVSI_PARITY (-161)
+sym #define DMRGO_ERR_DVSI_PORT (-162)
+sym #define DMRGO_ERR_DVSI_SAMPLES (-163)
+sym #define DMRGO_ERR_DVSI_START (-164)
+sym #define DMRGO_ERR_DVSI_STATUS (-165)
+sym #define DMRGO_ERR_DVSI_TIMEOUT (-166)
+sym #define DMRGO_ERR_DVSI_TYPE (-167)
 sym #define DMRGO_ERR_ENUMS_COLOR_CODE_ERROR (-103)
 sym #define DMRGO_ERR_FEC_UNCORRECTABLE (-110)
 sym #define DMRGO_ERR_FIELD_RANGE_ERROR (-100)
@@ -840,6 +895,36 @@ sym int dmrgo_csbk_wakeup_state_string(dmrgo_csbk_wakeup_state_t self, char *out
 sym int dmrgo_csbk_wakeup_tick(dmrgo_csbk_wakeup_t *self, int64_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_csbk_wakeup_tick_need(dmrgo_csbk_wakeup_t *self, int64_t now, size_t *items, size_t *arena);
 sym int dmrgo_csbk_wakeup_wake(dmrgo_csbk_wakeup_t *self, int64_t now, uint32_t bs, uint32_t source);
+sym int dmrgo_dvsi_append_channel(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t channel, const uint8_t *data, size_t data_len, int64_t bits, bool parity);
+sym int dmrgo_dvsi_append_parity_mode(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, bool on, bool parity);
+sym int dmrgo_dvsi_append_query(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, bool parity);
+sym int dmrgo_dvsi_append_rate_dmr(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t channel, bool parity);
+sym int dmrgo_dvsi_append_reset(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, bool parity);
+sym int dmrgo_dvsi_append_speech(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t channel, const int16_t *pcm, size_t pcm_len, bool parity);
+sym int dmrgo_dvsi_codec_append_decode(dmrgo_dvsi_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
+sym int dmrgo_dvsi_codec_append_decode_need(dmrgo_dvsi_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
+sym int dmrgo_dvsi_codec_close(dmrgo_dvsi_codec_t *self);
+sym int dmrgo_dvsi_codec_decode(dmrgo_dvsi_codec_t *self, const uint8_t slot[9], int16_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_dvsi_codec_decode_need(dmrgo_dvsi_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
+sym int dmrgo_dvsi_codec_encode(dmrgo_dvsi_codec_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
+sym int dmrgo_dvsi_codec_fid(dmrgo_dvsi_codec_t *self, dmrgo_enums_feature_set_id_t *out);
+sym int dmrgo_dvsi_codec_frame_samples(dmrgo_dvsi_codec_t *self, int64_t *out);
+sym int dmrgo_dvsi_codec_free(dmrgo_dvsi_codec_t *self);
+sym int dmrgo_dvsi_codec_new(dmrgo_dvsi_codec_t **out);
+sym int dmrgo_dvsi_codec_product(dmrgo_dvsi_codec_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_dvsi_codec_product_need(dmrgo_dvsi_codec_t *self, size_t *items, size_t *arena);
+sym int dmrgo_dvsi_codec_silence(dmrgo_dvsi_codec_t *self, uint8_t out[9]);
+sym int dmrgo_dvsi_codec_version(dmrgo_dvsi_codec_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_dvsi_codec_version_need(dmrgo_dvsi_codec_t *self, size_t *items, size_t *arena);
+sym int dmrgo_dvsi_new(dmrgo_dvsi_port_t *port, const dmrgo_dvsi_config_t *cfg, dmrgo_dvsi_codec_t **out);
+sym int dmrgo_dvsi_packet_append_channel_data(const dmrgo_dvsi_packet_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t *out1, int64_t *out2);
+sym int dmrgo_dvsi_packet_append_samples(const dmrgo_dvsi_packet_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t *out1);
+sym int dmrgo_dvsi_packet_response(const dmrgo_dvsi_packet_t *self, dmrgo_dvsi_field_t f, uint8_t *out0, size_t out0_cap, size_t *out0_len, size_t *out0_need, bool *out1);
+sym int dmrgo_dvsi_parse(const uint8_t *b, size_t b_len, bool parity, dmrgo_dvsi_packet_t *out0, int64_t *out1, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_dvsi_port_free(dmrgo_dvsi_port_t *self);
+sym int dmrgo_dvsi_port_from_vtable(const dmrgo_dvsi_port_vtable_t *vt, dmrgo_dvsi_port_t **out);
+sym int dmrgo_dvsi_port_read(dmrgo_dvsi_port_t *self, uint8_t *p, size_t p_len, int64_t *out);
+sym int dmrgo_dvsi_port_write(dmrgo_dvsi_port_t *self, const uint8_t *p, size_t p_len, int64_t *out);
 sym int dmrgo_enums_access_string(dmrgo_enums_access_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_ack_reason_from_ts(dmrgo_enums_ack_reason_t self, bool *out);
 sym int dmrgo_enums_ack_reason_string(dmrgo_enums_ack_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -1628,6 +1713,8 @@ sym typedef uint8_t dmrgo_csbk_requester_state_t;
 sym typedef uint8_t dmrgo_csbk_result_t;
 sym typedef uint8_t dmrgo_csbk_service_t;
 sym typedef uint8_t dmrgo_csbk_wakeup_state_t;
+sym typedef uint8_t dmrgo_dvsi_field_t;
+sym typedef uint8_t dmrgo_dvsi_packet_type_t;
 sym typedef uint8_t dmrgo_enums_access_t;
 sym typedef uint8_t dmrgo_enums_ack_reason_t;
 sym typedef uint8_t dmrgo_enums_ack_type_t;
@@ -1690,6 +1777,9 @@ type struct dmrgo_csbk_request_options_t { dmrgo_enums_access_t access; bool tim
 type struct dmrgo_csbk_requester_config_t { dmrgo_enums_color_code_t color_code; dmrgo_layer2_sync_source_t source; int64_t ack_wait; int64_t retries; int64_t idle_search; int64_t holdoff_max; uint64_t seed; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_csbk_responder_config_t { uint32_t address; dmrgo_enums_color_code_t color_code; dmrgo_layer2_sync_source_t source; dmrgo_enums_access_t access; dmrgo_csbk_oacsu_answer_t oacsu; bool no_radio_check; bool no_call_alert; bool no_fns; int64_t idle_search; int64_t holdoff_max; uint64_t seed; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_csbk_wakeup_config_t { dmrgo_enums_color_code_t color_code; int64_t sync_wait; int64_t attempts; dmrgo_layer2_burst_t *scratch; };
+type struct dmrgo_dvsi_config_t { int64_t channel; int64_t timeout; bool no_reset; bool no_parity; };
+type struct dmrgo_dvsi_packet_t { dmrgo_dvsi_packet_type_t type_; uint8_t *fields; size_t fields_len; };
+type struct dmrgo_dvsi_port_vtable_t { uintptr_t user; int (*read)(uintptr_t user, uint8_t *p, size_t p_len, int64_t *out); int (*write)(uintptr_t user, const uint8_t *p, size_t p_len, int64_t *out); };
 type struct dmrgo_enums_color_code_error_t { uint8_t value; };
 type struct dmrgo_fec_burst_fec_stats_t { dmrgo_fec_result_t slot_type; dmrgo_fec_result_t emb; dmrgo_fec_result_t payload; dmrgo_fec_result_t pdu; dmrgo_fec_result_t rc; };
 type struct dmrgo_fec_result_t { int64_t bits_checked; int64_t errors_corrected; bool uncorrectable; };

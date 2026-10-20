@@ -110,6 +110,32 @@ const char *dmrgo__gen_strerror(int status) {
 		return "codec2.ErrUnavailable";
 	case -146:
 		return "codec2.ErrUnsupportedMode";
+	case -155:
+		return "dvsi.ErrBits";
+	case -156:
+		return "dvsi.ErrChannel";
+	case -157:
+		return "dvsi.ErrClosed";
+	case -158:
+		return "dvsi.ErrField";
+	case -159:
+		return "dvsi.ErrIncomplete";
+	case -160:
+		return "dvsi.ErrLength";
+	case -161:
+		return "dvsi.ErrParity";
+	case -162:
+		return "dvsi.ErrPort";
+	case -163:
+		return "dvsi.ErrSamples";
+	case -164:
+		return "dvsi.ErrStart";
+	case -165:
+		return "dvsi.ErrStatus";
+	case -166:
+		return "dvsi.ErrTimeout";
+	case -167:
+		return "dvsi.ErrType";
 	case -106:
 		return "voice.ConfigError";
 	case -147:

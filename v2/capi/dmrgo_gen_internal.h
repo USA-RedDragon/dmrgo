@@ -65,6 +65,14 @@ static inline int dmrgo_vocoder_register_factory_fn_t__call(dmrgo_vocoder_regist
 	return f.fn(f.user, out);
 }
 
+static inline int dmrgo_dvsi_port_vtable_t__read(const dmrgo_dvsi_port_vtable_t *t, uint8_t *p, size_t p_len, int64_t *out) {
+	return t->read(t->user, p, p_len, out);
+}
+
+static inline int dmrgo_dvsi_port_vtable_t__write(const dmrgo_dvsi_port_vtable_t *t, const uint8_t *p, size_t p_len, int64_t *out) {
+	return t->write(t->user, p, p_len, out);
+}
+
 typedef struct dmrgo__last_t {
 	int code;
 	int kind;

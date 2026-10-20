@@ -88,6 +88,10 @@ linters:
           - gochecknoglobals
           - goconst
           - gosec
+      # dvsisim is a fixture of the tests, like the _test.go files.
+      - path: v2/internal/dvsisim/
+        linters:
+          - gosec
       # text.Int converts the magnitude of a negative int64, which uint64
       # always holds.
       - path: v2/internal/text/text\.go$

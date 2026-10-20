@@ -20,7 +20,7 @@ import (
 
 const moduleRoot = "../.."
 
-var skipDirs = []string{"cmd", "examples", "internal/allocgate", "internal/fecref", "internal/outputdigest", "internal/text/texttest", "internal/unpacked"}
+var skipDirs = []string{"cmd", "examples", "internal/allocgate", "internal/dvsisim", "internal/fecref", "internal/outputdigest", "internal/text/texttest", "internal/unpacked"}
 
 func libraryPackages(t *testing.T) []string {
 	t.Helper()
@@ -76,6 +76,7 @@ type gate struct {
 	declBy    map[string]*declFunc
 	notes     []string
 	unknown   map[string]bool
+	callerFns map[string]bool
 	growth    map[string]bool
 	full      bool
 	cuts      []*cut
@@ -108,7 +109,7 @@ func newGate(t *testing.T, patterns []string, env ...string) *gate {
 	isLib := func(path string) bool { return lib[path] }
 	bodies := disassemble(t, pkgs)
 	facts := readCompilerFacts(t)
-	gt := &gate{t: t, g: newCallGraph(bodies, facts.noReturn), p: loadProgram(t, pkgs, isLib), isLib: isLib, full: full, declBy: map[string]*declFunc{}, unknown: map[string]bool{}}
+	gt := &gate{t: t, g: newCallGraph(bodies, facts.noReturn), p: loadProgram(t, pkgs, isLib), isLib: isLib, full: full, declBy: map[string]*declFunc{}, unknown: map[string]bool{}, callerFns: map[string]bool{}}
 	gt.resolveInterfaceCalls()
 	gt.resolveFuncValueCalls()
 	gt.growth = facts.growth
@@ -128,6 +129,11 @@ func newGate(t *testing.T, patterns []string, env ...string) *gate {
 			name: "runtime cache", funcs: caches, allocates: true, where: "runtime cache",
 			what: "A type assertion or type switch to an interface type, and a goroutine that blocks",
 			when: "Once for each call site and dynamic type, as the runtime fills the cache of the assertion or switch, and when no sudog is free for a goroutine that blocks on a mutex or a channel. The runtime keeps both.",
+		},
+		{
+			name: "caller method", funcs: gt.callerFns, allocates: true, where: "method of the caller",
+			what: "A method of an interface that the library declares for the caller to implement, such as the Read and Write of a dvsi.Port",
+			when: "When the method of the caller allocates. The code of the library on the path does not.",
 		},
 		{
 			name: "debug print", funcs: prints,
@@ -171,6 +177,7 @@ func (gt *gate) resolveInterfaceCalls() {
 		}
 	}
 	cache := map[string][]string{}
+	callerNode := map[string]string{}
 	unresolved := map[string]bool{}
 	for name, bs := range gt.g.bodies {
 		for _, b := range bs {
@@ -182,7 +189,17 @@ func (gt *gate) resolveInterfaceCalls() {
 					case err == nil:
 						targets = gt.p.libraryImplementations(m)
 						if !m.sealed {
-							targets = append(targets, byName[m.method.Name()]...)
+							sym, _, _ := strings.Cut(strings.TrimPrefix(arg, "type:"), "+")
+							if !strings.HasPrefix(sym, "interface {") && gt.isLib(symPackage(sym)) {
+								via := "caller:" + sym + "." + m.method.Name()
+								callerNode[arg] = via
+								gt.callerFns[via] = true
+								for _, to := range byName[m.method.Name()] {
+									gt.g.addEdge(via, to)
+								}
+							} else {
+								targets = append(targets, byName[m.method.Name()]...)
+							}
 						}
 					case anonymousMethod(arg) != "":
 						targets = byName[anonymousMethod(arg)]
@@ -193,6 +210,9 @@ func (gt *gate) resolveInterfaceCalls() {
 				}
 				if unresolved[arg] {
 					gt.unknown[name] = true
+				}
+				if via, ok := callerNode[arg]; ok {
+					gt.g.addEdge(name, via)
 				}
 				for _, to := range targets {
 					gt.g.addEdge(name, to)

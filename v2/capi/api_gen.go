@@ -29,6 +29,7 @@ import (
 	g_trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
 	g_vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	g_vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
+	g_vocoder_dvsi "github.com/USA-RedDragon/dmrgo/v2/vocoder/dvsi"
 	g_voice "github.com/USA-RedDragon/dmrgo/v2/voice"
 	"slices"
 	"time"
@@ -3391,6 +3392,75 @@ func in_vocoder_codec2_Config(s *C.dmrgo_codec2_config_t) (d g_vocoder_codec2.Co
 	return
 }
 
+func in_vocoder_dvsi_Config(s *C.dmrgo_dvsi_config_t) (d g_vocoder_dvsi.Config) {
+	d.Channel = int(s.channel)
+	d.Timeout = time.Duration(s.timeout)
+	d.NoReset = bool(s.no_reset)
+	d.NoParity = bool(s.no_parity)
+	return
+}
+
+func in_vocoder_dvsi_Packet(s *C.dmrgo_dvsi_packet_t) (d g_vocoder_dvsi.Packet) {
+	d.Type = g_vocoder_dvsi.PacketType(s.type_)
+	d.Fields = unsafe.Slice((*byte)(unsafe.Pointer(s.fields)), int(s.fields_len))
+	return
+}
+
+func out_vocoder_dvsi_Packet(d *C.dmrgo_dvsi_packet_t, s *g_vocoder_dvsi.Packet, oc *outc) {
+	_ = oc
+	d.type_ = C.dmrgo_dvsi_packet_type_t(s.Type)
+	d.fields = (*C.uint8_t)(arenaCopy(oc, s.Fields))
+	d.fields_len = C.size_t(len(s.Fields))
+}
+
+type vt_vocoder_dvsi_Port struct {
+	t    C.dmrgo_dvsi_port_vtable_t
+	m0r0 C.int64_t
+	m1r0 C.int64_t
+}
+
+func (c *vt_vocoder_dvsi_Port) Read(q0 []byte) (o0 int, o1 error) {
+	oc := &outc{}
+	_ = oc
+	var code C.int
+	for {
+		code = C.dmrgo_dvsi_port_vtable_t__read(&c.t, (*C.uint8_t)(unsafe.Pointer(unsafe.SliceData(q0))), C.size_t(len(q0)), &c.m0r0)
+		break
+	}
+	if code != C.DMRGO_OK {
+		o1 = codeErr(code)
+		return
+	}
+	o0 = int(c.m0r0)
+	return
+}
+
+func (c *vt_vocoder_dvsi_Port) Write(q0 []byte) (o0 int, o1 error) {
+	oc := &outc{}
+	_ = oc
+	var code C.int
+	for {
+		code = C.dmrgo_dvsi_port_vtable_t__write(&c.t, (*C.uint8_t)(unsafe.Pointer(unsafe.SliceData(q0))), C.size_t(len(q0)), &c.m1r0)
+		break
+	}
+	if code != C.DMRGO_OK {
+		o1 = codeErr(code)
+		return
+	}
+	o0 = int(c.m1r0)
+	return
+}
+
+//export dmrgo_dvsi_port_from_vtable
+func dmrgo_dvsi_port_from_vtable(c_vt *C.dmrgo_dvsi_port_vtable_t, c_out **C.dmrgo_dvsi_port_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_vt == nil || c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_vocoder_dvsi_Port(&vt_vocoder_dvsi_Port{t: *c_vt})
+	return C.DMRGO_OK
+}
+
 func in_voice_ConfigError(s *C.dmrgo_voice_config_error_t) (d g_voice.ConfigError) {
 	d.Field = C.GoStringN(s.field, C.int(s.field_len))
 	return
@@ -4670,6 +4740,22 @@ func fromC_vocoder_codec2_Config(s *C.dmrgo_codec2_config_t) g_vocoder_codec2.Co
 	return in_vocoder_codec2_Config(s)
 }
 
+func out_vocoder_dvsi_Config(d *C.dmrgo_dvsi_config_t, s *g_vocoder_dvsi.Config, oc *outc) {
+	_ = oc
+	d.channel = C.int64_t(s.Channel)
+	d.timeout = C.int64_t(s.Timeout)
+	d.no_reset = C.bool(s.NoReset)
+	d.no_parity = C.bool(s.NoParity)
+}
+
+func fromC_vocoder_dvsi_Config(s *C.dmrgo_dvsi_config_t) g_vocoder_dvsi.Config {
+	return in_vocoder_dvsi_Config(s)
+}
+
+func fromC_vocoder_dvsi_Packet(s *C.dmrgo_dvsi_packet_t) g_vocoder_dvsi.Packet {
+	return in_vocoder_dvsi_Packet(s)
+}
+
 func fromC_voice_Call(s *C.dmrgo_voice_call_t) g_voice.Call {
 	return in_voice_Call(s)
 }
@@ -5161,6 +5247,30 @@ func get_vocoder_codec2_Codec(p *C.dmrgo_codec2_codec_t) *h_vocoder_codec2_Codec
 
 func new_vocoder_codec2_Codec(v *g_vocoder_codec2.Codec) *C.dmrgo_codec2_codec_t {
 	return (*C.dmrgo_codec2_codec_t)(newHandle(&h_vocoder_codec2_Codec{v: v}))
+}
+
+type h_vocoder_dvsi_Codec struct {
+	v *g_vocoder_dvsi.Codec
+}
+
+func get_vocoder_dvsi_Codec(p *C.dmrgo_dvsi_codec_t) *h_vocoder_dvsi_Codec {
+	return lookup[*h_vocoder_dvsi_Codec](unsafe.Pointer(p))
+}
+
+func new_vocoder_dvsi_Codec(v *g_vocoder_dvsi.Codec) *C.dmrgo_dvsi_codec_t {
+	return (*C.dmrgo_dvsi_codec_t)(newHandle(&h_vocoder_dvsi_Codec{v: v}))
+}
+
+type h_vocoder_dvsi_Port struct {
+	v g_vocoder_dvsi.Port
+}
+
+func get_vocoder_dvsi_Port(p *C.dmrgo_dvsi_port_t) *h_vocoder_dvsi_Port {
+	return lookup[*h_vocoder_dvsi_Port](unsafe.Pointer(p))
+}
+
+func new_vocoder_dvsi_Port(v g_vocoder_dvsi.Port) *C.dmrgo_dvsi_port_t {
+	return (*C.dmrgo_dvsi_port_t)(newHandle(&h_vocoder_dvsi_Port{v: v}))
 }
 
 type h_voice_Receiver struct {
@@ -23779,6 +23889,670 @@ func dmrgo_codec2_new_factory(c_cfg *C.dmrgo_codec2_config_t, c_out *C.dmrgo_voc
 	return C.DMRGO_OK
 }
 
+//export dmrgo_dvsi_append_channel
+func dmrgo_dvsi_append_channel(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_channel C.int64_t, c_data *C.uint8_t, c_data_len C.size_t, c_bits C.int64_t, c_parity C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_vocoder_dvsi.AppendChannel(a_dst, int(c_channel), a_data, int(c_bits), bool(c_parity))
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_append_parity_mode
+func dmrgo_dvsi_append_parity_mode(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_on C.bool, c_parity C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0 := g_vocoder_dvsi.AppendParityMode(a_dst, bool(c_on), bool(c_parity))
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_append_query
+func dmrgo_dvsi_append_query(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_parity C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0 := g_vocoder_dvsi.AppendQuery(a_dst, bool(c_parity))
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_append_rate_dmr
+func dmrgo_dvsi_append_rate_dmr(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_channel C.int64_t, c_parity C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := g_vocoder_dvsi.AppendRateDMR(a_dst, int(c_channel), bool(c_parity))
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_append_reset
+func dmrgo_dvsi_append_reset(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_parity C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0 := g_vocoder_dvsi.AppendReset(a_dst, bool(c_parity))
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_append_speech
+func dmrgo_dvsi_append_speech(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_channel C.int64_t, c_pcm *C.int16_t, c_pcm_len C.size_t, c_parity C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_pcm == nil && c_pcm_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_pcm []int16
+	a_pcm = unsafe.Slice((*int16)(unsafe.Pointer(c_pcm)), int(c_pcm_len))
+	r0, r1 := g_vocoder_dvsi.AppendSpeech(a_dst, int(c_channel), a_pcm, bool(c_parity))
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_codec_new
+func dmrgo_dvsi_codec_new(c_out **C.dmrgo_dvsi_codec_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_vocoder_dvsi_Codec(new(g_vocoder_dvsi.Codec))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_codec_free
+func dmrgo_dvsi_codec_free(c_self *C.dmrgo_dvsi_codec_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_vocoder_dvsi_Codec(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_codec_append_decode_need
+func dmrgo_dvsi_codec_append_decode_need(c_self *C.dmrgo_dvsi_codec_t, c_slot *C.uint8_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_vocoder_dvsi_Codec(c_self)
+	if c_slot == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(h.v.FrameSamples())))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_codec_append_decode
+func dmrgo_dvsi_codec_append_decode(c_self *C.dmrgo_dvsi_codec_t, c_dst *C.int16_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_slot *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_vocoder_dvsi_Codec(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*int16)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_slot == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	need_items := max(0, int(h.v.FrameSamples()))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0, r1 := h.v.AppendDecode(a_dst, *(*[9]byte)(unsafe.Pointer(c_slot)))
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_codec_close
+func dmrgo_dvsi_codec_close(c_self *C.dmrgo_dvsi_codec_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_vocoder_dvsi_Codec(c_self)
+	r0 := h.v.Close()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_codec_decode_need
+func dmrgo_dvsi_codec_decode_need(c_self *C.dmrgo_dvsi_codec_t, c_slot *C.uint8_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_vocoder_dvsi_Codec(c_self)
+	if c_slot == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(h.v.FrameSamples())))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_codec_decode
+func dmrgo_dvsi_codec_decode(c_self *C.dmrgo_dvsi_codec_t, c_slot *C.uint8_t, c_out *C.int16_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_vocoder_dvsi_Codec(c_self)
+	if c_slot == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	need_items := max(0, int(h.v.FrameSamples()))
+	need_arena := 0
+	_ = need_arena
+	if int(c_out_cap) < need_items {
+		if c_out_need != nil {
+			*c_out_need = C.size_t(0 + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0, r1 := h.v.Decode(*(*[9]byte)(unsafe.Pointer(c_slot)))
+	_ = r0
+	putSlice(unsafe.Slice((*int16)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_codec_encode
+func dmrgo_dvsi_codec_encode(c_self *C.dmrgo_dvsi_codec_t, c_pcm *C.int16_t, c_pcm_len C.size_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_vocoder_dvsi_Codec(c_self)
+	if c_pcm == nil && c_pcm_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_pcm []int16
+	a_pcm = unsafe.Slice((*int16)(unsafe.Pointer(c_pcm)), int(c_pcm_len))
+	r0, r1 := h.v.Encode(a_pcm)
+	_ = r0
+	if c_out != nil {
+		*(*[9]byte)(unsafe.Pointer(&(*(*[9]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_codec_fid
+func dmrgo_dvsi_codec_fid(c_self *C.dmrgo_dvsi_codec_t, c_out *C.dmrgo_enums_feature_set_id_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_vocoder_dvsi_Codec(c_self)
+	r0 := h.v.FID()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_enums_feature_set_id_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_codec_frame_samples
+func dmrgo_dvsi_codec_frame_samples(c_self *C.dmrgo_dvsi_codec_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_vocoder_dvsi_Codec(c_self)
+	r0 := h.v.FrameSamples()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_codec_product_need
+func dmrgo_dvsi_codec_product_need(c_self *C.dmrgo_dvsi_codec_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_vocoder_dvsi_Codec(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_vocoder_dvsi.MaxProductLen)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_codec_product
+func dmrgo_dvsi_codec_product(c_self *C.dmrgo_dvsi_codec_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_vocoder_dvsi_Codec(c_self)
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	need_items := max(0, int(g_vocoder_dvsi.MaxProductLen))
+	need_arena := 0
+	_ = need_arena
+	if int(c_out_cap)-1 < need_items {
+		if c_out_need != nil {
+			*c_out_need = C.size_t(0 + need_items + 1)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Product()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_codec_silence
+func dmrgo_dvsi_codec_silence(c_self *C.dmrgo_dvsi_codec_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_vocoder_dvsi_Codec(c_self)
+	r0 := h.v.Silence()
+	_ = r0
+	if c_out != nil {
+		*(*[9]byte)(unsafe.Pointer(&(*(*[9]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_codec_version_need
+func dmrgo_dvsi_codec_version_need(c_self *C.dmrgo_dvsi_codec_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_vocoder_dvsi_Codec(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_vocoder_dvsi.MaxVersionLen)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_codec_version
+func dmrgo_dvsi_codec_version(c_self *C.dmrgo_dvsi_codec_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_vocoder_dvsi_Codec(c_self)
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	need_items := max(0, int(g_vocoder_dvsi.MaxVersionLen))
+	need_arena := 0
+	_ = need_arena
+	if int(c_out_cap)-1 < need_items {
+		if c_out_need != nil {
+			*c_out_need = C.size_t(0 + need_items + 1)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Version()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_new
+func dmrgo_dvsi_new(c_port *C.dmrgo_dvsi_port_t, c_cfg *C.dmrgo_dvsi_config_t, c_out **C.dmrgo_dvsi_codec_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	var a_port g_vocoder_dvsi.Port
+	if c_port != nil {
+		a_port = get_vocoder_dvsi_Port(c_port).v
+	}
+	if c_cfg == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_cfg g_vocoder_dvsi.Config
+	a_cfg = in_vocoder_dvsi_Config(&(*c_cfg))
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := g_vocoder_dvsi.New(a_port, a_cfg)
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_vocoder_dvsi_Codec(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_packet_append_channel_data
+func dmrgo_dvsi_packet_append_channel_data(c_self *C.dmrgo_dvsi_packet_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_out1 *C.int64_t, c_out2 *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_vocoder_dvsi.Packet
+	x = in_vocoder_dvsi_Packet(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1, r2, r3 := x.AppendChannelData(a_dst)
+	_ = r0
+	_ = r1
+	_ = r2
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_out1 != nil {
+		*c_out1 = C.int64_t(r1)
+	}
+	if c_out2 != nil {
+		*c_out2 = C.int64_t(r2)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r3 != nil {
+		return setErr(r3)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_packet_append_samples
+func dmrgo_dvsi_packet_append_samples(c_self *C.dmrgo_dvsi_packet_t, c_dst *C.int16_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_out1 *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_vocoder_dvsi.Packet
+	x = in_vocoder_dvsi_Packet(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*int16)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1, r2 := x.AppendSamples(a_dst)
+	_ = r0
+	_ = r1
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_out1 != nil {
+		*c_out1 = C.int64_t(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r2 != nil {
+		return setErr(r2)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_packet_response
+func dmrgo_dvsi_packet_response(c_self *C.dmrgo_dvsi_packet_t, c_f C.dmrgo_dvsi_field_t, c_out0 *C.uint8_t, c_out0_cap C.size_t, c_out0_len *C.size_t, c_out0_need *C.size_t, c_out1 *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_vocoder_dvsi.Packet
+	x = in_vocoder_dvsi_Packet(&(*c_self))
+	if c_out0_len == nil || (c_out0 == nil && c_out0_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := x.Response(g_vocoder_dvsi.Field(c_f))
+	_ = r0
+	_ = r1
+	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out0)), int(c_out0_cap)), c_out0_len, c_out0_need, r0, oc)
+	if c_out1 != nil {
+		*c_out1 = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_parse
+func dmrgo_dvsi_parse(c_b *C.uint8_t, c_b_len C.size_t, c_parity C.bool, c_out0 *C.dmrgo_dvsi_packet_t, c_out1 *C.int64_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_b == nil && c_b_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_b []byte
+	a_b = unsafe.Slice((*byte)(unsafe.Pointer(c_b)), int(c_b_len))
+	r0, r1, r2 := g_vocoder_dvsi.Parse(a_b, bool(c_parity))
+	_ = r0
+	_ = r1
+	if c_out0 != nil {
+		out_vocoder_dvsi_Packet(&(*c_out0), &r0, oc)
+	}
+	if c_out1 != nil {
+		*c_out1 = C.int64_t(r1)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r2 != nil {
+		return setErr(r2)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_port_free
+func dmrgo_dvsi_port_free(c_self *C.dmrgo_dvsi_port_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_vocoder_dvsi_Port(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_port_read
+func dmrgo_dvsi_port_read(c_self *C.dmrgo_dvsi_port_t, c_p *C.uint8_t, c_p_len C.size_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_vocoder_dvsi_Port(c_self)
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	r0, r1 := h.v.Read(a_p)
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_port_write
+func dmrgo_dvsi_port_write(c_self *C.dmrgo_dvsi_port_t, c_p *C.uint8_t, c_p_len C.size_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_vocoder_dvsi_Port(c_self)
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	r0, r1 := h.v.Write(a_p)
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_voice_config_error_error
 func dmrgo_voice_config_error_error(c_self *C.dmrgo_voice_config_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -24834,6 +25608,32 @@ func errCode(err error) C.int {
 			return -145
 		case g_vocoder_codec2.ErrUnsupportedMode:
 			return -146
+		case g_vocoder_dvsi.ErrBits:
+			return -155
+		case g_vocoder_dvsi.ErrChannel:
+			return -156
+		case g_vocoder_dvsi.ErrClosed:
+			return -157
+		case g_vocoder_dvsi.ErrField:
+			return -158
+		case g_vocoder_dvsi.ErrIncomplete:
+			return -159
+		case g_vocoder_dvsi.ErrLength:
+			return -160
+		case g_vocoder_dvsi.ErrParity:
+			return -161
+		case g_vocoder_dvsi.ErrPort:
+			return -162
+		case g_vocoder_dvsi.ErrSamples:
+			return -163
+		case g_vocoder_dvsi.ErrStart:
+			return -164
+		case g_vocoder_dvsi.ErrStatus:
+			return -165
+		case g_vocoder_dvsi.ErrTimeout:
+			return -166
+		case g_vocoder_dvsi.ErrType:
+			return -167
 		case g_voice.ErrBusy:
 			return -147
 		case g_voice.ErrNotActive:
@@ -25023,6 +25823,32 @@ func codeErr(code C.int) error {
 		return g_vocoder_codec2.ErrUnavailable
 	case -146:
 		return g_vocoder_codec2.ErrUnsupportedMode
+	case -155:
+		return g_vocoder_dvsi.ErrBits
+	case -156:
+		return g_vocoder_dvsi.ErrChannel
+	case -157:
+		return g_vocoder_dvsi.ErrClosed
+	case -158:
+		return g_vocoder_dvsi.ErrField
+	case -159:
+		return g_vocoder_dvsi.ErrIncomplete
+	case -160:
+		return g_vocoder_dvsi.ErrLength
+	case -161:
+		return g_vocoder_dvsi.ErrParity
+	case -162:
+		return g_vocoder_dvsi.ErrPort
+	case -163:
+		return g_vocoder_dvsi.ErrSamples
+	case -164:
+		return g_vocoder_dvsi.ErrStart
+	case -165:
+		return g_vocoder_dvsi.ErrStatus
+	case -166:
+		return g_vocoder_dvsi.ErrTimeout
+	case -167:
+		return g_vocoder_dvsi.ErrType
 	case -147:
 		return g_voice.ErrBusy
 	case -148:
