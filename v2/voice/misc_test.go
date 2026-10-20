@@ -33,7 +33,6 @@ func TestReceiver_ColorCode(t *testing.T) {
 	}
 }
 
-// TestReceiver_Decoded checks that Decoded gives the same events as Burst.
 func TestReceiver_Decoded(t *testing.T) {
 	t.Parallel()
 
@@ -58,8 +57,6 @@ func TestReceiver_Decoded(t *testing.T) {
 	}
 }
 
-// TestReceiver_LateEntryInHang starts voice without a header in the hang
-// time. When its LC never comes, the session goes on.
 func TestReceiver_LateEntryInHang(t *testing.T) {
 	t.Parallel()
 

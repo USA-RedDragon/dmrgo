@@ -22,9 +22,6 @@ func newTransmitter(t *testing.T, cfg *voice.TransmitterConfig) *voice.Transmitt
 	return tx
 }
 
-// drain ticks tx at its deadlines until it ends or limit outputs, and
-// returns the outputs. It fails when one Tick appends more than MaxOutputs
-// or a Due time is not 60 ms after the one before.
 func drain(t *testing.T, tx *voice.Transmitter, limit int) []voice.Output {
 	t.Helper()
 	var all []voice.Output
@@ -58,7 +55,6 @@ func outBursts(out []voice.Output) []layer2.RawBurst {
 	return b
 }
 
-// framesOf returns the AMBE+2 frames of the voice bursts of bursts.
 func framesOf(t *testing.T, bursts []layer2.RawBurst) []vocoder.AMBEFrame {
 	t.Helper()
 	var out []vocoder.AMBEFrame
@@ -79,9 +75,6 @@ func framesOf(t *testing.T, bursts []layer2.RawBurst) []vocoder.AMBEFrame {
 	return out
 }
 
-// TestTransmitter_Golden builds the voice sequences of the golden
-// file in source mode, bursts that a real XPR 8400 accepted over the air,
-// and compares every byte.
 func TestTransmitter_Golden(t *testing.T) {
 	t.Parallel()
 
@@ -137,8 +130,6 @@ func TestTransmitter_Golden(t *testing.T) {
 	}
 }
 
-// TestTransmitter_Source checks the order, positions and timing of a
-// source call with three headers, two superframes and an underrun.
 func TestTransmitter_Source(t *testing.T) {
 	t.Parallel()
 
@@ -186,8 +177,6 @@ func TestTransmitter_Source(t *testing.T) {
 	}
 }
 
-// TestTransmitter_RoundTrip sends a call with a talker alias and GPS to a
-// Receiver, with one burst dropped, and checks what it receives.
 func TestTransmitter_RoundTrip(t *testing.T) {
 	t.Parallel()
 
@@ -229,10 +218,7 @@ func TestTransmitter_RoundTrip(t *testing.T) {
 	}
 }
 
-// TestTransmitter_Timeout lets T_TO expire at each position of a
-// superframe. The transmission ends after that superframe and a
-// terminator, refuses voice until Stop, and then ends with EndTimeout
-// (ETSI TS 102 361-2 clause 6.1).
+// ETSI TS 102 361-2 clause 6.1
 func TestTransmitter_Timeout(t *testing.T) {
 	t.Parallel()
 
@@ -261,9 +247,6 @@ func TestTransmitter_Timeout(t *testing.T) {
 	}
 }
 
-// TestTransmitter_Relay receives the XPR 8400 weak capture and relays it.
-// The voice bursts come out bit for bit, the color code and SYNC being the
-// same, and the headers and terminator are rebuilt from the call LC.
 func TestTransmitter_Relay(t *testing.T) {
 	t.Parallel()
 
@@ -302,9 +285,6 @@ func TestTransmitter_Relay(t *testing.T) {
 	}
 }
 
-// TestTransmitter_RelayLateEntry relays a call that the Receiver joined
-// late: the voice before the LC is dropped, and the call starts with a
-// header.
 func TestTransmitter_RelayLateEntry(t *testing.T) {
 	t.Parallel()
 
@@ -341,8 +321,6 @@ func timedOutputs(out []voice.Output) []input {
 	return in
 }
 
-// TestTransmitter_RelayLost relays a call with lost bursts and a call end
-// by the lost timer.
 func TestTransmitter_RelayLost(t *testing.T) {
 	t.Parallel()
 
@@ -423,7 +401,6 @@ func TestTransmitter_Errors(t *testing.T) {
 	}
 }
 
-// TestTransmitter_Lead emits a burst Lead before its Due time.
 func TestTransmitter_Lead(t *testing.T) {
 	t.Parallel()
 

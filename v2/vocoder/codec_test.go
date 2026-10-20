@@ -19,11 +19,8 @@ func (fakeCodec) Silence() [9]byte                { return [9]byte{} }
 func (c fakeCodec) FID() enums.FeatureSetID       { return c.fid }
 func (fakeCodec) Close() error                    { return nil }
 
-// errFactory is the error of the failing test factory.
 var errFactory = errors.New("factory failed")
 
-// registerTestCodecs registers the test codecs once per process, since the
-// registry is process-global and holds vocoder.MaxCodecs codecs.
 var registerTestCodecs = sync.OnceValue(func() error {
 	factory := func() (vocoder.Codec, error) { return fakeCodec{fid: 0x7F}, nil }
 	for _, name := range []string{"test-fake-b", "test-fake-a"} {

@@ -7,11 +7,9 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// slotPeriod is the time between two bursts of one logical channel (ETSI
-// TS 102 361-1 clause 4.2.2).
+// ETSI TS 102 361-1 clause 4.2.2
 const slotPeriod = 60 * time.Millisecond
 
-// placement is what tracker.place found for a voice burst.
 type placement uint8
 
 const (
@@ -20,16 +18,8 @@ const (
 	late
 )
 
-// lateWindow is the most sequence numbers by which a burst may be behind
-// the last one and count as late. A burst further behind starts the
-// sequence again, as after a transport restart.
 const lateWindow = 32
 
-// tracker keeps the superframe position of the last voice burst of a call.
-// header reports that pos is the position before burst A of a Voice LC
-// Header or PI Header without a sequence number that came at time at. Such
-// a header counts the lost bursts but predicts no position, because
-// headers after it can be lost too.
 type tracker struct {
 	known  bool
 	header bool
@@ -42,11 +32,6 @@ type tracker struct {
 	hasRaw bool
 }
 
-// afterHeader anchors a Voice LC Header or PI Header that arrived at now
-// with Hint h as the position before burst A, when no voice burst of the
-// call has come yet. The first voice burst then counts the bursts lost
-// after the header from the sequence number of h or, without one, from the
-// time since now.
 func (t *tracker) afterHeader(h *layer2.Hint, now time.Duration) {
 	if t.hasRaw {
 		return
@@ -59,19 +44,6 @@ func (t *tracker) afterHeader(h *layer2.Hint, now time.Duration) {
 	t.header, t.at, t.hasAt = true, now, true
 }
 
-// place returns the superframe index of the voice burst b, whose bits are
-// raw, 0 for burst A to 5 for burst F, or -1 when no evidence places it,
-// and the number of voice bursts lost before it. The evidence, strongest
-// first, is the transport position, the voice SYNC, the EMB LCSS of bursts
-// B, E and F, and the position predicted from the sequence number or,
-// without one, from the time since the last burst. A prediction never
-// places a burst at A, which needs its SYNC. A burst without a SYNC whose
-// sequence number predicts A is burst B: a MOTOTRBO repeater that misses
-// burst A does not count it in the RTP sequence (ipsc2hbrp commit a1a8d00,
-// from an XPR 8400 capture), and burst A counts as lost. Without a
-// sequence number, a burst that comes less than half a slot period after
-// the last one is a duplicate when it has the same bits, and else the next
-// burst, which arrived early.
 func (t *tracker) place(b *layer2.Burst, raw *layer2.RawBurst, h *layer2.Hint, now time.Duration) (idx, lost int, p placement) {
 	gap, p := t.seqGap(h)
 	if p != placed {
@@ -116,9 +88,6 @@ func (t *tracker) place(b *layer2.Burst, raw *layer2.RawBurst, h *layer2.Hint, n
 	return idx, lost, placed
 }
 
-// seqGap returns how many sequence numbers h is past the last burst, 0
-// without a sequence number or after a jump, or the placement of a
-// duplicate or late burst.
 func (t *tracker) seqGap(h *layer2.Hint) (int, placement) {
 	if !h.HasSeq || !t.hasSeq {
 		return 0, placed
@@ -140,9 +109,6 @@ func (t *tracker) seqGap(h *layer2.Hint) (int, placement) {
 	return 0, placed
 }
 
-// position returns the superframe index of b from its own evidence, or
-// predicted steps bursts after the last one, or -1. bySeq reports that a
-// sequence number gave steps.
 func (t *tracker) position(b *layer2.Burst, h *layer2.Hint, steps int, bySeq bool) int {
 	if pos, ok := strongPosition(b, h); ok {
 		return pos
@@ -162,8 +128,6 @@ func (t *tracker) position(b *layer2.Burst, h *layer2.Hint, steps int, bySeq boo
 	return pred
 }
 
-// strongPosition returns the superframe index of b from the transport, the
-// voice SYNC or an EMB whose LCSS fits one position only.
 func strongPosition(b *layer2.Burst, h *layer2.Hint) (int, bool) {
 	if i, ok := h.VoiceBurst.Index(); ok {
 		return i, true
@@ -186,11 +150,6 @@ func strongPosition(b *layer2.Burst, h *layer2.Hint) (int, bool) {
 	return 0, false
 }
 
-// nearestLost returns the count of lost bursts that the superframe
-// positions give, gap plus a whole number of superframes, that is nearest
-// to the count est that the time gives. When the positions give more than
-// the time allows, the transmitter started a new superframe early, and the
-// time wins.
 func nearestLost(gap, est int) int {
 	if gap > est+2 {
 		return est
@@ -202,8 +161,6 @@ func nearestLost(gap, est int) int {
 	return n
 }
 
-// forget drops the position, so that the next burst is placed only by its
-// own evidence, but keeps the sequence number for duplicate checks.
 func (t *tracker) forget() {
 	t.known = false
 }

@@ -17,18 +17,10 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-// libMu serializes libcodec2 calls. The decoder draws from a process-wide
-// random number generator in libcodec2 that has no locking.
-
 var libMu sync.Mutex
 
-// The errors of New for a failure of libcodec2.
 var (
-	// errCreate is returned by New when libcodec2 cannot create a codec
-	// state.
-	errCreate = errors.New("codec2: codec2_create failed")
-	// errFrameSize is returned by New when libcodec2 has another frame
-	// size for the mode than the package expects.
+	errCreate    = errors.New("codec2: codec2_create failed")
 	errFrameSize = errors.New("codec2: libcodec2 has another frame size for the mode")
 )
 
@@ -109,8 +101,6 @@ func New(cfg Config) (*Codec, error) {
 	return c, nil
 }
 
-// newSilence returns 20 ms of silence, encoded by a fresh encoder of mode
-// cmode into nbytes bytes.
 func newSilence(cmode C.int, nbytes int) ([9]byte, error) {
 	libMu.Lock()
 	defer libMu.Unlock()

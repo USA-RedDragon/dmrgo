@@ -2,14 +2,6 @@ package vocoder
 
 import "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 
-// The Motorola IPSC voice burst carries the three vocoder frames of a DMR
-// voice burst without their FEC in a 19-byte AMBE payload, bytes 33 to 51 of
-// the IPSC packet (AMBE_DATA in DMRlink documents/voice_burst_decoding.txt).
-// Frame k fills bits 50k to 50k+48, most significant bit of byte 0 first.
-// Bit 49 is set when frame 2 was bad on receive and bit 99 when frame 3 was
-// bad. Bits 149 to 151 are not used.
-
-// Bits of the IPSC AMBE payload that flag frames 2 and 3 as bad.
 const (
 	ambeBad2Bit = 49
 	ambeBad3Bit = 99

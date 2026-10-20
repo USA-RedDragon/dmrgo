@@ -10,8 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// registerOnce registers the codec once per test binary, as a program does
-// at startup.
 var registerOnce sync.Once
 
 func TestStubUnavailable(t *testing.T) {

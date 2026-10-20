@@ -9,8 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
-// headerCount returns the number of data bursts before the first voice
-// burst of bursts.
 func headerCount(t *testing.T, bursts []layer2.RawBurst) int {
 	t.Helper()
 	for i := range bursts {
@@ -26,9 +24,6 @@ func headerCount(t *testing.T, bursts []layer2.RawBurst) int {
 	return 0
 }
 
-// TestReceiver_LostAfterHeader drops the first voice bursts of a call that
-// a Voice LC Header starts. Without sequence numbers, the first voice burst
-// that arrives counts them from the time of the header.
 func TestReceiver_LostAfterHeader(t *testing.T) {
 	t.Parallel()
 
@@ -47,8 +42,6 @@ func TestReceiver_LostAfterHeader(t *testing.T) {
 			}
 			want := "ABCDEFABCDEFABCDEF"[lost:]
 			if want[0] == 'C' {
-				// The time of a header places no burst, and bursts C and D
-				// carry no position of their own.
 				want = "??" + want[2:]
 			}
 			if positions(got) != want {
@@ -68,8 +61,6 @@ func TestReceiver_LostAfterHeader(t *testing.T) {
 	}
 }
 
-// TestReceiver_LostAfterHeaderSeq checks that the sequence numbers, not
-// the time, count the voice bursts lost after a Voice LC Header.
 func TestReceiver_LostAfterHeaderSeq(t *testing.T) {
 	t.Parallel()
 

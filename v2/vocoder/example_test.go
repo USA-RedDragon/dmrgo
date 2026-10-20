@@ -8,7 +8,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// lsbCodec is a toy codec that sends the low bit of the first 72 samples.
 type lsbCodec struct{}
 
 func (lsbCodec) Close() error      { return nil }
@@ -33,8 +32,6 @@ func (lsbCodec) Decode(slot [9]byte) ([]int16, error) {
 func (lsbCodec) Silence() [9]byte        { return [9]byte{} }
 func (lsbCodec) FID() enums.FeatureSetID { return enums.FIDStandardized }
 
-// ExampleNew registers a toy codec, opens it by name, and shows the error
-// for an unknown name.
 func ExampleNew() {
 	err := vocoder.Register("example-lsb", func() (vocoder.Codec, error) { return lsbCodec{}, nil })
 	if err != nil && !errors.Is(err, vocoder.ErrDuplicateCodec) {
@@ -62,7 +59,6 @@ func ExampleNew() {
 	// vocoder: unknown codec
 }
 
-// ExampleDecodeAMBE72 corrects a bit error in an AMBE+2 silence slot.
 func ExampleDecodeAMBE72() {
 	slot := vocoder.AMBESilenceSlot()
 	slot[0] ^= 0x80 >> 5

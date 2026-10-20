@@ -9,9 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
-// TestAllocsReceiverCorpus runs each input of the FuzzReceiver corpus
-// through a reused Receiver, relays its events through a reused
-// Transmitter into a second Receiver, and checks that nothing allocates.
 func TestAllocsReceiverCorpus(t *testing.T) {
 	p := newPool(t)
 	events := make([]voice.Event, 0, voice.MaxEvents)

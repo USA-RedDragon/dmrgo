@@ -12,10 +12,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// Two TS2 group calls from 3191868 to TG 9 that an XPR 8400 sent on IPSC,
-// from the rig captures of ipsc2hbrp (internal/ipsc/rig_capture_test.go,
-// commit a1a8d00). In the second one the repeater missed burst A after the
-// headers and sent B to F with no gap in the RTP sequence.
 var (
 	ipscCall = []string{
 		"800004ce2e3230b43c00000902000058f320805dfb283bbf02a40000000001c0000a800a006000000000000930b43ce9f8ed00714694",
@@ -39,12 +35,6 @@ var (
 	}
 )
 
-// ipscInputs turns IPSC packets into Receiver inputs as an IPSC adapter
-// would: the RTP sequence number in Hint.Seq, burst A by its length or
-// SYNC flag and burst E by its length in Hint.VoiceBurst, and the EMB the
-// repeater sent. With noEMB, bursts B to F go to Decoded with their EMB
-// marked uncorrectable, as for a repeater whose EMB byte cannot be
-// trusted.
 func ipscInputs(t *testing.T, packets []string, noEMB bool) []input {
 	t.Helper()
 	out := make([]input, 0, len(packets))
@@ -102,10 +92,6 @@ func ipscInputs(t *testing.T, packets []string, noEMB bool) []input {
 	return out
 }
 
-// TestReceiver_IPSCLostBurstA runs the two XPR 8400 IPSC calls. The call
-// without burst A starts at B, also when the EMB cannot be trusted: the
-// sequence number after the header predicts A, and a burst without a SYNC
-// there is B.
 func TestReceiver_IPSCLostBurstA(t *testing.T) {
 	t.Parallel()
 

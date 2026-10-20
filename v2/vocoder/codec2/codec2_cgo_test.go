@@ -18,8 +18,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// registerOnce registers the codec once per test binary, as a program does
-// at startup.
 var registerOnce sync.Once
 
 func allModes() []Mode { return []Mode{Mode2400, Mode3200} }
@@ -34,7 +32,6 @@ func newCodec(t *testing.T, cfg Config) *Codec {
 	return c
 }
 
-// voiced returns a 150 Hz harmonic tone with a vowel-like spectrum.
 func voiced(frames int) []int16 {
 	const f0 = 150.0
 	pcm := make([]int16, frames*FrameSamples)
@@ -360,8 +357,6 @@ func lookTools(t *testing.T) {
 	}
 }
 
-// TestMatchesC2Enc checks that Encode produces the same bytes as the
-// libcodec2 c2enc tool.
 func TestMatchesC2Enc(t *testing.T) {
 	t.Parallel()
 
@@ -386,9 +381,6 @@ func TestMatchesC2Enc(t *testing.T) {
 	}
 }
 
-// TestMatchesC2Dec checks that Decode produces the same samples as the
-// libcodec2 c2dec tool. The decoder uses a process-wide random number
-// generator, so the decode runs in a fresh test process, like c2dec.
 func TestMatchesC2Dec(t *testing.T) {
 	t.Parallel()
 

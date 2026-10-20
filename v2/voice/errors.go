@@ -30,7 +30,6 @@ var (
 	ErrTimedOut = errors.New("voice: transmit timeout")
 )
 
-// The *ConfigError values that the constructors return.
 var (
 	errColorCode   error = &ConfigError{Field: "ColorCode"}
 	errSource      error = &ConfigError{Field: "Source"}

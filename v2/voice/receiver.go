@@ -198,7 +198,6 @@ func (r *Receiver) Deadline() (at time.Duration, ok bool) {
 	return at, ok
 }
 
-// timers runs every timer that is due at now, in deadline order.
 func (r *Receiver) timers(now time.Duration, out []Event) []Event {
 	for {
 		at, ok := r.Deadline()
@@ -223,8 +222,6 @@ func (r *Receiver) timers(now time.Duration, out []Event) []Event {
 	}
 }
 
-// syncLost ends the call or the late entry for a transport that lost the
-// signal.
 func (r *Receiver) syncLost(now time.Duration, out []Event) []Event {
 	switch r.state {
 	case StateInCall:
@@ -236,8 +233,6 @@ func (r *Receiver) syncLost(now time.Duration, out []Event) []Event {
 	return out
 }
 
-// receive is the common part of Burst and Decoded. b is nil for a burst
-// that did not decode, and raw is nil for a burst from Decoded.
 func (r *Receiver) receive(now time.Duration, b *layer2.Burst, raw *layer2.RawBurst, h *layer2.Hint, out []Event) []Event {
 	out = r.timers(now, out)
 	if h.SyncLost {
@@ -277,7 +272,6 @@ func (r *Receiver) receive(now time.Duration, b *layer2.Burst, raw *layer2.RawBu
 	return out
 }
 
-// data handles a data burst.
 func (r *Receiver) data(now time.Duration, b *layer2.Burst, raw *layer2.RawBurst, h *layer2.Hint, out []Event) []Event {
 	if b.SyncPattern == enums.SyncNone || b.SlotType.FEC.Uncorrectable {
 		return out
@@ -333,7 +327,6 @@ func (r *Receiver) data(now time.Duration, b *layer2.Burst, raw *layer2.RawBurst
 	return out
 }
 
-// rawOf returns *raw, or b encoded when raw is nil.
 func rawOf(b *layer2.Burst, raw *layer2.RawBurst) layer2.RawBurst {
 	if raw != nil {
 		return *raw
@@ -342,8 +335,6 @@ func rawOf(b *layer2.Burst, raw *layer2.RawBurst) layer2.RawBurst {
 	return r
 }
 
-// lcOctets returns the LC octets of a Voice LC Header or Terminator with
-// LC burst whose RS(12,9) code is correctable.
 func lcOctets(b *layer2.Burst) (pdu.LCBytes, bool) {
 	fl, ok := b.Data.(*pdu.FullLinkControl)
 	if !ok || fl.FEC.Uncorrectable {
@@ -356,7 +347,6 @@ func lcOctets(b *layer2.Burst) (pdu.LCBytes, bool) {
 	return pdu.LCBytes(octets), true
 }
 
-// terminator handles a Terminator with LC.
 func (r *Receiver) terminator(now time.Duration, b *layer2.Burst, out []Event) []Event {
 	lc, lcOK := lcOctets(b)
 	c, ok := callOf(lc, OriginTerminator)
@@ -389,7 +379,6 @@ func (r *Receiver) terminator(now time.Duration, b *layer2.Burst, out []Event) [
 	return out
 }
 
-// callLC handles the call LC c from a Voice LC Header or the embedded LC.
 func (r *Receiver) callLC(now time.Duration, c *Call, out []Event) []Event {
 	switch r.state {
 	case StateInCall:
@@ -408,8 +397,6 @@ func (r *Receiver) callLC(now time.Duration, c *Call, out []Event) []Event {
 	return r.startCall(now, c, out)
 }
 
-// startCall starts the call c, after the end of a session to another
-// target.
 func (r *Receiver) startCall(now time.Duration, c *Call, out []Event) []Event {
 	keep := r.state == StateLateEntry && c.Origin == OriginEmbedded
 	if r.inSession && (c.Target != r.session.Target || c.Group != r.session.Group) {
@@ -435,13 +422,10 @@ func (r *Receiver) startCall(now time.Duration, c *Call, out []Event) []Event {
 	return out
 }
 
-// hangs reports whether the call c has a call hang time.
 func (r *Receiver) hangs(c *Call) bool {
 	return r.hang >= 0 && !c.Options.IsBroadcast && (!c.Group || c.Target != constants.AllMSID)
 }
 
-// endCall ends the call at time at with reason, and starts the hang time
-// when the call has one.
 func (r *Receiver) endCall(at time.Duration, reason EndReason, out []Event) []Event {
 	out = r.appendEnd(at, reason, out)
 	if !r.hangs(&r.call) {
@@ -453,14 +437,12 @@ func (r *Receiver) endCall(at time.Duration, reason EndReason, out []Event) []Ev
 	return out
 }
 
-// endNoHang ends the call at time at with reason and goes to Idle.
 func (r *Receiver) endNoHang(at time.Duration, reason EndReason, out []Event) []Event {
 	out = r.appendEnd(at, reason, out)
 	r.state, r.inSession = StateIdle, false
 	return out
 }
 
-// appendEnd appends the EventCallEnd of the call.
 func (r *Receiver) appendEnd(at time.Duration, reason EndReason, out []Event) []Event {
 	r.stats.Duration = max(at-r.start, 0)
 	var e *Event
@@ -469,15 +451,12 @@ func (r *Receiver) appendEnd(at time.Duration, reason EndReason, out []Event) []
 	return out
 }
 
-// endSession ends the hang time.
 func (r *Receiver) endSession(out []Event) []Event {
 	r.state, r.inSession = StateIdle, false
 	out, _ = appendEvent(out, EventSessionEnd, &r.session)
 	return out
 }
 
-// abandon ends a late entry whose LC never came: back to the hang time
-// when a session is open and its hang time runs, else to Idle.
 func (r *Receiver) abandon(now time.Duration, out []Event) []Event {
 	switch {
 	case r.inSession && now < r.hangUntil:
@@ -490,7 +469,6 @@ func (r *Receiver) abandon(now time.Duration, out []Event) []Event {
 	return out
 }
 
-// voice handles a voice burst.
 func (r *Receiver) voice(now time.Duration, b *layer2.Burst, raw *layer2.RawBurst, h *layer2.Hint, out []Event) []Event {
 	switch r.state {
 	case StateIdle, StateHang:
@@ -566,9 +544,6 @@ func (r *Receiver) voice(now time.Duration, b *layer2.Burst, raw *layer2.RawBurs
 	return out
 }
 
-// collect adds the embedded signalling of burst b at superframe index idx
-// to the fragments of the embedded LC, and returns the LC octets when burst
-// E completes a superframe whose bursts B to E all arrived.
 func (r *Receiver) collect(b *layer2.Burst, idx, lost int) (pdu.LCBytes, bool) {
 	if idx < 1 || idx > 4 || !b.HasEmbeddedSignalling() {
 		r.fragNext = 0
@@ -594,8 +569,6 @@ func (r *Receiver) collect(b *layer2.Burst, idx, lost int) (pdu.LCBytes, bool) {
 	return pdu.LCBytes(lc), true
 }
 
-// embedded appends the EventEmbedded of an embedded LC that is not a call
-// LC, and the EventTalkerAlias when it completes a talker alias.
 func (r *Receiver) embedded(lc pdu.LCBytes, out []Event) []Event {
 	if pdu.DecodeFullLinkControlBytesInto(&r.lc, &r.lcp, lc) != nil {
 		return out
@@ -611,11 +584,6 @@ func (r *Receiver) embedded(lc pdu.LCBytes, out []Event) []Event {
 	return out
 }
 
-// appendEvent appends an Event of kind k for the call c to out and returns
-// the extended slice and the new Event. It grows out only when out lacks
-// the capacity. It is not inlined, so that the growth stays in a function
-// whose name tells that it appends.
-//
 //go:noinline
 func appendEvent(out []Event, k EventKind, c *Call) ([]Event, *Event) {
 	if len(out) < cap(out) {
@@ -629,7 +597,6 @@ func appendEvent(out []Event, k EventKind, c *Call) ([]Event, *Event) {
 	return out, e
 }
 
-// addSat16 returns a+n, at most the largest uint16.
 func addSat16(a uint16, n int) uint16 {
 	sum := int(a) + n
 	if sum >= 0xFFFF {
@@ -641,7 +608,6 @@ func addSat16(a uint16, n int) uint16 {
 	return uint16(sum)
 }
 
-// sat8 returns n limited to 0 to 255.
 func sat8(n int) uint8 {
 	if n >= 0xFF {
 		return 0xFF
