@@ -343,7 +343,7 @@ The example prints its counts on the serial console once a second.
 
 ### ETSI TS 102 361-4: DMR Trunking Protocol
 
-13 sections: 13 verified, 0 failing, 0 untested, 0 unimplemented.
+15 sections: 15 verified, 0 failing, 0 untested, 0 unimplemented.
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
@@ -351,12 +351,14 @@ The example prints its counts on the serial console once a second.
 | 5.2 | Tier III Signalling | verified | 4/4 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/burst.go` |
 | 5.3 | Modes of Control Channel | verified | 2/2 passed | `v2/layer2/burst.go` |
 | 5.4 | CSBK/MBC/UDT/USBD Block Structure | verified | 4/4 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer2/pdu/data_header.go` |
-| 6.2 | Random Access Procedures | verified | 2/2 passed | `v2/layer2/pdu/csbk.go`, `v2/constants/constants.go` |
-| 6.6 | Call Procedures | verified | 3/3 passed | `v2/layer2/pdu/csbk.go` |
+| 6.2 | Random Access Procedures | verified | 8/8 passed | `v2/layer2/pdu/csbk.go`, `v2/constants/constants.go`, `v2/enums/service_kind.go`, `v2/trunk/ms.go` |
+| 6.3 | Control Channel Acquisition and Retention | verified | 4/4 passed | `v2/trunk/control.go`, `v2/trunk/follower.go`, `v2/trunk/plan.go`, `v2/trunk/site.go` |
+| 6.4 | Registration, Power Save, and Authentication Procedures | verified | 2/2 passed | `v2/trunk/ms.go`, `v2/layer3/random_access_options.go` |
+| 6.6 | Call Procedures | verified | 10/10 passed | `v2/layer2/pdu/csbk.go`, `v2/trunk/follower.go`, `v2/trunk/ms.go` |
 | 7.1.1 | Control Signalling Block (CSBK/MBC/UDT) PDUs | verified | 17/17 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer2/pdu/data_header.go`, `v2/enums/announcement_type.go` |
 | 7.1.1.1 | TSCC Outbound channel CSBK/MBC/UDT | verified | 10/10 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer3/cdef_parms.go` |
 | 7.1.2 | Short Link Control PDUs | verified | 3/3 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go` |
-| 7.2 | Layer 3 Information Element Coding | verified | 6/6 passed | `v2/layer3/cdef_parms.go`, `v2/enums/announcement_type.go` |
+| 7.2 | Layer 3 Information Element Coding | verified | 12/12 passed | `v2/layer3/cdef_parms.go`, `v2/enums/announcement_type.go`, `v2/enums/ack_reason.go`, `v2/layer3/random_access_options.go`, `v2/layer2/pdu/broadcast_parms.go` |
 | A | Timers, constants levels and addresses | verified | 5/5 passed | `v2/constants/constants.go` |
 | B.1 | CSBK/MBC/UDT Opcode List | verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | B.2 | Short Link Control Opcode List | verified | 1/1 passed | `v2/enums/slco.go` |
