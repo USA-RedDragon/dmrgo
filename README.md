@@ -100,6 +100,10 @@ The programs in [v2/examples](v2/examples) run offline on the captures in `v2/la
 - Base station (`bs`), without I/O or goroutines:
   - `Repeater` is a two-slot repeater or hotspot, or the slot arbiter of a network server. It gives each slot to one source and queues or refuses the others, holds the call hang time, regenerates every repeated burst with new FEC and the local color code, and in RF mode sends one burst per 30 ms with the CACH, the AT bit, the Activity Update, Idle bursts, Terminators in the call hang time and TD_LC in the data hang time. It wakes up on BS_Dwn_Act or any burst and hibernates after T_MSInactiv. Its outbound stream for a voice call matches a Motorola XPR 8400 bit for bit.
   - `CACH` makes the CACH and Short LC fragments alone.
+- Tier III trunking (`trunk`), without I/O or goroutines:
+  - Channel plans, hunt lists and site tables, from the configuration and from CG_AP, Chan_Freq, Ann_WD_TSCC and Adjacent_Site.
+  - `Follower` hunts for a TSCC and follows its voice and data grants to the payload channels, as a scanner does, and returns on P_CLEAR, after the hang time or when the channel goes quiet.
+  - `MS` registers, makes talkgroup and individual voice calls by random access with backoff, answers C_AHOY, and ends its calls with P_MAINT.
 - FEC: BPTC(196,96), embedded LC BPTC, rate 3/4 trellis, RS(12,9), Golay(20,8), Golay(23,12), Golay(24,12), QR(16,7), Hamming codes and the CRCs. Each decoder reports its result in one `fec.Result`.
 - Burst finding in a demodulated bit stream (`layer2/framer`).
 - Vocoders (`vocoder`):
@@ -133,7 +137,7 @@ The counts are of exported functions and methods, for linux/amd64 with cgo. `DMR
 <!-- allocgate:end -->
 
 - Each exported function that a rule covers says in its doc when it allocates.
-- Do not copy `layer2.Burst`, `packet.Assembler`, `packet.Builder` or `voice.Receiver` after first use. They keep pointers into their own storage, and `go vet` reports a copy.
+- Do not copy `layer2.Burst`, `packet.Assembler`, `packet.Builder`, `voice.Receiver`, `trunk.Follower` or `trunk.MS` after first use. They keep pointers into their own storage, and `go vet` reports a copy.
 - A `layer2.Burst` keeps its decoded `Data` until the next decode into it. `packet.Builder` and `packet.Assembler` keep their results the same way.
 - Three checks keep this true, with no list of functions to maintain:
   - [v2/internal/allocgate](v2/internal/allocgate) follows the machine code of each exported function to the heap allocator.
