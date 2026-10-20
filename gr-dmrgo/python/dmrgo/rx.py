@@ -7,7 +7,7 @@ import numpy as np
 import pmt
 from gnuradio import gr
 
-from . import ambe, libdmrgo
+from . import ambe, dvsi, libdmrgo
 
 AUDIO_RATE = 8000
 AUDIO_DELAY = 0.3
@@ -35,17 +35,24 @@ class rx(gr.basic_block):
     to 2), bad, errors, and the call LC fields when known.
 
     The optional stream output is 8 kHz float audio in -1 to 1: the audio of
-    Codec2 calls (FID 0xC2), and of other calls when ambe_lib names a
-    separately installed AMBE+2 decoder (see gnuradio.dmrgo.ambe). It is
-    silence between calls. It plays the audio of each burst 0.3 s after
-    the burst in the input, so that the receiver has the time to decode it.
+    Codec2 calls (FID 0xC2), and of other calls with an AMBE+2 backend. It is
+    silence between calls. ambe_backend selects the AMBE+2 decoder:
+    "library" for the separately installed library that ambe_lib names (see
+    gnuradio.dmrgo.ambe), none when ambe_lib is empty; "serial" for a DVSI
+    AMBE-3000R or AMBE-3003 on the serial port dvsi_device at dvsi_baud,
+    such as a ThumbDV or a DVstick; "ambeserver" for an AMBEserver at
+    ambeserver, "host" or "host:port" (default port 2460). An AMBE-3003
+    decodes each timeslot on its own channel (see gnuradio.dmrgo.dvsi). It
+    plays the audio of each burst 0.3 s after the burst in the input, so
+    that the receiver has the time to decode it.
     audio_slot selects the timeslot, 1 or 2, or 0 for both, which the block
     adds. codec2_mode is the Codec2 bit rate, 2400 or 3200, or 0 to detect
     it for each call, or -1 to turn the Codec2 decode off.
     """
 
     def __init__(self, input_type="complex", samp_rate=48000, tier=2, codec2_mode=0,
-                 audio_slot=0, lib_path="", ambe_lib=""):
+                 audio_slot=0, lib_path="", ambe_lib="", ambe_backend="library", dvsi_device="",
+                 dvsi_baud=dvsi.DEFAULT_BAUD, ambeserver=""):
         iq = input_type == "complex"
         gr.basic_block.__init__(
             self, name="dmrgo_rx",
@@ -59,11 +66,22 @@ class rx(gr.basic_block):
         self._audio_slot = int(audio_slot)
         self._ambe_lib = ambe_lib
         self._ambe = {}
+        self._dvsi = None
+        if ambe_backend == "serial":
+            self._dvsi = dvsi.Device(self._lib, dvsi.SerialPort(dvsi_device, int(dvsi_baud)))
+        elif ambe_backend == "ambeserver":
+            self._dvsi = dvsi.Device(self._lib, dvsi.UDPPort(ambeserver))
+        elif ambe_backend != "library":
+            raise ValueError(f"ambe_backend {ambe_backend!r}, want library, serial or ambeserver")
         self._ring = np.zeros(4 * AUDIO_RATE, dtype=np.float32)
         self._in_total = 0
         self._out_total = 0
         self.message_port_register_out(pmt.intern("bursts"))
         self.message_port_register_out(pmt.intern("voice"))
+
+    def ambe_device(self):
+        """Return the product name of the DVSI chip, or "" without one."""
+        return self._dvsi.product if self._dvsi else ""
 
     def has_codec2(self):
         """Report whether the library decodes Codec2 audio."""
@@ -121,10 +139,12 @@ class rx(gr.basic_block):
         self._ring[:len(pcm) - k] += pcm[k:]
 
     def _ambe_decoder(self, ts):
+        if self._dvsi:
+            return _DVSIDecoder(self._lib, self._dvsi, ts)
         if not self._ambe_lib:
             return None
         if ts not in self._ambe:
-            self._ambe[ts] = ambe.Decoder(self._ambe_lib)
+            self._ambe[ts] = _LibraryDecoder(ambe.Decoder(self._ambe_lib))
         return self._ambe[ts]
 
     def _drain(self):
@@ -163,7 +183,28 @@ class rx(gr.basic_block):
                            ("errors", pmt.from_long(b.ambe_errors[i]))] + lc:
                 v = pmt.dict_add(v, pmt.intern(k), val)
             self.message_port_pub(pmt.intern("voice"), pmt.cons(v, pmt.init_u8vector(7, list(b.ambe[i]))))
-            if dec is not None and (pcm := dec.decode(b.ambe[i], b.ambe_bad[i])) is not None:
+            if dec is not None and (pcm := dec.decode(b, i)) is not None:
                 self._queue_audio(b.seconds + i * ambe.FRAME_SAMPLES / AUDIO_RATE, np.ctypeslib.as_array(pcm))
         if play and b.pcm_len:
             self._queue_audio(b.seconds, np.ctypeslib.as_array(b.pcm)[:b.pcm_len])
+
+
+class _LibraryDecoder:
+
+    def __init__(self, dec):
+        self._dec = dec
+
+    def decode(self, b, i):
+        return self._dec.decode(b.ambe[i], b.ambe_bad[i])
+
+
+class _DVSIDecoder:
+
+    def __init__(self, lib, dev, ts):
+        self._lib, self._dev, self._ts = lib, dev, ts
+        self._slots = None
+
+    def decode(self, b, i):
+        if i == 0 or self._slots is None:
+            self._slots = dvsi.voice_slots(self._lib, b.bits)
+        return self._dev.decode(self._slots[i], max(self._ts - 1, 0))

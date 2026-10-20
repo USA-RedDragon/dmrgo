@@ -10,11 +10,19 @@ GNU Radio 3.10 blocks of [dmrgo](../README.md). The module is licensed under the
 
 - `bursts`: one PDU per burst, with its timeslot, color code, kind, data type, superframe position, FEC results, Codec2 mode and call LC.
 - `voice`: one PDU per AMBE+2 frame, with its bad-frame flag.
-- `audio`: 8 kHz audio of Codec2 calls (FID 0xC2, as QRadioLink sends). The block detects the Codec2 mode, 2400 or 3200, of each call. This output is optional.
+- `audio`: 8 kHz audio of Codec2 calls (FID 0xC2, as QRadioLink sends), and of AMBE+2 calls with an AMBE+2 backend. The block detects the Codec2 mode, 2400 or 3200, of each call. This output is optional.
 
 Put a resampler before the block for other sample rates, as `examples/dmrgo_rx_file.grc` does.
 
-The module contains no AMBE+2 vocoder. To get audio of AMBE+2 calls, give the block the path of a separately installed decoder library that exports the functions that `python/dmrgo/ambe.py` describes.
+The module contains no AMBE+2 vocoder. To get audio of AMBE+2 calls, set the AMBE+2 backend of the block:
+
+| Backend | Parameters | Decoder |
+| --- | --- | --- |
+| `library` | `ambe_lib`: path of a shared library | A separately installed decoder library that exports the functions that `python/dmrgo/ambe.py` describes |
+| `serial` | `dvsi_device`, `dvsi_baud` (460800 for a ThumbDV or USB-3000, 921600 for a USB-3003) | A DVSI AMBE-3000R or AMBE-3003 chip on a serial port |
+| `ambeserver` | `ambeserver`: `host` or `host:port` (default port 2460) | The DVSI chip of an AMBEserver |
+
+The serial and AMBEserver backends speak the DVSI packet protocol through the `vocoder/dvsi` package of libdmrgo (`python/dmrgo/dvsi.py`). An AMBE-3003 decodes each timeslot on its own channel.
 
 ## Screenshots
 

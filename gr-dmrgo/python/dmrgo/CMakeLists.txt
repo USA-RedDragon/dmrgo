@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright 2026 Jacob McSwain
 
-set(DMRGO_PYTHON_SOURCES __init__.py ambe.py libdmrgo.py rx.py)
+set(DMRGO_PYTHON_SOURCES __init__.py ambe.py dvsi.py libdmrgo.py rx.py)
 
 GR_PYTHON_INSTALL(FILES ${DMRGO_PYTHON_SOURCES} DESTINATION ${GR_PYTHON_DIR}/gnuradio/dmrgo)
 

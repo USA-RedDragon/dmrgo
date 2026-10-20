@@ -43,11 +43,34 @@ parameters:
   dtype: string
   default: ''
   hide: part
+- id: ambe_backend
+  label: AMBE+2 Backend
+  dtype: enum
+  default: library
+  options: [library, serial, ambeserver]
+  option_labels: [Library, DVSI Serial, AMBEserver]
 - id: ambe_lib
   label: AMBE Decoder Library
   dtype: string
   default: ''
-  hide: part
+  hide: ${ 'part' if ambe_backend == 'library' else 'all' }
+- id: dvsi_device
+  label: DVSI Serial Device
+  dtype: string
+  default: /dev/ttyUSB0
+  hide: ${ 'none' if ambe_backend == 'serial' else 'all' }
+- id: dvsi_baud
+  label: DVSI Baud
+  dtype: enum
+  default: '460800'
+  options: ['230400', '460800', '921600']
+  option_labels: ['230400', '460800 (ThumbDV, USB-3000)', '921600 (USB-3003)']
+  hide: ${ 'none' if ambe_backend == 'serial' else 'all' }
+- id: ambeserver
+  label: AMBEserver
+  dtype: string
+  default: 127.0.0.1:2460
+  hide: ${ 'none' if ambe_backend == 'ambeserver' else 'all' }
 
 asserts:
 - ${ input_type != 'float' or int(samp_rate) in (24000, 12000, 9600) }
@@ -73,7 +96,8 @@ outputs:
 templates:
   imports: from gnuradio import dmrgo
   make: dmrgo.rx(input_type='${ input_type }', samp_rate=${ samp_rate }, tier=${ tier }, codec2_mode=${ codec2_mode },
-    audio_slot=${ audio_slot }, lib_path=${ lib_path }, ambe_lib=${ ambe_lib })
+    audio_slot=${ audio_slot }, lib_path=${ lib_path }, ambe_lib=${ ambe_lib }, ambe_backend='${ ambe_backend }',
+    dvsi_device=${ dvsi_device }, dvsi_baud=${ dvsi_baud }, ambeserver=${ ambeserver })
 
 documentation: |-
   DMR receiver of dmrgo (libdmrgo).
@@ -84,7 +108,9 @@ documentation: |-
 
   voice: one PDU per AMBE+2 frame, the 7 frame bytes and a dict with timeslot, voice_pos, index, bad, errors and the call LC.
 
-  audio: 8 kHz audio of Codec2 calls (FID 0xC2), and of other calls when AMBE Decoder Library names a separately installed decoder. Silence between calls.
+  audio: 8 kHz audio of Codec2 calls (FID 0xC2), and of other calls with an AMBE+2 backend. Silence between calls.
+
+  AMBE+2 Backend: Library decodes with the separately installed decoder that AMBE Decoder Library names (none when it is empty). DVSI Serial decodes on a DVSI AMBE-3000R or AMBE-3003 chip on a serial port, such as a ThumbDV or a DVstick. AMBEserver decodes on the chip of an AMBEserver at host:port.
 
   Codec2 Mode: Auto detects 2400 or 3200 for each call.
 
