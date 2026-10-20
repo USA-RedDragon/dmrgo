@@ -36,6 +36,34 @@ type Message struct {
 	BadCRC bool
 }
 
+// UDPIPv4 decodes the compressed UDP/IPv4 header at the start of Data and
+// returns it with the application data that follows it, which points into
+// Data. ok is false when the header is not a U_HEAD or C_HEAD with the SAP
+// UDP/IP header compression, or when Data is shorter than the compressed
+// header. (ETSI TS 102 361-3 clause 5.6)
+func (m *Message) UDPIPv4() (header pdu.UDPIPv4CompressedHeader, payload []byte, ok bool) {
+	var sap enums.ServiceAccessPointID
+	switch {
+	case m.Header.UnconfirmedDataHeader != nil:
+		sap = m.Header.UnconfirmedDataHeader.SAP
+	case m.Header.ConfirmedDataHeader != nil:
+		sap = m.Header.ConfirmedDataHeader.SAP
+	default:
+		return header, nil, false
+	}
+	if sap != enums.SAPUDPIPHeaderCompression || len(m.Data) < 5 {
+		return header, nil, false
+	}
+	var raw [9]byte
+	copy(raw[:], m.Data)
+	header = pdu.DecodeUDPIPv4CompressedHeader(raw)
+	n := header.Octets()
+	if len(m.Data) < n {
+		return pdu.UDPIPv4CompressedHeader{}, nil, false
+	}
+	return header, m.Data[n:], true
+}
+
 // Assembler collects the header and data blocks of one packet at a time on
 // one channel and returns each packet with its message CRC checked. For a
 // confirmed packet it tracks blocks by DBSN, so a retry of the failed blocks

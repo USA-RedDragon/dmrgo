@@ -90,6 +90,8 @@ The programs in [v2/examples](v2/examples) run offline on the captures in `v2/la
 - Packet data (`layer2/packet`): segmentation and reassembly of confirmed and unconfirmed packets, with response packets and selective retry:
   - `Builder.Retry` builds the later try that a SACK asks for.
   - The `Assembler` counts a block burst lost on air with `Lost`, reads the Full Message Flag, takes later tries of confirmed and short data packets, and with `AcceptBadCRC` delivers a packet whose CRC failed, as the "skip CRC" setting of some radios does.
+  - `Message.UDPIPv4` returns the compressed UDP/IPv4 header of a packet and the application data after it.
+- Position reports (`nmea`): `ParseRMC` decodes the NMEA 0183 RMC sentence that radios such as AnyTone send in a UDP datagram, and checks its checksum.
 - Voice calls (`voice`), without I/O or goroutines:
   - `Receiver` turns the bursts of one logical channel into call events: call start with where the call came from, voice bursts with their superframe position, lost count and frame quality, embedded GPS and talker alias, and call end with a reason. It handles late entry, duplicate and lost bursts, transport hints (`layer2.Hint`) and the call hang time.
   - `Transmitter` sends a call one burst per 60 ms slot: from AMBE+2 frames with the headers, embedded talker alias and GPS, padding, terminators and the transmit timeout, or as a relay of the events of a `Receiver`, with the local color code and SYNC.
@@ -331,7 +333,7 @@ The example prints its counts on the serial console once a second.
 | 5.3 | Unconfirmed data DLL bearer service | verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
 | 5.4 | Confirmed data DLL bearer service | verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
 | 5.5 | UDP/IPv4 data | verified | 6/6 passed | `v2/layer2/pdu/udp_ipv4_compressed.go`, `v2/enums/said.go`, `v2/enums/daid.go`, `v2/enums/spid.go`, `v2/enums/dpid.go` |
-| 5.6 | UDP/IPv4 header compression | verified | 2/2 passed | `v2/layer2/pdu/udp_ipv4_compressed.go`, `v2/enums/said.go`, `v2/enums/daid.go`, `v2/enums/spid.go`, `v2/enums/dpid.go` |
+| 5.6 | UDP/IPv4 header compression | verified | 4/4 passed | `v2/layer2/pdu/udp_ipv4_compressed.go`, `v2/layer2/packet/assembler.go`, `v2/enums/said.go`, `v2/enums/daid.go`, `v2/enums/spid.go`, `v2/enums/dpid.go` |
 | 6.1 | Defined Data | verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
 | 6.2 | Raw data | verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
 | 6.3 | Status/precoded data | verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |

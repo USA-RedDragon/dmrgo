@@ -26,6 +26,7 @@ import (
 	layer2_packet "github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	layer2_pdu "github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
+	nmea "github.com/USA-RedDragon/dmrgo/v2/nmea"
 	trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
 	vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
@@ -330,6 +331,7 @@ var api = [...]any{
 	(*layer2_packet.Builder).NewResponse,
 	(*layer2_packet.Builder).Retry,
 	(*layer2_packet.Builder).Segment,
+	(*layer2_packet.Message).UDPIPv4,
 	(*layer2_packet.ResponseData).AppendEncode,
 	(*layer2_packet.ResponseData).AppendRetryBlocks,
 	(*layer2_packet.ResponseData).Encode,
@@ -690,6 +692,7 @@ var api = [...]any{
 	layer3.SourceType.String,
 	layer3.TalkerAliasDataFormat.String,
 	layer3.VoiceServiceOptions.Field,
+	nmea.ParseRMC,
 	(*trunk.Access).Applies,
 	(*trunk.ChannelPlan).Add,
 	(*trunk.ChannelPlan).AddCdef,

@@ -84,6 +84,8 @@
 //   - trunk: the Tier III channel tables, a Follower that follows the
 //     calls of a trunked site, an MS that registers and makes calls, and a
 //     TSCC that runs a single site.
+//   - nmea: the NMEA 0183 RMC sentence that radios send as a position
+//     report in a data packet.
 //   - vocoder: the Codec interface and the AMBE+2 FEC of a voice slot.
 //   - vocoder/codec2: a Codec2 Codec (needs cgo and libcodec2).
 //
@@ -111,6 +113,8 @@
 //     without address fields.
 //   - csbk.ErrBusy, csbk.ErrNoAddresses: returned by the requests of the
 //     csbk machines.
+//   - nmea.ErrSentence, nmea.ErrChecksum, nmea.ErrField: returned by
+//     nmea.ParseRMC.
 //   - vocoder.ErrUnknownCodec, codec2.ErrUnavailable,
 //     codec2.ErrUnsupportedMode, codec2.ErrFrameLength, codec2.ErrClosed:
 //     returned by the vocoders.

@@ -361,6 +361,7 @@
 		dmrgo_layer3_voice_service_options_encode;
 		dmrgo_layer3_voice_service_options_field;
 		dmrgo_layer3_voice_service_options_string;
+		dmrgo_nmea_parse_rmc;
 		dmrgo_packet_append_bursts;
 		dmrgo_packet_assembler_add;
 		dmrgo_packet_assembler_add_burst;
@@ -390,6 +391,7 @@
 		dmrgo_packet_builder_segment_need;
 		dmrgo_packet_bursts;
 		dmrgo_packet_decode_response_data;
+		dmrgo_packet_message_udp_ipv4;
 		dmrgo_packet_new_assembler;
 		dmrgo_packet_new_builder;
 		dmrgo_packet_new_packet;
