@@ -82,7 +82,8 @@
 //     request with its answer and retries, the answers of a radio,
 //     Pre_CSBKs and the wakeup of a BS.
 //   - trunk: the Tier III channel tables, a Follower that follows the
-//     calls of a trunked site, and an MS that registers and makes calls.
+//     calls of a trunked site, an MS that registers and makes calls, and a
+//     TSCC that runs a single site.
 //   - vocoder: the Codec interface and the AMBE+2 FEC of a voice slot.
 //   - vocoder/codec2: a Codec2 Codec (needs cgo and libcodec2).
 //
