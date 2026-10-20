@@ -140,9 +140,10 @@ type softExt struct {
 	// detection again of coh.
 	known [layer2.BurstBits]bool
 	// ext and next hold the extrinsic ratios and the new channel ratios of
-	// a data pass.
+	// a data pass, and pch the channel ratios that its priors leave.
 	ext  [layer2.BurstBits]float32
 	next [layer2.BurstBits]int16
+	pch  [layer2.BurstBits]int16
 }
 
 // The stages of a softExt.
@@ -421,16 +422,22 @@ const (
 // ratios of its grid decode as priors, up to x.passes times, as
 // the engine of Tier3 does, and decodes it from the new ratios.
 func (x *softExt) dataPasses(c *leanCore, b *Burst, cc enums.ColorCode, ccOK bool) {
-	ch := x.llr
+	// ch is in x, as a local of its size is on the heap under TinyGo.
+	ch := &x.pch
+	*ch = x.llr
 	// The passes take their priors from the BPTC block alone, so the slot
 	// type keeps the decode of the first detection: the priors of a block
 	// that does not decode mislead the detection of the bits beside it.
-	fixed, data, st := b.Fixed, b.Data, ch
+	fixed, data := b.Fixed, b.Data
+	var st [20]int16
+	for i := range st {
+		st[i] = ch[98+i+i/10*48]
+	}
 	for range x.passes {
 		if !x.bptcRetry(b) || !x.affords(extPassCredit) {
 			break
 		}
-		x.soft.bptcExtrinsic(&ch, &x.ext)
+		x.soft.bptcExtrinsic(ch, &x.ext)
 		x.work += extWorkGrid
 		if !x.coh.refineData(&x.ext, cohDataPrior, &x.next) {
 			break
@@ -455,7 +462,7 @@ func (x *softExt) dataPasses(c *leanCore, b *Burst, cc enums.ColorCode, ccOK boo
 		m := byte(0x80) >> (q % 8)
 		b.Fixed[q/8] = b.Fixed[q/8]&^m | fixed[q/8]&m
 		b.Data[q/8] = b.Data[q/8]&^m | data[q/8]&m
-		x.llr[q] = st[q]
+		x.llr[q] = st[i]
 	}
 }
 

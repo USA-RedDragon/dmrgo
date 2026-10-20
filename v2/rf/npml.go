@@ -35,8 +35,9 @@ type npml struct {
 	rho float32
 	n   int
 	// alpha holds the log state metrics of the forward pass, by symbol and
-	// digit of the symbol.
+	// digit of the symbol, and x the symbols of the run.
 	alpha [burstSymbols + 1][4]float32
+	x     [burstSymbols + 1]float32
 }
 
 // fitSync adds the noise of the SYNC field with pattern p of the slot of
@@ -87,7 +88,7 @@ func (q *npml) fill(c *leanCore, llr *[layer2.BurstBits]int16) {
 	dev := c.dev
 	// Symbol i of the run is slot symbol cachSymbols-1+i: the last of the
 	// CACH starts it with its own likelihood.
-	var x [burstSymbols + 1]float32
+	x := &q.x
 	for i := range x {
 		x[i] = c.sym(c.base+int64(cachSymbols-1+i)) - c.dcHz
 	}

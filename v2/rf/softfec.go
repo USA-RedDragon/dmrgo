@@ -395,9 +395,11 @@ type softOSDScratch struct {
 	// btab, when not nil, holds byte tables of the non-basis bits in place
 	// of the nibble tables in tab.
 	btab *[softParWords * 8 * 256]int32
-	// par holds the non-basis code bits in reliability order, prow the
-	// work rows and phard the hard decisions on them, bit p for par[p].
+	// par holds the non-basis code bits in reliability order, pm their
+	// magnitudes, prow the work rows and phard the hard decisions on them,
+	// bit p for par[p].
 	par   [softOSDMaxN]int16
+	pm    [softOSDMaxN]int32
 	prow  [softOSDMaxK][softParWords]uint64
 	phard [softParWords]uint64
 	pcand [4][softParWords]uint64
@@ -460,17 +462,16 @@ func (id softOSDID) reprocess(s *softOSDScratch, order, window, listMax int) {
 		basis[j>>6] |= 1 << (j & 63)
 	}
 	p := 0
-	var pm [softOSDMaxN]int32
 	for _, j := range s.order[:c.n] {
 		if basis[j>>6]>>(j&63)&1 == 0 {
-			s.par[p], pm[p] = j, s.mag[j]
+			s.par[p], s.pm[p] = j, s.mag[j]
 			p++
 		}
 	}
 	if s.btab != nil {
-		softByteTables(s.btab, pm[:np])
+		softByteTables(s.btab, s.pm[:np])
 	} else {
-		softNibbleTables(s.tab, pm[:np])
+		softNibbleTables(s.tab, s.pm[:np])
 	}
 	s.phard = [softParWords]uint64{}
 	for q, j := range s.par[:np] {

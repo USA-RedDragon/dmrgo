@@ -596,6 +596,10 @@ func (s *cohStage) seedDeviation(c *leanCore, k0, k1 int) bool {
 	return true
 }
 
+// cohFitScales is the most scales of scaleFit: the far grid has the most,
+// 2*ln(3)/0.05+1 of them.
+const cohFitScales = 48
+
 // scaleFit returns the log of the factor of the scale of the audio ring at
 // which the waveform of the known symbols k0 to k1 at t0 explains the most
 // of the samples, on a grid of step to span either way, by a parabola
@@ -603,10 +607,8 @@ func (s *cohStage) seedDeviation(c *leanCore, k0, k1 int) bool {
 // I/Q it scales the modulation index hFit of the model instead, for the
 // windows of a SYNC, and leaves them at the last index of the grid.
 func (s *cohStage) scaleFit(k0, k1 int, span, step float64) (float64, float64) {
-	// The far grid has the most scales, 2*ln(3)/0.05+1 of them.
-	var ampBuf, noiseBuf [48]float64
-	n := min(int(math.Round(2*span/step))+1, len(ampBuf))
-	amp, noise := ampBuf[:n], noiseBuf[:n]
+	n := min(int(math.Round(2*span/step))+1, cohFitScales)
+	amp, noise := s.amp[:n], s.noise[:n]
 	best := 0
 	s.trialing = s.ph != nil
 	for i := range amp {
