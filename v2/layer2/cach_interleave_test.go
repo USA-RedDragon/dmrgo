@@ -84,9 +84,7 @@ func TestCACHInterleave_ATPosition(t *testing.T) {
 	}
 }
 
-// TestCACHInterleave_FigureB9 checks every position against the figure,
-// where the transmit row reads TX(23), sent first, to TX(0) (ETSI TS 102
-// 361-1 Figure B.9).
+// ETSI TS 102 361-1 Figure B.9
 func TestCACHInterleave_FigureB9(t *testing.T) {
 	t.Parallel()
 	txRow := []string{

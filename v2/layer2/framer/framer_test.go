@@ -41,9 +41,6 @@ func burstBits(b [33]byte) []unpacked.Bit {
 	return out
 }
 
-// pack returns stream packed, the first bit in the most significant bit of
-// byte 0, the form that Search and Framer take. The last byte is padded
-// with 0 bits.
 func pack(stream []unpacked.Bit) []byte {
 	out := make([]byte, (len(stream)+7)/8)
 	unpacked.PackAt(out, 0, stream)

@@ -351,8 +351,7 @@ func TestFullLinkControl_TalkerAliasBlock_String(t *testing.T) {
 func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 	t.Parallel()
 
-	// ETSI TS 102 361-2 Table 7.4: 5-bit data length (bits 2-6), then the
-	// 49-bit data whose MSB is bit 7.
+	// ETSI TS 102 361-2 Table 7.4
 	tests := []struct {
 		name       string
 		dataLength int

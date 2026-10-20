@@ -52,9 +52,6 @@ func TestBurst_Rate34Data_Full144Bits_RoundTrip(t *testing.T) {
 	}
 }
 
-// The trellis result of a Rate 3/4 block is in FEC.Payload. The block has
-// no PDU-level FEC, so FEC.PDU stays empty and Aggregate counts the trellis
-// corrections once.
 func TestBurst_Rate34Data_FEC(t *testing.T) {
 	t.Parallel()
 
@@ -138,7 +135,6 @@ func TestBurst_Rate1Data_Full192Bits_RoundTrip(t *testing.T) {
 	}
 }
 
-// trellisInfo returns the 196 rate 3/4 trellis coded bits of info.
 func trellisInfo(info [144]unpacked.Bit) [196]unpacked.Bit {
 	enc := trellis.Encode([18]byte(unpacked.Pack(info[:])))
 	var bits [196]unpacked.Bit

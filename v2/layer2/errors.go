@@ -36,12 +36,9 @@ var (
 	// ErrVoiceTerminated is returned by VoiceTransmitter methods called after
 	// Terminate.
 	ErrVoiceTerminated = errors.New("voice transmission already terminated")
-	// errNotPDU is returned by Burst.Encode and BuildBurst for Data of a type
-	// that package pdu does not define.
-	errNotPDU = errors.New("data is not a PDU type of package pdu")
+	errNotPDU          = errors.New("data is not a PDU type of package pdu")
 )
 
-// wrapError is an error with its own message that wraps err.
 type wrapError struct {
 	msg string
 	err error
@@ -55,8 +52,6 @@ func (e *wrapError) Unwrap() error {
 	return e.err
 }
 
-// reservedDataTypeError is ErrReservedDataType for a burst of data type dt.
-// It is one byte, so it converts to an error without allocating.
 type reservedDataTypeError struct {
 	dt enums.DataType
 }
@@ -70,15 +65,10 @@ func (e reservedDataTypeError) Unwrap() error {
 	return ErrReservedDataType
 }
 
-// colorCodeMismatchError is ErrColorCodeMismatch for a burst of color code
-// got, in the high 4 bits, and the expected color code, in the low 4 bits.
-// It is one byte, so it converts to an error without allocating.
 type colorCodeMismatchError struct {
 	gotWant uint8
 }
 
-// colorCodeMismatch returns ErrColorCodeMismatch with got and want, or
-// ErrColorCodeMismatch alone when one of them does not fit in 4 bits.
 func colorCodeMismatch(got, want enums.ColorCode) error {
 	if got > 0x0F || want > 0x0F {
 		return ErrColorCodeMismatch
@@ -96,8 +86,6 @@ func (e colorCodeMismatchError) Unwrap() error {
 	return ErrColorCodeMismatch
 }
 
-// The errors of the package that are not exported. Each is a static value,
-// so a call that fails does not allocate. They carry no values.
 var (
 	errDataBurstNoSync = errors.New("a data burst needs a data SYNC pattern; only a decoded data burst with an EMB has SyncNone")
 	errNoData          = errors.New("data burst has no Data")
@@ -121,16 +109,12 @@ var (
 	errRawBurstBPTCReservedRange = &dmrgo.FieldRangeError{Type: "RawBurst", Field: "BPTCReserved", Bits: 3}
 )
 
-// The joins of a decode error with ErrColorCodeMismatch, which
-// DecodeFromBytesWith returns when both happen. They are built once.
 var (
 	errReservedColorCode      = errors.Join(ErrReservedDataType, ErrColorCodeMismatch)
 	errUnknownKindColorCode   = errors.Join(errUnknownKind, ErrColorCodeMismatch)
 	errVoicePositionColorCode = errors.Join(errVoicePosition, ErrColorCodeMismatch)
 )
 
-// joinColorCode returns the static join of the decode error err with
-// ErrColorCodeMismatch.
 func joinColorCode(err error) error {
 	if _, ok := err.(reservedDataTypeError); ok {
 		return errReservedColorCode

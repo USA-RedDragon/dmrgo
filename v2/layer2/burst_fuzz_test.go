@@ -12,12 +12,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
-// ambiguousSync reports a decode whose SYNC classification can change on
-// re-encode: the first center matched a SYNC pattern with bit errors, a
-// voice burst B-F re-encoded with an embedded field within the SYNC match
-// threshold, or a burst without a SYNC pattern whose EMB Encode writes back
-// corrected, so that the EMB checks of a data burst with an EMB give another
-// result. A damaged SYNC burst and such a voice burst look the same.
 func ambiguousSync(first, second *layer2.Burst) bool {
 	if first.SyncPattern != enums.SyncNone {
 		return first.SyncDistance > 0
@@ -25,8 +19,6 @@ func ambiguousSync(first, second *layer2.Burst) bool {
 	return first.Kind != second.Kind || second.SyncPattern != enums.SyncNone
 }
 
-// fuzzCorpus returns the 33-octet first values of the corpus files in
-// testdata/fuzz/name.
 func fuzzCorpus(tb testing.TB, name string) []layer2.RawBurst {
 	tb.Helper()
 	files, err := filepath.Glob(filepath.Join("testdata", "fuzz", name, "*"))
@@ -54,9 +46,6 @@ func fuzzCorpus(tb testing.TB, name string) []layer2.RawBurst {
 	return out
 }
 
-// checkBurstDecode checks that a burst decoded from raw and encoded again
-// decodes to a burst that encodes to the same octets, unless its center is
-// ambiguous as ambiguousSync describes.
 func checkBurstDecode(t *testing.T, raw []byte) {
 	if len(raw) != 33 {
 		return
@@ -82,8 +71,6 @@ func checkBurstDecode(t *testing.T, raw []byte) {
 	}
 }
 
-// FuzzBurstDecode decodes any 33 octets and checks them with
-// checkBurstDecode.
 func FuzzBurstDecode(f *testing.F) {
 	for _, r := range captureFrames(f) {
 		f.Add(r[:])
@@ -91,9 +78,6 @@ func FuzzBurstDecode(f *testing.F) {
 	f.Fuzz(checkBurstDecode)
 }
 
-// fuzzOptions returns the DecodeOptions of the fuzz values: any kind,
-// voice position, data type, threshold and expected color code, valid or
-// not.
 func fuzzOptions(kind, pos, dt, thr, cc byte) *layer2.DecodeOptions {
 	o := &layer2.DecodeOptions{
 		Kind:          layer2.Kind(kind % 5),
@@ -111,14 +95,11 @@ func fuzzOptions(kind, pos, dt, thr, cc byte) *layer2.DecodeOptions {
 	return o
 }
 
-// decodeWithSeed is one seed of FuzzBurstDecodeWith.
 type decodeWithSeed struct {
 	raw                    []byte
 	kind, pos, dt, thr, cc byte
 }
 
-// decodeWithSeeds returns the seeds of FuzzBurstDecodeWith: each burst of
-// the captures with a spread of options.
 func decodeWithSeeds(tb testing.TB) []decodeWithSeed {
 	tb.Helper()
 	frames := captureFrames(tb)
@@ -130,14 +111,6 @@ func decodeWithSeeds(tb testing.TB) []decodeWithSeed {
 	return seeds
 }
 
-// checkBurstDecodeWith decodes raw with the options of the fuzz values. The
-// error is ErrReservedDataType, ErrColorCodeMismatch exactly when the
-// expected color code differs from the one of the burst, or an error for
-// an invalid kind or voice position. A burst that encodes decodes, with the
-// same options, to a burst that encodes to the same octets. The options fix
-// the classification, except that a data burst can take its center as a
-// SYNC or an EMB, and without a kind or voice position the center can be
-// ambiguous as ambiguousSync describes.
 func checkBurstDecodeWith(t *testing.T, raw []byte, kind, pos, dt, thr, cc byte) {
 	if len(raw) != 33 {
 		return
@@ -182,8 +155,6 @@ func checkBurstDecodeWith(t *testing.T, raw []byte, kind, pos, dt, thr, cc byte)
 	}
 }
 
-// FuzzBurstDecodeWith decodes any 33 octets with any DecodeOptions and
-// checks them with checkBurstDecodeWith.
 func FuzzBurstDecodeWith(f *testing.F) {
 	for _, s := range decodeWithSeeds(f) {
 		f.Add(s.raw, s.kind, s.pos, s.dt, s.thr, s.cc)

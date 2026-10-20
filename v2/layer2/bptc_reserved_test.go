@@ -9,14 +9,9 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// Capacity Max bursts from sdrtrunk recordings of a Motorola Capacity Max
-// control channel (CC 6). They decode with 0 FEC corrections and R(2)=1.
-// The CSBK CRC fails because RAS replaces it with a keyed check.
 const (
-	capMaxCSBKAloha = "0226983139d852c195e80d7018edff57d75df5da04188040c1588182010209e53a"
-	capMaxCSBK      = "00429eb534f051e9a4b84b3018edff57d75df5da047981c0e2a881860cca09f528"
-	// capMaxVoiceLCHeader has 0 BPTC corrections and 1 corrected slot type
-	// bit.
+	capMaxCSBKAloha     = "0226983139d852c195e80d7018edff57d75df5da04188040c1588182010209e53a"
+	capMaxCSBK          = "00429eb534f051e9a4b84b3018edff57d75df5da047981c0e2a881860cca09f528"
 	capMaxVoiceLCHeader = "09089bea12c010685560cb80984dff57d75df5daff18283015700b410413544161"
 )
 

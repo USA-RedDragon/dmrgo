@@ -12,7 +12,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// buildAndEncode builds a burst of d with BuildBurst and with Burst.Encode.
 func buildAndEncode(d layer2.Data) error {
 	r, err := layer2.BuildBurst(d, 1, layer2.SyncSourceBS)
 	if err != nil {
@@ -34,8 +33,6 @@ func buildAndEncode(d layer2.Data) error {
 	return nil
 }
 
-// onStack returns a func that copies seed into a local variable and builds
-// a burst of it, so that the local variable allocates if it escapes.
 func onStack[T any, P interface {
 	*T
 	layer2.Data
@@ -46,8 +43,6 @@ func onStack[T any, P interface {
 	}
 }
 
-// TestAllocsBuildBurst checks that BuildBurst and Burst.Encode keep a
-// stack-local PDU of each Data type of package pdu off the heap.
 func TestAllocsBuildBurst(t *testing.T) {
 	lc := must(pdu.NewVoiceLC(true, 91, 3191868, layer3.MotorolaServiceOptions()))
 	term := lc

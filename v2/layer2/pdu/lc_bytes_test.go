@@ -92,7 +92,6 @@ func TestLCBytes_ClearReservedOnFLCOChange(t *testing.T) {
 	}
 }
 
-// diffMask returns the bits that differ between a and b.
 func diffMask(a, b [9]byte) [9]byte {
 	var d [9]byte
 	for i := range a {

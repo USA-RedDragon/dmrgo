@@ -10,8 +10,6 @@ import (
 	"testing"
 )
 
-// TestVoiceReceiverFuzzCorpus runs the seeds and the testdata/fuzz inputs
-// of FuzzVoiceReceiver, because TinyGo does not run fuzz tests.
 func TestVoiceReceiverFuzzCorpus(t *testing.T) {
 	t.Parallel()
 	files, err := filepath.Glob("testdata/fuzz/FuzzVoiceReceiver/*")

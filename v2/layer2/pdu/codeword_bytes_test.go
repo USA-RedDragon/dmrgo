@@ -9,8 +9,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// matrixParity computes the RS(12,9) parity with the parity columns of the
-// ETSI TS 102 361-1 Table B.18 generator matrix, one row per LC octet.
+// ETSI TS 102 361-1 Table B.18
 func matrixParity(lc [9]byte) [3]byte {
 	rsGenerator := [9][3]byte{
 		{0x1C, 0xBC, 0xFD},

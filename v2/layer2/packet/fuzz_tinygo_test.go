@@ -4,8 +4,6 @@ package packet_test
 
 import "testing"
 
-// TestTinyGoFuzzSeeds replays the seeds of the fuzz tests, which TinyGo
-// does not run.
 func TestTinyGoFuzzSeeds(t *testing.T) {
 	t.Parallel()
 

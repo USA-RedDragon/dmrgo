@@ -11,8 +11,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// buildRCEmbeddedData constructs valid 32-bit embedded data for RC with
-// a given 4-bit payload, encoded through Single Burst BPTC with odd parity.
 func buildRCEmbeddedData(payload byte) [4]byte {
 	crcVal := crc.CRC7([]byte{payload << 4}, 4) ^ pdu.CRC7MaskRC
 	info := uint16(payload&0x0F)<<7 | uint16(crcVal&0x7F)
@@ -68,7 +66,6 @@ func TestRC_CombinedFEC(t *testing.T) {
 	embData := buildRCEmbeddedData(3)
 	fecResult := layer2.DecodeEmbeddedRC(embData).FEC
 
-	// The CRC-7 only detects errors, so BitsChecked is the BPTC's 32.
 	expectedBitsChecked := 32
 	if fecResult.BitsChecked != expectedBitsChecked {
 		t.Errorf("BitsChecked: got %d, want %d", fecResult.BitsChecked, expectedBitsChecked)
@@ -221,9 +218,7 @@ func TestRC_String(t *testing.T) {
 	}
 }
 
-// buildStandaloneRCBurst lays out a standalone RC burst by hand: EMB at bits
-// 84 to 91 and 172 to 179, RC at 92 to 107 and 156 to 171, and the RC SYNC
-// at 108 to 155 (ETSI TS 102 361-1 clause 6.4.1, Table E.12).
+// ETSI TS 102 361-1 clause 6.4.1, Table E.12
 func buildStandaloneRCBurst(cc int, cmd enums.RCCommand) [33]byte {
 	var packed [33]byte
 	embBits := must((&pdu.EmbeddedSignalling{

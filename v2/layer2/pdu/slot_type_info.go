@@ -72,7 +72,6 @@ func DecodeSlotTypeCodeword(cw uint32) (SlotTypeInfo, fec.Result) {
 	return SlotTypeInfo(st.ColorCode<<4) | SlotTypeInfo(st.DataType), st.FEC
 }
 
-// The errors of the SlotTypeInfo setters.
 var (
 	errSlotTypeInfoColorCodeRange = &dmrgo.FieldRangeError{Type: "SlotTypeInfo", Field: fieldColorCode, Bits: 4}
 	errSlotTypeInfoDataTypeRange  = &dmrgo.FieldRangeError{Type: "SlotTypeInfo", Field: "DataType", Bits: 4}

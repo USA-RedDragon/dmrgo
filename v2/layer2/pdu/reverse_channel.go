@@ -36,8 +36,6 @@ func DecodeReverseChannel(info [2]byte) ReverseChannel {
 	return result
 }
 
-// errReverseChannelRCCommandRange is the error of an Encode whose RCCommand
-// does not fit in 4 bits.
 var errReverseChannelRCCommandRange = &dmrgo.FieldRangeError{Type: "ReverseChannel", Field: "RCCommand", Bits: 4}
 
 // Encode encodes an RC PDU into its 11 information bits: the 4-bit RC command

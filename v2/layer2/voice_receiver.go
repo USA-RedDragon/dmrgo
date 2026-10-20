@@ -61,8 +61,6 @@ func (r *VoiceReceiver) ReceiveInto(dst *pdu.FullLinkControl, p *pdu.FullLinkCon
 	return true, nil
 }
 
-// receive places b in the superframe and returns the LC octets and the
-// embedded LC result when b completes an embedded LC, with done set.
 func (r *VoiceReceiver) receive(b *Burst) (lc [9]byte, res fec.Result, done bool, err error) {
 	switch {
 	case b.Kind == KindReverseChannel:

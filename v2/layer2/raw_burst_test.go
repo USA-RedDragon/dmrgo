@@ -34,8 +34,6 @@ func isBPTC(dt enums.DataType) bool {
 	return dt != enums.DataTypeRate34 && dt != enums.DataTypeRate1 && !dt.IsReserved()
 }
 
-// sameBits reports whether a and b agree outside the burst bit ranges in
-// skip, each given as [start, end).
 func sameBits(a, b layer2.RawBurst, skip ...[2]int) bool {
 	x := [264]unpacked.Bit(unpacked.Unpack(a[:]))
 	y := [264]unpacked.Bit(unpacked.Unpack(b[:]))

@@ -67,13 +67,10 @@ func Search(stream []byte, nbits, start, threshold int) (m Match, ok bool) {
 	return search(stream, clampBits(stream, nbits), start, threshold)
 }
 
-// clampBits returns nbits limited to the 8*len(stream) bits of stream, and
-// 0 for a negative nbits.
 func clampBits(stream []byte, nbits int) int {
 	return max(0, min(nbits, len(stream)*8))
 }
 
-// search is Search on the first n bits of stream.
 func search(stream []byte, n, start, threshold int) (m Match, ok bool) {
 	if threshold < 0 {
 		threshold = layer2.DefaultSyncThreshold
@@ -195,8 +192,6 @@ func (f *Framer) Write(stream []byte, nbits int) []Burst {
 // room for the bursts.
 func (f *Framer) AppendBursts(dst []Burst, stream []byte, nbits int) []Burst {
 	nbits = clampBits(stream, nbits)
-	// Fewer than f.pre+layer2.BurstBits+8 bits stay in f.buf between
-	// pieces, so New leaves room for at least one more bit.
 	for from := 0; from < nbits && f.n < cap(f.buf)*8; {
 		k := min(nbits-from, cap(f.buf)*8-f.n)
 		dst = f.appendPiece(dst, stream, from, k)
@@ -205,8 +200,6 @@ func (f *Framer) AppendBursts(dst []Burst, stream []byte, nbits int) []Burst {
 	return dst
 }
 
-// appendPiece adds the k bits of stream from bit from, which fit in the
-// room of f.buf, and appends the bursts they complete to dst.
 func (f *Framer) appendPiece(dst []Burst, stream []byte, from, k int) []Burst {
 	f.buf = f.buf[:(f.n+k+7)/8]
 	if f.n&7 == 0 && from&7 == 0 {
@@ -279,8 +272,6 @@ func (f *Framer) cut() Burst {
 	return b
 }
 
-// trim drops the whole bytes of f.buf before the next burst or SYNC search,
-// so that the bits it keeps keep their place in their byte.
 func (f *Framer) trim() {
 	keep := f.search - f.pre - SyncOffset
 	if f.locked {

@@ -4,8 +4,6 @@ package pdu_test
 
 import "testing"
 
-// TestFuzzSeeds runs the fuzz tests of the package on their seeds, which
-// TinyGo does not do because its F.Fuzz does not run the fuzz function.
 func TestFuzzSeeds(t *testing.T) {
 	t.Parallel()
 

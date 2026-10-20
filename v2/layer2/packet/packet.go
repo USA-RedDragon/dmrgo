@@ -9,18 +9,12 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// maxBlocks is the largest number of blocks that follow a header: the
-// Blocks To Follow element has 7 bits.
 const maxBlocks = 127
 
-// maxBlocksPerPacket is maxBlocks under the name that NewBuilder and
-// NewAssembler, whose parameter is maxBlocks, use.
 const maxBlocksPerPacket = maxBlocks
 
-// maxBlockOctets is the most octets that a block holds: 24, for rate 1.
 const maxBlockOctets = 24
 
-// crcOctets is the length of the message CRC at the end of the last block.
 const crcOctets = 4
 
 // Packet is a header and the data blocks that follow it. Each block is a
@@ -31,9 +25,7 @@ type Packet struct {
 	Blocks []layer2.Data  // the data blocks that follow the header
 }
 
-// blockOctets returns the user data octets of one block: 12, 18 or 24 for
-// rate 1/2, 3/4 and 1, and 2 less for a confirmed block, which starts with
-// the DBSN and CRC-9 (ETSI TS 102 361-1 clause 8.2.2.1, clause 8.2.2.2).
+// ETSI TS 102 361-1 clause 8.2.2.1, clause 8.2.2.2
 func blockOctets(rate enums.DataType, confirmed bool) (int, error) {
 	var n int
 	switch rate {
@@ -57,15 +49,11 @@ func blockOctets(rate enums.DataType, confirmed bool) (int, error) {
 	return n, nil
 }
 
-// appendMessageCRC appends the 32-bit message CRC over data, the user data
-// and pad octets, least significant octet first (ETSI TS 102 361-1 clause
-// B.3.9, Figure B.8C).
+// ETSI TS 102 361-1 clause B.3.9, Figure B.8C
 func appendMessageCRC(data []byte) []byte {
 	return binary.LittleEndian.AppendUint32(data, crc.CRC32(data))
 }
 
-// checkMessageCRC reports whether the last 4 octets of data are the message
-// CRC of the octets before them.
 func checkMessageCRC(data []byte) bool {
 	if len(data) < crcOctets {
 		return false
@@ -74,9 +62,7 @@ func checkMessageCRC(data []byte) bool {
 	return crc.CRC32(data[:n]) == binary.LittleEndian.Uint32(data[n:])
 }
 
-// layout returns the number of blocks and pad octets for a payload of n
-// octets in blocks of per octets: the payload, the pad and the 4-octet
-// message CRC exactly fill the blocks (ETSI TS 102 361-1 clause 8.2.2.1).
+// ETSI TS 102 361-1 clause 8.2.2.1
 func layout(n, per int) (blocks, pad int) {
 	blocks = (n + crcOctets + per - 1) / per
 	return blocks, blocks*per - crcOctets - n
@@ -143,9 +129,6 @@ func NewBuilder(maxBlocks int) *Builder {
 	}
 }
 
-// retryStore holds the header and block list of the Packet that
-// Builder.Retry returns, apart from the storage of Segment, so that a
-// retry does not change the packet it resends.
 type retryStore struct {
 	confirmed pdu.ConfirmedDataHeader
 	defined   pdu.DefinedDataHeader
@@ -223,8 +206,6 @@ func (b *Builder) Retry(p *Packet, rd *ResponseData) (Packet, error) {
 	return Packet{Header: h, Blocks: b.retry.blocks[:n]}, nil
 }
 
-// block fills block i of the storage for its chunk length and returns it.
-// A confirmed block gets DBSN i.
 func (b *Builder) block(i int, chunk []byte, confirmed bool) layer2.Data {
 	dbsn := uint8(i & 0x7F)
 	switch len(chunk) {
@@ -255,8 +236,6 @@ func (b *Builder) block(i int, chunk []byte, confirmed bool) layer2.Data {
 	}
 }
 
-// setLayout sets the block count and pad fields of a copy of the sub-header
-// of h in the storage of b, and points h at the copy.
 func (b *Builder) setLayout(h *pdu.DataHeader, n int, rate enums.DataType) (bool, error) {
 	confirmed, ok := isConfirmed(h)
 	if !ok {
@@ -298,8 +277,6 @@ func (b *Builder) setLayout(h *pdu.DataHeader, n int, rate enums.DataType) (bool
 	return confirmed, nil
 }
 
-// isConfirmed reports whether h is a confirmed or SARQ header. ok is false
-// for a header that does not carry segmented data.
 func isConfirmed(h *pdu.DataHeader) (confirmed, ok bool) {
 	switch {
 	case h.Format == pdu.FormatUnconfirmed && h.UnconfirmedDataHeader != nil:
@@ -330,9 +307,7 @@ func blocksOf(h *pdu.DataHeader) int {
 	return 0
 }
 
-// fullMessage reports whether h has its Full Message Flag set, or has no
-// such flag: true for the first try of a packet, false for a later try
-// (ETSI TS 102 361-1 clause 9.3.20).
+// ETSI TS 102 361-1 clause 9.3.20
 func fullMessage(h *pdu.DataHeader) bool {
 	switch {
 	case h.UnconfirmedDataHeader != nil && h.Format == pdu.FormatUnconfirmed:

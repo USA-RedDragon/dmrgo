@@ -9,7 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// The kinds of FuzzSmallPDU.
 const (
 	smallEMB = iota
 	smallSlotType
@@ -25,17 +24,11 @@ const (
 	smallKinds
 )
 
-// FuzzSmallPDU checks the decoders and encoders of the PDUs that are not a
-// 12-octet BPTC payload on any input, as FuzzBPTCPDU does: the EMB, slot
-// type, Short LC, TACT, RC, UDP/IPv4 compressed header, Rate 3/4 and Rate 1
-// data blocks and GPS Info, and the EMB and slot type codeword decoders and
-// setters.
 func FuzzSmallPDU(f *testing.F) {
 	smallSeeds(f, func(kind uint8, data []byte) { f.Add(kind, data) })
 	f.Fuzz(fuzzSmallPDU)
 }
 
-// smallSeeds calls add with each seed of FuzzSmallPDU.
 func smallSeeds(tb testing.TB, add func(kind uint8, data []byte)) {
 	for _, b := range captureBursts(tb) {
 		p, _ := b.Sync()
@@ -69,7 +62,6 @@ func smallSeeds(tb testing.TB, add func(kind uint8, data []byte)) {
 	}
 }
 
-// fuzzSmallPDU is the body of FuzzSmallPDU.
 func fuzzSmallPDU(t *testing.T, kind uint8, data []byte) {
 	var in [24]byte
 	copy(in[:], data)
@@ -101,9 +93,6 @@ func fuzzSmallPDU(t *testing.T, kind uint8, data []byte) {
 	}
 }
 
-// checkEMBCodeword fails t unless DecodeEMBCodeword of cw corrects to a
-// codeword at the distance that it reports, the info decodes back from its
-// own codeword, and the setters of EMBInfo take the fields of v.
 func checkEMBCodeword(t *testing.T, cw uint16, v byte) {
 	t.Helper()
 	info, res := pdu.DecodeEMBCodeword(cw)
@@ -133,10 +122,6 @@ func checkEMBCodeword(t *testing.T, cw uint16, v byte) {
 	}
 }
 
-// checkSlotTypeCodeword fails t unless DecodeSlotTypeCodeword of the low 20
-// bits of cw corrects to a codeword at the distance that it reports, the
-// info decodes back from its own codeword, and the setters of SlotTypeInfo
-// take the color code cc and the data type dt.
 func checkSlotTypeCodeword(t *testing.T, cw uint32, cc, dt byte) {
 	t.Helper()
 	info, res := pdu.DecodeSlotTypeCodeword(cw)
@@ -167,9 +152,6 @@ func checkSlotTypeCodeword(t *testing.T, cw uint32, cc, dt byte) {
 	}
 }
 
-// checkRate34 fails t unless the Rate 3/4 block b keeps every bit through
-// Decode and Encode and a confirmed block made from its DBSN and user data
-// reads them back and passes its CRC-9.
 func checkRate34(t *testing.T, b [18]byte) {
 	t.Helper()
 	if out := checkCodec(t, "Rate34Data", b, pdu.DecodeRate34Data, (*pdu.Rate34Data).Encode, (*pdu.Rate34Data).String); out != b {
@@ -186,7 +168,6 @@ func checkRate34(t *testing.T, b [18]byte) {
 	}
 }
 
-// checkRate1 runs the checks of checkRate34 on the Rate 1 block b.
 func checkRate1(t *testing.T, b [24]byte) {
 	t.Helper()
 	if out := checkCodec(t, "Rate1Data", b, pdu.DecodeRate1Data, (*pdu.Rate1Data).Encode, (*pdu.Rate1Data).String); out != b {

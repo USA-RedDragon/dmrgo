@@ -7,8 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// dataHeaderGroup returns the Group flag of the header that is set in h. ok
-// is false for a response or proprietary header.
 func dataHeaderGroup(h *pdu.DataHeader) (group, ok bool) {
 	switch {
 	case h.UnconfirmedDataHeader != nil:
@@ -27,7 +25,6 @@ func dataHeaderGroup(h *pdu.DataHeader) (group, ok bool) {
 	return false, false
 }
 
-// setDataHeaderGroup sets the Group flag of the header that is set in h.
 func setDataHeaderGroup(h *pdu.DataHeader, group bool) {
 	switch {
 	case h.UnconfirmedDataHeader != nil:
@@ -45,11 +42,6 @@ func setDataHeaderGroup(h *pdu.DataHeader, group bool) {
 	}
 }
 
-// FuzzPDUEditors checks the in-place editors LCBytes, CSBKBytes and
-// DataHeaderBytes on any octets: their getters agree with the decoded PDU,
-// each setter writes what its getter then reads, a refused edit changes
-// nothing, and an edit in place gives the octets that the same edit of the
-// decoded PDU encodes to.
 func FuzzPDUEditors(f *testing.F) {
 	editorSeeds(f, func(kind uint8, data []byte, target, source uint32, group bool, v uint8) {
 		f.Add(kind, data, target, source, group, v)
@@ -57,7 +49,6 @@ func FuzzPDUEditors(f *testing.F) {
 	f.Fuzz(fuzzPDUEditors)
 }
 
-// editorSeeds calls add with each seed of FuzzPDUEditors.
 func editorSeeds(tb testing.TB, add func(kind uint8, data []byte, target, source uint32, group bool, v uint8)) {
 	for _, b := range captureBursts(tb) {
 		if p, _ := b.Sync(); !isDataSync(p) {
@@ -76,7 +67,6 @@ func editorSeeds(tb testing.TB, add func(kind uint8, data []byte, target, source
 	}
 }
 
-// fuzzPDUEditors is the body of FuzzPDUEditors.
 func fuzzPDUEditors(t *testing.T, kind uint8, data []byte, target, source uint32, group bool, v uint8) {
 	var in [12]byte
 	copy(in[:], data)
@@ -90,9 +80,6 @@ func fuzzPDUEditors(t *testing.T, kind uint8, data []byte, target, source uint32
 	}
 }
 
-// checkLCBytes runs the LCBytes properties of FuzzPDUEditors on l, with the
-// addresses target and source, the group flag and the octet v for the other
-// setters.
 func checkLCBytes(t *testing.T, l pdu.LCBytes, target, source uint32, group bool, v uint8) {
 	t.Helper()
 	dec, err := pdu.DecodeFullLinkControlBytes(l)
@@ -132,8 +119,6 @@ func checkLCBytes(t *testing.T, l pdu.LCBytes, target, source uint32, group bool
 	checkLCBytesSetters(t, l, group, v)
 }
 
-// checkLCBytesSetters fails t unless the header setters of LCBytes on l
-// write the group flag and the octet v and keep every other bit.
 func checkLCBytesSetters(t *testing.T, l pdu.LCBytes, group bool, v uint8) {
 	t.Helper()
 	e := l
@@ -161,7 +146,6 @@ func checkLCBytesSetters(t *testing.T, l pdu.LCBytes, group bool, v uint8) {
 	}
 }
 
-// checkCSBKBytes runs the CSBKBytes properties of FuzzPDUEditors on c.
 func checkCSBKBytes(t *testing.T, c pdu.CSBKBytes, target, source uint32, group bool) {
 	t.Helper()
 	c.Reseal()
@@ -195,8 +179,6 @@ func checkCSBKBytes(t *testing.T, c pdu.CSBKBytes, target, source uint32, group 
 	}
 }
 
-// checkDataHeaderBytes runs the DataHeaderBytes properties of
-// FuzzPDUEditors on h.
 func checkDataHeaderBytes(t *testing.T, h pdu.DataHeaderBytes, target, source uint32, group bool) {
 	t.Helper()
 	h.Reseal()

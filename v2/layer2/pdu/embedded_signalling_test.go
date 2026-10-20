@@ -113,7 +113,6 @@ func TestEncodeEmbeddedSignalling_FullRoundTrip(t *testing.T) {
 		LCSS:                               enums.LCSSFirstFragment,
 	}
 	encoded := must(es.Encode())
-	// Verify the full [2]byte round trip through decode
 	decoded := pdu.DecodeEmbeddedSignalling(encoded)
 	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {

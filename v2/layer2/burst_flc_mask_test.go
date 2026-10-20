@@ -18,9 +18,7 @@ func burstInfoBits(raw [33]byte) [12]byte {
 	return [12]byte(unpacked.Pack(info[:]))
 }
 
-// Real Voice LC Headers and Terminators carry the Data Type CRC Mask in their
-// RS(12,9) parity (ETSI TS 102 361-1 B.3.12). The RS checks depend on a
-// correct RS(12,9) codec.
+// ETSI TS 102 361-1
 func TestBurst_FullLCCapturesUseDataTypeMask(t *testing.T) {
 	t.Parallel()
 

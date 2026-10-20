@@ -7,8 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// The receiver selects the payload variant from the discriminator, so Encode
-// must reject a payload pointer that the encoded header would not select.
 func TestEncodeRejectsPayloadTheHeaderDoesNotSelect(t *testing.T) {
 	t.Parallel()
 

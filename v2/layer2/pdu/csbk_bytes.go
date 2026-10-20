@@ -139,9 +139,6 @@ func (c *CSBKBytes) Reseal() {
 	_ = Seal((*[12]byte)(c), enums.DataTypeCSBK)
 }
 
-// The *dmrgo.FieldRangeError values of the 24-bit addresses of the
-// SetAddresses methods, NewVoiceLCBytes and NewVoiceLC. The fields are those
-// of the payload structs that hold the addresses.
 var (
 	errLCBytesTargetRange         = addressRangeError("LCBytes", fieldTargetAddress)
 	errLCBytesSourceRange         = addressRangeError("LCBytes", fieldSourceAddress)
@@ -157,7 +154,6 @@ var (
 	errDataHeaderBytesSourceRange = addressRangeError("DataHeaderBytes", fieldLLIDSource)
 )
 
-// The Field of the address errors.
 const (
 	fieldTargetAddress   = "TargetAddress"
 	fieldSourceAddress   = "SourceAddress"
@@ -165,14 +161,10 @@ const (
 	fieldLLIDSource      = "LLIDSource"
 )
 
-// addressRangeError returns the *dmrgo.FieldRangeError of a 24-bit address
-// field of type typ.
 func addressRangeError(typ, field string) error {
 	return &dmrgo.FieldRangeError{Type: typ, Field: field, Bits: 24}
 }
 
-// checkAddresses returns targetErr when target, or sourceErr when source,
-// does not fit in 24 bits.
 func checkAddresses(target, source uint32, targetErr, sourceErr error) error {
 	switch {
 	case target>>24 != 0:

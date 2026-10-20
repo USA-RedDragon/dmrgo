@@ -9,8 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// benchPayloads returns 64 random 12-octet payloads, sealed for dt when dt
-// has a CRC or RS(12,9) parity.
 func benchPayloads(dt enums.DataType) [][12]byte {
 	r := rand.New(rand.NewSource(int64(dt) + 7))
 	out := make([][12]byte, 64)

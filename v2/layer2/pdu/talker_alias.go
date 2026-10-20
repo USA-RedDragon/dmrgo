@@ -12,10 +12,9 @@ import (
 )
 
 const (
-	talkerAliasBlockBits = 56
-	talkerAliasMaxBlocks = 3
-	talkerAliasMaxUnits  = 31
-	// talkerAliasStreamBits is the 49-bit header data and three blocks.
+	talkerAliasBlockBits  = 56
+	talkerAliasMaxBlocks  = 3
+	talkerAliasMaxUnits   = 31
 	talkerAliasStreamBits = 49 + talkerAliasMaxBlocks*talkerAliasBlockBits
 )
 
@@ -75,8 +74,6 @@ func AppendTalkerAlias(dst []byte, header *FLCTalkerAliasHeader, blocks ...*FLCT
 	return append(dst, buf[:n]...), err
 }
 
-// talkerAliasText writes the alias that TalkerAlias returns to dst and
-// returns its length, with the errors of TalkerAlias.
 func talkerAliasText(dst *[TalkerAliasMaxText]byte, header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBlock) (int, error) {
 	format := header.TalkerAliasDataFormat
 	n := TalkerAliasBlocks(format, header.TalkerAliasDataLength)
@@ -102,10 +99,6 @@ func talkerAliasText(dst *[TalkerAliasMaxText]byte, header *FLCTalkerAliasHeader
 	return writeTalkerAliasText(dst, format, units[:length])
 }
 
-// writeTalkerAliasText writes the at most 31 Code Units of format to dst as
-// UTF-8 and returns the length of the text. Each unit takes at most 3
-// bytes, and a surrogate pair 4, so the text fits. An unpaired UTF-16
-// surrogate becomes U+FFFD, as in utf16.Decode.
 func writeTalkerAliasText(dst *[TalkerAliasMaxText]byte, format layer3.TalkerAliasDataFormat, units []uint16) (int, error) {
 	n := 0
 	switch format {
@@ -141,8 +134,6 @@ func writeTalkerAliasText(dst *[TalkerAliasMaxText]byte, format layer3.TalkerAli
 	return n, nil
 }
 
-// talkerAliasUnits writes the first Code Units of alias in format into
-// units and returns the number of Code Units of the whole alias.
 func talkerAliasUnits(units *[talkerAliasMaxUnits]uint16, alias string, format layer3.TalkerAliasDataFormat) (int, error) {
 	n := 0
 	switch format {
@@ -178,7 +169,6 @@ func talkerAliasUnits(units *[talkerAliasMaxUnits]uint16, alias string, format l
 	return 0, errUnknownFormat
 }
 
-// putUnit sets units[n] to u when it fits, and returns n+1.
 func putUnit(units *[talkerAliasMaxUnits]uint16, n int, u uint16) int {
 	if n < len(units) {
 		units[n] = u
@@ -316,7 +306,6 @@ func (a *TalkerAliasAssembler) AddInto(dst *[TalkerAliasMaxText]byte, lc *FullLi
 	return n, err == nil, err
 }
 
-// The errors of EncodeTalkerAlias for an alias that its format cannot carry.
 var (
 	errCharacterFormat = errors.New("a character of the talker alias is not in its format")
 	errUnknownFormat   = errors.New("unknown talker alias format")

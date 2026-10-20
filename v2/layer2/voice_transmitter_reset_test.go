@@ -11,8 +11,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// transmit sends n slots of a fixed pattern, then ends the transmission, and
-// returns the headers and every burst.
 func transmit(t *testing.T, tx *layer2.VoiceTransmitter, n int) []layer2.RawBurst {
 	t.Helper()
 	out := tx.AppendHeaders(nil)
@@ -31,9 +29,6 @@ func transmit(t *testing.T, tx *layer2.VoiceTransmitter, n int) []layer2.RawBurs
 	return out
 }
 
-// TestVoiceTransmitter_Reset reuses one VoiceTransmitter for a second call,
-// after a call that ended and after a call that stopped in the middle of a
-// superframe, and checks that it sends what a new one sends.
 func TestVoiceTransmitter_Reset(t *testing.T) {
 	t.Parallel()
 

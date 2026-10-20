@@ -104,8 +104,6 @@ func TestAssembler_CaptureCRCFailure(t *testing.T) {
 	}
 }
 
-// badHeader returns the U_HEAD of d-sms.bin (burst 5) with 24 bits flipped.
-// It decodes as a C_HEAD whose CRC fails.
 func badHeader(t *testing.T) *layer2.Burst {
 	t.Helper()
 	data, err := os.ReadFile("../testdata/d-sms.bin")

@@ -11,10 +11,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// TestAssembler_AcceptBadCRCCapture flips one bit of a data block of the
-// m-sms capture, so that its message CRC fails. Without AcceptBadCRC the
-// Message comes with ErrMessageCRC; with it, the Message comes with no
-// error. Both have BadCRC set.
 func TestAssembler_AcceptBadCRCCapture(t *testing.T) {
 	t.Parallel()
 
@@ -43,9 +39,6 @@ func TestAssembler_AcceptBadCRCCapture(t *testing.T) {
 	}
 }
 
-// TestAssembler_AcceptBadCRCConfirmed sends a confirmed packet whose block 2
-// fails its CRC-9. With AcceptBadCRC the last block delivers it, with the
-// bad block in Data. A block lost on air is still missing.
 func TestAssembler_AcceptBadCRCConfirmed(t *testing.T) {
 	t.Parallel()
 
@@ -104,8 +97,6 @@ func TestAssembler_AcceptBadCRCConfirmed(t *testing.T) {
 	}
 }
 
-// TestAssembler_AcceptBadCRCHeader checks that AcceptBadCRC still drops a
-// header whose CRC failed, and leaves a good packet unmarked.
 func TestAssembler_AcceptBadCRCHeader(t *testing.T) {
 	t.Parallel()
 
@@ -124,8 +115,6 @@ func TestAssembler_AcceptBadCRCHeader(t *testing.T) {
 	}
 }
 
-// TestAssembler_AllBlocksLost loses every block of an unconfirmed packet,
-// with and without AcceptBadCRC, which does not deliver lost blocks.
 func TestAssembler_AllBlocksLost(t *testing.T) {
 	t.Parallel()
 

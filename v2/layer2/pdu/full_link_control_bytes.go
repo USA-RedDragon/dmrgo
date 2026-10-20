@@ -60,6 +60,4 @@ func (s *FullLinkControl) Bytes() ([9]byte, error) {
 	return [9]byte(cw[:9]), nil
 }
 
-// errRoundTrip is the error of a full LC that does not encode back to the
-// same octets.
 var errRoundTrip = errors.New("the full LC does not encode back to the same octets")

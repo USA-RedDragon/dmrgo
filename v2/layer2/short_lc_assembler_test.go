@@ -13,8 +13,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// buildValidShortLCFragments constructs 4x17-bit CACH payloads that encode
-// a valid Short LC PDU with the given SLCO and 24-bit data payload.
 func buildValidShortLCFragments(slco byte, data [3]byte) [4][3]byte {
 	var info [5]byte
 	bits.SetField(info[:], 0, 4, uint64(slco))
@@ -43,8 +41,6 @@ func addShortLCFragments(t *testing.T, a *layer2.ShortLCAssembler, fragments [4]
 	}
 }
 
-// decodeShortLCFragments adds fragments to a new ShortLCAssembler as the
-// CACHs First, Continuation, Continuation and Last with Add.
 func decodeShortLCFragments(t *testing.T, fragments [4][3]byte) pdu.ShortLC {
 	t.Helper()
 	var a layer2.ShortLCAssembler
@@ -326,7 +322,6 @@ func TestShortLCAssembler_CombinedFEC(t *testing.T) {
 
 	slc := decodeShortLCFragments(t, fragments)
 	fecResult := slc.FEC
-	// The CRC-8 only detects errors, so BitsChecked is the BPTC's 68.
 	expectedBitsChecked := 68
 	if fecResult.BitsChecked != expectedBitsChecked {
 		t.Errorf("BitsChecked: got %d, want %d", fecResult.BitsChecked, expectedBitsChecked)
@@ -336,8 +331,6 @@ func TestShortLCAssembler_CombinedFEC(t *testing.T) {
 	}
 }
 
-// encodeCACHFragments calls bptc.EncodeCACH on the 36 bits of a packed
-// Short LC PDU and returns the packed CACH payloads.
 func encodeCACHFragments(info [5]byte) [4][3]byte {
 	var out [4][3]byte
 	for i, f := range bptc.EncodeCACH(bits.Field64(info[:], 0, 36)) {

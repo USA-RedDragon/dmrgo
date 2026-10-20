@@ -12,9 +12,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// laterTry returns a copy of the header of p for a later try that resends
-// the blocks with the given indexes: F clear and the block count set to
-// their number.
 func laterTry(t *testing.T, p packet.Packet, blocks []int) packet.Packet {
 	t.Helper()
 	h := p.Header
@@ -54,8 +51,6 @@ func allBlocks(p packet.Packet) []int {
 	return out
 }
 
-// corrupt returns block i of p encoded and decoded, with one bit flipped so
-// that its CRC-9 fails.
 func corrupt(t *testing.T, p packet.Packet, i int) layer2.Data {
 	t.Helper()
 	b := encodeBlock(t, p.Blocks[i])
@@ -70,9 +65,6 @@ func corrupt(t *testing.T, p packet.Packet, i int) layer2.Data {
 	return b
 }
 
-// TestAssembler_FirstHeaderLost loses the C_HEAD of the first try. A later
-// try that resends every block (F clear) then delivers the packet; its
-// pad octets stay in Data, because POC counts them only on the first try.
 func TestAssembler_FirstHeaderLost(t *testing.T) {
 	t.Parallel()
 
@@ -100,10 +92,6 @@ func TestAssembler_FirstHeaderLost(t *testing.T) {
 	}
 }
 
-// TestAssembler_FirstHeaderLostPartialRetry loses the C_HEAD of the first
-// try and gets a later try of some blocks only. The Assembler does not
-// deliver it: the DBSNs 0 to BF-1 are not all there, or the message CRC
-// fails.
 func TestAssembler_FirstHeaderLostPartialRetry(t *testing.T) {
 	t.Parallel()
 
@@ -121,9 +109,6 @@ func TestAssembler_FirstHeaderLostPartialRetry(t *testing.T) {
 	}
 }
 
-// TestAssembler_RetryWhileBlocksLost gets a later try while blocks of the
-// first try are still missing, as when a block burst was lost on air and
-// nobody called Lost. The later try fills the gap.
 func TestAssembler_RetryWhileBlocksLost(t *testing.T) {
 	t.Parallel()
 
@@ -150,9 +135,6 @@ func TestAssembler_RetryWhileBlocksLost(t *testing.T) {
 	}
 }
 
-// TestAssembler_UnexpectedRetry gets a later try of another packet while a
-// packet is in progress. The Assembler drops the header and the packet in
-// progress still completes.
 func TestAssembler_UnexpectedRetry(t *testing.T) {
 	t.Parallel()
 
@@ -189,9 +171,6 @@ func TestAssembler_UnexpectedRetry(t *testing.T) {
 	}
 }
 
-// TestAssembler_ShortDataRetry retries a short data packet with SARQ set,
-// for a DD_HEAD and an R_HEAD: one block fails its CRC-9, and a later try
-// with that block completes the packet.
 func TestAssembler_ShortDataRetry(t *testing.T) {
 	t.Parallel()
 
@@ -234,10 +213,6 @@ func TestAssembler_ShortDataRetry(t *testing.T) {
 	}
 }
 
-// TestAssembler_OrphanRetry checks a packet that a later try started: its
-// SACK cannot name the blocks, AcceptBadCRC does not deliver it when the
-// message CRC fails, and a full later try of the next packet replaces an
-// abandoned one.
 func TestAssembler_OrphanRetry(t *testing.T) {
 	t.Parallel()
 

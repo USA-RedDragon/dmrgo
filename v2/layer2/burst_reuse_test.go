@@ -7,9 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// TestBurstDecode_ReusesData shows that a decode into a reused Burst
-// overwrites the PDU of the previous decode, and that Encode codes an edit of
-// that PDU.
 func TestBurstDecode_ReusesData(t *testing.T) {
 	t.Parallel()
 

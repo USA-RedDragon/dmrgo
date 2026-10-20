@@ -10,8 +10,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// voiceLCHeaderMask is the Voice LC Header Data Type CRC Mask octet (ETSI
-// TS 102 361-1 Table B.21).
+// ETSI TS 102 361-1 Table B.21
 const voiceLCHeaderMask = 0x96
 
 // EncodeEmbeddedLC returns the four 32-bit embedded signalling fields, in
@@ -30,8 +29,6 @@ func DecodeEmbeddedLC(f [4][4]byte, strict bool) ([9]byte, fec.Result) {
 	return decodeEmbeddedLC(fragmentWords(f), strict)
 }
 
-// decodeEmbeddedLC decodes the LC octets from the four fragment words, as
-// DecodeEmbeddedLC does.
 func decodeEmbeddedLC(fragments [4]uint32, strict bool) ([9]byte, fec.Result) {
 	if strict {
 		return embeddedLCChecksum(bptc.DecodeEmbeddedStrict(fragments))
@@ -109,10 +106,7 @@ func (a *EmbeddedLCAssembler) discard() error {
 	return ErrEmbeddedLCSequence
 }
 
-// encodeEmbeddedLC returns the four BPTC(128,77) fragment words of the LC
-// octets lc and their 5-bit checksum: info rows 0 and 1 carry 11 LC bits,
-// rows 2 to 6 carry 10 LC bits and one checksum bit each (ETSI TS 102 361-1
-// clause B.2.1).
+// ETSI TS 102 361-1 clause B.2.1
 func encodeEmbeddedLC(lc [9]byte) [4]uint32 {
 	cs := crc.Checksum5(lc)
 	var info [10]byte
@@ -129,8 +123,6 @@ func embeddedLCChecksumValid(info [10]byte) bool {
 	return !result.Uncorrectable
 }
 
-// embeddedLCChecksum returns the LC octets of the 77 information bits info
-// and result, with Uncorrectable set when their checksum does not match.
 func embeddedLCChecksum(info [10]byte, result fec.Result) ([9]byte, fec.Result) {
 	var lc [9]byte
 	var cs uint8
@@ -181,8 +173,6 @@ func DecodeEmbeddedFullLinkControlInto(dst *pdu.FullLinkControl, p *pdu.FullLink
 	dst.FEC = combineEmbeddedFEC(result, dst.FEC)
 }
 
-// embeddedFullLCCodeword returns the masked RS(12,9) voice LC header
-// codeword of the LC octets lc.
 func embeddedFullLCCodeword(lc [9]byte) [12]byte {
 	codeword := reedsolomon.Encode(lc)
 	for i := 9; i < 12; i++ {
@@ -191,8 +181,6 @@ func embeddedFullLCCodeword(lc [9]byte) [12]byte {
 	return codeword
 }
 
-// combineEmbeddedFEC returns the embedded LC result with the corrections and
-// failure of the Full LC field decode added.
 func combineEmbeddedFEC(result, field fec.Result) fec.Result {
 	result.ErrorsCorrected += field.ErrorsCorrected
 	result.Uncorrectable = result.Uncorrectable || field.Uncorrectable

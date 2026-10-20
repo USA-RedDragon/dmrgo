@@ -10,7 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// voiceBurstBit returns the burst bit of bit j of voice slot i.
 func voiceBurstBit(i, j int) int {
 	v := i*72 + j
 	if v < 108 {
@@ -19,9 +18,6 @@ func voiceBurstBit(i, j int) int {
 	return v + 48
 }
 
-// Slots of another codec, here random bits, are not AMBE+2 codewords. The
-// AMBE+2 decoder changes them, so decode then Encode must keep the slots as
-// received.
 func TestBurstEncode_KeepsNonAMBEVoiceSlots(t *testing.T) {
 	t.Parallel()
 

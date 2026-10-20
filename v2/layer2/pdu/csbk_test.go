@@ -10,8 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// buildCSBK returns the 12 octets of a standard FID CSBK with LB set, the
-// given opcode and payload, and the CRC-CCITT with the CSBK mask.
 func buildCSBK(opcode byte, payload [8]byte) [12]byte {
 	var data [12]byte
 	data[0] = 0x80 | (opcode & 0x3F)

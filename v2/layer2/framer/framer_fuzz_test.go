@@ -12,8 +12,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 )
 
-// syncAt returns the 48-bit field of stream that starts at bit i, read one
-// bit at a time.
 func syncAt(stream []byte, i int) uint64 {
 	var v uint64
 	for k := range framer.SyncBits {
@@ -22,14 +20,11 @@ func syncAt(stream []byte, i int) uint64 {
 	return v
 }
 
-// nearestAt returns the distance of the field at bit i of stream from the
-// nearest SYNC pattern, as enums.NearestSyncPattern finds it.
 func nearestAt(stream []byte, i int) (enums.SyncPattern, int) {
 	v := syncAt(stream, i)
 	return enums.NearestSyncPattern([6]byte{byte(v >> 40), byte(v >> 32), byte(v >> 24), byte(v >> 16), byte(v >> 8), byte(v)})
 }
 
-// refSearch is Search done one bit position at a time.
 func refSearch(stream []byte, nbits, start, threshold int) (int, int, bool) {
 	n := max(0, min(nbits, 8*len(stream)))
 	if threshold < 0 {
@@ -43,15 +38,12 @@ func refSearch(stream []byte, nbits, start, threshold int) (int, int, bool) {
 	return 0, 0, false
 }
 
-// searchSeed is one seed of FuzzSearch.
 type searchSeed struct {
 	stream       []byte
 	nbits, start int16
 	threshold    int8
 }
 
-// searchSeeds returns the seeds of FuzzSearch: bursts of the voice capture
-// after 16 bits, and bit counts and starts out of range.
 func searchSeeds(tb testing.TB) []searchSeed {
 	tb.Helper()
 	var seeds []searchSeed
@@ -61,7 +53,6 @@ func searchSeeds(tb testing.TB) []searchSeed {
 	return append(seeds, searchSeed{[]byte{0xff}, -3, -9, 0})
 }
 
-// checkSearch is the property of FuzzSearch.
 func checkSearch(t *testing.T, stream []byte, nbits, start int16, threshold int8) {
 	m, ok := framer.Search(stream, int(nbits), int(start), int(threshold))
 	off, d, want := refSearch(stream, int(nbits), int(start), int(threshold))
@@ -73,8 +64,6 @@ func checkSearch(t *testing.T, stream []byte, nbits, start int16, threshold int8
 	}
 }
 
-// FuzzSearch checks Search against a search one bit position at a time,
-// for any stream, bit count, start and threshold.
 func FuzzSearch(f *testing.F) {
 	for _, s := range searchSeeds(f) {
 		f.Add(s.stream, s.nbits, s.start, s.threshold)
@@ -82,9 +71,6 @@ func FuzzSearch(f *testing.F) {
 	f.Fuzz(checkSearch)
 }
 
-// fuzzConfig returns the Framer configuration of the fuzz value c: a
-// threshold from -1 to 6, either period, CACH on or off, and up to 7
-// misses.
 func fuzzConfig(c byte) framer.Config {
 	cfg := framer.Config{Threshold: int(c&7) - 1, CACH: c&0x10 != 0, MaxMisses: int(c >> 5)}
 	if c&8 != 0 {
@@ -93,7 +79,6 @@ func fuzzConfig(c byte) framer.Config {
 	return cfg
 }
 
-// threshold returns the threshold that a Framer with cfg uses.
 func threshold(cfg framer.Config) int {
 	if cfg.Threshold < 0 {
 		return layer2.DefaultSyncThreshold
@@ -101,10 +86,6 @@ func threshold(cfg framer.Config) int {
 	return cfg.Threshold
 }
 
-// checkBursts checks the bursts that a Framer with cfg cut from stream: each
-// holds the stream bits at its offset, its SYNC and CACH fields are those
-// of the stream, the offsets increase, and the first burst is at the first
-// SYNC that Search finds after the CACH.
 func checkBursts(t *testing.T, cfg framer.Config, stream []byte, got []framer.Burst) {
 	t.Helper()
 	pre := 0
@@ -153,14 +134,11 @@ func checkBursts(t *testing.T, cfg framer.Config, stream []byte, got []framer.Bu
 	}
 }
 
-// framerSeed is one seed of FuzzFramer.
 type framerSeed struct {
 	stream, cuts []byte
 	cfg          byte
 }
 
-// framerSeeds returns the seeds of FuzzFramer: 8 bursts of the voice
-// capture, each after 24 bits, in a few configurations and pieces.
 func framerSeeds(tb testing.TB) []framerSeed {
 	tb.Helper()
 	var stream []byte
@@ -174,7 +152,6 @@ func framerSeeds(tb testing.TB) []framerSeed {
 	}
 }
 
-// checkFramer is the property of FuzzFramer.
 func checkFramer(t *testing.T, stream, cuts []byte, c byte) {
 	cfg := fuzzConfig(c)
 	whole := framer.New(cfg).Write(stream, 8*len(stream))
@@ -202,9 +179,6 @@ func checkFramer(t *testing.T, stream, cuts []byte, c byte) {
 	}
 }
 
-// FuzzFramer writes any stream to a Framer with any configuration, at once
-// and in pieces of any number of bits. Both give the same bursts, and the
-// bursts hold the stream as checkBursts describes.
 func FuzzFramer(f *testing.F) {
 	for _, s := range framerSeeds(f) {
 		f.Add(s.stream, s.cuts, s.cfg)
@@ -212,7 +186,6 @@ func FuzzFramer(f *testing.F) {
 	f.Fuzz(checkFramer)
 }
 
-// findsBurstSeed is one seed of FuzzFramerFindsBurst.
 type findsBurstSeed struct {
 	noise  []byte
 	offset uint16
@@ -221,20 +194,16 @@ type findsBurstSeed struct {
 	cfg    byte
 }
 
-// findsBurstSeeds are the seeds of FuzzFramerFindsBurst.
 var findsBurstSeeds = []findsBurstSeed{
 	{[]byte{0x01, 0x02, 0x03, 0x04}, 0, 0, []byte{}, 0},
 	{[]byte{0xff, 0x00, 0x77, 0x31, 0x99}, 37, 6, []byte{3, 40}, 0x13},
 	{[]byte{0xaa}, 300, 12, []byte{1}, 0x0a},
 }
 
-// findsBurst holds the bursts of the voice capture that carry a SYNC with
-// no bit errors.
 type findsBurst struct {
 	synced [][33]byte
 }
 
-// newFindsBurst returns the bursts of the voice capture with a SYNC.
 func newFindsBurst(tb testing.TB) *findsBurst {
 	tb.Helper()
 	fb := &findsBurst{}
@@ -246,7 +215,6 @@ func newFindsBurst(tb testing.TB) *findsBurst {
 	return fb
 }
 
-// check is the property of FuzzFramerFindsBurst.
 func (fb *findsBurst) check(t *testing.T, noise []byte, offset uint16, which byte, flips []byte, c byte) {
 	cfg := fuzzConfig(c)
 	burst := fb.synced[int(which)%len(fb.synced)]
@@ -281,9 +249,6 @@ func (fb *findsBurst) check(t *testing.T, noise []byte, offset uint16, which byt
 	}
 }
 
-// FuzzFramerFindsBurst puts a burst with a SYNC from the voice capture, with
-// up to the threshold of SYNC bit errors, at any offset in any noise. When
-// Search finds no SYNC before it, the Framer cuts the burst at its offset.
 func FuzzFramerFindsBurst(f *testing.F) {
 	for _, s := range findsBurstSeeds {
 		f.Add(s.noise, s.offset, s.which, s.flips, s.cfg)

@@ -2,8 +2,6 @@ package pdu
 
 import "github.com/USA-RedDragon/dmrgo/v2/enums"
 
-// addressFields returns pointers to the target and source address fields of
-// the payload that is set, or nil when the CSBK has no such payload.
 func (s *CSBK) addressFields() (target, source *uint32) {
 	switch {
 	case s.UnitToUnitVoiceServiceRequestPDU != nil:
@@ -64,8 +62,6 @@ func (s *CSBK) addressFields() (target, source *uint32) {
 	return nil, nil
 }
 
-// is0x38 reports whether s is a standard FID CSBK with opcode 0x38, whose
-// payload is in RawPayload.
 func (s *CSBK) is0x38() bool {
 	return s.Opcode == CSBKBSOutboundActivation && s.FID == enums.FIDStandardized
 }

@@ -11,10 +11,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// voiceFuzzInput is a parsed FuzzVoiceReceiver input: the call, the
-// talker alias of the odd superframes, the vocoder slots, and one action
-// byte per burst: send it, send it with a bit error that the FEC corrects,
-// lose it, or replace it with arbitrary bits.
 type voiceFuzzInput struct {
 	opts    layer2.VoiceTransmitterOptions
 	aliases []pdu.FullLinkControl
@@ -23,8 +19,6 @@ type voiceFuzzInput struct {
 	junk    []byte
 }
 
-// parseVoiceFuzz reads a FuzzVoiceReceiver input. ok is false when the
-// alias does not encode.
 func parseVoiceFuzz(data []byte) (in voiceFuzzInput, ok bool) {
 	next := func() byte {
 		if len(data) == 0 {
@@ -67,8 +61,6 @@ func parseVoiceFuzz(data []byte) (in voiceFuzzInput, ok bool) {
 	return in, true
 }
 
-// embeddedOf returns the embedded LC octets of superframe n: a talker alias
-// block on odd superframes when there is an alias, else the call LC.
 func (in *voiceFuzzInput) embeddedOf(n int) *pdu.FullLinkControl {
 	if len(in.aliases) == 0 || n%2 == 0 {
 		return nil
@@ -76,15 +68,6 @@ func (in *voiceFuzzInput) embeddedOf(n int) *pdu.FullLinkControl {
 	return &in.aliases[n/2%len(in.aliases)]
 }
 
-// FuzzVoiceReceiver builds a transmission of fuzzed vocoder slots, call
-// LC and talker alias with a VoiceTransmitter, loses, damages or replaces
-// the bursts that fuzzed actions select, and runs the rest through a
-// VoiceReceiver. A damaged burst has one bit error that the FEC corrects.
-// Each voice burst must decode with its slots; bursts A, B and E must get
-// their position, C, D and F theirs while no burst was lost or replaced
-// since the last A, B or E, and F VoiceBurstUnknown otherwise;
-// an embedded LC must come exactly when bursts B to E of a superframe
-// arrived in a row, and equal the LC of that superframe.
 func FuzzVoiceReceiver(f *testing.F) {
 	for _, s := range voiceReceiverSeeds() {
 		f.Add(s)
@@ -92,9 +75,6 @@ func FuzzVoiceReceiver(f *testing.F) {
 	f.Fuzz(runVoiceReceiver)
 }
 
-// voiceReceiverSeeds returns the seed corpus of FuzzVoiceReceiver: two
-// superframes of a call, with a talker alias, and with lost and replaced
-// bursts.
 func voiceReceiverSeeds() [][]byte {
 	call := []byte{0x01, 0x01, 0x00, 0x00, 0x0C, 0x1C, 0x30, 0xB4, 0x3C}
 	slots := make([]byte, 0, 1+36*9)
@@ -111,7 +91,6 @@ func voiceReceiverSeeds() [][]byte {
 	}
 }
 
-// runVoiceReceiver runs the input data, as FuzzVoiceReceiver describes.
 func runVoiceReceiver(t *testing.T, data []byte) {
 	in, ok := parseVoiceFuzz(data)
 	if !ok {
@@ -132,22 +111,13 @@ func runVoiceReceiver(t *testing.T, data []byte) {
 	checkVoiceReceiver(t, &in, bursts)
 }
 
-// voiceTrack is what checkVoiceReceiver knows of the stream the
-// VoiceReceiver saw. clean reports that the position of the last burst is
-// exact: no burst was lost or replaced since the last burst A, B or E.
-// fragments is the number of fragments of the embedded LC that arrived in
-// a row since burst B, or -1 after a lost or replaced burst, when a lost
-// whole superframe can join the fragments of two superframes.
 type voiceTrack struct {
 	clean     bool
 	fragments int
 }
 
-// broken is the voiceTrack after a lost or replaced burst.
 var broken = voiceTrack{fragments: -1}
 
-// checkVoiceReceiver runs bursts, with the actions of in, through a
-// VoiceReceiver and checks the positions, slots and embedded LCs.
 func checkVoiceReceiver(t *testing.T, in *voiceFuzzInput, bursts []layer2.RawBurst) {
 	t.Helper()
 	var rx layer2.VoiceReceiver
@@ -226,10 +196,6 @@ func checkVoiceReceiver(t *testing.T, in *voiceFuzzInput, bursts []layer2.RawBur
 	}
 }
 
-// damagedBit returns the bit that a bit error of value k flips in a burst
-// sent at pos: one bit of the SYNC of burst A, of the EMB of bursts B to
-// F, or of the BPTC(196,96) info bits of a data burst. The FEC of each
-// corrects it.
 func damagedBit(pos enums.VoiceBurstType, k int) int {
 	switch {
 	case pos == enums.VoiceBurstA:
@@ -244,9 +210,6 @@ func damagedBit(pos enums.VoiceBurstType, k int) int {
 	return 166 + k*3 - 98
 }
 
-// checkPosition checks the position got that the VoiceReceiver gave burst
-// i, which was sent at want. clean reports that no burst was lost or
-// replaced since the last burst A, B or E.
 func checkPosition(t *testing.T, i int, got, want enums.VoiceBurstType, clean bool) {
 	t.Helper()
 	switch {
@@ -263,8 +226,6 @@ func checkPosition(t *testing.T, i int, got, want enums.VoiceBurstType, clean bo
 	}
 }
 
-// voiceSlotsOf returns the slots of voice burst n of in, padded with
-// silence.
 func voiceSlotsOf(in *voiceFuzzInput, n int) [layer2.VoiceSlotsPerBurst][9]byte {
 	var s [layer2.VoiceSlotsPerBurst][9]byte
 	for i := range s {
@@ -276,8 +237,6 @@ func voiceSlotsOf(in *voiceFuzzInput, n int) [layer2.VoiceSlotsPerBurst][9]byte 
 	return s
 }
 
-// checkEmbeddedLC checks that lc, received at burst i, is the embedded LC
-// of superframe n.
 func checkEmbeddedLC(t *testing.T, i int, in *voiceFuzzInput, n int, lc *pdu.FullLinkControl) {
 	t.Helper()
 	want := in.embeddedOf(n)

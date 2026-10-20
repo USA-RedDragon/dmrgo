@@ -13,7 +13,6 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 	t.Parallel()
 
 	var infoBits [12]byte
-	// U_HEAD: group, POC 3, Full Message Flag and Blocks to Follow 10.
 	bits.SetBit(infoBits[:], 6, 1)
 	bits.SetBit(infoBits[:], 0, 1)
 	bits.SetBit(infoBits[:], 14, 1)
@@ -66,7 +65,6 @@ func TestDataHeader_CRCFailure(t *testing.T) {
 func TestDataHeader_FormatDispatch(t *testing.T) {
 	t.Parallel()
 
-	// Test that non-Unconfirmed formats decode without panic but have nil sub-PDUs
 	formats := []struct {
 		name   string
 		format uint64
@@ -104,8 +102,6 @@ func TestDataHeader_FormatDispatch(t *testing.T) {
 	}
 }
 
-// buildDataHeader creates a 12-octet DataHeader with valid CRC for testing.
-// The provided setup function may modify bits 0-79; this helper computes the CRC.
 func buildDataHeader(setup func(b *[12]byte)) [12]byte {
 	var infoBits [12]byte
 	setup(&infoBits)
@@ -398,7 +394,7 @@ func TestDataHeader_StatusPrecoded_RoundTrip(t *testing.T) {
 	}
 }
 
-// Bit positions follow TS 102 361-1 Table 9.17D and TS 102 361-4 Table 7.24.
+// TS 102 361-1 Table 9.17D; TS 102 361-4 Table 7.24
 func TestDataHeader_UDT_Decode(t *testing.T) {
 	t.Parallel()
 	infoBits := buildDataHeader(func(b *[12]byte) {
@@ -476,7 +472,7 @@ func TestDataHeader_UDT_RoundTrip(t *testing.T) {
 	}
 }
 
-// Bit positions follow TS 102 361-1 Table 9.17.
+// TS 102 361-1 Table 9.17
 func TestDataHeader_Proprietary_Decode(t *testing.T) {
 	t.Parallel()
 	infoBits := buildDataHeader(func(b *[12]byte) {

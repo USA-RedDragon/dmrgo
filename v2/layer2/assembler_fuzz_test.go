@@ -12,7 +12,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// distance returns the number of bits in which a and b differ.
 func distance(a, b []byte) int {
 	n := 0
 	for i := range a {
@@ -21,10 +20,8 @@ func distance(a, b []byte) int {
 	return n
 }
 
-// cachSeeds are the seeds of FuzzCACH.
 var cachSeeds = [][]byte{{0x00, 0x00, 0x00}, {0xff, 0xff, 0xff}, {0x5c, 0x3a, 0x81}}
 
-// checkCACH is the property of FuzzCACH.
 func checkCACH(t *testing.T, v []byte) {
 	if len(v) != 3 {
 		return
@@ -60,10 +57,6 @@ func checkCACH(t *testing.T, v []byte) {
 	}
 }
 
-// FuzzCACH checks that CACHInterleave and CACHDeinterleave invert each
-// other, that DecodeCACHField is DecodeCACH of the deinterleaved field, and
-// that a decoded CACH encodes to a field that decodes clean to the same
-// TACT and payload, and to the field itself when the TACT had no errors.
 func FuzzCACH(f *testing.F) {
 	for _, s := range cachSeeds {
 		f.Add(s)
@@ -71,14 +64,10 @@ func FuzzCACH(f *testing.F) {
 	f.Fuzz(checkCACH)
 }
 
-// shortLCModel is the state that ShortLCAssembler must keep: the number of
-// fragments of the partial Short LC.
 type shortLCModel struct {
 	count int
 }
 
-// add returns whether c completes a Short LC and whether it discards a
-// partial one, as the ShortLCAssembler docs describe.
 func (m *shortLCModel) add(c layer2.CACH) (done, discard bool) {
 	if c.TACT.FEC.Uncorrectable {
 		discard, m.count = m.count > 0, 0
@@ -106,20 +95,17 @@ func (m *shortLCModel) add(c layer2.CACH) (done, discard bool) {
 	return false, true
 }
 
-// shortLCSeed is one seed of FuzzShortLCAssembler.
 type shortLCSeed struct {
 	seq, slc []byte
 	at, tact byte
 }
 
-// shortLCSeeds are the seeds of FuzzShortLCAssembler.
 var shortLCSeeds = []shortLCSeed{
 	{[]byte{0x00, 0x34, 0x56, 0x78, 0x9a, 0xbc}, []byte{0x12, 0x34, 0x56, 0x78, 0x90}, 0, 0},
 	{[]byte{}, []byte{0x2a, 0x00, 0x00, 0x01, 0x20}, 1, 3},
 	{[]byte{0xff, 0xff, 0xff, 0x10, 0x00, 0x00, 0x20, 0x00, 0x00}, []byte{0x00, 0x00, 0x00, 0x00, 0x00}, 2, 1},
 }
 
-// checkShortLCAssembler is the property of FuzzShortLCAssembler.
 func checkShortLCAssembler(t *testing.T, seq, slcv []byte, at, tactv byte) {
 	var info [5]byte
 	copy(info[:], slcv)
@@ -180,11 +166,6 @@ func checkShortLCAssembler(t *testing.T, seq, slcv []byte, at, tactv byte) {
 	}
 }
 
-// FuzzShortLCAssembler feeds any CACH fields, with the 4 fields of a Short
-// LC at any place among them, to Add and AddInto. Both follow the LCSS
-// sequence rules, agree with each other, give the Short LC of the 4 fields
-// with a clean result, and report as corrected the bits in which the fields
-// of a completed Short LC differ from its coding.
 func FuzzShortLCAssembler(f *testing.F) {
 	for _, s := range shortLCSeeds {
 		f.Add(s.seq, s.slc, s.at, s.tact)
@@ -192,13 +173,10 @@ func FuzzShortLCAssembler(f *testing.F) {
 	f.Fuzz(checkShortLCAssembler)
 }
 
-// embeddedLCModel is the state that EmbeddedLCAssembler must keep.
 type embeddedLCModel struct {
 	count int
 }
 
-// add returns whether a fragment with lcss completes an LC and whether it
-// discards a partial one, as the EmbeddedLCAssembler docs describe.
 func (m *embeddedLCModel) add(lcss enums.LCSS) (done, discard bool) {
 	switch lcss {
 	case enums.LCSSFirstFragment:
@@ -220,15 +198,12 @@ func (m *embeddedLCModel) add(lcss enums.LCSS) (done, discard bool) {
 	return false, discard
 }
 
-// embeddedLCSeed is one seed of FuzzEmbeddedLCAssembler.
 type embeddedLCSeed struct {
 	seq, lc []byte
 	at      byte
 	strict  bool
 }
 
-// embeddedLCSeeds returns the seeds of FuzzEmbeddedLCAssembler: the LC of a
-// group voice call among fragments in and out of sequence.
 func embeddedLCSeeds() []embeddedLCSeed {
 	lc := groupLC(enums.FIDStandardized)
 	octets := must(lc.Bytes())
@@ -239,7 +214,6 @@ func embeddedLCSeeds() []embeddedLCSeed {
 	}
 }
 
-// checkEmbeddedLCAssembler is the property of FuzzEmbeddedLCAssembler.
 func checkEmbeddedLCAssembler(t *testing.T, seq, lcv []byte, at byte, strict bool) {
 	var lc [9]byte
 	copy(lc[:], lcv)
@@ -299,12 +273,6 @@ func checkEmbeddedLCAssembler(t *testing.T, seq, lcv []byte, at byte, strict boo
 	}
 }
 
-// FuzzEmbeddedLCAssembler feeds any fragments with any LCSS, with the 4
-// fragments of an LC at any place among them, to an EmbeddedLCAssembler. It
-// follows the LCSS sequence rules, returns what DecodeEmbeddedLC returns
-// for the 4 fragments of a completed LC, gives the LC of the 4 fragments
-// clean, and reports as corrected the bits in which the fragments of a
-// correctable LC differ from its coding.
 func FuzzEmbeddedLCAssembler(f *testing.F) {
 	for _, s := range embeddedLCSeeds() {
 		f.Add(s.seq, s.lc, s.at, s.strict)
@@ -312,14 +280,11 @@ func FuzzEmbeddedLCAssembler(f *testing.F) {
 	f.Fuzz(checkEmbeddedLCAssembler)
 }
 
-// embeddedLCCodeSeed is one seed of FuzzEmbeddedLC.
 type embeddedLCCodeSeed struct {
 	lc, flc, flips []byte
 	strict         bool
 }
 
-// embeddedLCCodeSeeds returns the seeds of FuzzEmbeddedLC: the LC of a group
-// voice call with no, one and four bit errors.
 func embeddedLCCodeSeeds() []embeddedLCCodeSeed {
 	lc := groupLC(enums.FIDStandardized)
 	lc.BurstDataType = enums.DataTypeVoiceLCHeader
@@ -332,7 +297,6 @@ func embeddedLCCodeSeeds() []embeddedLCCodeSeed {
 	}
 }
 
-// checkEmbeddedLCCode is the property of FuzzEmbeddedLC.
 func checkEmbeddedLCCode(t *testing.T, lcv, flcv, flips []byte, strict bool) {
 	var lc [9]byte
 	copy(lc[:], lcv)
@@ -389,13 +353,6 @@ func checkEmbeddedLCCode(t *testing.T, lcv, flcv, flips []byte, strict bool) {
 	}
 }
 
-// FuzzEmbeddedLC checks that any 9 LC octets and any Full LC that encodes
-// come back from their embedded fragments, also with one bit error, which
-// the result reports, except that the strict decode, as MMDVMHost, does not
-// correct the column parity row 7 (bit 7 of each fragment octet). Any
-// number of bit errors gives either an uncorrectable result or an LC whose
-// coding is as many bits from the fragments as the result reports
-// corrected.
 func FuzzEmbeddedLC(f *testing.F) {
 	for _, s := range embeddedLCCodeSeeds() {
 		f.Add(s.lc, s.flc, s.flips, s.strict)
@@ -403,16 +360,13 @@ func FuzzEmbeddedLC(f *testing.F) {
 	f.Fuzz(checkEmbeddedLCCode)
 }
 
-// rcSeed is one seed of FuzzEmbeddedRC.
 type rcSeed struct {
 	field []byte
 	cmd   byte
 }
 
-// rcSeeds are the seeds of FuzzEmbeddedRC.
 var rcSeeds = []rcSeed{{[]byte{0, 0, 0, 0}, 0}, {[]byte{0x12, 0x34, 0x56, 0x78}, 7}, {[]byte{0xff, 0xff, 0xff, 0xff}, 16}}
 
-// checkEmbeddedRC is the property of FuzzEmbeddedRC.
 func checkEmbeddedRC(t *testing.T, v []byte, cmd byte) {
 	rc := pdu.ReverseChannel{RCCommand: enums.RCCommand(cmd & 0x1F)}
 	data, err := layer2.EncodeEmbeddedRC(&rc)
@@ -439,10 +393,6 @@ func checkEmbeddedRC(t *testing.T, v []byte, cmd byte) {
 	}
 }
 
-// FuzzEmbeddedRC checks that any RC command comes back from its embedded
-// coding, that any decoded RC encodes, to the field itself when the decode
-// was clean, and that a correctable field is as many bits from the coding
-// of its RC as the result reports corrected.
 func FuzzEmbeddedRC(f *testing.F) {
 	for _, s := range rcSeeds {
 		f.Add(s.field, s.cmd)

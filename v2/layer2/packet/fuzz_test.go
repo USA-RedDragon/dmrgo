@@ -13,33 +13,25 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// fuzzRounds is the most fuzzed transmissions of one packet in a session.
-// Two clean transmissions follow, after which the packet must be delivered.
 const fuzzRounds = 8
 
-// maxEvents is the most receive events of one transmission: every burst of
-// a packet of 127 blocks, each duplicated.
 const maxEvents = 2 * 128
 
-// Fates of a burst on the fuzzed channel, from the low 3 bits of its op.
 const (
-	fateLost      = 3 // the burst is lost and the receiver calls Lost
-	fateSilent    = 4 // the burst is lost and the receiver does not know
-	fateDuplicate = 5 // the burst arrives twice
-	fateFlip      = 6 // the burst arrives with bit errors
+	fateLost      = 3
+	fateSilent    = 4
+	fateDuplicate = 5
+	fateFlip      = 6
 )
 
-// eventClass is the class of one receive event of a session.
 type eventClass uint8
 
 const (
-	eventIntact  eventClass = iota // the burst decodes to what was sent
-	eventLost                      // Lost, or a block whose FEC failed
-	eventUnknown                   // anything else, which the model cannot follow
+	eventIntact eventClass = iota
+	eventLost
+	eventUnknown
 )
 
-// event is one receive event of a transmission: a burst and the index of
-// the burst that was sent, 0 for the header, or a call of Lost.
 type event struct {
 	raw   layer2.RawBurst
 	sent  int
@@ -47,11 +39,6 @@ type event struct {
 	lost  bool
 }
 
-// session is one fuzzed exchange of a packet between a Builder and an
-// Assembler over a channel that loses, duplicates, reorders and damages
-// bursts. It keeps a model of the confirmed blocks that the Assembler holds
-// while the model can follow the channel. Its storage is allocated once, so
-// that a run does not allocate.
 type session struct {
 	tx      *packet.Builder
 	rxb     *packet.Builder
@@ -84,7 +71,6 @@ type session struct {
 	at    int
 }
 
-// newSession returns a session with storage for packets of 127 blocks.
 func newSession() *session {
 	return &session{
 		tx:      packet.NewBuilder(127),
@@ -98,15 +84,12 @@ func newSession() *session {
 	}
 }
 
-// failf records the first failure of the session.
 func (s *session) failf(msg string) {
 	if s.fail == "" {
 		s.fail = msg
 	}
 }
 
-// next returns the next channel op. Past the end of the ops every op is a
-// clean delivery.
 func (s *session) next() byte {
 	if len(s.ops) == 0 {
 		return 0
@@ -116,8 +99,6 @@ func (s *session) next() byte {
 	return b
 }
 
-// run sends the packet of s until the Assembler delivers it: fuzzRounds
-// transmissions over the channel that ops describe, then two clean ones.
 func (s *session) run(ops []byte, acceptBadCRC bool) {
 	s.rx.Reset()
 	s.rx.AcceptBadCRC = acceptBadCRC
@@ -140,9 +121,6 @@ func (s *session) run(ops []byte, acceptBadCRC bool) {
 	}
 }
 
-// nextTry returns the packet that the sender sends next: the first try,
-// the first try again for an unconfirmed packet, the blocks that the SACK
-// of the Assembler names, or every block after no response.
 func (s *session) nextTry() (packet.Packet, bool) {
 	if s.round == 0 || !s.confirmed {
 		return s.p, true
@@ -169,9 +147,6 @@ func (s *session) nextTry() (packet.Packet, bool) {
 	return q, true
 }
 
-// sack sends the SACK of the Assembler to the sender over a clean channel
-// and returns its response data, or nil when the Assembler has none. It
-// checks that the response names the blocks that Missing returns.
 func (s *session) sack() *packet.ResponseData {
 	resp, err := s.rx.Response()
 	if err != nil {
@@ -210,9 +185,6 @@ func (s *session) sack() *packet.ResponseData {
 	return &s.rd
 }
 
-// sarq returns the response data for the blocks that the Assembler misses
-// of a SARQ short data packet, which has no SACK packet, or nil when it
-// misses none.
 func (s *session) sarq() *packet.ResponseData {
 	if !s.rx.InProgress() {
 		return nil
@@ -232,8 +204,6 @@ func (s *session) sarq() *packet.ResponseData {
 	return &s.rd
 }
 
-// over sends the response packet p over a clean channel to the sender's
-// Assembler and returns the Message it delivers.
 func (s *session) over(p *packet.Packet) packet.Message {
 	var err error
 	s.resp, err = packet.AppendBursts(s.resp[:0], p, s.cc, s.src)
@@ -258,8 +228,6 @@ func (s *session) over(p *packet.Packet) packet.Message {
 	return packet.Message{}
 }
 
-// transmit sends q over the fuzzed channel and checks each result of the
-// Assembler.
 func (s *session) transmit(q *packet.Packet) {
 	var err error
 	s.air, err = packet.AppendBursts(s.air[:0], q, s.cc, s.src)
@@ -316,10 +284,6 @@ func (s *session) transmit(q *packet.Packet) {
 	}
 }
 
-// checkConfirmed checks the result of a block of a confirmed attempt that
-// the model follows. The packet completes at the block that gives the
-// model its last DBSN, and an attempt that ends without it returns
-// ErrBlocksMissing.
 func (s *session) checkConfirmed(q *packet.Packet, e event, m *packet.Message, done bool, err error, last bool) {
 	if e.class == eventIntact {
 		s.good[dbsnOf(q.Blocks[e.sent-1])] = true
@@ -352,11 +316,6 @@ func (s *session) checkConfirmed(q *packet.Packet, e event, m *packet.Message, d
 	}
 }
 
-// checkUnconfirmed checks the result of a block of an unconfirmed attempt
-// that the model follows. The packet completes at the last block, without
-// an error when every block arrived intact and in order, or, when accept
-// reports that AcceptBadCRC applies to blocks that all arrived, with
-// BadCRC set when they are out of order.
 func (s *session) checkUnconfirmed(m *packet.Message, done bool, err error, last, inOrder, accept bool) {
 	switch {
 	case done != last:
@@ -372,8 +331,6 @@ func (s *session) checkUnconfirmed(m *packet.Message, done bool, err error, last
 	}
 }
 
-// finish ends the session on a Message delivered without an error, and for
-// a C_HEAD sends the ACK to the sender.
 func (s *session) finish(m *packet.Message) {
 	s.done = true
 	if c := m.Header.ConfirmedDataHeader; c != nil && m.Header.Format == pdu.FormatConfirmed {
@@ -392,8 +349,6 @@ func (s *session) finish(m *packet.Message) {
 	}
 }
 
-// checkResult checks any result of the Assembler: the documented errors,
-// and a Message delivered without an error is the packet that was sent.
 func (s *session) checkResult(m *packet.Message, done bool, err error) {
 	switch {
 	case done && err != nil:
@@ -413,9 +368,6 @@ func (s *session) checkResult(m *packet.Message, done bool, err error) {
 	}
 }
 
-// samePacket reports whether m is the packet of s: the same format and
-// addresses, and the payload, followed by the pad octets when the header is
-// a later try or short data.
 func (s *session) samePacket(m *packet.Message) bool {
 	if m.Header.Format != s.p.Header.Format || m.DataType != s.rate {
 		return false
@@ -433,10 +385,6 @@ func (s *session) samePacket(m *packet.Message) bool {
 		!slices.ContainsFunc(m.Data[len(s.payload):], func(b byte) bool { return b != 0 })
 }
 
-// plan draws the fate of each burst of s.air from the channel ops and
-// fills s.events. It reports whether the model can follow the attempt:
-// the header arrives first and intact, and every block arrives once,
-// intact or as a loss that the Assembler counts.
 func (s *session) plan() bool {
 	n := len(s.air)
 	for i := range n {
@@ -477,10 +425,6 @@ func (s *session) plan() bool {
 	return accounted
 }
 
-// classify decodes raw, a damaged copy of burst sent of s.air, and returns
-// its event: intact when it decodes and encodes back to the burst that was
-// sent, lost when it is a block of the same rate whose FEC failed, which
-// the Assembler counts as a loss, and unknown otherwise.
 func (s *session) classify(raw layer2.RawBurst, sent int) event {
 	e := event{raw: raw, sent: sent, class: eventUnknown}
 	if s.burst.DecodeFromBytes(raw) != nil || s.burst.Kind != layer2.KindData || s.burst.Data == nil {
@@ -494,7 +438,6 @@ func (s *session) classify(raw layer2.RawBurst, sent int) event {
 	return e
 }
 
-// dbsnOf returns the DBSN of a confirmed block that Segment built.
 func dbsnOf(d layer2.Data) int {
 	switch b := d.(type) {
 	case *pdu.Rate12Data:
@@ -507,8 +450,6 @@ func dbsnOf(d layer2.Data) int {
 	return 0
 }
 
-// fullFlag reports whether h has its Full Message Flag set, or has no such
-// flag.
 func fullFlag(h *pdu.DataHeader) bool {
 	switch {
 	case h.UnconfirmedDataHeader != nil:
@@ -523,10 +464,6 @@ func fullFlag(h *pdu.DataHeader) bool {
 	return true
 }
 
-// fuzzHeader returns the first-try header of a fuzzed packet: kind bits 0-1
-// select U_HEAD, C_HEAD, DD_HEAD or R_HEAD, bit 4 sets SARQ and bit 5 clears
-// the Full Message Flag of a U_HEAD, bits 6 and 7 set Group and Response
-// Requested, and fields fills the other fields.
 func fuzzHeader(kind uint8, fields uint64, dst, src uint32) pdu.DataHeader {
 	dst, src = dst&0xFFFFFF, src&0xFFFFFF
 	group, resp := kind&0x40 != 0, kind&0x80 != 0
@@ -554,9 +491,6 @@ func fuzzHeader(kind uint8, fields uint64, dst, src uint32) pdu.DataHeader {
 	}
 }
 
-// setup segments the fuzzed packet into s. It returns false when the
-// payload needs more blocks than the header can count, which Segment must
-// report as ErrTooLong.
 func (s *session) setup(t *testing.T, kind uint8, fields uint64, dst, src uint32, payload []byte) bool {
 	t.Helper()
 	s.rate = [4]enums.DataType{enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1, enums.DataTypeRate12}[kind>>2&3]
@@ -588,7 +522,6 @@ func (s *session) setup(t *testing.T, kind uint8, fields uint64, dst, src uint32
 	return true
 }
 
-// roundTripSeed is one seed of FuzzRoundTrip.
 type roundTripSeed struct {
 	kind     uint8
 	fields   uint64
@@ -597,10 +530,6 @@ type roundTripSeed struct {
 	channel  []byte
 }
 
-// roundTripSeeds returns the seeds of FuzzRoundTrip: the payloads and
-// addresses of the SMS captures, sent unconfirmed, confirmed and as SARQ
-// short data at each rate, over clean and damaged channels, and a packet of
-// zeros that loses a block, whose message CRC still passes.
 func roundTripSeeds(t testing.TB) []roundTripSeed {
 	t.Helper()
 	var seeds []roundTripSeed
@@ -638,13 +567,6 @@ func roundTripSeeds(t testing.TB) []roundTripSeed {
 	return append(seeds, roundTripSeed{dst: seeds[0].dst, src: seeds[0].src, payload: make([]byte, 40), channel: []byte{0, 3}})
 }
 
-// FuzzRoundTrip segments a fuzzed packet with a Builder and sends it to an
-// Assembler over a channel that loses, duplicates, swaps and damages bursts,
-// with selective retry by the SACK of the Assembler. The Assembler must
-// never deliver a packet without an error that is not the one sent, must
-// end each attempt that the model follows as the package doc says, with
-// Missing and the SACK naming the blocks it lacks, and must deliver the
-// packet after two clean transmissions.
 func FuzzRoundTrip(f *testing.F) {
 	for _, s := range roundTripSeeds(f) {
 		f.Add(s.kind, s.fields, s.dst, s.src, s.payload, s.channel)
@@ -661,8 +583,6 @@ func FuzzRoundTrip(f *testing.F) {
 	})
 }
 
-// burstSeeds returns the seeds of FuzzAssemblerBursts: the bursts of each
-// SMS capture, each after an op byte that adds it.
 func burstSeeds(t testing.TB) [][]byte {
 	t.Helper()
 	var seeds [][]byte
@@ -681,9 +601,6 @@ func burstSeeds(t testing.TB) [][]byte {
 	return append(seeds, builtBursts(t, roundTripSeeds(t)[0].payload))
 }
 
-// builtBursts returns a seed of FuzzAssemblerBursts made with the Builder:
-// a confirmed packet of data that loses a block, the retry and the SACK,
-// then an unconfirmed packet with a P_HEAD second header.
 func builtBursts(t testing.TB, data []byte) []byte {
 	t.Helper()
 	b := packet.NewBuilder(127)
@@ -743,22 +660,16 @@ func builtBursts(t testing.TB, data []byte) []byte {
 	return in
 }
 
-// anyBursts is the reused state of FuzzAssemblerBursts.
 type anyBursts struct {
 	a       *packet.Assembler
 	b       layer2.Burst
 	missing []int
 }
 
-// newAnyBursts returns the state of FuzzAssemblerBursts.
 func newAnyBursts() *anyBursts {
 	return &anyBursts{a: packet.NewAssembler(127), missing: make([]int, 0, 127)}
 }
 
-// feed runs the ops of in on a reset Assembler: an op byte with the top
-// bits 01 calls Lost, 10 calls Reset, and any other adds the 33-byte burst
-// that follows it. After each op it checks the result, Missing and the
-// SACK.
 func (r *anyBursts) feed(t *testing.T, acceptBadCRC bool, in []byte) {
 	t.Helper()
 	a := r.a
@@ -791,10 +702,6 @@ func (r *anyBursts) feed(t *testing.T, acceptBadCRC bool, in []byte) {
 	}
 }
 
-// FuzzAssemblerBursts feeds an Assembler arbitrary bursts, losses and
-// resets. It must never panic, return only the documented errors, keep
-// Missing in order and within the packet, and build a SACK that names the
-// blocks Missing returns.
 func FuzzAssemblerBursts(f *testing.F) {
 	for _, in := range burstSeeds(f) {
 		f.Add(false, in)
@@ -806,8 +713,6 @@ func FuzzAssemblerBursts(f *testing.F) {
 	})
 }
 
-// checkAnyResult checks a result of an Assembler on arbitrary input: only
-// the documented errors, and a Message within the limits of a packet.
 func checkAnyResult(t *testing.T, m *packet.Message, done bool, err error) {
 	t.Helper()
 	if !done {
@@ -831,8 +736,6 @@ func checkAnyResult(t *testing.T, m *packet.Message, done bool, err error) {
 	}
 }
 
-// checkSACK checks that the SACK of the Assembler, when it has one, encodes
-// and names the blocks in missing.
 func checkSACK(t *testing.T, a *packet.Assembler, missing []int) {
 	t.Helper()
 	resp, err := a.Response()
@@ -861,14 +764,11 @@ func checkSACK(t *testing.T, a *packet.Assembler, missing []int) {
 	}
 }
 
-// responseDataSeed is one seed of FuzzResponseData.
 type responseDataSeed struct {
 	b0, b1 []byte
 	blocks uint8
 }
 
-// responseDataSeeds returns the seeds of FuzzResponseData: C_RDATA blocks
-// that retry nothing, one block and the first and last of 64.
 func responseDataSeeds() []responseDataSeed {
 	full := bytes.Repeat([]byte{0xFF}, 12)
 	return []responseDataSeed{
@@ -878,10 +778,6 @@ func responseDataSeeds() []responseDataSeed {
 	}
 }
 
-// checkResponseData decodes the C_RDATA blocks b0 and b1, when b1 is not
-// empty, and checks that the flags survive an encode for a packet of
-// blocks blocks. Each block holds the first 12 octets of its input, zero
-// padded.
 func checkResponseData(t *testing.T, b0, b1 []byte, blocks uint8) {
 	t.Helper()
 	in := []*pdu.Rate12Data{{}}
@@ -924,9 +820,6 @@ func checkResponseData(t *testing.T, b0, b1 []byte, blocks uint8) {
 	}
 }
 
-// FuzzResponseData decodes fuzzed C_RDATA blocks and encodes the flags for a
-// fuzzed packet size. The flags of the blocks of the packet must survive,
-// the rest must read as received, and the CRC must pass.
 func FuzzResponseData(f *testing.F) {
 	for _, s := range responseDataSeeds() {
 		f.Add(s.b0, s.b1, s.blocks)

@@ -10,8 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// buildShortLCBits constructs a valid 36-bit Short LC PDU with correct CRC-8.
-// slco is the 4-bit SLCO value, data is the 24-bit payload.
 func buildShortLCBits(slco byte, data [3]byte) [5]byte {
 	var info [5]byte
 	bits.SetField(info[:], 0, 4, uint64(slco))
@@ -43,7 +41,6 @@ func TestShortLC_NullMessage_Decode(t *testing.T) {
 
 func TestShortLC_ActivityUpdate_Decode(t *testing.T) {
 	t.Parallel()
-	// TS1ActivityID=5, TS2ActivityID=3, HashTS1=0xAB, HashTS2=0xCD
 	data := [3]byte{0b0101_0011, 0b1010_1011, 0b1100_1101}
 
 	info := buildShortLCBits(byte(enums.SLCOActivityUpdate), data)

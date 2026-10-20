@@ -29,8 +29,6 @@ func silenceSlot() [9]byte {
 	return slot
 }
 
-// groupLC returns a Grp_V_Ch_Usr LC. A manufacturer FID gets the same
-// payload bits in RawPayload, since only the SFID dispatches to GroupVoice.
 func groupLC(fid enums.FeatureSetID) pdu.FullLinkControl {
 	gv := &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3191868}
 	lc := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FID: fid}
@@ -42,9 +40,6 @@ func groupLC(fid enums.FeatureSetID) pdu.FullLinkControl {
 	return lc
 }
 
-// lcBits returns the 96 on-air bits of lc, packed, as a burst of dataType
-// carries them, so LCs decoded with RawPayload compare equal to the variant
-// they were built from.
 func lcBits(t *testing.T, lc pdu.FullLinkControl, dataType enums.DataType) [12]byte {
 	t.Helper()
 	lc.BurstDataType = dataType
@@ -75,8 +70,6 @@ func checkLCBurst(t *testing.T, raw [33]byte, lc pdu.FullLinkControl, dataType e
 	}
 }
 
-// checkVoiceBurst decodes voice burst i of a transmission and checks its
-// slots and its SYNC or EMB for superframe position i mod 6.
 func checkVoiceBurst(t *testing.T, i int, raw [33]byte, slots [3][9]byte, voiceSync enums.SyncPattern, cc int) *layer2.Burst {
 	t.Helper()
 	b, err := layer2.NewBurstFromBytes(raw)
@@ -111,8 +104,6 @@ func checkVoiceBurst(t *testing.T, i int, raw [33]byte, slots [3][9]byte, voiceS
 	return b
 }
 
-// TestVoiceTransmitter_Transmission builds a transmission of two full
-// superframes and one partial one and decodes every burst.
 func TestVoiceTransmitter_Transmission(t *testing.T) {
 	t.Parallel()
 
@@ -207,8 +198,6 @@ func TestVoiceTransmitter_AddFramesUsesAMBE72(t *testing.T) {
 	}
 }
 
-// TestVoiceTransmitter_Append shows that the Append forms append to dst the
-// bursts that the convenience forms return.
 func TestVoiceTransmitter_Append(t *testing.T) {
 	t.Parallel()
 
@@ -250,9 +239,6 @@ func TestVoiceTransmitter_Append(t *testing.T) {
 	}
 }
 
-// TestVoiceTransmitter_AddBurst checks that AddBurst returns the bursts that
-// AppendSlots returns for the same slots, also with a slot that waits from
-// an earlier call, and that Terminator is the last burst of Terminate.
 func TestVoiceTransmitter_AddBurst(t *testing.T) {
 	t.Parallel()
 
@@ -377,9 +363,6 @@ func TestVoiceTransmitter_RejectsBadInput(t *testing.T) {
 	}
 }
 
-// captureSuperframes splits the voice bursts of a capture into complete
-// superframes A to F. It returns the indices of the bursts in complete
-// superframes and of the other voice bursts.
 func captureSuperframes(t *testing.T, bursts []*layer2.Burst) (kept, skipped []int) {
 	t.Helper()
 	var run []int
@@ -409,10 +392,6 @@ func captureSuperframes(t *testing.T, bursts []*layer2.Burst) (kept, skipped []i
 	return kept, skipped
 }
 
-// TestVoiceTransmitter_ReproducesCaptures rebuilds each capture from its
-// Voice LC Header and voice slots. The captures drop bursts: voice.bin has a
-// superframe without its burst A and parrot_kerchunk.bin a burst A without
-// bursts B to F. Every other burst must match the capture bit for bit.
 func TestVoiceTransmitter_ReproducesCaptures(t *testing.T) {
 	t.Parallel()
 

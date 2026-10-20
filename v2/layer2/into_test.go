@@ -11,8 +11,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// TestReceiveInto_MatchesReceive checks that ReceiveInto returns the same
-// results and LCs as Receive on a transmission and on the captures.
 func TestReceiveInto_MatchesReceive(t *testing.T) {
 	t.Parallel()
 
@@ -48,8 +46,6 @@ func TestReceiveInto_MatchesReceive(t *testing.T) {
 	}
 }
 
-// TestDecodeEmbeddedFullLinkControlInto_MatchesValue checks the Into form
-// against DecodeEmbeddedFullLinkControl for every FLCO with a payload struct.
 func TestDecodeEmbeddedFullLinkControlInto_MatchesValue(t *testing.T) {
 	t.Parallel()
 
@@ -70,9 +66,6 @@ func TestDecodeEmbeddedFullLinkControlInto_MatchesValue(t *testing.T) {
 	}
 }
 
-// TestShortLCAssembler_AddInto_MatchesAdd checks AddInto and CompleteInto
-// against Add on a Short LC sequence, an uncorrectable TACT and an
-// incomplete assembler.
 func TestShortLCAssembler_AddInto_MatchesAdd(t *testing.T) {
 	t.Parallel()
 

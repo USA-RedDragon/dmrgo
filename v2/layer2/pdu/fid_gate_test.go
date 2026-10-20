@@ -10,7 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// buildCSBKFID is buildCSBK with a caller-chosen FID.
 func buildCSBKFID(opcode, fid byte, payload [8]byte) [12]byte {
 	var b [12]byte
 	b[0] = 0x80 | (opcode & 0x3F)
@@ -30,8 +29,7 @@ func testPayload64() [8]byte {
 	return p
 }
 
-// ETSI TS 102 361-1 Table 9.21: the FID redefines the CSBKO, so a
-// manufacturer FID must not be decoded with the standard layouts.
+// ETSI TS 102 361-1 Table 9.21
 func TestCSBK_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	t.Parallel()
 

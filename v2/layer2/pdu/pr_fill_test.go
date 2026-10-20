@@ -9,7 +9,7 @@ import (
 
 func TestPRFill_PackedHex(t *testing.T) {
 	t.Parallel()
-	// ETSI TS 102 361-1 Table D.2, I(95) first.
+	// ETSI TS 102 361-1 Table D.2
 	expected := [12]byte{
 		0xFF, 0x83, 0xDF, 0x17, 0x32, 0x09,
 		0x4E, 0xD1, 0xE7, 0xCD, 0x8A, 0x91,

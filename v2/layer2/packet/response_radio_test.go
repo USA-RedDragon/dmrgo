@@ -10,10 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// TestNewResponse_MatchesRadio builds the responses that a BTECH DA-7X2
-// (AnyTone D890UV firmware) sent over the air through a Motorola XPR 8400 on
-// 2026-10-16, and checks them bit for bit: an ACK for a complete confirmed
-// packet and the NACK it sends for a packet with a block missing.
 func TestNewResponse_MatchesRadio(t *testing.T) {
 	t.Parallel()
 	for _, c := range []struct {

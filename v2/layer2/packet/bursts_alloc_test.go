@@ -10,8 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 )
 
-// TestAllocsAppendBursts segments a packet at each rate into a local Packet
-// and appends its bursts. The Packet must stay off the heap.
 func TestAllocsAppendBursts(t *testing.T) {
 	b := packet.NewBuilder(127)
 	data := payload(100)

@@ -148,8 +148,6 @@ func (r *ResponseData) AppendEncode(dst []pdu.Rate12Data, blocks int) ([]pdu.Rat
 	return append(dst, out[:n]...), nil
 }
 
-// encodeInto writes the C_RDATA blocks that Encode returns to dst and
-// returns their number.
 func (r *ResponseData) encodeInto(dst *[2]pdu.Rate12Data, blocks int) (int, error) {
 	if blocks < 0 || blocks > maxBlocks {
 		return 0, ErrTooLong
@@ -191,7 +189,6 @@ func DecodeResponseData(blocks ...*pdu.Rate12Data) (ResponseData, error) {
 	return r, err
 }
 
-// decodeResponseData decodes the C_RDATA octets buf into r.
 func decodeResponseData(r *ResponseData, buf []byte) error {
 	clear(r.Retry[:])
 	if len(buf) != 12 && len(buf) != 24 {
@@ -229,20 +226,14 @@ func (b *Builder) NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *Res
 	return b.resp.build(to, r, data)
 }
 
-// noResponseData is the response data of a SACK without data, which
-// NewResponse only reads. A local would be on the heap under TinyGo, as its
-// address goes to encodeInto.
 var noResponseData ResponseData
 
-// responseStore holds the header and the C_RDATA blocks of a response
-// packet.
 type responseStore struct {
 	header pdu.ResponsePacketHeader
 	rate12 [2]pdu.Rate12Data
 	blocks [2]layer2.Data
 }
 
-// build builds the response packet that NewResponse returns into s.
 func (s *responseStore) build(to *pdu.ConfirmedDataHeader, r Response, data *ResponseData) (Packet, error) {
 	if r>>5 != 0 {
 		return Packet{}, errResponseClassRange

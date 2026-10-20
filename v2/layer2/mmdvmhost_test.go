@@ -10,11 +10,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// TestMMDVMHostAccepts_Vectors checks MMDVMHostAccepts against
-// CDMRFullLC::decode, CDMRCSBK::put and CDMRDataHeader::put of MMDVMHost
-// 0acb758, given each payload BPTC encoded. Per data type the vectors are a
-// valid payload, the same with one bit flipped, one with a wrong CRC mask
-// and a random payload.
 func TestMMDVMHostAccepts_Vectors(t *testing.T) {
 	t.Parallel()
 
@@ -80,9 +75,6 @@ func TestMMDVMHostAccepts_UncheckedDataTypes(t *testing.T) {
 	}
 }
 
-// TestMMDVMHostAccepts_MBCContinuation checks that MMDVMHost accepts the
-// last block of an MBC with one continuation block, whose last-block CRC
-// covers only that block, and rejects that block when it follows another.
 func TestMMDVMHostAccepts_MBCContinuation(t *testing.T) {
 	t.Parallel()
 

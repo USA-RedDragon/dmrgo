@@ -85,8 +85,6 @@ func TestBurst_Encode(t *testing.T) {
 
 				encoded := must(burst.Encode())
 
-				// A captured burst can have bad parity or FEC bits that the first
-				// Encode corrects, so the check is that a second round trip is stable.
 				burst2, err := layer2.NewBurstFromBytes(encoded)
 				if err != nil {
 					t.Fatalf("NewBurstFromBytes failed for burst %d: %v", i, err)
@@ -185,10 +183,6 @@ func TestBurst_SyncTolerance(t *testing.T) {
 	}
 }
 
-// TestBurst_SyncTolerance_EMBPositions checks that a damaged SYNC stays a
-// SYNC burst when the errors make the EMB positions a valid QR(16,7,6)
-// codeword. The EMB positions of MS-sourced data SYNC are 2 bits from a
-// codeword, at bits 115 and 155.
 func TestBurst_SyncTolerance_EMBPositions(t *testing.T) {
 	t.Parallel()
 
@@ -215,10 +209,6 @@ func TestBurst_SyncTolerance_EMBPositions(t *testing.T) {
 	}
 }
 
-// TestBurst_SyncTolerance_EmbeddedVoiceBursts checks that tolerant SYNC
-// matching does not take a voice burst B-F (EMB and embedded signalling in
-// the center) as a SYNC burst. The captures have clean SYNC fields, so any
-// SYNC match at a non-zero distance would be a misclassified B-F burst.
 func TestBurst_SyncTolerance_EmbeddedVoiceBursts(t *testing.T) {
 	t.Parallel()
 
