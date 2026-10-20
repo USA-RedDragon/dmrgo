@@ -222,12 +222,18 @@ func payloadNames() [][2]string {
 }
 
 const (
+	mcuAudio = "1,952 B of RAM with its stack at 3.7 MHz"
+	mcuIQLow = "2,036 B at 4.3 MHz"
+)
+
+const (
 	modeAudio = "audio"
 	modeIQ    = "iq"
+	modeIQLow = "iqlow"
 )
 
 func modes() [][3]string {
-	return [][3]string{{modeAudio, "FM discriminator audio", "Audio"}, {modeIQ, "I/Q", "I/Q"}}
+	return [][3]string{{modeAudio, "FM discriminator audio", "Audio"}, {modeIQLow, "I/Q at 9.6 kHz", "Low-rate I/Q"}, {modeIQ, "I/Q", "I/Q"}}
 }
 
 func modeLabel(m string) string {
@@ -246,12 +252,14 @@ func shortName(t tier) string {
 func inputName(t tier) string {
 	return map[string]string{
 		modeAudio + "0": "FM audio, 9.6 kHz, core",
-		modeAudio + "1": "FM audio, 9.6 kHz, soft decoding, noise prediction, coherent when weak",
+		modeAudio + "1": "FM audio, 9.6 kHz, soft decoding, noise prediction",
 		modeAudio + "2": "FM audio, 9.6 kHz, coherent detection",
+		modeAudio + "3": "FM audio, 24 kHz, coherent detection, data passes",
+		modeIQLow + "0": "I/Q, 9.6 kHz, discriminator core",
 		modeIQ + "0":    "I/Q, discriminator core",
-		modeIQ + "1":    "I/Q, soft decoding, noise prediction, coherent when weak",
+		modeIQ + "1":    "I/Q, soft decoding, noise prediction",
 		modeIQ + "2":    "I/Q, coherent detection",
-		modeIQ + "3":    "I/Q, phase trellis",
+		modeIQ + "3":    "I/Q, phase trellis with Tier 2 beside it",
 	}[t.Mode+strconv.Itoa(t.Tier)]
 }
 
@@ -327,12 +335,12 @@ func renderBlock(d data) []byte {
 		b.WriteString("| " + strings.Join(row, " | ") + " |\n")
 	}
 	b.WriteString("\n- Each cell is the Eb/N0 at which the tier recovers 90% of the frames. Lower is better. C/N in 12.5 kHz is 1.2 dB lower.\n")
-	b.WriteString("- CPU is measured on an " + d.bench.Machine + ". RAM is the state of the receiver. Audio tier 0 needs 1,056 B on a Cortex-M4F.")
+	b.WriteString("- CPU is measured on an " + d.bench.Machine + ". RAM is the state of the receiver. On a Cortex-M4F, audio tier 0 needs " + mcuAudio + " and low-rate I/Q tier 0 " + mcuIQLow + ".")
 	if !slices.ContainsFunc(d.bench.Tiers, func(t tier) bool { return t.Allocs > 0 }) {
 		b.WriteString(" No tier allocates after it starts.")
 	}
 	b.WriteString("\n")
-	b.WriteString("- Audio tiers take FM discriminator audio, as from a radio. I/Q tiers take samples at 48 kHz from a software radio.\n")
+	b.WriteString("- Audio tiers take FM discriminator audio, as from a radio. I/Q tiers take samples at 48 kHz from a software radio, and low-rate I/Q tier 0 takes I/Q at 9.6 kHz that a radio chip filtered to the channel.\n")
 	b.WriteString("- [docs/rx](docs/rx/README.md) tells how the sweep measures and what the floors are.\n\n")
 	renderSensitivity(&b, d)
 	var rec []tier
