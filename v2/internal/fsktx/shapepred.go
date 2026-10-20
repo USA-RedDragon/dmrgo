@@ -15,6 +15,10 @@ const (
 	predRing = 64
 	predSpan = 3
 	predSPS  = iqShaperHz / SymbolRate
+	// predC is the number of products of predFeaturesC, and predMaskC
+	// their indices in predFeatures as bits.
+	predC     = 6
+	predMaskC = 1<<0 | 1<<5 | 1<<9 | 1<<10 | 1<<12 | 1<<13
 )
 
 // predPulse is the pulse, with IQConfig.Exact, that the kernels fit: the
@@ -43,12 +47,21 @@ func predFeatures(x [predSpan + 1]float64) [predF]float64 {
 	}
 }
 
+// predFeaturesC returns the products of predFeatures that weigh the
+// kernels of PredKern 2: those of the third power that most lower the
+// residual of the fit, and the symbol itself.
+func predFeaturesC(x [predSpan + 1]float64) [predC]float64 {
+	x0, x1, x2, x3 := x[0], x[1], x[2], x[3]
+	return [predC]float64{x0, x0 * x0 * x0, x0 * x1 * x1, x0 * x1 * x2, x0 * x2 * x2, x0 * x2 * x3}
+}
+
 // predictor adds to the shaped deviation a phase correction that is a
 // fixed polynomial function of the symbols, fitted to the corrections of
 // the optimizer of IQConfig.Shape (shapefit_test.go). The kernels have
 // nothing below 3 kHz, as the optimizer's correction.
 type predictor struct {
 	kern *[predK][predF]float64
+	kc   *[predK][predC]float64
 	acc  [predK + predSPS]float64
 	psi  [predRing]float64
 	x    [predSpan + 1]float64
@@ -69,14 +82,11 @@ func (p *predictor) process(buf []float64, s int8) {
 		p.x[predSpan] = 0
 	}
 	if p.nSym >= predSpan {
-		ft := predFeatures(p.x)
 		a := p.acc[:predK]
-		for t := range a {
-			k := &p.kern[t]
-			a[t] += ((ft[0]*k[0] + ft[1]*k[1]) + (ft[2]*k[2] + ft[3]*k[3])) +
-				((ft[4]*k[4] + ft[5]*k[5]) + (ft[6]*k[6] + ft[7]*k[7])) +
-				((ft[8]*k[8] + ft[9]*k[9]) + (ft[10]*k[10] + ft[11]*k[11])) +
-				((ft[12]*k[12] + ft[13]*k[13]) + ft[14]*k[14])
+		if p.kc != nil {
+			p.addC(a)
+		} else {
+			p.addAll(a)
 		}
 		m := (p.nSym-predSpan)*predSPS + predLo
 		for i, v := range p.acc[:predSPS] {
@@ -93,5 +103,26 @@ func (p *predictor) process(buf []float64, s int8) {
 		p.nIn++
 		buf[i] += p.gain * (v - p.prev) * iqShaperHz / (2 * math.Pi)
 		p.prev = v
+	}
+}
+
+// addAll adds the kernels of every product to a.
+func (p *predictor) addAll(a []float64) {
+	ft := predFeatures(p.x)
+	for t := range a {
+		k := &p.kern[t]
+		a[t] += ((ft[0]*k[0] + ft[1]*k[1]) + (ft[2]*k[2] + ft[3]*k[3])) +
+			((ft[4]*k[4] + ft[5]*k[5]) + (ft[6]*k[6] + ft[7]*k[7])) +
+			((ft[8]*k[8] + ft[9]*k[9]) + (ft[10]*k[10] + ft[11]*k[11])) +
+			((ft[12]*k[12] + ft[13]*k[13]) + ft[14]*k[14])
+	}
+}
+
+// addC adds the kernels of predFeaturesC to a.
+func (p *predictor) addC(a []float64) {
+	ft := predFeaturesC(p.x)
+	for t := range a {
+		k := &p.kc[t]
+		a[t] += (ft[0]*k[0] + ft[1]*k[1]) + (ft[2]*k[2] + ft[3]*k[3]) + (ft[4]*k[4] + ft[5]*k[5])
 	}
 }
