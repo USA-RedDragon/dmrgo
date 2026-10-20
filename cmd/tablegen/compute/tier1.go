@@ -67,7 +67,6 @@ func EncoderStateTransition() []byte {
 	return table
 }
 
-// reverseBits3 reverses the 3 least significant bits.
 func reverseBits3(b byte) byte {
 	return ((b & 1) << 2) | (b & 2) | ((b & 4) >> 2)
 }
@@ -135,8 +134,6 @@ func Golay23_12_7Syndrome() [4096]uint32 {
 	return table
 }
 
-// golay23Syndrome computes the 11-bit syndrome of a Golay(23,12,7) error
-// pattern: its remainder modulo g(x) = 0xC75.
 func golay23Syndrome(errPattern uint32) int {
 	dividend := errPattern
 	for i := 11; i >= 0; i-- {
@@ -190,9 +187,6 @@ func Golay24_12_8Syndrome() [4096]uint32 {
 	return table
 }
 
-// golay24Syndrome computes the 12-bit syndrome of a Golay(24,12,8) error
-// pattern with the parity bit in bit 0 and the Golay(23,12,7) codeword in
-// bits 1 to 23.
 func golay24Syndrome(errPattern uint32) int {
 	err23 := errPattern >> 1
 	polySyndrome := golay23Syndrome(err23)

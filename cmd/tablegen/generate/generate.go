@@ -170,9 +170,6 @@ func writeTable[T ~byte | ~int | ~uint16 | ~uint32](name string, data []T) jen.C
 	return table.Values(literals...)
 }
 
-// writePackedBits writes the bits of data, one bit per element, as a byte
-// array that holds them packed, the first bit in the most significant bit
-// of byte 0.
 func writePackedBits(name string, data []uint8) jen.Code {
 	packed := make([]byte, (len(data)+7)/8)
 	for i, b := range data {
@@ -185,8 +182,6 @@ func writePackedBits(name string, data []uint8) jen.Code {
 	return jen.Var().Id(name).Op("=").Index(jen.Lit(len(packed))).Byte().Values(literals...)
 }
 
-// writeColorCodeErrors writes a ColorCodeError array with one element for
-// each value of values.
 func writeColorCodeErrors(name string, values []uint8) jen.Code {
 	elems := make([]jen.Code, len(values))
 	for i, v := range values {

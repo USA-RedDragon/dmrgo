@@ -302,6 +302,5 @@ func GaloisTables() (exp [256]uint8, log [256]uint8) {
 			val ^= 0x11D
 		}
 	}
-	// log[0] has no defined value and stays 0.
 	return exp, log
 }

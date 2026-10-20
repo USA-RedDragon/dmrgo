@@ -24,8 +24,7 @@ func Trellis34Transition(encoderStateTransition []byte) [][]byte {
 	return table
 }
 
-// trellis34DibitBits maps a ±1/±3 dibit symbol to its two transmitted bits
-// (ETSI TS 102 361-1 Table 10.3).
+// ETSI TS 102 361-1 Table 10.3
 func trellis34DibitBits(d int8) byte {
 	switch d {
 	case 3:
