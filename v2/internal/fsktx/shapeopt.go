@@ -28,6 +28,11 @@ const (
 	// optNoChain makes each block start from no correction and see none in
 	// its context, so that the output depends on a finite span of symbols.
 	optNoChain = false
+	// optACP, when above 0, adds to the weight the adjacent channel
+	// receiver of EN 300 113 Annex C at the widest tolerances, at optACP
+	// dB: the power that the ACP limit counts weighs as much as that of
+	// Mask D at optACP dB.
+	optACP = 0.0
 )
 
 // optimizer adds a phase correction to the shaped deviation that lowers
@@ -93,6 +98,9 @@ func newOptimizer(iters int) *optimizer {
 			o.inband[k] = 1
 		case a > optFromHz:
 			o.w2[k] = math.Pow(10, optMaskAttn(a)/10)
+			if optACP > 0 {
+				o.w2[k] += math.Pow(10, (optACP-optAnnexC(a))/10)
+			}
 		}
 		o.taper[k] = 0.5 - 0.5*math.Cos(2*math.Pi*(float64(k)+0.5)/optWin)
 	}
@@ -138,6 +146,24 @@ func optMaskAttn(fd float64) float64 {
 	default:
 		return 60
 	}
+}
+
+// optAnnexC is the attenuation in dB at fd Hz from the carrier of the
+// Annex C receive filter of EN 300 113 tuned to the adjacent channel at
+// 12.5 kHz, at the widest tolerances on each side.
+func optAnnexC(fd float64) float64 {
+	d := math.Abs(fd)/1000 - 12.5
+	x, y := [5]float64{0, 5, 6.25, 7.5, 11.5}, [5]float64{0, 2, 6, 26, 90}
+	if d < 0 {
+		d = -d
+		x = [5]float64{0, 4.34, 4.35, 5.5, 9.5}
+	}
+	for i := 1; i < len(x); i++ {
+		if d <= x[i] {
+			return y[i-1] + (y[i]-y[i-1])*(d-x[i-1])/(x[i]-x[i-1])
+		}
+	}
+	return 90
 }
 
 // process takes the shaped deviation in buf and replaces it with the
