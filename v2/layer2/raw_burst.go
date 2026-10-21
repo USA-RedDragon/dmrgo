@@ -308,6 +308,25 @@ func (r RawBurst) AMBEFrames() ([VoiceSlotsPerBurst]vocoder.AMBEFrame, fec.Resul
 	return frames, result
 }
 
+// AMBEVoice decodes the three voice slots as AMBEFrames does and packs the
+// frames into the 19-octet IPSC AMBE payload, with the bad flags of frames
+// 2 and 3 set from their FEC results, as vocoder.PackAMBEVoiceFlags does.
+// bad reports the uncorrectable frames; the flag of frame 1 belongs in the
+// IPSC packet header. res is the combined FEC result. It cannot fail and
+// does not allocate.
+func (r RawBurst) AMBEVoice() (p [19]byte, bad [VoiceSlotsPerBurst]bool, res fec.Result) {
+	var frames [VoiceSlotsPerBurst]vocoder.AMBEFrame
+	for i, slot := range r.VoiceSlots() {
+		var fr fec.Result
+		frames[i], fr = ambe.Decode(slot)
+		frames[i][6] &= 0x80
+		bad[i] = fr.Uncorrectable
+		res = res.Combine(fr)
+	}
+	p, _ = vocoder.PackAMBEVoiceFlags(frames, bad)
+	return p, bad, res
+}
+
 // SetAMBEFrames writes the AMBE+2 coding of frames (vocoder.EncodeAMBE72)
 // into the three voice slots. It returns the errors of EncodeAMBE72 and
 // then changes nothing.

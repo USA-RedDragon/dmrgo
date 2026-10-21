@@ -594,6 +594,7 @@
 		dmrgo_layer2_position_tracker_place_decoded;
 		dmrgo_layer2_position_tracker_reset;
 		dmrgo_layer2_raw_burst_ambe_frames;
+		dmrgo_layer2_raw_burst_ambe_voice;
 		dmrgo_layer2_raw_burst_bptc_payload;
 		dmrgo_layer2_raw_burst_bptc_reserved;
 		dmrgo_layer2_raw_burst_emb;
@@ -1023,6 +1024,7 @@
 		dmrgo_pdu_gen_site_parms_string;
 		dmrgo_pdu_is_pr_fill;
 		dmrgo_pdu_lc_bytes_addresses;
+		dmrgo_pdu_lc_bytes_call;
 		dmrgo_pdu_lc_bytes_codeword;
 		dmrgo_pdu_lc_bytes_fid;
 		dmrgo_pdu_lc_bytes_flco;
@@ -1031,6 +1033,7 @@
 		dmrgo_pdu_lc_bytes_reserved;
 		dmrgo_pdu_lc_bytes_service_options;
 		dmrgo_pdu_lc_bytes_set_addresses;
+		dmrgo_pdu_lc_bytes_set_call;
 		dmrgo_pdu_lc_bytes_set_fid;
 		dmrgo_pdu_lc_bytes_set_flco;
 		dmrgo_pdu_lc_bytes_set_group;

@@ -34,11 +34,10 @@ type Call struct {
 }
 
 func callOf(lc pdu.LCBytes, origin Origin) (c Call, ok bool) {
-	target, source, ok := lc.Addresses()
+	group, target, source, ok := lc.Call()
 	if !ok {
 		return c, false
 	}
-	group, _ := lc.Group()
 	so, _ := lc.ServiceOptions()
 	return Call{
 		Group:   group,
