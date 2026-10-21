@@ -12,6 +12,7 @@
 
 ignore_files:
   - v2/internal/digest/blake2b.go
+  - v2/internal/digest/equal.go
   - v2/internal/digest/sha1.go
   - v2/internal/digest/sha256.go
   - v2/nmea/errors.go

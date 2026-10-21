@@ -1400,6 +1400,7 @@ sym int dmrgo_dmrd_auth_bridge_sign(dmrgo_dmrd_auth_bridge_t *self, const uint8_
 sym int dmrgo_dmrd_auth_bridge_verify(dmrgo_dmrd_auth_bridge_t *self, const uint8_t *p, size_t p_len, bool *out);
 sym int dmrgo_dmrd_auth_new_bridge(const uint8_t *key, size_t key_len, dmrgo_dmrd_auth_bridge_t **out);
 sym int dmrgo_dmrd_auth_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, uint8_t out[32]);
+sym int dmrgo_dmrd_auth_verify_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, const uint8_t *token, size_t token_len, bool *out);
 sym int dmrgo_dmrd_bridge_append_binary(const dmrgo_dmrd_bridge_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_dmrd_bridge_control_append_binary(const dmrgo_dmrd_bridge_control_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_dmrd_classify(const uint8_t *p, size_t p_len, dmrgo_dmrd_dialect_t d, dmrgo_dmrd_command_t *out);

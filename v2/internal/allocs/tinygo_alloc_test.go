@@ -20,6 +20,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/digest"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/hytera"
@@ -509,11 +510,45 @@ func tinyDMRDOps(t *testing.T) []tinyOp {
 		buf = tinyBridgeRun(dmre, buf)
 		buf = tinyBridgeRun(bridge, buf)
 	}}, {"dmrd/auth", func() {
-		_, _ = auth.Token(dmrd.DialectHBRP, 0x0A7ED498, []byte("DL5DI"))
+		tok, _ := auth.Token(dmrd.DialectHBRP, 0x0A7ED498, []byte("DL5DI"))
+		_ = auth.VerifyToken(dmrd.DialectHBRP, 0x0A7ED498, []byte("DL5DI"), tok[:])
 		_ = signer.Sign(bridge)
 		_ = signer.Verify(bridge)
 		_ = signer.Sign(dmre)
 		_ = signer.Verify(dmre)
+	}}}
+}
+
+func tinyDigestRun(s *tinyDigestState) bool {
+	s.s1.Reset()
+	s.s1.Write(s.msg[:])
+	a := s.s1.Sum()
+	s.s2.Reset()
+	s.s2.Write(s.msg[:])
+	c := s.s2.Sum()
+	s.mac.Init(s.key[:])
+	s.mac.Write(s.msg[:])
+	h := s.mac.Sum()
+	s.b2.Init(16, s.key[:64])
+	s.b2.Write(s.msg[:])
+	s.b2.Sum(s.out[:])
+	return digest.Equal(a[:], h[:]) || digest.Equal(c[:16], s.out[:16])
+}
+
+type tinyDigestState struct {
+	s1  digest.SHA1
+	s2  digest.SHA256
+	mac digest.HMACSHA1
+	b2  digest.BLAKE2b
+	msg [200]byte
+	key [80]byte
+	out [64]byte
+}
+
+func tinyDigestOps() []tinyOp {
+	s := &tinyDigestState{}
+	return []tinyOp{{"digest", func() {
+		_ = tinyDigestRun(s)
 	}}}
 }
 
@@ -623,7 +658,7 @@ func TestTinyGoAllocs(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(1))
-	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCSBKOps(t), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r), tinyDVSIOps(t), tinyAppOps(t), tinyDMRDOps(t), tinyIPSCOps(t), tinyHyteraOps(t), tinyMMDVMOps(t))
+	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCSBKOps(t), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r), tinyDVSIOps(t), tinyAppOps(t), tinyDMRDOps(t), tinyIPSCOps(t), tinyHyteraOps(t), tinyMMDVMOps(t), tinyDigestOps())
 
 	probe := make([]byte, 0, 1)
 	if b, _ := tinyAlloc(func() { probe = make([]byte, 64) }); b < 64 {

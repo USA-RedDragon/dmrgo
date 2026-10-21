@@ -29,6 +29,19 @@ func TestTokenMMDVM(t *testing.T) {
 	if _, err := auth.Token(dmrd.DialectLocal, 1, nil); err == nil {
 		t.Error("local dialect: no error")
 	}
+	if !auth.VerifyToken(dmrd.DialectMMDVM, 0xDEADBEEF, []byte("passw0rd"), got[:]) {
+		t.Error("VerifyToken rejects its token")
+	}
+	for i := range got {
+		bad := got
+		bad[i] ^= 0x10
+		if auth.VerifyToken(dmrd.DialectMMDVM, 0xDEADBEEF, []byte("passw0rd"), bad[:]) {
+			t.Errorf("VerifyToken accepts a change in octet %d", i)
+		}
+	}
+	if auth.VerifyToken(dmrd.DialectMMDVM, 0xDEADBEEF, []byte("passw0rd"), got[:31]) || auth.VerifyToken(dmrd.DialectLocal, 0xDEADBEEF, []byte("passw0rd"), got[:]) {
+		t.Error("VerifyToken accepts a short token or the local dialect")
+	}
 	long := bytes.Repeat([]byte("x"), 300)
 	got, err = auth.Token(dmrd.DialectMMDVM, 0xDEADBEEF, long)
 	if err != nil || got != sha256.Sum256(append([]byte{0xDE, 0xAD, 0xBE, 0xEF}, long...)) {

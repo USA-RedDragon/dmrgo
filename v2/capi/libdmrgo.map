@@ -185,6 +185,7 @@
 		dmrgo_dmrd_auth_bridge_verify;
 		dmrgo_dmrd_auth_new_bridge;
 		dmrgo_dmrd_auth_token;
+		dmrgo_dmrd_auth_verify_token;
 		dmrgo_dmrd_bridge_append_binary;
 		dmrgo_dmrd_bridge_control_append_binary;
 		dmrgo_dmrd_classify;

@@ -39,6 +39,12 @@ func TestTokenOfDMRGatewayCapture(t *testing.T) {
 			if err != nil || want != c.Token {
 				t.Fatalf("token %x, DMRGateway sent %x (%v)", want, c.Token, err)
 			}
+			if !auth.VerifyToken(dmrd.DialectMMDVM, salt, []byte("passw0rd"), c.Token[:]) {
+				t.Fatal("VerifyToken rejects the token of DMRGateway")
+			}
+			if auth.VerifyToken(dmrd.DialectMMDVM, salt, []byte("passw0rD"), c.Token[:]) {
+				t.Fatal("VerifyToken accepts a wrong password")
+			}
 			checked = true
 		}
 	}
