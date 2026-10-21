@@ -320,7 +320,8 @@ func (m *MS) ahoyAny(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Ou
 	}
 	kind := enums.ServiceKind(a.ServiceKind)
 	switch {
-	case m.udtRequest() && m.u.ahoyFrom != 0 && a.SourceAddress == m.u.ahoyFrom && kind == m.u.ahoyKind:
+	case m.udtRequest() && m.u.ahoyFrom != 0 && a.SourceAddress == m.u.ahoyFrom &&
+		(kind == m.u.ahoyKind || m.req == reqDivert):
 		m.ra, m.waitAnswer, m.reqUntil = raIdle, true, now+m.answerTO()
 		return m.sendUDT(now+frame, slot, &m.u.send, m.u.sendTo, m.u.sendGrp, m.u.sendDiv, m.u.sendOp, out)
 	case kind == enums.ServiceShortDataPolling && m.req == reqNone:
