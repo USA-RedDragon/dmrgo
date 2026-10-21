@@ -52,6 +52,11 @@ ignore_files:
   - v2/transport/dmrd/dmrplus.go
   - v2/transport/dmrd/freedmr.go
   - v2/transport/dmrd/errors.go
+  - v2/transport/dmrd/session/bridge.go
+  - v2/transport/dmrd/session/errors.go
+  - v2/transport/dmrd/session/master.go
+  - v2/transport/dmrd/session/output.go
+  - v2/transport/dmrd/session/peer.go
   - v2/transport/hytera/errors.go
   - v2/transport/hytera/frame.go
   - v2/transport/hytera/layout.go
