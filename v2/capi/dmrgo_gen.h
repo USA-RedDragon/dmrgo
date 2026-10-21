@@ -10211,7 +10211,7 @@ int dmrgo_ipsc_session_master_reset(dmrgo_ipsc_session_master_t *self);
 int dmrgo_ipsc_session_master_sign_need(dmrgo_ipsc_session_master_t *self, size_t *items, size_t *arena);
 /* Go: session.Master.Sign. Sign appends the authentication trailer of the packet in dst to dst when the config has Auth, and returns dst as it is without. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_session_master_sign_need gives (DMRGO_IPSC_SESSION_MASTER_SIGN_MAX_ITEMS items). */
 int dmrgo_ipsc_session_master_sign(dmrgo_ipsc_session_master_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: session.Master.State. State returns StateRunning, or StateIdle after Close. */
+/* Go: session.Master.State. State returns StateRunning, or StateIdle after Close and for a Master that NewMaster did not make. */
 int dmrgo_ipsc_session_master_state(dmrgo_ipsc_session_master_t *self, dmrgo_ipsc_session_state_t *out);
 /* dmrgo_ipsc_session_master_tick_need sets *items and *arena to the room that dmrgo_ipsc_session_master_tick needs for these arguments, without a change to the handle. */
 int dmrgo_ipsc_session_master_tick_need(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);

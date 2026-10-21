@@ -27,8 +27,8 @@ type BridgeConfig struct {
 // Bridge is one OpenBridge link between two masters. It checks the
 // signature of each packet and, with BridgeConfig.Enhanced, runs the BCKA
 // keepalive and the liveness of the peer as FreeDMR does. Make it with
-// NewBridge. A Bridge is not safe for concurrent use and must not be
-// copied.
+// NewBridge; the zero Bridge takes no packet. A Bridge is not safe for
+// concurrent use and must not be copied.
 type Bridge struct {
 	key       *auth.BridgeKey
 	enhanced  bool
@@ -69,8 +69,12 @@ func (b *Bridge) State() State {
 }
 
 // Sign writes the signature of the OpenBridge packet p, as
-// auth.BridgeKey.Sign does. It does not allocate.
+// auth.BridgeKey.Sign does. It returns an error for a Bridge that NewBridge
+// did not make. It does not allocate.
 func (b *Bridge) Sign(p []byte) error {
+	if b.key == nil {
+		return errNoKey
+	}
 	_, err := b.key.Sign(p)
 	return err
 }
@@ -78,7 +82,7 @@ func (b *Bridge) Sign(p []byte) error {
 // Deadline returns the time at which the Bridge needs a Tick. ok is false
 // without BridgeConfig.Enhanced.
 func (b *Bridge) Deadline() (at time.Duration, ok bool) {
-	if !b.enhanced {
+	if !b.enhanced || b.key == nil {
 		return 0, false
 	}
 	if !b.started {
@@ -95,7 +99,7 @@ func (b *Bridge) Deadline() (at time.Duration, ok bool) {
 // sent nothing for Timeout. It allocates only when dst has no room for
 // MaxOutputs outputs.
 func (b *Bridge) Tick(now time.Duration, dst []Output) []Output {
-	if !b.enhanced {
+	if !b.enhanced || b.key == nil {
 		return dst
 	}
 	if b.state == StateRunning && now >= b.lastAt+b.timeout {
@@ -116,7 +120,7 @@ func (b *Bridge) Tick(now time.Duration, dst []Output) []Output {
 // them, is a sign of life: the first after StateIdle reports OutputUp.
 // It allocates only when dst has no room for MaxOutputs outputs.
 func (b *Bridge) Packet(now time.Duration, p []byte, dst []Output) []Output {
-	if len(p) > MaxPacket {
+	if b.key == nil || len(p) > MaxPacket {
 		return dst
 	}
 	if _, ok := b.key.Verify(p); !ok {

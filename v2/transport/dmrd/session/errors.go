@@ -1,5 +1,7 @@
 package session
 
+import "errors"
+
 // ConfigError is the error of NewPeer, NewMaster and NewBridge for a
 // config field with a value out of range. Match it with errors.As.
 type ConfigError struct {
@@ -18,3 +20,5 @@ var (
 	errOptions error = &ConfigError{Field: nameOptions}
 	errTimer   error = &ConfigError{Field: "timer"}
 )
+
+var errNoKey = errors.New("session: the Bridge has no key; make it with NewBridge")

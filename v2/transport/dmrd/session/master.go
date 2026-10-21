@@ -22,8 +22,8 @@ type MasterConfig struct {
 // Master is the master side of the session of one repeater of the MMDVM
 // network protocol or of HBRP. The consumer keeps one Master for each
 // address that sends it packets, and passes it the packets of that
-// address. Make it with NewMaster. A Master is not safe for concurrent
-// use and must not be copied.
+// address. Make it with NewMaster; the zero Master takes no packet. A
+// Master is not safe for concurrent use and must not be copied.
 type Master struct {
 	dialect dmrd.Dialect
 	timeout time.Duration
@@ -164,7 +164,7 @@ func (m *Master) nak(dst []Output, id uint32) []Output {
 // that the Master takes restarts Timeout. It allocates only when dst has
 // no room for MaxOutputs outputs.
 func (m *Master) Packet(now time.Duration, b []byte, dst []Output) []Output {
-	if len(b) > MaxPacket {
+	if m.dialect == dmrd.DialectUnknown || len(b) > MaxPacket {
 		return dst
 	}
 	c := dmrd.Classify(b, m.dialect)
