@@ -1,6 +1,7 @@
 package trunk
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
@@ -287,35 +288,59 @@ func orDefault(d, def time.Duration) time.Duration {
 
 // State returns the channel state of the MS.
 func (m *MS) State() State {
+	if m == nil {
+		return 0
+	}
+
 	return m.f.state
 }
 
 // Site returns what the MS knows about the TSCC.
 func (m *MS) Site() Site {
+	if m == nil {
+		return Site{}
+	}
+
 	return m.f.ctl.site
 }
 
 // UDT returns the UDT delivery of the last OutputUDT, as Follower.UDT
 // does.
 func (m *MS) UDT() *UDT {
+	if m == nil {
+		return nil
+	}
+
 	return &m.f.ctl.udt
 }
 
 // Registered reports whether the MS holds a registration record for the
 // SYS_AREA of the TSCC that it is on.
 func (m *MS) Registered() bool {
+	if m == nil {
+		return false
+	}
+
 	return m.registered && m.f.ctl.site.HasSysCode && m.regArea == m.areaOf(m.f.ctl.site.SysCode)
 }
 
 // Busy reports whether a registration, de-registration or call request
 // runs.
 func (m *MS) Busy() bool {
+	if m == nil {
+		return false
+	}
+
 	return m.req != reqNone
 }
 
 // Off reports whether the MS completed PowerOff or a TSCC killed it. An MS
 // that is off ignores every input until Reset, and a killed MS for good.
 func (m *MS) Off() bool {
+	if m == nil {
+		return false
+	}
+
 	return m.off
 }
 
@@ -323,6 +348,10 @@ func (m *MS) Off() bool {
 // talkgroups and any request, as after NewMS. It keeps the config, the
 // poll responses, and a stun or kill.
 func (m *MS) Reset() {
+	if m == nil {
+		return
+	}
+
 	m.f.Reset()
 	m.off, m.registered, m.ra, m.req, m.pending, m.ownCall, m.waitAnswer = false, false, raIdle, reqNone, false, false, false
 	m.auth = authChallenge{}
@@ -342,6 +371,10 @@ func (m *MS) Reset() {
 // registration that the MS does not hold, and a *dmrgo.ConfigError for a
 // target or options out of range.
 func (m *MS) Call(now time.Duration, group bool, target uint32, opts layer3.VoiceServiceOptions) error {
+	if m == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	kind := enums.ServiceIndividualVoice
 	if group {
 		kind = enums.ServiceTalkgroupVoice
@@ -357,6 +390,10 @@ func (m *MS) Call(now time.Duration, group bool, target uint32, opts layer3.Voic
 // target, as Call does. The consumer sends the data on the granted
 // channel with data.Sender.
 func (m *MS) CallData(now time.Duration, group bool, target uint32, opts layer3.DataServiceOptions) error {
+	if m == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	kind := enums.ServiceIndividualPacketData
 	if group {
 		kind = enums.ServiceTalkgroupPacketData
@@ -392,6 +429,10 @@ func (m *MS) request(now time.Duration, kind enums.ServiceKind, target uint32, f
 // that holds no registration appends OutputPowerOff at once. It allocates
 // only when dst has no room for MaxOutputs outputs.
 func (m *MS) PowerOff(now time.Duration, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	dst = m.timers(now, dst)
 	if m.off || m.req == reqDereg {
 		return dst
@@ -417,6 +458,10 @@ func (m *MS) PowerOff(now time.Duration, dst []Output) []Output {
 // appends the outputs to dst, and allocates only when dst has no room for
 // MaxOutputs outputs.
 func (m *MS) Quality(now time.Duration, level int, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	dst = m.timers(now, dst)
 	m.level, m.hasLevel = level, true
 	if m.f.state == StateControl && m.hasIdle && level < m.minIdle && m.req == reqNone {
@@ -429,6 +474,10 @@ func (m *MS) Quality(now time.Duration, level int, dst []Output) []Output {
 // ReasonCancelled when one ran, and allocates only when dst has no room
 // for MaxOutputs outputs.
 func (m *MS) Cancel(now time.Duration, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	dst = m.timers(now, dst)
 	if m.req == reqNone || m.req == reqDereg {
 		return dst
@@ -441,6 +490,10 @@ func (m *MS) Cancel(now time.Duration, dst []Output) []Output {
 // TSCC (ETSI TS 102 361-4 clause 6.6.2.3). It does nothing outside the own
 // call, and allocates only when dst has no room for MaxOutputs outputs.
 func (m *MS) EndCall(now time.Duration, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	dst = m.timers(now, dst)
 	if m.f.state != StatePayload || !m.ownCall {
 		return dst
@@ -469,6 +522,10 @@ func (m *MS) EndCall(now time.Duration, dst []Output) []Output {
 // Lost does, else it runs the timers. It allocates only when dst has no
 // room for MaxOutputs outputs.
 func (m *MS) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	if m.off {
 		return dst
 	}
@@ -508,6 +565,10 @@ func (m *MS) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach 
 // Lost tells the MS that the receiver lost the signal, as Follower.Lost
 // does. It allocates only when dst has no room for MaxOutputs outputs.
 func (m *MS) Lost(now time.Duration, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	if m.off {
 		return dst
 	}
@@ -522,6 +583,10 @@ func (m *MS) Lost(now time.Duration, dst []Output) []Output {
 // dst. A Tick before Deadline does nothing. It allocates only when dst has
 // no room for MaxOutputs outputs.
 func (m *MS) Tick(now time.Duration, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	if m.off {
 		return dst
 	}
@@ -531,6 +596,10 @@ func (m *MS) Tick(now time.Duration, dst []Output) []Output {
 // Deadline returns the time at which the MS needs a Tick. ok is false
 // when no timer runs.
 func (m *MS) Deadline() (at time.Duration, ok bool) {
+	if m == nil {
+		return 0, false
+	}
+
 	if m.off {
 		return 0, false
 	}

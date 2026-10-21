@@ -1,5 +1,7 @@
 package pdu
 
+import "github.com/USA-RedDragon/dmrgo/v2"
+
 // CapacityPlusMaxBlocks is the most CSBK blocks of one Capacity Plus site
 // status that CapacityPlusSiteStatusAssembler joins: enough for 16 busy
 // talkgroup LSNs and 16 busy radio LSNs.
@@ -32,6 +34,9 @@ type CapacityPlusActivity struct {
 // Talkgroup returns the talkgroup of a group call on lsn. ok is false
 // when lsn has no group call or is out of range.
 func (a *CapacityPlusActivity) Talkgroup(lsn uint8) (tg uint8, ok bool) {
+	if a == nil {
+		return 0, false
+	}
 	if lsn == 0 || lsn > CapacityPlusMaxLSN || a.Voice&(1<<(lsn-1)) == 0 {
 		return 0, false
 	}
@@ -41,6 +46,9 @@ func (a *CapacityPlusActivity) Talkgroup(lsn uint8) (tg uint8, ok bool) {
 // RadioTarget returns the target radio of a private voice or data call on
 // lsn. ok is false when lsn has no such call or is out of range.
 func (a *CapacityPlusActivity) RadioTarget(lsn uint8) (radio uint16, ok bool) {
+	if a == nil {
+		return 0, false
+	}
 	if lsn == 0 || lsn > CapacityPlusMaxLSN || a.Radio&(1<<(lsn-1)) == 0 {
 		return 0, false
 	}
@@ -61,6 +69,9 @@ type CapacityPlusSiteStatusAssembler struct {
 
 // Reset drops the partial or complete status.
 func (a *CapacityPlusSiteStatusAssembler) Reset() {
+	if a == nil {
+		return
+	}
 	*a = CapacityPlusSiteStatusAssembler{}
 }
 
@@ -70,6 +81,9 @@ func (a *CapacityPlusSiteStatusAssembler) Reset() {
 // block without a first block, and for a block past
 // CapacityPlusMaxBlocks. A nil p does nothing.
 func (a *CapacityPlusSiteStatusAssembler) Add(p *CapacityPlusSiteStatusPDU) (bool, error) {
+	if a == nil {
+		return false, dmrgo.ErrNilReceiver
+	}
 	if p == nil {
 		return false, nil
 	}
@@ -98,6 +112,9 @@ func (a *CapacityPlusSiteStatusAssembler) Add(p *CapacityPlusSiteStatusPDU) (boo
 // names more talkgroups or radios than the status holds; the activity then
 // has the entries that the status holds.
 func (a *CapacityPlusSiteStatusAssembler) Activity() (CapacityPlusActivity, error) {
+	if a == nil {
+		return CapacityPlusActivity{}, dmrgo.ErrNilReceiver
+	}
 	act := CapacityPlusActivity{RestLSN: a.rest}
 	if !a.done {
 		return act, ErrCapacityPlusIncomplete

@@ -1,6 +1,7 @@
 package pdu
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
@@ -49,6 +50,9 @@ const netSiteLen = 12
 // bits, Large 4 bits, Huge 2 bits. It returns a *dmrgo.FieldRangeError when
 // MODEL or NetSiteRaw does not fit its bits. (ETSI TS 102 361-4 Table 6.5)
 func (s *ShortLCCSysParms) NetID() (uint16, error) {
+	if s == nil {
+		return 0, dmrgo.ErrNilReceiver
+	}
 	if err := checkNetSite(s.MODEL, s.NetSiteRaw, errShortLCCSysParmsMODELRange, errShortLCCSysParmsNetSiteRawRange); err != nil {
 		return 0, err
 	}
@@ -59,6 +63,9 @@ func (s *ShortLCCSysParms) NetID() (uint16, error) {
 // bits, Large 8 bits, Huge 10 bits. It returns the errors of NetID.
 // (ETSI TS 102 361-4 Table 6.5)
 func (s *ShortLCCSysParms) SiteID() (uint16, error) {
+	if s == nil {
+		return 0, dmrgo.ErrNilReceiver
+	}
 	if err := checkNetSite(s.MODEL, s.NetSiteRaw, errShortLCCSysParmsMODELRange, errShortLCCSysParmsNetSiteRawRange); err != nil {
 		return 0, err
 	}
@@ -85,6 +92,9 @@ type ShortLCPSysParms struct {
 // NetID returns the network ID based on the MODEL field
 // (ETSI TS 102 361-4 Table 6.5), with the errors of ShortLCCSysParms.NetID.
 func (s *ShortLCPSysParms) NetID() (uint16, error) {
+	if s == nil {
+		return 0, dmrgo.ErrNilReceiver
+	}
 	if err := checkNetSite(s.MODEL, s.NetSiteRaw, errShortLCPSysParmsMODELRange, errShortLCPSysParmsNetSiteRawRange); err != nil {
 		return 0, err
 	}
@@ -94,6 +104,9 @@ func (s *ShortLCPSysParms) NetID() (uint16, error) {
 // SiteID returns the site ID based on the MODEL field
 // (ETSI TS 102 361-4 Table 6.5), with the errors of ShortLCCSysParms.NetID.
 func (s *ShortLCPSysParms) SiteID() (uint16, error) {
+	if s == nil {
+		return 0, dmrgo.ErrNilReceiver
+	}
 	if err := checkNetSite(s.MODEL, s.NetSiteRaw, errShortLCPSysParmsMODELRange, errShortLCPSysParmsNetSiteRawRange); err != nil {
 		return 0, err
 	}

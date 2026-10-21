@@ -6,6 +6,10 @@ import dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 
 // ID returns the repeater ID.
 func (c *Config) ID() uint32 {
+	if c == nil {
+		return 0
+	}
+
 	var result struct {
 		ID uint32
 	}
@@ -16,6 +20,10 @@ func (c *Config) ID() uint32 {
 
 // SetID sets the repeater ID.
 func (c *Config) SetID(v uint32) {
+	if c == nil {
+		return
+	}
+
 	data := c[:]
 	s := struct {
 		ID uint32
@@ -30,6 +38,10 @@ func (c *Config) SetID(v uint32) {
 // Callsign returns the callsign of the repeater. The text has its trailing
 // spaces and NUL octets removed, and points into c.
 func (c *Config) Callsign() []byte {
+	if c == nil {
+		return nil
+	}
+
 	_e := 16
 	for _e > 8 && (c[_e-1] == ' ' || c[_e-1] == 0) {
 		_e--
@@ -41,6 +53,10 @@ func (c *Config) Callsign() []byte {
 // returns a *dmrgo.FieldRangeError, and changes nothing, when v is longer
 // than 8 octets.
 func (c *Config) SetCallsign(v []byte) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if len(v) > 8 {
 		return errConfigCallsignRange
 	}
@@ -54,6 +70,10 @@ func (c *Config) SetCallsign(v []byte) error {
 // RXFrequency returns the receive frequency in Hz, 9 digits. It returns
 // ErrText when the field holds a character that is not a digit.
 func (c *Config) RXFrequency() (uint32, error) {
+	if c == nil {
+		return 0, dmrgo.ErrNilReceiver
+	}
+
 	var result struct {
 		RXFrequency uint32
 	}
@@ -73,6 +93,10 @@ func (c *Config) RXFrequency() (uint32, error) {
 // SetRXFrequency sets the receive frequency in Hz, 9 digits. It returns a
 // *dmrgo.FieldRangeError, and changes nothing, when v does not fit.
 func (c *Config) SetRXFrequency(v uint32) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	data := c[:]
 	s := struct {
 		RXFrequency uint32
@@ -91,6 +115,10 @@ func (c *Config) SetRXFrequency(v uint32) error {
 // TXFrequency returns the transmit frequency in Hz, 9 digits. It returns
 // ErrText when the field holds a character that is not a digit.
 func (c *Config) TXFrequency() (uint32, error) {
+	if c == nil {
+		return 0, dmrgo.ErrNilReceiver
+	}
+
 	var result struct {
 		TXFrequency uint32
 	}
@@ -110,6 +138,10 @@ func (c *Config) TXFrequency() (uint32, error) {
 // SetTXFrequency sets the transmit frequency in Hz, 9 digits. It returns a
 // *dmrgo.FieldRangeError, and changes nothing, when v does not fit.
 func (c *Config) SetTXFrequency(v uint32) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	data := c[:]
 	s := struct {
 		TXFrequency uint32
@@ -128,6 +160,10 @@ func (c *Config) SetTXFrequency(v uint32) error {
 // Power returns the transmit power in dBm, 2 digits. It returns ErrText when
 // the field holds a character that is not a digit.
 func (c *Config) Power() (uint8, error) {
+	if c == nil {
+		return 0, dmrgo.ErrNilReceiver
+	}
+
 	var result struct {
 		Power uint8
 	}
@@ -147,6 +183,10 @@ func (c *Config) Power() (uint8, error) {
 // SetPower sets the transmit power in dBm, 2 digits. It returns a
 // *dmrgo.FieldRangeError, and changes nothing, when v does not fit.
 func (c *Config) SetPower(v uint8) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	data := c[:]
 	s := struct {
 		Power uint8
@@ -165,6 +205,10 @@ func (c *Config) SetPower(v uint8) error {
 // ColorCode returns the color code, 2 digits. It returns ErrText when the
 // field holds a character that is not a digit.
 func (c *Config) ColorCode() (uint8, error) {
+	if c == nil {
+		return 0, dmrgo.ErrNilReceiver
+	}
+
 	var result struct {
 		ColorCode uint8
 	}
@@ -184,6 +228,10 @@ func (c *Config) ColorCode() (uint8, error) {
 // SetColorCode sets the color code, 2 digits. It returns a
 // *dmrgo.FieldRangeError, and changes nothing, when v does not fit.
 func (c *Config) SetColorCode(v uint8) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	data := c[:]
 	s := struct {
 		ColorCode uint8
@@ -202,6 +250,10 @@ func (c *Config) SetColorCode(v uint8) error {
 // Latitude returns the latitude as text, 8 characters, North positive. The
 // text has its trailing spaces and NUL octets removed, and points into c.
 func (c *Config) Latitude() []byte {
+	if c == nil {
+		return nil
+	}
+
 	_e := 46
 	for _e > 38 && (c[_e-1] == ' ' || c[_e-1] == 0) {
 		_e--
@@ -213,6 +265,10 @@ func (c *Config) Latitude() []byte {
 // pads v with spaces, and returns a *dmrgo.FieldRangeError, and changes
 // nothing, when v is longer than 8 octets.
 func (c *Config) SetLatitude(v []byte) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if len(v) > 8 {
 		return errConfigLatitudeRange
 	}
@@ -226,6 +282,10 @@ func (c *Config) SetLatitude(v []byte) error {
 // Longitude returns the longitude as text, 9 characters, East positive. The
 // text has its trailing spaces and NUL octets removed, and points into c.
 func (c *Config) Longitude() []byte {
+	if c == nil {
+		return nil
+	}
+
 	_e := 55
 	for _e > 46 && (c[_e-1] == ' ' || c[_e-1] == 0) {
 		_e--
@@ -237,6 +297,10 @@ func (c *Config) Longitude() []byte {
 // pads v with spaces, and returns a *dmrgo.FieldRangeError, and changes
 // nothing, when v is longer than 9 octets.
 func (c *Config) SetLongitude(v []byte) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if len(v) > 9 {
 		return errConfigLongitudeRange
 	}
@@ -250,6 +314,10 @@ func (c *Config) SetLongitude(v []byte) error {
 // Height returns the antenna height above ground in meters, 3 digits. It
 // returns ErrText when the field holds a character that is not a digit.
 func (c *Config) Height() (uint16, error) {
+	if c == nil {
+		return 0, dmrgo.ErrNilReceiver
+	}
+
 	var result struct {
 		Height uint16
 	}
@@ -270,6 +338,10 @@ func (c *Config) Height() (uint16, error) {
 // returns a *dmrgo.FieldRangeError, and changes nothing, when v does not
 // fit.
 func (c *Config) SetHeight(v uint16) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	data := c[:]
 	s := struct {
 		Height uint16
@@ -288,6 +360,10 @@ func (c *Config) SetHeight(v uint16) error {
 // Location returns the location of the repeater as free text. The text has
 // its trailing spaces and NUL octets removed, and points into c.
 func (c *Config) Location() []byte {
+	if c == nil {
+		return nil
+	}
+
 	_e := 78
 	for _e > 58 && (c[_e-1] == ' ' || c[_e-1] == 0) {
 		_e--
@@ -299,6 +375,10 @@ func (c *Config) Location() []byte {
 // spaces, and returns a *dmrgo.FieldRangeError, and changes nothing, when v
 // is longer than 20 octets.
 func (c *Config) SetLocation(v []byte) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if len(v) > 20 {
 		return errConfigLocationRange
 	}
@@ -312,6 +392,10 @@ func (c *Config) SetLocation(v []byte) error {
 // Description returns the description of the repeater as free text. The text
 // has its trailing spaces and NUL octets removed, and points into c.
 func (c *Config) Description() []byte {
+	if c == nil {
+		return nil
+	}
+
 	_e := 97
 	for _e > 78 && (c[_e-1] == ' ' || c[_e-1] == 0) {
 		_e--
@@ -323,6 +407,10 @@ func (c *Config) Description() []byte {
 // v with spaces, and returns a *dmrgo.FieldRangeError, and changes nothing,
 // when v is longer than 19 octets.
 func (c *Config) SetDescription(v []byte) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if len(v) > 19 {
 		return errConfigDescriptionRange
 	}
@@ -337,6 +425,10 @@ func (c *Config) SetDescription(v []byte) error {
 // 4 for simplex (DMO). It returns ErrText when the field holds a character
 // that is not a digit.
 func (c *Config) Slots() (uint8, error) {
+	if c == nil {
+		return 0, dmrgo.ErrNilReceiver
+	}
+
 	var result struct {
 		Slots uint8
 	}
@@ -357,6 +449,10 @@ func (c *Config) Slots() (uint8, error) {
 // 4 for simplex (DMO). It returns a *dmrgo.FieldRangeError, and changes
 // nothing, when v does not fit.
 func (c *Config) SetSlots(v uint8) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	data := c[:]
 	s := struct {
 		Slots uint8
@@ -375,6 +471,10 @@ func (c *Config) SetSlots(v uint8) error {
 // URL returns the web page of the repeater. The text has its trailing spaces
 // and NUL octets removed, and points into c.
 func (c *Config) URL() []byte {
+	if c == nil {
+		return nil
+	}
+
 	_e := 222
 	for _e > 98 && (c[_e-1] == ' ' || c[_e-1] == 0) {
 		_e--
@@ -386,6 +486,10 @@ func (c *Config) URL() []byte {
 // returns a *dmrgo.FieldRangeError, and changes nothing, when v is longer
 // than 124 octets.
 func (c *Config) SetURL(v []byte) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if len(v) > 124 {
 		return errConfigURLRange
 	}
@@ -399,6 +503,10 @@ func (c *Config) SetURL(v []byte) error {
 // SoftwareID returns the software and its version. The text has its trailing
 // spaces and NUL octets removed, and points into c.
 func (c *Config) SoftwareID() []byte {
+	if c == nil {
+		return nil
+	}
+
 	_e := 262
 	for _e > 222 && (c[_e-1] == ' ' || c[_e-1] == 0) {
 		_e--
@@ -410,6 +518,10 @@ func (c *Config) SoftwareID() []byte {
 // and returns a *dmrgo.FieldRangeError, and changes nothing, when v is
 // longer than 40 octets.
 func (c *Config) SetSoftwareID(v []byte) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if len(v) > 40 {
 		return errConfigSoftwareIDRange
 	}
@@ -423,6 +535,10 @@ func (c *Config) SetSoftwareID(v []byte) error {
 // PackageID returns the package and its version. The text has its trailing
 // spaces and NUL octets removed, and points into c.
 func (c *Config) PackageID() []byte {
+	if c == nil {
+		return nil
+	}
+
 	_e := 302
 	for _e > 262 && (c[_e-1] == ' ' || c[_e-1] == 0) {
 		_e--
@@ -434,6 +550,10 @@ func (c *Config) PackageID() []byte {
 // returns a *dmrgo.FieldRangeError, and changes nothing, when v is longer
 // than 40 octets.
 func (c *Config) SetPackageID(v []byte) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if len(v) > 40 {
 		return errConfigPackageIDRange
 	}
@@ -447,6 +567,10 @@ func (c *Config) SetPackageID(v []byte) error {
 // Reset sets c to an empty Config: the fixed octets, spaces in the text
 // fields and zero in the number fields.
 func (c *Config) Reset() {
+	if c == nil {
+		return
+	}
+
 	data := c[:]
 	clear(data)
 	data[0] = 0x52
@@ -504,6 +628,10 @@ func (c *Config) magicOK() bool {
 // Callsign returns the callsign of the repeater. The text has its trailing
 // spaces and NUL octets removed, and points into c.
 func (c *HBRPConfig) Callsign() []byte {
+	if c == nil {
+		return nil
+	}
+
 	_e := 12
 	for _e > 4 && (c[_e-1] == ' ' || c[_e-1] == 0) {
 		_e--
@@ -515,6 +643,10 @@ func (c *HBRPConfig) Callsign() []byte {
 // returns a *dmrgo.FieldRangeError, and changes nothing, when v is longer
 // than 8 octets.
 func (c *HBRPConfig) SetCallsign(v []byte) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if len(v) > 8 {
 		return errHBRPConfigCallsignRange
 	}
@@ -528,6 +660,10 @@ func (c *HBRPConfig) SetCallsign(v []byte) error {
 // ID returns the repeater ID, 8 hex digits. It returns ErrText when the
 // field holds a character that is not a digit.
 func (c *HBRPConfig) ID() (uint32, error) {
+	if c == nil {
+		return 0, dmrgo.ErrNilReceiver
+	}
+
 	var result struct {
 		ID uint32
 	}
@@ -552,6 +688,10 @@ func (c *HBRPConfig) ID() (uint32, error) {
 
 // SetID sets the repeater ID, 8 hex digits.
 func (c *HBRPConfig) SetID(v uint32) {
+	if c == nil {
+		return
+	}
+
 	data := c[:]
 	s := struct {
 		ID uint32
@@ -566,6 +706,10 @@ func (c *HBRPConfig) SetID(v uint32) {
 // RXFrequency returns the receive frequency in Hz, 9 digits. It returns
 // ErrText when the field holds a character that is not a digit.
 func (c *HBRPConfig) RXFrequency() (uint32, error) {
+	if c == nil {
+		return 0, dmrgo.ErrNilReceiver
+	}
+
 	var result struct {
 		RXFrequency uint32
 	}
@@ -585,6 +729,10 @@ func (c *HBRPConfig) RXFrequency() (uint32, error) {
 // SetRXFrequency sets the receive frequency in Hz, 9 digits. It returns a
 // *dmrgo.FieldRangeError, and changes nothing, when v does not fit.
 func (c *HBRPConfig) SetRXFrequency(v uint32) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	data := c[:]
 	s := struct {
 		RXFrequency uint32
@@ -603,6 +751,10 @@ func (c *HBRPConfig) SetRXFrequency(v uint32) error {
 // TXFrequency returns the transmit frequency in Hz, 9 digits. It returns
 // ErrText when the field holds a character that is not a digit.
 func (c *HBRPConfig) TXFrequency() (uint32, error) {
+	if c == nil {
+		return 0, dmrgo.ErrNilReceiver
+	}
+
 	var result struct {
 		TXFrequency uint32
 	}
@@ -622,6 +774,10 @@ func (c *HBRPConfig) TXFrequency() (uint32, error) {
 // SetTXFrequency sets the transmit frequency in Hz, 9 digits. It returns a
 // *dmrgo.FieldRangeError, and changes nothing, when v does not fit.
 func (c *HBRPConfig) SetTXFrequency(v uint32) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	data := c[:]
 	s := struct {
 		TXFrequency uint32
@@ -640,6 +796,10 @@ func (c *HBRPConfig) SetTXFrequency(v uint32) error {
 // Power returns the transmit power in dBm, 2 digits. It returns ErrText when
 // the field holds a character that is not a digit.
 func (c *HBRPConfig) Power() (uint8, error) {
+	if c == nil {
+		return 0, dmrgo.ErrNilReceiver
+	}
+
 	var result struct {
 		Power uint8
 	}
@@ -659,6 +819,10 @@ func (c *HBRPConfig) Power() (uint8, error) {
 // SetPower sets the transmit power in dBm, 2 digits. It returns a
 // *dmrgo.FieldRangeError, and changes nothing, when v does not fit.
 func (c *HBRPConfig) SetPower(v uint8) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	data := c[:]
 	s := struct {
 		Power uint8
@@ -677,6 +841,10 @@ func (c *HBRPConfig) SetPower(v uint8) error {
 // ColorCode returns the color code, 2 digits. It returns ErrText when the
 // field holds a character that is not a digit.
 func (c *HBRPConfig) ColorCode() (uint8, error) {
+	if c == nil {
+		return 0, dmrgo.ErrNilReceiver
+	}
+
 	var result struct {
 		ColorCode uint8
 	}
@@ -696,6 +864,10 @@ func (c *HBRPConfig) ColorCode() (uint8, error) {
 // SetColorCode sets the color code, 2 digits. It returns a
 // *dmrgo.FieldRangeError, and changes nothing, when v does not fit.
 func (c *HBRPConfig) SetColorCode(v uint8) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	data := c[:]
 	s := struct {
 		ColorCode uint8
@@ -714,6 +886,10 @@ func (c *HBRPConfig) SetColorCode(v uint8) error {
 // Latitude returns the latitude as text, 8 characters, North positive. The
 // text has its trailing spaces and NUL octets removed, and points into c.
 func (c *HBRPConfig) Latitude() []byte {
+	if c == nil {
+		return nil
+	}
+
 	_e := 50
 	for _e > 42 && (c[_e-1] == ' ' || c[_e-1] == 0) {
 		_e--
@@ -725,6 +901,10 @@ func (c *HBRPConfig) Latitude() []byte {
 // pads v with spaces, and returns a *dmrgo.FieldRangeError, and changes
 // nothing, when v is longer than 8 octets.
 func (c *HBRPConfig) SetLatitude(v []byte) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if len(v) > 8 {
 		return errHBRPConfigLatitudeRange
 	}
@@ -738,6 +918,10 @@ func (c *HBRPConfig) SetLatitude(v []byte) error {
 // Longitude returns the longitude as text, 9 characters, East positive. The
 // text has its trailing spaces and NUL octets removed, and points into c.
 func (c *HBRPConfig) Longitude() []byte {
+	if c == nil {
+		return nil
+	}
+
 	_e := 59
 	for _e > 50 && (c[_e-1] == ' ' || c[_e-1] == 0) {
 		_e--
@@ -749,6 +933,10 @@ func (c *HBRPConfig) Longitude() []byte {
 // pads v with spaces, and returns a *dmrgo.FieldRangeError, and changes
 // nothing, when v is longer than 9 octets.
 func (c *HBRPConfig) SetLongitude(v []byte) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if len(v) > 9 {
 		return errHBRPConfigLongitudeRange
 	}
@@ -762,6 +950,10 @@ func (c *HBRPConfig) SetLongitude(v []byte) error {
 // Height returns the antenna height above ground in meters, 3 digits. It
 // returns ErrText when the field holds a character that is not a digit.
 func (c *HBRPConfig) Height() (uint16, error) {
+	if c == nil {
+		return 0, dmrgo.ErrNilReceiver
+	}
+
 	var result struct {
 		Height uint16
 	}
@@ -782,6 +974,10 @@ func (c *HBRPConfig) Height() (uint16, error) {
 // returns a *dmrgo.FieldRangeError, and changes nothing, when v does not
 // fit.
 func (c *HBRPConfig) SetHeight(v uint16) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	data := c[:]
 	s := struct {
 		Height uint16
@@ -800,6 +996,10 @@ func (c *HBRPConfig) SetHeight(v uint16) error {
 // Location returns the location of the repeater as free text. The text has
 // its trailing spaces and NUL octets removed, and points into c.
 func (c *HBRPConfig) Location() []byte {
+	if c == nil {
+		return nil
+	}
+
 	_e := 82
 	for _e > 62 && (c[_e-1] == ' ' || c[_e-1] == 0) {
 		_e--
@@ -811,6 +1011,10 @@ func (c *HBRPConfig) Location() []byte {
 // spaces, and returns a *dmrgo.FieldRangeError, and changes nothing, when v
 // is longer than 20 octets.
 func (c *HBRPConfig) SetLocation(v []byte) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if len(v) > 20 {
 		return errHBRPConfigLocationRange
 	}
@@ -824,6 +1028,10 @@ func (c *HBRPConfig) SetLocation(v []byte) error {
 // Description returns the description of the repeater as free text. The text
 // has its trailing spaces and NUL octets removed, and points into c.
 func (c *HBRPConfig) Description() []byte {
+	if c == nil {
+		return nil
+	}
+
 	_e := 102
 	for _e > 82 && (c[_e-1] == ' ' || c[_e-1] == 0) {
 		_e--
@@ -835,6 +1043,10 @@ func (c *HBRPConfig) Description() []byte {
 // v with spaces, and returns a *dmrgo.FieldRangeError, and changes nothing,
 // when v is longer than 20 octets.
 func (c *HBRPConfig) SetDescription(v []byte) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if len(v) > 20 {
 		return errHBRPConfigDescriptionRange
 	}
@@ -848,6 +1060,10 @@ func (c *HBRPConfig) SetDescription(v []byte) error {
 // URL returns the web page of the repeater. The text has its trailing spaces
 // and NUL octets removed, and points into c.
 func (c *HBRPConfig) URL() []byte {
+	if c == nil {
+		return nil
+	}
+
 	_e := 226
 	for _e > 102 && (c[_e-1] == ' ' || c[_e-1] == 0) {
 		_e--
@@ -859,6 +1075,10 @@ func (c *HBRPConfig) URL() []byte {
 // returns a *dmrgo.FieldRangeError, and changes nothing, when v is longer
 // than 124 octets.
 func (c *HBRPConfig) SetURL(v []byte) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if len(v) > 124 {
 		return errHBRPConfigURLRange
 	}
@@ -872,6 +1092,10 @@ func (c *HBRPConfig) SetURL(v []byte) error {
 // SoftwareID returns the software and its version. The text has its trailing
 // spaces and NUL octets removed, and points into c.
 func (c *HBRPConfig) SoftwareID() []byte {
+	if c == nil {
+		return nil
+	}
+
 	_e := 266
 	for _e > 226 && (c[_e-1] == ' ' || c[_e-1] == 0) {
 		_e--
@@ -883,6 +1107,10 @@ func (c *HBRPConfig) SoftwareID() []byte {
 // and returns a *dmrgo.FieldRangeError, and changes nothing, when v is
 // longer than 40 octets.
 func (c *HBRPConfig) SetSoftwareID(v []byte) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if len(v) > 40 {
 		return errHBRPConfigSoftwareIDRange
 	}
@@ -896,6 +1124,10 @@ func (c *HBRPConfig) SetSoftwareID(v []byte) error {
 // PackageID returns the package and its version. The text has its trailing
 // spaces and NUL octets removed, and points into c.
 func (c *HBRPConfig) PackageID() []byte {
+	if c == nil {
+		return nil
+	}
+
 	_e := 306
 	for _e > 266 && (c[_e-1] == ' ' || c[_e-1] == 0) {
 		_e--
@@ -907,6 +1139,10 @@ func (c *HBRPConfig) PackageID() []byte {
 // returns a *dmrgo.FieldRangeError, and changes nothing, when v is longer
 // than 40 octets.
 func (c *HBRPConfig) SetPackageID(v []byte) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if len(v) > 40 {
 		return errHBRPConfigPackageIDRange
 	}
@@ -920,6 +1156,10 @@ func (c *HBRPConfig) SetPackageID(v []byte) error {
 // Reset sets c to an empty HBRPConfig: the fixed octets, spaces in the text
 // fields and zero in the number fields.
 func (c *HBRPConfig) Reset() {
+	if c == nil {
+		return
+	}
+
 	data := c[:]
 	clear(data)
 	data[0] = 0x52

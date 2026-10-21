@@ -27,6 +27,10 @@ func DecodeServiceOptions(data [1]byte) ServiceOptions {
 // bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-2 clause 7.2.1)
 func (s *ServiceOptions) Encode() ([1]byte, error) {
+	if s == nil {
+		return [1]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [1]byte
 	if s.IsEmergency {
 		data[0] |= 0x80
@@ -54,6 +58,10 @@ func (s *ServiceOptions) Encode() ([1]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ServiceOptions) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "ServiceOptions{ IsEmergency: " + text.Bool(s.IsEmergency) + ", IsPrivacy: " + text.Bool(s.IsPrivacy) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", IsBroadcast: " + text.Bool(s.IsBroadcast) + ", IsOpenVoiceCallMode: " + text.Bool(s.IsOpenVoiceCallMode) + ", PriorityLevel: " + text.Int(int64(s.PriorityLevel)) + " }"
 }
 

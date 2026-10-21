@@ -33,6 +33,10 @@ func DecodeSlotType(data [3]byte) SlotType {
 // the most significant bit of byte 0. The low 4 bits of byte 2 are 0.
 // (ETSI TS 102 361-1 clause 9.1.3)
 func (s *SlotType) Encode() ([3]byte, error) {
+	if s == nil {
+		return [3]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [3]byte
 	if uint64(s.ColorCode)>>4 != 0 {
 		return [3]byte{}, errSlotTypeColorCodeRange
@@ -53,6 +57,10 @@ func (s *SlotType) Encode() ([3]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *SlotType) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "SlotType{ ColorCode: " + text.Int(int64(s.ColorCode)) + ", DataType: " + s.DataType.String() + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "} }"
 }
 

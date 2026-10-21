@@ -148,6 +148,10 @@ func DecodeMBCHeaderInto(dst *MBCHeader, p *MBCHeaderPayloads, data [12]byte) {
 // Encode encodes an MBCHeader. It returns the 96 bits packed, the first bit
 // in the most significant bit of byte 0. (ETSI TS 102 361-1 clause 7.4.1)
 func (s *MBCHeader) Encode() ([12]byte, error) {
+	if s == nil {
+		return [12]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [12]byte
 	_payload := ""
 	if s.PrivateVoiceGrantPDU != nil {
@@ -327,6 +331,10 @@ func (s *MBCHeader) Encode() ([12]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MBCHeader) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	_ret := "MBCHeader{ "
 	_ret += "FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + ", FID: " + text.Int(int64(s.FID)) + ", "
 	switch {
@@ -371,6 +379,10 @@ func DecodeMBCContinuation(data [12]byte) MBCContinuation {
 // first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-1 clause 7.4.1)
 func (s *MBCContinuation) Encode() ([12]byte, error) {
+	if s == nil {
+		return [12]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [12]byte
 	if s.LastBlock {
 		data[0] |= 0x80
@@ -385,6 +397,10 @@ func (s *MBCContinuation) Encode() ([12]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MBCContinuation) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "MBCContinuation{ LastBlock: " + text.Bool(s.LastBlock) + ", Data: " + text.Hex(s.Data[:]) + " }"
 }
 
@@ -409,6 +425,10 @@ func decodeCGAPContinuation(data [12]byte) CGAPContinuation {
 // first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-4 clause 7.1.1.1.2, Table 7.16)
 func (s *CGAPContinuation) Encode() ([12]byte, error) {
+	if s == nil {
+		return [12]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [12]byte
 	if s.LastBlock {
 		data[0] |= 0x80
@@ -450,6 +470,10 @@ func (s *CGAPContinuation) Encode() ([12]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *CGAPContinuation) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "CGAPContinuation{ FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + ", Reserved1: " + text.Int(int64(s.Reserved1)) + ", ColorCode: " + text.Int(int64(s.ColorCode)) + ", Cdeftype: " + text.Int(int64(s.Cdeftype)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", CdefParms: " + s.CdefParms.String() + " }"
 }
 
@@ -474,6 +498,10 @@ func decodeMVAPContinuation(data [12]byte) MVAPContinuation {
 // first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-4 clause 7.1.1.1.3.1, Table 7.18)
 func (s *MVAPContinuation) Encode() ([12]byte, error) {
+	if s == nil {
+		return [12]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [12]byte
 	if s.LastBlock {
 		data[0] |= 0x80
@@ -515,6 +543,10 @@ func (s *MVAPContinuation) Encode() ([12]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MVAPContinuation) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "MVAPContinuation{ FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + ", Reserved1: " + text.Int(int64(s.Reserved1)) + ", ColorCode: " + text.Int(int64(s.ColorCode)) + ", Cdeftype: " + text.Int(int64(s.Cdeftype)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", CdefParms: " + s.CdefParms.String() + " }"
 }
 
@@ -538,6 +570,10 @@ func decodeBCAPContinuation(data [12]byte) BCAPContinuation {
 // first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-4 clause 7.1.1.1.5.1, Table 7.21)
 func (s *BCAPContinuation) Encode() ([12]byte, error) {
+	if s == nil {
+		return [12]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [12]byte
 	if s.LastBlock {
 		data[0] |= 0x80
@@ -572,6 +608,10 @@ func (s *BCAPContinuation) Encode() ([12]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *BCAPContinuation) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "BCAPContinuation{ FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + ", Reserved1: " + text.Int(int64(s.Reserved1)) + ", Cdeftype: " + text.Int(int64(s.Cdeftype)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", CdefParms: " + s.CdefParms.String() + " }"
 }
 
@@ -596,6 +636,10 @@ func decodeVNAPContinuation(data [12]byte) VNAPContinuation {
 // first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-4 clause 7.2.19.3.1, Table 7.72)
 func (s *VNAPContinuation) Encode() ([12]byte, error) {
+	if s == nil {
+		return [12]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [12]byte
 	if s.LastBlock {
 		data[0] |= 0x80
@@ -637,6 +681,10 @@ func (s *VNAPContinuation) Encode() ([12]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *VNAPContinuation) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "VNAPContinuation{ FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + ", Reserved1: " + text.Int(int64(s.Reserved1)) + ", ColorCode: " + text.Int(int64(s.ColorCode)) + ", Cdeftype: " + text.Int(int64(s.Cdeftype)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", CdefParms: " + s.CdefParms.String() + " }"
 }
 

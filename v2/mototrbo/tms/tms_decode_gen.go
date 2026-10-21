@@ -27,6 +27,10 @@ func decodeHeader(data []byte) (Header, error) {
 // a *dmrgo.FieldRangeError when a field does not fit. It allocates only to
 // grow dst.
 func (s *Header) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 1 {
 		dst = append(dst, 0)
@@ -51,6 +55,10 @@ func (s *Header) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *Header) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "Header{ Extension: " + text.Bool(s.Extension) + ", AckRequired: " + text.Bool(s.AckRequired) + ", Reserved: " + text.Bool(s.Reserved) + ", Type: " + s.Type.String() + " }"
 }
 
@@ -72,6 +80,10 @@ func decodeSequenceLow(data []byte) (SequenceLow, error) {
 // a *dmrgo.FieldRangeError when a field does not fit. It allocates only to
 // grow dst.
 func (s *SequenceLow) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 1 {
 		dst = append(dst, 0)
@@ -94,6 +106,10 @@ func (s *SequenceLow) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *SequenceLow) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "SequenceLow{ Extension: " + text.Bool(s.Extension) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", Low: " + text.Int(int64(s.Low)) + " }"
 }
 
@@ -115,6 +131,10 @@ func decodeSequenceHigh(data []byte) (SequenceHigh, error) {
 // a *dmrgo.FieldRangeError when a field does not fit. It allocates only to
 // grow dst.
 func (s *SequenceHigh) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 1 {
 		dst = append(dst, 0)
@@ -137,6 +157,10 @@ func (s *SequenceHigh) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *SequenceHigh) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "SequenceHigh{ Extension: " + text.Bool(s.Extension) + ", High: " + text.Int(int64(s.High)) + ", Encoding: " + s.Encoding.String() + " }"
 }
 
@@ -229,6 +253,10 @@ func decodeMessageAt(result *Message, data []byte, _o int) (int, error) {
 // It returns dst unchanged and a *dmrgo.FieldRangeError or another error
 // when a field does not fit. It allocates only to grow dst.
 func (s *Message) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	_lp := len(dst)
 	dst = append(dst, byte(0>>8), byte(0))
@@ -273,12 +301,20 @@ func (s *Message) AppendBinary(dst []byte) ([]byte, error) {
 // TextUTF8 appends Text, UTF-16LE text, to dst as UTF-8 and returns dst. The
 // text ends at the first NUL character. It allocates only to grow dst.
 func (s *Message) TextUTF8(dst []byte) []byte {
+	if s == nil {
+		return dst
+	}
+
 	return wire.AppendUTF8(dst, s.Text, false)
 }
 
 // SetTextUTF8 appends text, UTF-8, to dst as UTF-16LE, points Text at the
 // appended octets and returns dst. It allocates only to grow dst.
 func (s *Message) SetTextUTF8(dst, text []byte) []byte {
+	if s == nil {
+		return dst
+	}
+
 	n := len(dst)
 	dst = wire.AppendUTF16(dst, text, false)
 	s.Text = dst[n:]
@@ -288,6 +324,10 @@ func (s *Message) SetTextUTF8(dst, text []byte) []byte {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *Message) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "Message{ Length: " + text.Int(int64(s.Length)) + ", Header: " + s.Header.String() + ", Address: " + text.Bytes(s.Address[:]) + ", Capability: " + text.Int(int64(s.Capability)) + ", SequenceLow: " + s.SequenceLow.String() + ", SequenceHigh: " + s.SequenceHigh.String() + ", Text: " + text.Bytes(s.Text[:]) + " }"
 }
 

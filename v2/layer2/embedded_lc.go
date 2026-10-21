@@ -1,6 +1,7 @@
 package layer2
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
@@ -51,6 +52,9 @@ type EmbeddedLCAssembler struct {
 
 // Reset discards any partial LC.
 func (a *EmbeddedLCAssembler) Reset() {
+	if a == nil {
+		return
+	}
 	*a = EmbeddedLCAssembler{Strict: a.Strict}
 }
 
@@ -60,6 +64,9 @@ func (a *EmbeddedLCAssembler) Reset() {
 // FEC result is uncorrectable. Add returns ErrEmbeddedLCSequence when a
 // fragment out of that order discards a partial LC.
 func (a *EmbeddedLCAssembler) Add(frag [4]byte, lcss enums.LCSS) (lc [9]byte, res fec.Result, done bool, err error) {
+	if a == nil {
+		return [9]byte{}, fec.Result{}, false, dmrgo.ErrNilReceiver
+	}
 	return a.add(fragmentWord(frag), lcss)
 }
 

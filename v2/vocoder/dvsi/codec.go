@@ -2,6 +2,7 @@ package dvsi
 
 import (
 	"bytes"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -277,27 +278,56 @@ const (
 
 // Product returns the product name that the chip reported in New, such as
 // "AMBE3000R". It returns at most MaxProductLen bytes.
-func (c *Codec) Product() string { return c.product }
+func (c *Codec) Product() string {
+	if c == nil {
+		return ""
+	}
+	return c.product
+}
 
 // Version returns the version string that the chip reported in New. It
 // returns at most MaxVersionLen bytes.
-func (c *Codec) Version() string { return c.version }
+func (c *Codec) Version() string {
+	if c == nil {
+		return ""
+	}
+	return c.version
+}
 
 // FrameSamples returns FrameSamples.
-func (c *Codec) FrameSamples() int { return FrameSamples }
+func (c *Codec) FrameSamples() int {
+	if c == nil {
+		return 0
+	}
+	return FrameSamples
+}
 
 // FID returns enums.FIDStandardized, the Feature set ID of calls with the
 // ETSI standard vocoder, AMBE+2.
-func (c *Codec) FID() enums.FeatureSetID { return enums.FIDStandardized }
+func (c *Codec) FID() enums.FeatureSetID {
+	if c == nil {
+		return 0
+	}
+	return enums.FIDStandardized
+}
 
 // Silence returns vocoder.AMBESilenceSlot.
-func (c *Codec) Silence() [9]byte { return c.silence }
+func (c *Codec) Silence() [9]byte {
+	if c == nil {
+		return [9]byte{}
+	}
+	return c.silence
+}
 
 // Encode has the chip encode exactly FrameSamples samples into one 72-bit
 // frame with FEC. It returns ErrSamples for another number of samples,
 // ErrClosed after Close, ErrTimeout when the chip does not reply, and the
 // errors of the Port. It does not allocate.
 func (c *Codec) Encode(pcm []int16) ([9]byte, error) {
+	if c == nil {
+		return [9]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var slot [9]byte
 	if c.closed || c.port == nil {
 		return slot, ErrClosed
@@ -330,6 +360,10 @@ func (c *Codec) Encode(pcm []int16) ([9]byte, error) {
 // samples. It returns at most FrameSamples samples. It allocates the
 // samples; AppendDecode does not.
 func (c *Codec) Decode(slot [9]byte) ([]int16, error) {
+	if c == nil {
+		return nil, dmrgo.ErrNilReceiver
+	}
+
 	return c.AppendDecode(make([]int16, 0, FrameSamples), slot)
 }
 
@@ -339,6 +373,10 @@ func (c *Codec) Decode(slot [9]byte) ([]int16, error) {
 // ErrClosed after Close, ErrTimeout when the chip does not reply, and the
 // errors of the Port, with dst unchanged. It allocates only to grow dst.
 func (c *Codec) AppendDecode(dst []int16, slot [9]byte) ([]int16, error) {
+	if c == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	if c.closed || c.port == nil {
 		return dst, ErrClosed
 	}
@@ -369,6 +407,10 @@ func (c *Codec) AppendDecode(dst []int16, slot [9]byte) ([]int16, error) {
 // ErrClosed. It does not close the Port. Close is idempotent and returns
 // nil.
 func (c *Codec) Close() error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	c.closed = true
 	return nil
 }

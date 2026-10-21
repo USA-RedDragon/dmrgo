@@ -114,6 +114,10 @@ func NewReceiver(cfg *ReceiverConfig) (*Receiver, error) {
 // Reset ends any call and session without events and forgets the expected
 // call. It keeps the config.
 func (r *Receiver) Reset() {
+	if r == nil {
+		return
+	}
+
 	r.state = StateIdle
 	r.call, r.stats, r.session = Call{}, Stats{}, Call{}
 	r.inSession, r.hasStream, r.hasExpect = false, false, false
@@ -124,6 +128,10 @@ func (r *Receiver) Reset() {
 
 // State returns the state of the Receiver.
 func (r *Receiver) State() State {
+	if r == nil {
+		return 0
+	}
+
 	return r.state
 }
 
@@ -134,6 +142,10 @@ func (r *Receiver) State() State {
 // comes later sets Call.LC without an event, and one with other addresses
 // ends the call and starts a new one.
 func (r *Receiver) Expect(now time.Duration, c Call, until time.Duration) {
+	if r == nil {
+		return
+	}
+
 	if until <= now {
 		r.hasExpect = false
 		return
@@ -151,6 +163,10 @@ func (r *Receiver) Expect(now time.Duration, c Call, until time.Duration) {
 // Hint.SyncLost ends the call as Lost does. It allocates only when dst has
 // no room for MaxEvents events.
 func (r *Receiver) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Event) []Event {
+	if r == nil {
+		return dst
+	}
+
 	if raw == nil || r.b == nil {
 		return r.receive(now, nil, nil, &h, dst)
 	}
@@ -177,6 +193,10 @@ func (r *Receiver) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint,
 // transport event without a burst, such as an MMDVM TAG_LOST, call Lost.
 // It allocates only when dst has no room for MaxEvents events.
 func (r *Receiver) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, dst []Event) []Event {
+	if r == nil {
+		return dst
+	}
+
 	return r.receive(now, b, nil, &h, dst)
 }
 
@@ -184,6 +204,10 @@ func (r *Receiver) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, ds
 // MMDVM TAG_LOST. A call ends with EndSyncLost. It appends the events to
 // dst, and allocates only when dst has no room for MaxEvents events.
 func (r *Receiver) Lost(now time.Duration, dst []Event) []Event {
+	if r == nil {
+		return dst
+	}
+
 	dst = r.timers(now, dst)
 	return r.syncLost(now, dst)
 }
@@ -193,12 +217,20 @@ func (r *Receiver) Lost(now time.Duration, dst []Event) []Event {
 // of the hang time. A Tick before Deadline does nothing. It allocates only
 // when dst has no room for MaxEvents events.
 func (r *Receiver) Tick(now time.Duration, dst []Event) []Event {
+	if r == nil {
+		return dst
+	}
+
 	return r.timers(now, dst)
 }
 
 // Deadline returns the time at which the Receiver needs a Tick. ok is
 // false when no timer runs.
 func (r *Receiver) Deadline() (at time.Duration, ok bool) {
+	if r == nil {
+		return 0, false
+	}
+
 	if (r.state == StateInCall || r.state == StateLateEntry) && r.lostAfter >= 0 {
 		at, ok = r.last+r.lostAfter, true
 	}

@@ -9,6 +9,7 @@
 package auth
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/digest"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 )
@@ -126,6 +127,10 @@ func tagIs(p []byte, t string) bool {
 // the octets before the hash of a DMRE packet. It returns an error, and
 // changes nothing, when p is none of these. It does not allocate.
 func (b *Bridge) Sign(p []byte) error {
+	if b == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	msg, sig, keyed, ok := span(p)
 	if !ok {
 		return errPacket
@@ -144,6 +149,10 @@ func (b *Bridge) Sign(p []byte) error {
 // the key, as Sign would write it. It compares the signature in constant
 // time, and does not allocate.
 func (b *Bridge) Verify(p []byte) bool {
+	if b == nil {
+		return false
+	}
+
 	msg, sig, keyed, ok := span(p)
 	if !ok {
 		return false

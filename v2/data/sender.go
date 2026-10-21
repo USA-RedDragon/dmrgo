@@ -1,6 +1,7 @@
 package data
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
@@ -357,6 +358,10 @@ func NewSender(cfg *SenderConfig) (*Sender, error) {
 // numbers of every link and the channel state. It keeps the config and the
 // state of the random holdoff.
 func (s *Sender) Reset() {
+	if s == nil {
+		return
+	}
+
 	s.state, s.busy = SenderIdle, false
 	s.n, s.win, s.cur, s.closed = 0, 0, 0, false
 	s.link = nil
@@ -368,6 +373,9 @@ func (s *Sender) Reset() {
 
 // State returns the state of the Sender.
 func (s *Sender) State() SenderState {
+	if s == nil {
+		return 0
+	}
 	return s.state
 }
 
@@ -391,6 +399,9 @@ func (s *Sender) State() SenderState {
 // packet.ErrTooLong and packet.ErrRate. (ETSI TS 102 361-3 clauses 5.4 and
 // 5.4.4)
 func (s *Sender) Send(now time.Duration, m *Message) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	switch {
 	case s.asm == nil:
 		return errZero
@@ -532,6 +543,9 @@ func (s *Sender) load() {
 // that waits for the channel starts its try when it becomes idle. An
 // impolite Sender ignores it.
 func (s *Sender) Channel(now time.Duration, busy bool) {
+	if s == nil {
+		return
+	}
 	s.busy = busy
 	if !busy && s.state == SenderWaiting {
 		s.state, s.due = SenderSending, now
@@ -542,6 +556,10 @@ func (s *Sender) Channel(now time.Duration, busy bool) {
 // the outputs to dst. It does nothing without a message, and allocates
 // only when dst has no room for MaxOutputs outputs.
 func (s *Sender) Cancel(_ time.Duration, dst []Output) []Output {
+	if s == nil {
+		return dst
+	}
+
 	for s.n > 0 {
 		dst = s.finish(0, ResultCancelled, dst)
 	}
@@ -555,6 +573,9 @@ func (s *Sender) Cancel(_ time.Duration, dst []Output) []Output {
 // Channel. A nil raw, a transport frame without a burst, only runs the
 // timers. It allocates only when dst has no room for MaxOutputs outputs.
 func (s *Sender) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
+	if s == nil {
+		return dst
+	}
 	s.opts.Kind = h.Kind
 	if raw == nil || s.b == nil || s.b.DecodeFromBytesWith(*raw, &s.opts) != nil {
 		return s.timers(now, dst)
@@ -572,6 +593,9 @@ func (s *Sender) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, d
 // another Status is ignored. It allocates only when dst has no room for
 // MaxOutputs outputs. (ETSI TS 102 361-3 clause 5.4.4)
 func (s *Sender) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
+	if s == nil {
+		return dst
+	}
 	dst = s.timers(now, dst)
 	if b == nil || s.asm == nil || b.Kind != layer2.KindData || b.SlotType.FEC.Uncorrectable || s.state != SenderWaitResponse {
 		return dst
@@ -699,6 +723,9 @@ func (s *Sender) finish(k int, result Result, dst []Output) []Output {
 // Deadline returns the time at which the Sender needs a Tick. ok is false
 // when no timer runs.
 func (s *Sender) Deadline() (at time.Duration, ok bool) {
+	if s == nil {
+		return 0, false
+	}
 	switch s.state {
 	case SenderWaiting:
 		at = s.waitUntil
@@ -724,6 +751,9 @@ func (s *Sender) Deadline() (at time.Duration, ok bool) {
 // late caller calls Tick until Deadline is in the future. It allocates
 // only when dst has no room for MaxOutputs outputs.
 func (s *Sender) Tick(now time.Duration, dst []Output) []Output {
+	if s == nil {
+		return dst
+	}
 	return s.timers(now, dst)
 }
 
@@ -844,6 +874,10 @@ func (s *Sender) send(dst []Output) []Output {
 // recipient. ok is false for any other output. (ETSI TS 102 361-3 clauses
 // 5.2 and 5.4.2.1)
 func (o *Output) ICMP() (m ip.ICMPMessage, ok bool) {
+	if o == nil {
+		return 0, false
+	}
+
 	if o.Kind != OutputDone {
 		return 0, false
 	}

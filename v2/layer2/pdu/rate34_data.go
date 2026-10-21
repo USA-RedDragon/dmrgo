@@ -18,16 +18,25 @@ type Rate34Data struct {
 
 // DataType returns enums.DataTypeRate34.
 func (s *Rate34Data) DataType() enums.DataType {
+	if s == nil {
+		return 0
+	}
 	return enums.DataTypeRate34
 }
 
 // ConfirmedDBSN returns the Data Block Serial Number of a confirmed block.
 func (s *Rate34Data) ConfirmedDBSN() uint8 {
+	if s == nil {
+		return 0
+	}
 	return confirmedDBSN(s.Data[:])
 }
 
 // ConfirmedCRC9 returns the received (masked) CRC-9 of a confirmed block.
 func (s *Rate34Data) ConfirmedCRC9() uint16 {
+	if s == nil {
+		return 0
+	}
 	return confirmedCRC9(s.Data[:])
 }
 
@@ -35,6 +44,9 @@ func (s *Rate34Data) ConfirmedCRC9() uint16 {
 // In a last block (R_3_4_LDATA, Table 9.12) the last 4 octets are the
 // 32-bit message CRC.
 func (s *Rate34Data) ConfirmedUserData() [16]byte {
+	if s == nil {
+		return [16]byte{}
+	}
 	var out [16]byte
 	copy(out[:], s.Data[2:])
 	return out
@@ -42,6 +54,9 @@ func (s *Rate34Data) ConfirmedUserData() [16]byte {
 
 // ConfirmedCRC9OK reports whether the CRC-9 of a confirmed block is valid.
 func (s *Rate34Data) ConfirmedCRC9OK() bool {
+	if s == nil {
+		return false
+	}
 	return checkConfirmedCRC9(s.Data[:], crc9MaskRate34)
 }
 
@@ -49,6 +64,9 @@ func (s *Rate34Data) ConfirmedCRC9OK() bool {
 // the masked CRC-9. It returns a *dmrgo.FieldRangeError, and changes
 // nothing, when dbsn does not fit in 7 bits.
 func (s *Rate34Data) SetConfirmed(dbsn uint8, userData [16]byte) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if dbsn>>7 != 0 {
 		return errRate34DataDBSNRange
 	}

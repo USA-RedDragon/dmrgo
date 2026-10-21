@@ -1,6 +1,7 @@
 package layer2
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
@@ -51,6 +52,9 @@ var noVoiceTransmitterOptions VoiceTransmitterOptions
 // the errors of NewVoiceTransmitter. On an error t is left as it was. It
 // does not allocate.
 func (t *VoiceTransmitter) Reset(opts *VoiceTransmitterOptions) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if opts == nil {
 		opts = &noVoiceTransmitterOptions
 	}
@@ -103,12 +107,18 @@ func (t *VoiceTransmitter) Reset(opts *VoiceTransmitterOptions) error {
 // LC Header, then the PI Header when the options set one. It returns at
 // most 2 bursts. It allocates the slice; AppendHeaders does not.
 func (t *VoiceTransmitter) Headers() []RawBurst {
+	if t == nil {
+		return nil
+	}
 	return t.AppendHeaders(make([]RawBurst, 0, 2))
 }
 
 // AppendHeaders appends the bursts that Headers returns to dst and returns
 // the extended slice. It does not allocate when dst has room for 2 bursts.
 func (t *VoiceTransmitter) AppendHeaders(dst []RawBurst) []RawBurst {
+	if t == nil {
+		return dst
+	}
 	dst = append(dst, t.header)
 	if t.hasPI {
 		dst = append(dst, t.piHeader)
@@ -119,6 +129,9 @@ func (t *VoiceTransmitter) AppendHeaders(dst []RawBurst) []RawBurst {
 // SetEmbeddedLC sets the embedded LC of the next superframe that starts. It
 // takes precedence over the EmbeddedLC option for that superframe only.
 func (t *VoiceTransmitter) SetEmbeddedLC(lc pdu.FullLinkControl) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if t.terminated {
 		return ErrVoiceTerminated
 	}
@@ -135,6 +148,9 @@ func (t *VoiceTransmitter) SetEmbeddedLC(lc pdu.FullLinkControl) error {
 // them, so a bridge can pass received fragments through unchanged. Like
 // SetEmbeddedLC, it applies to that superframe only.
 func (t *VoiceTransmitter) SetEmbeddedFragments(f [4][4]byte) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if t.terminated {
 		return ErrVoiceTerminated
 	}

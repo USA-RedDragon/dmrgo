@@ -39,6 +39,10 @@ func decodeIPv4Header(data []byte) (IPv4Header, error) {
 // and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
 // to grow dst. (ETSI TS 102 361-3 clause 5.5)
 func (s *IPv4Header) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 20 {
 		dst = append(dst, 0)
@@ -87,6 +91,10 @@ func (s *IPv4Header) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *IPv4Header) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "IPv4Header{ Version: " + text.Int(int64(s.Version)) + ", IHL: " + text.Int(int64(s.IHL)) + ", TOS: " + text.Int(int64(s.TOS)) + ", TotalLength: " + text.Int(int64(s.TotalLength)) + ", ID: " + text.Int(int64(s.ID)) + ", Reserved: " + text.Bool(s.Reserved) + ", DontFragment: " + text.Bool(s.DontFragment) + ", MoreFragments: " + text.Bool(s.MoreFragments) + ", FragmentOffset: " + text.Int(int64(s.FragmentOffset)) + ", TTL: " + text.Int(int64(s.TTL)) + ", Protocol: " + s.Protocol.String() + ", Checksum: " + text.Int(int64(s.Checksum)) + ", Source: " + text.Bytes(s.Source[:]) + ", Destination: " + text.Bytes(s.Destination[:]) + " }"
 }
 
@@ -143,6 +151,10 @@ func decodeIPv4At(result *IPv4, data []byte, _o int) (int, error) {
 // of the data. It returns dst unchanged and a *dmrgo.FieldRangeError or
 // another error when a field does not fit. It allocates only to grow dst.
 func (s *IPv4) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	_fo := len(dst)
 	var _errHeader error
@@ -167,6 +179,10 @@ func (s *IPv4) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *IPv4) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "IPv4{ Header: " + s.Header.String() + ", Options: " + text.Bytes(s.Options[:]) + ", Payload: " + text.Bytes(s.Payload[:]) + " }"
 }
 
@@ -189,6 +205,10 @@ func decodeUDPHeader(data []byte) (UDPHeader, error) {
 // and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
 // to grow dst.
 func (s *UDPHeader) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 8 {
 		dst = append(dst, 0)
@@ -212,6 +232,10 @@ func (s *UDPHeader) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *UDPHeader) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "UDPHeader{ SourcePort: " + s.SourcePort.String() + ", DestinationPort: " + s.DestinationPort.String() + ", Length: " + text.Int(int64(s.Length)) + ", Checksum: " + text.Int(int64(s.Checksum)) + " }"
 }
 
@@ -261,6 +285,10 @@ func decodeUDPAt(result *UDP, data []byte, _o int) (int, error) {
 // data. It returns dst unchanged and a *dmrgo.FieldRangeError or another
 // error when a field does not fit. It allocates only to grow dst.
 func (s *UDP) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	_fo := len(dst)
 	var _errHeader error
@@ -281,6 +309,10 @@ func (s *UDP) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *UDP) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "UDP{ Header: " + s.Header.String() + ", Payload: " + text.Bytes(s.Payload[:]) + " }"
 }
 

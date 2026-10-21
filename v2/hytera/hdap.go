@@ -92,11 +92,17 @@ func (m *Message) sum() uint8 {
 // Seal sets Checksum: the sum of the octets of the opcode, the length and
 // the payload, inverted, plus 0x33.
 func (m *Message) Seal() {
+	if m == nil {
+		return
+	}
 	m.Checksum = m.sum()
 }
 
 // ChecksumOK reports whether Checksum matches the opcode, the length and
 // the payload.
 func (m *Message) ChecksumOK() bool {
+	if m == nil {
+		return false
+	}
 	return m.Checksum == m.sum()
 }

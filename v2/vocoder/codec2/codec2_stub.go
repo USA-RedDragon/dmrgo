@@ -2,7 +2,10 @@
 
 package codec2
 
-import "github.com/USA-RedDragon/dmrgo/v2/enums"
+import (
+	"github.com/USA-RedDragon/dmrgo/v2"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
+)
 
 // Codec is a Codec2 vocoder.Codec. This build has no libcodec2, so New
 // always returns ErrUnavailable and every method reports ErrUnavailable.
@@ -14,33 +17,82 @@ func New(*Config) (*Codec, error) {
 }
 
 // FrameSamples returns FrameSamples.
-func (c *Codec) FrameSamples() int { return FrameSamples }
+func (c *Codec) FrameSamples() int {
+	if c == nil {
+		return 0
+	}
+	return FrameSamples
+}
 
 // Mode returns zero.
-func (c *Codec) Mode() Mode { return 0 }
+func (c *Codec) Mode() Mode {
+	if c == nil {
+		return 0
+	}
+	return 0
+}
 
 // DecodeMode returns zero.
-func (c *Codec) DecodeMode() Mode { return 0 }
+func (c *Codec) DecodeMode() Mode {
+	if c == nil {
+		return 0
+	}
+	return 0
+}
 
 // Reset does nothing.
-func (c *Codec) Reset() {}
+func (c *Codec) Reset() {
+	if c == nil {
+		return
+	}
+}
 
 // FID returns zero.
-func (c *Codec) FID() enums.FeatureSetID { return 0 }
+func (c *Codec) FID() enums.FeatureSetID {
+	if c == nil {
+		return 0
+	}
+	return 0
+}
 
 // Silence returns an all-zero slot.
-func (c *Codec) Silence() [9]byte { return [9]byte{} }
+func (c *Codec) Silence() [9]byte {
+	if c == nil {
+		return [9]byte{}
+	}
+	return [9]byte{}
+}
 
 // Encode returns ErrUnavailable.
-func (c *Codec) Encode([]int16) ([9]byte, error) { return [9]byte{}, ErrUnavailable }
+func (c *Codec) Encode([]int16) ([9]byte, error) {
+	if c == nil {
+		return [9]byte{}, ErrUnavailable
+	}
+	return [9]byte{}, ErrUnavailable
+}
 
 // Decode returns ErrUnavailable. It returns at most FrameSamples() samples.
-func (c *Codec) Decode([9]byte) ([]int16, error) { return nil, ErrUnavailable }
+func (c *Codec) Decode([9]byte) ([]int16, error) {
+	if c == nil {
+		return nil, ErrUnavailable
+	}
+	return nil, ErrUnavailable
+}
 
 // AppendDecode returns dst and ErrUnavailable.
 func (c *Codec) AppendDecode(dst []int16, _ [9]byte) ([]int16, error) {
+	if c == nil {
+		return dst, ErrUnavailable
+	}
+
 	return dst, ErrUnavailable
 }
 
 // Close does nothing.
-func (c *Codec) Close() error { return nil }
+func (c *Codec) Close() error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	return nil
+}

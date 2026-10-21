@@ -131,18 +131,27 @@ func NewResponder(cfg *ResponderConfig) (*Responder, error) {
 // Reset drops the pending answer and forgets the channel state. It keeps
 // the config.
 func (r *Responder) Reset() {
+	if r == nil {
+		return
+	}
 	r.s.stop()
 	r.s.busy = false
 }
 
 // Pending reports whether an answer waits to go out.
 func (r *Responder) Pending() bool {
+	if r == nil {
+		return false
+	}
 	return r.s.state != sendIdle
 }
 
 // Channel reports whether the logical channel is busy, as
 // Requester.Channel does.
 func (r *Responder) Channel(now time.Duration, busy bool) {
+	if r == nil {
+		return
+	}
 	r.s.channel(now, busy)
 }
 
@@ -151,6 +160,9 @@ func (r *Responder) Channel(now time.Duration, busy bool) {
 // nil raw, a transport frame without a burst, is a nil b for Decoded. It
 // allocates only when dst has no room for MaxOutputs outputs.
 func (r *Responder) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
+	if r == nil {
+		return dst
+	}
 	return r.Decoded(now, r.d.decode(raw, &h), h, dst)
 }
 
@@ -160,6 +172,9 @@ func (r *Responder) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint
 // whose CRC fails is dropped. It allocates only when dst has no room for
 // MaxOutputs outputs.
 func (r *Responder) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
+	if r == nil {
+		return dst
+	}
 	dst = r.Tick(now, dst)
 	kind, c, octets := classify(b)
 	if kind != rxCSBK {
@@ -259,6 +274,9 @@ func (r *Responder) encode() pdu.CSBKBytes {
 // counts as idle. It runs the timers as Tick does, and allocates only when
 // dst has no room for MaxOutputs outputs.
 func (r *Responder) Lost(now time.Duration, dst []Output) []Output {
+	if r == nil {
+		return dst
+	}
 	r.s.channel(now, false)
 	return r.Tick(now, dst)
 }
@@ -268,6 +286,9 @@ func (r *Responder) Lost(now time.Duration, dst []Output) []Output {
 // time critical answer that the channel denied. A Tick before Deadline does
 // nothing. It allocates only when dst has no room for MaxOutputs outputs.
 func (r *Responder) Tick(now time.Duration, dst []Output) []Output {
+	if r == nil {
+		return dst
+	}
 	if r.s.state == sendIdle {
 		return dst
 	}
@@ -283,5 +304,8 @@ func (r *Responder) Tick(now time.Duration, dst []Output) []Output {
 // Deadline returns the time at which the Responder needs a Tick. ok is
 // false when no answer waits.
 func (r *Responder) Deadline() (at time.Duration, ok bool) {
+	if r == nil {
+		return 0, false
+	}
 	return r.s.deadline()
 }

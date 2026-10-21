@@ -1,6 +1,7 @@
 package pdu
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -43,6 +44,9 @@ type FullLinkControl struct {
 // from a manufacturer FID LC with these FLCOs. ok is false for other FLCOs.
 // (ETSI TS 102 361-2 Tables 7.1 and 7.2)
 func (s *FullLinkControl) Addresses() (target, source uint32, ok bool) {
+	if s == nil {
+		return 0, 0, false
+	}
 	if s.FLCO == enums.FLCOGroupVoiceChannelUser && s.GroupVoice != nil {
 		return s.GroupVoice.GroupAddress, s.GroupVoice.SourceAddress, true
 	}
@@ -62,6 +66,9 @@ func (s *FullLinkControl) Addresses() (target, source uint32, ok bool) {
 // (NewVoiceLC and a decode set it), and a *dmrgo.FieldRangeError when an
 // address does not fit in 24 bits, and then changes nothing.
 func (s *FullLinkControl) SetAddresses(target, source uint32) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if err := checkAddresses(target, source, errFullLinkControlTargetRange, errFullLinkControlSourceRange); err != nil {
 		return err
 	}
@@ -112,6 +119,9 @@ func NewVoiceLC(group bool, target, source uint32, so layer3.ServiceOptions) (Fu
 // payload field is set, so it also reads a manufacturer FID LC with these
 // FLCOs. ok is false for other FLCOs.
 func (s *FullLinkControl) ServiceOptions() (so layer3.ServiceOptions, ok bool) {
+	if s == nil {
+		return layer3.ServiceOptions{}, false
+	}
 	switch {
 	case s.FLCO == enums.FLCOGroupVoiceChannelUser && s.GroupVoice != nil:
 		return s.GroupVoice.ServiceOptions, true
@@ -180,5 +190,8 @@ type FLCTerminatorDataLinkControl struct {
 
 // DataType returns BurstDataType.
 func (s *FullLinkControl) DataType() enums.DataType {
+	if s == nil {
+		return 0
+	}
 	return s.BurstDataType
 }

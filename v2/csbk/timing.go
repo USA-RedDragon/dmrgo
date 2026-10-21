@@ -203,6 +203,10 @@ func NewTiming(cfg *TimingConfig) (*Timing, error) {
 // NoLeader for the CT_CSBKs of other radios before it asks for them.
 // (ETSI TS 102 361-2 clause 6.2.3.1)
 func (m *Timing) Join(now time.Duration) {
+	if m == nil {
+		return
+	}
+
 	m.Reset()
 	m.joined = true
 	m.noLeader.set(now + constants.NoLeader)
@@ -212,6 +216,10 @@ func (m *Timing) Join(now time.Duration) {
 // state. It keeps the config, the identifier and the state of the random
 // generator. (ETSI TS 102 361-2 clause 6.2)
 func (m *Timing) Reset() {
+	if m == nil {
+		return
+	}
+
 	m.joined, m.busy, m.state, m.lwatid, m.gen, m.syncRef = false, false, TimingLeaderAndTimingUnknown, 0, 0, 0
 	m.noLeader, m.syncAge, m.warning, m.beacon = timer{}, timer{}, timer{}, timer{}
 	m.pend, m.sending, m.rhotLow, m.rhotHigh = ctNone, 0, 0, constants.CTRHOTMax
@@ -219,6 +227,10 @@ func (m *Timing) Reset() {
 
 // State returns the state of the Timing. (ETSI TS 102 361-2 clause 6.2)
 func (m *Timing) State() TimingState {
+	if m == nil {
+		return 0
+	}
+
 	return m.state
 }
 
@@ -226,6 +238,10 @@ func (m *Timing) State() TimingState {
 // area timing leader. ok is false when the radio knows no leader.
 // (ETSI TS 102 361-2 clause 6.2)
 func (m *Timing) Leader() (dynamicID uint8, id uint32, ok bool) {
+	if m == nil {
+		return 0, 0, false
+	}
+
 	return uint8(m.lwatid >> 20), m.lwatid & MaxTimingID, m.lwatid != 0
 }
 
@@ -233,6 +249,10 @@ func (m *Timing) Leader() (dynamicID uint8, id uint32, ok bool) {
 // CT_CSBK waits for an idle channel. Until the first report the channel
 // counts as idle. (ETSI TS 102 361-2 clause 6.2)
 func (m *Timing) Channel(_ time.Duration, busy bool) {
+	if m == nil {
+		return
+	}
+
 	m.busy = busy
 }
 
@@ -244,6 +264,10 @@ func (m *Timing) Channel(_ time.Duration, busy bool) {
 // It allocates only when dst has no room for MaxOutputs outputs. (ETSI TS
 // 102 361-2 clauses 6.2.2.3.3 and 6.2.3.12)
 func (m *Timing) Terminator(now time.Duration, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	m.ct = pdu.ChannelTimingPDU{Generation: m.gen, SyncAge: m.sa(now), SourceIdentifier: m.id}
 	m.setLeader(m.lwatid)
 	switch {
@@ -275,6 +299,9 @@ func (m *Timing) Terminator(now time.Duration, dst []Output) []Output {
 // allocates only when dst has no room for MaxOutputs outputs.
 // (ETSI TS 102 361-2 clause 6.2)
 func (m *Timing) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
+	if m == nil || raw == nil {
+		return m.Decoded(now, nil, h, dst)
+	}
 	return m.Decoded(now, m.d.decode(raw, &h), h, dst)
 }
 
@@ -285,6 +312,10 @@ func (m *Timing) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, d
 // allocates only when dst has no room for MaxOutputs outputs. (ETSI TS 102
 // 361-2 clauses 6.2.3.2 to 6.2.3.11)
 func (m *Timing) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	dst = m.Tick(now, dst)
 	if !m.joined {
 		return dst
@@ -629,6 +660,10 @@ func (m *Timing) fill(now time.Duration) int {
 // up to two minutes. A Tick before Deadline does nothing. It allocates only
 // when dst has no room for MaxOutputs outputs. (ETSI TS 102 361-2 clause 6.2)
 func (m *Timing) Tick(now time.Duration, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	if !m.joined {
 		return dst
 	}
@@ -683,6 +718,10 @@ func (m *Timing) timers(now time.Duration) {
 // Deadline returns the time at which the Timing needs a Tick. ok is false
 // when no timer runs. (ETSI TS 102 361-2 clause 6.2)
 func (m *Timing) Deadline() (at time.Duration, ok bool) {
+	if m == nil {
+		return 0, false
+	}
+
 	if !m.joined {
 		return 0, false
 	}

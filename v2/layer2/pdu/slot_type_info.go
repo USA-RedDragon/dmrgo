@@ -21,6 +21,9 @@ func (s SlotTypeInfo) ColorCode() enums.ColorCode {
 
 // SetColorCode writes cc into the high 4 bits.
 func (s *SlotTypeInfo) SetColorCode(cc enums.ColorCode) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if cc>>4 != 0 {
 		return errSlotTypeInfoColorCodeRange
 	}
@@ -35,6 +38,9 @@ func (s SlotTypeInfo) DataType() enums.DataType {
 
 // SetDataType writes dt into the low 4 bits.
 func (s *SlotTypeInfo) SetDataType(dt enums.DataType) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if dt>>4 != 0 {
 		return errSlotTypeInfoDataTypeRange
 	}
@@ -50,6 +56,9 @@ func (s SlotTypeInfo) SlotType() SlotType {
 // Info returns the information bits of s as a SlotTypeInfo: the color code
 // and the data type. It returns the errors of Encode.
 func (s *SlotType) Info() (SlotTypeInfo, error) {
+	if s == nil {
+		return 0, dmrgo.ErrNilReceiver
+	}
 	cw, err := s.Encode()
 	return SlotTypeInfo(cw[0]), err
 }

@@ -54,6 +54,10 @@ func DecodeData(data []byte) (Data, error) {
 // *dmrgo.FieldRangeError when a field does not fit, or an error when Size is
 // not one of the lengths. It allocates only to grow dst.
 func (s *Data) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	_size := 53
 	switch s.Size {
@@ -128,6 +132,10 @@ func (s *Data) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *Data) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "Data{ Seq: " + text.Int(int64(s.Seq)) + ", Source: " + text.Int(int64(s.Source)) + ", Destination: " + text.Int(int64(s.Destination)) + ", Repeater: " + text.Int(int64(s.Repeater)) + ", Slot: " + s.Slot.String() + ", Private: " + text.Bool(s.Private) + ", Frame: " + s.Frame.String() + ", Value: " + text.Int(int64(s.Value)) + ", Stream: " + text.Int(int64(s.Stream)) + ", Burst: " + text.Bytes(s.Burst[:]) + ", BER: " + text.Int(int64(s.BER)) + ", RSSI: " + text.Int(int64(s.RSSI)) + ", UUID: " + text.Bytes(s.UUID[:]) + " }"
 }
 

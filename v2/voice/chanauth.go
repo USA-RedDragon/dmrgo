@@ -15,6 +15,10 @@ const pcgStream = 0x2545F4914F6CDD1D
 // to dst. It allocates only when dst has no room for MaxOutputs outputs.
 // (ETSI TS 102 361-2 clause 5.1.1.6.2)
 func (t *Transmitter) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
+	if t == nil {
+		return dst
+	}
+
 	if t.scratch == nil {
 		return t.Decoded(now, nil, h, dst)
 	}
@@ -44,6 +48,10 @@ func (t *Transmitter) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hi
 // dst has no room for MaxOutputs outputs. (ETSI TS 102 361-2 clause
 // 5.1.1.6.2)
 func (t *Transmitter) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
+	if t == nil {
+		return dst
+	}
+
 	dst = t.Tick(now, dst)
 	if t.state != TransmitterChanAuth || !t.authWaiting || b == nil || b.Kind != layer2.KindData || b.SlotType.FEC.Uncorrectable {
 		return dst

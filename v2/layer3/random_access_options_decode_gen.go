@@ -30,6 +30,10 @@ func DecodeVoiceServiceOptions(data [1]byte) VoiceServiceOptions {
 // first bit in the most significant bit of byte 0. The least significant bit
 // of byte 0 is 0. (ETSI TS 102 361-4 clause 7.2.13.1, Table 7.52)
 func (s *VoiceServiceOptions) Encode() ([1]byte, error) {
+	if s == nil {
+		return [1]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [1]byte
 	if s.IsEmergency {
 		data[0] |= 0x80
@@ -56,6 +60,10 @@ func (s *VoiceServiceOptions) Encode() ([1]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *VoiceServiceOptions) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "VoiceServiceOptions{ IsEmergency: " + text.Bool(s.IsEmergency) + ", IsPrivacy: " + text.Bool(s.IsPrivacy) + ", IsSuppData: " + text.Bool(s.IsSuppData) + ", IsBroadcast: " + text.Bool(s.IsBroadcast) + ", Reserved: " + text.Bool(s.Reserved) + ", PriorityLevel: " + text.Int(int64(s.PriorityLevel)) + " }"
 }
 
@@ -78,6 +86,10 @@ func DecodeDataServiceOptions(data [1]byte) DataServiceOptions {
 // first bit in the most significant bit of byte 0. The least significant bit
 // of byte 0 is 0. (ETSI TS 102 361-4 clause 7.2.13.2, Table 7.53)
 func (s *DataServiceOptions) Encode() ([1]byte, error) {
+	if s == nil {
+		return [1]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [1]byte
 	if s.IsEmergency {
 		data[0] |= 0x80
@@ -104,6 +116,10 @@ func (s *DataServiceOptions) Encode() ([1]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *DataServiceOptions) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "DataServiceOptions{ IsEmergency: " + text.Bool(s.IsEmergency) + ", IsPrivacy: " + text.Bool(s.IsPrivacy) + ", IsSuppData: " + text.Bool(s.IsSuppData) + ", HiRate: " + text.Bool(s.HiRate) + ", MultiItem: " + text.Bool(s.MultiItem) + ", PriorityLevel: " + text.Int(int64(s.PriorityLevel)) + " }"
 }
 
@@ -125,6 +141,10 @@ func DecodeRegistrationServiceOptions(data [1]byte) RegistrationServiceOptions {
 // the first bit in the most significant bit of byte 0. The least significant
 // bit of byte 0 is 0. (ETSI TS 102 361-4 clause 7.2.13.4, Table 7.55)
 func (s *RegistrationServiceOptions) Encode() ([1]byte, error) {
+	if s == nil {
+		return [1]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [1]byte
 	if s.Reserved {
 		data[0] |= 0x80
@@ -148,6 +168,10 @@ func (s *RegistrationServiceOptions) Encode() ([1]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *RegistrationServiceOptions) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "RegistrationServiceOptions{ Reserved: " + text.Bool(s.Reserved) + ", IsPrivacy: " + text.Bool(s.IsPrivacy) + ", IPInform: " + text.Bool(s.IPInform) + ", PowerSave: " + text.Int(int64(s.PowerSave)) + ", Register: " + text.Bool(s.Register) + " }"
 }
 

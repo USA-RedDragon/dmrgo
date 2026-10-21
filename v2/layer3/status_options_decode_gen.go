@@ -25,6 +25,10 @@ func DecodeStatusServiceOptions(data [1]byte) StatusServiceOptions {
 // first bit in the most significant bit of byte 0. The least significant bit
 // of byte 0 is 0. (ETSI TS 102 361-4 clause 7.2.13.6, Table 7.57)
 func (s *StatusServiceOptions) Encode() ([1]byte, error) {
+	if s == nil {
+		return [1]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [1]byte
 	if s.Group {
 		data[0] |= 0x80
@@ -42,6 +46,10 @@ func (s *StatusServiceOptions) Encode() ([1]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *StatusServiceOptions) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "StatusServiceOptions{ Group: " + text.Bool(s.Group) + ", IsSuppData: " + text.Bool(s.IsSuppData) + ", StatusHigh: " + text.Int(int64(s.StatusHigh)) + " }"
 }
 

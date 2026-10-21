@@ -68,5 +68,8 @@ type UnifiedSingleBlockData struct {
 
 // DataType returns enums.DataTypeUnifiedSingleBlock.
 func (s *UnifiedSingleBlockData) DataType() enums.DataType {
+	if s == nil {
+		return 0
+	}
 	return enums.DataTypeUnifiedSingleBlock
 }

@@ -2,6 +2,7 @@ package voice
 
 import (
 	"fmt"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
@@ -376,6 +377,10 @@ func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 // Reset ends any transmission without an output, empties the queue and
 // forgets the channel state. It keeps the config.
 func (t *Transmitter) Reset() {
+	if t == nil {
+		return
+	}
+
 	t.state, t.ended, t.timedOut, t.hasNext, t.relay, t.stopping = TransmitterIdle, false, false, false, false, false
 	t.busy = false
 	t.head, t.length, t.dropped, t.reason = 0, 0, 0, 0
@@ -383,11 +388,19 @@ func (t *Transmitter) Reset() {
 
 // State returns the state of the Transmitter.
 func (t *Transmitter) State() TransmitterState {
+	if t == nil {
+		return 0
+	}
+
 	return t.state
 }
 
 // Room returns the number of vocoder slots that the queue can take.
 func (t *Transmitter) Room() int {
+	if t == nil {
+		return 0
+	}
+
 	return len(t.queue) - t.length
 }
 
@@ -395,6 +408,10 @@ func (t *Transmitter) Room() int {
 // dropped: voice before the LC was known, and voice that did not fit in
 // the queue.
 func (t *Transmitter) Dropped() int {
+	if t == nil {
+		return 0
+	}
+
 	return t.dropped
 }
 
@@ -406,6 +423,10 @@ func (t *Transmitter) Dropped() int {
 // returns ErrBusy while a transmission runs, and a *dmrgo.ConfigError when c
 // does not make an LC.
 func (t *Transmitter) Start(at time.Duration, c Call, opts *CallOptions) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if t.state != TransmitterIdle {
 		return ErrBusy
 	}
@@ -432,6 +453,10 @@ func (t *Transmitter) Start(at time.Duration, c Call, opts *CallOptions) error {
 // when the channel becomes idle. Until the first report the channel counts
 // as idle. (ETSI TS 102 361-1 clause 5.2.1.2)
 func (t *Transmitter) Channel(now time.Duration, busy bool) {
+	if t == nil {
+		return
+	}
+
 	t.busy = busy
 	if busy || t.state != TransmitterAccess {
 		return
@@ -452,6 +477,10 @@ func (t *Transmitter) Channel(now time.Duration, busy bool) {
 // RC PDU whose CRC fails, a reserved command, a relayed call and a call
 // that is not on air are ignored. (ETSI TS 102 361-2 clause 6.3)
 func (t *Transmitter) Interrupt(rc pdu.ReverseChannel) bool {
+	if t == nil {
+		return false
+	}
+
 	if rc.FEC.Uncorrectable || t.relay {
 		return false
 	}
@@ -557,6 +586,10 @@ func (t *Transmitter) extra(i int) *pdu.FullLinkControl {
 // ErrTimedOut after T_TO, ErrNotActive when no call takes voice, and the
 // errors of vocoder.EncodeAMBE72.
 func (t *Transmitter) Frame(f vocoder.AMBEFrame) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	slot, err := vocoder.EncodeAMBE72(f)
 	if err != nil {
 		return err
@@ -567,6 +600,10 @@ func (t *Transmitter) Frame(f vocoder.AMBEFrame) error {
 // Frames queues AMBE+2 frames as Frame does. On an error the frames
 // before the failing one stay queued.
 func (t *Transmitter) Frames(f ...vocoder.AMBEFrame) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	for i := range f {
 		if err := t.Frame(f[i]); err != nil {
 			return err
@@ -578,6 +615,10 @@ func (t *Transmitter) Frames(f ...vocoder.AMBEFrame) error {
 // Slot queues one 72-bit vocoder slot of any codec, packed as
 // layer2.RawBurst.VoiceSlots returns it, as Frame does.
 func (t *Transmitter) Slot(s [9]byte) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	switch {
 	case t.state == TransmitterTimedOut || t.timedOut:
 		return ErrTimedOut
@@ -593,6 +634,10 @@ func (t *Transmitter) Slot(s [9]byte) error {
 
 // Slots queues 72-bit vocoder slots as Slot does.
 func (t *Transmitter) Slots(s ...[9]byte) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	for i := range s {
 		if err := t.Slot(s[i]); err != nil {
 			return err
@@ -611,6 +656,10 @@ func (t *Transmitter) push(s *[9]byte) {
 // Stop is the release of the PTT, and the next Tick appends OutputEnded. A
 // call in TransmitterAccess or TransmitterChanAuth ends without an output.
 func (t *Transmitter) Stop() {
+	if t == nil {
+		return
+	}
+
 	switch t.state {
 	case TransmitterAccess, TransmitterChanAuth:
 		t.state, t.head, t.length = TransmitterIdle, 0, 0
@@ -628,6 +677,10 @@ func (t *Transmitter) Stop() {
 // time of the next burst minus TransmitterConfig.Lead. ok is false when it
 // sends nothing.
 func (t *Transmitter) Deadline() (at time.Duration, ok bool) {
+	if t == nil {
+		return 0, false
+	}
+
 	switch {
 	case t.state == TransmitterIdle, t.state == TransmitterTimedOut && !t.ended:
 		return 0, false
@@ -645,6 +698,10 @@ func (t *Transmitter) Deadline() (at time.Duration, ok bool) {
 // future. It appends to dst, and allocates only when dst has no room for
 // MaxOutputs outputs.
 func (t *Transmitter) Tick(now time.Duration, dst []Output) []Output {
+	if t == nil {
+		return dst
+	}
+
 	at, ok := t.Deadline()
 	if !ok || now < at {
 		return dst
@@ -823,6 +880,10 @@ func (t *Transmitter) finish(out []Output, reason EndReason) []Output {
 // call LC when none was received. It returns ErrBusy for a CallStart while
 // a call that is not ending runs, and an error for a nil e.
 func (t *Transmitter) Relay(now time.Duration, e *Event) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if e == nil {
 		return errNilEvent
 	}

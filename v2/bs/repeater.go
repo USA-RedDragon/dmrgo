@@ -1,6 +1,7 @@
 package bs
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
@@ -279,6 +280,9 @@ func orDefault(d, def time.Duration) time.Duration {
 // Repeater in StateHibernating, or keyed in ModeNetwork. It keeps the
 // config.
 func (r *Repeater) Reset() {
+	if r == nil {
+		return
+	}
 	if r.b == nil {
 		return
 	}
@@ -294,6 +298,9 @@ func (r *Repeater) Reset() {
 
 // State returns the state of both slots.
 func (r *Repeater) State() State {
+	if r == nil {
+		return 0
+	}
 	if !r.keyed && r.mode == ModeRF {
 		return StateHibernating
 	}
@@ -312,6 +319,9 @@ func (r *Repeater) State() State {
 // SlotState returns the state of slot s, and SlotIdle for a slot other than
 // Slot1 or Slot2.
 func (r *Repeater) SlotState(s enums.Slot) SlotState {
+	if r == nil {
+		return 0
+	}
 	sl := r.slot(s)
 	if sl == nil {
 		return SlotIdle
@@ -343,6 +353,10 @@ func (s *slot) busy() bool {
 // Hint.SyncLost ends a call of from on the slot. It allocates only when
 // dst has no room for MaxOutputs outputs.
 func (r *Repeater) Inbound(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, from Source, dst []Output) []Output {
+	if r == nil {
+		return dst
+	}
+
 	if r.b == nil {
 		return dst
 	}
@@ -441,6 +455,10 @@ func (r *Repeater) key(now time.Duration, dst []Output) []Output {
 // tells a bad slot. It allocates only when dst has no room for MaxOutputs
 // outputs.
 func (r *Repeater) Lost(now time.Duration, s enums.Slot, from Source, dst []Output) []Output {
+	if r == nil {
+		return dst
+	}
+
 	if r.b == nil {
 		return dst
 	}
@@ -464,6 +482,9 @@ func (r *Repeater) Lost(now time.Duration, s enums.Slot, from Source, dst []Outp
 // returns ErrSlot for a slot other than Slot1 or Slot2, and does nothing
 // for a slot without a call.
 func (r *Repeater) Reject(s enums.Slot) error {
+	if r == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if r.b == nil {
 		return errZero
 	}
@@ -486,6 +507,9 @@ func (r *Repeater) Reject(s enums.Slot) error {
 // regenerated bursts that are due. It allocates only when dst has no room
 // for MaxOutputs outputs.
 func (r *Repeater) Tick(now time.Duration, dst []Output) []Output {
+	if r == nil {
+		return dst
+	}
 	if r.b == nil {
 		return dst
 	}
@@ -502,6 +526,9 @@ func (r *Repeater) Tick(now time.Duration, dst []Output) []Output {
 // Deadline returns the time at which the Repeater needs a Tick. ok is false
 // when no timer runs.
 func (r *Repeater) Deadline() (at time.Duration, ok bool) {
+	if r == nil {
+		return 0, false
+	}
 	if r.b == nil {
 		return 0, false
 	}

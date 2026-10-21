@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -129,12 +130,20 @@ func NewInterrupter(cfg *InterrupterConfig) (*Interrupter, error) {
 // Reset ends any interrupt request without an output. It keeps the config.
 // (ETSI TS 102 361-2 clause 6.3.5)
 func (i *Interrupter) Reset() {
+	if i == nil {
+		return
+	}
+
 	i.state = InterrupterIdle
 }
 
 // State returns the state of the Interrupter.
 // (ETSI TS 102 361-2 clause 6.3.5)
 func (i *Interrupter) State() InterrupterState {
+	if i == nil {
+		return 0
+	}
+
 	return i.state
 }
 
@@ -145,6 +154,10 @@ func (i *Interrupter) State() InterrupterState {
 // *dmrgo.ConfigError for another command. (ETSI TS 102 361-2 clauses 6.3.3 and
 // 6.3.4)
 func (i *Interrupter) Interrupt(now time.Duration, cmd enums.RCCommand) error {
+	if i == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if i.state != InterrupterIdle {
 		return ErrBusy
 	}
@@ -172,6 +185,10 @@ func (i *Interrupter) try(at time.Duration) {
 // Cancel ends the interrupt request without an output.
 // (ETSI TS 102 361-2 clause 6.3.5)
 func (i *Interrupter) Cancel() {
+	if i == nil {
+		return
+	}
+
 	i.state = InterrupterIdle
 }
 
@@ -180,6 +197,10 @@ func (i *Interrupter) Cancel() {
 // outputs to dst. It allocates only when dst has no room for MaxOutputs
 // outputs. (ETSI TS 102 361-2 clause 6.3.5)
 func (i *Interrupter) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
+	if i == nil {
+		return dst
+	}
+
 	i.opts = layer2.DecodeOptions{Kind: h.Kind, VoiceBurst: enums.VoiceBurstUnknown}
 	if h.Kind == layer2.KindVoice {
 		i.opts.VoiceBurst = h.VoiceBurst
@@ -189,7 +210,7 @@ func (i *Interrupter) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hi
 		i.opts.DataType = &i.dataType
 	}
 	b := i.b
-	if b.DecodeFromBytesWith(*raw, &i.opts) != nil {
+	if raw == nil || b.DecodeFromBytesWith(*raw, &i.opts) != nil {
 		b = nil
 	}
 	return i.Decoded(now, b, h, dst)
@@ -201,6 +222,10 @@ func (i *Interrupter) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hi
 // when dst has no room for MaxOutputs outputs.
 // (ETSI TS 102 361-2 clause 6.3.5)
 func (i *Interrupter) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
+	if i == nil {
+		return dst
+	}
+
 	dst = i.Tick(now, dst)
 	if i.state == InterrupterIdle || i.tries == 1 && i.state == InterrupterSending && i.sent == 0 {
 		return dst
@@ -220,6 +245,10 @@ func (i *Interrupter) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint,
 // only when dst has no room for MaxOutputs outputs.
 // (ETSI TS 102 361-2 clause 6.3.5)
 func (i *Interrupter) Tick(now time.Duration, dst []Output) []Output {
+	if i == nil {
+		return dst
+	}
+
 	if i.state == InterrupterWaiting && i.wait >= 0 && now >= i.waitUntil {
 		if i.tries > i.retries {
 			i.state = InterrupterIdle
@@ -246,6 +275,10 @@ func (i *Interrupter) Tick(now time.Duration, dst []Output) []Output {
 // Deadline returns the time at which the Interrupter needs a Tick. ok is
 // false when no timer runs. (ETSI TS 102 361-2 clause 6.3.5)
 func (i *Interrupter) Deadline() (at time.Duration, ok bool) {
+	if i == nil {
+		return 0, false
+	}
+
 	switch i.state {
 	case InterrupterSending:
 		return i.due, true

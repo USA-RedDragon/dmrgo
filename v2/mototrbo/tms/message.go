@@ -7,6 +7,9 @@ var errSequence = &dmrgo.FieldRangeError{Type: "tms", Field: "Sequence", Bits: 7
 // Sequence returns the 7-bit sequence number of a text message or an
 // acknowledgement, and false when the message has none.
 func (m *Message) Sequence() (uint8, bool) {
+	if m == nil {
+		return 0, false
+	}
 	if !m.Header.Extension || m.Header.Type == TypeAvailability {
 		return 0, false
 	}

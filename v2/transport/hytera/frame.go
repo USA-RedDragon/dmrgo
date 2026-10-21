@@ -1,6 +1,7 @@
 package hytera
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
@@ -169,6 +170,10 @@ func dataTypeOf(s SlotType) (enums.DataType, bool) {
 // layer2.ErrDataType for a data type that Hytera has no slot type for (MBC,
 // idle, rate 1 and unified single block data).
 func (f *Frame) SetKind(k layer2.Kind, pos enums.VoiceBurstType, dt enums.DataType) error {
+	if f == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	s, err := slotTypeOf(k, pos, dt)
 	if err != nil {
 		return err

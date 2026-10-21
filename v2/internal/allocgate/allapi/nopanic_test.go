@@ -206,8 +206,9 @@ func nopanicName(f any) string {
 
 // TestNoPanic calls every exported function and method of the library,
 // except the internal packages, with zero values, nil pointers and random
-// values of their arguments, on a receiver that is a zero value or holds
-// random exported fields, and fails for each call that panics or hangs.
+// values of their arguments, on a receiver that is nil, a zero value, made by
+// a constructor or holds random exported fields, and fails for each call that
+// panics or hangs.
 func TestNoPanic(t *testing.T) {
 	t.Parallel()
 
@@ -250,6 +251,9 @@ func TestNoPanic(t *testing.T) {
 						if v := g.construct(c[g.rng.IntN(len(c))]); v.IsValid() {
 							p = v
 						}
+					}
+					if round == 2 || round == 3 {
+						p = reflect.Zero(at)
 					}
 					args[j] = p
 				case round == 0:

@@ -27,6 +27,10 @@ func DecodeCdefParms(data [8]byte) CdefParms {
 // in the most significant bit of byte 0. The low 6 bits of byte 7 are 0.
 // (ETSI TS 102 361-4 clause 7.2.42, Table 7.103)
 func (s *CdefParms) Encode() ([8]byte, error) {
+	if s == nil {
+		return [8]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [8]byte
 	if uint64(s.Channel)>>12 != 0 {
 		return [8]byte{}, errCdefParmsChannelRange
@@ -66,6 +70,10 @@ func (s *CdefParms) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *CdefParms) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "CdefParms{ Channel: " + text.Int(int64(s.Channel)) + ", TXMHz: " + text.Int(int64(s.TXMHz)) + ", TXKHz: " + text.Int(int64(s.TXKHz)) + ", RXMHz: " + text.Int(int64(s.RXMHz)) + ", RXKHz: " + text.Int(int64(s.RXKHz)) + " }"
 }
 

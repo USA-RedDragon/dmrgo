@@ -1,6 +1,7 @@
 package ipsc
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -76,6 +77,10 @@ type Payload struct {
 // SlotType returns the slot type octet of the trailer and whether the
 // packet has one.
 func (d *Payload) SlotType() (pdu.SlotTypeInfo, bool) {
+	if d == nil {
+		return 0, false
+	}
+
 	if d.Flags[1]&0x08 == 0 || d.TrailerLen < 2 {
 		return 0, false
 	}
@@ -85,6 +90,10 @@ func (d *Payload) SlotType() (pdu.SlotTypeInfo, bool) {
 // RSSI returns the last two trailer octets and whether the packet has them.
 // ok is false for a TrailerLen over the length of Trailer.
 func (d *Payload) RSSI() (uint16, bool) {
+	if d == nil {
+		return 0, false
+	}
+
 	if d.Flags[0]&0x80 == 0 || d.TrailerLen < 2 || int(d.TrailerLen) > len(d.Trailer) {
 		return 0, false
 	}
@@ -279,6 +288,10 @@ func appendPayload(dst []byte, d Payload) ([]byte, error) {
 // data packet, EndWeak for the end flag on a voice packet, EndStrong on a
 // terminator or a data packet, and SyncLost for BurstSyncLost.
 func (u *User) Hint() layer2.Hint {
+	if u == nil {
+		return layer2.Hint{}
+	}
+
 	h := layer2.Hint{Slot: u.Info.Slot(), Seq: u.RTP.Seq, HasSeq: true, Stream: u.CallControl, HasStream: true}
 	switch {
 	case u.IsVoice():
@@ -317,6 +330,10 @@ func (u *User) Hint() layer2.Hint {
 // returns an error for BurstSyncLost, BurstRaw and other packets that carry
 // no burst it can rebuild, and the errors of the layer2 builders.
 func (u *User) RawBurst(cc enums.ColorCode, src layer2.SyncSource) (layer2.RawBurst, error) {
+	if u == nil {
+		return layer2.RawBurst{}, dmrgo.ErrNilReceiver
+	}
+
 	if u.IsVoice() {
 		var r layer2.RawBurst
 		if err := r.SetAMBEFrames(vocoder.UnpackAMBEVoice(u.Voice.AMBE)); err != nil {
@@ -362,6 +379,10 @@ func (u *User) RawBurst(cc enums.ColorCode, src layer2.SyncSource) (layer2.RawBu
 // for a data type that IPSC does not carry (Idle, rate 1, unified single
 // block and the reserved types), and the errors of vocoder.PackAMBEVoice.
 func (u *User) SetRawBurst(raw layer2.RawBurst, k layer2.Kind, pos enums.VoiceBurstType, dt enums.DataType) error {
+	if u == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	var slotBit uint8
 	if u.Info.Slot() == enums.Slot2 {
 		slotBit = 0x80

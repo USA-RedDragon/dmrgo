@@ -43113,6 +43113,8 @@ func dmrgo_voice_transmitter_state_string(c_self C.dmrgo_voice_transmitter_state
 func errCode(err error) C.int {
 	for e := err; e != nil; {
 		switch e {
+		case g_dmrgo.ErrNilReceiver:
+			return -228
 		case g_bs.ErrSlot:
 			return -107
 		case g_csbk.ErrBusy:
@@ -43396,6 +43398,8 @@ func setErr(err error) C.int {
 
 func codeErr(code C.int) error {
 	switch code {
+	case -228:
+		return g_dmrgo.ErrNilReceiver
 	case -107:
 		return g_bs.ErrSlot
 	case -108:

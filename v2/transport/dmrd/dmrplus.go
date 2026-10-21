@@ -113,6 +113,10 @@ func optionIndex(key []byte) int {
 // startup options text, each followed by a semicolon, in the order of the
 // fields. It allocates only to grow dst.
 func (o *DMRPlusOptions) AppendText(dst []byte) []byte {
+	if o == nil {
+		return dst
+	}
+
 	dst = appendOption(dst, "StartRef", o.StartRef)
 	dst = appendOption(dst, "RelinkTime", o.RelinkTime)
 	dst = appendOption(dst, "UserLink", o.UserLink)

@@ -20,6 +20,10 @@ func decodeMotorolaRadioCheckPDU(data [8]byte) MotorolaRadioCheckPDU {
 // Encode encodes a MotorolaRadioCheckPDU. It returns the 64 bits packed, the
 // first bit in the most significant bit of byte 0.
 func (s *MotorolaRadioCheckPDU) Encode() ([8]byte, error) {
+	if s == nil {
+		return [8]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [8]byte
 	data[0] = byte(uint64(s.Reserved))
 	if s.Answer {
@@ -49,6 +53,10 @@ func (s *MotorolaRadioCheckPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MotorolaRadioCheckPDU) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "MotorolaRadioCheckPDU{ Reserved: " + text.Int(int64(s.Reserved)) + ", Answer: " + text.Bool(s.Answer) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", RequesterAddress: " + text.Int(int64(s.RequesterAddress)) + ", CheckedAddress: " + text.Int(int64(s.CheckedAddress)) + " }"
 }
 func decodeMotorolaCallAlertPDU(data [8]byte) MotorolaCallAlertPDU {
@@ -62,6 +70,10 @@ func decodeMotorolaCallAlertPDU(data [8]byte) MotorolaCallAlertPDU {
 // Encode encodes a MotorolaCallAlertPDU. It returns the 64 bits packed, the
 // first bit in the most significant bit of byte 0.
 func (s *MotorolaCallAlertPDU) Encode() ([8]byte, error) {
+	if s == nil {
+		return [8]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [8]byte
 	_valReserved := uint64(s.Reserved)
 	data[0] = byte(_valReserved >> 8)
@@ -86,6 +98,10 @@ func (s *MotorolaCallAlertPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MotorolaCallAlertPDU) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "MotorolaCallAlertPDU{ Reserved: " + text.Int(int64(s.Reserved)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 func decodeMotorolaCallAlertAckPDU(data [8]byte) MotorolaCallAlertAckPDU {
@@ -100,6 +116,10 @@ func decodeMotorolaCallAlertAckPDU(data [8]byte) MotorolaCallAlertAckPDU {
 // Encode encodes a MotorolaCallAlertAckPDU. It returns the 64 bits packed,
 // the first bit in the most significant bit of byte 0.
 func (s *MotorolaCallAlertAckPDU) Encode() ([8]byte, error) {
+	if s == nil {
+		return [8]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [8]byte
 	data[0] = byte(uint64(s.Request))
 	data[1] = byte(uint64(s.Reserved))
@@ -123,6 +143,10 @@ func (s *MotorolaCallAlertAckPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MotorolaCallAlertAckPDU) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "MotorolaCallAlertAckPDU{ Request: " + text.Int(int64(s.Request)) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 

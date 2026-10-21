@@ -1,6 +1,9 @@
 package pdu
 
-import "github.com/USA-RedDragon/dmrgo/v2/enums"
+import (
+	"github.com/USA-RedDragon/dmrgo/v2"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
+)
 
 func (s *CSBK) addressFields() (target, source *uint32) {
 	switch {
@@ -72,6 +75,9 @@ func (s *CSBK) is0x38() bool {
 // payload with one address or none (C_MOVE, C_ALOHA, C_BCAST, C_ACKD, C_ACKU,
 // P_ACKD, P_ACKU and CT_CSBK) and for the RawPayload of another FID.
 func (s *CSBK) Addresses() (target, source uint32, ok bool) {
+	if s == nil {
+		return 0, 0, false
+	}
 	if s.is0x38() {
 		return uint24(s.RawPayload[2:5]), uint24(s.RawPayload[5:8]), true
 	}
@@ -87,6 +93,9 @@ func (s *CSBK) Addresses() (target, source uint32, ok bool) {
 // *dmrgo.FieldRangeError when an address does not fit in 24 bits, and then
 // changes nothing.
 func (s *CSBK) SetAddresses(target, source uint32) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if err := checkAddresses(target, source, errCSBKTargetRange, errCSBKSourceRange); err != nil {
 		return err
 	}

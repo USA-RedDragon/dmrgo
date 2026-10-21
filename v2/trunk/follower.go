@@ -174,11 +174,19 @@ func (f *Follower) init(cfg *FollowerConfig) error {
 
 // State returns the state of the Follower.
 func (f *Follower) State() State {
+	if f == nil {
+		return 0
+	}
+
 	return f.state
 }
 
 // Site returns what the Follower knows about the TSCC.
 func (f *Follower) Site() Site {
+	if f == nil {
+		return Site{}
+	}
+
 	return f.ctl.site
 }
 
@@ -186,29 +194,49 @@ func (f *Follower) Site() Site {
 // and Chan_Freq announced. The copy is large; Lookup reads one channel
 // without it.
 func (f *Follower) Plan() ChannelPlan {
+	if f == nil {
+		return ChannelPlan{}
+	}
+
 	return f.ctl.plan
 }
 
 // Lookup returns the channel with number n from the channel plan, as
 // ChannelPlan.Lookup does. ok is false when no entry and no rule gives it.
 func (f *Follower) Lookup(n uint16) (c Channel, ok bool) {
+	if f == nil {
+		return Channel{}, false
+	}
+
 	return f.ctl.plan.Lookup(n)
 }
 
 // Hunt returns the hunt list, with the changes of Ann_WD_TSCC broadcasts.
 func (f *Follower) Hunt() HuntList {
+	if f == nil {
+		return HuntList{}
+	}
+
 	return f.ctl.hunt
 }
 
 // Call returns the grant of the call that the Follower follows. ok is
 // false outside StatePayload.
 func (f *Follower) Call() (g Grant, ok bool) {
+	if f == nil {
+		return Grant{}, false
+	}
+
 	return f.call, f.state == StatePayload
 }
 
 // Reset forgets the site and the call and starts hunting again, as after
 // NewFollower. It keeps the config, the channel plan and the hunt list.
 func (f *Follower) Reset() {
+	if f == nil {
+		return
+	}
+
 	f.ctl.forget()
 	f.state, f.started, f.huntIdx, f.sysErrs = StateHunting, false, 0, 0
 	f.inHang, f.hasClear = false, false
@@ -224,6 +252,10 @@ func (f *Follower) Reset() {
 // does, else it runs the timers. It allocates only when dst has no room
 // for MaxOutputs outputs.
 func (f *Follower) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
+	if f == nil {
+		return dst
+	}
+
 	var c *layer2.CACH
 	if cach != nil {
 		f.cach = layer2.DecodeCACHField(*cach)
@@ -257,6 +289,10 @@ func (f *Follower) burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint,
 // channel the call ends as on TV_Inactive. It appends the outputs to dst,
 // and allocates only when dst has no room for MaxOutputs outputs.
 func (f *Follower) Lost(now time.Duration, dst []Output) []Output {
+	if f == nil {
+		return dst
+	}
+
 	dst = f.timers(now, dst)
 	if f.state == StatePayload {
 		return f.leave(now, ReasonInactive, dst)
@@ -269,12 +305,20 @@ func (f *Follower) Lost(now time.Duration, dst []Output) []Output {
 // first hunt list channel. A Tick before Deadline does nothing. It
 // allocates only when dst has no room for MaxOutputs outputs.
 func (f *Follower) Tick(now time.Duration, dst []Output) []Output {
+	if f == nil {
+		return dst
+	}
+
 	return f.timers(now, dst)
 }
 
 // Deadline returns the time at which the Follower needs a Tick. ok is
 // false when no timer runs.
 func (f *Follower) Deadline() (at time.Duration, ok bool) {
+	if f == nil {
+		return 0, false
+	}
+
 	if !f.started && f.ctl.useHunt && f.ctl.hunt.Len() > 0 {
 		return 0, true
 	}
@@ -506,6 +550,10 @@ func (f *Follower) moveTo(now time.Duration, ch uint16, out []Output) []Output {
 // UDT returns the UDT delivery of the last OutputUDT. It points into the
 // Follower and holds until the next call of a method of the Follower.
 func (f *Follower) UDT() *UDT {
+	if f == nil {
+		return nil
+	}
+
 	return &f.ctl.udt
 }
 

@@ -24,6 +24,10 @@ func decodeHeader(data []byte) (Header, error) {
 // a *dmrgo.FieldRangeError when a field does not fit. It allocates only to
 // grow dst.
 func (s *Header) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 1 {
 		dst = append(dst, 0)
@@ -42,6 +46,10 @@ func (s *Header) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *Header) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "Header{ Reliable: " + text.Bool(s.Reliable) + ", Service: " + s.Service.String() + " }"
 }
 
@@ -106,6 +114,10 @@ func decodeMessageAt(result *Message, data []byte, _o int) (int, error) {
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *Message) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	var _errHeader error
 	dst, _errHeader = s.Header.AppendBinary(dst)
@@ -129,6 +141,10 @@ func (s *Message) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *Message) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "Message{ Header: " + s.Header.String() + ", Opcode: " + text.Int(int64(s.Opcode)) + ", Payload: " + text.Bytes(s.Payload[:]) + ", Checksum: " + text.Int(int64(s.Checksum)) + ", End: " + text.Int(int64(s.End)) + " }"
 }
 

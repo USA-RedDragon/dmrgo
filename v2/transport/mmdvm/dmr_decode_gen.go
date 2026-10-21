@@ -4,6 +4,8 @@ package mmdvm
 
 import text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
+import "github.com/USA-RedDragon/dmrgo/v2"
+
 // DecodeDMRAloha decodes a DMRAloha from data, a frame of 33 octets. It
 // returns ErrShort when data is shorter than 33 octets and ErrLength when it
 // is longer. It does not keep data.
@@ -23,6 +25,10 @@ func DecodeDMRAloha(data []byte) (DMRAloha, error) {
 // and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
 // to grow dst.
 func (s *DMRAloha) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 33 {
 		dst = append(dst, 0)
@@ -35,5 +41,9 @@ func (s *DMRAloha) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *DMRAloha) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "DMRAloha{ Burst: " + text.Bytes(s.Burst[:]) + " }"
 }

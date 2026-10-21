@@ -34,6 +34,10 @@ func DecodeUDPIPv4CompressedHeader(data [9]byte) UDPIPv4CompressedHeader {
 // the first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-3 clause 7.2.3, Table 7.14)
 func (s *UDPIPv4CompressedHeader) Encode() ([9]byte, error) {
+	if s == nil {
+		return [9]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [9]byte
 	_valIPv4Identification := uint64(s.IPv4Identification)
 	data[0] = byte(_valIPv4Identification >> 8)
@@ -72,6 +76,10 @@ func (s *UDPIPv4CompressedHeader) Encode() ([9]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *UDPIPv4CompressedHeader) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "UDPIPv4CompressedHeader{ IPv4Identification: " + text.Int(int64(s.IPv4Identification)) + ", SAID: " + text.Int(int64(s.SAID)) + ", DAID: " + text.Int(int64(s.DAID)) + ", HeaderCompressionOpcode: " + text.Int(int64(s.HeaderCompressionOpcode)) + ", SPID: " + text.Int(int64(s.SPID)) + ", DPID: " + text.Int(int64(s.DPID)) + ", ExtendedHeader1: " + text.Int(int64(s.ExtendedHeader1)) + ", ExtendedHeader2: " + text.Int(int64(s.ExtendedHeader2)) + " }"
 }
 

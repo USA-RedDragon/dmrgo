@@ -1,6 +1,7 @@
 package pdu
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
@@ -79,6 +80,9 @@ func (s *DataHeader) Addresses() (target, source uint32, ok bool) {
 // is set, and a *dmrgo.FieldRangeError when an LLID does not fit in 24 bits,
 // and then changes nothing.
 func (s *DataHeader) SetAddresses(destination, source uint32) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if err := checkAddresses(destination, source, errDataHeaderTargetRange, errDataHeaderSourceRange); err != nil {
 		return err
 	}
@@ -120,6 +124,9 @@ const (
 
 // DataType returns enums.DataTypeDataHeader.
 func (s *DataHeader) DataType() enums.DataType {
+	if s == nil {
+		return 0
+	}
 	return enums.DataTypeDataHeader
 }
 

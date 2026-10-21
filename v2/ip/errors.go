@@ -26,5 +26,6 @@ var (
 	// checksum or the UDP checksum does not match.
 	ErrChecksum = errors.New("ip: checksum does not match")
 
-	errNil = errors.New("ip: nil Datagram")
+	errNil     = errors.New("ip: nil Datagram")
+	errNilICMP = errors.New("ip: nil ICMPPacket")
 )

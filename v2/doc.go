@@ -133,8 +133,14 @@
 //
 // # Errors
 //
+// No function or method of the library panics on its input. A method
+// called on a nil pointer does nothing: it returns ErrNilReceiver where it
+// returns an error, dst unchanged where it appends to dst, "<nil>" from
+// String and Error, and zero values otherwise.
+//
 // These errors can be matched with errors.Is. Each is a static value.
 //
+//   - ErrNilReceiver: a method was called on a nil pointer.
 //   - fec.ErrUncorrectable: an FEC or CRC check failed. It is wrapped by
 //     layer2.ErrEmbeddedLCUncorrectable, packet.ErrMessageCRC and
 //     packet.ErrBlocksMissing, which layer2.VoiceReceiver and

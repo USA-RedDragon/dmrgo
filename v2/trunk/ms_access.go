@@ -204,6 +204,10 @@ func (m *MS) challenged(now time.Duration, c uint32, slot enums.Slot, payload bo
 // for MaxOutputs outputs. (ETSI TS 102 361-4 clauses 6.4.8.3 and
 // 6.6.2.3.2.2, Table 6.18)
 func (m *MS) AuthResponse(now time.Duration, response uint32, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	a := m.auth
 	m.auth = authChallenge{}
 	if m.off || !a.on || now > a.due {

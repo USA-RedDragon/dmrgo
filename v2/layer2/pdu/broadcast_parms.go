@@ -59,6 +59,9 @@ type AdjacentSiteParms struct {
 // AsAnnWDTSCC returns p as Ann_WD_TSCC parameters. ok is false for another
 // AnnouncementType, or when a field of p does not fit its bits.
 func (p *BroadcastPDU) AsAnnWDTSCC() (v AnnWDTSCCParms, ok bool) {
+	if p == nil {
+		return AnnWDTSCCParms{}, false
+	}
 	b, err := p.Encode()
 	if err != nil || p.AnnouncementType != enums.AnnouncementAnnWDTSCC {
 		return v, false
@@ -68,6 +71,9 @@ func (p *BroadcastPDU) AsAnnWDTSCC() (v AnnWDTSCCParms, ok bool) {
 
 // AsChanFreq returns p as Chan_Freq parameters, as AsAnnWDTSCC does.
 func (p *BroadcastPDU) AsChanFreq() (v ChanFreqParms, ok bool) {
+	if p == nil {
+		return ChanFreqParms{}, false
+	}
 	b, err := p.Encode()
 	if err != nil || p.AnnouncementType != enums.AnnouncementChanFreq {
 		return v, false
@@ -78,6 +84,9 @@ func (p *BroadcastPDU) AsChanFreq() (v ChanFreqParms, ok bool) {
 // AsAdjacentSite returns p as Adjacent_Site parameters, as AsAnnWDTSCC
 // does.
 func (p *BroadcastPDU) AsAdjacentSite() (v AdjacentSiteParms, ok bool) {
+	if p == nil {
+		return AdjacentSiteParms{}, false
+	}
 	b, err := p.Encode()
 	if err != nil || p.AnnouncementType != enums.AnnouncementAdjacentSite {
 		return v, false
@@ -184,6 +193,10 @@ type GenSiteParms struct {
 // AsCallTimer returns p as CallTimer_Parms parameters, as AsAnnWDTSCC
 // does.
 func (p *BroadcastPDU) AsCallTimer() (v CallTimerParms, ok bool) {
+	if p == nil {
+		return CallTimerParms{}, false
+	}
+
 	b, err := p.Encode()
 	if err != nil || p.AnnouncementType != enums.AnnouncementCallTimer {
 		return v, false
@@ -193,6 +206,10 @@ func (p *BroadcastPDU) AsCallTimer() (v CallTimerParms, ok bool) {
 
 // AsVoteNow returns p as Vote_Now parameters, as AsAnnWDTSCC does.
 func (p *BroadcastPDU) AsVoteNow() (v VoteNowParms, ok bool) {
+	if p == nil {
+		return VoteNowParms{}, false
+	}
+
 	b, err := p.Encode()
 	if err != nil || p.AnnouncementType != enums.AnnouncementVoteNow {
 		return v, false
@@ -202,6 +219,10 @@ func (p *BroadcastPDU) AsVoteNow() (v VoteNowParms, ok bool) {
 
 // AsLocalTime returns p as Local_Time parameters, as AsAnnWDTSCC does.
 func (p *BroadcastPDU) AsLocalTime() (v LocalTimeParms, ok bool) {
+	if p == nil {
+		return LocalTimeParms{}, false
+	}
+
 	b, err := p.Encode()
 	if err != nil || p.AnnouncementType != enums.AnnouncementLocalTime {
 		return v, false
@@ -211,6 +232,10 @@ func (p *BroadcastPDU) AsLocalTime() (v LocalTimeParms, ok bool) {
 
 // AsMassReg returns p as MassReg parameters, as AsAnnWDTSCC does.
 func (p *BroadcastPDU) AsMassReg() (v MassRegParms, ok bool) {
+	if p == nil {
+		return MassRegParms{}, false
+	}
+
 	b, err := p.Encode()
 	if err != nil || p.AnnouncementType != enums.AnnouncementMassReg {
 		return v, false
@@ -220,6 +245,10 @@ func (p *BroadcastPDU) AsMassReg() (v MassRegParms, ok bool) {
 
 // AsGenSite returns p as Gen_Site_Params parameters, as AsAnnWDTSCC does.
 func (p *BroadcastPDU) AsGenSite() (v GenSiteParms, ok bool) {
+	if p == nil {
+		return GenSiteParms{}, false
+	}
+
 	b, err := p.Encode()
 	if err != nil || p.AnnouncementType != enums.AnnouncementGenSiteParams {
 		return v, false

@@ -33,6 +33,10 @@ func DecodeEmbeddedSignalling(data [2]byte) EmbeddedSignalling {
 // first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-1 clause 9.1.2)
 func (s *EmbeddedSignalling) Encode() ([2]byte, error) {
+	if s == nil {
+		return [2]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [2]byte
 	if uint64(s.ColorCode)>>4 != 0 {
 		return [2]byte{}, errEmbeddedSignallingColorCodeRange
@@ -55,6 +59,10 @@ func (s *EmbeddedSignalling) Encode() ([2]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *EmbeddedSignalling) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "EmbeddedSignalling{ ColorCode: " + text.Int(int64(s.ColorCode)) + ", PreemptionAndPowerControlIndicator: " + text.Bool(s.PreemptionAndPowerControlIndicator) + ", LCSS: " + s.LCSS.String() + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "} }"
 }
 

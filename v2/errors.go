@@ -1,6 +1,14 @@
 package dmrgo
 
-import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
+import (
+	"errors"
+
+	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
+)
+
+// ErrNilReceiver is returned by a method of the library that returns an
+// error when it is called on a nil pointer. Match it with errors.Is.
+var ErrNilReceiver = errors.New("dmrgo: method called on a nil receiver")
 
 // FieldRangeError is the error of an encoder or setter when a field value
 // does not fit in its on-air bits, when a padding bit of a packed field is
@@ -25,6 +33,9 @@ type FieldRangeError struct {
 
 // Error returns the message of e. It allocates the message.
 func (e *FieldRangeError) Error() string {
+	if e == nil {
+		return "<nil>"
+	}
 	if e.Min != e.Max {
 		return e.Type + "." + e.Field + ": value is outside [" + text.Float(e.Min) + ", " + text.Float(e.Max) + "]"
 	}
@@ -47,5 +58,8 @@ type ConfigError struct {
 
 // Error returns the message of e. It allocates the message.
 func (e *ConfigError) Error() string {
+	if e == nil {
+		return "<nil>"
+	}
 	return e.Type + ": " + e.Field + " is out of range"
 }

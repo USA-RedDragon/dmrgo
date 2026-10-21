@@ -45,6 +45,9 @@ func (l LCBytes) FLCO() enums.FLCO {
 // in 6 bits. DMRGateway clears the Reserved bit when it rewrites the FLCO;
 // to do the same, call SetReserved(false) as well.
 func (l *LCBytes) SetFLCO(f enums.FLCO) error {
+	if l == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if f>>6 != 0 {
 		return errLCBytesFLCORange
 	}
@@ -61,6 +64,9 @@ func (l LCBytes) ProtectFlag() bool {
 
 // SetProtectFlag writes the PF bit, bit 0 of octet 0.
 func (l *LCBytes) SetProtectFlag(pf bool) {
+	if l == nil {
+		return
+	}
 	if pf {
 		l[0] |= 0x80
 	} else {
@@ -76,6 +82,9 @@ func (l LCBytes) Reserved() bool {
 
 // SetReserved writes the Reserved bit, bit 1 of octet 0.
 func (l *LCBytes) SetReserved(r bool) {
+	if l == nil {
+		return
+	}
 	if r {
 		l[0] |= 0x40
 	} else {
@@ -90,6 +99,9 @@ func (l LCBytes) FID() enums.FeatureSetID {
 
 // SetFID writes fid into octet 1.
 func (l *LCBytes) SetFID(fid enums.FeatureSetID) {
+	if l == nil {
+		return
+	}
 	l[1] = byte(fid)
 }
 
@@ -101,6 +113,9 @@ func (l LCBytes) ServiceOptions() byte {
 
 // SetServiceOptions writes so into octet 2.
 func (l *LCBytes) SetServiceOptions(so byte) {
+	if l == nil {
+		return
+	}
 	l[2] = so
 }
 
@@ -128,6 +143,9 @@ func (l LCBytes) Addresses() (target, source uint32, ok bool) {
 // ErrNoAddresses for other FLCOs and a *dmrgo.FieldRangeError when an
 // address does not fit in 24 bits, and then changes nothing.
 func (l *LCBytes) SetAddresses(target, source uint32) error {
+	if l == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if err := checkAddresses(target, source, errLCBytesTargetRange, errLCBytesSourceRange); err != nil {
 		return err
 	}
@@ -153,6 +171,9 @@ func (l LCBytes) Group() (group, ok bool) {
 // Service Options and addresses carry over. It returns false, and changes
 // nothing, unless the FLCO is already one of the two.
 func (l *LCBytes) SetGroup(group bool) bool {
+	if l == nil {
+		return false
+	}
 	if !l.isVoiceChannelUser() {
 		return false
 	}

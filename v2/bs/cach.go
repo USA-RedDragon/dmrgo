@@ -1,6 +1,7 @@
 package bs
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -19,6 +20,9 @@ type CACH struct {
 // First reports whether the next call of Next starts a new Short LC, so
 // that the caller builds the Short LC only then.
 func (c *CACH) First() bool {
+	if c == nil {
+		return false
+	}
 	return c.n == 0
 }
 
@@ -29,6 +33,9 @@ func (c *CACH) First() bool {
 // other than Slot1 or Slot2, and the error of pdu.ShortLC.Encode, after
 // which First stays true.
 func (c *CACH) Next(tc enums.Slot, busy bool, slc *pdu.ShortLC) ([3]byte, error) {
+	if c == nil {
+		return [3]byte{}, dmrgo.ErrNilReceiver
+	}
 	if tc != enums.Slot1 && tc != enums.Slot2 {
 		return [3]byte{}, ErrSlot
 	}
@@ -53,5 +60,8 @@ func (c *CACH) Next(tc enums.Slot, busy bool, slc *pdu.ShortLC) ([3]byte, error)
 
 // Reset makes the next Next start a new Short LC.
 func (c *CACH) Reset() {
+	if c == nil {
+		return
+	}
 	c.n = 0
 }

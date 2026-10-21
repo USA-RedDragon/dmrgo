@@ -2,6 +2,7 @@ package pdu
 
 import (
 	"errors"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"slices"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -250,6 +251,9 @@ type TalkerAliasAssembler struct {
 
 // Reset discards the stored header and blocks.
 func (a *TalkerAliasAssembler) Reset() {
+	if a == nil {
+		return
+	}
 	*a = TalkerAliasAssembler{}
 }
 
@@ -259,6 +263,9 @@ func (a *TalkerAliasAssembler) Reset() {
 // decode. It returns at most TalkerAliasMaxText bytes of alias. It
 // allocates the string; AppendAdd does not.
 func (a *TalkerAliasAssembler) Add(lc *FullLinkControl) (alias string, ok bool, err error) {
+	if a == nil {
+		return "", false, dmrgo.ErrNilReceiver
+	}
 	var buf [TalkerAliasMaxText]byte
 	n, ok, err := a.AddInto(&buf, lc)
 	return string(buf[:n]), ok, err
@@ -269,6 +276,9 @@ func (a *TalkerAliasAssembler) Add(lc *FullLinkControl) (alias string, ok bool, 
 // when Add returns an empty alias. It allocates only when dst has no room
 // for TalkerAliasMaxText bytes.
 func (a *TalkerAliasAssembler) AppendAdd(dst []byte, lc *FullLinkControl) (alias []byte, ok bool, err error) {
+	if a == nil {
+		return dst, false, dmrgo.ErrNilReceiver
+	}
 	var buf [TalkerAliasMaxText]byte
 	n, ok, err := a.AddInto(&buf, lc)
 	return append(dst, buf[:n]...), ok, err
@@ -279,6 +289,9 @@ func (a *TalkerAliasAssembler) AppendAdd(dst []byte, lc *FullLinkControl) (alias
 // the alias, 0 when Add returns an empty alias. A nil dst returns an error
 // and changes nothing.
 func (a *TalkerAliasAssembler) AddInto(dst *[TalkerAliasMaxText]byte, lc *FullLinkControl) (n int, ok bool, err error) {
+	if a == nil {
+		return 0, false, dmrgo.ErrNilReceiver
+	}
 	if dst == nil {
 		return 0, false, errNil
 	}

@@ -31,6 +31,10 @@ type Access struct {
 // 6.2.1.1.1). An emergency request is let through for every Mask but 24.
 // A Mask of 24 with the address ADRNULL (0) lets no MS through.
 func (a *Access) Applies(ms uint32, emergency bool) bool {
+	if a == nil {
+		return false
+	}
+
 	if a.Mask >= 24 {
 		return a.Address != 0 && a.Address == ms&0xFFFFFF
 	}

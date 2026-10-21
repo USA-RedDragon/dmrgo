@@ -155,6 +155,9 @@ func DecodeICMPPacket(data []byte) (ICMPPacket, error) {
 // another error when the packet is longer than 65535 octets. It allocates
 // only to grow dst. (ETSI TS 102 361-3 clause 5.2)
 func AppendICMPPacket(dst []byte, c *ICMPPacket) ([]byte, error) {
+	if c == nil {
+		return dst, errNilICMP
+	}
 	orig := c.Original
 	if len(orig) >= 20 && orig[0]>>4 == 4 {
 		if Protocol(orig[9]) == ProtocolICMP {

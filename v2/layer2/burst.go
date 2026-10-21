@@ -1,6 +1,7 @@
 package layer2
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
@@ -153,6 +154,9 @@ func (b *Burst) reset(data RawBurst) {
 // embedded data field: a voice or data burst without a SYNC pattern, or a
 // standalone RC burst.
 func (b *Burst) HasEmbeddedSignalling() bool {
+	if b == nil {
+		return false
+	}
 	return b.Kind == KindReverseChannel || (b.Kind == KindVoice || b.Kind == KindData) && b.SyncPattern == enums.SyncNone
 }
 
@@ -160,6 +164,9 @@ func (b *Burst) HasEmbeddedSignalling() bool {
 // PDU: in a standalone RC burst, and in a voice or data burst whose EMB has
 // PI set and LCSS single fragment (ETSI TS 102 361-1 clause 6.4).
 func (b *Burst) HasReverseChannel() bool {
+	if b == nil {
+		return false
+	}
 	if b.Kind == KindReverseChannel {
 		return true
 	}
@@ -186,6 +193,9 @@ func NewBurstFromBytes(data RawBurst) (*Burst, error) {
 // DecodeFromBytesWith with nil options. When it returns no error, a decode
 // into a reused Burst does not allocate.
 func (b *Burst) DecodeFromBytes(data RawBurst) error {
+	if b == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	return b.DecodeFromBytesWith(data, nil)
 }
 
@@ -195,6 +205,9 @@ func (b *Burst) DecodeFromBytes(data RawBurst) error {
 // ErrColorCodeMismatch, an error for invalid options, or a join of these,
 // and the burst is populated also when an error is returned.
 func (b *Burst) DecodeFromBytesWith(data RawBurst, opts *DecodeOptions) error {
+	if b == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	var o DecodeOptions
 	if opts != nil {
 		o = *opts
@@ -441,6 +454,9 @@ func (b *Burst) embeddedData() ([4]byte, error) {
 // vocoder.DecodeAMBE72 and returns them with the combined FEC result. The
 // result is meaningful only for a burst that carries AMBE+2 voice.
 func (b *Burst) AMBEFrames() ([VoiceSlotsPerBurst]vocoder.AMBEFrame, fec.Result) {
+	if b == nil {
+		return [VoiceSlotsPerBurst]vocoder.AMBEFrame{}, fec.Result{}
+	}
 	var frames [VoiceSlotsPerBurst]vocoder.AMBEFrame
 	var result fec.Result
 	for i, slot := range b.VoiceSlots {
@@ -455,6 +471,9 @@ func (b *Burst) AMBEFrames() ([VoiceSlotsPerBurst]vocoder.AMBEFrame, fec.Result)
 // as vocoder.EncodeAMBE72 returns it. It returns the errors of
 // EncodeAMBE72 and then changes nothing.
 func (b *Burst) SetAMBEFrames(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame) error {
+	if b == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	var s [VoiceSlotsPerBurst][9]byte
 	for i := range frames {
 		var err error
@@ -507,6 +526,9 @@ func rate1Info(data *[25]byte) [25]byte {
 // String returns a string representation of the burst. It allocates the
 // string.
 func (b *Burst) String() string {
+	if b == nil {
+		return "<nil>"
+	}
 	ret := "{ Kind: " + b.Kind.String() + ", SyncPattern: " + b.SyncPattern.String() + ", "
 	if b.HasEmbeddedSignalling() {
 		ret += "EmbeddedSignalling: " + b.EmbeddedSignalling.String() + ", "
@@ -593,6 +615,9 @@ func decodePayload(st *decodeStore, dt enums.DataType, payload *[25]byte, sync e
 // not fit its bits or a padding bit that is set. A data burst takes only
 // the Data types that BuildBurst takes.
 func (b *Burst) Encode() (RawBurst, error) {
+	if b == nil {
+		return RawBurst{}, dmrgo.ErrNilReceiver
+	}
 	if b.Kind == KindReverseChannel {
 		return b.encodeStandaloneRC()
 	}

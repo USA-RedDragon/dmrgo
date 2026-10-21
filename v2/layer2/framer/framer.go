@@ -192,6 +192,9 @@ func New(c *Config) (*Framer, error) {
 
 // Locked reports whether the Framer is locked on a burst period.
 func (f *Framer) Locked() bool {
+	if f == nil {
+		return false
+	}
 	return f.locked
 }
 
@@ -214,6 +217,9 @@ func (f *Framer) Write(stream []byte, nbits int) []Burst {
 // dst and returns the extended slice. It allocates only when dst has no
 // room for 2*(min(nbits,8*len(stream))/layer2.BurstBits+1) bursts.
 func (f *Framer) AppendBursts(dst []Burst, stream []byte, nbits int) []Burst {
+	if f == nil {
+		return dst
+	}
 	nbits = clampBits(stream, nbits)
 	for from := 0; from < nbits && f.n < cap(f.buf)*8; {
 		k := min(nbits-from, cap(f.buf)*8-f.n)

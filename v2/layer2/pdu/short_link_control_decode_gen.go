@@ -28,6 +28,10 @@ func decodeShortLCNullMessage(data [3]byte) ShortLCNullMessage {
 // first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-2 clause 7.1.3.1)
 func (s *ShortLCNullMessage) Encode() ([3]byte, error) {
+	if s == nil {
+		return [3]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [3]byte
 	if uint64(s.Reserved)>>24 != 0 {
 		return [3]byte{}, errShortLCNullMessageReservedRange
@@ -42,6 +46,10 @@ func (s *ShortLCNullMessage) Encode() ([3]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ShortLCNullMessage) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "ShortLCNullMessage{ Reserved: " + text.Int(int64(s.Reserved)) + " }"
 }
 
@@ -59,6 +67,10 @@ func decodeShortLCActivityUpdate(data [3]byte) ShortLCActivityUpdate {
 // first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-2 clause 7.1.3.2)
 func (s *ShortLCActivityUpdate) Encode() ([3]byte, error) {
+	if s == nil {
+		return [3]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [3]byte
 	if uint64(s.TS1ActivityID)>>4 != 0 {
 		return [3]byte{}, errShortLCActivityUpdateTS1ActivityIDRange
@@ -76,6 +88,10 @@ func (s *ShortLCActivityUpdate) Encode() ([3]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ShortLCActivityUpdate) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "ShortLCActivityUpdate{ TS1ActivityID: " + s.TS1ActivityID.String() + ", TS2ActivityID: " + s.TS2ActivityID.String() + ", HashTS1: " + text.Int(int64(s.HashTS1)) + ", HashTS2: " + text.Int(int64(s.HashTS2)) + " }"
 }
 
@@ -93,6 +109,10 @@ func decodeShortLCCSysParms(data [3]byte) ShortLCCSysParms {
 // first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-4 clause 7.1.2.1)
 func (s *ShortLCCSysParms) Encode() ([3]byte, error) {
+	if s == nil {
+		return [3]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [3]byte
 	if uint64(s.MODEL)>>2 != 0 {
 		return [3]byte{}, errShortLCCSysParmsMODELRange
@@ -119,6 +139,10 @@ func (s *ShortLCCSysParms) Encode() ([3]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ShortLCCSysParms) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "ShortLCCSysParms{ MODEL: " + text.Int(int64(s.MODEL)) + ", NetSiteRaw: " + text.Int(int64(s.NetSiteRaw)) + ", Reg: " + text.Bool(s.Reg) + ", CommonSlotCounter: " + text.Int(int64(s.CommonSlotCounter)) + " }"
 }
 
@@ -136,6 +160,10 @@ func decodeShortLCPSysParms(data [3]byte) ShortLCPSysParms {
 // first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-4 clause 7.1.2.2)
 func (s *ShortLCPSysParms) Encode() ([3]byte, error) {
+	if s == nil {
+		return [3]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [3]byte
 	if uint64(s.MODEL)>>2 != 0 {
 		return [3]byte{}, errShortLCPSysParmsMODELRange
@@ -162,6 +190,10 @@ func (s *ShortLCPSysParms) Encode() ([3]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ShortLCPSysParms) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "ShortLCPSysParms{ MODEL: " + text.Int(int64(s.MODEL)) + ", NetSiteRaw: " + text.Int(int64(s.NetSiteRaw)) + ", PayloadChannelType: " + text.Bool(s.PayloadChannelType) + ", CommonSlotCounter: " + text.Int(int64(s.CommonSlotCounter)) + " }"
 }
 
@@ -241,6 +273,10 @@ func DecodeShortLCInto(dst *ShortLC, p *ShortLCPayloads, data [5]byte) {
 // the most significant bit of byte 0. The low 4 bits of byte 4 are 0.
 // (ETSI TS 102 361-1 clause 9.1.7)
 func (s *ShortLC) Encode() ([5]byte, error) {
+	if s == nil {
+		return [5]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [5]byte
 	_payload := ""
 	if s.NullMessage != nil {
@@ -323,6 +359,10 @@ func (s *ShortLC) Encode() ([5]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ShortLC) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	_ret := "ShortLC{ "
 	_ret += "SLCO: " + s.SLCO.String() + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, "
 	switch {

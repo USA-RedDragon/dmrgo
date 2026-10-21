@@ -1,6 +1,7 @@
 package layer2
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
@@ -114,18 +115,27 @@ func lcDataBurst(lc *pdu.FullLinkControl, dataType enums.DataType, colorCode enu
 // Header returns the Voice LC Header burst, sent before the first voice
 // burst.
 func (t *VoiceTransmitter) Header() RawBurst {
+	if t == nil {
+		return RawBurst{}
+	}
 	return t.header
 }
 
 // PIHeader returns the PI Header burst that Headers returns after the Voice
 // LC Header. ok is false when the options set no PI Header.
 func (t *VoiceTransmitter) PIHeader() (b RawBurst, ok bool) {
+	if t == nil {
+		return RawBurst{}, false
+	}
 	return t.piHeader, t.hasPI
 }
 
 // Terminator returns the Terminator with LC burst that Terminate returns
 // last. It does not end the transmission.
 func (t *VoiceTransmitter) Terminator() RawBurst {
+	if t == nil {
+		return RawBurst{}
+	}
 	return t.terminator
 }
 
@@ -134,6 +144,9 @@ func (t *VoiceTransmitter) Terminator() RawBurst {
 // an error for a transmission that is not BS-sourced (ETSI TS 102 361-1
 // clause 7.1.3.1).
 func (t *VoiceTransmitter) SetReverseChannel(rc pdu.ReverseChannel) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if t.terminated {
 		return ErrVoiceTerminated
 	}
@@ -163,6 +176,9 @@ func (t *VoiceTransmitter) AddSlots(slots ...[9]byte) ([]RawBurst, error) {
 // (len(slots)+VoiceSlotsPerBurst-1)/VoiceSlotsPerBurst bursts: the slots
 // that wait from an earlier call are fewer than VoiceSlotsPerBurst.
 func (t *VoiceTransmitter) AppendSlots(dst []RawBurst, slots ...[9]byte) ([]RawBurst, error) {
+	if t == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
 	if t.terminated {
 		return dst, ErrVoiceTerminated
 	}
@@ -191,6 +207,9 @@ func (t *VoiceTransmitter) AddFrames(frames ...vocoder.AMBEFrame) ([]RawBurst, e
 // added. It allocates only when dst has no room for
 // (len(frames)+VoiceSlotsPerBurst-1)/VoiceSlotsPerBurst bursts.
 func (t *VoiceTransmitter) AppendFrames(dst []RawBurst, frames ...vocoder.AMBEFrame) ([]RawBurst, error) {
+	if t == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
 	if t.terminated {
 		return dst, ErrVoiceTerminated
 	}
@@ -212,6 +231,9 @@ func (t *VoiceTransmitter) AppendFrames(dst []RawBurst, frames ...vocoder.AMBEFr
 // burst of the slots that wait from an earlier call, if any, and the first
 // slots.
 func (t *VoiceTransmitter) AddBurst(slots [VoiceSlotsPerBurst][9]byte) (RawBurst, error) {
+	if t == nil {
+		return RawBurst{}, dmrgo.ErrNilReceiver
+	}
 	if t.terminated {
 		return RawBurst{}, ErrVoiceTerminated
 	}
@@ -256,6 +278,9 @@ func (t *VoiceTransmitter) addSlot(slot *[9]byte) (RawBurst, bool, error) {
 // most VoiceBurstsPerSuperframe+1 bursts. It allocates the slice;
 // AppendTerminate does not.
 func (t *VoiceTransmitter) Terminate() ([]RawBurst, error) {
+	if t == nil {
+		return nil, dmrgo.ErrNilReceiver
+	}
 	if t.terminated {
 		return nil, ErrVoiceTerminated
 	}
@@ -271,6 +296,9 @@ func (t *VoiceTransmitter) Terminate() ([]RawBurst, error) {
 // with the bursts completed before the error. It does not allocate when dst
 // has room for VoiceBurstsPerSuperframe+1 bursts.
 func (t *VoiceTransmitter) AppendTerminate(dst []RawBurst) ([]RawBurst, error) {
+	if t == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
 	if t.terminated {
 		return dst, ErrVoiceTerminated
 	}

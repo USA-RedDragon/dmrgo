@@ -45,6 +45,10 @@ func decodeUnconfirmedDataHeader(data [10]byte) UnconfirmedDataHeader {
 // the first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-1 clause 9.2.6)
 func (s *UnconfirmedDataHeader) Encode() ([10]byte, error) {
+	if s == nil {
+		return [10]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [10]byte
 	if s.Group {
 		data[0] |= 0x80
@@ -101,6 +105,10 @@ func (s *UnconfirmedDataHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *UnconfirmedDataHeader) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "UnconfirmedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Reserved: " + text.Bool(s.Reserved) + ", PadOctetCount: " + text.Int(int64(s.PadOctetCount)) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BlocksToFollow: " + text.Int(int64(s.BlocksToFollow)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", FragmentSequenceNumber: " + text.Int(int64(s.FragmentSequenceNumber)) + " }"
 }
 
@@ -224,6 +232,10 @@ func DecodeDataHeaderInto(dst *DataHeader, p *DataHeaderPayloads, data [12]byte)
 // Encode encodes a DataHeader. It returns the 96 bits packed, the first bit
 // in the most significant bit of byte 0. (ETSI TS 102 361-1 clause 9.2)
 func (s *DataHeader) Encode() ([12]byte, error) {
+	if s == nil {
+		return [12]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [12]byte
 	_payload := ""
 	if s.UnconfirmedDataHeader != nil {
@@ -369,6 +381,10 @@ func (s *DataHeader) Encode() ([12]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *DataHeader) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	_ret := "DataHeader{ "
 	_ret += "FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, Format: " + text.Int(int64(s.Format)) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", "
 	switch {
@@ -421,6 +437,10 @@ func decodeConfirmedDataHeader(data [10]byte) ConfirmedDataHeader {
 // first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-1 clause 9.2.1, Table 9.10)
 func (s *ConfirmedDataHeader) Encode() ([10]byte, error) {
+	if s == nil {
+		return [10]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [10]byte
 	if s.Group {
 		data[0] |= 0x80
@@ -480,6 +500,10 @@ func (s *ConfirmedDataHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ConfirmedDataHeader) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "ConfirmedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Reserved: " + text.Bool(s.Reserved) + ", PadOctetCount: " + text.Int(int64(s.PadOctetCount)) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BlocksToFollow: " + text.Int(int64(s.BlocksToFollow)) + ", ReSynchronizeFlag: " + text.Bool(s.ReSynchronizeFlag) + ", SendSequenceNumber: " + text.Int(int64(s.SendSequenceNumber)) + ", FragmentSequenceNumber: " + text.Int(int64(s.FragmentSequenceNumber)) + " }"
 }
 
@@ -505,6 +529,10 @@ func decodeResponsePacketHeader(data [10]byte) ResponsePacketHeader {
 // first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-1 clause 9.2.4, Table 9.13)
 func (s *ResponsePacketHeader) Encode() ([10]byte, error) {
+	if s == nil {
+		return [10]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [10]byte
 	if s.Reserved {
 		data[0] |= 0x80
@@ -564,6 +592,10 @@ func (s *ResponsePacketHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ResponsePacketHeader) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "ResponsePacketHeader{ Reserved: " + text.Bool(s.Reserved) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", SAP: " + text.Int(int64(s.SAP)) + ", Reserved3: " + text.Int(int64(s.Reserved3)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BlocksToFollow: " + text.Int(int64(s.BlocksToFollow)) + ", ResponseClass: " + text.Int(int64(s.ResponseClass)) + ", ResponseType: " + text.Int(int64(s.ResponseType)) + ", ResponseStatus: " + text.Int(int64(s.ResponseStatus)) + " }"
 }
 
@@ -591,6 +623,10 @@ func decodeDefinedDataHeader(data [10]byte) DefinedDataHeader {
 // first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-1 clause 9.2.12, Table 9.17C)
 func (s *DefinedDataHeader) Encode() ([10]byte, error) {
+	if s == nil {
+		return [10]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [10]byte
 	if s.Group {
 		data[0] |= 0x80
@@ -640,6 +676,10 @@ func (s *DefinedDataHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *DefinedDataHeader) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "DefinedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", DefinedData: " + s.DefinedData.String() + ", SARQ: " + text.Bool(s.SARQ) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BitPadding: " + text.Int(int64(s.BitPadding)) + " }"
 }
 
@@ -668,6 +708,10 @@ func decodeRawDataHeader(data [10]byte) RawDataHeader {
 // bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-1 clause 9.2.11, Table 9.17B)
 func (s *RawDataHeader) Encode() ([10]byte, error) {
+	if s == nil {
+		return [10]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [10]byte
 	if s.Group {
 		data[0] |= 0x80
@@ -721,6 +765,10 @@ func (s *RawDataHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *RawDataHeader) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "RawDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", SourcePort: " + text.Int(int64(s.SourcePort)) + ", DestinationPort: " + text.Int(int64(s.DestinationPort)) + ", SARQ: " + text.Bool(s.SARQ) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BitPadding: " + text.Int(int64(s.BitPadding)) + " }"
 }
 
@@ -742,6 +790,10 @@ func decodeStatusPrecodedHeader(data [10]byte) StatusPrecodedHeader {
 // first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-1 clause 9.2.10, Table 9.17A)
 func (s *StatusPrecodedHeader) Encode() ([10]byte, error) {
+	if s == nil {
+		return [10]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [10]byte
 	if s.Group {
 		data[0] |= 0x80
@@ -791,6 +843,10 @@ func (s *StatusPrecodedHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *StatusPrecodedHeader) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "StatusPrecodedHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", SourcePort: " + text.Int(int64(s.SourcePort)) + ", DestinationPort: " + text.Int(int64(s.DestinationPort)) + ", StatusPrecoded: " + text.Int(int64(s.StatusPrecoded)) + " }"
 }
 
@@ -818,6 +874,10 @@ func decodeUDTHeader(data [10]byte) UDTHeader {
 // in the most significant bit of byte 0. (ETSI TS 102 361-1 clause 9.2.13,
 // Table 9.17D, ETSI TS 102 361-4 Tables 7.24 and 7.28)
 func (s *UDTHeader) Encode() ([10]byte, error) {
+	if s == nil {
+		return [10]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [10]byte
 	if s.Group {
 		data[0] |= 0x80
@@ -881,6 +941,10 @@ func (s *UDTHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *UDTHeader) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "UDTHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Emergency: " + text.Bool(s.Emergency) + ", OptionFlag: " + text.Bool(s.OptionFlag) + ", SAP: " + text.Int(int64(s.SAP)) + ", UDTFormat: " + text.Int(int64(s.UDTFormat)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", PadNibble: " + text.Int(int64(s.PadNibble)) + ", Reserved: " + text.Bool(s.Reserved) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", SupplementaryFlag: " + text.Bool(s.SupplementaryFlag) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + " }"
 }
 
@@ -897,6 +961,10 @@ func decodeProprietaryHeader(data [10]byte) ProprietaryHeader {
 // first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-1 clause 9.2.9, Table 9.17)
 func (s *ProprietaryHeader) Encode() ([10]byte, error) {
+	if s == nil {
+		return [10]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [10]byte
 	if uint64(s.SAP)>>4 != 0 {
 		return [10]byte{}, errProprietaryHeaderSAPRange
@@ -914,6 +982,10 @@ func (s *ProprietaryHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ProprietaryHeader) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "ProprietaryHeader{ SAP: " + text.Int(int64(s.SAP)) + ", MFID: " + text.Int(int64(s.MFID)) + ", ManufacturerData: " + text.Bytes(s.ManufacturerData[:]) + " }"
 }
 

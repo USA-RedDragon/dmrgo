@@ -26,6 +26,10 @@ func DecodeUnifiedSingleBlockData(data [12]byte) UnifiedSingleBlockData {
 // the first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-1 clause 8.2.3.1)
 func (s *UnifiedSingleBlockData) Encode() ([12]byte, error) {
+	if s == nil {
+		return [12]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [12]byte
 	if uint64(s.ServiceType)>>4 != 0 {
 		return [12]byte{}, errUnifiedSingleBlockDataServiceTypeRange
@@ -44,6 +48,10 @@ func (s *UnifiedSingleBlockData) Encode() ([12]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *UnifiedSingleBlockData) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "UnifiedSingleBlockData{ FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, ServiceType: " + text.Int(int64(s.ServiceType)) + ", Payload: " + text.Hex(s.Payload[:]) + " }"
 }
 

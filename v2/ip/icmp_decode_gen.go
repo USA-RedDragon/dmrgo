@@ -6,6 +6,8 @@ package ip
 
 import text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
+import "github.com/USA-RedDragon/dmrgo/v2"
+
 func decodeICMPHeader(data []byte) (ICMPHeader, error) {
 	if len(data) < 8 {
 		return ICMPHeader{}, ErrShort
@@ -26,6 +28,10 @@ func decodeICMPHeader(data []byte) (ICMPHeader, error) {
 // and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
 // to grow dst. (ETSI TS 102 361-3 clause 5.2)
 func (s *ICMPHeader) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 8 {
 		dst = append(dst, 0)
@@ -48,6 +54,10 @@ func (s *ICMPHeader) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ICMPHeader) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "ICMPHeader{ Message: " + s.Message.String() + ", Checksum: " + text.Int(int64(s.Checksum)) + ", Pointer: " + text.Int(int64(s.Pointer)) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", NextHopMTU: " + text.Int(int64(s.NextHopMTU)) + " }"
 }
 
@@ -86,6 +96,10 @@ func decodeICMPAt(result *ICMP, data []byte, _o int) (int, error) {
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst. (ETSI TS 102 361-3 clause 5.2)
 func (s *ICMP) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	var _errHeader error
 	dst, _errHeader = s.Header.AppendBinary(dst)
@@ -99,5 +113,9 @@ func (s *ICMP) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ICMP) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "ICMP{ Header: " + s.Header.String() + ", Original: " + text.Bytes(s.Original[:]) + " }"
 }
