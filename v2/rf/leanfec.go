@@ -13,8 +13,8 @@ import (
 
 const (
 	leanChase      = 4
-	leanSmallHard  = false
-	leanBPTCGather = false
+	leanSmallHard  = true
+	leanBPTCGather = true
 	leanR34Pair    = false
 	leanBPTCBits   = 196
 	leanBPTCHalf   = leanBPTCBits / 2

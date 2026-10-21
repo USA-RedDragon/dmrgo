@@ -50,11 +50,11 @@ const (
 	leanMMSign          = 1
 	leanMMGain          = 2
 	leanMidGate         = 0
-	leanSyncUnroll      = false
-	leanRawFuse         = false
+	leanSyncUnroll      = true
+	leanRawFuse         = true
 	leanMidSearch       = true
 	leanHuntMid         = true
-	leanHuntFuse        = false
+	leanHuntFuse        = true
 )
 
 const (
