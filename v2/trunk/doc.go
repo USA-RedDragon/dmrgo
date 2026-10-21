@@ -2,7 +2,9 @@
 // sites: the channel tables of a site, a Follower that follows the calls
 // of a site without transmitting, an MS that registers and makes calls by
 // random access, and a TSCC that runs a single site with its payload
-// channels (ETSI TS 102 361-4 clauses 6.2 to 6.6).
+// channels (ETSI TS 102 361-4 clauses 6.2 to 6.6). A CapacityPlusFollower
+// follows a MOTOTRBO Capacity Plus or Linked Capacity Plus site in the same
+// way, from its rest channel.
 //
 // The machines are state machines without I/O. Each method takes the time
 // now, on a monotonic clock that the caller picks, and appends outputs to a

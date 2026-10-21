@@ -841,6 +841,20 @@
 		dmrgo_pdu_vnap_continuation_string;
 		dmrgo_strerror;
 		dmrgo_trunk_access_applies;
+		dmrgo_trunk_capacity_plus_follower_burst;
+		dmrgo_trunk_capacity_plus_follower_burst_need;
+		dmrgo_trunk_capacity_plus_follower_call;
+		dmrgo_trunk_capacity_plus_follower_deadline;
+		dmrgo_trunk_capacity_plus_follower_free;
+		dmrgo_trunk_capacity_plus_follower_lost;
+		dmrgo_trunk_capacity_plus_follower_lost_need;
+		dmrgo_trunk_capacity_plus_follower_new;
+		dmrgo_trunk_capacity_plus_follower_reset;
+		dmrgo_trunk_capacity_plus_follower_rest_lsn;
+		dmrgo_trunk_capacity_plus_follower_site_number;
+		dmrgo_trunk_capacity_plus_follower_state;
+		dmrgo_trunk_capacity_plus_follower_tick;
+		dmrgo_trunk_capacity_plus_follower_tick_need;
 		dmrgo_trunk_channel_plan_add;
 		dmrgo_trunk_channel_plan_add_cdef;
 		dmrgo_trunk_channel_plan_add_rule;
@@ -900,6 +914,7 @@
 		dmrgo_trunk_ms_tick;
 		dmrgo_trunk_ms_tick_need;
 		dmrgo_trunk_ms_udt;
+		dmrgo_trunk_new_capacity_plus_follower;
 		dmrgo_trunk_new_follower;
 		dmrgo_trunk_new_ms;
 		dmrgo_trunk_new_tscc;

@@ -335,6 +335,10 @@ typedef struct dmrgo_layer3_voice_service_options_t dmrgo_layer3_voice_service_o
 typedef struct dmrgo_nmea_rmc_t dmrgo_nmea_rmc_t;
 /* Go: trunk.Access. Access is the random access control of the last C_ALOHA of a TSCC (ETSI TS 102 361-4 clause 6.2.1.1, Table 7.19). */
 typedef struct dmrgo_trunk_access_t dmrgo_trunk_access_t;
+/* Go: trunk.CapacityPlusConfig. CapacityPlusConfig configures NewCapacityPlusFollower. */
+typedef struct dmrgo_trunk_capacity_plus_config_t dmrgo_trunk_capacity_plus_config_t;
+/* Go: trunk.CapacityPlusFollower. CapacityPlusFollower follows a MOTOTRBO Capacity Plus or Linked Capacity Plus site without transmitting. */
+typedef struct dmrgo_trunk_capacity_plus_follower_t dmrgo_trunk_capacity_plus_follower_t;
 /* Go: trunk.Channel. Channel is a logical physical channel number (LPCN) of a site with its frequencies, as an MS uses them (ETSI TS 102 361-4 Annex C). */
 typedef struct dmrgo_trunk_channel_t dmrgo_trunk_channel_t;
 /* Go: trunk.ChannelPlan. ChannelPlan maps the channel numbers of a site to frequencies. */
@@ -1876,23 +1880,16 @@ struct dmrgo_trunk_access_t {
 	dmrgo_enums_backoff_t backoff;
 };
 
-struct dmrgo_trunk_channel_t {
-	uint16_t number;
-	uint64_t rx_hz;
-	uint64_t tx_hz;
-};
-
-struct dmrgo_trunk_channel_rule_t {
-	uint16_t first;
-	uint16_t last;
-	uint64_t rx_hz;
-	uint64_t step_hz;
-	int64_t tx_offset_hz;
-};
-
-struct dmrgo_trunk_config_error_t {
-	char *field;
-	size_t field_len;
+struct dmrgo_trunk_capacity_plus_config_t {
+	dmrgo_trunk_channel_plan_t *plan;
+	uint32_t talkgroups[32];
+	int64_t talkgroups_len;
+	bool individual;
+	bool no_follow;
+	int64_t no_signal;
+	int64_t inactive;
+	int64_t hangtime;
+	dmrgo_layer2_burst_t *scratch;
 };
 
 struct dmrgo_trunk_tune_t {
@@ -1932,6 +1929,25 @@ struct dmrgo_trunk_output_t {
 	dmrgo_enums_slot_t slot;
 	int64_t due;
 	dmrgo_enums_protect_kind_t protect;
+};
+
+struct dmrgo_trunk_channel_t {
+	uint16_t number;
+	uint64_t rx_hz;
+	uint64_t tx_hz;
+};
+
+struct dmrgo_trunk_channel_rule_t {
+	uint16_t first;
+	uint16_t last;
+	uint64_t rx_hz;
+	uint64_t step_hz;
+	int64_t tx_offset_hz;
+};
+
+struct dmrgo_trunk_config_error_t {
+	char *field;
+	size_t field_len;
 };
 
 struct dmrgo_trunk_neighbor_t {
@@ -2291,6 +2307,9 @@ struct dmrgo_voice_output_t {
 #define DMRGO_PACKET_ASSEMBLER_MISSING_MAX_ITEMS (127)
 #define DMRGO_PDU_TALKER_ALIAS_ASSEMBLER_ADD_MAX_ITEMS (DMRGO_PDU_TALKER_ALIAS_MAX_TEXT)
 #define DMRGO_PDU_TALKER_ALIAS_ASSEMBLER_APPEND_ADD_MAX_ITEMS (DMRGO_PDU_TALKER_ALIAS_MAX_TEXT)
+#define DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_BURST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
+#define DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_LOST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
+#define DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_TICK_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_FOLLOWER_BURST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_FOLLOWER_LOST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_FOLLOWER_TICK_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
@@ -3331,6 +3350,8 @@ struct dmrgo_voice_output_t {
 #define DMRGO_LAYER3_TALKER_ALIAS_UTF16 ((dmrgo_layer3_talker_alias_data_format_t)3)
 /* Go: layer3.TalkerAliasUTF8. Unicode UTF-8 */
 #define DMRGO_LAYER3_TALKER_ALIAS_UTF8 ((dmrgo_layer3_talker_alias_data_format_t)2)
+/* Go: trunk.CapacityPlusNoSignalDefault. CapacityPlusNoSignalDefault is the default CapacityPlusConfig.NoSignal: more than twice the 2 s beacon period of an idle rest channel. */
+#define DMRGO_TRUNK_CAPACITY_PLUS_NO_SIGNAL_DEFAULT INT64_C(5000000000)
 /* Go: trunk.ChannelAbsolute. ChannelAbsolute is the channel number of a grant or C_MOVE whose frequencies follow in a CG_AP or MV_AP block (ETSI TS 102 361-4 clause 7.1.1.1.1). */
 #define DMRGO_TRUNK_CHANNEL_ABSOLUTE 4095
 /* Go: trunk.ChannelNull. ChannelNull is CHNULL, the channel number that names no channel (ETSI TS 102 361-4 clause 7.2.19.1). */
@@ -5154,6 +5175,34 @@ int dmrgo_layer3_voice_service_options_string(dmrgo_layer3_voice_service_options
 int dmrgo_nmea_parse_rmc(const uint8_t *s, size_t s_len, dmrgo_nmea_rmc_t *out);
 /* Go: trunk.Access.Applies. Applies reports whether the C_ALOHA population subdivision lets the MS with address ms make a random access (ETSI TS 102 361-4 clause 6.2.1.1.1). */
 int dmrgo_trunk_access_applies(dmrgo_trunk_access_t *self, uint32_t ms, bool emergency, bool *out);
+/* dmrgo_trunk_capacity_plus_follower_new makes a zero trunk.CapacityPlusFollower. */
+int dmrgo_trunk_capacity_plus_follower_new(dmrgo_trunk_capacity_plus_follower_t **out);
+/* dmrgo_trunk_capacity_plus_follower_free frees the handle. self may be NULL. */
+int dmrgo_trunk_capacity_plus_follower_free(dmrgo_trunk_capacity_plus_follower_t *self);
+/* dmrgo_trunk_capacity_plus_follower_burst_need sets *items and *arena to the room that dmrgo_trunk_capacity_plus_follower_burst needs for these arguments, without a change to the handle. */
+int dmrgo_trunk_capacity_plus_follower_burst_need(dmrgo_trunk_capacity_plus_follower_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const dmrgo_layer2_cach_t *cach, size_t *items, size_t *arena);
+/* Go: trunk.CapacityPlusFollower.Burst. Burst decodes the burst raw with what the Hint h says about it, and the CACH before it when cach is not nil, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_capacity_plus_follower_burst_need gives (DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_BURST_MAX_ITEMS items). */
+int dmrgo_trunk_capacity_plus_follower_burst(dmrgo_trunk_capacity_plus_follower_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const dmrgo_layer2_cach_t *cach, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: trunk.CapacityPlusFollower.Call. Call returns the grant of the call that the Follower follows. */
+int dmrgo_trunk_capacity_plus_follower_call(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_trunk_grant_t *g, bool *ok);
+/* Go: trunk.CapacityPlusFollower.Deadline. Deadline returns the time at which the Follower needs a Tick. */
+int dmrgo_trunk_capacity_plus_follower_deadline(dmrgo_trunk_capacity_plus_follower_t *self, int64_t *at, bool *ok);
+/* dmrgo_trunk_capacity_plus_follower_lost_need sets *items and *arena to the room that dmrgo_trunk_capacity_plus_follower_lost needs for these arguments, without a change to the handle. */
+int dmrgo_trunk_capacity_plus_follower_lost_need(dmrgo_trunk_capacity_plus_follower_t *self, int64_t now, size_t *items, size_t *arena);
+/* Go: trunk.CapacityPlusFollower.Lost. Lost tells the Follower that the receiver lost the signal. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_capacity_plus_follower_lost_need gives (DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_LOST_MAX_ITEMS items). */
+int dmrgo_trunk_capacity_plus_follower_lost(dmrgo_trunk_capacity_plus_follower_t *self, int64_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: trunk.CapacityPlusFollower.Reset. Reset forgets the site and the call and starts hunting again, as after NewCapacityPlusFollower. */
+int dmrgo_trunk_capacity_plus_follower_reset(dmrgo_trunk_capacity_plus_follower_t *self);
+/* Go: trunk.CapacityPlusFollower.RestLSN. RestLSN returns the last rest LSN that the site announced. */
+int dmrgo_trunk_capacity_plus_follower_rest_lsn(dmrgo_trunk_capacity_plus_follower_t *self, uint8_t *lsn, bool *ok);
+/* Go: trunk.CapacityPlusFollower.SiteNumber. SiteNumber returns the site number of a Linked Capacity Plus site, from the rest channel Short LC or the neighbor report. */
+int dmrgo_trunk_capacity_plus_follower_site_number(dmrgo_trunk_capacity_plus_follower_t *self, uint8_t *site, bool *ok);
+/* Go: trunk.CapacityPlusFollower.State. State returns the state of the Follower: StateHunting, StateControl on the rest channel, or StatePayload in a call. */
+int dmrgo_trunk_capacity_plus_follower_state(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_trunk_state_t *out);
+/* dmrgo_trunk_capacity_plus_follower_tick_need sets *items and *arena to the room that dmrgo_trunk_capacity_plus_follower_tick needs for these arguments, without a change to the handle. */
+int dmrgo_trunk_capacity_plus_follower_tick_need(dmrgo_trunk_capacity_plus_follower_t *self, int64_t now, size_t *items, size_t *arena);
+/* Go: trunk.CapacityPlusFollower.Tick. Tick runs the timers that are due at now and appends their outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_capacity_plus_follower_tick_need gives (DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_TICK_MAX_ITEMS items). */
+int dmrgo_trunk_capacity_plus_follower_tick(dmrgo_trunk_capacity_plus_follower_t *self, int64_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_trunk_channel_plan_new makes a zero trunk.ChannelPlan. */
 int dmrgo_trunk_channel_plan_new(dmrgo_trunk_channel_plan_t **out);
 /* dmrgo_trunk_channel_plan_free frees the handle. self may be NULL. */
@@ -5272,6 +5321,8 @@ int dmrgo_trunk_ms_tick_need(dmrgo_trunk_ms_t *self, int64_t now, size_t *items,
 int dmrgo_trunk_ms_tick(dmrgo_trunk_ms_t *self, int64_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.MS.UDT. UDT returns the UDT delivery of the last OutputUDT, as Follower.UDT does. */
 int dmrgo_trunk_ms_udt(dmrgo_trunk_ms_t *self, dmrgo_trunk_udt_t **out);
+/* Go: trunk.NewCapacityPlusFollower. NewCapacityPlusFollower returns a CapacityPlusFollower for cfg. */
+int dmrgo_trunk_new_capacity_plus_follower(const dmrgo_trunk_capacity_plus_config_t *cfg, dmrgo_trunk_capacity_plus_follower_t **out);
 /* Go: trunk.NewFollower. NewFollower returns a Follower for cfg. */
 int dmrgo_trunk_new_follower(const dmrgo_trunk_follower_config_t *cfg, dmrgo_trunk_follower_t **out);
 /* Go: trunk.NewMS. NewMS returns an MS for cfg. */

@@ -3058,17 +3058,6 @@ type cb1 struct {
 	return
 }
 
-func in_trunk_ConfigError(s *C.dmrgo_trunk_config_error_t) (d g_trunk.ConfigError) {
-	d.Field = C.GoStringN(s.field, C.int(s.field_len))
-	return
-}
-
-func out_trunk_ConfigError(d *C.dmrgo_trunk_config_error_t, s *g_trunk.ConfigError, oc *outc) {
-	_ = oc
-	d.field = arenaStr(oc, s.Field)
-	d.field_len = C.size_t(len(s.Field))
-}
-
 func out_trunk_Tune(d *C.dmrgo_trunk_tune_t, s *g_trunk.Tune, oc *outc) {
 	_ = oc
 	d.channel = C.uint16_t(s.Channel)
@@ -3109,6 +3098,17 @@ func out_trunk_Output(d *C.dmrgo_trunk_output_t, s *g_trunk.Output, oc *outc) {
 	d.slot = C.dmrgo_enums_slot_t(s.Slot)
 	d.due = C.int64_t(s.Due)
 	d.protect = C.dmrgo_enums_protect_kind_t(s.Protect)
+}
+
+func in_trunk_ConfigError(s *C.dmrgo_trunk_config_error_t) (d g_trunk.ConfigError) {
+	d.Field = C.GoStringN(s.field, C.int(s.field_len))
+	return
+}
+
+func out_trunk_ConfigError(d *C.dmrgo_trunk_config_error_t, s *g_trunk.ConfigError, oc *outc) {
+	_ = oc
+	d.field = arenaStr(oc, s.Field)
+	d.field_len = C.size_t(len(s.Field))
 }
 
 func out_trunk_Neighbor(d *C.dmrgo_trunk_neighbor_t, s *g_trunk.Neighbor, oc *outc) {
@@ -3172,6 +3172,25 @@ func out_trunk_HuntEntry(d *C.dmrgo_trunk_hunt_entry_t, s *g_trunk.HuntEntry, oc
 	d.channel = C.uint16_t(s.Channel)
 	d.color_code = C.dmrgo_enums_color_code_t(s.ColorCode)
 	d.has_color_code = C.bool(s.HasColorCode)
+}
+
+func in_trunk_CapacityPlusConfig(s *C.dmrgo_trunk_capacity_plus_config_t) (d g_trunk.CapacityPlusConfig) {
+	d.Plan = nil
+	if s.plan != nil {
+		d.Plan = get_trunk_ChannelPlan(s.plan).v
+	}
+	d.Talkgroups = *(*[32]uint32)(unsafe.Pointer(&s.talkgroups))
+	d.TalkgroupsLen = int(s.talkgroups_len)
+	d.Individual = bool(s.individual)
+	d.NoFollow = bool(s.no_follow)
+	d.NoSignal = time.Duration(s.no_signal)
+	d.Inactive = time.Duration(s.inactive)
+	d.Hangtime = time.Duration(s.hangtime)
+	d.Scratch = nil
+	if s.scratch != nil {
+		d.Scratch = get_layer2_Burst(s.scratch).v
+	}
+	return
 }
 
 type st_trunk_FollowerConfig struct {
@@ -4968,6 +4987,29 @@ func fromC_trunk_Access(s *C.dmrgo_trunk_access_t) g_trunk.Access {
 	return in_trunk_Access(s)
 }
 
+func out_trunk_CapacityPlusConfig(d *C.dmrgo_trunk_capacity_plus_config_t, s *g_trunk.CapacityPlusConfig, oc *outc) {
+	_ = oc
+	if s.Plan != nil {
+		panic(argPanic{})
+	}
+	d.plan = nil
+	*(*[32]uint32)(unsafe.Pointer(&d.talkgroups)) = s.Talkgroups
+	d.talkgroups_len = C.int64_t(s.TalkgroupsLen)
+	d.individual = C.bool(s.Individual)
+	d.no_follow = C.bool(s.NoFollow)
+	d.no_signal = C.int64_t(s.NoSignal)
+	d.inactive = C.int64_t(s.Inactive)
+	d.hangtime = C.int64_t(s.Hangtime)
+	if s.Scratch != nil {
+		panic(argPanic{})
+	}
+	d.scratch = nil
+}
+
+func fromC_trunk_CapacityPlusConfig(s *C.dmrgo_trunk_capacity_plus_config_t) g_trunk.CapacityPlusConfig {
+	return in_trunk_CapacityPlusConfig(s)
+}
+
 func in_trunk_Channel(s *C.dmrgo_trunk_channel_t) (d g_trunk.Channel) {
 	d.Number = uint16(s.number)
 	d.RXHz = uint64(s.rx_hz)
@@ -5667,6 +5709,19 @@ func get_layer2_pdu_TalkerAliasAssembler(p *C.dmrgo_pdu_talker_alias_assembler_t
 
 func new_layer2_pdu_TalkerAliasAssembler(v *g_layer2_pdu.TalkerAliasAssembler) *C.dmrgo_pdu_talker_alias_assembler_t {
 	return (*C.dmrgo_pdu_talker_alias_assembler_t)(newHandle(&h_layer2_pdu_TalkerAliasAssembler{v: v}))
+}
+
+type h_trunk_CapacityPlusFollower struct {
+	v   *g_trunk.CapacityPlusFollower
+	sc0 []g_trunk.Output
+}
+
+func get_trunk_CapacityPlusFollower(p *C.dmrgo_trunk_capacity_plus_follower_t) *h_trunk_CapacityPlusFollower {
+	return lookup[*h_trunk_CapacityPlusFollower](unsafe.Pointer(p))
+}
+
+func new_trunk_CapacityPlusFollower(v *g_trunk.CapacityPlusFollower) *C.dmrgo_trunk_capacity_plus_follower_t {
+	return (*C.dmrgo_trunk_capacity_plus_follower_t)(newHandle(&h_trunk_CapacityPlusFollower{v: v}))
 }
 
 type h_trunk_ChannelPlan struct {
@@ -23433,6 +23488,345 @@ func dmrgo_trunk_access_applies(c_self *C.dmrgo_trunk_access_t, c_ms C.uint32_t,
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_capacity_plus_follower_new
+func dmrgo_trunk_capacity_plus_follower_new(c_out **C.dmrgo_trunk_capacity_plus_follower_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_trunk_CapacityPlusFollower(new(g_trunk.CapacityPlusFollower))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_capacity_plus_follower_free
+func dmrgo_trunk_capacity_plus_follower_free(c_self *C.dmrgo_trunk_capacity_plus_follower_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_trunk_CapacityPlusFollower(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_capacity_plus_follower_burst_need
+func dmrgo_trunk_capacity_plus_follower_burst_need(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_trunk_CapacityPlusFollower(c_self)
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	var a_cach g_layer2.CACH
+	var p_cach *g_layer2.CACH
+	if c_cach != nil {
+		a_cach = in_layer2_CACH(&(*c_cach))
+		p_cach = &a_cach
+	}
+	_ = h
+	_ = a_h
+	_ = p_cach
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_trunk.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_capacity_plus_follower_burst
+func dmrgo_trunk_capacity_plus_follower_burst(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_CapacityPlusFollower(c_self)
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	var a_cach g_layer2.CACH
+	var p_cach *g_layer2.CACH
+	if c_cach != nil {
+		a_cach = in_layer2_CACH(&(*c_cach))
+		p_cach = &a_cach
+	}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_trunk.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Burst(time.Duration(c_now), (*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h, p_cach, a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_trunk_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_trunk_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_capacity_plus_follower_call
+func dmrgo_trunk_capacity_plus_follower_call(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_g *C.dmrgo_trunk_grant_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_CapacityPlusFollower(c_self)
+	r0, r1 := h.v.Call()
+	_ = r0
+	_ = r1
+	if c_g != nil {
+		out_trunk_Grant(&(*c_g), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_capacity_plus_follower_deadline
+func dmrgo_trunk_capacity_plus_follower_deadline(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_CapacityPlusFollower(c_self)
+	r0, r1 := h.v.Deadline()
+	_ = r0
+	_ = r1
+	if c_at != nil {
+		*c_at = C.int64_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_capacity_plus_follower_lost_need
+func dmrgo_trunk_capacity_plus_follower_lost_need(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_trunk_CapacityPlusFollower(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_trunk.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_capacity_plus_follower_lost
+func dmrgo_trunk_capacity_plus_follower_lost(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.int64_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_CapacityPlusFollower(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_trunk.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Lost(time.Duration(c_now), a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_trunk_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_trunk_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_capacity_plus_follower_reset
+func dmrgo_trunk_capacity_plus_follower_reset(c_self *C.dmrgo_trunk_capacity_plus_follower_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_CapacityPlusFollower(c_self)
+	h.v.Reset()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_capacity_plus_follower_rest_lsn
+func dmrgo_trunk_capacity_plus_follower_rest_lsn(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_lsn *C.uint8_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_CapacityPlusFollower(c_self)
+	r0, r1 := h.v.RestLSN()
+	_ = r0
+	_ = r1
+	if c_lsn != nil {
+		*c_lsn = C.uint8_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_capacity_plus_follower_site_number
+func dmrgo_trunk_capacity_plus_follower_site_number(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_site *C.uint8_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_CapacityPlusFollower(c_self)
+	r0, r1 := h.v.SiteNumber()
+	_ = r0
+	_ = r1
+	if c_site != nil {
+		*c_site = C.uint8_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_capacity_plus_follower_state
+func dmrgo_trunk_capacity_plus_follower_state(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_out *C.dmrgo_trunk_state_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_CapacityPlusFollower(c_self)
+	r0 := h.v.State()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_trunk_state_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_capacity_plus_follower_tick_need
+func dmrgo_trunk_capacity_plus_follower_tick_need(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_trunk_CapacityPlusFollower(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_trunk.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_capacity_plus_follower_tick
+func dmrgo_trunk_capacity_plus_follower_tick(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.int64_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_CapacityPlusFollower(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_trunk.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Tick(time.Duration(c_now), a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_trunk_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_trunk_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_channel_plan_new
 func dmrgo_trunk_channel_plan_new(c_out **C.dmrgo_trunk_channel_plan_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -24734,6 +25128,34 @@ func dmrgo_trunk_ms_udt(c_self *C.dmrgo_trunk_ms_t, c_out **C.dmrgo_trunk_udt_t)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_new_capacity_plus_follower
+func dmrgo_trunk_new_capacity_plus_follower(c_cfg *C.dmrgo_trunk_capacity_plus_config_t, c_out **C.dmrgo_trunk_capacity_plus_follower_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	var a_cfg g_trunk.CapacityPlusConfig
+	var p_cfg *g_trunk.CapacityPlusConfig
+	if c_cfg != nil {
+		a_cfg = in_trunk_CapacityPlusConfig(&(*c_cfg))
+		p_cfg = &a_cfg
+	}
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := g_trunk.NewCapacityPlusFollower(p_cfg)
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_trunk_CapacityPlusFollower(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
