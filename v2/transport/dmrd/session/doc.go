@@ -22,10 +22,11 @@
 // step, takes the RPTO of a logged-in repeater with an RPTACK, as
 // DMRGateway waits for it before it sends traffic, answers a packet from a
 // repeater that is not logged in with MSTNAK, and ends the session after
-// Timeout without a packet.
+// LoginTimeout without a packet during the login and Timeout after it.
 //
 // (DMRGateway ee79d38 DMRNetwork.cpp clock; MMDVMHost 7008c62
 // DMRDirectNetwork.cpp clock; DL5DI, G4KLX and DG1HT, IPSC Protocol Specs
-// for homebrew DMR repeater, 2015-07-26; FreeDMR 546165eb hblink.py and
+// for homebrew DMR repeater, 2015-07-26; HBlink3 1db2730 hblink.py
+// master_maintenance_loop; FreeDMR 546165eb hblink.py and
 // bridge_master.py)
 package session

@@ -451,6 +451,7 @@ sym #define DMRGO_DMRD_OPTION_ABSENT ((dmrgo_dmrd_option_state_t)0)
 sym #define DMRGO_DMRD_OPTION_CLEAR ((dmrgo_dmrd_option_state_t)1)
 sym #define DMRGO_DMRD_OPTION_SET ((dmrgo_dmrd_option_state_t)2)
 sym #define DMRGO_DMRD_SESSION_KEEPALIVE_DEFAULT INT64_C(10000000000)
+sym #define DMRGO_DMRD_SESSION_LOGIN_TIMEOUT_DEFAULT INT64_C(15000000000)
 sym #define DMRGO_DMRD_SESSION_MAX_OPTIONS 291
 sym #define DMRGO_DMRD_SESSION_MAX_OUTPUTS 4
 sym #define DMRGO_DMRD_SESSION_MAX_PACKET 512
@@ -3179,7 +3180,7 @@ type struct dmrgo_dmrd_option_value_t { dmrgo_dmrd_option_state_t state; uint32_
 type struct dmrgo_dmrd_position_t { uint32_t repeater; uint32_t source; uint8_t data[7]; uint8_t size; };
 type struct dmrgo_dmrd_session_bridge_config_t { uint8_t *key; size_t key_len; bool enhanced; dmrgo_duration_t keepalive; dmrgo_duration_t timeout; };
 type struct dmrgo_dmrd_session_config_error_t { char *field; size_t field_len; };
-type struct dmrgo_dmrd_session_master_config_t { dmrgo_dmrd_dialect_t dialect; dmrgo_duration_t timeout; };
+type struct dmrgo_dmrd_session_master_config_t { dmrgo_dmrd_dialect_t dialect; dmrgo_duration_t timeout; dmrgo_duration_t login_timeout; };
 type struct dmrgo_dmrd_session_output_t { dmrgo_dmrd_session_output_kind_t kind; uint8_t *packet; size_t packet_len; dmrgo_dmrd_command_t command; uint32_t id; dmrgo_dmrd_session_reason_t reason; dmrgo_dmrd_session_state_t state; };
 type struct dmrgo_dmrd_session_peer_config_t { dmrgo_dmrd_dialect_t dialect; uint32_t id; uint8_t *password; size_t password_len; uint8_t *config; size_t config_len; uint8_t *options; size_t options_len; dmrgo_duration_t retry; dmrgo_duration_t timeout; dmrgo_duration_t backoff; };
 type struct dmrgo_dmrd_talker_alias_t { uint32_t repeater; uint32_t source; uint8_t type_; uint8_t data[7]; uint8_t size; };
