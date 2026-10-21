@@ -276,7 +276,8 @@ func (m *MS) Groups() DynamicGroups {
 
 // GroupAlias appends the DGNA alias of the talkgroup tg to dst as UTF-8 and
 // returns dst; it appends nothing for a talkgroup without an alias. It
-// allocates only to grow dst. (ETSI TS 102 361-4 clause 6.6.8.1.2)
+// allocates only when dst has no room for 63 more octets. (ETSI TS 102
+// 361-4 clause 6.6.8.1.2)
 func (m *MS) GroupAlias(dst []byte, tg uint32) []byte {
 	for i, g := range m.u.groups.Groups {
 		if g != constants.AddressNull && g == tg {
