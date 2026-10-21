@@ -278,6 +278,9 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 			rows[row] |= 1 << col
 			v = -v
 		}
+		if l := leanChase - 1; chase[l] >= 0 && (v > cmag[l] || v == cmag[l] && int16(p) > bit[l]) {
+			continue
+		}
 		for i := range chase {
 			if chase[i] < 0 || v < cmag[i] || v == cmag[i] && int16(p) < bit[i] {
 				copy(chase[i+1:], chase[i:leanChase-1])

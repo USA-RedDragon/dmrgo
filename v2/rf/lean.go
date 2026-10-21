@@ -160,7 +160,7 @@ func (tm *leanTiming) linearAt(t float32) float32 {
 
 func (tm *leanTiming) midAt(t float32) float32 {
 	if tm.six && t >= -3 && t <= -2 {
-		return lagrange6[site2](tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, t+2)
+		return lagrange6[site1](tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, t+2)
 	}
 	return tm.linearAt(t)
 }
@@ -643,7 +643,7 @@ func winAt[_ any](win *syncWindow, t float32) float32 {
 func (win *syncWindow) corr(syms *[syncSymbols]int8, t, sps float32) float32 {
 	var c float32
 	for i, s := range syms {
-		c += float32(s) * winAt[site0](win, t-float32(syncSymbols-1-i)*sps)
+		c += float32(s) * win.at(t-float32(syncSymbols-1-i)*sps)
 	}
 	return c
 }
@@ -760,7 +760,8 @@ func roundBits(v float32) int32 {
 
 //go:noinline
 func (r *leanCore) symbol(x, at float32) {
-	r.lockPush(x, at)
+	r.lastAt = at
+	r.pushSym(x)
 	if !r.locked {
 		r.searchHit(r.searchSigns())
 		return
@@ -947,7 +948,7 @@ func (r *leanCore) lockSym(x, at float32) (again, mid, match bool) {
 	}
 	again = r.again
 	r.again = false
-	sym, mid := signsMatch[site3](r, r.signs, r.midSigns)
+	sym, mid := r.signsMatch2(r.signs, r.midSigns)
 	return again, mid, mid || sym
 }
 
@@ -975,11 +976,10 @@ func (r *leanCore) lockHunt(at float32) (again, mid, match bool) {
 	}
 	again = r.again
 	r.again = false
-	sym, mid := signsMatch[site3](r, r.signs, r.midSigns)
+	sym, mid := r.signsMatch2(r.signs, r.midSigns)
 	return again, mid, mid || sym
 }
 
-//go:noinline
 func (r *leanCore) lockPush(x, at float32) (more bool) {
 	r.lastAt = at
 	r.pushSym(x)
@@ -1183,6 +1183,7 @@ func (r *leanCore) syncAt(end int64) (rho2 float32, src int, data bool) {
 }
 
 //go:noinline
+//go:section .text.signsMatch
 func (r *leanCore) signsMatch2(a, b uint32) (bool, bool) {
 	return signsMatch[site1](r, a, b)
 }
