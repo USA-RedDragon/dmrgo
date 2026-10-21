@@ -116,6 +116,9 @@ const (
 	// EndTimeout is the transmit timeout T_TO of a Transmitter (ETSI TS
 	// 102 361-2 clause 6.1).
 	EndTimeout
+	// EndDenied is a polite call of a Transmitter that the channel denied
+	// (ETSI TS 102 361-1 clause 5.2.2).
+	EndDenied
 )
 
 // String returns the name of the reason. It allocates only for a value
@@ -138,6 +141,8 @@ func (r EndReason) String() string {
 		return "Superseded"
 	case EndTimeout:
 		return "Timeout"
+	case EndDenied:
+		return "Denied"
 	}
 	return fmt.Sprintf("EndReason(%d)", uint8(r))
 }
