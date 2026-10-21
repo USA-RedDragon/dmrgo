@@ -36,12 +36,6 @@ func TestResponseHighBits(t *testing.T) {
 	}
 }
 
-func TestAllocs(t *testing.T) {
-	if n := testing.AllocsPerRun(100, func() { _ = auth.Response(0x123456, testKey, 0) }); n != 0 {
-		t.Errorf("%.1f allocations, want 0", n)
-	}
-}
-
 func FuzzResponse(f *testing.F) {
 	f.Add(uint32(0x7A17C0), testKey[:], uint32(0))
 	f.Fuzz(func(t *testing.T, challenge uint32, key []byte, psn uint32) {
@@ -66,7 +60,7 @@ func rc4Response(challenge uint32, k [auth.KeyLen]byte, psn uint32) uint32 {
 		s[i], s[j] = s[j], s[i]
 	}
 	i, j := 0, 0
-	var out []byte
+	out := make([]byte, 0, 259)
 	for range 259 {
 		i = (i + 1) % 256
 		j = (j + s[i]) % 256

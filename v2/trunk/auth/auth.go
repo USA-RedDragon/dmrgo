@@ -24,7 +24,7 @@ const MaxChallenge = 0xFFFCDF
 // 6.4.8.0 and 6.4.8.1.2, Figure 6.30, Tables 6.15 and 6.16)
 func Response(challenge uint32, key [KeyLen]byte, psn uint32) uint32 {
 	var k [3 + KeyLen]byte
-	k[0], k[1], k[2] = byte(challenge>>16), byte(challenge>>8), byte(challenge)
+	k[0], k[1], k[2] = byte(challenge>>16&0xFF), byte(challenge>>8&0xFF), byte(challenge&0xFF)
 	copy(k[3:], key[:])
 	var s [256]byte
 	for i := range s {
