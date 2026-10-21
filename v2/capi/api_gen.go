@@ -21,6 +21,7 @@ import (
 	g_data "github.com/USA-RedDragon/dmrgo/v2/data"
 	g_enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	g_fec "github.com/USA-RedDragon/dmrgo/v2/fec"
+	g_ip "github.com/USA-RedDragon/dmrgo/v2/ip"
 	g_layer2 "github.com/USA-RedDragon/dmrgo/v2/layer2"
 	g_layer2_framer "github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	g_layer2_packet "github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
@@ -827,6 +828,100 @@ func in_fec_BurstFECStats(s *C.dmrgo_fec_burst_fec_stats_t) (d g_fec.BurstFECSta
 	d.Payload = in_fec_Result(&s.payload)
 	d.PDU = in_fec_Result(&s.pdu)
 	d.RC = in_fec_Result(&s.rc)
+	return
+}
+
+func in_ip_Datagram(s *C.dmrgo_ip_datagram_t) (d g_ip.Datagram) {
+	d.Source = *(*[4]byte)(unsafe.Pointer(&s.source))
+	d.Destination = *(*[4]byte)(unsafe.Pointer(&s.destination))
+	d.SourcePort = g_ip.Port(s.source_port)
+	d.DestinationPort = g_ip.Port(s.destination_port)
+	d.ID = uint16(s.id)
+	d.TTL = uint8(s.ttl)
+	d.Compressed = bool(s.compressed)
+	d.SAID = g_enums.SAID(s.said)
+	d.DAID = g_enums.DAID(s.daid)
+	d.Payload = unsafe.Slice((*byte)(unsafe.Pointer(s.payload)), int(s.payload_len))
+	return
+}
+
+func out_ip_Datagram(d *C.dmrgo_ip_datagram_t, s *g_ip.Datagram, oc *outc) {
+	_ = oc
+	*(*[4]byte)(unsafe.Pointer(&d.source)) = s.Source
+	*(*[4]byte)(unsafe.Pointer(&d.destination)) = s.Destination
+	d.source_port = C.dmrgo_ip_port_t(s.SourcePort)
+	d.destination_port = C.dmrgo_ip_port_t(s.DestinationPort)
+	d.id = C.uint16_t(s.ID)
+	d.ttl = C.uint8_t(s.TTL)
+	d.compressed = C.bool(s.Compressed)
+	d.said = C.dmrgo_enums_said_t(s.SAID)
+	d.daid = C.dmrgo_enums_daid_t(s.DAID)
+	d.payload = (*C.uint8_t)(arenaCopy(oc, s.Payload))
+	d.payload_len = C.size_t(len(s.Payload))
+}
+
+func out_ip_IPv4Header(d *C.dmrgo_ip_ipv4_header_t, s *g_ip.IPv4Header, oc *outc) {
+	_ = oc
+	d.version = C.uint8_t(s.Version)
+	d.ihl = C.uint8_t(s.IHL)
+	d.tos = C.uint8_t(s.TOS)
+	d.total_length = C.uint16_t(s.TotalLength)
+	d.id = C.uint16_t(s.ID)
+	d.reserved = C.bool(s.Reserved)
+	d.dont_fragment = C.bool(s.DontFragment)
+	d.more_fragments = C.bool(s.MoreFragments)
+	d.fragment_offset = C.uint16_t(s.FragmentOffset)
+	d.ttl = C.uint8_t(s.TTL)
+	d.protocol = C.dmrgo_ip_protocol_t(s.Protocol)
+	d.checksum = C.uint16_t(s.Checksum)
+	*(*[4]byte)(unsafe.Pointer(&d.source)) = s.Source
+	*(*[4]byte)(unsafe.Pointer(&d.destination)) = s.Destination
+}
+
+func out_ip_IPv4(d *C.dmrgo_ip_ipv4_t, s *g_ip.IPv4, oc *outc) {
+	_ = oc
+	out_ip_IPv4Header(&d.header, &s.Header, oc)
+	d.options = (*C.uint8_t)(arenaCopy(oc, s.Options))
+	d.options_len = C.size_t(len(s.Options))
+	d.payload = (*C.uint8_t)(arenaCopy(oc, s.Payload))
+	d.payload_len = C.size_t(len(s.Payload))
+}
+
+func out_ip_UDP(d *C.dmrgo_ip_udp_t, s *g_ip.UDP, oc *outc) {
+	_ = oc
+	*(*g_ip.UDPHeader)(unsafe.Pointer(&d.header)) = s.Header
+	d.payload = (*C.uint8_t)(arenaCopy(oc, s.Payload))
+	d.payload_len = C.size_t(len(s.Payload))
+}
+
+func in_ip_IPv4Header(s *C.dmrgo_ip_ipv4_header_t) (d g_ip.IPv4Header) {
+	d.Version = uint8(s.version)
+	d.IHL = uint8(s.ihl)
+	d.TOS = uint8(s.tos)
+	d.TotalLength = uint16(s.total_length)
+	d.ID = uint16(s.id)
+	d.Reserved = bool(s.reserved)
+	d.DontFragment = bool(s.dont_fragment)
+	d.MoreFragments = bool(s.more_fragments)
+	d.FragmentOffset = uint16(s.fragment_offset)
+	d.TTL = uint8(s.ttl)
+	d.Protocol = g_ip.Protocol(s.protocol)
+	d.Checksum = uint16(s.checksum)
+	d.Source = *(*[4]byte)(unsafe.Pointer(&s.source))
+	d.Destination = *(*[4]byte)(unsafe.Pointer(&s.destination))
+	return
+}
+
+func in_ip_IPv4(s *C.dmrgo_ip_ipv4_t) (d g_ip.IPv4) {
+	d.Header = in_ip_IPv4Header(&s.header)
+	d.Options = unsafe.Slice((*byte)(unsafe.Pointer(s.options)), int(s.options_len))
+	d.Payload = unsafe.Slice((*byte)(unsafe.Pointer(s.payload)), int(s.payload_len))
+	return
+}
+
+func in_ip_UDP(s *C.dmrgo_ip_udp_t) (d g_ip.UDP) {
+	d.Header = *(*g_ip.UDPHeader)(unsafe.Pointer(&s.header))
+	d.Payload = unsafe.Slice((*byte)(unsafe.Pointer(s.payload)), int(s.payload_len))
 	return
 }
 
@@ -4191,6 +4286,42 @@ func fromC_fec_BurstFECStats(s *C.dmrgo_fec_burst_fec_stats_t) g_fec.BurstFECSta
 
 func fromC_fec_Result(s *C.dmrgo_fec_result_t) g_fec.Result {
 	return in_fec_Result(s)
+}
+
+func fromC_ip_Datagram(s *C.dmrgo_ip_datagram_t) g_ip.Datagram {
+	return in_ip_Datagram(s)
+}
+
+func fromC_ip_IPv4(s *C.dmrgo_ip_ipv4_t) g_ip.IPv4 {
+	return in_ip_IPv4(s)
+}
+
+func fromC_ip_IPv4Header(s *C.dmrgo_ip_ipv4_header_t) g_ip.IPv4Header {
+	return in_ip_IPv4Header(s)
+}
+
+func fromC_ip_UDP(s *C.dmrgo_ip_udp_t) g_ip.UDP {
+	return in_ip_UDP(s)
+}
+
+func in_ip_UDPHeader(s *C.dmrgo_ip_udp_header_t) (d g_ip.UDPHeader) {
+	d.SourcePort = g_ip.Port(s.source_port)
+	d.DestinationPort = g_ip.Port(s.destination_port)
+	d.Length = uint16(s.length)
+	d.Checksum = uint16(s.checksum)
+	return
+}
+
+func out_ip_UDPHeader(d *C.dmrgo_ip_udp_header_t, s *g_ip.UDPHeader, oc *outc) {
+	_ = oc
+	d.source_port = C.dmrgo_ip_port_t(s.SourcePort)
+	d.destination_port = C.dmrgo_ip_port_t(s.DestinationPort)
+	d.length = C.uint16_t(s.Length)
+	d.checksum = C.uint16_t(s.Checksum)
+}
+
+func fromC_ip_UDPHeader(s *C.dmrgo_ip_udp_header_t) g_ip.UDPHeader {
+	return in_ip_UDPHeader(s)
 }
 
 func fromC_layer2_CACH(s *C.dmrgo_layer2_cach_t) g_layer2.CACH {
@@ -10530,6 +10661,508 @@ func dmrgo_fec_result_has_errors(c_self *C.dmrgo_fec_result_t, c_out *C.bool) (r
 	if c_out != nil {
 		*c_out = C.bool(r0)
 	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_append_compressed
+func dmrgo_ip_append_compressed(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_d *C.dmrgo_ip_datagram_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	var a_d g_ip.Datagram
+	var p_d *g_ip.Datagram
+	if c_d != nil {
+		a_d = in_ip_Datagram(&(*c_d))
+		p_d = &a_d
+	}
+	r0, r1 := g_ip.AppendCompressed(a_dst, p_d)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_append_ipv4
+func dmrgo_ip_append_ipv4(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_d *C.dmrgo_ip_datagram_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	var a_d g_ip.Datagram
+	var p_d *g_ip.Datagram
+	if c_d != nil {
+		a_d = in_ip_Datagram(&(*c_d))
+		p_d = &a_d
+	}
+	r0, r1 := g_ip.AppendIPv4(a_dst, p_d)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_decode
+func dmrgo_ip_decode(c_sap C.dmrgo_enums_service_access_point_id_t, c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_ip_datagram_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_ip.Decode(g_enums.ServiceAccessPointID(c_sap), a_data)
+	_ = r0
+	if c_out != nil {
+		out_ip_Datagram(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_decode_ipv4
+func dmrgo_ip_decode_ipv4(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_ip_ipv4_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_ip.DecodeIPv4(a_data)
+	_ = r0
+	if c_out != nil {
+		out_ip_IPv4(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_decode_udp
+func dmrgo_ip_decode_udp(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_ip_udp_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_ip.DecodeUDP(a_data)
+	_ = r0
+	if c_out != nil {
+		out_ip_UDP(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_group_address
+func dmrgo_ip_group_address(c_prefix C.uint8_t, c_group C.uint32_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_ip.GroupAddress(uint8(c_prefix), uint32(c_group))
+	_ = r0
+	if c_out != nil {
+		*(*[4]byte)(unsafe.Pointer(&(*(*[4]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_id
+func dmrgo_ip_id(c_addr *C.uint8_t, c_out *C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_addr == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_ip.ID(*(*[4]byte)(unsafe.Pointer(c_addr)))
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint32_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_ipv4_append_binary
+func dmrgo_ip_ipv4_append_binary(c_self *C.dmrgo_ip_ipv4_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_ip.IPv4
+	x = in_ip_IPv4(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_ip_IPv4(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_ipv4_string
+func dmrgo_ip_ipv4_string(c_self *C.dmrgo_ip_ipv4_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_ip.IPv4
+	x = in_ip_IPv4(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_ip_IPv4(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_ipv4_header_append_binary
+func dmrgo_ip_ipv4_header_append_binary(c_self *C.dmrgo_ip_ipv4_header_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_ip.IPv4Header
+	x = in_ip_IPv4Header(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_ip_IPv4Header(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_ipv4_header_string
+func dmrgo_ip_ipv4_header_string(c_self *C.dmrgo_ip_ipv4_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_ip.IPv4Header
+	x = in_ip_IPv4Header(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_ip_IPv4Header(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_port_string
+func dmrgo_ip_port_string(c_self C.dmrgo_ip_port_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_ip.Port(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_protocol_string
+func dmrgo_ip_protocol_string(c_self C.dmrgo_ip_protocol_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_ip.Protocol(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_radio_address
+func dmrgo_ip_radio_address(c_network C.uint8_t, c_id C.uint32_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_ip.RadioAddress(uint8(c_network), uint32(c_id))
+	_ = r0
+	if c_out != nil {
+		*(*[4]byte)(unsafe.Pointer(&(*(*[4]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_udp_append_binary
+func dmrgo_ip_udp_append_binary(c_self *C.dmrgo_ip_udp_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_ip.UDP
+	x = in_ip_UDP(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_ip_UDP(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_udp_string
+func dmrgo_ip_udp_string(c_self *C.dmrgo_ip_udp_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_ip.UDP
+	x = in_ip_UDP(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_ip_UDP(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_udp_header_append_binary
+func dmrgo_ip_udp_header_append_binary(c_self *C.dmrgo_ip_udp_header_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_ip.UDPHeader
+	x = *(*g_ip.UDPHeader)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_ip.UDPHeader)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_udp_header_string
+func dmrgo_ip_udp_header_string(c_self *C.dmrgo_ip_udp_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_ip.UDPHeader
+	x = *(*g_ip.UDPHeader)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_ip.UDPHeader)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -28303,6 +28936,20 @@ func errCode(err error) C.int {
 			return -169
 		case g_fec.ErrUncorrectable:
 			return -110
+		case g_ip.ErrChecksum:
+			return -172
+		case g_ip.ErrFragment:
+			return -173
+		case g_ip.ErrLength:
+			return -174
+		case g_ip.ErrProtocol:
+			return -175
+		case g_ip.ErrSAP:
+			return -176
+		case g_ip.ErrShort:
+			return -177
+		case g_ip.ErrVersion:
+			return -178
 		case g_layer2.ErrColorCodeMismatch:
 			return -111
 		case g_layer2.ErrEmbeddedLCSequence:
@@ -28534,6 +29181,20 @@ func codeErr(code C.int) error {
 		return g_data.ErrBusy
 	case -110:
 		return g_fec.ErrUncorrectable
+	case -172:
+		return g_ip.ErrChecksum
+	case -173:
+		return g_ip.ErrFragment
+	case -174:
+		return g_ip.ErrLength
+	case -175:
+		return g_ip.ErrProtocol
+	case -176:
+		return g_ip.ErrSAP
+	case -177:
+		return g_ip.ErrShort
+	case -178:
+		return g_ip.ErrVersion
 	case -111:
 		return g_layer2.ErrColorCodeMismatch
 	case -112:

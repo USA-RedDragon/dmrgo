@@ -34,6 +34,20 @@ const char *dmrgo__gen_strerror(int status) {
 		return "enums.ColorCodeError";
 	case -110:
 		return "fec.ErrUncorrectable";
+	case -172:
+		return "ip.ErrChecksum";
+	case -173:
+		return "ip.ErrFragment";
+	case -174:
+		return "ip.ErrLength";
+	case -175:
+		return "ip.ErrProtocol";
+	case -176:
+		return "ip.ErrSAP";
+	case -177:
+		return "ip.ErrShort";
+	case -178:
+		return "ip.ErrVersion";
 	case -111:
 		return "layer2.ErrColorCodeMismatch";
 	case -112:

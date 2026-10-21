@@ -25,6 +25,7 @@ import (
 	internal_pcg "github.com/USA-RedDragon/dmrgo/v2/internal/pcg"
 	internal_text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	internal_wire "github.com/USA-RedDragon/dmrgo/v2/internal/wire"
+	ip "github.com/USA-RedDragon/dmrgo/v2/ip"
 	layer2 "github.com/USA-RedDragon/dmrgo/v2/layer2"
 	layer2_framer "github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	layer2_packet "github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
@@ -282,6 +283,24 @@ var api = [...]any{
 	internal_wire.Sintvar,
 	internal_wire.Ufloatvar,
 	internal_wire.Uintvar,
+	(*ip.IPv4).AppendBinary,
+	(*ip.IPv4).String,
+	(*ip.IPv4Header).AppendBinary,
+	(*ip.IPv4Header).String,
+	(*ip.UDP).AppendBinary,
+	(*ip.UDP).String,
+	(*ip.UDPHeader).AppendBinary,
+	(*ip.UDPHeader).String,
+	ip.AppendCompressed,
+	ip.AppendIPv4,
+	ip.Decode,
+	ip.DecodeIPv4,
+	ip.DecodeUDP,
+	ip.GroupAddress,
+	ip.ID,
+	ip.Port.String,
+	ip.Protocol.String,
+	ip.RadioAddress,
 	(*layer2.Burst).AMBEFrames,
 	(*layer2.Burst).DecodeFromBytes,
 	(*layer2.Burst).DecodeFromBytesWith,

@@ -69,6 +69,13 @@ code DMRGO_ERR_DATA_CONFIG_ERROR -168
 code DMRGO_ERR_DATA_BUSY -169
 code DMRGO_ERR_PDU_CAPACITY_PLUS_INCOMPLETE -170
 code DMRGO_ERR_PDU_CAPACITY_PLUS_SEQUENCE -171
+code DMRGO_ERR_IP_CHECKSUM -172
+code DMRGO_ERR_IP_FRAGMENT -173
+code DMRGO_ERR_IP_LENGTH -174
+code DMRGO_ERR_IP_PROTOCOL -175
+code DMRGO_ERR_IP_SAP -176
+code DMRGO_ERR_IP_SHORT -177
+code DMRGO_ERR_IP_VERSION -178
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -589,6 +596,13 @@ sym #define DMRGO_ERR_DVSI_TYPE (-167)
 sym #define DMRGO_ERR_ENUMS_COLOR_CODE_ERROR (-103)
 sym #define DMRGO_ERR_FEC_UNCORRECTABLE (-110)
 sym #define DMRGO_ERR_FIELD_RANGE_ERROR (-100)
+sym #define DMRGO_ERR_IP_CHECKSUM (-172)
+sym #define DMRGO_ERR_IP_FRAGMENT (-173)
+sym #define DMRGO_ERR_IP_LENGTH (-174)
+sym #define DMRGO_ERR_IP_PROTOCOL (-175)
+sym #define DMRGO_ERR_IP_SAP (-176)
+sym #define DMRGO_ERR_IP_SHORT (-177)
+sym #define DMRGO_ERR_IP_VERSION (-178)
 sym #define DMRGO_ERR_LAYER2_COLOR_CODE_MISMATCH (-111)
 sym #define DMRGO_ERR_LAYER2_EMBEDDED_LC_SEQUENCE (-112)
 sym #define DMRGO_ERR_LAYER2_EMBEDDED_LC_UNCORRECTABLE (-113)
@@ -637,6 +651,28 @@ sym #define DMRGO_FRAMER_OUTBOUND_PERIOD 288
 sym #define DMRGO_FRAMER_SLOT_PERIOD 576
 sym #define DMRGO_FRAMER_SYNC_BITS 48
 sym #define DMRGO_FRAMER_SYNC_OFFSET 108
+sym #define DMRGO_IP_DEFAULT_NETWORK 12
+sym #define DMRGO_IP_PORT_ARS ((dmrgo_ip_port_t)4005)
+sym #define DMRGO_IP_PORT_BATTERY ((dmrgo_ip_port_t)4012)
+sym #define DMRGO_IP_PORT_HYTERA_CALL ((dmrgo_ip_port_t)3005)
+sym #define DMRGO_IP_PORT_HYTERA_DATA ((dmrgo_ip_port_t)3007)
+sym #define DMRGO_IP_PORT_HYTERA_LOCATION ((dmrgo_ip_port_t)3003)
+sym #define DMRGO_IP_PORT_HYTERA_RRS ((dmrgo_ip_port_t)3002)
+sym #define DMRGO_IP_PORT_HYTERA_SELF_DEFINE ((dmrgo_ip_port_t)3009)
+sym #define DMRGO_IP_PORT_HYTERA_TELEMETRY ((dmrgo_ip_port_t)3006)
+sym #define DMRGO_IP_PORT_HYTERA_TEXT ((dmrgo_ip_port_t)3004)
+sym #define DMRGO_IP_PORT_JOB_TICKET ((dmrgo_ip_port_t)4013)
+sym #define DMRGO_IP_PORT_LOCATION ((dmrgo_ip_port_t)5017)
+sym #define DMRGO_IP_PORT_LRRP ((dmrgo_ip_port_t)4001)
+sym #define DMRGO_IP_PORT_NMEA ((dmrgo_ip_port_t)10110)
+sym #define DMRGO_IP_PORT_OTAP ((dmrgo_ip_port_t)4009)
+sym #define DMRGO_IP_PORT_TELEMETRY ((dmrgo_ip_port_t)4008)
+sym #define DMRGO_IP_PORT_TEXT ((dmrgo_ip_port_t)5016)
+sym #define DMRGO_IP_PORT_TMS ((dmrgo_ip_port_t)4007)
+sym #define DMRGO_IP_PORT_XCMP ((dmrgo_ip_port_t)4004)
+sym #define DMRGO_IP_PROTOCOL_ICMP ((dmrgo_ip_protocol_t)1)
+sym #define DMRGO_IP_PROTOCOL_TCP ((dmrgo_ip_protocol_t)6)
+sym #define DMRGO_IP_PROTOCOL_UDP ((dmrgo_ip_protocol_t)17)
 sym #define DMRGO_LAYER2_BURST_BITS 264
 sym #define DMRGO_LAYER2_CACH_BITS 24
 sym #define DMRGO_LAYER2_CACH_PAYLOAD_BITS 17
@@ -1131,6 +1167,24 @@ sym int dmrgo_framer_framer_write(dmrgo_framer_framer_t *self, const uint8_t *st
 sym int dmrgo_framer_framer_write_need(dmrgo_framer_framer_t *self, const uint8_t *stream, size_t stream_len, int64_t nbits, size_t *items, size_t *arena);
 sym int dmrgo_framer_new(const dmrgo_framer_config_t *cfg, dmrgo_framer_framer_t **out);
 sym int dmrgo_framer_search(const uint8_t *stream, size_t stream_len, int64_t nbits, int64_t start, int64_t threshold, dmrgo_framer_match_t *m, bool *ok);
+sym int dmrgo_ip_append_compressed(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_datagram_t *d);
+sym int dmrgo_ip_append_ipv4(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_datagram_t *d);
+sym int dmrgo_ip_decode(dmrgo_enums_service_access_point_id_t sap, const uint8_t *data, size_t data_len, dmrgo_ip_datagram_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ip_decode_ipv4(const uint8_t *data, size_t data_len, dmrgo_ip_ipv4_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ip_decode_udp(const uint8_t *data, size_t data_len, dmrgo_ip_udp_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ip_group_address(uint8_t prefix, uint32_t group, uint8_t out[4]);
+sym int dmrgo_ip_id(const uint8_t addr[4], uint32_t *out);
+sym int dmrgo_ip_ipv4_append_binary(dmrgo_ip_ipv4_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ip_ipv4_header_append_binary(dmrgo_ip_ipv4_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_ip_ipv4_header_string(dmrgo_ip_ipv4_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_ip_ipv4_string(dmrgo_ip_ipv4_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ip_port_string(dmrgo_ip_port_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_ip_protocol_string(dmrgo_ip_protocol_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_ip_radio_address(uint8_t network, uint32_t id, uint8_t out[4]);
+sym int dmrgo_ip_udp_append_binary(dmrgo_ip_udp_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ip_udp_header_append_binary(dmrgo_ip_udp_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_ip_udp_header_string(dmrgo_ip_udp_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_ip_udp_string(dmrgo_ip_udp_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_layer2_build_burst(const dmrgo_layer2_data_t *d, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
 sym int dmrgo_layer2_build_data_burst(const uint8_t p[12], dmrgo_enums_data_type_t dt, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
 sym int dmrgo_layer2_build_rate1_data_burst(const uint8_t p[24], dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
@@ -1880,6 +1934,7 @@ sym int dmrgo_voice_transmitter_tick(dmrgo_voice_transmitter_t *self, int64_t no
 sym int dmrgo_voice_transmitter_tick_need(dmrgo_voice_transmitter_t *self, int64_t now, size_t *items, size_t *arena);
 sym typedef int64_t dmrgo_codec2_mode_t;
 sym typedef int64_t dmrgo_layer2_sync_source_t;
+sym typedef uint16_t dmrgo_ip_port_t;
 sym typedef uint64_t dmrgo_enums_sync_pattern_t;
 sym typedef uint8_t dmrgo_bs_activation_t;
 sym typedef uint8_t dmrgo_bs_dest_t;
@@ -1930,6 +1985,7 @@ sym typedef uint8_t dmrgo_enums_slco_t;
 sym typedef uint8_t dmrgo_enums_slot_t;
 sym typedef uint8_t dmrgo_enums_spid_t;
 sym typedef uint8_t dmrgo_enums_voice_burst_type_t;
+sym typedef uint8_t dmrgo_ip_protocol_t;
 sym typedef uint8_t dmrgo_layer2_end_hint_t;
 sym typedef uint8_t dmrgo_layer2_kind_t;
 sym typedef uint8_t dmrgo_layer3_additional_information_field_t;
@@ -1987,6 +2043,11 @@ type struct dmrgo_field_range_error_t { char *type_; size_t type__len; char *fie
 type struct dmrgo_framer_burst_t { dmrgo_layer2_raw_burst_t data; int64_t offset; dmrgo_enums_sync_pattern_t sync; int64_t distance; bool has_cach; dmrgo_layer2_cach_t cach; int64_t channel; };
 type struct dmrgo_framer_config_t { int64_t threshold; int64_t period; bool cach; int64_t max_misses; };
 type struct dmrgo_framer_match_t { int64_t offset; dmrgo_enums_sync_pattern_t pattern; int64_t distance; };
+type struct dmrgo_ip_datagram_t { uint8_t source[4]; uint8_t destination[4]; dmrgo_ip_port_t source_port; dmrgo_ip_port_t destination_port; uint16_t id; uint8_t ttl; bool compressed; dmrgo_enums_said_t said; dmrgo_enums_daid_t daid; uint8_t *payload; size_t payload_len; };
+type struct dmrgo_ip_ipv4_header_t { uint8_t version; uint8_t ihl; uint8_t tos; uint16_t total_length; uint16_t id; bool reserved; bool dont_fragment; bool more_fragments; uint16_t fragment_offset; uint8_t ttl; dmrgo_ip_protocol_t protocol; uint16_t checksum; uint8_t source[4]; uint8_t destination[4]; };
+type struct dmrgo_ip_ipv4_t { dmrgo_ip_ipv4_header_t header; uint8_t *options; size_t options_len; uint8_t *payload; size_t payload_len; };
+type struct dmrgo_ip_udp_header_t { dmrgo_ip_port_t source_port; dmrgo_ip_port_t destination_port; uint16_t length; uint16_t checksum; };
+type struct dmrgo_ip_udp_t { dmrgo_ip_udp_header_t header; uint8_t *payload; size_t payload_len; };
 type struct dmrgo_layer2_cach_t { dmrgo_pdu_tact_t tact; uint8_t payload[3]; };
 type struct dmrgo_layer2_data_t { uint32_t tag; union { dmrgo_pdu_bcap_continuation_t pdu_bcap_continuation; dmrgo_pdu_cgap_continuation_t pdu_cgap_continuation; dmrgo_pdu_csbk_t pdu_csbk; dmrgo_pdu_data_header_t pdu_data_header; dmrgo_pdu_full_link_control_t pdu_full_link_control; dmrgo_pdu_mbc_continuation_t pdu_mbc_continuation; dmrgo_pdu_mbc_header_t pdu_mbc_header; dmrgo_pdu_mvap_continuation_t pdu_mvap_continuation; dmrgo_pdu_pi_header_t pdu_pi_header; dmrgo_pdu_pr_fill_t pdu_pr_fill; dmrgo_pdu_rate12_data_t pdu_rate12_data; dmrgo_pdu_rate1_data_t pdu_rate1_data; dmrgo_pdu_rate34_data_t pdu_rate34_data; dmrgo_pdu_unified_single_block_data_t pdu_unified_single_block_data; dmrgo_pdu_vnap_continuation_t pdu_vnap_continuation; } v; };
 type struct dmrgo_layer2_decode_options_t { int64_t sync_threshold; bool has_color_code; dmrgo_enums_color_code_t color_code; dmrgo_layer2_kind_t kind; dmrgo_enums_voice_burst_type_t voice_burst; bool has_data_type; dmrgo_enums_data_type_t data_type; };
