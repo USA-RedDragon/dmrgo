@@ -9,32 +9,14 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 )
 
-func row2087(k int) uint32 {
-	switch k {
-	case 0:
-		return 0x018eb
-	case 1:
-		return 0x0293e
-	case 2:
-		return 0x04a97
-	case 3:
-		return 0x08dc6
-	case 4:
-		return 0x10367
-	case 5:
-		return 0x206cd
-	case 6:
-		return 0x40d99
-	}
-	return 0x803da
-}
+var rows2087 = [8]uint32{0x018eb, 0x0293e, 0x04a97, 0x08dc6, 0x10367, 0x206cd, 0x40d99, 0x803da}
 
 // Encode2087 returns the Golay (20,8,7) codeword of 8 data bits: the data
 // bits followed by 12 parity bits, the first bit most significant.
 func Encode2087(data uint8) uint32 {
 	var cw uint32
 	for k := range 8 {
-		cw ^= row2087(k) & -uint32(data>>k&1)
+		cw ^= rows2087[k] & -uint32(data>>k&1)
 	}
 	return cw
 }
@@ -59,7 +41,7 @@ func Decode2087(cw uint32) (uint32, fec.Result) {
 		if i == 256 {
 			break
 		}
-		c ^= row2087(bits.TrailingZeros(uint(i)))
+		c ^= rows2087[bits.TrailingZeros(uint(i))&7]
 	}
 	result.Uncorrectable = true
 	return cw, result
