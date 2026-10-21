@@ -146,6 +146,7 @@ var api = [...]any{
 	enums.Backoff.Frames,
 	enums.DAID.String,
 	enums.DAID.Valid,
+	enums.DDFormat.String,
 	enums.DPID.String,
 	enums.DPID.Valid,
 	enums.DPIDToPort,

@@ -452,7 +452,7 @@ func out_layer2_pdu_DefinedDataHeader(d *C.dmrgo_pdu_defined_data_header_t, s *g
 	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
 	d.llid_destination = C.uint32_t(s.LLIDDestination)
 	d.llid_source = C.uint32_t(s.LLIDSource)
-	d.defined_data = C.uint8_t(s.DefinedData)
+	d.defined_data = C.dmrgo_enums_dd_format_t(s.DefinedData)
 	d.sarq = C.bool(s.SARQ)
 	d.full_message_flag = C.bool(s.FullMessageFlag)
 	d.bit_padding = C.uint8_t(s.BitPadding)
@@ -692,7 +692,7 @@ func in_layer2_pdu_DefinedDataHeader(s *C.dmrgo_pdu_defined_data_header_t) (d g_
 	d.SAP = g_enums.ServiceAccessPointID(s.sap)
 	d.LLIDDestination = uint32(s.llid_destination)
 	d.LLIDSource = uint32(s.llid_source)
-	d.DefinedData = uint8(s.defined_data)
+	d.DefinedData = g_enums.DDFormat(s.defined_data)
 	d.SARQ = bool(s.sarq)
 	d.FullMessageFlag = bool(s.full_message_flag)
 	d.BitPadding = uint8(s.bit_padding)
@@ -9736,6 +9736,22 @@ func dmrgo_enums_daid_valid(c_self C.dmrgo_enums_daid_t, c_out *C.bool) (rc C.in
 	if c_out != nil {
 		*c_out = C.bool(r0)
 	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_enums_dd_format_string
+func dmrgo_enums_dd_format_string(c_self C.dmrgo_enums_dd_format_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_enums.DDFormat(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}

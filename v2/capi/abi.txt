@@ -398,6 +398,31 @@ sym #define DMRGO_ENUMS_DATA_TYPE_RESERVED ((dmrgo_enums_data_type_t)12)
 sym #define DMRGO_ENUMS_DATA_TYPE_TERMINATOR_WITH_LC ((dmrgo_enums_data_type_t)2)
 sym #define DMRGO_ENUMS_DATA_TYPE_UNIFIED_SINGLE_BLOCK ((dmrgo_enums_data_type_t)11)
 sym #define DMRGO_ENUMS_DATA_TYPE_VOICE_LC_HEADER ((dmrgo_enums_data_type_t)1)
+sym #define DMRGO_ENUMS_DD7_BIT ((dmrgo_enums_dd_format_t)2)
+sym #define DMRGO_ENUMS_DDBCD ((dmrgo_enums_dd_format_t)1)
+sym #define DMRGO_ENUMS_DDISO8859_PART1 ((dmrgo_enums_dd_format_t)3)
+sym #define DMRGO_ENUMS_DDISO8859_PART10 ((dmrgo_enums_dd_format_t)12)
+sym #define DMRGO_ENUMS_DDISO8859_PART11 ((dmrgo_enums_dd_format_t)13)
+sym #define DMRGO_ENUMS_DDISO8859_PART13 ((dmrgo_enums_dd_format_t)14)
+sym #define DMRGO_ENUMS_DDISO8859_PART14 ((dmrgo_enums_dd_format_t)15)
+sym #define DMRGO_ENUMS_DDISO8859_PART15 ((dmrgo_enums_dd_format_t)16)
+sym #define DMRGO_ENUMS_DDISO8859_PART16 ((dmrgo_enums_dd_format_t)17)
+sym #define DMRGO_ENUMS_DDISO8859_PART2 ((dmrgo_enums_dd_format_t)4)
+sym #define DMRGO_ENUMS_DDISO8859_PART3 ((dmrgo_enums_dd_format_t)5)
+sym #define DMRGO_ENUMS_DDISO8859_PART4 ((dmrgo_enums_dd_format_t)6)
+sym #define DMRGO_ENUMS_DDISO8859_PART5 ((dmrgo_enums_dd_format_t)7)
+sym #define DMRGO_ENUMS_DDISO8859_PART6 ((dmrgo_enums_dd_format_t)8)
+sym #define DMRGO_ENUMS_DDISO8859_PART7 ((dmrgo_enums_dd_format_t)9)
+sym #define DMRGO_ENUMS_DDISO8859_PART8 ((dmrgo_enums_dd_format_t)10)
+sym #define DMRGO_ENUMS_DDISO8859_PART9 ((dmrgo_enums_dd_format_t)11)
+sym #define DMRGO_ENUMS_DDUTF16 ((dmrgo_enums_dd_format_t)19)
+sym #define DMRGO_ENUMS_DDUTF16BE ((dmrgo_enums_dd_format_t)20)
+sym #define DMRGO_ENUMS_DDUTF16LE ((dmrgo_enums_dd_format_t)21)
+sym #define DMRGO_ENUMS_DDUTF32 ((dmrgo_enums_dd_format_t)22)
+sym #define DMRGO_ENUMS_DDUTF32BE ((dmrgo_enums_dd_format_t)23)
+sym #define DMRGO_ENUMS_DDUTF32LE ((dmrgo_enums_dd_format_t)24)
+sym #define DMRGO_ENUMS_DDUTF8 ((dmrgo_enums_dd_format_t)18)
+sym #define DMRGO_ENUMS_DD_BINARY ((dmrgo_enums_dd_format_t)0)
 sym #define DMRGO_ENUMS_DPID_EXTENDED_HEADER ((dmrgo_enums_dpid_t)0)
 sym #define DMRGO_ENUMS_DPID_LOCATION_PROTOCOL ((dmrgo_enums_dpid_t)2)
 sym #define DMRGO_ENUMS_DPID_MANUFACTURER_SPECIFIC ((dmrgo_enums_dpid_t)95)
@@ -1050,6 +1075,7 @@ sym int dmrgo_enums_data_type_carries_full_lc(dmrgo_enums_data_type_t self, bool
 sym int dmrgo_enums_data_type_is_bptc(dmrgo_enums_data_type_t self, bool *out);
 sym int dmrgo_enums_data_type_is_reserved(dmrgo_enums_data_type_t self, bool *out);
 sym int dmrgo_enums_data_type_string(dmrgo_enums_data_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_enums_dd_format_string(dmrgo_enums_dd_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_dpid_string(dmrgo_enums_dpid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_dpid_to_port(dmrgo_enums_dpid_t dpid, uint16_t *out);
 sym int dmrgo_enums_dpid_valid(dmrgo_enums_dpid_t self, bool *out);
@@ -1888,6 +1914,7 @@ sym typedef uint8_t dmrgo_enums_backoff_t;
 sym typedef uint8_t dmrgo_enums_color_code_t;
 sym typedef uint8_t dmrgo_enums_daid_t;
 sym typedef uint8_t dmrgo_enums_data_type_t;
+sym typedef uint8_t dmrgo_enums_dd_format_t;
 sym typedef uint8_t dmrgo_enums_dpid_t;
 sym typedef uint8_t dmrgo_enums_feature_set_id_t;
 sym typedef uint8_t dmrgo_enums_flco_t;
@@ -2007,7 +2034,7 @@ type struct dmrgo_pdu_csbk_bytes_t { uint8_t v[12]; };
 type struct dmrgo_pdu_csbk_t { bool last_block; bool protect_flag; dmrgo_pdu_csbk_opcode_t opcode; dmrgo_enums_feature_set_id_t fid; dmrgo_fec_result_t fec; dmrgo_pdu_opcode0x38_hint_t hint0x38; bool has_unit_to_unit_voice_service_request_pdu; dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t unit_to_unit_voice_service_request_pdu; bool has_unit_to_unit_voice_service_answer_response_pdu; dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t unit_to_unit_voice_service_answer_response_pdu; bool has_negative_acknowledgement_pdu; dmrgo_pdu_negative_acknowledgement_pdu_t negative_acknowledgement_pdu; bool has_preamble_pdu; dmrgo_pdu_preamble_pdu_t preamble_pdu; bool has_channel_timing_pdu; dmrgo_pdu_channel_timing_pdu_t channel_timing_pdu; bool has_private_voice_grant_pdu; dmrgo_pdu_private_voice_grant_pdu_t private_voice_grant_pdu; bool has_talkgroup_voice_grant_pdu; dmrgo_pdu_talkgroup_voice_grant_pdu_t talkgroup_voice_grant_pdu; bool has_broadcast_talkgroup_voice_grant_pdu; dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t broadcast_talkgroup_voice_grant_pdu; bool has_private_data_grant_pdu; dmrgo_pdu_private_data_grant_pdu_t private_data_grant_pdu; bool has_talkgroup_data_grant_pdu; dmrgo_pdu_talkgroup_data_grant_pdu_t talkgroup_data_grant_pdu; bool has_duplex_private_voice_grant_pdu; dmrgo_pdu_duplex_private_voice_grant_pdu_t duplex_private_voice_grant_pdu; bool has_duplex_private_data_grant_pdu; dmrgo_pdu_duplex_private_data_grant_pdu_t duplex_private_data_grant_pdu; bool has_private_data_grant_multi_item_pdu; dmrgo_pdu_private_data_grant_multi_item_pdu_t private_data_grant_multi_item_pdu; bool has_move_pdu; dmrgo_pdu_move_pdu_t move_pdu; bool has_aloha_pdu; dmrgo_pdu_aloha_pdu_t aloha_pdu; bool has_broadcast_pdu; dmrgo_pdu_broadcast_pdu_t broadcast_pdu; bool has_clear_pdu; dmrgo_pdu_clear_pdu_t clear_pdu; bool has_protect_pdu; dmrgo_pdu_protect_pdu_t protect_pdu; bool has_ahoy_pdu; dmrgo_pdu_ahoy_pdu_t ahoy_pdu; bool has_ack_outbound_pdu; dmrgo_pdu_ack_outbound_pdu_t ack_outbound_pdu; bool has_ack_inbound_pdu; dmrgo_pdu_ack_inbound_pdu_t ack_inbound_pdu; bool has_ack_outbound_payload_pdu; dmrgo_pdu_ack_outbound_payload_pdu_t ack_outbound_payload_pdu; bool has_ack_inbound_payload_pdu; dmrgo_pdu_ack_inbound_payload_pdu_t ack_inbound_payload_pdu; bool has_random_access_pdu; dmrgo_pdu_random_access_pdu_t random_access_pdu; bool has_ackvitation_pdu; dmrgo_pdu_ackvitation_pdu_t ackvitation_pdu; bool has_maintenance_pdu; dmrgo_pdu_maintenance_pdu_t maintenance_pdu; uint8_t raw_payload[8]; };
 type struct dmrgo_pdu_data_header_bytes_t { uint8_t v[12]; };
 type struct dmrgo_pdu_data_header_t { dmrgo_fec_result_t fec; dmrgo_pdu_format_t format; uint8_t appended_blocks; bool has_unconfirmed_data_header; dmrgo_pdu_unconfirmed_data_header_t unconfirmed_data_header; bool has_confirmed_data_header; dmrgo_pdu_confirmed_data_header_t confirmed_data_header; bool has_response_packet_header; dmrgo_pdu_response_packet_header_t response_packet_header; bool has_defined_data_header; dmrgo_pdu_defined_data_header_t defined_data_header; bool has_status_precoded_header; dmrgo_pdu_status_precoded_header_t status_precoded_header; bool has_raw_data_header; dmrgo_pdu_raw_data_header_t raw_data_header; bool has_udt_header; dmrgo_pdu_udt_header_t udt_header; bool has_proprietary_header; dmrgo_pdu_proprietary_header_t proprietary_header; uint8_t raw_payload[10]; };
-type struct dmrgo_pdu_defined_data_header_t { bool group; bool response_requested; uint8_t appended_blocks; dmrgo_enums_service_access_point_id_t sap; uint32_t llid_destination; uint32_t llid_source; uint8_t defined_data; bool sarq; bool full_message_flag; uint8_t bit_padding; };
+type struct dmrgo_pdu_defined_data_header_t { bool group; bool response_requested; uint8_t appended_blocks; dmrgo_enums_service_access_point_id_t sap; uint32_t llid_destination; uint32_t llid_source; dmrgo_enums_dd_format_t defined_data; bool sarq; bool full_message_flag; uint8_t bit_padding; };
 type struct dmrgo_pdu_duplex_private_data_grant_pdu_t { uint16_t physical_channel; bool logical_channel; bool hi_rate; bool emergency; bool call_direction; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_duplex_private_voice_grant_pdu_t { uint16_t physical_channel; bool logical_channel; bool reserved; bool emergency; bool call_direction; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_embedded_signalling_t { dmrgo_enums_color_code_t color_code; bool preemption_and_power_control_indicator; dmrgo_enums_lcss_t lcss; dmrgo_fec_result_t fec; };

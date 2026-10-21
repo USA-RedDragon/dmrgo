@@ -481,7 +481,7 @@ func fuzzHeader(kind uint8, fields uint64, dst, src uint32) pdu.DataHeader {
 	case 2:
 		return pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{
 			Group: group, ResponseRequested: resp, SAP: sap, LLIDDestination: dst, LLIDSource: src,
-			DefinedData: uint8(fields>>12) & 0x3F, SARQ: kind&0x10 != 0, FullMessageFlag: true,
+			DefinedData: enums.DDFormat(fields>>12) & 0x3F, SARQ: kind&0x10 != 0, FullMessageFlag: true,
 			BitPadding: uint8(fields >> 18)}}
 	default:
 		return pdu.DataHeader{Format: pdu.FormatShortDataRawOrStatusPrecoded, RawDataHeader: &pdu.RawDataHeader{
