@@ -1250,6 +1250,7 @@ var api = [...]any{
 	(*trunk.Follower).Call,
 	(*trunk.Follower).Deadline,
 	(*trunk.Follower).Hunt,
+	(*trunk.Follower).Lookup,
 	(*trunk.Follower).Lost,
 	(*trunk.Follower).Plan,
 	(*trunk.Follower).Reset,

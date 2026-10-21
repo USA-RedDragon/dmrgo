@@ -1315,6 +1315,7 @@
 		dmrgo_trunk_follower_deadline;
 		dmrgo_trunk_follower_free;
 		dmrgo_trunk_follower_hunt;
+		dmrgo_trunk_follower_lookup;
 		dmrgo_trunk_follower_lost;
 		dmrgo_trunk_follower_lost_need;
 		dmrgo_trunk_follower_new;

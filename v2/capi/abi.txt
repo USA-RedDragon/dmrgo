@@ -2642,6 +2642,7 @@ sym int dmrgo_trunk_follower_call(dmrgo_trunk_follower_t *self, dmrgo_trunk_gran
 sym int dmrgo_trunk_follower_deadline(dmrgo_trunk_follower_t *self, dmrgo_duration_t *at, bool *ok);
 sym int dmrgo_trunk_follower_free(dmrgo_trunk_follower_t *self);
 sym int dmrgo_trunk_follower_hunt(dmrgo_trunk_follower_t *self, dmrgo_trunk_hunt_list_t *out);
+sym int dmrgo_trunk_follower_lookup(dmrgo_trunk_follower_t *self, uint16_t n, dmrgo_trunk_channel_t *c, bool *ok);
 sym int dmrgo_trunk_follower_lost(dmrgo_trunk_follower_t *self, dmrgo_duration_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_trunk_follower_lost_need(dmrgo_trunk_follower_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 sym int dmrgo_trunk_follower_new(dmrgo_trunk_follower_t **out);

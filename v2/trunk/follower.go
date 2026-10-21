@@ -182,10 +182,17 @@ func (f *Follower) Site() Site {
 	return f.ctl.site
 }
 
-// Plan returns the channel plan, with the channels that CG_AP and
-// Chan_Freq announced.
+// Plan returns a copy of the channel plan, with the channels that CG_AP
+// and Chan_Freq announced. The copy is large; Lookup reads one channel
+// without it.
 func (f *Follower) Plan() ChannelPlan {
 	return f.ctl.plan
+}
+
+// Lookup returns the channel with number n from the channel plan, as
+// ChannelPlan.Lookup does. ok is false when no entry and no rule gives it.
+func (f *Follower) Lookup(n uint16) (c Channel, ok bool) {
+	return f.ctl.plan.Lookup(n)
 }
 
 // Hunt returns the hunt list, with the changes of Ann_WD_TSCC broadcasts.
