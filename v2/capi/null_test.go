@@ -8,10 +8,14 @@ import (
 
 const errPanic = -7
 
+const zeroedLen = 256
+
 // TestNullArguments calls every generated entry point with all arguments
-// NULL or zero, and again with each pointer argument pointing to zeroed
-// memory, and fails for each call that returns DMRGO_ERR_PANIC. Function
-// pointers and handles, whose C type is incomplete, stay NULL.
+// NULL or zero, and again with each pointer argument pointing to
+// zeroedLen zeroed elements, more than the longest C array parameter such
+// as the uint8_t out[32] that dmrgo_dmrd_auth_token fills, and fails for
+// each call that returns DMRGO_ERR_PANIC. Function pointers and handles,
+// whose C type is incomplete, stay NULL.
 func TestNullArguments(t *testing.T) {
 	t.Parallel()
 
@@ -28,7 +32,7 @@ func TestNullArguments(t *testing.T) {
 			for i := range args {
 				at := ft.In(i)
 				args[i] = reflect.New(at).Elem()
-				if zeroed && at.Kind() == reflect.Pointer && !(at.Elem().Kind() == reflect.Array && at.Elem().Len() == 0) {
+				if zeroed && at.Kind() == reflect.Pointer && (at.Elem().Kind() != reflect.Array || at.Elem().Len() != 0) {
 					if p, ok := zeroedMemory(at.Elem()); ok {
 						args[i] = p
 					}
@@ -48,5 +52,5 @@ func zeroedMemory(t reflect.Type) (p reflect.Value, ok bool) {
 			ok = false
 		}
 	}()
-	return reflect.New(t), true
+	return reflect.MakeSlice(reflect.SliceOf(t), zeroedLen, zeroedLen).Index(0).Addr(), true
 }
