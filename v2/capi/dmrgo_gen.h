@@ -4024,7 +4024,7 @@ struct dmrgo_dmrd_session_output_t {
 	size_t packet_len;
 	/* Command is the command of OutputData and OutputMessage. */
 	dmrgo_dmrd_command_t command;
-	/* ID is the repeater ID of OutputLogin, OutputUp and OutputDown at a Master. */
+	/* ID is the repeater ID of OutputLogin, OutputUp, OutputDown and OutputPong at a Master. */
 	uint32_t id;
 	/* Reason tells why for OutputDown. */
 	dmrgo_dmrd_session_reason_t reason;
