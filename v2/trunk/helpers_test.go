@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -106,7 +107,7 @@ type capture struct {
 	at   time.Duration
 	raw  layer2.RawBurst
 	hint layer2.Hint
-	cach *layer2.CACH
+	cach *[3]byte
 }
 
 func readCapture(t testing.TB, path string) []capture {
@@ -121,7 +122,8 @@ func readCapture(t testing.TB, path string) []capture {
 	for _, b := range bursts {
 		c := capture{at: time.Duration(b.Offset) * time.Second / 9600, raw: b.Data, hint: layer2.Hint{Slot: enums.Slot(b.Channel)}}
 		if b.HasCACH {
-			cc := b.CACH
+			var cc [3]byte
+			bits.Copy(cc[:], 0, stream, int(b.Offset)-layer2.CACHBits, layer2.CACHBits)
 			c.cach = &cc
 		}
 		caps = append(caps, c)

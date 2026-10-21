@@ -82,6 +82,7 @@ type FollowerConfig struct {
 // concurrent use and must not be copied; go vet reports a copy.
 type Follower struct {
 	ctl       control
+	cach      layer2.CACH
 	talk      [MaxTalkgroups]uint32
 	talkLen   int
 	dyn       [MaxDynamicGroups]uint32
@@ -207,12 +208,22 @@ func (f *Follower) Reset() {
 }
 
 // Burst decodes the burst raw with what the Hint h says about it, and the
-// CACH before it when cach is not nil, and appends the outputs to dst. The
-// time now is on the monotonic clock of the caller. On a payload channel
-// only the bursts of the granted slot count, so h.Slot should be set when
-// the transport knows it. It allocates only when dst has no room for
-// MaxOutputs outputs.
-func (f *Follower) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *layer2.CACH, dst []Output) []Output {
+// CACH field before it when cach is not nil, and appends the outputs to
+// dst. cach is in transmit order, as bs.Output.CACH and
+// TSCCOutput.CACH give it. The time now is on the monotonic clock of the
+// caller. On a payload channel only the bursts of the granted slot count,
+// so h.Slot should be set when the transport knows it. It allocates only
+// when dst has no room for MaxOutputs outputs.
+func (f *Follower) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
+	var c *layer2.CACH
+	if cach != nil {
+		f.cach = layer2.DecodeCACHField(*cach)
+		c = &f.cach
+	}
+	return f.burst(now, raw, h, c, dst)
+}
+
+func (f *Follower) burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *layer2.CACH, dst []Output) []Output {
 	dst = f.timers(now, dst)
 	ok := f.ctl.decode(raw, &h)
 	if f.state == StatePayload {

@@ -39,7 +39,7 @@ func readCapPlusCapture(t testing.TB, path string) []capture {
 		if err1 != nil || err2 != nil || err3 != nil || len(cach) != 3 || len(burst) != 33 {
 			t.Fatalf("bad line %q", line)
 		}
-		c := layer2.DecodeCACHField([3]byte(cach))
+		c := [3]byte(cach)
 		caps = append(caps, capture{at: time.Duration(ms * float64(time.Millisecond)), raw: layer2.RawBurst(burst), cach: &c})
 	}
 	if err := sc.Err(); err != nil {

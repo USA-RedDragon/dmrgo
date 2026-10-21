@@ -32,7 +32,7 @@ func (s *exampleSite) send(d layer2.Data) {
 		c.LastBlock = true
 	}
 	raw, _ := layer2.BuildBurst(d, 1, layer2.SyncSourceBS)
-	free := layer2.CACH{}
+	free := [3]byte{}
 	s.out = s.ms.Burst(s.now, &raw, layer2.Hint{Slot: enums.Slot1}, &free, s.out[:0])
 	s.now += 60 * time.Millisecond
 	s.print()
@@ -68,7 +68,7 @@ func (s *exampleSite) udt(h pdu.UDTHeader, a *trunk.Appended) {
 	pdu.SetMBCLastBlockCRC(blocks)
 	for i := range blocks {
 		raw, _ := layer2.BuildDataBurst(blocks[i], enums.DataTypeRate12, 1, layer2.SyncSourceBS)
-		free := layer2.CACH{}
+		free := [3]byte{}
 		s.out = s.ms.Burst(s.now, &raw, layer2.Hint{Slot: enums.Slot1}, &free, s.out[:0])
 		s.now += 60 * time.Millisecond
 		s.print()

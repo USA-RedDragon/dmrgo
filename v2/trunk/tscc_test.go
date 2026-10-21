@@ -123,7 +123,6 @@ func (s *sim) step() {
 		if b.Kind != trunk.TSCCBurst {
 			continue
 		}
-		cach := layer2.DecodeCACHField(b.CACH)
 		if b.Channel != tsccChannel {
 			if d, err := layer2.NewBurstFromBytes(b.Burst); err == nil && d.SyncPattern == enums.SyncBSSourcedData && d.SlotType.DataType == enums.DataTypeVoiceLCHeader {
 				s.relayed++
@@ -133,7 +132,7 @@ func (s *sim) step() {
 			if m.channel != b.Channel {
 				continue
 			}
-			s.mout = m.ms.Burst(s.now, &b.Burst, layer2.Hint{Slot: b.Slot}, &cach, s.mout[:0])
+			s.mout = m.ms.Burst(s.now, &b.Burst, layer2.Hint{Slot: b.Slot}, &b.CACH, s.mout[:0])
 			if len(s.mout) > trunk.MaxOutputs {
 				s.t.Fatalf("%d MS outputs", len(s.mout))
 			}

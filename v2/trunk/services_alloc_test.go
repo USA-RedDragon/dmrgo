@@ -54,7 +54,7 @@ func TestAllocsMSServices(t *testing.T) {
 	out := make([]trunk.Output, 0, trunk.MaxOutputs)
 	data := []byte("supplementary")
 	now := time.Duration(0)
-	cach := layer2.CACH{}
+	var cach [3]byte
 	allocs := testing.AllocsPerRun(5, func() {
 		ms.Reset()
 		for i := range pool {

@@ -45,7 +45,7 @@ func ExampleMS_SendShortData() {
 
 	ms, _ := trunk.NewMS(&trunk.MSConfig{Address: 3120001, NoRegistration: true})
 	out := make([]trunk.Output, 0, trunk.MaxOutputs)
-	free := layer2.CACH{}
+	free := [3]byte{}
 	now := time.Duration(0)
 	var a trunk.Appended
 	_ = a.SetText(enums.UDTISO8, []byte("meet at gate 4"))

@@ -460,19 +460,25 @@ func (m *MS) EndCall(now time.Duration, dst []Output) []Output {
 }
 
 // Burst decodes the burst raw with what the Hint h says about it, and the
-// CACH before it when cach is not nil, as Follower.Burst does, runs the
+// CACH field before it, in transmit order, when cach is not nil, as
+// Follower.Burst does, runs the
 // random access and the requests, and appends the outputs to dst. On the
 // TSCC the MS counts TDMA frames by the bursts of its Slot, so h.Slot
 // should be set; random access needs the CACH, for its AT bit. It
 // allocates only when dst has no room for MaxOutputs outputs.
-func (m *MS) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *layer2.CACH, dst []Output) []Output {
+func (m *MS) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
 	if m.off {
 		return dst
+	}
+	var c *layer2.CACH
+	if cach != nil {
+		m.f.cach = layer2.DecodeCACHField(*cach)
+		c = &m.f.cach
 	}
 	dst = m.timers(now, dst)
 	before := m.f.state
 	n := len(dst)
-	dst = m.f.Burst(now, raw, h, cach, dst)
+	dst = m.f.burst(now, raw, h, c, dst)
 	dst = m.follow(now, before, dst, n)
 	dst = m.svcBurst(now, before, &h, dst, n)
 	switch {
@@ -486,7 +492,7 @@ func (m *MS) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach 
 	}
 	dst = m.addressed(now, &h, dst)
 	if m.f.state == StateControl && (h.Slot == enums.SlotUnknown || h.Slot == m.slot) {
-		dst = m.frame(now, cach, dst)
+		dst = m.frame(now, c, dst)
 	}
 	return dst
 }

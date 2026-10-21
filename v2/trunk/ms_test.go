@@ -16,8 +16,8 @@ import (
 const msAddr = 3120001
 
 var (
-	idle = layer2.CACH{TACT: pdu.TACT{}}
-	busy = layer2.CACH{TACT: pdu.TACT{AccessType: true}}
+	idle = [3]byte{}
+	busy = [3]byte{0x80, 0x02, 0x02}
 )
 
 type msRig struct {
@@ -36,7 +36,7 @@ func newRig(t *testing.T, cfg *trunk.MSConfig) *msRig {
 	return &msRig{t: t, ms: ms, out: make([]trunk.Output, 0, trunk.MaxOutputs)}
 }
 
-func (r *msRig) feed(raw layer2.RawBurst, cach *layer2.CACH) []trunk.Output {
+func (r *msRig) feed(raw layer2.RawBurst, cach *[3]byte) []trunk.Output {
 	r.now += 60 * time.Millisecond
 	r.out = r.ms.Burst(r.now, &raw, layer2.Hint{Slot: enums.Slot1}, cach, r.out[:0])
 	return r.out
