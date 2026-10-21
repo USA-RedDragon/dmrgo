@@ -163,9 +163,12 @@ func (r *Receiver) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint,
 
 // Decoded runs the decoded burst b through the Receiver and appends the
 // events to dst. ReceiverConfig.ColorCode does not apply: b was decoded
-// with the options of the caller. For a transport event without a burst,
-// such as an MMDVM TAG_LOST, call Lost. It allocates only when dst has no
-// room for MaxEvents events.
+// with the options of the caller, so set DecodeOptions.ColorCode for the
+// check. A nil b is a burst that did not decode, and only h applies. A
+// monitor that feeds a burst to several machines decodes it once with
+// layer2.Burst.DecodeFromBytesWith and calls Decoded on each. For a
+// transport event without a burst, such as an MMDVM TAG_LOST, call Lost.
+// It allocates only when dst has no room for MaxEvents events.
 func (r *Receiver) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, dst []Event) []Event {
 	return r.receive(now, b, nil, &h, dst)
 }
