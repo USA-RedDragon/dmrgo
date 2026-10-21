@@ -22,6 +22,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/hytera"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
 	ipscauth "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
@@ -515,6 +516,34 @@ func tinyDMRDOps(t *testing.T) []tinyOp {
 	}}}
 }
 
+func tinyHyteraRun(frame, hb, cmd, buf []byte) []byte {
+	f, _ := hytera.DecodeFrame(frame)
+	buf, _ = f.AppendBinary(buf[:0])
+	h := f.Hint()
+	_ = f.SetKind(h.Kind, h.VoiceBurst, h.DataType)
+	b, _ := hytera.DecodeHeartbeat(hb)
+	buf, _ = b.AppendBinary(buf[:0])
+	c, _ := hytera.DecodeP2P(cmd)
+	buf, _ = c.AppendBinary(buf[:0])
+	_, _ = c.RedirectPort()
+	_, _ = c.Service()
+	return buf
+}
+
+func tinyHyteraOps(t *testing.T) []tinyOp {
+	t.Helper()
+	var p [12]byte
+	raw := tinyOK(layer2.BuildDataBurst(p, enums.DataTypeVoiceLCHeader, 1, layer2.SyncSourceBS))
+	f := hytera.Frame{Port: 50002, Slot: enums.Slot1, SlotType: hytera.SlotTypeVoiceLCHeader, ColorCode: 1, Burst: raw, Destination: 262, Source: 2628347}
+	frame := tinyOK(f.AppendBinary(make([]byte, 0, hytera.FrameLen)))
+	hb := []byte("ZZZZ\x0a\x00\x00\x00\x14\x00\x00\x00\x5a\x5a\x59\x5a\x00\x00\x00\x00")
+	cmd := []byte("P2PP\x0b\x00\x00\x00\x14\x00\x00\x00\x42\xff\x01\x00\x00\x00\x00\x00\x11\x00\x00\x00\xff\x01\x51\xc3")
+	buf := make([]byte, 0, 128)
+	return []tinyOp{{"hytera", func() {
+		buf = tinyHyteraRun(frame, hb, cmd, buf)
+	}}}
+}
+
 func tinyIPSCRun(q, buf []byte) []byte {
 	got, _ := ipsc.DecodeUser(q)
 	buf, _ = got.AppendBinary(buf[:0])
@@ -550,7 +579,7 @@ func TestTinyGoAllocs(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(1))
-	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCSBKOps(t), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r), tinyDVSIOps(t), tinyAppOps(t), tinyDMRDOps(t), tinyIPSCOps(t))
+	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCSBKOps(t), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r), tinyDVSIOps(t), tinyAppOps(t), tinyDMRDOps(t), tinyIPSCOps(t), tinyHyteraOps(t))
 
 	probe := make([]byte, 0, 1)
 	if b, _ := tinyAlloc(func() { probe = make([]byte, 64) }); b < 64 {

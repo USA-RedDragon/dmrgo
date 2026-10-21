@@ -103,9 +103,13 @@ code DMRGO_ERR_DMRD_LENGTH -202
 code DMRGO_ERR_DMRD_SHORT -203
 code DMRGO_ERR_DMRD_SIGNATURE -204
 code DMRGO_ERR_DMRD_TEXT -205
-code DMRGO_ERR_IPSC_COMMAND -206
-code DMRGO_ERR_IPSC_LENGTH -207
-code DMRGO_ERR_IPSC_SHORT -208
+code DMRGO_ERR_TRANSPORT_HYTERA_CODE -206
+code DMRGO_ERR_TRANSPORT_HYTERA_LENGTH -207
+code DMRGO_ERR_TRANSPORT_HYTERA_SHORT -208
+code DMRGO_ERR_TRANSPORT_HYTERA_SIGNATURE -209
+code DMRGO_ERR_IPSC_COMMAND -210
+code DMRGO_ERR_IPSC_LENGTH -211
+code DMRGO_ERR_IPSC_SHORT -212
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -687,9 +691,9 @@ sym #define DMRGO_ERR_HYTERA_LENGTH (-197)
 sym #define DMRGO_ERR_HYTERA_SHORT (-198)
 sym #define DMRGO_ERR_HYTERA_SIGNATURE (-199)
 sym #define DMRGO_ERR_HYTERA_TEXT (-200)
-sym #define DMRGO_ERR_IPSC_COMMAND (-206)
-sym #define DMRGO_ERR_IPSC_LENGTH (-207)
-sym #define DMRGO_ERR_IPSC_SHORT (-208)
+sym #define DMRGO_ERR_IPSC_COMMAND (-210)
+sym #define DMRGO_ERR_IPSC_LENGTH (-211)
+sym #define DMRGO_ERR_IPSC_SHORT (-212)
 sym #define DMRGO_ERR_IP_CHECKSUM (-172)
 sym #define DMRGO_ERR_IP_FRAGMENT (-173)
 sym #define DMRGO_ERR_IP_LENGTH (-174)
@@ -741,6 +745,10 @@ sym #define DMRGO_ERR_SMS_SHORT (-194)
 sym #define DMRGO_ERR_SMS_SIGNATURE (-195)
 sym #define DMRGO_ERR_TMS_LENGTH (-183)
 sym #define DMRGO_ERR_TMS_SHORT (-184)
+sym #define DMRGO_ERR_TRANSPORT_HYTERA_CODE (-206)
+sym #define DMRGO_ERR_TRANSPORT_HYTERA_LENGTH (-207)
+sym #define DMRGO_ERR_TRANSPORT_HYTERA_SHORT (-208)
+sym #define DMRGO_ERR_TRANSPORT_HYTERA_SIGNATURE (-209)
 sym #define DMRGO_ERR_TRUNK_BUSY (-134)
 sym #define DMRGO_ERR_TRUNK_CHANNEL_NUMBER (-135)
 sym #define DMRGO_ERR_TRUNK_CONFIG_ERROR (-105)
@@ -993,6 +1001,27 @@ sym #define DMRGO_TMS_ENCODING_UTF16LE ((dmrgo_tms_encoding_t)4)
 sym #define DMRGO_TMS_TYPE_ACK ((dmrgo_tms_type_t)31)
 sym #define DMRGO_TMS_TYPE_AVAILABILITY ((dmrgo_tms_type_t)16)
 sym #define DMRGO_TMS_TYPE_TEXT ((dmrgo_tms_type_t)0)
+sym #define DMRGO_TRANSPORT_HYTERA_FRAME_LEN 72
+sym #define DMRGO_TRANSPORT_HYTERA_HEARTBEAT_LEN 20
+sym #define DMRGO_TRANSPORT_HYTERA_P2_P_HEADER_LEN 20
+sym #define DMRGO_TRANSPORT_HYTERA_SERVICE_DMR ((dmrgo_transport_hytera_service_t)17)
+sym #define DMRGO_TRANSPORT_HYTERA_SERVICE_RDAC ((dmrgo_transport_hytera_service_t)18)
+sym #define DMRGO_TRANSPORT_HYTERA_SERVICE_REGISTRATION ((dmrgo_transport_hytera_service_t)16)
+sym #define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_CSBK ((dmrgo_transport_hytera_slot_type_t)13107)
+sym #define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_DATA_HEADER ((dmrgo_transport_hytera_slot_type_t)17476)
+sym #define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_PI_HEADER ((dmrgo_transport_hytera_slot_type_t)0)
+sym #define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_RATE12 ((dmrgo_transport_hytera_slot_type_t)21845)
+sym #define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_RATE34 ((dmrgo_transport_hytera_slot_type_t)26214)
+sym #define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_SYNC ((dmrgo_transport_hytera_slot_type_t)61166)
+sym #define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_TERMINATOR ((dmrgo_transport_hytera_slot_type_t)8738)
+sym #define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_VOICE_A ((dmrgo_transport_hytera_slot_type_t)30583)
+sym #define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_VOICE_B ((dmrgo_transport_hytera_slot_type_t)34952)
+sym #define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_VOICE_C ((dmrgo_transport_hytera_slot_type_t)39321)
+sym #define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_VOICE_D ((dmrgo_transport_hytera_slot_type_t)43690)
+sym #define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_VOICE_E ((dmrgo_transport_hytera_slot_type_t)48059)
+sym #define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_VOICE_F ((dmrgo_transport_hytera_slot_type_t)52428)
+sym #define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_VOICE_LC_HEADER ((dmrgo_transport_hytera_slot_type_t)4369)
+sym #define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_WAKEUP ((dmrgo_transport_hytera_slot_type_t)56797)
 sym #define DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_BURST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_LOST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_TICK_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
@@ -2215,6 +2244,19 @@ sym int dmrgo_tms_sequence_high_string(dmrgo_tms_sequence_high_t *self, char *ou
 sym int dmrgo_tms_sequence_low_append_binary(dmrgo_tms_sequence_low_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_tms_sequence_low_string(dmrgo_tms_sequence_low_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_tms_type_string(dmrgo_tms_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_transport_hytera_decode_frame(const uint8_t *p, size_t p_len, dmrgo_transport_hytera_frame_t *out);
+sym int dmrgo_transport_hytera_decode_heartbeat(const uint8_t *p, size_t p_len, dmrgo_transport_hytera_heartbeat_t *out);
+sym int dmrgo_transport_hytera_decode_p2_p(const uint8_t *p, size_t p_len, dmrgo_transport_hytera_p2_p_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_transport_hytera_frame_append_binary(const dmrgo_transport_hytera_frame_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_transport_hytera_frame_has_burst(const dmrgo_transport_hytera_frame_t *self, bool *out);
+sym int dmrgo_transport_hytera_frame_hint(const dmrgo_transport_hytera_frame_t *self, dmrgo_layer2_hint_t *out);
+sym int dmrgo_transport_hytera_frame_set_kind(dmrgo_transport_hytera_frame_t *self, dmrgo_layer2_kind_t k, dmrgo_enums_voice_burst_type_t pos, dmrgo_enums_data_type_t dt);
+sym int dmrgo_transport_hytera_heartbeat_append_binary(const dmrgo_transport_hytera_heartbeat_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_transport_hytera_p2_p_append_binary(const dmrgo_transport_hytera_p2_p_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_transport_hytera_p2_p_redirect_port(const dmrgo_transport_hytera_p2_p_t *self, uint16_t *port, bool *ok);
+sym int dmrgo_transport_hytera_p2_p_service(const dmrgo_transport_hytera_p2_p_t *self, dmrgo_transport_hytera_service_t *s, bool *ok);
+sym int dmrgo_transport_hytera_service_string(dmrgo_transport_hytera_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_transport_hytera_slot_type_string(dmrgo_transport_hytera_slot_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_trunk_access_applies(dmrgo_trunk_access_t *self, uint32_t ms, bool emergency, bool *out);
 sym int dmrgo_trunk_capacity_plus_follower_burst(dmrgo_trunk_capacity_plus_follower_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const dmrgo_layer2_cach_t *cach, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_trunk_capacity_plus_follower_burst_need(dmrgo_trunk_capacity_plus_follower_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const dmrgo_layer2_cach_t *cach, size_t *items, size_t *arena);
@@ -2391,6 +2433,7 @@ sym int dmrgo_voice_transmitter_tick_need(dmrgo_voice_transmitter_t *self, int64
 sym typedef int64_t dmrgo_codec2_mode_t;
 sym typedef int64_t dmrgo_layer2_sync_source_t;
 sym typedef uint16_t dmrgo_ip_port_t;
+sym typedef uint16_t dmrgo_transport_hytera_slot_type_t;
 sym typedef uint64_t dmrgo_enums_sync_pattern_t;
 sym typedef uint8_t dmrgo_ars_event_t;
 sym typedef uint8_t dmrgo_ars_type_t;
@@ -2476,6 +2519,7 @@ sym typedef uint8_t dmrgo_pdu_udt_opcode_t;
 sym typedef uint8_t dmrgo_sms_format_t;
 sym typedef uint8_t dmrgo_tms_encoding_t;
 sym typedef uint8_t dmrgo_tms_type_t;
+sym typedef uint8_t dmrgo_transport_hytera_service_t;
 sym typedef uint8_t dmrgo_trunk_output_kind_t;
 sym typedef uint8_t dmrgo_trunk_reason_t;
 sym typedef uint8_t dmrgo_trunk_state_t;
@@ -2682,6 +2726,9 @@ type struct dmrgo_tms_header_t { bool extension; bool ack_required; bool reserve
 type struct dmrgo_tms_message_t { uint16_t length; dmrgo_tms_header_t header; uint8_t *address; size_t address_len; uint8_t capability; dmrgo_tms_sequence_low_t sequence_low; dmrgo_tms_sequence_high_t sequence_high; uint8_t *text; size_t text_len; };
 type struct dmrgo_tms_sequence_high_t { bool extension; uint8_t high; dmrgo_tms_encoding_t encoding; };
 type struct dmrgo_tms_sequence_low_t { bool extension; uint8_t reserved; uint8_t low; };
+type struct dmrgo_transport_hytera_frame_t { uint16_t port; uint16_t mark; uint8_t seq; uint8_t packet_type; dmrgo_enums_slot_t slot; dmrgo_transport_hytera_slot_type_t slot_type; dmrgo_enums_color_code_t color_code; uint16_t frame_type; dmrgo_layer2_raw_burst_t burst; uint8_t pad; uint8_t call_type; uint32_t destination; uint32_t source; uint8_t reserved[17]; };
+type struct dmrgo_transport_hytera_heartbeat_t { bool keepalive; uint8_t code; uint8_t seq; uint8_t status[3]; uint8_t reserved[11]; };
+type struct dmrgo_transport_hytera_p2_p_t { uint8_t op; uint8_t code; uint8_t seq; uint8_t status[3]; uint8_t reserved[11]; uint8_t *body; size_t body_len; };
 type struct dmrgo_trunk_access_t { uint8_t mask; uint32_t address; dmrgo_enums_service_function_t function; dmrgo_enums_n_rand_wait_t n_rand_wait; dmrgo_enums_backoff_t backoff; };
 type struct dmrgo_trunk_capacity_plus_config_t { dmrgo_trunk_channel_plan_t *plan; uint32_t talkgroups[32]; int64_t talkgroups_len; bool individual; bool no_follow; int64_t no_signal; int64_t inactive; int64_t hangtime; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_trunk_channel_rule_t { uint16_t first; uint16_t last; uint64_t rx_hz; uint64_t step_hz; int64_t tx_offset_hz; };
