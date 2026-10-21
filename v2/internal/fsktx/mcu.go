@@ -334,22 +334,74 @@ func (m *MCUAudio) shaped2(dst []int16, n int, s int8) int {
 		}
 	}
 	if t != nil && !m.c24 && n == len(mcuCorr[0]) {
-		d := (*[len(mcuCorr[0])]int16)(dst)
-		for p := range d {
-			v := (buf[p]+int32(t[p]))*sc + e2>>1 + half
-			e1, e2 = v&(1<<sh-1)-half+1, e1
-			d[p] = int16(v>>sh + off)
-		}
+		d := (*[10]int16)(dst)
+		var v int32
+		v = (buf[0]+int32(t[0]))*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[0] = int16(v>>sh + off)
+		v = (buf[1]+int32(t[1]))*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[1] = int16(v>>sh + off)
+		v = (buf[2]+int32(t[2]))*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[2] = int16(v>>sh + off)
+		v = (buf[3]+int32(t[3]))*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[3] = int16(v>>sh + off)
+		v = (buf[4]+int32(t[4]))*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[4] = int16(v>>sh + off)
+		v = (buf[5]+int32(t[5]))*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[5] = int16(v>>sh + off)
+		v = (buf[6]+int32(t[6]))*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[6] = int16(v>>sh + off)
+		v = (buf[7]+int32(t[7]))*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[7] = int16(v>>sh + off)
+		v = (buf[8]+int32(t[8]))*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[8] = int16(v>>sh + off)
+		v = (buf[9]+int32(t[9]))*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[9] = int16(v>>sh + off)
 		m.rerr, m.rerr2 = e1, e2
 		return n
 	}
 	if t == nil && n == len(mcuCorr[0]) {
-		d := (*[len(mcuCorr[0])]int16)(dst)
-		for p := range d {
-			v := buf[p]*sc + e2>>1 + half
-			e1, e2 = v&(1<<sh-1)-half+1, e1
-			d[p] = int16(v>>sh + off)
-		}
+		d := (*[10]int16)(dst)
+		var v int32
+		v = buf[0]*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[0] = int16(v>>sh + off)
+		v = buf[1]*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[1] = int16(v>>sh + off)
+		v = buf[2]*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[2] = int16(v>>sh + off)
+		v = buf[3]*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[3] = int16(v>>sh + off)
+		v = buf[4]*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[4] = int16(v>>sh + off)
+		v = buf[5]*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[5] = int16(v>>sh + off)
+		v = buf[6]*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[6] = int16(v>>sh + off)
+		v = buf[7]*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[7] = int16(v>>sh + off)
+		v = buf[8]*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[8] = int16(v>>sh + off)
+		v = buf[9]*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		d[9] = int16(v>>sh + off)
 		m.rerr, m.rerr2 = e1, e2
 		return n
 	}
