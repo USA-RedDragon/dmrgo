@@ -15,6 +15,7 @@ const (
 	leanChase      = 4
 	leanSmallHard  = false
 	leanBPTCGather = false
+	leanR34Pair    = false
 	leanBPTCBits   = 196
 	leanBPTCHalf   = leanBPTCBits / 2
 	leanNibbles    = softSmallMaxN / 4
@@ -371,8 +372,14 @@ func (r *leanCore) fixRate34(f *leanFEC, out *layer2.RawBurst) {
 	var bc [16]int32
 	for k := range softTrellisSteps {
 		var l [4]int16
-		for b, j := range &tr.step[k] {
-			l[b] = r.llrAt(int(tr.pos[j]))
+		if leanR34Pair {
+			at := r.base + cachSymbols
+			l[0], l[1] = r.symLLR(at + int64(tr.pos[tr.step[k][0]]>>1))
+			l[2], l[3] = r.symLLR(at + int64(tr.pos[tr.step[k][2]]>>1))
+		} else {
+			for b, j := range &tr.step[k] {
+				l[b] = r.llrAt(int(tr.pos[j]))
+			}
 		}
 		for lab := 1; lab < 16; lab++ {
 			bc[lab] = bc[lab&(lab-1)] + int32(l[3-bits.TrailingZeros(uint(lab))])
