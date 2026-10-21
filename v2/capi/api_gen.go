@@ -37553,6 +37553,210 @@ func dmrgo_ipsc_session_master_free(c_self *C.dmrgo_ipsc_session_master_t) (rc C
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ipsc_session_master_adopt_need
+func dmrgo_ipsc_session_master_adopt_need(c_self *C.dmrgo_ipsc_session_master_t, c_now C.dmrgo_duration_t, c_from *C.dmrgo_ipsc_session_addr_t, c_id C.uint32_t, c_mode C.dmrgo_ipsc_mode_t, c_flags *C.dmrgo_ipsc_flags_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_transport_ipsc_session_Master(c_self)
+	if c_from == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_flags == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(h.v.MaxOutputs())))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16))
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_session_master_adopt
+func dmrgo_ipsc_session_master_adopt(c_self *C.dmrgo_ipsc_session_master_t, c_now C.dmrgo_duration_t, c_from *C.dmrgo_ipsc_session_addr_t, c_id C.uint32_t, c_mode C.dmrgo_ipsc_mode_t, c_flags *C.dmrgo_ipsc_flags_t, c_dst *C.dmrgo_ipsc_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	h := get_transport_ipsc_session_Master(c_self)
+	if c_from == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_flags == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(h.v.MaxOutputs()))
+	need_arena := max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16)
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		if c_arena_need != nil {
+			*c_arena_need = C.size_t(oc.need + need_arena)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if int(c_arena_cap)-oc.need < need_arena {
+		if c_arena_need != nil {
+			*c_arena_need = C.size_t(oc.need + need_arena)
+		}
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Adopt(time.Duration(c_now), *(*g_transport_ipsc_session.Addr)(unsafe.Pointer(c_from)), uint32(c_id), g_transport_ipsc.Mode(c_mode), *(*g_transport_ipsc.Flags)(unsafe.Pointer(c_flags)), a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_ipsc_session_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_transport_ipsc_session_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_session_master_adopt_with_key_need
+func dmrgo_ipsc_session_master_adopt_with_key_need(c_self *C.dmrgo_ipsc_session_master_t, c_now C.dmrgo_duration_t, c_from *C.dmrgo_ipsc_session_addr_t, c_id C.uint32_t, c_mode C.dmrgo_ipsc_mode_t, c_flags *C.dmrgo_ipsc_flags_t, c_key *C.uint8_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_transport_ipsc_session_Master(c_self)
+	if c_from == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_flags == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_key == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(h.v.MaxOutputs())))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16))
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_session_master_adopt_with_key
+func dmrgo_ipsc_session_master_adopt_with_key(c_self *C.dmrgo_ipsc_session_master_t, c_now C.dmrgo_duration_t, c_from *C.dmrgo_ipsc_session_addr_t, c_id C.uint32_t, c_mode C.dmrgo_ipsc_mode_t, c_flags *C.dmrgo_ipsc_flags_t, c_key *C.uint8_t, c_dst *C.dmrgo_ipsc_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	h := get_transport_ipsc_session_Master(c_self)
+	if c_from == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_flags == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_key == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(h.v.MaxOutputs()))
+	need_arena := max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16)
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		if c_arena_need != nil {
+			*c_arena_need = C.size_t(oc.need + need_arena)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if int(c_arena_cap)-oc.need < need_arena {
+		if c_arena_need != nil {
+			*c_arena_need = C.size_t(oc.need + need_arena)
+		}
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.AdoptWithKey(time.Duration(c_now), *(*g_transport_ipsc_session.Addr)(unsafe.Pointer(c_from)), uint32(c_id), g_transport_ipsc.Mode(c_mode), *(*g_transport_ipsc.Flags)(unsafe.Pointer(c_flags)), *(*[20]byte)(unsafe.Pointer(c_key)), a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_ipsc_session_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_transport_ipsc_session_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ipsc_session_master_close_need
 func dmrgo_ipsc_session_master_close_need(c_self *C.dmrgo_ipsc_session_master_t, c_p0 C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -37780,6 +37984,116 @@ func dmrgo_ipsc_session_master_packet(c_self *C.dmrgo_ipsc_session_master_t, c_n
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ipsc_session_master_packet_with_key_need
+func dmrgo_ipsc_session_master_packet_with_key_need(c_self *C.dmrgo_ipsc_session_master_t, c_now C.dmrgo_duration_t, c_from *C.dmrgo_ipsc_session_addr_t, c_key *C.uint8_t, c_p *C.uint8_t, c_p_len C.size_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_transport_ipsc_session_Master(c_self)
+	if c_from == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_key == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	_ = h
+	_ = a_p
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(h.v.MaxOutputs())))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16))
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_session_master_packet_with_key
+func dmrgo_ipsc_session_master_packet_with_key(c_self *C.dmrgo_ipsc_session_master_t, c_now C.dmrgo_duration_t, c_from *C.dmrgo_ipsc_session_addr_t, c_key *C.uint8_t, c_p *C.uint8_t, c_p_len C.size_t, c_dst *C.dmrgo_ipsc_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	h := get_transport_ipsc_session_Master(c_self)
+	if c_from == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_key == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(h.v.MaxOutputs()))
+	need_arena := max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16)
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		if c_arena_need != nil {
+			*c_arena_need = C.size_t(oc.need + need_arena)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if int(c_arena_cap)-oc.need < need_arena {
+		if c_arena_need != nil {
+			*c_arena_need = C.size_t(oc.need + need_arena)
+		}
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.PacketWithKey(time.Duration(c_now), *(*g_transport_ipsc_session.Addr)(unsafe.Pointer(c_from)), *(*[20]byte)(unsafe.Pointer(c_key)), a_p, a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_ipsc_session_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_transport_ipsc_session_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ipsc_session_master_peer_at
 func dmrgo_ipsc_session_master_peer_at(c_self *C.dmrgo_ipsc_session_master_t, c_i C.int64_t, c_out *C.dmrgo_ipsc_session_peer_info_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -37859,6 +38173,53 @@ func dmrgo_ipsc_session_master_sign(c_self *C.dmrgo_ipsc_session_master_t, c_dst
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	r0 := h.v.Sign(a_dst)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_session_master_sign_for_need
+func dmrgo_ipsc_session_master_sign_for_need(c_self *C.dmrgo_ipsc_session_master_t, c_id C.uint32_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_transport_ipsc_session_Master(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_transport_ipsc_auth.TrailerLen)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_session_master_sign_for
+func dmrgo_ipsc_session_master_sign_for(c_self *C.dmrgo_ipsc_session_master_t, c_id C.uint32_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_transport_ipsc_session_Master(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	need_items := max(0, int(g_transport_ipsc_auth.TrailerLen))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.SignFor(uint32(c_id), a_dst)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {

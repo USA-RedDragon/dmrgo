@@ -126,11 +126,18 @@ func (m *Master) PeerAt(i int) PeerInfo {
 // when the config has Auth, and returns dst as it is without. It
 // allocates only when dst has no room for auth.TrailerLen more octets.
 func (m *Master) Sign(dst []byte) []byte {
-	if m == nil {
-		return dst
-	}
+	return m.l.sign(dst, nil)
+}
 
-	return m.l.sign(dst)
+// SignFor appends the authentication trailer of the packet in dst for the
+// registered peer id to dst: with the key of the peer when it registered
+// through PacketWithKey or AdoptWithKey, and else as Sign does. It
+// allocates only when dst has no room for auth.TrailerLen more octets.
+func (m *Master) SignFor(id uint32, dst []byte) []byte {
+	if i := m.l.find(id); i >= 0 {
+		return m.l.sign(dst, m.l.peers[i].keyOf())
+	}
+	return m.l.sign(dst, nil)
 }
 
 // Reset forgets every peer without a packet and runs the Master again
@@ -156,11 +163,15 @@ func (m *Master) Close(_ time.Duration, dst []Output) []Output {
 	if m.stopped || m.maxPeers == 0 {
 		return dst
 	}
-	p := m.l.appendControl(m.tx[:0], ipsc.Control{Opcode: ipsc.OpDeregisterRequest, ID: m.l.id})
+	p := m.l.appendControl(m.tx[:0], ipsc.Control{Opcode: ipsc.OpDeregisterRequest, ID: m.l.id}, nil)
 	for i := range m.l.n {
-		e := &m.l.peers[i].info
-		dst = send(dst, p, e.Addr)
-		dst = append(dst, Output{Kind: OutputDown, ID: e.ID, Addr: e.Addr, Reason: ReasonStopped})
+		e := &m.l.peers[i]
+		if e.keyed {
+			dst = send(dst, e.bye[:], e.info.Addr)
+		} else {
+			dst = send(dst, p, e.info.Addr)
+		}
+		dst = append(dst, Output{Kind: OutputDown, ID: e.info.ID, Addr: e.info.Addr, Reason: ReasonStopped})
 	}
 	m.l.n = 0
 	m.stopped = true
@@ -205,8 +216,8 @@ func (m *Master) Tick(now time.Duration, dst []Output) []Output {
 			continue
 		}
 		dst = append(dst, Output{Kind: OutputDown, ID: e.info.ID, Addr: e.info.Addr, Reason: ReasonTimeout})
+		dropped = dropped || !e.keyed
 		m.l.remove(i)
-		dropped = true
 	}
 	if dropped {
 		dst = m.listToAll(dst)
@@ -217,7 +228,9 @@ func (m *Master) Tick(now time.Duration, dst []Output) []Output {
 func (m *Master) listToAll(dst []Output) []Output {
 	p := m.l.appendPeerList(m.tx[:0])
 	for i := range m.l.n {
-		dst = send(dst, p, m.l.peers[i].info.Addr)
+		if !m.l.peers[i].keyed {
+			dst = send(dst, p, m.l.peers[i].info.Addr)
+		}
 	}
 	return dst
 }
@@ -236,17 +249,30 @@ func (m *Master) listToAll(dst []Output) []Output {
 // restarts its Timeout. A reply or status packet needs no answer. Any
 // other packet that the Master does not take gives OutputDropped, with
 // ReasonAuth, ReasonMalformed, ReasonUnregistered, ReasonFull or
-// ReasonAddress. It allocates only when dst has no room for MaxOutputs
-// outputs.
+// ReasonAddress. A packet of a peer that registered with its own key
+// gives ReasonAuth here; pass it to PacketWithKey. It allocates only when
+// dst has no room for MaxOutputs outputs.
 func (m *Master) Packet(now time.Duration, from Addr, p []byte, dst []Output) []Output {
-	if m == nil {
-		return dst
-	}
+	return m.packet(now, from, p, nil, dst)
+}
 
+// PacketWithKey takes the packet p from the address from as Packet does,
+// but checks its trailer with key, the own key of the sending peer, which
+// the caller looks up by the peer ID in octets 1 to 4 of p. A peer that
+// registers this way keeps its key: the Master signs what it sends to the
+// peer with it, and the peer is in a system of its own, so its peer list
+// holds only itself and the lists of the other peers leave it out. This
+// lets one Master serve many repeaters with keys of their own. It
+// allocates only when dst has no room for MaxOutputs outputs.
+func (m *Master) PacketWithKey(now time.Duration, from Addr, key [20]byte, p []byte, dst []Output) []Output {
+	return m.packet(now, from, p, &key, dst)
+}
+
+func (m *Master) packet(now time.Duration, from Addr, p []byte, key *[20]byte, dst []Output) []Output {
 	if m.stopped || m.maxPeers == 0 {
 		return dst
 	}
-	body, why := m.l.open(p)
+	body, why := m.l.openWith(p, key)
 	if why != ReasonNone {
 		return dropped(dst, from, 0, why)
 	}
@@ -255,6 +281,9 @@ func (m *Master) Packet(now time.Duration, from Addr, p []byte, dst []Output) []
 		return dropped(dst, from, 0, ReasonMalformed)
 	}
 	i := m.l.find(raw.ID)
+	if i >= 0 && key == nil && m.l.peers[i].keyed {
+		return dropped(dst, from, raw.ID, ReasonAuth)
+	}
 	switch raw.Opcode {
 	case ipsc.OpRegisterRequest, ipsc.OpAliveRequest:
 		c, err := ipsc.DecodeControl(body)
@@ -262,12 +291,12 @@ func (m *Master) Packet(now time.Duration, from Addr, p []byte, dst []Output) []
 			return dropped(dst, from, raw.ID, ReasonMalformed)
 		}
 		if raw.Opcode == ipsc.OpRegisterRequest {
-			return m.register(now, from, &c, i, dst, ipsc.OpRegisterReply)
+			return m.register(now, from, &c, i, key, dst, ipsc.OpRegisterReply)
 		}
-		if i < 0 && m.l.key == nil {
+		if i < 0 && m.l.key == nil && key == nil {
 			return dropped(dst, from, raw.ID, ReasonUnregistered)
 		}
-		return m.register(now, from, &c, i, dst, ipsc.OpAliveReply)
+		return m.register(now, from, &c, i, key, dst, ipsc.OpAliveReply)
 	case ipsc.OpRegisterReply, ipsc.OpPeerListReply, ipsc.OpAliveReply, ipsc.OpDeregisterReply, ipsc.OpStatus:
 		if i >= 0 {
 			m.l.peers[i].last = now
@@ -291,18 +320,24 @@ func (m *Master) registered(now time.Duration, from Addr, i int, raw *ipsc.Raw, 
 	}
 	switch raw.Opcode {
 	case ipsc.OpPeerListRequest:
+		if e.keyed {
+			return send(dst, m.l.appendOwnList(m.tx[:0], i), from)
+		}
 		dst = m.listToAll(dst)
 	case ipsc.OpDeregisterRequest:
 		if e.info.Addr != from {
 			return dropped(dst, from, raw.ID, ReasonAddress)
 		}
 		dst = append(dst, Output{Kind: OutputDown, ID: e.info.ID, Addr: from, Reason: ReasonClosed})
+		keyed := e.keyed
 		m.l.remove(i)
-		dst = m.listToAll(dst)
+		if !keyed {
+			dst = m.listToAll(dst)
+		}
 	case ipsc.OpPeerRegisterRequest:
-		dst = send(dst, m.l.appendControl(m.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerRegisterReply, ID: m.l.id, Version: m.l.version}), from)
+		dst = send(dst, m.l.appendControl(m.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerRegisterReply, ID: m.l.id, Version: m.l.version}, e.keyOf()), from)
 	case ipsc.OpPeerAliveRequest:
-		dst = send(dst, m.l.appendControl(m.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerAliveReply, ID: m.l.id, Mode: m.l.mode, Flags: m.l.flags}), from)
+		dst = send(dst, m.l.appendControl(m.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerAliveReply, ID: m.l.id, Mode: m.l.mode, Flags: m.l.flags}, e.keyOf()), from)
 	case ipsc.OpPeerRegisterReply, ipsc.OpPeerAliveReply:
 	default:
 		dst = append(dst, Output{Kind: OutputData, Packet: body, Addr: from, ID: raw.ID})
@@ -310,21 +345,68 @@ func (m *Master) registered(now time.Duration, from Addr, i int, raw *ipsc.Raw, 
 	return dst
 }
 
-func (m *Master) register(now time.Duration, from Addr, c *ipsc.Control, i int, dst []Output, op ipsc.Opcode) []Output {
+// Adopt registers the peer id at from with mode and flags without a
+// registration request and without a reply, for a peer that registered
+// with another Master, such as one of another replica of a server, and
+// now sends its packets here. It reports OutputUp for a new peer,
+// restarts the Timeout of a registered one, and gives OutputDropped with
+// ReasonFull when MaxPeers leaves no room. It allocates only when dst has
+// no room for MaxOutputs outputs.
+func (m *Master) Adopt(now time.Duration, from Addr, id uint32, mode ipsc.Mode, flags ipsc.Flags, dst []Output) []Output {
+	return m.adopt(now, from, id, mode, flags, nil, dst)
+}
+
+// AdoptWithKey adopts the peer id as Adopt does, with key, its own key, as
+// PacketWithKey registers a peer. It allocates only when dst has no room
+// for MaxOutputs outputs.
+func (m *Master) AdoptWithKey(now time.Duration, from Addr, id uint32, mode ipsc.Mode, flags ipsc.Flags, key [20]byte, dst []Output) []Output {
+	return m.adopt(now, from, id, mode, flags, &key, dst)
+}
+
+func (m *Master) adopt(now time.Duration, from Addr, id uint32, mode ipsc.Mode, flags ipsc.Flags, key *[20]byte, dst []Output) []Output {
+	if m.stopped || m.maxPeers == 0 {
+		return dst
+	}
+	i, isNew := m.l.find(id), false
+	if i < 0 {
+		if i = m.l.add(); i < 0 {
+			return dropped(dst, from, id, ReasonFull)
+		}
+		isNew = true
+	}
+	dst = m.keep(dst, now, i, PeerInfo{ID: id, Addr: from, Mode: mode, Flags: flags, Up: true}, key)
+	if isNew {
+		dst = append(dst, Output{Kind: OutputUp, ID: id, Addr: from})
+	}
+	return dst
+}
+
+func (m *Master) keep(dst []Output, now time.Duration, i int, info PeerInfo, key *[20]byte) []Output {
+	e := &m.l.peers[i]
+	e.info, e.last, e.keyed = info, now, key != nil
+	if key != nil {
+		e.key = *key
+		copy(e.bye[:], m.l.appendControl(m.tx[:0], ipsc.Control{Opcode: ipsc.OpDeregisterRequest, ID: m.l.id}, key))
+	}
+	return dst
+}
+
+func (m *Master) register(now time.Duration, from Addr, c *ipsc.Control, i int, key *[20]byte, dst []Output, op ipsc.Opcode) []Output {
 	isNew := i < 0
 	if isNew {
 		if i = m.l.add(); i < 0 {
 			return dropped(dst, from, c.ID, ReasonFull)
 		}
 	}
-	e := &m.l.peers[i]
-	e.info = PeerInfo{ID: c.ID, Addr: from, Mode: c.Mode, Flags: c.Flags, Up: true}
-	e.last = now
+	dst = m.keep(dst, now, i, PeerInfo{ID: c.ID, Addr: from, Mode: c.Mode, Flags: c.Flags, Up: true}, key)
 	r := ipsc.Control{Opcode: op, ID: m.l.id, Mode: m.l.mode, Flags: m.l.flags, Version: m.l.version}
 	if op == ipsc.OpRegisterReply {
-		r.Peers = uint16(m.l.n & 0xFFFF)
+		r.Peers = uint16(m.l.shared() & 0xFFFF)
+		if key != nil {
+			r.Peers = 1
+		}
 	}
-	dst = send(dst, m.l.appendControl(m.tx[:0], r), from)
+	dst = send(dst, m.l.appendControl(m.tx[:0], r, key), from)
 	if isNew {
 		dst = append(dst, Output{Kind: OutputUp, ID: c.ID, Addr: from})
 	}

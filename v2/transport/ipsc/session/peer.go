@@ -158,11 +158,7 @@ func (p *Peer) PeerAt(i int) PeerInfo {
 // when the config has Auth, and returns dst as it is without. It
 // allocates only when dst has no room for auth.TrailerLen more octets.
 func (p *Peer) Sign(dst []byte) []byte {
-	if p == nil {
-		return dst
-	}
-
-	return p.l.sign(dst)
+	return p.l.sign(dst, nil)
 }
 
 // Reset forgets the master and the peers without a packet, so the next
@@ -188,7 +184,7 @@ func (p *Peer) Close(_ time.Duration, dst []Output) []Output {
 	if p.state == StateIdle {
 		return dst
 	}
-	pk := p.l.appendControl(p.tx[:0], ipsc.Control{Opcode: ipsc.OpDeregisterRequest, ID: p.l.id})
+	pk := p.l.appendControl(p.tx[:0], ipsc.Control{Opcode: ipsc.OpDeregisterRequest, ID: p.l.id}, nil)
 	if p.state == StateRunning {
 		dst = send(dst, pk, p.master)
 		dst = append(dst, Output{Kind: OutputDown, ID: p.masterID, Addr: p.master, Reason: ReasonStopped})
@@ -242,11 +238,11 @@ func (p *Peer) Tick(now time.Duration, dst []Output) []Output {
 	if p.state == StateRegistering {
 		op = ipsc.OpRegisterRequest
 	}
-	dst = send(dst, p.l.appendControl(p.tx[:0], ipsc.Control{Opcode: op, ID: p.l.id, Mode: p.l.mode, Flags: p.l.flags, Version: p.l.version}), p.master)
+	dst = send(dst, p.l.appendControl(p.tx[:0], ipsc.Control{Opcode: op, ID: p.l.id, Mode: p.l.mode, Flags: p.l.flags, Version: p.l.version}, nil), p.master)
 	if p.state == StateRunning {
 		p.outstanding++
 		if !p.haveList {
-			dst = send(dst, p.l.appendControl(p.txList[:0], ipsc.Control{Opcode: ipsc.OpPeerListRequest, ID: p.l.id}), p.master)
+			dst = send(dst, p.l.appendControl(p.txList[:0], ipsc.Control{Opcode: ipsc.OpPeerListRequest, ID: p.l.id}, nil), p.master)
 		}
 	}
 	var reg, alive []byte
@@ -258,13 +254,13 @@ func (p *Peer) Tick(now time.Duration, dst []Output) []Output {
 		}
 		if !e.info.Up {
 			if reg == nil {
-				reg = p.l.appendControl(p.txReg[:0], ipsc.Control{Opcode: ipsc.OpPeerRegisterRequest, ID: p.l.id, Version: p.l.version})
+				reg = p.l.appendControl(p.txReg[:0], ipsc.Control{Opcode: ipsc.OpPeerRegisterRequest, ID: p.l.id, Version: p.l.version}, nil)
 			}
 			dst = send(dst, reg, e.info.Addr)
 			continue
 		}
 		if alive == nil {
-			alive = p.l.appendControl(p.txAlive[:0], ipsc.Control{Opcode: ipsc.OpPeerAliveRequest, ID: p.l.id, Mode: p.l.mode, Flags: p.l.flags})
+			alive = p.l.appendControl(p.txAlive[:0], ipsc.Control{Opcode: ipsc.OpPeerAliveRequest, ID: p.l.id, Mode: p.l.mode, Flags: p.l.flags}, nil)
 		}
 		dst = send(dst, alive, e.info.Addr)
 		e.outstanding++
@@ -402,9 +398,9 @@ func (p *Peer) answer(op ipsc.Opcode, body []byte, from Addr, dst []Output) []Ou
 		return dst
 	}
 	if op == ipsc.OpPeerRegisterRequest {
-		return send(dst, p.l.appendControl(p.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerRegisterReply, ID: p.l.id, Version: p.l.version}), from)
+		return send(dst, p.l.appendControl(p.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerRegisterReply, ID: p.l.id, Version: p.l.version}, nil), from)
 	}
-	return send(dst, p.l.appendControl(p.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerAliveReply, ID: p.l.id, Mode: p.l.mode, Flags: p.l.flags}), from)
+	return send(dst, p.l.appendControl(p.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerAliveReply, ID: p.l.id, Mode: p.l.mode, Flags: p.l.flags}, nil), from)
 }
 
 func (p *Peer) peerList(body []byte, dst []Output) []Output {

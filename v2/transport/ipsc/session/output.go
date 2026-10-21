@@ -4,6 +4,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2/internal/digest"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
 )
@@ -223,6 +224,16 @@ type entry struct {
 	info        PeerInfo
 	last        time.Duration
 	outstanding int
+	keyed       bool
+	key         [20]byte
+	bye         [5 + auth.TrailerLen]byte
+}
+
+func (e *entry) keyOf() *[20]byte {
+	if !e.keyed {
+		return nil
+	}
+	return &e.key
 }
 
 type noCopy struct{}
@@ -240,6 +251,7 @@ type link struct {
 	peers   []entry
 	n       int
 	list    []ipsc.PeerEntry
+	mac     digest.HMACSHA1
 }
 
 func newLink(id uint32, mode ipsc.Mode, flags ipsc.Flags, version [4]byte, useAuth bool, key [20]byte, maxPeers int) link {
@@ -279,11 +291,43 @@ func (l *link) open(p []byte) ([]byte, Reason) {
 	return body, ReasonNone
 }
 
+func (l *link) openWith(p []byte, key *[20]byte) ([]byte, Reason) {
+	if key == nil {
+		return l.open(p)
+	}
+	if len(p) > MaxPacket {
+		return nil, ReasonMalformed
+	}
+	if len(p) < auth.TrailerLen {
+		return nil, ReasonAuth
+	}
+	body := p[:len(p)-auth.TrailerLen]
+	t := l.trailer(body, key)
+	if !digest.Equal(t[:auth.TrailerLen], p[len(body):]) {
+		return nil, ReasonAuth
+	}
+	if len(body) == 0 {
+		return nil, ReasonMalformed
+	}
+	return body, ReasonNone
+}
+
+func (l *link) trailer(p []byte, key *[20]byte) [20]byte {
+	l.mac.Init(key[:])
+	l.mac.Reset()
+	l.mac.Write(p)
+	return l.mac.Sum()
+}
+
 func dropped(dst []Output, from Addr, id uint32, r Reason) []Output {
 	return append(dst, Output{Kind: OutputDropped, Addr: from, ID: id, Reason: r})
 }
 
-func (l *link) sign(dst []byte) []byte {
+func (l *link) sign(dst []byte, key *[20]byte) []byte {
+	if key != nil {
+		t := l.trailer(dst, key)
+		return append(dst, t[:auth.TrailerLen]...)
+	}
 	if l.key == nil {
 		return dst
 	}
@@ -291,20 +335,41 @@ func (l *link) sign(dst []byte) []byte {
 	return out
 }
 
-func (l *link) appendControl(dst []byte, c ipsc.Control) []byte {
+func (l *link) appendControl(dst []byte, c ipsc.Control, key *[20]byte) []byte {
 	b, err := c.AppendBinary(dst)
 	if err != nil {
 		return dst
 	}
-	return l.sign(b)
+	return l.sign(b, key)
 }
 
 func (l *link) appendPeerList(dst []byte) []byte {
+	k := 0
 	for i := range l.n {
-		e := &l.peers[i].info
-		l.list[i] = ipsc.PeerEntry{ID: e.ID, IP: e.Addr.IP, Port: e.Addr.Port, Mode: e.Mode}
+		e := &l.peers[i]
+		if e.keyed {
+			continue
+		}
+		l.list[k] = ipsc.PeerEntry{ID: e.info.ID, IP: e.info.Addr.IP, Port: e.info.Addr.Port, Mode: e.info.Mode}
+		k++
 	}
-	return l.sign(ipsc.AppendPeerListReply(dst, l.id, l.list[:l.n]))
+	return l.sign(ipsc.AppendPeerListReply(dst, l.id, l.list[:k]), nil)
+}
+
+func (l *link) appendOwnList(dst []byte, i int) []byte {
+	e := &l.peers[i]
+	l.list[0] = ipsc.PeerEntry{ID: e.info.ID, IP: e.info.Addr.IP, Port: e.info.Addr.Port, Mode: e.info.Mode}
+	return l.sign(ipsc.AppendPeerListReply(dst, l.id, l.list[:1]), e.keyOf())
+}
+
+func (l *link) shared() int {
+	k := 0
+	for i := range l.n {
+		if !l.peers[i].keyed {
+			k++
+		}
+	}
+	return k
 }
 
 func (l *link) find(id uint32) int {

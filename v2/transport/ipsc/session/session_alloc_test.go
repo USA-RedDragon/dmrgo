@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/session"
 )
 
@@ -14,6 +15,7 @@ func TestAllocsSession(t *testing.T) {
 	b, _ := session.NewPeer(&session.PeerConfig{ID: 3, Master: masterAddr, Auth: true, Key: key})
 	aAddr := session.Addr{IP: [4]byte{10, 0, 0, 2}, Port: 1}
 	bAddr := session.Addr{IP: [4]byte{10, 0, 0, 3}, Port: 1}
+	cAddr := session.Addr{IP: [4]byte{10, 0, 0, 4}, Port: 1}
 	ao := make([]session.Output, 0, a.MaxOutputs())
 	type pk struct {
 		from, to session.Addr
@@ -59,10 +61,13 @@ func TestAllocsSession(t *testing.T) {
 		}
 		voice = a.Sign(append(voice[:0], 0x80, 0, 0, 0, 2, 1))
 		ao = b.Packet(now, aAddr, voice, ao[:0])
+		ao = m.AdoptWithKey(now, cAddr, 4, 0x6a, ipsc.Flags{}, key, ao[:0])
+		ao = m.PacketWithKey(now, cAddr, key, m.SignFor(4, append(voice[:0], 0x80, 0, 0, 0, 4, 1)), ao[:0])
+		ao = m.Adopt(now, cAddr, 4, 0x6a, ipsc.Flags{}, ao[:0])
 	}
 	run()
 	run()
-	if m.Peers() != 2 || a.Peers() != 1 || !a.PeerAt(0).Up {
+	if m.Peers() != 3 || a.Peers() != 1 || !a.PeerAt(0).Up {
 		t.Fatalf("peers %d %d %+v", m.Peers(), a.Peers(), a.PeerAt(0))
 	}
 	if n := testing.AllocsPerRun(100, run); n != 0 {
