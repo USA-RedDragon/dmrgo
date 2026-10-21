@@ -447,6 +447,12 @@ typedef struct dmrgo_dmrd_position_t dmrgo_dmrd_position_t;
 typedef struct dmrgo_dmrd_talker_alias_t dmrgo_dmrd_talker_alias_t;
 /* Go: auth.Bridge. Bridge holds an OpenBridge key and the hash state that signing with it needs. */
 typedef struct dmrgo_dmrd_auth_bridge_t dmrgo_dmrd_auth_bridge_t;
+/* Go: hytera.Frame. Frame is a packet of the DMR service: one burst with its slot, slot type and call fields. */
+typedef struct dmrgo_transport_hytera_frame_t dmrgo_transport_hytera_frame_t;
+/* Go: hytera.Heartbeat. Heartbeat is the 20-octet "ZZZZ" heartbeat of the P2P service, or the 1-octet keepalive that each side sends on the DMR and RDAC services. */
+typedef struct dmrgo_transport_hytera_heartbeat_t dmrgo_transport_hytera_heartbeat_t;
+/* Go: hytera.P2P. P2P is a "P2P" command of the P2P service: a repeater asks the master for registration or for the DMR or RDAC service, the master accepts it and redirects the repeater to the port of the service, and the repeater acknowledges the redirect. */
+typedef struct dmrgo_transport_hytera_p2_p_t dmrgo_transport_hytera_p2_p_t;
 /* Go: ipsc.Control. Control is a peer control packet, opcodes 0x90 to 0x9B. */
 typedef struct dmrgo_ipsc_control_t dmrgo_ipsc_control_t;
 /* Go: ipsc.Flags. Flags is the 4 flag octets of a peer. */
@@ -714,6 +720,10 @@ typedef uint8_t dmrgo_dmrd_dialect_t;
 typedef uint8_t dmrgo_dmrd_frame_type_t;
 /* Go: dmrd.OptionState. OptionState is whether a DMR+ startup option is in the options text. */
 typedef uint8_t dmrgo_dmrd_option_state_t;
+/* Go: hytera.Service. Service is octet 20 of a P2P packet: the service that the repeater asks for. */
+typedef uint8_t dmrgo_transport_hytera_service_t;
+/* Go: hytera.SlotType. SlotType is octets 18 and 19 of a DMR frame: what the burst is, as one nibble four times. */
+typedef uint16_t dmrgo_transport_hytera_slot_type_t;
 /* Go: ipsc.BurstType. BurstType is octet 30 of a user packet: the DMR data type for a data burst, BurstVoice for a voice burst, BurstRaw for the raw information bits of a burst that the repeater could not decode, and BurstSyncLost for a placeholder of a burst that it lost. */
 typedef uint8_t dmrgo_ipsc_burst_type_t;
 /* Go: ipsc.CallInfo. CallInfo is octet 17 of a user packet. */
@@ -2527,6 +2537,41 @@ struct dmrgo_dmrd_hbrp_config_t {
 	uint8_t v[306];
 };
 
+struct dmrgo_transport_hytera_frame_t {
+	uint16_t port;
+	uint16_t mark;
+	uint8_t seq;
+	uint8_t packet_type;
+	dmrgo_enums_slot_t slot;
+	dmrgo_transport_hytera_slot_type_t slot_type;
+	dmrgo_enums_color_code_t color_code;
+	uint16_t frame_type;
+	dmrgo_layer2_raw_burst_t burst;
+	uint8_t pad;
+	uint8_t call_type;
+	uint32_t destination;
+	uint32_t source;
+	uint8_t reserved[17];
+};
+
+struct dmrgo_transport_hytera_heartbeat_t {
+	bool keepalive;
+	uint8_t code;
+	uint8_t seq;
+	uint8_t status[3];
+	uint8_t reserved[11];
+};
+
+struct dmrgo_transport_hytera_p2_p_t {
+	uint8_t op;
+	uint8_t code;
+	uint8_t seq;
+	uint8_t status[3];
+	uint8_t reserved[11];
+	uint8_t *body;
+	size_t body_len;
+};
+
 struct dmrgo_ipsc_peer_entry_t {
 	uint32_t id;
 	uint8_t ip[4];
@@ -2979,9 +3024,9 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ERR_HYTERA_SHORT (-198)
 #define DMRGO_ERR_HYTERA_SIGNATURE (-199)
 #define DMRGO_ERR_HYTERA_TEXT (-200)
-#define DMRGO_ERR_IPSC_COMMAND (-206)
-#define DMRGO_ERR_IPSC_LENGTH (-207)
-#define DMRGO_ERR_IPSC_SHORT (-208)
+#define DMRGO_ERR_IPSC_COMMAND (-210)
+#define DMRGO_ERR_IPSC_LENGTH (-211)
+#define DMRGO_ERR_IPSC_SHORT (-212)
 #define DMRGO_ERR_IP_CHECKSUM (-172)
 #define DMRGO_ERR_IP_FRAGMENT (-173)
 #define DMRGO_ERR_IP_LENGTH (-174)
@@ -3033,6 +3078,10 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ERR_SMS_SIGNATURE (-195)
 #define DMRGO_ERR_TMS_LENGTH (-183)
 #define DMRGO_ERR_TMS_SHORT (-184)
+#define DMRGO_ERR_TRANSPORT_HYTERA_CODE (-206)
+#define DMRGO_ERR_TRANSPORT_HYTERA_LENGTH (-207)
+#define DMRGO_ERR_TRANSPORT_HYTERA_SHORT (-208)
+#define DMRGO_ERR_TRANSPORT_HYTERA_SIGNATURE (-209)
 #define DMRGO_ERR_TRUNK_BUSY (-134)
 #define DMRGO_ERR_TRUNK_CHANNEL_NUMBER (-135)
 #define DMRGO_ERR_TRUNK_CONFIG_ERROR (-105)
@@ -4393,6 +4442,48 @@ struct dmrgo_voice_output_t {
 #define DMRGO_DMRD_OPTION_CLEAR ((dmrgo_dmrd_option_state_t)1)
 /* Go: dmrd.OptionSet. OptionSet is an option with a value: it overrides the master. */
 #define DMRGO_DMRD_OPTION_SET ((dmrgo_dmrd_option_state_t)2)
+/* Go: hytera.FrameLen. FrameLen is the length of a DMR frame in octets. */
+#define DMRGO_TRANSPORT_HYTERA_FRAME_LEN 72
+/* Go: hytera.HeartbeatLen. HeartbeatLen is the length of the heartbeat of the P2P service in octets. */
+#define DMRGO_TRANSPORT_HYTERA_HEARTBEAT_LEN 20
+/* Go: hytera.P2PHeaderLen. P2PHeaderLen is the length of a P2P command without its body, in octets. */
+#define DMRGO_TRANSPORT_HYTERA_P2_P_HEADER_LEN 20
+/* Go: hytera.ServiceDMR. The Service values. */
+#define DMRGO_TRANSPORT_HYTERA_SERVICE_DMR ((dmrgo_transport_hytera_service_t)17)
+/* Go: hytera.ServiceRDAC. The Service values. */
+#define DMRGO_TRANSPORT_HYTERA_SERVICE_RDAC ((dmrgo_transport_hytera_service_t)18)
+/* Go: hytera.ServiceRegistration. The Service values. */
+#define DMRGO_TRANSPORT_HYTERA_SERVICE_REGISTRATION ((dmrgo_transport_hytera_service_t)16)
+/* Go: hytera.SlotTypeCSBK. The SlotType values. */
+#define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_CSBK ((dmrgo_transport_hytera_slot_type_t)13107)
+/* Go: hytera.SlotTypeDataHeader. The SlotType values. */
+#define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_DATA_HEADER ((dmrgo_transport_hytera_slot_type_t)17476)
+/* Go: hytera.SlotTypePIHeader. The SlotType values. */
+#define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_PI_HEADER ((dmrgo_transport_hytera_slot_type_t)0)
+/* Go: hytera.SlotTypeRate12. The SlotType values. */
+#define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_RATE12 ((dmrgo_transport_hytera_slot_type_t)21845)
+/* Go: hytera.SlotTypeRate34. The SlotType values. */
+#define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_RATE34 ((dmrgo_transport_hytera_slot_type_t)26214)
+/* Go: hytera.SlotTypeSync. The SlotType values. */
+#define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_SYNC ((dmrgo_transport_hytera_slot_type_t)61166)
+/* Go: hytera.SlotTypeTerminator. The SlotType values. */
+#define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_TERMINATOR ((dmrgo_transport_hytera_slot_type_t)8738)
+/* Go: hytera.SlotTypeVoiceA. The SlotType values. */
+#define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_VOICE_A ((dmrgo_transport_hytera_slot_type_t)30583)
+/* Go: hytera.SlotTypeVoiceB. The SlotType values. */
+#define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_VOICE_B ((dmrgo_transport_hytera_slot_type_t)34952)
+/* Go: hytera.SlotTypeVoiceC. The SlotType values. */
+#define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_VOICE_C ((dmrgo_transport_hytera_slot_type_t)39321)
+/* Go: hytera.SlotTypeVoiceD. The SlotType values. */
+#define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_VOICE_D ((dmrgo_transport_hytera_slot_type_t)43690)
+/* Go: hytera.SlotTypeVoiceE. The SlotType values. */
+#define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_VOICE_E ((dmrgo_transport_hytera_slot_type_t)48059)
+/* Go: hytera.SlotTypeVoiceF. The SlotType values. */
+#define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_VOICE_F ((dmrgo_transport_hytera_slot_type_t)52428)
+/* Go: hytera.SlotTypeVoiceLCHeader. The SlotType values. */
+#define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_VOICE_LC_HEADER ((dmrgo_transport_hytera_slot_type_t)4369)
+/* Go: hytera.SlotTypeWakeup. The SlotType values. */
+#define DMRGO_TRANSPORT_HYTERA_SLOT_TYPE_WAKEUP ((dmrgo_transport_hytera_slot_type_t)56797)
 /* Go: ipsc.BurstRaw. The BurstType values other than the data types 0x00 to 0x08. */
 #define DMRGO_IPSC_BURST_RAW ((dmrgo_ipsc_burst_type_t)31)
 /* Go: ipsc.BurstSyncLost. The BurstType values other than the data types 0x00 to 0x08. */
@@ -6786,6 +6877,32 @@ int dmrgo_dmrd_auth_bridge_verify(dmrgo_dmrd_auth_bridge_t *self, const uint8_t 
 int dmrgo_dmrd_auth_new_bridge(const uint8_t *key, size_t key_len, dmrgo_dmrd_auth_bridge_t **out);
 /* Go: auth.Token. Token returns the login token of an RPTK message for the salt of the master and the password: SHA-256 of the salt and the password. */
 int dmrgo_dmrd_auth_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, uint8_t out[32]);
+/* Go: hytera.DecodeFrame. DecodeFrame decodes the 72-octet DMR frame p. */
+int dmrgo_transport_hytera_decode_frame(const uint8_t *p, size_t p_len, dmrgo_transport_hytera_frame_t *out);
+/* Go: hytera.DecodeHeartbeat. DecodeHeartbeat decodes a heartbeat (20 octets) or a keepalive (1 octet). */
+int dmrgo_transport_hytera_decode_heartbeat(const uint8_t *p, size_t p_len, dmrgo_transport_hytera_heartbeat_t *out);
+/* Go: hytera.DecodeP2P. DecodeP2P decodes the P2P command p. */
+int dmrgo_transport_hytera_decode_p2_p(const uint8_t *p, size_t p_len, dmrgo_transport_hytera_p2_p_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: hytera.Frame.AppendBinary. AppendBinary appends the 72-octet frame to dst. */
+int dmrgo_transport_hytera_frame_append_binary(const dmrgo_transport_hytera_frame_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: hytera.Frame.HasBurst. HasBurst reports whether Burst holds a burst: false for SlotTypeSync and SlotTypeWakeup, whose payload is not an ETSI burst. */
+int dmrgo_transport_hytera_frame_has_burst(const dmrgo_transport_hytera_frame_t *self, bool *out);
+/* Go: hytera.Frame.Hint. Hint returns what the frame tells about its burst, for the service machines: the slot, the voice position or data type from SlotType, and the sequence number (8 bits). */
+int dmrgo_transport_hytera_frame_hint(const dmrgo_transport_hytera_frame_t *self, dmrgo_layer2_hint_t *out);
+/* Go: hytera.Frame.SetKind. SetKind sets SlotType from the layer2 view of the burst: KindVoice with pos A to F, or KindData with dt. */
+int dmrgo_transport_hytera_frame_set_kind(dmrgo_transport_hytera_frame_t *self, dmrgo_layer2_kind_t k, dmrgo_enums_voice_burst_type_t pos, dmrgo_enums_data_type_t dt);
+/* Go: hytera.Heartbeat.AppendBinary. AppendBinary appends the heartbeat, or the keepalive, to dst. */
+int dmrgo_transport_hytera_heartbeat_append_binary(const dmrgo_transport_hytera_heartbeat_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: hytera.P2P.AppendBinary. AppendBinary appends the command and its body to dst. */
+int dmrgo_transport_hytera_p2_p_append_binary(const dmrgo_transport_hytera_p2_p_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: hytera.P2P.RedirectPort. RedirectPort returns the UDP port of a redirect: a body that ends in FF 01 and the port, little-endian. */
+int dmrgo_transport_hytera_p2_p_redirect_port(const dmrgo_transport_hytera_p2_p_t *self, uint16_t *port, bool *ok);
+/* Go: hytera.P2P.Service. Service returns octet 20, the service that the command is about. */
+int dmrgo_transport_hytera_p2_p_service(const dmrgo_transport_hytera_p2_p_t *self, dmrgo_transport_hytera_service_t *s, bool *ok);
+/* Go: hytera.Service.String. String returns the name of the service. */
+int dmrgo_transport_hytera_service_string(dmrgo_transport_hytera_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: hytera.SlotType.String. String returns the name of the slot type. */
+int dmrgo_transport_hytera_slot_type_string(dmrgo_transport_hytera_slot_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ipsc.AppendPeerListReply. AppendPeerListReply appends an OpPeerListReply of master with entries to dst. */
 int dmrgo_ipsc_append_peer_list_reply(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, uint32_t master, const dmrgo_ipsc_peer_entry_t *entries, size_t entries_len);
 /* Go: ipsc.CallInfo.End. End reports bit 6, the end flag. */

@@ -42,6 +42,7 @@ import (
 	sms "github.com/USA-RedDragon/dmrgo/v2/sms"
 	transport_dmrd "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 	transport_dmrd_auth "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
+	transport_hytera "github.com/USA-RedDragon/dmrgo/v2/transport/hytera"
 	transport_ipsc "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
 	transport_ipsc_auth "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
 	trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
@@ -1047,6 +1048,19 @@ var api = [...]any{
 	(*transport_dmrd_auth.Bridge).Verify,
 	transport_dmrd_auth.NewBridge,
 	transport_dmrd_auth.Token,
+	(*transport_hytera.Frame).SetKind,
+	transport_hytera.DecodeFrame,
+	transport_hytera.DecodeHeartbeat,
+	transport_hytera.DecodeP2P,
+	transport_hytera.Frame.AppendBinary,
+	transport_hytera.Frame.HasBurst,
+	transport_hytera.Frame.Hint,
+	transport_hytera.Heartbeat.AppendBinary,
+	transport_hytera.P2P.AppendBinary,
+	transport_hytera.P2P.RedirectPort,
+	transport_hytera.P2P.Service,
+	transport_hytera.Service.String,
+	transport_hytera.SlotType.String,
 	(*transport_ipsc.Flags).Set,
 	(*transport_ipsc.Payload).RSSI,
 	(*transport_ipsc.Payload).SlotType,

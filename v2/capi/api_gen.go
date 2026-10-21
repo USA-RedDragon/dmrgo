@@ -37,6 +37,7 @@ import (
 	g_sms "github.com/USA-RedDragon/dmrgo/v2/sms"
 	g_transport_dmrd "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 	g_transport_dmrd_auth "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
+	g_transport_hytera "github.com/USA-RedDragon/dmrgo/v2/transport/hytera"
 	g_transport_ipsc "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
 	g_transport_ipsc_auth "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
 	g_trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
@@ -3712,6 +3713,45 @@ func out_transport_dmrd_Control(d *C.dmrgo_dmrd_control_t, s *g_transport_dmrd.C
 	d.text_len = C.size_t(len(s.Text))
 }
 
+func out_transport_hytera_Heartbeat(d *C.dmrgo_transport_hytera_heartbeat_t, s *g_transport_hytera.Heartbeat, oc *outc) {
+	_ = oc
+	d.keepalive = C.bool(s.Keepalive)
+	d.code = C.uint8_t(s.Code)
+	d.seq = C.uint8_t(s.Seq)
+	*(*[3]byte)(unsafe.Pointer(&d.status)) = s.Status
+	*(*[11]byte)(unsafe.Pointer(&d.reserved)) = s.Reserved
+}
+
+func out_transport_hytera_P2P(d *C.dmrgo_transport_hytera_p2_p_t, s *g_transport_hytera.P2P, oc *outc) {
+	_ = oc
+	d.op = C.uint8_t(s.Op)
+	d.code = C.uint8_t(s.Code)
+	d.seq = C.uint8_t(s.Seq)
+	*(*[3]byte)(unsafe.Pointer(&d.status)) = s.Status
+	*(*[11]byte)(unsafe.Pointer(&d.reserved)) = s.Reserved
+	d.body = (*C.uint8_t)(arenaCopy(oc, s.Body))
+	d.body_len = C.size_t(len(s.Body))
+}
+
+func in_transport_hytera_Heartbeat(s *C.dmrgo_transport_hytera_heartbeat_t) (d g_transport_hytera.Heartbeat) {
+	d.Keepalive = bool(s.keepalive)
+	d.Code = uint8(s.code)
+	d.Seq = uint8(s.seq)
+	d.Status = *(*[3]byte)(unsafe.Pointer(&s.status))
+	d.Reserved = *(*[11]byte)(unsafe.Pointer(&s.reserved))
+	return
+}
+
+func in_transport_hytera_P2P(s *C.dmrgo_transport_hytera_p2_p_t) (d g_transport_hytera.P2P) {
+	d.Op = uint8(s.op)
+	d.Code = uint8(s.code)
+	d.Seq = uint8(s.seq)
+	d.Status = *(*[3]byte)(unsafe.Pointer(&s.status))
+	d.Reserved = *(*[11]byte)(unsafe.Pointer(&s.reserved))
+	d.Body = unsafe.Slice((*byte)(unsafe.Pointer(s.body)), int(s.body_len))
+	return
+}
+
 func out_transport_ipsc_Raw(d *C.dmrgo_ipsc_raw_t, s *g_transport_ipsc.Raw, oc *outc) {
 	_ = oc
 	d.opcode = C.dmrgo_ipsc_opcode_t(s.Opcode)
@@ -6311,6 +6351,54 @@ func out_transport_dmrd_TalkerAlias(d *C.dmrgo_dmrd_talker_alias_t, s *g_transpo
 
 func fromC_transport_dmrd_TalkerAlias(s *C.dmrgo_dmrd_talker_alias_t) g_transport_dmrd.TalkerAlias {
 	return in_transport_dmrd_TalkerAlias(s)
+}
+
+func in_transport_hytera_Frame(s *C.dmrgo_transport_hytera_frame_t) (d g_transport_hytera.Frame) {
+	d.Port = uint16(s.port)
+	d.Mark = uint16(s.mark)
+	d.Seq = uint8(s.seq)
+	d.PacketType = uint8(s.packet_type)
+	d.Slot = g_enums.Slot(s.slot)
+	d.SlotType = g_transport_hytera.SlotType(s.slot_type)
+	d.ColorCode = g_enums.ColorCode(s.color_code)
+	d.FrameType = uint16(s.frame_type)
+	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	d.Pad = uint8(s.pad)
+	d.CallType = uint8(s.call_type)
+	d.Destination = uint32(s.destination)
+	d.Source = uint32(s.source)
+	d.Reserved = *(*[17]byte)(unsafe.Pointer(&s.reserved))
+	return
+}
+
+func out_transport_hytera_Frame(d *C.dmrgo_transport_hytera_frame_t, s *g_transport_hytera.Frame, oc *outc) {
+	_ = oc
+	d.port = C.uint16_t(s.Port)
+	d.mark = C.uint16_t(s.Mark)
+	d.seq = C.uint8_t(s.Seq)
+	d.packet_type = C.uint8_t(s.PacketType)
+	d.slot = C.dmrgo_enums_slot_t(s.Slot)
+	d.slot_type = C.dmrgo_transport_hytera_slot_type_t(s.SlotType)
+	d.color_code = C.dmrgo_enums_color_code_t(s.ColorCode)
+	d.frame_type = C.uint16_t(s.FrameType)
+	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
+	d.pad = C.uint8_t(s.Pad)
+	d.call_type = C.uint8_t(s.CallType)
+	d.destination = C.uint32_t(s.Destination)
+	d.source = C.uint32_t(s.Source)
+	*(*[17]byte)(unsafe.Pointer(&d.reserved)) = s.Reserved
+}
+
+func fromC_transport_hytera_Frame(s *C.dmrgo_transport_hytera_frame_t) g_transport_hytera.Frame {
+	return in_transport_hytera_Frame(s)
+}
+
+func fromC_transport_hytera_Heartbeat(s *C.dmrgo_transport_hytera_heartbeat_t) g_transport_hytera.Heartbeat {
+	return in_transport_hytera_Heartbeat(s)
+}
+
+func fromC_transport_hytera_P2P(s *C.dmrgo_transport_hytera_p2_p_t) g_transport_hytera.P2P {
+	return in_transport_hytera_P2P(s)
 }
 
 func in_transport_ipsc_Control(s *C.dmrgo_ipsc_control_t) (d g_transport_ipsc.Control) {
@@ -31230,6 +31318,312 @@ func dmrgo_dmrd_auth_token(c_d C.dmrgo_dmrd_dialect_t, c_salt C.uint32_t, c_pass
 	return C.DMRGO_OK
 }
 
+//export dmrgo_transport_hytera_decode_frame
+func dmrgo_transport_hytera_decode_frame(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_transport_hytera_frame_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	r0, r1 := g_transport_hytera.DecodeFrame(a_p)
+	_ = r0
+	if c_out != nil {
+		*(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_transport_hytera_decode_heartbeat
+func dmrgo_transport_hytera_decode_heartbeat(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_transport_hytera_heartbeat_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	r0, r1 := g_transport_hytera.DecodeHeartbeat(a_p)
+	_ = r0
+	if c_out != nil {
+		out_transport_hytera_Heartbeat(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_transport_hytera_decode_p2_p
+func dmrgo_transport_hytera_decode_p2_p(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_transport_hytera_p2_p_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	r0, r1 := g_transport_hytera.DecodeP2P(a_p)
+	_ = r0
+	if c_out != nil {
+		out_transport_hytera_P2P(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_transport_hytera_frame_append_binary
+func dmrgo_transport_hytera_frame_append_binary(c_self *C.dmrgo_transport_hytera_frame_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_hytera.Frame
+	x = *(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_transport_hytera_frame_has_burst
+func dmrgo_transport_hytera_frame_has_burst(c_self *C.dmrgo_transport_hytera_frame_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_hytera.Frame
+	x = *(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self)))
+	r0 := x.HasBurst()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_transport_hytera_frame_hint
+func dmrgo_transport_hytera_frame_hint(c_self *C.dmrgo_transport_hytera_frame_t, c_out *C.dmrgo_layer2_hint_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_hytera.Frame
+	x = *(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self)))
+	r0 := x.Hint()
+	_ = r0
+	if c_out != nil {
+		out_layer2_Hint(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_transport_hytera_frame_set_kind
+func dmrgo_transport_hytera_frame_set_kind(c_self *C.dmrgo_transport_hytera_frame_t, c_k C.dmrgo_layer2_kind_t, c_pos C.dmrgo_enums_voice_burst_type_t, c_dt C.dmrgo_enums_data_type_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_hytera.Frame
+	x = *(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self)))
+	r0 := x.SetKind(g_layer2.Kind(c_k), g_enums.VoiceBurstType(c_pos), g_enums.DataType(c_dt))
+	*(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self))) = x
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_transport_hytera_heartbeat_append_binary
+func dmrgo_transport_hytera_heartbeat_append_binary(c_self *C.dmrgo_transport_hytera_heartbeat_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_hytera.Heartbeat
+	x = in_transport_hytera_Heartbeat(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_transport_hytera_p2_p_append_binary
+func dmrgo_transport_hytera_p2_p_append_binary(c_self *C.dmrgo_transport_hytera_p2_p_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_hytera.P2P
+	x = in_transport_hytera_P2P(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_transport_hytera_p2_p_redirect_port
+func dmrgo_transport_hytera_p2_p_redirect_port(c_self *C.dmrgo_transport_hytera_p2_p_t, c_port *C.uint16_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_hytera.P2P
+	x = in_transport_hytera_P2P(&(*c_self))
+	r0, r1 := x.RedirectPort()
+	_ = r0
+	_ = r1
+	if c_port != nil {
+		*c_port = C.uint16_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_transport_hytera_p2_p_service
+func dmrgo_transport_hytera_p2_p_service(c_self *C.dmrgo_transport_hytera_p2_p_t, c_s *C.dmrgo_transport_hytera_service_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_hytera.P2P
+	x = in_transport_hytera_P2P(&(*c_self))
+	r0, r1 := x.Service()
+	_ = r0
+	_ = r1
+	if c_s != nil {
+		*c_s = C.dmrgo_transport_hytera_service_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_transport_hytera_service_string
+func dmrgo_transport_hytera_service_string(c_self C.dmrgo_transport_hytera_service_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_transport_hytera.Service(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_transport_hytera_slot_type_string
+func dmrgo_transport_hytera_slot_type_string(c_self C.dmrgo_transport_hytera_slot_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_transport_hytera.SlotType(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ipsc_append_peer_list_reply
 func dmrgo_ipsc_append_peer_list_reply(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_master C.uint32_t, c_entries *C.dmrgo_ipsc_peer_entry_t, c_entries_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -36913,12 +37307,20 @@ func errCode(err error) C.int {
 			return -204
 		case g_transport_dmrd.ErrText:
 			return -205
-		case g_transport_ipsc.ErrCommand:
+		case g_transport_hytera.ErrCode:
 			return -206
-		case g_transport_ipsc.ErrLength:
+		case g_transport_hytera.ErrLength:
 			return -207
-		case g_transport_ipsc.ErrShort:
+		case g_transport_hytera.ErrShort:
 			return -208
+		case g_transport_hytera.ErrSignature:
+			return -209
+		case g_transport_ipsc.ErrCommand:
+			return -210
+		case g_transport_ipsc.ErrLength:
+			return -211
+		case g_transport_ipsc.ErrShort:
+			return -212
 		case g_trunk.ErrBusy:
 			return -134
 		case g_trunk.ErrChannelNumber:
@@ -37219,10 +37621,18 @@ func codeErr(code C.int) error {
 	case -205:
 		return g_transport_dmrd.ErrText
 	case -206:
-		return g_transport_ipsc.ErrCommand
+		return g_transport_hytera.ErrCode
 	case -207:
-		return g_transport_ipsc.ErrLength
+		return g_transport_hytera.ErrLength
 	case -208:
+		return g_transport_hytera.ErrShort
+	case -209:
+		return g_transport_hytera.ErrSignature
+	case -210:
+		return g_transport_ipsc.ErrCommand
+	case -211:
+		return g_transport_ipsc.ErrLength
+	case -212:
 		return g_transport_ipsc.ErrShort
 	case -134:
 		return g_trunk.ErrBusy
