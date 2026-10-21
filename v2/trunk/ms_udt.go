@@ -310,6 +310,10 @@ func (m *MS) udtRequest() bool {
 	return m.req >= reqShortData
 }
 
+func (m *MS) staleAck(from uint32) bool {
+	return m.udtRequest() && from != 0 && from != m.target && from != m.u.sendTo
+}
+
 func (m *MS) ahoyAny(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Output) []Output {
 	if a.GroupIndividual || a.TargetAddress != m.addr {
 		return m.ahoy(now, a, h, out)
