@@ -122,8 +122,8 @@ func runTX(args []string, std stdio) (err error) {
 	silence := fs.Bool("ambe-silence", false, "send AMBE+2 silence instead of the AMBE test pattern")
 	lateEntry := fs.Bool("late-entry", false, "leave out the voice LC and PI headers, so the call is known only from the embedded LC")
 	preambles := fs.Int("preambles", 4, "preamble CSBKs of the preamble and sms sequences")
-	dd := uint8(7)
-	fs.Func("dd", "Defined Data format of the sms sequence, 0 to 63 (default 7, UTF-16)", func(s string) error {
+	dd := uint8(enums.DDUTF16LE)
+	fs.Func("dd", "Defined Data format of the sms sequence, 0 to 63; the text is always UTF-16LE (default 21, UTF-16LE)", func(s string) error {
 		v, err := strconv.ParseUint(s, 10, 6)
 		dd = uint8(v)
 		return err
