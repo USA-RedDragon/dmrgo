@@ -2,9 +2,10 @@ package voice
 
 import "errors"
 
-// ConfigError is the error of NewReceiver, NewTransmitter and
-// Transmitter.Start for a config field or call field with a value out of
-// range. Match it with errors.As.
+// ConfigError is the error of NewReceiver, NewTransmitter,
+// NewInterrupter, Transmitter.Start and Interrupter.Interrupt for a config
+// field, call field or argument with a value out of range. Match it with
+// errors.As.
 type ConfigError struct {
 	// Field is the name of the config field.
 	Field string
@@ -18,7 +19,7 @@ func (e *ConfigError) Error() string {
 // Errors of a Transmitter. Match them with errors.Is.
 var (
 	// ErrBusy is returned by Start, and by Relay for a CallStart, while a
-	// transmission runs.
+	// transmission runs, and by Interrupter.Interrupt while a request runs.
 	ErrBusy = errors.New("voice: transmission in progress")
 	// ErrQueueFull is returned when the queue of vocoder slots is full.
 	ErrQueueFull = errors.New("voice: queue full")
@@ -37,6 +38,9 @@ var (
 	errTerminators error = &ConfigError{Field: "Terminators"}
 	errQueue       error = &ConfigError{Field: "Queue"}
 	errAccess      error = &ConfigError{Field: "Access"}
+	errRetries     error = &ConfigError{Field: "Retries"}
+	errRepeats     error = &ConfigError{Field: "Repeats"}
+	errCommand     error = &ConfigError{Field: "Command"}
 	errCall        error = &ConfigError{Field: "Call"}
 	errTalkerAlias error = &ConfigError{Field: "TalkerAlias"}
 	errGPS         error = &ConfigError{Field: "GPS"}

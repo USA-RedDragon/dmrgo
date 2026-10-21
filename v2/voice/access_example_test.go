@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
@@ -45,4 +46,41 @@ func ExampleTransmitter_Channel() {
 	// Access
 	// Ended Terminator 260ms
 	// Ended Denied 1.54s
+}
+
+func ExampleInterrupter() {
+	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot(), Source: layer2.SyncSourceDirectTS1})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	in, err := voice.NewInterrupter(nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	_ = tx.Start(0, voice.Call{Group: true, Target: 9, Source: 3120001}, nil)
+	_ = in.Interrupt(90*time.Millisecond, enums.RCCeaseTransmissionCommand)
+	out := make([]voice.Output, 0, voice.MaxOutputs)
+	var b layer2.Burst
+	for now := time.Duration(0); now < time.Second; now += 30 * time.Millisecond {
+		for _, o := range in.Tick(now, out[:0]) {
+			if b.DecodeFromBytes(o.Burst) == nil {
+				fmt.Println(b.ReverseChannel.RCCommand, tx.Interrupt(b.ReverseChannel))
+			}
+		}
+		for _, o := range tx.Tick(now, out[:0]) {
+			if o.Kind == voice.OutputEnded {
+				fmt.Println(o.Kind, o.Reason)
+				continue
+			}
+			for _, r := range in.Burst(now, &o.Burst, layer2.Hint{}, nil) {
+				fmt.Println(r.Kind, r.Due)
+			}
+		}
+	}
+	// Output:
+	// Cease Transmission Command true
+	// Interrupted 420ms
+	// Ended Interrupted
 }

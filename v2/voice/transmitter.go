@@ -12,8 +12,9 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
-// MaxOutputs is the most outputs that one call of a Transmitter method
-// appends: one burst, and OutputEnded after the last terminator.
+// MaxOutputs is the most outputs that one call of a Transmitter or
+// Interrupter method appends: one burst, and OutputEnded after the last
+// terminator.
 const MaxOutputs = 2
 
 // Limits and defaults of TransmitterConfig.
@@ -72,6 +73,10 @@ type TransmitterConfig struct {
 	// polite call. 0 means DefaultIdleSearch, and a negative value denies
 	// the call at once. (ETSI TS 102 361-1 clause 5.2.2.2.5)
 	IdleSearch time.Duration
+	// Interruptible makes Interrupt end the call on a Cease Transmission
+	// Request. A Cease Transmission Command ends it whatever this says.
+	// (ETSI TS 102 361-2 clauses 6.3.3 and 6.3.4)
+	Interruptible bool
 }
 
 // CallOptions are per-call settings of Transmitter.Start.
@@ -103,6 +108,14 @@ const (
 	OutputBurst OutputKind = iota + 1
 	// OutputEnded is the end of the transmission.
 	OutputEnded
+	// OutputInterrupted is the Terminator with LC that ends the call of
+	// another radio after the RC command of an Interrupter (ETSI TS 102
+	// 361-2 clause 6.3.5).
+	OutputInterrupted
+	// OutputInterruptFailed is an interrupt request of an Interrupter
+	// without a Terminator with LC after the last try (ETSI TS 102 361-2
+	// clause 6.3.5).
+	OutputInterruptFailed
 )
 
 // String returns the name of the kind. It allocates only for a value without
@@ -113,12 +126,16 @@ func (k OutputKind) String() string {
 		return "Burst"
 	case OutputEnded:
 		return "Ended"
+	case OutputInterrupted:
+		return "Interrupted"
+	case OutputInterruptFailed:
+		return "InterruptFailed"
 	}
 	return fmt.Sprintf("OutputKind(%d)", uint8(k))
 }
 
-// Output is one result of a Transmitter. Fields that do not apply to Kind
-// are zero.
+// Output is one result of a Transmitter or an Interrupter. Fields that do
+// not apply to Kind are zero.
 type Output struct {
 	// Kind is the kind of the output.
 	Kind OutputKind
@@ -202,6 +219,7 @@ type Transmitter struct {
 	lead        time.Duration
 	access      enums.Access
 	idleSearch  time.Duration
+	interrupt   bool
 	busy        bool
 	waitUntil   time.Duration
 
@@ -266,7 +284,7 @@ func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 	}
 	t := &Transmitter{cc: cfg.ColorCode, source: cfg.Source, silence: cfg.Silence, headers: cfg.Headers,
 		terminators: cfg.Terminators, timeout: cfg.Timeout, lead: cfg.Lead, access: cfg.Access,
-		idleSearch: cfg.IdleSearch}
+		idleSearch: cfg.IdleSearch, interrupt: cfg.Interruptible}
 	if t.headers == 0 {
 		t.headers = 1
 	}
@@ -363,6 +381,44 @@ func (t *Transmitter) Channel(now time.Duration, busy bool) {
 	if now > t.due {
 		t.start, t.due = now, now
 	}
+}
+
+// Interrupt takes a Tier 2 RC command that the reverse channel of the call
+// carried, and reports whether the Transmitter ends the call for it. A
+// Cease Transmission Command always ends a call on air, and a Cease
+// Transmission Request ends it when TransmitterConfig.Interruptible is
+// set. The queued voice is dropped, the last superframe is padded with
+// silence, and the terminators follow, so that the radio that sent the
+// command sees the Terminator with LC; OutputEnded has EndInterrupted. An
+// RC PDU whose CRC fails, a reserved command, a relayed call and a call
+// that is not on air are ignored. (ETSI TS 102 361-2 clause 6.3)
+func (t *Transmitter) Interrupt(rc pdu.ReverseChannel) bool {
+	if rc.FEC.Uncorrectable || t.relay {
+		return false
+	}
+	switch rc.RCCommand {
+	case enums.RCCeaseTransmissionCommand:
+	case enums.RCCeaseTransmissionRequest:
+		if !t.interrupt {
+			return false
+		}
+	default:
+		return false
+	}
+	switch t.state {
+	case TransmitterHeader, TransmitterVoice:
+		t.dropOwn()
+		t.stopping, t.reason = true, EndInterrupted
+		return true
+	case TransmitterEnding:
+		if !t.timedOut {
+			t.dropOwn()
+			t.reason = EndInterrupted
+		}
+		return true
+	case TransmitterIdle, TransmitterTimedOut, TransmitterAccess:
+	}
+	return false
 }
 
 func (t *Transmitter) begin(at time.Duration, c *Call, opts *CallOptions, keep bool) error {
