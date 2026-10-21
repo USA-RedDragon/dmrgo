@@ -93,6 +93,7 @@ code DMRGO_ERR_SMS_LENGTH -192
 code DMRGO_ERR_SMS_NOT_TEXT -193
 code DMRGO_ERR_SMS_SHORT -194
 code DMRGO_ERR_SMS_SIGNATURE -195
+code DMRGO_ERR_LOCATION_NO_FIX -196
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -639,6 +640,7 @@ sym #define DMRGO_ERR_LAYER2_RESERVED_DATA_TYPE (-114)
 sym #define DMRGO_ERR_LAYER2_SHORT_LC_INCOMPLETE (-115)
 sym #define DMRGO_ERR_LAYER2_SHORT_LC_SEQUENCE (-116)
 sym #define DMRGO_ERR_LAYER2_VOICE_TERMINATED (-117)
+sym #define DMRGO_ERR_LOCATION_NO_FIX (-196)
 sym #define DMRGO_ERR_LRRP_LENGTH (-187)
 sym #define DMRGO_ERR_LRRP_SHORT (-188)
 sym #define DMRGO_ERR_LRRP_TOKEN (-189)
@@ -755,6 +757,8 @@ sym #define DMRGO_LAYER3_TALKER_ALIAS_ISO_EIGHT_BIT ((dmrgo_layer3_talker_alias_
 sym #define DMRGO_LAYER3_TALKER_ALIAS_SEVEN_BIT ((dmrgo_layer3_talker_alias_data_format_t)0)
 sym #define DMRGO_LAYER3_TALKER_ALIAS_UTF16 ((dmrgo_layer3_talker_alias_data_format_t)3)
 sym #define DMRGO_LAYER3_TALKER_ALIAS_UTF8 ((dmrgo_layer3_talker_alias_data_format_t)2)
+sym #define DMRGO_LOCATION_FORMAT_LRRP ((dmrgo_location_format_t)2)
+sym #define DMRGO_LOCATION_FORMAT_NMEA ((dmrgo_location_format_t)1)
 sym #define DMRGO_LRRP_IMMEDIATE_REPORT ((dmrgo_lrrp_document_id_t)7)
 sym #define DMRGO_LRRP_IMMEDIATE_REQUEST ((dmrgo_lrrp_document_id_t)5)
 sym #define DMRGO_LRRP_PROTOCOL_REPORT ((dmrgo_lrrp_document_id_t)21)
@@ -1432,6 +1436,10 @@ sym int dmrgo_layer3_talker_alias_data_format_string(dmrgo_layer3_talker_alias_d
 sym int dmrgo_layer3_voice_service_options_encode(dmrgo_layer3_voice_service_options_t *self, uint8_t out[1]);
 sym int dmrgo_layer3_voice_service_options_field(const dmrgo_layer3_voice_service_options_t *self, uint8_t *out);
 sym int dmrgo_layer3_voice_service_options_string(dmrgo_layer3_voice_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_location_decoder_decode(dmrgo_location_decoder_t *self, const dmrgo_pdu_data_header_t *h, const uint8_t *data, size_t data_len, dmrgo_location_fix_t *out);
+sym int dmrgo_location_decoder_free(dmrgo_location_decoder_t *self);
+sym int dmrgo_location_decoder_new(dmrgo_location_decoder_t **out);
+sym int dmrgo_location_format_string(dmrgo_location_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_lrrp_circle2_d_append_binary(dmrgo_lrrp_circle2_d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_lrrp_circle2_d_string(dmrgo_lrrp_circle2_d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_lrrp_circle3_d_append_binary(dmrgo_lrrp_circle3_d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
@@ -2133,6 +2141,7 @@ sym typedef uint8_t dmrgo_layer3_additional_information_field_t;
 sym typedef uint8_t dmrgo_layer3_position_error_t;
 sym typedef uint8_t dmrgo_layer3_source_type_t;
 sym typedef uint8_t dmrgo_layer3_talker_alias_data_format_t;
+sym typedef uint8_t dmrgo_location_format_t;
 sym typedef uint8_t dmrgo_lrrp_document_id_t;
 sym typedef uint8_t dmrgo_packet_response_t;
 sym typedef uint8_t dmrgo_pdu_capacity_plus_segment_t;
@@ -2209,6 +2218,7 @@ type struct dmrgo_layer3_data_service_options_t { bool is_emergency; bool is_pri
 type struct dmrgo_layer3_registration_service_options_t { bool reserved; bool is_privacy; bool ip_inform; uint8_t power_save; bool register_; };
 type struct dmrgo_layer3_service_options_t { bool is_emergency; bool is_privacy; uint8_t reserved; bool is_broadcast; bool is_open_voice_call_mode; uint8_t priority_level; };
 type struct dmrgo_layer3_voice_service_options_t { bool is_emergency; bool is_privacy; bool is_supp_data; bool is_broadcast; bool reserved; uint8_t priority_level; };
+type struct dmrgo_location_fix_t { dmrgo_location_format_t format; uint32_t source; uint32_t destination; bool valid; double latitude; double longitude; double altitude; bool has_altitude; double radius; bool has_radius; double speed; bool has_speed; double course; bool has_course; uint16_t year; uint8_t month; uint8_t day; uint8_t hour; uint8_t minute; uint8_t second; bool has_time; };
 type struct dmrgo_lrrp_circle2_d_t { double latitude; double longitude; double radius; };
 type struct dmrgo_lrrp_circle3_d_t { double latitude; double longitude; double radius; double altitude; double altitude_accuracy; };
 type struct dmrgo_lrrp_message_t { dmrgo_lrrp_document_id_t document; uint32_t length; dmrgo_lrrp_request_t request; dmrgo_lrrp_report_t report; };

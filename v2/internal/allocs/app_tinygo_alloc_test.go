@@ -11,6 +11,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+	"github.com/USA-RedDragon/dmrgo/v2/location"
 	"github.com/USA-RedDragon/dmrgo/v2/mototrbo/ars"
 	"github.com/USA-RedDragon/dmrgo/v2/mototrbo/lrrp"
 	"github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms"
@@ -21,6 +22,8 @@ import (
 var tinyLRRP lrrp.Message
 
 var tinySMSHeader sms.Header
+
+var tinyLocation location.Decoder
 
 func tinyAppOps(t *testing.T) []tinyOp {
 	t.Helper()
@@ -36,6 +39,7 @@ func tinyAppOps(t *testing.T) []tinyOp {
 	loc := tinyOK(hex.DecodeString("071a22042468ace0341f4dbc778051118ecd8d118ad47b00636c0006"))
 	smsMsg := packet.Message{Header: pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3140598, LLIDSource: 3191868}}, Data: tmsIP}
 	smsText := sms.Text{Format: sms.FormatTMS, Source: 1, Destination: 2, Body: []byte("Hello")}
+	gpsMsg := packet.Message{Header: pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{SAP: enums.SAPUDPIPHeaderCompression}}, Data: gps}
 	buf := make([]byte, 0, 256)
 	var err error
 	ops := []tinyOp{
@@ -57,6 +61,7 @@ func tinyAppOps(t *testing.T) []tinyOp {
 		{"lrrp.Message.AppendBinary", func() { _, err = tinyLRRP.AppendBinary(buf[:0]) }},
 		{"sms.Decode", func() { _, _, err = sms.Decode(buf[:0], &smsMsg.Header, smsMsg.Data) }},
 		{"sms.AppendPacket", func() { _, err = sms.AppendPacket(buf[:0], &smsText, true, &tinySMSHeader) }},
+		{"location.Decoder.Decode", func() { _, err = tinyLocation.Decode(&gpsMsg.Header, gpsMsg.Data) }},
 	}
 	_ = err
 	return ops

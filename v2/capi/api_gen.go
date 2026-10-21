@@ -27,6 +27,7 @@ import (
 	g_layer2_packet "github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	g_layer2_pdu "github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	g_layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
+	g_location "github.com/USA-RedDragon/dmrgo/v2/location"
 	g_mototrbo_ars "github.com/USA-RedDragon/dmrgo/v2/mototrbo/ars"
 	g_mototrbo_lrrp "github.com/USA-RedDragon/dmrgo/v2/mototrbo/lrrp"
 	g_mototrbo_tms "github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms"
@@ -3123,6 +3124,31 @@ func in_layer3_VoiceServiceOptions(s *C.dmrgo_layer3_voice_service_options_t) (d
 	return
 }
 
+func out_location_Fix(d *C.dmrgo_location_fix_t, s *g_location.Fix, oc *outc) {
+	_ = oc
+	d.format = C.dmrgo_location_format_t(s.Format)
+	d.source = C.uint32_t(s.Source)
+	d.destination = C.uint32_t(s.Destination)
+	d.valid = C.bool(s.Valid)
+	d.latitude = C.double(s.Latitude)
+	d.longitude = C.double(s.Longitude)
+	d.altitude = C.double(s.Altitude)
+	d.has_altitude = C.bool(s.HasAltitude)
+	d.radius = C.double(s.Radius)
+	d.has_radius = C.bool(s.HasRadius)
+	d.speed = C.double(s.Speed)
+	d.has_speed = C.bool(s.HasSpeed)
+	d.course = C.double(s.Course)
+	d.has_course = C.bool(s.HasCourse)
+	d.year = C.uint16_t(s.Year)
+	d.month = C.uint8_t(s.Month)
+	d.day = C.uint8_t(s.Day)
+	d.hour = C.uint8_t(s.Hour)
+	d.minute = C.uint8_t(s.Minute)
+	d.second = C.uint8_t(s.Second)
+	d.has_time = C.bool(s.HasTime)
+}
+
 func out_mototrbo_ars_Header(d *C.dmrgo_ars_header_t, s *g_mototrbo_ars.Header, oc *outc) {
 	_ = oc
 	d.extension = C.bool(s.Extension)
@@ -5444,6 +5470,35 @@ func fromC_layer3_VoiceServiceOptions(s *C.dmrgo_layer3_voice_service_options_t)
 	return in_layer3_VoiceServiceOptions(s)
 }
 
+func in_location_Fix(s *C.dmrgo_location_fix_t) (d g_location.Fix) {
+	d.Format = g_location.Format(s.format)
+	d.Source = uint32(s.source)
+	d.Destination = uint32(s.destination)
+	d.Valid = bool(s.valid)
+	d.Latitude = float64(s.latitude)
+	d.Longitude = float64(s.longitude)
+	d.Altitude = float64(s.altitude)
+	d.HasAltitude = bool(s.has_altitude)
+	d.Radius = float64(s.radius)
+	d.HasRadius = bool(s.has_radius)
+	d.Speed = float64(s.speed)
+	d.HasSpeed = bool(s.has_speed)
+	d.Course = float64(s.course)
+	d.HasCourse = bool(s.has_course)
+	d.Year = uint16(s.year)
+	d.Month = uint8(s.month)
+	d.Day = uint8(s.day)
+	d.Hour = uint8(s.hour)
+	d.Minute = uint8(s.minute)
+	d.Second = uint8(s.second)
+	d.HasTime = bool(s.has_time)
+	return
+}
+
+func fromC_location_Fix(s *C.dmrgo_location_fix_t) g_location.Fix {
+	return in_location_Fix(s)
+}
+
 func fromC_mototrbo_ars_Header(s *C.dmrgo_ars_header_t) g_mototrbo_ars.Header {
 	return in_mototrbo_ars_Header(s)
 }
@@ -6403,6 +6458,18 @@ func get_layer2_pdu_TalkerAliasAssembler(p *C.dmrgo_pdu_talker_alias_assembler_t
 
 func new_layer2_pdu_TalkerAliasAssembler(v *g_layer2_pdu.TalkerAliasAssembler) *C.dmrgo_pdu_talker_alias_assembler_t {
 	return (*C.dmrgo_pdu_talker_alias_assembler_t)(newHandle(&h_layer2_pdu_TalkerAliasAssembler{v: v}))
+}
+
+type h_location_Decoder struct {
+	v *g_location.Decoder
+}
+
+func get_location_Decoder(p *C.dmrgo_location_decoder_t) *h_location_Decoder {
+	return lookup[*h_location_Decoder](unsafe.Pointer(p))
+}
+
+func new_location_Decoder(v *g_location.Decoder) *C.dmrgo_location_decoder_t {
+	return (*C.dmrgo_location_decoder_t)(newHandle(&h_location_Decoder{v: v}))
 }
 
 type h_trunk_CapacityPlusFollower struct {
@@ -24655,6 +24722,74 @@ func dmrgo_layer3_voice_service_options_string(c_self *C.dmrgo_layer3_voice_serv
 	return C.DMRGO_OK
 }
 
+//export dmrgo_location_decoder_new
+func dmrgo_location_decoder_new(c_out **C.dmrgo_location_decoder_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_location_Decoder(new(g_location.Decoder))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_location_decoder_free
+func dmrgo_location_decoder_free(c_self *C.dmrgo_location_decoder_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_location_Decoder(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_location_decoder_decode
+func dmrgo_location_decoder_decode(c_self *C.dmrgo_location_decoder_t, c_h *C.dmrgo_pdu_data_header_t, c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_location_fix_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_location_Decoder(c_self)
+	var a_h g_layer2_pdu.DataHeader
+	var p_h *g_layer2_pdu.DataHeader
+	var s_h st_layer2_pdu_DataHeader
+	if c_h != nil {
+		a_h = in_layer2_pdu_DataHeader(&(*c_h), &s_h)
+		p_h = &a_h
+	}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := h.v.Decode(p_h, a_data)
+	_ = r0
+	if c_out != nil {
+		out_location_Fix(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_location_format_string
+func dmrgo_location_format_string(c_self C.dmrgo_location_format_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_location.Format(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ars_decode_message
 func dmrgo_ars_decode_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_ars_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -31940,6 +32075,8 @@ func errCode(err error) C.int {
 			return -132
 		case g_layer2_pdu.ErrTalkerAliasLength:
 			return -133
+		case g_location.ErrNoFix:
+			return -196
 		case g_mototrbo_ars.ErrLength:
 			return -185
 		case g_mototrbo_ars.ErrShort:
@@ -32219,6 +32356,8 @@ func codeErr(code C.int) error {
 		return g_layer2_pdu.ErrTalkerAliasInvalidUTF8
 	case -133:
 		return g_layer2_pdu.ErrTalkerAliasLength
+	case -196:
+		return g_location.ErrNoFix
 	case -185:
 		return g_mototrbo_ars.ErrLength
 	case -186:
