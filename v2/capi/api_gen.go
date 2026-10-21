@@ -3865,6 +3865,8 @@ func in_sms_Text(s *C.dmrgo_sms_text_t) (d g_sms.Text) {
 	d.Source = uint32(s.source)
 	d.Destination = uint32(s.destination)
 	d.Group = bool(s.group)
+	d.Network = uint8(s.network)
+	d.GroupPrefix = uint8(s.group_prefix)
 	d.DD = g_enums.DDFormat(s.dd)
 	d.Sequence = uint8(s.sequence)
 	d.AckRequired = bool(s.ack_required)
@@ -3887,6 +3889,8 @@ func out_sms_Text(d *C.dmrgo_sms_text_t, s *g_sms.Text, oc *outc) {
 	d.source = C.uint32_t(s.Source)
 	d.destination = C.uint32_t(s.Destination)
 	d.group = C.bool(s.Group)
+	d.network = C.uint8_t(s.Network)
+	d.group_prefix = C.uint8_t(s.GroupPrefix)
 	d.dd = C.dmrgo_enums_dd_format_t(s.DD)
 	d.sequence = C.uint8_t(s.Sequence)
 	d.ack_required = C.bool(s.AckRequired)
@@ -43747,6 +43751,8 @@ func errCode(err error) C.int {
 			return -191
 		case g_sms.ErrLength:
 			return -192
+		case g_sms.ErrNil:
+			return -222
 		case g_sms.ErrNotText:
 			return -193
 		case g_sms.ErrShort:
@@ -44076,6 +44082,8 @@ func codeErr(code C.int) error {
 		return g_sms.ErrFormat
 	case -192:
 		return g_sms.ErrLength
+	case -222:
+		return g_sms.ErrNil
 	case -193:
 		return g_sms.ErrNotText
 	case -194:

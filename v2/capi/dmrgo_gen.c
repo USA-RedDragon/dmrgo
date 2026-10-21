@@ -142,6 +142,8 @@ const char *dmrgo__gen_strerror(int status) {
 		return "sms.ErrFormat";
 	case -192:
 		return "sms.ErrLength";
+	case -222:
+		return "sms.ErrNil";
 	case -193:
 		return "sms.ErrNotText";
 	case -194:

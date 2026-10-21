@@ -20,4 +20,7 @@ var (
 	// ErrFormat is returned by AppendPacket for an unknown Format, and for
 	// FormatDefinedData with DD format binary or BCD.
 	ErrFormat = errors.New("sms: unknown format")
+	// ErrNil is returned by Decode and AppendPacket for a nil pointer
+	// argument.
+	ErrNil = errors.New("sms: nil argument")
 )
