@@ -419,15 +419,15 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestShortLCAssembler_Lifecycle
-              - TestShortLCAssembler_Complete_NullMessage
-              - TestShortLCAssembler_Complete_ActivityUpdate
+              - TestShortLCAssembler_NullMessage
+              - TestShortLCAssembler_ActivityUpdate
               - TestShortLCAssembler_Add
               - TestShortLCAssembler_AddUncorrectableTACT
               - TestShortLCAssembler_RoundTrip_EncodeShortLC
               - TestShortLCAssembler_CombinedFEC
               - TestShortLCAssembler_RejectsBadSequence
               - TestShortLCAssembler_FirstRestartsSequence
-              - TestShortLCAssembler_CompleteIncomplete
+              - TestShortLCAssembler_AddIntoIncomplete
               - TestEncodeShortLCToCACH_RoundTrip
               - TestEncodeShortLCToCACH_Error
 
