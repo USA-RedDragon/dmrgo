@@ -261,7 +261,7 @@ type Transmitter struct {
 	dopts       layer2.DecodeOptions
 	dataType    enums.DataType
 	authWaiting bool
-	hangSeen    bool
+	busySeen    bool
 
 	vt    layer2.VoiceTransmitter
 	vopts layer2.VoiceTransmitterOptions

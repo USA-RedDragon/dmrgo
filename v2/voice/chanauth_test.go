@@ -94,11 +94,8 @@ func TestTransmitter_ChanAuth(t *testing.T) {
 	if out := tx.Tick(at, nil); len(out) != 1 || out[0].Hint.DataType != enums.DataTypeVoiceLCHeader || out[0].Due != at {
 		t.Fatalf("second ChanAuth PDU %+v", out)
 	}
-	if out := tx.Tick(at+360*ms, nil); len(out) != 0 || tx.State() != voice.TransmitterHeader {
-		t.Fatalf("expiry without hang time: %v", tx.State())
-	}
-	if d, _ := tx.Deadline(); d != at+360*ms {
-		t.Fatalf("start %v", d)
+	if out := tx.Tick(at+360*ms, nil); len(out) != 1 || out[0].Kind != voice.OutputEnded || out[0].Reason != voice.EndNoOutbound || out[0].Due != at+360*ms || tx.State() != voice.TransmitterIdle {
+		t.Fatalf("expiry without hang time: %+v %v", out, tx.State())
 	}
 
 	tx = authTransmitter(t, voice.TransmitterConfig{HoldoffMax: -1})
@@ -110,6 +107,46 @@ func TestTransmitter_ChanAuth(t *testing.T) {
 	tx.Stop()
 	if tx.State() != voice.TransmitterIdle || tx.Room() != voice.DefaultQueue {
 		t.Fatal("Stop in ChanAuth")
+	}
+}
+
+// ETSI TS 102 361-2 clause 5.1.1.6.2
+func TestTransmitter_ChanAuthOutbound(t *testing.T) {
+	t.Parallel()
+
+	ms := time.Millisecond
+	tx := authTransmitter(t, voice.TransmitterConfig{HoldoffMax: -1})
+	out := tx.Tick(1180*ms, nil)
+	if len(out) != 1 || out[0].Kind != voice.OutputEnded || out[0].Reason != voice.EndNoOutbound || tx.State() != voice.TransmitterIdle || tx.Room() != voice.DefaultQueue {
+		t.Fatalf("silent outbound: %+v %v", out, tx.State())
+	}
+
+	lc, err := pdu.NewVoiceLC(true, 9, 3120006, layer3.ServiceOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	vt, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSourceBS, Silence: vocoder.AMBESilenceSlot()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	voiceBursts, err := vt.AddFrames(vocoder.AMBESilence(), vocoder.AMBESilence(), vocoder.AMBESilence())
+	if err != nil || len(voiceBursts) != 1 {
+		t.Fatalf("voice burst: %v", err)
+	}
+	pi, err := layer2.BuildDataBurst(pdu.PRFillBits(), enums.DataTypePIHeader, 1, layer2.SyncSourceBS)
+	if err != nil {
+		t.Fatal(err)
+	}
+	junk := layer2.RawBurst{}
+	for name, b := range map[string]layer2.RawBurst{"voice": voiceBursts[0], "PI header": pi, "undecodable": junk} {
+		tx := authTransmitter(t, voice.TransmitterConfig{HoldoffMax: -1})
+		tx.Burst(1030*ms, &b, layer2.Hint{}, nil)
+		if out := tx.Tick(1180*ms, nil); len(out) != 0 || tx.State() != voice.TransmitterChanAuth {
+			t.Fatalf("%s: %+v %v", name, out, tx.State())
+		}
+		if out := tx.Tick(1180*ms, nil); len(out) != 1 || out[0].Hint.DataType != enums.DataTypeVoiceLCHeader {
+			t.Fatalf("%s: second ChanAuth PDU %+v", name, out)
+		}
 	}
 }
 

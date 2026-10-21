@@ -37,47 +37,40 @@ func (t *Transmitter) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hi
 	return t.Decoded(now, b, h, dst)
 }
 
-// Decoded takes the decoded outbound burst b of the slot, which may be nil,
-// while the Transmitter waits in TransmitterChanAuth. A Voice LC Header
-// with the source address of the call authorizes it, and its headers and
-// voice follow from now. A Voice LC Header with another source address
-// denies it, and appends OutputEnded with EndDenied to dst. A Terminator
-// with LC or an Idle burst is a hang time burst: when T_MS_ChanAuth runs
-// out after one, the Transmitter sends the ChanAuth PDU again after a
-// random holdoff, and without one the call starts. It allocates only when
-// dst has no room for MaxOutputs outputs. (ETSI TS 102 361-2 clause
-// 5.1.1.6.2)
+// Decoded takes the decoded outbound burst b of the slot, which may be nil
+// for a burst that did not decode, while the Transmitter waits in
+// TransmitterChanAuth. A Voice LC Header with the source address of the
+// call authorizes it, and its headers and voice follow from now. A Voice
+// LC Header with another source address denies it, and appends
+// OutputEnded with EndDenied to dst. Every other outbound burst, whatever
+// its kind and FEC, shows a busy channel: when T_MS_ChanAuth runs out
+// after one, the Transmitter sends the ChanAuth PDU again after a random
+// holdoff. When it runs out with no outbound burst, the call does not
+// start: the Transmitter appends OutputEnded with EndNoOutbound. It
+// allocates only when dst has no room for MaxOutputs outputs. (ETSI TS 102
+// 361-2 clause 5.1.1.6.2)
 func (t *Transmitter) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
 	if t == nil {
 		return dst
 	}
 
 	dst = t.Tick(now, dst)
-	if t.state != TransmitterChanAuth || !t.authWaiting || b == nil || b.Kind != layer2.KindData || b.SlotType.FEC.Uncorrectable {
+	if t.state != TransmitterChanAuth || !t.authWaiting {
 		return dst
 	}
-	switch b.SlotType.DataType {
-	case enums.DataTypeVoiceLCHeader:
-		lc, ok := b.Data.(*pdu.FullLinkControl)
-		if !ok {
-			return dst
+	if b != nil && b.Kind == layer2.KindData && !b.SlotType.FEC.Uncorrectable && b.SlotType.DataType == enums.DataTypeVoiceLCHeader {
+		if lc, ok := b.Data.(*pdu.FullLinkControl); ok {
+			if _, source, ok := lc.Addresses(); ok {
+				if source == t.call.Source {
+					t.grant(now)
+					return dst
+				}
+				t.due, t.head, t.length = now, 0, 0
+				return t.finish(dst, EndDenied)
+			}
 		}
-		_, source, ok := lc.Addresses()
-		if !ok {
-			return dst
-		}
-		if source == t.call.Source {
-			t.grant(now)
-			return dst
-		}
-		t.due, t.head, t.length = now, 0, 0
-		return t.finish(dst, EndDenied)
-	case enums.DataTypeTerminatorWithLC, enums.DataTypeIdle:
-		t.hangSeen = true
-	case enums.DataTypePIHeader, enums.DataTypeCSBK, enums.DataTypeMBCHeader, enums.DataTypeMBCContinuation,
-		enums.DataTypeDataHeader, enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1,
-		enums.DataTypeUnifiedSingleBlock, enums.DataTypeReserved:
 	}
+	t.busySeen = true
 	return dst
 }
 
@@ -90,12 +83,12 @@ func (t *Transmitter) authTick(dst []Output) []Output {
 		var o *Output
 		dst, o = appendOutput(dst, OutputBurst, t.due)
 		o.Burst, o.Hint = t.vt.Header(), dataHint(enums.DataTypeVoiceLCHeader)
-		t.authWaiting, t.hangSeen, t.waitUntil = true, false, t.due+t.chanAuth
+		t.authWaiting, t.busySeen, t.waitUntil = true, false, t.due+t.chanAuth
 		return dst
 	}
-	if !t.hangSeen {
-		t.grant(t.waitUntil)
-		return dst
+	if !t.busySeen {
+		t.due, t.head, t.length = t.waitUntil, 0, 0
+		return t.finish(dst, EndNoOutbound)
 	}
 	t.authWaiting, t.due = false, t.waitUntil
 	if t.holdoffMax > 0 {

@@ -343,7 +343,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
 | 5.1.1.6.1 | BS Channel Authorization Procedures | verified | 6/6 passed | `v2/bs/chanauth.go`, `v2/bs/types.go` |
-| 5.1.1.6.2 | MS Channel Authorization Procedures | verified | 3/3 passed | `v2/voice/chanauth.go` |
+| 5.1.1.6.2 | MS Channel Authorization Procedures | verified | 4/4 passed | `v2/voice/chanauth.go` |
 | 5.1.2 | Feature Not Supported (FNS) signalling | verified | 2/2 passed | `v2/csbk/responder.go` |
 | 5.2.2.3 | MS Individual call channel access | verified | 3/3 passed | `v2/csbk/requester.go` |
 | 5.4.2 | Inband positioning data service | verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go` |

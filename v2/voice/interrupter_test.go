@@ -234,7 +234,7 @@ func TestInterrupter_States(t *testing.T) {
 			t.Errorf("%d: %q", k, k.String())
 		}
 	}
-	for r, want := range map[voice.EndReason]string{voice.EndDenied: "Denied", voice.EndInterrupted: "Interrupted"} {
+	for r, want := range map[voice.EndReason]string{voice.EndDenied: "Denied", voice.EndInterrupted: "Interrupted", voice.EndNoOutbound: "NoOutbound"} {
 		if r.String() != want {
 			t.Errorf("%d: %q", r, r.String())
 		}
