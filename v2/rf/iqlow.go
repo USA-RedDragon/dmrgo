@@ -240,7 +240,6 @@ func (r *iqLowRx) feed(x []uint32) {
 
 func iqLowOf(r *DiscReceiver) *iqLowRx { return (*iqLowRx)(unsafe.Pointer(r)) }
 
-//go:noinline
 func (r *iqLowRx) fill(x []uint32) int {
 	m := min(len(x), iqLowBuf)
 	r.n = 0

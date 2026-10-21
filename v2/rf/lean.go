@@ -545,7 +545,6 @@ func coarseSync(win *syncWindow, syms *[syncSymbols]int8, end, sps float32, reac
 	return cov > 0 && cov*cov >= leanCoarse*leanCoarse*vv*pp
 }
 
-//go:noinline
 func symSum(syms *[syncSymbols]int8) int32 {
 	var sp int32
 	for _, s := range syms {
