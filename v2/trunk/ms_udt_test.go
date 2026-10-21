@@ -535,6 +535,41 @@ func TestMS_Duplex(t *testing.T) {
 	}
 }
 
+func TestMS_DuplexSlotOfOwnGrant(t *testing.T) {
+	t.Parallel()
+	for _, caller := range []bool{true, false} {
+		for _, ts2 := range []bool{false, true} {
+			r := onTSCC(t, nil)
+			if caller {
+				if err := r.ms.CallDuplex(r.now, peer, layer3.VoiceServiceOptions{}); err != nil {
+					t.Fatal(err)
+				}
+				randSent(t, r)
+			} else {
+				wantKinds(t, "duplex C_AHOY", r.feed(ahoyBurst(t, enums.ServiceDuplexVoice, peer, msAddr, false, 0), &idle), trunk.OutputAhoy, trunk.OutputBurst)
+			}
+			want := enums.Slot1
+			if ts2 {
+				want = enums.Slot2
+			}
+			other := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKDuplexPrivateVoiceGrant, DuplexPrivateVoiceGrantPDU: &pdu.DuplexPrivateVoiceGrantPDU{
+				PhysicalChannel: 7, LogicalChannel: !ts2, CallDirection: !caller, TargetAddress: peer, SourceAddress: msAddr}}, testCC)
+			r.feed(other, &idle)
+			own := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKDuplexPrivateVoiceGrant, DuplexPrivateVoiceGrantPDU: &pdu.DuplexPrivateVoiceGrantPDU{
+				PhysicalChannel: 7, LogicalChannel: ts2, CallDirection: caller, TargetAddress: msAddr, SourceAddress: peer}}, testCC)
+			out := r.feed(own, &idle)
+			wantKinds(t, "own PV_GRANT_DX", out, trunk.OutputGrant, trunk.OutputTune)
+			if out[0].Grant.Slot != want || out[1].Tune.Slot != want {
+				t.Fatalf("caller %v LCN %v: grant slot %v, tune slot %v, want %v", caller, ts2, out[0].Grant.Slot, out[1].Tune.Slot, want)
+			}
+			out = r.ms.EndCall(r.now, r.out[:0])
+			if len(out) == 0 || out[0].Kind != trunk.OutputBurst || out[0].Slot != want {
+				t.Errorf("caller %v LCN %v: P_MAINT %+v", caller, ts2, out)
+			}
+		}
+	}
+}
+
 func pvGrant(t testing.TB, target, source uint32, emergency bool) layer2.RawBurst {
 	t.Helper()
 	return bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKPrivateVoiceGrant, PrivateVoiceGrantPDU: &pdu.PrivateVoiceGrantPDU{
