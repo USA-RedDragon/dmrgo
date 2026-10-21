@@ -924,6 +924,7 @@ sym #define DMRGO_LAYER3_TALKER_ALIAS_ISO_EIGHT_BIT ((dmrgo_layer3_talker_alias_
 sym #define DMRGO_LAYER3_TALKER_ALIAS_SEVEN_BIT ((dmrgo_layer3_talker_alias_data_format_t)0)
 sym #define DMRGO_LAYER3_TALKER_ALIAS_UTF16 ((dmrgo_layer3_talker_alias_data_format_t)3)
 sym #define DMRGO_LAYER3_TALKER_ALIAS_UTF8 ((dmrgo_layer3_talker_alias_data_format_t)2)
+sym #define DMRGO_LOCATION_FORMAT_HDAP ((dmrgo_location_format_t)3)
 sym #define DMRGO_LOCATION_FORMAT_LRRP ((dmrgo_location_format_t)2)
 sym #define DMRGO_LOCATION_FORMAT_NMEA ((dmrgo_location_format_t)1)
 sym #define DMRGO_LRRP_IMMEDIATE_REPORT ((dmrgo_lrrp_document_id_t)7)

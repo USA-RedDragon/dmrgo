@@ -2,6 +2,7 @@ package location
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/hytera"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -20,6 +21,10 @@ const (
 	// FormatLRRP is a MOTOTRBO LRRP report to UDP port 4001, as MOTOTRBO
 	// and Hytera radios send.
 	FormatLRRP
+	// FormatHDAP is a Hytera HDAP location protocol message to UDP port
+	// 3003: the answer to a standard request, a condition report or an
+	// emergency report.
+	FormatHDAP
 )
 
 // String returns the name of f. It allocates only for a value without a
@@ -30,6 +35,8 @@ func (f Format) String() string {
 		return "NMEA"
 	case FormatLRRP:
 		return "LRRP"
+	case FormatHDAP:
+		return "HDAP"
 	}
 	return "Format(" + text.Int(int64(f)) + ")"
 }
@@ -78,11 +85,13 @@ type Decoder struct {
 }
 
 // Decode returns the position in a data packet, with header h and user
-// data data: an NMEA RMC sentence
-// to UDP port 10110 or an LRRP report with a position to UDP port 4001. It
-// returns ErrNoFix for a packet in neither format, and the errors of the
-// ip, lrrp and nmea packages for a message that does not decode. It does
-// not allocate.
+// data data: an NMEA RMC sentence to UDP port 10110, an LRRP report with a
+// position to UDP port 4001, or a Hytera HDAP location protocol message
+// with a position to UDP port 3003. It returns ErrNoFix for a packet in
+// none of these formats and for a standard answer whose Result is not 0,
+// and the errors of the ip, lrrp, nmea and hytera packages for a message
+// that does not decode. It does not check the HDAP checksum. It does not
+// allocate.
 func (d *Decoder) Decode(h *pdu.DataHeader, data []byte) (Fix, error) {
 	var sap enums.ServiceAccessPointID
 	switch {
@@ -124,6 +133,8 @@ func (d *Decoder) Decode(h *pdu.DataHeader, data []byte) (Fix, error) {
 			return Fix{}, ErrNoFix
 		}
 		return f, nil
+	case ip.PortHyteraLocation:
+		return fromHDAP(f, dg.Payload)
 	default:
 		return Fix{}, ErrNoFix
 	}
@@ -162,4 +173,75 @@ func fromReport(f *Fix, m *lrrp.Message) bool {
 		f.Year, f.Month, f.Day, f.Hour, f.Minute, f.Second, f.HasTime = t.Year, t.Month, t.Day, t.Hour, t.Minute, t.Second, true
 	}
 	return true
+}
+
+func fromHDAP(f Fix, data []byte) (Fix, error) {
+	m, err := hytera.DecodeMessage(data)
+	if err != nil {
+		return Fix{}, err
+	}
+	if m.Header.Service != hytera.ServiceLP {
+		return Fix{}, ErrNoFix
+	}
+	var g hytera.GPSData
+	switch m.Opcode {
+	case hytera.LPStandardAnswer:
+		a, err := hytera.DecodeLPAnswer(m.Payload)
+		if err != nil {
+			return Fix{}, err
+		}
+		if a.Result != 0 {
+			return Fix{}, ErrNoFix
+		}
+		g = a.GPS
+	case hytera.LPConditionReport:
+		r, err := hytera.DecodeLPReport(m.Payload)
+		if err != nil {
+			return Fix{}, err
+		}
+		g = r.GPS
+	case hytera.LPEmergencyReport:
+		e, err := hytera.DecodeLPEmergency(m.Payload)
+		if err != nil {
+			return Fix{}, err
+		}
+		g = e.GPS
+	default:
+		return Fix{}, ErrNoFix
+	}
+	f.Format, f.Valid = FormatHDAP, g.Valid()
+	f.Latitude, f.Longitude = g.Latitude(), g.Longitude()
+	if v, ok := knots(g.Speed); ok {
+		f.Speed, f.HasSpeed = v*knot, true
+	}
+	f.Course, f.HasCourse = float64(g.Direction), true
+	if g.Day != 0 {
+		f.Year, f.Month, f.Day = 2000+uint16(g.Year), g.Month, g.Day
+		f.Hour, f.Minute, f.Second = g.Hour, g.Minute, g.Second
+		f.HasTime = true
+	}
+	return f, nil
+}
+
+func knots(t [3]byte) (float64, bool) {
+	var v, scale float64 = 0, 1
+	digits, point := 0, false
+	for _, c := range t {
+		switch {
+		case c == ' ' && digits == 0 && !point:
+		case c == '.' && !point:
+			point = true
+		case c >= '0' && c <= '9':
+			digits++
+			if point {
+				scale /= 10
+				v += float64(c-'0') * scale
+			} else {
+				v = v*10 + float64(c-'0')
+			}
+		default:
+			return 0, false
+		}
+	}
+	return v, digits > 0
 }

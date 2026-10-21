@@ -4738,6 +4738,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_LAYER3_TALKER_ALIAS_UTF16 ((dmrgo_layer3_talker_alias_data_format_t)3)
 /* Go: layer3.TalkerAliasUTF8. Unicode UTF-8 */
 #define DMRGO_LAYER3_TALKER_ALIAS_UTF8 ((dmrgo_layer3_talker_alias_data_format_t)2)
+/* Go: location.FormatHDAP. FormatHDAP is a Hytera HDAP location protocol message to UDP port 3003: the answer to a standard request, a condition report or an emergency report. */
+#define DMRGO_LOCATION_FORMAT_HDAP ((dmrgo_location_format_t)3)
 /* Go: location.FormatLRRP. FormatLRRP is a MOTOTRBO LRRP report to UDP port 4001, as MOTOTRBO and Hytera radios send. */
 #define DMRGO_LOCATION_FORMAT_LRRP ((dmrgo_location_format_t)2)
 /* Go: location.FormatNMEA. FormatNMEA is an NMEA RMC sentence to UDP port 10110, as AnyTone radios send. */
@@ -7251,7 +7253,7 @@ int dmrgo_layer3_voice_service_options_string(dmrgo_layer3_voice_service_options
 int dmrgo_location_decoder_new(dmrgo_location_decoder_t **out);
 /* dmrgo_location_decoder_free frees the handle. self may be NULL. */
 int dmrgo_location_decoder_free(dmrgo_location_decoder_t *self);
-/* Go: location.Decoder.Decode. Decode returns the position in a data packet, with header h and user data data: an NMEA RMC sentence to UDP port 10110 or an LRRP report with a position to UDP port 4001. */
+/* Go: location.Decoder.Decode. Decode returns the position in a data packet, with header h and user data data: an NMEA RMC sentence to UDP port 10110, an LRRP report with a position to UDP port 4001, or a Hytera HDAP location protocol message with a position to UDP port 3003. */
 int dmrgo_location_decoder_decode(dmrgo_location_decoder_t *self, const dmrgo_pdu_data_header_t *h, const uint8_t *data, size_t data_len, dmrgo_location_fix_t *out);
 /* Go: location.Format.String. String returns the name of f. */
 int dmrgo_location_format_string(dmrgo_location_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
