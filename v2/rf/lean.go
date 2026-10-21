@@ -49,6 +49,7 @@ const (
 	leanMMSPS           = 2.5
 	leanMMSign          = 1
 	leanMMGain          = 2
+	leanMidGate         = 0
 )
 
 const (
@@ -564,6 +565,29 @@ func (win *syncWindow) coarseAt(syms *[syncSymbols]int8, e, step int32) (c, sv, 
 		svv += v * v
 	}
 	return c, sv, svv
+}
+
+//go:noinline
+func (r *leanCore) midNear(p enums.SyncPattern) bool {
+	back := int32(r.tm.step - r.lastAt + 0.5)
+	if back+2*syncSymbols > r.acqKept() {
+		return true
+	}
+	var sv, svv, c, sp float32
+	for k := range syncSymbols {
+		v := r.kept(back + 2*int32(syncSymbols-1-k))
+		s := float32(3)
+		if uint64(p)>>(2*(syncSymbols-1-k))&2 != 0 {
+			s = -3
+		}
+		c += s * v
+		sv += v
+		svv += v * v
+		sp += s
+	}
+	const n = syncSymbols
+	cov := c - sp*sv/n
+	return cov > 0 && cov*cov >= leanMidGate*leanMidGate*(svv-sv*sv/n)*(9*n-sp*sp/n)
 }
 
 func (r *leanCore) fillWindow(win *syncWindow, b0 int32) {
@@ -1147,6 +1171,9 @@ func (r *leanCore) searchMid() {
 	p := voice
 	if data {
 		p = dp
+	}
+	if leanMidGate > 0 && !r.midNear(p) {
+		return
 	}
 	at := r.lastAt
 	r.lastAt = at - r.tm.step
