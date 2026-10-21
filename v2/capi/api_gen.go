@@ -27,6 +27,7 @@ import (
 	g_layer2_packet "github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	g_layer2_pdu "github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	g_layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
+	g_mototrbo_tms "github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms"
 	g_nmea "github.com/USA-RedDragon/dmrgo/v2/nmea"
 	g_shortdata "github.com/USA-RedDragon/dmrgo/v2/shortdata"
 	g_trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
@@ -3119,6 +3120,74 @@ func in_layer3_VoiceServiceOptions(s *C.dmrgo_layer3_voice_service_options_t) (d
 	return
 }
 
+func out_mototrbo_tms_Header(d *C.dmrgo_tms_header_t, s *g_mototrbo_tms.Header, oc *outc) {
+	_ = oc
+	d.extension = C.bool(s.Extension)
+	d.ack_required = C.bool(s.AckRequired)
+	d.reserved = C.bool(s.Reserved)
+	d.type_ = C.dmrgo_tms_type_t(s.Type)
+}
+
+func out_mototrbo_tms_SequenceLow(d *C.dmrgo_tms_sequence_low_t, s *g_mototrbo_tms.SequenceLow, oc *outc) {
+	_ = oc
+	d.extension = C.bool(s.Extension)
+	d.reserved = C.uint8_t(s.Reserved)
+	d.low = C.uint8_t(s.Low)
+}
+
+func out_mototrbo_tms_SequenceHigh(d *C.dmrgo_tms_sequence_high_t, s *g_mototrbo_tms.SequenceHigh, oc *outc) {
+	_ = oc
+	d.extension = C.bool(s.Extension)
+	d.high = C.uint8_t(s.High)
+	d.encoding = C.dmrgo_tms_encoding_t(s.Encoding)
+}
+
+func out_mototrbo_tms_Message(d *C.dmrgo_tms_message_t, s *g_mototrbo_tms.Message, oc *outc) {
+	_ = oc
+	d.length = C.uint16_t(s.Length)
+	out_mototrbo_tms_Header(&d.header, &s.Header, oc)
+	d.address = (*C.uint8_t)(arenaCopy(oc, s.Address))
+	d.address_len = C.size_t(len(s.Address))
+	d.capability = C.uint8_t(s.Capability)
+	out_mototrbo_tms_SequenceLow(&d.sequence_low, &s.SequenceLow, oc)
+	out_mototrbo_tms_SequenceHigh(&d.sequence_high, &s.SequenceHigh, oc)
+	d.text = (*C.uint8_t)(arenaCopy(oc, s.Text))
+	d.text_len = C.size_t(len(s.Text))
+}
+
+func in_mototrbo_tms_Header(s *C.dmrgo_tms_header_t) (d g_mototrbo_tms.Header) {
+	d.Extension = bool(s.extension)
+	d.AckRequired = bool(s.ack_required)
+	d.Reserved = bool(s.reserved)
+	d.Type = g_mototrbo_tms.Type(s.type_)
+	return
+}
+
+func in_mototrbo_tms_SequenceLow(s *C.dmrgo_tms_sequence_low_t) (d g_mototrbo_tms.SequenceLow) {
+	d.Extension = bool(s.extension)
+	d.Reserved = uint8(s.reserved)
+	d.Low = uint8(s.low)
+	return
+}
+
+func in_mototrbo_tms_SequenceHigh(s *C.dmrgo_tms_sequence_high_t) (d g_mototrbo_tms.SequenceHigh) {
+	d.Extension = bool(s.extension)
+	d.High = uint8(s.high)
+	d.Encoding = g_mototrbo_tms.Encoding(s.encoding)
+	return
+}
+
+func in_mototrbo_tms_Message(s *C.dmrgo_tms_message_t) (d g_mototrbo_tms.Message) {
+	d.Length = uint16(s.length)
+	d.Header = in_mototrbo_tms_Header(&s.header)
+	d.Address = unsafe.Slice((*byte)(unsafe.Pointer(s.address)), int(s.address_len))
+	d.Capability = uint8(s.capability)
+	d.SequenceLow = in_mototrbo_tms_SequenceLow(&s.sequence_low)
+	d.SequenceHigh = in_mototrbo_tms_SequenceHigh(&s.sequence_high)
+	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
+	return
+}
+
 func out_nmea_RMC(d *C.dmrgo_nmea_rmc_t, s *g_nmea.RMC, oc *outc) {
 	_ = oc
 	*(*[2]byte)(unsafe.Pointer(&d.talker)) = s.Talker
@@ -5085,6 +5154,22 @@ func fromC_layer3_ServiceOptions(s *C.dmrgo_layer3_service_options_t) g_layer3.S
 
 func fromC_layer3_VoiceServiceOptions(s *C.dmrgo_layer3_voice_service_options_t) g_layer3.VoiceServiceOptions {
 	return in_layer3_VoiceServiceOptions(s)
+}
+
+func fromC_mototrbo_tms_Header(s *C.dmrgo_tms_header_t) g_mototrbo_tms.Header {
+	return in_mototrbo_tms_Header(s)
+}
+
+func fromC_mototrbo_tms_Message(s *C.dmrgo_tms_message_t) g_mototrbo_tms.Message {
+	return in_mototrbo_tms_Message(s)
+}
+
+func fromC_mototrbo_tms_SequenceHigh(s *C.dmrgo_tms_sequence_high_t) g_mototrbo_tms.SequenceHigh {
+	return in_mototrbo_tms_SequenceHigh(s)
+}
+
+func fromC_mototrbo_tms_SequenceLow(s *C.dmrgo_tms_sequence_low_t) g_mototrbo_tms.SequenceLow {
+	return in_mototrbo_tms_SequenceLow(s)
 }
 
 func in_nmea_RMC(s *C.dmrgo_nmea_rmc_t) (d g_nmea.RMC) {
@@ -24110,6 +24195,487 @@ func dmrgo_layer3_voice_service_options_string(c_self *C.dmrgo_layer3_voice_serv
 	return C.DMRGO_OK
 }
 
+//export dmrgo_tms_decode_message
+func dmrgo_tms_decode_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_tms_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_mototrbo_tms.DecodeMessage(a_data)
+	_ = r0
+	if c_out != nil {
+		out_mototrbo_tms_Message(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_tms_encoding_string
+func dmrgo_tms_encoding_string(c_self C.dmrgo_tms_encoding_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_mototrbo_tms.Encoding(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_tms_header_append_binary
+func dmrgo_tms_header_append_binary(c_self *C.dmrgo_tms_header_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_tms.Header
+	x = in_mototrbo_tms_Header(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_mototrbo_tms_Header(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_tms_header_string
+func dmrgo_tms_header_string(c_self *C.dmrgo_tms_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_tms.Header
+	x = in_mototrbo_tms_Header(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_mototrbo_tms_Header(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_tms_message_append_binary
+func dmrgo_tms_message_append_binary(c_self *C.dmrgo_tms_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_tms.Message
+	x = in_mototrbo_tms_Message(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_mototrbo_tms_Message(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_tms_message_sequence
+func dmrgo_tms_message_sequence(c_self *C.dmrgo_tms_message_t, c_out0 *C.uint8_t, c_out1 *C.bool, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_tms.Message
+	x = in_mototrbo_tms_Message(&(*c_self))
+	r0, r1 := x.Sequence()
+	out_mototrbo_tms_Message(&(*c_self), &x, oc)
+	_ = r0
+	_ = r1
+	if c_out0 != nil {
+		*c_out0 = C.uint8_t(r0)
+	}
+	if c_out1 != nil {
+		*c_out1 = C.bool(r1)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_tms_message_set_text_utf8
+func dmrgo_tms_message_set_text_utf8(c_self *C.dmrgo_tms_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_text *C.uint8_t, c_text_len C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_tms.Message
+	x = in_mototrbo_tms_Message(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_text == nil && c_text_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_text []byte
+	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	r0 := x.SetTextUTF8(a_dst, a_text)
+	out_mototrbo_tms_Message(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_tms_message_string
+func dmrgo_tms_message_string(c_self *C.dmrgo_tms_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_tms.Message
+	x = in_mototrbo_tms_Message(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_mototrbo_tms_Message(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_tms_message_text_utf8
+func dmrgo_tms_message_text_utf8(c_self *C.dmrgo_tms_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_tms.Message
+	x = in_mototrbo_tms_Message(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0 := x.TextUTF8(a_dst)
+	out_mototrbo_tms_Message(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_tms_new_ack
+func dmrgo_tms_new_ack(c_seq C.uint8_t, c_out *C.dmrgo_tms_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	r0, r1 := g_mototrbo_tms.NewAck(uint8(c_seq))
+	_ = r0
+	if c_out != nil {
+		out_mototrbo_tms_Message(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_tms_new_text
+func dmrgo_tms_new_text(c_seq C.uint8_t, c_ack_required C.bool, c_out *C.dmrgo_tms_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	r0, r1 := g_mototrbo_tms.NewText(uint8(c_seq), bool(c_ack_required))
+	_ = r0
+	if c_out != nil {
+		out_mototrbo_tms_Message(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_tms_sequence_high_append_binary
+func dmrgo_tms_sequence_high_append_binary(c_self *C.dmrgo_tms_sequence_high_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_tms.SequenceHigh
+	x = in_mototrbo_tms_SequenceHigh(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_mototrbo_tms_SequenceHigh(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_tms_sequence_high_string
+func dmrgo_tms_sequence_high_string(c_self *C.dmrgo_tms_sequence_high_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_tms.SequenceHigh
+	x = in_mototrbo_tms_SequenceHigh(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_mototrbo_tms_SequenceHigh(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_tms_sequence_low_append_binary
+func dmrgo_tms_sequence_low_append_binary(c_self *C.dmrgo_tms_sequence_low_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_tms.SequenceLow
+	x = in_mototrbo_tms_SequenceLow(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_mototrbo_tms_SequenceLow(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_tms_sequence_low_string
+func dmrgo_tms_sequence_low_string(c_self *C.dmrgo_tms_sequence_low_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_tms.SequenceLow
+	x = in_mototrbo_tms_SequenceLow(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_mototrbo_tms_SequenceLow(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_tms_type_string
+func dmrgo_tms_type_string(c_self C.dmrgo_tms_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_mototrbo_tms.Type(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_nmea_parse_rmc
 func dmrgo_nmea_parse_rmc(c_s *C.uint8_t, c_s_len C.size_t, c_out *C.dmrgo_nmea_rmc_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -29270,6 +29836,10 @@ func errCode(err error) C.int {
 			return -132
 		case g_layer2_pdu.ErrTalkerAliasLength:
 			return -133
+		case g_mototrbo_tms.ErrLength:
+			return -183
+		case g_mototrbo_tms.ErrShort:
+			return -184
 		case g_nmea.ErrChecksum:
 			return -152
 		case g_nmea.ErrField:
@@ -29523,6 +30093,10 @@ func codeErr(code C.int) error {
 		return g_layer2_pdu.ErrTalkerAliasInvalidUTF8
 	case -133:
 		return g_layer2_pdu.ErrTalkerAliasLength
+	case -183:
+		return g_mototrbo_tms.ErrLength
+	case -184:
+		return g_mototrbo_tms.ErrShort
 	case -152:
 		return g_nmea.ErrChecksum
 	case -153:
