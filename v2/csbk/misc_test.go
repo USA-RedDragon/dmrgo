@@ -103,7 +103,7 @@ func TestResetAndLost(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out := w.Cancel(nil); len(out) != 0 {
+	if out := w.Cancel(0, nil); len(out) != 0 {
 		t.Error("Cancel without a wakeup gave output")
 	}
 	if err := w.Wake(0, 1, 2); err != nil {
@@ -118,7 +118,7 @@ func TestResetAndLost(t *testing.T) {
 	if _, ok := w.Deadline(); ok {
 		t.Error("a negative SyncWait has a deadline")
 	}
-	if out := w.Cancel(nil); len(out) != 1 || out[0].Result != csbk.ResultCanceled {
+	if out := w.Cancel(0, nil); len(out) != 1 || out[0].Result != csbk.ResultCanceled {
 		t.Errorf("Cancel gave %+v", out)
 	}
 	if err := w.Wake(0, 1<<24, 2); err == nil {

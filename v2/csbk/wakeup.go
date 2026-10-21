@@ -143,9 +143,10 @@ func (w *Wakeup) OutboundSync(dst []Output) []Output {
 }
 
 // Cancel ends the wakeup, and appends an OutputDone with ResultCanceled to
-// dst while one runs. It allocates only when dst has no room for
+// dst while one runs. It does not run the timers, so now only gives the
+// shape of the other methods. It allocates only when dst has no room for
 // MaxOutputs outputs.
-func (w *Wakeup) Cancel(dst []Output) []Output {
+func (w *Wakeup) Cancel(_ time.Duration, dst []Output) []Output {
 	if w.state == WakeupIdle {
 		return dst
 	}

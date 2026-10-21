@@ -194,7 +194,7 @@ func TestRequesterErrors(t *testing.T) {
 	if err := q.RequestRadioCheck(0, 2, 1, nil); !errors.Is(err, csbk.ErrBusy) {
 		t.Errorf("second request: %v", err)
 	}
-	out := q.Cancel(nil)
+	out := q.Cancel(0, nil)
 	if len(out) != 1 || out[0].Result != csbk.ResultCanceled || q.State() != csbk.RequesterIdle {
 		t.Errorf("cancel %+v", out)
 	}
