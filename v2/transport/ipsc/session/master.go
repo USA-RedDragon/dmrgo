@@ -163,7 +163,7 @@ func (m *Master) Reset() {
 // DMRlink does when it shuts down, reports OutputDown with ReasonStopped
 // for each, and stops the Master until Reset. It allocates only when dst
 // has no room for MaxOutputs outputs.
-func (m *Master) Close(_ time.Duration, dst []Output) []Output {
+func (m *Master) Close(dst []Output) []Output {
 	if m == nil {
 		return dst
 	}

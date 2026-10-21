@@ -50,7 +50,7 @@ func TestAllocsSession(t *testing.T) {
 		po = b.Packet(now, bo[0].Packet, po[:0])
 		mo = m.Resume(now, 99, mo[:0])
 		mo = m.Resume(now, 1234, mo[:0])
-		po = p.Close(now, po[:0])
+		po = p.Close(po[:0])
 	}
 	run()
 	if p.State() != session.StateIdle || m.State() != session.StateRunning || b.State() != session.StateRunning {

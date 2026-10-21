@@ -109,7 +109,7 @@ func TestPeerReplaysXPR8400(t *testing.T) {
 	if want == nil {
 		t.Fatalf("register %x, want %x", reg, want)
 	}
-	out := p.Packet(time.Second, masterAddr, xprPacket(t, lines, ipsc.OpRegisterReply, 1), nil)
+	out := p.Packet(masterAddr, xprPacket(t, lines, ipsc.OpRegisterReply, 1), nil)
 	if len(out) != 1 || out[0].Kind != session.OutputUp || out[0].ID != 1 {
 		t.Fatalf("reply %+v", out)
 	}
@@ -117,17 +117,17 @@ func TestPeerReplaysXPR8400(t *testing.T) {
 	if len(s) != 2 || !bytes.Equal(s[0], xprPacket(t, lines, ipsc.OpAliveRequest, xpr)) || !bytes.Equal(s[1], xprPacket(t, lines, ipsc.OpPeerListRequest, xpr)) {
 		t.Fatalf("keepalive and list request %x", s)
 	}
-	out = p.Packet(5*time.Second, masterAddr, xprPacket(t, lines, ipsc.OpPeerListReply, 1), nil)
+	out = p.Packet(masterAddr, xprPacket(t, lines, ipsc.OpPeerListReply, 1), nil)
 	if len(out) != 1 || out[0].Kind != session.OutputPeers || p.Peers() != 0 {
 		t.Fatalf("list %v", kinds(out))
 	}
-	p.Packet(5*time.Second, masterAddr, xprPacket(t, lines, ipsc.OpAliveReply, 1), nil)
+	p.Packet(masterAddr, xprPacket(t, lines, ipsc.OpAliveReply, 1), nil)
 	if s = sends(p.Tick(10*time.Second, nil)); len(s) != 1 || ipsc.Opcode(s[0][0]) != ipsc.OpAliveRequest {
 		t.Fatalf("keepalive %x", s)
 	}
 	for _, pk := range lines {
 		if ipsc.Opcode(pk[0]) == ipsc.OpGroupVoice {
-			out = p.Packet(11*time.Second, masterAddr, append([]byte{pk[0], 0, 0, 0, 1}, pk[5:]...), nil)
+			out = p.Packet(masterAddr, append([]byte{pk[0], 0, 0, 0, 1}, pk[5:]...), nil)
 			if len(out) != 1 || out[0].Kind != session.OutputData {
 				t.Fatalf("voice %v", kinds(out))
 			}
@@ -187,7 +187,7 @@ func (n *net) pump() {
 		}
 		for _, nd := range n.nodes {
 			if nd.addr == q.to {
-				n.out(nd.addr, nd.peer.Packet(n.now, q.from, q.p, nil))
+				n.out(nd.addr, nd.peer.Packet(q.from, q.p, nil))
 			}
 		}
 	}
@@ -276,11 +276,11 @@ func TestLoopback(t *testing.T) {
 	}
 	a, b := n.nodes[0], n.nodes[1]
 	voice := a.peer.Sign([]byte{byte(ipsc.OpGroupVoice), 0, 0, 0, 100, 1, 2, 3})
-	out := b.peer.Packet(n.now, a.addr, voice, nil)
+	out := b.peer.Packet(a.addr, voice, nil)
 	if len(out) != 1 || out[0].Kind != session.OutputData || out[0].ID != 100 || len(out[0].Packet) != 8 {
 		t.Fatalf("voice %+v", out)
 	}
-	if out = b.peer.Packet(n.now, a.addr, voice[:8], nil); len(out) != 0 {
+	if out = b.peer.Packet(a.addr, voice[:8], nil); len(out) != 0 {
 		t.Fatal("packet without trailer taken")
 	}
 	if out = m.Packet(n.now, a.addr, voice, nil); len(out) != 1 || out[0].Kind != session.OutputData {
@@ -325,7 +325,7 @@ func TestLoopbackClose(t *testing.T) {
 	m := n.master
 	a, b := n.nodes[0], n.nodes[1]
 	n.events = map[session.Addr][]session.Output{}
-	n.out(b.addr, b.peer.Close(n.now, nil))
+	n.out(b.addr, b.peer.Close(nil))
 	n.pump()
 	if m.Peers() != 2 || count(n.events[masterAddr], session.OutputDown, session.ReasonClosed) != 1 || b.peer.State() != session.StateIdle {
 		t.Fatalf("close: %d %v", m.Peers(), kinds(n.events[masterAddr]))
@@ -337,7 +337,7 @@ func TestLoopbackClose(t *testing.T) {
 		t.Fatal("deadline after Close")
 	}
 	n.events = map[session.Addr][]session.Output{}
-	n.out(masterAddr, m.Close(n.now, nil))
+	n.out(masterAddr, m.Close(nil))
 	n.pump()
 	if m.State() != session.StateIdle || count(n.events[a.addr], session.OutputDown, session.ReasonClosed) != 1 || a.peer.State() != session.StateRegistering {
 		t.Fatalf("master close %v %v", kinds(n.events[a.addr]), a.peer.State())

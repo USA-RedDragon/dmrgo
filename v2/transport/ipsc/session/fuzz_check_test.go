@@ -86,7 +86,7 @@ func checkSession(t *testing.T, data []byte) {
 			out = p.Tick(now, out)
 			check(n, p.MaxOutputs())
 			n = len(out)
-			out = p.Packet(now, from, pk, out)
+			out = p.Packet(from, pk, out)
 			check(n, p.MaxOutputs())
 			n = len(out)
 			out = m.Tick(now, out)
@@ -106,10 +106,10 @@ func checkSession(t *testing.T, data []byte) {
 			check(n, m.MaxOutputs())
 		}
 		n := len(out)
-		out = p.Close(now, out)
+		out = p.Close(out)
 		check(n, p.MaxOutputs())
 		n = len(out)
-		out = m.Close(now, out)
+		out = m.Close(out)
 		check(n, m.MaxOutputs())
 	}
 }
