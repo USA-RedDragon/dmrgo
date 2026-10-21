@@ -71,3 +71,38 @@ func ExampleSender() {
 	// receiver sends ACK
 	// Delivered after 2 tries (ACK)
 }
+
+// ExampleOutput_ICMP shows the ICMP error message that the IP layer gets
+// for a confirmed message that got no response in its tries.
+func ExampleOutput_ICMP() {
+	tx, err := data.NewSender(&data.SenderConfig{Retries: 2})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	m := &data.Message{
+		Header: pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
+			SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001,
+		}},
+		Rate:    enums.DataTypeRate12,
+		Payload: []byte("no one hears this"),
+	}
+	if err := tx.Send(0, m); err != nil {
+		fmt.Println(err)
+		return
+	}
+	outputs := make([]data.Output, 0, data.MaxOutputs)
+	for {
+		at, ok := tx.Deadline()
+		if !ok {
+			return
+		}
+		for _, o := range tx.Tick(at, outputs[:0]) {
+			if icmp, ok := o.ICMP(); ok {
+				fmt.Printf("%v after %d tries: ICMP %v (type %d, code %d)\n", o.Result, o.Try, icmp, icmp.Type(), icmp.Code())
+			}
+		}
+	}
+	// Output:
+	// RetryLimit after 2 tries: ICMP Host Unreachable (type 3, code 1)
+}

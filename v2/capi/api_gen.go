@@ -397,6 +397,28 @@ func in_data_SenderConfig(s *C.dmrgo_data_sender_config_t) (d g_data.SenderConfi
 	return
 }
 
+func in_data_Output(s *C.dmrgo_data_output_t) (d g_data.Output) {
+	d.Kind = g_data.OutputKind(s.kind)
+	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	d.Due = time.Duration(s.due)
+	d.Try = uint8(s.try_)
+	d.Result = g_data.Result(s.result)
+	d.Response = g_layer2_packet.Response(s.response)
+	d.HasResponse = bool(s.has_response)
+	return
+}
+
+func out_data_Output(d *C.dmrgo_data_output_t, s *g_data.Output, oc *outc) {
+	_ = oc
+	d.kind = C.dmrgo_data_output_kind_t(s.Kind)
+	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
+	d.due = C.int64_t(s.Due)
+	d.try_ = C.uint8_t(s.Try)
+	d.result = C.dmrgo_data_result_t(s.Result)
+	d.response = C.dmrgo_packet_response_t(s.Response)
+	d.has_response = C.bool(s.HasResponse)
+}
+
 func out_data_Call(d *C.dmrgo_data_call_t, s *g_data.Call, oc *outc) {
 	_ = oc
 	d.group = C.bool(s.Group)
@@ -623,17 +645,6 @@ func out_data_Event(d *C.dmrgo_data_event_t, s *g_data.Event, oc *outc) {
 	d.due = C.int64_t(s.Due)
 	d.reason = C.dmrgo_data_end_reason_t(s.Reason)
 	*(*g_data.Stats)(unsafe.Pointer(&d.stats)) = s.Stats
-}
-
-func out_data_Output(d *C.dmrgo_data_output_t, s *g_data.Output, oc *outc) {
-	_ = oc
-	d.kind = C.dmrgo_data_output_kind_t(s.Kind)
-	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
-	d.due = C.int64_t(s.Due)
-	d.try_ = C.uint8_t(s.Try)
-	d.result = C.dmrgo_data_result_t(s.Result)
-	d.response = C.dmrgo_packet_response_t(s.Response)
-	d.has_response = C.bool(s.HasResponse)
 }
 
 type st_layer2_pdu_DataHeader struct {
@@ -5224,17 +5235,6 @@ func fromC_data_Event(s *C.dmrgo_data_event_t) g_data.Event {
 func fromC_data_Message(s *C.dmrgo_data_message_t) g_data.Message {
 	var st st_data_Message
 	return in_data_Message(s, &st)
-}
-
-func in_data_Output(s *C.dmrgo_data_output_t) (d g_data.Output) {
-	d.Kind = g_data.OutputKind(s.kind)
-	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
-	d.Due = time.Duration(s.due)
-	d.Try = uint8(s.try_)
-	d.Result = g_data.Result(s.result)
-	d.Response = g_layer2_packet.Response(s.response)
-	d.HasResponse = bool(s.has_response)
-	return
 }
 
 func fromC_data_Output(s *C.dmrgo_data_output_t) g_data.Output {
@@ -10763,6 +10763,31 @@ func dmrgo_data_new_sender(c_cfg *C.dmrgo_data_sender_config_t, c_out **C.dmrgo_
 	}
 	if r1 != nil {
 		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_output_icmp
+func dmrgo_data_output_icmp(c_self *C.dmrgo_data_output_t, c_m *C.dmrgo_ip_icmp_message_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_data.Output
+	x = in_data_Output(&(*c_self))
+	r0, r1 := x.ICMP()
+	out_data_Output(&(*c_self), &x, oc)
+	_ = r0
+	_ = r1
+	if c_m != nil {
+		*c_m = C.dmrgo_ip_icmp_message_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
 	}
 	return C.DMRGO_OK
 }

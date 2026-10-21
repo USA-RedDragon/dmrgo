@@ -6,6 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/pcg"
+	"github.com/USA-RedDragon/dmrgo/v2/ip"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -637,6 +638,29 @@ func (s *Sender) send(dst []Output) []Output {
 	s.state, s.respUntil = SenderWaitResponse, last+slotPeriod+s.responseWait
 	s.asm.Reset()
 	return dst
+}
+
+// ICMP returns the ICMP error message that the OutputDone o of a message
+// of the IP bearer service reports to the IP layer:
+// ip.ICMPHostUnreachable for a message that used all its tries on air
+// (ResultRetryLimit), that could not finish before SenderConfig.TxLimit
+// (ResultTimeLimit), or that got a NACK for the full memory of the
+// recipient. ok is false for any other output. (ETSI TS 102 361-3 clauses
+// 5.2 and 5.4.2.1)
+func (o *Output) ICMP() (m ip.ICMPMessage, ok bool) {
+	if o.Kind != OutputDone {
+		return 0, false
+	}
+	switch o.Result {
+	case ResultRetryLimit, ResultTimeLimit:
+		return ip.ICMPHostUnreachable, true
+	case ResultRefused:
+		if o.HasResponse && o.Response == packet.ResponseNACKMemoryFull {
+			return ip.ICMPHostUnreachable, true
+		}
+	case ResultSent, ResultDelivered, ResultCancelled:
+	}
+	return 0, false
 }
 
 //go:noinline
