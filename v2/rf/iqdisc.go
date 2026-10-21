@@ -450,7 +450,7 @@ func (r *iqRx) hunt(v complex64) {
 		return
 	}
 	hz := float32(r.spec.Hz)
-	if abs32(hz) > iqTuneMaxHz || abs32(hz-r.conv.hz) < iqAFCPullHz {
+	if d := abs32(hz); d > iqTuneMaxHz || d <= r.maxHz || abs32(hz-r.conv.hz) < iqAFCPullHz {
 		return
 	}
 	r.d.write(r.audio)
