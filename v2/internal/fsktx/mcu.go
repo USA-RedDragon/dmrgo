@@ -257,7 +257,8 @@ func (m *MCUAudio) Symbol(dst []int16, s int8) int {
 		return m.shaped(dst[:n], n, s)
 	}
 	if tier0Corr24 && m.corr && m.c24 && 2*n == len(mcuCorr[0]) {
-		if t := m.corrRow(s); t != nil {
+		if i, ok := m.corrIdx(s); ok {
+			t := &mcuCorr[i]
 			d := (*[len(mcuCorr[0]) / 2]int16)(dst)
 			for p := range d {
 				d[p] = int16(int32((int64(buf[p]+int32(t[2*p]))*sc+1<<(14+tapShift))>>(15+tapShift)) + off)
@@ -266,7 +267,8 @@ func (m *MCUAudio) Symbol(dst []int16, s int8) int {
 		}
 	}
 	if tier0Corr && m.corr && !m.c24 && n == len(mcuCorr[0]) {
-		if t := m.corrRow(s); t != nil {
+		if i, ok := m.corrIdx(s); ok {
+			t := &mcuCorr[i]
 			d := (*[len(mcuCorr[0])]int16)(dst)
 			for p := range d {
 				d[p] = int16(int32((int64(buf[p]+int32(t[p]))*sc+1<<(14+tapShift))>>(15+tapShift)) + off)
@@ -291,7 +293,8 @@ func (m *MCUAudio) shaped(dst []int16, n int, s int8) int {
 	const half = 1 << (sh - 1)
 	sc, off, buf, e := m.scale, m.offset, &m.k.buf, m.rerr
 	if tier0Corr24 && m.corr && m.c24 && 2*n == len(mcuCorr[0]) {
-		if t := m.corrRow(s); t != nil {
+		if i, ok := m.corrIdx(s); ok {
+			t := &mcuCorr[i]
 			d := (*[len(mcuCorr[0]) / 2]int16)(dst)
 			for p := range d {
 				v := (buf[p]+int32(t[2*p]))*sc - e + half
@@ -303,7 +306,8 @@ func (m *MCUAudio) shaped(dst []int16, n int, s int8) int {
 		}
 	}
 	if tier0Corr && m.corr && !m.c24 && n == len(mcuCorr[0]) {
-		if t := m.corrRow(s); t != nil {
+		if i, ok := m.corrIdx(s); ok {
+			t := &mcuCorr[i]
 			d := (*[len(mcuCorr[0])]int16)(dst)
 			for p := range d {
 				v := (buf[p]+int32(t[p]))*sc - e + half
@@ -329,7 +333,9 @@ func (m *MCUAudio) shaped2(dst []int16, n int, s int8) int {
 	sc, off, buf, e1, e2 := m.scale, m.offset, &m.k.buf, m.rerr, m.rerr2
 	var t *[10]int16
 	if tier0Corr && m.corr {
-		t = m.corrRow(s)
+		if i, ok := m.corrIdx(s); ok {
+			t = &mcuCorr[i]
+		}
 	}
 	if t != nil && !m.c24 && n == len(mcuCorr[0]) {
 		d := (*[len(mcuCorr[0])]int16)(dst)
@@ -368,9 +374,7 @@ func (m *MCUAudio) shaped2(dst []int16, n int, s int8) int {
 	return n
 }
 
-// corrRow takes the symbol s into the context and returns the correction
-// of the context, nil for a context with a symbol 0.
-func (m *MCUAudio) corrRow(s int8) *[10]int16 {
+func (m *MCUAudio) corrIdx(s int8) (uint32, bool) {
 	skip := mcuCorrSkip
 	if tier0Corr24 && m.c24 {
 		skip += 2
@@ -380,7 +384,7 @@ func (m *MCUAudio) corrRow(s int8) *[10]int16 {
 		e := code5[(r[m.k.pos+skip]+3)&7]
 		l := code5[(r[m.k.pos+skip+mcuCorrSyms]+3)&7]
 		m.idx5 = (m.idx5-uint32(l)*mcuCorrTop)*5 + uint32(e)
-		return &mcuCorr[m.idx5]
+		return m.idx5, true
 	}
 	z := uint32(0)
 	switch s {
@@ -391,9 +395,9 @@ func (m *MCUAudio) corrRow(s int8) *[10]int16 {
 	m.codes = m.codes<<2 | uint32(s+3)>>1
 	m.zeros = m.zeros<<1 | z
 	if m.zeros>>skip&(1<<mcuCorrSyms-1) != 0 {
-		return nil
+		return 0, false
 	}
-	return &mcuCorr[m.codes>>(2*skip)&(1<<(2*mcuCorrSyms)-1)]
+	return m.codes >> (2 * skip) & (1<<(2*mcuCorrSyms) - 1), true
 }
 
 // code5 is the digit of a symbol plus 3 in the index of mcuCorr in base
