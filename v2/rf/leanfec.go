@@ -248,13 +248,13 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 			}
 		}
 	}
-	_, checked := bptcCheck(dt, &[12]byte{})
+	var data [12]byte
+	_, checked := bptcCheck(dt, &data)
 	size := 1
 	if checked {
 		size = softListMax
 	}
 	f.nlist = 0
-	var data [12]byte
 	for g := 0; g < 1<<leanChase; g++ {
 		if g > 0 {
 			cell := chase[bits.TrailingZeros(uint(g))]
