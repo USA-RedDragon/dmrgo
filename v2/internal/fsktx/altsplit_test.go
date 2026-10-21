@@ -9,7 +9,8 @@ import (
 	"testing"
 )
 
-func altWelch(x []complex128, rate float64) float64 {
+func altWelch(x []complex128) float64 {
+	const rate = 96000.0
 	n := 2048
 	w := make([]float64, n)
 	var wsum float64
@@ -53,6 +54,7 @@ func altWelch(x []complex128, rate float64) float64 {
 }
 
 func TestAltSplit(t *testing.T) {
+	t.Parallel()
 	if os.Getenv("ALTSPLIT") == "" {
 		t.Skip()
 	}
@@ -84,7 +86,7 @@ func TestAltSplit(t *testing.T) {
 			ws = append(ws, float64(x))
 		}
 	}
-	t.Logf("A full int16 MCUIQ: %.2f dBc", altWelch(outI, rate))
+	t.Logf("A full int16 MCUIQ: %.2f dBc", altWelch(outI))
 	vs = vs[:0]
 	prev := int32(ws[0])
 	for _, wf := range ws[1:] {
@@ -132,10 +134,10 @@ func TestAltSplit(t *testing.T) {
 			si := sn + (c*fr)>>32
 			out[i] = complex(float64(int16(co>>16)), float64(int16(si>>16)))
 		}
-		t.Logf("Q16 table %d bits: %.2f dBc", bits, altWelch(out, rate))
+		t.Logf("Q16 table %d bits: %.2f dBc", bits, altWelch(out))
 	}
-	t.Logf("B linear interp, exact cos, float: %.2f dBc", altWelch(fm(inc, id), rate))
-	t.Logf("B2 linear interp, exact cos, int16 round: %.2f dBc", altWelch(fm(inc, rnd), rate))
+	t.Logf("B linear interp, exact cos, float: %.2f dBc", altWelch(fm(inc, id)))
+	t.Logf("B2 linear interp, exact cos, int16 round: %.2f dBc", altWelch(fm(inc, rnd)))
 	n := 1
 	for n < len(ws) {
 		n <<= 1
@@ -160,8 +162,8 @@ func TestAltSplit(t *testing.T) {
 	for i := 1; i < len(ws)-1; i++ {
 		ideal = append(ideal, real(up[4*(i-1)+1])/float64(n), real(up[4*(i-1)+3])/float64(n))
 	}
-	t.Logf("C ideal interp, exact cos, float: %.2f dBc", altWelch(fm(ideal, id), rate))
-	t.Logf("C2 ideal interp, int16 round: %.2f dBc", altWelch(fm(ideal, rnd), rate))
+	t.Logf("C ideal interp, exact cos, float: %.2f dBc", altWelch(fm(ideal, id)))
+	t.Logf("C2 ideal interp, int16 round: %.2f dBc", altWelch(fm(ideal, rnd)))
 	diff := make([]float64, len(ideal))
 	for i := range ideal {
 		diff[i] = inc[i] - ideal[i]

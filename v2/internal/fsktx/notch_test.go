@@ -7,6 +7,7 @@ import (
 )
 
 func TestNoisePoleNotch(t *testing.T) {
+	t.Parallel()
 	const rate = 2400000
 	base := IQConfig{Rate: rate, Tier: Tier2, Exact: true}
 	notch := base

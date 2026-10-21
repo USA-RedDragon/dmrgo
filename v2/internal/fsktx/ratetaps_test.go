@@ -9,6 +9,7 @@ import (
 )
 
 func TestRateTapsAddToPulse(t *testing.T) {
+	t.Parallel()
 	syms := newTestStream(t, 5, 60).syms
 	run := func(r RateDesign) []int16 {
 		a, err := NewAudio(AudioConfig{Hz: 24000, Tier: Tier1, Exact: true, Rates: []RateDesign{r}})

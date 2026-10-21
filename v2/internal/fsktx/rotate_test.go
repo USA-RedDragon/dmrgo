@@ -27,6 +27,7 @@ func rotatePair(t testing.TB, tier Tier, rate int, off float64) (*IQ, *IQ) {
 }
 
 func TestRotateMatches(t *testing.T) {
+	t.Parallel()
 	for _, tier := range []Tier{Tier1, Tier2} {
 		for _, rate := range []int{48000, 96000, 192000, 1000000, 2400000} {
 			for _, off := range []float64{0, 1200, -2500, float64(rate)/4 - 100} {

@@ -6,6 +6,7 @@ import (
 )
 
 func TestPreEmphasisInverts(t *testing.T) {
+	t.Parallel()
 	const hz = 48000
 	flat, err := NewAudio(AudioConfig{Hz: hz, Tier: Tier2})
 	if err != nil {
@@ -41,6 +42,7 @@ func TestPreEmphasisInverts(t *testing.T) {
 }
 
 func TestPreEmphasisRange(t *testing.T) {
+	t.Parallel()
 	for _, c := range [][2]float64{{-1, 3000}, {3000, 300}, {300, 0}, {300, 30000}} {
 		if _, err := NewAudio(AudioConfig{Tier: Tier1, PreEmphasisHz: c}); err == nil {
 			t.Errorf("PreEmphasisHz %v: no error", c)

@@ -13,6 +13,7 @@ import (
 )
 
 func TestIQCorrDump(t *testing.T) {
+	t.Parallel()
 	dir := os.Getenv("DMRGO_IQCORR_DUMP")
 	if dir == "" {
 		t.Skip("set DMRGO_IQCORR_DUMP")
@@ -43,8 +44,8 @@ func TestIQCorrDump(t *testing.T) {
 	const n = 200000
 	rng := rand.New(rand.NewPCG(3, 4))
 	sy := make([]byte, n)
-	var y0, y1 []float64
 	buf := make([]float64, len(q0.buf))
+	y0, y1 := make([]float64, 0, n*len(buf)), make([]float64, 0, n*len(buf))
 	for i := range sy {
 		s := int8(rng.IntN(4)*2 - 3)
 		sy[i] = byte(s + 3)

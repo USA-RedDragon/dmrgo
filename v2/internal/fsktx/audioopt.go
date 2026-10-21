@@ -381,7 +381,7 @@ func (o *aoptimizer) solve(w0 int) {
 			o.alpha[k] = o.rho[k] * dot(o.s[k], o.d)
 			axpy(-o.alpha[k], o.y[k], o.d)
 		}
-		gamma := 0.0
+		var gamma float64
 		if m > 0 {
 			k := (m - 1) % optMem
 			gamma = dot(o.s[k], o.y[k]) / dot(o.y[k], o.y[k])

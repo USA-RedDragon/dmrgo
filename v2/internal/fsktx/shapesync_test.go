@@ -26,6 +26,7 @@ func shapeSyncRun(t *testing.T, sync int, ageSyms int) []int16 {
 }
 
 func TestAudioShapeSync(t *testing.T) {
+	t.Parallel()
 	const age = 120 * SymbolRate
 	from := 200 * 48000 / SymbolRate
 	diff := func(a, b []int16) int {

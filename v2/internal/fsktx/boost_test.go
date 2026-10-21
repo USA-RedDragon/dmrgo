@@ -7,6 +7,7 @@ import (
 )
 
 func TestBoostPattern(t *testing.T) {
+	t.Parallel()
 	a := &Audio{bpairs: 4, boost: 0.01 / 4}
 	pat := []int8{3, 3, -3, -3}
 	var v float64
@@ -26,10 +27,11 @@ func TestBoostPattern(t *testing.T) {
 }
 
 func TestBoostSum(t *testing.T) {
+	t.Parallel()
 	const m = 42
 	a := &Audio{bpairs: m, boost: 1}
 	r := rand.New(rand.NewPCG(1, 2))
-	var h []int8
+	h := make([]int8, 0, 5000)
 	for k := range 5000 {
 		s := int8(2*r.IntN(4) - 3)
 		var u int

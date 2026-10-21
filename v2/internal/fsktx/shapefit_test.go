@@ -53,6 +53,7 @@ func fitLowPass(hz float64, n int) []float64 {
 }
 
 func TestShapeKernFit(t *testing.T) {
+	t.Parallel()
 	if !*updateKern {
 		t.Skip("only with -updatekern")
 	}

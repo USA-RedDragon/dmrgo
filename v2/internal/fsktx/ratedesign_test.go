@@ -8,6 +8,7 @@ import (
 )
 
 func TestRateDesignPicksByHz(t *testing.T) {
+	t.Parallel()
 	run := func(c AudioConfig) []int16 {
 		a, err := NewAudio(c)
 		if err != nil {

@@ -307,11 +307,11 @@ func renderMCUCorr(b *bytes.Buffer) error {
 	if c.Base == 0 {
 		c.Base = 4
 	}
-	rows, top := 1, 1
+	rows := 1
 	for range c.C {
 		rows *= c.Base
 	}
-	top = rows / c.Base
+	top := rows / c.Base
 	skip := c.K - 8 + 6
 	if skip < 0 || len(c.Hz) != 10*rows || c.Base != 4 && c.Base != 5 {
 		return fmt.Errorf("%s: bad context", mcuCorrFile)

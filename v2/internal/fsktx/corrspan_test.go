@@ -5,6 +5,7 @@ package fsktx
 import "testing"
 
 func TestCorrLongerSpanAligns(t *testing.T) {
+	t.Parallel()
 	const pad = 4
 	run := func(p PulseConfig, corr int) []int16 {
 		a, err := NewAudio(AudioConfig{Hz: 48000, Tier: Tier1, Pulse: p, Corr: corr, CorrHiHz: 12000, CorrTaps: 81, Corr48k: true})

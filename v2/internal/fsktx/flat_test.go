@@ -7,6 +7,7 @@ import (
 
 // TestFlatETSI checks that Flat gives the exact pulse the same gain at the
 func TestFlatETSI(t *testing.T) {
+	t.Parallel()
 	for _, c := range []PulseConfig{{Window: 3, Beta: 5}, {Window: 3, Beta: 17}, {Span: 8, Window: 3, Beta: 8}} {
 		pu := pulseOf(Tier2, c)
 		pu.nyquist()
@@ -21,6 +22,7 @@ func TestFlatETSI(t *testing.T) {
 }
 
 func TestIQShapeS8(t *testing.T) {
+	t.Parallel()
 	q, err := NewIQ(IQConfig{Rate: 96000, Tier: Tier2, Exact: true, NoiseShape: 2, NoiseZerosHz: [4]float64{12500, 25000}})
 	if err != nil {
 		t.Fatal(err)

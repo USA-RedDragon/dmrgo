@@ -6,6 +6,7 @@ import (
 )
 
 func TestBandPassTopFromHalfRate(t *testing.T) {
+	t.Parallel()
 	for _, hz := range []float64{8000, 9600, 12000, 24000} {
 		want := bandPass(optLPHz/4, 0, hz, 41)
 		for _, hi := range []float64{hz / 2, hz/2 + 1, 12000, 20000} {

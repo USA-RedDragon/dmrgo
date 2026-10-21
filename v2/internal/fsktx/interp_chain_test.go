@@ -6,6 +6,7 @@ import (
 )
 
 func TestInterpChainImages(t *testing.T) {
+	t.Parallel()
 	for _, rate := range []float64{48000, 96000, 192000, 1e6, 2.4e6} {
 		step := float64(iqShaperHz / gcd(int(rate), iqShaperHz))
 		for _, f := range []float64{300, 1200, 2400, 2880} {

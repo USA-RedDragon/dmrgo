@@ -9,6 +9,7 @@ import (
 )
 
 func TestNoiseShapeFarOut(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name  string
 		shape int

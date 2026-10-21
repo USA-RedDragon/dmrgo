@@ -8,6 +8,7 @@ import (
 )
 
 func TestIQDelay(t *testing.T) {
+	t.Parallel()
 	syms := []int8{3, -1, 1, -3, 3, 3, -3, -1, 1, 1}
 	for _, tier := range []Tier{Tier1, Tier2} {
 		run := func(d int) [][]int16 {
@@ -16,7 +17,7 @@ func TestIQDelay(t *testing.T) {
 				t.Fatal(err)
 			}
 			q.Key(true)
-			var out [][]int16
+			out := make([][]int16, 0, 40)
 			for i := range 40 {
 				var s int8
 				if i < len(syms) {

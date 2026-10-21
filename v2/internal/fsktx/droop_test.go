@@ -7,6 +7,7 @@ import (
 )
 
 func TestDroopRestarts(t *testing.T) {
+	t.Parallel()
 	cfg := AudioConfig{Tier: Tier1, Droop: DroopConfig{Hz: 10, LowHz: 1, Gain: 0.02}}
 	a, err := NewAudio(cfg)
 	if err != nil {

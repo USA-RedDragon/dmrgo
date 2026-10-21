@@ -169,7 +169,7 @@ func fitCorr(hz int, syms []int) []corrFit {
 			tot += c[i] * c[i]
 		}
 	}
-	var out []corrFit
+	out := make([]corrFit, 0, len(syms))
 	for _, C := range syms {
 		best := corrFit{hz: hz, syms: C}
 		bestEx := 0.0

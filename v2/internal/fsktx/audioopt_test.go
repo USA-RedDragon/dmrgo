@@ -7,6 +7,7 @@ import (
 )
 
 func TestAudioOptRates(t *testing.T) {
+	t.Parallel()
 	for _, hz := range []int{8000, 12000, 24000, 44100, 48000, 96000} {
 		a, err := NewAudio(AudioConfig{Hz: hz, Tier: Tier1, Opt: 2})
 		if err != nil {
@@ -26,6 +27,7 @@ func TestAudioOptRates(t *testing.T) {
 }
 
 func TestAudioOptGradient(t *testing.T) {
+	t.Parallel()
 	o := newAudioOpt(1, 48000)
 	rng := rand.New(rand.NewPCG(1, 2))
 	for i := range o.f {
