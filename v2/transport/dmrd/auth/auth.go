@@ -121,7 +121,7 @@ func tagIs(p []byte, t string) bool {
 
 // Sign writes the signature of the OpenBridge packet in dst, as
 // dmrd.Bridge.AppendBinary and dmrd.BridgeControl.AppendBinary encode it
-// with room for the signature, into its last octets, and returns dst:
+// with space for the signature, into its last octets, and returns dst:
 // HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag
 // (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of
 // a control packet, and keyed BLAKE2b-128 over the octets before the hash
@@ -148,7 +148,8 @@ func (b *BridgeKey) Sign(dst []byte) ([]byte, error) {
 
 // Verify reports whether the OpenBridge packet p carries the signature of
 // the key, as Sign would write it, and then returns p without its
-// signature. It reports false, with a nil body, otherwise and for a nil b. It compares the signature in constant time,
+// signature. It reports false, with a nil body, otherwise and for a nil b.
+// It returns at most len(p) octets. It compares the signature in constant time,
 // and does not allocate.
 func (b *BridgeKey) Verify(p []byte) (body []byte, ok bool) {
 	if b == nil {

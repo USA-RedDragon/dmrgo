@@ -1528,6 +1528,7 @@ sym int dmrgo_dmrd_append_free_dmr_static(uint32_t *dst, size_t dst_cap, size_t 
 sym int dmrgo_dmrd_auth_bridge_key_free(dmrgo_dmrd_auth_bridge_key_t *self);
 sym int dmrgo_dmrd_auth_bridge_key_sign(dmrgo_dmrd_auth_bridge_key_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_dmrd_auth_bridge_key_verify(dmrgo_dmrd_auth_bridge_key_t *self, const uint8_t *p, size_t p_len, uint8_t *body, size_t body_cap, size_t *body_len, size_t *body_need, bool *ok);
+sym int dmrgo_dmrd_auth_bridge_key_verify_need(dmrgo_dmrd_auth_bridge_key_t *self, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
 sym int dmrgo_dmrd_auth_new_bridge_key(const uint8_t *key, size_t key_len, dmrgo_dmrd_auth_bridge_key_t **out);
 sym int dmrgo_dmrd_auth_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, uint8_t out[32]);
 sym int dmrgo_dmrd_auth_verify_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, const uint8_t *token, size_t token_len, bool *out);
@@ -1831,6 +1832,7 @@ sym int dmrgo_ipsc_auth_key_free(dmrgo_ipsc_auth_key_t *self);
 sym int dmrgo_ipsc_auth_key_sign(dmrgo_ipsc_auth_key_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_ipsc_auth_key_sign_need(dmrgo_ipsc_auth_key_t *self, size_t *items, size_t *arena);
 sym int dmrgo_ipsc_auth_key_verify(dmrgo_ipsc_auth_key_t *self, const uint8_t *p, size_t p_len, uint8_t *body, size_t body_cap, size_t *body_len, size_t *body_need, bool *ok);
+sym int dmrgo_ipsc_auth_key_verify_need(dmrgo_ipsc_auth_key_t *self, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
 sym int dmrgo_ipsc_auth_new_key(const uint8_t k[20], dmrgo_ipsc_auth_key_t **out);
 sym int dmrgo_ipsc_auth_parse_key(const char *s, size_t s_len, uint8_t out[20]);
 sym int dmrgo_ipsc_call_info_end(dmrgo_ipsc_call_info_t self, bool *out);

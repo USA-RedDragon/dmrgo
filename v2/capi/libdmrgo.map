@@ -191,6 +191,7 @@
 		dmrgo_dmrd_auth_bridge_key_free;
 		dmrgo_dmrd_auth_bridge_key_sign;
 		dmrgo_dmrd_auth_bridge_key_verify;
+		dmrgo_dmrd_auth_bridge_key_verify_need;
 		dmrgo_dmrd_auth_new_bridge_key;
 		dmrgo_dmrd_auth_token;
 		dmrgo_dmrd_auth_verify_token;
@@ -494,6 +495,7 @@
 		dmrgo_ipsc_auth_key_sign;
 		dmrgo_ipsc_auth_key_sign_need;
 		dmrgo_ipsc_auth_key_verify;
+		dmrgo_ipsc_auth_key_verify_need;
 		dmrgo_ipsc_auth_new_key;
 		dmrgo_ipsc_auth_parse_key;
 		dmrgo_ipsc_call_info_end;
