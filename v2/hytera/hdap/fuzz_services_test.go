@@ -1,11 +1,11 @@
-package hytera_test
+package hdap_test
 
 import (
 	"bytes"
 	"errors"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/hytera"
+	"github.com/USA-RedDragon/dmrgo/v2/hytera/hdap"
 )
 
 type appender interface {
@@ -19,7 +19,7 @@ func checkRoundTrip[T any, P interface {
 	t.Helper()
 	v, err := decode(data)
 	if err != nil {
-		if !errors.Is(err, hytera.ErrShort) && !errors.Is(err, hytera.ErrLength) && !errors.Is(err, hytera.ErrSignature) && !errors.Is(err, hytera.ErrText) {
+		if !errors.Is(err, hdap.ErrShort) && !errors.Is(err, hdap.ErrLength) && !errors.Is(err, hdap.ErrSignature) && !errors.Is(err, hdap.ErrText) {
 			t.Fatalf("%s(%x): unexpected error %v", name, data, err)
 		}
 		return
@@ -45,7 +45,7 @@ func lpEmergencySeeds(add func(data []byte)) {
 }
 
 func fuzzDecodeLPEmergency(t *testing.T, data []byte) {
-	checkRoundTrip(t, "DecodeLPEmergency", hytera.DecodeLPEmergency, data)
+	checkRoundTrip(t, "DecodeLPEmergency", hdap.DecodeLPEmergency, data)
 }
 
 func FuzzDecodeLPReport(f *testing.F) {
@@ -59,7 +59,7 @@ func lpReportSeeds(add func(data []byte)) {
 }
 
 func fuzzDecodeLPReport(t *testing.T, data []byte) {
-	checkRoundTrip(t, "DecodeLPReport", hytera.DecodeLPReport, data)
+	checkRoundTrip(t, "DecodeLPReport", hdap.DecodeLPReport, data)
 }
 
 func FuzzDecodeLPRequest(f *testing.F) {
@@ -73,7 +73,7 @@ func lpRequestSeeds(add func(data []byte)) {
 }
 
 func fuzzDecodeLPRequest(t *testing.T, data []byte) {
-	checkRoundTrip(t, "DecodeLPRequest", hytera.DecodeLPRequest, data)
+	checkRoundTrip(t, "DecodeLPRequest", hdap.DecodeLPRequest, data)
 }
 
 func FuzzDecodeRRSAnswer(f *testing.F) {
@@ -87,7 +87,7 @@ func rrsAnswerSeeds(add func(data []byte)) {
 }
 
 func fuzzDecodeRRSAnswer(t *testing.T, data []byte) {
-	checkRoundTrip(t, "DecodeRRSAnswer", hytera.DecodeRRSAnswer, data)
+	checkRoundTrip(t, "DecodeRRSAnswer", hdap.DecodeRRSAnswer, data)
 }
 
 func FuzzDecodeRRSCheckAnswer(f *testing.F) {
@@ -101,7 +101,7 @@ func rrsCheckAnswerSeeds(add func(data []byte)) {
 }
 
 func fuzzDecodeRRSCheckAnswer(t *testing.T, data []byte) {
-	checkRoundTrip(t, "DecodeRRSCheckAnswer", hytera.DecodeRRSCheckAnswer, data)
+	checkRoundTrip(t, "DecodeRRSCheckAnswer", hdap.DecodeRRSCheckAnswer, data)
 }
 
 func FuzzDecodeRRSRadio(f *testing.F) {
@@ -115,7 +115,7 @@ func rrsRadioSeeds(add func(data []byte)) {
 }
 
 func fuzzDecodeRRSRadio(t *testing.T, data []byte) {
-	checkRoundTrip(t, "DecodeRRSRadio", hytera.DecodeRRSRadio, data)
+	checkRoundTrip(t, "DecodeRRSRadio", hdap.DecodeRRSRadio, data)
 }
 
 func FuzzDecodeTMPAnswer(f *testing.F) {
@@ -129,7 +129,7 @@ func tmpAnswerSeeds(add func(data []byte)) {
 }
 
 func fuzzDecodeTMPAnswer(t *testing.T, data []byte) {
-	checkRoundTrip(t, "DecodeTMPAnswer", hytera.DecodeTMPAnswer, data)
+	checkRoundTrip(t, "DecodeTMPAnswer", hdap.DecodeTMPAnswer, data)
 }
 
 func FuzzDecodeTMPFlags(f *testing.F) {
@@ -144,7 +144,7 @@ func tmpFlagsSeeds(add func(data []byte)) {
 }
 
 func fuzzDecodeTMPFlags(t *testing.T, data []byte) {
-	checkRoundTrip(t, "DecodeTMPFlags", hytera.DecodeTMPFlags, data)
+	checkRoundTrip(t, "DecodeTMPFlags", hdap.DecodeTMPFlags, data)
 }
 
 func FuzzDecodeTMPGroupAnswer(f *testing.F) {
@@ -158,5 +158,5 @@ func tmpGroupAnswerSeeds(add func(data []byte)) {
 }
 
 func fuzzDecodeTMPGroupAnswer(t *testing.T, data []byte) {
-	checkRoundTrip(t, "DecodeTMPGroupAnswer", hytera.DecodeTMPGroupAnswer, data)
+	checkRoundTrip(t, "DecodeTMPGroupAnswer", hdap.DecodeTMPGroupAnswer, data)
 }

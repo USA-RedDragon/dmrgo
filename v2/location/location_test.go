@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/hytera"
+	"github.com/USA-RedDragon/dmrgo/v2/hytera/hdap"
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
@@ -126,9 +126,9 @@ func TestLRRP(t *testing.T) {
 
 const hdapGPS = "A200037021225N3412.7300E10850.00000.0121"
 
-func hdapPacket(t testing.TB, service hytera.Service, opcode uint16, payload []byte) packet.Message {
+func hdapPacket(t testing.TB, service hdap.Service, opcode hdap.Opcode, payload []byte) packet.Message {
 	t.Helper()
-	m := hytera.Message{Header: hytera.Header{Service: service}, Opcode: opcode, Payload: payload}
+	m := hdap.Message{Header: hdap.Header{Service: service}, Opcode: opcode, Payload: payload}
 	m.Seal()
 	p, err := m.AppendBinary(nil)
 	if err != nil {
@@ -157,17 +157,17 @@ func TestHDAP(t *testing.T) {
 	var d location.Decoder
 	for _, tt := range []struct {
 		name    string
-		opcode  uint16
+		opcode  hdap.Opcode
 		payload []byte
 		valid   bool
 		sign    float64
 		speed   float64
 	}{
-		{"standard answer", hytera.LPStandardAnswer, answer, true, 1, 0},
-		{"condition report", hytera.LPConditionReport, report, true, 1, 0},
-		{"emergency report", hytera.LPEmergencyReport, emergency, false, -1, 1.5 * 1852 / 3600},
+		{"standard answer", hdap.LPStandardAnswer, answer, true, 1, 0},
+		{"condition report", hdap.LPConditionReport, report, true, 1, 0},
+		{"emergency report", hdap.LPEmergencyReport, emergency, false, -1, 1.5 * 1852 / 3600},
 	} {
-		m := hdapPacket(t, hytera.ServiceLP, tt.opcode, tt.payload)
+		m := hdapPacket(t, hdap.ServiceLP, tt.opcode, tt.payload)
 		f, err := d.Decode(&m.Header, m.Data)
 		if err != nil {
 			t.Fatalf("%s: %v", tt.name, err)
@@ -187,23 +187,23 @@ func TestHDAP(t *testing.T) {
 	copy(nospeed[8+34:], "x.0")
 	for _, tt := range []struct {
 		name    string
-		service hytera.Service
-		opcode  uint16
+		service hdap.Service
+		opcode  hdap.Opcode
 		payload []byte
 		want    error
 	}{
-		{"failed answer", hytera.ServiceLP, hytera.LPStandardAnswer, failed, location.ErrNoFix},
-		{"request", hytera.ServiceLP, hytera.LPStandardRequest, answer[:8], location.ErrNoFix},
-		{"RRS", hytera.ServiceRRS, hytera.LPStandardAnswer, answer, location.ErrNoFix},
-		{"short", hytera.ServiceLP, hytera.LPConditionReport, report[:20], hytera.ErrShort},
-		{"longitude 308", hytera.ServiceLP, hytera.LPConditionReport, east, location.ErrNoFix},
+		{"failed answer", hdap.ServiceLP, hdap.LPStandardAnswer, failed, location.ErrNoFix},
+		{"request", hdap.ServiceLP, hdap.LPStandardRequest, answer[:8], location.ErrNoFix},
+		{"RRS", hdap.ServiceRRS, hdap.LPStandardAnswer, answer, location.ErrNoFix},
+		{"short", hdap.ServiceLP, hdap.LPConditionReport, report[:20], hdap.ErrShort},
+		{"longitude 308", hdap.ServiceLP, hdap.LPConditionReport, east, location.ErrNoFix},
 	} {
 		m := hdapPacket(t, tt.service, tt.opcode, tt.payload)
 		if _, err := d.Decode(&m.Header, m.Data); !errors.Is(err, tt.want) {
 			t.Errorf("%s: %v, want %v", tt.name, err, tt.want)
 		}
 	}
-	m := hdapPacket(t, hytera.ServiceLP, hytera.LPConditionReport, nospeed)
+	m := hdapPacket(t, hdap.ServiceLP, hdap.LPConditionReport, nospeed)
 	if f, err := d.Decode(&m.Header, m.Data); err != nil || f.HasSpeed {
 		t.Errorf("bad speed: %+v, %v", f, err)
 	}

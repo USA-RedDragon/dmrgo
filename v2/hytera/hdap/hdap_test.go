@@ -1,4 +1,4 @@
-package hytera_test
+package hdap_test
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/hytera"
+	"github.com/USA-RedDragon/dmrgo/v2/hytera/hdap"
 )
 
 const gps = "A200037021225N3412.7300E10850.00000.0121"
@@ -15,12 +15,12 @@ const gps = "A200037021225N3412.7300E10850.00000.0121"
 func TestRRSRegistration(t *testing.T) {
 	t.Parallel()
 
-	r := hytera.RRSRadio{Radio: [4]byte{10, 0, 0, 80}}
+	r := hdap.RRSRadio{Radio: [4]byte{10, 0, 0, 80}}
 	payload, err := r.AppendBinary(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	m := hytera.Message{Header: hytera.Header{Service: hytera.ServiceRRS}, Opcode: hytera.RRSRegistration, Payload: payload, End: 3}
+	m := hdap.Message{Header: hdap.Header{Service: hdap.ServiceRRS}, Opcode: hdap.RRSRegistration, Payload: payload, End: 3}
 	m.Seal()
 	out, err := m.AppendBinary(nil)
 	if err != nil {
@@ -29,16 +29,16 @@ func TestRRSRegistration(t *testing.T) {
 	if got := hex.EncodeToString(out); got != "1100030004"+"0a000050"+"d103" {
 		t.Fatalf("message %s", got)
 	}
-	back, err := hytera.DecodeMessage(out)
-	if err != nil || !back.ChecksumOK() || back.Header.Service != hytera.ServiceRRS || back.Opcode != hytera.RRSRegistration {
+	back, err := hdap.DecodeMessage(out)
+	if err != nil || !back.ChecksumOK() || back.Header.Service != hdap.ServiceRRS || back.Opcode != hdap.RRSRegistration {
 		t.Fatalf("decoded %s, %v", back.String(), err)
 	}
-	rr, err := hytera.DecodeRRSRadio(back.Payload)
+	rr, err := hdap.DecodeRRSRadio(back.Payload)
 	if err != nil || rr.Radio != r.Radio {
 		t.Errorf("radio %v, %v", rr.Radio, err)
 	}
 	out[6] ^= 1
-	if bad, err := hytera.DecodeMessage(out); err != nil || bad.ChecksumOK() {
+	if bad, err := hdap.DecodeMessage(out); err != nil || bad.ChecksumOK() {
 		t.Errorf("a changed payload passes the checksum: %v", err)
 	}
 }
@@ -47,7 +47,7 @@ func TestLocationAnswer(t *testing.T) {
 	t.Parallel()
 
 	data := append([]byte{0, 0, 0, 7, 10, 0, 0, 80, 0, 0}, gps...)
-	a, err := hytera.DecodeLPAnswer(data)
+	a, err := hdap.DecodeLPAnswer(data)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,17 +62,17 @@ func TestLocationAnswer(t *testing.T) {
 	}
 	south := append([]byte{}, data...)
 	south[10+13], south[10+23] = 'S', 'W'
-	b, err := hytera.DecodeLPAnswer(south)
+	b, err := hdap.DecodeLPAnswer(south)
 	if err != nil || b.GPS.Latitude() > 0 || b.GPS.Longitude() > 0 {
 		t.Errorf("south west %v %v, %v", b.GPS.Latitude(), b.GPS.Longitude(), err)
 	}
 	broken := append([]byte{}, data...)
 	broken[10+18] = ','
-	if _, err := hytera.DecodeLPAnswer(broken); !errors.Is(err, hytera.ErrSignature) {
+	if _, err := hdap.DecodeLPAnswer(broken); !errors.Is(err, hdap.ErrSignature) {
 		t.Errorf("no point: %v", err)
 	}
 	broken[10+18], broken[10+2] = '.', 'x'
-	if _, err := hytera.DecodeLPAnswer(broken); !errors.Is(err, hytera.ErrText) {
+	if _, err := hdap.DecodeLPAnswer(broken); !errors.Is(err, hdap.ErrText) {
 		t.Errorf("letter in the hour: %v", err)
 	}
 }
@@ -80,18 +80,18 @@ func TestLocationAnswer(t *testing.T) {
 func TestTextMessage(t *testing.T) {
 	t.Parallel()
 
-	var m hytera.TMPMessage
+	var m hdap.TMPMessage
 	m.RequestID, m.Destination, m.Source = 1, [4]byte{10, 0, 0, 2}, [4]byte{10, 0, 0, 1}
 	m.SetTextUTF8(nil, []byte("Hello"))
 	payload, err := m.AppendBinary(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	flags, err := (&hytera.TMPFlags{}).AppendBinary(nil)
+	flags, err := (&hdap.TMPFlags{}).AppendBinary(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	msg := hytera.Message{Header: hytera.Header{Reliable: true, Service: hytera.ServiceTMP}, Opcode: uint16(flags[0])<<8 | uint16(hytera.TMPPrivateMessage), Payload: payload, End: 3}
+	msg := hdap.Message{Header: hdap.Header{Reliable: true, Service: hdap.ServiceTMP}, Opcode: hdap.Opcode(flags[0])<<8 | hdap.Opcode(hdap.TMPPrivateMessage), Payload: payload, End: 3}
 	msg.Seal()
 	out, err := msg.AppendBinary(nil)
 	if err != nil {
@@ -100,22 +100,22 @@ func TestTextMessage(t *testing.T) {
 	if out[0] != 0x89 || out[1] != 0x00 || out[2] != 0xA1 {
 		t.Errorf("header %x", out[:3])
 	}
-	back, err := hytera.DecodeMessage(out)
+	back, err := hdap.DecodeMessage(out)
 	if err != nil {
 		t.Fatal(err)
 	}
-	tm, err := hytera.DecodeTMPMessage(back.Payload)
+	tm, err := hdap.DecodeTMPMessage(back.Payload)
 	if err != nil || string(tm.TextUTF8(nil)) != "Hello" || tm.Source != m.Source {
 		t.Errorf("text %q, %v", tm.TextUTF8(nil), err)
 	}
-	ack := hytera.TMPAnswer{RequestID: 1, Destination: m.Destination, Source: m.Source, Result: 4}
+	ack := hdap.TMPAnswer{RequestID: 1, Destination: m.Destination, Source: m.Source, Result: 4}
 	b, _ := ack.AppendBinary(nil)
-	if back, err := hytera.DecodeTMPAnswer(b); err != nil || back.Result != 4 {
+	if back, err := hdap.DecodeTMPAnswer(b); err != nil || back.Result != 4 {
 		t.Errorf("answer %v", err)
 	}
-	g := hytera.TMPGroupAnswer{RequestID: 2, Destination: [4]byte{225, 0, 0, 9}}
+	g := hdap.TMPGroupAnswer{RequestID: 2, Destination: [4]byte{225, 0, 0, 9}}
 	b, _ = g.AppendBinary(nil)
-	if back, err := hytera.DecodeTMPGroupAnswer(b); err != nil || back.RequestID != 2 {
+	if back, err := hdap.DecodeTMPGroupAnswer(b); err != nil || back.RequestID != 2 {
 		t.Errorf("group answer %v", err)
 	}
 }
@@ -127,16 +127,22 @@ func TestMessageErrors(t *testing.T) {
 		data []byte
 		want error
 	}{
-		{nil, hytera.ErrShort},
-		{[]byte{0x11, 0, 3, 0, 4, 1, 2}, hytera.ErrShort},
-		{[]byte{0x11, 0, 3, 0, 0, 0xd1, 4}, hytera.ErrSignature},
-		{[]byte{0x11, 0, 3, 0, 0, 0xd1, 3, 0}, hytera.ErrLength},
+		{nil, hdap.ErrShort},
+		{[]byte{0x11, 0, 3, 0, 4, 1, 2}, hdap.ErrShort},
+		{[]byte{0x11, 0, 3, 0, 0, 0xd1, 4}, hdap.ErrSignature},
+		{[]byte{0x11, 0, 3, 0, 0, 0xd1, 3, 0}, hdap.ErrLength},
 	} {
-		if _, err := hytera.DecodeMessage(tt.data); !errors.Is(err, tt.want) {
+		if _, err := hdap.DecodeMessage(tt.data); !errors.Is(err, tt.want) {
 			t.Errorf("%x: %v, want %v", tt.data, err, tt.want)
 		}
 	}
-	if hytera.ServiceLP.String() != "LP" || hytera.Service(0x7F).String() != "Service(127)" {
+	if hdap.ServiceLP.String() != "LP" || hdap.Service(0x7F).String() != "Service(127)" {
 		t.Error("names")
+	}
+	if hdap.LPConditionReport.String() != "LPConditionReport" || hdap.Opcode(0x89A1).String() != "Opcode(35233)" {
+		t.Error("opcode names")
+	}
+	if hdap.TMPGroupMessage.String() != "TMPGroupMessage" || hdap.TMPType(0).String() != "TMPType(0)" {
+		t.Error("TMP type names")
 	}
 }

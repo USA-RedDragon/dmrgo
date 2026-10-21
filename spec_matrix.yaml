@@ -130,10 +130,10 @@ ignore_files:
   - v2/bs/repeater.go
   - v2/bs/types.go
   - v2/trunk/capplus.go
-  - v2/hytera/errors.go
-  - v2/hytera/gps.go
-  - v2/hytera/hdap.go
-  - v2/hytera/services.go
+  - v2/hytera/hdap/errors.go
+  - v2/hytera/hdap/gps.go
+  - v2/hytera/hdap/hdap.go
+  - v2/hytera/hdap/services.go
   - v2/internal/appcapture/appcapture.go
   - v2/internal/wire/wire.go
   - v2/location/errors.go

@@ -1,27 +1,79 @@
-package hytera
+package hdap
+
+import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
+
+// Opcode is the 16-bit opcode of a message. Its values depend on the
+// service. In the text message protocol (TMP) the high octet is the
+// TMPFlags and the low octet is a TMPType.
+type Opcode uint16
 
 // The opcodes of the radio registration service (RRS) and the location
 // protocol (LP).
 const (
-	RRSDeregistration     uint16 = 0x0001 // the radio goes offline
-	RRSOnlineCheck        uint16 = 0x0002 // the server asks if the radio is online
-	RRSRegistration       uint16 = 0x0003 // the radio registers
-	RRSRegistrationAnswer uint16 = 0x0080 // the answer to a registration
-	RRSOnlineCheckAnswer  uint16 = 0x0082 // the answer to an online check
-	LPStandardRequest     uint16 = 0xA001 // ask for one position
-	LPStandardAnswer      uint16 = 0xA002 // the answer to a standard request
-	LPEmergencyReport     uint16 = 0xB003 // a position sent in an emergency
-	LPConditionReport     uint16 = 0xD003 // a position on a condition, such as a period
+	RRSDeregistration     Opcode = 0x0001 // the radio goes offline
+	RRSOnlineCheck        Opcode = 0x0002 // the server asks if the radio is online
+	RRSRegistration       Opcode = 0x0003 // the radio registers
+	RRSRegistrationAnswer Opcode = 0x0080 // the answer to a registration
+	RRSOnlineCheckAnswer  Opcode = 0x0082 // the answer to an online check
+	LPStandardRequest     Opcode = 0xA001 // ask for one position
+	LPStandardAnswer      Opcode = 0xA002 // the answer to a standard request
+	LPEmergencyReport     Opcode = 0xB003 // a position sent in an emergency
+	LPConditionReport     Opcode = 0xD003 // a position on a condition, such as a period
 )
 
-// The service types of the text message protocol (TMP), the low octet of
-// its opcode.
+// String returns the name of o. It allocates only for a value without a
+// name, such as a TMP opcode.
+func (o Opcode) String() string {
+	switch o {
+	case RRSDeregistration:
+		return "RRSDeregistration"
+	case RRSOnlineCheck:
+		return "RRSOnlineCheck"
+	case RRSRegistration:
+		return "RRSRegistration"
+	case RRSRegistrationAnswer:
+		return "RRSRegistrationAnswer"
+	case RRSOnlineCheckAnswer:
+		return "RRSOnlineCheckAnswer"
+	case LPStandardRequest:
+		return "LPStandardRequest"
+	case LPStandardAnswer:
+		return "LPStandardAnswer"
+	case LPEmergencyReport:
+		return "LPEmergencyReport"
+	case LPConditionReport:
+		return "LPConditionReport"
+	}
+	return "Opcode(" + text.Int(int64(o)) + ")"
+}
+
+// TMPType is the service type of the text message protocol (TMP), the low
+// octet of its Opcode.
+type TMPType uint8
+
+// The TMPType values.
 const (
-	TMPPrivateMessage       uint8 = 0xA1 // a text to a radio
-	TMPPrivateMessageAnswer uint8 = 0xA2 // the answer to a private text
-	TMPGroupMessage         uint8 = 0xB1 // a text to a talkgroup
-	TMPGroupMessageAnswer   uint8 = 0xB2 // the answer to a group text
+	TMPPrivateMessage       TMPType = 0xA1 // a text to a radio
+	TMPPrivateMessageAnswer TMPType = 0xA2 // the answer to a private text
+	TMPGroupMessage         TMPType = 0xB1 // a text to a talkgroup
+	TMPGroupMessageAnswer   TMPType = 0xB2 // the answer to a group text
 )
+
+// String returns the name of t. It allocates only for a value without a
+// name.
+func (t TMPType) String() string {
+	switch t {
+	case TMPPrivateMessage:
+		return "TMPPrivateMessage"
+	case TMPPrivateMessageAnswer:
+		return "TMPPrivateMessageAnswer"
+	case TMPGroupMessage:
+		return "TMPGroupMessage"
+	case TMPGroupMessageAnswer:
+		return "TMPGroupMessageAnswer"
+	}
+	return "TMPType(" + text.Int(int64(t)) + ")"
+}
 
 // RRSRadio is the payload of an RRS registration, deregistration and online
 // check: the radio IP of the radio.

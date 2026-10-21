@@ -5,14 +5,14 @@ package location_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/hytera"
+	"github.com/USA-RedDragon/dmrgo/v2/hytera/hdap"
 	"github.com/USA-RedDragon/dmrgo/v2/location"
 )
 
 func TestAllocs(t *testing.T) {
 	ms := aprsMessages(t)
 	l := lrrpPacket(t, "071a22042468ace0341f4dbc778051118ecd8d118ad47b00636c0006")
-	h := hdapPacket(t, hytera.ServiceLP, hytera.LPConditionReport, append([]byte{0, 0, 0, 9, 10, 0, 0, 80}, hdapGPS...))
+	h := hdapPacket(t, hdap.ServiceLP, hdap.LPConditionReport, append([]byte{0, 0, 0, 9, 10, 0, 0, 80}, hdapGPS...))
 	d := new(location.Decoder)
 	n := testing.AllocsPerRun(50, func() {
 		if _, err := d.Decode(&ms[0].Header, ms[0].Data); err != nil {

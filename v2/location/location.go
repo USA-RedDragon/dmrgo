@@ -3,7 +3,7 @@ package location
 import (
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/hytera"
+	"github.com/USA-RedDragon/dmrgo/v2/hytera/hdap"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -183,17 +183,17 @@ func fromReport(f *Fix, m *lrrp.Message) bool {
 }
 
 func fromHDAP(f Fix, data []byte) (Fix, error) {
-	m, err := hytera.DecodeMessage(data)
+	m, err := hdap.DecodeMessage(data)
 	if err != nil {
 		return Fix{}, err
 	}
-	if m.Header.Service != hytera.ServiceLP {
+	if m.Header.Service != hdap.ServiceLP {
 		return Fix{}, ErrNoFix
 	}
-	var g hytera.GPSData
+	var g hdap.GPSData
 	switch m.Opcode {
-	case hytera.LPStandardAnswer:
-		a, err := hytera.DecodeLPAnswer(m.Payload)
+	case hdap.LPStandardAnswer:
+		a, err := hdap.DecodeLPAnswer(m.Payload)
 		if err != nil {
 			return Fix{}, err
 		}
@@ -201,14 +201,14 @@ func fromHDAP(f Fix, data []byte) (Fix, error) {
 			return Fix{}, ErrNoFix
 		}
 		g = a.GPS
-	case hytera.LPConditionReport:
-		r, err := hytera.DecodeLPReport(m.Payload)
+	case hdap.LPConditionReport:
+		r, err := hdap.DecodeLPReport(m.Payload)
 		if err != nil {
 			return Fix{}, err
 		}
 		g = r.GPS
-	case hytera.LPEmergencyReport:
-		e, err := hytera.DecodeLPEmergency(m.Payload)
+	case hdap.LPEmergencyReport:
+		e, err := hdap.DecodeLPEmergency(m.Payload)
 		if err != nil {
 			return Fix{}, err
 		}

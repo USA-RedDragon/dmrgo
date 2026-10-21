@@ -1,4 +1,4 @@
-package hytera
+package hdap
 
 // Valid reports a position from a fix: Status 'A'.
 func (g *GPSData) Valid() bool {
