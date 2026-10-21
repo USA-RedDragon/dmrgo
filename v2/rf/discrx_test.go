@@ -1,6 +1,7 @@
 package rf
 
 import (
+	"errors"
 	"math"
 	"testing"
 )
@@ -103,8 +104,10 @@ func TestDiscReceiverLoopback(t *testing.T) {
 
 func TestNewDiscConfig(t *testing.T) {
 	t.Parallel()
-	if _, err := NewDisc(DiscConfig{Hz: 48000}); err == nil {
-		t.Error("NewDisc took 48 kHz")
+	_, err := NewDisc(DiscConfig{Hz: 44100})
+	var ce *ConfigError
+	if !errors.As(err, &ce) || err.Error() != "rf: DiscConfig.Hz is out of range" {
+		t.Errorf("NewDisc at 44.1 kHz: %v", err)
 	}
 	if _, err := NewDisc(DiscConfig{Hz: 16000}); err == nil {
 		t.Error("NewDisc took 16 kHz")
@@ -124,7 +127,7 @@ func TestNewDiscConfig(t *testing.T) {
 			t.Errorf("tier %d: soft stages %v", tier-Tier0, soft)
 		}
 	}
-	for _, hz := range []int{24000, 12000, 9600} {
+	for _, hz := range []int{48000, 24000, 12000, 9600} {
 		r, err := NewDisc(DiscConfig{Hz: hz})
 		if err != nil {
 			t.Fatal(err)

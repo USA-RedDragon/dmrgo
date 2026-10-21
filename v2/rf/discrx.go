@@ -18,10 +18,12 @@ const (
 
 // DiscConfig sets up a DiscReceiver.
 type DiscConfig struct {
-	// Hz is the sample rate of the discriminator samples of Write: 24000,
-	// as MMDVM modems sample, 12000 or 9600. 0 means 24000. A lower rate
-	// costs less: the receiver halves 24 kHz with a half-band filter before
-	// its matched filter, which runs at 12 kHz or 9.6 kHz.
+	// Hz is the sample rate of the discriminator samples of Write: 48000,
+	// as sound cards sample, 24000, as MMDVM modems sample, 12000 or 9600.
+	// 0 means 24000. A lower rate costs less: the receiver halves 48 kHz
+	// and then 24 kHz with a half-band filter before its matched filter,
+	// which runs at 12 kHz or 9.6 kHz. For a sound card at 44100 Hz, set
+	// it to 48000 Hz or resample to 48000 Hz first.
 	Hz int
 	// MaxWrite is the largest number of samples in one Write, for the
 	// burst buffer that NewDisc allocates. 0 means 1 << 12. When OnBurst is
@@ -59,13 +61,14 @@ type DiscConfig struct {
 // safe for concurrent use.
 type DiscReceiver struct {
 	leanCore
-	f audioFront
+	f   audioFront
+	d48 disc48
 }
 
 var (
-	errDiscHz       = &ConfigError{Field: "Hz"}
-	errDiscMaxWrite = &ConfigError{Field: "MaxWrite"}
-	errDiscTier     = &ConfigError{Field: "Tier"}
+	errDiscHz       = &ConfigError{Type: "DiscConfig", Field: "Hz"}
+	errDiscMaxWrite = &ConfigError{Type: "DiscConfig", Field: "MaxWrite"}
+	errDiscTier     = &ConfigError{Type: "DiscConfig", Field: "Tier"}
 )
 
 // NewDisc returns a DiscReceiver of cfg. It allocates the receiver, and
@@ -104,7 +107,8 @@ func NewDisc(cfg DiscConfig) (*DiscReceiver, error) {
 // Init sets up r for cfg, in place of any state it holds. It does not
 // allocate, so that r can live in memory of the caller.
 func (r *DiscReceiver) Init(cfg DiscConfig) error {
-	if cfg.Hz == 0 {
+	dec := cfg.Hz == 2*discRate
+	if cfg.Hz == 0 || dec {
 		cfg.Hz = discRate
 	}
 	if cfg.Hz != discRate && cfg.Hz != discRate/2 && cfg.Hz != 2*symbolRate {
@@ -123,7 +127,7 @@ func (r *DiscReceiver) Init(cfg DiscConfig) error {
 	case cfg.lowIQ:
 		opt = iqLowOptions()
 	}
-	*r = DiscReceiver{}
+	*r = DiscReceiver{d48: disc48{on: dec}}
 	r.f.half = cfg.Hz == discRate
 	r.f.slow = cfg.Hz == 2*symbolRate
 	sps := float32(discSPS) / 2
@@ -173,7 +177,7 @@ func growBursts(dst []Burst, n int) []Burst {
 }
 
 func (r *DiscReceiver) maxBursts(n int) int {
-	return 4*n*symbolRate/(slotSymbols*r.inputHz()) + 16
+	return 4*r.inputSamples(n)*symbolRate/(slotSymbols*r.inputHz()) + 16
 }
 
 // AppendBursts processes the discriminator samples x, appends the bursts
@@ -184,7 +188,7 @@ func (r *DiscReceiver) AppendBursts(dst []Burst, x []int16) []Burst {
 	dst = growBursts(dst, r.maxBursts(len(x)))
 	keep, n := r.out, len(dst)
 	r.out = dst[n:n]
-	r.write(x)
+	r.input(x)
 	m := len(r.out)
 	r.out = keep[:0]
 	return dst[:n+m]
@@ -203,7 +207,7 @@ func (r *DiscReceiver) Write(x []int16) ([]Burst, error) {
 		return nil, ErrWriteTooLong
 	}
 	r.out = r.out[:0]
-	r.write(x)
+	r.input(x)
 	return r.out, nil
 }
 

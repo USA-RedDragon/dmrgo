@@ -19,9 +19,9 @@ func (r *DiscReceiver) addExt(opt *options) {
 	case opt.CohExt && opt.CohLazy:
 		ph = newDiscPhase(r, r.hz(), true, opt.cohRing())
 	case opt.CohExt:
-		hz, out := r.hz(), r.out
+		hz, out, d48 := r.hz(), r.out, r.d48
 		_ = r.Init(DiscConfig{Hz: discRate, OnBurst: r.onBurst, opt: opt})
-		r.out = out
+		r.out, r.d48 = out, d48
 		ph = newDiscPhase(r, hz, false, opt.cohRing())
 	}
 	x := softExtOf(opt, 2*r.tm.step)

@@ -441,7 +441,7 @@ func receiveIQ(in input, tier rf.Tier, offsetHz float64, burst func(rf.Burst)) (
 func receiveAudio(in input, tier rf.Tier, burst func(rf.Burst)) (offset, dev float64, err error) {
 	hz := 24000
 	switch in.rate {
-	case 24000, 12000, 9600:
+	case 48000, 24000, 12000, 9600:
 		hz = int(in.rate)
 	}
 	rx, err := rf.NewDisc(rf.DiscConfig{Hz: hz, Tier: tier})

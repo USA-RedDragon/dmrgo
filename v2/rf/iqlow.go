@@ -57,9 +57,9 @@ type LowIQReceiver struct {
 }
 
 var (
-	errLowIQHz      = &ConfigError{Field: "Hz"}
-	errLowIQOnBurst = &ConfigError{Field: "OnBurst"}
-	errLowIQOffset  = &ConfigError{Field: "OffsetHz"}
+	errLowIQHz      = &ConfigError{Type: "LowIQConfig", Field: "Hz"}
+	errLowIQOnBurst = &ConfigError{Type: "LowIQConfig", Field: "OnBurst"}
+	errLowIQOffset  = &ConfigError{Type: "LowIQConfig", Field: "OffsetHz"}
 )
 
 // Init sets up r for cfg, in place of any state it holds.
