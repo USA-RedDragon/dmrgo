@@ -144,7 +144,7 @@ linters:
         linters:
           - paralleltest
         text: ^Function TestAllocs\w* missing the call to method parallel
-      - path: v2/capi/go\.mod$
+      - path: v2/(capi|internal/digest/xcrypto)/go\.mod$
         linters:
           - gomoddirectives
         text: local replacement

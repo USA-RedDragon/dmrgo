@@ -41,6 +41,9 @@ jobs:
 
       - run: CGO_ENABLED=0 go test -C v2 ./...
 
+      - name: Compare BLAKE2b with golang.org/x/crypto
+        run: CGO_ENABLED=0 go test -C v2/internal/digest/xcrypto ./...
+
   race-tests:
     runs-on: ubuntu-24.04
 
