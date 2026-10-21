@@ -148,6 +148,16 @@ linters:
         linters:
           - gomoddirectives
         text: local replacement
+      # Lookup tables of the FEC decoders, which TinyGo keeps in flash.
+      - path: v2/internal/(fec/golay/golay_20_8_7|fec/quadraticresidue/quadratic_residue_16_7_6)\.go$
+        linters:
+          - gochecknoglobals
+        text: ^(rows2087|rows) is a global variable
+      # The no-panic test walks every kind of reflect value in one switch.
+      - path: v2/internal/allocgate/allapi/nopanic_test\.go$
+        linters:
+          - gocyclo
+        text: (nopanicGen\)\.fill|TestNoPanic)
       # jennifer's DSL is written with a dot import.
       - path: cmd/dmrgen/emit/
         linters:
