@@ -190,6 +190,12 @@ const char *dmrgo__gen_strerror(int status) {
 		return "trunk.ErrNotRegistered";
 	case -138:
 		return "trunk.ErrPlanFull";
+	case -216:
+		return "trunk.ErrUDTCharacter";
+	case -217:
+		return "trunk.ErrUDTFormat";
+	case -218:
+		return "trunk.ErrUDTLength";
 	case -139:
 		return "vocoder.ErrDuplicateCodec";
 	case -140:
