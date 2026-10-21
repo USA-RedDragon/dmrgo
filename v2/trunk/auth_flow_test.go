@@ -179,3 +179,33 @@ func TestTSCC_Authentication(t *testing.T) {
 		t.Error("names")
 	}
 }
+
+func TestTSCC_AuthPSNPerMS(t *testing.T) {
+	t.Parallel()
+	cfg := tsccConfig()
+	cfg.Authenticate, cfg.Seed, cfg.AnswerTimeout = true, 11, time.Second
+	key := [auth.KeyLen]byte{0x5A, 7}
+	const psn = 0x123456
+	s := newSim(t, cfg,
+		&trunk.MSConfig{Address: 3120001, Seed: 1},
+		&trunk.MSConfig{Address: 3120002, Seed: 2, DeniedLife: time.Hour},
+		&trunk.MSConfig{Address: 3120003, Seed: 3, DeniedLife: time.Hour})
+	s.keys = map[uint32]simKey{3120001: {key, psn}, 3120002: {key, 0}, 3120003: {key, psn}}
+	s.ms[0].key = &simKey{key, psn}
+	s.ms[1].key = &simKey{key, psn}
+	s.ms[2].key = &simKey{key, 0}
+	s.until(5*time.Second, func() bool {
+		_, d1 := has(s.ms[1].log, trunk.OutputRefused)
+		_, d2 := has(s.ms[2].log, trunk.OutputRefused)
+		return s.ms[0].ms.Registered() && d1 && d2
+	})
+	for i, m := range s.ms[1:] {
+		addr := uint32(3120002 + i)
+		if o, _ := has(m.log, trunk.OutputRefused); o.Ack != enums.ReasonRegDenied || m.ms.Registered() || s.tscc.Registered(addr) {
+			t.Errorf("MS %d with another PSN than the TSCC: %+v, registered %v", addr, o, m.ms.Registered())
+		}
+	}
+	if !s.tscc.Registered(3120001) {
+		t.Error("the TSCC did not register the MS with its PSN")
+	}
+}
