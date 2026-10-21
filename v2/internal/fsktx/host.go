@@ -30,6 +30,7 @@ var (
 	errDelay   = errors.New("fsktx: Delay must be from 0 to 64 symbols")
 	errNoise   = errors.New("fsktx: NoisePoleR must be from 0 to below 1")
 	errPreEmph = errors.New("fsktx: PreEmphasisHz must be a zero above 0 and a pole above it, below half of Hz")
+	errDroop   = errors.New("fsktx: Droop must be a corner above 0, a lower corner from 0 to below it, and a gain from 0 to 1")
 )
 
 const polyMaxPhases = 1024
@@ -264,6 +265,13 @@ type AudioConfig struct {
 	// is Hz sets ExactPow, Pulse.Gain, Pulse.FlatGain, CarrierHz and Boost
 	// in place of the fields above.
 	Rates []RateDesign
+	// Droop pre-compensates part of the droop of a radio that AC-couples
+	// the modulator input at the corner Hz: Tier1 and Tier2 add Gain times
+	// the deviation of the symbols low-passed at Hz, less the same
+	// low-passed at LowHz so that the mean deviation does not change. A
+	// symbol 0 restarts both, so the output does not depend on the age of
+	// the Audio. The zero value is off.
+	Droop DroopConfig
 }
 
 // RateDesign is the design of Tier1 and Tier2 audio at one sample rate,
@@ -276,6 +284,11 @@ type RateDesign struct {
 	// of the pulse at Hz, are added to the pulse: Taps[j] is the deviation
 	// in Hz j samples after the symbol enters.
 	Taps []float64
+}
+
+// DroopConfig sets the droop pre-compensation of AudioConfig.
+type DroopConfig struct {
+	Hz, LowHz, Gain float64
 }
 
 // PulseConfig sets the transmit pulse of Tier1 and Tier2.
@@ -369,6 +382,36 @@ type Audio struct {
 	cn     int
 	de     [3]float64
 	dx, dy float64
+	dr     droop
+}
+
+type droop struct {
+	a1, a2, g float64
+	y1, y2    float64
+	c         [64]float64
+	n, lag    int
+}
+
+func (d *droop) symbol(s int8) {
+	var v float64
+	switch s {
+	case -3, -1, 1, 3:
+		v = float64(s) * DeviationHz
+	default:
+		d.y1, d.y2 = 0, 0
+	}
+	d.y1 = d.a1*d.y1 + (1-d.a1)*v
+	d.y2 = d.a2*d.y2 + (1-d.a2)*v
+	d.n++
+	d.c[d.n&63] = d.g * (d.y1 - d.y2)
+}
+
+func (d *droop) add(buf []float64) {
+	c0, c1 := d.c[(d.n-d.lag-1)&63], d.c[(d.n-d.lag)&63]
+	f := 1 / float64(len(buf))
+	for i := range buf {
+		buf[i] += c0 + float64(i+1)*f*(c1-c0)
+	}
 }
 
 // NewAudio returns an Audio for cfg. It allocates the Audio, once.
@@ -483,6 +526,17 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		if cfg.Opt > 0 && aoptRate(cfg.Hz) {
 			a.opt = newAudioOpt(cfg.Opt, cfg.Hz)
 		}
+		if d := cfg.Droop; d != (DroopConfig{}) {
+			if !(d.Hz > 0 && d.LowHz >= 0 && d.LowHz < d.Hz && d.Gain >= 0 && d.Gain <= 1) {
+				return nil, errDroop
+			}
+			lag := pu.span
+			if a.cbp != nil {
+				lag += int(math.Round(float64(len(a.cbp)/2) * SymbolRate / float64(cfg.Hz)))
+			}
+			a.dr = droop{a1: math.Exp(-2 * math.Pi * d.Hz / SymbolRate), a2: math.Exp(-2 * math.Pi * d.LowHz / SymbolRate),
+				g: d.Gain, lag: min(lag, 62)}
+		}
 		return a, nil
 	default:
 		return nil, errTier
@@ -512,6 +566,12 @@ func (a *Audio) AppendSymbol(dst []int16, s int8) []int16 {
 	}
 	if a.opt != nil {
 		a.opt.process(a.buf[:n])
+	}
+	if a.dr.g != 0 {
+		a.dr.symbol(s)
+		if n > 0 {
+			a.dr.add(a.buf[:n])
+		}
 	}
 	if a.de[0] != 0 {
 		for i, x := range a.buf[:n] {
