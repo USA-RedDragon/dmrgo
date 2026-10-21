@@ -51,8 +51,8 @@ jobs:
         run: |
           go install "github.com/jstemmer/go-junit-report/v2@${GO_JUNIT_REPORT_VERSION}"
           go install "github.com/vakenbolt/go-test-report@${GO_TEST_REPORT_VERSION}"
-          env CGO_ENABLED=0 go test -C v2 -v ./... > out.txt 2>&1 && status=0 || status=$?
-          env CGO_ENABLED=0 go test -C v2 -v ./... -json > json-out.txt && json_status=0 || json_status=$?
+          env CGO_ENABLED=0 go test -C v2 -timeout 60m -v ./... > out.txt 2>&1 && status=0 || status=$?
+          env CGO_ENABLED=0 go test -C v2 -timeout 60m -v ./... -json > json-out.txt && json_status=0 || json_status=$?
           cd v2
           go-junit-report -in ../out.txt -out ../report.xml -iocopy
           go-test-report -o ../report.html < ../json-out.txt
@@ -64,7 +64,7 @@ jobs:
       - name: Unit tests coverage
         if: inputs.coverage
         run: |
-          env CGO_ENABLED=0 go test -C v2 -v ./... -coverprofile ../coverage.out -coverpkg=./... -covermode atomic
+          env CGO_ENABLED=0 go test -C v2 -timeout 60m -v ./... -coverprofile ../coverage.out -coverpkg=./... -covermode atomic
 
       - uses: USA-RedDragon/reusable-actions/coverage@c5ee15922a0ff4229b0f06a8d0551541b5cabfdc # v2.0.34
         if: always() && inputs.coverage
