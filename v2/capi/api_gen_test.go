@@ -1109,6 +1109,7 @@ var entryPoints = map[string]any{
 	"dmrgo_dmrd_talker_alias_lc_into":                                  dmrgo_dmrd_talker_alias_lc_into,
 	"dmrgo_dmrd_talker_alias_string":                                   dmrgo_dmrd_talker_alias_string,
 	"dmrgo_dmrd_auth_bridge_key_free":                                  dmrgo_dmrd_auth_bridge_key_free,
+	"dmrgo_dmrd_auth_bridge_key_sign_need":                             dmrgo_dmrd_auth_bridge_key_sign_need,
 	"dmrgo_dmrd_auth_bridge_key_sign":                                  dmrgo_dmrd_auth_bridge_key_sign,
 	"dmrgo_dmrd_auth_bridge_key_verify_need":                           dmrgo_dmrd_auth_bridge_key_verify_need,
 	"dmrgo_dmrd_auth_bridge_key_verify":                                dmrgo_dmrd_auth_bridge_key_verify,

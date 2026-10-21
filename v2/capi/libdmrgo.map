@@ -190,6 +190,7 @@
 		dmrgo_dmrd_append_free_dmr_static;
 		dmrgo_dmrd_auth_bridge_key_free;
 		dmrgo_dmrd_auth_bridge_key_sign;
+		dmrgo_dmrd_auth_bridge_key_sign_need;
 		dmrgo_dmrd_auth_bridge_key_verify;
 		dmrgo_dmrd_auth_bridge_key_verify_need;
 		dmrgo_dmrd_auth_new_bridge_key;

@@ -34723,6 +34723,20 @@ func dmrgo_dmrd_auth_bridge_key_free(c_self *C.dmrgo_dmrd_auth_bridge_key_t) (rc
 	return C.DMRGO_OK
 }
 
+//export dmrgo_dmrd_auth_bridge_key_sign_need
+func dmrgo_dmrd_auth_bridge_key_sign_need(c_self *C.dmrgo_dmrd_auth_bridge_key_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_transport_dmrd_auth_BridgeKey(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, 0))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_dmrd_auth_bridge_key_sign
 func dmrgo_dmrd_auth_bridge_key_sign(c_self *C.dmrgo_dmrd_auth_bridge_key_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -34734,9 +34748,21 @@ func dmrgo_dmrd_auth_bridge_key_sign(c_self *C.dmrgo_dmrd_auth_bridge_key_t, c_d
 	nf_dst := int(*c_dst_len)
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
+	need_items := max(0, 0)
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
 	r0, r1 := h.v.Sign(a_dst)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
