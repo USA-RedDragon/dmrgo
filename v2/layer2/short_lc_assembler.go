@@ -15,14 +15,20 @@ type ShortLCAssembler struct {
 	count     int
 }
 
-// Reset clears the assembler state for reuse.
+// Reset clears the assembler state for reuse. It does nothing for a nil a.
 func (a *ShortLCAssembler) Reset() {
+	if a == nil {
+		return
+	}
 	a.fragments = [4][3]byte{}
 	a.count = 0
 }
 
-// Count returns the number of fragments accumulated so far.
+// Count returns the number of fragments accumulated so far, 0 for a nil a.
 func (a *ShortLCAssembler) Count() int {
+	if a == nil {
+		return 0
+	}
 	return a.count
 }
 
@@ -34,9 +40,12 @@ func (a *ShortLCAssembler) Count() int {
 // fragment LCSS is not used in the CACH, so either discards the partial
 // Short LC; Add then returns ErrShortLCSequence when fragments were
 // discarded. A fragment out of order also discards the partial Short LC and
-// returns ErrShortLCSequence. Add allocates the payload struct of a
-// completed Short LC; AddInto does not.
+// returns ErrShortLCSequence. A nil a does nothing. Add allocates the
+// payload struct of a completed Short LC; AddInto does not.
 func (a *ShortLCAssembler) Add(c CACH) (slc pdu.ShortLC, done bool, err error) {
+	if a == nil {
+		return slc, false, nil
+	}
 	if done, err = a.add(c); err != nil || !done {
 		return slc, false, err
 	}
@@ -48,9 +57,12 @@ func (a *ShortLCAssembler) Add(c CACH) (slc pdu.ShortLC, done bool, err error) {
 
 // AddInto adds a decoded CACH as Add does, and decodes a completed Short LC
 // into dst, with its payload struct in p, as pdu.DecodeShortLCInto places
-// it. It leaves dst as it is until the Short LC is complete. It does not
-// allocate.
+// it. It leaves dst as it is until the Short LC is complete. A nil a, dst
+// or p does nothing. It does not allocate.
 func (a *ShortLCAssembler) AddInto(dst *pdu.ShortLC, p *pdu.ShortLCPayloads, c CACH) (done bool, err error) {
+	if a == nil || dst == nil || p == nil {
+		return false, nil
+	}
 	if done, err = a.add(c); err != nil || !done {
 		return false, err
 	}

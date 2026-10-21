@@ -8231,7 +8231,7 @@ int dmrgo_layer2_short_lc_assembler_free(dmrgo_layer2_short_lc_assembler_t *self
 int dmrgo_layer2_short_lc_assembler_add(dmrgo_layer2_short_lc_assembler_t *self, const dmrgo_layer2_cach_t *c, dmrgo_pdu_short_lc_t *slc, bool *done);
 /* Go: layer2.ShortLCAssembler.AddInto. AddInto adds a decoded CACH as Add does, and decodes a completed Short LC into dst, with its payload struct in p, as pdu.DecodeShortLCInto places it. */
 int dmrgo_layer2_short_lc_assembler_add_into(dmrgo_layer2_short_lc_assembler_t *self, dmrgo_pdu_short_lc_t *dst, dmrgo_pdu_short_lc_payloads_t *p, const dmrgo_layer2_cach_t *c, bool *done);
-/* Go: layer2.ShortLCAssembler.Count. Count returns the number of fragments accumulated so far. */
+/* Go: layer2.ShortLCAssembler.Count. Count returns the number of fragments accumulated so far, 0 for a nil a. */
 int dmrgo_layer2_short_lc_assembler_count(dmrgo_layer2_short_lc_assembler_t *self, int64_t *out);
 /* Go: layer2.ShortLCAssembler.Reset. Reset clears the assembler state for reuse. */
 int dmrgo_layer2_short_lc_assembler_reset(dmrgo_layer2_short_lc_assembler_t *self);
