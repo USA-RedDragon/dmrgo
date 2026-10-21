@@ -2609,12 +2609,15 @@ documents:
       - section: "6.6.2.6"
         title: "Ambient Listening Service (ALS)"
         source_files:
+          - v2/trunk/tscc_udt.go
+          - v2/trunk/tscc.go
           - v2/trunk/ms_udt.go
           - v2/trunk/ms.go
           - v2/trunk/ms_access.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
+              - TestTSCC_Ambient
               - TestMS_Ambient
 
       - section: "6.6.3.1"
@@ -2650,6 +2653,8 @@ documents:
       - section: "6.6.4"
         title: "UDT Short Data Message Procedure"
         source_files:
+          - v2/trunk/tscc_udt.go
+          - v2/trunk/tscc.go
           - v2/trunk/ms_udt.go
           - v2/trunk/ms.go
           - v2/trunk/ms_access.go
@@ -2657,6 +2662,7 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
+              - TestTSCC_ShortData
               - TestMS_ShortDataSend
               - TestMS_ShortDataRefusedAndTimeout
               - TestMS_ShortDataReceive
@@ -2664,12 +2670,15 @@ documents:
       - section: "6.6.5"
         title: "UDT Short Data Polling Service"
         source_files:
+          - v2/trunk/tscc_udt.go
+          - v2/trunk/tscc.go
           - v2/trunk/ms_udt.go
           - v2/trunk/ms.go
           - v2/trunk/ms_access.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
+              - TestTSCC_Polling
               - TestMS_PollShortData
               - TestMS_Polled
 
@@ -2679,6 +2688,8 @@ documents:
       - section: "6.6.7"
         title: "Call Diversion"
         source_files:
+          - v2/trunk/tscc_udt.go
+          - v2/trunk/tscc.go
           - v2/trunk/ms_udt.go
           - v2/trunk/ms.go
           - v2/trunk/ms_access.go
@@ -2686,6 +2697,7 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
+              - TestTSCC_Diversion
               - TestMS_Divert
               - TestMS_CallDiverted
           - package: github.com/USA-RedDragon/dmrgo/v2/layer3
@@ -2695,6 +2707,8 @@ documents:
       - section: "6.6.8"
         title: "Dynamic Group Numbering Assignment Service"
         source_files:
+          - v2/trunk/tscc_udt.go
+          - v2/trunk/tscc.go
           - v2/trunk/ms_udt.go
           - v2/trunk/ms.go
           - v2/trunk/ms_access.go
@@ -2703,11 +2717,14 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
+              - TestTSCC_DGNA
               - TestMS_DGNA
 
       - section: "6.6.9"
         title: "Full-Duplex MS to MS Voice Call Procedures"
         source_files:
+          - v2/trunk/tscc_udt.go
+          - v2/trunk/tscc.go
           - v2/trunk/ms_udt.go
           - v2/trunk/ms.go
           - v2/trunk/ms_access.go
@@ -2715,11 +2732,14 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
+              - TestTSCC_Duplex
               - TestMS_Duplex
 
       - section: "6.6.10"
         title: "Full-Duplex MS to MS Packet Data Call Procedures"
         source_files:
+          - v2/trunk/tscc_udt.go
+          - v2/trunk/tscc.go
           - v2/trunk/ms_udt.go
           - v2/trunk/ms.go
           - v2/trunk/ms_access.go
@@ -2727,11 +2747,14 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
+              - TestTSCC_Duplex
               - TestMS_Duplex
 
       - section: "6.6.11"
         title: "Unified Single Block Data Polling Service"
         source_files:
+          - v2/trunk/tscc_udt.go
+          - v2/trunk/tscc.go
           - v2/trunk/ms_udt.go
           - v2/trunk/ms.go
           - v2/trunk/ms_access.go
@@ -2739,6 +2762,7 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
+              - TestTSCC_Polling
               - TestMS_USBDPoll
 
       - section: "7.1.1"
