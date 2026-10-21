@@ -22,6 +22,7 @@ const (
 	encodeFnName = "Encode"
 
 	typUint8  = "uint8"
+	typByte   = "byte"
 	typUint16 = "uint16"
 	typUint32 = "uint32"
 	typUint64 = "uint64"
@@ -145,8 +146,17 @@ func GenerateFile(pdus []parse.PDUStruct, pkgName string) (*File, error) {
 	}
 
 	ev := &errVars{defs: map[string]Code{}}
+	types := map[string]parse.PDUStruct{}
+	for _, pdu := range pdus {
+		types[pdu.Name] = pdu
+	}
 	for _, pdu := range pdus {
 		switch {
+		case pdu.Stream != nil:
+			if err := emitStream(f, pdu, types, ev); err != nil {
+				return nil, fmt.Errorf("generating stream for %s: %w", pdu.Name, err)
+			}
+			continue
 		case pdu.View != nil:
 			if err := emitView(f, pdu, ev); err != nil {
 				return nil, fmt.Errorf("generating view for %s: %w", pdu.Name, err)
