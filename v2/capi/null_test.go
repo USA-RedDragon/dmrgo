@@ -1,0 +1,52 @@
+package main
+
+import (
+	"reflect"
+	"slices"
+	"testing"
+)
+
+const errPanic = -7
+
+// TestNullArguments calls every generated entry point with all arguments
+// NULL or zero, and again with each pointer argument pointing to zeroed
+// memory, and fails for each call that returns DMRGO_ERR_PANIC. Function
+// pointers and handles, whose C type is incomplete, stay NULL.
+func TestNullArguments(t *testing.T) {
+	t.Parallel()
+
+	names := make([]string, 0, len(entryPoints))
+	for n := range entryPoints {
+		names = append(names, n)
+	}
+	slices.Sort(names)
+	for _, name := range names {
+		f := reflect.ValueOf(entryPoints[name])
+		ft := f.Type()
+		for _, zeroed := range []bool{false, true} {
+			args := make([]reflect.Value, ft.NumIn())
+			for i := range args {
+				at := ft.In(i)
+				args[i] = reflect.New(at).Elem()
+				if zeroed && at.Kind() == reflect.Pointer && !(at.Elem().Kind() == reflect.Array && at.Elem().Len() == 0) {
+					if p, ok := zeroedMemory(at.Elem()); ok {
+						args[i] = p
+					}
+				}
+			}
+			out := f.Call(args)
+			if len(out) == 1 && out[0].CanInt() && out[0].Int() == errPanic {
+				t.Errorf("%s (zeroed pointers %t): DMRGO_ERR_PANIC", name, zeroed)
+			}
+		}
+	}
+}
+
+func zeroedMemory(t reflect.Type) (p reflect.Value, ok bool) {
+	defer func() {
+		if recover() != nil {
+			ok = false
+		}
+	}()
+	return reflect.New(t), true
+}
