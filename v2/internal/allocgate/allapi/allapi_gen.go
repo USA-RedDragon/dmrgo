@@ -42,6 +42,7 @@ import (
 	sms "github.com/USA-RedDragon/dmrgo/v2/sms"
 	transport_dmrd "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 	transport_dmrd_auth "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
+	transport_ipsc "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
 	trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
 	vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
@@ -1045,6 +1046,33 @@ var api = [...]any{
 	(*transport_dmrd_auth.Bridge).Verify,
 	transport_dmrd_auth.NewBridge,
 	transport_dmrd_auth.Token,
+	(*transport_ipsc.Flags).Set,
+	(*transport_ipsc.Payload).RSSI,
+	(*transport_ipsc.Payload).SlotType,
+	(*transport_ipsc.User).Hint,
+	(*transport_ipsc.User).RawBurst,
+	(*transport_ipsc.User).SetRawBurst,
+	transport_ipsc.AppendPeerListReply,
+	transport_ipsc.CallInfo.End,
+	transport_ipsc.CallInfo.Privacy,
+	transport_ipsc.CallInfo.Slot,
+	transport_ipsc.Control.AppendBinary,
+	transport_ipsc.DecodeControl,
+	transport_ipsc.DecodeRaw,
+	transport_ipsc.DecodeUser,
+	transport_ipsc.Flags.Has,
+	transport_ipsc.Mode.Analog,
+	transport_ipsc.Mode.Digital,
+	transport_ipsc.Mode.Operational,
+	transport_ipsc.Mode.TS1,
+	transport_ipsc.Mode.TS2,
+	transport_ipsc.Opcode.String,
+	transport_ipsc.PeerList.Entry,
+	transport_ipsc.PeerList.Len,
+	transport_ipsc.PeerListOf,
+	transport_ipsc.Raw.AppendBinary,
+	transport_ipsc.User.AppendBinary,
+	transport_ipsc.User.IsVoice,
 	(*trunk.Access).Applies,
 	(*trunk.CapacityPlusFollower).Burst,
 	(*trunk.CapacityPlusFollower).Call,

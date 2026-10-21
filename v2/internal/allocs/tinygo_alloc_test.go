@@ -22,6 +22,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder/dvsi"
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
@@ -513,11 +514,39 @@ func tinyDMRDOps(t *testing.T) []tinyOp {
 	}}}
 }
 
+func tinyIPSCRun(q, buf []byte) []byte {
+	got, _ := ipsc.DecodeUser(q)
+	buf, _ = got.AppendBinary(buf[:0])
+	h := got.Hint()
+	if r, err := got.RawBurst(7, layer2.SyncSourceBS); err == nil {
+		_ = got.SetRawBurst(r, h.Kind, h.VoiceBurst, h.DataType)
+	}
+	return buf
+}
+
+func tinyIPSCOps(t *testing.T) []tinyOp {
+	t.Helper()
+	var p [12]byte
+	raw := tinyOK(layer2.BuildDataBurst(p, enums.DataTypeCSBK, 7, layer2.SyncSourceBS))
+	u := ipsc.User{Opcode: ipsc.OpGroupData, Info: 0x20}
+	if err := u.SetRawBurst(raw, layer2.KindData, 0, enums.DataTypeCSBK); err != nil {
+		t.Fatal(err)
+	}
+	pkt := tinyOK(u.AppendBinary(make([]byte, 0, 80)))
+	voice := ipsc.User{Opcode: ipsc.OpGroupVoice, Burst: ipsc.BurstVoice, Voice: ipsc.Voice{Layout: ipsc.VoiceLayoutE, Length: 0x22, Control: 0x16}}
+	vpkt := tinyOK(voice.AppendBinary(make([]byte, 0, 80)))
+	buf := make([]byte, 0, 128)
+	return []tinyOp{{"ipsc", func() {
+		buf = tinyIPSCRun(pkt, buf)
+		buf = tinyIPSCRun(vpkt, buf)
+	}}}
+}
+
 func TestTinyGoAllocs(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(1))
-	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCSBKOps(t), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r), tinyDVSIOps(t), tinyAppOps(t), tinyDMRDOps(t))
+	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCSBKOps(t), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r), tinyDVSIOps(t), tinyAppOps(t), tinyDMRDOps(t), tinyIPSCOps(t))
 
 	probe := make([]byte, 0, 1)
 	if b, _ := tinyAlloc(func() { probe = make([]byte, 64) }); b < 64 {

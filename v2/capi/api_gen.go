@@ -37,6 +37,7 @@ import (
 	g_sms "github.com/USA-RedDragon/dmrgo/v2/sms"
 	g_transport_dmrd "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 	g_transport_dmrd_auth "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
+	g_transport_ipsc "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
 	g_trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
 	g_vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	g_vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
@@ -3710,6 +3711,97 @@ func out_transport_dmrd_Control(d *C.dmrgo_dmrd_control_t, s *g_transport_dmrd.C
 	d.text_len = C.size_t(len(s.Text))
 }
 
+func out_transport_ipsc_Raw(d *C.dmrgo_ipsc_raw_t, s *g_transport_ipsc.Raw, oc *outc) {
+	_ = oc
+	d.opcode = C.dmrgo_ipsc_opcode_t(s.Opcode)
+	d.id = C.uint32_t(s.ID)
+	d.body = (*C.uint8_t)(arenaCopy(oc, s.Body))
+	d.body_len = C.size_t(len(s.Body))
+}
+
+func out_transport_ipsc_RTP(d *C.dmrgo_ipsc_rtp_t, s *g_transport_ipsc.RTP, oc *outc) {
+	_ = oc
+	d.flags = C.uint8_t(s.Flags)
+	d.marker = C.bool(s.Marker)
+	d.payload_type = C.uint8_t(s.PayloadType)
+	d.seq = C.uint16_t(s.Seq)
+	d.timestamp = C.uint32_t(s.Timestamp)
+	d.ssrc = C.uint32_t(s.SSRC)
+}
+
+func out_transport_ipsc_Payload(d *C.dmrgo_ipsc_payload_t, s *g_transport_ipsc.Payload, oc *outc) {
+	_ = oc
+	d.status = C.uint8_t(s.Status)
+	d.words = C.uint16_t(s.Words)
+	d.has_body = C.bool(s.HasBody)
+	*(*[2]byte)(unsafe.Pointer(&d.flags)) = s.Flags
+	d.bits = C.uint16_t(s.Bits)
+	*(*[26]byte)(unsafe.Pointer(&d.octets)) = s.Octets
+	*(*[16]byte)(unsafe.Pointer(&d.trailer)) = s.Trailer
+	d.trailer_len = C.uint8_t(s.TrailerLen)
+}
+
+func out_transport_ipsc_User(d *C.dmrgo_ipsc_user_t, s *g_transport_ipsc.User, oc *outc) {
+	_ = oc
+	d.opcode = C.dmrgo_ipsc_opcode_t(s.Opcode)
+	d.id = C.uint32_t(s.ID)
+	d.call_seq = C.uint8_t(s.CallSeq)
+	d.source = C.uint32_t(s.Source)
+	d.destination = C.uint32_t(s.Destination)
+	d.priority = C.uint8_t(s.Priority)
+	d.call_control = C.uint32_t(s.CallControl)
+	d.info = C.dmrgo_ipsc_call_info_t(s.Info)
+	out_transport_ipsc_RTP(&d.rtp, &s.RTP, oc)
+	d.burst = C.dmrgo_ipsc_burst_type_t(s.Burst)
+	*(*g_transport_ipsc.Voice)(unsafe.Pointer(&d.voice)) = s.Voice
+	out_transport_ipsc_Payload(&d.data, &s.Data, oc)
+}
+
+func in_transport_ipsc_Payload(s *C.dmrgo_ipsc_payload_t) (d g_transport_ipsc.Payload) {
+	d.Status = uint8(s.status)
+	d.Words = uint16(s.words)
+	d.HasBody = bool(s.has_body)
+	d.Flags = *(*[2]byte)(unsafe.Pointer(&s.flags))
+	d.Bits = uint16(s.bits)
+	d.Octets = *(*[26]byte)(unsafe.Pointer(&s.octets))
+	d.Trailer = *(*[16]byte)(unsafe.Pointer(&s.trailer))
+	d.TrailerLen = uint8(s.trailer_len)
+	return
+}
+
+func in_transport_ipsc_Raw(s *C.dmrgo_ipsc_raw_t) (d g_transport_ipsc.Raw) {
+	d.Opcode = g_transport_ipsc.Opcode(s.opcode)
+	d.ID = uint32(s.id)
+	d.Body = unsafe.Slice((*byte)(unsafe.Pointer(s.body)), int(s.body_len))
+	return
+}
+
+func in_transport_ipsc_RTP(s *C.dmrgo_ipsc_rtp_t) (d g_transport_ipsc.RTP) {
+	d.Flags = uint8(s.flags)
+	d.Marker = bool(s.marker)
+	d.PayloadType = uint8(s.payload_type)
+	d.Seq = uint16(s.seq)
+	d.Timestamp = uint32(s.timestamp)
+	d.SSRC = uint32(s.ssrc)
+	return
+}
+
+func in_transport_ipsc_User(s *C.dmrgo_ipsc_user_t) (d g_transport_ipsc.User) {
+	d.Opcode = g_transport_ipsc.Opcode(s.opcode)
+	d.ID = uint32(s.id)
+	d.CallSeq = uint8(s.call_seq)
+	d.Source = uint32(s.source)
+	d.Destination = uint32(s.destination)
+	d.Priority = uint8(s.priority)
+	d.CallControl = uint32(s.call_control)
+	d.Info = g_transport_ipsc.CallInfo(s.info)
+	d.RTP = in_transport_ipsc_RTP(&s.rtp)
+	d.Burst = g_transport_ipsc.BurstType(s.burst)
+	d.Voice = *(*g_transport_ipsc.Voice)(unsafe.Pointer(&s.voice))
+	d.Data = in_transport_ipsc_Payload(&s.data)
+	return
+}
+
 func out_trunk_Tune(d *C.dmrgo_trunk_tune_t, s *g_trunk.Tune, oc *outc) {
 	_ = oc
 	d.channel = C.uint16_t(s.Channel)
@@ -6220,6 +6312,92 @@ func fromC_transport_dmrd_TalkerAlias(s *C.dmrgo_dmrd_talker_alias_t) g_transpor
 	return in_transport_dmrd_TalkerAlias(s)
 }
 
+func in_transport_ipsc_Control(s *C.dmrgo_ipsc_control_t) (d g_transport_ipsc.Control) {
+	d.Opcode = g_transport_ipsc.Opcode(s.opcode)
+	d.ID = uint32(s.id)
+	d.Mode = g_transport_ipsc.Mode(s.mode)
+	d.Flags = *(*g_transport_ipsc.Flags)(unsafe.Pointer(&s.flags))
+	d.Peers = uint16(s.peers)
+	d.Version = *(*[4]byte)(unsafe.Pointer(&s.version))
+	return
+}
+
+func out_transport_ipsc_Control(d *C.dmrgo_ipsc_control_t, s *g_transport_ipsc.Control, oc *outc) {
+	_ = oc
+	d.opcode = C.dmrgo_ipsc_opcode_t(s.Opcode)
+	d.id = C.uint32_t(s.ID)
+	d.mode = C.dmrgo_ipsc_mode_t(s.Mode)
+	*(*g_transport_ipsc.Flags)(unsafe.Pointer(&d.flags)) = s.Flags
+	d.peers = C.uint16_t(s.Peers)
+	*(*[4]byte)(unsafe.Pointer(&d.version)) = s.Version
+}
+
+func fromC_transport_ipsc_Control(s *C.dmrgo_ipsc_control_t) g_transport_ipsc.Control {
+	return in_transport_ipsc_Control(s)
+}
+
+func fromC_transport_ipsc_Payload(s *C.dmrgo_ipsc_payload_t) g_transport_ipsc.Payload {
+	return in_transport_ipsc_Payload(s)
+}
+
+func in_transport_ipsc_PeerEntry(s *C.dmrgo_ipsc_peer_entry_t) (d g_transport_ipsc.PeerEntry) {
+	d.ID = uint32(s.id)
+	d.IP = *(*[4]byte)(unsafe.Pointer(&s.ip))
+	d.Port = uint16(s.port)
+	d.Mode = g_transport_ipsc.Mode(s.mode)
+	return
+}
+
+func out_transport_ipsc_PeerEntry(d *C.dmrgo_ipsc_peer_entry_t, s *g_transport_ipsc.PeerEntry, oc *outc) {
+	_ = oc
+	d.id = C.uint32_t(s.ID)
+	*(*[4]byte)(unsafe.Pointer(&d.ip)) = s.IP
+	d.port = C.uint16_t(s.Port)
+	d.mode = C.dmrgo_ipsc_mode_t(s.Mode)
+}
+
+func fromC_transport_ipsc_PeerEntry(s *C.dmrgo_ipsc_peer_entry_t) g_transport_ipsc.PeerEntry {
+	return in_transport_ipsc_PeerEntry(s)
+}
+
+func fromC_transport_ipsc_RTP(s *C.dmrgo_ipsc_rtp_t) g_transport_ipsc.RTP {
+	return in_transport_ipsc_RTP(s)
+}
+
+func fromC_transport_ipsc_Raw(s *C.dmrgo_ipsc_raw_t) g_transport_ipsc.Raw {
+	return in_transport_ipsc_Raw(s)
+}
+
+func fromC_transport_ipsc_User(s *C.dmrgo_ipsc_user_t) g_transport_ipsc.User {
+	return in_transport_ipsc_User(s)
+}
+
+func in_transport_ipsc_Voice(s *C.dmrgo_ipsc_voice_t) (d g_transport_ipsc.Voice) {
+	d.Layout = g_transport_ipsc.VoiceLayout(s.layout)
+	d.Length = uint8(s.length)
+	d.Control = uint8(s.control)
+	d.AMBE = *(*[19]byte)(unsafe.Pointer(&s.ambe))
+	d.Embedded = *(*[4]byte)(unsafe.Pointer(&s.embedded))
+	d.LC = *(*[9]byte)(unsafe.Pointer(&s.lc))
+	d.EMB = g_layer2_pdu.EMBInfo(s.emb)
+	return
+}
+
+func out_transport_ipsc_Voice(d *C.dmrgo_ipsc_voice_t, s *g_transport_ipsc.Voice, oc *outc) {
+	_ = oc
+	d.layout = C.dmrgo_ipsc_voice_layout_t(s.Layout)
+	d.length = C.uint8_t(s.Length)
+	d.control = C.uint8_t(s.Control)
+	*(*[19]byte)(unsafe.Pointer(&d.ambe)) = s.AMBE
+	*(*[4]byte)(unsafe.Pointer(&d.embedded)) = s.Embedded
+	*(*[9]byte)(unsafe.Pointer(&d.lc)) = s.LC
+	d.emb = C.dmrgo_pdu_emb_info_t(s.EMB)
+}
+
+func fromC_transport_ipsc_Voice(s *C.dmrgo_ipsc_voice_t) g_transport_ipsc.Voice {
+	return in_transport_ipsc_Voice(s)
+}
+
 func in_trunk_Access(s *C.dmrgo_trunk_access_t) (d g_trunk.Access) {
 	d.Mask = uint8(s.mask)
 	d.Address = uint32(s.address)
@@ -6988,6 +7166,18 @@ func get_transport_dmrd_auth_Bridge(p *C.dmrgo_auth_bridge_t) *h_transport_dmrd_
 
 func new_transport_dmrd_auth_Bridge(v *g_transport_dmrd_auth.Bridge) *C.dmrgo_auth_bridge_t {
 	return (*C.dmrgo_auth_bridge_t)(newHandle(&h_transport_dmrd_auth_Bridge{v: v}))
+}
+
+type h_transport_ipsc_PeerList struct {
+	v *g_transport_ipsc.PeerList
+}
+
+func get_transport_ipsc_PeerList(p *C.dmrgo_ipsc_peer_list_t) *h_transport_ipsc_PeerList {
+	return lookup[*h_transport_ipsc_PeerList](unsafe.Pointer(p))
+}
+
+func new_transport_ipsc_PeerList(v *g_transport_ipsc.PeerList) *C.dmrgo_ipsc_peer_list_t {
+	return (*C.dmrgo_ipsc_peer_list_t)(newHandle(&h_transport_ipsc_PeerList{v: v}))
 }
 
 type h_trunk_CapacityPlusFollower struct {
@@ -31027,6 +31217,576 @@ func dmrgo_auth_token(c_d C.dmrgo_dmrd_dialect_t, c_salt C.uint32_t, c_password 
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ipsc_append_peer_list_reply
+func dmrgo_ipsc_append_peer_list_reply(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_master C.uint32_t, c_entries *C.dmrgo_ipsc_peer_entry_t, c_entries_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_entries == nil && c_entries_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_entries []g_transport_ipsc.PeerEntry
+	a_entries = unsafe.Slice((*g_transport_ipsc.PeerEntry)(unsafe.Pointer(c_entries)), int(c_entries_len))
+	r0 := g_transport_ipsc.AppendPeerListReply(a_dst, uint32(c_master), a_entries)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_call_info_end
+func dmrgo_ipsc_call_info_end(c_self C.dmrgo_ipsc_call_info_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_transport_ipsc.CallInfo(c_self).End()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_call_info_privacy
+func dmrgo_ipsc_call_info_privacy(c_self C.dmrgo_ipsc_call_info_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_transport_ipsc.CallInfo(c_self).Privacy()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_call_info_slot
+func dmrgo_ipsc_call_info_slot(c_self C.dmrgo_ipsc_call_info_t, c_out *C.dmrgo_enums_slot_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_transport_ipsc.CallInfo(c_self).Slot()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_enums_slot_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_control_append_binary
+func dmrgo_ipsc_control_append_binary(c_self *C.dmrgo_ipsc_control_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_ipsc.Control
+	x = *(*g_transport_ipsc.Control)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_decode_control
+func dmrgo_ipsc_decode_control(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_ipsc_control_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	r0, r1 := g_transport_ipsc.DecodeControl(a_p)
+	_ = r0
+	if c_out != nil {
+		*(*g_transport_ipsc.Control)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_decode_raw
+func dmrgo_ipsc_decode_raw(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_ipsc_raw_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	r0, r1 := g_transport_ipsc.DecodeRaw(a_p)
+	_ = r0
+	if c_out != nil {
+		out_transport_ipsc_Raw(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_decode_user
+func dmrgo_ipsc_decode_user(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_ipsc_user_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	r0, r1 := g_transport_ipsc.DecodeUser(a_p)
+	_ = r0
+	if c_out != nil {
+		out_transport_ipsc_User(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_flags_has
+func dmrgo_ipsc_flags_has(c_self *C.dmrgo_ipsc_flags_t, c_flag C.dmrgo_ipsc_flag_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*(*g_transport_ipsc.Flags)(unsafe.Pointer(c_self))).Has(g_transport_ipsc.Flag(c_flag))
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_flags_set
+func dmrgo_ipsc_flags_set(c_self *C.dmrgo_ipsc_flags_t, c_flag C.dmrgo_ipsc_flag_t, c_on C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	(*g_transport_ipsc.Flags)(unsafe.Pointer(c_self)).Set(g_transport_ipsc.Flag(c_flag), bool(c_on))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_mode_analog
+func dmrgo_ipsc_mode_analog(c_self C.dmrgo_ipsc_mode_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_transport_ipsc.Mode(c_self).Analog()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_mode_digital
+func dmrgo_ipsc_mode_digital(c_self C.dmrgo_ipsc_mode_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_transport_ipsc.Mode(c_self).Digital()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_mode_operational
+func dmrgo_ipsc_mode_operational(c_self C.dmrgo_ipsc_mode_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_transport_ipsc.Mode(c_self).Operational()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_mode_ts1
+func dmrgo_ipsc_mode_ts1(c_self C.dmrgo_ipsc_mode_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_transport_ipsc.Mode(c_self).TS1()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint8_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_mode_ts2
+func dmrgo_ipsc_mode_ts2(c_self C.dmrgo_ipsc_mode_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_transport_ipsc.Mode(c_self).TS2()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint8_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_opcode_string
+func dmrgo_ipsc_opcode_string(c_self C.dmrgo_ipsc_opcode_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_transport_ipsc.Opcode(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_payload_rssi
+func dmrgo_ipsc_payload_rssi(c_self *C.dmrgo_ipsc_payload_t, c_out0 *C.uint16_t, c_out1 *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_ipsc.Payload
+	x = in_transport_ipsc_Payload(&(*c_self))
+	r0, r1 := x.RSSI()
+	out_transport_ipsc_Payload(&(*c_self), &x, oc)
+	_ = r0
+	_ = r1
+	if c_out0 != nil {
+		*c_out0 = C.uint16_t(r0)
+	}
+	if c_out1 != nil {
+		*c_out1 = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_payload_slot_type
+func dmrgo_ipsc_payload_slot_type(c_self *C.dmrgo_ipsc_payload_t, c_out0 *C.dmrgo_pdu_slot_type_info_t, c_out1 *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_ipsc.Payload
+	x = in_transport_ipsc_Payload(&(*c_self))
+	r0, r1 := x.SlotType()
+	out_transport_ipsc_Payload(&(*c_self), &x, oc)
+	_ = r0
+	_ = r1
+	if c_out0 != nil {
+		*c_out0 = C.dmrgo_pdu_slot_type_info_t(r0)
+	}
+	if c_out1 != nil {
+		*c_out1 = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_peer_list_new
+func dmrgo_ipsc_peer_list_new(c_out **C.dmrgo_ipsc_peer_list_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_transport_ipsc_PeerList(new(g_transport_ipsc.PeerList))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_peer_list_free
+func dmrgo_ipsc_peer_list_free(c_self *C.dmrgo_ipsc_peer_list_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_transport_ipsc_PeerList(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_peer_list_entry
+func dmrgo_ipsc_peer_list_entry(c_self *C.dmrgo_ipsc_peer_list_t, c_i C.int64_t, c_out *C.dmrgo_ipsc_peer_entry_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_transport_ipsc_PeerList(c_self)
+	r0 := h.v.Entry(int(c_i))
+	_ = r0
+	if c_out != nil {
+		*(*g_transport_ipsc.PeerEntry)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_peer_list_len
+func dmrgo_ipsc_peer_list_len(c_self *C.dmrgo_ipsc_peer_list_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_transport_ipsc_PeerList(c_self)
+	r0 := h.v.Len()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_peer_list_of
+func dmrgo_ipsc_peer_list_of(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_ipsc_peer_list_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	r0, r1 := g_transport_ipsc.PeerListOf(a_p)
+	_ = r0
+	if c_out != nil {
+		*get_transport_ipsc_PeerList(c_out).v = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_raw_append_binary
+func dmrgo_ipsc_raw_append_binary(c_self *C.dmrgo_ipsc_raw_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_ipsc.Raw
+	x = in_transport_ipsc_Raw(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0 := x.AppendBinary(a_dst)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_user_append_binary
+func dmrgo_ipsc_user_append_binary(c_self *C.dmrgo_ipsc_user_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_ipsc.User
+	x = in_transport_ipsc_User(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_user_hint
+func dmrgo_ipsc_user_hint(c_self *C.dmrgo_ipsc_user_t, c_out *C.dmrgo_layer2_hint_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_ipsc.User
+	x = in_transport_ipsc_User(&(*c_self))
+	r0 := x.Hint()
+	out_transport_ipsc_User(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		out_layer2_Hint(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_user_is_voice
+func dmrgo_ipsc_user_is_voice(c_self *C.dmrgo_ipsc_user_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_ipsc.User
+	x = in_transport_ipsc_User(&(*c_self))
+	r0 := x.IsVoice()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_user_raw_burst
+func dmrgo_ipsc_user_raw_burst(c_self *C.dmrgo_ipsc_user_t, c_cc C.dmrgo_enums_color_code_t, c_src C.dmrgo_layer2_sync_source_t, c_out *C.dmrgo_layer2_raw_burst_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_ipsc.User
+	x = in_transport_ipsc_User(&(*c_self))
+	r0, r1 := x.RawBurst(g_enums.ColorCode(c_cc), g_layer2.SyncSource(c_src))
+	out_transport_ipsc_User(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		*(*g_layer2.RawBurst)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_user_set_raw_burst
+func dmrgo_ipsc_user_set_raw_burst(c_self *C.dmrgo_ipsc_user_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_k C.dmrgo_layer2_kind_t, c_pos C.dmrgo_enums_voice_burst_type_t, c_dt C.dmrgo_enums_data_type_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_ipsc.User
+	x = in_transport_ipsc_User(&(*c_self))
+	if c_raw == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.SetRawBurst(*(*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), g_layer2.Kind(c_k), g_enums.VoiceBurstType(c_pos), g_enums.DataType(c_dt))
+	out_transport_ipsc_User(&(*c_self), &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_access_applies
 func dmrgo_trunk_access_applies(c_self *C.dmrgo_trunk_access_t, c_ms C.uint32_t, c_emergency C.bool, c_out *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -35971,6 +36731,12 @@ func errCode(err error) C.int {
 			return -204
 		case g_transport_dmrd.ErrText:
 			return -205
+		case g_transport_ipsc.ErrCommand:
+			return -206
+		case g_transport_ipsc.ErrLength:
+			return -207
+		case g_transport_ipsc.ErrShort:
+			return -208
 		case g_trunk.ErrBusy:
 			return -134
 		case g_trunk.ErrChannelNumber:
@@ -36270,6 +37036,12 @@ func codeErr(code C.int) error {
 		return g_transport_dmrd.ErrSignature
 	case -205:
 		return g_transport_dmrd.ErrText
+	case -206:
+		return g_transport_ipsc.ErrCommand
+	case -207:
+		return g_transport_ipsc.ErrLength
+	case -208:
+		return g_transport_ipsc.ErrShort
 	case -134:
 		return g_trunk.ErrBusy
 	case -135:

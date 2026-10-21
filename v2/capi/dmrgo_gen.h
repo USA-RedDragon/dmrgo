@@ -447,6 +447,24 @@ typedef struct dmrgo_dmrd_position_t dmrgo_dmrd_position_t;
 typedef struct dmrgo_dmrd_talker_alias_t dmrgo_dmrd_talker_alias_t;
 /* Go: auth.Bridge. Bridge holds an OpenBridge key and the hash state that signing with it needs. */
 typedef struct dmrgo_auth_bridge_t dmrgo_auth_bridge_t;
+/* Go: ipsc.Control. Control is a peer control packet, opcodes 0x90 to 0x9B. */
+typedef struct dmrgo_ipsc_control_t dmrgo_ipsc_control_t;
+/* Go: ipsc.Flags. Flags is the 4 flag octets of a peer. */
+typedef struct dmrgo_ipsc_flags_t dmrgo_ipsc_flags_t;
+/* Go: ipsc.Payload. Payload is the burst of a data packet: the decoded payload with its status octets. */
+typedef struct dmrgo_ipsc_payload_t dmrgo_ipsc_payload_t;
+/* Go: ipsc.PeerEntry. PeerEntry is one peer of a peer list. */
+typedef struct dmrgo_ipsc_peer_entry_t dmrgo_ipsc_peer_entry_t;
+/* Go: ipsc.PeerList. PeerList is the entries of an OpPeerListReply, 11 octets each, as a view over the packet. */
+typedef struct dmrgo_ipsc_peer_list_t dmrgo_ipsc_peer_list_t;
+/* Go: ipsc.RTP. RTP is the RTP header of a user packet, octets 18 to 29. */
+typedef struct dmrgo_ipsc_rtp_t dmrgo_ipsc_rtp_t;
+/* Go: ipsc.Raw. Raw is a packet that this package does not decode further, such as OpWakeup, OpStatus or OpXNL: its opcode, sender ID and the octets after them. */
+typedef struct dmrgo_ipsc_raw_t dmrgo_ipsc_raw_t;
+/* Go: ipsc.User. User is a voice or data packet, opcodes 0x80, 0x81, 0x83 and 0x84. */
+typedef struct dmrgo_ipsc_user_t dmrgo_ipsc_user_t;
+/* Go: ipsc.Voice. Voice is the burst of a voice packet. */
+typedef struct dmrgo_ipsc_voice_t dmrgo_ipsc_voice_t;
 /* Go: trunk.Access. Access is the random access control of the last C_ALOHA of a TSCC (ETSI TS 102 361-4 clause 6.2.1.1, Table 7.19). */
 typedef struct dmrgo_trunk_access_t dmrgo_trunk_access_t;
 /* Go: trunk.CapacityPlusConfig. CapacityPlusConfig configures NewCapacityPlusFollower. */
@@ -694,6 +712,18 @@ typedef uint8_t dmrgo_dmrd_dialect_t;
 typedef uint8_t dmrgo_dmrd_frame_type_t;
 /* Go: dmrd.OptionState. OptionState is whether a DMR+ startup option is in the options text. */
 typedef uint8_t dmrgo_dmrd_option_state_t;
+/* Go: ipsc.BurstType. BurstType is octet 30 of a user packet: the DMR data type for a data burst, BurstVoice for a voice burst, BurstRaw for the raw information bits of a burst that the repeater could not decode, and BurstSyncLost for a placeholder of a burst that it lost. */
+typedef uint8_t dmrgo_ipsc_burst_type_t;
+/* Go: ipsc.CallInfo. CallInfo is octet 17 of a user packet. */
+typedef uint8_t dmrgo_ipsc_call_info_t;
+/* Go: ipsc.Flag. Flag is one bit of the 4 flag octets of a peer. */
+typedef uint8_t dmrgo_ipsc_flag_t;
+/* Go: ipsc.Mode. Mode is the mode octet of a peer: operational, analog or digital, and the link state of each slot. */
+typedef uint8_t dmrgo_ipsc_mode_t;
+/* Go: ipsc.Opcode. Opcode is octet 0 of an IPSC packet. */
+typedef uint8_t dmrgo_ipsc_opcode_t;
+/* Go: ipsc.VoiceLayout. VoiceLayout is the form of a voice packet, which tells some superframe positions. */
+typedef uint8_t dmrgo_ipsc_voice_layout_t;
 /* Go: trunk.OutputKind. OutputKind is the kind of an Output. */
 typedef uint8_t dmrgo_trunk_output_kind_t;
 /* Go: trunk.Reason. Reason tells why a machine lost a TSCC, left a payload channel or failed a request. */
@@ -2495,6 +2525,78 @@ struct dmrgo_dmrd_hbrp_config_t {
 	uint8_t v[306];
 };
 
+struct dmrgo_ipsc_peer_entry_t {
+	uint32_t id;
+	uint8_t ip[4];
+	uint16_t port;
+	dmrgo_ipsc_mode_t mode;
+};
+
+struct dmrgo_ipsc_flags_t {
+	uint8_t v[4];
+};
+
+struct dmrgo_ipsc_control_t {
+	dmrgo_ipsc_opcode_t opcode;
+	uint32_t id;
+	dmrgo_ipsc_mode_t mode;
+	dmrgo_ipsc_flags_t flags;
+	uint16_t peers;
+	uint8_t version[4];
+};
+
+struct dmrgo_ipsc_raw_t {
+	dmrgo_ipsc_opcode_t opcode;
+	uint32_t id;
+	uint8_t *body;
+	size_t body_len;
+};
+
+struct dmrgo_ipsc_rtp_t {
+	uint8_t flags;
+	bool marker;
+	uint8_t payload_type;
+	uint16_t seq;
+	uint32_t timestamp;
+	uint32_t ssrc;
+};
+
+struct dmrgo_ipsc_voice_t {
+	dmrgo_ipsc_voice_layout_t layout;
+	uint8_t length;
+	uint8_t control;
+	uint8_t ambe[19];
+	uint8_t embedded[4];
+	uint8_t lc[9];
+	dmrgo_pdu_emb_info_t emb;
+};
+
+struct dmrgo_ipsc_payload_t {
+	uint8_t status;
+	uint16_t words;
+	bool has_body;
+	uint8_t flags[2];
+	uint16_t bits;
+	uint8_t octets[26];
+	uint8_t trailer[16];
+	uint8_t trailer_len;
+};
+
+struct dmrgo_ipsc_user_t {
+	dmrgo_ipsc_opcode_t opcode;
+	uint32_t id;
+	uint8_t call_seq;
+	uint32_t source;
+	uint32_t destination;
+	uint8_t priority;
+	uint32_t call_control;
+	dmrgo_ipsc_call_info_t info;
+	dmrgo_ipsc_rtp_t rtp;
+	dmrgo_ipsc_burst_type_t burst;
+	dmrgo_ipsc_voice_t voice;
+	dmrgo_ipsc_payload_t data;
+};
+
 struct dmrgo_trunk_access_t {
 	uint8_t mask;
 	uint32_t address;
@@ -2875,6 +2977,9 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ERR_HYTERA_SHORT (-198)
 #define DMRGO_ERR_HYTERA_SIGNATURE (-199)
 #define DMRGO_ERR_HYTERA_TEXT (-200)
+#define DMRGO_ERR_IPSC_COMMAND (-206)
+#define DMRGO_ERR_IPSC_LENGTH (-207)
+#define DMRGO_ERR_IPSC_SHORT (-208)
 #define DMRGO_ERR_IP_CHECKSUM (-172)
 #define DMRGO_ERR_IP_FRAGMENT (-173)
 #define DMRGO_ERR_IP_LENGTH (-174)
@@ -4285,6 +4390,88 @@ struct dmrgo_voice_output_t {
 #define DMRGO_DMRD_OPTION_CLEAR ((dmrgo_dmrd_option_state_t)1)
 /* Go: dmrd.OptionSet. OptionSet is an option with a value: it overrides the master. */
 #define DMRGO_DMRD_OPTION_SET ((dmrgo_dmrd_option_state_t)2)
+/* Go: ipsc.BurstRaw. The BurstType values other than the data types 0x00 to 0x08. */
+#define DMRGO_IPSC_BURST_RAW ((dmrgo_ipsc_burst_type_t)31)
+/* Go: ipsc.BurstSyncLost. The BurstType values other than the data types 0x00 to 0x08. */
+#define DMRGO_IPSC_BURST_SYNC_LOST ((dmrgo_ipsc_burst_type_t)19)
+/* Go: ipsc.BurstVoice. The BurstType values other than the data types 0x00 to 0x08. */
+#define DMRGO_IPSC_BURST_VOICE ((dmrgo_ipsc_burst_type_t)10)
+/* Go: ipsc.FlagAuth. octet 3 bit 4: packets carry an HMAC-SHA1 trailer */
+#define DMRGO_IPSC_FLAG_AUTH ((dmrgo_ipsc_flag_t)52)
+/* Go: ipsc.FlagCSBK. octet 2 bit 7: CSBK calls */
+#define DMRGO_IPSC_FLAG_CSBK ((dmrgo_ipsc_flag_t)39)
+/* Go: ipsc.FlagConsoleApp. octet 2 bit 5: console application */
+#define DMRGO_IPSC_FLAG_CONSOLE_APP ((dmrgo_ipsc_flag_t)37)
+/* Go: ipsc.FlagData. octet 3 bit 3: data calls */
+#define DMRGO_IPSC_FLAG_DATA ((dmrgo_ipsc_flag_t)51)
+/* Go: ipsc.FlagMasterPeer. octet 3 bit 0: the master */
+#define DMRGO_IPSC_FLAG_MASTER_PEER ((dmrgo_ipsc_flag_t)48)
+/* Go: ipsc.FlagRepeaterMonitor. octet 2 bit 6: repeater call monitoring */
+#define DMRGO_IPSC_FLAG_REPEATER_MONITOR ((dmrgo_ipsc_flag_t)38)
+/* Go: ipsc.FlagVoice. octet 3 bit 2: voice calls */
+#define DMRGO_IPSC_FLAG_VOICE ((dmrgo_ipsc_flag_t)50)
+/* Go: ipsc.FlagXNLMaster. octet 3 bit 6: XNL master */
+#define DMRGO_IPSC_FLAG_XNL_MASTER ((dmrgo_ipsc_flag_t)54)
+/* Go: ipsc.FlagXNLSlave. octet 3 bit 5: XNL slave */
+#define DMRGO_IPSC_FLAG_XNL_SLAVE ((dmrgo_ipsc_flag_t)53)
+/* Go: ipsc.FlagXNLStatus. octet 3 bit 7: XNL connected */
+#define DMRGO_IPSC_FLAG_XNL_STATUS ((dmrgo_ipsc_flag_t)55)
+/* Go: ipsc.OpAliveReply. keepalive reply from the master */
+#define DMRGO_IPSC_OP_ALIVE_REPLY ((dmrgo_ipsc_opcode_t)151)
+/* Go: ipsc.OpAliveRequest. keepalive from a peer to the master */
+#define DMRGO_IPSC_OP_ALIVE_REQUEST ((dmrgo_ipsc_opcode_t)150)
+/* Go: ipsc.OpCallConfirmation. confirmation from the receiver of a confirmed call */
+#define DMRGO_IPSC_OP_CALL_CONFIRMATION ((dmrgo_ipsc_opcode_t)5)
+/* Go: ipsc.OpCallMonitorNack. call monitor NACK */
+#define DMRGO_IPSC_OP_CALL_MONITOR_NACK ((dmrgo_ipsc_opcode_t)99)
+/* Go: ipsc.OpCallMonitorRepeat. call monitor repeat */
+#define DMRGO_IPSC_OP_CALL_MONITOR_REPEAT ((dmrgo_ipsc_opcode_t)98)
+/* Go: ipsc.OpCallMonitorStatus. call monitor status */
+#define DMRGO_IPSC_OP_CALL_MONITOR_STATUS ((dmrgo_ipsc_opcode_t)97)
+/* Go: ipsc.OpCollision. collision of two transmitters */
+#define DMRGO_IPSC_OP_COLLISION ((dmrgo_ipsc_opcode_t)134)
+/* Go: ipsc.OpDeregisterReply. the leave is accepted */
+#define DMRGO_IPSC_OP_DEREGISTER_REPLY ((dmrgo_ipsc_opcode_t)155)
+/* Go: ipsc.OpDeregisterRequest. a peer leaves */
+#define DMRGO_IPSC_OP_DEREGISTER_REQUEST ((dmrgo_ipsc_opcode_t)154)
+/* Go: ipsc.OpGroupData. group data */
+#define DMRGO_IPSC_OP_GROUP_DATA ((dmrgo_ipsc_opcode_t)131)
+/* Go: ipsc.OpGroupVoice. group voice */
+#define DMRGO_IPSC_OP_GROUP_VOICE ((dmrgo_ipsc_opcode_t)128)
+/* Go: ipsc.OpPeerAliveReply. keepalive reply between peers */
+#define DMRGO_IPSC_OP_PEER_ALIVE_REPLY ((dmrgo_ipsc_opcode_t)153)
+/* Go: ipsc.OpPeerAliveRequest. keepalive between peers */
+#define DMRGO_IPSC_OP_PEER_ALIVE_REQUEST ((dmrgo_ipsc_opcode_t)152)
+/* Go: ipsc.OpPeerListReply. the master sends the peer list */
+#define DMRGO_IPSC_OP_PEER_LIST_REPLY ((dmrgo_ipsc_opcode_t)147)
+/* Go: ipsc.OpPeerListRequest. a peer asks for the peer list */
+#define DMRGO_IPSC_OP_PEER_LIST_REQUEST ((dmrgo_ipsc_opcode_t)146)
+/* Go: ipsc.OpPeerRegisterReply. a peer accepts a registration */
+#define DMRGO_IPSC_OP_PEER_REGISTER_REPLY ((dmrgo_ipsc_opcode_t)149)
+/* Go: ipsc.OpPeerRegisterRequest. a peer registers with another peer */
+#define DMRGO_IPSC_OP_PEER_REGISTER_REQUEST ((dmrgo_ipsc_opcode_t)148)
+/* Go: ipsc.OpPrivateData. private data */
+#define DMRGO_IPSC_OP_PRIVATE_DATA ((dmrgo_ipsc_opcode_t)132)
+/* Go: ipsc.OpPrivateVoice. private voice */
+#define DMRGO_IPSC_OP_PRIVATE_VOICE ((dmrgo_ipsc_opcode_t)129)
+/* Go: ipsc.OpRegisterReply. the master accepts a registration */
+#define DMRGO_IPSC_OP_REGISTER_REPLY ((dmrgo_ipsc_opcode_t)145)
+/* Go: ipsc.OpRegisterRequest. a peer registers with the master */
+#define DMRGO_IPSC_OP_REGISTER_REQUEST ((dmrgo_ipsc_opcode_t)144)
+/* Go: ipsc.OpStatus. sent by an XPR 8400 after each keepalive; meaning not known */
+#define DMRGO_IPSC_OP_STATUS ((dmrgo_ipsc_opcode_t)240)
+/* Go: ipsc.OpTextMessageAck. text message acknowledgement */
+#define DMRGO_IPSC_OP_TEXT_MESSAGE_ACK ((dmrgo_ipsc_opcode_t)84)
+/* Go: ipsc.OpWakeup. repeater wake-up */
+#define DMRGO_IPSC_OP_WAKEUP ((dmrgo_ipsc_opcode_t)133)
+/* Go: ipsc.OpXNL. XCMP/XNL control message */
+#define DMRGO_IPSC_OP_XNL ((dmrgo_ipsc_opcode_t)112)
+/* Go: ipsc.VoiceLayoutA. 52 octets: burst A, the AMBE frames only */
+#define DMRGO_IPSC_VOICE_LAYOUT_A ((dmrgo_ipsc_voice_layout_t)1)
+/* Go: ipsc.VoiceLayoutBCDF. 57 octets: bursts B, C, D and F, with embedded data and EMB */
+#define DMRGO_IPSC_VOICE_LAYOUT_BCDF ((dmrgo_ipsc_voice_layout_t)2)
+/* Go: ipsc.VoiceLayoutE. 66 octets: burst E, also with the full LC */
+#define DMRGO_IPSC_VOICE_LAYOUT_E ((dmrgo_ipsc_voice_layout_t)3)
 /* Go: trunk.CapacityPlusNoSignalDefault. CapacityPlusNoSignalDefault is the default CapacityPlusConfig.NoSignal: more than twice the 2 s beacon period of an idle rest channel. */
 #define DMRGO_TRUNK_CAPACITY_PLUS_NO_SIGNAL_DEFAULT INT64_C(5000000000)
 /* Go: trunk.ChannelAbsolute. ChannelAbsolute is the channel number of a grant or C_MOVE whose frequencies follow in a CG_AP or MV_AP block (ETSI TS 102 361-4 clause 7.1.1.1.1). */
@@ -6594,6 +6781,64 @@ int dmrgo_auth_bridge_verify(dmrgo_auth_bridge_t *self, const uint8_t *p, size_t
 int dmrgo_auth_new_bridge(const uint8_t *key, size_t key_len, dmrgo_auth_bridge_t **out);
 /* Go: auth.Token. Token returns the login token of an RPTK message for the salt of the master and the password: SHA-256 of the salt and the password. */
 int dmrgo_auth_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, uint8_t out[32]);
+/* Go: ipsc.AppendPeerListReply. AppendPeerListReply appends an OpPeerListReply of master with entries to dst. */
+int dmrgo_ipsc_append_peer_list_reply(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, uint32_t master, const dmrgo_ipsc_peer_entry_t *entries, size_t entries_len);
+/* Go: ipsc.CallInfo.End. End reports bit 6, the end flag. */
+int dmrgo_ipsc_call_info_end(dmrgo_ipsc_call_info_t self, bool *out);
+/* Go: ipsc.CallInfo.Privacy. Privacy reports bit 7: the call is encrypted. */
+int dmrgo_ipsc_call_info_privacy(dmrgo_ipsc_call_info_t self, bool *out);
+/* Go: ipsc.CallInfo.Slot. Slot returns Slot2 for bit 5 and Slot1 otherwise. */
+int dmrgo_ipsc_call_info_slot(dmrgo_ipsc_call_info_t self, dmrgo_enums_slot_t *out);
+/* Go: ipsc.Control.AppendBinary. AppendBinary appends the packet c to dst, without the authentication trailer. */
+int dmrgo_ipsc_control_append_binary(const dmrgo_ipsc_control_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: ipsc.DecodeControl. DecodeControl decodes the peer control packet p, without the authentication trailer (see package auth). */
+int dmrgo_ipsc_decode_control(const uint8_t *p, size_t p_len, dmrgo_ipsc_control_t *out);
+/* Go: ipsc.DecodeRaw. DecodeRaw splits p into its opcode, sender ID and body. */
+int dmrgo_ipsc_decode_raw(const uint8_t *p, size_t p_len, dmrgo_ipsc_raw_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ipsc.DecodeUser. DecodeUser decodes the user packet p, without the authentication trailer (see package auth). */
+int dmrgo_ipsc_decode_user(const uint8_t *p, size_t p_len, dmrgo_ipsc_user_t *out);
+/* Go: ipsc.Flags.Has. Has reports whether flag f is set. */
+int dmrgo_ipsc_flags_has(const dmrgo_ipsc_flags_t *self, dmrgo_ipsc_flag_t flag, bool *out);
+/* Go: ipsc.Flags.Set. Set sets or clears flag f. */
+int dmrgo_ipsc_flags_set(dmrgo_ipsc_flags_t *self, dmrgo_ipsc_flag_t flag, bool on);
+/* Go: ipsc.Mode.Analog. Analog reports that bits 5 and 4 say analog. */
+int dmrgo_ipsc_mode_analog(dmrgo_ipsc_mode_t self, bool *out);
+/* Go: ipsc.Mode.Digital. Digital reports that bits 5 and 4 say digital. */
+int dmrgo_ipsc_mode_digital(dmrgo_ipsc_mode_t self, bool *out);
+/* Go: ipsc.Mode.Operational. Operational reports bit 6, the peer is operational. */
+int dmrgo_ipsc_mode_operational(dmrgo_ipsc_mode_t self, bool *out);
+/* Go: ipsc.Mode.TS1. TS1 returns the 2-bit link state of slot 1, bits 3 and 2. */
+int dmrgo_ipsc_mode_ts1(dmrgo_ipsc_mode_t self, uint8_t *out);
+/* Go: ipsc.Mode.TS2. TS2 returns the 2-bit link state of slot 2, bits 1 and 0. */
+int dmrgo_ipsc_mode_ts2(dmrgo_ipsc_mode_t self, uint8_t *out);
+/* Go: ipsc.Opcode.String. String returns the name of the opcode. */
+int dmrgo_ipsc_opcode_string(dmrgo_ipsc_opcode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: ipsc.Payload.RSSI. RSSI returns the last two trailer octets and whether the packet has them. */
+int dmrgo_ipsc_payload_rssi(dmrgo_ipsc_payload_t *self, uint16_t *out0, bool *out1);
+/* Go: ipsc.Payload.SlotType. SlotType returns the slot type octet of the trailer and whether the packet has one. */
+int dmrgo_ipsc_payload_slot_type(dmrgo_ipsc_payload_t *self, dmrgo_pdu_slot_type_info_t *out0, bool *out1);
+/* dmrgo_ipsc_peer_list_new makes a zero ipsc.PeerList. */
+int dmrgo_ipsc_peer_list_new(dmrgo_ipsc_peer_list_t **out);
+/* dmrgo_ipsc_peer_list_free frees the handle. self may be NULL. */
+int dmrgo_ipsc_peer_list_free(dmrgo_ipsc_peer_list_t *self);
+/* Go: ipsc.PeerList.Entry. Entry returns entry i, or the zero PeerEntry when i is not below Len. */
+int dmrgo_ipsc_peer_list_entry(dmrgo_ipsc_peer_list_t *self, int64_t i, dmrgo_ipsc_peer_entry_t *out);
+/* Go: ipsc.PeerList.Len. Len returns the number of entries. */
+int dmrgo_ipsc_peer_list_len(dmrgo_ipsc_peer_list_t *self, int64_t *out);
+/* Go: ipsc.PeerListOf. PeerListOf returns the entries of the OpPeerListReply p without a copy. */
+int dmrgo_ipsc_peer_list_of(const uint8_t *p, size_t p_len, dmrgo_ipsc_peer_list_t *out);
+/* Go: ipsc.Raw.AppendBinary. AppendBinary appends r to dst. */
+int dmrgo_ipsc_raw_append_binary(const dmrgo_ipsc_raw_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: ipsc.User.AppendBinary. AppendBinary appends the packet u to dst, without the authentication trailer. */
+int dmrgo_ipsc_user_append_binary(const dmrgo_ipsc_user_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: ipsc.User.Hint. Hint returns what the packet tells about its burst, for the service machines: the slot from the call info, the RTP sequence number (16 bits), the call control as the stream, burst A or E from the voice layout (the receiver places B, C, D and F by the sequence number), the data type of a data packet, EndWeak for the end flag on a voice packet, EndStrong on a terminator or a data packet, and SyncLost for BurstSyncLost. */
+int dmrgo_ipsc_user_hint(dmrgo_ipsc_user_t *self, dmrgo_layer2_hint_t *out);
+/* Go: ipsc.User.IsVoice. IsVoice reports whether u carries a voice burst. */
+int dmrgo_ipsc_user_is_voice(const dmrgo_ipsc_user_t *self, bool *out);
+/* Go: ipsc.User.RawBurst. RawBurst rebuilds the 264-bit burst of the packet. */
+int dmrgo_ipsc_user_raw_burst(dmrgo_ipsc_user_t *self, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
+/* Go: ipsc.User.SetRawBurst. SetRawBurst sets Burst and Voice or Data from the 264-bit burst raw and its layer2 view, as an XPR 8400 sends them: KindVoice with the position pos, which picks the layout (the full LC of burst E stays as it is in u.Voice.LC), or KindData with the data type dt. */
+int dmrgo_ipsc_user_set_raw_burst(dmrgo_ipsc_user_t *self, const dmrgo_layer2_raw_burst_t *raw, dmrgo_layer2_kind_t k, dmrgo_enums_voice_burst_type_t pos, dmrgo_enums_data_type_t dt);
 /* Go: trunk.Access.Applies. Applies reports whether the C_ALOHA population subdivision lets the MS with address ms make a random access (ETSI TS 102 361-4 clause 6.2.1.1.1). */
 int dmrgo_trunk_access_applies(dmrgo_trunk_access_t *self, uint32_t ms, bool emergency, bool *out);
 /* dmrgo_trunk_capacity_plus_follower_new makes a zero trunk.CapacityPlusFollower. */

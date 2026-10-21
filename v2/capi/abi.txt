@@ -103,6 +103,9 @@ code DMRGO_ERR_DMRD_LENGTH -202
 code DMRGO_ERR_DMRD_SHORT -203
 code DMRGO_ERR_DMRD_SIGNATURE -204
 code DMRGO_ERR_DMRD_TEXT -205
+code DMRGO_ERR_IPSC_COMMAND -206
+code DMRGO_ERR_IPSC_LENGTH -207
+code DMRGO_ERR_IPSC_SHORT -208
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -684,6 +687,9 @@ sym #define DMRGO_ERR_HYTERA_LENGTH (-197)
 sym #define DMRGO_ERR_HYTERA_SHORT (-198)
 sym #define DMRGO_ERR_HYTERA_SIGNATURE (-199)
 sym #define DMRGO_ERR_HYTERA_TEXT (-200)
+sym #define DMRGO_ERR_IPSC_COMMAND (-206)
+sym #define DMRGO_ERR_IPSC_LENGTH (-207)
+sym #define DMRGO_ERR_IPSC_SHORT (-208)
 sym #define DMRGO_ERR_IP_CHECKSUM (-172)
 sym #define DMRGO_ERR_IP_FRAGMENT (-173)
 sym #define DMRGO_ERR_IP_LENGTH (-174)
@@ -775,6 +781,47 @@ sym #define DMRGO_HYTERA_TMP_GROUP_MESSAGE 177
 sym #define DMRGO_HYTERA_TMP_GROUP_MESSAGE_ANSWER 178
 sym #define DMRGO_HYTERA_TMP_PRIVATE_MESSAGE 161
 sym #define DMRGO_HYTERA_TMP_PRIVATE_MESSAGE_ANSWER 162
+sym #define DMRGO_IPSC_BURST_RAW ((dmrgo_ipsc_burst_type_t)31)
+sym #define DMRGO_IPSC_BURST_SYNC_LOST ((dmrgo_ipsc_burst_type_t)19)
+sym #define DMRGO_IPSC_BURST_VOICE ((dmrgo_ipsc_burst_type_t)10)
+sym #define DMRGO_IPSC_FLAG_AUTH ((dmrgo_ipsc_flag_t)52)
+sym #define DMRGO_IPSC_FLAG_CONSOLE_APP ((dmrgo_ipsc_flag_t)37)
+sym #define DMRGO_IPSC_FLAG_CSBK ((dmrgo_ipsc_flag_t)39)
+sym #define DMRGO_IPSC_FLAG_DATA ((dmrgo_ipsc_flag_t)51)
+sym #define DMRGO_IPSC_FLAG_MASTER_PEER ((dmrgo_ipsc_flag_t)48)
+sym #define DMRGO_IPSC_FLAG_REPEATER_MONITOR ((dmrgo_ipsc_flag_t)38)
+sym #define DMRGO_IPSC_FLAG_VOICE ((dmrgo_ipsc_flag_t)50)
+sym #define DMRGO_IPSC_FLAG_XNL_MASTER ((dmrgo_ipsc_flag_t)54)
+sym #define DMRGO_IPSC_FLAG_XNL_SLAVE ((dmrgo_ipsc_flag_t)53)
+sym #define DMRGO_IPSC_FLAG_XNL_STATUS ((dmrgo_ipsc_flag_t)55)
+sym #define DMRGO_IPSC_OP_ALIVE_REPLY ((dmrgo_ipsc_opcode_t)151)
+sym #define DMRGO_IPSC_OP_ALIVE_REQUEST ((dmrgo_ipsc_opcode_t)150)
+sym #define DMRGO_IPSC_OP_CALL_CONFIRMATION ((dmrgo_ipsc_opcode_t)5)
+sym #define DMRGO_IPSC_OP_CALL_MONITOR_NACK ((dmrgo_ipsc_opcode_t)99)
+sym #define DMRGO_IPSC_OP_CALL_MONITOR_REPEAT ((dmrgo_ipsc_opcode_t)98)
+sym #define DMRGO_IPSC_OP_CALL_MONITOR_STATUS ((dmrgo_ipsc_opcode_t)97)
+sym #define DMRGO_IPSC_OP_COLLISION ((dmrgo_ipsc_opcode_t)134)
+sym #define DMRGO_IPSC_OP_DEREGISTER_REPLY ((dmrgo_ipsc_opcode_t)155)
+sym #define DMRGO_IPSC_OP_DEREGISTER_REQUEST ((dmrgo_ipsc_opcode_t)154)
+sym #define DMRGO_IPSC_OP_GROUP_DATA ((dmrgo_ipsc_opcode_t)131)
+sym #define DMRGO_IPSC_OP_GROUP_VOICE ((dmrgo_ipsc_opcode_t)128)
+sym #define DMRGO_IPSC_OP_PEER_ALIVE_REPLY ((dmrgo_ipsc_opcode_t)153)
+sym #define DMRGO_IPSC_OP_PEER_ALIVE_REQUEST ((dmrgo_ipsc_opcode_t)152)
+sym #define DMRGO_IPSC_OP_PEER_LIST_REPLY ((dmrgo_ipsc_opcode_t)147)
+sym #define DMRGO_IPSC_OP_PEER_LIST_REQUEST ((dmrgo_ipsc_opcode_t)146)
+sym #define DMRGO_IPSC_OP_PEER_REGISTER_REPLY ((dmrgo_ipsc_opcode_t)149)
+sym #define DMRGO_IPSC_OP_PEER_REGISTER_REQUEST ((dmrgo_ipsc_opcode_t)148)
+sym #define DMRGO_IPSC_OP_PRIVATE_DATA ((dmrgo_ipsc_opcode_t)132)
+sym #define DMRGO_IPSC_OP_PRIVATE_VOICE ((dmrgo_ipsc_opcode_t)129)
+sym #define DMRGO_IPSC_OP_REGISTER_REPLY ((dmrgo_ipsc_opcode_t)145)
+sym #define DMRGO_IPSC_OP_REGISTER_REQUEST ((dmrgo_ipsc_opcode_t)144)
+sym #define DMRGO_IPSC_OP_STATUS ((dmrgo_ipsc_opcode_t)240)
+sym #define DMRGO_IPSC_OP_TEXT_MESSAGE_ACK ((dmrgo_ipsc_opcode_t)84)
+sym #define DMRGO_IPSC_OP_WAKEUP ((dmrgo_ipsc_opcode_t)133)
+sym #define DMRGO_IPSC_OP_XNL ((dmrgo_ipsc_opcode_t)112)
+sym #define DMRGO_IPSC_VOICE_LAYOUT_A ((dmrgo_ipsc_voice_layout_t)1)
+sym #define DMRGO_IPSC_VOICE_LAYOUT_BCDF ((dmrgo_ipsc_voice_layout_t)2)
+sym #define DMRGO_IPSC_VOICE_LAYOUT_E ((dmrgo_ipsc_voice_layout_t)3)
 sym #define DMRGO_IP_DEFAULT_NETWORK 12
 sym #define DMRGO_IP_PORT_ARS ((dmrgo_ip_port_t)4005)
 sym #define DMRGO_IP_PORT_BATTERY ((dmrgo_ip_port_t)4012)
@@ -1493,6 +1540,35 @@ sym int dmrgo_ip_udp_append_binary(dmrgo_ip_udp_t *self, uint8_t *dst, size_t ds
 sym int dmrgo_ip_udp_header_append_binary(dmrgo_ip_udp_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_ip_udp_header_string(dmrgo_ip_udp_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_ip_udp_string(dmrgo_ip_udp_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ipsc_append_peer_list_reply(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, uint32_t master, const dmrgo_ipsc_peer_entry_t *entries, size_t entries_len);
+sym int dmrgo_ipsc_call_info_end(dmrgo_ipsc_call_info_t self, bool *out);
+sym int dmrgo_ipsc_call_info_privacy(dmrgo_ipsc_call_info_t self, bool *out);
+sym int dmrgo_ipsc_call_info_slot(dmrgo_ipsc_call_info_t self, dmrgo_enums_slot_t *out);
+sym int dmrgo_ipsc_control_append_binary(const dmrgo_ipsc_control_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_ipsc_decode_control(const uint8_t *p, size_t p_len, dmrgo_ipsc_control_t *out);
+sym int dmrgo_ipsc_decode_raw(const uint8_t *p, size_t p_len, dmrgo_ipsc_raw_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ipsc_decode_user(const uint8_t *p, size_t p_len, dmrgo_ipsc_user_t *out);
+sym int dmrgo_ipsc_flags_has(const dmrgo_ipsc_flags_t *self, dmrgo_ipsc_flag_t flag, bool *out);
+sym int dmrgo_ipsc_flags_set(dmrgo_ipsc_flags_t *self, dmrgo_ipsc_flag_t flag, bool on);
+sym int dmrgo_ipsc_mode_analog(dmrgo_ipsc_mode_t self, bool *out);
+sym int dmrgo_ipsc_mode_digital(dmrgo_ipsc_mode_t self, bool *out);
+sym int dmrgo_ipsc_mode_operational(dmrgo_ipsc_mode_t self, bool *out);
+sym int dmrgo_ipsc_mode_ts1(dmrgo_ipsc_mode_t self, uint8_t *out);
+sym int dmrgo_ipsc_mode_ts2(dmrgo_ipsc_mode_t self, uint8_t *out);
+sym int dmrgo_ipsc_opcode_string(dmrgo_ipsc_opcode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_ipsc_payload_rssi(dmrgo_ipsc_payload_t *self, uint16_t *out0, bool *out1);
+sym int dmrgo_ipsc_payload_slot_type(dmrgo_ipsc_payload_t *self, dmrgo_pdu_slot_type_info_t *out0, bool *out1);
+sym int dmrgo_ipsc_peer_list_entry(dmrgo_ipsc_peer_list_t *self, int64_t i, dmrgo_ipsc_peer_entry_t *out);
+sym int dmrgo_ipsc_peer_list_free(dmrgo_ipsc_peer_list_t *self);
+sym int dmrgo_ipsc_peer_list_len(dmrgo_ipsc_peer_list_t *self, int64_t *out);
+sym int dmrgo_ipsc_peer_list_new(dmrgo_ipsc_peer_list_t **out);
+sym int dmrgo_ipsc_peer_list_of(const uint8_t *p, size_t p_len, dmrgo_ipsc_peer_list_t *out);
+sym int dmrgo_ipsc_raw_append_binary(const dmrgo_ipsc_raw_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_ipsc_user_append_binary(const dmrgo_ipsc_user_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_ipsc_user_hint(dmrgo_ipsc_user_t *self, dmrgo_layer2_hint_t *out);
+sym int dmrgo_ipsc_user_is_voice(const dmrgo_ipsc_user_t *self, bool *out);
+sym int dmrgo_ipsc_user_raw_burst(dmrgo_ipsc_user_t *self, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
+sym int dmrgo_ipsc_user_set_raw_burst(dmrgo_ipsc_user_t *self, const dmrgo_layer2_raw_burst_t *raw, dmrgo_layer2_kind_t k, dmrgo_enums_voice_burst_type_t pos, dmrgo_enums_data_type_t dt);
 sym int dmrgo_layer2_build_burst(const dmrgo_layer2_data_t *d, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
 sym int dmrgo_layer2_build_data_burst(const uint8_t p[12], dmrgo_enums_data_type_t dt, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
 sym int dmrgo_layer2_build_rate1_data_burst(const uint8_t p[24], dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
@@ -2363,6 +2439,12 @@ sym typedef uint8_t dmrgo_enums_spid_t;
 sym typedef uint8_t dmrgo_enums_voice_burst_type_t;
 sym typedef uint8_t dmrgo_hytera_service_t;
 sym typedef uint8_t dmrgo_ip_protocol_t;
+sym typedef uint8_t dmrgo_ipsc_burst_type_t;
+sym typedef uint8_t dmrgo_ipsc_call_info_t;
+sym typedef uint8_t dmrgo_ipsc_flag_t;
+sym typedef uint8_t dmrgo_ipsc_mode_t;
+sym typedef uint8_t dmrgo_ipsc_opcode_t;
+sym typedef uint8_t dmrgo_ipsc_voice_layout_t;
 sym typedef uint8_t dmrgo_layer2_end_hint_t;
 sym typedef uint8_t dmrgo_layer2_kind_t;
 sym typedef uint8_t dmrgo_layer3_additional_information_field_t;
@@ -2460,6 +2542,14 @@ type struct dmrgo_ip_ipv4_header_t { uint8_t version; uint8_t ihl; uint8_t tos; 
 type struct dmrgo_ip_ipv4_t { dmrgo_ip_ipv4_header_t header; uint8_t *options; size_t options_len; uint8_t *payload; size_t payload_len; };
 type struct dmrgo_ip_udp_header_t { dmrgo_ip_port_t source_port; dmrgo_ip_port_t destination_port; uint16_t length; uint16_t checksum; };
 type struct dmrgo_ip_udp_t { dmrgo_ip_udp_header_t header; uint8_t *payload; size_t payload_len; };
+type struct dmrgo_ipsc_control_t { dmrgo_ipsc_opcode_t opcode; uint32_t id; dmrgo_ipsc_mode_t mode; dmrgo_ipsc_flags_t flags; uint16_t peers; uint8_t version[4]; };
+type struct dmrgo_ipsc_flags_t { uint8_t v[4]; };
+type struct dmrgo_ipsc_payload_t { uint8_t status; uint16_t words; bool has_body; uint8_t flags[2]; uint16_t bits; uint8_t octets[26]; uint8_t trailer[16]; uint8_t trailer_len; };
+type struct dmrgo_ipsc_peer_entry_t { uint32_t id; uint8_t ip[4]; uint16_t port; dmrgo_ipsc_mode_t mode; };
+type struct dmrgo_ipsc_raw_t { dmrgo_ipsc_opcode_t opcode; uint32_t id; uint8_t *body; size_t body_len; };
+type struct dmrgo_ipsc_rtp_t { uint8_t flags; bool marker; uint8_t payload_type; uint16_t seq; uint32_t timestamp; uint32_t ssrc; };
+type struct dmrgo_ipsc_user_t { dmrgo_ipsc_opcode_t opcode; uint32_t id; uint8_t call_seq; uint32_t source; uint32_t destination; uint8_t priority; uint32_t call_control; dmrgo_ipsc_call_info_t info; dmrgo_ipsc_rtp_t rtp; dmrgo_ipsc_burst_type_t burst; dmrgo_ipsc_voice_t voice; dmrgo_ipsc_payload_t data; };
+type struct dmrgo_ipsc_voice_t { dmrgo_ipsc_voice_layout_t layout; uint8_t length; uint8_t control; uint8_t ambe[19]; uint8_t embedded[4]; uint8_t lc[9]; dmrgo_pdu_emb_info_t emb; };
 type struct dmrgo_layer2_cach_t { dmrgo_pdu_tact_t tact; uint8_t payload[3]; };
 type struct dmrgo_layer2_data_t { uint32_t tag; union { dmrgo_pdu_bcap_continuation_t pdu_bcap_continuation; dmrgo_pdu_cgap_continuation_t pdu_cgap_continuation; dmrgo_pdu_csbk_t pdu_csbk; dmrgo_pdu_data_header_t pdu_data_header; dmrgo_pdu_full_link_control_t pdu_full_link_control; dmrgo_pdu_mbc_continuation_t pdu_mbc_continuation; dmrgo_pdu_mbc_header_t pdu_mbc_header; dmrgo_pdu_mvap_continuation_t pdu_mvap_continuation; dmrgo_pdu_pi_header_t pdu_pi_header; dmrgo_pdu_pr_fill_t pdu_pr_fill; dmrgo_pdu_rate12_data_t pdu_rate12_data; dmrgo_pdu_rate1_data_t pdu_rate1_data; dmrgo_pdu_rate34_data_t pdu_rate34_data; dmrgo_pdu_unified_single_block_data_t pdu_unified_single_block_data; dmrgo_pdu_vnap_continuation_t pdu_vnap_continuation; } v; };
 type struct dmrgo_layer2_decode_options_t { int64_t sync_threshold; bool has_color_code; dmrgo_enums_color_code_t color_code; dmrgo_layer2_kind_t kind; dmrgo_enums_voice_burst_type_t voice_burst; bool has_data_type; dmrgo_enums_data_type_t data_type; };
