@@ -254,7 +254,7 @@ func inputName(t tier) string {
 		modeAudio + "0": "FM audio, 9.6 kHz, core",
 		modeAudio + "1": "FM audio, 9.6 kHz, soft decoding, noise prediction",
 		modeAudio + "2": "FM audio, 9.6 kHz, coherent detection",
-		modeAudio + "3": "FM audio, 24 kHz, coherent detection, data passes",
+		modeAudio + "3": "FM audio, 9.6 kHz, coherent detection, data passes",
 		modeIQLow + "0": "I/Q, 9.6 kHz, discriminator core",
 		modeIQ + "0":    "I/Q, discriminator core",
 		modeIQ + "1":    "I/Q, soft decoding, noise prediction",

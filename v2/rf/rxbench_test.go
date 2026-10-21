@@ -281,7 +281,7 @@ func benchEntries() []benchEntry {
 
 func receiveAudioTier(t testing.TB, a []int16, tier Tier) []Burst {
 	t.Helper()
-	return receiveAudioAt(t, a, audioHzOf(tier), tier)
+	return receiveAudioAt(t, a, benchAudioHz, tier)
 }
 
 func receiveAudioAt(t testing.TB, a []int16, hz int, tier Tier) []Burst {
@@ -300,17 +300,10 @@ func receiveAudioAt(t testing.TB, a []int16, hz int, tier Tier) []Burst {
 
 const benchAudioHz = 9600
 
-func audioHzOf(tier Tier) int {
-	if tier == Tier3 {
-		return discRate
-	}
-	return benchAudioHz
-}
-
 func benchReceive(t testing.TB, x []complex64, e benchEntry) []Burst {
 	switch e.mode {
 	case benchAudio:
-		return receiveAudioTier(t, discAudio(x, audioHzOf(e.tier)), e.tier)
+		return receiveAudioTier(t, discAudio(x, benchAudioHz), e.tier)
 	case benchIQLow:
 		return receiveLowIQ(lowIQ(x, iq0LowHz))
 	}
@@ -463,7 +456,7 @@ func falsePerHour(e benchEntry) float64 {
 	t := e.tier
 	switch e.mode {
 	case benchAudio:
-		hz := audioHzOf(t)
+		hz := benchAudioHz
 		r, err := NewDisc(DiscConfig{Hz: hz, Tier: t, OnBurst: func(*Burst) { n++ }})
 		if err != nil {
 			panic(err)
@@ -523,7 +516,7 @@ var ramMu sync.Mutex
 //go:noinline
 func newBenchReceiver(e benchEntry) any {
 	if e.mode == benchAudio {
-		d, err := NewDisc(DiscConfig{Hz: audioHzOf(e.tier), Tier: e.tier, OnBurst: func(*Burst) {}})
+		d, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: e.tier, OnBurst: func(*Burst) {}})
 		if err != nil {
 			panic(err)
 		}
@@ -565,7 +558,7 @@ func steadyAllocs(x []complex64, e benchEntry) float64 {
 	const chunk = 1 << 14
 	switch e.mode {
 	case benchAudio:
-		return discSteadyAllocs(discAudio(x, audioHzOf(e.tier)), e.tier)
+		return discSteadyAllocs(discAudio(x, benchAudioHz), e.tier)
 	case benchIQLow:
 		x = lowIQ(x, iq0LowHz)
 	}
@@ -587,7 +580,7 @@ func steadyAllocs(x []complex64, e benchEntry) float64 {
 
 func discSteadyAllocs(a []int16, tier Tier) float64 {
 	const chunk = 1 << 11
-	r, err := NewDisc(DiscConfig{Hz: audioHzOf(tier), Tier: tier, OnBurst: func(*Burst) {}})
+	r, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: tier, OnBurst: func(*Burst) {}})
 	if err != nil {
 		panic(err)
 	}
@@ -633,7 +626,7 @@ func TestRxBench(t *testing.T) {
 			var cpu float64
 			switch e.mode {
 			case benchAudio:
-				a := discAudio(x, audioHzOf(e.tier))
+				a := discAudio(x, benchAudioHz)
 				cpu = cpuSeconds(func() { receiveAudioTier(t, a, e.tier) })
 			case benchIQLow:
 				y := lowIQ(x, iq0LowHz)

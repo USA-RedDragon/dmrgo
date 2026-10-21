@@ -37,8 +37,8 @@ type DiscConfig struct {
 	// stages of the higher tiers, and under TinyGo, which has neither.
 	// Tier2 detects the bursts again coherently, on the carrier phase that
 	// it rebuilds from the samples, at about 5 times the CPU time of Tier1.
-	// Tier3 adds four passes over each data burst, at about twice the CPU
-	// time of Tier2, and is measured at 24 kHz.
+	// Tier3 gives the coherent stage more CPU time than Tier2 and adds four
+	// passes over each data burst, at about 1.1 times the CPU time of Tier2.
 	Tier  Tier
 	opt   *options
 	lowIQ bool
