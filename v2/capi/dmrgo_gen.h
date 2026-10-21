@@ -7595,9 +7595,9 @@ int dmrgo_csbk_requester_burst_need(dmrgo_csbk_requester_t *self, dmrgo_duration
 /* Go: csbk.Requester.Burst. Burst decodes the burst raw with what the Hint h says about it, runs it through the Requester as Decoded does, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_requester_burst_need gives (DMRGO_CSBK_REQUESTER_BURST_MAX_ITEMS items). */
 int dmrgo_csbk_requester_burst(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_csbk_requester_cancel_need sets *items and *arena to the room that dmrgo_csbk_requester_cancel needs for these arguments, without a change to the handle. */
-int dmrgo_csbk_requester_cancel_need(dmrgo_csbk_requester_t *self, size_t *items, size_t *arena);
+int dmrgo_csbk_requester_cancel_need(dmrgo_csbk_requester_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
 /* Go: csbk.Requester.Cancel. Cancel ends the request, and appends an OutputDone with ResultCanceled to dst while one runs. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_requester_cancel_need gives (DMRGO_CSBK_REQUESTER_CANCEL_MAX_ITEMS items). */
-int dmrgo_csbk_requester_cancel(dmrgo_csbk_requester_t *self, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_csbk_requester_cancel(dmrgo_csbk_requester_t *self, dmrgo_duration_t p0, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: csbk.Requester.Channel. Channel reports whether the logical channel is busy, from the activity that the caller sees on it. */
 int dmrgo_csbk_requester_channel(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, bool busy);
 /* Go: csbk.Requester.Deadline. Deadline returns the time at which the Requester needs a Tick. */
@@ -7703,9 +7703,9 @@ int dmrgo_csbk_wakeup_burst_need(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now
 /* Go: csbk.Wakeup.Burst. Burst decodes the burst raw with what the Hint h says about it, runs it through the Wakeup as Decoded does, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_wakeup_burst_need gives (DMRGO_CSBK_WAKEUP_BURST_MAX_ITEMS items). */
 int dmrgo_csbk_wakeup_burst(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_csbk_wakeup_cancel_need sets *items and *arena to the room that dmrgo_csbk_wakeup_cancel needs for these arguments, without a change to the handle. */
-int dmrgo_csbk_wakeup_cancel_need(dmrgo_csbk_wakeup_t *self, size_t *items, size_t *arena);
+int dmrgo_csbk_wakeup_cancel_need(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
 /* Go: csbk.Wakeup.Cancel. Cancel ends the wakeup, and appends an OutputDone with ResultCanceled to dst while one runs. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_wakeup_cancel_need gives (DMRGO_CSBK_WAKEUP_CANCEL_MAX_ITEMS items). */
-int dmrgo_csbk_wakeup_cancel(dmrgo_csbk_wakeup_t *self, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_csbk_wakeup_cancel(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t p0, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: csbk.Wakeup.Deadline. Deadline returns the time at which the Wakeup needs a Tick. */
 int dmrgo_csbk_wakeup_deadline(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t *at, bool *ok);
 /* dmrgo_csbk_wakeup_decoded_need sets *items and *arena to the room that dmrgo_csbk_wakeup_decoded needs for these arguments, without a change to the handle. */

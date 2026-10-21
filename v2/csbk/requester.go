@@ -347,9 +347,10 @@ func (q *Requester) Channel(now time.Duration, busy bool) {
 }
 
 // Cancel ends the request, and appends an OutputDone with ResultCanceled
-// to dst while one runs. It allocates only when dst has no room for
+// to dst while one runs. It does not run the timers, so now only gives the
+// shape of the other methods. It allocates only when dst has no room for
 // MaxOutputs outputs.
-func (q *Requester) Cancel(dst []Output) []Output {
+func (q *Requester) Cancel(_ time.Duration, dst []Output) []Output {
 	if q.state == RequesterIdle {
 		return dst
 	}

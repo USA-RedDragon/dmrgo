@@ -10133,7 +10133,7 @@ func dmrgo_csbk_requester_burst(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_
 }
 
 //export dmrgo_csbk_requester_cancel_need
-func dmrgo_csbk_requester_cancel_need(c_self *C.dmrgo_csbk_requester_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_requester_cancel_need(c_self *C.dmrgo_csbk_requester_t, c_p0 C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Requester(c_self)
 	_ = h
@@ -10147,7 +10147,7 @@ func dmrgo_csbk_requester_cancel_need(c_self *C.dmrgo_csbk_requester_t, c_items 
 }
 
 //export dmrgo_csbk_requester_cancel
-func dmrgo_csbk_requester_cancel(c_self *C.dmrgo_csbk_requester_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_requester_cancel(c_self *C.dmrgo_csbk_requester_t, c_p0 C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Requester(c_self)
@@ -10165,7 +10165,7 @@ func dmrgo_csbk_requester_cancel(c_self *C.dmrgo_csbk_requester_t, c_dst *C.dmrg
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.Cancel(a_dst)
+	r0 := h.v.Cancel(time.Duration(c_p0), a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{
@@ -11472,7 +11472,7 @@ func dmrgo_csbk_wakeup_burst(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_durati
 }
 
 //export dmrgo_csbk_wakeup_cancel_need
-func dmrgo_csbk_wakeup_cancel_need(c_self *C.dmrgo_csbk_wakeup_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_wakeup_cancel_need(c_self *C.dmrgo_csbk_wakeup_t, c_p0 C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Wakeup(c_self)
 	_ = h
@@ -11486,7 +11486,7 @@ func dmrgo_csbk_wakeup_cancel_need(c_self *C.dmrgo_csbk_wakeup_t, c_items *C.siz
 }
 
 //export dmrgo_csbk_wakeup_cancel
-func dmrgo_csbk_wakeup_cancel(c_self *C.dmrgo_csbk_wakeup_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_wakeup_cancel(c_self *C.dmrgo_csbk_wakeup_t, c_p0 C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Wakeup(c_self)
@@ -11504,7 +11504,7 @@ func dmrgo_csbk_wakeup_cancel(c_self *C.dmrgo_csbk_wakeup_t, c_dst *C.dmrgo_csbk
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.Cancel(a_dst)
+	r0 := h.v.Cancel(time.Duration(c_p0), a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{

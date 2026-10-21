@@ -95,9 +95,9 @@ func (g *rig) step(t testing.TB, op, arg byte) {
 	case 7:
 		_ = g.w.Wake(g.now, xpr, anytone)
 	case 8:
-		g.out = g.q.Cancel(g.out[:0])
+		g.out = g.q.Cancel(g.now, g.out[:0])
 	case 9:
-		g.out = g.w.Cancel(g.out[:0])
+		g.out = g.w.Cancel(g.now, g.out[:0])
 	case 10:
 		g.out = g.q.Lost(g.now, g.out[:0])
 	case 11:
