@@ -10041,6 +10041,10 @@ int dmrgo_dmrd_session_master_refuse_need(dmrgo_dmrd_session_master_t *self, dmr
 int dmrgo_dmrd_session_master_refuse(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t p0, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: session.Master.Reset. Reset ends the session without a packet or an output. */
 int dmrgo_dmrd_session_master_reset(dmrgo_dmrd_session_master_t *self);
+/* dmrgo_dmrd_session_master_resume_need sets *items and *arena to the room that dmrgo_dmrd_session_master_resume needs for these arguments, without a change to the handle. */
+int dmrgo_dmrd_session_master_resume_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, uint32_t id, size_t *items, size_t *arena);
+/* Go: session.Master.Resume. Resume starts the logged-in session of the repeater id without a login, for a repeater that logged in to another Master, such as one of another replica of a server, and now sends its packets here. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_session_master_resume_need gives. */
+int dmrgo_dmrd_session_master_resume(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, uint32_t id, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: session.Master.State. State returns the state of the session. */
 int dmrgo_dmrd_session_master_state(dmrgo_dmrd_session_master_t *self, dmrgo_dmrd_session_state_t *out);
 /* dmrgo_dmrd_session_master_tick_need sets *items and *arena to the room that dmrgo_dmrd_session_master_tick needs for these arguments, without a change to the handle. */

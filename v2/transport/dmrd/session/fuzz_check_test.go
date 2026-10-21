@@ -115,6 +115,7 @@ func checkSession(t *testing.T, data []byte) {
 			step(func(o []session.Output) []session.Output { return b.Tick(now, o) })
 			step(func(o []session.Output) []session.Output { return b.Packet(now, pk, o) })
 		})
+		step(func(o []session.Output) []session.Output { return m.Resume(now, 1234, o) })
 		step(func(o []session.Output) []session.Output { return p.Close(now, o) })
 		step(func(o []session.Output) []session.Output { return m.Close(now, o) })
 		step(func(o []session.Output) []session.Output { return m.Refuse(now, o) })

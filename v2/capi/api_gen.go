@@ -35604,6 +35604,93 @@ func dmrgo_dmrd_session_master_reset(c_self *C.dmrgo_dmrd_session_master_t) (rc 
 	return C.DMRGO_OK
 }
 
+//export dmrgo_dmrd_session_master_resume_need
+func dmrgo_dmrd_session_master_resume_need(c_self *C.dmrgo_dmrd_session_master_t, c_now C.dmrgo_duration_t, c_id C.uint32_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_transport_dmrd_session_Master(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_transport_dmrd_session.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(max(0, int(g_transport_dmrd_session.MaxOutputs)) * ((int(g_transport_dmrd_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16))
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_session_master_resume
+func dmrgo_dmrd_session_master_resume(c_self *C.dmrgo_dmrd_session_master_t, c_now C.dmrgo_duration_t, c_id C.uint32_t, c_dst *C.dmrgo_dmrd_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	h := get_transport_dmrd_session_Master(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_transport_dmrd_session.MaxOutputs))
+	need_arena := max(0, int(g_transport_dmrd_session.MaxOutputs)) * ((int(g_transport_dmrd_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16)
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		if c_arena_need != nil {
+			*c_arena_need = C.size_t(oc.need + need_arena)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if int(c_arena_cap)-oc.need < need_arena {
+		if c_arena_need != nil {
+			*c_arena_need = C.size_t(oc.need + need_arena)
+		}
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Resume(time.Duration(c_now), uint32(c_id), a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_dmrd_session_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_transport_dmrd_session_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_dmrd_session_master_state
 func dmrgo_dmrd_session_master_state(c_self *C.dmrgo_dmrd_session_master_t, c_out *C.dmrgo_dmrd_session_state_t) (rc C.int) {
 	defer recoverTo(&rc)

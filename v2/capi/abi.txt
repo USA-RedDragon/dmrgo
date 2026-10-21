@@ -1713,6 +1713,8 @@ sym int dmrgo_dmrd_session_master_packet_need(dmrgo_dmrd_session_master_t *self,
 sym int dmrgo_dmrd_session_master_refuse(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t p0, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_dmrd_session_master_refuse_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
 sym int dmrgo_dmrd_session_master_reset(dmrgo_dmrd_session_master_t *self);
+sym int dmrgo_dmrd_session_master_resume(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, uint32_t id, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_dmrd_session_master_resume_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, uint32_t id, size_t *items, size_t *arena);
 sym int dmrgo_dmrd_session_master_state(dmrgo_dmrd_session_master_t *self, dmrgo_dmrd_session_state_t *out);
 sym int dmrgo_dmrd_session_master_tick(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_dmrd_session_master_tick_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);

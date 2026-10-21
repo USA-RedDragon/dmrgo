@@ -1146,6 +1146,7 @@ var api = [...]any{
 	(*transport_dmrd_session.Master).Packet,
 	(*transport_dmrd_session.Master).Refuse,
 	(*transport_dmrd_session.Master).Reset,
+	(*transport_dmrd_session.Master).Resume,
 	(*transport_dmrd_session.Master).State,
 	(*transport_dmrd_session.Master).Tick,
 	(*transport_dmrd_session.Peer).Close,

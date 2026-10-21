@@ -48,6 +48,8 @@ func TestAllocsSession(t *testing.T) {
 		mo = m.Packet(now, data, mo[:0])
 		bo := b.Tick(now, po[:0])
 		po = b.Packet(now, bo[0].Packet, po[:0])
+		mo = m.Resume(now, 99, mo[:0])
+		mo = m.Resume(now, 1234, mo[:0])
 		po = p.Close(now, po[:0])
 	}
 	run()
