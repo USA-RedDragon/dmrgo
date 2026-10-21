@@ -26,4 +26,5 @@ var (
 	errHeaders     error = &ConfigError{Field: "Headers"}
 	errDataQueue   error = &ConfigError{Field: "DataQueue"}
 	errTerminators error = &ConfigError{Field: "Terminators"}
+	errChanAuth    error = &ConfigError{Field: "ChannelAuth"}
 )

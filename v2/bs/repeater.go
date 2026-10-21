@@ -94,6 +94,19 @@ type Config struct {
 	// Lead makes Tick emit an outbound burst this long before its Due time
 	// in ModeRF, so that a transmit FIFO can be filled ahead.
 	Lead time.Duration
+	// ChannelAuth selects the channel authorization of RF access in the
+	// call and channel hang time in ModeRF. ModeNetwork ignores it.
+	ChannelAuth ChannelAuth
+	// ChanAuthResponse is T_BS_ChanAuthRsp, how long the Repeater repeats
+	// a ChanAuth PDU while it waits for the authorized MS. 0 means
+	// constants.TBSChanAuthRspVoice for a Voice LC Header, and
+	// constants.TBSChanAuthRspCSBKSingle or
+	// constants.TBSChanAuthRspCSBKMulti for a Pre_CSBK. (ETSI TS 102 361-2
+	// clause A.1)
+	ChanAuthResponse time.Duration
+	// ChanAuthSelect is T_BS_ChanAuthSel of ChannelAuthMultiSite. 0 means
+	// constants.TBSChanAuthSel (240 ms). (ETSI TS 102 361-2 clause A.1)
+	ChanAuthSelect time.Duration
 	// Scratch, when set, is the Burst that the Repeater decodes into. It
 	// can be shared with other machines on the same goroutine, because the
 	// Repeater is done with it when its method returns. Nil means the
@@ -136,6 +149,13 @@ type slot struct {
 	count int
 	pend  [MaxPending]pending
 	npend int
+
+	auth       layer2.RawBurst
+	authFrom   Source
+	authSource uint32
+	authVoice  bool
+	authPrev   SlotState
+	authUntil  time.Duration
 }
 
 // Repeater is the base station of one carrier with two slots, as the
@@ -153,6 +173,9 @@ type Repeater struct {
 	pendingMax int
 	pendingAge time.Duration
 	lead       time.Duration
+	chanAuth   ChannelAuth
+	authRsp    time.Duration
+	authSel    time.Duration
 
 	b        *layer2.Burst
 	opts     layer2.DecodeOptions
@@ -185,7 +208,11 @@ func New(cfg *Config) (*Repeater, error) {
 	r := &Repeater{mode: cfg.Mode, cc: cfg.ColorCode, activation: cfg.Activation, cach: cfg.CACH && cfg.Mode == ModeRF,
 		callHang: orDefault(cfg.CallHang, constants.TCallHang), dataHang: orDefault(cfg.DataHang, constants.TDataHangtime),
 		inactivity: orDefault(cfg.Inactivity, DefaultInactivity), lost: orDefault(cfg.Lost, voice.DefaultLost),
-		pendingMax: cfg.Pending, pendingAge: orDefault(cfg.PendingAge, DefaultPendingAge), lead: cfg.Lead, b: cfg.Scratch}
+		pendingMax: cfg.Pending, pendingAge: orDefault(cfg.PendingAge, DefaultPendingAge), lead: cfg.Lead, b: cfg.Scratch,
+		authRsp: cfg.ChanAuthResponse, authSel: orDefault(cfg.ChanAuthSelect, constants.TBSChanAuthSel)}
+	if cfg.Mode == ModeRF {
+		r.chanAuth = cfg.ChannelAuth
+	}
 	if r.pendingMax == 0 {
 		r.pendingMax = DefaultPending
 	}
@@ -208,6 +235,8 @@ func New(cfg *Config) (*Repeater, error) {
 		return nil, errTerminators
 	case dataQueue < 0 || dataQueue > MaxDataQueue:
 		return nil, errDataQueue
+	case cfg.ChannelAuth > ChannelAuthMultiSite:
+		return nil, errChanAuth
 	}
 	if r.lost < 0 {
 		r.lost = voice.DefaultLost
@@ -332,6 +361,7 @@ func (r *Repeater) Inbound(now time.Duration, raw *layer2.RawBurst, h layer2.Hin
 		b = nil
 	}
 	wakeup := b != nil && isWakeup(b, raw)
+	hang := r.keyed
 	if !r.keyed {
 		if b == nil || from.RF && r.activation == ActivationWakeup && !wakeup {
 			return dst, nil
@@ -351,6 +381,12 @@ func (r *Repeater) Inbound(now time.Duration, raw *layer2.RawBurst, h layer2.Hin
 	r.lastActivity = now
 	if wakeup {
 		return dst, nil
+	}
+	if r.chanAuth != ChannelAuthOff {
+		var done bool
+		if dst, done = r.authorize(now, s, b, raw, hang, from, dst); done {
+			return dst, nil
+		}
 	}
 	if b.Kind == layer2.KindVoice {
 		dst = r.voice(now, s, b, nil, &h, from, dst)
@@ -470,6 +506,8 @@ func (r *Repeater) Deadline() (at time.Duration, ok bool) {
 			d.add(s.last + r.lost)
 		case SlotCallHang, SlotDataHang:
 			d.add(s.hangUntil)
+		case SlotChanAuth, SlotChanAuthSelect:
+			d.add(s.authUntil)
 		case SlotIdle:
 		}
 		for j := range s.npend {
@@ -507,6 +545,14 @@ func (r *Repeater) timers(now time.Duration, dst []Output) []Output {
 		case SlotCallHang, SlotDataHang:
 			if now >= s.hangUntil {
 				s.state = SlotIdle
+			}
+		case SlotChanAuthSelect:
+			if now >= s.authUntil {
+				dst = r.authSelected(s.authUntil, s, dst)
+			}
+		case SlotChanAuth:
+			if now >= s.authUntil {
+				r.authEnd(now, s)
 			}
 		case SlotIdle:
 		}
@@ -549,7 +595,7 @@ func (r *Repeater) admit(now time.Duration, s *slot, from Source, lc *pdu.LCByte
 			return true, dst
 		}
 		return false, r.refuse(now, s, from, ReasonHangTime, dst)
-	case SlotIdle, SlotDataHang:
+	case SlotIdle, SlotDataHang, SlotChanAuth, SlotChanAuthSelect:
 	}
 	if r.pendingMax > 0 && s.npend > 0 && s.pend[0].from != from {
 		return false, r.refuse(now, s, from, ReasonSlotBusy, dst)
@@ -892,7 +938,9 @@ func (r *Repeater) turn(dst []Output) []Output {
 		q := &s.queue[s.head]
 		b, to, ok = q.burst, q.to, true
 		s.head, s.count = (s.head+1)%len(s.queue), s.count-1
-	case s.state == SlotCallHang || s.state == SlotDataHang:
+	case s.state == SlotChanAuth:
+		b, ok = s.auth, true
+	case s.state == SlotCallHang || s.state == SlotDataHang || s.state == SlotChanAuthSelect && s.authPrev == SlotCallHang:
 		b, ok = s.hang, true
 	case r.cach:
 		b, ok = r.idle, true

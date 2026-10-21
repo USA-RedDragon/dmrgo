@@ -62,6 +62,40 @@ func (a Activation) String() string {
 	return "Activation(" + text.Int(int64(a)) + ")"
 }
 
+// ChannelAuth selects the channel authorization of a Repeater in ModeRF:
+// how it picks one MS among those that start a transmission in hang time
+// (ETSI TS 102 361-2 clause 5.1.1.6).
+type ChannelAuth uint8
+
+const (
+	// ChannelAuthOff gives the slot to the first burst that the hang time
+	// admits.
+	ChannelAuthOff ChannelAuth = iota
+	// ChannelAuthSingleSite repeats the ChanAuth PDU of the first MS, a
+	// Voice LC Header or a Pre_CSBK from RF, and gives the slot to the
+	// bursts with its source address (ETSI TS 102 361-2 clause 5.1.1.6.1.1).
+	ChannelAuthSingleSite
+	// ChannelAuthMultiSite first collects the ChanAuth PDUs from RF and
+	// from the network for T_BS_ChanAuthSel, picks the one with the lowest
+	// source address, and then repeats it as ChannelAuthSingleSite does
+	// (ETSI TS 102 361-2 clause 5.1.1.6.1.2).
+	ChannelAuthMultiSite
+)
+
+// String returns the name of the channel authorization. It allocates only
+// for a value without a name.
+func (c ChannelAuth) String() string {
+	switch c {
+	case ChannelAuthOff:
+		return "Off"
+	case ChannelAuthSingleSite:
+		return "SingleSite"
+	case ChannelAuthMultiSite:
+		return "MultiSite"
+	}
+	return "ChannelAuth(" + text.Int(int64(c)) + ")"
+}
+
 // Source is where an inbound burst came from. The zero Source is network
 // peer 0.
 type Source struct {
@@ -271,6 +305,14 @@ const (
 	// SlotRejected drops a call that timed out or was rejected until it
 	// ends.
 	SlotRejected
+	// SlotChanAuthSelect collects ChanAuth PDUs for T_BS_ChanAuthSel and
+	// keeps sending the hang time bursts (ETSI TS 102 361-2 clause
+	// 5.1.1.6.1.2).
+	SlotChanAuthSelect
+	// SlotChanAuth repeats the ChanAuth PDU of the authorized MS until
+	// T_BS_ChanAuthRsp runs out or a burst with its source address comes
+	// (ETSI TS 102 361-2 clause 5.1.1.6.1).
+	SlotChanAuth
 )
 
 // String returns the name of the slot state. It allocates only for a value
@@ -289,6 +331,10 @@ func (s SlotState) String() string {
 		return "DataHang"
 	case SlotRejected:
 		return rejectedName
+	case SlotChanAuthSelect:
+		return "ChanAuthSelect"
+	case SlotChanAuth:
+		return "ChanAuth"
 	}
 	return "SlotState(" + text.Int(int64(s)) + ")"
 }

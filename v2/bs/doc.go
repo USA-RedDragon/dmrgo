@@ -21,7 +21,9 @@
 // every 30 ms: the repeated traffic, hang time bursts or Idle bursts, and
 // the CACH with the TC bit, the AT bit and the Short LC (Activity Update or
 // Null). It wakes up on BS_Dwn_Act or any valid burst and hibernates after
-// T_MSInactiv without activity.
+// T_MSInactiv without activity. With Config.ChannelAuth it repeats the
+// ChanAuth PDU of one MS that starts a transmission in hang time, and
+// gives the slot only to that MS.
 //
 // CACH makes the CACH alone, for a consumer with its own slot logic.
 package bs
