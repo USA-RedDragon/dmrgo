@@ -1,0 +1,183 @@
+package session_test
+
+import (
+	"testing"
+	"time"
+
+	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/session"
+)
+
+func ctl(op ipsc.Opcode, id uint32) []byte {
+	b, _ := ipsc.Control{Opcode: op, ID: id, Mode: 0x6a}.AppendBinary(nil)
+	return b
+}
+
+var (
+	other = session.Addr{IP: [4]byte{10, 0, 0, 7}, Port: 7}
+	moved = session.Addr{IP: [4]byte{10, 0, 0, 8}, Port: 8}
+)
+
+func listedPeer(t *testing.T) *session.Peer {
+	t.Helper()
+	p, _ := session.NewPeer(&session.PeerConfig{ID: 9, Master: masterAddr, MaxMissed: 2})
+	p.Tick(0, nil)
+	p.Packet(0, masterAddr, ctl(ipsc.OpRegisterReply, 1), nil)
+	list := ipsc.AppendPeerListReply(nil, 1, []ipsc.PeerEntry{{ID: 9, IP: masterAddr.IP}, {ID: 7, IP: other.IP, Port: other.Port, Mode: 0x6a}})
+	p.Packet(time.Second, masterAddr, list, nil)
+	if p.Peers() != 1 {
+		t.Fatal(p.Peers())
+	}
+	return p
+}
+
+func TestPeerRegistration(t *testing.T) {
+	t.Parallel()
+
+	s := time.Second
+	p, _ := session.NewPeer(&session.PeerConfig{ID: 9, Master: masterAddr, MaxMissed: 2})
+	if out := p.Packet(0, masterAddr, ctl(ipsc.OpRegisterReply, 1), nil); len(out) != 0 {
+		t.Fatal("packet before the first Tick")
+	}
+	p.Tick(0, nil)
+	if out := p.Packet(0, other, ctl(ipsc.OpRegisterReply, 1), nil); len(out) != 0 {
+		t.Fatal("registration reply from another address")
+	}
+	if out := p.Packet(0, masterAddr, ctl(ipsc.OpPeerListReply, 1), nil); len(out) != 0 {
+		t.Fatal("packet of the master before registration")
+	}
+	p.Packet(0, masterAddr, ctl(ipsc.OpRegisterReply, 1), nil)
+	if out := p.Packet(0, masterAddr, ctl(ipsc.OpRegisterReply, 1), nil); len(out) != 0 {
+		t.Fatal("second registration reply")
+	}
+	list := ipsc.AppendPeerListReply(nil, 1, []ipsc.PeerEntry{{ID: 9, IP: masterAddr.IP}, {ID: 7, IP: other.IP, Port: other.Port, Mode: 0x6a}})
+	if out := p.Packet(s, masterAddr, list, nil); len(out) != 1 || p.Peers() != 1 || p.PeerAt(0).ID != 7 || p.PeerAt(-1).ID != 0 {
+		t.Fatalf("list %v %d", kinds(out), p.Peers())
+	}
+	voice := []byte{byte(ipsc.OpGroupVoice), 0, 0, 0, 7, 1}
+	if out := p.Packet(s, other, voice, nil); len(out) != 1 || out[0].Kind != session.OutputData {
+		t.Fatalf("voice of a listed peer before its link is up %v", kinds(out))
+	}
+	if out := p.Packet(s, other, ctl(ipsc.OpPeerRegisterRequest, 7), nil); len(out) != 1 || ipsc.Opcode(out[0].Packet[0]) != ipsc.OpPeerRegisterReply || out[0].Addr != other {
+		t.Fatalf("peer registration %v", kinds(out))
+	}
+}
+
+func TestPeerLinks(t *testing.T) {
+	t.Parallel()
+
+	s := time.Second
+	p := listedPeer(t)
+	out := p.Tick(5*s, nil)
+	if len(out) != 2 || ipsc.Opcode(out[1].Packet[0]) != ipsc.OpPeerRegisterRequest || out[1].Addr != other {
+		t.Fatalf("tick %x", sends(out))
+	}
+	if out = p.Packet(5*s, other, ctl(ipsc.OpPeerRegisterReply, 7), nil); len(out) != 1 || out[0].Kind != session.OutputUp {
+		t.Fatalf("peer up %v", kinds(out))
+	}
+	p.Packet(5*s, other, ctl(ipsc.OpPeerRegisterReply, 7), nil)
+	if out = p.Packet(5*s, other, ctl(ipsc.OpPeerAliveRequest, 7), nil); len(out) != 1 || ipsc.Opcode(out[0].Packet[0]) != ipsc.OpPeerAliveReply {
+		t.Fatalf("peer keepalive %v", kinds(out))
+	}
+	for _, op := range []ipsc.Opcode{ipsc.OpStatus, ipsc.OpAliveReply, ipsc.OpPeerAliveReply, ipsc.OpRegisterRequest} {
+		if out = p.Packet(5*s, masterAddr, ctl(op, 1), nil); len(out) != 0 {
+			t.Fatalf("%v from the master", op)
+		}
+	}
+	if out = p.Packet(5*s, masterAddr, ctl(ipsc.OpPeerAliveRequest, 1), nil); len(out) != 1 {
+		t.Fatal("peer keepalive of the master")
+	}
+	if out = p.Packet(5*s, other, ctl(ipsc.OpRegisterRequest, 7), nil); len(out) != 0 {
+		t.Fatal("registration request to a peer")
+	}
+	if out = p.Packet(5*s, other, ctl(ipsc.OpGroupVoice, 99), nil); len(out) != 0 {
+		t.Fatal("packet of an unknown sender")
+	}
+}
+
+func TestPeerListAndLeave(t *testing.T) {
+	t.Parallel()
+
+	s := time.Second
+	p := listedPeer(t)
+	p.Packet(5*s, other, ctl(ipsc.OpPeerRegisterReply, 7), nil)
+	list := ipsc.AppendPeerListReply(nil, 1, []ipsc.PeerEntry{{ID: 7, IP: moved.IP, Port: moved.Port}})
+	out := p.Packet(6*s, masterAddr, list, nil)
+	if len(out) != 2 || out[0].Reason != session.ReasonList || p.PeerAt(0).Addr != moved || p.PeerAt(0).Up {
+		t.Fatalf("moved peer %+v", out)
+	}
+	p.Packet(6*s, moved, ctl(ipsc.OpPeerRegisterReply, 7), nil)
+	out = nil
+	for now := 10 * s; now <= 25*s; now += 5 * s {
+		out = p.Tick(now, out)
+	}
+	if count(out, session.OutputDown, session.ReasonTimeout) != 2 || p.State() != session.StateRegistering {
+		t.Fatalf("missed keepalives %+v", out)
+	}
+	p.Packet(26*s, masterAddr, ctl(ipsc.OpRegisterReply, 2), nil)
+	if id, _ := p.Master(); id != 2 {
+		t.Fatal("new master ID")
+	}
+	out = p.Packet(26*s, masterAddr, ctl(ipsc.OpRegisterReply, 3), nil)
+	if len(out) != 2 || out[0].Kind != session.OutputDown || out[1].Kind != session.OutputUp {
+		t.Fatalf("master ID change %v", kinds(out))
+	}
+	list = ipsc.AppendPeerListReply(nil, 3, []ipsc.PeerEntry{{ID: 7, IP: moved.IP, Port: moved.Port}})
+	p.Packet(26*s, masterAddr, list, nil)
+	p.Packet(26*s, moved, ctl(ipsc.OpPeerRegisterReply, 7), nil)
+	out = p.Packet(27*s, moved, ctl(ipsc.OpDeregisterRequest, 7), nil)
+	if len(out) != 1 || out[0].Reason != session.ReasonClosed || p.Peers() != 0 {
+		t.Fatalf("peer leaves %+v", out)
+	}
+	out = p.Packet(27*s, masterAddr, ctl(ipsc.OpDeregisterRequest, 3), nil)
+	if len(out) != 1 || out[0].Reason != session.ReasonClosed || p.State() != session.StateRegistering {
+		t.Fatalf("master leaves %+v", out)
+	}
+	if out = p.Close(28*s, nil); len(out) != 0 || p.State() != session.StateIdle {
+		t.Fatalf("close while registering %v", kinds(out))
+	}
+	if out = p.Close(28*s, nil); len(out) != 0 {
+		t.Fatal("second close")
+	}
+	if out = p.Packet(28*s, masterAddr, ctl(ipsc.OpRegisterReply, 3), nil); len(out) != 0 {
+		t.Fatal("packet after close")
+	}
+}
+
+func TestMasterTransitions(t *testing.T) {
+	t.Parallel()
+
+	m, _ := session.NewMaster(&session.MasterConfig{ID: 1, Timeout: 10 * time.Second})
+	if _, ok := m.Deadline(); ok {
+		t.Fatal("deadline without peers")
+	}
+	for _, op := range []ipsc.Opcode{ipsc.OpGroupVoice, ipsc.OpPeerListRequest, ipsc.OpRegisterReply} {
+		if out := m.Packet(0, xprAddr, ctl(op, 7), nil); len(out) != 0 {
+			t.Fatalf("%v from a peer that is not registered", op)
+		}
+	}
+	if out := m.Packet(0, xprAddr, nil, nil); len(out) != 0 {
+		t.Fatal("empty packet")
+	}
+	if out := m.Packet(0, xprAddr, []byte{byte(ipsc.OpRegisterRequest), 0, 0, 0, 7}, nil); len(out) != 0 {
+		t.Fatal("short registration")
+	}
+	m.Packet(0, xprAddr, ctl(ipsc.OpRegisterRequest, 7), nil)
+	m.Packet(0, masterAddr, ctl(ipsc.OpRegisterRequest, 8), nil)
+	for _, op := range []ipsc.Opcode{ipsc.OpAliveReply, ipsc.OpPeerAliveReply, ipsc.OpStatus} {
+		if out := m.Packet(5*time.Second, xprAddr, ctl(op, 7), nil); len(out) != 0 {
+			t.Fatalf("%v answered", op)
+		}
+	}
+	out := m.Tick(10*time.Second, nil)
+	if len(out) != 2 || out[0].ID != 8 || out[0].Reason != session.ReasonTimeout || out[1].Addr != xprAddr {
+		t.Fatalf("expiry %+v", out)
+	}
+	m.Close(11*time.Second, nil)
+	if out = m.Packet(11*time.Second, xprAddr, ctl(ipsc.OpRegisterRequest, 7), nil); len(out) != 0 || len(m.Tick(time.Hour, nil)) != 0 || len(m.Close(time.Hour, nil)) != 0 {
+		t.Fatal("master after close")
+	}
+	if _, ok := m.Deadline(); ok {
+		t.Fatal("deadline after close")
+	}
+}
