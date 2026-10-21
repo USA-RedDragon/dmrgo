@@ -909,13 +909,30 @@ func (r *leanCore) huntSigns(at float32) (again, mid, ok bool) {
 
 //go:section .text.huntMid
 func (r *leanCore) huntMid(at float32) bool {
-	if acqKeptAt[site0](r) > 4 {
+	an := int64(leanAcqSamples)
+	if r.locked {
+		an = leanHuntSamples
+	}
+	if r.ext != nil {
+		if b := r.ext.kept(); b != nil {
+			an = int64(2 * len(b))
+		}
+	}
+	if int32(min(r.n-r.acqFrom, an)) > 4 {
 		r.midSigns <<= 1
 		if r.midTiming {
 			t := at - r.tm.step
 			var x float32
 			if r.linHunt {
-				x = r.tm.linearAt(t)
+				tm := &r.tm
+				switch {
+				case t >= -1:
+					x = tm.s3 + t*(tm.s3-tm.s2)
+				case t >= -2:
+					x = tm.s2 + (t+1)*(tm.s2-tm.s1)
+				default:
+					x = tm.s1 + (t+2)*(tm.s1-tm.s0)
+				}
 			} else {
 				x = r.tm.midAt(t)
 			}
