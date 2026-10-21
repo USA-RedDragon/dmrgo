@@ -65,6 +65,9 @@ type control struct {
 }
 
 func (c *control) decode(raw *layer2.RawBurst, h *layer2.Hint) bool {
+	if raw == nil {
+		return false
+	}
 	c.opts.Kind = h.Kind
 	c.opts.VoiceBurst = enums.VoiceBurstUnknown
 	if h.Kind == layer2.KindVoice {

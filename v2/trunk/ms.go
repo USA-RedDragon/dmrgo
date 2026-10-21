@@ -464,11 +464,19 @@ func (m *MS) EndCall(now time.Duration, dst []Output) []Output {
 // Follower.Burst does, runs the
 // random access and the requests, and appends the outputs to dst. On the
 // TSCC the MS counts TDMA frames by the bursts of its Slot, so h.Slot
-// should be set; random access needs the CACH, for its AT bit. It
-// allocates only when dst has no room for MaxOutputs outputs.
+// should be set; random access needs the CACH, for its AT bit. A nil raw
+// is a transport frame without a burst: with Hint.SyncLost it does what
+// Lost does, else it runs the timers. It allocates only when dst has no
+// room for MaxOutputs outputs.
 func (m *MS) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
 	if m.off {
 		return dst
+	}
+	if raw == nil {
+		if h.SyncLost {
+			return m.Lost(now, dst)
+		}
+		return m.timers(now, dst)
 	}
 	var c *layer2.CACH
 	if cach != nil {

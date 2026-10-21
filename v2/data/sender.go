@@ -544,27 +544,28 @@ func (s *Sender) Cancel(_ time.Duration, dst []Output) []Output {
 // messages in progress from it: a response packet from the target of the
 // messages to their source. It appends the end of each message that the
 // response ends. Other bursts are ignored; the channel state comes from
-// Channel. It allocates only when dst has no room for MaxOutputs outputs.
+// Channel. A nil raw, a transport frame without a burst, only runs the
+// timers. It allocates only when dst has no room for MaxOutputs outputs.
 func (s *Sender) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
 	s.opts.Kind = h.Kind
-	if s.b.DecodeFromBytesWith(*raw, &s.opts) != nil {
-		return dst
+	if raw == nil || s.b.DecodeFromBytesWith(*raw, &s.opts) != nil {
+		return s.timers(now, dst)
 	}
 	return s.Decoded(now, s.b, h, dst)
 }
 
 // Decoded takes the response to the confirmed messages in progress from
-// the decoded burst b, as Burst does. For a sliding window, the Status of
-// the response is the N(S) of a message of the window: an ACK delivers
-// the messages up to that one, a SACK delivers the messages before it and
-// resends its blocks that the SACK flags, and a NACK delivers the messages
-// before it and resends it or ends it as refused. The messages after it
-// are sent again, and a response with another Status is ignored. It
-// allocates only when dst has no room for MaxOutputs outputs. (ETSI TS 102
-// 361-3 clause 5.4.4)
+// the decoded burst b, as Burst does. A nil b only runs the timers. For a
+// sliding window, the Status of the response is the N(S) of a message of
+// the window: an ACK delivers the messages up to that one, a SACK delivers
+// the messages before it and resends its blocks that the SACK flags, and a
+// NACK delivers the messages before it and resends it or ends it as
+// refused. The messages after it are sent again, and a response with
+// another Status is ignored. It allocates only when dst has no room for
+// MaxOutputs outputs. (ETSI TS 102 361-3 clause 5.4.4)
 func (s *Sender) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
 	dst = s.timers(now, dst)
-	if b.Kind != layer2.KindData || b.SlotType.FEC.Uncorrectable || s.state != SenderWaitResponse {
+	if b == nil || b.Kind != layer2.KindData || b.SlotType.FEC.Uncorrectable || s.state != SenderWaitResponse {
 		return dst
 	}
 	switch b.SlotType.DataType {

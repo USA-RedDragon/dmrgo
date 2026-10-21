@@ -302,9 +302,14 @@ func (r *Receiver) State() State {
 // Burst decodes the burst raw with what the Hint h says about it, runs it
 // through the Receiver as Decoded does, and appends the events to dst. A
 // burst that does not decode, or has another color code than
-// ReceiverConfig.ColorCode, is dropped, but its Hint still applies. It
-// allocates only when dst has no room for MaxEvents events.
+// ReceiverConfig.ColorCode, is dropped, but its Hint still applies. A nil
+// raw is a transport frame without a burst: only h applies, and
+// Hint.SyncLost ends the call as Lost does. It allocates only when dst has
+// no room for MaxEvents events.
 func (r *Receiver) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Event) []Event {
+	if raw == nil {
+		return r.receive(now, nil, &h, dst)
+	}
 	r.opts.Kind, r.opts.VoiceBurst, r.opts.DataType = h.Kind, enums.VoiceBurstUnknown, nil
 	if h.Kind == layer2.KindVoice {
 		r.opts.VoiceBurst = h.VoiceBurst
@@ -322,7 +327,7 @@ func (r *Receiver) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint,
 // Decoded runs the decoded burst b through the Receiver and appends the
 // events to dst. ReceiverConfig.ColorCode does not apply: b was decoded
 // with the options of the caller, so set DecodeOptions.ColorCode for the
-// check. A nil b is a burst that did not decode, and only h applies. A
+// check. A nil b means only h applies, as for a nil raw in Burst. A
 // monitor that feeds a burst to several machines decodes it once with
 // layer2.Burst.DecodeFromBytesWith and calls Decoded on each, as the
 // example of voice.Receiver.Decoded shows. It allocates only when dst has

@@ -147,8 +147,9 @@ func (r *Responder) Channel(now time.Duration, busy bool) {
 }
 
 // Burst decodes the burst raw with what the Hint h says about it, runs it
-// through the Responder as Decoded does, and appends the outputs to dst.
-// It allocates only when dst has no room for MaxOutputs outputs.
+// through the Responder as Decoded does, and appends the outputs to dst. A
+// nil raw, a transport frame without a burst, is a nil b for Decoded. It
+// allocates only when dst has no room for MaxOutputs outputs.
 func (r *Responder) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
 	return r.Decoded(now, r.d.decode(raw, &h), h, dst)
 }

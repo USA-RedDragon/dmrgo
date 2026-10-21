@@ -333,12 +333,13 @@ func (s *slot) busy() bool {
 // Inbound takes a burst received on slot h.Slot from the source from, and
 // appends the outputs to dst. The burst is decoded with what h says about
 // it. RF bursts with another color code than Config.ColorCode are dropped.
-// A burst whose h.Slot is not Slot1 or Slot2, or a nil raw, is dropped
-// with no output; CheckSlot tells a bad slot. It allocates only when dst
-// has no room for MaxOutputs outputs.
+// A burst whose h.Slot is not Slot1 or Slot2 is dropped with no output;
+// CheckSlot tells a bad slot. A nil raw is a transport frame without a
+// burst: only h applies, and Hint.SyncLost ends a call of from on the slot.
+// It allocates only when dst has no room for MaxOutputs outputs.
 func (r *Repeater) Inbound(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, from Source, dst []Output) []Output {
 	s := r.slot(h.Slot)
-	if s == nil || raw == nil {
+	if s == nil {
 		return dst
 	}
 	dst = r.timers(now, dst)
@@ -354,7 +355,7 @@ func (r *Repeater) Inbound(now time.Duration, raw *layer2.RawBurst, h layer2.Hin
 		r.opts.ColorCode = &r.cc
 	}
 	b := r.b
-	if b.DecodeFromBytesWith(*raw, &r.opts) != nil || b.Kind == layer2.KindData && b.SlotType.FEC.Uncorrectable {
+	if raw == nil || b.DecodeFromBytesWith(*raw, &r.opts) != nil || b.Kind == layer2.KindData && b.SlotType.FEC.Uncorrectable {
 		b = nil
 	}
 	wakeup := b != nil && isWakeup(b, raw)

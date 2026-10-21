@@ -358,8 +358,9 @@ func (q *Requester) Cancel(_ time.Duration, dst []Output) []Output {
 }
 
 // Burst decodes the burst raw with what the Hint h says about it, runs it
-// through the Requester as Decoded does, and appends the outputs to dst.
-// It allocates only when dst has no room for MaxOutputs outputs.
+// through the Requester as Decoded does, and appends the outputs to dst. A
+// nil raw, a transport frame without a burst, is a nil b for Decoded. It
+// allocates only when dst has no room for MaxOutputs outputs.
 func (q *Requester) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
 	return q.Decoded(now, q.d.decode(raw, &h), h, dst)
 }

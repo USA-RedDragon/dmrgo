@@ -30,6 +30,9 @@ func newDecoder(scratch *layer2.Burst) decoder {
 }
 
 func (d *decoder) decode(raw *layer2.RawBurst, h *layer2.Hint) *layer2.Burst {
+	if raw == nil {
+		return nil
+	}
 	d.opts.Kind, d.opts.VoiceBurst, d.opts.DataType = h.Kind, enums.VoiceBurstUnknown, nil
 	if h.Kind == layer2.KindVoice {
 		d.opts.VoiceBurst = h.VoiceBurst

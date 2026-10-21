@@ -155,8 +155,9 @@ func (w *Wakeup) Cancel(_ time.Duration, dst []Output) []Output {
 
 // Burst decodes the burst raw with what the Hint h says about it, runs it
 // through the Wakeup as Decoded does, and appends the outputs to dst. A
-// burst with another color code does not decode. It allocates only when
-// dst has no room for MaxOutputs outputs.
+// burst with another color code does not decode. A nil raw, a transport
+// frame without a burst, only runs the timers, as Lost does. It allocates
+// only when dst has no room for MaxOutputs outputs.
 func (w *Wakeup) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
 	return w.Decoded(now, w.d.decode(raw, &h), h, dst)
 }
