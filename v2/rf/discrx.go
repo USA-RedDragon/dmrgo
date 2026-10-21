@@ -396,30 +396,7 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 	if h >= audio96Taps {
 		h = 0
 	}
-	for i := i0; ; i++ {
-		if st&st96Raw != 0 && t <= 0 {
-			t = tm.step
-			if tm.mid {
-				tm.half, tm.mid = s2, false
-			} else {
-				tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*s2*s2
-				tm.last, tm.mid = s2, true
-				if hit, sym, mid := r.rawSym(s2); hit {
-					tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
-					r.n += int64(i - i0)
-					i0 = i
-					r.acqHead, r.acqLow = kh, kq
-					f.rrcHead = h
-					r.lastAt = -1
-					r.searchHit(sym, mid)
-					sa, sb, s0, s1, s2, s3, t, kq = tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
-					kh = r.acqHead
-					buf, an = r.acqBuf()
-					st = r.state96()
-					k, off = f.k, f.off
-				}
-			}
-		}
+	for i := i0; ; {
 		if t <= 0 {
 			for {
 				if st&st96Raw != 0 {
@@ -524,7 +501,7 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 					r.acqHead, r.acqLow = kh, kq
 					if st&st96Lock != 0 {
 						again, mid, match := r.lockSym(tm.last, at)
-						if !match && r.ns != r.slotEnd {
+						if !match && uint32(r.ns) != uint32(r.slotEnd) {
 							if t > 0 {
 								break
 							}
@@ -534,7 +511,7 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 						if match {
 							r.huntMatch(again, mid)
 						}
-						if r.ns == r.slotEnd {
+						if uint32(r.ns) == uint32(r.slotEnd) {
 							r.slotDue = true
 						}
 					} else {
@@ -555,55 +532,61 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 				}
 			}
 		}
-		if i == n {
-			if !r.iqLow {
+		for i != n {
+			v := *(*int16)(unsafe.Add(unsafe.Pointer(unsafe.SliceData(x)), 2*i))
+			if st&st96Search != 0 {
+				f.sum += int32(v)
+				f.sq += int64(v) * int64(v)
+				if f.n++; f.n == frontBlock {
+					tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
+					r.acqHead, r.acqLow = kh, kq
+					f.rrcHead = h
+					r.levels()
+					sb, s0, s1, s2, s3, t = tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t
+					kq = r.acqLow
+					k, off = f.k, f.off
+				}
+			}
+			u := int8(max(min((int32(v)*k-off)>>16, 127), -128))
+			p := unsafe.Add(unsafe.Pointer(hist), h)
+			*(*int8)(p), *(*int8)(unsafe.Add(p, audio96Taps)) = u, u
+			if h++; h >= audio96Taps {
+				h = 0
+			}
+			acc := fir96[site0]((*[audio96Taps]int8)(unsafe.Add(unsafe.Pointer(hist), h)))
+			y := float32(acc) * (rrcStepHz / 32768.0)
+			sa, sb, s0, s1, s2, s3 = sb, s0, s1, s2, s3, y
+			if st&st96Keep != 0 {
+				q := int16(int8((acc + 1<<13) >> 14))
+				if kh&1 == 0 {
+					kq = q
+				} else if j := uint32(kh) >> 1; j < uint32(len(buf)) {
+					buf[j] = int16(uint16(uint8(kq)) | uint16(uint8(q))<<8)
+				}
+				if kh++; kh == an {
+					kh = 0
+				}
+			}
+			t--
+			i++
+			if t <= 0 {
 				break
 			}
-			r.n += int64(i - i0)
-			i0 = i
-			m := iqLowOf(r).fill(in[fed:])
-			if m == 0 {
-				break
-			}
-			fed += m
-			n, i, i0 = m, -1, 0
+		}
+		if t <= 0 {
 			continue
 		}
-		v := *(*int16)(unsafe.Add(unsafe.Pointer(unsafe.SliceData(x)), 2*i))
-		if st&st96Search != 0 {
-			f.sum += int32(v)
-			f.sq += int64(v) * int64(v)
-			if f.n++; f.n == frontBlock {
-				tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
-				r.acqHead, r.acqLow = kh, kq
-				f.rrcHead = h
-				r.levels()
-				sb, s0, s1, s2, s3, t = tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t
-				kq = r.acqLow
-				k, off = f.k, f.off
-			}
+		if !r.iqLow {
+			break
 		}
-		u := int8(max(min((int32(v)*k-off)>>16, 127), -128))
-		p := unsafe.Add(unsafe.Pointer(hist), h)
-		*(*int8)(p), *(*int8)(unsafe.Add(p, audio96Taps)) = u, u
-		if h++; h >= audio96Taps {
-			h = 0
+		r.n += int64(i - i0)
+		i0 = i
+		m := iqLowOf(r).fill(in[fed:])
+		if m == 0 {
+			break
 		}
-		acc := fir96[site0]((*[audio96Taps]int8)(unsafe.Add(unsafe.Pointer(hist), h)))
-		y := float32(acc) * (rrcStepHz / 32768.0)
-		sa, sb, s0, s1, s2, s3 = sb, s0, s1, s2, s3, y
-		if st&st96Keep != 0 {
-			q := int16(int8((acc + 1<<13) >> 14))
-			if kh&1 == 0 {
-				kq = q
-			} else if j := kh >> 1; j < int32(len(buf)) {
-				buf[j] = int16(uint16(uint8(kq)) | uint16(uint8(q))<<8)
-			}
-			if kh++; kh == an {
-				kh = 0
-			}
-		}
-		t--
+		fed += m
+		n, i, i0 = m, 0, 0
 	}
 	f.rrcHead = h
 	tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
