@@ -3914,16 +3914,6 @@ func in_transport_dmrd_Bridge(s *C.dmrgo_dmrd_bridge_t) (d g_transport_dmrd.Brid
 	return
 }
 
-func in_transport_dmrd_Control(s *C.dmrgo_dmrd_control_t) (d g_transport_dmrd.Control) {
-	d.Command = g_transport_dmrd.Command(s.command)
-	d.ID = uint32(s.id)
-	d.Salt = uint32(s.salt)
-	d.HasSalt = bool(s.has_salt)
-	d.Token = *(*[32]byte)(unsafe.Pointer(&s.token))
-	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
-	return
-}
-
 func out_transport_dmrd_Data(d *C.dmrgo_dmrd_data_t, s *g_transport_dmrd.Data, oc *outc) {
 	_ = oc
 	d.seq = C.uint8_t(s.Seq)
@@ -3951,6 +3941,16 @@ func out_transport_dmrd_Bridge(d *C.dmrgo_dmrd_bridge_t, s *g_transport_dmrd.Bri
 	d.source_repeater = C.uint32_t(s.SourceRepeater)
 	d.hops = C.uint8_t(s.Hops)
 	*(*[20]byte)(unsafe.Pointer(&d.signature)) = s.Signature
+}
+
+func in_transport_dmrd_Control(s *C.dmrgo_dmrd_control_t) (d g_transport_dmrd.Control) {
+	d.Command = g_transport_dmrd.Command(s.command)
+	d.ID = uint32(s.id)
+	d.Salt = uint32(s.salt)
+	d.HasSalt = bool(s.has_salt)
+	d.Token = *(*[32]byte)(unsafe.Pointer(&s.token))
+	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
+	return
 }
 
 func out_transport_dmrd_Control(d *C.dmrgo_dmrd_control_t, s *g_transport_dmrd.Control, oc *outc) {
@@ -4283,6 +4283,16 @@ func in_transport_mmdvm_DMRData(s *C.dmrgo_mmdvm_dmr_data_t) (d g_transport_mmdv
 	return
 }
 
+func out_transport_mmdvm_DMRData(d *C.dmrgo_mmdvm_dmr_data_t, s *g_transport_mmdvm.DMRData, oc *outc) {
+	_ = oc
+	d.slot = C.dmrgo_enums_slot_t(s.Slot)
+	d.lost = C.bool(s.Lost)
+	d.control = C.dmrgo_mmdvm_control_t(s.Control)
+	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
+	d.rssi = C.uint16_t(s.RSSI)
+	d.has_rssi = C.bool(s.HasRSSI)
+}
+
 func in_transport_mmdvm_DMRStart(s *C.dmrgo_mmdvm_dmr_start_t) (d g_transport_mmdvm.DMRStart) {
 	d.TX = bool(s.tx)
 	return
@@ -4304,16 +4314,6 @@ func in_transport_mmdvm_Frame(s *C.dmrgo_mmdvm_frame_t) (d g_transport_mmdvm.Fra
 	d.Command = g_transport_mmdvm.Command(s.command)
 	d.Payload = unsafe.Slice((*byte)(unsafe.Pointer(s.payload)), int(s.payload_len))
 	return
-}
-
-func out_transport_mmdvm_DMRData(d *C.dmrgo_mmdvm_dmr_data_t, s *g_transport_mmdvm.DMRData, oc *outc) {
-	_ = oc
-	d.slot = C.dmrgo_enums_slot_t(s.Slot)
-	d.lost = C.bool(s.Lost)
-	d.control = C.dmrgo_mmdvm_control_t(s.Control)
-	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
-	d.rssi = C.uint16_t(s.RSSI)
-	d.has_rssi = C.bool(s.HasRSSI)
 }
 
 func out_transport_mmdvm_Debug(d *C.dmrgo_mmdvm_debug_t, s *g_transport_mmdvm.Debug, oc *outc) {
@@ -19681,16 +19681,17 @@ func dmrgo_packet_builder_segment(c_self *C.dmrgo_packet_builder_t, c_header *C.
 func dmrgo_packet_bursts(c_p *C.dmrgo_packet_packet_t, c_color_code C.dmrgo_enums_color_code_t, c_src C.dmrgo_layer2_sync_source_t, c_out *C.dmrgo_layer2_raw_burst_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_p == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	var a_p g_layer2_packet.Packet
+	var p_p *g_layer2_packet.Packet
 	var s_p st_layer2_packet_Packet
-	a_p = in_layer2_packet_Packet(&(*c_p), &s_p)
+	if c_p != nil {
+		a_p = in_layer2_packet_Packet(&(*c_p), &s_p)
+		p_p = &a_p
+	}
 	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1 := g_layer2_packet.Bursts(a_p, g_enums.ColorCode(c_color_code), g_layer2.SyncSource(c_src))
+	r0, r1 := g_layer2_packet.Bursts(p_p, g_enums.ColorCode(c_color_code), g_layer2.SyncSource(c_src))
 	_ = r0
 	putSlice(unsafe.Slice((*g_layer2.RawBurst)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -25283,7 +25284,7 @@ func dmrgo_pdu_motorola_call_alert_pdu_string(c_self *C.dmrgo_pdu_motorola_call_
 }
 
 //export dmrgo_pdu_motorola_radio_check_pdu_addresses
-func dmrgo_pdu_motorola_radio_check_pdu_addresses(c_self *C.dmrgo_pdu_motorola_radio_check_pdu_t, c_target *C.uint32_t, c_source *C.uint32_t) (rc C.int) {
+func dmrgo_pdu_motorola_radio_check_pdu_addresses(c_self *C.dmrgo_pdu_motorola_radio_check_pdu_t, c_target *C.uint32_t, c_source *C.uint32_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -25291,15 +25292,19 @@ func dmrgo_pdu_motorola_radio_check_pdu_addresses(c_self *C.dmrgo_pdu_motorola_r
 	}
 	var x g_layer2_pdu.MotorolaRadioCheckPDU
 	x = in_layer2_pdu_MotorolaRadioCheckPDU(&(*c_self))
-	r0, r1 := x.Addresses()
+	r0, r1, r2 := x.Addresses()
 	out_layer2_pdu_MotorolaRadioCheckPDU(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
+	_ = r2
 	if c_target != nil {
 		*c_target = C.uint32_t(r0)
 	}
 	if c_source != nil {
 		*c_source = C.uint32_t(r1)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r2)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -31886,6 +31891,7 @@ func dmrgo_dmrd_bridge_append_binary(c_self *C.dmrgo_dmrd_bridge_t, c_dst *C.uin
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
+	out_transport_dmrd_Bridge(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -34043,6 +34049,7 @@ func dmrgo_hytera_frame_append_binary(c_self *C.dmrgo_hytera_frame_t, c_dst *C.u
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -34085,6 +34092,7 @@ func dmrgo_hytera_frame_hint(c_self *C.dmrgo_hytera_frame_t, c_out *C.dmrgo_laye
 	var x g_transport_hytera.Frame
 	x = *(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self)))
 	r0 := x.Hint()
+	*(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		out_layer2_Hint(&(*c_out), &r0, oc)
@@ -34711,6 +34719,7 @@ func dmrgo_ipsc_user_append_binary(c_self *C.dmrgo_ipsc_user_t, c_dst *C.uint8_t
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
+	out_transport_ipsc_User(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -35375,6 +35384,7 @@ func dmrgo_mmdvm_dmr_data_append_binary(c_self *C.dmrgo_mmdvm_dmr_data_t, c_dst 
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
+	out_transport_mmdvm_DMRData(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -35417,6 +35427,7 @@ func dmrgo_mmdvm_dmr_data_hint(c_self *C.dmrgo_mmdvm_dmr_data_t, c_out *C.dmrgo_
 	var x g_transport_mmdvm.DMRData
 	x = in_transport_mmdvm_DMRData(&(*c_self))
 	r0 := x.Hint()
+	out_transport_mmdvm_DMRData(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		out_layer2_Hint(&(*c_out), &r0, oc)

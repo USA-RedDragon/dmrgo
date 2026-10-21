@@ -208,7 +208,7 @@ func TestAppendBursts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want, err := packet.Bursts(p, 3, layer2.SyncSourceMS)
+	want, err := packet.Bursts(&p, 3, layer2.SyncSourceMS)
 	if err != nil {
 		t.Fatal(err)
 	}

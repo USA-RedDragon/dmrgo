@@ -78,12 +78,11 @@ type Data struct {
 // Hint returns what the packet tells about its burst, for the service
 // machines: the slot, the voice position or data type, the sequence number
 // (8 bits) and the stream ID. A FrameVoice packet with a position above 5
-// gives KindVoice with the position unknown.
+// gives KindVoice with the position unknown. A nil d gives the zero Hint.
 func (d *Data) Hint() layer2.Hint {
 	if d == nil {
 		return layer2.Hint{}
 	}
-
 	h := layer2.Hint{
 		Slot:      d.Slot,
 		Seq:       uint16(d.Seq),

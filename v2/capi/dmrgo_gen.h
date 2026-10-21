@@ -8876,7 +8876,7 @@ int dmrgo_pdu_motorola_call_alert_pdu_encode(dmrgo_pdu_motorola_call_alert_pdu_t
 /* Go: pdu.MotorolaCallAlertPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_motorola_call_alert_pdu_string(dmrgo_pdu_motorola_call_alert_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.MotorolaRadioCheckPDU.Addresses. Addresses returns the target and source of the CSBK that carries p: the checked radio and the requester for a request, and the reverse for an answer. */
-int dmrgo_pdu_motorola_radio_check_pdu_addresses(dmrgo_pdu_motorola_radio_check_pdu_t *self, uint32_t *target, uint32_t *source);
+int dmrgo_pdu_motorola_radio_check_pdu_addresses(dmrgo_pdu_motorola_radio_check_pdu_t *self, uint32_t *target, uint32_t *source, bool *ok);
 /* Go: pdu.MotorolaRadioCheckPDU.Encode. Encode encodes a MotorolaRadioCheckPDU. */
 int dmrgo_pdu_motorola_radio_check_pdu_encode(dmrgo_pdu_motorola_radio_check_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.MotorolaRadioCheckPDU.String. String returns the fields of s as text, for printing. */
@@ -9414,7 +9414,7 @@ int dmrgo_sms_ip_text_text_utf8(dmrgo_sms_ip_text_t *self, uint8_t *dst, size_t 
 /* Go: dmrd.AppendFreeDMRStatic. AppendFreeDMRStatic appends to dst the static talkgroups of slot s in a FreeDMR options text, as FreeDMR reads them: the DMR+ keys TS1_1 to TS1_9 (TS2_1 to TS2_9 for slot 2) when TS1_1 is there, else the comma list of TS1 or TS1_STATIC. */
 int dmrgo_dmrd_append_free_dmr_static(uint32_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, dmrgo_enums_slot_t s);
 /* Go: dmrd.Bridge.AppendBinary. AppendBinary appends the packet b to dst in the form of b.Version, with b.Signature as it is: sign the packet afterward with package auth. */
-int dmrgo_dmrd_bridge_append_binary(const dmrgo_dmrd_bridge_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_dmrd_bridge_append_binary(dmrgo_dmrd_bridge_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.BridgeControl.AppendBinary. AppendBinary appends the packet c to dst, with c.Signature as it is. */
 int dmrgo_dmrd_bridge_control_append_binary(const dmrgo_dmrd_bridge_control_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.Classify. Classify returns the command of packet p in dialect d by its tag, or CommandUnknown when no tag of d matches. */
@@ -9616,11 +9616,11 @@ int dmrgo_hytera_decode_heartbeat(const uint8_t *p, size_t p_len, dmrgo_hytera_h
 /* Go: hytera.DecodeP2P. DecodeP2P decodes the P2P command p. */
 int dmrgo_hytera_decode_p2p(const uint8_t *p, size_t p_len, dmrgo_hytera_p2p_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: hytera.Frame.AppendBinary. AppendBinary appends the 72-octet frame to dst. */
-int dmrgo_hytera_frame_append_binary(const dmrgo_hytera_frame_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_hytera_frame_append_binary(dmrgo_hytera_frame_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hytera.Frame.HasBurst. HasBurst reports whether Burst holds a burst: false for SlotTypeSync and SlotTypeWakeup, whose payload is not an ETSI burst. */
 int dmrgo_hytera_frame_has_burst(const dmrgo_hytera_frame_t *self, bool *out);
 /* Go: hytera.Frame.Hint. Hint returns what the frame tells about its burst, for the service machines: the slot, the voice position or data type from SlotType, and the sequence number (8 bits). */
-int dmrgo_hytera_frame_hint(const dmrgo_hytera_frame_t *self, dmrgo_layer2_hint_t *out);
+int dmrgo_hytera_frame_hint(dmrgo_hytera_frame_t *self, dmrgo_layer2_hint_t *out);
 /* Go: hytera.Frame.SetKind. SetKind sets SlotType from the layer2 view of the burst: KindVoice with pos A to F, or KindData with dt. */
 int dmrgo_hytera_frame_set_kind(dmrgo_hytera_frame_t *self, dmrgo_layer2_kind_t k, dmrgo_enums_voice_burst_type_t pos, dmrgo_enums_data_type_t dt);
 /* Go: hytera.Heartbeat.AppendBinary. AppendBinary appends the heartbeat, or the keepalive, to dst. */
@@ -9682,7 +9682,7 @@ int dmrgo_ipsc_peer_list_of(const uint8_t *p, size_t p_len, dmrgo_ipsc_peer_list
 /* Go: ipsc.Raw.AppendBinary. AppendBinary appends r to dst. */
 int dmrgo_ipsc_raw_append_binary(const dmrgo_ipsc_raw_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ipsc.User.AppendBinary. AppendBinary appends the packet u to dst, without the authentication trailer. */
-int dmrgo_ipsc_user_append_binary(const dmrgo_ipsc_user_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_ipsc_user_append_binary(dmrgo_ipsc_user_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ipsc.User.Hint. Hint returns what the packet tells about its burst, for the service machines: the slot from the call info, the RTP sequence number (16 bits), the call control as the stream, burst A or E from the voice layout (the receiver places B, C, D and F by the sequence number), the data type of a data packet, EndWeak for the end flag on a voice packet, EndStrong on a terminator or a data packet, and SyncLost for BurstSyncLost. */
 int dmrgo_ipsc_user_hint(dmrgo_ipsc_user_t *self, dmrgo_layer2_hint_t *out);
 /* Go: ipsc.User.IsVoice. IsVoice reports whether u carries a voice burst. */
@@ -9742,11 +9742,11 @@ int dmrgo_mmdvm_dmr_aloha_append_binary(dmrgo_mmdvm_dmr_aloha_t *self, uint8_t *
 /* Go: mmdvm.DMRAloha.String. String returns the fields of s as text, for printing. */
 int dmrgo_mmdvm_dmr_aloha_string(dmrgo_mmdvm_dmr_aloha_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: mmdvm.DMRData.AppendBinary. AppendBinary appends the payload to dst: nothing for a lost frame, else the control octet, the burst and the RSSI when HasRSSI is set. */
-int dmrgo_mmdvm_dmr_data_append_binary(const dmrgo_mmdvm_dmr_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_mmdvm_dmr_data_append_binary(dmrgo_mmdvm_dmr_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.DMRData.Command. Command returns the command of the frame: CommandDMRData1 or CommandDMRData2, or CommandDMRLost1 or CommandDMRLost2 when Lost is set. */
 int dmrgo_mmdvm_dmr_data_command(const dmrgo_mmdvm_dmr_data_t *self, dmrgo_mmdvm_command_t *out);
 /* Go: mmdvm.DMRData.Hint. Hint returns what the frame tells about its burst, for the service machines: the slot, and from Control the data type, voice burst A, or voice bursts B to F from N 1 to 5. */
-int dmrgo_mmdvm_dmr_data_hint(const dmrgo_mmdvm_dmr_data_t *self, dmrgo_layer2_hint_t *out);
+int dmrgo_mmdvm_dmr_data_hint(dmrgo_mmdvm_dmr_data_t *self, dmrgo_layer2_hint_t *out);
 /* Go: mmdvm.DMRShortLC.AppendBinary. AppendBinary appends the 9 octets of s to dst. */
 int dmrgo_mmdvm_dmr_short_lc_append_binary(dmrgo_mmdvm_dmr_short_lc_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.DMRShortLC.String. String returns the fields of s as text, for printing. */

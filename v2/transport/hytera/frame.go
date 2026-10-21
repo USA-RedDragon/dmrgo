@@ -90,9 +90,13 @@ func DecodeFrame(p []byte) (Frame, error) {
 
 // AppendBinary appends the 72-octet frame to dst. It returns dst unchanged
 // and an error when Slot is not Slot1 or Slot2, ColorCode is above 15, or
-// Destination or Source does not fit in 24 bits. It allocates only when dst
-// has no room for FrameLen more octets.
-func (f Frame) AppendBinary(dst []byte) ([]byte, error) {
+// Destination or Source does not fit in 24 bits. A nil f gives the error of
+// a bad Slot. It allocates only when dst has no room for FrameLen more
+// octets.
+func (f *Frame) AppendBinary(dst []byte) ([]byte, error) {
+	if f == nil {
+		return dst, errSlot
+	}
 	var l frameLayout
 	switch f.Slot {
 	case enums.Slot1:
@@ -128,8 +132,12 @@ func (f Frame) HasBurst() bool {
 // Hint returns what the frame tells about its burst, for the service
 // machines: the slot, the voice position or data type from SlotType, and
 // the sequence number (8 bits). A slot type without a burst kind, such as
-// one that no source names, gives KindUnknown; use HasBurst first.
-func (f Frame) Hint() layer2.Hint {
+// one that no source names, gives KindUnknown; use HasBurst first. A nil f
+// gives the zero Hint.
+func (f *Frame) Hint() layer2.Hint {
+	if f == nil {
+		return layer2.Hint{}
+	}
 	h := layer2.Hint{Slot: f.Slot, Seq: uint16(f.Seq), HasSeq: true, SeqBits: 8}
 	if f.SlotType >= SlotTypeVoiceA && f.SlotType <= SlotTypeVoiceF && f.SlotType%0x1111 == 0 {
 		h.Kind = layer2.KindVoice

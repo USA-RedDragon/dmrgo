@@ -119,7 +119,7 @@ func unconfirmed(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	bursts, err := packet.Bursts(p, colorCode, layer2.SyncSourceMS)
+	bursts, err := packet.Bursts(&p, colorCode, layer2.SyncSourceMS)
 	if err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func confirmed(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	bursts, err := packet.Bursts(p, colorCode, layer2.SyncSourceMS)
+	bursts, err := packet.Bursts(&p, colorCode, layer2.SyncSourceMS)
 	if err != nil {
 		return err
 	}
@@ -170,7 +170,7 @@ func confirmed(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	sackBursts, err := packet.Bursts(sack, colorCode, layer2.SyncSourceMS)
+	sackBursts, err := packet.Bursts(&sack, colorCode, layer2.SyncSourceMS)
 	if err != nil {
 		return err
 	}
@@ -204,7 +204,7 @@ func confirmed(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	ackBursts, err := packet.Bursts(ack, colorCode, layer2.SyncSourceMS)
+	ackBursts, err := packet.Bursts(&ack, colorCode, layer2.SyncSourceMS)
 	if err != nil {
 		return err
 	}

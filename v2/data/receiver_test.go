@@ -132,7 +132,7 @@ func build(t testing.TB, h pdu.DataHeader, payload []byte, rate enums.DataType) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := packet.Bursts(p, 1, layer2.SyncSourceMS)
+	b, err := packet.Bursts(&p, 1, layer2.SyncSourceMS)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -276,7 +276,7 @@ func retryBursts(t *testing.T, good []layer2.RawBurst, dbsn ...int) []layer2.Raw
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := packet.Bursts(rp, 1, layer2.SyncSourceMS)
+	b, err := packet.Bursts(&rp, 1, layer2.SyncSourceMS)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -355,7 +355,7 @@ func TestReceiverProprietarySAP(t *testing.T) {
 		ch := *p.Header.ConfirmedDataHeader
 		ch.BlocksToFollow++
 		p.Header.ConfirmedDataHeader = &ch
-		b, err := packet.Bursts(p, 1, layer2.SyncSourceMS)
+		b, err := packet.Bursts(&p, 1, layer2.SyncSourceMS)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -597,7 +597,7 @@ func TestReceiverProprietaryHeader(t *testing.T) {
 	uh := *p.Header.UnconfirmedDataHeader
 	uh.BlocksToFollow++
 	p.Header.UnconfirmedDataHeader = &uh
-	b, err := packet.Bursts(p, 1, layer2.SyncSourceMS)
+	b, err := packet.Bursts(&p, 1, layer2.SyncSourceMS)
 	if err != nil {
 		t.Fatal(err)
 	}

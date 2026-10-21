@@ -14,7 +14,7 @@ var (
 	ErrRate = errors.New("data type is not rate 1/2, 3/4 or 1 coded")
 	// ErrFormat is returned by NewPacket and Builder.Segment for a header
 	// that is not U_HEAD, C_HEAD, DD_HEAD or R_HEAD, or whose matching
-	// sub-header is nil.
+	// sub-header is nil, and by Bursts and AppendBursts for a nil Packet.
 	ErrFormat = errors.New("header format does not carry segmented data")
 	// ErrTooLong is returned when the payload needs more than 127 blocks,
 	// or more than the header can count.

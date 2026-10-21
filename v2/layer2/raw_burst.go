@@ -92,7 +92,9 @@ func (r *RawBurst) setInfo(p *[25]byte) {
 // BPTCPayload decodes the 196 information bits as BPTC(196,96) and returns
 // the 96 data bits packed most significant bit first, before any CRC or
 // RS(12,9) check. It is meaningful only for the BPTC data types; a Rate 3/4
-// or Rate 1 burst needs Rate34Payload or Rate1Payload.
+// or Rate 1 burst needs Rate34Payload or Rate1Payload. A network
+// translator that needs a payload that MMDVMHost accepts calls
+// MMDVMHostPayload instead.
 func (r RawBurst) BPTCPayload() ([12]byte, fec.Result) {
 	p, _, res := bptc.Decode196(r.info())
 	return p, res

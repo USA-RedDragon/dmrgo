@@ -117,8 +117,11 @@ func (d DMRData) Command() Command {
 // AppendBinary appends the payload to dst: nothing for a lost frame, else
 // the control octet, the burst and the RSSI when HasRSSI is set. Wrap it
 // with AppendFrame and Command. It does not allocate when dst has room for
-// DMRDataLen+2 more octets, and never fails.
-func (d DMRData) AppendBinary(dst []byte) ([]byte, error) {
+// DMRDataLen+2 more octets, and fails only for a nil d, with ErrCommand.
+func (d *DMRData) AppendBinary(dst []byte) ([]byte, error) {
+	if d == nil {
+		return dst, ErrCommand
+	}
 	if d.Lost {
 		return dst, nil
 	}
@@ -135,8 +138,12 @@ func (d DMRData) AppendBinary(dst []byte) ([]byte, error) {
 // voice bursts B to F from N 1 to 5. A frame without a sync bit and with N
 // 0, such as one that MMDVMHost sends, gives KindUnknown, which classifies
 // the burst by its SYNC. A lost frame gives only the slot and SyncLost. The
-// modem sends no sequence number; the slot period is the clock.
-func (d DMRData) Hint() layer2.Hint {
+// modem sends no sequence number; the slot period is the clock. A nil d
+// gives the zero Hint.
+func (d *DMRData) Hint() layer2.Hint {
+	if d == nil {
+		return layer2.Hint{}
+	}
 	h := layer2.Hint{Slot: d.Slot}
 	switch {
 	case d.Lost:

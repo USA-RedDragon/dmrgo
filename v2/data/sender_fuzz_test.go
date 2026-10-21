@@ -25,7 +25,7 @@ func txPool(t testing.TB) []layer2.RawBurst {
 			if err != nil {
 				t.Fatal(err)
 			}
-			b, err := packet.Bursts(resp, 0, layer2.SyncSourceBS)
+			b, err := packet.Bursts(&resp, 0, layer2.SyncSourceBS)
 			if err != nil {
 				t.Fatal(err)
 			}
