@@ -97,7 +97,7 @@ func (m *Master) Admit(now time.Duration, salt uint32, password []byte, dst []Ou
 	}
 	m.salt = salt
 	m.passLen = copy(m.pass[:], password)
-	m.state, m.timeoutAt = StateAuth, now+m.timeout
+	m.state, m.timeoutAt = StateAuth, after(now, m.timeout)
 	return m.challenge(dst)
 }
 
@@ -183,7 +183,7 @@ func (m *Master) Packet(now time.Duration, b []byte, dst []Output) []Output {
 		if m.state != StateRunning || id != m.id {
 			return m.nak(dst, id)
 		}
-		m.timeoutAt = now + m.timeout
+		m.timeoutAt = after(now, m.timeout)
 		return append(dst, Output{Kind: OutputData, Packet: b, Command: c, ID: m.id})
 	case dmrd.CommandRPTCL:
 		k, err := dmrd.DecodeControl(b, m.dialect)
@@ -204,17 +204,17 @@ func (m *Master) login(now time.Duration, b []byte, dst []Output) []Output {
 		return dst
 	}
 	if m.state == StateLogin && k.ID == m.id {
-		m.timeoutAt = now + m.timeout
+		m.timeoutAt = after(now, m.timeout)
 		return dst
 	}
 	if m.state == StateAuth && k.ID == m.id {
-		m.timeoutAt = now + m.timeout
+		m.timeoutAt = after(now, m.timeout)
 		return m.challenge(dst)
 	}
 	if m.state != StateIdle {
 		dst = m.down(dst, ReasonLogin)
 	}
-	m.id, m.state, m.timeoutAt = k.ID, StateLogin, now+m.timeout
+	m.id, m.state, m.timeoutAt = k.ID, StateLogin, after(now, m.timeout)
 	return append(dst, Output{Kind: OutputLogin, ID: k.ID})
 }
 
@@ -230,7 +230,7 @@ func (m *Master) token(now time.Duration, b []byte, dst []Output) []Output {
 		dst = m.nak(dst, k.ID)
 		return m.down(dst, ReasonRefused)
 	}
-	m.state, m.timeoutAt = StateConfig, now+m.timeout
+	m.state, m.timeoutAt = StateConfig, after(now, m.timeout)
 	return m.acked(dst)
 }
 
@@ -242,7 +242,7 @@ func (m *Master) running(now time.Duration, b []byte, c dmrd.Command, dst []Outp
 	if m.state != StateRunning || k.ID != m.id {
 		return m.nak(dst, k.ID)
 	}
-	m.timeoutAt = now + m.timeout
+	m.timeoutAt = after(now, m.timeout)
 	switch c {
 	case dmrd.CommandRPTO:
 		dst = m.acked(dst)
@@ -278,7 +278,7 @@ func (m *Master) config(now time.Duration, b []byte, dst []Output) []Output {
 	if (m.state != StateConfig && m.state != StateRunning) || id != m.id {
 		return m.nak(dst, id)
 	}
-	m.timeoutAt = now + m.timeout
+	m.timeoutAt = after(now, m.timeout)
 	dst = m.acked(dst)
 	dst = append(dst, Output{Kind: OutputConfig, Packet: b, ID: m.id})
 	if m.state == StateConfig {

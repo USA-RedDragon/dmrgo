@@ -1,6 +1,7 @@
 package session
 
 import (
+	"math"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/digest"
@@ -178,7 +179,7 @@ func (p *Peer) Tick(now time.Duration, dst []Output) []Output {
 			dst = append(dst, Output{Kind: OutputDown, Reason: ReasonTimeout, State: p.state})
 			p.wait(now)
 		default:
-			p.retryAt = now + p.retry
+			p.retryAt = after(now, p.retry)
 			return p.send(dst)
 		}
 	}
@@ -187,13 +188,13 @@ func (p *Peer) Tick(now time.Duration, dst []Output) []Output {
 
 func (p *Peer) login(now time.Duration, dst []Output) []Output {
 	p.state = StateLogin
-	p.retryAt, p.timeoutAt = now+p.retry, now+p.timeout
+	p.retryAt, p.timeoutAt = after(now, p.retry), after(now, p.timeout)
 	return p.send(dst)
 }
 
 func (p *Peer) wait(now time.Duration) {
 	d := p.retry
-	for i := uint8(0); i < p.fails && d < p.backoff; i++ {
+	for i := uint8(0); i < p.fails && d < p.backoff && d <= math.MaxInt64/2; i++ {
 		d *= 2
 	}
 	if p.backoff > p.retry {
@@ -202,7 +203,7 @@ func (p *Peer) wait(now time.Duration) {
 	if p.fails < 63 {
 		p.fails++
 	}
-	p.state, p.waitAt = StateWait, now+d
+	p.state, p.waitAt = StateWait, after(now, d)
 }
 
 func (p *Peer) send(dst []Output) []Output {
@@ -269,7 +270,7 @@ func (p *Peer) Packet(now time.Duration, b []byte, dst []Output) []Output {
 		dst = append(dst, Output{Kind: OutputDown, Reason: ReasonRefused, State: p.state})
 		if p.state == StateRunning {
 			p.state = StateLogin
-			p.retryAt, p.timeoutAt = now+p.retry, now+p.timeout
+			p.retryAt, p.timeoutAt = after(now, p.retry), after(now, p.timeout)
 			return dst
 		}
 		p.wait(now)
@@ -281,7 +282,7 @@ func (p *Peer) Packet(now time.Duration, b []byte, dst []Output) []Output {
 		p.wait(now)
 	case dmrd.CommandMSTPONG, dmrd.CommandRPTPONG:
 		if _, err := dmrd.DecodeControl(b, p.dialect); err == nil && p.state == StateRunning {
-			p.timeoutAt = now + p.timeout
+			p.timeoutAt = after(now, p.timeout)
 		}
 	case dmrd.CommandRPTSBKN:
 		if _, err := dmrd.DecodeControl(b, p.dialect); err == nil && p.state == StateRunning {
@@ -320,13 +321,13 @@ func (p *Peer) acked(now time.Duration, m *dmrd.Control, b []byte, dst []Output)
 	case StateIdle, StateWait, StateRunning:
 		return dst
 	}
-	p.retryAt, p.timeoutAt = now+p.retry, now+p.timeout
+	p.retryAt, p.timeoutAt = after(now, p.retry), after(now, p.timeout)
 	return p.send(dst)
 }
 
 func (p *Peer) up(now time.Duration, dst []Output) []Output {
 	p.state, p.fails = StateRunning, 0
-	p.retryAt, p.timeoutAt = now+p.retry, now+p.timeout
+	p.retryAt, p.timeoutAt = after(now, p.retry), after(now, p.timeout)
 	return append(dst, Output{Kind: OutputUp, ID: p.id})
 }
 

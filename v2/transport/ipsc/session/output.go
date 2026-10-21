@@ -1,6 +1,7 @@
 package session
 
 import (
+	"math"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
@@ -298,4 +299,11 @@ func orDefault(d, def time.Duration) time.Duration {
 		return def
 	}
 	return d
+}
+
+func after(t, d time.Duration) time.Duration {
+	if d > 0 && t > math.MaxInt64-d {
+		return math.MaxInt64
+	}
+	return t + d
 }

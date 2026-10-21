@@ -146,7 +146,7 @@ func (m *Master) Deadline() (at time.Duration, ok bool) {
 		return 0, false
 	}
 	for i := range m.l.n {
-		t := m.l.peers[i].last + m.timeout
+		t := after(m.l.peers[i].last, m.timeout)
 		if !ok || t < at {
 			at, ok = t, true
 		}
@@ -164,7 +164,7 @@ func (m *Master) Tick(now time.Duration, dst []Output) []Output {
 	dropped := false
 	for i := 0; i < m.l.n; {
 		e := &m.l.peers[i]
-		if now < e.last+m.timeout {
+		if now < after(e.last, m.timeout) {
 			i++
 			continue
 		}
