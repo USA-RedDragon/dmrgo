@@ -27,6 +27,7 @@ import (
 	g_layer2_packet "github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	g_layer2_pdu "github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	g_layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
+	g_mototrbo_ars "github.com/USA-RedDragon/dmrgo/v2/mototrbo/ars"
 	g_mototrbo_tms "github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms"
 	g_nmea "github.com/USA-RedDragon/dmrgo/v2/nmea"
 	g_shortdata "github.com/USA-RedDragon/dmrgo/v2/shortdata"
@@ -3120,6 +3121,78 @@ func in_layer3_VoiceServiceOptions(s *C.dmrgo_layer3_voice_service_options_t) (d
 	return
 }
 
+func out_mototrbo_ars_Header(d *C.dmrgo_ars_header_t, s *g_mototrbo_ars.Header, oc *outc) {
+	_ = oc
+	d.extension = C.bool(s.Extension)
+	d.ack_required = C.bool(s.AckRequired)
+	d.priority = C.bool(s.Priority)
+	d.control = C.bool(s.Control)
+	d.type_ = C.dmrgo_ars_type_t(s.Type)
+}
+
+func out_mototrbo_ars_Registration(d *C.dmrgo_ars_registration_t, s *g_mototrbo_ars.Registration, oc *outc) {
+	_ = oc
+	d.extension = C.bool(s.Extension)
+	d.event = C.dmrgo_ars_event_t(s.Event)
+	d.encoding = C.uint8_t(s.Encoding)
+}
+
+func out_mototrbo_ars_Response(d *C.dmrgo_ars_response_t, s *g_mototrbo_ars.Response, oc *outc) {
+	_ = oc
+	d.extension = C.bool(s.Extension)
+	d.value = C.uint8_t(s.Value)
+}
+
+func out_mototrbo_ars_Message(d *C.dmrgo_ars_message_t, s *g_mototrbo_ars.Message, oc *outc) {
+	_ = oc
+	d.length = C.uint16_t(s.Length)
+	out_mototrbo_ars_Header(&d.header, &s.Header, oc)
+	out_mototrbo_ars_Registration(&d.registration, &s.Registration, oc)
+	d.device = (*C.uint8_t)(arenaCopy(oc, s.Device))
+	d.device_len = C.size_t(len(s.Device))
+	d.user_ = (*C.uint8_t)(arenaCopy(oc, s.User))
+	d.user__len = C.size_t(len(s.User))
+	d.password = (*C.uint8_t)(arenaCopy(oc, s.Password))
+	d.password_len = C.size_t(len(s.Password))
+	out_mototrbo_ars_Response(&d.response, &s.Response, oc)
+	d.extra = (*C.uint8_t)(arenaCopy(oc, s.Extra))
+	d.extra_len = C.size_t(len(s.Extra))
+}
+
+func in_mototrbo_ars_Header(s *C.dmrgo_ars_header_t) (d g_mototrbo_ars.Header) {
+	d.Extension = bool(s.extension)
+	d.AckRequired = bool(s.ack_required)
+	d.Priority = bool(s.priority)
+	d.Control = bool(s.control)
+	d.Type = g_mototrbo_ars.Type(s.type_)
+	return
+}
+
+func in_mototrbo_ars_Registration(s *C.dmrgo_ars_registration_t) (d g_mototrbo_ars.Registration) {
+	d.Extension = bool(s.extension)
+	d.Event = g_mototrbo_ars.Event(s.event)
+	d.Encoding = uint8(s.encoding)
+	return
+}
+
+func in_mototrbo_ars_Response(s *C.dmrgo_ars_response_t) (d g_mototrbo_ars.Response) {
+	d.Extension = bool(s.extension)
+	d.Value = uint8(s.value)
+	return
+}
+
+func in_mototrbo_ars_Message(s *C.dmrgo_ars_message_t) (d g_mototrbo_ars.Message) {
+	d.Length = uint16(s.length)
+	d.Header = in_mototrbo_ars_Header(&s.header)
+	d.Registration = in_mototrbo_ars_Registration(&s.registration)
+	d.Device = unsafe.Slice((*byte)(unsafe.Pointer(s.device)), int(s.device_len))
+	d.User = unsafe.Slice((*byte)(unsafe.Pointer(s.user_)), int(s.user__len))
+	d.Password = unsafe.Slice((*byte)(unsafe.Pointer(s.password)), int(s.password_len))
+	d.Response = in_mototrbo_ars_Response(&s.response)
+	d.Extra = unsafe.Slice((*byte)(unsafe.Pointer(s.extra)), int(s.extra_len))
+	return
+}
+
 func out_mototrbo_tms_Header(d *C.dmrgo_tms_header_t, s *g_mototrbo_tms.Header, oc *outc) {
 	_ = oc
 	d.extension = C.bool(s.Extension)
@@ -5154,6 +5227,22 @@ func fromC_layer3_ServiceOptions(s *C.dmrgo_layer3_service_options_t) g_layer3.S
 
 func fromC_layer3_VoiceServiceOptions(s *C.dmrgo_layer3_voice_service_options_t) g_layer3.VoiceServiceOptions {
 	return in_layer3_VoiceServiceOptions(s)
+}
+
+func fromC_mototrbo_ars_Header(s *C.dmrgo_ars_header_t) g_mototrbo_ars.Header {
+	return in_mototrbo_ars_Header(s)
+}
+
+func fromC_mototrbo_ars_Message(s *C.dmrgo_ars_message_t) g_mototrbo_ars.Message {
+	return in_mototrbo_ars_Message(s)
+}
+
+func fromC_mototrbo_ars_Registration(s *C.dmrgo_ars_registration_t) g_mototrbo_ars.Registration {
+	return in_mototrbo_ars_Registration(s)
+}
+
+func fromC_mototrbo_ars_Response(s *C.dmrgo_ars_response_t) g_mototrbo_ars.Response {
+	return in_mototrbo_ars_Response(s)
 }
 
 func fromC_mototrbo_tms_Header(s *C.dmrgo_tms_header_t) g_mototrbo_tms.Header {
@@ -24195,6 +24284,499 @@ func dmrgo_layer3_voice_service_options_string(c_self *C.dmrgo_layer3_voice_serv
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ars_decode_message
+func dmrgo_ars_decode_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_ars_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_mototrbo_ars.DecodeMessage(a_data)
+	_ = r0
+	if c_out != nil {
+		out_mototrbo_ars_Message(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ars_event_string
+func dmrgo_ars_event_string(c_self C.dmrgo_ars_event_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_mototrbo_ars.Event(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ars_header_append_binary
+func dmrgo_ars_header_append_binary(c_self *C.dmrgo_ars_header_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_ars.Header
+	x = in_mototrbo_ars_Header(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_mototrbo_ars_Header(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ars_header_string
+func dmrgo_ars_header_string(c_self *C.dmrgo_ars_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_ars.Header
+	x = in_mototrbo_ars_Header(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_mototrbo_ars_Header(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ars_message_append_binary
+func dmrgo_ars_message_append_binary(c_self *C.dmrgo_ars_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_ars.Message
+	x = in_mototrbo_ars_Message(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_mototrbo_ars_Message(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ars_message_device_id
+func dmrgo_ars_message_device_id(c_self *C.dmrgo_ars_message_t, c_out0 *C.uint32_t, c_out1 *C.bool, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_ars.Message
+	x = in_mototrbo_ars_Message(&(*c_self))
+	r0, r1 := x.DeviceID()
+	out_mototrbo_ars_Message(&(*c_self), &x, oc)
+	_ = r0
+	_ = r1
+	if c_out0 != nil {
+		*c_out0 = C.uint32_t(r0)
+	}
+	if c_out1 != nil {
+		*c_out1 = C.bool(r1)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ars_message_set_device_id
+func dmrgo_ars_message_set_device_id(c_self *C.dmrgo_ars_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_id C.uint32_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_ars.Message
+	x = in_mototrbo_ars_Message(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0 := x.SetDeviceID(a_dst, uint32(c_id))
+	out_mototrbo_ars_Message(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ars_message_string
+func dmrgo_ars_message_string(c_self *C.dmrgo_ars_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_ars.Message
+	x = in_mototrbo_ars_Message(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_mototrbo_ars_Message(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ars_new_ack
+func dmrgo_ars_new_ack(c_refresh C.uint8_t, c_out *C.dmrgo_ars_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	r0, r1 := g_mototrbo_ars.NewAck(uint8(c_refresh))
+	_ = r0
+	if c_out != nil {
+		out_mototrbo_ars_Message(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ars_new_failure
+func dmrgo_ars_new_failure(c_reason C.uint8_t, c_out *C.dmrgo_ars_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	r0, r1 := g_mototrbo_ars.NewFailure(uint8(c_reason))
+	_ = r0
+	if c_out != nil {
+		out_mototrbo_ars_Message(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ars_new_query
+func dmrgo_ars_new_query(c_out *C.dmrgo_ars_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	r0 := g_mototrbo_ars.NewQuery()
+	_ = r0
+	if c_out != nil {
+		out_mototrbo_ars_Message(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ars_new_registration
+func dmrgo_ars_new_registration(c_event C.dmrgo_ars_event_t, c_out *C.dmrgo_ars_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	r0 := g_mototrbo_ars.NewRegistration(g_mototrbo_ars.Event(c_event))
+	_ = r0
+	if c_out != nil {
+		out_mototrbo_ars_Message(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ars_registration_append_binary
+func dmrgo_ars_registration_append_binary(c_self *C.dmrgo_ars_registration_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_ars.Registration
+	x = in_mototrbo_ars_Registration(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_mototrbo_ars_Registration(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ars_registration_string
+func dmrgo_ars_registration_string(c_self *C.dmrgo_ars_registration_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_ars.Registration
+	x = in_mototrbo_ars_Registration(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_mototrbo_ars_Registration(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ars_response_append_binary
+func dmrgo_ars_response_append_binary(c_self *C.dmrgo_ars_response_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_ars.Response
+	x = in_mototrbo_ars_Response(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_mototrbo_ars_Response(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ars_response_string
+func dmrgo_ars_response_string(c_self *C.dmrgo_ars_response_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_ars.Response
+	x = in_mototrbo_ars_Response(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_mototrbo_ars_Response(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ars_type_string
+func dmrgo_ars_type_string(c_self C.dmrgo_ars_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_mototrbo_ars.Type(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_tms_decode_message
 func dmrgo_tms_decode_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_tms_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -29836,6 +30418,10 @@ func errCode(err error) C.int {
 			return -132
 		case g_layer2_pdu.ErrTalkerAliasLength:
 			return -133
+		case g_mototrbo_ars.ErrLength:
+			return -185
+		case g_mototrbo_ars.ErrShort:
+			return -186
 		case g_mototrbo_tms.ErrLength:
 			return -183
 		case g_mototrbo_tms.ErrShort:
@@ -30093,6 +30679,10 @@ func codeErr(code C.int) error {
 		return g_layer2_pdu.ErrTalkerAliasInvalidUTF8
 	case -133:
 		return g_layer2_pdu.ErrTalkerAliasLength
+	case -185:
+		return g_mototrbo_ars.ErrLength
+	case -186:
+		return g_mototrbo_ars.ErrShort
 	case -183:
 		return g_mototrbo_tms.ErrLength
 	case -184:

@@ -341,6 +341,14 @@ typedef struct dmrgo_layer3_registration_service_options_t dmrgo_layer3_registra
 typedef struct dmrgo_layer3_service_options_t dmrgo_layer3_service_options_t;
 /* Go: layer3.VoiceServiceOptions. VoiceServiceOptions is the 7-bit Service_Options of a Tier III voice service request, such as a C_RAND for a talkgroup or individual voice call. */
 typedef struct dmrgo_layer3_voice_service_options_t dmrgo_layer3_voice_service_options_t;
+/* Go: ars.Header. Header is the first header octet of a message. */
+typedef struct dmrgo_ars_header_t dmrgo_ars_header_t;
+/* Go: ars.Message. Message is a MOTOTRBO Automatic Registration Service message, the payload of a UDP datagram to port 4005. */
+typedef struct dmrgo_ars_message_t dmrgo_ars_message_t;
+/* Go: ars.Registration. Registration is the second header octet of a registration. */
+typedef struct dmrgo_ars_registration_t dmrgo_ars_registration_t;
+/* Go: ars.Response. Response is the second header octet of an answer. */
+typedef struct dmrgo_ars_response_t dmrgo_ars_response_t;
 /* Go: tms.Header. Header is the first header octet of a message. */
 typedef struct dmrgo_tms_header_t dmrgo_tms_header_t;
 /* Go: tms.Message. Message is a MOTOTRBO Text Messaging Service message, the payload of a UDP datagram to port 4007. */
@@ -576,6 +584,10 @@ typedef uint8_t dmrgo_layer3_position_error_t;
 typedef uint8_t dmrgo_layer3_source_type_t;
 /* Go: layer3.TalkerAliasDataFormat. TalkerAliasDataFormat is the 2-bit character encoding of a talker alias (ETSI TS 102 361-2 clause 7.2.18, Table 7.25). */
 typedef uint8_t dmrgo_layer3_talker_alias_data_format_t;
+/* Go: ars.Event. Event is the 2-bit event of a device registration. */
+typedef uint8_t dmrgo_ars_event_t;
+/* Go: ars.Type. Type is the 4-bit PDU type of a message. */
+typedef uint8_t dmrgo_ars_type_t;
 /* Go: tms.Encoding. Encoding is the 5-bit character coding of the text. */
 typedef uint8_t dmrgo_tms_encoding_t;
 /* Go: tms.Type. Type is the kind of a message: the control bit and the 4-bit PDU type of the first header octet. */
@@ -1930,6 +1942,40 @@ struct dmrgo_layer3_voice_service_options_t {
 	uint8_t priority_level;
 };
 
+struct dmrgo_ars_header_t {
+	bool extension;
+	bool ack_required;
+	bool priority;
+	bool control;
+	dmrgo_ars_type_t type_;
+};
+
+struct dmrgo_ars_registration_t {
+	bool extension;
+	dmrgo_ars_event_t event;
+	uint8_t encoding;
+};
+
+struct dmrgo_ars_response_t {
+	bool extension;
+	uint8_t value;
+};
+
+struct dmrgo_ars_message_t {
+	uint16_t length;
+	dmrgo_ars_header_t header;
+	dmrgo_ars_registration_t registration;
+	uint8_t *device;
+	size_t device_len;
+	uint8_t *user_;
+	size_t user__len;
+	uint8_t *password;
+	size_t password_len;
+	dmrgo_ars_response_t response;
+	uint8_t *extra;
+	size_t extra_len;
+};
+
 struct dmrgo_tms_header_t {
 	bool extension;
 	bool ack_required;
@@ -2333,6 +2379,8 @@ struct dmrgo_voice_output_t {
 #define DMRGO_DATA_SENDER_TICK_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
 #define DMRGO_DVSI_CODEC_PRODUCT_MAX_ITEMS (DMRGO_DVSI_MAX_PRODUCT_LEN)
 #define DMRGO_DVSI_CODEC_VERSION_MAX_ITEMS (DMRGO_DVSI_MAX_VERSION_LEN)
+#define DMRGO_ERR_ARS_LENGTH (-185)
+#define DMRGO_ERR_ARS_SHORT (-186)
 #define DMRGO_ERR_BS_CONFIG_ERROR (-101)
 #define DMRGO_ERR_BS_SLOT (-107)
 #define DMRGO_ERR_CODEC2_CLOSED (-143)
@@ -3576,6 +3624,26 @@ struct dmrgo_voice_output_t {
 #define DMRGO_LAYER3_TALKER_ALIAS_UTF16 ((dmrgo_layer3_talker_alias_data_format_t)3)
 /* Go: layer3.TalkerAliasUTF8. Unicode UTF-8 */
 #define DMRGO_LAYER3_TALKER_ALIAS_UTF8 ((dmrgo_layer3_talker_alias_data_format_t)2)
+/* Go: ars.EventInitial. the radio registers after power on or a channel change */
+#define DMRGO_ARS_EVENT_INITIAL ((dmrgo_ars_event_t)1)
+/* Go: ars.EventNone. no event, as in a user registration */
+#define DMRGO_ARS_EVENT_NONE ((dmrgo_ars_event_t)0)
+/* Go: ars.EventRefresh. the radio registers again before its registration ends */
+#define DMRGO_ARS_EVENT_REFRESH ((dmrgo_ars_event_t)2)
+/* Go: ars.TypeAck. the answer to a device registration or a query */
+#define DMRGO_ARS_TYPE_ACK ((dmrgo_ars_type_t)15)
+/* Go: ars.TypeDeviceDeregistration. a radio leaves */
+#define DMRGO_ARS_TYPE_DEVICE_DEREGISTRATION ((dmrgo_ars_type_t)1)
+/* Go: ars.TypeDeviceRegistration. a radio registers with the server */
+#define DMRGO_ARS_TYPE_DEVICE_REGISTRATION ((dmrgo_ars_type_t)0)
+/* Go: ars.TypeQuery. the server asks a radio to register */
+#define DMRGO_ARS_TYPE_QUERY ((dmrgo_ars_type_t)4)
+/* Go: ars.TypeUserAck. the answer to a user registration or deregistration */
+#define DMRGO_ARS_TYPE_USER_ACK ((dmrgo_ars_type_t)7)
+/* Go: ars.TypeUserDeregistration. a user logs off */
+#define DMRGO_ARS_TYPE_USER_DEREGISTRATION ((dmrgo_ars_type_t)6)
+/* Go: ars.TypeUserRegistration. a user logs on at a radio */
+#define DMRGO_ARS_TYPE_USER_REGISTRATION ((dmrgo_ars_type_t)5)
 /* Go: tms.EncodingNone. no coding given */
 #define DMRGO_TMS_ENCODING_NONE ((dmrgo_tms_encoding_t)0)
 /* Go: tms.EncodingUTF16LE. UTF-16LE (UCS-2) */
@@ -5445,6 +5513,40 @@ int dmrgo_layer3_voice_service_options_encode(dmrgo_layer3_voice_service_options
 int dmrgo_layer3_voice_service_options_field(const dmrgo_layer3_voice_service_options_t *self, uint8_t *out);
 /* Go: layer3.VoiceServiceOptions.String. String returns the fields of s as text, for printing. */
 int dmrgo_layer3_voice_service_options_string(dmrgo_layer3_voice_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: ars.DecodeMessage. DecodeMessage decodes a Message from data. */
+int dmrgo_ars_decode_message(const uint8_t *data, size_t data_len, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ars.Event.String. String returns the name of e. */
+int dmrgo_ars_event_string(dmrgo_ars_event_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: ars.Header.AppendBinary. AppendBinary appends the 1 octets of s to dst. */
+int dmrgo_ars_header_append_binary(dmrgo_ars_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: ars.Header.String. String returns the fields of s as text, for printing. */
+int dmrgo_ars_header_string(dmrgo_ars_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: ars.Message.AppendBinary. AppendBinary appends s to dst, with Length set to the length of the data. */
+int dmrgo_ars_message_append_binary(dmrgo_ars_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ars.Message.DeviceID. DeviceID returns the radio ID that Device holds, and false when Device is empty, holds a character that is not a digit or a number over 24 bits. */
+int dmrgo_ars_message_device_id(dmrgo_ars_message_t *self, uint32_t *out0, bool *out1, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ars.Message.SetDeviceID. SetDeviceID appends the radio ID id to dst in decimal ASCII digits, points Device at them and returns dst. */
+int dmrgo_ars_message_set_device_id(dmrgo_ars_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, uint32_t id, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ars.Message.String. String returns the fields of s as text, for printing. */
+int dmrgo_ars_message_string(dmrgo_ars_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ars.NewAck. NewAck returns the answer to a successful device registration, with the refresh time in units of 30 minutes, 0 for none. */
+int dmrgo_ars_new_ack(uint8_t refresh, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ars.NewFailure. NewFailure returns the answer to a device registration that failed, with the reason that Response describes. */
+int dmrgo_ars_new_failure(uint8_t reason, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ars.NewQuery. NewQuery returns the query that asks a radio to register again. */
+int dmrgo_ars_new_query(dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ars.NewRegistration. NewRegistration returns a device registration with the header bits that radios send. */
+int dmrgo_ars_new_registration(dmrgo_ars_event_t event, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ars.Registration.AppendBinary. AppendBinary appends the 1 octets of s to dst. */
+int dmrgo_ars_registration_append_binary(dmrgo_ars_registration_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: ars.Registration.String. String returns the fields of s as text, for printing. */
+int dmrgo_ars_registration_string(dmrgo_ars_registration_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: ars.Response.AppendBinary. AppendBinary appends the 1 octets of s to dst. */
+int dmrgo_ars_response_append_binary(dmrgo_ars_response_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: ars.Response.String. String returns the fields of s as text, for printing. */
+int dmrgo_ars_response_string(dmrgo_ars_response_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: ars.Type.String. String returns the name of t. */
+int dmrgo_ars_type_string(dmrgo_ars_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: tms.DecodeMessage. DecodeMessage decodes a Message from data. */
 int dmrgo_tms_decode_message(const uint8_t *data, size_t data_len, dmrgo_tms_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: tms.Encoding.String. String returns the name of e. */

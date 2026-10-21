@@ -82,6 +82,8 @@ code DMRGO_ERR_SHORTDATA_LENGTH -181
 code DMRGO_ERR_SHORTDATA_SHORT -182
 code DMRGO_ERR_TMS_LENGTH -183
 code DMRGO_ERR_TMS_SHORT -184
+code DMRGO_ERR_ARS_LENGTH -185
+code DMRGO_ERR_ARS_SHORT -186
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -97,6 +99,16 @@ tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_RATE1_DATA 12
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_RATE34_DATA 13
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_UNIFIED_SINGLE_BLOCK_DATA 14
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_VNAP_CONTINUATION 15
+sym #define DMRGO_ARS_EVENT_INITIAL ((dmrgo_ars_event_t)1)
+sym #define DMRGO_ARS_EVENT_NONE ((dmrgo_ars_event_t)0)
+sym #define DMRGO_ARS_EVENT_REFRESH ((dmrgo_ars_event_t)2)
+sym #define DMRGO_ARS_TYPE_ACK ((dmrgo_ars_type_t)15)
+sym #define DMRGO_ARS_TYPE_DEVICE_DEREGISTRATION ((dmrgo_ars_type_t)1)
+sym #define DMRGO_ARS_TYPE_DEVICE_REGISTRATION ((dmrgo_ars_type_t)0)
+sym #define DMRGO_ARS_TYPE_QUERY ((dmrgo_ars_type_t)4)
+sym #define DMRGO_ARS_TYPE_USER_ACK ((dmrgo_ars_type_t)7)
+sym #define DMRGO_ARS_TYPE_USER_DEREGISTRATION ((dmrgo_ars_type_t)6)
+sym #define DMRGO_ARS_TYPE_USER_REGISTRATION ((dmrgo_ars_type_t)5)
 sym #define DMRGO_BS_ACTIVATION_ANY ((dmrgo_bs_activation_t)0)
 sym #define DMRGO_BS_ACTIVATION_WAKEUP ((dmrgo_bs_activation_t)1)
 sym #define DMRGO_BS_DEFAULT_DATA_QUEUE 4
@@ -575,6 +587,8 @@ sym #define DMRGO_ENUMS_VOICE_BURST_D ((dmrgo_enums_voice_burst_type_t)4)
 sym #define DMRGO_ENUMS_VOICE_BURST_E ((dmrgo_enums_voice_burst_type_t)5)
 sym #define DMRGO_ENUMS_VOICE_BURST_F ((dmrgo_enums_voice_burst_type_t)6)
 sym #define DMRGO_ENUMS_VOICE_BURST_UNKNOWN ((dmrgo_enums_voice_burst_type_t)0)
+sym #define DMRGO_ERR_ARS_LENGTH (-185)
+sym #define DMRGO_ERR_ARS_SHORT (-186)
 sym #define DMRGO_ERR_BS_CONFIG_ERROR (-101)
 sym #define DMRGO_ERR_BS_SLOT (-107)
 sym #define DMRGO_ERR_CODEC2_CLOSED (-143)
@@ -921,6 +935,23 @@ sym hand int dmrgo_abi_version(void);
 sym hand int dmrgo_last_error_code(void);
 sym hand int dmrgo_last_error_message(char *buf, size_t cap, size_t *len, size_t *need);
 sym hand int dmrgo_version(char *buf, size_t cap, size_t *len, size_t *need);
+sym int dmrgo_ars_decode_message(const uint8_t *data, size_t data_len, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ars_event_string(dmrgo_ars_event_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_ars_header_append_binary(dmrgo_ars_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_ars_header_string(dmrgo_ars_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_ars_message_append_binary(dmrgo_ars_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ars_message_device_id(dmrgo_ars_message_t *self, uint32_t *out0, bool *out1, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ars_message_set_device_id(dmrgo_ars_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, uint32_t id, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ars_message_string(dmrgo_ars_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ars_new_ack(uint8_t refresh, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ars_new_failure(uint8_t reason, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ars_new_query(dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ars_new_registration(dmrgo_ars_event_t event, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ars_registration_append_binary(dmrgo_ars_registration_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_ars_registration_string(dmrgo_ars_registration_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_ars_response_append_binary(dmrgo_ars_response_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_ars_response_string(dmrgo_ars_response_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_ars_type_string(dmrgo_ars_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_bs_activation_string(dmrgo_bs_activation_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_bs_cach_first(dmrgo_bs_cach_t *self, bool *out);
 sym int dmrgo_bs_cach_free(dmrgo_bs_cach_t *self);
@@ -1976,6 +2007,8 @@ sym typedef int64_t dmrgo_codec2_mode_t;
 sym typedef int64_t dmrgo_layer2_sync_source_t;
 sym typedef uint16_t dmrgo_ip_port_t;
 sym typedef uint64_t dmrgo_enums_sync_pattern_t;
+sym typedef uint8_t dmrgo_ars_event_t;
+sym typedef uint8_t dmrgo_ars_type_t;
 sym typedef uint8_t dmrgo_bs_activation_t;
 sym typedef uint8_t dmrgo_bs_dest_t;
 sym typedef uint8_t dmrgo_bs_mode_t;
@@ -2054,6 +2087,10 @@ sym typedef uint8_t dmrgo_voice_origin_t;
 sym typedef uint8_t dmrgo_voice_output_kind_t;
 sym typedef uint8_t dmrgo_voice_state_t;
 sym typedef uint8_t dmrgo_voice_transmitter_state_t;
+type struct dmrgo_ars_header_t { bool extension; bool ack_required; bool priority; bool control; dmrgo_ars_type_t type_; };
+type struct dmrgo_ars_message_t { uint16_t length; dmrgo_ars_header_t header; dmrgo_ars_registration_t registration; uint8_t *device; size_t device_len; uint8_t *user_; size_t user__len; uint8_t *password; size_t password_len; dmrgo_ars_response_t response; uint8_t *extra; size_t extra_len; };
+type struct dmrgo_ars_registration_t { bool extension; dmrgo_ars_event_t event; uint8_t encoding; };
+type struct dmrgo_ars_response_t { bool extension; uint8_t value; };
 type struct dmrgo_bs_config_error_t { char *field; size_t field_len; };
 type struct dmrgo_bs_config_t { dmrgo_bs_mode_t mode; dmrgo_enums_color_code_t color_code; dmrgo_bs_activation_t activation; bool cach; int64_t call_hang; int64_t data_hang; int64_t inactivity; int64_t lost; int64_t timeout; int64_t headers; int64_t terminators; int64_t pending; int64_t pending_age; int64_t data_queue; uint8_t silence[9]; int64_t lead; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_bs_output_t { dmrgo_bs_output_kind_t kind; dmrgo_enums_slot_t slot; dmrgo_bs_dest_t to; bool has_cach; uint8_t cach[3]; dmrgo_layer2_raw_burst_t burst; int64_t due; dmrgo_bs_source_t from; dmrgo_bs_service_t service; dmrgo_voice_call_t call; dmrgo_voice_end_reason_t end; dmrgo_bs_reason_t reason; };

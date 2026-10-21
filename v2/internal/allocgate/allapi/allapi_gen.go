@@ -31,6 +31,7 @@ import (
 	layer2_packet "github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	layer2_pdu "github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
+	mototrbo_ars "github.com/USA-RedDragon/dmrgo/v2/mototrbo/ars"
 	mototrbo_tms "github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms"
 	nmea "github.com/USA-RedDragon/dmrgo/v2/nmea"
 	shortdata "github.com/USA-RedDragon/dmrgo/v2/shortdata"
@@ -800,6 +801,23 @@ var api = [...]any{
 	layer3.SourceType.String,
 	layer3.TalkerAliasDataFormat.String,
 	layer3.VoiceServiceOptions.Field,
+	(*mototrbo_ars.Header).AppendBinary,
+	(*mototrbo_ars.Header).String,
+	(*mototrbo_ars.Message).AppendBinary,
+	(*mototrbo_ars.Message).DeviceID,
+	(*mototrbo_ars.Message).SetDeviceID,
+	(*mototrbo_ars.Message).String,
+	(*mototrbo_ars.Registration).AppendBinary,
+	(*mototrbo_ars.Registration).String,
+	(*mototrbo_ars.Response).AppendBinary,
+	(*mototrbo_ars.Response).String,
+	mototrbo_ars.DecodeMessage,
+	mototrbo_ars.Event.String,
+	mototrbo_ars.NewAck,
+	mototrbo_ars.NewFailure,
+	mototrbo_ars.NewQuery,
+	mototrbo_ars.NewRegistration,
+	mototrbo_ars.Type.String,
 	(*mototrbo_tms.Header).AppendBinary,
 	(*mototrbo_tms.Header).String,
 	(*mototrbo_tms.Message).AppendBinary,
