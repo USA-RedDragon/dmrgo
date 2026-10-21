@@ -379,7 +379,7 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 					taps = optLPN
 				}
 				taps = min((taps*cfg.Hz/48000)/2*2+1, len(a.cc)-1)
-				a.corr, a.corrC, a.corrK = t, cfg.Corr, skip
+				a.corr, a.corrC, a.corrK = t, cfg.Corr, skip+max(pu.span-corrSpan, 0)
 				a.cbp = corrBandPass(optLPHz, cfg.CorrHiHz, float64(cfg.Hz), fitHz, taps)
 			}
 		}
@@ -529,6 +529,8 @@ func (a *Audio) addCorr(s int8, n int) {
 
 // corrUnits is the scale of the correction tables, in steps per Hz.
 const corrUnits = 128
+
+const corrSpan = 8
 
 // corrTable returns the correction table of Corr for hz and syms context
 // symbols, and the symbols from its newest to the newest symbol; nil when
