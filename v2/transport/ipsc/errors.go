@@ -26,6 +26,7 @@ var (
 	errPayload = errors.New("ipsc: Data.Bits or Data.TrailerLen does not fit")
 	errBurst   = errors.New("ipsc: the burst cannot be rebuilt from this packet")
 	errKind    = errors.New("ipsc: SetRawBurst: kind is not KindVoice or KindData")
+	errSlot    = errors.New("ipsc: slot is not Slot1 or Slot2")
 
 	errVoicePosition error = &wrapError{"ipsc: SetRawBurst: voice position is not A to F", layer2.ErrVoicePosition}
 	errDataType      error = &wrapError{"ipsc: SetRawBurst: IPSC carries no burst of this data type", layer2.ErrDataType}

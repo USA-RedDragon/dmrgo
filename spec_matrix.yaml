@@ -60,6 +60,7 @@ ignore_files:
   - v2/transport/ipsc/control.go
   - v2/transport/ipsc/errors.go
   - v2/transport/ipsc/layout.go
+  - v2/transport/ipsc/stream.go
   - v2/transport/ipsc/types.go
   - v2/transport/ipsc/user.go
   - v2/transport/mmdvm/dmr.go

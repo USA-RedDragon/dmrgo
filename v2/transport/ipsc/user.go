@@ -163,16 +163,7 @@ func (u *User) SetCall(group bool, target, source uint32) error {
 	if u.Opcode != OpGroupData && u.Opcode != OpPrivateData && !voice {
 		voice = u.IsVoice()
 	}
-	switch {
-	case voice && group:
-		u.Opcode = OpGroupVoice
-	case voice:
-		u.Opcode = OpPrivateVoice
-	case group:
-		u.Opcode = OpGroupData
-	default:
-		u.Opcode = OpPrivateData
-	}
+	u.Opcode = UserOpcode(group, !voice)
 	u.Destination, u.Source = target, source
 	return nil
 }
@@ -473,13 +464,7 @@ func (u *User) SetRawBurst(raw layer2.RawBurst, h layer2.Hint) (fec.Result, erro
 		return fec.Result{}, dmrgo.ErrNilReceiver
 	}
 	info := u.Info
-	switch h.Slot {
-	case enums.Slot1:
-		info &^= 0x20
-	case enums.Slot2:
-		info |= 0x20
-	case enums.SlotUnknown:
-	}
+	_ = info.SetSlot(h.Slot)
 	var slotBit uint8
 	if info.Slot() == enums.Slot2 {
 		slotBit = 0x80

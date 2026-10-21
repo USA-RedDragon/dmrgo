@@ -491,6 +491,9 @@
 		dmrgo_ipsc_auth_parse_key;
 		dmrgo_ipsc_call_info_end;
 		dmrgo_ipsc_call_info_privacy;
+		dmrgo_ipsc_call_info_set_end;
+		dmrgo_ipsc_call_info_set_privacy;
+		dmrgo_ipsc_call_info_set_slot;
 		dmrgo_ipsc_call_info_slot;
 		dmrgo_ipsc_control_append_binary;
 		dmrgo_ipsc_decode_control;
@@ -511,10 +514,13 @@
 		dmrgo_ipsc_peer_list_len;
 		dmrgo_ipsc_peer_list_of;
 		dmrgo_ipsc_raw_append_binary;
+		dmrgo_ipsc_stream_fill;
+		dmrgo_ipsc_stream_skip;
 		dmrgo_ipsc_user_append_binary;
 		dmrgo_ipsc_user_call;
 		dmrgo_ipsc_user_hint;
 		dmrgo_ipsc_user_is_voice;
+		dmrgo_ipsc_user_opcode;
 		dmrgo_ipsc_user_raw_burst;
 		dmrgo_ipsc_user_set_call;
 		dmrgo_ipsc_user_set_raw_burst;
