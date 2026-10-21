@@ -192,7 +192,6 @@ type entry struct {
 	info        PeerInfo
 	last        time.Duration
 	outstanding int
-	listed      bool
 }
 
 type noCopy struct{}

@@ -181,3 +181,16 @@ func TestMasterTransitions(t *testing.T) {
 		t.Fatal("deadline after close")
 	}
 }
+
+func TestPeerListFullTable(t *testing.T) {
+	t.Parallel()
+
+	p, _ := session.NewPeer(&session.PeerConfig{ID: 9, Master: masterAddr, MaxPeers: 1})
+	p.Tick(0, nil)
+	p.Packet(0, masterAddr, ctl(ipsc.OpRegisterReply, 1), nil)
+	p.Packet(0, masterAddr, ipsc.AppendPeerListReply(nil, 1, []ipsc.PeerEntry{{ID: 200, IP: other.IP, Port: 1}}), nil)
+	p.Packet(0, masterAddr, ipsc.AppendPeerListReply(nil, 1, []ipsc.PeerEntry{{ID: 300, IP: moved.IP, Port: 2}}), nil)
+	if p.Peers() != 1 || p.PeerAt(0).ID != 300 || p.PeerAt(0).Addr != (session.Addr{IP: moved.IP, Port: 2}) {
+		t.Fatalf("peers %d %+v", p.Peers(), p.PeerAt(0))
+	}
+}

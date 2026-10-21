@@ -368,40 +368,41 @@ func (p *Peer) peerList(body []byte, dst []Output) []Output {
 	if err != nil {
 		return dst
 	}
-	for i := range p.l.n {
-		p.l.peers[i].listed = false
-	}
-	for j := range list.Len() {
-		pe := list.Entry(j)
-		if pe.ID == p.l.id {
-			continue
-		}
-		i := p.l.find(pe.ID)
-		if i < 0 {
-			if i = p.l.add(); i < 0 {
-				continue
-			}
-			p.l.peers[i].info.ID = pe.ID
-		}
+	for i := 0; i < p.l.n; {
 		e := &p.l.peers[i]
+		pe, ok := listed(list, e.info.ID)
 		addr := Addr{IP: pe.IP, Port: pe.Port}
-		if e.info.Up && e.info.Addr != addr {
+		if e.info.Up && (!ok || e.info.Addr != addr) {
 			e.info.Up = false
 			dst = append(dst, Output{Kind: OutputDown, ID: e.info.ID, Addr: e.info.Addr, Reason: ReasonList})
 		}
-		e.info.Addr, e.info.Mode, e.listed = addr, pe.Mode, true
-	}
-	for i := 0; i < p.l.n; {
-		e := &p.l.peers[i]
-		if e.listed {
-			i++
+		if !ok {
+			p.l.remove(i)
 			continue
 		}
-		if e.info.Up {
-			dst = append(dst, Output{Kind: OutputDown, ID: e.info.ID, Addr: e.info.Addr, Reason: ReasonList})
+		e.info.Addr, e.info.Mode = addr, pe.Mode
+		i++
+	}
+	for j := range list.Len() {
+		pe := list.Entry(j)
+		if pe.ID == p.l.id || p.l.find(pe.ID) >= 0 {
+			continue
 		}
-		p.l.remove(i)
+		i := p.l.add()
+		if i < 0 {
+			break
+		}
+		p.l.peers[i].info = PeerInfo{ID: pe.ID, Addr: Addr{IP: pe.IP, Port: pe.Port}, Mode: pe.Mode}
 	}
 	p.haveList = true
 	return append(dst, Output{Kind: OutputPeers})
+}
+
+func listed(list ipsc.PeerList, id uint32) (ipsc.PeerEntry, bool) {
+	for j := range list.Len() {
+		if pe := list.Entry(j); pe.ID == id {
+			return pe, true
+		}
+	}
+	return ipsc.PeerEntry{}, false
 }
