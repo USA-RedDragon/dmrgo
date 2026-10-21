@@ -36,7 +36,7 @@ func TestSignsMatch(t *testing.T) {
 				}
 			}
 		}
-		ma, mb := r.signsMatch(a, b)
+		ma, mb := r.signsMatch2(a, b)
 		wa, ia, da := match(r, a)
 		wb, _, _ := match(r, b)
 		if ma != wa || mb != wb {
