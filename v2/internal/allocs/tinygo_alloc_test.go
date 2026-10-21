@@ -493,7 +493,7 @@ func tinyDMRDOps(t *testing.T) []tinyOp {
 	login := []byte("RPTK00040178cbf0e29abbd11c6573825d36a664e3064441f91fc815ac5dc5ca570d4c4a5f85")
 	opts := []byte("StartRef=4013;RelinkTime=15;UserLink=1;TS1_1=262;")
 	buf := make([]byte, 0, 128)
-	signer := auth.NewBridge([]byte("passw0rd"))
+	signer := auth.NewBridgeKey([]byte("passw0rd"))
 	bridge := append(make([]byte, 0, 73), pkt[:53]...)
 	bridge = append(bridge, make([]byte, 20)...)
 	dmre := tinyOK((&dmrd.Bridge{Version: 5, Data: d}).AppendBinary(make([]byte, 0, 89)))
@@ -512,10 +512,10 @@ func tinyDMRDOps(t *testing.T) []tinyOp {
 	}}, {"dmrd/auth", func() {
 		tok, _ := auth.Token(dmrd.DialectHBRP, 0x0A7ED498, []byte("DL5DI"))
 		_ = auth.VerifyToken(dmrd.DialectHBRP, 0x0A7ED498, []byte("DL5DI"), tok[:])
-		_ = signer.Sign(bridge)
-		_ = signer.Verify(bridge)
-		_ = signer.Sign(dmre)
-		_ = signer.Verify(dmre)
+		_, _ = signer.Sign(bridge)
+		_, _ = signer.Verify(bridge)
+		_, _ = signer.Sign(dmre)
+		_, _ = signer.Verify(dmre)
 	}}}
 }
 
@@ -649,7 +649,7 @@ func tinyIPSCOps(t *testing.T) []tinyOp {
 	return []tinyOp{{"ipsc", func() {
 		buf = tinyIPSCRun(pkt, buf)
 		buf = tinyIPSCRun(vpkt, buf)
-		buf = key.Sign(buf)
+		buf, _ = key.Sign(buf)
 		_, _ = key.Verify(buf)
 	}}}
 }

@@ -1,7 +1,7 @@
 // Package auth computes and checks the login token of package dmrd and the
 // signatures of OpenBridge packets: SHA-256, HMAC-SHA1 and keyed BLAKE2b.
 // Package dmrd has none of this code, so a program that only encodes and
-// decodes does not link it. Nothing here allocates but NewBridge.
+// decodes does not link it. Nothing here allocates but NewBridgeKey.
 //
 // (DMRGateway ee79d38 DMRNetwork.cpp writeAuthorisation; DL5DI, G4KLX and
 // DG1HT, IPSC Protocol Specs for homebrew DMR repeater, 2015-07-26;
@@ -53,9 +53,9 @@ func VerifyToken(d dmrd.Dialect, salt uint32, password, token []byte) bool {
 	return err == nil && digest.Equal(want[:], token)
 }
 
-// Bridge holds an OpenBridge key and the hash state that signing with it
+// BridgeKey holds an OpenBridge key and the hash state that signing with it
 // needs. It is not safe for concurrent use.
-type Bridge struct {
+type BridgeKey struct {
 	hmac digest.HMACSHA1
 	b2   digest.BLAKE2b
 }
@@ -63,30 +63,30 @@ type Bridge struct {
 // KeyLen is the length of an OpenBridge key in octets.
 const KeyLen = 20
 
-// NewBridge returns a Bridge for key, the passphrase of the OpenBridge link
-// as plain octets. As HBlink3 and FreeDMR do, it pads the passphrase with
-// zero octets to KeyLen and cuts it at KeyLen. The padding does not change
-// HMAC-SHA1, but the BLAKE2b hash of FreeDMR versions 4 and 5 is keyed
-// with all KeyLen octets. It allocates the Bridge.
+// NewBridgeKey returns a BridgeKey for key, the passphrase of the
+// OpenBridge link as plain octets. As HBlink3 and FreeDMR do, it pads the
+// passphrase with zero octets to KeyLen and cuts it at KeyLen. The padding
+// does not change HMAC-SHA1, but the BLAKE2b hash of FreeDMR versions 4
+// and 5 is keyed with all KeyLen octets. It allocates the BridgeKey.
 //
 // (HBlink3 1db2730 and FreeDMR config.py, the PASSPHRASE of an OPENBRIDGE
 // section)
-func NewBridge(key []byte) *Bridge {
+func NewBridgeKey(key []byte) *BridgeKey {
 	var k [KeyLen]byte
 	copy(k[:], key)
-	b := &Bridge{}
+	b := &BridgeKey{}
 	b.hmac.Init(k[:])
 	b.b2.Init(16, k[:])
 	return b
 }
 
-func (b *Bridge) sha1(msg []byte) [20]byte {
+func (b *BridgeKey) sha1(msg []byte) [20]byte {
 	b.hmac.Reset()
 	b.hmac.Write(msg)
 	return b.hmac.Sum()
 }
 
-func (b *Bridge) blake(msg []byte) [16]byte {
+func (b *BridgeKey) blake(msg []byte) [16]byte {
 	var out [16]byte
 	b.b2.Reset()
 	b.b2.Write(msg)
@@ -119,43 +119,44 @@ func tagIs(p []byte, t string) bool {
 	return p[0] == t[0] && p[1] == t[1] && p[2] == t[2] && p[3] == t[3]
 }
 
-// Sign writes the signature of the OpenBridge packet p, as
-// dmrd.Bridge.AppendBinary and dmrd.BridgeControl.AppendBinary encode it,
-// into its last octets: HMAC-SHA1 over the first 53 octets of a version 1
-// packet and over the tag (and talkgroup and stream of BCSQ, or only the
-// version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over
-// the octets before the hash of a DMRE packet. It returns an error, and
-// changes nothing, when p is none of these. It does not allocate.
-func (b *Bridge) Sign(p []byte) error {
+// Sign writes the signature of the OpenBridge packet in dst, as
+// dmrd.Bridge.AppendBinary and dmrd.BridgeControl.AppendBinary encode it
+// with room for the signature, into its last octets, and returns dst:
+// HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag
+// (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of
+// a control packet, and keyed BLAKE2b-128 over the octets before the hash
+// of a DMRE packet. It returns dst unchanged and an error when the packet
+// is none of these, and dmrgo.ErrNilReceiver for a nil b. It does not
+// allocate.
+func (b *BridgeKey) Sign(dst []byte) ([]byte, error) {
 	if b == nil {
-		return dmrgo.ErrNilReceiver
+		return dst, dmrgo.ErrNilReceiver
 	}
-
-	msg, sig, keyed, ok := span(p)
+	msg, sig, keyed, ok := span(dst)
 	if !ok {
-		return errPacket
+		return dst, errPacket
 	}
 	if keyed {
 		h := b.blake(msg)
 		copy(sig, h[:])
-		return nil
+		return dst, nil
 	}
 	h := b.sha1(msg)
 	copy(sig, h[:])
-	return nil
+	return dst, nil
 }
 
 // Verify reports whether the OpenBridge packet p carries the signature of
-// the key, as Sign would write it. It compares the signature in constant
-// time, and does not allocate.
-func (b *Bridge) Verify(p []byte) bool {
+// the key, as Sign would write it, and then returns p without its
+// signature. It reports false, with a nil body, otherwise and for a nil b. It compares the signature in constant time,
+// and does not allocate.
+func (b *BridgeKey) Verify(p []byte) (body []byte, ok bool) {
 	if b == nil {
-		return false
+		return nil, false
 	}
-
 	msg, sig, keyed, ok := span(p)
 	if !ok {
-		return false
+		return nil, false
 	}
 	var want [20]byte
 	n := len(want)
@@ -166,5 +167,8 @@ func (b *Bridge) Verify(p []byte) bool {
 	} else {
 		want = b.sha1(msg)
 	}
-	return digest.Equal(want[:n], sig[:n])
+	if !digest.Equal(want[:n], sig[:n]) {
+		return nil, false
+	}
+	return p[:len(p)-len(sig)], true
 }

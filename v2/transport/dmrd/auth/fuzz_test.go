@@ -13,8 +13,9 @@ func FuzzBridge(f *testing.F) {
 	f.Add([]byte("k"), packet("DMRE", 69, 85))
 	f.Add(make([]byte, 70), packet("BCSQ", 11, 31))
 	f.Fuzz(func(t *testing.T, key, p []byte) {
-		b := auth.NewBridge(key)
-		if err := b.Sign(p); err == nil && !b.Verify(p) {
+		b := auth.NewBridgeKey(key)
+		_, err := b.Sign(p)
+		if _, ok := b.Verify(p); err == nil && !ok {
 			t.Fatalf("signed packet does not verify: key %x packet %x", key, p)
 		}
 	})

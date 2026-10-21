@@ -17,7 +17,7 @@ func ExampleKey_Sign() {
 	}
 	key := auth.NewKey(k)
 	p, _ := hex.DecodeString("900004ce2e6a0000805c04080400")
-	signed := key.Sign(p)
+	signed, _ := key.Sign(p)
 	fmt.Printf("%x\n", signed[len(signed)-auth.TrailerLen:])
 
 	body, ok := key.Verify(signed)
