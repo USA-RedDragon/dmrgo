@@ -66,12 +66,12 @@ func receive(bursts []layer2.RawBurst) (inbound, error) {
 	var in inbound
 	var rx layer2.VoiceReceiver
 	haveLC := false
+	var b layer2.Burst
 	for i, p := range bursts {
-		b, err := layer2.NewBurstFromBytes(p)
-		if err != nil {
+		if err := b.DecodeFromBytes(p); err != nil {
 			return in, fmt.Errorf("burst %d: %w", i, err)
 		}
-		if _, _, err := rx.Receive(b); err != nil {
+		if _, _, err := rx.Receive(&b); err != nil {
 			return in, fmt.Errorf("burst %d: %w", i, err)
 		}
 		switch b.Kind {
@@ -120,12 +120,12 @@ type verified struct {
 func verify(bursts []layer2.RawBurst) (verified, error) {
 	var v verified
 	rx := layer2.VoiceReceiver{Strict: true}
+	var b layer2.Burst
 	for i, p := range bursts {
-		b, err := layer2.NewBurstFromBytes(p)
-		if err != nil {
+		if err := b.DecodeFromBytes(p); err != nil {
 			return v, fmt.Errorf("rewritten burst %d: %w", i, err)
 		}
-		lc, ok, err := rx.Receive(b)
+		lc, ok, err := rx.Receive(&b)
 		if err != nil {
 			return v, fmt.Errorf("rewritten burst %d: %w", i, err)
 		}
@@ -226,9 +226,9 @@ func bridgeSMS(w io.Writer, path string) error {
 		return err
 	}
 	var preambles, headers int
+	var b, check layer2.Burst
 	for i, p := range bursts {
-		b, err := layer2.NewBurstFromBytes(p)
-		if err != nil {
+		if err := b.DecodeFromBytes(p); err != nil {
 			return fmt.Errorf("sms burst %d: %w", i, err)
 		}
 		switch d := b.Data.(type) {
@@ -249,7 +249,7 @@ func bridgeSMS(w io.Writer, path string) error {
 		if err != nil {
 			return fmt.Errorf("sms burst %d: %w", i, err)
 		}
-		if err := checkSMSBurst(enc); err != nil {
+		if err := checkSMSBurst(&check, enc); err != nil {
 			return fmt.Errorf("sms burst %d: %w", i, err)
 		}
 	}
@@ -260,9 +260,8 @@ func bridgeSMS(w io.Writer, path string) error {
 	return nil
 }
 
-func checkSMSBurst(p [33]byte) error {
-	b, err := layer2.NewBurstFromBytes(p)
-	if err != nil {
+func checkSMSBurst(b *layer2.Burst, p [33]byte) error {
+	if err := b.DecodeFromBytes(p); err != nil {
 		return err
 	}
 	raw := layer2.RawBurst(p)
