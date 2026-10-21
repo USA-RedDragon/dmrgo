@@ -12,13 +12,14 @@ import (
 )
 
 const (
-	leanChase     = 4
-	leanSmallHard = false
-	leanBPTCBits  = 196
-	leanBPTCHalf  = leanBPTCBits / 2
-	leanNibbles   = softSmallMaxN / 4
-	leanCandSize  = 9
-	leanShared    = max(leanNibbles*16, softTrellisSteps*softTrellisStates/4, softListMax*leanCandSize, (leanAcqSamples+1)/2)
+	leanChase      = 4
+	leanSmallHard  = false
+	leanBPTCGather = false
+	leanBPTCBits   = 196
+	leanBPTCHalf   = leanBPTCBits / 2
+	leanNibbles    = softSmallMaxN / 4
+	leanCandSize   = 9
+	leanShared     = max(leanNibbles*16, softTrellisSteps*softTrellisStates/4, softListMax*leanCandSize, (leanAcqSamples+1)/2)
 )
 
 type leanBest struct {
@@ -241,14 +242,43 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 	}
 	var rows [13]uint16
 	var base int32
-	if v := r.llrAt(bptcPos(0)); v < 0 {
-		base = -int32(v)
+	if !leanBPTCGather {
+		if v := r.llrAt(bptcPos(0)); v < 0 {
+			base = -int32(v)
+		}
 	}
 	var bit [leanChase]int16
+	at, c := r.base+cachSymbols, 0
+	var hi int16
 	for cell := range 13 * 15 {
+		var p int
+		var v int16
 		row, col := cell/15, cell%15
-		p := bptc.GridBit(row, col)
-		v := llrAtS[site0](r, bptcPos(p))
+		if leanBPTCGather {
+			p = cell + 1
+			v = hi
+			if p == leanBPTCHalf {
+				at += (softBurstBits - 2*leanBPTCHalf) / 2
+			}
+			if p&1 == 0 {
+				v, hi = r.symLLR(at + int64(p>>1))
+			}
+			if p == 1 {
+				l0, l1 := r.symLLR(at)
+				if l0 < 0 {
+					base = -int32(l0)
+				}
+				v = l1
+			}
+			c += 13
+			if c >= leanBPTCBits {
+				c -= leanBPTCBits
+			}
+			row, col = (c-1)/15, (c-1)%15
+		} else {
+			p = bptc.GridBit(row, col)
+			v = llrAtS[site0](r, bptcPos(p))
+		}
 		if v < 0 {
 			rows[row] |= 1 << col
 			v = -v
@@ -258,7 +288,7 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 				copy(chase[i+1:], chase[i:leanChase-1])
 				copy(cmag[i+1:], cmag[i:leanChase-1])
 				copy(bit[i+1:], bit[i:leanChase-1])
-				chase[i], cmag[i], bit[i] = int16(cell), v, int16(p)
+				chase[i], cmag[i], bit[i] = int16(row*15+col), v, int16(p)
 				break
 			}
 		}
