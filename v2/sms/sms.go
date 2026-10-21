@@ -74,7 +74,8 @@ type Text struct {
 // dst and the Text, whose Body points into dst. It finds the format from
 // the header and the UDP port: TMS on port 4007, IP or AnyTone text on
 // port 5016, and defined data. It returns ErrNotText for a packet in none
-// of these formats, and the errors of the ip, tms and shortdata packages
+// of these formats and for defined data with DD format binary, and the
+// errors of the ip, tms and shortdata packages
 // for a message that does not decode. It allocates only to grow dst.
 func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 	n := len(dst)
@@ -85,6 +86,9 @@ func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 	case h.DefinedDataHeader != nil:
 		d := h.DefinedDataHeader
 		t.Group, t.DD = d.Group, d.DefinedData
+		if d.DefinedData == enums.DDBinary {
+			return dst, Text{}, ErrNotText
+		}
 		if pad := int(d.BitPadding / 8); pad <= len(data) {
 			data = data[:len(data)-pad]
 		}
@@ -180,7 +184,8 @@ type Header struct {
 // the radio addresses of network ip.DefaultNetwork, and a confirmed packet
 // when confirmed is set. A TMS text starts with a CR LF. It returns dst
 // unchanged and ErrFormat for an unknown format and for FormatDefinedData
-// with DD format BCD, which Decode reads as FormatHytera, or the errors of
+// with DD format binary, which holds no text, or BCD, which Decode reads
+// as FormatHytera, or the errors of
 // the packages that build the message. It allocates only to grow dst.
 func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error) {
 	n := len(dst)
@@ -188,7 +193,7 @@ func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error
 	var err error
 	switch t.Format {
 	case FormatDefinedData:
-		if t.DD == enums.DDBCD {
+		if t.DD == enums.DDBCD || t.DD == enums.DDBinary {
 			return dst[:n], ErrFormat
 		}
 		if dst, err = shortdata.AppendText(dst, t.DD, t.Body); err != nil {
