@@ -529,7 +529,11 @@ func (g *gen) mapRecv(sm *sigmap, recv *tinfo, rk recvKind, call string) (string
 	case rClosed:
 		addSelf("const "+recv.c+" *"+self, ptr, true)
 		lines(&sm.pre, "var x "+g.goType(recv.named))
-		return "x." + call, g.unionInline(&sm.pre, recv, "x", "c_self")
+		if err := g.unionInline(&sm.pre, recv, "x", "c_self"); err != nil {
+			return "", err
+		}
+		lines(&sm.pre, "if x == nil {", "return fail(C.DMRGO_ERR_ARG)", "}")
+		return "x." + call, nil
 	case rValPtr, rValVal:
 		if err := g.needDeps(recv.named); err != nil {
 			return "", err

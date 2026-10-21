@@ -16676,6 +16676,9 @@ func dmrgo_layer2_data_data_type(c_self *C.dmrgo_layer2_data_t, c_out *C.dmrgo_e
 	default:
 		return fail(C.DMRGO_ERR_ARG)
 	}
+	if x == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	r0 := x.DataType()
 	_ = r0
 	if c_out != nil {
@@ -16748,6 +16751,9 @@ func dmrgo_layer2_data_string(c_self *C.dmrgo_layer2_data_t, c_out *C.char, c_ou
 		uv14 := in_layer2_pdu_VNAPContinuation((*C.dmrgo_pdu_vnap_continuation_t)(unsafe.Pointer(&c_self.v)))
 		x = &uv14
 	default:
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if x == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	if c_out == nil && c_out_cap > 0 {
