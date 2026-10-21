@@ -231,6 +231,10 @@ func (u *User) AppendBinary(dst []byte) ([]byte, error) {
 	if u == nil {
 		return dst, errOpcode
 	}
+	return u.appendBinary(dst)
+}
+
+func (u User) appendBinary(dst []byte) ([]byte, error) {
 	switch u.Opcode {
 	case OpGroupVoice, OpPrivateVoice, OpGroupData, OpPrivateData:
 	default:
