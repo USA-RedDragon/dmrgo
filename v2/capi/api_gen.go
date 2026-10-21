@@ -34454,6 +34454,26 @@ func dmrgo_dmrd_auth_bridge_key_sign(c_self *C.dmrgo_dmrd_auth_bridge_key_t, c_d
 	return C.DMRGO_OK
 }
 
+//export dmrgo_dmrd_auth_bridge_key_verify_need
+func dmrgo_dmrd_auth_bridge_key_verify_need(c_self *C.dmrgo_dmrd_auth_bridge_key_t, c_p *C.uint8_t, c_p_len C.size_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_transport_dmrd_auth_BridgeKey(c_self)
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	_ = h
+	_ = a_p
+	if c_items != nil {
+		*c_items = C.size_t(max(0, len(a_p)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_dmrd_auth_bridge_key_verify
 func dmrgo_dmrd_auth_bridge_key_verify(c_self *C.dmrgo_dmrd_auth_bridge_key_t, c_p *C.uint8_t, c_p_len C.size_t, c_body *C.uint8_t, c_body_cap C.size_t, c_body_len *C.size_t, c_body_need *C.size_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -34467,12 +34487,24 @@ func dmrgo_dmrd_auth_bridge_key_verify(c_self *C.dmrgo_dmrd_auth_bridge_key_t, c
 	if c_body_len == nil || (c_body == nil && c_body_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
+	need_items := max(0, len(a_p))
+	need_arena := 0
+	_ = need_arena
+	if int(c_body_cap)-1 < need_items {
+		if c_body_need != nil {
+			*c_body_need = C.size_t(0 + need_items + 1)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
 	r0, r1 := h.v.Verify(a_p)
 	_ = r0
 	_ = r1
 	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_body)), int(c_body_cap)), c_body_len, c_body_need, r0, oc)
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -35665,6 +35697,26 @@ func dmrgo_ipsc_auth_key_sign(c_self *C.dmrgo_ipsc_auth_key_t, c_dst *C.uint8_t,
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ipsc_auth_key_verify_need
+func dmrgo_ipsc_auth_key_verify_need(c_self *C.dmrgo_ipsc_auth_key_t, c_p *C.uint8_t, c_p_len C.size_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_transport_ipsc_auth_Key(c_self)
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	_ = h
+	_ = a_p
+	if c_items != nil {
+		*c_items = C.size_t(max(0, len(a_p)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ipsc_auth_key_verify
 func dmrgo_ipsc_auth_key_verify(c_self *C.dmrgo_ipsc_auth_key_t, c_p *C.uint8_t, c_p_len C.size_t, c_body *C.uint8_t, c_body_cap C.size_t, c_body_len *C.size_t, c_body_need *C.size_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -35678,12 +35730,24 @@ func dmrgo_ipsc_auth_key_verify(c_self *C.dmrgo_ipsc_auth_key_t, c_p *C.uint8_t,
 	if c_body_len == nil || (c_body == nil && c_body_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
+	need_items := max(0, len(a_p))
+	need_arena := 0
+	_ = need_arena
+	if int(c_body_cap)-1 < need_items {
+		if c_body_need != nil {
+			*c_body_need = C.size_t(0 + need_items + 1)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
 	r0, r1 := h.v.Verify(a_p)
 	_ = r0
 	_ = r1
 	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_body)), int(c_body_cap)), c_body_len, c_body_need, r0, oc)
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)

@@ -9684,9 +9684,11 @@ int dmrgo_dmrd_talker_alias_lc_into(dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_f
 int dmrgo_dmrd_talker_alias_string(dmrgo_dmrd_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_dmrd_auth_bridge_key_free frees the handle. self may be NULL. */
 int dmrgo_dmrd_auth_bridge_key_free(dmrgo_dmrd_auth_bridge_key_t *self);
-/* Go: auth.BridgeKey.Sign. Sign writes the signature of the OpenBridge packet in dst, as dmrd.Bridge.AppendBinary and dmrd.BridgeControl.AppendBinary encode it with room for the signature, into its last octets, and returns dst: HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over the octets before the hash of a DMRE packet. It changes the state of the handle even when it returns DMRGO_ERR_SHORT. */
+/* Go: auth.BridgeKey.Sign. Sign writes the signature of the OpenBridge packet in dst, as dmrd.Bridge.AppendBinary and dmrd.BridgeControl.AppendBinary encode it with space for the signature, into its last octets, and returns dst: HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over the octets before the hash of a DMRE packet. It changes the state of the handle even when it returns DMRGO_ERR_SHORT. */
 int dmrgo_dmrd_auth_bridge_key_sign(dmrgo_dmrd_auth_bridge_key_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: auth.BridgeKey.Verify. Verify reports whether the OpenBridge packet p carries the signature of the key, as Sign would write it, and then returns p without its signature. It changes the state of the handle even when it returns DMRGO_ERR_SHORT. */
+/* dmrgo_dmrd_auth_bridge_key_verify_need sets *items and *arena to the room that dmrgo_dmrd_auth_bridge_key_verify needs for these arguments, without a change to the handle. */
+int dmrgo_dmrd_auth_bridge_key_verify_need(dmrgo_dmrd_auth_bridge_key_t *self, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
+/* Go: auth.BridgeKey.Verify. Verify reports whether the OpenBridge packet p carries the signature of the key, as Sign would write it, and then returns p without its signature. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_auth_bridge_key_verify_need gives. */
 int dmrgo_dmrd_auth_bridge_key_verify(dmrgo_dmrd_auth_bridge_key_t *self, const uint8_t *p, size_t p_len, uint8_t *body, size_t body_cap, size_t *body_len, size_t *body_need, bool *ok);
 /* Go: auth.NewBridgeKey. NewBridgeKey returns a BridgeKey for key, the passphrase of the OpenBridge link as plain octets. */
 int dmrgo_dmrd_auth_new_bridge_key(const uint8_t *key, size_t key_len, dmrgo_dmrd_auth_bridge_key_t **out);
@@ -9800,7 +9802,9 @@ int dmrgo_ipsc_auth_key_free(dmrgo_ipsc_auth_key_t *self);
 int dmrgo_ipsc_auth_key_sign_need(dmrgo_ipsc_auth_key_t *self, size_t *items, size_t *arena);
 /* Go: auth.Key.Sign. Sign appends the authentication trailer of the packet in dst to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_auth_key_sign_need gives (DMRGO_IPSC_AUTH_KEY_SIGN_MAX_ITEMS items). */
 int dmrgo_ipsc_auth_key_sign(dmrgo_ipsc_auth_key_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: auth.Key.Verify. Verify reports whether the last TrailerLen octets of p are the trailer of the rest, and then returns the rest of p, the packet without its trailer. It changes the state of the handle even when it returns DMRGO_ERR_SHORT. */
+/* dmrgo_ipsc_auth_key_verify_need sets *items and *arena to the room that dmrgo_ipsc_auth_key_verify needs for these arguments, without a change to the handle. */
+int dmrgo_ipsc_auth_key_verify_need(dmrgo_ipsc_auth_key_t *self, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
+/* Go: auth.Key.Verify. Verify reports whether the last TrailerLen octets of p are the trailer of the rest, and then returns the rest of p, the packet without its trailer. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_auth_key_verify_need gives. */
 int dmrgo_ipsc_auth_key_verify(dmrgo_ipsc_auth_key_t *self, const uint8_t *p, size_t p_len, uint8_t *body, size_t body_cap, size_t *body_len, size_t *body_need, bool *ok);
 /* Go: auth.NewKey. NewKey returns a Key for the 20-octet key k. */
 int dmrgo_ipsc_auth_new_key(const uint8_t k[20], dmrgo_ipsc_auth_key_t **out);
