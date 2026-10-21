@@ -37163,7 +37163,7 @@ func dmrgo_trunk_capacity_plus_follower_free(c_self *C.dmrgo_trunk_capacity_plus
 }
 
 //export dmrgo_trunk_capacity_plus_follower_burst_need
-func dmrgo_trunk_capacity_plus_follower_burst_need(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_capacity_plus_follower_burst_need(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.uint8_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_CapacityPlusFollower(c_self)
 	if c_h == nil {
@@ -37171,15 +37171,8 @@ func dmrgo_trunk_capacity_plus_follower_burst_need(c_self *C.dmrgo_trunk_capacit
 	}
 	var a_h g_layer2.Hint
 	a_h = in_layer2_Hint(&(*c_h))
-	var a_cach g_layer2.CACH
-	var p_cach *g_layer2.CACH
-	if c_cach != nil {
-		a_cach = in_layer2_CACH(&(*c_cach))
-		p_cach = &a_cach
-	}
 	_ = h
 	_ = a_h
-	_ = p_cach
 	if c_items != nil {
 		*c_items = C.size_t(max(0, int(g_trunk.MaxOutputs)))
 	}
@@ -37190,7 +37183,7 @@ func dmrgo_trunk_capacity_plus_follower_burst_need(c_self *C.dmrgo_trunk_capacit
 }
 
 //export dmrgo_trunk_capacity_plus_follower_burst
-func dmrgo_trunk_capacity_plus_follower_burst(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_capacity_plus_follower_burst(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.uint8_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_CapacityPlusFollower(c_self)
@@ -37199,12 +37192,6 @@ func dmrgo_trunk_capacity_plus_follower_burst(c_self *C.dmrgo_trunk_capacity_plu
 	}
 	var a_h g_layer2.Hint
 	a_h = in_layer2_Hint(&(*c_h))
-	var a_cach g_layer2.CACH
-	var p_cach *g_layer2.CACH
-	if c_cach != nil {
-		a_cach = in_layer2_CACH(&(*c_cach))
-		p_cach = &a_cach
-	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -37219,7 +37206,7 @@ func dmrgo_trunk_capacity_plus_follower_burst(c_self *C.dmrgo_trunk_capacity_plu
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.Burst(time.Duration(c_now), (*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h, p_cach, a_dst)
+	r0 := h.v.Burst(time.Duration(c_now), (*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h, (*[3]byte)(unsafe.Pointer(c_cach)), a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{
@@ -37748,7 +37735,7 @@ func dmrgo_trunk_follower_free(c_self *C.dmrgo_trunk_follower_t) (rc C.int) {
 }
 
 //export dmrgo_trunk_follower_burst_need
-func dmrgo_trunk_follower_burst_need(c_self *C.dmrgo_trunk_follower_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_follower_burst_need(c_self *C.dmrgo_trunk_follower_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.uint8_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_Follower(c_self)
 	if c_h == nil {
@@ -37756,15 +37743,8 @@ func dmrgo_trunk_follower_burst_need(c_self *C.dmrgo_trunk_follower_t, c_now C.d
 	}
 	var a_h g_layer2.Hint
 	a_h = in_layer2_Hint(&(*c_h))
-	var a_cach g_layer2.CACH
-	var p_cach *g_layer2.CACH
-	if c_cach != nil {
-		a_cach = in_layer2_CACH(&(*c_cach))
-		p_cach = &a_cach
-	}
 	_ = h
 	_ = a_h
-	_ = p_cach
 	if c_items != nil {
 		*c_items = C.size_t(max(0, int(g_trunk.MaxOutputs)))
 	}
@@ -37775,7 +37755,7 @@ func dmrgo_trunk_follower_burst_need(c_self *C.dmrgo_trunk_follower_t, c_now C.d
 }
 
 //export dmrgo_trunk_follower_burst
-func dmrgo_trunk_follower_burst(c_self *C.dmrgo_trunk_follower_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_follower_burst(c_self *C.dmrgo_trunk_follower_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.uint8_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_Follower(c_self)
@@ -37784,12 +37764,6 @@ func dmrgo_trunk_follower_burst(c_self *C.dmrgo_trunk_follower_t, c_now C.dmrgo_
 	}
 	var a_h g_layer2.Hint
 	a_h = in_layer2_Hint(&(*c_h))
-	var a_cach g_layer2.CACH
-	var p_cach *g_layer2.CACH
-	if c_cach != nil {
-		a_cach = in_layer2_CACH(&(*c_cach))
-		p_cach = &a_cach
-	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -37804,7 +37778,7 @@ func dmrgo_trunk_follower_burst(c_self *C.dmrgo_trunk_follower_t, c_now C.dmrgo_
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.Burst(time.Duration(c_now), (*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h, p_cach, a_dst)
+	r0 := h.v.Burst(time.Duration(c_now), (*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h, (*[3]byte)(unsafe.Pointer(c_cach)), a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{
@@ -38409,7 +38383,7 @@ func dmrgo_trunk_ms_auth_response(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_dura
 }
 
 //export dmrgo_trunk_ms_burst_need
-func dmrgo_trunk_ms_burst_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_burst_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.uint8_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_MS(c_self)
 	if c_h == nil {
@@ -38417,15 +38391,8 @@ func dmrgo_trunk_ms_burst_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duratio
 	}
 	var a_h g_layer2.Hint
 	a_h = in_layer2_Hint(&(*c_h))
-	var a_cach g_layer2.CACH
-	var p_cach *g_layer2.CACH
-	if c_cach != nil {
-		a_cach = in_layer2_CACH(&(*c_cach))
-		p_cach = &a_cach
-	}
 	_ = h
 	_ = a_h
-	_ = p_cach
 	if c_items != nil {
 		*c_items = C.size_t(max(0, int(g_trunk.MaxOutputs)))
 	}
@@ -38436,7 +38403,7 @@ func dmrgo_trunk_ms_burst_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duratio
 }
 
 //export dmrgo_trunk_ms_burst
-func dmrgo_trunk_ms_burst(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_burst(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.uint8_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -38445,12 +38412,6 @@ func dmrgo_trunk_ms_burst(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, 
 	}
 	var a_h g_layer2.Hint
 	a_h = in_layer2_Hint(&(*c_h))
-	var a_cach g_layer2.CACH
-	var p_cach *g_layer2.CACH
-	if c_cach != nil {
-		a_cach = in_layer2_CACH(&(*c_cach))
-		p_cach = &a_cach
-	}
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38465,7 +38426,7 @@ func dmrgo_trunk_ms_burst(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, 
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.Burst(time.Duration(c_now), (*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h, p_cach, a_dst)
+	r0 := h.v.Burst(time.Duration(c_now), (*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h, (*[3]byte)(unsafe.Pointer(c_cach)), a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{

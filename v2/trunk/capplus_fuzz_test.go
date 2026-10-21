@@ -52,7 +52,7 @@ func runCapPlusFollower(t *testing.T, pool burstPool, in []byte) {
 			var raw layer2.RawBurst
 			n := copy(raw[:], in)
 			in = in[n:]
-			cach := layer2.DecodeCACH([3]byte{arg, kind, byte(n)})
+			cach := [3]byte{arg, kind, byte(n)}
 			out = f.Burst(now, &raw, layer2.Hint{}, &cach, out[:0])
 		case 3:
 			if at, ok := f.Deadline(); ok && at > now {

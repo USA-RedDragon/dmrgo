@@ -78,6 +78,7 @@ type CapacityPlusFollower struct {
 
 	b      *layer2.Burst
 	opts   layer2.DecodeOptions
+	cach   layer2.CACH
 	slc    layer2.ShortLCAssembler
 	slcOut pdu.ShortLC
 	slcP   pdu.ShortLCPayloads
@@ -165,20 +166,24 @@ func (f *CapacityPlusFollower) Reset() {
 }
 
 // Burst decodes the burst raw with what the Hint h says about it, and the
-// CACH before it when cach is not nil, and appends the outputs to dst.
-// h.Slot, or the TDMA channel of the CACH, tells the timeslot of the
-// burst. It allocates only when dst has no room for MaxOutputs outputs.
-func (f *CapacityPlusFollower) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *layer2.CACH, dst []Output) []Output {
+// CACH field before it when cach is not nil, and appends the outputs to
+// dst. cach is in transmit order, as bs.Output.CACH gives it. h.Slot, or
+// the TDMA channel of the CACH, tells the timeslot of the burst. It
+// allocates only when dst has no room for MaxOutputs outputs.
+func (f *CapacityPlusFollower) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
 	dst = f.timers(now, dst)
 	slot := h.Slot
-	if cach != nil && !cach.TACT.FEC.Uncorrectable {
+	if cach != nil {
+		f.cach = layer2.DecodeCACHField(*cach)
+	}
+	if cach != nil && !f.cach.TACT.FEC.Uncorrectable {
 		if slot == enums.SlotUnknown {
 			slot = enums.Slot1
-			if cach.TACT.TDMAChannel {
+			if f.cach.TACT.TDMAChannel {
 				slot = enums.Slot2
 			}
 		}
-		dst = f.shortLC(now, cach, dst)
+		dst = f.shortLC(now, &f.cach, dst)
 	}
 	f.opts.Kind = h.Kind
 	f.opts.VoiceBurst = enums.VoiceBurstUnknown

@@ -94,10 +94,9 @@ func (s *serviceSite) run(d time.Duration) {
 			if b.Kind != trunk.TSCCBurst {
 				continue
 			}
-			cach := layer2.DecodeCACHField(b.CACH)
 			for i, m := range s.ms {
 				if s.ch[i] == b.Channel {
-					s.mout = m.Burst(s.now, &b.Burst, layer2.Hint{Slot: b.Slot}, &cach, s.mout[:0])
+					s.mout = m.Burst(s.now, &b.Burst, layer2.Hint{Slot: b.Slot}, &b.CACH, s.mout[:0])
 					s.take(i, s.mout)
 				}
 			}

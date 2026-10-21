@@ -466,13 +466,12 @@ func abiInboundRun(h *harness, gt *trunk.TSCC, ct *C.dmrgo_trunk_tscc_t, now tim
 		})
 }
 
-func abiFollow(h *harness, gf *trunk.Follower, cf *C.dmrgo_trunk_follower_t, now time.Duration, raw layer2.RawBurst, hint layer2.Hint, cach layer2.CACH) error {
+func abiFollow(h *harness, gf *trunk.Follower, cf *C.dmrgo_trunk_follower_t, now time.Duration, raw layer2.RawBurst, hint layer2.Hint, cach [3]byte) error {
 	r := raw
 	fo := gf.Burst(now, &r, hint, &cach, nil)
 	fo = append([]trunk.Output(nil), fo...)
 	cn, ch := C.int64_t(now), cHint(hint)
-	cc := new(C.dmrgo_layer2_cach_t)
-	out_layer2_CACH(cc, &cach, h.in)
+	cc := (*C.uint8_t)(unsafe.Pointer(&cach[0]))
 	cr := raw
 	return runAppend(h, "Follower.Burst", fo, nil, fromC_trunk_Output,
 		func(it, a *C.size_t) C.int {
@@ -519,7 +518,7 @@ func (st *abiTrunk) msOut(m *abiMS, o []trunk.Output) {
 		}
 	}
 }
-func (st *abiTrunk) runMS(name string, m *abiMS, now time.Duration, raw *layer2.RawBurst, hint layer2.Hint, cach *layer2.CACH) error {
+func (st *abiTrunk) runMS(name string, m *abiMS, now time.Duration, raw *layer2.RawBurst, hint layer2.Hint, cach *[3]byte) error {
 	cn := C.int64_t(now)
 	if raw == nil {
 		st.mout = m.g.Tick(now, st.mout[:0])
@@ -534,8 +533,10 @@ func (st *abiTrunk) runMS(name string, m *abiMS, now time.Duration, raw *layer2.
 	st.mout = m.g.Burst(now, &r, hint, cach, st.mout[:0])
 	st.msOut(m, st.mout)
 	ch := cHint(hint)
-	cc := new(C.dmrgo_layer2_cach_t)
-	out_layer2_CACH(cc, cach, st.h.in)
+	var cc *C.uint8_t
+	if cach != nil {
+		cc = (*C.uint8_t)(unsafe.Pointer(&cach[0]))
+	}
 	cr := *raw
 	return runAppend(st.h, name, st.mout, nil, fromC_trunk_Output,
 		func(it, a *C.size_t) C.int { return C.dmrgo_trunk_ms_burst_need(m.c, cn, cRaw(&cr), ch, cc, it, a) },
@@ -637,7 +638,7 @@ func trunkABI(seed uint64, payload, nms int) (int, error) {
 			if b.Kind != trunk.TSCCBurst {
 				continue
 			}
-			cach := layer2.DecodeCACHField(b.CACH)
+			cach := b.CACH
 			hint := layer2.Hint{Slot: b.Slot}
 			if b.Channel == 1 && step%3 == 0 {
 				if err := abiFollow(h, gf, cf, now, b.Burst, hint, cach); err != nil {

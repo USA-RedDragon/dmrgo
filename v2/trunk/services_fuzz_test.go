@@ -69,7 +69,10 @@ func runMSServices(t *testing.T, pool burstPool, in []byte) {
 		kind, arg := in[0], in[1]
 		in = in[2:]
 		now += time.Duration(arg) * 5 * time.Millisecond
-		cach := layer2.CACH{TACT: pdu.TACT{AccessType: kind&0x80 != 0}}
+		var cach [3]byte
+		if kind&0x80 != 0 {
+			cach = [3]byte{0x80, 0x02, 0x02}
+		}
 		switch kind % 9 {
 		case 0, 1, 2, 3:
 			raw := pool[int(arg)%len(pool)]
