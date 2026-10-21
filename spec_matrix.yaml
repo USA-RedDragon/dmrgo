@@ -2764,18 +2764,53 @@ documents:
 
       - section: "7.2.19.2"
         title: "Specify Call Timer Parameters (CallTimer_Parms)"
+        source_files:
+          - v2/layer2/pdu/broadcast_parms.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestBroadcastPDU_AsCallTimer
+              - FuzzBroadcastParms
 
       - section: "7.2.19.3"
         title: "Vote Now Advice (Vote_Now)"
+        source_files:
+          - v2/layer2/pdu/broadcast_parms.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestBroadcastPDU_AsVoteNow
+              - FuzzBroadcastParms
 
       - section: "7.2.19.4"
         title: "Broadcast Local Time (Local_Time)"
+        source_files:
+          - v2/layer2/pdu/broadcast_parms.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestBroadcastPDU_AsLocalTime
+              - FuzzBroadcastParms
 
       - section: "7.2.19.5"
         title: "Broadcast Mass Registration (MassReg)"
+        source_files:
+          - v2/layer2/pdu/broadcast_parms.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestBroadcastPDU_AsMassReg
+              - FuzzBroadcastParms
 
       - section: "7.2.19.8"
         title: "Broadcast General Site Parameters information"
+        source_files:
+          - v2/layer2/pdu/broadcast_parms.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestBroadcastPDU_AsGenSite
+              - FuzzBroadcastParms
 
       - section: "7.2.31"
         title: "STATUS"

@@ -243,12 +243,12 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | Metric | Count |
 | --- | --- |
 | Total sections | 223 |
-| Verified (tests pass) | 160 |
+| Verified (tests pass) | 165 |
 | Failing (tests fail) | 0 |
 | Untested (has source, no tests) | 3 |
-| Unimplemented | 60 |
+| Unimplemented | 55 |
 
-**Overall: 160/223 verified (71.7%)**
+**Overall: 165/223 verified (74.0%)**
 
 ### ETSI TS 102 361-1: Air Interface Protocol
 
@@ -407,7 +407,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 
 ### ETSI TS 102 361-4: DMR Trunking Protocol
 
-89 sections: 31 verified, 0 failing, 3 untested, 55 unimplemented.
+89 sections: 36 verified, 0 failing, 3 untested, 50 unimplemented.
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
@@ -490,11 +490,11 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 7.2.13.9 | Service Options for a UDT Short Data Polling Request | unimplemented | - | - |
 | 7.2.14 | Service_Options_Mirror | unimplemented | - | - |
 | 7.2.16 | POL_FMT | unimplemented | - | - |
-| 7.2.19.2 | Specify Call Timer Parameters (CallTimer_Parms) | unimplemented | - | - |
-| 7.2.19.3 | Vote Now Advice (Vote_Now) | unimplemented | - | - |
-| 7.2.19.4 | Broadcast Local Time (Local_Time) | unimplemented | - | - |
-| 7.2.19.5 | Broadcast Mass Registration (MassReg) | unimplemented | - | - |
-| 7.2.19.8 | Broadcast General Site Parameters information | unimplemented | - | - |
+| 7.2.19.2 | Specify Call Timer Parameters (CallTimer_Parms) | verified | 2/2 passed | `v2/layer2/pdu/broadcast_parms.go` |
+| 7.2.19.3 | Vote Now Advice (Vote_Now) | verified | 2/2 passed | `v2/layer2/pdu/broadcast_parms.go` |
+| 7.2.19.4 | Broadcast Local Time (Local_Time) | verified | 2/2 passed | `v2/layer2/pdu/broadcast_parms.go` |
+| 7.2.19.5 | Broadcast Mass Registration (MassReg) | verified | 2/2 passed | `v2/layer2/pdu/broadcast_parms.go` |
+| 7.2.19.8 | Broadcast General Site Parameters information | verified | 2/2 passed | `v2/layer2/pdu/broadcast_parms.go` |
 | 7.2.31 | STATUS | unimplemented | - | - |
 | A | Timers, constants levels and addresses | verified | 5/5 passed | `v2/constants/constants.go` |
 | B.1 | CSBK/MBC/UDT Opcode List | verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |

@@ -34,3 +34,48 @@ func TestAdjacentSiteParmsStringMatchesFmt(t *testing.T) {
 	t.Parallel()
 	texttest.Check(t, (*AdjacentSiteParms).String, (*AdjacentSiteParms).fmtString)
 }
+
+func (s *CallTimerParms) fmtString() string {
+	return fmt.Sprintf("CallTimerParms{ AnnouncementType: %v, EmergencyTimer: %d, PacketTimer: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, MSMSTimer: %d, LineTimer: %d }", s.AnnouncementType, s.EmergencyTimer, s.PacketTimer, s.Reg, s.Backoff, s.SysIdentCode, s.MSMSTimer, s.LineTimer)
+}
+
+func TestCallTimerParmsStringMatchesFmt(t *testing.T) {
+	t.Parallel()
+	texttest.Check(t, (*CallTimerParms).String, (*CallTimerParms).fmtString)
+}
+
+func (s *VoteNowParms) fmtString() string {
+	return fmt.Sprintf("VoteNowParms{ AnnouncementType: %v, VoteSysCode: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, HasActiveConn: %t, ActiveConn: %t, ConfirmedPriority: %d, AdjacentPriority: %d, Reserved: %d, Channel: %d }", s.AnnouncementType, s.VoteSysCode, s.Reg, s.Backoff, s.SysIdentCode, s.HasActiveConn, s.ActiveConn, s.ConfirmedPriority, s.AdjacentPriority, s.Reserved, s.Channel)
+}
+
+func TestVoteNowParmsStringMatchesFmt(t *testing.T) {
+	t.Parallel()
+	texttest.Check(t, (*VoteNowParms).String, (*VoteNowParms).fmtString)
+}
+
+func (s *LocalTimeParms) fmtString() string {
+	return fmt.Sprintf("LocalTimeParms{ AnnouncementType: %v, Day: %d, Month: %d, UTCOffset: %d, UTCOffsetLags: %t, Reg: %t, Backoff: %d, SysIdentCode: %d, Hours: %d, Minutes: %d, Seconds: %d, DayOfWeek: %d, UTCOffsetQuarter: %d, Reserved: %d }", s.AnnouncementType, s.Day, s.Month, s.UTCOffset, s.UTCOffsetLags, s.Reg, s.Backoff, s.SysIdentCode, s.Hours, s.Minutes, s.Seconds, s.DayOfWeek, s.UTCOffsetQuarter, s.Reserved)
+}
+
+func TestLocalTimeParmsStringMatchesFmt(t *testing.T) {
+	t.Parallel()
+	texttest.Check(t, (*LocalTimeParms).String, (*LocalTimeParms).fmtString)
+}
+
+func (s *MassRegParms) fmtString() string {
+	return fmt.Sprintf("MassRegParms{ AnnouncementType: %v, Reserved: %d, RegWindow: %d, AlohaMask: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, Address: %d }", s.AnnouncementType, s.Reserved, s.RegWindow, s.AlohaMask, s.Reg, s.Backoff, s.SysIdentCode, s.Address)
+}
+
+func TestMassRegParmsStringMatchesFmt(t *testing.T) {
+	t.Parallel()
+	texttest.Check(t, (*MassRegParms).String, (*MassRegParms).fmtString)
+}
+
+func (s *GenSiteParms) fmtString() string {
+	return fmt.Sprintf("GenSiteParms{ AnnouncementType: %v, Reserved1: %d, Reg: %t, Backoff: %d, SysIdentCode: %d, Reserved2: %t, Hibernating: %t, Reserved3: %d, Reserved4: %d, RegWithoutTG: %t, Reserved5: %d }", s.AnnouncementType, s.Reserved1, s.Reg, s.Backoff, s.SysIdentCode, s.Reserved2, s.Hibernating, s.Reserved3, s.Reserved4, s.RegWithoutTG, s.Reserved5)
+}
+
+func TestGenSiteParmsStringMatchesFmt(t *testing.T) {
+	t.Parallel()
+	texttest.Check(t, (*GenSiteParms).String, (*GenSiteParms).fmtString)
+}

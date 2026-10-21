@@ -3040,6 +3040,18 @@ func out_layer2_pdu_AnnWDTSCCParms(d *C.dmrgo_pdu_ann_wd_tscc_parms_t, s *g_laye
 	d.channel2 = C.uint16_t(s.Channel2)
 }
 
+func out_layer2_pdu_CallTimerParms(d *C.dmrgo_pdu_call_timer_parms_t, s *g_layer2_pdu.CallTimerParms, oc *outc) {
+	_ = oc
+	d.announcement_type = C.dmrgo_enums_announcement_type_t(s.AnnouncementType)
+	d.emergency_timer = C.uint16_t(s.EmergencyTimer)
+	d.packet_timer = C.uint8_t(s.PacketTimer)
+	d.reg = C.bool(s.Reg)
+	d.backoff = C.uint8_t(s.Backoff)
+	d.sys_ident_code = C.uint16_t(s.SysIdentCode)
+	d.msms_timer = C.uint16_t(s.MSMSTimer)
+	d.line_timer = C.uint16_t(s.LineTimer)
+}
+
 func out_layer2_pdu_ChanFreqParms(d *C.dmrgo_pdu_chan_freq_parms_t, s *g_layer2_pdu.ChanFreqParms, oc *outc) {
 	_ = oc
 	d.announcement_type = C.dmrgo_enums_announcement_type_t(s.AnnouncementType)
@@ -3048,6 +3060,66 @@ func out_layer2_pdu_ChanFreqParms(d *C.dmrgo_pdu_chan_freq_parms_t, s *g_layer2_
 	d.backoff = C.uint8_t(s.Backoff)
 	d.sys_ident_code = C.uint16_t(s.SysIdentCode)
 	d.reserved2 = C.uint16_t(s.Reserved2)
+	d.channel = C.uint16_t(s.Channel)
+}
+
+func out_layer2_pdu_GenSiteParms(d *C.dmrgo_pdu_gen_site_parms_t, s *g_layer2_pdu.GenSiteParms, oc *outc) {
+	_ = oc
+	d.announcement_type = C.dmrgo_enums_announcement_type_t(s.AnnouncementType)
+	d.reserved1 = C.uint16_t(s.Reserved1)
+	d.reg = C.bool(s.Reg)
+	d.backoff = C.uint8_t(s.Backoff)
+	d.sys_ident_code = C.uint16_t(s.SysIdentCode)
+	d.reserved2 = C.bool(s.Reserved2)
+	d.hibernating = C.bool(s.Hibernating)
+	d.reserved3 = C.uint8_t(s.Reserved3)
+	d.reserved4 = C.uint8_t(s.Reserved4)
+	d.reg_without_tg = C.bool(s.RegWithoutTG)
+	d.reserved5 = C.uint8_t(s.Reserved5)
+}
+
+func out_layer2_pdu_LocalTimeParms(d *C.dmrgo_pdu_local_time_parms_t, s *g_layer2_pdu.LocalTimeParms, oc *outc) {
+	_ = oc
+	d.announcement_type = C.dmrgo_enums_announcement_type_t(s.AnnouncementType)
+	d.day = C.uint8_t(s.Day)
+	d.month = C.uint8_t(s.Month)
+	d.utc_offset = C.uint8_t(s.UTCOffset)
+	d.utc_offset_lags = C.bool(s.UTCOffsetLags)
+	d.reg = C.bool(s.Reg)
+	d.backoff = C.uint8_t(s.Backoff)
+	d.sys_ident_code = C.uint16_t(s.SysIdentCode)
+	d.hours = C.uint8_t(s.Hours)
+	d.minutes = C.uint8_t(s.Minutes)
+	d.seconds = C.uint8_t(s.Seconds)
+	d.day_of_week = C.uint8_t(s.DayOfWeek)
+	d.utc_offset_quarter = C.uint8_t(s.UTCOffsetQuarter)
+	d.reserved = C.uint8_t(s.Reserved)
+}
+
+func out_layer2_pdu_MassRegParms(d *C.dmrgo_pdu_mass_reg_parms_t, s *g_layer2_pdu.MassRegParms, oc *outc) {
+	_ = oc
+	d.announcement_type = C.dmrgo_enums_announcement_type_t(s.AnnouncementType)
+	d.reserved = C.uint8_t(s.Reserved)
+	d.reg_window = C.uint8_t(s.RegWindow)
+	d.aloha_mask = C.uint8_t(s.AlohaMask)
+	d.reg = C.bool(s.Reg)
+	d.backoff = C.uint8_t(s.Backoff)
+	d.sys_ident_code = C.uint16_t(s.SysIdentCode)
+	d.address = C.uint32_t(s.Address)
+}
+
+func out_layer2_pdu_VoteNowParms(d *C.dmrgo_pdu_vote_now_parms_t, s *g_layer2_pdu.VoteNowParms, oc *outc) {
+	_ = oc
+	d.announcement_type = C.dmrgo_enums_announcement_type_t(s.AnnouncementType)
+	d.vote_sys_code = C.uint16_t(s.VoteSysCode)
+	d.reg = C.bool(s.Reg)
+	d.backoff = C.uint8_t(s.Backoff)
+	d.sys_ident_code = C.uint16_t(s.SysIdentCode)
+	d.has_active_conn = C.bool(s.HasActiveConn)
+	d.active_conn = C.bool(s.ActiveConn)
+	d.confirmed_priority = C.uint8_t(s.ConfirmedPriority)
+	d.adjacent_priority = C.uint8_t(s.AdjacentPriority)
+	d.reserved = C.uint8_t(s.Reserved)
 	d.channel = C.uint16_t(s.Channel)
 }
 
@@ -3119,6 +3191,18 @@ func in_layer2_pdu_TalkgroupDataGrantMultiItemPDU(s *C.dmrgo_pdu_talkgroup_data_
 	d.Offset = bool(s.offset)
 	d.TargetAddress = uint32(s.target_address)
 	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
+func in_layer2_pdu_CallTimerParms(s *C.dmrgo_pdu_call_timer_parms_t) (d g_layer2_pdu.CallTimerParms) {
+	d.AnnouncementType = g_enums.AnnouncementType(s.announcement_type)
+	d.EmergencyTimer = uint16(s.emergency_timer)
+	d.PacketTimer = uint8(s.packet_timer)
+	d.Reg = bool(s.reg)
+	d.Backoff = uint8(s.backoff)
+	d.SysIdentCode = uint16(s.sys_ident_code)
+	d.MSMSTimer = uint16(s.msms_timer)
+	d.LineTimer = uint16(s.line_timer)
 	return
 }
 
@@ -3198,6 +3282,66 @@ func in_layer2_pdu_ChanFreqParms(s *C.dmrgo_pdu_chan_freq_parms_t) (d g_layer2_p
 	d.Backoff = uint8(s.backoff)
 	d.SysIdentCode = uint16(s.sys_ident_code)
 	d.Reserved2 = uint16(s.reserved2)
+	d.Channel = uint16(s.channel)
+	return
+}
+
+func in_layer2_pdu_GenSiteParms(s *C.dmrgo_pdu_gen_site_parms_t) (d g_layer2_pdu.GenSiteParms) {
+	d.AnnouncementType = g_enums.AnnouncementType(s.announcement_type)
+	d.Reserved1 = uint16(s.reserved1)
+	d.Reg = bool(s.reg)
+	d.Backoff = uint8(s.backoff)
+	d.SysIdentCode = uint16(s.sys_ident_code)
+	d.Reserved2 = bool(s.reserved2)
+	d.Hibernating = bool(s.hibernating)
+	d.Reserved3 = uint8(s.reserved3)
+	d.Reserved4 = uint8(s.reserved4)
+	d.RegWithoutTG = bool(s.reg_without_tg)
+	d.Reserved5 = uint8(s.reserved5)
+	return
+}
+
+func in_layer2_pdu_LocalTimeParms(s *C.dmrgo_pdu_local_time_parms_t) (d g_layer2_pdu.LocalTimeParms) {
+	d.AnnouncementType = g_enums.AnnouncementType(s.announcement_type)
+	d.Day = uint8(s.day)
+	d.Month = uint8(s.month)
+	d.UTCOffset = uint8(s.utc_offset)
+	d.UTCOffsetLags = bool(s.utc_offset_lags)
+	d.Reg = bool(s.reg)
+	d.Backoff = uint8(s.backoff)
+	d.SysIdentCode = uint16(s.sys_ident_code)
+	d.Hours = uint8(s.hours)
+	d.Minutes = uint8(s.minutes)
+	d.Seconds = uint8(s.seconds)
+	d.DayOfWeek = uint8(s.day_of_week)
+	d.UTCOffsetQuarter = uint8(s.utc_offset_quarter)
+	d.Reserved = uint8(s.reserved)
+	return
+}
+
+func in_layer2_pdu_MassRegParms(s *C.dmrgo_pdu_mass_reg_parms_t) (d g_layer2_pdu.MassRegParms) {
+	d.AnnouncementType = g_enums.AnnouncementType(s.announcement_type)
+	d.Reserved = uint8(s.reserved)
+	d.RegWindow = uint8(s.reg_window)
+	d.AlohaMask = uint8(s.aloha_mask)
+	d.Reg = bool(s.reg)
+	d.Backoff = uint8(s.backoff)
+	d.SysIdentCode = uint16(s.sys_ident_code)
+	d.Address = uint32(s.address)
+	return
+}
+
+func in_layer2_pdu_VoteNowParms(s *C.dmrgo_pdu_vote_now_parms_t) (d g_layer2_pdu.VoteNowParms) {
+	d.AnnouncementType = g_enums.AnnouncementType(s.announcement_type)
+	d.VoteSysCode = uint16(s.vote_sys_code)
+	d.Reg = bool(s.reg)
+	d.Backoff = uint8(s.backoff)
+	d.SysIdentCode = uint16(s.sys_ident_code)
+	d.HasActiveConn = bool(s.has_active_conn)
+	d.ActiveConn = bool(s.active_conn)
+	d.ConfirmedPriority = uint8(s.confirmed_priority)
+	d.AdjacentPriority = uint8(s.adjacent_priority)
+	d.Reserved = uint8(s.reserved)
 	d.Channel = uint16(s.channel)
 	return
 }
@@ -5877,6 +6021,10 @@ func fromC_layer2_pdu_CSBK(s *C.dmrgo_pdu_csbk_t) g_layer2_pdu.CSBK {
 	return in_layer2_pdu_CSBK(s, &st)
 }
 
+func fromC_layer2_pdu_CallTimerParms(s *C.dmrgo_pdu_call_timer_parms_t) g_layer2_pdu.CallTimerParms {
+	return in_layer2_pdu_CallTimerParms(s)
+}
+
 func in_layer2_pdu_CapacityPlusActivity(s *C.dmrgo_pdu_capacity_plus_activity_t) (d g_layer2_pdu.CapacityPlusActivity) {
 	d.RestLSN = uint8(s.rest_lsn)
 	d.Voice = uint16(s.voice)
@@ -6081,6 +6229,14 @@ func fromC_layer2_pdu_FullLinkControl(s *C.dmrgo_pdu_full_link_control_t) g_laye
 	return in_layer2_pdu_FullLinkControl(s, &st)
 }
 
+func fromC_layer2_pdu_GenSiteParms(s *C.dmrgo_pdu_gen_site_parms_t) g_layer2_pdu.GenSiteParms {
+	return in_layer2_pdu_GenSiteParms(s)
+}
+
+func fromC_layer2_pdu_LocalTimeParms(s *C.dmrgo_pdu_local_time_parms_t) g_layer2_pdu.LocalTimeParms {
+	return in_layer2_pdu_LocalTimeParms(s)
+}
+
 func fromC_layer2_pdu_MBCContinuation(s *C.dmrgo_pdu_mbc_continuation_t) g_layer2_pdu.MBCContinuation {
 	return in_layer2_pdu_MBCContinuation(s)
 }
@@ -6096,6 +6252,10 @@ func fromC_layer2_pdu_MVAPContinuation(s *C.dmrgo_pdu_mvap_continuation_t) g_lay
 
 func fromC_layer2_pdu_MaintenancePDU(s *C.dmrgo_pdu_maintenance_pdu_t) g_layer2_pdu.MaintenancePDU {
 	return in_layer2_pdu_MaintenancePDU(s)
+}
+
+func fromC_layer2_pdu_MassRegParms(s *C.dmrgo_pdu_mass_reg_parms_t) g_layer2_pdu.MassRegParms {
+	return in_layer2_pdu_MassRegParms(s)
 }
 
 func in_layer2_pdu_MotorolaCallAlertAckPDU(s *C.dmrgo_pdu_motorola_call_alert_ack_pdu_t) (d g_layer2_pdu.MotorolaCallAlertAckPDU) {
@@ -6383,6 +6543,10 @@ func fromC_layer2_pdu_UnitToUnitVoiceServiceRequestPDU(s *C.dmrgo_pdu_unit_to_un
 
 func fromC_layer2_pdu_VNAPContinuation(s *C.dmrgo_pdu_vnap_continuation_t) g_layer2_pdu.VNAPContinuation {
 	return in_layer2_pdu_VNAPContinuation(s)
+}
+
+func fromC_layer2_pdu_VoteNowParms(s *C.dmrgo_pdu_vote_now_parms_t) g_layer2_pdu.VoteNowParms {
+	return in_layer2_pdu_VoteNowParms(s)
 }
 
 func in_layer3_CdefParms(s *C.dmrgo_layer3_cdef_parms_t) (d g_layer3.CdefParms) {
@@ -20434,6 +20598,31 @@ func dmrgo_pdu_broadcast_pdu_as_ann_wd_tscc(c_self *C.dmrgo_pdu_broadcast_pdu_t,
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_broadcast_pdu_as_call_timer
+func dmrgo_pdu_broadcast_pdu_as_call_timer(c_self *C.dmrgo_pdu_broadcast_pdu_t, c_v *C.dmrgo_pdu_call_timer_parms_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.BroadcastPDU
+	x = in_layer2_pdu_BroadcastPDU(&(*c_self))
+	r0, r1 := x.AsCallTimer()
+	out_layer2_pdu_BroadcastPDU(&(*c_self), &x, oc)
+	_ = r0
+	_ = r1
+	if c_v != nil {
+		out_layer2_pdu_CallTimerParms(&(*c_v), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_broadcast_pdu_as_chan_freq
 func dmrgo_pdu_broadcast_pdu_as_chan_freq(c_self *C.dmrgo_pdu_broadcast_pdu_t, c_v *C.dmrgo_pdu_chan_freq_parms_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -20449,6 +20638,106 @@ func dmrgo_pdu_broadcast_pdu_as_chan_freq(c_self *C.dmrgo_pdu_broadcast_pdu_t, c
 	_ = r1
 	if c_v != nil {
 		out_layer2_pdu_ChanFreqParms(&(*c_v), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_broadcast_pdu_as_gen_site
+func dmrgo_pdu_broadcast_pdu_as_gen_site(c_self *C.dmrgo_pdu_broadcast_pdu_t, c_v *C.dmrgo_pdu_gen_site_parms_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.BroadcastPDU
+	x = in_layer2_pdu_BroadcastPDU(&(*c_self))
+	r0, r1 := x.AsGenSite()
+	out_layer2_pdu_BroadcastPDU(&(*c_self), &x, oc)
+	_ = r0
+	_ = r1
+	if c_v != nil {
+		out_layer2_pdu_GenSiteParms(&(*c_v), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_broadcast_pdu_as_local_time
+func dmrgo_pdu_broadcast_pdu_as_local_time(c_self *C.dmrgo_pdu_broadcast_pdu_t, c_v *C.dmrgo_pdu_local_time_parms_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.BroadcastPDU
+	x = in_layer2_pdu_BroadcastPDU(&(*c_self))
+	r0, r1 := x.AsLocalTime()
+	out_layer2_pdu_BroadcastPDU(&(*c_self), &x, oc)
+	_ = r0
+	_ = r1
+	if c_v != nil {
+		out_layer2_pdu_LocalTimeParms(&(*c_v), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_broadcast_pdu_as_mass_reg
+func dmrgo_pdu_broadcast_pdu_as_mass_reg(c_self *C.dmrgo_pdu_broadcast_pdu_t, c_v *C.dmrgo_pdu_mass_reg_parms_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.BroadcastPDU
+	x = in_layer2_pdu_BroadcastPDU(&(*c_self))
+	r0, r1 := x.AsMassReg()
+	out_layer2_pdu_BroadcastPDU(&(*c_self), &x, oc)
+	_ = r0
+	_ = r1
+	if c_v != nil {
+		out_layer2_pdu_MassRegParms(&(*c_v), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_broadcast_pdu_as_vote_now
+func dmrgo_pdu_broadcast_pdu_as_vote_now(c_self *C.dmrgo_pdu_broadcast_pdu_t, c_v *C.dmrgo_pdu_vote_now_parms_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.BroadcastPDU
+	x = in_layer2_pdu_BroadcastPDU(&(*c_self))
+	r0, r1 := x.AsVoteNow()
+	out_layer2_pdu_BroadcastPDU(&(*c_self), &x, oc)
+	_ = r0
+	_ = r1
+	if c_v != nil {
+		out_layer2_pdu_VoteNowParms(&(*c_v), &r0, oc)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -21331,6 +21620,52 @@ func dmrgo_pdu_csbk_payloads_free(c_self *C.dmrgo_pdu_csbk_payloads_t) (rc C.int
 	}
 	get_layer2_pdu_CSBKPayloads(c_self)
 	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_call_timer_parms_encode
+func dmrgo_pdu_call_timer_parms_encode(c_self *C.dmrgo_pdu_call_timer_parms_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CallTimerParms
+	x = in_layer2_pdu_CallTimerParms(&(*c_self))
+	r0, r1 := x.Encode()
+	out_layer2_pdu_CallTimerParms(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_call_timer_parms_string
+func dmrgo_pdu_call_timer_parms_string(c_self *C.dmrgo_pdu_call_timer_parms_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CallTimerParms
+	x = in_layer2_pdu_CallTimerParms(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_layer2_pdu_CallTimerParms(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
 	return C.DMRGO_OK
 }
 
@@ -23852,6 +24187,52 @@ func dmrgo_pdu_full_link_control_payloads_free(c_self *C.dmrgo_pdu_full_link_con
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_gen_site_parms_encode
+func dmrgo_pdu_gen_site_parms_encode(c_self *C.dmrgo_pdu_gen_site_parms_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.GenSiteParms
+	x = in_layer2_pdu_GenSiteParms(&(*c_self))
+	r0, r1 := x.Encode()
+	out_layer2_pdu_GenSiteParms(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_gen_site_parms_string
+func dmrgo_pdu_gen_site_parms_string(c_self *C.dmrgo_pdu_gen_site_parms_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.GenSiteParms
+	x = in_layer2_pdu_GenSiteParms(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_layer2_pdu_GenSiteParms(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_is_pr_fill
 func dmrgo_pdu_is_pr_fill(c_info *C.uint8_t, c_out *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -24131,6 +24512,52 @@ func dmrgo_pdu_lc_bytes_set_service_options(c_self *C.dmrgo_pdu_lc_bytes_t, c_so
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self)).SetServiceOptions(byte(c_so))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_local_time_parms_encode
+func dmrgo_pdu_local_time_parms_encode(c_self *C.dmrgo_pdu_local_time_parms_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.LocalTimeParms
+	x = in_layer2_pdu_LocalTimeParms(&(*c_self))
+	r0, r1 := x.Encode()
+	out_layer2_pdu_LocalTimeParms(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_local_time_parms_string
+func dmrgo_pdu_local_time_parms_string(c_self *C.dmrgo_pdu_local_time_parms_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.LocalTimeParms
+	x = in_layer2_pdu_LocalTimeParms(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_layer2_pdu_LocalTimeParms(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -24504,6 +24931,52 @@ func dmrgo_pdu_maintenance_pdu_string(c_self *C.dmrgo_pdu_maintenance_pdu_t, c_o
 	}
 	r0 := x.String()
 	out_layer2_pdu_MaintenancePDU(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mass_reg_parms_encode
+func dmrgo_pdu_mass_reg_parms_encode(c_self *C.dmrgo_pdu_mass_reg_parms_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MassRegParms
+	x = in_layer2_pdu_MassRegParms(&(*c_self))
+	r0, r1 := x.Encode()
+	out_layer2_pdu_MassRegParms(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mass_reg_parms_string
+func dmrgo_pdu_mass_reg_parms_string(c_self *C.dmrgo_pdu_mass_reg_parms_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MassRegParms
+	x = in_layer2_pdu_MassRegParms(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_layer2_pdu_MassRegParms(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -27682,6 +28155,52 @@ func dmrgo_pdu_vnap_continuation_string(c_self *C.dmrgo_pdu_vnap_continuation_t,
 	}
 	r0 := x.String()
 	out_layer2_pdu_VNAPContinuation(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_vote_now_parms_encode
+func dmrgo_pdu_vote_now_parms_encode(c_self *C.dmrgo_pdu_vote_now_parms_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.VoteNowParms
+	x = in_layer2_pdu_VoteNowParms(&(*c_self))
+	r0, r1 := x.Encode()
+	out_layer2_pdu_VoteNowParms(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_vote_now_parms_string
+func dmrgo_pdu_vote_now_parms_string(c_self *C.dmrgo_pdu_vote_now_parms_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.VoteNowParms
+	x = in_layer2_pdu_VoteNowParms(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_layer2_pdu_VoteNowParms(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {

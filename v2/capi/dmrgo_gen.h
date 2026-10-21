@@ -217,6 +217,8 @@ typedef struct dmrgo_pdu_csbk_t dmrgo_pdu_csbk_t;
 typedef struct dmrgo_pdu_csbk_bytes_t dmrgo_pdu_csbk_bytes_t;
 /* Go: pdu.CSBKPayloads. CSBKPayloads holds one payload struct of each type that a CSBK dispatch field points to, for DecodeCSBKInto. */
 typedef struct dmrgo_pdu_csbk_payloads_t dmrgo_pdu_csbk_payloads_t;
+/* Go: pdu.CallTimerParms. CallTimerParms is the C_BCAST payload with AnnouncementType CallTimer_Parms, which sets the call timers of the MSs. */
+typedef struct dmrgo_pdu_call_timer_parms_t dmrgo_pdu_call_timer_parms_t;
 /* Go: pdu.CapacityPlusActivity. CapacityPlusActivity is the channel activity of a Capacity Plus site status: the rest LSN, and per LSN the talkgroup of a group call or the radio of a private voice or data call. */
 typedef struct dmrgo_pdu_capacity_plus_activity_t dmrgo_pdu_capacity_plus_activity_t;
 /* Go: pdu.CapacityPlusDataRevertAnnouncementPDU. CapacityPlusDataRevertAnnouncementPDU is the payload of the MOTOTRBO enhanced data revert window announcement CSBK (FID 0x10, opcode 0x29). */
@@ -275,8 +277,12 @@ typedef struct dmrgo_pdu_flc_unit_to_unit_t dmrgo_pdu_flc_unit_to_unit_t;
 typedef struct dmrgo_pdu_full_link_control_t dmrgo_pdu_full_link_control_t;
 /* Go: pdu.FullLinkControlPayloads. FullLinkControlPayloads holds one payload struct of each type that a FullLinkControl dispatch field points to, for DecodeFullLinkControlInto. */
 typedef struct dmrgo_pdu_full_link_control_payloads_t dmrgo_pdu_full_link_control_payloads_t;
+/* Go: pdu.GenSiteParms. GenSiteParms is the C_BCAST payload with AnnouncementType Gen_Site_Params, which broadcasts the current site information and the network information (ETSI TS 102 361-4 clauses 7.2.19.8, 7.2.40 and 7.2.41, Tables 7.80, 7.101 and 7.102). */
+typedef struct dmrgo_pdu_gen_site_parms_t dmrgo_pdu_gen_site_parms_t;
 /* Go: pdu.LCBytes. LCBytes is the 72 LC bits of a Full LC without RS(12,9) parity, as FullLinkControl.Bytes returns them. */
 typedef struct dmrgo_pdu_lc_bytes_t dmrgo_pdu_lc_bytes_t;
+/* Go: pdu.LocalTimeParms. LocalTimeParms is the C_BCAST payload with AnnouncementType Local_Time, which broadcasts the local date and time and the offset from UTC (ETSI TS 102 361-4 clause 7.2.19.4, Tables 7.73 to 7.75). */
+typedef struct dmrgo_pdu_local_time_parms_t dmrgo_pdu_local_time_parms_t;
 /* Go: pdu.MBCContinuation. MBCContinuation is a continuation block of a Multi Block Control (MBC) PDU. */
 typedef struct dmrgo_pdu_mbc_continuation_t dmrgo_pdu_mbc_continuation_t;
 /* Go: pdu.MBCHeader. MBCHeader is the header block of a Multi Block Control (MBC) PDU (ETSI TS 102 361-1 clause 7.4.1). */
@@ -287,6 +293,8 @@ typedef struct dmrgo_pdu_mbc_header_payloads_t dmrgo_pdu_mbc_header_payloads_t;
 typedef struct dmrgo_pdu_mvap_continuation_t dmrgo_pdu_mvap_continuation_t;
 /* Go: pdu.MaintenancePDU. MaintenancePDU is the maintenance (P_MAINT) CSBK payload (ETSI TS 102 361-4 clause 7.1.1.4.3). */
 typedef struct dmrgo_pdu_maintenance_pdu_t dmrgo_pdu_maintenance_pdu_t;
+/* Go: pdu.MassRegParms. MassRegParms is the C_BCAST payload with AnnouncementType MassReg, which asks the MSs that match Address and AlohaMask to register within the registration window (ETSI TS 102 361-4 clause 7.2.19.5, Tables 7.76 and 7.77). */
+typedef struct dmrgo_pdu_mass_reg_parms_t dmrgo_pdu_mass_reg_parms_t;
 /* Go: pdu.MotorolaCallAlertAckPDU. MotorolaCallAlertAckPDU is the payload of the Motorola call alert acknowledgement CSBK (FID 0x10, opcode 0x20) that the alerted radio sends back. */
 typedef struct dmrgo_pdu_motorola_call_alert_ack_pdu_t dmrgo_pdu_motorola_call_alert_ack_pdu_t;
 /* Go: pdu.MotorolaCallAlertPDU. MotorolaCallAlertPDU is the payload of a Motorola call alert CSBK (FID 0x10, opcode 0x1F), which makes the target radio alert its user. */
@@ -369,6 +377,8 @@ typedef struct dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t dmrgo_
 typedef struct dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t;
 /* Go: pdu.VNAPContinuation. VNAPContinuation is the VN_AP continuation block of a C_BCAST Vote_Now MBC (ETSI TS 102 361-4 clause 7.2.19.3.1, Table 7.72). */
 typedef struct dmrgo_pdu_vnap_continuation_t dmrgo_pdu_vnap_continuation_t;
+/* Go: pdu.VoteNowParms. VoteNowParms is the C_BCAST payload with AnnouncementType Vote_Now, which asks the MSs to assess a TSCC. */
+typedef struct dmrgo_pdu_vote_now_parms_t dmrgo_pdu_vote_now_parms_t;
 /* Go: layer3.CdefParms. CdefParms is the Channel Definition Parameters (Cdeftype 0) information element, which carries the absolute TX and RX frequencies in 58 bits. */
 typedef struct dmrgo_layer3_cdef_parms_t dmrgo_layer3_cdef_parms_t;
 /* Go: layer3.DataServiceOptions. DataServiceOptions is the 7-bit Service_Options of a Tier III packet data service request, in the high bits of the octet as for VoiceServiceOptions. */
@@ -2134,6 +2144,17 @@ struct dmrgo_pdu_bs_outbound_activation_pdu_t {
 	uint32_t source_address;
 };
 
+struct dmrgo_pdu_call_timer_parms_t {
+	dmrgo_enums_announcement_type_t announcement_type;
+	uint16_t emergency_timer;
+	uint8_t packet_timer;
+	bool reg;
+	uint8_t backoff;
+	uint16_t sys_ident_code;
+	uint16_t msms_timer;
+	uint16_t line_timer;
+};
+
 struct dmrgo_pdu_chan_freq_parms_t {
 	dmrgo_enums_announcement_type_t announcement_type;
 	uint16_t reserved1;
@@ -2141,6 +2162,62 @@ struct dmrgo_pdu_chan_freq_parms_t {
 	uint8_t backoff;
 	uint16_t sys_ident_code;
 	uint16_t reserved2;
+	uint16_t channel;
+};
+
+struct dmrgo_pdu_gen_site_parms_t {
+	dmrgo_enums_announcement_type_t announcement_type;
+	uint16_t reserved1;
+	bool reg;
+	uint8_t backoff;
+	uint16_t sys_ident_code;
+	bool reserved2;
+	bool hibernating;
+	uint8_t reserved3;
+	uint8_t reserved4;
+	bool reg_without_tg;
+	uint8_t reserved5;
+};
+
+struct dmrgo_pdu_local_time_parms_t {
+	dmrgo_enums_announcement_type_t announcement_type;
+	uint8_t day;
+	uint8_t month;
+	uint8_t utc_offset;
+	bool utc_offset_lags;
+	bool reg;
+	uint8_t backoff;
+	uint16_t sys_ident_code;
+	uint8_t hours;
+	uint8_t minutes;
+	uint8_t seconds;
+	uint8_t day_of_week;
+	uint8_t utc_offset_quarter;
+	uint8_t reserved;
+};
+
+struct dmrgo_pdu_mass_reg_parms_t {
+	dmrgo_enums_announcement_type_t announcement_type;
+	uint8_t reserved;
+	uint8_t reg_window;
+	uint8_t aloha_mask;
+	bool reg;
+	uint8_t backoff;
+	uint16_t sys_ident_code;
+	uint32_t address;
+};
+
+struct dmrgo_pdu_vote_now_parms_t {
+	dmrgo_enums_announcement_type_t announcement_type;
+	uint16_t vote_sys_code;
+	bool reg;
+	uint8_t backoff;
+	uint16_t sys_ident_code;
+	bool has_active_conn;
+	bool active_conn;
+	uint8_t confirmed_priority;
+	uint8_t adjacent_priority;
+	uint8_t reserved;
 	uint16_t channel;
 };
 
@@ -6412,8 +6489,18 @@ int dmrgo_pdu_block_crc_ok(const uint8_t b[12], dmrgo_enums_data_type_t dt, bool
 int dmrgo_pdu_broadcast_pdu_as_adjacent_site(dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_adjacent_site_parms_t *v, bool *ok);
 /* Go: pdu.BroadcastPDU.AsAnnWDTSCC. AsAnnWDTSCC returns p as Ann_WD_TSCC parameters. */
 int dmrgo_pdu_broadcast_pdu_as_ann_wd_tscc(dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_ann_wd_tscc_parms_t *v, bool *ok);
+/* Go: pdu.BroadcastPDU.AsCallTimer. AsCallTimer returns p as CallTimer_Parms parameters, as AsAnnWDTSCC does. */
+int dmrgo_pdu_broadcast_pdu_as_call_timer(dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_call_timer_parms_t *v, bool *ok);
 /* Go: pdu.BroadcastPDU.AsChanFreq. AsChanFreq returns p as Chan_Freq parameters, as AsAnnWDTSCC does. */
 int dmrgo_pdu_broadcast_pdu_as_chan_freq(dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_chan_freq_parms_t *v, bool *ok);
+/* Go: pdu.BroadcastPDU.AsGenSite. AsGenSite returns p as Gen_Site_Params parameters, as AsAnnWDTSCC does. */
+int dmrgo_pdu_broadcast_pdu_as_gen_site(dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_gen_site_parms_t *v, bool *ok);
+/* Go: pdu.BroadcastPDU.AsLocalTime. AsLocalTime returns p as Local_Time parameters, as AsAnnWDTSCC does. */
+int dmrgo_pdu_broadcast_pdu_as_local_time(dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_local_time_parms_t *v, bool *ok);
+/* Go: pdu.BroadcastPDU.AsMassReg. AsMassReg returns p as MassReg parameters, as AsAnnWDTSCC does. */
+int dmrgo_pdu_broadcast_pdu_as_mass_reg(dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_mass_reg_parms_t *v, bool *ok);
+/* Go: pdu.BroadcastPDU.AsVoteNow. AsVoteNow returns p as Vote_Now parameters, as AsAnnWDTSCC does. */
+int dmrgo_pdu_broadcast_pdu_as_vote_now(dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_vote_now_parms_t *v, bool *ok);
 /* Go: pdu.BroadcastPDU.Encode. Encode encodes a BroadcastPDU. */
 int dmrgo_pdu_broadcast_pdu_encode(dmrgo_pdu_broadcast_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.BroadcastPDU.String. String returns the fields of s as text, for printing. */
@@ -6492,6 +6579,10 @@ int dmrgo_pdu_csbk_opcode_string(dmrgo_pdu_csbk_opcode_t self, char *out, size_t
 int dmrgo_pdu_csbk_payloads_new(dmrgo_pdu_csbk_payloads_t **out);
 /* dmrgo_pdu_csbk_payloads_free frees the handle. self may be NULL. */
 int dmrgo_pdu_csbk_payloads_free(dmrgo_pdu_csbk_payloads_t *self);
+/* Go: pdu.CallTimerParms.Encode. Encode encodes a CallTimerParms. */
+int dmrgo_pdu_call_timer_parms_encode(dmrgo_pdu_call_timer_parms_t *self, uint8_t out[8]);
+/* Go: pdu.CallTimerParms.String. String returns the fields of s as text, for printing. */
+int dmrgo_pdu_call_timer_parms_string(dmrgo_pdu_call_timer_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.CapacityPlusActivity.RadioTarget. RadioTarget returns the target radio of a private voice or data call on lsn. */
 int dmrgo_pdu_capacity_plus_activity_radio_target(dmrgo_pdu_capacity_plus_activity_t *self, uint8_t lsn, uint16_t *radio, bool *ok);
 /* Go: pdu.CapacityPlusActivity.Talkgroup. Talkgroup returns the talkgroup of a group call on lsn. */
@@ -6728,6 +6819,10 @@ int dmrgo_pdu_full_link_control_string(dmrgo_pdu_full_link_control_t *self, char
 int dmrgo_pdu_full_link_control_payloads_new(dmrgo_pdu_full_link_control_payloads_t **out);
 /* dmrgo_pdu_full_link_control_payloads_free frees the handle. self may be NULL. */
 int dmrgo_pdu_full_link_control_payloads_free(dmrgo_pdu_full_link_control_payloads_t *self);
+/* Go: pdu.GenSiteParms.Encode. Encode encodes a GenSiteParms. */
+int dmrgo_pdu_gen_site_parms_encode(dmrgo_pdu_gen_site_parms_t *self, uint8_t out[8]);
+/* Go: pdu.GenSiteParms.String. String returns the fields of s as text, for printing. */
+int dmrgo_pdu_gen_site_parms_string(dmrgo_pdu_gen_site_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.IsPRFill. IsPRFill reports whether the 96 information bits info, packed as PRFillBits returns them, are the PR FILL bits of Table D.2. */
 int dmrgo_pdu_is_pr_fill(const uint8_t info[12], bool *out);
 /* Go: pdu.LCBytes.Addresses. Addresses returns the 24-bit target (octets 3 to 5) and source (octets 6 to 8) addresses of a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC. */
@@ -6760,6 +6855,10 @@ int dmrgo_pdu_lc_bytes_set_protect_flag(dmrgo_pdu_lc_bytes_t *self, bool pf);
 int dmrgo_pdu_lc_bytes_set_reserved(dmrgo_pdu_lc_bytes_t *self, bool r);
 /* Go: pdu.LCBytes.SetServiceOptions. SetServiceOptions writes so into octet 2. */
 int dmrgo_pdu_lc_bytes_set_service_options(dmrgo_pdu_lc_bytes_t *self, uint8_t so);
+/* Go: pdu.LocalTimeParms.Encode. Encode encodes a LocalTimeParms. */
+int dmrgo_pdu_local_time_parms_encode(dmrgo_pdu_local_time_parms_t *self, uint8_t out[8]);
+/* Go: pdu.LocalTimeParms.String. String returns the fields of s as text, for printing. */
+int dmrgo_pdu_local_time_parms_string(dmrgo_pdu_local_time_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.MBCContinuation.AsBCAP. AsBCAP decodes the block as the BC_AP continuation of a C_BCAST MBC (ETSI TS 102 361-4 Table 7.21), as AsCGAP does. */
 int dmrgo_pdu_mbc_continuation_as_bcap(dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_bcap_continuation_t *out);
 /* Go: pdu.MBCContinuation.AsCGAP. AsCGAP decodes the block as the CG_AP continuation of a grant MBC. */
@@ -6796,6 +6895,10 @@ int dmrgo_pdu_mvap_continuation_string(dmrgo_pdu_mvap_continuation_t *self, char
 int dmrgo_pdu_maintenance_pdu_encode(dmrgo_pdu_maintenance_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.MaintenancePDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_maintenance_pdu_string(dmrgo_pdu_maintenance_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: pdu.MassRegParms.Encode. Encode encodes a MassRegParms. */
+int dmrgo_pdu_mass_reg_parms_encode(dmrgo_pdu_mass_reg_parms_t *self, uint8_t out[8]);
+/* Go: pdu.MassRegParms.String. String returns the fields of s as text, for printing. */
+int dmrgo_pdu_mass_reg_parms_string(dmrgo_pdu_mass_reg_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.MotorolaCallAlertAckPDU.Encode. Encode encodes a MotorolaCallAlertAckPDU. */
 int dmrgo_pdu_motorola_call_alert_ack_pdu_encode(dmrgo_pdu_motorola_call_alert_ack_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.MotorolaCallAlertAckPDU.String. String returns the fields of s as text, for printing. */
@@ -7084,6 +7187,10 @@ int dmrgo_pdu_vnap_continuation_data_type(dmrgo_pdu_vnap_continuation_t *self, d
 int dmrgo_pdu_vnap_continuation_encode(dmrgo_pdu_vnap_continuation_t *self, uint8_t out[12]);
 /* Go: pdu.VNAPContinuation.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_vnap_continuation_string(dmrgo_pdu_vnap_continuation_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: pdu.VoteNowParms.Encode. Encode encodes a VoteNowParms. */
+int dmrgo_pdu_vote_now_parms_encode(dmrgo_pdu_vote_now_parms_t *self, uint8_t out[8]);
+/* Go: pdu.VoteNowParms.String. String returns the fields of s as text, for printing. */
+int dmrgo_pdu_vote_now_parms_string(dmrgo_pdu_vote_now_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.AdditionalInformationField.String. */
 int dmrgo_layer3_additional_information_field_string(dmrgo_layer3_additional_information_field_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.CdefParms.Encode. Encode encodes a CdefParms. */

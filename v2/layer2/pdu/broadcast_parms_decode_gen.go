@@ -3,6 +3,11 @@
 // ETSI TS 102 361-4 clause 7.2.19.1, Table 7.69
 // ETSI TS 102 361-4 clause 7.2.19.6, Table 7.78
 // ETSI TS 102 361-4 clause 7.2.19.7, Table 7.79
+// ETSI TS 102 361-4 clause 7.2.19.2, Table 7.70
+// ETSI TS 102 361-4 clause 7.2.19.3, Table 7.71
+// ETSI TS 102 361-4 clause 7.2.19.4, Tables 7.73 to 7.75
+// ETSI TS 102 361-4 clause 7.2.19.5, Tables 7.76 and 7.77
+// ETSI TS 102 361-4 clauses 7.2.19.8, 7.2.40 and 7.2.41, Tables 7.80, 7.101 and 7.102
 
 package pdu
 
@@ -227,6 +232,379 @@ func (s *AdjacentSiteParms) String() string {
 	return "AdjacentSiteParms{ AnnouncementType: " + s.AnnouncementType.String() + ", AdjacentSysCode: " + text.Int(int64(s.AdjacentSysCode)) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", SysIdentCode: " + text.Int(int64(s.SysIdentCode)) + ", HasActiveConn: " + text.Bool(s.HasActiveConn) + ", ActiveConn: " + text.Bool(s.ActiveConn) + ", ConfirmedPriority: " + text.Int(int64(s.ConfirmedPriority)) + ", AdjacentPriority: " + text.Int(int64(s.AdjacentPriority)) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", Channel: " + text.Int(int64(s.Channel)) + " }"
 }
 
+// ETSI TS 102 361-4 clause 7.2.19.2, Table 7.70
+func decodeCallTimerParms(data [8]byte) CallTimerParms {
+	var result CallTimerParms
+	result.AnnouncementType = enums.AnnouncementType(uint64(data[0]) >> 3)
+	result.EmergencyTimer = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 2 & 0x1FF)
+	result.PacketTimer = uint8((uint64(data[1])<<8 | uint64(data[2])) >> 5 & 0x1F)
+	result.Reg = data[2]&0x10 != 0
+	result.Backoff = uint8(uint64(data[2]) & 0xF)
+	result.SysIdentCode = uint16(uint64(data[3])<<8 | uint64(data[4]))
+	result.MSMSTimer = uint16((uint64(data[5])<<8 | uint64(data[6])) >> 4)
+	result.LineTimer = uint16((uint64(data[6])<<8 | uint64(data[7])) & 0xFFF)
+	return result
+}
+
+// Encode encodes a CallTimerParms. It returns the 64 bits packed, the first
+// bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-4 clause 7.2.19.2, Table 7.70)
+func (s *CallTimerParms) Encode() ([8]byte, error) {
+	var data [8]byte
+	if uint64(s.AnnouncementType)>>5 != 0 {
+		return [8]byte{}, errCallTimerParmsAnnouncementTypeRange
+	}
+	data[0] = data[0]&^0xF8 | byte(uint64(s.AnnouncementType)<<3)&0xF8
+	if uint64(s.EmergencyTimer)>>9 != 0 {
+		return [8]byte{}, errCallTimerParmsEmergencyTimerRange
+	}
+	_valEmergencyTimer := uint64(s.EmergencyTimer)
+	data[0] = data[0]&^0x07 | byte(_valEmergencyTimer>>6)&0x07
+	data[1] = data[1]&^0xFC | byte(_valEmergencyTimer<<2)&0xFC
+	if uint64(s.PacketTimer)>>5 != 0 {
+		return [8]byte{}, errCallTimerParmsPacketTimerRange
+	}
+	_valPacketTimer := uint64(s.PacketTimer)
+	data[1] = data[1]&^0x03 | byte(_valPacketTimer>>3)&0x03
+	data[2] = data[2]&^0xE0 | byte(_valPacketTimer<<5)&0xE0
+	if s.Reg {
+		data[2] |= 0x10
+	}
+	if uint64(s.Backoff)>>4 != 0 {
+		return [8]byte{}, errCallTimerParmsBackoffRange
+	}
+	data[2] = data[2]&^0x0F | byte(uint64(s.Backoff))&0x0F
+	_valSysIdentCode := uint64(s.SysIdentCode)
+	data[3] = byte(_valSysIdentCode >> 8)
+	data[4] = byte(_valSysIdentCode)
+	if uint64(s.MSMSTimer)>>12 != 0 {
+		return [8]byte{}, errCallTimerParmsMSMSTimerRange
+	}
+	_valMSMSTimer := uint64(s.MSMSTimer)
+	data[5] = byte(_valMSMSTimer >> 4)
+	data[6] = data[6]&^0xF0 | byte(_valMSMSTimer<<4)&0xF0
+	if uint64(s.LineTimer)>>12 != 0 {
+		return [8]byte{}, errCallTimerParmsLineTimerRange
+	}
+	_valLineTimer := uint64(s.LineTimer)
+	data[6] = data[6]&^0x0F | byte(_valLineTimer>>8)&0x0F
+	data[7] = byte(_valLineTimer)
+	return data, nil
+}
+
+// String returns the fields of s as text, for printing. It allocates the
+// string.
+func (s *CallTimerParms) String() string {
+	return "CallTimerParms{ AnnouncementType: " + s.AnnouncementType.String() + ", EmergencyTimer: " + text.Int(int64(s.EmergencyTimer)) + ", PacketTimer: " + text.Int(int64(s.PacketTimer)) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", SysIdentCode: " + text.Int(int64(s.SysIdentCode)) + ", MSMSTimer: " + text.Int(int64(s.MSMSTimer)) + ", LineTimer: " + text.Int(int64(s.LineTimer)) + " }"
+}
+
+// ETSI TS 102 361-4 clause 7.2.19.3, Table 7.71
+func decodeVoteNowParms(data [8]byte) VoteNowParms {
+	var result VoteNowParms
+	result.AnnouncementType = enums.AnnouncementType(uint64(data[0]) >> 3)
+	result.VoteSysCode = uint16((uint64(data[0])<<16 | uint64(data[1])<<8 | uint64(data[2])) >> 5 & 0x3FFF)
+	result.Reg = data[2]&0x10 != 0
+	result.Backoff = uint8(uint64(data[2]) & 0xF)
+	result.SysIdentCode = uint16(uint64(data[3])<<8 | uint64(data[4]))
+	result.HasActiveConn = data[5]&0x80 != 0
+	result.ActiveConn = data[5]&0x40 != 0
+	result.ConfirmedPriority = uint8(uint64(data[5]) >> 3 & 0x7)
+	result.AdjacentPriority = uint8(uint64(data[5]) & 0x7)
+	result.Reserved = uint8(uint64(data[6]) >> 4)
+	result.Channel = uint16((uint64(data[6])<<8 | uint64(data[7])) & 0xFFF)
+	return result
+}
+
+// Encode encodes a VoteNowParms. It returns the 64 bits packed, the first
+// bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-4 clause 7.2.19.3, Table 7.71)
+func (s *VoteNowParms) Encode() ([8]byte, error) {
+	var data [8]byte
+	if uint64(s.AnnouncementType)>>5 != 0 {
+		return [8]byte{}, errVoteNowParmsAnnouncementTypeRange
+	}
+	data[0] = data[0]&^0xF8 | byte(uint64(s.AnnouncementType)<<3)&0xF8
+	if uint64(s.VoteSysCode)>>14 != 0 {
+		return [8]byte{}, errVoteNowParmsVoteSysCodeRange
+	}
+	_valVoteSysCode := uint64(s.VoteSysCode)
+	data[0] = data[0]&^0x07 | byte(_valVoteSysCode>>11)&0x07
+	data[1] = byte(_valVoteSysCode >> 3)
+	data[2] = data[2]&^0xE0 | byte(_valVoteSysCode<<5)&0xE0
+	if s.Reg {
+		data[2] |= 0x10
+	}
+	if uint64(s.Backoff)>>4 != 0 {
+		return [8]byte{}, errVoteNowParmsBackoffRange
+	}
+	data[2] = data[2]&^0x0F | byte(uint64(s.Backoff))&0x0F
+	_valSysIdentCode := uint64(s.SysIdentCode)
+	data[3] = byte(_valSysIdentCode >> 8)
+	data[4] = byte(_valSysIdentCode)
+	if s.HasActiveConn {
+		data[5] |= 0x80
+	}
+	if s.ActiveConn {
+		data[5] |= 0x40
+	}
+	if uint64(s.ConfirmedPriority)>>3 != 0 {
+		return [8]byte{}, errVoteNowParmsConfirmedPriorityRange
+	}
+	data[5] = data[5]&^0x38 | byte(uint64(s.ConfirmedPriority)<<3)&0x38
+	if uint64(s.AdjacentPriority)>>3 != 0 {
+		return [8]byte{}, errVoteNowParmsAdjacentPriorityRange
+	}
+	data[5] = data[5]&^0x07 | byte(uint64(s.AdjacentPriority))&0x07
+	if uint64(s.Reserved)>>4 != 0 {
+		return [8]byte{}, errVoteNowParmsReservedRange
+	}
+	data[6] = data[6]&^0xF0 | byte(uint64(s.Reserved)<<4)&0xF0
+	if uint64(s.Channel)>>12 != 0 {
+		return [8]byte{}, errVoteNowParmsChannelRange
+	}
+	_valChannel := uint64(s.Channel)
+	data[6] = data[6]&^0x0F | byte(_valChannel>>8)&0x0F
+	data[7] = byte(_valChannel)
+	return data, nil
+}
+
+// String returns the fields of s as text, for printing. It allocates the
+// string.
+func (s *VoteNowParms) String() string {
+	return "VoteNowParms{ AnnouncementType: " + s.AnnouncementType.String() + ", VoteSysCode: " + text.Int(int64(s.VoteSysCode)) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", SysIdentCode: " + text.Int(int64(s.SysIdentCode)) + ", HasActiveConn: " + text.Bool(s.HasActiveConn) + ", ActiveConn: " + text.Bool(s.ActiveConn) + ", ConfirmedPriority: " + text.Int(int64(s.ConfirmedPriority)) + ", AdjacentPriority: " + text.Int(int64(s.AdjacentPriority)) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", Channel: " + text.Int(int64(s.Channel)) + " }"
+}
+
+// ETSI TS 102 361-4 clause 7.2.19.4, Tables 7.73 to 7.75
+func decodeLocalTimeParms(data [8]byte) LocalTimeParms {
+	var result LocalTimeParms
+	result.AnnouncementType = enums.AnnouncementType(uint64(data[0]) >> 3)
+	result.Day = uint8((uint64(data[0])<<8 | uint64(data[1])) >> 6 & 0x1F)
+	result.Month = uint8(uint64(data[1]) >> 2 & 0xF)
+	result.UTCOffset = uint8((uint64(data[1])<<8 | uint64(data[2])) >> 6 & 0xF)
+	result.UTCOffsetLags = data[2]&0x20 != 0
+	result.Reg = data[2]&0x10 != 0
+	result.Backoff = uint8(uint64(data[2]) & 0xF)
+	result.SysIdentCode = uint16(uint64(data[3])<<8 | uint64(data[4]))
+	result.Hours = uint8(uint64(data[5]) >> 3)
+	result.Minutes = uint8((uint64(data[5])<<8 | uint64(data[6])) >> 5 & 0x3F)
+	result.Seconds = uint8((uint64(data[6])<<8 | uint64(data[7])) >> 7 & 0x3F)
+	result.DayOfWeek = uint8(uint64(data[7]) >> 4 & 0x7)
+	result.UTCOffsetQuarter = uint8(uint64(data[7]) >> 2 & 0x3)
+	result.Reserved = uint8(uint64(data[7]) & 0x3)
+	return result
+}
+
+// Encode encodes a LocalTimeParms. It returns the 64 bits packed, the first
+// bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-4 clause 7.2.19.4, Tables 7.73 to 7.75)
+func (s *LocalTimeParms) Encode() ([8]byte, error) {
+	var data [8]byte
+	if uint64(s.AnnouncementType)>>5 != 0 {
+		return [8]byte{}, errLocalTimeParmsAnnouncementTypeRange
+	}
+	data[0] = data[0]&^0xF8 | byte(uint64(s.AnnouncementType)<<3)&0xF8
+	if uint64(s.Day)>>5 != 0 {
+		return [8]byte{}, errLocalTimeParmsDayRange
+	}
+	_valDay := uint64(s.Day)
+	data[0] = data[0]&^0x07 | byte(_valDay>>2)&0x07
+	data[1] = data[1]&^0xC0 | byte(_valDay<<6)&0xC0
+	if uint64(s.Month)>>4 != 0 {
+		return [8]byte{}, errLocalTimeParmsMonthRange
+	}
+	data[1] = data[1]&^0x3C | byte(uint64(s.Month)<<2)&0x3C
+	if uint64(s.UTCOffset)>>4 != 0 {
+		return [8]byte{}, errLocalTimeParmsUTCOffsetRange
+	}
+	_valUTCOffset := uint64(s.UTCOffset)
+	data[1] = data[1]&^0x03 | byte(_valUTCOffset>>2)&0x03
+	data[2] = data[2]&^0xC0 | byte(_valUTCOffset<<6)&0xC0
+	if s.UTCOffsetLags {
+		data[2] |= 0x20
+	}
+	if s.Reg {
+		data[2] |= 0x10
+	}
+	if uint64(s.Backoff)>>4 != 0 {
+		return [8]byte{}, errLocalTimeParmsBackoffRange
+	}
+	data[2] = data[2]&^0x0F | byte(uint64(s.Backoff))&0x0F
+	_valSysIdentCode := uint64(s.SysIdentCode)
+	data[3] = byte(_valSysIdentCode >> 8)
+	data[4] = byte(_valSysIdentCode)
+	if uint64(s.Hours)>>5 != 0 {
+		return [8]byte{}, errLocalTimeParmsHoursRange
+	}
+	data[5] = data[5]&^0xF8 | byte(uint64(s.Hours)<<3)&0xF8
+	if uint64(s.Minutes)>>6 != 0 {
+		return [8]byte{}, errLocalTimeParmsMinutesRange
+	}
+	_valMinutes := uint64(s.Minutes)
+	data[5] = data[5]&^0x07 | byte(_valMinutes>>3)&0x07
+	data[6] = data[6]&^0xE0 | byte(_valMinutes<<5)&0xE0
+	if uint64(s.Seconds)>>6 != 0 {
+		return [8]byte{}, errLocalTimeParmsSecondsRange
+	}
+	_valSeconds := uint64(s.Seconds)
+	data[6] = data[6]&^0x1F | byte(_valSeconds>>1)&0x1F
+	data[7] = data[7]&^0x80 | byte(_valSeconds<<7)&0x80
+	if uint64(s.DayOfWeek)>>3 != 0 {
+		return [8]byte{}, errLocalTimeParmsDayOfWeekRange
+	}
+	data[7] = data[7]&^0x70 | byte(uint64(s.DayOfWeek)<<4)&0x70
+	if uint64(s.UTCOffsetQuarter)>>2 != 0 {
+		return [8]byte{}, errLocalTimeParmsUTCOffsetQuarterRange
+	}
+	data[7] = data[7]&^0x0C | byte(uint64(s.UTCOffsetQuarter)<<2)&0x0C
+	if uint64(s.Reserved)>>2 != 0 {
+		return [8]byte{}, errLocalTimeParmsReservedRange
+	}
+	data[7] = data[7]&^0x03 | byte(uint64(s.Reserved))&0x03
+	return data, nil
+}
+
+// String returns the fields of s as text, for printing. It allocates the
+// string.
+func (s *LocalTimeParms) String() string {
+	return "LocalTimeParms{ AnnouncementType: " + s.AnnouncementType.String() + ", Day: " + text.Int(int64(s.Day)) + ", Month: " + text.Int(int64(s.Month)) + ", UTCOffset: " + text.Int(int64(s.UTCOffset)) + ", UTCOffsetLags: " + text.Bool(s.UTCOffsetLags) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", SysIdentCode: " + text.Int(int64(s.SysIdentCode)) + ", Hours: " + text.Int(int64(s.Hours)) + ", Minutes: " + text.Int(int64(s.Minutes)) + ", Seconds: " + text.Int(int64(s.Seconds)) + ", DayOfWeek: " + text.Int(int64(s.DayOfWeek)) + ", UTCOffsetQuarter: " + text.Int(int64(s.UTCOffsetQuarter)) + ", Reserved: " + text.Int(int64(s.Reserved)) + " }"
+}
+
+// ETSI TS 102 361-4 clause 7.2.19.5, Tables 7.76 and 7.77
+func decodeMassRegParms(data [8]byte) MassRegParms {
+	var result MassRegParms
+	result.AnnouncementType = enums.AnnouncementType(uint64(data[0]) >> 3)
+	result.Reserved = uint8((uint64(data[0])<<8 | uint64(data[1])) >> 6 & 0x1F)
+	result.RegWindow = uint8(uint64(data[1]) >> 2 & 0xF)
+	result.AlohaMask = uint8((uint64(data[1])<<8 | uint64(data[2])) >> 5 & 0x1F)
+	result.Reg = data[2]&0x10 != 0
+	result.Backoff = uint8(uint64(data[2]) & 0xF)
+	result.SysIdentCode = uint16(uint64(data[3])<<8 | uint64(data[4]))
+	result.Address = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
+	return result
+}
+
+// Encode encodes a MassRegParms. It returns the 64 bits packed, the first
+// bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-4 clause 7.2.19.5, Tables 7.76 and 7.77)
+func (s *MassRegParms) Encode() ([8]byte, error) {
+	var data [8]byte
+	if uint64(s.AnnouncementType)>>5 != 0 {
+		return [8]byte{}, errMassRegParmsAnnouncementTypeRange
+	}
+	data[0] = data[0]&^0xF8 | byte(uint64(s.AnnouncementType)<<3)&0xF8
+	if uint64(s.Reserved)>>5 != 0 {
+		return [8]byte{}, errMassRegParmsReservedRange
+	}
+	_valReserved := uint64(s.Reserved)
+	data[0] = data[0]&^0x07 | byte(_valReserved>>2)&0x07
+	data[1] = data[1]&^0xC0 | byte(_valReserved<<6)&0xC0
+	if uint64(s.RegWindow)>>4 != 0 {
+		return [8]byte{}, errMassRegParmsRegWindowRange
+	}
+	data[1] = data[1]&^0x3C | byte(uint64(s.RegWindow)<<2)&0x3C
+	if uint64(s.AlohaMask)>>5 != 0 {
+		return [8]byte{}, errMassRegParmsAlohaMaskRange
+	}
+	_valAlohaMask := uint64(s.AlohaMask)
+	data[1] = data[1]&^0x03 | byte(_valAlohaMask>>3)&0x03
+	data[2] = data[2]&^0xE0 | byte(_valAlohaMask<<5)&0xE0
+	if s.Reg {
+		data[2] |= 0x10
+	}
+	if uint64(s.Backoff)>>4 != 0 {
+		return [8]byte{}, errMassRegParmsBackoffRange
+	}
+	data[2] = data[2]&^0x0F | byte(uint64(s.Backoff))&0x0F
+	_valSysIdentCode := uint64(s.SysIdentCode)
+	data[3] = byte(_valSysIdentCode >> 8)
+	data[4] = byte(_valSysIdentCode)
+	if uint64(s.Address)>>24 != 0 {
+		return [8]byte{}, errMassRegParmsAddressRange
+	}
+	_valAddress := uint64(s.Address)
+	data[5] = byte(_valAddress >> 16)
+	data[6] = byte(_valAddress >> 8)
+	data[7] = byte(_valAddress)
+	return data, nil
+}
+
+// String returns the fields of s as text, for printing. It allocates the
+// string.
+func (s *MassRegParms) String() string {
+	return "MassRegParms{ AnnouncementType: " + s.AnnouncementType.String() + ", Reserved: " + text.Int(int64(s.Reserved)) + ", RegWindow: " + text.Int(int64(s.RegWindow)) + ", AlohaMask: " + text.Int(int64(s.AlohaMask)) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", SysIdentCode: " + text.Int(int64(s.SysIdentCode)) + ", Address: " + text.Int(int64(s.Address)) + " }"
+}
+
+// ETSI TS 102 361-4 clauses 7.2.19.8, 7.2.40 and 7.2.41, Tables 7.80, 7.101 and 7.102
+func decodeGenSiteParms(data [8]byte) GenSiteParms {
+	var result GenSiteParms
+	result.AnnouncementType = enums.AnnouncementType(uint64(data[0]) >> 3)
+	result.Reserved1 = uint16((uint64(data[0])<<16 | uint64(data[1])<<8 | uint64(data[2])) >> 5 & 0x3FFF)
+	result.Reg = data[2]&0x10 != 0
+	result.Backoff = uint8(uint64(data[2]) & 0xF)
+	result.SysIdentCode = uint16(uint64(data[3])<<8 | uint64(data[4]))
+	result.Reserved2 = data[5]&0x80 != 0
+	result.Hibernating = data[5]&0x40 != 0
+	result.Reserved3 = uint8(uint64(data[5]) & 0x3F)
+	result.Reserved4 = uint8(uint64(data[6]))
+	result.RegWithoutTG = data[7]&0x80 != 0
+	result.Reserved5 = uint8(uint64(data[7]) & 0x7F)
+	return result
+}
+
+// Encode encodes a GenSiteParms. It returns the 64 bits packed, the first
+// bit in the most significant bit of byte 0.
+// (ETSI TS 102 361-4 clauses 7.2.19.8, 7.2.40 and 7.2.41, Tables 7.80,
+// 7.101 and 7.102)
+func (s *GenSiteParms) Encode() ([8]byte, error) {
+	var data [8]byte
+	if uint64(s.AnnouncementType)>>5 != 0 {
+		return [8]byte{}, errGenSiteParmsAnnouncementTypeRange
+	}
+	data[0] = data[0]&^0xF8 | byte(uint64(s.AnnouncementType)<<3)&0xF8
+	if uint64(s.Reserved1)>>14 != 0 {
+		return [8]byte{}, errGenSiteParmsReserved1Range
+	}
+	_valReserved1 := uint64(s.Reserved1)
+	data[0] = data[0]&^0x07 | byte(_valReserved1>>11)&0x07
+	data[1] = byte(_valReserved1 >> 3)
+	data[2] = data[2]&^0xE0 | byte(_valReserved1<<5)&0xE0
+	if s.Reg {
+		data[2] |= 0x10
+	}
+	if uint64(s.Backoff)>>4 != 0 {
+		return [8]byte{}, errGenSiteParmsBackoffRange
+	}
+	data[2] = data[2]&^0x0F | byte(uint64(s.Backoff))&0x0F
+	_valSysIdentCode := uint64(s.SysIdentCode)
+	data[3] = byte(_valSysIdentCode >> 8)
+	data[4] = byte(_valSysIdentCode)
+	if s.Reserved2 {
+		data[5] |= 0x80
+	}
+	if s.Hibernating {
+		data[5] |= 0x40
+	}
+	if uint64(s.Reserved3)>>6 != 0 {
+		return [8]byte{}, errGenSiteParmsReserved3Range
+	}
+	data[5] = data[5]&^0x3F | byte(uint64(s.Reserved3))&0x3F
+	data[6] = byte(uint64(s.Reserved4))
+	if s.RegWithoutTG {
+		data[7] |= 0x80
+	}
+	if uint64(s.Reserved5)>>7 != 0 {
+		return [8]byte{}, errGenSiteParmsReserved5Range
+	}
+	data[7] = data[7]&^0x7F | byte(uint64(s.Reserved5))&0x7F
+	return data, nil
+}
+
+// String returns the fields of s as text, for printing. It allocates the
+// string.
+func (s *GenSiteParms) String() string {
+	return "GenSiteParms{ AnnouncementType: " + s.AnnouncementType.String() + ", Reserved1: " + text.Int(int64(s.Reserved1)) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", SysIdentCode: " + text.Int(int64(s.SysIdentCode)) + ", Reserved2: " + text.Bool(s.Reserved2) + ", Hibernating: " + text.Bool(s.Hibernating) + ", Reserved3: " + text.Int(int64(s.Reserved3)) + ", Reserved4: " + text.Int(int64(s.Reserved4)) + ", RegWithoutTG: " + text.Bool(s.RegWithoutTG) + ", Reserved5: " + text.Int(int64(s.Reserved5)) + " }"
+}
+
 var (
 	errAnnWDTSCCParmsAnnouncementTypeRange = &dmrgo.FieldRangeError{
 		Bits:  5,
@@ -322,5 +700,180 @@ var (
 		Bits:  12,
 		Field: "Channel",
 		Type:  "AdjacentSiteParms",
+	}
+	errCallTimerParmsAnnouncementTypeRange = &dmrgo.FieldRangeError{
+		Bits:  5,
+		Field: "AnnouncementType",
+		Type:  "CallTimerParms",
+	}
+	errCallTimerParmsEmergencyTimerRange = &dmrgo.FieldRangeError{
+		Bits:  9,
+		Field: "EmergencyTimer",
+		Type:  "CallTimerParms",
+	}
+	errCallTimerParmsPacketTimerRange = &dmrgo.FieldRangeError{
+		Bits:  5,
+		Field: "PacketTimer",
+		Type:  "CallTimerParms",
+	}
+	errCallTimerParmsBackoffRange = &dmrgo.FieldRangeError{
+		Bits:  4,
+		Field: "Backoff",
+		Type:  "CallTimerParms",
+	}
+	errCallTimerParmsMSMSTimerRange = &dmrgo.FieldRangeError{
+		Bits:  12,
+		Field: "MSMSTimer",
+		Type:  "CallTimerParms",
+	}
+	errCallTimerParmsLineTimerRange = &dmrgo.FieldRangeError{
+		Bits:  12,
+		Field: "LineTimer",
+		Type:  "CallTimerParms",
+	}
+	errVoteNowParmsAnnouncementTypeRange = &dmrgo.FieldRangeError{
+		Bits:  5,
+		Field: "AnnouncementType",
+		Type:  "VoteNowParms",
+	}
+	errVoteNowParmsVoteSysCodeRange = &dmrgo.FieldRangeError{
+		Bits:  14,
+		Field: "VoteSysCode",
+		Type:  "VoteNowParms",
+	}
+	errVoteNowParmsBackoffRange = &dmrgo.FieldRangeError{
+		Bits:  4,
+		Field: "Backoff",
+		Type:  "VoteNowParms",
+	}
+	errVoteNowParmsConfirmedPriorityRange = &dmrgo.FieldRangeError{
+		Bits:  3,
+		Field: "ConfirmedPriority",
+		Type:  "VoteNowParms",
+	}
+	errVoteNowParmsAdjacentPriorityRange = &dmrgo.FieldRangeError{
+		Bits:  3,
+		Field: "AdjacentPriority",
+		Type:  "VoteNowParms",
+	}
+	errVoteNowParmsReservedRange = &dmrgo.FieldRangeError{
+		Bits:  4,
+		Field: "Reserved",
+		Type:  "VoteNowParms",
+	}
+	errVoteNowParmsChannelRange = &dmrgo.FieldRangeError{
+		Bits:  12,
+		Field: "Channel",
+		Type:  "VoteNowParms",
+	}
+	errLocalTimeParmsAnnouncementTypeRange = &dmrgo.FieldRangeError{
+		Bits:  5,
+		Field: "AnnouncementType",
+		Type:  "LocalTimeParms",
+	}
+	errLocalTimeParmsDayRange = &dmrgo.FieldRangeError{
+		Bits:  5,
+		Field: "Day",
+		Type:  "LocalTimeParms",
+	}
+	errLocalTimeParmsMonthRange = &dmrgo.FieldRangeError{
+		Bits:  4,
+		Field: "Month",
+		Type:  "LocalTimeParms",
+	}
+	errLocalTimeParmsUTCOffsetRange = &dmrgo.FieldRangeError{
+		Bits:  4,
+		Field: "UTCOffset",
+		Type:  "LocalTimeParms",
+	}
+	errLocalTimeParmsBackoffRange = &dmrgo.FieldRangeError{
+		Bits:  4,
+		Field: "Backoff",
+		Type:  "LocalTimeParms",
+	}
+	errLocalTimeParmsHoursRange = &dmrgo.FieldRangeError{
+		Bits:  5,
+		Field: "Hours",
+		Type:  "LocalTimeParms",
+	}
+	errLocalTimeParmsMinutesRange = &dmrgo.FieldRangeError{
+		Bits:  6,
+		Field: "Minutes",
+		Type:  "LocalTimeParms",
+	}
+	errLocalTimeParmsSecondsRange = &dmrgo.FieldRangeError{
+		Bits:  6,
+		Field: "Seconds",
+		Type:  "LocalTimeParms",
+	}
+	errLocalTimeParmsDayOfWeekRange = &dmrgo.FieldRangeError{
+		Bits:  3,
+		Field: "DayOfWeek",
+		Type:  "LocalTimeParms",
+	}
+	errLocalTimeParmsUTCOffsetQuarterRange = &dmrgo.FieldRangeError{
+		Bits:  2,
+		Field: "UTCOffsetQuarter",
+		Type:  "LocalTimeParms",
+	}
+	errLocalTimeParmsReservedRange = &dmrgo.FieldRangeError{
+		Bits:  2,
+		Field: "Reserved",
+		Type:  "LocalTimeParms",
+	}
+	errMassRegParmsAnnouncementTypeRange = &dmrgo.FieldRangeError{
+		Bits:  5,
+		Field: "AnnouncementType",
+		Type:  "MassRegParms",
+	}
+	errMassRegParmsReservedRange = &dmrgo.FieldRangeError{
+		Bits:  5,
+		Field: "Reserved",
+		Type:  "MassRegParms",
+	}
+	errMassRegParmsRegWindowRange = &dmrgo.FieldRangeError{
+		Bits:  4,
+		Field: "RegWindow",
+		Type:  "MassRegParms",
+	}
+	errMassRegParmsAlohaMaskRange = &dmrgo.FieldRangeError{
+		Bits:  5,
+		Field: "AlohaMask",
+		Type:  "MassRegParms",
+	}
+	errMassRegParmsBackoffRange = &dmrgo.FieldRangeError{
+		Bits:  4,
+		Field: "Backoff",
+		Type:  "MassRegParms",
+	}
+	errMassRegParmsAddressRange = &dmrgo.FieldRangeError{
+		Bits:  24,
+		Field: "Address",
+		Type:  "MassRegParms",
+	}
+	errGenSiteParmsAnnouncementTypeRange = &dmrgo.FieldRangeError{
+		Bits:  5,
+		Field: "AnnouncementType",
+		Type:  "GenSiteParms",
+	}
+	errGenSiteParmsReserved1Range = &dmrgo.FieldRangeError{
+		Bits:  14,
+		Field: "Reserved1",
+		Type:  "GenSiteParms",
+	}
+	errGenSiteParmsBackoffRange = &dmrgo.FieldRangeError{
+		Bits:  4,
+		Field: "Backoff",
+		Type:  "GenSiteParms",
+	}
+	errGenSiteParmsReserved3Range = &dmrgo.FieldRangeError{
+		Bits:  6,
+		Field: "Reserved3",
+		Type:  "GenSiteParms",
+	}
+	errGenSiteParmsReserved5Range = &dmrgo.FieldRangeError{
+		Bits:  7,
+		Field: "Reserved5",
+		Type:  "GenSiteParms",
 	}
 )
