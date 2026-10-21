@@ -515,7 +515,10 @@ func TestMS_Duplex(t *testing.T) {
 		}
 		out = r.ms.EndCall(r.now, r.out[:0])
 		if len(out) != constants.NMaint+2 {
-			t.Errorf("EndCall %v", kinds(out))
+			t.Fatalf("EndCall %v", kinds(out))
+		}
+		if c := sent(t, &out[0]); c.MaintenancePDU == nil || c.MaintenancePDU.TargetAddress != peer {
+			t.Errorf("duplex P_MAINT %+v", c.MaintenancePDU)
 		}
 	}
 	for _, no := range []bool{false, true} {
@@ -583,8 +586,8 @@ func TestMS_Ambient(t *testing.T) {
 		if len(out) != constants.NMaint+2 || out[constants.NMaint].Kind != trunk.OutputCallEnd {
 			t.Fatalf("T_ALS end %v", kinds(out))
 		}
-		if c := sent(t, &out[0]); c.MaintenancePDU == nil {
-			t.Errorf("T_ALS end %v", c.Opcode)
+		if c := sent(t, &out[0]); c.MaintenancePDU == nil || c.MaintenancePDU.TargetAddress != peer || c.MaintenancePDU.SourceAddress != msAddr {
+			t.Errorf("T_ALS end %v %+v", c.Opcode, c.MaintenancePDU)
 		}
 	}
 

@@ -418,7 +418,11 @@ func (m *MS) EndCall(now time.Duration, dst []Output) []Output {
 		return dst
 	}
 	g := &m.f.call
-	m.txMaint = pdu.MaintenancePDU{TargetAddress: g.Target, SourceAddress: m.addr}
+	to := g.Target
+	if to == m.addr {
+		to = g.Source
+	}
+	m.txMaint = pdu.MaintenancePDU{TargetAddress: to, SourceAddress: m.addr}
 	m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKMaintenance, MaintenancePDU: &m.txMaint}
 	for i := range constants.NMaint {
 		dst = m.send(now+time.Duration(i)*frame, g.Slot, dst)
