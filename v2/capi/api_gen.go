@@ -8529,16 +8529,16 @@ func new_location_Decoder(v *g_location.Decoder) *C.dmrgo_location_decoder_t {
 	return (*C.dmrgo_location_decoder_t)(newHandle(&h_location_Decoder{v: v}))
 }
 
-type h_transport_dmrd_auth_Bridge struct {
-	v *g_transport_dmrd_auth.Bridge
+type h_transport_dmrd_auth_BridgeKey struct {
+	v *g_transport_dmrd_auth.BridgeKey
 }
 
-func get_transport_dmrd_auth_Bridge(p *C.dmrgo_dmrd_auth_bridge_t) *h_transport_dmrd_auth_Bridge {
-	return lookup[*h_transport_dmrd_auth_Bridge](unsafe.Pointer(p))
+func get_transport_dmrd_auth_BridgeKey(p *C.dmrgo_dmrd_auth_bridge_key_t) *h_transport_dmrd_auth_BridgeKey {
+	return lookup[*h_transport_dmrd_auth_BridgeKey](unsafe.Pointer(p))
 }
 
-func new_transport_dmrd_auth_Bridge(v *g_transport_dmrd_auth.Bridge) *C.dmrgo_dmrd_auth_bridge_t {
-	return (*C.dmrgo_dmrd_auth_bridge_t)(newHandle(&h_transport_dmrd_auth_Bridge{v: v}))
+func new_transport_dmrd_auth_BridgeKey(v *g_transport_dmrd_auth.BridgeKey) *C.dmrgo_dmrd_auth_bridge_key_t {
+	return (*C.dmrgo_dmrd_auth_bridge_key_t)(newHandle(&h_transport_dmrd_auth_BridgeKey{v: v}))
 }
 
 type h_transport_ipsc_PeerList struct {
@@ -34419,51 +34419,60 @@ func dmrgo_dmrd_talker_alias_string(c_self *C.dmrgo_dmrd_talker_alias_t, c_out *
 	return C.DMRGO_OK
 }
 
-//export dmrgo_dmrd_auth_bridge_free
-func dmrgo_dmrd_auth_bridge_free(c_self *C.dmrgo_dmrd_auth_bridge_t) (rc C.int) {
+//export dmrgo_dmrd_auth_bridge_key_free
+func dmrgo_dmrd_auth_bridge_key_free(c_self *C.dmrgo_dmrd_auth_bridge_key_t) (rc C.int) {
 	defer recoverTo(&rc)
 	if c_self == nil {
 		return C.DMRGO_OK
 	}
-	get_transport_dmrd_auth_Bridge(c_self)
+	get_transport_dmrd_auth_BridgeKey(c_self)
 	deleteHandle(unsafe.Pointer(c_self))
 	return C.DMRGO_OK
 }
 
-//export dmrgo_dmrd_auth_bridge_sign
-func dmrgo_dmrd_auth_bridge_sign(c_self *C.dmrgo_dmrd_auth_bridge_t, c_p *C.uint8_t, c_p_len C.size_t) (rc C.int) {
+//export dmrgo_dmrd_auth_bridge_key_sign
+func dmrgo_dmrd_auth_bridge_key_sign(c_self *C.dmrgo_dmrd_auth_bridge_key_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	h := get_transport_dmrd_auth_Bridge(c_self)
-	if c_p == nil && c_p_len > 0 {
+	h := get_transport_dmrd_auth_BridgeKey(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
-	r0 := h.v.Sign(a_p)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_auth_bridge_verify
-func dmrgo_dmrd_auth_bridge_verify(c_self *C.dmrgo_dmrd_auth_bridge_t, c_p *C.uint8_t, c_p_len C.size_t, c_out *C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_transport_dmrd_auth_Bridge(c_self)
-	if c_p == nil && c_p_len > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
-	r0 := h.v.Verify(a_p)
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := h.v.Sign(a_dst)
 	_ = r0
-	if c_out != nil {
-		*c_out = C.bool(r0)
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_auth_bridge_key_verify
+func dmrgo_dmrd_auth_bridge_key_verify(c_self *C.dmrgo_dmrd_auth_bridge_key_t, c_p *C.uint8_t, c_p_len C.size_t, c_body *C.uint8_t, c_body_cap C.size_t, c_body_len *C.size_t, c_body_need *C.size_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_transport_dmrd_auth_BridgeKey(c_self)
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	if c_body_len == nil || (c_body == nil && c_body_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := h.v.Verify(a_p)
+	_ = r0
+	_ = r1
+	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_body)), int(c_body_cap)), c_body_len, c_body_need, r0, oc)
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -34471,8 +34480,8 @@ func dmrgo_dmrd_auth_bridge_verify(c_self *C.dmrgo_dmrd_auth_bridge_t, c_p *C.ui
 	return C.DMRGO_OK
 }
 
-//export dmrgo_dmrd_auth_new_bridge
-func dmrgo_dmrd_auth_new_bridge(c_key *C.uint8_t, c_key_len C.size_t, c_out **C.dmrgo_dmrd_auth_bridge_t) (rc C.int) {
+//export dmrgo_dmrd_auth_new_bridge_key
+func dmrgo_dmrd_auth_new_bridge_key(c_key *C.uint8_t, c_key_len C.size_t, c_out **C.dmrgo_dmrd_auth_bridge_key_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_key == nil && c_key_len > 0 {
@@ -34483,11 +34492,11 @@ func dmrgo_dmrd_auth_new_bridge(c_key *C.uint8_t, c_key_len C.size_t, c_out **C.
 	if c_out == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := g_transport_dmrd_auth.NewBridge(a_key)
+	r0 := g_transport_dmrd_auth.NewBridgeKey(a_key)
 	_ = r0
 	*c_out = nil
 	if r0 != nil {
-		*c_out = new_transport_dmrd_auth_Bridge(r0)
+		*c_out = new_transport_dmrd_auth_BridgeKey(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -35640,7 +35649,7 @@ func dmrgo_ipsc_auth_key_sign(c_self *C.dmrgo_ipsc_auth_key_t, c_dst *C.uint8_t,
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.Sign(a_dst)
+	r0, r1 := h.v.Sign(a_dst)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -35650,31 +35659,14 @@ func dmrgo_ipsc_auth_key_sign(c_self *C.dmrgo_ipsc_auth_key_t, c_dst *C.uint8_t,
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	return C.DMRGO_OK
-}
-
-//export dmrgo_ipsc_auth_key_verify_need
-func dmrgo_ipsc_auth_key_verify_need(c_self *C.dmrgo_ipsc_auth_key_t, c_p *C.uint8_t, c_p_len C.size_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	h := get_transport_ipsc_auth_Key(c_self)
-	if c_p == nil && c_p_len > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var a_p []byte
-	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
-	_ = h
-	_ = a_p
-	if c_items != nil {
-		*c_items = C.size_t(max(0, len(a_p)))
-	}
-	if c_arena != nil {
-		*c_arena = C.size_t(0)
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
 
 //export dmrgo_ipsc_auth_key_verify
-func dmrgo_ipsc_auth_key_verify(c_self *C.dmrgo_ipsc_auth_key_t, c_p *C.uint8_t, c_p_len C.size_t, c_out0 *C.uint8_t, c_out0_cap C.size_t, c_out0_len *C.size_t, c_out0_need *C.size_t, c_out1 *C.bool) (rc C.int) {
+func dmrgo_ipsc_auth_key_verify(c_self *C.dmrgo_ipsc_auth_key_t, c_p *C.uint8_t, c_p_len C.size_t, c_body *C.uint8_t, c_body_cap C.size_t, c_body_len *C.size_t, c_body_need *C.size_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_transport_ipsc_auth_Key(c_self)
@@ -35683,27 +35675,15 @@ func dmrgo_ipsc_auth_key_verify(c_self *C.dmrgo_ipsc_auth_key_t, c_p *C.uint8_t,
 	}
 	var a_p []byte
 	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
-	if c_out0_len == nil || (c_out0 == nil && c_out0_cap > 0) {
+	if c_body_len == nil || (c_body == nil && c_body_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
-	}
-	need_items := max(0, len(a_p))
-	need_arena := 0
-	_ = need_arena
-	if int(c_out0_cap)-1 < need_items {
-		if c_out0_need != nil {
-			*c_out0_need = C.size_t(0 + need_items + 1)
-		}
-		return fail(C.DMRGO_ERR_SHORT)
 	}
 	r0, r1 := h.v.Verify(a_p)
 	_ = r0
 	_ = r1
-	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out0)), int(c_out0_cap)), c_out0_len, c_out0_need, r0, oc)
-	if c_out1 != nil {
-		*c_out1 = C.bool(r1)
-	}
-	if oc.short {
-		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_body)), int(c_body_cap)), c_body_len, c_body_need, r0, oc)
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)

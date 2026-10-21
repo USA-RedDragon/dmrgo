@@ -24,7 +24,7 @@ func TestSignMatchesPython(t *testing.T) {
 		{"96003010af6a000080dc04020401", "712d51b8061daed9d7ce"},
 	} {
 		b, _ := hex.DecodeString(tt.body)
-		p := key.Sign(append([]byte{}, b...))
+		p, _ := key.Sign(append([]byte{}, b...))
 		if got := hex.EncodeToString(p[len(b):]); got != tt.trailer {
 			t.Errorf("%s: %s, want %s", tt.body, got, tt.trailer)
 		}
@@ -53,5 +53,17 @@ func TestParseKeyErrors(t *testing.T) {
 	k, err := auth.ParseKey("0123456789ABCDEF0123456789abcdef01234567")
 	if err != nil || hex.EncodeToString(k[:]) != "0123456789abcdef0123456789abcdef01234567" {
 		t.Fatalf("%x %v", k, err)
+	}
+}
+
+func TestKeyNil(t *testing.T) {
+	t.Parallel()
+
+	var k *auth.Key
+	if out, err := k.Sign([]byte{1, 2, 3}); err == nil || len(out) != 3 {
+		t.Fatal("nil Key signs")
+	}
+	if body, ok := k.Verify(make([]byte, 20)); ok || body != nil {
+		t.Fatal("nil Key verifies")
 	}
 }

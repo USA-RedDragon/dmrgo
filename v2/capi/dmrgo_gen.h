@@ -474,8 +474,8 @@ typedef struct dmrgo_dmrd_option_value_t dmrgo_dmrd_option_value_t;
 typedef struct dmrgo_dmrd_position_t dmrgo_dmrd_position_t;
 /* Go: dmrd.TalkerAlias. TalkerAlias is a DMRA message of DialectMMDVM: one talker alias block that a repeater heard, in the 19-octet form that DMRGateway builds toward a master. */
 typedef struct dmrgo_dmrd_talker_alias_t dmrgo_dmrd_talker_alias_t;
-/* Go: auth.Bridge. Bridge holds an OpenBridge key and the hash state that signing with it needs. */
-typedef struct dmrgo_dmrd_auth_bridge_t dmrgo_dmrd_auth_bridge_t;
+/* Go: auth.BridgeKey. BridgeKey holds an OpenBridge key and the hash state that signing with it needs. */
+typedef struct dmrgo_dmrd_auth_bridge_key_t dmrgo_dmrd_auth_bridge_key_t;
 /* Go: hytera.Frame. Frame is a packet of the DMR service: one burst with its slot, slot type and call fields. */
 typedef struct dmrgo_hytera_frame_t dmrgo_hytera_frame_t;
 /* Go: hytera.Heartbeat. Heartbeat is the 20-octet "ZZZZ" heartbeat of the P2P service, or the 1-octet keepalive that each side sends on the DMR and RDAC services. */
@@ -9682,14 +9682,14 @@ int dmrgo_dmrd_talker_alias_lc(dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_full_l
 int dmrgo_dmrd_talker_alias_lc_into(dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *p);
 /* Go: dmrd.TalkerAlias.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_talker_alias_string(dmrgo_dmrd_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_dmrd_auth_bridge_free frees the handle. self may be NULL. */
-int dmrgo_dmrd_auth_bridge_free(dmrgo_dmrd_auth_bridge_t *self);
-/* Go: auth.Bridge.Sign. Sign writes the signature of the OpenBridge packet p, as dmrd.Bridge.AppendBinary and dmrd.BridgeControl.AppendBinary encode it, into its last octets: HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over the octets before the hash of a DMRE packet. */
-int dmrgo_dmrd_auth_bridge_sign(dmrgo_dmrd_auth_bridge_t *self, const uint8_t *p, size_t p_len);
-/* Go: auth.Bridge.Verify. Verify reports whether the OpenBridge packet p carries the signature of the key, as Sign would write it. */
-int dmrgo_dmrd_auth_bridge_verify(dmrgo_dmrd_auth_bridge_t *self, const uint8_t *p, size_t p_len, bool *out);
-/* Go: auth.NewBridge. NewBridge returns a Bridge for key, the passphrase of the OpenBridge link as plain octets. */
-int dmrgo_dmrd_auth_new_bridge(const uint8_t *key, size_t key_len, dmrgo_dmrd_auth_bridge_t **out);
+/* dmrgo_dmrd_auth_bridge_key_free frees the handle. self may be NULL. */
+int dmrgo_dmrd_auth_bridge_key_free(dmrgo_dmrd_auth_bridge_key_t *self);
+/* Go: auth.BridgeKey.Sign. Sign writes the signature of the OpenBridge packet in dst, as dmrd.Bridge.AppendBinary and dmrd.BridgeControl.AppendBinary encode it with room for the signature, into its last octets, and returns dst: HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over the octets before the hash of a DMRE packet. It changes the state of the handle even when it returns DMRGO_ERR_SHORT. */
+int dmrgo_dmrd_auth_bridge_key_sign(dmrgo_dmrd_auth_bridge_key_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: auth.BridgeKey.Verify. Verify reports whether the OpenBridge packet p carries the signature of the key, as Sign would write it, and then returns p without its signature. It changes the state of the handle even when it returns DMRGO_ERR_SHORT. */
+int dmrgo_dmrd_auth_bridge_key_verify(dmrgo_dmrd_auth_bridge_key_t *self, const uint8_t *p, size_t p_len, uint8_t *body, size_t body_cap, size_t *body_len, size_t *body_need, bool *ok);
+/* Go: auth.NewBridgeKey. NewBridgeKey returns a BridgeKey for key, the passphrase of the OpenBridge link as plain octets. */
+int dmrgo_dmrd_auth_new_bridge_key(const uint8_t *key, size_t key_len, dmrgo_dmrd_auth_bridge_key_t **out);
 /* Go: auth.Token. Token returns the login token of an RPTK message for the salt of the master and the password: SHA-256 of the salt and the password. */
 int dmrgo_dmrd_auth_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, uint8_t out[32]);
 /* Go: auth.VerifyToken. VerifyToken reports whether token, from an RPTK message, is the login token of the salt and the password, as Token computes it. */
@@ -9800,10 +9800,8 @@ int dmrgo_ipsc_auth_key_free(dmrgo_ipsc_auth_key_t *self);
 int dmrgo_ipsc_auth_key_sign_need(dmrgo_ipsc_auth_key_t *self, size_t *items, size_t *arena);
 /* Go: auth.Key.Sign. Sign appends the authentication trailer of the packet in dst to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_auth_key_sign_need gives (DMRGO_IPSC_AUTH_KEY_SIGN_MAX_ITEMS items). */
 int dmrgo_ipsc_auth_key_sign(dmrgo_ipsc_auth_key_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* dmrgo_ipsc_auth_key_verify_need sets *items and *arena to the room that dmrgo_ipsc_auth_key_verify needs for these arguments, without a change to the handle. */
-int dmrgo_ipsc_auth_key_verify_need(dmrgo_ipsc_auth_key_t *self, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
-/* Go: auth.Key.Verify. Verify reports whether the last TrailerLen octets of p are the trailer of the rest. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_auth_key_verify_need gives. */
-int dmrgo_ipsc_auth_key_verify(dmrgo_ipsc_auth_key_t *self, const uint8_t *p, size_t p_len, uint8_t *out0, size_t out0_cap, size_t *out0_len, size_t *out0_need, bool *out1);
+/* Go: auth.Key.Verify. Verify reports whether the last TrailerLen octets of p are the trailer of the rest, and then returns the rest of p, the packet without its trailer. It changes the state of the handle even when it returns DMRGO_ERR_SHORT. */
+int dmrgo_ipsc_auth_key_verify(dmrgo_ipsc_auth_key_t *self, const uint8_t *p, size_t p_len, uint8_t *body, size_t body_cap, size_t *body_len, size_t *body_need, bool *ok);
 /* Go: auth.NewKey. NewKey returns a Key for the 20-octet key k. */
 int dmrgo_ipsc_auth_new_key(const uint8_t k[20], dmrgo_ipsc_auth_key_t **out);
 /* Go: auth.ParseKey. ParseKey parses the hex key of a MOTOTRBO or DMRlink configuration: up to 40 hex digits, padded on the left with zeros to 20 octets as DMRlink does. */

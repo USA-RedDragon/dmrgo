@@ -61,7 +61,7 @@ func TestHBlink3OpenBridge(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer f.Close()
-	b := auth.NewBridge([]byte("passw0rd-longer-than-twenty"))
+	b := auth.NewBridgeKey([]byte("passw0rd-longer-than-twenty"))
 	n := 0
 	sc := bufio.NewScanner(f)
 	for sc.Scan() {
@@ -69,7 +69,7 @@ func TestHBlink3OpenBridge(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !b.Verify(p) {
+		if _, ok := b.Verify(p); !ok {
 			t.Fatalf("%x does not verify", p)
 		}
 		d, err := dmrd.DecodeBridge(p)
@@ -78,7 +78,7 @@ func TestHBlink3OpenBridge(t *testing.T) {
 		}
 		q := append([]byte(nil), p...)
 		q[20] ^= 1
-		if b.Verify(q) {
+		if _, ok := b.Verify(q); ok {
 			t.Fatalf("%x verifies with a changed burst", q)
 		}
 		n++

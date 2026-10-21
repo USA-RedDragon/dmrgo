@@ -19,7 +19,7 @@ func FuzzKey(f *testing.F) {
 			return
 		}
 		key := auth.NewKey(k)
-		signed := key.Sign(append([]byte(nil), p...))
+		signed, _ := key.Sign(append([]byte(nil), p...))
 		body, ok := key.Verify(signed)
 		if !ok || !bytes.Equal(body, p) {
 			t.Fatalf("signed packet does not verify: key %q packet %x", s, p)

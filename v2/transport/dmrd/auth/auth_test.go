@@ -61,7 +61,7 @@ func packet(tag string, msgLen, n int) []byte {
 func TestBridgeSignaturesMatchPython(t *testing.T) {
 	t.Parallel()
 
-	b := auth.NewBridge([]byte("passw0rd"))
+	b := auth.NewBridgeKey([]byte("passw0rd"))
 	tests := []struct {
 		p      []byte
 		sigAt  int
@@ -75,20 +75,20 @@ func TestBridgeSignaturesMatchPython(t *testing.T) {
 		{packet("BCVE", 5, 25), 5, "ae865fe930ad93f8da278237b85b2e7483682ef5"},
 	}
 	for _, tt := range tests {
-		if b.Verify(tt.p) {
+		if _, ok := b.Verify(tt.p); ok {
 			t.Errorf("%s/%d: unsigned packet verifies", tt.p[:4], len(tt.p))
 		}
-		if err := b.Sign(tt.p); err != nil {
+		if _, err := b.Sign(tt.p); err != nil {
 			t.Fatalf("%s/%d: %v", tt.p[:4], len(tt.p), err)
 		}
 		if got := hex.EncodeToString(tt.p[tt.sigAt:]); got != tt.sigHex {
 			t.Errorf("%s/%d: %s, want %s", tt.p[:4], len(tt.p), got, tt.sigHex)
 		}
-		if !b.Verify(tt.p) {
-			t.Errorf("%s/%d: signed packet does not verify", tt.p[:4], len(tt.p))
+		if body, ok := b.Verify(tt.p); !ok || !bytes.Equal(body, tt.p[:tt.sigAt]) {
+			t.Errorf("%s/%d: signed packet does not verify, body %x", tt.p[:4], len(tt.p), body)
 		}
 		tt.p[len(tt.p)-1] ^= 1
-		if b.Verify(tt.p) {
+		if _, ok := b.Verify(tt.p); ok {
 			t.Errorf("%s/%d: changed signature verifies", tt.p[:4], len(tt.p))
 		}
 	}
@@ -97,21 +97,36 @@ func TestBridgeSignaturesMatchPython(t *testing.T) {
 func TestBridgeLongKey(t *testing.T) {
 	t.Parallel()
 
-	b := auth.NewBridge(bytes.Repeat([]byte("k"), 100))
+	b := auth.NewBridgeKey(bytes.Repeat([]byte("k"), 100))
 	p := packet("DMRD", 53, 73)
-	if err := b.Sign(p); err != nil || hex.EncodeToString(p[53:]) != "074d5ec72685e6bd0cbb917aabb83108726b943a" {
+	if _, err := b.Sign(p); err != nil || hex.EncodeToString(p[53:]) != "074d5ec72685e6bd0cbb917aabb83108726b943a" {
 		t.Fatalf("%x %v", p[53:], err)
 	}
 	e := packet("DMRE", 69, 85)
-	if err := b.Sign(e); err != nil || hex.EncodeToString(e[69:]) != "a943a3ca14b6731ef293c0eed48a9760" {
+	if _, err := b.Sign(e); err != nil || hex.EncodeToString(e[69:]) != "a943a3ca14b6731ef293c0eed48a9760" {
 		t.Fatalf("DMRE with a 100-octet key: %x %v", e[69:], err)
 	}
-	if !auth.NewBridge(bytes.Repeat([]byte("k"), auth.KeyLen)).Verify(e) {
+	if _, ok := auth.NewBridgeKey(bytes.Repeat([]byte("k"), auth.KeyLen)).Verify(e); !ok {
 		t.Error("the key is not cut at KeyLen")
 	}
 	for _, p := range [][]byte{nil, []byte("RPTL1234"), packet("DMRD", 53, 72)} {
-		if err := b.Sign(p); err == nil || b.Verify(p) {
+		_, err := b.Sign(p)
+		_, ok := b.Verify(p)
+		if err == nil || ok {
 			t.Errorf("%q: signs or verifies", p)
 		}
+	}
+}
+
+func TestBridgeKeyNil(t *testing.T) {
+	t.Parallel()
+
+	var b *auth.BridgeKey
+	p := packet("DMRD", 53, 73)
+	if out, err := b.Sign(p); err == nil || len(out) != 73 {
+		t.Fatal("nil BridgeKey signs")
+	}
+	if body, ok := b.Verify(p); ok || body != nil {
+		t.Fatal("nil BridgeKey verifies")
 	}
 }

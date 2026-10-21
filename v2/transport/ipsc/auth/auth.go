@@ -9,13 +9,16 @@ package auth
 import (
 	"errors"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/digest"
 )
 
 // TrailerLen is the length of the authentication trailer in octets.
 const TrailerLen = 10
 
-var errKeyText = errors.New("auth: key is not up to 40 hex digits")
+var (
+	errKeyText = errors.New("auth: key is not up to 40 hex digits")
+)
 
 // Key holds an IPSC authentication key and the HMAC state that signing
 // with it needs. It is not safe for concurrent use.
@@ -64,28 +67,28 @@ func (k *Key) trailer(p []byte) [20]byte {
 }
 
 // Sign appends the authentication trailer of the packet in dst to dst. It
-// allocates only when dst has no room for TrailerLen more octets.
-func (k *Key) Sign(dst []byte) []byte {
+// returns dst unchanged and dmrgo.ErrNilReceiver for a nil k. It allocates
+// only when dst has no room for TrailerLen more octets.
+func (k *Key) Sign(dst []byte) ([]byte, error) {
 	if k == nil {
-		return dst
+		return dst, dmrgo.ErrNilReceiver
 	}
-
 	t := k.trailer(dst)
-	return append(dst, t[:TrailerLen]...)
+	return append(dst, t[:TrailerLen]...), nil
 }
 
 // Verify reports whether the last TrailerLen octets of p are the trailer of
-// the rest. It returns at most len(p) octets, the rest of p, and does not
-// allocate. It compares the trailer in constant time.
-func (k *Key) Verify(p []byte) ([]byte, bool) {
-	if k == nil {
+// the rest, and then returns the rest of p, the packet without its trailer.
+// It reports false, with a nil body, otherwise and for a nil k. It compares the trailer in constant time and
+// does not allocate.
+func (k *Key) Verify(p []byte) (body []byte, ok bool) {
+	if k == nil || len(p) < TrailerLen {
 		return nil, false
 	}
-
-	if len(p) < TrailerLen {
-		return nil, false
-	}
-	body := p[:len(p)-TrailerLen]
+	body = p[:len(p)-TrailerLen]
 	t := k.trailer(body)
-	return body, digest.Equal(t[:TrailerLen], p[len(body):])
+	if !digest.Equal(t[:TrailerLen], p[len(body):]) {
+		return nil, false
+	}
+	return body, true
 }
