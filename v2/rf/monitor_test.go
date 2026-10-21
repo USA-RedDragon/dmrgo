@@ -19,7 +19,7 @@ func monitorBursts(t *testing.T, slot int) []Burst {
 	fm, env := rftx.ModulateBS(built.Slots)
 	x := rftx.Baseband(fm, env, 800)
 	var out []Burst
-	rx, err := New(Config{Tier: Tier0, OnBurst: func(b *Burst) { out = append(out, *b) }})
+	rx, err := New(&Config{Tier: Tier0, OnBurst: func(b *Burst) { out = append(out, *b) }})
 	if err != nil {
 		t.Fatal(err)
 	}

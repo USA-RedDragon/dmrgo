@@ -71,9 +71,15 @@ var (
 	errDiscTier     = &ConfigError{Type: "DiscConfig", Field: "Tier"}
 )
 
-// NewDisc returns a DiscReceiver of cfg. It allocates the receiver, and
-// the burst buffer of Write when cfg.OnBurst is nil.
-func NewDisc(cfg DiscConfig) (*DiscReceiver, error) {
+// NewDisc returns a DiscReceiver of cfg. A nil cfg means the zero
+// DiscConfig. It allocates the receiver, and the burst buffer of Write
+// when cfg.OnBurst is nil. It returns a *ConfigError when a field of cfg
+// is out of range.
+func NewDisc(c *DiscConfig) (*DiscReceiver, error) {
+	var cfg DiscConfig
+	if c != nil {
+		cfg = *c
+	}
 	if cfg.Tier == TierDefault {
 		cfg.Tier = discDefaultTier
 	}

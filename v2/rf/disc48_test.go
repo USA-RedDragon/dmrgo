@@ -32,11 +32,11 @@ func TestDisc48MatchesHalved(t *testing.T) {
 	a24 := halve48(a48)
 	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 		var got, want []Burst
-		r48, err := NewDisc(DiscConfig{Hz: 48000, Tier: tier, OnBurst: func(b *Burst) { got = append(got, *b) }})
+		r48, err := NewDisc(&DiscConfig{Hz: 48000, Tier: tier, OnBurst: func(b *Burst) { got = append(got, *b) }})
 		if err != nil {
 			t.Fatal(err)
 		}
-		r24, err := NewDisc(DiscConfig{Hz: 24000, Tier: tier, OnBurst: func(b *Burst) { want = append(want, *b) }})
+		r24, err := NewDisc(&DiscConfig{Hz: 24000, Tier: tier, OnBurst: func(b *Burst) { want = append(want, *b) }})
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -114,14 +114,14 @@ func runRxBounds(t *testing.T, s *rxBoundSignal, c rxBoundCase) (string, int) {
 	if !ok {
 		return "", 0
 	}
-	r, err := New(cfg)
+	r, err := New(&cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	seen := 0
 	ocfg := cfg
 	ocfg.OnBurst = func(*Burst) { seen++ }
-	ro, err := New(ocfg)
+	ro, err := New(&ocfg)
 	if err != nil {
 		t.Fatal(err)
 	}

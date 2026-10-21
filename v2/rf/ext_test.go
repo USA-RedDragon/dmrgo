@@ -13,7 +13,7 @@ func TestSoftExtEmbeddedLC(t *testing.T) {
 	a := discAudio(x, benchAudioHz)
 	elc := func(soft bool) float64 {
 		var out []Burst
-		r, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: Tier0, OnBurst: func(b *Burst) { out = append(out, *b) }})
+		r, err := NewDisc(&DiscConfig{Hz: benchAudioHz, Tier: Tier0, OnBurst: func(b *Burst) { out = append(out, *b) }})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -59,7 +59,7 @@ func TestSoftExtLookback(t *testing.T) {
 	a := discAudio(noisyBaseband(slots[start:], 1400, 20, 7), benchAudioHz)
 	first := func(lookback int) (start, b float64) {
 		start, b = -1, -1
-		r, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: Tier0, OnBurst: func(x *Burst) {
+		r, err := NewDisc(&DiscConfig{Hz: benchAudioHz, Tier: Tier0, OnBurst: func(x *Burst) {
 			if start < 0 {
 				start = x.Seconds
 			}

@@ -397,7 +397,7 @@ func receiveIQ(in input, tier rf.Tier, offsetHz float64, burst func(rf.Burst)) (
 	if raw {
 		cfg.Rate, cfg.Signed = in.rate, in.f.enc == encS8
 	}
-	rx, err := rf.New(cfg)
+	rx, err := rf.New(&cfg)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -444,7 +444,7 @@ func receiveAudio(in input, tier rf.Tier, burst func(rf.Burst)) (offset, dev flo
 	case 48000, 24000, 12000, 9600:
 		hz = int(in.rate)
 	}
-	rx, err := rf.NewDisc(rf.DiscConfig{Hz: hz, Tier: tier})
+	rx, err := rf.NewDisc(&rf.DiscConfig{Hz: hz, Tier: tier})
 	if err != nil {
 		return 0, 0, err
 	}

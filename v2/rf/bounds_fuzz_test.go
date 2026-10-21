@@ -25,7 +25,7 @@ func runDiscBounds(t *testing.T, audio map[int][]int16, sel, tier byte, cuts []b
 	if sel&4 != 0 {
 		x = x[len(x)/3:]
 	}
-	r, err := NewDisc(DiscConfig{Hz: hz, Tier: []Tier{Tier0, Tier1, Tier2}[int(tier)%3]})
+	r, err := NewDisc(&DiscConfig{Hz: hz, Tier: []Tier{Tier0, Tier1, Tier2}[int(tier)%3]})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -5,7 +5,7 @@ import "github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
 const burstSeconds = 0.0275
 
 func mustNew(cfg Config) *Receiver {
-	r, err := New(cfg)
+	r, err := New(&cfg)
 	if err != nil {
 		panic(err)
 	}

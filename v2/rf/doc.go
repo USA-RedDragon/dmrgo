@@ -7,7 +7,7 @@
 // takes complex baseband at BasebandRate. Both return the bursts that are
 // complete, or hand each one to Config.OnBurst. Flush ends the stream.
 //
-//	rx, err := rf.New(rf.Config{Rate: 2.048e6, Tier: rf.Tier2})
+//	rx, err := rf.New(&rf.Config{Rate: 2.048e6, Tier: rf.Tier2})
 //	if err != nil {
 //		return err
 //	}

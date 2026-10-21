@@ -177,7 +177,7 @@ func FuzzReceiverWrite(f *testing.F) {
 			if c.OnBurst != nil {
 				c.OnBurst = sink.one
 			}
-			r, err := New(c)
+			r, err := New(&c)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -254,7 +254,7 @@ func FuzzReceiverBaseband(f *testing.F) {
 			if flags&8 != 0 {
 				c.OnBurst = sink.one
 			}
-			r, err := New(c)
+			r, err := New(&c)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -327,7 +327,7 @@ func FuzzDiscReceiver(f *testing.F) {
 				}
 			} else {
 				var err error
-				if r, err = NewDisc(c); err != nil {
+				if r, err = NewDisc(&c); err != nil {
 					t.Fatal(err)
 				}
 			}

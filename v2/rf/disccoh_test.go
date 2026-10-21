@@ -5,7 +5,7 @@ import "testing"
 func receiveDisc(t testing.TB, a []int16, hz int, tier Tier) []Burst {
 	t.Helper()
 	var out []Burst
-	r, err := NewDisc(DiscConfig{Hz: hz, Tier: tier, OnBurst: func(b *Burst) { out = append(out, *b) }})
+	r, err := NewDisc(&DiscConfig{Hz: hz, Tier: tier, OnBurst: func(b *Burst) { out = append(out, *b) }})
 	if err != nil {
 		t.Fatal(err)
 	}

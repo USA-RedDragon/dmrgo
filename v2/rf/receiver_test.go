@@ -122,7 +122,7 @@ func TestReceiverHalfRate(t *testing.T) {
 	if full < total*9/10 || half < full-total/20 {
 		t.Errorf("%d of %d frames exact at %d Hz, %d at %d Hz", full, total, BasebandRate, half, BasebandRate/2)
 	}
-	if _, err := New(Config{Tier: Tier2, BasebandHz: BasebandRate / 2}); err == nil {
+	if _, err := New(&Config{Tier: Tier2, BasebandHz: BasebandRate / 2}); err == nil {
 		t.Error("Tier2 takes input at half rate")
 	}
 }
@@ -173,7 +173,7 @@ func TestReceiverLowRate(t *testing.T) {
 		{BasebandHz: iq0LowHz, Rate: 2 * iq0LowHz},
 		{BasebandHz: 16000},
 	} {
-		if _, err := New(c); err == nil {
+		if _, err := New(&c); err == nil {
 			t.Errorf("New took %+v", c)
 		}
 	}

@@ -73,7 +73,7 @@ func lowpassTaps(n int, fc float64) []float64 {
 func receiveAudio(t testing.TB, a []int16, hz int, opt *options) []Burst {
 	t.Helper()
 	var out []Burst
-	r, err := NewDisc(DiscConfig{Hz: hz, OnBurst: func(b *Burst) { out = append(out, *b) }, opt: opt})
+	r, err := NewDisc(&DiscConfig{Hz: hz, OnBurst: func(b *Burst) { out = append(out, *b) }, opt: opt})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,22 +104,22 @@ func TestDiscReceiverLoopback(t *testing.T) {
 
 func TestNewDiscConfig(t *testing.T) {
 	t.Parallel()
-	_, err := NewDisc(DiscConfig{Hz: 44100})
+	_, err := NewDisc(&DiscConfig{Hz: 44100})
 	var ce *ConfigError
 	if !errors.As(err, &ce) || err.Error() != "rf: DiscConfig.Hz is out of range" {
 		t.Errorf("NewDisc at 44.1 kHz: %v", err)
 	}
-	if _, err := NewDisc(DiscConfig{Hz: 16000}); err == nil {
+	if _, err := NewDisc(&DiscConfig{Hz: 16000}); err == nil {
 		t.Error("NewDisc took 16 kHz")
 	}
-	if _, err := NewDisc(DiscConfig{MaxWrite: -1}); err == nil {
+	if _, err := NewDisc(&DiscConfig{MaxWrite: -1}); err == nil {
 		t.Error("NewDisc took a negative MaxWrite")
 	}
-	if _, err := NewDisc(DiscConfig{Tier: Tier3 + 1}); err == nil {
+	if _, err := NewDisc(&DiscConfig{Tier: Tier3 + 1}); err == nil {
 		t.Error("NewDisc took a tier above Tier3")
 	}
 	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
-		r, err := NewDisc(DiscConfig{Tier: tier, OnBurst: func(*Burst) {}})
+		r, err := NewDisc(&DiscConfig{Tier: tier, OnBurst: func(*Burst) {}})
 		if err != nil {
 			t.Fatalf("tier %d: %v", tier-Tier0, err)
 		}
@@ -128,7 +128,7 @@ func TestNewDiscConfig(t *testing.T) {
 		}
 	}
 	for _, hz := range []int{48000, 24000, 12000, 9600} {
-		r, err := NewDisc(DiscConfig{Hz: hz})
+		r, err := NewDisc(&DiscConfig{Hz: hz})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -142,7 +142,7 @@ func TestDiscReceiverInitAppend(t *testing.T) {
 	t.Parallel()
 	slots, _ := benchStream(t, 3)
 	a := discAudio(noisyBaseband(slots, 1400, 12, 1), 9600)
-	r, err := NewDisc(DiscConfig{Hz: 9600, Tier: Tier0, MaxWrite: 1024})
+	r, err := NewDisc(&DiscConfig{Hz: 9600, Tier: Tier0, MaxWrite: 1024})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,7 +231,7 @@ func TestDiscReceiverRingWrap(t *testing.T) {
 	for _, tier := range []Tier{Tier0, Tier1, Tier2} {
 		want := receiveAudioTier(t, a, tier)
 		var got []Burst
-		r, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: tier, OnBurst: func(b *Burst) { got = append(got, *b) }})
+		r, err := NewDisc(&DiscConfig{Hz: benchAudioHz, Tier: tier, OnBurst: func(b *Burst) { got = append(got, *b) }})
 		if err != nil {
 			t.Fatal(err)
 		}

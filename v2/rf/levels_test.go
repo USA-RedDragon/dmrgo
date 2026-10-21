@@ -27,7 +27,7 @@ func (lr levelsReceiver) receive(t testing.TB, x []complex64) []Burst {
 		return receiveBaseband(x, lr.tier)
 	}
 	var out []Burst
-	r, err := NewDisc(DiscConfig{Hz: lr.hz, Tier: lr.tier, OnBurst: func(b *Burst) { out = append(out, *b) }})
+	r, err := NewDisc(&DiscConfig{Hz: lr.hz, Tier: lr.tier, OnBurst: func(b *Burst) { out = append(out, *b) }})
 	if err != nil {
 		t.Fatal(err)
 	}

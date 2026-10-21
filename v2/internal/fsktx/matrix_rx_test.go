@@ -37,7 +37,7 @@ func (p rxPath) run(y []complex64) []rf.Burst {
 
 func discBursts(a []int16, hz int, tier rf.Tier) []rf.Burst {
 	var out []rf.Burst
-	r, err := rf.NewDisc(rf.DiscConfig{Hz: hz, Tier: tier, OnBurst: func(b *rf.Burst) { out = append(out, *b) }})
+	r, err := rf.NewDisc(&rf.DiscConfig{Hz: hz, Tier: tier, OnBurst: func(b *rf.Burst) { out = append(out, *b) }})
 	if err != nil {
 		panic(err)
 	}
@@ -69,7 +69,7 @@ func dither(b []byte) {
 
 func nativeBursts(b []byte, rate int) []rf.Burst {
 	var got []rf.Burst
-	r, err := rf.New(rf.Config{Rate: float64(rate), Signed: true, Tier: rf.Tier1, MaxWrite: 1 << 16, OnBurst: func(b *rf.Burst) { got = append(got, *b) }})
+	r, err := rf.New(&rf.Config{Rate: float64(rate), Signed: true, Tier: rf.Tier1, MaxWrite: 1 << 16, OnBurst: func(b *rf.Burst) { got = append(got, *b) }})
 	if err != nil {
 		panic(err)
 	}

@@ -97,7 +97,7 @@ type sweepInput struct {
 
 func (j *sweepJob) newRx(cfg Config) sweepRx {
 	if j.Disc {
-		d, err := NewDisc(DiscConfig{Hz: j.audioHz(), OnBurst: cfg.OnBurst, opt: cfg.opt})
+		d, err := NewDisc(&DiscConfig{Hz: j.audioHz(), OnBurst: cfg.OnBurst, opt: cfg.opt})
 		if err != nil {
 			panic(err)
 		}
@@ -178,7 +178,7 @@ func TestSweepWorker(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg := j.config(t)
-	if _, err := New(cfg); err != nil {
+	if _, err := New(&cfg); err != nil {
 		t.Fatal(err)
 	}
 	var res sweepResult

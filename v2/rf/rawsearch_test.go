@@ -21,7 +21,7 @@ func TestRawSearchOffset(t *testing.T) {
 				for i, raw := range []uint8{0, 2} {
 					o := discOptions()
 					o.MidTiming, o.Front96, o.BSSuspectRun, o.RawSearch = true, true, 3, raw
-					r, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: Tier0, opt: &o, OnBurst: func(b *Burst) { got[i] = append(got[i], *b) }})
+					r, err := NewDisc(&DiscConfig{Hz: benchAudioHz, Tier: Tier0, opt: &o, OnBurst: func(b *Burst) { got[i] = append(got[i], *b) }})
 					if err != nil {
 						t.Fatal(err)
 					}

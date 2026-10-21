@@ -45,11 +45,11 @@ func TestDiscWriteTooLong(t *testing.T) {
 	slots, _ := benchStream(t, 2)
 	audio := discAudio(noisyBaseband(slots, 900, 25, 3), benchAudioHz)
 	const most = 1 << 10
-	a, err := NewDisc(DiscConfig{Hz: benchAudioHz, MaxWrite: most})
+	a, err := NewDisc(&DiscConfig{Hz: benchAudioHz, MaxWrite: most})
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := NewDisc(DiscConfig{Hz: benchAudioHz, MaxWrite: most})
+	b, err := NewDisc(&DiscConfig{Hz: benchAudioHz, MaxWrite: most})
 	if err != nil {
 		t.Fatal(err)
 	}

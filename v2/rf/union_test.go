@@ -16,7 +16,7 @@ import (
 func unionReceive(t testing.TB, a []int16, tier Tier) ([]Burst, *discUnion) {
 	t.Helper()
 	var out []Burst
-	r, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: tier, OnBurst: func(b *Burst) { out = append(out, *b) }})
+	r, err := NewDisc(&DiscConfig{Hz: benchAudioHz, Tier: tier, OnBurst: func(b *Burst) { out = append(out, *b) }})
 	if err != nil {
 		t.Fatal(err)
 	}

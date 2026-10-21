@@ -18,7 +18,7 @@ func Example() {
 	}
 	fm, env := rftx.ModulateBS(built.Slots)
 	x := rftx.Baseband(fm, env, 800)
-	rx, err := rf.New(rf.Config{Tier: rf.Tier0, MaxWrite: 2 * len(x)})
+	rx, err := rf.New(&rf.Config{Tier: rf.Tier0, MaxWrite: 2 * len(x)})
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -60,7 +60,7 @@ func ExampleMonitor() {
 	var m rf.Monitor
 	lb := layer2.NewBurst()
 	voice := 0
-	rx, err := rf.New(rf.Config{Tier: rf.Tier0, OnBurst: func(b *rf.Burst) {
+	rx, err := rf.New(&rf.Config{Tier: rf.Tier0, OnBurst: func(b *rf.Burst) {
 		r, err := m.Burst(lb, b)
 		if err != nil || r.Hint.Slot != enums.Slot2 {
 			return

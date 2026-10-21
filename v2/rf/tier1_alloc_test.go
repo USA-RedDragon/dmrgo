@@ -16,7 +16,7 @@ func TestAllocsTier1Weak(t *testing.T) {
 		t.Errorf("I/Q: %v allocations per WriteBaseband, %d bursts", n, bursts)
 	}
 	a := discAudio(x, benchAudioHz)
-	d, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: Tier1})
+	d, err := NewDisc(&DiscConfig{Hz: benchAudioHz, Tier: Tier1})
 	if err != nil {
 		t.Fatal(err)
 	}

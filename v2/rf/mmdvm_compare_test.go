@@ -133,7 +133,7 @@ func runMMDVM(ctx context.Context, bin, path string, cc int) ([]cmpFrame, error)
 func oursFrames(t *testing.T, a []int16, hz int) []cmpFrame {
 	t.Helper()
 	var fr []cmpFrame
-	r, err := NewDisc(DiscConfig{Hz: hz, OnBurst: func(b *Burst) {
+	r, err := NewDisc(&DiscConfig{Hz: hz, OnBurst: func(b *Burst) {
 		d, _ := b.Decoded()
 		fr = append(fr, cmpFrame{sec: b.Seconds, data: d})
 	}})

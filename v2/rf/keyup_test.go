@@ -31,7 +31,7 @@ func TestMSKeyUpStrobes(t *testing.T) {
 			}
 		}
 		var err error
-		r, err = NewDisc(DiscConfig{Hz: benchAudioHz, Tier: Tier0, OnBurst: on})
+		r, err = NewDisc(&DiscConfig{Hz: benchAudioHz, Tier: Tier0, OnBurst: on})
 		if err != nil {
 			t.Fatal(err)
 		}

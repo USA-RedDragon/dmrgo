@@ -62,7 +62,24 @@ var (
 	errLowIQOffset  = &ConfigError{Type: "LowIQConfig", Field: "OffsetHz"}
 )
 
-// Init sets up r for cfg, in place of any state it holds.
+// NewLowIQ returns a LowIQReceiver of cfg. A nil cfg means the zero
+// LowIQConfig. It returns the errors of Init. It allocates the receiver;
+// Init sets up one in memory of the caller instead.
+func NewLowIQ(cfg *LowIQConfig) (*LowIQReceiver, error) {
+	var c LowIQConfig
+	if cfg != nil {
+		c = *cfg
+	}
+	r := new(LowIQReceiver)
+	if err := r.Init(c); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+// Init sets up r for cfg, in place of any state it holds. It returns a
+// *ConfigError for an Hz other than 9600 or 12000, or a nil OnBurst. It
+// does not allocate, so that r can live in memory of the caller.
 func (r *LowIQReceiver) Init(cfg LowIQConfig) error {
 	if cfg.Hz == 0 {
 		cfg.Hz = iq0LowHz

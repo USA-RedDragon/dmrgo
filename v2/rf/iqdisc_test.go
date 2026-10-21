@@ -307,7 +307,7 @@ func TestReceiverOffsetHz(t *testing.T) {
 		}
 	}
 	for _, c := range []Config{{OffsetHz: 24000}, {OffsetHz: math.NaN()}, {BasebandHz: iq0LowHz, OffsetHz: -4800}} {
-		if _, err := New(c); err == nil {
+		if _, err := New(&c); err == nil {
 			t.Errorf("New took %+v", c)
 		}
 	}

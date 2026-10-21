@@ -286,9 +286,14 @@ type engine struct {
 	passRecs                     []passRec
 }
 
-// New returns a Receiver sized by cfg. It allocates every buffer of the
-// Receiver. It returns a *ConfigError when a field of cfg is out of range.
-func New(cfg Config) (*Receiver, error) {
+// New returns a Receiver sized by cfg. A nil cfg means the zero Config. It
+// allocates every buffer of the Receiver. It returns a *ConfigError when a
+// field of cfg is out of range.
+func New(c *Config) (*Receiver, error) {
+	var cfg Config
+	if c != nil {
+		cfg = *c
+	}
 	r, err := newReceiver(cfg)
 	if err != nil {
 		return nil, err

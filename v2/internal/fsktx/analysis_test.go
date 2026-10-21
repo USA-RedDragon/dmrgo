@@ -494,7 +494,7 @@ func discAudio(x []complex64) []int16 {
 
 func receiveDisc(x []complex64) []rf.Burst {
 	var out []rf.Burst
-	r, err := rf.NewDisc(rf.DiscConfig{Hz: discHz, Tier: rf.Tier0, OnBurst: func(b *rf.Burst) { out = append(out, *b) }})
+	r, err := rf.NewDisc(&rf.DiscConfig{Hz: discHz, Tier: rf.Tier0, OnBurst: func(b *rf.Burst) { out = append(out, *b) }})
 	if err != nil {
 		panic(err)
 	}
@@ -553,7 +553,7 @@ func probit(cns []float64, ok, n []int) float64 {
 
 func receive(x []complex64, t rf.Tier) []rf.Burst {
 	var out []rf.Burst
-	r, err := rf.New(rf.Config{Rate: rxRate, Tier: t, OnBurst: func(b *rf.Burst) { out = append(out, *b) }})
+	r, err := rf.New(&rf.Config{Rate: rxRate, Tier: t, OnBurst: func(b *rf.Burst) { out = append(out, *b) }})
 	if err != nil {
 		panic(err)
 	}

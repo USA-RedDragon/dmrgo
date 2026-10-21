@@ -287,7 +287,7 @@ func receiveAudioTier(t testing.TB, a []int16, tier Tier) []Burst {
 func receiveAudioAt(t testing.TB, a []int16, hz int, tier Tier) []Burst {
 	t.Helper()
 	var out []Burst
-	r, err := NewDisc(DiscConfig{Hz: hz, Tier: tier, OnBurst: func(b *Burst) { out = append(out, *b) }})
+	r, err := NewDisc(&DiscConfig{Hz: hz, Tier: tier, OnBurst: func(b *Burst) { out = append(out, *b) }})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -457,7 +457,7 @@ func falsePerHour(e benchEntry) float64 {
 	switch e.mode {
 	case benchAudio:
 		hz := benchAudioHz
-		r, err := NewDisc(DiscConfig{Hz: hz, Tier: t, OnBurst: func(*Burst) { n++ }})
+		r, err := NewDisc(&DiscConfig{Hz: hz, Tier: t, OnBurst: func(*Burst) { n++ }})
 		if err != nil {
 			panic(err)
 		}
@@ -516,7 +516,7 @@ var ramMu sync.Mutex
 //go:noinline
 func newBenchReceiver(e benchEntry) any {
 	if e.mode == benchAudio {
-		d, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: e.tier, OnBurst: func(*Burst) {}})
+		d, err := NewDisc(&DiscConfig{Hz: benchAudioHz, Tier: e.tier, OnBurst: func(*Burst) {}})
 		if err != nil {
 			panic(err)
 		}
@@ -580,7 +580,7 @@ func steadyAllocs(x []complex64, e benchEntry) float64 {
 
 func discSteadyAllocs(a []int16, tier Tier) float64 {
 	const chunk = 1 << 11
-	r, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: tier, OnBurst: func(*Burst) {}})
+	r, err := NewDisc(&DiscConfig{Hz: benchAudioHz, Tier: tier, OnBurst: func(*Burst) {}})
 	if err != nil {
 		panic(err)
 	}

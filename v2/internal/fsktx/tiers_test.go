@@ -122,7 +122,7 @@ func TestAudioRoundTrip(t *testing.T) {
 		a := audioOf(t, cfg, ts.syms)
 		if cfg.Hz == 24000 {
 			var got []rf.Burst
-			r, err := rf.NewDisc(rf.DiscConfig{Hz: cfg.Hz, OnBurst: func(b *rf.Burst) { got = append(got, *b) }})
+			r, err := rf.NewDisc(&rf.DiscConfig{Hz: cfg.Hz, OnBurst: func(b *rf.Burst) { got = append(got, *b) }})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -154,7 +154,7 @@ func TestIQRoundTrip(t *testing.T) {
 			b[i] = byte(int8(b[i]) + int8(rng.IntN(3)-1))
 		}
 		var got []rf.Burst
-		r, err := rf.New(rf.Config{Rate: float64(cfg.Rate), Signed: true, Tier: rf.Tier1, MaxWrite: 1 << 16, OnBurst: func(b *rf.Burst) { got = append(got, *b) }})
+		r, err := rf.New(&rf.Config{Rate: float64(cfg.Rate), Signed: true, Tier: rf.Tier1, MaxWrite: 1 << 16, OnBurst: func(b *rf.Burst) { got = append(got, *b) }})
 		if err != nil {
 			t.Fatal(err)
 		}

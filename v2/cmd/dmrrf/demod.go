@@ -16,7 +16,7 @@ type Demodulated struct {
 // DemodulateBytes recovers DMR bursts from 8-bit I/Q at rate, signed (cs8)
 // or unsigned (cu8), with a receiver of the given tier.
 func DemodulateBytes(iq []byte, rate float64, signed bool, tier rf.Tier) (Demodulated, error) {
-	rx, err := rf.New(rf.Config{Rate: rate, Signed: signed, Tier: tier})
+	rx, err := rf.New(&rf.Config{Rate: rate, Signed: signed, Tier: tier})
 	if err != nil {
 		return Demodulated{}, err
 	}
