@@ -397,196 +397,195 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 		h = 0
 	}
 	for i := i0; ; {
-		if t <= 0 {
-			for {
-				if st&st96Raw != 0 {
-					t = tm.step
-					if tm.mid {
-						tm.half, tm.mid = s2, false
-						break
+		if t > 0 {
+			for i != n {
+				v := *(*int16)(unsafe.Add(unsafe.Pointer(unsafe.SliceData(x)), 2*i))
+				if st&st96Search != 0 {
+					f.sum += int32(v)
+					f.sq += int64(v) * int64(v)
+					if f.n++; f.n == frontBlock {
+						tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
+						r.acqHead, r.acqLow = kh, kq
+						f.rrcHead = h
+						r.levels()
+						sb, s0, s1, s2, s3, t = tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t
+						kq = r.acqLow
+						k, off = f.k, f.off
 					}
-					tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*s2*s2
-					tm.last, tm.mid = s2, true
-					hit, sym, mid := r.rawSym(s2)
-					if !hit {
-						break
+				}
+				u := int8(max(min((int32(v)*k-off)>>16, 127), -128))
+				p := unsafe.Add(unsafe.Pointer(hist), h)
+				*(*int8)(p), *(*int8)(unsafe.Add(p, audio96Taps)) = u, u
+				acc := fir96[site0]((*[audio96Taps]int8)(unsafe.Add(p, 1)))
+				if h++; h >= audio96Taps {
+					h = 0
+				}
+				y := float32(acc) * (rrcStepHz / 32768.0)
+				sa, sb, s0, s1, s2, s3 = sb, s0, s1, s2, s3, y
+				if st&st96Keep != 0 {
+					q := int16(int8((acc + 1<<13) >> 14))
+					if kh&1 == 0 {
+						kq = q
+					} else if j := uint32(kh) >> 1; j < uint32(len(buf)) {
+						buf[j] = int16(uint16(uint8(kq)) | uint16(uint8(q))<<8)
 					}
-					tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
-					r.n += int64(i - i0)
-					i0 = i
-					r.acqHead, r.acqLow = kh, kq
-					f.rrcHead = h
-					r.lastAt = -1
-					r.searchHit(sym, mid)
-					sa, sb, s0, s1, s2, s3, t, kq = tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
-					kh = r.acqHead
-					buf, an = r.acqBuf()
-					st = r.state96()
-					k, off = f.k, f.off
+					if kh++; kh == an {
+						kh = 0
+					}
+				}
+				t--
+				i++
+				if t <= 0 {
+					goto strobe
+				}
+			}
+			if !r.iqLow {
+				break
+			}
+			r.n += int64(i - i0)
+			i0 = i
+			m := iqLowOf(r).fill(in[fed:])
+			if m == 0 {
+				break
+			}
+			fed += m
+			n, i, i0 = m, 0, 0
+			continue
+		}
+	strobe:
+		for {
+			if st&st96Raw != 0 {
+				t = tm.step
+				if tm.mid {
+					tm.half, tm.mid = s2, false
+					break
+				}
+				tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*s2*s2
+				tm.last, tm.mid = s2, true
+				hit, sym, mid := r.rawSym(s2)
+				if !hit {
+					break
+				}
+				tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
+				r.n += int64(i - i0)
+				i0 = i
+				r.acqHead, r.acqLow = kh, kq
+				f.rrcHead = h
+				r.lastAt = -1
+				r.searchHit(sym, mid)
+				sa, sb, s0, s1, s2, s3, t, kq = tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
+				kh = r.acqHead
+				buf, an = r.acqBuf()
+				st = r.state96()
+				k, off = f.k, f.off
+				if t > 0 {
+					break
+				}
+				continue
+			}
+			at := t
+			mu := 1 + at
+			var xv float32
+			switch {
+			case tm.mid && st&st96LinMid != 0:
+				xv = s1 + mu*(s2-s1)
+			case run96Strobe == 1:
+				xv = s1 + 0.5*mu*(s2-s0+mu*(2*s0-5*s1+4*s2-s3+mu*(3*(s1-s2)+s3-s0)))
+			case run96Strobe == 2:
+				xv = s1 + mu*(s2-s1)
+			case run96Strobe == 3:
+				c1 := s2 - (1.0/3)*s0 - 0.5*s1 - (1.0/6)*s3
+				c2 := 0.5*(s0+s2) - s1
+				c3 := (1.0/6)*(s3-s0) + 0.5*(s1-s2)
+				xv = s1 + mu*(c1+mu*(c2+mu*c3))
+			case st&st96Tab != 0:
+				xv = lagrangeAt(sa, sb, s0, s1, s2, s3, mu)
+			default:
+				xv = lagrange6[site0](sa, sb, s0, s1, s2, s3, mu)
+			}
+			at--
+			sym := true
+			switch {
+			case tm.mm:
+				yv := xv - tm.dc
+				d := tm.dev
+				if abs32(yv) > 2*tm.dev {
+					d = 3 * tm.dev
+				}
+				if yv < 0 {
+					d = -d
+				}
+				e := leanMMSign * (tm.half*yv - d*(tm.last-tm.dc))
+				tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*yv*yv
+				tm.last, tm.half = xv, d
+				t += 2 * tm.step
+				if !tm.hold && tm.pow > 0 {
+					t += max32(min32(leanMMGain*tm.gain*e/tm.pow, 0.5), -0.5)
+				}
+			case tm.mid:
+				tm.half, tm.mid = xv, false
+				t += tm.step
+				sym = false
+			default:
+				tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*xv*xv
+				e := tm.half * (tm.last - xv)
+				tm.last, tm.mid = xv, true
+				t += tm.step
+				if !tm.hold && tm.pow > 0 {
+					t += max32(min32(tm.gain*e/tm.pow, 0.5), -0.5)
+				}
+			}
+			if sym && st&st96Quiet != 0 {
+				if r.lockPush(tm.last, at) {
 					if t > 0 {
 						break
 					}
 					continue
 				}
-				at := t
-				mu := 1 + at
-				var xv float32
-				switch {
-				case tm.mid && st&st96LinMid != 0:
-					xv = s1 + mu*(s2-s1)
-				case run96Strobe == 1:
-					xv = s1 + 0.5*mu*(s2-s0+mu*(2*s0-5*s1+4*s2-s3+mu*(3*(s1-s2)+s3-s0)))
-				case run96Strobe == 2:
-					xv = s1 + mu*(s2-s1)
-				case run96Strobe == 3:
-					c1 := s2 - (1.0/3)*s0 - 0.5*s1 - (1.0/6)*s3
-					c2 := 0.5*(s0+s2) - s1
-					c3 := (1.0/6)*(s3-s0) + 0.5*(s1-s2)
-					xv = s1 + mu*(c1+mu*(c2+mu*c3))
-				case st&st96Tab != 0:
-					xv = lagrangeAt(sa, sb, s0, s1, s2, s3, mu)
-				default:
-					xv = lagrange6[site0](sa, sb, s0, s1, s2, s3, mu)
-				}
-				at--
-				sym := true
-				switch {
-				case tm.mm:
-					yv := xv - tm.dc
-					d := tm.dev
-					if abs32(yv) > 2*tm.dev {
-						d = 3 * tm.dev
-					}
-					if yv < 0 {
-						d = -d
-					}
-					e := leanMMSign * (tm.half*yv - d*(tm.last-tm.dc))
-					tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*yv*yv
-					tm.last, tm.half = xv, d
-					t += 2 * tm.step
-					if !tm.hold && tm.pow > 0 {
-						t += max32(min32(leanMMGain*tm.gain*e/tm.pow, 0.5), -0.5)
-					}
-				case tm.mid:
-					tm.half, tm.mid = xv, false
-					t += tm.step
-					sym = false
-				default:
-					tm.pow = leanPowerForget*tm.pow + (1-leanPowerForget)*xv*xv
-					e := tm.half * (tm.last - xv)
-					tm.last, tm.mid = xv, true
-					t += tm.step
-					if !tm.hold && tm.pow > 0 {
-						t += max32(min32(tm.gain*e/tm.pow, 0.5), -0.5)
-					}
-				}
-				if sym && st&st96Quiet != 0 {
-					if r.lockPush(tm.last, at) {
+				tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
+				r.n += int64(i - i0)
+				r.acqHead, r.acqLow = kh, kq
+				f.rrcHead = h
+				r.slotDue = true
+				return i, fed
+			}
+			if sym {
+				tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
+				r.n += int64(i - i0)
+				i0 = i
+				r.acqHead, r.acqLow = kh, kq
+				if st&st96Lock != 0 {
+					again, mid, match := r.lockSym(tm.last, at)
+					if !match && uint32(r.ns) != uint32(r.slotEnd) {
 						if t > 0 {
 							break
 						}
 						continue
 					}
-					tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
-					r.n += int64(i - i0)
-					r.acqHead, r.acqLow = kh, kq
 					f.rrcHead = h
-					r.slotDue = true
+					if match {
+						r.huntMatch(again, mid)
+					}
+					if uint32(r.ns) == uint32(r.slotEnd) {
+						r.slotDue = true
+					}
+				} else {
+					f.rrcHead = h
+					r.symbol(tm.last, at)
+				}
+				if r.slotDue {
 					return i, fed
 				}
-				if sym {
-					tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
-					r.n += int64(i - i0)
-					i0 = i
-					r.acqHead, r.acqLow = kh, kq
-					if st&st96Lock != 0 {
-						again, mid, match := r.lockSym(tm.last, at)
-						if !match && uint32(r.ns) != uint32(r.slotEnd) {
-							if t > 0 {
-								break
-							}
-							continue
-						}
-						f.rrcHead = h
-						if match {
-							r.huntMatch(again, mid)
-						}
-						if uint32(r.ns) == uint32(r.slotEnd) {
-							r.slotDue = true
-						}
-					} else {
-						f.rrcHead = h
-						r.symbol(tm.last, at)
-					}
-					if r.slotDue {
-						return i, fed
-					}
-					sa, sb, s0, s1, s2, s3, t, kq = tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
-					kh = r.acqHead
-					buf, an = r.acqBuf()
-					st = r.state96()
-					k, off = f.k, f.off
-				}
-				if t > 0 {
-					break
-				}
+				sa, sb, s0, s1, s2, s3, t, kq = tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t, r.acqLow
+				kh = r.acqHead
+				buf, an = r.acqBuf()
+				st = r.state96()
+				k, off = f.k, f.off
 			}
-		}
-		for i != n {
-			v := *(*int16)(unsafe.Add(unsafe.Pointer(unsafe.SliceData(x)), 2*i))
-			if st&st96Search != 0 {
-				f.sum += int32(v)
-				f.sq += int64(v) * int64(v)
-				if f.n++; f.n == frontBlock {
-					tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
-					r.acqHead, r.acqLow = kh, kq
-					f.rrcHead = h
-					r.levels()
-					sb, s0, s1, s2, s3, t = tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t
-					kq = r.acqLow
-					k, off = f.k, f.off
-				}
-			}
-			u := int8(max(min((int32(v)*k-off)>>16, 127), -128))
-			p := unsafe.Add(unsafe.Pointer(hist), h)
-			*(*int8)(p), *(*int8)(unsafe.Add(p, audio96Taps)) = u, u
-			acc := fir96[site0]((*[audio96Taps]int8)(unsafe.Add(p, 1)))
-			if h++; h >= audio96Taps {
-				h = 0
-			}
-			y := float32(acc) * (rrcStepHz / 32768.0)
-			sa, sb, s0, s1, s2, s3 = sb, s0, s1, s2, s3, y
-			if st&st96Keep != 0 {
-				q := int16(int8((acc + 1<<13) >> 14))
-				if kh&1 == 0 {
-					kq = q
-				} else if j := uint32(kh) >> 1; j < uint32(len(buf)) {
-					buf[j] = int16(uint16(uint8(kq)) | uint16(uint8(q))<<8)
-				}
-				if kh++; kh == an {
-					kh = 0
-				}
-			}
-			t--
-			i++
-			if t <= 0 {
+			if t > 0 {
 				break
 			}
 		}
-		if t <= 0 {
-			continue
-		}
-		if !r.iqLow {
-			break
-		}
-		r.n += int64(i - i0)
-		i0 = i
-		m := iqLowOf(r).fill(in[fed:])
-		if m == 0 {
-			break
-		}
-		fed += m
-		n, i, i0 = m, 0, 0
 	}
 	f.rrcHead = h
 	tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t = sa, sb, s0, s1, s2, s3, t
