@@ -72,16 +72,12 @@ func (k *Key) Sign(dst []byte) []byte {
 
 // Verify reports whether the last TrailerLen octets of p are the trailer of
 // the rest. It returns at most len(p) octets, the rest of p, and does not
-// allocate.
+// allocate. It compares the trailer in constant time.
 func (k *Key) Verify(p []byte) ([]byte, bool) {
 	if len(p) < TrailerLen {
 		return nil, false
 	}
 	body := p[:len(p)-TrailerLen]
 	t := k.trailer(body)
-	var diff byte
-	for i := range TrailerLen {
-		diff |= t[i] ^ p[len(body)+i]
-	}
-	return body, diff == 0
+	return body, digest.Equal(t[:TrailerLen], p[len(body):])
 }

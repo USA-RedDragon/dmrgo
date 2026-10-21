@@ -11,7 +11,8 @@ func TestAllocsAuth(t *testing.T) {
 	b := auth.NewBridge([]byte("passw0rd"))
 	v1, v5 := packet("DMRD", 53, 73), packet("DMRE", 73, 89)
 	n := testing.AllocsPerRun(100, func() {
-		_, _ = auth.Token(dmrd.DialectHBRP, 0x0A7ED498, []byte("DL5DI"))
+		tok, _ := auth.Token(dmrd.DialectHBRP, 0x0A7ED498, []byte("DL5DI"))
+		_ = auth.VerifyToken(dmrd.DialectHBRP, 0x0A7ED498, []byte("DL5DI"), tok[:])
 		_ = b.Sign(v1)
 		_ = b.Verify(v1)
 		_ = b.Sign(v5)

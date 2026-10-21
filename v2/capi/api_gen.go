@@ -31790,6 +31790,31 @@ func dmrgo_dmrd_auth_token(c_d C.dmrgo_dmrd_dialect_t, c_salt C.uint32_t, c_pass
 	return C.DMRGO_OK
 }
 
+//export dmrgo_dmrd_auth_verify_token
+func dmrgo_dmrd_auth_verify_token(c_d C.dmrgo_dmrd_dialect_t, c_salt C.uint32_t, c_password *C.uint8_t, c_password_len C.size_t, c_token *C.uint8_t, c_token_len C.size_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_password == nil && c_password_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_password []byte
+	a_password = unsafe.Slice((*byte)(unsafe.Pointer(c_password)), int(c_password_len))
+	if c_token == nil && c_token_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_token []byte
+	a_token = unsafe.Slice((*byte)(unsafe.Pointer(c_token)), int(c_token_len))
+	r0 := g_transport_dmrd_auth.VerifyToken(g_transport_dmrd.Dialect(c_d), uint32(c_salt), a_password, a_token)
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_transport_hytera_decode_frame
 func dmrgo_transport_hytera_decode_frame(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_transport_hytera_frame_t) (rc C.int) {
 	defer recoverTo(&rc)

@@ -7277,6 +7277,8 @@ int dmrgo_dmrd_auth_bridge_verify(dmrgo_dmrd_auth_bridge_t *self, const uint8_t 
 int dmrgo_dmrd_auth_new_bridge(const uint8_t *key, size_t key_len, dmrgo_dmrd_auth_bridge_t **out);
 /* Go: auth.Token. Token returns the login token of an RPTK message for the salt of the master and the password: SHA-256 of the salt and the password. */
 int dmrgo_dmrd_auth_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, uint8_t out[32]);
+/* Go: auth.VerifyToken. VerifyToken reports whether token, from an RPTK message, is the login token of the salt and the password, as Token computes it. */
+int dmrgo_dmrd_auth_verify_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, const uint8_t *token, size_t token_len, bool *out);
 /* Go: hytera.DecodeFrame. DecodeFrame decodes the 72-octet DMR frame p. */
 int dmrgo_transport_hytera_decode_frame(const uint8_t *p, size_t p_len, dmrgo_transport_hytera_frame_t *out);
 /* Go: hytera.DecodeHeartbeat. DecodeHeartbeat decodes a heartbeat (20 octets) or a keepalive (1 octet). */

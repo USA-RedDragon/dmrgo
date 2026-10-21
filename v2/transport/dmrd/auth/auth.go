@@ -43,6 +43,15 @@ func Token(d dmrd.Dialect, salt uint32, password []byte) ([32]byte, error) {
 	return h.Sum(), nil
 }
 
+// VerifyToken reports whether token, from an RPTK message, is the login
+// token of the salt and the password, as Token computes it. It compares
+// in constant time, and reports false for a dialect without a token. It
+// does not allocate.
+func VerifyToken(d dmrd.Dialect, salt uint32, password, token []byte) bool {
+	want, err := Token(d, salt, password)
+	return err == nil && digest.Equal(want[:], token)
+}
+
 // Bridge holds an OpenBridge key and the hash state that signing with it
 // needs. It is not safe for concurrent use.
 type Bridge struct {
@@ -131,7 +140,8 @@ func (b *Bridge) Sign(p []byte) error {
 }
 
 // Verify reports whether the OpenBridge packet p carries the signature of
-// the key, as Sign would write it. It does not allocate.
+// the key, as Sign would write it. It compares the signature in constant
+// time, and does not allocate.
 func (b *Bridge) Verify(p []byte) bool {
 	msg, sig, keyed, ok := span(p)
 	if !ok {
@@ -149,9 +159,5 @@ func (b *Bridge) Verify(p []byte) bool {
 	} else {
 		want = b.sha1(msg)
 	}
-	var diff byte
-	for i := range n {
-		diff |= want[i] ^ sig[i]
-	}
-	return diff == 0
+	return digest.Equal(want[:n], sig[:n])
 }
