@@ -233,7 +233,7 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 	for cell := range 13 * 15 {
 		row, col := cell/15, cell%15
 		p := bptc.GridBit(row, col)
-		v := r.llrAt(bptcPos(p))
+		v := llrAtS(r, bptcPos(p))
 		if v < 0 {
 			rows[row] |= 1 << col
 			v = -v
@@ -323,12 +323,12 @@ func (r *leanCore) fixRate34(f *leanFEC, out *layer2.RawBurst) {
 	tr := &softTrellisTables
 	metric := [softTrellisStates]int32{0, softInf, softInf, softInf, softInf, softInf, softInf, softInf}
 	var next [softTrellisStates]int32
+	var bc [16]int32
 	for k := range softTrellisSteps {
 		var l [4]int16
 		for b, j := range &tr.step[k] {
 			l[b] = r.llrAt(int(tr.pos[j]))
 		}
-		var bc [16]int32
 		for lab := 1; lab < 16; lab++ {
 			bc[lab] = bc[lab&(lab-1)] + int32(l[3-bits.TrailingZeros(uint(lab))])
 		}

@@ -506,7 +506,15 @@ func (r *leanCore) keptAt(t float32) float32 {
 	b := -t
 	i := int32(b)
 	mu := 1 - (b - float32(i))
-	p0, p1, p2, p3 := r.kept(i+2), r.kept(i+1), r.kept(i), r.kept(max(i-1, 0))
+	var p [4]float32
+	for j := range int32(4) {
+		b := i + 2 - j
+		if j == 3 {
+			b = max(b, 0)
+		}
+		p[j] = r.kept(b)
+	}
+	p0, p1, p2, p3 := p[0], p[1], p[2], p[3]
 	if i+3 >= r.acqKept() {
 		p0 = p1
 	}
@@ -852,9 +860,10 @@ func (r *leanCore) lockSym(x, at float32) (again, mid, match bool) {
 }
 
 //go:noinline
-func (r *leanCore) lockPush(x, at float32) {
+func (r *leanCore) lockPush(x, at float32) (more bool) {
 	r.lastAt = at
 	r.pushSym(x)
+	return r.ns != r.slotEnd
 }
 
 func (r *leanCore) endSlot() {
@@ -1644,6 +1653,10 @@ func (r *leanCore) setLLR() {
 }
 
 func (r *leanCore) llrAt(p int) int16 {
+	return llrAtS(r, p)
+}
+
+func llrAtS(r *leanCore, p int) int16 {
 	l0, l1 := r.symLLR(r.base + cachSymbols + int64(p>>1))
 	if p&1 == 0 {
 		return l0

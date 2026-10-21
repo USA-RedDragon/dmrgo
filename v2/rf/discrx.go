@@ -503,8 +503,7 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 					}
 				}
 				if sym && st&st96Quiet != 0 {
-					r.lockPush(tm.last, at)
-					if r.ns != r.slotEnd {
+					if r.lockPush(tm.last, at) {
 						if t > 0 {
 							break
 						}
