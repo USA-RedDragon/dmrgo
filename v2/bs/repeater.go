@@ -7,7 +7,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
-	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
@@ -242,10 +241,6 @@ func New(cfg *Config) (*Repeater, error) {
 	if r.lost < 0 {
 		r.lost = voice.DefaultLost
 	}
-	silence := cfg.Silence
-	if silence == [9]byte{} {
-		silence = vocoder.AMBESilenceSlot()
-	}
 	if r.b == nil {
 		r.b = layer2.NewBurst()
 	}
@@ -257,7 +252,7 @@ func New(cfg *Config) (*Repeater, error) {
 		if err != nil {
 			return nil, err
 		}
-		tx, err := voice.NewTransmitter(&voice.TransmitterConfig{ColorCode: r.cc, Silence: silence, Headers: cfg.Headers,
+		tx, err := voice.NewTransmitter(&voice.TransmitterConfig{ColorCode: r.cc, Silence: cfg.Silence, Headers: cfg.Headers,
 			Terminators: cfg.Terminators, Timeout: cfg.Timeout, Queue: layer2.VoiceSlotsPerBurst * (headers + 2)})
 		if err != nil {
 			return nil, err

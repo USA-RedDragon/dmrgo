@@ -3,6 +3,7 @@ package layer2
 import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
 // VoiceTransmitterOptions configures NewVoiceTransmitter.
@@ -16,8 +17,8 @@ type VoiceTransmitterOptions struct {
 	// Source selects the SYNC patterns. The zero value is SyncSourceBS.
 	Source SyncSource
 	// Silence is the 72-bit slot that pads the last superframe, packed as
-	// RawBurst.VoiceSlots returns it. It is codec specific: for AMBE+2 it is
-	// vocoder.AMBESilenceSlot().
+	// RawBurst.VoiceSlots returns it. The zero value means
+	// vocoder.AMBESilenceSlot(). A Codec2 caller sets its own.
 	Silence [9]byte
 	// PIHeader, when set, adds a PI Header burst after the Voice LC Header
 	// (ETSI TS 102 361-1 clause 5.1.2.2, clause 6.2).
@@ -91,6 +92,9 @@ func (t *VoiceTransmitter) Reset(opts *VoiceTransmitterOptions) error {
 		piHeader:   piHeader,
 		hasPI:      opts.PIHeader != nil,
 		silence:    opts.Silence,
+	}
+	if t.silence == [9]byte{} {
+		t.silence = vocoder.AMBESilenceSlot()
 	}
 	return nil
 }
