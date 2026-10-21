@@ -32,6 +32,7 @@ import (
 	g_mototrbo_tms "github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms"
 	g_nmea "github.com/USA-RedDragon/dmrgo/v2/nmea"
 	g_shortdata "github.com/USA-RedDragon/dmrgo/v2/shortdata"
+	g_sms "github.com/USA-RedDragon/dmrgo/v2/sms"
 	g_trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
 	g_vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	g_vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
@@ -3465,6 +3466,64 @@ func in_shortdata_HyteraText(s *C.dmrgo_shortdata_hytera_text_t) (d g_shortdata.
 	return
 }
 
+func in_sms_AnyToneText(s *C.dmrgo_sms_any_tone_text_t) (d g_sms.AnyToneText) {
+	d.Prefix = uint32(s.prefix)
+	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
+	return
+}
+
+func out_sms_AnyToneText(d *C.dmrgo_sms_any_tone_text_t, s *g_sms.AnyToneText, oc *outc) {
+	_ = oc
+	d.prefix = C.uint32_t(s.Prefix)
+	d.text = (*C.uint8_t)(arenaCopy(oc, s.Text))
+	d.text_len = C.size_t(len(s.Text))
+}
+
+func in_sms_Text(s *C.dmrgo_sms_text_t) (d g_sms.Text) {
+	d.Format = g_sms.Format(s.format)
+	d.Source = uint32(s.source)
+	d.Destination = uint32(s.destination)
+	d.Group = bool(s.group)
+	d.DD = g_enums.DDFormat(s.dd)
+	d.Sequence = uint8(s.sequence)
+	d.AckRequired = bool(s.ack_required)
+	d.Body = unsafe.Slice((*byte)(unsafe.Pointer(s.body)), int(s.body_len))
+	return
+}
+
+type st_sms_Header struct {
+	f_Data st_layer2_pdu_DataHeader
+}
+
+func in_sms_Header(s *C.dmrgo_sms_header_t, st *st_sms_Header) (d g_sms.Header) {
+	d.Data = in_layer2_pdu_DataHeader(&s.data, &st.f_Data)
+	return
+}
+
+func out_sms_Text(d *C.dmrgo_sms_text_t, s *g_sms.Text, oc *outc) {
+	_ = oc
+	d.format = C.dmrgo_sms_format_t(s.Format)
+	d.source = C.uint32_t(s.Source)
+	d.destination = C.uint32_t(s.Destination)
+	d.group = C.bool(s.Group)
+	d.dd = C.dmrgo_enums_dd_format_t(s.DD)
+	d.sequence = C.uint8_t(s.Sequence)
+	d.ack_required = C.bool(s.AckRequired)
+	d.body = (*C.uint8_t)(arenaCopy(oc, s.Body))
+	d.body_len = C.size_t(len(s.Body))
+}
+
+func out_sms_IPText(d *C.dmrgo_sms_ip_text_t, s *g_sms.IPText, oc *outc) {
+	_ = oc
+	d.text = (*C.uint8_t)(arenaCopy(oc, s.Text))
+	d.text_len = C.size_t(len(s.Text))
+}
+
+func in_sms_IPText(s *C.dmrgo_sms_ip_text_t) (d g_sms.IPText) {
+	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
+	return
+}
+
 func out_trunk_Tune(d *C.dmrgo_trunk_tune_t, s *g_trunk.Tune, oc *outc) {
 	_ = oc
 	d.channel = C.uint16_t(s.Channel)
@@ -5576,6 +5635,28 @@ func fromC_nmea_RMC(s *C.dmrgo_nmea_rmc_t) g_nmea.RMC {
 
 func fromC_shortdata_HyteraText(s *C.dmrgo_shortdata_hytera_text_t) g_shortdata.HyteraText {
 	return in_shortdata_HyteraText(s)
+}
+
+func fromC_sms_AnyToneText(s *C.dmrgo_sms_any_tone_text_t) g_sms.AnyToneText {
+	return in_sms_AnyToneText(s)
+}
+
+func out_sms_Header(d *C.dmrgo_sms_header_t, s *g_sms.Header, oc *outc) {
+	_ = oc
+	out_layer2_pdu_DataHeader(&d.data, &s.Data, oc)
+}
+
+func fromC_sms_Header(s *C.dmrgo_sms_header_t) g_sms.Header {
+	var st st_sms_Header
+	return in_sms_Header(s, &st)
+}
+
+func fromC_sms_IPText(s *C.dmrgo_sms_ip_text_t) g_sms.IPText {
+	return in_sms_IPText(s)
+}
+
+func fromC_sms_Text(s *C.dmrgo_sms_text_t) g_sms.Text {
+	return in_sms_Text(s)
 }
 
 func in_trunk_Access(s *C.dmrgo_trunk_access_t) (d g_trunk.Access) {
@@ -26479,6 +26560,502 @@ func dmrgo_shortdata_text(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.siz
 	return C.DMRGO_OK
 }
 
+//export dmrgo_sms_any_tone_text_append_binary
+func dmrgo_sms_any_tone_text_append_binary(c_self *C.dmrgo_sms_any_tone_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_sms.AnyToneText
+	x = in_sms_AnyToneText(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_sms_AnyToneText(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_sms_any_tone_text_set_text_utf8
+func dmrgo_sms_any_tone_text_set_text_utf8(c_self *C.dmrgo_sms_any_tone_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_text *C.uint8_t, c_text_len C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_sms.AnyToneText
+	x = in_sms_AnyToneText(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_text == nil && c_text_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_text []byte
+	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	r0 := x.SetTextUTF8(a_dst, a_text)
+	out_sms_AnyToneText(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_sms_any_tone_text_string
+func dmrgo_sms_any_tone_text_string(c_self *C.dmrgo_sms_any_tone_text_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_sms.AnyToneText
+	x = in_sms_AnyToneText(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_sms_AnyToneText(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_sms_any_tone_text_text_utf8
+func dmrgo_sms_any_tone_text_text_utf8(c_self *C.dmrgo_sms_any_tone_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_sms.AnyToneText
+	x = in_sms_AnyToneText(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0 := x.TextUTF8(a_dst)
+	out_sms_AnyToneText(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_sms_append_packet
+func dmrgo_sms_append_packet(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_t *C.dmrgo_sms_text_t, c_confirmed C.bool, c_h *C.dmrgo_sms_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	var a_t g_sms.Text
+	var p_t *g_sms.Text
+	if c_t != nil {
+		a_t = in_sms_Text(&(*c_t))
+		p_t = &a_t
+	}
+	var a_h g_sms.Header
+	var p_h *g_sms.Header
+	var s_h st_sms_Header
+	if c_h != nil {
+		a_h = in_sms_Header(&(*c_h), &s_h)
+		p_h = &a_h
+	}
+	r0, r1 := g_sms.AppendPacket(a_dst, p_t, bool(c_confirmed), p_h)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_sms_decode
+func dmrgo_sms_decode(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_h *C.dmrgo_pdu_data_header_t, c_data *C.uint8_t, c_data_len C.size_t, c_out1 *C.dmrgo_sms_text_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	var a_h g_layer2_pdu.DataHeader
+	var p_h *g_layer2_pdu.DataHeader
+	var s_h st_layer2_pdu_DataHeader
+	if c_h != nil {
+		a_h = in_layer2_pdu_DataHeader(&(*c_h), &s_h)
+		p_h = &a_h
+	}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1, r2 := g_sms.Decode(a_dst, p_h, a_data)
+	_ = r0
+	_ = r1
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_out1 != nil {
+		out_sms_Text(&(*c_out1), &r1, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r2 != nil {
+		return setErr(r2)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_sms_decode_any_tone_text
+func dmrgo_sms_decode_any_tone_text(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_sms_any_tone_text_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_sms.DecodeAnyToneText(a_data)
+	_ = r0
+	if c_out != nil {
+		out_sms_AnyToneText(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_sms_decode_ip_text
+func dmrgo_sms_decode_ip_text(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_sms_ip_text_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_sms.DecodeIPText(a_data)
+	_ = r0
+	if c_out != nil {
+		out_sms_IPText(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_sms_format_string
+func dmrgo_sms_format_string(c_self C.dmrgo_sms_format_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_sms.Format(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_sms_ip_text_append_binary
+func dmrgo_sms_ip_text_append_binary(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_sms.IPText
+	x = in_sms_IPText(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_sms_IPText(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_sms_ip_text_set_text_utf8
+func dmrgo_sms_ip_text_set_text_utf8(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_text *C.uint8_t, c_text_len C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_sms.IPText
+	x = in_sms_IPText(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_text == nil && c_text_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_text []byte
+	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	r0 := x.SetTextUTF8(a_dst, a_text)
+	out_sms_IPText(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_sms_ip_text_string
+func dmrgo_sms_ip_text_string(c_self *C.dmrgo_sms_ip_text_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_sms.IPText
+	x = in_sms_IPText(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_sms_IPText(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_sms_ip_text_text_utf8
+func dmrgo_sms_ip_text_text_utf8(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_sms.IPText
+	x = in_sms_IPText(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0 := x.TextUTF8(a_dst)
+	out_sms_IPText(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_access_applies
 func dmrgo_trunk_access_applies(c_self *C.dmrgo_trunk_access_t, c_ms C.uint32_t, c_emergency C.bool, c_out *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -31393,6 +31970,16 @@ func errCode(err error) C.int {
 			return -181
 		case g_shortdata.ErrShort:
 			return -182
+		case g_sms.ErrFormat:
+			return -191
+		case g_sms.ErrLength:
+			return -192
+		case g_sms.ErrNotText:
+			return -193
+		case g_sms.ErrShort:
+			return -194
+		case g_sms.ErrSignature:
+			return -195
 		case g_trunk.ErrBusy:
 			return -134
 		case g_trunk.ErrChannelNumber:
@@ -31662,6 +32249,16 @@ func codeErr(code C.int) error {
 		return g_shortdata.ErrLength
 	case -182:
 		return g_shortdata.ErrShort
+	case -191:
+		return g_sms.ErrFormat
+	case -192:
+		return g_sms.ErrLength
+	case -193:
+		return g_sms.ErrNotText
+	case -194:
+		return g_sms.ErrShort
+	case -195:
+		return g_sms.ErrSignature
 	case -134:
 		return g_trunk.ErrBusy
 	case -135:

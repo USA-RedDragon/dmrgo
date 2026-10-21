@@ -128,6 +128,16 @@ const char *dmrgo__gen_strerror(int status) {
 		return "shortdata.ErrLength";
 	case -182:
 		return "shortdata.ErrShort";
+	case -191:
+		return "sms.ErrFormat";
+	case -192:
+		return "sms.ErrLength";
+	case -193:
+		return "sms.ErrNotText";
+	case -194:
+		return "sms.ErrShort";
+	case -195:
+		return "sms.ErrSignature";
 	case -105:
 		return "trunk.ConfigError";
 	case -134:

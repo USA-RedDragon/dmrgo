@@ -381,6 +381,14 @@ typedef struct dmrgo_tms_sequence_low_t dmrgo_tms_sequence_low_t;
 typedef struct dmrgo_nmea_rmc_t dmrgo_nmea_rmc_t;
 /* Go: shortdata.HyteraText. HyteraText is the data of the defined data text that AnyTone radios send in H-SMS mode, with SAP short data and DD format 1. */
 typedef struct dmrgo_shortdata_hytera_text_t dmrgo_shortdata_hytera_text_t;
+/* Go: sms.AnyToneText. AnyToneText is the payload of the text that AnyTone radios send to UDP port 5016 in their DMR Standard mode: the octets 00 0d 00 0a, then the text in UTF-16LE and a NUL character. */
+typedef struct dmrgo_sms_any_tone_text_t dmrgo_sms_any_tone_text_t;
+/* Go: sms.Header. Header holds the data header that AppendPacket builds. */
+typedef struct dmrgo_sms_header_t dmrgo_sms_header_t;
+/* Go: sms.IPText. IPText is the payload of an ETSI text message: UDP port 5016, the text in UTF-16BE (ETSI TS 102 361-3 clause 5.7.1). */
+typedef struct dmrgo_sms_ip_text_t dmrgo_sms_ip_text_t;
+/* Go: sms.Text. Text is a text message. */
+typedef struct dmrgo_sms_text_t dmrgo_sms_text_t;
 /* Go: trunk.Access. Access is the random access control of the last C_ALOHA of a TSCC (ETSI TS 102 361-4 clause 6.2.1.1, Table 7.19). */
 typedef struct dmrgo_trunk_access_t dmrgo_trunk_access_t;
 /* Go: trunk.CapacityPlusConfig. CapacityPlusConfig configures NewCapacityPlusFollower. */
@@ -614,6 +622,8 @@ typedef uint8_t dmrgo_lrrp_document_id_t;
 typedef uint8_t dmrgo_tms_encoding_t;
 /* Go: tms.Type. Type is the kind of a message: the control bit and the 4-bit PDU type of the first header octet. */
 typedef uint8_t dmrgo_tms_type_t;
+/* Go: sms.Format. Format is the format of a text message. */
+typedef uint8_t dmrgo_sms_format_t;
 /* Go: trunk.OutputKind. OutputKind is the kind of an Output. */
 typedef uint8_t dmrgo_trunk_output_kind_t;
 /* Go: trunk.Reason. Reason tells why a machine lost a TSCC, left a payload channel or failed a request. */
@@ -2175,6 +2185,33 @@ struct dmrgo_shortdata_hytera_text_t {
 	size_t text_len;
 };
 
+struct dmrgo_sms_any_tone_text_t {
+	uint32_t prefix;
+	uint8_t *text;
+	size_t text_len;
+};
+
+struct dmrgo_sms_text_t {
+	dmrgo_sms_format_t format;
+	uint32_t source;
+	uint32_t destination;
+	bool group;
+	dmrgo_enums_dd_format_t dd;
+	uint8_t sequence;
+	bool ack_required;
+	uint8_t *body;
+	size_t body_len;
+};
+
+struct dmrgo_sms_header_t {
+	dmrgo_pdu_data_header_t data;
+};
+
+struct dmrgo_sms_ip_text_t {
+	uint8_t *text;
+	size_t text_len;
+};
+
 struct dmrgo_trunk_access_t {
 	uint8_t mask;
 	uint32_t address;
@@ -2589,6 +2626,11 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ERR_SHORTDATA_FORMAT (-180)
 #define DMRGO_ERR_SHORTDATA_LENGTH (-181)
 #define DMRGO_ERR_SHORTDATA_SHORT (-182)
+#define DMRGO_ERR_SMS_FORMAT (-191)
+#define DMRGO_ERR_SMS_LENGTH (-192)
+#define DMRGO_ERR_SMS_NOT_TEXT (-193)
+#define DMRGO_ERR_SMS_SHORT (-194)
+#define DMRGO_ERR_SMS_SIGNATURE (-195)
 #define DMRGO_ERR_TMS_LENGTH (-183)
 #define DMRGO_ERR_TMS_SHORT (-184)
 #define DMRGO_ERR_TRUNK_BUSY (-134)
@@ -3816,6 +3858,16 @@ struct dmrgo_voice_output_t {
 #define DMRGO_TMS_TYPE_AVAILABILITY ((dmrgo_tms_type_t)16)
 /* Go: tms.TypeText. a text message */
 #define DMRGO_TMS_TYPE_TEXT ((dmrgo_tms_type_t)0)
+/* Go: sms.FormatAnyTone. FormatAnyTone is the text to UDP port 5016 that AnyTone radios send in DMR Standard mode. */
+#define DMRGO_SMS_FORMAT_ANY_TONE ((dmrgo_sms_format_t)3)
+/* Go: sms.FormatDefinedData. FormatDefinedData is a short data packet (DD_HEAD) whose DD format gives the coding of the text. */
+#define DMRGO_SMS_FORMAT_DEFINED_DATA ((dmrgo_sms_format_t)4)
+/* Go: sms.FormatHytera. FormatHytera is the short data packet that AnyTone radios send in H-SMS mode: DD format 1 and the HyteraText layout. */
+#define DMRGO_SMS_FORMAT_HYTERA ((dmrgo_sms_format_t)5)
+/* Go: sms.FormatIP. FormatIP is an ETSI text message to UDP port 5016 in UTF-16BE. */
+#define DMRGO_SMS_FORMAT_IP ((dmrgo_sms_format_t)2)
+/* Go: sms.FormatTMS. FormatTMS is a MOTOTRBO text message to UDP port 4007, as AnyTone radios send in M-SMS mode. */
+#define DMRGO_SMS_FORMAT_TMS ((dmrgo_sms_format_t)1)
 /* Go: trunk.CapacityPlusNoSignalDefault. CapacityPlusNoSignalDefault is the default CapacityPlusConfig.NoSignal: more than twice the 2 s beacon period of an idle rest channel. */
 #define DMRGO_TRUNK_CAPACITY_PLUS_NO_SIGNAL_DEFAULT INT64_C(5000000000)
 /* Go: trunk.ChannelAbsolute. ChannelAbsolute is the channel number of a grant or C_MOVE whose frequencies follow in a CG_AP or MV_AP block (ETSI TS 102 361-4 clause 7.1.1.1.1). */
@@ -5801,6 +5853,32 @@ int dmrgo_shortdata_hytera_text_string(dmrgo_shortdata_hytera_text_t *self, char
 int dmrgo_shortdata_hytera_text_text_utf8(dmrgo_shortdata_hytera_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: shortdata.Text. Text appends the text in data, coded as format says, to dst as UTF-8 and returns dst. */
 int dmrgo_shortdata_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *data, size_t data_len);
+/* Go: sms.AnyToneText.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_sms_any_tone_text_append_binary(dmrgo_sms_any_tone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: sms.AnyToneText.SetTextUTF8. SetTextUTF8 appends text, UTF-8, to dst as UTF-16LE, then a NUL character, points Text at the appended octets and returns dst. */
+int dmrgo_sms_any_tone_text_set_text_utf8(dmrgo_sms_any_tone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: sms.AnyToneText.String. String returns the fields of s as text, for printing. */
+int dmrgo_sms_any_tone_text_string(dmrgo_sms_any_tone_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: sms.AnyToneText.TextUTF8. TextUTF8 appends Text, UTF-16LE text, to dst as UTF-8 and returns dst. */
+int dmrgo_sms_any_tone_text_text_utf8(dmrgo_sms_any_tone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: sms.AppendPacket. AppendPacket appends the user data of t in its format to dst, sets h to the data header to send it with, and returns dst. */
+int dmrgo_sms_append_packet(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_sms_text_t *t, bool confirmed, const dmrgo_sms_header_t *h);
+/* Go: sms.Decode. Decode appends the text of a data packet, with header h and user data data, to dst as UTF-8, and returns dst and the Text, whose Body points into dst. */
+int dmrgo_sms_decode(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_pdu_data_header_t *h, const uint8_t *data, size_t data_len, dmrgo_sms_text_t *out1, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: sms.DecodeAnyToneText. DecodeAnyToneText decodes an AnyToneText from data. */
+int dmrgo_sms_decode_any_tone_text(const uint8_t *data, size_t data_len, dmrgo_sms_any_tone_text_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: sms.DecodeIPText. DecodeIPText decodes an IPText from data. */
+int dmrgo_sms_decode_ip_text(const uint8_t *data, size_t data_len, dmrgo_sms_ip_text_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: sms.Format.String. String returns the name of f. */
+int dmrgo_sms_format_string(dmrgo_sms_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: sms.IPText.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_sms_ip_text_append_binary(dmrgo_sms_ip_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: sms.IPText.SetTextUTF8. SetTextUTF8 appends text, UTF-8, to dst as UTF-16BE, points Text at the appended octets and returns dst. */
+int dmrgo_sms_ip_text_set_text_utf8(dmrgo_sms_ip_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: sms.IPText.String. String returns the fields of s as text, for printing. */
+int dmrgo_sms_ip_text_string(dmrgo_sms_ip_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: sms.IPText.TextUTF8. TextUTF8 appends Text, UTF-16BE text, to dst as UTF-8 and returns dst. */
+int dmrgo_sms_ip_text_text_utf8(dmrgo_sms_ip_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: trunk.Access.Applies. Applies reports whether the C_ALOHA population subdivision lets the MS with address ms make a random access (ETSI TS 102 361-4 clause 6.2.1.1.1). */
 int dmrgo_trunk_access_applies(dmrgo_trunk_access_t *self, uint32_t ms, bool emergency, bool *out);
 /* dmrgo_trunk_capacity_plus_follower_new makes a zero trunk.CapacityPlusFollower. */

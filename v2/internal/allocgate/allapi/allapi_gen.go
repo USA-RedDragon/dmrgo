@@ -36,6 +36,7 @@ import (
 	mototrbo_tms "github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms"
 	nmea "github.com/USA-RedDragon/dmrgo/v2/nmea"
 	shortdata "github.com/USA-RedDragon/dmrgo/v2/shortdata"
+	sms "github.com/USA-RedDragon/dmrgo/v2/sms"
 	trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
 	vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
@@ -867,6 +868,19 @@ var api = [...]any{
 	shortdata.AppendText,
 	shortdata.DecodeHyteraText,
 	shortdata.Text,
+	(*sms.AnyToneText).AppendBinary,
+	(*sms.AnyToneText).SetTextUTF8,
+	(*sms.AnyToneText).String,
+	(*sms.AnyToneText).TextUTF8,
+	(*sms.IPText).AppendBinary,
+	(*sms.IPText).SetTextUTF8,
+	(*sms.IPText).String,
+	(*sms.IPText).TextUTF8,
+	sms.AppendPacket,
+	sms.Decode,
+	sms.DecodeAnyToneText,
+	sms.DecodeIPText,
+	sms.Format.String,
 	(*trunk.Access).Applies,
 	(*trunk.CapacityPlusFollower).Burst,
 	(*trunk.CapacityPlusFollower).Call,

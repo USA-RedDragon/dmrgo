@@ -88,6 +88,11 @@ code DMRGO_ERR_LRRP_LENGTH -187
 code DMRGO_ERR_LRRP_SHORT -188
 code DMRGO_ERR_LRRP_TOKEN -189
 code DMRGO_ERR_LRRP_VARINT -190
+code DMRGO_ERR_SMS_FORMAT -191
+code DMRGO_ERR_SMS_LENGTH -192
+code DMRGO_ERR_SMS_NOT_TEXT -193
+code DMRGO_ERR_SMS_SHORT -194
+code DMRGO_ERR_SMS_SIGNATURE -195
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -663,6 +668,11 @@ sym #define DMRGO_ERR_SHORTDATA_CHARACTER (-179)
 sym #define DMRGO_ERR_SHORTDATA_FORMAT (-180)
 sym #define DMRGO_ERR_SHORTDATA_LENGTH (-181)
 sym #define DMRGO_ERR_SHORTDATA_SHORT (-182)
+sym #define DMRGO_ERR_SMS_FORMAT (-191)
+sym #define DMRGO_ERR_SMS_LENGTH (-192)
+sym #define DMRGO_ERR_SMS_NOT_TEXT (-193)
+sym #define DMRGO_ERR_SMS_SHORT (-194)
+sym #define DMRGO_ERR_SMS_SIGNATURE (-195)
 sym #define DMRGO_ERR_TMS_LENGTH (-183)
 sym #define DMRGO_ERR_TMS_SHORT (-184)
 sym #define DMRGO_ERR_TRUNK_BUSY (-134)
@@ -842,6 +852,11 @@ sym #define DMRGO_PDU_UDT_OPCODE_DGNA_INBOUND_HEADER ((dmrgo_pdu_udt_opcode_t)37
 sym #define DMRGO_PDU_UDT_OPCODE_DGNA_OUTBOUND_HEADER ((dmrgo_pdu_udt_opcode_t)36)
 sym #define DMRGO_PDU_UDT_OPCODE_INBOUND_HEADER ((dmrgo_pdu_udt_opcode_t)27)
 sym #define DMRGO_PDU_UDT_OPCODE_OUTBOUND_HEADER ((dmrgo_pdu_udt_opcode_t)26)
+sym #define DMRGO_SMS_FORMAT_ANY_TONE ((dmrgo_sms_format_t)3)
+sym #define DMRGO_SMS_FORMAT_DEFINED_DATA ((dmrgo_sms_format_t)4)
+sym #define DMRGO_SMS_FORMAT_HYTERA ((dmrgo_sms_format_t)5)
+sym #define DMRGO_SMS_FORMAT_IP ((dmrgo_sms_format_t)2)
+sym #define DMRGO_SMS_FORMAT_TMS ((dmrgo_sms_format_t)1)
 sym #define DMRGO_TMS_ENCODING_NONE ((dmrgo_tms_encoding_t)0)
 sym #define DMRGO_TMS_ENCODING_UTF16LE ((dmrgo_tms_encoding_t)4)
 sym #define DMRGO_TMS_TYPE_ACK ((dmrgo_tms_type_t)31)
@@ -1854,6 +1869,19 @@ sym int dmrgo_shortdata_hytera_text_set_text_utf8(dmrgo_shortdata_hytera_text_t 
 sym int dmrgo_shortdata_hytera_text_string(dmrgo_shortdata_hytera_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_shortdata_hytera_text_text_utf8(dmrgo_shortdata_hytera_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_shortdata_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *data, size_t data_len);
+sym int dmrgo_sms_any_tone_text_append_binary(dmrgo_sms_any_tone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_sms_any_tone_text_set_text_utf8(dmrgo_sms_any_tone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_sms_any_tone_text_string(dmrgo_sms_any_tone_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_sms_any_tone_text_text_utf8(dmrgo_sms_any_tone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_sms_append_packet(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_sms_text_t *t, bool confirmed, const dmrgo_sms_header_t *h);
+sym int dmrgo_sms_decode(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_pdu_data_header_t *h, const uint8_t *data, size_t data_len, dmrgo_sms_text_t *out1, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_sms_decode_any_tone_text(const uint8_t *data, size_t data_len, dmrgo_sms_any_tone_text_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_sms_decode_ip_text(const uint8_t *data, size_t data_len, dmrgo_sms_ip_text_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_sms_format_string(dmrgo_sms_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_sms_ip_text_append_binary(dmrgo_sms_ip_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_sms_ip_text_set_text_utf8(dmrgo_sms_ip_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_sms_ip_text_string(dmrgo_sms_ip_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_sms_ip_text_text_utf8(dmrgo_sms_ip_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_tms_decode_message(const uint8_t *data, size_t data_len, dmrgo_tms_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_tms_encoding_string(dmrgo_tms_encoding_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_tms_header_append_binary(dmrgo_tms_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
@@ -2116,6 +2144,7 @@ sym typedef uint8_t dmrgo_pdu_opcode0x38_hint_t;
 sym typedef uint8_t dmrgo_pdu_service_type_t;
 sym typedef uint8_t dmrgo_pdu_slot_type_info_t;
 sym typedef uint8_t dmrgo_pdu_udt_opcode_t;
+sym typedef uint8_t dmrgo_sms_format_t;
 sym typedef uint8_t dmrgo_tms_encoding_t;
 sym typedef uint8_t dmrgo_tms_type_t;
 sym typedef uint8_t dmrgo_trunk_output_kind_t;
@@ -2281,6 +2310,10 @@ type struct dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t { dmrgo_l
 type struct dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t { dmrgo_layer3_service_options_t service_options; uint8_t reserved; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_vnap_continuation_t { dmrgo_fec_result_t fec; bool last_block; bool protect_flag; dmrgo_pdu_csbk_opcode_t opcode; uint8_t reserved1; dmrgo_enums_color_code_t color_code; uint8_t cdeftype; uint8_t reserved2; dmrgo_layer3_cdef_parms_t cdef_parms; };
 type struct dmrgo_shortdata_hytera_text_t { uint16_t field; uint8_t *text; size_t text_len; };
+type struct dmrgo_sms_any_tone_text_t { uint32_t prefix; uint8_t *text; size_t text_len; };
+type struct dmrgo_sms_header_t { dmrgo_pdu_data_header_t data; };
+type struct dmrgo_sms_ip_text_t { uint8_t *text; size_t text_len; };
+type struct dmrgo_sms_text_t { dmrgo_sms_format_t format; uint32_t source; uint32_t destination; bool group; dmrgo_enums_dd_format_t dd; uint8_t sequence; bool ack_required; uint8_t *body; size_t body_len; };
 type struct dmrgo_tms_header_t { bool extension; bool ack_required; bool reserved; dmrgo_tms_type_t type_; };
 type struct dmrgo_tms_message_t { uint16_t length; dmrgo_tms_header_t header; uint8_t *address; size_t address_len; uint8_t capability; dmrgo_tms_sequence_low_t sequence_low; dmrgo_tms_sequence_high_t sequence_high; uint8_t *text; size_t text_len; };
 type struct dmrgo_tms_sequence_high_t { bool extension; uint8_t high; dmrgo_tms_encoding_t encoding; };
