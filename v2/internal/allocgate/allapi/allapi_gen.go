@@ -378,6 +378,7 @@ var api = [...]any{
 	internal_wire.PutUintvar,
 	internal_wire.Sfloatvar,
 	internal_wire.Sintvar,
+	internal_wire.TrimDEL,
 	internal_wire.Ufloatvar,
 	internal_wire.Uintvar,
 	internal_wire.UintvarLen,

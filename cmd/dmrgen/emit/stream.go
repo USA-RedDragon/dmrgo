@@ -793,7 +793,7 @@ func emitStreamText(f *File, pdu parse.PDUStruct) {
 		if be {
 			order = "UTF-16BE"
 		}
-		comment(f, fl.Name+"UTF8 appends "+fl.Name+", "+order+" text, to dst as UTF-8 and returns dst. The text ends at the first NUL character. It allocates only to grow dst.")
+		comment(f, fl.Name+"UTF8 appends "+fl.Name+", "+order+" text, to dst as UTF-8 and returns dst. The text ends at the first NUL character and drops its trailing DEL characters. It allocates only to grow dst.")
 		f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id(fl.Name + "UTF8").Params(Id("dst").Index().Byte()).Index().Byte().Block(
 			Return(Qual(wirePkg, "AppendUTF8").Call(Id("dst"), Id("s").Dot(fl.Name), Lit(be))),
 		)

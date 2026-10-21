@@ -45,7 +45,8 @@ func (s *IPText) AppendBinary(dst []byte) ([]byte, error) {
 }
 
 // TextUTF8 appends Text, UTF-16BE text, to dst as UTF-8 and returns dst. The
-// text ends at the first NUL character. It allocates only to grow dst.
+// text ends at the first NUL character and drops its trailing DEL
+// characters. It allocates only to grow dst.
 func (s *IPText) TextUTF8(dst []byte) []byte {
 	if s == nil {
 		return dst
@@ -122,7 +123,8 @@ func (s *AnyToneText) AppendBinary(dst []byte) ([]byte, error) {
 }
 
 // TextUTF8 appends Text, UTF-16LE text, to dst as UTF-8 and returns dst. The
-// text ends at the first NUL character. It allocates only to grow dst.
+// text ends at the first NUL character and drops its trailing DEL
+// characters. It allocates only to grow dst.
 func (s *AnyToneText) TextUTF8(dst []byte) []byte {
 	if s == nil {
 		return dst

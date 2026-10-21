@@ -9,7 +9,8 @@ import (
 
 // Text appends the text in data, coded as format says, to dst as UTF-8 and
 // returns dst. The text ends at the first NUL character, so the pad octets
-// of the last block are dropped. Binary data is appended unchanged, NUL
+// of the last block are dropped, and its trailing DEL characters, which a
+// block filled with 1 bits leaves, are dropped too. Binary data is appended unchanged, NUL
 // octets included. BCD holds the dialed digits 0 to 9, '*' and '#', two
 // to an octet with the first in the high nibble, and ends at the first
 // nibble 1111 (DigitNULL). 7-bit text is ISO/IEC 646 characters packed
@@ -24,13 +25,14 @@ import (
 // 102 361-1 clause 9.3.38, ETSI TS 102 361-4 clauses 7.2.9, B.3.3 and
 // B.3.4)
 func Text(dst []byte, format enums.DDFormat, data []byte) ([]byte, error) {
+	from := len(dst)
 	switch format {
 	case enums.DDUTF8:
-		return utf8Text(dst, data), nil
+		return wire.TrimDEL(utf8Text(dst, data), from), nil
 	case enums.DDISO8859Part1, enums.DDISO8859Part2, enums.DDISO8859Part3, enums.DDISO8859Part4, enums.DDISO8859Part5,
 		enums.DDISO8859Part6, enums.DDISO8859Part7, enums.DDISO8859Part8, enums.DDISO8859Part9, enums.DDISO8859Part10,
 		enums.DDISO8859Part11, enums.DDISO8859Part13, enums.DDISO8859Part14, enums.DDISO8859Part15, enums.DDISO8859Part16:
-		return iso8859Text(dst, format, data), nil
+		return wire.TrimDEL(iso8859Text(dst, format, data), from), nil
 	case enums.DDUTF16BE:
 		return wire.AppendUTF8(dst, data, true), nil
 	case enums.DDUTF16LE:
@@ -44,11 +46,11 @@ func Text(dst []byte, format enums.DDFormat, data []byte) ([]byte, error) {
 		}
 		return wire.AppendUTF8(dst, data, true), nil
 	case enums.DDUTF32BE:
-		return utf32Text(dst, data, 0, true), nil
+		return wire.TrimDEL(utf32Text(dst, data, 0, true), from), nil
 	case enums.DDUTF32LE:
-		return utf32Text(dst, data, 0, false), nil
+		return wire.TrimDEL(utf32Text(dst, data, 0, false), from), nil
 	case enums.DDUTF32:
-		return utf32BOMText(dst, data), nil
+		return wire.TrimDEL(utf32BOMText(dst, data), from), nil
 	case enums.DDBinary:
 		return append(dst, data...), nil
 	case enums.DDBCD:
