@@ -929,8 +929,11 @@ func (r *Receiver) answer(now time.Duration, resp packet.Response, out []Event) 
 		if i >= 0 && i < r.win.n-1 {
 			current = false
 			resp, r.to.SendSequenceNumber, r.to.BlocksToFollow = r.win.resp[i], r.win.ns[i], r.win.blocks[i]
-			if resp == packet.ResponseNACKPacketCRC {
+			switch {
+			case resp == packet.ResponseNACKPacketCRC:
 				resp = packet.ResponseSACK
+			case resp != packet.ResponseSACK && i > 0:
+				resp, r.to.SendSequenceNumber = packet.ResponseACK, r.win.ns[i-1]
 			}
 			if r.to.BlocksToFollow == 0 {
 				r.to.BlocksToFollow = MaxBlocks
