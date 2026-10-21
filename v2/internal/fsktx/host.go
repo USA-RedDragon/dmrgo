@@ -221,6 +221,11 @@ type PulseConfig struct {
 	// root-raised-cosine.
 	Shape     []float64
 	PerSymbol int
+	// EndTaper, in symbols, fades the pulse of Shape and its echoes of
+	// Exact to 0 over that span at each end with a raised cosine: a pulse
+	// cut off at a value other than 0 spreads its step over the alternate
+	// channel.
+	EndTaper float64
 	// Flat, with Exact, makes the gain of the pulse and what follows it at
 	// 1200 Hz, the tone of the deviation test pattern, that at 0 Hz, so the
 	// pattern has the peak deviation of the specification.
@@ -240,6 +245,7 @@ func pulseOf(t Tier, c PulseConfig) pulse {
 	pu.flat = c.Flat
 	if len(c.Shape) == 2*pu.span*c.PerSymbol+1 && c.PerSymbol > 0 {
 		pu.tab, pu.per = c.Shape, c.PerSymbol
+		pu.edge = max(c.EndTaper, 0)
 	}
 	return pu
 }

@@ -78,6 +78,7 @@ type pulse struct {
 	gain float64
 	tab  []float64
 	per  int
+	edge float64
 	// flat makes nyquist give the pulse the same gain at etsiHz as at 0
 	// Hz.
 	flat bool
@@ -96,6 +97,9 @@ func (p pulse) core(t float64) float64 {
 // own and takes none.
 func (p pulse) taper(t float64) float64 {
 	if p.tab != nil {
+		if d := float64(p.span) - math.Abs(t); p.edge > 0 && d >= 0 && d < p.edge {
+			return 0.5 * (1 - math.Cos(math.Pi*d/p.edge))
+		}
 		return taper(winRect, 0, t/float64(p.span))
 	}
 	return taper(p.win, p.beta, t/float64(p.span))
