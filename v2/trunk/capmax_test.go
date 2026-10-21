@@ -1,9 +1,11 @@
 package trunk_test
 
 import (
+	"encoding/hex"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
 )
@@ -51,6 +53,33 @@ func TestFollower_RealCapacityMax(t *testing.T) {
 		}
 		if s.NeighborsLen == 0 {
 			t.Error("no Adjacent_Site neighbors")
+		}
+	}
+}
+
+func TestMS_AuthCapacityMaxChallenges(t *testing.T) {
+	t.Parallel()
+	for _, h := range []string{
+		"9c00000e018a890000ca", "9c00000e018a8900021d", "9c00000e018a89000355", "9c00000e018a89000874",
+		"9c00000e018a89002619", "9c00000e018a89005638", "9c00000e018a89006aef", "9c00000e002a540042de",
+		"9c00000e014066006acf", "9c00000e0203a9007aeb", "9c00000e029c120051a1",
+	} {
+		var c pdu.CSBKBytes
+		if _, err := hex.Decode(c[:10], []byte(h)); err != nil {
+			t.Fatal(err)
+		}
+		c.Reseal()
+		raw, err := layer2.BuildDataBurst([12]byte(c), enums.DataTypeCSBK, testCC, layer2.SyncSourceBS)
+		if err != nil {
+			t.Fatal(err)
+		}
+		target, source, _ := c.Addresses()
+		r := newRig(t, &trunk.MSConfig{Address: target, NoRegistration: true})
+		r.feed(aloha(t), &idle)
+		out := r.feed(raw, &busy)
+		wantKinds(t, h, out, trunk.OutputAuthChallenge)
+		if out[0].Challenge != source || source >= 0x8000 {
+			t.Errorf("%s: challenge %06X, want %06X", h, out[0].Challenge, source)
 		}
 	}
 }
