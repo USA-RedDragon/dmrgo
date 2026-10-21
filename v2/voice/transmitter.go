@@ -90,14 +90,15 @@ type TransmitterConfig struct {
 	ChanAuth time.Duration
 	// HoldoffMax is the upper end of the random holdoff before a new
 	// channel authorization try. 0 means DefaultHoldoffMax, and a negative
-	// value means no holdoff.
+	// value means no holdoff. (ETSI TS 102 361-2 clause 5.1.1.6.2)
 	HoldoffMax time.Duration
 	// Seed seeds the generator of the random holdoff, so that the same
-	// inputs give the same outputs.
+	// inputs give the same outputs. (ETSI TS 102 361-2 clause 5.1.1.6.2)
 	Seed uint64
 	// Scratch, when set, is the Burst that Burst decodes into. Machines
 	// that run on one goroutine can share one. Nil means the Transmitter
-	// makes its own when ChanAuth is set.
+	// makes its own when ChanAuth is set. (ETSI TS 102 361-2 clause
+	// 5.1.1.6.2)
 	Scratch *layer2.Burst
 }
 

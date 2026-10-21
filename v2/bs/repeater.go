@@ -95,7 +95,8 @@ type Config struct {
 	// in ModeRF, so that a transmit FIFO can be filled ahead.
 	Lead time.Duration
 	// ChannelAuth selects the channel authorization of RF access in the
-	// call and channel hang time in ModeRF. ModeNetwork ignores it.
+	// call and channel hang time in ModeRF. ModeNetwork ignores it. (ETSI
+	// TS 102 361-2 clause 5.1.1.6)
 	ChannelAuth ChannelAuth
 	// ChanAuthResponse is T_BS_ChanAuthRsp, how long the Repeater repeats
 	// a ChanAuth PDU while it waits for the authorized MS. 0 means

@@ -40,7 +40,7 @@ const (
 	ctBursts      = int(constants.CTDuration / BurstInterval)
 )
 
-// TimingConfig configures NewTiming.
+// TimingConfig configures NewTiming. (ETSI TS 102 361-2 clause 6.2)
 type TimingConfig struct {
 	// ID is MS_ID, the 20-bit identifier of the radio in its wide area
 	// timing identifier, from 1 to MaxTimingID. The Timing picks a new one
@@ -52,13 +52,14 @@ type TimingConfig struct {
 	DynamicID uint8
 	// Slot is the provisioned time slot, enums.Slot1 or enums.Slot2. It
 	// selects the TDMA direct mode SYNC of the CT_CSBKs.
+	// (ETSI TS 102 361-2 clause 6.2)
 	Slot enums.Slot
 	// Seed seeds the generator of CT_RHOT and of new identifiers, so that
 	// the same inputs give the same outputs. Radios on one channel need
-	// different seeds.
+	// different seeds. (ETSI TS 102 361-2 clause 6.2)
 	Seed uint64
 	// Scratch, when set, is the Burst that Burst decodes into, as for
-	// RequesterConfig.Scratch.
+	// RequesterConfig.Scratch. (ETSI TS 102 361-2 clause 6.2)
 	Scratch *layer2.Burst
 }
 
@@ -70,13 +71,16 @@ type TimingState uint8
 const (
 	// TimingLeaderAndTimingUnknown knows neither the channel slot timing
 	// nor the leader: after Join, and when no leader was ever known.
+	// (ETSI TS 102 361-2 clause 6.2)
 	TimingLeaderAndTimingUnknown TimingState = iota
 	// TimingLeaderUnknown knew the timing, but SyncAge ran out, and knows
-	// no leader.
+	// no leader. (ETSI TS 102 361-2 clause 6.2)
 	TimingLeaderUnknown
 	// TimingLeaderAndTimingKnown follows the leader and its slot timing.
+	// (ETSI TS 102 361-2 clause 6.2)
 	TimingLeaderAndTimingKnown
 	// TimingLeader is the wide area timing leader and sets the slot timing.
+	// (ETSI TS 102 361-2 clause 6.2)
 	TimingLeader
 )
 
@@ -173,6 +177,7 @@ type Timing struct {
 // cfg, an ID of 0 or above MaxTimingID, a DynamicID above MaxDynamicID or a
 // Slot other than Slot1 or Slot2. It allocates the Timing, and its Burst
 // unless cfg.Scratch is set. The Timing does nothing before Join.
+// (ETSI TS 102 361-2 clause 6.2)
 func NewTiming(cfg *TimingConfig) (*Timing, error) {
 	switch {
 	case cfg == nil, cfg.ID == 0, cfg.ID > MaxTimingID:
@@ -205,27 +210,28 @@ func (m *Timing) Join(now time.Duration) {
 
 // Reset stops the Timing until the next Join and forgets the channel
 // state. It keeps the config, the identifier and the state of the random
-// generator.
+// generator. (ETSI TS 102 361-2 clause 6.2)
 func (m *Timing) Reset() {
 	m.joined, m.busy, m.state, m.lwatid, m.gen, m.syncRef = false, false, TimingLeaderAndTimingUnknown, 0, 0, 0
 	m.noLeader, m.syncAge, m.warning, m.beacon = timer{}, timer{}, timer{}, timer{}
 	m.pend, m.sending, m.rhotLow, m.rhotHigh = ctNone, 0, 0, constants.CTRHOTMax
 }
 
-// State returns the state of the Timing.
+// State returns the state of the Timing. (ETSI TS 102 361-2 clause 6.2)
 func (m *Timing) State() TimingState {
 	return m.state
 }
 
 // Leader returns the dynamic identifier and the identifier of the wide
 // area timing leader. ok is false when the radio knows no leader.
+// (ETSI TS 102 361-2 clause 6.2)
 func (m *Timing) Leader() (dynamicID uint8, id uint32, ok bool) {
 	return uint8(m.lwatid >> 20), m.lwatid & MaxTimingID, m.lwatid != 0
 }
 
 // Channel reports whether the frequency has RF activity on either slot. A
 // CT_CSBK waits for an idle channel. Until the first report the channel
-// counts as idle.
+// counts as idle. (ETSI TS 102 361-2 clause 6.2)
 func (m *Timing) Channel(_ time.Duration, busy bool) {
 	m.busy = busy
 }
@@ -267,6 +273,7 @@ func (m *Timing) Terminator(now time.Duration, dst []Output) []Output {
 // Burst decodes the burst raw with what the Hint h says about it, runs it
 // through the Timing as Decoded does, and appends the outputs to dst. It
 // allocates only when dst has no room for MaxOutputs outputs.
+// (ETSI TS 102 361-2 clause 6.2)
 func (m *Timing) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
 	return m.Decoded(now, m.d.decode(raw, &h), h, dst)
 }
@@ -620,7 +627,7 @@ func (m *Timing) fill(now time.Duration) int {
 // BeaconDuration, ten bursts, and the others CTDuration, three bursts.
 // A CT_CSBK whose CT_RHOT ends on a busy channel waits another CT_RHOT, for
 // up to two minutes. A Tick before Deadline does nothing. It allocates only
-// when dst has no room for MaxOutputs outputs.
+// when dst has no room for MaxOutputs outputs. (ETSI TS 102 361-2 clause 6.2)
 func (m *Timing) Tick(now time.Duration, dst []Output) []Output {
 	if !m.joined {
 		return dst
@@ -674,7 +681,7 @@ func (m *Timing) timers(now time.Duration) {
 }
 
 // Deadline returns the time at which the Timing needs a Tick. ok is false
-// when no timer runs.
+// when no timer runs. (ETSI TS 102 361-2 clause 6.2)
 func (m *Timing) Deadline() (at time.Duration, ok bool) {
 	if !m.joined {
 		return 0, false
