@@ -28,8 +28,9 @@ type DiscConfig struct {
 	// it to 48000 Hz or resample to 48000 Hz first.
 	Hz int
 	// MaxWrite is the largest number of samples in one Write, for the
-	// burst buffer that NewDisc allocates. 0 means 1 << 12. When OnBurst is
-	// nil, a longer Write can return ErrWriteTooLong.
+	// burst buffer that NewDisc allocates, at most MaxWriteLimit. 0 means
+	// 1 << 12. When OnBurst is nil, a longer Write can return
+	// ErrWriteTooLong.
 	MaxWrite int
 	// OnBurst, when not nil, takes each burst as the receiver recovers it,
 	// in place of the slices that Write, AppendBursts and Flush return,
@@ -126,7 +127,7 @@ func (r *DiscReceiver) Init(cfg DiscConfig) error {
 	if cfg.Hz != discRate && cfg.Hz != discRate/2 && cfg.Hz != 2*symbolRate {
 		return errDiscHz
 	}
-	if cfg.MaxWrite < 0 {
+	if cfg.MaxWrite < 0 || cfg.MaxWrite > MaxWriteLimit {
 		return errDiscMaxWrite
 	}
 	if cfg.Tier != TierDefault && cfg.Tier != Tier0 && cfg.opt == nil {

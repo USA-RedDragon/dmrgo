@@ -105,6 +105,10 @@ const (
 // that MaxWrite sizes. The call processes none of its samples.
 var ErrWriteTooLong = errors.New("rf: write longer than MaxWrite")
 
+// MaxWriteLimit is the largest Config.MaxWrite and DiscConfig.MaxWrite, so
+// that the burst buffer that a constructor allocates stays bounded.
+const MaxWriteLimit = 1 << 24
+
 // BasebandRate is the sample rate of the complex baseband that
 // WriteBaseband takes by default, in Hz.
 const BasebandRate = basebandRate
@@ -138,8 +142,9 @@ type Config struct {
 	// be under BasebandHz/2 in size. 0 means a centered carrier.
 	OffsetHz float64
 	// MaxWrite is the largest number of bytes in one Write, and twice the
-	// largest number of samples in one WriteBaseband. 0 means 1 << 16.
-	// When OnBurst is nil, a longer call returns ErrWriteTooLong.
+	// largest number of samples in one WriteBaseband, at most
+	// MaxWriteLimit. 0 means 1 << 16. When OnBurst is nil, a longer call
+	// returns ErrWriteTooLong.
 	MaxWrite int
 	// LookbackSlots is the number of 30 ms slots before the first SYNC it
 	// locks to that the receiver keeps and decodes: 0 means 4 for Tier1, 8
@@ -369,7 +374,7 @@ func checkConfig(cfg *Config) (low bool, err error) {
 	if !(math.Abs(cfg.OffsetHz) < float64(cfg.BasebandHz)/2) {
 		return false, &dmrgo.ConfigError{Type: "rf", Field: "Config.OffsetHz"}
 	}
-	if cfg.MaxWrite < 0 {
+	if cfg.MaxWrite < 0 || cfg.MaxWrite > MaxWriteLimit {
 		return false, &dmrgo.ConfigError{Type: "rf", Field: "Config.MaxWrite"}
 	}
 	if cfg.LookbackSlots < 0 || cfg.Tier == Tier0 && cfg.LookbackSlots > 0 {
