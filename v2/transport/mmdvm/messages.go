@@ -1,5 +1,7 @@
 package mmdvm
 
+import "github.com/USA-RedDragon/dmrgo/v2/enums"
+
 // StatusV2 is the payload of a CommandGetStatus reply of protocol 2 (MMDVM
 // firmware): the modem state, its flags and the free space of each TX
 // buffer.
@@ -183,7 +185,7 @@ type ConfigV2 struct {
 	// DMRTrunking makes the modem a DMR Tier III control channel.
 	DMRTrunking bool `dmr:"bit:200"`
 	// DMRColorCode is the DMR color code, 0 to 15.
-	DMRColorCode uint8 `dmr:"bits:208-215"`
+	DMRColorCode enums.ColorCode `dmr:"bits:208-215"`
 	// DMRDelay is the DMR delay in symbols.
 	DMRDelay uint8 `dmr:"bits:216-223"`
 	// OscOffset is 128; the field was the oscillator offset.
@@ -235,7 +237,7 @@ type ConfigV1 struct {
 	// CWIDTXLevel is the CW ID TX level.
 	CWIDTXLevel uint8 `dmr:"bits:40-47"`
 	// DMRColorCode is the DMR color code, 0 to 15.
-	DMRColorCode uint8 `dmr:"bits:48-55"`
+	DMRColorCode enums.ColorCode `dmr:"bits:48-55"`
 	// DMRDelay is the DMR delay in symbols.
 	DMRDelay uint8 `dmr:"bits:56-63"`
 	// OscOffset is 128; the field was the oscillator offset.
@@ -334,8 +336,8 @@ type DMRStart struct {
 //
 //dmr:frame 1
 type DMRAbort struct {
-	// Slot is the slot number, 1 or 2.
-	Slot uint8 `dmr:"bits:0-7"`
+	// Slot is the slot, Slot1 (1) or Slot2 (2).
+	Slot enums.Slot `dmr:"bits:0-7,enum"`
 }
 
 // DMRShortLC is the payload of a CommandDMRShortLC frame: the Short LC that

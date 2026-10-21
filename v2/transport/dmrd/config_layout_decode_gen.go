@@ -2,7 +2,10 @@
 
 package dmrd
 
-import dmrgo "github.com/USA-RedDragon/dmrgo/v2"
+import (
+	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
+	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
+)
 
 // ID returns the repeater ID.
 func (c *Config) ID() uint32 {
@@ -204,13 +207,13 @@ func (c *Config) SetPower(v uint8) error {
 
 // ColorCode returns the color code, 2 digits. It returns ErrText when the
 // field holds a character that is not a digit.
-func (c *Config) ColorCode() (uint8, error) {
+func (c *Config) ColorCode() (enums.ColorCode, error) {
 	if c == nil {
 		return 0, dmrgo.ErrNilReceiver
 	}
 
 	var result struct {
-		ColorCode uint8
+		ColorCode enums.ColorCode
 	}
 	data := c[:]
 	var _vColorCode uint64
@@ -221,20 +224,20 @@ func (c *Config) ColorCode() (uint8, error) {
 		}
 		_vColorCode = _vColorCode*10 + uint64(_c-'0')
 	}
-	result.ColorCode = uint8(_vColorCode)
+	result.ColorCode = enums.ColorCode(_vColorCode)
 	return result.ColorCode, nil
 }
 
 // SetColorCode sets the color code, 2 digits. It returns a
 // *dmrgo.FieldRangeError, and changes nothing, when v does not fit.
-func (c *Config) SetColorCode(v uint8) error {
+func (c *Config) SetColorCode(v enums.ColorCode) error {
 	if c == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
 	data := c[:]
 	s := struct {
-		ColorCode uint8
+		ColorCode enums.ColorCode
 	}{v}
 	if uint64(s.ColorCode) > uint64(0x63) {
 		return errConfigColorCodeRange
@@ -840,13 +843,13 @@ func (c *HBRPConfig) SetPower(v uint8) error {
 
 // ColorCode returns the color code, 2 digits. It returns ErrText when the
 // field holds a character that is not a digit.
-func (c *HBRPConfig) ColorCode() (uint8, error) {
+func (c *HBRPConfig) ColorCode() (enums.ColorCode, error) {
 	if c == nil {
 		return 0, dmrgo.ErrNilReceiver
 	}
 
 	var result struct {
-		ColorCode uint8
+		ColorCode enums.ColorCode
 	}
 	data := c[:]
 	var _vColorCode uint64
@@ -857,20 +860,20 @@ func (c *HBRPConfig) ColorCode() (uint8, error) {
 		}
 		_vColorCode = _vColorCode*10 + uint64(_c-'0')
 	}
-	result.ColorCode = uint8(_vColorCode)
+	result.ColorCode = enums.ColorCode(_vColorCode)
 	return result.ColorCode, nil
 }
 
 // SetColorCode sets the color code, 2 digits. It returns a
 // *dmrgo.FieldRangeError, and changes nothing, when v does not fit.
-func (c *HBRPConfig) SetColorCode(v uint8) error {
+func (c *HBRPConfig) SetColorCode(v enums.ColorCode) error {
 	if c == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
 	data := c[:]
 	s := struct {
-		ColorCode uint8
+		ColorCode enums.ColorCode
 	}{v}
 	if uint64(s.ColorCode) > uint64(0x63) {
 		return errHBRPConfigColorCodeRange
