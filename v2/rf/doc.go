@@ -21,6 +21,11 @@
 //		...
 //	}
 //
+// A Monitor follows the TDMA channels of the bursts, as a scanner does: it
+// finds the TDMA channel of each burst from the CACHs of its stream,
+// decodes it, and keeps the LC of the call on each channel. Burst.Hint
+// gives the layer2.Hint of a burst for the voice and data machines.
+//
 // The Tier of the Config sets the detection and its cost, from Tier0, which
 // fits a microcontroller, to Tier3, for offline decoding. New allocates every
 // buffer of the Receiver, and Write, WriteBaseband and Flush allocate
