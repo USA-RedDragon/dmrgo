@@ -231,10 +231,11 @@ func AppendSfloatvar(dst []byte, v float64, prec int) []byte {
 }
 
 // AppendUTF8 appends the UTF-16 text src as UTF-8 to dst. bigEndian picks
-// the byte order of src. The text ends at the first NUL code unit; an odd
-// last octet is dropped, and a lone surrogate gives U+FFFD. It allocates
-// only to grow dst.
+// the byte order of src. The text ends at the first NUL code unit and
+// drops its trailing DEL characters; an odd last octet is dropped, and a
+// lone surrogate gives U+FFFD. It allocates only to grow dst.
 func AppendUTF8(dst, src []byte, bigEndian bool) []byte {
+	from := len(dst)
 	for i := 0; i+1 < len(src); i += 2 {
 		r := unit(src, i, bigEndian)
 		if r == 0 {
@@ -253,6 +254,16 @@ func AppendUTF8(dst, src []byte, bigEndian bool) []byte {
 			r = 0xFFFD
 		}
 		dst = appendRune(dst, r)
+	}
+	return TrimDEL(dst, from)
+}
+
+// TrimDEL drops the DEL characters at the end of dst[from:], the 1 bits
+// that a sender leaves after a text when it fills a block without pad
+// octets, and returns dst.
+func TrimDEL(dst []byte, from int) []byte {
+	for len(dst) > from && dst[len(dst)-1] == 0x7F {
+		dst = dst[:len(dst)-1]
 	}
 	return dst
 }

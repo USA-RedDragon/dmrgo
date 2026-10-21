@@ -126,6 +126,12 @@ func TestUTF16(t *testing.T) {
 	if got := wire.AppendUTF8(nil, []byte{0x41, 0, 0, 0, 0x42, 0}, false); string(got) != "A" {
 		t.Errorf("text after NUL: %q", got)
 	}
+	if got := wire.AppendUTF8([]byte{0x7F}, []byte{0x41, 0, 0x7F, 0, 0x42, 0, 0x7F, 0, 0x7F, 0}, false); string(got) != "\x7fA\x7fB" {
+		t.Errorf("trailing DEL: %q", got)
+	}
+	if got := wire.AppendUTF8([]byte{0x7F}, []byte{0x7F, 0}, false); string(got) != "\x7f" {
+		t.Errorf("only DEL: %q", got)
+	}
 	if got := wire.AppendUTF8(nil, []byte{0x00, 0xD8, 0x41, 0}, false); string(got) != "�A" {
 		t.Errorf("lone surrogate: %q", got)
 	}

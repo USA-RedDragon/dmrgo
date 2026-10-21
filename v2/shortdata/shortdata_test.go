@@ -101,6 +101,11 @@ func TestText(t *testing.T) {
 		{enums.DDUTF32, []byte{0xFF, 0xFE, 0, 0, 'H', 0, 0, 0}, "H"},
 		{enums.DDUTF32, []byte{0, 0, 0xFE, 0xFF, 0, 0, 0, 'H'}, "H"},
 		{enums.DDUTF32, []byte{0, 0, 0, 'H', 0, 0}, "H"},
+		{enums.DDUTF8, []byte("Hi\x7f\x7f"), "Hi"},
+		{enums.DDUTF8, []byte("H\x7fi\x7f\x00"), "H\x7fi"},
+		{enums.DDISO8859Part1, []byte{'H', 'i', 0x7F}, "Hi"},
+		{enums.DDUTF16BE, []byte{0, 'H', 0, 'i', 0, 0x7F, 0, 0x7F}, "Hi"},
+		{enums.DDUTF16LE, []byte{'H', 0, 0x7F, 0, 0, 0}, "H"},
 	}
 	for _, tt := range tests {
 		got, err := shortdata.Text([]byte("x"), tt.format, tt.data)
