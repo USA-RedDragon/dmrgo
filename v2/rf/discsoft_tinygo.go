@@ -13,3 +13,5 @@ func (r *DiscReceiver) write(x []int16) { r.run(x) }
 func (r *DiscReceiver) inputHz() int { return r.hz() }
 
 func (r *DiscReceiver) unionFlush() bool { return false }
+
+type discUnion struct{}

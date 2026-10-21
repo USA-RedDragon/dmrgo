@@ -79,7 +79,14 @@ func unionSuperset(truth []benchSlot, ms bool, t2, t3 []Burst) (int, error) {
 					return swaps, fmt.Errorf("Tier3 changed Tier2 burst %d at %.4f s, which is in no slot", j, a.Seconds)
 				}
 				d, _ := t2[j].Decoded()
-				if unionDataOK(truth[k], d) {
+				if truth[k].kind == "voice" {
+					e, _ := t3[i].Decoded()
+					fa, _ := d.AMBEFrames()
+					fb, _ := e.AMBEFrames()
+					if fa != fb || d.EMB() != e.EMB() {
+						return swaps, fmt.Errorf("Tier3 changed more than the embedded LC of Tier2 voice burst %d at %.4f s", j, a.Seconds)
+					}
+				} else if unionDataOK(truth[k], d) {
 					return swaps, fmt.Errorf("Tier3 changed Tier2 burst %d at %.4f s, which was right", j, a.Seconds)
 				}
 				swaps++
@@ -136,7 +143,7 @@ func TestDiscTier3Superset(t *testing.T) {
 		}
 	}
 	var mu sync.Mutex
-	var kept, filled, swaps, late int
+	var kept, filled, swaps, late, elc int
 	var maxLag float64
 	gain := map[string]int{}
 	var wg sync.WaitGroup
@@ -171,6 +178,7 @@ func TestDiscTier3Superset(t *testing.T) {
 			filled += len(t3) - len(t2)
 			swaps += n
 			late += u.late
+			elc += u.elc
 			maxLag = max(maxLag, u.maxLag)
 		}()
 	}
@@ -178,5 +186,5 @@ func TestDiscTier3Superset(t *testing.T) {
 	if late != 0 {
 		t.Errorf("%d Tier2 bursts came after the union decided their time", late)
 	}
-	t.Logf("%d cases: Tier2 %d bursts; Tier3 adds %d and replaces %d proven wrong; Tier2 latency at most %.3f s (horizon %.1f s); gains %v", len(cases), kept, filled, swaps, maxLag, unionHorizon, gain)
+	t.Logf("%d cases: Tier2 %d bursts; Tier3 adds %d, replaces %d proven wrong bursts and %d embedded LCs; Tier2 latency at most %.3f s (horizon %.1f s); gains %v", len(cases), kept, filled, swaps, elc, maxLag, unionHorizon, gain)
 }

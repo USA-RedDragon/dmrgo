@@ -15,9 +15,11 @@ const (
 	unionSlot    = 0.015
 	unionCap     = 256
 	unionHist    = 256
-	unionHeads   = 16
+	unionHeads   = 128
 	unionBlock   = 2 * slotSeconds
 	unionTol     = 0.005
+	unionLag     = 0.25
+	unionVoices  = 16
 )
 
 const (
@@ -25,6 +27,12 @@ const (
 	unionWrong
 	unionRight
 )
+
+type unionVoice struct {
+	at    float64
+	voice enums.VoiceBurstType
+	emb   [4]byte
+}
 
 type unionHead struct {
 	at float64
@@ -45,11 +53,14 @@ type discUnion struct {
 	hn       int
 	heads    [unionHeads]unionHead
 	headN    int
+	voices   [unionVoices]unionVoice
+	voiceN   int
 	late     int
 	maxLag   float64
 	dropped  int
 	filled   int
 	replaced int
+	elc      int
 }
 
 func (r *DiscReceiver) addUnion(opt *options) {
@@ -62,6 +73,9 @@ func (r *DiscReceiver) addUnion(opt *options) {
 	}
 	for i := range u.heads {
 		u.heads[i].at = math.Inf(-1)
+	}
+	for i := range u.voices {
+		u.voices[i].at = math.Inf(-1)
 	}
 	t2 := discTierOptions(Tier2)
 	_ = r.Init(DiscConfig{Hz: hz, OnBurst: u.onMain, opt: &t2})
@@ -84,13 +98,13 @@ func (u *discUnion) onMain(b *Burst) {
 	if b.Seconds < u.limit+unionSlot {
 		u.late++
 	}
-	if b.Seconds < u.limit-2*unionSlot {
+	if b.Seconds < u.limit-unionLag {
 		u.remember(b.Seconds)
 		u.emit(b)
 		return
 	}
 	if len(u.main) == cap(u.main) {
-		u.release(u.main[0].Seconds + 2*unionSlot + 1e-9)
+		u.release(u.main[0].Seconds + unionLag + 1e-9)
 	}
 	u.main = append(u.main, *b)
 }
@@ -149,7 +163,13 @@ func (u *discUnion) noteHead(b *Burst) {
 	if !h.CRCOK() || h.Format() != pdu.FormatConfirmed {
 		return
 	}
-	u.heads[u.headN] = unionHead{at: b.Seconds, bf: int(p[8] & 0x7F)}
+	bf := int(p[8] & 0x7F)
+	for _, x := range u.heads {
+		if x.bf == bf && math.Abs(x.at-b.Seconds) < unionSlot {
+			return
+		}
+	}
+	u.heads[u.headN] = unionHead{at: b.Seconds, bf: bf}
 	u.headN = (u.headN + 1) % unionHeads
 }
 
@@ -234,6 +254,7 @@ func (u *discUnion) release(limit float64) {
 			continue
 		}
 		j, clash := u.near(x.Seconds)
+		u.noteVoice(x)
 		if clash {
 			if j >= 0 && u.status(&u.main[j]) == unionWrong && u.status(x) == unionRight {
 				m := &u.main[j]
@@ -242,18 +263,85 @@ func (u *discUnion) release(limit float64) {
 				m.FixedCACH, m.HasFixed = c, true
 				u.replaced++
 			}
+			u.embedded(x)
 			continue
 		}
-		for len(u.main) > 0 && u.main[0].Seconds < limit-2*unionSlot && u.main[0].Seconds <= x.Seconds {
+		u.embedded(x)
+		for len(u.main) > 0 && u.main[0].Seconds < limit-unionLag && u.main[0].Seconds <= x.Seconds {
 			u.popMain()
 		}
 		u.filled++
 		u.emit(x)
 	}
 	u.extra = u.extra[:k]
-	for len(u.main) > 0 && u.main[0].Seconds < limit-2*unionSlot {
+	for len(u.main) > 0 && u.main[0].Seconds < limit-unionLag {
 		u.popMain()
 	}
+}
+
+func (u *discUnion) noteVoice(x *Burst) {
+	if x.Voice < enums.VoiceBurstB || x.Voice > enums.VoiceBurstE {
+		return
+	}
+	d, _ := x.Decoded()
+	u.voices[u.voiceN] = unionVoice{at: x.Seconds, voice: x.Voice, emb: d.EmbeddedData()}
+	u.voiceN = (u.voiceN + 1) % unionVoices
+}
+
+func (u *discUnion) twinFrag(at float64, v enums.VoiceBurstType) ([4]byte, bool) {
+	for _, x := range u.voices {
+		if x.voice == v && math.Abs(x.at-at) < unionTol {
+			return x.emb, true
+		}
+	}
+	return [4]byte{}, false
+}
+
+func (u *discUnion) embedded(x *Burst) {
+	if x.Voice != enums.VoiceBurstE {
+		return
+	}
+	var tw, mf [4][4]byte
+	var at [4]int
+	whole := true
+	for k := range tw {
+		s := x.Seconds - float64(3-k)*unionBlock
+		f, ok := u.twinFrag(s, enums.VoiceBurstB+enums.VoiceBurstType(k))
+		if !ok {
+			return
+		}
+		tw[k] = f
+		j, near := u.near(s)
+		if near && j < 0 {
+			return
+		}
+		at[k] = j
+		if j < 0 {
+			whole = false
+			continue
+		}
+		d, _ := u.main[j].Decoded()
+		mf[k] = d.EmbeddedData()
+	}
+	if _, r := layer2.DecodeEmbeddedLC(tw, true); r.Uncorrectable {
+		return
+	}
+	if whole {
+		if _, r := layer2.DecodeEmbeddedLC(mf, true); !r.Uncorrectable {
+			return
+		}
+	}
+	for k, j := range at {
+		if j < 0 {
+			continue
+		}
+		m := &u.main[j]
+		if !m.HasFixed {
+			m.Fixed, m.FixedCACH, m.HasFixed = m.Data, m.CACH, true
+		}
+		m.Fixed.SetEmbeddedData(tw[k])
+	}
+	u.elc++
 }
 
 func (u *discUnion) popMain() {
