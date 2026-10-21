@@ -200,8 +200,14 @@ func NewTiming(cfg *TimingConfig) (*Timing, error) {
 // Join starts the Timing for a radio that arrives on the channel: at power
 // up and on a change of frequency, but not on a change to the other slot of
 // the same frequency. The radio knows no leader and no timing, and waits
-// NoLeader for the CT_CSBKs of other radios before it asks for them.
-// (ETSI TS 102 361-2 clause 6.2.3.1)
+// NoLeader for the CT_CSBKs of other radios before it asks for them. While
+// it knows no leader, it waits NoLeader again after each CT_CSBK_Req
+// that it sends and then asks again. The standard sets NoLeaderTimer only
+// on arrival (Figure 6.2) and when SyncAge runs out (clause 6.2.3.4) and
+// says nothing of a repeat; the repeat is the choice of this package, so
+// that a radio that asked once, alone on the channel, does not stay in
+// TimingLeaderAndTimingUnknown. (ETSI TS 102 361-2 clauses 6.2.3.1 to
+// 6.2.3.4)
 func (m *Timing) Join(now time.Duration) {
 	if m == nil {
 		return
