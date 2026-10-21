@@ -86,6 +86,8 @@ typedef struct dmrgo__last_t {
 		char none;
 		dmrgo_config_error_t k0;
 		dmrgo_field_range_error_t k1;
+		dmrgo_dmrd_session_config_error_t k2;
+		dmrgo_ipsc_session_config_error_t k3;
 	} d;
 	unsigned char arena[512];
 } dmrgo__last_t;

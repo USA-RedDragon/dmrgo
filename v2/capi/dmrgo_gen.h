@@ -476,6 +476,22 @@ typedef struct dmrgo_dmrd_position_t dmrgo_dmrd_position_t;
 typedef struct dmrgo_dmrd_talker_alias_t dmrgo_dmrd_talker_alias_t;
 /* Go: auth.BridgeKey. BridgeKey holds an OpenBridge key and the hash state that signing with it needs. */
 typedef struct dmrgo_dmrd_auth_bridge_key_t dmrgo_dmrd_auth_bridge_key_t;
+/* Go: session.Bridge. Bridge is one OpenBridge link between two masters. */
+typedef struct dmrgo_dmrd_session_bridge_t dmrgo_dmrd_session_bridge_t;
+/* Go: session.BridgeConfig. BridgeConfig configures NewBridge. */
+typedef struct dmrgo_dmrd_session_bridge_config_t dmrgo_dmrd_session_bridge_config_t;
+/* Go: session.ConfigError. ConfigError is the error of NewPeer, NewMaster and NewBridge for a config field with a value out of range. */
+typedef struct dmrgo_dmrd_session_config_error_t dmrgo_dmrd_session_config_error_t;
+/* Go: session.Master. Master is the master side of the session of one repeater of the MMDVM network protocol or of HBRP. */
+typedef struct dmrgo_dmrd_session_master_t dmrgo_dmrd_session_master_t;
+/* Go: session.MasterConfig. MasterConfig configures NewMaster. */
+typedef struct dmrgo_dmrd_session_master_config_t dmrgo_dmrd_session_master_config_t;
+/* Go: session.Output. Output is one result of a Peer, Master or Bridge. */
+typedef struct dmrgo_dmrd_session_output_t dmrgo_dmrd_session_output_t;
+/* Go: session.Peer. Peer is the repeater side of a session of the MMDVM network protocol or of HBRP, as a repeater, a hotspot or DMRGateway runs it. */
+typedef struct dmrgo_dmrd_session_peer_t dmrgo_dmrd_session_peer_t;
+/* Go: session.PeerConfig. PeerConfig configures NewPeer. */
+typedef struct dmrgo_dmrd_session_peer_config_t dmrgo_dmrd_session_peer_config_t;
 /* Go: hytera.Frame. Frame is a packet of the DMR service: one burst with its slot, slot type and call fields. */
 typedef struct dmrgo_hytera_frame_t dmrgo_hytera_frame_t;
 /* Go: hytera.Heartbeat. Heartbeat is the 20-octet "ZZZZ" heartbeat of the P2P service, or the 1-octet keepalive that each side sends on the DMR and RDAC services. */
@@ -504,6 +520,22 @@ typedef struct dmrgo_ipsc_user_t dmrgo_ipsc_user_t;
 typedef struct dmrgo_ipsc_voice_t dmrgo_ipsc_voice_t;
 /* Go: auth.Key. Key holds an IPSC authentication key and the HMAC state that signing with it needs. */
 typedef struct dmrgo_ipsc_auth_key_t dmrgo_ipsc_auth_key_t;
+/* Go: session.Addr. Addr is the IPv4 address and UDP port of an IPSC peer, as a peer list carries it. */
+typedef struct dmrgo_ipsc_session_addr_t dmrgo_ipsc_session_addr_t;
+/* Go: session.ConfigError. ConfigError is the error of NewPeer and NewMaster for a config field with a value out of range. */
+typedef struct dmrgo_ipsc_session_config_error_t dmrgo_ipsc_session_config_error_t;
+/* Go: session.Master. Master is the master of an IPSC system, as DMRlink and ipsc2hbrp run it: it registers peers, answers their keepalives, sends the peer list to every peer when one asks for it and when a peer leaves or times out, and passes the voice and data packets of registered peers on. */
+typedef struct dmrgo_ipsc_session_master_t dmrgo_ipsc_session_master_t;
+/* Go: session.MasterConfig. MasterConfig configures NewMaster. */
+typedef struct dmrgo_ipsc_session_master_config_t dmrgo_ipsc_session_master_config_t;
+/* Go: session.Output. Output is one result of a Peer or Master. */
+typedef struct dmrgo_ipsc_session_output_t dmrgo_ipsc_session_output_t;
+/* Go: session.Peer. Peer is a peer of an IPSC system, as a MOTOTRBO repeater and DMRlink run it: it registers with the master and sends it keepalives, asks for the peer list, registers with each other peer of the list and sends it keepalives, answers the registrations and keepalives of the other peers, and passes the voice and data packets of the master and the peers on. */
+typedef struct dmrgo_ipsc_session_peer_t dmrgo_ipsc_session_peer_t;
+/* Go: session.PeerConfig. PeerConfig configures NewPeer. */
+typedef struct dmrgo_ipsc_session_peer_config_t dmrgo_ipsc_session_peer_config_t;
+/* Go: session.PeerInfo. PeerInfo is one peer that a Peer or Master knows. */
+typedef struct dmrgo_ipsc_session_peer_info_t dmrgo_ipsc_session_peer_info_t;
 /* Go: mmdvm.Ack. Ack is the payload of a CommandAck frame from the modem. */
 typedef struct dmrgo_mmdvm_ack_t dmrgo_mmdvm_ack_t;
 /* Go: mmdvm.ConfigV1. ConfigV1 is the payload of a CommandSetConfig frame of protocol 1, as MMDVMHost setConfig1 writes it and the MMDVM_HS firmware reads it. */
@@ -822,6 +854,12 @@ typedef uint8_t dmrgo_dmrd_dialect_t;
 typedef uint8_t dmrgo_dmrd_frame_type_t;
 /* Go: dmrd.OptionState. OptionState is whether a DMR+ startup option is in the options text. */
 typedef uint8_t dmrgo_dmrd_option_state_t;
+/* Go: session.OutputKind. OutputKind is the kind of an Output. */
+typedef uint8_t dmrgo_dmrd_session_output_kind_t;
+/* Go: session.Reason. Reason tells why a session ended. */
+typedef uint8_t dmrgo_dmrd_session_reason_t;
+/* Go: session.State. State is the state of a session. */
+typedef uint8_t dmrgo_dmrd_session_state_t;
 /* Go: hytera.Service. Service is octet 20 of a P2P packet: the service that the repeater asks for. */
 typedef uint8_t dmrgo_hytera_service_t;
 /* Go: hytera.SlotType. SlotType is octets 18 and 19 of a DMR frame: what the burst is, as one nibble four times. */
@@ -838,6 +876,12 @@ typedef uint8_t dmrgo_ipsc_mode_t;
 typedef uint8_t dmrgo_ipsc_opcode_t;
 /* Go: ipsc.VoiceLayout. VoiceLayout is the form of a voice packet, which tells some superframe positions. */
 typedef uint8_t dmrgo_ipsc_voice_layout_t;
+/* Go: session.OutputKind. OutputKind is the kind of an Output. */
+typedef uint8_t dmrgo_ipsc_session_output_kind_t;
+/* Go: session.Reason. Reason tells why a link went down. */
+typedef uint8_t dmrgo_ipsc_session_reason_t;
+/* Go: session.State. State is the state of a Peer or Master. */
+typedef uint8_t dmrgo_ipsc_session_state_t;
 /* Go: mmdvm.CPU. CPU is the processor of a modem of protocol 2. */
 typedef uint8_t dmrgo_mmdvm_cpu_t;
 /* Go: mmdvm.Capabilities. Capabilities is the set of modes that a modem has: octets 4 (low) and 5 (high) of a protocol 2 version reply. */
@@ -3972,6 +4016,69 @@ struct dmrgo_dmrd_hbrp_config_t {
 	uint8_t v[306];
 };
 
+struct dmrgo_dmrd_session_output_t {
+	/* Kind is the kind of the output. */
+	dmrgo_dmrd_session_output_kind_t kind;
+	/* Packet is the packet of OutputSend, OutputConfig, OutputData and OutputMessage, or the options text of OutputOptions. It holds at most MaxPacket octets. */
+	uint8_t *packet;
+	size_t packet_len;
+	/* Command is the command of OutputData and OutputMessage. */
+	dmrgo_dmrd_command_t command;
+	/* ID is the repeater ID of OutputLogin, OutputUp and OutputDown at a Master. */
+	uint32_t id;
+	/* Reason tells why for OutputDown. */
+	dmrgo_dmrd_session_reason_t reason;
+	/* State is the state in which the session ended, for OutputDown. */
+	dmrgo_dmrd_session_state_t state;
+};
+
+struct dmrgo_dmrd_session_bridge_config_t {
+	/* Key is the passphrase of the OpenBridge link (see auth.NewBridgeKey). */
+	uint8_t *key;
+	size_t key_len;
+	/* Enhanced turns on FreeDMR's enhanced OpenBridge: the Bridge sends a BCKA every Keepalive and takes the peer as down after Timeout without a packet with a good signature. Without it OpenBridge has no keepalive, and the Bridge only checks signatures. */
+	bool enhanced;
+	/* Keepalive is the BCKA period. 0 means KeepaliveDefault. */
+	dmrgo_duration_t keepalive;
+	/* Timeout is the time without a packet with a good signature after which an enhanced Bridge reports OutputDown. 0 means TimeoutDefault, the time after which FreeDMR stops sending to a peer. */
+	dmrgo_duration_t timeout;
+};
+
+struct dmrgo_dmrd_session_config_error_t {
+	/* Field is the name of the config field. */
+	char *field;
+	size_t field_len;
+};
+
+struct dmrgo_dmrd_session_master_config_t {
+	/* Dialect is dmrd.DialectMMDVM or dmrd.DialectHBRP. */
+	dmrgo_dmrd_dialect_t dialect;
+	/* Timeout is the time without a packet from the repeater after which the Master ends the session. 0 means TimeoutDefault. */
+	dmrgo_duration_t timeout;
+};
+
+struct dmrgo_dmrd_session_peer_config_t {
+	/* Dialect is dmrd.DialectMMDVM or dmrd.DialectHBRP. */
+	dmrgo_dmrd_dialect_t dialect;
+	/* ID is the repeater ID. */
+	uint32_t id;
+	/* Password is the password of the master. The Peer copies it. */
+	uint8_t *password;
+	size_t password_len;
+	/* Config is the RPTC message: a dmrd.Config (302 octets) for DialectMMDVM, a dmrd.HBRPConfig (306 octets) for DialectHBRP. The Peer copies it. */
+	uint8_t *config;
+	size_t config_len;
+	/* Options is the RPTO options text, at most MaxOptions octets, which the Peer sends after the RPTC is acknowledged. Empty sends no RPTO. DialectHBRP has no RPTO. */
+	uint8_t *options;
+	size_t options_len;
+	/* Retry is the time between two sends of a login step, between two pings, and before a new login after the session ended. 0 means RetryDefault. */
+	dmrgo_duration_t retry;
+	/* Timeout is the time without an acknowledgement or a pong after which the Peer ends the session and logs in again. 0 means TimeoutDefault. */
+	dmrgo_duration_t timeout;
+	/* Backoff is the longest wait before a new login. Each session that ends before the login completes doubles the wait from Retry up to Backoff. 0, or a value up to Retry, waits Retry each time, as DMRGateway does. */
+	dmrgo_duration_t backoff;
+};
+
 struct dmrgo_hytera_frame_t {
 	/* Port is octets 0 and 1: 50002 (C3 52) on the bursts of the repeater in the DO1KBL capture, 0 on its sync packets, 5A 5A from others. */
 	uint16_t port;
@@ -4161,6 +4268,88 @@ struct dmrgo_ipsc_stream_t {
 	uint32_t timestamp;
 	/* Sent is the number of packets that Fill has filled. */
 	uint32_t sent;
+};
+
+struct dmrgo_ipsc_session_addr_t {
+	/* IP is the IPv4 address. */
+	uint8_t ip[4];
+	/* Port is the UDP port. */
+	uint16_t port;
+};
+
+struct dmrgo_ipsc_session_config_error_t {
+	/* Field is the name of the config field. */
+	char *field;
+	size_t field_len;
+};
+
+struct dmrgo_ipsc_session_output_t {
+	/* Kind is the kind of the output. */
+	dmrgo_ipsc_session_output_kind_t kind;
+	/* Packet is the packet of OutputSend and OutputData. It holds at most MaxPacket octets. */
+	uint8_t *packet;
+	size_t packet_len;
+	/* Addr is where to send OutputSend, and the address of the peer of OutputUp and OutputData. */
+	dmrgo_ipsc_session_addr_t addr;
+	/* ID is the peer or master ID of OutputUp, OutputDown and OutputData. */
+	uint32_t id;
+	/* Reason tells why for OutputDown. */
+	dmrgo_ipsc_session_reason_t reason;
+};
+
+struct dmrgo_ipsc_session_peer_info_t {
+	/* ID is the peer ID. */
+	uint32_t id;
+	/* Addr is the address of the peer. */
+	dmrgo_ipsc_session_addr_t addr;
+	/* Mode is the last mode of the peer. */
+	dmrgo_ipsc_mode_t mode;
+	/* Flags is the last flags of the peer, zero when not known. */
+	dmrgo_ipsc_flags_t flags;
+	/* Up reports whether the link with the peer is up. */
+	bool up;
+};
+
+struct dmrgo_ipsc_session_master_config_t {
+	/* ID is the peer ID of the master. */
+	uint32_t id;
+	/* Mode is the mode that the master sends. 0 means ModeDefault. */
+	dmrgo_ipsc_mode_t mode;
+	/* Flags is the flags that the master sends. The zero Flags means voice and data calls. The Master sets ipsc.FlagMasterPeer, and ipsc.FlagAuth with Auth. */
+	dmrgo_ipsc_flags_t flags;
+	/* Version is the protocol version that the master sends. Zero means VersionDefault. */
+	uint8_t version[4];
+	/* Auth turns on the HMAC-SHA1 trailer with Key: the Master drops a packet without a good trailer and signs what it sends. */
+	bool auth;
+	/* Key is the authentication key (see auth.ParseKey). */
+	uint8_t key[20];
+	/* Timeout is the time without a packet from a peer after which the Master drops it. 0 means TimeoutDefault. */
+	dmrgo_duration_t timeout;
+	/* MaxPeers is the most peers that the Master registers. 0 means MaxPeersDefault. */
+	int64_t max_peers;
+};
+
+struct dmrgo_ipsc_session_peer_config_t {
+	/* ID is the peer ID. */
+	uint32_t id;
+	/* Mode is the mode that the peer sends. 0 means ModeDefault. */
+	dmrgo_ipsc_mode_t mode;
+	/* Flags is the flags that the peer sends. The zero Flags means voice and data calls. The Peer sets ipsc.FlagAuth with Auth. */
+	dmrgo_ipsc_flags_t flags;
+	/* Version is the protocol version that the peer sends. Zero means VersionDefault. */
+	uint8_t version[4];
+	/* Master is the address of the master. */
+	dmrgo_ipsc_session_addr_t master;
+	/* Auth turns on the HMAC-SHA1 trailer with Key: the Peer drops a packet without a good trailer and signs what it sends. */
+	bool auth;
+	/* Key is the authentication key (see auth.ParseKey). */
+	uint8_t key[20];
+	/* Alive is the keepalive period. 0 means AliveDefault. */
+	dmrgo_duration_t alive;
+	/* MaxMissed is the number of keepalives without a reply after which the Peer takes a link as down. 0 means MaxMissedDefault. */
+	int64_t max_missed;
+	/* MaxPeers is the most other peers that the Peer keeps from the peer list. 0 means MaxPeersDefault. */
+	int64_t max_peers;
 };
 
 struct dmrgo_mmdvm_ack_t {
@@ -5297,6 +5486,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_DATA_BUSY (-169)
 #define DMRGO_ERR_DMRD_COMMAND (-201)
 #define DMRGO_ERR_DMRD_LENGTH (-202)
+#define DMRGO_ERR_DMRD_SESSION_CONFIG_ERROR (-235)
 #define DMRGO_ERR_DMRD_SHORT (-203)
 #define DMRGO_ERR_DMRD_SIGNATURE (-204)
 #define DMRGO_ERR_DMRD_TEXT (-205)
@@ -5326,6 +5516,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_HYTERA_SIGNATURE (-199)
 #define DMRGO_ERR_IPSC_COMMAND (-210)
 #define DMRGO_ERR_IPSC_LENGTH (-211)
+#define DMRGO_ERR_IPSC_SESSION_CONFIG_ERROR (-236)
 #define DMRGO_ERR_IPSC_SHORT (-212)
 #define DMRGO_ERR_IP_CHECKSUM (-172)
 #define DMRGO_ERR_IP_FRAGMENT (-173)
@@ -5405,6 +5596,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_VOICE_QUEUE_FULL (-149)
 #define DMRGO_ERR_VOICE_TIMED_OUT (-150)
 #define DMRGO_IPSC_AUTH_KEY_SIGN_MAX_ITEMS (DMRGO_IPSC_AUTH_TRAILER_LEN)
+#define DMRGO_IPSC_SESSION_MASTER_SIGN_MAX_ITEMS (DMRGO_IPSC_AUTH_TRAILER_LEN)
+#define DMRGO_IPSC_SESSION_PEER_SIGN_MAX_ITEMS (DMRGO_IPSC_AUTH_TRAILER_LEN)
 #define DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 #define DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 #define DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -6845,6 +7038,62 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DMRD_OPTION_SET ((dmrgo_dmrd_option_state_t)2)
 /* Go: auth.KeyLen. KeyLen is the length of an OpenBridge key in octets. */
 #define DMRGO_DMRD_AUTH_KEY_LEN 20
+/* Go: session.KeepaliveDefault. KeepaliveDefault is the default BridgeConfig.Keepalive, the BCKA period of FreeDMR. */
+#define DMRGO_DMRD_SESSION_KEEPALIVE_DEFAULT INT64_C(10000000000)
+/* Go: session.MaxOptions. MaxOptions is the longest RPTO options text in octets that DMRGateway sends. */
+#define DMRGO_DMRD_SESSION_MAX_OPTIONS 291
+/* Go: session.MaxOutputs. MaxOutputs is the most outputs that one call of a Peer, Master or Bridge method appends. */
+#define DMRGO_DMRD_SESSION_MAX_OUTPUTS 4
+/* Go: session.MaxPacket. MaxPacket is the longest packet in octets that the machines take. */
+#define DMRGO_DMRD_SESSION_MAX_PACKET 512
+/* Go: session.MaxPassword. MaxPassword is the longest password in octets that Master.Admit keeps. */
+#define DMRGO_DMRD_SESSION_MAX_PASSWORD 128
+/* Go: session.OutputConfig. OutputConfig reports the RPTC that the Master accepted, in Output.Packet. */
+#define DMRGO_DMRD_SESSION_OUTPUT_CONFIG ((dmrgo_dmrd_session_output_kind_t)5)
+/* Go: session.OutputData. OutputData is a DMRD, DMRA or DMRG packet, or for a Bridge a DMRD or DMRE packet with a good signature, in Output.Packet, with its command in Output.Command. */
+#define DMRGO_DMRD_SESSION_OUTPUT_DATA ((dmrgo_dmrd_session_output_kind_t)7)
+/* Go: session.OutputDown. OutputDown reports that the session ended. */
+#define DMRGO_DMRD_SESSION_OUTPUT_DOWN ((dmrgo_dmrd_session_output_kind_t)3)
+/* Go: session.OutputLogin. OutputLogin reports the RPTL of the repeater in Output.ID at a Master. */
+#define DMRGO_DMRD_SESSION_OUTPUT_LOGIN ((dmrgo_dmrd_session_output_kind_t)4)
+/* Go: session.OutputMessage. OutputMessage is another message of a logged-in session for the consumer, in Output.Packet with its command in Output.Command: an RPTSBKN at a Peer, an RPTG, RPTRSSI or RPTINTR at a Master, or a BCSQ, BCST or BCVE at a Bridge. */
+#define DMRGO_DMRD_SESSION_OUTPUT_MESSAGE ((dmrgo_dmrd_session_output_kind_t)8)
+/* Go: session.OutputOptions. OutputOptions reports the RPTO options text that the Master accepted, in Output.Packet. */
+#define DMRGO_DMRD_SESSION_OUTPUT_OPTIONS ((dmrgo_dmrd_session_output_kind_t)6)
+/* Go: session.OutputSend. OutputSend is a packet in Output.Packet to send to the other side. */
+#define DMRGO_DMRD_SESSION_OUTPUT_SEND ((dmrgo_dmrd_session_output_kind_t)1)
+/* Go: session.OutputUp. OutputUp reports that the login is complete. */
+#define DMRGO_DMRD_SESSION_OUTPUT_UP ((dmrgo_dmrd_session_output_kind_t)2)
+/* Go: session.ReasonClosed. ReasonClosed is an MSTCL from the master or an RPTCL from the repeater. */
+#define DMRGO_DMRD_SESSION_REASON_CLOSED ((dmrgo_dmrd_session_reason_t)3)
+/* Go: session.ReasonLogin. ReasonLogin is a new RPTL from a repeater that was logged in. */
+#define DMRGO_DMRD_SESSION_REASON_LOGIN ((dmrgo_dmrd_session_reason_t)5)
+/* Go: session.ReasonNone. ReasonNone is the zero Reason. */
+#define DMRGO_DMRD_SESSION_REASON_NONE ((dmrgo_dmrd_session_reason_t)0)
+/* Go: session.ReasonRefused. ReasonRefused is an MSTNAK from the master, or a login that the Master refused. */
+#define DMRGO_DMRD_SESSION_REASON_REFUSED ((dmrgo_dmrd_session_reason_t)2)
+/* Go: session.ReasonStopped. ReasonStopped is a Close of the consumer. */
+#define DMRGO_DMRD_SESSION_REASON_STOPPED ((dmrgo_dmrd_session_reason_t)4)
+/* Go: session.ReasonTimeout. ReasonTimeout is Timeout without a reply or a packet. */
+#define DMRGO_DMRD_SESSION_REASON_TIMEOUT ((dmrgo_dmrd_session_reason_t)1)
+/* Go: session.RetryDefault. RetryDefault is the default PeerConfig.Retry: the time between two sends of a login step, and between two pings. */
+#define DMRGO_DMRD_SESSION_RETRY_DEFAULT INT64_C(10000000000)
+/* Go: session.StateAuth. StateAuth is a Peer that sent RPTK, or a Master that sent the salt. */
+#define DMRGO_DMRD_SESSION_STATE_AUTH ((dmrgo_dmrd_session_state_t)3)
+/* Go: session.StateConfig. StateConfig is a Peer that sent RPTC, or a Master that waits for it. */
+#define DMRGO_DMRD_SESSION_STATE_CONFIG ((dmrgo_dmrd_session_state_t)4)
+/* Go: session.StateIdle. StateIdle has no session: a Peer after Close, a Master before an RPTL or after the end of a session, a Bridge that has not heard its peer within Timeout. */
+#define DMRGO_DMRD_SESSION_STATE_IDLE ((dmrgo_dmrd_session_state_t)0)
+/* Go: session.StateLogin. StateLogin is a Peer that sent RPTL, or a Master that waits for Admit or Refuse. */
+#define DMRGO_DMRD_SESSION_STATE_LOGIN ((dmrgo_dmrd_session_state_t)2)
+/* Go: session.StateOptions. StateOptions is a Peer that sent RPTO. */
+#define DMRGO_DMRD_SESSION_STATE_OPTIONS ((dmrgo_dmrd_session_state_t)5)
+/* Go: session.StateRunning. StateRunning is a logged-in session, or a Bridge that heard its peer within Timeout. */
+#define DMRGO_DMRD_SESSION_STATE_RUNNING ((dmrgo_dmrd_session_state_t)6)
+/* Go: session.StateWait. StateWait is a Peer that waits to log in again. */
+#define DMRGO_DMRD_SESSION_STATE_WAIT ((dmrgo_dmrd_session_state_t)1)
+/* Go: session.TimeoutDefault. TimeoutDefault is the default PeerConfig.Timeout and MasterConfig.Timeout. */
+#define DMRGO_DMRD_SESSION_TIMEOUT_DEFAULT INT64_C(60000000000)
 /* Go: hytera.FrameLen. FrameLen is the length of a DMR frame in octets. */
 #define DMRGO_HYTERA_FRAME_LEN 72
 /* Go: hytera.HeartbeatLen. HeartbeatLen is the length of the heartbeat of the P2P service in octets. */
@@ -6971,6 +7220,48 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_IPSC_VOICE_LAYOUT_E ((dmrgo_ipsc_voice_layout_t)3)
 /* Go: auth.TrailerLen. TrailerLen is the length of the authentication trailer in octets. */
 #define DMRGO_IPSC_AUTH_TRAILER_LEN 10
+/* Go: session.AliveDefault. AliveDefault is the default PeerConfig.Alive, the ALIVE_TIMER of DMRlink. */
+#define DMRGO_IPSC_SESSION_ALIVE_DEFAULT INT64_C(5000000000)
+/* Go: session.MaxControl. MaxControl is the longest link control packet in octets other than a peer list, with its authentication trailer. */
+#define DMRGO_IPSC_SESSION_MAX_CONTROL 26
+/* Go: session.MaxMissedDefault. MaxMissedDefault is the default PeerConfig.MaxMissed, the MAX_MISSED of DMRlink. */
+#define DMRGO_IPSC_SESSION_MAX_MISSED_DEFAULT 20
+/* Go: session.MaxPacket. MaxPacket is the longest packet in octets that the machines take or send, with its authentication trailer. */
+#define DMRGO_IPSC_SESSION_MAX_PACKET 1500
+/* Go: session.MaxPeersDefault. MaxPeersDefault is the default MaxPeers: an IPSC system has at most 15 peers. */
+#define DMRGO_IPSC_SESSION_MAX_PEERS_DEFAULT 15
+/* Go: session.MaxPeersLimit. MaxPeersLimit is the largest MaxPeers: the most peers whose peer list, with its authentication trailer, fits in MaxPacket. */
+#define DMRGO_IPSC_SESSION_MAX_PEERS_LIMIT 134
+/* Go: session.ModeDefault. ModeDefault is the mode that a Peer or Master sends when its config leaves Mode zero: operational, digital, and both slots linked. */
+#define DMRGO_IPSC_SESSION_MODE_DEFAULT ((dmrgo_ipsc_mode_t)106)
+/* Go: session.OutputData. OutputData is a packet other than a link control packet, such as a voice or data packet, from Output.ID at Output.Addr, in Output.Packet without the authentication trailer. */
+#define DMRGO_IPSC_SESSION_OUTPUT_DATA ((dmrgo_ipsc_session_output_kind_t)5)
+/* Go: session.OutputDown. OutputDown reports that the link with Output.ID is down. */
+#define DMRGO_IPSC_SESSION_OUTPUT_DOWN ((dmrgo_ipsc_session_output_kind_t)3)
+/* Go: session.OutputPeers. OutputPeers reports a new peer list at a Peer, which Peers and PeerAt return. */
+#define DMRGO_IPSC_SESSION_OUTPUT_PEERS ((dmrgo_ipsc_session_output_kind_t)4)
+/* Go: session.OutputSend. OutputSend is a packet in Output.Packet to send to Output.Addr, with its authentication trailer when the config has Auth. */
+#define DMRGO_IPSC_SESSION_OUTPUT_SEND ((dmrgo_ipsc_session_output_kind_t)1)
+/* Go: session.OutputUp. OutputUp reports that the link with Output.ID at Output.Addr is up: at a Peer, the registration with the master or with another peer; at a Master, the registration of a peer. */
+#define DMRGO_IPSC_SESSION_OUTPUT_UP ((dmrgo_ipsc_session_output_kind_t)2)
+/* Go: session.ReasonClosed. ReasonClosed is a de-registration request of the other side. */
+#define DMRGO_IPSC_SESSION_REASON_CLOSED ((dmrgo_ipsc_session_reason_t)2)
+/* Go: session.ReasonList. ReasonList is a peer that a new peer list left out. */
+#define DMRGO_IPSC_SESSION_REASON_LIST ((dmrgo_ipsc_session_reason_t)4)
+/* Go: session.ReasonNone. ReasonNone is the zero Reason. */
+#define DMRGO_IPSC_SESSION_REASON_NONE ((dmrgo_ipsc_session_reason_t)0)
+/* Go: session.ReasonStopped. ReasonStopped is a Close of the consumer. */
+#define DMRGO_IPSC_SESSION_REASON_STOPPED ((dmrgo_ipsc_session_reason_t)3)
+/* Go: session.ReasonTimeout. ReasonTimeout is MaxMissed keepalives without a reply at a Peer, or Timeout without a packet at a Master. */
+#define DMRGO_IPSC_SESSION_REASON_TIMEOUT ((dmrgo_ipsc_session_reason_t)1)
+/* Go: session.StateIdle. StateIdle is a Peer or Master after Close. */
+#define DMRGO_IPSC_SESSION_STATE_IDLE ((dmrgo_ipsc_session_state_t)0)
+/* Go: session.StateRegistering. StateRegistering is a Peer that is not registered with the master. */
+#define DMRGO_IPSC_SESSION_STATE_REGISTERING ((dmrgo_ipsc_session_state_t)1)
+/* Go: session.StateRunning. StateRunning is a registered Peer, or a running Master. */
+#define DMRGO_IPSC_SESSION_STATE_RUNNING ((dmrgo_ipsc_session_state_t)2)
+/* Go: session.TimeoutDefault. TimeoutDefault is the default MasterConfig.Timeout, after which DMRlink drops a silent peer. */
+#define DMRGO_IPSC_SESSION_TIMEOUT_DEFAULT INT64_C(120000000000)
 /* Go: mmdvm.CPUAtmel. The CPU values. */
 #define DMRGO_MMDVM_CPU_ATMEL ((dmrgo_mmdvm_cpu_t)0)
 /* Go: mmdvm.CPUNXP. The CPU values. */
@@ -9694,6 +9985,88 @@ int dmrgo_dmrd_auth_new_bridge_key(const uint8_t *key, size_t key_len, dmrgo_dmr
 int dmrgo_dmrd_auth_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, uint8_t out[32]);
 /* Go: auth.VerifyToken. VerifyToken reports whether token, from an RPTK message, is the login token of the salt and the password, as Token computes it. */
 int dmrgo_dmrd_auth_verify_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, const uint8_t *token, size_t token_len, bool *out);
+/* dmrgo_dmrd_session_bridge_free frees the handle. self may be NULL. */
+int dmrgo_dmrd_session_bridge_free(dmrgo_dmrd_session_bridge_t *self);
+/* Go: session.Bridge.Deadline. Deadline returns the time at which the Bridge needs a Tick. */
+int dmrgo_dmrd_session_bridge_deadline(dmrgo_dmrd_session_bridge_t *self, dmrgo_duration_t *at, bool *ok);
+/* dmrgo_dmrd_session_bridge_packet_need sets *items and *arena to the room that dmrgo_dmrd_session_bridge_packet needs for these arguments, without a change to the handle. */
+int dmrgo_dmrd_session_bridge_packet_need(dmrgo_dmrd_session_bridge_t *self, dmrgo_duration_t now, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
+/* Go: session.Bridge.Packet. Packet takes the packet p from the peer. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_session_bridge_packet_need gives. */
+int dmrgo_dmrd_session_bridge_packet(dmrgo_dmrd_session_bridge_t *self, dmrgo_duration_t now, const uint8_t *p, size_t p_len, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: session.Bridge.Sign. Sign writes the signature of the OpenBridge packet p, as auth.BridgeKey.Sign does. */
+int dmrgo_dmrd_session_bridge_sign(dmrgo_dmrd_session_bridge_t *self, const uint8_t *p, size_t p_len);
+/* Go: session.Bridge.State. State returns StateRunning when the peer sent a packet with a good signature within Timeout, and StateIdle before that and after. */
+int dmrgo_dmrd_session_bridge_state(dmrgo_dmrd_session_bridge_t *self, dmrgo_dmrd_session_state_t *out);
+/* dmrgo_dmrd_session_bridge_tick_need sets *items and *arena to the room that dmrgo_dmrd_session_bridge_tick needs for these arguments, without a change to the handle. */
+int dmrgo_dmrd_session_bridge_tick_need(dmrgo_dmrd_session_bridge_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+/* Go: session.Bridge.Tick. Tick sends the BCKA of an enhanced Bridge when it is due, the first at the first Tick, and reports OutputDown with ReasonTimeout when the peer sent nothing for Timeout. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_session_bridge_tick_need gives. */
+int dmrgo_dmrd_session_bridge_tick(dmrgo_dmrd_session_bridge_t *self, dmrgo_duration_t now, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: session.ConfigError.Error. Error returns the message of e. */
+int dmrgo_dmrd_session_config_error_error(dmrgo_dmrd_session_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* dmrgo_dmrd_session_config_error_last sets *ok when the last error of this thread holds a session.ConfigError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
+int dmrgo_dmrd_session_config_error_last(dmrgo_dmrd_session_config_error_t *out, bool *ok);
+/* dmrgo_dmrd_session_master_free frees the handle. self may be NULL. */
+int dmrgo_dmrd_session_master_free(dmrgo_dmrd_session_master_t *self);
+/* dmrgo_dmrd_session_master_admit_need sets *items and *arena to the room that dmrgo_dmrd_session_master_admit needs for these arguments, without a change to the handle. */
+int dmrgo_dmrd_session_master_admit_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, uint32_t salt, const uint8_t *password, size_t password_len, size_t *items, size_t *arena);
+/* Go: session.Master.Admit. Admit answers the RPTL of OutputLogin with the salt, which the caller draws at random, and keeps the password of the repeater, of which it uses at most MaxPassword octets, to check the RPTK. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_session_master_admit_need gives. */
+int dmrgo_dmrd_session_master_admit(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, uint32_t salt, const uint8_t *password, size_t password_len, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* dmrgo_dmrd_session_master_close_need sets *items and *arena to the room that dmrgo_dmrd_session_master_close needs for these arguments, without a change to the handle. */
+int dmrgo_dmrd_session_master_close_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
+/* Go: session.Master.Close. Close ends a session with MSTCL, as a master that shuts down sends it, and OutputDown with ReasonStopped. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_session_master_close_need gives. */
+int dmrgo_dmrd_session_master_close(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t p0, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: session.Master.Deadline. Deadline returns the time at which the Master needs a Tick. */
+int dmrgo_dmrd_session_master_deadline(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t *at, bool *ok);
+/* Go: session.Master.ID. ID returns the repeater ID of the session, from its last RPTL. */
+int dmrgo_dmrd_session_master_id(dmrgo_dmrd_session_master_t *self, uint32_t *out);
+/* dmrgo_dmrd_session_master_packet_need sets *items and *arena to the room that dmrgo_dmrd_session_master_packet needs for these arguments, without a change to the handle. */
+int dmrgo_dmrd_session_master_packet_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, const uint8_t *b, size_t b_len, size_t *items, size_t *arena);
+/* Go: session.Master.Packet. Packet takes the packet b from the repeater. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_session_master_packet_need gives. */
+int dmrgo_dmrd_session_master_packet(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, const uint8_t *b, size_t b_len, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* dmrgo_dmrd_session_master_refuse_need sets *items and *arena to the room that dmrgo_dmrd_session_master_refuse needs for these arguments, without a change to the handle. */
+int dmrgo_dmrd_session_master_refuse_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
+/* Go: session.Master.Refuse. Refuse answers the RPTL of OutputLogin, or ends a session, with MSTNAK and OutputDown with ReasonRefused. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_session_master_refuse_need gives. */
+int dmrgo_dmrd_session_master_refuse(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t p0, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: session.Master.Reset. Reset ends the session without a packet or an output. */
+int dmrgo_dmrd_session_master_reset(dmrgo_dmrd_session_master_t *self);
+/* Go: session.Master.State. State returns the state of the session. */
+int dmrgo_dmrd_session_master_state(dmrgo_dmrd_session_master_t *self, dmrgo_dmrd_session_state_t *out);
+/* dmrgo_dmrd_session_master_tick_need sets *items and *arena to the room that dmrgo_dmrd_session_master_tick needs for these arguments, without a change to the handle. */
+int dmrgo_dmrd_session_master_tick_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+/* Go: session.Master.Tick. Tick ends the session with OutputDown and ReasonTimeout when the repeater sent nothing for Timeout. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_session_master_tick_need gives. */
+int dmrgo_dmrd_session_master_tick(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: session.NewBridge. NewBridge returns a Bridge for cfg. */
+int dmrgo_dmrd_session_new_bridge(const dmrgo_dmrd_session_bridge_config_t *cfg, dmrgo_dmrd_session_bridge_t **out);
+/* Go: session.NewMaster. NewMaster returns a Master for cfg in StateIdle. */
+int dmrgo_dmrd_session_new_master(dmrgo_dmrd_session_master_config_t *cfg, dmrgo_dmrd_session_master_t **out);
+/* Go: session.NewPeer. NewPeer returns a Peer for cfg. */
+int dmrgo_dmrd_session_new_peer(const dmrgo_dmrd_session_peer_config_t *cfg, dmrgo_dmrd_session_peer_t **out);
+/* Go: session.OutputKind.String. String returns the name of the OutputKind. */
+int dmrgo_dmrd_session_output_kind_string(dmrgo_dmrd_session_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* dmrgo_dmrd_session_peer_free frees the handle. self may be NULL. */
+int dmrgo_dmrd_session_peer_free(dmrgo_dmrd_session_peer_t *self);
+/* dmrgo_dmrd_session_peer_close_need sets *items and *arena to the room that dmrgo_dmrd_session_peer_close needs for these arguments, without a change to the handle. */
+int dmrgo_dmrd_session_peer_close_need(dmrgo_dmrd_session_peer_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
+/* Go: session.Peer.Close. Close ends the session: it sends RPTCL when the Peer is logged in, as DMRGateway does when it closes, and reports OutputDown with ReasonStopped. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_session_peer_close_need gives. */
+int dmrgo_dmrd_session_peer_close(dmrgo_dmrd_session_peer_t *self, dmrgo_duration_t p0, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: session.Peer.Deadline. Deadline returns the time at which the Peer needs a Tick. */
+int dmrgo_dmrd_session_peer_deadline(dmrgo_dmrd_session_peer_t *self, dmrgo_duration_t *at, bool *ok);
+/* dmrgo_dmrd_session_peer_packet_need sets *items and *arena to the room that dmrgo_dmrd_session_peer_packet needs for these arguments, without a change to the handle. */
+int dmrgo_dmrd_session_peer_packet_need(dmrgo_dmrd_session_peer_t *self, dmrgo_duration_t now, const uint8_t *b, size_t b_len, size_t *items, size_t *arena);
+/* Go: session.Peer.Packet. Packet takes the packet b from the master. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_session_peer_packet_need gives. */
+int dmrgo_dmrd_session_peer_packet(dmrgo_dmrd_session_peer_t *self, dmrgo_duration_t now, const uint8_t *b, size_t b_len, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: session.Peer.Reset. Reset ends the session without a packet and makes the Peer as NewPeer returned it, so the next Tick sends the RPTL. */
+int dmrgo_dmrd_session_peer_reset(dmrgo_dmrd_session_peer_t *self);
+/* Go: session.Peer.State. State returns the state of the Peer. */
+int dmrgo_dmrd_session_peer_state(dmrgo_dmrd_session_peer_t *self, dmrgo_dmrd_session_state_t *out);
+/* dmrgo_dmrd_session_peer_tick_need sets *items and *arena to the room that dmrgo_dmrd_session_peer_tick needs for these arguments, without a change to the handle. */
+int dmrgo_dmrd_session_peer_tick_need(dmrgo_dmrd_session_peer_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+/* Go: session.Peer.Tick. Tick runs the timers that are due at now: the first RPTL, the sends again of the login step, the pings, the timeout and the new login. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_session_peer_tick_need gives. */
+int dmrgo_dmrd_session_peer_tick(dmrgo_dmrd_session_peer_t *self, dmrgo_duration_t now, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: session.Reason.String. String returns the name of the Reason. */
+int dmrgo_dmrd_session_reason_string(dmrgo_dmrd_session_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: session.State.String. String returns the name of the State. */
+int dmrgo_dmrd_session_state_string(dmrgo_dmrd_session_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hytera.DecodeFrame. DecodeFrame decodes the 72-octet DMR frame p. */
 int dmrgo_hytera_decode_frame(const uint8_t *p, size_t p_len, dmrgo_hytera_frame_t *out);
 /* Go: hytera.DecodeHeartbeat. DecodeHeartbeat decodes a heartbeat (20 octets) or a keepalive (1 octet). */
@@ -9810,6 +10183,84 @@ int dmrgo_ipsc_auth_key_verify(dmrgo_ipsc_auth_key_t *self, const uint8_t *p, si
 int dmrgo_ipsc_auth_new_key(const uint8_t k[20], dmrgo_ipsc_auth_key_t **out);
 /* Go: auth.ParseKey. ParseKey parses the hex key of a MOTOTRBO or DMRlink configuration: up to 40 hex digits, padded on the left with zeros to 20 octets as DMRlink does. */
 int dmrgo_ipsc_auth_parse_key(const char *s, size_t s_len, uint8_t out[20]);
+/* Go: session.ConfigError.Error. Error returns the message of e. */
+int dmrgo_ipsc_session_config_error_error(dmrgo_ipsc_session_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* dmrgo_ipsc_session_config_error_last sets *ok when the last error of this thread holds a session.ConfigError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
+int dmrgo_ipsc_session_config_error_last(dmrgo_ipsc_session_config_error_t *out, bool *ok);
+/* dmrgo_ipsc_session_master_free frees the handle. self may be NULL. */
+int dmrgo_ipsc_session_master_free(dmrgo_ipsc_session_master_t *self);
+/* dmrgo_ipsc_session_master_close_need sets *items and *arena to the room that dmrgo_ipsc_session_master_close needs for these arguments, without a change to the handle. */
+int dmrgo_ipsc_session_master_close_need(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
+/* Go: session.Master.Close. Close sends a de-registration request to every registered peer, as DMRlink does when it shuts down, reports OutputDown with ReasonStopped for each, and stops the Master until Reset. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_session_master_close_need gives. */
+int dmrgo_ipsc_session_master_close(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t p0, dmrgo_ipsc_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: session.Master.Deadline. Deadline returns the time at which the Master needs a Tick: when the first peer times out. */
+int dmrgo_ipsc_session_master_deadline(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t *at, bool *ok);
+/* Go: session.Master.MaxOutputs. MaxOutputs returns the most outputs that one call of the Master appends. */
+int dmrgo_ipsc_session_master_max_outputs(dmrgo_ipsc_session_master_t *self, int64_t *out);
+/* dmrgo_ipsc_session_master_packet_need sets *items and *arena to the room that dmrgo_ipsc_session_master_packet needs for these arguments, without a change to the handle. */
+int dmrgo_ipsc_session_master_packet_need(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t now, const dmrgo_ipsc_session_addr_t *from, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
+/* Go: session.Master.Packet. Packet takes the packet p from the address from. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_session_master_packet_need gives. */
+int dmrgo_ipsc_session_master_packet(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t now, const dmrgo_ipsc_session_addr_t *from, const uint8_t *p, size_t p_len, dmrgo_ipsc_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: session.Master.PeerAt. PeerAt returns registered peer i, or the zero PeerInfo when i is not below Peers. */
+int dmrgo_ipsc_session_master_peer_at(dmrgo_ipsc_session_master_t *self, int64_t i, dmrgo_ipsc_session_peer_info_t *out);
+/* Go: session.Master.Peers. Peers returns the number of registered peers. */
+int dmrgo_ipsc_session_master_peers(dmrgo_ipsc_session_master_t *self, int64_t *out);
+/* Go: session.Master.Reset. Reset forgets every peer without a packet and runs the Master again after Close. */
+int dmrgo_ipsc_session_master_reset(dmrgo_ipsc_session_master_t *self);
+/* dmrgo_ipsc_session_master_sign_need sets *items and *arena to the room that dmrgo_ipsc_session_master_sign needs for these arguments, without a change to the handle. */
+int dmrgo_ipsc_session_master_sign_need(dmrgo_ipsc_session_master_t *self, size_t *items, size_t *arena);
+/* Go: session.Master.Sign. Sign appends the authentication trailer of the packet in dst to dst when the config has Auth, and returns dst as it is without. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_session_master_sign_need gives (DMRGO_IPSC_SESSION_MASTER_SIGN_MAX_ITEMS items). */
+int dmrgo_ipsc_session_master_sign(dmrgo_ipsc_session_master_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: session.Master.State. State returns StateRunning, or StateIdle after Close. */
+int dmrgo_ipsc_session_master_state(dmrgo_ipsc_session_master_t *self, dmrgo_ipsc_session_state_t *out);
+/* dmrgo_ipsc_session_master_tick_need sets *items and *arena to the room that dmrgo_ipsc_session_master_tick needs for these arguments, without a change to the handle. */
+int dmrgo_ipsc_session_master_tick_need(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+/* Go: session.Master.Tick. Tick drops the peers that sent nothing for Timeout, with OutputDown and ReasonTimeout, and then sends the new peer list to the peers left. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_session_master_tick_need gives. */
+int dmrgo_ipsc_session_master_tick(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t now, dmrgo_ipsc_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: session.NewMaster. NewMaster returns a Master for cfg. */
+int dmrgo_ipsc_session_new_master(const dmrgo_ipsc_session_master_config_t *cfg, dmrgo_ipsc_session_master_t **out);
+/* Go: session.NewPeer. NewPeer returns a Peer for cfg. */
+int dmrgo_ipsc_session_new_peer(const dmrgo_ipsc_session_peer_config_t *cfg, dmrgo_ipsc_session_peer_t **out);
+/* Go: session.OutputKind.String. String returns the name of the OutputKind. */
+int dmrgo_ipsc_session_output_kind_string(dmrgo_ipsc_session_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* dmrgo_ipsc_session_peer_free frees the handle. self may be NULL. */
+int dmrgo_ipsc_session_peer_free(dmrgo_ipsc_session_peer_t *self);
+/* dmrgo_ipsc_session_peer_close_need sets *items and *arena to the room that dmrgo_ipsc_session_peer_close needs for these arguments, without a change to the handle. */
+int dmrgo_ipsc_session_peer_close_need(dmrgo_ipsc_session_peer_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
+/* Go: session.Peer.Close. Close sends a de-registration request to the master and to every peer whose link is up, as DMRlink does when it leaves, reports OutputDown with ReasonStopped for the master, and stops the Peer until Reset. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_session_peer_close_need gives. */
+int dmrgo_ipsc_session_peer_close(dmrgo_ipsc_session_peer_t *self, dmrgo_duration_t p0, dmrgo_ipsc_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: session.Peer.Deadline. Deadline returns the time at which the Peer needs a Tick. */
+int dmrgo_ipsc_session_peer_deadline(dmrgo_ipsc_session_peer_t *self, dmrgo_duration_t *at, bool *ok);
+/* Go: session.Peer.Master. Master returns the ID of the master, which its registration reply gave. */
+int dmrgo_ipsc_session_peer_master(dmrgo_ipsc_session_peer_t *self, uint32_t *id, bool *ok);
+/* Go: session.Peer.MaxOutputs. MaxOutputs returns the most outputs that one call of the Peer appends. */
+int dmrgo_ipsc_session_peer_max_outputs(dmrgo_ipsc_session_peer_t *self, int64_t *out);
+/* dmrgo_ipsc_session_peer_packet_need sets *items and *arena to the room that dmrgo_ipsc_session_peer_packet needs for these arguments, without a change to the handle. */
+int dmrgo_ipsc_session_peer_packet_need(dmrgo_ipsc_session_peer_t *self, dmrgo_duration_t p0, const dmrgo_ipsc_session_addr_t *from, const uint8_t *b, size_t b_len, size_t *items, size_t *arena);
+/* Go: session.Peer.Packet. Packet takes the packet p from the address from. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_session_peer_packet_need gives. */
+int dmrgo_ipsc_session_peer_packet(dmrgo_ipsc_session_peer_t *self, dmrgo_duration_t p0, const dmrgo_ipsc_session_addr_t *from, const uint8_t *b, size_t b_len, dmrgo_ipsc_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: session.Peer.PeerAt. PeerAt returns peer i of the list, or the zero PeerInfo when i is not below Peers. */
+int dmrgo_ipsc_session_peer_peer_at(dmrgo_ipsc_session_peer_t *self, int64_t i, dmrgo_ipsc_session_peer_info_t *out);
+/* Go: session.Peer.Peers. Peers returns the number of other peers that the Peer knows from the peer list. */
+int dmrgo_ipsc_session_peer_peers(dmrgo_ipsc_session_peer_t *self, int64_t *out);
+/* Go: session.Peer.Reset. Reset forgets the master and the peers without a packet, so the next Tick registers again. */
+int dmrgo_ipsc_session_peer_reset(dmrgo_ipsc_session_peer_t *self);
+/* dmrgo_ipsc_session_peer_sign_need sets *items and *arena to the room that dmrgo_ipsc_session_peer_sign needs for these arguments, without a change to the handle. */
+int dmrgo_ipsc_session_peer_sign_need(dmrgo_ipsc_session_peer_t *self, size_t *items, size_t *arena);
+/* Go: session.Peer.Sign. Sign appends the authentication trailer of the packet in dst to dst when the config has Auth, and returns dst as it is without. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_session_peer_sign_need gives (DMRGO_IPSC_SESSION_PEER_SIGN_MAX_ITEMS items). */
+int dmrgo_ipsc_session_peer_sign(dmrgo_ipsc_session_peer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: session.Peer.State. State returns the state of the Peer. */
+int dmrgo_ipsc_session_peer_state(dmrgo_ipsc_session_peer_t *self, dmrgo_ipsc_session_state_t *out);
+/* dmrgo_ipsc_session_peer_tick_need sets *items and *arena to the room that dmrgo_ipsc_session_peer_tick needs for these arguments, without a change to the handle. */
+int dmrgo_ipsc_session_peer_tick_need(dmrgo_ipsc_session_peer_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+/* Go: session.Peer.Tick. Tick sends, when Alive is due, the registration request or the keepalive to the master, the peer list request until the list arrives, and the registration request or the keepalive to each peer of the list. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_session_peer_tick_need gives. */
+int dmrgo_ipsc_session_peer_tick(dmrgo_ipsc_session_peer_t *self, dmrgo_duration_t now, dmrgo_ipsc_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: session.Reason.String. String returns the name of the Reason. */
+int dmrgo_ipsc_session_reason_string(dmrgo_ipsc_session_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: session.State.String. String returns the name of the State. */
+int dmrgo_ipsc_session_state_string(dmrgo_ipsc_session_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: session.VersionDefault. VersionDefault returns the protocol version that a Peer or Master sends when its config leaves Version zero, as DMRlink sends it. */
+int dmrgo_ipsc_session_version_default(uint8_t out[4]);
 /* Go: mmdvm.Ack.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
 int dmrgo_mmdvm_ack_append_binary(dmrgo_mmdvm_ack_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.Ack.String. String returns the fields of s as text, for printing. */
