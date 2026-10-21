@@ -158,6 +158,12 @@ const char *dmrgo__gen_strerror(int status) {
 		return "dmrd.ErrSignature";
 	case -205:
 		return "dmrd.ErrText";
+	case -206:
+		return "ipsc.ErrCommand";
+	case -207:
+		return "ipsc.ErrLength";
+	case -208:
+		return "ipsc.ErrShort";
 	case -105:
 		return "trunk.ConfigError";
 	case -134:
