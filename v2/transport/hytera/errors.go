@@ -1,6 +1,10 @@
 package hytera
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+)
 
 // Errors of the decoders. Each is a static value, so a decode that fails
 // does not allocate. Match them with errors.Is.
@@ -22,5 +26,21 @@ var (
 var (
 	errSlot  = errors.New("hytera: Frame.Slot is not Slot1 or Slot2")
 	errColor = errors.New("hytera: Frame.ColorCode is above 15")
-	errKind  = errors.New("hytera: SetKind: kind, voice position or data type has no slot type")
+	errKind  = errors.New("hytera: SetKind: kind is not KindVoice or KindData")
+
+	errKindVoice error = &wrapError{"hytera: SetKind: voice position is not A to F", layer2.ErrVoicePosition}
+	errKindData  error = &wrapError{"hytera: SetKind: data type has no slot type", layer2.ErrDataType}
 )
+
+type wrapError struct {
+	msg string
+	err error
+}
+
+func (e *wrapError) Error() string {
+	return e.msg
+}
+
+func (e *wrapError) Unwrap() error {
+	return e.err
+}

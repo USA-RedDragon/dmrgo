@@ -57,17 +57,22 @@ func TestEncodeMisuse(t *testing.T) {
 	var u ipsc.User
 	var raw layer2.RawBurst
 	for _, tt := range []struct {
-		k   layer2.Kind
-		pos enums.VoiceBurstType
-		dt  enums.DataType
+		k    layer2.Kind
+		pos  enums.VoiceBurstType
+		dt   enums.DataType
+		want error
 	}{
-		{layer2.KindUnknown, 0, 0},
-		{layer2.KindVoice, enums.VoiceBurstUnknown, 0},
-		{layer2.KindData, 0, enums.DataTypeRate1},
-		{layer2.KindData, 0, enums.DataTypeIdle},
+		{layer2.KindUnknown, 0, 0, nil},
+		{layer2.KindVoice, enums.VoiceBurstUnknown, 0, layer2.ErrVoicePosition},
+		{layer2.KindData, 0, enums.DataTypeRate1, layer2.ErrDataType},
+		{layer2.KindData, 0, enums.DataTypeIdle, layer2.ErrDataType},
 	} {
-		if err := u.SetRawBurst(raw, tt.k, tt.pos, tt.dt); err == nil {
+		err := u.SetRawBurst(raw, tt.k, tt.pos, tt.dt)
+		if err == nil {
 			t.Errorf("%+v: no error", tt)
+		}
+		if tt.want != nil && !errors.Is(err, tt.want) {
+			t.Errorf("%+v: %v, want %v", tt, err, tt.want)
 		}
 	}
 }

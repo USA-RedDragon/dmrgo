@@ -356,9 +356,10 @@ func (u *User) RawBurst(cc enums.ColorCode, src layer2.SyncSource) (layer2.RawBu
 // pos, which picks the layout (the full LC of burst E stays as it is in
 // u.Voice.LC), or KindData with the data type dt. It takes the slot from
 // u.Info and leaves the header and RTP fields as they are. It returns an
-// error for another kind, a voice position that is not A to F, a data type
-// that IPSC does not carry (Idle, rate 1, unified single block and the
-// reserved types), and the errors of vocoder.PackAMBEVoice.
+// error for another kind, an error that wraps layer2.ErrVoicePosition for
+// a voice position that is not A to F, one that wraps layer2.ErrDataType
+// for a data type that IPSC does not carry (Idle, rate 1, unified single
+// block and the reserved types), and the errors of vocoder.PackAMBEVoice.
 func (u *User) SetRawBurst(raw layer2.RawBurst, k layer2.Kind, pos enums.VoiceBurstType, dt enums.DataType) error {
 	var slotBit uint8
 	if u.Info.Slot() == enums.Slot2 {
@@ -386,7 +387,7 @@ func (u *User) SetRawBurst(raw layer2.RawBurst, k layer2.Kind, pos enums.VoiceBu
 
 func voiceOf(raw layer2.RawBurst, pos enums.VoiceBurstType, lc [9]byte) (Voice, error) {
 	if _, ok := pos.Index(); !ok {
-		return Voice{}, errKind
+		return Voice{}, errVoicePosition
 	}
 	frames, _ := raw.AMBEFrames()
 	ambe, err := vocoder.PackAMBEVoice(frames)

@@ -107,11 +107,11 @@ func TestDataSetKind(t *testing.T) {
 			t.Errorf("kind %v: no error", k)
 		}
 	}
-	if err := d.SetKind(layer2.KindVoice, enums.VoiceBurstUnknown, 0); err == nil {
-		t.Error("unknown position: no error")
+	if err := d.SetKind(layer2.KindVoice, enums.VoiceBurstUnknown, 0); !errors.Is(err, layer2.ErrVoicePosition) {
+		t.Errorf("unknown position: %v, want layer2.ErrVoicePosition", err)
 	}
-	if err := d.SetKind(layer2.KindData, 0, 16); err == nil {
-		t.Error("data type 16: no error")
+	if err := d.SetKind(layer2.KindData, 0, 16); !errors.Is(err, layer2.ErrDataType) {
+		t.Errorf("data type 16: %v, want layer2.ErrDataType", err)
 	}
 }
 

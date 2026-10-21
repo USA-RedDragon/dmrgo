@@ -131,12 +131,23 @@ func TestFrameHint(t *testing.T) {
 	}
 	f := hytera.Frame{SlotType: hytera.SlotTypeCSBK}
 	for _, c := range []struct {
-		k   layer2.Kind
-		pos enums.VoiceBurstType
-		dt  enums.DataType
-	}{{layer2.KindVoice, enums.VoiceBurstUnknown, 0}, {layer2.KindData, 0, enums.DataTypeIdle}, {layer2.KindData, 0, enums.DataTypeRate1}, {layer2.KindUnknown, 0, 0}, {layer2.KindReverseChannel, 0, 0}} {
-		if err := f.SetKind(c.k, c.pos, c.dt); err == nil || f.SlotType != hytera.SlotTypeCSBK {
+		k    layer2.Kind
+		pos  enums.VoiceBurstType
+		dt   enums.DataType
+		want error
+	}{
+		{layer2.KindVoice, enums.VoiceBurstUnknown, 0, layer2.ErrVoicePosition},
+		{layer2.KindData, 0, enums.DataTypeIdle, layer2.ErrDataType},
+		{layer2.KindData, 0, enums.DataTypeRate1, layer2.ErrDataType},
+		{layer2.KindUnknown, 0, 0, nil},
+		{layer2.KindReverseChannel, 0, 0, nil},
+	} {
+		err := f.SetKind(c.k, c.pos, c.dt)
+		if err == nil || f.SlotType != hytera.SlotTypeCSBK {
 			t.Errorf("%+v: %v %v", c, f.SlotType, err)
+		}
+		if c.want != nil && !errors.Is(err, c.want) {
+			t.Errorf("%+v: %v, want %v", c, err, c.want)
 		}
 	}
 }
