@@ -77,22 +77,13 @@ func checkCapture(name string, raw []byte) *tally {
 	return t
 }
 
-func syncSource(p enums.SyncPattern) (layer2.SyncSource, bool) {
-	for _, s := range []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS, layer2.SyncSourceDirectTS1, layer2.SyncSourceDirectTS2} {
-		if _, data, _ := s.SyncPatterns(); data == p {
-			return s, true
-		}
-	}
-	return 0, false
-}
-
 func checkData(t *tally, i int, b *layer2.Burst, rb layer2.RawBurst) {
 	st := rb.SlotType()
 	if st != b.SlotType {
 		t.failf(i, "RawBurst slot type %v, Burst %v", st, b.SlotType)
 	}
-	src, ok := syncSource(b.SyncPattern)
-	if !ok {
+	src, kind, ok := layer2.SyncSourceOf(b.SyncPattern)
+	if !ok || kind != layer2.KindData {
 		t.failf(i, "no sync source for %v", b.SyncPattern)
 		return
 	}

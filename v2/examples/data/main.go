@@ -16,6 +16,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+	"github.com/USA-RedDragon/dmrgo/v2/sms"
 )
 
 const (
@@ -76,32 +77,17 @@ func capture(w io.Writer, path string) error {
 			continue
 		}
 		n++
-		dstID, srcID, _ := m.Header.Addresses()
+		_, t, err := sms.Decode(nil, &m.Header, m.Data)
+		if err != nil {
+			return fmt.Errorf("message %d: %w", n, err)
+		}
 		fmt.Fprintf(w, "%s: %s %d -> %d, %s, %d octets, CRC %08x, text %q\n",
-			filepath.Base(path), m.Header.Format, srcID, dstID, m.DataType, len(m.Data), m.CRC, utf16Text(m.Data))
+			filepath.Base(path), m.Header.Format, t.Source, t.Destination, m.DataType, len(m.Data), m.CRC, t.Body)
 	}
 	if n != 1 {
 		return fmt.Errorf("got %d messages, want 1", n)
 	}
 	return nil
-}
-
-func utf16Text(p []byte) string {
-	var best, cur []byte
-	for i := 0; i+1 < len(p); i += 2 {
-		if p[i+1] == 0 && p[i] >= 0x20 && p[i] < 0x7f {
-			cur = append(cur, p[i])
-			continue
-		}
-		if len(cur) > len(best) {
-			best = cur
-		}
-		cur = nil
-	}
-	if len(cur) > len(best) {
-		best = cur
-	}
-	return string(best)
 }
 
 func unconfirmed(w io.Writer) error {

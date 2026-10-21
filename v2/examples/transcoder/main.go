@@ -45,15 +45,6 @@ func readBursts(path string) ([]layer2.RawBurst, error) {
 	return bursts, nil
 }
 
-func syncSource(p enums.SyncPattern) (layer2.SyncSource, bool) {
-	for _, s := range []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS, layer2.SyncSourceDirectTS1, layer2.SyncSourceDirectTS2} {
-		if voice, _, ok := s.SyncPatterns(); ok && voice == p {
-			return s, true
-		}
-	}
-	return 0, false
-}
-
 func receive(bursts []layer2.RawBurst) (call, error) {
 	var c call
 	var rx layer2.VoiceReceiver
@@ -75,7 +66,7 @@ func receive(bursts []layer2.RawBurst) (call, error) {
 				c.lc, c.cc = lc, b.SlotType.ColorCode
 			}
 		case layer2.KindVoice:
-			if s, found := syncSource(b.SyncPattern); found {
+			if s, _, found := layer2.SyncSourceOf(b.SyncPattern); found {
 				c.source = s
 			}
 			c.voice++
