@@ -243,12 +243,12 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | Metric | Count |
 | --- | --- |
 | Total sections | 220 |
-| Verified (tests pass) | 149 |
+| Verified (tests pass) | 150 |
 | Failing (tests fail) | 0 |
 | Untested (has source, no tests) | 3 |
-| Unimplemented | 68 |
+| Unimplemented | 67 |
 
-**Overall: 149/220 verified (67.7%)**
+**Overall: 150/220 verified (68.2%)**
 
 ### ETSI TS 102 361-1: Air Interface Protocol
 
@@ -380,11 +380,11 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 
 ### ETSI TS 102 361-3: DMR Data Protocol
 
-17 sections: 15 verified, 0 failing, 0 untested, 2 unimplemented.
+17 sections: 16 verified, 0 failing, 0 untested, 1 unimplemented.
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
-| 5.2 | IP error messages | unimplemented | - | - |
+| 5.2 | IP error messages | verified | 4/4 passed | `v2/ip/icmp.go`, `v2/ip/errors.go` |
 | 5.3 | Unconfirmed data DLL bearer service | verified | 6/6 passed | `v2/layer2/pdu/data_header.go`, `v2/data/event.go`, `v2/data/message.go`, `v2/data/receiver.go`, `v2/data/sender.go` |
 | 5.4.1 | Confirmed IP Data Types/PDUs | verified | 3/3 passed | `v2/layer2/pdu/data_header.go` |
 | 5.4.2 | Confirmed IP Data SDL | verified | 8/8 passed | `v2/data/errors.go`, `v2/data/event.go`, `v2/data/message.go`, `v2/data/receiver.go`, `v2/data/sender.go` |

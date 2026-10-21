@@ -124,6 +124,12 @@ typedef struct dmrgo_hytera_tmp_group_answer_t dmrgo_hytera_tmp_group_answer_t;
 typedef struct dmrgo_hytera_tmp_message_t dmrgo_hytera_tmp_message_t;
 /* Go: ip.Datagram. Datagram is a UDP datagram of a DMR data packet, from an IPv4 header (SAP IP based packet data) or a compressed UDP/IPv4 header (SAP UDP/IP header compression). */
 typedef struct dmrgo_ip_datagram_t dmrgo_ip_datagram_t;
+/* Go: ip.ICMP. ICMP is an ICMP error message: the header and the start of the IPv4 packet that caused it (RFC 792). */
+typedef struct dmrgo_ip_icmp_t dmrgo_ip_icmp_t;
+/* Go: ip.ICMPHeader. ICMPHeader is the 8-octet header of an ICMP error message (RFC 792, RFC 1191 section 4). */
+typedef struct dmrgo_ip_icmp_header_t dmrgo_ip_icmp_header_t;
+/* Go: ip.ICMPPacket. ICMPPacket is an ICMP error message in an IPv4 packet, the user data of a packet with the SAP IP based packet data. */
+typedef struct dmrgo_ip_icmp_packet_t dmrgo_ip_icmp_packet_t;
 /* Go: ip.IPv4. IPv4 is an IPv4 packet: the header, its options and the payload, whose length the header gives (RFC 791 section 3.1). */
 typedef struct dmrgo_ip_ipv4_t dmrgo_ip_ipv4_t;
 /* Go: ip.IPv4Header. IPv4Header is the fixed 20-octet header of an IPv4 packet (RFC 791 section 3.1). */
@@ -692,6 +698,8 @@ typedef uint64_t dmrgo_enums_sync_pattern_t;
 typedef uint8_t dmrgo_enums_voice_burst_type_t;
 /* Go: hytera.Service. Service is the 7-bit service of a message. */
 typedef uint8_t dmrgo_hytera_service_t;
+/* Go: ip.ICMPMessage. ICMPMessage is the Type and Code of an ICMP message, as Type<<8 | Code (RFC 792). */
+typedef uint16_t dmrgo_ip_icmp_message_t;
 /* Go: ip.Port. Port is a UDP port. */
 typedef uint16_t dmrgo_ip_port_t;
 /* Go: ip.Protocol. Protocol is the protocol number of an IPv4 packet (RFC 790). */
@@ -1373,6 +1381,32 @@ struct dmrgo_ip_datagram_t {
 	dmrgo_enums_daid_t daid;
 	uint8_t *payload;
 	size_t payload_len;
+};
+
+struct dmrgo_ip_icmp_packet_t {
+	uint8_t source[4];
+	uint8_t destination[4];
+	uint16_t id;
+	uint8_t ttl;
+	dmrgo_ip_icmp_message_t message;
+	uint8_t pointer;
+	uint16_t next_hop_mtu;
+	uint8_t *original;
+	size_t original_len;
+};
+
+struct dmrgo_ip_icmp_header_t {
+	dmrgo_ip_icmp_message_t message;
+	uint16_t checksum;
+	uint8_t pointer;
+	uint8_t reserved;
+	uint16_t next_hop_mtu;
+};
+
+struct dmrgo_ip_icmp_t {
+	dmrgo_ip_icmp_header_t header;
+	uint8_t *original;
+	size_t original_len;
 };
 
 struct dmrgo_ip_ipv4_header_t {
@@ -4248,6 +4282,16 @@ struct dmrgo_voice_output_t {
 #define DMRGO_HYTERA_TMP_PRIVATE_MESSAGE_ANSWER 162
 /* Go: ip.DefaultNetwork. DefaultNetwork is the network ID that radios use by default for the IPv4 address of a radio: 12.x.y.z, with the 24-bit radio ID as x.y.z. */
 #define DMRGO_IP_DEFAULT_NETWORK 12
+/* Go: ip.ICMPBadHeader. ICMPBadHeader is a Parameter Problem: the IP header of the message is not a valid IPv4 header. */
+#define DMRGO_IP_ICMP_BAD_HEADER ((dmrgo_ip_icmp_message_t)3072)
+/* Go: ip.ICMPFragmentationNeeded. ICMPFragmentationNeeded is a Destination Unreachable: the IP message is longer than the MTU of the accessory interface and has the DF flag set. */
+#define DMRGO_IP_ICMP_FRAGMENTATION_NEEDED ((dmrgo_ip_icmp_message_t)772)
+/* Go: ip.ICMPHostUnreachable. ICMPHostUnreachable is a Destination Unreachable: the sender used all its tries on air, the message overflows the queue of the recipient, or it waited in the queue longer than the limit. */
+#define DMRGO_IP_ICMP_HOST_UNREACHABLE ((dmrgo_ip_icmp_message_t)769)
+/* Go: ip.ICMPNetworkUnknown. ICMPNetworkUnknown is a Destination Unreachable: the IP message is for a network class that the system does not support (RFC 1122 section 3.2.2.1). */
+#define DMRGO_IP_ICMP_NETWORK_UNKNOWN ((dmrgo_ip_icmp_message_t)774)
+/* Go: ip.ICMPNetworkUnreachable. ICMPNetworkUnreachable is a Destination Unreachable: the final destination of an IP message that a radio received is unreachable. */
+#define DMRGO_IP_ICMP_NETWORK_UNREACHABLE ((dmrgo_ip_icmp_message_t)768)
 /* Go: ip.PortARS. MOTOTRBO Automatic Registration Service */
 #define DMRGO_IP_PORT_ARS ((dmrgo_ip_port_t)4005)
 /* Go: ip.PortBattery. MOTOTRBO battery management */
@@ -5727,16 +5771,38 @@ int dmrgo_hytera_tmp_message_string(dmrgo_hytera_tmp_message_t *self, char *out,
 int dmrgo_hytera_tmp_message_text_utf8(dmrgo_hytera_tmp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ip.AppendCompressed. AppendCompressed appends d to dst with a compressed UDP/IPv4 header. */
 int dmrgo_ip_append_compressed(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_datagram_t *d);
+/* Go: ip.AppendICMPPacket. AppendICMPPacket appends c to dst as an IPv4 packet with an ICMP message, and computes both checksums. */
+int dmrgo_ip_append_icmp_packet(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_icmp_packet_t *c);
 /* Go: ip.AppendIPv4. AppendIPv4 appends d to dst as an IPv4 packet with a UDP datagram, and computes both checksums. */
 int dmrgo_ip_append_ipv4(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_datagram_t *d);
+/* Go: ip.CheckIPv4. CheckIPv4 returns the ICMP error message that a radio sends for the IPv4 packet data that it received for an accessory interface with the MTU mtu: ICMPBadHeader with the octet in error when the header is not a valid IPv4 header, or ICMPFragmentationNeeded when the packet is longer than mtu and has the DF flag set. */
+int dmrgo_ip_check_ipv4(const uint8_t *data, size_t data_len, int64_t mtu, dmrgo_ip_icmp_message_t *m, uint8_t *pointer, bool *ok);
 /* Go: ip.Decode. Decode decodes the UDP datagram at the start of data, the user data of a packet with the given SAP. */
 int dmrgo_ip_decode(dmrgo_enums_service_access_point_id_t sap, const uint8_t *data, size_t data_len, dmrgo_ip_datagram_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ip.DecodeICMP. DecodeICMP decodes an ICMP from data. */
+int dmrgo_ip_decode_icmp(const uint8_t *data, size_t data_len, dmrgo_ip_icmp_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ip.DecodeICMPPacket. DecodeICMPPacket decodes the ICMP message in the IPv4 packet at the start of data. */
+int dmrgo_ip_decode_icmp_packet(const uint8_t *data, size_t data_len, dmrgo_ip_icmp_packet_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ip.DecodeIPv4. DecodeIPv4 decodes an IPv4 from data. */
 int dmrgo_ip_decode_ipv4(const uint8_t *data, size_t data_len, dmrgo_ip_ipv4_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ip.DecodeUDP. DecodeUDP decodes a UDP from data. */
 int dmrgo_ip_decode_udp(const uint8_t *data, size_t data_len, dmrgo_ip_udp_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ip.GroupAddress. GroupAddress returns the IPv4 multicast address of the group with the 24-bit ID group: prefix.x.y.z, where prefix is a class D octet from 224 to 239, such as 225. */
 int dmrgo_ip_group_address(uint8_t prefix, uint32_t group, uint8_t out[4]);
+/* Go: ip.ICMP.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_ip_icmp_append_binary(dmrgo_ip_icmp_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ip.ICMP.String. String returns the fields of s as text, for printing. */
+int dmrgo_ip_icmp_string(dmrgo_ip_icmp_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ip.ICMPHeader.AppendBinary. AppendBinary appends the 8 octets of s to dst. */
+int dmrgo_ip_icmp_header_append_binary(dmrgo_ip_icmp_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: ip.ICMPHeader.String. String returns the fields of s as text, for printing. */
+int dmrgo_ip_icmp_header_string(dmrgo_ip_icmp_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: ip.ICMPMessage.Code. Code returns the ICMP Code of m. */
+int dmrgo_ip_icmp_message_code(dmrgo_ip_icmp_message_t self, uint8_t *out);
+/* Go: ip.ICMPMessage.String. String returns the Table 5.1 name of m. */
+int dmrgo_ip_icmp_message_string(dmrgo_ip_icmp_message_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: ip.ICMPMessage.Type. Type returns the ICMP Type of m. */
+int dmrgo_ip_icmp_message_type(dmrgo_ip_icmp_message_t self, uint8_t *out);
 /* Go: ip.ID. ID returns the 24-bit radio or group ID of the address addr: its last three octets. */
 int dmrgo_ip_id(const uint8_t addr[4], uint32_t *out);
 /* Go: ip.IPv4.AppendBinary. AppendBinary appends s to dst, with Header.TotalLength set to the length of the data. */

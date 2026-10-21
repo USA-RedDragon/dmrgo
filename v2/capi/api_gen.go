@@ -920,6 +920,18 @@ func in_ip_Datagram(s *C.dmrgo_ip_datagram_t) (d g_ip.Datagram) {
 	return
 }
 
+func in_ip_ICMPPacket(s *C.dmrgo_ip_icmp_packet_t) (d g_ip.ICMPPacket) {
+	d.Source = *(*[4]byte)(unsafe.Pointer(&s.source))
+	d.Destination = *(*[4]byte)(unsafe.Pointer(&s.destination))
+	d.ID = uint16(s.id)
+	d.TTL = uint8(s.ttl)
+	d.Message = g_ip.ICMPMessage(s.message)
+	d.Pointer = uint8(s.pointer)
+	d.NextHopMTU = uint16(s.next_hop_mtu)
+	d.Original = unsafe.Slice((*byte)(unsafe.Pointer(s.original)), int(s.original_len))
+	return
+}
+
 func out_ip_Datagram(d *C.dmrgo_ip_datagram_t, s *g_ip.Datagram, oc *outc) {
 	_ = oc
 	*(*[4]byte)(unsafe.Pointer(&d.source)) = s.Source
@@ -933,6 +945,26 @@ func out_ip_Datagram(d *C.dmrgo_ip_datagram_t, s *g_ip.Datagram, oc *outc) {
 	d.daid = C.dmrgo_enums_daid_t(s.DAID)
 	d.payload = (*C.uint8_t)(arenaCopy(oc, s.Payload))
 	d.payload_len = C.size_t(len(s.Payload))
+}
+
+func out_ip_ICMP(d *C.dmrgo_ip_icmp_t, s *g_ip.ICMP, oc *outc) {
+	_ = oc
+	*(*g_ip.ICMPHeader)(unsafe.Pointer(&d.header)) = s.Header
+	d.original = (*C.uint8_t)(arenaCopy(oc, s.Original))
+	d.original_len = C.size_t(len(s.Original))
+}
+
+func out_ip_ICMPPacket(d *C.dmrgo_ip_icmp_packet_t, s *g_ip.ICMPPacket, oc *outc) {
+	_ = oc
+	*(*[4]byte)(unsafe.Pointer(&d.source)) = s.Source
+	*(*[4]byte)(unsafe.Pointer(&d.destination)) = s.Destination
+	d.id = C.uint16_t(s.ID)
+	d.ttl = C.uint8_t(s.TTL)
+	d.message = C.dmrgo_ip_icmp_message_t(s.Message)
+	d.pointer = C.uint8_t(s.Pointer)
+	d.next_hop_mtu = C.uint16_t(s.NextHopMTU)
+	d.original = (*C.uint8_t)(arenaCopy(oc, s.Original))
+	d.original_len = C.size_t(len(s.Original))
 }
 
 func out_ip_IPv4Header(d *C.dmrgo_ip_ipv4_header_t, s *g_ip.IPv4Header, oc *outc) {
@@ -967,6 +999,12 @@ func out_ip_UDP(d *C.dmrgo_ip_udp_t, s *g_ip.UDP, oc *outc) {
 	*(*g_ip.UDPHeader)(unsafe.Pointer(&d.header)) = s.Header
 	d.payload = (*C.uint8_t)(arenaCopy(oc, s.Payload))
 	d.payload_len = C.size_t(len(s.Payload))
+}
+
+func in_ip_ICMP(s *C.dmrgo_ip_icmp_t) (d g_ip.ICMP) {
+	d.Header = *(*g_ip.ICMPHeader)(unsafe.Pointer(&s.header))
+	d.Original = unsafe.Slice((*byte)(unsafe.Pointer(s.original)), int(s.original_len))
+	return
 }
 
 func in_ip_IPv4Header(s *C.dmrgo_ip_ipv4_header_t) (d g_ip.IPv4Header) {
@@ -5526,6 +5564,36 @@ func fromC_hytera_TMPMessage(s *C.dmrgo_hytera_tmp_message_t) g_hytera.TMPMessag
 
 func fromC_ip_Datagram(s *C.dmrgo_ip_datagram_t) g_ip.Datagram {
 	return in_ip_Datagram(s)
+}
+
+func fromC_ip_ICMP(s *C.dmrgo_ip_icmp_t) g_ip.ICMP {
+	return in_ip_ICMP(s)
+}
+
+func in_ip_ICMPHeader(s *C.dmrgo_ip_icmp_header_t) (d g_ip.ICMPHeader) {
+	d.Message = g_ip.ICMPMessage(s.message)
+	d.Checksum = uint16(s.checksum)
+	d.Pointer = uint8(s.pointer)
+	d.Reserved = uint8(s.reserved)
+	d.NextHopMTU = uint16(s.next_hop_mtu)
+	return
+}
+
+func out_ip_ICMPHeader(d *C.dmrgo_ip_icmp_header_t, s *g_ip.ICMPHeader, oc *outc) {
+	_ = oc
+	d.message = C.dmrgo_ip_icmp_message_t(s.Message)
+	d.checksum = C.uint16_t(s.Checksum)
+	d.pointer = C.uint8_t(s.Pointer)
+	d.reserved = C.uint8_t(s.Reserved)
+	d.next_hop_mtu = C.uint16_t(s.NextHopMTU)
+}
+
+func fromC_ip_ICMPHeader(s *C.dmrgo_ip_icmp_header_t) g_ip.ICMPHeader {
+	return in_ip_ICMPHeader(s)
+}
+
+func fromC_ip_ICMPPacket(s *C.dmrgo_ip_icmp_packet_t) g_ip.ICMPPacket {
+	return in_ip_ICMPPacket(s)
 }
 
 func fromC_ip_IPv4(s *C.dmrgo_ip_ipv4_t) g_ip.IPv4 {
@@ -13901,6 +13969,35 @@ func dmrgo_ip_append_compressed(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len 
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ip_append_icmp_packet
+func dmrgo_ip_append_icmp_packet(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_c *C.dmrgo_ip_icmp_packet_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	var a_c g_ip.ICMPPacket
+	var p_c *g_ip.ICMPPacket
+	if c_c != nil {
+		a_c = in_ip_ICMPPacket(&(*c_c))
+		p_c = &a_c
+	}
+	r0, r1 := g_ip.AppendICMPPacket(a_dst, p_c)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ip_append_ipv4
 func dmrgo_ip_append_ipv4(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_d *C.dmrgo_ip_datagram_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -13930,6 +14027,34 @@ func dmrgo_ip_append_ipv4(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.siz
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ip_check_ipv4
+func dmrgo_ip_check_ipv4(c_data *C.uint8_t, c_data_len C.size_t, c_mtu C.int64_t, c_m *C.dmrgo_ip_icmp_message_t, c_pointer *C.uint8_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1, r2 := g_ip.CheckIPv4(a_data, int(c_mtu))
+	_ = r0
+	_ = r1
+	_ = r2
+	if c_m != nil {
+		*c_m = C.dmrgo_ip_icmp_message_t(r0)
+	}
+	if c_pointer != nil {
+		*c_pointer = C.uint8_t(r1)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r2)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ip_decode
 func dmrgo_ip_decode(c_sap C.dmrgo_enums_service_access_point_id_t, c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_ip_datagram_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -13950,6 +14075,78 @@ func dmrgo_ip_decode(c_sap C.dmrgo_enums_service_access_point_id_t, c_data *C.ui
 	_ = r0
 	if c_out != nil {
 		out_ip_Datagram(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_decode_icmp
+func dmrgo_ip_decode_icmp(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_ip_icmp_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_ip.DecodeICMP(a_data)
+	_ = r0
+	if c_out != nil {
+		out_ip_ICMP(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_decode_icmp_packet
+func dmrgo_ip_decode_icmp_packet(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_ip_icmp_packet_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_ip.DecodeICMPPacket(a_data)
+	_ = r0
+	if c_out != nil {
+		out_ip_ICMPPacket(&(*c_out), &r0, oc)
 	}
 	if c_arena_need != nil {
 		*c_arena_need = C.size_t(oc.reported())
@@ -14046,6 +14243,180 @@ func dmrgo_ip_group_address(c_prefix C.uint8_t, c_group C.uint32_t, c_out *C.uin
 	_ = r0
 	if c_out != nil {
 		*(*[4]byte)(unsafe.Pointer(&(*(*[4]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_icmp_append_binary
+func dmrgo_ip_icmp_append_binary(c_self *C.dmrgo_ip_icmp_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_ip.ICMP
+	x = in_ip_ICMP(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_ip_ICMP(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_icmp_string
+func dmrgo_ip_icmp_string(c_self *C.dmrgo_ip_icmp_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_ip.ICMP
+	x = in_ip_ICMP(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_ip_ICMP(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_icmp_header_append_binary
+func dmrgo_ip_icmp_header_append_binary(c_self *C.dmrgo_ip_icmp_header_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_ip.ICMPHeader
+	x = *(*g_ip.ICMPHeader)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_ip.ICMPHeader)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_icmp_header_string
+func dmrgo_ip_icmp_header_string(c_self *C.dmrgo_ip_icmp_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_ip.ICMPHeader
+	x = *(*g_ip.ICMPHeader)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_ip.ICMPHeader)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_icmp_message_code
+func dmrgo_ip_icmp_message_code(c_self C.dmrgo_ip_icmp_message_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_ip.ICMPMessage(c_self).Code()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint8_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_icmp_message_string
+func dmrgo_ip_icmp_message_string(c_self C.dmrgo_ip_icmp_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_ip.ICMPMessage(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_icmp_message_type
+func dmrgo_ip_icmp_message_type(c_self C.dmrgo_ip_icmp_message_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_ip.ICMPMessage(c_self).Type()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint8_t(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
