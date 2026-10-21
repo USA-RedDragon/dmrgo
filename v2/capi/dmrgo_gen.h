@@ -5388,7 +5388,7 @@ struct dmrgo_voice_interrupter_config_t {
 	dmrgo_enums_color_code_t color_code;
 	/* Wait is T_RCtimer, the wait for the Terminator with LC after each try. 0 means constants.TRCTimer (600 ms), and a negative value waits until the terminator or Cancel. (ETSI TS 102 361-2 clause A.1) */
 	dmrgo_duration_t wait;
-	/* Retries is the number of tries after the first. 0 means none; at most MaxRetries. (ETSI TS 102 361-2 clause 6.3.5) */
+	/* Retries is the number of tries after the first. 0 means 1, the one automatic retry of Motorola Transmit Interrupt (MOTOTRBO System Planner 2.3.2), a negative value means none, and it is at most MaxRetries. (ETSI TS 102 361-2 clause 6.3.5) */
 	int64_t retries;
 	/* Repeats is the number of standalone RC bursts of each try, 60 ms apart. 0 means 1; at most MaxRepeats. (ETSI TS 102 361-2 clause 6.3.5) */
 	int64_t repeats;

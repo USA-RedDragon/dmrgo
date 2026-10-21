@@ -1535,6 +1535,7 @@ documents:
             names:
               - TestInterrupter_StopsTransmitter
               - TestInterrupter_Retries
+              - TestInterrupter_DefaultRetries
               - TestInterrupter_States
 
       - section: "7.1.1"

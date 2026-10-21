@@ -31,8 +31,10 @@ type InterrupterConfig struct {
 	// try. 0 means constants.TRCTimer (600 ms), and a negative value waits
 	// until the terminator or Cancel. (ETSI TS 102 361-2 clause A.1)
 	Wait time.Duration
-	// Retries is the number of tries after the first. 0 means none; at
-	// most MaxRetries. (ETSI TS 102 361-2 clause 6.3.5)
+	// Retries is the number of tries after the first. 0 means 1, the one
+	// automatic retry of Motorola Transmit Interrupt (MOTOTRBO System
+	// Planner 2.3.2), a negative value means none, and it is at most
+	// MaxRetries. (ETSI TS 102 361-2 clause 6.3.5)
 	Retries int
 	// Repeats is the number of standalone RC bursts of each try, 60 ms
 	// apart. 0 means 1; at most MaxRepeats. (ETSI TS 102 361-2 clause 6.3.5)
@@ -102,8 +104,9 @@ type Interrupter struct {
 }
 
 // NewInterrupter returns an Interrupter for cfg. A nil cfg means the zero
-// InterrupterConfig. It returns a *dmrgo.ConfigError for a color code above 15,
-// or Retries or Repeats out of range. It allocates the Interrupter, and its
+// InterrupterConfig. It returns a *dmrgo.ConfigError for a color code
+// above 15, Retries above MaxRetries, or Repeats out of range. It allocates
+// the Interrupter, and its
 // Burst unless cfg.Scratch is set. (ETSI TS 102 361-2 clause 6.3.5)
 func NewInterrupter(cfg *InterrupterConfig) (*Interrupter, error) {
 	if cfg == nil {
@@ -112,12 +115,18 @@ func NewInterrupter(cfg *InterrupterConfig) (*Interrupter, error) {
 	switch {
 	case cfg.ColorCode > 15:
 		return nil, errColorCode
-	case cfg.Retries < 0 || cfg.Retries > MaxRetries:
+	case cfg.Retries > MaxRetries:
 		return nil, errRetries
 	case cfg.Repeats < 0 || cfg.Repeats > MaxRepeats:
 		return nil, errRepeats
 	}
 	i := &Interrupter{cc: cfg.ColorCode, wait: cfg.Wait, retries: cfg.Retries, repeats: max(cfg.Repeats, 1), b: cfg.Scratch}
+	switch {
+	case i.retries == 0:
+		i.retries = 1
+	case i.retries < 0:
+		i.retries = 0
+	}
 	if i.wait == 0 {
 		i.wait = constants.TRCTimer
 	}
