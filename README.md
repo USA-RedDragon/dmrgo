@@ -203,7 +203,7 @@ conn, err := (&net.Dialer{}).DialContext(ctx, "udp", "ambeserver.local:2460")
 if err != nil {
 	return err
 }
-codec, err := dvsi.New(conn, dvsi.Config{})
+codec, err := dvsi.New(conn, nil)
 ```
 
 | Port | Settings |

@@ -41911,15 +41911,16 @@ func dmrgo_dvsi_new(c_port *C.dmrgo_dvsi_port_t, c_cfg *C.dmrgo_dvsi_config_t, c
 	if c_port != nil {
 		a_port = get_vocoder_dvsi_Port(c_port).v
 	}
-	if c_cfg == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	var a_cfg g_vocoder_dvsi.Config
-	a_cfg = in_vocoder_dvsi_Config(&(*c_cfg))
+	var p_cfg *g_vocoder_dvsi.Config
+	if c_cfg != nil {
+		a_cfg = in_vocoder_dvsi_Config(&(*c_cfg))
+		p_cfg = &a_cfg
+	}
 	if c_out == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1 := g_vocoder_dvsi.New(a_port, a_cfg)
+	r0, r1 := g_vocoder_dvsi.New(a_port, p_cfg)
 	_ = r0
 	*c_out = nil
 	if r0 != nil {
