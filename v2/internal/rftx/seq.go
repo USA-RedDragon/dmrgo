@@ -213,7 +213,7 @@ func smsBursts(cfg SeqConfig) ([]layer2.RawBurst, error) {
 			SAP:             enums.SAPShortData,
 			LLIDDestination: cfg.Dest,
 			LLIDSource:      cfg.Source,
-			DefinedData:     cfg.DefinedData,
+			DefinedData:     enums.DDFormat(cfg.DefinedData),
 			FullMessageFlag: true,
 		},
 	}
