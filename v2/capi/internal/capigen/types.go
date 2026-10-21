@@ -3,6 +3,7 @@ package capigen
 import (
 	"fmt"
 	"go/types"
+	"path"
 	"slices"
 	"strings"
 	"unicode"
@@ -128,6 +129,15 @@ func cKeyword(s string) string {
 func (g *gen) prefix(p *types.Package) string {
 	if p.Path() == modulePath {
 		return "dmrgo_"
+	}
+	n := 0
+	for _, o := range g.pkgs {
+		if o.Name() == p.Name() {
+			n++
+		}
+	}
+	if n > 1 && path.Dir(p.Path()) != modulePath {
+		return "dmrgo_" + path.Base(path.Dir(p.Path())) + "_" + p.Name() + "_"
 	}
 	return "dmrgo_" + p.Name() + "_"
 }
