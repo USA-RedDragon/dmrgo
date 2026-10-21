@@ -353,7 +353,7 @@ func (m *Master) registered(now time.Duration, from Addr, i int, raw *ipsc.Raw, 
 	case ipsc.OpPeerRegisterRequest:
 		dst = send(dst, m.l.appendControl(m.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerRegisterReply, ID: m.l.id, Version: m.l.version}, e.keyOf()), from)
 	case ipsc.OpPeerAliveRequest:
-		dst = send(dst, m.l.appendControl(m.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerAliveReply, ID: m.l.id, Mode: m.l.mode, Flags: m.l.flags}, e.keyOf()), from)
+		dst = send(dst, m.l.appendControl(m.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerAliveReply, ID: m.l.id, Mode: m.l.mode, Flags: m.flagsFor(e.keyOf())}, e.keyOf()), from)
 	case ipsc.OpPeerRegisterReply, ipsc.OpPeerAliveReply:
 	default:
 		dst = append(dst, Output{Kind: OutputData, Packet: body, Addr: from, ID: raw.ID})
@@ -423,7 +423,7 @@ func (m *Master) register(now time.Duration, from Addr, c *ipsc.Control, i int, 
 		}
 	}
 	dst = m.keep(dst, now, i, PeerInfo{ID: c.ID, Addr: from, Mode: c.Mode, Flags: c.Flags, Up: true}, key)
-	r := ipsc.Control{Opcode: op, ID: m.l.id, Mode: m.l.mode, Flags: m.l.flags, Version: m.l.version}
+	r := ipsc.Control{Opcode: op, ID: m.l.id, Mode: m.l.mode, Flags: m.flagsFor(key), Version: m.l.version}
 	if op == ipsc.OpRegisterReply {
 		r.Peers = uint16(m.l.shared() & 0xFFFF)
 		if key != nil {
@@ -435,4 +435,12 @@ func (m *Master) register(now time.Duration, from Addr, c *ipsc.Control, i int, 
 		dst = append(dst, Output{Kind: OutputUp, ID: c.ID, Addr: from})
 	}
 	return dst
+}
+
+func (m *Master) flagsFor(key *[20]byte) ipsc.Flags {
+	f := m.l.flags
+	if key != nil {
+		f.Set(ipsc.FlagAuth, true)
+	}
+	return f
 }
