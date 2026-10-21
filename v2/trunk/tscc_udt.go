@@ -94,11 +94,10 @@ func (t *TSCC) UDT() *UDT {
 	return &t.u.got
 }
 
-// USBD returns the USBD Poll Response of the last TSCCUSBD. It points into
-// the TSCC and changes with the next TSCCUSBD. (ETSI TS 102 361-4 clause
-// 6.6.11.1)
-func (t *TSCC) USBD() *pdu.UnifiedSingleBlockData {
-	return &t.u.usbd
+// USBD returns the USBD Poll Response of the last TSCCUSBD. (ETSI TS 102
+// 361-4 clause 6.6.11.1)
+func (t *TSCC) USBD() pdu.UnifiedSingleBlockData {
+	return t.u.usbd
 }
 
 // Diverted returns the call diversion that the MS addr set, with the

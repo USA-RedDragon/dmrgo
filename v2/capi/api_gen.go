@@ -39205,6 +39205,27 @@ func dmrgo_trunk_tscc_free(c_self *C.dmrgo_trunk_tscc_t) (rc C.int) {
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_tscc_assign_groups
+func dmrgo_trunk_tscc_assign_groups(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_target C.uint32_t, c_a *C.dmrgo_trunk_appended_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_TSCC(c_self)
+	var a_a g_trunk.Appended
+	var p_a *g_trunk.Appended
+	if c_a != nil {
+		a_a = in_trunk_Appended(&(*c_a))
+		p_a = &a_a
+	}
+	r0 := h.v.AssignGroups(time.Duration(c_now), uint32(c_target), p_a)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_tscc_deadline
 func dmrgo_trunk_tscc_deadline(c_self *C.dmrgo_trunk_tscc_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -39218,6 +39239,30 @@ func dmrgo_trunk_tscc_deadline(c_self *C.dmrgo_trunk_tscc_t, c_at *C.int64_t, c_
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_tscc_diverted
+func dmrgo_trunk_tscc_diverted(c_self *C.dmrgo_trunk_tscc_t, c_addr C.uint32_t, c_opts *C.dmrgo_layer3_diversion_service_options_t, c_to *C.dmrgo_trunk_appended_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_TSCC(c_self)
+	r0, r1, r2 := h.v.Diverted(uint32(c_addr))
+	_ = r0
+	_ = r1
+	_ = r2
+	if c_opts != nil {
+		out_layer3_DiversionServiceOptions(&(*c_opts), &r0, oc)
+	}
+	if c_to != nil {
+		out_trunk_Appended(&(*c_to), &r1, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r2)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -39326,6 +39371,36 @@ func dmrgo_trunk_tscc_max_outputs(c_self *C.dmrgo_trunk_tscc_t, c_out *C.int64_t
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_tscc_poll_short_data
+func dmrgo_trunk_tscc_poll_short_data(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_target C.uint32_t, c_blocks C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_TSCC(c_self)
+	r0 := h.v.PollShortData(time.Duration(c_now), uint32(c_target), int(c_blocks))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_tscc_poll_usbd
+func dmrgo_trunk_tscc_poll_usbd(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_target C.uint32_t, c_st C.dmrgo_pdu_service_type_t, c_rd C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_TSCC(c_self)
+	r0 := h.v.PollUSBD(time.Duration(c_now), uint32(c_target), g_layer2_pdu.ServiceType(c_st), uint8(c_rd))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_tscc_registered
 func dmrgo_trunk_tscc_registered(c_self *C.dmrgo_trunk_tscc_t, c_addr C.uint32_t, c_out *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -39338,6 +39413,27 @@ func dmrgo_trunk_tscc_registered(c_self *C.dmrgo_trunk_tscc_t, c_addr C.uint32_t
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_tscc_send_short_data
+func dmrgo_trunk_tscc_send_short_data(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_group C.bool, c_target C.uint32_t, c_a *C.dmrgo_trunk_appended_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_TSCC(c_self)
+	var a_a g_trunk.Appended
+	var p_a *g_trunk.Appended
+	if c_a != nil {
+		a_a = in_trunk_Appended(&(*c_a))
+		p_a = &a_a
+	}
+	r0 := h.v.SendShortData(time.Duration(c_now), bool(c_group), uint32(c_target), p_a)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }
@@ -39401,6 +39497,42 @@ func dmrgo_trunk_tscc_tick(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_dst 
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_tscc_udt
+func dmrgo_trunk_tscc_udt(c_self *C.dmrgo_trunk_tscc_t, c_out **C.dmrgo_trunk_udt_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_TSCC(c_self)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := h.v.UDT()
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_trunk_UDT(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_tscc_usbd
+func dmrgo_trunk_tscc_usbd(c_self *C.dmrgo_trunk_tscc_t, c_out *C.dmrgo_pdu_unified_single_block_data_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_TSCC(c_self)
+	r0 := h.v.USBD()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_UnifiedSingleBlockData(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
 	return C.DMRGO_OK
 }
 
