@@ -11,7 +11,10 @@
 // voice bursts A and E only; a layer2.PositionTracker places B, C, D and F.
 // SetRawBurst returns the FEC result of the burst and sends a data block
 // that it cannot correct as BurstRaw, the 196 information bits, as an XPR
-// 8400 does; RawBurst rebuilds the burst of a BurstRaw packet.
+// 8400 does; RawBurst rebuilds the burst of a BurstRaw packet. To build the
+// packets of a call from scratch, UserOpcode picks the opcode, the CallInfo
+// setters write octet 17, and a Stream fills the RTP header, CallSeq and
+// CallControl of each packet.
 //
 // Decode functions never allocate and never panic. They return the static
 // errors ErrShort, ErrLength and ErrCommand, which errors.Is matches. The

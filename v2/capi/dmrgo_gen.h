@@ -496,6 +496,8 @@ typedef struct dmrgo_ipsc_peer_list_t dmrgo_ipsc_peer_list_t;
 typedef struct dmrgo_ipsc_rtp_t dmrgo_ipsc_rtp_t;
 /* Go: ipsc.Raw. Raw is a packet that this package does not decode further, such as OpWakeup, OpStatus or OpXNL: its opcode, sender ID and the octets after them. */
 typedef struct dmrgo_ipsc_raw_t dmrgo_ipsc_raw_t;
+/* Go: ipsc.Stream. Stream fills the fields that the user packets of one call share or count, as a MOTOTRBO repeater sends them. */
+typedef struct dmrgo_ipsc_stream_t dmrgo_ipsc_stream_t;
 /* Go: ipsc.User. User is a voice or data packet, opcodes 0x80, 0x81, 0x83 and 0x84. */
 typedef struct dmrgo_ipsc_user_t dmrgo_ipsc_user_t;
 /* Go: ipsc.Voice. Voice is the burst of a voice packet. */
@@ -4142,6 +4144,19 @@ struct dmrgo_ipsc_user_t {
 	dmrgo_ipsc_voice_t voice;
 	/* Data is the burst of a data packet. */
 	dmrgo_ipsc_payload_t data;
+};
+
+struct dmrgo_ipsc_stream_t {
+	/* CallSeq is octet 5 of every packet of the call. An XPR 8400 counts it up by one for each call. */
+	uint8_t call_seq;
+	/* CallControl identifies the call in every packet. */
+	uint32_t call_control;
+	/* Seq is the RTP sequence number of the next packet. */
+	uint16_t seq;
+	/* Timestamp is the RTP timestamp of the next packet. */
+	uint32_t timestamp;
+	/* Sent is the number of packets that Fill has filled. */
+	uint32_t sent;
 };
 
 struct dmrgo_mmdvm_ack_t {
@@ -9693,6 +9708,12 @@ int dmrgo_ipsc_append_peer_list_reply(uint8_t *dst, size_t dst_cap, size_t *dst_
 int dmrgo_ipsc_call_info_end(dmrgo_ipsc_call_info_t self, bool *out);
 /* Go: ipsc.CallInfo.Privacy. Privacy reports bit 7: the call is encrypted. */
 int dmrgo_ipsc_call_info_privacy(dmrgo_ipsc_call_info_t self, bool *out);
+/* Go: ipsc.CallInfo.SetEnd. SetEnd writes bit 6, the end flag. */
+int dmrgo_ipsc_call_info_set_end(dmrgo_ipsc_call_info_t *self, bool on);
+/* Go: ipsc.CallInfo.SetPrivacy. SetPrivacy writes bit 7, the call is encrypted. */
+int dmrgo_ipsc_call_info_set_privacy(dmrgo_ipsc_call_info_t *self, bool on);
+/* Go: ipsc.CallInfo.SetSlot. SetSlot writes bit 5: set for Slot2, clear for Slot1. */
+int dmrgo_ipsc_call_info_set_slot(dmrgo_ipsc_call_info_t *self, dmrgo_enums_slot_t s);
 /* Go: ipsc.CallInfo.Slot. Slot returns Slot2 for bit 5 and Slot1 otherwise. */
 int dmrgo_ipsc_call_info_slot(dmrgo_ipsc_call_info_t self, dmrgo_enums_slot_t *out);
 /* Go: ipsc.Control.AppendBinary. AppendBinary appends the packet c to dst, without the authentication trailer. */
@@ -9733,6 +9754,10 @@ int dmrgo_ipsc_peer_list_len(dmrgo_ipsc_peer_list_t *self, int64_t *out);
 int dmrgo_ipsc_peer_list_of(const uint8_t *p, size_t p_len, dmrgo_ipsc_peer_list_t *out);
 /* Go: ipsc.Raw.AppendBinary. AppendBinary appends r to dst. */
 int dmrgo_ipsc_raw_append_binary(const dmrgo_ipsc_raw_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: ipsc.Stream.Fill. Fill sets CallSeq, CallControl and the RTP header of u: Flags 0x80, the marker bit on the first packet of the call, PayloadType 0x5D, or 0x5E with the end flag of Info on the last packet, and Seq and Timestamp. */
+int dmrgo_ipsc_stream_fill(dmrgo_ipsc_stream_t *self, const dmrgo_ipsc_user_t *u, bool last);
+/* Go: ipsc.Stream.Skip. Skip counts Seq up by n and Timestamp by 480 for each of n bursts that were lost, so that the next packet shows the gap. */
+int dmrgo_ipsc_stream_skip(dmrgo_ipsc_stream_t *self, uint16_t n);
 /* Go: ipsc.User.AppendBinary. AppendBinary appends the packet u to dst, without the authentication trailer. */
 int dmrgo_ipsc_user_append_binary(dmrgo_ipsc_user_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ipsc.User.Call. Call returns the call of the packet: group for OpGroupVoice and OpGroupData, target is Destination and source is Source. */
@@ -9747,6 +9772,8 @@ int dmrgo_ipsc_user_raw_burst(dmrgo_ipsc_user_t *self, dmrgo_enums_color_code_t 
 int dmrgo_ipsc_user_set_call(dmrgo_ipsc_user_t *self, bool group, uint32_t target, uint32_t source);
 /* Go: ipsc.User.SetRawBurst. SetRawBurst sets Burst and Voice or Data from the 264-bit burst raw and what h says it is, as a machine Output gives it, in the form an XPR 8400 sends: KindVoice with a VoiceBurst of A to F, which picks the layout (the full LC of burst E stays as it is in u.Voice.LC), or KindData with a DataType. */
 int dmrgo_ipsc_user_set_raw_burst(dmrgo_ipsc_user_t *self, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_fec_result_t *out);
+/* Go: ipsc.UserOpcode. UserOpcode returns the opcode of a user packet: OpGroupVoice, OpPrivateVoice, OpGroupData or OpPrivateData. */
+int dmrgo_ipsc_user_opcode(bool group, bool data, dmrgo_ipsc_opcode_t *out);
 /* dmrgo_ipsc_auth_key_free frees the handle. self may be NULL. */
 int dmrgo_ipsc_auth_key_free(dmrgo_ipsc_auth_key_t *self);
 /* dmrgo_ipsc_auth_key_sign_need sets *items and *arena to the room that dmrgo_ipsc_auth_key_sign needs for these arguments, without a change to the handle. */

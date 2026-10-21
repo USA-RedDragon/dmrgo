@@ -1,6 +1,7 @@
 package ipsc
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
@@ -168,6 +169,56 @@ func (c CallInfo) Slot() enums.Slot {
 		return enums.Slot2
 	}
 	return enums.Slot1
+}
+
+// SetPrivacy writes bit 7, the call is encrypted.
+func (c *CallInfo) SetPrivacy(on bool) {
+	if c != nil {
+		c.set(0x80, on)
+	}
+}
+
+// SetEnd writes bit 6, the end flag.
+func (c *CallInfo) SetEnd(on bool) {
+	if c != nil {
+		c.set(0x40, on)
+	}
+}
+
+// SetSlot writes bit 5: set for Slot2, clear for Slot1. It returns an
+// error, and changes nothing, for another slot, and dmrgo.ErrNilReceiver
+// for a nil c.
+func (c *CallInfo) SetSlot(s enums.Slot) error {
+	switch {
+	case c == nil:
+		return dmrgo.ErrNilReceiver
+	case s == enums.Slot1 || s == enums.Slot2:
+		c.set(0x20, s == enums.Slot2)
+		return nil
+	}
+	return errSlot
+}
+
+func (c *CallInfo) set(bit CallInfo, on bool) {
+	if on {
+		*c |= bit
+		return
+	}
+	*c &^= bit
+}
+
+// UserOpcode returns the opcode of a user packet: OpGroupVoice,
+// OpPrivateVoice, OpGroupData or OpPrivateData.
+func UserOpcode(group, data bool) Opcode {
+	switch {
+	case group && data:
+		return OpGroupData
+	case data:
+		return OpPrivateData
+	case group:
+		return OpGroupVoice
+	}
+	return OpPrivateVoice
 }
 
 // BurstType is octet 30 of a user packet: the DMR data type for a data
