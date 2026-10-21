@@ -192,7 +192,7 @@ typedef struct dmrgo_pdu_ack_outbound_pdu_t dmrgo_pdu_ack_outbound_pdu_t;
 typedef struct dmrgo_pdu_ack_outbound_payload_pdu_t dmrgo_pdu_ack_outbound_payload_pdu_t;
 /* Go: pdu.AckvitationPDU. AckvitationPDU is the ackvitation (C_ACKVIT) CSBK payload (ETSI TS 102 361-4 clause 7.1.1.2.2). */
 typedef struct dmrgo_pdu_ackvitation_pdu_t dmrgo_pdu_ackvitation_pdu_t;
-/* Go: pdu.AdjacentSiteParms. AdjacentSiteParms is the C_BCAST payload with AnnouncementType Adjacent_Site, which announces the TSCC of an adjacent site (ETSI TS 102 361-4 clause 7.2.19.7, Table 7.79). */
+/* Go: pdu.AdjacentSiteParms. AdjacentSiteParms is the C_BCAST payload with AnnouncementType Adjacent_Site, which announces the TSCC of an adjacent site (ETSI TS 102 361-4 V1.12.1 clause 7.2.19.7, Table 7.79). */
 typedef struct dmrgo_pdu_adjacent_site_parms_t dmrgo_pdu_adjacent_site_parms_t;
 /* Go: pdu.AhoyPDU. AhoyPDU is the ahoy (C_AHOY and P_AHOY) CSBK payload (ETSI TS 102 361-4 clauses 7.1.1.1.6 and 7.1.1.3.4). */
 typedef struct dmrgo_pdu_ahoy_pdu_t dmrgo_pdu_ahoy_pdu_t;
@@ -238,7 +238,7 @@ typedef struct dmrgo_pdu_capacity_plus_rest_channel_t dmrgo_pdu_capacity_plus_re
 typedef struct dmrgo_pdu_capacity_plus_site_status_assembler_t dmrgo_pdu_capacity_plus_site_status_assembler_t;
 /* Go: pdu.CapacityPlusSiteStatusPDU. CapacityPlusSiteStatusPDU is one block of the Capacity Plus site status CSBK (FID 0x10, opcode 0x3E). */
 typedef struct dmrgo_pdu_capacity_plus_site_status_pdu_t dmrgo_pdu_capacity_plus_site_status_pdu_t;
-/* Go: pdu.ChanFreqParms. ChanFreqParms is the C_BCAST header payload with AnnouncementType Chan_Freq, which announces the frequencies of a channel number in the CdefParms of the BC_AP block that follows (ETSI TS 102 361-4 clause 7.2.19.6, Table 7.78). */
+/* Go: pdu.ChanFreqParms. ChanFreqParms is the C_BCAST header payload with AnnouncementType Chan_Freq, which announces the frequencies of a channel number in the CdefParms of the BC_AP block that follows (ETSI TS 102 361-4 V1.12.1 clause 7.2.19.6, Table 7.78). */
 typedef struct dmrgo_pdu_chan_freq_parms_t dmrgo_pdu_chan_freq_parms_t;
 /* Go: pdu.ChannelTimingPDU. ChannelTimingPDU is the channel timing (CT_CSBK) CSBK payload (ETSI TS 102 361-2 clause 7.1.2.6, Table 7.8). */
 typedef struct dmrgo_pdu_channel_timing_pdu_t dmrgo_pdu_channel_timing_pdu_t;
@@ -276,7 +276,7 @@ typedef struct dmrgo_pdu_flc_unit_to_unit_t dmrgo_pdu_flc_unit_to_unit_t;
 typedef struct dmrgo_pdu_full_link_control_t dmrgo_pdu_full_link_control_t;
 /* Go: pdu.FullLinkControlPayloads. FullLinkControlPayloads holds one payload struct of each type that a FullLinkControl dispatch field points to, for DecodeFullLinkControlInto. */
 typedef struct dmrgo_pdu_full_link_control_payloads_t dmrgo_pdu_full_link_control_payloads_t;
-/* Go: pdu.GenSiteParms. GenSiteParms is the C_BCAST payload with AnnouncementType Gen_Site_Params, which broadcasts the current site information and the network information (ETSI TS 102 361-4 clauses 7.2.19.8, 7.2.40 and 7.2.41, Tables 7.80, 7.101 and 7.102). */
+/* Go: pdu.GenSiteParms. GenSiteParms is the C_BCAST payload with AnnouncementType Gen_Site_Params, which broadcasts the current site information and the network information (ETSI TS 102 361-4 V1.12.1 clauses 7.2.19.8, 7.2.40 and 7.2.41, Tables 7.80, 7.101 and 7.102). */
 typedef struct dmrgo_pdu_gen_site_parms_t dmrgo_pdu_gen_site_parms_t;
 /* Go: pdu.LCBytes. LCBytes is the 72 LC bits of a Full LC without RS(12,9) parity, as FullLinkControl.Bytes returns them. */
 typedef struct dmrgo_pdu_lc_bytes_t dmrgo_pdu_lc_bytes_t;

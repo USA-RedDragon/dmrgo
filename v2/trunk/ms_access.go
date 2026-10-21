@@ -201,8 +201,8 @@ func (m *MS) challenged(now time.Duration, c uint32, slot enums.Slot, payload bo
 // in the slot after the challenge. It appends that OutputBurst to dst. It
 // does nothing when no challenge waits or that slot has passed, so call it
 // before the next Burst or Tick. It allocates only when dst has no room
-// for MaxOutputs outputs. (ETSI TS 102 361-4 clauses 6.4.8.3 and
-// 6.6.2.3.2.2, Table 6.18)
+// for MaxOutputs outputs. (ETSI TS 102 361-4 V1.12.1 clauses 6.4.8.3
+// and 6.6.2.3.2.2, Table 6.18)
 func (m *MS) AuthResponse(now time.Duration, response uint32, dst []Output) []Output {
 	if m == nil {
 		return dst

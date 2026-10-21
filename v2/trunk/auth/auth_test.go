@@ -71,7 +71,7 @@ func rc4Response(challenge uint32, k [auth.KeyLen]byte, psn uint32) uint32 {
 }
 
 // ExampleResponse computes the answer of an MS to the challenge of a
-// C_AHOY, with the test vector of ETSI TS 102 361-4 Table 6.15.
+// C_AHOY, with the test vector of ETSI TS 102 361-4 V1.12.1 Table 6.15.
 func ExampleResponse() {
 	key := [auth.KeyLen]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 	fmt.Printf("%06X\n", auth.Response(0x7A17C0, key, 0))

@@ -1,7 +1,8 @@
 package enums
 
 // ProtectKind is the 3-bit Protect_Kind of a P_PROTECT. Values without a
-// constant are reserved. (ETSI TS 102 361-4 clause 7.2.21, Table 7.82)
+// constant are reserved. (ETSI TS 102 361-4 V1.12.1 clause 7.2.21,
+// Table 7.82)
 type ProtectKind uint8
 
 // The ProtectKind values.
