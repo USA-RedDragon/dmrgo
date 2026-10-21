@@ -194,3 +194,29 @@ func TestDataEncodeRange(t *testing.T) {
 		}
 	}
 }
+
+func TestDataCall(t *testing.T) {
+	t.Parallel()
+
+	d := dmrd.Data{Private: true, Destination: 3120001, Source: 3191868}
+	if g, tg, src := d.Call(); g || tg != 3120001 || src != 3191868 {
+		t.Fatalf("Call: %v %d %d", g, tg, src)
+	}
+	if err := d.SetCall(true, 91, 7); err != nil || d.Private || d.Destination != 91 || d.Source != 7 {
+		t.Fatalf("SetCall: %v %+v", err, d)
+	}
+	want := d
+	if err := d.SetCall(false, 1<<24, 1); err == nil || d != want {
+		t.Fatalf("target over 24 bits: %v", err)
+	}
+	if err := d.SetCall(false, 1, 1<<24); err == nil || d != want {
+		t.Fatalf("source over 24 bits: %v", err)
+	}
+	var nd *dmrd.Data
+	if g, tg, src := nd.Call(); g || tg != 0 || src != 0 {
+		t.Fatal("nil Data Call")
+	}
+	if err := nd.SetCall(true, 1, 1); err == nil {
+		t.Fatal("nil Data SetCall: no error")
+	}
+}

@@ -136,6 +136,47 @@ type User struct {
 	Data Payload
 }
 
+// Call returns the call of the packet: group for OpGroupVoice and
+// OpGroupData, target is Destination and source is Source.
+func (u *User) Call() (group bool, target, source uint32) {
+	if u == nil {
+		return false, 0, 0
+	}
+	return u.Opcode == OpGroupVoice || u.Opcode == OpGroupData, u.Destination, u.Source
+}
+
+// SetCall sets Destination, Source and the group or private opcode of the
+// call. A voice opcode stays voice and a data opcode stays data; another
+// opcode becomes voice when u carries a voice burst and data otherwise. It
+// returns a *dmrgo.FieldRangeError, and changes nothing, when target or
+// source does not fit in 24 bits, and dmrgo.ErrNilReceiver for a nil u.
+func (u *User) SetCall(group bool, target, source uint32) error {
+	switch {
+	case u == nil:
+		return dmrgo.ErrNilReceiver
+	case target>>24 != 0:
+		return errUserDestinationRange
+	case source>>24 != 0:
+		return errUserSourceRange
+	}
+	voice := u.Opcode == OpGroupVoice || u.Opcode == OpPrivateVoice
+	if u.Opcode != OpGroupData && u.Opcode != OpPrivateData && !voice {
+		voice = u.IsVoice()
+	}
+	switch {
+	case voice && group:
+		u.Opcode = OpGroupVoice
+	case voice:
+		u.Opcode = OpPrivateVoice
+	case group:
+		u.Opcode = OpGroupData
+	default:
+		u.Opcode = OpPrivateData
+	}
+	u.Destination, u.Source = target, source
+	return nil
+}
+
 // IsVoice reports whether u carries a voice burst.
 func (u User) IsVoice() bool { return u.Burst&0x7F == BurstVoice }
 
