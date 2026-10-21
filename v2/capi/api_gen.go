@@ -28,6 +28,7 @@ import (
 	g_layer2_pdu "github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	g_layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 	g_nmea "github.com/USA-RedDragon/dmrgo/v2/nmea"
+	g_shortdata "github.com/USA-RedDragon/dmrgo/v2/shortdata"
 	g_trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
 	g_vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	g_vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
@@ -3153,6 +3154,19 @@ type cb1 struct {
 	return
 }
 
+func out_shortdata_HyteraText(d *C.dmrgo_shortdata_hytera_text_t, s *g_shortdata.HyteraText, oc *outc) {
+	_ = oc
+	d.field = C.uint16_t(s.Field)
+	d.text = (*C.uint8_t)(arenaCopy(oc, s.Text))
+	d.text_len = C.size_t(len(s.Text))
+}
+
+func in_shortdata_HyteraText(s *C.dmrgo_shortdata_hytera_text_t) (d g_shortdata.HyteraText) {
+	d.Field = uint16(s.field)
+	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
+	return
+}
+
 func out_trunk_Tune(d *C.dmrgo_trunk_tune_t, s *g_trunk.Tune, oc *outc) {
 	_ = oc
 	d.channel = C.uint16_t(s.Channel)
@@ -5094,6 +5108,10 @@ func in_nmea_RMC(s *C.dmrgo_nmea_rmc_t) (d g_nmea.RMC) {
 
 func fromC_nmea_RMC(s *C.dmrgo_nmea_rmc_t) g_nmea.RMC {
 	return in_nmea_RMC(s)
+}
+
+func fromC_shortdata_HyteraText(s *C.dmrgo_shortdata_hytera_text_t) g_shortdata.HyteraText {
+	return in_shortdata_HyteraText(s)
 }
 
 func in_trunk_Access(s *C.dmrgo_trunk_access_t) (d g_trunk.Access) {
@@ -24116,6 +24134,258 @@ func dmrgo_nmea_parse_rmc(c_s *C.uint8_t, c_s_len C.size_t, c_out *C.dmrgo_nmea_
 }
 
 //export dmrgo__fn1
+//export dmrgo_shortdata_append_text
+func dmrgo_shortdata_append_text(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_format C.dmrgo_enums_dd_format_t, c_text *C.uint8_t, c_text_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_text == nil && c_text_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_text []byte
+	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	r0, r1 := g_shortdata.AppendText(a_dst, g_enums.DDFormat(c_format), a_text)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_shortdata_decode_hytera_text
+func dmrgo_shortdata_decode_hytera_text(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_shortdata_hytera_text_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_shortdata.DecodeHyteraText(a_data)
+	_ = r0
+	if c_out != nil {
+		out_shortdata_HyteraText(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_shortdata_hytera_text_append_binary
+func dmrgo_shortdata_hytera_text_append_binary(c_self *C.dmrgo_shortdata_hytera_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_shortdata.HyteraText
+	x = in_shortdata_HyteraText(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_shortdata_HyteraText(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_shortdata_hytera_text_set_text_utf8
+func dmrgo_shortdata_hytera_text_set_text_utf8(c_self *C.dmrgo_shortdata_hytera_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_text *C.uint8_t, c_text_len C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_shortdata.HyteraText
+	x = in_shortdata_HyteraText(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_text == nil && c_text_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_text []byte
+	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	r0 := x.SetTextUTF8(a_dst, a_text)
+	out_shortdata_HyteraText(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_shortdata_hytera_text_string
+func dmrgo_shortdata_hytera_text_string(c_self *C.dmrgo_shortdata_hytera_text_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_shortdata.HyteraText
+	x = in_shortdata_HyteraText(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_shortdata_HyteraText(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_shortdata_hytera_text_text_utf8
+func dmrgo_shortdata_hytera_text_text_utf8(c_self *C.dmrgo_shortdata_hytera_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_shortdata.HyteraText
+	x = in_shortdata_HyteraText(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0 := x.TextUTF8(a_dst)
+	out_shortdata_HyteraText(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_shortdata_text
+func dmrgo_shortdata_text(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_format C.dmrgo_enums_dd_format_t, c_data *C.uint8_t, c_data_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_shortdata.Text(a_dst, g_enums.DDFormat(c_format), a_data)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_access_applies
 func dmrgo_trunk_access_applies(c_self *C.dmrgo_trunk_access_t, c_ms C.uint32_t, c_emergency C.bool, c_out *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -29006,6 +29276,14 @@ func errCode(err error) C.int {
 			return -153
 		case g_nmea.ErrSentence:
 			return -154
+		case g_shortdata.ErrCharacter:
+			return -179
+		case g_shortdata.ErrFormat:
+			return -180
+		case g_shortdata.ErrLength:
+			return -181
+		case g_shortdata.ErrShort:
+			return -182
 		case g_trunk.ErrBusy:
 			return -134
 		case g_trunk.ErrChannelNumber:
@@ -29251,6 +29529,14 @@ func codeErr(code C.int) error {
 		return g_nmea.ErrField
 	case -154:
 		return g_nmea.ErrSentence
+	case -179:
+		return g_shortdata.ErrCharacter
+	case -180:
+		return g_shortdata.ErrFormat
+	case -181:
+		return g_shortdata.ErrLength
+	case -182:
+		return g_shortdata.ErrShort
 	case -134:
 		return g_trunk.ErrBusy
 	case -135:

@@ -104,6 +104,14 @@ const char *dmrgo__gen_strerror(int status) {
 		return "nmea.ErrField";
 	case -154:
 		return "nmea.ErrSentence";
+	case -179:
+		return "shortdata.ErrCharacter";
+	case -180:
+		return "shortdata.ErrFormat";
+	case -181:
+		return "shortdata.ErrLength";
+	case -182:
+		return "shortdata.ErrShort";
 	case -105:
 		return "trunk.ConfigError";
 	case -134:

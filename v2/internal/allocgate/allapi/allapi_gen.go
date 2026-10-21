@@ -32,6 +32,7 @@ import (
 	layer2_pdu "github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 	nmea "github.com/USA-RedDragon/dmrgo/v2/nmea"
+	shortdata "github.com/USA-RedDragon/dmrgo/v2/shortdata"
 	trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
 	vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
@@ -799,6 +800,13 @@ var api = [...]any{
 	layer3.TalkerAliasDataFormat.String,
 	layer3.VoiceServiceOptions.Field,
 	nmea.ParseRMC,
+	(*shortdata.HyteraText).AppendBinary,
+	(*shortdata.HyteraText).SetTextUTF8,
+	(*shortdata.HyteraText).String,
+	(*shortdata.HyteraText).TextUTF8,
+	shortdata.AppendText,
+	shortdata.DecodeHyteraText,
+	shortdata.Text,
 	(*trunk.Access).Applies,
 	(*trunk.CapacityPlusFollower).Burst,
 	(*trunk.CapacityPlusFollower).Call,

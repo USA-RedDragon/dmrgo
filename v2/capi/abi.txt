@@ -76,6 +76,10 @@ code DMRGO_ERR_IP_PROTOCOL -175
 code DMRGO_ERR_IP_SAP -176
 code DMRGO_ERR_IP_SHORT -177
 code DMRGO_ERR_IP_VERSION -178
+code DMRGO_ERR_SHORTDATA_CHARACTER -179
+code DMRGO_ERR_SHORTDATA_FORMAT -180
+code DMRGO_ERR_SHORTDATA_LENGTH -181
+code DMRGO_ERR_SHORTDATA_SHORT -182
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -631,6 +635,10 @@ sym #define DMRGO_ERR_PDU_NO_ADDRESSES (-130)
 sym #define DMRGO_ERR_PDU_TALKER_ALIAS_INCOMPLETE (-131)
 sym #define DMRGO_ERR_PDU_TALKER_ALIAS_INVALID_UTF8 (-132)
 sym #define DMRGO_ERR_PDU_TALKER_ALIAS_LENGTH (-133)
+sym #define DMRGO_ERR_SHORTDATA_CHARACTER (-179)
+sym #define DMRGO_ERR_SHORTDATA_FORMAT (-180)
+sym #define DMRGO_ERR_SHORTDATA_LENGTH (-181)
+sym #define DMRGO_ERR_SHORTDATA_SHORT (-182)
 sym #define DMRGO_ERR_TRUNK_BUSY (-134)
 sym #define DMRGO_ERR_TRUNK_CHANNEL_NUMBER (-135)
 sym #define DMRGO_ERR_TRUNK_CONFIG_ERROR (-105)
@@ -1759,6 +1767,13 @@ sym int dmrgo_pdu_unit_to_unit_voice_service_request_pdu_string(dmrgo_pdu_unit_t
 sym int dmrgo_pdu_vnap_continuation_data_type(dmrgo_pdu_vnap_continuation_t *self, dmrgo_enums_data_type_t *out);
 sym int dmrgo_pdu_vnap_continuation_encode(dmrgo_pdu_vnap_continuation_t *self, uint8_t out[12]);
 sym int dmrgo_pdu_vnap_continuation_string(dmrgo_pdu_vnap_continuation_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_shortdata_append_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *text, size_t text_len);
+sym int dmrgo_shortdata_decode_hytera_text(const uint8_t *data, size_t data_len, dmrgo_shortdata_hytera_text_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_shortdata_hytera_text_append_binary(dmrgo_shortdata_hytera_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_shortdata_hytera_text_set_text_utf8(dmrgo_shortdata_hytera_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_shortdata_hytera_text_string(dmrgo_shortdata_hytera_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_shortdata_hytera_text_text_utf8(dmrgo_shortdata_hytera_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_shortdata_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *data, size_t data_len);
 sym int dmrgo_trunk_access_applies(dmrgo_trunk_access_t *self, uint32_t ms, bool emergency, bool *out);
 sym int dmrgo_trunk_capacity_plus_follower_burst(dmrgo_trunk_capacity_plus_follower_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const dmrgo_layer2_cach_t *cach, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_trunk_capacity_plus_follower_burst_need(dmrgo_trunk_capacity_plus_follower_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const dmrgo_layer2_cach_t *cach, size_t *items, size_t *arena);
@@ -2150,6 +2165,7 @@ type struct dmrgo_pdu_unified_single_block_data_t { dmrgo_fec_result_t fec; dmrg
 type struct dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t { dmrgo_layer3_service_options_t service_options; uint8_t answer_response; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t { dmrgo_layer3_service_options_t service_options; uint8_t reserved; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_vnap_continuation_t { dmrgo_fec_result_t fec; bool last_block; bool protect_flag; dmrgo_pdu_csbk_opcode_t opcode; uint8_t reserved1; dmrgo_enums_color_code_t color_code; uint8_t cdeftype; uint8_t reserved2; dmrgo_layer3_cdef_parms_t cdef_parms; };
+type struct dmrgo_shortdata_hytera_text_t { uint16_t field; uint8_t *text; size_t text_len; };
 type struct dmrgo_trunk_access_t { uint8_t mask; uint32_t address; dmrgo_enums_service_function_t function; dmrgo_enums_n_rand_wait_t n_rand_wait; dmrgo_enums_backoff_t backoff; };
 type struct dmrgo_trunk_capacity_plus_config_t { dmrgo_trunk_channel_plan_t *plan; uint32_t talkgroups[32]; int64_t talkgroups_len; bool individual; bool no_follow; int64_t no_signal; int64_t inactive; int64_t hangtime; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_trunk_channel_rule_t { uint16_t first; uint16_t last; uint64_t rx_hz; uint64_t step_hz; int64_t tx_offset_hz; };

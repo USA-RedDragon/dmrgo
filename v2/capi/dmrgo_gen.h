@@ -343,6 +343,8 @@ typedef struct dmrgo_layer3_service_options_t dmrgo_layer3_service_options_t;
 typedef struct dmrgo_layer3_voice_service_options_t dmrgo_layer3_voice_service_options_t;
 /* Go: nmea.RMC. RMC is a Recommended Minimum Specific GNSS Data sentence ($--RMC). */
 typedef struct dmrgo_nmea_rmc_t dmrgo_nmea_rmc_t;
+/* Go: shortdata.HyteraText. HyteraText is the data of the defined data text that AnyTone radios send in H-SMS mode, with SAP short data and DD format 1. */
+typedef struct dmrgo_shortdata_hytera_text_t dmrgo_shortdata_hytera_text_t;
 /* Go: trunk.Access. Access is the random access control of the last C_ALOHA of a TSCC (ETSI TS 102 361-4 clause 6.2.1.1, Table 7.19). */
 typedef struct dmrgo_trunk_access_t dmrgo_trunk_access_t;
 /* Go: trunk.CapacityPlusConfig. CapacityPlusConfig configures NewCapacityPlusFollower. */
@@ -1940,6 +1942,12 @@ struct dmrgo_nmea_rmc_t {
 
 
 
+struct dmrgo_shortdata_hytera_text_t {
+	uint16_t field;
+	uint8_t *text;
+	size_t text_len;
+};
+
 struct dmrgo_trunk_access_t {
 	uint8_t mask;
 	uint32_t address;
@@ -2344,6 +2352,10 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ERR_PDU_TALKER_ALIAS_INCOMPLETE (-131)
 #define DMRGO_ERR_PDU_TALKER_ALIAS_INVALID_UTF8 (-132)
 #define DMRGO_ERR_PDU_TALKER_ALIAS_LENGTH (-133)
+#define DMRGO_ERR_SHORTDATA_CHARACTER (-179)
+#define DMRGO_ERR_SHORTDATA_FORMAT (-180)
+#define DMRGO_ERR_SHORTDATA_LENGTH (-181)
+#define DMRGO_ERR_SHORTDATA_SHORT (-182)
 #define DMRGO_ERR_TRUNK_BUSY (-134)
 #define DMRGO_ERR_TRUNK_CHANNEL_NUMBER (-135)
 #define DMRGO_ERR_TRUNK_CONFIG_ERROR (-105)
@@ -5380,6 +5392,20 @@ int dmrgo_layer3_voice_service_options_field(const dmrgo_layer3_voice_service_op
 int dmrgo_layer3_voice_service_options_string(dmrgo_layer3_voice_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: nmea.ParseRMC. ParseRMC decodes one RMC sentence from s, from the $ to the two hex digits of the checksum, with an optional CR LF or LF after them. */
 int dmrgo_nmea_parse_rmc(const uint8_t *s, size_t s_len, dmrgo_nmea_rmc_t *out);
+/* Go: shortdata.AppendText. AppendText appends the UTF-8 text to dst, coded as format says, and returns dst. */
+int dmrgo_shortdata_append_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *text, size_t text_len);
+/* Go: shortdata.DecodeHyteraText. DecodeHyteraText decodes a HyteraText from data. */
+int dmrgo_shortdata_decode_hytera_text(const uint8_t *data, size_t data_len, dmrgo_shortdata_hytera_text_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: shortdata.HyteraText.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_shortdata_hytera_text_append_binary(dmrgo_shortdata_hytera_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: shortdata.HyteraText.SetTextUTF8. SetTextUTF8 appends text, UTF-8, to dst as UTF-16LE, then a NUL character, points Text at the appended octets and returns dst. */
+int dmrgo_shortdata_hytera_text_set_text_utf8(dmrgo_shortdata_hytera_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: shortdata.HyteraText.String. String returns the fields of s as text, for printing. */
+int dmrgo_shortdata_hytera_text_string(dmrgo_shortdata_hytera_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: shortdata.HyteraText.TextUTF8. TextUTF8 appends Text, UTF-16LE text, to dst as UTF-8 and returns dst. */
+int dmrgo_shortdata_hytera_text_text_utf8(dmrgo_shortdata_hytera_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: shortdata.Text. Text appends the text in data, coded as format says, to dst as UTF-8 and returns dst. */
+int dmrgo_shortdata_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *data, size_t data_len);
 /* Go: trunk.Access.Applies. Applies reports whether the C_ALOHA population subdivision lets the MS with address ms make a random access (ETSI TS 102 361-4 clause 6.2.1.1.1). */
 int dmrgo_trunk_access_applies(dmrgo_trunk_access_t *self, uint32_t ms, bool emergency, bool *out);
 /* dmrgo_trunk_capacity_plus_follower_new makes a zero trunk.CapacityPlusFollower. */
