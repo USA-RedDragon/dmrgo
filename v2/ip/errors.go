@@ -14,9 +14,11 @@ var (
 	// ErrVersion is returned for an IP version other than 4.
 	ErrVersion = errors.New("ip: not an IPv4 packet")
 	// ErrProtocol is returned for an IPv4 packet that does not carry UDP,
-	// or ICMP for DecodeICMPPacket, and by AppendICMPPacket for an ICMP
-	// message about an ICMP message.
+	// or ICMP for DecodeICMPPacket.
 	ErrProtocol = errors.New("ip: packet carries another protocol")
+	// ErrNoICMP is returned by AppendICMPPacket for a packet that must not
+	// get an ICMP error message (RFC 1122 clause 3.2.2).
+	ErrNoICMP = errors.New("ip: no ICMP error message about this packet")
 	// ErrFragment is returned for a fragment of an IPv4 packet.
 	ErrFragment = errors.New("ip: packet is a fragment")
 	// ErrSAP is returned for a SAP other than IP based packet data or UDP/IP

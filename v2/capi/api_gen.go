@@ -47179,6 +47179,8 @@ func errCode(err error) C.int {
 			return -173
 		case g_ip.ErrLength:
 			return -174
+		case g_ip.ErrNoICMP:
+			return -237
 		case g_ip.ErrProtocol:
 			return -175
 		case g_ip.ErrSAP:
@@ -47484,6 +47486,8 @@ func codeErr(code C.int) error {
 		return g_ip.ErrFragment
 	case -174:
 		return g_ip.ErrLength
+	case -237:
+		return g_ip.ErrNoICMP
 	case -175:
 		return g_ip.ErrProtocol
 	case -176:
