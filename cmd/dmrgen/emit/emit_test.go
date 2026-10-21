@@ -495,7 +495,7 @@ type T struct {
 }`)
 	assertContains(t, out,
 		"// TPayloads holds one payload struct of each type that\n// a T dispatch field points to, for DecodeTInto.\n// The zero value is ready to use.\ntype TPayloads struct {\n\tsub   Sub\n\tbspdu BSPDU\n}",
-		"func DecodeTInto(dst *T, p *TPayloads, data [2]byte, mode bool) {\n\t*dst = T{}\n\tresult := dst\n\tresult.Mode = mode\n",
+		"func DecodeTInto(dst *T, p *TPayloads, data [2]byte, mode bool) {\n\tif dst == nil || p == nil {\n\t\treturn\n\t}\n\t*dst = T{}\n\tresult := dst\n\tresult.Mode = mode\n",
 		"p.sub = DecodeSub(_dispatchBytes)\n\t\t\tresult.A = &p.sub",
 		"p.sub = DecodeSub(_dispatchBytes)\n\t\t\tresult.B = &p.sub",
 		"p.bspdu = DecodeBSPDU(_dispatchBytes)\n\t\tresult.C = &p.bspdu",
@@ -504,7 +504,7 @@ type T struct {
 	)
 	_, into, _ := strings.Cut(out, "func DecodeTInto(")
 	into, _, _ = strings.Cut(into, "\n}\n")
-	if strings.Contains(into, "return") || strings.Contains(into, "_decoded") {
+	if strings.Count(into, "return") != 1 || strings.Contains(into, "_decoded") {
 		t.Errorf("DecodeTInto returns or allocates a payload:\n%s", into)
 	}
 }

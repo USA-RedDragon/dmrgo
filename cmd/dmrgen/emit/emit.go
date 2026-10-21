@@ -349,8 +349,8 @@ func emitDecodeBytes(f *File, pdu parse.PDUStruct, into bool, codec *FECCodecInf
 		plain := decodeName(pdu, pdu.Name, false)
 		f.Comment(name + " decodes data into dst as " + plain + " does,")
 		f.Comment("but points the dispatch field of dst into p, so it does not allocate.")
-		f.Comment("The payload stays valid until the next decode into p. dst and p must")
-		f.Comment("not be nil.")
+		f.Comment("The payload stays valid until the next decode into p. A nil dst or")
+		f.Comment("p does nothing.")
 	case !exported:
 		if pdu.SpecRef != "" {
 			f.Comment(pdu.SpecRef)
@@ -385,6 +385,7 @@ func emitDecodeBytes(f *File, pdu parse.PDUStruct, into bool, codec *FECCodecInf
 	var genErr error
 	fn.BlockFunc(func(g *Group) {
 		if into {
+			g.If(Id("dst").Op("==").Nil().Op("||").Id("p").Op("==").Nil()).Block(Return())
 			g.Op("*").Id("dst").Op("=").Id(pdu.Name).Values()
 			g.Id("result").Op(":=").Id("dst")
 		} else {

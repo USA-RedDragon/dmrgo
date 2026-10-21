@@ -92,9 +92,12 @@ type FullLinkControlPayloads struct {
 
 // DecodeFullLinkControlInto decodes data into dst as DecodeFullLinkControl does,
 // but points the dispatch field of dst into p, so it does not allocate.
-// The payload stays valid until the next decode into p. dst and p must
-// not be nil.
+// The payload stays valid until the next decode into p. A nil dst or
+// p does nothing.
 func DecodeFullLinkControlInto(dst *FullLinkControl, p *FullLinkControlPayloads, data [12]byte, burstDataType enums.DataType) {
+	if dst == nil || p == nil {
+		return
+	}
 	*dst = FullLinkControl{}
 	result := dst
 	result.BurstDataType = burstDataType

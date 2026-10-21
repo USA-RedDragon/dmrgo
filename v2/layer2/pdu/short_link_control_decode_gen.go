@@ -207,9 +207,12 @@ type ShortLCPayloads struct {
 
 // DecodeShortLCInto decodes data into dst as DecodeShortLC does,
 // but points the dispatch field of dst into p, so it does not allocate.
-// The payload stays valid until the next decode into p. dst and p must
-// not be nil.
+// The payload stays valid until the next decode into p. A nil dst or
+// p does nothing.
 func DecodeShortLCInto(dst *ShortLC, p *ShortLCPayloads, data [5]byte) {
+	if dst == nil || p == nil {
+		return
+	}
 	*dst = ShortLC{}
 	result := dst
 	result.FEC.Uncorrectable = !crc.CheckCRC8(data[:], 28, uint8((uint64(data[3])<<8|uint64(data[4]))>>4&0xFF))
