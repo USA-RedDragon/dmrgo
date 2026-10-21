@@ -5,7 +5,7 @@ import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 // RCCommand is the 4-bit Reverse Channel (RC) command. Tier 2 uses the
 // cease values, and Tier III adds the power control values. Values that
 // have no constant are reserved (ETSI TS 102 361-2 clause 7.2.20, ETSI TS
-// 102 361-4 clause 6.4.14.1, Table 6.32).
+// 102 361-4 V1.12.1 clause 6.4.14.1, Table 6.32).
 type RCCommand uint8
 
 // The RCCommand values.
