@@ -84,6 +84,7 @@ type Follower struct {
 	ctl       control
 	talk      [MaxTalkgroups]uint32
 	talkLen   int
+	dyn       [MaxDynamicGroups]uint32
 	indiv     bool
 	data      bool
 	noFollow  bool
@@ -379,6 +380,9 @@ func (f *Follower) wants(now time.Duration, g *Grant) bool {
 	if f.hasClear && now-f.clearedAt < clearHold && sameCall(&f.cleared, g) {
 		return false
 	}
+	if f.self != 0 && (g.Service == enums.ServiceDuplexVoice || g.Service == enums.ServiceDuplexPacketData) {
+		return g.Target == f.self
+	}
 	if f.self != 0 && (g.Source == f.self || !g.Group && g.Target == f.self) {
 		return !g.Data() || f.data
 	}
@@ -395,6 +399,15 @@ func (f *Follower) wants(now time.Duration, g *Grant) bool {
 	}
 	for i := range f.talkLen {
 		if f.talk[i] == g.Target {
+			return true
+		}
+	}
+	return f.dynamic(g.Target)
+}
+
+func (f *Follower) dynamic(tg uint32) bool {
+	for _, d := range f.dyn {
+		if d != 0 && d == tg {
 			return true
 		}
 	}

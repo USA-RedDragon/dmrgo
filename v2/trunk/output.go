@@ -59,6 +59,21 @@ const (
 	// OutputAuthChallenge reports the authentication challenge of the TSCC
 	// in Output.Challenge. Answer it with MS.AuthResponse.
 	OutputAuthChallenge
+	// OutputDelivered reports that the TSCC completed a UDT short data,
+	// polling, call diversion or DGNA request of the MS, with the reason in
+	// Output.Ack.
+	OutputDelivered
+	// OutputPolled reports that the TSCC polled the MS, with a C_AHOY from
+	// Output.Grant.Source or with a USBD Poll Request, and that the MS sent
+	// its poll response or refused the poll.
+	OutputPolled
+	// OutputGroups reports that a DGNA transfer changed the talkgroups that
+	// MS.Groups returns.
+	OutputGroups
+	// OutputAmbient reports that the MS joined the Ambient Listening
+	// Service call of Output.Grant: it transmits without an action of its
+	// user until it ends the call at T_ALS or T_ALS_E.
+	OutputAmbient
 )
 
 // String returns the name of the OutputKind.
@@ -90,6 +105,14 @@ func (k OutputKind) String() string {
 		return "PowerOff"
 	case OutputAuthChallenge:
 		return "AuthChallenge"
+	case OutputDelivered:
+		return "Delivered"
+	case OutputPolled:
+		return "Polled"
+	case OutputGroups:
+		return "Groups"
+	case OutputAmbient:
+		return "Ambient"
 	}
 	return unknownName
 }
@@ -137,6 +160,9 @@ const (
 	// ReasonParked is a P_PROTECT ILLEGALLY_PARKED for an MS that is
 	// neither the source nor the target of the call.
 	ReasonParked
+	// ReasonDiverted is a request that the TSCC answered with the diverted
+	// address of the called party in a UDT, which UDT returns.
+	ReasonDiverted
 )
 
 // String returns the name of the Reason.
@@ -172,6 +198,8 @@ func (r Reason) String() string {
 		return "Denied"
 	case ReasonParked:
 		return "Parked"
+	case ReasonDiverted:
+		return "Diverted"
 	}
 	return unknownName
 }
