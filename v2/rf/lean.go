@@ -799,7 +799,14 @@ func (r *leanCore) cancelISI(base int64) {
 			hn = 0
 		}
 		xn := r.ring[hn]
-		ln := isiLevel(xn, off, thr)
+		xl := int32(xn)*(discStepHz/llrStepHz) + off
+		ln := int32(1)
+		if xl > thr || xl < -thr {
+			ln = 3
+		}
+		if xl < 0 {
+			ln = -ln
+		}
 		y := max(min(x-((lp+ln)*dev+1<<15)>>16, math.MaxInt8), math.MinInt8)
 		r.ring[h] = int8(y)
 		if i >= start {
@@ -978,6 +985,11 @@ func ringIdx[_ any](k int64) uint32 {
 	if uint64(k) < 1<<32 {
 		return uint32(k) % leanRing
 	}
+	return ringPosFar(k)
+}
+
+//go:noinline
+func ringPosFar(k int64) uint32 {
 	hi := uint32(int32(k>>32)%leanRing + leanRing)
 	return (hi%leanRing*(1<<32%leanRing) + uint32(k)%leanRing) % leanRing
 }
