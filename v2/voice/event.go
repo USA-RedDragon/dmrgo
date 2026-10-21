@@ -119,6 +119,9 @@ const (
 	// EndDenied is a polite call of a Transmitter that the channel denied
 	// (ETSI TS 102 361-1 clause 5.2.2).
 	EndDenied
+	// EndInterrupted is a call of a Transmitter that a Tier 2 RC command
+	// ended (ETSI TS 102 361-2 clause 6.3).
+	EndInterrupted
 )
 
 // String returns the name of the reason. It allocates only for a value
@@ -143,6 +146,8 @@ func (r EndReason) String() string {
 		return "Timeout"
 	case EndDenied:
 		return "Denied"
+	case EndInterrupted:
+		return "Interrupted"
 	}
 	return fmt.Sprintf("EndReason(%d)", uint8(r))
 }
