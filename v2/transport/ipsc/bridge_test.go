@@ -42,7 +42,7 @@ func TestXPR8400BridgeToDMRD(t *testing.T) {
 		}
 		bridged++
 	}
-	if rebuilt != 140 || bridged != rebuilt {
+	if rebuilt != 146 || bridged != rebuilt {
 		t.Fatalf("bridged %d of %d", bridged, rebuilt)
 	}
 }

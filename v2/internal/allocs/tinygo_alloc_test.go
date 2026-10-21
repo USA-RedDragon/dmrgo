@@ -628,7 +628,7 @@ func tinyIPSCRun(q, buf []byte) []byte {
 	buf, _ = got.AppendBinary(buf[:0])
 	h := got.Hint()
 	if r, err := got.RawBurst(7, layer2.SyncSourceBS); err == nil {
-		_ = got.SetRawBurst(r, h)
+		_, _ = got.SetRawBurst(r, h)
 	}
 	return buf
 }
@@ -638,7 +638,7 @@ func tinyIPSCOps(t *testing.T) []tinyOp {
 	var p [12]byte
 	raw := tinyOK(layer2.BuildDataBurst(p, enums.DataTypeCSBK, 7, layer2.SyncSourceBS))
 	u := ipsc.User{Opcode: ipsc.OpGroupData, Info: 0x20}
-	if err := u.SetRawBurst(raw, layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeCSBK, HasDataType: true}); err != nil {
+	if _, err := u.SetRawBurst(raw, layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeCSBK, HasDataType: true}); err != nil {
 		t.Fatal(err)
 	}
 	pkt := tinyOK(u.AppendBinary(make([]byte, 0, 80)))

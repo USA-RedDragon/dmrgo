@@ -573,3 +573,34 @@ func TestRawBurst_AMBEVoice(t *testing.T) {
 		t.Fatalf("frame 3 damaged: %v %v %+v", bad, flags, res)
 	}
 }
+
+func TestRawBurst_Info(t *testing.T) {
+	t.Parallel()
+
+	var p [12]byte
+	p[0] = 0x5A
+	raw, err := layer2.BuildDataBurst(p, enums.DataTypeRate12, 3, layer2.SyncSourceMS)
+	if err != nil {
+		t.Fatal(err)
+	}
+	info := raw.Info()
+	if info[24]&0x0F != 0 {
+		t.Fatalf("padding %x", info[24])
+	}
+	var back layer2.RawBurst
+	if err := back.SetSlotType(raw.SlotType()); err != nil {
+		t.Fatal(err)
+	}
+	if err := back.SetSync(enums.SyncMSSourcedData); err != nil {
+		t.Fatal(err)
+	}
+	if err := back.SetInfo(info); err != nil || back != raw {
+		t.Fatalf("SetInfo: %v %x, want %x", err, back, raw)
+	}
+	bad := info
+	bad[24] |= 0x01
+	var fre *dmrgo.FieldRangeError
+	if err := back.SetInfo(bad); !errors.As(err, &fre) || back != raw {
+		t.Fatalf("padding bit: %v", err)
+	}
+}

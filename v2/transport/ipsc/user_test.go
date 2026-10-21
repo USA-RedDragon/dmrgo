@@ -67,14 +67,14 @@ func TestEncodeMisuse(t *testing.T) {
 		{layer2.KindData, 0, enums.DataTypeRate1, layer2.ErrDataType},
 		{layer2.KindData, 0, enums.DataTypeIdle, layer2.ErrDataType},
 	} {
-		if err := u.SetRawBurst(raw, layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeCSBK}); err == nil {
+		if _, err := u.SetRawBurst(raw, layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeCSBK}); err == nil {
 			t.Error("data without a data type: no error")
 		}
 		var nu *ipsc.User
-		if err := nu.SetRawBurst(raw, layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeCSBK, HasDataType: true}); err == nil {
+		if _, err := nu.SetRawBurst(raw, layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeCSBK, HasDataType: true}); err == nil {
 			t.Error("nil User: no error")
 		}
-		err := u.SetRawBurst(raw, layer2.Hint{Kind: tt.k, VoiceBurst: tt.pos, DataType: tt.dt, HasDataType: true})
+		_, err := u.SetRawBurst(raw, layer2.Hint{Kind: tt.k, VoiceBurst: tt.pos, DataType: tt.dt, HasDataType: true})
 		if err == nil {
 			t.Errorf("%+v: no error", tt)
 		}
@@ -95,7 +95,7 @@ func TestBuildAndRebuild(t *testing.T) {
 		t.Fatal(err)
 	}
 	u := ipsc.User{Opcode: ipsc.OpGroupData, Info: 0x20, RTP: ipsc.RTP{Flags: 0x80, PayloadType: 0x5D}}
-	if err := u.SetRawBurst(raw, layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeCSBK, HasDataType: true}); err != nil {
+	if _, err := u.SetRawBurst(raw, layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeCSBK, HasDataType: true}); err != nil {
 		t.Fatal(err)
 	}
 	pkt, err := u.AppendBinary(nil)
