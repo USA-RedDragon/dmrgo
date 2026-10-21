@@ -157,11 +157,11 @@ func TestIQLowRecip(t *testing.T) {
 		ay := uint32(uint64(seed) * uint64(ax) >> 32)
 		z := uint(bits.LeadingZeros32(ax))
 		x := ax << z
-		r := ((ay << z) >> 16 * uint32(iqLowRecip64[x>>25&63])) >> 24
+		r := ((ay << z) >> 16 * uint32(iqLowTab[x>>25&63])) >> 24
 		if r > 63 {
 			t.Fatalf("ax %d ay %d: step %d", ax, ay, r)
 		}
-		got := float64(iqLowAtan64[r]) * (2 * math.Pi / (1 << 16))
+		got := float64(iqLowTab[64+r]) * (2 * math.Pi / (1 << 16))
 		if d := math.Abs(got - math.Atan2(float64(ay), float64(ax))); d > 0.02 {
 			t.Fatalf("ax %d ay %d: angle off by %.4f rad", ax, ay, d)
 		}
