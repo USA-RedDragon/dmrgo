@@ -17441,6 +17441,34 @@ func dmrgo_layer2_raw_burst_ambe_frames(c_self *C.dmrgo_layer2_raw_burst_t, c_ou
 	return C.DMRGO_OK
 }
 
+//export dmrgo_layer2_raw_burst_ambe_voice
+func dmrgo_layer2_raw_burst_ambe_voice(c_self *C.dmrgo_layer2_raw_burst_t, c_p *C.uint8_t, c_bad *C.bool, c_res *C.dmrgo_fec_result_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1, r2 := (*(*g_layer2.RawBurst)(unsafe.Pointer(c_self))).AMBEVoice()
+	_ = r0
+	_ = r1
+	_ = r2
+	if c_p != nil {
+		*(*[19]byte)(unsafe.Pointer(&(*(*[19]C.uint8_t)(unsafe.Pointer(c_p))))) = r0
+	}
+	if c_bad != nil {
+		for i0 := range r1 {
+			(*(*[3]C.bool)(unsafe.Pointer(c_bad)))[i0] = C.bool(r1[i0])
+		}
+	}
+	if c_res != nil {
+		out_fec_Result(&(*c_res), &r2, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_layer2_raw_burst_bptc_payload
 func dmrgo_layer2_raw_burst_bptc_payload(c_self *C.dmrgo_layer2_raw_burst_t, c_out0 *C.uint8_t, c_out1 *C.dmrgo_fec_result_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -24626,6 +24654,36 @@ func dmrgo_pdu_lc_bytes_addresses(c_self *C.dmrgo_pdu_lc_bytes_t, c_target *C.ui
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_lc_bytes_call
+func dmrgo_pdu_lc_bytes_call(c_self *C.dmrgo_pdu_lc_bytes_t, c_group *C.bool, c_target *C.uint32_t, c_source *C.uint32_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1, r2, r3 := (*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self))).Call()
+	_ = r0
+	_ = r1
+	_ = r2
+	_ = r3
+	if c_group != nil {
+		*c_group = C.bool(r0)
+	}
+	if c_target != nil {
+		*c_target = C.uint32_t(r1)
+	}
+	if c_source != nil {
+		*c_source = C.uint32_t(r2)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r3)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_lc_bytes_codeword
 func dmrgo_pdu_lc_bytes_codeword(c_self *C.dmrgo_pdu_lc_bytes_t, c_dt C.dmrgo_enums_data_type_t, c_out *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -24771,6 +24829,23 @@ func dmrgo_pdu_lc_bytes_set_addresses(c_self *C.dmrgo_pdu_lc_bytes_t, c_target C
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := (*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self)).SetAddresses(uint32(c_target), uint32(c_source))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_lc_bytes_set_call
+func dmrgo_pdu_lc_bytes_set_call(c_self *C.dmrgo_pdu_lc_bytes_t, c_group C.bool, c_target C.uint32_t, c_source C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self)).SetCall(bool(c_group), uint32(c_target), uint32(c_source))
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}

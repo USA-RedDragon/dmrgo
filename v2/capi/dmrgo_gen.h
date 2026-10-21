@@ -8209,6 +8209,8 @@ int dmrgo_layer2_position_tracker_place_decoded(dmrgo_layer2_position_tracker_t 
 int dmrgo_layer2_position_tracker_reset(dmrgo_layer2_position_tracker_t *self);
 /* Go: layer2.RawBurst.AMBEFrames. AMBEFrames decodes the three voice slots as AMBE+2 frames with vocoder.DecodeAMBE72, as Burst.AMBEFrames does, and returns them with the combined FEC result. */
 int dmrgo_layer2_raw_burst_ambe_frames(const dmrgo_layer2_raw_burst_t *self, dmrgo_vocoder_ambe_frame_t out0[3], dmrgo_fec_result_t *out1);
+/* Go: layer2.RawBurst.AMBEVoice. AMBEVoice decodes the three voice slots as AMBEFrames does and packs the frames into the 19-octet IPSC AMBE payload, with the bad flags of frames 2 and 3 set from their FEC results, as vocoder.PackAMBEVoiceFlags does. */
+int dmrgo_layer2_raw_burst_ambe_voice(const dmrgo_layer2_raw_burst_t *self, uint8_t p[19], bool bad[3], dmrgo_fec_result_t *res);
 /* Go: layer2.RawBurst.BPTCPayload. BPTCPayload decodes the 196 information bits as BPTC(196,96) and returns the 96 data bits packed most significant bit first, before any CRC or RS(12,9) check. */
 int dmrgo_layer2_raw_burst_bptc_payload(const dmrgo_layer2_raw_burst_t *self, uint8_t out0[12], dmrgo_fec_result_t *out1);
 /* Go: layer2.RawBurst.BPTCReserved. BPTCReserved decodes the 196 information bits as BPTC(196,96) and returns the reserved bits R(0) to R(2) after FEC correction, R(i) in bit i as Burst.BPTCReserved holds them, with the BPTC result. */
@@ -8829,6 +8831,8 @@ int dmrgo_pdu_gen_site_parms_string(dmrgo_pdu_gen_site_parms_t *self, char *out,
 int dmrgo_pdu_is_pr_fill(const uint8_t info[12], bool *out);
 /* Go: pdu.LCBytes.Addresses. Addresses returns the 24-bit target (octets 3 to 5) and source (octets 6 to 8) addresses of a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC. */
 int dmrgo_pdu_lc_bytes_addresses(const dmrgo_pdu_lc_bytes_t *self, uint32_t *target, uint32_t *source, bool *ok);
+/* Go: pdu.LCBytes.Call. Call returns the call of a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC: group for FLCO 0, the 24-bit target and the source. */
+int dmrgo_pdu_lc_bytes_call(const dmrgo_pdu_lc_bytes_t *self, bool *group, uint32_t *target, uint32_t *source, bool *ok);
 /* Go: pdu.LCBytes.Codeword. Codeword returns the 12-octet on-air codeword of l in a burst of dt: l followed by its RS(12,9) parity XORed with the mask of dt. */
 int dmrgo_pdu_lc_bytes_codeword(const dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_data_type_t dt, uint8_t out[12]);
 /* Go: pdu.LCBytes.FID. FID returns the Feature set ID, octet 1. */
@@ -8845,6 +8849,8 @@ int dmrgo_pdu_lc_bytes_reserved(const dmrgo_pdu_lc_bytes_t *self, bool *out);
 int dmrgo_pdu_lc_bytes_service_options(const dmrgo_pdu_lc_bytes_t *self, dmrgo_layer3_service_options_t *so, bool *ok);
 /* Go: pdu.LCBytes.SetAddresses. SetAddresses writes target into octets 3 to 5 and source into octets 6 to 8 of a Grp_V_Ch_Usr or UU_V_Ch_Usr LC, whatever the FID. */
 int dmrgo_pdu_lc_bytes_set_addresses(dmrgo_pdu_lc_bytes_t *self, uint32_t target, uint32_t source);
+/* Go: pdu.LCBytes.SetCall. SetCall sets the FLCO to Grp_V_Ch_Usr (0) when group is true and to UU_V_Ch_Usr (3) when it is false, and writes the target and source addresses. */
+int dmrgo_pdu_lc_bytes_set_call(dmrgo_pdu_lc_bytes_t *self, bool group, uint32_t target, uint32_t source);
 /* Go: pdu.LCBytes.SetFID. SetFID writes fid into octet 1. */
 int dmrgo_pdu_lc_bytes_set_fid(dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_feature_set_id_t fid);
 /* Go: pdu.LCBytes.SetFLCO. SetFLCO writes f into the FLCO and keeps the PF and Reserved bits. */

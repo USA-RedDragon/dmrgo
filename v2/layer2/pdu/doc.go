@@ -22,6 +22,14 @@
 // bits, or when a padding bit of a raw field, such as MBCContinuation.Data,
 // is set.
 //
+// # Setters
+//
+// A setter returns an error only when the type of its argument can hold a
+// value that does not fit the field. LCBytes.SetFID takes a full octet and
+// returns nothing, and LCBytes.SetFLCO returns an error because an FLCO is
+// a 6-bit field in a uint8 type. The error is a *dmrgo.FieldRangeError,
+// and the setter then changes nothing.
+//
 // # FEC results
 //
 // DecodeX returns only the PDU. A PDU whose decode corrects or checks

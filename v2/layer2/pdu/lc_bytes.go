@@ -169,6 +169,33 @@ func (l *LCBytes) SetAddresses(target, source uint32) error {
 	return nil
 }
 
+// Call returns the call of a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3)
+// LC: group for FLCO 0, the 24-bit target and the source. ok is false for
+// other FLCOs. It ignores the FID, as Addresses does.
+func (l LCBytes) Call() (group bool, target, source uint32, ok bool) {
+	target, source, ok = l.Addresses()
+	return ok && l.FLCO() == enums.FLCOGroupVoiceChannelUser, target, source, ok
+}
+
+// SetCall sets the FLCO to Grp_V_Ch_Usr (0) when group is true and to
+// UU_V_Ch_Usr (3) when it is false, and writes the target and source
+// addresses. It keeps the PF, Reserved, FID and Service Options bits. It
+// returns a *dmrgo.FieldRangeError, and changes nothing, when an address
+// does not fit in 24 bits.
+func (l *LCBytes) SetCall(group bool, target, source uint32) error {
+	if err := checkAddresses(target, source, errLCBytesTargetRange, errLCBytesSourceRange); err != nil {
+		return err
+	}
+	f := enums.FLCOUnitToUnitVoiceChannelUser
+	if group {
+		f = enums.FLCOGroupVoiceChannelUser
+	}
+	l[0] = l[0]&0xC0 | byte(f)
+	putUint24(l[3:6], target)
+	putUint24(l[6:9], source)
+	return nil
+}
+
 // Group reports whether the FLCO is Grp_V_Ch_Usr (0). ok is false unless
 // the FLCO is Grp_V_Ch_Usr or UU_V_Ch_Usr (3).
 func (l LCBytes) Group() (group, ok bool) {

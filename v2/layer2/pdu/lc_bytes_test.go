@@ -278,3 +278,30 @@ func TestLCBytes_GroupOtherFLCO(t *testing.T) {
 		t.Errorf("GPS LC: Group %t %t", g, ok)
 	}
 }
+
+func TestLCBytes_Call(t *testing.T) {
+	t.Parallel()
+
+	l := pdu.LCBytes(hex9(t, "c3100000270630b43c"))
+	if g, tg, src, ok := l.Call(); g || tg != 0x2706 || src != 0x30b43c || !ok {
+		t.Fatalf("Call of %x: %v %d %d %v", l, g, tg, src, ok)
+	}
+	if err := l.SetCall(true, 91, 3120001); err != nil || l[0] != 0xC0 || l[1] != 0x10 {
+		t.Fatalf("SetCall: %v %x", err, l)
+	}
+	if g, tg, src, ok := l.Call(); !g || tg != 91 || src != 3120001 || !ok {
+		t.Fatalf("Call after SetCall: %v %d %d %v", g, tg, src, ok)
+	}
+	want := l
+	var fre *dmrgo.FieldRangeError
+	if err := l.SetCall(false, 1<<24, 1); !errors.As(err, &fre) || l != want {
+		t.Fatalf("target over 24 bits: %v %x", err, l)
+	}
+	if err := l.SetCall(false, 1, 1<<24); !errors.As(err, &fre) || l != want {
+		t.Fatalf("source over 24 bits: %v %x", err, l)
+	}
+	other := pdu.LCBytes{byte(enums.FLCOTerminatorDataLinkControl)}
+	if g, tg, src, ok := other.Call(); g || tg != 0 || src != 0 || ok {
+		t.Fatalf("Call of another FLCO: %v %d %d %v", g, tg, src, ok)
+	}
+}

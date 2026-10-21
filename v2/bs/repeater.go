@@ -658,8 +658,7 @@ func (r *Repeater) admit(now time.Duration, s *slot, from Source, lc *pdu.LCByte
 }
 
 func sameTarget(lc *pdu.LCBytes, c *voice.Call) bool {
-	target, _, ok := lc.Addresses()
-	group, _ := lc.Group()
+	group, target, _, ok := lc.Call()
 	return ok && target == c.Target && group == c.Group
 }
 

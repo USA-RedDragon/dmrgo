@@ -538,3 +538,38 @@ func must2[T any](v T, ok bool) T {
 	}
 	return v
 }
+
+func TestRawBurst_AMBEVoice(t *testing.T) {
+	t.Parallel()
+
+	frames := [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame{vocoder.AMBESilence(), {0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0x80}, vocoder.AMBESilence()}
+	raw, err := layer2.BuildVoiceBurst(frames, enums.VoiceBurstA, pdu.EmbeddedSignalling{}, [4]byte{}, layer2.SyncSourceBS)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, bad, res := raw.AMBEVoice()
+	want, _ := vocoder.PackAMBEVoice(frames)
+	if p != want || bad != [3]bool{} || res.Uncorrectable || res.ErrorsCorrected != 0 {
+		t.Fatalf("clean: %x %v %+v", p, bad, res)
+	}
+	clean := raw.VoiceSlots()
+	found := false
+	for k := range 256 {
+		slots := clean
+		slots[2][0] ^= byte(k)
+		slots[2][1] ^= 0x0F
+		if _, r := vocoder.DecodeAMBE72(slots[2]); r.Uncorrectable {
+			raw.SetVoiceSlots(slots)
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatal("no uncorrectable damage found")
+	}
+	p, bad, res = raw.AMBEVoice()
+	_, flags := vocoder.UnpackAMBEVoiceFlags(p)
+	if !bad[2] || bad[0] || bad[1] || !res.Uncorrectable || !flags[2] || flags[1] {
+		t.Fatalf("frame 3 damaged: %v %v %+v", bad, flags, res)
+	}
+}
