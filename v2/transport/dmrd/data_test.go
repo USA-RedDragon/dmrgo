@@ -89,29 +89,41 @@ func TestDataHint(t *testing.T) {
 	}
 }
 
-func TestDataSetKind(t *testing.T) {
+func TestDataSetHint(t *testing.T) {
 	t.Parallel()
 
 	var d dmrd.Data
-	if err := d.SetKind(layer2.KindVoice, enums.VoiceBurstA, 0); err != nil || d.Frame != dmrd.FrameVoiceSync || d.Value != 0 {
-		t.Fatalf("A: %v %v %d", err, d.Frame, d.Value)
+	if err := d.SetHint(layer2.Hint{Slot: enums.Slot2, Kind: layer2.KindVoice, VoiceBurst: enums.VoiceBurstA}); err != nil || d.Frame != dmrd.FrameVoiceSync || d.Value != 0 || d.Slot != enums.Slot2 {
+		t.Fatalf("A: %v %v %d %v", err, d.Frame, d.Value, d.Slot)
 	}
-	if err := d.SetKind(layer2.KindVoice, enums.VoiceBurstE, 0); err != nil || d.Frame != dmrd.FrameVoice || d.Value != 4 {
-		t.Fatalf("E: %v %v %d", err, d.Frame, d.Value)
+	if err := d.SetHint(layer2.Hint{Kind: layer2.KindVoice, VoiceBurst: enums.VoiceBurstE}); err != nil || d.Frame != dmrd.FrameVoice || d.Value != 4 || d.Slot != enums.Slot2 {
+		t.Fatalf("E: %v %v %d %v", err, d.Frame, d.Value, d.Slot)
 	}
-	if err := d.SetKind(layer2.KindData, 0, enums.DataTypeRate34); err != nil || d.Frame != dmrd.FrameDataSync || d.Value != 8 {
+	if err := d.SetHint(layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeRate34, HasDataType: true}); err != nil || d.Frame != dmrd.FrameDataSync || d.Value != 8 {
 		t.Fatalf("data: %v %v %d", err, d.Frame, d.Value)
 	}
-	for _, k := range []layer2.Kind{layer2.KindUnknown, layer2.KindReverseChannel} {
-		if err := d.SetKind(k, 0, 0); err == nil {
-			t.Errorf("kind %v: no error", k)
+	want := d
+	for _, h := range []layer2.Hint{
+		{Kind: layer2.KindUnknown}, {Kind: layer2.KindReverseChannel}, {Kind: layer2.Kind(9)},
+		{Kind: layer2.KindVoice}, {Kind: layer2.KindVoice, VoiceBurst: 9},
+		{Kind: layer2.KindData, DataType: enums.DataTypeCSBK},
+		{Kind: layer2.KindData, DataType: 16, HasDataType: true},
+	} {
+		if err := d.SetHint(h); err == nil || d != want {
+			t.Errorf("%+v: %v %+v", h, err, d)
 		}
 	}
-	if err := d.SetKind(layer2.KindVoice, enums.VoiceBurstUnknown, 0); !errors.Is(err, layer2.ErrVoicePosition) {
+	if err := d.SetHint(layer2.Hint{Kind: layer2.KindVoice}); !errors.Is(err, layer2.ErrVoicePosition) {
 		t.Errorf("unknown position: %v, want layer2.ErrVoicePosition", err)
 	}
-	if err := d.SetKind(layer2.KindData, 0, 16); !errors.Is(err, layer2.ErrDataType) {
+	if err := d.SetHint(layer2.Hint{Kind: layer2.KindData, DataType: 16, HasDataType: true}); !errors.Is(err, layer2.ErrDataType) {
 		t.Errorf("data type 16: %v, want layer2.ErrDataType", err)
+	}
+	if err := d.SetKind(layer2.KindVoice, enums.VoiceBurstE, 0); err != nil || d.Frame != dmrd.FrameVoice || d.Value != 4 {
+		t.Fatalf("SetKind E: %v %v %d", err, d.Frame, d.Value)
+	}
+	if err := d.SetKind(layer2.KindData, 0, enums.DataTypeCSBK); err != nil || d.Frame != dmrd.FrameDataSync || d.Value != 3 {
+		t.Fatalf("SetKind data: %v %v %d", err, d.Frame, d.Value)
 	}
 }
 

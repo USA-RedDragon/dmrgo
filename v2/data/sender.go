@@ -167,6 +167,9 @@ type Output struct {
 	Kind OutputKind
 	// Burst is the burst to send.
 	Burst layer2.RawBurst
+	// Hint is what the burst is, for a transport: KindData with the data
+	// type of the burst. Its Slot is SlotUnknown.
+	Hint layer2.Hint
 	// Due is the time at which the burst goes on air, 60 ms after the one
 	// before it.
 	Due time.Duration
@@ -844,6 +847,7 @@ func (s *Sender) send(dst []Output) []Output {
 	var o *Output
 	dst, o = appendOutput(dst, OutputBurst, s.due)
 	o.Burst, o.Try = raw, uint8(min(e.tries, MaxRetries)&0xFF)
+	o.Hint = layer2.Hint{Kind: layer2.KindData, DataType: raw.SlotType().DataType, HasDataType: true}
 	if e.cHead {
 		o.Seq = e.ns
 	}

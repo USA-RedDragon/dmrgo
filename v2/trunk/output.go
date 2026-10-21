@@ -341,6 +341,9 @@ type Output struct {
 	Ack enums.AckReason
 	// Burst is the burst of OutputBurst.
 	Burst layer2.RawBurst
+	// Hint is what Burst is, for a transport: its Slot and KindData with
+	// enums.DataTypeCSBK.
+	Hint layer2.Hint
 	// Slot is the TDMA channel of OutputBurst.
 	Slot enums.Slot
 	// Due is the time at which to transmit OutputBurst.

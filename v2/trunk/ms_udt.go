@@ -588,5 +588,6 @@ func (m *MS) sendRaw(due time.Duration, slot enums.Slot, p [12]byte, dt enums.Da
 	if err != nil {
 		return out
 	}
-	return append(out, Output{Kind: OutputBurst, Burst: raw, Slot: slot, Due: due})
+	h := layer2.Hint{Slot: slot, Kind: layer2.KindData, DataType: dt, HasDataType: true}
+	return append(out, Output{Kind: OutputBurst, Burst: raw, Hint: h, Slot: slot, Due: due})
 }

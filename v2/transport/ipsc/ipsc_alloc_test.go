@@ -16,7 +16,7 @@ func TestAllocsIPSC(t *testing.T) {
 				buf, _ = u.AppendBinary(buf[:0])
 				h := u.Hint()
 				if raw, err := u.RawBurst(7, layer2.SyncSourceBS); err == nil {
-					_ = u.SetRawBurst(raw, h.Kind, h.VoiceBurst, h.DataType)
+					_ = u.SetRawBurst(raw, h)
 				}
 			}
 			if c, err := ipsc.DecodeControl(p); err == nil {

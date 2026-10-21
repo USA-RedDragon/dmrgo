@@ -103,35 +103,51 @@ func (d *Data) Hint() layer2.Hint {
 	return h
 }
 
-// SetKind sets Frame and Value from the layer2 view of the burst:
-// KindVoice with pos A to F, or KindData with dt. Burst A becomes
-// FrameVoiceSync, as MMDVMHost sends it. It returns an error, and changes
-// nothing, for another kind, an error that wraps layer2.ErrVoicePosition
-// for a position that is not A to F, and one that wraps layer2.ErrDataType
-// for a data type above 15.
-func (d *Data) SetKind(k layer2.Kind, pos enums.VoiceBurstType, dt enums.DataType) error {
+// SetHint sets Frame and Value from what h says the burst is, as a
+// machine Output gives it: KindVoice with a VoiceBurst of A to F, or
+// KindData with a DataType. Burst A becomes FrameVoiceSync, as MMDVMHost
+// sends it. It sets Slot when h.Slot is Slot1 or Slot2. It returns an
+// error, and changes nothing, for another kind, a position that is not A
+// to F, a KindData hint without a data type, or a data type above 15. The
+// position and data type errors wrap layer2.ErrVoicePosition and
+// layer2.ErrDataType.
+func (d *Data) SetHint(h layer2.Hint) error {
 	if d == nil {
 		return dmrgo.ErrNilReceiver
 	}
-
-	switch k {
+	var frame FrameType
+	var value uint8
+	switch h.Kind {
 	case layer2.KindVoice:
-		if _, ok := pos.Index(); !ok {
+		i, ok := h.VoiceBurst.Index()
+		if !ok {
 			return errKindVoice
 		}
-		d.Frame, d.Value = FrameVoice, uint8(pos-enums.VoiceBurstA)
-		if pos == enums.VoiceBurstA {
-			d.Frame = FrameVoiceSync
+		frame, value = FrameVoice, uint8(i&0xF)
+		if h.VoiceBurst == enums.VoiceBurstA {
+			frame = FrameVoiceSync
 		}
 	case layer2.KindData:
-		if dt > 15 {
+		if !h.HasDataType || h.DataType > 15 {
 			return errKindData
 		}
-		d.Frame, d.Value = FrameDataSync, uint8(dt)
+		frame, value = FrameDataSync, uint8(h.DataType)
 	case layer2.KindUnknown, layer2.KindReverseChannel:
 		return errKind
 	default:
 		return errKind
 	}
+	d.Frame, d.Value = frame, value
+	if h.Slot == enums.Slot1 || h.Slot == enums.Slot2 {
+		d.Slot = h.Slot
+	}
 	return nil
+}
+
+// SetKind sets Frame and Value as SetHint does for a Hint of k, pos and
+// dt.
+//
+// Deprecated: use SetHint with the Hint of a machine Output.
+func (d *Data) SetKind(k layer2.Kind, pos enums.VoiceBurstType, dt enums.DataType) error {
+	return d.SetHint(layer2.Hint{Kind: k, VoiceBurst: pos, DataType: dt, HasDataType: k == layer2.KindData})
 }

@@ -249,7 +249,7 @@ func TestRegression_RewriteEmbedded(t *testing.T) {
 	var lc pdu.FullLinkControl
 	var lcp pdu.FullLinkControlPayloads
 	for _, o := range sent {
-		if o.Kind != voice.OutputBurst || o.Position == enums.VoiceBurstUnknown {
+		if o.Kind != voice.OutputBurst || o.Hint.VoiceBurst == enums.VoiceBurstUnknown {
 			continue
 		}
 		var b layer2.Burst

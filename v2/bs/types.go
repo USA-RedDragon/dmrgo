@@ -232,6 +232,9 @@ type Output struct {
 	// Burst is the burst to send, with the color code and BS SYNC of the
 	// Repeater.
 	Burst layer2.RawBurst
+	// Hint is what Burst is, for a transport: Slot, and KindVoice with the
+	// superframe position or KindData with the data type.
+	Hint layer2.Hint
 	// Due is the time at which the burst goes out.
 	Due time.Duration
 	// From is the source of the call that the output belongs to.

@@ -159,6 +159,44 @@ func (d *DMRData) Hint() layer2.Hint {
 	return h
 }
 
+// SetHint sets Control from what h says the burst is, as a machine Output
+// gives it: ControlDataSync with the data type for KindData, ControlVoiceSync
+// for voice burst A, and N 1 to 5 for voice bursts B to F. It sets Slot
+// when h.Slot is Slot1 or Slot2, and Lost from h.SyncLost. It returns an
+// error, and changes nothing, for another kind, a position that is not A
+// to F, a KindData hint without a data type, a data type above 15, or a
+// nil d. A SyncLost hint needs no kind.
+func (d *DMRData) SetHint(h layer2.Hint) error {
+	if d == nil {
+		return errNilDMRData
+	}
+	var c Control
+	switch {
+	case h.SyncLost:
+	case h.Kind == layer2.KindVoice:
+		i, ok := h.VoiceBurst.Index()
+		if !ok {
+			return errHintVoice
+		}
+		c = Control(i & 0xF)
+		if i == 0 {
+			c = ControlVoiceSync
+		}
+	case h.Kind == layer2.KindData:
+		if !h.HasDataType || h.DataType > 15 {
+			return errHintData
+		}
+		c = ControlDataSync | Control(h.DataType)
+	default:
+		return errHintKind
+	}
+	d.Control, d.Lost = c, h.SyncLost
+	if h.Slot == enums.Slot1 || h.Slot == enums.Slot2 {
+		d.Slot = h.Slot
+	}
+	return nil
+}
+
 // DMRAloha is the payload of a CommandDMRAloha frame: the C_ALOHA CSBK
 // burst that a Tier III control channel sends. The firmware sets its slot
 // type to the configured color code.

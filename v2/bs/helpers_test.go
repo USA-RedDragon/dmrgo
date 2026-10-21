@@ -72,6 +72,9 @@ func run(t *testing.T, r *bs.Repeater, in []input, end time.Duration) []bs.Outpu
 		if len(out) > bs.MaxOutputs {
 			t.Fatalf("%d outputs in one call", len(out))
 		}
+		for i := range out {
+			checkHint(t, &out[i])
+		}
 		got = append(got, out...)
 	}
 	now := time.Duration(0)
@@ -99,6 +102,27 @@ func run(t *testing.T, r *bs.Repeater, in []input, end time.Duration) []bs.Outpu
 		now += 10 * time.Millisecond
 	}
 	return got
+}
+
+func checkHint(t *testing.T, o *bs.Output) {
+	t.Helper()
+	if o.Kind != bs.OutputBurst {
+		return
+	}
+	h := &o.Hint
+	b := layer2.NewBurst()
+	_ = b.DecodeFromBytes(o.Burst)
+	_, placed := h.VoiceBurst.Index()
+	switch {
+	case h.Slot != o.Slot:
+		t.Fatalf("hint slot %v, output slot %v", h.Slot, o.Slot)
+	case h.Kind == layer2.KindData && (!h.HasDataType || b.Kind != layer2.KindData || b.SlotType.DataType != h.DataType):
+		t.Fatalf("hint %+v for %v %v", *h, b.Kind, b.SlotType.DataType)
+	case h.Kind == layer2.KindVoice && (!placed || (h.VoiceBurst == enums.VoiceBurstA) != (b.VoiceBurst == enums.VoiceBurstA)):
+		t.Fatalf("hint %+v for voice burst %v", *h, b.VoiceBurst)
+	case h.Kind != layer2.KindData && h.Kind != layer2.KindVoice:
+		t.Fatalf("hint %+v", *h)
+	}
 }
 
 func filter(out []bs.Output, k bs.OutputKind) []bs.Output {

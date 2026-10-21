@@ -446,7 +446,7 @@ func (r *relayChecker) run(t *testing.T, now time.Duration) {
 			if err := b.DecodeFromBytes(o.Burst); err != nil {
 				t.Fatalf("relay burst %x does not decode: %v", o.Burst, err)
 			}
-			if o.Position == enums.VoiceBurstA && b.VoiceBurst != enums.VoiceBurstA {
+			if o.Hint.VoiceBurst == enums.VoiceBurstA && b.VoiceBurst != enums.VoiceBurstA {
 				t.Fatalf("relay burst A %x without a voice SYNC", o.Burst)
 			}
 			r.events = r.rx.Burst(o.Due, &o.Burst, layer2.Hint{}, r.events[:0])
@@ -613,7 +613,7 @@ func transmit(t *testing.T, tx *voice.Transmitter, rt *roundTrip) []sent {
 				continue
 			}
 			s := sent{out: o, voice: -1}
-			if o.Position != enums.VoiceBurstUnknown {
+			if o.Hint.VoiceBurst != enums.VoiceBurstUnknown {
 				s.voice = nVoice
 				for i := range s.frames {
 					s.frames[i] = vocoder.AMBESilence()
@@ -687,7 +687,7 @@ func (rt *roundTrip) damage(i int, b *sent) layer2.RawBurst {
 	k := int(rt.drop[i] & 0x3F)
 	var bit int
 	switch {
-	case b.out.Position == enums.VoiceBurstA:
+	case b.out.Hint.VoiceBurst == enums.VoiceBurstA:
 		bit = 108 + k%48
 	case b.voice >= 0 && k%16 < 8:
 		bit = 108 + k%16
@@ -730,7 +730,7 @@ func deliver(t *testing.T, rt *roundTrip, bursts []sent) delivery {
 		for at, ok := relay.Deadline(); ok && at <= until; at, ok = relay.Deadline() {
 			outs = relay.Tick(at, outs[:0])
 			for _, o := range outs {
-				if o.Kind == voice.OutputBurst && o.Position != enums.VoiceBurstUnknown && !o.Fill {
+				if o.Kind == voice.OutputBurst && o.Hint.VoiceBurst != enums.VoiceBurstUnknown && !o.Fill {
 					slots := o.Burst.VoiceSlots()
 					d.relayed = append(d.relayed, slots[:]...)
 				}
@@ -776,18 +776,18 @@ func deliver(t *testing.T, rt *roundTrip, bursts []sent) delivery {
 		}
 		switch {
 		case b.voice >= 0:
-			if p := b.out.Position; p != enums.VoiceBurstC && p != enums.VoiceBurstD {
+			if p := b.out.Hint.VoiceBurst; p != enums.VoiceBurstC && p != enums.VoiceBurstD {
 				loose = false
 			}
 			d.arrived = append(d.arrived, arrival{sent: b, raw: rt.damage(i, b), loose: loose, first: first,
 				afterHeader: first && anchored})
 			first = false
-		case b.out.DataType == enums.DataTypeVoiceLCHeader:
+		case b.out.Hint.DataType == enums.DataTypeVoiceLCHeader:
 			seg.headers++
 			header, anchored = true, true
-		case b.out.DataType == enums.DataTypePIHeader:
+		case b.out.Hint.DataType == enums.DataTypePIHeader:
 			anchored = header
-		case b.out.DataType == enums.DataTypeTerminatorWithLC:
+		case b.out.Hint.DataType == enums.DataTypeTerminatorWithLC:
 			seg.terminators++
 		}
 		last, started = b.out.Due, true
@@ -893,14 +893,14 @@ func checkVoice(t *testing.T, k int, e *voice.Event, arrived []arrival) {
 	if b.loose {
 		return
 	}
-	switch b.out.Position {
+	switch b.out.Hint.VoiceBurst {
 	case enums.VoiceBurstC, enums.VoiceBurstD:
-		if e.Position != b.out.Position && e.Position != enums.VoiceBurstUnknown {
-			t.Fatalf("voice event %d: position %v, sent %v", k, e.Position, b.out.Position)
+		if e.Position != b.out.Hint.VoiceBurst && e.Position != enums.VoiceBurstUnknown {
+			t.Fatalf("voice event %d: position %v, sent %v", k, e.Position, b.out.Hint.VoiceBurst)
 		}
 	default:
-		if e.Position != b.out.Position {
-			t.Fatalf("voice event %d: position %v, sent %v", k, e.Position, b.out.Position)
+		if e.Position != b.out.Hint.VoiceBurst {
+			t.Fatalf("voice event %d: position %v, sent %v", k, e.Position, b.out.Hint.VoiceBurst)
 		}
 	}
 	switch {

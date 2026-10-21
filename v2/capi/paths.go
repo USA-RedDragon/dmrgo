@@ -232,7 +232,7 @@ func receiverFuzzC(bursts [][33]byte, seed uint64) ([]string, int, error) {
 
 func outputKeyC(o *C.dmrgo_voice_output_t) string {
 	return fmt.Sprintf("%d %x %d %d %d %t %d", int(o.kind), unsafe.Slice((*byte)(unsafe.Pointer(&o.burst.v[0])), 33), int64(o.due),
-		int(o.position), int(o.data_type), bool(o.fill), int(o.reason))
+		int(o.hint.voice_burst), int(o.hint.data_type), bool(o.fill), int(o.reason))
 }
 
 func transmitterFuzzC(alias string, frames int, seed uint64) ([]string, int, error) {

@@ -30,9 +30,9 @@ var (
 	errTextLength           = errors.New("dmrd: Text is too long or has the wrong length for the message")
 	errBridgeVersion        = errors.New("dmrd: Bridge.Version is not 1, 4 or 5")
 	errBridgeData           = errors.New("dmrd: Bridge.Data does not encode")
-	errKindVoice      error = &wrapError{"dmrd: SetKind: voice position is not A to F", layer2.ErrVoicePosition}
-	errKindData       error = &wrapError{"dmrd: SetKind: data type does not fit in 4 bits", layer2.ErrDataType}
-	errKind                 = errors.New("dmrd: SetKind: kind is not KindVoice or KindData")
+	errKindVoice      error = &wrapError{"dmrd: SetHint: voice position is not A to F", layer2.ErrVoicePosition}
+	errKindData       error = &wrapError{"dmrd: SetHint: no data type, or it does not fit in 4 bits", layer2.ErrDataType}
+	errKind                 = errors.New("dmrd: SetHint: kind is not KindVoice or KindData")
 )
 
 type wrapError struct {

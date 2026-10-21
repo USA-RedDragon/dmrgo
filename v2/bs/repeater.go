@@ -118,6 +118,7 @@ type Config struct {
 type queued struct {
 	burst layer2.RawBurst
 	to    Dest
+	dt    enums.DataType
 }
 
 type pending struct {
@@ -781,7 +782,7 @@ func (r *Repeater) single(now time.Duration, s *slot, raw *layer2.RawBurst, dt e
 	if err != nil {
 		return dst
 	}
-	return r.send(now, s, out, from, dst)
+	return r.send(now, s, out, dt, from, dst)
 }
 
 func (r *Repeater) dataHeader(now time.Duration, s *slot, raw *layer2.RawBurst, from Source, dst []Output) []Output {
@@ -834,7 +835,7 @@ func (r *Repeater) dataHeader(now time.Duration, s *slot, raw *layer2.RawBurst, 
 	}
 	out, err := layer2.BuildDataBurst(p, enums.DataTypeDataHeader, r.cc, layer2.SyncSourceBS)
 	if err == nil {
-		dst = r.send(now, s, out, from, dst)
+		dst = r.send(now, s, out, enums.DataTypeDataHeader, from, dst)
 	}
 	if s.dataLeft == 0 {
 		dst = r.endData(now, s, 0, dst)
@@ -884,7 +885,7 @@ func (r *Repeater) dataBlock(now time.Duration, s *slot, raw *layer2.RawBurst, d
 		return dst
 	}
 	s.last = now
-	dst = r.send(now, s, out, from, dst)
+	dst = r.send(now, s, out, dt, from, dst)
 	if s.dataLeft > 0 {
 		s.dataLeft--
 		if s.dataLeft == 0 {
@@ -908,11 +909,12 @@ func (r *Repeater) endData(now time.Duration, s *slot, reason voice.EndReason, d
 	return dst
 }
 
-func (r *Repeater) send(now time.Duration, s *slot, b layer2.RawBurst, from Source, dst []Output) []Output {
+func (r *Repeater) send(now time.Duration, s *slot, b layer2.RawBurst, dt enums.DataType, from Source, dst []Output) []Output {
 	if r.mode == ModeNetwork {
 		var o *Output
 		dst, o = appendOutput(dst, OutputBurst)
 		o.Slot, o.To, o.Burst, o.Due, o.From = s.id, ToNetwork, b, now, from
+		o.Hint = dataHint(s.id, dt)
 		return dst
 	}
 	if s.count == len(s.queue) {
@@ -922,7 +924,7 @@ func (r *Repeater) send(now time.Duration, s *slot, b layer2.RawBurst, from Sour
 	if from.RF {
 		to |= ToNetwork
 	}
-	s.queue[(s.head+s.count)%len(s.queue)] = queued{burst: b, to: to}
+	s.queue[(s.head+s.count)%len(s.queue)] = queued{burst: b, to: to, dt: dt}
 	s.count++
 	return dst
 }
@@ -934,27 +936,30 @@ func (r *Repeater) flush(now time.Duration, dst []Output) []Output {
 	for i := range r.slots {
 		s := &r.slots[i]
 		var b layer2.RawBurst
+		var h layer2.Hint
 		var due time.Duration
 		var ok bool
-		if b, due, ok, dst = r.pull(now, s, dst); ok {
+		if b, h, due, ok, dst = r.pull(now, s, dst); ok {
 			var o *Output
 			dst, o = appendOutput(dst, OutputBurst)
-			o.Slot, o.To, o.Burst, o.Due, o.From = s.id, ToNetwork, b, due, s.owner
+			o.Slot, o.To, o.Burst, o.Hint, o.Due, o.From = s.id, ToNetwork, b, h, due, s.owner
 		}
 	}
 	return dst
 }
 
-func (r *Repeater) pull(now time.Duration, s *slot, dst []Output) (layer2.RawBurst, time.Duration, bool, []Output) {
+func (r *Repeater) pull(now time.Duration, s *slot, dst []Output) (layer2.RawBurst, layer2.Hint, time.Duration, bool, []Output) {
 	var b layer2.RawBurst
+	var h layer2.Hint
 	var due time.Duration
 	ok := false
 	outs := s.tx.Tick(now, r.txOut[:0])
 	for i := range outs {
 		if outs[i].Kind == voice.OutputBurst {
-			b, due, ok = outs[i].Burst, outs[i].Due, true
+			b, h, due, ok = outs[i].Burst, outs[i].Hint, outs[i].Due, true
 		}
 	}
+	h.Slot = s.id
 	if s.tx.State() == voice.TransmitterTimedOut {
 		s.tx.Reset()
 		if s.state == SlotVoice {
@@ -964,7 +969,7 @@ func (r *Repeater) pull(now time.Duration, s *slot, dst []Output) (layer2.RawBur
 			o.Slot, o.From, o.Reason, o.Call = s.id, s.owner, ReasonTimeout, s.call
 		}
 	}
-	return b, due, ok, dst
+	return b, h, due, ok, dst
 }
 
 func (r *Repeater) turn(dst []Output) []Output {
@@ -973,7 +978,7 @@ func (r *Repeater) turn(dst []Output) []Output {
 	r.next += SlotTime
 	r.nextSlot = r.nextSlot.Other()
 
-	b, _, ok, dst := r.pull(due+burstPeriod-1, s, dst)
+	b, h, _, ok, dst := r.pull(due+burstPeriod-1, s, dst)
 	to := ToRF
 	if ok && s.owner.RF {
 		to |= ToNetwork
@@ -982,21 +987,21 @@ func (r *Repeater) turn(dst []Output) []Output {
 	case ok:
 	case s.count > 0:
 		q := &s.queue[s.head]
-		b, to, ok = q.burst, q.to, true
+		b, h, to, ok = q.burst, dataHint(s.id, q.dt), q.to, true
 		s.head, s.count = (s.head+1)%len(s.queue), s.count-1
 	case s.state == SlotChanAuth:
-		b, ok = s.auth, true
+		b, h, ok = s.auth, dataHint(s.id, s.auth.SlotType().DataType), true
 	case s.state == SlotCallHang || s.state == SlotDataHang || s.state == SlotChanAuthSelect && s.authPrev == SlotCallHang:
-		b, ok = s.hang, true
+		b, h, ok = s.hang, dataHint(s.id, enums.DataTypeTerminatorWithLC), true
 	case r.cach:
-		b, ok = r.idle, true
+		b, h, ok = r.idle, dataHint(s.id, enums.DataTypeIdle), true
 	}
 	if !ok {
 		return dst
 	}
 	var o *Output
 	dst, o = appendOutput(dst, OutputBurst)
-	o.Slot, o.To, o.Burst, o.Due, o.From = s.id, to, b, due, s.owner
+	o.Slot, o.To, o.Burst, o.Hint, o.Due, o.From = s.id, to, b, h, due, s.owner
 	if r.cach {
 		if r.gen.First() {
 			r.shortLC()
@@ -1039,6 +1044,10 @@ func activityOf(c *voice.Call) enums.ActivityID {
 func hashOf(id uint32) byte {
 	h, _ := pdu.AddressHash(id)
 	return h
+}
+
+func dataHint(s enums.Slot, dt enums.DataType) layer2.Hint {
+	return layer2.Hint{Slot: s, Kind: layer2.KindData, DataType: dt, HasDataType: true}
 }
 
 //go:noinline

@@ -14,7 +14,7 @@ func TestAllocsHytera(t *testing.T) {
 			if f, err := hytera.DecodeFrame(p); err == nil {
 				buf, _ = f.AppendBinary(buf[:0])
 				h := f.Hint()
-				_ = f.SetKind(h.Kind, h.VoiceBurst, h.DataType)
+				_ = f.SetHint(h)
 				_ = f.HasBurst()
 			}
 			if h, err := hytera.DecodeHeartbeat(p); err == nil {

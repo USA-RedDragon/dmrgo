@@ -199,6 +199,9 @@ type Output struct {
 	Reason Reason
 	// Burst is the burst to send, for OutputBurst.
 	Burst layer2.RawBurst
+	// Hint is what Burst is, for a transport: KindData with
+	// enums.DataTypeCSBK. Its Slot is SlotUnknown.
+	Hint layer2.Hint
 	// Due is the time at which the burst goes on air, 60 ms after the one
 	// before it.
 	Due time.Duration

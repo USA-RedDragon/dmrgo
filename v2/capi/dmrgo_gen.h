@@ -1018,6 +1018,33 @@ struct dmrgo_layer2_raw_burst_t {
 	uint8_t v[33];
 };
 
+struct dmrgo_layer2_hint_t {
+	/* Slot is the TDMA channel, or enums.SlotUnknown. */
+	dmrgo_enums_slot_t slot;
+	/* Kind is the burst kind from the transport, for example the DMRD frame type. KindUnknown classifies the burst by its SYNC field. */
+	dmrgo_layer2_kind_t kind;
+	/* VoiceBurst is the superframe position from the transport, for example the DMRD voice sequence or an IPSC burst type. VoiceBurstUnknown means not known. */
+	dmrgo_enums_voice_burst_type_t voice_burst;
+	/* DataType is the data type from the transport. HasDataType reports whether it is set. */
+	dmrgo_enums_data_type_t data_type;
+	/* HasDataType reports whether DataType is set. */
+	bool has_data_type;
+	/* Seq is the transport sequence number, for example the RTP or DMRD sequence number. HasSeq reports whether it is set. */
+	uint16_t seq;
+	/* HasSeq reports whether Seq is set. */
+	bool has_seq;
+	/* SeqBits is the width of Seq in bits, after which it wraps to 0. 0 means 16, as for an RTP sequence number. The DMRD sequence number of HomeBrew has 8. */
+	uint8_t seq_bits;
+	/* Stream is the transport stream ID. HasStream reports whether it is set. */
+	uint32_t stream;
+	/* HasStream reports whether Stream is set. */
+	bool has_stream;
+	/* End is the end-of-call flag of the transport and how far to trust it. */
+	dmrgo_layer2_end_hint_t end;
+	/* SyncLost reports that the transport lost the signal before this burst, for example an MMDVM TAG_LOST or an IPSC "sync not detected" burst. */
+	bool sync_lost;
+};
+
 struct dmrgo_bs_source_t {
 	/* RF reports a burst from the receiver of the Repeater. */
 	bool rf;
@@ -1076,6 +1103,8 @@ struct dmrgo_bs_output_t {
 	uint8_t cach[3];
 	/* Burst is the burst to send, with the color code and BS SYNC of the Repeater. */
 	dmrgo_layer2_raw_burst_t burst;
+	/* Hint is what Burst is, for a transport: Slot, and KindVoice with the superframe position or KindData with the data type. */
+	dmrgo_layer2_hint_t hint;
 	/* Due is the time at which the burst goes out. */
 	dmrgo_duration_t due;
 	/* From is the source of the call that the output belongs to. */
@@ -1088,33 +1117,6 @@ struct dmrgo_bs_output_t {
 	dmrgo_voice_end_reason_t end;
 	/* Reason is why the source was refused. */
 	dmrgo_bs_reason_t reason;
-};
-
-struct dmrgo_layer2_hint_t {
-	/* Slot is the TDMA channel, or enums.SlotUnknown. */
-	dmrgo_enums_slot_t slot;
-	/* Kind is the burst kind from the transport, for example the DMRD frame type. KindUnknown classifies the burst by its SYNC field. */
-	dmrgo_layer2_kind_t kind;
-	/* VoiceBurst is the superframe position from the transport, for example the DMRD voice sequence or an IPSC burst type. VoiceBurstUnknown means not known. */
-	dmrgo_enums_voice_burst_type_t voice_burst;
-	/* DataType is the data type from the transport. HasDataType reports whether it is set. */
-	dmrgo_enums_data_type_t data_type;
-	/* HasDataType reports whether DataType is set. */
-	bool has_data_type;
-	/* Seq is the transport sequence number, for example the RTP or DMRD sequence number. HasSeq reports whether it is set. */
-	uint16_t seq;
-	/* HasSeq reports whether Seq is set. */
-	bool has_seq;
-	/* SeqBits is the width of Seq in bits, after which it wraps to 0. 0 means 16, as for an RTP sequence number. The DMRD sequence number of HomeBrew has 8. */
-	uint8_t seq_bits;
-	/* Stream is the transport stream ID. HasStream reports whether it is set. */
-	uint32_t stream;
-	/* HasStream reports whether Stream is set. */
-	bool has_stream;
-	/* End is the end-of-call flag of the transport and how far to trust it. */
-	dmrgo_layer2_end_hint_t end;
-	/* SyncLost reports that the transport lost the signal before this burst, for example an MMDVM TAG_LOST or an IPSC "sync not detected" burst. */
-	bool sync_lost;
 };
 
 struct dmrgo_csbk_match_t {
@@ -1216,6 +1218,8 @@ struct dmrgo_csbk_output_t {
 	dmrgo_csbk_reason_t reason;
 	/* Burst is the burst to send, for OutputBurst. */
 	dmrgo_layer2_raw_burst_t burst;
+	/* Hint is what Burst is, for a transport: KindData with enums.DataTypeCSBK. Its Slot is SlotUnknown. */
+	dmrgo_layer2_hint_t hint;
 	/* Due is the time at which the burst goes on air, 60 ms after the one before it. */
 	dmrgo_duration_t due;
 	/* Target and Source are the 24-bit addresses of the request, for OutputDone and OutputRequest, and of the Pre_CSBKs, for OutputAnnounced, OutputJoined and OutputExpired. */
@@ -1608,6 +1612,8 @@ struct dmrgo_data_output_t {
 	dmrgo_data_output_kind_t kind;
 	/* Burst is the burst to send. */
 	dmrgo_layer2_raw_burst_t burst;
+	/* Hint is what the burst is, for a transport: KindData with the data type of the burst. Its Slot is SlotUnknown. */
+	dmrgo_layer2_hint_t hint;
 	/* Due is the time at which the burst goes on air, 60 ms after the one before it. */
 	dmrgo_duration_t due;
 	/* Try is the transmission that the burst belongs to, or that ended the message: 1 for the first. */
@@ -4653,6 +4659,8 @@ struct dmrgo_trunk_output_t {
 	dmrgo_enums_ack_reason_t ack;
 	/* Burst is the burst of OutputBurst. */
 	dmrgo_layer2_raw_burst_t burst;
+	/* Hint is what Burst is, for a transport: its Slot and KindData with enums.DataTypeCSBK. */
+	dmrgo_layer2_hint_t hint;
 	/* Slot is the TDMA channel of OutputBurst. */
 	dmrgo_enums_slot_t slot;
 	/* Due is the time at which to transmit OutputBurst. */
@@ -4978,6 +4986,8 @@ struct dmrgo_trunk_tscc_output_t {
 	uint8_t cach[3];
 	/* Burst is the burst of TSCCBurst. */
 	dmrgo_layer2_raw_burst_t burst;
+	/* Hint is what Burst is, for a transport: Slot, and KindData with the data type, or for a relayed burst what the TSCC decoded of it: the kind, the data type, and voice burst A from its SYNC. */
+	dmrgo_layer2_hint_t hint;
 	/* Address is the MS of TSCCRegistered, TSCCDeregistered, TSCCRefused, TSCCDelivered, TSCCUDT, TSCCDiversion, TSCCStun, TSCCInterrupt and TSCCIPAdvice. */
 	uint32_t address;
 	/* Ack is the reason of TSCCRefused and TSCCDelivered, and the answer of the MS for TSCCStatus and TSCCStun. */
@@ -5151,10 +5161,8 @@ struct dmrgo_voice_output_t {
 	dmrgo_layer2_raw_burst_t burst;
 	/* Due is the time at which the burst goes on air, 60 ms after the one before it. */
 	dmrgo_duration_t due;
-	/* Position is the superframe position of a voice burst, and VoiceBurstUnknown for a header or terminator. */
-	dmrgo_enums_voice_burst_type_t position;
-	/* DataType is the data type of a header, PI Header or terminator. It is zero, the value of enums.DataTypePIHeader, for a voice burst, so check Position first. */
-	dmrgo_enums_data_type_t data_type;
+	/* Hint is what the burst is, for a transport: KindVoice with the superframe position, or KindData with the data type of a header, PI Header or terminator. Its Slot is SlotUnknown. */
+	dmrgo_layer2_hint_t hint;
 	/* Fill reports a voice burst with silence in place of voice that was not queued in time, or that pads the last superframe. The fills that Relay queues for lost bursts are voice and do not set it. */
 	bool fill;
 	/* Reason is why the transmission ended: EndTerminator after a normal end, EndLost for a relayed call that was lost, EndTimeout after T_TO. */
@@ -9493,7 +9501,9 @@ int dmrgo_dmrd_dmr_plus_options_append_text(dmrgo_dmrd_dmr_plus_options_t *self,
 int dmrgo_dmrd_data_append_binary(dmrgo_dmrd_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.Data.Hint. Hint returns what the packet tells about its burst, for the service machines: the slot, the voice position or data type, the sequence number (8 bits) and the stream ID. */
 int dmrgo_dmrd_data_hint(dmrgo_dmrd_data_t *self, dmrgo_layer2_hint_t *out);
-/* Go: dmrd.Data.SetKind. SetKind sets Frame and Value from the layer2 view of the burst: KindVoice with pos A to F, or KindData with dt. */
+/* Go: dmrd.Data.SetHint. SetHint sets Frame and Value from what h says the burst is, as a machine Output gives it: KindVoice with a VoiceBurst of A to F, or KindData with a DataType. */
+int dmrgo_dmrd_data_set_hint(dmrgo_dmrd_data_t *self, const dmrgo_layer2_hint_t *h);
+/* Go: dmrd.Data.SetKind. SetKind sets Frame and Value as SetHint does for a Hint of k, pos and dt. */
 int dmrgo_dmrd_data_set_kind(dmrgo_dmrd_data_t *self, dmrgo_layer2_kind_t k, dmrgo_enums_voice_burst_type_t pos, dmrgo_enums_data_type_t dt);
 /* Go: dmrd.Data.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_data_string(dmrgo_dmrd_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -9621,7 +9631,9 @@ int dmrgo_hytera_frame_append_binary(dmrgo_hytera_frame_t *self, uint8_t *dst, s
 int dmrgo_hytera_frame_has_burst(const dmrgo_hytera_frame_t *self, bool *out);
 /* Go: hytera.Frame.Hint. Hint returns what the frame tells about its burst, for the service machines: the slot, the voice position or data type from SlotType, and the sequence number (8 bits). */
 int dmrgo_hytera_frame_hint(dmrgo_hytera_frame_t *self, dmrgo_layer2_hint_t *out);
-/* Go: hytera.Frame.SetKind. SetKind sets SlotType from the layer2 view of the burst: KindVoice with pos A to F, or KindData with dt. */
+/* Go: hytera.Frame.SetHint. SetHint sets SlotType from what h says the burst is, as a machine Output gives it: KindVoice with a VoiceBurst of A to F, or KindData with a DataType. */
+int dmrgo_hytera_frame_set_hint(dmrgo_hytera_frame_t *self, const dmrgo_layer2_hint_t *h);
+/* Go: hytera.Frame.SetKind. SetKind sets SlotType as SetHint does for a Hint of k, pos and dt. */
 int dmrgo_hytera_frame_set_kind(dmrgo_hytera_frame_t *self, dmrgo_layer2_kind_t k, dmrgo_enums_voice_burst_type_t pos, dmrgo_enums_data_type_t dt);
 /* Go: hytera.Heartbeat.AppendBinary. AppendBinary appends the heartbeat, or the keepalive, to dst. */
 int dmrgo_hytera_heartbeat_append_binary(const dmrgo_hytera_heartbeat_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
@@ -9689,8 +9701,8 @@ int dmrgo_ipsc_user_hint(dmrgo_ipsc_user_t *self, dmrgo_layer2_hint_t *out);
 int dmrgo_ipsc_user_is_voice(const dmrgo_ipsc_user_t *self, bool *out);
 /* Go: ipsc.User.RawBurst. RawBurst rebuilds the 264-bit burst of the packet. */
 int dmrgo_ipsc_user_raw_burst(dmrgo_ipsc_user_t *self, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
-/* Go: ipsc.User.SetRawBurst. SetRawBurst sets Burst and Voice or Data from the 264-bit burst raw and its layer2 view, as an XPR 8400 sends them: KindVoice with the position pos, which picks the layout (the full LC of burst E stays as it is in u.Voice.LC), or KindData with the data type dt. */
-int dmrgo_ipsc_user_set_raw_burst(dmrgo_ipsc_user_t *self, const dmrgo_layer2_raw_burst_t *raw, dmrgo_layer2_kind_t k, dmrgo_enums_voice_burst_type_t pos, dmrgo_enums_data_type_t dt);
+/* Go: ipsc.User.SetRawBurst. SetRawBurst sets Burst and Voice or Data from the 264-bit burst raw and what h says it is, as a machine Output gives it, in the form an XPR 8400 sends: KindVoice with a VoiceBurst of A to F, which picks the layout (the full LC of burst E stays as it is in u.Voice.LC), or KindData with a DataType. */
+int dmrgo_ipsc_user_set_raw_burst(dmrgo_ipsc_user_t *self, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h);
 /* dmrgo_ipsc_auth_key_free frees the handle. self may be NULL. */
 int dmrgo_ipsc_auth_key_free(dmrgo_ipsc_auth_key_t *self);
 /* dmrgo_ipsc_auth_key_sign_need sets *items and *arena to the room that dmrgo_ipsc_auth_key_sign needs for these arguments, without a change to the handle. */
@@ -9747,6 +9759,8 @@ int dmrgo_mmdvm_dmr_data_append_binary(dmrgo_mmdvm_dmr_data_t *self, uint8_t *ds
 int dmrgo_mmdvm_dmr_data_command(const dmrgo_mmdvm_dmr_data_t *self, dmrgo_mmdvm_command_t *out);
 /* Go: mmdvm.DMRData.Hint. Hint returns what the frame tells about its burst, for the service machines: the slot, and from Control the data type, voice burst A, or voice bursts B to F from N 1 to 5. */
 int dmrgo_mmdvm_dmr_data_hint(dmrgo_mmdvm_dmr_data_t *self, dmrgo_layer2_hint_t *out);
+/* Go: mmdvm.DMRData.SetHint. SetHint sets Control from what h says the burst is, as a machine Output gives it: ControlDataSync with the data type for KindData, ControlVoiceSync for voice burst A, and N 1 to 5 for voice bursts B to F. */
+int dmrgo_mmdvm_dmr_data_set_hint(dmrgo_mmdvm_dmr_data_t *self, const dmrgo_layer2_hint_t *h);
 /* Go: mmdvm.DMRShortLC.AppendBinary. AppendBinary appends the 9 octets of s to dst. */
 int dmrgo_mmdvm_dmr_short_lc_append_binary(dmrgo_mmdvm_dmr_short_lc_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.DMRShortLC.String. String returns the fields of s as text, for printing. */

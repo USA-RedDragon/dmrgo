@@ -160,12 +160,12 @@ func TestTransmitter_Source(t *testing.T) {
 		switch {
 		case o.Kind == voice.OutputEnded:
 			pos = append(pos, '.')
-		case o.DataType == enums.DataTypeVoiceLCHeader:
+		case o.Hint.DataType == enums.DataTypeVoiceLCHeader:
 			pos = append(pos, 'h')
-		case o.DataType == enums.DataTypeTerminatorWithLC:
+		case o.Hint.DataType == enums.DataTypeTerminatorWithLC:
 			pos = append(pos, 't')
 		default:
-			pos = append(pos, o.Position.String()[0])
+			pos = append(pos, o.Hint.VoiceBurst.String()[0])
 		}
 		if o.Fill {
 			fills++
@@ -304,7 +304,7 @@ func TestTransmitter_RelayLateEntry(t *testing.T) {
 		sent = append(sent, tx.Tick(now, nil)...)
 	}
 	sent = append(sent, drain(t, tx, 30)...)
-	if sent[0].DataType != enums.DataTypeVoiceLCHeader || tx.Dropped() != 7 {
+	if sent[0].Hint.DataType != enums.DataTypeVoiceLCHeader || tx.Dropped() != 7 {
 		t.Fatalf("first output %+v, dropped %d", sent[0], tx.Dropped())
 	}
 	got := feed(t, newReceiver(t, nil), timedOutputs(sent), -1)
