@@ -341,6 +341,10 @@ typedef struct dmrgo_layer3_registration_service_options_t dmrgo_layer3_registra
 typedef struct dmrgo_layer3_service_options_t dmrgo_layer3_service_options_t;
 /* Go: layer3.VoiceServiceOptions. VoiceServiceOptions is the 7-bit Service_Options of a Tier III voice service request, such as a C_RAND for a talkgroup or individual voice call. */
 typedef struct dmrgo_layer3_voice_service_options_t dmrgo_layer3_voice_service_options_t;
+/* Go: location.Decoder. Decoder decodes positions. */
+typedef struct dmrgo_location_decoder_t dmrgo_location_decoder_t;
+/* Go: location.Fix. Fix is a position that a radio reported. */
+typedef struct dmrgo_location_fix_t dmrgo_location_fix_t;
 /* Go: ars.Header. Header is the first header octet of a message. */
 typedef struct dmrgo_ars_header_t dmrgo_ars_header_t;
 /* Go: ars.Message. Message is a MOTOTRBO Automatic Registration Service message, the payload of a UDP datagram to port 4005. */
@@ -612,6 +616,8 @@ typedef uint8_t dmrgo_layer3_position_error_t;
 typedef uint8_t dmrgo_layer3_source_type_t;
 /* Go: layer3.TalkerAliasDataFormat. TalkerAliasDataFormat is the 2-bit character encoding of a talker alias (ETSI TS 102 361-2 clause 7.2.18, Table 7.25). */
 typedef uint8_t dmrgo_layer3_talker_alias_data_format_t;
+/* Go: location.Format. Format is the format that a position came in. */
+typedef uint8_t dmrgo_location_format_t;
 /* Go: ars.Event. Event is the 2-bit event of a device registration. */
 typedef uint8_t dmrgo_ars_event_t;
 /* Go: ars.Type. Type is the 4-bit PDU type of a message. */
@@ -1974,6 +1980,30 @@ struct dmrgo_layer3_voice_service_options_t {
 	uint8_t priority_level;
 };
 
+struct dmrgo_location_fix_t {
+	dmrgo_location_format_t format;
+	uint32_t source;
+	uint32_t destination;
+	bool valid;
+	double latitude;
+	double longitude;
+	double altitude;
+	bool has_altitude;
+	double radius;
+	bool has_radius;
+	double speed;
+	bool has_speed;
+	double course;
+	bool has_course;
+	uint16_t year;
+	uint8_t month;
+	uint8_t day;
+	uint8_t hour;
+	uint8_t minute;
+	uint8_t second;
+	bool has_time;
+};
+
 struct dmrgo_ars_header_t {
 	bool extension;
 	bool ack_required;
@@ -2597,6 +2627,7 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ERR_LAYER2_SHORT_LC_INCOMPLETE (-115)
 #define DMRGO_ERR_LAYER2_SHORT_LC_SEQUENCE (-116)
 #define DMRGO_ERR_LAYER2_VOICE_TERMINATED (-117)
+#define DMRGO_ERR_LOCATION_NO_FIX (-196)
 #define DMRGO_ERR_LRRP_LENGTH (-187)
 #define DMRGO_ERR_LRRP_SHORT (-188)
 #define DMRGO_ERR_LRRP_TOKEN (-189)
@@ -3808,6 +3839,10 @@ struct dmrgo_voice_output_t {
 #define DMRGO_LAYER3_TALKER_ALIAS_UTF16 ((dmrgo_layer3_talker_alias_data_format_t)3)
 /* Go: layer3.TalkerAliasUTF8. Unicode UTF-8 */
 #define DMRGO_LAYER3_TALKER_ALIAS_UTF8 ((dmrgo_layer3_talker_alias_data_format_t)2)
+/* Go: location.FormatLRRP. FormatLRRP is a MOTOTRBO LRRP report to UDP port 4001, as MOTOTRBO and Hytera radios send. */
+#define DMRGO_LOCATION_FORMAT_LRRP ((dmrgo_location_format_t)2)
+/* Go: location.FormatNMEA. FormatNMEA is an NMEA RMC sentence to UDP port 10110, as AnyTone radios send. */
+#define DMRGO_LOCATION_FORMAT_NMEA ((dmrgo_location_format_t)1)
 /* Go: ars.EventInitial. the radio registers after power on or a channel change */
 #define DMRGO_ARS_EVENT_INITIAL ((dmrgo_ars_event_t)1)
 /* Go: ars.EventNone. no event, as in a user registration */
@@ -5727,6 +5762,14 @@ int dmrgo_layer3_voice_service_options_encode(dmrgo_layer3_voice_service_options
 int dmrgo_layer3_voice_service_options_field(const dmrgo_layer3_voice_service_options_t *self, uint8_t *out);
 /* Go: layer3.VoiceServiceOptions.String. String returns the fields of s as text, for printing. */
 int dmrgo_layer3_voice_service_options_string(dmrgo_layer3_voice_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* dmrgo_location_decoder_new makes a zero location.Decoder. */
+int dmrgo_location_decoder_new(dmrgo_location_decoder_t **out);
+/* dmrgo_location_decoder_free frees the handle. self may be NULL. */
+int dmrgo_location_decoder_free(dmrgo_location_decoder_t *self);
+/* Go: location.Decoder.Decode. Decode returns the position in a data packet, with header h and user data data: an NMEA RMC sentence to UDP port 10110 or an LRRP report with a position to UDP port 4001. */
+int dmrgo_location_decoder_decode(dmrgo_location_decoder_t *self, const dmrgo_pdu_data_header_t *h, const uint8_t *data, size_t data_len, dmrgo_location_fix_t *out);
+/* Go: location.Format.String. String returns the name of f. */
+int dmrgo_location_format_string(dmrgo_location_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ars.DecodeMessage. DecodeMessage decodes a Message from data. */
 int dmrgo_ars_decode_message(const uint8_t *data, size_t data_len, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ars.Event.String. String returns the name of e. */

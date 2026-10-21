@@ -467,6 +467,10 @@
 		dmrgo_layer3_voice_service_options_encode;
 		dmrgo_layer3_voice_service_options_field;
 		dmrgo_layer3_voice_service_options_string;
+		dmrgo_location_decoder_decode;
+		dmrgo_location_decoder_free;
+		dmrgo_location_decoder_new;
+		dmrgo_location_format_string;
 		dmrgo_lrrp_circle2_d_append_binary;
 		dmrgo_lrrp_circle2_d_string;
 		dmrgo_lrrp_circle3_d_append_binary;
