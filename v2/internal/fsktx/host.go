@@ -175,7 +175,10 @@ type AudioConfig struct {
 	// corrgen_test.go at 24000 and 48000 Hz. Other rates interpolate the
 	// table of 48000 Hz linearly. 0 is off.
 	Corr int
-	// CorrHiHz is the top of the band pass of Corr; 0 means none.
+	// CorrHiHz is the top of the band pass of Corr; 0 means none. The band
+	// pass also scales the correction by 2h/(1+h), with h the response of
+	// the hold and the low pass of the radio model of Opt, so that a radio
+	// without them does not get the correction 1/h too strong.
 	CorrHiHz float64
 	// CorrTaps is the length of the band pass of Corr at 48000 Hz, odd,
 	// scaled by Hz to at most 511; 0 means 161.
@@ -326,9 +329,11 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 				t, skip = corrTable(cfg.Hz, cfg.Corr)
 			}
 			a.spp, a.step = cfg.Hz/SymbolRate, 1
+			fitHz := float64(cfg.Hz)
 			if t == nil {
 				t, skip = corrTable(48000, cfg.Corr)
 				a.spp, a.step = 48000/SymbolRate, 48000/float64(cfg.Hz)
+				fitHz = 48000
 			}
 			if t != nil {
 				taps := cfg.CorrTaps
@@ -337,7 +342,7 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 				}
 				taps = min((taps*cfg.Hz/48000)/2*2+1, len(a.cc)-1)
 				a.corr, a.corrC, a.corrK = t, cfg.Corr, skip
-				a.cbp = bandPass(optLPHz, cfg.CorrHiHz, float64(cfg.Hz), taps)
+				a.cbp = corrBandPass(optLPHz, cfg.CorrHiHz, float64(cfg.Hz), fitHz, taps)
 			}
 		}
 		if z, p := cfg.PreEmphasisHz[0], cfg.PreEmphasisHz[1]; z > 0 || p > 0 {
@@ -527,6 +532,42 @@ func bandPass(lo, hi, hz float64, n int) []float64 {
 		}
 	} else {
 		b[n/2]++
+	}
+	return b
+}
+
+func corrBandPass(lo, hi, hz, fitHz float64, n int) []float64 {
+	b := bandPass(lo, 0, hz, n)
+	c := n / 2
+	b[c]--
+	top := hz / 2
+	if hi > 0 && hi < top {
+		top = hi
+	}
+	radio := func(f, rate float64) float64 {
+		return math.Abs(sinc(f/rate)) / math.Sqrt(1+math.Pow(f/radioLowpassHz, 4))
+	}
+	steps := 8 * n
+	df := top / float64(steps)
+	g := make([]float64, steps)
+	for k := range g {
+		f := (float64(k) + 0.5) * df
+		g[k] = 2 * radio(f, fitHz) / (1 + radio(f, hz))
+	}
+	h := make([]float64, n)
+	var sum float64
+	for i := range h {
+		t := float64(i - c)
+		var v float64
+		for k, gk := range g {
+			v += gk * math.Cos(2*math.Pi*(float64(k)+0.5)*df*t/hz)
+		}
+		u := t / float64(c+1)
+		h[i] = v * besselI0(optLPBeta*math.Sqrt(max(0, 1-u*u))) / besselI0(optLPBeta)
+		sum += h[i]
+	}
+	for i := range h {
+		b[i] += h[i] / sum
 	}
 	return b
 }
