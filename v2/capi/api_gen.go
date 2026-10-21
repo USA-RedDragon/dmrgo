@@ -41428,18 +41428,19 @@ func dmrgo_codec2_codec_silence(c_self *C.dmrgo_codec2_codec_t, c_out *C.uint8_t
 }
 
 //export dmrgo_codec2_new
-func dmrgo_codec2_new(c_cfg *C.dmrgo_codec2_config_t, c_out **C.dmrgo_codec2_codec_t) (rc C.int) {
+func dmrgo_codec2_new(c_p *C.dmrgo_codec2_config_t, c_out **C.dmrgo_codec2_codec_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_cfg == nil {
-		return fail(C.DMRGO_ERR_ARG)
+	var a_p g_vocoder_codec2.Config
+	var p_p *g_vocoder_codec2.Config
+	if c_p != nil {
+		a_p = in_vocoder_codec2_Config(&(*c_p))
+		p_p = &a_p
 	}
-	var a_cfg g_vocoder_codec2.Config
-	a_cfg = in_vocoder_codec2_Config(&(*c_cfg))
 	if c_out == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1 := g_vocoder_codec2.New(a_cfg)
+	r0, r1 := g_vocoder_codec2.New(p_p)
 	_ = r0
 	*c_out = nil
 	if r0 != nil {
@@ -41458,12 +41459,13 @@ func dmrgo_codec2_new(c_cfg *C.dmrgo_codec2_config_t, c_out **C.dmrgo_codec2_cod
 func dmrgo_codec2_new_factory(c_cfg *C.dmrgo_codec2_config_t, c_out *C.dmrgo_vocoder_register_factory_fn_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_cfg == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	var a_cfg g_vocoder_codec2.Config
-	a_cfg = in_vocoder_codec2_Config(&(*c_cfg))
-	r0 := g_vocoder_codec2.NewFactory(a_cfg)
+	var p_cfg *g_vocoder_codec2.Config
+	if c_cfg != nil {
+		a_cfg = in_vocoder_codec2_Config(&(*c_cfg))
+		p_cfg = &a_cfg
+	}
+	r0 := g_vocoder_codec2.NewFactory(p_cfg)
 	_ = r0
 	if c_out != nil {
 		*c_out = fnout2(r0)

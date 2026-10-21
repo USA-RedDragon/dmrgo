@@ -22,7 +22,7 @@ var registerOnce sync.Once
 
 func newCodec(t *testing.T, cfg Config) *Codec {
 	t.Helper()
-	c, err := New(cfg)
+	c, err := New(&cfg)
 	if err != nil {
 		t.Fatalf("New(%+v): %v", cfg, err)
 	}
@@ -111,7 +111,7 @@ func TestNew(t *testing.T) {
 	if c.Mode() != Mode3200 || c.DecodeMode() != Mode3200 || c.FID() != 0x81 {
 		t.Errorf("explicit: mode %d decode mode %d FID %#x", c.Mode(), c.DecodeMode(), c.FID())
 	}
-	if _, err := New(Config{Mode: 1600}); !errors.Is(err, ErrUnsupportedMode) {
+	if _, err := New(&Config{Mode: 1600}); !errors.Is(err, ErrUnsupportedMode) {
 		t.Errorf("New(1600) error = %v, want ErrUnsupportedMode", err)
 	}
 }
@@ -119,7 +119,7 @@ func TestNew(t *testing.T) {
 func TestRegistered(t *testing.T) {
 	t.Parallel()
 
-	registerOnce.Do(func() { _ = vocoder.Register(Name, NewFactory(Config{})) })
+	registerOnce.Do(func() { _ = vocoder.Register(Name, NewFactory(nil)) })
 	c, err := vocoder.New(Name)
 	if err != nil {
 		t.Fatal(err)
@@ -179,7 +179,7 @@ func TestEncodeFrameLength(t *testing.T) {
 func TestClose(t *testing.T) {
 	t.Parallel()
 
-	c, err := New(Config{})
+	c, err := New(nil)
 	if err != nil {
 		t.Fatal(err)
 	}

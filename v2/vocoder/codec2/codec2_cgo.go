@@ -74,8 +74,12 @@ func (m Mode) cmode() C.int {
 // ErrUnsupportedMode for a Mode other than ModeAuto, Mode2400 or Mode3200,
 // and an error when libcodec2 cannot create a codec state. It allocates the
 // Codec, and libcodec2 allocates its states: for ModeAuto a decoder state for
-// each mode.
-func New(cfg Config) (*Codec, error) {
+// each mode. A nil cfg means the zero Config.
+func New(p *Config) (*Codec, error) {
+	var cfg Config
+	if p != nil {
+		cfg = *p
+	}
 	cfg, err := cfg.withDefaults()
 	if err != nil {
 		return nil, err

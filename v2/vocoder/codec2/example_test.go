@@ -8,7 +8,7 @@ import (
 )
 
 func ExampleNew() {
-	c, err := codec2.New(codec2.Config{Mode: codec2.Mode2400})
+	c, err := codec2.New(&codec2.Config{Mode: codec2.Mode2400})
 	if errors.Is(err, codec2.ErrUnavailable) {
 		fmt.Println(codec2.FrameSamples, "samples per 20 ms frame")
 		return

@@ -1398,7 +1398,7 @@ sym int dmrgo_codec2_codec_mode(dmrgo_codec2_codec_t *self, dmrgo_codec2_mode_t 
 sym int dmrgo_codec2_codec_new(dmrgo_codec2_codec_t **out);
 sym int dmrgo_codec2_codec_reset(dmrgo_codec2_codec_t *self);
 sym int dmrgo_codec2_codec_silence(dmrgo_codec2_codec_t *self, uint8_t out[9]);
-sym int dmrgo_codec2_new(const dmrgo_codec2_config_t *cfg, dmrgo_codec2_codec_t **out);
+sym int dmrgo_codec2_new(const dmrgo_codec2_config_t *p, dmrgo_codec2_codec_t **out);
 sym int dmrgo_codec2_new_factory(const dmrgo_codec2_config_t *cfg, dmrgo_vocoder_register_factory_fn_t *out);
 sym int dmrgo_csbk_config_error_error(dmrgo_csbk_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_csbk_config_error_last(dmrgo_csbk_config_error_t *out, bool *ok);

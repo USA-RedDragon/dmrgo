@@ -9,7 +9,7 @@ import "github.com/USA-RedDragon/dmrgo/v2/enums"
 type Codec struct{}
 
 // New returns ErrUnavailable because this build has no libcodec2.
-func New(Config) (*Codec, error) {
+func New(*Config) (*Codec, error) {
 	return nil, ErrUnavailable
 }
 

@@ -41,15 +41,20 @@ type Config struct {
 var _ vocoder.AppendDecoder = (*Codec)(nil)
 
 // NewFactory returns a vocoder codec factory that creates a Codec with cfg.
-// It allocates the factory, and the factory allocates each Codec as New
-// does. Pass it to vocoder.Register:
+// A nil cfg means the zero Config. NewFactory copies cfg. It allocates the
+// factory, and the factory allocates each Codec as New does. Pass it to
+// vocoder.Register:
 //
-//	if err := vocoder.Register(codec2.Name, codec2.NewFactory(codec2.Config{})); err != nil {
+//	if err := vocoder.Register(codec2.Name, codec2.NewFactory(nil)); err != nil {
 //		return err
 //	}
-func NewFactory(cfg Config) func() (vocoder.Codec, error) {
+func NewFactory(cfg *Config) func() (vocoder.Codec, error) {
+	var conf Config
+	if cfg != nil {
+		conf = *cfg
+	}
 	return func() (vocoder.Codec, error) {
-		c, err := New(cfg)
+		c, err := New(&conf)
 		if err != nil {
 			return nil, err
 		}

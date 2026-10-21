@@ -484,7 +484,7 @@ func codec2ABI(seed uint64) error {
 	h := newHarness(seed)
 	defer h.free()
 	cfg := codec2.Config{}
-	gc, err := codec2.New(cfg)
+	gc, err := codec2.New(&cfg)
 	if errors.Is(err, codec2.ErrUnavailable) {
 		return nil
 	}
