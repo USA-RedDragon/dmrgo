@@ -144,7 +144,7 @@ func discTierOptions(t Tier) options {
 	case Tier3:
 		o := tier2Options(discOptions())
 		o.CohNoCross, o.CohNoNext, o.CohBudget, o.CohSymNoise, o.CohDataPasses = true, true, 1000, 8, 4
-		o.UnionTwins = 7
+		o.UnionTwins = 1
 		return o
 	case TierDefault, Tier0:
 	}
