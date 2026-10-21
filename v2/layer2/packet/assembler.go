@@ -2,8 +2,8 @@ package packet
 
 import (
 	"encoding/binary"
-	"github.com/USA-RedDragon/dmrgo/v2"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"

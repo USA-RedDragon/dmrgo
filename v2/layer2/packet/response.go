@@ -3,8 +3,8 @@ package packet
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/USA-RedDragon/dmrgo/v2"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"

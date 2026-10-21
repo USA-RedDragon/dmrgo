@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
-
 	"github.com/USA-RedDragon/dmrgo/v2/csbk"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
