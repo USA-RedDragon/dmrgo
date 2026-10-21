@@ -8270,7 +8270,7 @@ int dmrgo_trunk_ms_quality_need(dmrgo_trunk_ms_t *self, int64_t now, int64_t lev
 int dmrgo_trunk_ms_quality(dmrgo_trunk_ms_t *self, int64_t now, int64_t level, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.MS.Registered. Registered reports whether the MS holds a registration record for the SYS_AREA of the TSCC that it is on. */
 int dmrgo_trunk_ms_registered(dmrgo_trunk_ms_t *self, bool *out);
-/* Go: trunk.MS.Reset. Reset forgets the site, the registration, the denied list and any request, as after NewMS. */
+/* Go: trunk.MS.Reset. Reset forgets the site, the registration, the denied list, the DGNA talkgroups and any request, as after NewMS. */
 int dmrgo_trunk_ms_reset(dmrgo_trunk_ms_t *self);
 /* Go: trunk.MS.SendShortData. SendShortData asks the TSCC to deliver the appended data a as UDT short data to the talkgroup or MS target, or to a gateway, by random access (ETSI TS 102 361-4 clause 6.6.4). */
 int dmrgo_trunk_ms_send_short_data(dmrgo_trunk_ms_t *self, int64_t now, bool group, uint32_t target, const dmrgo_trunk_appended_t *a, const dmrgo_layer3_short_data_service_options_t *opts);

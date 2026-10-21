@@ -295,8 +295,9 @@ func (m *MS) Off() bool {
 	return m.off
 }
 
-// Reset forgets the site, the registration, the denied list and any
-// request, as after NewMS. It keeps the config.
+// Reset forgets the site, the registration, the denied list, the DGNA
+// talkgroups and any request, as after NewMS. It keeps the config and the
+// poll responses.
 func (m *MS) Reset() {
 	m.f.Reset()
 	m.off, m.registered, m.ra, m.req, m.pending, m.ownCall, m.waitAnswer = false, false, raIdle, reqNone, false, false, false
