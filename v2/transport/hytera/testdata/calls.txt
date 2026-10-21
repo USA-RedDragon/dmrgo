@@ -1,8 +1,16 @@
-# Voice LC headers of group calls, copied from captures of OK-DMR Hytera_Homebrew_Bridge
-# (hytera_homebrew_bridge/tests/data/pcap/HYTERA_IPSC). The first is from do1kbl.pcapng
-# (sha256 bae4e602...), a Hytera repeater: all 2268 Full LC bursts of that capture carry
-# CallType 0x00 and the FLCO Grp_V_Ch_Usr. The second is from
-# gw_hytera_mmdvm_10_hytera_to_mmdvm_ok.pcapng, which Hytera_Homebrew_Bridge built: its group
-# calls carry CallType 0x01.
-c3520050290600000100050101000000111111111111000040b82a0440026409b819203b01376d8457ff5dd7def57033f829103ac11f803b027ad0b30000000006010000fb1a2800
-5a5a5a5a452b00004100050101000000111111111111000040987c06b00a58046021d04b405f6d0457ff5dd7def5a4317808703f402e810d83040033b00a01006f00000009382300
+# Voice LC headers and terminators copied from the captures of OK-DMR Hytera_Homebrew_Bridge
+# (hytera_homebrew_bridge/tests/data/pcap). Each line is: the call the Full LC of the burst
+# carries (group or private), then the frame in hex.
+#
+# HYTERA_IPSC/do1kbl.pcapng (sha256 bae4e602...): BrandMeister (178.238.234.72) to a Hytera
+# repeater. Its group calls carry CallType 0x00.
+group c3520050290600000100050101000000111111111111000040b82a0440026409b819203b01376d8457ff5dd7def57033f829103ac11f803b027ad0b30000000006010000fb1a2800
+# HYTERA_IPSC/gw_hytera_mmdvm_10_hytera_to_mmdvm_ok.pcapng: a Hytera repeater (192.168.22.18),
+# group call, CallType 0x01.
+group 5a5a5a5a452b00004100050101000000111111111111000040987c06b00a58046021d04b405f6d0457ff5dd7def5a4317808703f402e810d83040033b00a01006f00000009382300
+# Hytera_Homebrew_Bridge/ea5gvk_1.pcapng (sha256 4ff1a23e...): a Hytera repeater (10.33.1.10).
+# Frames 9906 and 10110 are the header and terminator of a private call to 65000, CallType
+# 0x00; frame 11796 is the header of a group call to 6, CallType 0x01.
+private 5a5a5a5a6e0000004100050101000000111111111111000040d91848ed19aa25106ac0c241f96d8457ff5dd7def55032302d303fe1aad03684ca0081ed190000e8fd0000efba2000
+private 5a5a5a5a7d0000004300050101000000111122221111000040d9774839191a25686ab0c2e1f9ad8457ff5dd7d9f54467082e5038a1a6d03e84d300b239190000e8fd0000efba2000
+group 5a5a5a5a7e0000004100050101000000111111111111000080b1c304c0016005f81d1025603b6d8457ff5dd7def57032180e003a2020803502e000c0c001010006000000efba2000

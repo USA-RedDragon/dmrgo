@@ -7,28 +7,29 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/hytera"
 )
 
-func TestFrameCallFromCaptures(t *testing.T) {
-	t.Parallel()
+type callFrame struct {
+	group bool
+	f     hytera.Frame
+}
 
+func readCalls(t *testing.T) []callFrame {
+	t.Helper()
 	f, err := os.Open("testdata/calls.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer f.Close()
-	n := 0
+	var out []callFrame
 	sc := bufio.NewScanner(f)
 	for sc.Scan() {
-		line := strings.TrimSpace(sc.Text())
-		if line == "" || line[0] == '#' {
+		fs := strings.Fields(sc.Text())
+		if len(fs) != 2 || fs[0][0] == '#' {
 			continue
 		}
-		p, err := hex.DecodeString(line)
+		p, err := hex.DecodeString(fs[1])
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -36,40 +37,47 @@ func TestFrameCallFromCaptures(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		h := fr.Hint()
-		b := layer2.NewBurst()
-		if err := b.DecodeFromBytesWith(fr.Burst, &layer2.DecodeOptions{Kind: h.Kind, DataType: &h.DataType}); err != nil {
-			t.Fatal(err)
-		}
-		lc, ok := b.Data.(*pdu.FullLinkControl)
-		if !ok || lc.FEC.Uncorrectable || lc.FLCO != enums.FLCOGroupVoiceChannelUser {
-			t.Fatalf("%s: not a group voice LC: %+v", line[:16], b.Data)
-		}
-		lcTarget, lcSource, _ := lc.Addresses()
-		group, target, source := fr.Call()
-		if !group || target != lcTarget || source != lcSource {
-			t.Errorf("CallType %#x: Call %v %d %d, LC group %d %d", fr.CallType, group, target, source, lcTarget, lcSource)
-		}
-		n++
+		out = append(out, callFrame{group: fs[0] == "group", f: fr})
 	}
-	if n != 2 {
-		t.Fatalf("%d frames", n)
+	return out
+}
+
+func TestFrameCallFromCaptures(t *testing.T) {
+	t.Parallel()
+
+	frames := readCalls(t)
+	if len(frames) != 5 {
+		t.Fatalf("%d frames", len(frames))
+	}
+	for i, c := range frames {
+		group, target, source := c.f.Call()
+		if group != c.group || target != c.f.Destination || source != c.f.Source {
+			t.Errorf("frame %d, CallType %#x: Call %v %d %d, want group %v", i, c.f.CallType, group, target, source, c.group)
+		}
+		voice := c.f
+		voice.SlotType = hytera.SlotTypeVoiceB
+		if g, _, _ := voice.Call(); g != (c.f.CallType == 0x01) {
+			t.Errorf("frame %d as a voice burst, CallType %#x: group %v", i, c.f.CallType, g)
+		}
 	}
 }
 
 func TestFrameSetCall(t *testing.T) {
 	t.Parallel()
 
-	fr := hytera.Frame{CallType: 0x01}
-	if err := fr.SetCall(true, 262, 2628347); err != nil || fr.CallType != 0x00 || fr.Destination != 262 || fr.Source != 2628347 {
-		t.Fatalf("SetCall: %v %+v", err, fr)
+	var fr hytera.Frame
+	if err := fr.SetCall(true, 262, 2628347); err != nil || fr.CallType != 0x01 || fr.Destination != 262 || fr.Source != 2628347 {
+		t.Fatalf("group: %v %+v", err, fr)
+	}
+	if err := fr.SetCall(false, 65000, 2145007); err != nil || fr.CallType != 0x00 || fr.Destination != 65000 {
+		t.Fatalf("private: %v %+v", err, fr)
+	}
+	if g, _, _ := fr.Call(); g {
+		t.Fatal("private call reads as group")
 	}
 	want := fr
-	for _, c := range []struct {
-		group          bool
-		target, source uint32
-	}{{false, 1, 1}, {true, 1 << 24, 1}, {true, 1, 1 << 24}} {
-		if err := fr.SetCall(c.group, c.target, c.source); err == nil || fr != want {
+	for _, c := range []struct{ target, source uint32 }{{1 << 24, 1}, {1, 1 << 24}} {
+		if err := fr.SetCall(true, c.target, c.source); err == nil || fr != want {
 			t.Errorf("%+v: %v %+v", c, err, fr)
 		}
 	}
