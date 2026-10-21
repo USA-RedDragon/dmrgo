@@ -889,6 +889,7 @@ var api = [...]any{
 	layer2_pdu.SysCode.NetSite,
 	layer2_pdu.SysCode.Pack,
 	layer2_pdu.SysCode.Pack14,
+	layer2_pdu.TACT.Slot,
 	layer2_pdu.TalkerAlias,
 	layer2_pdu.TalkerAliasBlocks,
 	layer2_pdu.UDTOpcode.String,

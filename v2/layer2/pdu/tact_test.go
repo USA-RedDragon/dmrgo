@@ -119,3 +119,13 @@ func TestTACT_String(t *testing.T) {
 		t.Error("String should not be empty")
 	}
 }
+
+func TestTACT_Slot(t *testing.T) {
+	t.Parallel()
+	if got := (pdu.TACT{}).Slot(); got != enums.Slot1 {
+		t.Errorf("TC 0: %v, want TS1", got)
+	}
+	if got := (pdu.TACT{TDMAChannel: true}).Slot(); got != enums.Slot2 {
+		t.Errorf("TC 1: %v, want TS2", got)
+	}
+}
