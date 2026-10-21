@@ -4,7 +4,8 @@ package mmdvm
 
 import (
 	"errors"
-	"github.com/USA-RedDragon/dmrgo/v2"
+	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
+	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
@@ -261,7 +262,7 @@ func DecodeConfigV2(data []byte) (ConfigV2, error) {
 	result.P25TXHang = uint8(uint64(data[21]))
 	result.NXDNTXHang = uint8(uint64(data[22]))
 	result.DMRTrunking = data[25]&0x80 != 0
-	result.DMRColorCode = uint8(uint64(data[26]))
+	result.DMRColorCode = enums.ColorCode(uint64(data[26]))
 	result.DMRDelay = uint8(uint64(data[27]))
 	result.OscOffset = uint8(uint64(data[28]))
 	return result, nil
@@ -341,6 +342,9 @@ func (s *ConfigV2) AppendBinary(dst []byte) ([]byte, error) {
 	if s.DMRTrunking {
 		data[25] |= 0x80
 	}
+	if uint64(s.DMRColorCode)>>8 != 0 {
+		return dst[:_n], errConfigV2DMRColorCodeRange
+	}
 	data[26] = byte(uint64(s.DMRColorCode))
 	data[27] = byte(uint64(s.DMRDelay))
 	data[28] = byte(uint64(s.OscOffset))
@@ -408,7 +412,7 @@ func DecodeConfigV1(data []byte) (ConfigV1, error) {
 	result.State = Mode(uint64(data[3]))
 	result.RXLevel = uint8(uint64(data[4]))
 	result.CWIDTXLevel = uint8(uint64(data[5]))
-	result.DMRColorCode = uint8(uint64(data[6]))
+	result.DMRColorCode = enums.ColorCode(uint64(data[6]))
 	result.DMRDelay = uint8(uint64(data[7]))
 	result.OscOffset = uint8(uint64(data[8]))
 	result.DStarTXLevel = uint8(uint64(data[9]))
@@ -487,6 +491,9 @@ func (s *ConfigV1) AppendBinary(dst []byte) ([]byte, error) {
 	data[3] = byte(uint64(s.State))
 	data[4] = byte(uint64(s.RXLevel))
 	data[5] = byte(uint64(s.CWIDTXLevel))
+	if uint64(s.DMRColorCode)>>8 != 0 {
+		return dst[:_n], errConfigV1DMRColorCodeRange
+	}
 	data[6] = byte(uint64(s.DMRColorCode))
 	data[7] = byte(uint64(s.DMRDelay))
 	data[8] = byte(uint64(s.OscOffset))
@@ -793,7 +800,7 @@ func DecodeDMRAbort(data []byte) (DMRAbort, error) {
 		return DMRAbort{}, ErrLength
 	}
 	var result DMRAbort
-	result.Slot = uint8(uint64(data[0]))
+	result.Slot = enums.Slot(uint64(data[0]))
 	return result, nil
 }
 
@@ -810,6 +817,9 @@ func (s *DMRAbort) AppendBinary(dst []byte) ([]byte, error) {
 		dst = append(dst, 0)
 	}
 	data := dst[_n:]
+	if uint64(s.Slot)>>8 != 0 {
+		return dst[:_n], errDMRAbortSlotRange
+	}
 	data[0] = byte(uint64(s.Slot))
 	return dst, nil
 }
@@ -821,7 +831,7 @@ func (s *DMRAbort) String() string {
 		return "<nil>"
 	}
 
-	return "DMRAbort{ Slot: " + text.Int(int64(s.Slot)) + " }"
+	return "DMRAbort{ Slot: " + s.Slot.String() + " }"
 }
 
 // DecodeDMRShortLC decodes a DMRShortLC from data, a frame of 9 octets. It
@@ -867,5 +877,20 @@ func (s *DMRShortLC) String() string {
 }
 
 var (
-	errSetFreqSize = errors.New("SetFreq.Size: not one of 9, 10 or 14 octets")
+	errConfigV2DMRColorCodeRange = &dmrgo.FieldRangeError{
+		Bits:  8,
+		Field: "DMRColorCode",
+		Type:  "ConfigV2",
+	}
+	errConfigV1DMRColorCodeRange = &dmrgo.FieldRangeError{
+		Bits:  8,
+		Field: "DMRColorCode",
+		Type:  "ConfigV1",
+	}
+	errSetFreqSize       = errors.New("SetFreq.Size: not one of 9, 10 or 14 octets")
+	errDMRAbortSlotRange = &dmrgo.FieldRangeError{
+		Bits:  8,
+		Field: "Slot",
+		Type:  "DMRAbort",
+	}
 )

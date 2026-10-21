@@ -4206,7 +4206,7 @@ struct dmrgo_mmdvm_config_v1_t {
 	/* CWIDTXLevel is the CW ID TX level. */
 	uint8_t cwidtx_level;
 	/* DMRColorCode is the DMR color code, 0 to 15. */
-	uint8_t dmr_color_code;
+	dmrgo_enums_color_code_t dmr_color_code;
 	/* DMRDelay is the DMR delay in symbols. */
 	uint8_t dmr_delay;
 	/* OscOffset is 128; the field was the oscillator offset. */
@@ -4305,7 +4305,7 @@ struct dmrgo_mmdvm_config_v2_t {
 	/* DMRTrunking makes the modem a DMR Tier III control channel. */
 	bool dmr_trunking;
 	/* DMRColorCode is the DMR color code, 0 to 15. */
-	uint8_t dmr_color_code;
+	dmrgo_enums_color_code_t dmr_color_code;
 	/* DMRDelay is the DMR delay in symbols. */
 	uint8_t dmr_delay;
 	/* OscOffset is 128; the field was the oscillator offset. */
@@ -4313,8 +4313,8 @@ struct dmrgo_mmdvm_config_v2_t {
 };
 
 struct dmrgo_mmdvm_dmr_abort_t {
-	/* Slot is the slot number, 1 or 2. */
-	uint8_t slot;
+	/* Slot is the slot, Slot1 (1) or Slot2 (2). */
+	dmrgo_enums_slot_t slot;
 };
 
 struct dmrgo_mmdvm_dmr_aloha_t {
@@ -9487,7 +9487,7 @@ int dmrgo_dmrd_command_string(dmrgo_dmrd_command_t self, char *out, size_t out_c
 /* Go: dmrd.Config.Callsign. Callsign returns the callsign of the repeater. */
 int dmrgo_dmrd_config_callsign(dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.Config.ColorCode. ColorCode returns the color code, 2 digits. */
-int dmrgo_dmrd_config_color_code(dmrgo_dmrd_config_t *self, uint8_t *out);
+int dmrgo_dmrd_config_color_code(dmrgo_dmrd_config_t *self, dmrgo_enums_color_code_t *out);
 /* Go: dmrd.Config.Description. Description returns the description of the repeater as free text. */
 int dmrgo_dmrd_config_description(dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.Config.Height. Height returns the antenna height above ground in meters, 3 digits. */
@@ -9511,7 +9511,7 @@ int dmrgo_dmrd_config_reset(dmrgo_dmrd_config_t *self);
 /* Go: dmrd.Config.SetCallsign. SetCallsign sets the callsign of the repeater. */
 int dmrgo_dmrd_config_set_callsign(dmrgo_dmrd_config_t *self, const uint8_t *v, size_t v_len);
 /* Go: dmrd.Config.SetColorCode. SetColorCode sets the color code, 2 digits. */
-int dmrgo_dmrd_config_set_color_code(dmrgo_dmrd_config_t *self, uint8_t v);
+int dmrgo_dmrd_config_set_color_code(dmrgo_dmrd_config_t *self, dmrgo_enums_color_code_t v);
 /* Go: dmrd.Config.SetDescription. SetDescription sets the description of the repeater as free text. */
 int dmrgo_dmrd_config_set_description(dmrgo_dmrd_config_t *self, const uint8_t *v, size_t v_len);
 /* Go: dmrd.Config.SetHeight. SetHeight sets the antenna height above ground in meters, 3 digits. */
@@ -9589,7 +9589,7 @@ int dmrgo_dmrd_frame_type_string(dmrgo_dmrd_frame_type_t self, char *out, size_t
 /* Go: dmrd.HBRPConfig.Callsign. Callsign returns the callsign of the repeater. */
 int dmrgo_dmrd_hbrp_config_callsign(dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.HBRPConfig.ColorCode. ColorCode returns the color code, 2 digits. */
-int dmrgo_dmrd_hbrp_config_color_code(dmrgo_dmrd_hbrp_config_t *self, uint8_t *out);
+int dmrgo_dmrd_hbrp_config_color_code(dmrgo_dmrd_hbrp_config_t *self, dmrgo_enums_color_code_t *out);
 /* Go: dmrd.HBRPConfig.Description. Description returns the description of the repeater as free text. */
 int dmrgo_dmrd_hbrp_config_description(dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.HBRPConfig.Height. Height returns the antenna height above ground in meters, 3 digits. */
@@ -9613,7 +9613,7 @@ int dmrgo_dmrd_hbrp_config_reset(dmrgo_dmrd_hbrp_config_t *self);
 /* Go: dmrd.HBRPConfig.SetCallsign. SetCallsign sets the callsign of the repeater. */
 int dmrgo_dmrd_hbrp_config_set_callsign(dmrgo_dmrd_hbrp_config_t *self, const uint8_t *v, size_t v_len);
 /* Go: dmrd.HBRPConfig.SetColorCode. SetColorCode sets the color code, 2 digits. */
-int dmrgo_dmrd_hbrp_config_set_color_code(dmrgo_dmrd_hbrp_config_t *self, uint8_t v);
+int dmrgo_dmrd_hbrp_config_set_color_code(dmrgo_dmrd_hbrp_config_t *self, dmrgo_enums_color_code_t v);
 /* Go: dmrd.HBRPConfig.SetDescription. SetDescription sets the description of the repeater as free text. */
 int dmrgo_dmrd_hbrp_config_set_description(dmrgo_dmrd_hbrp_config_t *self, const uint8_t *v, size_t v_len);
 /* Go: dmrd.HBRPConfig.SetHeight. SetHeight sets the antenna height above ground in meters, 3 digits. */

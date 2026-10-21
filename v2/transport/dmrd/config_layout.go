@@ -16,7 +16,7 @@ type configLayout struct {
 	// Power is the transmit power in dBm, 2 digits.
 	Power uint8 `dmr:"bits:272-287,dec"`
 	// ColorCode is the color code, 2 digits.
-	ColorCode uint8 `dmr:"bits:288-303,dec"`
+	ColorCode enums.ColorCode `dmr:"bits:288-303,dec"`
 	// Latitude is the latitude as text, 8 characters, North positive.
 	Latitude [8]byte `dmr:"bits:304-367,packed,text"`
 	// Longitude is the longitude as text, 9 characters, East positive.
@@ -52,7 +52,7 @@ type hbrpConfigLayout struct {
 	// Power is the transmit power in dBm, 2 digits.
 	Power uint8 `dmr:"bits:304-319,dec"`
 	// ColorCode is the color code, 2 digits.
-	ColorCode uint8 `dmr:"bits:320-335,dec"`
+	ColorCode enums.ColorCode `dmr:"bits:320-335,dec"`
 	// Latitude is the latitude as text, 8 characters, North positive.
 	Latitude [8]byte `dmr:"bits:336-399,packed,text"`
 	// Longitude is the longitude as text, 9 characters, East positive.

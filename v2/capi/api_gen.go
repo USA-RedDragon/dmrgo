@@ -4142,7 +4142,7 @@ func in_transport_mmdvm_ConfigV1(s *C.dmrgo_mmdvm_config_v1_t) (d g_transport_mm
 	d.State = g_transport_mmdvm.Mode(s.state)
 	d.RXLevel = uint8(s.rx_level)
 	d.CWIDTXLevel = uint8(s.cwidtx_level)
-	d.DMRColorCode = uint8(s.dmr_color_code)
+	d.DMRColorCode = g_enums.ColorCode(s.dmr_color_code)
 	d.DMRDelay = uint8(s.dmr_delay)
 	d.OscOffset = uint8(s.osc_offset)
 	d.DStarTXLevel = uint8(s.d_star_tx_level)
@@ -4182,7 +4182,7 @@ func out_transport_mmdvm_ConfigV1(d *C.dmrgo_mmdvm_config_v1_t, s *g_transport_m
 	d.state = C.dmrgo_mmdvm_mode_t(s.State)
 	d.rx_level = C.uint8_t(s.RXLevel)
 	d.cwidtx_level = C.uint8_t(s.CWIDTXLevel)
-	d.dmr_color_code = C.uint8_t(s.DMRColorCode)
+	d.dmr_color_code = C.dmrgo_enums_color_code_t(s.DMRColorCode)
 	d.dmr_delay = C.uint8_t(s.DMRDelay)
 	d.osc_offset = C.uint8_t(s.OscOffset)
 	d.d_star_tx_level = C.uint8_t(s.DStarTXLevel)
@@ -4233,7 +4233,7 @@ func in_transport_mmdvm_ConfigV2(s *C.dmrgo_mmdvm_config_v2_t) (d g_transport_mm
 	d.P25TXHang = uint8(s.p25tx_hang)
 	d.NXDNTXHang = uint8(s.nxdntx_hang)
 	d.DMRTrunking = bool(s.dmr_trunking)
-	d.DMRColorCode = uint8(s.dmr_color_code)
+	d.DMRColorCode = g_enums.ColorCode(s.dmr_color_code)
 	d.DMRDelay = uint8(s.dmr_delay)
 	d.OscOffset = uint8(s.osc_offset)
 	return
@@ -4272,7 +4272,7 @@ func out_transport_mmdvm_ConfigV2(d *C.dmrgo_mmdvm_config_v2_t, s *g_transport_m
 	d.p25tx_hang = C.uint8_t(s.P25TXHang)
 	d.nxdntx_hang = C.uint8_t(s.NXDNTXHang)
 	d.dmr_trunking = C.bool(s.DMRTrunking)
-	d.dmr_color_code = C.uint8_t(s.DMRColorCode)
+	d.dmr_color_code = C.dmrgo_enums_color_code_t(s.DMRColorCode)
 	d.dmr_delay = C.uint8_t(s.DMRDelay)
 	d.osc_offset = C.uint8_t(s.OscOffset)
 }
@@ -7462,13 +7462,13 @@ func fromC_transport_mmdvm_ConfigV2(s *C.dmrgo_mmdvm_config_v2_t) g_transport_mm
 }
 
 func in_transport_mmdvm_DMRAbort(s *C.dmrgo_mmdvm_dmr_abort_t) (d g_transport_mmdvm.DMRAbort) {
-	d.Slot = uint8(s.slot)
+	d.Slot = g_enums.Slot(s.slot)
 	return
 }
 
 func out_transport_mmdvm_DMRAbort(d *C.dmrgo_mmdvm_dmr_abort_t, s *g_transport_mmdvm.DMRAbort, oc *outc) {
 	_ = oc
-	d.slot = C.uint8_t(s.Slot)
+	d.slot = C.dmrgo_enums_slot_t(s.Slot)
 }
 
 func fromC_transport_mmdvm_DMRAbort(s *C.dmrgo_mmdvm_dmr_abort_t) g_transport_mmdvm.DMRAbort {
@@ -32282,7 +32282,7 @@ func dmrgo_dmrd_config_callsign(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t,
 }
 
 //export dmrgo_dmrd_config_color_code
-func dmrgo_dmrd_config_color_code(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t) (rc C.int) {
+func dmrgo_dmrd_config_color_code(c_self *C.dmrgo_dmrd_config_t, c_out *C.dmrgo_enums_color_code_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -32291,7 +32291,7 @@ func dmrgo_dmrd_config_color_code(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_
 	r0, r1 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).ColorCode()
 	_ = r0
 	if c_out != nil {
-		*c_out = C.uint8_t(r0)
+		*c_out = C.dmrgo_enums_color_code_t(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -32515,13 +32515,13 @@ func dmrgo_dmrd_config_set_callsign(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_
 }
 
 //export dmrgo_dmrd_config_set_color_code
-func dmrgo_dmrd_config_set_color_code(c_self *C.dmrgo_dmrd_config_t, c_v C.uint8_t) (rc C.int) {
+func dmrgo_dmrd_config_set_color_code(c_self *C.dmrgo_dmrd_config_t, c_v C.dmrgo_enums_color_code_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetColorCode(uint8(c_v))
+	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetColorCode(g_enums.ColorCode(c_v))
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -33359,7 +33359,7 @@ func dmrgo_dmrd_hbrp_config_callsign(c_self *C.dmrgo_dmrd_hbrp_config_t, c_out *
 }
 
 //export dmrgo_dmrd_hbrp_config_color_code
-func dmrgo_dmrd_hbrp_config_color_code(c_self *C.dmrgo_dmrd_hbrp_config_t, c_out *C.uint8_t) (rc C.int) {
+func dmrgo_dmrd_hbrp_config_color_code(c_self *C.dmrgo_dmrd_hbrp_config_t, c_out *C.dmrgo_enums_color_code_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -33368,7 +33368,7 @@ func dmrgo_dmrd_hbrp_config_color_code(c_self *C.dmrgo_dmrd_hbrp_config_t, c_out
 	r0, r1 := (*g_transport_dmrd.HBRPConfig)(unsafe.Pointer(c_self)).ColorCode()
 	_ = r0
 	if c_out != nil {
-		*c_out = C.uint8_t(r0)
+		*c_out = C.dmrgo_enums_color_code_t(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -33595,13 +33595,13 @@ func dmrgo_dmrd_hbrp_config_set_callsign(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v
 }
 
 //export dmrgo_dmrd_hbrp_config_set_color_code
-func dmrgo_dmrd_hbrp_config_set_color_code(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v C.uint8_t) (rc C.int) {
+func dmrgo_dmrd_hbrp_config_set_color_code(c_self *C.dmrgo_dmrd_hbrp_config_t, c_v C.dmrgo_enums_color_code_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := (*g_transport_dmrd.HBRPConfig)(unsafe.Pointer(c_self)).SetColorCode(uint8(c_v))
+	r0 := (*g_transport_dmrd.HBRPConfig)(unsafe.Pointer(c_self)).SetColorCode(g_enums.ColorCode(c_v))
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}

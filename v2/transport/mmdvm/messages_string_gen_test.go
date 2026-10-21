@@ -90,7 +90,7 @@ func TestDMRStartStringMatchesFmt(t *testing.T) {
 }
 
 func (s *DMRAbort) fmtString() string {
-	return fmt.Sprintf("DMRAbort{ Slot: %d }", s.Slot)
+	return fmt.Sprintf("DMRAbort{ Slot: %v }", s.Slot)
 }
 
 func TestDMRAbortStringMatchesFmt(t *testing.T) {
