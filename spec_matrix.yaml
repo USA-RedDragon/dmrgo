@@ -119,7 +119,6 @@ ignore_files:
   - v2/voice/event.go
   - v2/voice/position.go
   - v2/voice/receiver.go
-  - v2/voice/transmitter.go
   - v2/csbk/decode.go
   - v2/csbk/errors.go
   - v2/csbk/nocopy.go
@@ -162,12 +161,20 @@ documents:
     sections:
       - section: "5.2.1.6"
         title: "Transmit admit criteria"
+        source_files:
+          - v2/voice/transmitter.go
+          - v2/enums/access.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/voice
+            names:
+              - TestTransmitter_ChannelAccess
+              - TestTransmitter_AccessStop
 
       - section: "5.2.2.1"
         title: "Direct mode Channel Access"
 
       - section: "5.2.2.2"
-        title: "Repeater mode channel access, other than 5.2.2.2.4"
+        title: "Repeater mode channel access, other than 5.2.2.2.4, 5.2.2.2.5 and 5.2.2.2.7"
 
       - section: "5.2.2.2.4"
         title: "MS TX_Wakeup_Message"
@@ -178,6 +185,24 @@ documents:
             names:
               - TestWakeupMatchesXPRGolden
               - TestWakeupOutbound
+
+      - section: "5.2.2.2.5"
+        title: "MS Not_In_Call channel access"
+        source_files:
+          - v2/voice/transmitter.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/voice
+            names:
+              - TestTransmitter_ChannelAccess
+
+      - section: "5.2.2.2.7"
+        title: "MS My_Call channel access"
+        source_files:
+          - v2/voice/transmitter.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/voice
+            names:
+              - TestTransmitter_ChannelAccess
 
       - section: "5.2.2.3"
         title: "Non-time critical CSBK ACK/NACK channel access"
@@ -1353,8 +1378,33 @@ documents:
   - id: "TS-102-361-2"
     title: "ETSI TS 102 361-2: DMR Voice and Generic Services and Facilities"
     sections:
-      - section: "5.1.1.6"
-        title: "Channel authorization"
+      - section: "5.1.1.6.1"
+        title: "BS Channel Authorization Procedures"
+        source_files:
+          - v2/bs/chanauth.go
+          - v2/bs/types.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/bs
+            names:
+              - TestChanAuthSingleSiteVoice
+              - TestChanAuthResponseTimeout
+              - TestChanAuthMultiSite
+              - TestChanAuthNotInHangTime
+              - TestChanAuthMatch
+              - TestChanAuthWithTransmitter
+
+      - section: "5.1.1.6.2"
+        title: "MS Channel Authorization Procedures"
+        source_files:
+          - v2/voice/chanauth.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/voice
+            names:
+              - TestTransmitter_ChanAuth
+              - TestTransmitter_ChanAuthSkipped
+          - package: github.com/USA-RedDragon/dmrgo/v2/bs
+            names:
+              - TestChanAuthWithTransmitter
 
       - section: "5.1.2"
         title: "Feature Not Supported (FNS) signalling"
@@ -1415,6 +1465,27 @@ documents:
 
       - section: "6.2"
         title: "TDMA direct mode wide area timing"
+        source_files:
+          - v2/csbk/timing.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/csbk
+            names:
+              - TestTimingNoLeaderRequest
+              - TestTimingRequestWaitsForLowerLeader
+              - TestTimingAcceptLeader
+              - TestTimingPropagation
+              - TestTimingSyncAge
+              - TestTimingWarningRequestKept
+              - TestTimingEvaluation
+              - TestTimingNoLeaderEvaluation
+              - TestTimingNewID
+              - TestTimingFollowerAppoints
+              - TestTimingLeaderBeacon
+              - TestTimingLeaderEvaluation
+              - TestTimingLeaderConflict
+              - TestTimingBusyChannel
+              - TestTimingElection
+              - TestTimingConfig
 
       - section: "6.3.1"
         title: "Reverse Channel Transmitter Interrupt: Repeater Mode"
@@ -1424,12 +1495,33 @@ documents:
 
       - section: "6.3.3"
         title: "Voice Interrupt"
+        source_files:
+          - v2/voice/transmitter.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/voice
+            names:
+              - TestTransmitter_Interrupt
+              - TestTransmitter_InterruptEnding
 
       - section: "6.3.4"
         title: "Emergency Interrupt"
+        source_files:
+          - v2/voice/transmitter.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/voice
+            names:
+              - TestTransmitter_Interrupt
 
       - section: "6.3.5"
         title: "Sending Interrupt Request and Retry Mechanism"
+        source_files:
+          - v2/voice/interrupter.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/voice
+            names:
+              - TestInterrupter_StopsTransmitter
+              - TestInterrupter_Retries
+              - TestInterrupter_States
 
       - section: "7.1.1"
         title: "Full Link Control PDUs"
