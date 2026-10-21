@@ -46,6 +46,7 @@ ignore_files:
   - v2/transport/dmrd/dialect.go
   - v2/transport/dmrd/dmrplus.go
   - v2/transport/dmrd/errors.go
+  - v2/transport/ipsc/auth/auth.go
   - v2/transport/ipsc/control.go
   - v2/transport/ipsc/errors.go
   - v2/transport/ipsc/layout.go

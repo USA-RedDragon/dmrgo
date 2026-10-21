@@ -114,6 +114,7 @@ The programs in [v2/examples](v2/examples) run offline on the captures in `v2/la
   - `transport/dmrd`: the DMRD packet and the login, keepalive and other control messages of the MMDVM network protocol of MMDVMHost and DMRGateway, of the 2015 HomeBrew Repeater Protocol and of the link between MMDVMHost and DMRGateway; the RPTC configuration, talker alias and GPS messages; the DMR+ startup options; and OpenBridge, with the DMRE and control packets of FreeDMR.
   - `transport/dmrd/auth`: the login token (SHA-256) and the OpenBridge signatures (HMAC-SHA1 and keyed BLAKE2b), without allocation. `transport/dmrd` does not link this code.
   - `transport/ipsc`: the peer control and the voice and data packets of Motorola IP Site Connect, with the RTP header. A data packet gives its burst as a `layer2.RawBurst` and a `layer2.Hint`.
+  - `transport/ipsc/auth`: the HMAC-SHA1 trailer of authenticated IPSC and the key text of a MOTOTRBO or DMRlink configuration, without allocation. `transport/ipsc` does not link this code.
 - FEC: BPTC(196,96), embedded LC BPTC, rate 3/4 trellis, RS(12,9), Golay(20,8), Golay(23,12), Golay(24,12), QR(16,7), Hamming codes and the CRCs. Each decoder reports its result in one `fec.Result`.
 - Burst finding in a demodulated bit stream (`layer2/framer`).
 - Vocoders (`vocoder`):
@@ -136,8 +137,8 @@ The table lists every place where the library can allocate. [v2/internal/allocga
 | The initialization of a package-level variable, such as a lookup table or a joined sentinel error | Once, when the program starts. | 2 |
 | A String, GoString or Error method | When the text is built, for a person to read. | 226 |
 | A function of internal/text, which formats the values of String and Error methods | When the text is built, for a person to read. | 7 |
-| An exported package-level New function | Once, at construction: it allocates what it returns, sized up front. | 31 |
-| An exported function or method that takes a slice dst and returns a slice of the same type | Only to grow dst when dst has no room. The caller sizes dst. A machine built from other machines may also pass each of them an unexported field sliced to [:0] that its New makes with capacity MaxX of that machine's package, whose fuzz test checks that bound. | 180 |
+| An exported package-level New function | Once, at construction: it allocates what it returns, sized up front. | 32 |
+| An exported function or method that takes a slice dst and returns a slice of the same type | Only to grow dst when dst has no room. The caller sizes dst. A machine built from other machines may also pass each of them an unexported field sliced to [:0] that its New makes with capacity MaxX of that machine's package, whose fuzz test checks that bound. | 181 |
 | An exported X with an exported twin AppendX or XInto that does not allocate | X allocates the slice, string or struct it returns; the twin writes into storage of the caller. | 22 |
 | An exported X whose whole body is return Twin(nil, its parameters), where Twin allocates only to grow dst | X allocates the slice it returns; Twin with room in dst does not. | 3 |
 | A type assertion or type switch to an interface type, and a goroutine that blocks | Once for each call site and dynamic type, as the runtime fills the cache of the assertion or switch, and when no sudog is free for a goroutine that blocks on a mutex or a channel. The runtime keeps both. | 4 |

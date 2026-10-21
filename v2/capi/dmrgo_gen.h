@@ -446,7 +446,7 @@ typedef struct dmrgo_dmrd_position_t dmrgo_dmrd_position_t;
 /* Go: dmrd.TalkerAlias. TalkerAlias is a DMRA message of DialectMMDVM: one talker alias block that a repeater heard, in the 19-octet form that DMRGateway builds toward a master. */
 typedef struct dmrgo_dmrd_talker_alias_t dmrgo_dmrd_talker_alias_t;
 /* Go: auth.Bridge. Bridge holds an OpenBridge key and the hash state that signing with it needs. */
-typedef struct dmrgo_auth_bridge_t dmrgo_auth_bridge_t;
+typedef struct dmrgo_dmrd_auth_bridge_t dmrgo_dmrd_auth_bridge_t;
 /* Go: ipsc.Control. Control is a peer control packet, opcodes 0x90 to 0x9B. */
 typedef struct dmrgo_ipsc_control_t dmrgo_ipsc_control_t;
 /* Go: ipsc.Flags. Flags is the 4 flag octets of a peer. */
@@ -465,6 +465,8 @@ typedef struct dmrgo_ipsc_raw_t dmrgo_ipsc_raw_t;
 typedef struct dmrgo_ipsc_user_t dmrgo_ipsc_user_t;
 /* Go: ipsc.Voice. Voice is the burst of a voice packet. */
 typedef struct dmrgo_ipsc_voice_t dmrgo_ipsc_voice_t;
+/* Go: auth.Key. Key holds an IPSC authentication key and the HMAC state that signing with it needs. */
+typedef struct dmrgo_ipsc_auth_key_t dmrgo_ipsc_auth_key_t;
 /* Go: trunk.Access. Access is the random access control of the last C_ALOHA of a TSCC (ETSI TS 102 361-4 clause 6.2.1.1, Table 7.19). */
 typedef struct dmrgo_trunk_access_t dmrgo_trunk_access_t;
 /* Go: trunk.CapacityPlusConfig. CapacityPlusConfig configures NewCapacityPlusFollower. */
@@ -3046,6 +3048,7 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ERR_VOICE_NOT_ACTIVE (-148)
 #define DMRGO_ERR_VOICE_QUEUE_FULL (-149)
 #define DMRGO_ERR_VOICE_TIMED_OUT (-150)
+#define DMRGO_IPSC_AUTH_KEY_SIGN_MAX_ITEMS (DMRGO_IPSC_AUTH_TRAILER_LEN)
 #define DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 #define DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 #define DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -4472,6 +4475,8 @@ struct dmrgo_voice_output_t {
 #define DMRGO_IPSC_VOICE_LAYOUT_BCDF ((dmrgo_ipsc_voice_layout_t)2)
 /* Go: ipsc.VoiceLayoutE. 66 octets: burst E, also with the full LC */
 #define DMRGO_IPSC_VOICE_LAYOUT_E ((dmrgo_ipsc_voice_layout_t)3)
+/* Go: auth.TrailerLen. TrailerLen is the length of the authentication trailer in octets. */
+#define DMRGO_IPSC_AUTH_TRAILER_LEN 10
 /* Go: trunk.CapacityPlusNoSignalDefault. CapacityPlusNoSignalDefault is the default CapacityPlusConfig.NoSignal: more than twice the 2 s beacon period of an idle rest channel. */
 #define DMRGO_TRUNK_CAPACITY_PLUS_NO_SIGNAL_DEFAULT INT64_C(5000000000)
 /* Go: trunk.ChannelAbsolute. ChannelAbsolute is the channel number of a grant or C_MOVE whose frequencies follow in a CG_AP or MV_AP block (ETSI TS 102 361-4 clause 7.1.1.1.1). */
@@ -6769,18 +6774,18 @@ int dmrgo_dmrd_position_string(dmrgo_dmrd_position_t *self, char *out, size_t ou
 int dmrgo_dmrd_talker_alias_append_binary(dmrgo_dmrd_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.TalkerAlias.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_talker_alias_string(dmrgo_dmrd_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_auth_bridge_new makes a zero auth.Bridge. */
-int dmrgo_auth_bridge_new(dmrgo_auth_bridge_t **out);
-/* dmrgo_auth_bridge_free frees the handle. self may be NULL. */
-int dmrgo_auth_bridge_free(dmrgo_auth_bridge_t *self);
+/* dmrgo_dmrd_auth_bridge_new makes a zero auth.Bridge. */
+int dmrgo_dmrd_auth_bridge_new(dmrgo_dmrd_auth_bridge_t **out);
+/* dmrgo_dmrd_auth_bridge_free frees the handle. self may be NULL. */
+int dmrgo_dmrd_auth_bridge_free(dmrgo_dmrd_auth_bridge_t *self);
 /* Go: auth.Bridge.Sign. Sign writes the signature of the OpenBridge packet p, as dmrd.Bridge.AppendBinary and dmrd.BridgeControl.AppendBinary encode it, into its last octets: HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over the octets before the hash of a DMRE packet. */
-int dmrgo_auth_bridge_sign(dmrgo_auth_bridge_t *self, const uint8_t *p, size_t p_len);
+int dmrgo_dmrd_auth_bridge_sign(dmrgo_dmrd_auth_bridge_t *self, const uint8_t *p, size_t p_len);
 /* Go: auth.Bridge.Verify. Verify reports whether the OpenBridge packet p carries the signature of the key, as Sign would write it. */
-int dmrgo_auth_bridge_verify(dmrgo_auth_bridge_t *self, const uint8_t *p, size_t p_len, bool *out);
+int dmrgo_dmrd_auth_bridge_verify(dmrgo_dmrd_auth_bridge_t *self, const uint8_t *p, size_t p_len, bool *out);
 /* Go: auth.NewBridge. NewBridge returns a Bridge for key, the passphrase of the OpenBridge link as plain octets. */
-int dmrgo_auth_new_bridge(const uint8_t *key, size_t key_len, dmrgo_auth_bridge_t **out);
+int dmrgo_dmrd_auth_new_bridge(const uint8_t *key, size_t key_len, dmrgo_dmrd_auth_bridge_t **out);
 /* Go: auth.Token. Token returns the login token of an RPTK message for the salt of the master and the password: SHA-256 of the salt and the password. */
-int dmrgo_auth_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, uint8_t out[32]);
+int dmrgo_dmrd_auth_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, uint8_t out[32]);
 /* Go: ipsc.AppendPeerListReply. AppendPeerListReply appends an OpPeerListReply of master with entries to dst. */
 int dmrgo_ipsc_append_peer_list_reply(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, uint32_t master, const dmrgo_ipsc_peer_entry_t *entries, size_t entries_len);
 /* Go: ipsc.CallInfo.End. End reports bit 6, the end flag. */
@@ -6839,6 +6844,22 @@ int dmrgo_ipsc_user_is_voice(const dmrgo_ipsc_user_t *self, bool *out);
 int dmrgo_ipsc_user_raw_burst(dmrgo_ipsc_user_t *self, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
 /* Go: ipsc.User.SetRawBurst. SetRawBurst sets Burst and Voice or Data from the 264-bit burst raw and its layer2 view, as an XPR 8400 sends them: KindVoice with the position pos, which picks the layout (the full LC of burst E stays as it is in u.Voice.LC), or KindData with the data type dt. */
 int dmrgo_ipsc_user_set_raw_burst(dmrgo_ipsc_user_t *self, const dmrgo_layer2_raw_burst_t *raw, dmrgo_layer2_kind_t k, dmrgo_enums_voice_burst_type_t pos, dmrgo_enums_data_type_t dt);
+/* dmrgo_ipsc_auth_key_new makes a zero auth.Key. */
+int dmrgo_ipsc_auth_key_new(dmrgo_ipsc_auth_key_t **out);
+/* dmrgo_ipsc_auth_key_free frees the handle. self may be NULL. */
+int dmrgo_ipsc_auth_key_free(dmrgo_ipsc_auth_key_t *self);
+/* dmrgo_ipsc_auth_key_sign_need sets *items and *arena to the room that dmrgo_ipsc_auth_key_sign needs for these arguments, without a change to the handle. */
+int dmrgo_ipsc_auth_key_sign_need(dmrgo_ipsc_auth_key_t *self, size_t *items, size_t *arena);
+/* Go: auth.Key.Sign. Sign appends the authentication trailer of the packet in dst to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_auth_key_sign_need gives (DMRGO_IPSC_AUTH_KEY_SIGN_MAX_ITEMS items). */
+int dmrgo_ipsc_auth_key_sign(dmrgo_ipsc_auth_key_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* dmrgo_ipsc_auth_key_verify_need sets *items and *arena to the room that dmrgo_ipsc_auth_key_verify needs for these arguments, without a change to the handle. */
+int dmrgo_ipsc_auth_key_verify_need(dmrgo_ipsc_auth_key_t *self, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
+/* Go: auth.Key.Verify. Verify reports whether the last TrailerLen octets of p are the trailer of the rest. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_auth_key_verify_need gives. */
+int dmrgo_ipsc_auth_key_verify(dmrgo_ipsc_auth_key_t *self, const uint8_t *p, size_t p_len, uint8_t *out0, size_t out0_cap, size_t *out0_len, size_t *out0_need, bool *out1);
+/* Go: auth.NewKey. NewKey returns a Key for the 20-octet key k. */
+int dmrgo_ipsc_auth_new_key(const uint8_t k[20], dmrgo_ipsc_auth_key_t **out);
+/* Go: auth.ParseKey. ParseKey parses the hex key of a MOTOTRBO or DMRlink configuration: up to 40 hex digits, padded on the left with zeros to 20 octets as DMRlink does. */
+int dmrgo_ipsc_auth_parse_key(const char *s, size_t s_len, uint8_t out[20]);
 /* Go: trunk.Access.Applies. Applies reports whether the C_ALOHA population subdivision lets the MS with address ms make a random access (ETSI TS 102 361-4 clause 6.2.1.1.1). */
 int dmrgo_trunk_access_applies(dmrgo_trunk_access_t *self, uint32_t ms, bool emergency, bool *out);
 /* dmrgo_trunk_capacity_plus_follower_new makes a zero trunk.CapacityPlusFollower. */

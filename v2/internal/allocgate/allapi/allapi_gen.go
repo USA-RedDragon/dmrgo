@@ -43,6 +43,7 @@ import (
 	transport_dmrd "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 	transport_dmrd_auth "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
 	transport_ipsc "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
+	transport_ipsc_auth "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
 	trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
 	vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
@@ -1073,6 +1074,10 @@ var api = [...]any{
 	transport_ipsc.Raw.AppendBinary,
 	transport_ipsc.User.AppendBinary,
 	transport_ipsc.User.IsVoice,
+	(*transport_ipsc_auth.Key).Sign,
+	(*transport_ipsc_auth.Key).Verify,
+	transport_ipsc_auth.NewKey,
+	transport_ipsc_auth.ParseKey,
 	(*trunk.Access).Applies,
 	(*trunk.CapacityPlusFollower).Burst,
 	(*trunk.CapacityPlusFollower).Call,

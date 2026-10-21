@@ -23,6 +23,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
+	ipscauth "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder/dvsi"
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
@@ -535,10 +536,13 @@ func tinyIPSCOps(t *testing.T) []tinyOp {
 	pkt := tinyOK(u.AppendBinary(make([]byte, 0, 80)))
 	voice := ipsc.User{Opcode: ipsc.OpGroupVoice, Burst: ipsc.BurstVoice, Voice: ipsc.Voice{Layout: ipsc.VoiceLayoutE, Length: 0x22, Control: 0x16}}
 	vpkt := tinyOK(voice.AppendBinary(make([]byte, 0, 80)))
+	key := ipscauth.NewKey([20]byte{1})
 	buf := make([]byte, 0, 128)
 	return []tinyOp{{"ipsc", func() {
 		buf = tinyIPSCRun(pkt, buf)
 		buf = tinyIPSCRun(vpkt, buf)
+		buf = key.Sign(buf)
+		_, _ = key.Verify(buf)
 	}}}
 }
 
