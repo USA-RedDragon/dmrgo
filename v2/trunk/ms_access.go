@@ -12,7 +12,7 @@ import (
 func (m *MS) startAccess(now time.Duration, req request, target uint32, options uint8, emergency bool) {
 	m.req, m.target, m.options, m.emergency = req, target, options, emergency
 	m.ra, m.frames, m.retries, m.raStart, m.waitAnswer = raWaitSlot, 1, 0, now, false
-	m.u.reserved, m.u.proxy = 0, false
+	m.u.reserved, m.u.proxy, m.u.sendTo = 0, false, 0
 }
 
 func (m *MS) backoff() {
@@ -92,7 +92,7 @@ func (m *MS) addressed(now time.Duration, h *layer2.Hint, out []Output) []Output
 			m.backoff()
 		}
 	case c.AckOutboundPDU != nil && c.AckOutboundPDU.TargetAddress == m.addr:
-		return m.answer(now, enums.AckReason(c.AckOutboundPDU.ReasonCode), out)
+		return m.answer(now, enums.AckReason(c.AckOutboundPDU.ReasonCode), c.AckOutboundPDU.AdditionalInfo, out)
 	case c.AhoyPDU != nil:
 		return m.ahoyAny(now, c.AhoyPDU, h, out)
 	case c.MovePDU != nil && c.MovePDU.PhysicalChannel != ChannelAbsolute:
@@ -116,8 +116,8 @@ func (m *MS) moved(now time.Duration, out []Output) []Output {
 	return m.f.moveTo(now, mv.PhysicalChannel, out)
 }
 
-func (m *MS) answer(now time.Duration, r enums.AckReason, out []Output) []Output {
-	if m.req == reqNone {
+func (m *MS) answer(now time.Duration, r enums.AckReason, from uint32, out []Output) []Output {
+	if m.req == reqNone || m.staleAck(from) {
 		return out
 	}
 	m.ra = raIdle
