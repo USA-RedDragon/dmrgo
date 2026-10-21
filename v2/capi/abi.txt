@@ -1189,6 +1189,7 @@ sym #define DMRGO_TRUNK_MAX_PAYLOAD_CHANNELS 16
 sym #define DMRGO_TRUNK_MAX_RULES 4
 sym #define DMRGO_TRUNK_MAX_SUPPLEMENTARY 46
 sym #define DMRGO_TRUNK_MAX_TALKGROUPS 32
+sym #define DMRGO_TRUNK_MAX_TSCC_OUTPUTS 43
 sym #define DMRGO_TRUNK_MS_AUTH_RESPONSE_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_MS_BURST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_MS_CANCEL_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
@@ -1261,12 +1262,14 @@ sym #define DMRGO_TRUNK_TSCC_CALL_START ((dmrgo_trunk_tscc_output_kind_t)4)
 sym #define DMRGO_TRUNK_TSCC_DELIVERED ((dmrgo_trunk_tscc_output_kind_t)8)
 sym #define DMRGO_TRUNK_TSCC_DEREGISTERED ((dmrgo_trunk_tscc_output_kind_t)3)
 sym #define DMRGO_TRUNK_TSCC_DIVERSION ((dmrgo_trunk_tscc_output_kind_t)11)
+sym #define DMRGO_TRUNK_TSCC_INBOUND_MAX_ITEMS (DMRGO_TRUNK_MAX_TSCC_OUTPUTS)
 sym #define DMRGO_TRUNK_TSCC_INTERRUPT ((dmrgo_trunk_tscc_output_kind_t)14)
 sym #define DMRGO_TRUNK_TSCC_IP_ADVICE ((dmrgo_trunk_tscc_output_kind_t)15)
 sym #define DMRGO_TRUNK_TSCC_REFUSED ((dmrgo_trunk_tscc_output_kind_t)6)
 sym #define DMRGO_TRUNK_TSCC_REGISTERED ((dmrgo_trunk_tscc_output_kind_t)2)
 sym #define DMRGO_TRUNK_TSCC_STATUS ((dmrgo_trunk_tscc_output_kind_t)12)
 sym #define DMRGO_TRUNK_TSCC_STUN ((dmrgo_trunk_tscc_output_kind_t)13)
+sym #define DMRGO_TRUNK_TSCC_TICK_MAX_ITEMS (DMRGO_TRUNK_MAX_TSCC_OUTPUTS)
 sym #define DMRGO_VOCODER_MAX_CODECS 8
 sym #define DMRGO_VOICE_DEFAULT_HOLDOFF_MAX 1000000000
 sym #define DMRGO_VOICE_DEFAULT_IDLE_SEARCH 540000000
@@ -2736,7 +2739,6 @@ sym int dmrgo_trunk_tscc_inbound_need(dmrgo_trunk_tscc_t *self, dmrgo_duration_t
 sym int dmrgo_trunk_tscc_interrupt(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_enums_rc_command_t cmd);
 sym int dmrgo_trunk_tscc_kill(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint32_t addr);
 sym int dmrgo_trunk_tscc_mass_register(dmrgo_trunk_tscc_t *self, uint8_t window, uint8_t mask, uint32_t addr);
-sym int dmrgo_trunk_tscc_max_outputs(dmrgo_trunk_tscc_t *self, int64_t *out);
 sym int dmrgo_trunk_tscc_new(dmrgo_trunk_tscc_t **out);
 sym int dmrgo_trunk_tscc_output_kind_string(dmrgo_trunk_tscc_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_trunk_tscc_poll_short_data(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint32_t target, int64_t blocks);

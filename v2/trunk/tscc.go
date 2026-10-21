@@ -14,6 +14,12 @@ import (
 // MaxPayloadChannels is the most payload channels of a TSCC.
 const MaxPayloadChannels = 16
 
+// MaxTSCCOutputs is the most outputs that one call of a TSCC method
+// appends: one burst for the TSCC, one burst and one call end for each
+// payload channel, and the events, such as a refusal for each
+// authentication challenge and call set-up that times out.
+const MaxTSCCOutputs = 1 + 2*MaxPayloadChannels + maxEvents
+
 const (
 	queueLen   = 32
 	maxSetups  = 4
@@ -386,14 +392,6 @@ func NewTSCC(cfg *TSCCConfig) (*TSCC, error) {
 	return t, nil
 }
 
-// MaxOutputs returns the most outputs that one call of a method of t
-// appends: one burst for the TSCC, one burst and one call end for each
-// payload channel, and one refusal for each authentication challenge and
-// call set-up that times out.
-func (t *TSCC) MaxOutputs() int {
-	return 1 + 2*t.cfg.PayloadLen + maxEvents
-}
-
 // Registered reports whether the MS addr is in the registration table.
 func (t *TSCC) Registered(addr uint32) bool {
 	return t.regIndex(addr) >= 0
@@ -410,7 +408,7 @@ func (t *TSCC) Deadline() (at time.Duration, ok bool) {
 // channel of carrier ch in slot s, and appends the outputs to dst. On the
 // TSCC it answers C_RAND, C_ACKU and C_NACKU; on a payload slot it keeps
 // the burst for the relay of the call and ends the call on P_MAINT. It
-// allocates only when dst has no room for MaxOutputs outputs.
+// allocates only when dst has no room for MaxTSCCOutputs outputs.
 func (t *TSCC) Inbound(now time.Duration, ch uint16, s enums.Slot, raw *layer2.RawBurst, h layer2.Hint, dst []TSCCOutput) []TSCCOutput {
 	out := dst
 	opts := layer2.DecodeOptions{Kind: h.Kind}
@@ -699,7 +697,7 @@ func (t *TSCC) startClear(i int, reason Reason, out []TSCCOutput) []TSCCOutput {
 // inbound burst, P_CLEAR or an idle burst, each with its CACH. It runs the
 // call timers and appends the outputs to dst. The slots alternate from
 // TS1 at the first Tick. It allocates only when dst has no room for
-// MaxOutputs outputs.
+// MaxTSCCOutputs outputs.
 func (t *TSCC) Tick(now time.Duration, dst []TSCCOutput) []TSCCOutput {
 	out := dst
 	t.slot = t.slot.Other()

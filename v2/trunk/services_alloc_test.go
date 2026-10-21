@@ -19,7 +19,7 @@ func TestAllocsTSCCServices(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	out := make([]trunk.TSCCOutput, 0, ts.MaxOutputs())
+	out := make([]trunk.TSCCOutput, 0, trunk.MaxTSCCOutputs)
 	now := time.Duration(0)
 	allocs := testing.AllocsPerRun(5, func() {
 		_ = ts.Stun(now, 3120002, false)

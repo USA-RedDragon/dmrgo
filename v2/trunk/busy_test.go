@@ -47,5 +47,5 @@ func TestTSCCManyBusyCarriers(t *testing.T) {
 	if most <= trunk.MaxOutputs {
 		t.Errorf("at most %d outputs per Tick; the test needs more than trunk.MaxOutputs, %d", most, trunk.MaxOutputs)
 	}
-	t.Logf("most outputs of one Tick: %d of MaxOutputs() %d", most, s.tscc.MaxOutputs())
+	t.Logf("most outputs of one Tick: %d of MaxTSCCOutputs %d", most, trunk.MaxTSCCOutputs)
 }
