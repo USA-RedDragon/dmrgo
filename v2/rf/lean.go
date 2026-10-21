@@ -996,7 +996,11 @@ func ringPosFar(k int64) uint32 {
 
 //go:section .text.sym
 func (r *leanCore) sym(k int64) float32 {
-	return float32(r.ring[ringPos(k)])*discStepHz + r.off
+	j := uint32(k) % leanRing
+	if uint64(k) >= 1<<32 {
+		j = ringPosFar(k)
+	}
+	return float32(r.ring[j])*discStepHz + r.off
 }
 
 //go:section .text.syncAt
@@ -1621,7 +1625,11 @@ func (r *leanCore) rebuildSigns() {
 
 //go:section .text.symLLR
 func (r *leanCore) symLLR(k int64) (int16, int16) {
-	x := int32(r.ring[ringPos(k)])*(discStepHz/llrStepHz) + r.llrOff
+	j := uint32(k) % leanRing
+	if uint64(k) >= 1<<32 {
+		j = ringPosFar(k)
+	}
+	x := int32(r.ring[j])*(discStepHz/llrStepHz) + r.llrOff
 	ax := x
 	if ax < 0 {
 		ax = -ax
