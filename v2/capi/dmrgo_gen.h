@@ -4960,7 +4960,7 @@ struct dmrgo_trunk_tscc_config_t {
 	int64_t payload_len;
 	/* Reg asks MSs to register, and refuses the services of an MS that is not registered. */
 	bool reg;
-	/* MaxRegistrations is the size of the registration table. 0 means 64. */
+	/* MaxRegistrations is the size of the registration table, at most 65536. 0 means 64. */
 	int64_t max_registrations;
 	/* NRandWait is the NRand_Wait of C_ALOHA. 0 means the code of constants.NDefaultNW. */
 	dmrgo_enums_n_rand_wait_t n_rand_wait;

@@ -14,6 +14,8 @@ import (
 // MaxPayloadChannels is the most payload channels of a TSCC.
 const MaxPayloadChannels = 16
 
+const maxRegistrations = 1 << 16
+
 // MaxTSCCOutputs is the most outputs that one call of a TSCC method
 // appends: one burst for the TSCC, one burst and one call end for each
 // payload channel, and the events, such as a refusal for each
@@ -45,7 +47,8 @@ type TSCCConfig struct {
 	// Reg asks MSs to register, and refuses the services of an MS that is
 	// not registered.
 	Reg bool
-	// MaxRegistrations is the size of the registration table. 0 means 64.
+	// MaxRegistrations is the size of the registration table, at most
+	// 65536. 0 means 64.
 	MaxRegistrations int
 	// NRandWait is the NRand_Wait of C_ALOHA. 0 means the code of
 	// constants.NDefaultNW.
@@ -336,8 +339,8 @@ type TSCC struct {
 
 // NewTSCC returns a TSCC for cfg. It returns a *dmrgo.ConfigError for a
 // SysCode whose fields do not fit, a color code over 15, a PayloadLen out of
-// range or a payload channel that names no channel. It allocates the TSCC
-// and its registration table.
+// range, a payload channel that names no channel or a MaxRegistrations out
+// of range. It allocates the TSCC and its registration table.
 func NewTSCC(cfg *TSCCConfig) (*TSCC, error) {
 	if cfg == nil {
 		return nil, errChannels
@@ -360,7 +363,7 @@ func NewTSCC(cfg *TSCCConfig) (*TSCC, error) {
 			return nil, errChannels
 		}
 	}
-	if c.MaxRegistrations < 0 {
+	if c.MaxRegistrations < 0 || c.MaxRegistrations > maxRegistrations {
 		return nil, errRegistrations
 	}
 	if c.MaxRegistrations == 0 {
