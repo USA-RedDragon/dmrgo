@@ -32,6 +32,11 @@ func TestUintvar(t *testing.T) {
 			}
 		}
 	}
+	b := make([]byte, wire.UintvarLen(500))
+	wire.PutUintvar(b, 500)
+	if !bytes.Equal(b, []byte{0x83, 0x74}) || wire.UintvarLen(0) != 1 || wire.UintvarLen(127) != 1 || wire.UintvarLen(128) != 2 {
+		t.Errorf("PutUintvar(500) = %x", b)
+	}
 	if _, _, st := wire.Uintvar([]byte{0x81}, 0); st != wire.Short {
 		t.Errorf("Uintvar of a cut value: %d", st)
 	}

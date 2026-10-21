@@ -144,6 +144,26 @@ func appendGroups(dst []byte, v uint64, n int) []byte {
 	return dst
 }
 
+// UintvarLen returns the number of octets of v as a Uintvar in the fewest
+// octets.
+func UintvarLen(v uint64) int {
+	return groups(v)
+}
+
+// PutUintvar writes v as a Uintvar of len(b) octets into b, with leading
+// zero groups when b is longer than UintvarLen(v). The caller makes b at
+// least that long.
+func PutUintvar(b []byte, v uint64) {
+	n := len(b)
+	for k := range n {
+		c := byte(v>>(7*(n-1-k))) & 0x7F
+		if k < n-1 {
+			c |= 0x80
+		}
+		b[k] = c
+	}
+}
+
 // AppendUintvar appends v as a Uintvar in the fewest octets. It allocates
 // only to grow dst.
 func AppendUintvar(dst []byte, v uint64) []byte {
