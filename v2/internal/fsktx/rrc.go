@@ -82,6 +82,8 @@ type pulse struct {
 	// flat makes nyquist give the pulse the same gain at etsiHz as at 0
 	// Hz.
 	flat bool
+	// flatGain is the gain of flat at etsiHz over that at 0 Hz, less 1.
+	flatGain float64
 }
 
 // core is the pulse at t symbols before its taper and echoes: the sampled
@@ -330,7 +332,7 @@ func (p *pulse) nyquist() {
 		e := make([]float64, n+1)
 		for j := range ng {
 			t := tg(j)
-			w := p.taper(t) / nyquistGrid * nyquistFlat * (math.Cos(2*math.Pi*etsiHz/SymbolRate*t) - 1)
+			w := p.taper(t) / nyquistGrid * nyquistFlat * (math.Cos(2*math.Pi*etsiHz/SymbolRate*t) - 1 - p.flatGain)
 			for k := range n + 1 {
 				if k == n {
 					e[k] += p.core(t) * w

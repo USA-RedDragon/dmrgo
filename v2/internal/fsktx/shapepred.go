@@ -31,7 +31,7 @@ var predPulse = PulseConfig{Span: 16, Window: 3, Beta: 17, Flat: true}
 func predFits(t Tier, c PulseConfig) bool {
 	p := pulseOf(t, c)
 	return p.span == predPulse.Span && c.Window == predPulse.Window && c.Beta == predPulse.Beta &&
-		c.Flat == predPulse.Flat && c.Comp == 0 && (c.Gain == 0 || c.Gain == 1) && c.Shape == nil
+		c.Flat == predPulse.Flat && c.FlatGain == 0 && c.Comp == 0 && (c.Gain == 0 || c.Gain == 1) && c.Shape == nil
 }
 
 // predFeatures returns the products of the symbol x[0] and the next three

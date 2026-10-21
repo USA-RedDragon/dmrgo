@@ -206,6 +206,9 @@ type AudioConfig struct {
 	// modulator input, such as 300 and 3000; Tier1 and Tier2 apply its
 	// inverse first. Zeros mean a flat radio.
 	PreEmphasisHz [2]float64
+	// CarrierHz is added to the deviation of every sample, in Hz, finer
+	// than a code step; it trims the carrier of the pulse.
+	CarrierHz float64
 }
 
 // PulseConfig sets the transmit pulse of Tier1 and Tier2.
@@ -236,6 +239,9 @@ type PulseConfig struct {
 	// 1200 Hz, the tone of the deviation test pattern, that at 0 Hz, so the
 	// pattern has the peak deviation of the specification.
 	Flat bool
+	// FlatGain, with Flat, is the gain at 1200 Hz over that at 0 Hz, less
+	// 1; 0 means equal.
+	FlatGain float64
 }
 
 // pulseOf returns the pulse of the tier t with c applied.
@@ -248,7 +254,7 @@ func pulseOf(t Tier, c PulseConfig) pulse {
 		pu.span = c.Span
 	}
 	pu.win, pu.beta, pu.comp, pu.gain = window(c.Window), c.Beta, c.Comp, c.Gain
-	pu.flat = c.Flat
+	pu.flat, pu.flatGain = c.Flat, c.FlatGain
 	if len(c.Shape) == 2*pu.span*c.PerSymbol+1 && c.PerSymbol > 0 {
 		pu.tab, pu.per = c.Shape, c.PerSymbol
 		pu.edge = max(c.EndTaper, 0)
@@ -337,6 +343,7 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 			return nil, errOffset
 		}
 		a.k = k
+		a.offset += cfg.CarrierHz * a.scale
 		a.buf = make([]float64, k.l/k.m+1)
 		a.shape = min(max(cfg.Shape, 0), 4)
 		a.fb = ntf(a.shape, cfg.NoiseZerosHz, float64(cfg.Hz))
