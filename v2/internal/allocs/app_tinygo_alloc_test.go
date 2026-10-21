@@ -9,6 +9,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/appcapture"
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
+	"github.com/USA-RedDragon/dmrgo/v2/mototrbo/ars"
 	"github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms"
 	"github.com/USA-RedDragon/dmrgo/v2/shortdata"
 )
@@ -22,6 +23,8 @@ func tinyAppOps(t *testing.T) []tinyOp {
 	c := tinyOK(ip.Decode(enums.SAPUDPIPHeaderCompression, gps))
 	h := tinyOK(shortdata.DecodeHyteraText(hsms))
 	m := tinyOK(tms.DecodeMessage(d.Payload))
+	reg := []byte{0x00, 0x0c, 0xf0, 0x20, 0x07, '3', '1', '9', '1', '8', '6', '8', 0x00, 0x00}
+	a := tinyOK(ars.DecodeMessage(reg))
 	buf := make([]byte, 0, 256)
 	var err error
 	ops := []tinyOp{
@@ -37,6 +40,8 @@ func tinyAppOps(t *testing.T) []tinyOp {
 		{"tms.DecodeMessage", func() { _, err = tms.DecodeMessage(d.Payload) }},
 		{"tms.Message.AppendBinary", func() { _, err = m.AppendBinary(buf[:0]) }},
 		{"tms.Message.TextUTF8", func() { _ = m.TextUTF8(buf[:0]) }},
+		{"ars.DecodeMessage", func() { _, err = ars.DecodeMessage(reg) }},
+		{"ars.Message.AppendBinary", func() { _, err = a.AppendBinary(buf[:0]) }},
 	}
 	_ = err
 	return ops

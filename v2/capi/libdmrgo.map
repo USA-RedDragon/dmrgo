@@ -1,6 +1,23 @@
 {
 	global:
 		dmrgo_abi_version;
+		dmrgo_ars_decode_message;
+		dmrgo_ars_event_string;
+		dmrgo_ars_header_append_binary;
+		dmrgo_ars_header_string;
+		dmrgo_ars_message_append_binary;
+		dmrgo_ars_message_device_id;
+		dmrgo_ars_message_set_device_id;
+		dmrgo_ars_message_string;
+		dmrgo_ars_new_ack;
+		dmrgo_ars_new_failure;
+		dmrgo_ars_new_query;
+		dmrgo_ars_new_registration;
+		dmrgo_ars_registration_append_binary;
+		dmrgo_ars_registration_string;
+		dmrgo_ars_response_append_binary;
+		dmrgo_ars_response_string;
+		dmrgo_ars_type_string;
 		dmrgo_bs_activation_string;
 		dmrgo_bs_cach_first;
 		dmrgo_bs_cach_free;

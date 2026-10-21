@@ -98,6 +98,10 @@ const char *dmrgo__gen_strerror(int status) {
 		return "pdu.ErrTalkerAliasInvalidUTF8";
 	case -133:
 		return "pdu.ErrTalkerAliasLength";
+	case -185:
+		return "ars.ErrLength";
+	case -186:
+		return "ars.ErrShort";
 	case -183:
 		return "tms.ErrLength";
 	case -184:
