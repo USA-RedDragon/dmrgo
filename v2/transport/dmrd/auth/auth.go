@@ -126,8 +126,8 @@ func tagIs(p []byte, t string) bool {
 // (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of
 // a control packet, and keyed BLAKE2b-128 over the octets before the hash
 // of a DMRE packet. It returns dst unchanged and an error when the packet
-// is none of these, and dmrgo.ErrNilReceiver for a nil b. It does not
-// allocate.
+// is none of these, and dmrgo.ErrNilReceiver for a nil b. It keeps the
+// length of dst and does not allocate.
 func (b *BridgeKey) Sign(dst []byte) ([]byte, error) {
 	if b == nil {
 		return dst, dmrgo.ErrNilReceiver

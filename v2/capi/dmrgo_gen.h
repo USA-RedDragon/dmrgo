@@ -5473,6 +5473,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DATA_SENDER_CANCEL_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
 #define DMRGO_DATA_SENDER_DECODED_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
 #define DMRGO_DATA_SENDER_TICK_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
+#define DMRGO_DMRD_AUTH_BRIDGE_KEY_SIGN_MAX_ITEMS (0)
 #define DMRGO_DVSI_CODEC_PRODUCT_MAX_ITEMS (DMRGO_DVSI_MAX_PRODUCT_LEN)
 #define DMRGO_DVSI_CODEC_VERSION_MAX_ITEMS (DMRGO_DVSI_MAX_VERSION_LEN)
 #define DMRGO_ERR_ARS_LENGTH (-185)
@@ -9992,7 +9993,9 @@ int dmrgo_dmrd_talker_alias_lc_into(dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_f
 int dmrgo_dmrd_talker_alias_string(dmrgo_dmrd_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_dmrd_auth_bridge_key_free frees the handle. self may be NULL. */
 int dmrgo_dmrd_auth_bridge_key_free(dmrgo_dmrd_auth_bridge_key_t *self);
-/* Go: auth.BridgeKey.Sign. Sign writes the signature of the OpenBridge packet in dst, as dmrd.Bridge.AppendBinary and dmrd.BridgeControl.AppendBinary encode it with space for the signature, into its last octets, and returns dst: HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over the octets before the hash of a DMRE packet. It changes the state of the handle even when it returns DMRGO_ERR_SHORT. */
+/* dmrgo_dmrd_auth_bridge_key_sign_need sets *items and *arena to the room that dmrgo_dmrd_auth_bridge_key_sign needs for these arguments, without a change to the handle. */
+int dmrgo_dmrd_auth_bridge_key_sign_need(dmrgo_dmrd_auth_bridge_key_t *self, size_t *items, size_t *arena);
+/* Go: auth.BridgeKey.Sign. Sign writes the signature of the OpenBridge packet in dst, as dmrd.Bridge.AppendBinary and dmrd.BridgeControl.AppendBinary encode it with space for the signature, into its last octets, and returns dst: HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over the octets before the hash of a DMRE packet. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_auth_bridge_key_sign_need gives (DMRGO_DMRD_AUTH_BRIDGE_KEY_SIGN_MAX_ITEMS items). */
 int dmrgo_dmrd_auth_bridge_key_sign(dmrgo_dmrd_auth_bridge_key_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_dmrd_auth_bridge_key_verify_need sets *items and *arena to the room that dmrgo_dmrd_auth_bridge_key_verify needs for these arguments, without a change to the handle. */
 int dmrgo_dmrd_auth_bridge_key_verify_need(dmrgo_dmrd_auth_bridge_key_t *self, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
