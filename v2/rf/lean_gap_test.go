@@ -64,6 +64,7 @@ func TestLeanGapNoiseSpread(t *testing.T) {
 	r := &leanCore{devScale: 1, lastAnch: 10}
 	end := int64(1000)
 	r.ns = end - leanSyncEnd + slotSymbols
+	r.head = uint8(ringPos(r.ns))
 	rng := rand.New(rand.NewPCG(1, 2))
 	var e [syncSymbols]float64
 	for k := range e {
@@ -119,6 +120,7 @@ func TestLeanReplayNoise(t *testing.T) {
 	r := &leanCore{devScale: 1, lastAnch: leanNoSlot, replaying: true}
 	r.first, r.next = base-3*slotSymbols, 4
 	r.ns = base + 10*slotSymbols
+	r.head = uint8(ringPos(r.ns))
 	rng := rand.New(rand.NewPCG(3, 4))
 	for k := base - 1; k <= base+slotSymbols; k++ {
 		r.ring[ringPos(k)] = int8(rng.IntN(41) - 20)

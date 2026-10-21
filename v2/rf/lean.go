@@ -205,6 +205,7 @@ type leanCore struct {
 	n                                  int64
 	ns                                 int64
 	ring                               [leanRing]int8
+	head                               uint8
 	acqHead                            int32
 	acqFrom                            int64
 	acqLow                             int16
@@ -750,8 +751,13 @@ func (r *leanCore) pushSym(x float32) {
 
 func pushSymAt[T any](r *leanCore, x float32) {
 	q := int8(max(min(roundBits((x-r.off)/discStepHz), math.MaxInt8), math.MinInt8))
-	h := ringIdx[T](r.ns)
+	h := uint32(r.head)
+	nh := h + 1
+	if nh == leanRing {
+		nh = 0
+	}
 	r.ring[h] = q
+	r.head = uint8(nh)
 	old := h + leanRing - syncSymbols
 	if old >= leanRing {
 		old -= leanRing
@@ -860,7 +866,7 @@ func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
 func (r *leanCore) lockSym(x, at float32) (again, mid, match bool) {
 	r.lastAt = at
 	pushSymAt[site3](r, x)
-	if !r.hunt || !r.huntMid(at) {
+	if !r.hunt || !r.huntMid(r.lastAt) {
 		return false, false, false
 	}
 	again = r.again

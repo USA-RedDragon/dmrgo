@@ -233,6 +233,7 @@ func TestDiscReceiverRingWrap(t *testing.T) {
 			t.Fatal(err)
 		}
 		r.ns = 1<<32 - int64(len(a)/benchAudioHz*symbolRate/2)
+		r.head = uint8(ringPos(r.ns))
 		for k := 0; k < len(a); k += 1024 {
 			must(r.Write(a[k:min(k+1024, len(a))]))
 		}
