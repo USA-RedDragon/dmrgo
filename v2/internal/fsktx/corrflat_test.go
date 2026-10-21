@@ -2,6 +2,7 @@ package fsktx
 
 import (
 	"math"
+	"slices"
 	"testing"
 )
 
@@ -60,5 +61,27 @@ func TestCorrFlatRadio(t *testing.T) {
 		if on < off+0.5 {
 			t.Errorf("ideal %v: Corr leaves %.2f dB of Mask D margin, %.2f dB without it", r.ideal, on, off)
 		}
+	}
+}
+
+func TestShapeMinLevel(t *testing.T) {
+	t.Parallel()
+	syms := newTestStream(t, 1, 40).syms
+	run := func(level, shape, minLevel int) []int16 {
+		a, err := NewAudio(AudioConfig{Hz: 48000, Tier: Tier1, Level: level, Offset: 512, Shape: shape, NoiseZerosHz: [4]float64{3000, 21000}, ShapeMinLevel: minLevel})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var out []int16
+		for _, s := range syms {
+			out = a.AppendSymbol(out, s)
+		}
+		return out
+	}
+	if !slices.Equal(run(64, 2, 100), run(64, 0, 0)) {
+		t.Error("Level 64 under ShapeMinLevel 100 is still shaped")
+	}
+	if slices.Equal(run(260, 2, 100), run(260, 0, 0)) || !slices.Equal(run(260, 2, 100), run(260, 2, 0)) {
+		t.Error("Level 260 over ShapeMinLevel 100 is not shaped as Shape 2")
 	}
 }

@@ -191,6 +191,10 @@ type AudioConfig struct {
 	// symbols, so that the output depends on a bounded span of symbols
 	// only and does not drift with the age of the Audio. 0 never clears.
 	ShapeSync int
+	// ShapeMinLevel, above 0, turns Shape off when Level is under it: at
+	// so coarse a code step the shaped noise in the channel costs more FSK
+	// error than its zeros save outside it.
+	ShapeMinLevel int
 	// PreEmphasisHz are the corners, zero then pole, of a first-order
 	// pre-emphasis (1+s/wz)/(1+s/wp) that the radio applies to the
 	// modulator input, such as 300 and 3000; Tier1 and Tier2 apply its
@@ -320,6 +324,9 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		a.k = k
 		a.buf = make([]float64, k.l/k.m+1)
 		a.shape = min(max(cfg.Shape, 0), 4)
+		if cfg.Level < cfg.ShapeMinLevel {
+			a.shape = 0
+		}
 		a.fb = ntf(a.shape, cfg.NoiseZerosHz, float64(cfg.Hz))
 		a.sync = max(cfg.ShapeSync, 0)
 		if cfg.Corr > 0 {
