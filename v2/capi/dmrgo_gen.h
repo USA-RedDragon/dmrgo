@@ -94,6 +94,16 @@ typedef struct dmrgo_fec_ber_calculator_t dmrgo_fec_ber_calculator_t;
 typedef struct dmrgo_fec_burst_fec_stats_t dmrgo_fec_burst_fec_stats_t;
 /* Go: fec.Result. Result is the outcome of one FEC decode or check step. */
 typedef struct dmrgo_fec_result_t dmrgo_fec_result_t;
+/* Go: ip.Datagram. Datagram is a UDP datagram of a DMR data packet, from an IPv4 header (SAP IP based packet data) or a compressed UDP/IPv4 header (SAP UDP/IP header compression). */
+typedef struct dmrgo_ip_datagram_t dmrgo_ip_datagram_t;
+/* Go: ip.IPv4. IPv4 is an IPv4 packet: the header, its options and the payload, whose length the header gives (RFC 791 section 3.1). */
+typedef struct dmrgo_ip_ipv4_t dmrgo_ip_ipv4_t;
+/* Go: ip.IPv4Header. IPv4Header is the fixed 20-octet header of an IPv4 packet (RFC 791 section 3.1). */
+typedef struct dmrgo_ip_ipv4_header_t dmrgo_ip_ipv4_header_t;
+/* Go: ip.UDP. UDP is a UDP datagram: the header and the payload, whose length the header gives (RFC 768). */
+typedef struct dmrgo_ip_udp_t dmrgo_ip_udp_t;
+/* Go: ip.UDPHeader. UDPHeader is the 8-octet header of a UDP datagram (RFC 768). */
+typedef struct dmrgo_ip_udp_header_t dmrgo_ip_udp_header_t;
 /* Go: layer2.Burst. Burst represents a DMR burst. */
 typedef struct dmrgo_layer2_burst_t dmrgo_layer2_burst_t;
 /* Go: layer2.CACH. CACH is a decoded Common Announcement Channel field (ETSI TS 102 361-1 clause 6.3). */
@@ -518,6 +528,10 @@ typedef uint8_t dmrgo_enums_slot_t;
 typedef uint64_t dmrgo_enums_sync_pattern_t;
 /* Go: enums.VoiceBurstType. VoiceBurstType is the position of a voice burst in a voice superframe. */
 typedef uint8_t dmrgo_enums_voice_burst_type_t;
+/* Go: ip.Port. Port is a UDP port. */
+typedef uint16_t dmrgo_ip_port_t;
+/* Go: ip.Protocol. Protocol is the protocol number of an IPv4 packet (RFC 790). */
+typedef uint8_t dmrgo_ip_protocol_t;
 /* Go: layer2.EndHint. EndHint is what a transport says about the end of a call. */
 typedef uint8_t dmrgo_layer2_end_hint_t;
 /* Go: layer2.Kind. Kind is the kind of a burst. */
@@ -1031,6 +1045,58 @@ struct dmrgo_fec_burst_fec_stats_t {
 	dmrgo_fec_result_t payload;
 	dmrgo_fec_result_t pdu;
 	dmrgo_fec_result_t rc;
+};
+
+struct dmrgo_ip_datagram_t {
+	uint8_t source[4];
+	uint8_t destination[4];
+	dmrgo_ip_port_t source_port;
+	dmrgo_ip_port_t destination_port;
+	uint16_t id;
+	uint8_t ttl;
+	bool compressed;
+	dmrgo_enums_said_t said;
+	dmrgo_enums_daid_t daid;
+	uint8_t *payload;
+	size_t payload_len;
+};
+
+struct dmrgo_ip_ipv4_header_t {
+	uint8_t version;
+	uint8_t ihl;
+	uint8_t tos;
+	uint16_t total_length;
+	uint16_t id;
+	bool reserved;
+	bool dont_fragment;
+	bool more_fragments;
+	uint16_t fragment_offset;
+	uint8_t ttl;
+	dmrgo_ip_protocol_t protocol;
+	uint16_t checksum;
+	uint8_t source[4];
+	uint8_t destination[4];
+};
+
+struct dmrgo_ip_ipv4_t {
+	dmrgo_ip_ipv4_header_t header;
+	uint8_t *options;
+	size_t options_len;
+	uint8_t *payload;
+	size_t payload_len;
+};
+
+struct dmrgo_ip_udp_header_t {
+	dmrgo_ip_port_t source_port;
+	dmrgo_ip_port_t destination_port;
+	uint16_t length;
+	uint16_t checksum;
+};
+
+struct dmrgo_ip_udp_t {
+	dmrgo_ip_udp_header_t header;
+	uint8_t *payload;
+	size_t payload_len;
 };
 
 struct dmrgo_layer3_cdef_parms_t {
@@ -2243,6 +2309,13 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ERR_ENUMS_COLOR_CODE_ERROR (-103)
 #define DMRGO_ERR_FEC_UNCORRECTABLE (-110)
 #define DMRGO_ERR_FIELD_RANGE_ERROR (-100)
+#define DMRGO_ERR_IP_CHECKSUM (-172)
+#define DMRGO_ERR_IP_FRAGMENT (-173)
+#define DMRGO_ERR_IP_LENGTH (-174)
+#define DMRGO_ERR_IP_PROTOCOL (-175)
+#define DMRGO_ERR_IP_SAP (-176)
+#define DMRGO_ERR_IP_SHORT (-177)
+#define DMRGO_ERR_IP_VERSION (-178)
 #define DMRGO_ERR_LAYER2_COLOR_CODE_MISMATCH (-111)
 #define DMRGO_ERR_LAYER2_EMBEDDED_LC_SEQUENCE (-112)
 #define DMRGO_ERR_LAYER2_EMBEDDED_LC_UNCORRECTABLE (-113)
@@ -3158,6 +3231,50 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ENUMS_VOICE_BURST_F ((dmrgo_enums_voice_burst_type_t)6)
 /* Go: enums.VoiceBurstUnknown. VoiceBurstUnknown is a burst whose superframe position is not known. */
 #define DMRGO_ENUMS_VOICE_BURST_UNKNOWN ((dmrgo_enums_voice_burst_type_t)0)
+/* Go: ip.DefaultNetwork. DefaultNetwork is the network ID that radios use by default for the IPv4 address of a radio: 12.x.y.z, with the 24-bit radio ID as x.y.z. */
+#define DMRGO_IP_DEFAULT_NETWORK 12
+/* Go: ip.PortARS. MOTOTRBO Automatic Registration Service */
+#define DMRGO_IP_PORT_ARS ((dmrgo_ip_port_t)4005)
+/* Go: ip.PortBattery. MOTOTRBO battery management */
+#define DMRGO_IP_PORT_BATTERY ((dmrgo_ip_port_t)4012)
+/* Go: ip.PortHyteraCall. Hytera radio control protocol */
+#define DMRGO_IP_PORT_HYTERA_CALL ((dmrgo_ip_port_t)3005)
+/* Go: ip.PortHyteraData. Hytera data transmit protocol */
+#define DMRGO_IP_PORT_HYTERA_DATA ((dmrgo_ip_port_t)3007)
+/* Go: ip.PortHyteraLocation. Hytera location protocol */
+#define DMRGO_IP_PORT_HYTERA_LOCATION ((dmrgo_ip_port_t)3003)
+/* Go: ip.PortHyteraRRS. Hytera radio registration service */
+#define DMRGO_IP_PORT_HYTERA_RRS ((dmrgo_ip_port_t)3002)
+/* Go: ip.PortHyteraSelfDefine. Hytera self-defined message protocol */
+#define DMRGO_IP_PORT_HYTERA_SELF_DEFINE ((dmrgo_ip_port_t)3009)
+/* Go: ip.PortHyteraTelemetry. Hytera telemetry protocol */
+#define DMRGO_IP_PORT_HYTERA_TELEMETRY ((dmrgo_ip_port_t)3006)
+/* Go: ip.PortHyteraText. Hytera text message protocol */
+#define DMRGO_IP_PORT_HYTERA_TEXT ((dmrgo_ip_port_t)3004)
+/* Go: ip.PortJobTicket. MOTOTRBO job ticket server */
+#define DMRGO_IP_PORT_JOB_TICKET ((dmrgo_ip_port_t)4013)
+/* Go: ip.PortLRRP. MOTOTRBO Location Request and Response Protocol */
+#define DMRGO_IP_PORT_LRRP ((dmrgo_ip_port_t)4001)
+/* Go: ip.PortLocation. location information protocol (ETSI TS 102 361-3 clause 5.7.2) */
+#define DMRGO_IP_PORT_LOCATION ((dmrgo_ip_port_t)5017)
+/* Go: ip.PortNMEA. NMEA 0183 sentences */
+#define DMRGO_IP_PORT_NMEA ((dmrgo_ip_port_t)10110)
+/* Go: ip.PortOTAP. MOTOTRBO over the air programming */
+#define DMRGO_IP_PORT_OTAP ((dmrgo_ip_port_t)4009)
+/* Go: ip.PortTMS. MOTOTRBO Text Messaging Service */
+#define DMRGO_IP_PORT_TMS ((dmrgo_ip_port_t)4007)
+/* Go: ip.PortTelemetry. MOTOTRBO telemetry */
+#define DMRGO_IP_PORT_TELEMETRY ((dmrgo_ip_port_t)4008)
+/* Go: ip.PortText. text messaging (ETSI TS 102 361-3 clause 5.7.1) */
+#define DMRGO_IP_PORT_TEXT ((dmrgo_ip_port_t)5016)
+/* Go: ip.PortXCMP. MOTOTRBO Extensible Command Message Protocol */
+#define DMRGO_IP_PORT_XCMP ((dmrgo_ip_port_t)4004)
+/* Go: ip.ProtocolICMP. ICMP */
+#define DMRGO_IP_PROTOCOL_ICMP ((dmrgo_ip_protocol_t)1)
+/* Go: ip.ProtocolTCP. TCP */
+#define DMRGO_IP_PROTOCOL_TCP ((dmrgo_ip_protocol_t)6)
+/* Go: ip.ProtocolUDP. UDP */
+#define DMRGO_IP_PROTOCOL_UDP ((dmrgo_ip_protocol_t)17)
 /* Go: layer2.BurstBits. BurstBits is the total number of bits in a DMR burst. */
 #define DMRGO_LAYER2_BURST_BITS 264
 /* Go: layer2.CACHBits. CACHBits is the total number of bits in a CACH field. */
@@ -4061,6 +4178,42 @@ int dmrgo_fec_result_combine(const dmrgo_fec_result_t *self, const dmrgo_fec_res
 int dmrgo_fec_result_err(const dmrgo_fec_result_t *self);
 /* Go: fec.Result.HasErrors. HasErrors returns true if any errors were corrected or if the data is uncorrectable. */
 int dmrgo_fec_result_has_errors(const dmrgo_fec_result_t *self, bool *out);
+/* Go: ip.AppendCompressed. AppendCompressed appends d to dst with a compressed UDP/IPv4 header. */
+int dmrgo_ip_append_compressed(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_datagram_t *d);
+/* Go: ip.AppendIPv4. AppendIPv4 appends d to dst as an IPv4 packet with a UDP datagram, and computes both checksums. */
+int dmrgo_ip_append_ipv4(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_datagram_t *d);
+/* Go: ip.Decode. Decode decodes the UDP datagram at the start of data, the user data of a packet with the given SAP. */
+int dmrgo_ip_decode(dmrgo_enums_service_access_point_id_t sap, const uint8_t *data, size_t data_len, dmrgo_ip_datagram_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ip.DecodeIPv4. DecodeIPv4 decodes an IPv4 from data. */
+int dmrgo_ip_decode_ipv4(const uint8_t *data, size_t data_len, dmrgo_ip_ipv4_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ip.DecodeUDP. DecodeUDP decodes a UDP from data. */
+int dmrgo_ip_decode_udp(const uint8_t *data, size_t data_len, dmrgo_ip_udp_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ip.GroupAddress. GroupAddress returns the IPv4 multicast address of the group with the 24-bit ID group: prefix.x.y.z, where prefix is a class D octet from 224 to 239, such as 225. */
+int dmrgo_ip_group_address(uint8_t prefix, uint32_t group, uint8_t out[4]);
+/* Go: ip.ID. ID returns the 24-bit radio or group ID of the address addr: its last three octets. */
+int dmrgo_ip_id(const uint8_t addr[4], uint32_t *out);
+/* Go: ip.IPv4.AppendBinary. AppendBinary appends s to dst, with Header.TotalLength set to the length of the data. */
+int dmrgo_ip_ipv4_append_binary(dmrgo_ip_ipv4_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ip.IPv4.String. String returns the fields of s as text, for printing. */
+int dmrgo_ip_ipv4_string(dmrgo_ip_ipv4_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ip.IPv4Header.AppendBinary. AppendBinary appends the 20 octets of s to dst. */
+int dmrgo_ip_ipv4_header_append_binary(dmrgo_ip_ipv4_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: ip.IPv4Header.String. String returns the fields of s as text, for printing. */
+int dmrgo_ip_ipv4_header_string(dmrgo_ip_ipv4_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: ip.Port.String. String returns the name of p, or its number when it has no name. */
+int dmrgo_ip_port_string(dmrgo_ip_port_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: ip.Protocol.String. String returns the name of p. */
+int dmrgo_ip_protocol_string(dmrgo_ip_protocol_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: ip.RadioAddress. RadioAddress returns the IPv4 address of the radio with the 24-bit radio ID id: network.x.y.z. */
+int dmrgo_ip_radio_address(uint8_t network, uint32_t id, uint8_t out[4]);
+/* Go: ip.UDP.AppendBinary. AppendBinary appends s to dst, with Header.Length set to the length of the data. */
+int dmrgo_ip_udp_append_binary(dmrgo_ip_udp_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ip.UDP.String. String returns the fields of s as text, for printing. */
+int dmrgo_ip_udp_string(dmrgo_ip_udp_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ip.UDPHeader.AppendBinary. AppendBinary appends the 8 octets of s to dst. */
+int dmrgo_ip_udp_header_append_binary(dmrgo_ip_udp_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: ip.UDPHeader.String. String returns the fields of s as text, for printing. */
+int dmrgo_ip_udp_header_string(dmrgo_ip_udp_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer2.BuildBurst. BuildBurst returns the data burst that carries d, with a slot type of color code cc and data type d.DataType() and the data SYNC pattern of src. */
 int dmrgo_layer2_build_burst(const dmrgo_layer2_data_t *d, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
 /* Go: layer2.BuildDataBurst. BuildDataBurst returns a data burst that carries the BPTC(196,96) payload p, which must already carry its CRC or parity (see pdu.Seal), with a slot type of color code cc and data type dt and the data SYNC pattern of src. */
