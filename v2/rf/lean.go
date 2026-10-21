@@ -50,6 +50,7 @@ const (
 	leanMMSign          = 1
 	leanMMGain          = 2
 	leanMidGate         = 0
+	leanSyncUnroll      = false
 )
 
 const (
@@ -1052,15 +1053,32 @@ func (r *leanCore) syncAt(end int64) (rho2 float32, src int, data bool) {
 	var mx, xx int32
 	var sr [numSources]int32
 	j := ringPos(end - syncSymbols + 1)
-	for k := range syncSymbols {
-		q := int32(r.ring[j])
-		if j++; j == leanRing {
-			j = 0
+	if leanSyncUnroll {
+		var s0, s1, s2, s3 int32
+		for k := range syncSymbols {
+			q := int32(r.ring[j])
+			if j++; j == leanRing {
+				j = 0
+			}
+			mx += q
+			xx += q * q
+			s0 += int32(syncSyms8[0][k]) * q
+			s1 += int32(syncSyms8[1][k]) * q
+			s2 += int32(syncSyms8[2][k]) * q
+			s3 += int32(syncSyms8[3][k]) * q
 		}
-		mx += q
-		xx += q * q
-		for i := range r.sources {
-			sr[i] += int32(syncSyms8[i][k]) * q
+		sr = [numSources]int32{s0, s1, s2, s3}
+	} else {
+		for k := range syncSymbols {
+			q := int32(r.ring[j])
+			if j++; j == leanRing {
+				j = 0
+			}
+			mx += q
+			xx += q * q
+			for i := range r.sources {
+				sr[i] += int32(syncSyms8[i][k]) * q
+			}
 		}
 	}
 	fm := float32(mx)
