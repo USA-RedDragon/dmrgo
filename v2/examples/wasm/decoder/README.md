@@ -53,6 +53,14 @@ Chrome and Edge have WebUSB; Firefox and Safari do not. `rtlsdr.js` sets up the 
 - **Linux:** the kernel DVB driver (`dvb_usb_rtl28xxu`) must not be bound to the device. Blacklist it as the rtl-sdr packages do. Your user also needs write access to the USB device node, for example from the udev rules of the rtl-sdr package.
 - **Windows:** install the WinUSB driver for the device with Zadig.
 
+On 2026-10-21, an RTL-SDR in Chrome 155 decoded a HackRF over the air on 441.000 MHz simplex: a private voice call from 3191868 to 8009990 on color code 7, made by `dmrrf tx -seq voice`. The page decoded all 108 voice frames, the LC header, the embedded LC and the terminator, with every FEC field clean:
+
+![Live decode of a private voice call](live-call.png)
+
+The SMS that `dmrrf tx -seq sms` sent next arrived complete with a good CRC. Its data header marks the text as ISO 8859-5 (DD format 7), but the payload is UTF-16, so the page shows the packet and does not show text:
+
+![Live decode of the SMS packet](live-sms.png)
+
 The RTL2832U stalls I2C transfers to the tuner when its I2C repeater stays on while the bus is idle, so the driver turns the repeater off before each wait.
 
 ## Real-time factor

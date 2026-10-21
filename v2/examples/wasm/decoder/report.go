@@ -61,6 +61,8 @@ type event struct {
 	FEC       string   `json:"fec"`
 	BER       float64  `json:"ber"`
 	Frames    int      `json:"frames,omitempty"`
+	AMBEBits  int      `json:"ambeBits,omitempty"`
+	AMBEBER   float64  `json:"ambeBER,omitempty"`
 	LC        *lcInfo  `json:"lc,omitempty"`
 	CSBK      string   `json:"csbk,omitempty"`
 	Header    string   `json:"header,omitempty"`
@@ -247,7 +249,7 @@ func (p *reporter) burst(r *rf.Burst) {
 		if ch.st.AMBEBits > 0 {
 			ch.st.BER = float64(ch.st.AMBEFixed) / float64(ch.st.AMBEBits)
 		}
-		e.Frames = ch.st.Voice
+		e.Frames, e.AMBEBits, e.AMBEBER = ch.st.Voice, ch.st.AMBEBits, ch.st.BER
 		e.FEC = fecString(res)
 		if res.BitsChecked > 0 {
 			e.BER = float64(res.ErrorsCorrected) / float64(res.BitsChecked)
@@ -323,7 +325,15 @@ func (p *reporter) packet(e *event, ch *chanState, b *layer2.Burst) {
 		e.SMS = &smsInfo{Format: t.Format.String(), Source: t.Source, Dest: t.Destination, Group: t.Group, Text: string(t.Body)}
 		return
 	}
-	if fix, err := p.loc.Decode(&m.Header, m.Data); err == nil {
+	smsErr := err
+	fix, err := p.loc.Decode(&m.Header, m.Data)
+	if err != nil {
+		if !errors.Is(smsErr, sms.ErrNotText) {
+			e.Error = "SMS: " + smsErr.Error()
+		}
+		return
+	}
+	{
 		g := &gpsInfo{From: fix.Format.String(), Source: fix.Source, Latitude: fix.Latitude, Longitude: fix.Longitude}
 		if fix.HasRadius {
 			g.Detail = fmt.Sprintf("radius %.0f m", fix.Radius)

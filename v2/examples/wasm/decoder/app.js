@@ -107,6 +107,10 @@ function render(e) {
     const st = (slotStats[k] = slotStats[k] || { bursts: 0, voiceFrames: 0, ambeBER: 0 });
     st.bursts++;
     if (e.frames) st.voiceFrames = e.frames;
+    if (e.ambeBits) {
+      st.ambeBits = e.ambeBits;
+      st.ambeBER = e.ambeBER || 0;
+    }
     if (e.lc && e.lc.call) calls[k] = fmtLC(e.lc);
     if (e.alias) calls[k + "alias"] = e.alias;
     if (e.gps) calls[k + "gps"] = `${e.gps.lat.toFixed(5)}, ${e.gps.lon.toFixed(5)}`;
