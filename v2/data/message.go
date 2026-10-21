@@ -53,6 +53,16 @@ func callOf(h *pdu.DataHeader) Call {
 	return Call{Group: groupOf(h), Target: target, Source: source}
 }
 
+func sapOf(h *pdu.DataHeader) enums.ServiceAccessPointID {
+	switch {
+	case h.UnconfirmedDataHeader != nil:
+		return h.UnconfirmedDataHeader.SAP
+	case h.ConfirmedDataHeader != nil:
+		return h.ConfirmedDataHeader.SAP
+	}
+	return enums.SAPUnifiedDataTransport
+}
+
 func groupOf(h *pdu.DataHeader) bool {
 	switch {
 	case h.UnconfirmedDataHeader != nil:

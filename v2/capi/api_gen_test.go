@@ -129,6 +129,7 @@ var entryPoints = map[string]any{
 	"dmrgo_csbk_wakeup_wake":                                           dmrgo_csbk_wakeup_wake,
 	"dmrgo_csbk_wakeup_state_string":                                   dmrgo_csbk_wakeup_state_string,
 	"dmrgo_data_end_reason_string":                                     dmrgo_data_end_reason_string,
+	"dmrgo_data_event_icmp":                                            dmrgo_data_event_icmp,
 	"dmrgo_data_event_kind_string":                                     dmrgo_data_event_kind_string,
 	"dmrgo_data_new_receiver":                                          dmrgo_data_new_receiver,
 	"dmrgo_data_new_sender":                                            dmrgo_data_new_sender,

@@ -16,8 +16,10 @@ var (
 	// ErrProtocol is returned for an IPv4 packet that does not carry UDP,
 	// or ICMP for DecodeICMPPacket.
 	ErrProtocol = errors.New("ip: packet carries another protocol")
-	// ErrNoICMP is returned by AppendICMPPacket for a packet that must not
-	// get an ICMP error message (RFC 1122 clause 3.2.2).
+	// ErrNoICMP is returned when no ICMP error message goes out about a
+	// packet: by AppendICMPPacket for a packet that must not get one (RFC
+	// 1122 clause 3.2.2), and by the data package for a packet of a group
+	// call or one that needs none.
 	ErrNoICMP = errors.New("ip: no ICMP error message about this packet")
 	// ErrFragment is returned for a fragment of an IPv4 packet.
 	ErrFragment = errors.New("ip: packet is a fragment")
