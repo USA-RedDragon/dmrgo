@@ -2856,7 +2856,7 @@ struct dmrgo_framer_burst_t {
 struct dmrgo_framer_config_t {
 	/* Threshold is the largest SYNC distance accepted. 0 accepts only an exact SYNC, and a negative value means layer2.DefaultSyncThreshold. */
 	int64_t threshold;
-	/* Period is the number of bits from one burst to the next while locked. 0 means OutboundPeriod, and a Period under layer2.BurstBits means layer2.BurstBits. Use SlotPeriod for the bursts of a single TDMA channel, such as one inbound or direct mode channel. */
+	/* Period is the number of bits from one burst to the next while locked. 0 means OutboundPeriod, a Period under layer2.BurstBits means layer2.BurstBits, and at most MaxPeriod. Use SlotPeriod for the bursts of a single TDMA channel, such as one inbound or direct mode channel. */
 	int64_t period;
 	/* CACH decodes the 24 bits before each burst as a CACH, for a BS outbound stream. */
 	bool cach;
@@ -5320,7 +5320,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_ENUMS_COLOR_CODE_ERROR (-103)
 #define DMRGO_ERR_FEC_UNCORRECTABLE (-110)
 #define DMRGO_ERR_FIELD_RANGE_ERROR (-100)
-#define DMRGO_ERR_FRAMER_PERIOD (-217)
+#define DMRGO_ERR_FRAMER_PERIOD (-223)
 #define DMRGO_ERR_HYTERA_LENGTH (-197)
 #define DMRGO_ERR_HYTERA_SHORT (-198)
 #define DMRGO_ERR_HYTERA_SIGNATURE (-199)
@@ -7497,6 +7497,8 @@ int dmrgo_bs_cach_next(dmrgo_bs_cach_t *self, dmrgo_enums_slot_t tc, bool busy, 
 int dmrgo_bs_cach_reset(dmrgo_bs_cach_t *self);
 /* Go: bs.ChannelAuth.String. String returns the name of the channel authorization. */
 int dmrgo_bs_channel_auth_string(dmrgo_bs_channel_auth_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: bs.CheckSlot. CheckSlot returns ErrSlot for a slot other than enums.Slot1 or enums.Slot2, the slots that Repeater.Inbound and Repeater.Lost drop. */
+int dmrgo_bs_check_slot(dmrgo_enums_slot_t s);
 /* Go: bs.ConfigError.Error. Error returns the message of e. */
 int dmrgo_bs_config_error_error(dmrgo_bs_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* dmrgo_bs_config_error_last sets *ok when the last error of this thread holds a bs.ConfigError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */

@@ -25,6 +25,7 @@
 		dmrgo_bs_cach_next;
 		dmrgo_bs_cach_reset;
 		dmrgo_bs_channel_auth_string;
+		dmrgo_bs_check_slot;
 		dmrgo_bs_config_error_error;
 		dmrgo_bs_config_error_last;
 		dmrgo_bs_mode_string;
