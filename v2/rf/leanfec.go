@@ -12,12 +12,13 @@ import (
 )
 
 const (
-	leanChase    = 4
-	leanBPTCBits = 196
-	leanBPTCHalf = leanBPTCBits / 2
-	leanNibbles  = softSmallMaxN / 4
-	leanCandSize = 9
-	leanShared   = max(leanNibbles*16, softTrellisSteps*softTrellisStates/4, softListMax*leanCandSize, (leanAcqSamples+1)/2)
+	leanChase     = 4
+	leanSmallHard = false
+	leanBPTCBits  = 196
+	leanBPTCHalf  = leanBPTCBits / 2
+	leanNibbles   = softSmallMaxN / 4
+	leanCandSize  = 9
+	leanShared    = max(leanNibbles*16, softTrellisSteps*softTrellisStates/4, softListMax*leanCandSize, (leanAcqSamples+1)/2)
 )
 
 type leanBest struct {
@@ -168,6 +169,20 @@ func (r *leanCore) gather(f *leanFEC, id softSmallID, cach bool) uint32 {
 
 func (r *leanCore) decodeSmall(f *leanFEC, id softSmallID, cach bool, fixed, want uint32) (info, cw uint32, errs int) {
 	hard := r.gather(f, id, cach)
+	if leanSmallHard {
+		c := &softSmallCodes[id]
+		var hi uint32
+		cw := c.base
+		for i := range c.k {
+			if hard>>(c.k-1-i)&1 != 0 {
+				hi |= 1 << i
+				cw ^= c.rows[i]
+			}
+		}
+		if cw == hard && (hi^want)&fixed == 0 {
+			return hi, cw, 0
+		}
+	}
 	nibbleTables(f.s[:leanNibbles*16], f.l[:softSmallCodes[id].n])
 	f.top.reset()
 	searchNibble(id, f.s[:leanNibbles*16], 0, fixed, want, &f.top)
