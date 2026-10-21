@@ -10,7 +10,7 @@ func (r *DiscReceiver) addSoft(opt *options) error {
 }
 
 func (r *DiscReceiver) addExt(opt *options) {
-	if opt.Union {
+	if opt.UnionTwins != 0 {
 		r.addUnion(opt)
 		return
 	}

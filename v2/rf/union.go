@@ -13,13 +13,13 @@ import (
 const (
 	unionHorizon = 3.0
 	unionSlot    = 0.015
-	unionCap     = 256
+	unionCap     = 512
 	unionHist    = 256
 	unionHeads   = 128
 	unionBlock   = 2 * slotSeconds
 	unionTol     = 0.005
 	unionLag     = 0.25
-	unionVoices  = 16
+	unionVoices  = 128
 )
 
 const (
@@ -40,7 +40,8 @@ type unionHead struct {
 }
 
 type discUnion struct {
-	r, twin  *DiscReceiver
+	r        *DiscReceiver
+	twins    []*DiscReceiver
 	e        *softExt
 	user     func(*Burst)
 	hz       float64
@@ -80,14 +81,37 @@ func (r *DiscReceiver) addUnion(opt *options) {
 		u.voices[i].at = math.Inf(-1)
 	}
 	t2 := discTierOptions(Tier2)
+	if opt.UnionTwins&0x80 != 0 {
+		t2.CohBudget = 0
+	}
 	_ = r.Init(DiscConfig{Hz: hz, OnBurst: u.onMain, opt: &t2})
 	r.out = out
 	r.addExt(&t2)
-	o := *opt
-	o.Union = false
-	u.twin = &DiscReceiver{}
-	_ = u.twin.Init(DiscConfig{Hz: hz, OnBurst: u.onTwin, opt: &o})
-	u.twin.addExt(&o)
+	set := opt.UnionTwins &^ 0x80
+	if set == 0 {
+		set = 1
+	}
+	for k := range 7 {
+		if set&(1<<k) == 0 {
+			continue
+		}
+		o := *opt
+		switch k {
+		case 1:
+			o = tier2Options(discOptions())
+			o.CohDataPasses = 4
+		case 2:
+			o = discTierOptions(Tier2)
+			o.CohBudget, o.CohDataPasses = 0, 4
+		case 3:
+			o = discTierOptions(Tier2)
+		}
+		o.UnionTwins = 0
+		w := &DiscReceiver{}
+		_ = w.Init(DiscConfig{Hz: hz, OnBurst: u.onTwin, opt: &o})
+		w.addExt(&o)
+		u.twins = append(u.twins, w)
+	}
 	u.e = r.ext.(*softExt)
 	u.e.union = u
 }
@@ -126,7 +150,9 @@ func (u *discUnion) write(x []int16) {
 	u.e.union = nil
 	u.r.write(x)
 	u.e.union = u
-	u.twin.write(x)
+	for _, w := range u.twins {
+		w.write(x)
+	}
 	u.n += int64(len(x))
 	u.release(u.inSec - unionHorizon)
 }
@@ -140,7 +166,9 @@ func (r *DiscReceiver) unionFlush() bool {
 	u.inSec = math.Inf(1)
 	e.union = nil
 	r.flushSolo()
-	u.twin.flush()
+	for _, w := range u.twins {
+		w.flush()
+	}
 	e.union = u
 	u.release(math.Inf(1))
 	return true
