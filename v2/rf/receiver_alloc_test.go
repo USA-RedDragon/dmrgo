@@ -3,6 +3,7 @@ package rf
 import (
 	"encoding/json"
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/rftx"
@@ -47,6 +48,36 @@ func TestAllocsReceiver(t *testing.T) {
 		})
 		if n != 0 || bursts == 0 {
 			t.Errorf("tier %d: %v allocations per WriteBaseband with OnBurst, %d bursts", tier, n, bursts)
+		}
+	}
+}
+
+func TestAllocsReceiverRAMOtherGoroutines(t *testing.T) {
+	e := benchEntry{benchIQ, Tier0}
+	quiet := receiverRAM(e)
+	stop, done := make(chan struct{}), make(chan [][]byte)
+	go func() {
+		var kept [][]byte
+		for {
+			select {
+			case <-stop:
+				done <- kept
+				return
+			default:
+				kept = append(kept, make([]byte, 64))
+				runtime.Gosched()
+			}
+		}
+	}()
+	got := make([]int, 0, 4)
+	for range cap(got) {
+		got = append(got, receiverRAM(e))
+	}
+	close(stop)
+	<-done
+	for _, n := range got {
+		if n != quiet {
+			t.Fatalf("receiverRAM under other allocations %v, quiet %d", got, quiet)
 		}
 	}
 }

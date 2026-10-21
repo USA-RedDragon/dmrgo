@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/bits"
 	"os"
+	"reflect"
 	"runtime"
 	"slices"
 	"strconv"
@@ -462,31 +463,63 @@ func receiverRAM(e benchEntry) int {
 	if e.mode == benchAudio && e.tier == Tier0 {
 		return int(unsafe.Sizeof(DiscReceiver{}))
 	}
-	least := math.MaxInt
-	for range 5 {
-		least = min(least, heapOfNew(e))
-	}
-	return least
+	ramMu.Lock()
+	defer ramMu.Unlock()
+	rate := runtime.MemProfileRate
+	runtime.MemProfileRate = 1
+	defer func() { runtime.MemProfileRate = rate }()
+	runtime.GC()
+	runtime.GC()
+	before := liveBytesUnder(newBenchReceiver)
+	r := newBenchReceiver(e)
+	runtime.GC()
+	runtime.GC()
+	after := liveBytesUnder(newBenchReceiver)
+	runtime.KeepAlive(r)
+	return int(after - before)
 }
 
-func heapOfNew(e benchEntry) int {
-	var a, b runtime.MemStats
-	runtime.GC()
-	runtime.ReadMemStats(&a)
-	var r any
+var ramMu sync.Mutex
+
+//go:noinline
+func newBenchReceiver(e benchEntry) any {
 	if e.mode == benchAudio {
 		d, err := NewDisc(DiscConfig{Hz: benchAudioHz, Tier: e.tier, OnBurst: func(*Burst) {}})
 		if err != nil {
 			panic(err)
 		}
-		r = d
-	} else {
-		r = mustNew(Config{Rate: basebandRate, Tier: e.tier, OnBurst: func(*Burst) {}})
+		return d
 	}
-	runtime.GC()
-	runtime.ReadMemStats(&b)
-	runtime.KeepAlive(r)
-	return int(b.HeapAlloc) - int(a.HeapAlloc)
+	return mustNew(Config{Rate: basebandRate, Tier: e.tier, OnBurst: func(*Burst) {}})
+}
+
+func liveBytesUnder(f any) int64 {
+	name := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+	n, _ := runtime.MemProfile(nil, true)
+	var p []runtime.MemProfileRecord
+	for {
+		p = make([]runtime.MemProfileRecord, n+64)
+		var ok bool
+		if n, ok = runtime.MemProfile(p, true); ok {
+			p = p[:n]
+			break
+		}
+	}
+	var live int64
+	for i := range p {
+		frames := runtime.CallersFrames(p[i].Stack())
+		for {
+			fr, more := frames.Next()
+			if fr.Function == name {
+				live += p[i].InUseBytes()
+				break
+			}
+			if !more {
+				break
+			}
+		}
+	}
+	return live
 }
 
 func steadyAllocs(x []complex64, e benchEntry) float64 {
