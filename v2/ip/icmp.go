@@ -15,7 +15,7 @@ type ICMPMessage uint16
 const (
 	// ICMPNetworkUnreachable is a Destination Unreachable: the final
 	// destination of an IP message that a radio received is unreachable.
-	ICMPNetworkUnreachable ICMPMessage = 3<<8 | 0
+	ICMPNetworkUnreachable ICMPMessage = 3 << 8
 	// ICMPHostUnreachable is a Destination Unreachable: the sender used all
 	// its tries on air, the message overflows the queue of the recipient,
 	// or it waited in the queue longer than the limit.
@@ -30,7 +30,7 @@ const (
 	ICMPNetworkUnknown ICMPMessage = 3<<8 | 6
 	// ICMPBadHeader is a Parameter Problem: the IP header of the message is
 	// not a valid IPv4 header. ICMPHeader.Pointer gives the octet in error.
-	ICMPBadHeader ICMPMessage = 12<<8 | 0
+	ICMPBadHeader ICMPMessage = 12 << 8
 )
 
 // Type returns the ICMP Type of m.

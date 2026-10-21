@@ -374,11 +374,11 @@ func TestSenderWindowResponses(t *testing.T) {
 			t.Fatalf("%s: state %v after %d outputs", c.name, s.State(), len(out))
 		}
 		now := out[len(out)-1].Due + 120*time.Millisecond
-		var got []data.Output
+		got := make([]data.Output, 0, len(c.resp)*data.MaxOutputs)
 		for i := range c.resp {
 			got = append(got, s.Burst(now, &c.resp[i], layer2.Hint{}, nil)...)
 		}
-		var dones []string
+		dones := make([]string, 0, len(got))
 		for _, o := range got {
 			dones = append(dones, strconv.Itoa(int(o.Seq))+":"+o.Result.String())
 		}
@@ -475,7 +475,7 @@ func TestReceiverWindow(t *testing.T) {
 		{"new window at a repeat", []uint8{5, 6, 5, 6}, [2]int{0, 2}, -1, "ACK", 6, 0, 0, 2},
 		{"stop and wait", []uint8{1}, [2]int{0, 2}, -1, "SACK", 1, 1, 1, 0},
 	} {
-		var bursts []layer2.RawBurst
+		bursts := make([]layer2.RawBurst, 0, len(c.ns)*8)
 		drop := -1
 		for i, ns := range c.ns {
 			if c.drop[0] == i {
@@ -505,13 +505,17 @@ func TestReceiverWindow(t *testing.T) {
 		if c.rdata == 0 {
 			continue
 		}
-		var blocks []*pdu.Rate12Data
+		blocks := make([]*pdu.Rate12Data, 0, len(resp)-1)
 		for _, e := range resp[1:] {
 			b, err := layer2.NewBurstFromBytes(e.Burst)
 			if err != nil {
 				t.Fatal(err)
 			}
-			blocks = append(blocks, b.Data.(*pdu.Rate12Data))
+			blk, ok := b.Data.(*pdu.Rate12Data)
+			if !ok {
+				t.Fatalf("%s: response block carries %T", c.name, b.Data)
+			}
+			blocks = append(blocks, blk)
 		}
 		rd, err := packet.DecodeResponseData(blocks...)
 		if err != nil {
