@@ -17,7 +17,8 @@ type Message struct {
 	// Proprietary is the P_HEAD sent as the second header, or nil.
 	Proprietary *pdu.ProprietaryHeader
 	// Rate is the data type of the blocks: enums.DataTypeRate12,
-	// enums.DataTypeRate34 or enums.DataTypeRate1.
+	// enums.DataTypeRate34 or enums.DataTypeRate1. For Sender.Send the
+	// zero value means enums.DataTypeRate12.
 	Rate enums.DataType
 	// Payload is the user data, without the pad octets and the message CRC.
 	// A packet whose first header was lost keeps its pad octets, as only a
