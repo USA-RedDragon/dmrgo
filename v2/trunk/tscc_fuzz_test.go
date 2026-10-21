@@ -37,6 +37,8 @@ func newInboundPool(t testing.TB) burstPool {
 		msBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKMaintenance, MaintenancePDU: &pdu.MaintenancePDU{TargetAddress: 9, SourceAddress: 3120001}}),
 		voiceLCRaw(t, enums.DataTypeVoiceLCHeader),
 		voiceLCRaw(t, enums.DataTypeTerminatorWithLC),
+		msBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInbound, AckInboundPDU: &pdu.AckInboundPDU{
+			ReasonCode: byte(enums.ReasonAuthResponseMS), TargetAddress: 0x123456, AdditionalInfo: 3120001}}),
 	}
 }
 
@@ -59,6 +61,7 @@ func runTSCC(t *testing.T, pool burstPool, in []byte) {
 	if len(in) > 0 {
 		cfg.PayloadLen = 1 + int(in[0]&1)
 		cfg.Reg = in[0]&2 != 0
+		cfg.Authenticate = in[0]&4 != 0
 		in = in[1:]
 	}
 	ts, err := trunk.NewTSCC(cfg)
@@ -77,6 +80,11 @@ func runTSCC(t *testing.T, pool burstPool, in []byte) {
 		if kind&1 == 0 {
 			raw := pool[int(arg)%len(pool)]
 			out = ts.Inbound(now, ch, enums.Slot(1+arg>>7), &raw, layer2.Hint{}, out[:0])
+			for _, o := range out {
+				if o.Kind == trunk.TSCCAuthChallenge && kind&2 != 0 {
+					ts.ExpectAuth(o.Address, 0x123456)
+				}
+			}
 		} else {
 			for range int(arg % 8) {
 				now += 30 * time.Millisecond
@@ -96,6 +104,7 @@ func tsccSeeds() [][]byte {
 	return [][]byte{
 		{3, 0, 0, 1, 7, 2, 2, 1, 7, 0x81, 7, 6, 3, 1, 200},
 		{0, 3, 3, 1, 7, 5, 5, 1, 255, 0xc0, 8, 0x80, 6, 1, 255},
+		{6, 2, 0, 1, 1, 0, 9, 1, 7, 0, 0, 1, 255, 1, 255, 1, 255},
 	}
 }
 

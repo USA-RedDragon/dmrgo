@@ -2379,6 +2379,24 @@ documents:
 
       - section: "6.4.8"
         title: "Authentication Procedures"
+        source_files:
+          - v2/trunk/auth/auth.go
+          - v2/trunk/ms_access.go
+          - v2/trunk/tscc.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk/auth
+            names:
+              - TestResponseTable6_15
+              - TestResponseTable6_16
+              - TestResponseHighBits
+              - FuzzResponse
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestMS_AuthDuringRegistration
+              - TestMS_AuthTimeoutAndLate
+              - TestMS_AuthNotChallenges
+              - TestMS_AuthOnPayload
+              - TestTSCC_Authentication
 
       - section: "6.4.9"
         title: "MS Stun/Revive"

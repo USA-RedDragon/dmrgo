@@ -185,6 +185,7 @@ type MS struct {
 	pendingEnd time.Duration
 	pending    bool
 
+	auth    authChallenge
 	tx      pdu.CSBK
 	txRand  pdu.RandomAccessPDU
 	txAck   pdu.AckInboundPDU
@@ -291,6 +292,7 @@ func (m *MS) Off() bool {
 func (m *MS) Reset() {
 	m.f.Reset()
 	m.off, m.registered, m.ra, m.req, m.pending, m.ownCall, m.waitAnswer = false, false, raIdle, reqNone, false, false, false
+	m.auth = authChallenge{}
 	m.denied = [MaxDenied]deniedEntry{}
 	m.berN, m.berIdx, m.hasLevel = 0, 0, false
 }
@@ -568,7 +570,8 @@ func (m *MS) follow(now time.Duration, before State, out []Output, n int) []Outp
 				}
 				m.pending = false
 			}
-		case OutputGrant, OutputCallEnd, OutputBurst, OutputRegistered, OutputRefused, OutputAhoy, OutputUDT, OutputProtect, OutputPowerOff:
+		case OutputGrant, OutputCallEnd, OutputBurst, OutputRegistered, OutputRefused, OutputAhoy, OutputUDT, OutputProtect, OutputPowerOff,
+			OutputAuthChallenge:
 		}
 	}
 	return out

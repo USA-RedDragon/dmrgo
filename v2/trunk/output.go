@@ -56,6 +56,9 @@ const (
 	// OutputPowerOff reports that the MS de-registered, or gave up after
 	// T_Dereg, and may be switched off.
 	OutputPowerOff
+	// OutputAuthChallenge reports the authentication challenge of the TSCC
+	// in Output.Challenge. Answer it with MS.AuthResponse.
+	OutputAuthChallenge
 )
 
 // String returns the name of the OutputKind.
@@ -85,6 +88,8 @@ func (k OutputKind) String() string {
 		return "Protect"
 	case OutputPowerOff:
 		return "PowerOff"
+	case OutputAuthChallenge:
+		return "AuthChallenge"
 	}
 	return unknownName
 }
@@ -264,6 +269,8 @@ type Output struct {
 	Due time.Duration
 	// Protect is the kind of OutputProtect.
 	Protect enums.ProtectKind
+	// Challenge is the 24-bit challenge of OutputAuthChallenge.
+	Challenge uint32
 }
 
 // State is the state of a Follower or an MS.

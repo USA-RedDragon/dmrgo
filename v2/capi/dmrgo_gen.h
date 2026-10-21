@@ -561,7 +561,7 @@ typedef struct dmrgo_trunk_neighbor_t dmrgo_trunk_neighbor_t;
 typedef struct dmrgo_trunk_output_t dmrgo_trunk_output_t;
 /* Go: trunk.Site. Site is what a Follower or an MS knows about the TSCC it is on, from C_ALOHA, C_BCAST and the C_SYS_Parms of the CACH (ETSI TS 102 361-4 clauses 5.1, 6.3.2 and 7.1.1.1). */
 typedef struct dmrgo_trunk_site_t dmrgo_trunk_site_t;
-/* Go: trunk.TSCC. TSCC is a Tier III dedicated TSCC with its payload channels, for a single site (ETSI TS 102 361-4 clauses 6.2, 6.4.4 and 6.6). */
+/* Go: trunk.TSCC. TSCC is a Tier III dedicated TSCC with its payload channels, for a single site (ETSI TS 102 361-4 clauses 6.2, 6.4.4, 6.4.8 and 6.6). */
 typedef struct dmrgo_trunk_tscc_t dmrgo_trunk_tscc_t;
 /* Go: trunk.TSCCConfig. TSCCConfig configures NewTSCC. */
 typedef struct dmrgo_trunk_tscc_config_t dmrgo_trunk_tscc_config_t;
@@ -3098,6 +3098,7 @@ struct dmrgo_trunk_output_t {
 	dmrgo_enums_slot_t slot;
 	int64_t due;
 	dmrgo_enums_protect_kind_t protect;
+	uint32_t challenge;
 };
 
 struct dmrgo_trunk_channel_t {
@@ -3217,6 +3218,8 @@ struct dmrgo_trunk_tscc_config_t {
 	int64_t hangtime;
 	int64_t inactive;
 	int64_t answer_timeout;
+	bool authenticate;
+	uint64_t seed;
 };
 
 struct dmrgo_trunk_tscc_output_t {
@@ -3229,6 +3232,7 @@ struct dmrgo_trunk_tscc_output_t {
 	dmrgo_enums_ack_reason_t ack;
 	dmrgo_trunk_grant_t call;
 	dmrgo_trunk_reason_t reason;
+	uint32_t challenge;
 };
 
 struct dmrgo_vocoder_append_decoder_vtable_t {
@@ -3548,6 +3552,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_FOLLOWER_BURST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_FOLLOWER_LOST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_FOLLOWER_TICK_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
+#define DMRGO_TRUNK_MS_AUTH_RESPONSE_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_BURST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_CANCEL_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_END_CALL_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
@@ -5228,6 +5233,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_MAX_TALKGROUPS 32
 /* Go: trunk.OutputAhoy. OutputAhoy reports a C_AHOY for the MS, with the call in Output.Grant: an individual call that the MS answers, or a radio check. */
 #define DMRGO_TRUNK_OUTPUT_AHOY ((dmrgo_trunk_output_kind_t)9)
+/* Go: trunk.OutputAuthChallenge. OutputAuthChallenge reports the authentication challenge of the TSCC in Output.Challenge. */
+#define DMRGO_TRUNK_OUTPUT_AUTH_CHALLENGE ((dmrgo_trunk_output_kind_t)13)
 /* Go: trunk.OutputBurst. OutputBurst is a burst for the MS to transmit in Output.Slot at Output.Due. */
 #define DMRGO_TRUNK_OUTPUT_BURST ((dmrgo_trunk_output_kind_t)6)
 /* Go: trunk.OutputCallEnd. OutputCallEnd reports that the machine left the payload channel of Output.Grant. */
@@ -5286,6 +5293,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_STATE_HUNTING ((dmrgo_trunk_state_t)0)
 /* Go: trunk.StatePayload. StatePayload follows a call on a payload channel. */
 #define DMRGO_TRUNK_STATE_PAYLOAD ((dmrgo_trunk_state_t)2)
+/* Go: trunk.TSCCAuthChallenge. TSCCAuthChallenge reports that the TSCC sent the authentication Challenge to the MS Address. */
+#define DMRGO_TRUNK_TSCC_AUTH_CHALLENGE ((dmrgo_trunk_tscc_output_kind_t)7)
 /* Go: trunk.TSCCBurst. TSCCBurst is an outbound burst with its CACH for Channel and Slot. */
 #define DMRGO_TRUNK_TSCC_BURST ((dmrgo_trunk_tscc_output_kind_t)1)
 /* Go: trunk.TSCCCallEnd. TSCCCallEnd reports that the TSCC cleared Call, with Reason. */
@@ -5298,6 +5307,10 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_TSCC_REFUSED ((dmrgo_trunk_tscc_output_kind_t)6)
 /* Go: trunk.TSCCRegistered. TSCCRegistered reports that the MS Address registered. */
 #define DMRGO_TRUNK_TSCC_REGISTERED ((dmrgo_trunk_tscc_output_kind_t)2)
+/* Go: auth.KeyLen. KeyLen is the length of the authentication key K in octets (ETSI TS 102 361-4 clause 6.4.8.1.1). */
+#define DMRGO_TRUNK_AUTH_KEY_LEN 16
+/* Go: auth.MaxChallenge. MaxChallenge is the largest challenge that a TSCC sends in the Source Address of a C_AHOY. */
+#define DMRGO_TRUNK_AUTH_MAX_CHALLENGE 16776415
 /* Go: vocoder.MaxCodecs. MaxCodecs is the number of codec factories that Register can hold. */
 #define DMRGO_VOCODER_MAX_CODECS 8
 /* Go: codec2.DefaultFID. DefaultFID is the Full LC Feature set ID QRadioLink sends for Codec2 calls. */
@@ -7947,6 +7960,10 @@ int dmrgo_trunk_hunt_list_withdraw(dmrgo_trunk_hunt_list_t *self, uint16_t chann
 int dmrgo_trunk_ms_new(dmrgo_trunk_ms_t **out);
 /* dmrgo_trunk_ms_free frees the handle. self may be NULL. */
 int dmrgo_trunk_ms_free(dmrgo_trunk_ms_t *self);
+/* dmrgo_trunk_ms_auth_response_need sets *items and *arena to the room that dmrgo_trunk_ms_auth_response needs for these arguments, without a change to the handle. */
+int dmrgo_trunk_ms_auth_response_need(dmrgo_trunk_ms_t *self, int64_t now, uint32_t response, size_t *items, size_t *arena);
+/* Go: trunk.MS.AuthResponse. AuthResponse sends response, the answer to the challenge of the last OutputAuthChallenge that auth.Response computes, to the TSCC: a C_ACKU, or a P_ACKU on a payload channel, with reason Authentication Response, in the slot after the challenge. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_auth_response_need gives (DMRGO_TRUNK_MS_AUTH_RESPONSE_MAX_ITEMS items). */
+int dmrgo_trunk_ms_auth_response(dmrgo_trunk_ms_t *self, int64_t now, uint32_t response, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_trunk_ms_burst_need sets *items and *arena to the room that dmrgo_trunk_ms_burst needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_burst_need(dmrgo_trunk_ms_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const dmrgo_layer2_cach_t *cach, size_t *items, size_t *arena);
 /* Go: trunk.MS.Burst. Burst decodes the burst raw with what the Hint h says about it, and the CACH before it when cach is not nil, as Follower.Burst does, runs the random access and the requests, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_burst_need gives (DMRGO_TRUNK_MS_BURST_MAX_ITEMS items). */
@@ -8015,11 +8032,13 @@ int dmrgo_trunk_tscc_new(dmrgo_trunk_tscc_t **out);
 int dmrgo_trunk_tscc_free(dmrgo_trunk_tscc_t *self);
 /* Go: trunk.TSCC.Deadline. Deadline returns the time of the next Tick: the TSCC sends one burst per 30 ms slot. */
 int dmrgo_trunk_tscc_deadline(dmrgo_trunk_tscc_t *self, int64_t *at, bool *ok);
+/* Go: trunk.TSCC.ExpectAuth. ExpectAuth sets response as the answer that the TSCC accepts from the MS addr to the challenge of the last TSCCAuthChallenge for addr. */
+int dmrgo_trunk_tscc_expect_auth(dmrgo_trunk_tscc_t *self, uint32_t addr, uint32_t response);
 /* dmrgo_trunk_tscc_inbound_need sets *items and *arena to the room that dmrgo_trunk_tscc_inbound needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_tscc_inbound_need(dmrgo_trunk_tscc_t *self, int64_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 /* Go: trunk.TSCC.Inbound. Inbound takes the burst raw that the TSCC received on the inbound channel of carrier ch in slot s, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_tscc_inbound_need gives. */
 int dmrgo_trunk_tscc_inbound(dmrgo_trunk_tscc_t *self, int64_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_trunk_tscc_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: trunk.TSCC.MaxOutputs. MaxOutputs returns the most outputs that one call of a method of t appends: one burst for the TSCC and for each payload channel, plus the events. */
+/* Go: trunk.TSCC.MaxOutputs. MaxOutputs returns the most outputs that one call of a method of t appends: one burst for the TSCC, one burst and one call end for each payload channel, and one refusal for each authentication challenge and call set-up that times out. */
 int dmrgo_trunk_tscc_max_outputs(dmrgo_trunk_tscc_t *self, int64_t *out);
 /* Go: trunk.TSCC.Registered. Registered reports whether the MS addr is in the registration table. */
 int dmrgo_trunk_tscc_registered(dmrgo_trunk_tscc_t *self, uint32_t addr, bool *out);
@@ -8049,6 +8068,8 @@ int dmrgo_trunk_udt_set_crc_ok(dmrgo_trunk_udt_t *self, bool v);
 int dmrgo_trunk_udt_new(dmrgo_trunk_udt_t **out);
 /* dmrgo_trunk_udt_free frees the handle. self may be NULL. */
 int dmrgo_trunk_udt_free(dmrgo_trunk_udt_t *self);
+/* Go: auth.Response. Response returns the 24-bit response to the challenge for the key K: the octets 257 to 259 of the RC4 keystream keyed with the 3 octets of the challenge, most significant first, and the 16 octets of K, exclusive-or psn. */
+int dmrgo_trunk_auth_response(uint32_t challenge, const uint8_t key[16], uint32_t psn, uint32_t *out);
 /* Go: vocoder.AMBESilence. AMBESilence returns the AMBE+2 frame of silence that MMDVMHost sends to fill a voice burst (DMR_SILENCE_DATA); EncodeAMBE72 of it is the slot B9E881526173002A6B. */
 int dmrgo_vocoder_ambe_silence(dmrgo_vocoder_ambe_frame_t *out);
 /* Go: vocoder.AMBESilenceSlot. AMBESilenceSlot returns the 72 on-air bits of the AMBE+2 silence frame, EncodeAMBE72(AMBESilence()), the slot B9E881526173002A6B. */
