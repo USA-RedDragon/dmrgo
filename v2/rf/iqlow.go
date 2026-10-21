@@ -249,10 +249,10 @@ func (r *iqLowRx) halfRunGo(x []uint32) {
 	for i := 0; ; {
 		y := x[i]
 		d := smuad(y, q)
-		ar = addAsr10(ar, d)
+		ar = addRound10(ar, d)
 		c := smusdx(q, y)
-		ai = addAsr10(ai, c)
-		pow = addAsr10(pow, smuad(y, y))
+		ai = addRound10(ai, c)
+		pow = addRound10(pow, smuad(y, y))
 		q = y
 		ax, ay := uint32((d^d>>31)-d>>31), uint32((c^c>>31)-c>>31)
 		m := (c ^ d) >> 31

@@ -48,9 +48,12 @@ dmrgo_iqlow_half:
 	smuad r10, r4, r3
 	smusdx r11, r3, r4
 	smuad r12, r4, r4
+	add r12, r12, #512
 	add r7, r7, r12, asr #10
-	add r5, r5, r10, asr #10
-	add r6, r6, r11, asr #10
+	add r12, r10, #512
+	add r5, r5, r12, asr #10
+	add r12, r11, #512
+	add r6, r6, r12, asr #10
 	eor r12, r10, r10, asr #31
 	add r12, r12, r10, lsr #31
 	eor lr, r11, r11, asr #31
@@ -86,9 +89,12 @@ dmrgo_iqlow_half:
 	smuad r10, r3, r4
 	smusdx r11, r4, r3
 	smuad r12, r3, r3
+	add r12, r12, #512
 	add r7, r7, r12, asr #10
-	add r5, r5, r10, asr #10
-	add r6, r6, r11, asr #10
+	add r12, r10, #512
+	add r5, r5, r12, asr #10
+	add r12, r11, #512
+	add r6, r6, r12, asr #10
 	eor r12, r10, r10, asr #31
 	add r12, r12, r10, lsr #31
 	eor lr, r11, r11, asr #31

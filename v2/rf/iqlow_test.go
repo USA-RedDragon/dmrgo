@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"math/bits"
+	"math/rand/v2"
 	"testing"
 )
 
@@ -87,6 +88,28 @@ func TestLowIQConfig(t *testing.T) {
 	}
 	if err := r.Init(LowIQConfig{OnBurst: on}); err != nil {
 		t.Errorf("default Hz: %v", err)
+	}
+}
+
+func TestLowIQWeakNoiseKeepsTune(t *testing.T) {
+	t.Parallel()
+	for _, sigma := range []float64{4, 12, 24} {
+		var r LowIQReceiver
+		if err := r.Init(LowIQConfig{OnBurst: func(*Burst) {}}); err != nil {
+			t.Fatal(err)
+		}
+		rng := rand.New(rand.NewPCG(1, uint64(sigma)))
+		x := make([]uint32, 4096)
+		for range 5 {
+			for i := range x {
+				re, im := int16(math.Round(rng.NormFloat64()*sigma)), int16(math.Round(rng.NormFloat64()*sigma))
+				x[i] = uint32(uint16(re)) | uint32(uint16(im))<<16
+			}
+			r.WriteIQ16(x)
+		}
+		if r.r.hz != 0 {
+			t.Errorf("noise of %v LSB tuned the AFC to %.0f Hz", sigma, r.r.hz)
+		}
 	}
 }
 

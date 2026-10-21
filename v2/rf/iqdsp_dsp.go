@@ -16,6 +16,6 @@ func smmulr(x, y int32) int32 {
 	return int32(arm.AsmFull("smmulr {}, {x}, {y}", map[string]interface{}{"x": uintptr(x), "y": uintptr(y)}))
 }
 
-func addAsr10(a, b int32) int32 {
-	return int32(arm.AsmFull("add {}, {a}, {b}, asr #10", map[string]interface{}{"a": uintptr(a), "b": uintptr(b)}))
+func addRound10(a, b int32) int32 {
+	return int32(arm.AsmFull("add {}, {a}, {b}, asr #10", map[string]interface{}{"a": uintptr(a), "b": uintptr(b + 512)}))
 }
