@@ -1171,6 +1171,7 @@ sym #define DMRGO_TRUNK_FOLLOWER_TICK_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_MAX_APPENDED_OCTETS 46
 sym #define DMRGO_TRUNK_MAX_CHANNELS 64
 sym #define DMRGO_TRUNK_MAX_DENIED 8
+sym #define DMRGO_TRUNK_MAX_DIVERSIONS 16
 sym #define DMRGO_TRUNK_MAX_DYNAMIC_GROUPS 16
 sym #define DMRGO_TRUNK_MAX_NEIGHBORS 8
 sym #define DMRGO_TRUNK_MAX_OUTPUTS 10
@@ -1222,11 +1223,15 @@ sym #define DMRGO_TRUNK_REASON_TIMEOUT ((dmrgo_trunk_reason_t)9)
 sym #define DMRGO_TRUNK_STATE_CONTROL ((dmrgo_trunk_state_t)1)
 sym #define DMRGO_TRUNK_STATE_HUNTING ((dmrgo_trunk_state_t)0)
 sym #define DMRGO_TRUNK_STATE_PAYLOAD ((dmrgo_trunk_state_t)2)
+sym #define DMRGO_TRUNK_TSCCUDT ((dmrgo_trunk_tscc_output_kind_t)9)
+sym #define DMRGO_TRUNK_TSCCUSBD ((dmrgo_trunk_tscc_output_kind_t)10)
 sym #define DMRGO_TRUNK_TSCC_AUTH_CHALLENGE ((dmrgo_trunk_tscc_output_kind_t)7)
 sym #define DMRGO_TRUNK_TSCC_BURST ((dmrgo_trunk_tscc_output_kind_t)1)
 sym #define DMRGO_TRUNK_TSCC_CALL_END ((dmrgo_trunk_tscc_output_kind_t)5)
 sym #define DMRGO_TRUNK_TSCC_CALL_START ((dmrgo_trunk_tscc_output_kind_t)4)
+sym #define DMRGO_TRUNK_TSCC_DELIVERED ((dmrgo_trunk_tscc_output_kind_t)8)
 sym #define DMRGO_TRUNK_TSCC_DEREGISTERED ((dmrgo_trunk_tscc_output_kind_t)3)
+sym #define DMRGO_TRUNK_TSCC_DIVERSION ((dmrgo_trunk_tscc_output_kind_t)11)
 sym #define DMRGO_TRUNK_TSCC_REFUSED ((dmrgo_trunk_tscc_output_kind_t)6)
 sym #define DMRGO_TRUNK_TSCC_REGISTERED ((dmrgo_trunk_tscc_output_kind_t)2)
 sym #define DMRGO_VOCODER_MAX_CODECS 8
@@ -2664,7 +2669,9 @@ sym int dmrgo_trunk_nmea_short_string(dmrgo_trunk_nmea_short_t *self, char *out,
 sym int dmrgo_trunk_output_kind_string(dmrgo_trunk_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_trunk_reason_string(dmrgo_trunk_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_trunk_state_string(dmrgo_trunk_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_trunk_tscc_assign_groups(dmrgo_trunk_tscc_t *self, int64_t now, uint32_t target, const dmrgo_trunk_appended_t *a);
 sym int dmrgo_trunk_tscc_deadline(dmrgo_trunk_tscc_t *self, int64_t *at, bool *ok);
+sym int dmrgo_trunk_tscc_diverted(dmrgo_trunk_tscc_t *self, uint32_t addr, dmrgo_layer3_diversion_service_options_t *opts, dmrgo_trunk_appended_t *to, bool *ok);
 sym int dmrgo_trunk_tscc_expect_auth(dmrgo_trunk_tscc_t *self, uint32_t addr, uint32_t response);
 sym int dmrgo_trunk_tscc_free(dmrgo_trunk_tscc_t *self);
 sym int dmrgo_trunk_tscc_inbound(dmrgo_trunk_tscc_t *self, int64_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_trunk_tscc_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
@@ -2672,9 +2679,14 @@ sym int dmrgo_trunk_tscc_inbound_need(dmrgo_trunk_tscc_t *self, int64_t now, uin
 sym int dmrgo_trunk_tscc_max_outputs(dmrgo_trunk_tscc_t *self, int64_t *out);
 sym int dmrgo_trunk_tscc_new(dmrgo_trunk_tscc_t **out);
 sym int dmrgo_trunk_tscc_output_kind_string(dmrgo_trunk_tscc_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_trunk_tscc_poll_short_data(dmrgo_trunk_tscc_t *self, int64_t now, uint32_t target, int64_t blocks);
+sym int dmrgo_trunk_tscc_poll_usbd(dmrgo_trunk_tscc_t *self, int64_t now, uint32_t target, dmrgo_pdu_service_type_t st, uint8_t rd);
 sym int dmrgo_trunk_tscc_registered(dmrgo_trunk_tscc_t *self, uint32_t addr, bool *out);
+sym int dmrgo_trunk_tscc_send_short_data(dmrgo_trunk_tscc_t *self, int64_t now, bool group, uint32_t target, const dmrgo_trunk_appended_t *a);
 sym int dmrgo_trunk_tscc_tick(dmrgo_trunk_tscc_t *self, int64_t now, dmrgo_trunk_tscc_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_trunk_tscc_tick_need(dmrgo_trunk_tscc_t *self, int64_t now, size_t *items, size_t *arena);
+sym int dmrgo_trunk_tscc_udt(dmrgo_trunk_tscc_t *self, dmrgo_trunk_udt_t **out);
+sym int dmrgo_trunk_tscc_usbd(dmrgo_trunk_tscc_t *self, dmrgo_pdu_unified_single_block_data_t *out);
 sym int dmrgo_trunk_udt_appended(dmrgo_trunk_udt_t *self, dmrgo_trunk_appended_t *out);
 sym int dmrgo_trunk_udt_free(dmrgo_trunk_udt_t *self);
 sym int dmrgo_trunk_udt_get_crc_ok(dmrgo_trunk_udt_t *self, bool *out);

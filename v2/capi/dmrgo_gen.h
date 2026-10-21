@@ -5385,6 +5385,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_MAX_CHANNELS 64
 /* Go: trunk.MaxDenied. MaxDenied is the number of entries of the denied registration list of an MS. */
 #define DMRGO_TRUNK_MAX_DENIED 8
+/* Go: trunk.MaxDiversions. MaxDiversions is the size of the call diversion table of a TSCC (ETSI TS 102 361-4 clause 6.6.7). */
+#define DMRGO_TRUNK_MAX_DIVERSIONS 16
 /* Go: trunk.MaxDynamicGroups. MaxDynamicGroups is the number of DGNA talkgroups of an MS: 15 of the DGNA_Address mode and one of the DGNA_Alias mode (ETSI TS 102 361-4 clause 6.6.8.0). */
 #define DMRGO_TRUNK_MAX_DYNAMIC_GROUPS 16
 /* Go: trunk.MaxNeighbors. MaxNeighbors is the number of adjacent sites that a Site keeps. */
@@ -5477,12 +5479,20 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_TSCC_CALL_END ((dmrgo_trunk_tscc_output_kind_t)5)
 /* Go: trunk.TSCCCallStart. TSCCCallStart reports the grant of Call. */
 #define DMRGO_TRUNK_TSCC_CALL_START ((dmrgo_trunk_tscc_output_kind_t)4)
+/* Go: trunk.TSCCDelivered. TSCCDelivered reports that a UDT short data, polling or DGNA transfer from Address to Call.Target completed, with the final acknowledgement in Ack. */
+#define DMRGO_TRUNK_TSCC_DELIVERED ((dmrgo_trunk_tscc_output_kind_t)8)
 /* Go: trunk.TSCCDeregistered. TSCCDeregistered reports that the MS Address de-registered. */
 #define DMRGO_TRUNK_TSCC_DEREGISTERED ((dmrgo_trunk_tscc_output_kind_t)3)
+/* Go: trunk.TSCCDiversion. TSCCDiversion reports that the MS Address set or cleared a call diversion. */
+#define DMRGO_TRUNK_TSCC_DIVERSION ((dmrgo_trunk_tscc_output_kind_t)11)
 /* Go: trunk.TSCCRefused. TSCCRefused reports a C_NACKD with Ack to the MS Address. */
 #define DMRGO_TRUNK_TSCC_REFUSED ((dmrgo_trunk_tscc_output_kind_t)6)
 /* Go: trunk.TSCCRegistered. TSCCRegistered reports that the MS Address registered. */
 #define DMRGO_TRUNK_TSCC_REGISTERED ((dmrgo_trunk_tscc_output_kind_t)2)
+/* Go: trunk.TSCCUDT. TSCCUDT reports the UDT from the MS Address that answers PollShortData. */
+#define DMRGO_TRUNK_TSCCUDT ((dmrgo_trunk_tscc_output_kind_t)9)
+/* Go: trunk.TSCCUSBD. TSCCUSBD reports a USBD Poll Response, to the poll of the MS Address. */
+#define DMRGO_TRUNK_TSCCUSBD ((dmrgo_trunk_tscc_output_kind_t)10)
 /* Go: auth.KeyLen. KeyLen is the length of the authentication key K in octets (ETSI TS 102 361-4 clause 6.4.8.1.1). */
 #define DMRGO_TRUNK_AUTH_KEY_LEN 16
 /* Go: auth.MaxChallenge. MaxChallenge is the largest challenge that a TSCC sends in the Source Address of a C_AHOY. */
@@ -8314,8 +8324,12 @@ int dmrgo_trunk_state_string(dmrgo_trunk_state_t self, char *out, size_t out_cap
 int dmrgo_trunk_tscc_new(dmrgo_trunk_tscc_t **out);
 /* dmrgo_trunk_tscc_free frees the handle. self may be NULL. */
 int dmrgo_trunk_tscc_free(dmrgo_trunk_tscc_t *self);
+/* Go: trunk.TSCC.AssignGroups. AssignGroups sends the DGNA talkgroups of a from the gateway DGNAI to the MS target, in the UDT outbound phase of ETSI TS 102 361-4 clause 6.6.8.2.2. */
+int dmrgo_trunk_tscc_assign_groups(dmrgo_trunk_tscc_t *self, int64_t now, uint32_t target, const dmrgo_trunk_appended_t *a);
 /* Go: trunk.TSCC.Deadline. Deadline returns the time of the next Tick: the TSCC sends one burst per 30 ms slot. */
 int dmrgo_trunk_tscc_deadline(dmrgo_trunk_tscc_t *self, int64_t *at, bool *ok);
+/* Go: trunk.TSCC.Diverted. Diverted returns the call diversion that the MS addr set, with the services that it diverts and the diversion address. */
+int dmrgo_trunk_tscc_diverted(dmrgo_trunk_tscc_t *self, uint32_t addr, dmrgo_layer3_diversion_service_options_t *opts, dmrgo_trunk_appended_t *to, bool *ok);
 /* Go: trunk.TSCC.ExpectAuth. ExpectAuth sets response as the answer that the TSCC accepts from the MS addr to the challenge of the last TSCCAuthChallenge for addr. */
 int dmrgo_trunk_tscc_expect_auth(dmrgo_trunk_tscc_t *self, uint32_t addr, uint32_t response);
 /* dmrgo_trunk_tscc_inbound_need sets *items and *arena to the room that dmrgo_trunk_tscc_inbound needs for these arguments, without a change to the handle. */
@@ -8324,12 +8338,22 @@ int dmrgo_trunk_tscc_inbound_need(dmrgo_trunk_tscc_t *self, int64_t now, uint16_
 int dmrgo_trunk_tscc_inbound(dmrgo_trunk_tscc_t *self, int64_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_trunk_tscc_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.TSCC.MaxOutputs. MaxOutputs returns the most outputs that one call of a method of t appends: one burst for the TSCC, one burst and one call end for each payload channel, and one refusal for each authentication challenge and call set-up that times out. */
 int dmrgo_trunk_tscc_max_outputs(dmrgo_trunk_tscc_t *self, int64_t *out);
+/* Go: trunk.TSCC.PollShortData. PollShortData polls the MS target for UDT short data in the given number of appended blocks with a C_AHOY from SDMI (ETSI TS 102 361-4 clause 6.6.5.1.5). */
+int dmrgo_trunk_tscc_poll_short_data(dmrgo_trunk_tscc_t *self, int64_t now, uint32_t target, int64_t blocks);
+/* Go: trunk.TSCC.PollUSBD. PollUSBD sends a USBD Poll Request of the Service Type st to the MS target, which answers after the Response Delay rd, 0 to 3 (ETSI TS 102 361-4 clause 6.6.11.1). */
+int dmrgo_trunk_tscc_poll_usbd(dmrgo_trunk_tscc_t *self, int64_t now, uint32_t target, dmrgo_pdu_service_type_t st, uint8_t rd);
 /* Go: trunk.TSCC.Registered. Registered reports whether the MS addr is in the registration table. */
 int dmrgo_trunk_tscc_registered(dmrgo_trunk_tscc_t *self, uint32_t addr, bool *out);
+/* Go: trunk.TSCC.SendShortData. SendShortData sends the appended data a as UDT short data from the gateway SDMI to the talkgroup or MS target, in the download phase of ETSI TS 102 361-4 clause 6.6.4.1.4. */
+int dmrgo_trunk_tscc_send_short_data(dmrgo_trunk_tscc_t *self, int64_t now, bool group, uint32_t target, const dmrgo_trunk_appended_t *a);
 /* dmrgo_trunk_tscc_tick_need sets *items and *arena to the room that dmrgo_trunk_tscc_tick needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_tscc_tick_need(dmrgo_trunk_tscc_t *self, int64_t now, size_t *items, size_t *arena);
 /* Go: trunk.TSCC.Tick. Tick sends the outbound bursts of one 30 ms slot: on the TSCC a queued PDU or a C_ALOHA, and on each payload channel with a call the relayed inbound burst, P_CLEAR or an idle burst, each with its CACH. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_tscc_tick_need gives. */
 int dmrgo_trunk_tscc_tick(dmrgo_trunk_tscc_t *self, int64_t now, dmrgo_trunk_tscc_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: trunk.TSCC.UDT. UDT returns the UDT that the TSCC received for itself with the last TSCCUDT, such as the answer to PollShortData. */
+int dmrgo_trunk_tscc_udt(dmrgo_trunk_tscc_t *self, dmrgo_trunk_udt_t **out);
+/* Go: trunk.TSCC.USBD. USBD returns the USBD Poll Response of the last TSCCUSBD. */
+int dmrgo_trunk_tscc_usbd(dmrgo_trunk_tscc_t *self, dmrgo_pdu_unified_single_block_data_t *out);
 /* Go: trunk.TSCCOutputKind.String. String returns the name of the TSCCOutputKind. */
 int dmrgo_trunk_tscc_output_kind_string(dmrgo_trunk_tscc_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: trunk.UDT.Header. Header is the C_UDTHD header. */

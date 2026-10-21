@@ -1375,7 +1375,9 @@
 		dmrgo_trunk_output_kind_string;
 		dmrgo_trunk_reason_string;
 		dmrgo_trunk_state_string;
+		dmrgo_trunk_tscc_assign_groups;
 		dmrgo_trunk_tscc_deadline;
+		dmrgo_trunk_tscc_diverted;
 		dmrgo_trunk_tscc_expect_auth;
 		dmrgo_trunk_tscc_free;
 		dmrgo_trunk_tscc_inbound;
@@ -1383,9 +1385,14 @@
 		dmrgo_trunk_tscc_max_outputs;
 		dmrgo_trunk_tscc_new;
 		dmrgo_trunk_tscc_output_kind_string;
+		dmrgo_trunk_tscc_poll_short_data;
+		dmrgo_trunk_tscc_poll_usbd;
 		dmrgo_trunk_tscc_registered;
+		dmrgo_trunk_tscc_send_short_data;
 		dmrgo_trunk_tscc_tick;
 		dmrgo_trunk_tscc_tick_need;
+		dmrgo_trunk_tscc_udt;
+		dmrgo_trunk_tscc_usbd;
 		dmrgo_trunk_udt_appended;
 		dmrgo_trunk_udt_free;
 		dmrgo_trunk_udt_get_crc_ok;
