@@ -91,7 +91,14 @@ The programs in [v2/examples](v2/examples) run offline on the captures in `v2/la
   - `Builder.Retry` builds the later try that a SACK asks for.
   - The `Assembler` counts a block burst lost on air with `Lost`, reads the Full Message Flag, takes later tries of confirmed and short data packets, and with `AcceptBadCRC` delivers a packet whose CRC failed, as the "skip CRC" setting of some radios does.
   - `Message.UDPIPv4` returns the compressed UDP/IPv4 header of a packet and the application data after it.
-- Position reports (`nmea`): `ParseRMC` decodes the NMEA 0183 RMC sentence that radios such as AnyTone send in a UDP datagram, and checks its checksum.
+- Applications in data packets:
+  - `ip`: the IPv4 and UDP headers of a data packet and the compressed UDP/IPv4 header, with their checksums.
+  - `sms`: text messages in every format that radios use: MOTOTRBO TMS, the ETSI IP text, the DMR Standard text of AnyTone radios, ETSI defined data and the AnyTone H-SMS text.
+  - `shortdata`: the text of an ETSI defined data packet in the coding that its DD format names, and the AnyTone H-SMS text.
+  - `location`: positions in every format that radios report: the NMEA RMC sentence of AnyTone radios and the LRRP reports of MOTOTRBO and Hytera radios.
+  - `nmea`: `ParseRMC` decodes the NMEA 0183 RMC sentence that radios such as AnyTone send in a UDP datagram, and checks its checksum.
+  - `mototrbo/ars`, `mototrbo/lrrp`, `mototrbo/tms`: the MOTOTRBO registration (UDP port 4005), location (port 4001) and text message (port 4007) services.
+  - `hytera`: the Hytera DMR Application Protocol (HDAP): the frame with its checksum, and the radio registration, location and text message services.
 - Voice calls (`voice`), without I/O or goroutines:
   - `Receiver` turns the bursts of one logical channel into call events: call start with where the call came from, voice bursts with their superframe position, lost count and frame quality, embedded GPS and talker alias, and call end with a reason. It handles late entry, duplicate and lost bursts, transport hints (`layer2.Hint`) and the call hang time.
   - `Transmitter` sends a call one burst per 60 ms slot: from AMBE+2 frames with the headers, embedded talker alias and GPS, padding, terminators and the transmit timeout, or as a relay of the events of a `Receiver`, with the local color code and SYNC.
@@ -123,7 +130,8 @@ The programs in [v2/examples](v2/examples) run offline on the captures in `v2/la
   - The AMBE+2 frame FEC. AMBE+2 itself is not included.
   - A `Codec` interface with a registry, and a Codec2 codec (`vocoder/codec2`).
   - AMBE+2 on a DVSI AMBE-3000R or AMBE-3003 chip (`vocoder/dvsi`), such as a ThumbDV, a DVstick or an AMBEserver. See [DVSI](#dvsi).
-- No cgo outside `vocoder/codec2`.
+- A C API (`v2/capi`): libdmrgo, a shared library with the C form of the whole library (`dmrgo.h` and `dmrgo_gen.h`). It is a module of its own, so its cgo stays out of `v2`. `make -C v2/capi` builds it.
+- No cgo in the `v2` module outside `vocoder/codec2`.
 - No allocation on the hot path: see [Allocation](#allocation).
 
 ## Allocation
