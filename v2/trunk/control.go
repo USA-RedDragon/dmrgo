@@ -55,6 +55,7 @@ type control struct {
 	lastGrantT time.Duration
 	hasLast    bool
 	cs         pdu.CSBK
+	counterNew bool
 	acceptRAS  bool
 	udt        UDT
 	udtWant    int
@@ -78,7 +79,7 @@ func (c *control) cach(cc *layer2.CACH) bool {
 		return false
 	}
 	p := c.slcOut.CSysParms
-	c.site.SlotCounter = p.CommonSlotCounter
+	c.site.SlotCounter, c.counterNew = p.CommonSlotCounter, true
 	code14 := uint16(p.MODEL)<<12 | p.NetSiteRaw
 	if !c.site.HasSysCode {
 		return false

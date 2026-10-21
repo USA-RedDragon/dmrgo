@@ -9,6 +9,10 @@ static inline int dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t__call(
 	return f.fn(f.user, superframe, out, out_ok);
 }
 
+static inline int dmrgo_trunk_authenticator_vtable_t__response(const dmrgo_trunk_authenticator_vtable_t *t, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok) {
+	return t->response(t->user, addr, challenge, response, ok);
+}
+
 static inline int dmrgo_vocoder_append_decoder_vtable_t__append_decode(const dmrgo_vocoder_append_decoder_vtable_t *t, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]) {
 	return t->append_decode(t->user, dst, dst_cap, dst_len, dst_need, slot);
 }

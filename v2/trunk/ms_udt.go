@@ -327,13 +327,13 @@ func (m *MS) ahoyAny(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Ou
 	case m.udtRequest() && m.u.ahoyFrom != 0 && a.SourceAddress == m.u.ahoyFrom &&
 		(kind == m.u.ahoyKind || m.req == reqDivert):
 		m.ra, m.waitAnswer, m.reqUntil = raIdle, true, now+m.answerTO()
-		return m.sendUDT(now+frame, slot, &m.u.send, m.u.sendTo, m.u.sendGrp, m.u.sendDiv, m.u.sendOp, out)
+		return m.sendUDT(now+frame, slot, &m.u.send, m.u.sendTo, m.u.sendGrp, m.u.sendDiv, false, m.u.sendOp, out)
 	case kind == enums.ServiceShortDataPolling && m.req == reqNone:
 		out = append(out, Output{Kind: OutputPolled, Grant: Grant{Service: kind, Target: m.addr, Source: a.SourceAddress}})
 		if !m.u.hasPoll {
 			return m.ackU(now+frame, slot, enums.ReasonMSNotSupported, a.SourceAddress, out)
 		}
-		return m.sendUDT(now+frame, slot, &m.u.poll, a.SourceAddress, false, false, pdu.UDTOpcodeInboundHeader, out)
+		return m.sendUDT(now+frame, slot, &m.u.poll, a.SourceAddress, false, false, false, pdu.UDTOpcodeInboundHeader, out)
 	case kind == enums.ServiceDuplexVoice && m.req == reqNone:
 		out = append(out, Output{Kind: OutputAhoy, Grant: Grant{Service: kind, Target: a.TargetAddress, Source: a.SourceAddress}})
 		if m.u.noDuplex {
@@ -507,11 +507,12 @@ func (m *MS) ackU(due time.Duration, slot enums.Slot, r enums.AckReason, to uint
 	return m.send(due, slot, out)
 }
 
-func (m *MS) sendUDT(due time.Duration, slot enums.Slot, a *Appended, to uint32, group, div bool, op pdu.UDTOpcode, out []Output) []Output {
+func (m *MS) sendUDT(due time.Duration, slot enums.Slot, a *Appended, to uint32, group, div, supp bool, op pdu.UDTOpcode, out []Output) []Output {
 	u := &m.u
 	u.hdr = pdu.UDTHeader{
 		Group: group, ResponseRequested: op == pdu.UDTOpcodeDGNAInboundHeader, OptionFlag: div, SAP: enums.SAPUnifiedDataTransport,
-		UDTFormat: a.Format, LLIDDestination: to, LLIDSource: m.addr, PadNibble: a.PadNibble, AppendedBlocks: uab(a.Blocks), Opcode: op,
+		UDTFormat: a.Format, LLIDDestination: to, LLIDSource: m.addr, PadNibble: a.PadNibble, AppendedBlocks: uab(a.Blocks), SupplementaryFlag: supp,
+		Opcode: op,
 	}
 	u.dh = pdu.DataHeader{Format: pdu.FormatUnifiedDataTransport, UDTHeader: &u.hdr}
 	p, err := u.dh.Encode()

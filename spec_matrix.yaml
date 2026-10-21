@@ -2364,6 +2364,20 @@ documents:
 
       - section: "6.4.5"
         title: "Mass Re-registration"
+        source_files:
+          - v2/trunk/ms_services.go
+          - v2/trunk/tscc_services.go
+          - v2/layer2/pdu/broadcast_massreg.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestMassRegistration
+              - FuzzMSServices
+              - FuzzTSCCServices
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
+            names:
+              - TestBroadcastPDU_AsMassReg_Table7_76
+              - TestRegWindowTime_Table6_12
 
       - section: "6.4.6"
         title: "De-registration"
@@ -2376,6 +2390,14 @@ documents:
 
       - section: "6.4.7"
         title: "Power Save"
+        source_files:
+          - v2/trunk/ms_services.go
+          - v2/trunk/tscc_services.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestPowerSave_SleepAndHeldAhoy
+              - TestNextWake_Table6_14
 
       - section: "6.4.8"
         title: "Authentication Procedures"
@@ -2400,12 +2422,38 @@ documents:
 
       - section: "6.4.9"
         title: "MS Stun/Revive"
+        source_files:
+          - v2/trunk/ms_services.go
+          - v2/trunk/tscc_services.go
+          - v2/trunk/services.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestStun_WithoutAuthentication
+              - TestStun_Authenticated
+              - TestStun_ConfigState
 
       - section: "6.4.10"
         title: "MS Kill"
+        source_files:
+          - v2/trunk/ms_services.go
+          - v2/trunk/tscc_services.go
+          - v2/trunk/services.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestStun_Authenticated
+              - TestStun_ConfigState
 
       - section: "6.4.11"
         title: "IP Connection Advice"
+        source_files:
+          - v2/trunk/ms_services.go
+          - v2/trunk/tscc_services.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestIPAdvice
 
       - section: "6.4.12"
         title: "Unsolicited MS Radio Check"
@@ -2419,12 +2467,42 @@ documents:
 
       - section: "6.4.13"
         title: "Supplementary_User Data Service"
+        source_files:
+          - v2/trunk/ms_services.go
+          - v2/trunk/tscc_services.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestSupplementary_VoiceCall
+              - TestSupplementary_NotOffered
 
       - section: "6.4.14"
         title: "MS Power Control and MS De-key"
+        source_files:
+          - v2/trunk/ms_services.go
+          - v2/trunk/tscc_services.go
+          - v2/enums/rc_command.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestInterrupt_PayloadInterrupt
+              - TestInterrupt_Refused
+              - TestInterrupt_TerminateAndCallTimer
+              - TestInterrupt_TSCCPowerControl
+          - package: github.com/USA-RedDragon/dmrgo/v2/enums
+            names:
+              - TestRCCommand_Table6_32
 
       - section: "6.4.15"
         title: "Transmit Interrupt for MS De-key"
+        source_files:
+          - v2/trunk/ms_services.go
+          - v2/trunk/tscc_services.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestInterrupt_PayloadInterrupt
+              - TestInterrupt_TerminateAndCallTimer
 
       - section: "6.5.1.0"
         title: "Format of the Appended Data"
@@ -2684,6 +2762,19 @@ documents:
 
       - section: "6.6.6"
         title: "Status Call Service"
+        source_files:
+          - v2/trunk/ms_services.go
+          - v2/trunk/tscc_services.go
+          - v2/trunk/services.go
+          - v2/layer3/status_options.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestStatus_DeliveryAndPoll
+              - TestStatus_NoAnswer
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer3
+            names:
+              - TestStatusServiceOptions_Table7_57
 
       - section: "6.6.7"
         title: "Call Diversion"
@@ -2877,6 +2968,12 @@ documents:
 
       - section: "7.2.13.6"
         title: "Service_Options for a Status Transport Request"
+        source_files:
+          - v2/layer3/status_options.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/layer3
+            names:
+              - TestStatusServiceOptions_Table7_57
 
       - section: "7.2.13.7"
         title: "Service_Options for the UDT Short Data Service"

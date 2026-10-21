@@ -393,6 +393,8 @@ typedef struct dmrgo_layer3_registration_service_options_t dmrgo_layer3_registra
 typedef struct dmrgo_layer3_service_options_t dmrgo_layer3_service_options_t;
 /* Go: layer3.ShortDataServiceOptions. ShortDataServiceOptions is the 7-bit Service_Options of a Tier III UDT short data or DGNA request, in the high bits of the octet as for VoiceServiceOptions. */
 typedef struct dmrgo_layer3_short_data_service_options_t dmrgo_layer3_short_data_service_options_t;
+/* Go: layer3.StatusServiceOptions. StatusServiceOptions is the 7-bit Service_Options of a Tier III status transport request, in the high bits of the octet as for VoiceServiceOptions. */
+typedef struct dmrgo_layer3_status_service_options_t dmrgo_layer3_status_service_options_t;
 /* Go: layer3.VoiceServiceOptions. VoiceServiceOptions is the 7-bit Service_Options of a Tier III voice service request, such as a C_RAND for a talkgroup or individual voice call. */
 typedef struct dmrgo_layer3_voice_service_options_t dmrgo_layer3_voice_service_options_t;
 /* Go: location.Decoder. Decoder decodes positions. */
@@ -539,6 +541,9 @@ typedef struct dmrgo_trunk_access_t dmrgo_trunk_access_t;
 typedef struct dmrgo_trunk_address_list_t dmrgo_trunk_address_list_t;
 /* Go: trunk.Appended. Appended is the appended data of a UDT with the fields of its header that describe it: the UDT Format, the pad nibbles and the number of blocks. */
 typedef struct dmrgo_trunk_appended_t dmrgo_trunk_appended_t;
+/* Go: trunk.Authenticator. Authenticator gives the 24-bit response of the challenge and response authentication, as the RC4 algorithm with the key K (and the PSN, when it is used) of an MS computes it. */
+typedef struct dmrgo_trunk_authenticator_t dmrgo_trunk_authenticator_t;
+typedef struct dmrgo_trunk_authenticator_vtable_t dmrgo_trunk_authenticator_vtable_t;
 /* Go: trunk.CapacityPlusConfig. CapacityPlusConfig configures NewCapacityPlusFollower. */
 typedef struct dmrgo_trunk_capacity_plus_config_t dmrgo_trunk_capacity_plus_config_t;
 /* Go: trunk.CapacityPlusFollower. CapacityPlusFollower follows a MOTOTRBO Capacity Plus or Linked Capacity Plus site without transmitting. */
@@ -722,7 +727,7 @@ typedef uint8_t dmrgo_enums_lcss_t;
 typedef uint8_t dmrgo_enums_n_rand_wait_t;
 /* Go: enums.ProtectKind. ProtectKind is the 3-bit Protect_Kind of a P_PROTECT. */
 typedef uint8_t dmrgo_enums_protect_kind_t;
-/* Go: enums.RCCommand. RCCommand is the 4-bit Tier 2 Reverse Channel (RC) command. */
+/* Go: enums.RCCommand. RCCommand is the 4-bit Reverse Channel (RC) command. */
 typedef uint8_t dmrgo_enums_rc_command_t;
 /* Go: enums.SAID. SAID is the 4-bit Source IP Address Identifier of a UDP/IPv4 compressed header. */
 typedef uint8_t dmrgo_enums_said_t;
@@ -842,6 +847,10 @@ typedef uint8_t dmrgo_trunk_output_kind_t;
 typedef uint8_t dmrgo_trunk_reason_t;
 /* Go: trunk.State. State is the state of a Follower or an MS. */
 typedef uint8_t dmrgo_trunk_state_t;
+/* Go: trunk.Status. Status is the 7-bit value of the status call service. */
+typedef uint8_t dmrgo_trunk_status_t;
+/* Go: trunk.StunAction. StunAction is a supplementary service of a TSCC that disables or enables an MS (ETSI TS 102 361-4 clauses 6.4.9 and 6.4.10). */
+typedef uint8_t dmrgo_trunk_stun_action_t;
 /* Go: trunk.TSCCOutputKind. TSCCOutputKind is the kind of a TSCCOutput. */
 typedef uint8_t dmrgo_trunk_tscc_output_kind_t;
 /* Go: codec2.Mode. Mode is a Codec2 bit rate in bits per second. */
@@ -2404,6 +2413,12 @@ struct dmrgo_layer3_short_data_service_options_t {
 	bool is_supp_data;
 };
 
+struct dmrgo_layer3_status_service_options_t {
+	bool group;
+	bool is_supp_data;
+	uint8_t status_high;
+};
+
 struct dmrgo_layer3_voice_service_options_t {
 	bool is_emergency;
 	bool is_privacy;
@@ -3144,6 +3159,11 @@ struct dmrgo_trunk_nmea_short_t {
 	uint8_t ten_seconds;
 };
 
+struct dmrgo_trunk_authenticator_vtable_t {
+	uintptr_t user;
+	int (*response)(uintptr_t user, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
+};
+
 struct dmrgo_trunk_capacity_plus_config_t {
 	dmrgo_trunk_channel_plan_t *plan;
 	uint32_t talkgroups[32];
@@ -3194,6 +3214,9 @@ struct dmrgo_trunk_output_t {
 	int64_t due;
 	dmrgo_enums_protect_kind_t protect;
 	uint32_t challenge;
+	dmrgo_trunk_status_t status;
+	dmrgo_trunk_stun_action_t stun;
+	dmrgo_enums_rc_command_t rc;
 };
 
 struct dmrgo_trunk_channel_t {
@@ -3334,6 +3357,13 @@ struct dmrgo_trunk_ms_config_t {
 	dmrgo_layer2_burst_t *scratch;
 	bool no_duplex;
 	bool ambient;
+	dmrgo_trunk_authenticator_t *auth;
+	bool no_stun;
+	bool no_kill;
+	bool stunned;
+	bool killed;
+	uint8_t power_save;
+	int64_t awake;
 };
 
 struct dmrgo_trunk_tscc_config_t {
@@ -3354,6 +3384,13 @@ struct dmrgo_trunk_tscc_config_t {
 	int64_t answer_timeout;
 	bool authenticate;
 	uint64_t seed;
+	dmrgo_trunk_authenticator_t *auth;
+	bool transmit_interrupt;
+	int64_t max_call;
+	bool power_save;
+	int64_t awake;
+	bool ip;
+	bool supplementary;
 };
 
 struct dmrgo_trunk_tscc_output_t {
@@ -3367,6 +3404,11 @@ struct dmrgo_trunk_tscc_output_t {
 	dmrgo_trunk_grant_t call;
 	dmrgo_trunk_reason_t reason;
 	uint32_t challenge;
+	dmrgo_trunk_status_t status;
+	dmrgo_trunk_stun_action_t stun;
+	uint8_t ip[16];
+	bool ipv6;
+	bool remove;
 };
 
 struct dmrgo_vocoder_append_decoder_vtable_t {
@@ -3646,7 +3688,9 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_TRUNK_CONFIG_ERROR (-105)
 #define DMRGO_ERR_TRUNK_NOT_ON_CONTROL (-136)
 #define DMRGO_ERR_TRUNK_NOT_REGISTERED (-137)
+#define DMRGO_ERR_TRUNK_NO_CALL (-219)
 #define DMRGO_ERR_TRUNK_PLAN_FULL (-138)
+#define DMRGO_ERR_TRUNK_STUNNED (-220)
 #define DMRGO_ERR_TRUNK_UDT_CHARACTER (-216)
 #define DMRGO_ERR_TRUNK_UDT_FORMAT (-217)
 #define DMRGO_ERR_TRUNK_UDT_LENGTH (-218)
@@ -3694,6 +3738,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_MS_CANCEL_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_END_CALL_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_GROUP_ALIAS_MAX_ITEMS (63)
+#define DMRGO_TRUNK_MS_INTERRUPT_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_LOST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_POWER_OFF_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_QUALITY_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
@@ -4371,6 +4416,14 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ENUMS_RC_CEASE_TRANSMISSION_COMMAND ((dmrgo_enums_rc_command_t)4)
 /* Go: enums.RCCeaseTransmissionRequest. cease transmission request */
 #define DMRGO_ENUMS_RC_CEASE_TRANSMISSION_REQUEST ((dmrgo_enums_rc_command_t)5)
+/* Go: enums.RCDecreasePower. decrease power by one step, Tier III */
+#define DMRGO_ENUMS_RC_DECREASE_POWER ((dmrgo_enums_rc_command_t)1)
+/* Go: enums.RCHighestPower. set power to highest, Tier III */
+#define DMRGO_ENUMS_RC_HIGHEST_POWER ((dmrgo_enums_rc_command_t)2)
+/* Go: enums.RCIncreasePower. increase power by one step, Tier III */
+#define DMRGO_ENUMS_RC_INCREASE_POWER ((dmrgo_enums_rc_command_t)0)
+/* Go: enums.RCLowestPower. set power to lowest, Tier III */
+#define DMRGO_ENUMS_RC_LOWEST_POWER ((dmrgo_enums_rc_command_t)3)
 /* Go: enums.ReasonAuthResponseMS. authentication response of the MS */
 #define DMRGO_ENUMS_REASON_AUTH_RESPONSE_MS ((dmrgo_enums_ack_reason_t)72)
 /* Go: enums.ReasonAuthResponseTS. authentication response of the TS */
@@ -5397,8 +5450,12 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_MAX_PAYLOAD_CHANNELS 16
 /* Go: trunk.MaxRules. MaxRules is the number of rules that a ChannelPlan holds. */
 #define DMRGO_TRUNK_MAX_RULES 4
+/* Go: trunk.MaxSupplementary. MaxSupplementary is the most octets of supplementary_user data: four appended UDT blocks less the CRC (ETSI TS 102 361-4 clause 6.4.13). */
+#define DMRGO_TRUNK_MAX_SUPPLEMENTARY 46
 /* Go: trunk.MaxTalkgroups. MaxTalkgroups is the size of FollowerConfig.Talkgroups. */
 #define DMRGO_TRUNK_MAX_TALKGROUPS 32
+/* Go: trunk.OutputAccepted. OutputAccepted reports that the TSCC accepted a request of the MS that needs no payload channel, such as a status call, a transmit interrupt or an IP connection advice. */
+#define DMRGO_TRUNK_OUTPUT_ACCEPTED ((dmrgo_trunk_output_kind_t)19)
 /* Go: trunk.OutputAhoy. OutputAhoy reports a C_AHOY for the MS, with the call in Output.Grant: an individual call that the MS answers, or a radio check. */
 #define DMRGO_TRUNK_OUTPUT_AHOY ((dmrgo_trunk_output_kind_t)9)
 /* Go: trunk.OutputAmbient. OutputAmbient reports that the MS joined the Ambient Listening Service call of Output.Grant: it transmits without an action of its user until it ends the call at T_ALS or T_ALS_E. */
@@ -5427,12 +5484,24 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_OUTPUT_REFUSED ((dmrgo_trunk_output_kind_t)8)
 /* Go: trunk.OutputRegistered. OutputRegistered reports that the TSCC accepted the registration of the MS. */
 #define DMRGO_TRUNK_OUTPUT_REGISTERED ((dmrgo_trunk_output_kind_t)7)
+/* Go: trunk.OutputReverseChannel. OutputReverseChannel reports the RC command in Output.RC on the payload channel of the MS. */
+#define DMRGO_TRUNK_OUTPUT_REVERSE_CHANNEL ((dmrgo_trunk_output_kind_t)21)
 /* Go: trunk.OutputSite. OutputSite reports that the machine confirmed a TSCC, or that the system parameters of the TSCC changed. */
 #define DMRGO_TRUNK_OUTPUT_SITE ((dmrgo_trunk_output_kind_t)2)
+/* Go: trunk.OutputSleep. OutputSleep reports that the MS may switch its receiver off until Output.Due, its next power save frame. */
+#define DMRGO_TRUNK_OUTPUT_SLEEP ((dmrgo_trunk_output_kind_t)22)
+/* Go: trunk.OutputStatus. OutputStatus reports a status in Output.Status: a status call to the MS or to one of its talkgroups, with the parties in Output.Grant, or the answer to a status poll of the MS, from Output.Grant.Source. */
+#define DMRGO_TRUNK_OUTPUT_STATUS ((dmrgo_trunk_output_kind_t)18)
+/* Go: trunk.OutputStun. OutputStun reports that the TSCC stunned, revived or killed the MS, with the action in Output.Stun. */
+#define DMRGO_TRUNK_OUTPUT_STUN ((dmrgo_trunk_output_kind_t)20)
 /* Go: trunk.OutputTune. OutputTune asks the consumer to tune the receiver, and the transmitter of an MS, to Output.Tune. */
 #define DMRGO_TRUNK_OUTPUT_TUNE ((dmrgo_trunk_output_kind_t)1)
 /* Go: trunk.OutputUDT. OutputUDT reports a UDT delivery, which UDT returns until the next call of the machine. */
 #define DMRGO_TRUNK_OUTPUT_UDT ((dmrgo_trunk_output_kind_t)10)
+/* Go: trunk.ReasonAuthentication. ReasonAuthentication is a failed authentication: no key for the MS, or a response that the MS refused. */
+#define DMRGO_TRUNK_REASON_AUTHENTICATION ((dmrgo_trunk_reason_t)18)
+/* Go: trunk.ReasonCallTimer. ReasonCallTimer is the end of the longest call time of a TSCC. */
+#define DMRGO_TRUNK_REASON_CALL_TIMER ((dmrgo_trunk_reason_t)17)
 /* Go: trunk.ReasonCancelled. ReasonCancelled is a request that the consumer cancelled. */
 #define DMRGO_TRUNK_REASON_CANCELLED ((dmrgo_trunk_reason_t)10)
 /* Go: trunk.ReasonClear. ReasonClear is a P_CLEAR on the payload channel. */
@@ -5445,6 +5514,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_REASON_HANGTIME ((dmrgo_trunk_reason_t)5)
 /* Go: trunk.ReasonInactive. ReasonInactive is TV_Inactive or TD_Inactive without a burst on the payload channel. */
 #define DMRGO_TRUNK_REASON_INACTIVE ((dmrgo_trunk_reason_t)4)
+/* Go: trunk.ReasonInterrupt. ReasonInterrupt is a transmit interrupt: the MS left the payload channel to ask for it, or the TSCC stopped the transmission of the call. */
+#define DMRGO_TRUNK_REASON_INTERRUPT ((dmrgo_trunk_reason_t)16)
 /* Go: trunk.ReasonMaintenance. ReasonMaintenance is the end of the own call: the MS sent P_MAINT. */
 #define DMRGO_TRUNK_REASON_MAINTENANCE ((dmrgo_trunk_reason_t)6)
 /* Go: trunk.ReasonMove. ReasonMove is a C_MOVE to another TSCC. */
@@ -5471,6 +5542,24 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_STATE_HUNTING ((dmrgo_trunk_state_t)0)
 /* Go: trunk.StatePayload. StatePayload follows a call on a payload channel. */
 #define DMRGO_TRUNK_STATE_PAYLOAD ((dmrgo_trunk_state_t)2)
+/* Go: trunk.StatusCancelEmergency. StatusCancelEmergency cancels an emergency alarm (ETSI TS 102 361-4 clause 6.6.6.3.2). */
+#define DMRGO_TRUNK_STATUS_CANCEL_EMERGENCY ((dmrgo_trunk_status_t)124)
+/* Go: trunk.StatusEmergency. StatusEmergency is an emergency alarm (ETSI TS 102 361-4 clause 6.6.6.3.1). */
+#define DMRGO_TRUNK_STATUS_EMERGENCY ((dmrgo_trunk_status_t)126)
+/* Go: trunk.StatusInterrupt. StatusInterrupt asks the TSCC to stop the transmission of an MS so that the caller can talk (ETSI TS 102 361-4 clause 6.4.14.3.3). */
+#define DMRGO_TRUNK_STATUS_INTERRUPT ((dmrgo_trunk_status_t)125)
+/* Go: trunk.StatusPoll. StatusPoll asks the target for its status (ETSI TS 102 361-4 clause 6.6.6.2). */
+#define DMRGO_TRUNK_STATUS_POLL ((dmrgo_trunk_status_t)127)
+/* Go: trunk.StatusTerminate. StatusTerminate asks the TSCC to stop the transmission of an MS and to end its call, such as an ALS call (ETSI TS 102 361-4 clause 6.4.14.3.4). */
+#define DMRGO_TRUNK_STATUS_TERMINATE ((dmrgo_trunk_status_t)123)
+/* Go: trunk.StunKill. StunKill disables the MS for good. */
+#define DMRGO_TRUNK_STUN_KILL ((dmrgo_trunk_stun_action_t)3)
+/* Go: trunk.StunNone. StunNone is the zero StunAction. */
+#define DMRGO_TRUNK_STUN_NONE ((dmrgo_trunk_stun_action_t)0)
+/* Go: trunk.StunRevive. StunRevive gives a stunned MS its user services again. */
+#define DMRGO_TRUNK_STUN_REVIVE ((dmrgo_trunk_stun_action_t)2)
+/* Go: trunk.StunStun. StunStun denies the MS the user services. */
+#define DMRGO_TRUNK_STUN_STUN ((dmrgo_trunk_stun_action_t)1)
 /* Go: trunk.TSCCAuthChallenge. TSCCAuthChallenge reports that the TSCC sent the authentication Challenge to the MS Address. */
 #define DMRGO_TRUNK_TSCC_AUTH_CHALLENGE ((dmrgo_trunk_tscc_output_kind_t)7)
 /* Go: trunk.TSCCBurst. TSCCBurst is an outbound burst with its CACH for Channel and Slot. */
@@ -5485,10 +5574,18 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_TSCC_DEREGISTERED ((dmrgo_trunk_tscc_output_kind_t)3)
 /* Go: trunk.TSCCDiversion. TSCCDiversion reports that the MS Address set or cleared a call diversion. */
 #define DMRGO_TRUNK_TSCC_DIVERSION ((dmrgo_trunk_tscc_output_kind_t)11)
+/* Go: trunk.TSCCIPAdvice. TSCCIPAdvice reports the IP connection advice of the MS Address, in IP, IPv6 and Remove. */
+#define DMRGO_TRUNK_TSCC_IP_ADVICE ((dmrgo_trunk_tscc_output_kind_t)15)
+/* Go: trunk.TSCCInterrupt. TSCCInterrupt reports the end of a transmit interrupt of Call for the MS Address, or for the TSCC when Address is 0. */
+#define DMRGO_TRUNK_TSCC_INTERRUPT ((dmrgo_trunk_tscc_output_kind_t)14)
 /* Go: trunk.TSCCRefused. TSCCRefused reports a C_NACKD with Ack to the MS Address. */
 #define DMRGO_TRUNK_TSCC_REFUSED ((dmrgo_trunk_tscc_output_kind_t)6)
 /* Go: trunk.TSCCRegistered. TSCCRegistered reports that the MS Address registered. */
 #define DMRGO_TRUNK_TSCC_REGISTERED ((dmrgo_trunk_tscc_output_kind_t)2)
+/* Go: trunk.TSCCStatus. TSCCStatus reports a status call with Status between the parties in Call, and the answer of the called MS in Ack. */
+#define DMRGO_TRUNK_TSCC_STATUS ((dmrgo_trunk_tscc_output_kind_t)12)
+/* Go: trunk.TSCCStun. TSCCStun reports the end of Stun or Kill for the MS Address: Stun tells the action and Ack holds the final answer of the MS. */
+#define DMRGO_TRUNK_TSCC_STUN ((dmrgo_trunk_tscc_output_kind_t)13)
 /* Go: trunk.TSCCUDT. TSCCUDT reports the UDT from the MS Address that answers PollShortData. */
 #define DMRGO_TRUNK_TSCCUDT ((dmrgo_trunk_tscc_output_kind_t)9)
 /* Go: trunk.TSCCUSBD. TSCCUSBD reports a USBD Poll Response, to the poll of the MS Address. */
@@ -7256,6 +7353,8 @@ int dmrgo_pdu_rate34_data_string(dmrgo_pdu_rate34_data_t *self, char *out, size_
 int dmrgo_pdu_raw_data_header_encode(dmrgo_pdu_raw_data_header_t *self, uint8_t out[10]);
 /* Go: pdu.RawDataHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_raw_data_header_string(dmrgo_pdu_raw_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: pdu.RegWindowTime. RegWindowTime returns TReg_Window, the time in which an MS makes its registration for the Reg_Window w, and false for 0, which cancels the mass registration, or a w over 15 (ETSI TS 102 361-4 clause 6.4.5.1, Table 6.12). */
+int dmrgo_pdu_reg_window_time(uint8_t w, int64_t *out0, bool *out1);
 /* Go: pdu.ResponsePacketHeader.Encode. Encode encodes a ResponsePacketHeader. */
 int dmrgo_pdu_response_packet_header_encode(dmrgo_pdu_response_packet_header_t *self, uint8_t out[10]);
 /* Go: pdu.ResponsePacketHeader.String. String returns the fields of s as text, for printing. */
@@ -7456,6 +7555,8 @@ int dmrgo_layer3_decode_registration_service_options(const uint8_t data[1], dmrg
 int dmrgo_layer3_decode_service_options(const uint8_t data[1], dmrgo_layer3_service_options_t *out);
 /* Go: layer3.DecodeShortDataServiceOptions. DecodeShortDataServiceOptions decodes a ShortDataServiceOptions. */
 int dmrgo_layer3_decode_short_data_service_options(const uint8_t data[1], dmrgo_layer3_short_data_service_options_t *out);
+/* Go: layer3.DecodeStatusServiceOptions. DecodeStatusServiceOptions decodes a StatusServiceOptions. */
+int dmrgo_layer3_decode_status_service_options(const uint8_t data[1], dmrgo_layer3_status_service_options_t *out);
 /* Go: layer3.DecodeVoiceServiceOptions. DecodeVoiceServiceOptions decodes a VoiceServiceOptions. */
 int dmrgo_layer3_decode_voice_service_options(const uint8_t data[1], dmrgo_layer3_voice_service_options_t *out);
 /* Go: layer3.DiversionServiceOptions.Encode. Encode encodes a DiversionServiceOptions. */
@@ -7494,6 +7595,12 @@ int dmrgo_layer3_short_data_service_options_field(const dmrgo_layer3_short_data_
 int dmrgo_layer3_short_data_service_options_string(dmrgo_layer3_short_data_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.SourceType.String. */
 int dmrgo_layer3_source_type_string(dmrgo_layer3_source_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: layer3.StatusServiceOptions.Encode. Encode encodes a StatusServiceOptions. */
+int dmrgo_layer3_status_service_options_encode(dmrgo_layer3_status_service_options_t *self, uint8_t out[1]);
+/* Go: layer3.StatusServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
+int dmrgo_layer3_status_service_options_field(const dmrgo_layer3_status_service_options_t *self, uint8_t *out);
+/* Go: layer3.StatusServiceOptions.String. String returns the fields of s as text, for printing. */
+int dmrgo_layer3_status_service_options_string(dmrgo_layer3_status_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.TalkerAliasDataFormat.String. */
 int dmrgo_layer3_talker_alias_data_format_string(dmrgo_layer3_talker_alias_data_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.VoiceServiceOptions.Encode. Encode encodes a VoiceServiceOptions. */
@@ -8110,6 +8217,12 @@ int dmrgo_trunk_appended_set_nmea_short(dmrgo_trunk_appended_t *self, const dmrg
 int dmrgo_trunk_appended_set_text(dmrgo_trunk_appended_t *self, dmrgo_enums_udt_format_t f, const uint8_t *text, size_t text_len);
 /* Go: trunk.Appended.Text. Text appends the text of a to dst as UTF-8 and returns dst, for the formats enums.UDTISO7, enums.UDTISO8 (read as ISO/IEC 8859-1), enums.UDTUTF16BE and enums.UDTMixed (the text after the address). */
 int dmrgo_trunk_appended_text(dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* dmrgo_trunk_authenticator_free frees the handle. self may be NULL. */
+int dmrgo_trunk_authenticator_free(dmrgo_trunk_authenticator_t *self);
+/* Go: trunk.Authenticator.Response. Response returns the response of the MS addr to challenge. */
+int dmrgo_trunk_authenticator_response(dmrgo_trunk_authenticator_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
+/* dmrgo_trunk_authenticator_from_vtable makes a Authenticator whose methods call the functions of vt with vt->user. */
+int dmrgo_trunk_authenticator_from_vtable(const dmrgo_trunk_authenticator_vtable_t *vt, dmrgo_trunk_authenticator_t **out);
 /* dmrgo_trunk_capacity_plus_follower_new makes a zero trunk.CapacityPlusFollower. */
 int dmrgo_trunk_capacity_plus_follower_new(dmrgo_trunk_capacity_plus_follower_t **out);
 /* dmrgo_trunk_capacity_plus_follower_free frees the handle. self may be NULL. */
@@ -8222,6 +8335,10 @@ int dmrgo_trunk_lip_short_report_string(dmrgo_trunk_lip_short_report_t *self, ch
 int dmrgo_trunk_ms_new(dmrgo_trunk_ms_t **out);
 /* dmrgo_trunk_ms_free frees the handle. self may be NULL. */
 int dmrgo_trunk_ms_free(dmrgo_trunk_ms_t *self);
+/* Go: trunk.MS.AdviseIP. AdviseIP sends an IP connection advice: a registration by random access with IP_Inform, and the address by UDT when the TSCC asks for it with a C_AHOY from IPI. */
+int dmrgo_trunk_ms_advise_ip(dmrgo_trunk_ms_t *self, int64_t now, const uint8_t ip[16], bool ipv6, bool remove);
+/* Go: trunk.MS.Asleep. Asleep reports whether the MS sleeps in power save until its next power save frame (ETSI TS 102 361-4 clause 6.4.7). */
+int dmrgo_trunk_ms_asleep(dmrgo_trunk_ms_t *self, bool *out);
 /* Go: trunk.MS.AssignGroups. AssignGroups asks the TSCC to give the MS target the DGNA talkgroups of a, by random access to DGNAI (ETSI TS 102 361-4 clause 6.6.8.3). */
 int dmrgo_trunk_ms_assign_groups(dmrgo_trunk_ms_t *self, int64_t now, uint32_t target, const dmrgo_trunk_appended_t *a);
 /* dmrgo_trunk_ms_auth_response_need sets *items and *arena to the room that dmrgo_trunk_ms_auth_response needs for these arguments, without a change to the handle. */
@@ -8262,18 +8379,28 @@ int dmrgo_trunk_ms_group_alias_need(dmrgo_trunk_ms_t *self, uint32_t tg, size_t 
 int dmrgo_trunk_ms_group_alias(dmrgo_trunk_ms_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, uint32_t tg);
 /* Go: trunk.MS.Groups. Groups returns the DGNA talkgroups of the MS. */
 int dmrgo_trunk_ms_groups(dmrgo_trunk_ms_t *self, dmrgo_trunk_dynamic_groups_t *out);
+/* dmrgo_trunk_ms_interrupt_need sets *items and *arena to the room that dmrgo_trunk_ms_interrupt needs for these arguments, without a change to the handle. */
+int dmrgo_trunk_ms_interrupt_need(dmrgo_trunk_ms_t *self, int64_t now, bool terminate, size_t *items, size_t *arena);
+/* Go: trunk.MS.Interrupt. Interrupt asks the TSCC to stop the transmission on the voice call that the MS follows on a payload channel. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_interrupt_need gives (DMRGO_TRUNK_MS_INTERRUPT_MAX_ITEMS items). */
+int dmrgo_trunk_ms_interrupt(dmrgo_trunk_ms_t *self, int64_t now, bool terminate, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: trunk.MS.Killed. Killed reports whether a TSCC killed the MS (ETSI TS 102 361-4 clause 6.4.10). */
+int dmrgo_trunk_ms_killed(dmrgo_trunk_ms_t *self, bool *out);
 /* dmrgo_trunk_ms_lost_need sets *items and *arena to the room that dmrgo_trunk_ms_lost needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_lost_need(dmrgo_trunk_ms_t *self, int64_t now, size_t *items, size_t *arena);
 /* Go: trunk.MS.Lost. Lost tells the MS that the receiver lost the signal, as Follower.Lost does. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_lost_need gives (DMRGO_TRUNK_MS_LOST_MAX_ITEMS items). */
 int dmrgo_trunk_ms_lost(dmrgo_trunk_ms_t *self, int64_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: trunk.MS.Off. Off reports whether the MS completed PowerOff. */
+/* Go: trunk.MS.Off. Off reports whether the MS completed PowerOff or a TSCC killed it. */
 int dmrgo_trunk_ms_off(dmrgo_trunk_ms_t *self, bool *out);
 /* Go: trunk.MS.PollShortData. PollShortData asks the TSCC to poll the MS target for UDT short data in the format f, in the given number of appended blocks, by random access (ETSI TS 102 361-4 clause 6.6.5). */
 int dmrgo_trunk_ms_poll_short_data(dmrgo_trunk_ms_t *self, int64_t now, uint32_t target, dmrgo_enums_udt_format_t f, int64_t blocks);
+/* Go: trunk.MS.PollStatus. PollStatus asks the MS target for its status by random access. */
+int dmrgo_trunk_ms_poll_status(dmrgo_trunk_ms_t *self, int64_t now, uint32_t target);
 /* dmrgo_trunk_ms_power_off_need sets *items and *arena to the room that dmrgo_trunk_ms_power_off needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_power_off_need(dmrgo_trunk_ms_t *self, int64_t now, size_t *items, size_t *arena);
 /* Go: trunk.MS.PowerOff. PowerOff de-registers the MS before it is switched off: it sends the de-registration by random access and appends OutputPowerOff when the TSCC accepts it or after T_Dereg (ETSI TS 102 361-4 clause 6.4.6). It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_power_off_need gives (DMRGO_TRUNK_MS_POWER_OFF_MAX_ITEMS items). */
 int dmrgo_trunk_ms_power_off(dmrgo_trunk_ms_t *self, int64_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: trunk.MS.PowerSaveOffset. PowerSaveOffset returns the PowerSave_Offset that the TSCC gave the MS with its registration, or 0 when the MS uses no power save (ETSI TS 102 361-4 clause 6.4.7.2.1). */
+int dmrgo_trunk_ms_power_save_offset(dmrgo_trunk_ms_t *self, uint8_t *out);
 /* dmrgo_trunk_ms_quality_need sets *items and *arena to the room that dmrgo_trunk_ms_quality needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_quality_need(dmrgo_trunk_ms_t *self, int64_t now, int64_t level, size_t *items, size_t *arena);
 /* Go: trunk.MS.Quality. Quality gives the MS the signal level of the TSCC, in the units of MSConfig.MinLevelHunt and MinLevelIdle, for the confirmation of a TSCC and for leaving it (ETSI TS 102 361-4 clauses 6.3.2.3 and 6.3.3.1). It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_quality_need gives (DMRGO_TRUNK_MS_QUALITY_MAX_ITEMS items). */
@@ -8284,14 +8411,22 @@ int dmrgo_trunk_ms_registered(dmrgo_trunk_ms_t *self, bool *out);
 int dmrgo_trunk_ms_reset(dmrgo_trunk_ms_t *self);
 /* Go: trunk.MS.SendShortData. SendShortData asks the TSCC to deliver the appended data a as UDT short data to the talkgroup or MS target, or to a gateway, by random access (ETSI TS 102 361-4 clause 6.6.4). */
 int dmrgo_trunk_ms_send_short_data(dmrgo_trunk_ms_t *self, int64_t now, bool group, uint32_t target, const dmrgo_trunk_appended_t *a, const dmrgo_layer3_short_data_service_options_t *opts);
+/* Go: trunk.MS.SendStatus. SendStatus sends the status s to the talkgroup or MS target by random access. */
+int dmrgo_trunk_ms_send_status(dmrgo_trunk_ms_t *self, int64_t now, bool group, uint32_t target, dmrgo_trunk_status_t s);
 /* Go: trunk.MS.SetPollResponse. SetPollResponse sets the data that the MS sends when the TSCC polls it for UDT short data with a C_AHOY. */
 int dmrgo_trunk_ms_set_poll_response(dmrgo_trunk_ms_t *self, const dmrgo_trunk_appended_t *a);
+/* Go: trunk.MS.SetStatus. SetStatus sets the status with which the MS answers a status poll. */
+int dmrgo_trunk_ms_set_status(dmrgo_trunk_ms_t *self, dmrgo_trunk_status_t s);
+/* Go: trunk.MS.SetSupplementary. SetSupplementary sets the supplementary_user data of the next request that asks for it: a SendStatus, or a Call or CallData with IsSuppData. */
+int dmrgo_trunk_ms_set_supplementary(dmrgo_trunk_ms_t *self, uint8_t format, const uint8_t *data, size_t data_len);
 /* Go: trunk.MS.SetUSBDResponse. SetUSBDResponse sets the Poll Response that the MS sends to a USBD Poll Request of the same Service Type for it, such as a USBDLIPResponse in its Payload. */
 int dmrgo_trunk_ms_set_usbd_response(dmrgo_trunk_ms_t *self, const dmrgo_pdu_unified_single_block_data_t *p);
 /* Go: trunk.MS.Site. Site returns what the MS knows about the TSCC. */
 int dmrgo_trunk_ms_site(dmrgo_trunk_ms_t *self, dmrgo_trunk_site_t *out);
 /* Go: trunk.MS.State. State returns the channel state of the MS. */
 int dmrgo_trunk_ms_state(dmrgo_trunk_ms_t *self, dmrgo_trunk_state_t *out);
+/* Go: trunk.MS.Stunned. Stunned reports whether a TSCC stunned the MS: it then refuses the user services and follows no calls (ETSI TS 102 361-4 clause 6.4.9). */
+int dmrgo_trunk_ms_stunned(dmrgo_trunk_ms_t *self, bool *out);
 /* dmrgo_trunk_ms_tick_need sets *items and *arena to the room that dmrgo_trunk_ms_tick needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_tick_need(dmrgo_trunk_ms_t *self, int64_t now, size_t *items, size_t *arena);
 /* Go: trunk.MS.Tick. Tick runs the timers that are due at now and appends their outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_tick_need gives (DMRGO_TRUNK_MS_TICK_MAX_ITEMS items). */
@@ -8320,6 +8455,8 @@ int dmrgo_trunk_output_kind_string(dmrgo_trunk_output_kind_t self, char *out, si
 int dmrgo_trunk_reason_string(dmrgo_trunk_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: trunk.State.String. String returns the name of the State. */
 int dmrgo_trunk_state_string(dmrgo_trunk_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: trunk.StunAction.String. String returns the name of the StunAction. */
+int dmrgo_trunk_stun_action_string(dmrgo_trunk_stun_action_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_trunk_tscc_new makes a zero trunk.TSCC. */
 int dmrgo_trunk_tscc_new(dmrgo_trunk_tscc_t **out);
 /* dmrgo_trunk_tscc_free frees the handle. self may be NULL. */
@@ -8336,6 +8473,12 @@ int dmrgo_trunk_tscc_expect_auth(dmrgo_trunk_tscc_t *self, uint32_t addr, uint32
 int dmrgo_trunk_tscc_inbound_need(dmrgo_trunk_tscc_t *self, int64_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 /* Go: trunk.TSCC.Inbound. Inbound takes the burst raw that the TSCC received on the inbound channel of carrier ch in slot s, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_tscc_inbound_need gives. */
 int dmrgo_trunk_tscc_inbound(dmrgo_trunk_tscc_t *self, int64_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_trunk_tscc_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: trunk.TSCC.Interrupt. Interrupt sends the RC command cmd to the MS that transmits on slot s of the payload channel ch, in the embedded signalling of the other slot of the carrier. */
+int dmrgo_trunk_tscc_interrupt(dmrgo_trunk_tscc_t *self, int64_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_enums_rc_command_t cmd);
+/* Go: trunk.TSCC.Kill. Kill asks the MS addr to disable itself for good, with a C_AHOY from KILLI, as Stun does. */
+int dmrgo_trunk_tscc_kill(dmrgo_trunk_tscc_t *self, int64_t now, uint32_t addr);
+/* Go: trunk.TSCC.MassRegister. MassRegister sends a C_BCAST MassReg, which asks the MSs whose Mask least significant address bits match addr to register again within the TReg_Window of window. */
+int dmrgo_trunk_tscc_mass_register(dmrgo_trunk_tscc_t *self, uint8_t window, uint8_t mask, uint32_t addr);
 /* Go: trunk.TSCC.MaxOutputs. MaxOutputs returns the most outputs that one call of a method of t appends: one burst for the TSCC, one burst and one call end for each payload channel, and one refusal for each authentication challenge and call set-up that times out. */
 int dmrgo_trunk_tscc_max_outputs(dmrgo_trunk_tscc_t *self, int64_t *out);
 /* Go: trunk.TSCC.PollShortData. PollShortData polls the MS target for UDT short data in the given number of appended blocks with a C_AHOY from SDMI (ETSI TS 102 361-4 clause 6.6.5.1.5). */
@@ -8346,6 +8489,10 @@ int dmrgo_trunk_tscc_poll_usbd(dmrgo_trunk_tscc_t *self, int64_t now, uint32_t t
 int dmrgo_trunk_tscc_registered(dmrgo_trunk_tscc_t *self, uint32_t addr, bool *out);
 /* Go: trunk.TSCC.SendShortData. SendShortData sends the appended data a as UDT short data from the gateway SDMI to the talkgroup or MS target, in the download phase of ETSI TS 102 361-4 clause 6.6.4.1.4. */
 int dmrgo_trunk_tscc_send_short_data(dmrgo_trunk_tscc_t *self, int64_t now, bool group, uint32_t target, const dmrgo_trunk_appended_t *a);
+/* Go: trunk.TSCC.SendStatus. SendStatus sends the status s from source, an MS or a gateway such as DISPATI, to the talkgroup or MS target with a C_AHOY. */
+int dmrgo_trunk_tscc_send_status(dmrgo_trunk_tscc_t *self, int64_t now, bool group, uint32_t target, uint32_t source, dmrgo_trunk_status_t s);
+/* Go: trunk.TSCC.Stun. Stun asks the MS addr to stop, or with revive to give back, its user services, with a C_AHOY from STUNI. */
+int dmrgo_trunk_tscc_stun(dmrgo_trunk_tscc_t *self, int64_t now, uint32_t addr, bool revive);
 /* dmrgo_trunk_tscc_tick_need sets *items and *arena to the room that dmrgo_trunk_tscc_tick needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_tscc_tick_need(dmrgo_trunk_tscc_t *self, int64_t now, size_t *items, size_t *arena);
 /* Go: trunk.TSCC.Tick. Tick sends the outbound bursts of one 30 ms slot: on the TSCC a queued PDU or a C_ALOHA, and on each payload channel with a call the relayed inbound burst, P_CLEAR or an idle burst, each with its CACH. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_tscc_tick_need gives. */

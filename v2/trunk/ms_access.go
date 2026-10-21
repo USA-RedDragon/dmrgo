@@ -13,6 +13,7 @@ func (m *MS) startAccess(now time.Duration, req request, target uint32, options 
 	m.req, m.target, m.options, m.emergency = req, target, options, emergency
 	m.ra, m.frames, m.retries, m.raStart, m.waitAnswer = raWaitSlot, 1, 0, now, false
 	m.u.reserved, m.u.proxy, m.u.sendTo = 0, false, 0
+	m.svcStart(options)
 }
 
 func (m *MS) backoff() {
@@ -52,7 +53,7 @@ func (m *MS) frame(now time.Duration, cach *layer2.CACH, out []Output) []Output 
 		m.ra = raWaitAloha
 		return out
 	}
-	m.txRand = pdu.RandomAccessPDU{ServiceOptions: m.options, ProxyFlag: m.u.proxy, Reserved: m.u.reserved, ServiceKind: uint8(m.kind),
+	m.txRand = pdu.RandomAccessPDU{ServiceOptions: m.options, ProxyFlag: m.u.proxy, Reserved: m.u.reserved | m.svc.raExtra, ServiceKind: uint8(m.kind),
 		TargetAddress: m.target, SourceAddress: m.addr}
 	m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKRandomAccess, RandomAccessPDU: &m.txRand}
 	m.retries++
@@ -85,6 +86,9 @@ func (m *MS) addressed(now time.Duration, h *layer2.Hint, out []Output) []Output
 	c, ok := m.f.ctl.b.Data.(*pdu.CSBK)
 	if !ok || c.FID != enums.FIDStandardized {
 		return out
+	}
+	if o, done := m.svcCSBK(now, c, h, out); done {
+		return o
 	}
 	switch {
 	case c.AlohaPDU != nil:
@@ -264,7 +268,7 @@ func (m *MS) payload(now time.Duration, h *layer2.Hint, out []Output) []Output {
 			return out
 		}
 		if p.GroupIndividual && g.Group && p.TargetAddress == g.Target || !p.GroupIndividual && p.TargetAddress == m.addr ||
-			kind == enums.ProtectEnablePTTOneMS && p.GroupIndividual && g.Group && p.TargetAddress == g.Target {
+			kind == enums.ProtectEnablePTTOneMS {
 			return append(out, Output{Kind: OutputProtect, Protect: kind, Grant: *g})
 		}
 	case c.AhoyPDU != nil && m.isChallenge(c.AhoyPDU):
@@ -284,15 +288,7 @@ func (m *MS) send(due time.Duration, slot enums.Slot, out []Output) []Output {
 	if err != nil {
 		return out
 	}
-	cc := m.f.ctl.site.ColorCode
-	if m.f.state == StatePayload && m.f.call.HasColorCode {
-		cc = m.f.call.ColorCode
-	}
-	raw, err := layer2.BuildDataBurst(p, enums.DataTypeCSBK, cc, layer2.SyncSourceMS)
-	if err != nil {
-		return out
-	}
-	return append(out, Output{Kind: OutputBurst, Burst: raw, Slot: slot, Due: due})
+	return m.sendRaw(due, slot, p, enums.DataTypeCSBK, out)
 }
 
 func (m *MS) done() {

@@ -30,6 +30,13 @@ var (
 	// ErrNotRegistered is returned by MS.Call and MS.CallData when the
 	// TSCC asks for a registration that the MS does not hold.
 	ErrNotRegistered = errors.New("trunk: not registered")
+	// ErrStunned is returned for a user service of an MS that the TSCC
+	// stunned.
+	ErrStunned = errors.New("trunk: stunned")
+	// ErrNoCall is returned by MS.Interrupt when the MS is not on the
+	// payload channel of a voice call, and by TSCC.Interrupt for a slot
+	// without a call.
+	ErrNoCall = errors.New("trunk: no call")
 )
 
 // Errors of the appended data of a UDT. Match them with errors.Is.
@@ -55,4 +62,7 @@ var (
 	errColorCode     error = &ConfigError{Field: "ColorCode"}
 	errChannels      error = &ConfigError{Field: "Payload"}
 	errRegistrations error = &ConfigError{Field: "MaxRegistrations"}
+	errPowerSave     error = &ConfigError{Field: "PowerSave"}
+	errStatus        error = &ConfigError{Field: "status"}
+	errSupplementary error = &ConfigError{Field: "supplementary data"}
 )
