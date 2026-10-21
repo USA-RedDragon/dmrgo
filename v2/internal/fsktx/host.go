@@ -209,6 +209,17 @@ type AudioConfig struct {
 	// CarrierHz is added to the deviation of every sample, in Hz, finer
 	// than a code step; it trims the carrier of the pulse.
 	CarrierHz float64
+	// Rates is the per-rate design of Tier1 and Tier2: the entry whose Hz
+	// is Hz sets ExactPow, Pulse.Gain, Pulse.FlatGain and CarrierHz in
+	// place of the fields above.
+	Rates []RateDesign
+}
+
+// RateDesign is the design of Tier1 and Tier2 audio at one sample rate,
+// as the hold of the DAC differs by rate.
+type RateDesign struct {
+	Hz                                  int
+	ExactPow, Gain, FlatGain, CarrierHz float64
 }
 
 // PulseConfig sets the transmit pulse of Tier1 and Tier2.
@@ -325,6 +336,12 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		}
 		return a, nil
 	case TierDefault, Tier1, Tier2:
+		for _, r := range cfg.Rates {
+			if r.Hz == cfg.Hz {
+				cfg.ExactPow, cfg.Pulse.Gain, cfg.Pulse.FlatGain, cfg.CarrierHz = r.ExactPow, r.Gain, r.FlatGain, r.CarrierHz
+				break
+			}
+		}
 		pu := pulseOf(cfg.Tier, cfg.Pulse)
 		if cfg.Exact {
 			pu.nyquist()
