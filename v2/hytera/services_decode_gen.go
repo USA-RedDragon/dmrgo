@@ -144,8 +144,8 @@ func (s *RRSCheckAnswer) String() string {
 	return "RRSCheckAnswer{ Radio: " + text.Bytes(s.Radio[:]) + ", Result: " + text.Int(int64(s.Result)) + " }"
 }
 
-// DecodeTMPFlags decodes a TMPFlags from data, a frame of 1 octets. It
-// returns ErrShort when data is shorter than 1 octets and ErrLength when it
+// DecodeTMPFlags decodes a TMPFlags from data, a frame of 1 octet. It
+// returns ErrShort when data is shorter than 1 octet and ErrLength when it
 // is longer. It does not keep data.
 func DecodeTMPFlags(data []byte) (TMPFlags, error) {
 	if len(data) < 1 {
@@ -161,9 +161,9 @@ func DecodeTMPFlags(data []byte) (TMPFlags, error) {
 	return result, nil
 }
 
-// AppendBinary appends the 1 octets of s to dst. It returns dst unchanged
-// and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
-// to grow dst.
+// AppendBinary appends the 1 octet of s to dst. It returns dst unchanged and
+// a *dmrgo.FieldRangeError when a field does not fit. It allocates only to
+// grow dst.
 func (s *TMPFlags) AppendBinary(dst []byte) ([]byte, error) {
 	_n := len(dst)
 	for range 1 {
