@@ -54,6 +54,7 @@ const (
 	leanRawFuse         = false
 	leanMidSearch       = true
 	leanHuntMid         = true
+	leanHuntFuse        = false
 )
 
 const (
@@ -930,7 +931,38 @@ func (r *leanCore) lockSym(x, at float32) (again, mid, match bool) {
 		r.again = false
 		return false, false, r.signsOne(r.signs)
 	}
+	if leanHuntFuse && r.hunt && r.ext == nil && r.midTiming && r.linHunt {
+		return r.lockHunt(at)
+	}
 	if !r.hunt || !r.huntMid(r.lastAt) {
+		return false, false, false
+	}
+	again = r.again
+	r.again = false
+	sym, mid := signsMatch[site3](r, r.signs, r.midSigns)
+	return again, mid, mid || sym
+}
+
+func (r *leanCore) lockHunt(at float32) (again, mid, match bool) {
+	if r.n-r.acqFrom > 4 {
+		b := r.midSigns << 1
+		tm := &r.tm
+		t := at - tm.step
+		var x float32
+		switch {
+		case t >= -1:
+			x = tm.s3 + t*(tm.s3-tm.s2)
+		case t >= -2:
+			x = tm.s2 + (t+1)*(tm.s2-tm.s1)
+		default:
+			x = tm.s1 + (t+2)*(tm.s1-tm.s0)
+		}
+		if (x-r.off)*syncSymbols > float32(r.ringSum)*discStepHz {
+			b |= 1
+		}
+		r.midSigns = b
+	}
+	if r.ns < leanRing {
 		return false, false, false
 	}
 	again = r.again
