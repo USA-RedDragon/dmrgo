@@ -170,9 +170,17 @@ func (f *CapacityPlusFollower) Reset() {
 // Burst decodes the burst raw with what the Hint h says about it, and the
 // CACH field before it when cach is not nil, and appends the outputs to
 // dst. cach is in transmit order, as bs.Output.CACH gives it. h.Slot, or
-// the TDMA channel of the CACH, tells the timeslot of the burst. It
-// allocates only when dst has no room for MaxOutputs outputs.
+// the TDMA channel of the CACH, tells the timeslot of the burst. A nil raw
+// is a transport frame without a burst: with Hint.SyncLost it does what
+// Lost does, else it runs the timers. It allocates only when dst has no
+// room for MaxOutputs outputs.
 func (f *CapacityPlusFollower) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
+	if raw == nil {
+		if h.SyncLost {
+			return f.Lost(now, dst)
+		}
+		return f.timers(now, dst)
+	}
 	dst = f.timers(now, dst)
 	slot := h.Slot
 	if cach != nil {

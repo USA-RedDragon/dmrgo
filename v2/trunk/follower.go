@@ -219,8 +219,10 @@ func (f *Follower) Reset() {
 // dst. cach is in transmit order, as bs.Output.CACH and
 // TSCCOutput.CACH give it. The time now is on the monotonic clock of the
 // caller. On a payload channel only the bursts of the granted slot count,
-// so h.Slot should be set when the transport knows it. It allocates only
-// when dst has no room for MaxOutputs outputs.
+// so h.Slot should be set when the transport knows it. A nil raw is a
+// transport frame without a burst: with Hint.SyncLost it does what Lost
+// does, else it runs the timers. It allocates only when dst has no room
+// for MaxOutputs outputs.
 func (f *Follower) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
 	var c *layer2.CACH
 	if cach != nil {
@@ -231,6 +233,12 @@ func (f *Follower) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint,
 }
 
 func (f *Follower) burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *layer2.CACH, dst []Output) []Output {
+	if raw == nil {
+		if h.SyncLost {
+			return f.Lost(now, dst)
+		}
+		return f.timers(now, dst)
+	}
 	dst = f.timers(now, dst)
 	ok := f.ctl.decode(raw, &h)
 	if f.state == StatePayload {
