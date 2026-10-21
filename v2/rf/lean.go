@@ -51,6 +51,7 @@ const (
 	leanMMGain          = 2
 	leanMidGate         = 0
 	leanSyncUnroll      = false
+	leanRawFuse         = false
 )
 
 const (
@@ -879,9 +880,38 @@ func (r *leanCore) searchHit(sym, mid bool) {
 //go:noinline
 //go:section .text.rawSym
 func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
-	pushSymAt[site0](r, x)
-	midSignAt[site0](r)
-	sym, mid = signsMatch[site0](r, r.signs, r.midSigns)
+	if leanRawFuse {
+		q := int8(max(min(roundBits((x-r.off)/discStepHz), math.MaxInt8), math.MinInt8))
+		h := uint32(r.head)
+		nh := h + 1
+		if nh == leanRing {
+			nh = 0
+		}
+		r.ring[h] = q
+		r.head = uint8(nh)
+		old := h + leanRing - syncSymbols
+		if old >= leanRing {
+			old -= leanRing
+		}
+		sum := r.ringSum + (int32(q) - int32(r.ring[old]))
+		r.ringSum = sum
+		a := r.signs << 1
+		if int32(q)*syncSymbols > sum {
+			a |= 1
+		}
+		r.signs = a
+		r.ns++
+		b := r.midSigns << 1
+		if (r.tm.half-r.off)*(float32(syncSymbols)/discStepHz) > float32(sum) {
+			b |= 1
+		}
+		r.midSigns = b
+		sym, mid = signsMatch[site0](r, a, b)
+	} else {
+		pushSymAt[site0](r, x)
+		midSignAt[site0](r)
+		sym, mid = signsMatch[site0](r, r.signs, r.midSigns)
+	}
 	hit = r.ns > leanSyncEnd+1 && sym || r.ns >= leanRing && r.ext != nil || mid && r.ns > leanSyncEnd+2
 	return hit, sym, mid
 }
