@@ -77,6 +77,9 @@ func TestFloatvar(t *testing.T) {
 	if st != wire.OK || v != 339+64.0/16384 {
 		t.Errorf("Sfloatvar = %v, %d", v, st)
 	}
+	if _, _, st := wire.Ufloatvar([]byte{0x90, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00, 0x00}, 0); st != wire.Overflow {
+		t.Errorf("Ufloatvar of 2^53: %d", st)
+	}
 	if b := wire.AppendUfloatvar(nil, 0.7734375, 1); !bytes.Equal(b, []byte{0x00, 0x63}) {
 		t.Errorf("AppendUfloatvar = %x", b)
 	}
@@ -93,7 +96,7 @@ func TestFloatvar(t *testing.T) {
 		v      float64
 		signed bool
 		want   bool
-	}{{1, false, true}, {-1, false, false}, {-1, true, true}, {math.NaN(), true, false}, {math.Inf(1), true, false}, {1 << 63, true, false}} {
+	}{{1, false, true}, {-1, false, false}, {-1, true, true}, {math.NaN(), true, false}, {math.Inf(1), true, false}, {1 << 53, true, false}, {1<<53 - 1, false, true}} {
 		if got := wire.FloatvarFits(c.v, c.signed); got != c.want {
 			t.Errorf("FloatvarFits(%v, %t) = %t", c.v, c.signed, got)
 		}
