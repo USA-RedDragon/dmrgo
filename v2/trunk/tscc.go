@@ -99,6 +99,19 @@ const (
 	// Challenge to the MS Address. Pass the expected response, from
 	// auth.Response, to ExpectAuth before the answer of the MS.
 	TSCCAuthChallenge
+	// TSCCDelivered reports that a UDT short data, polling or DGNA
+	// transfer from Address to Call.Target completed, with the final
+	// acknowledgement in Ack.
+	TSCCDelivered
+	// TSCCUDT reports the UDT from the MS Address that answers
+	// PollShortData. UDT returns it.
+	TSCCUDT
+	// TSCCUSBD reports a USBD Poll Response, to the poll of the MS
+	// Address. USBD returns it.
+	TSCCUSBD
+	// TSCCDiversion reports that the MS Address set or cleared a call
+	// diversion. Diverted returns it.
+	TSCCDiversion
 )
 
 // String returns the name of the TSCCOutputKind.
@@ -118,6 +131,14 @@ func (k TSCCOutputKind) String() string {
 		return "Refused"
 	case TSCCAuthChallenge:
 		return "AuthChallenge"
+	case TSCCDelivered:
+		return "Delivered"
+	case TSCCUDT:
+		return "UDT"
+	case TSCCUSBD:
+		return "USBD"
+	case TSCCDiversion:
+		return "Diversion"
 	}
 	return unknownName
 }
@@ -135,10 +156,10 @@ type TSCCOutput struct {
 	CACH [3]byte
 	// Burst is the burst of TSCCBurst.
 	Burst layer2.RawBurst
-	// Address is the MS of TSCCRegistered, TSCCDeregistered and
-	// TSCCRefused.
+	// Address is the MS of TSCCRegistered, TSCCDeregistered,
+	// TSCCRefused, TSCCDelivered, TSCCUDT and TSCCDiversion.
 	Address uint32
-	// Ack is the reason of TSCCRefused.
+	// Ack is the reason of TSCCRefused and TSCCDelivered.
 	Ack enums.AckReason
 	// Call is the call of TSCCCallStart and TSCCCallEnd.
 	Call Grant
@@ -192,8 +213,11 @@ type setup struct {
 // talkgroup voice calls and individual voice calls with OACSU, sends
 // grants and late entry grants, relays the inbound bursts of each call
 // on its payload slot, clears calls with P_CLEAR, and authenticates the
-// MSs that register when TSCCConfig.Authenticate is set. Data, UDT,
-// FOACSU and power save are not supported. Make it with NewTSCC.
+// MSs that register when TSCCConfig.Authenticate is set. It also carries
+// UDT short data, UDT and USBD polling, call diversion and DGNA, sets up
+// full-duplex calls and ALS calls (ETSI TS 102 361-4 clauses 6.6.2.6 and
+// 6.6.4 to 6.6.11). Half-duplex data calls, FOACSU and power save are not
+// supported. Make it with NewTSCC.
 // A TSCC is not safe for concurrent use and must not be copied; go vet
 // reports a copy.
 type TSCC struct {
@@ -225,6 +249,7 @@ type TSCC struct {
 	slc     pdu.ShortLC
 	csys    pdu.ShortLCCSysParms
 	psys    pdu.ShortLCPSysParms
+	u       tsccUDT
 	noCopy  noCopy
 }
 
@@ -328,6 +353,9 @@ func (t *TSCC) Inbound(now time.Duration, ch uint16, s enums.Slot, raw *layer2.R
 	if b.Kind != layer2.KindData || b.FEC.SlotType.Uncorrectable || b.FEC.PDU.Uncorrectable || b.SlotType.ColorCode != t.cfg.ColorCode {
 		return out
 	}
+	if o, done := t.udtInbound(now, s, out); done {
+		return o
+	}
 	c, ok := b.Data.(*pdu.CSBK)
 	if !ok || c.FID != enums.FIDStandardized {
 		return out
@@ -355,7 +383,8 @@ func (t *TSCC) payloadIn(now time.Duration, ch uint16, s enums.Slot, raw *layer2
 	if b.Kind == layer2.KindData {
 		switch b.SlotType.DataType {
 		case enums.DataTypeCSBK:
-			if c, ok := b.Data.(*pdu.CSBK); ok && !b.FEC.PDU.Uncorrectable && c.MaintenancePDU != nil && c.MaintenancePDU.SourceAddress == cs.grant.Source {
+			if c, ok := b.Data.(*pdu.CSBK); ok && !b.FEC.PDU.Uncorrectable && c.MaintenancePDU != nil &&
+				(c.MaintenancePDU.SourceAddress == cs.grant.Source || duplex(&cs.grant) && c.MaintenancePDU.SourceAddress == cs.grant.Target) {
 				return t.startClear(i, ReasonMaintenance, out)
 			}
 			return out
@@ -367,11 +396,15 @@ func (t *TSCC) payloadIn(now time.Duration, ch uint16, s enums.Slot, raw *layer2
 	} else {
 		cs.inHang = false
 	}
-	cs.relay, cs.hasRelay = *raw, true
+	rs := &t.calls[t.relaySlot(i)]
+	rs.relay, rs.hasRelay = *raw, true
 	return out
 }
 
 func (t *TSCC) random(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutput) []TSCCOutput {
+	if o, done := t.udtRandom(now, r, out); done {
+		return o
+	}
 	src := r.SourceAddress
 	switch enums.ServiceKind(r.ServiceKind) {
 	case enums.ServiceRegistration:
@@ -419,7 +452,8 @@ func (t *TSCC) random(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutpu
 		}
 		*st = setup{used: true, caller: src, called: r.TargetAddress, until: now + t.cfg.AnswerTimeout, opts: r.ServiceOptions}
 		t.sendAck(src, enums.ReasonWait)
-		t.ahoy = pdu.AhoyPDU{ServiceOptsMirror: r.ServiceOptions, ServiceKind: uint8(enums.ServiceIndividualVoice), TargetAddress: r.TargetAddress, SourceAddress: src}
+		t.ahoy = pdu.AhoyPDU{ServiceOptsMirror: r.ServiceOptions, ALS: r.Reserved&alsBit != 0, ServiceKind: uint8(enums.ServiceIndividualVoice),
+			TargetAddress: r.TargetAddress, SourceAddress: src}
 		t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &t.ahoy}
 		t.enqueue(true)
 		return out
@@ -493,6 +527,9 @@ func (t *TSCC) authAnswer(a *pdu.AckInboundPDU, out []TSCCOutput) []TSCCOutput {
 func (t *TSCC) answer(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOutput) []TSCCOutput {
 	if enums.AckReason(a.ReasonCode) == enums.ReasonAuthResponseMS {
 		return t.authAnswer(a, out)
+	}
+	if o, done := t.udtAck(now, a, out); done {
+		return o
 	}
 	called := a.AdditionalInfo
 	for i := range t.setups {
@@ -619,6 +656,7 @@ func (t *TSCC) Tick(now time.Duration, dst []TSCCOutput) []TSCCOutput {
 	t.slot = t.slot.Other()
 	t.next = now + slotLength
 	out = t.timers(now, out)
+	out = t.udtTimers(now, out)
 	out = t.control(out)
 	for c := range t.cfg.PayloadLen {
 		out = t.carrier(c, out)
@@ -665,21 +703,24 @@ func (t *TSCC) timers(now time.Duration, out []TSCCOutput) []TSCCOutput {
 }
 
 func (t *TSCC) control(out []TSCCOutput) []TSCCOutput {
-	var p [12]byte
-	reply := false
-	if t.qLen > 0 {
+	p, dt, reply, ok := t.udtNext()
+	switch {
+	case ok:
+	case t.qLen > 0:
+		dt = enums.DataTypeCSBK
 		q := &t.queue[t.qHead]
 		p, reply = q.p, q.reply
 		t.qHead = (t.qHead + 1) % queueLen
 		t.qLen--
-	} else {
+	default:
+		dt = enums.DataTypeCSBK
 		t.aloha = pdu.AlohaPDU{SiteTSSync: true, Version: 1, NRandWait: uint8(t.cfg.NRandWait), Reg: t.cfg.Reg, Backoff: uint8(t.cfg.Backoff), SysIdentCode: t.code}
 		t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAloha, AlohaPDU: &t.aloha}
 		p, _ = t.cs.Encode()
 	}
 	t.csys = pdu.ShortLCCSysParms{MODEL: uint8(t.cfg.SysCode.Model), NetSiteRaw: t.netSite, Reg: t.cfg.Reg, CommonSlotCounter: t.counter}
 	t.slc = pdu.ShortLC{SLCO: enums.SLCOCSysParms, CSysParms: &t.csys}
-	return t.emit(0, t.cfg.Channel, p, enums.DataTypeCSBK, reply, out)
+	return t.emit(0, t.cfg.Channel, p, dt, reply, out)
 }
 
 func (t *TSCC) carrier(c int, out []TSCCOutput) []TSCCOutput {
