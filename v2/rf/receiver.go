@@ -5,7 +5,6 @@ import (
 	"math"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
-
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"

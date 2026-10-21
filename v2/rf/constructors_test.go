@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
-
 	"github.com/USA-RedDragon/dmrgo/v2/rf"
 )
 
