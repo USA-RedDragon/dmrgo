@@ -184,3 +184,36 @@ func TestErrors(t *testing.T) {
 		t.Error("names")
 	}
 }
+
+func TestAppendPacketAnyToneNUL(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		body, udp string
+		ipLen     int
+	}{
+		{"C4 one", "13981398001a46df000d000a4300340020006f006e0065000000", 46},
+		{"C4 x", "139813980016", 42},
+	}
+	for _, tt := range tests {
+		in := sms.Text{Format: sms.FormatAnyTone, Source: 3140598, Destination: 3191868, Body: []byte(tt.body)}
+		var h sms.Header
+		out, err := sms.AppendPacket(nil, &in, true, &h)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(out) != tt.ipLen || int(out[2])<<8|int(out[3]) != tt.ipLen {
+			t.Errorf("%q: IP length %d, want %d", tt.body, len(out), tt.ipLen)
+		}
+		if want := unhex(t, tt.udp); len(out) < 20+len(want) || !bytes.Equal(out[20:20+len(want)], want) {
+			t.Errorf("%q: UDP %x, want %x", tt.body, out[20:], want)
+		}
+		if !bytes.HasSuffix(out, []byte{0, 0}) || bytes.HasSuffix(out, []byte{0, 0, 0, 0}) {
+			t.Errorf("%q: not one NUL: %x", tt.body, out)
+		}
+		_, got, err := sms.Decode(nil, &h.Data, out)
+		if err != nil || got.Format != sms.FormatAnyTone || string(got.Body) != tt.body {
+			t.Errorf("%q: decoded %+v %q, %v", tt.body, got, got.Body, err)
+		}
+	}
+}
