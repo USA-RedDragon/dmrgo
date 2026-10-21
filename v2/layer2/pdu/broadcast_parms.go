@@ -23,8 +23,8 @@ type AnnWDTSCCParms struct {
 
 // ChanFreqParms is the C_BCAST header payload with AnnouncementType
 // Chan_Freq, which announces the frequencies of a channel number in the
-// CdefParms of the BC_AP block that follows (ETSI TS 102 361-4 clause
-// 7.2.19.6, Table 7.78).
+// CdefParms of the BC_AP block that follows (ETSI TS 102 361-4 V1.12.1
+// clause 7.2.19.6, Table 7.78).
 //
 //dmr:subpdu
 type ChanFreqParms struct {
@@ -39,7 +39,7 @@ type ChanFreqParms struct {
 
 // AdjacentSiteParms is the C_BCAST payload with AnnouncementType
 // Adjacent_Site, which announces the TSCC of an adjacent site (ETSI TS 102
-// 361-4 clause 7.2.19.7, Table 7.79).
+// 361-4 V1.12.1 clause 7.2.19.7, Table 7.79).
 //
 //dmr:subpdu
 type AdjacentSiteParms struct {
@@ -172,8 +172,8 @@ type MassRegParms struct {
 
 // GenSiteParms is the C_BCAST payload with AnnouncementType
 // Gen_Site_Params, which broadcasts the current site information and the
-// network information (ETSI TS 102 361-4 clauses 7.2.19.8, 7.2.40 and
-// 7.2.41, Tables 7.80, 7.101 and 7.102).
+// network information (ETSI TS 102 361-4 V1.12.1 clauses 7.2.19.8, 7.2.40
+// and 7.2.41, Tables 7.80, 7.101 and 7.102).
 //
 //dmr:subpdu
 type GenSiteParms struct {

@@ -46,7 +46,7 @@ func ExampleFollower() {
 }
 
 // ExampleMS_AuthResponse answers the authentication challenge of a TSCC
-// with the key of the MS, as in ETSI TS 102 361-4 Table 6.15.
+// with the key of the MS, as in ETSI TS 102 361-4 V1.12.1 Table 6.15.
 func ExampleMS_AuthResponse() {
 	key := [auth.KeyLen]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 	ms, _ := trunk.NewMS(&trunk.MSConfig{Address: 3120001, NoRegistration: true})

@@ -13,15 +13,15 @@ const KeyLen = 16
 
 // MaxChallenge is the largest challenge that a TSCC sends in the Source
 // Address of a C_AHOY. Larger values are the gateway and identifier
-// addresses (ETSI TS 102 361-4 clause 6.4.8.2, Table 6.17).
+// addresses (ETSI TS 102 361-4 V1.12.1 clause 6.4.8.2, Table 6.17).
 const MaxChallenge = 0xFFFCDF
 
 // Response returns the 24-bit response to the challenge for the key K: the
 // octets 257 to 259 of the RC4 keystream keyed with the 3 octets of the
 // challenge, most significant first, and the 16 octets of K, exclusive-or
 // psn. A psn of 0 is an MS that uses no PSN. Bits above 24 of challenge
-// and psn are ignored. It does not allocate. (ETSI TS 102 361-4 clauses
-// 6.4.8.0 and 6.4.8.1.2, Figure 6.30, Tables 6.15 and 6.16)
+// and psn are ignored. It does not allocate. (ETSI TS 102 361-4 V1.12.1
+// clauses 6.4.8.0 and 6.4.8.1.2, Figure 6.30, Tables 6.15 and 6.16)
 func Response(challenge uint32, key [KeyLen]byte, psn uint32) uint32 {
 	var k [3 + KeyLen]byte
 	k[0], k[1], k[2] = byte(challenge>>16&0xFF), byte(challenge>>8&0xFF), byte(challenge&0xFF)
