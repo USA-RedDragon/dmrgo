@@ -178,27 +178,27 @@ func containsStr(s, substr string) bool {
 	return false
 }
 
-func TestServiceOptionsByte(t *testing.T) {
+func TestServiceOptionsField(t *testing.T) {
 	t.Parallel()
 
 	for v := range 256 {
 		so := DecodeServiceOptions([1]byte{byte(v)})
-		if got := must(so.Byte()); got != byte(v) {
-			t.Errorf("DecodeServiceOptions(%#02x).Byte() = %#02x", v, got)
+		if got := must(so.Field()); got != byte(v) {
+			t.Errorf("DecodeServiceOptions(%#02x).Field() = %#02x", v, got)
 		}
 		bits := must(so.Encode())
 		if got := bits[0]; got != byte(v) {
 			t.Errorf("%#02x: Encode gives %#02x", v, got)
 		}
 	}
-	if got := must(MotorolaServiceOptions().Byte()); got != 0x20 {
-		t.Errorf("MotorolaServiceOptions().Byte() = %#02x, want 0x20", got)
+	if got := must(MotorolaServiceOptions().Field()); got != 0x20 {
+		t.Errorf("MotorolaServiceOptions().Field() = %#02x, want 0x20", got)
 	}
 	var rangeErr *dmrgo.FieldRangeError
-	if _, err := (ServiceOptions{Reserved: 4}).Byte(); !errors.As(err, &rangeErr) || rangeErr.Field != "Reserved" {
+	if _, err := (ServiceOptions{Reserved: 4}).Field(); !errors.As(err, &rangeErr) || rangeErr.Field != "Reserved" {
 		t.Errorf("Reserved 4: error %v, want the FieldRangeError of Reserved", err)
 	}
-	if _, err := (ServiceOptions{PriorityLevel: 4}).Byte(); !errors.As(err, &rangeErr) || rangeErr.Field != "PriorityLevel" {
+	if _, err := (ServiceOptions{PriorityLevel: 4}).Field(); !errors.As(err, &rangeErr) || rangeErr.Field != "PriorityLevel" {
 		t.Errorf("PriorityLevel 4: error %v, want the FieldRangeError of PriorityLevel", err)
 	}
 }

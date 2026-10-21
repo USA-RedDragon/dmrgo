@@ -2013,8 +2013,8 @@ sym int dmrgo_layer3_position_error_string(dmrgo_layer3_position_error_t self, c
 sym int dmrgo_layer3_registration_service_options_encode(dmrgo_layer3_registration_service_options_t *self, uint8_t out[1]);
 sym int dmrgo_layer3_registration_service_options_field(const dmrgo_layer3_registration_service_options_t *self, uint8_t *out);
 sym int dmrgo_layer3_registration_service_options_string(dmrgo_layer3_registration_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-sym int dmrgo_layer3_service_options_byte(const dmrgo_layer3_service_options_t *self, uint8_t *out);
 sym int dmrgo_layer3_service_options_encode(dmrgo_layer3_service_options_t *self, uint8_t out[1]);
+sym int dmrgo_layer3_service_options_field(const dmrgo_layer3_service_options_t *self, uint8_t *out);
 sym int dmrgo_layer3_service_options_string(dmrgo_layer3_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_layer3_short_data_service_options_encode(dmrgo_layer3_short_data_service_options_t *self, uint8_t out[1]);
 sym int dmrgo_layer3_short_data_service_options_field(const dmrgo_layer3_short_data_service_options_t *self, uint8_t *out);

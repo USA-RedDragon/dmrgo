@@ -19,9 +19,9 @@ func MotorolaServiceOptions() ServiceOptions {
 	return ServiceOptions{Reserved: 2}
 }
 
-// Byte returns s as the Service Options octet, the octet of Encode, with
-// the errors of Encode. It is the inverse of DecodeServiceOptions.
-func (s ServiceOptions) Byte() (byte, error) {
+// Field returns s as the 8-bit Service Options field, the octet of Encode,
+// with the errors of Encode. It is the inverse of DecodeServiceOptions.
+func (s ServiceOptions) Field() (uint8, error) {
 	b, err := s.Encode()
 	return b[0], err
 }

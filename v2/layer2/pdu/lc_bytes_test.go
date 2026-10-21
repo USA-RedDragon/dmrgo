@@ -217,7 +217,7 @@ func TestNewVoiceLC(t *testing.T) {
 		if b := must(f.Bytes()); b != [9]byte(l) {
 			t.Errorf("group %t: NewVoiceLCBytes %x, NewVoiceLC.Bytes %x", group, l, b)
 		}
-		if g, ok := l.Group(); !ok || g != group || l.ServiceOptions() != must(so.Byte()) {
+		if g, ok := l.Group(); !ok || g != group || l.ServiceOptions() != must(so.Field()) {
 			t.Errorf("group %t: LCBytes %x", group, l)
 		}
 	}
