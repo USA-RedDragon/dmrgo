@@ -10,6 +10,10 @@ func (r *DiscReceiver) addSoft(opt *options) error {
 }
 
 func (r *DiscReceiver) addExt(opt *options) {
+	if opt.Union {
+		r.addUnion(opt)
+		return
+	}
 	var ph *discPhase
 	switch {
 	case opt.CohExt && opt.CohLazy:
@@ -37,6 +41,10 @@ func (r *DiscReceiver) addExt(opt *options) {
 
 func (r *DiscReceiver) write(x []int16) {
 	e, _ := r.ext.(*softExt)
+	if e != nil && e.union != nil {
+		e.union.write(x)
+		return
+	}
 	if e == nil || e.ph == nil {
 		r.run(x)
 		return

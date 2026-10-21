@@ -63,6 +63,7 @@ type softExt struct {
 	stages          uint8
 	coh             *cohStage
 	ph              *discPhase
+	union           *discUnion
 	np              *npml
 	qcoh            [extQueue]bool
 	qcore           [extQueue]layer2.RawBurst

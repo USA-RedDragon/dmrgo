@@ -37,8 +37,11 @@ type DiscConfig struct {
 	// stages of the higher tiers, and under TinyGo, which has neither.
 	// Tier2 detects the bursts again coherently, on the carrier phase that
 	// it rebuilds from the samples, at about 5 times the CPU time of Tier1.
-	// Tier3 gives the coherent stage more CPU time than Tier2 and adds four
-	// passes over each data burst, at about 1.1 times the CPU time of Tier2.
+	// Tier3 runs Tier2 and, beside it, a receiver that gives the coherent
+	// stage more CPU time and four passes over each data burst. It keeps
+	// every burst of Tier2 and adds the bursts that Tier2 misses and the
+	// data bursts that pass a CRC where those of Tier2 fail, at about twice
+	// the CPU time and memory of Tier2.
 	Tier  Tier
 	opt   *options
 	lowIQ bool
@@ -230,6 +233,12 @@ func (r *DiscReceiver) AppendFlush(dst []Burst) []Burst {
 }
 
 func (r *DiscReceiver) flush() {
+	if !r.unionFlush() {
+		r.flushSolo()
+	}
+}
+
+func (r *DiscReceiver) flushSolo() {
 	var idle [16]int16
 	v := int16(max32(min32(r.f.dc/r.f.gain, 32767), -32768))
 	for i := range idle {

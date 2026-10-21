@@ -92,6 +92,7 @@ type options struct {
 	IQLow                                uint8
 	LeanChase                            uint8
 	NoMidSearch                          bool
+	Union                                bool
 }
 
 func discOptions() options {
@@ -143,6 +144,7 @@ func discTierOptions(t Tier) options {
 	case Tier3:
 		o := tier2Options(discOptions())
 		o.CohNoCross, o.CohNoNext, o.CohBudget, o.CohSymNoise, o.CohDataPasses = true, true, 1000, 8, 4
+		o.Union = true
 		return o
 	case TierDefault, Tier0:
 	}
