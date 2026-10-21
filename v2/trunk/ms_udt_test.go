@@ -448,7 +448,7 @@ func TestMS_DGNA(t *testing.T) {
 		t.Fatal(err)
 	}
 	r.feedAll(download(t, pdu.UDTHeader{LLIDDestination: msAddr, LLIDSource: peer, Opcode: pdu.UDTOpcodeDGNAOutboundHeader}, &alias))
-	if err := alias.SetMixed(true, 502, []byte("Command")); err != nil {
+	if err := alias.SetMixed(true, 502, []byte("Command\x7f")); err != nil {
 		t.Fatal(err)
 	}
 	r.feedAll(download(t, pdu.UDTHeader{LLIDDestination: msAddr, LLIDSource: peer, Opcode: pdu.UDTOpcodeDGNAOutboundHeader}, &alias))

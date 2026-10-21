@@ -368,10 +368,12 @@ func (a *Appended) setSymbols(f enums.UDTFormat, start int, text []byte) error {
 // Text appends the text of a to dst as UTF-8 and returns dst, for the
 // formats enums.UDTISO7, enums.UDTISO8 (read as ISO/IEC 8859-1),
 // enums.UDTUTF16BE and enums.UDTMixed (the text after the address). The
-// text ends before the pad nibbles or at the first NUL character. It
-// returns ErrUDTFormat for another format and ErrUDTLength for a PadNibble
-// over the size of the blocks. It allocates only to grow dst. (ETSI TS 102
-// 361-4 clauses B.3.4, B.3.5, B.3.8 and B.3.9)
+// text ends before the pad nibbles or at the first NUL character, and
+// drops its trailing DEL characters, the 1 bits of a block that a sender
+// fills without pad nibbles. It returns ErrUDTFormat for another format and
+// ErrUDTLength for a PadNibble over the size of the blocks. It allocates
+// only to grow dst. (ETSI TS 102 361-4 clauses B.3.4, B.3.5, B.3.8 and
+// B.3.9)
 func (a *Appended) Text(dst []byte) ([]byte, error) {
 	if a == nil {
 		return dst, dmrgo.ErrNilReceiver
@@ -394,8 +396,9 @@ func (a *Appended) Text(dst []byte) ([]byte, error) {
 		return dst, ErrUDTLength
 	}
 	n := room / w
+	from := len(dst)
 	if w == 16 {
-		return wire.AppendUTF8(dst, a.Data[start/8:start/8+2*n], true), nil
+		return trimDEL(wire.AppendUTF8(dst, a.Data[start/8:start/8+2*n], true), from), nil
 	}
 	for i := range n {
 		c := bits.Field(a.Data[:], start+w*i, w) & 0xFF
@@ -404,7 +407,14 @@ func (a *Appended) Text(dst []byte) ([]byte, error) {
 		}
 		dst = wire.AppendRune(dst, rune(c))
 	}
-	return dst, nil
+	return trimDEL(dst, from), nil
+}
+
+func trimDEL(dst []byte, from int) []byte {
+	for len(dst) > from && dst[len(dst)-1] == 0x7F {
+		dst = dst[:len(dst)-1]
+	}
+	return dst
 }
 
 // Mixed returns the address of a in the mixed format, and whether it is

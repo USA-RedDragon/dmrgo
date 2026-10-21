@@ -10616,7 +10616,7 @@ int dmrgo_trunk_ms_end_call_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, s
 int dmrgo_trunk_ms_end_call(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_trunk_ms_group_alias_need sets *items and *arena to the room that dmrgo_trunk_ms_group_alias needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_group_alias_need(dmrgo_trunk_ms_t *self, uint32_t tg, size_t *items, size_t *arena);
-/* Go: trunk.MS.GroupAlias. GroupAlias appends the DGNA alias of the talkgroup tg to dst as UTF-8 and returns dst; it appends nothing for a talkgroup without an alias. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_group_alias_need gives (DMRGO_TRUNK_MS_GROUP_ALIAS_MAX_ITEMS items). */
+/* Go: trunk.MS.GroupAlias. GroupAlias appends the DGNA alias of the talkgroup tg to dst as UTF-8, without trailing DEL characters, and returns dst; it appends nothing for a talkgroup without an alias. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_group_alias_need gives (DMRGO_TRUNK_MS_GROUP_ALIAS_MAX_ITEMS items). */
 int dmrgo_trunk_ms_group_alias(dmrgo_trunk_ms_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, uint32_t tg);
 /* Go: trunk.MS.Groups. Groups returns the DGNA talkgroups of the MS. */
 int dmrgo_trunk_ms_groups(dmrgo_trunk_ms_t *self, dmrgo_trunk_dynamic_groups_t *out);
