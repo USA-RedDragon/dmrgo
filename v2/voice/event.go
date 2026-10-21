@@ -122,6 +122,13 @@ const (
 	// EndInterrupted is a call of a Transmitter that a Tier 2 RC command
 	// ended (ETSI TS 102 361-2 clause 6.3).
 	EndInterrupted
+	// EndNoOutbound is a call of a Transmitter that began in hang time
+	// with no outbound burst at all until T_MS_ChanAuth ran out: the BS
+	// is asleep or out of range. The caller goes back to normal channel
+	// access, the polite check and then the wakeup of the BS, and starts
+	// the call again without CallOptions.HangTime. (ETSI TS 102 361-1
+	// clauses 5.2.2 and 5.2.2.2.4, ETSI TS 102 361-2 clause 5.1.1.6.2)
+	EndNoOutbound
 )
 
 // String returns the name of the reason. It allocates only for a value
@@ -148,6 +155,8 @@ func (r EndReason) String() string {
 		return "Denied"
 	case EndInterrupted:
 		return "Interrupted"
+	case EndNoOutbound:
+		return "NoOutbound"
 	}
 	return fmt.Sprintf("EndReason(%d)", uint8(r))
 }

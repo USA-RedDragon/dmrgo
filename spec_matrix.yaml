@@ -1416,6 +1416,7 @@ documents:
             names:
               - TestTransmitter_ChanAuth
               - TestTransmitter_ChanAuthSkipped
+              - TestTransmitter_ChanAuthOutbound
           - package: github.com/USA-RedDragon/dmrgo/v2/bs
             names:
               - TestChanAuthWithTransmitter

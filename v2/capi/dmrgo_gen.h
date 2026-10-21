@@ -7705,6 +7705,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_VOICE_END_INTERRUPTED ((dmrgo_voice_end_reason_t)10)
 /* Go: voice.EndLost. EndLost is a time of ReceiverConfig.Lost without a burst. */
 #define DMRGO_VOICE_END_LOST ((dmrgo_voice_end_reason_t)4)
+/* Go: voice.EndNoOutbound. EndNoOutbound is a call of a Transmitter that began in hang time with no outbound burst at all until T_MS_ChanAuth ran out: the BS is asleep or out of range. */
+#define DMRGO_VOICE_END_NO_OUTBOUND ((dmrgo_voice_end_reason_t)11)
 /* Go: voice.EndSuperseded. EndSuperseded is a new call: an LC with other addresses, or another transport stream. */
 #define DMRGO_VOICE_END_SUPERSEDED ((dmrgo_voice_end_reason_t)7)
 /* Go: voice.EndSyncLost. EndSyncLost is a transport that lost the signal: Hint.SyncLost or Receiver.Lost. */
@@ -11000,7 +11002,7 @@ int dmrgo_voice_transmitter_channel(dmrgo_voice_transmitter_t *self, dmrgo_durat
 int dmrgo_voice_transmitter_deadline(dmrgo_voice_transmitter_t *self, dmrgo_duration_t *at, bool *ok);
 /* dmrgo_voice_transmitter_decoded_need sets *items and *arena to the room that dmrgo_voice_transmitter_decoded needs for these arguments, without a change to the handle. */
 int dmrgo_voice_transmitter_decoded_need(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, size_t *items, size_t *arena);
-/* Go: voice.Transmitter.Decoded. Decoded takes the decoded outbound burst b of the slot, which may be nil, while the Transmitter waits in TransmitterChanAuth. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_transmitter_decoded_need gives (DMRGO_VOICE_TRANSMITTER_DECODED_MAX_ITEMS items). */
+/* Go: voice.Transmitter.Decoded. Decoded takes the decoded outbound burst b of the slot, which may be nil for a burst that did not decode, while the Transmitter waits in TransmitterChanAuth. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_transmitter_decoded_need gives (DMRGO_VOICE_TRANSMITTER_DECODED_MAX_ITEMS items). */
 int dmrgo_voice_transmitter_decoded(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: voice.Transmitter.Dropped. Dropped returns the number of relayed voice bursts that the Transmitter dropped: voice before the LC was known, and voice that did not fit in the queue. */
 int dmrgo_voice_transmitter_dropped(dmrgo_voice_transmitter_t *self, int64_t *out);
