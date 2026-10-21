@@ -36,7 +36,6 @@
 		dmrgo_bs_repeater_inbound_need;
 		dmrgo_bs_repeater_lost;
 		dmrgo_bs_repeater_lost_need;
-		dmrgo_bs_repeater_new;
 		dmrgo_bs_repeater_reject;
 		dmrgo_bs_repeater_reset;
 		dmrgo_bs_repeater_slot_state;
@@ -57,7 +56,6 @@
 		dmrgo_codec2_codec_frame_samples;
 		dmrgo_codec2_codec_free;
 		dmrgo_codec2_codec_mode;
-		dmrgo_codec2_codec_new;
 		dmrgo_codec2_codec_reset;
 		dmrgo_codec2_codec_silence;
 		dmrgo_codec2_new;
@@ -79,7 +77,6 @@
 		dmrgo_csbk_preambles_free;
 		dmrgo_csbk_preambles_lost;
 		dmrgo_csbk_preambles_lost_need;
-		dmrgo_csbk_preambles_new;
 		dmrgo_csbk_preambles_reset;
 		dmrgo_csbk_preambles_state;
 		dmrgo_csbk_preambles_state_string;
@@ -97,7 +94,6 @@
 		dmrgo_csbk_requester_free;
 		dmrgo_csbk_requester_lost;
 		dmrgo_csbk_requester_lost_need;
-		dmrgo_csbk_requester_new;
 		dmrgo_csbk_requester_request;
 		dmrgo_csbk_requester_request_call_alert;
 		dmrgo_csbk_requester_request_oacsu;
@@ -116,7 +112,6 @@
 		dmrgo_csbk_responder_free;
 		dmrgo_csbk_responder_lost;
 		dmrgo_csbk_responder_lost_need;
-		dmrgo_csbk_responder_new;
 		dmrgo_csbk_responder_pending;
 		dmrgo_csbk_responder_reset;
 		dmrgo_csbk_responder_tick;
@@ -132,7 +127,6 @@
 		dmrgo_csbk_timing_free;
 		dmrgo_csbk_timing_join;
 		dmrgo_csbk_timing_leader;
-		dmrgo_csbk_timing_new;
 		dmrgo_csbk_timing_reset;
 		dmrgo_csbk_timing_state;
 		dmrgo_csbk_timing_state_string;
@@ -150,7 +144,6 @@
 		dmrgo_csbk_wakeup_free;
 		dmrgo_csbk_wakeup_lost;
 		dmrgo_csbk_wakeup_lost_need;
-		dmrgo_csbk_wakeup_new;
 		dmrgo_csbk_wakeup_outbound_sync;
 		dmrgo_csbk_wakeup_outbound_sync_need;
 		dmrgo_csbk_wakeup_reset;
@@ -173,7 +166,6 @@
 		dmrgo_data_receiver_free;
 		dmrgo_data_receiver_lost;
 		dmrgo_data_receiver_lost_need;
-		dmrgo_data_receiver_new;
 		dmrgo_data_receiver_reset;
 		dmrgo_data_receiver_state;
 		dmrgo_data_receiver_tick;
@@ -188,7 +180,6 @@
 		dmrgo_data_sender_decoded;
 		dmrgo_data_sender_decoded_need;
 		dmrgo_data_sender_free;
-		dmrgo_data_sender_new;
 		dmrgo_data_sender_reset;
 		dmrgo_data_sender_send;
 		dmrgo_data_sender_state;
@@ -198,7 +189,6 @@
 		dmrgo_data_state_string;
 		dmrgo_dmrd_append_free_dmr_static;
 		dmrgo_dmrd_auth_bridge_free;
-		dmrgo_dmrd_auth_bridge_new;
 		dmrgo_dmrd_auth_bridge_sign;
 		dmrgo_dmrd_auth_bridge_verify;
 		dmrgo_dmrd_auth_new_bridge;
@@ -311,7 +301,6 @@
 		dmrgo_dvsi_codec_fid;
 		dmrgo_dvsi_codec_frame_samples;
 		dmrgo_dvsi_codec_free;
-		dmrgo_dvsi_codec_new;
 		dmrgo_dvsi_codec_product;
 		dmrgo_dvsi_codec_product_need;
 		dmrgo_dvsi_codec_silence;
@@ -392,7 +381,6 @@
 		dmrgo_framer_framer_append_bursts_need;
 		dmrgo_framer_framer_free;
 		dmrgo_framer_framer_locked;
-		dmrgo_framer_framer_new;
 		dmrgo_framer_framer_write;
 		dmrgo_framer_framer_write_need;
 		dmrgo_framer_new;
@@ -476,7 +464,6 @@
 		dmrgo_ip_udp_string;
 		dmrgo_ipsc_append_peer_list_reply;
 		dmrgo_ipsc_auth_key_free;
-		dmrgo_ipsc_auth_key_new;
 		dmrgo_ipsc_auth_key_sign;
 		dmrgo_ipsc_auth_key_sign_need;
 		dmrgo_ipsc_auth_key_verify;
@@ -503,7 +490,6 @@
 		dmrgo_ipsc_peer_list_entry;
 		dmrgo_ipsc_peer_list_free;
 		dmrgo_ipsc_peer_list_len;
-		dmrgo_ipsc_peer_list_new;
 		dmrgo_ipsc_peer_list_of;
 		dmrgo_ipsc_raw_append_binary;
 		dmrgo_ipsc_user_append_binary;
@@ -642,7 +628,6 @@
 		dmrgo_layer2_voice_transmitter_header;
 		dmrgo_layer2_voice_transmitter_headers;
 		dmrgo_layer2_voice_transmitter_headers_need;
-		dmrgo_layer2_voice_transmitter_new;
 		dmrgo_layer2_voice_transmitter_pi_header;
 		dmrgo_layer2_voice_transmitter_reset;
 		dmrgo_layer2_voice_transmitter_set_embedded_fragments;
@@ -791,13 +776,11 @@
 		dmrgo_packet_assembler_lost_need;
 		dmrgo_packet_assembler_missing;
 		dmrgo_packet_assembler_missing_need;
-		dmrgo_packet_assembler_new;
 		dmrgo_packet_assembler_reset;
 		dmrgo_packet_assembler_response;
 		dmrgo_packet_assembler_response_need;
 		dmrgo_packet_assembler_set_accept_bad_crc;
 		dmrgo_packet_builder_free;
-		dmrgo_packet_builder_new;
 		dmrgo_packet_builder_new_response;
 		dmrgo_packet_builder_new_response_need;
 		dmrgo_packet_builder_retry;
@@ -1283,7 +1266,6 @@
 		dmrgo_trunk_capacity_plus_follower_free;
 		dmrgo_trunk_capacity_plus_follower_lost;
 		dmrgo_trunk_capacity_plus_follower_lost_need;
-		dmrgo_trunk_capacity_plus_follower_new;
 		dmrgo_trunk_capacity_plus_follower_reset;
 		dmrgo_trunk_capacity_plus_follower_rest_lsn;
 		dmrgo_trunk_capacity_plus_follower_site_number;
@@ -1311,7 +1293,6 @@
 		dmrgo_trunk_follower_lookup;
 		dmrgo_trunk_follower_lost;
 		dmrgo_trunk_follower_lost_need;
-		dmrgo_trunk_follower_new;
 		dmrgo_trunk_follower_plan;
 		dmrgo_trunk_follower_reset;
 		dmrgo_trunk_follower_site;
@@ -1357,7 +1338,6 @@
 		dmrgo_trunk_ms_killed;
 		dmrgo_trunk_ms_lost;
 		dmrgo_trunk_ms_lost_need;
-		dmrgo_trunk_ms_new;
 		dmrgo_trunk_ms_off;
 		dmrgo_trunk_ms_poll_short_data;
 		dmrgo_trunk_ms_poll_status;
@@ -1402,7 +1382,6 @@
 		dmrgo_trunk_tscc_interrupt;
 		dmrgo_trunk_tscc_kill;
 		dmrgo_trunk_tscc_mass_register;
-		dmrgo_trunk_tscc_new;
 		dmrgo_trunk_tscc_output_kind_string;
 		dmrgo_trunk_tscc_poll_short_data;
 		dmrgo_trunk_tscc_poll_usbd;
@@ -1420,7 +1399,6 @@
 		dmrgo_trunk_udt_get_data;
 		dmrgo_trunk_udt_get_header;
 		dmrgo_trunk_udt_get_len;
-		dmrgo_trunk_udt_new;
 		dmrgo_trunk_udt_set_crc_ok;
 		dmrgo_trunk_udt_set_data;
 		dmrgo_trunk_udt_set_header;
@@ -1472,7 +1450,6 @@
 		dmrgo_voice_interrupter_decoded_need;
 		dmrgo_voice_interrupter_free;
 		dmrgo_voice_interrupter_interrupt;
-		dmrgo_voice_interrupter_new;
 		dmrgo_voice_interrupter_reset;
 		dmrgo_voice_interrupter_state;
 		dmrgo_voice_interrupter_state_string;
@@ -1492,7 +1469,6 @@
 		dmrgo_voice_receiver_free;
 		dmrgo_voice_receiver_lost;
 		dmrgo_voice_receiver_lost_need;
-		dmrgo_voice_receiver_new;
 		dmrgo_voice_receiver_reset;
 		dmrgo_voice_receiver_state;
 		dmrgo_voice_receiver_tick;
@@ -1509,7 +1485,6 @@
 		dmrgo_voice_transmitter_frames;
 		dmrgo_voice_transmitter_free;
 		dmrgo_voice_transmitter_interrupt;
-		dmrgo_voice_transmitter_new;
 		dmrgo_voice_transmitter_relay;
 		dmrgo_voice_transmitter_reset;
 		dmrgo_voice_transmitter_room;

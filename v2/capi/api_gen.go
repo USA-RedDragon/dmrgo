@@ -9011,16 +9011,6 @@ func dmrgo_bs_reason_string(c_self C.dmrgo_bs_reason_t, c_out *C.char, c_out_cap
 	return C.DMRGO_OK
 }
 
-//export dmrgo_bs_repeater_new
-func dmrgo_bs_repeater_new(c_out **C.dmrgo_bs_repeater_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_bs_Repeater(new(g_bs.Repeater))
-	return C.DMRGO_OK
-}
-
 //export dmrgo_bs_repeater_free
 func dmrgo_bs_repeater_free(c_self *C.dmrgo_bs_repeater_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -9550,16 +9540,6 @@ func dmrgo_csbk_output_kind_string(c_self C.dmrgo_csbk_output_kind_t, c_out *C.c
 	return C.DMRGO_OK
 }
 
-//export dmrgo_csbk_preambles_new
-func dmrgo_csbk_preambles_new(c_out **C.dmrgo_csbk_preambles_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_csbk_Preambles(new(g_csbk.Preambles))
-	return C.DMRGO_OK
-}
-
 //export dmrgo_csbk_preambles_free
 func dmrgo_csbk_preambles_free(c_self *C.dmrgo_csbk_preambles_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -9927,16 +9907,6 @@ func dmrgo_csbk_reason_string(c_self C.dmrgo_csbk_reason_t, c_out *C.char, c_out
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_csbk_requester_new
-func dmrgo_csbk_requester_new(c_out **C.dmrgo_csbk_requester_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_csbk_Requester(new(g_csbk.Requester))
 	return C.DMRGO_OK
 }
 
@@ -10465,16 +10435,6 @@ func dmrgo_csbk_requester_state_string(c_self C.dmrgo_csbk_requester_state_t, c_
 	return C.DMRGO_OK
 }
 
-//export dmrgo_csbk_responder_new
-func dmrgo_csbk_responder_new(c_out **C.dmrgo_csbk_responder_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_csbk_Responder(new(g_csbk.Responder))
-	return C.DMRGO_OK
-}
-
 //export dmrgo_csbk_responder_free
 func dmrgo_csbk_responder_free(c_self *C.dmrgo_csbk_responder_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -10854,16 +10814,6 @@ func dmrgo_csbk_service_string(c_self C.dmrgo_csbk_service_t, c_out *C.char, c_o
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_csbk_timing_new
-func dmrgo_csbk_timing_new(c_out **C.dmrgo_csbk_timing_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_csbk_Timing(new(g_csbk.Timing))
 	return C.DMRGO_OK
 }
 
@@ -11266,16 +11216,6 @@ func dmrgo_csbk_timing_state_string(c_self C.dmrgo_csbk_timing_state_t, c_out *C
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_csbk_wakeup_new
-func dmrgo_csbk_wakeup_new(c_out **C.dmrgo_csbk_wakeup_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_csbk_Wakeup(new(g_csbk.Wakeup))
 	return C.DMRGO_OK
 }
 
@@ -11902,16 +11842,6 @@ func dmrgo_data_output_kind_string(c_self C.dmrgo_data_output_kind_t, c_out *C.c
 	return C.DMRGO_OK
 }
 
-//export dmrgo_data_receiver_new
-func dmrgo_data_receiver_new(c_out **C.dmrgo_data_receiver_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_data_Receiver(new(g_data.Receiver))
-	return C.DMRGO_OK
-}
-
 //export dmrgo_data_receiver_free
 func dmrgo_data_receiver_free(c_self *C.dmrgo_data_receiver_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -12363,16 +12293,6 @@ func dmrgo_data_result_string(c_self C.dmrgo_data_result_t, c_out *C.char, c_out
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_data_sender_new
-func dmrgo_data_sender_new(c_out **C.dmrgo_data_sender_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_data_Sender(new(g_data.Sender))
 	return C.DMRGO_OK
 }
 
@@ -18140,16 +18060,6 @@ func dmrgo_layer2_voice_receiver_reset(c_self *C.dmrgo_layer2_voice_receiver_t) 
 	return C.DMRGO_OK
 }
 
-//export dmrgo_layer2_voice_transmitter_new
-func dmrgo_layer2_voice_transmitter_new(c_out **C.dmrgo_layer2_voice_transmitter_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_layer2_VoiceTransmitter(new(g_layer2.VoiceTransmitter))
-	return C.DMRGO_OK
-}
-
 //export dmrgo_layer2_voice_transmitter_free
 func dmrgo_layer2_voice_transmitter_free(c_self *C.dmrgo_layer2_voice_transmitter_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -18738,16 +18648,6 @@ func dmrgo_layer2_voice_transmitter_terminator(c_self *C.dmrgo_layer2_voice_tran
 	return C.DMRGO_OK
 }
 
-//export dmrgo_framer_framer_new
-func dmrgo_framer_framer_new(c_out **C.dmrgo_framer_framer_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_layer2_framer_Framer(new(g_layer2_framer.Framer))
-	return C.DMRGO_OK
-}
-
 //export dmrgo_framer_framer_free
 func dmrgo_framer_framer_free(c_self *C.dmrgo_framer_framer_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -19024,16 +18924,6 @@ func dmrgo_packet_assembler_set_accept_bad_crc(c_self *C.dmrgo_packet_assembler_
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_packet_assembler_new
-func dmrgo_packet_assembler_new(c_out **C.dmrgo_packet_assembler_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_layer2_packet_Assembler(new(g_layer2_packet.Assembler))
 	return C.DMRGO_OK
 }
 
@@ -19557,16 +19447,6 @@ func dmrgo_packet_assembler_response(c_self *C.dmrgo_packet_assembler_t, c_out *
 	if r1 != nil {
 		return setErr(r1)
 	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_packet_builder_new
-func dmrgo_packet_builder_new(c_out **C.dmrgo_packet_builder_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_layer2_packet_Builder(new(g_layer2_packet.Builder))
 	return C.DMRGO_OK
 }
 
@@ -33959,16 +33839,6 @@ func dmrgo_dmrd_talker_alias_string(c_self *C.dmrgo_dmrd_talker_alias_t, c_out *
 	return C.DMRGO_OK
 }
 
-//export dmrgo_dmrd_auth_bridge_new
-func dmrgo_dmrd_auth_bridge_new(c_out **C.dmrgo_dmrd_auth_bridge_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_transport_dmrd_auth_Bridge(new(g_transport_dmrd_auth.Bridge))
-	return C.DMRGO_OK
-}
-
 //export dmrgo_dmrd_auth_bridge_free
 func dmrgo_dmrd_auth_bridge_free(c_self *C.dmrgo_dmrd_auth_bridge_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -34752,16 +34622,6 @@ func dmrgo_ipsc_payload_slot_type(c_self *C.dmrgo_ipsc_payload_t, c_out0 *C.dmrg
 	return C.DMRGO_OK
 }
 
-//export dmrgo_ipsc_peer_list_new
-func dmrgo_ipsc_peer_list_new(c_out **C.dmrgo_ipsc_peer_list_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_transport_ipsc_PeerList(new(g_transport_ipsc.PeerList))
-	return C.DMRGO_OK
-}
-
 //export dmrgo_ipsc_peer_list_free
 func dmrgo_ipsc_peer_list_free(c_self *C.dmrgo_ipsc_peer_list_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -34966,16 +34826,6 @@ func dmrgo_ipsc_user_set_raw_burst(c_self *C.dmrgo_ipsc_user_t, c_raw *C.dmrgo_l
 	if r0 != nil {
 		return setErr(r0)
 	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_ipsc_auth_key_new
-func dmrgo_ipsc_auth_key_new(c_out **C.dmrgo_ipsc_auth_key_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_transport_ipsc_auth_Key(new(g_transport_ipsc_auth.Key))
 	return C.DMRGO_OK
 }
 
@@ -36978,16 +36828,6 @@ func dmrgo_trunk_authenticator_response(c_self *C.dmrgo_trunk_authenticator_t, c
 	return C.DMRGO_OK
 }
 
-//export dmrgo_trunk_capacity_plus_follower_new
-func dmrgo_trunk_capacity_plus_follower_new(c_out **C.dmrgo_trunk_capacity_plus_follower_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_trunk_CapacityPlusFollower(new(g_trunk.CapacityPlusFollower))
-	return C.DMRGO_OK
-}
-
 //export dmrgo_trunk_capacity_plus_follower_free
 func dmrgo_trunk_capacity_plus_follower_free(c_self *C.dmrgo_trunk_capacity_plus_follower_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -37499,16 +37339,6 @@ func dmrgo_trunk_decode_usbd_poll_request(c_data *C.uint8_t, c_out *C.dmrgo_trun
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_trunk_follower_new
-func dmrgo_trunk_follower_new(c_out **C.dmrgo_trunk_follower_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_trunk_Follower(new(g_trunk.Follower))
 	return C.DMRGO_OK
 }
 
@@ -38050,16 +37880,6 @@ func dmrgo_trunk_lip_short_report_string(c_self *C.dmrgo_trunk_lip_short_report_
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_trunk_ms_new
-func dmrgo_trunk_ms_new(c_out **C.dmrgo_trunk_ms_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_trunk_MS(new(g_trunk.MS))
 	return C.DMRGO_OK
 }
 
@@ -39482,16 +39302,6 @@ func dmrgo_trunk_stun_action_string(c_self C.dmrgo_trunk_stun_action_t, c_out *C
 	return C.DMRGO_OK
 }
 
-//export dmrgo_trunk_tscc_new
-func dmrgo_trunk_tscc_new(c_out **C.dmrgo_trunk_tscc_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_trunk_TSCC(new(g_trunk.TSCC))
-	return C.DMRGO_OK
-}
-
 //export dmrgo_trunk_tscc_free
 func dmrgo_trunk_tscc_free(c_self *C.dmrgo_trunk_tscc_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -40026,16 +39836,6 @@ func dmrgo_trunk_udt_set_crc_ok(c_self *C.dmrgo_trunk_udt_t, c_v C.bool) (rc C.i
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_trunk_udt_new
-func dmrgo_trunk_udt_new(c_out **C.dmrgo_trunk_udt_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_trunk_UDT(new(g_trunk.UDT))
 	return C.DMRGO_OK
 }
 
@@ -40917,16 +40717,6 @@ func dmrgo_vocoder_unpack_ambe_voice_flags(c_data *C.uint8_t, c_frames *C.dmrgo_
 	return C.DMRGO_OK
 }
 
-//export dmrgo_codec2_codec_new
-func dmrgo_codec2_codec_new(c_out **C.dmrgo_codec2_codec_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_vocoder_codec2_Codec(new(g_vocoder_codec2.Codec))
-	return C.DMRGO_OK
-}
-
 //export dmrgo_codec2_codec_free
 func dmrgo_codec2_codec_free(c_self *C.dmrgo_codec2_codec_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -41362,16 +41152,6 @@ func dmrgo_dvsi_append_speech(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C
 	if r1 != nil {
 		return setErr(r1)
 	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dvsi_codec_new
-func dmrgo_dvsi_codec_new(c_out **C.dmrgo_dvsi_codec_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_vocoder_dvsi_Codec(new(g_vocoder_dvsi.Codec))
 	return C.DMRGO_OK
 }
 
@@ -41923,16 +41703,6 @@ func dmrgo_voice_event_kind_string(c_self C.dmrgo_voice_event_kind_t, c_out *C.c
 	return C.DMRGO_OK
 }
 
-//export dmrgo_voice_interrupter_new
-func dmrgo_voice_interrupter_new(c_out **C.dmrgo_voice_interrupter_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_voice_Interrupter(new(g_voice.Interrupter))
-	return C.DMRGO_OK
-}
-
 //export dmrgo_voice_interrupter_free
 func dmrgo_voice_interrupter_free(c_self *C.dmrgo_voice_interrupter_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -42366,16 +42136,6 @@ func dmrgo_voice_output_kind_string(c_self C.dmrgo_voice_output_kind_t, c_out *C
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_voice_receiver_new
-func dmrgo_voice_receiver_new(c_out **C.dmrgo_voice_receiver_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_voice_Receiver(new(g_voice.Receiver))
 	return C.DMRGO_OK
 }
 
@@ -42847,16 +42607,6 @@ func dmrgo_voice_state_string(c_self C.dmrgo_voice_state_t, c_out *C.char, c_out
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_voice_transmitter_new
-func dmrgo_voice_transmitter_new(c_out **C.dmrgo_voice_transmitter_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_voice_Transmitter(new(g_voice.Transmitter))
 	return C.DMRGO_OK
 }
 

@@ -1,6 +1,9 @@
 package capigen
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestSnake(t *testing.T) {
 	t.Parallel()
@@ -48,5 +51,25 @@ func TestCKeyword(t *testing.T) {
 	}
 	if got := cKeyword("burst"); got != "burst" {
 		t.Errorf("cKeyword(burst) = %q", got)
+	}
+}
+
+func TestZeroReady(t *testing.T) {
+	t.Parallel()
+
+	for doc, want := range map[string]bool{
+		"CACH makes the CACH field. The zero CACH is ready: its first Next starts a Short LC.": true,
+		"Decoder decodes. The zero value is ready to use.":                                     true,
+		"BERCalculator counts. The zero value is an empty calculator.":                         true,
+		"ChannelPlan maps. The zero ChannelPlan is empty and ready to use.":                    true,
+		"Receiver receives. Make it with NewReceiver.":                                         false,
+		"Framer frames. Make one with New: a zero Framer has no buffer and drops every bit.":   false,
+		"Assembler assembles. The zero value has no storage for blocks.":                       false,
+		"Codec codes. The zero Codec is closed.":                                               false,
+	} {
+		name := doc[:strings.Index(doc, " ")]
+		if got := zeroReady(doc, name); got != want {
+			t.Errorf("zeroReady(%q) = %t, want %t", doc, got, want)
+		}
 	}
 }
