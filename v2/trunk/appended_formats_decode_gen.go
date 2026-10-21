@@ -3,8 +3,8 @@
 // ETSI TS 102 361-4 clause B.3.6.1, Table B.7
 // ETSI TS 102 361-4 clause B.3.6.2, Table B.7
 // ETSI TS 102 361-4 clause B.3.10, ETSI TS 100 392-18-1 clause 6.2.1
-// ETSI TS 102 361-4 clause 6.6.11.1, Table 6.76
-// ETSI TS 102 361-4 clause 6.6.11.3.2, Table 6.79
+// ETSI TS 102 361-4 V1.12.1 clause 6.6.11.1, Table 6.76
+// ETSI TS 102 361-4 V1.12.1 clause 6.6.11.3.2, Table 6.79
 
 package trunk
 
@@ -351,8 +351,8 @@ func (s *LIPShortReport) String() string {
 
 // DecodeUSBDPollRequest decodes a USBDPollRequest. data holds the 76 bits of
 // the PDU packed, the first bit in the most significant bit of data[0]. The
-// low 4 bits of data[9] are ignored. (ETSI TS 102 361-4 clause 6.6.11.1,
-// Table 6.76)
+// low 4 bits of data[9] are ignored.
+// (ETSI TS 102 361-4 V1.12.1 clause 6.6.11.1, Table 6.76)
 func DecodeUSBDPollRequest(data [10]byte) USBDPollRequest {
 	var result USBDPollRequest
 	result.ResponseDelay = uint8(uint64(data[0]) >> 6)
@@ -365,7 +365,7 @@ func DecodeUSBDPollRequest(data [10]byte) USBDPollRequest {
 
 // Encode encodes a USBDPollRequest. It returns the 76 bits packed, the first
 // bit in the most significant bit of byte 0. The low 4 bits of byte 9 are 0.
-// (ETSI TS 102 361-4 clause 6.6.11.1, Table 6.76)
+// (ETSI TS 102 361-4 V1.12.1 clause 6.6.11.1, Table 6.76)
 func (s *USBDPollRequest) Encode() ([10]byte, error) {
 	if s == nil {
 		return [10]byte{}, dmrgo.ErrNilReceiver
@@ -416,8 +416,8 @@ func (s *USBDPollRequest) String() string {
 
 // DecodeUSBDLIPResponse decodes a USBDLIPResponse. data holds the 76 bits of
 // the PDU packed, the first bit in the most significant bit of data[0]. The
-// low 4 bits of data[9] are ignored. (ETSI TS 102 361-4 clause 6.6.11.3.2,
-// Table 6.79)
+// low 4 bits of data[9] are ignored.
+// (ETSI TS 102 361-4 V1.12.1 clause 6.6.11.3.2, Table 6.79)
 func DecodeUSBDLIPResponse(data [10]byte) USBDLIPResponse {
 	var result USBDLIPResponse
 	result.TimeElapsed = uint8(uint64(data[0]) >> 6)
@@ -433,7 +433,7 @@ func DecodeUSBDLIPResponse(data [10]byte) USBDLIPResponse {
 
 // Encode encodes a USBDLIPResponse. It returns the 76 bits packed, the first
 // bit in the most significant bit of byte 0. The low 4 bits of byte 9 are 0.
-// (ETSI TS 102 361-4 clause 6.6.11.3.2, Table 6.79)
+// (ETSI TS 102 361-4 V1.12.1 clause 6.6.11.3.2, Table 6.79)
 func (s *USBDLIPResponse) Encode() ([10]byte, error) {
 	if s == nil {
 		return [10]byte{}, dmrgo.ErrNilReceiver
