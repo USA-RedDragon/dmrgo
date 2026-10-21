@@ -271,7 +271,7 @@ type UDTHeader struct {
 	Emergency         bool                       `dmr:"bit:2"`      // emergency in C_UDTHD, reserved in C_UDTHU
 	OptionFlag        bool                       `dmr:"bit:3"`      // UDT_Option_Flag in C_UDTHD, UDT_DIV in C_UDTHU
 	SAP               enums.ServiceAccessPointID `dmr:"bits:8-11"`  // SAP identifier
-	UDTFormat         uint8                      `dmr:"bits:12-15"` // UDT Format
+	UDTFormat         enums.UDTFormat            `dmr:"bits:12-15"` // UDT Format
 	LLIDDestination   uint32                     `dmr:"bits:16-39"` // destination LLID
 	LLIDSource        uint32                     `dmr:"bits:40-63"` // source LLID
 	PadNibble         uint8                      `dmr:"bits:64-68"` // number of pad nibbles appended to the user data
