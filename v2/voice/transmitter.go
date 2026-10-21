@@ -48,8 +48,8 @@ type TransmitterConfig struct {
 	Source layer2.SyncSource
 	// Silence is the 72-bit slot that fills a burst when no voice is
 	// queued, and pads the last superframe, packed as
-	// layer2.RawBurst.VoiceSlots returns it. For AMBE+2 it is
-	// vocoder.AMBESilenceSlot().
+	// layer2.RawBurst.VoiceSlots returns it. The zero value means
+	// vocoder.AMBESilenceSlot(). A Codec2 caller sets its own.
 	Silence [9]byte
 	// Headers is the number of Voice LC Headers before burst A. 0 means
 	// 1, as ETSI TS 102 361-1 clause 5.1.2.2 gives; at most MaxHeaders.
@@ -342,6 +342,9 @@ func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 	}
 	if t.idleSearch == 0 {
 		t.idleSearch = DefaultIdleSearch
+	}
+	if t.silence == [9]byte{} {
+		t.silence = vocoder.AMBESilenceSlot()
 	}
 	queue := cfg.Queue
 	if queue == 0 {
