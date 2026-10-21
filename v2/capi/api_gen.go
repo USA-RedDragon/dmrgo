@@ -40,6 +40,7 @@ import (
 	g_transport_hytera "github.com/USA-RedDragon/dmrgo/v2/transport/hytera"
 	g_transport_ipsc "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
 	g_transport_ipsc_auth "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
+	g_transport_mmdvm "github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm"
 	g_trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
 	g_vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	g_vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
@@ -3843,6 +3844,331 @@ func in_transport_ipsc_User(s *C.dmrgo_ipsc_user_t) (d g_transport_ipsc.User) {
 	return
 }
 
+func in_transport_mmdvm_ConfigV1(s *C.dmrgo_mmdvm_config_v1_t) (d g_transport_mmdvm.ConfigV1) {
+	d.Simplex = bool(s.simplex)
+	d.UseCOSAsLockout = bool(s.use_cos_as_lockout)
+	d.Debug = bool(s.debug)
+	d.YSFLoDev = bool(s.ysf_lo_dev)
+	d.PTTInvert = bool(s.ptt_invert)
+	d.TXInvert = bool(s.tx_invert)
+	d.RXInvert = bool(s.rx_invert)
+	d.M17 = bool(s.m17)
+	d.POCSAG = bool(s.pocsag)
+	d.NXDN = bool(s.nxdn)
+	d.P25 = bool(s.p25)
+	d.YSF = bool(s.ysf)
+	d.DMR = bool(s.dmr)
+	d.DStar = bool(s.d_star)
+	d.TXDelay = uint8(s.tx_delay)
+	d.State = g_transport_mmdvm.Mode(s.state)
+	d.RXLevel = uint8(s.rx_level)
+	d.CWIDTXLevel = uint8(s.cwidtx_level)
+	d.DMRColorCode = uint8(s.dmr_color_code)
+	d.DMRDelay = uint8(s.dmr_delay)
+	d.OscOffset = uint8(s.osc_offset)
+	d.DStarTXLevel = uint8(s.d_star_tx_level)
+	d.DMRTXLevel = uint8(s.dmrtx_level)
+	d.YSFTXLevel = uint8(s.ysftx_level)
+	d.P25TXLevel = uint8(s.p25tx_level)
+	d.TXDCOffset = uint8(s.txdc_offset)
+	d.RXDCOffset = uint8(s.rxdc_offset)
+	d.NXDNTXLevel = uint8(s.nxdntx_level)
+	d.YSFTXHang = uint8(s.ysftx_hang)
+	d.POCSAGTXLevel = uint8(s.pocsagtx_level)
+	d.FMTXLevel = uint8(s.fmtx_level)
+	d.P25TXHang = uint8(s.p25tx_hang)
+	d.NXDNTXHang = uint8(s.nxdntx_hang)
+	d.M17TXLevel = uint8(s.m17tx_level)
+	d.M17TXHang = uint8(s.m17tx_hang)
+	return
+}
+
+func out_transport_mmdvm_ConfigV1(d *C.dmrgo_mmdvm_config_v1_t, s *g_transport_mmdvm.ConfigV1, oc *outc) {
+	_ = oc
+	d.simplex = C.bool(s.Simplex)
+	d.use_cos_as_lockout = C.bool(s.UseCOSAsLockout)
+	d.debug = C.bool(s.Debug)
+	d.ysf_lo_dev = C.bool(s.YSFLoDev)
+	d.ptt_invert = C.bool(s.PTTInvert)
+	d.tx_invert = C.bool(s.TXInvert)
+	d.rx_invert = C.bool(s.RXInvert)
+	d.m17 = C.bool(s.M17)
+	d.pocsag = C.bool(s.POCSAG)
+	d.nxdn = C.bool(s.NXDN)
+	d.p25 = C.bool(s.P25)
+	d.ysf = C.bool(s.YSF)
+	d.dmr = C.bool(s.DMR)
+	d.d_star = C.bool(s.DStar)
+	d.tx_delay = C.uint8_t(s.TXDelay)
+	d.state = C.dmrgo_mmdvm_mode_t(s.State)
+	d.rx_level = C.uint8_t(s.RXLevel)
+	d.cwidtx_level = C.uint8_t(s.CWIDTXLevel)
+	d.dmr_color_code = C.uint8_t(s.DMRColorCode)
+	d.dmr_delay = C.uint8_t(s.DMRDelay)
+	d.osc_offset = C.uint8_t(s.OscOffset)
+	d.d_star_tx_level = C.uint8_t(s.DStarTXLevel)
+	d.dmrtx_level = C.uint8_t(s.DMRTXLevel)
+	d.ysftx_level = C.uint8_t(s.YSFTXLevel)
+	d.p25tx_level = C.uint8_t(s.P25TXLevel)
+	d.txdc_offset = C.uint8_t(s.TXDCOffset)
+	d.rxdc_offset = C.uint8_t(s.RXDCOffset)
+	d.nxdntx_level = C.uint8_t(s.NXDNTXLevel)
+	d.ysftx_hang = C.uint8_t(s.YSFTXHang)
+	d.pocsagtx_level = C.uint8_t(s.POCSAGTXLevel)
+	d.fmtx_level = C.uint8_t(s.FMTXLevel)
+	d.p25tx_hang = C.uint8_t(s.P25TXHang)
+	d.nxdntx_hang = C.uint8_t(s.NXDNTXHang)
+	d.m17tx_level = C.uint8_t(s.M17TXLevel)
+	d.m17tx_hang = C.uint8_t(s.M17TXHang)
+}
+
+func in_transport_mmdvm_ConfigV2(s *C.dmrgo_mmdvm_config_v2_t) (d g_transport_mmdvm.ConfigV2) {
+	d.Simplex = bool(s.simplex)
+	d.UseCOSAsLockout = bool(s.use_cos_as_lockout)
+	d.Debug = bool(s.debug)
+	d.YSFLoDev = bool(s.ysf_lo_dev)
+	d.PTTInvert = bool(s.ptt_invert)
+	d.TXInvert = bool(s.tx_invert)
+	d.RXInvert = bool(s.rx_invert)
+	d.FM = bool(s.fm)
+	d.NXDN = bool(s.nxdn)
+	d.P25 = bool(s.p25)
+	d.YSF = bool(s.ysf)
+	d.DMR = bool(s.dmr)
+	d.DStar = bool(s.d_star)
+	d.POCSAG = bool(s.pocsag)
+	d.TXDelay = uint8(s.tx_delay)
+	d.State = g_transport_mmdvm.Mode(s.state)
+	d.TXDCOffset = uint8(s.txdc_offset)
+	d.RXDCOffset = uint8(s.rxdc_offset)
+	d.RXLevel = uint8(s.rx_level)
+	d.CWIDTXLevel = uint8(s.cwidtx_level)
+	d.DStarTXLevel = uint8(s.d_star_tx_level)
+	d.DMRTXLevel = uint8(s.dmrtx_level)
+	d.YSFTXLevel = uint8(s.ysftx_level)
+	d.P25TXLevel = uint8(s.p25tx_level)
+	d.NXDNTXLevel = uint8(s.nxdntx_level)
+	d.POCSAGTXLevel = uint8(s.pocsagtx_level)
+	d.FMTXLevel = uint8(s.fmtx_level)
+	d.YSFTXHang = uint8(s.ysftx_hang)
+	d.P25TXHang = uint8(s.p25tx_hang)
+	d.NXDNTXHang = uint8(s.nxdntx_hang)
+	d.DMRTrunking = bool(s.dmr_trunking)
+	d.DMRColorCode = uint8(s.dmr_color_code)
+	d.DMRDelay = uint8(s.dmr_delay)
+	d.OscOffset = uint8(s.osc_offset)
+	return
+}
+
+func out_transport_mmdvm_ConfigV2(d *C.dmrgo_mmdvm_config_v2_t, s *g_transport_mmdvm.ConfigV2, oc *outc) {
+	_ = oc
+	d.simplex = C.bool(s.Simplex)
+	d.use_cos_as_lockout = C.bool(s.UseCOSAsLockout)
+	d.debug = C.bool(s.Debug)
+	d.ysf_lo_dev = C.bool(s.YSFLoDev)
+	d.ptt_invert = C.bool(s.PTTInvert)
+	d.tx_invert = C.bool(s.TXInvert)
+	d.rx_invert = C.bool(s.RXInvert)
+	d.fm = C.bool(s.FM)
+	d.nxdn = C.bool(s.NXDN)
+	d.p25 = C.bool(s.P25)
+	d.ysf = C.bool(s.YSF)
+	d.dmr = C.bool(s.DMR)
+	d.d_star = C.bool(s.DStar)
+	d.pocsag = C.bool(s.POCSAG)
+	d.tx_delay = C.uint8_t(s.TXDelay)
+	d.state = C.dmrgo_mmdvm_mode_t(s.State)
+	d.txdc_offset = C.uint8_t(s.TXDCOffset)
+	d.rxdc_offset = C.uint8_t(s.RXDCOffset)
+	d.rx_level = C.uint8_t(s.RXLevel)
+	d.cwidtx_level = C.uint8_t(s.CWIDTXLevel)
+	d.d_star_tx_level = C.uint8_t(s.DStarTXLevel)
+	d.dmrtx_level = C.uint8_t(s.DMRTXLevel)
+	d.ysftx_level = C.uint8_t(s.YSFTXLevel)
+	d.p25tx_level = C.uint8_t(s.P25TXLevel)
+	d.nxdntx_level = C.uint8_t(s.NXDNTXLevel)
+	d.pocsagtx_level = C.uint8_t(s.POCSAGTXLevel)
+	d.fmtx_level = C.uint8_t(s.FMTXLevel)
+	d.ysftx_hang = C.uint8_t(s.YSFTXHang)
+	d.p25tx_hang = C.uint8_t(s.P25TXHang)
+	d.nxdntx_hang = C.uint8_t(s.NXDNTXHang)
+	d.dmr_trunking = C.bool(s.DMRTrunking)
+	d.dmr_color_code = C.uint8_t(s.DMRColorCode)
+	d.dmr_delay = C.uint8_t(s.DMRDelay)
+	d.osc_offset = C.uint8_t(s.OscOffset)
+}
+
+func in_transport_mmdvm_DMRData(s *C.dmrgo_mmdvm_dmr_data_t) (d g_transport_mmdvm.DMRData) {
+	d.Slot = g_enums.Slot(s.slot)
+	d.Lost = bool(s.lost)
+	d.Control = g_transport_mmdvm.Control(s.control)
+	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	d.RSSI = uint16(s.rssi)
+	d.HasRSSI = bool(s.has_rssi)
+	return
+}
+
+func in_transport_mmdvm_DMRStart(s *C.dmrgo_mmdvm_dmr_start_t) (d g_transport_mmdvm.DMRStart) {
+	d.TX = bool(s.tx)
+	return
+}
+
+func out_transport_mmdvm_DMRStart(d *C.dmrgo_mmdvm_dmr_start_t, s *g_transport_mmdvm.DMRStart, oc *outc) {
+	_ = oc
+	d.tx = C.bool(s.TX)
+}
+
+func in_transport_mmdvm_Debug(s *C.dmrgo_mmdvm_debug_t) (d g_transport_mmdvm.Debug) {
+	d.Command = g_transport_mmdvm.Command(s.command)
+	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
+	d.N = *(*[4]int16)(unsafe.Pointer(&s.n))
+	return
+}
+
+func in_transport_mmdvm_Frame(s *C.dmrgo_mmdvm_frame_t) (d g_transport_mmdvm.Frame) {
+	d.Command = g_transport_mmdvm.Command(s.command)
+	d.Payload = unsafe.Slice((*byte)(unsafe.Pointer(s.payload)), int(s.payload_len))
+	return
+}
+
+func out_transport_mmdvm_DMRData(d *C.dmrgo_mmdvm_dmr_data_t, s *g_transport_mmdvm.DMRData, oc *outc) {
+	_ = oc
+	d.slot = C.dmrgo_enums_slot_t(s.Slot)
+	d.lost = C.bool(s.Lost)
+	d.control = C.dmrgo_mmdvm_control_t(s.Control)
+	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
+	d.rssi = C.uint16_t(s.RSSI)
+	d.has_rssi = C.bool(s.HasRSSI)
+}
+
+func out_transport_mmdvm_Debug(d *C.dmrgo_mmdvm_debug_t, s *g_transport_mmdvm.Debug, oc *outc) {
+	_ = oc
+	d.command = C.dmrgo_mmdvm_command_t(s.Command)
+	d.text = (*C.uint8_t)(arenaCopy(oc, s.Text))
+	d.text_len = C.size_t(len(s.Text))
+	*(*[4]int16)(unsafe.Pointer(&d.n)) = s.N
+}
+
+func out_transport_mmdvm_StatusV1(d *C.dmrgo_mmdvm_status_v1_t, s *g_transport_mmdvm.StatusV1, oc *outc) {
+	_ = oc
+	d.m17 = C.bool(s.M17)
+	d.pocsag = C.bool(s.POCSAG)
+	d.nxdn = C.bool(s.NXDN)
+	d.p25 = C.bool(s.P25)
+	d.ysf = C.bool(s.YSF)
+	d.dmr = C.bool(s.DMR)
+	d.d_star = C.bool(s.DStar)
+	d.state = C.dmrgo_mmdvm_mode_t(s.State)
+	d.cd = C.bool(s.CD)
+	d.dac_overflow = C.bool(s.DACOverflow)
+	d.lockout = C.bool(s.Lockout)
+	d.tx_overflow = C.bool(s.TXOverflow)
+	d.rx_overflow = C.bool(s.RXOverflow)
+	d.adc_overflow = C.bool(s.ADCOverflow)
+	d.tx = C.bool(s.TX)
+	d.d_star_space = C.uint8_t(s.DStarSpace)
+	d.dmr_space1 = C.uint8_t(s.DMRSpace1)
+	d.dmr_space2 = C.uint8_t(s.DMRSpace2)
+	d.ysf_space = C.uint8_t(s.YSFSpace)
+	d.p25_space = C.uint8_t(s.P25Space)
+	d.nxdn_space = C.uint8_t(s.NXDNSpace)
+	d.pocsag_space = C.uint8_t(s.POCSAGSpace)
+	d.m17_space = C.uint8_t(s.M17Space)
+}
+
+func out_transport_mmdvm_StatusV2(d *C.dmrgo_mmdvm_status_v2_t, s *g_transport_mmdvm.StatusV2, oc *outc) {
+	_ = oc
+	d.state = C.dmrgo_mmdvm_mode_t(s.State)
+	d.cd = C.bool(s.CD)
+	d.dac_overflow = C.bool(s.DACOverflow)
+	d.lockout = C.bool(s.Lockout)
+	d.tx_overflow = C.bool(s.TXOverflow)
+	d.rx_overflow = C.bool(s.RXOverflow)
+	d.adc_overflow = C.bool(s.ADCOverflow)
+	d.tx = C.bool(s.TX)
+	d.d_star_space = C.uint8_t(s.DStarSpace)
+	d.dmr_space1 = C.uint8_t(s.DMRSpace1)
+	d.dmr_space2 = C.uint8_t(s.DMRSpace2)
+	d.ysf_space = C.uint8_t(s.YSFSpace)
+	d.p25_space = C.uint8_t(s.P25Space)
+	d.nxdn_space = C.uint8_t(s.NXDNSpace)
+	d.fm_space = C.uint8_t(s.FMSpace)
+	d.pocsag_space = C.uint8_t(s.POCSAGSpace)
+}
+
+func out_transport_mmdvm_Version(d *C.dmrgo_mmdvm_version_t, s *g_transport_mmdvm.Version, oc *outc) {
+	_ = oc
+	d.protocol = C.uint8_t(s.Protocol)
+	d.capabilities = C.dmrgo_mmdvm_capabilities_t(s.Capabilities)
+	d.cpu = C.dmrgo_mmdvm_cpu_t(s.CPU)
+	*(*[16]byte)(unsafe.Pointer(&d.udid)) = s.UDID
+	d.description = (*C.uint8_t)(arenaCopy(oc, s.Description))
+	d.description_len = C.size_t(len(s.Description))
+}
+
+func out_transport_mmdvm_Frame(d *C.dmrgo_mmdvm_frame_t, s *g_transport_mmdvm.Frame, oc *outc) {
+	_ = oc
+	d.command = C.dmrgo_mmdvm_command_t(s.Command)
+	d.payload = (*C.uint8_t)(arenaCopy(oc, s.Payload))
+	d.payload_len = C.size_t(len(s.Payload))
+}
+
+func in_transport_mmdvm_StatusV1(s *C.dmrgo_mmdvm_status_v1_t) (d g_transport_mmdvm.StatusV1) {
+	d.M17 = bool(s.m17)
+	d.POCSAG = bool(s.pocsag)
+	d.NXDN = bool(s.nxdn)
+	d.P25 = bool(s.p25)
+	d.YSF = bool(s.ysf)
+	d.DMR = bool(s.dmr)
+	d.DStar = bool(s.d_star)
+	d.State = g_transport_mmdvm.Mode(s.state)
+	d.CD = bool(s.cd)
+	d.DACOverflow = bool(s.dac_overflow)
+	d.Lockout = bool(s.lockout)
+	d.TXOverflow = bool(s.tx_overflow)
+	d.RXOverflow = bool(s.rx_overflow)
+	d.ADCOverflow = bool(s.adc_overflow)
+	d.TX = bool(s.tx)
+	d.DStarSpace = uint8(s.d_star_space)
+	d.DMRSpace1 = uint8(s.dmr_space1)
+	d.DMRSpace2 = uint8(s.dmr_space2)
+	d.YSFSpace = uint8(s.ysf_space)
+	d.P25Space = uint8(s.p25_space)
+	d.NXDNSpace = uint8(s.nxdn_space)
+	d.POCSAGSpace = uint8(s.pocsag_space)
+	d.M17Space = uint8(s.m17_space)
+	return
+}
+
+func in_transport_mmdvm_StatusV2(s *C.dmrgo_mmdvm_status_v2_t) (d g_transport_mmdvm.StatusV2) {
+	d.State = g_transport_mmdvm.Mode(s.state)
+	d.CD = bool(s.cd)
+	d.DACOverflow = bool(s.dac_overflow)
+	d.Lockout = bool(s.lockout)
+	d.TXOverflow = bool(s.tx_overflow)
+	d.RXOverflow = bool(s.rx_overflow)
+	d.ADCOverflow = bool(s.adc_overflow)
+	d.TX = bool(s.tx)
+	d.DStarSpace = uint8(s.d_star_space)
+	d.DMRSpace1 = uint8(s.dmr_space1)
+	d.DMRSpace2 = uint8(s.dmr_space2)
+	d.YSFSpace = uint8(s.ysf_space)
+	d.P25Space = uint8(s.p25_space)
+	d.NXDNSpace = uint8(s.nxdn_space)
+	d.FMSpace = uint8(s.fm_space)
+	d.POCSAGSpace = uint8(s.pocsag_space)
+	return
+}
+
+func in_transport_mmdvm_Version(s *C.dmrgo_mmdvm_version_t) (d g_transport_mmdvm.Version) {
+	d.Protocol = uint8(s.protocol)
+	d.Capabilities = g_transport_mmdvm.Capabilities(s.capabilities)
+	d.CPU = g_transport_mmdvm.CPU(s.cpu)
+	d.UDID = *(*[16]byte)(unsafe.Pointer(&s.udid))
+	d.Description = unsafe.Slice((*byte)(unsafe.Pointer(s.description)), int(s.description_len))
+	return
+}
+
 func out_trunk_Tune(d *C.dmrgo_trunk_tune_t, s *g_trunk.Tune, oc *outc) {
 	_ = oc
 	d.channel = C.uint16_t(s.Channel)
@@ -6485,6 +6811,152 @@ func out_transport_ipsc_Voice(d *C.dmrgo_ipsc_voice_t, s *g_transport_ipsc.Voice
 
 func fromC_transport_ipsc_Voice(s *C.dmrgo_ipsc_voice_t) g_transport_ipsc.Voice {
 	return in_transport_ipsc_Voice(s)
+}
+
+func in_transport_mmdvm_Ack(s *C.dmrgo_mmdvm_ack_t) (d g_transport_mmdvm.Ack) {
+	d.Command = g_transport_mmdvm.Command(s.command)
+	return
+}
+
+func out_transport_mmdvm_Ack(d *C.dmrgo_mmdvm_ack_t, s *g_transport_mmdvm.Ack, oc *outc) {
+	_ = oc
+	d.command = C.dmrgo_mmdvm_command_t(s.Command)
+}
+
+func fromC_transport_mmdvm_Ack(s *C.dmrgo_mmdvm_ack_t) g_transport_mmdvm.Ack {
+	return in_transport_mmdvm_Ack(s)
+}
+
+func fromC_transport_mmdvm_ConfigV1(s *C.dmrgo_mmdvm_config_v1_t) g_transport_mmdvm.ConfigV1 {
+	return in_transport_mmdvm_ConfigV1(s)
+}
+
+func fromC_transport_mmdvm_ConfigV2(s *C.dmrgo_mmdvm_config_v2_t) g_transport_mmdvm.ConfigV2 {
+	return in_transport_mmdvm_ConfigV2(s)
+}
+
+func in_transport_mmdvm_DMRAbort(s *C.dmrgo_mmdvm_dmr_abort_t) (d g_transport_mmdvm.DMRAbort) {
+	d.Slot = uint8(s.slot)
+	return
+}
+
+func out_transport_mmdvm_DMRAbort(d *C.dmrgo_mmdvm_dmr_abort_t, s *g_transport_mmdvm.DMRAbort, oc *outc) {
+	_ = oc
+	d.slot = C.uint8_t(s.Slot)
+}
+
+func fromC_transport_mmdvm_DMRAbort(s *C.dmrgo_mmdvm_dmr_abort_t) g_transport_mmdvm.DMRAbort {
+	return in_transport_mmdvm_DMRAbort(s)
+}
+
+func in_transport_mmdvm_DMRAloha(s *C.dmrgo_mmdvm_dmr_aloha_t) (d g_transport_mmdvm.DMRAloha) {
+	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	return
+}
+
+func out_transport_mmdvm_DMRAloha(d *C.dmrgo_mmdvm_dmr_aloha_t, s *g_transport_mmdvm.DMRAloha, oc *outc) {
+	_ = oc
+	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
+}
+
+func fromC_transport_mmdvm_DMRAloha(s *C.dmrgo_mmdvm_dmr_aloha_t) g_transport_mmdvm.DMRAloha {
+	return in_transport_mmdvm_DMRAloha(s)
+}
+
+func fromC_transport_mmdvm_DMRData(s *C.dmrgo_mmdvm_dmr_data_t) g_transport_mmdvm.DMRData {
+	return in_transport_mmdvm_DMRData(s)
+}
+
+func in_transport_mmdvm_DMRShortLC(s *C.dmrgo_mmdvm_dmr_short_lc_t) (d g_transport_mmdvm.DMRShortLC) {
+	d.LC = *(*[9]byte)(unsafe.Pointer(&s.lc))
+	return
+}
+
+func out_transport_mmdvm_DMRShortLC(d *C.dmrgo_mmdvm_dmr_short_lc_t, s *g_transport_mmdvm.DMRShortLC, oc *outc) {
+	_ = oc
+	*(*[9]byte)(unsafe.Pointer(&d.lc)) = s.LC
+}
+
+func fromC_transport_mmdvm_DMRShortLC(s *C.dmrgo_mmdvm_dmr_short_lc_t) g_transport_mmdvm.DMRShortLC {
+	return in_transport_mmdvm_DMRShortLC(s)
+}
+
+func fromC_transport_mmdvm_DMRStart(s *C.dmrgo_mmdvm_dmr_start_t) g_transport_mmdvm.DMRStart {
+	return in_transport_mmdvm_DMRStart(s)
+}
+
+func fromC_transport_mmdvm_Debug(s *C.dmrgo_mmdvm_debug_t) g_transport_mmdvm.Debug {
+	return in_transport_mmdvm_Debug(s)
+}
+
+func fromC_transport_mmdvm_Frame(s *C.dmrgo_mmdvm_frame_t) g_transport_mmdvm.Frame {
+	return in_transport_mmdvm_Frame(s)
+}
+
+func in_transport_mmdvm_Nak(s *C.dmrgo_mmdvm_nak_t) (d g_transport_mmdvm.Nak) {
+	d.Command = g_transport_mmdvm.Command(s.command)
+	d.Reason = uint8(s.reason)
+	return
+}
+
+func out_transport_mmdvm_Nak(d *C.dmrgo_mmdvm_nak_t, s *g_transport_mmdvm.Nak, oc *outc) {
+	_ = oc
+	d.command = C.dmrgo_mmdvm_command_t(s.Command)
+	d.reason = C.uint8_t(s.Reason)
+}
+
+func fromC_transport_mmdvm_Nak(s *C.dmrgo_mmdvm_nak_t) g_transport_mmdvm.Nak {
+	return in_transport_mmdvm_Nak(s)
+}
+
+func in_transport_mmdvm_SetFreq(s *C.dmrgo_mmdvm_set_freq_t) (d g_transport_mmdvm.SetFreq) {
+	d.Reserved = uint8(s.reserved)
+	d.RX = uint32(s.rx)
+	d.TX = uint32(s.tx)
+	d.RFLevel = uint8(s.rf_level)
+	d.POCSAG = uint32(s.pocsag)
+	d.Size = uint8(s.size)
+	return
+}
+
+func out_transport_mmdvm_SetFreq(d *C.dmrgo_mmdvm_set_freq_t, s *g_transport_mmdvm.SetFreq, oc *outc) {
+	_ = oc
+	d.reserved = C.uint8_t(s.Reserved)
+	d.rx = C.uint32_t(s.RX)
+	d.tx = C.uint32_t(s.TX)
+	d.rf_level = C.uint8_t(s.RFLevel)
+	d.pocsag = C.uint32_t(s.POCSAG)
+	d.size = C.uint8_t(s.Size)
+}
+
+func fromC_transport_mmdvm_SetFreq(s *C.dmrgo_mmdvm_set_freq_t) g_transport_mmdvm.SetFreq {
+	return in_transport_mmdvm_SetFreq(s)
+}
+
+func in_transport_mmdvm_SetMode(s *C.dmrgo_mmdvm_set_mode_t) (d g_transport_mmdvm.SetMode) {
+	d.Mode = g_transport_mmdvm.Mode(s.mode)
+	return
+}
+
+func out_transport_mmdvm_SetMode(d *C.dmrgo_mmdvm_set_mode_t, s *g_transport_mmdvm.SetMode, oc *outc) {
+	_ = oc
+	d.mode = C.dmrgo_mmdvm_mode_t(s.Mode)
+}
+
+func fromC_transport_mmdvm_SetMode(s *C.dmrgo_mmdvm_set_mode_t) g_transport_mmdvm.SetMode {
+	return in_transport_mmdvm_SetMode(s)
+}
+
+func fromC_transport_mmdvm_StatusV1(s *C.dmrgo_mmdvm_status_v1_t) g_transport_mmdvm.StatusV1 {
+	return in_transport_mmdvm_StatusV1(s)
+}
+
+func fromC_transport_mmdvm_StatusV2(s *C.dmrgo_mmdvm_status_v2_t) g_transport_mmdvm.StatusV2 {
+	return in_transport_mmdvm_StatusV2(s)
+}
+
+func fromC_transport_mmdvm_Version(s *C.dmrgo_mmdvm_version_t) g_transport_mmdvm.Version {
+	return in_transport_mmdvm_Version(s)
 }
 
 func in_trunk_Access(s *C.dmrgo_trunk_access_t) (d g_trunk.Access) {
@@ -32363,6 +32835,1324 @@ func dmrgo_ipsc_auth_parse_key(c_s *C.char, c_s_len C.size_t, c_out *C.uint8_t) 
 	return C.DMRGO_OK
 }
 
+//export dmrgo_mmdvm_ack_append_binary
+func dmrgo_mmdvm_ack_append_binary(c_self *C.dmrgo_mmdvm_ack_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.Ack
+	x = *(*g_transport_mmdvm.Ack)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_transport_mmdvm.Ack)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_ack_string
+func dmrgo_mmdvm_ack_string(c_self *C.dmrgo_mmdvm_ack_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.Ack
+	x = *(*g_transport_mmdvm.Ack)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_transport_mmdvm.Ack)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_append_frame
+func dmrgo_mmdvm_append_frame(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_c C.dmrgo_mmdvm_command_t, c_payload *C.uint8_t, c_payload_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_payload == nil && c_payload_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_payload []byte
+	a_payload = unsafe.Slice((*byte)(unsafe.Pointer(c_payload)), int(c_payload_len))
+	r0, r1 := g_transport_mmdvm.AppendFrame(a_dst, g_transport_mmdvm.Command(c_c), a_payload)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_capabilities_has
+func dmrgo_mmdvm_capabilities_has(c_self C.dmrgo_mmdvm_capabilities_t, c_m C.dmrgo_mmdvm_capabilities_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_transport_mmdvm.Capabilities(c_self).Has(g_transport_mmdvm.Capabilities(c_m))
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_command_string
+func dmrgo_mmdvm_command_string(c_self C.dmrgo_mmdvm_command_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_transport_mmdvm.Command(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_config_v1_append_binary
+func dmrgo_mmdvm_config_v1_append_binary(c_self *C.dmrgo_mmdvm_config_v1_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.ConfigV1
+	x = in_transport_mmdvm_ConfigV1(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_transport_mmdvm_ConfigV1(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_config_v1_string
+func dmrgo_mmdvm_config_v1_string(c_self *C.dmrgo_mmdvm_config_v1_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.ConfigV1
+	x = in_transport_mmdvm_ConfigV1(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_transport_mmdvm_ConfigV1(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_config_v2_append_binary
+func dmrgo_mmdvm_config_v2_append_binary(c_self *C.dmrgo_mmdvm_config_v2_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.ConfigV2
+	x = in_transport_mmdvm_ConfigV2(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_transport_mmdvm_ConfigV2(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_config_v2_string
+func dmrgo_mmdvm_config_v2_string(c_self *C.dmrgo_mmdvm_config_v2_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.ConfigV2
+	x = in_transport_mmdvm_ConfigV2(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_transport_mmdvm_ConfigV2(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_control_data_sync
+func dmrgo_mmdvm_control_data_sync(c_self C.dmrgo_mmdvm_control_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_transport_mmdvm.Control(c_self).DataSync()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_control_data_type
+func dmrgo_mmdvm_control_data_type(c_self C.dmrgo_mmdvm_control_t, c_out *C.dmrgo_enums_data_type_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_transport_mmdvm.Control(c_self).DataType()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_enums_data_type_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_control_idle
+func dmrgo_mmdvm_control_idle(c_self C.dmrgo_mmdvm_control_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_transport_mmdvm.Control(c_self).Idle()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_control_n
+func dmrgo_mmdvm_control_n(c_self C.dmrgo_mmdvm_control_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_transport_mmdvm.Control(c_self).N()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint8_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_control_voice_sync
+func dmrgo_mmdvm_control_voice_sync(c_self C.dmrgo_mmdvm_control_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_transport_mmdvm.Control(c_self).VoiceSync()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_dmr_abort_append_binary
+func dmrgo_mmdvm_dmr_abort_append_binary(c_self *C.dmrgo_mmdvm_dmr_abort_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.DMRAbort
+	x = *(*g_transport_mmdvm.DMRAbort)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_transport_mmdvm.DMRAbort)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_dmr_abort_string
+func dmrgo_mmdvm_dmr_abort_string(c_self *C.dmrgo_mmdvm_dmr_abort_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.DMRAbort
+	x = *(*g_transport_mmdvm.DMRAbort)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_transport_mmdvm.DMRAbort)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_dmr_aloha_append_binary
+func dmrgo_mmdvm_dmr_aloha_append_binary(c_self *C.dmrgo_mmdvm_dmr_aloha_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.DMRAloha
+	x = *(*g_transport_mmdvm.DMRAloha)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_transport_mmdvm.DMRAloha)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_dmr_aloha_string
+func dmrgo_mmdvm_dmr_aloha_string(c_self *C.dmrgo_mmdvm_dmr_aloha_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.DMRAloha
+	x = *(*g_transport_mmdvm.DMRAloha)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_transport_mmdvm.DMRAloha)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_dmr_data_append_binary
+func dmrgo_mmdvm_dmr_data_append_binary(c_self *C.dmrgo_mmdvm_dmr_data_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.DMRData
+	x = in_transport_mmdvm_DMRData(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_dmr_data_command
+func dmrgo_mmdvm_dmr_data_command(c_self *C.dmrgo_mmdvm_dmr_data_t, c_out *C.dmrgo_mmdvm_command_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.DMRData
+	x = in_transport_mmdvm_DMRData(&(*c_self))
+	r0 := x.Command()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_mmdvm_command_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_dmr_data_hint
+func dmrgo_mmdvm_dmr_data_hint(c_self *C.dmrgo_mmdvm_dmr_data_t, c_out *C.dmrgo_layer2_hint_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.DMRData
+	x = in_transport_mmdvm_DMRData(&(*c_self))
+	r0 := x.Hint()
+	_ = r0
+	if c_out != nil {
+		out_layer2_Hint(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_dmr_short_lc_append_binary
+func dmrgo_mmdvm_dmr_short_lc_append_binary(c_self *C.dmrgo_mmdvm_dmr_short_lc_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.DMRShortLC
+	x = *(*g_transport_mmdvm.DMRShortLC)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_transport_mmdvm.DMRShortLC)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_dmr_short_lc_string
+func dmrgo_mmdvm_dmr_short_lc_string(c_self *C.dmrgo_mmdvm_dmr_short_lc_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.DMRShortLC
+	x = *(*g_transport_mmdvm.DMRShortLC)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_transport_mmdvm.DMRShortLC)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_dmr_start_append_binary
+func dmrgo_mmdvm_dmr_start_append_binary(c_self *C.dmrgo_mmdvm_dmr_start_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.DMRStart
+	x = in_transport_mmdvm_DMRStart(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_transport_mmdvm_DMRStart(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_dmr_start_string
+func dmrgo_mmdvm_dmr_start_string(c_self *C.dmrgo_mmdvm_dmr_start_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.DMRStart
+	x = in_transport_mmdvm_DMRStart(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_transport_mmdvm_DMRStart(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_debug_append_binary
+func dmrgo_mmdvm_debug_append_binary(c_self *C.dmrgo_mmdvm_debug_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.Debug
+	x = in_transport_mmdvm_Debug(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_debug_count
+func dmrgo_mmdvm_debug_count(c_self *C.dmrgo_mmdvm_debug_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.Debug
+	x = in_transport_mmdvm_Debug(&(*c_self))
+	r0 := x.Count()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_decode_ack
+func dmrgo_mmdvm_decode_ack(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_ack_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_transport_mmdvm.DecodeAck(a_data)
+	_ = r0
+	if c_out != nil {
+		*(*g_transport_mmdvm.Ack)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_decode_config_v1
+func dmrgo_mmdvm_decode_config_v1(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_config_v1_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_transport_mmdvm.DecodeConfigV1(a_data)
+	_ = r0
+	if c_out != nil {
+		out_transport_mmdvm_ConfigV1(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_decode_config_v2
+func dmrgo_mmdvm_decode_config_v2(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_config_v2_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_transport_mmdvm.DecodeConfigV2(a_data)
+	_ = r0
+	if c_out != nil {
+		out_transport_mmdvm_ConfigV2(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_decode_dmr_abort
+func dmrgo_mmdvm_decode_dmr_abort(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_dmr_abort_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_transport_mmdvm.DecodeDMRAbort(a_data)
+	_ = r0
+	if c_out != nil {
+		*(*g_transport_mmdvm.DMRAbort)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_decode_dmr_aloha
+func dmrgo_mmdvm_decode_dmr_aloha(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_dmr_aloha_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_transport_mmdvm.DecodeDMRAloha(a_data)
+	_ = r0
+	if c_out != nil {
+		*(*g_transport_mmdvm.DMRAloha)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_decode_dmr_data
+func dmrgo_mmdvm_decode_dmr_data(c_f *C.dmrgo_mmdvm_frame_t, c_out *C.dmrgo_mmdvm_dmr_data_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_f == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_f g_transport_mmdvm.Frame
+	a_f = in_transport_mmdvm_Frame(&(*c_f))
+	r0, r1 := g_transport_mmdvm.DecodeDMRData(a_f)
+	_ = r0
+	if c_out != nil {
+		out_transport_mmdvm_DMRData(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_decode_dmr_short_lc
+func dmrgo_mmdvm_decode_dmr_short_lc(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_dmr_short_lc_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_transport_mmdvm.DecodeDMRShortLC(a_data)
+	_ = r0
+	if c_out != nil {
+		*(*g_transport_mmdvm.DMRShortLC)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_decode_dmr_start
+func dmrgo_mmdvm_decode_dmr_start(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_dmr_start_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_transport_mmdvm.DecodeDMRStart(a_data)
+	_ = r0
+	if c_out != nil {
+		out_transport_mmdvm_DMRStart(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_decode_debug
+func dmrgo_mmdvm_decode_debug(c_f *C.dmrgo_mmdvm_frame_t, c_out *C.dmrgo_mmdvm_debug_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_f == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_f g_transport_mmdvm.Frame
+	a_f = in_transport_mmdvm_Frame(&(*c_f))
+	r0, r1 := g_transport_mmdvm.DecodeDebug(a_f)
+	_ = r0
+	if c_out != nil {
+		out_transport_mmdvm_Debug(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_decode_nak
+func dmrgo_mmdvm_decode_nak(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_nak_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_transport_mmdvm.DecodeNak(a_data)
+	_ = r0
+	if c_out != nil {
+		*(*g_transport_mmdvm.Nak)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_decode_set_freq
+func dmrgo_mmdvm_decode_set_freq(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_set_freq_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_transport_mmdvm.DecodeSetFreq(a_data)
+	_ = r0
+	if c_out != nil {
+		*(*g_transport_mmdvm.SetFreq)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_decode_set_mode
+func dmrgo_mmdvm_decode_set_mode(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_set_mode_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_transport_mmdvm.DecodeSetMode(a_data)
+	_ = r0
+	if c_out != nil {
+		*(*g_transport_mmdvm.SetMode)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_decode_status_v1
+func dmrgo_mmdvm_decode_status_v1(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_status_v1_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_transport_mmdvm.DecodeStatusV1(a_data)
+	_ = r0
+	if c_out != nil {
+		out_transport_mmdvm_StatusV1(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_decode_status_v2
+func dmrgo_mmdvm_decode_status_v2(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_mmdvm_status_v2_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_transport_mmdvm.DecodeStatusV2(a_data)
+	_ = r0
+	if c_out != nil {
+		out_transport_mmdvm_StatusV2(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_decode_version
+func dmrgo_mmdvm_decode_version(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_mmdvm_version_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	r0, r1 := g_transport_mmdvm.DecodeVersion(a_p)
+	_ = r0
+	if c_out != nil {
+		out_transport_mmdvm_Version(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_mode_string
+func dmrgo_mmdvm_mode_string(c_self C.dmrgo_mmdvm_mode_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_transport_mmdvm.Mode(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_nak_append_binary
+func dmrgo_mmdvm_nak_append_binary(c_self *C.dmrgo_mmdvm_nak_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.Nak
+	x = *(*g_transport_mmdvm.Nak)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_transport_mmdvm.Nak)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_nak_string
+func dmrgo_mmdvm_nak_string(c_self *C.dmrgo_mmdvm_nak_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.Nak
+	x = *(*g_transport_mmdvm.Nak)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_transport_mmdvm.Nak)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_next
+func dmrgo_mmdvm_next(c_p *C.uint8_t, c_p_len C.size_t, c_f *C.dmrgo_mmdvm_frame_t, c_n *C.int64_t, c_st *C.dmrgo_mmdvm_status_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	r0, r1, r2 := g_transport_mmdvm.Next(a_p)
+	_ = r0
+	_ = r1
+	_ = r2
+	if c_f != nil {
+		out_transport_mmdvm_Frame(&(*c_f), &r0, oc)
+	}
+	if c_n != nil {
+		*c_n = C.int64_t(r1)
+	}
+	if c_st != nil {
+		*c_st = C.dmrgo_mmdvm_status_t(r2)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_set_freq_append_binary
+func dmrgo_mmdvm_set_freq_append_binary(c_self *C.dmrgo_mmdvm_set_freq_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.SetFreq
+	x = *(*g_transport_mmdvm.SetFreq)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_transport_mmdvm.SetFreq)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_set_freq_string
+func dmrgo_mmdvm_set_freq_string(c_self *C.dmrgo_mmdvm_set_freq_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.SetFreq
+	x = *(*g_transport_mmdvm.SetFreq)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_transport_mmdvm.SetFreq)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_set_mode_append_binary
+func dmrgo_mmdvm_set_mode_append_binary(c_self *C.dmrgo_mmdvm_set_mode_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.SetMode
+	x = *(*g_transport_mmdvm.SetMode)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_transport_mmdvm.SetMode)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_set_mode_string
+func dmrgo_mmdvm_set_mode_string(c_self *C.dmrgo_mmdvm_set_mode_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.SetMode
+	x = *(*g_transport_mmdvm.SetMode)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_transport_mmdvm.SetMode)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_status_v1_append_binary
+func dmrgo_mmdvm_status_v1_append_binary(c_self *C.dmrgo_mmdvm_status_v1_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.StatusV1
+	x = in_transport_mmdvm_StatusV1(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_transport_mmdvm_StatusV1(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_status_v1_string
+func dmrgo_mmdvm_status_v1_string(c_self *C.dmrgo_mmdvm_status_v1_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.StatusV1
+	x = in_transport_mmdvm_StatusV1(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_transport_mmdvm_StatusV1(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_status_v2_append_binary
+func dmrgo_mmdvm_status_v2_append_binary(c_self *C.dmrgo_mmdvm_status_v2_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.StatusV2
+	x = in_transport_mmdvm_StatusV2(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_transport_mmdvm_StatusV2(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_status_v2_string
+func dmrgo_mmdvm_status_v2_string(c_self *C.dmrgo_mmdvm_status_v2_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.StatusV2
+	x = in_transport_mmdvm_StatusV2(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_transport_mmdvm_StatusV2(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_version_append_binary
+func dmrgo_mmdvm_version_append_binary(c_self *C.dmrgo_mmdvm_version_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.Version
+	x = in_transport_mmdvm_Version(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_access_applies
 func dmrgo_trunk_access_applies(c_self *C.dmrgo_trunk_access_t, c_ms C.uint32_t, c_emergency C.bool, c_out *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -37321,6 +39111,12 @@ func errCode(err error) C.int {
 			return -211
 		case g_transport_ipsc.ErrShort:
 			return -212
+		case g_transport_mmdvm.ErrCommand:
+			return -213
+		case g_transport_mmdvm.ErrLength:
+			return -214
+		case g_transport_mmdvm.ErrShort:
+			return -215
 		case g_trunk.ErrBusy:
 			return -134
 		case g_trunk.ErrChannelNumber:
@@ -37634,6 +39430,12 @@ func codeErr(code C.int) error {
 		return g_transport_ipsc.ErrLength
 	case -212:
 		return g_transport_ipsc.ErrShort
+	case -213:
+		return g_transport_mmdvm.ErrCommand
+	case -214:
+		return g_transport_mmdvm.ErrLength
+	case -215:
+		return g_transport_mmdvm.ErrShort
 	case -134:
 		return g_trunk.ErrBusy
 	case -135:

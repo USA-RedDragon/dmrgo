@@ -172,6 +172,12 @@ const char *dmrgo__gen_strerror(int status) {
 		return "ipsc.ErrLength";
 	case -212:
 		return "ipsc.ErrShort";
+	case -213:
+		return "mmdvm.ErrCommand";
+	case -214:
+		return "mmdvm.ErrLength";
+	case -215:
+		return "mmdvm.ErrShort";
 	case -105:
 		return "trunk.ConfigError";
 	case -134:

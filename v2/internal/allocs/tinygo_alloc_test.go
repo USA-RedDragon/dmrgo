@@ -24,6 +24,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/hytera"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm"
 	ipscauth "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder/dvsi"
@@ -516,6 +517,49 @@ func tinyDMRDOps(t *testing.T) []tinyOp {
 	}}}
 }
 
+func tinyMMDVMRun(stream, buf, out []byte) ([]byte, []byte) {
+	for len(stream) > 0 {
+		f, n, st := mmdvm.Next(stream)
+		if st == mmdvm.StatusMore {
+			break
+		}
+		stream = stream[n:]
+		if st != mmdvm.StatusFrame {
+			continue
+		}
+		if d, err := mmdvm.DecodeDMRData(f); err == nil {
+			buf, _ = d.AppendBinary(buf[:0])
+			out, _ = mmdvm.AppendFrame(out[:0], d.Command(), buf)
+			_ = d.Hint()
+		}
+		if s, err := mmdvm.DecodeStatusV1(f.Payload); err == nil {
+			buf, _ = s.AppendBinary(buf[:0])
+		}
+		if c, err := mmdvm.DecodeConfigV2(f.Payload); err == nil {
+			buf, _ = c.AppendBinary(buf[:0])
+		}
+		if v, err := mmdvm.DecodeVersion(f.Payload); err == nil {
+			buf, _ = v.AppendBinary(buf[:0])
+		}
+	}
+	return buf, out
+}
+
+func tinyMMDVMOps(t *testing.T) []tinyOp {
+	t.Helper()
+	var p [12]byte
+	raw := tinyOK(layer2.BuildDataBurst(p, enums.DataTypeVoiceLCHeader, 1, layer2.SyncSourceBS))
+	d := mmdvm.DMRData{Slot: enums.Slot2, Control: mmdvm.ControlDataSync | 1, Burst: raw, RSSI: 300, HasRSSI: true}
+	pl := tinyOK(d.AppendBinary(make([]byte, 0, 40)))
+	stream := tinyOK(mmdvm.AppendFrame(make([]byte, 0, 128), d.Command(), pl))
+	stream = append(stream, 0xE0, 0x0E, 0x01, 0x02, 0, 0, 0, 0x1C, 0x1C, 0, 0, 0, 0, 0)
+	buf := make([]byte, 0, 64)
+	out := make([]byte, 0, 64)
+	return []tinyOp{{"mmdvm", func() {
+		buf, out = tinyMMDVMRun(stream, buf, out)
+	}}}
+}
+
 func tinyHyteraRun(frame, hb, cmd, buf []byte) []byte {
 	f, _ := hytera.DecodeFrame(frame)
 	buf, _ = f.AppendBinary(buf[:0])
@@ -579,7 +623,7 @@ func TestTinyGoAllocs(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(1))
-	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCSBKOps(t), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r), tinyDVSIOps(t), tinyAppOps(t), tinyDMRDOps(t), tinyIPSCOps(t), tinyHyteraOps(t))
+	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCSBKOps(t), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r), tinyDVSIOps(t), tinyAppOps(t), tinyDMRDOps(t), tinyIPSCOps(t), tinyHyteraOps(t), tinyMMDVMOps(t))
 
 	probe := make([]byte, 0, 1)
 	if b, _ := tinyAlloc(func() { probe = make([]byte, 64) }); b < 64 {

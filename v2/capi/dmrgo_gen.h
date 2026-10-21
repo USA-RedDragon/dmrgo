@@ -473,6 +473,38 @@ typedef struct dmrgo_ipsc_user_t dmrgo_ipsc_user_t;
 typedef struct dmrgo_ipsc_voice_t dmrgo_ipsc_voice_t;
 /* Go: auth.Key. Key holds an IPSC authentication key and the HMAC state that signing with it needs. */
 typedef struct dmrgo_ipsc_auth_key_t dmrgo_ipsc_auth_key_t;
+/* Go: mmdvm.Ack. Ack is the payload of a CommandAck frame from the modem. */
+typedef struct dmrgo_mmdvm_ack_t dmrgo_mmdvm_ack_t;
+/* Go: mmdvm.ConfigV1. ConfigV1 is the payload of a CommandSetConfig frame of protocol 1, as MMDVMHost setConfig1 writes it and the MMDVM_HS firmware reads it. */
+typedef struct dmrgo_mmdvm_config_v1_t dmrgo_mmdvm_config_v1_t;
+/* Go: mmdvm.ConfigV2. ConfigV2 is the payload of a CommandSetConfig frame of protocol 2, as MMDVMHost setConfig2 writes it and the MMDVM firmware reads it. */
+typedef struct dmrgo_mmdvm_config_v2_t dmrgo_mmdvm_config_v2_t;
+/* Go: mmdvm.DMRAbort. DMRAbort is the payload of a CommandDMRAbort frame: it drops the queued bursts of one slot. */
+typedef struct dmrgo_mmdvm_dmr_abort_t dmrgo_mmdvm_dmr_abort_t;
+/* Go: mmdvm.DMRAloha. DMRAloha is the payload of a CommandDMRAloha frame: the C_ALOHA CSBK burst that a Tier III control channel sends. */
+typedef struct dmrgo_mmdvm_dmr_aloha_t dmrgo_mmdvm_dmr_aloha_t;
+/* Go: mmdvm.DMRData. DMRData is a CommandDMRData1 or CommandDMRData2 frame, one burst of slot 1 or 2, or a CommandDMRLost1 or CommandDMRLost2 frame, which tells that the modem lost the signal of the slot. */
+typedef struct dmrgo_mmdvm_dmr_data_t dmrgo_mmdvm_dmr_data_t;
+/* Go: mmdvm.DMRShortLC. DMRShortLC is the payload of a CommandDMRShortLC frame: the Short LC that the modem sends in the CACH, as MMDVMHost CDMRShortLC encodes it. */
+typedef struct dmrgo_mmdvm_dmr_short_lc_t dmrgo_mmdvm_dmr_short_lc_t;
+/* Go: mmdvm.DMRStart. DMRStart is the payload of a CommandDMRStart frame: it starts or stops the duplex transmitter. */
+typedef struct dmrgo_mmdvm_dmr_start_t dmrgo_mmdvm_dmr_start_t;
+/* Go: mmdvm.Debug. Debug is a debug frame from the modem: CommandDebug1 to CommandDebug5, a text and 0 to 4 big-endian numbers, or CommandDebugDump, raw octets. */
+typedef struct dmrgo_mmdvm_debug_t dmrgo_mmdvm_debug_t;
+/* Go: mmdvm.Frame. Frame is one frame of the serial protocol: its command and its payload. */
+typedef struct dmrgo_mmdvm_frame_t dmrgo_mmdvm_frame_t;
+/* Go: mmdvm.Nak. Nak is the payload of a CommandNak frame from the modem. */
+typedef struct dmrgo_mmdvm_nak_t dmrgo_mmdvm_nak_t;
+/* Go: mmdvm.SetFreq. SetFreq is the payload of a CommandSetFreq frame: the RX and TX frequencies, and from current hosts the RF level and the POCSAG TX frequency. */
+typedef struct dmrgo_mmdvm_set_freq_t dmrgo_mmdvm_set_freq_t;
+/* Go: mmdvm.SetMode. SetMode is the payload of a CommandSetMode frame. */
+typedef struct dmrgo_mmdvm_set_mode_t dmrgo_mmdvm_set_mode_t;
+/* Go: mmdvm.StatusV1. StatusV1 is the payload of a CommandGetStatus reply of protocol 1 (MMDVM_HS firmware): the enabled modes, the modem state, its flags and the free space of each TX buffer. */
+typedef struct dmrgo_mmdvm_status_v1_t dmrgo_mmdvm_status_v1_t;
+/* Go: mmdvm.StatusV2. StatusV2 is the payload of a CommandGetStatus reply of protocol 2 (MMDVM firmware): the modem state, its flags and the free space of each TX buffer. */
+typedef struct dmrgo_mmdvm_status_v2_t dmrgo_mmdvm_status_v2_t;
+/* Go: mmdvm.Version. Version is the payload of a CommandGetVersion reply. */
+typedef struct dmrgo_mmdvm_version_t dmrgo_mmdvm_version_t;
 /* Go: trunk.Access. Access is the random access control of the last C_ALOHA of a TSCC (ETSI TS 102 361-4 clause 6.2.1.1, Table 7.19). */
 typedef struct dmrgo_trunk_access_t dmrgo_trunk_access_t;
 /* Go: trunk.CapacityPlusConfig. CapacityPlusConfig configures NewCapacityPlusFollower. */
@@ -736,6 +768,18 @@ typedef uint8_t dmrgo_ipsc_mode_t;
 typedef uint8_t dmrgo_ipsc_opcode_t;
 /* Go: ipsc.VoiceLayout. VoiceLayout is the form of a voice packet, which tells some superframe positions. */
 typedef uint8_t dmrgo_ipsc_voice_layout_t;
+/* Go: mmdvm.CPU. CPU is the processor of a modem of protocol 2. */
+typedef uint8_t dmrgo_mmdvm_cpu_t;
+/* Go: mmdvm.Capabilities. Capabilities is the set of modes that a modem has: octets 4 (low) and 5 (high) of a protocol 2 version reply. */
+typedef uint16_t dmrgo_mmdvm_capabilities_t;
+/* Go: mmdvm.Command. Command is octet 2 of a frame (octet 3 of a long frame): what the frame carries. */
+typedef uint8_t dmrgo_mmdvm_command_t;
+/* Go: mmdvm.Control. Control is the first payload octet of a DMR data frame: how the modem found the burst. */
+typedef uint8_t dmrgo_mmdvm_control_t;
+/* Go: mmdvm.Mode. Mode is a mode of the modem, or a calibration state in a status reply. */
+typedef uint8_t dmrgo_mmdvm_mode_t;
+/* Go: mmdvm.Status. Status is the result of Next. */
+typedef uint8_t dmrgo_mmdvm_status_t;
 /* Go: trunk.OutputKind. OutputKind is the kind of an Output. */
 typedef uint8_t dmrgo_trunk_output_kind_t;
 /* Go: trunk.Reason. Reason tells why a machine lost a TSCC, left a payload channel or failed a request. */
@@ -2644,6 +2688,195 @@ struct dmrgo_ipsc_user_t {
 	dmrgo_ipsc_payload_t data;
 };
 
+struct dmrgo_mmdvm_ack_t {
+	dmrgo_mmdvm_command_t command;
+};
+
+struct dmrgo_mmdvm_config_v1_t {
+	bool simplex;
+	bool use_cos_as_lockout;
+	bool debug;
+	bool ysf_lo_dev;
+	bool ptt_invert;
+	bool tx_invert;
+	bool rx_invert;
+	bool m17;
+	bool pocsag;
+	bool nxdn;
+	bool p25;
+	bool ysf;
+	bool dmr;
+	bool d_star;
+	uint8_t tx_delay;
+	dmrgo_mmdvm_mode_t state;
+	uint8_t rx_level;
+	uint8_t cwidtx_level;
+	uint8_t dmr_color_code;
+	uint8_t dmr_delay;
+	uint8_t osc_offset;
+	uint8_t d_star_tx_level;
+	uint8_t dmrtx_level;
+	uint8_t ysftx_level;
+	uint8_t p25tx_level;
+	uint8_t txdc_offset;
+	uint8_t rxdc_offset;
+	uint8_t nxdntx_level;
+	uint8_t ysftx_hang;
+	uint8_t pocsagtx_level;
+	uint8_t fmtx_level;
+	uint8_t p25tx_hang;
+	uint8_t nxdntx_hang;
+	uint8_t m17tx_level;
+	uint8_t m17tx_hang;
+};
+
+struct dmrgo_mmdvm_config_v2_t {
+	bool simplex;
+	bool use_cos_as_lockout;
+	bool debug;
+	bool ysf_lo_dev;
+	bool ptt_invert;
+	bool tx_invert;
+	bool rx_invert;
+	bool fm;
+	bool nxdn;
+	bool p25;
+	bool ysf;
+	bool dmr;
+	bool d_star;
+	bool pocsag;
+	uint8_t tx_delay;
+	dmrgo_mmdvm_mode_t state;
+	uint8_t txdc_offset;
+	uint8_t rxdc_offset;
+	uint8_t rx_level;
+	uint8_t cwidtx_level;
+	uint8_t d_star_tx_level;
+	uint8_t dmrtx_level;
+	uint8_t ysftx_level;
+	uint8_t p25tx_level;
+	uint8_t nxdntx_level;
+	uint8_t pocsagtx_level;
+	uint8_t fmtx_level;
+	uint8_t ysftx_hang;
+	uint8_t p25tx_hang;
+	uint8_t nxdntx_hang;
+	bool dmr_trunking;
+	uint8_t dmr_color_code;
+	uint8_t dmr_delay;
+	uint8_t osc_offset;
+};
+
+struct dmrgo_mmdvm_dmr_abort_t {
+	uint8_t slot;
+};
+
+struct dmrgo_mmdvm_dmr_aloha_t {
+	dmrgo_layer2_raw_burst_t burst;
+};
+
+struct dmrgo_mmdvm_dmr_data_t {
+	dmrgo_enums_slot_t slot;
+	bool lost;
+	dmrgo_mmdvm_control_t control;
+	dmrgo_layer2_raw_burst_t burst;
+	uint16_t rssi;
+	bool has_rssi;
+};
+
+struct dmrgo_mmdvm_dmr_short_lc_t {
+	uint8_t lc[9];
+};
+
+struct dmrgo_mmdvm_dmr_start_t {
+	bool tx;
+};
+
+struct dmrgo_mmdvm_debug_t {
+	dmrgo_mmdvm_command_t command;
+	uint8_t *text;
+	size_t text_len;
+	int16_t n[4];
+};
+
+struct dmrgo_mmdvm_frame_t {
+	dmrgo_mmdvm_command_t command;
+	uint8_t *payload;
+	size_t payload_len;
+};
+
+struct dmrgo_mmdvm_nak_t {
+	dmrgo_mmdvm_command_t command;
+	uint8_t reason;
+};
+
+struct dmrgo_mmdvm_set_freq_t {
+	uint8_t reserved;
+	uint32_t rx;
+	uint32_t tx;
+	uint8_t rf_level;
+	uint32_t pocsag;
+	uint8_t size;
+};
+
+struct dmrgo_mmdvm_set_mode_t {
+	dmrgo_mmdvm_mode_t mode;
+};
+
+struct dmrgo_mmdvm_status_v1_t {
+	bool m17;
+	bool pocsag;
+	bool nxdn;
+	bool p25;
+	bool ysf;
+	bool dmr;
+	bool d_star;
+	dmrgo_mmdvm_mode_t state;
+	bool cd;
+	bool dac_overflow;
+	bool lockout;
+	bool tx_overflow;
+	bool rx_overflow;
+	bool adc_overflow;
+	bool tx;
+	uint8_t d_star_space;
+	uint8_t dmr_space1;
+	uint8_t dmr_space2;
+	uint8_t ysf_space;
+	uint8_t p25_space;
+	uint8_t nxdn_space;
+	uint8_t pocsag_space;
+	uint8_t m17_space;
+};
+
+struct dmrgo_mmdvm_status_v2_t {
+	dmrgo_mmdvm_mode_t state;
+	bool cd;
+	bool dac_overflow;
+	bool lockout;
+	bool tx_overflow;
+	bool rx_overflow;
+	bool adc_overflow;
+	bool tx;
+	uint8_t d_star_space;
+	uint8_t dmr_space1;
+	uint8_t dmr_space2;
+	uint8_t ysf_space;
+	uint8_t p25_space;
+	uint8_t nxdn_space;
+	uint8_t fm_space;
+	uint8_t pocsag_space;
+};
+
+struct dmrgo_mmdvm_version_t {
+	uint8_t protocol;
+	dmrgo_mmdvm_capabilities_t capabilities;
+	dmrgo_mmdvm_cpu_t cpu;
+	uint8_t udid[16];
+	uint8_t *description;
+	size_t description_len;
+};
+
 struct dmrgo_trunk_access_t {
 	uint8_t mask;
 	uint32_t address;
@@ -3046,6 +3279,9 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ERR_LRRP_SHORT (-188)
 #define DMRGO_ERR_LRRP_TOKEN (-189)
 #define DMRGO_ERR_LRRP_VARINT (-190)
+#define DMRGO_ERR_MMDVM_COMMAND (-213)
+#define DMRGO_ERR_MMDVM_LENGTH (-214)
+#define DMRGO_ERR_MMDVM_SHORT (-215)
 #define DMRGO_ERR_NMEA_CHECKSUM (-152)
 #define DMRGO_ERR_NMEA_FIELD (-153)
 #define DMRGO_ERR_NMEA_SENTENCE (-154)
@@ -4568,6 +4804,170 @@ struct dmrgo_voice_output_t {
 #define DMRGO_IPSC_VOICE_LAYOUT_E ((dmrgo_ipsc_voice_layout_t)3)
 /* Go: auth.TrailerLen. TrailerLen is the length of the authentication trailer in octets. */
 #define DMRGO_IPSC_AUTH_TRAILER_LEN 10
+/* Go: mmdvm.CPUAtmel. The CPU values. */
+#define DMRGO_MMDVM_CPU_ATMEL ((dmrgo_mmdvm_cpu_t)0)
+/* Go: mmdvm.CPUNXP. The CPU values. */
+#define DMRGO_MMDVM_CPUNXP ((dmrgo_mmdvm_cpu_t)1)
+/* Go: mmdvm.CPUST. The CPU values. */
+#define DMRGO_MMDVM_CPUST ((dmrgo_mmdvm_cpu_t)2)
+/* Go: mmdvm.CapDMR. The Capabilities bits. */
+#define DMRGO_MMDVM_CAP_DMR ((dmrgo_mmdvm_capabilities_t)2)
+/* Go: mmdvm.CapDStar. The Capabilities bits. */
+#define DMRGO_MMDVM_CAP_D_STAR ((dmrgo_mmdvm_capabilities_t)1)
+/* Go: mmdvm.CapFM. The Capabilities bits. */
+#define DMRGO_MMDVM_CAP_FM ((dmrgo_mmdvm_capabilities_t)64)
+/* Go: mmdvm.CapNXDN. The Capabilities bits. */
+#define DMRGO_MMDVM_CAP_NXDN ((dmrgo_mmdvm_capabilities_t)16)
+/* Go: mmdvm.CapP25. The Capabilities bits. */
+#define DMRGO_MMDVM_CAP_P25 ((dmrgo_mmdvm_capabilities_t)8)
+/* Go: mmdvm.CapPOCSAG. The Capabilities bits. */
+#define DMRGO_MMDVM_CAP_POCSAG ((dmrgo_mmdvm_capabilities_t)256)
+/* Go: mmdvm.CapYSF. The Capabilities bits. */
+#define DMRGO_MMDVM_CAP_YSF ((dmrgo_mmdvm_capabilities_t)4)
+/* Go: mmdvm.CapabilitiesV1. CapabilitiesV1 is what MMDVMHost assumes for a modem of protocol 1, which does not send its capabilities. */
+#define DMRGO_MMDVM_CAPABILITIES_V1 ((dmrgo_mmdvm_capabilities_t)287)
+/* Go: mmdvm.CommandAck. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_ACK ((dmrgo_mmdvm_command_t)112)
+/* Go: mmdvm.CommandCalData. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_CAL_DATA ((dmrgo_mmdvm_command_t)8)
+/* Go: mmdvm.CommandDMRAbort. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_DMR_ABORT ((dmrgo_mmdvm_command_t)30)
+/* Go: mmdvm.CommandDMRAloha. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_DMR_ALOHA ((dmrgo_mmdvm_command_t)23)
+/* Go: mmdvm.CommandDMRData1. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_DMR_DATA1 ((dmrgo_mmdvm_command_t)24)
+/* Go: mmdvm.CommandDMRData2. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_DMR_DATA2 ((dmrgo_mmdvm_command_t)26)
+/* Go: mmdvm.CommandDMRLost1. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_DMR_LOST1 ((dmrgo_mmdvm_command_t)25)
+/* Go: mmdvm.CommandDMRLost2. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_DMR_LOST2 ((dmrgo_mmdvm_command_t)27)
+/* Go: mmdvm.CommandDMRShortLC. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_DMR_SHORT_LC ((dmrgo_mmdvm_command_t)28)
+/* Go: mmdvm.CommandDMRStart. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_DMR_START ((dmrgo_mmdvm_command_t)29)
+/* Go: mmdvm.CommandDStarData. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_D_STAR_DATA ((dmrgo_mmdvm_command_t)17)
+/* Go: mmdvm.CommandDStarEOT. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_D_STAR_EOT ((dmrgo_mmdvm_command_t)19)
+/* Go: mmdvm.CommandDStarHeader. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_D_STAR_HEADER ((dmrgo_mmdvm_command_t)16)
+/* Go: mmdvm.CommandDStarLost. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_D_STAR_LOST ((dmrgo_mmdvm_command_t)18)
+/* Go: mmdvm.CommandDebug1. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_DEBUG1 ((dmrgo_mmdvm_command_t)241)
+/* Go: mmdvm.CommandDebug2. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_DEBUG2 ((dmrgo_mmdvm_command_t)242)
+/* Go: mmdvm.CommandDebug3. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_DEBUG3 ((dmrgo_mmdvm_command_t)243)
+/* Go: mmdvm.CommandDebug4. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_DEBUG4 ((dmrgo_mmdvm_command_t)244)
+/* Go: mmdvm.CommandDebug5. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_DEBUG5 ((dmrgo_mmdvm_command_t)245)
+/* Go: mmdvm.CommandDebugDump. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_DEBUG_DUMP ((dmrgo_mmdvm_command_t)250)
+/* Go: mmdvm.CommandFMData. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_FM_DATA ((dmrgo_mmdvm_command_t)101)
+/* Go: mmdvm.CommandFMEOT. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_FMEOT ((dmrgo_mmdvm_command_t)103)
+/* Go: mmdvm.CommandFMParams1. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_FM_PARAMS1 ((dmrgo_mmdvm_command_t)96)
+/* Go: mmdvm.CommandFMParams2. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_FM_PARAMS2 ((dmrgo_mmdvm_command_t)97)
+/* Go: mmdvm.CommandFMParams3. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_FM_PARAMS3 ((dmrgo_mmdvm_command_t)98)
+/* Go: mmdvm.CommandFMParams4. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_FM_PARAMS4 ((dmrgo_mmdvm_command_t)99)
+/* Go: mmdvm.CommandFMRSSI. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_FMRSSI ((dmrgo_mmdvm_command_t)104)
+/* Go: mmdvm.CommandFMStatus. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_FM_STATUS ((dmrgo_mmdvm_command_t)102)
+/* Go: mmdvm.CommandGetStatus. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_GET_STATUS ((dmrgo_mmdvm_command_t)1)
+/* Go: mmdvm.CommandGetVersion. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_GET_VERSION ((dmrgo_mmdvm_command_t)0)
+/* Go: mmdvm.CommandI2CData. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_I2C_DATA ((dmrgo_mmdvm_command_t)129)
+/* Go: mmdvm.CommandM17EOT. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_M17EOT ((dmrgo_mmdvm_command_t)73)
+/* Go: mmdvm.CommandM17LinkSetup. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_M17_LINK_SETUP ((dmrgo_mmdvm_command_t)69)
+/* Go: mmdvm.CommandM17Lost. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_M17_LOST ((dmrgo_mmdvm_command_t)72)
+/* Go: mmdvm.CommandM17Packet. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_M17_PACKET ((dmrgo_mmdvm_command_t)71)
+/* Go: mmdvm.CommandM17Stream. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_M17_STREAM ((dmrgo_mmdvm_command_t)70)
+/* Go: mmdvm.CommandNXDNData. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_NXDN_DATA ((dmrgo_mmdvm_command_t)64)
+/* Go: mmdvm.CommandNXDNLost. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_NXDN_LOST ((dmrgo_mmdvm_command_t)65)
+/* Go: mmdvm.CommandNak. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_NAK ((dmrgo_mmdvm_command_t)127)
+/* Go: mmdvm.CommandP25Header. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_P25_HEADER ((dmrgo_mmdvm_command_t)48)
+/* Go: mmdvm.CommandP25LDU. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_P25LDU ((dmrgo_mmdvm_command_t)49)
+/* Go: mmdvm.CommandP25Lost. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_P25_LOST ((dmrgo_mmdvm_command_t)50)
+/* Go: mmdvm.CommandPOCSAGData. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_POCSAG_DATA ((dmrgo_mmdvm_command_t)80)
+/* Go: mmdvm.CommandQSOInfo. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_QSO_INFO ((dmrgo_mmdvm_command_t)145)
+/* Go: mmdvm.CommandRSSIData. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_RSSI_DATA ((dmrgo_mmdvm_command_t)9)
+/* Go: mmdvm.CommandSendCWID. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_SEND_CWID ((dmrgo_mmdvm_command_t)10)
+/* Go: mmdvm.CommandSerialData. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_SERIAL_DATA ((dmrgo_mmdvm_command_t)128)
+/* Go: mmdvm.CommandSetConfig. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_SET_CONFIG ((dmrgo_mmdvm_command_t)2)
+/* Go: mmdvm.CommandSetFreq. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_SET_FREQ ((dmrgo_mmdvm_command_t)4)
+/* Go: mmdvm.CommandSetMode. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_SET_MODE ((dmrgo_mmdvm_command_t)3)
+/* Go: mmdvm.CommandTransparent. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_TRANSPARENT ((dmrgo_mmdvm_command_t)144)
+/* Go: mmdvm.CommandYSFData. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_YSF_DATA ((dmrgo_mmdvm_command_t)32)
+/* Go: mmdvm.CommandYSFLost. The Command values of the MMDVM and MMDVM_HS firmware. */
+#define DMRGO_MMDVM_COMMAND_YSF_LOST ((dmrgo_mmdvm_command_t)33)
+/* Go: mmdvm.ControlDataSync. ControlDataSync marks a burst with a data SYNC; the low nibble is its data type. */
+#define DMRGO_MMDVM_CONTROL_DATA_SYNC ((dmrgo_mmdvm_control_t)64)
+/* Go: mmdvm.ControlIdle. ControlIdle marks a burst that the modem heard while idle, such as the BS_Dwn_Act CSBK that wakes a repeater (0x80 | 0x40 | CSBK). */
+#define DMRGO_MMDVM_CONTROL_IDLE ((dmrgo_mmdvm_control_t)128)
+/* Go: mmdvm.ControlVoiceSync. ControlVoiceSync marks voice burst A, which has the voice SYNC, or a voice burst at the position of A whose SYNC the modem missed. */
+#define DMRGO_MMDVM_CONTROL_VOICE_SYNC ((dmrgo_mmdvm_control_t)32)
+/* Go: mmdvm.DMRDataLen. DMRDataLen is the length of the payload of a DMR data frame without RSSI. */
+#define DMRGO_MMDVM_DMR_DATA_LEN 34
+/* Go: mmdvm.FrameStart. FrameStart is the first octet of every frame. */
+#define DMRGO_MMDVM_FRAME_START 224
+/* Go: mmdvm.MaxFrameLen. MaxFrameLen is the length of the longest frame in octets: the long form counts 255 plus its second length octet. */
+#define DMRGO_MMDVM_MAX_FRAME_LEN 510
+/* Go: mmdvm.ModeDMR. The Mode values. */
+#define DMRGO_MMDVM_MODE_DMR ((dmrgo_mmdvm_mode_t)2)
+/* Go: mmdvm.ModeDStar. The Mode values. */
+#define DMRGO_MMDVM_MODE_D_STAR ((dmrgo_mmdvm_mode_t)1)
+/* Go: mmdvm.ModeFM. The Mode values. */
+#define DMRGO_MMDVM_MODE_FM ((dmrgo_mmdvm_mode_t)10)
+/* Go: mmdvm.ModeIdle. The Mode values. */
+#define DMRGO_MMDVM_MODE_IDLE ((dmrgo_mmdvm_mode_t)0)
+/* Go: mmdvm.ModeM17. The Mode values. */
+#define DMRGO_MMDVM_MODE_M17 ((dmrgo_mmdvm_mode_t)7)
+/* Go: mmdvm.ModeNXDN. The Mode values. */
+#define DMRGO_MMDVM_MODE_NXDN ((dmrgo_mmdvm_mode_t)5)
+/* Go: mmdvm.ModeP25. The Mode values. */
+#define DMRGO_MMDVM_MODE_P25 ((dmrgo_mmdvm_mode_t)4)
+/* Go: mmdvm.ModePOCSAG. The Mode values. */
+#define DMRGO_MMDVM_MODE_POCSAG ((dmrgo_mmdvm_mode_t)6)
+/* Go: mmdvm.ModeYSF. The Mode values. */
+#define DMRGO_MMDVM_MODE_YSF ((dmrgo_mmdvm_mode_t)3)
+/* Go: mmdvm.StatusFrame. StatusFrame is a whole frame. */
+#define DMRGO_MMDVM_STATUS_FRAME ((dmrgo_mmdvm_status_t)0)
+/* Go: mmdvm.StatusMore. StatusMore is the start of a frame that needs more octets. */
+#define DMRGO_MMDVM_STATUS_MORE ((dmrgo_mmdvm_status_t)1)
+/* Go: mmdvm.StatusSkip. StatusSkip is octets that do not start a frame, to drop. */
+#define DMRGO_MMDVM_STATUS_SKIP ((dmrgo_mmdvm_status_t)2)
 /* Go: trunk.CapacityPlusNoSignalDefault. CapacityPlusNoSignalDefault is the default CapacityPlusConfig.NoSignal: more than twice the 2 s beacon period of an idle rest channel. */
 #define DMRGO_TRUNK_CAPACITY_PLUS_NO_SIGNAL_DEFAULT INT64_C(5000000000)
 /* Go: trunk.ChannelAbsolute. ChannelAbsolute is the channel number of a grant or C_MOVE whose frequencies follow in a CG_AP or MV_AP block (ETSI TS 102 361-4 clause 7.1.1.1.1). */
@@ -6977,6 +7377,116 @@ int dmrgo_ipsc_auth_key_verify(dmrgo_ipsc_auth_key_t *self, const uint8_t *p, si
 int dmrgo_ipsc_auth_new_key(const uint8_t k[20], dmrgo_ipsc_auth_key_t **out);
 /* Go: auth.ParseKey. ParseKey parses the hex key of a MOTOTRBO or DMRlink configuration: up to 40 hex digits, padded on the left with zeros to 20 octets as DMRlink does. */
 int dmrgo_ipsc_auth_parse_key(const char *s, size_t s_len, uint8_t out[20]);
+/* Go: mmdvm.Ack.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
+int dmrgo_mmdvm_ack_append_binary(dmrgo_mmdvm_ack_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: mmdvm.Ack.String. String returns the fields of s as text, for printing. */
+int dmrgo_mmdvm_ack_string(dmrgo_mmdvm_ack_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: mmdvm.AppendFrame. AppendFrame appends a frame of c with payload to dst: the short form up to 255 octets in all, the long form above. */
+int dmrgo_mmdvm_append_frame(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_mmdvm_command_t c, const uint8_t *payload, size_t payload_len);
+/* Go: mmdvm.Capabilities.Has. Has reports whether c has every bit of m. */
+int dmrgo_mmdvm_capabilities_has(dmrgo_mmdvm_capabilities_t self, dmrgo_mmdvm_capabilities_t m, bool *out);
+/* Go: mmdvm.Command.String. String returns the name of the command. */
+int dmrgo_mmdvm_command_string(dmrgo_mmdvm_command_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: mmdvm.ConfigV1.AppendBinary. AppendBinary appends the 23 octets of s to dst. */
+int dmrgo_mmdvm_config_v1_append_binary(dmrgo_mmdvm_config_v1_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: mmdvm.ConfigV1.String. String returns the fields of s as text, for printing. */
+int dmrgo_mmdvm_config_v1_string(dmrgo_mmdvm_config_v1_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: mmdvm.ConfigV2.AppendBinary. AppendBinary appends the 37 octets of s to dst. */
+int dmrgo_mmdvm_config_v2_append_binary(dmrgo_mmdvm_config_v2_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: mmdvm.ConfigV2.String. String returns the fields of s as text, for printing. */
+int dmrgo_mmdvm_config_v2_string(dmrgo_mmdvm_config_v2_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: mmdvm.Control.DataSync. DataSync reports a burst with a data SYNC. */
+int dmrgo_mmdvm_control_data_sync(dmrgo_mmdvm_control_t self, bool *out);
+/* Go: mmdvm.Control.DataType. DataType returns the data type of a burst with a data SYNC: the low nibble. */
+int dmrgo_mmdvm_control_data_type(dmrgo_mmdvm_control_t self, dmrgo_enums_data_type_t *out);
+/* Go: mmdvm.Control.Idle. Idle reports a burst that the modem heard while idle. */
+int dmrgo_mmdvm_control_idle(dmrgo_mmdvm_control_t self, bool *out);
+/* Go: mmdvm.Control.N. N returns the low nibble: 1 to 5 for voice bursts B to F. */
+int dmrgo_mmdvm_control_n(dmrgo_mmdvm_control_t self, uint8_t *out);
+/* Go: mmdvm.Control.VoiceSync. VoiceSync reports voice burst A. */
+int dmrgo_mmdvm_control_voice_sync(dmrgo_mmdvm_control_t self, bool *out);
+/* Go: mmdvm.DMRAbort.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
+int dmrgo_mmdvm_dmr_abort_append_binary(dmrgo_mmdvm_dmr_abort_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: mmdvm.DMRAbort.String. String returns the fields of s as text, for printing. */
+int dmrgo_mmdvm_dmr_abort_string(dmrgo_mmdvm_dmr_abort_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: mmdvm.DMRAloha.AppendBinary. AppendBinary appends the 33 octets of s to dst. */
+int dmrgo_mmdvm_dmr_aloha_append_binary(dmrgo_mmdvm_dmr_aloha_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: mmdvm.DMRAloha.String. String returns the fields of s as text, for printing. */
+int dmrgo_mmdvm_dmr_aloha_string(dmrgo_mmdvm_dmr_aloha_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: mmdvm.DMRData.AppendBinary. AppendBinary appends the payload to dst: nothing for a lost frame, else the control octet, the burst and the RSSI when HasRSSI is set. */
+int dmrgo_mmdvm_dmr_data_append_binary(const dmrgo_mmdvm_dmr_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: mmdvm.DMRData.Command. Command returns the command of the frame: CommandDMRData1 or CommandDMRData2, or CommandDMRLost1 or CommandDMRLost2 when Lost is set. */
+int dmrgo_mmdvm_dmr_data_command(const dmrgo_mmdvm_dmr_data_t *self, dmrgo_mmdvm_command_t *out);
+/* Go: mmdvm.DMRData.Hint. Hint returns what the frame tells about its burst, for the service machines: the slot, and from Control the data type, voice burst A, or voice bursts B to F from N 1 to 5. */
+int dmrgo_mmdvm_dmr_data_hint(const dmrgo_mmdvm_dmr_data_t *self, dmrgo_layer2_hint_t *out);
+/* Go: mmdvm.DMRShortLC.AppendBinary. AppendBinary appends the 9 octets of s to dst. */
+int dmrgo_mmdvm_dmr_short_lc_append_binary(dmrgo_mmdvm_dmr_short_lc_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: mmdvm.DMRShortLC.String. String returns the fields of s as text, for printing. */
+int dmrgo_mmdvm_dmr_short_lc_string(dmrgo_mmdvm_dmr_short_lc_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: mmdvm.DMRStart.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
+int dmrgo_mmdvm_dmr_start_append_binary(dmrgo_mmdvm_dmr_start_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: mmdvm.DMRStart.String. String returns the fields of s as text, for printing. */
+int dmrgo_mmdvm_dmr_start_string(dmrgo_mmdvm_dmr_start_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: mmdvm.Debug.AppendBinary. AppendBinary appends the payload to dst: the text and the numbers. */
+int dmrgo_mmdvm_debug_append_binary(const dmrgo_mmdvm_debug_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: mmdvm.Debug.Count. Count returns the number of numbers: 0 for CommandDebug1 and CommandDebugDump, up to 4 for CommandDebug5. */
+int dmrgo_mmdvm_debug_count(const dmrgo_mmdvm_debug_t *self, int64_t *out);
+/* Go: mmdvm.DecodeAck. DecodeAck decodes an Ack from data, a frame of 1 octet. */
+int dmrgo_mmdvm_decode_ack(const uint8_t *data, size_t data_len, dmrgo_mmdvm_ack_t *out);
+/* Go: mmdvm.DecodeConfigV1. DecodeConfigV1 decodes a ConfigV1 from data, a frame of 23 octets. */
+int dmrgo_mmdvm_decode_config_v1(const uint8_t *data, size_t data_len, dmrgo_mmdvm_config_v1_t *out);
+/* Go: mmdvm.DecodeConfigV2. DecodeConfigV2 decodes a ConfigV2 from data, a frame of 37 octets. */
+int dmrgo_mmdvm_decode_config_v2(const uint8_t *data, size_t data_len, dmrgo_mmdvm_config_v2_t *out);
+/* Go: mmdvm.DecodeDMRAbort. DecodeDMRAbort decodes a DMRAbort from data, a frame of 1 octet. */
+int dmrgo_mmdvm_decode_dmr_abort(const uint8_t *data, size_t data_len, dmrgo_mmdvm_dmr_abort_t *out);
+/* Go: mmdvm.DecodeDMRAloha. DecodeDMRAloha decodes a DMRAloha from data, a frame of 33 octets. */
+int dmrgo_mmdvm_decode_dmr_aloha(const uint8_t *data, size_t data_len, dmrgo_mmdvm_dmr_aloha_t *out);
+/* Go: mmdvm.DecodeDMRData. DecodeDMRData decodes a DMR data or lost frame. */
+int dmrgo_mmdvm_decode_dmr_data(const dmrgo_mmdvm_frame_t *f, dmrgo_mmdvm_dmr_data_t *out);
+/* Go: mmdvm.DecodeDMRShortLC. DecodeDMRShortLC decodes a DMRShortLC from data, a frame of 9 octets. */
+int dmrgo_mmdvm_decode_dmr_short_lc(const uint8_t *data, size_t data_len, dmrgo_mmdvm_dmr_short_lc_t *out);
+/* Go: mmdvm.DecodeDMRStart. DecodeDMRStart decodes a DMRStart from data, a frame of 1 octet. */
+int dmrgo_mmdvm_decode_dmr_start(const uint8_t *data, size_t data_len, dmrgo_mmdvm_dmr_start_t *out);
+/* Go: mmdvm.DecodeDebug. DecodeDebug decodes a debug frame. */
+int dmrgo_mmdvm_decode_debug(const dmrgo_mmdvm_frame_t *f, dmrgo_mmdvm_debug_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: mmdvm.DecodeNak. DecodeNak decodes a Nak from data, a frame of 2 octets. */
+int dmrgo_mmdvm_decode_nak(const uint8_t *data, size_t data_len, dmrgo_mmdvm_nak_t *out);
+/* Go: mmdvm.DecodeSetFreq. DecodeSetFreq decodes a SetFreq from data, a frame of 9, 10 or 14 octets. */
+int dmrgo_mmdvm_decode_set_freq(const uint8_t *data, size_t data_len, dmrgo_mmdvm_set_freq_t *out);
+/* Go: mmdvm.DecodeSetMode. DecodeSetMode decodes a SetMode from data, a frame of 1 octet. */
+int dmrgo_mmdvm_decode_set_mode(const uint8_t *data, size_t data_len, dmrgo_mmdvm_set_mode_t *out);
+/* Go: mmdvm.DecodeStatusV1. DecodeStatusV1 decodes a StatusV1 from data, a frame of 11 octets. */
+int dmrgo_mmdvm_decode_status_v1(const uint8_t *data, size_t data_len, dmrgo_mmdvm_status_v1_t *out);
+/* Go: mmdvm.DecodeStatusV2. DecodeStatusV2 decodes a StatusV2 from data, a frame of 17 octets. */
+int dmrgo_mmdvm_decode_status_v2(const uint8_t *data, size_t data_len, dmrgo_mmdvm_status_v2_t *out);
+/* Go: mmdvm.DecodeVersion. DecodeVersion decodes the payload of a CommandGetVersion reply. */
+int dmrgo_mmdvm_decode_version(const uint8_t *p, size_t p_len, dmrgo_mmdvm_version_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: mmdvm.Mode.String. String returns the name of the mode. */
+int dmrgo_mmdvm_mode_string(dmrgo_mmdvm_mode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: mmdvm.Nak.AppendBinary. AppendBinary appends the 2 octets of s to dst. */
+int dmrgo_mmdvm_nak_append_binary(dmrgo_mmdvm_nak_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: mmdvm.Nak.String. String returns the fields of s as text, for printing. */
+int dmrgo_mmdvm_nak_string(dmrgo_mmdvm_nak_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: mmdvm.Next. Next finds the frame at the start of p, as the firmware and MMDVMHost read the stream. */
+int dmrgo_mmdvm_next(const uint8_t *p, size_t p_len, dmrgo_mmdvm_frame_t *f, int64_t *n, dmrgo_mmdvm_status_t *st, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: mmdvm.SetFreq.AppendBinary. AppendBinary appends the 9, 10 or 14 octets of s to dst: Size selects the length, and 0 means 9. */
+int dmrgo_mmdvm_set_freq_append_binary(dmrgo_mmdvm_set_freq_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: mmdvm.SetFreq.String. String returns the fields of s as text, for printing. */
+int dmrgo_mmdvm_set_freq_string(dmrgo_mmdvm_set_freq_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: mmdvm.SetMode.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
+int dmrgo_mmdvm_set_mode_append_binary(dmrgo_mmdvm_set_mode_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: mmdvm.SetMode.String. String returns the fields of s as text, for printing. */
+int dmrgo_mmdvm_set_mode_string(dmrgo_mmdvm_set_mode_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: mmdvm.StatusV1.AppendBinary. AppendBinary appends the 11 octets of s to dst. */
+int dmrgo_mmdvm_status_v1_append_binary(dmrgo_mmdvm_status_v1_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: mmdvm.StatusV1.String. String returns the fields of s as text, for printing. */
+int dmrgo_mmdvm_status_v1_string(dmrgo_mmdvm_status_v1_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: mmdvm.StatusV2.AppendBinary. AppendBinary appends the 17 octets of s to dst. */
+int dmrgo_mmdvm_status_v2_append_binary(dmrgo_mmdvm_status_v2_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: mmdvm.StatusV2.String. String returns the fields of s as text, for printing. */
+int dmrgo_mmdvm_status_v2_string(dmrgo_mmdvm_status_v2_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: mmdvm.Version.AppendBinary. AppendBinary appends the payload to dst: for protocol 2 the protocol, the capabilities, the CPU, the UDID and the description, else the protocol and the description. */
+int dmrgo_mmdvm_version_append_binary(const dmrgo_mmdvm_version_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.Access.Applies. Applies reports whether the C_ALOHA population subdivision lets the MS with address ms make a random access (ETSI TS 102 361-4 clause 6.2.1.1.1). */
 int dmrgo_trunk_access_applies(dmrgo_trunk_access_t *self, uint32_t ms, bool emergency, bool *out);
 /* dmrgo_trunk_capacity_plus_follower_new makes a zero trunk.CapacityPlusFollower. */
