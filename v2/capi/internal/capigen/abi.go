@@ -184,14 +184,26 @@ func scalarTypedefs(syms []string, old map[string]bool) map[string]string {
 }
 
 func layoutOf(line string, scalars map[string]string) string {
-	if !strings.HasPrefix(line, lockType+" ") {
+	if !strings.HasPrefix(line, lockType+" ") && (!strings.HasPrefix(line, "sym ") || strings.HasPrefix(line, "sym typedef ") || strings.HasPrefix(line, "sym #define ")) {
 		return line
 	}
-	f := strings.Fields(line)
-	for i, w := range f {
-		if base, ok := scalars[w]; ok {
-			f[i] = base
+	var b strings.Builder
+	for i := 0; i < len(line); {
+		j := i
+		for j < len(line) && (line[j] == '_' || line[j] >= 'a' && line[j] <= 'z' || line[j] >= 'A' && line[j] <= 'Z' || line[j] >= '0' && line[j] <= '9') {
+			j++
 		}
+		if j == i {
+			b.WriteByte(line[i])
+			i++
+			continue
+		}
+		if base, ok := scalars[line[i:j]]; ok {
+			b.WriteString(base)
+		} else {
+			b.WriteString(line[i:j])
+		}
+		i = j
 	}
-	return strings.Join(f, " ")
+	return b.String()
 }

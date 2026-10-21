@@ -231,7 +231,7 @@ func out_bs_Output(d *C.dmrgo_bs_output_t, s *g_bs.Output, oc *outc) {
 	d.has_cach = C.bool(s.HasCACH)
 	*(*[3]byte)(unsafe.Pointer(&d.cach)) = s.CACH
 	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
-	d.due = C.int64_t(s.Due)
+	d.due = C.dmrgo_duration_t(s.Due)
 	out_bs_Source(&d.from, &s.From, oc)
 	d.service = C.dmrgo_bs_service_t(s.Service)
 	out_voice_Call(&d.call, &s.Call, oc)
@@ -322,12 +322,12 @@ func out_csbk_Output(d *C.dmrgo_csbk_output_t, s *g_csbk.Output, oc *outc) {
 	d.result = C.dmrgo_csbk_result_t(s.Result)
 	d.reason = C.dmrgo_csbk_reason_t(s.Reason)
 	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
-	d.due = C.int64_t(s.Due)
+	d.due = C.dmrgo_duration_t(s.Due)
 	d.target = C.uint32_t(s.Target)
 	d.source = C.uint32_t(s.Source)
 	d.group = C.bool(s.Group)
 	d.data = C.bool(s.Data)
-	d.until = C.int64_t(s.Until)
+	d.until = C.dmrgo_duration_t(s.Until)
 	*(*g_layer2_pdu.CSBKBytes)(unsafe.Pointer(&d.csbk)) = s.CSBK
 }
 
@@ -430,7 +430,7 @@ func out_data_Output(d *C.dmrgo_data_output_t, s *g_data.Output, oc *outc) {
 	_ = oc
 	d.kind = C.dmrgo_data_output_kind_t(s.Kind)
 	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
-	d.due = C.int64_t(s.Due)
+	d.due = C.dmrgo_duration_t(s.Due)
 	d.try_ = C.uint8_t(s.Try)
 	d.seq = C.uint8_t(s.Seq)
 	d.result = C.dmrgo_data_result_t(s.Result)
@@ -661,7 +661,7 @@ func out_data_Event(d *C.dmrgo_data_event_t, s *g_data.Event, oc *outc) {
 		d.retry = C.dmrgo_packet_response_data_t{}
 	}
 	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
-	d.due = C.int64_t(s.Due)
+	d.due = C.dmrgo_duration_t(s.Due)
 	d.reason = C.dmrgo_data_end_reason_t(s.Reason)
 	*(*g_data.Stats)(unsafe.Pointer(&d.stats)) = s.Stats
 }
@@ -4637,7 +4637,7 @@ func out_trunk_Output(d *C.dmrgo_trunk_output_t, s *g_trunk.Output, oc *outc) {
 	d.ack = C.dmrgo_enums_ack_reason_t(s.Ack)
 	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
 	d.slot = C.dmrgo_enums_slot_t(s.Slot)
-	d.due = C.int64_t(s.Due)
+	d.due = C.dmrgo_duration_t(s.Due)
 	d.protect = C.dmrgo_enums_protect_kind_t(s.Protect)
 	d.challenge = C.uint32_t(s.Challenge)
 	d.status = C.dmrgo_trunk_status_t(s.Status)
@@ -5366,7 +5366,7 @@ func out_voice_Output(d *C.dmrgo_voice_output_t, s *g_voice.Output, oc *outc) {
 	_ = oc
 	d.kind = C.dmrgo_voice_output_kind_t(s.Kind)
 	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
-	d.due = C.int64_t(s.Due)
+	d.due = C.dmrgo_duration_t(s.Due)
 	d.position = C.dmrgo_enums_voice_burst_type_t(s.Position)
 	d.data_type = C.dmrgo_enums_data_type_t(s.DataType)
 	d.fill = C.bool(s.Fill)
@@ -5524,21 +5524,21 @@ func out_bs_Config(d *C.dmrgo_bs_config_t, s *g_bs.Config, oc *outc) {
 	d.color_code = C.dmrgo_enums_color_code_t(s.ColorCode)
 	d.activation = C.dmrgo_bs_activation_t(s.Activation)
 	d.cach = C.bool(s.CACH)
-	d.call_hang = C.int64_t(s.CallHang)
-	d.data_hang = C.int64_t(s.DataHang)
-	d.inactivity = C.int64_t(s.Inactivity)
-	d.lost = C.int64_t(s.Lost)
-	d.timeout = C.int64_t(s.Timeout)
+	d.call_hang = C.dmrgo_duration_t(s.CallHang)
+	d.data_hang = C.dmrgo_duration_t(s.DataHang)
+	d.inactivity = C.dmrgo_duration_t(s.Inactivity)
+	d.lost = C.dmrgo_duration_t(s.Lost)
+	d.timeout = C.dmrgo_duration_t(s.Timeout)
 	d.headers = C.int64_t(s.Headers)
 	d.terminators = C.int64_t(s.Terminators)
 	d.pending = C.int64_t(s.Pending)
-	d.pending_age = C.int64_t(s.PendingAge)
+	d.pending_age = C.dmrgo_duration_t(s.PendingAge)
 	d.data_queue = C.int64_t(s.DataQueue)
 	*(*[9]byte)(unsafe.Pointer(&d.silence)) = s.Silence
-	d.lead = C.int64_t(s.Lead)
+	d.lead = C.dmrgo_duration_t(s.Lead)
 	d.channel_auth = C.dmrgo_bs_channel_auth_t(s.ChannelAuth)
-	d.chan_auth_response = C.int64_t(s.ChanAuthResponse)
-	d.chan_auth_select = C.int64_t(s.ChanAuthSelect)
+	d.chan_auth_response = C.dmrgo_duration_t(s.ChanAuthResponse)
+	d.chan_auth_select = C.dmrgo_duration_t(s.ChanAuthSelect)
 	if s.Scratch != nil {
 		panic(argPanic{})
 	}
@@ -5640,10 +5640,10 @@ func out_csbk_RequesterConfig(d *C.dmrgo_csbk_requester_config_t, s *g_csbk.Requ
 	_ = oc
 	d.color_code = C.dmrgo_enums_color_code_t(s.ColorCode)
 	d.source = C.dmrgo_layer2_sync_source_t(s.Source)
-	d.ack_wait = C.int64_t(s.AckWait)
+	d.ack_wait = C.dmrgo_duration_t(s.AckWait)
 	d.retries = C.int64_t(s.Retries)
-	d.idle_search = C.int64_t(s.IdleSearch)
-	d.holdoff_max = C.int64_t(s.HoldoffMax)
+	d.idle_search = C.dmrgo_duration_t(s.IdleSearch)
+	d.holdoff_max = C.dmrgo_duration_t(s.HoldoffMax)
 	d.seed = C.uint64_t(s.Seed)
 	if s.Scratch != nil {
 		panic(argPanic{})
@@ -5665,8 +5665,8 @@ func out_csbk_ResponderConfig(d *C.dmrgo_csbk_responder_config_t, s *g_csbk.Resp
 	d.no_radio_check = C.bool(s.NoRadioCheck)
 	d.no_call_alert = C.bool(s.NoCallAlert)
 	d.no_fns = C.bool(s.NoFNS)
-	d.idle_search = C.int64_t(s.IdleSearch)
-	d.holdoff_max = C.int64_t(s.HoldoffMax)
+	d.idle_search = C.dmrgo_duration_t(s.IdleSearch)
+	d.holdoff_max = C.dmrgo_duration_t(s.HoldoffMax)
 	d.seed = C.uint64_t(s.Seed)
 	if s.Scratch != nil {
 		panic(argPanic{})
@@ -5697,7 +5697,7 @@ func fromC_csbk_TimingConfig(s *C.dmrgo_csbk_timing_config_t) g_csbk.TimingConfi
 func out_csbk_WakeupConfig(d *C.dmrgo_csbk_wakeup_config_t, s *g_csbk.WakeupConfig, oc *outc) {
 	_ = oc
 	d.color_code = C.dmrgo_enums_color_code_t(s.ColorCode)
-	d.sync_wait = C.int64_t(s.SyncWait)
+	d.sync_wait = C.dmrgo_duration_t(s.SyncWait)
 	d.attempts = C.int64_t(s.Attempts)
 	if s.Scratch != nil {
 		panic(argPanic{})
@@ -5773,13 +5773,13 @@ func out_data_ReceiverConfig(d *C.dmrgo_data_receiver_config_t, s *g_data.Receiv
 	d.address = C.uint32_t(s.Address)
 	d.respond = C.bool(s.Respond)
 	d.source = C.dmrgo_layer2_sync_source_t(s.Source)
-	d.response_delay = C.int64_t(s.ResponseDelay)
+	d.response_delay = C.dmrgo_duration_t(s.ResponseDelay)
 	d.max_blocks = C.int64_t(s.MaxBlocks)
 	d.max_fragment = C.int64_t(s.MaxFragment)
 	d.max_message = C.int64_t(s.MaxMessage)
 	d.peers = C.int64_t(s.Peers)
-	d.lost = C.int64_t(s.Lost)
-	d.hang = C.int64_t(s.Hang)
+	d.lost = C.dmrgo_duration_t(s.Lost)
+	d.hang = C.dmrgo_duration_t(s.Hang)
 	d.accept_bad_crc = C.bool(s.AcceptBadCRC)
 	if s.Scratch != nil {
 		panic(argPanic{})
@@ -5798,10 +5798,10 @@ func out_data_SenderConfig(d *C.dmrgo_data_sender_config_t, s *g_data.SenderConf
 	d.source = C.dmrgo_layer2_sync_source_t(s.Source)
 	d.access = C.dmrgo_enums_access_t(s.Access)
 	d.preambles = C.int64_t(s.Preambles)
-	d.idle_search = C.int64_t(s.IdleSearch)
-	d.holdoff = C.int64_t(s.Holdoff)
-	d.response_wait = C.int64_t(s.ResponseWait)
-	d.tx_limit = C.int64_t(s.TxLimit)
+	d.idle_search = C.dmrgo_duration_t(s.IdleSearch)
+	d.holdoff = C.dmrgo_duration_t(s.Holdoff)
+	d.response_wait = C.dmrgo_duration_t(s.ResponseWait)
+	d.tx_limit = C.dmrgo_duration_t(s.TxLimit)
 	d.retries = C.int64_t(s.Retries)
 	d.max_blocks = C.int64_t(s.MaxBlocks)
 	d.peers = C.int64_t(s.Peers)
@@ -5839,7 +5839,7 @@ func out_data_Stats(d *C.dmrgo_data_stats_t, s *g_data.Stats, oc *outc) {
 	d.duplicates = C.uint16_t(s.Duplicates)
 	d.out_of_sequence = C.uint16_t(s.OutOfSequence)
 	d.dropped = C.uint16_t(s.Dropped)
-	d.duration = C.int64_t(s.Duration)
+	d.duration = C.dmrgo_duration_t(s.Duration)
 }
 
 func fromC_data_Stats(s *C.dmrgo_data_stats_t) g_data.Stats {
@@ -7658,9 +7658,9 @@ func out_trunk_CapacityPlusConfig(d *C.dmrgo_trunk_capacity_plus_config_t, s *g_
 	d.talkgroups_len = C.int64_t(s.TalkgroupsLen)
 	d.individual = C.bool(s.Individual)
 	d.no_follow = C.bool(s.NoFollow)
-	d.no_signal = C.int64_t(s.NoSignal)
-	d.inactive = C.int64_t(s.Inactive)
-	d.hangtime = C.int64_t(s.Hangtime)
+	d.no_signal = C.dmrgo_duration_t(s.NoSignal)
+	d.inactive = C.dmrgo_duration_t(s.Inactive)
+	d.hangtime = C.dmrgo_duration_t(s.Hangtime)
 	if s.Scratch != nil {
 		panic(argPanic{})
 	}
@@ -7746,9 +7746,9 @@ func out_trunk_FollowerConfig(d *C.dmrgo_trunk_follower_config_t, s *g_trunk.Fol
 	d.individual = C.bool(s.Individual)
 	d.data = C.bool(s.Data)
 	d.no_follow = C.bool(s.NoFollow)
-	d.no_signal = C.int64_t(s.NoSignal)
-	d.inactive = C.int64_t(s.Inactive)
-	d.hangtime = C.int64_t(s.Hangtime)
+	d.no_signal = C.dmrgo_duration_t(s.NoSignal)
+	d.inactive = C.dmrgo_duration_t(s.Inactive)
+	d.hangtime = C.dmrgo_duration_t(s.Hangtime)
 	d.sys_errors = C.int64_t(s.SysErrors)
 	d.accept_ras = C.bool(s.AcceptRAS)
 	if s.Scratch != nil {
@@ -7795,12 +7795,12 @@ func out_trunk_MSConfig(d *C.dmrgo_trunk_ms_config_t, s *g_trunk.MSConfig, oc *o
 	d.slot = C.dmrgo_enums_slot_t(s.Slot)
 	d.seed = C.uint64_t(s.Seed)
 	d.no_registration = C.bool(s.NoRegistration)
-	d.random_timeout = C.int64_t(s.RandomTimeout)
-	d.call_timeout = C.int64_t(s.CallTimeout)
-	d.reg_timeout = C.int64_t(s.RegTimeout)
-	d.pending = C.int64_t(s.Pending)
-	d.dereg = C.int64_t(s.Dereg)
-	d.denied_life = C.int64_t(s.DeniedLife)
+	d.random_timeout = C.dmrgo_duration_t(s.RandomTimeout)
+	d.call_timeout = C.dmrgo_duration_t(s.CallTimeout)
+	d.reg_timeout = C.dmrgo_duration_t(s.RegTimeout)
+	d.pending = C.dmrgo_duration_t(s.Pending)
+	d.dereg = C.dmrgo_duration_t(s.Dereg)
+	d.denied_life = C.dmrgo_duration_t(s.DeniedLife)
 	d.dmrla = C.int64_t(s.DMRLA)
 	if s.MinLevelHunt != nil {
 		d.has_min_level_hunt = true
@@ -7818,9 +7818,9 @@ func out_trunk_MSConfig(d *C.dmrgo_trunk_ms_config_t, s *g_trunk.MSConfig, oc *o
 	}
 	d.max_ber_permille = C.int64_t(s.MaxBERPermille)
 	d.accept_ras = C.bool(s.AcceptRAS)
-	d.no_signal = C.int64_t(s.NoSignal)
-	d.inactive = C.int64_t(s.Inactive)
-	d.hangtime = C.int64_t(s.Hangtime)
+	d.no_signal = C.dmrgo_duration_t(s.NoSignal)
+	d.inactive = C.dmrgo_duration_t(s.Inactive)
+	d.hangtime = C.dmrgo_duration_t(s.Hangtime)
 	if s.Scratch != nil {
 		panic(argPanic{})
 	}
@@ -7836,7 +7836,7 @@ func out_trunk_MSConfig(d *C.dmrgo_trunk_ms_config_t, s *g_trunk.MSConfig, oc *o
 	d.stunned = C.bool(s.Stunned)
 	d.killed = C.bool(s.Killed)
 	d.power_save = C.uint8_t(s.PowerSave)
-	d.awake = C.int64_t(s.Awake)
+	d.awake = C.dmrgo_duration_t(s.Awake)
 }
 
 func fromC_trunk_MSConfig(s *C.dmrgo_trunk_ms_config_t) g_trunk.MSConfig {
@@ -7934,10 +7934,10 @@ func out_trunk_TSCCConfig(d *C.dmrgo_trunk_tscc_config_t, s *g_trunk.TSCCConfig,
 	d.backoff = C.dmrgo_enums_backoff_t(s.Backoff)
 	d.grant_repeats = C.int64_t(s.GrantRepeats)
 	d.clear_repeats = C.int64_t(s.ClearRepeats)
-	d.late_entry = C.int64_t(s.LateEntry)
-	d.hangtime = C.int64_t(s.Hangtime)
-	d.inactive = C.int64_t(s.Inactive)
-	d.answer_timeout = C.int64_t(s.AnswerTimeout)
+	d.late_entry = C.dmrgo_duration_t(s.LateEntry)
+	d.hangtime = C.dmrgo_duration_t(s.Hangtime)
+	d.inactive = C.dmrgo_duration_t(s.Inactive)
+	d.answer_timeout = C.dmrgo_duration_t(s.AnswerTimeout)
 	d.authenticate = C.bool(s.Authenticate)
 	d.seed = C.uint64_t(s.Seed)
 	if s.Auth != nil {
@@ -7945,9 +7945,9 @@ func out_trunk_TSCCConfig(d *C.dmrgo_trunk_tscc_config_t, s *g_trunk.TSCCConfig,
 	}
 	d.auth = nil
 	d.transmit_interrupt = C.bool(s.TransmitInterrupt)
-	d.max_call = C.int64_t(s.MaxCall)
+	d.max_call = C.dmrgo_duration_t(s.MaxCall)
 	d.power_save = C.bool(s.PowerSave)
-	d.awake = C.int64_t(s.Awake)
+	d.awake = C.dmrgo_duration_t(s.Awake)
 	d.ip = C.bool(s.IP)
 	d.supplementary = C.bool(s.Supplementary)
 }
@@ -8064,7 +8064,7 @@ func fromC_vocoder_codec2_Config(s *C.dmrgo_codec2_config_t) g_vocoder_codec2.Co
 func out_vocoder_dvsi_Config(d *C.dmrgo_dvsi_config_t, s *g_vocoder_dvsi.Config, oc *outc) {
 	_ = oc
 	d.channel = C.int64_t(s.Channel)
-	d.timeout = C.int64_t(s.Timeout)
+	d.timeout = C.dmrgo_duration_t(s.Timeout)
 	d.no_reset = C.bool(s.NoReset)
 	d.no_parity = C.bool(s.NoParity)
 }
@@ -8125,7 +8125,7 @@ func fromC_voice_FrameQuality(s *C.dmrgo_voice_frame_quality_t) g_voice.FrameQua
 func out_voice_InterrupterConfig(d *C.dmrgo_voice_interrupter_config_t, s *g_voice.InterrupterConfig, oc *outc) {
 	_ = oc
 	d.color_code = C.dmrgo_enums_color_code_t(s.ColorCode)
-	d.wait = C.int64_t(s.Wait)
+	d.wait = C.dmrgo_duration_t(s.Wait)
 	d.retries = C.int64_t(s.Retries)
 	d.repeats = C.int64_t(s.Repeats)
 	if s.Scratch != nil {
@@ -8162,8 +8162,8 @@ func out_voice_ReceiverConfig(d *C.dmrgo_voice_receiver_config_t, s *g_voice.Rec
 		d.has_color_code = false
 		d.color_code = 0
 	}
-	d.lost = C.int64_t(s.Lost)
-	d.hang = C.int64_t(s.Hang)
+	d.lost = C.dmrgo_duration_t(s.Lost)
+	d.hang = C.dmrgo_duration_t(s.Hang)
 	d.strict = C.bool(s.Strict)
 	if s.Scratch != nil {
 		panic(argPanic{})
@@ -8195,7 +8195,7 @@ func out_voice_Stats(d *C.dmrgo_voice_stats_t, s *g_voice.Stats, oc *outc) {
 	d.late = C.uint16_t(s.Late)
 	d.bits_checked = C.uint32_t(s.BitsChecked)
 	d.bit_errors = C.uint32_t(s.BitErrors)
-	d.duration = C.int64_t(s.Duration)
+	d.duration = C.dmrgo_duration_t(s.Duration)
 }
 
 func fromC_voice_Stats(s *C.dmrgo_voice_stats_t) g_voice.Stats {
@@ -8209,14 +8209,14 @@ func out_voice_TransmitterConfig(d *C.dmrgo_voice_transmitter_config_t, s *g_voi
 	*(*[9]byte)(unsafe.Pointer(&d.silence)) = s.Silence
 	d.headers = C.int64_t(s.Headers)
 	d.terminators = C.int64_t(s.Terminators)
-	d.timeout = C.int64_t(s.Timeout)
+	d.timeout = C.dmrgo_duration_t(s.Timeout)
 	d.queue = C.int64_t(s.Queue)
-	d.lead = C.int64_t(s.Lead)
+	d.lead = C.dmrgo_duration_t(s.Lead)
 	d.access = C.dmrgo_enums_access_t(s.Access)
-	d.idle_search = C.int64_t(s.IdleSearch)
+	d.idle_search = C.dmrgo_duration_t(s.IdleSearch)
 	d.interruptible = C.bool(s.Interruptible)
-	d.chan_auth = C.int64_t(s.ChanAuth)
-	d.holdoff_max = C.int64_t(s.HoldoffMax)
+	d.chan_auth = C.dmrgo_duration_t(s.ChanAuth)
+	d.holdoff_max = C.dmrgo_duration_t(s.HoldoffMax)
 	d.seed = C.uint64_t(s.Seed)
 	if s.Scratch != nil {
 		panic(argPanic{})
@@ -9086,7 +9086,7 @@ func dmrgo_bs_repeater_free(c_self *C.dmrgo_bs_repeater_t) (rc C.int) {
 }
 
 //export dmrgo_bs_repeater_deadline
-func dmrgo_bs_repeater_deadline(c_self *C.dmrgo_bs_repeater_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+func dmrgo_bs_repeater_deadline(c_self *C.dmrgo_bs_repeater_t, c_at *C.dmrgo_duration_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_bs_Repeater(c_self)
@@ -9094,7 +9094,7 @@ func dmrgo_bs_repeater_deadline(c_self *C.dmrgo_bs_repeater_t, c_at *C.int64_t, 
 	_ = r0
 	_ = r1
 	if c_at != nil {
-		*c_at = C.int64_t(r0)
+		*c_at = C.dmrgo_duration_t(r0)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -9106,7 +9106,7 @@ func dmrgo_bs_repeater_deadline(c_self *C.dmrgo_bs_repeater_t, c_at *C.int64_t, 
 }
 
 //export dmrgo_bs_repeater_inbound_need
-func dmrgo_bs_repeater_inbound_need(c_self *C.dmrgo_bs_repeater_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_from *C.dmrgo_bs_source_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_bs_repeater_inbound_need(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_from *C.dmrgo_bs_source_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_bs_Repeater(c_self)
 	if c_h == nil {
@@ -9132,7 +9132,7 @@ func dmrgo_bs_repeater_inbound_need(c_self *C.dmrgo_bs_repeater_t, c_now C.int64
 }
 
 //export dmrgo_bs_repeater_inbound
-func dmrgo_bs_repeater_inbound(c_self *C.dmrgo_bs_repeater_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_from *C.dmrgo_bs_source_t, c_dst *C.dmrgo_bs_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_bs_repeater_inbound(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_from *C.dmrgo_bs_source_t, c_dst *C.dmrgo_bs_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_bs_Repeater(c_self)
@@ -9193,7 +9193,7 @@ func dmrgo_bs_repeater_inbound(c_self *C.dmrgo_bs_repeater_t, c_now C.int64_t, c
 }
 
 //export dmrgo_bs_repeater_lost_need
-func dmrgo_bs_repeater_lost_need(c_self *C.dmrgo_bs_repeater_t, c_now C.int64_t, c_s C.dmrgo_enums_slot_t, c_from *C.dmrgo_bs_source_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_bs_repeater_lost_need(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_duration_t, c_s C.dmrgo_enums_slot_t, c_from *C.dmrgo_bs_source_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_bs_Repeater(c_self)
 	if c_from == nil {
@@ -9213,7 +9213,7 @@ func dmrgo_bs_repeater_lost_need(c_self *C.dmrgo_bs_repeater_t, c_now C.int64_t,
 }
 
 //export dmrgo_bs_repeater_lost
-func dmrgo_bs_repeater_lost(c_self *C.dmrgo_bs_repeater_t, c_now C.int64_t, c_s C.dmrgo_enums_slot_t, c_from *C.dmrgo_bs_source_t, c_dst *C.dmrgo_bs_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_bs_repeater_lost(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_duration_t, c_s C.dmrgo_enums_slot_t, c_from *C.dmrgo_bs_source_t, c_dst *C.dmrgo_bs_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_bs_Repeater(c_self)
@@ -9328,7 +9328,7 @@ func dmrgo_bs_repeater_state(c_self *C.dmrgo_bs_repeater_t, c_out *C.dmrgo_bs_st
 }
 
 //export dmrgo_bs_repeater_tick_need
-func dmrgo_bs_repeater_tick_need(c_self *C.dmrgo_bs_repeater_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_bs_repeater_tick_need(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_bs_Repeater(c_self)
 	_ = h
@@ -9342,7 +9342,7 @@ func dmrgo_bs_repeater_tick_need(c_self *C.dmrgo_bs_repeater_t, c_now C.int64_t,
 }
 
 //export dmrgo_bs_repeater_tick
-func dmrgo_bs_repeater_tick(c_self *C.dmrgo_bs_repeater_t, c_now C.int64_t, c_dst *C.dmrgo_bs_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_bs_repeater_tick(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_bs_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_bs_Repeater(c_self)
@@ -9676,7 +9676,7 @@ func dmrgo_csbk_preambles_free(c_self *C.dmrgo_csbk_preambles_t) (rc C.int) {
 }
 
 //export dmrgo_csbk_preambles_burst_need
-func dmrgo_csbk_preambles_burst_need(c_self *C.dmrgo_csbk_preambles_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_preambles_burst_need(c_self *C.dmrgo_csbk_preambles_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Preambles(c_self)
 	if c_h == nil {
@@ -9696,7 +9696,7 @@ func dmrgo_csbk_preambles_burst_need(c_self *C.dmrgo_csbk_preambles_t, c_now C.i
 }
 
 //export dmrgo_csbk_preambles_burst
-func dmrgo_csbk_preambles_burst(c_self *C.dmrgo_csbk_preambles_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_preambles_burst(c_self *C.dmrgo_csbk_preambles_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Preambles(c_self)
@@ -9749,7 +9749,7 @@ func dmrgo_csbk_preambles_burst(c_self *C.dmrgo_csbk_preambles_t, c_now C.int64_
 }
 
 //export dmrgo_csbk_preambles_deadline
-func dmrgo_csbk_preambles_deadline(c_self *C.dmrgo_csbk_preambles_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+func dmrgo_csbk_preambles_deadline(c_self *C.dmrgo_csbk_preambles_t, c_at *C.dmrgo_duration_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Preambles(c_self)
@@ -9757,7 +9757,7 @@ func dmrgo_csbk_preambles_deadline(c_self *C.dmrgo_csbk_preambles_t, c_at *C.int
 	_ = r0
 	_ = r1
 	if c_at != nil {
-		*c_at = C.int64_t(r0)
+		*c_at = C.dmrgo_duration_t(r0)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -9769,7 +9769,7 @@ func dmrgo_csbk_preambles_deadline(c_self *C.dmrgo_csbk_preambles_t, c_at *C.int
 }
 
 //export dmrgo_csbk_preambles_decoded_need
-func dmrgo_csbk_preambles_decoded_need(c_self *C.dmrgo_csbk_preambles_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_preambles_decoded_need(c_self *C.dmrgo_csbk_preambles_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Preambles(c_self)
 	var a_b *g_layer2.Burst
@@ -9794,7 +9794,7 @@ func dmrgo_csbk_preambles_decoded_need(c_self *C.dmrgo_csbk_preambles_t, c_now C
 }
 
 //export dmrgo_csbk_preambles_decoded
-func dmrgo_csbk_preambles_decoded(c_self *C.dmrgo_csbk_preambles_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_preambles_decoded(c_self *C.dmrgo_csbk_preambles_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Preambles(c_self)
@@ -9851,7 +9851,7 @@ func dmrgo_csbk_preambles_decoded(c_self *C.dmrgo_csbk_preambles_t, c_now C.int6
 }
 
 //export dmrgo_csbk_preambles_lost_need
-func dmrgo_csbk_preambles_lost_need(c_self *C.dmrgo_csbk_preambles_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_preambles_lost_need(c_self *C.dmrgo_csbk_preambles_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Preambles(c_self)
 	_ = h
@@ -9865,7 +9865,7 @@ func dmrgo_csbk_preambles_lost_need(c_self *C.dmrgo_csbk_preambles_t, c_now C.in
 }
 
 //export dmrgo_csbk_preambles_lost
-func dmrgo_csbk_preambles_lost(c_self *C.dmrgo_csbk_preambles_t, c_now C.int64_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_preambles_lost(c_self *C.dmrgo_csbk_preambles_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Preambles(c_self)
@@ -9941,7 +9941,7 @@ func dmrgo_csbk_preambles_state(c_self *C.dmrgo_csbk_preambles_t, c_out *C.dmrgo
 }
 
 //export dmrgo_csbk_preambles_tick_need
-func dmrgo_csbk_preambles_tick_need(c_self *C.dmrgo_csbk_preambles_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_preambles_tick_need(c_self *C.dmrgo_csbk_preambles_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Preambles(c_self)
 	_ = h
@@ -9955,7 +9955,7 @@ func dmrgo_csbk_preambles_tick_need(c_self *C.dmrgo_csbk_preambles_t, c_now C.in
 }
 
 //export dmrgo_csbk_preambles_tick
-func dmrgo_csbk_preambles_tick(c_self *C.dmrgo_csbk_preambles_t, c_now C.int64_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_preambles_tick(c_self *C.dmrgo_csbk_preambles_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Preambles(c_self)
@@ -10056,7 +10056,7 @@ func dmrgo_csbk_requester_free(c_self *C.dmrgo_csbk_requester_t) (rc C.int) {
 }
 
 //export dmrgo_csbk_requester_burst_need
-func dmrgo_csbk_requester_burst_need(c_self *C.dmrgo_csbk_requester_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_requester_burst_need(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Requester(c_self)
 	if c_h == nil {
@@ -10076,7 +10076,7 @@ func dmrgo_csbk_requester_burst_need(c_self *C.dmrgo_csbk_requester_t, c_now C.i
 }
 
 //export dmrgo_csbk_requester_burst
-func dmrgo_csbk_requester_burst(c_self *C.dmrgo_csbk_requester_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_requester_burst(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Requester(c_self)
@@ -10191,7 +10191,7 @@ func dmrgo_csbk_requester_cancel(c_self *C.dmrgo_csbk_requester_t, c_dst *C.dmrg
 }
 
 //export dmrgo_csbk_requester_channel
-func dmrgo_csbk_requester_channel(c_self *C.dmrgo_csbk_requester_t, c_now C.int64_t, c_busy C.bool) (rc C.int) {
+func dmrgo_csbk_requester_channel(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_busy C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Requester(c_self)
@@ -10203,7 +10203,7 @@ func dmrgo_csbk_requester_channel(c_self *C.dmrgo_csbk_requester_t, c_now C.int6
 }
 
 //export dmrgo_csbk_requester_deadline
-func dmrgo_csbk_requester_deadline(c_self *C.dmrgo_csbk_requester_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+func dmrgo_csbk_requester_deadline(c_self *C.dmrgo_csbk_requester_t, c_at *C.dmrgo_duration_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Requester(c_self)
@@ -10211,7 +10211,7 @@ func dmrgo_csbk_requester_deadline(c_self *C.dmrgo_csbk_requester_t, c_at *C.int
 	_ = r0
 	_ = r1
 	if c_at != nil {
-		*c_at = C.int64_t(r0)
+		*c_at = C.dmrgo_duration_t(r0)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -10223,7 +10223,7 @@ func dmrgo_csbk_requester_deadline(c_self *C.dmrgo_csbk_requester_t, c_at *C.int
 }
 
 //export dmrgo_csbk_requester_decoded_need
-func dmrgo_csbk_requester_decoded_need(c_self *C.dmrgo_csbk_requester_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_requester_decoded_need(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Requester(c_self)
 	var a_b *g_layer2.Burst
@@ -10248,7 +10248,7 @@ func dmrgo_csbk_requester_decoded_need(c_self *C.dmrgo_csbk_requester_t, c_now C
 }
 
 //export dmrgo_csbk_requester_decoded
-func dmrgo_csbk_requester_decoded(c_self *C.dmrgo_csbk_requester_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_requester_decoded(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Requester(c_self)
@@ -10305,7 +10305,7 @@ func dmrgo_csbk_requester_decoded(c_self *C.dmrgo_csbk_requester_t, c_now C.int6
 }
 
 //export dmrgo_csbk_requester_lost_need
-func dmrgo_csbk_requester_lost_need(c_self *C.dmrgo_csbk_requester_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_requester_lost_need(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Requester(c_self)
 	_ = h
@@ -10319,7 +10319,7 @@ func dmrgo_csbk_requester_lost_need(c_self *C.dmrgo_csbk_requester_t, c_now C.in
 }
 
 //export dmrgo_csbk_requester_lost
-func dmrgo_csbk_requester_lost(c_self *C.dmrgo_csbk_requester_t, c_now C.int64_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_requester_lost(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Requester(c_self)
@@ -10367,7 +10367,7 @@ func dmrgo_csbk_requester_lost(c_self *C.dmrgo_csbk_requester_t, c_now C.int64_t
 }
 
 //export dmrgo_csbk_requester_request
-func dmrgo_csbk_requester_request(c_self *C.dmrgo_csbk_requester_t, c_now C.int64_t, c_c *C.dmrgo_pdu_csbk_bytes_t, c_m *C.dmrgo_csbk_match_t, c_opts *C.dmrgo_csbk_request_options_t) (rc C.int) {
+func dmrgo_csbk_requester_request(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_c *C.dmrgo_pdu_csbk_bytes_t, c_m *C.dmrgo_csbk_match_t, c_opts *C.dmrgo_csbk_request_options_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Requester(c_self)
@@ -10396,7 +10396,7 @@ func dmrgo_csbk_requester_request(c_self *C.dmrgo_csbk_requester_t, c_now C.int6
 }
 
 //export dmrgo_csbk_requester_request_call_alert
-func dmrgo_csbk_requester_request_call_alert(c_self *C.dmrgo_csbk_requester_t, c_now C.int64_t, c_target C.uint32_t, c_source C.uint32_t, c_opts *C.dmrgo_csbk_request_options_t) (rc C.int) {
+func dmrgo_csbk_requester_request_call_alert(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_target C.uint32_t, c_source C.uint32_t, c_opts *C.dmrgo_csbk_request_options_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Requester(c_self)
@@ -10417,7 +10417,7 @@ func dmrgo_csbk_requester_request_call_alert(c_self *C.dmrgo_csbk_requester_t, c
 }
 
 //export dmrgo_csbk_requester_request_oacsu
-func dmrgo_csbk_requester_request_oacsu(c_self *C.dmrgo_csbk_requester_t, c_now C.int64_t, c_target C.uint32_t, c_source C.uint32_t, c_so *C.dmrgo_layer3_service_options_t, c_opts *C.dmrgo_csbk_request_options_t) (rc C.int) {
+func dmrgo_csbk_requester_request_oacsu(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_target C.uint32_t, c_source C.uint32_t, c_so *C.dmrgo_layer3_service_options_t, c_opts *C.dmrgo_csbk_request_options_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Requester(c_self)
@@ -10443,7 +10443,7 @@ func dmrgo_csbk_requester_request_oacsu(c_self *C.dmrgo_csbk_requester_t, c_now 
 }
 
 //export dmrgo_csbk_requester_request_radio_check
-func dmrgo_csbk_requester_request_radio_check(c_self *C.dmrgo_csbk_requester_t, c_now C.int64_t, c_target C.uint32_t, c_source C.uint32_t, c_opts *C.dmrgo_csbk_request_options_t) (rc C.int) {
+func dmrgo_csbk_requester_request_radio_check(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_target C.uint32_t, c_source C.uint32_t, c_opts *C.dmrgo_csbk_request_options_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Requester(c_self)
@@ -10492,7 +10492,7 @@ func dmrgo_csbk_requester_state(c_self *C.dmrgo_csbk_requester_t, c_out *C.dmrgo
 }
 
 //export dmrgo_csbk_requester_tick_need
-func dmrgo_csbk_requester_tick_need(c_self *C.dmrgo_csbk_requester_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_requester_tick_need(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Requester(c_self)
 	_ = h
@@ -10506,7 +10506,7 @@ func dmrgo_csbk_requester_tick_need(c_self *C.dmrgo_csbk_requester_t, c_now C.in
 }
 
 //export dmrgo_csbk_requester_tick
-func dmrgo_csbk_requester_tick(c_self *C.dmrgo_csbk_requester_t, c_now C.int64_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_requester_tick(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Requester(c_self)
@@ -10591,7 +10591,7 @@ func dmrgo_csbk_responder_free(c_self *C.dmrgo_csbk_responder_t) (rc C.int) {
 }
 
 //export dmrgo_csbk_responder_burst_need
-func dmrgo_csbk_responder_burst_need(c_self *C.dmrgo_csbk_responder_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_responder_burst_need(c_self *C.dmrgo_csbk_responder_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Responder(c_self)
 	if c_h == nil {
@@ -10611,7 +10611,7 @@ func dmrgo_csbk_responder_burst_need(c_self *C.dmrgo_csbk_responder_t, c_now C.i
 }
 
 //export dmrgo_csbk_responder_burst
-func dmrgo_csbk_responder_burst(c_self *C.dmrgo_csbk_responder_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_responder_burst(c_self *C.dmrgo_csbk_responder_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Responder(c_self)
@@ -10664,7 +10664,7 @@ func dmrgo_csbk_responder_burst(c_self *C.dmrgo_csbk_responder_t, c_now C.int64_
 }
 
 //export dmrgo_csbk_responder_channel
-func dmrgo_csbk_responder_channel(c_self *C.dmrgo_csbk_responder_t, c_now C.int64_t, c_busy C.bool) (rc C.int) {
+func dmrgo_csbk_responder_channel(c_self *C.dmrgo_csbk_responder_t, c_now C.dmrgo_duration_t, c_busy C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Responder(c_self)
@@ -10676,7 +10676,7 @@ func dmrgo_csbk_responder_channel(c_self *C.dmrgo_csbk_responder_t, c_now C.int6
 }
 
 //export dmrgo_csbk_responder_deadline
-func dmrgo_csbk_responder_deadline(c_self *C.dmrgo_csbk_responder_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+func dmrgo_csbk_responder_deadline(c_self *C.dmrgo_csbk_responder_t, c_at *C.dmrgo_duration_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Responder(c_self)
@@ -10684,7 +10684,7 @@ func dmrgo_csbk_responder_deadline(c_self *C.dmrgo_csbk_responder_t, c_at *C.int
 	_ = r0
 	_ = r1
 	if c_at != nil {
-		*c_at = C.int64_t(r0)
+		*c_at = C.dmrgo_duration_t(r0)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -10696,7 +10696,7 @@ func dmrgo_csbk_responder_deadline(c_self *C.dmrgo_csbk_responder_t, c_at *C.int
 }
 
 //export dmrgo_csbk_responder_decoded_need
-func dmrgo_csbk_responder_decoded_need(c_self *C.dmrgo_csbk_responder_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_responder_decoded_need(c_self *C.dmrgo_csbk_responder_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Responder(c_self)
 	var a_b *g_layer2.Burst
@@ -10721,7 +10721,7 @@ func dmrgo_csbk_responder_decoded_need(c_self *C.dmrgo_csbk_responder_t, c_now C
 }
 
 //export dmrgo_csbk_responder_decoded
-func dmrgo_csbk_responder_decoded(c_self *C.dmrgo_csbk_responder_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_responder_decoded(c_self *C.dmrgo_csbk_responder_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Responder(c_self)
@@ -10778,7 +10778,7 @@ func dmrgo_csbk_responder_decoded(c_self *C.dmrgo_csbk_responder_t, c_now C.int6
 }
 
 //export dmrgo_csbk_responder_lost_need
-func dmrgo_csbk_responder_lost_need(c_self *C.dmrgo_csbk_responder_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_responder_lost_need(c_self *C.dmrgo_csbk_responder_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Responder(c_self)
 	_ = h
@@ -10792,7 +10792,7 @@ func dmrgo_csbk_responder_lost_need(c_self *C.dmrgo_csbk_responder_t, c_now C.in
 }
 
 //export dmrgo_csbk_responder_lost
-func dmrgo_csbk_responder_lost(c_self *C.dmrgo_csbk_responder_t, c_now C.int64_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_responder_lost(c_self *C.dmrgo_csbk_responder_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Responder(c_self)
@@ -10868,7 +10868,7 @@ func dmrgo_csbk_responder_reset(c_self *C.dmrgo_csbk_responder_t) (rc C.int) {
 }
 
 //export dmrgo_csbk_responder_tick_need
-func dmrgo_csbk_responder_tick_need(c_self *C.dmrgo_csbk_responder_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_responder_tick_need(c_self *C.dmrgo_csbk_responder_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Responder(c_self)
 	_ = h
@@ -10882,7 +10882,7 @@ func dmrgo_csbk_responder_tick_need(c_self *C.dmrgo_csbk_responder_t, c_now C.in
 }
 
 //export dmrgo_csbk_responder_tick
-func dmrgo_csbk_responder_tick(c_self *C.dmrgo_csbk_responder_t, c_now C.int64_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_responder_tick(c_self *C.dmrgo_csbk_responder_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Responder(c_self)
@@ -10983,7 +10983,7 @@ func dmrgo_csbk_timing_free(c_self *C.dmrgo_csbk_timing_t) (rc C.int) {
 }
 
 //export dmrgo_csbk_timing_burst_need
-func dmrgo_csbk_timing_burst_need(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_timing_burst_need(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Timing(c_self)
 	if c_h == nil {
@@ -11003,7 +11003,7 @@ func dmrgo_csbk_timing_burst_need(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t
 }
 
 //export dmrgo_csbk_timing_burst
-func dmrgo_csbk_timing_burst(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_timing_burst(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Timing(c_self)
@@ -11056,7 +11056,7 @@ func dmrgo_csbk_timing_burst(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t, c_r
 }
 
 //export dmrgo_csbk_timing_channel
-func dmrgo_csbk_timing_channel(c_self *C.dmrgo_csbk_timing_t, c_p0 C.int64_t, c_busy C.bool) (rc C.int) {
+func dmrgo_csbk_timing_channel(c_self *C.dmrgo_csbk_timing_t, c_p0 C.dmrgo_duration_t, c_busy C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Timing(c_self)
@@ -11068,7 +11068,7 @@ func dmrgo_csbk_timing_channel(c_self *C.dmrgo_csbk_timing_t, c_p0 C.int64_t, c_
 }
 
 //export dmrgo_csbk_timing_deadline
-func dmrgo_csbk_timing_deadline(c_self *C.dmrgo_csbk_timing_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+func dmrgo_csbk_timing_deadline(c_self *C.dmrgo_csbk_timing_t, c_at *C.dmrgo_duration_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Timing(c_self)
@@ -11076,7 +11076,7 @@ func dmrgo_csbk_timing_deadline(c_self *C.dmrgo_csbk_timing_t, c_at *C.int64_t, 
 	_ = r0
 	_ = r1
 	if c_at != nil {
-		*c_at = C.int64_t(r0)
+		*c_at = C.dmrgo_duration_t(r0)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -11088,7 +11088,7 @@ func dmrgo_csbk_timing_deadline(c_self *C.dmrgo_csbk_timing_t, c_at *C.int64_t, 
 }
 
 //export dmrgo_csbk_timing_decoded_need
-func dmrgo_csbk_timing_decoded_need(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_timing_decoded_need(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Timing(c_self)
 	var a_b *g_layer2.Burst
@@ -11113,7 +11113,7 @@ func dmrgo_csbk_timing_decoded_need(c_self *C.dmrgo_csbk_timing_t, c_now C.int64
 }
 
 //export dmrgo_csbk_timing_decoded
-func dmrgo_csbk_timing_decoded(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_timing_decoded(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Timing(c_self)
@@ -11170,7 +11170,7 @@ func dmrgo_csbk_timing_decoded(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t, c
 }
 
 //export dmrgo_csbk_timing_join
-func dmrgo_csbk_timing_join(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t) (rc C.int) {
+func dmrgo_csbk_timing_join(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Timing(c_self)
@@ -11234,7 +11234,7 @@ func dmrgo_csbk_timing_state(c_self *C.dmrgo_csbk_timing_t, c_out *C.dmrgo_csbk_
 }
 
 //export dmrgo_csbk_timing_terminator_need
-func dmrgo_csbk_timing_terminator_need(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_timing_terminator_need(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Timing(c_self)
 	_ = h
@@ -11248,7 +11248,7 @@ func dmrgo_csbk_timing_terminator_need(c_self *C.dmrgo_csbk_timing_t, c_now C.in
 }
 
 //export dmrgo_csbk_timing_terminator
-func dmrgo_csbk_timing_terminator(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_timing_terminator(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Timing(c_self)
@@ -11296,7 +11296,7 @@ func dmrgo_csbk_timing_terminator(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t
 }
 
 //export dmrgo_csbk_timing_tick_need
-func dmrgo_csbk_timing_tick_need(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_timing_tick_need(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Timing(c_self)
 	_ = h
@@ -11310,7 +11310,7 @@ func dmrgo_csbk_timing_tick_need(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t,
 }
 
 //export dmrgo_csbk_timing_tick
-func dmrgo_csbk_timing_tick(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_timing_tick(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Timing(c_self)
@@ -11395,7 +11395,7 @@ func dmrgo_csbk_wakeup_free(c_self *C.dmrgo_csbk_wakeup_t) (rc C.int) {
 }
 
 //export dmrgo_csbk_wakeup_burst_need
-func dmrgo_csbk_wakeup_burst_need(c_self *C.dmrgo_csbk_wakeup_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_wakeup_burst_need(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Wakeup(c_self)
 	if c_h == nil {
@@ -11415,7 +11415,7 @@ func dmrgo_csbk_wakeup_burst_need(c_self *C.dmrgo_csbk_wakeup_t, c_now C.int64_t
 }
 
 //export dmrgo_csbk_wakeup_burst
-func dmrgo_csbk_wakeup_burst(c_self *C.dmrgo_csbk_wakeup_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_wakeup_burst(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Wakeup(c_self)
@@ -11530,7 +11530,7 @@ func dmrgo_csbk_wakeup_cancel(c_self *C.dmrgo_csbk_wakeup_t, c_dst *C.dmrgo_csbk
 }
 
 //export dmrgo_csbk_wakeup_deadline
-func dmrgo_csbk_wakeup_deadline(c_self *C.dmrgo_csbk_wakeup_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+func dmrgo_csbk_wakeup_deadline(c_self *C.dmrgo_csbk_wakeup_t, c_at *C.dmrgo_duration_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Wakeup(c_self)
@@ -11538,7 +11538,7 @@ func dmrgo_csbk_wakeup_deadline(c_self *C.dmrgo_csbk_wakeup_t, c_at *C.int64_t, 
 	_ = r0
 	_ = r1
 	if c_at != nil {
-		*c_at = C.int64_t(r0)
+		*c_at = C.dmrgo_duration_t(r0)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -11550,7 +11550,7 @@ func dmrgo_csbk_wakeup_deadline(c_self *C.dmrgo_csbk_wakeup_t, c_at *C.int64_t, 
 }
 
 //export dmrgo_csbk_wakeup_decoded_need
-func dmrgo_csbk_wakeup_decoded_need(c_self *C.dmrgo_csbk_wakeup_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_wakeup_decoded_need(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Wakeup(c_self)
 	var a_b *g_layer2.Burst
@@ -11575,7 +11575,7 @@ func dmrgo_csbk_wakeup_decoded_need(c_self *C.dmrgo_csbk_wakeup_t, c_now C.int64
 }
 
 //export dmrgo_csbk_wakeup_decoded
-func dmrgo_csbk_wakeup_decoded(c_self *C.dmrgo_csbk_wakeup_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_wakeup_decoded(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Wakeup(c_self)
@@ -11632,7 +11632,7 @@ func dmrgo_csbk_wakeup_decoded(c_self *C.dmrgo_csbk_wakeup_t, c_now C.int64_t, c
 }
 
 //export dmrgo_csbk_wakeup_lost_need
-func dmrgo_csbk_wakeup_lost_need(c_self *C.dmrgo_csbk_wakeup_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_wakeup_lost_need(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Wakeup(c_self)
 	_ = h
@@ -11646,7 +11646,7 @@ func dmrgo_csbk_wakeup_lost_need(c_self *C.dmrgo_csbk_wakeup_t, c_now C.int64_t,
 }
 
 //export dmrgo_csbk_wakeup_lost
-func dmrgo_csbk_wakeup_lost(c_self *C.dmrgo_csbk_wakeup_t, c_now C.int64_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_wakeup_lost(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Wakeup(c_self)
@@ -11784,7 +11784,7 @@ func dmrgo_csbk_wakeup_state(c_self *C.dmrgo_csbk_wakeup_t, c_out *C.dmrgo_csbk_
 }
 
 //export dmrgo_csbk_wakeup_tick_need
-func dmrgo_csbk_wakeup_tick_need(c_self *C.dmrgo_csbk_wakeup_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_wakeup_tick_need(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Wakeup(c_self)
 	_ = h
@@ -11798,7 +11798,7 @@ func dmrgo_csbk_wakeup_tick_need(c_self *C.dmrgo_csbk_wakeup_t, c_now C.int64_t,
 }
 
 //export dmrgo_csbk_wakeup_tick
-func dmrgo_csbk_wakeup_tick(c_self *C.dmrgo_csbk_wakeup_t, c_now C.int64_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_wakeup_tick(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Wakeup(c_self)
@@ -11846,7 +11846,7 @@ func dmrgo_csbk_wakeup_tick(c_self *C.dmrgo_csbk_wakeup_t, c_now C.int64_t, c_ds
 }
 
 //export dmrgo_csbk_wakeup_wake
-func dmrgo_csbk_wakeup_wake(c_self *C.dmrgo_csbk_wakeup_t, c_now C.int64_t, c_bs C.uint32_t, c_source C.uint32_t) (rc C.int) {
+func dmrgo_csbk_wakeup_wake(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duration_t, c_bs C.uint32_t, c_source C.uint32_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Wakeup(c_self)
@@ -12076,7 +12076,7 @@ func dmrgo_data_receiver_free(c_self *C.dmrgo_data_receiver_t) (rc C.int) {
 }
 
 //export dmrgo_data_receiver_burst_need
-func dmrgo_data_receiver_burst_need(c_self *C.dmrgo_data_receiver_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_data_receiver_burst_need(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_data_Receiver(c_self)
 	if c_h == nil {
@@ -12096,7 +12096,7 @@ func dmrgo_data_receiver_burst_need(c_self *C.dmrgo_data_receiver_t, c_now C.int
 }
 
 //export dmrgo_data_receiver_burst
-func dmrgo_data_receiver_burst(c_self *C.dmrgo_data_receiver_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_data_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_data_receiver_burst(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_data_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_arena_len != nil {
@@ -12174,7 +12174,7 @@ func dmrgo_data_receiver_burst(c_self *C.dmrgo_data_receiver_t, c_now C.int64_t,
 }
 
 //export dmrgo_data_receiver_deadline
-func dmrgo_data_receiver_deadline(c_self *C.dmrgo_data_receiver_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+func dmrgo_data_receiver_deadline(c_self *C.dmrgo_data_receiver_t, c_at *C.dmrgo_duration_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_data_Receiver(c_self)
@@ -12182,7 +12182,7 @@ func dmrgo_data_receiver_deadline(c_self *C.dmrgo_data_receiver_t, c_at *C.int64
 	_ = r0
 	_ = r1
 	if c_at != nil {
-		*c_at = C.int64_t(r0)
+		*c_at = C.dmrgo_duration_t(r0)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -12194,7 +12194,7 @@ func dmrgo_data_receiver_deadline(c_self *C.dmrgo_data_receiver_t, c_at *C.int64
 }
 
 //export dmrgo_data_receiver_decoded_need
-func dmrgo_data_receiver_decoded_need(c_self *C.dmrgo_data_receiver_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_data_receiver_decoded_need(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_data_Receiver(c_self)
 	var a_b *g_layer2.Burst
@@ -12219,7 +12219,7 @@ func dmrgo_data_receiver_decoded_need(c_self *C.dmrgo_data_receiver_t, c_now C.i
 }
 
 //export dmrgo_data_receiver_decoded
-func dmrgo_data_receiver_decoded(c_self *C.dmrgo_data_receiver_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_data_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_data_receiver_decoded(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_data_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_arena_len != nil {
@@ -12301,7 +12301,7 @@ func dmrgo_data_receiver_decoded(c_self *C.dmrgo_data_receiver_t, c_now C.int64_
 }
 
 //export dmrgo_data_receiver_lost_need
-func dmrgo_data_receiver_lost_need(c_self *C.dmrgo_data_receiver_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_data_receiver_lost_need(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_data_Receiver(c_self)
 	_ = h
@@ -12315,7 +12315,7 @@ func dmrgo_data_receiver_lost_need(c_self *C.dmrgo_data_receiver_t, c_now C.int6
 }
 
 //export dmrgo_data_receiver_lost
-func dmrgo_data_receiver_lost(c_self *C.dmrgo_data_receiver_t, c_now C.int64_t, c_dst *C.dmrgo_data_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_data_receiver_lost(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_data_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_arena_len != nil {
@@ -12416,7 +12416,7 @@ func dmrgo_data_receiver_state(c_self *C.dmrgo_data_receiver_t, c_out *C.dmrgo_d
 }
 
 //export dmrgo_data_receiver_tick_need
-func dmrgo_data_receiver_tick_need(c_self *C.dmrgo_data_receiver_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_data_receiver_tick_need(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_data_Receiver(c_self)
 	_ = h
@@ -12430,7 +12430,7 @@ func dmrgo_data_receiver_tick_need(c_self *C.dmrgo_data_receiver_t, c_now C.int6
 }
 
 //export dmrgo_data_receiver_tick
-func dmrgo_data_receiver_tick(c_self *C.dmrgo_data_receiver_t, c_now C.int64_t, c_dst *C.dmrgo_data_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_data_receiver_tick(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_data_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_arena_len != nil {
@@ -12540,7 +12540,7 @@ func dmrgo_data_sender_free(c_self *C.dmrgo_data_sender_t) (rc C.int) {
 }
 
 //export dmrgo_data_sender_burst_need
-func dmrgo_data_sender_burst_need(c_self *C.dmrgo_data_sender_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_data_sender_burst_need(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_data_Sender(c_self)
 	if c_h == nil {
@@ -12560,7 +12560,7 @@ func dmrgo_data_sender_burst_need(c_self *C.dmrgo_data_sender_t, c_now C.int64_t
 }
 
 //export dmrgo_data_sender_burst
-func dmrgo_data_sender_burst(c_self *C.dmrgo_data_sender_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_data_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_data_sender_burst(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_data_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_data_Sender(c_self)
@@ -12613,7 +12613,7 @@ func dmrgo_data_sender_burst(c_self *C.dmrgo_data_sender_t, c_now C.int64_t, c_r
 }
 
 //export dmrgo_data_sender_cancel_need
-func dmrgo_data_sender_cancel_need(c_self *C.dmrgo_data_sender_t, c_p0 C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_data_sender_cancel_need(c_self *C.dmrgo_data_sender_t, c_p0 C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_data_Sender(c_self)
 	_ = h
@@ -12627,7 +12627,7 @@ func dmrgo_data_sender_cancel_need(c_self *C.dmrgo_data_sender_t, c_p0 C.int64_t
 }
 
 //export dmrgo_data_sender_cancel
-func dmrgo_data_sender_cancel(c_self *C.dmrgo_data_sender_t, c_p0 C.int64_t, c_dst *C.dmrgo_data_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_data_sender_cancel(c_self *C.dmrgo_data_sender_t, c_p0 C.dmrgo_duration_t, c_dst *C.dmrgo_data_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_data_Sender(c_self)
@@ -12675,7 +12675,7 @@ func dmrgo_data_sender_cancel(c_self *C.dmrgo_data_sender_t, c_p0 C.int64_t, c_d
 }
 
 //export dmrgo_data_sender_channel
-func dmrgo_data_sender_channel(c_self *C.dmrgo_data_sender_t, c_now C.int64_t, c_busy C.bool) (rc C.int) {
+func dmrgo_data_sender_channel(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_duration_t, c_busy C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_data_Sender(c_self)
@@ -12687,7 +12687,7 @@ func dmrgo_data_sender_channel(c_self *C.dmrgo_data_sender_t, c_now C.int64_t, c
 }
 
 //export dmrgo_data_sender_deadline
-func dmrgo_data_sender_deadline(c_self *C.dmrgo_data_sender_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+func dmrgo_data_sender_deadline(c_self *C.dmrgo_data_sender_t, c_at *C.dmrgo_duration_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_data_Sender(c_self)
@@ -12695,7 +12695,7 @@ func dmrgo_data_sender_deadline(c_self *C.dmrgo_data_sender_t, c_at *C.int64_t, 
 	_ = r0
 	_ = r1
 	if c_at != nil {
-		*c_at = C.int64_t(r0)
+		*c_at = C.dmrgo_duration_t(r0)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -12707,7 +12707,7 @@ func dmrgo_data_sender_deadline(c_self *C.dmrgo_data_sender_t, c_at *C.int64_t, 
 }
 
 //export dmrgo_data_sender_decoded_need
-func dmrgo_data_sender_decoded_need(c_self *C.dmrgo_data_sender_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_data_sender_decoded_need(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_data_Sender(c_self)
 	var a_b *g_layer2.Burst
@@ -12732,7 +12732,7 @@ func dmrgo_data_sender_decoded_need(c_self *C.dmrgo_data_sender_t, c_now C.int64
 }
 
 //export dmrgo_data_sender_decoded
-func dmrgo_data_sender_decoded(c_self *C.dmrgo_data_sender_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_data_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_data_sender_decoded(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_data_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_data_Sender(c_self)
@@ -12801,7 +12801,7 @@ func dmrgo_data_sender_reset(c_self *C.dmrgo_data_sender_t) (rc C.int) {
 }
 
 //export dmrgo_data_sender_send
-func dmrgo_data_sender_send(c_self *C.dmrgo_data_sender_t, c_now C.int64_t, c_m *C.dmrgo_data_message_t) (rc C.int) {
+func dmrgo_data_sender_send(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_duration_t, c_m *C.dmrgo_data_message_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_data_Sender(c_self)
@@ -12839,7 +12839,7 @@ func dmrgo_data_sender_state(c_self *C.dmrgo_data_sender_t, c_out *C.dmrgo_data_
 }
 
 //export dmrgo_data_sender_tick_need
-func dmrgo_data_sender_tick_need(c_self *C.dmrgo_data_sender_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_data_sender_tick_need(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_data_Sender(c_self)
 	_ = h
@@ -12853,7 +12853,7 @@ func dmrgo_data_sender_tick_need(c_self *C.dmrgo_data_sender_t, c_now C.int64_t,
 }
 
 //export dmrgo_data_sender_tick
-func dmrgo_data_sender_tick(c_self *C.dmrgo_data_sender_t, c_now C.int64_t, c_dst *C.dmrgo_data_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_data_sender_tick(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_data_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_data_Sender(c_self)
@@ -26906,14 +26906,14 @@ func dmrgo_pdu_raw_data_header_string(c_self *C.dmrgo_pdu_raw_data_header_t, c_o
 }
 
 //export dmrgo_pdu_reg_window_time
-func dmrgo_pdu_reg_window_time(c_w C.uint8_t, c_out0 *C.int64_t, c_out1 *C.bool) (rc C.int) {
+func dmrgo_pdu_reg_window_time(c_w C.uint8_t, c_out0 *C.dmrgo_duration_t, c_out1 *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	r0, r1 := g_layer2_pdu.RegWindowTime(uint8(c_w))
 	_ = r0
 	_ = r1
 	if c_out0 != nil {
-		*c_out0 = C.int64_t(r0)
+		*c_out0 = C.dmrgo_duration_t(r0)
 	}
 	if c_out1 != nil {
 		*c_out1 = C.bool(r1)
@@ -37163,7 +37163,7 @@ func dmrgo_trunk_capacity_plus_follower_free(c_self *C.dmrgo_trunk_capacity_plus
 }
 
 //export dmrgo_trunk_capacity_plus_follower_burst_need
-func dmrgo_trunk_capacity_plus_follower_burst_need(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_capacity_plus_follower_burst_need(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_CapacityPlusFollower(c_self)
 	if c_h == nil {
@@ -37190,7 +37190,7 @@ func dmrgo_trunk_capacity_plus_follower_burst_need(c_self *C.dmrgo_trunk_capacit
 }
 
 //export dmrgo_trunk_capacity_plus_follower_burst
-func dmrgo_trunk_capacity_plus_follower_burst(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_capacity_plus_follower_burst(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_CapacityPlusFollower(c_self)
@@ -37269,7 +37269,7 @@ func dmrgo_trunk_capacity_plus_follower_call(c_self *C.dmrgo_trunk_capacity_plus
 }
 
 //export dmrgo_trunk_capacity_plus_follower_deadline
-func dmrgo_trunk_capacity_plus_follower_deadline(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+func dmrgo_trunk_capacity_plus_follower_deadline(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_at *C.dmrgo_duration_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_CapacityPlusFollower(c_self)
@@ -37277,7 +37277,7 @@ func dmrgo_trunk_capacity_plus_follower_deadline(c_self *C.dmrgo_trunk_capacity_
 	_ = r0
 	_ = r1
 	if c_at != nil {
-		*c_at = C.int64_t(r0)
+		*c_at = C.dmrgo_duration_t(r0)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -37289,7 +37289,7 @@ func dmrgo_trunk_capacity_plus_follower_deadline(c_self *C.dmrgo_trunk_capacity_
 }
 
 //export dmrgo_trunk_capacity_plus_follower_lost_need
-func dmrgo_trunk_capacity_plus_follower_lost_need(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_capacity_plus_follower_lost_need(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_CapacityPlusFollower(c_self)
 	_ = h
@@ -37303,7 +37303,7 @@ func dmrgo_trunk_capacity_plus_follower_lost_need(c_self *C.dmrgo_trunk_capacity
 }
 
 //export dmrgo_trunk_capacity_plus_follower_lost
-func dmrgo_trunk_capacity_plus_follower_lost(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.int64_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_capacity_plus_follower_lost(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_CapacityPlusFollower(c_self)
@@ -37419,7 +37419,7 @@ func dmrgo_trunk_capacity_plus_follower_state(c_self *C.dmrgo_trunk_capacity_plu
 }
 
 //export dmrgo_trunk_capacity_plus_follower_tick_need
-func dmrgo_trunk_capacity_plus_follower_tick_need(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_capacity_plus_follower_tick_need(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_CapacityPlusFollower(c_self)
 	_ = h
@@ -37433,7 +37433,7 @@ func dmrgo_trunk_capacity_plus_follower_tick_need(c_self *C.dmrgo_trunk_capacity
 }
 
 //export dmrgo_trunk_capacity_plus_follower_tick
-func dmrgo_trunk_capacity_plus_follower_tick(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.int64_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_capacity_plus_follower_tick(c_self *C.dmrgo_trunk_capacity_plus_follower_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_CapacityPlusFollower(c_self)
@@ -37748,7 +37748,7 @@ func dmrgo_trunk_follower_free(c_self *C.dmrgo_trunk_follower_t) (rc C.int) {
 }
 
 //export dmrgo_trunk_follower_burst_need
-func dmrgo_trunk_follower_burst_need(c_self *C.dmrgo_trunk_follower_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_follower_burst_need(c_self *C.dmrgo_trunk_follower_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_Follower(c_self)
 	if c_h == nil {
@@ -37775,7 +37775,7 @@ func dmrgo_trunk_follower_burst_need(c_self *C.dmrgo_trunk_follower_t, c_now C.i
 }
 
 //export dmrgo_trunk_follower_burst
-func dmrgo_trunk_follower_burst(c_self *C.dmrgo_trunk_follower_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_follower_burst(c_self *C.dmrgo_trunk_follower_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_Follower(c_self)
@@ -37854,7 +37854,7 @@ func dmrgo_trunk_follower_call(c_self *C.dmrgo_trunk_follower_t, c_g *C.dmrgo_tr
 }
 
 //export dmrgo_trunk_follower_deadline
-func dmrgo_trunk_follower_deadline(c_self *C.dmrgo_trunk_follower_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+func dmrgo_trunk_follower_deadline(c_self *C.dmrgo_trunk_follower_t, c_at *C.dmrgo_duration_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_Follower(c_self)
@@ -37862,7 +37862,7 @@ func dmrgo_trunk_follower_deadline(c_self *C.dmrgo_trunk_follower_t, c_at *C.int
 	_ = r0
 	_ = r1
 	if c_at != nil {
-		*c_at = C.int64_t(r0)
+		*c_at = C.dmrgo_duration_t(r0)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -37890,7 +37890,7 @@ func dmrgo_trunk_follower_hunt(c_self *C.dmrgo_trunk_follower_t, c_out *C.dmrgo_
 }
 
 //export dmrgo_trunk_follower_lost_need
-func dmrgo_trunk_follower_lost_need(c_self *C.dmrgo_trunk_follower_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_follower_lost_need(c_self *C.dmrgo_trunk_follower_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_Follower(c_self)
 	_ = h
@@ -37904,7 +37904,7 @@ func dmrgo_trunk_follower_lost_need(c_self *C.dmrgo_trunk_follower_t, c_now C.in
 }
 
 //export dmrgo_trunk_follower_lost
-func dmrgo_trunk_follower_lost(c_self *C.dmrgo_trunk_follower_t, c_now C.int64_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_follower_lost(c_self *C.dmrgo_trunk_follower_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_Follower(c_self)
@@ -38012,7 +38012,7 @@ func dmrgo_trunk_follower_state(c_self *C.dmrgo_trunk_follower_t, c_out *C.dmrgo
 }
 
 //export dmrgo_trunk_follower_tick_need
-func dmrgo_trunk_follower_tick_need(c_self *C.dmrgo_trunk_follower_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_follower_tick_need(c_self *C.dmrgo_trunk_follower_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_Follower(c_self)
 	_ = h
@@ -38026,7 +38026,7 @@ func dmrgo_trunk_follower_tick_need(c_self *C.dmrgo_trunk_follower_t, c_now C.in
 }
 
 //export dmrgo_trunk_follower_tick
-func dmrgo_trunk_follower_tick(c_self *C.dmrgo_trunk_follower_t, c_now C.int64_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_follower_tick(c_self *C.dmrgo_trunk_follower_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_Follower(c_self)
@@ -38292,7 +38292,7 @@ func dmrgo_trunk_ms_free(c_self *C.dmrgo_trunk_ms_t) (rc C.int) {
 }
 
 //export dmrgo_trunk_ms_advise_ip
-func dmrgo_trunk_ms_advise_ip(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_ip *C.uint8_t, c_ipv6 C.bool, c_remove C.bool) (rc C.int) {
+func dmrgo_trunk_ms_advise_ip(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_ip *C.uint8_t, c_ipv6 C.bool, c_remove C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -38326,7 +38326,7 @@ func dmrgo_trunk_ms_asleep(c_self *C.dmrgo_trunk_ms_t, c_out *C.bool) (rc C.int)
 }
 
 //export dmrgo_trunk_ms_assign_groups
-func dmrgo_trunk_ms_assign_groups(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_target C.uint32_t, c_a *C.dmrgo_trunk_appended_t) (rc C.int) {
+func dmrgo_trunk_ms_assign_groups(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_target C.uint32_t, c_a *C.dmrgo_trunk_appended_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -38347,7 +38347,7 @@ func dmrgo_trunk_ms_assign_groups(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c
 }
 
 //export dmrgo_trunk_ms_auth_response_need
-func dmrgo_trunk_ms_auth_response_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_response C.uint32_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_auth_response_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_response C.uint32_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_MS(c_self)
 	_ = h
@@ -38361,7 +38361,7 @@ func dmrgo_trunk_ms_auth_response_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64
 }
 
 //export dmrgo_trunk_ms_auth_response
-func dmrgo_trunk_ms_auth_response(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_response C.uint32_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_auth_response(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_response C.uint32_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -38409,7 +38409,7 @@ func dmrgo_trunk_ms_auth_response(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c
 }
 
 //export dmrgo_trunk_ms_burst_need
-func dmrgo_trunk_ms_burst_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_burst_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_MS(c_self)
 	if c_h == nil {
@@ -38436,7 +38436,7 @@ func dmrgo_trunk_ms_burst_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_ra
 }
 
 //export dmrgo_trunk_ms_burst
-func dmrgo_trunk_ms_burst(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_burst(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -38511,7 +38511,7 @@ func dmrgo_trunk_ms_busy(c_self *C.dmrgo_trunk_ms_t, c_out *C.bool) (rc C.int) {
 }
 
 //export dmrgo_trunk_ms_call
-func dmrgo_trunk_ms_call(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_group C.bool, c_target C.uint32_t, c_opts *C.dmrgo_layer3_voice_service_options_t) (rc C.int) {
+func dmrgo_trunk_ms_call(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_group C.bool, c_target C.uint32_t, c_opts *C.dmrgo_layer3_voice_service_options_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -38531,7 +38531,7 @@ func dmrgo_trunk_ms_call(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_group C.
 }
 
 //export dmrgo_trunk_ms_call_ambient
-func dmrgo_trunk_ms_call_ambient(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_target C.uint32_t, c_opts *C.dmrgo_layer3_voice_service_options_t) (rc C.int) {
+func dmrgo_trunk_ms_call_ambient(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_target C.uint32_t, c_opts *C.dmrgo_layer3_voice_service_options_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -38551,7 +38551,7 @@ func dmrgo_trunk_ms_call_ambient(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_
 }
 
 //export dmrgo_trunk_ms_call_data
-func dmrgo_trunk_ms_call_data(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_group C.bool, c_target C.uint32_t, c_opts *C.dmrgo_layer3_data_service_options_t) (rc C.int) {
+func dmrgo_trunk_ms_call_data(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_group C.bool, c_target C.uint32_t, c_opts *C.dmrgo_layer3_data_service_options_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -38571,7 +38571,7 @@ func dmrgo_trunk_ms_call_data(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_gro
 }
 
 //export dmrgo_trunk_ms_call_duplex
-func dmrgo_trunk_ms_call_duplex(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_target C.uint32_t, c_opts *C.dmrgo_layer3_voice_service_options_t) (rc C.int) {
+func dmrgo_trunk_ms_call_duplex(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_target C.uint32_t, c_opts *C.dmrgo_layer3_voice_service_options_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -38591,7 +38591,7 @@ func dmrgo_trunk_ms_call_duplex(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_t
 }
 
 //export dmrgo_trunk_ms_call_duplex_data
-func dmrgo_trunk_ms_call_duplex_data(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_target C.uint32_t, c_opts *C.dmrgo_layer3_data_service_options_t) (rc C.int) {
+func dmrgo_trunk_ms_call_duplex_data(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_target C.uint32_t, c_opts *C.dmrgo_layer3_data_service_options_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -38611,7 +38611,7 @@ func dmrgo_trunk_ms_call_duplex_data(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t
 }
 
 //export dmrgo_trunk_ms_cancel_need
-func dmrgo_trunk_ms_cancel_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_cancel_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_MS(c_self)
 	_ = h
@@ -38625,7 +38625,7 @@ func dmrgo_trunk_ms_cancel_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_i
 }
 
 //export dmrgo_trunk_ms_cancel
-func dmrgo_trunk_ms_cancel(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_cancel(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -38673,7 +38673,7 @@ func dmrgo_trunk_ms_cancel(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_dst *C
 }
 
 //export dmrgo_trunk_ms_deadline
-func dmrgo_trunk_ms_deadline(c_self *C.dmrgo_trunk_ms_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+func dmrgo_trunk_ms_deadline(c_self *C.dmrgo_trunk_ms_t, c_at *C.dmrgo_duration_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -38681,7 +38681,7 @@ func dmrgo_trunk_ms_deadline(c_self *C.dmrgo_trunk_ms_t, c_at *C.int64_t, c_ok *
 	_ = r0
 	_ = r1
 	if c_at != nil {
-		*c_at = C.int64_t(r0)
+		*c_at = C.dmrgo_duration_t(r0)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -38693,7 +38693,7 @@ func dmrgo_trunk_ms_deadline(c_self *C.dmrgo_trunk_ms_t, c_at *C.int64_t, c_ok *
 }
 
 //export dmrgo_trunk_ms_divert
-func dmrgo_trunk_ms_divert(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_gateway C.uint32_t, c_opts *C.dmrgo_layer3_diversion_service_options_t, c_a *C.dmrgo_trunk_appended_t) (rc C.int) {
+func dmrgo_trunk_ms_divert(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_gateway C.uint32_t, c_opts *C.dmrgo_layer3_diversion_service_options_t, c_a *C.dmrgo_trunk_appended_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -38719,7 +38719,7 @@ func dmrgo_trunk_ms_divert(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_gatewa
 }
 
 //export dmrgo_trunk_ms_end_call_need
-func dmrgo_trunk_ms_end_call_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_end_call_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_MS(c_self)
 	_ = h
@@ -38733,7 +38733,7 @@ func dmrgo_trunk_ms_end_call_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c
 }
 
 //export dmrgo_trunk_ms_end_call
-func dmrgo_trunk_ms_end_call(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_end_call(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -38844,7 +38844,7 @@ func dmrgo_trunk_ms_groups(c_self *C.dmrgo_trunk_ms_t, c_out *C.dmrgo_trunk_dyna
 }
 
 //export dmrgo_trunk_ms_interrupt_need
-func dmrgo_trunk_ms_interrupt_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_terminate C.bool, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_interrupt_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_terminate C.bool, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_MS(c_self)
 	_ = h
@@ -38858,7 +38858,7 @@ func dmrgo_trunk_ms_interrupt_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, 
 }
 
 //export dmrgo_trunk_ms_interrupt
-func dmrgo_trunk_ms_interrupt(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_terminate C.bool, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_interrupt(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_terminate C.bool, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -38925,7 +38925,7 @@ func dmrgo_trunk_ms_killed(c_self *C.dmrgo_trunk_ms_t, c_out *C.bool) (rc C.int)
 }
 
 //export dmrgo_trunk_ms_lost_need
-func dmrgo_trunk_ms_lost_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_lost_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_MS(c_self)
 	_ = h
@@ -38939,7 +38939,7 @@ func dmrgo_trunk_ms_lost_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_ite
 }
 
 //export dmrgo_trunk_ms_lost
-func dmrgo_trunk_ms_lost(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_lost(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -39003,7 +39003,7 @@ func dmrgo_trunk_ms_off(c_self *C.dmrgo_trunk_ms_t, c_out *C.bool) (rc C.int) {
 }
 
 //export dmrgo_trunk_ms_poll_short_data
-func dmrgo_trunk_ms_poll_short_data(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_target C.uint32_t, c_f C.dmrgo_enums_udt_format_t, c_blocks C.int64_t) (rc C.int) {
+func dmrgo_trunk_ms_poll_short_data(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_target C.uint32_t, c_f C.dmrgo_enums_udt_format_t, c_blocks C.int64_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -39018,7 +39018,7 @@ func dmrgo_trunk_ms_poll_short_data(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t,
 }
 
 //export dmrgo_trunk_ms_poll_status
-func dmrgo_trunk_ms_poll_status(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_target C.uint32_t) (rc C.int) {
+func dmrgo_trunk_ms_poll_status(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_target C.uint32_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -39033,7 +39033,7 @@ func dmrgo_trunk_ms_poll_status(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_t
 }
 
 //export dmrgo_trunk_ms_power_off_need
-func dmrgo_trunk_ms_power_off_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_power_off_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_MS(c_self)
 	_ = h
@@ -39047,7 +39047,7 @@ func dmrgo_trunk_ms_power_off_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, 
 }
 
 //export dmrgo_trunk_ms_power_off
-func dmrgo_trunk_ms_power_off(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_power_off(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -39111,7 +39111,7 @@ func dmrgo_trunk_ms_power_save_offset(c_self *C.dmrgo_trunk_ms_t, c_out *C.uint8
 }
 
 //export dmrgo_trunk_ms_quality_need
-func dmrgo_trunk_ms_quality_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_level C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_quality_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_level C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_MS(c_self)
 	_ = h
@@ -39125,7 +39125,7 @@ func dmrgo_trunk_ms_quality_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_
 }
 
 //export dmrgo_trunk_ms_quality
-func dmrgo_trunk_ms_quality(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_level C.int64_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_quality(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_level C.int64_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -39201,7 +39201,7 @@ func dmrgo_trunk_ms_reset(c_self *C.dmrgo_trunk_ms_t) (rc C.int) {
 }
 
 //export dmrgo_trunk_ms_send_short_data
-func dmrgo_trunk_ms_send_short_data(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_group C.bool, c_target C.uint32_t, c_a *C.dmrgo_trunk_appended_t, c_opts *C.dmrgo_layer3_short_data_service_options_t) (rc C.int) {
+func dmrgo_trunk_ms_send_short_data(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_group C.bool, c_target C.uint32_t, c_a *C.dmrgo_trunk_appended_t, c_opts *C.dmrgo_layer3_short_data_service_options_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -39227,7 +39227,7 @@ func dmrgo_trunk_ms_send_short_data(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t,
 }
 
 //export dmrgo_trunk_ms_send_status
-func dmrgo_trunk_ms_send_status(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_group C.bool, c_target C.uint32_t, c_s C.dmrgo_trunk_status_t) (rc C.int) {
+func dmrgo_trunk_ms_send_status(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_group C.bool, c_target C.uint32_t, c_s C.dmrgo_trunk_status_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -39361,7 +39361,7 @@ func dmrgo_trunk_ms_stunned(c_self *C.dmrgo_trunk_ms_t, c_out *C.bool) (rc C.int
 }
 
 //export dmrgo_trunk_ms_tick_need
-func dmrgo_trunk_ms_tick_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_tick_need(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_MS(c_self)
 	_ = h
@@ -39375,7 +39375,7 @@ func dmrgo_trunk_ms_tick_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_ite
 }
 
 //export dmrgo_trunk_ms_tick
-func dmrgo_trunk_ms_tick(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_ms_tick(c_self *C.dmrgo_trunk_ms_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_MS(c_self)
@@ -39734,7 +39734,7 @@ func dmrgo_trunk_tscc_free(c_self *C.dmrgo_trunk_tscc_t) (rc C.int) {
 }
 
 //export dmrgo_trunk_tscc_assign_groups
-func dmrgo_trunk_tscc_assign_groups(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_target C.uint32_t, c_a *C.dmrgo_trunk_appended_t) (rc C.int) {
+func dmrgo_trunk_tscc_assign_groups(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_t, c_target C.uint32_t, c_a *C.dmrgo_trunk_appended_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_TSCC(c_self)
@@ -39755,7 +39755,7 @@ func dmrgo_trunk_tscc_assign_groups(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_
 }
 
 //export dmrgo_trunk_tscc_deadline
-func dmrgo_trunk_tscc_deadline(c_self *C.dmrgo_trunk_tscc_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+func dmrgo_trunk_tscc_deadline(c_self *C.dmrgo_trunk_tscc_t, c_at *C.dmrgo_duration_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_TSCC(c_self)
@@ -39763,7 +39763,7 @@ func dmrgo_trunk_tscc_deadline(c_self *C.dmrgo_trunk_tscc_t, c_at *C.int64_t, c_
 	_ = r0
 	_ = r1
 	if c_at != nil {
-		*c_at = C.int64_t(r0)
+		*c_at = C.dmrgo_duration_t(r0)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -39811,7 +39811,7 @@ func dmrgo_trunk_tscc_expect_auth(c_self *C.dmrgo_trunk_tscc_t, c_addr C.uint32_
 }
 
 //export dmrgo_trunk_tscc_inbound_need
-func dmrgo_trunk_tscc_inbound_need(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_ch C.uint16_t, c_s C.dmrgo_enums_slot_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_tscc_inbound_need(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_t, c_ch C.uint16_t, c_s C.dmrgo_enums_slot_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_TSCC(c_self)
 	if c_h == nil {
@@ -39831,7 +39831,7 @@ func dmrgo_trunk_tscc_inbound_need(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t
 }
 
 //export dmrgo_trunk_tscc_inbound
-func dmrgo_trunk_tscc_inbound(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_ch C.uint16_t, c_s C.dmrgo_enums_slot_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_trunk_tscc_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_tscc_inbound(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_t, c_ch C.uint16_t, c_s C.dmrgo_enums_slot_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_trunk_tscc_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_TSCC(c_self)
@@ -39884,7 +39884,7 @@ func dmrgo_trunk_tscc_inbound(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_c
 }
 
 //export dmrgo_trunk_tscc_interrupt
-func dmrgo_trunk_tscc_interrupt(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_ch C.uint16_t, c_s C.dmrgo_enums_slot_t, c_cmd C.dmrgo_enums_rc_command_t) (rc C.int) {
+func dmrgo_trunk_tscc_interrupt(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_t, c_ch C.uint16_t, c_s C.dmrgo_enums_slot_t, c_cmd C.dmrgo_enums_rc_command_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_TSCC(c_self)
@@ -39899,7 +39899,7 @@ func dmrgo_trunk_tscc_interrupt(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c
 }
 
 //export dmrgo_trunk_tscc_kill
-func dmrgo_trunk_tscc_kill(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_addr C.uint32_t) (rc C.int) {
+func dmrgo_trunk_tscc_kill(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_t, c_addr C.uint32_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_TSCC(c_self)
@@ -39945,7 +39945,7 @@ func dmrgo_trunk_tscc_max_outputs(c_self *C.dmrgo_trunk_tscc_t, c_out *C.int64_t
 }
 
 //export dmrgo_trunk_tscc_poll_short_data
-func dmrgo_trunk_tscc_poll_short_data(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_target C.uint32_t, c_blocks C.int64_t) (rc C.int) {
+func dmrgo_trunk_tscc_poll_short_data(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_t, c_target C.uint32_t, c_blocks C.int64_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_TSCC(c_self)
@@ -39960,7 +39960,7 @@ func dmrgo_trunk_tscc_poll_short_data(c_self *C.dmrgo_trunk_tscc_t, c_now C.int6
 }
 
 //export dmrgo_trunk_tscc_poll_usbd
-func dmrgo_trunk_tscc_poll_usbd(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_target C.uint32_t, c_st C.dmrgo_pdu_service_type_t, c_rd C.uint8_t) (rc C.int) {
+func dmrgo_trunk_tscc_poll_usbd(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_t, c_target C.uint32_t, c_st C.dmrgo_pdu_service_type_t, c_rd C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_TSCC(c_self)
@@ -39991,7 +39991,7 @@ func dmrgo_trunk_tscc_registered(c_self *C.dmrgo_trunk_tscc_t, c_addr C.uint32_t
 }
 
 //export dmrgo_trunk_tscc_send_short_data
-func dmrgo_trunk_tscc_send_short_data(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_group C.bool, c_target C.uint32_t, c_a *C.dmrgo_trunk_appended_t) (rc C.int) {
+func dmrgo_trunk_tscc_send_short_data(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_t, c_group C.bool, c_target C.uint32_t, c_a *C.dmrgo_trunk_appended_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_TSCC(c_self)
@@ -40012,7 +40012,7 @@ func dmrgo_trunk_tscc_send_short_data(c_self *C.dmrgo_trunk_tscc_t, c_now C.int6
 }
 
 //export dmrgo_trunk_tscc_send_status
-func dmrgo_trunk_tscc_send_status(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_group C.bool, c_target C.uint32_t, c_source C.uint32_t, c_s C.dmrgo_trunk_status_t) (rc C.int) {
+func dmrgo_trunk_tscc_send_status(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_t, c_group C.bool, c_target C.uint32_t, c_source C.uint32_t, c_s C.dmrgo_trunk_status_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_TSCC(c_self)
@@ -40027,7 +40027,7 @@ func dmrgo_trunk_tscc_send_status(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t,
 }
 
 //export dmrgo_trunk_tscc_stun
-func dmrgo_trunk_tscc_stun(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_addr C.uint32_t, c_revive C.bool) (rc C.int) {
+func dmrgo_trunk_tscc_stun(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_t, c_addr C.uint32_t, c_revive C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_TSCC(c_self)
@@ -40042,7 +40042,7 @@ func dmrgo_trunk_tscc_stun(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_addr
 }
 
 //export dmrgo_trunk_tscc_tick_need
-func dmrgo_trunk_tscc_tick_need(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_tscc_tick_need(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_TSCC(c_self)
 	_ = h
@@ -40056,7 +40056,7 @@ func dmrgo_trunk_tscc_tick_need(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c
 }
 
 //export dmrgo_trunk_tscc_tick
-func dmrgo_trunk_tscc_tick(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_dst *C.dmrgo_trunk_tscc_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_tscc_tick(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_trunk_tscc_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_TSCC(c_self)
@@ -42236,7 +42236,7 @@ func dmrgo_voice_interrupter_free(c_self *C.dmrgo_voice_interrupter_t) (rc C.int
 }
 
 //export dmrgo_voice_interrupter_burst_need
-func dmrgo_voice_interrupter_burst_need(c_self *C.dmrgo_voice_interrupter_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_voice_interrupter_burst_need(c_self *C.dmrgo_voice_interrupter_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_voice_Interrupter(c_self)
 	if c_h == nil {
@@ -42256,7 +42256,7 @@ func dmrgo_voice_interrupter_burst_need(c_self *C.dmrgo_voice_interrupter_t, c_n
 }
 
 //export dmrgo_voice_interrupter_burst
-func dmrgo_voice_interrupter_burst(c_self *C.dmrgo_voice_interrupter_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_voice_interrupter_burst(c_self *C.dmrgo_voice_interrupter_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_voice_Interrupter(c_self)
@@ -42321,7 +42321,7 @@ func dmrgo_voice_interrupter_cancel(c_self *C.dmrgo_voice_interrupter_t) (rc C.i
 }
 
 //export dmrgo_voice_interrupter_deadline
-func dmrgo_voice_interrupter_deadline(c_self *C.dmrgo_voice_interrupter_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+func dmrgo_voice_interrupter_deadline(c_self *C.dmrgo_voice_interrupter_t, c_at *C.dmrgo_duration_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_voice_Interrupter(c_self)
@@ -42329,7 +42329,7 @@ func dmrgo_voice_interrupter_deadline(c_self *C.dmrgo_voice_interrupter_t, c_at 
 	_ = r0
 	_ = r1
 	if c_at != nil {
-		*c_at = C.int64_t(r0)
+		*c_at = C.dmrgo_duration_t(r0)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -42341,7 +42341,7 @@ func dmrgo_voice_interrupter_deadline(c_self *C.dmrgo_voice_interrupter_t, c_at 
 }
 
 //export dmrgo_voice_interrupter_decoded_need
-func dmrgo_voice_interrupter_decoded_need(c_self *C.dmrgo_voice_interrupter_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_voice_interrupter_decoded_need(c_self *C.dmrgo_voice_interrupter_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_voice_Interrupter(c_self)
 	var a_b *g_layer2.Burst
@@ -42366,7 +42366,7 @@ func dmrgo_voice_interrupter_decoded_need(c_self *C.dmrgo_voice_interrupter_t, c
 }
 
 //export dmrgo_voice_interrupter_decoded
-func dmrgo_voice_interrupter_decoded(c_self *C.dmrgo_voice_interrupter_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_voice_interrupter_decoded(c_self *C.dmrgo_voice_interrupter_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_voice_Interrupter(c_self)
@@ -42423,7 +42423,7 @@ func dmrgo_voice_interrupter_decoded(c_self *C.dmrgo_voice_interrupter_t, c_now 
 }
 
 //export dmrgo_voice_interrupter_interrupt
-func dmrgo_voice_interrupter_interrupt(c_self *C.dmrgo_voice_interrupter_t, c_now C.int64_t, c_cmd C.dmrgo_enums_rc_command_t) (rc C.int) {
+func dmrgo_voice_interrupter_interrupt(c_self *C.dmrgo_voice_interrupter_t, c_now C.dmrgo_duration_t, c_cmd C.dmrgo_enums_rc_command_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_voice_Interrupter(c_self)
@@ -42466,7 +42466,7 @@ func dmrgo_voice_interrupter_state(c_self *C.dmrgo_voice_interrupter_t, c_out *C
 }
 
 //export dmrgo_voice_interrupter_tick_need
-func dmrgo_voice_interrupter_tick_need(c_self *C.dmrgo_voice_interrupter_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_voice_interrupter_tick_need(c_self *C.dmrgo_voice_interrupter_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_voice_Interrupter(c_self)
 	_ = h
@@ -42480,7 +42480,7 @@ func dmrgo_voice_interrupter_tick_need(c_self *C.dmrgo_voice_interrupter_t, c_no
 }
 
 //export dmrgo_voice_interrupter_tick
-func dmrgo_voice_interrupter_tick(c_self *C.dmrgo_voice_interrupter_t, c_now C.int64_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_voice_interrupter_tick(c_self *C.dmrgo_voice_interrupter_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_voice_Interrupter(c_self)
@@ -42682,7 +42682,7 @@ func dmrgo_voice_receiver_free(c_self *C.dmrgo_voice_receiver_t) (rc C.int) {
 }
 
 //export dmrgo_voice_receiver_burst_need
-func dmrgo_voice_receiver_burst_need(c_self *C.dmrgo_voice_receiver_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_voice_receiver_burst_need(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_voice_Receiver(c_self)
 	if c_h == nil {
@@ -42702,7 +42702,7 @@ func dmrgo_voice_receiver_burst_need(c_self *C.dmrgo_voice_receiver_t, c_now C.i
 }
 
 //export dmrgo_voice_receiver_burst
-func dmrgo_voice_receiver_burst(c_self *C.dmrgo_voice_receiver_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_voice_receiver_burst(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_arena_len != nil {
@@ -42780,7 +42780,7 @@ func dmrgo_voice_receiver_burst(c_self *C.dmrgo_voice_receiver_t, c_now C.int64_
 }
 
 //export dmrgo_voice_receiver_deadline
-func dmrgo_voice_receiver_deadline(c_self *C.dmrgo_voice_receiver_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+func dmrgo_voice_receiver_deadline(c_self *C.dmrgo_voice_receiver_t, c_at *C.dmrgo_duration_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_voice_Receiver(c_self)
@@ -42788,7 +42788,7 @@ func dmrgo_voice_receiver_deadline(c_self *C.dmrgo_voice_receiver_t, c_at *C.int
 	_ = r0
 	_ = r1
 	if c_at != nil {
-		*c_at = C.int64_t(r0)
+		*c_at = C.dmrgo_duration_t(r0)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -42800,7 +42800,7 @@ func dmrgo_voice_receiver_deadline(c_self *C.dmrgo_voice_receiver_t, c_at *C.int
 }
 
 //export dmrgo_voice_receiver_decoded_need
-func dmrgo_voice_receiver_decoded_need(c_self *C.dmrgo_voice_receiver_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_voice_receiver_decoded_need(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_voice_Receiver(c_self)
 	var a_b *g_layer2.Burst
@@ -42825,7 +42825,7 @@ func dmrgo_voice_receiver_decoded_need(c_self *C.dmrgo_voice_receiver_t, c_now C
 }
 
 //export dmrgo_voice_receiver_decoded
-func dmrgo_voice_receiver_decoded(c_self *C.dmrgo_voice_receiver_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_voice_receiver_decoded(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_arena_len != nil {
@@ -42907,7 +42907,7 @@ func dmrgo_voice_receiver_decoded(c_self *C.dmrgo_voice_receiver_t, c_now C.int6
 }
 
 //export dmrgo_voice_receiver_expect
-func dmrgo_voice_receiver_expect(c_self *C.dmrgo_voice_receiver_t, c_now C.int64_t, c_c *C.dmrgo_voice_call_t, c_until C.int64_t) (rc C.int) {
+func dmrgo_voice_receiver_expect(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_duration_t, c_c *C.dmrgo_voice_call_t, c_until C.dmrgo_duration_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_voice_Receiver(c_self)
@@ -42924,7 +42924,7 @@ func dmrgo_voice_receiver_expect(c_self *C.dmrgo_voice_receiver_t, c_now C.int64
 }
 
 //export dmrgo_voice_receiver_lost_need
-func dmrgo_voice_receiver_lost_need(c_self *C.dmrgo_voice_receiver_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_voice_receiver_lost_need(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_voice_Receiver(c_self)
 	_ = h
@@ -42938,7 +42938,7 @@ func dmrgo_voice_receiver_lost_need(c_self *C.dmrgo_voice_receiver_t, c_now C.in
 }
 
 //export dmrgo_voice_receiver_lost
-func dmrgo_voice_receiver_lost(c_self *C.dmrgo_voice_receiver_t, c_now C.int64_t, c_dst *C.dmrgo_voice_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_voice_receiver_lost(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_voice_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_arena_len != nil {
@@ -43039,7 +43039,7 @@ func dmrgo_voice_receiver_state(c_self *C.dmrgo_voice_receiver_t, c_out *C.dmrgo
 }
 
 //export dmrgo_voice_receiver_tick_need
-func dmrgo_voice_receiver_tick_need(c_self *C.dmrgo_voice_receiver_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_voice_receiver_tick_need(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_voice_Receiver(c_self)
 	_ = h
@@ -43053,7 +43053,7 @@ func dmrgo_voice_receiver_tick_need(c_self *C.dmrgo_voice_receiver_t, c_now C.in
 }
 
 //export dmrgo_voice_receiver_tick
-func dmrgo_voice_receiver_tick(c_self *C.dmrgo_voice_receiver_t, c_now C.int64_t, c_dst *C.dmrgo_voice_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_voice_receiver_tick(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_voice_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_arena_len != nil {
@@ -43163,7 +43163,7 @@ func dmrgo_voice_transmitter_free(c_self *C.dmrgo_voice_transmitter_t) (rc C.int
 }
 
 //export dmrgo_voice_transmitter_burst_need
-func dmrgo_voice_transmitter_burst_need(c_self *C.dmrgo_voice_transmitter_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_voice_transmitter_burst_need(c_self *C.dmrgo_voice_transmitter_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_voice_Transmitter(c_self)
 	if c_h == nil {
@@ -43183,7 +43183,7 @@ func dmrgo_voice_transmitter_burst_need(c_self *C.dmrgo_voice_transmitter_t, c_n
 }
 
 //export dmrgo_voice_transmitter_burst
-func dmrgo_voice_transmitter_burst(c_self *C.dmrgo_voice_transmitter_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_voice_transmitter_burst(c_self *C.dmrgo_voice_transmitter_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_voice_Transmitter(c_self)
@@ -43236,7 +43236,7 @@ func dmrgo_voice_transmitter_burst(c_self *C.dmrgo_voice_transmitter_t, c_now C.
 }
 
 //export dmrgo_voice_transmitter_channel
-func dmrgo_voice_transmitter_channel(c_self *C.dmrgo_voice_transmitter_t, c_now C.int64_t, c_busy C.bool) (rc C.int) {
+func dmrgo_voice_transmitter_channel(c_self *C.dmrgo_voice_transmitter_t, c_now C.dmrgo_duration_t, c_busy C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_voice_Transmitter(c_self)
@@ -43248,7 +43248,7 @@ func dmrgo_voice_transmitter_channel(c_self *C.dmrgo_voice_transmitter_t, c_now 
 }
 
 //export dmrgo_voice_transmitter_deadline
-func dmrgo_voice_transmitter_deadline(c_self *C.dmrgo_voice_transmitter_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+func dmrgo_voice_transmitter_deadline(c_self *C.dmrgo_voice_transmitter_t, c_at *C.dmrgo_duration_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_voice_Transmitter(c_self)
@@ -43256,7 +43256,7 @@ func dmrgo_voice_transmitter_deadline(c_self *C.dmrgo_voice_transmitter_t, c_at 
 	_ = r0
 	_ = r1
 	if c_at != nil {
-		*c_at = C.int64_t(r0)
+		*c_at = C.dmrgo_duration_t(r0)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -43268,7 +43268,7 @@ func dmrgo_voice_transmitter_deadline(c_self *C.dmrgo_voice_transmitter_t, c_at 
 }
 
 //export dmrgo_voice_transmitter_decoded_need
-func dmrgo_voice_transmitter_decoded_need(c_self *C.dmrgo_voice_transmitter_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_voice_transmitter_decoded_need(c_self *C.dmrgo_voice_transmitter_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_voice_Transmitter(c_self)
 	var a_b *g_layer2.Burst
@@ -43293,7 +43293,7 @@ func dmrgo_voice_transmitter_decoded_need(c_self *C.dmrgo_voice_transmitter_t, c
 }
 
 //export dmrgo_voice_transmitter_decoded
-func dmrgo_voice_transmitter_decoded(c_self *C.dmrgo_voice_transmitter_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_voice_transmitter_decoded(c_self *C.dmrgo_voice_transmitter_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_voice_Transmitter(c_self)
@@ -43425,7 +43425,7 @@ func dmrgo_voice_transmitter_interrupt(c_self *C.dmrgo_voice_transmitter_t, c_rc
 }
 
 //export dmrgo_voice_transmitter_relay
-func dmrgo_voice_transmitter_relay(c_self *C.dmrgo_voice_transmitter_t, c_now C.int64_t, c_e *C.dmrgo_voice_event_t) (rc C.int) {
+func dmrgo_voice_transmitter_relay(c_self *C.dmrgo_voice_transmitter_t, c_now C.dmrgo_duration_t, c_e *C.dmrgo_voice_event_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_voice_Transmitter(c_self)
@@ -43513,7 +43513,7 @@ func dmrgo_voice_transmitter_slots(c_self *C.dmrgo_voice_transmitter_t, c_s *C.u
 }
 
 //export dmrgo_voice_transmitter_start
-func dmrgo_voice_transmitter_start(c_self *C.dmrgo_voice_transmitter_t, c_at C.int64_t, c_c *C.dmrgo_voice_call_t, c_opts *C.dmrgo_voice_call_options_t) (rc C.int) {
+func dmrgo_voice_transmitter_start(c_self *C.dmrgo_voice_transmitter_t, c_at C.dmrgo_duration_t, c_c *C.dmrgo_voice_call_t, c_opts *C.dmrgo_voice_call_options_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_voice_Transmitter(c_self)
@@ -43568,7 +43568,7 @@ func dmrgo_voice_transmitter_stop(c_self *C.dmrgo_voice_transmitter_t) (rc C.int
 }
 
 //export dmrgo_voice_transmitter_tick_need
-func dmrgo_voice_transmitter_tick_need(c_self *C.dmrgo_voice_transmitter_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_voice_transmitter_tick_need(c_self *C.dmrgo_voice_transmitter_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_voice_Transmitter(c_self)
 	_ = h
@@ -43582,7 +43582,7 @@ func dmrgo_voice_transmitter_tick_need(c_self *C.dmrgo_voice_transmitter_t, c_no
 }
 
 //export dmrgo_voice_transmitter_tick
-func dmrgo_voice_transmitter_tick(c_self *C.dmrgo_voice_transmitter_t, c_now C.int64_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_voice_transmitter_tick(c_self *C.dmrgo_voice_transmitter_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_voice_Transmitter(c_self)

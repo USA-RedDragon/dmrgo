@@ -685,7 +685,9 @@ func (g *gen) finish(opt Options) (*Output, error) {
 		fmt.Sprintf("#define DMRGO_ABI_VERSION %d", g.lock.abi), "",
 		"typedef struct dmrgo_complex64_t {", "\tfloat re;", "\tfloat im;", "} dmrgo_complex64_t;", "",
 		"typedef struct dmrgo_complex128_t {", "\tdouble re;", "\tdouble im;", "} dmrgo_complex128_t;", "",
-		"typedef struct dmrgo_string_t {", "\tchar *ptr;", "\tsize_t len;", "} dmrgo_string_t;", "")
+		"typedef struct dmrgo_string_t {", "\tchar *ptr;", "\tsize_t len;", "} dmrgo_string_t;", "",
+		"/* dmrgo_duration_t is a time in nanoseconds, as a Go time.Duration. A now argument is the time since any fixed start, such as a monotonic clock. */",
+		"typedef int64_t "+cDuration+";", "")
 	for _, f := range g.fwd {
 		lines2(f)
 	}
@@ -748,7 +750,8 @@ func (g *gen) finish(opt Options) (*Output, error) {
 	if err != nil {
 		return nil, err
 	}
-	syms := append(slices.Clone(g.abiSyms), g.abiTypes...)
+	syms := append(slices.Clone(g.abiSyms), "sym typedef int64_t "+cDuration+";")
+	syms = append(syms, g.abiTypes...)
 	syms = append(syms, hand...)
 	var mb bytes.Buffer
 	mb.WriteString("{\n\tglobal:\n")
