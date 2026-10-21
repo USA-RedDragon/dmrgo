@@ -81,6 +81,30 @@ func newPoly(pu pulse, hz int, f32 bool) (*poly, error) {
 	return k, nil
 }
 
+// add adds t to the pulse when the rate is a whole multiple of the symbol
+// rate and t has the length of the pulse: t[j] is the deviation j samples
+// after the symbol enters.
+func (k *poly) add(t []float64) {
+	if k.m != 1 || len(t) != k.l*k.n {
+		return
+	}
+	k.peak = 0
+	for p := range k.l {
+		var sum float64
+		for i := range k.n {
+			j := p*k.n + i
+			if k.taps32 != nil {
+				k.taps32[j] += float32(t[i*k.l+p])
+				sum += math.Abs(float64(k.taps32[j]))
+			} else {
+				k.taps64[j] += t[i*k.l+p]
+				sum += math.Abs(k.taps64[j])
+			}
+		}
+		k.peak = max(k.peak, 3*sum)
+	}
+}
+
 func (k *poly) push(s int8) {
 	switch s {
 	case -3, -1, 1, 3:
@@ -248,6 +272,10 @@ type RateDesign struct {
 	Hz                                  int
 	ExactPow, Gain, FlatGain, CarrierHz float64
 	Boost                               float64
+	// Taps, at a rate that is a whole multiple of 4800 and of the length
+	// of the pulse at Hz, are added to the pulse: Taps[j] is the deviation
+	// in Hz j samples after the symbol enters.
+	Taps []float64
 }
 
 // PulseConfig sets the transmit pulse of Tier1 and Tier2.
@@ -370,10 +398,12 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		}
 		return a, nil
 	case TierDefault, Tier1, Tier2:
+		var extra []float64
 		for _, r := range cfg.Rates {
 			if r.Hz == cfg.Hz {
 				cfg.ExactPow, cfg.Pulse.Gain, cfg.Pulse.FlatGain, cfg.CarrierHz = r.ExactPow, r.Gain, r.FlatGain, r.CarrierHz
 				cfg.Boost = r.Boost
+				extra = r.Taps
 				break
 			}
 		}
@@ -391,6 +421,7 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		if err != nil {
 			return nil, err
 		}
+		k.add(extra)
 		if x := k.peak * a.scale; a.offset+x > math.MaxInt16 || a.offset-x < math.MinInt16 {
 			return nil, errOffset
 		}
