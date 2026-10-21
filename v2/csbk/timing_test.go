@@ -562,6 +562,21 @@ func TestTimingLeaderConflict(t *testing.T) {
 	}
 }
 
+// ETSI TS 102 361-2 clause 6.2.3.7, Figure 6.7
+func TestTimingLeaderSyncAgeWrap(t *testing.T) {
+	t.Parallel()
+
+	for _, sa := range []uint16{1080 + 535, 540 + 9, 2 * 540} {
+		d := newTiming(t, 0x80000, 2, 1)
+		d.rx(minute, ctf{gen: 1, sa: 0, ldi: 2, lid: 0x80000, nl: true, cto: 2, sid: 300})
+		d.until(minute + time.Second)
+		d.rx(minute+time.Second, ctf{gen: 1, sa: sa, ldi: 2, lid: 0x80000, cto: 3, sid: 8})
+		if _, id, _ := d.m.Leader(); d.m.State() != csbk.TimingLeader || id != 0x80000 {
+			t.Fatalf("SA %d: state %v, leader %#x", sa, d.m.State(), id)
+		}
+	}
+}
+
 // ETSI TS 102 361-2 clause 6.2.3.8
 func TestTimingBusyChannel(t *testing.T) {
 	t.Parallel()

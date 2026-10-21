@@ -447,7 +447,7 @@ func (m *Timing) leader(now time.Duration, rx *pdu.ChannelTimingPDU, octets pdu.
 		sa, msa := int(rx.SyncAge), int(m.sa(now))
 		switch {
 		case abs(sa-msa) <= saConflict:
-		case abs(sa%int(constants.BeaconInterval/constants.SyncAgeIncrement)-msa) <= saConflict:
+		case beaconDistance(sa, msa) <= saConflict:
 			m.schedule(now, ctResponse)
 		default:
 			m.newID()
@@ -571,6 +571,12 @@ func (m *Timing) sameSA(now time.Duration, sa uint16) bool {
 
 func (m *Timing) older(now time.Duration, sa uint16) bool {
 	return int(sa) > int(m.sa(now))+saTolerance
+}
+
+func beaconDistance(sa, msa int) int {
+	const n = int(constants.BeaconInterval / constants.SyncAgeIncrement)
+	d := abs(sa%n - msa%n)
+	return min(d, n-d)
 }
 
 func abs(v int) int {
