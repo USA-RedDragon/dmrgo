@@ -341,6 +341,14 @@ typedef struct dmrgo_layer3_registration_service_options_t dmrgo_layer3_registra
 typedef struct dmrgo_layer3_service_options_t dmrgo_layer3_service_options_t;
 /* Go: layer3.VoiceServiceOptions. VoiceServiceOptions is the 7-bit Service_Options of a Tier III voice service request, such as a C_RAND for a talkgroup or individual voice call. */
 typedef struct dmrgo_layer3_voice_service_options_t dmrgo_layer3_voice_service_options_t;
+/* Go: tms.Header. Header is the first header octet of a message. */
+typedef struct dmrgo_tms_header_t dmrgo_tms_header_t;
+/* Go: tms.Message. Message is a MOTOTRBO Text Messaging Service message, the payload of a UDP datagram to port 4007. */
+typedef struct dmrgo_tms_message_t dmrgo_tms_message_t;
+/* Go: tms.SequenceHigh. SequenceHigh is the second extension octet of a text message or an acknowledgement. */
+typedef struct dmrgo_tms_sequence_high_t dmrgo_tms_sequence_high_t;
+/* Go: tms.SequenceLow. SequenceLow is the first extension octet of a text message or an acknowledgement. */
+typedef struct dmrgo_tms_sequence_low_t dmrgo_tms_sequence_low_t;
 /* Go: nmea.RMC. RMC is a Recommended Minimum Specific GNSS Data sentence ($--RMC). */
 typedef struct dmrgo_nmea_rmc_t dmrgo_nmea_rmc_t;
 /* Go: shortdata.HyteraText. HyteraText is the data of the defined data text that AnyTone radios send in H-SMS mode, with SAP short data and DD format 1. */
@@ -568,6 +576,10 @@ typedef uint8_t dmrgo_layer3_position_error_t;
 typedef uint8_t dmrgo_layer3_source_type_t;
 /* Go: layer3.TalkerAliasDataFormat. TalkerAliasDataFormat is the 2-bit character encoding of a talker alias (ETSI TS 102 361-2 clause 7.2.18, Table 7.25). */
 typedef uint8_t dmrgo_layer3_talker_alias_data_format_t;
+/* Go: tms.Encoding. Encoding is the 5-bit character coding of the text. */
+typedef uint8_t dmrgo_tms_encoding_t;
+/* Go: tms.Type. Type is the kind of a message: the control bit and the 4-bit PDU type of the first header octet. */
+typedef uint8_t dmrgo_tms_type_t;
 /* Go: trunk.OutputKind. OutputKind is the kind of an Output. */
 typedef uint8_t dmrgo_trunk_output_kind_t;
 /* Go: trunk.Reason. Reason tells why a machine lost a TSCC, left a payload channel or failed a request. */
@@ -1918,6 +1930,37 @@ struct dmrgo_layer3_voice_service_options_t {
 	uint8_t priority_level;
 };
 
+struct dmrgo_tms_header_t {
+	bool extension;
+	bool ack_required;
+	bool reserved;
+	dmrgo_tms_type_t type_;
+};
+
+struct dmrgo_tms_sequence_low_t {
+	bool extension;
+	uint8_t reserved;
+	uint8_t low;
+};
+
+struct dmrgo_tms_sequence_high_t {
+	bool extension;
+	uint8_t high;
+	dmrgo_tms_encoding_t encoding;
+};
+
+struct dmrgo_tms_message_t {
+	uint16_t length;
+	dmrgo_tms_header_t header;
+	uint8_t *address;
+	size_t address_len;
+	uint8_t capability;
+	dmrgo_tms_sequence_low_t sequence_low;
+	dmrgo_tms_sequence_high_t sequence_high;
+	uint8_t *text;
+	size_t text_len;
+};
+
 struct dmrgo_nmea_rmc_t {
 	uint8_t talker[2];
 	uint8_t hour;
@@ -2356,6 +2399,8 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ERR_SHORTDATA_FORMAT (-180)
 #define DMRGO_ERR_SHORTDATA_LENGTH (-181)
 #define DMRGO_ERR_SHORTDATA_SHORT (-182)
+#define DMRGO_ERR_TMS_LENGTH (-183)
+#define DMRGO_ERR_TMS_SHORT (-184)
 #define DMRGO_ERR_TRUNK_BUSY (-134)
 #define DMRGO_ERR_TRUNK_CHANNEL_NUMBER (-135)
 #define DMRGO_ERR_TRUNK_CONFIG_ERROR (-105)
@@ -3531,6 +3576,16 @@ struct dmrgo_voice_output_t {
 #define DMRGO_LAYER3_TALKER_ALIAS_UTF16 ((dmrgo_layer3_talker_alias_data_format_t)3)
 /* Go: layer3.TalkerAliasUTF8. Unicode UTF-8 */
 #define DMRGO_LAYER3_TALKER_ALIAS_UTF8 ((dmrgo_layer3_talker_alias_data_format_t)2)
+/* Go: tms.EncodingNone. no coding given */
+#define DMRGO_TMS_ENCODING_NONE ((dmrgo_tms_encoding_t)0)
+/* Go: tms.EncodingUTF16LE. UTF-16LE (UCS-2) */
+#define DMRGO_TMS_ENCODING_UTF16LE ((dmrgo_tms_encoding_t)4)
+/* Go: tms.TypeAck. the acknowledgement of a text message */
+#define DMRGO_TMS_TYPE_ACK ((dmrgo_tms_type_t)31)
+/* Go: tms.TypeAvailability. a service availability message */
+#define DMRGO_TMS_TYPE_AVAILABILITY ((dmrgo_tms_type_t)16)
+/* Go: tms.TypeText. a text message */
+#define DMRGO_TMS_TYPE_TEXT ((dmrgo_tms_type_t)0)
 /* Go: trunk.CapacityPlusNoSignalDefault. CapacityPlusNoSignalDefault is the default CapacityPlusConfig.NoSignal: more than twice the 2 s beacon period of an idle rest channel. */
 #define DMRGO_TRUNK_CAPACITY_PLUS_NO_SIGNAL_DEFAULT INT64_C(5000000000)
 /* Go: trunk.ChannelAbsolute. ChannelAbsolute is the channel number of a grant or C_MOVE whose frequencies follow in a CG_AP or MV_AP block (ETSI TS 102 361-4 clause 7.1.1.1.1). */
@@ -5390,6 +5445,38 @@ int dmrgo_layer3_voice_service_options_encode(dmrgo_layer3_voice_service_options
 int dmrgo_layer3_voice_service_options_field(const dmrgo_layer3_voice_service_options_t *self, uint8_t *out);
 /* Go: layer3.VoiceServiceOptions.String. String returns the fields of s as text, for printing. */
 int dmrgo_layer3_voice_service_options_string(dmrgo_layer3_voice_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: tms.DecodeMessage. DecodeMessage decodes a Message from data. */
+int dmrgo_tms_decode_message(const uint8_t *data, size_t data_len, dmrgo_tms_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: tms.Encoding.String. String returns the name of e. */
+int dmrgo_tms_encoding_string(dmrgo_tms_encoding_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: tms.Header.AppendBinary. AppendBinary appends the 1 octets of s to dst. */
+int dmrgo_tms_header_append_binary(dmrgo_tms_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: tms.Header.String. String returns the fields of s as text, for printing. */
+int dmrgo_tms_header_string(dmrgo_tms_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: tms.Message.AppendBinary. AppendBinary appends s to dst, with Length set to the length of the data. */
+int dmrgo_tms_message_append_binary(dmrgo_tms_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: tms.Message.Sequence. Sequence returns the 7-bit sequence number of a text message or an acknowledgement, and false when the message has none. */
+int dmrgo_tms_message_sequence(dmrgo_tms_message_t *self, uint8_t *out0, bool *out1, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: tms.Message.SetTextUTF8. SetTextUTF8 appends text, UTF-8, to dst as UTF-16LE, points Text at the appended octets and returns dst. */
+int dmrgo_tms_message_set_text_utf8(dmrgo_tms_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: tms.Message.String. String returns the fields of s as text, for printing. */
+int dmrgo_tms_message_string(dmrgo_tms_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: tms.Message.TextUTF8. TextUTF8 appends Text, UTF-16LE text, to dst as UTF-8 and returns dst. */
+int dmrgo_tms_message_text_utf8(dmrgo_tms_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: tms.NewAck. NewAck returns the acknowledgement of the text message with sequence number seq. */
+int dmrgo_tms_new_ack(uint8_t seq, dmrgo_tms_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: tms.NewText. NewText returns a text message with sequence number seq, with the header bits that radios send: both extension octets and the UTF-16LE encoding. */
+int dmrgo_tms_new_text(uint8_t seq, bool ack_required, dmrgo_tms_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: tms.SequenceHigh.AppendBinary. AppendBinary appends the 1 octets of s to dst. */
+int dmrgo_tms_sequence_high_append_binary(dmrgo_tms_sequence_high_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: tms.SequenceHigh.String. String returns the fields of s as text, for printing. */
+int dmrgo_tms_sequence_high_string(dmrgo_tms_sequence_high_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: tms.SequenceLow.AppendBinary. AppendBinary appends the 1 octets of s to dst. */
+int dmrgo_tms_sequence_low_append_binary(dmrgo_tms_sequence_low_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: tms.SequenceLow.String. String returns the fields of s as text, for printing. */
+int dmrgo_tms_sequence_low_string(dmrgo_tms_sequence_low_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: tms.Type.String. String returns the name of t. */
+int dmrgo_tms_type_string(dmrgo_tms_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: nmea.ParseRMC. ParseRMC decodes one RMC sentence from s, from the $ to the two hex digits of the checksum, with an optional CR LF or LF after them. */
 int dmrgo_nmea_parse_rmc(const uint8_t *s, size_t s_len, dmrgo_nmea_rmc_t *out);
 /* Go: shortdata.AppendText. AppendText appends the UTF-8 text to dst, coded as format says, and returns dst. */

@@ -31,6 +31,7 @@ import (
 	layer2_packet "github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	layer2_pdu "github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
+	mototrbo_tms "github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms"
 	nmea "github.com/USA-RedDragon/dmrgo/v2/nmea"
 	shortdata "github.com/USA-RedDragon/dmrgo/v2/shortdata"
 	trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
@@ -799,6 +800,22 @@ var api = [...]any{
 	layer3.SourceType.String,
 	layer3.TalkerAliasDataFormat.String,
 	layer3.VoiceServiceOptions.Field,
+	(*mototrbo_tms.Header).AppendBinary,
+	(*mototrbo_tms.Header).String,
+	(*mototrbo_tms.Message).AppendBinary,
+	(*mototrbo_tms.Message).Sequence,
+	(*mototrbo_tms.Message).SetTextUTF8,
+	(*mototrbo_tms.Message).String,
+	(*mototrbo_tms.Message).TextUTF8,
+	(*mototrbo_tms.SequenceHigh).AppendBinary,
+	(*mototrbo_tms.SequenceHigh).String,
+	(*mototrbo_tms.SequenceLow).AppendBinary,
+	(*mototrbo_tms.SequenceLow).String,
+	mototrbo_tms.DecodeMessage,
+	mototrbo_tms.Encoding.String,
+	mototrbo_tms.NewAck,
+	mototrbo_tms.NewText,
+	mototrbo_tms.Type.String,
 	nmea.ParseRMC,
 	(*shortdata.HyteraText).AppendBinary,
 	(*shortdata.HyteraText).SetTextUTF8,
