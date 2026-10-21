@@ -46,6 +46,13 @@
 // method of the PDU. A PDU with its own FEC or CRC, such as a CSBK, Full LC,
 // data header or slot type, reports the result in its FEC field.
 //
+// Optional values follow one rule. A field of a config or options struct
+// that can be left unset is a pointer, where nil means unset, such as
+// layer2.DecodeOptions.ColorCode, or a value whose zero means the default
+// that its doc gives. Where a doc says so, a negative duration turns a
+// timer off. A value of a result that can be missing has a HasX bool beside
+// it, such as layer2.Hint.HasDataType and location.Fix.HasAltitude.
+//
 // Every field of bits that the library takes or returns is packed in bytes
 // in transmit order: the first bit on air is the most significant bit of
 // byte 0. A 264-bit burst is a [33]byte, a 96-bit PDU a [12]byte and a
