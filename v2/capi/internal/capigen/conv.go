@@ -487,7 +487,8 @@ func (g *gen) outField(w *strings.Builder, t types.Type, d, n, s string) error {
 		return nil
 	case *types.Named:
 		if ti := g.info(u); ti != nil && ti.kind == kOpen {
-			return fmt.Errorf("an interface handle field has no C output form")
+			lines(w, "if "+s+" != nil {", "panic(argPanic{})", "}", d+"."+n+" = nil")
+			return nil
 		}
 	}
 	return g.outVal(w, t, d+"."+n, s, 0)
