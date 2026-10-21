@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="420" viewBox="0 0 700 420">
+<style>text{font-family:sans-serif;font-size:12px;fill:#57606a}.ax{stroke:#57606a;stroke-width:1;fill:none}.gr{stroke:#d0d7de;stroke-width:1}.mi{stroke:#eaeef2;stroke-width:1}.r0{stroke:#6e7781}.r1{stroke:#bc4c00}.r2{stroke:#8250df}.s1{stroke:#cf222e}.s2{stroke:#0969da}.s3{stroke:#1a7f37}.s4{stroke:#9a6700}.l{fill:none;stroke-width:2}.p{fill:none;stroke-width:1.5}@media (prefers-color-scheme:dark){text{fill:#c9d1d9}.ax{stroke:#8b949e}.gr{stroke:#30363d}.mi{stroke:#21262d}.r0{stroke:#8b949e}.r1{stroke:#f0883e}.r2{stroke:#d2a8ff}.s1{stroke:#ff7b72}.s2{stroke:#58a6ff}.s3{stroke:#3fb950}.s4{stroke:#d29922}}</style>
+<text x="76.0" y="24">Data rate 3/4, Low-rate I/Q: frame error rate</text>
+<line class="mi" x1="76.0" y1="96.6" x2="510.0" y2="96.6"/>
+<line class="mi" x1="76.0" y1="82.4" x2="510.0" y2="82.4"/>
+<line class="mi" x1="76.0" y1="72.2" x2="510.0" y2="72.2"/>
+<line class="mi" x1="76.0" y1="64.4" x2="510.0" y2="64.4"/>
+<line class="mi" x1="76.0" y1="58.0" x2="510.0" y2="58.0"/>
+<line class="mi" x1="76.0" y1="52.5" x2="510.0" y2="52.5"/>
+<line class="mi" x1="76.0" y1="47.8" x2="510.0" y2="47.8"/>
+<line class="mi" x1="76.0" y1="43.7" x2="510.0" y2="43.7"/>
+<line class="mi" x1="76.0" y1="177.6" x2="510.0" y2="177.6"/>
+<line class="mi" x1="76.0" y1="163.4" x2="510.0" y2="163.4"/>
+<line class="mi" x1="76.0" y1="153.2" x2="510.0" y2="153.2"/>
+<line class="mi" x1="76.0" y1="145.4" x2="510.0" y2="145.4"/>
+<line class="mi" x1="76.0" y1="139.0" x2="510.0" y2="139.0"/>
+<line class="mi" x1="76.0" y1="133.5" x2="510.0" y2="133.5"/>
+<line class="mi" x1="76.0" y1="128.8" x2="510.0" y2="128.8"/>
+<line class="mi" x1="76.0" y1="124.7" x2="510.0" y2="124.7"/>
+<line class="mi" x1="76.0" y1="258.6" x2="510.0" y2="258.6"/>
+<line class="mi" x1="76.0" y1="244.4" x2="510.0" y2="244.4"/>
+<line class="mi" x1="76.0" y1="234.2" x2="510.0" y2="234.2"/>
+<line class="mi" x1="76.0" y1="226.4" x2="510.0" y2="226.4"/>
+<line class="mi" x1="76.0" y1="220.0" x2="510.0" y2="220.0"/>
+<line class="mi" x1="76.0" y1="214.5" x2="510.0" y2="214.5"/>
+<line class="mi" x1="76.0" y1="209.8" x2="510.0" y2="209.8"/>
+<line class="mi" x1="76.0" y1="205.7" x2="510.0" y2="205.7"/>
+<line class="mi" x1="76.0" y1="339.6" x2="510.0" y2="339.6"/>
+<line class="mi" x1="76.0" y1="325.4" x2="510.0" y2="325.4"/>
+<line class="mi" x1="76.0" y1="315.2" x2="510.0" y2="315.2"/>
+<line class="mi" x1="76.0" y1="307.4" x2="510.0" y2="307.4"/>
+<line class="mi" x1="76.0" y1="301.0" x2="510.0" y2="301.0"/>
+<line class="mi" x1="76.0" y1="295.5" x2="510.0" y2="295.5"/>
+<line class="mi" x1="76.0" y1="290.8" x2="510.0" y2="290.8"/>
+<line class="mi" x1="76.0" y1="286.7" x2="510.0" y2="286.7"/>
+<line class="gr" x1="76.0" y1="364.0" x2="76.0" y2="40.0"/>
+<text x="76.0" y="382.0" text-anchor="middle">-8</text>
+<line class="gr" x1="115.5" y1="364.0" x2="115.5" y2="40.0"/>
+<text x="115.5" y="382.0" text-anchor="middle">-6</text>
+<line class="gr" x1="154.9" y1="364.0" x2="154.9" y2="40.0"/>
+<text x="154.9" y="382.0" text-anchor="middle">-4</text>
+<line class="gr" x1="194.4" y1="364.0" x2="194.4" y2="40.0"/>
+<text x="194.4" y="382.0" text-anchor="middle">-2</text>
+<line class="gr" x1="233.8" y1="364.0" x2="233.8" y2="40.0"/>
+<text x="233.8" y="382.0" text-anchor="middle">0</text>
+<line class="gr" x1="273.3" y1="364.0" x2="273.3" y2="40.0"/>
+<text x="273.3" y="382.0" text-anchor="middle">2</text>
+<line class="gr" x1="312.7" y1="364.0" x2="312.7" y2="40.0"/>
+<text x="312.7" y="382.0" text-anchor="middle">4</text>
+<line class="gr" x1="352.2" y1="364.0" x2="352.2" y2="40.0"/>
+<text x="352.2" y="382.0" text-anchor="middle">6</text>
+<line class="gr" x1="391.6" y1="364.0" x2="391.6" y2="40.0"/>
+<text x="391.6" y="382.0" text-anchor="middle">8</text>
+<line class="gr" x1="431.1" y1="364.0" x2="431.1" y2="40.0"/>
+<text x="431.1" y="382.0" text-anchor="middle">10</text>
+<line class="gr" x1="470.5" y1="364.0" x2="470.5" y2="40.0"/>
+<text x="470.5" y="382.0" text-anchor="middle">12</text>
+<line class="gr" x1="510.0" y1="364.0" x2="510.0" y2="40.0"/>
+<text x="510.0" y="382.0" text-anchor="middle">14</text>
+<line class="gr" x1="76.0" y1="40.0" x2="510.0" y2="40.0"/>
+<text x="68.0" y="44.0" text-anchor="end">1</text>
+<line class="gr" x1="76.0" y1="121.0" x2="510.0" y2="121.0"/>
+<text x="68.0" y="125.0" text-anchor="end">0.1</text>
+<line class="gr" x1="76.0" y1="202.0" x2="510.0" y2="202.0"/>
+<text x="68.0" y="206.0" text-anchor="end">1e-2</text>
+<line class="gr" x1="76.0" y1="283.0" x2="510.0" y2="283.0"/>
+<text x="68.0" y="287.0" text-anchor="end">1e-3</text>
+<line class="gr" x1="76.0" y1="364.0" x2="510.0" y2="364.0"/>
+<text x="68.0" y="368.0" text-anchor="end">1e-4</text>
+<rect class="ax" x="76.0" y="40.0" width="434.0" height="324.0"/>
+<text x="293.0" y="408.0" text-anchor="middle">Eb/N0 (dB)</text>
+<text x="18" y="202.0" text-anchor="middle" transform="rotate(-90 18 202.0)">Frame error rate</text>
+<path class="l r0" stroke-dasharray="6 4" d="M98.6,40.0 L108.5,40.0 L118.3,40.0 L128.2,40.0 L138.1,40.0 L147.9,40.0 L157.8,40.0 L167.7,40.0 L177.5,40.0 L187.4,40.3 L197.2,41.6 L207.1,48.1 L217.0,64.4 L226.8,78.0 L236.7,108.5 L246.6,179.2 L256.4,225.7"/>
+<line class="l r0" stroke-dasharray="6 4" x1="526.0" y1="50.0" x2="550.0" y2="50.0"/>
+<text x="556.0" y="54.0">4FSK floor (any code)</text>
+<path class="l s1" d="M217.0,40.0 L226.8,40.0 L236.7,40.0 L246.6,40.0 L256.4,40.0 L266.3,40.0 L276.2,40.0 L286.0,40.0 L295.9,40.0 L305.8,40.0 L315.6,40.3 L325.5,41.3 L335.3,42.9 L345.2,47.7 L355.1,54.3 L364.9,66.4 L374.8,80.6 L384.7,98.0 L394.5,117.8 L404.4,138.0 L414.3,157.9 L424.1,178.5 L434.0,201.5 L443.8,225.2 L453.7,251.8 L463.6,272.6 L473.4,296.9 L483.3,329.3 L493.2,359.6"/>
+<circle class="p s1" cx="217.0" cy="40.0" r="2"/><circle class="p s1" cx="226.8" cy="40.0" r="2"/><circle class="p s1" cx="236.7" cy="40.0" r="2"/><circle class="p s1" cx="246.6" cy="40.0" r="2"/><circle class="p s1" cx="256.4" cy="40.0" r="2"/><circle class="p s1" cx="266.3" cy="40.0" r="2"/><circle class="p s1" cx="276.2" cy="40.0" r="2"/><circle class="p s1" cx="286.0" cy="40.0" r="2"/><circle class="p s1" cx="295.9" cy="40.0" r="2"/><circle class="p s1" cx="305.8" cy="40.0" r="2"/><circle class="p s1" cx="315.6" cy="40.3" r="2"/><circle class="p s1" cx="325.5" cy="41.3" r="2"/><circle class="p s1" cx="335.3" cy="42.9" r="2"/><circle class="p s1" cx="345.2" cy="47.7" r="2"/><circle class="p s1" cx="355.1" cy="54.3" r="2"/><circle class="p s1" cx="364.9" cy="66.4" r="2"/><circle class="p s1" cx="374.8" cy="80.6" r="2"/><circle class="p s1" cx="384.7" cy="98.0" r="2"/><circle class="p s1" cx="394.5" cy="117.8" r="2"/><circle class="p s1" cx="404.4" cy="138.0" r="2"/><circle class="p s1" cx="414.3" cy="157.9" r="2"/><circle class="p s1" cx="424.1" cy="178.5" r="2"/><circle class="p s1" cx="434.0" cy="201.5" r="2"/><circle class="p s1" cx="443.8" cy="225.2" r="2"/><circle class="p s1" cx="453.7" cy="251.8" r="2"/><circle class="p s1" cx="463.6" cy="272.6" r="2"/><circle class="p s1" cx="473.4" cy="296.9" r="2"/><circle class="p s1" cx="483.3" cy="329.3" r="2"/><circle class="p s1" cx="493.2" cy="359.6" r="2"/>
+<line class="l s1" x1="526.0" y1="72.0" x2="550.0" y2="72.0"/>
+<text x="556.0" y="76.0">Tier 0</text>
+</svg>
