@@ -35,8 +35,10 @@ func sourceAt(i int) layer2.SyncSource {
 }
 
 func syncSyms(p enums.SyncPattern, out *[syncSymbols]int8) {
+	v := uint64(p) << (64 - 2*syncSymbols)
 	for k := range syncSymbols {
-		d := uint8(uint64(p) >> (2 * (syncSymbols - 1 - k)) & 3)
+		d := uint8(v >> 62)
+		v <<= 2
 		out[k] = symbolOf(unpacked.Bit(d>>1), unpacked.Bit(d&1))
 	}
 }
