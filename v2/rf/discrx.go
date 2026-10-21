@@ -108,7 +108,7 @@ func NewDisc(c *DiscConfig) (*DiscReceiver, error) {
 		if cfg.MaxWrite == 0 {
 			cfg.MaxWrite = 1 << 12
 		}
-		r.out = make([]Burst, 0, max(r.maxBursts(cfg.MaxWrite), r.maxBursts(slotSymbols*discSPS)))
+		r.out = make([]Burst, 0, max(r.maxBursts(cfg.MaxWrite), r.flushBursts()))
 	}
 	return r, nil
 }
@@ -197,6 +197,10 @@ func (r *DiscReceiver) maxBursts(n int) int {
 	return 4*r.inputSamples(n)*symbolRate/(slotSymbols*r.inputHz()) + 16
 }
 
+func (r *DiscReceiver) flushBursts() int {
+	return r.maxBursts(slotSymbols*discSPS) + r.unionBacklog()
+}
+
 // AppendBursts processes the discriminator samples x, appends the bursts
 // that are complete to dst and returns the extended slice. It allocates
 // only when dst has no room for len(x)/72+16 bursts, the most that x can
@@ -243,7 +247,8 @@ func (r *DiscReceiver) Write(x []int16) ([]Burst, error) {
 }
 
 // Flush finishes the stream at its end and returns the remaining bursts,
-// as Write does. It returns at most 26 bursts, as AppendFlush does. A
+// as Write does. It returns at most 26 bursts, as AppendFlush does, and
+// Tier3 also the bursts of its delay, up to 1050. A
 // DiscReceiver that Init set up without OnBurst has no buffer for them, so
 // there Flush changes nothing and returns nil; use AppendFlush.
 func (r *DiscReceiver) Flush() []Burst {
@@ -261,7 +266,8 @@ func (r *DiscReceiver) Flush() []Burst {
 
 // AppendFlush finishes the stream at its end, appends the remaining bursts
 // to dst and returns the extended slice. It allocates only when dst has no
-// room for 26 bursts, the most that one slot of samples can complete.
+// room for 26 bursts, the most that one slot of samples can complete, and
+// with Tier3 for the 1024 bursts that its delay can hold as well.
 func (r *DiscReceiver) AppendFlush(dst []Burst) []Burst {
 	if r == nil {
 		return dst
@@ -270,7 +276,7 @@ func (r *DiscReceiver) AppendFlush(dst []Burst) []Burst {
 	if r.audio == nil {
 		return dst
 	}
-	dst = growBursts(dst, r.maxBursts(slotSymbols*discSPS))
+	dst = growBursts(dst, r.flushBursts())
 	keep, n := r.out, len(dst)
 	r.out = dst[n:n]
 	r.flush()

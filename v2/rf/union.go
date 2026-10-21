@@ -168,6 +168,14 @@ func (u *discUnion) write(x []int16) {
 	u.release(u.inSec - unionHorizon)
 }
 
+func (r *DiscReceiver) unionBacklog() int {
+	e, _ := r.ext.(*softExt)
+	if e == nil || e.union == nil {
+		return 0
+	}
+	return cap(e.union.main) + cap(e.union.extra)
+}
+
 func (r *DiscReceiver) unionFlush() bool {
 	e, _ := r.ext.(*softExt)
 	if e == nil || e.union == nil {

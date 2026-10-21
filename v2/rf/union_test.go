@@ -196,3 +196,42 @@ func TestDiscTier3Superset(t *testing.T) {
 	}
 	t.Logf("%d cases: Tier2 %d bursts; Tier3 adds %d, replaces %d proven wrong bursts and %d embedded LCs; Tier2 latency at most %.3f s (horizon %.1f s); gains %v", len(cases), kept, filled, swaps, elc, maxLag, unionHorizon, gain)
 }
+
+func TestDiscTier3WriteFlush(t *testing.T) {
+	t.Parallel()
+	slots, _ := benchStream(t, 6)
+	x := noisyBaseband(slots, 1400, 12, 7)
+	for _, hz := range []int{2 * symbolRate, discRate} {
+		a := discAudio(x, hz)
+		a = a[:len(a)*2/3]
+		var want []Burst
+		w, err := NewDisc(&DiscConfig{Hz: hz, Tier: Tier3, OnBurst: func(b *Burst) { want = append(want, *b) }})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for k := 0; k < len(a); k += 4096 {
+			must(w.Write(a[k:min(k+4096, len(a))]))
+		}
+		w.Flush()
+		r, err := NewDisc(&DiscConfig{Hz: hz, Tier: Tier3})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var got []Burst
+		for k := 0; k < len(a); k += 4096 {
+			got = append(got, must(r.Write(a[k:min(k+4096, len(a))]))...)
+		}
+		got = append(got, r.Flush()...)
+		if len(got) != len(want) {
+			t.Fatalf("at %d Hz Write and Flush return %d bursts, OnBurst takes %d", hz, len(got), len(want))
+		}
+		for i := range got {
+			if got[i] != want[i] {
+				t.Fatalf("at %d Hz burst %d of Write and Flush differs from that of OnBurst", hz, i)
+			}
+		}
+		if n := r.flushBursts(); n > 1050 {
+			t.Errorf("at %d Hz Tier3 Flush has room for %d bursts, the docs say up to 1050", hz, n)
+		}
+	}
+}
