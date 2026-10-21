@@ -15,6 +15,7 @@ func TestFuzzSeeds(t *testing.T) {
 	talkerAliasSeeds(func(alias string, format, order uint8, extra []byte) {
 		fuzzTalkerAlias(t, alias, format, order, extra)
 	})
+	capPlusSeeds(t, func(data []byte) { fuzzCapacityPlus(t, data) })
 	sysCodeSeeds(func(v uint16, model uint8, net, site uint16, par uint8, id uint32) {
 		fuzzSysCode(t, v, model, net, site, par, id)
 	})

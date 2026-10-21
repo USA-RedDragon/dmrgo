@@ -1,0 +1,36 @@
+# Capacity Plus and Linked Capacity Plus PDUs that dmrgo decoded from public recordings, with valid CRCs. Only the decoder output is here, not the recordings.
+# lcp: baseband I/Q of a Linked Capacity Plus rest beacon, site 3, CC 12, attached to sdrtrunk issue 1947 (github.com/DSheirer/sdrtrunk/issues/1947).
+# busy: DMRMOTOTRBO_Sound.mp3 of the Signal Identification Wiki DMR page (sigidwiki.com/wiki/Digital_Mobile_Radio_(DMR)), a busy single site Capacity Plus repeater, CC 1, from the inverted audio.
+# rest: Possible_MOTOTRBO_DMR_resting_burst.mp3 of the same page, a Linked Capacity Plus rest beacon, site 4, CC 1, from the inverted audio.
+# halifax: 451.4875MHz.wav of the same page, Capacity Plus with a call on TG 30, CC 2; a SYNC-trained slicer and layer2/framer.
+# revert: DMR.mp3 of the same page, MOTOTRBO enhanced data revert, CC 8.
+# Columns: the recording, the PDU kind (csbk: 12 octets, slc: the 5 octets of a Short LC), the octets.
+lcp csbk be10c600000000000000f265
+lcp csbk be10e600000000000000890d
+lcp csbk bb10c61b122343000000cea3
+lcp csbk bb10e61b122343000000b5cb
+lcp slc f100618460
+busy csbk be10c300000000000000badb
+busy csbk be10e300000000000000c1b3
+busy csbk be10c4000000000000007dc3
+busy csbk be10e40000000000000006ab
+busy csbk bd10800200ffff0407ed2d8a
+busy csbk bd10800100ffff0407edf508
+busy csbk bd10800000ffff0407ed4d69
+busy csbk bd10800200ffff03082c7149
+busy slc f1003004f0
+busy slc f100400240
+busy slc f1024008a0
+rest csbk be10c200000000000000fd08
+rest csbk be10e2000000000000008660
+rest csbk bb10c221a100000000004d67
+rest csbk bb10e221a10000000000360f
+rest slc f102220140
+halifax csbk be10c2801e0000000000ccd6
+halifax csbk be10e2801e0000000000b7be
+halifax csbk be10e1401e000000000009de
+halifax csbk be10c1401e000000000072b6
+halifax slc f1002102a0
+halifax slc f100110150
+revert csbk a91000002a3c02fc0000be07
+revert csbk a9100000004f02fc0000fe59

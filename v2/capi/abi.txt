@@ -67,6 +67,8 @@ code DMRGO_ERR_DVSI_TIMEOUT -166
 code DMRGO_ERR_DVSI_TYPE -167
 code DMRGO_ERR_DATA_CONFIG_ERROR -168
 code DMRGO_ERR_DATA_BUSY -169
+code DMRGO_ERR_PDU_CAPACITY_PLUS_INCOMPLETE -170
+code DMRGO_ERR_PDU_CAPACITY_PLUS_SEQUENCE -171
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -584,6 +586,8 @@ sym #define DMRGO_ERR_PACKET_RATE_CHANGE (-126)
 sym #define DMRGO_ERR_PACKET_RESPONSE_DATA (-127)
 sym #define DMRGO_ERR_PACKET_TOO_LONG (-128)
 sym #define DMRGO_ERR_PACKET_UNEXPECTED_RETRY (-129)
+sym #define DMRGO_ERR_PDU_CAPACITY_PLUS_INCOMPLETE (-170)
+sym #define DMRGO_ERR_PDU_CAPACITY_PLUS_SEQUENCE (-171)
 sym #define DMRGO_ERR_PDU_NO_ADDRESSES (-130)
 sym #define DMRGO_ERR_PDU_TALKER_ALIAS_INCOMPLETE (-131)
 sym #define DMRGO_ERR_PDU_TALKER_ALIAS_INVALID_UTF8 (-132)
@@ -657,6 +661,12 @@ sym #define DMRGO_PACKET_RESPONSE_NACK_OUT_OF_SEQUENCE ((dmrgo_packet_response_t
 sym #define DMRGO_PACKET_RESPONSE_NACK_PACKET_CRC ((dmrgo_packet_response_t)9)
 sym #define DMRGO_PACKET_RESPONSE_NACK_UNDELIVERABLE ((dmrgo_packet_response_t)12)
 sym #define DMRGO_PACKET_RESPONSE_SACK ((dmrgo_packet_response_t)16)
+sym #define DMRGO_PDU_CAPACITY_PLUS_MAX_BLOCKS 8
+sym #define DMRGO_PDU_CAPACITY_PLUS_MAX_LSN 16
+sym #define DMRGO_PDU_CAPACITY_PLUS_SEGMENT_CONTINUATION ((dmrgo_pdu_capacity_plus_segment_t)0)
+sym #define DMRGO_PDU_CAPACITY_PLUS_SEGMENT_FIRST ((dmrgo_pdu_capacity_plus_segment_t)2)
+sym #define DMRGO_PDU_CAPACITY_PLUS_SEGMENT_LAST ((dmrgo_pdu_capacity_plus_segment_t)1)
+sym #define DMRGO_PDU_CAPACITY_PLUS_SEGMENT_SINGLE ((dmrgo_pdu_capacity_plus_segment_t)3)
 sym #define DMRGO_PDU_CRC7_MASK_RC 122
 sym #define DMRGO_PDU_CSBKBS_OUTBOUND_ACTIVATION ((dmrgo_pdu_csbk_opcode_t)56)
 sym #define DMRGO_PDU_CSBK_ACKVITATION ((dmrgo_pdu_csbk_opcode_t)30)
@@ -668,6 +678,11 @@ sym #define DMRGO_PDU_CSBK_AHOY ((dmrgo_pdu_csbk_opcode_t)28)
 sym #define DMRGO_PDU_CSBK_ALOHA ((dmrgo_pdu_csbk_opcode_t)25)
 sym #define DMRGO_PDU_CSBK_BROADCAST ((dmrgo_pdu_csbk_opcode_t)40)
 sym #define DMRGO_PDU_CSBK_BROADCAST_TALKGROUP_VOICE_GRANT ((dmrgo_pdu_csbk_opcode_t)50)
+sym #define DMRGO_PDU_CSBK_CAPACITY_PLUS_DATA_REVERT_ANNOUNCEMENT ((dmrgo_pdu_csbk_opcode_t)41)
+sym #define DMRGO_PDU_CSBK_CAPACITY_PLUS_DATA_REVERT_GRANT ((dmrgo_pdu_csbk_opcode_t)42)
+sym #define DMRGO_PDU_CSBK_CAPACITY_PLUS_NEIGHBORS ((dmrgo_pdu_csbk_opcode_t)59)
+sym #define DMRGO_PDU_CSBK_CAPACITY_PLUS_PREAMBLE ((dmrgo_pdu_csbk_opcode_t)61)
+sym #define DMRGO_PDU_CSBK_CAPACITY_PLUS_SITE_STATUS ((dmrgo_pdu_csbk_opcode_t)62)
 sym #define DMRGO_PDU_CSBK_CHANNEL_TIMING ((dmrgo_pdu_csbk_opcode_t)7)
 sym #define DMRGO_PDU_CSBK_CLEAR ((dmrgo_pdu_csbk_opcode_t)46)
 sym #define DMRGO_PDU_CSBK_DUPLEX_PRIVATE_DATA_GRANT ((dmrgo_pdu_csbk_opcode_t)54)
@@ -689,6 +704,8 @@ sym #define DMRGO_PDU_CSBK_TALKGROUP_DATA_GRANT_MULTI_ITEM ((dmrgo_pdu_csbk_opco
 sym #define DMRGO_PDU_CSBK_TALKGROUP_VOICE_GRANT ((dmrgo_pdu_csbk_opcode_t)49)
 sym #define DMRGO_PDU_CSBK_UNIT_TO_UNIT_VOICE_SERVICE_ANSWER_RESPONSE ((dmrgo_pdu_csbk_opcode_t)5)
 sym #define DMRGO_PDU_CSBK_UNIT_TO_UNIT_VOICE_SERVICE_REQUEST ((dmrgo_pdu_csbk_opcode_t)4)
+sym #define DMRGO_PDU_FLCO_CAPACITY_PLUS_GROUP_VOICE_GRANT ((dmrgo_enums_flco_t)4)
+sym #define DMRGO_PDU_FLCO_CAPACITY_PLUS_PRIVATE_VOICE_GRANT ((dmrgo_enums_flco_t)7)
 sym #define DMRGO_PDU_FORMAT_CONFIRMED ((dmrgo_pdu_format_t)3)
 sym #define DMRGO_PDU_FORMAT_PROPRIETARY ((dmrgo_pdu_format_t)15)
 sym #define DMRGO_PDU_FORMAT_RESPONSE_PACKET ((dmrgo_pdu_format_t)1)
@@ -712,6 +729,7 @@ sym #define DMRGO_PDU_SERVICE_TYPE_MANUFACTURER_SPECIFIC5 ((dmrgo_pdu_service_ty
 sym #define DMRGO_PDU_SERVICE_TYPE_MANUFACTURER_SPECIFIC6 ((dmrgo_pdu_service_type_t)13)
 sym #define DMRGO_PDU_SERVICE_TYPE_MANUFACTURER_SPECIFIC7 ((dmrgo_pdu_service_type_t)14)
 sym #define DMRGO_PDU_SERVICE_TYPE_MANUFACTURER_SPECIFIC8 ((dmrgo_pdu_service_type_t)15)
+sym #define DMRGO_PDU_SLCO_CAPACITY_PLUS_REST_CHANNEL ((dmrgo_enums_slco_t)15)
 sym #define DMRGO_PDU_TALKER_ALIAS_ASSEMBLER_ADD_MAX_ITEMS (DMRGO_PDU_TALKER_ALIAS_MAX_TEXT)
 sym #define DMRGO_PDU_TALKER_ALIAS_ASSEMBLER_APPEND_ADD_MAX_ITEMS (DMRGO_PDU_TALKER_ALIAS_MAX_TEXT)
 sym #define DMRGO_PDU_TALKER_ALIAS_MAX_TEXT 93
@@ -1326,6 +1344,32 @@ sym int dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_encode(dmrgo_pdu_broadcast
 sym int dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_string(dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_pdu_bs_outbound_activation_pdu_encode(dmrgo_pdu_bs_outbound_activation_pdu_t *self, uint8_t out[8]);
 sym int dmrgo_pdu_bs_outbound_activation_pdu_string(dmrgo_pdu_bs_outbound_activation_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_pdu_capacity_plus_activity_radio_target(dmrgo_pdu_capacity_plus_activity_t *self, uint8_t lsn, uint16_t *radio, bool *ok);
+sym int dmrgo_pdu_capacity_plus_activity_talkgroup(dmrgo_pdu_capacity_plus_activity_t *self, uint8_t lsn, uint8_t *tg, bool *ok);
+sym int dmrgo_pdu_capacity_plus_channel(uint8_t lsn, uint8_t *repeater, dmrgo_enums_slot_t *slot, bool *ok);
+sym int dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_encode(dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t *self, uint8_t out[8]);
+sym int dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_string(dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_pdu_capacity_plus_data_revert_grant_pdu_encode(dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t *self, uint8_t out[8]);
+sym int dmrgo_pdu_capacity_plus_data_revert_grant_pdu_string(dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_pdu_capacity_plus_group_voice_grant_encode(dmrgo_pdu_capacity_plus_group_voice_grant_t *self, uint8_t out[7]);
+sym int dmrgo_pdu_capacity_plus_group_voice_grant_string(dmrgo_pdu_capacity_plus_group_voice_grant_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_pdu_capacity_plus_neighbors_pdu_encode(dmrgo_pdu_capacity_plus_neighbors_pdu_t *self, uint8_t out[8]);
+sym int dmrgo_pdu_capacity_plus_neighbors_pdu_neighbor(dmrgo_pdu_capacity_plus_neighbors_pdu_t *self, int64_t i, uint8_t *site, uint8_t *rest_lsn, bool *ok);
+sym int dmrgo_pdu_capacity_plus_neighbors_pdu_string(dmrgo_pdu_capacity_plus_neighbors_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_pdu_capacity_plus_preamble_pdu_encode(dmrgo_pdu_capacity_plus_preamble_pdu_t *self, uint8_t out[8]);
+sym int dmrgo_pdu_capacity_plus_preamble_pdu_string(dmrgo_pdu_capacity_plus_preamble_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_pdu_capacity_plus_private_voice_grant_encode(dmrgo_pdu_capacity_plus_private_voice_grant_t *self, uint8_t out[7]);
+sym int dmrgo_pdu_capacity_plus_private_voice_grant_string(dmrgo_pdu_capacity_plus_private_voice_grant_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_pdu_capacity_plus_rest_channel_encode(dmrgo_pdu_capacity_plus_rest_channel_t *self, uint8_t out[3]);
+sym int dmrgo_pdu_capacity_plus_rest_channel_string(dmrgo_pdu_capacity_plus_rest_channel_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_pdu_capacity_plus_segment_string(dmrgo_pdu_capacity_plus_segment_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_pdu_capacity_plus_site_status_assembler_activity(dmrgo_pdu_capacity_plus_site_status_assembler_t *self, dmrgo_pdu_capacity_plus_activity_t *out);
+sym int dmrgo_pdu_capacity_plus_site_status_assembler_add(dmrgo_pdu_capacity_plus_site_status_assembler_t *self, const dmrgo_pdu_capacity_plus_site_status_pdu_t *p, bool *out);
+sym int dmrgo_pdu_capacity_plus_site_status_assembler_free(dmrgo_pdu_capacity_plus_site_status_assembler_t *self);
+sym int dmrgo_pdu_capacity_plus_site_status_assembler_new(dmrgo_pdu_capacity_plus_site_status_assembler_t **out);
+sym int dmrgo_pdu_capacity_plus_site_status_assembler_reset(dmrgo_pdu_capacity_plus_site_status_assembler_t *self);
+sym int dmrgo_pdu_capacity_plus_site_status_pdu_encode(dmrgo_pdu_capacity_plus_site_status_pdu_t *self, uint8_t out[8]);
+sym int dmrgo_pdu_capacity_plus_site_status_pdu_string(dmrgo_pdu_capacity_plus_site_status_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_pdu_cgap_continuation_data_type(dmrgo_pdu_cgap_continuation_t *self, dmrgo_enums_data_type_t *out);
 sym int dmrgo_pdu_cgap_continuation_encode(dmrgo_pdu_cgap_continuation_t *self, uint8_t out[12]);
 sym int dmrgo_pdu_cgap_continuation_string(dmrgo_pdu_cgap_continuation_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -1340,6 +1384,11 @@ sym int dmrgo_pdu_confirmed_data_header_string(dmrgo_pdu_confirmed_data_header_t
 sym int dmrgo_pdu_crc_mask(dmrgo_enums_data_type_t dt, uint32_t *mask, int64_t *width, bool *ok);
 sym int dmrgo_pdu_csbk_addresses(dmrgo_pdu_csbk_t *self, uint32_t *target, uint32_t *source, bool *ok);
 sym int dmrgo_pdu_csbk_as_bs_outbound_activation(dmrgo_pdu_csbk_t *self, dmrgo_pdu_bs_outbound_activation_pdu_t *p, bool *ok);
+sym int dmrgo_pdu_csbk_as_capacity_plus_data_revert_announcement(dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t *p, bool *ok);
+sym int dmrgo_pdu_csbk_as_capacity_plus_data_revert_grant(dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t *p, bool *ok);
+sym int dmrgo_pdu_csbk_as_capacity_plus_neighbors(dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_neighbors_pdu_t *p, bool *ok);
+sym int dmrgo_pdu_csbk_as_capacity_plus_preamble(dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_preamble_pdu_t *p, bool *ok);
+sym int dmrgo_pdu_csbk_as_capacity_plus_site_status(dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_site_status_pdu_t *p, bool *ok);
 sym int dmrgo_pdu_csbk_as_motorola_call_alert(dmrgo_pdu_csbk_t *self, dmrgo_pdu_motorola_call_alert_pdu_t *p, bool *ok);
 sym int dmrgo_pdu_csbk_as_motorola_call_alert_ack(dmrgo_pdu_csbk_t *self, dmrgo_pdu_motorola_call_alert_ack_pdu_t *p, bool *ok);
 sym int dmrgo_pdu_csbk_as_motorola_radio_check(dmrgo_pdu_csbk_t *self, dmrgo_pdu_motorola_radio_check_pdu_t *p, bool *ok);
@@ -1438,6 +1487,8 @@ sym int dmrgo_pdu_flc_unit_to_unit_string(dmrgo_pdu_flc_unit_to_unit_t *self, ch
 sym int dmrgo_pdu_format_string(dmrgo_pdu_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_pdu_full_lc_parity_ok(const uint8_t cw[12], dmrgo_enums_data_type_t dt, bool *out);
 sym int dmrgo_pdu_full_link_control_addresses(dmrgo_pdu_full_link_control_t *self, uint32_t *target, uint32_t *source, bool *ok);
+sym int dmrgo_pdu_full_link_control_as_capacity_plus_group_voice_grant(dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_capacity_plus_group_voice_grant_t *p, bool *ok);
+sym int dmrgo_pdu_full_link_control_as_capacity_plus_private_voice_grant(dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_capacity_plus_private_voice_grant_t *p, bool *ok);
 sym int dmrgo_pdu_full_link_control_bytes(dmrgo_pdu_full_link_control_t *self, uint8_t out[9]);
 sym int dmrgo_pdu_full_link_control_data_type(dmrgo_pdu_full_link_control_t *self, dmrgo_enums_data_type_t *out);
 sym int dmrgo_pdu_full_link_control_encode(dmrgo_pdu_full_link_control_t *self, uint8_t out[12]);
@@ -1552,6 +1603,7 @@ sym int dmrgo_pdu_service_type_string(dmrgo_pdu_service_type_t self, char *out, 
 sym int dmrgo_pdu_set_mbc_last_block_crc(const uint8_t (*blocks)[12], size_t blocks_len);
 sym int dmrgo_pdu_short_lc_activity_update_encode(dmrgo_pdu_short_lc_activity_update_t *self, uint8_t out[3]);
 sym int dmrgo_pdu_short_lc_activity_update_string(dmrgo_pdu_short_lc_activity_update_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_pdu_short_lc_as_capacity_plus_rest_channel(dmrgo_pdu_short_lc_t *self, dmrgo_pdu_capacity_plus_rest_channel_t *p, bool *ok);
 sym int dmrgo_pdu_short_lc_c_sys_parms_encode(dmrgo_pdu_short_lc_c_sys_parms_t *self, uint8_t out[3]);
 sym int dmrgo_pdu_short_lc_c_sys_parms_net_id(dmrgo_pdu_short_lc_c_sys_parms_t *self, uint16_t *out);
 sym int dmrgo_pdu_short_lc_c_sys_parms_set_sys_code(dmrgo_pdu_short_lc_c_sys_parms_t *self, const dmrgo_pdu_sys_code_t *c);
@@ -1839,6 +1891,7 @@ sym typedef uint8_t dmrgo_layer3_position_error_t;
 sym typedef uint8_t dmrgo_layer3_source_type_t;
 sym typedef uint8_t dmrgo_layer3_talker_alias_data_format_t;
 sym typedef uint8_t dmrgo_packet_response_t;
+sym typedef uint8_t dmrgo_pdu_capacity_plus_segment_t;
 sym typedef uint8_t dmrgo_pdu_csbk_opcode_t;
 sym typedef uint8_t dmrgo_pdu_emb_info_t;
 sym typedef uint8_t dmrgo_pdu_format_t;
@@ -1917,6 +1970,15 @@ type struct dmrgo_pdu_bcap_continuation_t { dmrgo_fec_result_t fec; bool last_bl
 type struct dmrgo_pdu_broadcast_pdu_t { dmrgo_enums_announcement_type_t announcement_type; uint16_t broadcast_parms1; bool reg; uint8_t backoff; uint16_t sys_ident_code; uint32_t broadcast_parms2; };
 type struct dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t { uint16_t physical_channel; bool logical_channel; bool late_entry; bool emergency; bool offset; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_bs_outbound_activation_pdu_t { uint16_t reserved; uint32_t bs_address; uint32_t source_address; };
+type struct dmrgo_pdu_capacity_plus_activity_t { uint8_t rest_lsn; uint16_t voice; uint8_t talkgroups[16]; uint8_t options; uint16_t radio; uint16_t radios[16]; };
+type struct dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t { uint8_t reserved; uint16_t target_address; uint8_t window; uint8_t superframe; uint8_t flags; uint16_t reserved2; };
+type struct dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t { uint8_t reserved; uint16_t target_address; uint8_t window; uint8_t superframe; uint32_t reserved2; };
+type struct dmrgo_pdu_capacity_plus_group_voice_grant_t { dmrgo_layer3_service_options_t service_options; uint16_t reserved; uint8_t group_address; uint8_t reserved2; uint8_t rest_lsn; uint16_t source_address; };
+type struct dmrgo_pdu_capacity_plus_neighbors_pdu_t { dmrgo_pdu_capacity_plus_segment_t segment; bool slot2; uint8_t rest_lsn; bool async; uint8_t site; uint8_t count; uint8_t neighbors[6]; };
+type struct dmrgo_pdu_capacity_plus_preamble_pdu_t { bool data; bool group; uint8_t reserved; uint8_t blocks_to_follow; uint32_t target_address; uint8_t reserved2; uint8_t rest_lsn; uint16_t source_address; };
+type struct dmrgo_pdu_capacity_plus_private_voice_grant_t { dmrgo_layer3_service_options_t service_options; uint32_t target_address; uint8_t reserved; uint8_t rest_lsn; uint16_t source_address; };
+type struct dmrgo_pdu_capacity_plus_rest_channel_t { uint8_t marker; uint8_t flags; uint8_t rest_lsn; uint8_t site; uint8_t reserved; };
+type struct dmrgo_pdu_capacity_plus_site_status_pdu_t { dmrgo_pdu_capacity_plus_segment_t segment; bool slot2; uint8_t rest_lsn; uint8_t activity[7]; };
 type struct dmrgo_pdu_cgap_continuation_t { dmrgo_fec_result_t fec; bool last_block; bool protect_flag; dmrgo_pdu_csbk_opcode_t opcode; uint8_t reserved1; dmrgo_enums_color_code_t color_code; uint8_t cdeftype; uint8_t reserved2; dmrgo_layer3_cdef_parms_t cdef_parms; };
 type struct dmrgo_pdu_chan_freq_parms_t { dmrgo_enums_announcement_type_t announcement_type; uint16_t reserved1; bool reg; uint8_t backoff; uint16_t sys_ident_code; uint16_t reserved2; uint16_t channel; };
 type struct dmrgo_pdu_channel_timing_pdu_t { uint16_t sync_age; uint8_t generation; uint32_t leader_identifier; bool new_leader; uint8_t leader_dynamic_identifier; bool channel_timing_op1; uint32_t source_identifier; bool reserved; uint8_t source_dynamic_identifier; bool channel_timing_op0; };

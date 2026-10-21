@@ -72,6 +72,10 @@ const char *dmrgo__gen_strerror(int status) {
 		return "packet.ErrTooLong";
 	case -129:
 		return "packet.ErrUnexpectedRetry";
+	case -170:
+		return "pdu.ErrCapacityPlusIncomplete";
+	case -171:
+		return "pdu.ErrCapacityPlusSequence";
 	case -130:
 		return "pdu.ErrNoAddresses";
 	case -131:
