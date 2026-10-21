@@ -74,21 +74,40 @@ func addDecls(m map[string]ast.Expr, f *ast.File) {
 			continue
 		}
 		for _, s := range gd.Specs {
-			ts := s.(*ast.TypeSpec)
-			m[ts.Name.Name] = ts.Type
+			if ts, ok := s.(*ast.TypeSpec); ok {
+				m[ts.Name.Name] = ts.Type
+			}
 		}
 	}
 }
 
-var basics = map[string]kind{
-	"bool": kFalse, "string": kEmpty, "any": kNil, "error": kNil,
-	"int": kZero, "int8": kZero, "int16": kZero, "int32": kZero, "int64": kZero,
-	"uint": kZero, "uint8": kZero, "uint16": kZero, "uint32": kZero, "uint64": kZero, "uintptr": kZero,
-	"byte": kZero, "rune": kZero, "float32": kZero, "float64": kZero, "complex64": kZero, "complex128": kZero,
+const rootPkg = "dmrgo"
+
+func basicKind(name string) (kind, bool) {
+	switch name {
+	case "bool":
+		return kFalse, true
+	case "string":
+		return kEmpty, true
+	case "any", "error":
+		return kNil, true
+	case "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64", "uintptr",
+		"byte", "rune", "float32", "float64", "complex64", "complex128":
+		return kZero, true
+	}
+	return 0, false
 }
 
-var std = map[string]kind{
-	"time.Duration": kZero, "time.Time": kComposite, "unsafe.Pointer": kNil,
+func stdKind(name string) (kind, bool) {
+	switch name {
+	case "time.Duration":
+		return kZero, true
+	case "time.Time":
+		return kComposite, true
+	case "unsafe.Pointer":
+		return kNil, true
+	}
+	return 0, false
 }
 
 func (g *Guard) kindOf(t ast.Expr, dir string, f *ast.File, depth int) (kind, error) {
@@ -110,7 +129,7 @@ func (g *Guard) kindOf(t ast.Expr, dir string, f *ast.File, depth int) (kind, er
 	case *ast.IndexExpr, *ast.IndexListExpr:
 		return kComposite, nil
 	case *ast.Ident:
-		if k, ok := basics[t.Name]; ok {
+		if k, ok := basicKind(t.Name); ok {
 			return k, nil
 		}
 		u, ok := g.decls(dir, nil)[t.Name]
@@ -119,9 +138,13 @@ func (g *Guard) kindOf(t ast.Expr, dir string, f *ast.File, depth int) (kind, er
 		}
 		return g.kindOf(u, dir, nil, depth+1)
 	case *ast.SelectorExpr:
-		pkg := t.X.(*ast.Ident).Name
+		x, ok := t.X.(*ast.Ident)
+		if !ok {
+			return 0, fmt.Errorf("unknown selector type in %s", dir)
+		}
+		pkg := x.Name
 		path := importPath(f, pkg)
-		if k, ok := std[filepath.Base(path)+"."+t.Sel.Name]; ok && !strings.HasPrefix(path, Module) {
+		if k, ok := stdKind(filepath.Base(path) + "." + t.Sel.Name); ok && !strings.HasPrefix(path, Module) {
 			return k, nil
 		}
 		if !strings.HasPrefix(path, Module) {
@@ -147,7 +170,7 @@ func declares(f *ast.File, name string) bool {
 	for _, d := range f.Decls {
 		if gd, ok := d.(*ast.GenDecl); ok && gd.Tok == token.TYPE {
 			for _, s := range gd.Specs {
-				if s.(*ast.TypeSpec).Name.Name == name {
+				if ts, ok := s.(*ast.TypeSpec); ok && ts.Name.Name == name {
 					return true
 				}
 			}
@@ -179,7 +202,7 @@ func rootName(f *ast.File) string {
 			if im.Name != nil {
 				return im.Name.Name
 			}
-			return "dmrgo"
+			return rootPkg
 		}
 	}
 	return ""
@@ -199,13 +222,13 @@ func (g *Guard) Apply(src []byte, dir string) ([]byte, int, error) {
 		return nil, 0, err
 	}
 	g.decls(dir, f)
-	inRoot := f.Name.Name == "dmrgo" && filepath.Clean(dir) == filepath.Clean(g.root)
+	inRoot := f.Name.Name == rootPkg && filepath.Clean(dir) == filepath.Clean(g.root)
 	errName := "ErrNilReceiver"
 	needImport := false
 	if !inRoot {
 		n := rootName(f)
 		if n == "" {
-			n, needImport = "dmrgo", true
+			n, needImport = rootPkg, true
 		}
 		errName = n + ".ErrNilReceiver"
 	}
@@ -364,6 +387,7 @@ func (g *Guard) value(fset *token.FileSet, src []byte, f *ast.File, dir string, 
 		return "false", false, nil
 	case kEmpty:
 		return `""`, false, nil
+	case kZero:
 	}
 	return "0", false, nil
 }

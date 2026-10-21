@@ -170,6 +170,11 @@ linters:
         linters:
           - gocyclo
         text: (\(\*Repeater\)\.Inbound|TestLCBytes_EditsKeepOtherBits)
+      # Apply walks every declaration kind of a file in one pass.
+      - path: cmd/dmrgen/nilguard/nilguard\.go$
+        linters:
+          - gocyclo
+        text: \(\*Guard\)\.Apply
       # jennifer's DSL is written with a dot import.
       - path: cmd/dmrgen/emit/
         linters:
