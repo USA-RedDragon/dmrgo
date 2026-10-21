@@ -114,6 +114,7 @@ The programs in [v2/examples](v2/examples) run offline on the captures in `v2/la
   - `Follower` hunts for a TSCC and follows its voice and data grants to the payload channels, as a scanner does, and returns on P_CLEAR, after the hang time or when the channel goes quiet. It reads UDT deliveries, and with `AcceptRAS` the CSBKs of Capacity Max sites whose CRC is a keyed MAC.
   - `MS` registers and de-registers, makes voice and packet data calls by random access with backoff, also as emergency, answers C_AHOY and P_AHOY radio checks, follows C_MOVE, P_PROTECT and P_CLEAR, keeps a denied registration list, leaves a weak TSCC, and ends its calls with P_MAINT.
   - `TSCC` runs a single site: C_ALOHA and C_SYS_Parms, AT reservation, registration, talkgroup and individual (OACSU) voice calls with grants, late entry grants, relay on the payload channels and P_CLEAR.
+  - `TSCC` also carries UDT short data between MSs and from a gateway, polls MSs for UDT short data and with USBD Poll Requests, keeps the call diversions of MSs and answers calls to a diverted MS with the diverted address, relays DGNA talkgroups, and sets up full-duplex and Ambient Listening Service calls.
 - Data calls (`data`), without I/O or goroutines:
   - `Receiver` turns the bursts of one logical channel into data events: call start at the preamble or header, each complete packet with its CRCs checked, the responses heard, the ACK, NACK or SACK bursts to send, and call end with a reason. It takes confirmed, unconfirmed, short data and UDT packets at rate 1/2, 3/4 and 1, counts a block lost on air from the transport sequence number or the slot time, drops a repeated packet, keeps a confirmed packet for its retry, and joins a confirmed message from its fragments (FSN).
   - `Sender` sends a message one burst per 60 ms slot, with preamble CSBKs, polite or impolite channel access and a seeded random holdoff. For confirmed data it waits for the response, resends the blocks of a SACK or the whole packet after a NACK or no response, and keeps N(S) per link.
@@ -461,7 +462,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 6.6.2.3 | Procedures for the Voice Payload Channel | verified | 5/5 passed | `v2/trunk/follower.go`, `v2/trunk/ms_access.go`, `v2/trunk/tscc.go` |
 | 6.6.2.4 | Late Entry | untested | - | `v2/trunk/control.go`, `v2/trunk/tscc.go` |
 | 6.6.2.5 | Preferential Call Notification | unimplemented | - | - |
-| 6.6.2.6 | Ambient Listening Service (ALS) | verified | 1/1 passed | `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go` |
+| 6.6.2.6 | Ambient Listening Service (ALS) | verified | 2/2 passed | `v2/trunk/tscc_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go` |
 | 6.6.3.1 | Packet Data Call Procedures for the TSCC | unimplemented | - | - |
 | 6.6.3.2 | Packet Data Call Procedures for MS (single-part set-up) | verified | 1/1 passed | `v2/trunk/ms.go`, `v2/trunk/ms_access.go` |
 | 6.6.3.2.3 | Initiating a Multi-part Packet Data Service | unimplemented | - | - |
@@ -469,14 +470,14 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 6.6.3.2.6 | Availability Check to the Called MS (packet data) | unimplemented | - | - |
 | 6.6.3.3.1 | TS Procedures for the Packet Data Payload Channel | unimplemented | - | - |
 | 6.6.3.3.2 | MS Procedures for the Packet Data Payload Channel | untested | - | `v2/trunk/ms_access.go` |
-| 6.6.4 | UDT Short Data Message Procedure | verified | 3/3 passed | `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/control.go` |
-| 6.6.5 | UDT Short Data Polling Service | verified | 2/2 passed | `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go` |
+| 6.6.4 | UDT Short Data Message Procedure | verified | 4/4 passed | `v2/trunk/tscc_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/control.go` |
+| 6.6.5 | UDT Short Data Polling Service | verified | 3/3 passed | `v2/trunk/tscc_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go` |
 | 6.6.6 | Status Call Service | unimplemented | - | - |
-| 6.6.7 | Call Diversion | verified | 3/3 passed | `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/layer3/udt_service_options.go` |
-| 6.6.8 | Dynamic Group Numbering Assignment Service | verified | 1/1 passed | `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/follower.go`, `v2/trunk/control.go` |
-| 6.6.9 | Full-Duplex MS to MS Voice Call Procedures | verified | 1/1 passed | `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/follower.go` |
-| 6.6.10 | Full-Duplex MS to MS Packet Data Call Procedures | verified | 1/1 passed | `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/follower.go` |
-| 6.6.11 | Unified Single Block Data Polling Service | verified | 1/1 passed | `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/appended_formats.go` |
+| 6.6.7 | Call Diversion | verified | 4/4 passed | `v2/trunk/tscc_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/layer3/udt_service_options.go` |
+| 6.6.8 | Dynamic Group Numbering Assignment Service | verified | 2/2 passed | `v2/trunk/tscc_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/follower.go`, `v2/trunk/control.go` |
+| 6.6.9 | Full-Duplex MS to MS Voice Call Procedures | verified | 2/2 passed | `v2/trunk/tscc_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/follower.go` |
+| 6.6.10 | Full-Duplex MS to MS Packet Data Call Procedures | verified | 2/2 passed | `v2/trunk/tscc_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/follower.go` |
+| 6.6.11 | Unified Single Block Data Polling Service | verified | 2/2 passed | `v2/trunk/tscc_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/appended_formats.go` |
 | 7.1.1 | Control Signalling Block (CSBK/MBC/UDT) PDUs | verified | 17/17 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer2/pdu/data_header.go`, `v2/enums/announcement_type.go` |
 | 7.1.1.1 | TSCC Outbound channel CSBK/MBC/UDT | verified | 10/10 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer3/cdef_parms.go` |
 | 7.1.2 | Short Link Control PDUs | verified | 3/3 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go` |
