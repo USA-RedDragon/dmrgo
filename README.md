@@ -242,13 +242,13 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 
 | Metric | Count |
 | --- | --- |
-| Total sections | 223 |
-| Verified (tests pass) | 166 |
+| Total sections | 232 |
+| Verified (tests pass) | 187 |
 | Failing (tests fail) | 0 |
 | Untested (has source, no tests) | 3 |
-| Unimplemented | 54 |
+| Unimplemented | 42 |
 
-**Overall: 166/223 verified (74.4%)**
+**Overall: 187/232 verified (80.6%)**
 
 ### ETSI TS 102 361-1: Air Interface Protocol
 
@@ -407,7 +407,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 
 ### ETSI TS 102 361-4: DMR Trunking Protocol
 
-89 sections: 37 verified, 0 failing, 3 untested, 49 unimplemented.
+98 sections: 58 verified, 0 failing, 3 untested, 37 unimplemented.
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
@@ -461,7 +461,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 6.6.2.3 | Procedures for the Voice Payload Channel | verified | 5/5 passed | `v2/trunk/follower.go`, `v2/trunk/ms_access.go`, `v2/trunk/tscc.go` |
 | 6.6.2.4 | Late Entry | untested | - | `v2/trunk/control.go`, `v2/trunk/tscc.go` |
 | 6.6.2.5 | Preferential Call Notification | unimplemented | - | - |
-| 6.6.2.6 | Ambient Listening Service (ALS) | unimplemented | - | - |
+| 6.6.2.6 | Ambient Listening Service (ALS) | verified | 1/1 passed | `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go` |
 | 6.6.3.1 | Packet Data Call Procedures for the TSCC | unimplemented | - | - |
 | 6.6.3.2 | Packet Data Call Procedures for MS (single-part set-up) | verified | 1/1 passed | `v2/trunk/ms.go`, `v2/trunk/ms_access.go` |
 | 6.6.3.2.3 | Initiating a Multi-part Packet Data Service | unimplemented | - | - |
@@ -469,25 +469,25 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 6.6.3.2.6 | Availability Check to the Called MS (packet data) | unimplemented | - | - |
 | 6.6.3.3.1 | TS Procedures for the Packet Data Payload Channel | unimplemented | - | - |
 | 6.6.3.3.2 | MS Procedures for the Packet Data Payload Channel | untested | - | `v2/trunk/ms_access.go` |
-| 6.6.4 | UDT Short Data Message Procedure | unimplemented | - | - |
-| 6.6.5 | UDT Short Data Polling Service | unimplemented | - | - |
+| 6.6.4 | UDT Short Data Message Procedure | verified | 3/3 passed | `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/control.go` |
+| 6.6.5 | UDT Short Data Polling Service | verified | 2/2 passed | `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go` |
 | 6.6.6 | Status Call Service | unimplemented | - | - |
-| 6.6.7 | Call Diversion | unimplemented | - | - |
-| 6.6.8 | Dynamic Group Numbering Assignment Service | unimplemented | - | - |
-| 6.6.9 | Full-Duplex MS to MS Voice Call Procedures | unimplemented | - | - |
-| 6.6.10 | Full-Duplex MS to MS Packet Data Call Procedures | unimplemented | - | - |
-| 6.6.11 | Unified Single Block Data Polling Service | unimplemented | - | - |
+| 6.6.7 | Call Diversion | verified | 3/3 passed | `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/layer3/udt_service_options.go` |
+| 6.6.8 | Dynamic Group Numbering Assignment Service | verified | 1/1 passed | `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/follower.go`, `v2/trunk/control.go` |
+| 6.6.9 | Full-Duplex MS to MS Voice Call Procedures | verified | 1/1 passed | `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/follower.go` |
+| 6.6.10 | Full-Duplex MS to MS Packet Data Call Procedures | verified | 1/1 passed | `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/follower.go` |
+| 6.6.11 | Unified Single Block Data Polling Service | verified | 1/1 passed | `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/appended_formats.go` |
 | 7.1.1 | Control Signalling Block (CSBK/MBC/UDT) PDUs | verified | 17/17 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer2/pdu/data_header.go`, `v2/enums/announcement_type.go` |
 | 7.1.1.1 | TSCC Outbound channel CSBK/MBC/UDT | verified | 10/10 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer3/cdef_parms.go` |
 | 7.1.2 | Short Link Control PDUs | verified | 3/3 passed | `v2/layer2/pdu/short_link_control.go`, `v2/enums/slco.go` |
-| 7.2 | Layer 3 Information Element Coding, other than the subclauses below | verified | 14/14 passed | `v2/layer3/cdef_parms.go`, `v2/enums/announcement_type.go`, `v2/enums/ack_reason.go`, `v2/enums/protect_kind.go`, `v2/layer3/random_access_options.go`, `v2/layer2/pdu/broadcast_parms.go` |
+| 7.2 | Layer 3 Information Element Coding, other than the subclauses below | verified | 15/15 passed | `v2/layer3/cdef_parms.go`, `v2/enums/announcement_type.go`, `v2/enums/ack_reason.go`, `v2/enums/protect_kind.go`, `v2/layer3/random_access_options.go`, `v2/enums/udt_format.go`, `v2/layer2/pdu/broadcast_parms.go` |
 | 7.2.9 | Digits | unimplemented | - | - |
-| 7.2.13.3 | Service_Options for a Call Diversion Service Request | unimplemented | - | - |
+| 7.2.13.3 | Service_Options for a Call Diversion Service Request | verified | 1/1 passed | `v2/layer3/udt_service_options.go` |
 | 7.2.13.5 | Service_Options for an Include Call Service Request | unimplemented | - | - |
 | 7.2.13.6 | Service_Options for a Status Transport Request | unimplemented | - | - |
-| 7.2.13.7 | Service_Options for the UDT Short Data Service | unimplemented | - | - |
+| 7.2.13.7 | Service_Options for the UDT Short Data Service | verified | 1/1 passed | `v2/layer3/udt_service_options.go` |
 | 7.2.13.8 | Service Options for the Supplementary Data Service | unimplemented | - | - |
-| 7.2.13.9 | Service Options for a UDT Short Data Polling Request | unimplemented | - | - |
+| 7.2.13.9 | Service Options for a UDT Short Data Polling Request | verified | 1/1 passed | `v2/layer3/udt_service_options.go` |
 | 7.2.14 | Service_Options_Mirror | unimplemented | - | - |
 | 7.2.16 | POL_FMT | unimplemented | - | - |
 | 7.2.19.2 | Specify Call Timer Parameters (CallTimer_Parms) | verified | 2/2 passed | `v2/layer2/pdu/broadcast_parms.go` |
@@ -499,6 +499,15 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | A | Timers, constants levels and addresses | verified | 5/5 passed | `v2/constants/constants.go` |
 | B.1 | CSBK/MBC/UDT Opcode List | verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | B.2 | Short Link Control Opcode List | verified | 1/1 passed | `v2/enums/slco.go` |
-| B.3 | Appended Data Information Elements | unimplemented | - | - |
+| B.3.1 | Appended Data Binary Format | verified | 1/1 passed | `v2/trunk/appended.go` |
+| B.3.2 | Appended Data Addressing Format | verified | 1/1 passed | `v2/trunk/appended.go` |
+| B.3.3 | Appended Data BCD Format | verified | 2/2 passed | `v2/trunk/appended.go` |
+| B.3.4 | Appended Data ISO 7 bit character set Format | verified | 2/2 passed | `v2/trunk/appended.go` |
+| B.3.5 | Appended Data ISO 8 bit Character Format | verified | 2/2 passed | `v2/trunk/appended.go` |
+| B.3.6 | Appended Data NMEA (IEC 61162-1) Format | verified | 1/1 passed | `v2/trunk/appended.go`, `v2/trunk/appended_formats.go` |
+| B.3.7 | UDT DMR IP Format | verified | 1/1 passed | `v2/trunk/appended.go` |
+| B.3.8 | Appended Data Unicode 16 bit UTF-16BE Character Format | verified | 2/2 passed | `v2/trunk/appended.go` |
+| B.3.9 | Appended Data Mixed Format | verified | 2/2 passed | `v2/trunk/appended.go` |
+| B.3.10 | Location Information Protocol (LIP) | verified | 1/1 passed | `v2/trunk/appended.go`, `v2/trunk/appended_formats.go` |
 
 <!-- END ETSI COVERAGE -->

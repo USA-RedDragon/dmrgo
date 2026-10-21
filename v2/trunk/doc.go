@@ -23,4 +23,10 @@
 // Due time, and the voice of its own calls with a voice.Transmitter. A
 // TSCC takes the inbound bursts of its carriers and sends one burst with
 // its CACH per carrier and 30 ms slot on Tick.
+//
+// An MS also uses the UDT services: UDT short data, UDT and USBD polling,
+// call diversion and DGNA, and makes full-duplex and Ambient Listening
+// Service calls (ETSI TS 102 361-4 clauses 6.6.2.6 and 6.6.4 to 6.6.11).
+// Appended reads and writes the appended data of a UDT in each format of
+// ETSI TS 102 361-4 Annex B.3.
 package trunk
