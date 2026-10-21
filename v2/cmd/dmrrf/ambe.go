@@ -81,7 +81,7 @@ func openAMBE(spec string) (*ambeBackend, error) {
 }
 
 func newDVSI(port io.ReadWriteCloser, where string) (*ambeBackend, error) {
-	c, err := dvsi.New(port, dvsi.Config{Timeout: time.Second})
+	c, err := dvsi.New(port, &dvsi.Config{Timeout: time.Second})
 	if err != nil {
 		_ = port.Close()
 		return nil, fmt.Errorf("%s: %w", where, err)
