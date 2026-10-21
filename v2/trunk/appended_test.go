@@ -203,6 +203,46 @@ func TestAppended_DigitsAndText(t *testing.T) {
 	}
 }
 
+func TestAppended_TextTrailingNULAndDEL(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct {
+		f          enums.UDTFormat
+		text, want string
+	}{
+		{enums.UDTISO7, "hi\x7f\x7f", "hi"},
+		{enums.UDTISO7, "hi\x00\x7f", "hi"},
+		{enums.UDTISO7, "a\x7fb", "a\x7fb"},
+		{enums.UDTISO8, "hi\x00", "hi"},
+		{enums.UDTISO8, "hi\x7f\x00", "hi"},
+		{enums.UDTISO8, "hi\x7f", "hi"},
+		{enums.UDTUTF16BE, "hi\x00", "hi"},
+		{enums.UDTUTF16BE, "hi\x7f\x7f", "hi"},
+		{enums.UDTUTF16BE, "é\x7f", "é"},
+	} {
+		var a trunk.Appended
+		if err := a.SetText(c.f, []byte(c.text)); err != nil {
+			t.Fatal(err)
+		}
+		if got, err := a.Text(nil); err != nil || string(got) != c.want {
+			t.Errorf("%v %q: %q %v, want %q", c.f, c.text, got, err, c.want)
+		}
+	}
+	var a trunk.Appended
+	if err := a.SetText(enums.UDTISO7, []byte("hi")); err != nil {
+		t.Fatal(err)
+	}
+	a.PadNibble = 0
+	if got, _ := a.Text([]byte("x")); string(got) != "xhi" {
+		t.Errorf("ISO7 filled with 1s and no pad nibbles: %q", got)
+	}
+	if err := a.SetMixed(false, 5, []byte("hi\x7f")); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := a.Text(nil); string(got) != "hi" {
+		t.Errorf("mixed %q", got)
+	}
+}
+
 func TestAppended_NMEAIPLIP(t *testing.T) {
 	t.Parallel()
 	var a trunk.Appended

@@ -317,10 +317,10 @@ func (m *MS) Groups() DynamicGroups {
 	return m.u.groups
 }
 
-// GroupAlias appends the DGNA alias of the talkgroup tg to dst as UTF-8 and
-// returns dst; it appends nothing for a talkgroup without an alias. It
-// allocates only when dst has no room for 63 more octets. (ETSI TS 102
-// 361-4 clause 6.6.8.1.2)
+// GroupAlias appends the DGNA alias of the talkgroup tg to dst as UTF-8,
+// without trailing DEL characters, and returns dst; it appends nothing for
+// a talkgroup without an alias. It allocates only when dst has no room for
+// 63 more octets. (ETSI TS 102 361-4 clause 6.6.8.1.2)
 func (m *MS) GroupAlias(dst []byte, tg uint32) []byte {
 	if m == nil {
 		return dst
@@ -339,7 +339,7 @@ func appendAlias(dst []byte, a *[2 * aliasUnits]byte) []byte {
 	for n < aliasUnits && (a[2*n] != 0 || a[2*n+1] != 0) {
 		n++
 	}
-	return wire.AppendUTF8(dst, a[:2*n], true)
+	return trimDEL(wire.AppendUTF8(dst, a[:2*n], true), len(dst))
 }
 
 func uab(blocks int) uint8 {
