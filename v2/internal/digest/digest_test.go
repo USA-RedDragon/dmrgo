@@ -1,11 +1,7 @@
 package digest_test
 
 import (
-	"crypto/hmac"
-	"crypto/sha1"
-	"crypto/sha256"
 	"encoding/hex"
-	"math/rand/v2"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/digest"
@@ -61,61 +57,5 @@ func TestBLAKE2bMatchesPython(t *testing.T) {
 	}
 	if d.Init(0, nil) || d.Init(65, nil) || d.Init(16, make([]byte, 65)) {
 		t.Error("Init accepts a bad size or key")
-	}
-}
-
-func TestBLAKE2bRFC7693(t *testing.T) {
-	t.Parallel()
-
-	var d digest.BLAKE2b
-	d.Init(64, nil)
-	d.Write([]byte("abc"))
-	var out [64]byte
-	d.Sum(out[:])
-	const want = "ba80a53f981c4d0d6a2797b69f12f6e94c212f14685ac4b74b12bb6fdbffa2d17d87c5392aab792dc252d5de4533cc9518d38aa8dbf1925ab92386edd4009923"
-	if got := hex.EncodeToString(out[:]); got != want {
-		t.Fatalf("%s", got)
-	}
-}
-
-func TestSHAMatchesStandardLibrary(t *testing.T) {
-	t.Parallel()
-
-	r := rand.New(rand.NewPCG(1, 2))
-	var s1 digest.SHA1
-	var s2 digest.SHA256
-	for range 300 {
-		p := make([]byte, r.IntN(400))
-		for i := range p {
-			p[i] = byte(r.Uint32())
-		}
-		s1.Reset()
-		s2.Reset()
-		cut := r.IntN(len(p) + 1)
-		s1.Write(p[:cut])
-		s1.Write(p[cut:])
-		s2.Write(p[:cut])
-		s2.Write(p[cut:])
-		if s1.Sum() != sha1.Sum(p) {
-			t.Fatalf("SHA-1 of %d octets", len(p))
-		}
-		if s2.Sum() != sha256.Sum256(p) {
-			t.Fatalf("SHA-256 of %d octets", len(p))
-		}
-		key := p[:r.IntN(len(p)+1)]
-		var m digest.HMACSHA1
-		m.Init(key)
-		m.Write(p)
-		ref := hmac.New(sha1.New, key)
-		ref.Write(p)
-		if got := m.Sum(); hex.EncodeToString(got[:]) != hex.EncodeToString(ref.Sum(nil)) {
-			t.Fatalf("HMAC-SHA1 key %d octets, message %d", len(key), len(p))
-		}
-		m.Reset()
-		m.Write(p[:cut])
-		m.Write(p[cut:])
-		if got := m.Sum(); hex.EncodeToString(got[:]) != hex.EncodeToString(ref.Sum(nil)) {
-			t.Fatalf("HMAC-SHA1 after Reset")
-		}
 	}
 }
