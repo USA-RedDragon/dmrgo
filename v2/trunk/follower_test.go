@@ -111,7 +111,7 @@ func TestFollower_GrantClear(t *testing.T) {
 	out = f.Burst(now, &other, layer2.Hint{Slot: enums.Slot1}, nil, out[:0])
 	wantKinds(t, "P_CLEAR on the other slot", out)
 
-	now += slot
+	now += 2 * time.Second
 	cl := pClear(t, 9)
 	out = f.Burst(now, &cl, layer2.Hint{Slot: enums.Slot2}, nil, out[:0])
 	wantKinds(t, "P_CLEAR", out, trunk.OutputCallEnd, trunk.OutputTune)
@@ -120,8 +120,20 @@ func TestFollower_GrantClear(t *testing.T) {
 	}
 
 	now += slot
+	late := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{
+		PhysicalChannel: 5, LogicalChannel: true, LateEntry: true, TargetAddress: 9, SourceAddress: 3120001}}, testCC)
+	out = f.Burst(now, &late, layer2.Hint{Slot: enums.Slot2}, nil, out[:0])
+	wantKinds(t, "late entry TV_GRANT of the cleared call", out, trunk.OutputGrant)
+	if f.State() != trunk.StateControl {
+		t.Fatalf("State after a late entry grant of the cleared call = %v, want Control", f.State())
+	}
+
+	now += slot
 	out = f.Burst(now, &g, layer2.Hint{Slot: enums.Slot2}, nil, out[:0])
-	wantKinds(t, "repeated TV_GRANT after P_CLEAR", out)
+	wantKinds(t, "new TV_GRANT of the same parties after P_CLEAR", out, trunk.OutputGrant, trunk.OutputTune)
+	if f.State() != trunk.StatePayload || out[1].Tune.Channel != 5 {
+		t.Errorf("new set-up grant after P_CLEAR: state %v, outputs %+v", f.State(), out)
+	}
 }
 
 func TestFollower_HangAndInactive(t *testing.T) {
