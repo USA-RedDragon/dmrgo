@@ -110,6 +110,9 @@ code DMRGO_ERR_TRANSPORT_HYTERA_SIGNATURE -209
 code DMRGO_ERR_IPSC_COMMAND -210
 code DMRGO_ERR_IPSC_LENGTH -211
 code DMRGO_ERR_IPSC_SHORT -212
+code DMRGO_ERR_MMDVM_COMMAND -213
+code DMRGO_ERR_MMDVM_LENGTH -214
+code DMRGO_ERR_MMDVM_SHORT -215
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -713,6 +716,9 @@ sym #define DMRGO_ERR_LRRP_LENGTH (-187)
 sym #define DMRGO_ERR_LRRP_SHORT (-188)
 sym #define DMRGO_ERR_LRRP_TOKEN (-189)
 sym #define DMRGO_ERR_LRRP_VARINT (-190)
+sym #define DMRGO_ERR_MMDVM_COMMAND (-213)
+sym #define DMRGO_ERR_MMDVM_LENGTH (-214)
+sym #define DMRGO_ERR_MMDVM_SHORT (-215)
 sym #define DMRGO_ERR_NMEA_CHECKSUM (-152)
 sym #define DMRGO_ERR_NMEA_FIELD (-153)
 sym #define DMRGO_ERR_NMEA_SENTENCE (-154)
@@ -904,6 +910,88 @@ sym #define DMRGO_LRRP_TRIGGERED_ANSWER ((dmrgo_lrrp_document_id_t)11)
 sym #define DMRGO_LRRP_TRIGGERED_REPORT ((dmrgo_lrrp_document_id_t)13)
 sym #define DMRGO_LRRP_TRIGGERED_REQUEST ((dmrgo_lrrp_document_id_t)9)
 sym #define DMRGO_LRRP_UNSOLICITED_REPORT ((dmrgo_lrrp_document_id_t)19)
+sym #define DMRGO_MMDVM_CAPABILITIES_V1 ((dmrgo_mmdvm_capabilities_t)287)
+sym #define DMRGO_MMDVM_CAP_DMR ((dmrgo_mmdvm_capabilities_t)2)
+sym #define DMRGO_MMDVM_CAP_D_STAR ((dmrgo_mmdvm_capabilities_t)1)
+sym #define DMRGO_MMDVM_CAP_FM ((dmrgo_mmdvm_capabilities_t)64)
+sym #define DMRGO_MMDVM_CAP_NXDN ((dmrgo_mmdvm_capabilities_t)16)
+sym #define DMRGO_MMDVM_CAP_P25 ((dmrgo_mmdvm_capabilities_t)8)
+sym #define DMRGO_MMDVM_CAP_POCSAG ((dmrgo_mmdvm_capabilities_t)256)
+sym #define DMRGO_MMDVM_CAP_YSF ((dmrgo_mmdvm_capabilities_t)4)
+sym #define DMRGO_MMDVM_COMMAND_ACK ((dmrgo_mmdvm_command_t)112)
+sym #define DMRGO_MMDVM_COMMAND_CAL_DATA ((dmrgo_mmdvm_command_t)8)
+sym #define DMRGO_MMDVM_COMMAND_DEBUG1 ((dmrgo_mmdvm_command_t)241)
+sym #define DMRGO_MMDVM_COMMAND_DEBUG2 ((dmrgo_mmdvm_command_t)242)
+sym #define DMRGO_MMDVM_COMMAND_DEBUG3 ((dmrgo_mmdvm_command_t)243)
+sym #define DMRGO_MMDVM_COMMAND_DEBUG4 ((dmrgo_mmdvm_command_t)244)
+sym #define DMRGO_MMDVM_COMMAND_DEBUG5 ((dmrgo_mmdvm_command_t)245)
+sym #define DMRGO_MMDVM_COMMAND_DEBUG_DUMP ((dmrgo_mmdvm_command_t)250)
+sym #define DMRGO_MMDVM_COMMAND_DMR_ABORT ((dmrgo_mmdvm_command_t)30)
+sym #define DMRGO_MMDVM_COMMAND_DMR_ALOHA ((dmrgo_mmdvm_command_t)23)
+sym #define DMRGO_MMDVM_COMMAND_DMR_DATA1 ((dmrgo_mmdvm_command_t)24)
+sym #define DMRGO_MMDVM_COMMAND_DMR_DATA2 ((dmrgo_mmdvm_command_t)26)
+sym #define DMRGO_MMDVM_COMMAND_DMR_LOST1 ((dmrgo_mmdvm_command_t)25)
+sym #define DMRGO_MMDVM_COMMAND_DMR_LOST2 ((dmrgo_mmdvm_command_t)27)
+sym #define DMRGO_MMDVM_COMMAND_DMR_SHORT_LC ((dmrgo_mmdvm_command_t)28)
+sym #define DMRGO_MMDVM_COMMAND_DMR_START ((dmrgo_mmdvm_command_t)29)
+sym #define DMRGO_MMDVM_COMMAND_D_STAR_DATA ((dmrgo_mmdvm_command_t)17)
+sym #define DMRGO_MMDVM_COMMAND_D_STAR_EOT ((dmrgo_mmdvm_command_t)19)
+sym #define DMRGO_MMDVM_COMMAND_D_STAR_HEADER ((dmrgo_mmdvm_command_t)16)
+sym #define DMRGO_MMDVM_COMMAND_D_STAR_LOST ((dmrgo_mmdvm_command_t)18)
+sym #define DMRGO_MMDVM_COMMAND_FMEOT ((dmrgo_mmdvm_command_t)103)
+sym #define DMRGO_MMDVM_COMMAND_FMRSSI ((dmrgo_mmdvm_command_t)104)
+sym #define DMRGO_MMDVM_COMMAND_FM_DATA ((dmrgo_mmdvm_command_t)101)
+sym #define DMRGO_MMDVM_COMMAND_FM_PARAMS1 ((dmrgo_mmdvm_command_t)96)
+sym #define DMRGO_MMDVM_COMMAND_FM_PARAMS2 ((dmrgo_mmdvm_command_t)97)
+sym #define DMRGO_MMDVM_COMMAND_FM_PARAMS3 ((dmrgo_mmdvm_command_t)98)
+sym #define DMRGO_MMDVM_COMMAND_FM_PARAMS4 ((dmrgo_mmdvm_command_t)99)
+sym #define DMRGO_MMDVM_COMMAND_FM_STATUS ((dmrgo_mmdvm_command_t)102)
+sym #define DMRGO_MMDVM_COMMAND_GET_STATUS ((dmrgo_mmdvm_command_t)1)
+sym #define DMRGO_MMDVM_COMMAND_GET_VERSION ((dmrgo_mmdvm_command_t)0)
+sym #define DMRGO_MMDVM_COMMAND_I2C_DATA ((dmrgo_mmdvm_command_t)129)
+sym #define DMRGO_MMDVM_COMMAND_M17EOT ((dmrgo_mmdvm_command_t)73)
+sym #define DMRGO_MMDVM_COMMAND_M17_LINK_SETUP ((dmrgo_mmdvm_command_t)69)
+sym #define DMRGO_MMDVM_COMMAND_M17_LOST ((dmrgo_mmdvm_command_t)72)
+sym #define DMRGO_MMDVM_COMMAND_M17_PACKET ((dmrgo_mmdvm_command_t)71)
+sym #define DMRGO_MMDVM_COMMAND_M17_STREAM ((dmrgo_mmdvm_command_t)70)
+sym #define DMRGO_MMDVM_COMMAND_NAK ((dmrgo_mmdvm_command_t)127)
+sym #define DMRGO_MMDVM_COMMAND_NXDN_DATA ((dmrgo_mmdvm_command_t)64)
+sym #define DMRGO_MMDVM_COMMAND_NXDN_LOST ((dmrgo_mmdvm_command_t)65)
+sym #define DMRGO_MMDVM_COMMAND_P25LDU ((dmrgo_mmdvm_command_t)49)
+sym #define DMRGO_MMDVM_COMMAND_P25_HEADER ((dmrgo_mmdvm_command_t)48)
+sym #define DMRGO_MMDVM_COMMAND_P25_LOST ((dmrgo_mmdvm_command_t)50)
+sym #define DMRGO_MMDVM_COMMAND_POCSAG_DATA ((dmrgo_mmdvm_command_t)80)
+sym #define DMRGO_MMDVM_COMMAND_QSO_INFO ((dmrgo_mmdvm_command_t)145)
+sym #define DMRGO_MMDVM_COMMAND_RSSI_DATA ((dmrgo_mmdvm_command_t)9)
+sym #define DMRGO_MMDVM_COMMAND_SEND_CWID ((dmrgo_mmdvm_command_t)10)
+sym #define DMRGO_MMDVM_COMMAND_SERIAL_DATA ((dmrgo_mmdvm_command_t)128)
+sym #define DMRGO_MMDVM_COMMAND_SET_CONFIG ((dmrgo_mmdvm_command_t)2)
+sym #define DMRGO_MMDVM_COMMAND_SET_FREQ ((dmrgo_mmdvm_command_t)4)
+sym #define DMRGO_MMDVM_COMMAND_SET_MODE ((dmrgo_mmdvm_command_t)3)
+sym #define DMRGO_MMDVM_COMMAND_TRANSPARENT ((dmrgo_mmdvm_command_t)144)
+sym #define DMRGO_MMDVM_COMMAND_YSF_DATA ((dmrgo_mmdvm_command_t)32)
+sym #define DMRGO_MMDVM_COMMAND_YSF_LOST ((dmrgo_mmdvm_command_t)33)
+sym #define DMRGO_MMDVM_CONTROL_DATA_SYNC ((dmrgo_mmdvm_control_t)64)
+sym #define DMRGO_MMDVM_CONTROL_IDLE ((dmrgo_mmdvm_control_t)128)
+sym #define DMRGO_MMDVM_CONTROL_VOICE_SYNC ((dmrgo_mmdvm_control_t)32)
+sym #define DMRGO_MMDVM_CPUNXP ((dmrgo_mmdvm_cpu_t)1)
+sym #define DMRGO_MMDVM_CPUST ((dmrgo_mmdvm_cpu_t)2)
+sym #define DMRGO_MMDVM_CPU_ATMEL ((dmrgo_mmdvm_cpu_t)0)
+sym #define DMRGO_MMDVM_DMR_DATA_LEN 34
+sym #define DMRGO_MMDVM_FRAME_START 224
+sym #define DMRGO_MMDVM_MAX_FRAME_LEN 510
+sym #define DMRGO_MMDVM_MODE_DMR ((dmrgo_mmdvm_mode_t)2)
+sym #define DMRGO_MMDVM_MODE_D_STAR ((dmrgo_mmdvm_mode_t)1)
+sym #define DMRGO_MMDVM_MODE_FM ((dmrgo_mmdvm_mode_t)10)
+sym #define DMRGO_MMDVM_MODE_IDLE ((dmrgo_mmdvm_mode_t)0)
+sym #define DMRGO_MMDVM_MODE_M17 ((dmrgo_mmdvm_mode_t)7)
+sym #define DMRGO_MMDVM_MODE_NXDN ((dmrgo_mmdvm_mode_t)5)
+sym #define DMRGO_MMDVM_MODE_P25 ((dmrgo_mmdvm_mode_t)4)
+sym #define DMRGO_MMDVM_MODE_POCSAG ((dmrgo_mmdvm_mode_t)6)
+sym #define DMRGO_MMDVM_MODE_YSF ((dmrgo_mmdvm_mode_t)3)
+sym #define DMRGO_MMDVM_STATUS_FRAME ((dmrgo_mmdvm_status_t)0)
+sym #define DMRGO_MMDVM_STATUS_MORE ((dmrgo_mmdvm_status_t)1)
+sym #define DMRGO_MMDVM_STATUS_SKIP ((dmrgo_mmdvm_status_t)2)
 sym #define DMRGO_PACKET_ASSEMBLER_APPEND_MISSING_MAX_ITEMS (127)
 sym #define DMRGO_PACKET_ASSEMBLER_MISSING_MAX_ITEMS (127)
 sym #define DMRGO_PACKET_RESPONSE_ACK ((dmrgo_packet_response_t)1)
@@ -1800,6 +1888,61 @@ sym int dmrgo_lrrp_request_append_binary(dmrgo_lrrp_request_t *self, uint8_t *ds
 sym int dmrgo_lrrp_request_string(dmrgo_lrrp_request_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_lrrp_time_append_binary(dmrgo_lrrp_time_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_lrrp_time_string(dmrgo_lrrp_time_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_mmdvm_ack_append_binary(dmrgo_mmdvm_ack_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_mmdvm_ack_string(dmrgo_mmdvm_ack_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_mmdvm_append_frame(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_mmdvm_command_t c, const uint8_t *payload, size_t payload_len);
+sym int dmrgo_mmdvm_capabilities_has(dmrgo_mmdvm_capabilities_t self, dmrgo_mmdvm_capabilities_t m, bool *out);
+sym int dmrgo_mmdvm_command_string(dmrgo_mmdvm_command_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_mmdvm_config_v1_append_binary(dmrgo_mmdvm_config_v1_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_mmdvm_config_v1_string(dmrgo_mmdvm_config_v1_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_mmdvm_config_v2_append_binary(dmrgo_mmdvm_config_v2_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_mmdvm_config_v2_string(dmrgo_mmdvm_config_v2_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_mmdvm_control_data_sync(dmrgo_mmdvm_control_t self, bool *out);
+sym int dmrgo_mmdvm_control_data_type(dmrgo_mmdvm_control_t self, dmrgo_enums_data_type_t *out);
+sym int dmrgo_mmdvm_control_idle(dmrgo_mmdvm_control_t self, bool *out);
+sym int dmrgo_mmdvm_control_n(dmrgo_mmdvm_control_t self, uint8_t *out);
+sym int dmrgo_mmdvm_control_voice_sync(dmrgo_mmdvm_control_t self, bool *out);
+sym int dmrgo_mmdvm_debug_append_binary(const dmrgo_mmdvm_debug_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_mmdvm_debug_count(const dmrgo_mmdvm_debug_t *self, int64_t *out);
+sym int dmrgo_mmdvm_decode_ack(const uint8_t *data, size_t data_len, dmrgo_mmdvm_ack_t *out);
+sym int dmrgo_mmdvm_decode_config_v1(const uint8_t *data, size_t data_len, dmrgo_mmdvm_config_v1_t *out);
+sym int dmrgo_mmdvm_decode_config_v2(const uint8_t *data, size_t data_len, dmrgo_mmdvm_config_v2_t *out);
+sym int dmrgo_mmdvm_decode_debug(const dmrgo_mmdvm_frame_t *f, dmrgo_mmdvm_debug_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_mmdvm_decode_dmr_abort(const uint8_t *data, size_t data_len, dmrgo_mmdvm_dmr_abort_t *out);
+sym int dmrgo_mmdvm_decode_dmr_aloha(const uint8_t *data, size_t data_len, dmrgo_mmdvm_dmr_aloha_t *out);
+sym int dmrgo_mmdvm_decode_dmr_data(const dmrgo_mmdvm_frame_t *f, dmrgo_mmdvm_dmr_data_t *out);
+sym int dmrgo_mmdvm_decode_dmr_short_lc(const uint8_t *data, size_t data_len, dmrgo_mmdvm_dmr_short_lc_t *out);
+sym int dmrgo_mmdvm_decode_dmr_start(const uint8_t *data, size_t data_len, dmrgo_mmdvm_dmr_start_t *out);
+sym int dmrgo_mmdvm_decode_nak(const uint8_t *data, size_t data_len, dmrgo_mmdvm_nak_t *out);
+sym int dmrgo_mmdvm_decode_set_freq(const uint8_t *data, size_t data_len, dmrgo_mmdvm_set_freq_t *out);
+sym int dmrgo_mmdvm_decode_set_mode(const uint8_t *data, size_t data_len, dmrgo_mmdvm_set_mode_t *out);
+sym int dmrgo_mmdvm_decode_status_v1(const uint8_t *data, size_t data_len, dmrgo_mmdvm_status_v1_t *out);
+sym int dmrgo_mmdvm_decode_status_v2(const uint8_t *data, size_t data_len, dmrgo_mmdvm_status_v2_t *out);
+sym int dmrgo_mmdvm_decode_version(const uint8_t *p, size_t p_len, dmrgo_mmdvm_version_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_mmdvm_dmr_abort_append_binary(dmrgo_mmdvm_dmr_abort_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_mmdvm_dmr_abort_string(dmrgo_mmdvm_dmr_abort_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_mmdvm_dmr_aloha_append_binary(dmrgo_mmdvm_dmr_aloha_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_mmdvm_dmr_aloha_string(dmrgo_mmdvm_dmr_aloha_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_mmdvm_dmr_data_append_binary(const dmrgo_mmdvm_dmr_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_mmdvm_dmr_data_command(const dmrgo_mmdvm_dmr_data_t *self, dmrgo_mmdvm_command_t *out);
+sym int dmrgo_mmdvm_dmr_data_hint(const dmrgo_mmdvm_dmr_data_t *self, dmrgo_layer2_hint_t *out);
+sym int dmrgo_mmdvm_dmr_short_lc_append_binary(dmrgo_mmdvm_dmr_short_lc_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_mmdvm_dmr_short_lc_string(dmrgo_mmdvm_dmr_short_lc_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_mmdvm_dmr_start_append_binary(dmrgo_mmdvm_dmr_start_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_mmdvm_dmr_start_string(dmrgo_mmdvm_dmr_start_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_mmdvm_mode_string(dmrgo_mmdvm_mode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_mmdvm_nak_append_binary(dmrgo_mmdvm_nak_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_mmdvm_nak_string(dmrgo_mmdvm_nak_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_mmdvm_next(const uint8_t *p, size_t p_len, dmrgo_mmdvm_frame_t *f, int64_t *n, dmrgo_mmdvm_status_t *st, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_mmdvm_set_freq_append_binary(dmrgo_mmdvm_set_freq_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_mmdvm_set_freq_string(dmrgo_mmdvm_set_freq_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_mmdvm_set_mode_append_binary(dmrgo_mmdvm_set_mode_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_mmdvm_set_mode_string(dmrgo_mmdvm_set_mode_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_mmdvm_status_v1_append_binary(dmrgo_mmdvm_status_v1_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_mmdvm_status_v1_string(dmrgo_mmdvm_status_v1_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_mmdvm_status_v2_append_binary(dmrgo_mmdvm_status_v2_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_mmdvm_status_v2_string(dmrgo_mmdvm_status_v2_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_mmdvm_version_append_binary(const dmrgo_mmdvm_version_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_nmea_parse_rmc(const uint8_t *s, size_t s_len, dmrgo_nmea_rmc_t *out);
 sym int dmrgo_packet_append_bursts(dmrgo_layer2_raw_burst_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_packet_packet_t *p, dmrgo_enums_color_code_t color_code, dmrgo_layer2_sync_source_t src);
 sym int dmrgo_packet_assembler_add(dmrgo_packet_assembler_t *self, const dmrgo_layer2_data_t *d, dmrgo_packet_message_t *out0, bool *out1, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
@@ -2433,6 +2576,7 @@ sym int dmrgo_voice_transmitter_tick_need(dmrgo_voice_transmitter_t *self, int64
 sym typedef int64_t dmrgo_codec2_mode_t;
 sym typedef int64_t dmrgo_layer2_sync_source_t;
 sym typedef uint16_t dmrgo_ip_port_t;
+sym typedef uint16_t dmrgo_mmdvm_capabilities_t;
 sym typedef uint16_t dmrgo_transport_hytera_slot_type_t;
 sym typedef uint64_t dmrgo_enums_sync_pattern_t;
 sym typedef uint8_t dmrgo_ars_event_t;
@@ -2506,6 +2650,11 @@ sym typedef uint8_t dmrgo_layer3_source_type_t;
 sym typedef uint8_t dmrgo_layer3_talker_alias_data_format_t;
 sym typedef uint8_t dmrgo_location_format_t;
 sym typedef uint8_t dmrgo_lrrp_document_id_t;
+sym typedef uint8_t dmrgo_mmdvm_command_t;
+sym typedef uint8_t dmrgo_mmdvm_control_t;
+sym typedef uint8_t dmrgo_mmdvm_cpu_t;
+sym typedef uint8_t dmrgo_mmdvm_mode_t;
+sym typedef uint8_t dmrgo_mmdvm_status_t;
 sym typedef uint8_t dmrgo_packet_response_t;
 sym typedef uint8_t dmrgo_pdu_capacity_plus_segment_t;
 sym typedef uint8_t dmrgo_pdu_csbk_opcode_t;
@@ -2627,6 +2776,22 @@ type struct dmrgo_lrrp_point3_d_t { double latitude; double longitude; double al
 type struct dmrgo_lrrp_report_t { uint8_t *request_id; size_t request_id_len; bool has_request_id; uint8_t short_request_id; bool has_short_request_id; dmrgo_lrrp_time_t time; bool has_time; uint32_t protocol_version; bool has_protocol_version; uint32_t result; bool has_result; bool success; dmrgo_lrrp_operation_error_t error; bool has_error; dmrgo_lrrp_circle2_d_t circle2_d; bool has_circle2_d; dmrgo_lrrp_circle3_d_t circle3_d; bool has_circle3_d; uint8_t direction; bool has_direction; uint8_t level_of_confidence; bool has_level_of_confidence; dmrgo_lrrp_point2_d_t point2_d; bool has_point2_d; dmrgo_lrrp_point3_d_t point3_d; bool has_point3_d; dmrgo_lrrp_point3_d_accuracy_t point3_d_accuracy; bool has_point3_d_accuracy; double speed; bool has_speed; double vertical_speed; bool has_vertical_speed; };
 type struct dmrgo_lrrp_request_t { uint8_t *request_id; size_t request_id_len; bool has_request_id; uint8_t short_request_id; bool has_short_request_id; bool periodic; bool one_shot; uint32_t interval; bool has_interval; uint32_t distance; bool has_distance; uint32_t trigger_condition; bool has_trigger_condition; uint32_t protocol_version; bool has_protocol_version; bool accuracy; bool accuracy_and_time; bool time; bool altitude; bool speed; bool direction; bool vertical_speed; uint8_t level_of_confidence; bool has_level_of_confidence; };
 type struct dmrgo_lrrp_time_t { uint16_t year; uint8_t month; uint8_t day; uint8_t hour; uint8_t minute; uint8_t second; };
+type struct dmrgo_mmdvm_ack_t { dmrgo_mmdvm_command_t command; };
+type struct dmrgo_mmdvm_config_v1_t { bool simplex; bool use_cos_as_lockout; bool debug; bool ysf_lo_dev; bool ptt_invert; bool tx_invert; bool rx_invert; bool m17; bool pocsag; bool nxdn; bool p25; bool ysf; bool dmr; bool d_star; uint8_t tx_delay; dmrgo_mmdvm_mode_t state; uint8_t rx_level; uint8_t cwidtx_level; uint8_t dmr_color_code; uint8_t dmr_delay; uint8_t osc_offset; uint8_t d_star_tx_level; uint8_t dmrtx_level; uint8_t ysftx_level; uint8_t p25tx_level; uint8_t txdc_offset; uint8_t rxdc_offset; uint8_t nxdntx_level; uint8_t ysftx_hang; uint8_t pocsagtx_level; uint8_t fmtx_level; uint8_t p25tx_hang; uint8_t nxdntx_hang; uint8_t m17tx_level; uint8_t m17tx_hang; };
+type struct dmrgo_mmdvm_config_v2_t { bool simplex; bool use_cos_as_lockout; bool debug; bool ysf_lo_dev; bool ptt_invert; bool tx_invert; bool rx_invert; bool fm; bool nxdn; bool p25; bool ysf; bool dmr; bool d_star; bool pocsag; uint8_t tx_delay; dmrgo_mmdvm_mode_t state; uint8_t txdc_offset; uint8_t rxdc_offset; uint8_t rx_level; uint8_t cwidtx_level; uint8_t d_star_tx_level; uint8_t dmrtx_level; uint8_t ysftx_level; uint8_t p25tx_level; uint8_t nxdntx_level; uint8_t pocsagtx_level; uint8_t fmtx_level; uint8_t ysftx_hang; uint8_t p25tx_hang; uint8_t nxdntx_hang; bool dmr_trunking; uint8_t dmr_color_code; uint8_t dmr_delay; uint8_t osc_offset; };
+type struct dmrgo_mmdvm_debug_t { dmrgo_mmdvm_command_t command; uint8_t *text; size_t text_len; int16_t n[4]; };
+type struct dmrgo_mmdvm_dmr_abort_t { uint8_t slot; };
+type struct dmrgo_mmdvm_dmr_aloha_t { dmrgo_layer2_raw_burst_t burst; };
+type struct dmrgo_mmdvm_dmr_data_t { dmrgo_enums_slot_t slot; bool lost; dmrgo_mmdvm_control_t control; dmrgo_layer2_raw_burst_t burst; uint16_t rssi; bool has_rssi; };
+type struct dmrgo_mmdvm_dmr_short_lc_t { uint8_t lc[9]; };
+type struct dmrgo_mmdvm_dmr_start_t { bool tx; };
+type struct dmrgo_mmdvm_frame_t { dmrgo_mmdvm_command_t command; uint8_t *payload; size_t payload_len; };
+type struct dmrgo_mmdvm_nak_t { dmrgo_mmdvm_command_t command; uint8_t reason; };
+type struct dmrgo_mmdvm_set_freq_t { uint8_t reserved; uint32_t rx; uint32_t tx; uint8_t rf_level; uint32_t pocsag; uint8_t size; };
+type struct dmrgo_mmdvm_set_mode_t { dmrgo_mmdvm_mode_t mode; };
+type struct dmrgo_mmdvm_status_v1_t { bool m17; bool pocsag; bool nxdn; bool p25; bool ysf; bool dmr; bool d_star; dmrgo_mmdvm_mode_t state; bool cd; bool dac_overflow; bool lockout; bool tx_overflow; bool rx_overflow; bool adc_overflow; bool tx; uint8_t d_star_space; uint8_t dmr_space1; uint8_t dmr_space2; uint8_t ysf_space; uint8_t p25_space; uint8_t nxdn_space; uint8_t pocsag_space; uint8_t m17_space; };
+type struct dmrgo_mmdvm_status_v2_t { dmrgo_mmdvm_mode_t state; bool cd; bool dac_overflow; bool lockout; bool tx_overflow; bool rx_overflow; bool adc_overflow; bool tx; uint8_t d_star_space; uint8_t dmr_space1; uint8_t dmr_space2; uint8_t ysf_space; uint8_t p25_space; uint8_t nxdn_space; uint8_t fm_space; uint8_t pocsag_space; };
+type struct dmrgo_mmdvm_version_t { uint8_t protocol; dmrgo_mmdvm_capabilities_t capabilities; dmrgo_mmdvm_cpu_t cpu; uint8_t udid[16]; uint8_t *description; size_t description_len; };
 type struct dmrgo_nmea_rmc_t { uint8_t talker[2]; uint8_t hour; uint8_t minute; uint8_t second; uint16_t millisecond; bool valid; double latitude; double longitude; double speed; double course; uint8_t day; uint8_t month; uint16_t year; double magnetic_variation; uint8_t mode; };
 type struct dmrgo_packet_message_t { dmrgo_pdu_data_header_t header; bool has_proprietary; dmrgo_pdu_proprietary_header_t proprietary; dmrgo_enums_data_type_t data_type; uint8_t *data; size_t data_len; uint32_t crc; bool has_response; dmrgo_packet_response_data_t response; bool bad_crc; };
 type struct dmrgo_packet_packet_t { dmrgo_pdu_data_header_t header; dmrgo_layer2_data_t *blocks; size_t blocks_len; };
