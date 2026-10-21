@@ -5,8 +5,6 @@ import (
 	"testing"
 )
 
-// TestInterpChainImages checks interpChain against the sum of the images
-// of the linear interpolation that fold onto f at the output rate.
 func TestInterpChainImages(t *testing.T) {
 	for _, rate := range []float64{48000, 96000, 192000, 1e6, 2.4e6} {
 		step := float64(iqShaperHz / gcd(int(rate), iqShaperHz))

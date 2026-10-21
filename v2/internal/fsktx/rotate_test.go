@@ -24,8 +24,6 @@ func rotatePair(t testing.TB, tier Tier, rate int, off float64) (*IQ, *IQ) {
 	return a, b
 }
 
-// TestRotateMatches checks that Rotate gives the I/Q of Tier2 within a
-// rounding step, keyed up and down.
 func TestRotateMatches(t *testing.T) {
 	for _, tier := range []Tier{Tier1, Tier2} {
 		for _, rate := range []int{48000, 96000, 192000, 1000000, 2400000} {

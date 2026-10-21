@@ -2,40 +2,25 @@ package fsktx
 
 import "math"
 
-// Sizes of the out-of-band phase predictor of IQConfig.ShapePred, in
-// shaper samples at iqShaperHz: each symbol adds predF products of its
-// symbol and the next three, each times a kernel of predK samples from
-// predLo samples after the start of the symbol. With predLo of at least
-// predSpan symbols the kernels of a sample are in before the sample, so
-// the predictor adds no lag.
 const (
-	predF    = 15
-	predLo   = 60
-	predK    = 200
-	predRing = 64
-	predSpan = 3
-	predSPS  = iqShaperHz / SymbolRate
-	// predC is the number of products of predFeaturesC, and predMaskC
-	// their indices in predFeatures as bits.
+	predF     = 15
+	predLo    = 60
+	predK     = 200
+	predRing  = 64
+	predSpan  = 3
+	predSPS   = iqShaperHz / SymbolRate
 	predC     = 6
 	predMaskC = 1<<0 | 1<<5 | 1<<9 | 1<<10 | 1<<12 | 1<<13
 )
 
-// predPulse is the pulse, with IQConfig.Exact, that the kernels fit: the
-// correction depends on the pulse, and the kernels of a sample start
-// predLo samples after its symbol, past the half-length of the pulse only
-// with a span of 16 symbols.
 var predPulse = PulseConfig{Span: 16, Window: 3, Beta: 17, Flat: true}
 
-// predFits reports whether the kernels fit the pulse c of the tier t.
 func predFits(t Tier, c PulseConfig) bool {
 	p := pulseOf(t, c)
 	return p.span == predPulse.Span && c.Window == predPulse.Window && c.Beta == predPulse.Beta &&
 		c.Flat == predPulse.Flat && c.FlatGain == 0 && c.Comp == 0 && (c.Gain == 0 || c.Gain == 1) && c.Shape == nil
 }
 
-// predFeatures returns the products of the symbol x[0] and the next three
-// that weigh the kernels of x[0].
 func predFeatures(x [predSpan + 1]float64) [predF]float64 {
 	x0, x1, x2, x3 := x[0], x[1], x[2], x[3]
 	x00 := x0 * x0
@@ -47,18 +32,11 @@ func predFeatures(x [predSpan + 1]float64) [predF]float64 {
 	}
 }
 
-// predFeaturesC returns the products of predFeatures that weigh the
-// kernels of PredKern 2: those of the third power that most lower the
-// residual of the fit, and the symbol itself.
 func predFeaturesC(x [predSpan + 1]float64) [predC]float64 {
 	x0, x1, x2, x3 := x[0], x[1], x[2], x[3]
 	return [predC]float64{x0, x0 * x0 * x0, x0 * x1 * x1, x0 * x1 * x2, x0 * x2 * x2, x0 * x2 * x3}
 }
 
-// predictor adds to the shaped deviation a phase correction that is a
-// fixed polynomial function of the symbols, fitted to the corrections of
-// the optimizer of IQConfig.Shape (shapefit_test.go). The kernels have
-// nothing below 3 kHz, as the optimizer's correction.
 type predictor struct {
 	kern *[predK][predF]float64
 	kc   *[predK][predC]float64
@@ -71,8 +49,6 @@ type predictor struct {
 	prev float64
 }
 
-// process takes the symbol s and its shaped deviation in buf and adds the
-// correction to it.
 func (p *predictor) process(buf []float64, s int8) {
 	copy(p.x[:], p.x[1:])
 	switch s {
@@ -106,7 +82,6 @@ func (p *predictor) process(buf []float64, s int8) {
 	}
 }
 
-// addAll adds the kernels of every product to a.
 func (p *predictor) addAll(a []float64) {
 	ft := predFeatures(p.x)
 	for t := range a {
@@ -118,7 +93,6 @@ func (p *predictor) addAll(a []float64) {
 	}
 }
 
-// addC adds the kernels of predFeaturesC to a.
 func (p *predictor) addC(a []float64) {
 	ft := predFeaturesC(p.x)
 	for t := range a {

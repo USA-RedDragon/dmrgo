@@ -6,12 +6,6 @@ import (
 	"testing"
 )
 
-// TestNoiseShapeFarOut bounds the 8-bit rounding noise of AppendS8 beyond
-// ntfFarHz in every 100 kHz: Emission Mask D wants 70 dB there at 100 W,
-// ERC/REC 74-01 70 dB beyond 62.5 kHz, Part 97.307(e) 60 dB. Plain rounding
-// gives about -62 dBc; zeros of NoiseShape without poles near the channel
-// lift the noise at every frequency far from them (24 dB for two pairs at
-// 12.5 and 25 kHz at 2.4 MHz), so NewIQ drops them there.
 func TestNoiseShapeFarOut(t *testing.T) {
 	cases := []struct {
 		name  string
@@ -42,9 +36,6 @@ func TestNoiseShapeFarOut(t *testing.T) {
 	}
 }
 
-// farNoise returns the most power of the 8-bit rounding error of cfg in
-// any 100 kHz beyond 56.25 kHz (or beyond it to half the rate when that is
-// closer), relative to the carrier.
 func farNoise(t *testing.T, cfg IQConfig) float64 {
 	t.Helper()
 	q, err := NewIQ(cfg)

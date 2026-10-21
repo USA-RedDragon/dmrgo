@@ -82,9 +82,6 @@ func newPoly(pu pulse, hz int, f32 bool) (*poly, error) {
 	return k, nil
 }
 
-// add adds t to the pulse when the rate is a whole multiple of the symbol
-// rate and t has the length of the pulse: t[j] is the deviation j samples
-// after the symbol enters.
 func (k *poly) add(t []float64) {
 	if k.m != 1 || len(t) != k.l*k.n {
 		return
@@ -115,7 +112,6 @@ func (k *poly) push(s int8) {
 	k.pushf(float64(s))
 }
 
-// pushf puts the value v in the ring.
 func (k *poly) pushf(v float64) {
 	k.pos--
 	if k.pos < 0 {
@@ -135,14 +131,11 @@ func (k *poly) symbol(dst []float64, s int8) int {
 	return k.emit(dst)
 }
 
-// symbolf is symbol with the value v in the ring in place of a symbol.
 func (k *poly) symbolf(dst []float64, v float64) int {
 	k.pushf(v)
 	return k.emit(dst)
 }
 
-// emit writes the samples of the symbol period that the newest value of the
-// ring completes to dst and returns their number.
 func (k *poly) emit(dst []float64) int {
 	n := 0
 	if k.taps32 != nil {
@@ -329,7 +322,6 @@ type PulseConfig struct {
 	FlatGain float64
 }
 
-// pulseOf returns the pulse of the tier t with c applied.
 func pulseOf(t Tier, c PulseConfig) pulse {
 	pu := pulse{span: 8}
 	if t == Tier2 {
@@ -644,9 +636,6 @@ func (a *Audio) AppendSymbol(dst []int16, s int8) []int16 {
 	return dst
 }
 
-// addCorr adds the correction of the table Corr, band-passed from
-// optInHz to CorrHiHz, to the n samples in buf after the symbol s, and
-// delays the samples by the half-length of the band pass.
 func (a *Audio) addCorr(s int8, n int) {
 	copy(a.hist[1:], a.hist[:len(a.hist)-1])
 	a.hist[0] = s
@@ -694,14 +683,10 @@ func (a *Audio) addCorr(s int8, n int) {
 	a.pos = max(0, a.pos-float64(a.spp))
 }
 
-// corrUnits is the scale of the correction tables, in steps per Hz.
 const corrUnits = 128
 
 const corrSpan = 8
 
-// corrTable returns the correction table of Corr for hz and syms context
-// symbols, and the symbols from its newest to the newest symbol; nil when
-// there is none.
 func corrTable(hz, syms int) ([]int16, int) {
 	switch {
 	case hz == 24000 && syms == 5:
@@ -716,8 +701,6 @@ func corrTable(hz, syms int) ([]int16, int) {
 	return nil, 0
 }
 
-// bandPass returns the taps of a Kaiser-windowed band pass from lo to hi
-// Hz at hz, over n taps, n odd; hi 0 or from hz/2 means up to hz/2.
 func bandPass(lo, hi, hz float64, n int) []float64 {
 	lp := func(fc float64) []float64 {
 		h := make([]float64, n)
@@ -789,8 +772,6 @@ func corrBandPass(lo, hi, hz, fitHz float64, n int) []float64 {
 	return b
 }
 
-// ntf returns the feedback weights of the noise transfer function with n
-// pairs of zeros on the unit circle at the frequencies zs at rate hz.
 func ntf(n int, zs [4]float64, hz float64) [8]float64 {
 	p := [9]float64{1}
 	for k := range n {
@@ -808,14 +789,8 @@ func ntf(n int, zs [4]float64, hz float64) [8]float64 {
 	return fb
 }
 
-// ntfMaxGain is the most gain of the noise transfer function of
-// IQConfig.NoiseShape: NewIQ drops the last zeros until the gain is at most
-// this, as more makes the rounding to 8 bits overload. Two pairs of zeros
-// have at most 16.
 const ntfMaxGain = 16
 
-// ntfPeak returns the most gain over frequency of the noise transfer
-// function 1 + sum of fb[i] z^-(i+1).
 func ntfPeak(fb []float64) float64 {
 	var top float64
 	for k := range 513 {
@@ -831,21 +806,10 @@ func ntfPeak(fb []float64) float64 {
 	return top
 }
 
-// ntfFarHz is where the far-out limits on the 8-bit rounding noise start:
-// Emission Mask D wants 70 dB in 100 kHz there at 100 W, ERC/REC 74-01
-// 70 dB beyond 62.5 kHz. Plain rounding gives about -62 dBc in 100 kHz.
 const ntfFarHz = 56250
 
-// ntfFarGain is the most gain of the noise transfer function of
-// IQConfig.NoiseShape from ntfFarHz to half the rate (0.5 dB): NewIQ drops
-// the last zeros until the gain there is at most this. Zeros without poles
-// near the channel lift the noise far from them (24 dB for two pairs at
-// 12.5 and 25 kHz at 2.4 MHz); the notches of NoisePoleR do not.
 const ntfFarGain = 1.06
 
-// ntfFarPeak returns the most gain from ntfFarHz to half of rate of the
-// noise transfer function (1 + sum of fb[i] z^-(i+1)) / (1 + sum of fbp[i]
-// z^-(i+1)), or 0 when half of rate is under ntfFarHz.
 func ntfFarPeak(fb, fbp []float64, rate float64) float64 {
 	var top float64
 	if rate/2 < ntfFarHz {
@@ -935,7 +899,6 @@ type IQConfig struct {
 	Rotate bool
 }
 
-// maxDelay is the longest Delay of IQConfig, in symbols.
 const maxDelay = 64
 
 // IQ modulates complex I/Q for a software radio: it FM-modulates the
@@ -1129,8 +1092,6 @@ func (q *IQ) AppendS8(dst []byte, s int8) []byte {
 	return dst
 }
 
-// appendPole is AppendS8 with the noise transfer function A(z)/A(z/r) of
-// IQConfig.NoisePoleR: e holds the rounding error filtered by 1/A(z/r).
 func (q *IQ) appendPole(dst []byte, n int) []byte {
 	m := 2 * q.shape
 	for j, v := range q.out[:n] {
@@ -1195,11 +1156,6 @@ func (q *IQ) symbol(s int8) int {
 	return j
 }
 
-// rotate writes the I/Q of the n shaper samples in buf to out by a complex
-// rotation and returns the number of values. The carrier phasor z and the
-// step r start from a sine and cosine once per call and when the carrier
-// comes back on; between shaper samples r takes the change of slope by a
-// small-angle rotation, and the frequency step d is one too.
 func (q *IQ) rotate(n int) int {
 	j := 0
 	l, m := float64(q.l), float64(q.m)
@@ -1263,8 +1219,6 @@ func (q *IQ) rotate(n int) int {
 	return j
 }
 
-// smallRot returns the sine and cosine of x by their Taylor series to the
-// 9th and 8th power; for |x| up to 0.5 the error is under 3e-10.
 func smallRot(x float64) (s, c float64) {
 	x2 := x * x
 	s = x * (1 - x2/6*(1-x2/20*(1-x2/42*(1-x2/72))))
@@ -1305,9 +1259,6 @@ func (q *IQ) sample(hz float64) (i, qd int16) {
 	return sat16(c * a), sat16(s * a)
 }
 
-// round16 rounds x, which must be within the range of int16, to the
-// nearest int16, ties to even, by the rounding of an add of 1.5 times
-// 2**52.
 func round16(x float64) int16 {
 	return int16(math.Float64bits(x + 0x1.8p52))
 }
@@ -1327,7 +1278,6 @@ func sat16(x float64) int16 {
 
 const maxBoostPairs = 48
 
-// boosted returns s with the Boost of a, and puts s in its history.
 func (a *Audio) boosted(s int8) float64 {
 	switch s {
 	case -3, -1, 1, 3:

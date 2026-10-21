@@ -6,8 +6,6 @@ import (
 	"testing"
 )
 
-// TestNoisePoleNotch checks that NoisePoleR lowers the 8-bit rounding
-// noise in its notch and keeps it near that of plain rounding far out.
 func TestNoisePoleNotch(t *testing.T) {
 	const rate = 2400000
 	base := IQConfig{Rate: rate, Tier: Tier2, Exact: true}

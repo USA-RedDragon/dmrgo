@@ -48,8 +48,6 @@ func tier0Pulses() []struct {
 	return t
 }
 
-// roundSum rounds the values of v to integers whose sum is the rounded
-// sum of v, by the largest remainders.
 func roundSum(v []float64) []int {
 	out := make([]int, len(v))
 	var sum float64
@@ -92,14 +90,6 @@ func TestTablesGenerated(t *testing.T) {
 	}
 }
 
-// renderLUT writes tapsIQLUT: for each pair of symbols, newer and older,
-// at taps 2j and 2j+1 of tapsIQ, each index 5 times the code of the newer
-// symbol plus the code of the older, and each pair of phases 2g and 2g+1,
-// the sum over those two taps, phase 2g in the low half of the word and
-// phase 2g+1 in the high half. The codes 0 to 4 are the symbols -3, -1,
-// +1, +3 and 0; the indexes 25 to 31 are zero, so that a mask of 5 bits
-// indexes the table. Each sum over all taps is under 3*tapsIQPeak, within
-// int16, so that the halves of the word sum stay apart.
 func renderLUT(b *bytes.Buffer, h []float64, l, n int) {
 	tap := func(p, i int) int32 {
 		if p >= l {
@@ -189,7 +179,6 @@ func renderTables() ([]byte, error) {
 				row[i] = int(int16(math.Round(h[p*n+i] * t.units / 3)))
 			}
 			if tier0Exact {
-				// Each phase passes a run of one symbol at exactly units.
 				x := make([]float64, n)
 				var s float64
 				for i := range n {
@@ -243,17 +232,8 @@ func renderTables() ([]byte, error) {
 	return format.Source(b.Bytes())
 }
 
-// corrIQFile holds the correction of tier0IQCorr in Hz, fitted from the
-// phase optimizer of Tier2: C symbols of context ending K symbols before
-// the newest, for a pulse of 16 symbols on each side, at 48 kHz. With L,
-// the sum of L tables, table k for the context k symbols newer; with
-// Sym, only the rows whose oldest symbol is -3 or -1, as the correction of
-// the negated symbols is the negated correction.
 const corrIQFile = "testdata/mcorriq-c4.json"
 
-// renderCorrIQ writes corrIQ and its context, each two phases in a word
-// as tapsIQLUT, or an empty table when
-// tier0IQCorr is off. It needs tapsIQ at 48 kHz.
 func renderCorrIQ(b *bytes.Buffer) error {
 	var span, l int
 	for _, t := range tier0Pulses() {
@@ -306,13 +286,8 @@ func renderCorrIQ(b *bytes.Buffer) error {
 	return nil
 }
 
-// mcuCorrFile holds the correction of tier0Corr in Hz, fitted from the audio
-// optimizer of Tier3: C symbols of context ending K symbols before the
-// newest, for a pulse of 8 symbols on each side, 10 samples a symbol.
 const mcuCorrFile = "testdata/mcorr48k-c5.json"
 
-// renderMCUCorr writes mcuCorr and its context, or an empty table when
-// tier0Corr is off.
 func renderMCUCorr(b *bytes.Buffer) error {
 	if !tier0Corr {
 		b.WriteString("const (\nmcuCorrSyms = 1\nmcuCorrSkip = 0\nmcuCorrBase = 4\nmcuCorrTop = 1\n)\n\nvar mcuCorr [4][10]int16\n\n")

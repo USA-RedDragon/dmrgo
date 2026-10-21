@@ -5,10 +5,6 @@ import (
 	"testing"
 )
 
-// TestNyquistPulse checks that nyquist leaves a pulse that, after the
-// receive filter of nyquist, has the gain of a run of one symbol at its
-// centre and little intersymbol interference, where the truncated pulse
-// has neither.
 func TestNyquistPulse(t *testing.T) {
 	t.Parallel()
 	for _, span := range []int{4, 6, 8, 16} {
@@ -22,9 +18,6 @@ func TestNyquistPulse(t *testing.T) {
 	}
 }
 
-// nyquistResponse returns the gain error at the centre of p after the
-// receive filter of nyquist, over the area of p, and the sum of squares of
-// the response at the other symbol times.
 func nyquistResponse(p pulse) (gain, isi float64) {
 	const g = 128
 	var area float64

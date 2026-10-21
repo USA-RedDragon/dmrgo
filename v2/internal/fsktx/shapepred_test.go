@@ -10,9 +10,6 @@ import (
 	"testing"
 )
 
-// predMargin is the least margin in dB to Emission Mask D from 8 to 12.5
-// kHz of the peak-hold power in 100 Hz of the I/Q of cfg on random
-// symbols.
 func predMargin(t *testing.T, cfg IQConfig) float64 {
 	q, err := NewIQ(cfg)
 	if err != nil {
@@ -72,7 +69,6 @@ func predMargin(t *testing.T, cfg IQConfig) float64 {
 	return m
 }
 
-// fftInPlace is a radix-2 FFT of x.
 func fftInPlace(x []complex128) {
 	n := len(x)
 	for i, j := 1, 0; i < n; i++ {
@@ -98,10 +94,6 @@ func fftInPlace(x []complex128) {
 	}
 }
 
-// TestShapePredMask checks that the predictor lowers the peak power from
-// 8 to 12.5 kHz on both tiers. The kernels fitted to a pulse of 8 symbols
-// each side raised it by 4 dB instead, as they start predLo samples after
-// their symbol, past the peak of that pulse.
 func TestShapePredMask(t *testing.T) {
 	t.Parallel()
 	for _, tier := range []Tier{Tier1, Tier2} {

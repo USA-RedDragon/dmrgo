@@ -66,28 +66,20 @@ func besselI0(x float64) float64 {
 }
 
 type pulse struct {
-	span int
-	win  window
-	beta float64
-	comp float64
-	// inv, when not zero, is the weights c1 and c2 of a five-tap
-	// symmetric filter that invert sets, in place of comp.
-	inv [2]float64
-	// echo, when set, holds the weights of the echoes of nyquist.
-	echo *[4*maxTaps + 1]float64
-	gain float64
-	tab  []float64
-	per  int
-	edge float64
-	// flat makes nyquist give the pulse the same gain at etsiHz as at 0
-	// Hz.
-	flat bool
-	// flatGain is the gain of flat at etsiHz over that at 0 Hz, less 1.
+	span     int
+	win      window
+	beta     float64
+	comp     float64
+	inv      [2]float64
+	echo     *[4*maxTaps + 1]float64
+	gain     float64
+	tab      []float64
+	per      int
+	edge     float64
+	flat     bool
 	flatGain float64
 }
 
-// core is the pulse at t symbols before its taper and echoes: the sampled
-// shape of tab, or else the root-raised-cosine pulse.
 func (p pulse) core(t float64) float64 {
 	if p.tab != nil {
 		return p.shape(t)
@@ -95,8 +87,6 @@ func (p pulse) core(t float64) float64 {
 	return rrc(t)
 }
 
-// taper is the window of the pulse at t symbols; a sampled shape has its
-// own and takes none.
 func (p pulse) taper(t float64) float64 {
 	if p.tab != nil {
 		if d := float64(p.span) - math.Abs(t); p.edge > 0 && d >= 0 && d < p.edge {
@@ -107,7 +97,6 @@ func (p pulse) taper(t float64) float64 {
 	return taper(p.win, p.beta, t/float64(p.span))
 }
 
-// shape returns the pulse of tab at t symbols by cubic interpolation.
 func (p pulse) shape(t float64) float64 {
 	x := (t + float64(p.span)) * float64(p.per)
 	n := len(p.tab)
@@ -137,10 +126,6 @@ func (p pulse) at(t, d float64) float64 {
 	return (1+2*p.comp)*p.base(t) - p.comp*p.base(t-d) - p.comp*p.base(t+d)
 }
 
-// invert sets p.inv to the five-tap symmetric filter at hz, with a gain of
-// 1 at 0 Hz, that comes closest to 1/chain(f) in least squares over the
-// band of the pulse, weighted by the raised-cosine spectrum: the inverse
-// of the response chain of what follows the pulse.
 func (p *pulse) invert(hz float64, chain func(f float64) float64) {
 	var a11, a12, a22, b1, b2 float64
 	const n = 512
@@ -161,10 +146,8 @@ func (p *pulse) invert(hz float64, chain func(f float64) float64) {
 }
 
 // etsiHz is the tone of the deviation test pattern +3 +3 -3 -3 (ETSI TS
-// 102 361-1 10.2.2.3).
 const etsiHz = SymbolRate / 4.0
 
-// baseGain is the gain of base at f cycles per symbol over its gain at 0.
 func (p pulse) baseGain(f float64) float64 {
 	const grid = 64
 	var a, b float64
@@ -177,8 +160,6 @@ func (p pulse) baseGain(f float64) float64 {
 	return a / b
 }
 
-// rcSpectrum is the raised-cosine spectrum of roll-off 0.2 at f cycles per
-// symbol.
 func rcSpectrum(f float64) float64 {
 	const a = rrcAlpha
 	f = math.Abs(f)
@@ -192,7 +173,6 @@ func rcSpectrum(f float64) float64 {
 	}
 }
 
-// sinc is sin(pi x) / (pi x).
 func sinc(x float64) float64 {
 	if x == 0 {
 		return 1
@@ -200,19 +180,10 @@ func sinc(x float64) float64 {
 	return math.Sin(math.Pi*x) / (math.Pi * x)
 }
 
-// holdChain is the response of a zero-order hold at hz.
 func holdChain(hz float64) func(f float64) float64 {
 	return func(f float64) float64 { return sinc(f / hz) }
 }
 
-// interpChain is the response from the frequency at hz to the phase at
-// rate: the linear interpolation by rate/hz and the sum of the phase steps
-// at rate, over the integral of FM. The linear interpolation is sinc^2 at
-// f/hz, sampled at rate: the images at the multiples of the least common
-// multiple of hz and rate, P times hz, fold onto f, and their sum is
-// (sin(pi x) / (P sin(pi x/P)))^2 at x = f/hz. The sum of the phase steps
-// at rate is 1/sinc(f/rate) of the integral. An infinite rate leaves the
-// interpolation alone.
 func interpChain(hz, rate float64) func(f float64) float64 {
 	if math.IsInf(rate, 1) {
 		return func(f float64) float64 { s := sinc(f / hz); return s * s }
@@ -228,8 +199,6 @@ func interpChain(hz, rate float64) func(f float64) float64 {
 	}
 }
 
-// base is the pulse at t symbols before the inverse-sinc: the tapered
-// core pulse and, with echo, its echoes.
 func (p pulse) base(t float64) float64 {
 	w := p.taper(t)
 	if w == 0 {
@@ -246,49 +215,26 @@ func (p pulse) base(t float64) float64 {
 	return v * w
 }
 
-// nyquistGrid is the number of points per symbol of the integrals of
-// nyquist.
 const nyquistGrid = 64
 
-// nyquistRxSpan is the half-length in symbols of the receive filter of
-// nyquist, as a measuring receiver truncates it.
 const nyquistRxSpan = 32
 
-// nyquistStep is the number of echoes of nyquist per symbol, and
-// nyquistRidge the ridge of its least squares, which keeps the echoes
-// small where the symbol times do not fix them.
 const (
 	nyquistStep  = 2
 	nyquistRidge = 1e-6
 )
 
-// nyquistFlat is the weight of the row of flat in nyquist.
 const nyquistFlat = 1e3
 
-// nyquist sets the echoes of p: the weights b_k, k from -span to span in
-// steps of 1/nyquistStep, of the pulses rrc(t-k) under the taper that,
-// added to the tapered pulse, make the pulse after the receive filter a
-// Nyquist pulse: 1 at its centre over its area, 0 at the other symbol
-// times, in least squares over the symbol times within 2 span of the
-// centre. The receive filter is the root-raised-cosine pulse over
-// nyquistRxSpan symbols on each side, as the FSK error measurement takes
-// it. The truncation of the pulse otherwise leaves intersymbol
-// interference and a gain at the symbol times other than the gain of a
-// run of one symbol.
 func (p *pulse) nyquist() {
 	n := nyquistStep*2*p.span + 1
 	nm := 4*p.span + 1
 	ng := 2 * p.span * nyquistGrid
 	tg := func(j int) float64 { return float64(j)/nyquistGrid - float64(p.span) + 0.5/nyquistGrid }
-	// a[m][k]: the response at symbol m-2 span of basis k (k = n is the
-	// tapered pulse itself); dc[k] its area.
 	a := make([][]float64, nm+1)
 	for i := range a {
 		a[i] = make([]float64, n+1)
 	}
-	// rx[i] is the receive filter at i+0.5 grid points less 3 span
-	// symbols, the times m-2 span-t; it is the root-raised-cosine pulse
-	// over nyquistRxSpan symbols on each side, over its area there.
 	rx := make([]float64, 6*p.span*nyquistGrid)
 	var area float64
 	for i := -nyquistRxSpan * nyquistGrid; i < nyquistRxSpan*nyquistGrid; i++ {
@@ -315,9 +261,6 @@ func (p *pulse) nyquist() {
 			a[nm][k] += f
 		}
 	}
-	// Rows r_m = resp_m - [m = 0] area, which the echoes take to -r_m of
-	// the pulse; with flat, a last row of weight nyquistFlat for the gain
-	// at etsiHz less that at 0 Hz.
 	rows := make([][]float64, nm, nm+1)
 	for m := range nm {
 		rows[m] = make([]float64, n+1)
@@ -343,7 +286,6 @@ func (p *pulse) nyquist() {
 		}
 		rows = append(rows, e)
 	}
-	// Normal equations, solved by Gaussian elimination with pivoting.
 	g := make([][]float64, n)
 	for i := range g {
 		g[i] = make([]float64, n+1)
@@ -354,7 +296,6 @@ func (p *pulse) nyquist() {
 		}
 		g[i][i] += nyquistRidge
 		if i == nyquistStep*p.span {
-			// The echo at 0 is the pulse itself, which stays.
 			clear(g[i])
 			g[i][i] = 1
 			continue

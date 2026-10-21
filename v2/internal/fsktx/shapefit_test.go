@@ -15,7 +15,6 @@ import (
 
 var updateKern = flag.Bool("updatekern", false, "rewrite shapekern_gen.go from a fit to the optimizer")
 
-// Settings of the fit of the predictor kernels.
 const (
 	fitSymbols = 30000
 	fitIters   = 30
@@ -25,16 +24,11 @@ const (
 	fitGaps    = true
 	fitTopHz   = 16000.0
 	fitTopN    = 41
-	// fitACPB is the ACP weight of the optimizer of shapeKernB.
-	fitACPB = 42.0
-	// fitACPD and fitALTD are the ACP and alternate channel weights of
-	// the optimizer of shapeKernD.
-	fitACPD = 60.0
-	fitALTD = 85.0
+	fitACPB    = 42.0
+	fitACPD    = 60.0
+	fitALTD    = 85.0
 )
 
-// fitLowPass is a Kaiser low pass at hz of n taps with unit gain at 0 Hz,
-// at iqShaperHz.
 func fitLowPass(hz float64, n int) []float64 {
 	if hz <= 0 {
 		return []float64{1}
@@ -58,8 +52,6 @@ func fitLowPass(hz float64, n int) []float64 {
 	return h
 }
 
-// TestShapeKernFit fits the predictor kernels to the corrections of the
-// optimizer on random symbols, and with -updatekern writes them.
 func TestShapeKernFit(t *testing.T) {
 	if !*updateKern {
 		t.Skip("only with -updatekern")
@@ -94,7 +86,6 @@ func TestShapeKernFit(t *testing.T) {
 	}
 }
 
-// writeKern writes the kernels k as the variable name.
 func writeKern(b *bytes.Buffer, name, doc string, k *[predK][predF]float64) {
 	fmt.Fprintf(b, "// %s are %s.\n", name, doc)
 	fmt.Fprintf(b, "var %s = [predK][predF]float64{\n", name)
@@ -108,11 +99,6 @@ func writeKern(b *bytes.Buffer, name, doc string, k *[predK][predF]float64) {
 	b.WriteString("}\n\n")
 }
 
-// fitKern fits the kernels of the tier and pulse to the correction of
-// the optimizer with the ACP weight acp and alternate channel weight
-// alt, its blocks unchained with
-// noChain; with warm, to the sum of the correction of the predictor with
-// the kernels warm and of the optimizer that starts from it.
 func fitKern(t *testing.T, tier Tier, pc PulseConfig, warm *[predK][predF]float64, acp, alt float64, noChain bool, mask uint16) *[predK][predF]float64 {
 	q, err := NewIQ(IQConfig{Rate: 96000, Tier: tier, Exact: true, Pulse: pc})
 	if err != nil {

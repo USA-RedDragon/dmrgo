@@ -12,14 +12,6 @@ import (
 	"testing"
 )
 
-// TestIQCorrDump writes the data that the MCUIQ correction tables
-// (testdata/mcorriq-*.json) are fitted to, to the dir of DMRGO_IQCORR_DUMP:
-// 200000 random symbols (PCG 3, 4) as s+3 bytes to iq_syms.bin, and the
-// deviation of Tier2 I/Q at 96 kHz (Exact, Pulse Window 3 Beta 5) with
-// Shape 15 less that with Shape 0, at the shaper rate and aligned by
-// optDelay, as float32 to iq_corr.f32. DMRGO_IQCORR_ACP and
-// DMRGO_IQCORR_ALT set the optACP and optALT of the optimizer. The fit is
-// candtx/scratch/txmcorr/fitiq.py and pocs.py.
 func TestIQCorrDump(t *testing.T) {
 	dir := os.Getenv("DMRGO_IQCORR_DUMP")
 	if dir == "" {

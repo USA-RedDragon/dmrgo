@@ -5,8 +5,6 @@ import (
 	"testing"
 )
 
-// TestPreEmphasisInverts checks that the output of PreEmphasisHz through
-// the pre-emphasis it names is the output of a flat radio.
 func TestPreEmphasisInverts(t *testing.T) {
 	const hz = 48000
 	flat, err := NewAudio(AudioConfig{Hz: hz, Tier: Tier2})

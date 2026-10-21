@@ -28,13 +28,6 @@ var tableKnobs = map[string][][2]string{
 
 var heaplessExamples = []string{"txaudio", "txiq"}
 
-// TestTinyGoTablesInFlash builds the heapless modulator examples for the
-// feather-m4 as the firmware ships (-gc=none -scheduler=none at the
-// default -opt), from a copy of the module with the MCUAudio knobs that link
-// the correction table mcuCorr and the tables regenerated, and fails when a
-// symbol of ramTableLimit bytes or more that an empty program for the board
-// does not have is in a writable section, which takes RAM. It runs only with
-// DMRGO_TINYGO_ALLOCS set.
 func TestTinyGoTablesInFlash(t *testing.T) {
 	t.Parallel()
 

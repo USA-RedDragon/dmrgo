@@ -27,7 +27,6 @@ func TestIQDelay(t *testing.T) {
 			return out
 		}
 		a, b := run(0), run(8)
-		// Past the 1 ms ramp of Key, 4.8 symbols, the envelopes agree.
 		for i := 14; i < 32; i++ {
 			if !slices.Equal(a[i-8], b[i]) {
 				t.Fatalf("tier %v: symbol %d of Delay 8 is not symbol %d of Delay 0", tier, i, i-8)

@@ -10,9 +10,6 @@ import (
 	"sync"
 )
 
-// corrPulse is the pulse that the tables of AudioConfig.Corr are fitted
-// for: the Tier1 pulse that agent txaud fitted at 48 kHz, with Exact,
-// Shape 2 and NoiseZerosHz 7000 and 21000 Hz.
 func corrPulse() PulseConfig {
 	return PulseConfig{Span: 8, PerSymbol: 40, Gain: 1.0004, Shape: []float64{
 		0.0007281326, 0.0008281617, 0.0009277724, 0.0010263221, 0.0011222641, 0.0012148748,
@@ -125,24 +122,17 @@ func corrPulse() PulseConfig {
 	}}
 }
 
-// Sizes of the fit of the correction tables.
 const (
 	corrFitSyms = 240000
 	corrFitOpt  = 30
 	corrFitSkip = 200
 )
 
-// corrFit is one correction table: its rate, context symbols and skip,
-// and its corrections in Hz.
 type corrFit struct {
 	hz, syms, skip int
 	t              []float64
 }
 
-// fitCorr runs Opt at corrFitOpt iterations over corrFitSyms random
-// symbols at hz and fits, for each context length in syms, the mean
-// correction per context of the symbols that ends 3 to 7 symbols before
-// the newest, with the skip that explains the most of its power.
 func fitCorr(hz int, syms []int) []corrFit {
 	cfg := AudioConfig{Hz: hz, Tier: Tier1, Exact: true, Pulse: corrPulse()}
 	a0, err := NewAudio(cfg)
@@ -223,9 +213,6 @@ func fitCorr(hz int, syms []int) []corrFit {
 	return out
 }
 
-// renderAudioCorr writes the correction tables of AudioConfig.Corr: for each
-// rate and context length, the corrections at corrUnits per Hz and the
-// skip of the context.
 func renderAudioCorr(b *bytes.Buffer) {
 	rates := []int{24000, 48000}
 	fits := make([][]corrFit, len(rates))

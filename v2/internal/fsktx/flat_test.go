@@ -6,7 +6,6 @@ import (
 )
 
 // TestFlatETSI checks that Flat gives the exact pulse the same gain at the
-// tone of the deviation test pattern as at 0 Hz.
 func TestFlatETSI(t *testing.T) {
 	for _, c := range []PulseConfig{{Window: 3, Beta: 5}, {Window: 3, Beta: 17}, {Span: 8, Window: 3, Beta: 8}} {
 		pu := pulseOf(Tier2, c)
@@ -21,8 +20,6 @@ func TestFlatETSI(t *testing.T) {
 	}
 }
 
-// TestIQShapeS8 checks that the noise shaping of AppendS8 keeps the 8-bit
-// I/Q on the rounded 16-bit I/Q on average.
 func TestIQShapeS8(t *testing.T) {
 	q, err := NewIQ(IQConfig{Rate: 96000, Tier: Tier2, Exact: true, NoiseShape: 2, NoiseZerosHz: [4]float64{12500, 25000}})
 	if err != nil {
@@ -50,10 +47,6 @@ func TestIQShapeS8(t *testing.T) {
 	}
 }
 
-// TestNoiseShapeGain checks that NewIQ keeps the zeros of NoiseShape that
-// the gain bounds allow: three pairs at 96 kHz; none at 2.4 MHz, where the
-// third pair takes the gain to 64 and the rounding overloads, and the other
-// two lift the noise beyond ntfFarHz by 24 dB.
 func TestNoiseShapeGain(t *testing.T) {
 	t.Parallel()
 	for _, c := range []struct{ rate, want int }{{96000, 3}, {2400000, 0}} {

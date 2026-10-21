@@ -7,30 +7,18 @@ import (
 
 const tableUnits = 15000
 
-// tier0Exact makes the tables of the Tier0 modulators Nyquist pulses after
-// a receive root-raised-cosine filter, with the inverse of the hold of a
-// DAC or of the linear interpolation of MCUIQ, and each phase exact for a
-// run of one symbol. MCUIQ then sums the phase steps at the midpoints of
-// its output samples, so that its phase is the integral of the
-// interpolated deviation at every rate.
 const (
 	tier0Exact = false
 )
 
-// tier0IQFine makes MCUIQ interpolate cosTable to first order in the phase.
 const (
 	tier0IQFine = false
 )
 
-// tapShift is the number of extra fraction bits of the taps of an
-// AudioTable over its output units.
 const (
 	tapShift = 0
 )
 
-// tier0Corr adds to the samples of Table48k the correction of mcuCorr for
-// the context of mcuCorrSyms symbols that ends mcuCorrSkip symbols before
-// the newest, which cuts the power of the FM signal outside the channel.
 const (
 	tier0Corr = false
 )
@@ -47,9 +35,6 @@ const (
 	tier0Fold = false
 )
 
-// tier0Shape feeds the rounding error of each MCUAudio sample into the
-// next, which puts a zero of the error at half the rate: it cuts the
-// rounding noise of a coarse DAC in the alternate channel.
 const (
 	tier0Shape = false
 )
@@ -188,20 +173,16 @@ func (k *shaperMAC) symbol(s int8) int {
 // up in memory of the caller, such as a package variable. An MCUAudio is not
 // safe for concurrent use. (ETSI TS 102 361-1 clause 10.2.2.2)
 type MCUAudio struct {
-	k      shaperMAC
-	scale  int32
-	offset int32
-	// codes holds 2 bits for each recent symbol, the newest lowest, and
-	// zeros a bit for each that is 0; corr is set for Table48k.
+	k            shaperMAC
+	scale        int32
+	offset       int32
 	codes, zeros uint32
 	idx5         uint32
 	corr         bool
-	// rerr is the rounding residue of the last sample for tier0Shape, and
-	// shape32 is set when every sum of the shaped loop fits 32 bits.
-	rerr    int32
-	rerr2   int32
-	shape32 bool
-	c24     bool
+	rerr         int32
+	rerr2        int32
+	shape32      bool
+	c24          bool
 }
 
 // Init sets up m for table t at level units for a run of symbol +3 (1944
@@ -278,9 +259,6 @@ func (m *MCUAudio) Symbol(dst []int16, s int8) int {
 	return n
 }
 
-// shaped is the output loop of Symbol for tier0Shape, in 32 bits, which
-// Init allows only when no sum can overflow. The residue of the rounding
-// is the low bits of the sum before the shift.
 func (m *MCUAudio) shaped(dst []int16, n int, s int8) int {
 	if tier0Shape2 {
 		return m.shaped2(dst, n, s)
@@ -448,6 +426,4 @@ func (m *MCUAudio) corrIdx(s int8) (uint32, bool) {
 	return m.codes >> (2 * skip) & (1<<(2*mcuCorrSyms) - 1), true
 }
 
-// code5 is the digit of a symbol plus 3 in the index of mcuCorr in base
-// 5: -3, -1, +1, +3 as 0 to 3 and 0 as 4.
 var code5 = [8]uint8{0, 0, 1, 4, 2, 0, 3, 0}

@@ -2,65 +2,38 @@ package fsktx
 
 import "math"
 
-// Model of the FM radio that an Audio drives, for the out-of-band
-// optimizer of AudioConfig.Opt: the zero-order hold of the DAC, an analog
-// two-pole Butterworth low pass at radioLowpassHz, and FM at radioHz.
 const (
 	radioHz        = 96000
 	radioLowpassHz = 8000.0
 )
 
-// The window of the audio optimizer is the power of two of samples at
-// the audio rate nearest to aoptWin48k times the rate over 48000 Hz, so
-// that its delay in symbols is about the same at every rate. Its context
-// is a quarter and its step a half of it.
 const (
 	aoptWin48k = 1024
 	aoptH      = optLPN / 2
 )
 
-// Every aoptAnchor blocks the audio optimizer starts again from the input
-// alone: the block before solves its window again without the past
-// correction and holds the result over the context of the next block, so
-// that the output depends on a bounded span of input only.
 const aoptAnchor = 2
 
-// Extra weight of the audio optimizer, in dB, on the power from aoptFarHz
-// from the carrier, which takes in the alternate channel.
 const (
 	aoptFarHz = 17000.0
 	aoptFarDb = 20.0
 )
 
 // Weights of the audio optimizer on the receivers of EN 300 113 Annex C
-// at the widest tolerances, as optACP and optALT: above 0, the power that
-// the adjacent (aoptACP) or alternate (aoptALT) channel limit counts
-// weighs as much as that of Mask D at that many dB.
 const (
 	aoptACP = 0.0
 	aoptALT = 0.0
 )
 
-// Below aoptLowHz the hold images of the DAC fall into the adjacent
-// channel, and aoptACPLow, above 0, takes the place of aoptACP.
 const (
 	aoptLowHz  = 32000
 	aoptACPLow = 0.0
 )
 
 const (
-	// aoptAnyRate makes the audio optimizer take every rate: its radio
-	// model runs at the rate times the least power of two that reaches
-	// radioHz.
 	aoptAnyRate = false
 )
 
-// aoptimizer is the optimizer of IQConfig.Shape for audio: it adds a
-// correction to the deviation that lowers the power of the FM signal of
-// the radio outside the channel, weighted by Emission Mask D. The
-// correction is high-passed so that the deviation below optInHz does not
-// change, and the radio model maps it to the RF phase, so the optimizer
-// sees the spectrum that the radio sends.
 type aoptimizer struct {
 	iters     int
 	up        int
@@ -94,8 +67,6 @@ type aoptimizer struct {
 	jscale    float64
 }
 
-// aoptRate reports whether the audio optimizer takes the rate hz: radioHz
-// is hz times a power of two.
 func aoptRate(hz int) bool {
 	if aoptAnyRate && hz > 0 {
 		return true
@@ -107,15 +78,11 @@ func aoptRate(hz int) bool {
 	return up&(up-1) == 0
 }
 
-// aoptSettle returns the length in samples at hz of the response of the
-// radio model to one sample.
 func aoptSettle(hz int) int {
 	al := 2 * math.Pi * radioLowpassHz / math.Sqrt2
 	return int(math.Ceil((36/al+1/float64(hz))*float64(hz))) + 1
 }
 
-// newAudioOpt returns an aoptimizer for audio at hz, which aoptRate
-// takes, with iters iterations per block.
 func newAudioOpt(iters, hz int) *aoptimizer {
 	win := 64
 	for float64(win)*math.Sqrt2 < aoptWin48k*float64(hz)/48000 || win < 4*(aoptSettle(hz)+aoptH) {
@@ -124,9 +91,6 @@ func newAudioOpt(iters, hz int) *aoptimizer {
 	return newAudioOptWin(iters, hz, win, aoptAnchor)
 }
 
-// newAudioOptWin returns an aoptimizer with a window of win samples, a
-// power of two, that starts again from the input every anchor blocks, or
-// never for 0.
 func newAudioOptWin(iters, hz, win, anchor int) *aoptimizer {
 	up := 1
 	for hz*up < radioHz {
@@ -236,8 +200,6 @@ func newAudioOptWin(iters, hz, win, anchor int) *aoptimizer {
 	return o
 }
 
-// process takes the deviation in buf and replaces it with the delayed
-// corrected deviation.
 func (o *aoptimizer) process(buf []float64) {
 	for i, v := range buf {
 		o.f[o.nIn&(optRing-1)] = v
@@ -286,8 +248,6 @@ func (o *aoptimizer) fft(re, im []float64, inv bool) {
 	}
 }
 
-// eval returns the cost of the free correction x of the window from w0
-// and its gradient in g.
 func (o *aoptimizer) eval(w0 int, x, g []float64) float64 {
 	L, H := o.settle, aoptH
 	win, ctx := o.win, o.ctx
@@ -375,7 +335,6 @@ func (o *aoptimizer) eval(w0 int, x, g []float64) float64 {
 	return j * sc
 }
 
-// block optimizes the window from sample w0, block nBlk.
 func (o *aoptimizer) block(w0 int) {
 	free := o.win - o.ctx
 	if o.anchor > 0 && (o.nBlk+1)%o.anchor == 0 {
@@ -405,8 +364,6 @@ func (o *aoptimizer) block(w0 int) {
 	}
 }
 
-// solve runs the iterations on the free correction xv of the window from
-// sample w0.
 func (o *aoptimizer) solve(w0 int) {
 	o.jscale = 1
 	j := o.eval(w0, o.xv, o.g)

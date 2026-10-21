@@ -50,8 +50,6 @@ func altWelch(x []complex128, rate float64) float64 {
 	return 10 * math.Log10(max(band(20750, 29250), band(-29250, -20750)))
 }
 
-// TestAltSplit breaks the alternate channel power of MCUIQ at 96 kHz into
-// its sources. Run with ALTSPLIT=1.
 func TestAltSplit(t *testing.T) {
 	if os.Getenv("ALTSPLIT") == "" {
 		t.Skip()
@@ -85,7 +83,6 @@ func TestAltSplit(t *testing.T) {
 		}
 	}
 	t.Logf("A full int16 MCUIQ: %.2f dBc", altWelch(outI, rate))
-	// Rebuild the phase increments of steady1 from ws (exact integer path).
 	vs = vs[:0]
 	prev := int32(ws[0])
 	for _, wf := range ws[1:] {
@@ -137,8 +134,6 @@ func TestAltSplit(t *testing.T) {
 	}
 	t.Logf("B linear interp, exact cos, float: %.2f dBc", altWelch(fm(inc, id), rate))
 	t.Logf("B2 linear interp, exact cos, int16 round: %.2f dBc", altWelch(fm(inc, rnd), rate))
-	// Integer phase with the table path but float out vs table: done by A.
-	// C: band-limited interpolation of ws at the output sample midpoints.
 	n := 1
 	for n < len(ws) {
 		n <<= 1
@@ -161,7 +156,6 @@ func TestAltSplit(t *testing.T) {
 	fft(up)
 	ideal := make([]float64, 0, 2*len(ws))
 	for i := 1; i < len(ws)-1; i++ {
-		// between ws[i-1] and ws[i]: positions 4(i-1)+1 and 4(i-1)+3
 		ideal = append(ideal, real(up[4*(i-1)+1])/float64(n), real(up[4*(i-1)+3])/float64(n))
 	}
 	t.Logf("C ideal interp, exact cos, float: %.2f dBc", altWelch(fm(ideal, id), rate))

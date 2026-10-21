@@ -2,47 +2,29 @@ package fsktx
 
 import "math"
 
-// Sizes of the out-of-band phase optimizer of IQConfig.Shape, in shaper
-// samples at iqShaperHz: each block optimizes a window of optWin samples,
-// optCtx of them already final, and makes optStep of them final.
 const (
-	optWin  = 1024
-	optCtx  = 256
-	optStep = 512
-	optRing = 4096
-	optLPN  = 161
-	optMem  = 8
-	optFree = optWin - optCtx
-	// optDelay is the delay of the optimizer: the lookahead of a block,
-	// a whole block, and the half-length of the high pass.
+	optWin   = 1024
+	optCtx   = 256
+	optStep  = 512
+	optRing  = 4096
+	optLPN   = 161
+	optMem   = 8
+	optFree  = optWin - optCtx
 	optDelay = (optWin - optCtx - 1 + optLPN/2 + 9) / 10 * 10
 )
 
-// Tuning of the optimizer.
 const (
 	optInHz    = 3000.0
 	optFromHz  = 5000.0
 	optPenalty = 0.0
 	optLPHz    = 3750.0
 	optLPBeta  = 8.0
-	// optNoChain makes each block start from no correction and see none in
-	// its context, so that the output depends on a finite span of symbols.
 	optNoChain = false
-	// optACP, when above 0, adds to the weight the adjacent channel
 	// receiver of EN 300 113 Annex C at the widest tolerances, at optACP
-	// dB: the power that the ACP limit counts weighs as much as that of
-	// Mask D at optACP dB.
 	optACP = 0.0
-	// optALT is optACP for the alternate channel at 25 kHz.
 	optALT = 0.0
 )
 
-// optimizer adds a phase correction to the shaped deviation that lowers
-// the power outside the channel, weighted by Emission Mask D, with the
-// frequency below optInHz unchanged: a high pass removes everything below
-// it from the correction, so the receive filter and the deviation tests
-// see the same signal. It delays the deviation by optDelay shaper samples,
-// and not the keying: the caller keys by the lag, as for the pulse.
 type optimizer struct {
 	iters      int
 	noChain    bool
@@ -69,8 +51,6 @@ func newOptimizer(iters int) *optimizer {
 	return newOptimizerACP(iters, optACP, optALT)
 }
 
-// newOptimizerACP is newOptimizer with acp and alt in place of optACP and
-// optALT.
 func newOptimizerACP(iters int, acp, alt float64) *optimizer {
 	o := &optimizer{iters: iters, noChain: optNoChain}
 	o.f = make([]float64, optRing)
@@ -146,8 +126,6 @@ func newOptimizerACP(iters int, acp, alt float64) *optimizer {
 	return o
 }
 
-// optMaskAttn is the attenuation of Emission Mask D at fd Hz from the
-// carrier.
 func optMaskAttn(fd float64) float64 {
 	fd = math.Abs(fd) / 1000
 	switch {
@@ -160,9 +138,7 @@ func optMaskAttn(fd float64) float64 {
 	}
 }
 
-// optAnnexC is the attenuation in dB at fd Hz from the carrier of the
 // Annex C receive filter of EN 300 113 tuned to ch Hz from the carrier, at
-// the widest tolerances on each side.
 func optAnnexC(fd, ch float64) float64 {
 	d := (math.Abs(fd) - ch) / 1000
 	x, y := [5]float64{0, 5, 6.25, 7.5, 11.5}, [5]float64{0, 2, 6, 26, 90}
@@ -178,8 +154,6 @@ func optAnnexC(fd, ch float64) float64 {
 	return 90
 }
 
-// process takes the shaped deviation in buf and replaces it with the
-// delayed corrected deviation.
 func (o *optimizer) process(buf []float64) {
 	for i, v := range buf {
 		o.f[o.nIn&(optRing-1)] = v
@@ -200,7 +174,6 @@ func (o *optimizer) process(buf []float64) {
 	}
 }
 
-// psiH is the high-passed correction at sample m.
 func (o *optimizer) psiH(m int) float64 {
 	h := optLPN / 2
 	var acc float64
@@ -241,7 +214,6 @@ func (o *optimizer) fft(re, im []float64, inv bool) {
 	}
 }
 
-// eval returns the cost of the free correction x and its gradient in g.
 func (o *optimizer) eval(w0 int, x, g []float64) float64 {
 	re, im, pr, pi := o.re, o.im, o.pr, o.pi
 	for n := range optWin {
@@ -284,7 +256,6 @@ func (o *optimizer) eval(w0 int, x, g []float64) float64 {
 	return j*sc + optPenalty*jp/optWin
 }
 
-// block optimizes the window from shaper sample w0.
 func (o *optimizer) block(w0 int) {
 	var ph float64
 	for n := range optWin {
