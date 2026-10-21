@@ -24,6 +24,7 @@ import (
 	internal_fec_trellis "github.com/USA-RedDragon/dmrgo/v2/internal/fec/trellis"
 	internal_pcg "github.com/USA-RedDragon/dmrgo/v2/internal/pcg"
 	internal_text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
+	internal_wire "github.com/USA-RedDragon/dmrgo/v2/internal/wire"
 	layer2 "github.com/USA-RedDragon/dmrgo/v2/layer2"
 	layer2_framer "github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 	layer2_packet "github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
@@ -269,6 +270,18 @@ var api = [...]any{
 	internal_text.Hex,
 	internal_text.Int,
 	internal_text.Uint,
+	internal_wire.AppendRune,
+	internal_wire.AppendSfloatvar,
+	internal_wire.AppendSintvar,
+	internal_wire.AppendUTF16,
+	internal_wire.AppendUTF8,
+	internal_wire.AppendUfloatvar,
+	internal_wire.AppendUintvar,
+	internal_wire.FloatvarFits,
+	internal_wire.Sfloatvar,
+	internal_wire.Sintvar,
+	internal_wire.Ufloatvar,
+	internal_wire.Uintvar,
 	(*layer2.Burst).AMBEFrames,
 	(*layer2.Burst).DecodeFromBytes,
 	(*layer2.Burst).DecodeFromBytesWith,
