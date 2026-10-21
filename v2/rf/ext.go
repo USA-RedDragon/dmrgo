@@ -627,7 +627,7 @@ func (x *softExt) placeLate(c *leanCore, ch *extChan, b *Burst, cc enums.ColorCo
 		lb := &l.b
 		lb.Voice = v
 		if v == enums.VoiceBurstA {
-			lb.Voice, lb.Sync, lb.Distance = enums.VoiceBurstUnknown, voice, syncDist(lb.Data, voice)
+			lb.Voice, lb.Sync, lb.Distance = enums.VoiceBurstUnknown, voice, syncDist(&lb.Data, voice)
 		}
 		lb.HasCACH = false
 		c.ring, c.base = l.ring, l.base

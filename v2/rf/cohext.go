@@ -931,7 +931,7 @@ func (s *cohStage) place(c *leanCore, b *Burst, j int32) bool {
 	}
 	s.dt += cohDTGain * bestD
 	ch := &c.ch[j&1]
-	b.Sync, b.Distance = bestP, syncDist(b.Data, bestP)
+	b.Sync, b.Distance = bestP, syncDist(&b.Data, bestP)
 	if bestP == voice {
 		ch.sf, ch.data = j, false
 	} else {

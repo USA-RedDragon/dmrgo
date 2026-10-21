@@ -712,8 +712,7 @@ func roundBits(v float32) int32 {
 
 //go:noinline
 func (r *leanCore) symbol(x, at float32) {
-	r.lastAt = at
-	r.pushSym(x)
+	r.lockPush(x, at)
 	if !r.locked {
 		r.searchHit(r.searchSigns())
 		return
@@ -816,23 +815,22 @@ func (r *leanCore) searchHit(sym, mid bool) {
 
 //go:noinline
 func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
-	r.pushSym(x)
+	r.lockPush(x, r.lastAt)
 	r.pushMidSign()
-	sym, mid = r.signsMatch(r.signs, r.midSigns)
+	sym, mid = r.signsMatch2(r.signs, r.midSigns)
 	hit = r.ns > leanSyncEnd+1 && sym || r.ns >= leanRing && r.ext != nil || mid && r.ns > leanSyncEnd+2
 	return hit, sym, mid
 }
 
 //go:noinline
 func (r *leanCore) lockSym(x, at float32) (again, mid, match bool) {
-	r.lastAt = at
-	r.pushSym(x)
+	r.lockPush(x, at)
 	if !r.hunt || !r.huntMid(at) {
 		return false, false, false
 	}
 	again = r.again
 	r.again = false
-	sym, mid := r.signsMatch(r.signs, r.midSigns)
+	sym, mid := r.signsMatch2(r.signs, r.midSigns)
 	return again, mid, mid || sym
 }
 
@@ -1256,23 +1254,35 @@ func (r *leanCore) fitLevels(end int64, p enums.SyncPattern, first, check bool) 
 func (r *leanCore) fitSync(end int64, p enums.SyncPattern) (g, dc, res float32) {
 	var syms [syncSymbols]int8
 	syncSyms(p, &syms)
-	k0 := end - syncSymbols + 1
+	j0 := ringPos(end - syncSymbols + 1)
 	var mp, mx float32
+	j := j0
 	for k := range syncSymbols {
-		mx += r.sym(k0 + int64(k))
+		mx += float32(r.ring[j])*discStepHz + r.off
+		if j++; j == leanRing {
+			j = 0
+		}
 		mp += float32(syms[k])
 	}
 	mp /= syncSymbols
 	mx /= syncSymbols
 	var sxy, spp float32
+	j = j0
 	for k := range syncSymbols {
-		sxy += (float32(syms[k]) - mp) * (r.sym(k0+int64(k)) - mx)
+		sxy += (float32(syms[k]) - mp) * (float32(r.ring[j])*discStepHz + r.off - mx)
+		if j++; j == leanRing {
+			j = 0
+		}
 		spp += (float32(syms[k]) - mp) * (float32(syms[k]) - mp)
 	}
 	g = sxy / spp / deviationHz
 	dc = mx - g*deviationHz*mp
+	j = j0
 	for k := range syncSymbols {
-		e := r.sym(k0+int64(k)) - dc - g*deviationHz*float32(syms[k])
+		e := float32(r.ring[j])*discStepHz + r.off - dc - g*deviationHz*float32(syms[k])
+		if j++; j == leanRing {
+			j = 0
+		}
 		res += e * e
 	}
 	return g, dc, res / syncSymbols
@@ -1402,9 +1412,14 @@ func (r *leanCore) noCarrier(end int64, p enums.SyncPattern) bool {
 		top = min(r.first+int64(r.next)*slotSymbols+1, r.ns)
 	}
 	n := int32(0)
-	for k := max(end-leanSyncEnd, top-leanRing); k < min(end-leanSyncEnd+slotSymbols, top); k++ {
-		if abs32(r.sym(k)-r.dcHz) > out {
+	k0, k1 := max(end-leanSyncEnd, top-leanRing), min(end-leanSyncEnd+slotSymbols, top)
+	j := ringPos(k0)
+	for k := k0; k < k1; k++ {
+		if abs32(float32(r.ring[j])*discStepHz+r.off-r.dcHz) > out {
 			n++
+		}
+		if j++; j == leanRing {
+			j = 0
 		}
 	}
 	g, _, res := r.fitSync(end, p)
@@ -1711,7 +1726,7 @@ func (r *leanCore) colorCode() (enums.ColorCode, bool) {
 func (r *leanCore) classify(b *Burst, j int32) bool {
 	c := &r.ch[j&1]
 	voice, data, _ := sourceAt(int(r.src)).SyncPatterns()
-	dv, dd := syncDist(b.Data, voice), syncDist(b.Data, data)
+	dv, dd := syncDist(&b.Data, voice), syncDist(&b.Data, data)
 	switch {
 	case r.anchor == data || r.anchor == 0 && dd <= damagedSyncDistance && dd < dv:
 		b.Distance, b.Sync = dd, data
@@ -1719,7 +1734,7 @@ func (r *leanCore) classify(b *Burst, j int32) bool {
 		r.noteData(b, j, c)
 		return true
 	case r.anchor == enums.SyncMSSourcedRC:
-		b.Distance, b.Sync = syncDist(b.Data, enums.SyncMSSourcedRC), enums.SyncMSSourcedRC
+		b.Distance, b.Sync = syncDist(&b.Data, enums.SyncMSSourcedRC), enums.SyncMSSourcedRC
 		return true
 	case r.anchor == voice || dv <= layer2.DefaultSyncThreshold:
 		b.Distance, b.Sync = dv, voice

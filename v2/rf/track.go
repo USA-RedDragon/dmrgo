@@ -153,13 +153,13 @@ func (t *tracker) flush(emit func(*received)) {
 
 func (t *tracker) resolveLeftover(e *trackEntry) {
 	_, data, _ := e.rec.src.SyncPatterns()
-	if d := syncDist(e.rec.data, data); d <= damagedSyncDistance {
+	if d := syncDist(&e.rec.data, data); d <= damagedSyncDistance {
 		e.out.distance, e.out.sync, e.keep = d, data, true
 	}
 	e.resolved = true
 }
 
-func syncDist(b layer2.RawBurst, p enums.SyncPattern) int {
+func syncDist(b *layer2.RawBurst, p enums.SyncPattern) int {
 	return bits.OnesCount64(ibits.Field(b[:], framer.SyncOffset, framer.SyncBits) ^ uint64(p))
 }
 
@@ -177,7 +177,7 @@ func (t *tracker) classify(e *trackEntry) {
 	idx := e.rec.index
 	c := &t.ch[((idx%2)+2)%2]
 	voice, data, _ := e.rec.src.SyncPatterns()
-	dv, dd := syncDist(e.rec.data, voice), syncDist(e.rec.data, data)
+	dv, dd := syncDist(&e.rec.data, voice), syncDist(&e.rec.data, data)
 	switch {
 	case e.rec.anchor == data || e.rec.anchor == 0 && dd <= damagedSyncDistance && dd < dv:
 		e.out.distance, e.out.sync = dd, data
@@ -186,7 +186,7 @@ func (t *tracker) classify(e *trackEntry) {
 		t.noteData(e, c)
 		return
 	case e.rec.anchor == enums.SyncMSSourcedRC:
-		e.out.distance, e.out.sync = syncDist(e.rec.data, enums.SyncMSSourcedRC), enums.SyncMSSourcedRC
+		e.out.distance, e.out.sync = syncDist(&e.rec.data, enums.SyncMSSourcedRC), enums.SyncMSSourcedRC
 		e.resolved, e.keep = true, true
 		return
 	case e.rec.anchor == voice || dv <= layer2.DefaultSyncThreshold:
@@ -231,7 +231,7 @@ func (t *tracker) backfill(e *trackEntry, c *chanTrack) {
 	check := true
 	if prev := t.find(a); prev != nil && !prev.resolved {
 		voice, _, _ := prev.rec.src.SyncPatterns()
-		if d := syncDist(prev.rec.data, voice); d <= voiceSyncDistance {
+		if d := syncDist(&prev.rec.data, voice); d <= voiceSyncDistance {
 			t.setA(prev, c, d, true)
 			check = false
 		}
@@ -247,7 +247,7 @@ func (t *tracker) fillFrom(a int64, c *chanTrack, check bool) {
 			continue
 		}
 		_, data, _ := x.rec.src.SyncPatterns()
-		if syncDist(x.rec.data, data) <= damagedSyncDistance {
+		if syncDist(&x.rec.data, data) <= damagedSyncDistance {
 			return
 		}
 		pos := enums.VoiceBurstA + enums.VoiceBurstType(n)
@@ -312,7 +312,7 @@ func (t *tracker) lateEntry(e *trackEntry, c *chanTrack) {
 		return
 	}
 	voice, _, _ := a.rec.src.SyncPatterns()
-	d := syncDist(a.rec.data, voice)
+	d := syncDist(&a.rec.data, voice)
 	if d > voiceSyncDistance {
 		return
 	}
