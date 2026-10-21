@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -90,13 +91,17 @@ func runWeak(t *testing.T, spec string) (string, string) {
 func TestAMBESpecErrors(t *testing.T) {
 	t.Parallel()
 
+	badBaud, noDevice := "baud 1234", "no such file"
+	if runtime.GOOS != "linux" {
+		badBaud, noDevice = "Linux only", "Linux only"
+	}
 	for _, tt := range []struct{ args, want string }{
 		{"-ambe software:x", "takes no argument"},
 		{"-ambe dvsi", "want software"},
 		{"-ambe serial:", "no device"},
 		{"-ambe serial:/dev/null@fast", "baud"},
-		{"-ambe serial:/dev/null@1234", "baud 1234"},
-		{"-ambe serial:/nonexistent/tty", "no such file"},
+		{"-ambe serial:/dev/null@1234", badBaud},
+		{"-ambe serial:/nonexistent/tty", noDevice},
 		{"-pcm x.pcm", "-pcm needs -ambe"},
 	} {
 		args := append([]string{"rx", "-i", weakCapture, "-rate", "256000"}, strings.Fields(tt.args)...)
