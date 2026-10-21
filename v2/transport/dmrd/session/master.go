@@ -149,7 +149,7 @@ func (m *Master) Resume(now time.Duration, id uint32, dst []Output) []Output {
 // uses at most MaxPassword octets, to check the RPTK. It does nothing in
 // another state. It allocates only when dst has no room for MaxOutputs
 // outputs.
-func (m *Master) Admit(_ time.Duration, salt uint32, password []byte, dst []Output) []Output {
+func (m *Master) Admit(salt uint32, password []byte, dst []Output) []Output {
 	if m == nil {
 		return dst
 	}

@@ -41,7 +41,7 @@ func TestZeroValues(t *testing.T) {
 	if _, ok := m.Deadline(); ok {
 		t.Fatal("zero Master deadline")
 	}
-	if len(m.Admit(0, 1, nil, nil)) != 0 || len(m.Refuse(0, nil)) != 0 || len(m.Close(0, nil)) != 0 || len(p.Close(0, nil)) != 0 {
+	if len(m.Admit(1, nil, nil)) != 0 || len(m.Refuse(0, nil)) != 0 || len(m.Close(0, nil)) != 0 || len(p.Close(0, nil)) != 0 {
 		t.Fatal("zero machine sent")
 	}
 	p.Reset()

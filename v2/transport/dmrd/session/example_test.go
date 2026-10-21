@@ -36,7 +36,7 @@ func Example() {
 				case session.OutputSend:
 					toPeer = keep(toPeer, o)
 				case session.OutputLogin:
-					for _, a := range master.Admit(now, 0xfcb17c08, []byte("passw0rd"), nil) {
+					for _, a := range master.Admit(0xfcb17c08, []byte("passw0rd"), nil) {
 						toPeer = keep(toPeer, a)
 					}
 				default:

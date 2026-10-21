@@ -31,7 +31,7 @@ func TestAllocsSession(t *testing.T) {
 				}
 			}
 			if m.State() == session.StateLogin {
-				mo = m.Admit(now, 7, pass, mo[:0])
+				mo = m.Admit(7, pass, mo[:0])
 			}
 			po = po[:0]
 			for _, o := range mo {
