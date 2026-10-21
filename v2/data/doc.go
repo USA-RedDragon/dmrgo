@@ -40,7 +40,12 @@
 // clause 5.4.4). A Receiver keeps the result of each packet of a window
 // and answers at the last one for all of them: an ACK with the N(S) of the
 // last packet when all are good, else a response about the first packet
-// that failed, with its N(S) as the status. It keeps the blocks of the
+// that failed, with its N(S) as the status. ETSI TS 102 361-1 Table 8.3
+// gives the status of a response both as the packet it is about and as
+// the last packet received correctly, so a NACK about a packet after the
+// first of a window goes out as an ACK of the packet before it, which
+// means the same in both readings; the NACK follows when that packet comes
+// again as the first of a window. It keeps the blocks of the
 // last packet only, so a SACK about an earlier packet flags all its blocks,
 // and a packet found lost from a gap in N(S) gets a SACK that flags 127
 // blocks. The Receiver uses go back N: after the first packet of a window

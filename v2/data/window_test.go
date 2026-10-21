@@ -189,8 +189,8 @@ func TestSenderWindowLoopback(t *testing.T) {
 		},
 		{
 			name: "memory full", big: true,
-			heads: "0 1 2A 2rA", resp: "NACK Memory Full(1)+ACK(2)",
-			dones: "0:Delivered/1 1:Refused/1 2:Delivered/2", got: "ac",
+			heads: "0 1 2A 1r 2rA 2rA", resp: "ACK(0)+NACK Memory Full(1)+ACK(2)",
+			dones: "0:Delivered/1 1:Refused/2 2:Delivered/3", got: "ac",
 		},
 	} {
 		l := &winLink{
