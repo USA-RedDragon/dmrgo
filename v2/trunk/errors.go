@@ -32,6 +32,19 @@ var (
 	ErrNotRegistered = errors.New("trunk: not registered")
 )
 
+// Errors of the appended data of a UDT. Match them with errors.Is.
+var (
+	// ErrUDTFormat is returned for appended data in another UDT Format
+	// than the method reads or writes.
+	ErrUDTFormat = errors.New("trunk: appended data in another UDT format")
+	// ErrUDTLength is returned for data that does not fit in 1 to 4
+	// appended blocks, or for blocks whose size does not match the format.
+	ErrUDTLength = errors.New("trunk: appended data length out of range")
+	// ErrUDTCharacter is returned for a character or digit that the UDT
+	// Format cannot hold.
+	ErrUDTCharacter = errors.New("trunk: character out of range for the UDT format")
+)
+
 var (
 	errHunt          error = &ConfigError{Field: "Hunt"}
 	errTalkgroups    error = &ConfigError{Field: "Talkgroups"}
