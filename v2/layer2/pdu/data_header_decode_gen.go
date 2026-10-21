@@ -799,7 +799,7 @@ func decodeUDTHeader(data [10]byte) UDTHeader {
 	result.Emergency = data[0]&0x20 != 0
 	result.OptionFlag = data[0]&0x10 != 0
 	result.SAP = enums.ServiceAccessPointID(uint64(data[1]) >> 4)
-	result.UDTFormat = uint8(uint64(data[1]) & 0xF)
+	result.UDTFormat = enums.UDTFormat(uint64(data[1]) & 0xF)
 	result.LLIDDestination = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
 	result.LLIDSource = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	result.PadNibble = uint8(uint64(data[8]) >> 3)
