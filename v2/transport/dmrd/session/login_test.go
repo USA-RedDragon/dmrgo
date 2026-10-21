@@ -20,10 +20,10 @@ func TestMasterLoginTimeout(t *testing.T) {
 		t.Fatalf("login deadline %v", at)
 	}
 	m.Admit(s, 7, []byte("pw"), nil)
-	if at, _ := m.Deadline(); at != s+session.LoginTimeoutDefault {
+	if at, _ := m.Deadline(); at != session.LoginTimeoutDefault {
 		t.Fatalf("auth deadline %v", at)
 	}
-	out := m.Tick(s+session.LoginTimeoutDefault, nil)
+	out := m.Tick(session.LoginTimeoutDefault, nil)
 	if len(out) != 1 || out[0].Reason != session.ReasonTimeout || out[0].State != session.StateAuth {
 		t.Fatalf("login timeout %+v", out)
 	}
@@ -42,5 +42,33 @@ func TestMasterLoginTimeout(t *testing.T) {
 	var ce *session.ConfigError
 	if _, err := session.NewMaster(&session.MasterConfig{Dialect: dmrd.DialectMMDVM, LoginTimeout: -1}); !errors.As(err, &ce) {
 		t.Fatalf("negative LoginTimeout: %v", err)
+	}
+}
+
+func TestMasterRepeatedRPTLDoesNotExtendLogin(t *testing.T) {
+	t.Parallel()
+
+	s := time.Second
+	m, _ := session.NewMaster(&session.MasterConfig{Dialect: dmrd.DialectMMDVM, LoginTimeout: 10 * s})
+	m.Packet(0, ctl(dmrd.CommandRPTL, 5), nil)
+	for now := s; now < 10*s; now += s {
+		m.Packet(now, ctl(dmrd.CommandRPTL, 5), nil)
+	}
+	m.Admit(9*s, 7, []byte("pw"), nil)
+	for now := 9 * s; now < 10*s; now += 100 * time.Millisecond {
+		m.Packet(now, ctl(dmrd.CommandRPTL, 5), nil)
+	}
+	if at, _ := m.Deadline(); at != 10*s {
+		t.Fatalf("deadline %v", at)
+	}
+	out := m.Tick(10*s, nil)
+	if len(out) != 1 || out[0].Reason != session.ReasonTimeout || m.State() != session.StateIdle {
+		t.Fatalf("half-open login kept %+v %v", out, m.State())
+	}
+	if out = m.Packet(11*s, ctl(dmrd.CommandRPTL, 5), nil); len(out) != 1 || out[0].Kind != session.OutputLogin {
+		t.Fatalf("new attempt %+v", out)
+	}
+	if at, _ := m.Deadline(); at != 21*s {
+		t.Fatalf("new attempt deadline %v", at)
 	}
 }

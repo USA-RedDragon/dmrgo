@@ -35215,7 +35215,7 @@ func dmrgo_dmrd_session_master_free(c_self *C.dmrgo_dmrd_session_master_t) (rc C
 }
 
 //export dmrgo_dmrd_session_master_admit_need
-func dmrgo_dmrd_session_master_admit_need(c_self *C.dmrgo_dmrd_session_master_t, c_now C.dmrgo_duration_t, c_salt C.uint32_t, c_password *C.uint8_t, c_password_len C.size_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_dmrd_session_master_admit_need(c_self *C.dmrgo_dmrd_session_master_t, c_p0 C.dmrgo_duration_t, c_salt C.uint32_t, c_password *C.uint8_t, c_password_len C.size_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_transport_dmrd_session_Master(c_self)
 	if c_password == nil && c_password_len > 0 {
@@ -35235,7 +35235,7 @@ func dmrgo_dmrd_session_master_admit_need(c_self *C.dmrgo_dmrd_session_master_t,
 }
 
 //export dmrgo_dmrd_session_master_admit
-func dmrgo_dmrd_session_master_admit(c_self *C.dmrgo_dmrd_session_master_t, c_now C.dmrgo_duration_t, c_salt C.uint32_t, c_password *C.uint8_t, c_password_len C.size_t, c_dst *C.dmrgo_dmrd_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_dmrd_session_master_admit(c_self *C.dmrgo_dmrd_session_master_t, c_p0 C.dmrgo_duration_t, c_salt C.uint32_t, c_password *C.uint8_t, c_password_len C.size_t, c_dst *C.dmrgo_dmrd_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_arena_len != nil {
@@ -35277,7 +35277,7 @@ func dmrgo_dmrd_session_master_admit(c_self *C.dmrgo_dmrd_session_master_t, c_no
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.Admit(time.Duration(c_now), uint32(c_salt), a_password, a_dst)
+	r0 := h.v.Admit(time.Duration(c_p0), uint32(c_salt), a_password, a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{
