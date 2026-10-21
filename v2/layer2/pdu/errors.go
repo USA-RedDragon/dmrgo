@@ -18,4 +18,7 @@ var (
 	// payload field that holds them is nil.
 	ErrNoAddresses = errors.New("PDU has no address fields")
 	errNil         = errors.New("pdu: nil pointer argument")
+	// ErrNoServiceOptions is returned by LCBytes.SetServiceOptions when the
+	// FLCO of the LC has no Service Options field.
+	ErrNoServiceOptions = errors.New("PDU has no Service Options field")
 )

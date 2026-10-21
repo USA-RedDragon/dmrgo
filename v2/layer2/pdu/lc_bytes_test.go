@@ -16,7 +16,7 @@ func TestLCBytes_Capture(t *testing.T) {
 	t.Parallel()
 
 	l := pdu.LCBytes(hex9(t, "03000000270630b43c"))
-	if g, ok := l.Group(); l.FLCO() != enums.FLCOUnitToUnitVoiceChannelUser || l.FID() != enums.FIDStandardized || l.ServiceOptions() != 0 || g || !ok || l.ProtectFlag() {
+	if g, ok := l.Group(); l.FLCO() != enums.FLCOUnitToUnitVoiceChannelUser || l.FID() != enums.FIDStandardized || !soOK(l, layer3.ServiceOptions{}) || g || !ok || l.ProtectFlag() {
 		t.Fatalf("fields of %x", l)
 	}
 	tgt, src, ok := l.Addresses()
@@ -150,10 +150,14 @@ func TestLCBytes_EditsKeepOtherBits(t *testing.T) {
 			t.Fatalf("%x: SetFID", orig)
 		}
 		l = orig
-		so := byte(rng.Intn(256))
-		l.SetServiceOptions(so)
-		if l.ServiceOptions() != so || !within(diffMask(l, orig), soBits) {
-			t.Fatalf("%x: SetServiceOptions", orig)
+		so := layer3.DecodeServiceOptions([1]byte{byte(rng.Intn(256))})
+		err := l.SetServiceOptions(so)
+		got, ok := l.ServiceOptions()
+		if ok != (err == nil) || ok && got != so || !within(diffMask(l, orig), soBits) || !ok && l != orig {
+			t.Fatalf("%x: SetServiceOptions %v", orig, err)
+		}
+		if !ok && !errors.Is(err, pdu.ErrNoServiceOptions) {
+			t.Fatalf("%x: SetServiceOptions %v, want ErrNoServiceOptions", orig, err)
 		}
 
 		l = orig
@@ -217,7 +221,7 @@ func TestNewVoiceLC(t *testing.T) {
 		if b := must(f.Bytes()); b != [9]byte(l) {
 			t.Errorf("group %t: NewVoiceLCBytes %x, NewVoiceLC.Bytes %x", group, l, b)
 		}
-		if g, ok := l.Group(); !ok || g != group || l.ServiceOptions() != must(so.Field()) {
+		if g, ok := l.Group(); !ok || g != group || !soOK(l, so) {
 			t.Errorf("group %t: LCBytes %x", group, l)
 		}
 	}
@@ -235,6 +239,30 @@ func TestNewVoiceLC(t *testing.T) {
 	raw.FLCO = enums.FLCOGPSInfo
 	if _, ok := raw.ServiceOptions(); ok {
 		t.Error("GPS LC has Service Options")
+	}
+}
+
+func soOK(l pdu.LCBytes, want layer3.ServiceOptions) bool {
+	got, ok := l.ServiceOptions()
+	return ok && got == want
+}
+
+func TestLCBytes_SetServiceOptionsRange(t *testing.T) {
+	t.Parallel()
+
+	l := must(pdu.NewVoiceLCBytes(true, 91, 1, layer3.ServiceOptions{}))
+	orig := l
+	var rangeErr *dmrgo.FieldRangeError
+	if err := l.SetServiceOptions(layer3.ServiceOptions{Reserved: 4}); !errors.As(err, &rangeErr) || l != orig {
+		t.Errorf("Reserved 4: %v, %x", err, l)
+	}
+	var zero pdu.LCBytes
+	zero[0] = byte(enums.FLCOGPSInfo)
+	if err := zero.SetServiceOptions(layer3.ServiceOptions{}); !errors.Is(err, pdu.ErrNoServiceOptions) {
+		t.Errorf("GPS LC: %v", err)
+	}
+	if err := l.SetServiceOptions(layer3.ServiceOptions{IsEmergency: true}); err != nil || !soOK(l, layer3.ServiceOptions{IsEmergency: true}) {
+		t.Errorf("emergency: %v, %x", err, l)
 	}
 }
 

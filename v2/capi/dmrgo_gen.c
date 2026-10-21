@@ -104,6 +104,8 @@ const char *dmrgo__gen_strerror(int status) {
 		return "pdu.ErrCapacityPlusSequence";
 	case -130:
 		return "pdu.ErrNoAddresses";
+	case -234:
+		return "pdu.ErrNoServiceOptions";
 	case -131:
 		return "pdu.ErrTalkerAliasIncomplete";
 	case -132:
