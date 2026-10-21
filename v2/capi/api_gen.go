@@ -3802,6 +3802,22 @@ func out_nmea_RMC(d *C.dmrgo_nmea_rmc_t, s *g_nmea.RMC, oc *outc) {
 	d.mode = C.uint8_t(s.Mode)
 }
 
+func out_layer2_Hint(d *C.dmrgo_layer2_hint_t, s *g_layer2.Hint, oc *outc) {
+	_ = oc
+	d.slot = C.dmrgo_enums_slot_t(s.Slot)
+	d.kind = C.dmrgo_layer2_kind_t(s.Kind)
+	d.voice_burst = C.dmrgo_enums_voice_burst_type_t(s.VoiceBurst)
+	d.data_type = C.dmrgo_enums_data_type_t(s.DataType)
+	d.has_data_type = C.bool(s.HasDataType)
+	d.seq = C.uint16_t(s.Seq)
+	d.has_seq = C.bool(s.HasSeq)
+	d.seq_bits = C.uint8_t(s.SeqBits)
+	d.stream = C.uint32_t(s.Stream)
+	d.has_stream = C.bool(s.HasStream)
+	d.end = C.dmrgo_layer2_end_hint_t(s.End)
+	d.sync_lost = C.bool(s.SyncLost)
+}
+
 type cb1 struct {
 }
 
@@ -3944,22 +3960,6 @@ func out_transport_dmrd_Data(d *C.dmrgo_dmrd_data_t, s *g_transport_dmrd.Data, o
 	d.rssi = C.uint8_t(s.RSSI)
 	*(*[16]byte)(unsafe.Pointer(&d.uuid)) = s.UUID
 	d.size = C.uint8_t(s.Size)
-}
-
-func out_layer2_Hint(d *C.dmrgo_layer2_hint_t, s *g_layer2.Hint, oc *outc) {
-	_ = oc
-	d.slot = C.dmrgo_enums_slot_t(s.Slot)
-	d.kind = C.dmrgo_layer2_kind_t(s.Kind)
-	d.voice_burst = C.dmrgo_enums_voice_burst_type_t(s.VoiceBurst)
-	d.data_type = C.dmrgo_enums_data_type_t(s.DataType)
-	d.has_data_type = C.bool(s.HasDataType)
-	d.seq = C.uint16_t(s.Seq)
-	d.has_seq = C.bool(s.HasSeq)
-	d.seq_bits = C.uint8_t(s.SeqBits)
-	d.stream = C.uint32_t(s.Stream)
-	d.has_stream = C.bool(s.HasStream)
-	d.end = C.dmrgo_layer2_end_hint_t(s.End)
-	d.sync_lost = C.bool(s.SyncLost)
 }
 
 func out_transport_dmrd_Bridge(d *C.dmrgo_dmrd_bridge_t, s *g_transport_dmrd.Bridge, oc *outc) {
