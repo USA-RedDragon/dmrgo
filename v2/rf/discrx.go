@@ -468,7 +468,7 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 				case st&st96Tab != 0:
 					xv = lagrangeAt(sa, sb, s0, s1, s2, s3, mu)
 				default:
-					xv = lagrange6(sa, sb, s0, s1, s2, s3, mu)
+					xv = lagrange6[site0](sa, sb, s0, s1, s2, s3, mu)
 				}
 				at--
 				sym := true
@@ -588,7 +588,7 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 		if h++; h >= audio96Taps {
 			h = 0
 		}
-		acc := fir96((*[audio96Taps]int8)(unsafe.Add(unsafe.Pointer(hist), h)))
+		acc := fir96[site0]((*[audio96Taps]int8)(unsafe.Add(unsafe.Pointer(hist), h)))
 		y := float32(acc) * (rrcStepHz / 32768.0)
 		sa, sb, s0, s1, s2, s3 = sb, s0, s1, s2, s3, y
 		if st&st96Keep != 0 {
@@ -743,7 +743,7 @@ func (f *audioFront) mf96(v int8) int32 {
 		h = 0
 	}
 	f.rrcHead = h
-	return fir96((*[audio96Taps]int8)(f.rrcHist[h : h+audio96Taps]))
+	return fir96[site1]((*[audio96Taps]int8)(f.rrcHist[h : h+audio96Taps]))
 }
 
 func (f *audioFront) mf12(v int8) int32 {

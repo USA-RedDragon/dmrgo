@@ -104,7 +104,7 @@ func nibbleTables(tab []int16, l []int16) {
 	}
 }
 
-func nibbleCost(tab []int16, cw uint32, n int) int32 {
+func nibbleCost[_ any](tab []int16, cw uint32, n int) int32 {
 	var c int32
 	for b := 0; b*4 < n; b++ {
 		c += int32(tab[16*b+int(cw>>(4*b)&15)])
@@ -126,13 +126,13 @@ func searchNibble(id softSmallID, tab []int16, off, fixed, want uint32, top *lea
 			cw ^= c.rows[i]
 		}
 	}
-	top.add(nibbleCost(tab, cw, c.n), info, cw)
+	top.add(nibbleCost[site1](tab, cw, c.n), info, cw)
 	worst := top.worst()
 	for g := uint32(1); g < uint32(1)<<nf; g++ {
 		i := free[bits.TrailingZeros32(g)&15]
 		info ^= 1 << i
 		cw ^= c.rows[i]
-		if cost := nibbleCost(tab, cw, c.n); cost < worst {
+		if cost := nibbleCost[site0](tab, cw, c.n); cost < worst {
 			top.add(cost, info, cw)
 			worst = top.worst()
 		}
@@ -233,7 +233,7 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 	for cell := range 13 * 15 {
 		row, col := cell/15, cell%15
 		p := bptc.GridBit(row, col)
-		v := llrAtS(r, bptcPos(p))
+		v := llrAtS[site0](r, bptcPos(p))
 		if v < 0 {
 			rows[row] |= 1 << col
 			v = -v

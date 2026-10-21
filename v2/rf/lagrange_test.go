@@ -22,7 +22,7 @@ func TestLagrange6Strobes(t *testing.T) {
 	for k := range 6 {
 		p := func(x float32) float32 { return float32(math.Pow(float64(x), float64(k))) }
 		for _, mu := range []float32{-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75} {
-			got := lagrange6(p(-3), p(-2), p(-1), p(0), p(1), p(2), mu)
+			got := lagrange6[site0](p(-3), p(-2), p(-1), p(0), p(1), p(2), mu)
 			if d := math.Abs(float64(got - p(mu))); d > 1e-3*math.Max(1, float64(p(mu))) {
 				t.Errorf("x^%d at %v: %v, want %v", k, mu, got, p(mu))
 			}
@@ -49,7 +49,7 @@ func TestLagrange6Strobes(t *testing.T) {
 	for k := 20; k < len(syms)-20; k++ {
 		s := func(j int) float32 { return float32(y(float64(k) - 0.25 + 0.5*float64(j))) }
 		want := syms[k]
-		l := float64(lagrange6(s(-3), s(-2), s(-1), s(0), s(1), s(2), 0.5))
+		l := float64(lagrange6[site0](s(-3), s(-2), s(-1), s(0), s(1), s(2), 0.5))
 		p0, p1, p2, p3 := s(-1), s(0), s(1), s(2)
 		mu := float32(0.5)
 		c := float64(p1 + 0.5*mu*(p2-p0+mu*(2*p0-5*p1+4*p2-p3+mu*(3*(p1-p2)+p3-p0))))

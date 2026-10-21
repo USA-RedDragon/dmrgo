@@ -2,7 +2,7 @@
 
 package rf
 
-func fir96(w *[audio96Taps]int8) int32 {
+func fir96[_ any](w *[audio96Taps]int8) int32 {
 	return int32(audio96RRCQ15[8])*int32(w[8]) +
 		int32(audio96RRCQ15[0])*(int32(w[0])+int32(w[16])) +
 		int32(audio96RRCQ15[1])*(int32(w[1])+int32(w[15])) +

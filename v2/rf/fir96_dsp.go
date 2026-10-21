@@ -7,7 +7,7 @@ import (
 	"unsafe"
 )
 
-func fir96(w *[audio96Taps]int8) int32 {
+func fir96[_ any](w *[audio96Taps]int8) int32 {
 	c := &audio96RRCQ15
 	c02 := uint32(uint16(c[0])) | uint32(uint16(c[2]))<<16
 	c13 := uint32(uint16(c[1])) | uint32(uint16(c[3]))<<16

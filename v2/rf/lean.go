@@ -137,7 +137,7 @@ func (tm *leanTiming) at(t float32) float32 {
 
 func cubicAt(six bool, a, b, p0, p1, p2, p3, mu float32) float32 {
 	if six {
-		return lagrange6(a, b, p0, p1, p2, p3, mu)
+		return lagrange6[site1](a, b, p0, p1, p2, p3, mu)
 	}
 	return p1 + 0.5*mu*(p2-p0+mu*(2*p0-5*p1+4*p2-p3+mu*(3*(p1-p2)+p3-p0)))
 }
@@ -154,12 +154,12 @@ func (tm *leanTiming) linearAt(t float32) float32 {
 
 func (tm *leanTiming) midAt(t float32) float32 {
 	if tm.six && t >= -3 && t <= -2 {
-		return lagrange6(tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, t+2)
+		return lagrange6[site2](tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, t+2)
 	}
 	return tm.linearAt(t)
 }
 
-func lagrange6(a, b, p0, p1, p2, p3, mu float32) float32 {
+func lagrange6[_ any](a, b, p0, p1, p2, p3, mu float32) float32 {
 	d0, d1, d2, d3, d4, d5 := mu+3, mu+2, mu+1, mu, mu-1, mu-2
 	l01 := d0 * d1
 	l012 := l01 * d2
@@ -478,10 +478,10 @@ func scale8(x, g8, a8 int32) int32 {
 }
 
 func (r *leanCore) acqKept() int32 {
-	return acqKeptAt(r)
+	return acqKeptAt[site1](r)
 }
 
-func acqKeptAt(r *leanCore) int32 {
+func acqKeptAt[_ any](r *leanCore) int32 {
 	_, an := r.acqBuf()
 	return int32(min(r.n-r.acqFrom, int64(an)))
 }
@@ -593,10 +593,10 @@ type syncWindow struct {
 }
 
 func (win *syncWindow) at(t float32) float32 {
-	return winAt(win, t)
+	return winAt[site1](win, t)
 }
 
-func winAt(win *syncWindow, t float32) float32 {
+func winAt[_ any](win *syncWindow, t float32) float32 {
 	b := -t
 	i := int32(b)
 	mu := 1 - (b - float32(i))
@@ -609,7 +609,7 @@ func winAt(win *syncWindow, t float32) float32 {
 func (win *syncWindow) corr(syms *[syncSymbols]int8, t, sps float32) float32 {
 	var c float32
 	for i, s := range syms {
-		c += float32(s) * winAt(win, t-float32(syncSymbols-1-i)*sps)
+		c += float32(s) * winAt[site0](win, t-float32(syncSymbols-1-i)*sps)
 	}
 	return c
 }
@@ -746,12 +746,12 @@ func (r *leanCore) symbol(x, at float32) {
 }
 
 func (r *leanCore) pushSym(x float32) {
-	pushSymAt(r, x)
+	pushSymAt[site1](r, x)
 }
 
-func pushSymAt(r *leanCore, x float32) {
+func pushSymAt[T any](r *leanCore, x float32) {
 	q := int8(max(min(roundBits((x-r.off)/discStepHz), math.MaxInt8), math.MinInt8))
-	h := ringIdx(r.ns)
+	h := ringIdx[T](r.ns)
 	r.ring[h] = q
 	old := h + leanRing - syncSymbols
 	if old >= leanRing {
@@ -813,10 +813,10 @@ func (r *leanCore) searchSigns() (sym, mid bool) {
 }
 
 func (r *leanCore) pushMidSign() {
-	midSignAt(r)
+	midSignAt[site1](r)
 }
 
-func midSignAt(r *leanCore) {
+func midSignAt[_ any](r *leanCore) {
 	r.midSigns <<= 1
 	if (r.tm.half-r.off)*(float32(syncSymbols)/discStepHz) > float32(r.ringSum) {
 		r.midSigns |= 1
@@ -839,9 +839,9 @@ func (r *leanCore) searchHit(sym, mid bool) {
 
 //go:noinline
 func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
-	pushSymAt(r, x)
-	midSignAt(r)
-	sym, mid = signsMatch(r, r.signs, r.midSigns)
+	pushSymAt[site0](r, x)
+	midSignAt[site0](r)
+	sym, mid = signsMatch[site0](r, r.signs, r.midSigns)
 	hit = r.ns > leanSyncEnd+1 && sym || r.ns >= leanRing && r.ext != nil || mid && r.ns > leanSyncEnd+2
 	return hit, sym, mid
 }
@@ -849,13 +849,13 @@ func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
 //go:noinline
 func (r *leanCore) lockSym(x, at float32) (again, mid, match bool) {
 	r.lastAt = at
-	pushSymAt(r, x)
+	pushSymAt[site3](r, x)
 	if !r.hunt || !r.huntMid(at) {
 		return false, false, false
 	}
 	again = r.again
 	r.again = false
-	sym, mid := signsMatch(r, r.signs, r.midSigns)
+	sym, mid := signsMatch[site3](r, r.signs, r.midSigns)
 	return again, mid, mid || sym
 }
 
@@ -895,7 +895,7 @@ func (r *leanCore) huntSigns(at float32) (again, mid, ok bool) {
 }
 
 func (r *leanCore) huntMid(at float32) bool {
-	if acqKeptAt(r) > 4 {
+	if acqKeptAt[site0](r) > 4 {
 		r.midSigns <<= 1
 		if r.midTiming {
 			t := at - r.tm.step
@@ -964,10 +964,10 @@ func (r *leanRx) block(p float32) {
 }
 
 func ringPos(k int64) uint32 {
-	return ringIdx(k)
+	return ringIdx[site2](k)
 }
 
-func ringIdx(k int64) uint32 {
+func ringIdx[_ any](k int64) uint32 {
 	if uint64(k) < 1<<32 {
 		return uint32(k) % leanRing
 	}
@@ -1011,18 +1011,18 @@ func (r *leanCore) syncAt(end int64) (rho2 float32, src int, data bool) {
 
 //go:noinline
 func (r *leanCore) signsMatch2(a, b uint32) (bool, bool) {
-	return signsMatch(r, a, b)
+	return signsMatch[site1](r, a, b)
 }
 
-func signsMatch(r *leanCore, a, b uint32) (bool, bool) {
+func signsMatch[T any](r *leanCore, a, b uint32) (bool, bool) {
 	lo := (uint32(r.signMiss) + 1) * 0x01010101
 	hi := (syncSymbols - uint32(r.signMiss)) * 0x01010101
 	m := uint32(0x80808080) >> (32 - 8*uint32(r.sources))
-	da, db := syncDists2(a, b)
+	da, db := syncDists2[T](a, b)
 	return syncHits(da, lo, hi)&m != 0, syncHits(db, lo, hi)&m != 0
 }
 
-func syncDists2(a, b uint32) (uint32, uint32) {
+func syncDists2[_ any](a, b uint32) (uint32, uint32) {
 	return syncNib[0][a&15] + syncNib[1][a>>4&15] + syncNib[2][a>>8&15] +
 			syncNib[3][a>>12&15] + syncNib[4][a>>16&15] + syncNib[5][a>>20&15],
 		syncNib[0][b&15] + syncNib[1][b>>4&15] + syncNib[2][b>>8&15] +
@@ -1614,7 +1614,7 @@ func (r *leanCore) symLLR(k int64) (int16, int16) {
 	if x < 0 {
 		b0 = -b0
 	}
-	l0, l1 := evenLLR(b0), evenLLR(near-far)
+	l0, l1 := evenLLR[site0](b0), evenLLR[site1](near-far)
 	if l0 == 0 {
 		l0 = 1
 		if x < 0 {
@@ -1634,7 +1634,7 @@ func (r *leanCore) llrTerm(e int32) int32 {
 	return max(-int32(int64(e*e)*r.llrK>>llrShift), r.llrFloor)
 }
 
-func evenLLR(v int32) int16 {
+func evenLLR[_ any](v int32) int16 {
 	h := (v + 1) >> 1
 	if v < 0 {
 		h = -((1 - v) >> 1)
@@ -1653,10 +1653,10 @@ func (r *leanCore) setLLR() {
 }
 
 func (r *leanCore) llrAt(p int) int16 {
-	return llrAtS(r, p)
+	return llrAtS[site1](r, p)
 }
 
-func llrAtS(r *leanCore, p int) int16 {
+func llrAtS[_ any](r *leanCore, p int) int16 {
 	l0, l1 := r.symLLR(r.base + cachSymbols + int64(p>>1))
 	if p&1 == 0 {
 		return l0
@@ -1906,3 +1906,10 @@ func tickSeconds(t int64) float64 {
 	}
 	return math.Float64frombits(sign | uint64(s+tickExp+52+1023)<<52 | m&(1<<52-1))
 }
+
+type (
+	site0 struct{}
+	site1 struct{}
+	site2 struct{}
+	site3 struct{}
+)
