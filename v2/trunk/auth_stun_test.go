@@ -32,8 +32,8 @@ func TestStun_AuthKeys(t *testing.T) {
 	if err := s.tscc.Stun(s.now, 3120002, false); err != nil {
 		t.Fatal(err)
 	}
-	s.until(3*time.Second, func() bool { return len(events(s, trunk.TSCCStun)) == 2 })
-	for _, e := range events(s, trunk.TSCCStun) {
+	s.until(3*time.Second, func() bool { return len(stuns(s)) == 2 })
+	for _, e := range stuns(s) {
 		switch e.Address {
 		case 3120001:
 			if e.Ack != enums.ReasonMSAccepted || e.Reason != trunk.ReasonNone || !a.ms.Stunned() {
@@ -50,8 +50,8 @@ func TestStun_AuthKeys(t *testing.T) {
 	if err := s.tscc.Stun(s.now, 3120001, true); err != nil {
 		t.Fatal(err)
 	}
-	s.until(3*time.Second, func() bool { return len(events(s, trunk.TSCCStun)) == 1 })
-	if e := events(s, trunk.TSCCStun); len(e) != 1 || e[0].Ack != enums.ReasonMSAccepted || a.ms.Stunned() {
+	s.until(3*time.Second, func() bool { return len(stuns(s)) == 1 })
+	if e := stuns(s); len(e) != 1 || e[0].Ack != enums.ReasonMSAccepted || a.ms.Stunned() {
 		t.Errorf("revive A: %+v, stunned %v", e, a.ms.Stunned())
 	}
 
@@ -59,8 +59,8 @@ func TestStun_AuthKeys(t *testing.T) {
 	if err := s.tscc.Kill(s.now, 3120001); err != nil {
 		t.Fatal(err)
 	}
-	s.until(3*time.Second, func() bool { return len(events(s, trunk.TSCCStun)) == 1 })
-	if e := events(s, trunk.TSCCStun); len(e) != 1 || e[0].Stun != trunk.StunKill || e[0].Ack != enums.ReasonMSAccepted || !a.ms.Killed() {
+	s.until(3*time.Second, func() bool { return len(stuns(s)) == 1 })
+	if e := stuns(s); len(e) != 1 || e[0].Stun != trunk.StunKill || e[0].Ack != enums.ReasonMSAccepted || !a.ms.Killed() {
 		t.Errorf("kill A: %+v, killed %v", e, a.ms.Killed())
 	}
 }
