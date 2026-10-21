@@ -181,7 +181,7 @@ func runTSCCServices(t *testing.T, pool burstPool, in []byte) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	out := make([]trunk.TSCCOutput, 0, ts.MaxOutputs())
+	out := make([]trunk.TSCCOutput, 0, trunk.MaxTSCCOutputs)
 	now := time.Duration(0)
 	for op := 0; op < maxFuzzOps && len(in) >= 2; op++ {
 		kind, arg := in[0], in[1]
@@ -198,7 +198,7 @@ func runTSCCServices(t *testing.T, pool burstPool, in []byte) {
 			for range int(arg % 16) {
 				now += 30 * time.Millisecond
 				out = ts.Tick(now, out[:0])
-				if len(out) > ts.MaxOutputs() || cap(out) != ts.MaxOutputs() {
+				if len(out) > trunk.MaxTSCCOutputs || cap(out) != trunk.MaxTSCCOutputs {
 					t.Fatalf("op %d: %d outputs, cap %d", op, len(out), cap(out))
 				}
 			}
@@ -218,7 +218,7 @@ func runTSCCServices(t *testing.T, pool burstPool, in []byte) {
 			}
 			out = out[:0]
 		}
-		if len(out) > ts.MaxOutputs() || cap(out) != ts.MaxOutputs() {
+		if len(out) > trunk.MaxTSCCOutputs || cap(out) != trunk.MaxTSCCOutputs {
 			t.Fatalf("op %d: %d outputs, cap %d", op, len(out), cap(out))
 		}
 	}

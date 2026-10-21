@@ -1317,7 +1317,6 @@ var api = [...]any{
 	(*trunk.TSCC).Interrupt,
 	(*trunk.TSCC).Kill,
 	(*trunk.TSCC).MassRegister,
-	(*trunk.TSCC).MaxOutputs,
 	(*trunk.TSCC).PollShortData,
 	(*trunk.TSCC).PollUSBD,
 	(*trunk.TSCC).Registered,

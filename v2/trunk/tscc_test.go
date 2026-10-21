@@ -52,7 +52,7 @@ func newSim(t *testing.T, cfg *trunk.TSCCConfig, ms ...*trunk.MSConfig) *sim {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := &sim{t: t, tscc: ts, tout: make([]trunk.TSCCOutput, 0, ts.MaxOutputs()), mout: make([]trunk.Output, 0, trunk.MaxOutputs)}
+	s := &sim{t: t, tscc: ts, tout: make([]trunk.TSCCOutput, 0, trunk.MaxTSCCOutputs), mout: make([]trunk.Output, 0, trunk.MaxOutputs)}
 	for _, c := range ms {
 		m, err := trunk.NewMS(c)
 		if err != nil {
@@ -143,8 +143,8 @@ func (s *sim) step() {
 }
 
 func (s *sim) record() {
-	if len(s.tout) > s.tscc.MaxOutputs() {
-		s.t.Fatalf("%d TSCC outputs, MaxOutputs %d", len(s.tout), s.tscc.MaxOutputs())
+	if len(s.tout) > trunk.MaxTSCCOutputs {
+		s.t.Fatalf("%d TSCC outputs, MaxOutputs %d", len(s.tout), trunk.MaxTSCCOutputs)
 	}
 	for _, o := range s.tout {
 		if o.Kind != trunk.TSCCBurst {

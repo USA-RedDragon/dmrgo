@@ -36,7 +36,7 @@ func newServiceSite(cfg *trunk.TSCCConfig, ms ...*trunk.MSConfig) *serviceSite {
 	sys := pdu.SysCode{Model: pdu.NetworkModelSmall, Net: 12, Site: 3, Par: 2}
 	cfg.SysCode, cfg.ColorCode, cfg.Channel, cfg.Payload, cfg.PayloadLen, cfg.Reg = sys, 3, 1, [trunk.MaxPayloadChannels]uint16{10}, 1, true
 	ts, _ := trunk.NewTSCC(cfg)
-	s := &serviceSite{tscc: ts, tout: make([]trunk.TSCCOutput, 0, ts.MaxOutputs()), mout: make([]trunk.Output, 0, trunk.MaxOutputs)}
+	s := &serviceSite{tscc: ts, tout: make([]trunk.TSCCOutput, 0, trunk.MaxTSCCOutputs), mout: make([]trunk.Output, 0, trunk.MaxOutputs)}
 	for _, c := range ms {
 		m, _ := trunk.NewMS(c)
 		s.ms, s.ch = append(s.ms, m), append(s.ch, 1)

@@ -19,7 +19,7 @@ func ExampleTSCC_SendShortData() {
 	var a trunk.Appended
 	_ = a.SetText(enums.UDTISO8, []byte("gate 4"))
 	_ = ts.SendShortData(0, false, 3120001, &a)
-	out := make([]trunk.TSCCOutput, 0, ts.MaxOutputs())
+	out := make([]trunk.TSCCOutput, 0, trunk.MaxTSCCOutputs)
 	for i := range 4 {
 		out = ts.Tick(time.Duration(i)*30*time.Millisecond, out[:0])
 		for _, o := range out {

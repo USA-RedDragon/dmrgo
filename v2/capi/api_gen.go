@@ -39827,7 +39827,7 @@ func dmrgo_trunk_tscc_inbound_need(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_d
 	_ = h
 	_ = a_h
 	if c_items != nil {
-		*c_items = C.size_t(max(0, int(h.v.MaxOutputs())))
+		*c_items = C.size_t(max(0, int(g_trunk.MaxTSCCOutputs)))
 	}
 	if c_arena != nil {
 		*c_arena = C.size_t(0)
@@ -39850,7 +39850,7 @@ func dmrgo_trunk_tscc_inbound(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_durati
 	}
 	nf_dst := int(*c_dst_len)
 	a_dst := h.sc0[:0]
-	need_items := max(0, int(h.v.MaxOutputs()))
+	need_items := max(0, int(g_trunk.MaxTSCCOutputs))
 	need_arena := 0
 	_ = need_arena
 	if int(c_dst_cap)-nf_dst < need_items {
@@ -39929,22 +39929,6 @@ func dmrgo_trunk_tscc_mass_register(c_self *C.dmrgo_trunk_tscc_t, c_window C.uin
 	}
 	if r0 != nil {
 		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_trunk_tscc_max_outputs
-func dmrgo_trunk_tscc_max_outputs(c_self *C.dmrgo_trunk_tscc_t, c_out *C.int64_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_trunk_TSCC(c_self)
-	r0 := h.v.MaxOutputs()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.int64_t(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
 	}
 	return C.DMRGO_OK
 }
@@ -40052,7 +40036,7 @@ func dmrgo_trunk_tscc_tick_need(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_dura
 	h := get_trunk_TSCC(c_self)
 	_ = h
 	if c_items != nil {
-		*c_items = C.size_t(max(0, int(h.v.MaxOutputs())))
+		*c_items = C.size_t(max(0, int(g_trunk.MaxTSCCOutputs)))
 	}
 	if c_arena != nil {
 		*c_arena = C.size_t(0)
@@ -40070,7 +40054,7 @@ func dmrgo_trunk_tscc_tick(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_
 	}
 	nf_dst := int(*c_dst_len)
 	a_dst := h.sc0[:0]
-	need_items := max(0, int(h.v.MaxOutputs()))
+	need_items := max(0, int(g_trunk.MaxTSCCOutputs))
 	need_arena := 0
 	_ = need_arena
 	if int(c_dst_cap)-nf_dst < need_items {

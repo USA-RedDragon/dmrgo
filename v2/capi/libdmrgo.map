@@ -1409,7 +1409,6 @@
 		dmrgo_trunk_tscc_interrupt;
 		dmrgo_trunk_tscc_kill;
 		dmrgo_trunk_tscc_mass_register;
-		dmrgo_trunk_tscc_max_outputs;
 		dmrgo_trunk_tscc_new;
 		dmrgo_trunk_tscc_output_kind_string;
 		dmrgo_trunk_tscc_poll_short_data;

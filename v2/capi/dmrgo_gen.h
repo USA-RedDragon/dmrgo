@@ -5446,6 +5446,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_MS_POWER_OFF_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_QUALITY_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_TICK_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
+#define DMRGO_TRUNK_TSCC_INBOUND_MAX_ITEMS (DMRGO_TRUNK_MAX_TSCC_OUTPUTS)
+#define DMRGO_TRUNK_TSCC_TICK_MAX_ITEMS (DMRGO_TRUNK_MAX_TSCC_OUTPUTS)
 #define DMRGO_VOICE_INTERRUPTER_BURST_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 #define DMRGO_VOICE_INTERRUPTER_DECODED_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 #define DMRGO_VOICE_INTERRUPTER_TICK_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
@@ -7155,6 +7157,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_MAX_RULES 4
 /* Go: trunk.MaxSupplementary. MaxSupplementary is the most octets of supplementary_user data: four appended UDT blocks less the CRC (ETSI TS 102 361-4 clause 6.4.13). */
 #define DMRGO_TRUNK_MAX_SUPPLEMENTARY 46
+/* Go: trunk.MaxTSCCOutputs. MaxTSCCOutputs is the most outputs that one call of a TSCC method appends: one burst for the TSCC, one burst and one call end for each payload channel, and the events, such as a refusal for each authentication challenge and call set-up that times out. */
+#define DMRGO_TRUNK_MAX_TSCC_OUTPUTS 43
 /* Go: trunk.MaxTalkgroups. MaxTalkgroups is the size of FollowerConfig.Talkgroups. */
 #define DMRGO_TRUNK_MAX_TALKGROUPS 32
 /* Go: trunk.OutputAccepted. OutputAccepted reports that the TSCC accepted a request of the MS that needs no payload channel, such as a status call, a transmit interrupt or an IP connection advice. */
@@ -10178,7 +10182,7 @@ int dmrgo_trunk_tscc_diverted(dmrgo_trunk_tscc_t *self, uint32_t addr, dmrgo_lay
 int dmrgo_trunk_tscc_expect_auth(dmrgo_trunk_tscc_t *self, uint32_t addr, uint32_t response);
 /* dmrgo_trunk_tscc_inbound_need sets *items and *arena to the room that dmrgo_trunk_tscc_inbound needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_tscc_inbound_need(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
-/* Go: trunk.TSCC.Inbound. Inbound takes the burst raw that the TSCC received on the inbound channel of carrier ch in slot s, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_tscc_inbound_need gives. */
+/* Go: trunk.TSCC.Inbound. Inbound takes the burst raw that the TSCC received on the inbound channel of carrier ch in slot s, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_tscc_inbound_need gives (DMRGO_TRUNK_TSCC_INBOUND_MAX_ITEMS items). */
 int dmrgo_trunk_tscc_inbound(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_trunk_tscc_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.TSCC.Interrupt. Interrupt sends the RC command cmd to the MS that transmits on slot s of the payload channel ch, in the embedded signalling of the other slot of the carrier. */
 int dmrgo_trunk_tscc_interrupt(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_enums_rc_command_t cmd);
@@ -10186,8 +10190,6 @@ int dmrgo_trunk_tscc_interrupt(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, u
 int dmrgo_trunk_tscc_kill(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint32_t addr);
 /* Go: trunk.TSCC.MassRegister. MassRegister sends a C_BCAST MassReg, which asks the MSs whose Mask least significant address bits match addr to register again within the TReg_Window of window. */
 int dmrgo_trunk_tscc_mass_register(dmrgo_trunk_tscc_t *self, uint8_t window, uint8_t mask, uint32_t addr);
-/* Go: trunk.TSCC.MaxOutputs. MaxOutputs returns the most outputs that one call of a method of t appends: one burst for the TSCC, one burst and one call end for each payload channel, and one refusal for each authentication challenge and call set-up that times out. */
-int dmrgo_trunk_tscc_max_outputs(dmrgo_trunk_tscc_t *self, int64_t *out);
 /* Go: trunk.TSCC.PollShortData. PollShortData polls the MS target for UDT short data in the given number of appended blocks with a C_AHOY from SDMI (ETSI TS 102 361-4 clause 6.6.5.1.5). */
 int dmrgo_trunk_tscc_poll_short_data(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint32_t target, int64_t blocks);
 /* Go: trunk.TSCC.PollUSBD. PollUSBD sends a USBD Poll Request of the Service Type st to the MS target, which answers after the Response Delay rd, 0 to 3 (ETSI TS 102 361-4 clause 6.6.11.1). */
@@ -10202,7 +10204,7 @@ int dmrgo_trunk_tscc_send_status(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now,
 int dmrgo_trunk_tscc_stun(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint32_t addr, bool revive);
 /* dmrgo_trunk_tscc_tick_need sets *items and *arena to the room that dmrgo_trunk_tscc_tick needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_tscc_tick_need(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
-/* Go: trunk.TSCC.Tick. Tick sends the outbound bursts of one 30 ms slot: on the TSCC a queued PDU or a C_ALOHA, and on each payload channel with a call the relayed inbound burst, P_CLEAR or an idle burst, each with its CACH. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_tscc_tick_need gives. */
+/* Go: trunk.TSCC.Tick. Tick sends the outbound bursts of one 30 ms slot: on the TSCC a queued PDU or a C_ALOHA, and on each payload channel with a call the relayed inbound burst, P_CLEAR or an idle burst, each with its CACH. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_tscc_tick_need gives (DMRGO_TRUNK_TSCC_TICK_MAX_ITEMS items). */
 int dmrgo_trunk_tscc_tick(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, dmrgo_trunk_tscc_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.TSCC.UDT. UDT returns the UDT that the TSCC received for itself with the last TSCCUDT, such as the answer to PollShortData. */
 int dmrgo_trunk_tscc_udt(dmrgo_trunk_tscc_t *self, dmrgo_trunk_udt_t **out);

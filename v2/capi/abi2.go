@@ -591,7 +591,7 @@ func trunkABI(seed uint64, payload, nms int) (int, error) {
 	}
 	defer C.dmrgo_trunk_follower_free(cf)
 	most := 0
-	tout := make([]trunk.TSCCOutput, 0, gt.MaxOutputs())
+	tout := make([]trunk.TSCCOutput, 0, trunk.MaxTSCCOutputs)
 	st := &abiTrunk{h: h, mout: make([]trunk.Output, 0, trunk.MaxOutputs)}
 	called := 0
 	for step := 0; step < 1400; step++ {

@@ -24,7 +24,7 @@ func TestAllocsTSCCUDT(t *testing.T) {
 	if err := a.SetAddresses(true, []uint32{501}); err != nil {
 		t.Fatal(err)
 	}
-	out := make([]trunk.TSCCOutput, 0, ts.MaxOutputs())
+	out := make([]trunk.TSCCOutput, 0, trunk.MaxTSCCOutputs)
 	now := time.Duration(0)
 	run := func() {
 		for i := range pool {
