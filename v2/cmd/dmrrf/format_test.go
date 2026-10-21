@@ -8,6 +8,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -185,6 +186,9 @@ func TestPipe(t *testing.T) {
 
 func TestOSPipe(t *testing.T) {
 	t.Parallel()
+	if runtime.GOARCH == "wasm" {
+		t.Skip("wasm has no pipe")
+	}
 	r, w, err := os.Pipe()
 	if err != nil {
 		t.Fatal(err)
