@@ -472,6 +472,8 @@ func (r *Receiver) header(now time.Duration, dh *pdu.DataHeader, cc enums.ColorC
 			r.stats.Dropped++
 		case r.cur.pending > 0:
 			r.cur.pending--
+			r.cur.lastBlock = now
+			r.cur.hasSeq, r.cur.seq, r.cur.seqBits = h.HasSeq, h.Seq, h.SeqBits
 		}
 		if done {
 			out = r.complete(now, &m, done, err, out)
