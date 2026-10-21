@@ -36,7 +36,7 @@ func fir96[_ any](w *[audio96Taps]int8) int32 {
 		"x": arm.AsmFull("sxtb16 {}, {x}, ror #8", map[string]interface{}{"x": a}),
 		"y": arm.AsmFull("sxtb16 {}, {x}, ror #8", map[string]interface{}{"x": b}),
 	})
-	acc := uintptr(int32(c[8]) * int32(w[8]))
+	acc := uintptr(int32(c[8]) * int32(arm.AsmFull("ldrsb {}, [{p}, #8]", map[string]interface{}{"p": p})))
 	acc = arm.AsmFull("smlad {}, {x}, {y}, {z}", map[string]interface{}{"x": s02, "y": uintptr(c02), "z": acc})
 	acc = arm.AsmFull("smlad {}, {x}, {y}, {z}", map[string]interface{}{"x": s13, "y": uintptr(c13), "z": acc})
 	acc = arm.AsmFull("smlad {}, {x}, {y}, {z}", map[string]interface{}{"x": s46, "y": uintptr(c46), "z": acc})
