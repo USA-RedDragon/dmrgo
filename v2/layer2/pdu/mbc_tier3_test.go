@@ -255,7 +255,7 @@ func TestMBCAbsoluteParms_LastBlockCRC(t *testing.T) {
 		}
 	}
 
-	if !pdu.MBCLastBlockCRCOK(data) {
+	if !pdu.MBCLastBlockCRCOK([][12]byte{data}) {
 		t.Error("MBCLastBlockCRCOK should accept a single valid last block")
 	}
 
@@ -283,16 +283,18 @@ func TestMBCLastBlockCRC_MultiBlock(t *testing.T) {
 	if got := uint16(bits.Field(blocks[1][:], 80, 16)); got != c {
 		t.Errorf("last-block CRC = 0x%04X, want 0x%04X", got, c)
 	}
-	if !pdu.MBCLastBlockCRCOK(blocks...) {
+	if !pdu.MBCLastBlockCRCOK(blocks) {
 		t.Error("MBCLastBlockCRCOK should accept valid blocks")
 	}
 	blocks[0][6] ^= 0x20
-	if pdu.MBCLastBlockCRCOK(blocks...) {
+	if pdu.MBCLastBlockCRCOK(blocks) {
 		t.Error("MBCLastBlockCRCOK should reject a corrupted intermediate block")
 	}
-	if pdu.MBCLastBlockCRCOK() {
+	if pdu.MBCLastBlockCRCOK(nil) {
 		t.Error("MBCLastBlockCRCOK with no blocks should be false")
 	}
+	pdu.SetMBCLastBlockCRC(nil)
+	pdu.SetMBCLastBlockCRC([][12]byte{})
 }
 
 func cdefOf(data [8]byte) layer3.CdefParms {

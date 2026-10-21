@@ -102,7 +102,7 @@ func uploaded(t *testing.T, out []trunk.Output) (pdu.UDTHeader, trunk.Appended) 
 			t.Errorf("block %d due %v slot %v", i, out[1+i].Due, out[1+i].Slot)
 		}
 	}
-	if !pdu.MBCLastBlockCRCOK(blocks...) {
+	if !pdu.MBCLastBlockCRCOK(blocks) {
 		t.Error("UDT CRC")
 	}
 	return h, a

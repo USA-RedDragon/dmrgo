@@ -25088,7 +25088,7 @@ func dmrgo_pdu_mbc_last_block_crc_ok(c_blocks *C.uint8_t, c_blocks_len C.size_t,
 	}
 	var a_blocks [][12]byte
 	a_blocks = unsafe.Slice((*[12]byte)(unsafe.Pointer(c_blocks)), int(c_blocks_len))
-	r0 := g_layer2_pdu.MBCLastBlockCRCOK(a_blocks...)
+	r0 := g_layer2_pdu.MBCLastBlockCRCOK(a_blocks)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.bool(r0)

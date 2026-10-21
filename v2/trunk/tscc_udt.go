@@ -476,7 +476,7 @@ func (t *TSCC) udtInbound(now time.Duration, s enums.Slot, out []TSCCOutput) ([]
 		}
 		u.inOn = false
 		in.Len = in.n*12 - 2
-		in.CRCOK = pdu.MBCLastBlockCRCOK(in.blocks[:in.n]...)
+		in.CRCOK = pdu.MBCLastBlockCRCOK(in.blocks[:in.n])
 		return t.uploaded(now, out), true
 	case *pdu.UnifiedSingleBlockData:
 		u.usbd = *d

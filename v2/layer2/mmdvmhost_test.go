@@ -91,7 +91,7 @@ func TestMMDVMHostAccepts_MBCContinuation(t *testing.T) {
 	}
 	blocks = [][12]byte{first, last}
 	pdu.SetMBCLastBlockCRC(blocks)
-	if !pdu.MBCLastBlockCRCOK(blocks...) || layer2.MMDVMHostAccepts(enums.DataTypeMBCContinuation, blocks[1]) {
+	if !pdu.MBCLastBlockCRCOK(blocks) || layer2.MMDVMHostAccepts(enums.DataTypeMBCContinuation, blocks[1]) {
 		t.Error("last of two continuation blocks accepted")
 	}
 }
