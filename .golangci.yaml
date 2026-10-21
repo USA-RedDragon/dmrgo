@@ -158,6 +158,18 @@ linters:
         linters:
           - gocyclo
         text: (nopanicGen\)\.fill|TestNoPanic)
+      # nilguard gives each String method of a nil pointer the text <nil>.
+      - path: v2/
+        linters:
+          - goconst
+        text: "^string `<nil>` has"
+      # Inbound runs the access rules, the channel authorization and the
+      # nil burst of one transport frame in one place, and the test edits
+      # every field of an LC.
+      - path: v2/(bs/repeater\.go|layer2/pdu/lc_bytes_test\.go)$
+        linters:
+          - gocyclo
+        text: (\(\*Repeater\)\.Inbound|TestLCBytes_EditsKeepOtherBits)
       # jennifer's DSL is written with a dot import.
       - path: cmd/dmrgen/emit/
         linters:

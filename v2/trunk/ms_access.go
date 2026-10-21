@@ -155,7 +155,7 @@ func (m *MS) answer(now time.Duration, r enums.AckReason, from uint32, out []Out
 		}
 	case reqShortData, reqPoll, reqDivert, reqDGNA:
 		return m.udtAnswer(now, r, out)
-	case reqNone:
+	case reqNone, reqStatus, reqInterrupt, reqIP:
 	}
 	m.waitAnswer, m.reqUntil = true, now+m.answerTO()
 	return out

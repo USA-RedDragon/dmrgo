@@ -2784,7 +2784,7 @@ sym int dmrgo_trunk_appended_set_nmea_long(dmrgo_trunk_appended_t *self, const d
 sym int dmrgo_trunk_appended_set_nmea_short(dmrgo_trunk_appended_t *self, const dmrgo_trunk_nmea_short_t *n);
 sym int dmrgo_trunk_appended_set_text(dmrgo_trunk_appended_t *self, dmrgo_enums_udt_format_t f, const uint8_t *text, size_t text_len);
 sym int dmrgo_trunk_appended_text(dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-sym int dmrgo_trunk_auth_key_response(dmrgo_trunk_auth_key_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
+sym int dmrgo_trunk_auth_key_response(dmrgo_trunk_auth_key_t *self, uint32_t p0, uint32_t challenge, uint32_t *response, bool *ok);
 sym int dmrgo_trunk_auth_keys_response(dmrgo_trunk_auth_keys_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_trunk_auth_response(uint32_t challenge, const uint8_t key[16], uint32_t psn, uint32_t *out);
 sym int dmrgo_trunk_authenticator_free(dmrgo_trunk_authenticator_t *self);

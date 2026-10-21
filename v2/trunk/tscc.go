@@ -446,7 +446,7 @@ func (t *TSCC) Inbound(now time.Duration, ch uint16, s enums.Slot, raw *layer2.R
 	if o, done := t.udtInbound(now, s, out); done {
 		return o
 	}
-	if o, done := t.svcInbound(now, s, out); done {
+	if o, done := t.svcInbound(now, out); done {
 		return o
 	}
 	c, ok := b.Data.(*pdu.CSBK)
@@ -792,7 +792,8 @@ func (t *TSCC) control(out []TSCCOutput) []TSCCOutput {
 	now := t.next - slotLength
 	p, dt, reply, ok := t.udtNext(now)
 	if !ok && (!t.u.downHold || t.u.downN == 0 || t.u.downI == 0) {
-		p, dt, reply, ok = t.dequeue(now)
+		dt = enums.DataTypeCSBK
+		p, reply, ok = t.dequeue(now)
 	}
 	if !ok {
 		dt = enums.DataTypeCSBK

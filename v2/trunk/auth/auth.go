@@ -61,9 +61,9 @@ type Key struct {
 }
 
 // Response returns the response of the MS to challenge, as the package
-// function Response computes it, and true. addr is not used. A nil k has
+// function Response computes it, and true, for any address. A nil k has
 // no key. It does not allocate.
-func (k *Key) Response(addr, challenge uint32) (response uint32, ok bool) {
+func (k *Key) Response(_, challenge uint32) (response uint32, ok bool) {
 	if k == nil {
 		return 0, false
 	}

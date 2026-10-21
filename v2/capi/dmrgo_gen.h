@@ -10768,8 +10768,8 @@ int dmrgo_trunk_usbdlip_response_string(dmrgo_trunk_usbdlip_response_t *self, ch
 int dmrgo_trunk_usbd_poll_request_encode(dmrgo_trunk_usbd_poll_request_t *self, uint8_t out[10]);
 /* Go: trunk.USBDPollRequest.String. String returns the fields of s as text, for printing. */
 int dmrgo_trunk_usbd_poll_request_string(dmrgo_trunk_usbd_poll_request_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: auth.Key.Response. Response returns the response of the MS to challenge, as the package function Response computes it, and true. */
-int dmrgo_trunk_auth_key_response(dmrgo_trunk_auth_key_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
+/* Go: auth.Key.Response. Response returns the response of the MS to challenge, as the package function Response computes it, and true, for any address. */
+int dmrgo_trunk_auth_key_response(dmrgo_trunk_auth_key_t *self, uint32_t p0, uint32_t challenge, uint32_t *response, bool *ok);
 /* Go: auth.Keys.Response. Response returns the response of the MS addr to challenge, and false when Entries has no key for addr or k is nil. */
 int dmrgo_trunk_auth_keys_response(dmrgo_trunk_auth_keys_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: auth.Response. Response returns the 24-bit response to the challenge for the key K: the octets 257 to 259 of the RC4 keystream keyed with the 3 octets of the challenge, most significant first, and the 16 octets of K, exclusive-or psn. */

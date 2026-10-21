@@ -111,7 +111,7 @@ func NewCapacityPlusFollower(cfg *CapacityPlusConfig) (*CapacityPlusFollower, er
 		cfg = &zero
 	}
 	if cfg.TalkgroupsLen < 0 || cfg.TalkgroupsLen > MaxTalkgroups {
-		return nil, &dmrgo.ConfigError{Type: "trunk", Field: "TalkgroupsLen"}
+		return nil, &dmrgo.ConfigError{Type: pkgName, Field: "TalkgroupsLen"}
 	}
 	f := &CapacityPlusFollower{
 		talk: cfg.Talkgroups, talkLen: cfg.TalkgroupsLen,

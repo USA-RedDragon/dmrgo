@@ -141,7 +141,7 @@ func (t *PositionTracker) Place(raw *RawBurst, h *Hint) (lost int, p Placement) 
 		case hasDT && dt == enums.DataTypeTerminatorWithLC:
 			t.end()
 		}
-	case KindReverseChannel:
+	case KindReverseChannel, KindUnknown:
 	}
 	if h.End == EndStrong {
 		t.end()

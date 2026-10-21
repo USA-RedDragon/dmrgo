@@ -44048,7 +44048,7 @@ func dmrgo_trunk_usbd_poll_request_string(c_self *C.dmrgo_trunk_usbd_poll_reques
 }
 
 //export dmrgo_trunk_auth_key_response
-func dmrgo_trunk_auth_key_response(c_self *C.dmrgo_trunk_auth_key_t, c_addr C.uint32_t, c_challenge C.uint32_t, c_response *C.uint32_t, c_ok *C.bool) (rc C.int) {
+func dmrgo_trunk_auth_key_response(c_self *C.dmrgo_trunk_auth_key_t, c_p0 C.uint32_t, c_challenge C.uint32_t, c_response *C.uint32_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -44056,7 +44056,7 @@ func dmrgo_trunk_auth_key_response(c_self *C.dmrgo_trunk_auth_key_t, c_addr C.ui
 	}
 	var x g_trunk_auth.Key
 	x = *(*g_trunk_auth.Key)(unsafe.Pointer(&(*c_self)))
-	r0, r1 := x.Response(uint32(c_addr), uint32(c_challenge))
+	r0, r1 := x.Response(uint32(c_p0), uint32(c_challenge))
 	*(*g_trunk_auth.Key)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	_ = r1
