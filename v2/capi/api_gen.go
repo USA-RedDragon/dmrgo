@@ -37887,6 +37887,26 @@ func dmrgo_trunk_follower_hunt(c_self *C.dmrgo_trunk_follower_t, c_out *C.dmrgo_
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_follower_lookup
+func dmrgo_trunk_follower_lookup(c_self *C.dmrgo_trunk_follower_t, c_n C.uint16_t, c_c *C.dmrgo_trunk_channel_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_Follower(c_self)
+	r0, r1 := h.v.Lookup(uint16(c_n))
+	_ = r0
+	_ = r1
+	if c_c != nil {
+		*(*g_trunk.Channel)(unsafe.Pointer(&(*c_c))) = r0
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_follower_lost_need
 func dmrgo_trunk_follower_lost_need(c_self *C.dmrgo_trunk_follower_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)

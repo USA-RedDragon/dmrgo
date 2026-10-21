@@ -9998,11 +9998,13 @@ int dmrgo_trunk_follower_call(dmrgo_trunk_follower_t *self, dmrgo_trunk_grant_t 
 int dmrgo_trunk_follower_deadline(dmrgo_trunk_follower_t *self, dmrgo_duration_t *at, bool *ok);
 /* Go: trunk.Follower.Hunt. Hunt returns the hunt list, with the changes of Ann_WD_TSCC broadcasts. */
 int dmrgo_trunk_follower_hunt(dmrgo_trunk_follower_t *self, dmrgo_trunk_hunt_list_t *out);
+/* Go: trunk.Follower.Lookup. Lookup returns the channel with number n from the channel plan, as ChannelPlan.Lookup does. */
+int dmrgo_trunk_follower_lookup(dmrgo_trunk_follower_t *self, uint16_t n, dmrgo_trunk_channel_t *c, bool *ok);
 /* dmrgo_trunk_follower_lost_need sets *items and *arena to the room that dmrgo_trunk_follower_lost needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_follower_lost_need(dmrgo_trunk_follower_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: trunk.Follower.Lost. Lost tells the Follower that the receiver lost the signal. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_follower_lost_need gives (DMRGO_TRUNK_FOLLOWER_LOST_MAX_ITEMS items). */
 int dmrgo_trunk_follower_lost(dmrgo_trunk_follower_t *self, dmrgo_duration_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: trunk.Follower.Plan. Plan returns the channel plan, with the channels that CG_AP and Chan_Freq announced. */
+/* Go: trunk.Follower.Plan. Plan returns a copy of the channel plan, with the channels that CG_AP and Chan_Freq announced. */
 int dmrgo_trunk_follower_plan(dmrgo_trunk_follower_t *self, dmrgo_trunk_channel_plan_t *out);
 /* Go: trunk.Follower.Reset. Reset forgets the site and the call and starts hunting again, as after NewFollower. */
 int dmrgo_trunk_follower_reset(dmrgo_trunk_follower_t *self);

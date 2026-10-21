@@ -231,6 +231,12 @@ func TestFollower_MBCGrant(t *testing.T) {
 	if ch, ok := plan.Lookup(42); !ok || ch.RXHz != 451_012_500 {
 		t.Errorf("plan channel 42 = %+v, %v", ch, ok)
 	}
+	if ch, ok := f.Lookup(42); !ok || ch.RXHz != 451_012_500 {
+		t.Errorf("Lookup(42) = %+v, %v", ch, ok)
+	}
+	if _, ok := f.Lookup(43); ok {
+		t.Error("Lookup(43) found a channel")
+	}
 }
 
 func TestFollower_Hunt(t *testing.T) {
