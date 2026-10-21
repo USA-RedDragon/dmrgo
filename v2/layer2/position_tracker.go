@@ -65,6 +65,10 @@ type PositionTracker struct {
 
 // Reset forgets the call.
 func (t *PositionTracker) Reset() {
+	if t == nil {
+		return
+	}
+
 	if t != nil {
 		*t = PositionTracker{}
 	}
@@ -74,6 +78,10 @@ func (t *PositionTracker) Reset() {
 // that the next burst is placed only by its SYNC or EMB, as after a weak
 // burst.
 func (t *PositionTracker) Forget() {
+	if t == nil {
+		return
+	}
+
 	if t != nil {
 		t.known = false
 	}
@@ -91,6 +99,10 @@ func (t *PositionTracker) Forget() {
 // tracker. A nil raw, for a packet without a burst, applies only the
 // stream, SyncLost and End of h. A nil t or h is a no-op.
 func (t *PositionTracker) Place(raw *RawBurst, h *Hint) (lost int, p Placement) {
+	if t == nil {
+		return 0, 0
+	}
+
 	if t == nil || h == nil {
 		return 0, PlacementInOrder
 	}
@@ -147,6 +159,10 @@ func (t *PositionTracker) end() {
 // burst A. It does nothing after the first voice burst, or for a nil t or
 // h.
 func (t *PositionTracker) Header(h *Hint) {
+	if t == nil {
+		return
+	}
+
 	if t == nil || h == nil || t.started {
 		return
 	}
@@ -165,6 +181,10 @@ func (t *PositionTracker) Header(h *Hint) {
 // sets h.VoiceBurst, and returns the bursts lost before b and how it took
 // b. A nil t, b or h is a no-op, and steps below 1 count as 1.
 func (t *PositionTracker) PlaceDecoded(b *Burst, h *Hint, steps int) (lost int, p Placement) {
+	if t == nil {
+		return 0, 0
+	}
+
 	if t == nil || b == nil || h == nil {
 		return 0, PlacementInOrder
 	}

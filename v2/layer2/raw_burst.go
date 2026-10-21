@@ -92,6 +92,10 @@ func (r RawBurst) Info() [25]byte {
 // and changes nothing, when a padding bit, one of the low 4 bits of octet
 // 24, is set.
 func (r *RawBurst) SetInfo(p [25]byte) error {
+	if r == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if p[24]&0x0F != 0 {
 		return errRawBurstInfoRange
 	}

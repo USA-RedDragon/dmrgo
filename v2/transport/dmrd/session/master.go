@@ -53,22 +53,38 @@ func NewMaster(cfg *MasterConfig) (*Master, error) {
 
 // State returns the state of the session.
 func (m *Master) State() State {
+	if m == nil {
+		return 0
+	}
+
 	return m.state
 }
 
 // ID returns the repeater ID of the session, from its last RPTL.
 func (m *Master) ID() uint32 {
+	if m == nil {
+		return 0
+	}
+
 	return m.id
 }
 
 // Reset ends the session without a packet or an output.
 func (m *Master) Reset() {
+	if m == nil {
+		return
+	}
+
 	m.state, m.id, m.salt, m.passLen = StateIdle, 0, 0, 0
 }
 
 // Deadline returns the time at which the Master needs a Tick. ok is false
 // in StateIdle.
 func (m *Master) Deadline() (at time.Duration, ok bool) {
+	if m == nil {
+		return 0, false
+	}
+
 	if m.state == StateIdle {
 		return 0, false
 	}
@@ -80,6 +96,10 @@ func (m *Master) Deadline() (at time.Duration, ok bool) {
 // repeater after that gets an MSTNAK. It allocates only when dst has no
 // room for MaxOutputs outputs.
 func (m *Master) Tick(now time.Duration, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	if at, ok := m.Deadline(); ok && now >= at {
 		dst = m.down(dst, ReasonTimeout)
 	}
@@ -92,6 +112,10 @@ func (m *Master) Tick(now time.Duration, dst []Output) []Output {
 // another state. It allocates only when dst has no room for MaxOutputs
 // outputs.
 func (m *Master) Admit(now time.Duration, salt uint32, password []byte, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	if m.state != StateLogin {
 		return dst
 	}
@@ -105,6 +129,10 @@ func (m *Master) Admit(now time.Duration, salt uint32, password []byte, dst []Ou
 // and OutputDown with ReasonRefused. It does nothing in StateIdle. It
 // allocates only when dst has no room for MaxOutputs outputs.
 func (m *Master) Refuse(_ time.Duration, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	if m.state == StateIdle {
 		return dst
 	}
@@ -116,6 +144,10 @@ func (m *Master) Refuse(_ time.Duration, dst []Output) []Output {
 // and OutputDown with ReasonStopped. It does nothing in StateIdle. It
 // allocates only when dst has no room for MaxOutputs outputs.
 func (m *Master) Close(_ time.Duration, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	if m.state == StateIdle {
 		return dst
 	}
@@ -164,6 +196,10 @@ func (m *Master) nak(dst []Output, id uint32) []Output {
 // that the Master takes restarts Timeout. It allocates only when dst has
 // no room for MaxOutputs outputs.
 func (m *Master) Packet(now time.Duration, b []byte, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	if m.dialect == dmrd.DialectUnknown || len(b) > MaxPacket {
 		return dst
 	}

@@ -3,6 +3,7 @@ package session
 import (
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
 )
@@ -65,6 +66,10 @@ func NewBridge(cfg *BridgeConfig) (*Bridge, error) {
 // State returns StateRunning when the peer sent a packet with a good
 // signature within Timeout, and StateIdle before that and after.
 func (b *Bridge) State() State {
+	if b == nil {
+		return 0
+	}
+
 	return b.state
 }
 
@@ -72,6 +77,10 @@ func (b *Bridge) State() State {
 // auth.BridgeKey.Sign does. It returns an error for a Bridge that NewBridge
 // did not make. It does not allocate.
 func (b *Bridge) Sign(p []byte) error {
+	if b == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if b.key == nil {
 		return errNoKey
 	}
@@ -82,6 +91,10 @@ func (b *Bridge) Sign(p []byte) error {
 // Deadline returns the time at which the Bridge needs a Tick. ok is false
 // without BridgeConfig.Enhanced.
 func (b *Bridge) Deadline() (at time.Duration, ok bool) {
+	if b == nil {
+		return 0, false
+	}
+
 	if !b.enhanced || b.key == nil {
 		return 0, false
 	}
@@ -99,6 +112,10 @@ func (b *Bridge) Deadline() (at time.Duration, ok bool) {
 // sent nothing for Timeout. It allocates only when dst has no room for
 // MaxOutputs outputs.
 func (b *Bridge) Tick(now time.Duration, dst []Output) []Output {
+	if b == nil {
+		return dst
+	}
+
 	if !b.enhanced || b.key == nil {
 		return dst
 	}
@@ -120,6 +137,10 @@ func (b *Bridge) Tick(now time.Duration, dst []Output) []Output {
 // them, is a sign of life: the first after StateIdle reports OutputUp.
 // It allocates only when dst has no room for MaxOutputs outputs.
 func (b *Bridge) Packet(now time.Duration, p []byte, dst []Output) []Output {
+	if b == nil {
+		return dst
+	}
+
 	if b.key == nil || len(p) > MaxPacket {
 		return dst
 	}

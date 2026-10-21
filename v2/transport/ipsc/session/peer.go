@@ -105,29 +105,49 @@ func NewPeer(cfg *PeerConfig) (*Peer, error) {
 
 // MaxOutputs returns the most outputs that one call of the Peer appends.
 func (p *Peer) MaxOutputs() int {
+	if p == nil {
+		return 0
+	}
+
 	return 2*p.maxPeers + 4
 }
 
 // State returns the state of the Peer.
 func (p *Peer) State() State {
+	if p == nil {
+		return 0
+	}
+
 	return p.state
 }
 
 // Master returns the ID of the master, which its registration reply gave.
 // ok is false before that.
 func (p *Peer) Master() (id uint32, ok bool) {
+	if p == nil {
+		return 0, false
+	}
+
 	return p.masterID, p.state == StateRunning
 }
 
 // Peers returns the number of other peers that the Peer knows from the
 // peer list.
 func (p *Peer) Peers() int {
+	if p == nil {
+		return 0
+	}
+
 	return p.l.n
 }
 
 // PeerAt returns peer i of the list, or the zero PeerInfo when i is not
 // below Peers.
 func (p *Peer) PeerAt(i int) PeerInfo {
+	if p == nil {
+		return PeerInfo{}
+	}
+
 	if i < 0 || i >= p.l.n {
 		return PeerInfo{}
 	}
@@ -138,12 +158,20 @@ func (p *Peer) PeerAt(i int) PeerInfo {
 // when the config has Auth, and returns dst as it is without. It
 // allocates only when dst has no room for auth.TrailerLen more octets.
 func (p *Peer) Sign(dst []byte) []byte {
+	if p == nil {
+		return dst
+	}
+
 	return p.l.sign(dst)
 }
 
 // Reset forgets the master and the peers without a packet, so the next
 // Tick registers again.
 func (p *Peer) Reset() {
+	if p == nil {
+		return
+	}
+
 	p.l.n = 0
 	p.state, p.started, p.masterID, p.outstanding, p.haveList = StateRegistering, false, 0, 0, false
 }
@@ -153,6 +181,10 @@ func (p *Peer) Reset() {
 // with ReasonStopped for the master, and stops the Peer until Reset. It
 // allocates only when dst has no room for MaxOutputs outputs.
 func (p *Peer) Close(_ time.Duration, dst []Output) []Output {
+	if p == nil {
+		return dst
+	}
+
 	if p.state == StateIdle {
 		return dst
 	}
@@ -174,6 +206,10 @@ func (p *Peer) Close(_ time.Duration, dst []Output) []Output {
 // Deadline returns the time at which the Peer needs a Tick. ok is false
 // after Close.
 func (p *Peer) Deadline() (at time.Duration, ok bool) {
+	if p == nil {
+		return 0, false
+	}
+
 	if p.state == StateIdle {
 		return 0, false
 	}
@@ -190,6 +226,10 @@ func (p *Peer) Deadline() (at time.Duration, ok bool) {
 // ReasonTimeout. It allocates only when dst has no room for MaxOutputs
 // outputs.
 func (p *Peer) Tick(now time.Duration, dst []Output) []Output {
+	if p == nil {
+		return dst
+	}
+
 	if at, ok := p.Deadline(); !ok || now < at {
 		return dst
 	}
@@ -246,6 +286,10 @@ func (p *Peer) Tick(now time.Duration, dst []Output) []Output {
 // trailer with Auth, and a packet of a sender it does not know. It
 // allocates only when dst has no room for MaxOutputs outputs.
 func (p *Peer) Packet(_ time.Duration, from Addr, b []byte, dst []Output) []Output {
+	if p == nil {
+		return dst
+	}
+
 	if p.state == StateIdle || !p.started {
 		return dst
 	}

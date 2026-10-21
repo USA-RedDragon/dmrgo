@@ -9,6 +9,10 @@ type ConfigError struct {
 
 // Error returns the message of e. It allocates the message.
 func (e *ConfigError) Error() string {
+	if e == nil {
+		return "<nil>"
+	}
+
 	return "session: " + e.Field + " is out of range"
 }
 

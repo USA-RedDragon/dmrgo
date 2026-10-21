@@ -80,12 +80,20 @@ func NewMaster(cfg *MasterConfig) (*Master, error) {
 
 // MaxOutputs returns the most outputs that one call of the Master appends.
 func (m *Master) MaxOutputs() int {
+	if m == nil {
+		return 0
+	}
+
 	return 2*m.maxPeers + 2
 }
 
 // State returns StateRunning, or StateIdle after Close and for a Master
 // that NewMaster did not make.
 func (m *Master) State() State {
+	if m == nil {
+		return 0
+	}
+
 	if m.stopped || m.maxPeers == 0 {
 		return StateIdle
 	}
@@ -94,12 +102,20 @@ func (m *Master) State() State {
 
 // Peers returns the number of registered peers.
 func (m *Master) Peers() int {
+	if m == nil {
+		return 0
+	}
+
 	return m.l.n
 }
 
 // PeerAt returns registered peer i, or the zero PeerInfo when i is not
 // below Peers.
 func (m *Master) PeerAt(i int) PeerInfo {
+	if m == nil {
+		return PeerInfo{}
+	}
+
 	if i < 0 || i >= m.l.n {
 		return PeerInfo{}
 	}
@@ -110,12 +126,20 @@ func (m *Master) PeerAt(i int) PeerInfo {
 // when the config has Auth, and returns dst as it is without. It
 // allocates only when dst has no room for auth.TrailerLen more octets.
 func (m *Master) Sign(dst []byte) []byte {
+	if m == nil {
+		return dst
+	}
+
 	return m.l.sign(dst)
 }
 
 // Reset forgets every peer without a packet and runs the Master again
 // after Close.
 func (m *Master) Reset() {
+	if m == nil {
+		return
+	}
+
 	m.l.n = 0
 	m.stopped = false
 }
@@ -125,6 +149,10 @@ func (m *Master) Reset() {
 // for each, and stops the Master until Reset. It allocates only when dst
 // has no room for MaxOutputs outputs.
 func (m *Master) Close(_ time.Duration, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	if m.stopped || m.maxPeers == 0 {
 		return dst
 	}
@@ -142,6 +170,10 @@ func (m *Master) Close(_ time.Duration, dst []Output) []Output {
 // Deadline returns the time at which the Master needs a Tick: when the
 // first peer times out. ok is false without peers.
 func (m *Master) Deadline() (at time.Duration, ok bool) {
+	if m == nil {
+		return 0, false
+	}
+
 	if m.stopped {
 		return 0, false
 	}
@@ -158,6 +190,10 @@ func (m *Master) Deadline() (at time.Duration, ok bool) {
 // ReasonTimeout, and then sends the new peer list to the peers left. It
 // allocates only when dst has no room for MaxOutputs outputs.
 func (m *Master) Tick(now time.Duration, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	if m.stopped || m.maxPeers == 0 {
 		return dst
 	}
@@ -203,6 +239,10 @@ func (m *Master) listToAll(dst []Output) []Output {
 // ReasonAddress. It allocates only when dst has no room for MaxOutputs
 // outputs.
 func (m *Master) Packet(now time.Duration, from Addr, p []byte, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	if m.stopped || m.maxPeers == 0 {
 		return dst
 	}
