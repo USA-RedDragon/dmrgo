@@ -3993,7 +3993,7 @@ struct dmrgo_hytera_frame_t {
 	dmrgo_layer2_raw_burst_t burst;
 	/* Pad is octet 58, the octet after the burst in the payload. */
 	uint8_t pad;
-	/* CallType is octet 62: 0x00 on the group calls of the DO1KBL capture, 0x01 on those of other repeaters, 0x0A on wakeup packets. */
+	/* CallType is octet 62: 0x00 on the group calls of the DO1KBL capture, 0x01 on those that Hytera_Homebrew_Bridge builds, 0x0A on wakeup packets. Call and SetCall read and write it. */
 	uint8_t call_type;
 	/* Destination is the talkgroup or radio ID that is called (octets 64 to 66, little-endian). */
 	uint32_t destination;
@@ -9702,10 +9702,14 @@ int dmrgo_hytera_decode_heartbeat(const uint8_t *p, size_t p_len, dmrgo_hytera_h
 int dmrgo_hytera_decode_p2p(const uint8_t *p, size_t p_len, dmrgo_hytera_p2p_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: hytera.Frame.AppendBinary. AppendBinary appends the 72-octet frame to dst. */
 int dmrgo_hytera_frame_append_binary(dmrgo_hytera_frame_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: hytera.Frame.Call. Call returns the call of the frame: group for CallType 0x00, as the group calls of a Hytera repeater in the DO1KBL capture carry it, and for 0x01, as Hytera_Homebrew_Bridge sends group calls (OK-DMR names 0x00 a private call, which the capture does not show); target is Destination and source is Source. */
+int dmrgo_hytera_frame_call(dmrgo_hytera_frame_t *self, bool *group, uint32_t *target, uint32_t *source);
 /* Go: hytera.Frame.HasBurst. HasBurst reports whether Burst holds a burst: false for SlotTypeSync and SlotTypeWakeup, whose payload is not an ETSI burst. */
 int dmrgo_hytera_frame_has_burst(const dmrgo_hytera_frame_t *self, bool *out);
 /* Go: hytera.Frame.Hint. Hint returns what the frame tells about its burst, for the service machines: the slot, the voice position or data type from SlotType, and the sequence number (8 bits). */
 int dmrgo_hytera_frame_hint(dmrgo_hytera_frame_t *self, dmrgo_layer2_hint_t *out);
+/* Go: hytera.Frame.SetCall. SetCall sets CallType to 0x00 for a group call, as a Hytera repeater sends it, and Destination and Source. */
+int dmrgo_hytera_frame_set_call(dmrgo_hytera_frame_t *self, bool group, uint32_t target, uint32_t source);
 /* Go: hytera.Frame.SetHint. SetHint sets SlotType from what h says the burst is, as a machine Output gives it: KindVoice with a VoiceBurst of A to F, or KindData with a DataType. */
 int dmrgo_hytera_frame_set_hint(dmrgo_hytera_frame_t *self, const dmrgo_layer2_hint_t *h);
 /* Go: hytera.Heartbeat.AppendBinary. AppendBinary appends the heartbeat, or the keepalive, to dst. */

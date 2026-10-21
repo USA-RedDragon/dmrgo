@@ -40,7 +40,8 @@ type Frame struct {
 	// Pad is octet 58, the octet after the burst in the payload.
 	Pad uint8
 	// CallType is octet 62: 0x00 on the group calls of the DO1KBL
-	// capture, 0x01 on those of other repeaters, 0x0A on wakeup packets.
+	// capture, 0x01 on those that Hytera_Homebrew_Bridge builds, 0x0A on
+	// wakeup packets. Call and SetCall read and write it.
 	CallType uint8
 	// Destination is the talkgroup or radio ID that is called (octets 64
 	// to 66, little-endian).
@@ -121,6 +122,38 @@ func (f *Frame) AppendBinary(dst []byte) ([]byte, error) {
 	copy(l.R60[:], f.Reserved[12:14])
 	l.R63, l.R67, l.R71 = f.Reserved[14], f.Reserved[15], f.Reserved[16]
 	return l.AppendBinary(dst)
+}
+
+// Call returns the call of the frame: group for CallType 0x00, as the
+// group calls of a Hytera repeater in the DO1KBL capture carry it, and for
+// 0x01, as Hytera_Homebrew_Bridge sends group calls (OK-DMR names 0x00 a
+// private call, which the capture does not show); target is Destination
+// and source is Source. A nil f gives zero values.
+func (f *Frame) Call() (group bool, target, source uint32) {
+	if f == nil {
+		return false, 0, 0
+	}
+	return f.CallType == 0x00 || f.CallType == 0x01, f.Destination, f.Source
+}
+
+// SetCall sets CallType to 0x00 for a group call, as a Hytera repeater
+// sends it, and Destination and Source. No capture shows the CallType of a
+// private call, so it returns an error for group false. It also returns a
+// *dmrgo.FieldRangeError when target or source does not fit in 24 bits,
+// and dmrgo.ErrNilReceiver for a nil f. On an error it changes nothing.
+func (f *Frame) SetCall(group bool, target, source uint32) error {
+	switch {
+	case f == nil:
+		return dmrgo.ErrNilReceiver
+	case !group:
+		return errPrivateCall
+	case target>>24 != 0:
+		return errFrameDestinationRange
+	case source>>24 != 0:
+		return errFrameSourceRange
+	}
+	f.CallType, f.Destination, f.Source = 0x00, target, source
+	return nil
 }
 
 // HasBurst reports whether Burst holds a burst: false for SlotTypeSync and

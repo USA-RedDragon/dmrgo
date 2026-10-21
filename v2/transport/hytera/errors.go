@@ -3,6 +3,7 @@ package hytera
 import (
 	"errors"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -30,6 +31,10 @@ var (
 
 	errKindVoice error = &wrapError{"hytera: SetHint: voice position is not A to F", layer2.ErrVoicePosition}
 	errKindData  error = &wrapError{"hytera: SetHint: no data type, or one that has no slot type", layer2.ErrDataType}
+
+	errPrivateCall           = errors.New("hytera: SetCall: no capture shows the CallType of a private call")
+	errFrameDestinationRange = &dmrgo.FieldRangeError{Type: "Frame", Field: "Destination", Bits: 24}
+	errFrameSourceRange      = &dmrgo.FieldRangeError{Type: "Frame", Field: "Source", Bits: 24}
 )
 
 type wrapError struct {

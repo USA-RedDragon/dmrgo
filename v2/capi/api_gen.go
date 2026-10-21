@@ -34675,6 +34675,35 @@ func dmrgo_hytera_frame_append_binary(c_self *C.dmrgo_hytera_frame_t, c_dst *C.u
 	return C.DMRGO_OK
 }
 
+//export dmrgo_hytera_frame_call
+func dmrgo_hytera_frame_call(c_self *C.dmrgo_hytera_frame_t, c_group *C.bool, c_target *C.uint32_t, c_source *C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_hytera.Frame
+	x = *(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self)))
+	r0, r1, r2 := x.Call()
+	*(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	_ = r1
+	_ = r2
+	if c_group != nil {
+		*c_group = C.bool(r0)
+	}
+	if c_target != nil {
+		*c_target = C.uint32_t(r1)
+	}
+	if c_source != nil {
+		*c_source = C.uint32_t(r2)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_hytera_frame_has_burst
 func dmrgo_hytera_frame_has_burst(c_self *C.dmrgo_hytera_frame_t, c_out *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -34712,6 +34741,26 @@ func dmrgo_hytera_frame_hint(c_self *C.dmrgo_hytera_frame_t, c_out *C.dmrgo_laye
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_frame_set_call
+func dmrgo_hytera_frame_set_call(c_self *C.dmrgo_hytera_frame_t, c_group C.bool, c_target C.uint32_t, c_source C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_hytera.Frame
+	x = *(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self)))
+	r0 := x.SetCall(bool(c_group), uint32(c_target), uint32(c_source))
+	*(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self))) = x
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }
