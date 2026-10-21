@@ -11,7 +11,8 @@ import (
 // data ends inside a field and ErrLength when a length does not match the
 // data. It does not copy: the byte string fields point into data.
 func DecodeHyteraText(data []byte) (HyteraText, error) {
-	v, n, err := decodeHyteraTextAt(data, 0)
+	var v HyteraText
+	n, err := decodeHyteraTextAt(&v, data, 0)
 	if err != nil {
 		return HyteraText{}, err
 	}
@@ -21,16 +22,15 @@ func DecodeHyteraText(data []byte) (HyteraText, error) {
 	return v, nil
 }
 
-func decodeHyteraTextAt(data []byte, _o int) (HyteraText, int, error) {
-	var result HyteraText
+func decodeHyteraTextAt(result *HyteraText, data []byte, _o int) (int, error) {
 	if len(data)-_o < 2 {
-		return HyteraText{}, 0, ErrShort
+		return 0, ErrShort
 	}
 	result.Field = uint16(uint64(data[_o])<<8 | uint64(data[_o+1]))
 	_o += 2
 	result.Text = data[_o:len(data)]
 	_o = len(data)
-	return result, _o, nil
+	return _o, nil
 }
 
 // AppendBinary appends s to dst. It returns dst unchanged and a

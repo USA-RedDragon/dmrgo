@@ -144,7 +144,8 @@ func (s *SequenceHigh) String() string {
 // ends inside a field and ErrLength when a length does not match the data.
 // It does not copy: the byte string fields point into data.
 func DecodeMessage(data []byte) (Message, error) {
-	v, n, err := decodeMessageAt(data, 0)
+	var v Message
+	n, err := decodeMessageAt(&v, data, 0)
 	if err != nil {
 		return Message{}, err
 	}
@@ -154,65 +155,64 @@ func DecodeMessage(data []byte) (Message, error) {
 	return v, nil
 }
 
-func decodeMessageAt(data []byte, _o int) (Message, int, error) {
-	var result Message
+func decodeMessageAt(result *Message, data []byte, _o int) (int, error) {
 	if len(data)-_o < 2 {
-		return Message{}, 0, ErrShort
+		return 0, ErrShort
 	}
 	result.Length = uint16(uint64(data[_o])<<8 | uint64(data[_o+1]))
 	_o += 2
 	_end := _o + int(result.Length)
 	if _end < _o {
-		return Message{}, 0, ErrLength
+		return 0, ErrLength
 	}
 	if _end > len(data) {
-		return Message{}, 0, ErrShort
+		return 0, ErrShort
 	}
 	data = data[:_end]
 	if len(data)-_o < 1 {
-		return Message{}, 0, ErrShort
+		return 0, ErrShort
 	}
 	_vHeader, _err := decodeHeader(data[_o : _o+1])
 	if _err != nil {
-		return Message{}, 0, _err
+		return 0, _err
 	}
 	result.Header = _vHeader
 	_o += 1
 	if len(data)-_o < 1 {
-		return Message{}, 0, ErrShort
+		return 0, ErrShort
 	}
 	_lAddress := int(uint64(data[_o]))
 	_o += 1
 	if len(data)-_o < _lAddress {
-		return Message{}, 0, ErrShort
+		return 0, ErrShort
 	}
 	result.Address = data[_o : _o+_lAddress]
 	_o += _lAddress
 	if (result.Header.Extension) && (result.Header.Type == TypeAvailability) {
 		if len(data)-_o < 1 {
-			return Message{}, 0, ErrShort
+			return 0, ErrShort
 		}
 		result.Capability = uint8(uint64(data[_o]))
 		_o += 1
 	}
 	if (result.Header.Extension) && (result.Header.Type != TypeAvailability) {
 		if len(data)-_o < 1 {
-			return Message{}, 0, ErrShort
+			return 0, ErrShort
 		}
 		_vSequenceLow, _err := decodeSequenceLow(data[_o : _o+1])
 		if _err != nil {
-			return Message{}, 0, _err
+			return 0, _err
 		}
 		result.SequenceLow = _vSequenceLow
 		_o += 1
 	}
 	if (result.Header.Extension) && (result.Header.Type != TypeAvailability) && (result.SequenceLow.Extension) {
 		if len(data)-_o < 1 {
-			return Message{}, 0, ErrShort
+			return 0, ErrShort
 		}
 		_vSequenceHigh, _err := decodeSequenceHigh(data[_o : _o+1])
 		if _err != nil {
-			return Message{}, 0, _err
+			return 0, _err
 		}
 		result.SequenceHigh = _vSequenceHigh
 		_o += 1
@@ -220,9 +220,9 @@ func decodeMessageAt(data []byte, _o int) (Message, int, error) {
 	result.Text = data[_o:len(data)]
 	_o = len(data)
 	if _o != len(data) {
-		return Message{}, 0, ErrLength
+		return 0, ErrLength
 	}
-	return result, _o, nil
+	return _o, nil
 }
 
 // AppendBinary appends s to dst, with Length set to the length of the data.

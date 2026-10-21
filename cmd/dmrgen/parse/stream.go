@@ -106,6 +106,7 @@ const (
 type StreamDirective struct {
 	Tokens   bool // dmr:tokens
 	Trailing bool // dmr:stream trailing: Decode ignores octets after the bound
+	Into     bool // dmr:stream into: DecodeXInto fills a struct of the caller, for a struct over 256 octets
 	Fields   []StreamField
 	// BoundPath is set by dmr:bound Path [total]: an integer of a frame
 	// field that gives the length of the stream.
@@ -140,12 +141,15 @@ func parseStreamStruct(name string, structType *ast.StructType, doc *ast.Comment
 		arg = strings.TrimSpace(arg)
 		switch dname {
 		case directiveStream:
-			switch arg {
-			case "":
-			case "trailing":
-				pdu.Stream.Trailing = true
-			default:
-				return pdu, fmt.Errorf("dmr:stream: unknown argument %q", arg)
+			for _, a := range strings.Fields(arg) {
+				switch a {
+				case "trailing":
+					pdu.Stream.Trailing = true
+				case "into":
+					pdu.Stream.Into = true
+				default:
+					return pdu, fmt.Errorf("dmr:stream: unknown argument %q", a)
+				}
 			}
 		case directiveTokens:
 			if arg != "" {

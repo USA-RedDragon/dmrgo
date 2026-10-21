@@ -23,10 +23,8 @@ type streamGen struct {
 	errs  *errVars
 }
 
-func (s streamGen) zero() *Statement { return Id(s.pdu.Name).Values() }
-
 func (s streamGen) fail(name string) *Statement {
-	return Return(s.zero(), Lit(0), Id(name))
+	return Return(Lit(0), Id(name))
 }
 
 func (s streamGen) failStatus() *Statement {
@@ -209,7 +207,7 @@ func (s streamGen) decodeValue(g *Group, f parse.StreamField, target *Statement)
 		n := p.Frame.Sizes[0]
 		g.If(Len(Id("data")).Op("-").Id("_o").Op("<").Lit(n)).Block(s.fail(errShort))
 		g.List(Id(tmp), Id("_err")).Op(":=").Id(p.DecodeFuncName(p.Name)).Call(Id("data").Index(Id("_o"), Id("_o").Op("+").Lit(n)))
-		g.If(Id("_err").Op("!=").Nil()).Block(Return(s.zero(), Lit(0), Id("_err")))
+		g.If(Id("_err").Op("!=").Nil()).Block(Return(Lit(0), Id("_err")))
 		g.Add(target.Clone()).Op("=").Id(tmp)
 		g.Id("_o").Op("+=").Lit(n)
 	case parse.StreamNested, parse.StreamTokens:
@@ -217,10 +215,9 @@ func (s streamGen) decodeValue(g *Group, f parse.StreamField, target *Statement)
 		if err != nil {
 			return err
 		}
-		g.List(Id(tmp), Id("_on"), Id("_err")).Op(":=").Id(atName(p.Name)).Call(Id("data"), Id("_o"))
-		g.If(Id("_err").Op("!=").Nil()).Block(Return(s.zero(), Lit(0), Id("_err")))
-		g.Add(target.Clone()).Op("=").Id(tmp)
-		g.Id("_o").Op("=").Id("_on")
+		g.List(Id("_on"+f.Name), Id("_err")).Op(":=").Id(atName(p.Name)).Call(Op("&").Add(target.Clone()), Id("data"), Id("_o"))
+		g.If(Id("_err").Op("!=").Nil()).Block(Return(Lit(0), Id("_err")))
+		g.Id("_o").Op("=").Id("_on" + f.Name)
 	case parse.StreamArray:
 		g.If(Len(Id("data")).Op("-").Id("_o").Op("<").Lit(f.Octets)).Block(s.fail(errShort))
 		g.Copy(target.Clone().Index(Empty(), Empty()), Id("data").Index(Id("_o"), Id("_o").Op("+").Lit(f.Octets)))
@@ -327,8 +324,7 @@ func (s streamGen) emitDecodeAt(f *File) error {
 	pdu := s.pdu
 	st := pdu.Stream
 	var err error
-	f.Func().Id(atName(pdu.Name)).Params(Id("data").Index().Byte(), Id("_o").Int()).Params(Id(pdu.Name), Int(), Error()).BlockFunc(func(g *Group) {
-		g.Var().Id(streamLocal).Id(pdu.Name)
+	f.Func().Id(atName(pdu.Name)).Params(Id(streamLocal).Op("*").Id(pdu.Name), Id("data").Index().Byte(), Id("_o").Int()).Params(Int(), Error()).BlockFunc(func(g *Group) {
 		if st.Tokens {
 			g.For(Id("_o").Op("<").Len(Id("data"))).BlockFunc(func(lp *Group) {
 				lp.Id("_t").Op(":=").Id("data").Index(Id("_o"))
@@ -350,7 +346,7 @@ func (s streamGen) emitDecodeAt(f *File) error {
 					sw.Default().Block(s.fail(errToken))
 				})
 			})
-			g.Return(Id(streamLocal), Id("_o"), Nil())
+			g.Return(Id("_o"), Nil())
 			return
 		}
 		usesStart := st.BoundMode == parse.BoundTotal
@@ -392,7 +388,7 @@ func (s streamGen) emitDecodeAt(f *File) error {
 		if bounded {
 			g.If(Id("_o").Op("!=").Len(Id("data"))).Block(s.fail(errLength))
 		}
-		g.Return(Id(streamLocal), Id("_o"), Nil())
+		g.Return(Id("_o"), Nil())
 	})
 	return err
 }
@@ -452,14 +448,33 @@ func emitStreamDecode(f *File, pdu parse.PDUStruct, types map[string]parse.PDUSt
 		if pdu.Stream.Trailing {
 			doc += " It ignores octets after the length that the message gives."
 		}
+		if pdu.Stream.Into {
+			comment(f, name+"Into decodes "+strings.TrimPrefix(strings.TrimPrefix(doc, name+" decodes "), "")+" into m. On an error m is the zero "+pdu.Name+"."+docCite(pdu))
+			f.Func().Id(name+"Into").Params(Id("m").Op("*").Id(pdu.Name), Id("data").Index().Byte()).Error().BlockFunc(func(g *Group) {
+				g.Op("*").Id("m").Op("=").Id(pdu.Name).Values()
+				g.List(Id("n"), Id("err")).Op(":=").Id(atName(pdu.Name)).Call(Id("m"), Id("data"), Lit(0))
+				if !pdu.Stream.Trailing {
+					g.If(Id("err").Op("==").Nil().Op("&&").Id("n").Op("!=").Len(Id("data"))).Block(Id("err").Op("=").Id(errLength))
+				} else {
+					g.Id("_").Op("=").Id("n")
+				}
+				g.If(Id("err").Op("!=").Nil()).Block(Op("*").Id("m").Op("=").Id(pdu.Name).Values())
+				g.Return(Id("err"))
+			})
+			f.Line()
+			return s.emitDecodeAt(f)
+		}
 		comment(f, doc+docCite(pdu))
 		f.Func().Id(name).Params(Id("data").Index().Byte()).Params(Id(pdu.Name), Error()).BlockFunc(func(g *Group) {
-			g.List(Id("v"), Id("n"), Id("err")).Op(":=").Id(atName(pdu.Name)).Call(Id("data"), Lit(0))
+			g.Var().Id("v").Id(pdu.Name)
+			n := Id("n")
+			if pdu.Stream.Trailing {
+				n = Id("_")
+			}
+			g.List(n, Id("err")).Op(":=").Id(atName(pdu.Name)).Call(Op("&").Id("v"), Id("data"), Lit(0))
 			g.If(Id("err").Op("!=").Nil()).Block(Return(Id(pdu.Name).Values(), Id("err")))
 			if !pdu.Stream.Trailing {
 				g.If(Id("n").Op("!=").Len(Id("data"))).Block(Return(Id(pdu.Name).Values(), Id(errLength)))
-			} else {
-				g.Id("_").Op("=").Id("n")
 			}
 			g.Return(Id("v"), Nil())
 		})
