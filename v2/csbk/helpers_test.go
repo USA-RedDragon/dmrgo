@@ -91,6 +91,15 @@ func mustRequester(t *testing.T, cfg *csbk.RequesterConfig) *csbk.Requester {
 	return q
 }
 
+func mustPreambles(t *testing.T, cfg *csbk.PreamblesConfig) *csbk.Preambles {
+	t.Helper()
+	p, err := csbk.NewPreambles(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return p
+}
+
 func mustResponder(t *testing.T, cfg *csbk.ResponderConfig) *csbk.Responder {
 	t.Helper()
 	r, err := csbk.NewResponder(cfg)

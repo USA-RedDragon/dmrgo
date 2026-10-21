@@ -129,7 +129,7 @@ func TestResponderAnswersLikeAnyTone(t *testing.T) {
 func TestPreamblesJoinXPROutbound(t *testing.T) {
 	t.Parallel()
 
-	p := csbk.NewPreambles(nil)
+	p := mustPreambles(t, nil)
 	pre := "bd00000130b43c2febf621a6"
 	all := make([]csbk.Output, 0, 2)
 	for _, at := range []int{624, 684, 744, 804, 864} {
@@ -150,7 +150,7 @@ func TestPreamblesJoinXPROutbound(t *testing.T) {
 func TestPreamblesJoinAnyToneInbound(t *testing.T) {
 	t.Parallel()
 
-	p := csbk.NewPreambles(nil)
+	p := mustPreambles(t, nil)
 	all := make([]csbk.Output, 0, 2)
 	for i, s := range anytoneRadioCheck {
 		all = append(all, p.Burst(time.Duration(i)*csbk.BurstInterval, burstOf(t, s, layer2.SyncSourceMS), layer2.Hint{}, nil)...)

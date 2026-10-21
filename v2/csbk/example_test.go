@@ -62,7 +62,11 @@ func ExampleRequester_RequestRadioCheck() {
 func ExamplePreambles() {
 	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Source: layer2.SyncSourceMS})
 	_ = q.RequestCallAlert(0, 3191868, 3140598, &csbk.RequestOptions{Preambles: 2})
-	p := csbk.NewPreambles(nil)
+	p, err := csbk.NewPreambles(nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	out := make([]csbk.Output, 0, csbk.MaxOutputs)
 	for range 3 {
 		at, _ := q.Deadline()

@@ -88,7 +88,7 @@ func TestResetAndLost(t *testing.T) {
 		t.Error("Reset left an answer")
 	}
 
-	p := csbk.NewPreambles(&csbk.PreamblesConfig{Scratch: layer2.NewBurst()})
+	p := mustPreambles(t, &csbk.PreamblesConfig{Scratch: layer2.NewBurst()})
 	p.Burst(0, burstOf(t, anytoneRadioCheck[0], layer2.SyncSourceMS), layer2.Hint{}, nil)
 	if out := p.Lost(time.Second, nil); len(out) != 1 || out[0].Kind != csbk.OutputExpired {
 		t.Errorf("Lost gave %+v", out)
