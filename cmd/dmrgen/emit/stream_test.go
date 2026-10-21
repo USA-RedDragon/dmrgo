@@ -19,7 +19,7 @@ type Head struct {
 type Msg struct {
 	Len  uint16 ` + "`dmr:\"u16,length\"`" + `
 	Hd   Head   ` + "`dmr:\"frame\"`" + `
-	Seq  uint8  ` + "`dmr:\"u8,if:Hd.Ext\"`" + `
+	Seq  uint8  ` + "`dmr:\"u8,if:Hd.Ext&Hd.Type!=3|4\"`" + `
 	Name []byte ` + "`dmr:\"lv8,utf16le\"`" + `
 	T    Toks   ` + "`dmr:\"tokens,if:Hd.Type==3\"`" + `
 	Rest []byte ` + "`dmr:\"rest,if:Hd.Type!=3\"`" + `
@@ -53,7 +53,7 @@ func TestStreamCode(t *testing.T) {
 		"func decodeMsgAt(data []byte, _o int) (Msg, int, error) {",
 		"_end := _o + int(result.Len)",
 		"data = data[:_end]",
-		"if result.Hd.Ext {",
+		"if (result.Hd.Ext) && (result.Hd.Type != 3 && result.Hd.Type != 4) {",
 		"if result.Hd.Type == 3 {",
 		"if result.Hd.Type != 3 {",
 		"func decodeToksAt(data []byte, _o int) (Toks, int, error) {",
