@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 )
 
@@ -67,5 +69,59 @@ func TestPositionForms(t *testing.T) {
 	}
 	if r, err := short.AppendBinary(nil); err != nil || !bytes.Equal(r, q[:14]) {
 		t.Fatalf("DMRGateway form encodes %x %v", r, err)
+	}
+}
+
+func TestAliasAndPositionLC(t *testing.T) {
+	t.Parallel()
+
+	local := dmrd.LocalTalkerAlias{Source: 3191868, Type: 0, Data: [7]byte{0x4B, 'K', 'I', '5', 'V', 'M', 'F'}}
+	lc, err := local.LC()
+	if err != nil || lc.FLCO != enums.FLCOTalkerAliasHeader || lc.FID != enums.FIDStandardized {
+		t.Fatalf("local alias: %+v %v", lc, err)
+	}
+	m := dmrd.TalkerAlias{Repeater: 1, Source: 3191868, Type: 2, Data: local.Data, Size: 19}
+	if lc, err := m.LC(); err != nil || lc.FLCO != enums.FLCOTalkerAliasBlock2 {
+		t.Fatalf("alias block 2: %+v %v", lc, err)
+	}
+	m.Type = 4
+	if _, err := m.LC(); err == nil {
+		t.Fatal("Type 4: no error")
+	}
+	pos := dmrd.Position{Repeater: 1, Source: 3191868, Data: [7]byte{0, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC}, Size: 18}
+	if lc, err := pos.LC(); err != nil || lc.FLCO != enums.FLCOGPSInfo {
+		t.Fatalf("position: %+v %v", lc, err)
+	}
+	lp := dmrd.LocalPosition{Source: 3191868, Data: pos.Data}
+	if lc, err := lp.LC(); err != nil || lc.FLCO != enums.FLCOGPSInfo {
+		t.Fatalf("local position: %+v %v", lc, err)
+	}
+	var into pdu.FullLinkControl
+	var pl pdu.FullLinkControlPayloads
+	if err := pos.LCInto(&into, &pl); err != nil || into.FLCO != enums.FLCOGPSInfo {
+		t.Fatalf("position LCInto: %+v %v", into, err)
+	}
+	if err := local.LCInto(&into, &pl); err != nil || into.FLCO != enums.FLCOTalkerAliasHeader {
+		t.Fatalf("alias LCInto: %+v %v", into, err)
+	}
+	if err := m.LCInto(&into, &pl); err == nil {
+		t.Fatal("LCInto Type 4: no error")
+	}
+	if err := lp.LCInto(nil, &pl); err == nil {
+		t.Fatal("LCInto nil dst: no error")
+	}
+	var nt *dmrd.TalkerAlias
+	var nl *dmrd.LocalTalkerAlias
+	var np *dmrd.Position
+	var nlp *dmrd.LocalPosition
+	for _, f := range []func() error{
+		func() error { _, err := nt.LC(); return err },
+		func() error { _, err := nl.LC(); return err },
+		func() error { _, err := np.LC(); return err },
+		func() error { _, err := nlp.LC(); return err },
+	} {
+		if f() == nil {
+			t.Error("nil message: no error")
+		}
 	}
 }
