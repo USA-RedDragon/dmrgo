@@ -410,19 +410,19 @@ typedef struct dmrgo_ars_registration_t dmrgo_ars_registration_t;
 /* Go: ars.Response. Response is the second header octet of an answer. */
 typedef struct dmrgo_ars_response_t dmrgo_ars_response_t;
 /* Go: lrrp.Circle2D. Circle2D is a position with its accuracy (token 0x51). */
-typedef struct dmrgo_lrrp_circle2_d_t dmrgo_lrrp_circle2_d_t;
+typedef struct dmrgo_lrrp_circle2d_t dmrgo_lrrp_circle2d_t;
 /* Go: lrrp.Circle3D. Circle3D is a position with an altitude and the accuracy of both (token 0x55). */
-typedef struct dmrgo_lrrp_circle3_d_t dmrgo_lrrp_circle3_d_t;
+typedef struct dmrgo_lrrp_circle3d_t dmrgo_lrrp_circle3d_t;
 /* Go: lrrp.Message. Message is a MOTOTRBO Location Request and Response Protocol message, the payload of a UDP datagram to port 4001. */
 typedef struct dmrgo_lrrp_message_t dmrgo_lrrp_message_t;
 /* Go: lrrp.OperationError. OperationError is the result of a request that failed, with its text (token 0x39). */
 typedef struct dmrgo_lrrp_operation_error_t dmrgo_lrrp_operation_error_t;
 /* Go: lrrp.Point2D. Point2D is a position (token 0x66). */
-typedef struct dmrgo_lrrp_point2_d_t dmrgo_lrrp_point2_d_t;
+typedef struct dmrgo_lrrp_point2d_t dmrgo_lrrp_point2d_t;
 /* Go: lrrp.Point3D. Point3D is a position with an altitude (token 0x69). */
-typedef struct dmrgo_lrrp_point3_d_t dmrgo_lrrp_point3_d_t;
+typedef struct dmrgo_lrrp_point3d_t dmrgo_lrrp_point3d_t;
 /* Go: lrrp.Point3DAccuracy. Point3DAccuracy is a position with an altitude and its accuracy (token 0x6A). */
-typedef struct dmrgo_lrrp_point3_d_accuracy_t dmrgo_lrrp_point3_d_accuracy_t;
+typedef struct dmrgo_lrrp_point3d_accuracy_t dmrgo_lrrp_point3d_accuracy_t;
 /* Go: lrrp.Report. Report holds the tokens of a report or an answer. */
 typedef struct dmrgo_lrrp_report_t dmrgo_lrrp_report_t;
 /* Go: lrrp.Request. Request holds the tokens of a request. */
@@ -482,7 +482,7 @@ typedef struct dmrgo_transport_hytera_frame_t dmrgo_transport_hytera_frame_t;
 /* Go: hytera.Heartbeat. Heartbeat is the 20-octet "ZZZZ" heartbeat of the P2P service, or the 1-octet keepalive that each side sends on the DMR and RDAC services. */
 typedef struct dmrgo_transport_hytera_heartbeat_t dmrgo_transport_hytera_heartbeat_t;
 /* Go: hytera.P2P. P2P is a "P2P" command of the P2P service: a repeater asks the master for registration or for the DMR or RDAC service, the master accepts it and redirects the repeater to the port of the service, and the repeater acknowledges the redirect. */
-typedef struct dmrgo_transport_hytera_p2_p_t dmrgo_transport_hytera_p2_p_t;
+typedef struct dmrgo_transport_hytera_p2p_t dmrgo_transport_hytera_p2p_t;
 /* Go: ipsc.Control. Control is a peer control packet, opcodes 0x90 to 0x9B. */
 typedef struct dmrgo_ipsc_control_t dmrgo_ipsc_control_t;
 /* Go: ipsc.Flags. Flags is the 4 flag octets of a peer. */
@@ -2492,13 +2492,13 @@ struct dmrgo_ars_message_t {
 	size_t extra_len;
 };
 
-struct dmrgo_lrrp_circle2_d_t {
+struct dmrgo_lrrp_circle2d_t {
 	double latitude;
 	double longitude;
 	double radius;
 };
 
-struct dmrgo_lrrp_circle3_d_t {
+struct dmrgo_lrrp_circle3d_t {
 	double latitude;
 	double longitude;
 	double radius;
@@ -2548,18 +2548,18 @@ struct dmrgo_lrrp_operation_error_t {
 	size_t info_len;
 };
 
-struct dmrgo_lrrp_point2_d_t {
+struct dmrgo_lrrp_point2d_t {
 	double latitude;
 	double longitude;
 };
 
-struct dmrgo_lrrp_point3_d_t {
+struct dmrgo_lrrp_point3d_t {
 	double latitude;
 	double longitude;
 	double altitude;
 };
 
-struct dmrgo_lrrp_point3_d_accuracy_t {
+struct dmrgo_lrrp_point3d_accuracy_t {
 	double latitude;
 	double longitude;
 	double altitude;
@@ -2581,20 +2581,20 @@ struct dmrgo_lrrp_report_t {
 	bool success;
 	dmrgo_lrrp_operation_error_t error;
 	bool has_error;
-	dmrgo_lrrp_circle2_d_t circle2_d;
-	bool has_circle2_d;
-	dmrgo_lrrp_circle3_d_t circle3_d;
-	bool has_circle3_d;
+	dmrgo_lrrp_circle2d_t circle2d;
+	bool has_circle2d;
+	dmrgo_lrrp_circle3d_t circle3d;
+	bool has_circle3d;
 	uint8_t direction;
 	bool has_direction;
 	uint8_t level_of_confidence;
 	bool has_level_of_confidence;
-	dmrgo_lrrp_point2_d_t point2_d;
-	bool has_point2_d;
-	dmrgo_lrrp_point3_d_t point3_d;
-	bool has_point3_d;
-	dmrgo_lrrp_point3_d_accuracy_t point3_d_accuracy;
-	bool has_point3_d_accuracy;
+	dmrgo_lrrp_point2d_t point2d;
+	bool has_point2d;
+	dmrgo_lrrp_point3d_t point3d;
+	bool has_point3d;
+	dmrgo_lrrp_point3d_accuracy_t point3d_accuracy;
+	bool has_point3d_accuracy;
 	double speed;
 	bool has_speed;
 	double vertical_speed;
@@ -2834,7 +2834,7 @@ struct dmrgo_transport_hytera_heartbeat_t {
 	uint8_t reserved[11];
 };
 
-struct dmrgo_transport_hytera_p2_p_t {
+struct dmrgo_transport_hytera_p2p_t {
 	uint8_t op;
 	uint8_t code;
 	uint8_t seq;
@@ -4982,15 +4982,15 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: layer3.PositionLessThan200KM. less than or equal to 200 km */
 #define DMRGO_LAYER3_POSITION_LESS_THAN200_KM ((dmrgo_layer3_position_error_t)5)
 /* Go: layer3.PositionLessThan200M. less than 200 m */
-#define DMRGO_LAYER3_POSITION_LESS_THAN200_M ((dmrgo_layer3_position_error_t)2)
+#define DMRGO_LAYER3_POSITION_LESS_THAN200M ((dmrgo_layer3_position_error_t)2)
 /* Go: layer3.PositionLessThan20KM. less than 20 km */
 #define DMRGO_LAYER3_POSITION_LESS_THAN20_KM ((dmrgo_layer3_position_error_t)4)
 /* Go: layer3.PositionLessThan20M. less than 20 m */
-#define DMRGO_LAYER3_POSITION_LESS_THAN20_M ((dmrgo_layer3_position_error_t)1)
+#define DMRGO_LAYER3_POSITION_LESS_THAN20M ((dmrgo_layer3_position_error_t)1)
 /* Go: layer3.PositionLessThan2KM. less than 2 km */
 #define DMRGO_LAYER3_POSITION_LESS_THAN2_KM ((dmrgo_layer3_position_error_t)3)
 /* Go: layer3.PositionLessThan2M. less than 2 m */
-#define DMRGO_LAYER3_POSITION_LESS_THAN2_M ((dmrgo_layer3_position_error_t)0)
+#define DMRGO_LAYER3_POSITION_LESS_THAN2M ((dmrgo_layer3_position_error_t)0)
 /* Go: layer3.PositionMoreThan200KM. more than 200 km */
 #define DMRGO_LAYER3_POSITION_MORE_THAN200_KM ((dmrgo_layer3_position_error_t)6)
 /* Go: layer3.SourceTypeBS. BS sourced */
@@ -5160,7 +5160,7 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: hytera.HeartbeatLen. HeartbeatLen is the length of the heartbeat of the P2P service in octets. */
 #define DMRGO_TRANSPORT_HYTERA_HEARTBEAT_LEN 20
 /* Go: hytera.P2PHeaderLen. P2PHeaderLen is the length of a P2P command without its body, in octets. */
-#define DMRGO_TRANSPORT_HYTERA_P2_P_HEADER_LEN 20
+#define DMRGO_TRANSPORT_HYTERA_P2P_HEADER_LEN 20
 /* Go: hytera.ServiceDMR. The Service values. */
 #define DMRGO_TRANSPORT_HYTERA_SERVICE_DMR ((dmrgo_transport_hytera_service_t)17)
 /* Go: hytera.ServiceRDAC. The Service values. */
@@ -7549,13 +7549,13 @@ int dmrgo_layer3_cdef_parms_encode(dmrgo_layer3_cdef_parms_t *self, uint8_t out[
 /* Go: layer3.CdefParms.RXFrequencyHz. RXFrequencyHz returns the receive frequency in Hz, RXMHz MHz plus RXKHz steps of 125 Hz. */
 int dmrgo_layer3_cdef_parms_rx_frequency_hz(dmrgo_layer3_cdef_parms_t *self, uint64_t *out);
 /* Go: layer3.CdefParms.RXFrequencyMHz. RXFrequencyMHz returns the receive frequency in MHz, RXMHz plus RXKHz times 0.000125 (ETSI TS 102 361-4 Annex C). */
-int dmrgo_layer3_cdef_parms_rx_frequency_m_hz(dmrgo_layer3_cdef_parms_t *self, double *out);
+int dmrgo_layer3_cdef_parms_rx_frequency_mhz(dmrgo_layer3_cdef_parms_t *self, double *out);
 /* Go: layer3.CdefParms.String. String returns the fields of s as text, for printing. */
 int dmrgo_layer3_cdef_parms_string(dmrgo_layer3_cdef_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.CdefParms.TXFrequencyHz. TXFrequencyHz returns the transmit frequency in Hz, TXMHz MHz plus TXKHz steps of 125 Hz. */
 int dmrgo_layer3_cdef_parms_tx_frequency_hz(dmrgo_layer3_cdef_parms_t *self, uint64_t *out);
 /* Go: layer3.CdefParms.TXFrequencyMHz. TXFrequencyMHz returns the transmit frequency in MHz, TXMHz plus TXKHz times 0.000125 (ETSI TS 102 361-4 Annex C). */
-int dmrgo_layer3_cdef_parms_tx_frequency_m_hz(dmrgo_layer3_cdef_parms_t *self, double *out);
+int dmrgo_layer3_cdef_parms_tx_frequency_mhz(dmrgo_layer3_cdef_parms_t *self, double *out);
 /* Go: layer3.DataServiceOptions.Encode. Encode encodes a DataServiceOptions. */
 int dmrgo_layer3_data_service_options_encode(dmrgo_layer3_data_service_options_t *self, uint8_t out[1]);
 /* Go: layer3.DataServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
@@ -7673,13 +7673,13 @@ int dmrgo_ars_response_string(dmrgo_ars_response_t *self, char *out, size_t out_
 /* Go: ars.Type.String. String returns the name of t. */
 int dmrgo_ars_type_string(dmrgo_ars_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.Circle2D.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_lrrp_circle2_d_append_binary(dmrgo_lrrp_circle2_d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_lrrp_circle2d_append_binary(dmrgo_lrrp_circle2d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Circle2D.String. String returns the fields of s as text, for printing. */
-int dmrgo_lrrp_circle2_d_string(dmrgo_lrrp_circle2_d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_lrrp_circle2d_string(dmrgo_lrrp_circle2d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.Circle3D.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_lrrp_circle3_d_append_binary(dmrgo_lrrp_circle3_d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_lrrp_circle3d_append_binary(dmrgo_lrrp_circle3d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Circle3D.String. String returns the fields of s as text, for printing. */
-int dmrgo_lrrp_circle3_d_string(dmrgo_lrrp_circle3_d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_lrrp_circle3d_string(dmrgo_lrrp_circle3d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.DecodeMessageInto. DecodeMessageInto decodes a Message from data. */
 int dmrgo_lrrp_decode_message_into(const dmrgo_lrrp_message_t *m, const uint8_t *data, size_t data_len);
 /* Go: lrrp.DocumentID.String. String returns the name of d. */
@@ -7693,17 +7693,17 @@ int dmrgo_lrrp_operation_error_append_binary(dmrgo_lrrp_operation_error_t *self,
 /* Go: lrrp.OperationError.String. String returns the fields of s as text, for printing. */
 int dmrgo_lrrp_operation_error_string(dmrgo_lrrp_operation_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: lrrp.Point2D.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_lrrp_point2_d_append_binary(dmrgo_lrrp_point2_d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_lrrp_point2d_append_binary(dmrgo_lrrp_point2d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Point2D.String. String returns the fields of s as text, for printing. */
-int dmrgo_lrrp_point2_d_string(dmrgo_lrrp_point2_d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_lrrp_point2d_string(dmrgo_lrrp_point2d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.Point3D.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_lrrp_point3_d_append_binary(dmrgo_lrrp_point3_d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_lrrp_point3d_append_binary(dmrgo_lrrp_point3d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Point3D.String. String returns the fields of s as text, for printing. */
-int dmrgo_lrrp_point3_d_string(dmrgo_lrrp_point3_d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_lrrp_point3d_string(dmrgo_lrrp_point3d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.Point3DAccuracy.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_lrrp_point3_d_accuracy_append_binary(dmrgo_lrrp_point3_d_accuracy_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_lrrp_point3d_accuracy_append_binary(dmrgo_lrrp_point3d_accuracy_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Point3DAccuracy.String. String returns the fields of s as text, for printing. */
-int dmrgo_lrrp_point3_d_accuracy_string(dmrgo_lrrp_point3_d_accuracy_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_lrrp_point3d_accuracy_string(dmrgo_lrrp_point3d_accuracy_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.Report.AppendBinary. AppendBinary appends s to dst: each field that is set, as its token and value, in the order of the fields. */
 int dmrgo_lrrp_report_append_binary(dmrgo_lrrp_report_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: lrrp.Report.String. String returns the fields of s as text, for printing. */
@@ -7995,7 +7995,7 @@ int dmrgo_transport_hytera_decode_frame(const uint8_t *p, size_t p_len, dmrgo_tr
 /* Go: hytera.DecodeHeartbeat. DecodeHeartbeat decodes a heartbeat (20 octets) or a keepalive (1 octet). */
 int dmrgo_transport_hytera_decode_heartbeat(const uint8_t *p, size_t p_len, dmrgo_transport_hytera_heartbeat_t *out);
 /* Go: hytera.DecodeP2P. DecodeP2P decodes the P2P command p. */
-int dmrgo_transport_hytera_decode_p2_p(const uint8_t *p, size_t p_len, dmrgo_transport_hytera_p2_p_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_transport_hytera_decode_p2p(const uint8_t *p, size_t p_len, dmrgo_transport_hytera_p2p_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: hytera.Frame.AppendBinary. AppendBinary appends the 72-octet frame to dst. */
 int dmrgo_transport_hytera_frame_append_binary(const dmrgo_transport_hytera_frame_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hytera.Frame.HasBurst. HasBurst reports whether Burst holds a burst: false for SlotTypeSync and SlotTypeWakeup, whose payload is not an ETSI burst. */
@@ -8007,11 +8007,11 @@ int dmrgo_transport_hytera_frame_set_kind(dmrgo_transport_hytera_frame_t *self, 
 /* Go: hytera.Heartbeat.AppendBinary. AppendBinary appends the heartbeat, or the keepalive, to dst. */
 int dmrgo_transport_hytera_heartbeat_append_binary(const dmrgo_transport_hytera_heartbeat_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hytera.P2P.AppendBinary. AppendBinary appends the command and its body to dst. */
-int dmrgo_transport_hytera_p2_p_append_binary(const dmrgo_transport_hytera_p2_p_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_transport_hytera_p2p_append_binary(const dmrgo_transport_hytera_p2p_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hytera.P2P.RedirectPort. RedirectPort returns the UDP port of a redirect: a body that ends in FF 01 and the port, little-endian. */
-int dmrgo_transport_hytera_p2_p_redirect_port(const dmrgo_transport_hytera_p2_p_t *self, uint16_t *port, bool *ok);
+int dmrgo_transport_hytera_p2p_redirect_port(const dmrgo_transport_hytera_p2p_t *self, uint16_t *port, bool *ok);
 /* Go: hytera.P2P.Service. Service returns octet 20, the service that the command is about. */
-int dmrgo_transport_hytera_p2_p_service(const dmrgo_transport_hytera_p2_p_t *self, dmrgo_transport_hytera_service_t *s, bool *ok);
+int dmrgo_transport_hytera_p2p_service(const dmrgo_transport_hytera_p2p_t *self, dmrgo_transport_hytera_service_t *s, bool *ok);
 /* Go: hytera.Service.String. String returns the name of the service. */
 int dmrgo_transport_hytera_service_string(dmrgo_transport_hytera_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hytera.SlotType.String. String returns the name of the slot type. */

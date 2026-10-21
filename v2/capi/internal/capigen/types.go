@@ -76,7 +76,18 @@ func snake(s string) string {
 		}
 		i = j
 	}
-	return strings.ToLower(strings.Join(words, "_"))
+	out := words[:0]
+	for _, w := range words {
+		if n := len(out); n > 0 {
+			prev := out[n-1]
+			if len(w) == 1 && unicode.IsUpper(rune(w[0])) && unicode.IsDigit(rune(prev[len(prev)-1])) || w == "Hz" && len(prev) == 1 {
+				out[n-1] = prev + w
+				continue
+			}
+		}
+		out = append(out, w)
+	}
+	return strings.ToLower(strings.Join(out, "_"))
 }
 
 func acronyms(w string) []string {
