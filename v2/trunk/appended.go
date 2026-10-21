@@ -254,13 +254,13 @@ func symbolBits(f enums.UDTFormat) int {
 	return 0
 }
 
-func utf16Units(text []byte) int {
+func symbolCount(text []byte, w int) int {
 	n := 0
 	for i := 0; i < len(text); {
 		r, k := utf8.DecodeRune(text[i:])
 		i += k
 		n++
-		if r >= 0x10000 {
+		if w == 16 && r >= 0x10000 {
 			n++
 		}
 	}
@@ -304,10 +304,7 @@ func (a *Appended) SetMixed(oneKey bool, addr uint32, text []byte) error {
 
 func (a *Appended) setSymbols(f enums.UDTFormat, start int, text []byte) error {
 	w := symbolBits(f)
-	n := utf8.RuneCount(text)
-	if w == 16 {
-		n = utf16Units(text)
-	}
+	n := symbolCount(text, w)
 	b := blocksFor(start + w*n)
 	if n == 0 || b == 0 {
 		return ErrUDTLength
