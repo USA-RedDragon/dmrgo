@@ -226,6 +226,9 @@ type AudioConfig struct {
 	// CarrierHz is added to the deviation of every sample, in Hz, finer
 	// than a code step; it trims the carrier of the pulse.
 	CarrierHz float64
+	// CarrierMinLevel is the least Level that CarrierHz applies at; 0
+	// means every Level.
+	CarrierMinLevel int
 	// Boost raises the gain of Tier1 and Tier2 at 1200 Hz, the tone of
 	// the deviation test pattern, by Boost: each symbol adds Boost times
 	// the sum of the symbols 2m before it, m from 1 to BoostPairs (even,
@@ -392,7 +395,9 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 			return nil, errOffset
 		}
 		a.k = k
-		a.offset += cfg.CarrierHz * a.scale
+		if cfg.Level >= cfg.CarrierMinLevel {
+			a.offset += cfg.CarrierHz * a.scale
+		}
 		if m := cfg.BoostPairs; cfg.Boost != 0 && m > 0 && m <= maxBoostPairs && m%2 == 0 {
 			a.bpairs, a.boost = m, cfg.Boost/float64(m)
 		}
