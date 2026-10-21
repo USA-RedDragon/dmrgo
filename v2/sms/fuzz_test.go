@@ -1,7 +1,9 @@
 package sms_test
 
 import (
+	"bytes"
 	"encoding/hex"
+	"errors"
 	"testing"
 	"unicode/utf8"
 
@@ -9,6 +11,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/appcapture"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+	"github.com/USA-RedDragon/dmrgo/v2/shortdata"
 	"github.com/USA-RedDragon/dmrgo/v2/sms"
 )
 
@@ -50,6 +53,9 @@ func fuzzDecode(t *testing.T, defined bool, code uint8, data []byte) {
 	}
 	var h sms.Header
 	enc, err := sms.AppendPacket(nil, &got, false, &h)
+	if errors.Is(err, shortdata.ErrCharacter) && bytes.ContainsRune(got.Body, utf8.RuneError) {
+		return
+	}
 	if err != nil {
 		t.Fatalf("AppendPacket(%+v): %v", got, err)
 	}

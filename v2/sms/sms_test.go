@@ -171,8 +171,14 @@ func TestErrors(t *testing.T) {
 	if _, err := sms.AppendPacket(nil, &sms.Text{Format: 99}, false, &h); !errors.Is(err, sms.ErrFormat) {
 		t.Errorf("format 99: %v", err)
 	}
-	if b, err := sms.AppendPacket([]byte("x"), &sms.Text{Format: sms.FormatDefinedData, DD: enums.DDBCD}, false, &h); !errors.Is(err, sms.ErrFormat) || string(b) != "x" {
-		t.Errorf("BCD text built: %q, %v", b, err)
+	for _, dd := range []enums.DDFormat{enums.DDBCD, enums.DDBinary} {
+		if b, err := sms.AppendPacket([]byte("x"), &sms.Text{Format: sms.FormatDefinedData, DD: dd, Body: []byte("1")}, false, &h); !errors.Is(err, sms.ErrFormat) || string(b) != "x" {
+			t.Errorf("%s text built: %q, %v", dd, b, err)
+		}
+	}
+	bin := pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{DefinedData: enums.DDBinary}}
+	if _, _, err := sms.Decode(nil, &bin, []byte("Hi")); !errors.Is(err, sms.ErrNotText) {
+		t.Errorf("binary: %v", err)
 	}
 	if sms.FormatHytera.String() != "Hytera" || sms.Format(9).String() != "Format(9)" {
 		t.Error("names")
