@@ -1498,6 +1498,7 @@ documents:
               - TestTimingLeaderBeacon
               - TestTimingLeaderEvaluation
               - TestTimingLeaderConflict
+              - TestTimingLeaderSyncAgeWrap
               - TestTimingBusyChannel
               - TestTimingElection
               - TestTimingConfig
