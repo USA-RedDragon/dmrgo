@@ -162,6 +162,9 @@ func in_bs_Config(s *C.dmrgo_bs_config_t) (d g_bs.Config) {
 	d.DataQueue = int(s.data_queue)
 	d.Silence = *(*[9]byte)(unsafe.Pointer(&s.silence))
 	d.Lead = time.Duration(s.lead)
+	d.ChannelAuth = g_bs.ChannelAuth(s.channel_auth)
+	d.ChanAuthResponse = time.Duration(s.chan_auth_response)
+	d.ChanAuthSelect = time.Duration(s.chan_auth_select)
 	d.Scratch = nil
 	if s.scratch != nil {
 		d.Scratch = get_layer2_Burst(s.scratch).v
@@ -280,6 +283,18 @@ func in_csbk_ResponderConfig(s *C.dmrgo_csbk_responder_config_t) (d g_csbk.Respo
 	d.NoFNS = bool(s.no_fns)
 	d.IdleSearch = time.Duration(s.idle_search)
 	d.HoldoffMax = time.Duration(s.holdoff_max)
+	d.Seed = uint64(s.seed)
+	d.Scratch = nil
+	if s.scratch != nil {
+		d.Scratch = get_layer2_Burst(s.scratch).v
+	}
+	return
+}
+
+func in_csbk_TimingConfig(s *C.dmrgo_csbk_timing_config_t) (d g_csbk.TimingConfig) {
+	d.ID = uint32(s.id)
+	d.DynamicID = uint8(s.dynamic_id)
+	d.Slot = g_enums.Slot(s.slot)
 	d.Seed = uint64(s.seed)
 	d.Scratch = nil
 	if s.scratch != nil {
@@ -4888,6 +4903,29 @@ func out_voice_ConfigError(d *C.dmrgo_voice_config_error_t, s *g_voice.ConfigErr
 	d.field_len = C.size_t(len(s.Field))
 }
 
+func out_voice_Output(d *C.dmrgo_voice_output_t, s *g_voice.Output, oc *outc) {
+	_ = oc
+	d.kind = C.dmrgo_voice_output_kind_t(s.Kind)
+	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
+	d.due = C.int64_t(s.Due)
+	d.position = C.dmrgo_enums_voice_burst_type_t(s.Position)
+	d.data_type = C.dmrgo_enums_data_type_t(s.DataType)
+	d.fill = C.bool(s.Fill)
+	d.reason = C.dmrgo_voice_end_reason_t(s.Reason)
+}
+
+func in_voice_InterrupterConfig(s *C.dmrgo_voice_interrupter_config_t) (d g_voice.InterrupterConfig) {
+	d.ColorCode = g_enums.ColorCode(s.color_code)
+	d.Wait = time.Duration(s.wait)
+	d.Retries = int(s.retries)
+	d.Repeats = int(s.repeats)
+	d.Scratch = nil
+	if s.scratch != nil {
+		d.Scratch = get_layer2_Burst(s.scratch).v
+	}
+	return
+}
+
 type st_voice_ReceiverConfig struct {
 	p_ColorCode g_enums.ColorCode
 }
@@ -4918,6 +4956,16 @@ func in_voice_TransmitterConfig(s *C.dmrgo_voice_transmitter_config_t) (d g_voic
 	d.Timeout = time.Duration(s.timeout)
 	d.Queue = int(s.queue)
 	d.Lead = time.Duration(s.lead)
+	d.Access = g_enums.Access(s.access)
+	d.IdleSearch = time.Duration(s.idle_search)
+	d.Interruptible = bool(s.interruptible)
+	d.ChanAuth = time.Duration(s.chan_auth)
+	d.HoldoffMax = time.Duration(s.holdoff_max)
+	d.Seed = uint64(s.seed)
+	d.Scratch = nil
+	if s.scratch != nil {
+		d.Scratch = get_layer2_Burst(s.scratch).v
+	}
 	return
 }
 
@@ -5002,18 +5050,9 @@ func in_voice_CallOptions(s *C.dmrgo_voice_call_options_t, st *st_voice_CallOpti
 	} else {
 		d.GPS = nil
 	}
+	d.InCall = bool(s.in_call)
+	d.HangTime = bool(s.hang_time)
 	return
-}
-
-func out_voice_Output(d *C.dmrgo_voice_output_t, s *g_voice.Output, oc *outc) {
-	_ = oc
-	d.kind = C.dmrgo_voice_output_kind_t(s.Kind)
-	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
-	d.due = C.int64_t(s.Due)
-	d.position = C.dmrgo_enums_voice_burst_type_t(s.Position)
-	d.data_type = C.dmrgo_enums_data_type_t(s.DataType)
-	d.fill = C.bool(s.Fill)
-	d.reason = C.dmrgo_voice_end_reason_t(s.Reason)
 }
 
 func fromC_dmrgo_FieldRangeError(s *C.dmrgo_field_range_error_t) g_dmrgo.FieldRangeError {
@@ -5038,6 +5077,9 @@ func out_bs_Config(d *C.dmrgo_bs_config_t, s *g_bs.Config, oc *outc) {
 	d.data_queue = C.int64_t(s.DataQueue)
 	*(*[9]byte)(unsafe.Pointer(&d.silence)) = s.Silence
 	d.lead = C.int64_t(s.Lead)
+	d.channel_auth = C.dmrgo_bs_channel_auth_t(s.ChannelAuth)
+	d.chan_auth_response = C.int64_t(s.ChanAuthResponse)
+	d.chan_auth_select = C.int64_t(s.ChanAuthSelect)
 	if s.Scratch != nil {
 		panic(argPanic{})
 	}
@@ -5175,6 +5217,22 @@ func out_csbk_ResponderConfig(d *C.dmrgo_csbk_responder_config_t, s *g_csbk.Resp
 
 func fromC_csbk_ResponderConfig(s *C.dmrgo_csbk_responder_config_t) g_csbk.ResponderConfig {
 	return in_csbk_ResponderConfig(s)
+}
+
+func out_csbk_TimingConfig(d *C.dmrgo_csbk_timing_config_t, s *g_csbk.TimingConfig, oc *outc) {
+	_ = oc
+	d.id = C.uint32_t(s.ID)
+	d.dynamic_id = C.uint8_t(s.DynamicID)
+	d.slot = C.dmrgo_enums_slot_t(s.Slot)
+	d.seed = C.uint64_t(s.Seed)
+	if s.Scratch != nil {
+		panic(argPanic{})
+	}
+	d.scratch = nil
+}
+
+func fromC_csbk_TimingConfig(s *C.dmrgo_csbk_timing_config_t) g_csbk.TimingConfig {
+	return in_csbk_TimingConfig(s)
 }
 
 func out_csbk_WakeupConfig(d *C.dmrgo_csbk_wakeup_config_t, s *g_csbk.WakeupConfig, oc *outc) {
@@ -7380,6 +7438,8 @@ func out_voice_CallOptions(d *C.dmrgo_voice_call_options_t, s *g_voice.CallOptio
 		d.has_gps = false
 		d.gps = C.dmrgo_pdu_flc_gps_info_t{}
 	}
+	d.in_call = C.bool(s.InCall)
+	d.hang_time = C.bool(s.HangTime)
 }
 
 func fromC_voice_CallOptions(s *C.dmrgo_voice_call_options_t) g_voice.CallOptions {
@@ -7398,6 +7458,22 @@ func fromC_voice_Event(s *C.dmrgo_voice_event_t) g_voice.Event {
 
 func fromC_voice_FrameQuality(s *C.dmrgo_voice_frame_quality_t) g_voice.FrameQuality {
 	return in_voice_FrameQuality(s)
+}
+
+func out_voice_InterrupterConfig(d *C.dmrgo_voice_interrupter_config_t, s *g_voice.InterrupterConfig, oc *outc) {
+	_ = oc
+	d.color_code = C.dmrgo_enums_color_code_t(s.ColorCode)
+	d.wait = C.int64_t(s.Wait)
+	d.retries = C.int64_t(s.Retries)
+	d.repeats = C.int64_t(s.Repeats)
+	if s.Scratch != nil {
+		panic(argPanic{})
+	}
+	d.scratch = nil
+}
+
+func fromC_voice_InterrupterConfig(s *C.dmrgo_voice_interrupter_config_t) g_voice.InterrupterConfig {
+	return in_voice_InterrupterConfig(s)
 }
 
 func in_voice_Output(s *C.dmrgo_voice_output_t) (d g_voice.Output) {
@@ -7474,6 +7550,16 @@ func out_voice_TransmitterConfig(d *C.dmrgo_voice_transmitter_config_t, s *g_voi
 	d.timeout = C.int64_t(s.Timeout)
 	d.queue = C.int64_t(s.Queue)
 	d.lead = C.int64_t(s.Lead)
+	d.access = C.dmrgo_enums_access_t(s.Access)
+	d.idle_search = C.int64_t(s.IdleSearch)
+	d.interruptible = C.bool(s.Interruptible)
+	d.chan_auth = C.int64_t(s.ChanAuth)
+	d.holdoff_max = C.int64_t(s.HoldoffMax)
+	d.seed = C.uint64_t(s.Seed)
+	if s.Scratch != nil {
+		panic(argPanic{})
+	}
+	d.scratch = nil
 }
 
 func fromC_voice_TransmitterConfig(s *C.dmrgo_voice_transmitter_config_t) g_voice.TransmitterConfig {
@@ -7542,6 +7628,19 @@ func get_csbk_Responder(p *C.dmrgo_csbk_responder_t) *h_csbk_Responder {
 
 func new_csbk_Responder(v *g_csbk.Responder) *C.dmrgo_csbk_responder_t {
 	return (*C.dmrgo_csbk_responder_t)(newHandle(&h_csbk_Responder{v: v}))
+}
+
+type h_csbk_Timing struct {
+	v   *g_csbk.Timing
+	sc0 []g_csbk.Output
+}
+
+func get_csbk_Timing(p *C.dmrgo_csbk_timing_t) *h_csbk_Timing {
+	return lookup[*h_csbk_Timing](unsafe.Pointer(p))
+}
+
+func new_csbk_Timing(v *g_csbk.Timing) *C.dmrgo_csbk_timing_t {
+	return (*C.dmrgo_csbk_timing_t)(newHandle(&h_csbk_Timing{v: v}))
 }
 
 type h_csbk_Wakeup struct {
@@ -7973,6 +8072,19 @@ func new_vocoder_dvsi_Port(v g_vocoder_dvsi.Port) *C.dmrgo_dvsi_port_t {
 	return (*C.dmrgo_dvsi_port_t)(newHandle(&h_vocoder_dvsi_Port{v: v}))
 }
 
+type h_voice_Interrupter struct {
+	v   *g_voice.Interrupter
+	sc0 []g_voice.Output
+}
+
+func get_voice_Interrupter(p *C.dmrgo_voice_interrupter_t) *h_voice_Interrupter {
+	return lookup[*h_voice_Interrupter](unsafe.Pointer(p))
+}
+
+func new_voice_Interrupter(v *g_voice.Interrupter) *C.dmrgo_voice_interrupter_t {
+	return (*C.dmrgo_voice_interrupter_t)(newHandle(&h_voice_Interrupter{v: v}))
+}
+
 type h_voice_Receiver struct {
 	v   *g_voice.Receiver
 	sc0 []g_voice.Event
@@ -8132,6 +8244,22 @@ func dmrgo_bs_cach_reset(c_self *C.dmrgo_bs_cach_t) (rc C.int) {
 	oc := &outc{}
 	h := get_bs_CACH(c_self)
 	h.v.Reset()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_bs_channel_auth_string
+func dmrgo_bs_channel_auth_string(c_self C.dmrgo_bs_channel_auth_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_bs.ChannelAuth(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -8754,6 +8882,34 @@ func dmrgo_csbk_new_responder(c_cfg *C.dmrgo_csbk_responder_config_t, c_out **C.
 	*c_out = nil
 	if r0 != nil {
 		*c_out = new_csbk_Responder(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_new_timing
+func dmrgo_csbk_new_timing(c_cfg *C.dmrgo_csbk_timing_config_t, c_out **C.dmrgo_csbk_timing_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	var a_cfg g_csbk.TimingConfig
+	var p_cfg *g_csbk.TimingConfig
+	if c_cfg != nil {
+		a_cfg = in_csbk_TimingConfig(&(*c_cfg))
+		p_cfg = &a_cfg
+	}
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := g_csbk.NewTiming(p_cfg)
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_csbk_Timing(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -10123,6 +10279,418 @@ func dmrgo_csbk_service_string(c_self C.dmrgo_csbk_service_t, c_out *C.char, c_o
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := g_csbk.Service(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_new
+func dmrgo_csbk_timing_new(c_out **C.dmrgo_csbk_timing_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_csbk_Timing(new(g_csbk.Timing))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_free
+func dmrgo_csbk_timing_free(c_self *C.dmrgo_csbk_timing_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_csbk_Timing(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_burst_need
+func dmrgo_csbk_timing_burst_need(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_csbk_Timing(c_self)
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	_ = h
+	_ = a_h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_csbk.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_burst
+func dmrgo_csbk_timing_burst(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_csbk_Timing(c_self)
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_csbk.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Burst(time.Duration(c_now), (*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h, a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_csbk_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_csbk_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_channel
+func dmrgo_csbk_timing_channel(c_self *C.dmrgo_csbk_timing_t, c_p0 C.int64_t, c_busy C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_csbk_Timing(c_self)
+	h.v.Channel(time.Duration(c_p0), bool(c_busy))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_deadline
+func dmrgo_csbk_timing_deadline(c_self *C.dmrgo_csbk_timing_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_csbk_Timing(c_self)
+	r0, r1 := h.v.Deadline()
+	_ = r0
+	_ = r1
+	if c_at != nil {
+		*c_at = C.int64_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_decoded_need
+func dmrgo_csbk_timing_decoded_need(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_csbk_Timing(c_self)
+	var a_b *g_layer2.Burst
+	if c_b != nil {
+		a_b = get_layer2_Burst(c_b).v
+	}
+	if c_p2 == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p2 g_layer2.Hint
+	a_p2 = in_layer2_Hint(&(*c_p2))
+	_ = h
+	_ = a_b
+	_ = a_p2
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_csbk.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_decoded
+func dmrgo_csbk_timing_decoded(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_csbk_Timing(c_self)
+	var a_b *g_layer2.Burst
+	if c_b != nil {
+		a_b = get_layer2_Burst(c_b).v
+	}
+	if c_p2 == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p2 g_layer2.Hint
+	a_p2 = in_layer2_Hint(&(*c_p2))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_csbk.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Decoded(time.Duration(c_now), a_b, a_p2, a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_csbk_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_csbk_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_join
+func dmrgo_csbk_timing_join(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_csbk_Timing(c_self)
+	h.v.Join(time.Duration(c_now))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_leader
+func dmrgo_csbk_timing_leader(c_self *C.dmrgo_csbk_timing_t, c_dynamic_id *C.uint8_t, c_id *C.uint32_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_csbk_Timing(c_self)
+	r0, r1, r2 := h.v.Leader()
+	_ = r0
+	_ = r1
+	_ = r2
+	if c_dynamic_id != nil {
+		*c_dynamic_id = C.uint8_t(r0)
+	}
+	if c_id != nil {
+		*c_id = C.uint32_t(r1)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r2)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_reset
+func dmrgo_csbk_timing_reset(c_self *C.dmrgo_csbk_timing_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_csbk_Timing(c_self)
+	h.v.Reset()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_state
+func dmrgo_csbk_timing_state(c_self *C.dmrgo_csbk_timing_t, c_out *C.dmrgo_csbk_timing_state_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_csbk_Timing(c_self)
+	r0 := h.v.State()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_csbk_timing_state_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_terminator_need
+func dmrgo_csbk_timing_terminator_need(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_csbk_Timing(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_csbk.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_terminator
+func dmrgo_csbk_timing_terminator(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_csbk_Timing(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_csbk.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Terminator(time.Duration(c_now), a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_csbk_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_csbk_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_tick_need
+func dmrgo_csbk_timing_tick_need(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_csbk_Timing(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_csbk.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_tick
+func dmrgo_csbk_timing_tick(c_self *C.dmrgo_csbk_timing_t, c_now C.int64_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_csbk_Timing(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_csbk.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Tick(time.Duration(c_now), a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_csbk_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_csbk_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_state_string
+func dmrgo_csbk_timing_state_string(c_self C.dmrgo_csbk_timing_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_csbk.TimingState(c_self).String()
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -38499,6 +39067,363 @@ func dmrgo_voice_event_kind_string(c_self C.dmrgo_voice_event_kind_t, c_out *C.c
 	return C.DMRGO_OK
 }
 
+//export dmrgo_voice_interrupter_new
+func dmrgo_voice_interrupter_new(c_out **C.dmrgo_voice_interrupter_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_voice_Interrupter(new(g_voice.Interrupter))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_interrupter_free
+func dmrgo_voice_interrupter_free(c_self *C.dmrgo_voice_interrupter_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_voice_Interrupter(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_interrupter_burst_need
+func dmrgo_voice_interrupter_burst_need(c_self *C.dmrgo_voice_interrupter_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_voice_Interrupter(c_self)
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	_ = h
+	_ = a_h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_voice.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_interrupter_burst
+func dmrgo_voice_interrupter_burst(c_self *C.dmrgo_voice_interrupter_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Interrupter(c_self)
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_voice.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Burst(time.Duration(c_now), (*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h, a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_voice_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_voice_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_interrupter_cancel
+func dmrgo_voice_interrupter_cancel(c_self *C.dmrgo_voice_interrupter_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Interrupter(c_self)
+	h.v.Cancel()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_interrupter_deadline
+func dmrgo_voice_interrupter_deadline(c_self *C.dmrgo_voice_interrupter_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Interrupter(c_self)
+	r0, r1 := h.v.Deadline()
+	_ = r0
+	_ = r1
+	if c_at != nil {
+		*c_at = C.int64_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_interrupter_decoded_need
+func dmrgo_voice_interrupter_decoded_need(c_self *C.dmrgo_voice_interrupter_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_voice_Interrupter(c_self)
+	var a_b *g_layer2.Burst
+	if c_b != nil {
+		a_b = get_layer2_Burst(c_b).v
+	}
+	if c_p2 == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p2 g_layer2.Hint
+	a_p2 = in_layer2_Hint(&(*c_p2))
+	_ = h
+	_ = a_b
+	_ = a_p2
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_voice.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_interrupter_decoded
+func dmrgo_voice_interrupter_decoded(c_self *C.dmrgo_voice_interrupter_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Interrupter(c_self)
+	var a_b *g_layer2.Burst
+	if c_b != nil {
+		a_b = get_layer2_Burst(c_b).v
+	}
+	if c_p2 == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p2 g_layer2.Hint
+	a_p2 = in_layer2_Hint(&(*c_p2))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_voice.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Decoded(time.Duration(c_now), a_b, a_p2, a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_voice_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_voice_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_interrupter_interrupt
+func dmrgo_voice_interrupter_interrupt(c_self *C.dmrgo_voice_interrupter_t, c_now C.int64_t, c_cmd C.dmrgo_enums_rc_command_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Interrupter(c_self)
+	r0 := h.v.Interrupt(time.Duration(c_now), g_enums.RCCommand(c_cmd))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_interrupter_reset
+func dmrgo_voice_interrupter_reset(c_self *C.dmrgo_voice_interrupter_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Interrupter(c_self)
+	h.v.Reset()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_interrupter_state
+func dmrgo_voice_interrupter_state(c_self *C.dmrgo_voice_interrupter_t, c_out *C.dmrgo_voice_interrupter_state_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Interrupter(c_self)
+	r0 := h.v.State()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_voice_interrupter_state_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_interrupter_tick_need
+func dmrgo_voice_interrupter_tick_need(c_self *C.dmrgo_voice_interrupter_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_voice_Interrupter(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_voice.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_interrupter_tick
+func dmrgo_voice_interrupter_tick(c_self *C.dmrgo_voice_interrupter_t, c_now C.int64_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Interrupter(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_voice.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Tick(time.Duration(c_now), a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_voice_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_voice_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_interrupter_state_string
+func dmrgo_voice_interrupter_state_string(c_self C.dmrgo_voice_interrupter_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_voice.InterrupterState(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_new_interrupter
+func dmrgo_voice_new_interrupter(c_cfg *C.dmrgo_voice_interrupter_config_t, c_out **C.dmrgo_voice_interrupter_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	var a_cfg g_voice.InterrupterConfig
+	var p_cfg *g_voice.InterrupterConfig
+	if c_cfg != nil {
+		a_cfg = in_voice_InterrupterConfig(&(*c_cfg))
+		p_cfg = &a_cfg
+	}
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := g_voice.NewInterrupter(p_cfg)
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_voice_Interrupter(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_voice_new_receiver
 func dmrgo_voice_new_receiver(c_cfg *C.dmrgo_voice_receiver_config_t, c_out **C.dmrgo_voice_receiver_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -39090,6 +40015,91 @@ func dmrgo_voice_transmitter_free(c_self *C.dmrgo_voice_transmitter_t) (rc C.int
 	return C.DMRGO_OK
 }
 
+//export dmrgo_voice_transmitter_burst_need
+func dmrgo_voice_transmitter_burst_need(c_self *C.dmrgo_voice_transmitter_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_voice_Transmitter(c_self)
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	_ = h
+	_ = a_h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_voice.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_transmitter_burst
+func dmrgo_voice_transmitter_burst(c_self *C.dmrgo_voice_transmitter_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Transmitter(c_self)
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_voice.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Burst(time.Duration(c_now), (*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h, a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_voice_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_voice_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_transmitter_channel
+func dmrgo_voice_transmitter_channel(c_self *C.dmrgo_voice_transmitter_t, c_now C.int64_t, c_busy C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Transmitter(c_self)
+	h.v.Channel(time.Duration(c_now), bool(c_busy))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_voice_transmitter_deadline
 func dmrgo_voice_transmitter_deadline(c_self *C.dmrgo_voice_transmitter_t, c_at *C.int64_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -39107,6 +40117,88 @@ func dmrgo_voice_transmitter_deadline(c_self *C.dmrgo_voice_transmitter_t, c_at 
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_transmitter_decoded_need
+func dmrgo_voice_transmitter_decoded_need(c_self *C.dmrgo_voice_transmitter_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_voice_Transmitter(c_self)
+	var a_b *g_layer2.Burst
+	if c_b != nil {
+		a_b = get_layer2_Burst(c_b).v
+	}
+	if c_p2 == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p2 g_layer2.Hint
+	a_p2 = in_layer2_Hint(&(*c_p2))
+	_ = h
+	_ = a_b
+	_ = a_p2
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_voice.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_transmitter_decoded
+func dmrgo_voice_transmitter_decoded(c_self *C.dmrgo_voice_transmitter_t, c_now C.int64_t, c_b *C.dmrgo_layer2_burst_t, c_p2 *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Transmitter(c_self)
+	var a_b *g_layer2.Burst
+	if c_b != nil {
+		a_b = get_layer2_Burst(c_b).v
+	}
+	if c_p2 == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p2 g_layer2.Hint
+	a_p2 = in_layer2_Hint(&(*c_p2))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_voice.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Decoded(time.Duration(c_now), a_b, a_p2, a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_voice_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_voice_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
 	return C.DMRGO_OK
 }
 
@@ -39160,6 +40252,27 @@ func dmrgo_voice_transmitter_frames(c_self *C.dmrgo_voice_transmitter_t, c_f *C.
 	}
 	if r0 != nil {
 		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_transmitter_interrupt
+func dmrgo_voice_transmitter_interrupt(c_self *C.dmrgo_voice_transmitter_t, c_rc *C.dmrgo_pdu_reverse_channel_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Transmitter(c_self)
+	if c_rc == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_rc g_layer2_pdu.ReverseChannel
+	a_rc = in_layer2_pdu_ReverseChannel(&(*c_rc))
+	r0 := h.v.Interrupt(a_rc)
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
 	}
 	return C.DMRGO_OK
 }
