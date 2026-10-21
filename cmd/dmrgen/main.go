@@ -91,7 +91,7 @@ func run(v2Root string) error {
 		if guardErr != nil {
 			return fmt.Errorf("guarding %s: %w", outPath, guardErr)
 		}
-		if writeErr := os.WriteFile(outPath, src, 0o644); writeErr != nil {
+		if writeErr := os.WriteFile(outPath, src, 0o600); writeErr != nil {
 			return fmt.Errorf("writing %s: %w", outPath, writeErr)
 		}
 		if slices.ContainsFunc(pdus, func(p parse.PDUStruct) bool { return p.View == nil }) {
