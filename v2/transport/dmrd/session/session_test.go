@@ -68,9 +68,10 @@ func TestLoopback(t *testing.T) {
 		}
 		l.events = nil
 		l.advance(l.now + 10*time.Minute)
-		if len(l.events) != 0 || l.peer.State() != session.StateRunning || l.master.State() != session.StateRunning {
+		if len(l.events) != 60 || count(l.events, session.OutputPong) != 60 || l.peer.State() != session.StateRunning || l.master.State() != session.StateRunning {
 			t.Fatalf("%v: keepalive: %v", tc.d, eventKinds(l))
 		}
+		l.events = nil
 		var d dmrd.Data
 		d.Repeater, d.Slot, d.Source, d.Destination = 3129100, 1, 3191868, 91
 		pkt, _ := d.AppendBinary(nil)
@@ -394,7 +395,7 @@ func TestMasterLogin(t *testing.T) {
 	pos = append(pos, ctl(dmrd.CommandRPTG, 5)...)
 	pos = append(pos, "+30.2672-097.7431"...)
 	sameKinds(t, kinds(m.Packet(4*s, pos, nil)), session.OutputMessage)
-	if out := m.Packet(5*s, ctl(dmrd.CommandRPTPING, 5), nil); len(out) != 1 || command(t, out[0].Packet, d) != dmrd.CommandMSTPONG {
+	if out := m.Packet(5*s, ctl(dmrd.CommandRPTPING, 5), nil); len(out) != 2 || command(t, out[0].Packet, d) != dmrd.CommandMSTPONG || out[1].Kind != session.OutputPong || out[1].ID != 5 {
 		t.Fatal("pong")
 	}
 	if at, _ := m.Deadline(); at != 35*s {
@@ -526,7 +527,7 @@ func TestConfigErrors(t *testing.T) {
 func TestNames(t *testing.T) {
 	t.Parallel()
 
-	for k := session.OutputKind(0); k <= session.OutputMessage+1; k++ {
+	for k := session.OutputKind(0); k <= session.OutputPong+1; k++ {
 		if k.String() == "" {
 			t.Fatal(k)
 		}
@@ -558,4 +559,14 @@ func TestPeerRepeatedChallenge(t *testing.T) {
 	if out := p.Packet(0, []byte("MSTACK00040178"), nil); len(out) != 1 || p.State() != session.StateConfig {
 		t.Fatalf("ack after the challenge again: %v %v", kinds(out), p.State())
 	}
+}
+
+func count(out []session.Output, k session.OutputKind) int {
+	n := 0
+	for _, o := range out {
+		if o.Kind == k {
+			n++
+		}
+	}
+	return n
 }

@@ -222,7 +222,7 @@ func (m *Master) nak(dst []Output, id uint32) []Output {
 // an acknowledgement, and another token MSTNAK. An RPTC for the ID gets an
 // acknowledgement and completes the login with OutputConfig and OutputUp.
 // In StateRunning an RPTO gets an acknowledgement and OutputOptions, a
-// ping gets a pong, an RPTCL ends the session with ReasonClosed, and
+// ping gets a pong and OutputPong, an RPTCL ends the session with ReasonClosed, and
 // DMRD, DMRA, DMRG, RPTG, RPTRSSI and RPTINTR are passed on. A packet of
 // a step that the session has not reached gets MSTNAK, as the HBRP
 // specification says for a repeater that is not logged in. Each packet
@@ -321,7 +321,8 @@ func (m *Master) running(now time.Duration, b []byte, c dmrd.Command, dst []Outp
 		if m.dialect == dmrd.DialectHBRP {
 			pong = dmrd.CommandRPTPONG
 		}
-		return send(dst, appendControl(m.tx[:0], m.dialect, dmrd.Control{Command: pong, ID: m.id}))
+		dst = send(dst, appendControl(m.tx[:0], m.dialect, dmrd.Control{Command: pong, ID: m.id}))
+		return append(dst, Output{Kind: OutputPong, ID: m.id})
 	default:
 	}
 	return append(dst, Output{Kind: OutputMessage, Packet: b, Command: c, ID: m.id})

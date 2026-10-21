@@ -130,11 +130,12 @@ func TestMasterReplaysDMRGateway(t *testing.T) {
 			t.Fatalf("packet %d: %x, want %x", i, sent[i], want[i])
 		}
 	}
-	wantEvents := make([]session.OutputKind, 0, 12)
+	wantEvents := make([]session.OutputKind, 0, 14)
 	wantEvents = append(wantEvents, session.OutputLogin, session.OutputConfig, session.OutputUp, session.OutputOptions)
 	for range 8 {
 		wantEvents = append(wantEvents, session.OutputData)
 	}
+	wantEvents = append(wantEvents, session.OutputPong, session.OutputPong)
 	if len(events) != len(wantEvents) {
 		t.Fatalf("events %v", events)
 	}
