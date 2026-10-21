@@ -1,6 +1,9 @@
 package pdu
 
-import "github.com/USA-RedDragon/dmrgo/v2/enums"
+import (
+	"github.com/USA-RedDragon/dmrgo/v2"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
+)
 
 // DataHeaderBytes is the 12-octet BPTC(196,96) payload of a data header
 // burst, as layer2.RawBurst.BPTCPayload returns it. Its methods read or write
@@ -45,6 +48,9 @@ func (h DataHeaderBytes) Addresses() (target, source uint32, ok bool) {
 // format and a *dmrgo.FieldRangeError when an LLID does not fit in 24 bits,
 // and then changes nothing.
 func (h *DataHeaderBytes) SetAddresses(target, source uint32) error {
+	if h == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if err := checkAddresses(target, source, errDataHeaderBytesTargetRange, errDataHeaderBytesSourceRange); err != nil {
 		return err
 	}
@@ -70,6 +76,9 @@ func (h DataHeaderBytes) Group() (group, ok bool) {
 // call Reseal. It returns false, and changes nothing, for a header for
 // which Group returns no flag.
 func (h *DataHeaderBytes) SetGroup(group bool) bool {
+	if h == nil {
+		return false
+	}
 	if !h.hasGroupFlag() {
 		return false
 	}
@@ -90,5 +99,8 @@ func (h DataHeaderBytes) CRCOK() bool {
 // Reseal writes the CRC of octets 0 to 9 with the Data Header mask into
 // octets 10 and 11, as Seal does.
 func (h *DataHeaderBytes) Reseal() {
+	if h == nil {
+		return
+	}
 	_ = Seal((*[12]byte)(h), enums.DataTypeDataHeader)
 }

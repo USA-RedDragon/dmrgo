@@ -1,6 +1,7 @@
 package layer2
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -21,6 +22,9 @@ type VoiceReceiver struct {
 
 // Reset forgets the superframe position and any partial embedded LC.
 func (r *VoiceReceiver) Reset() {
+	if r == nil {
+		return
+	}
 	*r = VoiceReceiver{Strict: r.Strict}
 }
 
@@ -31,6 +35,9 @@ func (r *VoiceReceiver) Reset() {
 // burst discards a partial embedded LC. It allocates the payload struct of a
 // completed LC; ReceiveInto does not. A nil b is ignored.
 func (r *VoiceReceiver) Receive(b *Burst) (lc pdu.FullLinkControl, ok bool, err error) {
+	if r == nil {
+		return pdu.FullLinkControl{}, false, dmrgo.ErrNilReceiver
+	}
 	if b == nil {
 		return lc, false, nil
 	}
@@ -53,6 +60,9 @@ func (r *VoiceReceiver) Receive(b *Burst) (lc pdu.FullLinkControl, ok bool, err 
 // is. A nil b is ignored, and a nil dst or p returns an error and changes
 // nothing. It does not allocate.
 func (r *VoiceReceiver) ReceiveInto(dst *pdu.FullLinkControl, p *pdu.FullLinkControlPayloads, b *Burst) (ok bool, err error) {
+	if r == nil {
+		return false, dmrgo.ErrNilReceiver
+	}
 	if dst == nil || p == nil {
 		return false, errNil
 	}

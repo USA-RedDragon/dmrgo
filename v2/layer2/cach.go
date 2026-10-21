@@ -53,6 +53,9 @@ var errCACHPayloadRange = &dmrgo.FieldRangeError{Type: "CACH", Field: "Payload",
 // order. It returns an error when a TACT field does not fit, or when one of
 // the low 7 bits of Payload[2] is set.
 func (c *CACH) Encode() ([3]byte, error) {
+	if c == nil {
+		return [3]byte{}, dmrgo.ErrNilReceiver
+	}
 	tact, err := c.TACT.Encode()
 	if err != nil {
 		return [3]byte{}, err

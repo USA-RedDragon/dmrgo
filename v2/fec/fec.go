@@ -57,6 +57,9 @@ type BERCalculator struct {
 
 // Add incorporates a single Result into the running BER calculation.
 func (b *BERCalculator) Add(result Result) {
+	if b == nil {
+		return
+	}
 	b.totalBitsChecked += result.BitsChecked
 	b.totalErrors += result.ErrorsCorrected
 	if result.Uncorrectable {
@@ -67,12 +70,18 @@ func (b *BERCalculator) Add(result Result) {
 // AddBurst incorporates the Aggregate of the FEC layers of a burst into the
 // running BER calculation.
 func (b *BERCalculator) AddBurst(stats BurstFECStats) {
+	if b == nil {
+		return
+	}
 	b.Add(stats.Aggregate())
 }
 
 // BER returns the bit error rate as a percentage from 0 to 100, as MMDVM
 // computes it. It returns 0 when no bits have been checked.
 func (b *BERCalculator) BER() float64 {
+	if b == nil {
+		return 0
+	}
 	if b.totalBitsChecked == 0 {
 		return 0
 	}
@@ -81,11 +90,17 @@ func (b *BERCalculator) BER() float64 {
 
 // TotalErrors returns the total number of corrected errors accumulated.
 func (b *BERCalculator) TotalErrors() int {
+	if b == nil {
+		return 0
+	}
 	return b.totalErrors
 }
 
 // TotalBitsChecked returns the total number of FEC-protected bits accumulated.
 func (b *BERCalculator) TotalBitsChecked() int {
+	if b == nil {
+		return 0
+	}
 	return b.totalBitsChecked
 }
 
@@ -93,11 +108,17 @@ func (b *BERCalculator) TotalBitsChecked() int {
 // Uncorrectable set. The corrected errors and bits of such a result count
 // toward the BER, but its uncorrected errors are unknown.
 func (b *BERCalculator) Uncorrectable() int {
+	if b == nil {
+		return 0
+	}
 	return b.uncorrectable
 }
 
 // Reset clears the accumulated BER state.
 func (b *BERCalculator) Reset() {
+	if b == nil {
+		return
+	}
 	*b = BERCalculator{}
 }
 

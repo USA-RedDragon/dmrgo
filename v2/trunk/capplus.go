@@ -134,12 +134,20 @@ func NewCapacityPlusFollower(cfg *CapacityPlusConfig) (*CapacityPlusFollower, er
 // State returns the state of the Follower: StateHunting, StateControl on
 // the rest channel, or StatePayload in a call.
 func (f *CapacityPlusFollower) State() State {
+	if f == nil {
+		return 0
+	}
+
 	return f.state
 }
 
 // RestLSN returns the last rest LSN that the site announced. ok is false
 // before the Follower found the rest channel.
 func (f *CapacityPlusFollower) RestLSN() (lsn uint8, ok bool) {
+	if f == nil {
+		return 0, false
+	}
+
 	return f.rest, f.rest != 0
 }
 
@@ -147,18 +155,30 @@ func (f *CapacityPlusFollower) RestLSN() (lsn uint8, ok bool) {
 // the rest channel Short LC or the neighbor report. ok is false before
 // either arrived.
 func (f *CapacityPlusFollower) SiteNumber() (site uint8, ok bool) {
+	if f == nil {
+		return 0, false
+	}
+
 	return f.site, f.hasSite
 }
 
 // Call returns the grant of the call that the Follower follows. ok is
 // false outside a call.
 func (f *CapacityPlusFollower) Call() (g Grant, ok bool) {
+	if f == nil {
+		return Grant{}, false
+	}
+
 	return f.call, f.state == StatePayload
 }
 
 // Reset forgets the site and the call and starts hunting again, as after
 // NewCapacityPlusFollower.
 func (f *CapacityPlusFollower) Reset() {
+	if f == nil {
+		return
+	}
+
 	f.slc.Reset()
 	f.status[0].Reset()
 	f.status[1].Reset()
@@ -175,6 +195,10 @@ func (f *CapacityPlusFollower) Reset() {
 // Lost does, else it runs the timers. It allocates only when dst has no
 // room for MaxOutputs outputs.
 func (f *CapacityPlusFollower) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
+	if f == nil {
+		return dst
+	}
+
 	if raw == nil {
 		if h.SyncLost {
 			return f.Lost(now, dst)
@@ -219,6 +243,10 @@ func (f *CapacityPlusFollower) Burst(now time.Duration, raw *layer2.RawBurst, h 
 // returns to the rest channel as on Inactive. It appends the outputs to
 // dst, and allocates only when dst has no room for MaxOutputs outputs.
 func (f *CapacityPlusFollower) Lost(now time.Duration, dst []Output) []Output {
+	if f == nil {
+		return dst
+	}
+
 	dst = f.timers(now, dst)
 	if f.state == StatePayload {
 		return f.leave(now, ReasonInactive, dst)
@@ -231,12 +259,20 @@ func (f *CapacityPlusFollower) Lost(now time.Duration, dst []Output) []Output {
 // Tick or Burst asks for the first repeater. It allocates only when dst
 // has no room for MaxOutputs outputs.
 func (f *CapacityPlusFollower) Tick(now time.Duration, dst []Output) []Output {
+	if f == nil {
+		return dst
+	}
+
 	return f.timers(now, dst)
 }
 
 // Deadline returns the time at which the Follower needs a Tick. ok is
 // false when no timer runs.
 func (f *CapacityPlusFollower) Deadline() (at time.Duration, ok bool) {
+	if f == nil {
+		return 0, false
+	}
+
 	hunts := f.plan.Len() > 0 || f.plan.nRules > 0
 	if !f.started && hunts {
 		return 0, true

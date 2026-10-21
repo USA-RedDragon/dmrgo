@@ -57,6 +57,9 @@ func (rc *ReverseChannel) Encode() ([2]byte, error) {
 // String returns a human-readable string representation of the RC PDU. It
 // allocates the string.
 func (rc *ReverseChannel) String() string {
+	if rc == nil {
+		return "<nil>"
+	}
 	return "ReverseChannel{ RCCommand: " + rc.RCCommand.String() +
 		", FEC: {BitsChecked: " + text.Int(int64(rc.FEC.BitsChecked)) +
 		", ErrorsCorrected: " + text.Int(int64(rc.FEC.ErrorsCorrected)) +

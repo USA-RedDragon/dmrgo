@@ -21,6 +21,10 @@ func decodeCapacityPlusRestChannel(data [3]byte) CapacityPlusRestChannel {
 // Encode encodes a CapacityPlusRestChannel. It returns the 24 bits packed,
 // the first bit in the most significant bit of byte 0.
 func (s *CapacityPlusRestChannel) Encode() ([3]byte, error) {
+	if s == nil {
+		return [3]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [3]byte
 	data[0] = byte(uint64(s.Marker))
 	if uint64(s.Flags)>>3 != 0 {
@@ -45,6 +49,10 @@ func (s *CapacityPlusRestChannel) Encode() ([3]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *CapacityPlusRestChannel) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "CapacityPlusRestChannel{ Marker: " + text.Int(int64(s.Marker)) + ", Flags: " + text.Int(int64(s.Flags)) + ", RestLSN: " + text.Int(int64(s.RestLSN)) + ", Site: " + text.Int(int64(s.Site)) + ", Reserved: " + text.Int(int64(s.Reserved)) + " }"
 }
 func decodeCapacityPlusSiteStatusPDU(data [8]byte) CapacityPlusSiteStatusPDU {
@@ -59,6 +67,10 @@ func decodeCapacityPlusSiteStatusPDU(data [8]byte) CapacityPlusSiteStatusPDU {
 // Encode encodes a CapacityPlusSiteStatusPDU. It returns the 64 bits packed,
 // the first bit in the most significant bit of byte 0.
 func (s *CapacityPlusSiteStatusPDU) Encode() ([8]byte, error) {
+	if s == nil {
+		return [8]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [8]byte
 	if uint64(s.Segment)>>2 != 0 {
 		return [8]byte{}, errCapacityPlusSiteStatusPDUSegmentRange
@@ -78,6 +90,10 @@ func (s *CapacityPlusSiteStatusPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *CapacityPlusSiteStatusPDU) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "CapacityPlusSiteStatusPDU{ Segment: " + text.Int(int64(s.Segment)) + ", Slot2: " + text.Bool(s.Slot2) + ", RestLSN: " + text.Int(int64(s.RestLSN)) + ", Activity: " + text.Hex(s.Activity[:]) + " }"
 }
 func decodeCapacityPlusNeighborsPDU(data [8]byte) CapacityPlusNeighborsPDU {
@@ -95,6 +111,10 @@ func decodeCapacityPlusNeighborsPDU(data [8]byte) CapacityPlusNeighborsPDU {
 // Encode encodes a CapacityPlusNeighborsPDU. It returns the 64 bits packed,
 // the first bit in the most significant bit of byte 0.
 func (s *CapacityPlusNeighborsPDU) Encode() ([8]byte, error) {
+	if s == nil {
+		return [8]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [8]byte
 	if uint64(s.Segment)>>2 != 0 {
 		return [8]byte{}, errCapacityPlusNeighborsPDUSegmentRange
@@ -125,6 +145,10 @@ func (s *CapacityPlusNeighborsPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *CapacityPlusNeighborsPDU) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "CapacityPlusNeighborsPDU{ Segment: " + text.Int(int64(s.Segment)) + ", Slot2: " + text.Bool(s.Slot2) + ", RestLSN: " + text.Int(int64(s.RestLSN)) + ", Async: " + text.Bool(s.Async) + ", Site: " + text.Int(int64(s.Site)) + ", Count: " + text.Int(int64(s.Count)) + ", Neighbors: " + text.Hex(s.Neighbors[:]) + " }"
 }
 func decodeCapacityPlusPreamblePDU(data [8]byte) CapacityPlusPreamblePDU {
@@ -143,6 +167,10 @@ func decodeCapacityPlusPreamblePDU(data [8]byte) CapacityPlusPreamblePDU {
 // Encode encodes a CapacityPlusPreamblePDU. It returns the 64 bits packed,
 // the first bit in the most significant bit of byte 0.
 func (s *CapacityPlusPreamblePDU) Encode() ([8]byte, error) {
+	if s == nil {
+		return [8]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [8]byte
 	if s.Data {
 		data[0] |= 0x80
@@ -179,6 +207,10 @@ func (s *CapacityPlusPreamblePDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *CapacityPlusPreamblePDU) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "CapacityPlusPreamblePDU{ Data: " + text.Bool(s.Data) + ", Group: " + text.Bool(s.Group) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", BlocksToFollow: " + text.Int(int64(s.BlocksToFollow)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", RestLSN: " + text.Int(int64(s.RestLSN)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 func decodeCapacityPlusDataRevertAnnouncementPDU(data [8]byte) CapacityPlusDataRevertAnnouncementPDU {
@@ -195,6 +227,10 @@ func decodeCapacityPlusDataRevertAnnouncementPDU(data [8]byte) CapacityPlusDataR
 // Encode encodes a CapacityPlusDataRevertAnnouncementPDU. It returns the 64
 // bits packed, the first bit in the most significant bit of byte 0.
 func (s *CapacityPlusDataRevertAnnouncementPDU) Encode() ([8]byte, error) {
+	if s == nil {
+		return [8]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [8]byte
 	data[0] = byte(uint64(s.Reserved))
 	_valTargetAddress := uint64(s.TargetAddress)
@@ -212,6 +248,10 @@ func (s *CapacityPlusDataRevertAnnouncementPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *CapacityPlusDataRevertAnnouncementPDU) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "CapacityPlusDataRevertAnnouncementPDU{ Reserved: " + text.Int(int64(s.Reserved)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", Window: " + text.Int(int64(s.Window)) + ", Superframe: " + text.Int(int64(s.Superframe)) + ", Flags: " + text.Int(int64(s.Flags)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + " }"
 }
 func decodeCapacityPlusDataRevertGrantPDU(data [8]byte) CapacityPlusDataRevertGrantPDU {
@@ -227,6 +267,10 @@ func decodeCapacityPlusDataRevertGrantPDU(data [8]byte) CapacityPlusDataRevertGr
 // Encode encodes a CapacityPlusDataRevertGrantPDU. It returns the 64 bits
 // packed, the first bit in the most significant bit of byte 0.
 func (s *CapacityPlusDataRevertGrantPDU) Encode() ([8]byte, error) {
+	if s == nil {
+		return [8]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [8]byte
 	data[0] = byte(uint64(s.Reserved))
 	_valTargetAddress := uint64(s.TargetAddress)
@@ -247,6 +291,10 @@ func (s *CapacityPlusDataRevertGrantPDU) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *CapacityPlusDataRevertGrantPDU) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "CapacityPlusDataRevertGrantPDU{ Reserved: " + text.Int(int64(s.Reserved)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", Window: " + text.Int(int64(s.Window)) + ", Superframe: " + text.Int(int64(s.Superframe)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + " }"
 }
 func decodeCapacityPlusGroupVoiceGrant(data [7]byte) CapacityPlusGroupVoiceGrant {
@@ -265,6 +313,10 @@ func decodeCapacityPlusGroupVoiceGrant(data [7]byte) CapacityPlusGroupVoiceGrant
 // Encode encodes a CapacityPlusGroupVoiceGrant. It returns the 56 bits
 // packed, the first bit in the most significant bit of byte 0.
 func (s *CapacityPlusGroupVoiceGrant) Encode() ([7]byte, error) {
+	if s == nil {
+		return [7]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [7]byte
 	_serviceOptionsBytes, err := s.ServiceOptions.Encode()
 	if err != nil {
@@ -292,6 +344,10 @@ func (s *CapacityPlusGroupVoiceGrant) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *CapacityPlusGroupVoiceGrant) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "CapacityPlusGroupVoiceGrant{ ServiceOptions: " + s.ServiceOptions.String() + ", Reserved: " + text.Int(int64(s.Reserved)) + ", GroupAddress: " + text.Int(int64(s.GroupAddress)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", RestLSN: " + text.Int(int64(s.RestLSN)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 func decodeCapacityPlusPrivateVoiceGrant(data [7]byte) CapacityPlusPrivateVoiceGrant {
@@ -309,6 +365,10 @@ func decodeCapacityPlusPrivateVoiceGrant(data [7]byte) CapacityPlusPrivateVoiceG
 // Encode encodes a CapacityPlusPrivateVoiceGrant. It returns the 56 bits
 // packed, the first bit in the most significant bit of byte 0.
 func (s *CapacityPlusPrivateVoiceGrant) Encode() ([7]byte, error) {
+	if s == nil {
+		return [7]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [7]byte
 	_serviceOptionsBytes, err := s.ServiceOptions.Encode()
 	if err != nil {
@@ -339,6 +399,10 @@ func (s *CapacityPlusPrivateVoiceGrant) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *CapacityPlusPrivateVoiceGrant) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "CapacityPlusPrivateVoiceGrant{ ServiceOptions: " + s.ServiceOptions.String() + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", RestLSN: " + text.Int(int64(s.RestLSN)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 

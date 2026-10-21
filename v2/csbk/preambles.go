@@ -74,11 +74,17 @@ func NewPreambles(cfg *PreamblesConfig) (*Preambles, error) {
 
 // Reset forgets the announced transfer without an output.
 func (p *Preambles) Reset() {
+	if p == nil {
+		return
+	}
 	p.state = PreamblesIdle
 }
 
 // State returns the state of the Preambles.
 func (p *Preambles) State() PreamblesState {
+	if p == nil {
+		return 0
+	}
 	return p.state
 }
 
@@ -87,6 +93,9 @@ func (p *Preambles) State() PreamblesState {
 // nil raw, a transport frame without a burst, only runs the timers, as
 // Lost does. It allocates only when dst has no room for MaxOutputs outputs.
 func (p *Preambles) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
+	if p == nil {
+		return dst
+	}
 	return p.Decoded(now, p.d.decode(raw, &h), h, dst)
 }
 
@@ -97,6 +106,9 @@ func (p *Preambles) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint
 // replaces. A CSBK whose CRC fails is dropped. It allocates only when dst
 // has no room for MaxOutputs outputs.
 func (p *Preambles) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
+	if p == nil {
+		return dst
+	}
 	dst = p.Tick(now, dst)
 	kind, c, octets := classify(b)
 	switch kind {
@@ -153,6 +165,9 @@ func (p *Preambles) appendAt(out []Output, k OutputKind) []Output {
 // timers as Tick does; the announced transfer can still come. It allocates
 // only when dst has no room for MaxOutputs outputs.
 func (p *Preambles) Lost(now time.Duration, dst []Output) []Output {
+	if p == nil {
+		return dst
+	}
 	return p.Tick(now, dst)
 }
 
@@ -161,6 +176,9 @@ func (p *Preambles) Lost(now time.Duration, dst []Output) []Output {
 // followed the Pre_CSBKs. A Tick before Deadline does nothing. It allocates
 // only when dst has no room for MaxOutputs outputs.
 func (p *Preambles) Tick(now time.Duration, dst []Output) []Output {
+	if p == nil {
+		return dst
+	}
 	if p.state == PreamblesAnnounced && now >= p.until+BurstInterval {
 		dst = p.appendAt(dst, OutputExpired)
 		p.state = PreamblesIdle
@@ -171,6 +189,9 @@ func (p *Preambles) Tick(now time.Duration, dst []Output) []Output {
 // Deadline returns the time at which the Preambles needs a Tick. ok is
 // false when no transfer is announced.
 func (p *Preambles) Deadline() (at time.Duration, ok bool) {
+	if p == nil {
+		return 0, false
+	}
 	if p.state != PreamblesAnnounced {
 		return 0, false
 	}

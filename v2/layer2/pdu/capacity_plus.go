@@ -104,6 +104,9 @@ type CapacityPlusRestChannel struct {
 // channel Short LC. ok is false for another SLCO, or when the payload does
 // not start with the Motorola FID 0x10.
 func (s *ShortLC) AsCapacityPlusRestChannel() (p CapacityPlusRestChannel, ok bool) {
+	if s == nil {
+		return CapacityPlusRestChannel{}, false
+	}
 	if s.SLCO != SLCOCapacityPlusRestChannel || s.RawPayload[0] != byte(enums.FIDMotorola) {
 		return p, false
 	}
@@ -125,6 +128,9 @@ type CapacityPlusSiteStatusPDU struct {
 // AsCapacityPlusSiteStatus decodes the RawPayload of a Capacity Plus site
 // status CSBK. ok is false for another opcode or FID.
 func (s *CSBK) AsCapacityPlusSiteStatus() (p CapacityPlusSiteStatusPDU, ok bool) {
+	if s == nil {
+		return CapacityPlusSiteStatusPDU{}, false
+	}
 	if s.Opcode != CSBKCapacityPlusSiteStatus || s.FID != enums.FIDMotorola {
 		return p, false
 	}
@@ -149,6 +155,9 @@ type CapacityPlusNeighborsPDU struct {
 // Neighbor returns the site number and rest LSN of neighbor i, from 0. ok
 // is false when i is not below Count or 6.
 func (p *CapacityPlusNeighborsPDU) Neighbor(i int) (site, restLSN uint8, ok bool) {
+	if p == nil {
+		return 0, 0, false
+	}
 	if i < 0 || i >= int(p.Count) || i >= len(p.Neighbors) {
 		return 0, 0, false
 	}
@@ -158,6 +167,9 @@ func (p *CapacityPlusNeighborsPDU) Neighbor(i int) (site, restLSN uint8, ok bool
 // AsCapacityPlusNeighbors decodes the RawPayload of a Linked Capacity Plus
 // neighbor report CSBK. ok is false for another opcode or FID.
 func (s *CSBK) AsCapacityPlusNeighbors() (p CapacityPlusNeighborsPDU, ok bool) {
+	if s == nil {
+		return CapacityPlusNeighborsPDU{}, false
+	}
 	if s.Opcode != CSBKCapacityPlusNeighbors || s.FID != enums.FIDMotorola {
 		return p, false
 	}
@@ -183,6 +195,9 @@ type CapacityPlusPreamblePDU struct {
 // AsCapacityPlusPreamble decodes the RawPayload of a Capacity Plus
 // preamble CSBK. ok is false for another opcode or FID.
 func (s *CSBK) AsCapacityPlusPreamble() (p CapacityPlusPreamblePDU, ok bool) {
+	if s == nil {
+		return CapacityPlusPreamblePDU{}, false
+	}
 	if s.Opcode != CSBKCapacityPlusPreamble || s.FID != enums.FIDMotorola {
 		return p, false
 	}
@@ -206,6 +221,9 @@ type CapacityPlusDataRevertAnnouncementPDU struct {
 // enhanced data revert window announcement CSBK. ok is false for another
 // opcode or FID.
 func (s *CSBK) AsCapacityPlusDataRevertAnnouncement() (p CapacityPlusDataRevertAnnouncementPDU, ok bool) {
+	if s == nil {
+		return CapacityPlusDataRevertAnnouncementPDU{}, false
+	}
 	if s.Opcode != CSBKCapacityPlusDataRevertAnnouncement || s.FID != enums.FIDMotorola {
 		return p, false
 	}
@@ -228,6 +246,9 @@ type CapacityPlusDataRevertGrantPDU struct {
 // AsCapacityPlusDataRevertGrant decodes the RawPayload of an enhanced data
 // revert window grant CSBK. ok is false for another opcode or FID.
 func (s *CSBK) AsCapacityPlusDataRevertGrant() (p CapacityPlusDataRevertGrantPDU, ok bool) {
+	if s == nil {
+		return CapacityPlusDataRevertGrantPDU{}, false
+	}
 	if s.Opcode != CSBKCapacityPlusDataRevertGrant || s.FID != enums.FIDMotorola {
 		return p, false
 	}
@@ -250,6 +271,9 @@ type CapacityPlusGroupVoiceGrant struct {
 // AsCapacityPlusGroupVoiceGrant decodes the RawPayload of a Capacity Plus
 // group voice call grant. ok is false for another FLCO or FID.
 func (s *FullLinkControl) AsCapacityPlusGroupVoiceGrant() (p CapacityPlusGroupVoiceGrant, ok bool) {
+	if s == nil {
+		return CapacityPlusGroupVoiceGrant{}, false
+	}
 	if s.FLCO != FLCOCapacityPlusGroupVoiceGrant || s.FID != enums.FIDMotorola {
 		return p, false
 	}
@@ -271,6 +295,9 @@ type CapacityPlusPrivateVoiceGrant struct {
 // AsCapacityPlusPrivateVoiceGrant decodes the RawPayload of a Capacity Plus
 // private voice call grant. ok is false for another FLCO or FID.
 func (s *FullLinkControl) AsCapacityPlusPrivateVoiceGrant() (p CapacityPlusPrivateVoiceGrant, ok bool) {
+	if s == nil {
+		return CapacityPlusPrivateVoiceGrant{}, false
+	}
 	if s.FLCO != FLCOCapacityPlusPrivateVoiceGrant || s.FID != enums.FIDMotorola {
 		return p, false
 	}

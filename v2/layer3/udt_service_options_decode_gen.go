@@ -27,6 +27,10 @@ func DecodeShortDataServiceOptions(data [1]byte) ShortDataServiceOptions {
 // the first bit in the most significant bit of byte 0. The least significant
 // bit of byte 0 is 0. (ETSI TS 102 361-4 clause 7.2.13.7, Table 7.58)
 func (s *ShortDataServiceOptions) Encode() ([1]byte, error) {
+	if s == nil {
+		return [1]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [1]byte
 	if s.IsPrivacy {
 		data[0] |= 0x40
@@ -43,6 +47,10 @@ func (s *ShortDataServiceOptions) Encode() ([1]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ShortDataServiceOptions) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "ShortDataServiceOptions{ IsPrivacy: " + text.Bool(s.IsPrivacy) + ", IsSuppData: " + text.Bool(s.IsSuppData) + " }"
 }
 
@@ -61,6 +69,10 @@ func DecodePollingServiceOptions(data [1]byte) PollingServiceOptions {
 // first bit in the most significant bit of byte 0. The least significant bit
 // of byte 0 is 0. (ETSI TS 102 361-4 clause 7.2.13.9, Table 7.60)
 func (s *PollingServiceOptions) Encode() ([1]byte, error) {
+	if s == nil {
+		return [1]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [1]byte
 	if s.IsPrivacy {
 		data[0] |= 0x40
@@ -78,6 +90,10 @@ func (s *PollingServiceOptions) Encode() ([1]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *PollingServiceOptions) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "PollingServiceOptions{ IsPrivacy: " + text.Bool(s.IsPrivacy) + ", Format: " + text.Int(int64(s.Format)) + " }"
 }
 
@@ -100,6 +116,10 @@ func DecodeDiversionServiceOptions(data [1]byte) DiversionServiceOptions {
 // the first bit in the most significant bit of byte 0. The least significant
 // bit of byte 0 is 0. (ETSI TS 102 361-4 clause 7.2.13.3, Table 7.54)
 func (s *DiversionServiceOptions) Encode() ([1]byte, error) {
+	if s == nil {
+		return [1]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [1]byte
 	if s.IsPrivacy {
 		data[0] |= 0x40
@@ -126,6 +146,10 @@ func (s *DiversionServiceOptions) Encode() ([1]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *DiversionServiceOptions) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "DiversionServiceOptions{ IsPrivacy: " + text.Bool(s.IsPrivacy) + ", Set: " + text.Bool(s.Set) + ", Voice: " + text.Bool(s.Voice) + ", PacketData: " + text.Bool(s.PacketData) + ", ShortData: " + text.Bool(s.ShortData) + ", Status: " + text.Bool(s.Status) + " }"
 }
 

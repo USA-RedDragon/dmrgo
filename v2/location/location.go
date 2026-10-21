@@ -1,6 +1,7 @@
 package location
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/hytera"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
@@ -93,6 +94,9 @@ type Decoder struct {
 // lrrp, nmea and hytera packages for a message that does not decode. It
 // does not check the HDAP checksum. It does not allocate.
 func (d *Decoder) Decode(h *pdu.DataHeader, data []byte) (Fix, error) {
+	if d == nil {
+		return Fix{}, dmrgo.ErrNilReceiver
+	}
 	if h == nil {
 		return Fix{}, ErrNoFix
 	}

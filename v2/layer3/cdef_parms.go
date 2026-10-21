@@ -18,23 +18,35 @@ type CdefParms struct {
 // TXFrequencyHz returns the transmit frequency in Hz, TXMHz MHz plus TXKHz
 // steps of 125 Hz.
 func (s *CdefParms) TXFrequencyHz() uint64 {
+	if s == nil {
+		return 0
+	}
 	return uint64(s.TXMHz)*1_000_000 + uint64(s.TXKHz)*125
 }
 
 // RXFrequencyHz returns the receive frequency in Hz, RXMHz MHz plus RXKHz
 // steps of 125 Hz.
 func (s *CdefParms) RXFrequencyHz() uint64 {
+	if s == nil {
+		return 0
+	}
 	return uint64(s.RXMHz)*1_000_000 + uint64(s.RXKHz)*125
 }
 
 // TXFrequencyMHz returns the transmit frequency in MHz, TXMHz plus TXKHz
 // times 0.000125 (ETSI TS 102 361-4 Annex C).
 func (s *CdefParms) TXFrequencyMHz() float64 {
+	if s == nil {
+		return 0
+	}
 	return float64(s.TXMHz) + float64(s.TXKHz)*0.000125
 }
 
 // RXFrequencyMHz returns the receive frequency in MHz, RXMHz plus RXKHz
 // times 0.000125 (ETSI TS 102 361-4 Annex C).
 func (s *CdefParms) RXFrequencyMHz() float64 {
+	if s == nil {
+		return 0
+	}
 	return float64(s.RXMHz) + float64(s.RXKHz)*0.000125
 }

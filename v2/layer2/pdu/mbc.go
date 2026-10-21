@@ -39,6 +39,9 @@ type MBCHeader struct {
 
 // DataType returns enums.DataTypeMBCHeader.
 func (s *MBCHeader) DataType() enums.DataType {
+	if s == nil {
+		return 0
+	}
 	return enums.DataTypeMBCHeader
 }
 
@@ -57,6 +60,9 @@ type MBCContinuation struct {
 
 // DataType returns enums.DataTypeMBCContinuation.
 func (s *MBCContinuation) DataType() enums.DataType {
+	if s == nil {
+		return 0
+	}
 	return enums.DataTypeMBCContinuation
 }
 
@@ -74,24 +80,36 @@ func (s *MBCContinuation) packed() [12]byte {
 // this is the one continuation block of the MBC.
 // (ETSI TS 102 361-4 Table 7.16)
 func (s *MBCContinuation) AsCGAP() CGAPContinuation {
+	if s == nil {
+		return CGAPContinuation{}
+	}
 	return decodeCGAPContinuation(s.packed())
 }
 
 // AsMVAP decodes the block as the MV_AP continuation of a C_MOVE MBC (ETSI TS
 // 102 361-4 Table 7.18), as AsCGAP does.
 func (s *MBCContinuation) AsMVAP() MVAPContinuation {
+	if s == nil {
+		return MVAPContinuation{}
+	}
 	return decodeMVAPContinuation(s.packed())
 }
 
 // AsBCAP decodes the block as the BC_AP continuation of a C_BCAST MBC (ETSI
 // TS 102 361-4 Table 7.21), as AsCGAP does.
 func (s *MBCContinuation) AsBCAP() BCAPContinuation {
+	if s == nil {
+		return BCAPContinuation{}
+	}
 	return decodeBCAPContinuation(s.packed())
 }
 
 // AsVNAP decodes the block as the VN_AP continuation of a C_BCAST Vote_Now
 // MBC (ETSI TS 102 361-4 Table 7.72), as AsCGAP does.
 func (s *MBCContinuation) AsVNAP() VNAPContinuation {
+	if s == nil {
+		return VNAPContinuation{}
+	}
 	return decodeVNAPContinuation(s.packed())
 }
 
@@ -154,6 +172,9 @@ type CGAPContinuation struct {
 
 // DataType returns enums.DataTypeMBCContinuation.
 func (s *CGAPContinuation) DataType() enums.DataType {
+	if s == nil {
+		return 0
+	}
 	return enums.DataTypeMBCContinuation
 }
 
@@ -176,6 +197,9 @@ type MVAPContinuation struct {
 
 // DataType returns enums.DataTypeMBCContinuation.
 func (s *MVAPContinuation) DataType() enums.DataType {
+	if s == nil {
+		return 0
+	}
 	return enums.DataTypeMBCContinuation
 }
 
@@ -197,6 +221,9 @@ type BCAPContinuation struct {
 
 // DataType returns enums.DataTypeMBCContinuation.
 func (s *BCAPContinuation) DataType() enums.DataType {
+	if s == nil {
+		return 0
+	}
 	return enums.DataTypeMBCContinuation
 }
 
@@ -219,5 +246,8 @@ type VNAPContinuation struct {
 
 // DataType returns enums.DataTypeMBCContinuation.
 func (s *VNAPContinuation) DataType() enums.DataType {
+	if s == nil {
+		return 0
+	}
 	return enums.DataTypeMBCContinuation
 }

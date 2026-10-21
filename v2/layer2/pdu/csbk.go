@@ -1,6 +1,7 @@
 package pdu
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
@@ -503,6 +504,9 @@ type CSBK struct {
 // AsBSOutboundActivation decodes the RawPayload of a standard FID CSBK with
 // opcode 0x38 as a BS_Dwn_Act PDU. ok is false for another opcode or FID.
 func (s *CSBK) AsBSOutboundActivation() (p BSOutboundActivationPDU, ok bool) {
+	if s == nil {
+		return BSOutboundActivationPDU{}, false
+	}
 	if s.Opcode != CSBKBSOutboundActivation || s.FID != 0 {
 		return p, false
 	}
@@ -513,6 +517,9 @@ func (s *CSBK) AsBSOutboundActivation() (p BSOutboundActivationPDU, ok bool) {
 // CSBK with opcode 0x38 as a TD_GRANT_MI PDU. ok is false for another opcode
 // or FID.
 func (s *CSBK) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItemPDU, ok bool) {
+	if s == nil {
+		return TalkgroupDataGrantMultiItemPDU{}, false
+	}
 	if s.Opcode != CSBKTalkgroupDataGrantMultiItem || s.FID != 0 {
 		return p, false
 	}
@@ -524,6 +531,9 @@ func (s *CSBK) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItemPDU
 // payload fields and keeps LastBlock and ProtectFlag. It returns the error
 // of p.Encode and leaves s as it is on an error.
 func (s *CSBK) SetBSOutboundActivation(p BSOutboundActivationPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	payload, err := p.Encode()
 	if err != nil {
 		return err
@@ -535,6 +545,9 @@ func (s *CSBK) SetBSOutboundActivation(p BSOutboundActivationPDU) error {
 // SetTalkgroupDataGrantMultiItem makes s a standard FID TD_GRANT_MI CSBK
 // that carries p, as SetBSOutboundActivation does.
 func (s *CSBK) SetTalkgroupDataGrantMultiItem(p TalkgroupDataGrantMultiItemPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	payload, err := p.Encode()
 	if err != nil {
 		return err
@@ -566,5 +579,8 @@ func NewBSOutboundActivation(bs, source uint32) (CSBK, error) {
 
 // DataType returns enums.DataTypeCSBK.
 func (s *CSBK) DataType() enums.DataType {
+	if s == nil {
+		return 0
+	}
 	return enums.DataTypeCSBK
 }

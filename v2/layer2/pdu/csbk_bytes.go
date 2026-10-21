@@ -62,6 +62,9 @@ func (c CSBKBytes) Addresses() (target, source uint32, ok bool) {
 // It returns ErrNoAddresses for other CSBKs and a *dmrgo.FieldRangeError
 // when an address does not fit in 24 bits, and then changes nothing.
 func (c *CSBKBytes) SetAddresses(target, source uint32) error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if err := checkAddresses(target, source, errCSBKBytesTargetRange, errCSBKBytesSourceRange); err != nil {
 		return err
 	}
@@ -115,6 +118,9 @@ func (c CSBKBytes) Group() (group, ok bool) {
 // call Reseal. It returns false, and changes nothing, for a CSBK for which
 // Group returns no flag.
 func (c *CSBKBytes) SetGroup(group bool) bool {
+	if c == nil {
+		return false
+	}
 	o, m, ok := c.groupBit()
 	if !ok {
 		return false
@@ -136,6 +142,9 @@ func (c CSBKBytes) CRCOK() bool {
 // Reseal writes the CRC of octets 0 to 9 with the CSBK mask into octets 10
 // and 11, as Seal does.
 func (c *CSBKBytes) Reseal() {
+	if c == nil {
+		return
+	}
 	_ = Seal((*[12]byte)(c), enums.DataTypeCSBK)
 }
 

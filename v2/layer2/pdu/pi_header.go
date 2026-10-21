@@ -27,5 +27,8 @@ type PIHeader struct {
 
 // DataType returns enums.DataTypePIHeader.
 func (s *PIHeader) DataType() enums.DataType {
+	if s == nil {
+		return 0
+	}
 	return enums.DataTypePIHeader
 }

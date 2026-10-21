@@ -31,6 +31,10 @@ func decodeTime(data []byte) (Time, error) {
 // and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
 // to grow dst.
 func (s *Time) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 5 {
 		dst = append(dst, 0)
@@ -74,6 +78,10 @@ func (s *Time) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *Time) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "Time{ Year: " + text.Int(int64(s.Year)) + ", Month: " + text.Int(int64(s.Month)) + ", Day: " + text.Int(int64(s.Day)) + ", Hour: " + text.Int(int64(s.Hour)) + ", Minute: " + text.Int(int64(s.Minute)) + ", Second: " + text.Int(int64(s.Second)) + " }"
 }
 
@@ -95,6 +103,10 @@ func decodePoint2DAt(result *Point2D, data []byte, _o int) (int, error) {
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *Point2D) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	_vLatitude := math.Round(s.Latitude / (90.0 / (1 << 31)))
 	if !(_vLatitude >= -2.147483648e+09 && _vLatitude <= 2.147483647e+09) {
@@ -112,6 +124,10 @@ func (s *Point2D) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *Point2D) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "Point2D{ Latitude: " + text.Fixed(s.Latitude) + ", Longitude: " + text.Fixed(s.Longitude) + " }"
 }
 
@@ -142,6 +158,10 @@ func decodeCircle2DAt(result *Circle2D, data []byte, _o int) (int, error) {
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *Circle2D) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	_vLatitude := math.Round(s.Latitude / (90.0 / (1 << 31)))
 	if !(_vLatitude >= -2.147483648e+09 && _vLatitude <= 2.147483647e+09) {
@@ -163,6 +183,10 @@ func (s *Circle2D) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *Circle2D) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "Circle2D{ Latitude: " + text.Fixed(s.Latitude) + ", Longitude: " + text.Fixed(s.Longitude) + ", Radius: " + text.Fixed(s.Radius) + " }"
 }
 
@@ -193,6 +217,10 @@ func decodePoint3DAt(result *Point3D, data []byte, _o int) (int, error) {
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *Point3D) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	_vLatitude := math.Round(s.Latitude / (90.0 / (1 << 31)))
 	if !(_vLatitude >= -2.147483648e+09 && _vLatitude <= 2.147483647e+09) {
@@ -214,6 +242,10 @@ func (s *Point3D) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *Point3D) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "Point3D{ Latitude: " + text.Fixed(s.Latitude) + ", Longitude: " + text.Fixed(s.Longitude) + ", Altitude: " + text.Fixed(s.Altitude) + " }"
 }
 
@@ -253,6 +285,10 @@ func decodePoint3DAccuracyAt(result *Point3DAccuracy, data []byte, _o int) (int,
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *Point3DAccuracy) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	_vLatitude := math.Round(s.Latitude / (90.0 / (1 << 31)))
 	if !(_vLatitude >= -2.147483648e+09 && _vLatitude <= 2.147483647e+09) {
@@ -278,6 +314,10 @@ func (s *Point3DAccuracy) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *Point3DAccuracy) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "Point3DAccuracy{ Latitude: " + text.Fixed(s.Latitude) + ", Longitude: " + text.Fixed(s.Longitude) + ", Altitude: " + text.Fixed(s.Altitude) + ", AltitudeAccuracy: " + text.Fixed(s.AltitudeAccuracy) + " }"
 }
 
@@ -326,6 +366,10 @@ func decodeCircle3DAt(result *Circle3D, data []byte, _o int) (int, error) {
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *Circle3D) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	_vLatitude := math.Round(s.Latitude / (90.0 / (1 << 31)))
 	if !(_vLatitude >= -2.147483648e+09 && _vLatitude <= 2.147483647e+09) {
@@ -355,6 +399,10 @@ func (s *Circle3D) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *Circle3D) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "Circle3D{ Latitude: " + text.Fixed(s.Latitude) + ", Longitude: " + text.Fixed(s.Longitude) + ", Radius: " + text.Fixed(s.Radius) + ", Altitude: " + text.Fixed(s.Altitude) + ", AltitudeAccuracy: " + text.Fixed(s.AltitudeAccuracy) + " }"
 }
 
@@ -395,6 +443,10 @@ func decodeOperationErrorAt(result *OperationError, data []byte, _o int) (int, e
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *OperationError) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	dst = wire.AppendUintvar(dst, uint64(s.Code))
 	dst = wire.AppendUintvar(dst, uint64(len(s.Info)))
 	dst = append(dst, s.Info...)
@@ -404,6 +456,10 @@ func (s *OperationError) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *OperationError) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "OperationError{ Code: " + text.Int(int64(s.Code)) + ", Info: " + text.Bytes(s.Info[:]) + " }"
 }
 
@@ -569,6 +625,10 @@ func decodeReportAt(result *Report, data []byte, _o int) (int, error) {
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *Report) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	if s.HasRequestID {
 		dst = append(dst, 0x22)
@@ -677,6 +737,10 @@ func (s *Report) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *Report) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "Report{ RequestID: " + text.Bytes(s.RequestID[:]) + ", ShortRequestID: " + text.Int(int64(s.ShortRequestID)) + ", Time: " + s.Time.String() + ", ProtocolVersion: " + text.Int(int64(s.ProtocolVersion)) + ", Result: " + text.Int(int64(s.Result)) + ", Success: " + text.Bool(s.Success) + ", Error: " + s.Error.String() + ", Circle2D: " + s.Circle2D.String() + ", Circle3D: " + s.Circle3D.String() + ", Direction: " + text.Int(int64(s.Direction)) + ", LevelOfConfidence: " + text.Int(int64(s.LevelOfConfidence)) + ", Point2D: " + s.Point2D.String() + ", Point3D: " + s.Point3D.String() + ", Point3DAccuracy: " + s.Point3DAccuracy.String() + ", Speed: " + text.Fixed(s.Speed) + ", VerticalSpeed: " + text.Fixed(s.VerticalSpeed) + " }"
 }
 
@@ -804,6 +868,10 @@ func decodeRequestAt(result *Request, data []byte, _o int) (int, error) {
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *Request) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	if s.HasRequestID {
 		dst = append(dst, 0x22)
 		dst = wire.AppendUintvar(dst, uint64(len(s.RequestID)))
@@ -868,6 +936,10 @@ func (s *Request) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *Request) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "Request{ RequestID: " + text.Bytes(s.RequestID[:]) + ", ShortRequestID: " + text.Int(int64(s.ShortRequestID)) + ", Periodic: " + text.Bool(s.Periodic) + ", OneShot: " + text.Bool(s.OneShot) + ", Interval: " + text.Int(int64(s.Interval)) + ", Distance: " + text.Int(int64(s.Distance)) + ", TriggerCondition: " + text.Int(int64(s.TriggerCondition)) + ", ProtocolVersion: " + text.Int(int64(s.ProtocolVersion)) + ", Accuracy: " + text.Bool(s.Accuracy) + ", AccuracyAndTime: " + text.Bool(s.AccuracyAndTime) + ", Time: " + text.Bool(s.Time) + ", Altitude: " + text.Bool(s.Altitude) + ", Speed: " + text.Bool(s.Speed) + ", Direction: " + text.Bool(s.Direction) + ", VerticalSpeed: " + text.Bool(s.VerticalSpeed) + ", LevelOfConfidence: " + text.Int(int64(s.LevelOfConfidence)) + " }"
 }
 
@@ -943,6 +1015,10 @@ func decodeMessageAt(result *Message, data []byte, _o int) (int, error) {
 // It returns dst unchanged and a *dmrgo.FieldRangeError or another error
 // when a field does not fit. It allocates only to grow dst.
 func (s *Message) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	_vDocument := uint64(s.Document)
 	dst = append(dst, byte(_vDocument))
@@ -975,6 +1051,10 @@ func (s *Message) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *Message) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "Message{ Document: " + s.Document.String() + ", Length: " + text.Int(int64(s.Length)) + ", Request: " + s.Request.String() + ", Report: " + s.Report.String() + " }"
 }
 

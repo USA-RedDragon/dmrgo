@@ -3,6 +3,7 @@ package trunk
 import (
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -90,12 +91,20 @@ type tsccUDT struct {
 // TSCCUDT, such as the answer to PollShortData. It points into the TSCC
 // and changes with the next TSCCUDT. (ETSI TS 102 361-4 clause 6.6.5.1.5)
 func (t *TSCC) UDT() *UDT {
+	if t == nil {
+		return nil
+	}
+
 	return &t.u.got
 }
 
 // USBD returns the USBD Poll Response of the last TSCCUSBD. (ETSI TS 102
 // 361-4 clause 6.6.11.1)
 func (t *TSCC) USBD() pdu.UnifiedSingleBlockData {
+	if t == nil {
+		return pdu.UnifiedSingleBlockData{}
+	}
+
 	return t.u.usbd
 }
 
@@ -103,6 +112,10 @@ func (t *TSCC) USBD() pdu.UnifiedSingleBlockData {
 // services that it diverts and the diversion address. ok is false when the
 // MS diverts no call. (ETSI TS 102 361-4 clause 6.6.7.1.1)
 func (t *TSCC) Diverted(addr uint32) (opts layer3.DiversionServiceOptions, to Appended, ok bool) {
+	if t == nil {
+		return layer3.DiversionServiceOptions{}, Appended{}, false
+	}
+
 	if i := t.divIndex(addr); i >= 0 {
 		d := &t.u.divs[i]
 		return d.opts, d.to, true
@@ -117,6 +130,10 @@ func (t *TSCC) Diverted(addr uint32) (opts layer3.DiversionServiceOptions, to Ap
 // UDT transactions is full, ErrUDTLength for an a with Blocks out of range
 // and a *dmrgo.ConfigError for a target out of range.
 func (t *TSCC) SendShortData(now time.Duration, group bool, target uint32, a *Appended) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if _, err := a.size(); err != nil {
 		return err
 	}
@@ -143,6 +160,13 @@ func (t *TSCC) SendShortData(now time.Duration, group bool, target uint32, a *Ap
 // it with TSCCDelivered. It returns the errors of SendShortData, and
 // ErrUDTFormat for another format.
 func (t *TSCC) AssignGroups(now time.Duration, target uint32, a *Appended) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	if a == nil {
+		return errNil
+	}
 	if a.Format != enums.UDTAddress && a.Format != enums.UDTMixed {
 		return ErrUDTFormat
 	}
@@ -169,6 +193,10 @@ func (t *TSCC) AssignGroups(now time.Duration, target uint32, a *Appended) error
 // transactions is full, ErrUDTLength for blocks out of range and a
 // *dmrgo.ConfigError for a target out of range.
 func (t *TSCC) PollShortData(now time.Duration, target uint32, blocks int) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if blocks < 1 || blocks > 4 {
 		return ErrUDTLength
 	}
@@ -190,6 +218,10 @@ func (t *TSCC) PollShortData(now time.Duration, target uint32, blocks int) error
 // while another download runs or the table of UDT transactions is full,
 // and a *dmrgo.ConfigError for a target or rd out of range.
 func (t *TSCC) PollUSBD(now time.Duration, target uint32, st pdu.ServiceType, rd uint8) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	r := USBDPollRequest{ResponseDelay: rd, Target: target}
 	p, err := r.Encode()
 	if err != nil || target == 0 || target > 0xFFFFFF {

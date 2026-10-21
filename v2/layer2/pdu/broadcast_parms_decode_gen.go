@@ -38,6 +38,10 @@ func decodeAnnWDTSCCParms(data [8]byte) AnnWDTSCCParms {
 // bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-4 clause 7.2.19.1, Table 7.69)
 func (s *AnnWDTSCCParms) Encode() ([8]byte, error) {
+	if s == nil {
+		return [8]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [8]byte{}, errAnnWDTSCCParmsAnnouncementTypeRange
@@ -93,6 +97,10 @@ func (s *AnnWDTSCCParms) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *AnnWDTSCCParms) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "AnnWDTSCCParms{ AnnouncementType: " + s.AnnouncementType.String() + ", Reserved: " + text.Int(int64(s.Reserved)) + ", ColorCode1: " + text.Int(int64(s.ColorCode1)) + ", ColorCode2: " + text.Int(int64(s.ColorCode2)) + ", Withdraw1: " + text.Bool(s.Withdraw1) + ", Withdraw2: " + text.Bool(s.Withdraw2) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", SysIdentCode: " + text.Int(int64(s.SysIdentCode)) + ", Channel1: " + text.Int(int64(s.Channel1)) + ", Channel2: " + text.Int(int64(s.Channel2)) + " }"
 }
 
@@ -113,6 +121,10 @@ func decodeChanFreqParms(data [8]byte) ChanFreqParms {
 // bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-4 clause 7.2.19.6, Table 7.78)
 func (s *ChanFreqParms) Encode() ([8]byte, error) {
+	if s == nil {
+		return [8]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [8]byte{}, errChanFreqParmsAnnouncementTypeRange
@@ -153,6 +165,10 @@ func (s *ChanFreqParms) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ChanFreqParms) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "ChanFreqParms{ AnnouncementType: " + s.AnnouncementType.String() + ", Reserved1: " + text.Int(int64(s.Reserved1)) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", SysIdentCode: " + text.Int(int64(s.SysIdentCode)) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", Channel: " + text.Int(int64(s.Channel)) + " }"
 }
 
@@ -177,6 +193,10 @@ func decodeAdjacentSiteParms(data [8]byte) AdjacentSiteParms {
 // first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-4 clause 7.2.19.7, Table 7.79)
 func (s *AdjacentSiteParms) Encode() ([8]byte, error) {
+	if s == nil {
+		return [8]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [8]byte{}, errAdjacentSiteParmsAnnouncementTypeRange
@@ -229,6 +249,10 @@ func (s *AdjacentSiteParms) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *AdjacentSiteParms) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "AdjacentSiteParms{ AnnouncementType: " + s.AnnouncementType.String() + ", AdjacentSysCode: " + text.Int(int64(s.AdjacentSysCode)) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", SysIdentCode: " + text.Int(int64(s.SysIdentCode)) + ", HasActiveConn: " + text.Bool(s.HasActiveConn) + ", ActiveConn: " + text.Bool(s.ActiveConn) + ", ConfirmedPriority: " + text.Int(int64(s.ConfirmedPriority)) + ", AdjacentPriority: " + text.Int(int64(s.AdjacentPriority)) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", Channel: " + text.Int(int64(s.Channel)) + " }"
 }
 
@@ -250,6 +274,10 @@ func decodeCallTimerParms(data [8]byte) CallTimerParms {
 // bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-4 clause 7.2.19.2, Table 7.70)
 func (s *CallTimerParms) Encode() ([8]byte, error) {
+	if s == nil {
+		return [8]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [8]byte{}, errCallTimerParmsAnnouncementTypeRange
@@ -295,6 +323,10 @@ func (s *CallTimerParms) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *CallTimerParms) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "CallTimerParms{ AnnouncementType: " + s.AnnouncementType.String() + ", EmergencyTimer: " + text.Int(int64(s.EmergencyTimer)) + ", PacketTimer: " + text.Int(int64(s.PacketTimer)) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", SysIdentCode: " + text.Int(int64(s.SysIdentCode)) + ", MSMSTimer: " + text.Int(int64(s.MSMSTimer)) + ", LineTimer: " + text.Int(int64(s.LineTimer)) + " }"
 }
 
@@ -319,6 +351,10 @@ func decodeVoteNowParms(data [8]byte) VoteNowParms {
 // bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-4 clause 7.2.19.3, Table 7.71)
 func (s *VoteNowParms) Encode() ([8]byte, error) {
+	if s == nil {
+		return [8]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [8]byte{}, errVoteNowParmsAnnouncementTypeRange
@@ -371,6 +407,10 @@ func (s *VoteNowParms) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *VoteNowParms) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "VoteNowParms{ AnnouncementType: " + s.AnnouncementType.String() + ", VoteSysCode: " + text.Int(int64(s.VoteSysCode)) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", SysIdentCode: " + text.Int(int64(s.SysIdentCode)) + ", HasActiveConn: " + text.Bool(s.HasActiveConn) + ", ActiveConn: " + text.Bool(s.ActiveConn) + ", ConfirmedPriority: " + text.Int(int64(s.ConfirmedPriority)) + ", AdjacentPriority: " + text.Int(int64(s.AdjacentPriority)) + ", Reserved: " + text.Int(int64(s.Reserved)) + ", Channel: " + text.Int(int64(s.Channel)) + " }"
 }
 
@@ -398,6 +438,10 @@ func decodeLocalTimeParms(data [8]byte) LocalTimeParms {
 // bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-4 clause 7.2.19.4, Tables 7.73 to 7.75)
 func (s *LocalTimeParms) Encode() ([8]byte, error) {
+	if s == nil {
+		return [8]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [8]byte{}, errLocalTimeParmsAnnouncementTypeRange
@@ -466,6 +510,10 @@ func (s *LocalTimeParms) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *LocalTimeParms) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "LocalTimeParms{ AnnouncementType: " + s.AnnouncementType.String() + ", Day: " + text.Int(int64(s.Day)) + ", Month: " + text.Int(int64(s.Month)) + ", UTCOffset: " + text.Int(int64(s.UTCOffset)) + ", UTCOffsetLags: " + text.Bool(s.UTCOffsetLags) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", SysIdentCode: " + text.Int(int64(s.SysIdentCode)) + ", Hours: " + text.Int(int64(s.Hours)) + ", Minutes: " + text.Int(int64(s.Minutes)) + ", Seconds: " + text.Int(int64(s.Seconds)) + ", DayOfWeek: " + text.Int(int64(s.DayOfWeek)) + ", UTCOffsetQuarter: " + text.Int(int64(s.UTCOffsetQuarter)) + ", Reserved: " + text.Int(int64(s.Reserved)) + " }"
 }
 
@@ -487,6 +535,10 @@ func decodeMassRegParms(data [8]byte) MassRegParms {
 // bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-4 clause 7.2.19.5, Tables 7.76 and 7.77)
 func (s *MassRegParms) Encode() ([8]byte, error) {
+	if s == nil {
+		return [8]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [8]byte{}, errMassRegParmsAnnouncementTypeRange
@@ -531,6 +583,10 @@ func (s *MassRegParms) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *MassRegParms) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "MassRegParms{ AnnouncementType: " + s.AnnouncementType.String() + ", Reserved: " + text.Int(int64(s.Reserved)) + ", RegWindow: " + text.Int(int64(s.RegWindow)) + ", AlohaMask: " + text.Int(int64(s.AlohaMask)) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", SysIdentCode: " + text.Int(int64(s.SysIdentCode)) + ", Address: " + text.Int(int64(s.Address)) + " }"
 }
 
@@ -556,6 +612,10 @@ func decodeGenSiteParms(data [8]byte) GenSiteParms {
 // (ETSI TS 102 361-4 clauses 7.2.19.8, 7.2.40 and 7.2.41, Tables 7.80,
 // 7.101 and 7.102)
 func (s *GenSiteParms) Encode() ([8]byte, error) {
+	if s == nil {
+		return [8]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [8]byte{}, errGenSiteParmsAnnouncementTypeRange
@@ -602,6 +662,10 @@ func (s *GenSiteParms) Encode() ([8]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *GenSiteParms) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "GenSiteParms{ AnnouncementType: " + s.AnnouncementType.String() + ", Reserved1: " + text.Int(int64(s.Reserved1)) + ", Reg: " + text.Bool(s.Reg) + ", Backoff: " + text.Int(int64(s.Backoff)) + ", SysIdentCode: " + text.Int(int64(s.SysIdentCode)) + ", Reserved2: " + text.Bool(s.Reserved2) + ", Hibernating: " + text.Bool(s.Hibernating) + ", Reserved3: " + text.Int(int64(s.Reserved3)) + ", Reserved4: " + text.Int(int64(s.Reserved4)) + ", RegWithoutTG: " + text.Bool(s.RegWithoutTG) + ", Reserved5: " + text.Int(int64(s.Reserved5)) + " }"
 }
 

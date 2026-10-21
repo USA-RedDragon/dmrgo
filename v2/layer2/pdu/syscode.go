@@ -88,6 +88,9 @@ func (s SysCode) NetSite() (uint16, error) {
 // Unpack sets s to the fields of the 16-bit C_SYScode v. It is the inverse
 // of Pack.
 func (s *SysCode) Unpack(v uint16) {
+	if s == nil {
+		return
+	}
 	model := NetworkModel(v >> 14)
 	siteBits := netSiteLen - netSiteBits(uint8(model))
 	*s = SysCode{
@@ -103,6 +106,9 @@ func (s *SysCode) Unpack(v uint16) {
 // *dmrgo.FieldRangeError, and changes nothing, when v does not fit in 14
 // bits.
 func (s *SysCode) Unpack14(v uint16) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if v>>14 != 0 {
 		return errSysCode14Range
 	}
@@ -133,11 +139,17 @@ func sysCodeFromShortLC(model uint8, netSite uint16, modelErr, netSiteErr error)
 // returns a *dmrgo.FieldRangeError when MODEL or NetSiteRaw does not fit
 // its bits.
 func (s *ShortLCCSysParms) SysCode() (SysCode, error) {
+	if s == nil {
+		return SysCode{}, dmrgo.ErrNilReceiver
+	}
 	return sysCodeFromShortLC(s.MODEL, s.NetSiteRaw, errShortLCCSysParmsMODELRange, errShortLCCSysParmsNetSiteRawRange)
 }
 
 // SetSysCode sets MODEL and NetSiteRaw from c. c.Par is ignored.
 func (s *ShortLCCSysParms) SetSysCode(c SysCode) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	netSite, err := c.NetSite()
 	if err != nil {
 		return err
@@ -149,11 +161,17 @@ func (s *ShortLCCSysParms) SetSysCode(c SysCode) error {
 // SysCode returns the MODEL, NET and SITE carried in the P_SYS_Parms, with
 // the errors of ShortLCCSysParms.SysCode.
 func (s *ShortLCPSysParms) SysCode() (SysCode, error) {
+	if s == nil {
+		return SysCode{}, dmrgo.ErrNilReceiver
+	}
 	return sysCodeFromShortLC(s.MODEL, s.NetSiteRaw, errShortLCPSysParmsMODELRange, errShortLCPSysParmsNetSiteRawRange)
 }
 
 // SetSysCode sets MODEL and NetSiteRaw from c. c.Par is ignored.
 func (s *ShortLCPSysParms) SetSysCode(c SysCode) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	netSite, err := c.NetSite()
 	if err != nil {
 		return err

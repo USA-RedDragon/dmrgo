@@ -303,11 +303,19 @@ type Grant struct {
 // Call returns the voice.Call of a voice grant, for voice.Receiver.Expect.
 // Trunked voice can start without a Voice LC Header.
 func (g *Grant) Call() voice.Call {
+	if g == nil {
+		return voice.Call{}
+	}
+
 	return voice.Call{Group: g.Group, Target: g.Target, Source: g.Source}
 }
 
 // Data reports whether the grant is for packet data.
 func (g *Grant) Data() bool {
+	if g == nil {
+		return false
+	}
+
 	return g.Service == enums.ServiceIndividualPacketData || g.Service == enums.ServiceTalkgroupPacketData ||
 		g.Service == enums.ServiceDuplexPacketData
 }

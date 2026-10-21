@@ -3,6 +3,7 @@ package trunk
 import (
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -266,6 +267,10 @@ func (t *TSCC) register(src uint32, out []TSCCOutput) ([]TSCCOutput, bool) {
 // window over 15, a mask over 24 or an addr over 24 bits. (ETSI TS 102
 // 361-4 clause 6.4.5)
 func (t *TSCC) MassRegister(window, mask uint8, addr uint32) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if window > 15 || mask > 24 || addr > 0xFFFFFF {
 		return errTarget
 	}
@@ -282,6 +287,10 @@ func (t *TSCC) MassRegister(window, mask uint8, addr uint32) error {
 // returns ErrBusy when a stun or kill for addr runs or too many run, and a
 // *dmrgo.ConfigError for an addr out of range. (ETSI TS 102 361-4 clause 6.4.9)
 func (t *TSCC) Stun(now time.Duration, addr uint32, revive bool) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	act := StunStun
 	if revive {
 		act = StunRevive
@@ -293,6 +302,10 @@ func (t *TSCC) Stun(now time.Duration, addr uint32, revive bool) error {
 // KILLI, as Stun does. The MS authenticates the TSCC first, so it needs
 // TSCCConfig.Auth (ETSI TS 102 361-4 clause 6.4.10).
 func (t *TSCC) Kill(now time.Duration, addr uint32) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	return t.stun(now, addr, StunKill)
 }
 
@@ -507,6 +520,10 @@ func (t *TSCC) statusStart(now time.Duration, caller, from, target uint32, st St
 // address out of range or a poll of a talkgroup. (ETSI TS 102 361-4 clause
 // 6.6.6)
 func (t *TSCC) SendStatus(now time.Duration, group bool, target, source uint32, s Status) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if target == 0 || target > 0xFFFFFF || source == 0 || source > 0xFFFFFF || s > StatusPoll || group && s == StatusPoll {
 		return errTarget
 	}
@@ -559,6 +576,10 @@ func (t *TSCC) startRC(now time.Duration, i int, cmd enums.RCCommand, by uint32,
 // ErrNoCall for a slot without a call and a *dmrgo.ConfigError for a reserved
 // command. (ETSI TS 102 361-4 clauses 6.4.14 and 6.4.15.1)
 func (t *TSCC) Interrupt(now time.Duration, ch uint16, s enums.Slot, cmd enums.RCCommand) error {
+	if t == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if cmd > enums.RCCeaseTransmissionRequest {
 		return errTarget
 	}

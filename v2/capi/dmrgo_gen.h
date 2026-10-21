@@ -5313,6 +5313,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_MMDVM_COMMAND (-213)
 #define DMRGO_ERR_MMDVM_LENGTH (-214)
 #define DMRGO_ERR_MMDVM_SHORT (-215)
+#define DMRGO_ERR_NIL_RECEIVER (-228)
 #define DMRGO_ERR_NMEA_CHECKSUM (-152)
 #define DMRGO_ERR_NMEA_FIELD (-153)
 #define DMRGO_ERR_NMEA_SENTENCE (-154)

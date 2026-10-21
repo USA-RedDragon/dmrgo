@@ -155,6 +155,10 @@ func DecodeFullLinkControlInto(dst *FullLinkControl, p *FullLinkControlPayloads,
 // bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-1 clause 9.1.6)
 func (s *FullLinkControl) Encode() ([12]byte, error) {
+	if s == nil {
+		return [12]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [12]byte
 	_payload := ""
 	if s.GroupVoice != nil {
@@ -289,6 +293,10 @@ func (s *FullLinkControl) Encode() ([12]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *FullLinkControl) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	_ret := "FullLinkControl{ "
 	_ret += "BurstDataType: " + s.BurstDataType.String() + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Reserved: " + text.Bool(s.Reserved) + ", FLCO: " + s.FLCO.String() + ", FID: " + s.FID.String() + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, "
 	switch {
@@ -326,6 +334,10 @@ func decodeFLCGroupVoice(data [7]byte) FLCGroupVoice {
 // bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-2 clause 7.1.1.1, Table 7.1)
 func (s *FLCGroupVoice) Encode() ([7]byte, error) {
+	if s == nil {
+		return [7]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [7]byte
 	_serviceOptionsBytes, err := s.ServiceOptions.Encode()
 	if err != nil {
@@ -352,6 +364,10 @@ func (s *FLCGroupVoice) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *FLCGroupVoice) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "FLCGroupVoice{ ServiceOptions: " + s.ServiceOptions.String() + ", GroupAddress: " + text.Int(int64(s.GroupAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
@@ -370,6 +386,10 @@ func decodeFLCUnitToUnit(data [7]byte) FLCUnitToUnit {
 // bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-2 clause 7.1.1.2, Table 7.2)
 func (s *FLCUnitToUnit) Encode() ([7]byte, error) {
+	if s == nil {
+		return [7]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [7]byte
 	_serviceOptionsBytes, err := s.ServiceOptions.Encode()
 	if err != nil {
@@ -396,6 +416,10 @@ func (s *FLCUnitToUnit) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *FLCUnitToUnit) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "FLCUnitToUnit{ ServiceOptions: " + s.ServiceOptions.String() + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
@@ -413,6 +437,10 @@ func decodeFLCGPSInfo(data [7]byte) FLCGPSInfo {
 // in the most significant bit of byte 0. (ETSI TS 102 361-2 clause 7.1.1.3,
 // Table 7.3)
 func (s *FLCGPSInfo) Encode() ([7]byte, error) {
+	if s == nil {
+		return [7]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [7]byte
 	if uint64(s.Reserved)>>4 != 0 {
 		return [7]byte{}, errFLCGPSInfoReservedRange
@@ -446,6 +474,10 @@ func (s *FLCGPSInfo) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *FLCGPSInfo) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "FLCGPSInfo{ Reserved: " + text.Int(int64(s.Reserved)) + ", PositionError: " + s.PositionError.String() + ", Longitude: " + text.Fixed(s.Longitude) + ", Latitude: " + text.Fixed(s.Latitude) + " }"
 }
 
@@ -462,6 +494,10 @@ func decodeFLCTalkerAliasHeader(data [7]byte) FLCTalkerAliasHeader {
 // first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-2 clause 7.1.1.4, Table 7.4)
 func (s *FLCTalkerAliasHeader) Encode() ([7]byte, error) {
+	if s == nil {
+		return [7]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [7]byte
 	if uint64(s.TalkerAliasDataFormat)>>2 != 0 {
 		return [7]byte{}, errFLCTalkerAliasHeaderTalkerAliasDataFormatRange
@@ -488,6 +524,10 @@ func (s *FLCTalkerAliasHeader) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *FLCTalkerAliasHeader) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "FLCTalkerAliasHeader{ TalkerAliasDataFormat: " + s.TalkerAliasDataFormat.String() + ", TalkerAliasDataLength: " + text.Int(int64(s.TalkerAliasDataLength)) + ", TalkerAliasData: " + text.Uint(uint64(s.TalkerAliasData)) + " }"
 }
 
@@ -502,6 +542,10 @@ func decodeFLCTalkerAliasBlock(data [7]byte) FLCTalkerAliasBlock {
 // first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-2 clause 7.1.1.5, Table 7.5)
 func (s *FLCTalkerAliasBlock) Encode() ([7]byte, error) {
+	if s == nil {
+		return [7]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [7]byte
 	copy(data[0:7], s.TalkerAliasData[0:7])
 	return data, nil
@@ -510,6 +554,10 @@ func (s *FLCTalkerAliasBlock) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *FLCTalkerAliasBlock) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "FLCTalkerAliasBlock{ TalkerAliasData: " + text.Bytes(s.TalkerAliasData[:]) + " }"
 }
 
@@ -531,6 +579,10 @@ func decodeFLCTerminatorDataLinkControl(data [7]byte) FLCTerminatorDataLinkContr
 // packed, the first bit in the most significant bit of byte 0.
 // (ETSI TS 102 361-3 clause 7.1.1.1, Table 7.1)
 func (s *FLCTerminatorDataLinkControl) Encode() ([7]byte, error) {
+	if s == nil {
+		return [7]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [7]byte
 	if uint64(s.LLIDDestination)>>24 != 0 {
 		return [7]byte{}, errFLCTerminatorDataLinkControlLLIDDestinationRange
@@ -571,6 +623,10 @@ func (s *FLCTerminatorDataLinkControl) Encode() ([7]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *FLCTerminatorDataLinkControl) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "FLCTerminatorDataLinkControl{ LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", GroupOrIndividual: " + text.Bool(s.GroupOrIndividual) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", Reserved: " + text.Bool(s.Reserved) + ", ReSynchronizeFlag: " + text.Bool(s.ReSynchronizeFlag) + ", SendSequenceNumber: " + text.Int(int64(s.SendSequenceNumber)) + " }"
 }
 

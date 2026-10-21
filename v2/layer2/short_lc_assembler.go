@@ -1,6 +1,7 @@
 package layer2
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
@@ -17,12 +18,18 @@ type ShortLCAssembler struct {
 
 // Reset clears the assembler state for reuse.
 func (a *ShortLCAssembler) Reset() {
+	if a == nil {
+		return
+	}
 	a.fragments = [4][3]byte{}
 	a.count = 0
 }
 
 // Count returns the number of fragments accumulated so far.
 func (a *ShortLCAssembler) Count() int {
+	if a == nil {
+		return 0
+	}
 	return a.count
 }
 
@@ -33,6 +40,9 @@ func (a *ShortLCAssembler) Count() int {
 // ErrShortLCSequence when fragments were discarded. It allocates the payload
 // struct of a completed Short LC; AddInto does not.
 func (a *ShortLCAssembler) Add(c CACH) (slc pdu.ShortLC, done bool, err error) {
+	if a == nil {
+		return pdu.ShortLC{}, false, dmrgo.ErrNilReceiver
+	}
 	if c.TACT.FEC.Uncorrectable || c.TACT.LCSS == enums.LCSSSingleFragment {
 		n := a.count
 		a.Reset()
@@ -55,6 +65,9 @@ func (a *ShortLCAssembler) Add(c CACH) (slc pdu.ShortLC, done bool, err error) {
 // Complete. Any other LCSS or order discards the partial Short LC and
 // returns ErrShortLCSequence.
 func (a *ShortLCAssembler) AddFragment(lcss enums.LCSS, payload [3]byte) (bool, error) {
+	if a == nil {
+		return false, dmrgo.ErrNilReceiver
+	}
 	switch lcss {
 	case enums.LCSSFirstFragment:
 		a.Reset()
@@ -86,6 +99,9 @@ func (a *ShortLCAssembler) AddFragment(lcss enums.LCSS, payload [3]byte) (bool, 
 // ErrShortLCIncomplete if the assembler does not hold a full sequence. It
 // allocates the payload struct of the Short LC; CompleteInto does not.
 func (a *ShortLCAssembler) Complete() (pdu.ShortLC, error) {
+	if a == nil {
+		return pdu.ShortLC{}, dmrgo.ErrNilReceiver
+	}
 	if a.count != 4 {
 		return pdu.ShortLC{}, ErrShortLCIncomplete
 	}
@@ -100,6 +116,9 @@ func (a *ShortLCAssembler) Complete() (pdu.ShortLC, error) {
 // ErrShortLCIncomplete, and leaves dst as it is, if the assembler does not
 // hold a full sequence. It does not allocate.
 func (a *ShortLCAssembler) CompleteInto(dst *pdu.ShortLC, p *pdu.ShortLCPayloads) error {
+	if a == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if a.count != 4 {
 		return ErrShortLCIncomplete
 	}
@@ -113,6 +132,9 @@ func (a *ShortLCAssembler) CompleteInto(dst *pdu.ShortLC, p *pdu.ShortLCPayloads
 // into dst, with its payload struct in p, as CompleteInto does. It does not
 // allocate.
 func (a *ShortLCAssembler) AddInto(dst *pdu.ShortLC, p *pdu.ShortLCPayloads, c CACH) (done bool, err error) {
+	if a == nil {
+		return false, dmrgo.ErrNilReceiver
+	}
 	if c.TACT.FEC.Uncorrectable || c.TACT.LCSS == enums.LCSSSingleFragment {
 		n := a.count
 		a.Reset()

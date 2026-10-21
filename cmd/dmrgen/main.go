@@ -7,6 +7,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/USA-RedDragon/dmrgo/cmd/dmrgen/emit"
+	"github.com/USA-RedDragon/dmrgo/cmd/dmrgen/nilguard"
 	"github.com/USA-RedDragon/dmrgo/cmd/dmrgen/parse"
 )
 
@@ -72,6 +74,7 @@ func run(v2Root string) error {
 	for _, pdus := range pkgs {
 		parse.SetUnexportedDecode(pdus)
 	}
+	guard := nilguard.New(v2Root)
 	for _, sf := range files {
 		pdus := pkgs[filepath.Dir(sf.path)][sf.start : sf.start+sf.n]
 		f, genErr := emit.GenerateFile(pdus, pdus[0].Package)
@@ -80,8 +83,16 @@ func run(v2Root string) error {
 		}
 		base := strings.TrimSuffix(filepath.Base(sf.path), ".go")
 		outPath := filepath.Join(filepath.Dir(sf.path), base+"_decode_gen.go")
-		if saveErr := f.Save(outPath); saveErr != nil {
-			return fmt.Errorf("writing %s: %w", outPath, saveErr)
+		var buf bytes.Buffer
+		if renderErr := f.Render(&buf); renderErr != nil {
+			return fmt.Errorf("rendering %s: %w", outPath, renderErr)
+		}
+		src, _, guardErr := guard.Apply(buf.Bytes(), filepath.Dir(sf.path))
+		if guardErr != nil {
+			return fmt.Errorf("guarding %s: %w", outPath, guardErr)
+		}
+		if writeErr := os.WriteFile(outPath, src, 0o644); writeErr != nil {
+			return fmt.Errorf("writing %s: %w", outPath, writeErr)
 		}
 		if slices.ContainsFunc(pdus, func(p parse.PDUStruct) bool { return p.View == nil }) {
 			testPath := filepath.Join(filepath.Dir(sf.path), base+"_string_gen_test.go")

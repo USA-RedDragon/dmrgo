@@ -36,6 +36,10 @@ func decodeRRSRadioAt(result *RRSRadio, data []byte, _o int) (int, error) {
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *RRSRadio) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	dst = append(dst, s.Radio[:]...)
 	return dst, nil
 }
@@ -43,6 +47,10 @@ func (s *RRSRadio) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *RRSRadio) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "RRSRadio{ Radio: " + text.Bytes(s.Radio[:]) + " }"
 }
 
@@ -84,6 +92,10 @@ func decodeRRSAnswerAt(result *RRSAnswer, data []byte, _o int) (int, error) {
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *RRSAnswer) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	dst = append(dst, s.Radio[:]...)
 	_vResult := uint64(s.Result)
 	dst = append(dst, byte(_vResult))
@@ -95,6 +107,10 @@ func (s *RRSAnswer) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *RRSAnswer) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "RRSAnswer{ Radio: " + text.Bytes(s.Radio[:]) + ", Result: " + text.Int(int64(s.Result)) + ", ValidTime: " + text.Int(int64(s.ValidTime)) + " }"
 }
 
@@ -132,6 +148,10 @@ func decodeRRSCheckAnswerAt(result *RRSCheckAnswer, data []byte, _o int) (int, e
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *RRSCheckAnswer) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	dst = append(dst, s.Radio[:]...)
 	_vResult := uint64(s.Result)
 	dst = append(dst, byte(_vResult))
@@ -141,6 +161,10 @@ func (s *RRSCheckAnswer) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *RRSCheckAnswer) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "RRSCheckAnswer{ Radio: " + text.Bytes(s.Radio[:]) + ", Result: " + text.Int(int64(s.Result)) + " }"
 }
 
@@ -165,6 +189,10 @@ func DecodeTMPFlags(data []byte) (TMPFlags, error) {
 // a *dmrgo.FieldRangeError when a field does not fit. It allocates only to
 // grow dst.
 func (s *TMPFlags) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 1 {
 		dst = append(dst, 0)
@@ -186,6 +214,10 @@ func (s *TMPFlags) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *TMPFlags) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "TMPFlags{ NoAck: " + text.Bool(s.NoAck) + ", Option: " + text.Bool(s.Option) + ", Reserved: " + text.Int(int64(s.Reserved)) + " }"
 }
 
@@ -229,6 +261,10 @@ func decodeTMPMessageAt(result *TMPMessage, data []byte, _o int) (int, error) {
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *TMPMessage) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_vRequestID := uint64(s.RequestID)
 	dst = append(dst, byte(_vRequestID>>24), byte(_vRequestID>>16), byte(_vRequestID>>8), byte(_vRequestID))
 	dst = append(dst, s.Destination[:]...)
@@ -240,12 +276,20 @@ func (s *TMPMessage) AppendBinary(dst []byte) ([]byte, error) {
 // TextUTF8 appends Text, UTF-16LE text, to dst as UTF-8 and returns dst. The
 // text ends at the first NUL character. It allocates only to grow dst.
 func (s *TMPMessage) TextUTF8(dst []byte) []byte {
+	if s == nil {
+		return dst
+	}
+
 	return wire.AppendUTF8(dst, s.Text, false)
 }
 
 // SetTextUTF8 appends text, UTF-8, to dst as UTF-16LE, points Text at the
 // appended octets and returns dst. It allocates only to grow dst.
 func (s *TMPMessage) SetTextUTF8(dst, text []byte) []byte {
+	if s == nil {
+		return dst
+	}
+
 	n := len(dst)
 	dst = wire.AppendUTF16(dst, text, false)
 	s.Text = dst[n:]
@@ -255,6 +299,10 @@ func (s *TMPMessage) SetTextUTF8(dst, text []byte) []byte {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *TMPMessage) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "TMPMessage{ RequestID: " + text.Int(int64(s.RequestID)) + ", Destination: " + text.Bytes(s.Destination[:]) + ", Source: " + text.Bytes(s.Source[:]) + ", Text: " + text.Bytes(s.Text[:]) + " }"
 }
 
@@ -301,6 +349,10 @@ func decodeTMPAnswerAt(result *TMPAnswer, data []byte, _o int) (int, error) {
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *TMPAnswer) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_vRequestID := uint64(s.RequestID)
 	dst = append(dst, byte(_vRequestID>>24), byte(_vRequestID>>16), byte(_vRequestID>>8), byte(_vRequestID))
 	dst = append(dst, s.Destination[:]...)
@@ -313,6 +365,10 @@ func (s *TMPAnswer) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *TMPAnswer) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "TMPAnswer{ RequestID: " + text.Int(int64(s.RequestID)) + ", Destination: " + text.Bytes(s.Destination[:]) + ", Source: " + text.Bytes(s.Source[:]) + ", Result: " + text.Int(int64(s.Result)) + " }"
 }
 
@@ -355,6 +411,10 @@ func decodeTMPGroupAnswerAt(result *TMPGroupAnswer, data []byte, _o int) (int, e
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *TMPGroupAnswer) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_vRequestID := uint64(s.RequestID)
 	dst = append(dst, byte(_vRequestID>>24), byte(_vRequestID>>16), byte(_vRequestID>>8), byte(_vRequestID))
 	dst = append(dst, s.Destination[:]...)
@@ -366,6 +426,10 @@ func (s *TMPGroupAnswer) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *TMPGroupAnswer) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "TMPGroupAnswer{ RequestID: " + text.Int(int64(s.RequestID)) + ", Destination: " + text.Bytes(s.Destination[:]) + ", Result: " + text.Int(int64(s.Result)) + " }"
 }
 
@@ -511,6 +575,10 @@ func decodeGPSData(data []byte) (GPSData, error) {
 // and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
 // to grow dst.
 func (s *GPSData) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 40 {
 		dst = append(dst, 0)
@@ -632,6 +700,10 @@ func (s *GPSData) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *GPSData) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "GPSData{ Status: " + text.Int(int64(s.Status)) + ", Hour: " + text.Int(int64(s.Hour)) + ", Minute: " + text.Int(int64(s.Minute)) + ", Second: " + text.Int(int64(s.Second)) + ", Day: " + text.Int(int64(s.Day)) + ", Month: " + text.Int(int64(s.Month)) + ", Year: " + text.Int(int64(s.Year)) + ", NorthSouth: " + text.Int(int64(s.NorthSouth)) + ", LatitudeDegrees: " + text.Int(int64(s.LatitudeDegrees)) + ", LatitudeMinutes: " + text.Int(int64(s.LatitudeMinutes)) + ", LatitudeFraction: " + text.Int(int64(s.LatitudeFraction)) + ", EastWest: " + text.Int(int64(s.EastWest)) + ", LongitudeDegrees: " + text.Int(int64(s.LongitudeDegrees)) + ", LongitudeMinutes: " + text.Int(int64(s.LongitudeMinutes)) + ", LongitudeFraction: " + text.Int(int64(s.LongitudeFraction)) + ", Speed: " + text.Bytes(s.Speed[:]) + ", Direction: " + text.Int(int64(s.Direction)) + " }"
 }
 
@@ -668,6 +740,10 @@ func decodeLPRequestAt(result *LPRequest, data []byte, _o int) (int, error) {
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *LPRequest) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_vRequestID := uint64(s.RequestID)
 	dst = append(dst, byte(_vRequestID>>24), byte(_vRequestID>>16), byte(_vRequestID>>8), byte(_vRequestID))
 	dst = append(dst, s.Radio[:]...)
@@ -677,6 +753,10 @@ func (s *LPRequest) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *LPRequest) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "LPRequest{ RequestID: " + text.Int(int64(s.RequestID)) + ", Radio: " + text.Bytes(s.Radio[:]) + " }"
 }
 
@@ -727,6 +807,10 @@ func decodeLPAnswerAt(result *LPAnswer, data []byte, _o int) (int, error) {
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *LPAnswer) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	_vRequestID := uint64(s.RequestID)
 	dst = append(dst, byte(_vRequestID>>24), byte(_vRequestID>>16), byte(_vRequestID>>8), byte(_vRequestID))
@@ -744,6 +828,10 @@ func (s *LPAnswer) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *LPAnswer) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "LPAnswer{ RequestID: " + text.Int(int64(s.RequestID)) + ", Radio: " + text.Bytes(s.Radio[:]) + ", Result: " + text.Int(int64(s.Result)) + ", GPS: " + s.GPS.String() + " }"
 }
 
@@ -789,6 +877,10 @@ func decodeLPReportAt(result *LPReport, data []byte, _o int) (int, error) {
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *LPReport) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	_vRequestID := uint64(s.RequestID)
 	dst = append(dst, byte(_vRequestID>>24), byte(_vRequestID>>16), byte(_vRequestID>>8), byte(_vRequestID))
@@ -804,6 +896,10 @@ func (s *LPReport) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *LPReport) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "LPReport{ RequestID: " + text.Int(int64(s.RequestID)) + ", Radio: " + text.Bytes(s.Radio[:]) + ", GPS: " + s.GPS.String() + " }"
 }
 
@@ -849,6 +945,10 @@ func decodeLPEmergencyAt(result *LPEmergency, data []byte, _o int) (int, error) 
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *LPEmergency) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	dst = append(dst, s.Radio[:]...)
 	_vType := uint64(s.Type)
@@ -864,6 +964,10 @@ func (s *LPEmergency) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *LPEmergency) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "LPEmergency{ Radio: " + text.Bytes(s.Radio[:]) + ", Type: " + text.Int(int64(s.Type)) + ", GPS: " + s.GPS.String() + " }"
 }
 

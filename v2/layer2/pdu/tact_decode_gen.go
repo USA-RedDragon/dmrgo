@@ -31,6 +31,10 @@ func DecodeTACT(data [1]byte) TACT {
 // most significant bit of byte 0. The least significant bit of byte 0 is 0.
 // (ETSI TS 102 361-1 clause 9.1.4)
 func (s *TACT) Encode() ([1]byte, error) {
+	if s == nil {
+		return [1]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [1]byte
 	if s.AccessType {
 		data[0] |= 0x80
@@ -50,6 +54,10 @@ func (s *TACT) Encode() ([1]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *TACT) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "TACT{ AccessType: " + text.Bool(s.AccessType) + ", TDMAChannel: " + text.Bool(s.TDMAChannel) + ", LCSS: " + s.LCSS.String() + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "} }"
 }
 

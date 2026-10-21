@@ -7,6 +7,9 @@ var errValue = &dmrgo.FieldRangeError{Type: "ars", Field: "Value", Bits: 7}
 // DeviceID returns the radio ID that Device holds, and false when Device is
 // empty, holds a character that is not a digit or a number over 24 bits.
 func (m *Message) DeviceID() (uint32, bool) {
+	if m == nil {
+		return 0, false
+	}
 	if len(m.Device) == 0 || len(m.Device) > 8 {
 		return 0, false
 	}
@@ -23,6 +26,9 @@ func (m *Message) DeviceID() (uint32, bool) {
 // SetDeviceID appends the radio ID id to dst in decimal ASCII digits,
 // points Device at them and returns dst. It allocates only to grow dst.
 func (m *Message) SetDeviceID(dst []byte, id uint32) []byte {
+	if m == nil {
+		return dst
+	}
 	n := len(dst)
 	var b [10]byte
 	i := len(b)

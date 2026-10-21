@@ -3,6 +3,7 @@
 package shortdata
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	wire "github.com/USA-RedDragon/dmrgo/v2/internal/wire"
 )
@@ -37,6 +38,10 @@ func decodeHyteraTextAt(result *HyteraText, data []byte, _o int) (int, error) {
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *HyteraText) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_vField := uint64(s.Field)
 	dst = append(dst, byte(_vField>>8), byte(_vField))
 	dst = append(dst, s.Text...)
@@ -46,6 +51,10 @@ func (s *HyteraText) AppendBinary(dst []byte) ([]byte, error) {
 // TextUTF8 appends Text, UTF-16LE text, to dst as UTF-8 and returns dst. The
 // text ends at the first NUL character. It allocates only to grow dst.
 func (s *HyteraText) TextUTF8(dst []byte) []byte {
+	if s == nil {
+		return dst
+	}
+
 	return wire.AppendUTF8(dst, s.Text, false)
 }
 
@@ -53,6 +62,10 @@ func (s *HyteraText) TextUTF8(dst []byte) []byte {
 // points Text at the appended octets and returns dst. It allocates only to
 // grow dst.
 func (s *HyteraText) SetTextUTF8(dst, text []byte) []byte {
+	if s == nil {
+		return dst
+	}
+
 	n := len(dst)
 	dst = wire.AppendUTF16(dst, text, false)
 	dst = append(dst, 0, 0)
@@ -63,5 +76,9 @@ func (s *HyteraText) SetTextUTF8(dst, text []byte) []byte {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *HyteraText) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "HyteraText{ Field: " + text.Int(int64(s.Field)) + ", Text: " + text.Bytes(s.Text[:]) + " }"
 }

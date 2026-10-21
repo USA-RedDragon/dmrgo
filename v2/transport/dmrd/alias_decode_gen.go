@@ -33,6 +33,10 @@ func DecodeTalkerAlias(data []byte) (TalkerAlias, error) {
 // and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
 // to grow dst.
 func (s *TalkerAlias) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 19 {
 		dst = append(dst, 0)
@@ -62,6 +66,10 @@ func (s *TalkerAlias) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *TalkerAlias) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "TalkerAlias{ Repeater: " + text.Int(int64(s.Repeater)) + ", Source: " + text.Int(int64(s.Source)) + ", Type: " + text.Int(int64(s.Type)) + ", Data: " + text.Bytes(s.Data[:]) + " }"
 }
 
@@ -90,6 +98,10 @@ func DecodeLocalTalkerAlias(data []byte) (LocalTalkerAlias, error) {
 // and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
 // to grow dst.
 func (s *LocalTalkerAlias) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 15 {
 		dst = append(dst, 0)
@@ -114,6 +126,10 @@ func (s *LocalTalkerAlias) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *LocalTalkerAlias) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "LocalTalkerAlias{ Source: " + text.Int(int64(s.Source)) + ", Type: " + text.Int(int64(s.Type)) + ", Data: " + text.Bytes(s.Data[:]) + " }"
 }
 
@@ -142,6 +158,10 @@ func DecodePosition(data []byte) (Position, error) {
 // and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
 // to grow dst.
 func (s *Position) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 18 {
 		dst = append(dst, 0)
@@ -170,6 +190,10 @@ func (s *Position) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *Position) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "Position{ Repeater: " + text.Int(int64(s.Repeater)) + ", Source: " + text.Int(int64(s.Source)) + ", Data: " + text.Bytes(s.Data[:]) + " }"
 }
 
@@ -197,6 +221,10 @@ func DecodeLocalPosition(data []byte) (LocalPosition, error) {
 // and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
 // to grow dst.
 func (s *LocalPosition) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 14 {
 		dst = append(dst, 0)
@@ -220,6 +248,10 @@ func (s *LocalPosition) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *LocalPosition) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "LocalPosition{ Source: " + text.Int(int64(s.Source)) + ", Data: " + text.Bytes(s.Data[:]) + " }"
 }
 

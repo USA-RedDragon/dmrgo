@@ -3,6 +3,7 @@ package trunk
 import (
 	"unicode/utf8"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/wire"
@@ -73,7 +74,7 @@ func (a *Appended) reset(f enums.UDTFormat, blocks int) {
 }
 
 func (a *Appended) size() (int, error) {
-	if a.Blocks < 1 || a.Blocks > 4 {
+	if a == nil || a.Blocks < 1 || a.Blocks > 4 {
 		return 0, ErrUDTLength
 	}
 	return appendedBits(a.Blocks), nil
@@ -98,6 +99,10 @@ func (a *Appended) pad(from int) {
 // is 1 to 367. It returns ErrUDTLength for n out of range or a b too short
 // for n. (ETSI TS 102 361-4 clause B.3.1)
 func (a *Appended) SetBinary(b []byte, n int) error {
+	if a == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if n < 1 || n > maxBinaryBits || len(b)*8 < n {
 		return ErrUDTLength
 	}
@@ -114,6 +119,10 @@ func (a *Appended) SetBinary(b []byte, n int) error {
 // format and ErrUDTLength when a has no end marker or no data before it.
 // It allocates only to grow dst. (ETSI TS 102 361-4 clause B.3.1)
 func (a *Appended) Binary(dst []byte) ([]byte, int, error) {
+	if a == nil {
+		return dst, 0, dmrgo.ErrNilReceiver
+	}
+
 	total, err := a.check(enums.UDTBinary)
 	if err != nil {
 		return dst, 0, err
@@ -139,6 +148,10 @@ func (a *Appended) Binary(dst []byte) ([]byte, int, error) {
 // the One-key_talkgroup of DGNA. It returns ErrUDTLength for a list out of
 // range, or for an address over 24 bits. (ETSI TS 102 361-4 clause B.3.2)
 func (a *Appended) SetAddresses(oneKey bool, list []uint32) error {
+	if a == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if len(list) < 1 || len(list) > 15 {
 		return ErrUDTLength
 	}
@@ -159,6 +172,10 @@ func (a *Appended) SetAddresses(oneKey bool, list []uint32) error {
 // ErrUDTFormat for another format and ErrUDTLength for a Blocks out of
 // range. (ETSI TS 102 361-4 clause B.3.2)
 func (a *Appended) Addresses() (AddressList, error) {
+	if a == nil {
+		return AddressList{}, dmrgo.ErrNilReceiver
+	}
+
 	var l AddressList
 	total, err := a.check(enums.UDTAddress)
 	if err != nil {
@@ -189,6 +206,10 @@ func digitCode(c byte) (uint64, bool) {
 // count out of range and ErrUDTCharacter for another character. (ETSI TS
 // 102 361-4 clause B.3.3 and clause 7.2.9)
 func (a *Appended) SetDigits(digits []byte) error {
+	if a == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	n := len(digits)
 	if n < 1 || n > 92 {
 		return ErrUDTLength
@@ -214,6 +235,10 @@ func (a *Appended) SetDigits(digits []byte) error {
 // allocates only to grow dst. (ETSI TS 102 361-4 clause B.3.3 and clause
 // 7.2.9)
 func (a *Appended) Digits(dst []byte) ([]byte, error) {
+	if a == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	total, err := a.check(enums.UDTBCD)
 	if err != nil {
 		return dst, err
@@ -275,6 +300,10 @@ func symbolCount(text []byte, w int) int {
 // cannot hold. Invalid UTF-8 gives U+FFFD. (ETSI TS 102 361-4 clauses
 // B.3.4, B.3.5 and B.3.8)
 func (a *Appended) SetText(f enums.UDTFormat, text []byte) error {
+	if a == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if f != enums.UDTISO7 && f != enums.UDTISO8 && f != enums.UDTUTF16BE {
 		return ErrUDTFormat
 	}
@@ -287,6 +316,10 @@ func (a *Appended) SetText(f enums.UDTFormat, text []byte) error {
 // One-key_talkgroup of DGNA. It returns ErrUDTLength for a too long text or
 // an address over 24 bits. (ETSI TS 102 361-4 clause B.3.9)
 func (a *Appended) SetMixed(oneKey bool, addr uint32, text []byte) error {
+	if a == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if addr > 0xFFFFFF {
 		return ErrUDTLength
 	}
@@ -340,6 +373,10 @@ func (a *Appended) setSymbols(f enums.UDTFormat, start int, text []byte) error {
 // over the size of the blocks. It allocates only to grow dst. (ETSI TS 102
 // 361-4 clauses B.3.4, B.3.5, B.3.8 and B.3.9)
 func (a *Appended) Text(dst []byte) ([]byte, error) {
+	if a == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	w := symbolBits(a.Format)
 	if w == 0 || a.Format == enums.UDTLIP {
 		return dst, ErrUDTFormat
@@ -374,6 +411,10 @@ func (a *Appended) Text(dst []byte) ([]byte, error) {
 // the One-key_talkgroup of DGNA. Text returns the text. It returns
 // ErrUDTFormat for another format. (ETSI TS 102 361-4 clause B.3.9)
 func (a *Appended) Mixed() (addr uint32, oneKey bool, err error) {
+	if a == nil {
+		return 0, false, dmrgo.ErrNilReceiver
+	}
+
 	if _, err = a.check(enums.UDTMixed); err != nil {
 		return 0, false, err
 	}
@@ -384,6 +425,10 @@ func (a *Appended) Mixed() (addr uint32, oneKey bool, err error) {
 // returns the errors of NMEAShort.Encode. (ETSI TS 102 361-4 clause
 // B.3.6.1)
 func (a *Appended) SetNMEAShort(n *NMEAShort) error {
+	if a == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	p, err := n.Encode()
 	if err != nil {
 		return err
@@ -397,6 +442,10 @@ func (a *Appended) SetNMEAShort(n *NMEAShort) error {
 // another format, or an NMEA format with other than 1 block. (ETSI TS 102
 // 361-4 clause B.3.6.1)
 func (a *Appended) NMEAShort() (NMEAShort, error) {
+	if a == nil {
+		return NMEAShort{}, dmrgo.ErrNilReceiver
+	}
+
 	if a.Format != enums.UDTNMEA || a.Blocks != 1 {
 		return NMEAShort{}, ErrUDTFormat
 	}
@@ -407,6 +456,10 @@ func (a *Appended) NMEAShort() (NMEAShort, error) {
 // It returns the errors of NMEALong.Encode. (ETSI TS 102 361-4 clause
 // B.3.6.2)
 func (a *Appended) SetNMEALong(n *NMEALong) error {
+	if a == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	p, err := n.Encode()
 	if err != nil {
 		return err
@@ -422,6 +475,10 @@ func (a *Appended) SetNMEALong(n *NMEALong) error {
 // manufacturer that its MFID names, in Data octet 11. (ETSI TS 102 361-4
 // clauses B.3.6.2 and B.3.6.3)
 func (a *Appended) NMEALong() (NMEALong, error) {
+	if a == nil {
+		return NMEALong{}, dmrgo.ErrNilReceiver
+	}
+
 	if a.Format != enums.UDTNMEA || a.Blocks != 2 {
 		return NMEALong{}, ErrUDTFormat
 	}
@@ -432,6 +489,10 @@ func (a *Appended) NMEALong() (NMEALong, error) {
 // of ip in one block for IPv4, or all 16 in two blocks for IPv6. (ETSI TS
 // 102 361-4 clause B.3.7)
 func (a *Appended) SetIP(ip [16]byte, v6 bool) {
+	if a == nil {
+		return
+	}
+
 	if v6 {
 		a.reset(enums.UDTIP, 2)
 		copy(a.Data[:], ip[:])
@@ -446,6 +507,10 @@ func (a *Appended) SetIP(ip [16]byte, v6 bool) {
 // for another format and ErrUDTLength for other than 1 or 2 blocks. (ETSI
 // TS 102 361-4 clause B.3.7)
 func (a *Appended) IP() (ip [16]byte, v6 bool, err error) {
+	if a == nil {
+		return [16]byte{}, false, dmrgo.ErrNilReceiver
+	}
+
 	if a.Format != enums.UDTIP {
 		return ip, false, ErrUDTFormat
 	}
@@ -464,6 +529,10 @@ func (a *Appended) IP() (ip [16]byte, v6 bool, err error) {
 // as an encoded LIPShortReport. It returns ErrUDTLength for a count out of
 // range. (ETSI TS 102 361-4 clause B.3.10)
 func (a *Appended) SetLIP(pdu []byte) error {
+	if a == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	n := len(pdu)
 	if n < 1 || n > MaxAppendedOctets {
 		return ErrUDTLength
@@ -481,6 +550,10 @@ func (a *Appended) SetLIP(pdu []byte) error {
 // another format and ErrUDTLength for a PadNibble over the size of the
 // blocks. It allocates only to grow dst. (ETSI TS 102 361-4 clause B.3.10)
 func (a *Appended) LIP(dst []byte) ([]byte, error) {
+	if a == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	total, err := a.check(enums.UDTLIP)
 	if err != nil {
 		return dst, err
@@ -494,7 +567,11 @@ func (a *Appended) LIP(dst []byte) ([]byte, error) {
 // Appended returns the appended data of u, with the UDT Format and the pad
 // nibbles of its header. (ETSI TS 102 361-4 clause 6.5.1)
 func (u *UDT) Appended() Appended {
-	a := Appended{Format: u.Header.UDTFormat, PadNibble: u.Header.PadNibble, Blocks: u.n}
-	copy(a.Data[:], u.Data[:u.Len])
+	if u == nil {
+		return Appended{}
+	}
+
+	a := Appended{Format: u.Header.UDTFormat, PadNibble: u.Header.PadNibble, Blocks: min(max(u.n, 0), 4)}
+	copy(a.Data[:], u.Data[:min(max(u.Len, 0), len(u.Data))])
 	return a
 }

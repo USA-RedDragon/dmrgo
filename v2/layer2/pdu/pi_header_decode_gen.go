@@ -26,6 +26,10 @@ func DecodePIHeader(data [12]byte) PIHeader {
 // Encode encodes a PIHeader. It returns the 96 bits packed, the first bit in
 // the most significant bit of byte 0.
 func (s *PIHeader) Encode() ([12]byte, error) {
+	if s == nil {
+		return [12]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [12]byte
 	data[0] = byte(uint64(s.AlgorithmID))
 	if uint64(s.MFID)>>8 != 0 {
@@ -54,6 +58,10 @@ func (s *PIHeader) Encode() ([12]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *PIHeader) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "PIHeader{ FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, AlgorithmID: " + text.Int(int64(s.AlgorithmID)) + ", MFID: " + text.Int(int64(s.MFID)) + ", KeyID: " + text.Int(int64(s.KeyID)) + ", MessageIndicator: " + text.Int(int64(s.MessageIndicator)) + ", Destination: " + text.Int(int64(s.Destination)) + ", Raw: " + text.Hex(s.Raw[:]) + " }"
 }
 

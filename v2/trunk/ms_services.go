@@ -3,6 +3,7 @@ package trunk
 import (
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -102,18 +103,30 @@ func (m *MS) resetSvc() {
 // Stunned reports whether a TSCC stunned the MS: it then refuses the user
 // services and follows no calls (ETSI TS 102 361-4 clause 6.4.9).
 func (m *MS) Stunned() bool {
+	if m == nil {
+		return false
+	}
+
 	return m.svc.stunned
 }
 
 // Killed reports whether a TSCC killed the MS (ETSI TS 102 361-4 clause
 // 6.4.10).
 func (m *MS) Killed() bool {
+	if m == nil {
+		return false
+	}
+
 	return m.svc.killed
 }
 
 // Asleep reports whether the MS sleeps in power save until its next power
 // save frame (ETSI TS 102 361-4 clause 6.4.7).
 func (m *MS) Asleep() bool {
+	if m == nil {
+		return false
+	}
+
 	return m.svc.asleep
 }
 
@@ -121,6 +134,10 @@ func (m *MS) Asleep() bool {
 // with its registration, or 0 when the MS uses no power save (ETSI TS 102
 // 361-4 clause 6.4.7.2.1).
 func (m *MS) PowerSaveOffset() uint8 {
+	if m == nil {
+		return 0
+	}
+
 	return m.svc.psOffset
 }
 
@@ -128,6 +145,10 @@ func (m *MS) PowerSaveOffset() uint8 {
 // is 0 after NewMS. It returns a *dmrgo.ConfigError for a status over 126. (ETSI
 // TS 102 361-4 clause 6.6.6.2.2.1.5)
 func (m *MS) SetStatus(s Status) error {
+	if m == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if s >= StatusPoll {
 		return errStatus
 	}
@@ -142,6 +163,10 @@ func (m *MS) SetStatus(s Status) error {
 // *dmrgo.ConfigError for data over MaxSupplementary octets or a format over 15.
 // (ETSI TS 102 361-4 clause 6.4.13)
 func (m *MS) SetSupplementary(format uint8, data []byte) error {
+	if m == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if len(data) > MaxSupplementary || format > 15 {
 		return errSupplementary
 	}
@@ -156,6 +181,10 @@ func (m *MS) SetSupplementary(format uint8, data []byte) error {
 // ErrStunned for a stunned MS, and a *dmrgo.ConfigError for a status over 126.
 // (ETSI TS 102 361-4 clause 6.6.6.1)
 func (m *MS) SendStatus(now time.Duration, group bool, target uint32, s Status) error {
+	if m == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if s >= StatusPoll {
 		return errStatus
 	}
@@ -167,6 +196,10 @@ func (m *MS) SendStatus(now time.Duration, group bool, target uint32, s Status) 
 // target, or OutputRefused. It returns the errors of SendStatus. (ETSI TS
 // 102 361-4 clause 6.6.6.2)
 func (m *MS) PollStatus(now time.Duration, target uint32) error {
+	if m == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	return m.statusRequest(now, reqStatus, false, target, StatusPoll)
 }
 
@@ -216,6 +249,10 @@ func (m *MS) suplExtra(options uint8) uint8 {
 // only when dst has no room for MaxOutputs outputs. (ETSI TS 102 361-4
 // clauses 6.4.14.3.3 and 6.4.14.3.4)
 func (m *MS) Interrupt(now time.Duration, terminate bool, dst []Output) ([]Output, error) {
+	if m == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	dst = m.timers(now, dst)
 	g := m.f.call
 	switch {
@@ -271,6 +308,10 @@ func (m *MS) resume(now time.Duration, out []Output) []Output {
 // ErrNotOnControl and ErrBusy as Call does. (ETSI TS 102 361-4 clause
 // 6.4.11)
 func (m *MS) AdviseIP(now time.Duration, ip [16]byte, ipv6, remove bool) error {
+	if m == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	switch {
 	case m.off || m.f.state != StateControl:
 		return ErrNotOnControl

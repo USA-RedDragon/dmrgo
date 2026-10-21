@@ -1,6 +1,7 @@
 package csbk
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -104,11 +105,17 @@ func NewWakeup(cfg *WakeupConfig) (*Wakeup, error) {
 
 // Reset ends any wakeup without an output. It keeps the config.
 func (w *Wakeup) Reset() {
+	if w == nil {
+		return
+	}
 	w.state = WakeupIdle
 }
 
 // State returns the state of the Wakeup.
 func (w *Wakeup) State() WakeupState {
+	if w == nil {
+		return 0
+	}
 	return w.state
 }
 
@@ -116,6 +123,9 @@ func (w *Wakeup) State() WakeupState {
 // first BS_Dwn_Act goes out at the next Tick. It returns ErrBusy while a
 // wakeup runs, and a *dmrgo.ConfigError for an address above 24 bits.
 func (w *Wakeup) Wake(now time.Duration, bs, source uint32) error {
+	if w == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if w.state != WakeupIdle {
 		return ErrBusy
 	}
@@ -136,6 +146,9 @@ func (w *Wakeup) Wake(now time.Duration, bs, source uint32) error {
 // while a wakeup runs. It allocates only when dst has no room for
 // MaxOutputs outputs.
 func (w *Wakeup) OutboundSync(dst []Output) []Output {
+	if w == nil {
+		return dst
+	}
 	if w.state == WakeupIdle || w.sent == 0 {
 		return dst
 	}
@@ -147,6 +160,10 @@ func (w *Wakeup) OutboundSync(dst []Output) []Output {
 // shape of the other methods. It allocates only when dst has no room for
 // MaxOutputs outputs.
 func (w *Wakeup) Cancel(_ time.Duration, dst []Output) []Output {
+	if w == nil {
+		return dst
+	}
+
 	if w.state == WakeupIdle {
 		return dst
 	}
@@ -159,6 +176,9 @@ func (w *Wakeup) Cancel(_ time.Duration, dst []Output) []Output {
 // frame without a burst, only runs the timers, as Lost does. It allocates
 // only when dst has no room for MaxOutputs outputs.
 func (w *Wakeup) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
+	if w == nil {
+		return dst
+	}
 	return w.Decoded(now, w.d.decode(raw, &h), h, dst)
 }
 
@@ -167,6 +187,9 @@ func (w *Wakeup) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, d
 // BS_Dwn_Act went out, ends the wakeup with ResultAnswered. It allocates
 // only when dst has no room for MaxOutputs outputs.
 func (w *Wakeup) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
+	if w == nil {
+		return dst
+	}
 	dst = w.Tick(now, dst)
 	if b == nil || (b.SyncPattern != enums.SyncBSSourcedData && b.SyncPattern != enums.SyncBSSourcedVoice) {
 		return dst
@@ -181,6 +204,9 @@ func (w *Wakeup) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst 
 // timers as Tick does, and allocates only when dst has no room for
 // MaxOutputs outputs.
 func (w *Wakeup) Lost(now time.Duration, dst []Output) []Output {
+	if w == nil {
+		return dst
+	}
 	return w.Tick(now, dst)
 }
 
@@ -189,6 +215,9 @@ func (w *Wakeup) Lost(now time.Duration, dst []Output) []Output {
 // last T_SyncWu. A Tick before Deadline does nothing. It allocates only
 // when dst has no room for MaxOutputs outputs.
 func (w *Wakeup) Tick(now time.Duration, dst []Output) []Output {
+	if w == nil {
+		return dst
+	}
 	if w.state == WakeupWaiting && w.syncWait >= 0 && now >= w.waitUntil {
 		if w.sent >= w.attempts {
 			return w.done(dst, ResultNoAnswer)
@@ -213,6 +242,9 @@ func (w *Wakeup) Tick(now time.Duration, dst []Output) []Output {
 // Deadline returns the time at which the Wakeup needs a Tick. ok is false
 // when no timer runs.
 func (w *Wakeup) Deadline() (at time.Duration, ok bool) {
+	if w == nil {
+		return 0, false
+	}
 	switch w.state {
 	case WakeupSending:
 		return w.due, true

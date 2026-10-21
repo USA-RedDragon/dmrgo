@@ -21,6 +21,9 @@ type UDPIPv4CompressedHeader struct {
 // The application data starts after it. (ETSI TS 102 361-3 clause 5.6,
 // Tables 7.20 and 7.21)
 func (s *UDPIPv4CompressedHeader) Octets() int {
+	if s == nil {
+		return 0
+	}
 	n := 5
 	if s.SPID == enums.SPIDExtendedHeader {
 		n += 2
@@ -36,6 +39,9 @@ func (s *UDPIPv4CompressedHeader) Octets() int {
 // manufacturer specific or reserved SPID or DPID gives port 0, as the radio
 // configures its port. (ETSI TS 102 361-3 clauses 7.2.1.1 and 7.2.1.2)
 func (s *UDPIPv4CompressedHeader) Ports() (source, destination uint16) {
+	if s == nil {
+		return 0, 0
+	}
 	source = enums.SPIDToPort(s.SPID)
 	destination = enums.DPIDToPort(s.DPID)
 	switch {

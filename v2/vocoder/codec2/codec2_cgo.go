@@ -14,6 +14,7 @@ import (
 	"sync"
 	"unsafe"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
@@ -155,11 +156,21 @@ func newSilence(cmode C.int, nbytes int) ([9]byte, error) {
 }
 
 // FrameSamples returns FrameSamples.
-func (c *Codec) FrameSamples() int { return FrameSamples }
+func (c *Codec) FrameSamples() int {
+	if c == nil {
+		return 0
+	}
+	return FrameSamples
+}
 
 // Mode returns the configured Codec2 mode, ModeAuto for a Codec that detects
 // the mode.
-func (c *Codec) Mode() Mode { return c.mode }
+func (c *Codec) Mode() Mode {
+	if c == nil {
+		return 0
+	}
+	return c.mode
+}
 
 // DecodeMode returns the mode of the frames of the current call: the
 // configured mode, or for ModeAuto the detected mode. It returns ModeAuto
@@ -167,6 +178,10 @@ func (c *Codec) Mode() Mode { return c.mode }
 // decide it. Until then Decode uses the more likely mode, Mode2400 when no
 // frame favors either.
 func (c *Codec) DecodeMode() Mode {
+	if c == nil {
+		return 0
+	}
+
 	if c.mode != ModeAuto {
 		return c.mode
 	}
@@ -176,19 +191,38 @@ func (c *Codec) DecodeMode() Mode {
 // Reset starts a new call: a ModeAuto Codec detects the mode again from the
 // next frame. Without Reset, Decode follows a change of mode after at most 9
 // frames. Reset does nothing for a fixed mode.
-func (c *Codec) Reset() { c.det.reset() }
+func (c *Codec) Reset() {
+	if c == nil {
+		return
+	}
+	c.det.reset()
+}
 
 // FID returns the configured Feature set ID.
-func (c *Codec) FID() enums.FeatureSetID { return c.fid }
+func (c *Codec) FID() enums.FeatureSetID {
+	if c == nil {
+		return 0
+	}
+	return c.fid
+}
 
 // Silence returns 20 ms of digital silence encoded with a fresh encoder
 // state in the mode that Encode uses.
-func (c *Codec) Silence() [9]byte { return c.silence }
+func (c *Codec) Silence() [9]byte {
+	if c == nil {
+		return [9]byte{}
+	}
+	return c.silence
+}
 
 // Encode encodes exactly FrameSamples samples into one 72-bit frame, in
 // Mode2400 for ModeAuto. It does not allocate when pcm has FrameSamples
 // samples.
 func (c *Codec) Encode(pcm []int16) ([9]byte, error) {
+	if c == nil {
+		return [9]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	if c.enc == nil {
 		return [9]byte{}, ErrClosed
 	}
@@ -210,6 +244,10 @@ func (c *Codec) Encode(pcm []int16) ([9]byte, error) {
 // them. It returns at most FrameSamples() samples. It allocates the samples;
 // AppendDecode does not.
 func (c *Codec) Decode(slot [9]byte) ([]int16, error) {
+	if c == nil {
+		return nil, dmrgo.ErrNilReceiver
+	}
+
 	if c.enc == nil {
 		return nil, ErrClosed
 	}
@@ -221,6 +259,10 @@ func (c *Codec) Decode(slot [9]byte) ([]int16, error) {
 // allocate when dst has room for FrameSamples more samples. On error it
 // returns dst unchanged.
 func (c *Codec) AppendDecode(dst []int16, slot [9]byte) ([]int16, error) {
+	if c == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	if c.enc == nil {
 		return dst, ErrClosed
 	}
@@ -244,6 +286,10 @@ func (c *Codec) AppendDecode(dst []int16, slot [9]byte) ([]int16, error) {
 // another Codec can allocate once, for the runtime record of the waiting
 // goroutine.
 func (c *Codec) Close() error {
+	if c == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if c.enc == nil {
 		return nil
 	}

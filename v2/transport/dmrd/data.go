@@ -1,6 +1,7 @@
 package dmrd
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -79,6 +80,10 @@ type Data struct {
 // (8 bits) and the stream ID. A FrameVoice packet with a position above 5
 // gives KindVoice with the position unknown.
 func (d *Data) Hint() layer2.Hint {
+	if d == nil {
+		return layer2.Hint{}
+	}
+
 	h := layer2.Hint{
 		Slot:      d.Slot,
 		Seq:       uint16(d.Seq),
@@ -106,6 +111,10 @@ func (d *Data) Hint() layer2.Hint {
 // for a position that is not A to F, and one that wraps layer2.ErrDataType
 // for a data type above 15.
 func (d *Data) SetKind(k layer2.Kind, pos enums.VoiceBurstType, dt enums.DataType) error {
+	if d == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	switch k {
 	case layer2.KindVoice:
 		if _, ok := pos.Index(); !ok {

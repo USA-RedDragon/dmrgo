@@ -21,6 +21,9 @@ func (e EMBInfo) ColorCode() enums.ColorCode {
 
 // SetColorCode writes cc into bits 7 to 4.
 func (e *EMBInfo) SetColorCode(cc enums.ColorCode) error {
+	if e == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if cc>>4 != 0 {
 		return errEMBInfoColorCodeRange
 	}
@@ -35,6 +38,9 @@ func (e EMBInfo) PI() bool {
 
 // SetPI writes the Pre-emption and power control Indicator into bit 3.
 func (e *EMBInfo) SetPI(pi bool) {
+	if e == nil {
+		return
+	}
 	if pi {
 		*e |= 0x08
 	} else {
@@ -49,6 +55,9 @@ func (e EMBInfo) LCSS() enums.LCSS {
 
 // SetLCSS writes l into bits 2 and 1.
 func (e *EMBInfo) SetLCSS(l enums.LCSS) error {
+	if e == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if l>>2 != 0 {
 		return errEMBInfoLCSSRange
 	}
@@ -69,6 +78,9 @@ func (e EMBInfo) EmbeddedSignalling() EmbeddedSignalling {
 // Info returns the information bits of s as an EMBInfo with bit 0 clear:
 // the color code, the PI and the LCSS. It returns the errors of Encode.
 func (s *EmbeddedSignalling) Info() (EMBInfo, error) {
+	if s == nil {
+		return 0, dmrgo.ErrNilReceiver
+	}
 	cw, err := s.Encode()
 	return EMBInfo(cw[0] & 0xFE), err
 }

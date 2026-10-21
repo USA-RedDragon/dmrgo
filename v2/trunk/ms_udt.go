@@ -3,6 +3,7 @@ package trunk
 import (
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/wire"
@@ -99,6 +100,10 @@ func (u *msUDT) deadline(at time.Duration, ok bool) (time.Duration, bool) {
 // OutputRefused. It returns the errors of Call, and ErrUDTLength for an a
 // with Blocks out of range.
 func (m *MS) SendShortData(now time.Duration, group bool, target uint32, a *Appended, opts layer3.ShortDataServiceOptions) error {
+	if m == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	kind := enums.ServiceIndividualShortData
 	if group {
 		kind = enums.ServiceTalkgroupShortData
@@ -126,6 +131,10 @@ func (m *MS) SendShortData(now time.Duration, group bool, target uint32, a *Appe
 // and OutputDelivered, or OutputRefused. It returns the errors of Call, and
 // ErrUDTLength for blocks out of range.
 func (m *MS) PollShortData(now time.Duration, target uint32, f enums.UDTFormat, blocks int) error {
+	if m == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	field, err := layer3.PollingServiceOptions{Format: f}.Field()
 	if err != nil {
 		return errTarget
@@ -151,6 +160,10 @@ func (m *MS) PollShortData(now time.Duration, target uint32, f enums.UDTFormat, 
 // the errors of Call, and a *dmrgo.ConfigError for another gateway or a missing
 // a.
 func (m *MS) Divert(now time.Duration, gateway uint32, opts layer3.DiversionServiceOptions, a *Appended) error {
+	if m == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	switch gateway {
 	case constants.GatewayMSI, constants.GatewayGPI, constants.GatewayPSTNI, constants.GatewayPABXI, constants.GatewayLINEI,
 		constants.GatewayDISPATI, constants.GatewayIPI:
@@ -191,6 +204,13 @@ func (m *MS) Divert(now time.Duration, gateway uint32, opts layer3.DiversionServ
 // OutputRefused. It returns the errors of Call, and ErrUDTFormat for
 // another format.
 func (m *MS) AssignGroups(now time.Duration, target uint32, a *Appended) error {
+	if m == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	if a == nil {
+		return errNil
+	}
 	if a.Format != enums.UDTAddress && a.Format != enums.UDTMixed {
 		return ErrUDTFormat
 	}
@@ -214,6 +234,10 @@ func (m *MS) AssignGroups(now time.Duration, target uint32, a *Appended) error {
 // by random access, as Call does (ETSI TS 102 361-4 clause 6.6.9.2). The MS
 // follows the PV_GRANT_DX whose Target is its own address.
 func (m *MS) CallDuplex(now time.Duration, target uint32, opts layer3.VoiceServiceOptions) error {
+	if m == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	field, err := opts.Field()
 	if err != nil {
 		return errTarget
@@ -225,6 +249,10 @@ func (m *MS) CallDuplex(now time.Duration, target uint32, opts layer3.VoiceServi
 // target, by random access, as CallData does (ETSI TS 102 361-4 clause
 // 6.6.10.2).
 func (m *MS) CallDuplexData(now time.Duration, target uint32, opts layer3.DataServiceOptions) error {
+	if m == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	field, err := opts.Field()
 	if err != nil {
 		return errTarget
@@ -237,6 +265,10 @@ func (m *MS) CallDuplexData(now time.Duration, target uint32, opts layer3.DataSe
 // called MS transmits without an action of its user (ETSI TS 102 361-4
 // clause 6.6.2.6.2).
 func (m *MS) CallAmbient(now time.Duration, target uint32, opts layer3.VoiceServiceOptions) error {
+	if m == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if err := m.Call(now, false, target, opts); err != nil {
 		return err
 	}
@@ -249,6 +281,10 @@ func (m *MS) CallAmbient(now time.Duration, target uint32, opts layer3.VoiceServ
 // refuses a poll with C_NACKU MSNot_Supported. The MS keeps a copy. (ETSI
 // TS 102 361-4 clause 6.6.5.7)
 func (m *MS) SetPollResponse(a *Appended) {
+	if m == nil {
+		return
+	}
+
 	m.u.hasPoll = a != nil
 	if a != nil {
 		m.u.poll = *a
@@ -261,6 +297,10 @@ func (m *MS) SetPollResponse(a *Appended) {
 // C_NACKU MSNot_Supported. The MS keeps a copy. (ETSI TS 102 361-4 clause
 // 6.6.11.2)
 func (m *MS) SetUSBDResponse(p *pdu.UnifiedSingleBlockData) {
+	if m == nil {
+		return
+	}
+
 	m.u.hasUSBD = p != nil
 	if p != nil {
 		m.u.usbd = *p
@@ -270,6 +310,10 @@ func (m *MS) SetUSBDResponse(p *pdu.UnifiedSingleBlockData) {
 // Groups returns the DGNA talkgroups of the MS. The MS follows their calls
 // as those of MSConfig.Talkgroups. (ETSI TS 102 361-4 clause 6.6.8.1)
 func (m *MS) Groups() DynamicGroups {
+	if m == nil {
+		return DynamicGroups{}
+	}
+
 	return m.u.groups
 }
 
@@ -278,6 +322,10 @@ func (m *MS) Groups() DynamicGroups {
 // allocates only when dst has no room for 63 more octets. (ETSI TS 102
 // 361-4 clause 6.6.8.1.2)
 func (m *MS) GroupAlias(dst []byte, tg uint32) []byte {
+	if m == nil {
+		return dst
+	}
+
 	for i, g := range m.u.groups.Groups {
 		if g != constants.AddressNull && g == tg {
 			return appendAlias(dst, &m.u.alias[i])

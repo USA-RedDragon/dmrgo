@@ -1,6 +1,7 @@
 package csbk
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
@@ -172,6 +173,9 @@ func NewRequester(cfg *RequesterConfig) (*Requester, error) {
 // Reset ends any request without an output and forgets the channel state.
 // It keeps the config and the state of the random generator.
 func (q *Requester) Reset() {
+	if q == nil {
+		return
+	}
 	q.state = RequesterIdle
 	q.s.stop()
 	q.s.busy = false
@@ -179,6 +183,9 @@ func (q *Requester) Reset() {
 
 // State returns the state of the Requester.
 func (q *Requester) State() RequesterState {
+	if q == nil {
+		return 0
+	}
 	return q.state
 }
 
@@ -190,6 +197,9 @@ func (q *Requester) State() RequesterState {
 // and a *dmrgo.ConfigError for an address above 24 bits, impolite access or
 // a Pre_CSBK count out of range. (ETSI TS 102 361-2 clause 5.2.2.3)
 func (q *Requester) RequestOACSU(now time.Duration, target, source uint32, so layer3.ServiceOptions, opts *RequestOptions) error {
+	if q == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	var o RequestOptions
 	if opts != nil {
 		o = *opts
@@ -215,6 +225,9 @@ func (q *Requester) RequestOACSU(now time.Duration, target, source uint32, so la
 // 0x10, opcode 0x24). The OutputDone has ResultAnswered when target
 // answers. It returns errors as RequestOACSU does.
 func (q *Requester) RequestRadioCheck(now time.Duration, target, source uint32, opts *RequestOptions) error {
+	if q == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	var o RequestOptions
 	if opts != nil {
 		o = *opts
@@ -239,6 +252,9 @@ func (q *Requester) RequestRadioCheck(now time.Duration, target, source uint32, 
 // has ResultAnswered when target acknowledges it. It returns errors as
 // RequestOACSU does.
 func (q *Requester) RequestCallAlert(now time.Duration, target, source uint32, opts *RequestOptions) error {
+	if q == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	var o RequestOptions
 	if opts != nil {
 		o = *opts
@@ -266,6 +282,9 @@ func (q *Requester) RequestCallAlert(now time.Duration, target, source uint32, o
 // standard CSBK without both addresses, and a *dmrgo.ConfigError for a Match
 // without opcodes or a Pre_CSBK count out of range.
 func (q *Requester) Request(now time.Duration, c pdu.CSBKBytes, m Match, opts *RequestOptions) error {
+	if q == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	var o RequestOptions
 	if opts != nil {
 		o = *opts
@@ -340,6 +359,9 @@ func (q *Requester) sync() {
 // that the caller sees on it. A polite try waits for an idle channel. Until
 // the first report the channel counts as idle.
 func (q *Requester) Channel(now time.Duration, busy bool) {
+	if q == nil {
+		return
+	}
 	q.s.channel(now, busy)
 	if q.state == RequesterAccess {
 		q.sync()
@@ -351,6 +373,10 @@ func (q *Requester) Channel(now time.Duration, busy bool) {
 // shape of the other methods. It allocates only when dst has no room for
 // MaxOutputs outputs.
 func (q *Requester) Cancel(_ time.Duration, dst []Output) []Output {
+	if q == nil {
+		return dst
+	}
+
 	if q.state == RequesterIdle {
 		return dst
 	}
@@ -362,6 +388,9 @@ func (q *Requester) Cancel(_ time.Duration, dst []Output) []Output {
 // nil raw, a transport frame without a burst, is a nil b for Decoded. It
 // allocates only when dst has no room for MaxOutputs outputs.
 func (q *Requester) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
+	if q == nil {
+		return dst
+	}
 	return q.Decoded(now, q.d.decode(raw, &h), h, dst)
 }
 
@@ -370,6 +399,9 @@ func (q *Requester) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint
 // NACK_Rsp for it, after the first try went out. A CSBK whose CRC fails is
 // dropped. It allocates only when dst has no room for MaxOutputs outputs.
 func (q *Requester) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
+	if q == nil {
+		return dst
+	}
 	dst = q.Tick(now, dst)
 	if q.state == RequesterIdle || q.tries == 0 {
 		return dst
@@ -432,6 +464,9 @@ func (q *Requester) answer(c *pdu.CSBK) (Result, bool) {
 // counts as idle. It runs the timers as Tick does and appends the outputs
 // to dst. It allocates only when dst has no room for MaxOutputs outputs.
 func (q *Requester) Lost(now time.Duration, dst []Output) []Output {
+	if q == nil {
+		return dst
+	}
 	q.Channel(now, false)
 	return q.Tick(now, dst)
 }
@@ -442,6 +477,9 @@ func (q *Requester) Lost(now time.Duration, dst []Output) []Output {
 // Deadline does nothing. It allocates only when dst has no room for
 // MaxOutputs outputs.
 func (q *Requester) Tick(now time.Duration, dst []Output) []Output {
+	if q == nil {
+		return dst
+	}
 	if q.state == RequesterWaiting && q.wait >= 0 && now >= q.waitUntil {
 		if q.tries > q.retries {
 			return q.done(dst, ResultNoAnswer, nil)
@@ -472,6 +510,9 @@ func (q *Requester) Tick(now time.Duration, dst []Output) []Output {
 // Deadline returns the time at which the Requester needs a Tick. ok is
 // false when no timer runs.
 func (q *Requester) Deadline() (at time.Duration, ok bool) {
+	if q == nil {
+		return 0, false
+	}
 	switch q.state {
 	case RequesterWaiting:
 		return q.waitUntil, q.wait >= 0

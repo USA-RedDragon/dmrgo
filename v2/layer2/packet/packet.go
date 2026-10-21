@@ -2,6 +2,7 @@ package packet
 
 import (
 	"encoding/binary"
+	"github.com/USA-RedDragon/dmrgo/v2"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
@@ -138,6 +139,9 @@ type retryStore struct {
 
 // Segment does what NewPacket does, into the storage of b.
 func (b *Builder) Segment(header pdu.DataHeader, payload []byte, rate enums.DataType) (Packet, error) {
+	if b == nil {
+		return Packet{}, dmrgo.ErrNilReceiver
+	}
 	confirmed, err := b.setLayout(&header, len(payload), rate)
 	if err != nil {
 		return Packet{}, err
@@ -169,6 +173,9 @@ func (b *Builder) Segment(header pdu.DataHeader, payload []byte, rate enums.Data
 // Retry. It returns an error for a nil p. (ETSI TS 102 361-1 clause
 // 9.3.20, ETSI TS 102 361-3 clause 5.4)
 func (b *Builder) Retry(p *Packet, rd *ResponseData) (Packet, error) {
+	if b == nil {
+		return Packet{}, dmrgo.ErrNilReceiver
+	}
 	if p == nil {
 		return Packet{}, errNil
 	}

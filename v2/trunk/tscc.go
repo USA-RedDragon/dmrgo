@@ -394,6 +394,10 @@ func NewTSCC(cfg *TSCCConfig) (*TSCC, error) {
 
 // Registered reports whether the MS addr is in the registration table.
 func (t *TSCC) Registered(addr uint32) bool {
+	if t == nil {
+		return false
+	}
+
 	return t.regIndex(addr) >= 0
 }
 
@@ -401,6 +405,10 @@ func (t *TSCC) Registered(addr uint32) bool {
 // per 30 ms slot. It is the time of the last Tick plus 30 ms, or 0 before
 // the first Tick.
 func (t *TSCC) Deadline() (at time.Duration, ok bool) {
+	if t == nil {
+		return 0, false
+	}
+
 	return t.next, true
 }
 
@@ -411,6 +419,10 @@ func (t *TSCC) Deadline() (at time.Duration, ok bool) {
 // raw, a transport frame without a burst, does nothing. It allocates only
 // when dst has no room for MaxTSCCOutputs outputs.
 func (t *TSCC) Inbound(now time.Duration, ch uint16, s enums.Slot, raw *layer2.RawBurst, h layer2.Hint, dst []TSCCOutput) []TSCCOutput {
+	if t == nil {
+		return dst
+	}
+
 	out := dst
 	opts := layer2.DecodeOptions{Kind: h.Kind}
 	if raw == nil || t.b == nil || t.b.DecodeFromBytesWith(*raw, &opts) != nil {
@@ -549,6 +561,10 @@ func (t *TSCC) challenge(now time.Duration, src uint32, opts, ps uint8, out []TS
 // nothing when no challenge to addr waits. (ETSI TS 102 361-4 clause
 // 6.4.8.2)
 func (t *TSCC) ExpectAuth(addr, response uint32) {
+	if t == nil {
+		return
+	}
+
 	for i := range t.auths {
 		if w := &t.auths[i]; w.used && w.addr == addr {
 			w.expect, w.hasExpect = response&0xFFFFFF, true
@@ -700,6 +716,10 @@ func (t *TSCC) startClear(i int, reason Reason, out []TSCCOutput) []TSCCOutput {
 // TS1 at the first Tick. It allocates only when dst has no room for
 // MaxTSCCOutputs outputs.
 func (t *TSCC) Tick(now time.Duration, dst []TSCCOutput) []TSCCOutput {
+	if t == nil {
+		return dst
+	}
+
 	out := dst
 	t.slot = t.slot.Other()
 	t.next = now + slotLength

@@ -1,6 +1,7 @@
 package trunk
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
@@ -67,6 +68,10 @@ type ChannelPlan struct {
 // over 12 bits, and ErrPlanFull when MaxChannels other numbers are in the
 // plan.
 func (p *ChannelPlan) Add(c Channel) error {
+	if p == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if c.Number == ChannelNull || c.Number >= ChannelAbsolute {
 		return ErrChannelNumber
 	}
@@ -89,6 +94,10 @@ func (p *ChannelPlan) Add(c Channel) error {
 // the MS. It returns an error for a nil c (ETSI TS 102 361-4 clause
 // C.1.1.4).
 func (p *ChannelPlan) AddCdef(c *layer3.CdefParms) error {
+	if p == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if c == nil {
 		return errNil
 	}
@@ -100,6 +109,10 @@ func (p *ChannelPlan) AddCdef(c *layer3.CdefParms) error {
 // below r.First or not below ChannelAbsolute, and ErrPlanFull when the plan
 // holds MaxRules rules.
 func (p *ChannelPlan) AddRule(r ChannelRule) error {
+	if p == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if r.First == ChannelNull || r.Last < r.First || r.Last >= ChannelAbsolute {
 		return ErrChannelNumber
 	}
@@ -114,6 +127,10 @@ func (p *ChannelPlan) AddRule(r ChannelRule) error {
 // Lookup returns the channel with number n. ok is false when no entry and
 // no rule gives it.
 func (p *ChannelPlan) Lookup(n uint16) (c Channel, ok bool) {
+	if p == nil {
+		return Channel{}, false
+	}
+
 	for i := range p.n {
 		if p.channels[i].Number == n {
 			return p.channels[i], true
@@ -136,6 +153,10 @@ func (p *ChannelPlan) Lookup(n uint16) (c Channel, ok bool) {
 
 // Len returns the number of entries that Add made.
 func (p *ChannelPlan) Len() int {
+	if p == nil {
+		return 0
+	}
+
 	return p.n
 }
 
@@ -162,6 +183,10 @@ type HuntList struct {
 // channel. It returns ErrChannelNumber for CHNULL or a number that is not
 // below ChannelAbsolute, and ErrPlanFull when the list is full.
 func (l *HuntList) Add(e HuntEntry) error {
+	if l == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if e.Channel == ChannelNull || e.Channel >= ChannelAbsolute {
 		return ErrChannelNumber
 	}
@@ -180,6 +205,10 @@ func (l *HuntList) Add(e HuntEntry) error {
 // Withdraw removes the channel from the list and keeps the order of the
 // others. It reports whether the channel was in the list.
 func (l *HuntList) Withdraw(channel uint16) bool {
+	if l == nil {
+		return false
+	}
+
 	i := l.index(channel)
 	if i < 0 {
 		return false
@@ -192,12 +221,20 @@ func (l *HuntList) Withdraw(channel uint16) bool {
 
 // Len returns the number of channels in the list.
 func (l *HuntList) Len() int {
+	if l == nil {
+		return 0
+	}
+
 	return l.n
 }
 
 // At returns entry i, for i from 0 to Len() - 1. It returns the zero
 // HuntEntry for any other i.
 func (l *HuntList) At(i int) HuntEntry {
+	if l == nil {
+		return HuntEntry{}
+	}
+
 	if i < 0 || i >= l.n {
 		return HuntEntry{}
 	}

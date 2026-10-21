@@ -2,6 +2,7 @@ package packet
 
 import (
 	"encoding/binary"
+	"github.com/USA-RedDragon/dmrgo/v2"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -42,6 +43,9 @@ type Message struct {
 // UDP/IP header compression, or when Data is shorter than the compressed
 // header. (ETSI TS 102 361-3 clause 5.6)
 func (m *Message) UDPIPv4() (header pdu.UDPIPv4CompressedHeader, payload []byte, ok bool) {
+	if m == nil {
+		return pdu.UDPIPv4CompressedHeader{}, nil, false
+	}
 	var sap enums.ServiceAccessPointID
 	switch {
 	case m.Header.UnconfirmedDataHeader != nil:
@@ -165,6 +169,9 @@ func (s *store) copyHeader(dst, src *pdu.DataHeader) {
 
 // Reset discards any partial packet. It keeps AcceptBadCRC.
 func (a *Assembler) Reset() {
+	if a == nil {
+		return
+	}
 	a.msg = Message{}
 	a.active, a.confirmed, a.hasBlocks = false, false, false
 	a.total, a.expect, a.count, a.per, a.ns = 0, 0, 0, 0, 0
@@ -177,6 +184,9 @@ func (a *Assembler) Reset() {
 // response packets, after a proprietary header, and while a confirmed
 // packet waits for retried blocks.
 func (a *Assembler) InProgress() bool {
+	if a == nil {
+		return false
+	}
 	return a.active
 }
 
@@ -185,6 +195,9 @@ func (a *Assembler) InProgress() bool {
 // counted but not used, so the message CRC or CRC-9 catches it. A nil b is
 // ignored.
 func (a *Assembler) AddBurst(b *layer2.Burst) (Message, bool, error) {
+	if a == nil {
+		return Message{}, false, dmrgo.ErrNilReceiver
+	}
 	if b == nil || b.Kind != layer2.KindData || b.Data == nil {
 		return Message{}, false, nil
 	}
@@ -202,6 +215,9 @@ func (a *Assembler) AddBurst(b *layer2.Burst) (Message, bool, error) {
 // ErrBlocksMissing, so that Response builds the SACK. Lost does nothing
 // when no packet waits for blocks.
 func (a *Assembler) Lost() (Message, bool, error) {
+	if a == nil {
+		return Message{}, false, dmrgo.ErrNilReceiver
+	}
 	if !a.active || a.count >= a.expect {
 		return Message{}, false, nil
 	}
@@ -215,6 +231,9 @@ func (a *Assembler) Lost() (Message, bool, error) {
 // ErrHeaderCRC and changes nothing. The package doc gives the rules for
 // headers.
 func (a *Assembler) Add(d layer2.Data) (Message, bool, error) {
+	if a == nil {
+		return Message{}, false, dmrgo.ErrNilReceiver
+	}
 	switch v := d.(type) {
 	case *pdu.DataHeader:
 		return a.addHeader(v)
@@ -376,6 +395,9 @@ func (a *Assembler) allValid() bool {
 // arrived with a good CRC-9. It returns at most 127 block numbers. It
 // allocates the slice; AppendMissing does not.
 func (a *Assembler) Missing() []int {
+	if a == nil {
+		return nil
+	}
 	n := a.total
 	if a.hasBlocks {
 		n = 0
@@ -395,6 +417,9 @@ func (a *Assembler) Missing() []int {
 // the extended slice. It does not allocate when dst has room for 127 block
 // numbers.
 func (a *Assembler) AppendMissing(dst []int) []int {
+	if a == nil {
+		return dst
+	}
 	for i, ok := range a.valid[:a.total] {
 		if !ok || !a.hasBlocks {
 			dst = append(dst, i)
@@ -409,6 +434,9 @@ func (a *Assembler) AppendMissing(dst []int) []int {
 // try started. After Add returns a confirmed Message, use
 // NewResponse with ResponseACK, or ResponseNACKPacketCRC on ErrMessageCRC.
 func (a *Assembler) Response() (Packet, error) {
+	if a == nil {
+		return Packet{}, dmrgo.ErrNilReceiver
+	}
 	h := a.msg.Header.ConfirmedDataHeader
 	if !a.active || h == nil {
 		return Packet{}, errNoConfirmed

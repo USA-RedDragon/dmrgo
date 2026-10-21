@@ -4,6 +4,7 @@ package mmdvm
 
 import (
 	"errors"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
@@ -41,6 +42,10 @@ func DecodeStatusV2(data []byte) (StatusV2, error) {
 // and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
 // to grow dst.
 func (s *StatusV2) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 17 {
 		dst = append(dst, 0)
@@ -91,6 +96,10 @@ func (s *StatusV2) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *StatusV2) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "StatusV2{ State: " + text.Int(int64(s.State)) + ", CD: " + text.Bool(s.CD) + ", DACOverflow: " + text.Bool(s.DACOverflow) + ", Lockout: " + text.Bool(s.Lockout) + ", TXOverflow: " + text.Bool(s.TXOverflow) + ", RXOverflow: " + text.Bool(s.RXOverflow) + ", ADCOverflow: " + text.Bool(s.ADCOverflow) + ", TX: " + text.Bool(s.TX) + ", DStarSpace: " + text.Int(int64(s.DStarSpace)) + ", DMRSpace1: " + text.Int(int64(s.DMRSpace1)) + ", DMRSpace2: " + text.Int(int64(s.DMRSpace2)) + ", YSFSpace: " + text.Int(int64(s.YSFSpace)) + ", P25Space: " + text.Int(int64(s.P25Space)) + ", NXDNSpace: " + text.Int(int64(s.NXDNSpace)) + ", FMSpace: " + text.Int(int64(s.FMSpace)) + ", POCSAGSpace: " + text.Int(int64(s.POCSAGSpace)) + " }"
 }
 
@@ -135,6 +144,10 @@ func DecodeStatusV1(data []byte) (StatusV1, error) {
 // and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
 // to grow dst.
 func (s *StatusV1) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 11 {
 		dst = append(dst, 0)
@@ -199,6 +212,10 @@ func (s *StatusV1) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *StatusV1) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "StatusV1{ M17: " + text.Bool(s.M17) + ", POCSAG: " + text.Bool(s.POCSAG) + ", NXDN: " + text.Bool(s.NXDN) + ", P25: " + text.Bool(s.P25) + ", YSF: " + text.Bool(s.YSF) + ", DMR: " + text.Bool(s.DMR) + ", DStar: " + text.Bool(s.DStar) + ", State: " + text.Int(int64(s.State)) + ", CD: " + text.Bool(s.CD) + ", DACOverflow: " + text.Bool(s.DACOverflow) + ", Lockout: " + text.Bool(s.Lockout) + ", TXOverflow: " + text.Bool(s.TXOverflow) + ", RXOverflow: " + text.Bool(s.RXOverflow) + ", ADCOverflow: " + text.Bool(s.ADCOverflow) + ", TX: " + text.Bool(s.TX) + ", DStarSpace: " + text.Int(int64(s.DStarSpace)) + ", DMRSpace1: " + text.Int(int64(s.DMRSpace1)) + ", DMRSpace2: " + text.Int(int64(s.DMRSpace2)) + ", YSFSpace: " + text.Int(int64(s.YSFSpace)) + ", P25Space: " + text.Int(int64(s.P25Space)) + ", NXDNSpace: " + text.Int(int64(s.NXDNSpace)) + ", POCSAGSpace: " + text.Int(int64(s.POCSAGSpace)) + ", M17Space: " + text.Int(int64(s.M17Space)) + " }"
 }
 
@@ -254,6 +271,10 @@ func DecodeConfigV2(data []byte) (ConfigV2, error) {
 // and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
 // to grow dst.
 func (s *ConfigV2) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 37 {
 		dst = append(dst, 0)
@@ -351,6 +372,10 @@ func (s *ConfigV2) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ConfigV2) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "ConfigV2{ Simplex: " + text.Bool(s.Simplex) + ", UseCOSAsLockout: " + text.Bool(s.UseCOSAsLockout) + ", Debug: " + text.Bool(s.Debug) + ", YSFLoDev: " + text.Bool(s.YSFLoDev) + ", PTTInvert: " + text.Bool(s.PTTInvert) + ", TXInvert: " + text.Bool(s.TXInvert) + ", RXInvert: " + text.Bool(s.RXInvert) + ", FM: " + text.Bool(s.FM) + ", NXDN: " + text.Bool(s.NXDN) + ", P25: " + text.Bool(s.P25) + ", YSF: " + text.Bool(s.YSF) + ", DMR: " + text.Bool(s.DMR) + ", DStar: " + text.Bool(s.DStar) + ", POCSAG: " + text.Bool(s.POCSAG) + ", TXDelay: " + text.Int(int64(s.TXDelay)) + ", State: " + text.Int(int64(s.State)) + ", TXDCOffset: " + text.Int(int64(s.TXDCOffset)) + ", RXDCOffset: " + text.Int(int64(s.RXDCOffset)) + ", RXLevel: " + text.Int(int64(s.RXLevel)) + ", CWIDTXLevel: " + text.Int(int64(s.CWIDTXLevel)) + ", DStarTXLevel: " + text.Int(int64(s.DStarTXLevel)) + ", DMRTXLevel: " + text.Int(int64(s.DMRTXLevel)) + ", YSFTXLevel: " + text.Int(int64(s.YSFTXLevel)) + ", P25TXLevel: " + text.Int(int64(s.P25TXLevel)) + ", NXDNTXLevel: " + text.Int(int64(s.NXDNTXLevel)) + ", POCSAGTXLevel: " + text.Int(int64(s.POCSAGTXLevel)) + ", FMTXLevel: " + text.Int(int64(s.FMTXLevel)) + ", YSFTXHang: " + text.Int(int64(s.YSFTXHang)) + ", P25TXHang: " + text.Int(int64(s.P25TXHang)) + ", NXDNTXHang: " + text.Int(int64(s.NXDNTXHang)) + ", DMRTrunking: " + text.Bool(s.DMRTrunking) + ", DMRColorCode: " + text.Int(int64(s.DMRColorCode)) + ", DMRDelay: " + text.Int(int64(s.DMRDelay)) + ", OscOffset: " + text.Int(int64(s.OscOffset)) + " }"
 }
 
@@ -407,6 +432,10 @@ func DecodeConfigV1(data []byte) (ConfigV1, error) {
 // and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
 // to grow dst.
 func (s *ConfigV1) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 23 {
 		dst = append(dst, 0)
@@ -483,6 +512,10 @@ func (s *ConfigV1) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ConfigV1) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "ConfigV1{ Simplex: " + text.Bool(s.Simplex) + ", UseCOSAsLockout: " + text.Bool(s.UseCOSAsLockout) + ", Debug: " + text.Bool(s.Debug) + ", YSFLoDev: " + text.Bool(s.YSFLoDev) + ", PTTInvert: " + text.Bool(s.PTTInvert) + ", TXInvert: " + text.Bool(s.TXInvert) + ", RXInvert: " + text.Bool(s.RXInvert) + ", M17: " + text.Bool(s.M17) + ", POCSAG: " + text.Bool(s.POCSAG) + ", NXDN: " + text.Bool(s.NXDN) + ", P25: " + text.Bool(s.P25) + ", YSF: " + text.Bool(s.YSF) + ", DMR: " + text.Bool(s.DMR) + ", DStar: " + text.Bool(s.DStar) + ", TXDelay: " + text.Int(int64(s.TXDelay)) + ", State: " + text.Int(int64(s.State)) + ", RXLevel: " + text.Int(int64(s.RXLevel)) + ", CWIDTXLevel: " + text.Int(int64(s.CWIDTXLevel)) + ", DMRColorCode: " + text.Int(int64(s.DMRColorCode)) + ", DMRDelay: " + text.Int(int64(s.DMRDelay)) + ", OscOffset: " + text.Int(int64(s.OscOffset)) + ", DStarTXLevel: " + text.Int(int64(s.DStarTXLevel)) + ", DMRTXLevel: " + text.Int(int64(s.DMRTXLevel)) + ", YSFTXLevel: " + text.Int(int64(s.YSFTXLevel)) + ", P25TXLevel: " + text.Int(int64(s.P25TXLevel)) + ", TXDCOffset: " + text.Int(int64(s.TXDCOffset)) + ", RXDCOffset: " + text.Int(int64(s.RXDCOffset)) + ", NXDNTXLevel: " + text.Int(int64(s.NXDNTXLevel)) + ", YSFTXHang: " + text.Int(int64(s.YSFTXHang)) + ", POCSAGTXLevel: " + text.Int(int64(s.POCSAGTXLevel)) + ", FMTXLevel: " + text.Int(int64(s.FMTXLevel)) + ", P25TXHang: " + text.Int(int64(s.P25TXHang)) + ", NXDNTXHang: " + text.Int(int64(s.NXDNTXHang)) + ", M17TXLevel: " + text.Int(int64(s.M17TXLevel)) + ", M17TXHang: " + text.Int(int64(s.M17TXHang)) + " }"
 }
 
@@ -523,6 +556,10 @@ func DecodeSetFreq(data []byte) (SetFreq, error) {
 // *dmrgo.FieldRangeError when a field does not fit, or an error when Size is
 // not one of the lengths. It allocates only to grow dst.
 func (s *SetFreq) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	_size := 9
 	switch s.Size {
@@ -565,6 +602,10 @@ func (s *SetFreq) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *SetFreq) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "SetFreq{ Reserved: " + text.Int(int64(s.Reserved)) + ", RX: " + text.Int(int64(s.RX)) + ", TX: " + text.Int(int64(s.TX)) + ", RFLevel: " + text.Int(int64(s.RFLevel)) + ", POCSAG: " + text.Int(int64(s.POCSAG)) + " }"
 }
 
@@ -587,6 +628,10 @@ func DecodeSetMode(data []byte) (SetMode, error) {
 // a *dmrgo.FieldRangeError when a field does not fit. It allocates only to
 // grow dst.
 func (s *SetMode) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 1 {
 		dst = append(dst, 0)
@@ -599,6 +644,10 @@ func (s *SetMode) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *SetMode) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "SetMode{ Mode: " + text.Int(int64(s.Mode)) + " }"
 }
 
@@ -621,6 +670,10 @@ func DecodeAck(data []byte) (Ack, error) {
 // a *dmrgo.FieldRangeError when a field does not fit. It allocates only to
 // grow dst.
 func (s *Ack) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 1 {
 		dst = append(dst, 0)
@@ -633,6 +686,10 @@ func (s *Ack) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *Ack) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "Ack{ Command: " + text.Int(int64(s.Command)) + " }"
 }
 
@@ -656,6 +713,10 @@ func DecodeNak(data []byte) (Nak, error) {
 // and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
 // to grow dst.
 func (s *Nak) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 2 {
 		dst = append(dst, 0)
@@ -669,6 +730,10 @@ func (s *Nak) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *Nak) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "Nak{ Command: " + text.Int(int64(s.Command)) + ", Reason: " + text.Int(int64(s.Reason)) + " }"
 }
 
@@ -691,6 +756,10 @@ func DecodeDMRStart(data []byte) (DMRStart, error) {
 // a *dmrgo.FieldRangeError when a field does not fit. It allocates only to
 // grow dst.
 func (s *DMRStart) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 1 {
 		dst = append(dst, 0)
@@ -706,6 +775,10 @@ func (s *DMRStart) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *DMRStart) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "DMRStart{ TX: " + text.Bool(s.TX) + " }"
 }
 
@@ -728,6 +801,10 @@ func DecodeDMRAbort(data []byte) (DMRAbort, error) {
 // a *dmrgo.FieldRangeError when a field does not fit. It allocates only to
 // grow dst.
 func (s *DMRAbort) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 1 {
 		dst = append(dst, 0)
@@ -740,6 +817,10 @@ func (s *DMRAbort) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *DMRAbort) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "DMRAbort{ Slot: " + text.Int(int64(s.Slot)) + " }"
 }
 
@@ -762,6 +843,10 @@ func DecodeDMRShortLC(data []byte) (DMRShortLC, error) {
 // and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
 // to grow dst.
 func (s *DMRShortLC) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_n := len(dst)
 	for range 9 {
 		dst = append(dst, 0)
@@ -774,6 +859,10 @@ func (s *DMRShortLC) AppendBinary(dst []byte) ([]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *DMRShortLC) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "DMRShortLC{ LC: " + text.Bytes(s.LC[:]) + " }"
 }
 

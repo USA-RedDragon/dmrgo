@@ -5,6 +5,7 @@
 package sms
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	wire "github.com/USA-RedDragon/dmrgo/v2/internal/wire"
 )
@@ -35,6 +36,10 @@ func decodeIPTextAt(result *IPText, data []byte, _o int) (int, error) {
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst. (ETSI TS 102 361-3 clause 5.7.1)
 func (s *IPText) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	dst = append(dst, s.Text...)
 	return dst, nil
 }
@@ -42,12 +47,20 @@ func (s *IPText) AppendBinary(dst []byte) ([]byte, error) {
 // TextUTF8 appends Text, UTF-16BE text, to dst as UTF-8 and returns dst. The
 // text ends at the first NUL character. It allocates only to grow dst.
 func (s *IPText) TextUTF8(dst []byte) []byte {
+	if s == nil {
+		return dst
+	}
+
 	return wire.AppendUTF8(dst, s.Text, true)
 }
 
 // SetTextUTF8 appends text, UTF-8, to dst as UTF-16BE, points Text at the
 // appended octets and returns dst. It allocates only to grow dst.
 func (s *IPText) SetTextUTF8(dst, text []byte) []byte {
+	if s == nil {
+		return dst
+	}
+
 	n := len(dst)
 	dst = wire.AppendUTF16(dst, text, true)
 	s.Text = dst[n:]
@@ -57,6 +70,10 @@ func (s *IPText) SetTextUTF8(dst, text []byte) []byte {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *IPText) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "IPText{ Text: " + text.Bytes(s.Text[:]) + " }"
 }
 
@@ -94,6 +111,10 @@ func decodeAnyToneTextAt(result *AnyToneText, data []byte, _o int) (int, error) 
 // *dmrgo.FieldRangeError or another error when a field does not fit. It
 // allocates only to grow dst.
 func (s *AnyToneText) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
 	_vPrefix := uint64(0x000D000A)
 	dst = append(dst, byte(_vPrefix>>24), byte(_vPrefix>>16), byte(_vPrefix>>8), byte(_vPrefix))
 	dst = append(dst, s.Text...)
@@ -103,6 +124,10 @@ func (s *AnyToneText) AppendBinary(dst []byte) ([]byte, error) {
 // TextUTF8 appends Text, UTF-16LE text, to dst as UTF-8 and returns dst. The
 // text ends at the first NUL character. It allocates only to grow dst.
 func (s *AnyToneText) TextUTF8(dst []byte) []byte {
+	if s == nil {
+		return dst
+	}
+
 	return wire.AppendUTF8(dst, s.Text, false)
 }
 
@@ -110,6 +135,10 @@ func (s *AnyToneText) TextUTF8(dst []byte) []byte {
 // points Text at the appended octets and returns dst. It allocates only to
 // grow dst.
 func (s *AnyToneText) SetTextUTF8(dst, text []byte) []byte {
+	if s == nil {
+		return dst
+	}
+
 	n := len(dst)
 	dst = wire.AppendUTF16(dst, text, false)
 	dst = append(dst, 0, 0)
@@ -120,5 +149,9 @@ func (s *AnyToneText) SetTextUTF8(dst, text []byte) []byte {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *AnyToneText) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "AnyToneText{ Prefix: " + text.Int(int64(s.Prefix)) + ", Text: " + text.Bytes(s.Text[:]) + " }"
 }

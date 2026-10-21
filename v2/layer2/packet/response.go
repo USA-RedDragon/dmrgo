@@ -3,6 +3,7 @@ package packet
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/USA-RedDragon/dmrgo/v2"
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -99,6 +100,9 @@ type ResponseData struct {
 // RetryBlocks returns the DBSNs flagged for retry in ascending order. It
 // allocates the slice; AppendRetryBlocks does not.
 func (r *ResponseData) RetryBlocks() []int {
+	if r == nil {
+		return nil
+	}
 	n := 0
 	for _, retry := range r.Retry {
 		if retry {
@@ -115,6 +119,9 @@ func (r *ResponseData) RetryBlocks() []int {
 // order and returns the extended slice. It does not allocate when dst has
 // room.
 func (r *ResponseData) AppendRetryBlocks(dst []int) []int {
+	if r == nil {
+		return dst
+	}
 	for i, retry := range r.Retry {
 		if retry {
 			dst = append(dst, i)
@@ -128,6 +135,9 @@ func (r *ResponseData) AppendRetryBlocks(dst []int) []int {
 // when blocks is over 64. Flags for blocks past the packet are 1. It
 // allocates the blocks; AppendEncode does not.
 func (r *ResponseData) Encode(blocks int) ([]*pdu.Rate12Data, error) {
+	if r == nil {
+		return nil, dmrgo.ErrNilReceiver
+	}
 	data, err := r.AppendEncode(make([]pdu.Rate12Data, 0, 2), blocks)
 	if err != nil {
 		return nil, err
@@ -143,6 +153,9 @@ func (r *ResponseData) Encode(blocks int) ([]*pdu.Rate12Data, error) {
 // returns the extended slice. It does not allocate when dst has room for two
 // blocks. On error it returns dst unchanged.
 func (r *ResponseData) AppendEncode(dst []pdu.Rate12Data, blocks int) ([]pdu.Rate12Data, error) {
+	if r == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
 	var out [2]pdu.Rate12Data
 	n, err := r.encodeInto(&out, blocks)
 	if err != nil {
@@ -227,6 +240,9 @@ func NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *ResponseData) (P
 // NewResponse does what the package function NewResponse does, into the
 // storage of b. The Packet is valid until the next NewResponse.
 func (b *Builder) NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *ResponseData) (Packet, error) {
+	if b == nil {
+		return Packet{}, dmrgo.ErrNilReceiver
+	}
 	return b.resp.build(to, r, data)
 }
 

@@ -141,6 +141,10 @@ func (f Flags) Has(flag Flag) bool {
 
 // Set sets or clears flag f.
 func (f *Flags) Set(flag Flag, on bool) {
+	if f == nil {
+		return
+	}
+
 	if on {
 		f[flag>>4&3] |= 1 << (flag & 7)
 		return

@@ -41,6 +41,10 @@ func DecodeNMEAShort(data [10]byte) NMEAShort {
 // in the most significant bit of byte 0. (ETSI TS 102 361-4 clause B.3.6.1,
 // Table B.7)
 func (s *NMEAShort) Encode() ([10]byte, error) {
+	if s == nil {
+		return [10]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [10]byte
 	if s.Encrypted {
 		data[0] |= 0x80
@@ -112,6 +116,10 @@ func (s *NMEAShort) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *NMEAShort) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "NMEAShort{ Encrypted: " + text.Bool(s.Encrypted) + ", North: " + text.Bool(s.North) + ", East: " + text.Bool(s.East) + ", Fix: " + text.Bool(s.Fix) + ", Speed: " + text.Int(int64(s.Speed)) + ", LatDegrees: " + text.Int(int64(s.LatDegrees)) + ", LatMinutes: " + text.Int(int64(s.LatMinutes)) + ", LatFraction: " + text.Int(int64(s.LatFraction)) + ", LonDegrees: " + text.Int(int64(s.LonDegrees)) + ", LonMinutes: " + text.Int(int64(s.LonMinutes)) + ", LonFraction: " + text.Int(int64(s.LonFraction)) + ", Hours: " + text.Int(int64(s.Hours)) + ", Minutes: " + text.Int(int64(s.Minutes)) + ", TenSeconds: " + text.Int(int64(s.TenSeconds)) + " }"
 }
 
@@ -146,6 +154,10 @@ func DecodeNMEALong(data [22]byte) NMEALong {
 // in the most significant bit of byte 0. (ETSI TS 102 361-4 clause B.3.6.2,
 // Table B.7)
 func (s *NMEALong) Encode() ([22]byte, error) {
+	if s == nil {
+		return [22]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [22]byte
 	if s.Encrypted {
 		data[0] |= 0x80
@@ -243,6 +255,10 @@ func (s *NMEALong) Encode() ([22]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *NMEALong) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "NMEALong{ Encrypted: " + text.Bool(s.Encrypted) + ", North: " + text.Bool(s.North) + ", East: " + text.Bool(s.East) + ", Fix: " + text.Bool(s.Fix) + ", Speed: " + text.Int(int64(s.Speed)) + ", LatDegrees: " + text.Int(int64(s.LatDegrees)) + ", LatMinutes: " + text.Int(int64(s.LatMinutes)) + ", LatFraction: " + text.Int(int64(s.LatFraction)) + ", LonDegrees: " + text.Int(int64(s.LonDegrees)) + ", LonMinutes: " + text.Int(int64(s.LonMinutes)) + ", LonFraction: " + text.Int(int64(s.LonFraction)) + ", Hours: " + text.Int(int64(s.Hours)) + ", Minutes: " + text.Int(int64(s.Minutes)) + ", Seconds: " + text.Int(int64(s.Seconds)) + ", Spare1: " + text.Int(int64(s.Spare1)) + ", MFID: " + text.Int(int64(s.MFID)) + ", Spare2: " + text.Int(int64(s.Spare2)) + ", Course: " + text.Int(int64(s.Course)) + ", Spare3: " + text.Uint(uint64(s.Spare3)) + " }"
 }
 
@@ -268,6 +284,10 @@ func DecodeLIPShortReport(data [10]byte) LIPShortReport {
 // bit in the most significant bit of byte 0. The low 4 bits of byte 9 are 0.
 // (ETSI TS 102 361-4 clause B.3.10, ETSI TS 100 392-18-1 clause 6.2.1)
 func (s *LIPShortReport) Encode() ([10]byte, error) {
+	if s == nil {
+		return [10]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [10]byte
 	if uint64(s.PDUType)>>2 != 0 {
 		return [10]byte{}, errLIPShortReportPDUTypeRange
@@ -322,6 +342,10 @@ func (s *LIPShortReport) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *LIPShortReport) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "LIPShortReport{ PDUType: " + text.Int(int64(s.PDUType)) + ", TimeElapsed: " + text.Int(int64(s.TimeElapsed)) + ", Longitude: " + text.Fixed(s.Longitude) + ", Latitude: " + text.Fixed(s.Latitude) + ", PositionError: " + s.PositionError.String() + ", Velocity: " + text.Int(int64(s.Velocity)) + ", Direction: " + text.Int(int64(s.Direction)) + ", AdditionalType: " + text.Bool(s.AdditionalType) + ", AdditionalData: " + text.Int(int64(s.AdditionalData)) + " }"
 }
 
@@ -343,6 +367,10 @@ func DecodeUSBDPollRequest(data [10]byte) USBDPollRequest {
 // bit in the most significant bit of byte 0. The low 4 bits of byte 9 are 0.
 // (ETSI TS 102 361-4 clause 6.6.11.1, Table 6.76)
 func (s *USBDPollRequest) Encode() ([10]byte, error) {
+	if s == nil {
+		return [10]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [10]byte
 	if uint64(s.ResponseDelay)>>2 != 0 {
 		return [10]byte{}, errUSBDPollRequestResponseDelayRange
@@ -379,6 +407,10 @@ func (s *USBDPollRequest) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *USBDPollRequest) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "USBDPollRequest{ ResponseDelay: " + text.Int(int64(s.ResponseDelay)) + ", PayloadContents: " + text.Bool(s.PayloadContents) + ", Reserved: " + text.Bool(s.Reserved) + ", Parameters: " + text.Uint(uint64(s.Parameters)) + ", Target: " + text.Int(int64(s.Target)) + " }"
 }
 
@@ -403,6 +435,10 @@ func DecodeUSBDLIPResponse(data [10]byte) USBDLIPResponse {
 // bit in the most significant bit of byte 0. The low 4 bits of byte 9 are 0.
 // (ETSI TS 102 361-4 clause 6.6.11.3.2, Table 6.79)
 func (s *USBDLIPResponse) Encode() ([10]byte, error) {
+	if s == nil {
+		return [10]byte{}, dmrgo.ErrNilReceiver
+	}
+
 	var data [10]byte
 	if uint64(s.TimeElapsed)>>2 != 0 {
 		return [10]byte{}, errUSBDLIPResponseTimeElapsedRange
@@ -456,6 +492,10 @@ func (s *USBDLIPResponse) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *USBDLIPResponse) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
 	return "USBDLIPResponse{ TimeElapsed: " + text.Int(int64(s.TimeElapsed)) + ", Longitude: " + text.Fixed(s.Longitude) + ", Latitude: " + text.Fixed(s.Latitude) + ", PositionError: " + s.PositionError.String() + ", Velocity: " + text.Int(int64(s.Velocity)) + ", Direction: " + text.Int(int64(s.Direction)) + ", Reason: " + text.Int(int64(s.Reason)) + ", HashedSource: " + text.Int(int64(s.HashedSource)) + " }"
 }
 

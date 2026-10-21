@@ -66,6 +66,10 @@ func (k *Key) trailer(p []byte) [20]byte {
 // Sign appends the authentication trailer of the packet in dst to dst. It
 // allocates only when dst has no room for TrailerLen more octets.
 func (k *Key) Sign(dst []byte) []byte {
+	if k == nil {
+		return dst
+	}
+
 	t := k.trailer(dst)
 	return append(dst, t[:TrailerLen]...)
 }
@@ -74,6 +78,10 @@ func (k *Key) Sign(dst []byte) []byte {
 // the rest. It returns at most len(p) octets, the rest of p, and does not
 // allocate. It compares the trailer in constant time.
 func (k *Key) Verify(p []byte) ([]byte, bool) {
+	if k == nil {
+		return nil, false
+	}
+
 	if len(p) < TrailerLen {
 		return nil, false
 	}

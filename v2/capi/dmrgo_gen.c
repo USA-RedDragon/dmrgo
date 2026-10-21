@@ -16,6 +16,8 @@ const char *dmrgo__gen_strerror(int status) {
 	switch (status) {
 	case -227:
 		return "dmrgo.ConfigError";
+	case -228:
+		return "dmrgo.ErrNilReceiver";
 	case -100:
 		return "dmrgo.FieldRangeError";
 	case -107:

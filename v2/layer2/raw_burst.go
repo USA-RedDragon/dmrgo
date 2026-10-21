@@ -1,6 +1,7 @@
 package layer2
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
@@ -37,6 +38,9 @@ func (r RawBurst) Sync() (enums.SyncPattern, int) {
 // SetSync writes the SYNC pattern p into burst bits 108 to 155. It returns
 // an error unless p is a SYNC pattern (ETSI TS 102 361-1 Table 9.2).
 func (r *RawBurst) SetSync(p enums.SyncPattern) error {
+	if r == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if !isSyncPattern(p) {
 		return errSyncPattern
 	}
@@ -60,6 +64,9 @@ func (r RawBurst) SlotType() pdu.SlotType {
 // SetSlotType encodes st into the slot type bits. It returns the errors of
 // st.Encode and then changes nothing.
 func (r *RawBurst) SetSlotType(st pdu.SlotType) error {
+	if r == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	cw, err := st.Encode()
 	if err != nil {
 		return err
@@ -95,6 +102,9 @@ func (r RawBurst) BPTCPayload() ([12]byte, fec.Result) {
 // with the reserved bits R(0) to R(3) zero, and keeps the slot type and
 // SYNC. p must already carry its CRC or RS(12,9) parity (see pdu.Seal).
 func (r *RawBurst) SetBPTCPayload(p [12]byte) {
+	if r == nil {
+		return
+	}
 	info := bptc.Encode196(p, 0)
 	r.setInfo(&info)
 }
@@ -114,6 +124,9 @@ func (r RawBurst) BPTCReserved() (uint8, fec.Result) {
 // same data and FEC result as before. It returns a *dmrgo.FieldRangeError,
 // and changes nothing, when res does not fit in 3 bits.
 func (r *RawBurst) SetBPTCReserved(res uint8) error {
+	if r == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if res>>3 != 0 {
 		return errRawBurstBPTCReservedRange
 	}
@@ -136,6 +149,9 @@ func (r RawBurst) Rate34Payload() ([18]byte, fec.Result) {
 
 // SetRate34Payload trellis encodes p into the 196 information bits.
 func (r *RawBurst) SetRate34Payload(p [18]byte) {
+	if r == nil {
+		return
+	}
 	info := trellis.Encode(p)
 	r.setInfo(&info)
 }
@@ -154,6 +170,9 @@ func (r RawBurst) Rate1Payload() ([24]byte, fec.Result) {
 // SetRate1Payload writes p into the 192 data bits of a Rate 1 burst.
 // Information bits 96 to 99, between the two halves, stay as they are.
 func (r *RawBurst) SetRate1Payload(p [24]byte) {
+	if r == nil {
+		return
+	}
 	copy(r[:12], p[:12])
 	bits.Copy(r[:], infoSecondStart+2, p[:], 96, 96)
 }
@@ -169,6 +188,9 @@ func (r RawBurst) EMB() pdu.EmbeddedSignalling {
 // burst without a SYNC pattern. It returns the errors of e.Encode and then
 // changes nothing.
 func (r *RawBurst) SetEMB(e pdu.EmbeddedSignalling) error {
+	if r == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	return r.setEMB(e, embFirstStart, embSecondStart)
 }
 
@@ -182,6 +204,9 @@ func (r RawBurst) EmbeddedData() [4]byte {
 
 // SetEmbeddedData writes d into the embedded signalling field.
 func (r *RawBurst) SetEmbeddedData(d [4]byte) {
+	if r == nil {
+		return
+	}
 	r.setWord32(d, embeddedDataStart, embeddedDataStart+16)
 }
 
@@ -194,6 +219,9 @@ func (r RawBurst) StandaloneRCEMB() pdu.EmbeddedSignalling {
 // SetStandaloneRCEMB encodes e into the EMB bits of a standalone RC burst,
 // as SetEMB does, with the errors of SetEMB.
 func (r *RawBurst) SetStandaloneRCEMB(e pdu.EmbeddedSignalling) error {
+	if r == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	return r.setEMB(e, rcembFirstStart, rcembSecondStart)
 }
 
@@ -206,6 +234,9 @@ func (r RawBurst) StandaloneRCData() [4]byte {
 
 // SetStandaloneRCData writes d into the RC bits of a standalone RC burst.
 func (r *RawBurst) SetStandaloneRCData(d [4]byte) {
+	if r == nil {
+		return
+	}
 	r.setWord32(d, rcDataFirstStart, rcDataSecondStart)
 }
 
@@ -250,6 +281,9 @@ func (r RawBurst) VoiceSlots() [VoiceSlotsPerBurst][9]byte {
 
 // SetVoiceSlots writes the three vocoder slots s into the voice bits.
 func (r *RawBurst) SetVoiceSlots(s [VoiceSlotsPerBurst][9]byte) {
+	if r == nil {
+		return
+	}
 	copy(r[:9], s[0][:])
 	copy(r[9:13], s[1][:4])
 	bits.Copy(r[:], 104, s[1][:], 32, 4)
@@ -276,6 +310,9 @@ func (r RawBurst) AMBEFrames() ([VoiceSlotsPerBurst]vocoder.AMBEFrame, fec.Resul
 // into the three voice slots. It returns the errors of EncodeAMBE72 and
 // then changes nothing.
 func (r *RawBurst) SetAMBEFrames(frames [VoiceSlotsPerBurst]vocoder.AMBEFrame) error {
+	if r == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	var s [VoiceSlotsPerBurst][9]byte
 	for i := range frames {
 		var err error
