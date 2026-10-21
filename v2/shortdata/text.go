@@ -26,41 +26,11 @@ import (
 func Text(dst []byte, format enums.DDFormat, data []byte) ([]byte, error) {
 	switch format {
 	case enums.DDUTF8:
-		for i := 0; i < len(data); {
-			if data[i] == 0 {
-				break
-			}
-			r, n := utf8.DecodeRune(data[i:])
-			dst = wire.AppendRune(dst, r)
-			i += n
-		}
-		return dst, nil
-	case enums.DDISO8859Part1:
-		for _, c := range data {
-			if c == 0 {
-				break
-			}
-			dst = wire.AppendRune(dst, rune(c))
-		}
-		return dst, nil
-	case enums.DDISO8859Part2, enums.DDISO8859Part3, enums.DDISO8859Part4, enums.DDISO8859Part5, enums.DDISO8859Part6,
-		enums.DDISO8859Part7, enums.DDISO8859Part8, enums.DDISO8859Part9, enums.DDISO8859Part10, enums.DDISO8859Part11,
-		enums.DDISO8859Part13, enums.DDISO8859Part14, enums.DDISO8859Part15, enums.DDISO8859Part16:
-		part := int(format - enums.DDISO8859Part2)
-		for _, c := range data {
-			if c == 0 {
-				break
-			}
-			r := rune(c)
-			if c >= 0xA0 {
-				r = rune(iso8859High[part][c-0xA0])
-				if r == 0 {
-					r = utf8.RuneError
-				}
-			}
-			dst = wire.AppendRune(dst, r)
-		}
-		return dst, nil
+		return utf8Text(dst, data), nil
+	case enums.DDISO8859Part1, enums.DDISO8859Part2, enums.DDISO8859Part3, enums.DDISO8859Part4, enums.DDISO8859Part5,
+		enums.DDISO8859Part6, enums.DDISO8859Part7, enums.DDISO8859Part8, enums.DDISO8859Part9, enums.DDISO8859Part10,
+		enums.DDISO8859Part11, enums.DDISO8859Part13, enums.DDISO8859Part14, enums.DDISO8859Part15, enums.DDISO8859Part16:
+		return iso8859Text(dst, format, data), nil
 	case enums.DDUTF16BE:
 		return wire.AppendUTF8(dst, data, true), nil
 	case enums.DDUTF16LE:
@@ -78,44 +48,85 @@ func Text(dst []byte, format enums.DDFormat, data []byte) ([]byte, error) {
 	case enums.DDUTF32LE:
 		return utf32Text(dst, data, 0, false), nil
 	case enums.DDUTF32:
-		switch {
-		case len(data) >= 4 && data[0] == 0xFF && data[1] == 0xFE && data[2] == 0 && data[3] == 0:
-			return utf32Text(dst, data, 4, false), nil
-		case len(data) >= 4 && data[0] == 0 && data[1] == 0 && data[2] == 0xFE && data[3] == 0xFF:
-			return utf32Text(dst, data, 4, true), nil
-		}
-		return utf32Text(dst, data, 0, true), nil
+		return utf32BOMText(dst, data), nil
 	case enums.DDBinary:
 		return append(dst, data...), nil
 	case enums.DDBCD:
-		for _, c := range data {
-			for _, d := range [2]byte{c >> 4, c & 0xF} {
-				if d == 0xF {
-					return dst, nil
-				}
-				dst = wire.AppendRune(dst, bcdDigit(d))
-			}
-		}
-		return dst, nil
+		return bcdText(dst, data), nil
 	case enums.DD7Bit:
-		del := 0
-		for k := range len(data) * 8 / 7 {
-			c := septet(data, 7*k)
-			switch c {
-			case 0:
-				return dst, nil
-			case 0x7F:
-				del++
-				continue
-			}
-			for ; del > 0; del-- {
-				dst = append(dst, 0x7F)
-			}
-			dst = append(dst, c)
-		}
-		return dst, nil
+		return septetText(dst, data), nil
 	}
 	return dst, ErrFormat
+}
+
+func utf8Text(dst, data []byte) []byte {
+	for i := 0; i < len(data); {
+		if data[i] == 0 {
+			break
+		}
+		r, n := utf8.DecodeRune(data[i:])
+		dst = wire.AppendRune(dst, r)
+		i += n
+	}
+	return dst
+}
+
+func iso8859Text(dst []byte, format enums.DDFormat, data []byte) []byte {
+	for _, c := range data {
+		if c == 0 {
+			break
+		}
+		r := rune(c)
+		if c >= 0xA0 && format != enums.DDISO8859Part1 {
+			r = rune(iso8859High[format-enums.DDISO8859Part2][c-0xA0])
+			if r == 0 {
+				r = utf8.RuneError
+			}
+		}
+		dst = wire.AppendRune(dst, r)
+	}
+	return dst
+}
+
+func utf32BOMText(dst, data []byte) []byte {
+	switch {
+	case len(data) >= 4 && data[0] == 0xFF && data[1] == 0xFE && data[2] == 0 && data[3] == 0:
+		return utf32Text(dst, data, 4, false)
+	case len(data) >= 4 && data[0] == 0 && data[1] == 0 && data[2] == 0xFE && data[3] == 0xFF:
+		return utf32Text(dst, data, 4, true)
+	}
+	return utf32Text(dst, data, 0, true)
+}
+
+func bcdText(dst, data []byte) []byte {
+	for _, c := range data {
+		for _, d := range [2]byte{c >> 4, c & 0xF} {
+			if d == 0xF {
+				return dst
+			}
+			dst = wire.AppendRune(dst, bcdDigit(d))
+		}
+	}
+	return dst
+}
+
+func septetText(dst, data []byte) []byte {
+	del := 0
+	for k := range len(data) * 8 / 7 {
+		c := septet(data, 7*k)
+		switch c {
+		case 0:
+			return dst
+		case 0x7F:
+			del++
+			continue
+		}
+		for ; del > 0; del-- {
+			dst = append(dst, 0x7F)
+		}
+		dst = append(dst, c)
+	}
+	return dst
 }
 
 // AppendText appends the UTF-8 text to dst, coded as format says, and
@@ -192,11 +203,11 @@ func AppendText(dst []byte, format enums.DDFormat, text []byte) ([]byte, error) 
 			bits += 7
 			if bits >= 8 {
 				bits -= 8
-				dst = append(dst, byte(acc>>bits))
+				dst = append(dst, byte(acc>>bits&0xFF))
 			}
 		}
 		if bits > 0 {
-			dst = append(dst, byte(acc<<(8-bits))|byte(0xFF>>bits))
+			dst = append(dst, byte(acc<<(8-bits)&0xFF)|byte(0xFF>>bits))
 		}
 		return dst, nil
 	}
@@ -226,11 +237,11 @@ func appendUTF32(dst, text []byte, bigEndian bool) []byte {
 	for i := 0; i < len(text); {
 		r, n := utf8.DecodeRune(text[i:])
 		i += n
-		u := uint32(r)
+		u := uint32(r & 0x1FFFFF)
 		if bigEndian {
-			dst = append(dst, byte(u>>24), byte(u>>16), byte(u>>8), byte(u))
+			dst = append(dst, byte(u>>24), byte(u>>16), byte(u>>8&0xFF), byte(u&0xFF))
 		} else {
-			dst = append(dst, byte(u), byte(u>>8), byte(u>>16), byte(u>>24))
+			dst = append(dst, byte(u&0xFF), byte(u>>8&0xFF), byte(u>>16), byte(u>>24))
 		}
 	}
 	return dst
@@ -239,9 +250,9 @@ func appendUTF32(dst, text []byte, bigEndian bool) []byte {
 func iso8859Octet(format enums.DDFormat, r rune) (byte, bool) {
 	switch {
 	case r < 0xA0:
-		return byte(r), r >= 0
+		return byte(r & 0xFF), r >= 0
 	case format == enums.DDISO8859Part1:
-		return byte(r), r <= 0xFF
+		return byte(r & 0xFF), r <= 0xFF
 	}
 	row := &iso8859High[format-enums.DDISO8859Part2]
 	for j := range row {
@@ -282,5 +293,5 @@ func septet(data []byte, bit int) byte {
 	if i+1 < len(data) {
 		w |= uint16(data[i+1])
 	}
-	return byte(w>>(9-bit%8)) & 0x7F
+	return byte(w >> (9 - bit%8) & 0x7F)
 }

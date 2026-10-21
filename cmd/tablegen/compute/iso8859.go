@@ -29,7 +29,7 @@ func ISO8859High() [][]uint16 {
 				continue
 			}
 			r := cm.DecodeByte(c)
-			if r != utf8.RuneError {
+			if r != utf8.RuneError && r >= 0 && r <= 0xFFFF {
 				out[i][j] = uint16(r)
 			}
 		}

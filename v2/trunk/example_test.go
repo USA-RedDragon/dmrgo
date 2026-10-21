@@ -65,7 +65,11 @@ func ExampleMS_AuthResponse() {
 			}
 			out = ms.AuthResponse(now, auth.Response(o.Challenge, key, 0), out[:0])
 			b, _ := layer2.NewBurstFromBytes(out[0].Burst)
-			ack := b.Data.(*pdu.CSBK).AckInboundPDU
+			c, ok := b.Data.(*pdu.CSBK)
+			if !ok {
+				break
+			}
+			ack := c.AckInboundPDU
 			fmt.Printf("challenge %06X, response %06X from %d\n", o.Challenge, ack.TargetAddress, ack.AdditionalInfo)
 			break
 		}
