@@ -292,6 +292,8 @@ type iqRx struct {
 	maxHz     float32
 	syncOnly  bool
 	pullAgree bool
+	spec      *spectrum
+	specLock  bool
 }
 
 func newIQRx(cfg Config, opt options) *iqRx {
@@ -307,6 +309,9 @@ func newIQRx(cfg Config, opt options) *iqRx {
 		r.conv.init(basebandRate/hz, iqFilter{taps: opt.IQTaps, beta: opt.IQKaiser, cutHz: opt.IQCutHz, half: opt.IQHalfband, afc: opt.IQAFCAvg})
 	}
 	r.maxHz, r.syncOnly, r.pullAgree = opt.IQTuneMaxHz, opt.IQTuneSyncOnly, opt.IQPullAgree
+	if opt.IQSpecHunt {
+		r.spec = newSpectrum(float64(cfg.BasebandHz))
+	}
 	n := opt.IQBuf
 	if n == 0 {
 		n = 1024
@@ -346,6 +351,9 @@ func newIQRx(cfg Config, opt options) *iqRx {
 }
 
 func (r *iqRx) sample(v complex64) {
+	if r.spec != nil {
+		r.hunt(v)
+	}
 	if r.afcN++; r.afcN == iqAFCBlock {
 		r.afcN = 0
 		r.follow()
@@ -429,6 +437,28 @@ func (d *iqDisc) hzOf(acc complex64) float32 {
 	return atan2f(imag(acc), real(acc)) * (float32(basebandRate/d.decim) / (2 * math.Pi))
 }
 
+func (r *iqRx) hunt(v complex64) {
+	if r.d.locked {
+		if !r.specLock {
+			r.spec.reset()
+		}
+		r.specLock = true
+		return
+	}
+	r.specLock = false
+	if !r.spec.push(v) || !r.spec.OK {
+		return
+	}
+	hz := float32(r.spec.Hz)
+	if abs32(hz) > iqTuneMaxHz || abs32(hz-r.conv.hz) < iqAFCPullHz {
+		return
+	}
+	r.d.write(r.audio)
+	r.audio = r.audio[:0]
+	r.afcAvg, r.afcPull = 0, 0
+	r.tuneWith(hz-r.conv.hz, 0, iqTuneMaxHz)
+}
+
 func (r *iqRx) tuneLimit() float32 {
 	if r.d.locked && r.maxHz > 0 {
 		return max(r.maxHz, iqTuneMaxHz)
@@ -436,10 +466,12 @@ func (r *iqRx) tuneLimit() float32 {
 	return r.maxHz
 }
 
-func (r *iqRx) tune(hz, dc float32) {
+func (r *iqRx) tune(hz, dc float32) { r.tuneWith(hz, dc, r.tuneLimit()) }
+
+func (r *iqRx) tuneWith(hz, dc, lim float32) {
 	f := &r.d.f
 	scale := f.gain * iqUnitsPerHz
-	if lim := r.tuneLimit(); lim > 0 && abs32(r.conv.hz+hz) > lim {
+	if lim > 0 && abs32(r.conv.hz+hz) > lim {
 		return
 	}
 	r.conv.tune(r.conv.hz + hz)

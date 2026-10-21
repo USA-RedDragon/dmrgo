@@ -255,6 +255,19 @@ func TestIQDiscLoopback(t *testing.T) {
 	}
 }
 
+func TestIQSpecHunt(t *testing.T) {
+	t.Parallel()
+	slots, _ := benchStream(t, 6)
+	for _, off := range []float64{-6000, -5000, 5000, 6000} {
+		x := noisyBaseband(slots, off, 10, 4)
+		for _, tier := range []Tier{Tier0, Tier1, Tier2} {
+			if exact, total := exactFrames(slots, receiveBaseband(x, tier)); exact < total*8/10 {
+				t.Errorf("tier %d at %.0f Hz: %d of %d voice frames exact", tier-Tier0, off, exact, total)
+			}
+		}
+	}
+}
+
 func TestIQAFCAvgNoise(t *testing.T) {
 	t.Parallel()
 	for _, m := range []int{2, 3, 5} {

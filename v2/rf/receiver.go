@@ -22,10 +22,13 @@ const (
 	TierDefault Tier = iota
 	// Tier0 slices the output of an FM discriminator and its matched
 	// filter. On I/Q at BasebandRate an FM discriminator at 12 kHz comes
-	// before it, and the receiver keeps about 5 KB. At a BasebandHz of 9600
+	// before it, and the receiver keeps about 19 KB. At a BasebandHz of 9600
 	// or 12000 it takes I/Q that a radio chip filtered to the channel and
 	// keeps about 1.6 KB; LowIQReceiver is that receiver in memory of the
-	// caller, for a microcontroller.
+	// caller, for a microcontroller. On I/Q at BasebandRate Tier0 to Tier3
+	// find a carrier up to 6.25 kHz off, half the channel spacing, from the
+	// spectrum before they lock; a carrier further off is taken for the
+	// next channel.
 	Tier0
 	// Tier1 adds to Tier0 the soft decoders: a BPTC(196,96) block whose
 	// check fails by ordered statistics, C0 and C1 of each voice frame by
@@ -34,7 +37,7 @@ const (
 	// before the first lock decoded again. It detects the bursts that they
 	// decode, and each rate 3/4 block, from the symbols of the
 	// discriminator with the correlation of their noise. It keeps about
-	// 35 KB.
+	// 35 KB on audio and 50 KB on I/Q.
 	Tier1
 	// Tier2 adds to the soft decoders of Tier1 the detection again of the
 	// bursts with a trellis over three symbols that carries the carrier
