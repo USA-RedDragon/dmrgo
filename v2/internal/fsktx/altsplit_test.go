@@ -81,7 +81,7 @@ func TestAltSplit(t *testing.T) {
 		prev := m.prev
 		_ = prev
 		for _, x := range m.buf {
-			ws = append(ws, float64(x*m.step+m.off))
+			ws = append(ws, float64(x))
 		}
 	}
 	t.Logf("A full int16 MCUIQ: %.2f dBc", altWelch(outI, rate))

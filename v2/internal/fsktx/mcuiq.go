@@ -42,12 +42,12 @@ const (
 // nothing and fits a microcontroller: Init sets it up in memory of the
 // caller. An MCUIQ is not safe for concurrent use.
 type MCUIQ struct {
+	buf [iqPhases]int32
 	// hist holds a byte for each symbol of the pulse, the newest in the
 	// low byte of hist[0]: 5 times the code of the symbol plus the code
 	// of the one before, the index of tapsIQLUT. The codes 0 to 4 are the
 	// symbols -3, -1, +1, +3 and 0.
 	hist    [iqWords]uint32
-	buf     [iqPhases]int32
 	values  int32
 	upShift uint32
 	phase   uint32
@@ -64,6 +64,7 @@ type MCUIQ struct {
 	// codes holds 2 bits for each recent symbol, the newest lowest, and
 	// zeros a bit for each that is 0, for tier0IQCorr.
 	codes, zeros uint32
+	frac         uint32
 	on           bool
 }
 
@@ -80,7 +81,7 @@ func (m *MCUIQ) Init(rate, offsetHz, rampSamples int) error {
 	case rampSamples < 1 || rampSamples > 1<<15:
 		return errRamp
 	}
-	*m = MCUIQ{ramp: int32(rampSamples), zeros: ^uint32(0)}
+	*m = MCUIQ{ramp: int32(rampSamples), zeros: ^uint32(0), frac: cosFracWide}
 	for i := range &m.hist {
 		m.hist[i] = 0x18181818
 	}
@@ -110,6 +111,8 @@ func (m *MCUIQ) Key(on bool) { m.on = on }
 // shorter than 2*Samples, or before Init, it writes nothing, does not take
 // the symbol and returns 0. The output lags the symbols by four symbol
 // periods and one sample of the shaper, at 24 kHz.
+//
+//go:nobounds
 func (m *MCUIQ) Symbol(dst []int16, s int8) int {
 	n := int(m.values)
 	if n == 0 || len(dst) < n {
@@ -128,30 +131,28 @@ func (m *MCUIQ) Symbol(dst []int16, s int8) int {
 	default:
 		c = 4
 	}
-	for i := iqWords - 1; i > 0; i-- {
-		m.hist[i] = m.hist[i]<<8 | m.hist[i-1]>>24
+	if iqWords == 4 {
+		h := (*[4]uint32)(unsafe.Pointer(&m.hist))
+		h[3] = h[3]<<8 | h[2]>>24
+		h[2] = h[2]<<8 | h[1]>>24
+		h[1] = h[1]<<8 | h[0]>>24
+	} else {
+		for i := iqWords - 1; i > 0; i-- {
+			m.hist[i] = m.hist[i]<<8 | m.hist[i-1]>>24
+		}
 	}
-	m.hist[0] = m.hist[0]<<8 | 5*c + m.hist[0]&255/5
+	m.hist[0] = m.hist[0]<<8 | 5*c + m.hist[0]&255*13>>6
 	m.shape(c)
 	dst = dst[:n]
 	switch {
 	case m.on && m.env == m.ramp:
-		switch m.upShift {
-		case 0:
-			m.steady0(dst)
-		case 1:
+		if tier0IQFine && tier0IQWide && cosFracWide%2 == 0 && m.upShift == 1 {
 			m.steady1(dst)
-		case 2:
-			m.steady2(dst)
-		default:
-			m.steady3(dst)
+		} else {
+			m.steady(dst)
 		}
 	case !m.on && m.env == 0:
-		m.silent()
-		for len(dst) >= 4 {
-			*(*[4]int16)(dst) = [4]int16{}
-			dst = dst[4:]
-		}
+		m.silent(dst)
 	default:
 		m.ramping(dst)
 	}
@@ -159,11 +160,15 @@ func (m *MCUIQ) Symbol(dst []int16, s int8) int {
 }
 
 // shape writes the deviation of the samples of the symbol period that
-// the symbols of hist complete to buf, in output units: for each two
+// the symbols of hist complete to buf, as phase steps: for each two
 // phases, the sum of the words of tapsIQLUT of each two symbols, plus with
 // tier0IQCorr the correction of corr for the newest symbol of code c. The
-// sums are those of tapsIQ.
+// sums are those of tapsIQ, in output units, times step plus off.
 func (m *MCUIQ) shape(c uint32) {
+	if len(tapsIQLUT[0][0]) == 5 {
+		m.shape5(c)
+		return
+	}
 	var acc [len(tapsIQLUT[0][0])]int32
 	if tier0IQCorr {
 		acc = m.corr(c)
@@ -176,10 +181,49 @@ func (m *MCUIQ) shape(c uint32) {
 	}
 	for g, y := range acc {
 		y0 := int32(int16(y))
-		m.buf[2*g] = y0
+		m.buf[2*g] = y0*m.step + m.off
 		if 2*g+1 < iqPhases {
-			m.buf[2*g+1] = (y - y0) >> 16
+			m.buf[2*g+1] = (y-y0)>>16*m.step + m.off
 		}
+	}
+}
+
+//go:nobounds
+func (m *MCUIQ) shape5(c uint32) {
+	var a0, a1, a2, a3, a4 int32
+	if tier0IQCorr {
+		a0, a1, a2, a3, a4 = m.corr5(c)
+	}
+	for w := range iqWords {
+		h := m.hist[w]
+		t := (*[5]int32)(tapsIQLUT[2*w][h&31][:])
+		a0 += t[0]
+		a1 += t[1]
+		a2 += t[2]
+		a3 += t[3]
+		a4 += t[4]
+		if len(tapsIQLUT) == 2*iqWords || 2*w+1 < len(tapsIQLUT) {
+			t = (*[5]int32)(tapsIQLUT[2*w+1][h>>16&31][:])
+			a0 += t[0]
+			a1 += t[1]
+			a2 += t[2]
+			a3 += t[3]
+			a4 += t[4]
+		}
+	}
+	b, step, off := &m.buf, m.step, m.off
+	split(b, 0, a0, step, off)
+	split(b, 1, a1, step, off)
+	split(b, 2, a2, step, off)
+	split(b, 3, a3, step, off)
+	split(b, 4, a4, step, off)
+}
+
+func split(b *[iqPhases]int32, g int, y, step, off int32) {
+	y0 := int32(int16(y))
+	b[2*g] = y0*step + off
+	if 2*g+1 < iqPhases {
+		b[2*g+1] = (y-y0)>>16*step + off
 	}
 }
 
@@ -199,7 +243,7 @@ func cosSin(phase uint32) (int16, int16) {
 	if tier0IQFine && tier0IQWide {
 		// m is the phase from the middle of the entry in 2^-32 radians,
 		// signed so that the products are those of a signed multiply.
-		m := int32(uint64(phase<<cosTableBits)*cosFracWide>>32) - cosFracWide/2
+		m := cosFrac32(phase)
 		sn, c := int32(cosTable[i]), int32(cosTable[i+cosQuarter])
 		co := c - int32(int64(sn)*int64(m)>>32)
 		si := sn + int32(int64(c)*int64(m)>>32)
@@ -213,12 +257,16 @@ func cosSin(phase uint32) (int16, int16) {
 	return int16(c), int16(-ns)
 }
 
+func cosFrac32(phase uint32) int32 {
+	return int32(uint64(phase<<cosTableBits)*cosFracWide>>32) - cosFracWide/2
+}
+
 // putIQ writes the cosine and sine of phase to d. With tier0IQWide it
 // writes them as one word, I in the low half, for a little-endian target.
 func putIQ(d *[2]int16, phase uint32) {
 	if tier0IQFine && tier0IQWide {
 		i := phase >> cosShift
-		m := int32(uint64(phase<<cosTableBits)*cosFracWide>>32) - cosFracWide/2
+		m := cosFrac32(phase)
 		sn, c := int32(cosTable[i]), int32(cosTable[i+cosQuarter])
 		co := c - int32(int64(sn)*int64(m)>>32)
 		si := sn + int32(int64(c)*int64(m)>>32)
@@ -235,95 +283,77 @@ const (
 	cosFracWide = 26353589 >> (cosTableBits - 10)
 )
 
-// steady0 writes the I/Q of the deviation samples of the shaper to dst at
-// full power and the shaper rate, the path of all but the samples of a
-// power ramp. steady1, steady2 and steady3 are steady0 at two, four and
-// eight times the shaper rate, with the phase step interpolated linearly;
-// with tier0Exact, at the midpoints of the output samples.
-func (m *MCUIQ) steady0(dst []int16) {
-	phase, step, off := m.phase, m.step, m.off
-	prev := m.prev
-	for p, x := range &m.buf {
-		w := x*step + off
-		v := w
+// steady writes the I/Q of the deviation samples of the shaper to dst at
+// full power and 2^upShift times the shaper rate, with the phase step
+// interpolated linearly; with tier0Exact, at the midpoints of the output
+// samples. It is the path of all but the samples of a power ramp.
+//
+//go:nobounds
+func (m *MCUIQ) steady(dst []int16) {
+	us := m.upShift & 3
+	phase, prev := m.phase, m.prev
+	j := 0
+	for _, w := range &m.buf {
+		dw := (w - prev) >> us
+		v := prev
 		if tier0Exact {
-			v = prev + (w-prev)>>1
+			if us == 0 {
+				v += dw>>1 - dw
+			} else {
+				v -= dw >> 1
+			}
 		}
 		prev = w
-		d := dst[2*p : 2*p+2 : 2*p+2]
-		phase += uint32(v)
-		putIQ((*[2]int16)(d), phase)
+		for range 1 << us {
+			v += dw
+			phase += uint32(v)
+			putIQ((*[2]int16)(dst[j:j+2]), phase)
+			j += 2
+		}
 	}
 	m.phase, m.prev = phase, prev
 }
 
+//go:nobounds
 func (m *MCUIQ) steady1(dst []int16) {
-	phase, prev, step, off := m.phase, m.prev, m.step, m.off
-	for p, x := range &m.buf {
-		w := x*step + off
+	phase, prev, fr := m.phase, m.prev, m.frac
+	p := 0
+	for {
+		w := m.buf[p]
 		dw := (w - prev) >> 1
 		v := prev + dw
 		if tier0Exact {
 			v -= dw >> 1
 		}
 		prev = w
-		d := dst[4*p : 4*p+4 : 4*p+4]
 		phase += uint32(v)
-		putIQ((*[2]int16)(d[0:2]), phase)
+		i, f := phase>>cosShift, int32(uint64(phase<<cosTableBits)*uint64(fr)>>32)-int32(fr>>1)
+		sn, c := int32(cosTable[i]), int32(cosTable[i+cosQuarter])
+		lo := uint32(sn+int32(int64(c)*int64(f)>>32))&0xffff0000 | uint32(c-int32(int64(sn)*int64(f)>>32))>>16
 		phase += uint32(v + dw)
-		putIQ((*[2]int16)(d[2:4]), phase)
-	}
-	m.phase, m.prev = phase, prev
-}
-
-func (m *MCUIQ) steady2(dst []int16) {
-	phase, prev, step, off := m.phase, m.prev, m.step, m.off
-	for p, x := range &m.buf {
-		w := x*step + off
-		dw := (w - prev) >> 2
-		v := prev
-		if tier0Exact {
-			v -= dw >> 1
-		}
-		prev = w
-		d := (*[8]int16)(dst[8*p : 8*p+8])
-		for j := 0; j < 8; j += 2 {
-			v += dw
-			phase += uint32(v)
-			putIQ((*[2]int16)(d[j:j+2]), phase)
+		i, f = phase>>cosShift, int32(uint64(phase<<cosTableBits)*uint64(fr)>>32)-int32(fr>>1)
+		sn, c = int32(cosTable[i]), int32(cosTable[i+cosQuarter])
+		hi := uint32(sn+int32(int64(c)*int64(f)>>32))&0xffff0000 | uint32(c-int32(int64(sn)*int64(f)>>32))>>16
+		*(*[2]uint32)(unsafe.Pointer(&dst[4*p])) = [2]uint32{lo, hi}
+		p++
+		if p == iqPhases {
+			break
 		}
 	}
 	m.phase, m.prev = phase, prev
 }
 
-func (m *MCUIQ) steady3(dst []int16) {
-	phase, prev, step, off := m.phase, m.prev, m.step, m.off
-	for p, x := range &m.buf {
-		w := x*step + off
-		dw := (w - prev) >> 3
-		v := prev
-		if tier0Exact {
-			v -= dw >> 1
-		}
-		prev = w
-		d := (*[16]int16)(dst[16*p : 16*p+16])
-		for j := 0; j < 16; j += 2 {
-			v += dw
-			phase += uint32(v)
-			putIQ((*[2]int16)(d[j:j+2]), phase)
-		}
-	}
-	m.phase, m.prev = phase, prev
-}
-
-// silent steps the phase over the l deviation samples of the shaper as
-// steady does, with no output: over the 2^u samples of a shaper sample
+// silent zeros dst and steps the phase over the deviation samples of the
+// shaper as steady does: over the 2^u samples of a shaper sample
 // it moves by 2^u times prev and 2^u(2^u+1)/2 times the step dw.
-func (m *MCUIQ) silent() {
-	phase, prev, step, off, us := m.phase, m.prev, m.step, m.off, m.upShift&31
+func (m *MCUIQ) silent(dst []int16) {
+	for len(dst) >= 4 {
+		*(*[4]int16)(dst) = [4]int16{}
+		dst = dst[4:]
+	}
+	phase, prev, us := m.phase, m.prev, m.upShift&31
 	tri := uint32(1<<us) * (1<<us + 1) / 2
-	for _, x := range &m.buf {
-		w := x*step + off
+	for _, w := range &m.buf {
 		dw := (w - prev) >> us
 		v := prev
 		if tier0Exact {
@@ -344,11 +374,10 @@ func (m *MCUIQ) silent() {
 //go:noinline
 func (m *MCUIQ) ramping(dst []int16) {
 	us := m.upShift & 31
-	phase, prev, step, off := m.phase, m.prev, m.step, m.off
+	phase, prev := m.phase, m.prev
 	env, q, r, ramp, sq, sr, on := m.env, m.envQ, m.envR, m.ramp, m.stepQ, m.stepR, m.on
 	j := 0
-	for _, x := range &m.buf {
-		w := x*step + off
+	for _, w := range &m.buf {
 		dw := (w - prev) >> us
 		v := prev
 		if tier0Exact {
@@ -423,4 +452,37 @@ func (m *MCUIQ) corr(c uint32) (acc [len(tapsIQLUT[0][0])]int32) {
 		}
 	}
 	return acc
+}
+
+func (m *MCUIQ) corr5(c uint32) (a0, a1, a2, a3, a4 int32) {
+	const mask = 1<<(2*corrIQSyms) - 1
+	const span = corrIQSyms + corrIQLen - 1
+	z := uint32(0)
+	if c == 4 {
+		z, c = 1, 0
+	}
+	codes, zeros := m.codes<<2|c, m.zeros<<1|z
+	m.codes, m.zeros = codes, zeros
+	if zeros>>(corrIQSkip-corrIQLen+1)&(1<<span-1) != 0 {
+		return
+	}
+	for k := range corrIQLen {
+		i := codes >> uint32(2*(corrIQSkip-k)) & mask
+		if corrIQSym && i > mask/2 {
+			t := (*[5]int32)(corrIQ[k][(i^mask)&uint32(len(corrIQ[0])-1)][:])
+			a0 -= t[0]
+			a1 -= t[1]
+			a2 -= t[2]
+			a3 -= t[3]
+			a4 -= t[4]
+			continue
+		}
+		t := (*[5]int32)(corrIQ[k][i&uint32(len(corrIQ[0])-1)][:])
+		a0 += t[0]
+		a1 += t[1]
+		a2 += t[2]
+		a3 += t[3]
+		a4 += t[4]
+	}
+	return
 }
