@@ -22,8 +22,9 @@
 // or a NACK. The sequence rule depends on the layer. A packet of the IP
 // bearer service (SAP UDP/IP header compression, IP based packet data or
 // ARP, in the header or in the P_HEAD after it) gets no N(S) check: each
-// valid packet is delivered and gets an ACK, and duplicates are left to the
-// IP layer (ETSI TS 102 361-3 clauses 5.4.1.3 and 5.4.2.2). For any other
+// valid packet is delivered and gets an ACK, so a packet sent again after a
+// lost response is delivered again (ETSI TS 102 361-3 clauses 5.4.1.3 and
+// 5.4.2.2). For any other
 // SAP, a packet with N(S) equal to VI is a duplicate that gets an ACK and
 // is not delivered, a packet with N(S) equal to VI + 1 is the next one, any
 // other N(S) gets a NACK out of sequence with status VI, and the first
@@ -42,8 +43,12 @@
 // that failed, with its N(S) as the status. It keeps the blocks of the
 // last packet only, so a SACK about an earlier packet flags all its blocks,
 // and a packet found lost from a gap in N(S) gets a SACK that flags 127
-// blocks. The Sender sends the packets after that one again; the IP layer
-// drops the copies.
+// blocks. The Receiver uses go back N: after the first packet of a window
+// that failed or was lost, it does not deliver the later packets of that
+// window, and the Sender sends them again. So each packet is delivered
+// once, with no buffer for later packets. IPv4 and UDP do not drop copies
+// (RFC 1122 clauses 1.1.3 and 4.1.1), so a lost response still gives a copy, as it
+// does with stop and wait.
 //
 // Output.ICMP gives the ICMP error message that a message that failed
 // reports to the IP layer (ETSI TS 102 361-3 clauses 5.2 and 5.4.2.1).

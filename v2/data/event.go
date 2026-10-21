@@ -121,8 +121,9 @@ type Stats struct {
 	// that is neither VI nor VI + 1.
 	OutOfSequence uint16
 	// Dropped is the number of other bursts dropped: blocks without a
-	// header, packets over MaxBlocks, and headers that the Assembler
-	// refused.
+	// header, packets over MaxBlocks, headers that the Assembler refused,
+	// and the packets of a sliding window after one that failed or was
+	// lost.
 	Dropped uint16
 	// Duration is the time from the start of the call to its end.
 	Duration time.Duration

@@ -200,6 +200,18 @@ func (w *window) add(ns uint8, resp packet.Response, blocks uint8) {
 	w.n++
 }
 
+func (w *window) held(ns uint8) bool {
+	if w.n == 0 {
+		return false
+	}
+	for i := range w.n {
+		if w.ns[i] == ns {
+			return false
+		}
+	}
+	return w.failed() >= 0 || ns != (w.ns[w.n-1]+1)&7
+}
+
 func (w *window) failed() int {
 	for i := range w.n {
 		if w.resp[i] != packet.ResponseACK {
@@ -721,6 +733,7 @@ func (r *Receiver) complete(now time.Duration, m *packet.Message, done bool, err
 	if done && m.Header.Format == pdu.FormatResponsePacket {
 		return r.response(m, err, out)
 	}
+	held := r.windowed() && r.win.held(r.cur.ns)
 	if !done {
 		return r.answer(now, r.missing(), out)
 	}
@@ -731,6 +744,13 @@ func (r *Receiver) complete(now time.Duration, m *packet.Message, done bool, err
 		if err != nil {
 			return out
 		}
+	}
+	if held {
+		r.stats.Dropped++
+		if m.BadCRC {
+			return out
+		}
+		return r.answer(now, packet.ResponseACK, out)
 	}
 	var link *peer
 	if !m.BadCRC && r.answers() && r.cur.format == pdu.FormatConfirmed {
