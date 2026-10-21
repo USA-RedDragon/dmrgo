@@ -119,12 +119,6 @@ func TestDataSetHint(t *testing.T) {
 	if err := d.SetHint(layer2.Hint{Kind: layer2.KindData, DataType: 16, HasDataType: true}); !errors.Is(err, layer2.ErrDataType) {
 		t.Errorf("data type 16: %v, want layer2.ErrDataType", err)
 	}
-	if err := d.SetKind(layer2.KindVoice, enums.VoiceBurstE, 0); err != nil || d.Frame != dmrd.FrameVoice || d.Value != 4 {
-		t.Fatalf("SetKind E: %v %v %d", err, d.Frame, d.Value)
-	}
-	if err := d.SetKind(layer2.KindData, 0, enums.DataTypeCSBK); err != nil || d.Frame != dmrd.FrameDataSync || d.Value != 3 {
-		t.Fatalf("SetKind data: %v %v %d", err, d.Frame, d.Value)
-	}
 }
 
 func TestDataSizes(t *testing.T) {

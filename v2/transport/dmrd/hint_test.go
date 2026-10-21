@@ -73,7 +73,4 @@ func TestSetHintNil(t *testing.T) {
 	if err := d.SetHint(layer2.Hint{Kind: layer2.KindVoice, VoiceBurst: enums.VoiceBurstA}); err == nil {
 		t.Fatal("nil Data: no error")
 	}
-	if err := d.SetKind(layer2.KindVoice, enums.VoiceBurstA, 0); err == nil {
-		t.Fatal("nil Data SetKind: no error")
-	}
 }

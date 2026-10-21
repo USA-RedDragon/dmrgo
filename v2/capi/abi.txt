@@ -1574,7 +1574,6 @@ sym int dmrgo_dmrd_data_call(dmrgo_dmrd_data_t *self, bool *group, uint32_t *tar
 sym int dmrgo_dmrd_data_hint(dmrgo_dmrd_data_t *self, dmrgo_layer2_hint_t *out);
 sym int dmrgo_dmrd_data_set_call(dmrgo_dmrd_data_t *self, bool group, uint32_t target, uint32_t source);
 sym int dmrgo_dmrd_data_set_hint(dmrgo_dmrd_data_t *self, const dmrgo_layer2_hint_t *h);
-sym int dmrgo_dmrd_data_set_kind(dmrgo_dmrd_data_t *self, dmrgo_layer2_kind_t k, dmrgo_enums_voice_burst_type_t pos, dmrgo_enums_data_type_t dt);
 sym int dmrgo_dmrd_data_string(dmrgo_dmrd_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_dmrd_decode_bridge(const uint8_t *p, size_t p_len, dmrgo_dmrd_bridge_t *out);
 sym int dmrgo_dmrd_decode_bridge_control(const uint8_t *p, size_t p_len, dmrgo_dmrd_bridge_control_t *out);
@@ -1791,7 +1790,6 @@ sym int dmrgo_hytera_frame_append_binary(dmrgo_hytera_frame_t *self, uint8_t *ds
 sym int dmrgo_hytera_frame_has_burst(const dmrgo_hytera_frame_t *self, bool *out);
 sym int dmrgo_hytera_frame_hint(dmrgo_hytera_frame_t *self, dmrgo_layer2_hint_t *out);
 sym int dmrgo_hytera_frame_set_hint(dmrgo_hytera_frame_t *self, const dmrgo_layer2_hint_t *h);
-sym int dmrgo_hytera_frame_set_kind(dmrgo_hytera_frame_t *self, dmrgo_layer2_kind_t k, dmrgo_enums_voice_burst_type_t pos, dmrgo_enums_data_type_t dt);
 sym int dmrgo_hytera_heartbeat_append_binary(const dmrgo_hytera_heartbeat_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_hytera_p2p_append_binary(const dmrgo_hytera_p2p_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_hytera_p2p_redirect_port(const dmrgo_hytera_p2p_t *self, uint16_t *port, bool *ok);

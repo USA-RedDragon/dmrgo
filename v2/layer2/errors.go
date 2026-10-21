@@ -34,7 +34,7 @@ var (
 	// Terminate.
 	ErrVoiceTerminated = errors.New("voice transmission already terminated")
 	// ErrDataType is returned, wrapped or as is, by the builders and by the
-	// SetKind methods of the transports for a data type that the call cannot
+	// SetHint methods of the transports for a data type that the call cannot
 	// carry: Data of another data type than the slot type, or a data type
 	// that is not BPTC(196,96) coded for BuildDataBurst.
 	ErrDataType = errors.New("the data burst cannot carry this data type")

@@ -169,11 +169,3 @@ func (d *Data) SetHint(h layer2.Hint) error {
 	}
 	return nil
 }
-
-// SetKind sets Frame and Value as SetHint does for a Hint of k, pos and
-// dt.
-//
-// Deprecated: use SetHint with the Hint of a machine Output.
-func (d *Data) SetKind(k layer2.Kind, pos enums.VoiceBurstType, dt enums.DataType) error {
-	return d.SetHint(layer2.Hint{Kind: k, VoiceBurst: pos, DataType: dt, HasDataType: k == layer2.KindData})
-}
