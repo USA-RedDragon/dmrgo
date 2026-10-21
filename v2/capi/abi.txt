@@ -120,6 +120,7 @@ code DMRGO_ERR_HDAP_SHORT -230
 code DMRGO_ERR_HDAP_SIGNATURE -231
 code DMRGO_ERR_HDAP_TEXT -232
 code DMRGO_ERR_HYTERA_CODE -233
+code DMRGO_ERR_PDU_NO_SERVICE_OPTIONS -234
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -787,6 +788,7 @@ sym #define DMRGO_ERR_PACKET_UNEXPECTED_RETRY (-129)
 sym #define DMRGO_ERR_PDU_CAPACITY_PLUS_INCOMPLETE (-170)
 sym #define DMRGO_ERR_PDU_CAPACITY_PLUS_SEQUENCE (-171)
 sym #define DMRGO_ERR_PDU_NO_ADDRESSES (-130)
+sym #define DMRGO_ERR_PDU_NO_SERVICE_OPTIONS (-234)
 sym #define DMRGO_ERR_PDU_TALKER_ALIAS_INCOMPLETE (-131)
 sym #define DMRGO_ERR_PDU_TALKER_ALIAS_INVALID_UTF8 (-132)
 sym #define DMRGO_ERR_PDU_TALKER_ALIAS_LENGTH (-133)
@@ -2353,14 +2355,14 @@ sym int dmrgo_pdu_lc_bytes_flco(const dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_fl
 sym int dmrgo_pdu_lc_bytes_group(const dmrgo_pdu_lc_bytes_t *self, bool *group, bool *ok);
 sym int dmrgo_pdu_lc_bytes_protect_flag(const dmrgo_pdu_lc_bytes_t *self, bool *out);
 sym int dmrgo_pdu_lc_bytes_reserved(const dmrgo_pdu_lc_bytes_t *self, bool *out);
-sym int dmrgo_pdu_lc_bytes_service_options(const dmrgo_pdu_lc_bytes_t *self, uint8_t *out);
+sym int dmrgo_pdu_lc_bytes_service_options(const dmrgo_pdu_lc_bytes_t *self, dmrgo_layer3_service_options_t *so, bool *ok);
 sym int dmrgo_pdu_lc_bytes_set_addresses(dmrgo_pdu_lc_bytes_t *self, uint32_t target, uint32_t source);
 sym int dmrgo_pdu_lc_bytes_set_fid(dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_feature_set_id_t fid);
 sym int dmrgo_pdu_lc_bytes_set_flco(dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_flco_t f);
 sym int dmrgo_pdu_lc_bytes_set_group(dmrgo_pdu_lc_bytes_t *self, bool group, bool *out);
 sym int dmrgo_pdu_lc_bytes_set_protect_flag(dmrgo_pdu_lc_bytes_t *self, bool pf);
 sym int dmrgo_pdu_lc_bytes_set_reserved(dmrgo_pdu_lc_bytes_t *self, bool r);
-sym int dmrgo_pdu_lc_bytes_set_service_options(dmrgo_pdu_lc_bytes_t *self, uint8_t so);
+sym int dmrgo_pdu_lc_bytes_set_service_options(dmrgo_pdu_lc_bytes_t *self, const dmrgo_layer3_service_options_t *so);
 sym int dmrgo_pdu_local_time_parms_encode(dmrgo_pdu_local_time_parms_t *self, uint8_t out[8]);
 sym int dmrgo_pdu_local_time_parms_string(dmrgo_pdu_local_time_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_pdu_maintenance_pdu_encode(dmrgo_pdu_maintenance_pdu_t *self, uint8_t out[8]);

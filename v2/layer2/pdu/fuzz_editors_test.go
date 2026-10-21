@@ -5,6 +5,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
 func dataHeaderGroup(h *pdu.DataHeader) (group, ok bool) {
@@ -132,8 +133,10 @@ func checkLCBytesSetters(t *testing.T, l pdu.LCBytes, group bool, v uint8) {
 	e.SetProtectFlag(group)
 	e.SetReserved(!group)
 	e.SetFID(enums.FeatureSetID(v))
-	e.SetServiceOptions(^v)
-	if e.ProtectFlag() != group || e.Reserved() == group || e.FID() != enums.FeatureSetID(v) || e.ServiceOptions() != ^v || e.FLCO() != l.FLCO() || [6]byte(e[3:]) != [6]byte(l[3:]) {
+	so := layer3.DecodeServiceOptions([1]byte{^v})
+	soErr := e.SetServiceOptions(so)
+	gotSO, soOK := e.ServiceOptions()
+	if e.ProtectFlag() != group || e.Reserved() == group || e.FID() != enums.FeatureSetID(v) || soOK != (soErr == nil) || soOK && gotSO != so || e.FLCO() != l.FLCO() || [6]byte(e[3:]) != [6]byte(l[3:]) {
 		t.Fatalf("LCBytes %x setters give %x", l, e)
 	}
 	for _, dt := range []enums.DataType{enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC} {

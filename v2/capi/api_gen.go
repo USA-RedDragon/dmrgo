@@ -24654,16 +24654,20 @@ func dmrgo_pdu_lc_bytes_reserved(c_self *C.dmrgo_pdu_lc_bytes_t, c_out *C.bool) 
 }
 
 //export dmrgo_pdu_lc_bytes_service_options
-func dmrgo_pdu_lc_bytes_service_options(c_self *C.dmrgo_pdu_lc_bytes_t, c_out *C.uint8_t) (rc C.int) {
+func dmrgo_pdu_lc_bytes_service_options(c_self *C.dmrgo_pdu_lc_bytes_t, c_so *C.dmrgo_layer3_service_options_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := (*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self))).ServiceOptions()
+	r0, r1 := (*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self))).ServiceOptions()
 	_ = r0
-	if c_out != nil {
-		*c_out = C.uint8_t(r0)
+	_ = r1
+	if c_so != nil {
+		out_layer3_ServiceOptions(&(*c_so), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -24766,15 +24770,23 @@ func dmrgo_pdu_lc_bytes_set_reserved(c_self *C.dmrgo_pdu_lc_bytes_t, c_r C.bool)
 }
 
 //export dmrgo_pdu_lc_bytes_set_service_options
-func dmrgo_pdu_lc_bytes_set_service_options(c_self *C.dmrgo_pdu_lc_bytes_t, c_so C.uint8_t) (rc C.int) {
+func dmrgo_pdu_lc_bytes_set_service_options(c_self *C.dmrgo_pdu_lc_bytes_t, c_so *C.dmrgo_layer3_service_options_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self)).SetServiceOptions(byte(c_so))
+	if c_so == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_so g_layer3.ServiceOptions
+	a_so = in_layer3_ServiceOptions(&(*c_so))
+	r0 := (*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self)).SetServiceOptions(a_so)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }
@@ -43231,6 +43243,8 @@ func errCode(err error) C.int {
 			return -171
 		case g_layer2_pdu.ErrNoAddresses:
 			return -130
+		case g_layer2_pdu.ErrNoServiceOptions:
+			return -234
 		case g_layer2_pdu.ErrTalkerAliasIncomplete:
 			return -131
 		case g_layer2_pdu.ErrTalkerAliasInvalidUTF8:
@@ -43516,6 +43530,8 @@ func codeErr(code C.int) error {
 		return g_layer2_pdu.ErrCapacityPlusSequence
 	case -130:
 		return g_layer2_pdu.ErrNoAddresses
+	case -234:
+		return g_layer2_pdu.ErrNoServiceOptions
 	case -131:
 		return g_layer2_pdu.ErrTalkerAliasIncomplete
 	case -132:

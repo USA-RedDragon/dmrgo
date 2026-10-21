@@ -106,17 +106,29 @@ func (l *LCBytes) SetFID(fid enums.FeatureSetID) {
 }
 
 // ServiceOptions returns octet 2, the Service Options of a Grp_V_Ch_Usr
-// or UU_V_Ch_Usr LC. Other FLCOs use the octet for other fields.
-func (l LCBytes) ServiceOptions() byte {
-	return l[2]
+// (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC. ok is false for other FLCOs, which
+// use the octet for other fields.
+func (l LCBytes) ServiceOptions() (so layer3.ServiceOptions, ok bool) {
+	if !l.isVoiceChannelUser() {
+		return so, false
+	}
+	return layer3.DecodeServiceOptions([1]byte{l[2]}), true
 }
 
-// SetServiceOptions writes so into octet 2.
-func (l *LCBytes) SetServiceOptions(so byte) {
-	if l == nil {
-		return
+// SetServiceOptions writes so into octet 2 of a Grp_V_Ch_Usr or
+// UU_V_Ch_Usr LC. It returns ErrNoServiceOptions for other FLCOs and a
+// *dmrgo.FieldRangeError when a field of so does not fit its bits, and then
+// changes nothing.
+func (l *LCBytes) SetServiceOptions(so layer3.ServiceOptions) error {
+	octet, err := so.Field()
+	if err != nil {
+		return err
 	}
-	l[2] = so
+	if !l.isVoiceChannelUser() {
+		return ErrNoServiceOptions
+	}
+	l[2] = octet
+	return nil
 }
 
 func (l LCBytes) isVoiceChannelUser() bool {

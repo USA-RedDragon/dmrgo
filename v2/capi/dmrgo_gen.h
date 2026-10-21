@@ -5340,6 +5340,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_PDU_CAPACITY_PLUS_INCOMPLETE (-170)
 #define DMRGO_ERR_PDU_CAPACITY_PLUS_SEQUENCE (-171)
 #define DMRGO_ERR_PDU_NO_ADDRESSES (-130)
+#define DMRGO_ERR_PDU_NO_SERVICE_OPTIONS (-234)
 #define DMRGO_ERR_PDU_TALKER_ALIAS_INCOMPLETE (-131)
 #define DMRGO_ERR_PDU_TALKER_ALIAS_INVALID_UTF8 (-132)
 #define DMRGO_ERR_PDU_TALKER_ALIAS_LENGTH (-133)
@@ -8813,8 +8814,8 @@ int dmrgo_pdu_lc_bytes_group(const dmrgo_pdu_lc_bytes_t *self, bool *group, bool
 int dmrgo_pdu_lc_bytes_protect_flag(const dmrgo_pdu_lc_bytes_t *self, bool *out);
 /* Go: pdu.LCBytes.Reserved. Reserved returns the Reserved bit, bit 1 of octet 0. */
 int dmrgo_pdu_lc_bytes_reserved(const dmrgo_pdu_lc_bytes_t *self, bool *out);
-/* Go: pdu.LCBytes.ServiceOptions. ServiceOptions returns octet 2, the Service Options of a Grp_V_Ch_Usr or UU_V_Ch_Usr LC. */
-int dmrgo_pdu_lc_bytes_service_options(const dmrgo_pdu_lc_bytes_t *self, uint8_t *out);
+/* Go: pdu.LCBytes.ServiceOptions. ServiceOptions returns octet 2, the Service Options of a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC. */
+int dmrgo_pdu_lc_bytes_service_options(const dmrgo_pdu_lc_bytes_t *self, dmrgo_layer3_service_options_t *so, bool *ok);
 /* Go: pdu.LCBytes.SetAddresses. SetAddresses writes target into octets 3 to 5 and source into octets 6 to 8 of a Grp_V_Ch_Usr or UU_V_Ch_Usr LC, whatever the FID. */
 int dmrgo_pdu_lc_bytes_set_addresses(dmrgo_pdu_lc_bytes_t *self, uint32_t target, uint32_t source);
 /* Go: pdu.LCBytes.SetFID. SetFID writes fid into octet 1. */
@@ -8827,8 +8828,8 @@ int dmrgo_pdu_lc_bytes_set_group(dmrgo_pdu_lc_bytes_t *self, bool group, bool *o
 int dmrgo_pdu_lc_bytes_set_protect_flag(dmrgo_pdu_lc_bytes_t *self, bool pf);
 /* Go: pdu.LCBytes.SetReserved. SetReserved writes the Reserved bit, bit 1 of octet 0. */
 int dmrgo_pdu_lc_bytes_set_reserved(dmrgo_pdu_lc_bytes_t *self, bool r);
-/* Go: pdu.LCBytes.SetServiceOptions. SetServiceOptions writes so into octet 2. */
-int dmrgo_pdu_lc_bytes_set_service_options(dmrgo_pdu_lc_bytes_t *self, uint8_t so);
+/* Go: pdu.LCBytes.SetServiceOptions. SetServiceOptions writes so into octet 2 of a Grp_V_Ch_Usr or UU_V_Ch_Usr LC. */
+int dmrgo_pdu_lc_bytes_set_service_options(dmrgo_pdu_lc_bytes_t *self, const dmrgo_layer3_service_options_t *so);
 /* Go: pdu.LocalTimeParms.Encode. Encode encodes a LocalTimeParms. */
 int dmrgo_pdu_local_time_parms_encode(dmrgo_pdu_local_time_parms_t *self, uint8_t out[8]);
 /* Go: pdu.LocalTimeParms.String. String returns the fields of s as text, for printing. */

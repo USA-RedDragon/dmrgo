@@ -39,11 +39,12 @@ func callOf(lc pdu.LCBytes, origin Origin) (c Call, ok bool) {
 		return c, false
 	}
 	group, _ := lc.Group()
+	so, _ := lc.ServiceOptions()
 	return Call{
 		Group:   group,
 		Target:  target,
 		Source:  source,
-		Options: layer3.DecodeServiceOptions([1]byte{lc.ServiceOptions()}),
+		Options: so,
 		FID:     lc.FID(),
 		LC:      lc,
 		Origin:  origin,
