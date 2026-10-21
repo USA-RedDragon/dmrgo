@@ -48,6 +48,7 @@ type discUnion struct {
 	limit    float64
 	inSec    float64
 	main     []Burst
+	fill     []bool
 	extra    []Burst
 	hist     [unionHist]float64
 	hn       int
@@ -67,6 +68,7 @@ func (r *DiscReceiver) addUnion(opt *options) {
 	hz, out, user := r.hz(), r.out, r.onBurst
 	u := &discUnion{r: r, user: user, hz: float64(hz), limit: math.Inf(-1)}
 	u.main = make([]Burst, 0, unionCap)
+	u.fill = make([]bool, 0, unionCap)
 	u.extra = make([]Burst, 0, unionCap)
 	for i := range u.hist {
 		u.hist[i] = math.Inf(-1)
@@ -107,6 +109,7 @@ func (u *discUnion) onMain(b *Burst) {
 		u.release(u.main[0].Seconds + unionLag + 1e-9)
 	}
 	u.main = append(u.main, *b)
+	u.fill = append(u.fill, false)
 }
 
 func (u *discUnion) onTwin(b *Burst) {
@@ -256,7 +259,7 @@ func (u *discUnion) release(limit float64) {
 		j, clash := u.near(x.Seconds)
 		u.noteVoice(x)
 		if clash {
-			if j >= 0 && u.status(&u.main[j]) == unionWrong && u.status(x) == unionRight {
+			if j >= 0 && !u.fill[j] && u.status(&u.main[j]) == unionWrong && u.status(x) == unionRight {
 				m := &u.main[j]
 				_, c := m.Decoded()
 				m.Fixed, _ = x.Decoded()
@@ -267,11 +270,8 @@ func (u *discUnion) release(limit float64) {
 			continue
 		}
 		u.embedded(x)
-		for len(u.main) > 0 && u.main[0].Seconds < limit-unionLag && u.main[0].Seconds <= x.Seconds {
-			u.popMain()
-		}
 		u.filled++
-		u.emit(x)
+		u.insert(x)
 	}
 	u.extra = u.extra[:k]
 	for len(u.main) > 0 && u.main[0].Seconds < limit-unionLag {
@@ -315,10 +315,16 @@ func (u *discUnion) embedded(x *Burst) {
 		if near && j < 0 {
 			return
 		}
+		if j >= 0 && u.fill[j] {
+			j = -1
+		}
 		at[k] = j
 		if j < 0 {
 			whole = false
 			continue
+		}
+		if u.main[j].Voice != enums.VoiceBurstB+enums.VoiceBurstType(k) {
+			return
 		}
 		d, _ := u.main[j].Decoded()
 		mf[k] = d.EmbeddedData()
@@ -344,10 +350,30 @@ func (u *discUnion) embedded(x *Burst) {
 	u.elc++
 }
 
+func (u *discUnion) insert(x *Burst) {
+	if len(u.main) == cap(u.main) {
+		u.popMain()
+	}
+	p := len(u.main)
+	for i := range u.main {
+		if u.main[i].Seconds > x.Seconds {
+			p = i
+			break
+		}
+	}
+	u.main = append(u.main, Burst{})
+	u.fill = append(u.fill, false)
+	copy(u.main[p+1:], u.main[p:])
+	copy(u.fill[p+1:], u.fill[p:])
+	u.main[p], u.fill[p] = *x, true
+}
+
 func (u *discUnion) popMain() {
 	b := u.main[0]
 	copy(u.main, u.main[1:])
 	u.main = u.main[:len(u.main)-1]
+	copy(u.fill, u.fill[1:])
+	u.fill = u.fill[:len(u.fill)-1]
 	u.remember(b.Seconds)
 	u.emit(&b)
 }

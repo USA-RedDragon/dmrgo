@@ -99,6 +99,12 @@ func unionSuperset(truth []benchSlot, ms bool, t2, t3 []Burst) (int, error) {
 				return swaps, fmt.Errorf("Tier3 burst %d at %.4f s is near Tier2 burst %d at %.4f s", i, t3[i].Seconds, k, t2[k].Seconds)
 			}
 		}
+		if j < len(t2) && t2[j].Seconds < t3[i].Seconds && (j == 0 || t2[j-1].Seconds < t3[i].Seconds) {
+			return swaps, fmt.Errorf("Tier3 puts burst %d at %.4f s before Tier2 burst %d at %.4f s", i, t3[i].Seconds, j, t2[j].Seconds)
+		}
+		if j > 0 && t2[j-1].Seconds > t3[i].Seconds && (j == len(t2) || t2[j].Seconds > t3[i].Seconds) {
+			return swaps, fmt.Errorf("Tier3 puts burst %d at %.4f s after Tier2 burst %d at %.4f s", i, t3[i].Seconds, j-1, t2[j-1].Seconds)
+		}
 	}
 	if j != len(t2) {
 		return swaps, fmt.Errorf("Tier3 keeps %d of %d Tier2 bursts in order", j, len(t2))
