@@ -3,7 +3,6 @@
 package codec2
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
@@ -90,9 +89,5 @@ func (c *Codec) AppendDecode(dst []int16, _ [9]byte) ([]int16, error) {
 
 // Close does nothing.
 func (c *Codec) Close() error {
-	if c == nil {
-		return dmrgo.ErrNilReceiver
-	}
-
 	return nil
 }
