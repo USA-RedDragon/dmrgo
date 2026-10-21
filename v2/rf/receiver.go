@@ -485,6 +485,10 @@ func newEngine(cfg Config, opt options) *engine {
 
 // OffsetHz returns the carrier offset of the last stream that ended, in Hz.
 func (r *Receiver) OffsetHz() float64 {
+	if r == nil {
+		return 0
+	}
+
 	if r.iql != nil {
 		return float64(r.iql.hz) + r.iql.d.OffsetHz()/iqUnitsPerHz
 	}
@@ -505,6 +509,10 @@ func (r *Receiver) OffsetHz() float64 {
 
 // DeviationHz returns the outer deviation of the last locked stream, in Hz.
 func (r *Receiver) DeviationHz() float64 {
+	if r == nil {
+		return 0
+	}
+
 	if r.iql != nil {
 		return r.iql.d.DeviationHz() / iqUnitsPerHz
 	}
@@ -529,6 +537,10 @@ func (r *Receiver) DeviationHz() float64 {
 // r.MaxBursts(0), and all three return none when Config.OnBurst is set. It
 // does not allocate.
 func (r *Receiver) MaxBursts(samples int) int {
+	if r == nil {
+		return 0
+	}
+
 	c := cap(r.outBuf())
 	if r.cb != nil || c == 0 {
 		return c
@@ -564,6 +576,10 @@ func (r *Receiver) outBuf() []Burst {
 // OnBurst, it returns ErrWriteTooLong and processes nothing when iq is
 // longer than Config.MaxWrite.
 func (r *Receiver) Write(iq []byte) ([]Burst, error) {
+	if r == nil {
+		return nil, dmrgo.ErrNilReceiver
+	}
+
 	if len(iq) > r.maxWrite && cap(r.outBuf()) > 0 {
 		return nil, ErrWriteTooLong
 	}
@@ -598,6 +614,10 @@ func (r *Receiver) write(iq []byte) []Burst {
 // call. Without OnBurst, it returns ErrWriteTooLong and processes nothing
 // when x has more than Config.MaxWrite/2 samples.
 func (r *Receiver) WriteBaseband(x []complex64) ([]Burst, error) {
+	if r == nil {
+		return nil, dmrgo.ErrNilReceiver
+	}
+
 	if 2*len(x) > r.maxWrite && cap(r.outBuf()) > 0 {
 		return nil, ErrWriteTooLong
 	}
@@ -629,6 +649,10 @@ func (r *Receiver) writeBaseband(x []complex64) []Burst {
 // Flush finishes the stream at its end and returns the remaining bursts.
 // It returns at most r.MaxBursts(0) bursts.
 func (r *Receiver) Flush() []Burst {
+	if r == nil {
+		return nil
+	}
+
 	if r.cb != nil {
 		return r.cb.flush()
 	}

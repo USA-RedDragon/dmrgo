@@ -83,6 +83,10 @@ func NewLowIQ(cfg *LowIQConfig) (*LowIQReceiver, error) {
 // *dmrgo.ConfigError for an Hz other than 9600 or 12000, or a nil OnBurst. It
 // does not allocate, so that r can live in memory of the caller.
 func (r *LowIQReceiver) Init(cfg LowIQConfig) error {
+	if r == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	if cfg.Hz == 0 {
 		cfg.Hz = iq0LowHz
 	}
@@ -104,6 +108,10 @@ func (r *LowIQReceiver) Init(cfg LowIQConfig) error {
 // complete to OnBurst. It takes 1 as 4096 of WriteIQ16 and clips each part
 // at ±8.
 func (r *LowIQReceiver) WriteBaseband(x []complex64) {
+	if r == nil {
+		return
+	}
+
 	if r.r.d.audio != nil {
 		r.r.writeBaseband(x)
 	}
@@ -115,6 +123,10 @@ func (r *LowIQReceiver) WriteBaseband(x []complex64) {
 // of a little-endian chip, the pairs of int16 I, Q. The scale does not
 // matter, but I and Q must be above -32768.
 func (r *LowIQReceiver) WriteIQ16(x []uint32) {
+	if r == nil {
+		return
+	}
+
 	if r.r.d.audio == nil {
 		return
 	}
@@ -124,6 +136,10 @@ func (r *LowIQReceiver) WriteIQ16(x []uint32) {
 
 // Flush finishes the stream at its end.
 func (r *LowIQReceiver) Flush() {
+	if r == nil {
+		return
+	}
+
 	if r.r.d.audio != nil {
 		r.r.flush()
 	}

@@ -115,6 +115,10 @@ func NewDisc(c *DiscConfig) (*DiscReceiver, error) {
 // Init sets up r for cfg, in place of any state it holds. It does not
 // allocate, so that r can live in memory of the caller.
 func (r *DiscReceiver) Init(cfg DiscConfig) error {
+	if r == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
 	dec := cfg.Hz == 2*discRate
 	if cfg.Hz == 0 || dec {
 		cfg.Hz = discRate
@@ -197,6 +201,10 @@ func (r *DiscReceiver) maxBursts(n int) int {
 // only when dst has no room for len(x)/72+16 bursts, the most that x can
 // complete at the lowest input rate, 9600 Hz.
 func (r *DiscReceiver) AppendBursts(dst []Burst, x []int16) []Burst {
+	if r == nil {
+		return dst
+	}
+
 	if r.audio == nil {
 		return dst
 	}
@@ -218,6 +226,10 @@ func (r *DiscReceiver) AppendBursts(dst []Burst, x []int16) []Burst {
 // to DiscConfig.MaxWrite samples; a DiscReceiver that Init set up has none,
 // so use AppendBursts.
 func (r *DiscReceiver) Write(x []int16) ([]Burst, error) {
+	if r == nil {
+		return nil, dmrgo.ErrNilReceiver
+	}
+
 	if r.audio == nil {
 		return nil, nil
 	}
@@ -234,6 +246,10 @@ func (r *DiscReceiver) Write(x []int16) ([]Burst, error) {
 // DiscReceiver that Init set up without OnBurst has no buffer for them, so
 // there Flush changes nothing and returns nil; use AppendFlush.
 func (r *DiscReceiver) Flush() []Burst {
+	if r == nil {
+		return nil
+	}
+
 	if r.audio == nil || r.onBurst == nil && cap(r.out) == 0 {
 		return nil
 	}
@@ -246,6 +262,10 @@ func (r *DiscReceiver) Flush() []Burst {
 // to dst and returns the extended slice. It allocates only when dst has no
 // room for 26 bursts, the most that one slot of samples can complete.
 func (r *DiscReceiver) AppendFlush(dst []Burst) []Burst {
+	if r == nil {
+		return dst
+	}
+
 	if r.audio == nil {
 		return dst
 	}
@@ -633,12 +653,20 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 // the input samples. It is the carrier offset times the gain of the
 // discriminator, plus the offset of its converter.
 func (r *DiscReceiver) OffsetHz() float64 {
+	if r == nil {
+		return 0
+	}
+
 	return float64(float32(r.offsetHz) / r.f.gain)
 }
 
 // DeviationHz returns the outer deviation of the last locked stream, in
 // units of the input samples.
 func (r *DiscReceiver) DeviationHz() float64 {
+	if r == nil {
+		return 0
+	}
+
 	return float64(float32(r.devHz) / r.f.gain)
 }
 

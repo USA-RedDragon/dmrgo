@@ -43,6 +43,10 @@ type Burst struct {
 // Decoded returns the burst and CACH bits to decode: Fixed and FixedCACH
 // when the burst has them, Data and CACH otherwise.
 func (b *Burst) Decoded() (layer2.RawBurst, [3]byte) {
+	if b == nil {
+		return layer2.RawBurst{}, [3]byte{}
+	}
+
 	if b.HasFixed {
 		return b.Fixed, b.FixedCACH
 	}
@@ -50,7 +54,12 @@ func (b *Burst) Decoded() (layer2.RawBurst, [3]byte) {
 }
 
 // Timed reports whether the burst was placed by timing instead of a SYNC.
-func (b *Burst) Timed() bool { return b.Distance < 0 }
+func (b *Burst) Timed() bool {
+	if b == nil {
+		return false
+	}
+	return b.Distance < 0
+}
 
 type received struct {
 	data      layer2.RawBurst

@@ -20,6 +20,10 @@ var ErrNilBurst = errors.New("rf: nil Monitor or Burst")
 // burst by timing. A Monitor gives Slot from the CACHs of the whole stream,
 // which one bad CACH does not change. A nil b gives the zero Hint.
 func (b *Burst) Hint() layer2.Hint {
+	if b == nil {
+		return layer2.Hint{}
+	}
+
 	var h layer2.Hint
 	if b == nil {
 		return h
