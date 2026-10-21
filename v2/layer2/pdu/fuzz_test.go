@@ -223,7 +223,7 @@ func sealBPTC(t *testing.T, p *[12]byte, dt enums.DataType) bool {
 		blocks := [][12]byte{*p}
 		pdu.SetMBCLastBlockCRC(blocks)
 		*p = blocks[0]
-		if !pdu.MBCLastBlockCRCOK(*p) {
+		if !pdu.MBCLastBlockCRCOK([][12]byte{*p}) {
 			t.Fatalf("sealed MBC continuation %x fails its CRC", *p)
 		}
 	case pdu.Seal(p, dt) != nil:
@@ -244,7 +244,7 @@ func checkMBCViews(t *testing.T, in, out [12]byte) {
 	cgap, mvap, bcap, vnap := c.AsCGAP(), c.AsMVAP(), c.AsBCAP(), c.AsVNAP()
 	views := [...][12]byte{must(cgap.Encode()), must(mvap.Encode()), must(bcap.Encode()), must(vnap.Encode())}
 	crcs := [...]fec.Result{cgap.FEC, mvap.FEC, bcap.FEC, vnap.FEC}
-	crcOK := pdu.MBCLastBlockCRCOK(out)
+	crcOK := pdu.MBCLastBlockCRCOK([][12]byte{out})
 	for i, v := range views {
 		if [10]byte(v[:10]) != [10]byte(out[:10]) || crcs[i].Uncorrectable == crcOK || crcOK && v != out {
 			t.Fatalf("MBCContinuation view %d of %x encodes as %x with %+v, block %x", i, in, v, crcs[i], out)
@@ -274,7 +274,7 @@ func checkOctetError(t *testing.T, k int, in [12]byte, at int, e byte) {
 	case 3:
 		r = pdu.DecodeMBCHeader(bad).FEC
 	case 4:
-		r.Uncorrectable = !pdu.MBCLastBlockCRCOK(bad)
+		r.Uncorrectable = !pdu.MBCLastBlockCRCOK([][12]byte{bad})
 	case 5:
 		r = pdu.DecodeDataHeader(bad).FEC
 	case 6:

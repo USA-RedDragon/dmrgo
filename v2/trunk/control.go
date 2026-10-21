@@ -155,7 +155,7 @@ func (c *control) udtBlock(d *pdu.Rate12Data, slot enums.Slot) tsccEvent {
 	}
 	c.udtOn = false
 	u.Len = u.n*12 - 2
-	u.CRCOK = pdu.MBCLastBlockCRCOK(u.blocks[:u.n]...)
+	u.CRCOK = pdu.MBCLastBlockCRCOK(u.blocks[:u.n])
 	return eventUDT
 }
 

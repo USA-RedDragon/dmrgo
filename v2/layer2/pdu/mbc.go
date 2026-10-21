@@ -113,7 +113,7 @@ func (s *MBCContinuation) AsVNAP() VNAPContinuation {
 	return decodeVNAPContinuation(s.packed())
 }
 
-func mbcLastBlockCRC(blocks ...[12]byte) uint16 {
+func mbcLastBlockCRC(blocks [][12]byte) uint16 {
 	if len(blocks) == 0 {
 		return 0
 	}
@@ -132,12 +132,12 @@ func mbcLastBlockCRC(blocks ...[12]byte) uint16 {
 // the last-block CRC-CCITT that SetMBCLastBlockCRC writes. Each block holds
 // its 96 bits packed, the first bit in the most significant bit of byte 0.
 // It returns false for no blocks.
-func MBCLastBlockCRCOK(blocks ...[12]byte) bool {
+func MBCLastBlockCRCOK(blocks [][12]byte) bool {
 	if len(blocks) == 0 {
 		return false
 	}
 	last := blocks[len(blocks)-1]
-	return uint16(last[10])<<8|uint16(last[11]) == mbcLastBlockCRC(blocks...)
+	return uint16(last[10])<<8|uint16(last[11]) == mbcLastBlockCRC(blocks)
 }
 
 // SetMBCLastBlockCRC writes the last-block CRC-CCITT into bits 80 to 95 of
@@ -148,7 +148,7 @@ func SetMBCLastBlockCRC(blocks [][12]byte) {
 	if len(blocks) == 0 {
 		return
 	}
-	c := mbcLastBlockCRC(blocks...)
+	c := mbcLastBlockCRC(blocks)
 	last := &blocks[len(blocks)-1]
 	last[10], last[11] = byte(c>>8), byte(c&0xFF)
 }

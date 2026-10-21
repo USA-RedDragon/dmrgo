@@ -691,7 +691,7 @@ func (r *Receiver) udtBlock(b *layer2.Burst, out []Event) []Event {
 	r.u.active = false
 	r.cur.pending = 0
 	r.stats.Packets++
-	ok = pdu.MBCLastBlockCRCOK(r.u.blocks[:r.u.need]...)
+	ok = pdu.MBCLastBlockCRCOK(r.u.blocks[:r.u.need])
 	if !ok {
 		r.stats.BadCRC++
 		if !r.acceptBadCRC {
