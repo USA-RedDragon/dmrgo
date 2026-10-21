@@ -49,6 +49,7 @@ type discUnion struct {
 	limit    float64
 	inSec    float64
 	main     []Burst
+	head     Burst
 	fill     []bool
 	extra    []Burst
 	hist     [unionHist]float64
@@ -132,8 +133,12 @@ func (u *discUnion) onMain(b *Burst) {
 	if len(u.main) == cap(u.main) {
 		u.release(u.main[0].Seconds + unionLag + 1e-9)
 	}
-	u.main = append(u.main, *b)
-	u.fill = append(u.fill, false)
+	if len(u.main) == cap(u.main) {
+		u.popMain()
+	}
+	n := len(u.main)
+	u.main, u.fill = u.main[:n+1], u.fill[:n+1]
+	u.main[n], u.fill[n] = *b, false
 }
 
 func (u *discUnion) onTwin(b *Burst) {
@@ -142,7 +147,9 @@ func (u *discUnion) onTwin(b *Burst) {
 		u.dropped++
 		return
 	}
-	u.extra = append(u.extra, *b)
+	n := len(u.extra)
+	u.extra = u.extra[:n+1]
+	u.extra[n] = *b
 }
 
 func (u *discUnion) write(x []int16) {
@@ -389,21 +396,21 @@ func (u *discUnion) insert(x *Burst) {
 			break
 		}
 	}
-	u.main = append(u.main, Burst{})
-	u.fill = append(u.fill, false)
+	n := len(u.main)
+	u.main, u.fill = u.main[:n+1], u.fill[:n+1]
 	copy(u.main[p+1:], u.main[p:])
 	copy(u.fill[p+1:], u.fill[p:])
 	u.main[p], u.fill[p] = *x, true
 }
 
 func (u *discUnion) popMain() {
-	b := u.main[0]
+	u.head = u.main[0]
 	copy(u.main, u.main[1:])
 	u.main = u.main[:len(u.main)-1]
 	copy(u.fill, u.fill[1:])
 	u.fill = u.fill[:len(u.fill)-1]
-	u.remember(b.Seconds)
-	u.emit(&b)
+	u.remember(u.head.Seconds)
+	u.emit(&u.head)
 }
 
 func (u *discUnion) emit(b *Burst) {
