@@ -179,14 +179,18 @@ type Header struct {
 // the data header to send it with, and returns dst. An IP format uses an IPv4 header (SAP IP based packet data) with
 // the radio addresses of network ip.DefaultNetwork, and a confirmed packet
 // when confirmed is set. A TMS text starts with a CR LF. It returns dst
-// unchanged and ErrFormat for an unknown format, or the errors of the
-// packages that build the message. It allocates only to grow dst.
+// unchanged and ErrFormat for an unknown format and for FormatDefinedData
+// with DD format BCD, which Decode reads as FormatHytera, or the errors of
+// the packages that build the message. It allocates only to grow dst.
 func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error) {
 	n := len(dst)
 	h.Data = pdu.DataHeader{}
 	var err error
 	switch t.Format {
 	case FormatDefinedData:
+		if t.DD == enums.DDBCD {
+			return dst[:n], ErrFormat
+		}
 		if dst, err = shortdata.AppendText(dst, t.DD, t.Body); err != nil {
 			return dst[:n], err
 		}
