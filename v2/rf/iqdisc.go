@@ -21,7 +21,7 @@ type iqDisc struct {
 	hist    []complex64
 	head    int
 	phase   int
-	half    iqHalf
+	half    *iqHalf
 	prev    complex64
 	ncoStep complex64
 	ncoRot  complex64
@@ -31,11 +31,12 @@ type iqDisc struct {
 	pw      float32
 	accAvg  complex64
 	pwAvg   float32
+	halfOn  bool
 	afc     []complex64
 	afcSum  complex64
 	afcPrev complex64
 	afcHead int
-	iq0Front
+	*iq0Front
 }
 
 type iqFilter struct {
@@ -119,6 +120,7 @@ func (d *iqDisc) init(decim int, f iqFilter) {
 		fc = f.cutHz
 	}
 	if f.half > 0 && decim%2 == 0 {
+		d.half, d.halfOn = new(iqHalf), true
 		d.half.init(f.half)
 		d.step, rate = decim/2, rate/2
 	}
@@ -155,9 +157,10 @@ func turnBy(w float32, age int) complex64 {
 
 func (d *iqDisc) turn(w float32) {
 	age0, per := 1, 1
-	h := &d.half
-	nh := len(h.hist) / 2
-	if h.side != nil {
+	h := d.half
+	nh := 0
+	if h != nil {
+		nh = len(h.hist) / 2
 		age0, per = nh-nh/2+h.phase, 2
 	}
 	n := len(d.taps)
@@ -195,7 +198,7 @@ func (d *iqDisc) push(v complex64) (float32, complex64, bool) {
 	}
 	w := v * d.ncoRot
 	d.ncoRot *= d.ncoStep
-	if d.half.side != nil {
+	if d.halfOn {
 		var ok bool
 		if w, ok = d.half.push(w); !ok {
 			return 0, 0, false
