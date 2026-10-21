@@ -76,6 +76,10 @@ const (
 	// voice or data packet, from Output.ID at Output.Addr, in
 	// Output.Packet without the authentication trailer.
 	OutputData
+	// OutputDropped reports a packet from Output.Addr that a Master
+	// dropped, with the sender ID in Output.ID when the packet has one.
+	// Output.Reason tells why.
+	OutputDropped
 )
 
 // String returns the name of the OutputKind.
@@ -91,6 +95,8 @@ func (k OutputKind) String() string {
 		return "Peers"
 	case OutputData:
 		return "Data"
+	case OutputDropped:
+		return "Dropped"
 	}
 	return unknownName
 }
@@ -111,6 +117,20 @@ const (
 	ReasonStopped
 	// ReasonList is a peer that a new peer list left out.
 	ReasonList
+	// ReasonAuth is a packet without a good authentication trailer, with
+	// Auth.
+	ReasonAuth
+	// ReasonUnregistered is a packet that needs the registration of its
+	// sender, from a peer that is not registered.
+	ReasonUnregistered
+	// ReasonMalformed is a packet that is empty, longer than MaxPacket or
+	// does not decode as its opcode.
+	ReasonMalformed
+	// ReasonFull is a registration that MaxPeers leaves no room for.
+	ReasonFull
+	// ReasonAddress is a de-registration request from an address other
+	// than the one the peer registered from.
+	ReasonAddress
 )
 
 // String returns the name of the Reason.
@@ -126,6 +146,16 @@ func (r Reason) String() string {
 		return "Stopped"
 	case ReasonList:
 		return "List"
+	case ReasonAuth:
+		return "Auth"
+	case ReasonUnregistered:
+		return "Unregistered"
+	case ReasonMalformed:
+		return "Malformed"
+	case ReasonFull:
+		return "Full"
+	case ReasonAddress:
+		return "Address"
 	}
 	return unknownName
 }
@@ -171,7 +201,7 @@ type Output struct {
 	Addr Addr
 	// ID is the peer or master ID of OutputUp, OutputDown and OutputData.
 	ID uint32
-	// Reason tells why for OutputDown.
+	// Reason tells why for OutputDown and OutputDropped.
 	Reason Reason
 }
 
@@ -229,15 +259,28 @@ func newLink(id uint32, mode ipsc.Mode, flags ipsc.Flags, version [4]byte, useAu
 	return l
 }
 
-func (l *link) open(p []byte) ([]byte, bool) {
+func (l *link) open(p []byte) ([]byte, Reason) {
 	if len(p) > MaxPacket {
-		return nil, false
+		return nil, ReasonMalformed
 	}
 	if l.key == nil {
-		return p, len(p) > 0
+		if len(p) == 0 {
+			return nil, ReasonMalformed
+		}
+		return p, ReasonNone
 	}
 	body, ok := l.key.Verify(p)
-	return body, ok && len(body) > 0
+	if !ok {
+		return nil, ReasonAuth
+	}
+	if len(body) == 0 {
+		return nil, ReasonMalformed
+	}
+	return body, ReasonNone
+}
+
+func dropped(dst []Output, from Addr, id uint32, r Reason) []Output {
+	return append(dst, Output{Kind: OutputDropped, Addr: from, ID: id, Reason: r})
 }
 
 func (l *link) sign(dst []byte) []byte {

@@ -51,7 +51,7 @@ func checkSession(t *testing.T, data []byte) {
 				t.Fatalf("%d outputs, limit %d", len(out)-n, limit)
 			}
 			for _, o := range out[n:] {
-				if o.Kind < session.OutputSend || o.Kind > session.OutputData {
+				if o.Kind < session.OutputSend || o.Kind > session.OutputDropped {
 					t.Fatalf("kind %v", o.Kind)
 				}
 				if tooLong(o.Packet) {
