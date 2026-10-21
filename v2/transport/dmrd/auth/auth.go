@@ -55,19 +55,27 @@ func VerifyToken(d dmrd.Dialect, salt uint32, password, token []byte) bool {
 // Bridge holds an OpenBridge key and the hash state that signing with it
 // needs. It is not safe for concurrent use.
 type Bridge struct {
-	hmac  digest.HMACSHA1
-	b2    digest.BLAKE2b
-	b2Key bool
+	hmac digest.HMACSHA1
+	b2   digest.BLAKE2b
 }
 
+// KeyLen is the length of an OpenBridge key in octets.
+const KeyLen = 20
+
 // NewBridge returns a Bridge for key, the passphrase of the OpenBridge link
-// as plain octets. It allocates the Bridge. A key longer than 64 octets
-// makes Sign and Verify fail for the BLAKE2b hash of FreeDMR versions 4 and
-// 5.
+// as plain octets. As HBlink3 and FreeDMR do, it pads the passphrase with
+// zero octets to KeyLen and cuts it at KeyLen. The padding does not change
+// HMAC-SHA1, but the BLAKE2b hash of FreeDMR versions 4 and 5 is keyed
+// with all KeyLen octets. It allocates the Bridge.
+//
+// (HBlink3 1db2730 and FreeDMR config.py, the PASSPHRASE of an OPENBRIDGE
+// section)
 func NewBridge(key []byte) *Bridge {
+	var k [KeyLen]byte
+	copy(k[:], key)
 	b := &Bridge{}
-	b.hmac.Init(key)
-	b.b2Key = b.b2.Init(16, key)
+	b.hmac.Init(k[:])
+	b.b2.Init(16, k[:])
 	return b
 }
 
@@ -77,15 +85,12 @@ func (b *Bridge) sha1(msg []byte) [20]byte {
 	return b.hmac.Sum()
 }
 
-func (b *Bridge) blake(msg []byte) ([16]byte, error) {
+func (b *Bridge) blake(msg []byte) [16]byte {
 	var out [16]byte
-	if !b.b2Key {
-		return out, errKey
-	}
 	b.b2.Reset()
 	b.b2.Write(msg)
 	b.b2.Sum(out[:])
-	return out, nil
+	return out
 }
 
 func span(p []byte) (msg, sig []byte, keyed bool, ok bool) {
@@ -119,18 +124,14 @@ func tagIs(p []byte, t string) bool {
 // packet and over the tag (and talkgroup and stream of BCSQ, or only the
 // version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over
 // the octets before the hash of a DMRE packet. It returns an error, and
-// changes nothing, when p is none of these or the key does not fit
-// BLAKE2b. It does not allocate.
+// changes nothing, when p is none of these. It does not allocate.
 func (b *Bridge) Sign(p []byte) error {
 	msg, sig, keyed, ok := span(p)
 	if !ok {
 		return errPacket
 	}
 	if keyed {
-		h, err := b.blake(msg)
-		if err != nil {
-			return err
-		}
+		h := b.blake(msg)
 		copy(sig, h[:])
 		return nil
 	}
@@ -150,10 +151,7 @@ func (b *Bridge) Verify(p []byte) bool {
 	var want [20]byte
 	n := len(want)
 	if keyed {
-		bl, err := b.blake(msg)
-		if err != nil {
-			return false
-		}
+		bl := b.blake(msg)
 		copy(want[:], bl[:])
 		n = len(bl)
 	} else {

@@ -52,3 +52,38 @@ func TestTokenOfDMRGatewayCapture(t *testing.T) {
 		t.Fatal("no RPTK in the capture")
 	}
 }
+
+func TestHBlink3OpenBridge(t *testing.T) {
+	t.Parallel()
+
+	f, err := os.Open("../testdata/hblink3-openbridge.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	b := auth.NewBridge([]byte("passw0rd-longer-than-twenty"))
+	n := 0
+	sc := bufio.NewScanner(f)
+	for sc.Scan() {
+		p, err := hex.DecodeString(strings.Fields(sc.Text())[1])
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !b.Verify(p) {
+			t.Fatalf("%x does not verify", p)
+		}
+		d, err := dmrd.DecodeBridge(p)
+		if err != nil || d.Version != 1 || d.Data.Repeater != 3129100 || d.Data.Destination != 91 {
+			t.Fatalf("%x: %+v %v", p, d, err)
+		}
+		q := append([]byte(nil), p...)
+		q[20] ^= 1
+		if b.Verify(q) {
+			t.Fatalf("%x verifies with a changed burst", q)
+		}
+		n++
+	}
+	if n != 8 {
+		t.Fatalf("%d packets", n)
+	}
+}

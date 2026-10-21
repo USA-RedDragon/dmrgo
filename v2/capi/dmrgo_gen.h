@@ -4678,6 +4678,8 @@ struct dmrgo_voice_output_t {
 #define DMRGO_DMRD_OPTION_CLEAR ((dmrgo_dmrd_option_state_t)1)
 /* Go: dmrd.OptionSet. OptionSet is an option with a value: it overrides the master. */
 #define DMRGO_DMRD_OPTION_SET ((dmrgo_dmrd_option_state_t)2)
+/* Go: auth.KeyLen. KeyLen is the length of an OpenBridge key in octets. */
+#define DMRGO_DMRD_AUTH_KEY_LEN 20
 /* Go: hytera.FrameLen. FrameLen is the length of a DMR frame in octets. */
 #define DMRGO_TRANSPORT_HYTERA_FRAME_LEN 72
 /* Go: hytera.HeartbeatLen. HeartbeatLen is the length of the heartbeat of the P2P service in octets. */

@@ -68,8 +68,8 @@ func TestBridgeSignaturesMatchPython(t *testing.T) {
 		sigHex string
 	}{
 		{packet("DMRD", 53, 73), 53, "ed07b50531fa7a96159f796fa6d6934fb70e9b90"},
-		{packet("DMRE", 69, 85), 69, "b4f519b8627e52b5f79319f463ea15fb"},
-		{packet("DMRE", 73, 89), 73, "8f9cfabfdf7007dc4c00be83e48f7b7e"},
+		{packet("DMRE", 69, 85), 69, "6ee460d8b78607eef430890b04a781ad"},
+		{packet("DMRE", 73, 89), 73, "ef26784919d293e2d58fd85242e40666"},
 		{packet("BCKA", 4, 24), 4, "5577d4a35e2fe3b307b2cfe3a79da4745baf45fb"},
 		{packet("BCSQ", 11, 31), 11, "4a41d40a117097a8093ba2fb4b19ea3266b61a6e"},
 		{packet("BCVE", 5, 25), 5, "ae865fe930ad93f8da278237b85b2e7483682ef5"},
@@ -99,11 +99,15 @@ func TestBridgeLongKey(t *testing.T) {
 
 	b := auth.NewBridge(bytes.Repeat([]byte("k"), 100))
 	p := packet("DMRD", 53, 73)
-	if err := b.Sign(p); err != nil || hex.EncodeToString(p[53:]) != "e264f16a07726418bde5cf09e2d802a92f0c341c" {
+	if err := b.Sign(p); err != nil || hex.EncodeToString(p[53:]) != "074d5ec72685e6bd0cbb917aabb83108726b943a" {
 		t.Fatalf("%x %v", p[53:], err)
 	}
-	if err := b.Sign(packet("DMRE", 69, 85)); err == nil {
-		t.Error("BLAKE2b with a 100-octet key: no error")
+	e := packet("DMRE", 69, 85)
+	if err := b.Sign(e); err != nil || hex.EncodeToString(e[69:]) != "a943a3ca14b6731ef293c0eed48a9760" {
+		t.Fatalf("DMRE with a 100-octet key: %x %v", e[69:], err)
+	}
+	if !auth.NewBridge(bytes.Repeat([]byte("k"), auth.KeyLen)).Verify(e) {
+		t.Error("the key is not cut at KeyLen")
 	}
 	for _, p := range [][]byte{nil, []byte("RPTL1234"), packet("DMRD", 53, 72)} {
 		if err := b.Sign(p); err == nil || b.Verify(p) {
