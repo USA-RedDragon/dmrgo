@@ -4055,7 +4055,7 @@ struct dmrgo_dmrd_session_master_config_t {
 	dmrgo_dmrd_dialect_t dialect;
 	/* Timeout is the time without a packet from the repeater after which the Master ends the session. 0 means TimeoutDefault. */
 	dmrgo_duration_t timeout;
-	/* LoginTimeout is the time without a packet from a repeater that has not finished its login after which the Master ends the session. 0 means LoginTimeoutDefault. */
+	/* LoginTimeout is the time after the first RPTL of a login, and after the RPTK that proves the password, in which the repeater must finish its login, or the Master ends the session. A repeated RPTL does not restart it. 0 means LoginTimeoutDefault. */
 	dmrgo_duration_t login_timeout;
 };
 
@@ -10033,9 +10033,9 @@ int dmrgo_dmrd_session_config_error_last(dmrgo_dmrd_session_config_error_t *out,
 /* dmrgo_dmrd_session_master_free frees the handle. self may be NULL. */
 int dmrgo_dmrd_session_master_free(dmrgo_dmrd_session_master_t *self);
 /* dmrgo_dmrd_session_master_admit_need sets *items and *arena to the room that dmrgo_dmrd_session_master_admit needs for these arguments, without a change to the handle. */
-int dmrgo_dmrd_session_master_admit_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, uint32_t salt, const uint8_t *password, size_t password_len, size_t *items, size_t *arena);
+int dmrgo_dmrd_session_master_admit_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t p0, uint32_t salt, const uint8_t *password, size_t password_len, size_t *items, size_t *arena);
 /* Go: session.Master.Admit. Admit answers the RPTL of OutputLogin with the salt, which the caller draws at random, and keeps the password of the repeater, of which it uses at most MaxPassword octets, to check the RPTK. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_session_master_admit_need gives. */
-int dmrgo_dmrd_session_master_admit(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, uint32_t salt, const uint8_t *password, size_t password_len, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_dmrd_session_master_admit(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t p0, uint32_t salt, const uint8_t *password, size_t password_len, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* dmrgo_dmrd_session_master_close_need sets *items and *arena to the room that dmrgo_dmrd_session_master_close needs for these arguments, without a change to the handle. */
 int dmrgo_dmrd_session_master_close_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
 /* Go: session.Master.Close. Close ends a session with MSTCL, as a master that shuts down sends it, and OutputDown with ReasonStopped. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_session_master_close_need gives. */

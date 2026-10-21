@@ -1709,8 +1709,8 @@ sym int dmrgo_dmrd_session_bridge_tick(dmrgo_dmrd_session_bridge_t *self, dmrgo_
 sym int dmrgo_dmrd_session_bridge_tick_need(dmrgo_dmrd_session_bridge_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 sym int dmrgo_dmrd_session_config_error_error(dmrgo_dmrd_session_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_dmrd_session_config_error_last(dmrgo_dmrd_session_config_error_t *out, bool *ok);
-sym int dmrgo_dmrd_session_master_admit(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, uint32_t salt, const uint8_t *password, size_t password_len, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-sym int dmrgo_dmrd_session_master_admit_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, uint32_t salt, const uint8_t *password, size_t password_len, size_t *items, size_t *arena);
+sym int dmrgo_dmrd_session_master_admit(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t p0, uint32_t salt, const uint8_t *password, size_t password_len, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_dmrd_session_master_admit_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t p0, uint32_t salt, const uint8_t *password, size_t password_len, size_t *items, size_t *arena);
 sym int dmrgo_dmrd_session_master_close(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t p0, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_dmrd_session_master_close_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
 sym int dmrgo_dmrd_session_master_deadline(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t *at, bool *ok);
