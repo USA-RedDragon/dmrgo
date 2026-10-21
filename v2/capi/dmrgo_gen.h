@@ -9562,8 +9562,6 @@ int dmrgo_dmrd_data_hint(dmrgo_dmrd_data_t *self, dmrgo_layer2_hint_t *out);
 int dmrgo_dmrd_data_set_call(dmrgo_dmrd_data_t *self, bool group, uint32_t target, uint32_t source);
 /* Go: dmrd.Data.SetHint. SetHint sets Frame and Value from what h says the burst is, as a machine Output gives it: KindVoice with a VoiceBurst of A to F, or KindData with a DataType. */
 int dmrgo_dmrd_data_set_hint(dmrgo_dmrd_data_t *self, const dmrgo_layer2_hint_t *h);
-/* Go: dmrd.Data.SetKind. SetKind sets Frame and Value as SetHint does for a Hint of k, pos and dt. */
-int dmrgo_dmrd_data_set_kind(dmrgo_dmrd_data_t *self, dmrgo_layer2_kind_t k, dmrgo_enums_voice_burst_type_t pos, dmrgo_enums_data_type_t dt);
 /* Go: dmrd.Data.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_data_string(dmrgo_dmrd_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.DecodeBridge. DecodeBridge decodes the OpenBridge data packet p: a 73-octet DMRD or an 85 or 89-octet DMRE packet. */
@@ -9710,8 +9708,6 @@ int dmrgo_hytera_frame_has_burst(const dmrgo_hytera_frame_t *self, bool *out);
 int dmrgo_hytera_frame_hint(dmrgo_hytera_frame_t *self, dmrgo_layer2_hint_t *out);
 /* Go: hytera.Frame.SetHint. SetHint sets SlotType from what h says the burst is, as a machine Output gives it: KindVoice with a VoiceBurst of A to F, or KindData with a DataType. */
 int dmrgo_hytera_frame_set_hint(dmrgo_hytera_frame_t *self, const dmrgo_layer2_hint_t *h);
-/* Go: hytera.Frame.SetKind. SetKind sets SlotType as SetHint does for a Hint of k, pos and dt. */
-int dmrgo_hytera_frame_set_kind(dmrgo_hytera_frame_t *self, dmrgo_layer2_kind_t k, dmrgo_enums_voice_burst_type_t pos, dmrgo_enums_data_type_t dt);
 /* Go: hytera.Heartbeat.AppendBinary. AppendBinary appends the heartbeat, or the keepalive, to dst. */
 int dmrgo_hytera_heartbeat_append_binary(const dmrgo_hytera_heartbeat_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hytera.P2P.AppendBinary. AppendBinary appends the command and its body to dst. */

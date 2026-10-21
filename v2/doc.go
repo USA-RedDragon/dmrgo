@@ -160,7 +160,7 @@
 //     layer2.ErrShortLCSequence: returned by the voice transmitter and
 //     receiver and the Short LC assembler.
 //   - layer2.ErrDataType, layer2.ErrSyncSource, layer2.ErrVoicePosition:
-//     returned, some wrapped, by the burst builders and by the SetKind and
+//     returned, some wrapped, by the burst builders and by the SetHint and
 //     SetRawBurst methods of the transports for a data type, sync source or
 //     voice position that the call cannot take.
 //   - packet.ErrNoHeader, packet.ErrRateChange, packet.ErrRate,

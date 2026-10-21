@@ -33068,26 +33068,6 @@ func dmrgo_dmrd_data_set_hint(c_self *C.dmrgo_dmrd_data_t, c_h *C.dmrgo_layer2_h
 	return C.DMRGO_OK
 }
 
-//export dmrgo_dmrd_data_set_kind
-func dmrgo_dmrd_data_set_kind(c_self *C.dmrgo_dmrd_data_t, c_k C.dmrgo_layer2_kind_t, c_pos C.dmrgo_enums_voice_burst_type_t, c_dt C.dmrgo_enums_data_type_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_transport_dmrd.Data
-	x = in_transport_dmrd_Data(&(*c_self))
-	r0 := x.SetKind(g_layer2.Kind(c_k), g_enums.VoiceBurstType(c_pos), g_enums.DataType(c_dt))
-	out_transport_dmrd_Data(&(*c_self), &x, oc)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_dmrd_data_string
 func dmrgo_dmrd_data_string(c_self *C.dmrgo_dmrd_data_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -34751,26 +34731,6 @@ func dmrgo_hytera_frame_set_hint(c_self *C.dmrgo_hytera_frame_t, c_h *C.dmrgo_la
 	var a_h g_layer2.Hint
 	a_h = in_layer2_Hint(&(*c_h))
 	r0 := x.SetHint(a_h)
-	*(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self))) = x
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_hytera_frame_set_kind
-func dmrgo_hytera_frame_set_kind(c_self *C.dmrgo_hytera_frame_t, c_k C.dmrgo_layer2_kind_t, c_pos C.dmrgo_enums_voice_burst_type_t, c_dt C.dmrgo_enums_data_type_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_transport_hytera.Frame
-	x = *(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self)))
-	r0 := x.SetKind(g_layer2.Kind(c_k), g_enums.VoiceBurstType(c_pos), g_enums.DataType(c_dt))
 	*(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self))) = x
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)

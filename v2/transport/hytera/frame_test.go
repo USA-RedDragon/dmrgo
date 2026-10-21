@@ -119,9 +119,6 @@ func TestFrameHint(t *testing.T) {
 		if err := back.SetHint(layer2.Hint{Kind: layer2.KindData, DataType: dt, HasDataType: true}); err != nil || back.SlotType != s {
 			t.Errorf("%v: SetHint %v %v", dt, back.SlotType, err)
 		}
-		if err := back.SetKind(layer2.KindData, 0, dt); err != nil || back.SlotType != s {
-			t.Errorf("%v: SetKind %v %v", dt, back.SlotType, err)
-		}
 	}
 	for _, s := range []hytera.SlotType{hytera.SlotTypeSync, hytera.SlotTypeWakeup, 0x1234, 0xFFFF} {
 		f := hytera.Frame{SlotType: s}
