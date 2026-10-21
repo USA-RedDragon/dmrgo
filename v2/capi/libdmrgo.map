@@ -232,7 +232,9 @@
 		dmrgo_dmrd_config_url;
 		dmrgo_dmrd_control_append_binary;
 		dmrgo_dmrd_data_append_binary;
+		dmrgo_dmrd_data_call;
 		dmrgo_dmrd_data_hint;
+		dmrgo_dmrd_data_set_call;
 		dmrgo_dmrd_data_set_hint;
 		dmrgo_dmrd_data_set_kind;
 		dmrgo_dmrd_data_string;
@@ -510,9 +512,11 @@
 		dmrgo_ipsc_peer_list_of;
 		dmrgo_ipsc_raw_append_binary;
 		dmrgo_ipsc_user_append_binary;
+		dmrgo_ipsc_user_call;
 		dmrgo_ipsc_user_hint;
 		dmrgo_ipsc_user_is_voice;
 		dmrgo_ipsc_user_raw_burst;
+		dmrgo_ipsc_user_set_call;
 		dmrgo_ipsc_user_set_raw_burst;
 		dmrgo_last_error_code;
 		dmrgo_last_error_message;

@@ -32947,6 +32947,35 @@ func dmrgo_dmrd_data_append_binary(c_self *C.dmrgo_dmrd_data_t, c_dst *C.uint8_t
 	return C.DMRGO_OK
 }
 
+//export dmrgo_dmrd_data_call
+func dmrgo_dmrd_data_call(c_self *C.dmrgo_dmrd_data_t, c_group *C.bool, c_target *C.uint32_t, c_source *C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_dmrd.Data
+	x = in_transport_dmrd_Data(&(*c_self))
+	r0, r1, r2 := x.Call()
+	out_transport_dmrd_Data(&(*c_self), &x, oc)
+	_ = r0
+	_ = r1
+	_ = r2
+	if c_group != nil {
+		*c_group = C.bool(r0)
+	}
+	if c_target != nil {
+		*c_target = C.uint32_t(r1)
+	}
+	if c_source != nil {
+		*c_source = C.uint32_t(r2)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_dmrd_data_hint
 func dmrgo_dmrd_data_hint(c_self *C.dmrgo_dmrd_data_t, c_out *C.dmrgo_layer2_hint_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -32964,6 +32993,26 @@ func dmrgo_dmrd_data_hint(c_self *C.dmrgo_dmrd_data_t, c_out *C.dmrgo_layer2_hin
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_data_set_call
+func dmrgo_dmrd_data_set_call(c_self *C.dmrgo_dmrd_data_t, c_group C.bool, c_target C.uint32_t, c_source C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_dmrd.Data
+	x = in_transport_dmrd_Data(&(*c_self))
+	r0 := x.SetCall(bool(c_group), uint32(c_target), uint32(c_source))
+	out_transport_dmrd_Data(&(*c_self), &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }
@@ -35050,6 +35099,35 @@ func dmrgo_ipsc_user_append_binary(c_self *C.dmrgo_ipsc_user_t, c_dst *C.uint8_t
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ipsc_user_call
+func dmrgo_ipsc_user_call(c_self *C.dmrgo_ipsc_user_t, c_group *C.bool, c_target *C.uint32_t, c_source *C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_ipsc.User
+	x = in_transport_ipsc_User(&(*c_self))
+	r0, r1, r2 := x.Call()
+	out_transport_ipsc_User(&(*c_self), &x, oc)
+	_ = r0
+	_ = r1
+	_ = r2
+	if c_group != nil {
+		*c_group = C.bool(r0)
+	}
+	if c_target != nil {
+		*c_target = C.uint32_t(r1)
+	}
+	if c_source != nil {
+		*c_source = C.uint32_t(r2)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ipsc_user_hint
 func dmrgo_ipsc_user_hint(c_self *C.dmrgo_ipsc_user_t, c_out *C.dmrgo_layer2_hint_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -35111,6 +35189,26 @@ func dmrgo_ipsc_user_raw_burst(c_self *C.dmrgo_ipsc_user_t, c_cc C.dmrgo_enums_c
 	}
 	if r1 != nil {
 		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_user_set_call
+func dmrgo_ipsc_user_set_call(c_self *C.dmrgo_ipsc_user_t, c_group C.bool, c_target C.uint32_t, c_source C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_ipsc.User
+	x = in_transport_ipsc_User(&(*c_self))
+	r0 := x.SetCall(bool(c_group), uint32(c_target), uint32(c_source))
+	out_transport_ipsc_User(&(*c_self), &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }

@@ -27,8 +27,10 @@ func TestXPR8400BridgeToDMRD(t *testing.T) {
 		}
 		rebuilt++
 		track[h.Slot].Place(&raw, &h)
-		d := dmrd.Data{Source: u.Source, Destination: u.Destination, Repeater: u.ID, Stream: u.CallControl, Burst: raw,
-			Private: u.Opcode == ipsc.OpPrivateVoice || u.Opcode == ipsc.OpPrivateData}
+		d := dmrd.Data{Repeater: u.ID, Stream: u.CallControl, Burst: raw}
+		if err := d.SetCall(u.Call()); err != nil {
+			t.Fatal(err)
+		}
 		if err := d.SetHint(h); err != nil {
 			t.Errorf("%s %x: %+v: %v", c.tag, c.p[:31], h, err)
 			continue

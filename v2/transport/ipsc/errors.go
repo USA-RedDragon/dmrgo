@@ -3,6 +3,7 @@ package ipsc
 import (
 	"errors"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
@@ -28,6 +29,9 @@ var (
 
 	errVoicePosition error = &wrapError{"ipsc: SetRawBurst: voice position is not A to F", layer2.ErrVoicePosition}
 	errDataType      error = &wrapError{"ipsc: SetRawBurst: IPSC carries no burst of this data type", layer2.ErrDataType}
+
+	errUserSourceRange      = &dmrgo.FieldRangeError{Type: "User", Field: "Source", Bits: 24}
+	errUserDestinationRange = &dmrgo.FieldRangeError{Type: "User", Field: "Destination", Bits: 24}
 )
 
 type wrapError struct {

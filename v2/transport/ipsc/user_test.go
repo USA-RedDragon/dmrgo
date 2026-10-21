@@ -114,3 +114,44 @@ func TestBuildAndRebuild(t *testing.T) {
 		t.Fatalf("hint %+v", h)
 	}
 }
+
+func TestUserCall(t *testing.T) {
+	t.Parallel()
+
+	u := ipsc.User{Opcode: ipsc.OpPrivateVoice, Destination: 3120001, Source: 3191868}
+	if g, tg, src := u.Call(); g || tg != 3120001 || src != 3191868 {
+		t.Fatalf("Call: %v %d %d", g, tg, src)
+	}
+	for _, c := range []struct {
+		op    ipsc.Opcode
+		burst ipsc.BurstType
+		group bool
+		want  ipsc.Opcode
+	}{
+		{ipsc.OpPrivateVoice, 0, true, ipsc.OpGroupVoice}, {ipsc.OpGroupVoice, 0, false, ipsc.OpPrivateVoice},
+		{ipsc.OpPrivateData, ipsc.BurstVoice, true, ipsc.OpGroupData}, {ipsc.OpGroupData, 0, false, ipsc.OpPrivateData},
+		{0, ipsc.BurstVoice, true, ipsc.OpGroupVoice}, {0, 3, false, ipsc.OpPrivateData},
+	} {
+		u := ipsc.User{Opcode: c.op, Burst: c.burst}
+		if err := u.SetCall(c.group, 91, 7); err != nil || u.Opcode != c.want || u.Destination != 91 || u.Source != 7 {
+			t.Errorf("%+v: %v %v", c, err, u.Opcode)
+		}
+		if g, _, _ := u.Call(); g != c.group {
+			t.Errorf("%+v: group %v", c, g)
+		}
+	}
+	want := u
+	if err := u.SetCall(true, 1<<24, 1); err == nil || u != want {
+		t.Fatalf("target over 24 bits: %v", err)
+	}
+	if err := u.SetCall(true, 1, 1<<24); err == nil || u != want {
+		t.Fatalf("source over 24 bits: %v", err)
+	}
+	var nu *ipsc.User
+	if g, tg, src := nu.Call(); g || tg != 0 || src != 0 {
+		t.Fatal("nil User Call")
+	}
+	if err := nu.SetCall(true, 1, 1); err == nil {
+		t.Fatal("nil User SetCall: no error")
+	}
+}

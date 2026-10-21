@@ -103,6 +103,32 @@ func (d *Data) Hint() layer2.Hint {
 	return h
 }
 
+// Call returns the call of the packet: group is the reverse of Private,
+// target is Destination and source is Source.
+func (d *Data) Call() (group bool, target, source uint32) {
+	if d == nil {
+		return false, 0, 0
+	}
+	return !d.Private, d.Destination, d.Source
+}
+
+// SetCall sets Private, Destination and Source from the call: group is
+// the reverse of Private. It returns a *dmrgo.FieldRangeError, and changes
+// nothing, when target or source does not fit in 24 bits, and
+// dmrgo.ErrNilReceiver for a nil d.
+func (d *Data) SetCall(group bool, target, source uint32) error {
+	switch {
+	case d == nil:
+		return dmrgo.ErrNilReceiver
+	case target>>24 != 0:
+		return errDataDestinationRange
+	case source>>24 != 0:
+		return errDataSourceRange
+	}
+	d.Private, d.Destination, d.Source = !group, target, source
+	return nil
+}
+
 // SetHint sets Frame and Value from what h says the burst is, as a
 // machine Output gives it: KindVoice with a VoiceBurst of A to F, or
 // KindData with a DataType. Burst A becomes FrameVoiceSync, as MMDVMHost
