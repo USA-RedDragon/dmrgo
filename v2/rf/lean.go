@@ -53,6 +53,7 @@ const (
 	leanSyncUnroll      = false
 	leanRawFuse         = false
 	leanMidSearch       = true
+	leanHuntMid         = true
 )
 
 const (
@@ -922,6 +923,13 @@ func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
 func (r *leanCore) lockSym(x, at float32) (again, mid, match bool) {
 	r.lastAt = at
 	pushSymAt[site3](r, x)
+	if !leanHuntMid {
+		if !r.hunt || r.ns < leanRing {
+			return false, false, false
+		}
+		r.again = false
+		return false, false, r.signsOne(r.signs)
+	}
 	if !r.hunt || !r.huntMid(r.lastAt) {
 		return false, false, false
 	}
@@ -957,6 +965,13 @@ func (r *leanCore) huntSym(at float32) {
 }
 
 func (r *leanCore) huntSigns(at float32) (again, mid, ok bool) {
+	if !leanHuntMid {
+		if r.ns < leanRing {
+			return false, false, false
+		}
+		r.again = false
+		return false, false, r.signsOne(r.signs)
+	}
 	if !r.huntMid(at) {
 		return false, false, false
 	}
@@ -1145,6 +1160,13 @@ func syncDists2[_ any](a, b uint32) (uint32, uint32) {
 			syncNib[3][a>>12&15] + syncNib[4][a>>16&15] + syncNib[5][a>>20&15],
 		syncNib[0][b&15] + syncNib[1][b>>4&15] + syncNib[2][b>>8&15] +
 			syncNib[3][b>>12&15] + syncNib[4][b>>16&15] + syncNib[5][b>>20&15]
+}
+
+func (r *leanCore) signsOne(a uint32) bool {
+	lo := (uint32(r.signMiss) + 1) * 0x01010101
+	hi := (syncSymbols - uint32(r.signMiss)) * 0x01010101
+	m := uint32(0x80808080) >> (32 - 8*uint32(r.sources))
+	return syncHits(syncDists(a), lo, hi)&m != 0
 }
 
 func syncDists(s uint32) uint32 {
