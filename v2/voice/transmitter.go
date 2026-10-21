@@ -821,8 +821,11 @@ func (t *Transmitter) finish(out []Output, reason EndReason) []Output {
 // vocoder slot, later ones are silence. The embedded LC of each complete
 // received superframe is sent in the next superframe that starts, and the
 // call LC when none was received. It returns ErrBusy for a CallStart while
-// a call that is not ending runs.
+// a call that is not ending runs, and an error for a nil e.
 func (t *Transmitter) Relay(now time.Duration, e *Event) error {
+	if e == nil {
+		return errNilEvent
+	}
 	switch e.Kind {
 	case EventCallStart:
 		c := e.Call

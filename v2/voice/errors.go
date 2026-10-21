@@ -19,6 +19,8 @@ var (
 	// ErrTimedOut is returned for voice after the transmit timeout T_TO,
 	// until Stop (ETSI TS 102 361-2 clause 6.1).
 	ErrTimedOut = errors.New("voice: transmit timeout")
+
+	errNilEvent = errors.New("voice: nil Event")
 )
 
 var (

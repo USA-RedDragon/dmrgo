@@ -472,7 +472,7 @@ func (m *MS) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach 
 	if m.off {
 		return dst
 	}
-	if raw == nil {
+	if raw == nil || m.f.ctl.b == nil {
 		if h.SyncLost {
 			return m.Lost(now, dst)
 		}
