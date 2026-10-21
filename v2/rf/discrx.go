@@ -550,10 +550,10 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 			u := int8(max(min((int32(v)*k-off)>>16, 127), -128))
 			p := unsafe.Add(unsafe.Pointer(hist), h)
 			*(*int8)(p), *(*int8)(unsafe.Add(p, audio96Taps)) = u, u
+			acc := fir96[site0]((*[audio96Taps]int8)(unsafe.Add(p, 1)))
 			if h++; h >= audio96Taps {
 				h = 0
 			}
-			acc := fir96[site0]((*[audio96Taps]int8)(unsafe.Add(unsafe.Pointer(hist), h)))
 			y := float32(acc) * (rrcStepHz / 32768.0)
 			sa, sb, s0, s1, s2, s3 = sb, s0, s1, s2, s3, y
 			if st&st96Keep != 0 {
