@@ -76,6 +76,8 @@ ignore_files:
   - v2/enums/slot.go
   - v2/layer2/hint.go
   - v2/layer2/pdu/csbk_motorola.go
+  - v2/layer2/pdu/capacity_plus.go
+  - v2/layer2/pdu/capacity_plus_status.go
   - v2/voice/errors.go
   - v2/voice/event.go
   - v2/voice/position.go
@@ -90,6 +92,7 @@ ignore_files:
   - v2/bs/nocopy.go
   - v2/bs/repeater.go
   - v2/bs/types.go
+  - v2/trunk/capplus.go
   - v2/trunk/errors.go
   - v2/trunk/nocopy.go
   - v2/trunk/output.go
