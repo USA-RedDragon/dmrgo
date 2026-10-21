@@ -88,8 +88,8 @@ type Decoder struct {
 // data data: an NMEA RMC sentence to UDP port 10110, an LRRP report with a
 // position to UDP port 4001, or a Hytera HDAP location protocol message
 // with a position to UDP port 3003. It returns ErrNoFix for a packet in
-// none of these formats and for a standard answer whose Result is not 0,
-// and the errors of the ip, lrrp, nmea and hytera packages for a message
+// none of these formats, for a standard answer whose Result is not 0 and
+// for an HDAP position out of range, and the errors of the ip, lrrp, nmea and hytera packages for a message
 // that does not decode. It does not check the HDAP checksum. It does not
 // allocate.
 func (d *Decoder) Decode(h *pdu.DataHeader, data []byte) (Fix, error) {
@@ -211,11 +211,16 @@ func fromHDAP(f Fix, data []byte) (Fix, error) {
 	}
 	f.Format, f.Valid = FormatHDAP, g.Valid()
 	f.Latitude, f.Longitude = g.Latitude(), g.Longitude()
+	if g.LatitudeMinutes >= 60 || g.LongitudeMinutes >= 60 || f.Latitude < -90 || f.Latitude > 90 || f.Longitude < -180 || f.Longitude > 180 {
+		return Fix{}, ErrNoFix
+	}
 	if v, ok := knots(g.Speed); ok {
 		f.Speed, f.HasSpeed = v*knot, true
 	}
-	f.Course, f.HasCourse = float64(g.Direction), true
-	if g.Day != 0 {
+	if g.Direction <= 360 {
+		f.Course, f.HasCourse = float64(g.Direction), true
+	}
+	if g.Day != 0 && g.Day <= 31 && g.Month >= 1 && g.Month <= 12 && g.Hour <= 23 && g.Minute <= 59 && g.Second <= 60 {
 		f.Year, f.Month, f.Day = 2000+uint16(g.Year), g.Month, g.Day
 		f.Hour, f.Minute, f.Second = g.Hour, g.Minute, g.Second
 		f.HasTime = true
