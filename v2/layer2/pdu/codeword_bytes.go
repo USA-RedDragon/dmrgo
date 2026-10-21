@@ -109,8 +109,11 @@ func fullLCMask(dt enums.DataType) ([3]byte, error) {
 // dt: the masked RS(12,9) parity in octets 9 to 11 for a Voice LC Header or
 // Terminator with LC, and the masked CRC-CCITT of octets 0 to 9 in octets 10
 // and 11 for a PI Header, CSBK, MBC Header, Data Header or USBD. For other
-// data types it returns an error and leaves p unchanged.
+// data types, and for a nil p, it returns an error and leaves p unchanged.
 func Seal(p *[12]byte, dt enums.DataType) error {
+	if p == nil {
+		return errNil
+	}
 	if dt.CarriesFullLC() {
 		cw, err := LCBytes(p[:9]).Codeword(dt)
 		if err != nil {

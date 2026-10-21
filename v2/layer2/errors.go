@@ -102,6 +102,7 @@ var (
 	errDataBurstNoSync       = errors.New("a data burst needs a data SYNC pattern; only a decoded data burst with an EMB has SyncNone")
 	errNoData                = errors.New("data burst has no Data")
 	errNilData               = errors.New("cannot build a burst from nil Data")
+	errNil                   = errors.New("layer2: nil pointer argument")
 	errRCNotOutbound         = errors.New("only a BS-sourced voice burst F carries a reverse channel")
 	errUnknownKind           = errors.New("unknown burst kind")
 	errKindNoEncode          = errors.New("the burst kind does not encode")

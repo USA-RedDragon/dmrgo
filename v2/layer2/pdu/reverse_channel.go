@@ -41,8 +41,11 @@ var errReverseChannelRCCommandRange = &dmrgo.FieldRangeError{Type: "ReverseChann
 // Encode encodes an RC PDU into its 11 information bits: the 4-bit RC command
 // and the CRC-7 masked with CRC7MaskRC, packed as DecodeReverseChannel takes
 // them, with the low 5 bits of byte 1 0. It returns an error if RCCommand
-// does not fit in 4 bits.
+// does not fit in 4 bits or rc is nil.
 func (rc *ReverseChannel) Encode() ([2]byte, error) {
+	if rc == nil {
+		return [2]byte{}, errNil
+	}
 	if rc.RCCommand > 0x0F {
 		return [2]byte{}, errReverseChannelRCCommandRange
 	}

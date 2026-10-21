@@ -166,8 +166,12 @@ func DecodeEmbeddedFullLinkControl(f [4][4]byte, strict bool) pdu.FullLinkContro
 
 // DecodeEmbeddedFullLinkControlInto decodes into dst as
 // DecodeEmbeddedFullLinkControl does, with the payload struct of dst in p as
-// pdu.DecodeFullLinkControlInto places it. It does not allocate.
+// pdu.DecodeFullLinkControlInto places it. A nil dst or p does nothing. It
+// does not allocate.
 func DecodeEmbeddedFullLinkControlInto(dst *pdu.FullLinkControl, p *pdu.FullLinkControlPayloads, f [4][4]byte, strict bool) {
+	if dst == nil || p == nil {
+		return
+	}
 	lc, result := decodeEmbeddedLC(fragmentWords(f), strict)
 	pdu.DecodeFullLinkControlInto(dst, p, embeddedFullLCCodeword(lc), enums.DataTypeVoiceLCHeader)
 	dst.FEC = combineEmbeddedFEC(result, dst.FEC)

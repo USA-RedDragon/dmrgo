@@ -68,8 +68,11 @@ func (a *CapacityPlusSiteStatusAssembler) Reset() {
 // that is for a single or last block. A first or single block starts a new
 // status. It returns ErrCapacityPlusSequence for a continuation or last
 // block without a first block, and for a block past
-// CapacityPlusMaxBlocks.
+// CapacityPlusMaxBlocks. A nil p does nothing.
 func (a *CapacityPlusSiteStatusAssembler) Add(p *CapacityPlusSiteStatusPDU) (bool, error) {
+	if p == nil {
+		return false, nil
+	}
 	switch p.Segment {
 	case CapacityPlusSegmentFirst, CapacityPlusSegmentSingle:
 		a.Reset()
