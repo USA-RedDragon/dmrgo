@@ -166,7 +166,7 @@ func (m *Master) Admit(salt uint32, password []byte, dst []Output) []Output {
 // Refuse answers the RPTL of OutputLogin, or ends a session, with MSTNAK
 // and OutputDown with ReasonRefused. It does nothing in StateIdle. It
 // allocates only when dst has no room for MaxOutputs outputs.
-func (m *Master) Refuse(_ time.Duration, dst []Output) []Output {
+func (m *Master) Refuse(dst []Output) []Output {
 	if m == nil {
 		return dst
 	}
@@ -181,7 +181,7 @@ func (m *Master) Refuse(_ time.Duration, dst []Output) []Output {
 // Close ends a session with MSTCL, as a master that shuts down sends it,
 // and OutputDown with ReasonStopped. It does nothing in StateIdle. It
 // allocates only when dst has no room for MaxOutputs outputs.
-func (m *Master) Close(_ time.Duration, dst []Output) []Output {
+func (m *Master) Close(dst []Output) []Output {
 	if m == nil {
 		return dst
 	}

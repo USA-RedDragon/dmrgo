@@ -81,7 +81,7 @@ func TestLoopback(t *testing.T) {
 		if o := l.peer.Packet(l.now, pkt, nil); len(o) != 1 || o[0].Kind != session.OutputData {
 			t.Fatalf("peer data %v", kinds(o))
 		}
-		l.fromPeer(l.peer.Close(l.now, nil))
+		l.fromPeer(l.peer.Close(nil))
 		l.pump()
 		sameKinds(t, eventKinds(l), session.OutputDown, session.OutputDown)
 		if l.events[0].Reason != session.ReasonStopped || l.events[1].Reason != session.ReasonClosed || l.master.State() != session.StateIdle {
@@ -269,7 +269,7 @@ func TestPeerRunning(t *testing.T) {
 	if out = p.Packet(81*s, ctl(dmrd.CommandMSTNAK, 1234), nil); len(out) != 0 {
 		t.Fatal("nak while waiting")
 	}
-	out = p.Close(82*s, nil)
+	out = p.Close(nil)
 	if len(out) != 0 || p.State() != session.StateIdle {
 		t.Fatalf("close while waiting %v", kinds(out))
 	}
@@ -354,7 +354,7 @@ func TestMasterBeforeLogin(t *testing.T) {
 	if out := m.Admit(1, nil, nil); len(out) != 0 {
 		t.Fatal("admit before login")
 	}
-	if out := m.Refuse(0, nil); len(out) != 0 {
+	if out := m.Refuse(nil); len(out) != 0 {
 		t.Fatal("refuse before login")
 	}
 }
@@ -427,7 +427,7 @@ func TestMasterRefusals(t *testing.T) {
 		t.Fatalf("bad token %+v", out)
 	}
 	m.Packet(42*s, ctl(dmrd.CommandRPTL, 5), nil)
-	out = m.Refuse(42*s, nil)
+	out = m.Refuse(nil)
 	if len(out) != 2 || !nak(out[:1]) || out[1].State != session.StateLogin {
 		t.Fatalf("refuse %+v", out)
 	}
@@ -436,7 +436,7 @@ func TestMasterRefusals(t *testing.T) {
 	if len(out) != 2 || out[0].Reason != session.ReasonLogin || out[1].ID != 9 || m.ID() != 9 {
 		t.Fatalf("new login %+v", out)
 	}
-	out = m.Close(44*s, nil)
+	out = m.Close(nil)
 	if len(out) != 2 || command(t, out[0].Packet, d) != dmrd.CommandMSTCL || out[1].Reason != session.ReasonStopped {
 		t.Fatalf("close %+v", out)
 	}

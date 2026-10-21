@@ -37,7 +37,7 @@ func (n *keyedNet) deliver(now time.Duration, from session.Addr, out []session.O
 			continue
 		}
 		if p := n.peers[o.Addr]; p != nil {
-			n.deliver(now, o.Addr, p.Packet(now, masterAddr, pk, nil))
+			n.deliver(now, o.Addr, p.Packet(masterAddr, pk, nil))
 		}
 	}
 }
@@ -75,14 +75,14 @@ func TestMasterKeysOfPeers(t *testing.T) {
 		t.Fatalf("voice of a keyed peer without its key %+v", out)
 	}
 	toB := m.SignFor(3, append([]byte(nil), 0x80, 0, 0, 0, 1, 7))
-	if out := pb.Packet(time.Minute, masterAddr, toB, nil); len(out) != 1 || out[0].Kind != session.OutputData {
+	if out := pb.Packet(masterAddr, toB, nil); len(out) != 1 || out[0].Kind != session.OutputData {
 		t.Fatalf("SignFor %+v", out)
 	}
-	if out := pa.Packet(time.Minute, masterAddr, toB, nil); len(out) != 0 {
+	if out := pa.Packet(masterAddr, toB, nil); len(out) != 0 {
 		t.Fatal("packet signed for b taken by a")
 	}
 	n.ev = map[session.Addr][]session.Output{}
-	n.deliver(time.Minute, masterAddr, m.Close(time.Minute, nil))
+	n.deliver(time.Minute, masterAddr, m.Close(nil))
 	if count(n.ev[a], session.OutputDown, session.ReasonClosed) != 1 || count(n.ev[b], session.OutputDown, session.ReasonClosed) != 1 {
 		t.Fatalf("close a %v b %v", kinds(n.ev[a]), kinds(n.ev[b]))
 	}
