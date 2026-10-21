@@ -18,7 +18,7 @@ func txPool(t testing.TB) []layer2.RawBurst {
 	rd.Retry[0], rd.Retry[3] = true, true
 	for _, r := range []packet.Response{packet.ResponseACK, packet.ResponseSACK, packet.ResponseNACKPacketCRC,
 		packet.ResponseNACKOutOfSequence, packet.ResponseNACKMemoryFull} {
-		for ns := range uint8(2) {
+		for ns := range uint8(8) {
 			h := confirmedHeader(ns).ConfirmedDataHeader
 			h.BlocksToFollow = 7
 			resp, err := packet.NewResponse(h, r, &rd)
@@ -51,8 +51,9 @@ func checkTxScript(t *testing.T, in []byte, p []layer2.RawBurst, msgs []*data.Me
 		}
 		return 0
 	}
-	c0, c1 := get(0), get(1)
+	c0, c1, c2 := get(0), get(1), get(2)
 	s, err := data.NewSender(&data.SenderConfig{
+		Window: int(c2 % 10),
 		Access: enums.Access(c0 & 3), Preambles: int(c0 >> 2 & 7), Retries: int(c1 & 7),
 		Resync: c0&0x20 != 0, Seed: uint64(c1), Holdoff: time.Duration(c1>>3) * 50 * time.Millisecond,
 		IdleSearch: time.Duration(int8(c0&0xC0)) * time.Millisecond, MaxBlocks: int(c1 >> 6 * 16),
@@ -62,15 +63,15 @@ func checkTxScript(t *testing.T, in []byte, p []layer2.RawBurst, msgs []*data.Me
 	}
 	out := make([]data.Output, 0, data.MaxOutputs)
 	var now time.Duration
-	active := false
-	for i := 2; i+2 < len(in) && i < 2+3*512; i += 3 {
+	active := 0
+	for i := 3; i+2 < len(in) && i < 3+3*512; i += 3 {
 		k, step, arg := in[i]%6, in[i+1], in[i+2]
 		now += time.Duration(step) * time.Millisecond
 		out = out[:0]
 		switch k {
 		case 0:
 			if s.Send(now, msgs[int(arg)%len(msgs)]) == nil {
-				active = true
+				active++
 			}
 		case 1:
 			if at, ok := s.Deadline(); ok && at > now {
@@ -89,7 +90,7 @@ func checkTxScript(t *testing.T, in []byte, p []layer2.RawBurst, msgs []*data.Me
 			out = s.Cancel(now, out)
 		case 5:
 			s.Reset()
-			active = false
+			active = 0
 		}
 		if len(out) > data.MaxOutputs {
 			t.Fatalf("op %d: %d outputs", i, len(out))
@@ -98,22 +99,22 @@ func checkTxScript(t *testing.T, in []byte, p []layer2.RawBurst, msgs []*data.Me
 			if o.Kind != data.OutputDone {
 				continue
 			}
-			if !active {
+			if active == 0 {
 				t.Fatalf("op %d: a message ended twice", i)
 			}
-			active = false
-			if s.State() != data.SenderIdle {
-				t.Fatalf("op %d: state %v after Done", i, s.State())
-			}
+			active--
+		}
+		if (active == 0) != (s.State() == data.SenderIdle) {
+			t.Fatalf("op %d: state %v with %d messages", i, s.State(), active)
 		}
 	}
 }
 
 func txSeeds() [][]byte {
 	seeds := make([][]byte, 0, 3)
-	for _, cfg := range [][2]byte{{0, 0}, {0x2A, 0x13}, {0xC2, 0xFF}} {
-		s := make([]byte, 0, 2+3*40)
-		s = append(s, cfg[0], cfg[1])
+	for _, cfg := range [][3]byte{{0, 0, 0}, {0x2A, 0x13, 3}, {0xC2, 0xFF, 8}} {
+		s := make([]byte, 0, 3+3*40)
+		s = append(s, cfg[0], cfg[1], cfg[2])
 		for i := range 40 {
 			switch {
 			case i%10 == 0:

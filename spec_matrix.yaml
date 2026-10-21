@@ -1854,6 +1854,7 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/data
             names:
               - TestSenderSourceSDL
+              - TestSenderWindowLoopback
 
       - section: "5.3"
         title: "Unconfirmed data DLL bearer service"
@@ -1934,6 +1935,19 @@ documents:
 
       - section: "5.4.4"
         title: "Sliding window confirmed data"
+        source_files:
+          - v2/data/errors.go
+          - v2/data/receiver.go
+          - v2/data/sender.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/data
+            names:
+              - TestSenderWindowLoopback
+              - TestSenderWindowOfEight
+              - TestSenderWindowJoin
+              - TestSenderWindowResponses
+              - TestSenderWindowTimeLimit
+              - TestReceiverWindow
 
       - section: "5.5"
         title: "UDP/IPv4 data"

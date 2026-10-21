@@ -34,6 +34,11 @@ func pool(t testing.TB) []layer2.RawBurst {
 	}
 	p = append(p, build(t, confirmedHeader(1), payload(50), enums.DataTypeRate1)...)
 	p = append(p, build(t, confirmedHeader(2), payload(30), enums.DataTypeRate12)...)
+	for ns := range uint8(3) {
+		h := confirmedHeader(ns)
+		h.ConfirmedDataHeader.ResponseRequested = ns == 2
+		p = append(p, build(t, h, payload(20), enums.DataTypeRate12)...)
+	}
 	for _, h := range []pdu.DataHeader{
 		sapHeader(enums.SAPShortData, 0, false),
 		sapHeader(enums.SAPShortData, 1, false),
