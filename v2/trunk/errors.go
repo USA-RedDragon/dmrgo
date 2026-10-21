@@ -7,6 +7,9 @@ import (
 )
 
 // Errors of the tables and machines. Match them with errors.Is.
+
+const pkgName = "trunk"
+
 var (
 	// ErrChannelNumber is returned for a channel number that names no
 	// channel: CHNULL, ChannelAbsolute or over 12 bits.
@@ -47,16 +50,16 @@ var (
 var (
 	errNil = errors.New("trunk: nil pointer argument")
 
-	errHunt          error = &dmrgo.ConfigError{Type: "trunk", Field: "Hunt"}
-	errTalkgroups    error = &dmrgo.ConfigError{Type: "trunk", Field: "Talkgroups"}
-	errSysCode       error = &dmrgo.ConfigError{Type: "trunk", Field: "SysCode"}
-	errAddress       error = &dmrgo.ConfigError{Type: "trunk", Field: "Address"}
-	errTarget        error = &dmrgo.ConfigError{Type: "trunk", Field: "target"}
-	errDMRLA         error = &dmrgo.ConfigError{Type: "trunk", Field: "DMRLA"}
-	errColorCode     error = &dmrgo.ConfigError{Type: "trunk", Field: "ColorCode"}
-	errChannels      error = &dmrgo.ConfigError{Type: "trunk", Field: "Payload"}
-	errRegistrations error = &dmrgo.ConfigError{Type: "trunk", Field: "MaxRegistrations"}
-	errPowerSave     error = &dmrgo.ConfigError{Type: "trunk", Field: "PowerSave"}
-	errStatus        error = &dmrgo.ConfigError{Type: "trunk", Field: "status"}
-	errSupplementary error = &dmrgo.ConfigError{Type: "trunk", Field: "supplementary data"}
+	errHunt          error = &dmrgo.ConfigError{Type: pkgName, Field: "Hunt"}
+	errTalkgroups    error = &dmrgo.ConfigError{Type: pkgName, Field: "Talkgroups"}
+	errSysCode       error = &dmrgo.ConfigError{Type: pkgName, Field: "SysCode"}
+	errAddress       error = &dmrgo.ConfigError{Type: pkgName, Field: "Address"}
+	errTarget        error = &dmrgo.ConfigError{Type: pkgName, Field: "target"}
+	errDMRLA         error = &dmrgo.ConfigError{Type: pkgName, Field: "DMRLA"}
+	errColorCode     error = &dmrgo.ConfigError{Type: pkgName, Field: "ColorCode"}
+	errChannels      error = &dmrgo.ConfigError{Type: pkgName, Field: "Payload"}
+	errRegistrations error = &dmrgo.ConfigError{Type: pkgName, Field: "MaxRegistrations"}
+	errPowerSave     error = &dmrgo.ConfigError{Type: pkgName, Field: "PowerSave"}
+	errStatus        error = &dmrgo.ConfigError{Type: pkgName, Field: "status"}
+	errSupplementary error = &dmrgo.ConfigError{Type: pkgName, Field: "supplementary data"}
 )

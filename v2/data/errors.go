@@ -12,17 +12,19 @@ var ErrBusy = errors.New("data: message in progress")
 
 var errZero = errors.New("data: zero Sender; make it with NewSender")
 
+const pkgName = "data"
+
 var (
-	errColorCode    error = &dmrgo.ConfigError{Type: "data", Field: "ColorCode"}
-	errSource       error = &dmrgo.ConfigError{Type: "data", Field: "Source"}
-	errMaxBlocks    error = &dmrgo.ConfigError{Type: "data", Field: "MaxBlocks"}
-	errPeers        error = &dmrgo.ConfigError{Type: "data", Field: "Peers"}
-	errMaxFragment  error = &dmrgo.ConfigError{Type: "data", Field: "MaxFragment"}
-	errMaxMessage   error = &dmrgo.ConfigError{Type: "data", Field: "MaxMessage"}
-	errAccess       error = &dmrgo.ConfigError{Type: "data", Field: "Access"}
-	errPreambles    error = &dmrgo.ConfigError{Type: "data", Field: "Preambles"}
-	errRetries      error = &dmrgo.ConfigError{Type: "data", Field: "Retries"}
-	errHeader       error = &dmrgo.ConfigError{Type: "data", Field: "Header"}
-	errWindow       error = &dmrgo.ConfigError{Type: "data", Field: "Window"}
-	errMessageGroup error = &dmrgo.ConfigError{Type: "data", Field: "Header.Group"}
+	errColorCode    error = &dmrgo.ConfigError{Type: pkgName, Field: "ColorCode"}
+	errSource       error = &dmrgo.ConfigError{Type: pkgName, Field: "Source"}
+	errMaxBlocks    error = &dmrgo.ConfigError{Type: pkgName, Field: "MaxBlocks"}
+	errPeers        error = &dmrgo.ConfigError{Type: pkgName, Field: "Peers"}
+	errMaxFragment  error = &dmrgo.ConfigError{Type: pkgName, Field: "MaxFragment"}
+	errMaxMessage   error = &dmrgo.ConfigError{Type: pkgName, Field: "MaxMessage"}
+	errAccess       error = &dmrgo.ConfigError{Type: pkgName, Field: "Access"}
+	errPreambles    error = &dmrgo.ConfigError{Type: pkgName, Field: "Preambles"}
+	errRetries      error = &dmrgo.ConfigError{Type: pkgName, Field: "Retries"}
+	errHeader       error = &dmrgo.ConfigError{Type: pkgName, Field: "Header"}
+	errWindow       error = &dmrgo.ConfigError{Type: pkgName, Field: "Window"}
+	errMessageGroup error = &dmrgo.ConfigError{Type: pkgName, Field: "Header.Group"}
 )

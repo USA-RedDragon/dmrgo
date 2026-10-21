@@ -706,7 +706,8 @@ func (m *MS) follow(now time.Duration, before State, out []Output, n int) []Outp
 		case OutputUDT:
 			out = m.udtIn(now, out)
 		case OutputGrant, OutputCallEnd, OutputBurst, OutputRegistered, OutputRefused, OutputAhoy, OutputProtect, OutputPowerOff,
-			OutputAuthChallenge, OutputDelivered, OutputPolled, OutputGroups, OutputAmbient:
+			OutputAuthChallenge, OutputDelivered, OutputPolled, OutputGroups, OutputAmbient,
+			OutputStatus, OutputAccepted, OutputStun, OutputReverseChannel, OutputSleep:
 		}
 	}
 	return out

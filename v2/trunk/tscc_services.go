@@ -128,7 +128,7 @@ func (t *TSCC) sendCSBK(addr uint32, reply bool) {
 	t.push(p, addr, reply)
 }
 
-func (t *TSCC) dequeue(now time.Duration) (p [12]byte, dt enums.DataType, reply, ok bool) {
+func (t *TSCC) dequeue(now time.Duration) (p [12]byte, reply, ok bool) {
 	for i := range t.qLen {
 		q := t.queue[(t.qHead+i)%queueLen]
 		if q.addr != 0 && !t.awake(q.addr, now) {
@@ -139,9 +139,9 @@ func (t *TSCC) dequeue(now time.Duration) (p [12]byte, dt enums.DataType, reply,
 		}
 		t.qHead = (t.qHead + 1) % queueLen
 		t.qLen--
-		return q.p, enums.DataTypeCSBK, q.reply, true
+		return q.p, q.reply, true
 	}
-	return p, enums.DataTypeCSBK, false, false
+	return p, false, false
 }
 
 func (t *TSCC) psFind(addr uint32) int {
@@ -420,20 +420,21 @@ func (t *TSCC) svcAnswer(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOutp
 	return out, false
 }
 
-func (t *TSCC) svcInbound(now time.Duration, s enums.Slot, out []TSCCOutput) ([]TSCCOutput, bool) {
-	switch d := t.b.Data.(type) {
-	case *pdu.CSBK:
-		if d.FID != enums.FIDStandardized {
-			return out, true
-		}
-		switch {
-		case d.AckvitationPDU != nil:
-			return t.ackvit(now, d.AckvitationPDU, out), true
-		case d.AckInboundPDU != nil:
-			return t.svcAnswer(now, d.AckInboundPDU, out)
-		case d.RandomAccessPDU != nil:
-			return t.svcRandom(now, d.RandomAccessPDU, out)
-		}
+func (t *TSCC) svcInbound(now time.Duration, out []TSCCOutput) ([]TSCCOutput, bool) {
+	d, ok := t.b.Data.(*pdu.CSBK)
+	if !ok {
+		return out, false
+	}
+	if d.FID != enums.FIDStandardized {
+		return out, true
+	}
+	switch {
+	case d.AckvitationPDU != nil:
+		return t.ackvit(now, d.AckvitationPDU, out), true
+	case d.AckInboundPDU != nil:
+		return t.svcAnswer(now, d.AckInboundPDU, out)
+	case d.RandomAccessPDU != nil:
+		return t.svcRandom(now, d.RandomAccessPDU, out)
 	}
 	return out, false
 }
