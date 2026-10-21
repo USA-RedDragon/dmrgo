@@ -465,34 +465,50 @@ func (u *User) SetRawBurst(raw layer2.RawBurst, h layer2.Hint) (fec.Result, erro
 	}
 	info := u.Info
 	_ = info.SetSlot(h.Slot)
+	var b burstOut
+	if err := b.build(raw, h, info.Slot() == enums.Slot2, u.Voice.LC); err != nil {
+		return fec.Result{}, err
+	}
+	u.Info, u.Burst = info, b.burst
+	if h.Kind == layer2.KindVoice {
+		u.Voice = b.voice
+	} else {
+		u.Data = b.data
+	}
+	return b.res, nil
+}
+
+type burstOut struct {
+	burst BurstType
+	voice Voice
+	data  Payload
+	res   fec.Result
+}
+
+func (b *burstOut) build(raw layer2.RawBurst, h layer2.Hint, slot2 bool, lc [9]byte) error {
 	var slotBit uint8
-	if info.Slot() == enums.Slot2 {
+	if slot2 {
 		slotBit = 0x80
 	}
+	var err error
 	switch h.Kind {
 	case layer2.KindVoice:
-		v, res, err := voiceOf(raw, h.VoiceBurst, u.Voice.LC)
-		if err != nil {
-			return fec.Result{}, err
-		}
-		u.Info, u.Burst, u.Voice = info, BurstVoice|BurstType(slotBit), v
-		return res, nil
+		b.voice, b.res, err = voiceOf(raw, h.VoiceBurst, lc)
+		b.burst = BurstVoice | BurstType(slotBit)
+		return err
 	case layer2.KindData:
 		if !h.HasDataType {
-			return fec.Result{}, errDataType
+			return errDataType
 		}
-		d, res, err := dataOf(raw, h.DataType, slotBit)
-		if err != nil {
-			return fec.Result{}, err
+		b.data, b.res, err = dataOf(raw, h.DataType, slotBit)
+		b.burst = BurstType(h.DataType)
+		if b.res.Uncorrectable {
+			b.burst = BurstRaw
 		}
-		u.Info, u.Burst, u.Data = info, BurstType(h.DataType), d
-		if res.Uncorrectable {
-			u.Burst = BurstRaw
-		}
-		return res, nil
+		return err
 	case layer2.KindUnknown, layer2.KindReverseChannel:
 	}
-	return fec.Result{}, errKind
+	return errKind
 }
 
 func voiceOf(raw layer2.RawBurst, pos enums.VoiceBurstType, lc [9]byte) (Voice, fec.Result, error) {
