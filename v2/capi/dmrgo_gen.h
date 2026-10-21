@@ -7065,6 +7065,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DMRD_SESSION_OUTPUT_MESSAGE ((dmrgo_dmrd_session_output_kind_t)8)
 /* Go: session.OutputOptions. OutputOptions reports the RPTO options text that the Master accepted, in Output.Packet. */
 #define DMRGO_DMRD_SESSION_OUTPUT_OPTIONS ((dmrgo_dmrd_session_output_kind_t)6)
+/* Go: session.OutputPong. OutputPong reports a ping of the repeater in Output.ID that the Master answered with a pong, so the consumer can keep the time of the last ping. */
+#define DMRGO_DMRD_SESSION_OUTPUT_PONG ((dmrgo_dmrd_session_output_kind_t)9)
 /* Go: session.OutputSend. OutputSend is a packet in Output.Packet to send to the other side. */
 #define DMRGO_DMRD_SESSION_OUTPUT_SEND ((dmrgo_dmrd_session_output_kind_t)1)
 /* Go: session.OutputUp. OutputUp reports that the login is complete. */

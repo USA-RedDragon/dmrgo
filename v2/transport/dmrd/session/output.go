@@ -68,6 +68,10 @@ const (
 	// RPTSBKN at a Peer, an RPTG, RPTRSSI or RPTINTR at a Master, or a
 	// BCSQ, BCST or BCVE at a Bridge.
 	OutputMessage
+	// OutputPong reports a ping of the repeater in Output.ID that the
+	// Master answered with a pong, so the consumer can keep the time of
+	// the last ping.
+	OutputPong
 )
 
 // String returns the name of the OutputKind.
@@ -89,6 +93,8 @@ func (k OutputKind) String() string {
 		return "Data"
 	case OutputMessage:
 		return "Message"
+	case OutputPong:
+		return "Pong"
 	}
 	return unknownName
 }
@@ -197,8 +203,8 @@ type Output struct {
 	Packet []byte
 	// Command is the command of OutputData and OutputMessage.
 	Command dmrd.Command
-	// ID is the repeater ID of OutputLogin, OutputUp and OutputDown at a
-	// Master.
+	// ID is the repeater ID of OutputLogin, OutputUp, OutputDown and
+	// OutputPong at a Master.
 	ID uint32
 	// Reason tells why for OutputDown.
 	Reason Reason

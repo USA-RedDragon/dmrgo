@@ -52,7 +52,7 @@ func checkOutputs(t *testing.T, before, after []session.Output, d dmrd.Dialect) 
 		t.Fatalf("%d outputs", len(after)-len(before))
 	}
 	for _, o := range after[len(before):] {
-		if o.Kind < session.OutputSend || o.Kind > session.OutputMessage {
+		if o.Kind < session.OutputSend || o.Kind > session.OutputPong {
 			t.Fatalf("kind %v", o.Kind)
 		}
 		if tooLong(o.Packet) {
