@@ -377,7 +377,9 @@ func (r rxRecv) name() string {
 func rxRecvs() []rxRecv {
 	var out []rxRecv
 	for _, e := range benchEntries() {
-		out = append(out, rxRecv{benchEntry: e})
+		if e.mode != benchIQLow {
+			out = append(out, rxRecv{benchEntry: e})
+		}
 	}
 	return append(out, rxRecv{benchEntry{benchIQ, Tier0}, true}, rxRecv{benchEntry{benchIQ, Tier1}, true})
 }
@@ -389,7 +391,7 @@ func rxReceive(t testing.TB, in rxInput, e rxRecv) []Burst {
 	}
 	switch {
 	case e.mode == benchAudio:
-		return receiveAudioTier(t, in.audio, e.tier)
+		return receiveAudioAt(t, in.audio, benchAudioHz, e.tier)
 	case in.iq != nil:
 		cfg.Rate = rxByteRate
 		r := mustNew(cfg)

@@ -281,8 +281,13 @@ func benchEntries() []benchEntry {
 
 func receiveAudioTier(t testing.TB, a []int16, tier Tier) []Burst {
 	t.Helper()
+	return receiveAudioAt(t, a, audioHzOf(tier), tier)
+}
+
+func receiveAudioAt(t testing.TB, a []int16, hz int, tier Tier) []Burst {
+	t.Helper()
 	var out []Burst
-	r, err := NewDisc(DiscConfig{Hz: audioHzOf(tier), Tier: tier, OnBurst: func(b *Burst) { out = append(out, *b) }})
+	r, err := NewDisc(DiscConfig{Hz: hz, Tier: tier, OnBurst: func(b *Burst) { out = append(out, *b) }})
 	if err != nil {
 		t.Fatal(err)
 	}
