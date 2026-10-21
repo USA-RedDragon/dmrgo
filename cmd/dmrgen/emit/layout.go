@@ -79,7 +79,7 @@ func sizeGroups(pdu parse.PDUStruct) []sizeGroup {
 			continue
 		}
 		size := 0
-		if s := minSize(pdu, field); len(pdu.Frame.Sizes) > 1 && s > pdu.Frame.Sizes[0] {
+		if s := minSize(pdu, field); !field.Tail && len(pdu.Frame.Sizes) > 1 && s > pdu.Frame.Sizes[0] {
 			size = s
 		}
 		if len(out) > 0 && out[len(out)-1].size == size {

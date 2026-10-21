@@ -1109,6 +1109,10 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		g.Add(target).Op("=").Add(castUint(field, pdu, readUint(field)))
 
 	case parse.FieldRaw, parse.FieldPacked:
+		if field.Tail {
+			g.Copy(Id("result").Dot(field.Name).Index(Empty(), Empty()), dataBuf().Index(Lit(field.BitStart/8), Empty()))
+			break
+		}
 		addAll(g, copyBits(fieldOf("result", field.Name), 0, dataBuf, field.BitStart, field.BitWidth))
 
 	case parse.FieldDelegate:
@@ -1459,6 +1463,10 @@ func (e encoder) delegate(g *Group, field parse.Field) {
 }
 
 func (e encoder) raw(g *Group, field parse.Field) {
+	if field.Tail {
+		g.Copy(dataBuf().Index(Lit(field.BitStart/8), Empty()), Id("s").Dot(field.Name).Index(Empty(), Empty()))
+		return
+	}
 	n := parse.RawBytes(field.BitWidth)
 	if pad := n*8 - field.BitWidth; pad > 0 {
 		g.If(Id("s").Dot(field.Name).Index(Lit(n - 1)).Op("&").Lit(1<<pad - 1).Op("!=").Lit(0)).Block(

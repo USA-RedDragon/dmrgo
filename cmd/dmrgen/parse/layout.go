@@ -240,6 +240,12 @@ func checkFrameSizes(pdu *PDUStruct) error {
 		if f.Skip {
 			continue
 		}
+		if f.Tail {
+			if f.Kind != FieldPacked || f.BitStart%8 != 0 || f.BitEnd+1 != sizes[len(sizes)-1]*8 || len(f.ExtraBitRanges) > 0 {
+				return fmt.Errorf("field %s: tail needs a packed field that starts on an octet and ends the longest frame", f.Name)
+			}
+			continue
+		}
 		for _, r := range f.Ranges() {
 			for _, s := range sizes[:len(sizes)-1] {
 				if r[0] < s*8 && r[1] >= s*8 {
