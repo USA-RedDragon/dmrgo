@@ -2096,6 +2096,8 @@ func tickSeconds(t int64) float64 {
 	return math.Float64frombits(sign | uint64(s+tickExp+52+1023)<<52 | m&(1<<52-1))
 }
 
+// Each site type makes TinyGo build a separate copy of a generic helper per
+// call site, so that -opt z inlines it.
 type (
 	site0 struct{}
 	site1 struct{}
