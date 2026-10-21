@@ -41,6 +41,7 @@ var (
 	errRetries     error = &ConfigError{Field: "Retries"}
 	errRepeats     error = &ConfigError{Field: "Repeats"}
 	errCommand     error = &ConfigError{Field: "Command"}
+	errChanAuth    error = &ConfigError{Field: "ChanAuth"}
 	errCall        error = &ConfigError{Field: "Call"}
 	errTalkerAlias error = &ConfigError{Field: "TalkerAlias"}
 	errGPS         error = &ConfigError{Field: "GPS"}

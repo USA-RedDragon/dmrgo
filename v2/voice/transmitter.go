@@ -6,6 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/pcg"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -31,6 +32,10 @@ const (
 	// DefaultIdleSearch is the idle search timer T_IdleSrch of a polite
 	// call, the most that ETSI TS 102 361-1 clause F.1 allows.
 	DefaultIdleSearch = 540 * time.Millisecond
+	// DefaultHoldoffMax is the upper end of the random holdoff before a new
+	// channel authorization try, the recommended maximum T_Holdoff of ETSI
+	// TS 102 361-1 clause F.1.
+	DefaultHoldoffMax = time.Second
 )
 
 // TransmitterConfig configures NewTransmitter. A nil config means the zero
@@ -77,6 +82,23 @@ type TransmitterConfig struct {
 	// Request. A Cease Transmission Command ends it whatever this says.
 	// (ETSI TS 102 361-2 clauses 6.3.3 and 6.3.4)
 	Interruptible bool
+	// ChanAuth is T_MS_ChanAuth, the wait for the BS to repeat the ChanAuth
+	// PDU of a call that starts in hang time, CallOptions.HangTime. 0 means
+	// no channel authorization; constants.TMSChanAuth and
+	// constants.TMSChanAuthMultiSite are the recommended values. (ETSI TS
+	// 102 361-2 clause 5.1.1.6.2)
+	ChanAuth time.Duration
+	// HoldoffMax is the upper end of the random holdoff before a new
+	// channel authorization try. 0 means DefaultHoldoffMax, and a negative
+	// value means no holdoff.
+	HoldoffMax time.Duration
+	// Seed seeds the generator of the random holdoff, so that the same
+	// inputs give the same outputs.
+	Seed uint64
+	// Scratch, when set, is the Burst that Burst decodes into. Machines
+	// that run on one goroutine can share one. Nil means the Transmitter
+	// makes its own when ChanAuth is set.
+	Scratch *layer2.Burst
 }
 
 // CallOptions are per-call settings of Transmitter.Start.
@@ -97,6 +119,11 @@ type CallOptions struct {
 	// call starts whatever the channel state and TransmitterConfig.Access.
 	// (ETSI TS 102 361-1 clauses 5.2.1.6 and 5.2.2.2.7)
 	InCall bool
+	// HangTime reports that the BS sends call or channel hang time bursts.
+	// With TransmitterConfig.ChanAuth set, a call that is not impolite then
+	// starts with the channel authorization. (ETSI TS 102 361-2 clause
+	// 5.1.1.6)
+	HangTime bool
 }
 
 // OutputKind is the kind of an Output.
@@ -181,6 +208,10 @@ const (
 	// TransmitterAccess waits for Channel to report an idle channel
 	// before a polite call (ETSI TS 102 361-1 clause 5.2.2).
 	TransmitterAccess
+	// TransmitterChanAuth sends the ChanAuth PDU of a call in hang time and
+	// waits T_MS_ChanAuth for the BS to repeat it (ETSI TS 102 361-2 clause
+	// 5.1.1.6.2).
+	TransmitterChanAuth
 )
 
 // String returns the name of the state. It allocates only for a value
@@ -199,6 +230,8 @@ func (s TransmitterState) String() string {
 		return "TimedOut"
 	case TransmitterAccess:
 		return "Access"
+	case TransmitterChanAuth:
+		return "ChanAuth"
 	}
 	return fmt.Sprintf("TransmitterState(%d)", uint8(s))
 }
@@ -222,6 +255,14 @@ type Transmitter struct {
 	interrupt   bool
 	busy        bool
 	waitUntil   time.Duration
+	chanAuth    time.Duration
+	holdoffMax  time.Duration
+	rng         pcg.Source
+	scratch     *layer2.Burst
+	dopts       layer2.DecodeOptions
+	dataType    enums.DataType
+	authWaiting bool
+	hangSeen    bool
 
 	vt    layer2.VoiceTransmitter
 	vopts layer2.VoiceTransmitterOptions
@@ -284,7 +325,11 @@ func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 	}
 	t := &Transmitter{cc: cfg.ColorCode, source: cfg.Source, silence: cfg.Silence, headers: cfg.Headers,
 		terminators: cfg.Terminators, timeout: cfg.Timeout, lead: cfg.Lead, access: cfg.Access,
-		idleSearch: cfg.IdleSearch, interrupt: cfg.Interruptible}
+		idleSearch: cfg.IdleSearch, interrupt: cfg.Interruptible, chanAuth: cfg.ChanAuth, holdoffMax: cfg.HoldoffMax,
+		rng: pcg.NewStream(cfg.Seed, pcgStream), scratch: cfg.Scratch}
+	if t.holdoffMax == 0 {
+		t.holdoffMax = DefaultHoldoffMax
+	}
 	if t.headers == 0 {
 		t.headers = 1
 	}
@@ -306,6 +351,8 @@ func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 		return nil, errColorCode
 	case cfg.Access > enums.AccessImpolite:
 		return nil, errAccess
+	case cfg.ChanAuth < 0:
+		return nil, errChanAuth
 	case !ok:
 		return nil, errSource
 	case t.headers < 0 || t.headers > MaxHeaders:
@@ -316,6 +363,9 @@ func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 		return nil, errQueue
 	}
 	t.queue = make([][9]byte, queue)
+	if t.chanAuth > 0 && t.scratch == nil {
+		t.scratch = layer2.NewBurst()
+	}
 	return t, nil
 }
 
@@ -347,9 +397,10 @@ func (t *Transmitter) Dropped() int {
 // Start begins the call c, whose first burst is due at the time at. The
 // LC is c.LC when it matches the other fields of c, else it is built from
 // them. opts may be nil. A polite call on a busy channel waits in
-// TransmitterAccess, as TransmitterConfig.Access says. Start returns
-// ErrBusy while a transmission runs, and a *ConfigError when c does not
-// make an LC.
+// TransmitterAccess, as TransmitterConfig.Access says, and a call in hang
+// time starts in TransmitterChanAuth, as CallOptions.HangTime says. Start
+// returns ErrBusy while a transmission runs, and a *ConfigError when c
+// does not make an LC.
 func (t *Transmitter) Start(at time.Duration, c Call, opts *CallOptions) error {
 	if t.state != TransmitterIdle {
 		return ErrBusy
@@ -357,6 +408,10 @@ func (t *Transmitter) Start(at time.Duration, c Call, opts *CallOptions) error {
 	t.relay = false
 	if err := t.begin(at, &c, opts, false); err != nil {
 		return err
+	}
+	if t.chanAuth > 0 && opts != nil && opts.HangTime && t.access != enums.AccessImpolite {
+		t.state, t.authWaiting = TransmitterChanAuth, false
+		return nil
 	}
 	if t.busy && t.access != enums.AccessImpolite && (opts == nil || !opts.InCall) {
 		t.state, t.waitUntil = TransmitterAccess, at
@@ -416,7 +471,7 @@ func (t *Transmitter) Interrupt(rc pdu.ReverseChannel) bool {
 			t.reason = EndInterrupted
 		}
 		return true
-	case TransmitterIdle, TransmitterTimedOut, TransmitterAccess:
+	case TransmitterIdle, TransmitterTimedOut, TransmitterAccess, TransmitterChanAuth:
 	}
 	return false
 }
@@ -522,7 +577,7 @@ func (t *Transmitter) Slot(s [9]byte) error {
 	switch {
 	case t.state == TransmitterTimedOut || t.timedOut:
 		return ErrTimedOut
-	case t.state != TransmitterHeader && t.state != TransmitterVoice && t.state != TransmitterAccess || t.stopping:
+	case t.state != TransmitterHeader && t.state != TransmitterVoice && t.state != TransmitterAccess && t.state != TransmitterChanAuth || t.stopping:
 		return ErrNotActive
 	case t.length == len(t.queue):
 		return ErrQueueFull
@@ -550,10 +605,10 @@ func (t *Transmitter) push(s *[9]byte) {
 // Stop ends the call: the queued voice is sent, the last superframe is
 // padded with silence to burst F, and the terminators follow. After T_TO,
 // Stop is the release of the PTT, and the next Tick appends OutputEnded. A
-// call in TransmitterAccess ends without an output.
+// call in TransmitterAccess or TransmitterChanAuth ends without an output.
 func (t *Transmitter) Stop() {
 	switch t.state {
-	case TransmitterAccess:
+	case TransmitterAccess, TransmitterChanAuth:
 		t.state, t.head, t.length = TransmitterIdle, 0, 0
 	case TransmitterHeader, TransmitterVoice:
 		t.stopping = true
@@ -572,7 +627,7 @@ func (t *Transmitter) Deadline() (at time.Duration, ok bool) {
 	switch {
 	case t.state == TransmitterIdle, t.state == TransmitterTimedOut && !t.ended:
 		return 0, false
-	case t.state == TransmitterAccess:
+	case t.state == TransmitterAccess, t.state == TransmitterChanAuth && t.authWaiting:
 		return t.waitUntil, true
 	}
 	return t.due - t.lead, true
@@ -581,10 +636,10 @@ func (t *Transmitter) Deadline() (at time.Duration, ok bool) {
 // Tick appends the next burst when now has reached its Due time minus
 // TransmitterConfig.Lead, and OutputEnded after the last terminator, or
 // with EndDenied for a polite call that the channel denied for
-// T_IdleSrch. A Tick before Deadline appends nothing. Each Tick appends at most one
-// burst; a late caller calls Tick until Deadline is in the future. It
-// appends to dst, and allocates only when dst has no room for MaxOutputs
-// outputs.
+// T_IdleSrch. A Tick before Deadline appends nothing. Each Tick appends at
+// most one burst; a late caller calls Tick until Deadline is in the
+// future. It appends to dst, and allocates only when dst has no room for
+// MaxOutputs outputs.
 func (t *Transmitter) Tick(now time.Duration, dst []Output) []Output {
 	at, ok := t.Deadline()
 	if !ok || now < at {
@@ -596,6 +651,9 @@ func (t *Transmitter) Tick(now time.Duration, dst []Output) []Output {
 	if t.state == TransmitterAccess {
 		t.due, t.head, t.length = t.waitUntil, 0, 0
 		return t.finish(dst, EndDenied)
+	}
+	if t.state == TransmitterChanAuth {
+		return t.authTick(dst)
 	}
 	if t.state == TransmitterHeader && !t.headersDone() {
 		var o *Output
@@ -618,7 +676,7 @@ func (t *Transmitter) Tick(now time.Duration, dst []Output) []Output {
 			dst, o = appendOutput(dst, OutputBurst, t.due)
 			t.voice(o)
 		}
-	case TransmitterIdle, TransmitterHeader, TransmitterTimedOut, TransmitterAccess:
+	case TransmitterIdle, TransmitterHeader, TransmitterTimedOut, TransmitterAccess, TransmitterChanAuth:
 	}
 	t.due += slotPeriod
 	return dst
