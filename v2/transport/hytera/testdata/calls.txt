@@ -1,0 +1,8 @@
+# Voice LC headers of group calls, copied from captures of OK-DMR Hytera_Homebrew_Bridge
+# (hytera_homebrew_bridge/tests/data/pcap/HYTERA_IPSC). The first is from do1kbl.pcapng
+# (sha256 bae4e602...), a Hytera repeater: all 2268 Full LC bursts of that capture carry
+# CallType 0x00 and the FLCO Grp_V_Ch_Usr. The second is from
+# gw_hytera_mmdvm_10_hytera_to_mmdvm_ok.pcapng, which Hytera_Homebrew_Bridge built: its group
+# calls carry CallType 0x01.
+c3520050290600000100050101000000111111111111000040b82a0440026409b819203b01376d8457ff5dd7def57033f829103ac11f803b027ad0b30000000006010000fb1a2800
+5a5a5a5a452b00004100050101000000111111111111000040987c06b00a58046021d04b405f6d0457ff5dd7def5a4317808703f402e810d83040033b00a01006f00000009382300
