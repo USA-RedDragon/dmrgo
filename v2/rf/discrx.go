@@ -426,8 +426,8 @@ func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 					q := int16(int8((acc + 1<<13) >> 14))
 					if kh&1 == 0 {
 						kq = q
-					} else if j := uint32(kh) >> 1; j < uint32(len(buf)) {
-						buf[j] = int16(uint16(uint8(kq)) | uint16(uint8(q))<<8)
+					} else if uint32(kh) < uint32(an) {
+						*(*int16)(unsafe.Add(unsafe.Pointer(unsafe.SliceData(buf)), kh&^1)) = int16(uint16(uint8(kq)) | uint16(uint8(q))<<8)
 					}
 					if kh++; kh == an {
 						kh = 0
