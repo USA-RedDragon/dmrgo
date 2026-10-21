@@ -106,6 +106,28 @@ func (m *Master) Tick(now time.Duration, dst []Output) []Output {
 	return dst
 }
 
+// Resume starts the logged-in session of the repeater id without a login,
+// for a repeater that logged in to another Master, such as one of another
+// replica of a server, and now sends its packets here. It ends a session
+// of another state or ID with OutputDown and ReasonLogin, and reports
+// OutputUp; for the session of id that runs it only restarts Timeout. It
+// sends nothing. The zero Master does nothing. It allocates
+// only when dst has no room for MaxOutputs outputs.
+func (m *Master) Resume(now time.Duration, id uint32, dst []Output) []Output {
+	if m.dialect == dmrd.DialectUnknown {
+		return dst
+	}
+	if m.state == StateRunning && m.id == id {
+		m.timeoutAt = after(now, m.timeout)
+		return dst
+	}
+	if m.state != StateIdle {
+		dst = m.down(dst, ReasonLogin)
+	}
+	m.id, m.state, m.passLen, m.timeoutAt = id, StateRunning, 0, after(now, m.timeout)
+	return append(dst, Output{Kind: OutputUp, ID: id})
+}
+
 // Admit answers the RPTL of OutputLogin with the salt, which the caller
 // draws at random, and keeps the password of the repeater, of which it
 // uses at most MaxPassword octets, to check the RPTK. It does nothing in
