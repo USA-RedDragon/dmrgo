@@ -62,6 +62,10 @@ typedef struct dmrgo_csbk_requester_config_t dmrgo_csbk_requester_config_t;
 typedef struct dmrgo_csbk_responder_t dmrgo_csbk_responder_t;
 /* Go: csbk.ResponderConfig. ResponderConfig configures NewResponder. */
 typedef struct dmrgo_csbk_responder_config_t dmrgo_csbk_responder_config_t;
+/* Go: csbk.Timing. Timing runs the TDMA direct mode wide area timing of one radio: it learns the leader and the channel slot timing from the CT_CSBKs of other radios, elects and appoints a leader, propagates the leader beacon, answers requests and corrects radios with old timing, and beacons when it is the leader. */
+typedef struct dmrgo_csbk_timing_t dmrgo_csbk_timing_t;
+/* Go: csbk.TimingConfig. TimingConfig configures NewTiming. */
+typedef struct dmrgo_csbk_timing_config_t dmrgo_csbk_timing_config_t;
 /* Go: csbk.Wakeup. Wakeup is the MS side of the BS outbound activation: it sends BS_Dwn_Act with MS sourced SYNC, waits T_SyncWu for a BS sourced burst with the color code of the BS, and sends again up to N_Wakeup times. */
 typedef struct dmrgo_csbk_wakeup_t dmrgo_csbk_wakeup_t;
 /* Go: csbk.WakeupConfig. WakeupConfig configures NewWakeup. */
@@ -581,13 +585,17 @@ typedef struct dmrgo_dvsi_port_vtable_t dmrgo_dvsi_port_vtable_t;
 typedef struct dmrgo_voice_call_t dmrgo_voice_call_t;
 /* Go: voice.CallOptions. CallOptions are per-call settings of Transmitter.Start. */
 typedef struct dmrgo_voice_call_options_t dmrgo_voice_call_options_t;
-/* Go: voice.ConfigError. ConfigError is the error of NewReceiver, NewTransmitter and Transmitter.Start for a config field or call field with a value out of range. */
+/* Go: voice.ConfigError. ConfigError is the error of NewReceiver, NewTransmitter, NewInterrupter, Transmitter.Start and Interrupter.Interrupt for a config field, call field or argument with a value out of range. */
 typedef struct dmrgo_voice_config_error_t dmrgo_voice_config_error_t;
 /* Go: voice.Event. Event is one result of a Receiver. */
 typedef struct dmrgo_voice_event_t dmrgo_voice_event_t;
 /* Go: voice.FrameQuality. FrameQuality is the FEC result of one 72-bit AMBE+2 vocoder slot. */
 typedef struct dmrgo_voice_frame_quality_t dmrgo_voice_frame_quality_t;
-/* Go: voice.Output. Output is one result of a Transmitter. */
+/* Go: voice.Interrupter. Interrupter is the radio that interrupts the voice call of another radio: it sends a Tier 2 RC command in standalone RC bursts on the reverse channel of the call, waits T_RCtimer for the Terminator with LC of the call, and tries again up to InterrupterConfig.Retries times. */
+typedef struct dmrgo_voice_interrupter_t dmrgo_voice_interrupter_t;
+/* Go: voice.InterrupterConfig. InterrupterConfig configures NewInterrupter. */
+typedef struct dmrgo_voice_interrupter_config_t dmrgo_voice_interrupter_config_t;
+/* Go: voice.Output. Output is one result of a Transmitter or an Interrupter. */
 typedef struct dmrgo_voice_output_t dmrgo_voice_output_t;
 /* Go: voice.Receiver. Receiver turns the bursts of one logical channel into call events, as the package doc describes. */
 typedef struct dmrgo_voice_receiver_t dmrgo_voice_receiver_t;
@@ -602,6 +610,8 @@ typedef struct dmrgo_voice_transmitter_config_t dmrgo_voice_transmitter_config_t
 
 /* Go: bs.Activation. Activation selects what wakes up a hibernating Repeater (ETSI TS 102 361-1 clause 5.2.1.3). */
 typedef uint8_t dmrgo_bs_activation_t;
+/* Go: bs.ChannelAuth. ChannelAuth selects the channel authorization of a Repeater in ModeRF: how it picks one MS among those that start a transmission in hang time (ETSI TS 102 361-2 clause 5.1.1.6). */
+typedef uint8_t dmrgo_bs_channel_auth_t;
 /* Go: bs.Dest. Dest is a set of places an output burst goes to. */
 typedef uint8_t dmrgo_bs_dest_t;
 /* Go: bs.Mode. Mode selects what a Repeater makes. */
@@ -630,6 +640,8 @@ typedef uint8_t dmrgo_csbk_requester_state_t;
 typedef uint8_t dmrgo_csbk_result_t;
 /* Go: csbk.Service. Service is the CSBK service of a request or an answer. */
 typedef uint8_t dmrgo_csbk_service_t;
+/* Go: csbk.TimingState. TimingState is the high level state of a Timing (ETSI TS 102 361-2 clause 6.2.1). */
+typedef uint8_t dmrgo_csbk_timing_state_t;
 /* Go: csbk.WakeupState. WakeupState is the state of a Wakeup. */
 typedef uint8_t dmrgo_csbk_wakeup_state_t;
 /* Go: data.EndReason. EndReason is why a data call ended. */
@@ -806,6 +818,8 @@ typedef uint8_t dmrgo_dvsi_packet_type_t;
 typedef uint8_t dmrgo_voice_end_reason_t;
 /* Go: voice.EventKind. EventKind is the kind of an Event. */
 typedef uint8_t dmrgo_voice_event_kind_t;
+/* Go: voice.InterrupterState. InterrupterState is the state of an Interrupter. */
+typedef uint8_t dmrgo_voice_interrupter_state_t;
 /* Go: voice.Origin. Origin is where a Receiver learned the identity of a call. */
 typedef uint8_t dmrgo_voice_origin_t;
 /* Go: voice.OutputKind. OutputKind is the kind of an Output. */
@@ -888,6 +902,9 @@ struct dmrgo_bs_config_t {
 	int64_t data_queue;
 	uint8_t silence[9];
 	int64_t lead;
+	dmrgo_bs_channel_auth_t channel_auth;
+	int64_t chan_auth_response;
+	int64_t chan_auth_select;
 	dmrgo_layer2_burst_t *scratch;
 };
 
@@ -996,6 +1013,14 @@ struct dmrgo_csbk_responder_config_t {
 	bool no_fns;
 	int64_t idle_search;
 	int64_t holdoff_max;
+	uint64_t seed;
+	dmrgo_layer2_burst_t *scratch;
+};
+
+struct dmrgo_csbk_timing_config_t {
+	uint32_t id;
+	uint8_t dynamic_id;
+	dmrgo_enums_slot_t slot;
 	uint64_t seed;
 	dmrgo_layer2_burst_t *scratch;
 };
@@ -3161,6 +3186,8 @@ struct dmrgo_voice_call_options_t {
 	dmrgo_layer3_talker_alias_data_format_t talker_alias_format;
 	bool has_gps;
 	dmrgo_pdu_flc_gps_info_t gps;
+	bool in_call;
+	bool hang_time;
 };
 
 struct dmrgo_voice_config_error_t {
@@ -3197,6 +3224,24 @@ struct dmrgo_voice_event_t {
 	dmrgo_voice_stats_t stats;
 };
 
+struct dmrgo_voice_output_t {
+	dmrgo_voice_output_kind_t kind;
+	dmrgo_layer2_raw_burst_t burst;
+	int64_t due;
+	dmrgo_enums_voice_burst_type_t position;
+	dmrgo_enums_data_type_t data_type;
+	bool fill;
+	dmrgo_voice_end_reason_t reason;
+};
+
+struct dmrgo_voice_interrupter_config_t {
+	dmrgo_enums_color_code_t color_code;
+	int64_t wait;
+	int64_t retries;
+	int64_t repeats;
+	dmrgo_layer2_burst_t *scratch;
+};
+
 struct dmrgo_voice_receiver_config_t {
 	bool has_color_code;
 	dmrgo_enums_color_code_t color_code;
@@ -3215,16 +3260,13 @@ struct dmrgo_voice_transmitter_config_t {
 	int64_t timeout;
 	int64_t queue;
 	int64_t lead;
-};
-
-struct dmrgo_voice_output_t {
-	dmrgo_voice_output_kind_t kind;
-	dmrgo_layer2_raw_burst_t burst;
-	int64_t due;
-	dmrgo_enums_voice_burst_type_t position;
-	dmrgo_enums_data_type_t data_type;
-	bool fill;
-	dmrgo_voice_end_reason_t reason;
+	dmrgo_enums_access_t access;
+	int64_t idle_search;
+	bool interruptible;
+	int64_t chan_auth;
+	int64_t holdoff_max;
+	uint64_t seed;
+	dmrgo_layer2_burst_t *scratch;
 };
 
 #define DMRGO_BS_REPEATER_INBOUND_MAX_ITEMS (DMRGO_BS_MAX_OUTPUTS)
@@ -3243,6 +3285,10 @@ struct dmrgo_voice_output_t {
 #define DMRGO_CSBK_RESPONDER_DECODED_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 #define DMRGO_CSBK_RESPONDER_LOST_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 #define DMRGO_CSBK_RESPONDER_TICK_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
+#define DMRGO_CSBK_TIMING_BURST_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
+#define DMRGO_CSBK_TIMING_DECODED_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
+#define DMRGO_CSBK_TIMING_TERMINATOR_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
+#define DMRGO_CSBK_TIMING_TICK_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 #define DMRGO_CSBK_WAKEUP_BURST_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 #define DMRGO_CSBK_WAKEUP_CANCEL_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 #define DMRGO_CSBK_WAKEUP_DECODED_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
@@ -3406,12 +3452,23 @@ struct dmrgo_voice_output_t {
 #define DMRGO_TRUNK_MS_POWER_OFF_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_QUALITY_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_TICK_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
+#define DMRGO_VOICE_INTERRUPTER_BURST_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
+#define DMRGO_VOICE_INTERRUPTER_DECODED_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
+#define DMRGO_VOICE_INTERRUPTER_TICK_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
+#define DMRGO_VOICE_TRANSMITTER_BURST_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
+#define DMRGO_VOICE_TRANSMITTER_DECODED_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 #define DMRGO_VOICE_TRANSMITTER_TICK_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 
 /* Go: bs.ActivationAny. ActivationAny wakes up on any valid burst with the own color code, or on any network burst ("MS established timing"). */
 #define DMRGO_BS_ACTIVATION_ANY ((dmrgo_bs_activation_t)0)
 /* Go: bs.ActivationWakeup. ActivationWakeup wakes up only on a BS_Dwn_Act CSBK with the own color code, or on a network burst ("BS established timing", ETSI TS 102 361-2 clause 5.1.1.1). */
 #define DMRGO_BS_ACTIVATION_WAKEUP ((dmrgo_bs_activation_t)1)
+/* Go: bs.ChannelAuthMultiSite. ChannelAuthMultiSite first collects the ChanAuth PDUs from RF and from the network for T_BS_ChanAuthSel, picks the one with the lowest source address, and then repeats it as ChannelAuthSingleSite does (ETSI TS 102 361-2 clause 5.1.1.6.1.2). */
+#define DMRGO_BS_CHANNEL_AUTH_MULTI_SITE ((dmrgo_bs_channel_auth_t)2)
+/* Go: bs.ChannelAuthOff. ChannelAuthOff gives the slot to the first burst that the hang time admits. */
+#define DMRGO_BS_CHANNEL_AUTH_OFF ((dmrgo_bs_channel_auth_t)0)
+/* Go: bs.ChannelAuthSingleSite. ChannelAuthSingleSite repeats the ChanAuth PDU of the first MS, a Voice LC Header or a Pre_CSBK from RF, and gives the slot to the bursts with its source address (ETSI TS 102 361-2 clause 5.1.1.6.1.1). */
+#define DMRGO_BS_CHANNEL_AUTH_SINGLE_SITE ((dmrgo_bs_channel_auth_t)1)
 /* Go: bs.DefaultDataQueue. DefaultDataQueue is the number of data and CSBK bursts per slot that wait for the outbound channel. */
 #define DMRGO_BS_DEFAULT_DATA_QUEUE 4
 /* Go: bs.DefaultInactivity. DefaultInactivity is T_MSInactiv, the time without inbound activity after which the Repeater hibernates (ETSI TS 102 361-1 clause F.1). */
@@ -3456,6 +3513,10 @@ struct dmrgo_voice_output_t {
 #define DMRGO_BS_SERVICE_VOICE ((dmrgo_bs_service_t)0)
 /* Go: bs.SlotCallHang. SlotCallHang is the call hang time after a voice call: only a call to the same target takes the slot, and it gets Terminators with the call LC. */
 #define DMRGO_BS_SLOT_CALL_HANG ((dmrgo_bs_slot_state_t)3)
+/* Go: bs.SlotChanAuth. SlotChanAuth repeats the ChanAuth PDU of the authorized MS until T_BS_ChanAuthRsp runs out or a burst with its source address comes (ETSI TS 102 361-2 clause 5.1.1.6.1). */
+#define DMRGO_BS_SLOT_CHAN_AUTH ((dmrgo_bs_slot_state_t)7)
+/* Go: bs.SlotChanAuthSelect. SlotChanAuthSelect collects ChanAuth PDUs for T_BS_ChanAuthSel and keeps sending the hang time bursts (ETSI TS 102 361-2 clause 5.1.1.6.1.2). */
+#define DMRGO_BS_SLOT_CHAN_AUTH_SELECT ((dmrgo_bs_slot_state_t)6)
 /* Go: bs.SlotData. SlotData repeats a data header and its blocks. */
 #define DMRGO_BS_SLOT_DATA ((dmrgo_bs_slot_state_t)2)
 /* Go: bs.SlotDataHang. SlotDataHang is the data hang time after confirmed data: it gets TD_LC and waits for the response. */
@@ -3666,6 +3727,8 @@ struct dmrgo_voice_output_t {
 #define DMRGO_CONSTANTS_TV_ITEM_DEFAULT INT64_C(30000000000)
 /* Go: constants.VoteBlockDefault. VoteBlockDefault is the default VOTE_BLK, the number of TDMA frames for which the TSCC withdraws random access activity after a Vote Now Advice. */
 #define DMRGO_CONSTANTS_VOTE_BLOCK_DEFAULT 3
+/* Go: csbk.AllSiteColorCode. AllSiteColorCode is the "All Site" color code of the CT_CSBKs (ETSI TS 102 361-2 clause 6.2.2.2). */
+#define DMRGO_CSBK_ALL_SITE_COLOR_CODE ((dmrgo_enums_color_code_t)15)
 /* Go: csbk.BurstInterval. BurstInterval is the time between two bursts of one logical channel: one TDMA frame of two 30 ms slots. */
 #define DMRGO_CSBK_BURST_INTERVAL 60000000
 /* Go: csbk.DefaultHoldoffMax. DefaultHoldoffMax is the upper end of the random holdoff T_Holdoff, the recommended maximum for non-time critical CSBK ACK/NACK messages (ETSI TS 102 361-1 clause F.1). */
@@ -3678,12 +3741,16 @@ struct dmrgo_voice_output_t {
 #define DMRGO_CSBK_DEFAULT_SYNC_WAIT 360000000
 /* Go: csbk.DefaultWakeups. DefaultWakeups is the wakeup threshold N_Wakeup that ETSI TS 102 361-1 clause F.2 suggests. */
 #define DMRGO_CSBK_DEFAULT_WAKEUPS 2
+/* Go: csbk.MaxDynamicID. MaxDynamicID is the largest dynamic identifier, the leader preference High (ETSI TS 102 361-2 clause 7.2.9). */
+#define DMRGO_CSBK_MAX_DYNAMIC_ID 3
 /* Go: csbk.MaxOutputs. MaxOutputs is the most outputs that one call of a machine method appends. */
 #define DMRGO_CSBK_MAX_OUTPUTS 2
 /* Go: csbk.MaxPreambles. MaxPreambles is the most Pre_CSBKs before a CSBK: the CSBK Blocks to Follow of the first one counts them and the CSBK in 8 bits. */
 #define DMRGO_CSBK_MAX_PREAMBLES 255
 /* Go: csbk.MaxRetries. MaxRetries is the most retries of a request, and the most attempts of a wakeup. */
 #define DMRGO_CSBK_MAX_RETRIES 255
+/* Go: csbk.MaxTimingID. MaxTimingID is the largest 20-bit MS identifier of a wide area timing identifier (ETSI TS 102 361-2 clause 7.2.10). */
+#define DMRGO_CSBK_MAX_TIMING_ID 1048575
 /* Go: csbk.OACSUDeny. OACSUDeny answers UU_Ans_Rsp with Deny. */
 #define DMRGO_CSBK_OACSU_DENY ((dmrgo_csbk_oacsu_answer_t)1)
 /* Go: csbk.OACSUNotSupported. OACSUNotSupported answers the Feature Not Supported NACK_Rsp, unless ResponderConfig.NoFNS is set. */
@@ -3702,6 +3769,8 @@ struct dmrgo_voice_output_t {
 #define DMRGO_CSBK_OUTPUT_JOINED ((dmrgo_csbk_output_kind_t)5)
 /* Go: csbk.OutputRequest. OutputRequest is a request for the radio of a Responder, which it answers. */
 #define DMRGO_CSBK_OUTPUT_REQUEST ((dmrgo_csbk_output_kind_t)3)
+/* Go: csbk.OutputTiming. OutputTiming tells the caller of a Timing to set the channel slot timing from the CT_CSBK in CSBK, which it passed at Due (ETSI TS 102 361-2 clause 6.2.2.3). */
+#define DMRGO_CSBK_OUTPUT_TIMING ((dmrgo_csbk_output_kind_t)7)
 /* Go: csbk.PreamblesAnnounced. PreamblesAnnounced waits for the CSBK or data that Pre_CSBKs announced. */
 #define DMRGO_CSBK_PREAMBLES_ANNOUNCED ((dmrgo_csbk_preambles_state_t)1)
 /* Go: csbk.PreamblesIdle. PreamblesIdle follows no announced transfer. */
@@ -3736,10 +3805,20 @@ struct dmrgo_voice_output_t {
 #define DMRGO_CSBK_SERVICE_OACSU ((dmrgo_csbk_service_t)1)
 /* Go: csbk.ServiceRadioCheck. ServiceRadioCheck is the Motorola radio check (FID 0x10, opcode 0x24), answered by a radio check with octet 3 set to 0x80. */
 #define DMRGO_CSBK_SERVICE_RADIO_CHECK ((dmrgo_csbk_service_t)2)
+/* Go: csbk.ServiceTiming. ServiceTiming is the TDMA direct mode wide area timing of a Timing, with CT_CSBK (ETSI TS 102 361-2 clause 6.2). */
+#define DMRGO_CSBK_SERVICE_TIMING ((dmrgo_csbk_service_t)6)
 /* Go: csbk.ServiceUnsupported. ServiceUnsupported is a standard CSBK that addresses the radio and that the Responder does not support. */
 #define DMRGO_CSBK_SERVICE_UNSUPPORTED ((dmrgo_csbk_service_t)4)
 /* Go: csbk.ServiceWakeup. ServiceWakeup is the BS outbound activation BS_Dwn_Act (ETSI TS 102 361-1 clause 5.2.2.2.4). */
 #define DMRGO_CSBK_SERVICE_WAKEUP ((dmrgo_csbk_service_t)5)
+/* Go: csbk.TimingLeader. TimingLeader is the wide area timing leader and sets the slot timing. */
+#define DMRGO_CSBK_TIMING_LEADER ((dmrgo_csbk_timing_state_t)3)
+/* Go: csbk.TimingLeaderAndTimingKnown. TimingLeaderAndTimingKnown follows the leader and its slot timing. */
+#define DMRGO_CSBK_TIMING_LEADER_AND_TIMING_KNOWN ((dmrgo_csbk_timing_state_t)2)
+/* Go: csbk.TimingLeaderAndTimingUnknown. TimingLeaderAndTimingUnknown knows neither the channel slot timing nor the leader: after Join, and when no leader was ever known. */
+#define DMRGO_CSBK_TIMING_LEADER_AND_TIMING_UNKNOWN ((dmrgo_csbk_timing_state_t)0)
+/* Go: csbk.TimingLeaderUnknown. TimingLeaderUnknown knew the timing, but SyncAge ran out, and knows no leader. */
+#define DMRGO_CSBK_TIMING_LEADER_UNKNOWN ((dmrgo_csbk_timing_state_t)1)
 /* Go: csbk.WakeupIdle. WakeupIdle runs no wakeup. */
 #define DMRGO_CSBK_WAKEUP_IDLE ((dmrgo_csbk_wakeup_state_t)0)
 /* Go: csbk.WakeupSending. WakeupSending sends a BS_Dwn_Act at the next Tick. */
@@ -5180,14 +5259,22 @@ struct dmrgo_voice_output_t {
 #define DMRGO_DVSI_TYPE_CONTROL ((dmrgo_dvsi_packet_type_t)0)
 /* Go: dvsi.TypeSpeech. speech samples to encode, or decoded by the chip */
 #define DMRGO_DVSI_TYPE_SPEECH ((dmrgo_dvsi_packet_type_t)2)
+/* Go: voice.DefaultHoldoffMax. DefaultHoldoffMax is the upper end of the random holdoff before a new channel authorization try, the recommended maximum T_Holdoff of ETSI TS 102 361-1 clause F.1. */
+#define DMRGO_VOICE_DEFAULT_HOLDOFF_MAX 1000000000
+/* Go: voice.DefaultIdleSearch. DefaultIdleSearch is the idle search timer T_IdleSrch of a polite call, the most that ETSI TS 102 361-1 clause F.1 allows. */
+#define DMRGO_VOICE_DEFAULT_IDLE_SEARCH 540000000
 /* Go: voice.DefaultLost. DefaultLost is the time without a burst after which a Receiver ends a call, when ReceiverConfig.Lost is 0. */
 #define DMRGO_VOICE_DEFAULT_LOST 1000000000
 /* Go: voice.DefaultQueue. DefaultQueue is the number of vocoder slots that a Transmitter buffers when TransmitterConfig.Queue is 0: three bursts. */
 #define DMRGO_VOICE_DEFAULT_QUEUE 9
 /* Go: voice.EndDataSync. EndDataSync is a data burst other than a terminator. */
 #define DMRGO_VOICE_END_DATA_SYNC ((dmrgo_voice_end_reason_t)2)
+/* Go: voice.EndDenied. EndDenied is a polite call of a Transmitter that the channel denied (ETSI TS 102 361-1 clause 5.2.2). */
+#define DMRGO_VOICE_END_DENIED ((dmrgo_voice_end_reason_t)9)
 /* Go: voice.EndIdle. EndIdle is an idle burst. */
 #define DMRGO_VOICE_END_IDLE ((dmrgo_voice_end_reason_t)3)
+/* Go: voice.EndInterrupted. EndInterrupted is a call of a Transmitter that a Tier 2 RC command ended (ETSI TS 102 361-2 clause 6.3). */
+#define DMRGO_VOICE_END_INTERRUPTED ((dmrgo_voice_end_reason_t)10)
 /* Go: voice.EndLost. EndLost is a time of ReceiverConfig.Lost without a burst. */
 #define DMRGO_VOICE_END_LOST ((dmrgo_voice_end_reason_t)4)
 /* Go: voice.EndSuperseded. EndSuperseded is a new call: an LC with other addresses, or another transport stream. */
@@ -5216,14 +5303,24 @@ struct dmrgo_voice_output_t {
 #define DMRGO_VOICE_EVENT_TALKER_ALIAS ((dmrgo_voice_event_kind_t)4)
 /* Go: voice.EventVoice. EventVoice is a voice burst. */
 #define DMRGO_VOICE_EVENT_VOICE ((dmrgo_voice_event_kind_t)2)
+/* Go: voice.InterrupterIdle. InterrupterIdle runs no interrupt request. */
+#define DMRGO_VOICE_INTERRUPTER_IDLE ((dmrgo_voice_interrupter_state_t)0)
+/* Go: voice.InterrupterSending. InterrupterSending sends the standalone RC bursts of a try. */
+#define DMRGO_VOICE_INTERRUPTER_SENDING ((dmrgo_voice_interrupter_state_t)1)
+/* Go: voice.InterrupterWaiting. InterrupterWaiting waits T_RCtimer for the Terminator with LC. */
+#define DMRGO_VOICE_INTERRUPTER_WAITING ((dmrgo_voice_interrupter_state_t)2)
 /* Go: voice.MaxEvents. MaxEvents is the most events that one call of a Receiver method appends. */
 #define DMRGO_VOICE_MAX_EVENTS 6
 /* Go: voice.MaxHeaders. MaxHeaders is the most Voice LC Headers before burst A. */
 #define DMRGO_VOICE_MAX_HEADERS 8
-/* Go: voice.MaxOutputs. MaxOutputs is the most outputs that one call of a Transmitter method appends: one burst, and OutputEnded after the last terminator. */
+/* Go: voice.MaxOutputs. MaxOutputs is the most outputs that one call of a Transmitter or Interrupter method appends: one burst, and OutputEnded after the last terminator. */
 #define DMRGO_VOICE_MAX_OUTPUTS 2
 /* Go: voice.MaxQueue. MaxQueue is the most vocoder slots that a Transmitter buffers. */
 #define DMRGO_VOICE_MAX_QUEUE 192
+/* Go: voice.MaxRepeats. MaxRepeats is the most standalone RC bursts of one try. */
+#define DMRGO_VOICE_MAX_REPEATS 8
+/* Go: voice.MaxRetries. MaxRetries is the most retries of an interrupt request. */
+#define DMRGO_VOICE_MAX_RETRIES 255
 /* Go: voice.MaxTerminators. MaxTerminators is the most Terminators with LC at the end of a call. */
 #define DMRGO_VOICE_MAX_TERMINATORS 64
 /* Go: voice.OriginEmbedded. OriginEmbedded is the embedded LC of bursts B to E (late entry). */
@@ -5240,6 +5337,10 @@ struct dmrgo_voice_output_t {
 #define DMRGO_VOICE_OUTPUT_BURST ((dmrgo_voice_output_kind_t)1)
 /* Go: voice.OutputEnded. OutputEnded is the end of the transmission. */
 #define DMRGO_VOICE_OUTPUT_ENDED ((dmrgo_voice_output_kind_t)2)
+/* Go: voice.OutputInterruptFailed. OutputInterruptFailed is an interrupt request of an Interrupter without a Terminator with LC after the last try (ETSI TS 102 361-2 clause 6.3.5). */
+#define DMRGO_VOICE_OUTPUT_INTERRUPT_FAILED ((dmrgo_voice_output_kind_t)4)
+/* Go: voice.OutputInterrupted. OutputInterrupted is the Terminator with LC that ends the call of another radio after the RC command of an Interrupter (ETSI TS 102 361-2 clause 6.3.5). */
+#define DMRGO_VOICE_OUTPUT_INTERRUPTED ((dmrgo_voice_output_kind_t)3)
 /* Go: voice.StateHang. StateHang is the call hang time after a call, in which a new call to the same target continues the session. */
 #define DMRGO_VOICE_STATE_HANG ((dmrgo_voice_state_t)3)
 /* Go: voice.StateIdle. StateIdle has no call and no session. */
@@ -5248,6 +5349,10 @@ struct dmrgo_voice_output_t {
 #define DMRGO_VOICE_STATE_IN_CALL ((dmrgo_voice_state_t)2)
 /* Go: voice.StateLateEntry. StateLateEntry has voice whose LC is not known yet. */
 #define DMRGO_VOICE_STATE_LATE_ENTRY ((dmrgo_voice_state_t)1)
+/* Go: voice.TransmitterAccess. TransmitterAccess waits for Channel to report an idle channel before a polite call (ETSI TS 102 361-1 clause 5.2.2). */
+#define DMRGO_VOICE_TRANSMITTER_ACCESS ((dmrgo_voice_transmitter_state_t)5)
+/* Go: voice.TransmitterChanAuth. TransmitterChanAuth sends the ChanAuth PDU of a call in hang time and waits T_MS_ChanAuth for the BS to repeat it (ETSI TS 102 361-2 clause 5.1.1.6.2). */
+#define DMRGO_VOICE_TRANSMITTER_CHAN_AUTH ((dmrgo_voice_transmitter_state_t)6)
 /* Go: voice.TransmitterEnding. TransmitterEnding pads the last superframe and sends the terminators. */
 #define DMRGO_VOICE_TRANSMITTER_ENDING ((dmrgo_voice_transmitter_state_t)3)
 /* Go: voice.TransmitterHeader. TransmitterHeader sends the Voice LC Headers and the PI Header. */
@@ -5277,6 +5382,8 @@ int dmrgo_bs_cach_first(dmrgo_bs_cach_t *self, bool *out);
 int dmrgo_bs_cach_next(dmrgo_bs_cach_t *self, dmrgo_enums_slot_t tc, bool busy, const dmrgo_pdu_short_lc_t *slc, uint8_t out[3]);
 /* Go: bs.CACH.Reset. Reset makes the next Next start a new Short LC. */
 int dmrgo_bs_cach_reset(dmrgo_bs_cach_t *self);
+/* Go: bs.ChannelAuth.String. String returns the name of the channel authorization. */
+int dmrgo_bs_channel_auth_string(dmrgo_bs_channel_auth_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: bs.ConfigError.Error. Error returns the message of e. */
 int dmrgo_bs_config_error_error(dmrgo_bs_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* dmrgo_bs_config_error_last sets *ok when the last error of this thread holds a bs.ConfigError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
@@ -5331,6 +5438,8 @@ int dmrgo_csbk_new_preambles(const dmrgo_csbk_preambles_config_t *cfg, dmrgo_csb
 int dmrgo_csbk_new_requester(const dmrgo_csbk_requester_config_t *cfg, dmrgo_csbk_requester_t **out);
 /* Go: csbk.NewResponder. NewResponder returns a Responder for cfg. */
 int dmrgo_csbk_new_responder(const dmrgo_csbk_responder_config_t *cfg, dmrgo_csbk_responder_t **out);
+/* Go: csbk.NewTiming. NewTiming returns a Timing for cfg. */
+int dmrgo_csbk_new_timing(const dmrgo_csbk_timing_config_t *cfg, dmrgo_csbk_timing_t **out);
 /* Go: csbk.NewWakeup. NewWakeup returns a Wakeup for cfg. */
 int dmrgo_csbk_new_wakeup(const dmrgo_csbk_wakeup_config_t *cfg, dmrgo_csbk_wakeup_t **out);
 /* Go: csbk.OACSUAnswer.String. String returns the name of the answer. */
@@ -5441,6 +5550,40 @@ int dmrgo_csbk_responder_tick(dmrgo_csbk_responder_t *self, int64_t now, dmrgo_c
 int dmrgo_csbk_result_string(dmrgo_csbk_result_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: csbk.Service.String. String returns the name of the service. */
 int dmrgo_csbk_service_string(dmrgo_csbk_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* dmrgo_csbk_timing_new makes a zero csbk.Timing. */
+int dmrgo_csbk_timing_new(dmrgo_csbk_timing_t **out);
+/* dmrgo_csbk_timing_free frees the handle. self may be NULL. */
+int dmrgo_csbk_timing_free(dmrgo_csbk_timing_t *self);
+/* dmrgo_csbk_timing_burst_need sets *items and *arena to the room that dmrgo_csbk_timing_burst needs for these arguments, without a change to the handle. */
+int dmrgo_csbk_timing_burst_need(dmrgo_csbk_timing_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+/* Go: csbk.Timing.Burst. Burst decodes the burst raw with what the Hint h says about it, runs it through the Timing as Decoded does, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_timing_burst_need gives (DMRGO_CSBK_TIMING_BURST_MAX_ITEMS items). */
+int dmrgo_csbk_timing_burst(dmrgo_csbk_timing_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: csbk.Timing.Channel. Channel reports whether the frequency has RF activity on either slot. */
+int dmrgo_csbk_timing_channel(dmrgo_csbk_timing_t *self, int64_t p0, bool busy);
+/* Go: csbk.Timing.Deadline. Deadline returns the time at which the Timing needs a Tick. */
+int dmrgo_csbk_timing_deadline(dmrgo_csbk_timing_t *self, int64_t *at, bool *ok);
+/* dmrgo_csbk_timing_decoded_need sets *items and *arena to the room that dmrgo_csbk_timing_decoded needs for these arguments, without a change to the handle. */
+int dmrgo_csbk_timing_decoded_need(dmrgo_csbk_timing_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, size_t *items, size_t *arena);
+/* Go: csbk.Timing.Decoded. Decoded takes the decoded burst b, which may be nil, from either slot, and evaluates a CT_CSBK in it: it appends OutputTiming to dst when the radio takes the slot timing of b, and starts, keeps or cancels the CT_CSBK that the radio sends. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_timing_decoded_need gives (DMRGO_CSBK_TIMING_DECODED_MAX_ITEMS items). */
+int dmrgo_csbk_timing_decoded(dmrgo_csbk_timing_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: csbk.Timing.Join. Join starts the Timing for a radio that arrives on the channel: at power up and on a change of frequency, but not on a change to the other slot of the same frequency. */
+int dmrgo_csbk_timing_join(dmrgo_csbk_timing_t *self, int64_t now);
+/* Go: csbk.Timing.Leader. Leader returns the dynamic identifier and the identifier of the wide area timing leader. */
+int dmrgo_csbk_timing_leader(dmrgo_csbk_timing_t *self, uint8_t *dynamic_id, uint32_t *id, bool *ok);
+/* Go: csbk.Timing.Reset. Reset stops the Timing until the next Join and forgets the channel state. */
+int dmrgo_csbk_timing_reset(dmrgo_csbk_timing_t *self);
+/* Go: csbk.Timing.State. State returns the state of the Timing. */
+int dmrgo_csbk_timing_state(dmrgo_csbk_timing_t *self, dmrgo_csbk_timing_state_t *out);
+/* dmrgo_csbk_timing_terminator_need sets *items and *arena to the room that dmrgo_csbk_timing_terminator needs for these arguments, without a change to the handle. */
+int dmrgo_csbk_timing_terminator_need(dmrgo_csbk_timing_t *self, int64_t now, size_t *items, size_t *arena);
+/* Go: csbk.Timing.Terminator. Terminator appends to dst the CT_CSBK_Term that follows a voice, data or CSBK transmission of the radio, due at now. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_timing_terminator_need gives (DMRGO_CSBK_TIMING_TERMINATOR_MAX_ITEMS items). */
+int dmrgo_csbk_timing_terminator(dmrgo_csbk_timing_t *self, int64_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* dmrgo_csbk_timing_tick_need sets *items and *arena to the room that dmrgo_csbk_timing_tick needs for these arguments, without a change to the handle. */
+int dmrgo_csbk_timing_tick_need(dmrgo_csbk_timing_t *self, int64_t now, size_t *items, size_t *arena);
+/* Go: csbk.Timing.Tick. Tick runs the timers that are due at now and appends their outputs to dst: at most one CT_CSBK burst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_timing_tick_need gives (DMRGO_CSBK_TIMING_TICK_MAX_ITEMS items). */
+int dmrgo_csbk_timing_tick(dmrgo_csbk_timing_t *self, int64_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: csbk.TimingState.String. String returns the name of the state. */
+int dmrgo_csbk_timing_state_string(dmrgo_csbk_timing_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_csbk_wakeup_new makes a zero csbk.Wakeup. */
 int dmrgo_csbk_wakeup_new(dmrgo_csbk_wakeup_t **out);
 /* dmrgo_csbk_wakeup_free frees the handle. self may be NULL. */
@@ -7929,6 +8072,36 @@ int dmrgo_voice_config_error_last(dmrgo_voice_config_error_t *out, bool *ok);
 int dmrgo_voice_end_reason_string(dmrgo_voice_end_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: voice.EventKind.String. String returns the name of the kind. */
 int dmrgo_voice_event_kind_string(dmrgo_voice_event_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* dmrgo_voice_interrupter_new makes a zero voice.Interrupter. */
+int dmrgo_voice_interrupter_new(dmrgo_voice_interrupter_t **out);
+/* dmrgo_voice_interrupter_free frees the handle. self may be NULL. */
+int dmrgo_voice_interrupter_free(dmrgo_voice_interrupter_t *self);
+/* dmrgo_voice_interrupter_burst_need sets *items and *arena to the room that dmrgo_voice_interrupter_burst needs for these arguments, without a change to the handle. */
+int dmrgo_voice_interrupter_burst_need(dmrgo_voice_interrupter_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+/* Go: voice.Interrupter.Burst. Burst decodes the burst raw of the call with what the Hint h says about it, runs it through the Interrupter as Decoded does, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_interrupter_burst_need gives (DMRGO_VOICE_INTERRUPTER_BURST_MAX_ITEMS items). */
+int dmrgo_voice_interrupter_burst(dmrgo_voice_interrupter_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: voice.Interrupter.Cancel. Cancel ends the interrupt request without an output. */
+int dmrgo_voice_interrupter_cancel(dmrgo_voice_interrupter_t *self);
+/* Go: voice.Interrupter.Deadline. Deadline returns the time at which the Interrupter needs a Tick. */
+int dmrgo_voice_interrupter_deadline(dmrgo_voice_interrupter_t *self, int64_t *at, bool *ok);
+/* dmrgo_voice_interrupter_decoded_need sets *items and *arena to the room that dmrgo_voice_interrupter_decoded needs for these arguments, without a change to the handle. */
+int dmrgo_voice_interrupter_decoded_need(dmrgo_voice_interrupter_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, size_t *items, size_t *arena);
+/* Go: voice.Interrupter.Decoded. Decoded takes the decoded burst b of the call, which may be nil, and appends the outputs to dst: OutputInterrupted when b is a Terminator with LC after the first standalone RC burst went out. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_interrupter_decoded_need gives (DMRGO_VOICE_INTERRUPTER_DECODED_MAX_ITEMS items). */
+int dmrgo_voice_interrupter_decoded(dmrgo_voice_interrupter_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: voice.Interrupter.Interrupt. Interrupt starts an interrupt request with the RC command cmd, whose first standalone RC burst is due at now: enums.RCCeaseTransmissionRequest for a radio that is party to the call, enums.RCCeaseTransmissionCommand for an emergency call. */
+int dmrgo_voice_interrupter_interrupt(dmrgo_voice_interrupter_t *self, int64_t now, dmrgo_enums_rc_command_t cmd);
+/* Go: voice.Interrupter.Reset. Reset ends any interrupt request without an output. */
+int dmrgo_voice_interrupter_reset(dmrgo_voice_interrupter_t *self);
+/* Go: voice.Interrupter.State. State returns the state of the Interrupter. */
+int dmrgo_voice_interrupter_state(dmrgo_voice_interrupter_t *self, dmrgo_voice_interrupter_state_t *out);
+/* dmrgo_voice_interrupter_tick_need sets *items and *arena to the room that dmrgo_voice_interrupter_tick needs for these arguments, without a change to the handle. */
+int dmrgo_voice_interrupter_tick_need(dmrgo_voice_interrupter_t *self, int64_t now, size_t *items, size_t *arena);
+/* Go: voice.Interrupter.Tick. Tick runs the timers that are due at now and appends their outputs to dst: at most one standalone RC burst, with Position enums.VoiceBurstUnknown, and OutputInterruptFailed when T_RCtimer ran out after the last try. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_interrupter_tick_need gives (DMRGO_VOICE_INTERRUPTER_TICK_MAX_ITEMS items). */
+int dmrgo_voice_interrupter_tick(dmrgo_voice_interrupter_t *self, int64_t now, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: voice.InterrupterState.String. String returns the name of the state. */
+int dmrgo_voice_interrupter_state_string(dmrgo_voice_interrupter_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: voice.NewInterrupter. NewInterrupter returns an Interrupter for cfg. */
+int dmrgo_voice_new_interrupter(const dmrgo_voice_interrupter_config_t *cfg, dmrgo_voice_interrupter_t **out);
 /* Go: voice.NewReceiver. NewReceiver returns a Receiver for cfg. */
 int dmrgo_voice_new_receiver(const dmrgo_voice_receiver_config_t *cfg, dmrgo_voice_receiver_t **out);
 /* Go: voice.NewTransmitter. NewTransmitter returns a Transmitter for cfg. */
@@ -7971,17 +8144,29 @@ int dmrgo_voice_state_string(dmrgo_voice_state_t self, char *out, size_t out_cap
 int dmrgo_voice_transmitter_new(dmrgo_voice_transmitter_t **out);
 /* dmrgo_voice_transmitter_free frees the handle. self may be NULL. */
 int dmrgo_voice_transmitter_free(dmrgo_voice_transmitter_t *self);
+/* dmrgo_voice_transmitter_burst_need sets *items and *arena to the room that dmrgo_voice_transmitter_burst needs for these arguments, without a change to the handle. */
+int dmrgo_voice_transmitter_burst_need(dmrgo_voice_transmitter_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+/* Go: voice.Transmitter.Burst. Burst decodes the outbound burst raw with what the Hint h says about it, runs it through the Transmitter as Decoded does, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_transmitter_burst_need gives (DMRGO_VOICE_TRANSMITTER_BURST_MAX_ITEMS items). */
+int dmrgo_voice_transmitter_burst(dmrgo_voice_transmitter_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: voice.Transmitter.Channel. Channel reports whether the logical channel is busy, from the activity that the caller sees on it, such as the AT bit of the CACH, the carrier, or a call with its own color code. */
+int dmrgo_voice_transmitter_channel(dmrgo_voice_transmitter_t *self, int64_t now, bool busy);
 /* Go: voice.Transmitter.Deadline. Deadline returns the time at which the Transmitter needs a Tick: the Due time of the next burst minus TransmitterConfig.Lead. */
 int dmrgo_voice_transmitter_deadline(dmrgo_voice_transmitter_t *self, int64_t *at, bool *ok);
+/* dmrgo_voice_transmitter_decoded_need sets *items and *arena to the room that dmrgo_voice_transmitter_decoded needs for these arguments, without a change to the handle. */
+int dmrgo_voice_transmitter_decoded_need(dmrgo_voice_transmitter_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, size_t *items, size_t *arena);
+/* Go: voice.Transmitter.Decoded. Decoded takes the decoded outbound burst b of the slot, which may be nil, while the Transmitter waits in TransmitterChanAuth. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_transmitter_decoded_need gives (DMRGO_VOICE_TRANSMITTER_DECODED_MAX_ITEMS items). */
+int dmrgo_voice_transmitter_decoded(dmrgo_voice_transmitter_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: voice.Transmitter.Dropped. Dropped returns the number of relayed voice bursts that the Transmitter dropped: voice before the LC was known, and voice that did not fit in the queue. */
 int dmrgo_voice_transmitter_dropped(dmrgo_voice_transmitter_t *self, int64_t *out);
 /* Go: voice.Transmitter.Frame. Frame queues one AMBE+2 frame. */
 int dmrgo_voice_transmitter_frame(dmrgo_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *f);
 /* Go: voice.Transmitter.Frames. Frames queues AMBE+2 frames as Frame does. */
 int dmrgo_voice_transmitter_frames(dmrgo_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *f, size_t f_len);
+/* Go: voice.Transmitter.Interrupt. Interrupt takes a Tier 2 RC command that the reverse channel of the call carried, and reports whether the Transmitter ends the call for it. */
+int dmrgo_voice_transmitter_interrupt(dmrgo_voice_transmitter_t *self, const dmrgo_pdu_reverse_channel_t *rc, bool *out);
 /* Go: voice.Transmitter.Relay. Relay takes an event of a Receiver and sends the call again: a CallStart starts it with its headers, voice is queued, a PI Header is sent after the headers, and a CallEnd ends it. */
 int dmrgo_voice_transmitter_relay(dmrgo_voice_transmitter_t *self, int64_t now, const dmrgo_voice_event_t *e);
-/* Go: voice.Transmitter.Reset. Reset ends any transmission without an output and empties the queue. */
+/* Go: voice.Transmitter.Reset. Reset ends any transmission without an output, empties the queue and forgets the channel state. */
 int dmrgo_voice_transmitter_reset(dmrgo_voice_transmitter_t *self);
 /* Go: voice.Transmitter.Room. Room returns the number of vocoder slots that the queue can take. */
 int dmrgo_voice_transmitter_room(dmrgo_voice_transmitter_t *self, int64_t *out);
@@ -7997,7 +8182,7 @@ int dmrgo_voice_transmitter_state(dmrgo_voice_transmitter_t *self, dmrgo_voice_t
 int dmrgo_voice_transmitter_stop(dmrgo_voice_transmitter_t *self);
 /* dmrgo_voice_transmitter_tick_need sets *items and *arena to the room that dmrgo_voice_transmitter_tick needs for these arguments, without a change to the handle. */
 int dmrgo_voice_transmitter_tick_need(dmrgo_voice_transmitter_t *self, int64_t now, size_t *items, size_t *arena);
-/* Go: voice.Transmitter.Tick. Tick appends the next burst when now has reached its Due time minus TransmitterConfig.Lead, and OutputEnded after the last terminator. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_transmitter_tick_need gives (DMRGO_VOICE_TRANSMITTER_TICK_MAX_ITEMS items). */
+/* Go: voice.Transmitter.Tick. Tick appends the next burst when now has reached its Due time minus TransmitterConfig.Lead, and OutputEnded after the last terminator, or with EndDenied for a polite call that the channel denied for T_IdleSrch. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_transmitter_tick_need gives (DMRGO_VOICE_TRANSMITTER_TICK_MAX_ITEMS items). */
 int dmrgo_voice_transmitter_tick(dmrgo_voice_transmitter_t *self, int64_t now, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: voice.TransmitterState.String. String returns the name of the state. */
 int dmrgo_voice_transmitter_state_string(dmrgo_voice_transmitter_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

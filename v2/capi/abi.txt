@@ -141,6 +141,9 @@ sym #define DMRGO_ARS_TYPE_USER_DEREGISTRATION ((dmrgo_ars_type_t)6)
 sym #define DMRGO_ARS_TYPE_USER_REGISTRATION ((dmrgo_ars_type_t)5)
 sym #define DMRGO_BS_ACTIVATION_ANY ((dmrgo_bs_activation_t)0)
 sym #define DMRGO_BS_ACTIVATION_WAKEUP ((dmrgo_bs_activation_t)1)
+sym #define DMRGO_BS_CHANNEL_AUTH_MULTI_SITE ((dmrgo_bs_channel_auth_t)2)
+sym #define DMRGO_BS_CHANNEL_AUTH_OFF ((dmrgo_bs_channel_auth_t)0)
+sym #define DMRGO_BS_CHANNEL_AUTH_SINGLE_SITE ((dmrgo_bs_channel_auth_t)1)
 sym #define DMRGO_BS_DEFAULT_DATA_QUEUE 4
 sym #define DMRGO_BS_DEFAULT_INACTIVITY INT64_C(5000000000)
 sym #define DMRGO_BS_DEFAULT_PENDING 8
@@ -166,6 +169,8 @@ sym #define DMRGO_BS_REPEATER_TICK_MAX_ITEMS (DMRGO_BS_MAX_OUTPUTS)
 sym #define DMRGO_BS_SERVICE_DATA ((dmrgo_bs_service_t)1)
 sym #define DMRGO_BS_SERVICE_VOICE ((dmrgo_bs_service_t)0)
 sym #define DMRGO_BS_SLOT_CALL_HANG ((dmrgo_bs_slot_state_t)3)
+sym #define DMRGO_BS_SLOT_CHAN_AUTH ((dmrgo_bs_slot_state_t)7)
+sym #define DMRGO_BS_SLOT_CHAN_AUTH_SELECT ((dmrgo_bs_slot_state_t)6)
 sym #define DMRGO_BS_SLOT_DATA ((dmrgo_bs_slot_state_t)2)
 sym #define DMRGO_BS_SLOT_DATA_HANG ((dmrgo_bs_slot_state_t)4)
 sym #define DMRGO_BS_SLOT_IDLE ((dmrgo_bs_slot_state_t)0)
@@ -277,15 +282,18 @@ sym #define DMRGO_CONSTANTS_T_RAND_TC_DEFAULT INT64_C(10000000000)
 sym #define DMRGO_CONSTANTS_T_RESPONSE_WAIT 180000000
 sym #define DMRGO_CONSTANTS_T_RESPONSE_WAIT_SIMULCAST 2000000000
 sym #define DMRGO_CONSTANTS_VOTE_BLOCK_DEFAULT 3
+sym #define DMRGO_CSBK_ALL_SITE_COLOR_CODE ((dmrgo_enums_color_code_t)15)
 sym #define DMRGO_CSBK_BURST_INTERVAL 60000000
 sym #define DMRGO_CSBK_DEFAULT_HOLDOFF_MAX 1000000000
 sym #define DMRGO_CSBK_DEFAULT_IDLE_SEARCH 540000000
 sym #define DMRGO_CSBK_DEFAULT_MOTOROLA_ACK_WAIT 2000000000
 sym #define DMRGO_CSBK_DEFAULT_SYNC_WAIT 360000000
 sym #define DMRGO_CSBK_DEFAULT_WAKEUPS 2
+sym #define DMRGO_CSBK_MAX_DYNAMIC_ID 3
 sym #define DMRGO_CSBK_MAX_OUTPUTS 2
 sym #define DMRGO_CSBK_MAX_PREAMBLES 255
 sym #define DMRGO_CSBK_MAX_RETRIES 255
+sym #define DMRGO_CSBK_MAX_TIMING_ID 1048575
 sym #define DMRGO_CSBK_OACSU_DENY ((dmrgo_csbk_oacsu_answer_t)1)
 sym #define DMRGO_CSBK_OACSU_NOT_SUPPORTED ((dmrgo_csbk_oacsu_answer_t)2)
 sym #define DMRGO_CSBK_OACSU_PROCEED ((dmrgo_csbk_oacsu_answer_t)0)
@@ -295,6 +303,7 @@ sym #define DMRGO_CSBK_OUTPUT_DONE ((dmrgo_csbk_output_kind_t)2)
 sym #define DMRGO_CSBK_OUTPUT_EXPIRED ((dmrgo_csbk_output_kind_t)6)
 sym #define DMRGO_CSBK_OUTPUT_JOINED ((dmrgo_csbk_output_kind_t)5)
 sym #define DMRGO_CSBK_OUTPUT_REQUEST ((dmrgo_csbk_output_kind_t)3)
+sym #define DMRGO_CSBK_OUTPUT_TIMING ((dmrgo_csbk_output_kind_t)7)
 sym #define DMRGO_CSBK_PREAMBLES_ANNOUNCED ((dmrgo_csbk_preambles_state_t)1)
 sym #define DMRGO_CSBK_PREAMBLES_BURST_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 sym #define DMRGO_CSBK_PREAMBLES_DECODED_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
@@ -325,8 +334,17 @@ sym #define DMRGO_CSBK_SERVICE_CALL_ALERT ((dmrgo_csbk_service_t)3)
 sym #define DMRGO_CSBK_SERVICE_CUSTOM ((dmrgo_csbk_service_t)0)
 sym #define DMRGO_CSBK_SERVICE_OACSU ((dmrgo_csbk_service_t)1)
 sym #define DMRGO_CSBK_SERVICE_RADIO_CHECK ((dmrgo_csbk_service_t)2)
+sym #define DMRGO_CSBK_SERVICE_TIMING ((dmrgo_csbk_service_t)6)
 sym #define DMRGO_CSBK_SERVICE_UNSUPPORTED ((dmrgo_csbk_service_t)4)
 sym #define DMRGO_CSBK_SERVICE_WAKEUP ((dmrgo_csbk_service_t)5)
+sym #define DMRGO_CSBK_TIMING_BURST_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
+sym #define DMRGO_CSBK_TIMING_DECODED_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
+sym #define DMRGO_CSBK_TIMING_LEADER ((dmrgo_csbk_timing_state_t)3)
+sym #define DMRGO_CSBK_TIMING_LEADER_AND_TIMING_KNOWN ((dmrgo_csbk_timing_state_t)2)
+sym #define DMRGO_CSBK_TIMING_LEADER_AND_TIMING_UNKNOWN ((dmrgo_csbk_timing_state_t)0)
+sym #define DMRGO_CSBK_TIMING_LEADER_UNKNOWN ((dmrgo_csbk_timing_state_t)1)
+sym #define DMRGO_CSBK_TIMING_TERMINATOR_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
+sym #define DMRGO_CSBK_TIMING_TICK_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 sym #define DMRGO_CSBK_WAKEUP_BURST_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 sym #define DMRGO_CSBK_WAKEUP_CANCEL_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 sym #define DMRGO_CSBK_WAKEUP_DECODED_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
@@ -1179,10 +1197,14 @@ sym #define DMRGO_TRUNK_TSCC_DEREGISTERED ((dmrgo_trunk_tscc_output_kind_t)3)
 sym #define DMRGO_TRUNK_TSCC_REFUSED ((dmrgo_trunk_tscc_output_kind_t)6)
 sym #define DMRGO_TRUNK_TSCC_REGISTERED ((dmrgo_trunk_tscc_output_kind_t)2)
 sym #define DMRGO_VOCODER_MAX_CODECS 8
+sym #define DMRGO_VOICE_DEFAULT_HOLDOFF_MAX 1000000000
+sym #define DMRGO_VOICE_DEFAULT_IDLE_SEARCH 540000000
 sym #define DMRGO_VOICE_DEFAULT_LOST 1000000000
 sym #define DMRGO_VOICE_DEFAULT_QUEUE 9
 sym #define DMRGO_VOICE_END_DATA_SYNC ((dmrgo_voice_end_reason_t)2)
+sym #define DMRGO_VOICE_END_DENIED ((dmrgo_voice_end_reason_t)9)
 sym #define DMRGO_VOICE_END_IDLE ((dmrgo_voice_end_reason_t)3)
+sym #define DMRGO_VOICE_END_INTERRUPTED ((dmrgo_voice_end_reason_t)10)
 sym #define DMRGO_VOICE_END_LOST ((dmrgo_voice_end_reason_t)4)
 sym #define DMRGO_VOICE_END_SUPERSEDED ((dmrgo_voice_end_reason_t)7)
 sym #define DMRGO_VOICE_END_SYNC_LOST ((dmrgo_voice_end_reason_t)5)
@@ -1197,10 +1219,18 @@ sym #define DMRGO_VOICE_EVENT_SESSION_END ((dmrgo_voice_event_kind_t)8)
 sym #define DMRGO_VOICE_EVENT_SESSION_START ((dmrgo_voice_event_kind_t)7)
 sym #define DMRGO_VOICE_EVENT_TALKER_ALIAS ((dmrgo_voice_event_kind_t)4)
 sym #define DMRGO_VOICE_EVENT_VOICE ((dmrgo_voice_event_kind_t)2)
+sym #define DMRGO_VOICE_INTERRUPTER_BURST_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
+sym #define DMRGO_VOICE_INTERRUPTER_DECODED_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
+sym #define DMRGO_VOICE_INTERRUPTER_IDLE ((dmrgo_voice_interrupter_state_t)0)
+sym #define DMRGO_VOICE_INTERRUPTER_SENDING ((dmrgo_voice_interrupter_state_t)1)
+sym #define DMRGO_VOICE_INTERRUPTER_TICK_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
+sym #define DMRGO_VOICE_INTERRUPTER_WAITING ((dmrgo_voice_interrupter_state_t)2)
 sym #define DMRGO_VOICE_MAX_EVENTS 6
 sym #define DMRGO_VOICE_MAX_HEADERS 8
 sym #define DMRGO_VOICE_MAX_OUTPUTS 2
 sym #define DMRGO_VOICE_MAX_QUEUE 192
+sym #define DMRGO_VOICE_MAX_REPEATS 8
+sym #define DMRGO_VOICE_MAX_RETRIES 255
 sym #define DMRGO_VOICE_MAX_TERMINATORS 64
 sym #define DMRGO_VOICE_ORIGIN_EMBEDDED ((dmrgo_voice_origin_t)2)
 sym #define DMRGO_VOICE_ORIGIN_EXPECTED ((dmrgo_voice_origin_t)4)
@@ -1209,10 +1239,16 @@ sym #define DMRGO_VOICE_ORIGIN_TERMINATOR ((dmrgo_voice_origin_t)3)
 sym #define DMRGO_VOICE_ORIGIN_UNKNOWN ((dmrgo_voice_origin_t)0)
 sym #define DMRGO_VOICE_OUTPUT_BURST ((dmrgo_voice_output_kind_t)1)
 sym #define DMRGO_VOICE_OUTPUT_ENDED ((dmrgo_voice_output_kind_t)2)
+sym #define DMRGO_VOICE_OUTPUT_INTERRUPTED ((dmrgo_voice_output_kind_t)3)
+sym #define DMRGO_VOICE_OUTPUT_INTERRUPT_FAILED ((dmrgo_voice_output_kind_t)4)
 sym #define DMRGO_VOICE_STATE_HANG ((dmrgo_voice_state_t)3)
 sym #define DMRGO_VOICE_STATE_IDLE ((dmrgo_voice_state_t)0)
 sym #define DMRGO_VOICE_STATE_IN_CALL ((dmrgo_voice_state_t)2)
 sym #define DMRGO_VOICE_STATE_LATE_ENTRY ((dmrgo_voice_state_t)1)
+sym #define DMRGO_VOICE_TRANSMITTER_ACCESS ((dmrgo_voice_transmitter_state_t)5)
+sym #define DMRGO_VOICE_TRANSMITTER_BURST_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
+sym #define DMRGO_VOICE_TRANSMITTER_CHAN_AUTH ((dmrgo_voice_transmitter_state_t)6)
+sym #define DMRGO_VOICE_TRANSMITTER_DECODED_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 sym #define DMRGO_VOICE_TRANSMITTER_ENDING ((dmrgo_voice_transmitter_state_t)3)
 sym #define DMRGO_VOICE_TRANSMITTER_HEADER ((dmrgo_voice_transmitter_state_t)1)
 sym #define DMRGO_VOICE_TRANSMITTER_IDLE ((dmrgo_voice_transmitter_state_t)0)
@@ -1247,6 +1283,7 @@ sym int dmrgo_bs_cach_free(dmrgo_bs_cach_t *self);
 sym int dmrgo_bs_cach_new(dmrgo_bs_cach_t **out);
 sym int dmrgo_bs_cach_next(dmrgo_bs_cach_t *self, dmrgo_enums_slot_t tc, bool busy, const dmrgo_pdu_short_lc_t *slc, uint8_t out[3]);
 sym int dmrgo_bs_cach_reset(dmrgo_bs_cach_t *self);
+sym int dmrgo_bs_channel_auth_string(dmrgo_bs_channel_auth_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_bs_config_error_error(dmrgo_bs_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_bs_config_error_last(dmrgo_bs_config_error_t *out, bool *ok);
 sym int dmrgo_bs_mode_string(dmrgo_bs_mode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -1290,6 +1327,7 @@ sym int dmrgo_csbk_config_error_last(dmrgo_csbk_config_error_t *out, bool *ok);
 sym int dmrgo_csbk_new_preambles(const dmrgo_csbk_preambles_config_t *cfg, dmrgo_csbk_preambles_t **out);
 sym int dmrgo_csbk_new_requester(const dmrgo_csbk_requester_config_t *cfg, dmrgo_csbk_requester_t **out);
 sym int dmrgo_csbk_new_responder(const dmrgo_csbk_responder_config_t *cfg, dmrgo_csbk_responder_t **out);
+sym int dmrgo_csbk_new_timing(const dmrgo_csbk_timing_config_t *cfg, dmrgo_csbk_timing_t **out);
 sym int dmrgo_csbk_new_wakeup(const dmrgo_csbk_wakeup_config_t *cfg, dmrgo_csbk_wakeup_t **out);
 sym int dmrgo_csbk_oacsu_answer_string(dmrgo_csbk_oacsu_answer_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_csbk_output_kind_string(dmrgo_csbk_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -1345,6 +1383,23 @@ sym int dmrgo_csbk_responder_tick(dmrgo_csbk_responder_t *self, int64_t now, dmr
 sym int dmrgo_csbk_responder_tick_need(dmrgo_csbk_responder_t *self, int64_t now, size_t *items, size_t *arena);
 sym int dmrgo_csbk_result_string(dmrgo_csbk_result_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_csbk_service_string(dmrgo_csbk_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_csbk_timing_burst(dmrgo_csbk_timing_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_csbk_timing_burst_need(dmrgo_csbk_timing_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+sym int dmrgo_csbk_timing_channel(dmrgo_csbk_timing_t *self, int64_t p0, bool busy);
+sym int dmrgo_csbk_timing_deadline(dmrgo_csbk_timing_t *self, int64_t *at, bool *ok);
+sym int dmrgo_csbk_timing_decoded(dmrgo_csbk_timing_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_csbk_timing_decoded_need(dmrgo_csbk_timing_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, size_t *items, size_t *arena);
+sym int dmrgo_csbk_timing_free(dmrgo_csbk_timing_t *self);
+sym int dmrgo_csbk_timing_join(dmrgo_csbk_timing_t *self, int64_t now);
+sym int dmrgo_csbk_timing_leader(dmrgo_csbk_timing_t *self, uint8_t *dynamic_id, uint32_t *id, bool *ok);
+sym int dmrgo_csbk_timing_new(dmrgo_csbk_timing_t **out);
+sym int dmrgo_csbk_timing_reset(dmrgo_csbk_timing_t *self);
+sym int dmrgo_csbk_timing_state(dmrgo_csbk_timing_t *self, dmrgo_csbk_timing_state_t *out);
+sym int dmrgo_csbk_timing_state_string(dmrgo_csbk_timing_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_csbk_timing_terminator(dmrgo_csbk_timing_t *self, int64_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_csbk_timing_terminator_need(dmrgo_csbk_timing_t *self, int64_t now, size_t *items, size_t *arena);
+sym int dmrgo_csbk_timing_tick(dmrgo_csbk_timing_t *self, int64_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_csbk_timing_tick_need(dmrgo_csbk_timing_t *self, int64_t now, size_t *items, size_t *arena);
 sym int dmrgo_csbk_wakeup_burst(dmrgo_csbk_wakeup_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_csbk_wakeup_burst_need(dmrgo_csbk_wakeup_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 sym int dmrgo_csbk_wakeup_cancel(dmrgo_csbk_wakeup_t *self, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
@@ -2558,6 +2613,21 @@ sym int dmrgo_voice_config_error_error(dmrgo_voice_config_error_t *self, char *o
 sym int dmrgo_voice_config_error_last(dmrgo_voice_config_error_t *out, bool *ok);
 sym int dmrgo_voice_end_reason_string(dmrgo_voice_end_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_voice_event_kind_string(dmrgo_voice_event_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_voice_interrupter_burst(dmrgo_voice_interrupter_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_voice_interrupter_burst_need(dmrgo_voice_interrupter_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+sym int dmrgo_voice_interrupter_cancel(dmrgo_voice_interrupter_t *self);
+sym int dmrgo_voice_interrupter_deadline(dmrgo_voice_interrupter_t *self, int64_t *at, bool *ok);
+sym int dmrgo_voice_interrupter_decoded(dmrgo_voice_interrupter_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_voice_interrupter_decoded_need(dmrgo_voice_interrupter_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, size_t *items, size_t *arena);
+sym int dmrgo_voice_interrupter_free(dmrgo_voice_interrupter_t *self);
+sym int dmrgo_voice_interrupter_interrupt(dmrgo_voice_interrupter_t *self, int64_t now, dmrgo_enums_rc_command_t cmd);
+sym int dmrgo_voice_interrupter_new(dmrgo_voice_interrupter_t **out);
+sym int dmrgo_voice_interrupter_reset(dmrgo_voice_interrupter_t *self);
+sym int dmrgo_voice_interrupter_state(dmrgo_voice_interrupter_t *self, dmrgo_voice_interrupter_state_t *out);
+sym int dmrgo_voice_interrupter_state_string(dmrgo_voice_interrupter_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_voice_interrupter_tick(dmrgo_voice_interrupter_t *self, int64_t now, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_voice_interrupter_tick_need(dmrgo_voice_interrupter_t *self, int64_t now, size_t *items, size_t *arena);
+sym int dmrgo_voice_new_interrupter(const dmrgo_voice_interrupter_config_t *cfg, dmrgo_voice_interrupter_t **out);
 sym int dmrgo_voice_new_receiver(const dmrgo_voice_receiver_config_t *cfg, dmrgo_voice_receiver_t **out);
 sym int dmrgo_voice_new_transmitter(const dmrgo_voice_transmitter_config_t *cfg, dmrgo_voice_transmitter_t **out);
 sym int dmrgo_voice_origin_string(dmrgo_voice_origin_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -2577,11 +2647,17 @@ sym int dmrgo_voice_receiver_state(dmrgo_voice_receiver_t *self, dmrgo_voice_sta
 sym int dmrgo_voice_receiver_tick(dmrgo_voice_receiver_t *self, int64_t now, dmrgo_voice_event_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_voice_receiver_tick_need(dmrgo_voice_receiver_t *self, int64_t now, size_t *items, size_t *arena);
 sym int dmrgo_voice_state_string(dmrgo_voice_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_voice_transmitter_burst(dmrgo_voice_transmitter_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_voice_transmitter_burst_need(dmrgo_voice_transmitter_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+sym int dmrgo_voice_transmitter_channel(dmrgo_voice_transmitter_t *self, int64_t now, bool busy);
 sym int dmrgo_voice_transmitter_deadline(dmrgo_voice_transmitter_t *self, int64_t *at, bool *ok);
+sym int dmrgo_voice_transmitter_decoded(dmrgo_voice_transmitter_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_voice_transmitter_decoded_need(dmrgo_voice_transmitter_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, size_t *items, size_t *arena);
 sym int dmrgo_voice_transmitter_dropped(dmrgo_voice_transmitter_t *self, int64_t *out);
 sym int dmrgo_voice_transmitter_frame(dmrgo_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *f);
 sym int dmrgo_voice_transmitter_frames(dmrgo_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *f, size_t f_len);
 sym int dmrgo_voice_transmitter_free(dmrgo_voice_transmitter_t *self);
+sym int dmrgo_voice_transmitter_interrupt(dmrgo_voice_transmitter_t *self, const dmrgo_pdu_reverse_channel_t *rc, bool *out);
 sym int dmrgo_voice_transmitter_new(dmrgo_voice_transmitter_t **out);
 sym int dmrgo_voice_transmitter_relay(dmrgo_voice_transmitter_t *self, int64_t now, const dmrgo_voice_event_t *e);
 sym int dmrgo_voice_transmitter_reset(dmrgo_voice_transmitter_t *self);
@@ -2604,6 +2680,7 @@ sym typedef uint64_t dmrgo_enums_sync_pattern_t;
 sym typedef uint8_t dmrgo_ars_event_t;
 sym typedef uint8_t dmrgo_ars_type_t;
 sym typedef uint8_t dmrgo_bs_activation_t;
+sym typedef uint8_t dmrgo_bs_channel_auth_t;
 sym typedef uint8_t dmrgo_bs_dest_t;
 sym typedef uint8_t dmrgo_bs_mode_t;
 sym typedef uint8_t dmrgo_bs_output_kind_t;
@@ -2618,6 +2695,7 @@ sym typedef uint8_t dmrgo_csbk_reason_t;
 sym typedef uint8_t dmrgo_csbk_requester_state_t;
 sym typedef uint8_t dmrgo_csbk_result_t;
 sym typedef uint8_t dmrgo_csbk_service_t;
+sym typedef uint8_t dmrgo_csbk_timing_state_t;
 sym typedef uint8_t dmrgo_csbk_wakeup_state_t;
 sym typedef uint8_t dmrgo_data_end_reason_t;
 sym typedef uint8_t dmrgo_data_event_kind_t;
@@ -2697,6 +2775,7 @@ sym typedef uint8_t dmrgo_trunk_state_t;
 sym typedef uint8_t dmrgo_trunk_tscc_output_kind_t;
 sym typedef uint8_t dmrgo_voice_end_reason_t;
 sym typedef uint8_t dmrgo_voice_event_kind_t;
+sym typedef uint8_t dmrgo_voice_interrupter_state_t;
 sym typedef uint8_t dmrgo_voice_origin_t;
 sym typedef uint8_t dmrgo_voice_output_kind_t;
 sym typedef uint8_t dmrgo_voice_state_t;
@@ -2706,7 +2785,7 @@ type struct dmrgo_ars_message_t { uint16_t length; dmrgo_ars_header_t header; dm
 type struct dmrgo_ars_registration_t { bool extension; dmrgo_ars_event_t event; uint8_t encoding; };
 type struct dmrgo_ars_response_t { bool extension; uint8_t value; };
 type struct dmrgo_bs_config_error_t { char *field; size_t field_len; };
-type struct dmrgo_bs_config_t { dmrgo_bs_mode_t mode; dmrgo_enums_color_code_t color_code; dmrgo_bs_activation_t activation; bool cach; int64_t call_hang; int64_t data_hang; int64_t inactivity; int64_t lost; int64_t timeout; int64_t headers; int64_t terminators; int64_t pending; int64_t pending_age; int64_t data_queue; uint8_t silence[9]; int64_t lead; dmrgo_layer2_burst_t *scratch; };
+type struct dmrgo_bs_config_t { dmrgo_bs_mode_t mode; dmrgo_enums_color_code_t color_code; dmrgo_bs_activation_t activation; bool cach; int64_t call_hang; int64_t data_hang; int64_t inactivity; int64_t lost; int64_t timeout; int64_t headers; int64_t terminators; int64_t pending; int64_t pending_age; int64_t data_queue; uint8_t silence[9]; int64_t lead; dmrgo_bs_channel_auth_t channel_auth; int64_t chan_auth_response; int64_t chan_auth_select; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_bs_output_t { dmrgo_bs_output_kind_t kind; dmrgo_enums_slot_t slot; dmrgo_bs_dest_t to; bool has_cach; uint8_t cach[3]; dmrgo_layer2_raw_burst_t burst; int64_t due; dmrgo_bs_source_t from; dmrgo_bs_service_t service; dmrgo_voice_call_t call; dmrgo_voice_end_reason_t end; dmrgo_bs_reason_t reason; };
 type struct dmrgo_bs_source_t { bool rf; uint32_t peer; };
 type struct dmrgo_codec2_config_t { dmrgo_codec2_mode_t mode; dmrgo_enums_feature_set_id_t fid; };
@@ -2717,6 +2796,7 @@ type struct dmrgo_csbk_preambles_config_t { dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_csbk_request_options_t { dmrgo_enums_access_t access; bool time_critical; int64_t preambles; int64_t retry_preambles; };
 type struct dmrgo_csbk_requester_config_t { dmrgo_enums_color_code_t color_code; dmrgo_layer2_sync_source_t source; int64_t ack_wait; int64_t retries; int64_t idle_search; int64_t holdoff_max; uint64_t seed; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_csbk_responder_config_t { uint32_t address; dmrgo_enums_color_code_t color_code; dmrgo_layer2_sync_source_t source; dmrgo_enums_access_t access; dmrgo_csbk_oacsu_answer_t oacsu; bool no_radio_check; bool no_call_alert; bool no_fns; int64_t idle_search; int64_t holdoff_max; uint64_t seed; dmrgo_layer2_burst_t *scratch; };
+type struct dmrgo_csbk_timing_config_t { uint32_t id; uint8_t dynamic_id; dmrgo_enums_slot_t slot; uint64_t seed; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_csbk_wakeup_config_t { dmrgo_enums_color_code_t color_code; int64_t sync_wait; int64_t attempts; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_data_call_t { bool group; uint32_t target; uint32_t source; };
 type struct dmrgo_data_config_error_t { char *field; size_t field_len; };
@@ -2938,12 +3018,13 @@ type struct dmrgo_vocoder_ambe_frame_t { uint8_t v[7]; };
 type struct dmrgo_vocoder_append_decoder_vtable_t { uintptr_t user; int (*append_decode)(uintptr_t user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]); int (*close)(uintptr_t user); int (*decode)(uintptr_t user, const uint8_t slot[9], int16_t *out, size_t out_cap, size_t *out_len, size_t *out_need); int (*encode)(uintptr_t user, const int16_t *pcm, size_t pcm_len, uint8_t out[9]); int (*fid)(uintptr_t user, dmrgo_enums_feature_set_id_t *out); int (*frame_samples)(uintptr_t user, int64_t *out); int (*silence)(uintptr_t user, uint8_t out[9]); };
 type struct dmrgo_vocoder_codec_vtable_t { uintptr_t user; int (*close)(uintptr_t user); int (*decode)(uintptr_t user, const uint8_t slot[9], int16_t *out, size_t out_cap, size_t *out_len, size_t *out_need); int (*encode)(uintptr_t user, const int16_t *pcm, size_t pcm_len, uint8_t out[9]); int (*fid)(uintptr_t user, dmrgo_enums_feature_set_id_t *out); int (*frame_samples)(uintptr_t user, int64_t *out); int (*silence)(uintptr_t user, uint8_t out[9]); };
 type struct dmrgo_vocoder_register_factory_fn_t { int (*fn)(uintptr_t user, dmrgo_vocoder_codec_t **out); uintptr_t user; };
-type struct dmrgo_voice_call_options_t { bool has_pi_header; dmrgo_pdu_pi_header_t pi_header; char *talker_alias; size_t talker_alias_len; dmrgo_layer3_talker_alias_data_format_t talker_alias_format; bool has_gps; dmrgo_pdu_flc_gps_info_t gps; };
+type struct dmrgo_voice_call_options_t { bool has_pi_header; dmrgo_pdu_pi_header_t pi_header; char *talker_alias; size_t talker_alias_len; dmrgo_layer3_talker_alias_data_format_t talker_alias_format; bool has_gps; dmrgo_pdu_flc_gps_info_t gps; bool in_call; bool hang_time; };
 type struct dmrgo_voice_call_t { bool group; uint32_t target; uint32_t source; dmrgo_layer3_service_options_t options; dmrgo_enums_feature_set_id_t fid; dmrgo_pdu_lc_bytes_t lc; dmrgo_voice_origin_t origin; uint32_t stream; };
 type struct dmrgo_voice_config_error_t { char *field; size_t field_len; };
 type struct dmrgo_voice_event_t { dmrgo_voice_event_kind_t kind; dmrgo_voice_call_t call; dmrgo_enums_voice_burst_type_t position; dmrgo_layer2_raw_burst_t burst; dmrgo_voice_frame_quality_t frames[3]; uint8_t lost; dmrgo_pdu_full_link_control_t lc; uint8_t *text; size_t text_len; dmrgo_voice_end_reason_t reason; dmrgo_voice_stats_t stats; };
 type struct dmrgo_voice_frame_quality_t { uint8_t errors_corrected; bool bad; };
+type struct dmrgo_voice_interrupter_config_t { dmrgo_enums_color_code_t color_code; int64_t wait; int64_t retries; int64_t repeats; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_voice_output_t { dmrgo_voice_output_kind_t kind; dmrgo_layer2_raw_burst_t burst; int64_t due; dmrgo_enums_voice_burst_type_t position; dmrgo_enums_data_type_t data_type; bool fill; dmrgo_voice_end_reason_t reason; };
 type struct dmrgo_voice_receiver_config_t { bool has_color_code; dmrgo_enums_color_code_t color_code; int64_t lost; int64_t hang; bool strict; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_voice_stats_t { uint16_t bursts; uint16_t lost; uint16_t duplicates; uint16_t late; uint32_t bits_checked; uint32_t bit_errors; int64_t duration; };
-type struct dmrgo_voice_transmitter_config_t { dmrgo_enums_color_code_t color_code; dmrgo_layer2_sync_source_t source; uint8_t silence[9]; int64_t headers; int64_t terminators; int64_t timeout; int64_t queue; int64_t lead; };
+type struct dmrgo_voice_transmitter_config_t { dmrgo_enums_color_code_t color_code; dmrgo_layer2_sync_source_t source; uint8_t silence[9]; int64_t headers; int64_t terminators; int64_t timeout; int64_t queue; int64_t lead; dmrgo_enums_access_t access; int64_t idle_search; bool interruptible; int64_t chan_auth; int64_t holdoff_max; uint64_t seed; dmrgo_layer2_burst_t *scratch; };
