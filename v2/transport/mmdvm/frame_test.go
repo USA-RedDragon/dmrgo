@@ -83,7 +83,8 @@ func TestDMRData(t *testing.T) {
 		k   layer2.Kind
 		pos enums.VoiceBurstType
 	}{{mmdvm.ControlVoiceSync, layer2.KindVoice, enums.VoiceBurstA}, {1, layer2.KindVoice, enums.VoiceBurstB}, {5, layer2.KindVoice, enums.VoiceBurstF}, {0, layer2.KindUnknown, enums.VoiceBurstUnknown}, {6, layer2.KindUnknown, enums.VoiceBurstUnknown}} {
-		h := mmdvm.DMRData{Slot: enums.Slot2, Control: c.ctl}.Hint()
+		d := mmdvm.DMRData{Slot: enums.Slot2, Control: c.ctl}
+		h := d.Hint()
 		if h.Kind != c.k || h.VoiceBurst != c.pos {
 			t.Errorf("%#x: %+v", uint8(c.ctl), h)
 		}

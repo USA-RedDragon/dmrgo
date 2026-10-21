@@ -21,7 +21,7 @@ func TestBursts(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			bursts, err := packet.Bursts(p, 5, layer2.SyncSourceMS)
+			bursts, err := packet.Bursts(&p, 5, layer2.SyncSourceMS)
 			if err != nil {
 				t.Fatalf("%s: %v", rate, err)
 			}
@@ -56,19 +56,26 @@ func TestBursts(t *testing.T) {
 	}
 
 	p, _ := packet.NewPacket(unconfirmed(), payload(5), enums.DataTypeRate12)
-	if _, err := packet.Bursts(p, 1, layer2.SyncSource(9)); err == nil {
+	if _, err := packet.Bursts(&p, 1, layer2.SyncSource(9)); err == nil {
 		t.Error("Bursts accepted sync source 9")
 	}
 	p.Blocks = append(p.Blocks, &pdu.CSBK{})
-	if _, err := packet.Bursts(p, 1, layer2.SyncSourceBS); !errors.Is(err, packet.ErrRate) {
+	if _, err := packet.Bursts(&p, 1, layer2.SyncSourceBS); !errors.Is(err, packet.ErrRate) {
 		t.Errorf("CSBK block: %v", err)
 	}
 	p.Blocks[len(p.Blocks)-1] = nil
-	if _, err := packet.Bursts(p, 1, layer2.SyncSourceBS); err == nil {
+	if _, err := packet.Bursts(&p, 1, layer2.SyncSourceBS); err == nil {
 		t.Error("Bursts accepted a nil block")
 	}
 	p.Blocks[len(p.Blocks)-1] = (*pdu.Rate12Data)(nil)
-	if _, err := packet.Bursts(p, 1, layer2.SyncSourceBS); err == nil {
+	if _, err := packet.Bursts(&p, 1, layer2.SyncSourceBS); err == nil {
 		t.Error("Bursts accepted a nil *pdu.Rate12Data")
+	}
+	if _, err := packet.Bursts(nil, 1, layer2.SyncSourceBS); !errors.Is(err, packet.ErrFormat) {
+		t.Errorf("nil Packet: %v", err)
+	}
+	dst := make([]layer2.RawBurst, 1, 4)
+	if out, err := packet.AppendBursts(dst, nil, 1, layer2.SyncSourceBS); !errors.Is(err, packet.ErrFormat) || len(out) != 1 {
+		t.Errorf("AppendBursts nil Packet: %d bursts, %v", len(out), err)
 	}
 }

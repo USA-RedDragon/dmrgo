@@ -610,7 +610,7 @@ func builtBursts(t testing.TB, data []byte) []byte {
 	}
 	var raws []layer2.RawBurst
 	add := func(p packet.Packet) {
-		out, err := packet.Bursts(p, 1, layer2.SyncSourceMS)
+		out, err := packet.Bursts(&p, 1, layer2.SyncSourceMS)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -742,7 +742,7 @@ func checkSACK(t *testing.T, a *packet.Assembler, missing []int) {
 	if err != nil {
 		return
 	}
-	if _, err := packet.Bursts(resp, 0, layer2.SyncSourceBS); err != nil {
+	if _, err := packet.Bursts(&resp, 0, layer2.SyncSourceBS); err != nil {
 		t.Fatalf("SACK does not encode: %v", err)
 	}
 	blocks := make([]*pdu.Rate12Data, len(resp.Blocks))

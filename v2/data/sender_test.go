@@ -239,7 +239,7 @@ func response(t *testing.T, r packet.Response, rd *packet.ResponseData) []layer2
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := packet.Bursts(p, 0, layer2.SyncSourceBS)
+	b, err := packet.Bursts(&p, 0, layer2.SyncSourceBS)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -320,7 +320,7 @@ func TestSenderOtherResponse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := packet.Bursts(p, 0, layer2.SyncSourceBS)
+	b, err := packet.Bursts(&p, 0, layer2.SyncSourceBS)
 	if err != nil {
 		t.Fatal(err)
 	}

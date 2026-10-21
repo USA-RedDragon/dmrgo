@@ -18,5 +18,5 @@ func ExampleParseRMC() {
 	fmt.Println(err)
 	// Output:
 	// 2025-12-02 20:00:37 valid=true 34.21217 108.83333 0.0 kn 121 deg
-	// NMEA checksum is missing or does not match
+	// nmea: checksum is missing or does not match
 }

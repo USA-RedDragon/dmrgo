@@ -338,7 +338,7 @@ func windowResponse(t *testing.T, r packet.Response, status uint8, rd *packet.Re
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := packet.Bursts(p, 0, layer2.SyncSourceBS)
+	b, err := packet.Bursts(&p, 0, layer2.SyncSourceBS)
 	if err != nil {
 		t.Fatal(err)
 	}

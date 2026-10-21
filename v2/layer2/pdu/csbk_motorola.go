@@ -33,15 +33,15 @@ type MotorolaRadioCheckPDU struct {
 
 // Addresses returns the target and source of the CSBK that carries p: the
 // checked radio and the requester for a request, and the reverse for an
-// answer.
-func (p *MotorolaRadioCheckPDU) Addresses() (target, source uint32) {
-	if p == nil {
-		return 0, 0
+// answer. ok is false for a nil p.
+func (p *MotorolaRadioCheckPDU) Addresses() (target, source uint32, ok bool) {
+	switch {
+	case p == nil:
+		return 0, 0, false
+	case p.Answer:
+		return p.RequesterAddress, p.CheckedAddress, true
 	}
-	if p.Answer {
-		return p.RequesterAddress, p.CheckedAddress
-	}
-	return p.CheckedAddress, p.RequesterAddress
+	return p.CheckedAddress, p.RequesterAddress, true
 }
 
 // MotorolaCallAlertPDU is the payload of a Motorola call alert CSBK (FID

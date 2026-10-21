@@ -84,8 +84,7 @@ func addresses(c *pdu.CSBK) (target, source uint32, ok bool) {
 		return c.Addresses()
 	}
 	if p, ok := c.AsMotorolaRadioCheck(); ok {
-		target, source = p.Addresses()
-		return target, source, true
+		return p.Addresses()
 	}
 	if p, ok := c.AsMotorolaCallAlert(); ok {
 		return p.TargetAddress, p.SourceAddress, true

@@ -46,8 +46,8 @@ func TestMotorolaRadioCheck(t *testing.T) {
 		if !ok || p.Answer != tt.answer || p.RequesterAddress != 3140598 || p.CheckedAddress != 3191868 {
 			t.Fatalf("%s: payload %+v %t", tt.name, p, ok)
 		}
-		if tgt, src := p.Addresses(); tgt != tt.target || src != tt.source {
-			t.Errorf("%s: Addresses %d %d, want %d %d", tt.name, tgt, src, tt.target, tt.source)
+		if tgt, src, ok := p.Addresses(); !ok || tgt != tt.target || src != tt.source {
+			t.Errorf("%s: Addresses %d %d %t, want %d %d", tt.name, tgt, src, ok, tt.target, tt.source)
 		}
 		if _, ok := c.AsMotorolaCallAlert(); ok {
 			t.Errorf("%s: AsMotorolaCallAlert ok", tt.name)
@@ -60,6 +60,15 @@ func TestMotorolaRadioCheck(t *testing.T) {
 		if got := must(built.Encode()); got != raw {
 			t.Errorf("%s: built %x, radio sent %x", tt.name, got, raw)
 		}
+	}
+}
+
+func TestMotorolaRadioCheckNil(t *testing.T) {
+	t.Parallel()
+
+	var p *pdu.MotorolaRadioCheckPDU
+	if tgt, src, ok := p.Addresses(); ok || tgt != 0 || src != 0 {
+		t.Errorf("nil Addresses %d %d %t", tgt, src, ok)
 	}
 }
 

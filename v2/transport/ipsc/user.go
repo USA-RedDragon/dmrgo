@@ -225,9 +225,12 @@ func decodeData(p []byte) (Payload, error) {
 // trailer. It returns dst unchanged and an error for an opcode that is not
 // a user packet, an unknown voice layout, a data payload that does not fit,
 // and a *dmrgo.FieldRangeError for a Source or
-// Destination over 24 bits or a PayloadType over 7. It allocates only to
-// grow dst.
-func (u User) AppendBinary(dst []byte) ([]byte, error) {
+// Destination over 24 bits or a PayloadType over 7. A nil u gives the error
+// of an opcode that is not a user packet. It allocates only to grow dst.
+func (u *User) AppendBinary(dst []byte) ([]byte, error) {
+	if u == nil {
+		return dst, errOpcode
+	}
 	switch u.Opcode {
 	case OpGroupVoice, OpPrivateVoice, OpGroupData, OpPrivateData:
 	default:
@@ -286,12 +289,12 @@ func appendPayload(dst []byte, d Payload) ([]byte, error) {
 // the call control as the stream, burst A or E from the voice layout (the
 // receiver places B, C, D and F by the sequence number), the data type of a
 // data packet, EndWeak for the end flag on a voice packet, EndStrong on a
-// terminator or a data packet, and SyncLost for BurstSyncLost.
+// terminator or a data packet, and SyncLost for BurstSyncLost. A nil u
+// gives the zero Hint.
 func (u *User) Hint() layer2.Hint {
 	if u == nil {
 		return layer2.Hint{}
 	}
-
 	h := layer2.Hint{Slot: u.Info.Slot(), Seq: u.RTP.Seq, HasSeq: true, Stream: u.CallControl, HasStream: true}
 	switch {
 	case u.IsVoice():
