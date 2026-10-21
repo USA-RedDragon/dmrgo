@@ -13,6 +13,7 @@ const pcgStream = 0x2545F4914F6CDD1D
 // Burst decodes the outbound burst raw with what the Hint h says about it,
 // runs it through the Transmitter as Decoded does, and appends the outputs
 // to dst. It allocates only when dst has no room for MaxOutputs outputs.
+// (ETSI TS 102 361-2 clause 5.1.1.6.2)
 func (t *Transmitter) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
 	if t.scratch == nil {
 		return t.Decoded(now, nil, h, dst)

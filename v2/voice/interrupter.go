@@ -13,42 +13,49 @@ import (
 // Limits of InterrupterConfig.
 const (
 	// MaxRetries is the most retries of an interrupt request.
+	// (ETSI TS 102 361-2 clause 6.3.5)
 	MaxRetries = 255
 	// MaxRepeats is the most standalone RC bursts of one try.
+	// (ETSI TS 102 361-2 clause 6.3.5)
 	MaxRepeats = 8
 )
 
 // InterrupterConfig configures NewInterrupter. A nil config means the zero
-// InterrupterConfig.
+// InterrupterConfig. (ETSI TS 102 361-2 clause 6.3.5)
 type InterrupterConfig struct {
 	// ColorCode is the color code of the EMB of the standalone RC bursts.
+	// (ETSI TS 102 361-2 clause 6.3.5)
 	ColorCode enums.ColorCode
 	// Wait is T_RCtimer, the wait for the Terminator with LC after each
 	// try. 0 means constants.TRCTimer (600 ms), and a negative value waits
 	// until the terminator or Cancel. (ETSI TS 102 361-2 clause A.1)
 	Wait time.Duration
 	// Retries is the number of tries after the first. 0 means none; at
-	// most MaxRetries.
+	// most MaxRetries. (ETSI TS 102 361-2 clause 6.3.5)
 	Retries int
 	// Repeats is the number of standalone RC bursts of each try, 60 ms
-	// apart. 0 means 1; at most MaxRepeats.
+	// apart. 0 means 1; at most MaxRepeats. (ETSI TS 102 361-2 clause 6.3.5)
 	Repeats int
 	// Scratch, when set, is the Burst that Burst decodes into. Machines
 	// that run on one goroutine can share one. Nil means the Interrupter
-	// makes its own.
+	// makes its own. (ETSI TS 102 361-2 clause 6.3.5)
 	Scratch *layer2.Burst
 }
 
 // InterrupterState is the state of an Interrupter.
+// (ETSI TS 102 361-2 clause 6.3.5)
 type InterrupterState uint8
 
 // The InterrupterState values.
 const (
 	// InterrupterIdle runs no interrupt request.
+	// (ETSI TS 102 361-2 clause 6.3.5)
 	InterrupterIdle InterrupterState = iota
 	// InterrupterSending sends the standalone RC bursts of a try.
+	// (ETSI TS 102 361-2 clause 6.3.5)
 	InterrupterSending
 	// InterrupterWaiting waits T_RCtimer for the Terminator with LC.
+	// (ETSI TS 102 361-2 clause 6.3.5)
 	InterrupterWaiting
 )
 
@@ -96,7 +103,7 @@ type Interrupter struct {
 // NewInterrupter returns an Interrupter for cfg. A nil cfg means the zero
 // InterrupterConfig. It returns a *ConfigError for a color code above 15,
 // or Retries or Repeats out of range. It allocates the Interrupter, and its
-// Burst unless cfg.Scratch is set.
+// Burst unless cfg.Scratch is set. (ETSI TS 102 361-2 clause 6.3.5)
 func NewInterrupter(cfg *InterrupterConfig) (*Interrupter, error) {
 	if cfg == nil {
 		cfg = &InterrupterConfig{}
@@ -120,11 +127,13 @@ func NewInterrupter(cfg *InterrupterConfig) (*Interrupter, error) {
 }
 
 // Reset ends any interrupt request without an output. It keeps the config.
+// (ETSI TS 102 361-2 clause 6.3.5)
 func (i *Interrupter) Reset() {
 	i.state = InterrupterIdle
 }
 
 // State returns the state of the Interrupter.
+// (ETSI TS 102 361-2 clause 6.3.5)
 func (i *Interrupter) State() InterrupterState {
 	return i.state
 }
@@ -161,6 +170,7 @@ func (i *Interrupter) try(at time.Duration) {
 }
 
 // Cancel ends the interrupt request without an output.
+// (ETSI TS 102 361-2 clause 6.3.5)
 func (i *Interrupter) Cancel() {
 	i.state = InterrupterIdle
 }
@@ -168,7 +178,7 @@ func (i *Interrupter) Cancel() {
 // Burst decodes the burst raw of the call with what the Hint h says about
 // it, runs it through the Interrupter as Decoded does, and appends the
 // outputs to dst. It allocates only when dst has no room for MaxOutputs
-// outputs.
+// outputs. (ETSI TS 102 361-2 clause 6.3.5)
 func (i *Interrupter) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
 	i.opts = layer2.DecodeOptions{Kind: h.Kind, VoiceBurst: enums.VoiceBurstUnknown}
 	if h.Kind == layer2.KindVoice {
@@ -189,6 +199,7 @@ func (i *Interrupter) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hi
 // appends the outputs to dst: OutputInterrupted when b is a Terminator
 // with LC after the first standalone RC burst went out. It allocates only
 // when dst has no room for MaxOutputs outputs.
+// (ETSI TS 102 361-2 clause 6.3.5)
 func (i *Interrupter) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
 	dst = i.Tick(now, dst)
 	if i.state == InterrupterIdle || i.tries == 1 && i.state == InterrupterSending && i.sent == 0 {
@@ -207,6 +218,7 @@ func (i *Interrupter) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint,
 // enums.VoiceBurstUnknown, and OutputInterruptFailed when T_RCtimer ran out
 // after the last try. A Tick before Deadline does nothing. It allocates
 // only when dst has no room for MaxOutputs outputs.
+// (ETSI TS 102 361-2 clause 6.3.5)
 func (i *Interrupter) Tick(now time.Duration, dst []Output) []Output {
 	if i.state == InterrupterWaiting && i.wait >= 0 && now >= i.waitUntil {
 		if i.tries > i.retries {
@@ -232,7 +244,7 @@ func (i *Interrupter) Tick(now time.Duration, dst []Output) []Output {
 }
 
 // Deadline returns the time at which the Interrupter needs a Tick. ok is
-// false when no timer runs.
+// false when no timer runs. (ETSI TS 102 361-2 clause 6.3.5)
 func (i *Interrupter) Deadline() (at time.Duration, ok bool) {
 	switch i.state {
 	case InterrupterSending:
