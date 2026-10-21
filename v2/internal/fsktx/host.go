@@ -87,21 +87,38 @@ func (k *poly) push(s int8) {
 	default:
 		s = 0
 	}
+	k.pushf(float64(s))
+}
+
+// pushf puts the value v in the ring.
+func (k *poly) pushf(v float64) {
 	k.pos--
 	if k.pos < 0 {
 		k.pos = k.n - 1
 	}
 	if k.taps32 != nil {
-		k.ring32[k.pos] = float32(s)
-		k.ring32[k.pos+k.n] = float32(s)
+		k.ring32[k.pos] = float32(v)
+		k.ring32[k.pos+k.n] = float32(v)
 	} else {
-		k.ring64[k.pos] = float64(s)
-		k.ring64[k.pos+k.n] = float64(s)
+		k.ring64[k.pos] = v
+		k.ring64[k.pos+k.n] = v
 	}
 }
 
 func (k *poly) symbol(dst []float64, s int8) int {
 	k.push(s)
+	return k.emit(dst)
+}
+
+// symbolf is symbol with the value v in the ring in place of a symbol.
+func (k *poly) symbolf(dst []float64, v float64) int {
+	k.pushf(v)
+	return k.emit(dst)
+}
+
+// emit writes the samples of the symbol period that the newest value of the
+// ring completes to dst and returns their number.
+func (k *poly) emit(dst []float64) int {
 	n := 0
 	if k.taps32 != nil {
 		w := k.ring32[k.pos : k.pos+k.n]
@@ -209,9 +226,16 @@ type AudioConfig struct {
 	// CarrierHz is added to the deviation of every sample, in Hz, finer
 	// than a code step; it trims the carrier of the pulse.
 	CarrierHz float64
+	// Boost raises the gain of Tier1 and Tier2 at 1200 Hz, the tone of
+	// the deviation test pattern, by Boost: each symbol adds Boost times
+	// the sum of the symbols 2m before it, m from 1 to BoostPairs (even,
+	// at most 48), with the sign of (-1)^m, over BoostPairs. The sum has
+	// no gain at 0 and 2400 Hz.
+	Boost      float64
+	BoostPairs int
 	// Rates is the per-rate design of Tier1 and Tier2: the entry whose Hz
-	// is Hz sets ExactPow, Pulse.Gain, Pulse.FlatGain and CarrierHz in
-	// place of the fields above.
+	// is Hz sets ExactPow, Pulse.Gain, Pulse.FlatGain, CarrierHz and Boost
+	// in place of the fields above.
 	Rates []RateDesign
 }
 
@@ -220,6 +244,7 @@ type AudioConfig struct {
 type RateDesign struct {
 	Hz                                  int
 	ExactPow, Gain, FlatGain, CarrierHz float64
+	Boost                               float64
 }
 
 // PulseConfig sets the transmit pulse of Tier1 and Tier2.
@@ -302,6 +327,12 @@ type Audio struct {
 	step   float64
 	pos    float64
 	hist   [32]int8
+	bst    [2 * maxBoostPairs]int8
+	bacc   [2]int
+	bpos   int
+	bpar   int
+	bpairs int
+	boost  float64
 	cbp    []float64
 	cf, cc [512]float64
 	cn     int
@@ -339,6 +370,7 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		for _, r := range cfg.Rates {
 			if r.Hz == cfg.Hz {
 				cfg.ExactPow, cfg.Pulse.Gain, cfg.Pulse.FlatGain, cfg.CarrierHz = r.ExactPow, r.Gain, r.FlatGain, r.CarrierHz
+				cfg.Boost = r.Boost
 				break
 			}
 		}
@@ -361,6 +393,9 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		}
 		a.k = k
 		a.offset += cfg.CarrierHz * a.scale
+		if m := cfg.BoostPairs; cfg.Boost != 0 && m > 0 && m <= maxBoostPairs && m%2 == 0 {
+			a.bpairs, a.boost = m, cfg.Boost/float64(m)
+		}
 		a.buf = make([]float64, k.l/k.m+1)
 		a.shape = min(max(cfg.Shape, 0), 4)
 		a.fb = ntf(a.shape, cfg.NoiseZerosHz, float64(cfg.Hz))
@@ -430,7 +465,12 @@ func (a *Audio) AppendSymbol(dst []int16, s int8) []int16 {
 		n := a.mcu.Symbol(a.tmp[:], s)
 		return append(dst, a.tmp[:n]...)
 	}
-	n := a.k.symbol(a.buf, s)
+	var n int
+	if a.bpairs > 0 {
+		n = a.k.symbolf(a.buf, a.boosted(s))
+	} else {
+		n = a.k.symbol(a.buf, s)
+	}
 	if a.corr != nil {
 		a.addCorr(s, n)
 	}
@@ -1173,4 +1213,24 @@ func sat16(x float64) int16 {
 	default:
 		return int16(x - 0.5)
 	}
+}
+
+const maxBoostPairs = 48
+
+// boosted returns s with the Boost of a, and puts s in its history.
+func (a *Audio) boosted(s int8) float64 {
+	switch s {
+	case -3, -1, 1, 3:
+	default:
+		s = 0
+	}
+	p := a.bpar
+	u := a.bacc[p]
+	a.bacc[p] = int(a.bst[a.bpos]) - int(s) - u
+	a.bst[a.bpos] = s
+	if a.bpos++; a.bpos == 2*a.bpairs {
+		a.bpos = 0
+	}
+	a.bpar = 1 - p
+	return float64(s) + a.boost*float64(u)
 }
