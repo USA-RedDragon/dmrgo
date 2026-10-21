@@ -29,6 +29,15 @@ func TestAllocs(t *testing.T) {
 		if _, err := ip.AppendCompressed(buf[:0], &c); err != nil {
 			panic(err)
 		}
+		e := ip.ICMPPacket{Message: ip.ICMPHostUnreachable, Original: data}
+		out, err := ip.AppendICMPPacket(buf[:0], &e)
+		if err != nil {
+			panic(err)
+		}
+		if _, err := ip.DecodeICMPPacket(out); err != nil {
+			panic(err)
+		}
+		ip.CheckIPv4(data, 576)
 	})
 	if n != 0 {
 		t.Errorf("%.1f allocations per run, want 0", n)

@@ -62,3 +62,59 @@ func fuzzDecode(t *testing.T, sap uint8, data []byte) {
 		t.Fatalf("round trip %+v gave %+v", d, back)
 	}
 }
+
+func FuzzDecodeICMPPacket(f *testing.F) {
+	icmpSeeds(func(data []byte) { f.Add(data) })
+	f.Fuzz(fuzzDecodeICMPPacket)
+}
+
+func icmpSeeds(add func(data []byte)) {
+	b, _ := hex.DecodeString(hostUnreachable)
+	add(b)
+	b, _ = hex.DecodeString(appcapture.TMS)
+	add(b)
+	add([]byte{0x45, 0, 0, 28, 0, 0, 0, 0, 64, 1})
+	add([]byte{3, 1, 0, 0})
+}
+
+var icmpErrors = []error{ip.ErrShort, ip.ErrLength, ip.ErrVersion, ip.ErrProtocol, ip.ErrFragment, ip.ErrChecksum}
+
+func fuzzDecodeICMPPacket(t *testing.T, data []byte) {
+	ip.CheckIPv4(data, len(data)/2)
+	if m, err := ip.DecodeICMP(data); err == nil {
+		out, err := m.AppendBinary(nil)
+		if err != nil || !bytes.Equal(out, data) {
+			t.Fatalf("DecodeICMP(%x) round trip %x, %v", data, out, err)
+		}
+	} else if !errors.Is(err, ip.ErrShort) {
+		t.Fatalf("DecodeICMP(%x): %v", data, err)
+	}
+	c, err := ip.DecodeICMPPacket(data)
+	if err != nil {
+		known := false
+		for _, e := range icmpErrors {
+			known = known || errors.Is(err, e)
+		}
+		if !known {
+			t.Fatalf("DecodeICMPPacket(%x): unexpected error %v", data, err)
+		}
+		if !errors.Is(err, ip.ErrChecksum) {
+			return
+		}
+	}
+	out, err := ip.AppendICMPPacket(nil, &c)
+	if errors.Is(err, ip.ErrProtocol) {
+		return
+	}
+	if err != nil {
+		t.Fatalf("append %+v: %v", c, err)
+	}
+	back, err := ip.DecodeICMPPacket(out)
+	if err != nil {
+		t.Fatalf("DecodeICMPPacket(append %+v) = %v", c, err)
+	}
+	if back.Message != c.Message || back.Pointer != c.Pointer || back.NextHopMTU != c.NextHopMTU || back.ID != c.ID ||
+		back.Source != c.Source || back.Destination != c.Destination || !bytes.Equal(back.Original, c.Original[:len(back.Original)]) {
+		t.Fatalf("round trip %+v gave %+v", c, back)
+	}
+}

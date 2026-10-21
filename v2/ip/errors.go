@@ -13,8 +13,10 @@ var (
 	ErrLength = errors.New("ip: length does not match the packet")
 	// ErrVersion is returned for an IP version other than 4.
 	ErrVersion = errors.New("ip: not an IPv4 packet")
-	// ErrProtocol is returned for an IPv4 packet that does not carry UDP.
-	ErrProtocol = errors.New("ip: packet does not carry UDP")
+	// ErrProtocol is returned for an IPv4 packet that does not carry UDP,
+	// or ICMP for DecodeICMPPacket, and by AppendICMPPacket for an ICMP
+	// message about an ICMP message.
+	ErrProtocol = errors.New("ip: packet carries another protocol")
 	// ErrFragment is returned for a fragment of an IPv4 packet.
 	ErrFragment = errors.New("ip: packet is a fragment")
 	// ErrSAP is returned for a SAP other than IP based packet data or UDP/IP

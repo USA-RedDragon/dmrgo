@@ -841,6 +841,11 @@ sym #define DMRGO_IPSC_VOICE_LAYOUT_A ((dmrgo_ipsc_voice_layout_t)1)
 sym #define DMRGO_IPSC_VOICE_LAYOUT_BCDF ((dmrgo_ipsc_voice_layout_t)2)
 sym #define DMRGO_IPSC_VOICE_LAYOUT_E ((dmrgo_ipsc_voice_layout_t)3)
 sym #define DMRGO_IP_DEFAULT_NETWORK 12
+sym #define DMRGO_IP_ICMP_BAD_HEADER ((dmrgo_ip_icmp_message_t)3072)
+sym #define DMRGO_IP_ICMP_FRAGMENTATION_NEEDED ((dmrgo_ip_icmp_message_t)772)
+sym #define DMRGO_IP_ICMP_HOST_UNREACHABLE ((dmrgo_ip_icmp_message_t)769)
+sym #define DMRGO_IP_ICMP_NETWORK_UNKNOWN ((dmrgo_ip_icmp_message_t)774)
+sym #define DMRGO_IP_ICMP_NETWORK_UNREACHABLE ((dmrgo_ip_icmp_message_t)768)
 sym #define DMRGO_IP_PORT_ARS ((dmrgo_ip_port_t)4005)
 sym #define DMRGO_IP_PORT_BATTERY ((dmrgo_ip_port_t)4012)
 sym #define DMRGO_IP_PORT_HYTERA_CALL ((dmrgo_ip_port_t)3005)
@@ -1645,11 +1650,22 @@ sym int dmrgo_hytera_tmp_message_set_text_utf8(dmrgo_hytera_tmp_message_t *self,
 sym int dmrgo_hytera_tmp_message_string(dmrgo_hytera_tmp_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_hytera_tmp_message_text_utf8(dmrgo_hytera_tmp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ip_append_compressed(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_datagram_t *d);
+sym int dmrgo_ip_append_icmp_packet(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_icmp_packet_t *c);
 sym int dmrgo_ip_append_ipv4(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_datagram_t *d);
+sym int dmrgo_ip_check_ipv4(const uint8_t *data, size_t data_len, int64_t mtu, dmrgo_ip_icmp_message_t *m, uint8_t *pointer, bool *ok);
 sym int dmrgo_ip_decode(dmrgo_enums_service_access_point_id_t sap, const uint8_t *data, size_t data_len, dmrgo_ip_datagram_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ip_decode_icmp(const uint8_t *data, size_t data_len, dmrgo_ip_icmp_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ip_decode_icmp_packet(const uint8_t *data, size_t data_len, dmrgo_ip_icmp_packet_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ip_decode_ipv4(const uint8_t *data, size_t data_len, dmrgo_ip_ipv4_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ip_decode_udp(const uint8_t *data, size_t data_len, dmrgo_ip_udp_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ip_group_address(uint8_t prefix, uint32_t group, uint8_t out[4]);
+sym int dmrgo_ip_icmp_append_binary(dmrgo_ip_icmp_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ip_icmp_header_append_binary(dmrgo_ip_icmp_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_ip_icmp_header_string(dmrgo_ip_icmp_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_ip_icmp_message_code(dmrgo_ip_icmp_message_t self, uint8_t *out);
+sym int dmrgo_ip_icmp_message_string(dmrgo_ip_icmp_message_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_ip_icmp_message_type(dmrgo_ip_icmp_message_t self, uint8_t *out);
+sym int dmrgo_ip_icmp_string(dmrgo_ip_icmp_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ip_id(const uint8_t addr[4], uint32_t *out);
 sym int dmrgo_ip_ipv4_append_binary(dmrgo_ip_ipv4_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ip_ipv4_header_append_binary(dmrgo_ip_ipv4_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
@@ -2578,6 +2594,7 @@ sym int dmrgo_voice_transmitter_tick(dmrgo_voice_transmitter_t *self, int64_t no
 sym int dmrgo_voice_transmitter_tick_need(dmrgo_voice_transmitter_t *self, int64_t now, size_t *items, size_t *arena);
 sym typedef int64_t dmrgo_codec2_mode_t;
 sym typedef int64_t dmrgo_layer2_sync_source_t;
+sym typedef uint16_t dmrgo_ip_icmp_message_t;
 sym typedef uint16_t dmrgo_ip_port_t;
 sym typedef uint16_t dmrgo_mmdvm_capabilities_t;
 sym typedef uint16_t dmrgo_transport_hytera_slot_type_t;
@@ -2744,6 +2761,9 @@ type struct dmrgo_hytera_tmp_flags_t { bool no_ack; bool option; uint8_t reserve
 type struct dmrgo_hytera_tmp_group_answer_t { uint32_t request_id; uint8_t destination[4]; uint8_t result; };
 type struct dmrgo_hytera_tmp_message_t { uint32_t request_id; uint8_t destination[4]; uint8_t source[4]; uint8_t *text; size_t text_len; };
 type struct dmrgo_ip_datagram_t { uint8_t source[4]; uint8_t destination[4]; dmrgo_ip_port_t source_port; dmrgo_ip_port_t destination_port; uint16_t id; uint8_t ttl; bool compressed; dmrgo_enums_said_t said; dmrgo_enums_daid_t daid; uint8_t *payload; size_t payload_len; };
+type struct dmrgo_ip_icmp_header_t { dmrgo_ip_icmp_message_t message; uint16_t checksum; uint8_t pointer; uint8_t reserved; uint16_t next_hop_mtu; };
+type struct dmrgo_ip_icmp_packet_t { uint8_t source[4]; uint8_t destination[4]; uint16_t id; uint8_t ttl; dmrgo_ip_icmp_message_t message; uint8_t pointer; uint16_t next_hop_mtu; uint8_t *original; size_t original_len; };
+type struct dmrgo_ip_icmp_t { dmrgo_ip_icmp_header_t header; uint8_t *original; size_t original_len; };
 type struct dmrgo_ip_ipv4_header_t { uint8_t version; uint8_t ihl; uint8_t tos; uint16_t total_length; uint16_t id; bool reserved; bool dont_fragment; bool more_fragments; uint16_t fragment_offset; uint8_t ttl; dmrgo_ip_protocol_t protocol; uint16_t checksum; uint8_t source[4]; uint8_t destination[4]; };
 type struct dmrgo_ip_ipv4_t { dmrgo_ip_ipv4_header_t header; uint8_t *options; size_t options_len; uint8_t *payload; size_t payload_len; };
 type struct dmrgo_ip_udp_header_t { dmrgo_ip_port_t source_port; dmrgo_ip_port_t destination_port; uint16_t length; uint16_t checksum; };

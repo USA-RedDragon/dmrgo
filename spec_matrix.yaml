@@ -1840,6 +1840,16 @@ documents:
     sections:
       - section: "5.2"
         title: "IP error messages"
+        source_files:
+          - v2/ip/icmp.go
+          - v2/ip/errors.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/ip
+            names:
+              - TestICMPMessages
+              - TestAppendICMPPacket
+              - TestICMPPacketErrors
+              - TestCheckIPv4
 
       - section: "5.3"
         title: "Unconfirmed data DLL bearer service"
