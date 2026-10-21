@@ -193,12 +193,18 @@ func (g *gen) recvMethod(recv *tinfo, name string) bool {
 	return ok && m.Signature().Params().Len() == 0 && m.Signature().Results().Len() == 1
 }
 
+// boundPhrase returns the bound that doc states for the one output buffer
+// of a call: "room for N more octets" or "returns at most N items", or 0
+// for a call that writes into dst and "keeps the length of dst".
 func boundPhrase(doc string) (string, bool) {
 	f := regexp.MustCompile(`(?:room for|returns at most) (\S+?)(?: more)? [a-z]+`).FindStringSubmatch(doc)
-	if f == nil {
-		return "", false
+	if f != nil {
+		return f[1], true
 	}
-	return f[1], true
+	if regexp.MustCompile(`keeps the length of \S+`).MatchString(doc) {
+		return "0", true
+	}
+	return "", false
 }
 
 func (g *gen) elemArena(t types.Type, doc string, pkg *types.Package) (string, error) {
