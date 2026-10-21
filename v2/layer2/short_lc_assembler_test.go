@@ -321,3 +321,35 @@ func encodeCACHFragments(info [5]byte) [4][3]byte {
 	}
 	return out
 }
+
+func TestShortLCAssembler_Nil(t *testing.T) {
+	t.Parallel()
+	var data [3]byte
+	fragments := buildValidShortLCFragments(byte(enums.SLCONullMessage), data)
+	var nilAsm *layer2.ShortLCAssembler
+	nilAsm.Reset()
+	if nilAsm.Count() != 0 {
+		t.Error("nil Count")
+	}
+	var a layer2.ShortLCAssembler
+	var dst pdu.ShortLC
+	var p pdu.ShortLCPayloads
+	for i, f := range fragments {
+		c := cachOf(shortLCSequence[i], f)
+		if _, done, err := nilAsm.Add(c); done || err != nil {
+			t.Fatalf("nil Add: %t %v", done, err)
+		}
+		if done, err := nilAsm.AddInto(&dst, &p, c); done || err != nil {
+			t.Fatalf("nil AddInto: %t %v", done, err)
+		}
+		if done, err := a.AddInto(nil, &p, c); done || err != nil {
+			t.Fatalf("AddInto nil dst: %t %v", done, err)
+		}
+		if done, err := a.AddInto(&dst, nil, c); done || err != nil {
+			t.Fatalf("AddInto nil p: %t %v", done, err)
+		}
+	}
+	if a.Count() != 0 {
+		t.Errorf("nil arguments changed the assembler: count %d", a.Count())
+	}
+}
