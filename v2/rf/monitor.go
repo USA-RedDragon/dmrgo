@@ -172,5 +172,8 @@ func (m *Monitor) slot(b *Burst, cach [3]byte) enums.Slot {
 	if m.votes[1] > m.votes[0] {
 		align = 1
 	}
-	return enums.Slot(parity ^ align + 1)
+	if parity^align == 1 {
+		return enums.Slot2
+	}
+	return enums.Slot1
 }

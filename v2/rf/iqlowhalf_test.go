@@ -10,6 +10,7 @@ import (
 )
 
 func TestIQLowHalfAsmLayout(t *testing.T) {
+	t.Parallel()
 	var r iqLowRx
 	q := unsafe.Offsetof(r.q)
 	got := [...]uintptr{
@@ -25,6 +26,7 @@ func TestIQLowHalfAsmLayout(t *testing.T) {
 }
 
 func TestLeanPushAsmLayout(t *testing.T) {
+	t.Parallel()
 	var r leanCore
 	ns := unsafe.Offsetof(r.ns)
 	got := [...]uintptr{unsafe.Offsetof(r.ring) - ns, unsafe.Offsetof(r.head) - ns, unsafe.Offsetof(r.ringSum) - ns, unsafe.Offsetof(r.signs) - ns}
@@ -37,6 +39,7 @@ func TestLeanPushAsmLayout(t *testing.T) {
 }
 
 func TestIQLowHalfAsmTable(t *testing.T) {
+	t.Parallel()
 	src, err := os.ReadFile("iqlowhalf_dsp.go")
 	if err != nil {
 		t.Fatal(err)

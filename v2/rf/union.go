@@ -113,7 +113,11 @@ func (r *DiscReceiver) addUnion(opt *options) {
 		w.addExt(&o)
 		u.twins = append(u.twins, w)
 	}
-	u.e = r.ext.(*softExt)
+	e, ok := r.ext.(*softExt)
+	if !ok {
+		return
+	}
+	u.e = e
 	u.e.union = u
 }
 

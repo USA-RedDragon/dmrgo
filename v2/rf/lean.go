@@ -2102,5 +2102,4 @@ type (
 	site0 struct{}
 	site1 struct{}
 	site2 struct{}
-	site3 struct{}
 )

@@ -57,6 +57,7 @@ func unionDataOK(ts benchSlot, data layer2.RawBurst) bool {
 		a, _ := data.Rate1Payload()
 		b, _ := ts.burst.Rate1Payload()
 		return a == b
+	default:
 	}
 	a, _ := data.BPTCPayload()
 	b, _ := ts.burst.BPTCPayload()
@@ -137,8 +138,9 @@ func TestDiscTier3Superset(t *testing.T) {
 		ms    bool
 		x     func() []complex64
 	}
-	var cases []tcase
-	for _, cn := range []float64{-1, 0, 1, 2, 3, 4, 5, 6, 8, 12, 30} {
+	cns := []float64{-1, 0, 1, 2, 3, 4, 5, 6, 8, 12, 30}
+	cases := make([]tcase, 0, 3*len(cns)*seeds)
+	for _, cn := range cns {
 		for s := range uint64(seeds) {
 			seed := 100 + s
 			cases = append(cases,
