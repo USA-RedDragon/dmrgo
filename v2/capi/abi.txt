@@ -438,6 +438,7 @@ sym #define DMRGO_DMRD_FRAME_DATA_SYNC ((dmrgo_dmrd_frame_type_t)2)
 sym #define DMRGO_DMRD_FRAME_RESERVED ((dmrgo_dmrd_frame_type_t)3)
 sym #define DMRGO_DMRD_FRAME_VOICE ((dmrgo_dmrd_frame_type_t)0)
 sym #define DMRGO_DMRD_FRAME_VOICE_SYNC ((dmrgo_dmrd_frame_type_t)1)
+sym #define DMRGO_DMRD_MAX_FREE_DMR_OPTIONS_LEN 255
 sym #define DMRGO_DMRD_OPTION_ABSENT ((dmrgo_dmrd_option_state_t)0)
 sym #define DMRGO_DMRD_OPTION_CLEAR ((dmrgo_dmrd_option_state_t)1)
 sym #define DMRGO_DMRD_OPTION_SET ((dmrgo_dmrd_option_state_t)2)
@@ -1459,6 +1460,7 @@ sym int dmrgo_data_sender_state_string(dmrgo_data_sender_state_t self, char *out
 sym int dmrgo_data_sender_tick(dmrgo_data_sender_t *self, int64_t now, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_data_sender_tick_need(dmrgo_data_sender_t *self, int64_t now, size_t *items, size_t *arena);
 sym int dmrgo_data_state_string(dmrgo_data_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_dmrd_append_free_dmr_static(uint32_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, dmrgo_enums_slot_t s);
 sym int dmrgo_dmrd_auth_bridge_free(dmrgo_dmrd_auth_bridge_t *self);
 sym int dmrgo_dmrd_auth_bridge_new(dmrgo_dmrd_auth_bridge_t **out);
 sym int dmrgo_dmrd_auth_bridge_sign(dmrgo_dmrd_auth_bridge_t *self, const uint8_t *p, size_t p_len);
@@ -1553,6 +1555,7 @@ sym int dmrgo_dmrd_local_position_string(dmrgo_dmrd_local_position_t *self, char
 sym int dmrgo_dmrd_local_talker_alias_append_binary(dmrgo_dmrd_local_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_dmrd_local_talker_alias_string(dmrgo_dmrd_local_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_dmrd_parse_dmr_plus_options(const uint8_t *text, size_t text_len, dmrgo_dmrd_dmr_plus_options_t *out);
+sym int dmrgo_dmrd_parse_free_dmr_options(const uint8_t *text, size_t text_len, dmrgo_dmrd_free_dmr_options_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_dmrd_position_append_binary(dmrgo_dmrd_position_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_dmrd_position_string(dmrgo_dmrd_position_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_dmrd_talker_alias_append_binary(dmrgo_dmrd_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
@@ -2828,6 +2831,7 @@ type struct dmrgo_dmrd_config_t { uint8_t v[302]; };
 type struct dmrgo_dmrd_control_t { dmrgo_dmrd_command_t command; uint32_t id; uint32_t salt; bool has_salt; uint8_t token[32]; uint8_t *text; size_t text_len; };
 type struct dmrgo_dmrd_data_t { uint8_t seq; uint32_t source; uint32_t destination; uint32_t repeater; dmrgo_enums_slot_t slot; bool private_; dmrgo_dmrd_frame_type_t frame; uint8_t value; uint32_t stream; dmrgo_layer2_raw_burst_t burst; uint8_t ber; uint8_t rssi; uint8_t uuid[16]; uint8_t size; };
 type struct dmrgo_dmrd_dmr_plus_options_t { dmrgo_dmrd_option_value_t start_ref; dmrgo_dmrd_option_value_t relink_time; dmrgo_dmrd_option_value_t user_link; dmrgo_dmrd_option_value_t ts1[5]; };
+type struct dmrgo_dmrd_free_dmr_options_t { dmrgo_dmrd_option_value_t dial_ts1; dmrgo_dmrd_option_value_t dial_ts2; dmrgo_dmrd_option_value_t timer; dmrgo_dmrd_option_value_t ts1_timer; dmrgo_dmrd_option_value_t ts2_timer; dmrgo_dmrd_option_value_t tg_timer; dmrgo_dmrd_option_value_t dial_timer; dmrgo_dmrd_option_value_t ts1tg_timer; dmrgo_dmrd_option_value_t ts2tg_timer; dmrgo_dmrd_option_value_t ts1_dial_timer; dmrgo_dmrd_option_value_t ts2_dial_timer; dmrgo_dmrd_option_value_t voice; dmrgo_dmrd_option_value_t ident_tg; dmrgo_dmrd_option_value_t single; dmrgo_dmrd_option_value_t dial_atg; dmrgo_dmrd_option_value_t dynamic; dmrgo_dmrd_option_value_t direct_dial_slot; uint8_t *key; size_t key_len; uint8_t *lang; size_t lang_len; };
 type struct dmrgo_dmrd_hbrp_config_t { uint8_t v[306]; };
 type struct dmrgo_dmrd_local_position_t { uint32_t source; uint8_t data[7]; };
 type struct dmrgo_dmrd_local_talker_alias_t { uint32_t source; uint8_t type_; uint8_t data[7]; };

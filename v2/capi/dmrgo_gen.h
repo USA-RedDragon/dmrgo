@@ -453,6 +453,8 @@ typedef struct dmrgo_dmrd_control_t dmrgo_dmrd_control_t;
 typedef struct dmrgo_dmrd_dmr_plus_options_t dmrgo_dmrd_dmr_plus_options_t;
 /* Go: dmrd.Data. Data is a DMRD packet: one burst with its call fields. */
 typedef struct dmrgo_dmrd_data_t dmrgo_dmrd_data_t;
+/* Go: dmrd.FreeDMROptions. FreeDMROptions is the FreeDMR options text that a repeater or hotspot sends in Control.Text of an RPTO, for example "TS1=91,2350;TS2=;DIAL=0;VOICE=1;TIMER=10;". */
+typedef struct dmrgo_dmrd_free_dmr_options_t dmrgo_dmrd_free_dmr_options_t;
 /* Go: dmrd.HBRPConfig. HBRPConfig is the 306-octet RPTC configuration message of DialectHBRP, as a view. */
 typedef struct dmrgo_dmrd_hbrp_config_t dmrgo_dmrd_hbrp_config_t;
 /* Go: dmrd.LocalPosition. LocalPosition is a DMRG message of DialectLocal, from MMDVMHost to DMRGateway: Position without the repeater ID. */
@@ -2715,6 +2717,30 @@ struct dmrgo_dmrd_talker_alias_t {
 	uint8_t data[7];
 };
 
+struct dmrgo_dmrd_free_dmr_options_t {
+	dmrgo_dmrd_option_value_t dial_ts1;
+	dmrgo_dmrd_option_value_t dial_ts2;
+	dmrgo_dmrd_option_value_t timer;
+	dmrgo_dmrd_option_value_t ts1_timer;
+	dmrgo_dmrd_option_value_t ts2_timer;
+	dmrgo_dmrd_option_value_t tg_timer;
+	dmrgo_dmrd_option_value_t dial_timer;
+	dmrgo_dmrd_option_value_t ts1tg_timer;
+	dmrgo_dmrd_option_value_t ts2tg_timer;
+	dmrgo_dmrd_option_value_t ts1_dial_timer;
+	dmrgo_dmrd_option_value_t ts2_dial_timer;
+	dmrgo_dmrd_option_value_t voice;
+	dmrgo_dmrd_option_value_t ident_tg;
+	dmrgo_dmrd_option_value_t single;
+	dmrgo_dmrd_option_value_t dial_atg;
+	dmrgo_dmrd_option_value_t dynamic;
+	dmrgo_dmrd_option_value_t direct_dial_slot;
+	uint8_t *key;
+	size_t key_len;
+	uint8_t *lang;
+	size_t lang_len;
+};
+
 struct dmrgo_dmrd_hbrp_config_t {
 	uint8_t v[306];
 };
@@ -4878,6 +4904,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DMRD_FRAME_VOICE ((dmrgo_dmrd_frame_type_t)0)
 /* Go: dmrd.FrameVoiceSync. voice burst A */
 #define DMRGO_DMRD_FRAME_VOICE_SYNC ((dmrgo_dmrd_frame_type_t)1)
+/* Go: dmrd.MaxFreeDMROptionsLen. MaxFreeDMROptionsLen is the longest options text that FreeDMR reads. */
+#define DMRGO_DMRD_MAX_FREE_DMR_OPTIONS_LEN 255
 /* Go: dmrd.OptionAbsent. OptionAbsent leaves the setting of the master as it is. */
 #define DMRGO_DMRD_OPTION_ABSENT ((dmrgo_dmrd_option_state_t)0)
 /* Go: dmrd.OptionClear. OptionClear is an option with an empty value: it clears the setting of the master. */
@@ -7409,6 +7437,8 @@ int dmrgo_sms_ip_text_set_text_utf8(dmrgo_sms_ip_text_t *self, uint8_t *dst, siz
 int dmrgo_sms_ip_text_string(dmrgo_sms_ip_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: sms.IPText.TextUTF8. TextUTF8 appends Text, UTF-16BE text, to dst as UTF-8 and returns dst. */
 int dmrgo_sms_ip_text_text_utf8(dmrgo_sms_ip_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: dmrd.AppendFreeDMRStatic. AppendFreeDMRStatic appends to dst the static talkgroups of slot s in a FreeDMR options text, as FreeDMR reads them: the DMR+ keys TS1_1 to TS1_9 (TS2_1 to TS2_9 for slot 2) when TS1_1 is there, else the comma list of TS1 or TS1_STATIC. */
+int dmrgo_dmrd_append_free_dmr_static(uint32_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, dmrgo_enums_slot_t s);
 /* Go: dmrd.Bridge.AppendBinary. AppendBinary appends the packet b to dst in the form of b.Version, with b.Signature as it is: sign the packet afterward with package auth. */
 int dmrgo_dmrd_bridge_append_binary(const dmrgo_dmrd_bridge_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.BridgeControl.AppendBinary. AppendBinary appends the packet c to dst, with c.Signature as it is. */
@@ -7583,6 +7613,8 @@ int dmrgo_dmrd_local_talker_alias_append_binary(dmrgo_dmrd_local_talker_alias_t 
 int dmrgo_dmrd_local_talker_alias_string(dmrgo_dmrd_local_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.ParseDMRPlusOptions. ParseDMRPlusOptions parses a DMR+ startup options text: Key=Value pairs separated by semicolons, with spaces around them ignored. */
 int dmrgo_dmrd_parse_dmr_plus_options(const uint8_t *text, size_t text_len, dmrgo_dmrd_dmr_plus_options_t *out);
+/* Go: dmrd.ParseFreeDMROptions. ParseFreeDMROptions parses a FreeDMR options text as FreeDMR does: Key=Value pairs separated by semicolons, keys in the exact case, the last pair of a key wins, and pairs with no "=" or more than one are skipped. */
+int dmrgo_dmrd_parse_free_dmr_options(const uint8_t *text, size_t text_len, dmrgo_dmrd_free_dmr_options_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: dmrd.Position.AppendBinary. AppendBinary appends the 18 octets of s to dst. */
 int dmrgo_dmrd_position_append_binary(dmrgo_dmrd_position_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.Position.String. String returns the fields of s as text, for printing. */

@@ -3925,6 +3925,31 @@ func out_transport_dmrd_Control(d *C.dmrgo_dmrd_control_t, s *g_transport_dmrd.C
 	d.text_len = C.size_t(len(s.Text))
 }
 
+func out_transport_dmrd_FreeDMROptions(d *C.dmrgo_dmrd_free_dmr_options_t, s *g_transport_dmrd.FreeDMROptions, oc *outc) {
+	_ = oc
+	*(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&d.dial_ts1)) = s.DialTS1
+	*(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&d.dial_ts2)) = s.DialTS2
+	*(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&d.timer)) = s.Timer
+	*(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&d.ts1_timer)) = s.TS1Timer
+	*(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&d.ts2_timer)) = s.TS2Timer
+	*(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&d.tg_timer)) = s.TGTimer
+	*(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&d.dial_timer)) = s.DialTimer
+	*(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&d.ts1tg_timer)) = s.TS1TGTimer
+	*(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&d.ts2tg_timer)) = s.TS2TGTimer
+	*(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&d.ts1_dial_timer)) = s.TS1DialTimer
+	*(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&d.ts2_dial_timer)) = s.TS2DialTimer
+	*(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&d.voice)) = s.Voice
+	*(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&d.ident_tg)) = s.IdentTG
+	*(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&d.single)) = s.Single
+	*(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&d.dial_atg)) = s.DialATG
+	*(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&d.dynamic)) = s.Dynamic
+	*(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&d.direct_dial_slot)) = s.DirectDialSlot
+	d.key = (*C.uint8_t)(arenaCopy(oc, s.Key))
+	d.key_len = C.size_t(len(s.Key))
+	d.lang = (*C.uint8_t)(arenaCopy(oc, s.Lang))
+	d.lang_len = C.size_t(len(s.Lang))
+}
+
 func out_transport_hytera_Heartbeat(d *C.dmrgo_transport_hytera_heartbeat_t, s *g_transport_hytera.Heartbeat, oc *outc) {
 	_ = oc
 	d.keepalive = C.bool(s.Keepalive)
@@ -6883,6 +6908,33 @@ func fromC_transport_dmrd_DMRPlusOptions(s *C.dmrgo_dmrd_dmr_plus_options_t) g_t
 
 func fromC_transport_dmrd_Data(s *C.dmrgo_dmrd_data_t) g_transport_dmrd.Data {
 	return in_transport_dmrd_Data(s)
+}
+
+func in_transport_dmrd_FreeDMROptions(s *C.dmrgo_dmrd_free_dmr_options_t) (d g_transport_dmrd.FreeDMROptions) {
+	d.DialTS1 = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.dial_ts1))
+	d.DialTS2 = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.dial_ts2))
+	d.Timer = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.timer))
+	d.TS1Timer = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.ts1_timer))
+	d.TS2Timer = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.ts2_timer))
+	d.TGTimer = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.tg_timer))
+	d.DialTimer = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.dial_timer))
+	d.TS1TGTimer = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.ts1tg_timer))
+	d.TS2TGTimer = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.ts2tg_timer))
+	d.TS1DialTimer = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.ts1_dial_timer))
+	d.TS2DialTimer = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.ts2_dial_timer))
+	d.Voice = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.voice))
+	d.IdentTG = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.ident_tg))
+	d.Single = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.single))
+	d.DialATG = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.dial_atg))
+	d.Dynamic = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.dynamic))
+	d.DirectDialSlot = *(*g_transport_dmrd.OptionValue)(unsafe.Pointer(&s.direct_dial_slot))
+	d.Key = unsafe.Slice((*byte)(unsafe.Pointer(s.key)), int(s.key_len))
+	d.Lang = unsafe.Slice((*byte)(unsafe.Pointer(s.lang)), int(s.lang_len))
+	return
+}
+
+func fromC_transport_dmrd_FreeDMROptions(s *C.dmrgo_dmrd_free_dmr_options_t) g_transport_dmrd.FreeDMROptions {
+	return in_transport_dmrd_FreeDMROptions(s)
 }
 
 func in_transport_dmrd_LocalPosition(s *C.dmrgo_dmrd_local_position_t) (d g_transport_dmrd.LocalPosition) {
@@ -31253,6 +31305,31 @@ func dmrgo_sms_ip_text_text_utf8(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uint8_t
 	return C.DMRGO_OK
 }
 
+//export dmrgo_dmrd_append_free_dmr_static
+func dmrgo_dmrd_append_free_dmr_static(c_dst *C.uint32_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_text *C.uint8_t, c_text_len C.size_t, c_s C.dmrgo_enums_slot_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*uint32)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_text == nil && c_text_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_text []byte
+	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	r0 := g_transport_dmrd.AppendFreeDMRStatic(a_dst, a_text, g_enums.Slot(c_s))
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
 //export dmrgo_dmrd_bridge_append_binary
 func dmrgo_dmrd_bridge_append_binary(c_self *C.dmrgo_dmrd_bridge_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -33059,6 +33136,42 @@ func dmrgo_dmrd_parse_dmr_plus_options(c_text *C.uint8_t, c_text_len C.size_t, c
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_parse_free_dmr_options
+func dmrgo_dmrd_parse_free_dmr_options(c_text *C.uint8_t, c_text_len C.size_t, c_out *C.dmrgo_dmrd_free_dmr_options_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_text == nil && c_text_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_text []byte
+	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	r0, r1 := g_transport_dmrd.ParseFreeDMROptions(a_text)
+	_ = r0
+	if c_out != nil {
+		out_transport_dmrd_FreeDMROptions(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
 	}
 	if r1 != nil {
 		return setErr(r1)

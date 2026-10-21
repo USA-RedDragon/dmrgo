@@ -199,6 +199,7 @@
 		dmrgo_data_sender_tick;
 		dmrgo_data_sender_tick_need;
 		dmrgo_data_state_string;
+		dmrgo_dmrd_append_free_dmr_static;
 		dmrgo_dmrd_auth_bridge_free;
 		dmrgo_dmrd_auth_bridge_new;
 		dmrgo_dmrd_auth_bridge_sign;
@@ -293,6 +294,7 @@
 		dmrgo_dmrd_local_talker_alias_append_binary;
 		dmrgo_dmrd_local_talker_alias_string;
 		dmrgo_dmrd_parse_dmr_plus_options;
+		dmrgo_dmrd_parse_free_dmr_options;
 		dmrgo_dmrd_position_append_binary;
 		dmrgo_dmrd_position_string;
 		dmrgo_dmrd_talker_alias_append_binary;

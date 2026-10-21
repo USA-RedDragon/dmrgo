@@ -49,6 +49,7 @@ ignore_files:
   - v2/transport/dmrd/data.go
   - v2/transport/dmrd/dialect.go
   - v2/transport/dmrd/dmrplus.go
+  - v2/transport/dmrd/freedmr.go
   - v2/transport/dmrd/errors.go
   - v2/transport/hytera/errors.go
   - v2/transport/hytera/frame.go
