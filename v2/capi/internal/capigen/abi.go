@@ -11,8 +11,11 @@ import (
 
 const firstCode = -100
 
+const lockPre = "prerelease"
+
 type abiLock struct {
 	abi   int
+	pre   bool
 	codes map[string]int
 	tags  map[string]int
 	lines map[string]bool
@@ -46,6 +49,8 @@ func parseLock(b []byte) (*abiLock, error) {
 				}
 				l.tags[f[1]+" "+f[2]] = n
 			}
+		case lockPre:
+			l.pre = true
 		case "sym", lockType:
 			l.lines[line] = true
 		default:
@@ -112,10 +117,12 @@ func (l *abiLock) render(syms []string, allowBreak bool) ([]byte, []string, erro
 	}
 	slices.Sort(broken)
 	if len(broken) > 0 {
-		if !allowBreak {
+		if !allowBreak && !l.pre {
 			return nil, broken, fmt.Errorf("the C ABI changed in %d places; run the generator with -break to bump DMRGO_ABI_VERSION", len(broken))
 		}
-		l.abi++
+		if !l.pre {
+			l.abi++
+		}
 		for _, b := range broken {
 			f := strings.Fields(b)
 			switch f[0] {
@@ -128,6 +135,9 @@ func (l *abiLock) render(syms []string, allowBreak bool) ([]byte, []string, erro
 	}
 	var b bytes.Buffer
 	fmt.Fprintf(&b, "abi %d\n", l.abi)
+	if l.pre {
+		b.WriteString(lockPre + "\n")
+	}
 	type kv struct {
 		k string
 		v int
