@@ -192,9 +192,15 @@ type AudioConfig struct {
 	// only and does not drift with the age of the Audio. 0 never clears.
 	ShapeSync int
 	// ShapeMinLevel, above 0, turns Shape off when Level is under it: at
-	// so coarse a code step the shaped noise in the channel costs more FSK
-	// error than its zeros save outside it.
+	// so coarse a code step the noise that Shape lifts between its zeros
+	// fails Emission Mask D.
 	ShapeMinLevel int
+	// ShapeLow is Shape when Level is under ShapeMinLevel, with zeros at
+	// NoiseLowZerosHz and poles at NoiseLowPoleR times each zero, which
+	// narrow each zero to a notch and keep the gain near 1 elsewhere.
+	ShapeLow        int
+	NoiseLowZerosHz [4]float64
+	NoiseLowPoleR   float64
 	// PreEmphasisHz are the corners, zero then pole, of a first-order
 	// pre-emphasis (1+s/wz)/(1+s/wp) that the radio applies to the
 	// modulator input, such as 300 and 3000; Tier1 and Tier2 apply its
@@ -262,7 +268,10 @@ type Audio struct {
 	scale  float64
 	offset float64
 	fb     [8]float64
+	fbp    [8]float64
 	err    [8]float64
+	wh     [8]float64
+	poles  bool
 	shape  int
 	sync   int
 	run    int
@@ -330,10 +339,19 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		a.k = k
 		a.buf = make([]float64, k.l/k.m+1)
 		a.shape = min(max(cfg.Shape, 0), 4)
-		if cfg.Level < cfg.ShapeMinLevel {
-			a.shape = 0
-		}
 		a.fb = ntf(a.shape, cfg.NoiseZerosHz, float64(cfg.Hz))
+		if cfg.Level < cfg.ShapeMinLevel {
+			a.shape = min(max(cfg.ShapeLow, 0), 4)
+			a.fb = ntf(a.shape, cfg.NoiseLowZerosHz, float64(cfg.Hz))
+			if r := cfg.NoiseLowPoleR; r > 0 && r < 1 {
+				a.poles = true
+				g := r
+				for i := range a.fbp {
+					a.fbp[i] = a.fb[i] * g
+					g *= r
+				}
+			}
+		}
 		a.sync = max(cfg.ShapeSync, 0)
 		if cfg.Corr > 0 {
 			var t []int16
@@ -410,7 +428,7 @@ func (a *Audio) AppendSymbol(dst []int16, s int8) []int16 {
 			a.last, a.run = s, 0
 		}
 		if a.run++; a.run >= a.sync {
-			a.err, a.run = [8]float64{}, 0
+			a.err, a.wh, a.run = [8]float64{}, [8]float64{}, 0
 		}
 	}
 	if a.shape == 0 {
@@ -422,13 +440,23 @@ func (a *Audio) AppendSymbol(dst []int16, s int8) []int16 {
 	for _, v := range a.buf[:n] {
 		if a.opt != nil && a.opt.anchor > 0 {
 			if a.oc == 0 {
-				a.err, a.oc = [8]float64{}, a.opt.step
+				a.err, a.wh, a.oc = [8]float64{}, [8]float64{}, a.opt.step
 			}
 			a.oc--
 		}
 		x := v*a.scale + a.offset
-		for i, f := range a.fb[:2*a.shape] {
-			x += f * a.err[i]
+		if !a.poles {
+			for i, f := range a.fb[:2*a.shape] {
+				x += f * a.err[i]
+			}
+		} else {
+			var w float64
+			for i, f := range a.fb[:2*a.shape] {
+				w += (f-a.fbp[i])*a.err[i] - a.fbp[i]*a.wh[i]
+			}
+			x += w
+			copy(a.wh[1:], a.wh[:7])
+			a.wh[0] = w
 		}
 		c := sat16(x)
 		e := float64(c) - x
