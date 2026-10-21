@@ -1,0 +1,9 @@
+SHA1ShortMsg.rsp, SHA256ShortMsg.rsp, SHA1Monte.rsp and SHA256Monte.rsp are the byte
+oriented SHA test vectors of the NIST Cryptographic Algorithm Validation Program (CAVS
+11.0 and 11.1, shabytetestvectors.zip, fetched on 2026-10-20 from csrc.nist.gov), with
+CRLF line ends changed to LF. SHA1LongMsg.rsp and SHA256LongMsg.rsp keep every 8th entry
+of the NIST files of the same name.
+
+blake2b-kat.txt is testvectors/blake2b-kat.txt of the BLAKE2 reference code
+(github.com/BLAKE2/BLAKE2 ed1974ea), the keyed BLAKE2b-512 answers for the key 00 01 ..
+3F and the inputs 00 01 .. of 0 to 255 octets.
