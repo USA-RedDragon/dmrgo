@@ -3,6 +3,7 @@
 package lrrp
 
 import (
+	"errors"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	wire "github.com/USA-RedDragon/dmrgo/v2/internal/wire"
@@ -874,8 +875,11 @@ func (s *Request) String() string {
 // data ends inside a field, ErrLength when a length does not match the data
 // and ErrVarint for a number that does not fit its field. It does not copy:
 // the byte string fields point into data. into m. On an error m is the zero
-// Message.
+// Message. It returns an error for a nil m.
 func DecodeMessageInto(m *Message, data []byte) error {
+	if m == nil {
+		return errNilMessage
+	}
 	*m = Message{}
 	n, err := decodeMessageAt(m, data, 0)
 	if err == nil && n != len(data) {
@@ -886,6 +890,8 @@ func DecodeMessageInto(m *Message, data []byte) error {
 	}
 	return err
 }
+
+var errNilMessage = errors.New("DecodeMessageInto: nil m")
 
 func decodeMessageAt(result *Message, data []byte, _o int) (int, error) {
 	if len(data)-_o < 1 {

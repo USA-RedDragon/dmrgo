@@ -170,9 +170,12 @@ type DataHeaderPayloads struct {
 
 // DecodeDataHeaderInto decodes data into dst as DecodeDataHeader does,
 // but points the dispatch field of dst into p, so it does not allocate.
-// The payload stays valid until the next decode into p. dst and p must
-// not be nil.
+// The payload stays valid until the next decode into p. A nil dst or
+// p does nothing.
 func DecodeDataHeaderInto(dst *DataHeader, p *DataHeaderPayloads, data [12]byte) {
+	if dst == nil || p == nil {
+		return
+	}
 	*dst = DataHeader{}
 	result := dst
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xCCCC)
