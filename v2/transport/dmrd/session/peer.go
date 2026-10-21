@@ -40,8 +40,8 @@ type PeerConfig struct {
 
 // Peer is the repeater side of a session of the MMDVM network protocol or
 // of HBRP, as a repeater, a hotspot or DMRGateway runs it. Make it with
-// NewPeer. The first Tick sends the RPTL. A Peer is not safe for
-// concurrent use and must not be copied.
+// NewPeer; the zero Peer does nothing. The first Tick sends the RPTL. A
+// Peer is not safe for concurrent use and must not be copied.
 type Peer struct {
 	dialect dmrd.Dialect
 	id      uint32
@@ -146,9 +146,9 @@ func (p *Peer) Close(_ time.Duration, dst []Output) []Output {
 }
 
 // Deadline returns the time at which the Peer needs a Tick. ok is false
-// after Close.
+// after Close, and for a Peer that NewPeer did not make.
 func (p *Peer) Deadline() (at time.Duration, ok bool) {
-	if p.stopped {
+	if p.stopped || p.retry == 0 {
 		return 0, false
 	}
 	if !p.started {

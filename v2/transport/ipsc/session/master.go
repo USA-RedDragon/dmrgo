@@ -36,8 +36,8 @@ type MasterConfig struct {
 // it: it registers peers, answers their keepalives, sends the peer list
 // to every peer when one asks for it and when a peer leaves or times out,
 // and passes the voice and data packets of registered peers on. Make it
-// with NewMaster. A Master is not safe for concurrent use and must not be
-// copied.
+// with NewMaster; the zero Master takes no packet. A Master is not safe
+// for concurrent use and must not be copied.
 type Master struct {
 	l        link
 	timeout  time.Duration
@@ -83,9 +83,10 @@ func (m *Master) MaxOutputs() int {
 	return 2*m.maxPeers + 2
 }
 
-// State returns StateRunning, or StateIdle after Close.
+// State returns StateRunning, or StateIdle after Close and for a Master
+// that NewMaster did not make.
 func (m *Master) State() State {
-	if m.stopped {
+	if m.stopped || m.maxPeers == 0 {
 		return StateIdle
 	}
 	return StateRunning
@@ -124,7 +125,7 @@ func (m *Master) Reset() {
 // for each, and stops the Master until Reset. It allocates only when dst
 // has no room for MaxOutputs outputs.
 func (m *Master) Close(_ time.Duration, dst []Output) []Output {
-	if m.stopped {
+	if m.stopped || m.maxPeers == 0 {
 		return dst
 	}
 	p := m.l.appendControl(m.tx[:0], ipsc.Control{Opcode: ipsc.OpDeregisterRequest, ID: m.l.id})
@@ -157,7 +158,7 @@ func (m *Master) Deadline() (at time.Duration, ok bool) {
 // ReasonTimeout, and then sends the new peer list to the peers left. It
 // allocates only when dst has no room for MaxOutputs outputs.
 func (m *Master) Tick(now time.Duration, dst []Output) []Output {
-	if m.stopped {
+	if m.stopped || m.maxPeers == 0 {
 		return dst
 	}
 	dropped := false
@@ -200,7 +201,7 @@ func (m *Master) listToAll(dst []Output) []Output {
 // registered, a packet without a good trailer with Auth, and a reply. It
 // allocates only when dst has no room for MaxOutputs outputs.
 func (m *Master) Packet(now time.Duration, from Addr, p []byte, dst []Output) []Output {
-	if m.stopped {
+	if m.stopped || m.maxPeers == 0 {
 		return dst
 	}
 	body, ok := m.l.open(p)

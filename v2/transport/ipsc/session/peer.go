@@ -41,8 +41,9 @@ type PeerConfig struct {
 // keepalives, answers the registrations and keepalives of the other
 // peers, and passes the voice and data packets of the master and the
 // peers on. Every Alive it sends what the state needs, as DMRlink does.
-// The first Tick sends the registration request. Make it with NewPeer. A
-// Peer is not safe for concurrent use and must not be copied.
+// The first Tick sends the registration request. Make it with NewPeer;
+// the zero Peer does nothing. A Peer is not safe for concurrent use and
+// must not be copied.
 type Peer struct {
 	l           link
 	master      Addr
