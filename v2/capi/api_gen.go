@@ -8944,6 +8944,20 @@ func dmrgo_bs_channel_auth_string(c_self C.dmrgo_bs_channel_auth_t, c_out *C.cha
 	return C.DMRGO_OK
 }
 
+//export dmrgo_bs_check_slot
+func dmrgo_bs_check_slot(c_s C.dmrgo_enums_slot_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_bs.CheckSlot(g_enums.Slot(c_s))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_bs_config_error_error
 func dmrgo_bs_config_error_error(c_self *C.dmrgo_bs_config_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -9164,7 +9178,7 @@ func dmrgo_bs_repeater_inbound(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_dura
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0, r1 := h.v.Inbound(time.Duration(c_now), (*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h, a_from, a_dst)
+	r0 := h.v.Inbound(time.Duration(c_now), (*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h, a_from, a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{
@@ -9190,9 +9204,6 @@ func dmrgo_bs_repeater_inbound(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_dura
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if r1 != nil {
-		return setErr(r1)
-	}
 	return C.DMRGO_OK
 }
 
@@ -9240,7 +9251,7 @@ func dmrgo_bs_repeater_lost(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_duratio
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0, r1 := h.v.Lost(time.Duration(c_now), g_enums.Slot(c_s), a_from, a_dst)
+	r0 := h.v.Lost(time.Duration(c_now), g_enums.Slot(c_s), a_from, a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{
@@ -9266,9 +9277,6 @@ func dmrgo_bs_repeater_lost(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_duratio
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if r1 != nil {
-		return setErr(r1)
-	}
 	return C.DMRGO_OK
 }
 
@@ -43692,7 +43700,7 @@ func errCode(err error) C.int {
 		case g_layer2.ErrVoiceTerminated:
 			return -117
 		case g_layer2_framer.ErrPeriod:
-			return -217
+			return -223
 		case g_layer2_packet.ErrBlocksMissing:
 			return -118
 		case g_layer2_packet.ErrFormat:
@@ -44024,7 +44032,7 @@ func codeErr(code C.int) error {
 		return g_layer2.ErrShortLCSequence
 	case -117:
 		return g_layer2.ErrVoiceTerminated
-	case -217:
+	case -223:
 		return g_layer2_framer.ErrPeriod
 	case -118:
 		return g_layer2_packet.ErrBlocksMissing

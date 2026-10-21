@@ -120,6 +120,7 @@ code DMRGO_ERR_TRUNK_UDT_LENGTH -218
 code DMRGO_ERR_TRUNK_NO_CALL -219
 code DMRGO_ERR_TRUNK_STUNNED -220
 code DMRGO_ERR_SMS_NIL -222
+code DMRGO_ERR_FRAMER_PERIOD -223
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -734,6 +735,7 @@ sym #define DMRGO_ERR_DVSI_TYPE (-167)
 sym #define DMRGO_ERR_ENUMS_COLOR_CODE_ERROR (-103)
 sym #define DMRGO_ERR_FEC_UNCORRECTABLE (-110)
 sym #define DMRGO_ERR_FIELD_RANGE_ERROR (-100)
+sym #define DMRGO_ERR_FRAMER_PERIOD (-223)
 sym #define DMRGO_ERR_HYTERA_LENGTH (-197)
 sym #define DMRGO_ERR_HYTERA_SHORT (-198)
 sym #define DMRGO_ERR_HYTERA_SIGNATURE (-199)
@@ -821,6 +823,7 @@ sym #define DMRGO_ERR_VOICE_NOT_ACTIVE (-148)
 sym #define DMRGO_ERR_VOICE_QUEUE_FULL (-149)
 sym #define DMRGO_ERR_VOICE_TIMED_OUT (-150)
 sym #define DMRGO_FRAMER_DEFAULT_MAX_MISSES 12
+sym #define DMRGO_FRAMER_MAX_PERIOD 65536
 sym #define DMRGO_FRAMER_OUTBOUND_PERIOD 288
 sym #define DMRGO_FRAMER_SLOT_PERIOD 576
 sym #define DMRGO_FRAMER_SYNC_BITS 48
@@ -1358,6 +1361,7 @@ sym int dmrgo_bs_cach_new(dmrgo_bs_cach_t **out);
 sym int dmrgo_bs_cach_next(dmrgo_bs_cach_t *self, dmrgo_enums_slot_t tc, bool busy, const dmrgo_pdu_short_lc_t *slc, uint8_t out[3]);
 sym int dmrgo_bs_cach_reset(dmrgo_bs_cach_t *self);
 sym int dmrgo_bs_channel_auth_string(dmrgo_bs_channel_auth_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_bs_check_slot(dmrgo_enums_slot_t s);
 sym int dmrgo_bs_config_error_error(dmrgo_bs_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_bs_config_error_last(dmrgo_bs_config_error_t *out, bool *ok);
 sym int dmrgo_bs_mode_string(dmrgo_bs_mode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -1733,7 +1737,7 @@ sym int dmrgo_framer_framer_locked(dmrgo_framer_framer_t *self, bool *out);
 sym int dmrgo_framer_framer_new(dmrgo_framer_framer_t **out);
 sym int dmrgo_framer_framer_write(dmrgo_framer_framer_t *self, const uint8_t *stream, size_t stream_len, int64_t nbits, dmrgo_framer_burst_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_framer_framer_write_need(dmrgo_framer_framer_t *self, const uint8_t *stream, size_t stream_len, int64_t nbits, size_t *items, size_t *arena);
-sym int dmrgo_framer_new(const dmrgo_framer_config_t *cfg, dmrgo_framer_framer_t **out);
+sym int dmrgo_framer_new(const dmrgo_framer_config_t *c, dmrgo_framer_framer_t **out);
 sym int dmrgo_framer_search(const uint8_t *stream, size_t stream_len, int64_t nbits, int64_t start, int64_t threshold, dmrgo_framer_match_t *m, bool *ok);
 sym int dmrgo_hytera_decode_lp_answer(const uint8_t *data, size_t data_len, dmrgo_hytera_lp_answer_t *out);
 sym int dmrgo_hytera_decode_lp_emergency(const uint8_t *data, size_t data_len, dmrgo_hytera_lp_emergency_t *out);
