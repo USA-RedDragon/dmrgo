@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
@@ -197,5 +198,36 @@ func TestSupplementary_NotOffered(t *testing.T) {
 	s.until(5*time.Second, func() bool { return a.ms.State() == trunk.StatePayload && c.ms.State() == trunk.StatePayload })
 	if _, ok := has(c.log, trunk.OutputUDT); ok {
 		t.Error("C got supplementary data from a TSCC without the service")
+	}
+}
+
+func TestMS_RegistrationResponseInfo(t *testing.T) {
+	t.Parallel()
+	for _, tt := range []struct {
+		name   string
+		ps     uint8
+		reason enums.AckReason
+		info   uint8
+		offset uint8
+	}{
+		{"Reg_Accepted 0x7F without power save", 0, enums.ReasonRegAccepted, 0x7F, 0},
+		{"Reg_Denied 9 without power save", 0, enums.ReasonRegDenied, 9, 0},
+		{"Reg_Denied 9 with power save", 2, enums.ReasonRegDenied, 9, 0},
+		{"Reg_Accepted 3 with power save", 2, enums.ReasonRegAccepted, 3, 3},
+	} {
+		r := newRig(t, &trunk.MSConfig{Address: msAddr, Seed: 7, PowerSave: tt.ps})
+		a := aloha(t)
+		r.feed(a, &idle)
+		wantKinds(t, tt.name+" C_RAND", r.feed(a, &idle), trunk.OutputBurst)
+		out := r.feed(svcAck(t, tt.reason, tt.info, constants.GatewayREGI), &idle)
+		accepted := tt.reason == enums.ReasonRegAccepted
+		if accepted {
+			wantKinds(t, tt.name, out, trunk.OutputRegistered)
+		} else if len(out) == 0 || out[0].Kind != trunk.OutputRefused || out[0].Ack != enums.ReasonRegDenied {
+			t.Errorf("%s: %+v", tt.name, out)
+		}
+		if r.ms.Registered() != accepted || r.ms.PowerSaveOffset() != tt.offset || r.ms.Asleep() {
+			t.Errorf("%s: registered %v, offset %d, asleep %v", tt.name, r.ms.Registered(), r.ms.PowerSaveOffset(), r.ms.Asleep())
+		}
 	}
 }
