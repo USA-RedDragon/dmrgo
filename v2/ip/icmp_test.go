@@ -107,13 +107,59 @@ func TestICMPPacketErrors(t *testing.T) {
 			t.Errorf("%s: %v, want %v", tt.name, err, tt.want)
 		}
 	}
-	c := ip.ICMPPacket{Message: ip.ICMPHostUnreachable, Original: good}
-	if out, err := ip.AppendICMPPacket([]byte{1}, &c); !errors.Is(err, ip.ErrProtocol) || len(out) != 1 {
-		t.Errorf("ICMP about ICMP: %x, %v", out, err)
-	}
-	c.Original = make([]byte, 65535)
+	c := ip.ICMPPacket{Message: ip.ICMPHostUnreachable, Original: make([]byte, 65535)}
 	if out, err := ip.AppendICMPPacket([]byte{1}, &c); err == nil || len(out) != 1 {
 		t.Errorf("long: %d octets, %v", len(out), err)
+	}
+}
+
+func TestAppendICMPPacketRFC1122(t *testing.T) {
+	t.Parallel()
+
+	tms := unhex(t, appcapture.TMS)
+	icmp := func(typ uint8) []byte {
+		b := append([]byte(nil), unhex(t, hostUnreachable)...)
+		b[20] = typ
+		return b
+	}
+	mod := func(f func([]byte)) []byte {
+		b := append([]byte(nil), tms...)
+		f(b)
+		return b
+	}
+	tests := []struct {
+		name string
+		orig []byte
+		ok   bool
+	}{
+		{"udp", tms, true},
+		{"echo request", icmp(8), true},
+		{"echo reply", icmp(0), true},
+		{"timestamp", icmp(13), true},
+		{"destination unreachable", icmp(3), false},
+		{"source quench", icmp(4), false},
+		{"redirect", icmp(5), false},
+		{"time exceeded", icmp(11), false},
+		{"parameter problem", icmp(12), false},
+		{"icmp without its type", icmp(8)[:20], false},
+		{"first fragment", mod(func(b []byte) { b[6] = 0x20 }), true},
+		{"later fragment", mod(func(b []byte) { b[7] = 1 }), false},
+		{"later fragment, high bits", mod(func(b []byte) { b[6] = 0x10 }), false},
+		{"multicast destination", mod(func(b []byte) { b[16] = 224 }), false},
+		{"last multicast destination", mod(func(b []byte) { b[16] = 239 }), false},
+		{"broadcast destination", mod(func(b []byte) { copy(b[16:], []byte{255, 255, 255, 255}) }), false},
+		{"zero source", mod(func(b []byte) { copy(b[12:], []byte{0, 0, 0, 0}) }), false},
+		{"loopback source", mod(func(b []byte) { b[12] = 127 }), false},
+		{"multicast source", mod(func(b []byte) { b[12] = 230 }), false},
+		{"class E source", mod(func(b []byte) { b[12] = 240 }), false},
+		{"broadcast source", mod(func(b []byte) { copy(b[12:], []byte{255, 255, 255, 255}) }), false},
+	}
+	for _, tt := range tests {
+		c := ip.ICMPPacket{Message: ip.ICMPNetworkUnknown, Original: tt.orig}
+		out, err := ip.AppendICMPPacket([]byte{1}, &c)
+		if tt.ok && (err != nil || len(out) == 1) || !tt.ok && (!errors.Is(err, ip.ErrNoICMP) || len(out) != 1) {
+			t.Errorf("%s: %d octets, %v", tt.name, len(out), err)
+		}
 	}
 }
 

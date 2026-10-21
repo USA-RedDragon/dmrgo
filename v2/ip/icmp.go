@@ -150,18 +150,25 @@ func DecodeICMPPacket(data []byte) (ICMPPacket, error) {
 // and computes both checksums. The header has no options, and a TTL of 0
 // is sent as 64. Of an Original that starts with an IPv4 header it sends
 // the header and the first 8 octets of the payload, as RFC 792 says. It
-// returns dst unchanged and ErrProtocol when Original is an IPv4 packet
-// that carries ICMP, as no ICMP message is sent about an ICMP message, and
-// another error when the packet is longer than 65535 octets. It allocates
-// only to grow dst. (ETSI TS 102 361-3 clause 5.2)
+// returns dst unchanged and ErrNoICMP when RFC 1122 clause 3.2.2 forbids
+// an ICMP error message about Original: an ICMP error message (Type 3, 4,
+// 5, 11 or 12, or an ICMP Type that Original does not hold), a packet to
+// the broadcast address 255.255.255.255 or a multicast address, a fragment
+// other than the first, or a packet from an address that is not one host
+// (0.0.0.0/8, 127.0.0.0/8, multicast or class E). An ICMP error message
+// about another ICMP message, such as an Echo Request, is allowed. The
+// caller does not send one about a packet that came in a DMR group call,
+// which is a link layer broadcast. It returns another error when the
+// packet is longer than 65535 octets. It allocates only to grow dst.
+// (ETSI TS 102 361-3 clause 5.2)
 func AppendICMPPacket(dst []byte, c *ICMPPacket) ([]byte, error) {
 	if c == nil {
 		return dst, errNilICMP
 	}
 	orig := c.Original
 	if len(orig) >= 20 && orig[0]>>4 == 4 {
-		if Protocol(orig[9]) == ProtocolICMP {
-			return dst, ErrProtocol
+		if !errorAllowed(orig) {
+			return dst, ErrNoICMP
 		}
 		orig = orig[:min(len(orig), int(orig[0]&0xF)*4+8)]
 	}
@@ -192,6 +199,30 @@ func AppendICMPPacket(dst []byte, c *ICMPPacket) ([]byte, error) {
 	binary.BigEndian.PutUint16(dst[n+10:], ^checksum(0, dst[n:n+20]))
 	binary.BigEndian.PutUint16(dst[n+22:], ^checksum(0, dst[n+20:]))
 	return dst, nil
+}
+
+// RFC 1122 clause 3.2.2
+func errorAllowed(orig []byte) bool {
+	src, dst := orig[12], orig[16]
+	switch {
+	case binary.BigEndian.Uint16(orig[6:])&0x1FFF != 0:
+		return false
+	case dst >= 224 && dst < 240, dst == 255 && orig[17] == 255 && orig[18] == 255 && orig[19] == 255:
+		return false
+	case src == 0, src == 127, src >= 224:
+		return false
+	case Protocol(orig[9]) != ProtocolICMP:
+		return true
+	}
+	hl := int(orig[0]&0xF) * 4
+	if hl < 20 || len(orig) <= hl {
+		return false
+	}
+	switch orig[hl] {
+	case 3, 4, 5, 11, 12:
+		return false
+	}
+	return true
 }
 
 // CheckIPv4 returns the ICMP error message that a radio sends for the

@@ -44,6 +44,8 @@ const char *dmrgo__gen_strerror(int status) {
 		return "ip.ErrFragment";
 	case -174:
 		return "ip.ErrLength";
+	case -237:
+		return "ip.ErrNoICMP";
 	case -175:
 		return "ip.ErrProtocol";
 	case -176:

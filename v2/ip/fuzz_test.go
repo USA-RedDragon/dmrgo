@@ -103,7 +103,7 @@ func fuzzDecodeICMPPacket(t *testing.T, data []byte) {
 		}
 	}
 	out, err := ip.AppendICMPPacket(nil, &c)
-	if errors.Is(err, ip.ErrProtocol) {
+	if errors.Is(err, ip.ErrNoICMP) {
 		return
 	}
 	if err != nil {
