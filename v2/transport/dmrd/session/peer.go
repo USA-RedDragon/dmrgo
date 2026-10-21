@@ -240,8 +240,10 @@ func (p *Peer) send(dst []Output) []Output {
 // acknowledgement with the next login step, reports OutputUp when the
 // login is complete, takes a pong as a sign of life, reports MSTNAK and
 // MSTCL with OutputDown and logs in again, and passes DMRD, DMRA, DMRG
-// and RPTSBKN of a logged-in session on. In DialectHBRP the token is of
-// the salt text as the master sent it, in upper or lower case. It ignores
+// and RPTSBKN of a logged-in session on. In DialectHBRP it ignores an
+// MSTACK with the salt after the RPTK, as a master sends for an RPTL that
+// the Peer sent again, and the token is of the salt text as the master
+// sent it, in upper or lower case. It ignores
 // a packet it cannot use. It appends the outputs to dst, and allocates
 // only when dst has no room for MaxOutputs outputs.
 func (p *Peer) Packet(now time.Duration, b []byte, dst []Output) []Output {
@@ -291,6 +293,9 @@ func (p *Peer) Packet(now time.Duration, b []byte, dst []Output) []Output {
 }
 
 func (p *Peer) acked(now time.Duration, m *dmrd.Control, b []byte, dst []Output) []Output {
+	if p.state != StateLogin && m.HasSalt {
+		return dst
+	}
 	switch p.state {
 	case StateLogin:
 		switch {

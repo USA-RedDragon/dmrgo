@@ -545,3 +545,17 @@ func TestNames(t *testing.T) {
 		t.Fatal("names")
 	}
 }
+
+func TestPeerRepeatedChallenge(t *testing.T) {
+	t.Parallel()
+
+	p, _ := session.NewPeer(&session.PeerConfig{Dialect: dmrd.DialectHBRP, ID: 0x40178, Password: []byte("DL5DI"), Config: hbrpConfig(0x40178)})
+	p.Tick(0, nil)
+	p.Packet(0, []byte("MSTACK000401780A7ED498"), nil)
+	if out := p.Packet(0, []byte("MSTACK000401780A7ED498"), nil); len(out) != 0 || p.State() != session.StateAuth {
+		t.Fatalf("HBRP challenge again taken as the ack: %v %v", kinds(out), p.State())
+	}
+	if out := p.Packet(0, []byte("MSTACK00040178"), nil); len(out) != 1 || p.State() != session.StateConfig {
+		t.Fatalf("ack after the challenge again: %v %v", kinds(out), p.State())
+	}
+}
