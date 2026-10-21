@@ -236,17 +236,9 @@ func (r *iqLowRx) feed(x []uint32) {
 
 func iqLowOf(r *DiscReceiver) *iqLowRx { return (*iqLowRx)(unsafe.Pointer(r)) }
 
-func (r *iqLowRx) fill(x []uint32) int {
-	m := min(len(x), iqLowBuf)
-	r.n = 0
-	r.halfRun(x[:m])
-	r.n = uint8(m)
-	return m
-}
-
 //go:noinline
 //go:section .text.halfRun
-func (r *iqLowRx) halfRun(x []uint32) {
+func (r *iqLowRx) halfRunGo(x []uint32) {
 	out := r.buf[r.n : int(r.n)+len(x)]
 	q, step := r.q, r.step
 	ar, ai, pow := r.ar, r.ai, r.pow

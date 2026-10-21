@@ -13,3 +13,13 @@ func smusdx(x, y uint32) int32 { return lo16(x)*hi16(y) - hi16(x)*lo16(y) }
 func smmulr(x, y int32) int32 { return int32((int64(x)*int64(y) + 1<<31) >> 32) }
 
 func addAsr10(a, b int32) int32 { return a + b>>10 }
+
+func (r *iqLowRx) halfRun(x []uint32) { r.halfRunGo(x) }
+
+func (r *iqLowRx) fill(x []uint32) int {
+	m := min(len(x), iqLowBuf)
+	r.n = 0
+	r.halfRun(x[:m])
+	r.n = uint8(m)
+	return m
+}
