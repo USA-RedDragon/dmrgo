@@ -32,6 +32,7 @@ import (
 	layer2_pdu "github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	layer3 "github.com/USA-RedDragon/dmrgo/v2/layer3"
 	mototrbo_ars "github.com/USA-RedDragon/dmrgo/v2/mototrbo/ars"
+	mototrbo_lrrp "github.com/USA-RedDragon/dmrgo/v2/mototrbo/lrrp"
 	mototrbo_tms "github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms"
 	nmea "github.com/USA-RedDragon/dmrgo/v2/nmea"
 	shortdata "github.com/USA-RedDragon/dmrgo/v2/shortdata"
@@ -820,6 +821,28 @@ var api = [...]any{
 	mototrbo_ars.NewQuery,
 	mototrbo_ars.NewRegistration,
 	mototrbo_ars.Type.String,
+	(*mototrbo_lrrp.Circle2D).AppendBinary,
+	(*mototrbo_lrrp.Circle2D).String,
+	(*mototrbo_lrrp.Circle3D).AppendBinary,
+	(*mototrbo_lrrp.Circle3D).String,
+	(*mototrbo_lrrp.Message).AppendBinary,
+	(*mototrbo_lrrp.Message).String,
+	(*mototrbo_lrrp.OperationError).AppendBinary,
+	(*mototrbo_lrrp.OperationError).String,
+	(*mototrbo_lrrp.Point2D).AppendBinary,
+	(*mototrbo_lrrp.Point2D).String,
+	(*mototrbo_lrrp.Point3D).AppendBinary,
+	(*mototrbo_lrrp.Point3D).String,
+	(*mototrbo_lrrp.Point3DAccuracy).AppendBinary,
+	(*mototrbo_lrrp.Point3DAccuracy).String,
+	(*mototrbo_lrrp.Report).AppendBinary,
+	(*mototrbo_lrrp.Report).String,
+	(*mototrbo_lrrp.Request).AppendBinary,
+	(*mototrbo_lrrp.Request).String,
+	(*mototrbo_lrrp.Time).AppendBinary,
+	(*mototrbo_lrrp.Time).String,
+	mototrbo_lrrp.DecodeMessageInto,
+	mototrbo_lrrp.DocumentID.String,
 	(*mototrbo_tms.Header).AppendBinary,
 	(*mototrbo_tms.Header).String,
 	(*mototrbo_tms.Message).AppendBinary,

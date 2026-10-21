@@ -84,6 +84,10 @@ code DMRGO_ERR_TMS_LENGTH -183
 code DMRGO_ERR_TMS_SHORT -184
 code DMRGO_ERR_ARS_LENGTH -185
 code DMRGO_ERR_ARS_SHORT -186
+code DMRGO_ERR_LRRP_LENGTH -187
+code DMRGO_ERR_LRRP_SHORT -188
+code DMRGO_ERR_LRRP_TOKEN -189
+code DMRGO_ERR_LRRP_VARINT -190
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -630,6 +634,10 @@ sym #define DMRGO_ERR_LAYER2_RESERVED_DATA_TYPE (-114)
 sym #define DMRGO_ERR_LAYER2_SHORT_LC_INCOMPLETE (-115)
 sym #define DMRGO_ERR_LAYER2_SHORT_LC_SEQUENCE (-116)
 sym #define DMRGO_ERR_LAYER2_VOICE_TERMINATED (-117)
+sym #define DMRGO_ERR_LRRP_LENGTH (-187)
+sym #define DMRGO_ERR_LRRP_SHORT (-188)
+sym #define DMRGO_ERR_LRRP_TOKEN (-189)
+sym #define DMRGO_ERR_LRRP_VARINT (-190)
 sym #define DMRGO_ERR_NMEA_CHECKSUM (-152)
 sym #define DMRGO_ERR_NMEA_FIELD (-153)
 sym #define DMRGO_ERR_NMEA_SENTENCE (-154)
@@ -737,6 +745,16 @@ sym #define DMRGO_LAYER3_TALKER_ALIAS_ISO_EIGHT_BIT ((dmrgo_layer3_talker_alias_
 sym #define DMRGO_LAYER3_TALKER_ALIAS_SEVEN_BIT ((dmrgo_layer3_talker_alias_data_format_t)0)
 sym #define DMRGO_LAYER3_TALKER_ALIAS_UTF16 ((dmrgo_layer3_talker_alias_data_format_t)3)
 sym #define DMRGO_LAYER3_TALKER_ALIAS_UTF8 ((dmrgo_layer3_talker_alias_data_format_t)2)
+sym #define DMRGO_LRRP_IMMEDIATE_REPORT ((dmrgo_lrrp_document_id_t)7)
+sym #define DMRGO_LRRP_IMMEDIATE_REQUEST ((dmrgo_lrrp_document_id_t)5)
+sym #define DMRGO_LRRP_PROTOCOL_REPORT ((dmrgo_lrrp_document_id_t)21)
+sym #define DMRGO_LRRP_PROTOCOL_REQUEST ((dmrgo_lrrp_document_id_t)20)
+sym #define DMRGO_LRRP_STOP_ANSWER ((dmrgo_lrrp_document_id_t)17)
+sym #define DMRGO_LRRP_STOP_REQUEST ((dmrgo_lrrp_document_id_t)15)
+sym #define DMRGO_LRRP_TRIGGERED_ANSWER ((dmrgo_lrrp_document_id_t)11)
+sym #define DMRGO_LRRP_TRIGGERED_REPORT ((dmrgo_lrrp_document_id_t)13)
+sym #define DMRGO_LRRP_TRIGGERED_REQUEST ((dmrgo_lrrp_document_id_t)9)
+sym #define DMRGO_LRRP_UNSOLICITED_REPORT ((dmrgo_lrrp_document_id_t)19)
 sym #define DMRGO_PACKET_ASSEMBLER_APPEND_MISSING_MAX_ITEMS (127)
 sym #define DMRGO_PACKET_ASSEMBLER_MISSING_MAX_ITEMS (127)
 sym #define DMRGO_PACKET_RESPONSE_ACK ((dmrgo_packet_response_t)1)
@@ -1399,6 +1417,28 @@ sym int dmrgo_layer3_talker_alias_data_format_string(dmrgo_layer3_talker_alias_d
 sym int dmrgo_layer3_voice_service_options_encode(dmrgo_layer3_voice_service_options_t *self, uint8_t out[1]);
 sym int dmrgo_layer3_voice_service_options_field(const dmrgo_layer3_voice_service_options_t *self, uint8_t *out);
 sym int dmrgo_layer3_voice_service_options_string(dmrgo_layer3_voice_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_lrrp_circle2_d_append_binary(dmrgo_lrrp_circle2_d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_lrrp_circle2_d_string(dmrgo_lrrp_circle2_d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_lrrp_circle3_d_append_binary(dmrgo_lrrp_circle3_d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_lrrp_circle3_d_string(dmrgo_lrrp_circle3_d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_lrrp_decode_message_into(const dmrgo_lrrp_message_t *m, const uint8_t *data, size_t data_len);
+sym int dmrgo_lrrp_document_id_string(dmrgo_lrrp_document_id_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_lrrp_message_append_binary(dmrgo_lrrp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_lrrp_message_string(dmrgo_lrrp_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_lrrp_operation_error_append_binary(dmrgo_lrrp_operation_error_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_lrrp_operation_error_string(dmrgo_lrrp_operation_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_lrrp_point2_d_append_binary(dmrgo_lrrp_point2_d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_lrrp_point2_d_string(dmrgo_lrrp_point2_d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_lrrp_point3_d_accuracy_append_binary(dmrgo_lrrp_point3_d_accuracy_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_lrrp_point3_d_accuracy_string(dmrgo_lrrp_point3_d_accuracy_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_lrrp_point3_d_append_binary(dmrgo_lrrp_point3_d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_lrrp_point3_d_string(dmrgo_lrrp_point3_d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_lrrp_report_append_binary(dmrgo_lrrp_report_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_lrrp_report_string(dmrgo_lrrp_report_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_lrrp_request_append_binary(dmrgo_lrrp_request_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_lrrp_request_string(dmrgo_lrrp_request_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_lrrp_time_append_binary(dmrgo_lrrp_time_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_lrrp_time_string(dmrgo_lrrp_time_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_nmea_parse_rmc(const uint8_t *s, size_t s_len, dmrgo_nmea_rmc_t *out);
 sym int dmrgo_packet_append_bursts(dmrgo_layer2_raw_burst_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_packet_packet_t *p, dmrgo_enums_color_code_t color_code, dmrgo_layer2_sync_source_t src);
 sym int dmrgo_packet_assembler_add(dmrgo_packet_assembler_t *self, const dmrgo_layer2_data_t *d, dmrgo_packet_message_t *out0, bool *out1, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
@@ -2065,6 +2105,7 @@ sym typedef uint8_t dmrgo_layer3_additional_information_field_t;
 sym typedef uint8_t dmrgo_layer3_position_error_t;
 sym typedef uint8_t dmrgo_layer3_source_type_t;
 sym typedef uint8_t dmrgo_layer3_talker_alias_data_format_t;
+sym typedef uint8_t dmrgo_lrrp_document_id_t;
 sym typedef uint8_t dmrgo_packet_response_t;
 sym typedef uint8_t dmrgo_pdu_capacity_plus_segment_t;
 sym typedef uint8_t dmrgo_pdu_csbk_opcode_t;
@@ -2139,6 +2180,16 @@ type struct dmrgo_layer3_data_service_options_t { bool is_emergency; bool is_pri
 type struct dmrgo_layer3_registration_service_options_t { bool reserved; bool is_privacy; bool ip_inform; uint8_t power_save; bool register_; };
 type struct dmrgo_layer3_service_options_t { bool is_emergency; bool is_privacy; uint8_t reserved; bool is_broadcast; bool is_open_voice_call_mode; uint8_t priority_level; };
 type struct dmrgo_layer3_voice_service_options_t { bool is_emergency; bool is_privacy; bool is_supp_data; bool is_broadcast; bool reserved; uint8_t priority_level; };
+type struct dmrgo_lrrp_circle2_d_t { double latitude; double longitude; double radius; };
+type struct dmrgo_lrrp_circle3_d_t { double latitude; double longitude; double radius; double altitude; double altitude_accuracy; };
+type struct dmrgo_lrrp_message_t { dmrgo_lrrp_document_id_t document; uint32_t length; dmrgo_lrrp_request_t request; dmrgo_lrrp_report_t report; };
+type struct dmrgo_lrrp_operation_error_t { uint32_t code; uint8_t *info; size_t info_len; };
+type struct dmrgo_lrrp_point2_d_t { double latitude; double longitude; };
+type struct dmrgo_lrrp_point3_d_accuracy_t { double latitude; double longitude; double altitude; double altitude_accuracy; };
+type struct dmrgo_lrrp_point3_d_t { double latitude; double longitude; double altitude; };
+type struct dmrgo_lrrp_report_t { uint8_t *request_id; size_t request_id_len; bool has_request_id; uint8_t short_request_id; bool has_short_request_id; dmrgo_lrrp_time_t time; bool has_time; uint32_t protocol_version; bool has_protocol_version; uint32_t result; bool has_result; bool success; dmrgo_lrrp_operation_error_t error; bool has_error; dmrgo_lrrp_circle2_d_t circle2_d; bool has_circle2_d; dmrgo_lrrp_circle3_d_t circle3_d; bool has_circle3_d; uint8_t direction; bool has_direction; uint8_t level_of_confidence; bool has_level_of_confidence; dmrgo_lrrp_point2_d_t point2_d; bool has_point2_d; dmrgo_lrrp_point3_d_t point3_d; bool has_point3_d; dmrgo_lrrp_point3_d_accuracy_t point3_d_accuracy; bool has_point3_d_accuracy; double speed; bool has_speed; double vertical_speed; bool has_vertical_speed; };
+type struct dmrgo_lrrp_request_t { uint8_t *request_id; size_t request_id_len; bool has_request_id; uint8_t short_request_id; bool has_short_request_id; bool periodic; bool one_shot; uint32_t interval; bool has_interval; uint32_t distance; bool has_distance; uint32_t trigger_condition; bool has_trigger_condition; uint32_t protocol_version; bool has_protocol_version; bool accuracy; bool accuracy_and_time; bool time; bool altitude; bool speed; bool direction; bool vertical_speed; uint8_t level_of_confidence; bool has_level_of_confidence; };
+type struct dmrgo_lrrp_time_t { uint16_t year; uint8_t month; uint8_t day; uint8_t hour; uint8_t minute; uint8_t second; };
 type struct dmrgo_nmea_rmc_t { uint8_t talker[2]; uint8_t hour; uint8_t minute; uint8_t second; uint16_t millisecond; bool valid; double latitude; double longitude; double speed; double course; uint8_t day; uint8_t month; uint16_t year; double magnetic_variation; uint8_t mode; };
 type struct dmrgo_packet_message_t { dmrgo_pdu_data_header_t header; bool has_proprietary; dmrgo_pdu_proprietary_header_t proprietary; dmrgo_enums_data_type_t data_type; uint8_t *data; size_t data_len; uint32_t crc; bool has_response; dmrgo_packet_response_data_t response; bool bad_crc; };
 type struct dmrgo_packet_packet_t { dmrgo_pdu_data_header_t header; dmrgo_layer2_data_t *blocks; size_t blocks_len; };

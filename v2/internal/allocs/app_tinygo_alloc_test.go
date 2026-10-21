@@ -10,9 +10,12 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/appcapture"
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
 	"github.com/USA-RedDragon/dmrgo/v2/mototrbo/ars"
+	"github.com/USA-RedDragon/dmrgo/v2/mototrbo/lrrp"
 	"github.com/USA-RedDragon/dmrgo/v2/mototrbo/tms"
 	"github.com/USA-RedDragon/dmrgo/v2/shortdata"
 )
+
+var tinyLRRP lrrp.Message
 
 func tinyAppOps(t *testing.T) []tinyOp {
 	t.Helper()
@@ -25,6 +28,7 @@ func tinyAppOps(t *testing.T) []tinyOp {
 	m := tinyOK(tms.DecodeMessage(d.Payload))
 	reg := []byte{0x00, 0x0c, 0xf0, 0x20, 0x07, '3', '1', '9', '1', '8', '6', '8', 0x00, 0x00}
 	a := tinyOK(ars.DecodeMessage(reg))
+	loc := tinyOK(hex.DecodeString("071a22042468ace0341f4dbc778051118ecd8d118ad47b00636c0006"))
 	buf := make([]byte, 0, 256)
 	var err error
 	ops := []tinyOp{
@@ -42,6 +46,8 @@ func tinyAppOps(t *testing.T) []tinyOp {
 		{"tms.Message.TextUTF8", func() { _ = m.TextUTF8(buf[:0]) }},
 		{"ars.DecodeMessage", func() { _, err = ars.DecodeMessage(reg) }},
 		{"ars.Message.AppendBinary", func() { _, err = a.AppendBinary(buf[:0]) }},
+		{"lrrp.DecodeMessageInto", func() { err = lrrp.DecodeMessageInto(&tinyLRRP, loc) }},
+		{"lrrp.Message.AppendBinary", func() { _, err = tinyLRRP.AppendBinary(buf[:0]) }},
 	}
 	_ = err
 	return ops
