@@ -37,6 +37,7 @@ const (
 
 const (
 	typeBool    = "bool"
+	typeUint    = "uint"
 	typeInt     = "int"
 	typeFloat64 = "float64"
 	typeInt64   = "int64"
@@ -224,6 +225,10 @@ type PDUStruct struct {
 	// named byte array type, which gets a getter and setter per field.
 	View *ViewDirective
 
+	// Stream is set by dmr:stream or dmr:tokens: the struct is a sequence
+	// of octet fields whose lengths depend on the data.
+	Stream *StreamDirective
+
 	// Magic holds the dmr:magic directives: octets that decode checks and
 	// encode writes.
 	Magic []MagicDirective
@@ -259,6 +264,13 @@ func SetUnexportedDecode(pdus []PDUStruct) {
 		for _, f := range p.Fields {
 			if f.Kind == FieldDispatch && f.PointedType != "" {
 				sub[f.PointedType] = true
+			}
+		}
+		if p.Stream != nil {
+			for _, f := range p.Stream.Fields {
+				if f.SKind == StreamFrame || f.SKind == StreamNested || f.SKind == StreamTokens {
+					sub[f.TypeName] = true
+				}
 			}
 		}
 	}
@@ -341,6 +353,10 @@ func parseAST(node *ast.File, filePath string, baseTypes map[string]string) ([]P
 }
 
 func parseStruct(name string, structType *ast.StructType, doc *ast.CommentGroup, baseTypes map[string]string) (PDUStruct, bool, error) {
+	if hasStreamDirective(doc) {
+		pdu, err := parseStreamStruct(name, structType, doc, baseTypes)
+		return pdu, err == nil, err
+	}
 	pdu := PDUStruct{Name: name}
 	hasDMRTags := false
 	for _, field := range structType.Fields.List {
