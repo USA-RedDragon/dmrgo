@@ -78,11 +78,18 @@ var _ vocoder.AppendDecoder = (*Codec)(nil)
 // end any packet the chip is in the middle of, and a reset packet, and
 // waits for PKT_READY, as xlxd ambed does. Then it sets the parity mode,
 // reads the product name and version, and sets the rate of cfg.Channel
-// with AppendRateDMR. It returns ErrChannel for a channel outside 0 to
-// MaxChannel, ErrTimeout when the chip does not reply, ErrStatus when it
-// rejects a field, and the errors of port. It allocates the Codec and the
-// product and version strings.
-func New(port Port, cfg Config) (*Codec, error) {
+// with AppendRateDMR. A nil cfg means the zero Config. It returns
+// ErrChannel for a channel outside 0 to MaxChannel, ErrPort for a nil
+// port, ErrTimeout when the chip does not reply, ErrStatus when it rejects
+// a field, and the errors of port. It allocates the Codec and the product
+// and version strings.
+func New(port Port, cfg *Config) (*Codec, error) {
+	if cfg == nil {
+		cfg = &Config{}
+	}
+	if port == nil {
+		return nil, ErrPort
+	}
 	if cfg.Channel < 0 || cfg.Channel > MaxChannel {
 		return nil, ErrChannel
 	}

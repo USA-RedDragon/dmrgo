@@ -296,7 +296,7 @@ func TestAllocsDVSI(t *testing.T) {
 	pairs := dvsisim.Pairs(4)
 	for _, opt := range []dvsisim.Options{{}, {Chunk: 3}, {Datagram: true}} {
 		d := dvsisim.New(pairs, opt)
-		c, err := dvsi.New(d, dvsi.Config{})
+		c, err := dvsi.New(d, nil)
 		if err != nil {
 			t.Fatal(err)
 		}

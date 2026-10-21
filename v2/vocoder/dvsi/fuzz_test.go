@@ -104,7 +104,7 @@ func checkResync(t testing.TB, garbage []byte, chunk uint8, datagram bool) {
 	garbage = garbage[:min(len(garbage), dvsi.MaxPacketLen)]
 	pairs := dvsisim.Pairs(2)
 	d := dvsisim.New(pairs, dvsisim.Options{Chunk: int(chunk % 9), Datagram: datagram})
-	c, err := dvsi.New(d, dvsi.Config{Timeout: 50 * time.Millisecond})
+	c, err := dvsi.New(d, &dvsi.Config{Timeout: 50 * time.Millisecond})
 	if err != nil {
 		t.Fatal(err)
 	}

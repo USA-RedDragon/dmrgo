@@ -17,7 +17,7 @@ func ExampleNew() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	c, err := dvsi.New(conn, dvsi.Config{})
+	c, err := dvsi.New(conn, nil)
 	if err != nil {
 		_ = conn.Close()
 		log.Fatal(err)

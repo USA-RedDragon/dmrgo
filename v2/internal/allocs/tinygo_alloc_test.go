@@ -452,7 +452,7 @@ func tinyDVSIOps(t *testing.T) []tinyOp {
 	var ops []tinyOp
 	for _, opt := range []dvsisim.Options{{}, {Chunk: 3}, {Datagram: true}} {
 		d := dvsisim.New(pairs, opt)
-		c := tinyOK(dvsi.New(d, dvsi.Config{}))
+		c := tinyOK(dvsi.New(d, nil))
 		pcm := make([]int16, 0, dvsi.FrameSamples)
 		_, _ = c.AppendDecode(pcm, pairs[0].Slot)
 		_, _ = c.Encode(pairs[0].PCM[:])

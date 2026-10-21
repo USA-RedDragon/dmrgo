@@ -62,7 +62,7 @@ func TestCodecPorts(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			d := dvsisim.New(pairs, tt.opt)
-			c, err := dvsi.New(d, tt.cfg)
+			c, err := dvsi.New(d, &tt.cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -90,7 +90,7 @@ func TestCodecInterface(t *testing.T) {
 	t.Parallel()
 
 	d := dvsisim.New(dvsisim.Pairs(1), dvsisim.Options{})
-	c, err := dvsi.New(d, dvsi.Config{})
+	c, err := dvsi.New(d, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,11 +141,11 @@ func TestCodecNoReset(t *testing.T) {
 
 	pairs := dvsisim.Pairs(4)
 	d := dvsisim.New(pairs, dvsisim.Options{Channels: 3})
-	c0, err := dvsi.New(d, dvsi.Config{})
+	c0, err := dvsi.New(d, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	c1, err := dvsi.New(d, dvsi.Config{Channel: 1, NoReset: true})
+	c1, err := dvsi.New(d, &dvsi.Config{Channel: 1, NoReset: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +174,7 @@ func TestCodecResync(t *testing.T) {
 	for _, opt := range []dvsisim.Options{{}, {Chunk: 1}, {Datagram: true}} {
 		for _, parity := range []bool{true, false} {
 			d := dvsisim.New(pairs, opt)
-			c, err := dvsi.New(d, dvsi.Config{NoParity: !parity, Timeout: time.Second})
+			c, err := dvsi.New(d, &dvsi.Config{NoParity: !parity, Timeout: time.Second})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -202,7 +202,7 @@ func TestCodecTimeout(t *testing.T) {
 
 	pairs := dvsisim.Pairs(2)
 	d := dvsisim.New(pairs, dvsisim.Options{})
-	c, err := dvsi.New(d, dvsi.Config{Timeout: 20 * time.Millisecond})
+	c, err := dvsi.New(d, &dvsi.Config{Timeout: 20 * time.Millisecond})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -222,12 +222,12 @@ func TestCodecTimeout(t *testing.T) {
 
 	d = dvsisim.New(pairs, dvsisim.Options{})
 	d.Drop = 1
-	if _, err := dvsi.New(d, dvsi.Config{Timeout: 10 * time.Millisecond}); !errors.Is(err, dvsi.ErrTimeout) {
+	if _, err := dvsi.New(d, &dvsi.Config{Timeout: 10 * time.Millisecond}); !errors.Is(err, dvsi.ErrTimeout) {
 		t.Errorf("New without PKT_READY = %v", err)
 	}
 	d = dvsisim.New(pairs, dvsisim.Options{})
 	d.Drop = 2
-	if _, err := dvsi.New(d, dvsi.Config{Timeout: 10 * time.Millisecond}); !errors.Is(err, dvsi.ErrTimeout) {
+	if _, err := dvsi.New(d, &dvsi.Config{Timeout: 10 * time.Millisecond}); !errors.Is(err, dvsi.ErrTimeout) {
 		t.Errorf("New without a PARITYMODE response = %v", err)
 	}
 	checkSim(t, d)
@@ -267,7 +267,7 @@ func TestCodecPortErrors(t *testing.T) {
 
 	pairs := dvsisim.Pairs(1)
 	dp := &deadlinePort{Device: dvsisim.New(pairs, dvsisim.Options{Chunk: 5})}
-	c, err := dvsi.New(dp, dvsi.Config{})
+	c, err := dvsi.New(dp, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -277,7 +277,7 @@ func TestCodecPortErrors(t *testing.T) {
 	}
 	boom := errors.New("boom")
 	nd := &deadlinePort{Device: dvsisim.New(pairs, dvsisim.Options{}), fail: boom}
-	c2, err := dvsi.New(nd, dvsi.Config{})
+	c2, err := dvsi.New(nd, nil)
 	if err != nil {
 		t.Fatalf("New on a port without deadlines: %v", err)
 	}
@@ -290,26 +290,29 @@ func TestCodecPortErrors(t *testing.T) {
 		t.Errorf("Decode with a failing SetReadDeadline = %v", err)
 	}
 
-	if _, err := dvsi.New(&brokenPort{writeErr: boom}, dvsi.Config{}); !errors.Is(err, boom) {
+	if _, err := dvsi.New(&brokenPort{writeErr: boom}, nil); !errors.Is(err, boom) {
 		t.Errorf("New with a failing Write = %v", err)
 	}
-	if _, err := dvsi.New(&brokenPort{}, dvsi.Config{}); !errors.Is(err, dvsi.ErrPort) {
+	if _, err := dvsi.New(&brokenPort{}, nil); !errors.Is(err, dvsi.ErrPort) {
 		t.Errorf("New with a Write of 0 bytes = %v", err)
 	}
-	if _, err := dvsi.New(&brokenPort{readErr: boom, writeAll: true}, dvsi.Config{}); !errors.Is(err, boom) {
+	if _, err := dvsi.New(&brokenPort{readErr: boom, writeAll: true}, nil); !errors.Is(err, boom) {
 		t.Errorf("New with a failing Read = %v", err)
 	}
-	if _, err := dvsi.New(&brokenPort{readN: 1 << 20, writeAll: true}, dvsi.Config{}); !errors.Is(err, dvsi.ErrPort) {
+	if _, err := dvsi.New(&brokenPort{readN: 1 << 20, writeAll: true}, nil); !errors.Is(err, dvsi.ErrPort) {
 		t.Errorf("New with a Read past the buffer = %v", err)
 	}
-	if _, err := dvsi.New(&brokenPort{readN: -1, writeAll: true}, dvsi.Config{}); !errors.Is(err, dvsi.ErrPort) {
+	if _, err := dvsi.New(&brokenPort{readN: -1, writeAll: true}, nil); !errors.Is(err, dvsi.ErrPort) {
 		t.Errorf("New with a negative Read = %v", err)
 	}
-	if _, err := dvsi.New(&brokenPort{writeAll: true}, dvsi.Config{Timeout: 5 * time.Millisecond}); !errors.Is(err, dvsi.ErrTimeout) {
+	if _, err := dvsi.New(&brokenPort{writeAll: true}, &dvsi.Config{Timeout: 5 * time.Millisecond}); !errors.Is(err, dvsi.ErrTimeout) {
 		t.Errorf("New with a silent Port = %v", err)
 	}
-	if _, err := dvsi.New(&brokenPort{}, dvsi.Config{Channel: 3}); !errors.Is(err, dvsi.ErrChannel) {
+	if _, err := dvsi.New(&brokenPort{}, &dvsi.Config{Channel: 3}); !errors.Is(err, dvsi.ErrChannel) {
 		t.Errorf("New on channel 3 = %v", err)
+	}
+	if _, err := dvsi.New(nil, nil); !errors.Is(err, dvsi.ErrPort) {
+		t.Errorf("New with a nil Port = %v", err)
 	}
 	checkSim(t, dp.Device)
 }
@@ -318,7 +321,7 @@ func TestCodecDeviceErrors(t *testing.T) {
 	t.Parallel()
 
 	d := dvsisim.New(dvsisim.Pairs(1), dvsisim.Options{})
-	if _, err := dvsi.New(d, dvsi.Config{Channel: 1, Timeout: 10 * time.Millisecond}); !errors.Is(err, dvsi.ErrTimeout) {
+	if _, err := dvsi.New(d, &dvsi.Config{Channel: 1, Timeout: 10 * time.Millisecond}); !errors.Is(err, dvsi.ErrTimeout) {
 		t.Errorf("New on channel 1 of an AMBE-3000R = %v", err)
 	}
 	if len(d.Errs) != 1 {
@@ -326,7 +329,7 @@ func TestCodecDeviceErrors(t *testing.T) {
 	}
 	d = dvsisim.New(dvsisim.Pairs(1), dvsisim.Options{})
 	d.Reject = 1
-	if _, err := dvsi.New(d, dvsi.Config{}); !errors.Is(err, dvsi.ErrStatus) {
+	if _, err := dvsi.New(d, nil); !errors.Is(err, dvsi.ErrStatus) {
 		t.Errorf("New with a rejected RATEP field = %v", err)
 	}
 	checkSim(t, d)
