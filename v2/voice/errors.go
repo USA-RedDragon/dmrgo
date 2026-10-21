@@ -36,6 +36,7 @@ var (
 	errHeaders     error = &ConfigError{Field: "Headers"}
 	errTerminators error = &ConfigError{Field: "Terminators"}
 	errQueue       error = &ConfigError{Field: "Queue"}
+	errAccess      error = &ConfigError{Field: "Access"}
 	errCall        error = &ConfigError{Field: "Call"}
 	errTalkerAlias error = &ConfigError{Field: "TalkerAlias"}
 	errGPS         error = &ConfigError{Field: "GPS"}

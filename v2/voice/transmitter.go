@@ -27,6 +27,9 @@ const (
 	DefaultQueue = 9
 	// MaxQueue is the most vocoder slots that a Transmitter buffers.
 	MaxQueue = 3 * 64
+	// DefaultIdleSearch is the idle search timer T_IdleSrch of a polite
+	// call, the most that ETSI TS 102 361-1 clause F.1 allows.
+	DefaultIdleSearch = 540 * time.Millisecond
 )
 
 // TransmitterConfig configures NewTransmitter. A nil config means the zero
@@ -59,6 +62,16 @@ type TransmitterConfig struct {
 	// Lead makes Tick emit a burst this long before its Due time, so that
 	// an RF FIFO can be filled ahead. 0 means at Due.
 	Lead time.Duration
+	// Access is the channel access policy of Start. A polite call waits
+	// up to IdleSearch for Channel to report an idle channel and ends with
+	// EndDenied when it does not; an impolite call starts at once. Relay
+	// ignores it. The zero value is polite to own color code. (ETSI TS 102
+	// 361-1 clauses 5.2.1.6 and 5.2.2)
+	Access enums.Access
+	// IdleSearch is T_IdleSrch, the wait for an idle channel before a
+	// polite call. 0 means DefaultIdleSearch, and a negative value denies
+	// the call at once. (ETSI TS 102 361-1 clause 5.2.2.2.5)
+	IdleSearch time.Duration
 }
 
 // CallOptions are per-call settings of Transmitter.Start.
@@ -74,6 +87,11 @@ type CallOptions struct {
 	// GPS, when set, is sent in the embedded LC of every other superframe,
 	// after the talker alias.
 	GPS *pdu.FLCGPSInfo
+	// InCall reports that the radio is party to the call on the channel,
+	// or that the call is a response that the channel solicited. Such a
+	// call starts whatever the channel state and TransmitterConfig.Access.
+	// (ETSI TS 102 361-1 clauses 5.2.1.6 and 5.2.2.2.7)
+	InCall bool
 }
 
 // OutputKind is the kind of an Output.
@@ -143,6 +161,9 @@ const (
 	// TransmitterTimedOut has ended the call after T_TO and waits for
 	// Stop, the release of the PTT (ETSI TS 102 361-2 clause 6.1).
 	TransmitterTimedOut
+	// TransmitterAccess waits for Channel to report an idle channel
+	// before a polite call (ETSI TS 102 361-1 clause 5.2.2).
+	TransmitterAccess
 )
 
 // String returns the name of the state. It allocates only for a value
@@ -159,6 +180,8 @@ func (s TransmitterState) String() string {
 		return "Ending"
 	case TransmitterTimedOut:
 		return "TimedOut"
+	case TransmitterAccess:
+		return "Access"
 	}
 	return fmt.Sprintf("TransmitterState(%d)", uint8(s))
 }
@@ -177,6 +200,10 @@ type Transmitter struct {
 	terminators int
 	timeout     time.Duration
 	lead        time.Duration
+	access      enums.Access
+	idleSearch  time.Duration
+	busy        bool
+	waitUntil   time.Duration
 
 	vt    layer2.VoiceTransmitter
 	vopts layer2.VoiceTransmitterOptions
@@ -238,7 +265,8 @@ func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 		cfg = &TransmitterConfig{}
 	}
 	t := &Transmitter{cc: cfg.ColorCode, source: cfg.Source, silence: cfg.Silence, headers: cfg.Headers,
-		terminators: cfg.Terminators, timeout: cfg.Timeout, lead: cfg.Lead}
+		terminators: cfg.Terminators, timeout: cfg.Timeout, lead: cfg.Lead, access: cfg.Access,
+		idleSearch: cfg.IdleSearch}
 	if t.headers == 0 {
 		t.headers = 1
 	}
@@ -248,6 +276,9 @@ func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 	if t.timeout == 0 {
 		t.timeout = constants.TTO
 	}
+	if t.idleSearch == 0 {
+		t.idleSearch = DefaultIdleSearch
+	}
 	queue := cfg.Queue
 	if queue == 0 {
 		queue = DefaultQueue
@@ -255,6 +286,8 @@ func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 	switch _, _, ok := cfg.Source.SyncPatterns(); {
 	case cfg.ColorCode > 15:
 		return nil, errColorCode
+	case cfg.Access > enums.AccessImpolite:
+		return nil, errAccess
 	case !ok:
 		return nil, errSource
 	case t.headers < 0 || t.headers > MaxHeaders:
@@ -268,10 +301,11 @@ func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 	return t, nil
 }
 
-// Reset ends any transmission without an output and empties the queue. It
-// keeps the config.
+// Reset ends any transmission without an output, empties the queue and
+// forgets the channel state. It keeps the config.
 func (t *Transmitter) Reset() {
 	t.state, t.ended, t.timedOut, t.hasNext, t.relay, t.stopping = TransmitterIdle, false, false, false, false, false
+	t.busy = false
 	t.head, t.length, t.dropped, t.reason = 0, 0, 0, 0
 }
 
@@ -294,14 +328,41 @@ func (t *Transmitter) Dropped() int {
 
 // Start begins the call c, whose first burst is due at the time at. The
 // LC is c.LC when it matches the other fields of c, else it is built from
-// them. opts may be nil. Start returns ErrBusy while a transmission runs,
-// and a *ConfigError when c does not make an LC.
+// them. opts may be nil. A polite call on a busy channel waits in
+// TransmitterAccess, as TransmitterConfig.Access says. Start returns
+// ErrBusy while a transmission runs, and a *ConfigError when c does not
+// make an LC.
 func (t *Transmitter) Start(at time.Duration, c Call, opts *CallOptions) error {
 	if t.state != TransmitterIdle {
 		return ErrBusy
 	}
 	t.relay = false
-	return t.begin(at, &c, opts, false)
+	if err := t.begin(at, &c, opts, false); err != nil {
+		return err
+	}
+	if t.busy && t.access != enums.AccessImpolite && (opts == nil || !opts.InCall) {
+		t.state, t.waitUntil = TransmitterAccess, at
+		if t.idleSearch > 0 {
+			t.waitUntil += t.idleSearch
+		}
+	}
+	return nil
+}
+
+// Channel reports whether the logical channel is busy, from the activity
+// that the caller sees on it, such as the AT bit of the CACH, the carrier,
+// or a call with its own color code. A call in TransmitterAccess starts
+// when the channel becomes idle. Until the first report the channel counts
+// as idle. (ETSI TS 102 361-1 clause 5.2.1.2)
+func (t *Transmitter) Channel(now time.Duration, busy bool) {
+	t.busy = busy
+	if busy || t.state != TransmitterAccess {
+		return
+	}
+	t.state = TransmitterHeader
+	if now > t.due {
+		t.start, t.due = now, now
+	}
 }
 
 func (t *Transmitter) begin(at time.Duration, c *Call, opts *CallOptions, keep bool) error {
@@ -405,7 +466,7 @@ func (t *Transmitter) Slot(s [9]byte) error {
 	switch {
 	case t.state == TransmitterTimedOut || t.timedOut:
 		return ErrTimedOut
-	case t.state != TransmitterHeader && t.state != TransmitterVoice || t.stopping:
+	case t.state != TransmitterHeader && t.state != TransmitterVoice && t.state != TransmitterAccess || t.stopping:
 		return ErrNotActive
 	case t.length == len(t.queue):
 		return ErrQueueFull
@@ -432,9 +493,12 @@ func (t *Transmitter) push(s *[9]byte) {
 
 // Stop ends the call: the queued voice is sent, the last superframe is
 // padded with silence to burst F, and the terminators follow. After T_TO,
-// Stop is the release of the PTT, and the next Tick appends OutputEnded.
+// Stop is the release of the PTT, and the next Tick appends OutputEnded. A
+// call in TransmitterAccess ends without an output.
 func (t *Transmitter) Stop() {
 	switch t.state {
+	case TransmitterAccess:
+		t.state, t.head, t.length = TransmitterIdle, 0, 0
 	case TransmitterHeader, TransmitterVoice:
 		t.stopping = true
 	case TransmitterTimedOut:
@@ -452,13 +516,16 @@ func (t *Transmitter) Deadline() (at time.Duration, ok bool) {
 	switch {
 	case t.state == TransmitterIdle, t.state == TransmitterTimedOut && !t.ended:
 		return 0, false
+	case t.state == TransmitterAccess:
+		return t.waitUntil, true
 	}
 	return t.due - t.lead, true
 }
 
 // Tick appends the next burst when now has reached its Due time minus
-// TransmitterConfig.Lead, and OutputEnded after the last terminator. A
-// Tick before Deadline appends nothing. Each Tick appends at most one
+// TransmitterConfig.Lead, and OutputEnded after the last terminator, or
+// with EndDenied for a polite call that the channel denied for
+// T_IdleSrch. A Tick before Deadline appends nothing. Each Tick appends at most one
 // burst; a late caller calls Tick until Deadline is in the future. It
 // appends to dst, and allocates only when dst has no room for MaxOutputs
 // outputs.
@@ -469,6 +536,10 @@ func (t *Transmitter) Tick(now time.Duration, dst []Output) []Output {
 	}
 	if t.state == TransmitterTimedOut {
 		return t.finish(dst, EndTimeout)
+	}
+	if t.state == TransmitterAccess {
+		t.due, t.head, t.length = t.waitUntil, 0, 0
+		return t.finish(dst, EndDenied)
 	}
 	if t.state == TransmitterHeader && !t.headersDone() {
 		var o *Output
@@ -491,7 +562,7 @@ func (t *Transmitter) Tick(now time.Duration, dst []Output) []Output {
 			dst, o = appendOutput(dst, OutputBurst, t.due)
 			t.voice(o)
 		}
-	case TransmitterIdle, TransmitterHeader, TransmitterTimedOut:
+	case TransmitterIdle, TransmitterHeader, TransmitterTimedOut, TransmitterAccess:
 	}
 	t.due += slotPeriod
 	return dst
