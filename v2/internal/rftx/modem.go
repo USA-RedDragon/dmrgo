@@ -1,6 +1,6 @@
 // Package rftx builds DMR test transmissions: burst sequences, 4FSK
-// modulation of MS bursts and BS outbound streams, and 8-bit I/Q for a
-// HackRF (ETSI TS 102 361-1 clause 10).
+// modulation of MS bursts and BS outbound streams, and the I/Q of an FM
+// transmitter (ETSI TS 102 361-1 clause 10).
 package rftx
 
 import (
@@ -212,8 +212,7 @@ func PadToFrames(freq, env []float64) ([]float64, []float64) {
 }
 
 // ToIQ FM-modulates the deviation signal onto a carrier at offsetHz from the
-// tuned frequency and returns signed 8-bit interleaved I/Q at rate, the format
-// hackrf_transfer -t reads.
+// tuned frequency and returns signed 8-bit interleaved I/Q (cs8) at rate.
 func ToIQ(freq, env []float64, rate, offsetHz, level float64) []byte {
 	return MixIQ([]Carrier{{Freq: freq, Env: env, OffsetHz: offsetHz}}, rate, level)
 }
@@ -230,14 +229,30 @@ type Carrier struct {
 // level divided by the number of carriers, so the sum never clips. The
 // output is as long as the longest carrier.
 func MixIQ(carriers []Carrier, rate, level float64) []byte {
+	out := make([]byte, 0, 2*mixLen(carriers, rate))
+	mix(carriers, rate, 127*level/float64(max(len(carriers), 1)), func(re, im float64) {
+		out = append(out, s8(re), s8(im))
+	})
+	return out
+}
+
+// Mix FM-modulates each carrier, sums them and calls emit with each complex
+// sample at rate, in units where 1 is full scale, as MixIQ does.
+func Mix(carriers []Carrier, rate, level float64, emit func(re, im float64)) {
+	mix(carriers, rate, level/float64(max(len(carriers), 1)), emit)
+}
+
+func mixLen(carriers []Carrier, rate float64) int {
 	var longest int
 	for _, c := range carriers {
 		longest = max(longest, len(c.Freq))
 	}
-	n := int(float64(longest) * rate / basebandRate)
-	out := make([]byte, 2*n)
+	return int(float64(longest) * rate / basebandRate)
+}
+
+func mix(carriers []Carrier, rate, scale float64, emit func(re, im float64)) {
+	n := mixLen(carriers, rate)
 	phase := make([]float64, len(carriers))
-	scale := 127 * level / float64(max(len(carriers), 1))
 	for i := range n {
 		pos := float64(i) * basebandRate / rate
 		k := int(pos)
@@ -258,10 +273,8 @@ func MixIQ(carriers []Carrier, rate, level float64) []byte {
 			re += amp * math.Cos(phase[j])
 			im += amp * math.Sin(phase[j])
 		}
-		out[2*i] = s8(re)
-		out[2*i+1] = s8(im)
+		emit(re, im)
 	}
-	return out
 }
 
 func s8(f float64) byte {
@@ -283,7 +296,7 @@ func fromS8(b byte) float64 {
 	return float64(v)
 }
 
-// CW returns an unmodulated carrier at offsetHz as signed 8-bit I/Q.
+// CW returns an unmodulated carrier at offsetHz as signed 8-bit I/Q (cs8).
 func CW(seconds, rate, offsetHz, level float64) []byte {
 	n := int(seconds * rate)
 	out := make([]byte, 2*n)
@@ -295,8 +308,8 @@ func CW(seconds, rate, offsetHz, level float64) []byte {
 	return out
 }
 
-// FromRTL converts rtl_sdr unsigned 8-bit interleaved I/Q to complex samples.
-func FromRTL(b []byte) []complex128 {
+// FromCU8 converts unsigned 8-bit interleaved I/Q (cu8) to complex samples.
+func FromCU8(b []byte) []complex128 {
 	out := make([]complex128, len(b)/2)
 	for i := range out {
 		out[i] = complex((float64(b[2*i])-127.5)/127.5, (float64(b[2*i+1])-127.5)/127.5)
@@ -304,8 +317,8 @@ func FromRTL(b []byte) []complex128 {
 	return out
 }
 
-// FromHackRF converts signed 8-bit interleaved I/Q to complex samples.
-func FromHackRF(b []byte) []complex128 {
+// FromCS8 converts signed 8-bit interleaved I/Q (cs8) to complex samples.
+func FromCS8(b []byte) []complex128 {
 	out := make([]complex128, len(b)/2)
 	for i := range out {
 		out[i] = complex(fromS8(b[2*i])/127, fromS8(b[2*i+1])/127)

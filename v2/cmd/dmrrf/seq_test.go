@@ -53,7 +53,7 @@ func runBuilt(t *testing.T, seq string, built rftx.Built, cfg rftx.SeqConfig, pp
 	if cfg.BSSourced {
 		rx = 2.4e6
 	}
-	d := demodulate(t, rftx.FromRTL(rftx.Channel(iq, 2e6/(1+ppm*1e-6), rx, 3000, 25, 5)), rx)
+	d := demodulate(t, rftx.FromCU8(rftx.Channel(iq, 2e6/(1+ppm*1e-6), rx, 3000, 25, 5)), rx)
 	if len(d.Bursts) != len(want) {
 		t.Fatalf("%s: got %d bursts, want %d", seq, len(d.Bursts), len(want))
 	}

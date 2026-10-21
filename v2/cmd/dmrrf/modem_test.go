@@ -27,7 +27,7 @@ func TestLoopbackDecodesEverySequence(t *testing.T) {
 		fm, env := rftx.Modulate(bursts, rftx.Schedule{Slot: 0})
 		iq := rftx.ToIQ(fm, env, 2e6, 0, 0.9)
 		rx := rftx.Channel(iq, 2e6, 2.048e6, 3000, 25, 1)
-		d := demodulate(t, rftx.FromRTL(rx), 2.048e6)
+		d := demodulate(t, rftx.FromCU8(rx), 2.048e6)
 		if len(d.Bursts) != len(bursts) {
 			t.Fatalf("%s: got %d bursts, want %d", seq, len(d.Bursts), len(bursts))
 		}
@@ -72,7 +72,7 @@ func TestBitErrorRateBySNR(t *testing.T) {
 	fm, env := rftx.Modulate(bursts, rftx.Schedule{Slot: -1})
 	iq := rftx.ToIQ(fm, env, 2e6, 0, 0.9)
 	for _, snr := range []float64{30, 20, 15} {
-		d := demodulate(t, rftx.FromRTL(rftx.Channel(iq, 2e6, 2.048e6, -2500, snr, 7)), 2.048e6)
+		d := demodulate(t, rftx.FromCU8(rftx.Channel(iq, 2e6, 2.048e6, -2500, snr, 7)), 2.048e6)
 		var errs, total int
 		for _, r := range d.Bursts {
 			for i := range r.Data {
@@ -99,7 +99,7 @@ func TestBitErrorRateWeakBS(t *testing.T) {
 	fm, env := rftx.ModulateBS(built.Slots)
 	iq := rftx.ToIQ(fm, env, 2e6, 0, 0.9)
 	for seed := range uint64(3) {
-		d := demodulate(t, rftx.FromRTL(rftx.Channel(iq, 2e6, 2.4e6, 3000, -10, seed)), 2.4e6)
+		d := demodulate(t, rftx.FromCU8(rftx.Channel(iq, 2e6, 2.4e6, 3000, -10, seed)), 2.4e6)
 		if len(d.Bursts) != len(built.Slots) {
 			t.Errorf("seed %d: %d bursts, want %d", seed, len(d.Bursts), len(built.Slots))
 			continue
@@ -139,7 +139,7 @@ func TestOccupiedBandwidth(t *testing.T) {
 	for i := range env {
 		env[i] = 1
 	}
-	x := rftx.FromHackRF(rftx.ToIQ(fm, env, basebandRate, 0, 0.9))
+	x := rftx.FromCS8(rftx.ToIQ(fm, env, basebandRate, 0, 0.9))
 	const n = 4096
 	psd := make([]float64, n)
 	{
@@ -176,7 +176,7 @@ func TestCalMeasuresCarrier(t *testing.T) {
 
 	iq := rftx.CW(0.2, 2e6, 0, 0.9)
 	rx := rftx.Channel(iq, 2e6, 2.048e6, -1234, 30, 3)
-	off := carrierOffset(decimate(rftx.FromRTL(rx), 2.048e6))
+	off := carrierOffset(decimate(rftx.FromCU8(rx), 2.048e6))
 	if math.Abs(off+1234) > 20 {
 		t.Errorf("offset %.1f Hz, want -1234", off)
 	}

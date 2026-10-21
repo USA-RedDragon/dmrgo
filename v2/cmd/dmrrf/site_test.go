@@ -14,7 +14,7 @@ import (
 
 func siteLoop(t *testing.T, built rftx.Built, iq []byte, rate, offsetHz float64, want []rftx.BSSlot) loop {
 	t.Helper()
-	x := rftx.FromHackRF(iq)
+	x := rftx.FromCS8(iq)
 	for i := range x {
 		x[i] *= cmplx.Exp(complex(0, -2*math.Pi*offsetHz*float64(i)/rate))
 	}

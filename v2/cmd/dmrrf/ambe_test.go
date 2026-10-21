@@ -47,7 +47,7 @@ func weakSlots(t *testing.T) [][9]byte {
 	rec := &echoCodec{}
 	rep := NewReporter(io.Discard)
 	rep.audio = &audioOut{codec: rec, w: io.Discard}
-	for _, r := range demodulate(t, rftx.FromRTL(iq), 256e3).Bursts {
+	for _, r := range demodulate(t, rftx.FromCU8(iq), 256e3).Bursts {
 		rep.Burst(r)
 	}
 	if len(rec.slots) != 18 {

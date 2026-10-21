@@ -38,7 +38,7 @@ func writeCapture(t *testing.T, iq string) {
 	}
 	var sb strings.Builder
 	sb.WriteString(captureHeader)
-	for _, r := range demodulate(t, rftx.FromRTL(b), 2.048e6).Bursts {
+	for _, r := range demodulate(t, rftx.FromCU8(b), 2.048e6).Bursts {
 		fmt.Fprintf(&sb, "%d %06x %d %x\n", int(math.Round(r.Seconds*basebandRate)), r.CACH, r.Distance, r.Data)
 	}
 	if err := os.WriteFile(capturePath, []byte(sb.String()), 0o600); err != nil {
@@ -147,7 +147,7 @@ func TestCaptureXPR8400Weak(t *testing.T) {
 	}
 	var buf bytes.Buffer
 	rep := NewReporter(&buf)
-	d := demodulate(t, rftx.FromRTL(iq), 256e3)
+	d := demodulate(t, rftx.FromCU8(iq), 256e3)
 	for _, r := range d.Bursts {
 		rep.Burst(r)
 	}

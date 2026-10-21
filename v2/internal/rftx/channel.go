@@ -6,10 +6,11 @@ import (
 	"math/rand/v2"
 )
 
-// Channel resamples signed 8-bit I/Q from txRate to rxRate, adds a carrier
-// offset and white noise at snrDB, and returns rtl_sdr style unsigned bytes.
+// Channel resamples signed 8-bit I/Q (cs8) from txRate to rxRate, adds a
+// carrier offset and white noise at snrDB, and returns unsigned 8-bit I/Q
+// (cu8).
 func Channel(iq []byte, txRate, rxRate, offsetHz, snrDB float64, seed uint64) []byte {
-	x := FromHackRF(iq)
+	x := FromCS8(iq)
 	n := int(float64(len(x)) * rxRate / txRate)
 	rng := rand.New(rand.NewPCG(seed, seed+1))
 	sigma := math.Sqrt(0.81/math.Pow(10, snrDB/10)) / math.Sqrt2

@@ -13,8 +13,8 @@ type Demodulated struct {
 	DeviationHz float64
 }
 
-// DemodulateBytes recovers DMR bursts from 8-bit I/Q at rate with a
-// receiver of the given tier.
+// DemodulateBytes recovers DMR bursts from 8-bit I/Q at rate, signed (cs8)
+// or unsigned (cu8), with a receiver of the given tier.
 func DemodulateBytes(iq []byte, rate float64, signed bool, tier rf.Tier) (Demodulated, error) {
 	rx, err := rf.New(rf.Config{Rate: rate, Signed: signed, Tier: tier})
 	if err != nil {
@@ -36,8 +36,8 @@ func DemodulateBytes(iq []byte, rate float64, signed bool, tier rf.Tier) (Demodu
 	return res, nil
 }
 
-// Demodulate recovers DMR bursts from complex samples at rate, as rtl_sdr
-// unsigned 8-bit I/Q scaled by rftx.FromRTL, with rf.Tier3.
+// Demodulate recovers DMR bursts from complex samples at rate, as unsigned
+// 8-bit I/Q (cu8) scaled by rftx.FromCU8, with rf.Tier3.
 func Demodulate(x []complex128, rate float64) (Demodulated, error) {
 	b := make([]byte, 2*len(x))
 	for i, v := range x {
