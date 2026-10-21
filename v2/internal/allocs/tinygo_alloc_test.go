@@ -473,7 +473,7 @@ func TestTinyGoAllocs(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(1))
-	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCSBKOps(t), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r), tinyDVSIOps(t))
+	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCSBKOps(t), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r), tinyDVSIOps(t), tinyAppOps(t))
 
 	probe := make([]byte, 0, 1)
 	if b, _ := tinyAlloc(func() { probe = make([]byte, 64) }); b < 64 {
