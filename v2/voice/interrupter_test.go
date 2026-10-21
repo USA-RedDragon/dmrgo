@@ -108,10 +108,54 @@ func TestInterrupter_Retries(t *testing.T) {
 	}
 }
 
+// ETSI TS 102 361-2 clause 6.3.5
+func TestInterrupter_DefaultRetries(t *testing.T) {
+	t.Parallel()
+
+	ms := time.Millisecond
+	for _, c := range []struct {
+		cfg  *voice.InterrupterConfig
+		want []time.Duration
+		end  time.Duration
+	}{
+		{nil, []time.Duration{0, 600 * ms}, 1200 * ms},
+		{&voice.InterrupterConfig{Retries: -1}, []time.Duration{0}, 600 * ms},
+		{&voice.InterrupterConfig{Retries: 2}, []time.Duration{0, 600 * ms, 1200 * ms}, 1800 * ms},
+	} {
+		in := newInterrupter(t, c.cfg)
+		if err := in.Interrupt(0, enums.RCCeaseTransmissionRequest); err != nil {
+			t.Fatal(err)
+		}
+		var due []time.Duration
+		var end voice.Output
+		for range 20 {
+			at, ok := in.Deadline()
+			if !ok {
+				break
+			}
+			for _, o := range in.Tick(at, nil) {
+				if o.Kind == voice.OutputBurst {
+					due = append(due, o.Due)
+				} else {
+					end = o
+				}
+			}
+		}
+		if len(due) != len(c.want) || end.Kind != voice.OutputInterruptFailed || end.Due != c.end {
+			t.Fatalf("%+v: bursts %v, end %+v", c.cfg, due, end)
+		}
+		for k := range c.want {
+			if due[k] != c.want[k] {
+				t.Fatalf("%+v: bursts %v, want %v", c.cfg, due, c.want)
+			}
+		}
+	}
+}
+
 func TestInterrupter_States(t *testing.T) {
 	t.Parallel()
 
-	for _, cfg := range []voice.InterrupterConfig{{ColorCode: 16}, {Retries: -1}, {Retries: voice.MaxRetries + 1}, {Repeats: voice.MaxRepeats + 1}, {Repeats: -1}} {
+	for _, cfg := range []voice.InterrupterConfig{{ColorCode: 16}, {Retries: voice.MaxRetries + 1}, {Repeats: voice.MaxRepeats + 1}, {Repeats: -1}} {
 		if _, err := voice.NewInterrupter(&cfg); err == nil {
 			t.Errorf("%+v: no error", cfg)
 		}
