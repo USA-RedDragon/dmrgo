@@ -9143,6 +9143,8 @@ int dmrgo_pdu_sys_code_unpack(dmrgo_pdu_sys_code_t *self, uint16_t v);
 int dmrgo_pdu_sys_code_unpack14(dmrgo_pdu_sys_code_t *self, uint16_t v);
 /* Go: pdu.TACT.Encode. Encode encodes a TACT. */
 int dmrgo_pdu_tact_encode(dmrgo_pdu_tact_t *self, uint8_t out[1]);
+/* Go: pdu.TACT.Slot. Slot returns the TDMA channel that TDMAChannel gives for the next outbound burst: enums.Slot2 when it is set, else enums.Slot1, in the form that bs.CACH.Next takes. */
+int dmrgo_pdu_tact_slot(const dmrgo_pdu_tact_t *self, dmrgo_enums_slot_t *out);
 /* Go: pdu.TACT.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_tact_string(dmrgo_pdu_tact_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.TalkerAlias. TalkerAlias returns the alias carried by a Talker Alias header and its blocks, given in order block 1, 2, 3. */

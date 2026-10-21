@@ -1167,6 +1167,7 @@
 		dmrgo_pdu_sys_code_unpack;
 		dmrgo_pdu_sys_code_unpack14;
 		dmrgo_pdu_tact_encode;
+		dmrgo_pdu_tact_slot;
 		dmrgo_pdu_tact_string;
 		dmrgo_pdu_talker_alias;
 		dmrgo_pdu_talker_alias_assembler_add;

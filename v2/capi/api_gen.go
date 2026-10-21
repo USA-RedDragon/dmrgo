@@ -27871,6 +27871,26 @@ func dmrgo_pdu_tact_encode(c_self *C.dmrgo_pdu_tact_t, c_out *C.uint8_t) (rc C.i
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_tact_slot
+func dmrgo_pdu_tact_slot(c_self *C.dmrgo_pdu_tact_t, c_out *C.dmrgo_enums_slot_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.TACT
+	x = in_layer2_pdu_TACT(&(*c_self))
+	r0 := x.Slot()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_enums_slot_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_tact_string
 func dmrgo_pdu_tact_string(c_self *C.dmrgo_pdu_tact_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)

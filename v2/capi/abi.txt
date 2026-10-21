@@ -2493,6 +2493,7 @@ sym int dmrgo_pdu_sys_code_pack14(const dmrgo_pdu_sys_code_t *self, uint16_t *ou
 sym int dmrgo_pdu_sys_code_unpack(dmrgo_pdu_sys_code_t *self, uint16_t v);
 sym int dmrgo_pdu_sys_code_unpack14(dmrgo_pdu_sys_code_t *self, uint16_t v);
 sym int dmrgo_pdu_tact_encode(dmrgo_pdu_tact_t *self, uint8_t out[1]);
+sym int dmrgo_pdu_tact_slot(const dmrgo_pdu_tact_t *self, dmrgo_enums_slot_t *out);
 sym int dmrgo_pdu_tact_string(dmrgo_pdu_tact_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_pdu_talker_alias(const dmrgo_pdu_flc_talker_alias_header_t *header, const dmrgo_pdu_flc_talker_alias_block_t *blocks, size_t blocks_len, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_pdu_talker_alias_assembler_add(dmrgo_pdu_talker_alias_assembler_t *self, const dmrgo_pdu_full_link_control_t *lc, char *alias, size_t alias_cap, size_t *alias_len, size_t *alias_need, bool *ok);

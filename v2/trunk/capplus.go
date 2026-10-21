@@ -178,10 +178,7 @@ func (f *CapacityPlusFollower) Burst(now time.Duration, raw *layer2.RawBurst, h 
 	}
 	if cach != nil && !f.cach.TACT.FEC.Uncorrectable {
 		if slot == enums.SlotUnknown {
-			slot = enums.Slot1
-			if f.cach.TACT.TDMAChannel {
-				slot = enums.Slot2
-			}
+			slot = f.cach.TACT.Slot()
 		}
 		dst = f.shortLC(now, &f.cach, dst)
 	}
