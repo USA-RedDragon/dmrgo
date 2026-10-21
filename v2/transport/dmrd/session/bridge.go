@@ -89,7 +89,7 @@ func (b *Bridge) Deadline() (at time.Duration, ok bool) {
 		return 0, true
 	}
 	if b.state == StateRunning {
-		return min(b.sendAt, b.lastAt+b.timeout), true
+		return min(b.sendAt, after(b.lastAt, b.timeout)), true
 	}
 	return b.sendAt, true
 }
@@ -102,12 +102,12 @@ func (b *Bridge) Tick(now time.Duration, dst []Output) []Output {
 	if !b.enhanced || b.key == nil {
 		return dst
 	}
-	if b.state == StateRunning && now >= b.lastAt+b.timeout {
+	if b.state == StateRunning && now >= after(b.lastAt, b.timeout) {
 		b.state = StateIdle
 		dst = append(dst, Output{Kind: OutputDown, Reason: ReasonTimeout, State: StateRunning})
 	}
 	if !b.started || now >= b.sendAt {
-		b.started, b.sendAt = true, now+b.keepalive
+		b.started, b.sendAt = true, after(now, b.keepalive)
 		dst = send(dst, b.bcka)
 	}
 	return dst

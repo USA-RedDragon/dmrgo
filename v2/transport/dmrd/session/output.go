@@ -1,6 +1,7 @@
 package session
 
 import (
+	"math"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
@@ -226,4 +227,11 @@ func send(dst []Output, p []byte) []Output {
 		return dst
 	}
 	return append(dst, Output{Kind: OutputSend, Packet: p})
+}
+
+func after(t, d time.Duration) time.Duration {
+	if d > 0 && t > math.MaxInt64-d {
+		return math.MaxInt64
+	}
+	return t + d
 }

@@ -193,7 +193,7 @@ func (p *Peer) Tick(now time.Duration, dst []Output) []Output {
 	if at, ok := p.Deadline(); !ok || now < at {
 		return dst
 	}
-	p.started, p.next = true, now+p.alive
+	p.started, p.next = true, after(now, p.alive)
 	if p.state == StateRunning && p.outstanding >= p.maxMissed {
 		dst = append(dst, Output{Kind: OutputDown, ID: p.masterID, Addr: p.master, Reason: ReasonTimeout})
 		p.state, p.outstanding = StateRegistering, 0
