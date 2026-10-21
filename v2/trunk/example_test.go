@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
+	"github.com/USA-RedDragon/dmrgo/v2/trunk/auth"
 )
 
 func ExampleFollower() {
@@ -41,4 +43,34 @@ func ExampleFollower() {
 	// site 1 2
 	// grant to talkgroup 9 from 3120001
 	// tune to channel 17 TS2 451200000 Hz
+}
+
+// ExampleMS_AuthResponse answers the authentication challenge of a TSCC
+// with the key of the MS, as in ETSI TS 102 361-4 Table 6.15.
+func ExampleMS_AuthResponse() {
+	key := [auth.KeyLen]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+	ms, _ := trunk.NewMS(&trunk.MSConfig{Address: 3120001, NoRegistration: true})
+	out := make([]trunk.Output, 0, trunk.MaxOutputs)
+
+	aloha, _ := layer2.BuildBurst(&pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAloha, AlohaPDU: &pdu.AlohaPDU{}}, 1, layer2.SyncSourceBS)
+	ahoy, _ := layer2.BuildBurst(&pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{
+		ServiceKind: uint8(enums.ServiceRegistration), TargetAddress: 3120001, SourceAddress: 0x7A17C0}}, 1, layer2.SyncSourceBS)
+
+	now := time.Duration(0)
+	for _, raw := range []layer2.RawBurst{aloha, ahoy} {
+		out = ms.Burst(now, &raw, layer2.Hint{Slot: enums.Slot1}, nil, out[:0])
+		for _, o := range out {
+			if o.Kind != trunk.OutputAuthChallenge {
+				continue
+			}
+			out = ms.AuthResponse(now, auth.Response(o.Challenge, key, 0), out[:0])
+			b, _ := layer2.NewBurstFromBytes(out[0].Burst)
+			ack := b.Data.(*pdu.CSBK).AckInboundPDU
+			fmt.Printf("challenge %06X, response %06X from %d\n", o.Challenge, ack.TargetAddress, ack.AdditionalInfo)
+			break
+		}
+		now += 60 * time.Millisecond
+	}
+	// Output:
+	// challenge 7A17C0, response E8CA1D from 3120001
 }

@@ -1238,6 +1238,7 @@
 		dmrgo_transport_hytera_service_string;
 		dmrgo_transport_hytera_slot_type_string;
 		dmrgo_trunk_access_applies;
+		dmrgo_trunk_auth_response;
 		dmrgo_trunk_capacity_plus_follower_burst;
 		dmrgo_trunk_capacity_plus_follower_burst_need;
 		dmrgo_trunk_capacity_plus_follower_call;
@@ -1285,6 +1286,8 @@
 		dmrgo_trunk_hunt_list_len;
 		dmrgo_trunk_hunt_list_new;
 		dmrgo_trunk_hunt_list_withdraw;
+		dmrgo_trunk_ms_auth_response;
+		dmrgo_trunk_ms_auth_response_need;
 		dmrgo_trunk_ms_burst;
 		dmrgo_trunk_ms_burst_need;
 		dmrgo_trunk_ms_busy;
@@ -1319,6 +1322,7 @@
 		dmrgo_trunk_reason_string;
 		dmrgo_trunk_state_string;
 		dmrgo_trunk_tscc_deadline;
+		dmrgo_trunk_tscc_expect_auth;
 		dmrgo_trunk_tscc_free;
 		dmrgo_trunk_tscc_inbound;
 		dmrgo_trunk_tscc_inbound_need;

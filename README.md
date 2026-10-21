@@ -243,12 +243,12 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | Metric | Count |
 | --- | --- |
 | Total sections | 223 |
-| Verified (tests pass) | 165 |
+| Verified (tests pass) | 166 |
 | Failing (tests fail) | 0 |
 | Untested (has source, no tests) | 3 |
-| Unimplemented | 55 |
+| Unimplemented | 54 |
 
-**Overall: 165/223 verified (74.0%)**
+**Overall: 166/223 verified (74.4%)**
 
 ### ETSI TS 102 361-1: Air Interface Protocol
 
@@ -395,7 +395,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 5.4.4 | Sliding window confirmed data | verified | 6/6 passed | `v2/data/errors.go`, `v2/data/receiver.go`, `v2/data/sender.go` |
 | 5.5 | UDP/IPv4 data | verified | 10/10 passed | `v2/layer2/pdu/udp_ipv4_compressed.go`, `v2/enums/said.go`, `v2/enums/daid.go`, `v2/enums/spid.go`, `v2/enums/dpid.go`, `v2/ip/datagram.go`, `v2/ip/errors.go`, `v2/ip/ipv4.go`, `v2/ip/port.go` |
 | 5.6 | UDP/IPv4 header compression | verified | 6/6 passed | `v2/layer2/pdu/udp_ipv4_compressed.go`, `v2/layer2/packet/assembler.go`, `v2/enums/said.go`, `v2/enums/daid.go`, `v2/enums/spid.go`, `v2/enums/dpid.go` |
-| 6.1 | Defined Data | verified | 4/4 passed | `v2/layer2/pdu/data_header.go`, `v2/enums/dd_format.go`, `v2/shortdata/errors.go`, `v2/shortdata/text.go` |
+| 6.1 | Defined Data | verified | 6/6 passed | `v2/layer2/pdu/data_header.go`, `v2/enums/dd_format.go`, `v2/shortdata/errors.go`, `v2/shortdata/text.go` |
 | 6.2 | Raw data | verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
 | 6.3 | Status/precoded data | verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
 | 6.4 | Short data confirmed response | verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
@@ -407,7 +407,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 
 ### ETSI TS 102 361-4: DMR Trunking Protocol
 
-89 sections: 36 verified, 0 failing, 3 untested, 50 unimplemented.
+89 sections: 37 verified, 0 failing, 3 untested, 49 unimplemented.
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
@@ -428,7 +428,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 6.4.5 | Mass Re-registration | unimplemented | - | - |
 | 6.4.6 | De-registration | verified | 1/1 passed | `v2/trunk/ms.go` |
 | 6.4.7 | Power Save | unimplemented | - | - |
-| 6.4.8 | Authentication Procedures | unimplemented | - | - |
+| 6.4.8 | Authentication Procedures | verified | 9/9 passed | `v2/trunk/auth/auth.go`, `v2/trunk/ms_access.go`, `v2/trunk/tscc.go` |
 | 6.4.9 | MS Stun/Revive | unimplemented | - | - |
 | 6.4.10 | MS Kill | unimplemented | - | - |
 | 6.4.11 | IP Connection Advice | unimplemented | - | - |

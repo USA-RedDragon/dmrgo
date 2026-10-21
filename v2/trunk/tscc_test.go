@@ -9,6 +9,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
+	"github.com/USA-RedDragon/dmrgo/v2/trunk/auth"
 )
 
 const tsccChannel = 1
@@ -17,6 +18,12 @@ type simMS struct {
 	ms      *trunk.MS
 	channel uint16
 	log     []trunk.Output
+	key     *simKey
+}
+
+type simKey struct {
+	k   [auth.KeyLen]byte
+	psn uint32
 }
 
 type simInbound struct {
@@ -36,6 +43,7 @@ type sim struct {
 	tout    []trunk.TSCCOutput
 	mout    []trunk.Output
 	relayed int
+	keys    map[uint32]simKey
 }
 
 func newSim(t *testing.T, cfg *trunk.TSCCConfig, ms ...*trunk.MSConfig) *sim {
@@ -67,6 +75,10 @@ func (s *sim) msOutputs(m *simMS, out []trunk.Output) {
 			}
 		case trunk.OutputBurst:
 			s.pending = append(s.pending, simInbound{due: o.Due, ch: m.channel, slot: o.Slot, raw: o.Burst})
+		case trunk.OutputAuthChallenge:
+			if m.key != nil {
+				s.msOutputs(m, m.ms.AuthResponse(s.now, auth.Response(o.Challenge, m.key.k, m.key.psn), nil))
+			}
 		default:
 		}
 	}
@@ -138,6 +150,9 @@ func (s *sim) record() {
 	for _, o := range s.tout {
 		if o.Kind != trunk.TSCCBurst {
 			s.events = append(s.events, o)
+		}
+		if k, ok := s.keys[o.Address]; ok && o.Kind == trunk.TSCCAuthChallenge {
+			s.tscc.ExpectAuth(o.Address, auth.Response(o.Challenge, k.k, k.psn))
 		}
 	}
 }

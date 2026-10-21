@@ -162,7 +162,60 @@ func (m *MS) member(group bool, target uint32) bool {
 	return false
 }
 
+const maxChallenge = 0xFFFCDF
+
+type authChallenge struct {
+	on      bool
+	payload bool
+	slot    enums.Slot
+	due     time.Duration
+}
+
+func (m *MS) isChallenge(a *pdu.AhoyPDU) bool {
+	return enums.ServiceKind(a.ServiceKind) == enums.ServiceRegistration && !a.ServiceKindFlag && !a.GroupIndividual &&
+		a.TargetAddress == m.addr && a.SourceAddress <= maxChallenge
+}
+
+func (m *MS) challenged(now time.Duration, c uint32, slot enums.Slot, payload bool, out []Output) []Output {
+	m.auth = authChallenge{on: true, payload: payload, slot: slot, due: now + frame}
+	if m.req != reqNone && m.req != reqDereg {
+		m.ra, m.waitAnswer, m.reqUntil = raIdle, true, now+m.answerTO()
+	}
+	return append(out, Output{Kind: OutputAuthChallenge, Challenge: c})
+}
+
+// AuthResponse sends response, the answer to the challenge of the last
+// OutputAuthChallenge that auth.Response computes, to the TSCC: a C_ACKU,
+// or a P_ACKU on a payload channel, with reason Authentication Response,
+// in the slot after the challenge. It appends that OutputBurst to dst. It
+// does nothing when no challenge waits or that slot has passed, so call it
+// before the next Burst or Tick. It allocates only when dst has no room
+// for MaxOutputs outputs. (ETSI TS 102 361-4 clauses 6.4.8.3 and
+// 6.6.2.3.2.2, Table 6.18)
+func (m *MS) AuthResponse(now time.Duration, response uint32, dst []Output) []Output {
+	a := m.auth
+	m.auth = authChallenge{}
+	if m.off || !a.on || now > a.due {
+		return dst
+	}
+	if a.payload {
+		m.txAckP = pdu.AckInboundPayloadPDU{ReasonCode: byte(enums.ReasonAuthResponseMS), TargetAddress: response & 0xFFFFFF, AdditionalInfo: m.addr}
+		m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInboundPayload, AckInboundPayloadPDU: &m.txAckP}
+	} else {
+		m.txAck = pdu.AckInboundPDU{ReasonCode: byte(enums.ReasonAuthResponseMS), TargetAddress: response & 0xFFFFFF, AdditionalInfo: m.addr}
+		m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInbound, AckInboundPDU: &m.txAck}
+	}
+	return m.send(a.due, a.slot, dst)
+}
+
 func (m *MS) ahoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Output) []Output {
+	slot := h.Slot
+	if slot == enums.SlotUnknown {
+		slot = m.slot
+	}
+	if m.isChallenge(a) {
+		return m.challenged(now, a.SourceAddress, slot, false, out)
+	}
 	if !m.member(a.GroupIndividual, a.TargetAddress) || m.req != reqNone {
 		return out
 	}
@@ -180,10 +233,6 @@ func (m *MS) ahoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Outpu
 	out = append(out, Output{Kind: OutputAhoy, Grant: Grant{Service: kind, Group: a.GroupIndividual, Target: a.TargetAddress, Source: a.SourceAddress}})
 	m.txAck = pdu.AckInboundPDU{ReasonCode: byte(enums.ReasonMSAccepted), TargetAddress: a.SourceAddress, AdditionalInfo: m.addr}
 	m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInbound, AckInboundPDU: &m.txAck}
-	slot := h.Slot
-	if slot == enums.SlotUnknown {
-		slot = m.slot
-	}
 	return m.send(now+frame, slot, out)
 }
 
@@ -211,6 +260,8 @@ func (m *MS) payload(now time.Duration, h *layer2.Hint, out []Output) []Output {
 			kind == enums.ProtectEnablePTTOneMS && p.GroupIndividual && g.Group && p.TargetAddress == g.Target {
 			return append(out, Output{Kind: OutputProtect, Protect: kind, Grant: *g})
 		}
+	case c.AhoyPDU != nil && m.isChallenge(c.AhoyPDU):
+		return m.challenged(now, c.AhoyPDU.SourceAddress, g.Slot, true, out)
 	case c.AhoyPDU != nil && enums.ServiceKind(c.AhoyPDU.ServiceKind) == enums.ServiceRegistration && m.member(c.AhoyPDU.GroupIndividual, c.AhoyPDU.TargetAddress):
 		a := c.AhoyPDU
 		out = append(out, Output{Kind: OutputAhoy, Grant: Grant{Service: enums.ServiceRegistration, Group: a.GroupIndividual, Target: a.TargetAddress, Source: a.SourceAddress}})

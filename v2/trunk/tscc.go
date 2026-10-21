@@ -6,6 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/bs"
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/pcg"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -17,7 +18,7 @@ const MaxPayloadChannels = 16
 const (
 	queueLen   = 32
 	maxSetups  = 4
-	maxEvents  = 6
+	maxEvents  = 2 * maxSetups
 	slotLength = 30 * time.Millisecond
 )
 
@@ -64,8 +65,17 @@ type TSCCConfig struct {
 	// constants.TVInactiveDefault.
 	Inactive time.Duration
 	// AnswerTimeout is how long the TSCC waits for the answer of a called
-	// MS to its C_AHOY. 0 means constants.TPTimerDefault.
+	// MS to its C_AHOY, and for the answer to an authentication challenge.
+	// 0 means constants.TPTimerDefault.
 	AnswerTimeout time.Duration
+	// Authenticate challenges each MS that registers with a C_AHOY, and
+	// registers it only when its answer matches the response that the
+	// consumer passes to ExpectAuth after TSCCAuthChallenge. A wrong answer
+	// gets C_NACKD Reg_Denied, and no answer within AnswerTimeout gets
+	// C_NACKD Reg_Refused.
+	Authenticate bool
+	// Seed seeds the random choice of the authentication challenges.
+	Seed uint64
 }
 
 // TSCCOutputKind is the kind of a TSCCOutput.
@@ -85,6 +95,10 @@ const (
 	TSCCCallEnd
 	// TSCCRefused reports a C_NACKD with Ack to the MS Address.
 	TSCCRefused
+	// TSCCAuthChallenge reports that the TSCC sent the authentication
+	// Challenge to the MS Address. Pass the expected response, from
+	// auth.Response, to ExpectAuth before the answer of the MS.
+	TSCCAuthChallenge
 )
 
 // String returns the name of the TSCCOutputKind.
@@ -102,6 +116,8 @@ func (k TSCCOutputKind) String() string {
 		return "CallEnd"
 	case TSCCRefused:
 		return "Refused"
+	case TSCCAuthChallenge:
+		return "AuthChallenge"
 	}
 	return unknownName
 }
@@ -128,6 +144,8 @@ type TSCCOutput struct {
 	Call Grant
 	// Reason tells why for TSCCCallEnd.
 	Reason Reason
+	// Challenge is the 24-bit challenge of TSCCAuthChallenge.
+	Challenge uint32
 }
 
 type queued struct {
@@ -150,6 +168,15 @@ type callSlot struct {
 	endReason Reason
 }
 
+type authWait struct {
+	used      bool
+	addr      uint32
+	challenge uint32
+	expect    uint32
+	hasExpect bool
+	until     time.Duration
+}
+
 type setup struct {
 	used   bool
 	caller uint32
@@ -159,13 +186,14 @@ type setup struct {
 }
 
 // TSCC is a Tier III dedicated TSCC with its payload channels, for a
-// single site (ETSI TS 102 361-4 clauses 6.2, 6.4.4 and 6.6). It sends
+// single site (ETSI TS 102 361-4 clauses 6.2, 6.4.4, 6.4.8 and 6.6). It sends
 // C_ALOHA and the C_SYS_Parms Short LC, reserves the inbound slot of a
 // PDU that solicits an answer with the AT bit, registers MSs, sets up
 // talkgroup voice calls and individual voice calls with OACSU, sends
 // grants and late entry grants, relays the inbound bursts of each call
-// on its payload slot, and clears calls with P_CLEAR. Data, UDT, FOACSU,
-// power save and authentication are not supported. Make it with NewTSCC.
+// on its payload slot, clears calls with P_CLEAR, and authenticates the
+// MSs that register when TSCCConfig.Authenticate is set. Data, UDT,
+// FOACSU and power save are not supported. Make it with NewTSCC.
 // A TSCC is not safe for concurrent use and must not be copied; go vet
 // reports a copy.
 type TSCC struct {
@@ -179,6 +207,8 @@ type TSCC struct {
 	qLen    int
 	calls   [2 * MaxPayloadChannels]callSlot
 	setups  [maxSetups]setup
+	auths   [maxSetups]authWait
+	rng     pcg.Source
 	slot    enums.Slot
 	ticks   uint32
 	next    time.Duration
@@ -255,15 +285,17 @@ func NewTSCC(cfg *TSCCConfig) (*TSCC, error) {
 		c.AnswerTimeout = constants.TPTimerDefault
 	}
 	t.regs = make([]uint32, c.MaxRegistrations)
+	t.rng = pcg.New(c.Seed)
 	t.b = layer2.NewBurst()
 	return t, nil
 }
 
 // MaxOutputs returns the most outputs that one call of a method of t
-// appends: one burst for the TSCC and for each payload channel, plus the
-// events.
+// appends: one burst for the TSCC, one burst and one call end for each
+// payload channel, and one refusal for each authentication challenge and
+// call set-up that times out.
 func (t *TSCC) MaxOutputs() int {
-	return 1 + t.cfg.PayloadLen + maxEvents
+	return 1 + 2*t.cfg.PayloadLen + maxEvents
 }
 
 // Registered reports whether the MS addr is in the registration table.
@@ -353,16 +385,10 @@ func (t *TSCC) random(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutpu
 			t.sendAck(src, enums.ReasonRegAccepted)
 			return out
 		}
-		if t.regIndex(src) < 0 {
-			if t.nRegs == len(t.regs) {
-				return t.refuse(src, enums.ReasonRegRefused, out)
-			}
-			t.regs[t.nRegs] = src
-			t.nRegs++
-			out = append(out, TSCCOutput{Kind: TSCCRegistered, Address: src})
+		if t.cfg.Authenticate {
+			return t.challenge(now, src, r.ServiceOptions, out)
 		}
-		t.sendAck(src, enums.ReasonRegAccepted)
-		return out
+		return t.register(src, out)
 	case enums.ServiceTalkgroupVoice, enums.ServiceIndividualVoice:
 	default:
 		return t.refuse(src, enums.ReasonNotSupported, out)
@@ -401,7 +427,73 @@ func (t *TSCC) random(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutpu
 	return t.refuse(src, enums.ReasonSysBusyRefused, out)
 }
 
+func (t *TSCC) register(src uint32, out []TSCCOutput) []TSCCOutput {
+	if t.regIndex(src) < 0 {
+		if t.nRegs == len(t.regs) {
+			return t.refuse(src, enums.ReasonRegRefused, out)
+		}
+		t.regs[t.nRegs] = src
+		t.nRegs++
+		out = append(out, TSCCOutput{Kind: TSCCRegistered, Address: src})
+	}
+	t.sendAck(src, enums.ReasonRegAccepted)
+	return out
+}
+
+func (t *TSCC) challenge(now time.Duration, src uint32, opts uint8, out []TSCCOutput) []TSCCOutput {
+	w := -1
+	for i := range t.auths {
+		if t.auths[i].used && t.auths[i].addr == src {
+			w = i
+			break
+		}
+		if w < 0 && !t.auths[i].used {
+			w = i
+		}
+	}
+	if w < 0 {
+		return t.refuse(src, enums.ReasonRegRefused, out)
+	}
+	c := t.rng.Uint32() % (maxChallenge + 1)
+	t.auths[w] = authWait{used: true, addr: src, challenge: c, until: now + t.cfg.AnswerTimeout}
+	t.ahoy = pdu.AhoyPDU{ServiceOptsMirror: opts, ServiceKind: uint8(enums.ServiceRegistration), TargetAddress: src, SourceAddress: c}
+	t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &t.ahoy}
+	t.enqueue(true)
+	return append(out, TSCCOutput{Kind: TSCCAuthChallenge, Address: src, Challenge: c})
+}
+
+// ExpectAuth sets response as the answer that the TSCC accepts from the MS
+// addr to the challenge of the last TSCCAuthChallenge for addr. It does
+// nothing when no challenge to addr waits. (ETSI TS 102 361-4 clause
+// 6.4.8.2)
+func (t *TSCC) ExpectAuth(addr, response uint32) {
+	for i := range t.auths {
+		if w := &t.auths[i]; w.used && w.addr == addr {
+			w.expect, w.hasExpect = response&0xFFFFFF, true
+		}
+	}
+}
+
+func (t *TSCC) authAnswer(a *pdu.AckInboundPDU, out []TSCCOutput) []TSCCOutput {
+	for i := range t.auths {
+		w := &t.auths[i]
+		if !w.used || w.addr != a.AdditionalInfo {
+			continue
+		}
+		ok := w.hasExpect && w.expect == a.TargetAddress
+		*w = authWait{}
+		if !ok {
+			return t.refuse(a.AdditionalInfo, enums.ReasonRegDenied, out)
+		}
+		return t.register(a.AdditionalInfo, out)
+	}
+	return out
+}
+
 func (t *TSCC) answer(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOutput) []TSCCOutput {
+	if enums.AckReason(a.ReasonCode) == enums.ReasonAuthResponseMS {
+		return t.authAnswer(a, out)
+	}
 	called := a.AdditionalInfo
 	for i := range t.setups {
 		st := &t.setups[i]
@@ -539,6 +631,13 @@ func (t *TSCC) Tick(now time.Duration, dst []TSCCOutput) []TSCCOutput {
 }
 
 func (t *TSCC) timers(now time.Duration, out []TSCCOutput) []TSCCOutput {
+	for i := range t.auths {
+		if w := &t.auths[i]; w.used && now >= w.until {
+			addr := w.addr
+			*w = authWait{}
+			out = t.refuse(addr, enums.ReasonRegRefused, out)
+		}
+	}
 	for i := range t.setups {
 		st := &t.setups[i]
 		if st.used && now >= st.until {

@@ -47,6 +47,7 @@ import (
 	transport_ipsc_auth "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
 	transport_mmdvm "github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm"
 	trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
+	trunk_auth "github.com/USA-RedDragon/dmrgo/v2/trunk/auth"
 	vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
 	vocoder_dvsi "github.com/USA-RedDragon/dmrgo/v2/vocoder/dvsi"
@@ -1225,6 +1226,7 @@ var api = [...]any{
 	(*trunk.HuntList).At,
 	(*trunk.HuntList).Len,
 	(*trunk.HuntList).Withdraw,
+	(*trunk.MS).AuthResponse,
 	(*trunk.MS).Burst,
 	(*trunk.MS).Busy,
 	(*trunk.MS).Call,
@@ -1243,6 +1245,7 @@ var api = [...]any{
 	(*trunk.MS).Tick,
 	(*trunk.MS).UDT,
 	(*trunk.TSCC).Deadline,
+	(*trunk.TSCC).ExpectAuth,
 	(*trunk.TSCC).Inbound,
 	(*trunk.TSCC).MaxOutputs,
 	(*trunk.TSCC).Registered,
@@ -1255,6 +1258,7 @@ var api = [...]any{
 	trunk.Reason.String,
 	trunk.State.String,
 	trunk.TSCCOutputKind.String,
+	trunk_auth.Response,
 	vocoder.AMBESilence,
 	vocoder.AMBESilenceSlot,
 	vocoder.AppendNames,

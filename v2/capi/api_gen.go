@@ -42,6 +42,7 @@ import (
 	g_transport_ipsc_auth "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
 	g_transport_mmdvm "github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm"
 	g_trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
+	g_trunk_auth "github.com/USA-RedDragon/dmrgo/v2/trunk/auth"
 	g_vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	g_vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
 	g_vocoder_dvsi "github.com/USA-RedDragon/dmrgo/v2/vocoder/dvsi"
@@ -4445,6 +4446,7 @@ func out_trunk_Output(d *C.dmrgo_trunk_output_t, s *g_trunk.Output, oc *outc) {
 	d.slot = C.dmrgo_enums_slot_t(s.Slot)
 	d.due = C.int64_t(s.Due)
 	d.protect = C.dmrgo_enums_protect_kind_t(s.Protect)
+	d.challenge = C.uint32_t(s.Challenge)
 }
 
 func in_trunk_ConfigError(s *C.dmrgo_trunk_config_error_t) (d g_trunk.ConfigError) {
@@ -4646,6 +4648,8 @@ func in_trunk_TSCCConfig(s *C.dmrgo_trunk_tscc_config_t) (d g_trunk.TSCCConfig) 
 	d.Hangtime = time.Duration(s.hangtime)
 	d.Inactive = time.Duration(s.inactive)
 	d.AnswerTimeout = time.Duration(s.answer_timeout)
+	d.Authenticate = bool(s.authenticate)
+	d.Seed = uint64(s.seed)
 	return
 }
 
@@ -4660,6 +4664,7 @@ func out_trunk_TSCCOutput(d *C.dmrgo_trunk_tscc_output_t, s *g_trunk.TSCCOutput,
 	d.ack = C.dmrgo_enums_ack_reason_t(s.Ack)
 	out_trunk_Grant(&d.call, &s.Call, oc)
 	d.reason = C.dmrgo_trunk_reason_t(s.Reason)
+	d.challenge = C.uint32_t(s.Challenge)
 }
 
 type vt_vocoder_AppendDecoder struct {
@@ -7530,6 +7535,7 @@ func in_trunk_Output(s *C.dmrgo_trunk_output_t) (d g_trunk.Output) {
 	d.Slot = g_enums.Slot(s.slot)
 	d.Due = time.Duration(s.due)
 	d.Protect = g_enums.ProtectKind(s.protect)
+	d.Challenge = uint32(s.challenge)
 	return
 }
 
@@ -7578,6 +7584,8 @@ func out_trunk_TSCCConfig(d *C.dmrgo_trunk_tscc_config_t, s *g_trunk.TSCCConfig,
 	d.hangtime = C.int64_t(s.Hangtime)
 	d.inactive = C.int64_t(s.Inactive)
 	d.answer_timeout = C.int64_t(s.AnswerTimeout)
+	d.authenticate = C.bool(s.Authenticate)
+	d.seed = C.uint64_t(s.Seed)
 }
 
 func fromC_trunk_TSCCConfig(s *C.dmrgo_trunk_tscc_config_t) g_trunk.TSCCConfig {
@@ -7594,6 +7602,7 @@ func in_trunk_TSCCOutput(s *C.dmrgo_trunk_tscc_output_t) (d g_trunk.TSCCOutput) 
 	d.Ack = g_enums.AckReason(s.ack)
 	d.Call = in_trunk_Grant(&s.call)
 	d.Reason = g_trunk.Reason(s.reason)
+	d.Challenge = uint32(s.challenge)
 	return
 }
 
@@ -36813,6 +36822,68 @@ func dmrgo_trunk_ms_free(c_self *C.dmrgo_trunk_ms_t) (rc C.int) {
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_ms_auth_response_need
+func dmrgo_trunk_ms_auth_response_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_response C.uint32_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_trunk_MS(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_trunk.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_ms_auth_response
+func dmrgo_trunk_ms_auth_response(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_response C.uint32_t, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_trunk.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.AuthResponse(time.Duration(c_now), uint32(c_response), a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_trunk_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_trunk_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_ms_burst_need
 func dmrgo_trunk_ms_burst_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_cach *C.dmrgo_layer2_cach_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -37646,6 +37717,18 @@ func dmrgo_trunk_tscc_deadline(c_self *C.dmrgo_trunk_tscc_t, c_at *C.int64_t, c_
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_tscc_expect_auth
+func dmrgo_trunk_tscc_expect_auth(c_self *C.dmrgo_trunk_tscc_t, c_addr C.uint32_t, c_response C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_TSCC(c_self)
+	h.v.ExpectAuth(uint32(c_addr), uint32(c_response))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_tscc_inbound_need
 func dmrgo_trunk_tscc_inbound_need(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_ch C.uint16_t, c_s C.dmrgo_enums_slot_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -37967,6 +38050,24 @@ func dmrgo_trunk_udt_free(c_self *C.dmrgo_trunk_udt_t) (rc C.int) {
 	}
 	get_trunk_UDT(c_self)
 	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_auth_response
+func dmrgo_trunk_auth_response(c_challenge C.uint32_t, c_key *C.uint8_t, c_psn C.uint32_t, c_out *C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_key == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_trunk_auth.Response(uint32(c_challenge), *(*[16]byte)(unsafe.Pointer(c_key)), uint32(c_psn))
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint32_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
 	return C.DMRGO_OK
 }
 
