@@ -158,34 +158,42 @@ func TestSenderLoopback(t *testing.T) {
 		result data.Result
 		tries  uint8
 		resp   string
+		ipDups int
 	}{
-		{"clean", nil, data.ResultDelivered, 1, "ACK"},
-		{"lost block", func(try uint8, i int) bool { return try == 1 && i == 3 }, data.ResultDelivered, 2, "SACK+ACK"},
-		{"lost last block", func(try uint8, i int) bool { return try == 1 && i == 6 }, data.ResultDelivered, 2, "SACK+ACK"},
-		{"lost header", func(try uint8, i int) bool { return try == 1 && i == 0 }, data.ResultDelivered, 2, "ACK"},
-		{"lost ACK", func(try uint8, i int) bool { return try == 0 && i == 0 }, data.ResultDelivered, 2, "ACK+ACK"},
-		{"all lost", func(try uint8, _ int) bool { return try > 0 }, data.ResultRetryLimit, 3, ""},
+		{"clean", nil, data.ResultDelivered, 1, "ACK", 0},
+		{"lost block", func(try uint8, i int) bool { return try == 1 && i == 3 }, data.ResultDelivered, 2, "SACK+ACK", 0},
+		{"lost last block", func(try uint8, i int) bool { return try == 1 && i == 6 }, data.ResultDelivered, 2, "SACK+ACK", 0},
+		{"lost header", func(try uint8, i int) bool { return try == 1 && i == 0 }, data.ResultDelivered, 2, "ACK", 0},
+		{"lost ACK", func(try uint8, i int) bool { return try == 0 && i == 0 }, data.ResultDelivered, 2, "ACK+ACK", 1},
+		{"all lost", func(try uint8, _ int) bool { return try > 0 }, data.ResultRetryLimit, 3, "", 0},
 	} {
-		l := &link{
-			t:    t,
-			tx:   newSender(t, &data.SenderConfig{Source: layer2.SyncSourceMS, ColorCode: 1, Retries: 3}),
-			rx:   newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID}),
-			drop: c.drop,
-		}
-		l.run(message(60), 10*time.Second)
-		if len(l.done) != 1 || l.done[0].Result != c.result || l.done[0].Try != c.tries {
-			t.Errorf("%s: done %+v", c.name, l.done)
-			continue
-		}
-		if r := strings.Join(l.resp, "+"); r != c.resp {
-			t.Errorf("%s: responses %q, want %q", c.name, r, c.resp)
-		}
-		want := 1
-		if c.result != data.ResultDelivered {
-			want = 0
-		}
-		if len(l.got) != want || want == 1 && !bytes.HasPrefix(l.got[0], payload(60)) {
-			t.Errorf("%s: %d deliveries", c.name, len(l.got))
+		for _, sap := range []enums.ServiceAccessPointID{enums.SAPIPBasedPacketData, enums.SAPShortData} {
+			l := &link{
+				t:    t,
+				tx:   newSender(t, &data.SenderConfig{Source: layer2.SyncSourceMS, ColorCode: 1, Retries: 3}),
+				rx:   newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID}),
+				drop: c.drop,
+			}
+			m := message(60)
+			m.Header = sapHeader(sap, 0, false)
+			l.run(m, 10*time.Second)
+			if len(l.done) != 1 || l.done[0].Result != c.result || l.done[0].Try != c.tries {
+				t.Errorf("%s, %v: done %+v", c.name, sap, l.done)
+				continue
+			}
+			if r := strings.Join(l.resp, "+"); r != c.resp {
+				t.Errorf("%s, %v: responses %q, want %q", c.name, sap, r, c.resp)
+			}
+			want := 1
+			if sap == enums.SAPIPBasedPacketData {
+				want += c.ipDups
+			}
+			if c.result != data.ResultDelivered {
+				want = 0
+			}
+			if len(l.got) != want || want > 0 && !bytes.HasPrefix(l.got[0], payload(60)) {
+				t.Errorf("%s, %v: %d deliveries, want %d", c.name, sap, len(l.got), want)
+			}
 		}
 	}
 }

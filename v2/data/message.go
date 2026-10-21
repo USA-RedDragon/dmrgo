@@ -73,9 +73,9 @@ func groupOf(h *pdu.DataHeader) bool {
 type peer struct {
 	source, target uint32
 	seq            uint8
-	crc            uint32
 	stamp          uint32
 	used           bool
+	valid          bool
 }
 
 type peers struct {

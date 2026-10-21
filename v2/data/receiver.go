@@ -59,8 +59,9 @@ type ReceiverConfig struct {
 	Address uint32
 	// Respond makes the Receiver answer confirmed packets with an ACK,
 	// NACK or SACK (EventRespond), and drop duplicate and out of sequence
-	// packets. False delivers every complete packet and answers none, as a
-	// scanner or bridge needs.
+	// packets outside the IP bearer service, as the package doc describes.
+	// False delivers every complete packet and answers none, as a scanner
+	// or bridge needs.
 	Respond bool
 	// Source selects the SYNC of the responses: layer2.SyncSourceBS, the
 	// zero value, for a repeater outbound, layer2.SyncSourceMS for a
@@ -169,6 +170,7 @@ type Receiver struct {
 	hdr     pdu.UDTHeader
 	to      pdu.ConfirmedDataHeader
 	pkt     packet.Packet
+	vi      uint8
 	noCopy  noCopy
 }
 
@@ -657,8 +659,16 @@ func (r *Receiver) complete(now time.Duration, m *packet.Message, done bool, err
 		if err != nil {
 			return out
 		}
-	} else if r.answers() && r.cur.format == pdu.FormatConfirmed {
-		switch r.sequence(m.CRC) {
+	}
+	var link *peer
+	if !m.BadCRC && r.answers() && r.cur.format == pdu.FormatConfirmed {
+		sap := r.cur.sap
+		if sap == enums.SAPProprietaryPacketData && m.Proprietary != nil {
+			sap = m.Proprietary.SAP
+		}
+		var s int
+		link, s = r.sequence(sap)
+		switch s {
 		case seqDuplicate:
 			r.stats.Duplicates++
 			return r.answer(now, packet.ResponseACK, out)
@@ -676,6 +686,9 @@ func (r *Receiver) complete(now time.Duration, m *packet.Message, done bool, err
 	if !ok && r.answers() {
 		r.stats.OutOfSequence++
 		return r.answer(now, packet.ResponseNACKFSNOutOfSequence, out)
+	}
+	if link != nil {
+		link.seq, link.valid = r.cur.ns, true
 	}
 	var e *Event
 	out, e = appendEvent(out, EventDelivered, &r.call)
@@ -744,20 +757,34 @@ const (
 	seqOut
 )
 
-func (r *Receiver) sequence(crc uint32) int {
-	p, found := r.peers.lookup(r.cur.call.Source, r.cur.call.Target)
-	if p == nil {
-		return seqNext
+// ETSI TS 102 361-1 clauses 9.3.23 and 9.3.24, clause 8.2.2.3 table 8.3
+func (r *Receiver) sequence(sap enums.ServiceAccessPointID) (*peer, int) {
+	if ipBearer(sap) {
+		return nil, seqNext
 	}
-	ns := r.cur.ns
+	p, _ := r.peers.lookup(r.cur.call.Source, r.cur.call.Target)
 	switch {
-	case found && ns == p.seq && crc == p.crc && !r.cur.resync:
-		return seqDuplicate
-	case !found || r.cur.resync || ns == p.seq || ns == (p.seq+1)&7:
-		p.seq, p.crc = ns, crc
-		return seqNext
+	case p == nil:
+		return nil, seqNext
+	case !p.valid || r.cur.resync:
+		return p, seqNext
+	case r.cur.ns == p.seq:
+		return nil, seqDuplicate
+	case r.cur.ns == (p.seq+1)&7:
+		return p, seqNext
 	}
-	return seqOut
+	r.vi = p.seq
+	return nil, seqOut
+}
+
+// ETSI TS 102 361-3 clause 5.4.2.2 figure 5.9, clause 5.4.1.3 table 5.7
+func ipBearer(sap enums.ServiceAccessPointID) bool {
+	switch sap {
+	case enums.SAPUDPIPHeaderCompression, enums.SAPIPBasedPacketData, enums.SAPAddressResolutionProtocol:
+		return true
+	case enums.SAPUnifiedDataTransport, enums.SAPTCPIPHeaderCompression, enums.SAPProprietaryPacketData, enums.SAPShortData:
+	}
+	return false
 }
 
 func (r *Receiver) response(m *packet.Message, err error, out []Event) []Event {
@@ -791,6 +818,9 @@ func (r *Receiver) answer(now time.Duration, resp packet.Response, out []Event) 
 	r.to = pdu.ConfirmedDataHeader{
 		SAP: c.sap, LLIDDestination: c.call.Target, LLIDSource: c.call.Source,
 		BlocksToFollow: c.blocks, SendSequenceNumber: c.ns,
+	}
+	if resp == packet.ResponseNACKOutOfSequence {
+		r.to.SendSequenceNumber = r.vi
 	}
 	var err error
 	if resp == packet.ResponseSACK {
