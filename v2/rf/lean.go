@@ -614,7 +614,6 @@ func (win *syncWindow) corr(syms *[syncSymbols]int8, t, sps float32) float32 {
 	return c
 }
 
-//go:noinline
 func (win *syncWindow) sums(syms *[syncSymbols]int8, t, sps float32) (sv, svv, sxv, sp float32) {
 	for i, s := range syms {
 		v := win.at(t - float32(syncSymbols-1-i)*sps)
@@ -683,7 +682,6 @@ func (r *leanCore) resample(p enums.SyncPattern, saved *[syncSymbols]int8, wide 
 	return bestD, true
 }
 
-//go:noinline
 func (r *leanCore) ringSync(win *syncWindow, t, sps float32, saved *[syncSymbols]int8) {
 	j := ringPos(r.ns - syncSymbols)
 	for i := range syncSymbols {
