@@ -49,6 +49,12 @@ func WriteAll(tables *compute.Tables, dmrRoot string) error {
 		return err
 	}
 
+	if err := writeFile(dmrRoot, "shortdata", "shortdata",
+		writeTable2D("iso8859High", tables.ISO8859High),
+	); err != nil {
+		return err
+	}
+
 	if err := writeFile(dmrRoot, "enums", "enums",
 		writeColorCodeErrors("colorCodeErrors", tables.ColorCodeErrorValues[:]),
 	); err != nil {

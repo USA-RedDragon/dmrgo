@@ -2113,6 +2113,8 @@ documents:
             names:
               - TestText
               - TestAppendText
+              - TestAppendTextCodings
+              - FuzzText
 
       - section: "6.2"
         title: "Raw data"

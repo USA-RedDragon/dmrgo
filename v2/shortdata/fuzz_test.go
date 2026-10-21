@@ -24,6 +24,11 @@ func textSeeds(add func(format uint8, data []byte)) {
 	add(uint8(enums.DDUTF16), []byte{0xFF, 0xFE, 0x3D, 0xD8, 0x00, 0xDE})
 	add(uint8(enums.DDUTF8), []byte("Grüße"))
 	add(uint8(enums.DDISO8859Part1), []byte{0xFC, 0})
+	add(uint8(enums.DD7Bit), []byte{0x91, 0x97, 0x66, 0xCD, 0xFF})
+	add(uint8(enums.DDBCD), []byte{0x12, 0xAB, 0xC3, 0x4F})
+	add(uint8(enums.DDISO8859Part11), []byte{0xA1, 0xDB, 0xFB, 0x85})
+	add(uint8(enums.DDUTF32), []byte{0, 0, 0xFE, 0xFF, 0, 0x01, 0xF6, 0x00, 0, 0x11, 0, 0})
+	add(uint8(enums.DDBinary), []byte{0, 1, 0xFF})
 }
 
 func fuzzText(t *testing.T, format uint8, data []byte) {
@@ -35,10 +40,20 @@ func fuzzText(t *testing.T, format uint8, data []byte) {
 		}
 		return
 	}
+	if f == enums.DDBinary {
+		if enc, err := shortdata.AppendText(nil, f, got); !bytes.Equal(got, data) || err != nil || !bytes.Equal(enc, data) {
+			t.Fatalf("binary %x gave %x, then %x, %v", data, got, enc, err)
+		}
+		return
+	}
 	if !utf8.Valid(got) || bytes.IndexByte(got, 0) >= 0 {
 		t.Fatalf("Text(%s, %x) = %q: not UTF-8 without NUL", f, data, got)
 	}
 	enc, err := shortdata.AppendText(nil, f, got)
+	lossy := f == enums.DDBCD || f >= enums.DDISO8859Part2 && f <= enums.DDISO8859Part16
+	if errors.Is(err, shortdata.ErrCharacter) && lossy && bytes.ContainsRune(got, utf8.RuneError) {
+		return
+	}
 	if err != nil {
 		t.Fatalf("AppendText(%s, %q): %v", f, got, err)
 	}

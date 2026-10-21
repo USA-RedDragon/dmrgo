@@ -75,6 +75,32 @@ func TestText(t *testing.T) {
 		{enums.DDUTF16, []byte{0, 'H', 0, 'i'}, "Hi"},
 		{enums.DDUTF16, []byte{0xFF, 0xFE, 'H', 0, 'i', 0}, "Hi"},
 		{enums.DDUTF16, []byte{0xFE, 0xFF, 0, 'H', 0, 'i'}, "Hi"},
+		{enums.DDBinary, []byte{0, 0xFF, 'a'}, "\x00\xFFa"},
+		{enums.DDBCD, []byte{0x12, 0x34, 0xAB, 0x5F, 0x66}, "1234*#5"},
+		{enums.DDBCD, []byte{0xC1, 0x0E}, "\uFFFD10\uFFFD"},
+		{enums.DD7Bit, []byte{0x91, 0xA7}, "Hi"},
+		{enums.DD7Bit, []byte{0x91, 0x97, 0x66, 0xCD, 0xFF}, "Hello"},
+		{enums.DD7Bit, []byte{0x83, 0x0A, 0x1C, 0x48, 0xB1, 0xA3, 0xFF}, "ABCDEFG"},
+		{enums.DD7Bit, []byte{0x91, 0x80, 0x00}, "H`"},
+		{enums.DD7Bit, []byte{0x91, 0xFF, 0xFF}, "H"},
+		{enums.DD7Bit, []byte{0xFF, 0x20, 0x7F}, "\x7FH\x0F"},
+		{enums.DDISO8859Part2, []byte{'z', 0xA1, 0xFF, 0}, "zĄ˙"},
+		{enums.DDISO8859Part3, []byte{0xA5, 0xA1}, "\uFFFDĦ"},
+		{enums.DDISO8859Part5, []byte{0xC0, 0xF0}, "Р№"},
+		{enums.DDISO8859Part6, []byte{0xC7, 0xA1}, "ا\uFFFD"},
+		{enums.DDISO8859Part7, []byte{0xC1, 0xA4}, "Α€"},
+		{enums.DDISO8859Part8, []byte{0xE0, 0xFD}, "א\u200E"},
+		{enums.DDISO8859Part9, []byte{0xD0, 0xFE}, "Ğş"},
+		{enums.DDISO8859Part11, []byte{0xA1, 0xDA, 0xDB, 0xDF, 0xFB, 0xFC}, "ก\u0E3A\uFFFD฿๛\uFFFD"},
+		{enums.DDISO8859Part13, []byte{0xA1, 0xFF}, "”’"},
+		{enums.DDISO8859Part14, []byte{0xA1, 0xA2}, "Ḃḃ"},
+		{enums.DDISO8859Part15, []byte{0xA4, 0xBC, 0x85}, "€Œ\u0085"},
+		{enums.DDISO8859Part16, []byte{0xA1, 0xAA}, "ĄȘ"},
+		{enums.DDUTF32BE, []byte{0, 0, 0, 'H', 0, 0x01, 0xF6, 0x00, 0, 0x11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'x'}, "H😀\uFFFD"},
+		{enums.DDUTF32LE, []byte{'H', 0, 0, 0, 'i', 0, 0, 0, 0, 0}, "Hi"},
+		{enums.DDUTF32, []byte{0xFF, 0xFE, 0, 0, 'H', 0, 0, 0}, "H"},
+		{enums.DDUTF32, []byte{0, 0, 0xFE, 0xFF, 0, 0, 0, 'H'}, "H"},
+		{enums.DDUTF32, []byte{0, 0, 0, 'H', 0, 0}, "H"},
 	}
 	for _, tt := range tests {
 		got, err := shortdata.Text([]byte("x"), tt.format, tt.data)
@@ -82,7 +108,7 @@ func TestText(t *testing.T) {
 			t.Errorf("Text(%s, %x) = %q, %v, want %q", tt.format, tt.data, got, err, tt.want)
 		}
 	}
-	for _, f := range []enums.DDFormat{enums.DDBinary, enums.DDBCD, enums.DD7Bit, enums.DDISO8859Part2, enums.DDUTF32LE, 0x3F} {
+	for _, f := range []enums.DDFormat{0x19, 0x3F} {
 		if got, err := shortdata.Text([]byte("x"), f, []byte("a")); !errors.Is(err, shortdata.ErrFormat) || string(got) != "x" {
 			t.Errorf("Text(%s) = %q, %v", f, got, err)
 		}
@@ -112,5 +138,54 @@ func TestAppendText(t *testing.T) {
 	}
 	if got, err := shortdata.AppendText([]byte("x"), enums.DDISO8859Part1, in); !errors.Is(err, shortdata.ErrCharacter) || string(got) != "x" {
 		t.Errorf("ISO 8859-1 of €: %q, %v", got, err)
+	}
+}
+
+func TestAppendTextCodings(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		format enums.DDFormat
+		text   string
+		want   []byte
+	}{
+		{enums.DDBinary, "\x00\xFF", []byte{0, 0xFF}},
+		{enums.DDBCD, "12*#3", []byte{0x12, 0xAB, 0x3F}},
+		{enums.DDBCD, "0987", []byte{0x09, 0x87}},
+		{enums.DD7Bit, "Hello", []byte{0x91, 0x97, 0x66, 0xCD, 0xFF}},
+		{enums.DD7Bit, "ABCDEFGH", []byte{0x83, 0x0A, 0x1C, 0x48, 0xB1, 0xA3, 0xC8}},
+		{enums.DDISO8859Part2, "Ąz˙", []byte{0xA1, 'z', 0xFF}},
+		{enums.DDISO8859Part7, "Α€", []byte{0xC1, 0xA4}},
+		{enums.DDISO8859Part11, "ก๛", []byte{0xA1, 0xFB}},
+		{enums.DDISO8859Part15, "€\u0085", []byte{0xA4, 0x85}},
+		{enums.DDUTF32, "H😀", []byte{0, 0, 0xFE, 0xFF, 0, 0, 0, 'H', 0, 0x01, 0xF6, 0x00}},
+		{enums.DDUTF32LE, "H", []byte{'H', 0, 0, 0}},
+		{enums.DDUTF32BE, "H", []byte{0, 0, 0, 'H'}},
+	}
+	for _, tt := range tests {
+		got, err := shortdata.AppendText([]byte("x"), tt.format, []byte(tt.text))
+		if err != nil || !bytes.Equal(got, append([]byte("x"), tt.want...)) {
+			t.Errorf("AppendText(%s, %q) = %x, %v, want %x", tt.format, tt.text, got, err, tt.want)
+			continue
+		}
+		back, err := shortdata.Text(nil, tt.format, got[1:])
+		if err != nil || string(back) != tt.text {
+			t.Errorf("Text(%s, %x) = %q, %v, want %q", tt.format, got[1:], back, err, tt.text)
+		}
+	}
+	for _, tt := range []struct {
+		format enums.DDFormat
+		text   string
+	}{
+		{enums.DDBCD, "12a"},
+		{enums.DDBCD, "1\xFF"},
+		{enums.DD7Bit, "é"},
+		{enums.DDISO8859Part2, "€"},
+		{enums.DDISO8859Part3, "\xFF"},
+		{enums.DDISO8859Part5, "\uFFFD"},
+	} {
+		if got, err := shortdata.AppendText([]byte("x"), tt.format, []byte(tt.text)); !errors.Is(err, shortdata.ErrCharacter) || string(got) != "x" {
+			t.Errorf("AppendText(%s, %q) = %q, %v", tt.format, tt.text, got, err)
+		}
 	}
 }
