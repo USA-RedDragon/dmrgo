@@ -181,7 +181,7 @@ func rms(pcm []int16) float64 {
 }
 
 func codec2Call(w io.Writer, captured *pdu.FullLinkControl) error {
-	if err := vocoder.Register(codec2.Name, codec2.NewFactory(codec2.Config{})); err != nil && !errors.Is(err, vocoder.ErrDuplicateCodec) {
+	if err := vocoder.Register(codec2.Name, codec2.NewFactory(nil)); err != nil && !errors.Is(err, vocoder.ErrDuplicateCodec) {
 		return err
 	}
 	enc, err := vocoder.New(codec2.Name)

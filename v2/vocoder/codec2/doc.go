@@ -20,7 +20,7 @@
 // The package does not register itself. A program that creates codecs by
 // name registers it once, before vocoder.New:
 //
-//	if err := vocoder.Register(codec2.Name, codec2.NewFactory(codec2.Config{})); err != nil {
+//	if err := vocoder.Register(codec2.Name, codec2.NewFactory(nil)); err != nil {
 //		return err
 //	}
 //

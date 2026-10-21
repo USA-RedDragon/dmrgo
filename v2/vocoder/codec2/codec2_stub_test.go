@@ -15,10 +15,10 @@ var registerOnce sync.Once
 func TestStubUnavailable(t *testing.T) {
 	t.Parallel()
 
-	if _, err := New(Config{}); !errors.Is(err, ErrUnavailable) {
+	if _, err := New(nil); !errors.Is(err, ErrUnavailable) {
 		t.Errorf("New error = %v, want ErrUnavailable", err)
 	}
-	registerOnce.Do(func() { _ = vocoder.Register(Name, NewFactory(Config{})) })
+	registerOnce.Do(func() { _ = vocoder.Register(Name, NewFactory(nil)) })
 	if _, err := vocoder.New(Name); !errors.Is(err, ErrUnavailable) {
 		t.Errorf("vocoder.New error = %v, want ErrUnavailable", err)
 	}

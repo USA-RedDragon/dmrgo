@@ -24,7 +24,7 @@ func TestRun(t *testing.T) {
 		"AMBE72 with 3 flipped bits: 3 corrected, frame restored true",
 		"rebuilt: 80 bursts, 13 embedded LCs, AMBE frames equal true",
 	}
-	c, err := codec2.New(codec2.Config{})
+	c, err := codec2.New(nil)
 	switch {
 	case errors.Is(err, codec2.ErrUnavailable):
 		want = append(want, "codec2 unavailable, skipping")

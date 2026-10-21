@@ -179,7 +179,7 @@ The counts are of exported functions and methods, for linux/amd64 with cgo. `DMR
 The package does not register itself. A program that creates codecs by name registers it once at startup:
 
 ```go
-if err := vocoder.Register(codec2.Name, codec2.NewFactory(codec2.Config{})); err != nil {
+if err := vocoder.Register(codec2.Name, codec2.NewFactory(nil)); err != nil {
 	return err
 }
 enc, err := vocoder.New(codec2.Name)

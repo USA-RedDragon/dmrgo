@@ -10346,7 +10346,7 @@ int dmrgo_codec2_codec_reset(dmrgo_codec2_codec_t *self);
 /* Go: codec2.Codec.Silence. Silence returns 20 ms of digital silence encoded with a fresh encoder state in the mode that Encode uses. */
 int dmrgo_codec2_codec_silence(dmrgo_codec2_codec_t *self, uint8_t out[9]);
 /* Go: codec2.New. New creates a Codec2 codec with the given configuration. */
-int dmrgo_codec2_new(const dmrgo_codec2_config_t *cfg, dmrgo_codec2_codec_t **out);
+int dmrgo_codec2_new(const dmrgo_codec2_config_t *p, dmrgo_codec2_codec_t **out);
 /* Go: codec2.NewFactory. NewFactory returns a vocoder codec factory that creates a Codec with cfg. */
 int dmrgo_codec2_new_factory(const dmrgo_codec2_config_t *cfg, dmrgo_vocoder_register_factory_fn_t *out);
 /* Go: dvsi.AppendChannel. AppendChannel appends a channel packet that asks the chip to decode bits channel bits, packed MSB first in data, which must hold (bits+7)/8 bytes (AMBE-3000R manual Table 106). */
