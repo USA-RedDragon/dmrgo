@@ -132,7 +132,9 @@ const (
 	TSCCRefused
 	// TSCCAuthChallenge reports that the TSCC sent the authentication
 	// Challenge to the MS Address. Pass the expected response, from
-	// auth.Response, to ExpectAuth before the answer of the MS.
+	// auth.Response with the key and the PSN of that MS, to ExpectAuth
+	// before the answer of the MS. Keep a PSN for each MS, 0 for an MS
+	// without one: a wrong PSN gets Reg_Denied for a right key.
 	TSCCAuthChallenge
 	// TSCCDelivered reports that a UDT short data, polling or DGNA
 	// transfer from Address to Call.Target completed, with the final

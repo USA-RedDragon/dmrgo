@@ -57,7 +57,8 @@ const (
 	// T_Dereg, and may be switched off.
 	OutputPowerOff
 	// OutputAuthChallenge reports the authentication challenge of the TSCC
-	// in Output.Challenge. Answer it with MS.AuthResponse.
+	// in Output.Challenge. Answer it with MS.AuthResponse, with the PSN of
+	// the MS in auth.Response only when the MS has one.
 	OutputAuthChallenge
 	// OutputDelivered reports that the TSCC completed a UDT short data,
 	// polling, call diversion or DGNA request of the MS, with the reason in
