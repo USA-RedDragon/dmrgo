@@ -6,6 +6,8 @@ import (
 	"math/bits"
 	"math/rand/v2"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2"
 )
 
 func lowIQ(x []complex64, hz int) []complex64 {
@@ -77,12 +79,12 @@ func TestLowIQConfig(t *testing.T) {
 		cfg   LowIQConfig
 		field string
 	}{
-		{LowIQConfig{Hz: 48000, OnBurst: on}, "Hz"},
-		{LowIQConfig{Hz: 24000, OnBurst: on}, "Hz"},
-		{LowIQConfig{}, "OnBurst"},
+		{LowIQConfig{Hz: 48000, OnBurst: on}, "LowIQConfig.Hz"},
+		{LowIQConfig{Hz: 24000, OnBurst: on}, "LowIQConfig.Hz"},
+		{LowIQConfig{}, "LowIQConfig.OnBurst"},
 	} {
 		err := r.Init(c.cfg)
-		if e := (*ConfigError)(nil); !errors.As(err, &e) || e.Field != c.field {
+		if e := (*dmrgo.ConfigError)(nil); !errors.As(err, &e) || e.Field != c.field {
 			t.Errorf("%+v: got %v, want a ConfigError for %s", c.cfg, err, c.field)
 		}
 	}

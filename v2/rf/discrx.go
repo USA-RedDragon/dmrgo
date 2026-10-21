@@ -3,6 +3,8 @@ package rf
 import (
 	"math"
 	"unsafe"
+
+	"github.com/USA-RedDragon/dmrgo/v2"
 )
 
 const (
@@ -66,14 +68,14 @@ type DiscReceiver struct {
 }
 
 var (
-	errDiscHz       = &ConfigError{Type: "DiscConfig", Field: "Hz"}
-	errDiscMaxWrite = &ConfigError{Type: "DiscConfig", Field: "MaxWrite"}
-	errDiscTier     = &ConfigError{Type: "DiscConfig", Field: "Tier"}
+	errDiscHz       = &dmrgo.ConfigError{Type: "rf", Field: "DiscConfig.Hz"}
+	errDiscMaxWrite = &dmrgo.ConfigError{Type: "rf", Field: "DiscConfig.MaxWrite"}
+	errDiscTier     = &dmrgo.ConfigError{Type: "rf", Field: "DiscConfig.Tier"}
 )
 
 // NewDisc returns a DiscReceiver of cfg. A nil cfg means the zero
 // DiscConfig. It allocates the receiver, and the burst buffer of Write
-// when cfg.OnBurst is nil. It returns a *ConfigError when a field of cfg
+// when cfg.OnBurst is nil. It returns a *dmrgo.ConfigError when a field of cfg
 // is out of range.
 func NewDisc(c *DiscConfig) (*DiscReceiver, error) {
 	var cfg DiscConfig

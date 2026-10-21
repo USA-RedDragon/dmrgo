@@ -4,6 +4,8 @@ import (
 	"errors"
 	"math"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2"
 )
 
 const (
@@ -105,7 +107,7 @@ func TestDiscReceiverLoopback(t *testing.T) {
 func TestNewDiscConfig(t *testing.T) {
 	t.Parallel()
 	_, err := NewDisc(&DiscConfig{Hz: 44100})
-	var ce *ConfigError
+	var ce *dmrgo.ConfigError
 	if !errors.As(err, &ce) || err.Error() != "rf: DiscConfig.Hz is out of range" {
 		t.Errorf("NewDisc at 44.1 kHz: %v", err)
 	}

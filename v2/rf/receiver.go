@@ -4,6 +4,8 @@ import (
 	"errors"
 	"math"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
+
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -155,20 +157,6 @@ type Config struct {
 	opt     *options
 }
 
-// ConfigError reports a Config, DiscConfig or LowIQConfig that New,
-// NewDisc or Init cannot use.
-type ConfigError struct {
-	// Type is the name of the config struct, such as "DiscConfig".
-	Type string
-	// Field is the name of the config field, such as "Rate".
-	Field string
-}
-
-// Error returns the message of e. It allocates the message.
-func (e *ConfigError) Error() string {
-	return "rf: " + e.Type + "." + e.Field + " is out of range"
-}
-
 type anchorInfo struct {
 	pattern enums.SyncPattern
 	metric  float64
@@ -287,7 +275,7 @@ type engine struct {
 }
 
 // New returns a Receiver sized by cfg. A nil cfg means the zero Config. It
-// allocates every buffer of the Receiver. It returns a *ConfigError when a
+// allocates every buffer of the Receiver. It returns a *dmrgo.ConfigError when a
 // field of cfg is out of range.
 func New(c *Config) (*Receiver, error) {
 	var cfg Config
@@ -325,7 +313,7 @@ func newReceiver(cfg Config) (*Receiver, error) {
 		opt = *cfg.opt
 	}
 	if !opt.tabled() || opt.IQFront > 0 && opt.CohExt {
-		return nil, &ConfigError{Type: "Config", Field: "opt"}
+		return nil, &dmrgo.ConfigError{Type: "rf", Field: "Config.opt"}
 	}
 	if low && opt.IQLow > 0 {
 		return &Receiver{iql: newIQLowRx(cfg, opt)}, nil
@@ -357,7 +345,7 @@ func checkConfig(cfg *Config) (low bool, err error) {
 		cfg.Tier = Tier0
 	}
 	if cfg.Tier < Tier0 || cfg.Tier > Tier3 {
-		return false, &ConfigError{Type: "Config", Field: "Tier"}
+		return false, &dmrgo.ConfigError{Type: "rf", Field: "Config.Tier"}
 	}
 	low = cfg.BasebandHz == iq0LowHz || cfg.BasebandHz == discRate/2
 	if cfg.opt != nil {
@@ -370,22 +358,22 @@ func checkConfig(cfg *Config) (low bool, err error) {
 		cfg.BasebandHz = basebandRate
 	case cfg.BasebandHz == discRate && cfg.Tier <= Tier1, cfg.BasebandHz == basebandRate, low:
 	default:
-		return false, &ConfigError{Type: "Config", Field: "BasebandHz"}
+		return false, &dmrgo.ConfigError{Type: "rf", Field: "Config.BasebandHz"}
 	}
 	switch {
 	case cfg.Rate == 0:
 		cfg.Rate = float64(cfg.BasebandHz)
 	case !(cfg.Rate >= float64(cfg.BasebandHz)) || cfg.Rate > 1e9, low && cfg.opt == nil && cfg.Rate != float64(cfg.BasebandHz):
-		return false, &ConfigError{Type: "Config", Field: "Rate"}
+		return false, &dmrgo.ConfigError{Type: "rf", Field: "Config.Rate"}
 	}
 	if !(math.Abs(cfg.OffsetHz) < float64(cfg.BasebandHz)/2) {
-		return false, &ConfigError{Type: "Config", Field: "OffsetHz"}
+		return false, &dmrgo.ConfigError{Type: "rf", Field: "Config.OffsetHz"}
 	}
 	if cfg.MaxWrite < 0 {
-		return false, &ConfigError{Type: "Config", Field: "MaxWrite"}
+		return false, &dmrgo.ConfigError{Type: "rf", Field: "Config.MaxWrite"}
 	}
 	if cfg.LookbackSlots < 0 || cfg.Tier == Tier0 && cfg.LookbackSlots > 0 {
-		return false, &ConfigError{Type: "Config", Field: "LookbackSlots"}
+		return false, &dmrgo.ConfigError{Type: "rf", Field: "Config.LookbackSlots"}
 	}
 	if cfg.MaxWrite == 0 {
 		cfg.MaxWrite = 1 << 16

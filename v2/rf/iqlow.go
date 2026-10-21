@@ -4,6 +4,8 @@ import (
 	"math"
 	"math/bits"
 	"unsafe"
+
+	"github.com/USA-RedDragon/dmrgo/v2"
 )
 
 const (
@@ -57,9 +59,9 @@ type LowIQReceiver struct {
 }
 
 var (
-	errLowIQHz      = &ConfigError{Type: "LowIQConfig", Field: "Hz"}
-	errLowIQOnBurst = &ConfigError{Type: "LowIQConfig", Field: "OnBurst"}
-	errLowIQOffset  = &ConfigError{Type: "LowIQConfig", Field: "OffsetHz"}
+	errLowIQHz      = &dmrgo.ConfigError{Type: "rf", Field: "LowIQConfig.Hz"}
+	errLowIQOnBurst = &dmrgo.ConfigError{Type: "rf", Field: "LowIQConfig.OnBurst"}
+	errLowIQOffset  = &dmrgo.ConfigError{Type: "rf", Field: "LowIQConfig.OffsetHz"}
 )
 
 // NewLowIQ returns a LowIQReceiver of cfg. A nil cfg means the zero
@@ -78,7 +80,7 @@ func NewLowIQ(cfg *LowIQConfig) (*LowIQReceiver, error) {
 }
 
 // Init sets up r for cfg, in place of any state it holds. It returns a
-// *ConfigError for an Hz other than 9600 or 12000, or a nil OnBurst. It
+// *dmrgo.ConfigError for an Hz other than 9600 or 12000, or a nil OnBurst. It
 // does not allocate, so that r can live in memory of the caller.
 func (r *LowIQReceiver) Init(cfg LowIQConfig) error {
 	if cfg.Hz == 0 {
