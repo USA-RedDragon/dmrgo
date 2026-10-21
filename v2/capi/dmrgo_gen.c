@@ -102,6 +102,14 @@ const char *dmrgo__gen_strerror(int status) {
 		return "ars.ErrLength";
 	case -186:
 		return "ars.ErrShort";
+	case -187:
+		return "lrrp.ErrLength";
+	case -188:
+		return "lrrp.ErrShort";
+	case -189:
+		return "lrrp.ErrToken";
+	case -190:
+		return "lrrp.ErrVarint";
 	case -183:
 		return "tms.ErrLength";
 	case -184:

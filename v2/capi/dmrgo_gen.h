@@ -349,6 +349,26 @@ typedef struct dmrgo_ars_message_t dmrgo_ars_message_t;
 typedef struct dmrgo_ars_registration_t dmrgo_ars_registration_t;
 /* Go: ars.Response. Response is the second header octet of an answer. */
 typedef struct dmrgo_ars_response_t dmrgo_ars_response_t;
+/* Go: lrrp.Circle2D. Circle2D is a position with its accuracy (token 0x51). */
+typedef struct dmrgo_lrrp_circle2_d_t dmrgo_lrrp_circle2_d_t;
+/* Go: lrrp.Circle3D. Circle3D is a position with an altitude and the accuracy of both (token 0x55). */
+typedef struct dmrgo_lrrp_circle3_d_t dmrgo_lrrp_circle3_d_t;
+/* Go: lrrp.Message. Message is a MOTOTRBO Location Request and Response Protocol message, the payload of a UDP datagram to port 4001. */
+typedef struct dmrgo_lrrp_message_t dmrgo_lrrp_message_t;
+/* Go: lrrp.OperationError. OperationError is the result of a request that failed, with its text (token 0x39). */
+typedef struct dmrgo_lrrp_operation_error_t dmrgo_lrrp_operation_error_t;
+/* Go: lrrp.Point2D. Point2D is a position (token 0x66). */
+typedef struct dmrgo_lrrp_point2_d_t dmrgo_lrrp_point2_d_t;
+/* Go: lrrp.Point3D. Point3D is a position with an altitude (token 0x69). */
+typedef struct dmrgo_lrrp_point3_d_t dmrgo_lrrp_point3_d_t;
+/* Go: lrrp.Point3DAccuracy. Point3DAccuracy is a position with an altitude and its accuracy (token 0x6A). */
+typedef struct dmrgo_lrrp_point3_d_accuracy_t dmrgo_lrrp_point3_d_accuracy_t;
+/* Go: lrrp.Report. Report holds the tokens of a report or an answer. */
+typedef struct dmrgo_lrrp_report_t dmrgo_lrrp_report_t;
+/* Go: lrrp.Request. Request holds the tokens of a request. */
+typedef struct dmrgo_lrrp_request_t dmrgo_lrrp_request_t;
+/* Go: lrrp.Time. Time is the UTC time of a position (token 0x34). */
+typedef struct dmrgo_lrrp_time_t dmrgo_lrrp_time_t;
 /* Go: tms.Header. Header is the first header octet of a message. */
 typedef struct dmrgo_tms_header_t dmrgo_tms_header_t;
 /* Go: tms.Message. Message is a MOTOTRBO Text Messaging Service message, the payload of a UDP datagram to port 4007. */
@@ -588,6 +608,8 @@ typedef uint8_t dmrgo_layer3_talker_alias_data_format_t;
 typedef uint8_t dmrgo_ars_event_t;
 /* Go: ars.Type. Type is the 4-bit PDU type of a message. */
 typedef uint8_t dmrgo_ars_type_t;
+/* Go: lrrp.DocumentID. DocumentID identifies the kind of a message. */
+typedef uint8_t dmrgo_lrrp_document_id_t;
 /* Go: tms.Encoding. Encoding is the 5-bit character coding of the text. */
 typedef uint8_t dmrgo_tms_encoding_t;
 /* Go: tms.Type. Type is the kind of a message: the control bit and the 4-bit PDU type of the first header octet. */
@@ -1976,6 +1998,122 @@ struct dmrgo_ars_message_t {
 	size_t extra_len;
 };
 
+struct dmrgo_lrrp_circle2_d_t {
+	double latitude;
+	double longitude;
+	double radius;
+};
+
+struct dmrgo_lrrp_circle3_d_t {
+	double latitude;
+	double longitude;
+	double radius;
+	double altitude;
+	double altitude_accuracy;
+};
+
+struct dmrgo_lrrp_request_t {
+	uint8_t *request_id;
+	size_t request_id_len;
+	bool has_request_id;
+	uint8_t short_request_id;
+	bool has_short_request_id;
+	bool periodic;
+	bool one_shot;
+	uint32_t interval;
+	bool has_interval;
+	uint32_t distance;
+	bool has_distance;
+	uint32_t trigger_condition;
+	bool has_trigger_condition;
+	uint32_t protocol_version;
+	bool has_protocol_version;
+	bool accuracy;
+	bool accuracy_and_time;
+	bool time;
+	bool altitude;
+	bool speed;
+	bool direction;
+	bool vertical_speed;
+	uint8_t level_of_confidence;
+	bool has_level_of_confidence;
+};
+
+struct dmrgo_lrrp_time_t {
+	uint16_t year;
+	uint8_t month;
+	uint8_t day;
+	uint8_t hour;
+	uint8_t minute;
+	uint8_t second;
+};
+
+struct dmrgo_lrrp_operation_error_t {
+	uint32_t code;
+	uint8_t *info;
+	size_t info_len;
+};
+
+struct dmrgo_lrrp_point2_d_t {
+	double latitude;
+	double longitude;
+};
+
+struct dmrgo_lrrp_point3_d_t {
+	double latitude;
+	double longitude;
+	double altitude;
+};
+
+struct dmrgo_lrrp_point3_d_accuracy_t {
+	double latitude;
+	double longitude;
+	double altitude;
+	double altitude_accuracy;
+};
+
+struct dmrgo_lrrp_report_t {
+	uint8_t *request_id;
+	size_t request_id_len;
+	bool has_request_id;
+	uint8_t short_request_id;
+	bool has_short_request_id;
+	dmrgo_lrrp_time_t time;
+	bool has_time;
+	uint32_t protocol_version;
+	bool has_protocol_version;
+	uint32_t result;
+	bool has_result;
+	bool success;
+	dmrgo_lrrp_operation_error_t error;
+	bool has_error;
+	dmrgo_lrrp_circle2_d_t circle2_d;
+	bool has_circle2_d;
+	dmrgo_lrrp_circle3_d_t circle3_d;
+	bool has_circle3_d;
+	uint8_t direction;
+	bool has_direction;
+	uint8_t level_of_confidence;
+	bool has_level_of_confidence;
+	dmrgo_lrrp_point2_d_t point2_d;
+	bool has_point2_d;
+	dmrgo_lrrp_point3_d_t point3_d;
+	bool has_point3_d;
+	dmrgo_lrrp_point3_d_accuracy_t point3_d_accuracy;
+	bool has_point3_d_accuracy;
+	double speed;
+	bool has_speed;
+	double vertical_speed;
+	bool has_vertical_speed;
+};
+
+struct dmrgo_lrrp_message_t {
+	dmrgo_lrrp_document_id_t document;
+	uint32_t length;
+	dmrgo_lrrp_request_t request;
+	dmrgo_lrrp_report_t report;
+};
+
 struct dmrgo_tms_header_t {
 	bool extension;
 	bool ack_required;
@@ -2422,6 +2560,10 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ERR_LAYER2_SHORT_LC_INCOMPLETE (-115)
 #define DMRGO_ERR_LAYER2_SHORT_LC_SEQUENCE (-116)
 #define DMRGO_ERR_LAYER2_VOICE_TERMINATED (-117)
+#define DMRGO_ERR_LRRP_LENGTH (-187)
+#define DMRGO_ERR_LRRP_SHORT (-188)
+#define DMRGO_ERR_LRRP_TOKEN (-189)
+#define DMRGO_ERR_LRRP_VARINT (-190)
 #define DMRGO_ERR_NMEA_CHECKSUM (-152)
 #define DMRGO_ERR_NMEA_FIELD (-153)
 #define DMRGO_ERR_NMEA_SENTENCE (-154)
@@ -3644,6 +3786,26 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ARS_TYPE_USER_DEREGISTRATION ((dmrgo_ars_type_t)6)
 /* Go: ars.TypeUserRegistration. a user logs on at a radio */
 #define DMRGO_ARS_TYPE_USER_REGISTRATION ((dmrgo_ars_type_t)5)
+/* Go: lrrp.ImmediateReport. the answer to an ImmediateRequest */
+#define DMRGO_LRRP_IMMEDIATE_REPORT ((dmrgo_lrrp_document_id_t)7)
+/* Go: lrrp.ImmediateRequest. ask for one position */
+#define DMRGO_LRRP_IMMEDIATE_REQUEST ((dmrgo_lrrp_document_id_t)5)
+/* Go: lrrp.ProtocolReport. the answer to a ProtocolRequest */
+#define DMRGO_LRRP_PROTOCOL_REPORT ((dmrgo_lrrp_document_id_t)21)
+/* Go: lrrp.ProtocolRequest. ask for the protocol version */
+#define DMRGO_LRRP_PROTOCOL_REQUEST ((dmrgo_lrrp_document_id_t)20)
+/* Go: lrrp.StopAnswer. the answer to a StopRequest */
+#define DMRGO_LRRP_STOP_ANSWER ((dmrgo_lrrp_document_id_t)17)
+/* Go: lrrp.StopRequest. stop a TriggeredRequest */
+#define DMRGO_LRRP_STOP_REQUEST ((dmrgo_lrrp_document_id_t)15)
+/* Go: lrrp.TriggeredAnswer. the answer to a TriggeredRequest */
+#define DMRGO_LRRP_TRIGGERED_ANSWER ((dmrgo_lrrp_document_id_t)11)
+/* Go: lrrp.TriggeredReport. a position that a trigger sent */
+#define DMRGO_LRRP_TRIGGERED_REPORT ((dmrgo_lrrp_document_id_t)13)
+/* Go: lrrp.TriggeredRequest. ask for positions on a trigger, such as a period */
+#define DMRGO_LRRP_TRIGGERED_REQUEST ((dmrgo_lrrp_document_id_t)9)
+/* Go: lrrp.UnsolicitedReport. a position sent without a request */
+#define DMRGO_LRRP_UNSOLICITED_REPORT ((dmrgo_lrrp_document_id_t)19)
 /* Go: tms.EncodingNone. no coding given */
 #define DMRGO_TMS_ENCODING_NONE ((dmrgo_tms_encoding_t)0)
 /* Go: tms.EncodingUTF16LE. UTF-16LE (UCS-2) */
@@ -5547,6 +5709,50 @@ int dmrgo_ars_response_append_binary(dmrgo_ars_response_t *self, uint8_t *dst, s
 int dmrgo_ars_response_string(dmrgo_ars_response_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ars.Type.String. String returns the name of t. */
 int dmrgo_ars_type_string(dmrgo_ars_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: lrrp.Circle2D.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_lrrp_circle2_d_append_binary(dmrgo_lrrp_circle2_d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: lrrp.Circle2D.String. String returns the fields of s as text, for printing. */
+int dmrgo_lrrp_circle2_d_string(dmrgo_lrrp_circle2_d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: lrrp.Circle3D.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_lrrp_circle3_d_append_binary(dmrgo_lrrp_circle3_d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: lrrp.Circle3D.String. String returns the fields of s as text, for printing. */
+int dmrgo_lrrp_circle3_d_string(dmrgo_lrrp_circle3_d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: lrrp.DecodeMessageInto. DecodeMessageInto decodes a Message from data. */
+int dmrgo_lrrp_decode_message_into(const dmrgo_lrrp_message_t *m, const uint8_t *data, size_t data_len);
+/* Go: lrrp.DocumentID.String. String returns the name of d. */
+int dmrgo_lrrp_document_id_string(dmrgo_lrrp_document_id_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: lrrp.Message.AppendBinary. AppendBinary appends s to dst, with Length set to the length of the data. */
+int dmrgo_lrrp_message_append_binary(dmrgo_lrrp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: lrrp.Message.String. String returns the fields of s as text, for printing. */
+int dmrgo_lrrp_message_string(dmrgo_lrrp_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: lrrp.OperationError.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_lrrp_operation_error_append_binary(dmrgo_lrrp_operation_error_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: lrrp.OperationError.String. String returns the fields of s as text, for printing. */
+int dmrgo_lrrp_operation_error_string(dmrgo_lrrp_operation_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: lrrp.Point2D.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_lrrp_point2_d_append_binary(dmrgo_lrrp_point2_d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: lrrp.Point2D.String. String returns the fields of s as text, for printing. */
+int dmrgo_lrrp_point2_d_string(dmrgo_lrrp_point2_d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: lrrp.Point3D.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_lrrp_point3_d_append_binary(dmrgo_lrrp_point3_d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: lrrp.Point3D.String. String returns the fields of s as text, for printing. */
+int dmrgo_lrrp_point3_d_string(dmrgo_lrrp_point3_d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: lrrp.Point3DAccuracy.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_lrrp_point3_d_accuracy_append_binary(dmrgo_lrrp_point3_d_accuracy_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: lrrp.Point3DAccuracy.String. String returns the fields of s as text, for printing. */
+int dmrgo_lrrp_point3_d_accuracy_string(dmrgo_lrrp_point3_d_accuracy_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: lrrp.Report.AppendBinary. AppendBinary appends s to dst: each field that is set, as its token and value, in the order of the fields. */
+int dmrgo_lrrp_report_append_binary(dmrgo_lrrp_report_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: lrrp.Report.String. String returns the fields of s as text, for printing. */
+int dmrgo_lrrp_report_string(dmrgo_lrrp_report_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: lrrp.Request.AppendBinary. AppendBinary appends s to dst: each field that is set, as its token and value, in the order of the fields. */
+int dmrgo_lrrp_request_append_binary(dmrgo_lrrp_request_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: lrrp.Request.String. String returns the fields of s as text, for printing. */
+int dmrgo_lrrp_request_string(dmrgo_lrrp_request_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: lrrp.Time.AppendBinary. AppendBinary appends the 5 octets of s to dst. */
+int dmrgo_lrrp_time_append_binary(dmrgo_lrrp_time_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: lrrp.Time.String. String returns the fields of s as text, for printing. */
+int dmrgo_lrrp_time_string(dmrgo_lrrp_time_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: tms.DecodeMessage. DecodeMessage decodes a Message from data. */
 int dmrgo_tms_decode_message(const uint8_t *data, size_t data_len, dmrgo_tms_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: tms.Encoding.String. String returns the name of e. */

@@ -1,0 +1,265 @@
+package lrrp
+
+import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
+
+// DocumentID identifies the kind of a message. Radios send the odd values,
+// which carry no constant data table.
+type DocumentID uint8
+
+// The DocumentID values.
+const (
+	ImmediateRequest  DocumentID = 0x05 // ask for one position
+	ImmediateReport   DocumentID = 0x07 // the answer to an ImmediateRequest
+	TriggeredRequest  DocumentID = 0x09 // ask for positions on a trigger, such as a period
+	TriggeredAnswer   DocumentID = 0x0B // the answer to a TriggeredRequest
+	TriggeredReport   DocumentID = 0x0D // a position that a trigger sent
+	StopRequest       DocumentID = 0x0F // stop a TriggeredRequest
+	StopAnswer        DocumentID = 0x11 // the answer to a StopRequest
+	UnsolicitedReport DocumentID = 0x13 // a position sent without a request
+	ProtocolRequest   DocumentID = 0x14 // ask for the protocol version
+	ProtocolReport    DocumentID = 0x15 // the answer to a ProtocolRequest
+)
+
+// String returns the name of d. It allocates only for a value without a
+// name.
+func (d DocumentID) String() string {
+	switch d {
+	case ImmediateRequest:
+		return "Immediate Location Request"
+	case ImmediateReport:
+		return "Immediate Location Report"
+	case TriggeredRequest:
+		return "Triggered Location Request"
+	case TriggeredAnswer:
+		return "Triggered Location Answer"
+	case TriggeredReport:
+		return "Triggered Location Report"
+	case StopRequest:
+		return "Triggered Location Stop Request"
+	case StopAnswer:
+		return "Triggered Location Stop Answer"
+	case UnsolicitedReport:
+		return "Unsolicited Location Report"
+	case ProtocolRequest:
+		return "Location Protocol Request"
+	case ProtocolReport:
+		return "Location Protocol Report"
+	}
+	return "DocumentID(" + text.Int(int64(d)) + ")"
+}
+
+// Time is the UTC time of a position (token 0x34).
+//
+//dmr:frame 5
+type Time struct {
+	// Year is the year, such as 2026.
+	Year uint16 `dmr:"bits:0-13"`
+	// Month is the month, 1 to 12.
+	Month uint8 `dmr:"bits:14-17"`
+	// Day is the day of the month, 1 to 31.
+	Day uint8 `dmr:"bits:18-22"`
+	// Hour is the hour, 0 to 23.
+	Hour uint8 `dmr:"bits:23-27"`
+	// Minute is the minute, 0 to 59.
+	Minute uint8 `dmr:"bits:28-33"`
+	// Second is the second, 0 to 59.
+	Second uint8 `dmr:"bits:34-39"`
+}
+
+// Point2D is a position (token 0x66).
+//
+//dmr:stream
+type Point2D struct {
+	// Latitude is in degrees, north positive.
+	Latitude float64 `dmr:"i32,scale:90/31"`
+	// Longitude is in degrees, east positive.
+	Longitude float64 `dmr:"i32,scale:360/32"`
+}
+
+// Circle2D is a position with its accuracy (token 0x51).
+//
+//dmr:stream
+type Circle2D struct {
+	// Latitude is in degrees, north positive.
+	Latitude float64 `dmr:"i32,scale:90/31"`
+	// Longitude is in degrees, east positive.
+	Longitude float64 `dmr:"i32,scale:360/32"`
+	// Radius is the radius of the circle that holds the position, in
+	// meters.
+	Radius float64 `dmr:"ufloatvar"`
+}
+
+// Point3D is a position with an altitude (token 0x69).
+//
+//dmr:stream
+type Point3D struct {
+	// Latitude is in degrees, north positive.
+	Latitude float64 `dmr:"i32,scale:90/31"`
+	// Longitude is in degrees, east positive.
+	Longitude float64 `dmr:"i32,scale:360/32"`
+	// Altitude is in meters.
+	Altitude float64 `dmr:"sfloatvar"`
+}
+
+// Point3DAccuracy is a position with an altitude and its accuracy (token
+// 0x6A).
+//
+//dmr:stream
+type Point3DAccuracy struct {
+	// Latitude is in degrees, north positive.
+	Latitude float64 `dmr:"i32,scale:90/31"`
+	// Longitude is in degrees, east positive.
+	Longitude float64 `dmr:"i32,scale:360/32"`
+	// Altitude is in meters.
+	Altitude float64 `dmr:"sfloatvar"`
+	// AltitudeAccuracy is in meters.
+	AltitudeAccuracy float64 `dmr:"ufloatvar"`
+}
+
+// Circle3D is a position with an altitude and the accuracy of both (token
+// 0x55).
+//
+//dmr:stream
+type Circle3D struct {
+	// Latitude is in degrees, north positive.
+	Latitude float64 `dmr:"i32,scale:90/31"`
+	// Longitude is in degrees, east positive.
+	Longitude float64 `dmr:"i32,scale:360/32"`
+	// Radius is the radius of the circle that holds the position, in
+	// meters.
+	Radius float64 `dmr:"ufloatvar"`
+	// Altitude is in meters.
+	Altitude float64 `dmr:"sfloatvar"`
+	// AltitudeAccuracy is in meters.
+	AltitudeAccuracy float64 `dmr:"ufloatvar"`
+}
+
+// OperationError is the result of a request that failed, with its text
+// (token 0x39).
+//
+//dmr:stream
+type OperationError struct {
+	// Code is the result code, such as 0x10 for no GPS fix.
+	Code uint32 `dmr:"uintvar"`
+	// Info is the text of the error.
+	Info []byte `dmr:"lvvar"`
+}
+
+// Report holds the tokens of a report or an answer. Each value field has a
+// Has field that tells whether the message carries it.
+//
+//dmr:tokens
+type Report struct {
+	// RequestID is the identifier of the request that the report answers.
+	RequestID    []byte `dmr:"lvvar,token:0x22"`
+	HasRequestID bool   `dmr:"-"`
+	// ShortRequestID is a request identifier of one octet.
+	ShortRequestID    uint8 `dmr:"u8,token:0x23"`
+	HasShortRequestID bool  `dmr:"-"`
+	// Time is the time of the position.
+	Time    Time `dmr:"frame,token:0x34"`
+	HasTime bool `dmr:"-"`
+	// ProtocolVersion is the version of the protocol.
+	ProtocolVersion    uint32 `dmr:"uintvar,token:0x36"`
+	HasProtocolVersion bool   `dmr:"-"`
+	// Result is the result code of the request.
+	Result    uint32 `dmr:"uintvar,token:0x37"`
+	HasResult bool   `dmr:"-"`
+	// Success reports a request that succeeded.
+	Success bool `dmr:"flag,token:0x38"`
+	// Error is the result of a request that failed.
+	Error    OperationError `dmr:"stream,token:0x39"`
+	HasError bool           `dmr:"-"`
+	// Circle2D is a position with its accuracy.
+	Circle2D    Circle2D `dmr:"stream,token:0x51"`
+	HasCircle2D bool     `dmr:"-"`
+	// Circle3D is a position with an altitude and its accuracy.
+	Circle3D    Circle3D `dmr:"stream,token:0x55"`
+	HasCircle3D bool     `dmr:"-"`
+	// Direction is the heading in units of 2 degrees from north.
+	Direction    uint8 `dmr:"u8,token:0x56"`
+	HasDirection bool  `dmr:"-"`
+	// LevelOfConfidence is the confidence of the position in percent.
+	LevelOfConfidence    uint8 `dmr:"u8,token:0x65"`
+	HasLevelOfConfidence bool  `dmr:"-"`
+	// Point2D is a position.
+	Point2D    Point2D `dmr:"stream,token:0x66"`
+	HasPoint2D bool    `dmr:"-"`
+	// Point3D is a position with an altitude.
+	Point3D    Point3D `dmr:"stream,token:0x69"`
+	HasPoint3D bool    `dmr:"-"`
+	// Point3DAccuracy is a position with an altitude and its accuracy.
+	Point3DAccuracy    Point3DAccuracy `dmr:"stream,token:0x6A"`
+	HasPoint3DAccuracy bool            `dmr:"-"`
+	// Speed is the horizontal speed in meters per second.
+	Speed    float64 `dmr:"ufloatvar,token:0x6C"`
+	HasSpeed bool    `dmr:"-"`
+	// VerticalSpeed is the vertical speed in meters per second, up
+	// positive.
+	VerticalSpeed    float64 `dmr:"sfloatvar,token:0x70"`
+	HasVerticalSpeed bool    `dmr:"-"`
+}
+
+// Request holds the tokens of a request. AppendBinary writes them in the
+// order of the fields, which is the order that radios and servers use.
+//
+//dmr:tokens
+type Request struct {
+	// RequestID is the identifier that the reports carry.
+	RequestID    []byte `dmr:"lvvar,token:0x22"`
+	HasRequestID bool   `dmr:"-"`
+	// ShortRequestID is a request identifier of one octet.
+	ShortRequestID    uint8 `dmr:"u8,token:0x23"`
+	HasShortRequestID bool  `dmr:"-"`
+	// Periodic asks for reports on a period or a distance.
+	Periodic bool `dmr:"flag,token:0x34"`
+	// OneShot asks for a single report.
+	OneShot bool `dmr:"flag,token:0x33"`
+	// Interval is the period of a periodic trigger, in seconds.
+	Interval    uint32 `dmr:"uintvar,token:0x31"`
+	HasInterval bool   `dmr:"-"`
+	// Distance is the distance of a distance trigger, in meters.
+	Distance    uint32 `dmr:"uintvar,token:0x78"`
+	HasDistance bool   `dmr:"-"`
+	// TriggerCondition is the condition that sends a report, such as 2 for
+	// an emergency.
+	TriggerCondition    uint32 `dmr:"uintvar,token:0x4A"`
+	HasTriggerCondition bool   `dmr:"-"`
+	// ProtocolVersion is the requested protocol version.
+	ProtocolVersion    uint32 `dmr:"uintvar,token:0x3F"`
+	HasProtocolVersion bool   `dmr:"-"`
+	// Accuracy asks for the accuracy of the position.
+	Accuracy bool `dmr:"flag,token:0x50"`
+	// AccuracyAndTime asks for the accuracy and the time of the position.
+	AccuracyAndTime bool `dmr:"flag,token:0x51"`
+	// Time asks for the time of the position.
+	Time bool `dmr:"flag,token:0x52"`
+	// Altitude asks for the altitude.
+	Altitude bool `dmr:"flag,token:0x54"`
+	// Speed asks for the horizontal speed.
+	Speed bool `dmr:"flag,token:0x62"`
+	// Direction asks for the heading.
+	Direction bool `dmr:"flag,token:0x57"`
+	// VerticalSpeed asks for the vertical speed.
+	VerticalSpeed bool `dmr:"flag,token:0x64"`
+	// LevelOfConfidence is the confidence that the request asks for.
+	LevelOfConfidence    uint8 `dmr:"u8,token:0x61"`
+	HasLevelOfConfidence bool  `dmr:"-"`
+}
+
+// Message is a MOTOTRBO Location Request and Response Protocol message, the
+// payload of a UDP datagram to port 4001. It is larger than 256 octets, so
+// decode it with DecodeMessageInto into a Message that lives in a struct of
+// the caller or a package variable.
+//
+//dmr:stream into
+type Message struct {
+	// Document is the kind of the message.
+	Document DocumentID `dmr:"u8"`
+	// Length is the number of octets after it. AppendBinary sets it.
+	Length uint32 `dmr:"uintvar,length"`
+	// Request holds the tokens of a request document.
+	Request Request `dmr:"tokens,if:Document==ImmediateRequest|TriggeredRequest|StopRequest|ProtocolRequest"`
+	// Report holds the tokens of a report or answer document.
+	Report Report `dmr:"tokens,if:Document!=ImmediateRequest|TriggeredRequest|StopRequest|ProtocolRequest"`
+}
