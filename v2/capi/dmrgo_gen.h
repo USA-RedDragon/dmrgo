@@ -9648,10 +9648,18 @@ int dmrgo_dmrd_hbrp_config_url(dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, siz
 int dmrgo_dmrd_hbrp_config_of(const uint8_t *p, size_t p_len, dmrgo_dmrd_hbrp_config_t *out, bool *out_ok);
 /* Go: dmrd.LocalPosition.AppendBinary. AppendBinary appends the 14 octets of s to dst. */
 int dmrgo_dmrd_local_position_append_binary(dmrgo_dmrd_local_position_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: dmrd.LocalPosition.LC. LC decodes the position as Position.LC does. */
+int dmrgo_dmrd_local_position_lc(dmrgo_dmrd_local_position_t *self, dmrgo_pdu_full_link_control_t *out);
+/* Go: dmrd.LocalPosition.LCInto. LCInto decodes the position into dst as Position.LCInto does. */
+int dmrgo_dmrd_local_position_lc_into(dmrgo_dmrd_local_position_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *pl);
 /* Go: dmrd.LocalPosition.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_local_position_string(dmrgo_dmrd_local_position_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.LocalTalkerAlias.AppendBinary. AppendBinary appends the 15 octets of s to dst. */
 int dmrgo_dmrd_local_talker_alias_append_binary(dmrgo_dmrd_local_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: dmrd.LocalTalkerAlias.LC. LC decodes the talker alias block as TalkerAlias.LC does. */
+int dmrgo_dmrd_local_talker_alias_lc(dmrgo_dmrd_local_talker_alias_t *self, dmrgo_pdu_full_link_control_t *out);
+/* Go: dmrd.LocalTalkerAlias.LCInto. LCInto decodes the block into dst as TalkerAlias.LCInto does. */
+int dmrgo_dmrd_local_talker_alias_lc_into(dmrgo_dmrd_local_talker_alias_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *p);
 /* Go: dmrd.LocalTalkerAlias.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_local_talker_alias_string(dmrgo_dmrd_local_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.ParseDMRPlusOptions. ParseDMRPlusOptions parses a DMR+ startup options text: Key=Value pairs separated by semicolons, with spaces around them ignored. */
@@ -9660,10 +9668,18 @@ int dmrgo_dmrd_parse_dmr_plus_options(const uint8_t *text, size_t text_len, dmrg
 int dmrgo_dmrd_parse_free_dmr_options(const uint8_t *text, size_t text_len, dmrgo_dmrd_free_dmr_options_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: dmrd.Position.AppendBinary. AppendBinary appends the 14 or 18 octets of s to dst: Size selects the length, and 0 means 14. */
 int dmrgo_dmrd_position_append_binary(dmrgo_dmrd_position_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: dmrd.Position.LC. LC decodes the position as the GPS Info Full LC it came from: FLCO GPS Info, standard FID, and Data. */
+int dmrgo_dmrd_position_lc(dmrgo_dmrd_position_t *self, dmrgo_pdu_full_link_control_t *out);
+/* Go: dmrd.Position.LCInto. LCInto decodes the position into dst as LC does, with the payload struct in pl as pdu.DecodeFullLinkControlBytesInto places it. */
+int dmrgo_dmrd_position_lc_into(dmrgo_dmrd_position_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *pl);
 /* Go: dmrd.Position.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_position_string(dmrgo_dmrd_position_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.TalkerAlias.AppendBinary. AppendBinary appends the 15 or 19 octets of s to dst: Size selects the length, and 0 means 15. */
 int dmrgo_dmrd_talker_alias_append_binary(dmrgo_dmrd_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: dmrd.TalkerAlias.LC. LC decodes the talker alias block as the Full LC it came from: FLCO Talker Alias Header plus Type, standard FID, and Data. */
+int dmrgo_dmrd_talker_alias_lc(dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_full_link_control_t *out);
+/* Go: dmrd.TalkerAlias.LCInto. LCInto decodes the block into dst as LC does, with the payload struct in p as pdu.DecodeFullLinkControlBytesInto places it. */
+int dmrgo_dmrd_talker_alias_lc_into(dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *p);
 /* Go: dmrd.TalkerAlias.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_talker_alias_string(dmrgo_dmrd_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_dmrd_auth_bridge_free frees the handle. self may be NULL. */

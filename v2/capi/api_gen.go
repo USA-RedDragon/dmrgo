@@ -33961,6 +33961,62 @@ func dmrgo_dmrd_local_position_append_binary(c_self *C.dmrgo_dmrd_local_position
 	return C.DMRGO_OK
 }
 
+//export dmrgo_dmrd_local_position_lc
+func dmrgo_dmrd_local_position_lc(c_self *C.dmrgo_dmrd_local_position_t, c_out *C.dmrgo_pdu_full_link_control_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_dmrd.LocalPosition
+	x = *(*g_transport_dmrd.LocalPosition)(unsafe.Pointer(&(*c_self)))
+	r0, r1 := x.LC()
+	*(*g_transport_dmrd.LocalPosition)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_FullLinkControl(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_local_position_lc_into
+func dmrgo_dmrd_local_position_lc_into(c_self *C.dmrgo_dmrd_local_position_t, c_dst *C.dmrgo_pdu_full_link_control_t, c_pl *C.dmrgo_pdu_full_link_control_payloads_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_dmrd.LocalPosition
+	x = *(*g_transport_dmrd.LocalPosition)(unsafe.Pointer(&(*c_self)))
+	var a_dst g_layer2_pdu.FullLinkControl
+	var p_dst *g_layer2_pdu.FullLinkControl
+	if c_dst != nil {
+		p_dst = &a_dst
+	}
+	var a_pl *g_layer2_pdu.FullLinkControlPayloads
+	if c_pl != nil {
+		a_pl = get_layer2_pdu_FullLinkControlPayloads(c_pl).v
+	}
+	r0 := x.LCInto(p_dst, a_pl)
+	*(*g_transport_dmrd.LocalPosition)(unsafe.Pointer(&(*c_self))) = x
+	if c_dst != nil {
+		out_layer2_pdu_FullLinkControl(&(*c_dst), &a_dst, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_dmrd_local_position_string
 func dmrgo_dmrd_local_position_string(c_self *C.dmrgo_dmrd_local_position_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -34008,6 +34064,62 @@ func dmrgo_dmrd_local_talker_alias_append_binary(c_self *C.dmrgo_dmrd_local_talk
 	*c_dst_len = C.size_t(nf_dst)
 	if r1 != nil {
 		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_local_talker_alias_lc
+func dmrgo_dmrd_local_talker_alias_lc(c_self *C.dmrgo_dmrd_local_talker_alias_t, c_out *C.dmrgo_pdu_full_link_control_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_dmrd.LocalTalkerAlias
+	x = *(*g_transport_dmrd.LocalTalkerAlias)(unsafe.Pointer(&(*c_self)))
+	r0, r1 := x.LC()
+	*(*g_transport_dmrd.LocalTalkerAlias)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_FullLinkControl(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_local_talker_alias_lc_into
+func dmrgo_dmrd_local_talker_alias_lc_into(c_self *C.dmrgo_dmrd_local_talker_alias_t, c_dst *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_full_link_control_payloads_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_dmrd.LocalTalkerAlias
+	x = *(*g_transport_dmrd.LocalTalkerAlias)(unsafe.Pointer(&(*c_self)))
+	var a_dst g_layer2_pdu.FullLinkControl
+	var p_dst *g_layer2_pdu.FullLinkControl
+	if c_dst != nil {
+		p_dst = &a_dst
+	}
+	var a_p *g_layer2_pdu.FullLinkControlPayloads
+	if c_p != nil {
+		a_p = get_layer2_pdu_FullLinkControlPayloads(c_p).v
+	}
+	r0 := x.LCInto(p_dst, a_p)
+	*(*g_transport_dmrd.LocalTalkerAlias)(unsafe.Pointer(&(*c_self))) = x
+	if c_dst != nil {
+		out_layer2_pdu_FullLinkControl(&(*c_dst), &a_dst, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }
@@ -34122,6 +34234,62 @@ func dmrgo_dmrd_position_append_binary(c_self *C.dmrgo_dmrd_position_t, c_dst *C
 	return C.DMRGO_OK
 }
 
+//export dmrgo_dmrd_position_lc
+func dmrgo_dmrd_position_lc(c_self *C.dmrgo_dmrd_position_t, c_out *C.dmrgo_pdu_full_link_control_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_dmrd.Position
+	x = *(*g_transport_dmrd.Position)(unsafe.Pointer(&(*c_self)))
+	r0, r1 := x.LC()
+	*(*g_transport_dmrd.Position)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_FullLinkControl(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_position_lc_into
+func dmrgo_dmrd_position_lc_into(c_self *C.dmrgo_dmrd_position_t, c_dst *C.dmrgo_pdu_full_link_control_t, c_pl *C.dmrgo_pdu_full_link_control_payloads_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_dmrd.Position
+	x = *(*g_transport_dmrd.Position)(unsafe.Pointer(&(*c_self)))
+	var a_dst g_layer2_pdu.FullLinkControl
+	var p_dst *g_layer2_pdu.FullLinkControl
+	if c_dst != nil {
+		p_dst = &a_dst
+	}
+	var a_pl *g_layer2_pdu.FullLinkControlPayloads
+	if c_pl != nil {
+		a_pl = get_layer2_pdu_FullLinkControlPayloads(c_pl).v
+	}
+	r0 := x.LCInto(p_dst, a_pl)
+	*(*g_transport_dmrd.Position)(unsafe.Pointer(&(*c_self))) = x
+	if c_dst != nil {
+		out_layer2_pdu_FullLinkControl(&(*c_dst), &a_dst, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_dmrd_position_string
 func dmrgo_dmrd_position_string(c_self *C.dmrgo_dmrd_position_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -34169,6 +34337,62 @@ func dmrgo_dmrd_talker_alias_append_binary(c_self *C.dmrgo_dmrd_talker_alias_t, 
 	*c_dst_len = C.size_t(nf_dst)
 	if r1 != nil {
 		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_talker_alias_lc
+func dmrgo_dmrd_talker_alias_lc(c_self *C.dmrgo_dmrd_talker_alias_t, c_out *C.dmrgo_pdu_full_link_control_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_dmrd.TalkerAlias
+	x = *(*g_transport_dmrd.TalkerAlias)(unsafe.Pointer(&(*c_self)))
+	r0, r1 := x.LC()
+	*(*g_transport_dmrd.TalkerAlias)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_FullLinkControl(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_talker_alias_lc_into
+func dmrgo_dmrd_talker_alias_lc_into(c_self *C.dmrgo_dmrd_talker_alias_t, c_dst *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_full_link_control_payloads_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_dmrd.TalkerAlias
+	x = *(*g_transport_dmrd.TalkerAlias)(unsafe.Pointer(&(*c_self)))
+	var a_dst g_layer2_pdu.FullLinkControl
+	var p_dst *g_layer2_pdu.FullLinkControl
+	if c_dst != nil {
+		p_dst = &a_dst
+	}
+	var a_p *g_layer2_pdu.FullLinkControlPayloads
+	if c_p != nil {
+		a_p = get_layer2_pdu_FullLinkControlPayloads(c_p).v
+	}
+	r0 := x.LCInto(p_dst, a_p)
+	*(*g_transport_dmrd.TalkerAlias)(unsafe.Pointer(&(*c_self))) = x
+	if c_dst != nil {
+		out_layer2_pdu_FullLinkControl(&(*c_dst), &a_dst, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }

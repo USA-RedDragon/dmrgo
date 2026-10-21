@@ -33,6 +33,8 @@ var (
 	errKindVoice      error = &wrapError{"dmrd: SetHint: voice position is not A to F", layer2.ErrVoicePosition}
 	errKindData       error = &wrapError{"dmrd: SetHint: no data type, or it does not fit in 4 bits", layer2.ErrDataType}
 	errKind                 = errors.New("dmrd: SetHint: kind is not KindVoice or KindData")
+	errNilMessage           = errors.New("dmrd: nil message")
+	errAliasType            = errors.New("dmrd: talker alias Type is above 3")
 )
 
 type wrapError struct {

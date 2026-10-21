@@ -38,6 +38,7 @@ ignore_files:
   - v2/layer2/nocopy.go
   - v2/layer2/packet/nocopy.go
   - v2/transport/dmrd/alias.go
+  - v2/transport/dmrd/alias_lc.go
   - v2/transport/dmrd/auth/auth.go
   - v2/transport/dmrd/auth/errors.go
   - v2/transport/dmrd/bridge.go
