@@ -110,6 +110,11 @@ type Field struct {
 	// guard) and encode skips, because the sub-PDU encode writes its bits.
 	NoEncode bool
 
+	// Tail marks a packed byte field at the end of the longest frame that a
+	// shorter frame cuts: decode and encode copy the octets that the frame
+	// holds.
+	Tail bool
+
 	// BaseType is the resolved underlying Go basic type (e.g. "uint8"), or "" if unknown.
 	BaseType string
 
@@ -736,6 +741,8 @@ func applyFlag(f *Field, mod string) error {
 		f.Swap16 = true
 	case "text":
 		f.Text = true
+	case "tail":
+		f.Tail = true
 	default:
 		return fmt.Errorf("unrecognized modifier: %q", mod)
 	}

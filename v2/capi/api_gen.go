@@ -7245,6 +7245,7 @@ func in_transport_dmrd_Position(s *C.dmrgo_dmrd_position_t) (d g_transport_dmrd.
 	d.Repeater = uint32(s.repeater)
 	d.Source = uint32(s.source)
 	d.Data = *(*[7]byte)(unsafe.Pointer(&s.data))
+	d.Size = uint8(s.size)
 	return
 }
 
@@ -7253,6 +7254,7 @@ func out_transport_dmrd_Position(d *C.dmrgo_dmrd_position_t, s *g_transport_dmrd
 	d.repeater = C.uint32_t(s.Repeater)
 	d.source = C.uint32_t(s.Source)
 	*(*[7]byte)(unsafe.Pointer(&d.data)) = s.Data
+	d.size = C.uint8_t(s.Size)
 }
 
 func fromC_transport_dmrd_Position(s *C.dmrgo_dmrd_position_t) g_transport_dmrd.Position {
@@ -7264,6 +7266,7 @@ func in_transport_dmrd_TalkerAlias(s *C.dmrgo_dmrd_talker_alias_t) (d g_transpor
 	d.Source = uint32(s.source)
 	d.Type = uint8(s.type_)
 	d.Data = *(*[7]byte)(unsafe.Pointer(&s.data))
+	d.Size = uint8(s.size)
 	return
 }
 
@@ -7273,6 +7276,7 @@ func out_transport_dmrd_TalkerAlias(d *C.dmrgo_dmrd_talker_alias_t, s *g_transpo
 	d.source = C.uint32_t(s.Source)
 	d.type_ = C.uint8_t(s.Type)
 	*(*[7]byte)(unsafe.Pointer(&d.data)) = s.Data
+	d.size = C.uint8_t(s.Size)
 }
 
 func fromC_transport_dmrd_TalkerAlias(s *C.dmrgo_dmrd_talker_alias_t) g_transport_dmrd.TalkerAlias {

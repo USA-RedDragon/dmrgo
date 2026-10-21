@@ -3906,8 +3906,10 @@ struct dmrgo_dmrd_position_t {
 	uint32_t repeater;
 	/* Source is the radio ID (24 bits). */
 	uint32_t source;
-	/* Data is the 7 octets of the GPS Info LC after its FLCO and FID octets (ETSI TS 102 361-2 clause 7.1.1.3). */
+	/* Data is the 7 octets of the GPS Info LC after its FLCO and FID octets (ETSI TS 102 361-2 clause 7.1.1.3). A 14-octet packet holds the first 3, and the others are 0. */
 	uint8_t data[7];
+	/* Size is the length of the packet: 14 or 18, or 0 for 14. */
+	uint8_t size;
 };
 
 struct dmrgo_dmrd_talker_alias_t {
@@ -3917,8 +3919,10 @@ struct dmrgo_dmrd_talker_alias_t {
 	uint32_t source;
 	/* Type is the talker alias block: 0 for the header, 1 to 3 for the blocks. */
 	uint8_t type_;
-	/* Data is the 7 octets of the block, after its FLCO and FID octets (ETSI TS 102 361-2 clauses 7.1.1.4 and 7.1.1.5). */
+	/* Data is the 7 octets of the block, after its FLCO and FID octets (ETSI TS 102 361-2 clauses 7.1.1.4 and 7.1.1.5). A 15-octet packet holds the first 3, and the others are 0. */
 	uint8_t data[7];
+	/* Size is the length of the packet: 15 or 19, or 0 for 15. */
+	uint8_t size;
 };
 
 struct dmrgo_dmrd_free_dmr_options_t {
@@ -9574,9 +9578,9 @@ int dmrgo_dmrd_decode_data(const uint8_t *data, size_t data_len, dmrgo_dmrd_data
 int dmrgo_dmrd_decode_local_position(const uint8_t *data, size_t data_len, dmrgo_dmrd_local_position_t *out);
 /* Go: dmrd.DecodeLocalTalkerAlias. DecodeLocalTalkerAlias decodes a LocalTalkerAlias from data, a frame of 15 octets. */
 int dmrgo_dmrd_decode_local_talker_alias(const uint8_t *data, size_t data_len, dmrgo_dmrd_local_talker_alias_t *out);
-/* Go: dmrd.DecodePosition. DecodePosition decodes a Position from data, a frame of 18 octets. */
+/* Go: dmrd.DecodePosition. DecodePosition decodes a Position from data, a frame of 14 or 18 octets. */
 int dmrgo_dmrd_decode_position(const uint8_t *data, size_t data_len, dmrgo_dmrd_position_t *out);
-/* Go: dmrd.DecodeTalkerAlias. DecodeTalkerAlias decodes a TalkerAlias from data, a frame of 19 octets. */
+/* Go: dmrd.DecodeTalkerAlias. DecodeTalkerAlias decodes a TalkerAlias from data, a frame of 15 or 19 octets. */
 int dmrgo_dmrd_decode_talker_alias(const uint8_t *data, size_t data_len, dmrgo_dmrd_talker_alias_t *out);
 /* Go: dmrd.Dialect.String. String returns the name of the dialect. */
 int dmrgo_dmrd_dialect_string(dmrgo_dmrd_dialect_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -9654,11 +9658,11 @@ int dmrgo_dmrd_local_talker_alias_string(dmrgo_dmrd_local_talker_alias_t *self, 
 int dmrgo_dmrd_parse_dmr_plus_options(const uint8_t *text, size_t text_len, dmrgo_dmrd_dmr_plus_options_t *out);
 /* Go: dmrd.ParseFreeDMROptions. ParseFreeDMROptions parses a FreeDMR options text as FreeDMR does: Key=Value pairs separated by semicolons, keys in the exact case, the last pair of a key wins, and pairs with no "=" or more than one are skipped. */
 int dmrgo_dmrd_parse_free_dmr_options(const uint8_t *text, size_t text_len, dmrgo_dmrd_free_dmr_options_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: dmrd.Position.AppendBinary. AppendBinary appends the 18 octets of s to dst. */
+/* Go: dmrd.Position.AppendBinary. AppendBinary appends the 14 or 18 octets of s to dst: Size selects the length, and 0 means 14. */
 int dmrgo_dmrd_position_append_binary(dmrgo_dmrd_position_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.Position.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_position_string(dmrgo_dmrd_position_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: dmrd.TalkerAlias.AppendBinary. AppendBinary appends the 19 octets of s to dst. */
+/* Go: dmrd.TalkerAlias.AppendBinary. AppendBinary appends the 15 or 19 octets of s to dst: Size selects the length, and 0 means 15. */
 int dmrgo_dmrd_talker_alias_append_binary(dmrgo_dmrd_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.TalkerAlias.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_talker_alias_string(dmrgo_dmrd_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

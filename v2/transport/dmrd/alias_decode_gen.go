@@ -3,42 +3,55 @@
 package dmrd
 
 import (
+	"errors"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
-// DecodeTalkerAlias decodes a TalkerAlias from data, a frame of 19 octets.
-// It returns ErrShort when data is shorter than 19 octets, ErrLength when it
-// is longer and ErrSignature when octets 0 to 3 do not hold "DMRA". It does
-// not keep data.
+// DecodeTalkerAlias decodes a TalkerAlias from data, a frame of 15 or 19
+// octets. It returns ErrShort when data is shorter than 15 octets, ErrLength
+// when its length is not one of these and ErrSignature when octets 0 to 3 do
+// not hold "DMRA". It does not keep data.
 func DecodeTalkerAlias(data []byte) (TalkerAlias, error) {
-	if len(data) < 19 {
-		return TalkerAlias{}, ErrShort
-	}
-	if len(data) != 19 {
+	switch len(data) {
+	case 15, 19:
+	default:
+		if len(data) < 15 {
+			return TalkerAlias{}, ErrShort
+		}
 		return TalkerAlias{}, ErrLength
 	}
 	if data[0] != 0x44 || data[1] != 0x4D || data[2] != 0x52 || data[3] != 0x41 {
 		return TalkerAlias{}, ErrSignature
 	}
 	var result TalkerAlias
+	result.Size = uint8(len(data))
 	result.Repeater = uint32(uint64(data[4])<<24 | uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	result.Source = uint32(uint64(data[8])<<16 | uint64(data[9])<<8 | uint64(data[10]))
 	result.Type = uint8(uint64(data[11]))
-	copy(result.Data[0:7], data[12:19])
+	copy(result.Data[:], data[12:])
 	return result, nil
 }
 
-// AppendBinary appends the 19 octets of s to dst. It returns dst unchanged
-// and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
-// to grow dst.
+// AppendBinary appends the 15 or 19 octets of s to dst: Size selects the
+// length, and 0 means 15. It returns dst unchanged and a
+// *dmrgo.FieldRangeError when a field does not fit, or an error when Size is
+// not one of the lengths. It allocates only to grow dst.
 func (s *TalkerAlias) AppendBinary(dst []byte) ([]byte, error) {
 	if s == nil {
 		return dst, dmrgo.ErrNilReceiver
 	}
 
 	_n := len(dst)
-	for range 19 {
+	_size := 15
+	switch s.Size {
+	case 0, 15:
+	case 19:
+		_size = 19
+	default:
+		return dst, errTalkerAliasSize
+	}
+	for range _size {
 		dst = append(dst, 0)
 	}
 	data := dst[_n:]
@@ -59,7 +72,7 @@ func (s *TalkerAlias) AppendBinary(dst []byte) ([]byte, error) {
 	data[9] = byte(_valSource >> 8)
 	data[10] = byte(_valSource)
 	data[11] = byte(uint64(s.Type))
-	copy(data[12:19], s.Data[0:7])
+	copy(data[12:], s.Data[:])
 	return dst, nil
 }
 
@@ -133,37 +146,49 @@ func (s *LocalTalkerAlias) String() string {
 	return "LocalTalkerAlias{ Source: " + text.Int(int64(s.Source)) + ", Type: " + text.Int(int64(s.Type)) + ", Data: " + text.Bytes(s.Data[:]) + " }"
 }
 
-// DecodePosition decodes a Position from data, a frame of 18 octets. It
-// returns ErrShort when data is shorter than 18 octets, ErrLength when it is
-// longer and ErrSignature when octets 0 to 3 do not hold "DMRG". It does not
-// keep data.
+// DecodePosition decodes a Position from data, a frame of 14 or 18 octets.
+// It returns ErrShort when data is shorter than 14 octets, ErrLength when
+// its length is not one of these and ErrSignature when octets 0 to 3 do not
+// hold "DMRG". It does not keep data.
 func DecodePosition(data []byte) (Position, error) {
-	if len(data) < 18 {
-		return Position{}, ErrShort
-	}
-	if len(data) != 18 {
+	switch len(data) {
+	case 14, 18:
+	default:
+		if len(data) < 14 {
+			return Position{}, ErrShort
+		}
 		return Position{}, ErrLength
 	}
 	if data[0] != 0x44 || data[1] != 0x4D || data[2] != 0x52 || data[3] != 0x47 {
 		return Position{}, ErrSignature
 	}
 	var result Position
+	result.Size = uint8(len(data))
 	result.Repeater = uint32(uint64(data[4])<<24 | uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	result.Source = uint32(uint64(data[8])<<16 | uint64(data[9])<<8 | uint64(data[10]))
-	copy(result.Data[0:7], data[11:18])
+	copy(result.Data[:], data[11:])
 	return result, nil
 }
 
-// AppendBinary appends the 18 octets of s to dst. It returns dst unchanged
-// and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
-// to grow dst.
+// AppendBinary appends the 14 or 18 octets of s to dst: Size selects the
+// length, and 0 means 14. It returns dst unchanged and a
+// *dmrgo.FieldRangeError when a field does not fit, or an error when Size is
+// not one of the lengths. It allocates only to grow dst.
 func (s *Position) AppendBinary(dst []byte) ([]byte, error) {
 	if s == nil {
 		return dst, dmrgo.ErrNilReceiver
 	}
 
 	_n := len(dst)
-	for range 18 {
+	_size := 14
+	switch s.Size {
+	case 0, 14:
+	case 18:
+		_size = 18
+	default:
+		return dst, errPositionSize
+	}
+	for range _size {
 		dst = append(dst, 0)
 	}
 	data := dst[_n:]
@@ -183,7 +208,7 @@ func (s *Position) AppendBinary(dst []byte) ([]byte, error) {
 	data[8] = byte(_valSource >> 16)
 	data[9] = byte(_valSource >> 8)
 	data[10] = byte(_valSource)
-	copy(data[11:18], s.Data[0:7])
+	copy(data[11:], s.Data[:])
 	return dst, nil
 }
 
@@ -256,6 +281,7 @@ func (s *LocalPosition) String() string {
 }
 
 var (
+	errTalkerAliasSize        = errors.New("TalkerAlias.Size: not one of 15 or 19 octets")
 	errTalkerAliasSourceRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "Source",
@@ -266,6 +292,7 @@ var (
 		Field: "Source",
 		Type:  "LocalTalkerAlias",
 	}
+	errPositionSize        = errors.New("Position.Size: not one of 14 or 18 octets")
 	errPositionSourceRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "Source",
