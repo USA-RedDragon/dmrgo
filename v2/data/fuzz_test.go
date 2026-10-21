@@ -34,6 +34,15 @@ func pool(t testing.TB) []layer2.RawBurst {
 	}
 	p = append(p, build(t, confirmedHeader(1), payload(50), enums.DataTypeRate1)...)
 	p = append(p, build(t, confirmedHeader(2), payload(30), enums.DataTypeRate12)...)
+	for _, h := range []pdu.DataHeader{
+		sapHeader(enums.SAPShortData, 0, false),
+		sapHeader(enums.SAPShortData, 1, false),
+		sapHeader(enums.SAPShortData, 4, false),
+		sapHeader(enums.SAPShortData, 4, true),
+		sapHeader(enums.SAPUDPIPHeaderCompression, 0, false),
+	} {
+		p = append(p, build(t, h, payload(20), enums.DataTypeRate34)...)
+	}
 	udt := pdu.DataHeader{Format: pdu.FormatUnifiedDataTransport, UDTHeader: &pdu.UDTHeader{
 		LLIDDestination: dstID, LLIDSource: srcID, AppendedBlocks: 0, Opcode: pdu.UDTOpcodeInboundHeader}}
 	blocks := [][12]byte{{1, 2, 3}}
@@ -150,6 +159,9 @@ func checkRxScript(t *testing.T, in []byte, p []layer2.RawBurst) {
 			}
 			if e.Kind == data.EventCallEnd && e.Reason == 0 {
 				t.Fatalf("op %d: call end without a reason", i)
+			}
+			if st := e.Stats; e.Kind == data.EventCallEnd && st.Delivered+st.Duplicates+st.OutOfSequence > st.Packets {
+				t.Fatalf("op %d: stats %+v deliver or refuse more packets than complete", i, st)
 			}
 		}
 		if at, ok := r.Deadline(); ok && r.State() == data.StateIdle {

@@ -103,8 +103,8 @@ func TestReceiverAnyToneThroughXPR(t *testing.T) {
 
 	cc := enums.ColorCode(7)
 	ev := replay(t, newReceiver(t, &data.ReceiverConfig{Respond: true, Address: 3140598, ColorCode: &cc}), bursts)
-	if got := ipIDs(ev); !bytes.Equal(got, []byte{5, 6, 7}) {
-		t.Errorf("endpoint: IP IDs %v, want [5 6 7]", got)
+	if got := ipIDs(ev); !bytes.Equal(got, []byte{5, 5, 6, 7}) {
+		t.Errorf("endpoint: IP IDs %v, want [5 5 6 7]", got)
 	}
 	n, dups := 0, 0
 	for _, e := range ev {
@@ -119,8 +119,8 @@ func TestReceiverAnyToneThroughXPR(t *testing.T) {
 		case data.EventCallStart, data.EventDelivered, data.EventResponse, data.EventReassembled:
 		}
 	}
-	if n != 4 || dups != 1 {
-		t.Errorf("endpoint: %d ACKs and %d duplicates, want 4 and 1", n, dups)
+	if n != 4 || dups != 0 {
+		t.Errorf("endpoint: %d ACKs and %d duplicates, want 4 and 0", n, dups)
 	}
 }
 
@@ -138,9 +138,13 @@ func build(t testing.TB, h pdu.DataHeader, payload []byte, rate enums.DataType) 
 }
 
 func confirmedHeader(ns uint8) pdu.DataHeader {
+	return sapHeader(enums.SAPIPBasedPacketData, ns, false)
+}
+
+func sapHeader(sap enums.ServiceAccessPointID, ns uint8, resync bool) pdu.DataHeader {
 	return pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
-		ResponseRequested: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: dstID, LLIDSource: srcID,
-		FullMessageFlag: true, SendSequenceNumber: ns, FragmentSequenceNumber: 0b1000,
+		ResponseRequested: true, SAP: sap, LLIDDestination: dstID, LLIDSource: srcID,
+		FullMessageFlag: true, ReSynchronizeFlag: resync, SendSequenceNumber: ns, FragmentSequenceNumber: 0b1000,
 	}}
 }
 
@@ -197,6 +201,7 @@ func responses(t *testing.T, ev []data.Event) (string, []int) {
 func TestReceiverConfirmedFaults(t *testing.T) {
 	t.Parallel()
 	good := build(t, confirmedHeader(0), payload(60), enums.DataTypeRate12)
+	short := build(t, sapHeader(enums.SAPShortData, 0, false), payload(60), enums.DataTypeRate12)
 	if len(good) != 8 {
 		t.Fatalf("%d bursts, want a header and 7 blocks", len(good))
 	}
@@ -232,7 +237,8 @@ func TestReceiverConfirmedFaults(t *testing.T) {
 		{"last block lost", timed(0, good, 7), 0, "SACK", []int{6}},
 		{"message CRC", timed(0, badCRC32), 0, "NACK Packet CRC", nil},
 		{"header CRC", timed(0, badHeader), 0, "", nil},
-		{"duplicate", append(timed(0, good), timed(2*time.Second, good)...), 1, "ACK+ACK", nil},
+		{"IP twice", append(timed(0, good), timed(2*time.Second, good)...), 2, "ACK+ACK", nil},
+		{"duplicate", append(timed(0, short), timed(2*time.Second, short)...), 1, "ACK+ACK", nil},
 		{"selective retry", append(timed(0, good, 3), timed(time.Second, retryBursts(t, good, 2))...), 1, "SACK+ACK", []int{2}},
 	} {
 		r := newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID, Source: layer2.SyncSourceBS})
@@ -280,27 +286,112 @@ func retryBursts(t *testing.T, good []layer2.RawBurst, dbsn ...int) []layer2.Raw
 
 func TestReceiverSequence(t *testing.T) {
 	t.Parallel()
-	pkt := func(ns uint8, n int) []layer2.RawBurst {
-		return build(t, confirmedHeader(ns), payload(n), enums.DataTypeRate12)
+	type pk struct {
+		ns     uint8
+		resync bool
+		n      int
 	}
-	bursts := make([]timedBurst, 0, 40)
-	for i, b := range [][]layer2.RawBurst{pkt(3, 20), pkt(4, 20), pkt(4, 20), pkt(4, 30), pkt(7, 20)} {
-		bursts = append(bursts, timed(time.Duration(i)*time.Second, b)...)
-	}
-	ev := replay(t, newReceiver(t, &data.ReceiverConfig{Respond: true}), bursts)
-	resp, _ := responses(t, ev)
-	if resp != "ACK+ACK+ACK+ACK+NACK Out Of Sequence" {
-		t.Errorf("responses %q", resp)
-	}
-	n := 0
-	for _, e := range ev {
-		if e.Kind == data.EventDelivered {
-			n++
+	for _, c := range []struct {
+		name      string
+		sap       enums.ServiceAccessPointID
+		pkts      []pk
+		resp      string
+		status    []uint8
+		delivered int
+	}{
+		{"short data", enums.SAPShortData,
+			[]pk{{3, false, 20}, {4, false, 20}, {4, false, 20}, {4, false, 30}, {7, false, 20}, {5, false, 20}},
+			"ACK+ACK+ACK+ACK+NACK Out Of Sequence+ACK", []uint8{3, 4, 4, 4, 4, 5}, 3},
+		{"resync", enums.SAPShortData,
+			[]pk{{2, false, 20}, {6, false, 20}, {6, true, 20}, {6, false, 20}, {7, false, 20}, {1, true, 20}},
+			"ACK+NACK Out Of Sequence+ACK+ACK+ACK+ACK", []uint8{2, 2, 6, 6, 7, 1}, 4},
+		{"IP", enums.SAPIPBasedPacketData,
+			[]pk{{3, false, 20}, {4, false, 20}, {4, false, 20}, {4, false, 30}, {7, false, 20}, {0, false, 20}},
+			"ACK+ACK+ACK+ACK+ACK+ACK", []uint8{3, 4, 4, 4, 7, 0}, 6},
+		{"UDP/IP header compression", enums.SAPUDPIPHeaderCompression,
+			[]pk{{0, false, 20}, {0, false, 20}, {5, false, 20}},
+			"ACK+ACK+ACK", []uint8{0, 0, 5}, 3},
+	} {
+		bursts := make([]timedBurst, 0, 64)
+		for i, p := range c.pkts {
+			b := build(t, sapHeader(c.sap, p.ns, p.resync), payload(p.n), enums.DataTypeRate12)
+			bursts = append(bursts, timed(time.Duration(i)*time.Second, b)...)
+		}
+		ev := replay(t, newReceiver(t, &data.ReceiverConfig{Respond: true}), bursts)
+		resp, _ := responses(t, ev)
+		if resp != c.resp {
+			t.Errorf("%s: responses %q, want %q", c.name, resp, c.resp)
+		}
+		if got := statuses(t, ev); !slices.Equal(got, c.status) {
+			t.Errorf("%s: status %v, want %v", c.name, got, c.status)
+		}
+		n := 0
+		for _, e := range ev {
+			if e.Kind == data.EventDelivered {
+				n++
+			}
+		}
+		if n != c.delivered {
+			t.Errorf("%s: %d delivered, want %d (%s)", c.name, n, c.delivered, kinds(ev))
 		}
 	}
-	if n != 3 {
-		t.Errorf("%d delivered, want 3 (%s)", n, kinds(ev))
+}
+
+func TestReceiverProprietarySAP(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct {
+		sap       enums.ServiceAccessPointID
+		delivered int
+	}{
+		{enums.SAPIPBasedPacketData, 2},
+		{enums.SAPShortData, 1},
+	} {
+		p, err := packet.NewPacket(sapHeader(enums.SAPProprietaryPacketData, 0, false), payload(20), enums.DataTypeRate12)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ch := *p.Header.ConfirmedDataHeader
+		ch.BlocksToFollow++
+		p.Header.ConfirmedDataHeader = &ch
+		b, err := packet.Bursts(p, 1, layer2.SyncSourceMS)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ph, err := layer2.BuildBurst(&pdu.DataHeader{Format: pdu.FormatProprietary,
+			ProprietaryHeader: &pdu.ProprietaryHeader{SAP: c.sap, MFID: 0x10}}, 1, layer2.SyncSourceMS)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b = slices.Insert(b, 1, ph)
+		ev := replay(t, newReceiver(t, &data.ReceiverConfig{Respond: true}), append(timed(0, b), timed(2*time.Second, b)...))
+		n := 0
+		for _, e := range ev {
+			if e.Kind == data.EventDelivered {
+				n++
+			}
+		}
+		if resp, _ := responses(t, ev); n != c.delivered || resp != "ACK+ACK" {
+			t.Errorf("P_HEAD SAP %v: %d delivered, responses %q; want %d, ACK+ACK (%s)", c.sap, n, resp, c.delivered, kinds(ev))
+		}
 	}
+}
+
+func statuses(t *testing.T, ev []data.Event) []uint8 {
+	t.Helper()
+	var s []uint8
+	for _, e := range ev {
+		if e.Kind != data.EventRespond {
+			continue
+		}
+		b, err := layer2.NewBurstFromBytes(e.Burst)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if dh, ok := b.Data.(*pdu.DataHeader); ok && dh.ResponsePacketHeader != nil {
+			s = append(s, dh.ResponsePacketHeader.ResponseStatus)
+		}
+	}
+	return s
 }
 
 func TestReceiverNoAnswer(t *testing.T) {
