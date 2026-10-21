@@ -8003,7 +8003,7 @@
       },
       "csbk": {
        "truth": 6,
-       "exact": 6
+       "exact": 4
       },
       "elc": {
        "truth": 6,
@@ -8625,7 +8625,7 @@
       },
       "csbk": {
        "truth": 112,
-       "exact": 3
+       "exact": 1
       },
       "elc": {
        "truth": 120,
@@ -8649,7 +8649,7 @@
       },
       "rate12": {
        "truth": 232,
-       "exact": 2
+       "exact": 1
       },
       "rate1_bit": {
        "truth": 10752,
@@ -8711,7 +8711,7 @@
       },
       "rate12": {
        "truth": 232,
-       "exact": 8
+       "exact": 4
       },
       "rate1_bit": {
        "truth": 10752,
@@ -8749,7 +8749,7 @@
       },
       "csbk": {
        "truth": 112,
-       "exact": 13
+       "exact": 10
       },
       "elc": {
        "truth": 120,
@@ -8761,7 +8761,7 @@
       },
       "header": {
        "truth": 232,
-       "exact": 20
+       "exact": 16
       },
       "lc": {
        "truth": 8,
@@ -8773,7 +8773,7 @@
       },
       "rate12": {
        "truth": 232,
-       "exact": 20
+       "exact": 14
       },
       "rate1_bit": {
        "truth": 10752,
@@ -8811,7 +8811,7 @@
       },
       "csbk": {
        "truth": 112,
-       "exact": 27
+       "exact": 22
       },
       "elc": {
        "truth": 120,
@@ -8823,7 +8823,7 @@
       },
       "header": {
        "truth": 232,
-       "exact": 54
+       "exact": 31
       },
       "lc": {
        "truth": 8,
@@ -8835,7 +8835,7 @@
       },
       "rate12": {
        "truth": 232,
-       "exact": 52
+       "exact": 33
       },
       "rate1_bit": {
        "truth": 10752,
@@ -8873,7 +8873,7 @@
       },
       "csbk": {
        "truth": 112,
-       "exact": 43
+       "exact": 33
       },
       "elc": {
        "truth": 120,
@@ -8885,7 +8885,7 @@
       },
       "header": {
        "truth": 232,
-       "exact": 105
+       "exact": 82
       },
       "lc": {
        "truth": 8,
@@ -8897,7 +8897,7 @@
       },
       "rate12": {
        "truth": 232,
-       "exact": 92
+       "exact": 72
       },
       "rate1_bit": {
        "truth": 10752,
@@ -8935,7 +8935,7 @@
       },
       "csbk": {
        "truth": 112,
-       "exact": 71
+       "exact": 58
       },
       "elc": {
        "truth": 120,
@@ -8947,11 +8947,11 @@
       },
       "header": {
        "truth": 232,
-       "exact": 146
+       "exact": 126
       },
       "lc": {
        "truth": 8,
-       "exact": 5
+       "exact": 2
       },
       "rate1": {
        "truth": 56,
@@ -8959,7 +8959,7 @@
       },
       "rate12": {
        "truth": 232,
-       "exact": 152
+       "exact": 123
       },
       "rate1_bit": {
        "truth": 10752,
@@ -8997,7 +8997,7 @@
       },
       "csbk": {
        "truth": 112,
-       "exact": 89
+       "exact": 78
       },
       "elc": {
        "truth": 120,
@@ -9009,11 +9009,11 @@
       },
       "header": {
        "truth": 232,
-       "exact": 176
+       "exact": 160
       },
       "lc": {
        "truth": 8,
-       "exact": 5
+       "exact": 4
       },
       "rate1": {
        "truth": 56,
@@ -9021,7 +9021,7 @@
       },
       "rate12": {
        "truth": 232,
-       "exact": 192
+       "exact": 176
       },
       "rate1_bit": {
        "truth": 10752,
@@ -9047,23 +9047,23 @@
      "payloads": {
       "ambe": {
        "truth": 19440,
-       "exact": 5348
+       "exact": 5346
       },
       "ambe_c0c1": {
        "truth": 19440,
-       "exact": 18622
+       "exact": 18630
       },
       "ambe_u": {
        "truth": 486000,
-       "exact": 460830
+       "exact": 460831
       },
       "csbk": {
        "truth": 1008,
-       "exact": 911
+       "exact": 866
       },
       "elc": {
        "truth": 1080,
-       "exact": 140
+       "exact": 139
       },
       "emb": {
        "truth": 5400,
@@ -9071,11 +9071,11 @@
       },
       "header": {
        "truth": 2088,
-       "exact": 1897
+       "exact": 1786
       },
       "lc": {
        "truth": 72,
-       "exact": 65
+       "exact": 63
       },
       "rate1": {
        "truth": 504,
@@ -9083,23 +9083,23 @@
       },
       "rate12": {
        "truth": 2088,
-       "exact": 1895
+       "exact": 1774
       },
       "rate1_bit": {
        "truth": 96768,
-       "exact": 91902
+       "exact": 91908
       },
       "rate34": {
        "truth": 1008,
-       "exact": 337
+       "exact": 336
       },
       "slottype": {
        "truth": 6768,
-       "exact": 6713
+       "exact": 6712
       },
       "sync": {
        "truth": 7848,
-       "exact": 7803
+       "exact": 7802
       }
      }
     },
@@ -9121,7 +9121,7 @@
       },
       "csbk": {
        "truth": 1008,
-       "exact": 970
+       "exact": 937
       },
       "elc": {
        "truth": 1080,
@@ -9133,11 +9133,11 @@
       },
       "header": {
        "truth": 2088,
-       "exact": 2001
+       "exact": 1961
       },
       "lc": {
        "truth": 72,
-       "exact": 69
+       "exact": 67
       },
       "rate1": {
        "truth": 504,
@@ -9145,7 +9145,7 @@
       },
       "rate12": {
        "truth": 2088,
-       "exact": 1996
+       "exact": 1935
       },
       "rate1_bit": {
        "truth": 96768,
@@ -9167,97 +9167,159 @@
     },
     {
      "cn": 6,
-     "seeds": 68,
+     "seeds": 36,
      "payloads": {
       "ambe": {
-       "truth": 36720,
-       "exact": 16579
+       "truth": 19440,
+       "exact": 8853
       },
       "ambe_c0c1": {
-       "truth": 36720,
-       "exact": 36358
+       "truth": 19440,
+       "exact": 19245
       },
       "ambe_u": {
-       "truth": 918000,
-       "exact": 888338
+       "truth": 486000,
+       "exact": 470311
       },
       "csbk": {
-       "truth": 1904,
-       "exact": 1883
+       "truth": 1008,
+       "exact": 984
       },
       "elc": {
-       "truth": 2040,
-       "exact": 741
+       "truth": 1080,
+       "exact": 394
       },
       "emb": {
-       "truth": 10200,
-       "exact": 10197
+       "truth": 5400,
+       "exact": 5398
       },
       "header": {
-       "truth": 3944,
-       "exact": 3868
+       "truth": 2088,
+       "exact": 2035
       },
       "lc": {
-       "truth": 136,
-       "exact": 134
+       "truth": 72,
+       "exact": 67
       },
       "rate1": {
-       "truth": 952,
-       "exact": 13
+       "truth": 504,
+       "exact": 7
       },
       "rate12": {
-       "truth": 3944,
-       "exact": 3890
+       "truth": 2088,
+       "exact": 2035
       },
       "rate1_bit": {
-       "truth": 182784,
-       "exact": 177642
+       "truth": 96768,
+       "exact": 94078
       },
       "rate34": {
-       "truth": 1904,
-       "exact": 1304
+       "truth": 1008,
+       "exact": 688
       },
       "slottype": {
-       "truth": 12784,
-       "exact": 12718
+       "truth": 6768,
+       "exact": 6727
       },
       "sync": {
-       "truth": 14824,
-       "exact": 14766
+       "truth": 7848,
+       "exact": 7811
       }
      }
     },
     {
      "cn": 6.5,
+     "seeds": 100,
+     "payloads": {
+      "ambe": {
+       "truth": 54000,
+       "exact": 29672
+      },
+      "ambe_c0c1": {
+       "truth": 54000,
+       "exact": 53781
+      },
+      "ambe_u": {
+       "truth": 1350000,
+       "exact": 1317271
+      },
+      "csbk": {
+       "truth": 2800,
+       "exact": 2777
+      },
+      "elc": {
+       "truth": 3000,
+       "exact": 1527
+      },
+      "emb": {
+       "truth": 15000,
+       "exact": 14998
+      },
+      "header": {
+       "truth": 5800,
+       "exact": 5702
+      },
+      "lc": {
+       "truth": 200,
+       "exact": 198
+      },
+      "rate1": {
+       "truth": 1400,
+       "exact": 62
+      },
+      "rate12": {
+       "truth": 5800,
+       "exact": 5741
+      },
+      "rate1_bit": {
+       "truth": 268800,
+       "exact": 262921
+      },
+      "rate34": {
+       "truth": 2800,
+       "exact": 2274
+      },
+      "slottype": {
+       "truth": 18800,
+       "exact": 18728
+      },
+      "sync": {
+       "truth": 21800,
+       "exact": 21729
+      }
+     }
+    },
+    {
+     "cn": 7,
      "seeds": 228,
      "payloads": {
       "ambe": {
        "truth": 123120,
-       "exact": 67510
+       "exact": 78462
       },
       "ambe_c0c1": {
        "truth": 123120,
-       "exact": 122565
+       "exact": 122857
       },
       "ambe_u": {
        "truth": 3078000,
-       "exact": 3003134
+       "exact": 3021401
       },
       "csbk": {
        "truth": 6384,
-       "exact": 6362
+       "exact": 6363
       },
       "elc": {
        "truth": 6840,
-       "exact": 3509
+       "exact": 4432
       },
       "emb": {
        "truth": 34200,
-       "exact": 34196
+       "exact": 34195
       },
       "header": {
        "truth": 13224,
-       "exact": 13045
+       "exact": 13065
       },
       "lc": {
        "truth": 456,
@@ -9265,213 +9327,151 @@
       },
       "rate1": {
        "truth": 3192,
-       "exact": 129
+       "exact": 273
       },
       "rate12": {
        "truth": 13224,
-       "exact": 13168
+       "exact": 13177
       },
       "rate1_bit": {
        "truth": 612864,
-       "exact": 599553
+       "exact": 602901
       },
       "rate34": {
        "truth": 6384,
-       "exact": 5155
+       "exact": 5713
       },
       "slottype": {
        "truth": 42864,
-       "exact": 42692
+       "exact": 42712
       },
       "sync": {
        "truth": 49704,
-       "exact": 49535
-      }
-     }
-    },
-    {
-     "cn": 7,
-     "seeds": 836,
-     "payloads": {
-      "ambe": {
-       "truth": 451440,
-       "exact": 287330
-      },
-      "ambe_c0c1": {
-       "truth": 451440,
-       "exact": 450464
-      },
-      "ambe_u": {
-       "truth": 11286000,
-       "exact": 11078410
-      },
-      "csbk": {
-       "truth": 23408,
-       "exact": 23388
-      },
-      "elc": {
-       "truth": 25080,
-       "exact": 16041
-      },
-      "emb": {
-       "truth": 125400,
-       "exact": 125386
-      },
-      "header": {
-       "truth": 48488,
-       "exact": 47984
-      },
-      "lc": {
-       "truth": 1672,
-       "exact": 1667
-      },
-      "rate1": {
-       "truth": 11704,
-       "exact": 988
-      },
-      "rate12": {
-       "truth": 48488,
-       "exact": 48424
-      },
-      "rate1_bit": {
-       "truth": 2247168,
-       "exact": 2210954
-      },
-      "rate34": {
-       "truth": 23408,
-       "exact": 20844
-      },
-      "slottype": {
-       "truth": 157168,
-       "exact": 156672
-      },
-      "sync": {
-       "truth": 182248,
-       "exact": 181767
+       "exact": 49558
       }
      }
     },
     {
      "cn": 7.5,
-     "seeds": 1700,
+     "seeds": 516,
      "payloads": {
       "ambe": {
-       "truth": 918000,
-       "exact": 657905
+       "truth": 278640,
+       "exact": 199863
       },
       "ambe_c0c1": {
-       "truth": 918000,
-       "exact": 917119
+       "truth": 278640,
+       "exact": 278373
       },
       "ambe_u": {
-       "truth": 22950000,
-       "exact": 22638718
+       "truth": 6966000,
+       "exact": 6871742
       },
       "csbk": {
-       "truth": 47600,
-       "exact": 47580
+       "truth": 14448,
+       "exact": 14427
       },
       "elc": {
-       "truth": 51000,
-       "exact": 38589
+       "truth": 15480,
+       "exact": 11693
       },
       "emb": {
-       "truth": 255000,
-       "exact": 254994
+       "truth": 77400,
+       "exact": 77398
       },
       "header": {
-       "truth": 98600,
-       "exact": 97694
+       "truth": 29928,
+       "exact": 29647
       },
       "lc": {
-       "truth": 3400,
-       "exact": 3399
+       "truth": 1032,
+       "exact": 1031
       },
       "rate1": {
-       "truth": 23800,
-       "exact": 3755
+       "truth": 7224,
+       "exact": 1135
       },
       "rate12": {
-       "truth": 98600,
-       "exact": 98539
+       "truth": 29928,
+       "exact": 29882
       },
       "rate1_bit": {
-       "truth": 4569600,
-       "exact": 4515737
+       "truth": 1387008,
+       "exact": 1370612
       },
       "rate34": {
-       "truth": 47600,
-       "exact": 44667
+       "truth": 14448,
+       "exact": 13552
       },
       "slottype": {
-       "truth": 319600,
-       "exact": 318664
+       "truth": 97008,
+       "exact": 96717
       },
       "sync": {
-       "truth": 370600,
-       "exact": 369682
+       "truth": 112488,
+       "exact": 112204
       }
      }
     },
     {
      "cn": 8,
-     "seeds": 4100,
+     "seeds": 2884,
      "payloads": {
       "ambe": {
-       "truth": 2214000,
-       "exact": 1740772
+       "truth": 1557360,
+       "exact": 1224511
       },
       "ambe_c0c1": {
-       "truth": 2214000,
-       "exact": 2213130
+       "truth": 1557360,
+       "exact": 1556761
       },
       "ambe_u": {
-       "truth": 55350000,
-       "exact": 54808162
+       "truth": 38934000,
+       "exact": 38552971
       },
       "csbk": {
-       "truth": 114800,
-       "exact": 114792
+       "truth": 80752,
+       "exact": 80732
       },
       "elc": {
-       "truth": 123000,
-       "exact": 103690
+       "truth": 86520,
+       "exact": 72987
       },
       "emb": {
-       "truth": 615000,
-       "exact": 614993
+       "truth": 432600,
+       "exact": 432596
       },
       "header": {
-       "truth": 237800,
-       "exact": 235932
+       "truth": 167272,
+       "exact": 165931
       },
       "lc": {
-       "truth": 8200,
-       "exact": 8200
+       "truth": 5768,
+       "exact": 5767
       },
       "rate1": {
-       "truth": 57400,
-       "exact": 15140
+       "truth": 40376,
+       "exact": 10624
       },
       "rate12": {
-       "truth": 237800,
-       "exact": 237754
+       "truth": 167272,
+       "exact": 167208
       },
       "rate1_bit": {
-       "truth": 11020800,
-       "exact": 10927329
+       "truth": 7752192,
+       "exact": 7686268
       },
       "rate34": {
-       "truth": 114800,
-       "exact": 110779
+       "truth": 80752,
+       "exact": 77863
       },
       "slottype": {
-       "truth": 770800,
-       "exact": 768901
+       "truth": 542192,
+       "exact": 540836
       },
       "sync": {
-       "truth": 893800,
-       "exact": 891919
+       "truth": 628712,
+       "exact": 627368
       }
      }
     },
@@ -9481,7 +9481,7 @@
      "payloads": {
       "ambe": {
        "truth": 2214000,
-       "exact": 1866442
+       "exact": 1866460
       },
       "ambe_c0c1": {
        "truth": 2214000,
@@ -9489,15 +9489,15 @@
       },
       "ambe_u": {
        "truth": 55350000,
-       "exact": 54966275
+       "exact": 54966301
       },
       "csbk": {
        "truth": 114800,
-       "exact": 114799
+       "exact": 114794
       },
       "elc": {
        "truth": 123000,
-       "exact": 110721
+       "exact": 110722
       },
       "emb": {
        "truth": 615000,
@@ -9505,7 +9505,7 @@
       },
       "header": {
        "truth": 237800,
-       "exact": 236215
+       "exact": 236173
       },
       "lc": {
        "truth": 8200,
@@ -9513,27 +9513,27 @@
       },
       "rate1": {
        "truth": 57400,
-       "exact": 22231
+       "exact": 22243
       },
       "rate12": {
        "truth": 237800,
-       "exact": 237781
+       "exact": 237751
       },
       "rate1_bit": {
        "truth": 11020800,
-       "exact": 10955263
+       "exact": 10955272
       },
       "rate34": {
        "truth": 114800,
-       "exact": 112563
+       "exact": 112562
       },
       "slottype": {
        "truth": 770800,
-       "exact": 769200
+       "exact": 769158
       },
       "sync": {
        "truth": 893800,
-       "exact": 892205
+       "exact": 892163
       }
      }
     },
@@ -9543,23 +9543,23 @@
      "payloads": {
       "ambe": {
        "truth": 2214000,
-       "exact": 1966437
+       "exact": 1966436
       },
       "ambe_c0c1": {
        "truth": 2214000,
-       "exact": 2213840
+       "exact": 2213837
       },
       "ambe_u": {
        "truth": 55350000,
-       "exact": 55083365
+       "exact": 55083370
       },
       "csbk": {
        "truth": 114800,
-       "exact": 114799
+       "exact": 114798
       },
       "elc": {
        "truth": 123000,
-       "exact": 115629
+       "exact": 115624
       },
       "emb": {
        "truth": 615000,
@@ -9567,7 +9567,7 @@
       },
       "header": {
        "truth": 237800,
-       "exact": 236431
+       "exact": 236406
       },
       "lc": {
        "truth": 8200,
@@ -9575,15 +9575,15 @@
       },
       "rate1": {
        "truth": 57400,
-       "exact": 29572
+       "exact": 29575
       },
       "rate12": {
        "truth": 237800,
-       "exact": 237791
+       "exact": 237783
       },
       "rate1_bit": {
        "truth": 11020800,
-       "exact": 10975656
+       "exact": 10975650
       },
       "rate34": {
        "truth": 114800,
@@ -9591,11 +9591,11 @@
       },
       "slottype": {
        "truth": 770800,
-       "exact": 769421
+       "exact": 769396
       },
       "sync": {
        "truth": 893800,
-       "exact": 892425
+       "exact": 892400
       }
      }
     },
@@ -9605,7 +9605,7 @@
      "payloads": {
       "ambe": {
        "truth": 2214000,
-       "exact": 2041627
+       "exact": 2041660
       },
       "ambe_c0c1": {
        "truth": 2214000,
@@ -9613,11 +9613,11 @@
       },
       "ambe_u": {
        "truth": 55350000,
-       "exact": 55168149
+       "exact": 55168187
       },
       "csbk": {
        "truth": 114800,
-       "exact": 114800
+       "exact": 114798
       },
       "elc": {
        "truth": 123000,
@@ -9629,7 +9629,7 @@
       },
       "header": {
        "truth": 237800,
-       "exact": 236592
+       "exact": 236573
       },
       "lc": {
        "truth": 8200,
@@ -9637,7 +9637,131 @@
       },
       "rate1": {
        "truth": 57400,
-       "exact": 36159
+       "exact": 36144
+      },
+      "rate12": {
+       "truth": 237800,
+       "exact": 237793
+      },
+      "rate1_bit": {
+       "truth": 11020800,
+       "exact": 10989760
+      },
+      "rate34": {
+       "truth": 114800,
+       "exact": 114209
+      },
+      "slottype": {
+       "truth": 770800,
+       "exact": 769567
+      },
+      "sync": {
+       "truth": 893800,
+       "exact": 892568
+      }
+     }
+    },
+    {
+     "cn": 10,
+     "seeds": 4100,
+     "payloads": {
+      "ambe": {
+       "truth": 2214000,
+       "exact": 2096389
+      },
+      "ambe_c0c1": {
+       "truth": 2214000,
+       "exact": 2213971
+      },
+      "ambe_u": {
+       "truth": 55350000,
+       "exact": 55227730
+      },
+      "csbk": {
+       "truth": 114800,
+       "exact": 114800
+      },
+      "elc": {
+       "truth": 123000,
+       "exact": 120597
+      },
+      "emb": {
+       "truth": 615000,
+       "exact": 615000
+      },
+      "header": {
+       "truth": 237800,
+       "exact": 236790
+      },
+      "lc": {
+       "truth": 8200,
+       "exact": 8200
+      },
+      "rate1": {
+       "truth": 57400,
+       "exact": 42089
+      },
+      "rate12": {
+       "truth": 237800,
+       "exact": 237798
+      },
+      "rate1_bit": {
+       "truth": 11020800,
+       "exact": 11000275
+      },
+      "rate34": {
+       "truth": 114800,
+       "exact": 114500
+      },
+      "slottype": {
+       "truth": 770800,
+       "exact": 769789
+      },
+      "sync": {
+       "truth": 893800,
+       "exact": 892789
+      }
+     }
+    },
+    {
+     "cn": 10.5,
+     "seeds": 4100,
+     "payloads": {
+      "ambe": {
+       "truth": 2214000,
+       "exact": 2135465
+      },
+      "ambe_c0c1": {
+       "truth": 2214000,
+       "exact": 2213986
+      },
+      "ambe_u": {
+       "truth": 55350000,
+       "exact": 55269388
+      },
+      "csbk": {
+       "truth": 114800,
+       "exact": 114800
+      },
+      "elc": {
+       "truth": 123000,
+       "exact": 121694
+      },
+      "emb": {
+       "truth": 615000,
+       "exact": 615000
+      },
+      "header": {
+       "truth": 237800,
+       "exact": 237015
+      },
+      "lc": {
+       "truth": 8200,
+       "exact": 8200
+      },
+      "rate1": {
+       "truth": 57400,
+       "exact": 46703
       },
       "rate12": {
        "truth": 237800,
@@ -9645,143 +9769,19 @@
       },
       "rate1_bit": {
        "truth": 11020800,
-       "exact": 10989792
+       "exact": 11007321
       },
       "rate34": {
        "truth": 114800,
-       "exact": 114207
+       "exact": 114661
       },
       "slottype": {
        "truth": 770800,
-       "exact": 769591
+       "exact": 770015
       },
       "sync": {
        "truth": 893800,
-       "exact": 892592
-      }
-     }
-    },
-    {
-     "cn": 10,
-     "seeds": 324,
-     "payloads": {
-      "ambe": {
-       "truth": 174960,
-       "exact": 165676
-      },
-      "ambe_c0c1": {
-       "truth": 174960,
-       "exact": 174957
-      },
-      "ambe_u": {
-       "truth": 4374000,
-       "exact": 4364386
-      },
-      "csbk": {
-       "truth": 9072,
-       "exact": 9072
-      },
-      "elc": {
-       "truth": 9720,
-       "exact": 9539
-      },
-      "emb": {
-       "truth": 48600,
-       "exact": 48600
-      },
-      "header": {
-       "truth": 18792,
-       "exact": 18721
-      },
-      "lc": {
-       "truth": 648,
-       "exact": 648
-      },
-      "rate1": {
-       "truth": 4536,
-       "exact": 3396
-      },
-      "rate12": {
-       "truth": 18792,
-       "exact": 18792
-      },
-      "rate1_bit": {
-       "truth": 870912,
-       "exact": 869422
-      },
-      "rate34": {
-       "truth": 9072,
-       "exact": 9050
-      },
-      "slottype": {
-       "truth": 60912,
-       "exact": 60841
-      },
-      "sync": {
-       "truth": 70632,
-       "exact": 70561
-      }
-     }
-    },
-    {
-     "cn": 10.5,
-     "seeds": 612,
-     "payloads": {
-      "ambe": {
-       "truth": 330480,
-       "exact": 318713
-      },
-      "ambe_c0c1": {
-       "truth": 330480,
-       "exact": 330479
-      },
-      "ambe_u": {
-       "truth": 8262000,
-       "exact": 8249915
-      },
-      "csbk": {
-       "truth": 17136,
-       "exact": 17136
-      },
-      "elc": {
-       "truth": 18360,
-       "exact": 18181
-      },
-      "emb": {
-       "truth": 91800,
-       "exact": 91800
-      },
-      "header": {
-       "truth": 35496,
-       "exact": 35390
-      },
-      "lc": {
-       "truth": 1224,
-       "exact": 1224
-      },
-      "rate1": {
-       "truth": 8568,
-       "exact": 6907
-      },
-      "rate12": {
-       "truth": 35496,
-       "exact": 35496
-      },
-      "rate1_bit": {
-       "truth": 1645056,
-       "exact": 1642989
-      },
-      "rate34": {
-       "truth": 17136,
-       "exact": 17113
-      },
-      "slottype": {
-       "truth": 115056,
-       "exact": 114950
-      },
-      "sync": {
-       "truth": 133416,
-       "exact": 133310
+       "exact": 893015
       }
      }
     },
@@ -9791,7 +9791,7 @@
      "payloads": {
       "ambe": {
        "truth": 572400,
-       "exact": 559092
+       "exact": 559093
       },
       "ambe_c0c1": {
        "truth": 572400,
@@ -9799,7 +9799,7 @@
       },
       "ambe_u": {
        "truth": 14310000,
-       "exact": 14296429
+       "exact": 14296430
       },
       "csbk": {
        "truth": 29680,
@@ -9815,7 +9815,7 @@
       },
       "header": {
        "truth": 61480,
-       "exact": 61311
+       "exact": 61309
       },
       "lc": {
        "truth": 2120,
@@ -9839,11 +9839,11 @@
       },
       "slottype": {
        "truth": 199280,
-       "exact": 199111
+       "exact": 199109
       },
       "sync": {
        "truth": 231080,
-       "exact": 230911
+       "exact": 230909
       }
      }
     },
@@ -9877,7 +9877,7 @@
       },
       "header": {
        "truth": 154280,
-       "exact": 153959
+       "exact": 153957
       },
       "lc": {
        "truth": 5320,
@@ -9885,7 +9885,7 @@
       },
       "rate1": {
        "truth": 37240,
-       "exact": 34187
+       "exact": 34189
       },
       "rate12": {
        "truth": 154280,
@@ -9893,7 +9893,7 @@
       },
       "rate1_bit": {
        "truth": 7150080,
-       "exact": 7146581
+       "exact": 7146583
       },
       "rate34": {
        "truth": 74480,
@@ -9901,11 +9901,11 @@
       },
       "slottype": {
        "truth": 500080,
-       "exact": 499759
+       "exact": 499757
       },
       "sync": {
        "truth": 579880,
-       "exact": 579559
+       "exact": 579557
       }
      }
     },
@@ -9915,7 +9915,7 @@
      "payloads": {
       "ambe": {
        "truth": 2214000,
-       "exact": 2192476
+       "exact": 2192475
       },
       "ambe_c0c1": {
        "truth": 2214000,
@@ -9923,7 +9923,7 @@
       },
       "ambe_u": {
        "truth": 55350000,
-       "exact": 55328225
+       "exact": 55328224
       },
       "csbk": {
        "truth": 114800,
@@ -9931,7 +9931,7 @@
       },
       "elc": {
        "truth": 123000,
-       "exact": 122835
+       "exact": 122834
       },
       "emb": {
        "truth": 615000,
@@ -9939,7 +9939,7 @@
       },
       "header": {
        "truth": 237800,
-       "exact": 237425
+       "exact": 237424
       },
       "lc": {
        "truth": 8200,
@@ -9947,7 +9947,7 @@
       },
       "rate1": {
        "truth": 57400,
-       "exact": 54397
+       "exact": 54396
       },
       "rate12": {
        "truth": 237800,
@@ -9955,7 +9955,7 @@
       },
       "rate1_bit": {
        "truth": 11020800,
-       "exact": 11017444
+       "exact": 11017443
       },
       "rate34": {
        "truth": 114800,
@@ -9963,16 +9963,16 @@
       },
       "slottype": {
        "truth": 770800,
-       "exact": 770425
+       "exact": 770424
       },
       "sync": {
        "truth": 893800,
-       "exact": 893425
+       "exact": 893424
       }
      }
     }
    ],
-   "ns_per_second": 735131.5354251304,
+   "ns_per_second": 399659.2283724787,
    "ram_bytes": 1408,
    "allocs": 0
   },

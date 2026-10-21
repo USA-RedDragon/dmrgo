@@ -48,7 +48,7 @@ type DiscConfig struct {
 // as the radio chips of hotspots and MMDVM modems give it: real samples in
 // any units, with any gain and DC offset, which the receiver measures
 // itself. With Tier0 it keeps about 1.4 KB of state, for microcontrollers;
-// on a Cortex-M4F it needs about 4.8 MHz and 2.1 KB with its stack, built
+// on a Cortex-M4F it needs about 3.8 MHz and 1.9 KB with its stack, built
 // with TinyGo -opt z. A
 // DiscReceiver that Init sets up in memory of the caller, such as a package
 // variable, uses no heap with OnBurst or AppendBursts. A DiscReceiver is not
