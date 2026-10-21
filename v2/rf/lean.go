@@ -52,7 +52,6 @@ const (
 	leanMidGate         = 0
 	leanSyncUnroll      = true
 	leanRawFuse         = true
-	leanMidSearch       = true
 	leanHuntMid         = true
 	leanHuntFuse        = true
 )
@@ -206,7 +205,8 @@ type leanCore struct {
 	center                             int64
 	mfStep                             int64
 	acqGain, trackGain                 float32
-	mmOK                               bool
+	mmOK, midSearch                    bool
+	chase                              uint8
 	tm                                 leanTiming
 	n                                  int64
 	ns                                 int64
@@ -325,7 +325,11 @@ func (r *leanCore) init(onBurst func(*Burst), opt options, sps float32) {
 	r.sources, r.outlier = uint8(opt.Sources), float32(opt.DiscOutlier)
 	r.clickSpan = float32(opt.ClickSpan)
 	r.midTiming = opt.MidTiming && sps <= leanCubicSPS
-	r.linHunt = opt.HuntLinMid
+	r.linHunt, r.midSearch = opt.HuntLinMid, !opt.NoMidSearch
+	r.chase = leanChase
+	if opt.LeanChase > 0 {
+		r.chase = min(opt.LeanChase, leanChase)
+	}
 	r.signMiss = leanSignMiss
 	r.bsSuspectRun = opt.BSSuspectRun
 	if po := opt.DiscOutlier; po > 0 {
@@ -879,7 +883,7 @@ func (r *leanCore) searchHit(sym, mid bool) {
 			r.forceLock(src, data, back)
 		}
 	}
-	if leanMidSearch && mid && !r.locked && r.ns > leanSyncEnd+2 {
+	if r.midSearch && mid && !r.locked && r.ns > leanSyncEnd+2 {
 		r.searchMid()
 	}
 }

@@ -32,7 +32,6 @@ type options struct {
 	IQAFCAvg                             int
 	IQFront                              int
 	IQPoly                               int
-	IQLow                                int
 	IQBuf                                int
 	CohSPS                               int
 	CohDataPasses                        int
@@ -90,6 +89,9 @@ type options struct {
 	Window                               uint8
 	ChanDecimation                       uint8
 	DriftSteps                           uint8
+	IQLow                                uint8
+	LeanChase                            uint8
+	NoMidSearch                          bool
 }
 
 func discOptions() options {
@@ -126,6 +128,7 @@ func iqLowOptions() options {
 	o := disc0Options()
 	o.HuntLinMid, o.StrobeTab = true, true
 	o.IQDisc, o.IQHz, o.IQFront, o.IQLow, o.IQBuf = true, iq0LowHz, 4, 1, 32
+	o.LeanChase, o.NoMidSearch = 1, true
 	return o
 }
 

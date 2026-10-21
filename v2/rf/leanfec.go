@@ -55,12 +55,6 @@ type leanFEC struct {
 
 const leanLocal = max(softSmallMaxN, 2*leanChase)
 
-func (f *leanFEC) chase() []int16 { return f.l[:leanChase] }
-
-func (f *leanFEC) cmag() []int16 {
-	return f.l[leanChase : 2*leanChase]
-}
-
 func (f *leanFEC) setPrev(k, in, v int) {
 	q := k*softTrellisStates + in
 	sh := 4 * uint(q&3)
@@ -237,7 +231,7 @@ func (f *leanFEC) addCand(cost int32, data *[12]byte, reserved uint8, limit int)
 
 //go:noinline
 func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) bool {
-	chase, cmag := f.chase(), f.cmag()
+	chase, cmag := f.l[:leanChase], f.l[leanChase:2*leanChase]
 	for i := range chase {
 		chase[i], cmag[i] = -1, 0
 	}
@@ -301,7 +295,8 @@ func (r *leanCore) fixBPTC(f *leanFEC, dt enums.DataType, out *layer2.RawBurst) 
 		size = softListMax
 	}
 	f.nlist = 0
-	for g := 0; g < 1<<leanChase; g++ {
+	chase = chase[:r.chase]
+	for g := 0; g < 1<<len(chase); g++ {
 		if g > 0 {
 			cell := chase[bits.TrailingZeros(uint(g))]
 			rows[cell/15] ^= 1 << (cell % 15)
