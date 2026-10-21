@@ -455,7 +455,7 @@ func (q *Requester) answer(c *pdu.CSBK) (Result, bool) {
 				return ResultAnswered, true
 			}
 		}
-	case ServiceUnsupported, ServiceWakeup:
+	case ServiceUnsupported, ServiceWakeup, ServiceTiming:
 	}
 	return 0, false
 }
