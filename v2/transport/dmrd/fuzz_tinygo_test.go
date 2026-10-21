@@ -10,4 +10,5 @@ func TestTinyGoFuzzSeeds(t *testing.T) {
 	for _, s := range fuzzSeeds() {
 		checkPacket(t, s)
 	}
+	freeDMRSeeds(func(b []byte) { fuzzFreeDMROptions(t, b) })
 }
