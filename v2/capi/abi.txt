@@ -120,6 +120,8 @@ code DMRGO_ERR_HDAP_SIGNATURE -231
 code DMRGO_ERR_HDAP_TEXT -232
 code DMRGO_ERR_HYTERA_CODE -233
 code DMRGO_ERR_PDU_NO_SERVICE_OPTIONS -234
+code DMRGO_ERR_DMRD_SESSION_CONFIG_ERROR -235
+code DMRGO_ERR_IPSC_SESSION_CONFIG_ERROR -236
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -448,6 +450,34 @@ sym #define DMRGO_DMRD_MAX_FREE_DMR_OPTIONS_LEN 255
 sym #define DMRGO_DMRD_OPTION_ABSENT ((dmrgo_dmrd_option_state_t)0)
 sym #define DMRGO_DMRD_OPTION_CLEAR ((dmrgo_dmrd_option_state_t)1)
 sym #define DMRGO_DMRD_OPTION_SET ((dmrgo_dmrd_option_state_t)2)
+sym #define DMRGO_DMRD_SESSION_KEEPALIVE_DEFAULT INT64_C(10000000000)
+sym #define DMRGO_DMRD_SESSION_MAX_OPTIONS 291
+sym #define DMRGO_DMRD_SESSION_MAX_OUTPUTS 4
+sym #define DMRGO_DMRD_SESSION_MAX_PACKET 512
+sym #define DMRGO_DMRD_SESSION_MAX_PASSWORD 128
+sym #define DMRGO_DMRD_SESSION_OUTPUT_CONFIG ((dmrgo_dmrd_session_output_kind_t)5)
+sym #define DMRGO_DMRD_SESSION_OUTPUT_DATA ((dmrgo_dmrd_session_output_kind_t)7)
+sym #define DMRGO_DMRD_SESSION_OUTPUT_DOWN ((dmrgo_dmrd_session_output_kind_t)3)
+sym #define DMRGO_DMRD_SESSION_OUTPUT_LOGIN ((dmrgo_dmrd_session_output_kind_t)4)
+sym #define DMRGO_DMRD_SESSION_OUTPUT_MESSAGE ((dmrgo_dmrd_session_output_kind_t)8)
+sym #define DMRGO_DMRD_SESSION_OUTPUT_OPTIONS ((dmrgo_dmrd_session_output_kind_t)6)
+sym #define DMRGO_DMRD_SESSION_OUTPUT_SEND ((dmrgo_dmrd_session_output_kind_t)1)
+sym #define DMRGO_DMRD_SESSION_OUTPUT_UP ((dmrgo_dmrd_session_output_kind_t)2)
+sym #define DMRGO_DMRD_SESSION_REASON_CLOSED ((dmrgo_dmrd_session_reason_t)3)
+sym #define DMRGO_DMRD_SESSION_REASON_LOGIN ((dmrgo_dmrd_session_reason_t)5)
+sym #define DMRGO_DMRD_SESSION_REASON_NONE ((dmrgo_dmrd_session_reason_t)0)
+sym #define DMRGO_DMRD_SESSION_REASON_REFUSED ((dmrgo_dmrd_session_reason_t)2)
+sym #define DMRGO_DMRD_SESSION_REASON_STOPPED ((dmrgo_dmrd_session_reason_t)4)
+sym #define DMRGO_DMRD_SESSION_REASON_TIMEOUT ((dmrgo_dmrd_session_reason_t)1)
+sym #define DMRGO_DMRD_SESSION_RETRY_DEFAULT INT64_C(10000000000)
+sym #define DMRGO_DMRD_SESSION_STATE_AUTH ((dmrgo_dmrd_session_state_t)3)
+sym #define DMRGO_DMRD_SESSION_STATE_CONFIG ((dmrgo_dmrd_session_state_t)4)
+sym #define DMRGO_DMRD_SESSION_STATE_IDLE ((dmrgo_dmrd_session_state_t)0)
+sym #define DMRGO_DMRD_SESSION_STATE_LOGIN ((dmrgo_dmrd_session_state_t)2)
+sym #define DMRGO_DMRD_SESSION_STATE_OPTIONS ((dmrgo_dmrd_session_state_t)5)
+sym #define DMRGO_DMRD_SESSION_STATE_RUNNING ((dmrgo_dmrd_session_state_t)6)
+sym #define DMRGO_DMRD_SESSION_STATE_WAIT ((dmrgo_dmrd_session_state_t)1)
+sym #define DMRGO_DMRD_SESSION_TIMEOUT_DEFAULT INT64_C(60000000000)
 sym #define DMRGO_DVSI_CODEC_PRODUCT_MAX_ITEMS (DMRGO_DVSI_MAX_PRODUCT_LEN)
 sym #define DMRGO_DVSI_CODEC_VERSION_MAX_ITEMS (DMRGO_DVSI_MAX_VERSION_LEN)
 sym #define DMRGO_DVSI_DEFAULT_TIMEOUT 500000000
@@ -713,6 +743,7 @@ sym #define DMRGO_ERR_CSBK_NO_ADDRESSES (-109)
 sym #define DMRGO_ERR_DATA_BUSY (-169)
 sym #define DMRGO_ERR_DMRD_COMMAND (-201)
 sym #define DMRGO_ERR_DMRD_LENGTH (-202)
+sym #define DMRGO_ERR_DMRD_SESSION_CONFIG_ERROR (-235)
 sym #define DMRGO_ERR_DMRD_SHORT (-203)
 sym #define DMRGO_ERR_DMRD_SIGNATURE (-204)
 sym #define DMRGO_ERR_DMRD_TEXT (-205)
@@ -742,6 +773,7 @@ sym #define DMRGO_ERR_HYTERA_SHORT (-198)
 sym #define DMRGO_ERR_HYTERA_SIGNATURE (-199)
 sym #define DMRGO_ERR_IPSC_COMMAND (-210)
 sym #define DMRGO_ERR_IPSC_LENGTH (-211)
+sym #define DMRGO_ERR_IPSC_SESSION_CONFIG_ERROR (-236)
 sym #define DMRGO_ERR_IPSC_SHORT (-212)
 sym #define DMRGO_ERR_IP_CHECKSUM (-172)
 sym #define DMRGO_ERR_IP_FRAGMENT (-173)
@@ -907,6 +939,29 @@ sym #define DMRGO_IPSC_OP_STATUS ((dmrgo_ipsc_opcode_t)240)
 sym #define DMRGO_IPSC_OP_TEXT_MESSAGE_ACK ((dmrgo_ipsc_opcode_t)84)
 sym #define DMRGO_IPSC_OP_WAKEUP ((dmrgo_ipsc_opcode_t)133)
 sym #define DMRGO_IPSC_OP_XNL ((dmrgo_ipsc_opcode_t)112)
+sym #define DMRGO_IPSC_SESSION_ALIVE_DEFAULT INT64_C(5000000000)
+sym #define DMRGO_IPSC_SESSION_MASTER_SIGN_MAX_ITEMS (DMRGO_IPSC_AUTH_TRAILER_LEN)
+sym #define DMRGO_IPSC_SESSION_MAX_CONTROL 26
+sym #define DMRGO_IPSC_SESSION_MAX_MISSED_DEFAULT 20
+sym #define DMRGO_IPSC_SESSION_MAX_PACKET 1500
+sym #define DMRGO_IPSC_SESSION_MAX_PEERS_DEFAULT 15
+sym #define DMRGO_IPSC_SESSION_MAX_PEERS_LIMIT 134
+sym #define DMRGO_IPSC_SESSION_MODE_DEFAULT ((dmrgo_ipsc_mode_t)106)
+sym #define DMRGO_IPSC_SESSION_OUTPUT_DATA ((dmrgo_ipsc_session_output_kind_t)5)
+sym #define DMRGO_IPSC_SESSION_OUTPUT_DOWN ((dmrgo_ipsc_session_output_kind_t)3)
+sym #define DMRGO_IPSC_SESSION_OUTPUT_PEERS ((dmrgo_ipsc_session_output_kind_t)4)
+sym #define DMRGO_IPSC_SESSION_OUTPUT_SEND ((dmrgo_ipsc_session_output_kind_t)1)
+sym #define DMRGO_IPSC_SESSION_OUTPUT_UP ((dmrgo_ipsc_session_output_kind_t)2)
+sym #define DMRGO_IPSC_SESSION_PEER_SIGN_MAX_ITEMS (DMRGO_IPSC_AUTH_TRAILER_LEN)
+sym #define DMRGO_IPSC_SESSION_REASON_CLOSED ((dmrgo_ipsc_session_reason_t)2)
+sym #define DMRGO_IPSC_SESSION_REASON_LIST ((dmrgo_ipsc_session_reason_t)4)
+sym #define DMRGO_IPSC_SESSION_REASON_NONE ((dmrgo_ipsc_session_reason_t)0)
+sym #define DMRGO_IPSC_SESSION_REASON_STOPPED ((dmrgo_ipsc_session_reason_t)3)
+sym #define DMRGO_IPSC_SESSION_REASON_TIMEOUT ((dmrgo_ipsc_session_reason_t)1)
+sym #define DMRGO_IPSC_SESSION_STATE_IDLE ((dmrgo_ipsc_session_state_t)0)
+sym #define DMRGO_IPSC_SESSION_STATE_REGISTERING ((dmrgo_ipsc_session_state_t)1)
+sym #define DMRGO_IPSC_SESSION_STATE_RUNNING ((dmrgo_ipsc_session_state_t)2)
+sym #define DMRGO_IPSC_SESSION_TIMEOUT_DEFAULT INT64_C(120000000000)
 sym #define DMRGO_IPSC_VOICE_LAYOUT_A ((dmrgo_ipsc_voice_layout_t)1)
 sym #define DMRGO_IPSC_VOICE_LAYOUT_BCDF ((dmrgo_ipsc_voice_layout_t)2)
 sym #define DMRGO_IPSC_VOICE_LAYOUT_E ((dmrgo_ipsc_voice_layout_t)3)
@@ -1630,6 +1685,47 @@ sym int dmrgo_dmrd_position_append_binary(dmrgo_dmrd_position_t *self, uint8_t *
 sym int dmrgo_dmrd_position_lc(dmrgo_dmrd_position_t *self, dmrgo_pdu_full_link_control_t *out);
 sym int dmrgo_dmrd_position_lc_into(dmrgo_dmrd_position_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *pl);
 sym int dmrgo_dmrd_position_string(dmrgo_dmrd_position_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_dmrd_session_bridge_deadline(dmrgo_dmrd_session_bridge_t *self, dmrgo_duration_t *at, bool *ok);
+sym int dmrgo_dmrd_session_bridge_free(dmrgo_dmrd_session_bridge_t *self);
+sym int dmrgo_dmrd_session_bridge_packet(dmrgo_dmrd_session_bridge_t *self, dmrgo_duration_t now, const uint8_t *p, size_t p_len, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_dmrd_session_bridge_packet_need(dmrgo_dmrd_session_bridge_t *self, dmrgo_duration_t now, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
+sym int dmrgo_dmrd_session_bridge_sign(dmrgo_dmrd_session_bridge_t *self, const uint8_t *p, size_t p_len);
+sym int dmrgo_dmrd_session_bridge_state(dmrgo_dmrd_session_bridge_t *self, dmrgo_dmrd_session_state_t *out);
+sym int dmrgo_dmrd_session_bridge_tick(dmrgo_dmrd_session_bridge_t *self, dmrgo_duration_t now, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_dmrd_session_bridge_tick_need(dmrgo_dmrd_session_bridge_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+sym int dmrgo_dmrd_session_config_error_error(dmrgo_dmrd_session_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_dmrd_session_config_error_last(dmrgo_dmrd_session_config_error_t *out, bool *ok);
+sym int dmrgo_dmrd_session_master_admit(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, uint32_t salt, const uint8_t *password, size_t password_len, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_dmrd_session_master_admit_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, uint32_t salt, const uint8_t *password, size_t password_len, size_t *items, size_t *arena);
+sym int dmrgo_dmrd_session_master_close(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t p0, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_dmrd_session_master_close_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
+sym int dmrgo_dmrd_session_master_deadline(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t *at, bool *ok);
+sym int dmrgo_dmrd_session_master_free(dmrgo_dmrd_session_master_t *self);
+sym int dmrgo_dmrd_session_master_id(dmrgo_dmrd_session_master_t *self, uint32_t *out);
+sym int dmrgo_dmrd_session_master_packet(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, const uint8_t *b, size_t b_len, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_dmrd_session_master_packet_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, const uint8_t *b, size_t b_len, size_t *items, size_t *arena);
+sym int dmrgo_dmrd_session_master_refuse(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t p0, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_dmrd_session_master_refuse_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
+sym int dmrgo_dmrd_session_master_reset(dmrgo_dmrd_session_master_t *self);
+sym int dmrgo_dmrd_session_master_state(dmrgo_dmrd_session_master_t *self, dmrgo_dmrd_session_state_t *out);
+sym int dmrgo_dmrd_session_master_tick(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_dmrd_session_master_tick_need(dmrgo_dmrd_session_master_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+sym int dmrgo_dmrd_session_new_bridge(const dmrgo_dmrd_session_bridge_config_t *cfg, dmrgo_dmrd_session_bridge_t **out);
+sym int dmrgo_dmrd_session_new_master(dmrgo_dmrd_session_master_config_t *cfg, dmrgo_dmrd_session_master_t **out);
+sym int dmrgo_dmrd_session_new_peer(const dmrgo_dmrd_session_peer_config_t *cfg, dmrgo_dmrd_session_peer_t **out);
+sym int dmrgo_dmrd_session_output_kind_string(dmrgo_dmrd_session_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_dmrd_session_peer_close(dmrgo_dmrd_session_peer_t *self, dmrgo_duration_t p0, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_dmrd_session_peer_close_need(dmrgo_dmrd_session_peer_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
+sym int dmrgo_dmrd_session_peer_deadline(dmrgo_dmrd_session_peer_t *self, dmrgo_duration_t *at, bool *ok);
+sym int dmrgo_dmrd_session_peer_free(dmrgo_dmrd_session_peer_t *self);
+sym int dmrgo_dmrd_session_peer_packet(dmrgo_dmrd_session_peer_t *self, dmrgo_duration_t now, const uint8_t *b, size_t b_len, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_dmrd_session_peer_packet_need(dmrgo_dmrd_session_peer_t *self, dmrgo_duration_t now, const uint8_t *b, size_t b_len, size_t *items, size_t *arena);
+sym int dmrgo_dmrd_session_peer_reset(dmrgo_dmrd_session_peer_t *self);
+sym int dmrgo_dmrd_session_peer_state(dmrgo_dmrd_session_peer_t *self, dmrgo_dmrd_session_state_t *out);
+sym int dmrgo_dmrd_session_peer_tick(dmrgo_dmrd_session_peer_t *self, dmrgo_duration_t now, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_dmrd_session_peer_tick_need(dmrgo_dmrd_session_peer_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+sym int dmrgo_dmrd_session_reason_string(dmrgo_dmrd_session_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_dmrd_session_state_string(dmrgo_dmrd_session_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_dmrd_talker_alias_append_binary(dmrgo_dmrd_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_dmrd_talker_alias_lc(dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_full_link_control_t *out);
 sym int dmrgo_dmrd_talker_alias_lc_into(dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *p);
@@ -1860,6 +1956,45 @@ sym int dmrgo_ipsc_peer_list_free(dmrgo_ipsc_peer_list_t *self);
 sym int dmrgo_ipsc_peer_list_len(dmrgo_ipsc_peer_list_t *self, int64_t *out);
 sym int dmrgo_ipsc_peer_list_of(const uint8_t *p, size_t p_len, dmrgo_ipsc_peer_list_t *out);
 sym int dmrgo_ipsc_raw_append_binary(const dmrgo_ipsc_raw_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_ipsc_session_config_error_error(dmrgo_ipsc_session_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ipsc_session_config_error_last(dmrgo_ipsc_session_config_error_t *out, bool *ok);
+sym int dmrgo_ipsc_session_master_close(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t p0, dmrgo_ipsc_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ipsc_session_master_close_need(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
+sym int dmrgo_ipsc_session_master_deadline(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t *at, bool *ok);
+sym int dmrgo_ipsc_session_master_free(dmrgo_ipsc_session_master_t *self);
+sym int dmrgo_ipsc_session_master_max_outputs(dmrgo_ipsc_session_master_t *self, int64_t *out);
+sym int dmrgo_ipsc_session_master_packet(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t now, const dmrgo_ipsc_session_addr_t *from, const uint8_t *p, size_t p_len, dmrgo_ipsc_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ipsc_session_master_packet_need(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t now, const dmrgo_ipsc_session_addr_t *from, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
+sym int dmrgo_ipsc_session_master_peer_at(dmrgo_ipsc_session_master_t *self, int64_t i, dmrgo_ipsc_session_peer_info_t *out);
+sym int dmrgo_ipsc_session_master_peers(dmrgo_ipsc_session_master_t *self, int64_t *out);
+sym int dmrgo_ipsc_session_master_reset(dmrgo_ipsc_session_master_t *self);
+sym int dmrgo_ipsc_session_master_sign(dmrgo_ipsc_session_master_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_ipsc_session_master_sign_need(dmrgo_ipsc_session_master_t *self, size_t *items, size_t *arena);
+sym int dmrgo_ipsc_session_master_state(dmrgo_ipsc_session_master_t *self, dmrgo_ipsc_session_state_t *out);
+sym int dmrgo_ipsc_session_master_tick(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t now, dmrgo_ipsc_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ipsc_session_master_tick_need(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+sym int dmrgo_ipsc_session_new_master(const dmrgo_ipsc_session_master_config_t *cfg, dmrgo_ipsc_session_master_t **out);
+sym int dmrgo_ipsc_session_new_peer(const dmrgo_ipsc_session_peer_config_t *cfg, dmrgo_ipsc_session_peer_t **out);
+sym int dmrgo_ipsc_session_output_kind_string(dmrgo_ipsc_session_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_ipsc_session_peer_close(dmrgo_ipsc_session_peer_t *self, dmrgo_duration_t p0, dmrgo_ipsc_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ipsc_session_peer_close_need(dmrgo_ipsc_session_peer_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
+sym int dmrgo_ipsc_session_peer_deadline(dmrgo_ipsc_session_peer_t *self, dmrgo_duration_t *at, bool *ok);
+sym int dmrgo_ipsc_session_peer_free(dmrgo_ipsc_session_peer_t *self);
+sym int dmrgo_ipsc_session_peer_master(dmrgo_ipsc_session_peer_t *self, uint32_t *id, bool *ok);
+sym int dmrgo_ipsc_session_peer_max_outputs(dmrgo_ipsc_session_peer_t *self, int64_t *out);
+sym int dmrgo_ipsc_session_peer_packet(dmrgo_ipsc_session_peer_t *self, dmrgo_duration_t p0, const dmrgo_ipsc_session_addr_t *from, const uint8_t *b, size_t b_len, dmrgo_ipsc_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ipsc_session_peer_packet_need(dmrgo_ipsc_session_peer_t *self, dmrgo_duration_t p0, const dmrgo_ipsc_session_addr_t *from, const uint8_t *b, size_t b_len, size_t *items, size_t *arena);
+sym int dmrgo_ipsc_session_peer_peer_at(dmrgo_ipsc_session_peer_t *self, int64_t i, dmrgo_ipsc_session_peer_info_t *out);
+sym int dmrgo_ipsc_session_peer_peers(dmrgo_ipsc_session_peer_t *self, int64_t *out);
+sym int dmrgo_ipsc_session_peer_reset(dmrgo_ipsc_session_peer_t *self);
+sym int dmrgo_ipsc_session_peer_sign(dmrgo_ipsc_session_peer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_ipsc_session_peer_sign_need(dmrgo_ipsc_session_peer_t *self, size_t *items, size_t *arena);
+sym int dmrgo_ipsc_session_peer_state(dmrgo_ipsc_session_peer_t *self, dmrgo_ipsc_session_state_t *out);
+sym int dmrgo_ipsc_session_peer_tick(dmrgo_ipsc_session_peer_t *self, dmrgo_duration_t now, dmrgo_ipsc_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ipsc_session_peer_tick_need(dmrgo_ipsc_session_peer_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+sym int dmrgo_ipsc_session_reason_string(dmrgo_ipsc_session_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_ipsc_session_state_string(dmrgo_ipsc_session_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_ipsc_session_version_default(uint8_t out[4]);
 sym int dmrgo_ipsc_stream_fill(dmrgo_ipsc_stream_t *self, const dmrgo_ipsc_user_t *u, bool last);
 sym int dmrgo_ipsc_stream_skip(dmrgo_ipsc_stream_t *self, uint16_t n);
 sym int dmrgo_ipsc_user_append_binary(dmrgo_ipsc_user_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
@@ -2905,6 +3040,9 @@ sym typedef uint8_t dmrgo_dmrd_command_t;
 sym typedef uint8_t dmrgo_dmrd_dialect_t;
 sym typedef uint8_t dmrgo_dmrd_frame_type_t;
 sym typedef uint8_t dmrgo_dmrd_option_state_t;
+sym typedef uint8_t dmrgo_dmrd_session_output_kind_t;
+sym typedef uint8_t dmrgo_dmrd_session_reason_t;
+sym typedef uint8_t dmrgo_dmrd_session_state_t;
 sym typedef uint8_t dmrgo_dvsi_field_t;
 sym typedef uint8_t dmrgo_dvsi_packet_type_t;
 sym typedef uint8_t dmrgo_enums_access_t;
@@ -2942,6 +3080,9 @@ sym typedef uint8_t dmrgo_ipsc_call_info_t;
 sym typedef uint8_t dmrgo_ipsc_flag_t;
 sym typedef uint8_t dmrgo_ipsc_mode_t;
 sym typedef uint8_t dmrgo_ipsc_opcode_t;
+sym typedef uint8_t dmrgo_ipsc_session_output_kind_t;
+sym typedef uint8_t dmrgo_ipsc_session_reason_t;
+sym typedef uint8_t dmrgo_ipsc_session_state_t;
 sym typedef uint8_t dmrgo_ipsc_voice_layout_t;
 sym typedef uint8_t dmrgo_layer2_end_hint_t;
 sym typedef uint8_t dmrgo_layer2_kind_t;
@@ -3019,6 +3160,11 @@ type struct dmrgo_dmrd_local_position_t { uint32_t source; uint8_t data[7]; };
 type struct dmrgo_dmrd_local_talker_alias_t { uint32_t source; uint8_t type_; uint8_t data[7]; };
 type struct dmrgo_dmrd_option_value_t { dmrgo_dmrd_option_state_t state; uint32_t value; };
 type struct dmrgo_dmrd_position_t { uint32_t repeater; uint32_t source; uint8_t data[7]; uint8_t size; };
+type struct dmrgo_dmrd_session_bridge_config_t { uint8_t *key; size_t key_len; bool enhanced; dmrgo_duration_t keepalive; dmrgo_duration_t timeout; };
+type struct dmrgo_dmrd_session_config_error_t { char *field; size_t field_len; };
+type struct dmrgo_dmrd_session_master_config_t { dmrgo_dmrd_dialect_t dialect; dmrgo_duration_t timeout; };
+type struct dmrgo_dmrd_session_output_t { dmrgo_dmrd_session_output_kind_t kind; uint8_t *packet; size_t packet_len; dmrgo_dmrd_command_t command; uint32_t id; dmrgo_dmrd_session_reason_t reason; dmrgo_dmrd_session_state_t state; };
+type struct dmrgo_dmrd_session_peer_config_t { dmrgo_dmrd_dialect_t dialect; uint32_t id; uint8_t *password; size_t password_len; uint8_t *config; size_t config_len; uint8_t *options; size_t options_len; dmrgo_duration_t retry; dmrgo_duration_t timeout; dmrgo_duration_t backoff; };
 type struct dmrgo_dmrd_talker_alias_t { uint32_t repeater; uint32_t source; uint8_t type_; uint8_t data[7]; uint8_t size; };
 type struct dmrgo_dvsi_config_t { int64_t channel; dmrgo_duration_t timeout; bool no_reset; bool no_parity; };
 type struct dmrgo_dvsi_packet_t { dmrgo_dvsi_packet_type_t type_; uint8_t *fields; size_t fields_len; };
@@ -3060,6 +3206,12 @@ type struct dmrgo_ipsc_payload_t { uint8_t status; uint16_t words; bool has_body
 type struct dmrgo_ipsc_peer_entry_t { uint32_t id; uint8_t ip[4]; uint16_t port; dmrgo_ipsc_mode_t mode; };
 type struct dmrgo_ipsc_raw_t { dmrgo_ipsc_opcode_t opcode; uint32_t id; uint8_t *body; size_t body_len; };
 type struct dmrgo_ipsc_rtp_t { uint8_t flags; bool marker; uint8_t payload_type; uint16_t seq; uint32_t timestamp; uint32_t ssrc; };
+type struct dmrgo_ipsc_session_addr_t { uint8_t ip[4]; uint16_t port; };
+type struct dmrgo_ipsc_session_config_error_t { char *field; size_t field_len; };
+type struct dmrgo_ipsc_session_master_config_t { uint32_t id; dmrgo_ipsc_mode_t mode; dmrgo_ipsc_flags_t flags; uint8_t version[4]; bool auth; uint8_t key[20]; dmrgo_duration_t timeout; int64_t max_peers; };
+type struct dmrgo_ipsc_session_output_t { dmrgo_ipsc_session_output_kind_t kind; uint8_t *packet; size_t packet_len; dmrgo_ipsc_session_addr_t addr; uint32_t id; dmrgo_ipsc_session_reason_t reason; };
+type struct dmrgo_ipsc_session_peer_config_t { uint32_t id; dmrgo_ipsc_mode_t mode; dmrgo_ipsc_flags_t flags; uint8_t version[4]; dmrgo_ipsc_session_addr_t master; bool auth; uint8_t key[20]; dmrgo_duration_t alive; int64_t max_missed; int64_t max_peers; };
+type struct dmrgo_ipsc_session_peer_info_t { uint32_t id; dmrgo_ipsc_session_addr_t addr; dmrgo_ipsc_mode_t mode; dmrgo_ipsc_flags_t flags; bool up; };
 type struct dmrgo_ipsc_stream_t { uint8_t call_seq; uint32_t call_control; uint16_t seq; uint32_t timestamp; uint32_t sent; };
 type struct dmrgo_ipsc_user_t { dmrgo_ipsc_opcode_t opcode; uint32_t id; uint8_t call_seq; uint32_t source; uint32_t destination; uint8_t priority; uint32_t call_control; dmrgo_ipsc_call_info_t info; dmrgo_ipsc_rtp_t rtp; dmrgo_ipsc_burst_type_t burst; dmrgo_ipsc_voice_t voice; dmrgo_ipsc_payload_t data; };
 type struct dmrgo_ipsc_voice_t { dmrgo_ipsc_voice_layout_t layout; uint8_t length; uint8_t control; uint8_t ambe[19]; uint8_t embedded[4]; uint8_t lc[9]; dmrgo_pdu_emb_info_t emb; };

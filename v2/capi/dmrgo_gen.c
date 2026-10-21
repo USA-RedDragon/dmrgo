@@ -164,6 +164,8 @@ const char *dmrgo__gen_strerror(int status) {
 		return "dmrd.ErrSignature";
 	case -205:
 		return "dmrd.ErrText";
+	case -235:
+		return "session.ConfigError";
 	case -233:
 		return "hytera.ErrCode";
 	case -197:
@@ -178,6 +180,8 @@ const char *dmrgo__gen_strerror(int status) {
 		return "ipsc.ErrLength";
 	case -212:
 		return "ipsc.ErrShort";
+	case -236:
+		return "session.ConfigError";
 	case -213:
 		return "mmdvm.ErrCommand";
 	case -214:
