@@ -1843,6 +1843,7 @@ documents:
         source_files:
           - v2/ip/icmp.go
           - v2/ip/errors.go
+          - v2/data/sender.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/ip
             names:
@@ -1850,6 +1851,9 @@ documents:
               - TestAppendICMPPacket
               - TestICMPPacketErrors
               - TestCheckIPv4
+          - package: github.com/USA-RedDragon/dmrgo/v2/data
+            names:
+              - TestSenderSourceSDL
 
       - section: "5.3"
         title: "Unconfirmed data DLL bearer service"
@@ -1926,6 +1930,7 @@ documents:
               - TestSenderResponses
               - TestSenderOtherResponse
               - TestSenderErrors
+              - TestSenderSourceSDL
 
       - section: "5.4.4"
         title: "Sliding window confirmed data"

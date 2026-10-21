@@ -33,6 +33,9 @@
 // message are each delivered at once, and EventReassembled follows the last
 // one with the whole message (ETSI TS 102 361-1 clause 9.3.25).
 //
+// Output.ICMP gives the ICMP error message that a message that failed
+// reports to the IP layer (ETSI TS 102 361-3 clauses 5.2 and 5.4.2.1).
+//
 // Multi-fragment reassembly is tested only against the 14-fragment example
 // of ETSI TS 102 361-1 Table 8.2 and synthetic packets, as no radio at hand
 // sends fragments. A BTECH DA-7X2 (AnyTone D890UV firmware) sends confirmed

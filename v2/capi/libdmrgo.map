@@ -147,6 +147,7 @@
 		dmrgo_data_event_kind_string;
 		dmrgo_data_new_receiver;
 		dmrgo_data_new_sender;
+		dmrgo_data_output_icmp;
 		dmrgo_data_output_kind_string;
 		dmrgo_data_receiver_burst;
 		dmrgo_data_receiver_burst_need;
