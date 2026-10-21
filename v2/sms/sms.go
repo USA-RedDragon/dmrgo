@@ -9,6 +9,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/shortdata"
 )
 
+const defaultGroupPrefix = 225
+
 // Format is the format of a text message.
 type Format uint8
 
@@ -57,6 +59,15 @@ type Text struct {
 	Source, Destination uint32
 	// Group reports a message to a talkgroup.
 	Group bool
+	// Network is the network ID of the IPv4 radio addresses of a FormatTMS,
+	// FormatIP or FormatAnyTone message, Network.x.y.z. The zero value
+	// means ip.DefaultNetwork. Decode sets it from the source address, and
+	// leaves it 0 for a compressed header.
+	Network uint8
+	// GroupPrefix is the first octet of the IPv4 multicast address of a
+	// group message in those formats. The zero value means 225. Decode sets
+	// it from the destination address of a group message.
+	GroupPrefix uint8
 	// DD is the DD format of a FormatDefinedData message.
 	DD enums.DDFormat
 	// Sequence is the sequence number of a FormatTMS message.
@@ -74,10 +85,13 @@ type Text struct {
 // dst and the Text, whose Body points into dst. It finds the format from
 // the header and the UDP port: TMS on port 4007, IP or AnyTone text on
 // port 5016, and defined data. It returns ErrNotText for a packet in none
-// of these formats and for defined data with DD format binary, and the
-// errors of the ip, tms and shortdata packages
-// for a message that does not decode. It allocates only to grow dst.
+// of these formats and for defined data with DD format binary, the errors
+// of the ip, tms and shortdata packages for a message that does not
+// decode, and ErrNil for a nil h. It allocates only to grow dst.
 func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
+	if h == nil {
+		return dst, Text{}, ErrNil
+	}
 	n := len(dst)
 	var t Text
 	target, source, _ := h.Addresses()
@@ -124,6 +138,10 @@ func decodeIP(dst []byte, sap enums.ServiceAccessPointID, data []byte, t Text) (
 	d, err := ip.Decode(sap, data)
 	if err != nil {
 		return dst, Text{}, err
+	}
+	t.Network = d.Source[0]
+	if t.Group {
+		t.GroupPrefix = d.Destination[0]
 	}
 	switch d.DestinationPort {
 	case ip.PortTMS:
@@ -180,14 +198,19 @@ type Header struct {
 }
 
 // AppendPacket appends the user data of t in its format to dst, sets h to
-// the data header to send it with, and returns dst. An IP format uses an IPv4 header (SAP IP based packet data) with
-// the radio addresses of network ip.DefaultNetwork, and a confirmed packet
-// when confirmed is set. A TMS text starts with a CR LF. It returns dst
-// unchanged and ErrFormat for an unknown format and for FormatDefinedData
-// with DD format binary, which holds no text, or BCD, which Decode reads
-// as FormatHytera, or the errors of
-// the packages that build the message. It allocates only to grow dst.
+// the data header to send it with, and returns dst. An IP format uses an
+// IPv4 header (SAP IP based packet data) with the radio addresses of
+// network t.Network and a group address with prefix t.GroupPrefix, and a
+// confirmed packet when confirmed is set. A TMS text starts with a CR LF.
+// It returns dst unchanged and ErrFormat for an unknown format and for
+// FormatDefinedData with DD format binary, which holds no text, or BCD,
+// which Decode reads as FormatHytera, ErrNil for a nil t or h, or the
+// errors of the packages that build the message. It allocates only to
+// grow dst.
 func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error) {
+	if t == nil || h == nil {
+		return dst, ErrNil
+	}
 	n := len(dst)
 	h.Data = pdu.DataHeader{}
 	var err error
@@ -217,13 +240,21 @@ func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error
 	default:
 		return dst, ErrFormat
 	}
+	network := t.Network
+	if network == 0 {
+		network = ip.DefaultNetwork
+	}
 	d := ip.Datagram{
-		Source:      ip.RadioAddress(ip.DefaultNetwork, t.Source),
-		Destination: ip.RadioAddress(ip.DefaultNetwork, t.Destination),
+		Source:      ip.RadioAddress(network, t.Source),
+		Destination: ip.RadioAddress(network, t.Destination),
 		SourcePort:  ip.PortText, DestinationPort: ip.PortText,
 	}
 	if t.Group {
-		d.Destination = ip.GroupAddress(225, t.Destination)
+		prefix := t.GroupPrefix
+		if prefix == 0 {
+			prefix = defaultGroupPrefix
+		}
+		d.Destination = ip.GroupAddress(prefix, t.Destination)
 	}
 	var p0 int
 	switch t.Format {

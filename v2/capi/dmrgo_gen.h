@@ -1494,7 +1494,7 @@ struct dmrgo_data_message_t {
 	/* Proprietary is the P_HEAD sent as the second header, or nil. */
 	bool has_proprietary;
 	dmrgo_pdu_proprietary_header_t proprietary;
-	/* Rate is the data type of the blocks: enums.DataTypeRate12, enums.DataTypeRate34 or enums.DataTypeRate1. */
+	/* Rate is the data type of the blocks: enums.DataTypeRate12, enums.DataTypeRate34 or enums.DataTypeRate1. For Sender.Send the zero value means enums.DataTypeRate12. */
 	dmrgo_enums_data_type_t rate;
 	/* Payload is the user data, without the pad octets and the message CRC. A packet whose first header was lost keeps its pad octets, as only a first try counts them. It holds at most MaxMessage octets (ETSI TS 102 361-1 clause 9.3.20). */
 	uint8_t *payload;
@@ -3769,6 +3769,10 @@ struct dmrgo_sms_text_t {
 	uint32_t destination;
 	/* Group reports a message to a talkgroup. */
 	bool group;
+	/* Network is the network ID of the IPv4 radio addresses of a FormatTMS, FormatIP or FormatAnyTone message, Network.x.y.z. The zero value means ip.DefaultNetwork. Decode sets it from the source address, and leaves it 0 for a compressed header. */
+	uint8_t network;
+	/* GroupPrefix is the first octet of the IPv4 multicast address of a group message in those formats. The zero value means 225. Decode sets it from the destination address of a group message. */
+	uint8_t group_prefix;
 	/* DD is the DD format of a FormatDefinedData message. */
 	dmrgo_enums_dd_format_t dd;
 	/* Sequence is the sequence number of a FormatTMS message. */
@@ -5372,6 +5376,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_SHORTDATA_SHORT (-182)
 #define DMRGO_ERR_SMS_FORMAT (-191)
 #define DMRGO_ERR_SMS_LENGTH (-192)
+#define DMRGO_ERR_SMS_NIL (-222)
 #define DMRGO_ERR_SMS_NOT_TEXT (-193)
 #define DMRGO_ERR_SMS_SHORT (-194)
 #define DMRGO_ERR_SMS_SIGNATURE (-195)
