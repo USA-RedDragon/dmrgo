@@ -31,22 +31,20 @@ typedef struct dmrgo_string_t {
 /* dmrgo_duration_t is a time in nanoseconds, as a Go time.Duration. A now argument is the time since any fixed start, such as a monotonic clock. */
 typedef int64_t dmrgo_duration_t;
 
+/* Go: dmrgo.ConfigError. ConfigError is the error of a constructor, and of a machine method that takes a config, option or argument field, for a field with a value out of range. */
+typedef struct dmrgo_config_error_t dmrgo_config_error_t;
 /* Go: dmrgo.FieldRangeError. FieldRangeError is the error of an encoder or setter when a field value does not fit in its on-air bits, when a padding bit of a packed field is set, or for a coordinate when it is outside [Min, Max]. */
 typedef struct dmrgo_field_range_error_t dmrgo_field_range_error_t;
 /* Go: bs.CACH. CACH makes the CACH field that goes before each outbound burst: the TACT with the TC bit, the AT bit and the LCSS, and one fragment of a Short LC. */
 typedef struct dmrgo_bs_cach_t dmrgo_bs_cach_t;
 /* Go: bs.Config. Config configures New. */
 typedef struct dmrgo_bs_config_t dmrgo_bs_config_t;
-/* Go: bs.ConfigError. ConfigError is the error of New for a config field with a value out of range. */
-typedef struct dmrgo_bs_config_error_t dmrgo_bs_config_error_t;
 /* Go: bs.Output. Output is one result of a Repeater. */
 typedef struct dmrgo_bs_output_t dmrgo_bs_output_t;
 /* Go: bs.Repeater. Repeater is the base station of one carrier with two slots, as the package doc describes. */
 typedef struct dmrgo_bs_repeater_t dmrgo_bs_repeater_t;
 /* Go: bs.Source. Source is where an inbound burst came from. */
 typedef struct dmrgo_bs_source_t dmrgo_bs_source_t;
-/* Go: csbk.ConfigError. ConfigError is the error of a constructor, and of a request or wakeup, for a field with a value out of range. */
-typedef struct dmrgo_csbk_config_error_t dmrgo_csbk_config_error_t;
 /* Go: csbk.Match. Match describes the answer that ends a request of Requester.Request: a CSBK with feature set FID and one of the first N Opcodes, addressed from the target of the request to its source. */
 typedef struct dmrgo_csbk_match_t dmrgo_csbk_match_t;
 /* Go: csbk.Output. Output is one result of a machine. */
@@ -75,8 +73,6 @@ typedef struct dmrgo_csbk_wakeup_t dmrgo_csbk_wakeup_t;
 typedef struct dmrgo_csbk_wakeup_config_t dmrgo_csbk_wakeup_config_t;
 /* Go: data.Call. Call is the parties of a data call. */
 typedef struct dmrgo_data_call_t dmrgo_data_call_t;
-/* Go: data.ConfigError. ConfigError is the error of NewReceiver, NewSender and Sender.Send for a config field or message field with a value out of range. */
-typedef struct dmrgo_data_config_error_t dmrgo_data_config_error_t;
 /* Go: data.Event. Event is one result of a Receiver. */
 typedef struct dmrgo_data_event_t dmrgo_data_event_t;
 /* Go: data.Message. Message is one data packet: its header, rate and user data. */
@@ -93,8 +89,6 @@ typedef struct dmrgo_data_sender_t dmrgo_data_sender_t;
 typedef struct dmrgo_data_sender_config_t dmrgo_data_sender_config_t;
 /* Go: data.Stats. Stats counts what a Receiver saw during a data call. */
 typedef struct dmrgo_data_stats_t dmrgo_data_stats_t;
-/* Go: enums.ColorCodeError. ColorCodeError is the error of NewColorCode for a value that does not fit in 4 bits. */
-typedef struct dmrgo_enums_color_code_error_t dmrgo_enums_color_code_error_t;
 /* Go: fec.BERCalculator. BERCalculator accumulates Results into an overall bit error rate. */
 typedef struct dmrgo_fec_ber_calculator_t dmrgo_fec_ber_calculator_t;
 /* Go: fec.BurstFECStats. BurstFECStats holds the FEC results of each layer of one DMR burst. */
@@ -557,8 +551,6 @@ typedef struct dmrgo_trunk_channel_t dmrgo_trunk_channel_t;
 typedef struct dmrgo_trunk_channel_plan_t dmrgo_trunk_channel_plan_t;
 /* Go: trunk.ChannelRule. ChannelRule gives the frequencies of a range of channel numbers by a fixed step, as the channel plan of a site or a radio codeplug does: channel n receives on RXHz + (n - First) * StepHz and transmits TXOffsetHz from there. */
 typedef struct dmrgo_trunk_channel_rule_t dmrgo_trunk_channel_rule_t;
-/* Go: trunk.ConfigError. ConfigError is the error of NewFollower, NewMS and NewTSCC for a config field with a value out of range. */
-typedef struct dmrgo_trunk_config_error_t dmrgo_trunk_config_error_t;
 /* Go: trunk.DynamicGroups. DynamicGroups is the DGNA talkgroup list of an MS (ETSI TS 102 361-4 clause 6.6.8.1). */
 typedef struct dmrgo_trunk_dynamic_groups_t dmrgo_trunk_dynamic_groups_t;
 /* Go: trunk.Follower. Follower follows a Tier III trunked site without transmitting, as a scanner does: it hunts for a TSCC, reads its site parameters, broadcasts and grants, follows the grants of the calls it wants to their payload channels, and returns to the TSCC on P_CLEAR, after the hang time or when the payload channel goes quiet (ETSI TS 102 361-4 clauses 6.3 and 6.6). */
@@ -633,8 +625,6 @@ typedef struct dmrgo_dvsi_port_vtable_t dmrgo_dvsi_port_vtable_t;
 typedef struct dmrgo_voice_call_t dmrgo_voice_call_t;
 /* Go: voice.CallOptions. CallOptions are per-call settings of Transmitter.Start. */
 typedef struct dmrgo_voice_call_options_t dmrgo_voice_call_options_t;
-/* Go: voice.ConfigError. ConfigError is the error of NewReceiver, NewTransmitter, NewInterrupter, Transmitter.Start and Interrupter.Interrupt for a config field, call field or argument with a value out of range. */
-typedef struct dmrgo_voice_config_error_t dmrgo_voice_config_error_t;
 /* Go: voice.Event. Event is one result of a Receiver. */
 typedef struct dmrgo_voice_event_t dmrgo_voice_event_t;
 /* Go: voice.FrameQuality. FrameQuality is the FEC result of one 72-bit AMBE+2 vocoder slot. */
@@ -883,6 +873,15 @@ typedef uint8_t dmrgo_voice_state_t;
 /* Go: voice.TransmitterState. TransmitterState is the state of a Transmitter. */
 typedef uint8_t dmrgo_voice_transmitter_state_t;
 
+struct dmrgo_config_error_t {
+	/* Type is the package of the call, such as "voice" or "trunk", and Field the name of the field, such as "ColorCode" or "Header.Group". */
+	char *type_;
+	size_t type__len;
+	/* Type is the package of the call, such as "voice" or "trunk", and Field the name of the field, such as "ColorCode" or "Header.Group". */
+	char *field;
+	size_t field_len;
+};
+
 struct dmrgo_field_range_error_t {
 	/* Type and Field name the PDU type and its field, such as "FLCGroupVoice" and "GroupAddress". For a value that a method takes, Field is the method, such as "SysCode" and "Unpack14". For a value that a package-level function or type takes, Type is the package and Field the function or type, such as "vocoder" and "AMBEFrame". */
 	char *type_;
@@ -1011,12 +1010,6 @@ struct dmrgo_bs_config_t {
 	dmrgo_layer2_burst_t *scratch;
 };
 
-struct dmrgo_bs_config_error_t {
-	/* Field is the name of the config field. */
-	char *field;
-	size_t field_len;
-};
-
 struct dmrgo_layer2_raw_burst_t {
 	uint8_t v[33];
 };
@@ -1118,12 +1111,6 @@ struct dmrgo_layer2_hint_t {
 	dmrgo_layer2_end_hint_t end;
 	/* SyncLost reports that the transport lost the signal before this burst, for example an MMDVM TAG_LOST or an IPSC "sync not detected" burst. */
 	bool sync_lost;
-};
-
-struct dmrgo_csbk_config_error_t {
-	/* Field is the name of the config, option or argument field. */
-	char *field;
-	size_t field_len;
 };
 
 struct dmrgo_csbk_match_t {
@@ -1259,12 +1246,6 @@ struct dmrgo_data_call_t {
 	uint32_t target;
 	/* Source is the 24-bit source LLID. */
 	uint32_t source;
-};
-
-struct dmrgo_data_config_error_t {
-	/* Field is the name of the field. */
-	char *field;
-	size_t field_len;
 };
 
 struct dmrgo_pdu_unconfirmed_data_header_t {
@@ -1635,11 +1616,6 @@ struct dmrgo_data_output_t {
 	dmrgo_packet_response_t response;
 	/* HasResponse reports whether Response is set. */
 	bool has_response;
-};
-
-struct dmrgo_enums_color_code_error_t {
-	/* Value is the value given to NewColorCode. */
-	uint8_t value;
 };
 
 struct dmrgo_fec_burst_fec_stats_t {
@@ -3743,7 +3719,6 @@ struct dmrgo_nmea_rmc_t {
 
 
 
-
 struct dmrgo_shortdata_hytera_text_t {
 	/* Field is a 16-bit value before the text whose meaning is not known: it was 00 00 in four captures and 45 00 in one. Decode keeps it as it is. */
 	uint16_t field;
@@ -4712,12 +4687,6 @@ struct dmrgo_trunk_channel_rule_t {
 	int64_t tx_offset_hz;
 };
 
-struct dmrgo_trunk_config_error_t {
-	/* Field is the name of the config field. */
-	char *field;
-	size_t field_len;
-};
-
 struct dmrgo_trunk_lip_short_report_t {
 	/* PDU type, 0 for a short location report */
 	uint8_t pdu_type;
@@ -5123,12 +5092,6 @@ struct dmrgo_voice_call_options_t {
 	bool hang_time;
 };
 
-struct dmrgo_voice_config_error_t {
-	/* Field is the name of the config field. */
-	char *field;
-	size_t field_len;
-};
-
 struct dmrgo_voice_frame_quality_t {
 	/* ErrorsCorrected is the number of bit errors that the Golay codes corrected, at most 255. */
 	uint8_t errors_corrected;
@@ -5288,17 +5251,15 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DVSI_CODEC_VERSION_MAX_ITEMS (DMRGO_DVSI_MAX_VERSION_LEN)
 #define DMRGO_ERR_ARS_LENGTH (-185)
 #define DMRGO_ERR_ARS_SHORT (-186)
-#define DMRGO_ERR_BS_CONFIG_ERROR (-101)
 #define DMRGO_ERR_BS_SLOT (-107)
 #define DMRGO_ERR_CODEC2_CLOSED (-143)
 #define DMRGO_ERR_CODEC2_FRAME_LENGTH (-144)
 #define DMRGO_ERR_CODEC2_UNAVAILABLE (-145)
 #define DMRGO_ERR_CODEC2_UNSUPPORTED_MODE (-146)
+#define DMRGO_ERR_CONFIG_ERROR (-227)
 #define DMRGO_ERR_CSBK_BUSY (-108)
-#define DMRGO_ERR_CSBK_CONFIG_ERROR (-102)
 #define DMRGO_ERR_CSBK_NO_ADDRESSES (-109)
 #define DMRGO_ERR_DATA_BUSY (-169)
-#define DMRGO_ERR_DATA_CONFIG_ERROR (-168)
 #define DMRGO_ERR_DMRD_COMMAND (-201)
 #define DMRGO_ERR_DMRD_LENGTH (-202)
 #define DMRGO_ERR_DMRD_SHORT (-203)
@@ -5317,7 +5278,6 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_DVSI_STATUS (-165)
 #define DMRGO_ERR_DVSI_TIMEOUT (-166)
 #define DMRGO_ERR_DVSI_TYPE (-167)
-#define DMRGO_ERR_ENUMS_COLOR_CODE_ERROR (-103)
 #define DMRGO_ERR_FEC_UNCORRECTABLE (-110)
 #define DMRGO_ERR_FIELD_RANGE_ERROR (-100)
 #define DMRGO_ERR_FRAMER_PERIOD (-223)
@@ -5392,7 +5352,6 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_TRANSPORT_HYTERA_SIGNATURE (-209)
 #define DMRGO_ERR_TRUNK_BUSY (-134)
 #define DMRGO_ERR_TRUNK_CHANNEL_NUMBER (-135)
-#define DMRGO_ERR_TRUNK_CONFIG_ERROR (-105)
 #define DMRGO_ERR_TRUNK_NOT_ON_CONTROL (-136)
 #define DMRGO_ERR_TRUNK_NOT_REGISTERED (-137)
 #define DMRGO_ERR_TRUNK_NO_CALL (-219)
@@ -5406,7 +5365,6 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_VOCODER_REGISTRY_FULL (-141)
 #define DMRGO_ERR_VOCODER_UNKNOWN_CODEC (-142)
 #define DMRGO_ERR_VOICE_BUSY (-147)
-#define DMRGO_ERR_VOICE_CONFIG_ERROR (-106)
 #define DMRGO_ERR_VOICE_NOT_ACTIVE (-148)
 #define DMRGO_ERR_VOICE_QUEUE_FULL (-149)
 #define DMRGO_ERR_VOICE_TIMED_OUT (-150)
@@ -7482,6 +7440,10 @@ struct dmrgo_voice_transmitter_config_t {
 
 #ifndef DMRGO_NO_PROTOTYPES
 
+/* Go: dmrgo.ConfigError.Error. Error returns the message of e. */
+int dmrgo_config_error_error(dmrgo_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* dmrgo_config_error_last sets *ok when the last error of this thread holds a dmrgo.ConfigError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
+int dmrgo_config_error_last(dmrgo_config_error_t *out, bool *ok);
 /* Go: dmrgo.FieldRangeError.Error. Error returns the message of e. */
 int dmrgo_field_range_error_error(dmrgo_field_range_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* dmrgo_field_range_error_last sets *ok when the last error of this thread holds a dmrgo.FieldRangeError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
@@ -7502,10 +7464,6 @@ int dmrgo_bs_cach_reset(dmrgo_bs_cach_t *self);
 int dmrgo_bs_channel_auth_string(dmrgo_bs_channel_auth_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: bs.CheckSlot. CheckSlot returns ErrSlot for a slot other than enums.Slot1 or enums.Slot2, the slots that Repeater.Inbound and Repeater.Lost drop. */
 int dmrgo_bs_check_slot(dmrgo_enums_slot_t s);
-/* Go: bs.ConfigError.Error. Error returns the message of e. */
-int dmrgo_bs_config_error_error(dmrgo_bs_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* dmrgo_bs_config_error_last sets *ok when the last error of this thread holds a bs.ConfigError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
-int dmrgo_bs_config_error_last(dmrgo_bs_config_error_t *out, bool *ok);
 /* Go: bs.Mode.String. String returns the name of the mode. */
 int dmrgo_bs_mode_string(dmrgo_bs_mode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: bs.New. New returns a Repeater for cfg. */
@@ -7546,10 +7504,6 @@ int dmrgo_bs_service_string(dmrgo_bs_service_t self, char *out, size_t out_cap, 
 int dmrgo_bs_slot_state_string(dmrgo_bs_slot_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: bs.State.String. String returns the name of the state. */
 int dmrgo_bs_state_string(dmrgo_bs_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: csbk.ConfigError.Error. Error returns the message of e. */
-int dmrgo_csbk_config_error_error(dmrgo_csbk_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* dmrgo_csbk_config_error_last sets *ok when the last error of this thread holds a csbk.ConfigError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
-int dmrgo_csbk_config_error_last(dmrgo_csbk_config_error_t *out, bool *ok);
 /* Go: csbk.NewPreambles. NewPreambles returns a Preambles for cfg. */
 int dmrgo_csbk_new_preambles(const dmrgo_csbk_preambles_config_t *cfg, dmrgo_csbk_preambles_t **out);
 /* Go: csbk.NewRequester. NewRequester returns a Requester for cfg. */
@@ -7740,10 +7694,6 @@ int dmrgo_csbk_wakeup_tick(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, dmrg
 int dmrgo_csbk_wakeup_wake(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, uint32_t bs, uint32_t source);
 /* Go: csbk.WakeupState.String. String returns the name of the state. */
 int dmrgo_csbk_wakeup_state_string(dmrgo_csbk_wakeup_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: data.ConfigError.Error. Error returns the message of e. */
-int dmrgo_data_config_error_error(dmrgo_data_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* dmrgo_data_config_error_last sets *ok when the last error of this thread holds a data.ConfigError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
-int dmrgo_data_config_error_last(dmrgo_data_config_error_t *out, bool *ok);
 /* Go: data.EndReason.String. String returns the name of the reason. */
 int dmrgo_data_end_reason_string(dmrgo_data_end_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: data.EventKind.String. String returns the name of the kind. */
@@ -7834,10 +7784,6 @@ int dmrgo_enums_activity_id_string(dmrgo_enums_activity_id_t self, char *out, si
 int dmrgo_enums_announcement_type_string(dmrgo_enums_announcement_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.Backoff.Frames. Frames returns the number of TDMA frames of the backoff number (ETSI TS 102 361-4 Table 6.3). */
 int dmrgo_enums_backoff_frames(dmrgo_enums_backoff_t self, int64_t *out);
-/* Go: enums.ColorCodeError.Error. Error returns the message of e. */
-int dmrgo_enums_color_code_error_error(dmrgo_enums_color_code_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_enums_color_code_error_last sets *ok when the last error of this thread holds a enums.ColorCodeError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
-int dmrgo_enums_color_code_error_last(dmrgo_enums_color_code_error_t *out, bool *ok);
 /* Go: enums.DAID.String. */
 int dmrgo_enums_daid_string(dmrgo_enums_daid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.DAID.Valid. Valid reports whether daid fits the 4-bit DAID field. */
@@ -9982,10 +9928,6 @@ int dmrgo_trunk_channel_plan_add_rule(dmrgo_trunk_channel_plan_t *self, const dm
 int dmrgo_trunk_channel_plan_len(dmrgo_trunk_channel_plan_t *self, int64_t *out);
 /* Go: trunk.ChannelPlan.Lookup. Lookup returns the channel with number n. */
 int dmrgo_trunk_channel_plan_lookup(dmrgo_trunk_channel_plan_t *self, uint16_t n, dmrgo_trunk_channel_t *c, bool *ok);
-/* Go: trunk.ConfigError.Error. Error returns the message of e. */
-int dmrgo_trunk_config_error_error(dmrgo_trunk_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* dmrgo_trunk_config_error_last sets *ok when the last error of this thread holds a trunk.ConfigError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
-int dmrgo_trunk_config_error_last(dmrgo_trunk_config_error_t *out, bool *ok);
 /* Go: trunk.DecodeLIPShortReport. DecodeLIPShortReport decodes an LIPShortReport. */
 int dmrgo_trunk_decode_lip_short_report(const uint8_t data[10], dmrgo_trunk_lip_short_report_t *out);
 /* Go: trunk.DecodeNMEALong. DecodeNMEALong decodes an NMEALong. */
@@ -10412,10 +10354,6 @@ int dmrgo_dvsi_port_read(dmrgo_dvsi_port_t *self, uint8_t *p, size_t p_len, int6
 int dmrgo_dvsi_port_write(dmrgo_dvsi_port_t *self, const uint8_t *p, size_t p_len, int64_t *out);
 /* dmrgo_dvsi_port_from_vtable makes a Port whose methods call the functions of vt with vt->user. */
 int dmrgo_dvsi_port_from_vtable(const dmrgo_dvsi_port_vtable_t *vt, dmrgo_dvsi_port_t **out);
-/* Go: voice.ConfigError.Error. Error returns the message of e. */
-int dmrgo_voice_config_error_error(dmrgo_voice_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* dmrgo_voice_config_error_last sets *ok when the last error of this thread holds a voice.ConfigError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
-int dmrgo_voice_config_error_last(dmrgo_voice_config_error_t *out, bool *ok);
 /* Go: voice.EndReason.String. String returns the name of the reason. */
 int dmrgo_voice_end_reason_string(dmrgo_voice_end_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: voice.EventKind.String. String returns the name of the kind. */

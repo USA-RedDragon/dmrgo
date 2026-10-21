@@ -34,3 +34,18 @@ func (e *FieldRangeError) Error() string {
 	}
 	return e.Type + "." + e.Field + ": value does not fit in " + text.Int(int64(e.Bits)) + " " + signed + "bits"
 }
+
+// ConfigError is the error of a constructor, and of a machine method that
+// takes a config, option or argument field, for a field with a value out of
+// range. Most fields have one static ConfigError, so a call that fails does
+// not allocate. Match it with errors.As.
+type ConfigError struct {
+	// Type is the package of the call, such as "voice" or "trunk", and Field
+	// the name of the field, such as "ColorCode" or "Header.Group".
+	Type, Field string
+}
+
+// Error returns the message of e. It allocates the message.
+func (e *ConfigError) Error() string {
+	return e.Type + ": " + e.Field + " is out of range"
+}

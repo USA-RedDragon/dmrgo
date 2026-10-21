@@ -198,7 +198,7 @@ type Repeater struct {
 }
 
 // New returns a Repeater for cfg. A nil cfg means the zero Config. It
-// returns a *ConfigError for a field out of range. It allocates the
+// returns a *dmrgo.ConfigError for a field out of range. It allocates the
 // Repeater, a voice.Receiver and a voice.Transmitter per slot, the data
 // queues, and the scratch Burst unless cfg.Scratch is set.
 func New(cfg *Config) (*Repeater, error) {

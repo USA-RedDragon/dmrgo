@@ -293,7 +293,7 @@ type Sender struct {
 }
 
 // NewSender returns a Sender for cfg. A nil cfg means the zero
-// SenderConfig. It returns a *ConfigError for a color code above 15, an
+// SenderConfig. It returns a *dmrgo.ConfigError for a color code above 15, an
 // unknown Source or Access, or a Preambles, Retries, MaxBlocks, Peers or
 // Window out of range. It allocates the Sender, a packet.Builder for each
 // message of the window, its packet.Assembler, its table of links and its
@@ -383,7 +383,7 @@ func (s *Sender) State() SenderState {
 // Window are in progress: it goes in the window on air when the last
 // header of that window has not gone yet, else in the next window. Send
 // returns ErrBusy for any other message while a message is in progress, a
-// *ConfigError for a nil m or another header, a P_HEAD in m.Proprietary,
+// *dmrgo.ConfigError for a nil m or another header, a P_HEAD in m.Proprietary,
 // or a confirmed message to a group, and the errors of
 // packet.Builder.Segment, such as packet.ErrTooLong and packet.ErrRate.
 // (ETSI TS 102 361-3 clauses 5.4 and 5.4.4)

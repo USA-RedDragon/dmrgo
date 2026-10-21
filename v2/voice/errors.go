@@ -1,20 +1,10 @@
 package voice
 
-import "errors"
+import (
+	"errors"
 
-// ConfigError is the error of NewReceiver, NewTransmitter,
-// NewInterrupter, Transmitter.Start and Interrupter.Interrupt for a config
-// field, call field or argument with a value out of range. Match it with
-// errors.As.
-type ConfigError struct {
-	// Field is the name of the config field.
-	Field string
-}
-
-// Error returns the message of e. It allocates the message.
-func (e *ConfigError) Error() string {
-	return "voice: " + e.Field + " is out of range"
-}
+	"github.com/USA-RedDragon/dmrgo/v2"
+)
 
 // Errors of a Transmitter. Match them with errors.Is.
 var (
@@ -32,17 +22,17 @@ var (
 )
 
 var (
-	errColorCode   error = &ConfigError{Field: "ColorCode"}
-	errSource      error = &ConfigError{Field: "Source"}
-	errHeaders     error = &ConfigError{Field: "Headers"}
-	errTerminators error = &ConfigError{Field: "Terminators"}
-	errQueue       error = &ConfigError{Field: "Queue"}
-	errAccess      error = &ConfigError{Field: "Access"}
-	errRetries     error = &ConfigError{Field: "Retries"}
-	errRepeats     error = &ConfigError{Field: "Repeats"}
-	errCommand     error = &ConfigError{Field: "Command"}
-	errChanAuth    error = &ConfigError{Field: "ChanAuth"}
-	errCall        error = &ConfigError{Field: "Call"}
-	errTalkerAlias error = &ConfigError{Field: "TalkerAlias"}
-	errGPS         error = &ConfigError{Field: "GPS"}
+	errColorCode   error = &dmrgo.ConfigError{Type: "voice", Field: "ColorCode"}
+	errSource      error = &dmrgo.ConfigError{Type: "voice", Field: "Source"}
+	errHeaders     error = &dmrgo.ConfigError{Type: "voice", Field: "Headers"}
+	errTerminators error = &dmrgo.ConfigError{Type: "voice", Field: "Terminators"}
+	errQueue       error = &dmrgo.ConfigError{Type: "voice", Field: "Queue"}
+	errAccess      error = &dmrgo.ConfigError{Type: "voice", Field: "Access"}
+	errRetries     error = &dmrgo.ConfigError{Type: "voice", Field: "Retries"}
+	errRepeats     error = &dmrgo.ConfigError{Type: "voice", Field: "Repeats"}
+	errCommand     error = &dmrgo.ConfigError{Type: "voice", Field: "Command"}
+	errChanAuth    error = &dmrgo.ConfigError{Type: "voice", Field: "ChanAuth"}
+	errCall        error = &dmrgo.ConfigError{Type: "voice", Field: "Call"}
+	errTalkerAlias error = &dmrgo.ConfigError{Type: "voice", Field: "TalkerAlias"}
+	errGPS         error = &dmrgo.ConfigError{Type: "voice", Field: "GPS"}
 )

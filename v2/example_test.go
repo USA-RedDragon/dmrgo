@@ -8,6 +8,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
 func Example() {
@@ -48,4 +49,14 @@ func ExampleFieldRangeError() {
 	}
 	// Output:
 	// GroupAddress 24
+}
+
+func ExampleConfigError() {
+	_, err := voice.NewTransmitter(&voice.TransmitterConfig{ColorCode: 16})
+	var configErr *dmrgo.ConfigError
+	if errors.As(err, &configErr) {
+		fmt.Println(configErr.Type, configErr.Field)
+	}
+	// Output:
+	// voice ColorCode
 }

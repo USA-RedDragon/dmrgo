@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
+
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/csbk"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -172,7 +174,7 @@ func TestRequesterErrors(t *testing.T) {
 	t.Parallel()
 
 	q := mustRequester(t, nil)
-	var ce *csbk.ConfigError
+	var ce *dmrgo.ConfigError
 	if err := q.RequestOACSU(0, 2, 1, layer3.ServiceOptions{}, &csbk.RequestOptions{Access: enums.AccessImpolite}); !errors.As(err, &ce) || ce.Field != "Access" {
 		t.Errorf("impolite OACSU: %v", err)
 	}

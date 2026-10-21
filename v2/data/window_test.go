@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
+
 	"github.com/USA-RedDragon/dmrgo/v2/data"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
@@ -321,7 +323,7 @@ func TestSenderWindowJoin(t *testing.T) {
 		t.Errorf("second short data C_HEAD: %v", err)
 	}
 	for _, w := range []int{-1, data.MaxWindow + 1} {
-		var ce *data.ConfigError
+		var ce *dmrgo.ConfigError
 		if _, err := data.NewSender(&data.SenderConfig{Window: w}); !errors.As(err, &ce) || ce.Field != "Window" {
 			t.Errorf("Window %d: %v", w, err)
 		}

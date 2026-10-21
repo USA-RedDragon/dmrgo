@@ -48,17 +48,17 @@ static void test_version(void) {
 
 static void test_errors(void) {
 	dmrgo_enums_color_code_t cc = 0;
-	CHECK(dmrgo_enums_new_color_code(16, &cc) == DMRGO_ERR_ENUMS_COLOR_CODE_ERROR);
-	CHECK(dmrgo_last_error_code() == DMRGO_ERR_ENUMS_COLOR_CODE_ERROR);
-	dmrgo_enums_color_code_error_t e = {0};
+	CHECK(dmrgo_enums_new_color_code(16, &cc) == DMRGO_ERR_FIELD_RANGE_ERROR);
+	CHECK(dmrgo_last_error_code() == DMRGO_ERR_FIELD_RANGE_ERROR);
+	dmrgo_field_range_error_t e = {0};
 	bool ok = false;
-	OK(dmrgo_enums_color_code_error_last(&e, &ok));
-	CHECK(ok && e.value == 16);
+	OK(dmrgo_field_range_error_last(&e, &ok));
+	CHECK(ok && e.bits == 4 && e.field_len == 9 && memcmp(e.field, "ColorCode", 9) == 0);
 	char msg[128];
 	size_t n = 0;
 	OK(dmrgo_last_error_message(msg, sizeof msg, &n, NULL));
-	CHECK(n > 0 && strstr(msg, "16") != NULL);
-	CHECK(strcmp(dmrgo_strerror(DMRGO_ERR_ENUMS_COLOR_CODE_ERROR), "enums.ColorCodeError") == 0);
+	CHECK(n > 0 && strstr(msg, "4 bits") != NULL);
+	CHECK(strcmp(dmrgo_strerror(DMRGO_ERR_FIELD_RANGE_ERROR), "dmrgo.FieldRangeError") == 0);
 	OK(dmrgo_enums_new_color_code(7, &cc));
 	CHECK(cc == 7);
 

@@ -3,6 +3,8 @@ package enums
 import (
 	"errors"
 	"testing"
+
+	"github.com/USA-RedDragon/dmrgo/v2"
 )
 
 func TestNewColorCode(t *testing.T) {
@@ -16,12 +18,12 @@ func TestNewColorCode(t *testing.T) {
 			}
 			continue
 		}
-		var ccErr *ColorCodeError
-		if !errors.As(err, &ccErr) || ccErr.Value != uint8(v) {
-			t.Errorf("NewColorCode(%d) error = %v, want a *ColorCodeError", v, err)
+		var rangeErr *dmrgo.FieldRangeError
+		if !errors.As(err, &rangeErr) || rangeErr.Type != "enums" || rangeErr.Field != "ColorCode" || rangeErr.Bits != 4 {
+			t.Errorf("NewColorCode(%d) error = %v, want a *dmrgo.FieldRangeError", v, err)
 		}
 	}
-	if got := (&ColorCodeError{Value: 16}).Error(); got != "color code 16 does not fit in 4 bits" {
-		t.Errorf("Error() = %q", got)
+	if _, err := NewColorCode(16); err.Error() != "enums.ColorCode: value does not fit in 4 bits" {
+		t.Errorf("Error() = %q", err)
 	}
 }

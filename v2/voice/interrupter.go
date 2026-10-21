@@ -101,7 +101,7 @@ type Interrupter struct {
 }
 
 // NewInterrupter returns an Interrupter for cfg. A nil cfg means the zero
-// InterrupterConfig. It returns a *ConfigError for a color code above 15,
+// InterrupterConfig. It returns a *dmrgo.ConfigError for a color code above 15,
 // or Retries or Repeats out of range. It allocates the Interrupter, and its
 // Burst unless cfg.Scratch is set. (ETSI TS 102 361-2 clause 6.3.5)
 func NewInterrupter(cfg *InterrupterConfig) (*Interrupter, error) {
@@ -142,7 +142,7 @@ func (i *Interrupter) State() InterrupterState {
 // first standalone RC burst is due at now: enums.RCCeaseTransmissionRequest
 // for a radio that is party to the call, enums.RCCeaseTransmissionCommand
 // for an emergency call. It returns ErrBusy while a request runs, and a
-// *ConfigError for another command. (ETSI TS 102 361-2 clauses 6.3.3 and
+// *dmrgo.ConfigError for another command. (ETSI TS 102 361-2 clauses 6.3.3 and
 // 6.3.4)
 func (i *Interrupter) Interrupt(now time.Duration, cmd enums.RCCommand) error {
 	if i.state != InterrupterIdle {

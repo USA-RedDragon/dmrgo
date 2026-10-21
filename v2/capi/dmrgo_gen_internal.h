@@ -84,13 +84,8 @@ typedef struct dmrgo__last_t {
 	char msg[512];
 	union {
 		char none;
-		dmrgo_field_range_error_t k0;
-		dmrgo_bs_config_error_t k1;
-		dmrgo_csbk_config_error_t k2;
-		dmrgo_data_config_error_t k3;
-		dmrgo_enums_color_code_error_t k4;
-		dmrgo_trunk_config_error_t k6;
-		dmrgo_voice_config_error_t k7;
+		dmrgo_config_error_t k0;
+		dmrgo_field_range_error_t k1;
 	} d;
 	unsigned char arena[512];
 } dmrgo__last_t;

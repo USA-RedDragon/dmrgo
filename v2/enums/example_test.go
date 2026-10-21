@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
@@ -15,12 +16,14 @@ func ExampleNearestSyncPattern() {
 	// BS-sourced voice 1
 }
 
-func ExampleColorCodeError() {
+// ExampleNewColorCode shows the error of a value that does not fit in 4
+// bits.
+func ExampleNewColorCode() {
 	_, err := enums.NewColorCode(16)
-	var ccErr *enums.ColorCodeError
-	if errors.As(err, &ccErr) {
-		fmt.Println(ccErr.Value)
+	var rangeErr *dmrgo.FieldRangeError
+	if errors.As(err, &rangeErr) {
+		fmt.Println(rangeErr.Type, rangeErr.Field, rangeErr.Bits)
 	}
 	// Output:
-	// 16
+	// enums ColorCode 4
 }

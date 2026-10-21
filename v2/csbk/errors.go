@@ -1,18 +1,10 @@
 package csbk
 
-import "errors"
+import (
+	"errors"
 
-// ConfigError is the error of a constructor, and of a request or wakeup,
-// for a field with a value out of range. Match it with errors.As.
-type ConfigError struct {
-	// Field is the name of the config, option or argument field.
-	Field string
-}
-
-// Error returns the message of e. It allocates the message.
-func (e *ConfigError) Error() string {
-	return "csbk: " + e.Field + " is out of range"
-}
+	"github.com/USA-RedDragon/dmrgo/v2"
+)
 
 // Errors of the machines. Match them with errors.Is.
 var (
@@ -24,18 +16,18 @@ var (
 )
 
 var (
-	errColorCode  error = &ConfigError{Field: "ColorCode"}
-	errSource     error = &ConfigError{Field: "Source"}
-	errRetries    error = &ConfigError{Field: "Retries"}
-	errAttempts   error = &ConfigError{Field: "Attempts"}
-	errAddress    error = &ConfigError{Field: "Address"}
-	errTarget     error = &ConfigError{Field: "Target"}
-	errSourceAddr error = &ConfigError{Field: "SourceAddress"}
-	errPreambles  error = &ConfigError{Field: "Preambles"}
-	errAccess     error = &ConfigError{Field: "Access"}
-	errMatch      error = &ConfigError{Field: "Match"}
-	errOACSU      error = &ConfigError{Field: "OACSU"}
-	errID         error = &ConfigError{Field: "ID"}
-	errDynamicID  error = &ConfigError{Field: "DynamicID"}
-	errSlot       error = &ConfigError{Field: "Slot"}
+	errColorCode  error = &dmrgo.ConfigError{Type: "csbk", Field: "ColorCode"}
+	errSource     error = &dmrgo.ConfigError{Type: "csbk", Field: "Source"}
+	errRetries    error = &dmrgo.ConfigError{Type: "csbk", Field: "Retries"}
+	errAttempts   error = &dmrgo.ConfigError{Type: "csbk", Field: "Attempts"}
+	errAddress    error = &dmrgo.ConfigError{Type: "csbk", Field: "Address"}
+	errTarget     error = &dmrgo.ConfigError{Type: "csbk", Field: "Target"}
+	errSourceAddr error = &dmrgo.ConfigError{Type: "csbk", Field: "SourceAddress"}
+	errPreambles  error = &dmrgo.ConfigError{Type: "csbk", Field: "Preambles"}
+	errAccess     error = &dmrgo.ConfigError{Type: "csbk", Field: "Access"}
+	errMatch      error = &dmrgo.ConfigError{Type: "csbk", Field: "Match"}
+	errOACSU      error = &dmrgo.ConfigError{Type: "csbk", Field: "OACSU"}
+	errID         error = &dmrgo.ConfigError{Type: "csbk", Field: "ID"}
+	errDynamicID  error = &dmrgo.ConfigError{Type: "csbk", Field: "DynamicID"}
+	errSlot       error = &dmrgo.ConfigError{Type: "csbk", Field: "Slot"}
 )

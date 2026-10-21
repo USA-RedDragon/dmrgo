@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
+
 	"github.com/USA-RedDragon/dmrgo/v2/csbk"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -103,9 +105,11 @@ func ExampleWakeup() {
 	// 720ms Done NoAnswer
 }
 
-func ExampleConfigError() {
+// ExampleNewResponder_configError shows the error of a config field out of
+// range.
+func ExampleNewResponder_configError() {
 	_, err := csbk.NewResponder(&csbk.ResponderConfig{})
-	var ce *csbk.ConfigError
+	var ce *dmrgo.ConfigError
 	if errors.As(err, &ce) {
 		fmt.Println(ce.Field)
 	}

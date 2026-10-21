@@ -1,35 +1,26 @@
 package data
 
-import "errors"
+import (
+	"errors"
 
-// ConfigError is the error of NewReceiver, NewSender and Sender.Send for a
-// config field or message field with a value out of range. Match it with
-// errors.As.
-type ConfigError struct {
-	// Field is the name of the field.
-	Field string
-}
-
-// Error returns the message of e. It allocates the message.
-func (e *ConfigError) Error() string {
-	return "data: " + e.Field + " is out of range"
-}
+	"github.com/USA-RedDragon/dmrgo/v2"
+)
 
 // ErrBusy is returned by Sender.Send while a message is in progress. Match
 // it with errors.Is.
 var ErrBusy = errors.New("data: message in progress")
 
 var (
-	errColorCode    error = &ConfigError{Field: "ColorCode"}
-	errSource       error = &ConfigError{Field: "Source"}
-	errMaxBlocks    error = &ConfigError{Field: "MaxBlocks"}
-	errPeers        error = &ConfigError{Field: "Peers"}
-	errMaxFragment  error = &ConfigError{Field: "MaxFragment"}
-	errMaxMessage   error = &ConfigError{Field: "MaxMessage"}
-	errAccess       error = &ConfigError{Field: "Access"}
-	errPreambles    error = &ConfigError{Field: "Preambles"}
-	errRetries      error = &ConfigError{Field: "Retries"}
-	errHeader       error = &ConfigError{Field: "Header"}
-	errWindow       error = &ConfigError{Field: "Window"}
-	errMessageGroup error = &ConfigError{Field: "Header.Group"}
+	errColorCode    error = &dmrgo.ConfigError{Type: "data", Field: "ColorCode"}
+	errSource       error = &dmrgo.ConfigError{Type: "data", Field: "Source"}
+	errMaxBlocks    error = &dmrgo.ConfigError{Type: "data", Field: "MaxBlocks"}
+	errPeers        error = &dmrgo.ConfigError{Type: "data", Field: "Peers"}
+	errMaxFragment  error = &dmrgo.ConfigError{Type: "data", Field: "MaxFragment"}
+	errMaxMessage   error = &dmrgo.ConfigError{Type: "data", Field: "MaxMessage"}
+	errAccess       error = &dmrgo.ConfigError{Type: "data", Field: "Access"}
+	errPreambles    error = &dmrgo.ConfigError{Type: "data", Field: "Preambles"}
+	errRetries      error = &dmrgo.ConfigError{Type: "data", Field: "Retries"}
+	errHeader       error = &dmrgo.ConfigError{Type: "data", Field: "Header"}
+	errWindow       error = &dmrgo.ConfigError{Type: "data", Field: "Window"}
+	errMessageGroup error = &dmrgo.ConfigError{Type: "data", Field: "Header.Group"}
 )

@@ -76,10 +76,10 @@ type Wakeup struct {
 	noCopy    noCopy
 }
 
-// NewWakeup returns a Wakeup for cfg. A nil cfg means the zero
-// WakeupConfig. It returns a *ConfigError for a color code above 15 or
-// Attempts out of range. It allocates the Wakeup, and its Burst unless
-// cfg.Scratch is set.
+// NewWakeup returns a Wakeup for cfg. A nil cfg means the zero WakeupConfig.
+// It returns a *dmrgo.ConfigError for a color code above 15 or Attempts out
+// of range. It allocates the Wakeup, and its Burst unless cfg.Scratch is
+// set.
 func NewWakeup(cfg *WakeupConfig) (*Wakeup, error) {
 	if cfg == nil {
 		cfg = &WakeupConfig{}
@@ -112,9 +112,9 @@ func (w *Wakeup) State() WakeupState {
 	return w.state
 }
 
-// Wake starts the wakeup of the BS with address bs by the radio source.
-// The first BS_Dwn_Act goes out at the next Tick. It returns ErrBusy while
-// a wakeup runs, and a *ConfigError for an address above 24 bits.
+// Wake starts the wakeup of the BS with address bs by the radio source. The
+// first BS_Dwn_Act goes out at the next Tick. It returns ErrBusy while a
+// wakeup runs, and a *dmrgo.ConfigError for an address above 24 bits.
 func (w *Wakeup) Wake(now time.Duration, bs, source uint32) error {
 	if w.state != WakeupIdle {
 		return ErrBusy

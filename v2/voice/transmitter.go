@@ -318,8 +318,8 @@ type Transmitter struct {
 }
 
 // NewTransmitter returns a Transmitter for cfg. A nil cfg means the zero
-// TransmitterConfig. It returns a *ConfigError for a field out of range.
-// It allocates the Transmitter and its queue, 72 bytes for each slot.
+// TransmitterConfig. It returns a *dmrgo.ConfigError for a field out of
+// range. It allocates the Transmitter and its queue, 72 bytes for each slot.
 func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 	if cfg == nil {
 		cfg = &TransmitterConfig{}
@@ -403,7 +403,7 @@ func (t *Transmitter) Dropped() int {
 // them. opts may be nil. A polite call on a busy channel waits in
 // TransmitterAccess, as TransmitterConfig.Access says, and a call in hang
 // time starts in TransmitterChanAuth, as CallOptions.HangTime says. Start
-// returns ErrBusy while a transmission runs, and a *ConfigError when c
+// returns ErrBusy while a transmission runs, and a *dmrgo.ConfigError when c
 // does not make an LC.
 func (t *Transmitter) Start(at time.Duration, c Call, opts *CallOptions) error {
 	if t.state != TransmitterIdle {
@@ -514,7 +514,7 @@ func (t *Transmitter) setLC(c *Call) error {
 	if got, ok := callOf(lc, OriginHeader); !ok || !got.sameParties(c) || got.Options != c.Options || got.FID != c.FID {
 		var err error
 		if lc, err = pdu.NewVoiceLCBytes(c.Group, c.Target, c.Source, c.Options); err != nil {
-			return errCall
+			return err
 		}
 		lc.SetFID(c.FID)
 	}

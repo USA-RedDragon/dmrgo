@@ -77,8 +77,9 @@ func ExampleReceiver_respond() {
 	// send ACK at 4.14329s
 }
 
-// ExampleConfigError shows the error of a config field out of range.
-func ExampleConfigError() {
+// ExampleNewReceiver_configError shows the error of a config field out of
+// range.
+func ExampleNewReceiver_configError() {
 	_, err := data.NewReceiver(&data.ReceiverConfig{MaxBlocks: 200})
 	fmt.Println(err)
 	// Output:

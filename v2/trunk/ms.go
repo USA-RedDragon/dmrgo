@@ -222,9 +222,9 @@ type MS struct {
 	noCopy  noCopy
 }
 
-// NewMS returns an MS for cfg. It returns a *ConfigError for an Address
-// out of range and for the errors of NewFollower. It allocates the MS, and
-// its Burst unless cfg.Scratch is set.
+// NewMS returns an MS for cfg. It returns a *dmrgo.ConfigError for an
+// Address out of range and for the errors of NewFollower. It allocates the
+// MS, and its Burst unless cfg.Scratch is set.
 func NewMS(cfg *MSConfig) (*MS, error) {
 	if cfg == nil || cfg.Address == 0 || cfg.Address > maxAddress {
 		return nil, errAddress
@@ -336,11 +336,11 @@ func (m *MS) Reset() {
 // Call asks the TSCC for a voice call to the talkgroup or MS target, by
 // random access. The outputs follow from Burst and Tick: OutputGrant and
 // OutputTune for the grant, or OutputRefused. An emergency call uses the
-// emergency random access of ETSI TS 102 361-4 clause 6.2.1.1.9. It
-// returns ErrNotOnControl when the MS is not on a confirmed TSCC, ErrBusy
-// while another request runs, ErrNotRegistered when the TSCC asks for a
-// registration that the MS does not hold, and a *ConfigError for a target
-// or options out of range.
+// emergency random access of ETSI TS 102 361-4 clause 6.2.1.1.9. It returns
+// ErrNotOnControl when the MS is not on a confirmed TSCC, ErrBusy while
+// another request runs, ErrNotRegistered when the TSCC asks for a
+// registration that the MS does not hold, and a *dmrgo.ConfigError for a
+// target or options out of range.
 func (m *MS) Call(now time.Duration, group bool, target uint32, opts layer3.VoiceServiceOptions) error {
 	kind := enums.ServiceIndividualVoice
 	if group {

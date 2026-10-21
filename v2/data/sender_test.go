@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
+
 	"github.com/USA-RedDragon/dmrgo/v2/data"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -405,7 +407,7 @@ func TestSenderErrors(t *testing.T) {
 		{data.SenderConfig{Peers: -2}, "Peers"},
 	} {
 		_, err := data.NewSender(&c.cfg)
-		var ce *data.ConfigError
+		var ce *dmrgo.ConfigError
 		if !errors.As(err, &ce) || ce.Field != c.field {
 			t.Errorf("%+v: %v, want a ConfigError for %s", c.cfg, err, c.field)
 		}
@@ -421,14 +423,14 @@ func TestSenderErrors(t *testing.T) {
 		m    *data.Message
 		want error
 	}{
-		{"group", group, &data.ConfigError{Field: "Header.Group"}},
-		{"UDT", udt, &data.ConfigError{Field: "Header"}},
-		{"P_HEAD", prop, &data.ConfigError{Field: "Header"}},
+		{"group", group, &dmrgo.ConfigError{Type: "data", Field: "Header.Group"}},
+		{"UDT", udt, &dmrgo.ConfigError{Type: "data", Field: "Header"}},
+		{"P_HEAD", prop, &dmrgo.ConfigError{Type: "data", Field: "Header"}},
 		{"too long", message(200), packet.ErrTooLong},
 		{"rate", &data.Message{Header: confirmedHeader(0), Rate: enums.DataTypeCSBK}, packet.ErrRate},
 	} {
 		err := s.Send(0, c.m)
-		var ce, we *data.ConfigError
+		var ce, we *dmrgo.ConfigError
 		switch {
 		case errors.As(c.want, &we):
 			if !errors.As(err, &ce) || ce.Field != we.Field {

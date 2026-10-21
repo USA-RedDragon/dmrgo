@@ -125,7 +125,7 @@ func (m *MS) PowerSaveOffset() uint8 {
 }
 
 // SetStatus sets the status with which the MS answers a status poll. It
-// is 0 after NewMS. It returns a *ConfigError for a status over 126. (ETSI
+// is 0 after NewMS. It returns a *dmrgo.ConfigError for a status over 126. (ETSI
 // TS 102 361-4 clause 6.6.6.2.2.1.5)
 func (m *MS) SetStatus(s Status) error {
 	if s >= StatusPoll {
@@ -139,7 +139,7 @@ func (m *MS) SetStatus(s Status) error {
 // that asks for it: a SendStatus, or a Call or CallData with IsSuppData.
 // The MS uploads it when the TSCC asks for it with a C_AHOY from SUPLI.
 // format is the UDT_Format of the data. Empty data clears it. It returns a
-// *ConfigError for data over MaxSupplementary octets or a format over 15.
+// *dmrgo.ConfigError for data over MaxSupplementary octets or a format over 15.
 // (ETSI TS 102 361-4 clause 6.4.13)
 func (m *MS) SetSupplementary(format uint8, data []byte) error {
 	if len(data) > MaxSupplementary || format > 15 {
@@ -153,7 +153,7 @@ func (m *MS) SetSupplementary(format uint8, data []byte) error {
 // SendStatus sends the status s to the talkgroup or MS target by random
 // access. The outputs follow from Burst and Tick: OutputAccepted when the
 // TSCC delivered it, or OutputRefused. It returns the errors of Call,
-// ErrStunned for a stunned MS, and a *ConfigError for a status over 126.
+// ErrStunned for a stunned MS, and a *dmrgo.ConfigError for a status over 126.
 // (ETSI TS 102 361-4 clause 6.6.6.1)
 func (m *MS) SendStatus(now time.Duration, group bool, target uint32, s Status) error {
 	if s >= StatusPoll {
