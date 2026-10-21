@@ -161,7 +161,7 @@ func TestSenderWindowLoopback(t *testing.T) {
 			name:  "lost block of the middle packet",
 			drop:  func(seq, try uint8, i int) bool { return seq == 1 && try == 1 && i == 3 },
 			heads: "0 1 2A 1r 2rA", resp: "SACK(1)+ACK(2)",
-			dones: "0:Delivered/1 1:Delivered/2 2:Delivered/2", got: "acbc",
+			dones: "0:Delivered/1 1:Delivered/2 2:Delivered/2", got: "abc",
 		},
 		{
 			name:  "lost block of the last packet",
@@ -173,7 +173,7 @@ func TestSenderWindowLoopback(t *testing.T) {
 			name:  "lost header of the middle packet",
 			drop:  func(seq, try uint8, i int) bool { return seq == 1 && try == 1 && i == 0 },
 			heads: "0 1 2A 1r 2rA", resp: "SACK(1)+ACK(2)",
-			dones: "0:Delivered/1 1:Delivered/2 2:Delivered/2", got: "acbc",
+			dones: "0:Delivered/1 1:Delivered/2 2:Delivered/2", got: "abc",
 		},
 		{
 			name:  "lost ACK",
@@ -190,7 +190,7 @@ func TestSenderWindowLoopback(t *testing.T) {
 		{
 			name: "memory full", big: true,
 			heads: "0 1 2A 2rA", resp: "NACK Memory Full(1)+ACK(2)",
-			dones: "0:Delivered/1 1:Refused/1 2:Delivered/2", got: "acc",
+			dones: "0:Delivered/1 1:Refused/1 2:Delivered/2", got: "ac",
 		},
 	} {
 		l := &winLink{
@@ -468,11 +468,11 @@ func TestReceiverWindow(t *testing.T) {
 		deliver int
 	}{
 		{"all good", []uint8{5, 6, 7}, [2]int{-1, 0}, -1, "ACK", 7, 0, 0, 3},
-		{"bad block of the first", []uint8{5, 6, 7}, [2]int{0, 2}, -1, "SACK", 5, 7, 1, 2},
+		{"bad block of the first", []uint8{5, 6, 7}, [2]int{0, 2}, -1, "SACK", 5, 7, 1, 0},
 		{"bad block of the last", []uint8{5, 6, 7}, [2]int{2, 4}, -1, "SACK", 7, 1, 1, 2},
-		{"lost packet", []uint8{5, 7}, [2]int{-1, 0}, -1, "SACK", 6, 127, 2, 2},
-		{"bad block of a later try", []uint8{5, 6, 7}, [2]int{1, 2}, 1, "SACK", 6, 127, 2, 2},
-		{"new window at a repeat", []uint8{5, 6, 5, 6}, [2]int{0, 2}, -1, "ACK", 6, 0, 0, 3},
+		{"lost packet", []uint8{5, 7}, [2]int{-1, 0}, -1, "SACK", 6, 127, 2, 1},
+		{"bad block of a later try", []uint8{5, 6, 7}, [2]int{1, 2}, 1, "SACK", 6, 127, 2, 1},
+		{"new window at a repeat", []uint8{5, 6, 5, 6}, [2]int{0, 2}, -1, "ACK", 6, 0, 0, 2},
 		{"stop and wait", []uint8{1}, [2]int{0, 2}, -1, "SACK", 1, 1, 1, 0},
 	} {
 		var bursts []layer2.RawBurst
