@@ -43,6 +43,10 @@ const (
 	tier0Shape2 = false
 )
 
+const (
+	tier0Fold = false
+)
+
 // tier0Shape feeds the rounding error of each MCUAudio sample into the
 // next, which puts a zero of the error at half the rate: it cuts the
 // rounding noise of a coarse DAC in the alternate channel.
@@ -100,6 +104,9 @@ func shape24k(dst *[maxSamples]int32, r *[maxTaps]int8) int {
 }
 
 func shape48k(dst *[maxSamples]int32, r *[maxTaps]int8) int {
+	if tier0Fold {
+		return shape48kFold(dst, r)
+	}
 	for p := range taps48k {
 		t := &taps48k[p]
 		var y int32
@@ -108,6 +115,34 @@ func shape48k(dst *[maxSamples]int32, r *[maxTaps]int8) int {
 		}
 		dst[p] = y
 	}
+	return len(taps48k)
+}
+
+func shape48kFold(dst *[maxSamples]int32, r *[maxTaps]int8) int {
+	var u, w [6]int32
+	for i := range u {
+		a, b := int32(r[i]), int32(r[11-i])
+		u[i], w[i] = a+b, a-b
+	}
+	for k := range 4 {
+		f := &taps48kFold[k]
+		var s, d int32
+		for i := range u {
+			s += int32(f[i]) * u[i]
+			d += int32(f[6+i]) * w[i]
+		}
+		dst[k+1] = (s + d) >> 1
+		dst[9-k] = (s - d) >> 1
+	}
+	f := &taps48kFold[4]
+	var y int32
+	for i := range u {
+		y += int32(f[i]) * u[i]
+	}
+	dst[5] = y
+	dst[0] = int32(f[6])*(int32(r[1])+int32(r[11])) + int32(f[7])*(int32(r[2])+int32(r[10])) +
+		int32(f[8])*(int32(r[3])+int32(r[9])) + int32(f[9])*(int32(r[4])+int32(r[8])) +
+		int32(f[10])*(int32(r[5])+int32(r[7])) + int32(f[11])*int32(r[6])
 	return len(taps48k)
 }
 
