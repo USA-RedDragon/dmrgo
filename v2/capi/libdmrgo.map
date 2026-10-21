@@ -858,6 +858,13 @@
 		dmrgo_pdu_vnap_continuation_data_type;
 		dmrgo_pdu_vnap_continuation_encode;
 		dmrgo_pdu_vnap_continuation_string;
+		dmrgo_shortdata_append_text;
+		dmrgo_shortdata_decode_hytera_text;
+		dmrgo_shortdata_hytera_text_append_binary;
+		dmrgo_shortdata_hytera_text_set_text_utf8;
+		dmrgo_shortdata_hytera_text_string;
+		dmrgo_shortdata_hytera_text_text_utf8;
+		dmrgo_shortdata_text;
 		dmrgo_strerror;
 		dmrgo_trunk_access_applies;
 		dmrgo_trunk_capacity_plus_follower_burst;
