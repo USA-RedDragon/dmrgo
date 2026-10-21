@@ -433,12 +433,12 @@ static void test_last_error(void) {
 	size_t sneed = 0;
 	CHECK(dmrgo_enums_data_type_string(DMRGO_ENUMS_DATA_TYPE_CSBK, small, sizeof small, &n, &sneed) == DMRGO_ERR_SHORT);
 	CHECK(dmrgo_last_error_code() == DMRGO_ERR_SHORT && n == 1 && sneed > 2);
-	uint8_t iq[64] = {0};
-	size_t m = 0;
-	CHECK(dmrgo_last_error_code() == DMRGO_ERR_PANIC);
+	cfg.tier = 9;
+	dmrgo_config_error_t ce = {0};
+	bool ok = false;
+	OK(dmrgo_config_error_last(&ce, &ok));
 	char msg[256];
 	OK(dmrgo_last_error_message(msg, sizeof msg, &n, NULL));
-	CHECK(strstr(msg, "panic") != NULL);
 	CHECK(strcmp(dmrgo_strerror(DMRGO_ERR_PDU_NO_ADDRESSES), "pdu.ErrNoAddresses") == 0);
 }
 

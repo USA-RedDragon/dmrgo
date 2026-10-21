@@ -282,7 +282,7 @@ func (g *gen) typeObject(o *types.TypeName, gn string) error {
 		}
 	}
 	if ti.kind == kHandle {
-		if err := g.lifecycle(ti, gn, true); err != nil {
+		if err := g.lifecycle(ti, gn, zeroReady(g.l.full[o], o.Name())); err != nil {
 			return err
 		}
 	}
@@ -408,6 +408,21 @@ func (g *gen) handleField(ti *tinfo, f *types.Var, fe *Export) error {
 		return nil
 	}
 	return g.addFunc(fe, ti.base+"_set_"+n, doc, ti, rHandle, f.Name(), set, &lead{assign: true})
+}
+
+// zeroReady reports whether the Go doc of the type name says that its zero
+// value is ready to use, which is when the C API makes it with a _new
+// function.
+func zeroReady(doc, name string) bool {
+	for _, lead := range []string{"The zero value is ", "The zero " + name + " is "} {
+		if i := strings.Index(doc, lead); i >= 0 {
+			rest := doc[i+len(lead):]
+			if strings.HasPrefix(rest, "ready") || strings.HasPrefix(rest, "empty") || strings.HasPrefix(rest, "an empty") {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (g *gen) lifecycle(ti *tinfo, gn string, zero bool) error {

@@ -7472,8 +7472,6 @@ int dmrgo_bs_new(const dmrgo_bs_config_t *cfg, dmrgo_bs_repeater_t **out);
 int dmrgo_bs_output_kind_string(dmrgo_bs_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: bs.Reason.String. String returns the name of the reason. */
 int dmrgo_bs_reason_string(dmrgo_bs_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_bs_repeater_new makes a zero bs.Repeater. */
-int dmrgo_bs_repeater_new(dmrgo_bs_repeater_t **out);
 /* dmrgo_bs_repeater_free frees the handle. self may be NULL. */
 int dmrgo_bs_repeater_free(dmrgo_bs_repeater_t *self);
 /* Go: bs.Repeater.Deadline. Deadline returns the time at which the Repeater needs a Tick. */
@@ -7518,8 +7516,6 @@ int dmrgo_csbk_new_wakeup(const dmrgo_csbk_wakeup_config_t *cfg, dmrgo_csbk_wake
 int dmrgo_csbk_oacsu_answer_string(dmrgo_csbk_oacsu_answer_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: csbk.OutputKind.String. String returns the name of the kind. */
 int dmrgo_csbk_output_kind_string(dmrgo_csbk_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_csbk_preambles_new makes a zero csbk.Preambles. */
-int dmrgo_csbk_preambles_new(dmrgo_csbk_preambles_t **out);
 /* dmrgo_csbk_preambles_free frees the handle. self may be NULL. */
 int dmrgo_csbk_preambles_free(dmrgo_csbk_preambles_t *self);
 /* dmrgo_csbk_preambles_burst_need sets *items and *arena to the room that dmrgo_csbk_preambles_burst needs for these arguments, without a change to the handle. */
@@ -7548,8 +7544,6 @@ int dmrgo_csbk_preambles_tick(dmrgo_csbk_preambles_t *self, dmrgo_duration_t now
 int dmrgo_csbk_preambles_state_string(dmrgo_csbk_preambles_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: csbk.Reason.String. String returns the name of the reason code. */
 int dmrgo_csbk_reason_string(dmrgo_csbk_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_csbk_requester_new makes a zero csbk.Requester. */
-int dmrgo_csbk_requester_new(dmrgo_csbk_requester_t **out);
 /* dmrgo_csbk_requester_free frees the handle. self may be NULL. */
 int dmrgo_csbk_requester_free(dmrgo_csbk_requester_t *self);
 /* dmrgo_csbk_requester_burst_need sets *items and *arena to the room that dmrgo_csbk_requester_burst needs for these arguments, without a change to the handle. */
@@ -7590,8 +7584,6 @@ int dmrgo_csbk_requester_tick_need(dmrgo_csbk_requester_t *self, dmrgo_duration_
 int dmrgo_csbk_requester_tick(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: csbk.RequesterState.String. String returns the name of the state. */
 int dmrgo_csbk_requester_state_string(dmrgo_csbk_requester_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_csbk_responder_new makes a zero csbk.Responder. */
-int dmrgo_csbk_responder_new(dmrgo_csbk_responder_t **out);
 /* dmrgo_csbk_responder_free frees the handle. self may be NULL. */
 int dmrgo_csbk_responder_free(dmrgo_csbk_responder_t *self);
 /* dmrgo_csbk_responder_burst_need sets *items and *arena to the room that dmrgo_csbk_responder_burst needs for these arguments, without a change to the handle. */
@@ -7622,8 +7614,6 @@ int dmrgo_csbk_responder_tick(dmrgo_csbk_responder_t *self, dmrgo_duration_t now
 int dmrgo_csbk_result_string(dmrgo_csbk_result_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: csbk.Service.String. String returns the name of the service. */
 int dmrgo_csbk_service_string(dmrgo_csbk_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_csbk_timing_new makes a zero csbk.Timing. */
-int dmrgo_csbk_timing_new(dmrgo_csbk_timing_t **out);
 /* dmrgo_csbk_timing_free frees the handle. self may be NULL. */
 int dmrgo_csbk_timing_free(dmrgo_csbk_timing_t *self);
 /* dmrgo_csbk_timing_burst_need sets *items and *arena to the room that dmrgo_csbk_timing_burst needs for these arguments, without a change to the handle. */
@@ -7656,8 +7646,6 @@ int dmrgo_csbk_timing_tick_need(dmrgo_csbk_timing_t *self, dmrgo_duration_t now,
 int dmrgo_csbk_timing_tick(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: csbk.TimingState.String. String returns the name of the state. */
 int dmrgo_csbk_timing_state_string(dmrgo_csbk_timing_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_csbk_wakeup_new makes a zero csbk.Wakeup. */
-int dmrgo_csbk_wakeup_new(dmrgo_csbk_wakeup_t **out);
 /* dmrgo_csbk_wakeup_free frees the handle. self may be NULL. */
 int dmrgo_csbk_wakeup_free(dmrgo_csbk_wakeup_t *self);
 /* dmrgo_csbk_wakeup_burst_need sets *items and *arena to the room that dmrgo_csbk_wakeup_burst needs for these arguments, without a change to the handle. */
@@ -7706,8 +7694,6 @@ int dmrgo_data_new_sender(const dmrgo_data_sender_config_t *cfg, dmrgo_data_send
 int dmrgo_data_output_icmp(dmrgo_data_output_t *self, dmrgo_ip_icmp_message_t *m, bool *ok);
 /* Go: data.OutputKind.String. String returns the name of the kind. */
 int dmrgo_data_output_kind_string(dmrgo_data_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_data_receiver_new makes a zero data.Receiver. */
-int dmrgo_data_receiver_new(dmrgo_data_receiver_t **out);
 /* dmrgo_data_receiver_free frees the handle. self may be NULL. */
 int dmrgo_data_receiver_free(dmrgo_data_receiver_t *self);
 /* dmrgo_data_receiver_burst_need sets *items and *arena to the room that dmrgo_data_receiver_burst needs for these arguments, without a change to the handle. */
@@ -7734,8 +7720,6 @@ int dmrgo_data_receiver_tick_need(dmrgo_data_receiver_t *self, dmrgo_duration_t 
 int dmrgo_data_receiver_tick(dmrgo_data_receiver_t *self, dmrgo_duration_t now, dmrgo_data_event_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: data.Result.String. String returns the name of the result. */
 int dmrgo_data_result_string(dmrgo_data_result_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_data_sender_new makes a zero data.Sender. */
-int dmrgo_data_sender_new(dmrgo_data_sender_t **out);
 /* dmrgo_data_sender_free frees the handle. self may be NULL. */
 int dmrgo_data_sender_free(dmrgo_data_sender_t *self);
 /* dmrgo_data_sender_burst_need sets *items and *arena to the room that dmrgo_data_sender_burst needs for these arguments, without a change to the handle. */
@@ -8266,8 +8250,6 @@ int dmrgo_layer2_voice_receiver_receive(dmrgo_layer2_voice_receiver_t *self, dmr
 int dmrgo_layer2_voice_receiver_receive_into(dmrgo_layer2_voice_receiver_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *p, dmrgo_layer2_burst_t *b, bool *ok);
 /* Go: layer2.VoiceReceiver.Reset. Reset forgets the superframe position and any partial embedded LC. */
 int dmrgo_layer2_voice_receiver_reset(dmrgo_layer2_voice_receiver_t *self);
-/* dmrgo_layer2_voice_transmitter_new makes a zero layer2.VoiceTransmitter. */
-int dmrgo_layer2_voice_transmitter_new(dmrgo_layer2_voice_transmitter_t **out);
 /* dmrgo_layer2_voice_transmitter_free frees the handle. self may be NULL. */
 int dmrgo_layer2_voice_transmitter_free(dmrgo_layer2_voice_transmitter_t *self);
 /* Go: layer2.VoiceTransmitter.AddBurst. AddBurst adds the VoiceSlotsPerBurst slots of one burst in transmit order, as AppendSlots does, and returns the voice burst that they complete. */
@@ -8318,8 +8300,6 @@ int dmrgo_layer2_voice_transmitter_terminate_need(dmrgo_layer2_voice_transmitter
 int dmrgo_layer2_voice_transmitter_terminate(dmrgo_layer2_voice_transmitter_t *self, dmrgo_layer2_raw_burst_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer2.VoiceTransmitter.Terminator. Terminator returns the Terminator with LC burst that Terminate returns last. */
 int dmrgo_layer2_voice_transmitter_terminator(dmrgo_layer2_voice_transmitter_t *self, dmrgo_layer2_raw_burst_t *out);
-/* dmrgo_framer_framer_new makes a zero framer.Framer. */
-int dmrgo_framer_framer_new(dmrgo_framer_framer_t **out);
 /* dmrgo_framer_framer_free frees the handle. self may be NULL. */
 int dmrgo_framer_framer_free(dmrgo_framer_framer_t *self);
 /* dmrgo_framer_framer_append_bursts_need sets *items and *arena to the room that dmrgo_framer_framer_append_bursts needs for these arguments, without a change to the handle. */
@@ -8342,8 +8322,6 @@ int dmrgo_packet_append_bursts(dmrgo_layer2_raw_burst_t *dst, size_t dst_cap, si
 int dmrgo_packet_assembler_get_accept_bad_crc(dmrgo_packet_assembler_t *self, bool *out);
 /* Go: packet.Assembler.AcceptBadCRC. AcceptBadCRC makes the Assembler deliver a packet whose message CRC failed, or whose confirmed blocks failed their CRC-9, as the "skip CRC" setting of some radios does. */
 int dmrgo_packet_assembler_set_accept_bad_crc(dmrgo_packet_assembler_t *self, bool v);
-/* dmrgo_packet_assembler_new makes a zero packet.Assembler. */
-int dmrgo_packet_assembler_new(dmrgo_packet_assembler_t **out);
 /* dmrgo_packet_assembler_free frees the handle. self may be NULL. */
 int dmrgo_packet_assembler_free(dmrgo_packet_assembler_t *self);
 /* dmrgo_packet_assembler_add_need sets *items and *arena to the room that dmrgo_packet_assembler_add needs for these arguments, without a change to the handle. */
@@ -8374,8 +8352,6 @@ int dmrgo_packet_assembler_reset(dmrgo_packet_assembler_t *self);
 int dmrgo_packet_assembler_response_need(dmrgo_packet_assembler_t *self, size_t *items, size_t *arena);
 /* Go: packet.Assembler.Response. Response builds the response packet for the current confirmed packet: a SACK for the blocks Missing returns. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_packet_assembler_response_need gives. */
 int dmrgo_packet_assembler_response(dmrgo_packet_assembler_t *self, dmrgo_packet_packet_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* dmrgo_packet_builder_new makes a zero packet.Builder. */
-int dmrgo_packet_builder_new(dmrgo_packet_builder_t **out);
 /* dmrgo_packet_builder_free frees the handle. self may be NULL. */
 int dmrgo_packet_builder_free(dmrgo_packet_builder_t *self);
 /* dmrgo_packet_builder_new_response_need sets *items and *arena to the room that dmrgo_packet_builder_new_response needs for these arguments, without a change to the handle. */
@@ -9618,8 +9594,6 @@ int dmrgo_dmrd_position_string(dmrgo_dmrd_position_t *self, char *out, size_t ou
 int dmrgo_dmrd_talker_alias_append_binary(dmrgo_dmrd_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.TalkerAlias.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_talker_alias_string(dmrgo_dmrd_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_dmrd_auth_bridge_new makes a zero auth.Bridge. */
-int dmrgo_dmrd_auth_bridge_new(dmrgo_dmrd_auth_bridge_t **out);
 /* dmrgo_dmrd_auth_bridge_free frees the handle. self may be NULL. */
 int dmrgo_dmrd_auth_bridge_free(dmrgo_dmrd_auth_bridge_t *self);
 /* Go: auth.Bridge.Sign. Sign writes the signature of the OpenBridge packet p, as dmrd.Bridge.AppendBinary and dmrd.BridgeControl.AppendBinary encode it, into its last octets: HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over the octets before the hash of a DMRE packet. */
@@ -9694,8 +9668,6 @@ int dmrgo_ipsc_opcode_string(dmrgo_ipsc_opcode_t self, char *out, size_t out_cap
 int dmrgo_ipsc_payload_rssi(dmrgo_ipsc_payload_t *self, uint16_t *out0, bool *out1);
 /* Go: ipsc.Payload.SlotType. SlotType returns the slot type octet of the trailer and whether the packet has one. */
 int dmrgo_ipsc_payload_slot_type(dmrgo_ipsc_payload_t *self, dmrgo_pdu_slot_type_info_t *out0, bool *out1);
-/* dmrgo_ipsc_peer_list_new makes a zero ipsc.PeerList. */
-int dmrgo_ipsc_peer_list_new(dmrgo_ipsc_peer_list_t **out);
 /* dmrgo_ipsc_peer_list_free frees the handle. self may be NULL. */
 int dmrgo_ipsc_peer_list_free(dmrgo_ipsc_peer_list_t *self);
 /* Go: ipsc.PeerList.Entry. Entry returns entry i, or the zero PeerEntry when i is not below Len. */
@@ -9716,8 +9688,6 @@ int dmrgo_ipsc_user_is_voice(const dmrgo_ipsc_user_t *self, bool *out);
 int dmrgo_ipsc_user_raw_burst(dmrgo_ipsc_user_t *self, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
 /* Go: ipsc.User.SetRawBurst. SetRawBurst sets Burst and Voice or Data from the 264-bit burst raw and its layer2 view, as an XPR 8400 sends them: KindVoice with the position pos, which picks the layout (the full LC of burst E stays as it is in u.Voice.LC), or KindData with the data type dt. */
 int dmrgo_ipsc_user_set_raw_burst(dmrgo_ipsc_user_t *self, const dmrgo_layer2_raw_burst_t *raw, dmrgo_layer2_kind_t k, dmrgo_enums_voice_burst_type_t pos, dmrgo_enums_data_type_t dt);
-/* dmrgo_ipsc_auth_key_new makes a zero auth.Key. */
-int dmrgo_ipsc_auth_key_new(dmrgo_ipsc_auth_key_t **out);
 /* dmrgo_ipsc_auth_key_free frees the handle. self may be NULL. */
 int dmrgo_ipsc_auth_key_free(dmrgo_ipsc_auth_key_t *self);
 /* dmrgo_ipsc_auth_key_sign_need sets *items and *arena to the room that dmrgo_ipsc_auth_key_sign needs for these arguments, without a change to the handle. */
@@ -9886,8 +9856,6 @@ int dmrgo_trunk_authenticator_free(dmrgo_trunk_authenticator_t *self);
 int dmrgo_trunk_authenticator_response(dmrgo_trunk_authenticator_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
 /* dmrgo_trunk_authenticator_from_vtable makes a Authenticator whose methods call the functions of vt with vt->user. */
 int dmrgo_trunk_authenticator_from_vtable(const dmrgo_trunk_authenticator_vtable_t *vt, dmrgo_trunk_authenticator_t **out);
-/* dmrgo_trunk_capacity_plus_follower_new makes a zero trunk.CapacityPlusFollower. */
-int dmrgo_trunk_capacity_plus_follower_new(dmrgo_trunk_capacity_plus_follower_t **out);
 /* dmrgo_trunk_capacity_plus_follower_free frees the handle. self may be NULL. */
 int dmrgo_trunk_capacity_plus_follower_free(dmrgo_trunk_capacity_plus_follower_t *self);
 /* dmrgo_trunk_capacity_plus_follower_burst_need sets *items and *arena to the room that dmrgo_trunk_capacity_plus_follower_burst needs for these arguments, without a change to the handle. */
@@ -9938,8 +9906,6 @@ int dmrgo_trunk_decode_nmea_short(const uint8_t data[10], dmrgo_trunk_nmea_short
 int dmrgo_trunk_decode_usbdlip_response(const uint8_t data[10], dmrgo_trunk_usbdlip_response_t *out);
 /* Go: trunk.DecodeUSBDPollRequest. DecodeUSBDPollRequest decodes a USBDPollRequest. */
 int dmrgo_trunk_decode_usbd_poll_request(const uint8_t data[10], dmrgo_trunk_usbd_poll_request_t *out);
-/* dmrgo_trunk_follower_new makes a zero trunk.Follower. */
-int dmrgo_trunk_follower_new(dmrgo_trunk_follower_t **out);
 /* dmrgo_trunk_follower_free frees the handle. self may be NULL. */
 int dmrgo_trunk_follower_free(dmrgo_trunk_follower_t *self);
 /* dmrgo_trunk_follower_burst_need sets *items and *arena to the room that dmrgo_trunk_follower_burst needs for these arguments, without a change to the handle. */
@@ -9992,8 +9958,6 @@ int dmrgo_trunk_hunt_list_withdraw(dmrgo_trunk_hunt_list_t *self, uint16_t chann
 int dmrgo_trunk_lip_short_report_encode(dmrgo_trunk_lip_short_report_t *self, uint8_t out[10]);
 /* Go: trunk.LIPShortReport.String. String returns the fields of s as text, for printing. */
 int dmrgo_trunk_lip_short_report_string(dmrgo_trunk_lip_short_report_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_trunk_ms_new makes a zero trunk.MS. */
-int dmrgo_trunk_ms_new(dmrgo_trunk_ms_t **out);
 /* dmrgo_trunk_ms_free frees the handle. self may be NULL. */
 int dmrgo_trunk_ms_free(dmrgo_trunk_ms_t *self);
 /* Go: trunk.MS.AdviseIP. AdviseIP sends an IP connection advice: a registration by random access with IP_Inform, and the address by UDT when the TSCC asks for it with a C_AHOY from IPI. */
@@ -10118,8 +10082,6 @@ int dmrgo_trunk_reason_string(dmrgo_trunk_reason_t self, char *out, size_t out_c
 int dmrgo_trunk_state_string(dmrgo_trunk_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: trunk.StunAction.String. String returns the name of the StunAction. */
 int dmrgo_trunk_stun_action_string(dmrgo_trunk_stun_action_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_trunk_tscc_new makes a zero trunk.TSCC. */
-int dmrgo_trunk_tscc_new(dmrgo_trunk_tscc_t **out);
 /* dmrgo_trunk_tscc_free frees the handle. self may be NULL. */
 int dmrgo_trunk_tscc_free(dmrgo_trunk_tscc_t *self);
 /* Go: trunk.TSCC.AssignGroups. AssignGroups sends the DGNA talkgroups of a from the gateway DGNAI to the MS target, in the UDT outbound phase of ETSI TS 102 361-4 clause 6.6.8.2.2. */
@@ -10178,8 +10140,6 @@ int dmrgo_trunk_udt_set_len(dmrgo_trunk_udt_t *self, int64_t v);
 int dmrgo_trunk_udt_get_crc_ok(dmrgo_trunk_udt_t *self, bool *out);
 /* Go: trunk.UDT.CRCOK. CRCOK reports whether the CRC of the last block checks. */
 int dmrgo_trunk_udt_set_crc_ok(dmrgo_trunk_udt_t *self, bool v);
-/* dmrgo_trunk_udt_new makes a zero trunk.UDT. */
-int dmrgo_trunk_udt_new(dmrgo_trunk_udt_t **out);
 /* dmrgo_trunk_udt_free frees the handle. self may be NULL. */
 int dmrgo_trunk_udt_free(dmrgo_trunk_udt_t *self);
 /* Go: trunk.UDT.Appended. Appended returns the appended data of u, with the UDT Format and the pad nibbles of its header. */
@@ -10262,8 +10222,6 @@ int dmrgo_vocoder_register(const char *name, size_t name_len, dmrgo_vocoder_regi
 int dmrgo_vocoder_unpack_ambe_voice(const uint8_t data[19], dmrgo_vocoder_ambe_frame_t out[3]);
 /* Go: vocoder.UnpackAMBEVoiceFlags. UnpackAMBEVoiceFlags is the reverse of PackAMBEVoiceFlags. */
 int dmrgo_vocoder_unpack_ambe_voice_flags(const uint8_t data[19], dmrgo_vocoder_ambe_frame_t frames[3], bool bad[3]);
-/* dmrgo_codec2_codec_new makes a zero codec2.Codec. */
-int dmrgo_codec2_codec_new(dmrgo_codec2_codec_t **out);
 /* dmrgo_codec2_codec_free frees the handle. self may be NULL. */
 int dmrgo_codec2_codec_free(dmrgo_codec2_codec_t *self);
 /* dmrgo_codec2_codec_append_decode_need sets *items and *arena to the room that dmrgo_codec2_codec_append_decode needs for these arguments, without a change to the handle. */
@@ -10306,8 +10264,6 @@ int dmrgo_dvsi_append_rate_dmr(uint8_t *dst, size_t dst_cap, size_t *dst_len, si
 int dmrgo_dvsi_append_reset(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, bool parity);
 /* Go: dvsi.AppendSpeech. AppendSpeech appends a speech packet that asks the chip to encode pcm, 8 kHz 16-bit samples, each sent most significant byte first (AMBE-3000R manual Table 98). */
 int dmrgo_dvsi_append_speech(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t channel, const int16_t *pcm, size_t pcm_len, bool parity);
-/* dmrgo_dvsi_codec_new makes a zero dvsi.Codec. */
-int dmrgo_dvsi_codec_new(dmrgo_dvsi_codec_t **out);
 /* dmrgo_dvsi_codec_free frees the handle. self may be NULL. */
 int dmrgo_dvsi_codec_free(dmrgo_dvsi_codec_t *self);
 /* dmrgo_dvsi_codec_append_decode_need sets *items and *arena to the room that dmrgo_dvsi_codec_append_decode needs for these arguments, without a change to the handle. */
@@ -10358,8 +10314,6 @@ int dmrgo_dvsi_port_from_vtable(const dmrgo_dvsi_port_vtable_t *vt, dmrgo_dvsi_p
 int dmrgo_voice_end_reason_string(dmrgo_voice_end_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: voice.EventKind.String. String returns the name of the kind. */
 int dmrgo_voice_event_kind_string(dmrgo_voice_event_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_voice_interrupter_new makes a zero voice.Interrupter. */
-int dmrgo_voice_interrupter_new(dmrgo_voice_interrupter_t **out);
 /* dmrgo_voice_interrupter_free frees the handle. self may be NULL. */
 int dmrgo_voice_interrupter_free(dmrgo_voice_interrupter_t *self);
 /* dmrgo_voice_interrupter_burst_need sets *items and *arena to the room that dmrgo_voice_interrupter_burst needs for these arguments, without a change to the handle. */
@@ -10396,8 +10350,6 @@ int dmrgo_voice_new_transmitter(const dmrgo_voice_transmitter_config_t *cfg, dmr
 int dmrgo_voice_origin_string(dmrgo_voice_origin_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: voice.OutputKind.String. String returns the name of the kind. */
 int dmrgo_voice_output_kind_string(dmrgo_voice_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_voice_receiver_new makes a zero voice.Receiver. */
-int dmrgo_voice_receiver_new(dmrgo_voice_receiver_t **out);
 /* dmrgo_voice_receiver_free frees the handle. self may be NULL. */
 int dmrgo_voice_receiver_free(dmrgo_voice_receiver_t *self);
 /* dmrgo_voice_receiver_burst_need sets *items and *arena to the room that dmrgo_voice_receiver_burst needs for these arguments, without a change to the handle. */
@@ -10426,8 +10378,6 @@ int dmrgo_voice_receiver_tick_need(dmrgo_voice_receiver_t *self, dmrgo_duration_
 int dmrgo_voice_receiver_tick(dmrgo_voice_receiver_t *self, dmrgo_duration_t now, dmrgo_voice_event_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: voice.State.String. String returns the name of the state. */
 int dmrgo_voice_state_string(dmrgo_voice_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_voice_transmitter_new makes a zero voice.Transmitter. */
-int dmrgo_voice_transmitter_new(dmrgo_voice_transmitter_t **out);
 /* dmrgo_voice_transmitter_free frees the handle. self may be NULL. */
 int dmrgo_voice_transmitter_free(dmrgo_voice_transmitter_t *self);
 /* dmrgo_voice_transmitter_burst_need sets *items and *arena to the room that dmrgo_voice_transmitter_burst needs for these arguments, without a change to the handle. */

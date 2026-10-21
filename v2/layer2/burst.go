@@ -48,7 +48,8 @@ func (k Kind) String() string {
 
 // Burst represents a DMR burst. A decode stores the PDU of a data burst, and
 // the payload struct that it points to, in the Burst, so a Burst must not be
-// copied after its first decode; go vet reports a copy.
+// copied after its first decode; go vet reports a copy. The zero Burst is
+// ready to use.
 type Burst struct {
 	// Kind is the kind of the burst.
 	Kind Kind
