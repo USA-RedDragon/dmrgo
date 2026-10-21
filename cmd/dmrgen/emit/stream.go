@@ -79,6 +79,17 @@ func (s streamGen) constant(v string) *Statement {
 }
 
 func (s streamGen) cond(root string, c *parse.Cond) *Statement {
+	if len(c.And) == 0 {
+		return s.term(root, c)
+	}
+	e := Parens(s.term(root, c))
+	for i := range c.And {
+		e = e.Op("&&").Parens(s.term(root, &c.And[i]))
+	}
+	return e
+}
+
+func (s streamGen) term(root string, c *parse.Cond) *Statement {
 	p := pathOf(root, c.Path)
 	if c.Op == "" {
 		return p

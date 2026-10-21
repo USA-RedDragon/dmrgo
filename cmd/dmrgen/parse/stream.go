@@ -59,6 +59,7 @@ type Cond struct {
 	Path   string   // Go selector relative to the struct, such as "Header.Extended"
 	Op     string   // "" for a bool path, "==" or "!="
 	Values []string // integer literals or constant names
+	And    []Cond   // further terms joined with &, which all must hold
 }
 
 // LenExpr is a len: expression: Path*Mul+Add.
@@ -333,6 +334,22 @@ func applyStreamModifier(sf *StreamField, mod string) error {
 }
 
 func parseCond(arg string) (*Cond, error) {
+	terms := strings.Split(arg, "&")
+	c, err := parseTerm(terms[0])
+	if err != nil {
+		return nil, err
+	}
+	for _, t := range terms[1:] {
+		d, err := parseTerm(t)
+		if err != nil {
+			return nil, err
+		}
+		c.And = append(c.And, *d)
+	}
+	return c, nil
+}
+
+func parseTerm(arg string) (*Cond, error) {
 	c := &Cond{}
 	switch {
 	case strings.Contains(arg, "=="):
@@ -527,7 +544,7 @@ func validateStream(pdu *PDUStruct) error {
 		if f.Bound != BoundNone {
 			bounds++
 		}
-		for _, p := range []string{condPath(f.If), exprPath(f.Expr)} {
+		for _, p := range append(condPaths(f.If), exprPath(f.Expr)) {
 			if p == "" {
 				continue
 			}
@@ -603,11 +620,15 @@ func isTail(f *StreamField) bool {
 	return f.SKind == StreamTokens || (f.SKind == StreamBytes && f.Length == LengthRest)
 }
 
-func condPath(c *Cond) string {
+func condPaths(c *Cond) []string {
 	if c == nil {
-		return ""
+		return nil
 	}
-	return c.Path
+	paths := []string{c.Path}
+	for _, t := range c.And {
+		paths = append(paths, t.Path)
+	}
+	return paths
 }
 
 func exprPath(e *LenExpr) string {
