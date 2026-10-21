@@ -171,7 +171,42 @@ type Receiver struct {
 	to      pdu.ConfirmedDataHeader
 	pkt     packet.Packet
 	vi      uint8
+	win     window
+	rd      packet.ResponseData
 	noCopy  noCopy
+}
+
+type window struct {
+	n      int
+	ns     [MaxWindow]uint8
+	resp   [MaxWindow]packet.Response
+	blocks [MaxWindow]uint8
+}
+
+func (w *window) add(ns uint8, resp packet.Response, blocks uint8) {
+	for i := range w.n {
+		if w.ns[i] == ns {
+			w.n = 0
+			break
+		}
+	}
+	if w.n > 0 {
+		for next := (w.ns[w.n-1] + 1) & 7; next != ns && w.n < MaxWindow-1; next = (next + 1) & 7 {
+			w.ns[w.n], w.resp[w.n], w.blocks[w.n] = next, packet.ResponseSACK, 0
+			w.n++
+		}
+	}
+	w.ns[w.n], w.resp[w.n], w.blocks[w.n] = ns, resp, blocks
+	w.n++
+}
+
+func (w *window) failed() int {
+	for i := range w.n {
+		if w.resp[i] != packet.ResponseACK {
+			return i
+		}
+	}
+	return -1
 }
 
 // NewReceiver returns a Receiver for cfg. A nil cfg means the zero
@@ -256,6 +291,7 @@ func (r *Receiver) Reset() {
 	r.peers.reset()
 	r.u.active = false
 	r.chain.active = false
+	r.win.n = 0
 }
 
 // State returns the state of the Receiver.
@@ -391,6 +427,7 @@ func (r *Receiver) begin(now time.Duration, c *Call, out []Event) []Event {
 	}
 	if r.state == StateIdle {
 		r.call, r.stats, r.start, r.state = *c, Stats{}, now, StateCall
+		r.win.n = 0
 		out, _ = appendEvent(out, EventCallStart, &r.call)
 	}
 	r.last = now
@@ -810,22 +847,58 @@ func (r *Receiver) answers() bool {
 	return r.respond && c.answer && !c.call.Group && (r.address == 0 || c.call.Target == r.address)
 }
 
+func (r *Receiver) windowed() bool {
+	c := &r.cur
+	return r.respond && c.format == pdu.FormatConfirmed && ipBearer(c.sap) && !c.call.Group &&
+		(r.address == 0 || c.call.Target == r.address)
+}
+
+// ETSI TS 102 361-3 clause 5.4.4
 func (r *Receiver) answer(now time.Duration, resp packet.Response, out []Event) []Event {
-	if !r.answers() {
-		return out
-	}
 	c := &r.cur
 	r.to = pdu.ConfirmedDataHeader{
 		SAP: c.sap, LLIDDestination: c.call.Target, LLIDSource: c.call.Source,
 		BlocksToFollow: c.blocks, SendSequenceNumber: c.ns,
 	}
+	current := true
+	if r.windowed() {
+		blocks := c.blocks
+		if !c.full {
+			blocks = 0
+		}
+		r.win.add(c.ns, resp, blocks)
+		if !c.answer {
+			return out
+		}
+		i := r.win.failed()
+		if i >= 0 && i < r.win.n-1 {
+			current = false
+			resp, r.to.SendSequenceNumber, r.to.BlocksToFollow = r.win.resp[i], r.win.ns[i], r.win.blocks[i]
+			if resp == packet.ResponseNACKPacketCRC {
+				resp = packet.ResponseSACK
+			}
+			if r.to.BlocksToFollow == 0 {
+				r.to.BlocksToFollow = MaxBlocks
+			}
+		}
+		r.win.n = 0
+	}
+	if !r.answers() {
+		return out
+	}
 	if resp == packet.ResponseNACKOutOfSequence {
 		r.to.SendSequenceNumber = r.vi
 	}
 	var err error
-	if resp == packet.ResponseSACK {
+	switch {
+	case resp == packet.ResponseSACK && current:
 		r.pkt, err = r.asm.Response()
-	} else {
+	case resp == packet.ResponseSACK:
+		for i := range r.rd.Retry {
+			r.rd.Retry[i] = true
+		}
+		r.pkt, err = r.build.NewResponse(&r.to, resp, &r.rd)
+	default:
 		r.pkt, err = r.build.NewResponse(&r.to, resp, nil)
 	}
 	if err != nil {

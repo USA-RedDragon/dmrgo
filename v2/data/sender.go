@@ -13,11 +13,15 @@ import (
 )
 
 // MaxOutputs is the most outputs that one call of a Sender method appends:
-// one burst and the end of the message.
-const MaxOutputs = 2
+// one burst and the end of each message of a window.
+const MaxOutputs = MaxWindow + 1
 
 // Defaults and limits of SenderConfig.
 const (
+	// MaxWindow is the most C_HEAD packets of one sliding window: 7 that do
+	// not ask for a response and the 8th that does (ETSI TS 102 361-3
+	// clause 5.4.4).
+	MaxWindow = 8
 	// DefaultIdleSearch is the time that a polite Sender waits for an idle
 	// channel before it holds off, the largest T_IdleSrch (ETSI TS 102
 	// 361-1 clause F.1).
@@ -76,6 +80,14 @@ type SenderConfig struct {
 	// takes the N(S). ETSI TS 102 361-1 clause 9.3.23 keeps S for special
 	// registration messages, so false, the default, never sets it.
 	Resync bool
+	// Window is the most C_HEAD messages of the IP bearer service in
+	// progress at once, for sliding window flow control. Send queues up to
+	// Window of them to one link, and the Sender sends them one after the
+	// other with the Response Requested flag set only on the last, then
+	// takes one response for all of them. 0 or 1 means stop and wait, one
+	// message at a time; at most MaxWindow. Each message of the window
+	// takes its own packet.Builder. (ETSI TS 102 361-3 clause 5.4.4)
+	Window int
 	// Seed seeds the random holdoff. Two Senders with the same seed hold
 	// off for the same times, so give each radio its own seed.
 	Seed uint64
@@ -160,6 +172,11 @@ type Output struct {
 	// Try is the transmission that the burst belongs to, or that ended the
 	// message: 1 for the first.
 	Try uint8
+	// Seq is the N(S) of the C_HEAD message that the burst belongs to or
+	// that ended. Messages to one link take N(S) 0, 1, 2 and so on modulo 8
+	// in the order of Send, so with SenderConfig.Window above 1 Seq tells
+	// which message an OutputDone ends. It is 0 for other messages.
+	Seq uint8
 	// Result is how the message ended.
 	Result Result
 	// Response is the last response to the message. HasResponse reports
@@ -204,21 +221,35 @@ func (s SenderState) String() string {
 	return unnamed("SenderState", uint8(s))
 }
 
-const (
-	resendFirst = iota
-	resendLater
-	resendSelective
-)
+type slot struct {
+	pb        *packet.Builder
+	pkt       packet.Packet
+	try       packet.Packet
+	confirmed bool
+	cHead     bool
+	windowed  bool
+	ns        uint8
+	tries     int
+	limitAt   time.Duration
+	last      packet.Response
+	hasLast   bool
 
-// Sender sends one data message at a time on one logical channel: the
-// preamble CSBKs, the header and the blocks of each try, one burst per
-// Tick, 60 ms apart, after the channel access of SenderConfig.Access. For
-// a confirmed message it waits for the response and resends: the blocks
-// that a SACK asks for, the whole packet after a NACK for a bad CRC or no
-// response, and the whole packet again as a first try after a NACK for
-// N(S) out of sequence, which some radios send for a lost block. Make it
-// with NewSender. A Sender is not safe for concurrent use and must not be
-// copied; go vet reports a copy.
+	u   pdu.UnconfirmedDataHeader
+	c   pdu.ConfirmedDataHeader
+	dd  pdu.DefinedDataHeader
+	raw pdu.RawDataHeader
+}
+
+// Sender sends data messages on one logical channel: the preamble CSBKs,
+// the header and the blocks of each try, one burst per Tick, 60 ms apart,
+// after the channel access of SenderConfig.Access. For a confirmed message
+// it waits for the response and resends: the blocks that a SACK asks for,
+// the whole packet after a NACK for a bad CRC or no response, and the
+// whole packet again as a first try after a NACK for N(S) out of sequence,
+// which some radios send for a lost block. It sends one message at a time,
+// or with SenderConfig.Window a sliding window of C_HEAD messages of the
+// IP bearer service to one link. Make it with NewSender. A Sender is not
+// safe for concurrent use and must not be copied; go vet reports a copy.
 type Sender struct {
 	cc           enums.ColorCode
 	source       layer2.SyncSource
@@ -236,30 +267,26 @@ type Sender struct {
 	b    *layer2.Burst
 	opts layer2.DecodeOptions
 	asm  *packet.Assembler
-	pb   *packet.Builder
+
+	slots  []slot
+	ord    [MaxWindow]uint8
+	n      int
+	win    int
+	cur    int
+	closed bool
 
 	state     SenderState
 	busy      bool
-	pkt       packet.Packet
-	try       packet.Packet
 	call      Call
-	confirmed bool
 	link      *peer
 	idx       int
 	total     int
-	tries     int
 	due       time.Duration
 	waitUntil time.Duration
 	holdUntil time.Duration
 	respUntil time.Duration
 	limitAt   time.Duration
-	last      packet.Response
-	hasLast   bool
 
-	u      pdu.UnconfirmedDataHeader
-	c      pdu.ConfirmedDataHeader
-	dd     pdu.DefinedDataHeader
-	raw    pdu.RawDataHeader
 	pre    pdu.PreamblePDU
 	csbk   pdu.CSBK
 	noCopy noCopy
@@ -267,9 +294,10 @@ type Sender struct {
 
 // NewSender returns a Sender for cfg. A nil cfg means the zero
 // SenderConfig. It returns a *ConfigError for a color code above 15, an
-// unknown Source or Access, or a Preambles, Retries, MaxBlocks or Peers out
-// of range. It allocates the Sender, its packet.Builder and
-// packet.Assembler, its table of links and its Burst.
+// unknown Source or Access, or a Preambles, Retries, MaxBlocks, Peers or
+// Window out of range. It allocates the Sender, a packet.Builder for each
+// message of the window, its packet.Assembler, its table of links and its
+// Burst.
 func NewSender(cfg *SenderConfig) (*Sender, error) {
 	if cfg == nil {
 		cfg = &SenderConfig{}
@@ -298,7 +326,11 @@ func NewSender(cfg *SenderConfig) (*Sender, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Sender{
+	window, err := limit(cfg.Window, 1, MaxWindow, errWindow)
+	if err != nil {
+		return nil, err
+	}
+	s := &Sender{
 		cc:           cfg.ColorCode,
 		source:       cfg.Source,
 		access:       cfg.Access,
@@ -313,15 +345,20 @@ func NewSender(cfg *SenderConfig) (*Sender, error) {
 		peers:        peers{list: make([]peer, n)},
 		b:            layer2.NewBurst(),
 		asm:          packet.NewAssembler(2),
-		pb:           packet.NewBuilder(blocks),
-	}, nil
+		slots:        make([]slot, window),
+	}
+	for i := range s.slots {
+		s.slots[i].pb = packet.NewBuilder(blocks)
+	}
+	return s, nil
 }
 
-// Reset ends any message without outputs and forgets the sequence numbers
-// of every link and the channel state. It keeps the config and the state
-// of the random holdoff.
+// Reset ends every message without outputs and forgets the sequence
+// numbers of every link and the channel state. It keeps the config and the
+// state of the random holdoff.
 func (s *Sender) Reset() {
-	s.state, s.busy, s.hasLast = SenderIdle, false, false
+	s.state, s.busy = SenderIdle, false
+	s.n, s.win, s.cur, s.closed = 0, 0, 0, false
 	s.link = nil
 	s.peers.reset()
 	s.asm.Reset()
@@ -332,87 +369,148 @@ func (s *Sender) State() SenderState {
 	return s.state
 }
 
-// Send starts the message m at now. m.Header is a U_HEAD, a C_HEAD, or a
-// DD_HEAD or R_HEAD, with its sub-header set, and m.Rate is the rate of
-// the blocks. Send copies the header and m.Payload, so the caller can
-// reuse them. It sets the block count, pad octets and Full Message Flag,
-// and for a C_HEAD the Response Requested flag, N(S) from the link, S
-// (with SenderConfig.Resync) and FSN 1000, a message in one fragment. It
+// Send starts the message m at now, or queues it in the sliding window.
+// m.Header is a U_HEAD, a C_HEAD, or a DD_HEAD or R_HEAD, with its
+// sub-header set, and m.Rate is the rate of the blocks. Send copies the
+// header and m.Payload, so the caller can reuse them. It sets the block
+// count, pad octets and Full Message Flag, and for a C_HEAD N(S) from the
+// link, S (with SenderConfig.Resync), FSN 1000, a message in one fragment,
+// and the Response Requested flag on the last message of a window only. It
 // sets the Response Requested flag of a short data header with SARQ set.
-// It returns ErrBusy while a message is in progress, a *ConfigError for
-// another header, a P_HEAD in m.Proprietary, or a confirmed message to a
-// group, and the errors of packet.Builder.Segment, such as
-// packet.ErrTooLong and packet.ErrRate.
+// With SenderConfig.Window above 1, a C_HEAD message of the IP bearer
+// service to the link of the messages in progress joins them while fewer
+// than Window are in progress: it goes in the window on air when the last
+// header of that window has not gone yet, else in the next window. Send
+// returns ErrBusy for any other message while a message is in progress, a
+// *ConfigError for another header, a P_HEAD in m.Proprietary, or a
+// confirmed message to a group, and the errors of packet.Builder.Segment,
+// such as packet.ErrTooLong and packet.ErrRate. (ETSI TS 102 361-3 clauses
+// 5.4 and 5.4.4)
 func (s *Sender) Send(now time.Duration, m *Message) error {
-	if s.state != SenderIdle {
+	if s.n >= len(s.slots) || s.n > 0 && !s.joins(m) {
 		return ErrBusy
 	}
 	if m.Proprietary != nil {
 		return errHeader
 	}
+	at := s.free()
+	e := &s.slots[at]
 	h := m.Header
 	switch {
 	case h.Format == pdu.FormatUnconfirmed && h.UnconfirmedDataHeader != nil:
-		s.u = *h.UnconfirmedDataHeader
-		s.u.FullMessageFlag = true
-		h.UnconfirmedDataHeader = &s.u
-		s.confirmed = false
+		e.u = *h.UnconfirmedDataHeader
+		e.u.FullMessageFlag = true
+		h.UnconfirmedDataHeader = &e.u
+		e.confirmed = false
 	case h.Format == pdu.FormatConfirmed && h.ConfirmedDataHeader != nil:
 		if h.ConfirmedDataHeader.Group {
 			return errMessageGroup
 		}
-		s.c = *h.ConfirmedDataHeader
-		s.c.FullMessageFlag, s.c.ResponseRequested, s.c.FragmentSequenceNumber = true, true, 0b1000
-		h.ConfirmedDataHeader = &s.c
-		s.confirmed = true
+		e.c = *h.ConfirmedDataHeader
+		e.c.FullMessageFlag, e.c.ResponseRequested, e.c.FragmentSequenceNumber = true, true, 0b1000
+		h.ConfirmedDataHeader = &e.c
+		e.confirmed = true
 	case h.Format == pdu.FormatShortDataDefined && h.DefinedDataHeader != nil:
-		s.dd = *h.DefinedDataHeader
-		s.dd.FullMessageFlag = true
-		s.dd.ResponseRequested = s.dd.ResponseRequested || s.dd.SARQ
-		h.DefinedDataHeader = &s.dd
-		s.confirmed = s.dd.SARQ
+		e.dd = *h.DefinedDataHeader
+		e.dd.FullMessageFlag = true
+		e.dd.ResponseRequested = e.dd.ResponseRequested || e.dd.SARQ
+		h.DefinedDataHeader = &e.dd
+		e.confirmed = e.dd.SARQ
 	case h.Format == pdu.FormatShortDataRawOrStatusPrecoded && h.RawDataHeader != nil:
-		s.raw = *h.RawDataHeader
-		s.raw.FullMessageFlag = true
-		s.raw.ResponseRequested = s.raw.ResponseRequested || s.raw.SARQ
-		h.RawDataHeader = &s.raw
-		s.confirmed = s.raw.SARQ
+		e.raw = *h.RawDataHeader
+		e.raw.FullMessageFlag = true
+		e.raw.ResponseRequested = e.raw.ResponseRequested || e.raw.SARQ
+		h.RawDataHeader = &e.raw
+		e.confirmed = e.raw.SARQ
 	default:
 		return errHeader
 	}
-	if s.confirmed && groupOf(&h) {
+	if e.confirmed && groupOf(&h) {
 		return errMessageGroup
 	}
-	s.call = callOf(&h)
-	s.link = nil
-	if h.Format == pdu.FormatConfirmed {
-		link, found := s.peers.lookup(s.call.Source, s.call.Target)
-		if link != nil {
-			s.c.SendSequenceNumber = link.seq
+	e.cHead = h.Format == pdu.FormatConfirmed
+	e.windowed = e.cHead && ipBearer(e.c.SAP)
+	if s.n == 0 {
+		s.call, s.link = callOf(&h), nil
+		if e.cHead {
+			link, found := s.peers.lookup(s.call.Source, s.call.Target)
+			e.c.ReSynchronizeFlag = s.resync && !found
+			s.link = link
 		}
-		s.c.ReSynchronizeFlag = s.resync && !found
-		s.link = link
+	} else {
+		e.c.ReSynchronizeFlag = false
 	}
-	p, err := s.pb.Segment(h, m.Payload, m.Rate)
+	p, err := e.pb.Segment(h, m.Payload, m.Rate)
 	if err != nil {
 		return err
 	}
-	s.pkt, s.tries, s.hasLast = p, 0, false
-	s.limitAt = now + s.txLimit
-	s.asm.Reset()
-	s.start(now, &s.pkt)
+	e.pkt, e.try, e.tries, e.hasLast = p, p, 0, false
+	e.limitAt = now + s.txLimit
+	s.ord[s.n] = uint8(at & 0xFF)
+	s.n++
+	switch {
+	case s.n == 1:
+		s.asm.Reset()
+		s.start(now)
+	case !s.closed && s.state != SenderWaitResponse:
+		s.join(s.n - 1)
+	}
 	return nil
 }
 
-func (s *Sender) start(now time.Duration, p *packet.Packet) {
-	s.try = *p
-	s.idx, s.total = 0, s.preambles+1+len(p.Blocks)
-	s.tries++
+func (s *Sender) joins(m *Message) bool {
+	h := &m.Header
+	if !s.slots[s.ord[0]].windowed || h.Format != pdu.FormatConfirmed || h.ConfirmedDataHeader == nil {
+		return false
+	}
+	c := h.ConfirmedDataHeader
+	return ipBearer(c.SAP) && !c.Group && c.LLIDDestination == s.call.Target && c.LLIDSource == s.call.Source
+}
+
+func (s *Sender) free() int {
+	for i := range s.slots {
+		used := false
+		for k := range s.n {
+			used = used || int(s.ord[k]) == i
+		}
+		if !used {
+			return i
+		}
+	}
+	return 0
+}
+
+func (s *Sender) join(k int) {
+	e := &s.slots[s.ord[k]]
+	if c := e.pkt.Header.ConfirmedDataHeader; e.tries == 0 && e.cHead && c != nil && s.link != nil {
+		e.ns, c.SendSequenceNumber = s.link.seq, s.link.seq
+		s.link.seq = (s.link.seq + 1) & 7
+	}
+	e.tries++
+	s.win = k + 1
+}
+
+func (s *Sender) start(now time.Duration) {
+	s.win, s.cur, s.idx, s.closed = 0, 0, 0, false
+	s.limitAt = s.slots[s.ord[0]].limitAt
+	for k := range s.n {
+		s.join(k)
+		s.limitAt = min(s.limitAt, s.slots[s.ord[k]].limitAt)
+	}
+	s.load()
 	switch {
 	case s.access == enums.AccessImpolite || !s.busy:
 		s.state, s.due = SenderSending, now
 	default:
 		s.state, s.waitUntil = SenderWaiting, now+s.idleSearch
+	}
+}
+
+func (s *Sender) load() {
+	e := &s.slots[s.ord[s.cur]]
+	s.total = 1 + len(e.try.Blocks)
+	if s.cur == 0 {
+		s.total += s.preambles
 	}
 }
 
@@ -427,22 +525,21 @@ func (s *Sender) Channel(now time.Duration, busy bool) {
 	}
 }
 
-// Cancel ends the message in progress with ResultCancelled and appends the
-// output to dst. It does nothing without a message, and allocates only
-// when dst has no room for MaxOutputs outputs.
+// Cancel ends every message in progress with ResultCancelled and appends
+// the outputs to dst. It does nothing without a message, and allocates
+// only when dst has no room for MaxOutputs outputs.
 func (s *Sender) Cancel(_ time.Duration, dst []Output) []Output {
-	if s.state == SenderIdle {
-		return dst
+	for s.n > 0 {
+		dst = s.finish(0, ResultCancelled, dst)
 	}
-	return s.done(ResultCancelled, dst)
+	return dst
 }
 
 // Burst decodes the burst raw and takes the response to the confirmed
-// message in progress from it: a response packet from the target of the
-// message to its source. It appends the end of the message, or nothing
-// when a resend starts. Other bursts are ignored; the channel state comes
-// from Channel. It allocates only when dst has no room for MaxOutputs
-// outputs.
+// messages in progress from it: a response packet from the target of the
+// messages to their source. It appends the end of each message that the
+// response ends. Other bursts are ignored; the channel state comes from
+// Channel. It allocates only when dst has no room for MaxOutputs outputs.
 func (s *Sender) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
 	s.opts.Kind = h.Kind
 	if s.b.DecodeFromBytesWith(*raw, &s.opts) != nil {
@@ -451,9 +548,15 @@ func (s *Sender) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, d
 	return s.Decoded(now, s.b, h, dst)
 }
 
-// Decoded takes the response to the confirmed message in progress from
-// the decoded burst b, as Burst does. It allocates only when dst has no
-// room for MaxOutputs outputs.
+// Decoded takes the response to the confirmed messages in progress from
+// the decoded burst b, as Burst does. For a sliding window, the Status of
+// the response is the N(S) of a message of the window: an ACK delivers
+// the messages up to that one, a SACK delivers the messages before it and
+// resends its blocks that the SACK flags, and a NACK delivers the messages
+// before it and resends it or ends it as refused. The messages after it
+// are sent again, and a response with another Status is ignored. It
+// allocates only when dst has no room for MaxOutputs outputs. (ETSI TS 102
+// 361-3 clause 5.4.4)
 func (s *Sender) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
 	dst = s.timers(now, dst)
 	if b.Kind != layer2.KindData || b.SlotType.FEC.Uncorrectable || s.state != SenderWaitResponse {
@@ -479,67 +582,103 @@ func (s *Sender) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst 
 	if cerr != nil {
 		return dst
 	}
-	s.last, s.hasLast = code, true
-	switch code {
-	case packet.ResponseACK:
-		return s.done(ResultDelivered, dst)
-	case packet.ResponseSACK:
-		if err != nil || m.Response == nil {
-			return s.resend(now, resendLater, nil, dst)
-		}
-		return s.resend(now, resendSelective, m.Response, dst)
-	case packet.ResponseNACKOutOfSequence:
-		if s.link != nil && s.resync {
-			s.c.ReSynchronizeFlag = true
-			if p := s.pkt.Header.ConfirmedDataHeader; p != nil {
-				p.ReSynchronizeFlag = true
+	j := 0
+	if s.win > 1 {
+		j = -1
+		for k := range s.win {
+			if s.slots[s.ord[k]].ns == rh.ResponseStatus {
+				j = k
 			}
 		}
-		return s.resend(now, resendFirst, nil, dst)
-	case packet.ResponseNACKPacketCRC:
-		return s.resend(now, resendLater, nil, dst)
-	case packet.ResponseNACKIllegalFormat, packet.ResponseNACKMemoryFull, packet.ResponseNACKFSNOutOfSequence,
-		packet.ResponseNACKUndeliverable, packet.ResponseNACKInvalidUser:
-	}
-	return s.done(ResultRefused, dst)
-}
-
-func (s *Sender) resend(now time.Duration, k int, rd *packet.ResponseData, dst []Output) []Output {
-	if s.tries >= s.retries {
-		return s.done(ResultRetryLimit, dst)
-	}
-	if s.txLimit >= 0 && now >= s.limitAt {
-		return s.done(ResultTimeLimit, dst)
-	}
-	if k == resendFirst {
-		s.start(now, &s.pkt)
-		return dst
-	}
-	if k == resendSelective {
-		p, err := s.pb.Retry(&s.pkt, rd)
-		if err == nil {
-			s.start(now, &p)
+		if j < 0 && code != packet.ResponseNACKOutOfSequence {
 			return dst
 		}
 	}
-	p, err := s.pb.Retry(&s.pkt, nil)
+	rd := m.Response
 	if err != nil {
-		s.start(now, &s.pkt)
-		return dst
+		rd = nil
 	}
-	s.start(now, &p)
+	return s.answered(now, code, j, rd, dst)
+}
+
+func (s *Sender) answered(now time.Duration, code packet.Response, j int, rd *packet.ResponseData, dst []Output) []Output {
+	w, k := s.win, 0
+	for i := range w {
+		e := &s.slots[s.ord[k]]
+		e.last, e.hasLast = code, true
+		switch {
+		case code == packet.ResponseNACKOutOfSequence:
+			if c := e.pkt.Header.ConfirmedDataHeader; s.resync && e.cHead && c != nil {
+				c.ReSynchronizeFlag = true
+			}
+			e.try = e.pkt
+			k++
+		case i < j || i == j && code == packet.ResponseACK:
+			dst = s.finish(k, ResultDelivered, dst)
+		case i > j || code == packet.ResponseNACKPacketCRC:
+			s.again(e, nil)
+			k++
+		case code == packet.ResponseSACK:
+			s.again(e, rd)
+			k++
+		default:
+			dst = s.finish(k, ResultRefused, dst)
+		}
+	}
+	return s.next(now, dst)
+}
+
+func (s *Sender) again(e *slot, rd *packet.ResponseData) {
+	if rd != nil {
+		if p, err := e.pb.Retry(&e.pkt, rd); err == nil {
+			e.try = p
+			return
+		}
+	}
+	p, err := e.pb.Retry(&e.pkt, nil)
+	if err != nil {
+		e.try = e.pkt
+		return
+	}
+	e.try = p
+}
+
+func (s *Sender) next(now time.Duration, dst []Output) []Output {
+	for k := 0; k < s.n; {
+		e := &s.slots[s.ord[k]]
+		switch {
+		case e.tries >= s.retries:
+			dst = s.finish(k, ResultRetryLimit, dst)
+		case s.txLimit >= 0 && now >= e.limitAt:
+			dst = s.finish(k, ResultTimeLimit, dst)
+		default:
+			k++
+		}
+	}
+	if s.n > 0 {
+		s.start(now)
+	}
 	return dst
 }
 
-func (s *Sender) done(result Result, dst []Output) []Output {
-	if s.link != nil && s.tries > 0 {
-		s.link.seq = (s.link.seq + 1) & 7
-	}
-	s.link = nil
+func (s *Sender) finish(k int, result Result, dst []Output) []Output {
+	e := &s.slots[s.ord[k]]
 	var o *Output
 	dst, o = appendOutput(dst, OutputDone, 0)
-	o.Try, o.Result, o.Response, o.HasResponse = uint8(min(s.tries, MaxRetries)&0xFF), result, s.last, s.hasLast
-	s.state = SenderIdle
+	o.Try, o.Result, o.Response, o.HasResponse = uint8(min(e.tries, MaxRetries)&0xFF), result, e.last, e.hasLast
+	if e.cHead {
+		o.Seq = e.ns
+	}
+	for i := k + 1; i < s.n; i++ {
+		s.ord[i-1] = s.ord[i]
+	}
+	s.n--
+	if k < s.win {
+		s.win--
+	}
+	if s.n == 0 {
+		s.state, s.link, s.win = SenderIdle, nil, 0
+	}
 	return dst
 }
 
@@ -583,7 +722,8 @@ func (s *Sender) timers(now time.Duration, dst []Output) []Output {
 		switch s.state {
 		case SenderWaiting, SenderHoldoff:
 			if s.txLimit >= 0 && at == s.limitAt {
-				return s.done(ResultTimeLimit, dst)
+				dst = s.expire(at, dst)
+				continue
 			}
 			if s.state == SenderWaiting {
 				s.state, s.holdUntil = SenderHoldoff, at+s.rng.Duration(s.holdoff)
@@ -597,43 +737,85 @@ func (s *Sender) timers(now time.Duration, dst []Output) []Output {
 		case SenderSending:
 			return s.send(dst)
 		case SenderWaitResponse:
-			dst = s.resend(at, resendLater, nil, dst)
+			for k := range s.win {
+				s.again(&s.slots[s.ord[k]], nil)
+			}
+			dst = s.next(at, dst)
 		case SenderIdle:
 			return dst
 		}
 	}
 }
 
+func (s *Sender) expire(at time.Duration, dst []Output) []Output {
+	for k := 0; k < s.n; {
+		if s.slots[s.ord[k]].limitAt <= at {
+			dst = s.finish(k, ResultTimeLimit, dst)
+			continue
+		}
+		k++
+	}
+	if s.n > 0 {
+		s.limitAt = s.slots[s.ord[0]].limitAt
+		for k := 1; k < s.n; k++ {
+			s.limitAt = min(s.limitAt, s.slots[s.ord[k]].limitAt)
+		}
+		s.cur = 0
+		s.load()
+	}
+	return dst
+}
+
 func (s *Sender) send(dst []Output) []Output {
+	e := &s.slots[s.ord[s.cur]]
+	pre := 0
+	if s.cur == 0 {
+		pre = s.preambles
+	}
 	var d layer2.Data
 	switch {
-	case s.idx < s.preambles:
+	case s.idx < pre:
 		s.pre = pdu.PreamblePDU{
 			Data: true, Group: s.call.Group, CSBKBlocksToFollow: byte(min(s.total-1-s.idx, 0xFF) & 0xFF),
 			TargetAddress: s.call.Target, SourceAddress: s.call.Source,
 		}
 		s.csbk = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKPreamble, PreamblePDU: &s.pre}
 		d = &s.csbk
-	case s.idx == s.preambles:
-		d = &s.try.Header
+	case s.idx == pre:
+		if c := e.try.Header.ConfirmedDataHeader; e.cHead && c != nil {
+			c.ResponseRequested = s.cur == s.win-1
+			s.closed = s.closed || c.ResponseRequested
+		}
+		d = &e.try.Header
 	default:
-		d = s.try.Blocks[s.idx-s.preambles-1]
+		d = e.try.Blocks[s.idx-pre-1]
 	}
 	raw, err := layer2.BuildBurst(d, s.cc, s.source)
 	if err != nil {
-		return s.done(ResultRefused, dst)
+		for s.n > 0 {
+			dst = s.finish(0, ResultRefused, dst)
+		}
+		return dst
 	}
 	var o *Output
 	dst, o = appendOutput(dst, OutputBurst, s.due)
-	o.Burst, o.Try = raw, uint8(min(s.tries, MaxRetries)&0xFF)
+	o.Burst, o.Try = raw, uint8(min(e.tries, MaxRetries)&0xFF)
+	if e.cHead {
+		o.Seq = e.ns
+	}
 	last := s.due
 	s.idx++
 	s.due += slotPeriod
 	if s.idx < s.total {
 		return dst
 	}
-	if !s.confirmed {
-		return s.done(ResultSent, dst)
+	if s.cur < s.win-1 {
+		s.cur, s.idx = s.cur+1, 0
+		s.load()
+		return dst
+	}
+	if !e.confirmed {
+		return s.finish(s.cur, ResultSent, dst)
 	}
 	s.state, s.respUntil = SenderWaitResponse, last+slotPeriod+s.responseWait
 	s.asm.Reset()

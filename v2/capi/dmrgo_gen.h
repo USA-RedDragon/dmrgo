@@ -80,7 +80,7 @@ typedef struct dmrgo_data_output_t dmrgo_data_output_t;
 typedef struct dmrgo_data_receiver_t dmrgo_data_receiver_t;
 /* Go: data.ReceiverConfig. ReceiverConfig configures NewReceiver. */
 typedef struct dmrgo_data_receiver_config_t dmrgo_data_receiver_config_t;
-/* Go: data.Sender. Sender sends one data message at a time on one logical channel: the preamble CSBKs, the header and the blocks of each try, one burst per Tick, 60 ms apart, after the channel access of SenderConfig.Access. */
+/* Go: data.Sender. Sender sends data messages on one logical channel: the preamble CSBKs, the header and the blocks of each try, one burst per Tick, 60 ms apart, after the channel access of SenderConfig.Access. */
 typedef struct dmrgo_data_sender_t dmrgo_data_sender_t;
 /* Go: data.SenderConfig. SenderConfig configures NewSender. */
 typedef struct dmrgo_data_sender_config_t dmrgo_data_sender_config_t;
@@ -1244,6 +1244,7 @@ struct dmrgo_data_sender_config_t {
 	int64_t max_blocks;
 	int64_t peers;
 	bool resync;
+	int64_t window;
 	uint64_t seed;
 };
 
@@ -1252,6 +1253,7 @@ struct dmrgo_data_output_t {
 	dmrgo_layer2_raw_burst_t burst;
 	int64_t due;
 	uint8_t try_;
+	uint8_t seq;
 	dmrgo_data_result_t result;
 	dmrgo_packet_response_t response;
 	bool has_response;
@@ -3786,14 +3788,16 @@ struct dmrgo_voice_output_t {
 #define DMRGO_DATA_MAX_EVENTS 14
 /* Go: data.MaxMessage. MaxMessage is the most octets of ReceiverConfig.MaxFragment and ReceiverConfig.MaxMessage. */
 #define DMRGO_DATA_MAX_MESSAGE 65535
-/* Go: data.MaxOutputs. MaxOutputs is the most outputs that one call of a Sender method appends: one burst and the end of the message. */
-#define DMRGO_DATA_MAX_OUTPUTS 2
+/* Go: data.MaxOutputs. MaxOutputs is the most outputs that one call of a Sender method appends: one burst and the end of each message of a window. */
+#define DMRGO_DATA_MAX_OUTPUTS 9
 /* Go: data.MaxPeers. MaxPeers is the most links in the table of sequence numbers. */
 #define DMRGO_DATA_MAX_PEERS 64
 /* Go: data.MaxPreambles. MaxPreambles is the most preamble CSBKs before a header. */
 #define DMRGO_DATA_MAX_PREAMBLES 64
 /* Go: data.MaxRetries. MaxRetries is the most transmissions of one message. */
 #define DMRGO_DATA_MAX_RETRIES 64
+/* Go: data.MaxWindow. MaxWindow is the most C_HEAD packets of one sliding window: 7 that do not ask for a response and the 8th that does (ETSI TS 102 361-3 clause 5.4.4). */
+#define DMRGO_DATA_MAX_WINDOW 8
 /* Go: data.OutputBurst. OutputBurst is a burst to send. */
 #define DMRGO_DATA_OUTPUT_BURST ((dmrgo_data_output_kind_t)1)
 /* Go: data.OutputDone. OutputDone is the end of the message. */
@@ -5525,11 +5529,11 @@ int dmrgo_data_sender_new(dmrgo_data_sender_t **out);
 int dmrgo_data_sender_free(dmrgo_data_sender_t *self);
 /* dmrgo_data_sender_burst_need sets *items and *arena to the room that dmrgo_data_sender_burst needs for these arguments, without a change to the handle. */
 int dmrgo_data_sender_burst_need(dmrgo_data_sender_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
-/* Go: data.Sender.Burst. Burst decodes the burst raw and takes the response to the confirmed message in progress from it: a response packet from the target of the message to its source. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_sender_burst_need gives (DMRGO_DATA_SENDER_BURST_MAX_ITEMS items). */
+/* Go: data.Sender.Burst. Burst decodes the burst raw and takes the response to the confirmed messages in progress from it: a response packet from the target of the messages to their source. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_sender_burst_need gives (DMRGO_DATA_SENDER_BURST_MAX_ITEMS items). */
 int dmrgo_data_sender_burst(dmrgo_data_sender_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_data_sender_cancel_need sets *items and *arena to the room that dmrgo_data_sender_cancel needs for these arguments, without a change to the handle. */
 int dmrgo_data_sender_cancel_need(dmrgo_data_sender_t *self, int64_t p0, size_t *items, size_t *arena);
-/* Go: data.Sender.Cancel. Cancel ends the message in progress with ResultCancelled and appends the output to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_sender_cancel_need gives (DMRGO_DATA_SENDER_CANCEL_MAX_ITEMS items). */
+/* Go: data.Sender.Cancel. Cancel ends every message in progress with ResultCancelled and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_sender_cancel_need gives (DMRGO_DATA_SENDER_CANCEL_MAX_ITEMS items). */
 int dmrgo_data_sender_cancel(dmrgo_data_sender_t *self, int64_t p0, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: data.Sender.Channel. Channel tells the Sender whether the channel is busy at now, for example from the AT bit of the CACH, the carrier, or a repeater. */
 int dmrgo_data_sender_channel(dmrgo_data_sender_t *self, int64_t now, bool busy);
@@ -5537,11 +5541,11 @@ int dmrgo_data_sender_channel(dmrgo_data_sender_t *self, int64_t now, bool busy)
 int dmrgo_data_sender_deadline(dmrgo_data_sender_t *self, int64_t *at, bool *ok);
 /* dmrgo_data_sender_decoded_need sets *items and *arena to the room that dmrgo_data_sender_decoded needs for these arguments, without a change to the handle. */
 int dmrgo_data_sender_decoded_need(dmrgo_data_sender_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, size_t *items, size_t *arena);
-/* Go: data.Sender.Decoded. Decoded takes the response to the confirmed message in progress from the decoded burst b, as Burst does. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_sender_decoded_need gives (DMRGO_DATA_SENDER_DECODED_MAX_ITEMS items). */
+/* Go: data.Sender.Decoded. Decoded takes the response to the confirmed messages in progress from the decoded burst b, as Burst does. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_sender_decoded_need gives (DMRGO_DATA_SENDER_DECODED_MAX_ITEMS items). */
 int dmrgo_data_sender_decoded(dmrgo_data_sender_t *self, int64_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *p2, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: data.Sender.Reset. Reset ends any message without outputs and forgets the sequence numbers of every link and the channel state. */
+/* Go: data.Sender.Reset. Reset ends every message without outputs and forgets the sequence numbers of every link and the channel state. */
 int dmrgo_data_sender_reset(dmrgo_data_sender_t *self);
-/* Go: data.Sender.Send. Send starts the message m at now. */
+/* Go: data.Sender.Send. Send starts the message m at now, or queues it in the sliding window. */
 int dmrgo_data_sender_send(dmrgo_data_sender_t *self, int64_t now, const dmrgo_data_message_t *m);
 /* Go: data.Sender.State. State returns the state of the Sender. */
 int dmrgo_data_sender_state(dmrgo_data_sender_t *self, dmrgo_data_sender_state_t *out);

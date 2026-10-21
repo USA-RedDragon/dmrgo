@@ -30,5 +30,6 @@ var (
 	errPreambles    error = &ConfigError{Field: "Preambles"}
 	errRetries      error = &ConfigError{Field: "Retries"}
 	errHeader       error = &ConfigError{Field: "Header"}
+	errWindow       error = &ConfigError{Field: "Window"}
 	errMessageGroup error = &ConfigError{Field: "Header.Group"}
 )

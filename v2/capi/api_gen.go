@@ -393,6 +393,7 @@ func in_data_SenderConfig(s *C.dmrgo_data_sender_config_t) (d g_data.SenderConfi
 	d.MaxBlocks = int(s.max_blocks)
 	d.Peers = int(s.peers)
 	d.Resync = bool(s.resync)
+	d.Window = int(s.window)
 	d.Seed = uint64(s.seed)
 	return
 }
@@ -402,6 +403,7 @@ func in_data_Output(s *C.dmrgo_data_output_t) (d g_data.Output) {
 	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
 	d.Due = time.Duration(s.due)
 	d.Try = uint8(s.try_)
+	d.Seq = uint8(s.seq)
 	d.Result = g_data.Result(s.result)
 	d.Response = g_layer2_packet.Response(s.response)
 	d.HasResponse = bool(s.has_response)
@@ -414,6 +416,7 @@ func out_data_Output(d *C.dmrgo_data_output_t, s *g_data.Output, oc *outc) {
 	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
 	d.due = C.int64_t(s.Due)
 	d.try_ = C.uint8_t(s.Try)
+	d.seq = C.uint8_t(s.Seq)
 	d.result = C.dmrgo_data_result_t(s.Result)
 	d.response = C.dmrgo_packet_response_t(s.Response)
 	d.has_response = C.bool(s.HasResponse)
@@ -5286,6 +5289,7 @@ func out_data_SenderConfig(d *C.dmrgo_data_sender_config_t, s *g_data.SenderConf
 	d.max_blocks = C.int64_t(s.MaxBlocks)
 	d.peers = C.int64_t(s.Peers)
 	d.resync = C.bool(s.Resync)
+	d.window = C.int64_t(s.Window)
 	d.seed = C.uint64_t(s.Seed)
 }
 
