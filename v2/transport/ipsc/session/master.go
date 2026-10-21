@@ -197,33 +197,35 @@ func (m *Master) listToAll(dst []Output) []Output {
 // sends the new list to the rest. The peer to peer registration and
 // keepalive of a registered peer get their replies. Any other packet of a
 // registered peer gives OutputData. Each packet of a registered peer
-// restarts its Timeout. The Master drops a packet of a peer that is not
-// registered, a packet without a good trailer with Auth, and a reply. It
-// allocates only when dst has no room for MaxOutputs outputs.
+// restarts its Timeout. A reply or status packet needs no answer. Any
+// other packet that the Master does not take gives OutputDropped, with
+// ReasonAuth, ReasonMalformed, ReasonUnregistered, ReasonFull or
+// ReasonAddress. It allocates only when dst has no room for MaxOutputs
+// outputs.
 func (m *Master) Packet(now time.Duration, from Addr, p []byte, dst []Output) []Output {
 	if m.stopped || m.maxPeers == 0 {
 		return dst
 	}
-	body, ok := m.l.open(p)
-	if !ok {
-		return dst
+	body, why := m.l.open(p)
+	if why != ReasonNone {
+		return dropped(dst, from, 0, why)
 	}
 	raw, err := ipsc.DecodeRaw(body)
 	if err != nil {
-		return dst
+		return dropped(dst, from, 0, ReasonMalformed)
 	}
 	i := m.l.find(raw.ID)
 	switch raw.Opcode {
-	case ipsc.OpRegisterRequest:
+	case ipsc.OpRegisterRequest, ipsc.OpAliveRequest:
 		c, err := ipsc.DecodeControl(body)
 		if err != nil {
-			return dst
+			return dropped(dst, from, raw.ID, ReasonMalformed)
 		}
-		return m.register(now, from, &c, i, dst, ipsc.OpRegisterReply)
-	case ipsc.OpAliveRequest:
-		c, err := ipsc.DecodeControl(body)
-		if err != nil || (i < 0 && m.l.key == nil) {
-			return dst
+		if raw.Opcode == ipsc.OpRegisterRequest {
+			return m.register(now, from, &c, i, dst, ipsc.OpRegisterReply)
+		}
+		if i < 0 && m.l.key == nil {
+			return dropped(dst, from, raw.ID, ReasonUnregistered)
 		}
 		return m.register(now, from, &c, i, dst, ipsc.OpAliveReply)
 	case ipsc.OpRegisterReply, ipsc.OpPeerListReply, ipsc.OpAliveReply, ipsc.OpDeregisterReply, ipsc.OpStatus:
@@ -234,30 +236,33 @@ func (m *Master) Packet(now time.Duration, from Addr, p []byte, dst []Output) []
 	default:
 	}
 	if i < 0 {
-		return dst
+		return dropped(dst, from, raw.ID, ReasonUnregistered)
 	}
+	return m.registered(now, from, i, &raw, body, dst)
+}
+
+func (m *Master) registered(now time.Duration, from Addr, i int, raw *ipsc.Raw, body []byte, dst []Output) []Output {
 	e := &m.l.peers[i]
 	e.last = now
+	if isLinkControl(raw.Opcode) {
+		if _, err := ipsc.DecodeControl(body); err != nil {
+			return dropped(dst, from, raw.ID, ReasonMalformed)
+		}
+	}
 	switch raw.Opcode {
 	case ipsc.OpPeerListRequest:
-		if _, err := ipsc.DecodeControl(body); err == nil {
-			dst = m.listToAll(dst)
-		}
+		dst = m.listToAll(dst)
 	case ipsc.OpDeregisterRequest:
-		if _, err := ipsc.DecodeControl(body); err != nil || e.info.Addr != from {
-			return dst
+		if e.info.Addr != from {
+			return dropped(dst, from, raw.ID, ReasonAddress)
 		}
 		dst = append(dst, Output{Kind: OutputDown, ID: e.info.ID, Addr: from, Reason: ReasonClosed})
 		m.l.remove(i)
 		dst = m.listToAll(dst)
 	case ipsc.OpPeerRegisterRequest:
-		if _, err := ipsc.DecodeControl(body); err == nil {
-			dst = send(dst, m.l.appendControl(m.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerRegisterReply, ID: m.l.id, Version: m.l.version}), from)
-		}
+		dst = send(dst, m.l.appendControl(m.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerRegisterReply, ID: m.l.id, Version: m.l.version}), from)
 	case ipsc.OpPeerAliveRequest:
-		if _, err := ipsc.DecodeControl(body); err == nil {
-			dst = send(dst, m.l.appendControl(m.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerAliveReply, ID: m.l.id, Mode: m.l.mode, Flags: m.l.flags}), from)
-		}
+		dst = send(dst, m.l.appendControl(m.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerAliveReply, ID: m.l.id, Mode: m.l.mode, Flags: m.l.flags}), from)
 	case ipsc.OpPeerRegisterReply, ipsc.OpPeerAliveReply:
 	default:
 		dst = append(dst, Output{Kind: OutputData, Packet: body, Addr: from, ID: raw.ID})
@@ -269,7 +274,7 @@ func (m *Master) register(now time.Duration, from Addr, c *ipsc.Control, i int, 
 	isNew := i < 0
 	if isNew {
 		if i = m.l.add(); i < 0 {
-			return dst
+			return dropped(dst, from, c.ID, ReasonFull)
 		}
 	}
 	e := &m.l.peers[i]

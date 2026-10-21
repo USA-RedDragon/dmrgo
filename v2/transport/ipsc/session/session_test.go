@@ -354,7 +354,7 @@ func TestMasterKeepaliveRegisters(t *testing.T) {
 
 	alive, _ := ipsc.Control{Opcode: ipsc.OpAliveRequest, ID: 7, Mode: 0x6a}.AppendBinary(nil)
 	open, _ := session.NewMaster(&session.MasterConfig{ID: 1})
-	if out := open.Packet(0, xprAddr, alive, nil); len(out) != 0 {
+	if out := open.Packet(0, xprAddr, alive, nil); !isDrop(out, 7, session.ReasonUnregistered) {
 		t.Fatal("keepalive of a peer that is not registered taken without Auth")
 	}
 	key, _ := ipscKey()
@@ -364,11 +364,11 @@ func TestMasterKeepaliveRegisters(t *testing.T) {
 		t.Fatalf("authenticated keepalive %v", kinds(out))
 	}
 	other, _ := ipsc.Control{Opcode: ipsc.OpRegisterRequest, ID: 8}.AppendBinary(nil)
-	if out = m.Packet(0, masterAddr, m.Sign(other), nil); len(out) != 0 {
+	if out = m.Packet(0, masterAddr, m.Sign(other), nil); !isDrop(out, 8, session.ReasonFull) {
 		t.Fatal("registered beyond MaxPeers")
 	}
 	dereg, _ := ipsc.Control{Opcode: ipsc.OpDeregisterRequest, ID: 7}.AppendBinary(nil)
-	if out = m.Packet(0, masterAddr, m.Sign(dereg), nil); len(out) != 0 || m.Peers() != 1 {
+	if out = m.Packet(0, masterAddr, m.Sign(dereg), nil); !isDrop(out, 7, session.ReasonAddress) || m.Peers() != 1 {
 		t.Fatal("de-registration from another address")
 	}
 	for _, op := range []ipsc.Opcode{ipsc.OpPeerRegisterRequest, ipsc.OpPeerAliveRequest} {
@@ -402,13 +402,13 @@ func TestNames(t *testing.T) {
 	t.Parallel()
 
 	if session.OutputData.String() != "Data" || session.OutputKind(0).String() != "Unknown" || session.ReasonList.String() != "List" ||
-		session.Reason(9).String() != "Unknown" || session.StateRegistering.String() != "Registering" || session.State(9).String() != "Unknown" {
+		session.Reason(99).String() != "Unknown" || session.StateRegistering.String() != "Registering" || session.State(9).String() != "Unknown" {
 		t.Fatal("names")
 	}
-	for k := session.OutputKind(0); k <= session.OutputData; k++ {
+	for k := session.OutputKind(0); k <= session.OutputDropped; k++ {
 		_ = k.String()
 	}
-	for r := session.Reason(0); r <= session.ReasonList; r++ {
+	for r := session.Reason(0); r <= session.ReasonAddress; r++ {
 		_ = r.String()
 	}
 	for s := session.State(0); s <= session.StateRunning; s++ {

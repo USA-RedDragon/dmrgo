@@ -7238,22 +7238,34 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_IPSC_SESSION_OUTPUT_DATA ((dmrgo_ipsc_session_output_kind_t)5)
 /* Go: session.OutputDown. OutputDown reports that the link with Output.ID is down. */
 #define DMRGO_IPSC_SESSION_OUTPUT_DOWN ((dmrgo_ipsc_session_output_kind_t)3)
+/* Go: session.OutputDropped. OutputDropped reports a packet from Output.Addr that a Master dropped, with the sender ID in Output.ID when the packet has one. */
+#define DMRGO_IPSC_SESSION_OUTPUT_DROPPED ((dmrgo_ipsc_session_output_kind_t)6)
 /* Go: session.OutputPeers. OutputPeers reports a new peer list at a Peer, which Peers and PeerAt return. */
 #define DMRGO_IPSC_SESSION_OUTPUT_PEERS ((dmrgo_ipsc_session_output_kind_t)4)
 /* Go: session.OutputSend. OutputSend is a packet in Output.Packet to send to Output.Addr, with its authentication trailer when the config has Auth. */
 #define DMRGO_IPSC_SESSION_OUTPUT_SEND ((dmrgo_ipsc_session_output_kind_t)1)
 /* Go: session.OutputUp. OutputUp reports that the link with Output.ID at Output.Addr is up: at a Peer, the registration with the master or with another peer; at a Master, the registration of a peer. */
 #define DMRGO_IPSC_SESSION_OUTPUT_UP ((dmrgo_ipsc_session_output_kind_t)2)
+/* Go: session.ReasonAddress. ReasonAddress is a de-registration request from an address other than the one the peer registered from. */
+#define DMRGO_IPSC_SESSION_REASON_ADDRESS ((dmrgo_ipsc_session_reason_t)9)
+/* Go: session.ReasonAuth. ReasonAuth is a packet without a good authentication trailer, with Auth. */
+#define DMRGO_IPSC_SESSION_REASON_AUTH ((dmrgo_ipsc_session_reason_t)5)
 /* Go: session.ReasonClosed. ReasonClosed is a de-registration request of the other side. */
 #define DMRGO_IPSC_SESSION_REASON_CLOSED ((dmrgo_ipsc_session_reason_t)2)
+/* Go: session.ReasonFull. ReasonFull is a registration that MaxPeers leaves no room for. */
+#define DMRGO_IPSC_SESSION_REASON_FULL ((dmrgo_ipsc_session_reason_t)8)
 /* Go: session.ReasonList. ReasonList is a peer that a new peer list left out. */
 #define DMRGO_IPSC_SESSION_REASON_LIST ((dmrgo_ipsc_session_reason_t)4)
+/* Go: session.ReasonMalformed. ReasonMalformed is a packet that is empty, longer than MaxPacket or does not decode as its opcode. */
+#define DMRGO_IPSC_SESSION_REASON_MALFORMED ((dmrgo_ipsc_session_reason_t)7)
 /* Go: session.ReasonNone. ReasonNone is the zero Reason. */
 #define DMRGO_IPSC_SESSION_REASON_NONE ((dmrgo_ipsc_session_reason_t)0)
 /* Go: session.ReasonStopped. ReasonStopped is a Close of the consumer. */
 #define DMRGO_IPSC_SESSION_REASON_STOPPED ((dmrgo_ipsc_session_reason_t)3)
 /* Go: session.ReasonTimeout. ReasonTimeout is MaxMissed keepalives without a reply at a Peer, or Timeout without a packet at a Master. */
 #define DMRGO_IPSC_SESSION_REASON_TIMEOUT ((dmrgo_ipsc_session_reason_t)1)
+/* Go: session.ReasonUnregistered. ReasonUnregistered is a packet that needs the registration of its sender, from a peer that is not registered. */
+#define DMRGO_IPSC_SESSION_REASON_UNREGISTERED ((dmrgo_ipsc_session_reason_t)6)
 /* Go: session.StateIdle. StateIdle is a Peer or Master after Close. */
 #define DMRGO_IPSC_SESSION_STATE_IDLE ((dmrgo_ipsc_session_state_t)0)
 /* Go: session.StateRegistering. StateRegistering is a Peer that is not registered with the master. */

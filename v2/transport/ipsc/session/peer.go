@@ -249,8 +249,8 @@ func (p *Peer) Packet(_ time.Duration, from Addr, b []byte, dst []Output) []Outp
 	if p.state == StateIdle || !p.started {
 		return dst
 	}
-	body, ok := p.l.open(b)
-	if !ok {
+	body, why := p.l.open(b)
+	if why != ReasonNone {
 		return dst
 	}
 	raw, err := ipsc.DecodeRaw(body)

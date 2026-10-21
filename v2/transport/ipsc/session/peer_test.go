@@ -151,22 +151,30 @@ func TestMasterTransitions(t *testing.T) {
 	if _, ok := m.Deadline(); ok {
 		t.Fatal("deadline without peers")
 	}
-	for _, op := range []ipsc.Opcode{ipsc.OpGroupVoice, ipsc.OpPeerListRequest, ipsc.OpRegisterReply} {
-		if out := m.Packet(0, xprAddr, ctl(op, 7), nil); len(out) != 0 {
-			t.Fatalf("%v from a peer that is not registered", op)
+	for _, pk := range [][]byte{{byte(ipsc.OpGroupVoice), 0, 0, 0, 7, 1}, ctl(ipsc.OpPeerListRequest, 7), ctl(ipsc.OpDeregisterRequest, 7)} {
+		if out := m.Packet(0, xprAddr, pk, nil); !isDrop(out, 7, session.ReasonUnregistered) {
+			t.Fatalf("%x from a peer that is not registered: %+v", pk, out)
 		}
 	}
-	if out := m.Packet(0, xprAddr, nil, nil); len(out) != 0 {
-		t.Fatal("empty packet")
+	if out := m.Packet(0, xprAddr, ctl(ipsc.OpRegisterReply, 7), nil); len(out) != 0 {
+		t.Fatal("reply of a peer that is not registered")
 	}
-	if out := m.Packet(0, xprAddr, []byte{byte(ipsc.OpRegisterRequest), 0, 0, 0, 7}, nil); len(out) != 0 {
-		t.Fatal("short registration")
+	for _, pk := range [][]byte{nil, {0x80, 0, 0}, make([]byte, session.MaxPacket+1)} {
+		if out := m.Packet(0, xprAddr, pk, nil); !isDrop(out, 0, session.ReasonMalformed) {
+			t.Fatalf("packet of %d octets: %+v", len(pk), out)
+		}
+	}
+	if out := m.Packet(0, xprAddr, []byte{byte(ipsc.OpRegisterRequest), 0, 0, 0, 7}, nil); !isDrop(out, 7, session.ReasonMalformed) {
+		t.Fatalf("short registration %+v", out)
 	}
 	m.Packet(0, xprAddr, ctl(ipsc.OpRegisterRequest, 7), nil)
 	m.Packet(0, masterAddr, ctl(ipsc.OpRegisterRequest, 8), nil)
-	for _, op := range []ipsc.Opcode{ipsc.OpAliveReply, ipsc.OpPeerAliveReply, ipsc.OpStatus} {
-		if out := m.Packet(5*time.Second, xprAddr, ctl(op, 7), nil); len(out) != 0 {
-			t.Fatalf("%v answered", op)
+	if out := m.Packet(0, xprAddr, []byte{byte(ipsc.OpPeerAliveRequest), 0, 0, 0, 7}, nil); !isDrop(out, 7, session.ReasonMalformed) {
+		t.Fatalf("short keepalive of a registered peer %+v", out)
+	}
+	for _, pk := range [][]byte{ctl(ipsc.OpAliveReply, 7), ctl(ipsc.OpPeerAliveReply, 7), {byte(ipsc.OpStatus), 0, 0, 0, 7, 0, 0, 0, 0}} {
+		if out := m.Packet(5*time.Second, xprAddr, pk, nil); len(out) != 0 {
+			t.Fatalf("%x answered", pk)
 		}
 	}
 	out := m.Tick(10*time.Second, nil)
@@ -192,5 +200,27 @@ func TestPeerListFullTable(t *testing.T) {
 	p.Packet(0, masterAddr, ipsc.AppendPeerListReply(nil, 1, []ipsc.PeerEntry{{ID: 300, IP: moved.IP, Port: 2}}), nil)
 	if p.Peers() != 1 || p.PeerAt(0).ID != 300 || p.PeerAt(0).Addr != (session.Addr{IP: moved.IP, Port: 2}) {
 		t.Fatalf("peers %d %+v", p.Peers(), p.PeerAt(0))
+	}
+}
+
+func isDrop(out []session.Output, id uint32, r session.Reason) bool {
+	return len(out) == 1 && out[0].Kind == session.OutputDropped && out[0].ID == id && out[0].Reason == r
+}
+
+func TestMasterDropsAuth(t *testing.T) {
+	t.Parallel()
+
+	key, _ := ipscKey()
+	m, _ := session.NewMaster(&session.MasterConfig{ID: 1, Auth: true, Key: key})
+	reg := m.Sign(ctl(ipsc.OpRegisterRequest, 7))
+	bad := append([]byte(nil), reg...)
+	bad[len(bad)-1] ^= 1
+	for _, pk := range [][]byte{bad, ctl(ipsc.OpRegisterRequest, 7), {1, 2}} {
+		if out := m.Packet(0, xprAddr, pk, nil); !isDrop(out, 0, session.ReasonAuth) || out[0].Addr != xprAddr {
+			t.Fatalf("%x: %+v", pk, out)
+		}
+	}
+	if out := m.Packet(0, xprAddr, reg, nil); len(out) != 2 || m.Peers() != 1 {
+		t.Fatalf("good trailer %+v", out)
 	}
 }
