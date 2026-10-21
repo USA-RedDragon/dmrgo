@@ -377,7 +377,7 @@ func (f *Follower) wants(now time.Duration, g *Grant) bool {
 	if f.noFollow || g.Channel == ChannelNull || g.Channel == ChannelAbsolute {
 		return false
 	}
-	if f.hasClear && now-f.clearedAt < clearHold && sameCall(&f.cleared, g) {
+	if f.hasClear && now-f.clearedAt < clearHold && g.LateEntry && sameCall(&f.cleared, g) {
 		return false
 	}
 	if f.self != 0 && (g.Service == enums.ServiceDuplexVoice || g.Service == enums.ServiceDuplexPacketData) {

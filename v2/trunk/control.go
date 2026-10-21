@@ -311,7 +311,7 @@ func (c *control) newGrant(now time.Duration, g *Grant) tsccEvent {
 	if ch, ok := c.plan.Lookup(g.Channel); ok && g.RXHz == 0 {
 		g.RXHz, g.TXHz = ch.RXHz, ch.TXHz
 	}
-	repeat := c.hasLast && now-c.lastGrantT < repeatHold && sameCall(&c.lastGrant, g)
+	repeat := c.hasLast && now-c.lastGrantT < repeatHold && sameCall(&c.lastGrant, g) && c.lastGrant.LateEntry == g.LateEntry
 	c.lastGrant, c.lastGrantT, c.hasLast = *g, now, true
 	if repeat {
 		return eventTSCC
