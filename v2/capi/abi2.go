@@ -299,7 +299,10 @@ func csbkABI(seed uint64) error {
 	if err != nil {
 		return err
 	}
-	gp := csbk.NewPreambles(&csbk.PreamblesConfig{})
+	gp, err := csbk.NewPreambles(&csbk.PreamblesConfig{})
+	if err != nil {
+		return err
+	}
 	cq, cr, cw, cp := new(*C.dmrgo_csbk_requester_t), new(*C.dmrgo_csbk_responder_t), new(*C.dmrgo_csbk_wakeup_t), new(*C.dmrgo_csbk_preambles_t)
 	cqc, crc, cwc, cpc := new(C.dmrgo_csbk_requester_config_t), new(C.dmrgo_csbk_responder_config_t), new(C.dmrgo_csbk_wakeup_config_t), new(C.dmrgo_csbk_preambles_config_t)
 	out_csbk_RequesterConfig(cqc, &qcfg, h.in)

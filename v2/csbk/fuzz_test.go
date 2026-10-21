@@ -39,7 +39,11 @@ func newRig(t testing.TB) *rig {
 	if err != nil {
 		t.Fatal(err)
 	}
-	g := &rig{q: q, r: r, p: csbk.NewPreambles(&csbk.PreamblesConfig{Scratch: scratch}), w: w, out: make([]csbk.Output, 0, csbk.MaxOutputs)}
+	p, err := csbk.NewPreambles(&csbk.PreamblesConfig{Scratch: scratch})
+	if err != nil {
+		t.Fatal(err)
+	}
+	g := &rig{q: q, r: r, p: p, w: w, out: make([]csbk.Output, 0, csbk.MaxOutputs)}
 	for _, s := range []string{injectedRadioCheck, anytoneRadioAnswer, injectedCallAlert, anytoneCallAlertAc, anytoneRadioCheck[0], anytoneRadioCheck[5]} {
 		b, _ := hex.DecodeString(s)
 		for _, src := range []layer2.SyncSource{layer2.SyncSourceBS, layer2.SyncSourceMS} {

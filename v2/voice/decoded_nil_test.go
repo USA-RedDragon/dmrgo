@@ -20,7 +20,10 @@ func TestDecodedNilBurst(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	pre := csbk.NewPreambles(nil)
+	pre, err := csbk.NewPreambles(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, h := range []layer2.Hint{{}, {SyncLost: true, End: layer2.EndStrong}} {
 		if got := vrx.Decoded(0, nil, h, nil); len(got) != 0 {
 			t.Errorf("voice: %+v", got)

@@ -62,13 +62,14 @@ type Preambles struct {
 }
 
 // NewPreambles returns a Preambles for cfg. A nil cfg means the zero
-// PreamblesConfig. It allocates the Preambles, and its Burst unless
-// cfg.Scratch is set.
-func NewPreambles(cfg *PreamblesConfig) *Preambles {
+// PreamblesConfig. No PreamblesConfig is out of range, so the error is
+// nil; it has the shape of the other machine constructors. It allocates
+// the Preambles, and its Burst unless cfg.Scratch is set.
+func NewPreambles(cfg *PreamblesConfig) (*Preambles, error) {
 	if cfg == nil {
 		cfg = &PreamblesConfig{}
 	}
-	return &Preambles{d: newDecoder(cfg.Scratch)}
+	return &Preambles{d: newDecoder(cfg.Scratch)}, nil
 }
 
 // Reset forgets the announced transfer without an output.

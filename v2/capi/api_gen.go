@@ -9502,7 +9502,7 @@ func dmrgo_csbk_new_preambles(c_cfg *C.dmrgo_csbk_preambles_config_t, c_out **C.
 	if c_out == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := g_csbk.NewPreambles(p_cfg)
+	r0, r1 := g_csbk.NewPreambles(p_cfg)
 	_ = r0
 	*c_out = nil
 	if r0 != nil {
@@ -9510,6 +9510,9 @@ func dmrgo_csbk_new_preambles(c_cfg *C.dmrgo_csbk_preambles_config_t, c_out **C.
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }

@@ -321,7 +321,7 @@ func TestPreamblesData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p := csbk.NewPreambles(nil)
+	p := mustPreambles(t, nil)
 	out := p.Burst(0, pre(3, 2), layer2.Hint{}, nil)
 	out = append(out, p.Burst(60*ms, pre(2, 2), layer2.Hint{}, nil)...)
 	out = append(out, p.Burst(120*ms, &header, layer2.Hint{}, nil)...)

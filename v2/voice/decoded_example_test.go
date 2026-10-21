@@ -34,7 +34,11 @@ func ExampleReceiver_Decoded() {
 		fmt.Println(err)
 		return
 	}
-	pre := csbk.NewPreambles(nil)
+	pre, err := csbk.NewPreambles(nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	burst := layer2.NewBurst()
 	cc := enums.ColorCode(1)
 	opts := layer2.DecodeOptions{ColorCode: &cc}

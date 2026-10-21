@@ -275,7 +275,7 @@ func tinyCSBKOps(t *testing.T) []tinyOp {
 	scratch := layer2.NewBurst()
 	q := tinyOK(csbk.NewRequester(&csbk.RequesterConfig{ColorCode: 1, Source: layer2.SyncSourceMS, Scratch: scratch}))
 	r := tinyOK(csbk.NewResponder(&csbk.ResponderConfig{Address: 2, ColorCode: 1, Source: layer2.SyncSourceMS, Scratch: scratch}))
-	p := csbk.NewPreambles(&csbk.PreamblesConfig{Scratch: scratch})
+	p := tinyOK(csbk.NewPreambles(&csbk.PreamblesConfig{Scratch: scratch}))
 	w := tinyOK(csbk.NewWakeup(&csbk.WakeupConfig{ColorCode: 1, Scratch: scratch}))
 	out := make([]csbk.Output, 0, csbk.MaxOutputs)
 	out2 := make([]csbk.Output, 0, csbk.MaxOutputs)
