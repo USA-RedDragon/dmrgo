@@ -25,7 +25,9 @@ const (
 // InterrupterConfig. (ETSI TS 102 361-2 clause 6.3.5)
 type InterrupterConfig struct {
 	// ColorCode is the color code of the EMB of the standalone RC bursts.
-	// (ETSI TS 102 361-2 clause 6.3.5)
+	// The EMB also has PI set, as an RC for the other logical channel.
+	// (ETSI TS 102 361-1 clause 6.4.2 and Table 9.19, ETSI TS 102 361-2
+	// clause 6.3.5)
 	ColorCode enums.ColorCode
 	// Wait is T_RCtimer, the wait for the Terminator with LC after each
 	// try. 0 means constants.TRCTimer (600 ms), and a negative value waits
@@ -179,7 +181,7 @@ func (i *Interrupter) Interrupt(now time.Duration, cmd enums.RCCommand) error {
 	}
 	i.rc = layer2.RawBurst{}
 	_ = i.rc.SetSync(enums.SyncMSSourcedRC)
-	_ = i.rc.SetStandaloneRCEMB(pdu.EmbeddedSignalling{ColorCode: i.cc, LCSS: enums.LCSSSingleFragment})
+	_ = i.rc.SetStandaloneRCEMB(pdu.EmbeddedSignalling{ColorCode: i.cc, PreemptionAndPowerControlIndicator: true, LCSS: enums.LCSSSingleFragment})
 	i.rc.SetStandaloneRCData(d)
 	i.tries = 0
 	i.try(now)

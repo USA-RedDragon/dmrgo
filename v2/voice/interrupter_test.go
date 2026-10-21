@@ -7,6 +7,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
@@ -148,6 +149,34 @@ func TestInterrupter_DefaultRetries(t *testing.T) {
 			if due[k] != c.want[k] {
 				t.Fatalf("%+v: bursts %v, want %v", c.cfg, due, c.want)
 			}
+		}
+	}
+}
+
+// ETSI TS 102 361-1 clause 6.4.2 and Table 9.19
+func TestInterrupter_RCPI(t *testing.T) {
+	t.Parallel()
+
+	in := newInterrupter(t, &voice.InterrupterConfig{ColorCode: 3})
+	if err := in.Interrupt(0, enums.RCCeaseTransmissionRequest); err != nil {
+		t.Fatal(err)
+	}
+	out := in.Tick(0, nil)
+	if len(out) != 1 || out[0].Kind != voice.OutputBurst {
+		t.Fatalf("outputs %+v", out)
+	}
+	raw := out[0].Burst
+	if e := raw.StandaloneRCEMB(); !e.PreemptionAndPowerControlIndicator || e.ColorCode != 3 || e.LCSS != enums.LCSSSingleFragment {
+		t.Fatalf("EMB %+v", e)
+	}
+	for _, pi := range []bool{true, false} {
+		r := raw
+		if err := r.SetStandaloneRCEMB(pdu.EmbeddedSignalling{ColorCode: 3, PreemptionAndPowerControlIndicator: pi, LCSS: enums.LCSSSingleFragment}); err != nil {
+			t.Fatal(err)
+		}
+		var b layer2.Burst
+		if err := b.DecodeFromBytes(r); err != nil || b.Kind != layer2.KindReverseChannel || !b.HasReverseChannel() || b.ReverseChannel.RCCommand != enums.RCCeaseTransmissionRequest {
+			t.Fatalf("PI %v: %v, kind %v, RC %+v", pi, err, b.Kind, b.ReverseChannel)
 		}
 	}
 }

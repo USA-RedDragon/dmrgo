@@ -5384,7 +5384,7 @@ struct dmrgo_voice_output_t {
 };
 
 struct dmrgo_voice_interrupter_config_t {
-	/* ColorCode is the color code of the EMB of the standalone RC bursts. (ETSI TS 102 361-2 clause 6.3.5) */
+	/* ColorCode is the color code of the EMB of the standalone RC bursts. The EMB also has PI set, as an RC for the other logical channel. (ETSI TS 102 361-1 clause 6.4.2 and Table 9.19, ETSI TS 102 361-2 clause 6.3.5) */
 	dmrgo_enums_color_code_t color_code;
 	/* Wait is T_RCtimer, the wait for the Terminator with LC after each try. 0 means constants.TRCTimer (600 ms), and a negative value waits until the terminator or Cancel. (ETSI TS 102 361-2 clause A.1) */
 	dmrgo_duration_t wait;

@@ -1536,6 +1536,7 @@ documents:
               - TestInterrupter_StopsTransmitter
               - TestInterrupter_Retries
               - TestInterrupter_DefaultRetries
+              - TestInterrupter_RCPI
               - TestInterrupter_States
 
       - section: "7.1.1"
