@@ -52,6 +52,7 @@ const (
 	leanMidGate         = 0
 	leanSyncUnroll      = false
 	leanRawFuse         = false
+	leanMidSearch       = true
 )
 
 const (
@@ -872,7 +873,7 @@ func (r *leanCore) searchHit(sym, mid bool) {
 			r.forceLock(src, data, back)
 		}
 	}
-	if mid && !r.locked && r.ns > leanSyncEnd+2 {
+	if leanMidSearch && mid && !r.locked && r.ns > leanSyncEnd+2 {
 		r.searchMid()
 	}
 }
