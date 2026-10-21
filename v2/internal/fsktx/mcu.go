@@ -39,6 +39,10 @@ const (
 	tier0Corr24 = false
 )
 
+const (
+	tier0Shape2 = false
+)
+
 // tier0Shape feeds the rounding error of each MCUAudio sample into the
 // next, which puts a zero of the error at half the rate: it cuts the
 // rounding noise of a coarse DAC in the alternate channel.
@@ -164,6 +168,7 @@ type MCUAudio struct {
 	// rerr is the rounding residue of the last sample for tier0Shape, and
 	// shape32 is set when every sum of the shaped loop fits 32 bits.
 	rerr    int32
+	rerr2   int32
 	shape32 bool
 	c24     bool
 }
@@ -192,7 +197,7 @@ func (m *MCUAudio) Init(t AudioTable, level, offset int) error {
 	m.offset = int32(offset)
 	m.codes, m.zeros, m.corr = 0, ^uint32(0), tier0Corr && (t.hz == 48000 || tier0Corr24 && t.hz == 24000)
 	m.c24 = tier0Corr24 && t.hz == 24000
-	m.rerr = 0
+	m.rerr, m.rerr2 = 0, 0
 	m.shape32 = tier0Shape && 4*int64(t.peak)*int64(scale)+1<<(15+tapShift) < math.MaxInt32
 	m.idx5 = uint32(len(mcuCorr) - 1)
 	return nil
@@ -244,6 +249,9 @@ func (m *MCUAudio) Symbol(dst []int16, s int8) int {
 // Init allows only when no sum can overflow. The residue of the rounding
 // is the low bits of the sum before the shift.
 func (m *MCUAudio) shaped(dst []int16, n int, s int8) int {
+	if tier0Shape2 {
+		return m.shaped2(dst, n, s)
+	}
 	const sh = 15 + tapShift
 	const half = 1 << (sh - 1)
 	sc, off, buf, e := m.scale, m.offset, &m.k.buf, m.rerr
@@ -277,6 +285,51 @@ func (m *MCUAudio) shaped(dst []int16, n int, s int8) int {
 		dst[p] = int16(v>>sh + off)
 	}
 	m.rerr = e
+	return n
+}
+
+func (m *MCUAudio) shaped2(dst []int16, n int, s int8) int {
+	const sh = 15 + tapShift
+	const half = 1 << (sh - 1)
+	sc, off, buf, e1, e2 := m.scale, m.offset, &m.k.buf, m.rerr, m.rerr2
+	var t *[10]int16
+	if tier0Corr && m.corr {
+		t = m.corrRow(s)
+	}
+	if t != nil && !m.c24 && n == len(mcuCorr[0]) {
+		d := (*[len(mcuCorr[0])]int16)(dst)
+		for p := range d {
+			v := (buf[p]+int32(t[p]))*sc + e2>>1 + half
+			e1, e2 = v&(1<<sh-1)-half+1, e1
+			d[p] = int16(v>>sh + off)
+		}
+		m.rerr, m.rerr2 = e1, e2
+		return n
+	}
+	if t == nil && n == len(mcuCorr[0]) {
+		d := (*[len(mcuCorr[0])]int16)(dst)
+		for p := range d {
+			v := buf[p]*sc + e2>>1 + half
+			e1, e2 = v&(1<<sh-1)-half+1, e1
+			d[p] = int16(v>>sh + off)
+		}
+		m.rerr, m.rerr2 = e1, e2
+		return n
+	}
+	step := 1
+	if m.c24 {
+		step = 2
+	}
+	for p := range dst[:n] {
+		x := buf[p]
+		if t != nil {
+			x += int32(t[p*step])
+		}
+		v := x*sc + e2>>1 + half
+		e1, e2 = v&(1<<sh-1)-half+1, e1
+		dst[p] = int16(v>>sh + off)
+	}
+	m.rerr, m.rerr2 = e1, e2
 	return n
 }
 
