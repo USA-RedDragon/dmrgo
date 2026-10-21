@@ -119,30 +119,26 @@ func shape48k(dst *[maxSamples]int32, r *[maxTaps]int8) int {
 }
 
 func shape48kFold(dst *[maxSamples]int32, r *[maxTaps]int8) int {
-	var u, w [6]int32
-	for i := range u {
-		a, b := int32(r[i]), int32(r[11-i])
-		u[i], w[i] = a+b, a-b
-	}
-	for k := range 4 {
-		f := &taps48kFold[k]
-		var s, d int32
-		for i := range u {
-			s += int32(f[i]) * u[i]
-			d += int32(f[6+i]) * w[i]
-		}
-		dst[k+1] = (s + d) >> 1
-		dst[9-k] = (s - d) >> 1
-	}
-	f := &taps48kFold[4]
-	var y int32
-	for i := range u {
-		y += int32(f[i]) * u[i]
-	}
-	dst[5] = y
-	dst[0] = int32(f[6])*(int32(r[1])+int32(r[11])) + int32(f[7])*(int32(r[2])+int32(r[10])) +
-		int32(f[8])*(int32(r[3])+int32(r[9])) + int32(f[9])*(int32(r[4])+int32(r[8])) +
-		int32(f[10])*(int32(r[5])+int32(r[7])) + int32(f[11])*int32(r[6])
+	r0, r1, r2, r3, r4, r5 := int32(r[0]), int32(r[1]), int32(r[2]), int32(r[3]), int32(r[4]), int32(r[5])
+	r6, r7, r8, r9, r10, r11 := int32(r[6]), int32(r[7]), int32(r[8]), int32(r[9]), int32(r[10]), int32(r[11])
+	u0, u1, u2, u3, u4, u5 := r0+r11, r1+r10, r2+r9, r3+r8, r4+r7, r5+r6
+	w0, w1, w2, w3, w4, w5 := r0-r11, r1-r10, r2-r9, r3-r8, r4-r7, r5-r6
+	f := &taps48kFold
+	s0 := int32(f[0][0])*u0 + int32(f[0][1])*u1 + int32(f[0][2])*u2 + int32(f[0][3])*u3 + int32(f[0][4])*u4 + int32(f[0][5])*u5
+	d0 := int32(f[0][6])*w0 + int32(f[0][7])*w1 + int32(f[0][8])*w2 + int32(f[0][9])*w3 + int32(f[0][10])*w4 + int32(f[0][11])*w5
+	dst[1], dst[9] = (s0+d0)>>1, (s0-d0)>>1
+	s1 := int32(f[1][0])*u0 + int32(f[1][1])*u1 + int32(f[1][2])*u2 + int32(f[1][3])*u3 + int32(f[1][4])*u4 + int32(f[1][5])*u5
+	d1 := int32(f[1][6])*w0 + int32(f[1][7])*w1 + int32(f[1][8])*w2 + int32(f[1][9])*w3 + int32(f[1][10])*w4 + int32(f[1][11])*w5
+	dst[2], dst[8] = (s1+d1)>>1, (s1-d1)>>1
+	s2 := int32(f[2][0])*u0 + int32(f[2][1])*u1 + int32(f[2][2])*u2 + int32(f[2][3])*u3 + int32(f[2][4])*u4 + int32(f[2][5])*u5
+	d2 := int32(f[2][6])*w0 + int32(f[2][7])*w1 + int32(f[2][8])*w2 + int32(f[2][9])*w3 + int32(f[2][10])*w4 + int32(f[2][11])*w5
+	dst[3], dst[7] = (s2+d2)>>1, (s2-d2)>>1
+	s3 := int32(f[3][0])*u0 + int32(f[3][1])*u1 + int32(f[3][2])*u2 + int32(f[3][3])*u3 + int32(f[3][4])*u4 + int32(f[3][5])*u5
+	d3 := int32(f[3][6])*w0 + int32(f[3][7])*w1 + int32(f[3][8])*w2 + int32(f[3][9])*w3 + int32(f[3][10])*w4 + int32(f[3][11])*w5
+	dst[4], dst[6] = (s3+d3)>>1, (s3-d3)>>1
+	dst[5] = int32(f[4][0])*u0 + int32(f[4][1])*u1 + int32(f[4][2])*u2 + int32(f[4][3])*u3 + int32(f[4][4])*u4 + int32(f[4][5])*u5
+	dst[0] = int32(f[4][6])*(r1+r11) + int32(f[4][7])*(r2+r10) + int32(f[4][8])*(r3+r9) + int32(f[4][9])*(r4+r8) +
+		int32(f[4][10])*(r5+r7) + int32(f[4][11])*r6
 	return len(taps48k)
 }
 
