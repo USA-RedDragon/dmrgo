@@ -948,6 +948,9 @@ sym #define DMRGO_LAYER2_KIND_DATA ((dmrgo_layer2_kind_t)2)
 sym #define DMRGO_LAYER2_KIND_REVERSE_CHANNEL ((dmrgo_layer2_kind_t)3)
 sym #define DMRGO_LAYER2_KIND_UNKNOWN ((dmrgo_layer2_kind_t)0)
 sym #define DMRGO_LAYER2_KIND_VOICE ((dmrgo_layer2_kind_t)1)
+sym #define DMRGO_LAYER2_PLACEMENT_DUPLICATE ((dmrgo_layer2_placement_t)1)
+sym #define DMRGO_LAYER2_PLACEMENT_IN_ORDER ((dmrgo_layer2_placement_t)0)
+sym #define DMRGO_LAYER2_PLACEMENT_LATE ((dmrgo_layer2_placement_t)2)
 sym #define DMRGO_LAYER2_SYNC_SOURCE_BS ((dmrgo_layer2_sync_source_t)0)
 sym #define DMRGO_LAYER2_SYNC_SOURCE_DIRECT_TS1 ((dmrgo_layer2_sync_source_t)2)
 sym #define DMRGO_LAYER2_SYNC_SOURCE_DIRECT_TS2 ((dmrgo_layer2_sync_source_t)3)
@@ -1917,6 +1920,14 @@ sym int dmrgo_layer2_mmdvm_host_seal(dmrgo_enums_data_type_t data_type, uint8_t 
 sym int dmrgo_layer2_new_burst(dmrgo_layer2_burst_t **out);
 sym int dmrgo_layer2_new_burst_from_bytes(const dmrgo_layer2_raw_burst_t *data, dmrgo_layer2_burst_t **out);
 sym int dmrgo_layer2_new_voice_transmitter(const dmrgo_layer2_voice_transmitter_options_t *opts, dmrgo_layer2_voice_transmitter_t **out);
+sym int dmrgo_layer2_placement_string(dmrgo_layer2_placement_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_layer2_position_tracker_forget(dmrgo_layer2_position_tracker_t *self);
+sym int dmrgo_layer2_position_tracker_free(dmrgo_layer2_position_tracker_t *self);
+sym int dmrgo_layer2_position_tracker_header(dmrgo_layer2_position_tracker_t *self, const dmrgo_layer2_hint_t *h);
+sym int dmrgo_layer2_position_tracker_new(dmrgo_layer2_position_tracker_t **out);
+sym int dmrgo_layer2_position_tracker_place(dmrgo_layer2_position_tracker_t *self, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, int64_t *lost, dmrgo_layer2_placement_t *p);
+sym int dmrgo_layer2_position_tracker_place_decoded(dmrgo_layer2_position_tracker_t *self, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, int64_t steps, int64_t *lost, dmrgo_layer2_placement_t *p);
+sym int dmrgo_layer2_position_tracker_reset(dmrgo_layer2_position_tracker_t *self);
 sym int dmrgo_layer2_raw_burst_ambe_frames(const dmrgo_layer2_raw_burst_t *self, dmrgo_vocoder_ambe_frame_t out0[3], dmrgo_fec_result_t *out1);
 sym int dmrgo_layer2_raw_burst_bptc_payload(const dmrgo_layer2_raw_burst_t *self, uint8_t out0[12], dmrgo_fec_result_t *out1);
 sym int dmrgo_layer2_raw_burst_bptc_reserved(const dmrgo_layer2_raw_burst_t *self, uint8_t *out0, dmrgo_fec_result_t *out1);
@@ -2907,6 +2918,7 @@ sym typedef uint8_t dmrgo_ipsc_opcode_t;
 sym typedef uint8_t dmrgo_ipsc_voice_layout_t;
 sym typedef uint8_t dmrgo_layer2_end_hint_t;
 sym typedef uint8_t dmrgo_layer2_kind_t;
+sym typedef uint8_t dmrgo_layer2_placement_t;
 sym typedef uint8_t dmrgo_layer3_additional_information_field_t;
 sym typedef uint8_t dmrgo_layer3_position_error_t;
 sym typedef uint8_t dmrgo_layer3_source_type_t;

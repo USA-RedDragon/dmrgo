@@ -71,6 +71,12 @@
 // A lost burst inside a superframe can shift the positions of the bursts
 // after it until the next burst A, B or E.
 //
+// PositionTracker places voice bursts packet by packet from what a
+// transport gives: the position or sequence number of the Hint, the voice
+// SYNC and the LCSS, as voice.Receiver does. A bridge that forwards each
+// packet to a transport that needs the position, such as IPSC to HomeBrew
+// DMRD, uses it.
+//
 // # CACH and Short LC
 //
 // In a BS outbound stream each burst follows a 24-bit CACH (ETSI TS 102

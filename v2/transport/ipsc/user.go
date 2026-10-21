@@ -290,8 +290,8 @@ func appendPayload(dst []byte, d Payload) ([]byte, error) {
 
 // Hint returns what the packet tells about its burst, for the service
 // machines: the slot from the call info, the RTP sequence number (16 bits),
-// the call control as the stream, burst A or E from the voice layout (the
-// receiver places B, C, D and F by the sequence number), the data type of a
+// the call control as the stream, burst A or E from the voice layout (a
+// layer2.PositionTracker places B, C, D and F), the data type of a
 // data packet, EndWeak for the end flag on a voice packet, EndStrong on a
 // terminator or a data packet, and SyncLost for BurstSyncLost. A nil u
 // gives the zero Hint.

@@ -152,6 +152,8 @@ typedef struct dmrgo_layer2_embedded_lc_assembler_t dmrgo_layer2_embedded_lc_ass
 /* Go: layer2.Hint. Hint is what a transport knows about a burst besides its 264 bits, such as the fields of a HomeBrew DMRD, IPSC or MMDVM frame. */
 typedef struct dmrgo_layer2_hint_t dmrgo_layer2_hint_t;
 typedef struct dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t;
+/* Go: layer2.PositionTracker. PositionTracker places the voice bursts of one logical channel in their superframe, packet by packet, as voice.Receiver does: from the position in the Hint, the voice SYNC of burst A, the LCSS of the EMB of bursts B to F, and the sequence number of the Hint, or one step per burst without one. */
+typedef struct dmrgo_layer2_position_tracker_t dmrgo_layer2_position_tracker_t;
 /* Go: layer2.RawBurst. RawBurst is a 33-octet burst in transmit bit order, the form NewBurstFromBytes takes. */
 typedef struct dmrgo_layer2_raw_burst_t dmrgo_layer2_raw_burst_t;
 /* Go: layer2.ShortLCAssembler. ShortLCAssembler collects the signalling payloads of 4 CACHs and decodes the Short LC PDU they carry. */
@@ -764,6 +766,8 @@ typedef uint8_t dmrgo_ip_protocol_t;
 typedef uint8_t dmrgo_layer2_end_hint_t;
 /* Go: layer2.Kind. Kind is the kind of a burst. */
 typedef uint8_t dmrgo_layer2_kind_t;
+/* Go: layer2.Placement. Placement is how a PositionTracker took a burst. */
+typedef uint8_t dmrgo_layer2_placement_t;
 /* Go: layer2.SyncSource. SyncSource selects the SYNC patterns of a voice transmission (ETSI TS 102 361-1 Table 9.2). */
 typedef int64_t dmrgo_layer2_sync_source_t;
 /* Go: packet.Response. Response is the Class and Type of a response packet, as Class<<3 | Type (ETSI TS 102 361-1 Table 8.3). */
@@ -6442,6 +6446,12 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_LAYER2_KIND_UNKNOWN ((dmrgo_layer2_kind_t)0)
 /* Go: layer2.KindVoice. KindVoice is a voice burst: three vocoder slots around a voice SYNC pattern (burst A) or embedded signalling (bursts B to F). */
 #define DMRGO_LAYER2_KIND_VOICE ((dmrgo_layer2_kind_t)1)
+/* Go: layer2.PlacementDuplicate. PlacementDuplicate is a burst with the sequence number of the burst before it. */
+#define DMRGO_LAYER2_PLACEMENT_DUPLICATE ((dmrgo_layer2_placement_t)1)
+/* Go: layer2.PlacementInOrder. PlacementInOrder is a burst that follows the one before it, or a gap after it. */
+#define DMRGO_LAYER2_PLACEMENT_IN_ORDER ((dmrgo_layer2_placement_t)0)
+/* Go: layer2.PlacementLate. PlacementLate is a burst whose sequence number is at most 32 behind the last one. */
+#define DMRGO_LAYER2_PLACEMENT_LATE ((dmrgo_layer2_placement_t)2)
 /* Go: layer2.SyncSourceBS. SyncSourceBS is a BS-sourced (outbound) transmission. */
 #define DMRGO_LAYER2_SYNC_SOURCE_BS ((dmrgo_layer2_sync_source_t)0)
 /* Go: layer2.SyncSourceDirectTS1. SyncSourceDirectTS1 is a direct mode transmission on TDMA time slot 1. */
@@ -8181,6 +8191,22 @@ int dmrgo_layer2_new_burst(dmrgo_layer2_burst_t **out);
 int dmrgo_layer2_new_burst_from_bytes(const dmrgo_layer2_raw_burst_t *data, dmrgo_layer2_burst_t **out);
 /* Go: layer2.NewVoiceTransmitter. NewVoiceTransmitter returns a VoiceTransmitter for opts. */
 int dmrgo_layer2_new_voice_transmitter(const dmrgo_layer2_voice_transmitter_options_t *opts, dmrgo_layer2_voice_transmitter_t **out);
+/* Go: layer2.Placement.String. String returns the name of the placement. */
+int dmrgo_layer2_placement_string(dmrgo_layer2_placement_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* dmrgo_layer2_position_tracker_new makes a zero layer2.PositionTracker. */
+int dmrgo_layer2_position_tracker_new(dmrgo_layer2_position_tracker_t **out);
+/* dmrgo_layer2_position_tracker_free frees the handle. self may be NULL. */
+int dmrgo_layer2_position_tracker_free(dmrgo_layer2_position_tracker_t *self);
+/* Go: layer2.PositionTracker.Forget. Forget forgets the superframe position and keeps the sequence number, so that the next burst is placed only by its SYNC or EMB, as after a weak burst. */
+int dmrgo_layer2_position_tracker_forget(dmrgo_layer2_position_tracker_t *self);
+/* Go: layer2.PositionTracker.Header. Header tells the tracker that a voice LC header or PI header with Hint h came before the first voice burst of the call, so that the next burst is burst A. */
+int dmrgo_layer2_position_tracker_header(dmrgo_layer2_position_tracker_t *self, const dmrgo_layer2_hint_t *h);
+/* Go: layer2.PositionTracker.Place. Place takes the burst raw of one packet with its Hint h, as a transport gives them, and sets h.VoiceBurst of a voice burst to its superframe position, or to VoiceBurstUnknown when it cannot place it. */
+int dmrgo_layer2_position_tracker_place(dmrgo_layer2_position_tracker_t *self, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, int64_t *lost, dmrgo_layer2_placement_t *p);
+/* Go: layer2.PositionTracker.PlaceDecoded. PlaceDecoded places the decoded voice burst b with Hint h by the same rules as Place, for a receiver that has decoded the burst already. */
+int dmrgo_layer2_position_tracker_place_decoded(dmrgo_layer2_position_tracker_t *self, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, int64_t steps, int64_t *lost, dmrgo_layer2_placement_t *p);
+/* Go: layer2.PositionTracker.Reset. Reset forgets the call. */
+int dmrgo_layer2_position_tracker_reset(dmrgo_layer2_position_tracker_t *self);
 /* Go: layer2.RawBurst.AMBEFrames. AMBEFrames decodes the three voice slots as AMBE+2 frames with vocoder.DecodeAMBE72, as Burst.AMBEFrames does, and returns them with the combined FEC result. */
 int dmrgo_layer2_raw_burst_ambe_frames(const dmrgo_layer2_raw_burst_t *self, dmrgo_vocoder_ambe_frame_t out0[3], dmrgo_fec_result_t *out1);
 /* Go: layer2.RawBurst.BPTCPayload. BPTCPayload decodes the 196 information bits as BPTC(196,96) and returns the 96 data bits packed most significant bit first, before any CRC or RS(12,9) check. */
@@ -9695,7 +9721,7 @@ int dmrgo_ipsc_peer_list_of(const uint8_t *p, size_t p_len, dmrgo_ipsc_peer_list
 int dmrgo_ipsc_raw_append_binary(const dmrgo_ipsc_raw_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ipsc.User.AppendBinary. AppendBinary appends the packet u to dst, without the authentication trailer. */
 int dmrgo_ipsc_user_append_binary(dmrgo_ipsc_user_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: ipsc.User.Hint. Hint returns what the packet tells about its burst, for the service machines: the slot from the call info, the RTP sequence number (16 bits), the call control as the stream, burst A or E from the voice layout (the receiver places B, C, D and F by the sequence number), the data type of a data packet, EndWeak for the end flag on a voice packet, EndStrong on a terminator or a data packet, and SyncLost for BurstSyncLost. */
+/* Go: ipsc.User.Hint. Hint returns what the packet tells about its burst, for the service machines: the slot from the call info, the RTP sequence number (16 bits), the call control as the stream, burst A or E from the voice layout (a layer2.PositionTracker places B, C, D and F), the data type of a data packet, EndWeak for the end flag on a voice packet, EndStrong on a terminator or a data packet, and SyncLost for BurstSyncLost. */
 int dmrgo_ipsc_user_hint(dmrgo_ipsc_user_t *self, dmrgo_layer2_hint_t *out);
 /* Go: ipsc.User.IsVoice. IsVoice reports whether u carries a voice burst. */
 int dmrgo_ipsc_user_is_voice(const dmrgo_ipsc_user_t *self, bool *out);

@@ -7,7 +7,8 @@
 // User packets carry decoded payloads, not the 264-bit burst: three AMBE+2
 // frames without FEC, or the BPTC or rate 3/4 payload of a data burst.
 // User.RawBurst rebuilds the burst and User.SetRawBurst takes one apart, and
-// User.Hint gives the layer2.Hint for the service machines.
+// User.Hint gives the layer2.Hint for the service machines. The Hint marks
+// voice bursts A and E only; a layer2.PositionTracker places B, C, D and F.
 //
 // Decode functions never allocate and never panic. They return the static
 // errors ErrShort, ErrLength and ErrCommand, which errors.Is matches. The
