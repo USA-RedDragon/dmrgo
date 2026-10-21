@@ -936,7 +936,7 @@ func (t *Transmitter) relayStart(now time.Duration, c *Call) error {
 			t.hasNextPI, t.nextStop = false, false
 			return nil
 		}
-	case TransmitterTimedOut:
+	case TransmitterTimedOut, TransmitterAccess, TransmitterChanAuth:
 	}
 	return ErrBusy
 }

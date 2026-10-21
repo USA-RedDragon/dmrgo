@@ -248,7 +248,7 @@ func (m *Timing) Leader() (dynamicID uint8, id uint32, ok bool) {
 		return 0, 0, false
 	}
 
-	return uint8(m.lwatid >> 20), m.lwatid & MaxTimingID, m.lwatid != 0
+	return watidDI(m.lwatid), m.lwatid & MaxTimingID, m.lwatid != 0
 }
 
 // Channel reports whether the frequency has RF activity on either slot. A
@@ -276,11 +276,12 @@ func (m *Timing) Terminator(now time.Duration, dst []Output) []Output {
 
 	m.ct = pdu.ChannelTimingPDU{Generation: m.gen, SyncAge: m.sa(now), SourceIdentifier: m.id}
 	m.setLeader(m.lwatid)
-	switch {
-	case m.state == TimingLeader:
+	switch m.state {
+	case TimingLeader:
 		m.ct.Generation, m.ct.SourceDynamicIdentifier = 0, m.di
-	case m.state == TimingLeaderUnknown:
+	case TimingLeaderUnknown:
 		m.ct.SourceDynamicIdentifier = m.di
+	case TimingLeaderAndTimingUnknown, TimingLeaderAndTimingKnown:
 	}
 	switch {
 	case m.lwatid == 0:
@@ -416,7 +417,7 @@ func (m *Timing) evaluate(now time.Duration, rx *pdu.ChannelTimingPDU, octets pd
 	}
 	switch {
 	case lw < m.lwatid || lw == m.lwatid && m.older(now, rx.SyncAge):
-		if rx.SourceDynamicIdentifier <= uint8(m.lwatid>>20) {
+		if rx.SourceDynamicIdentifier <= watidDI(m.lwatid) {
 			m.schedule(now, ctResponse)
 		} else {
 			m.appoint(now, sw)
@@ -561,10 +562,17 @@ func (m *Timing) watid() uint32 {
 }
 
 func (m *Timing) sa(now time.Duration) uint16 {
-	if m.state < TimingLeaderAndTimingKnown || now < m.syncRef {
+	if m.state < TimingLeaderAndTimingKnown {
 		return 0
 	}
-	return uint16(min((now-m.syncRef)/constants.SyncAgeIncrement, saMax))
+	n := (now - m.syncRef) / constants.SyncAgeIncrement
+	switch {
+	case n < 0:
+		return 0
+	case n >= saMax:
+		return saMax
+	}
+	return uint16(n)
 }
 
 func (m *Timing) setSA(now time.Duration, sa uint16) {
@@ -594,6 +602,10 @@ func abs(v int) int {
 
 func lwatidOf(c *pdu.ChannelTimingPDU) uint32 {
 	return uint32(c.LeaderDynamicIdentifier)<<20 | c.LeaderIdentifier
+}
+
+func watidDI(w uint32) uint8 {
+	return uint8(w >> 20 & MaxDynamicID)
 }
 
 func swatidOf(c *pdu.ChannelTimingPDU) uint32 {

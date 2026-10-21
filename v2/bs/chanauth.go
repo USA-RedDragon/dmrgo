@@ -146,6 +146,9 @@ func (r *Repeater) chanAuthPDU(b *layer2.Burst, raw *layer2.RawBurst) (out layer
 		}
 		out, err := layer2.BuildDataBurst(p, enums.DataTypeCSBK, r.cc, layer2.SyncSourceBS)
 		return out, source, false, err == nil
+	case enums.DataTypePIHeader, enums.DataTypeTerminatorWithLC, enums.DataTypeMBCHeader, enums.DataTypeMBCContinuation,
+		enums.DataTypeDataHeader, enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeIdle, enums.DataTypeRate1,
+		enums.DataTypeUnifiedSingleBlock, enums.DataTypeReserved:
 	}
 	return out, 0, false, false
 }

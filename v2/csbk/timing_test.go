@@ -160,14 +160,14 @@ const (
 	rhotMax = constants.CTRHOTMax
 )
 
-func beaconOf(di uint8, id uint32, sa uint16) ctf {
-	return ctf{sa: sa, ldi: di, lid: id, cto: 3, sdi: di, sid: id}
+func beaconOf(di uint8, id uint32) ctf {
+	return ctf{ldi: di, lid: id, cto: 3, sdi: di, sid: id}
 }
 
-func following(t *testing.T, at time.Duration) *tdriver {
+func following(t *testing.T) *tdriver {
 	t.Helper()
 	d := newTiming(t, 100, 2, 1)
-	if n := timings(d.rx(at, ctf{gen: 1, sa: 20, ldi: 3, lid: 7, cto: 2, sid: 55})); n != 1 {
+	if n := timings(d.rx(minute, ctf{gen: 1, sa: 20, ldi: 3, lid: 7, cto: 2, sid: 55})); n != 1 {
 		t.Fatalf("%d timing outputs", n)
 	}
 	d.state(csbk.TimingLeaderAndTimingKnown)
@@ -224,7 +224,7 @@ func TestTimingRequestWaitsForLowerLeader(t *testing.T) {
 func TestTimingAcceptLeader(t *testing.T) {
 	t.Parallel()
 
-	d := following(t, minute)
+	d := following(t)
 	if got := d.txs(d.until(minute + rhotMax + time.Second)); len(got) != 0 {
 		t.Fatalf("sent %+v", got)
 	}
@@ -250,7 +250,7 @@ func TestTimingPropagation(t *testing.T) {
 	t.Parallel()
 
 	d := newTiming(t, 100, 2, 5)
-	out := d.rx(minute, beaconOf(3, 7, 0))
+	out := d.rx(minute, beaconOf(3, 7))
 	if timings(out) != 1 {
 		t.Fatalf("outputs %v", kinds(out))
 	}
@@ -264,7 +264,7 @@ func TestTimingPropagation(t *testing.T) {
 	}
 	at := 2 * minute
 	for range 3 {
-		d.rx(at, beaconOf(3, 7, 0))
+		d.rx(at, beaconOf(3, 7))
 		next, ok := d.m.Deadline()
 		if !ok || next < at+2160*time.Millisecond || next > at+rhotMax {
 			t.Fatalf("CT_RHOT after a propagation: %v", next-at)
@@ -275,7 +275,7 @@ func TestTimingPropagation(t *testing.T) {
 		}
 		at += minute
 	}
-	d.rx(at, beaconOf(3, 7, 0))
+	d.rx(at, beaconOf(3, 7))
 	if next, _ := d.m.Deadline(); next < at+1800*time.Millisecond || next > at+2880*time.Millisecond {
 		t.Fatalf("CT_RHOT after three cancels: %v", next-at)
 	}
@@ -285,7 +285,7 @@ func TestTimingPropagation(t *testing.T) {
 func TestTimingSyncAge(t *testing.T) {
 	t.Parallel()
 
-	d := following(t, minute)
+	d := following(t)
 	start := minute - 20*constants.SyncAgeIncrement
 	got := d.txs(d.until(start + constants.SyncAgeWarning + rhotMax + time.Second))
 	if len(got) != 1 || got[0].first < start+constants.SyncAgeWarning || got[0].f.cto != 2 || got[0].f.sdi != 0 || got[0].f.lid != 7 || got[0].n != 3 {
@@ -323,7 +323,7 @@ func TestTimingWarningRequestKept(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			d := following(t, minute)
+			d := following(t)
 			start := minute - 20*constants.SyncAgeIncrement
 			w := start + constants.SyncAgeWarning
 			d.until(w)
@@ -369,7 +369,7 @@ func TestTimingEvaluation(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			d := following(t, minute)
+			d := following(t)
 			out := d.rx(minute, tc.rx)
 			if n := timings(out); n != tc.timing {
 				t.Fatalf("%d timing outputs", n)
@@ -424,13 +424,13 @@ func TestTimingNoLeaderEvaluation(t *testing.T) {
 func TestTimingNewID(t *testing.T) {
 	t.Parallel()
 
-	d := following(t, minute)
+	d := following(t)
 	d.rx(minute, ctf{gen: 1, sa: 20, ldi: 3, lid: 7, cto: 2, sid: 100})
 	got := d.txs(d.m.Terminator(minute, nil))
 	if got[0].f.sid == 100 || got[0].f.sid == 0 || got[0].f.sid > csbk.MaxTimingID {
 		t.Fatalf("source id %d", got[0].f.sid)
 	}
-	e := following(t, minute)
+	e := following(t)
 	e.rx(minute, ctf{gen: 1, sa: 20, ldi: 2, lid: 100, cto: 2, sdi: 3, sid: 9})
 	if got := e.txs(e.m.Terminator(minute, nil)); got[0].f.sid == 100 {
 		t.Fatal("leader id equal to own id kept")
@@ -464,7 +464,7 @@ func appointed(t *testing.T) *tdriver {
 	d.rx(minute, ctf{gen: 1, sa: 40, ldi: 2, lid: 100, nl: true, cto: 2, sid: 300})
 	d.state(csbk.TimingLeader)
 	got := d.txs(d.until(minute + time.Second))
-	if len(got) != 1 || got[0].first != minute || got[0].n != 10 || got[0].f != beaconOf(2, 100, 0) {
+	if len(got) != 1 || got[0].first != minute || got[0].n != 10 || got[0].f != beaconOf(2, 100) {
 		t.Fatalf("beacon %+v", got)
 	}
 	return d
@@ -480,7 +480,7 @@ func TestTimingLeaderBeacon(t *testing.T) {
 		t.Fatalf("beacons %+v", got)
 	}
 	for _, g := range got {
-		if g.f != beaconOf(2, 100, 0) || g.n != 10 {
+		if g.f != beaconOf(2, 100) || g.n != 10 {
 			t.Fatalf("beacon %+v", g)
 		}
 	}
@@ -581,7 +581,7 @@ func TestTimingLeaderSyncAgeWrap(t *testing.T) {
 func TestTimingBusyChannel(t *testing.T) {
 	t.Parallel()
 
-	d := following(t, minute)
+	d := following(t)
 	d.rx(minute, ctf{sdi: 1, sid: 300})
 	d.m.Channel(minute, true)
 	if got := d.txs(d.until(minute + time.Minute)); len(got) != 0 {
@@ -655,14 +655,14 @@ func TestTimingConfig(t *testing.T) {
 	if out := m.Tick(time.Hour, nil); len(out) != 0 {
 		t.Fatal("Tick before Join")
 	}
-	if out := m.Burst(0, ctBurst(t, beaconOf(3, 7, 0)), layer2.Hint{}, nil); len(out) != 0 || m.State() != csbk.TimingLeaderAndTimingUnknown {
+	if out := m.Burst(0, ctBurst(t, beaconOf(3, 7)), layer2.Hint{}, nil); len(out) != 0 || m.State() != csbk.TimingLeaderAndTimingUnknown {
 		t.Fatal("Burst before Join")
 	}
 	m.Join(0)
 	if out := m.Decoded(0, nil, layer2.Hint{}, nil); len(out) != 0 {
 		t.Fatal("nil burst")
 	}
-	m.Burst(0, ctBurst(t, beaconOf(3, 7, 0)), layer2.Hint{}, nil)
+	m.Burst(0, ctBurst(t, beaconOf(3, 7)), layer2.Hint{}, nil)
 	m.Reset()
 	if _, ok := m.Deadline(); ok || m.State() != csbk.TimingLeaderAndTimingUnknown {
 		t.Fatal("Reset")

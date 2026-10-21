@@ -19,7 +19,7 @@ func newPool(t testing.TB) []layer2.RawBurst {
 	for _, in := range call(t, 1, 9, 3191868, 2, enums.Slot1, bs.Source{}, 0) {
 		p = append(p, in.raw)
 	}
-	p = append(p, wakeup(t, 1), preCSBK(t, 1, 9, 3120005), preCSBK(t, 1, 9, 3120001), header(t, 1, 9, 3120001))
+	p = append(p, wakeup(t, 1), preCSBK(t, 3120005), preCSBK(t, 3120001), header(t, 9, 3120001))
 	for _, name := range []string{"d-sms.bin", "m-sms.bin"} {
 		p = append(p, loadBin(t, name)...)
 	}

@@ -56,26 +56,26 @@ func (d *driver) feed(in []input) {
 	}
 }
 
-func header(t testing.TB, cc enums.ColorCode, target, source uint32) layer2.RawBurst {
+func header(t testing.TB, target, source uint32) layer2.RawBurst {
 	t.Helper()
-	return call(t, cc, target, source, 0, enums.Slot1, bs.Source{}, 0)[0].raw
+	return call(t, 1, target, source, 0, enums.Slot1, bs.Source{}, 0)[0].raw
 }
 
-func preCSBK(t testing.TB, cc enums.ColorCode, target, source uint32) layer2.RawBurst {
+func preCSBK(t testing.TB, source uint32) layer2.RawBurst {
 	t.Helper()
-	c := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKPreamble, PreamblePDU: &pdu.PreamblePDU{Group: true, CSBKBlocksToFollow: 3, TargetAddress: target, SourceAddress: source}}
-	b, err := layer2.BuildBurst(&c, cc, layer2.SyncSourceMS)
+	c := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKPreamble, PreamblePDU: &pdu.PreamblePDU{Group: true, CSBKBlocksToFollow: 3, TargetAddress: 9, SourceAddress: source}}
+	b, err := layer2.BuildBurst(&c, 1, layer2.SyncSourceMS)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return b
 }
 
-func slotBursts(t *testing.T, out []bs.Output, s enums.Slot) (dts []enums.DataType, sources []uint32) {
+func slotBursts(t *testing.T, out []bs.Output) (dts []enums.DataType, sources []uint32) {
 	t.Helper()
 	var b layer2.Burst
 	for _, o := range out {
-		if o.Kind != bs.OutputBurst || o.Slot != s || o.To&bs.ToRF == 0 {
+		if o.Kind != bs.OutputBurst || o.Slot != enums.Slot1 || o.To&bs.ToRF == 0 {
 			continue
 		}
 		if err := b.DecodeFromBytes(o.Burst); err != nil {
@@ -116,13 +116,13 @@ func TestChanAuthSingleSiteVoice(t *testing.T) {
 	if st := d.r.SlotState(enums.Slot1); st != bs.SlotIdle {
 		t.Fatalf("before: %v", st)
 	}
-	d.in(time.Second, enums.Slot1, rf, header(t, 1, 9, 3120005))
+	d.in(time.Second, enums.Slot1, rf, header(t, 9, 3120005))
 	if st := d.r.SlotState(enums.Slot1); st != bs.SlotChanAuth {
 		t.Fatalf("after the ChanAuth PDU: %v", st)
 	}
-	d.in(1060*time.Millisecond, enums.Slot1, rf, header(t, 1, 9, 3120007))
+	d.in(1060*time.Millisecond, enums.Slot1, rf, header(t, 9, 3120007))
 	out := d.until(1300 * time.Millisecond)
-	dts, src := slotBursts(t, out, enums.Slot1)
+	dts, src := slotBursts(t, out)
 	if len(dts) < 4 {
 		t.Fatalf("%d bursts", len(dts))
 	}
@@ -163,12 +163,12 @@ func TestChanAuthResponseTimeout(t *testing.T) {
 		hangDT  enums.DataType
 		noState bool
 	}{
-		{name: "voice in channel hang", hang: -1, burst: func(t *testing.T) layer2.RawBurst { return header(t, 1, 9, 3120005) }, rsp: 720 * time.Millisecond, prev: bs.SlotIdle, hangDT: enums.DataTypeIdle},
-		{name: "voice in call hang", burst: func(t *testing.T) layer2.RawBurst { return header(t, 1, 9, 3120005) }, rsp: 720 * time.Millisecond, prev: bs.SlotCallHang, hangDT: enums.DataTypeTerminatorWithLC},
-		{name: "Pre_CSBK in channel hang", hang: -1, burst: func(t *testing.T) layer2.RawBurst { return preCSBK(t, 1, 9, 3120005) }, rsp: 900 * time.Millisecond, prev: bs.SlotIdle, hangDT: enums.DataTypeIdle},
-		{name: "configured response", hang: -1, cfgRsp: 300 * time.Millisecond, burst: func(t *testing.T) layer2.RawBurst { return preCSBK(t, 1, 9, 3120005) }, rsp: 300 * time.Millisecond, prev: bs.SlotIdle, hangDT: enums.DataTypeIdle},
-		{name: "Pre_CSBK in call hang", burst: func(t *testing.T) layer2.RawBurst { return preCSBK(t, 1, 9, 3120005) }, noState: true, prev: bs.SlotCallHang},
-		{name: "voice to another target in call hang", burst: func(t *testing.T) layer2.RawBurst { return header(t, 1, 92, 3120005) }, noState: true, prev: bs.SlotCallHang},
+		{name: "voice in channel hang", hang: -1, burst: func(t *testing.T) layer2.RawBurst { return header(t, 9, 3120005) }, rsp: 720 * time.Millisecond, prev: bs.SlotIdle, hangDT: enums.DataTypeIdle},
+		{name: "voice in call hang", burst: func(t *testing.T) layer2.RawBurst { return header(t, 9, 3120005) }, rsp: 720 * time.Millisecond, prev: bs.SlotCallHang, hangDT: enums.DataTypeTerminatorWithLC},
+		{name: "Pre_CSBK in channel hang", hang: -1, burst: func(t *testing.T) layer2.RawBurst { return preCSBK(t, 3120005) }, rsp: 900 * time.Millisecond, prev: bs.SlotIdle, hangDT: enums.DataTypeIdle},
+		{name: "configured response", hang: -1, cfgRsp: 300 * time.Millisecond, burst: func(t *testing.T) layer2.RawBurst { return preCSBK(t, 3120005) }, rsp: 300 * time.Millisecond, prev: bs.SlotIdle, hangDT: enums.DataTypeIdle},
+		{name: "Pre_CSBK in call hang", burst: func(t *testing.T) layer2.RawBurst { return preCSBK(t, 3120005) }, noState: true, prev: bs.SlotCallHang},
+		{name: "voice to another target in call hang", burst: func(t *testing.T) layer2.RawBurst { return header(t, 92, 3120005) }, noState: true, prev: bs.SlotCallHang},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -192,7 +192,7 @@ func TestChanAuthResponseTimeout(t *testing.T) {
 				t.Fatalf("after T_BS_ChanAuthRsp: %v", st)
 			}
 			out := d.until(at + tc.rsp + 300*time.Millisecond)
-			dts, _ := slotBursts(t, out, enums.Slot1)
+			dts, _ := slotBursts(t, out)
 			for _, dt := range dts {
 				if dt != tc.hangDT {
 					t.Fatalf("hang bursts %v", dts)
@@ -209,7 +209,7 @@ func TestChanAuthMultiSite(t *testing.T) {
 	d := keyed(t, bs.Config{ChannelAuth: bs.ChannelAuthMultiSite, CallHang: -1})
 	at := 1500 * time.Millisecond
 	d.until(at)
-	out := d.in(at, enums.Slot1, bs.Source{RF: true}, header(t, 1, 9, 3120005))
+	out := d.in(at, enums.Slot1, bs.Source{RF: true}, header(t, 9, 3120005))
 	fwd := 0
 	for _, o := range filter(out, bs.OutputBurst) {
 		if o.To == bs.ToNetwork && o.Slot == enums.Slot1 {
@@ -219,10 +219,10 @@ func TestChanAuthMultiSite(t *testing.T) {
 	if st := d.r.SlotState(enums.Slot1); st != bs.SlotChanAuthSelect || fwd != 1 {
 		t.Fatalf("state %v, %d forwarded", st, fwd)
 	}
-	d.in(at+100*time.Millisecond, enums.Slot1, bs.Source{Peer: 7}, header(t, 1, 9, 3120001))
-	d.in(at+150*time.Millisecond, enums.Slot1, bs.Source{Peer: 8}, header(t, 1, 9, 3120003))
+	d.in(at+100*time.Millisecond, enums.Slot1, bs.Source{Peer: 7}, header(t, 9, 3120001))
+	d.in(at+150*time.Millisecond, enums.Slot1, bs.Source{Peer: 8}, header(t, 9, 3120003))
 	out = d.until(at + 239*time.Millisecond)
-	if dts, _ := slotBursts(t, out, enums.Slot1); len(dts) == 0 || dts[0] != enums.DataTypeIdle {
+	if dts, _ := slotBursts(t, out); len(dts) == 0 || dts[0] != enums.DataTypeIdle {
 		t.Fatalf("select bursts %v", dts)
 	}
 	d.until(at + 240*time.Millisecond)
@@ -230,7 +230,7 @@ func TestChanAuthMultiSite(t *testing.T) {
 		t.Fatalf("after T_BS_ChanAuthSel: %v", st)
 	}
 	out = d.until(at + 600*time.Millisecond)
-	dts, src := slotBursts(t, out, enums.Slot1)
+	dts, src := slotBursts(t, out)
 	if len(dts) == 0 || dts[0] != enums.DataTypeVoiceLCHeader || src[0] != 3120001 {
 		t.Fatalf("selected %v %v", dts, src)
 	}
@@ -253,13 +253,13 @@ func TestChanAuthNotInHangTime(t *testing.T) {
 		t.Fatalf("wakeup call: %+v", starts)
 	}
 	n := newDriver(t, &bs.Config{Mode: bs.ModeNetwork, ColorCode: 1, ChannelAuth: bs.ChannelAuthMultiSite})
-	n.in(0, enums.Slot1, bs.Source{Peer: 1}, header(t, 1, 9, 3120005))
+	n.in(0, enums.Slot1, bs.Source{Peer: 1}, header(t, 9, 3120005))
 	if st := n.r.SlotState(enums.Slot1); st != bs.SlotVoice {
 		t.Fatalf("network mode: %v", st)
 	}
 	s := keyed(t, bs.Config{ChannelAuth: bs.ChannelAuthSingleSite, CallHang: -1})
 	s.until(time.Second)
-	s.in(time.Second, enums.Slot1, bs.Source{Peer: 1}, header(t, 1, 9, 3120005))
+	s.in(time.Second, enums.Slot1, bs.Source{Peer: 1}, header(t, 9, 3120005))
 	if st := s.r.SlotState(enums.Slot1); st != bs.SlotVoice {
 		t.Fatalf("network burst on a single site: %v", st)
 	}
@@ -334,12 +334,12 @@ func TestChanAuthMatch(t *testing.T) {
 	rf := bs.Source{RF: true}
 	d := keyed(t, bs.Config{ChannelAuth: bs.ChannelAuthSingleSite, CallHang: -1})
 	d.until(time.Second)
-	d.in(time.Second, enums.Slot1, rf, preCSBK(t, 1, 9, 3120005))
-	d.in(1060*time.Millisecond, enums.Slot1, rf, preCSBK(t, 1, 9, 3120006))
+	d.in(time.Second, enums.Slot1, rf, preCSBK(t, 3120005))
+	d.in(1060*time.Millisecond, enums.Slot1, rf, preCSBK(t, 3120006))
 	if st := d.r.SlotState(enums.Slot1); st != bs.SlotChanAuth {
 		t.Fatalf("other source: %v", st)
 	}
-	d.in(1300*time.Millisecond, enums.Slot1, rf, preCSBK(t, 1, 9, 3120005))
+	d.in(1300*time.Millisecond, enums.Slot1, rf, preCSBK(t, 3120005))
 	if st := d.r.SlotState(enums.Slot1); st != bs.SlotIdle {
 		t.Fatalf("matching Pre_CSBK: %v", st)
 	}
@@ -360,7 +360,7 @@ func TestChanAuthMatch(t *testing.T) {
 
 	h := keyed(t, bs.Config{ChannelAuth: bs.ChannelAuthSingleSite, CallHang: 1400 * time.Millisecond})
 	h.until(1300 * time.Millisecond)
-	h.in(1300*time.Millisecond, enums.Slot1, rf, header(t, 1, 9, 3120005))
+	h.in(1300*time.Millisecond, enums.Slot1, rf, header(t, 9, 3120005))
 	if st := h.r.SlotState(enums.Slot1); st != bs.SlotChanAuth {
 		t.Fatalf("header in call hang: %v", st)
 	}
