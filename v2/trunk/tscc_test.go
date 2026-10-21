@@ -191,9 +191,9 @@ func has(log []trunk.Output, kind trunk.OutputKind) (trunk.Output, bool) {
 	return trunk.Output{}, false
 }
 
-func voiceLC(t *testing.T, group bool, target, source uint32, dt enums.DataType) layer2.RawBurst {
+func voiceLC(t *testing.T, dt enums.DataType) layer2.RawBurst {
 	t.Helper()
-	lc, err := pdu.NewVoiceLC(group, target, source, layer3.ServiceOptions{})
+	lc, err := pdu.NewVoiceLC(true, 9, 3120001, layer3.ServiceOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -244,9 +244,9 @@ func TestTSCC_EndToEnd(t *testing.T) {
 	if _, ok := has(c.log, trunk.OutputGrant); !ok {
 		t.Error("C saw no grant")
 	}
-	s.inject(a, voiceLC(t, true, 9, 3120001, enums.DataTypeVoiceLCHeader), start.Call.Slot)
+	s.inject(a, voiceLC(t, enums.DataTypeVoiceLCHeader), start.Call.Slot)
 	s.run(60 * time.Millisecond)
-	s.inject(a, voiceLC(t, true, 9, 3120001, enums.DataTypeTerminatorWithLC), start.Call.Slot)
+	s.inject(a, voiceLC(t, enums.DataTypeTerminatorWithLC), start.Call.Slot)
 	s.until(3*time.Second, func() bool { _, ok := s.event(trunk.TSCCCallEnd); return ok })
 	end, _ := s.event(trunk.TSCCCallEnd)
 	if s.relayed != 1 {

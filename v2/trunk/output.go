@@ -136,7 +136,7 @@ func (k OutputKind) String() string {
 	case OutputAccepted:
 		return "Accepted"
 	case OutputStun:
-		return "Stun"
+		return stunName
 	case OutputReverseChannel:
 		return "ReverseChannel"
 	case OutputSleep:
@@ -387,7 +387,10 @@ func (s State) String() string {
 	return unknownName
 }
 
-const unknownName = "Unknown"
+const (
+	unknownName = "Unknown"
+	stunName    = "Stun"
+)
 
 // UDT is a Unified Data Transport delivery of a TSCC: a C_UDTHD header
 // and its 1 to 4 appended rate 1/2 blocks (ETSI TS 102 361-4 clause 6.5).

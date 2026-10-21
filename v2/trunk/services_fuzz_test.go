@@ -18,10 +18,10 @@ func svcAhoy(t testing.TB, kind enums.ServiceKind, flag, group bool, mirror, ab 
 		GroupIndividual: group, AppendedBlocks: ab, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: source}}, testCC)
 }
 
-func svcAck(t testing.TB, r enums.AckReason, info uint8, target, from uint32) layer2.RawBurst {
+func svcAck(t testing.TB, r enums.AckReason, info uint8, from uint32) layer2.RawBurst {
 	t.Helper()
 	return bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckOutbound, AckOutboundPDU: &pdu.AckOutboundPDU{
-		ResponseInfo: info, ReasonCode: byte(r), TargetAddress: target, AdditionalInfo: from}}, testCC)
+		ResponseInfo: info, ReasonCode: byte(r), TargetAddress: msAddr, AdditionalInfo: from}}, testCC)
 }
 
 func newMSSvcPool(t testing.TB) burstPool {
@@ -38,12 +38,12 @@ func newMSSvcPool(t testing.TB) burstPool {
 		svcAhoy(t, enums.ServiceStatusTransport, false, true, 0x05, 1, 9, 3120002),
 		svcAhoy(t, enums.ServiceRegistration, false, false, 0, 1, msAddr, constants.GatewayIPI),
 		svcAhoy(t, enums.ServiceIndividualVoice, false, false, 0, 1, msAddr, constants.GatewaySUPLI),
-		svcAck(t, enums.ReasonAuthResponseTS, 0, msAddr, 0x123456),
-		svcAck(t, enums.ReasonRegAccepted, 3, msAddr, constants.GatewayREGI),
-		svcAck(t, enums.ReasonStatusPollAcceptedMS, 17, msAddr, 3120002),
-		svcAck(t, enums.ReasonMSAccepted, 0, msAddr, 3120002),
-		svcAck(t, enums.ReasonIPConnectionFailed, 0, msAddr, constants.GatewayIPI),
-		svcAck(t, enums.ReasonNotSupported, 0, msAddr, constants.GatewayTSI),
+		svcAck(t, enums.ReasonAuthResponseTS, 0, 0x123456),
+		svcAck(t, enums.ReasonRegAccepted, 3, constants.GatewayREGI),
+		svcAck(t, enums.ReasonStatusPollAcceptedMS, 17, 3120002),
+		svcAck(t, enums.ReasonMSAccepted, 0, 3120002),
+		svcAck(t, enums.ReasonIPConnectionFailed, 0, constants.GatewayIPI),
+		svcAck(t, enums.ReasonNotSupported, 0, constants.GatewayTSI),
 		mass(1, 0, 0), mass(0, 0, 0), mass(3, 24, msAddr),
 		voiceSuperframe(t)[5])
 }

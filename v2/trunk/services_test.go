@@ -32,10 +32,10 @@ func countKind(log []trunk.Output, kind trunk.OutputKind) int {
 	return n
 }
 
-func events(s *sim, kind trunk.TSCCOutputKind) []trunk.TSCCOutput {
+func stuns(s *sim) []trunk.TSCCOutput {
 	var out []trunk.TSCCOutput
 	for _, e := range s.events {
-		if e.Kind == kind {
+		if e.Kind == trunk.TSCCStun {
 			out = append(out, e)
 		}
 	}
@@ -188,7 +188,7 @@ func groupCall(t *testing.T, s *sim, a, b *simMS) trunk.Grant {
 	}
 	s.until(3*time.Second, func() bool { return a.ms.State() == trunk.StatePayload && b.ms.State() == trunk.StatePayload })
 	g, _ := s.event(trunk.TSCCCallStart)
-	s.inject(a, voiceLC(t, true, 9, 3120001, enums.DataTypeVoiceLCHeader), g.Call.Slot)
+	s.inject(a, voiceLC(t, enums.DataTypeVoiceLCHeader), g.Call.Slot)
 	s.run(60 * time.Millisecond)
 	return g.Call
 }
@@ -219,7 +219,7 @@ func TestInterrupt_PayloadInterrupt(t *testing.T) {
 	if !ok || rc.RC != enums.RCCeaseTransmissionCommand {
 		t.Fatalf("A reverse channel %+v %v", rc, ok)
 	}
-	s.inject(a, voiceLC(t, true, 9, 3120001, enums.DataTypeTerminatorWithLC), g.Slot)
+	s.inject(a, voiceLC(t, enums.DataTypeTerminatorWithLC), g.Slot)
 	s.until(2*time.Second, func() bool { _, ok := has(b.log, trunk.OutputProtect); return ok })
 	if e, ok := s.event(trunk.TSCCInterrupt); !ok || e.Address != 3120002 || e.Reason != trunk.ReasonNone {
 		t.Errorf("TSCCInterrupt %+v %v", e, ok)
@@ -404,7 +404,7 @@ func TestStun_Authenticated(t *testing.T) {
 	cfgs[0].Auth = xorAuth(0x5A5A5A)
 	cfgs[1].Auth = xorAuth(0x123456)
 	s := registeredSim(t, tsccConfig(), cfgs...)
-	a, b := s.ms[0], s.ms[1]
+	a := s.ms[0]
 
 	if err := s.tscc.Stun(s.now, 3120001, false); err != nil {
 		t.Fatal(err)
@@ -417,15 +417,15 @@ func TestStun_Authenticated(t *testing.T) {
 	cfg := tsccConfig()
 	cfg.Auth = xorAuth(0x5A5A5A)
 	s = registeredSim(t, cfg, cfgs...)
-	a, b = s.ms[0], s.ms[1]
+	a, b := s.ms[0], s.ms[1]
 	if err := s.tscc.Stun(s.now, 3120001, false); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.tscc.Stun(s.now, 3120002, false); err != nil {
 		t.Fatal(err)
 	}
-	s.until(3*time.Second, func() bool { return len(events(s, trunk.TSCCStun)) == 2 })
-	for _, e := range events(s, trunk.TSCCStun) {
+	s.until(3*time.Second, func() bool { return len(stuns(s)) == 2 })
+	for _, e := range stuns(s) {
 		switch e.Address {
 		case 3120001:
 			if e.Ack != enums.ReasonMSAccepted || e.Reason != trunk.ReasonNone || !a.ms.Stunned() {
@@ -445,8 +445,8 @@ func TestStun_Authenticated(t *testing.T) {
 	if err := s.tscc.Kill(s.now, 3120003); err != nil {
 		t.Fatal(err)
 	}
-	s.until(3*time.Second, func() bool { return len(events(s, trunk.TSCCStun)) == 2 })
-	for _, e := range events(s, trunk.TSCCStun) {
+	s.until(3*time.Second, func() bool { return len(stuns(s)) == 2 })
+	for _, e := range stuns(s) {
 		switch e.Address {
 		case 3120001:
 			if e.Stun != trunk.StunKill || e.Ack != enums.ReasonMSAccepted || !a.ms.Killed() || !a.ms.Off() {
