@@ -168,9 +168,9 @@ func TestReject(t *testing.T) {
 	t.Parallel()
 	r := newRepeater(t, &bs.Config{Mode: bs.ModeNetwork, ColorCode: 1})
 	in := call(t, 1, 9, 3191868, 1, enums.Slot1, bs.Source{Peer: 4}, 0)
-	out, err := r.Inbound(0, &in[0].raw, layer2.Hint{Slot: enums.Slot1}, in[0].from, nil)
-	if err != nil || len(filter(out, bs.OutputCallStart)) != 1 {
-		t.Fatalf("%v %v", out, err)
+	out := r.Inbound(0, &in[0].raw, layer2.Hint{Slot: enums.Slot1}, in[0].from, nil)
+	if len(filter(out, bs.OutputCallStart)) != 1 {
+		t.Fatalf("%v", out)
 	}
 	if err := r.Reject(enums.Slot1); err != nil {
 		t.Fatal(err)
@@ -276,11 +276,24 @@ func TestNew(t *testing.T) {
 	}
 	r := newRepeater(t, nil)
 	var raw layer2.RawBurst
-	if _, err := r.Inbound(0, &raw, layer2.Hint{}, rf, nil); !errors.Is(err, bs.ErrSlot) {
-		t.Errorf("Inbound without a slot: %v", err)
+	if out := r.Inbound(0, &raw, layer2.Hint{}, rf, nil); len(out) != 0 {
+		t.Errorf("Inbound without a slot: %+v", out)
 	}
-	if _, err := r.Lost(0, 3, rf, nil); !errors.Is(err, bs.ErrSlot) {
-		t.Errorf("Lost of slot 3: %v", err)
+	if out := r.Inbound(0, nil, layer2.Hint{Slot: enums.Slot1}, rf, nil); len(out) != 0 {
+		t.Errorf("Inbound of a nil burst: %+v", out)
+	}
+	if out := r.Lost(0, 3, rf, nil); len(out) != 0 {
+		t.Errorf("Lost of slot 3: %+v", out)
+	}
+	for _, s := range []enums.Slot{enums.SlotUnknown, 3} {
+		if err := bs.CheckSlot(s); !errors.Is(err, bs.ErrSlot) {
+			t.Errorf("CheckSlot(%d) = %v", s, err)
+		}
+	}
+	for _, s := range []enums.Slot{enums.Slot1, enums.Slot2} {
+		if err := bs.CheckSlot(s); err != nil {
+			t.Errorf("CheckSlot(%v) = %v", s, err)
+		}
 	}
 }
 

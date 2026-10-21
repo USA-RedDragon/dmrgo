@@ -27,9 +27,9 @@ func ExampleConfig_channelAuth() {
 	for now := time.Duration(0); now < 1500*time.Millisecond; now += bs.SlotTime {
 		switch now {
 		case 0:
-			_, _ = r.Inbound(now, &wake, layer2.Hint{Slot: enums.Slot1}, bs.Source{RF: true}, out[:0])
+			_ = r.Inbound(now, &wake, layer2.Hint{Slot: enums.Slot1}, bs.Source{RF: true}, out[:0])
 		case 300 * time.Millisecond:
-			_, _ = r.Inbound(now, &vh, layer2.Hint{Slot: enums.Slot1}, bs.Source{RF: true}, out[:0])
+			_ = r.Inbound(now, &vh, layer2.Hint{Slot: enums.Slot1}, bs.Source{RF: true}, out[:0])
 			fmt.Println(r.SlotState(enums.Slot1))
 		}
 		for _, o := range r.Tick(now, out[:0]) {

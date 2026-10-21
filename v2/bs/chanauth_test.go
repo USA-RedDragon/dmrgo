@@ -45,11 +45,7 @@ func (d *driver) until(end time.Duration) []bs.Output {
 func (d *driver) in(at time.Duration, s enums.Slot, from bs.Source, raw layer2.RawBurst) []bs.Output {
 	d.t.Helper()
 	pre := d.until(at)
-	var err error
-	d.out, err = d.r.Inbound(at, &raw, layer2.Hint{Slot: s}, from, d.out[:0])
-	if err != nil {
-		d.t.Fatal(err)
-	}
+	d.out = d.r.Inbound(at, &raw, layer2.Hint{Slot: s}, from, d.out[:0])
 	d.all = append(d.all, d.out...)
 	return append(pre, d.out...)
 }

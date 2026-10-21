@@ -252,9 +252,9 @@ func tinyServiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 		{"bs.Repeater", func() {
 			rep.Reset()
 			from := bs.Source{Peer: 1}
-			bsOut, _ = rep.Inbound(now, &csbk, layer2.Hint{Slot: enums.Slot2}, from, bsOut[:0])
+			bsOut = rep.Inbound(now, &csbk, layer2.Hint{Slot: enums.Slot2}, from, bsOut[:0])
 			for i := range bursts {
-				bsOut, _ = rep.Inbound(now, &bursts[i], layer2.Hint{Slot: enums.Slot1}, from, bsOut[:0])
+				bsOut = rep.Inbound(now, &bursts[i], layer2.Hint{Slot: enums.Slot1}, from, bsOut[:0])
 				bsOut = rep.Tick(now, bsOut[:0])
 				now += bs.SlotTime
 				bsOut = rep.Tick(now, bsOut[:0])

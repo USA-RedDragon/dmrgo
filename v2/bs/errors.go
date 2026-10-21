@@ -1,6 +1,10 @@
 package bs
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
+)
 
 // ConfigError is the error of New for a config field with a value out of
 // range. Match it with errors.As.
@@ -17,6 +21,15 @@ func (e *ConfigError) Error() string {
 // ErrSlot is returned for a slot other than enums.Slot1 or enums.Slot2.
 // Match it with errors.Is.
 var ErrSlot = errors.New("bs: slot must be 1 or 2")
+
+// CheckSlot returns ErrSlot for a slot other than enums.Slot1 or
+// enums.Slot2, the slots that Repeater.Inbound and Repeater.Lost drop.
+func CheckSlot(s enums.Slot) error {
+	if s != enums.Slot1 && s != enums.Slot2 {
+		return ErrSlot
+	}
+	return nil
+}
 
 var (
 	errMode        error = &ConfigError{Field: "Mode"}

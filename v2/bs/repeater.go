@@ -333,12 +333,13 @@ func (s *slot) busy() bool {
 // Inbound takes a burst received on slot h.Slot from the source from, and
 // appends the outputs to dst. The burst is decoded with what h says about
 // it. RF bursts with another color code than Config.ColorCode are dropped.
-// It returns ErrSlot when h.Slot is not Slot1 or Slot2. It allocates only
-// when dst has no room for MaxOutputs outputs.
-func (r *Repeater) Inbound(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, from Source, dst []Output) ([]Output, error) {
+// A burst whose h.Slot is not Slot1 or Slot2, or a nil raw, is dropped
+// with no output; CheckSlot tells a bad slot. It allocates only when dst
+// has no room for MaxOutputs outputs.
+func (r *Repeater) Inbound(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, from Source, dst []Output) []Output {
 	s := r.slot(h.Slot)
-	if s == nil {
-		return dst, ErrSlot
+	if s == nil || raw == nil {
+		return dst
 	}
 	dst = r.timers(now, dst)
 	r.opts = layer2.DecodeOptions{Kind: h.Kind, VoiceBurst: enums.VoiceBurstUnknown}
@@ -360,7 +361,7 @@ func (r *Repeater) Inbound(now time.Duration, raw *layer2.RawBurst, h layer2.Hin
 	hang := r.keyed
 	if !r.keyed {
 		if b == nil || from.RF && r.activation == ActivationWakeup && !wakeup {
-			return dst, nil
+			return dst
 		}
 		dst = r.key(now, dst)
 	}
@@ -372,21 +373,21 @@ func (r *Repeater) Inbound(now time.Duration, raw *layer2.RawBurst, h layer2.Hin
 		case h.SyncLost:
 			dst = r.events(now, s, s.rx.Lost(now, r.ev[:0]), dst)
 		}
-		return r.flush(now, dst), nil
+		return r.flush(now, dst)
 	}
 	r.lastActivity = now
 	if wakeup {
-		return dst, nil
+		return dst
 	}
 	if r.chanAuth != ChannelAuthOff {
 		var done bool
 		if dst, done = r.authorize(now, s, b, raw, hang, from, dst); done {
-			return dst, nil
+			return dst
 		}
 	}
 	if b.Kind == layer2.KindVoice {
 		dst = r.voice(now, s, b, nil, &h, from, dst)
-		return r.flush(now, dst), nil
+		return r.flush(now, dst)
 	}
 	switch b.SlotType.DataType {
 	case enums.DataTypeVoiceLCHeader, enums.DataTypePIHeader, enums.DataTypeTerminatorWithLC:
@@ -405,7 +406,7 @@ func (r *Repeater) Inbound(now time.Duration, raw *layer2.RawBurst, h layer2.Hin
 		dst = r.dataBlock(now, s, raw, b.SlotType.DataType, from, dst)
 	case enums.DataTypeIdle, enums.DataTypeReserved:
 	}
-	return r.flush(now, dst), nil
+	return r.flush(now, dst)
 }
 
 func isWakeup(b *layer2.Burst, raw *layer2.RawBurst) bool {
@@ -426,13 +427,13 @@ func (r *Repeater) key(now time.Duration, dst []Output) []Output {
 }
 
 // Lost tells the Repeater that the transport lost the signal of slot s,
-// such as an MMDVM TAG_LOST. A call of from on s ends. It returns ErrSlot
-// for a slot other than Slot1 or Slot2, and allocates only when dst has no
-// room for MaxOutputs outputs.
-func (r *Repeater) Lost(now time.Duration, s enums.Slot, from Source, dst []Output) ([]Output, error) {
+// such as an MMDVM TAG_LOST. A call of from on s ends. For a slot other
+// than Slot1 or Slot2 it does nothing; CheckSlot tells a bad slot. It
+// allocates only when dst has no room for MaxOutputs outputs.
+func (r *Repeater) Lost(now time.Duration, s enums.Slot, from Source, dst []Output) []Output {
 	sl := r.slot(s)
 	if sl == nil {
-		return dst, ErrSlot
+		return dst
 	}
 	dst = r.timers(now, dst)
 	if sl.owner == from && sl.repeating() {
@@ -441,7 +442,7 @@ func (r *Repeater) Lost(now time.Duration, s enums.Slot, from Source, dst []Outp
 			dst = r.endData(now, sl, voice.EndSyncLost, dst)
 		}
 	}
-	return r.flush(now, dst), nil
+	return r.flush(now, dst)
 }
 
 // Reject refuses the call on slot s, as for an access rule of the caller,
