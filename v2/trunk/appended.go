@@ -100,8 +100,8 @@ func (a *Appended) SetBinary(b []byte, n int) error {
 // significant bit first, and returns dst and the number of bits. It finds
 // the end of the data from the end marker of SetBinary; read Data for
 // binary data of a fixed length. It returns ErrUDTFormat for another
-// format and ErrUDTLength when a has no end marker. It allocates only to
-// grow dst. (ETSI TS 102 361-4 clause B.3.1)
+// format and ErrUDTLength when a has no end marker or no data before it.
+// It allocates only to grow dst. (ETSI TS 102 361-4 clause B.3.1)
 func (a *Appended) Binary(dst []byte) ([]byte, int, error) {
 	total, err := a.check(enums.UDTBinary)
 	if err != nil {
@@ -111,7 +111,7 @@ func (a *Appended) Binary(dst []byte) ([]byte, int, error) {
 	for n >= 0 && bits.Bit(a.Data[:], n) == 1 {
 		n--
 	}
-	if n < 0 {
+	if n < 1 {
 		return dst, 0, ErrUDTLength
 	}
 	k := len(dst)
