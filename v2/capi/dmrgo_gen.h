@@ -287,7 +287,7 @@ typedef struct dmrgo_pdu_motorola_radio_check_pdu_t dmrgo_pdu_motorola_radio_che
 typedef struct dmrgo_pdu_move_pdu_t dmrgo_pdu_move_pdu_t;
 /* Go: pdu.NegativeAcknowledgementPDU. NegativeAcknowledgementPDU is the negative acknowledgement response (NACK_Rsp) CSBK payload (ETSI TS 102 361-2 clause 7.1.2.4). */
 typedef struct dmrgo_pdu_negative_acknowledgement_pdu_t dmrgo_pdu_negative_acknowledgement_pdu_t;
-/* Go: pdu.PIHeader. PIHeader is the Privacy Indicator (PI) header, with fields in the DMRA layout (ETSI TS 102 361-1 clause 6.2). */
+/* Go: pdu.PIHeader. PIHeader is the Privacy Indicator (PI) header. */
 typedef struct dmrgo_pdu_pi_header_t dmrgo_pdu_pi_header_t;
 /* Go: pdu.PRFill. PRFill is the Pseudo Random Fill Bit (PR FILL) PDU of an idle burst, the 96 fixed bits of Table D.2 (ETSI TS 102 361-1 clause 9.1.9). */
 typedef struct dmrgo_pdu_pr_fill_t dmrgo_pdu_pr_fill_t;
