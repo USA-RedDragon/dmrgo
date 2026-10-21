@@ -30,7 +30,7 @@ var (
 	errDelay   = errors.New("fsktx: Delay must be from 0 to 64 symbols")
 	errNoise   = errors.New("fsktx: NoisePoleR must be from 0 to below 1")
 	errPreEmph = errors.New("fsktx: PreEmphasisHz must be a zero above 0 and a pole above it, below half of Hz")
-	errDroop   = errors.New("fsktx: Droop must be a corner above 0, a lower corner from 0 to below it, and a gain from 0 to 1")
+	errDroop   = errors.New("fsktx: Droop must be a corner above 0, a lower corner from 0 to below it, a gain from 0 to 1 and a floor from 0")
 )
 
 const polyMaxPhases = 1024
@@ -262,15 +262,18 @@ type AudioConfig struct {
 	Boost      float64
 	BoostPairs int
 	// Rates is the per-rate design of Tier1 and Tier2: the entry whose Hz
-	// is Hz sets ExactPow, Pulse.Gain, Pulse.FlatGain, CarrierHz and Boost
-	// in place of the fields above.
+	// is Hz sets ExactPow, Pulse.Gain, Pulse.FlatGain, CarrierHz, Boost and
+	// Droop in place of the fields of AudioConfig.
 	Rates []RateDesign
 	// Droop pre-compensates part of the droop of a radio that AC-couples
 	// the modulator input at the corner Hz: Tier1 and Tier2 add Gain times
 	// the deviation of the symbols low-passed at Hz, less the same
 	// low-passed at LowHz so that the mean deviation does not change. A
 	// symbol 0 restarts both, so the output does not depend on the age of
-	// the Audio. The zero value is off.
+	// the Audio. With Floor above 0 it acts only on the symbols where that
+	// difference, less Bias and less Own times the deviation of the symbol,
+	// is more than Floor from 0, by Gain times the excess. The zero value is
+	// off.
 	Droop DroopConfig
 }
 
@@ -283,12 +286,14 @@ type RateDesign struct {
 	// Taps, at a rate that is a whole multiple of 4800 and of the length
 	// of the pulse at Hz, are added to the pulse: Taps[j] is the deviation
 	// in Hz j samples after the symbol enters.
-	Taps []float64
+	Taps  []float64
+	Droop DroopConfig
 }
 
 // DroopConfig sets the droop pre-compensation of AudioConfig.
 type DroopConfig struct {
-	Hz, LowHz, Gain float64
+	Hz, LowHz, Gain  float64
+	Floor, Bias, Own float64
 }
 
 // PulseConfig sets the transmit pulse of Tier1 and Tier2.
@@ -386,10 +391,11 @@ type Audio struct {
 }
 
 type droop struct {
-	a1, a2, g float64
-	y1, y2    float64
-	c         [64]float64
-	n, lag    int
+	a1, a2, g        float64
+	floor, bias, own float64
+	y1, y2           float64
+	c                [64]float64
+	n, lag           int
 }
 
 func (d *droop) symbol(s int8) {
@@ -403,7 +409,11 @@ func (d *droop) symbol(s int8) {
 	d.y1 = d.a1*d.y1 + (1-d.a1)*v
 	d.y2 = d.a2*d.y2 + (1-d.a2)*v
 	d.n++
-	d.c[d.n&63] = d.g * (d.y1 - d.y2)
+	w := d.y1 - d.y2 - d.bias - d.own*v
+	if d.floor > 0 {
+		w = math.Copysign(max(0, math.Abs(w)-d.floor), w)
+	}
+	d.c[d.n&63] = d.g * w
 }
 
 func (d *droop) add(buf []float64) {
@@ -445,7 +455,7 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 		for _, r := range cfg.Rates {
 			if r.Hz == cfg.Hz {
 				cfg.ExactPow, cfg.Pulse.Gain, cfg.Pulse.FlatGain, cfg.CarrierHz = r.ExactPow, r.Gain, r.FlatGain, r.CarrierHz
-				cfg.Boost = r.Boost
+				cfg.Boost, cfg.Droop = r.Boost, r.Droop
 				extra = r.Taps
 				break
 			}
@@ -527,7 +537,7 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 			a.opt = newAudioOpt(cfg.Opt, cfg.Hz)
 		}
 		if d := cfg.Droop; d != (DroopConfig{}) {
-			if !(d.Hz > 0 && d.LowHz >= 0 && d.LowHz < d.Hz && d.Gain >= 0 && d.Gain <= 1) {
+			if !(d.Hz > 0 && d.LowHz >= 0 && d.LowHz < d.Hz && d.Gain >= 0 && d.Gain <= 1 && d.Floor >= 0) {
 				return nil, errDroop
 			}
 			lag := pu.span
@@ -535,7 +545,7 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 				lag += int(math.Round(float64(len(a.cbp)/2) * SymbolRate / float64(cfg.Hz)))
 			}
 			a.dr = droop{a1: math.Exp(-2 * math.Pi * d.Hz / SymbolRate), a2: math.Exp(-2 * math.Pi * d.LowHz / SymbolRate),
-				g: d.Gain, lag: min(lag, 62)}
+				g: d.Gain, floor: d.Floor, bias: d.Bias, own: d.Own, lag: min(lag, 62)}
 		}
 		return a, nil
 	default:

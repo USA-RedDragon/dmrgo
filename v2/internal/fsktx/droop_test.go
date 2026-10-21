@@ -36,4 +36,19 @@ func TestDroopRestarts(t *testing.T) {
 	if _, err := NewAudio(AudioConfig{Tier: Tier1, Droop: DroopConfig{Hz: 1, LowHz: 2, Gain: 0.1}}); err == nil {
 		t.Fatal("LowHz above Hz was taken")
 	}
+	if _, err := NewAudio(AudioConfig{Tier: Tier1, Droop: DroopConfig{Hz: 10, Gain: 0.1, Floor: -1}}); err == nil {
+		t.Fatal("a negative Floor was taken")
+	}
+	r48 := AudioConfig{Tier: Tier1, Hz: 96000, Rates: []RateDesign{{Hz: 48000, Droop: DroopConfig{Hz: 10, Gain: 0.4, Floor: 300}}}}
+	c, err := NewAudio(r48)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.dr.g != 0 {
+		t.Fatal("the Droop of the 48000 Hz design reached 96000 Hz")
+	}
+	r48.Hz = 48000
+	if c, err = NewAudio(r48); err != nil || c.dr.floor != 300 {
+		t.Fatal("the Droop of the 48000 Hz design did not reach 48000 Hz", err)
+	}
 }
