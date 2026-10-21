@@ -577,7 +577,7 @@ func decodeDefinedDataHeader(data [10]byte) DefinedDataHeader {
 	result.SAP = enums.ServiceAccessPointID(uint64(data[1]) >> 4)
 	result.LLIDDestination = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
 	result.LLIDSource = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
-	result.DefinedData = uint8(uint64(data[8]) >> 2)
+	result.DefinedData = enums.DDFormat(uint64(data[8]) >> 2)
 	result.SARQ = data[8]&0x02 != 0
 	result.FullMessageFlag = data[8]&0x01 != 0
 	result.BitPadding = uint8(uint64(data[9]))
@@ -637,7 +637,7 @@ func (s *DefinedDataHeader) Encode() ([10]byte, error) {
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *DefinedDataHeader) String() string {
-	return "DefinedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", DefinedData: " + text.Int(int64(s.DefinedData)) + ", SARQ: " + text.Bool(s.SARQ) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BitPadding: " + text.Int(int64(s.BitPadding)) + " }"
+	return "DefinedDataHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", SAP: " + text.Int(int64(s.SAP)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", DefinedData: " + s.DefinedData.String() + ", SARQ: " + text.Bool(s.SARQ) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", BitPadding: " + text.Int(int64(s.BitPadding)) + " }"
 }
 
 // ETSI TS 102 361-1 clause 9.2.11, Table 9.17B

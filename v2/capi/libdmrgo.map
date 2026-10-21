@@ -208,6 +208,7 @@
 		dmrgo_enums_data_type_is_bptc;
 		dmrgo_enums_data_type_is_reserved;
 		dmrgo_enums_data_type_string;
+		dmrgo_enums_dd_format_string;
 		dmrgo_enums_dpid_string;
 		dmrgo_enums_dpid_to_port;
 		dmrgo_enums_dpid_valid;

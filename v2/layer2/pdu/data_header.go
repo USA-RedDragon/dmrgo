@@ -185,16 +185,16 @@ type ResponsePacketHeader struct {
 //
 //dmr:const 4-7=FormatShortDataDefined
 type DefinedDataHeader struct {
-	Group             bool                       `dmr:"bit:0"`          // true when LLIDDestination is a group
-	ResponseRequested bool                       `dmr:"bit:1"`          // Response Requested (A)
-	AppendedBlocks    uint8                      `dmr:"bits:2-3+12-15"` // Appended Blocks (AB); bits 2 and 3 are the MSBs
-	SAP               enums.ServiceAccessPointID `dmr:"bits:8-11"`      // SAP identifier
-	LLIDDestination   uint32                     `dmr:"bits:16-39"`     // destination LLID
-	LLIDSource        uint32                     `dmr:"bits:40-63"`     // source LLID
-	DefinedData       uint8                      `dmr:"bits:64-69"`     // Defined Data format (DD)
-	SARQ              bool                       `dmr:"bit:70"`         // Selective Automatic Repeat reQuest (SARQ)
-	FullMessageFlag   bool                       `dmr:"bit:71"`         // Full Message Flag (F)
-	BitPadding        uint8                      `dmr:"bits:72-79"`     // Bit Padding field
+	Group             bool                       `dmr:"bit:0"`           // true when LLIDDestination is a group
+	ResponseRequested bool                       `dmr:"bit:1"`           // Response Requested (A)
+	AppendedBlocks    uint8                      `dmr:"bits:2-3+12-15"`  // Appended Blocks (AB); bits 2 and 3 are the MSBs
+	SAP               enums.ServiceAccessPointID `dmr:"bits:8-11"`       // SAP identifier
+	LLIDDestination   uint32                     `dmr:"bits:16-39"`      // destination LLID
+	LLIDSource        uint32                     `dmr:"bits:40-63"`      // source LLID
+	DefinedData       enums.DDFormat             `dmr:"bits:64-69,enum"` // Defined Data format (DD)
+	SARQ              bool                       `dmr:"bit:70"`          // Selective Automatic Repeat reQuest (SARQ)
+	FullMessageFlag   bool                       `dmr:"bit:71"`          // Full Message Flag (F)
+	BitPadding        uint8                      `dmr:"bits:72-79"`      // Bit Padding field
 }
 
 // RawDataHeader is the raw data header (R_HEAD), used when AppendedBlocks is

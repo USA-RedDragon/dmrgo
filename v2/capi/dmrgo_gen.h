@@ -482,6 +482,8 @@ typedef uint8_t dmrgo_enums_backoff_t;
 typedef uint8_t dmrgo_enums_color_code_t;
 /* Go: enums.DAID. DAID is the 4-bit Destination IP Address Identifier of a UDP/IPv4 compressed header. */
 typedef uint8_t dmrgo_enums_daid_t;
+/* Go: enums.DDFormat. DDFormat is the 6-bit Defined Data format (DD) of a defined data header: the coding of the data in its blocks. */
+typedef uint8_t dmrgo_enums_dd_format_t;
 /* Go: enums.DPID. DPID is the 7-bit UDP Destination Port Identifier of a UDP/IPv4 compressed header. */
 typedef uint8_t dmrgo_enums_dpid_t;
 /* Go: enums.DataType. DataType is the 4-bit Data Type of a slot type: the content of a general data burst (ETSI TS 102 361-1 clause 9.3.6, Table 9.22). */
@@ -857,7 +859,7 @@ struct dmrgo_pdu_defined_data_header_t {
 	dmrgo_enums_service_access_point_id_t sap;
 	uint32_t llid_destination;
 	uint32_t llid_source;
-	uint8_t defined_data;
+	dmrgo_enums_dd_format_t defined_data;
 	bool sarq;
 	bool full_message_flag;
 	uint8_t bit_padding;
@@ -2802,6 +2804,56 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ENUMS_DAID_RADIO_NETWORK ((dmrgo_enums_daid_t)0)
 /* Go: enums.DAIDUSBEthernetNetwork. USB or Ethernet network */
 #define DMRGO_ENUMS_DAIDUSB_ETHERNET_NETWORK ((dmrgo_enums_daid_t)1)
+/* Go: enums.DD7Bit. 7-bit characters */
+#define DMRGO_ENUMS_DD7_BIT ((dmrgo_enums_dd_format_t)2)
+/* Go: enums.DDBCD. BCD */
+#define DMRGO_ENUMS_DDBCD ((dmrgo_enums_dd_format_t)1)
+/* Go: enums.DDBinary. binary */
+#define DMRGO_ENUMS_DD_BINARY ((dmrgo_enums_dd_format_t)0)
+/* Go: enums.DDISO8859Part1. 8-bit ISO/IEC 8859-1 */
+#define DMRGO_ENUMS_DDISO8859_PART1 ((dmrgo_enums_dd_format_t)3)
+/* Go: enums.DDISO8859Part10. 8-bit ISO/IEC 8859-10 */
+#define DMRGO_ENUMS_DDISO8859_PART10 ((dmrgo_enums_dd_format_t)12)
+/* Go: enums.DDISO8859Part11. 8-bit ISO/IEC 8859-11 */
+#define DMRGO_ENUMS_DDISO8859_PART11 ((dmrgo_enums_dd_format_t)13)
+/* Go: enums.DDISO8859Part13. 8-bit ISO/IEC 8859-13 */
+#define DMRGO_ENUMS_DDISO8859_PART13 ((dmrgo_enums_dd_format_t)14)
+/* Go: enums.DDISO8859Part14. 8-bit ISO/IEC 8859-14 */
+#define DMRGO_ENUMS_DDISO8859_PART14 ((dmrgo_enums_dd_format_t)15)
+/* Go: enums.DDISO8859Part15. 8-bit ISO/IEC 8859-15 */
+#define DMRGO_ENUMS_DDISO8859_PART15 ((dmrgo_enums_dd_format_t)16)
+/* Go: enums.DDISO8859Part16. 8-bit ISO/IEC 8859-16 */
+#define DMRGO_ENUMS_DDISO8859_PART16 ((dmrgo_enums_dd_format_t)17)
+/* Go: enums.DDISO8859Part2. 8-bit ISO/IEC 8859-2 */
+#define DMRGO_ENUMS_DDISO8859_PART2 ((dmrgo_enums_dd_format_t)4)
+/* Go: enums.DDISO8859Part3. 8-bit ISO/IEC 8859-3 */
+#define DMRGO_ENUMS_DDISO8859_PART3 ((dmrgo_enums_dd_format_t)5)
+/* Go: enums.DDISO8859Part4. 8-bit ISO/IEC 8859-4 */
+#define DMRGO_ENUMS_DDISO8859_PART4 ((dmrgo_enums_dd_format_t)6)
+/* Go: enums.DDISO8859Part5. 8-bit ISO/IEC 8859-5 */
+#define DMRGO_ENUMS_DDISO8859_PART5 ((dmrgo_enums_dd_format_t)7)
+/* Go: enums.DDISO8859Part6. 8-bit ISO/IEC 8859-6 */
+#define DMRGO_ENUMS_DDISO8859_PART6 ((dmrgo_enums_dd_format_t)8)
+/* Go: enums.DDISO8859Part7. 8-bit ISO/IEC 8859-7 */
+#define DMRGO_ENUMS_DDISO8859_PART7 ((dmrgo_enums_dd_format_t)9)
+/* Go: enums.DDISO8859Part8. 8-bit ISO/IEC 8859-8 */
+#define DMRGO_ENUMS_DDISO8859_PART8 ((dmrgo_enums_dd_format_t)10)
+/* Go: enums.DDISO8859Part9. 8-bit ISO/IEC 8859-9 */
+#define DMRGO_ENUMS_DDISO8859_PART9 ((dmrgo_enums_dd_format_t)11)
+/* Go: enums.DDUTF16. Unicode UTF-16, big-endian unless a byte order mark says otherwise */
+#define DMRGO_ENUMS_DDUTF16 ((dmrgo_enums_dd_format_t)19)
+/* Go: enums.DDUTF16BE. Unicode UTF-16BE */
+#define DMRGO_ENUMS_DDUTF16BE ((dmrgo_enums_dd_format_t)20)
+/* Go: enums.DDUTF16LE. Unicode UTF-16LE */
+#define DMRGO_ENUMS_DDUTF16LE ((dmrgo_enums_dd_format_t)21)
+/* Go: enums.DDUTF32. Unicode UTF-32 */
+#define DMRGO_ENUMS_DDUTF32 ((dmrgo_enums_dd_format_t)22)
+/* Go: enums.DDUTF32BE. Unicode UTF-32BE */
+#define DMRGO_ENUMS_DDUTF32BE ((dmrgo_enums_dd_format_t)23)
+/* Go: enums.DDUTF32LE. Unicode UTF-32LE */
+#define DMRGO_ENUMS_DDUTF32LE ((dmrgo_enums_dd_format_t)24)
+/* Go: enums.DDUTF8. Unicode UTF-8 */
+#define DMRGO_ENUMS_DDUTF8 ((dmrgo_enums_dd_format_t)18)
 /* Go: enums.DPIDExtendedHeader. port number in the extended header */
 #define DMRGO_ENUMS_DPID_EXTENDED_HEADER ((dmrgo_enums_dpid_t)0)
 /* Go: enums.DPIDLocationProtocol. Port 5017 */
@@ -3911,6 +3963,8 @@ int dmrgo_enums_color_code_error_last(dmrgo_enums_color_code_error_t *out, bool 
 int dmrgo_enums_daid_string(dmrgo_enums_daid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.DAID.Valid. Valid reports whether daid fits the 4-bit DAID field. */
 int dmrgo_enums_daid_valid(dmrgo_enums_daid_t self, bool *out);
+/* Go: enums.DDFormat.String. String returns the name of f. */
+int dmrgo_enums_dd_format_string(dmrgo_enums_dd_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.DPID.String. */
 int dmrgo_enums_dpid_string(dmrgo_enums_dpid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.DPID.Valid. Valid reports whether dpid fits the 7-bit DPID field. */
