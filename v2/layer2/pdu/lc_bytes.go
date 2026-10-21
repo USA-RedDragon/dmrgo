@@ -183,6 +183,9 @@ func (l LCBytes) Call() (group bool, target, source uint32, ok bool) {
 // returns a *dmrgo.FieldRangeError, and changes nothing, when an address
 // does not fit in 24 bits.
 func (l *LCBytes) SetCall(group bool, target, source uint32) error {
+	if l == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	if err := checkAddresses(target, source, errLCBytesTargetRange, errLCBytesSourceRange); err != nil {
 		return err
 	}

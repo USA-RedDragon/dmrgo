@@ -3,6 +3,7 @@ package data
 import (
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
@@ -165,6 +166,9 @@ type Event struct {
 // group call, which is a link layer broadcast (RFC 1122 clause 3.2.2). It
 // does not allocate. (ETSI TS 102 361-3 clause 5.2, Table 5.1)
 func (e *Event) ICMP(mtu int) (m ip.ICMPMessage, pointer uint8, err error) {
+	if e == nil {
+		return 0, 0, dmrgo.ErrNilReceiver
+	}
 	h := &e.Message.Header
 	if e.Kind != EventDelivered && e.Kind != EventReassembled || e.Call.Group || groupOf(h) || sapOf(h) != enums.SAPIPBasedPacketData {
 		return 0, 0, ip.ErrNoICMP
