@@ -46,6 +46,14 @@ func TestRCCommand_Cast_CeaseRequest(t *testing.T) {
 	}
 }
 
+func TestRCCommand_Cast_Reserved(t *testing.T) {
+	t.Parallel()
+	rc := enums.RCCommand(0b0110)
+	if int(rc) != 6 {
+		t.Errorf("expected 6, got %d", rc)
+	}
+}
+
 func TestRCCommand_Table6_32(t *testing.T) {
 	t.Parallel()
 	for _, c := range []struct {
