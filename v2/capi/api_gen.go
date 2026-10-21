@@ -36267,6 +36267,54 @@ func dmrgo_mmdvm_dmr_short_lc_append_binary(c_self *C.dmrgo_mmdvm_dmr_short_lc_t
 	return C.DMRGO_OK
 }
 
+//export dmrgo_mmdvm_dmr_short_lc_short_lc
+func dmrgo_mmdvm_dmr_short_lc_short_lc(c_self *C.dmrgo_mmdvm_dmr_short_lc_t, c_out *C.dmrgo_pdu_short_lc_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.DMRShortLC
+	x = *(*g_transport_mmdvm.DMRShortLC)(unsafe.Pointer(&(*c_self)))
+	r0 := x.ShortLC()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_ShortLC(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_dmr_short_lc_short_lc_into
+func dmrgo_mmdvm_dmr_short_lc_short_lc_into(c_self *C.dmrgo_mmdvm_dmr_short_lc_t, c_dst *C.dmrgo_pdu_short_lc_t, c_p *C.dmrgo_pdu_short_lc_payloads_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.DMRShortLC
+	x = *(*g_transport_mmdvm.DMRShortLC)(unsafe.Pointer(&(*c_self)))
+	var a_dst g_layer2_pdu.ShortLC
+	var p_dst *g_layer2_pdu.ShortLC
+	if c_dst != nil {
+		p_dst = &a_dst
+	}
+	var a_p *g_layer2_pdu.ShortLCPayloads
+	if c_p != nil {
+		a_p = get_layer2_pdu_ShortLCPayloads(c_p).v
+	}
+	x.ShortLCInto(p_dst, a_p)
+	if c_dst != nil {
+		out_layer2_pdu_ShortLC(&(*c_dst), &a_dst, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_mmdvm_dmr_short_lc_string
 func dmrgo_mmdvm_dmr_short_lc_string(c_self *C.dmrgo_mmdvm_dmr_short_lc_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -36822,6 +36870,31 @@ func dmrgo_mmdvm_nak_string(c_self *C.dmrgo_mmdvm_nak_t, c_out *C.char, c_out_ca
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_new_dmr_short_lc
+func dmrgo_mmdvm_new_dmr_short_lc(c_slc *C.dmrgo_pdu_short_lc_t, c_out *C.dmrgo_mmdvm_dmr_short_lc_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	var a_slc g_layer2_pdu.ShortLC
+	var p_slc *g_layer2_pdu.ShortLC
+	var s_slc st_layer2_pdu_ShortLC
+	if c_slc != nil {
+		a_slc = in_layer2_pdu_ShortLC(&(*c_slc), &s_slc)
+		p_slc = &a_slc
+	}
+	r0, r1 := g_transport_mmdvm.NewDMRShortLC(p_slc)
+	_ = r0
+	if c_out != nil {
+		*(*g_transport_mmdvm.DMRShortLC)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }

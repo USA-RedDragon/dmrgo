@@ -340,6 +340,7 @@ type DMRAbort struct {
 
 // DMRShortLC is the payload of a CommandDMRShortLC frame: the Short LC that
 // the modem sends in the CACH, as MMDVMHost CDMRShortLC encodes it.
+// NewDMRShortLC builds it from a pdu.ShortLC, and ShortLC decodes it.
 //
 //dmr:frame 9
 type DMRShortLC struct {
