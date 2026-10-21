@@ -22,7 +22,7 @@ func TestAllocs(t *testing.T) {
 			j := 0
 			for now := time.Duration(0); now < 8*time.Second; now += 10 * time.Millisecond {
 				for ; j < len(in) && in[j].at <= now; j++ {
-					out, _ = r.Inbound(in[j].at, &in[j].raw, layer2.Hint{Slot: in[j].slot}, in[j].from, out[:0])
+					out = r.Inbound(in[j].at, &in[j].raw, layer2.Hint{Slot: in[j].slot}, in[j].from, out[:0])
 				}
 				if at, ok := r.Deadline(); ok && at <= now {
 					out = r.Tick(now, out[:0])
@@ -44,11 +44,11 @@ func TestAllocs(t *testing.T) {
 				o := &s.ops[k]
 				switch o.kind {
 				case 0, 1, 2:
-					out, _ = r.Inbound(o.at, &o.raw, o.h, o.from, out[:0])
+					out = r.Inbound(o.at, &o.raw, o.h, o.from, out[:0])
 				case 3:
 					out = r.Tick(o.at, out[:0])
 				case 4:
-					out, _ = r.Lost(o.at, o.slot, o.from, out[:0])
+					out = r.Lost(o.at, o.slot, o.from, out[:0])
 				case 5:
 					_ = r.Reject(o.slot)
 				}

@@ -95,10 +95,7 @@ func runXPR(t *testing.T, xpr []xprBurst, cfg *bs.Config) []bs.Output {
 			if dt, ok := dataType(&x.burst); ok && dt == enums.DataTypeIdle {
 				continue
 			}
-			out, err = r.Inbound(x.at, &x.burst, layer2.Hint{Slot: enums.Slot2}, bs.Source{Peer: 1}, out[:0])
-			if err != nil {
-				t.Fatal(err)
-			}
+			out = r.Inbound(x.at, &x.burst, layer2.Hint{Slot: enums.Slot2}, bs.Source{Peer: 1}, out[:0])
 			keep()
 		}
 		out = r.Tick(now, out[:0])

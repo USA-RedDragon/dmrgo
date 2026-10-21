@@ -74,14 +74,14 @@ func run(t *testing.T, r *bs.Repeater, in []input, end time.Duration) []bs.Outpu
 		}
 		got = append(got, out...)
 	}
-	var err error
 	now := time.Duration(0)
 	for now <= end {
 		for len(in) > 0 && in[0].at <= now {
 			h := layer2.Hint{Slot: in[0].slot}
-			if out, err = r.Inbound(in[0].at, &in[0].raw, h, in[0].from, out[:0]); err != nil {
+			if err := bs.CheckSlot(h.Slot); err != nil {
 				t.Fatal(err)
 			}
+			out = r.Inbound(in[0].at, &in[0].raw, h, in[0].from, out[:0])
 			keep()
 			in = in[1:]
 		}

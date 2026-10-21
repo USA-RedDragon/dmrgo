@@ -248,11 +248,10 @@ func bsABI(seed uint64) error {
 		if i%3 != 0 {
 			hint.Slot = enums.Slot1
 		}
-		var gerr error
-		out, gerr = gr.Inbound(now, &bursts[i], hint, src, out[:0])
+		out = gr.Inbound(now, &bursts[i], hint, src, out[:0])
 		total += len(out)
 		cn, ch, craw := C.int64_t(now), cHint(hint), cRaw(&bursts[i])
-		err := runAppend(h, "Repeater.Inbound", out, gerr, fromC_bs_Output,
+		err := runAppend(h, "Repeater.Inbound", out, nil, fromC_bs_Output,
 			func(it, a *C.size_t) C.int { return C.dmrgo_bs_repeater_inbound_need(cr, cn, craw, ch, csrc, it, a) },
 			func(d *C.dmrgo_bs_output_t, c C.size_t, n, nn *C.size_t, _ unsafe.Pointer, _ C.size_t, _, _ *C.size_t) C.int {
 				return C.dmrgo_bs_repeater_inbound(cr, cn, craw, ch, csrc, d, c, n, nn)

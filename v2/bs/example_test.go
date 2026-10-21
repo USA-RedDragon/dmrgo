@@ -42,12 +42,7 @@ func ExampleRepeater() {
 		if next+33 <= len(data) && now >= time.Duration(next/33)*60*time.Millisecond {
 			raw := layer2.RawBurst(data[next : next+33])
 			next += 33
-			out, err = r.Inbound(now, &raw, layer2.Hint{Slot: enums.Slot2}, bs.Source{RF: true}, out[:0])
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-			handle(out)
+			handle(r.Inbound(now, &raw, layer2.Hint{Slot: enums.Slot2}, bs.Source{RF: true}, out[:0]))
 		}
 		handle(r.Tick(now, out[:0]))
 	}

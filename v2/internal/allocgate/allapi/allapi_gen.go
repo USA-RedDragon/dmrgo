@@ -70,6 +70,7 @@ var api = [...]any{
 	(*bs.Repeater).Tick,
 	bs.Activation.String,
 	bs.ChannelAuth.String,
+	bs.CheckSlot,
 	bs.Mode.String,
 	bs.New,
 	bs.OutputKind.String,

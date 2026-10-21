@@ -79,11 +79,11 @@ func runScript(t *testing.T, p []layer2.RawBurst, data []byte) {
 		var err error
 		switch o.kind {
 		case 0, 1, 2:
-			out, err = r.Inbound(o.at, &o.raw, o.h, o.from, out[:0])
+			out = r.Inbound(o.at, &o.raw, o.h, o.from, out[:0])
 		case 3:
 			out = r.Tick(o.at, out[:0])
 		case 4:
-			out, err = r.Lost(o.at, o.slot, o.from, out[:0])
+			out = r.Lost(o.at, o.slot, o.from, out[:0])
 		case 5:
 			err = r.Reject(o.slot)
 			out = out[:0]
