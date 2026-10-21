@@ -164,7 +164,7 @@ func (l *link) fromMaster(out []session.Output) {
 			continue
 		case session.OutputLogin:
 			l.events = append(l.events, o)
-			l.fromMaster(l.master.Admit(l.now, l.salt, l.pass, nil))
+			l.fromMaster(l.master.Admit(l.salt, l.pass, nil))
 			continue
 		default:
 		}

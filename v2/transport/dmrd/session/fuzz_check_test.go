@@ -108,7 +108,7 @@ func checkSession(t *testing.T, data []byte) {
 			step(func(o []session.Output) []session.Output {
 				o = m.Packet(now, pk, o)
 				if m.State() == session.StateLogin {
-					o = m.Admit(now, 7, []byte("pw"), o)
+					o = m.Admit(7, []byte("pw"), o)
 				}
 				return o
 			})

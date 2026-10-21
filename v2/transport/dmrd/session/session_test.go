@@ -298,7 +298,7 @@ func TestHBRPSpecToken(t *testing.T) {
 	m, _ := session.NewMaster(&session.MasterConfig{Dialect: dmrd.DialectHBRP})
 	out := m.Packet(0, []byte("RPTL00040178"), nil)
 	sameKinds(t, kinds(out), session.OutputLogin)
-	out = m.Admit(0, 0x0A7ED498, []byte("DL5DI"), nil)
+	out = m.Admit(0x0A7ED498, []byte("DL5DI"), nil)
 	if len(out) != 1 || string(out[0].Packet) != "MSTACK000401780A7ED498" {
 		t.Fatalf("salt %q", sends(out))
 	}
@@ -351,7 +351,7 @@ func TestMasterBeforeLogin(t *testing.T) {
 	if out := m.Packet(0, ctl(dmrd.CommandRPTCL, 5), nil); len(out) != 0 {
 		t.Fatal("RPTCL before login")
 	}
-	if out := m.Admit(0, 1, nil, nil); len(out) != 0 {
+	if out := m.Admit(1, nil, nil); len(out) != 0 {
 		t.Fatal("admit before login")
 	}
 	if out := m.Refuse(0, nil); len(out) != 0 {
@@ -373,7 +373,7 @@ func TestMasterLogin(t *testing.T) {
 	if out := m.Packet(s, ctl(dmrd.CommandRPTL, 5), nil); len(out) != 0 {
 		t.Fatal("second RPTL while waiting for Admit")
 	}
-	salt := sends(m.Admit(s, 7, []byte("pw"), nil))
+	salt := sends(m.Admit(7, []byte("pw"), nil))
 	if again := sends(m.Packet(2*s, ctl(dmrd.CommandRPTL, 5), nil)); len(again) != 1 || !bytes.Equal(again[0], salt[0]) {
 		t.Fatal("RPTL again does not get the same salt")
 	}
@@ -420,7 +420,7 @@ func TestMasterRefusals(t *testing.T) {
 		return len(out) == 1 && command(t, out[0].Packet, d) == dmrd.CommandMSTNAK
 	}
 	m.Packet(40*s, ctl(dmrd.CommandRPTL, 5), nil)
-	m.Admit(40*s, 8, []byte("pw"), nil)
+	m.Admit(8, []byte("pw"), nil)
 	bad, _ := auth.Token(d, 8, []byte("px"))
 	out := m.Packet(41*s, rptk(5, bad), nil)
 	if len(out) != 2 || out[1].Reason != session.ReasonRefused || m.State() != session.StateIdle {
