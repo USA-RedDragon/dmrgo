@@ -1,9 +1,9 @@
 package bs
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"

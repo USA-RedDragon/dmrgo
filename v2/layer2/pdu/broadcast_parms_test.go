@@ -156,7 +156,9 @@ func checkBroadcastEncode(t *testing.T, b *pdu.BroadcastPDU, got [8]byte) {
 }
 
 func FuzzBroadcastParms(f *testing.F) {
-	broadcastSeeds(func(typ uint8, p1 uint16, reg bool, backoff uint8, sys uint16, p2 uint32) { f.Add(typ, p1, reg, backoff, sys, p2) })
+	broadcastSeeds(func(typ uint8, p1 uint16, reg bool, backoff uint8, sys uint16, p2 uint32) {
+		f.Add(typ, p1, reg, backoff, sys, p2)
+	})
 	f.Fuzz(fuzzBroadcastParms)
 }
 

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
-
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/csbk"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"

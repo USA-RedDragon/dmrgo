@@ -2,11 +2,11 @@ package pdu
 
 import (
 	"errors"
-	"github.com/USA-RedDragon/dmrgo/v2"
 	"slices"
 	"unicode/utf16"
 	"unicode/utf8"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"

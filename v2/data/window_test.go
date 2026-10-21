@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
-
 	"github.com/USA-RedDragon/dmrgo/v2/data"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
