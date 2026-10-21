@@ -599,6 +599,7 @@
 		dmrgo_layer2_raw_burst_bptc_reserved;
 		dmrgo_layer2_raw_burst_emb;
 		dmrgo_layer2_raw_burst_embedded_data;
+		dmrgo_layer2_raw_burst_info;
 		dmrgo_layer2_raw_burst_mmdvm_host_payload;
 		dmrgo_layer2_raw_burst_rate1_payload;
 		dmrgo_layer2_raw_burst_rate34_payload;
@@ -607,6 +608,7 @@
 		dmrgo_layer2_raw_burst_set_bptc_reserved;
 		dmrgo_layer2_raw_burst_set_emb;
 		dmrgo_layer2_raw_burst_set_embedded_data;
+		dmrgo_layer2_raw_burst_set_info;
 		dmrgo_layer2_raw_burst_set_rate1_payload;
 		dmrgo_layer2_raw_burst_set_rate34_payload;
 		dmrgo_layer2_raw_burst_set_slot_type;

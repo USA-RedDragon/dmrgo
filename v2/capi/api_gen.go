@@ -17549,6 +17549,24 @@ func dmrgo_layer2_raw_burst_embedded_data(c_self *C.dmrgo_layer2_raw_burst_t, c_
 	return C.DMRGO_OK
 }
 
+//export dmrgo_layer2_raw_burst_info
+func dmrgo_layer2_raw_burst_info(c_self *C.dmrgo_layer2_raw_burst_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*(*g_layer2.RawBurst)(unsafe.Pointer(c_self))).Info()
+	_ = r0
+	if c_out != nil {
+		*(*[25]byte)(unsafe.Pointer(&(*(*[25]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_layer2_raw_burst_mmdvm_host_payload
 func dmrgo_layer2_raw_burst_mmdvm_host_payload(c_self *C.dmrgo_layer2_raw_burst_t, c_dt C.dmrgo_enums_data_type_t, c_out0 *C.uint8_t, c_out1 *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -17704,6 +17722,26 @@ func dmrgo_layer2_raw_burst_set_embedded_data(c_self *C.dmrgo_layer2_raw_burst_t
 	(*g_layer2.RawBurst)(unsafe.Pointer(c_self)).SetEmbeddedData(*(*[4]byte)(unsafe.Pointer(c_d)))
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer2_raw_burst_set_info
+func dmrgo_layer2_raw_burst_set_info(c_self *C.dmrgo_layer2_raw_burst_t, c_p *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*g_layer2.RawBurst)(unsafe.Pointer(c_self)).SetInfo(*(*[25]byte)(unsafe.Pointer(c_p)))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }
@@ -35078,7 +35116,7 @@ func dmrgo_ipsc_user_raw_burst(c_self *C.dmrgo_ipsc_user_t, c_cc C.dmrgo_enums_c
 }
 
 //export dmrgo_ipsc_user_set_raw_burst
-func dmrgo_ipsc_user_set_raw_burst(c_self *C.dmrgo_ipsc_user_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t) (rc C.int) {
+func dmrgo_ipsc_user_set_raw_burst(c_self *C.dmrgo_ipsc_user_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_out *C.dmrgo_fec_result_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -35094,13 +35132,17 @@ func dmrgo_ipsc_user_set_raw_burst(c_self *C.dmrgo_ipsc_user_t, c_raw *C.dmrgo_l
 	}
 	var a_h g_layer2.Hint
 	a_h = in_layer2_Hint(&(*c_h))
-	r0 := x.SetRawBurst(*(*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h)
+	r0, r1 := x.SetRawBurst(*(*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h)
 	out_transport_ipsc_User(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		out_fec_Result(&(*c_out), &r0, oc)
+	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	if r0 != nil {
-		return setErr(r0)
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }

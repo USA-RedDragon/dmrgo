@@ -320,7 +320,7 @@ func (b *Burst) decodeData(dataType *enums.DataType, threshold int) error {
 	if dataType != nil {
 		b.SlotType.DataType = *dataType
 	}
-	b.payloadBits, b.FEC.Payload = b.deinterleave(b.raw.info(), b.SlotType.DataType)
+	b.payloadBits, b.FEC.Payload = b.deinterleave(b.raw.Info(), b.SlotType.DataType)
 	var err error
 	b.Data, b.FEC.PDU, err = decodePayload(&b.store, b.SlotType.DataType, &b.payload, b.SyncPattern)
 	b.decodedDataType = b.SlotType.DataType
@@ -360,7 +360,7 @@ func (b *Burst) isEmbeddedDataBurst() bool {
 	if emb := b.raw.EMB(); emb.FEC.Uncorrectable || emb.ColorCode != st.ColorCode {
 		return false
 	}
-	p, _, res := bptc.Decode196(b.raw.info())
+	p, _, res := bptc.Decode196(b.raw.Info())
 	if res.Uncorrectable || res.ErrorsCorrected > embeddedDataMaxBPTCErrors {
 		return false
 	}

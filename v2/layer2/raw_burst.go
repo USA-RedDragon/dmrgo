@@ -75,12 +75,28 @@ func (r *RawBurst) SetSlotType(st pdu.SlotType) error {
 	return nil
 }
 
-func (r *RawBurst) info() [25]byte {
+// Info returns the 196 information bits of a data burst, burst bits 0 to
+// 97 and 166 to 263, before any FEC, packed most significant bit first. The
+// low 4 bits of octet 24 are 0. An IPSC BurstRaw packet carries them in
+// this form (ETSI TS 102 361-1 clause 4.2.2).
+func (r RawBurst) Info() [25]byte {
 	var p [25]byte
 	copy(p[:12], r[:12])
 	bits.Copy(p[:], 96, r[:], 96, 2)
 	bits.Copy(p[:], infoFirstEnd, r[:], infoSecondStart, infoSecondEnd-infoSecondStart)
 	return p
+}
+
+// SetInfo writes the 196 information bits p, packed as Info returns them,
+// and keeps the slot type and SYNC. It returns a *dmrgo.FieldRangeError,
+// and changes nothing, when a padding bit, one of the low 4 bits of octet
+// 24, is set.
+func (r *RawBurst) SetInfo(p [25]byte) error {
+	if p[24]&0x0F != 0 {
+		return errRawBurstInfoRange
+	}
+	r.setInfo(&p)
+	return nil
 }
 
 func (r *RawBurst) setInfo(p *[25]byte) {
@@ -96,7 +112,7 @@ func (r *RawBurst) setInfo(p *[25]byte) {
 // translator that needs a payload that MMDVMHost accepts calls
 // MMDVMHostPayload instead.
 func (r RawBurst) BPTCPayload() ([12]byte, fec.Result) {
-	p, _, res := bptc.Decode196(r.info())
+	p, _, res := bptc.Decode196(r.Info())
 	return p, res
 }
 
@@ -116,7 +132,7 @@ func (r *RawBurst) SetBPTCPayload(p [12]byte) {
 // Burst.BPTCReserved holds them, with the BPTC result. Motorola Capacity Max
 // sets R(2) to flag RAS (ETSI TS 102 361-1 clause B.1.1).
 func (r RawBurst) BPTCReserved() (uint8, fec.Result) {
-	_, res, result := bptc.Decode196(r.info())
+	_, res, result := bptc.Decode196(r.Info())
 	return res, result
 }
 
@@ -132,7 +148,7 @@ func (r *RawBurst) SetBPTCReserved(res uint8) error {
 	if res>>3 != 0 {
 		return errRawBurstBPTCReservedRange
 	}
-	info := r.info()
+	info := r.Info()
 	_, cur, _ := bptc.Decode196(info)
 	delta := bptc.Encode196([12]byte{}, res^cur)
 	for i := range info {
@@ -146,7 +162,7 @@ func (r *RawBurst) SetBPTCReserved(res uint8) error {
 // code and returns the 144 data bits packed most significant bit first
 // (ETSI TS 102 361-1 clause B.1.1).
 func (r RawBurst) Rate34Payload() ([18]byte, fec.Result) {
-	return trellis.Decode(r.info())
+	return trellis.Decode(r.Info())
 }
 
 // SetRate34Payload trellis encodes p into the 196 information bits.
@@ -162,7 +178,7 @@ func (r *RawBurst) SetRate34Payload(p [18]byte) {
 // most significant bit first: information bits 0 to 95 and 100 to 195. The
 // fec.Result is zero (ETSI TS 102 361-1 Table B.10B).
 func (r RawBurst) Rate1Payload() ([24]byte, fec.Result) {
-	info := r.info()
+	info := r.Info()
 	var p [24]byte
 	copy(p[:12], info[:12])
 	bits.Copy(p[:], 96, info[:], 100, 96)

@@ -4109,7 +4109,7 @@ struct dmrgo_ipsc_payload_t {
 	uint8_t flags[2];
 	/* Bits is the payload size in bits: 96 for a BPTC burst, 144 for rate 3/4, 196 for BurstRaw. */
 	uint16_t bits;
-	/* Octets holds the payload, the first (Bits+7)/8 octets. */
+	/* Octets holds the payload, padded with zeros to whole 16-bit words: 12 octets for 96 bits, 18 for 144 and 26 for 196. */
 	uint8_t octets[26];
 	/* Trailer holds the octets after the payload, TrailerLen of them: the slot type, the unknown octets and the RSSI. */
 	uint8_t trailer[16];
@@ -8219,6 +8219,8 @@ int dmrgo_layer2_raw_burst_bptc_reserved(const dmrgo_layer2_raw_burst_t *self, u
 int dmrgo_layer2_raw_burst_emb(const dmrgo_layer2_raw_burst_t *self, dmrgo_pdu_embedded_signalling_t *out);
 /* Go: layer2.RawBurst.EmbeddedData. EmbeddedData returns the 32-bit embedded signalling field, burst bits 116 to 147, of a voice burst B to F or a data burst without a SYNC pattern: an embedded LC fragment, a Null embedded message or an outbound RC, still FEC coded. */
 int dmrgo_layer2_raw_burst_embedded_data(const dmrgo_layer2_raw_burst_t *self, uint8_t out[4]);
+/* Go: layer2.RawBurst.Info. Info returns the 196 information bits of a data burst, burst bits 0 to 97 and 166 to 263, before any FEC, packed most significant bit first. */
+int dmrgo_layer2_raw_burst_info(const dmrgo_layer2_raw_burst_t *self, uint8_t out[25]);
 /* Go: layer2.RawBurst.MMDVMHostPayload. MMDVMHostPayload returns the BPTC(196,96) payload of r, as BPTCPayload returns it, and whether MMDVMHost accepts it from the network for a burst of dt, as MMDVMHostAccepts reports. */
 int dmrgo_layer2_raw_burst_mmdvm_host_payload(const dmrgo_layer2_raw_burst_t *self, dmrgo_enums_data_type_t dt, uint8_t out0[12], bool *out1);
 /* Go: layer2.RawBurst.Rate1Payload. Rate1Payload returns the 192 uncoded data bits of a Rate 1 burst packed most significant bit first: information bits 0 to 95 and 100 to 195. */
@@ -8235,6 +8237,8 @@ int dmrgo_layer2_raw_burst_set_bptc_reserved(dmrgo_layer2_raw_burst_t *self, uin
 int dmrgo_layer2_raw_burst_set_emb(dmrgo_layer2_raw_burst_t *self, const dmrgo_pdu_embedded_signalling_t *e);
 /* Go: layer2.RawBurst.SetEmbeddedData. SetEmbeddedData writes d into the embedded signalling field. */
 int dmrgo_layer2_raw_burst_set_embedded_data(dmrgo_layer2_raw_burst_t *self, const uint8_t d[4]);
+/* Go: layer2.RawBurst.SetInfo. SetInfo writes the 196 information bits p, packed as Info returns them, and keeps the slot type and SYNC. */
+int dmrgo_layer2_raw_burst_set_info(dmrgo_layer2_raw_burst_t *self, const uint8_t p[25]);
 /* Go: layer2.RawBurst.SetRate1Payload. SetRate1Payload writes p into the 192 data bits of a Rate 1 burst. */
 int dmrgo_layer2_raw_burst_set_rate1_payload(dmrgo_layer2_raw_burst_t *self, const uint8_t p[24]);
 /* Go: layer2.RawBurst.SetRate34Payload. SetRate34Payload trellis encodes p into the 196 information bits. */
@@ -9734,7 +9738,7 @@ int dmrgo_ipsc_user_is_voice(const dmrgo_ipsc_user_t *self, bool *out);
 /* Go: ipsc.User.RawBurst. RawBurst rebuilds the 264-bit burst of the packet. */
 int dmrgo_ipsc_user_raw_burst(dmrgo_ipsc_user_t *self, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
 /* Go: ipsc.User.SetRawBurst. SetRawBurst sets Burst and Voice or Data from the 264-bit burst raw and what h says it is, as a machine Output gives it, in the form an XPR 8400 sends: KindVoice with a VoiceBurst of A to F, which picks the layout (the full LC of burst E stays as it is in u.Voice.LC), or KindData with a DataType. */
-int dmrgo_ipsc_user_set_raw_burst(dmrgo_ipsc_user_t *self, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h);
+int dmrgo_ipsc_user_set_raw_burst(dmrgo_ipsc_user_t *self, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_fec_result_t *out);
 /* dmrgo_ipsc_auth_key_free frees the handle. self may be NULL. */
 int dmrgo_ipsc_auth_key_free(dmrgo_ipsc_auth_key_t *self);
 /* dmrgo_ipsc_auth_key_sign_need sets *items and *arena to the room that dmrgo_ipsc_auth_key_sign needs for these arguments, without a change to the handle. */

@@ -115,6 +115,7 @@ var (
 
 	errBurstBPTCReservedRange    = &dmrgo.FieldRangeError{Type: "Burst", Field: "BPTCReserved", Bits: 3}
 	errRawBurstBPTCReservedRange = &dmrgo.FieldRangeError{Type: "RawBurst", Field: "BPTCReserved", Bits: 3}
+	errRawBurstInfoRange         = &dmrgo.FieldRangeError{Type: "RawBurst", Field: "SetInfo", Bits: 196}
 )
 
 var (

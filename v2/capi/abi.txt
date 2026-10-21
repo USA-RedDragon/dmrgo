@@ -1850,7 +1850,7 @@ sym int dmrgo_ipsc_user_append_binary(dmrgo_ipsc_user_t *self, uint8_t *dst, siz
 sym int dmrgo_ipsc_user_hint(dmrgo_ipsc_user_t *self, dmrgo_layer2_hint_t *out);
 sym int dmrgo_ipsc_user_is_voice(const dmrgo_ipsc_user_t *self, bool *out);
 sym int dmrgo_ipsc_user_raw_burst(dmrgo_ipsc_user_t *self, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
-sym int dmrgo_ipsc_user_set_raw_burst(dmrgo_ipsc_user_t *self, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h);
+sym int dmrgo_ipsc_user_set_raw_burst(dmrgo_ipsc_user_t *self, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_fec_result_t *out);
 sym int dmrgo_layer2_build_burst(const dmrgo_layer2_data_t *d, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
 sym int dmrgo_layer2_build_data_burst(const uint8_t p[12], dmrgo_enums_data_type_t dt, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
 sym int dmrgo_layer2_build_rate1_data_burst(const uint8_t p[24], dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
@@ -1934,6 +1934,7 @@ sym int dmrgo_layer2_raw_burst_bptc_payload(const dmrgo_layer2_raw_burst_t *self
 sym int dmrgo_layer2_raw_burst_bptc_reserved(const dmrgo_layer2_raw_burst_t *self, uint8_t *out0, dmrgo_fec_result_t *out1);
 sym int dmrgo_layer2_raw_burst_emb(const dmrgo_layer2_raw_burst_t *self, dmrgo_pdu_embedded_signalling_t *out);
 sym int dmrgo_layer2_raw_burst_embedded_data(const dmrgo_layer2_raw_burst_t *self, uint8_t out[4]);
+sym int dmrgo_layer2_raw_burst_info(const dmrgo_layer2_raw_burst_t *self, uint8_t out[25]);
 sym int dmrgo_layer2_raw_burst_mmdvm_host_payload(const dmrgo_layer2_raw_burst_t *self, dmrgo_enums_data_type_t dt, uint8_t out0[12], bool *out1);
 sym int dmrgo_layer2_raw_burst_rate1_payload(const dmrgo_layer2_raw_burst_t *self, uint8_t out0[24], dmrgo_fec_result_t *out1);
 sym int dmrgo_layer2_raw_burst_rate34_payload(const dmrgo_layer2_raw_burst_t *self, uint8_t out0[18], dmrgo_fec_result_t *out1);
@@ -1942,6 +1943,7 @@ sym int dmrgo_layer2_raw_burst_set_bptc_payload(dmrgo_layer2_raw_burst_t *self, 
 sym int dmrgo_layer2_raw_burst_set_bptc_reserved(dmrgo_layer2_raw_burst_t *self, uint8_t res);
 sym int dmrgo_layer2_raw_burst_set_emb(dmrgo_layer2_raw_burst_t *self, const dmrgo_pdu_embedded_signalling_t *e);
 sym int dmrgo_layer2_raw_burst_set_embedded_data(dmrgo_layer2_raw_burst_t *self, const uint8_t d[4]);
+sym int dmrgo_layer2_raw_burst_set_info(dmrgo_layer2_raw_burst_t *self, const uint8_t p[25]);
 sym int dmrgo_layer2_raw_burst_set_rate1_payload(dmrgo_layer2_raw_burst_t *self, const uint8_t p[24]);
 sym int dmrgo_layer2_raw_burst_set_rate34_payload(dmrgo_layer2_raw_burst_t *self, const uint8_t p[18]);
 sym int dmrgo_layer2_raw_burst_set_slot_type(dmrgo_layer2_raw_burst_t *self, const dmrgo_pdu_slot_type_t *st);

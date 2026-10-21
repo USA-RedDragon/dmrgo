@@ -150,7 +150,7 @@ func TestXPR8400CallsRebuild(t *testing.T) {
 			}
 		}
 		h.VoiceBurst = pos
-		if err := back.SetRawBurst(raw, h); err != nil {
+		if _, err := back.SetRawBurst(raw, h); err != nil {
 			t.Fatalf("%x: SetRawBurst %v", c.p, err)
 		}
 		if u.IsVoice() {

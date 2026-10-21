@@ -9,6 +9,9 @@
 // User.RawBurst rebuilds the burst and User.SetRawBurst takes one apart, and
 // User.Hint gives the layer2.Hint for the service machines. The Hint marks
 // voice bursts A and E only; a layer2.PositionTracker places B, C, D and F.
+// SetRawBurst returns the FEC result of the burst and sends a data block
+// that it cannot correct as BurstRaw, the 196 information bits, as an XPR
+// 8400 does; RawBurst rebuilds the burst of a BurstRaw packet.
 //
 // Decode functions never allocate and never panic. They return the static
 // errors ErrShort, ErrLength and ErrCommand, which errors.Is matches. The

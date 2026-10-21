@@ -3,6 +3,7 @@ package ipsc
 import (
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
@@ -65,7 +66,8 @@ type Payload struct {
 	// Bits is the payload size in bits: 96 for a BPTC burst, 144 for rate
 	// 3/4, 196 for BurstRaw.
 	Bits uint16
-	// Octets holds the payload, the first (Bits+7)/8 octets.
+	// Octets holds the payload, padded with zeros to whole 16-bit words: 12
+	// octets for 96 bits, 18 for 144 and 26 for 196.
 	Octets [26]byte
 	// Trailer holds the octets after the payload, TrailerLen of them: the
 	// slot type, the unknown octets and the RSSI.
@@ -88,13 +90,18 @@ func (d *Payload) SlotType() (pdu.SlotTypeInfo, bool) {
 }
 
 // RSSI returns the last two trailer octets and whether the packet has them.
-// ok is false for a TrailerLen over the length of Trailer.
+// An XPR 8400 cuts them from some BurstRaw packets with the six unknown
+// octets, and then RSSI reports none. ok is false for a TrailerLen over the
+// length of Trailer.
 func (d *Payload) RSSI() (uint16, bool) {
 	if d == nil {
 		return 0, false
 	}
-
-	if d.Flags[0]&0x80 == 0 || d.TrailerLen < 2 || int(d.TrailerLen) > len(d.Trailer) {
+	n := uint8(4)
+	if d.Flags[1]&0x40 != 0 {
+		n += 6
+	}
+	if d.Flags[0]&0x80 == 0 || d.TrailerLen < n || int(d.TrailerLen) > len(d.Trailer) {
 		return 0, false
 	}
 	return uint16(d.Trailer[d.TrailerLen-2])<<8 | uint16(d.Trailer[d.TrailerLen-1]), true
@@ -212,7 +219,7 @@ func decodeData(p []byte) (Payload, error) {
 	d.HasBody = true
 	d.Flags = [2]byte{p[34], p[35]}
 	d.Bits = uint16(p[36])<<8 | uint16(p[37])
-	n := (int(d.Bits) + 7) / 8
+	n := (int(d.Bits) + 15) / 16 * 2
 	if n > len(d.Octets) || 38+n > len(p) || len(p)-38-n > len(d.Trailer) {
 		return d, ErrLength
 	}
@@ -279,7 +286,7 @@ func appendPayload(dst []byte, d Payload) ([]byte, error) {
 	if !d.HasBody {
 		return dst, nil
 	}
-	n := (int(d.Bits) + 7) / 8
+	n := (int(d.Bits) + 15) / 16 * 2
 	if n > len(d.Octets) || int(d.TrailerLen) > len(d.Trailer) {
 		return dst, errPayload
 	}
@@ -333,9 +340,12 @@ func (u *User) Hint() layer2.Hint {
 // the FEC of its AMBE frames, the voice SYNC of src at burst A, and the EMB
 // and embedded data as the repeater sent them. A data burst gets the BPTC
 // or rate 3/4 coding of its payload, the data SYNC of src and the slot type
-// of the packet, or of cc and the burst type when the packet has none. It
-// returns an error for BurstSyncLost, BurstRaw and other packets that carry
-// no burst it can rebuild, and the errors of the layer2 builders.
+// of the packet, or of cc and the burst type when the packet has none. A
+// BurstRaw packet gives its 196 information bits as they are, with the data
+// SYNC of src and the slot type of the packet; one without a slot type
+// returns an error. It returns an error for BurstSyncLost and other packets
+// that carry no burst it can rebuild, and the errors of the layer2
+// builders.
 func (u *User) RawBurst(cc enums.ColorCode, src layer2.SyncSource) (layer2.RawBurst, error) {
 	if u == nil {
 		return layer2.RawBurst{}, dmrgo.ErrNilReceiver
@@ -372,8 +382,31 @@ func (u *User) RawBurst(cc enums.ColorCode, src layer2.SyncSource) (layer2.RawBu
 		return layer2.BuildRate34DataBurst(block, cc, src)
 	case u.Burst < BurstType(enums.DataTypeRate34) && d.Bits == 96:
 		return layer2.BuildDataBurst([12]byte(d.Octets[:12]), enums.DataType(u.Burst), cc, src)
+	case u.Burst == BurstRaw && d.Bits == 196:
+		return rawBurstOf(d, src)
 	}
 	return layer2.RawBurst{}, errBurst
+}
+
+func rawBurstOf(d *Payload, src layer2.SyncSource) (layer2.RawBurst, error) {
+	st, ok := d.SlotType()
+	_, sync, known := src.SyncPatterns()
+	if !ok || !known {
+		return layer2.RawBurst{}, errBurst
+	}
+	var r layer2.RawBurst
+	info := [25]byte(d.Octets[:25])
+	info[24] &= 0xF0
+	if err := r.SetInfo(info); err != nil {
+		return layer2.RawBurst{}, err
+	}
+	if err := r.SetSync(sync); err != nil {
+		return layer2.RawBurst{}, err
+	}
+	if err := r.SetSlotType(st.SlotType()); err != nil {
+		return layer2.RawBurst{}, err
+	}
+	return r, nil
 }
 
 // SetRawBurst sets Burst and Voice or Data from the 264-bit burst raw and
@@ -381,15 +414,22 @@ func (u *User) RawBurst(cc enums.ColorCode, src layer2.SyncSource) (layer2.RawBu
 // sends: KindVoice with a VoiceBurst of A to F, which picks the layout (the
 // full LC of burst E stays as it is in u.Voice.LC), or KindData with a
 // DataType. It sets the slot bit of Info when h.Slot is Slot1 or Slot2,
-// and leaves the other header and RTP fields as they are. It returns an
-// error, and changes nothing, for another kind, a voice position that is
-// not A to F, a KindData hint without a data type or with one that IPSC
-// does not carry (Idle, rate 1, unified single block and the reserved
-// types), and the errors of vocoder.PackAMBEVoice. The position and data
-// type errors wrap layer2.ErrVoicePosition and layer2.ErrDataType.
-func (u *User) SetRawBurst(raw layer2.RawBurst, h layer2.Hint) error {
+// and leaves the other header and RTP fields as they are.
+//
+// It returns the FEC result of the burst: of the three AMBE frames for
+// voice, with the bad flags of Voice.Control and of the AMBE payload set
+// for the uncorrectable frames, or of the BPTC or rate 3/4 payload for
+// data. When the payload of a data burst is uncorrectable, it writes a
+// BurstRaw packet with the 196 information bits as an XPR 8400 does, so a
+// caller that would rather drop the block checks Result.Uncorrectable.
+// It returns an error, and changes nothing, for another kind, a voice
+// position that is not A to F, and a KindData hint without a data type or
+// with one that IPSC does not carry (Idle, rate 1, unified single block
+// and the reserved types). The position and data type errors wrap
+// layer2.ErrVoicePosition and layer2.ErrDataType.
+func (u *User) SetRawBurst(raw layer2.RawBurst, h layer2.Hint) (fec.Result, error) {
 	if u == nil {
-		return dmrgo.ErrNilReceiver
+		return fec.Result{}, dmrgo.ErrNilReceiver
 	}
 	info := u.Info
 	switch h.Slot {
@@ -405,72 +445,85 @@ func (u *User) SetRawBurst(raw layer2.RawBurst, h layer2.Hint) error {
 	}
 	switch h.Kind {
 	case layer2.KindVoice:
-		v, err := voiceOf(raw, h.VoiceBurst, u.Voice.LC)
+		v, res, err := voiceOf(raw, h.VoiceBurst, u.Voice.LC)
 		if err != nil {
-			return err
+			return fec.Result{}, err
 		}
 		u.Info, u.Burst, u.Voice = info, BurstVoice|BurstType(slotBit), v
-		return nil
+		return res, nil
 	case layer2.KindData:
 		if !h.HasDataType {
-			return errDataType
+			return fec.Result{}, errDataType
 		}
-		d, err := dataOf(raw, h.DataType, slotBit)
+		d, res, err := dataOf(raw, h.DataType, slotBit)
 		if err != nil {
-			return err
+			return fec.Result{}, err
 		}
 		u.Info, u.Burst, u.Data = info, BurstType(h.DataType), d
-		return nil
+		if res.Uncorrectable {
+			u.Burst = BurstRaw
+		}
+		return res, nil
 	case layer2.KindUnknown, layer2.KindReverseChannel:
 	}
-	return errKind
+	return fec.Result{}, errKind
 }
 
-func voiceOf(raw layer2.RawBurst, pos enums.VoiceBurstType, lc [9]byte) (Voice, error) {
+func voiceOf(raw layer2.RawBurst, pos enums.VoiceBurstType, lc [9]byte) (Voice, fec.Result, error) {
 	if _, ok := pos.Index(); !ok {
-		return Voice{}, errVoicePosition
+		return Voice{}, fec.Result{}, errVoicePosition
 	}
-	frames, _ := raw.AMBEFrames()
-	ambe, err := vocoder.PackAMBEVoice(frames)
-	if err != nil {
-		return Voice{}, err
+	ambe, bad, res := raw.AMBEVoice()
+	var flag uint8
+	if bad[0] {
+		flag = 0x01
 	}
-	v := Voice{Layout: VoiceLayoutBCDF, Length: 0x19, Control: 0x06, AMBE: ambe, Embedded: raw.EmbeddedData(), LC: lc}
+	v := Voice{Layout: VoiceLayoutBCDF, Length: 0x19, Control: 0x06 | flag, AMBE: ambe, Embedded: raw.EmbeddedData(), LC: lc}
 	switch pos {
 	case enums.VoiceBurstA:
-		return Voice{Layout: VoiceLayoutA, Length: 0x14, Control: 0x40, AMBE: ambe, LC: lc}, nil
+		return Voice{Layout: VoiceLayoutA, Length: 0x14, Control: 0x40 | flag, AMBE: ambe, LC: lc}, res, nil
 	case enums.VoiceBurstE:
-		v.Layout, v.Length, v.Control = VoiceLayoutE, 0x22, 0x16
+		v.Layout, v.Length, v.Control = VoiceLayoutE, 0x22, 0x16|flag
 	default:
 	}
 	emb := raw.EMB()
+	var err error
 	if v.EMB, err = emb.Info(); err != nil {
-		return Voice{}, err
+		return Voice{}, fec.Result{}, err
 	}
-	return v, nil
+	return v, res, nil
 }
 
-func dataOf(raw layer2.RawBurst, dt enums.DataType, slotBit uint8) (Payload, error) {
+func dataOf(raw layer2.RawBurst, dt enums.DataType, slotBit uint8) (Payload, fec.Result, error) {
 	d := Payload{Status: 0x40 | slotBit, HasBody: true, Flags: [2]byte{0x80, 0x0A}, TrailerLen: 4, Words: 10}
+	var res fec.Result
 	switch {
 	case dt == enums.DataTypeRate34:
-		p, _ := raw.Rate34Payload()
+		var p [18]byte
+		p, res = raw.Rate34Payload()
 		copy(d.Octets[:16], p[2:])
 		copy(d.Octets[16:18], p[:2])
 		d.Bits, d.Words = 144, 13
 	case dt < enums.DataTypeRate34:
-		p, _ := raw.BPTCPayload()
+		var p [12]byte
+		p, res = raw.BPTCPayload()
 		copy(d.Octets[:12], p[:])
 		d.Bits = 96
 	default:
-		return Payload{}, errDataType
+		return Payload{}, fec.Result{}, errDataType
+	}
+	if res.Uncorrectable {
+		info := raw.Info()
+		d.Octets = [26]byte{}
+		copy(d.Octets[:], info[:])
+		d.Bits, d.Words = 196, 17
 	}
 	st := raw.SlotType()
 	st.DataType = dt
 	info, err := st.Info()
 	if err != nil {
-		return Payload{}, err
+		return Payload{}, fec.Result{}, err
 	}
 	d.Trailer[1] = byte(info)
-	return d, nil
+	return d, res, nil
 }
