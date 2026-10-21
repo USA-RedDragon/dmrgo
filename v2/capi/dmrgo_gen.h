@@ -383,10 +383,16 @@ typedef struct dmrgo_pdu_vote_now_parms_t dmrgo_pdu_vote_now_parms_t;
 typedef struct dmrgo_layer3_cdef_parms_t dmrgo_layer3_cdef_parms_t;
 /* Go: layer3.DataServiceOptions. DataServiceOptions is the 7-bit Service_Options of a Tier III packet data service request, in the high bits of the octet as for VoiceServiceOptions. */
 typedef struct dmrgo_layer3_data_service_options_t dmrgo_layer3_data_service_options_t;
+/* Go: layer3.DiversionServiceOptions. DiversionServiceOptions is the 7-bit Service_Options of a Tier III call diversion request, in the high bits of the octet as for VoiceServiceOptions. */
+typedef struct dmrgo_layer3_diversion_service_options_t dmrgo_layer3_diversion_service_options_t;
+/* Go: layer3.PollingServiceOptions. PollingServiceOptions is the 7-bit Service_Options of a Tier III UDT short data polling request, in the high bits of the octet as for VoiceServiceOptions. */
+typedef struct dmrgo_layer3_polling_service_options_t dmrgo_layer3_polling_service_options_t;
 /* Go: layer3.RegistrationServiceOptions. RegistrationServiceOptions is the 7-bit Service_Options of a Tier III registration request, in the high bits of the octet as for VoiceServiceOptions (ETSI TS 102 361-4 clause 7.2.13.4, Table 7.55). */
 typedef struct dmrgo_layer3_registration_service_options_t dmrgo_layer3_registration_service_options_t;
 /* Go: layer3.ServiceOptions. ServiceOptions is the Service Options information element (ETSI TS 102 361-2 clause 7.2.1). */
 typedef struct dmrgo_layer3_service_options_t dmrgo_layer3_service_options_t;
+/* Go: layer3.ShortDataServiceOptions. ShortDataServiceOptions is the 7-bit Service_Options of a Tier III UDT short data or DGNA request, in the high bits of the octet as for VoiceServiceOptions. */
+typedef struct dmrgo_layer3_short_data_service_options_t dmrgo_layer3_short_data_service_options_t;
 /* Go: layer3.VoiceServiceOptions. VoiceServiceOptions is the 7-bit Service_Options of a Tier III voice service request, such as a C_RAND for a talkgroup or individual voice call. */
 typedef struct dmrgo_layer3_voice_service_options_t dmrgo_layer3_voice_service_options_t;
 /* Go: location.Decoder. Decoder decodes positions. */
@@ -529,6 +535,10 @@ typedef struct dmrgo_mmdvm_status_v2_t dmrgo_mmdvm_status_v2_t;
 typedef struct dmrgo_mmdvm_version_t dmrgo_mmdvm_version_t;
 /* Go: trunk.Access. Access is the random access control of the last C_ALOHA of a TSCC (ETSI TS 102 361-4 clause 6.2.1.1, Table 7.19). */
 typedef struct dmrgo_trunk_access_t dmrgo_trunk_access_t;
+/* Go: trunk.AddressList. AddressList is the appended data of a UDT in the address format: up to 15 MS or talkgroup addresses (ETSI TS 102 361-4 clause B.3.2). */
+typedef struct dmrgo_trunk_address_list_t dmrgo_trunk_address_list_t;
+/* Go: trunk.Appended. Appended is the appended data of a UDT with the fields of its header that describe it: the UDT Format, the pad nibbles and the number of blocks. */
+typedef struct dmrgo_trunk_appended_t dmrgo_trunk_appended_t;
 /* Go: trunk.CapacityPlusConfig. CapacityPlusConfig configures NewCapacityPlusFollower. */
 typedef struct dmrgo_trunk_capacity_plus_config_t dmrgo_trunk_capacity_plus_config_t;
 /* Go: trunk.CapacityPlusFollower. CapacityPlusFollower follows a MOTOTRBO Capacity Plus or Linked Capacity Plus site without transmitting. */
@@ -541,6 +551,8 @@ typedef struct dmrgo_trunk_channel_plan_t dmrgo_trunk_channel_plan_t;
 typedef struct dmrgo_trunk_channel_rule_t dmrgo_trunk_channel_rule_t;
 /* Go: trunk.ConfigError. ConfigError is the error of NewFollower, NewMS and NewTSCC for a config field with a value out of range. */
 typedef struct dmrgo_trunk_config_error_t dmrgo_trunk_config_error_t;
+/* Go: trunk.DynamicGroups. DynamicGroups is the DGNA talkgroup list of an MS (ETSI TS 102 361-4 clause 6.6.8.1). */
+typedef struct dmrgo_trunk_dynamic_groups_t dmrgo_trunk_dynamic_groups_t;
 /* Go: trunk.Follower. Follower follows a Tier III trunked site without transmitting, as a scanner does: it hunts for a TSCC, reads its site parameters, broadcasts and grants, follows the grants of the calls it wants to their payload channels, and returns to the TSCC on P_CLEAR, after the hang time or when the payload channel goes quiet (ETSI TS 102 361-4 clauses 6.3 and 6.6). */
 typedef struct dmrgo_trunk_follower_t dmrgo_trunk_follower_t;
 /* Go: trunk.FollowerConfig. FollowerConfig configures NewFollower. */
@@ -551,10 +563,16 @@ typedef struct dmrgo_trunk_grant_t dmrgo_trunk_grant_t;
 typedef struct dmrgo_trunk_hunt_entry_t dmrgo_trunk_hunt_entry_t;
 /* Go: trunk.HuntList. HuntList is the list of channels on which an MS looks for a TSCC (ETSI TS 102 361-4 clause 6.3.2, Annex D). */
 typedef struct dmrgo_trunk_hunt_list_t dmrgo_trunk_hunt_list_t;
+/* Go: trunk.LIPShortReport. LIPShortReport is the LIP Short Location Report that a UDT in the LIP format carries: PDU type 0, the position, its error, the speed and the direction. */
+typedef struct dmrgo_trunk_lip_short_report_t dmrgo_trunk_lip_short_report_t;
 /* Go: trunk.MS. MS is a Tier III mobile station: it hunts for and follows a TSCC as a Follower does, registers and de-registers, makes voice and packet data calls by random access, answers C_AHOY and P_AHOY, follows C_MOVE and P_PROTECT, and ends its own calls with P_MAINT (ETSI TS 102 361-4 clauses 6.2 to 6.6). */
 typedef struct dmrgo_trunk_ms_t dmrgo_trunk_ms_t;
 /* Go: trunk.MSConfig. MSConfig configures NewMS. */
 typedef struct dmrgo_trunk_ms_config_t dmrgo_trunk_ms_config_t;
+/* Go: trunk.NMEALong. NMEALong is the Long NMEA (IEC 61162-1) Format Specified appended data of a UDT: two blocks with the fields of NMEAShort, the time in seconds and the course over ground. */
+typedef struct dmrgo_trunk_nmea_long_t dmrgo_trunk_nmea_long_t;
+/* Go: trunk.NMEAShort. NMEAShort is the Short NMEA (IEC 61162-1) appended data of a UDT: one block with the position, speed and the time in steps of 10 s. */
+typedef struct dmrgo_trunk_nmea_short_t dmrgo_trunk_nmea_short_t;
 /* Go: trunk.Neighbor. Neighbor is an adjacent site that a TSCC announces with C_BCAST Adjacent_Site (ETSI TS 102 361-4 clause 7.2.19.7). */
 typedef struct dmrgo_trunk_neighbor_t dmrgo_trunk_neighbor_t;
 /* Go: trunk.Output. Output is one result of a Follower or MS. */
@@ -571,6 +589,10 @@ typedef struct dmrgo_trunk_tscc_output_t dmrgo_trunk_tscc_output_t;
 typedef struct dmrgo_trunk_tune_t dmrgo_trunk_tune_t;
 /* Go: trunk.UDT. UDT is a Unified Data Transport delivery of a TSCC: a C_UDTHD header and its 1 to 4 appended rate 1/2 blocks (ETSI TS 102 361-4 clause 6.5). */
 typedef struct dmrgo_trunk_udt_t dmrgo_trunk_udt_t;
+/* Go: trunk.USBDLIPResponse. USBDLIPResponse is the Poll Response of the USBD polling service for LIP: the payload of an inbound USBD with Service Type LIP. */
+typedef struct dmrgo_trunk_usbdlip_response_t dmrgo_trunk_usbdlip_response_t;
+/* Go: trunk.USBDPollRequest. USBDPollRequest is the Poll Request of the USBD polling service: the payload of an outbound USBD after its Service Type. */
+typedef struct dmrgo_trunk_usbd_poll_request_t dmrgo_trunk_usbd_poll_request_t;
 /* Go: vocoder.AMBEFrame. AMBEFrame holds the 49 information bits of one AMBE+2 vocoder frame, without the frame FEC, packed, the first bit in the most significant bit of byte 0. */
 typedef struct dmrgo_vocoder_ambe_frame_t dmrgo_vocoder_ambe_frame_t;
 /* Go: vocoder.AppendDecoder. AppendDecoder is a Codec that can decode into a buffer of the caller. */
@@ -718,6 +740,8 @@ typedef uint8_t dmrgo_enums_service_kind_t;
 typedef uint8_t dmrgo_enums_slot_t;
 /* Go: enums.SyncPattern. SyncPattern is the 48-bit SYNC pattern in the center of a burst, as an integer with the first bit most significant (ETSI TS 102 361-1 clause 9.1.1, Table 9.2). */
 typedef uint64_t dmrgo_enums_sync_pattern_t;
+/* Go: enums.UDTFormat. UDTFormat is the 4-bit UDT Format of a UDT header: the format of the appended data. */
+typedef uint8_t dmrgo_enums_udt_format_t;
 /* Go: enums.VoiceBurstType. VoiceBurstType is the position of a voice burst in a voice superframe. */
 typedef uint8_t dmrgo_enums_voice_burst_type_t;
 /* Go: hytera.Service. Service is the 7-bit service of a message. */
@@ -1169,7 +1193,7 @@ struct dmrgo_pdu_udt_header_t {
 	bool emergency;
 	bool option_flag;
 	dmrgo_enums_service_access_point_id_t sap;
-	uint8_t udt_format;
+	dmrgo_enums_udt_format_t udt_format;
 	uint32_t llid_destination;
 	uint32_t llid_source;
 	uint8_t pad_nibble;
@@ -2353,12 +2377,31 @@ struct dmrgo_layer3_data_service_options_t {
 	uint8_t priority_level;
 };
 
+struct dmrgo_layer3_diversion_service_options_t {
+	bool is_privacy;
+	bool set;
+	bool voice;
+	bool packet_data;
+	bool short_data;
+	bool status;
+};
+
+struct dmrgo_layer3_polling_service_options_t {
+	bool is_privacy;
+	dmrgo_enums_udt_format_t format;
+};
+
 struct dmrgo_layer3_registration_service_options_t {
 	bool reserved;
 	bool is_privacy;
 	bool ip_inform;
 	uint8_t power_save;
 	bool register_;
+};
+
+struct dmrgo_layer3_short_data_service_options_t {
+	bool is_privacy;
+	bool is_supp_data;
 };
 
 struct dmrgo_layer3_voice_service_options_t {
@@ -3049,6 +3092,58 @@ struct dmrgo_trunk_access_t {
 	dmrgo_enums_backoff_t backoff;
 };
 
+struct dmrgo_trunk_address_list_t {
+	bool one_key;
+	uint32_t addresses[15];
+	int64_t len;
+};
+
+struct dmrgo_trunk_appended_t {
+	dmrgo_enums_udt_format_t format;
+	uint8_t pad_nibble;
+	int64_t blocks;
+	uint8_t data[46];
+};
+
+struct dmrgo_trunk_nmea_long_t {
+	bool encrypted;
+	bool north;
+	bool east;
+	bool fix;
+	uint8_t speed;
+	uint8_t lat_degrees;
+	uint8_t lat_minutes;
+	uint16_t lat_fraction;
+	uint8_t lon_degrees;
+	uint8_t lon_minutes;
+	uint16_t lon_fraction;
+	uint8_t hours;
+	uint8_t minutes;
+	uint8_t seconds;
+	uint8_t spare1;
+	uint8_t mfid;
+	uint8_t spare2;
+	uint16_t course;
+	uint64_t spare3;
+};
+
+struct dmrgo_trunk_nmea_short_t {
+	bool encrypted;
+	bool north;
+	bool east;
+	bool fix;
+	uint8_t speed;
+	uint8_t lat_degrees;
+	uint8_t lat_minutes;
+	uint16_t lat_fraction;
+	uint8_t lon_degrees;
+	uint8_t lon_minutes;
+	uint16_t lon_fraction;
+	uint8_t hours;
+	uint8_t minutes;
+	uint8_t ten_seconds;
+};
+
 struct dmrgo_trunk_capacity_plus_config_t {
 	dmrgo_trunk_channel_plan_t *plan;
 	uint32_t talkgroups[32];
@@ -3118,6 +3213,43 @@ struct dmrgo_trunk_channel_rule_t {
 struct dmrgo_trunk_config_error_t {
 	char *field;
 	size_t field_len;
+};
+
+struct dmrgo_trunk_lip_short_report_t {
+	uint8_t pdu_type;
+	uint8_t time_elapsed;
+	double longitude;
+	double latitude;
+	dmrgo_layer3_position_error_t position_error;
+	uint8_t velocity;
+	uint8_t direction;
+	bool additional_type;
+	uint8_t additional_data;
+};
+
+struct dmrgo_trunk_usbdlip_response_t {
+	uint8_t time_elapsed;
+	double longitude;
+	double latitude;
+	dmrgo_layer3_position_error_t position_error;
+	uint8_t velocity;
+	uint8_t direction;
+	uint8_t reason;
+	uint8_t hashed_source;
+};
+
+struct dmrgo_trunk_usbd_poll_request_t {
+	uint8_t response_delay;
+	bool payload_contents;
+	bool reserved;
+	uint64_t parameters;
+	uint32_t target;
+};
+
+struct dmrgo_trunk_dynamic_groups_t {
+	uint32_t groups[16];
+	uint32_t one_key;
+	bool has_one_key;
 };
 
 struct dmrgo_trunk_neighbor_t {
@@ -3200,6 +3332,8 @@ struct dmrgo_trunk_ms_config_t {
 	int64_t inactive;
 	int64_t hangtime;
 	dmrgo_layer2_burst_t *scratch;
+	bool no_duplex;
+	bool ambient;
 };
 
 struct dmrgo_trunk_tscc_config_t {
@@ -3513,6 +3647,9 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_TRUNK_NOT_ON_CONTROL (-136)
 #define DMRGO_ERR_TRUNK_NOT_REGISTERED (-137)
 #define DMRGO_ERR_TRUNK_PLAN_FULL (-138)
+#define DMRGO_ERR_TRUNK_UDT_CHARACTER (-216)
+#define DMRGO_ERR_TRUNK_UDT_FORMAT (-217)
+#define DMRGO_ERR_TRUNK_UDT_LENGTH (-218)
 #define DMRGO_ERR_VOCODER_DUPLICATE_CODEC (-139)
 #define DMRGO_ERR_VOCODER_NIL_FACTORY (-140)
 #define DMRGO_ERR_VOCODER_REGISTRY_FULL (-141)
@@ -3556,6 +3693,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_MS_BURST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_CANCEL_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_END_CALL_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
+#define DMRGO_TRUNK_MS_GROUP_ALIAS_MAX_ITEMS (63)
 #define DMRGO_TRUNK_MS_LOST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_POWER_OFF_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_QUALITY_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
@@ -4417,6 +4555,30 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ENUMS_SYNC_TDMA2_DATA ((dmrgo_enums_sync_pattern_t)UINT64_C(0xd7557f5ff7f5))
 /* Go: enums.SyncTDMA2Voice. TDMA direct mode time slot 2 voice */
 #define DMRGO_ENUMS_SYNC_TDMA2_VOICE ((dmrgo_enums_sync_pattern_t)UINT64_C(0x7dffd5f55d5f))
+/* Go: enums.UDTAddress. MS or talkgroup addresses */
+#define DMRGO_ENUMS_UDT_ADDRESS ((dmrgo_enums_udt_format_t)1)
+/* Go: enums.UDTBCD. 4-bit BCD digits */
+#define DMRGO_ENUMS_UDTBCD ((dmrgo_enums_udt_format_t)2)
+/* Go: enums.UDTBinary. binary */
+#define DMRGO_ENUMS_UDT_BINARY ((dmrgo_enums_udt_format_t)0)
+/* Go: enums.UDTIP. IP address */
+#define DMRGO_ENUMS_UDTIP ((dmrgo_enums_udt_format_t)6)
+/* Go: enums.UDTISO7. ISO/IEC 646 7-bit characters */
+#define DMRGO_ENUMS_UDTISO7 ((dmrgo_enums_udt_format_t)3)
+/* Go: enums.UDTISO8. ISO/IEC 8859 8-bit characters */
+#define DMRGO_ENUMS_UDTISO8 ((dmrgo_enums_udt_format_t)4)
+/* Go: enums.UDTLIP. Location Information Protocol (LIP) */
+#define DMRGO_ENUMS_UDTLIP ((dmrgo_enums_udt_format_t)11)
+/* Go: enums.UDTManufacturer1. manufacturer specific */
+#define DMRGO_ENUMS_UDT_MANUFACTURER1 ((dmrgo_enums_udt_format_t)8)
+/* Go: enums.UDTManufacturer2. manufacturer specific */
+#define DMRGO_ENUMS_UDT_MANUFACTURER2 ((dmrgo_enums_udt_format_t)9)
+/* Go: enums.UDTMixed. one address and UTF-16BE characters */
+#define DMRGO_ENUMS_UDT_MIXED ((dmrgo_enums_udt_format_t)10)
+/* Go: enums.UDTNMEA. NMEA (IEC 61162-1) location */
+#define DMRGO_ENUMS_UDTNMEA ((dmrgo_enums_udt_format_t)5)
+/* Go: enums.UDTUTF16BE. UTF-16BE characters */
+#define DMRGO_ENUMS_UDTUTF16BE ((dmrgo_enums_udt_format_t)7)
 /* Go: enums.VoiceBurstA. burst A, which carries the voice SYNC */
 #define DMRGO_ENUMS_VOICE_BURST_A ((dmrgo_enums_voice_burst_type_t)1)
 /* Go: enums.VoiceBurstB. burst B */
@@ -5217,10 +5379,14 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_CHANNEL_NULL 0
 /* Go: trunk.DefaultMaxBERPermille. DefaultMaxBERPermille is the bit error rate of the TSCC, in parts per thousand of the FEC-checked bits of the last 32 TSCC bursts, above which an MS leaves the TSCC, when MSConfig.MaxBERPermille is 0. */
 #define DMRGO_TRUNK_DEFAULT_MAX_BER_PERMILLE 50
+/* Go: trunk.MaxAppendedOctets. MaxAppendedOctets is the most octets of appended data in a UDT: four blocks of 12 octets, less the CRC of the last block. */
+#define DMRGO_TRUNK_MAX_APPENDED_OCTETS 46
 /* Go: trunk.MaxChannels. MaxChannels is the number of channels that a ChannelPlan and a HuntList hold, the storage of a hunt list in ETSI TS 102 361-4 Annex D. */
 #define DMRGO_TRUNK_MAX_CHANNELS 64
 /* Go: trunk.MaxDenied. MaxDenied is the number of entries of the denied registration list of an MS. */
 #define DMRGO_TRUNK_MAX_DENIED 8
+/* Go: trunk.MaxDynamicGroups. MaxDynamicGroups is the number of DGNA talkgroups of an MS: 15 of the DGNA_Address mode and one of the DGNA_Alias mode (ETSI TS 102 361-4 clause 6.6.8.0). */
+#define DMRGO_TRUNK_MAX_DYNAMIC_GROUPS 16
 /* Go: trunk.MaxNeighbors. MaxNeighbors is the number of adjacent sites that a Site keeps. */
 #define DMRGO_TRUNK_MAX_NEIGHBORS 8
 /* Go: trunk.MaxOutputs. MaxOutputs is the most outputs that one call of a Follower or MS method appends. */
@@ -5233,16 +5399,24 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_MAX_TALKGROUPS 32
 /* Go: trunk.OutputAhoy. OutputAhoy reports a C_AHOY for the MS, with the call in Output.Grant: an individual call that the MS answers, or a radio check. */
 #define DMRGO_TRUNK_OUTPUT_AHOY ((dmrgo_trunk_output_kind_t)9)
+/* Go: trunk.OutputAmbient. OutputAmbient reports that the MS joined the Ambient Listening Service call of Output.Grant: it transmits without an action of its user until it ends the call at T_ALS or T_ALS_E. */
+#define DMRGO_TRUNK_OUTPUT_AMBIENT ((dmrgo_trunk_output_kind_t)17)
 /* Go: trunk.OutputAuthChallenge. OutputAuthChallenge reports the authentication challenge of the TSCC in Output.Challenge. */
 #define DMRGO_TRUNK_OUTPUT_AUTH_CHALLENGE ((dmrgo_trunk_output_kind_t)13)
 /* Go: trunk.OutputBurst. OutputBurst is a burst for the MS to transmit in Output.Slot at Output.Due. */
 #define DMRGO_TRUNK_OUTPUT_BURST ((dmrgo_trunk_output_kind_t)6)
 /* Go: trunk.OutputCallEnd. OutputCallEnd reports that the machine left the payload channel of Output.Grant. */
 #define DMRGO_TRUNK_OUTPUT_CALL_END ((dmrgo_trunk_output_kind_t)5)
+/* Go: trunk.OutputDelivered. OutputDelivered reports that the TSCC completed a UDT short data, polling, call diversion or DGNA request of the MS, with the reason in Output.Ack. */
+#define DMRGO_TRUNK_OUTPUT_DELIVERED ((dmrgo_trunk_output_kind_t)14)
 /* Go: trunk.OutputGrant. OutputGrant reports a channel grant in Output.Grant, whether or not the machine follows it. */
 #define DMRGO_TRUNK_OUTPUT_GRANT ((dmrgo_trunk_output_kind_t)4)
+/* Go: trunk.OutputGroups. OutputGroups reports that a DGNA transfer changed the talkgroups that MS.Groups returns. */
+#define DMRGO_TRUNK_OUTPUT_GROUPS ((dmrgo_trunk_output_kind_t)16)
 /* Go: trunk.OutputLost. OutputLost reports that the machine lost the TSCC. */
 #define DMRGO_TRUNK_OUTPUT_LOST ((dmrgo_trunk_output_kind_t)3)
+/* Go: trunk.OutputPolled. OutputPolled reports that the TSCC polled the MS, with a C_AHOY from Output.Grant.Source or with a USBD Poll Request, and that the MS sent its poll response or refused the poll. */
+#define DMRGO_TRUNK_OUTPUT_POLLED ((dmrgo_trunk_output_kind_t)15)
 /* Go: trunk.OutputPowerOff. OutputPowerOff reports that the MS de-registered, or gave up after T_Dereg, and may be switched off. */
 #define DMRGO_TRUNK_OUTPUT_POWER_OFF ((dmrgo_trunk_output_kind_t)12)
 /* Go: trunk.OutputProtect. OutputProtect reports a P_PROTECT for the MS on its payload channel, with its kind in Output.Protect. */
@@ -5263,6 +5437,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_REASON_CLEAR ((dmrgo_trunk_reason_t)3)
 /* Go: trunk.ReasonDenied. ReasonDenied is a TSCC in a SYS_AREA that denied the registration of the MS. */
 #define DMRGO_TRUNK_REASON_DENIED ((dmrgo_trunk_reason_t)13)
+/* Go: trunk.ReasonDiverted. ReasonDiverted is a request that the TSCC answered with the diverted address of the called party in a UDT, which UDT returns. */
+#define DMRGO_TRUNK_REASON_DIVERTED ((dmrgo_trunk_reason_t)15)
 /* Go: trunk.ReasonHangtime. ReasonHangtime is the end of the call hang time after a terminator. */
 #define DMRGO_TRUNK_REASON_HANGTIME ((dmrgo_trunk_reason_t)5)
 /* Go: trunk.ReasonInactive. ReasonInactive is TV_Inactive or TD_Inactive without a burst on the payload channel. */
@@ -5908,6 +6084,8 @@ int dmrgo_enums_slot_other(dmrgo_enums_slot_t self, dmrgo_enums_slot_t *out);
 int dmrgo_enums_slot_string(dmrgo_enums_slot_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.SyncPattern.String. String returns the name of the SyncPattern. */
 int dmrgo_enums_sync_pattern_string(dmrgo_enums_sync_pattern_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: enums.UDTFormat.String. String returns the name of the UDT Format. */
+int dmrgo_enums_udt_format_string(dmrgo_enums_udt_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.VoiceBurstAt. VoiceBurstAt returns the voice burst at index i of a superframe, 0 for burst A to 5 for burst F. */
 int dmrgo_enums_voice_burst_at(int64_t i, dmrgo_enums_voice_burst_type_t *v, bool *ok);
 /* Go: enums.VoiceBurstType.Index. Index returns the index of v in a superframe, 0 for burst A to 5 for burst F. */
@@ -7258,14 +7436,32 @@ int dmrgo_layer3_data_service_options_string(dmrgo_layer3_data_service_options_t
 int dmrgo_layer3_decode_cdef_parms(const uint8_t data[8], dmrgo_layer3_cdef_parms_t *out);
 /* Go: layer3.DecodeDataServiceOptions. DecodeDataServiceOptions decodes a DataServiceOptions. */
 int dmrgo_layer3_decode_data_service_options(const uint8_t data[1], dmrgo_layer3_data_service_options_t *out);
+/* Go: layer3.DecodeDiversionServiceOptions. DecodeDiversionServiceOptions decodes a DiversionServiceOptions. */
+int dmrgo_layer3_decode_diversion_service_options(const uint8_t data[1], dmrgo_layer3_diversion_service_options_t *out);
+/* Go: layer3.DecodePollingServiceOptions. DecodePollingServiceOptions decodes a PollingServiceOptions. */
+int dmrgo_layer3_decode_polling_service_options(const uint8_t data[1], dmrgo_layer3_polling_service_options_t *out);
 /* Go: layer3.DecodeRegistrationServiceOptions. DecodeRegistrationServiceOptions decodes a RegistrationServiceOptions. */
 int dmrgo_layer3_decode_registration_service_options(const uint8_t data[1], dmrgo_layer3_registration_service_options_t *out);
 /* Go: layer3.DecodeServiceOptions. DecodeServiceOptions decodes a ServiceOptions. */
 int dmrgo_layer3_decode_service_options(const uint8_t data[1], dmrgo_layer3_service_options_t *out);
+/* Go: layer3.DecodeShortDataServiceOptions. DecodeShortDataServiceOptions decodes a ShortDataServiceOptions. */
+int dmrgo_layer3_decode_short_data_service_options(const uint8_t data[1], dmrgo_layer3_short_data_service_options_t *out);
 /* Go: layer3.DecodeVoiceServiceOptions. DecodeVoiceServiceOptions decodes a VoiceServiceOptions. */
 int dmrgo_layer3_decode_voice_service_options(const uint8_t data[1], dmrgo_layer3_voice_service_options_t *out);
+/* Go: layer3.DiversionServiceOptions.Encode. Encode encodes a DiversionServiceOptions. */
+int dmrgo_layer3_diversion_service_options_encode(dmrgo_layer3_diversion_service_options_t *self, uint8_t out[1]);
+/* Go: layer3.DiversionServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
+int dmrgo_layer3_diversion_service_options_field(const dmrgo_layer3_diversion_service_options_t *self, uint8_t *out);
+/* Go: layer3.DiversionServiceOptions.String. String returns the fields of s as text, for printing. */
+int dmrgo_layer3_diversion_service_options_string(dmrgo_layer3_diversion_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.MotorolaServiceOptions. MotorolaServiceOptions returns the Service Options octet 0x20 seen in Motorola IPSC voice traffic: no flag set and only the first Reserved bit (0x20) set, so Reserved is 2. */
 int dmrgo_layer3_motorola_service_options(dmrgo_layer3_service_options_t *out);
+/* Go: layer3.PollingServiceOptions.Encode. Encode encodes a PollingServiceOptions. */
+int dmrgo_layer3_polling_service_options_encode(dmrgo_layer3_polling_service_options_t *self, uint8_t out[1]);
+/* Go: layer3.PollingServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
+int dmrgo_layer3_polling_service_options_field(const dmrgo_layer3_polling_service_options_t *self, uint8_t *out);
+/* Go: layer3.PollingServiceOptions.String. String returns the fields of s as text, for printing. */
+int dmrgo_layer3_polling_service_options_string(dmrgo_layer3_polling_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.PositionError.String. */
 int dmrgo_layer3_position_error_string(dmrgo_layer3_position_error_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.RegistrationServiceOptions.Encode. Encode encodes a RegistrationServiceOptions. */
@@ -7280,6 +7476,12 @@ int dmrgo_layer3_service_options_byte(const dmrgo_layer3_service_options_t *self
 int dmrgo_layer3_service_options_encode(dmrgo_layer3_service_options_t *self, uint8_t out[1]);
 /* Go: layer3.ServiceOptions.String. String returns the fields of s as text, for printing. */
 int dmrgo_layer3_service_options_string(dmrgo_layer3_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: layer3.ShortDataServiceOptions.Encode. Encode encodes a ShortDataServiceOptions. */
+int dmrgo_layer3_short_data_service_options_encode(dmrgo_layer3_short_data_service_options_t *self, uint8_t out[1]);
+/* Go: layer3.ShortDataServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
+int dmrgo_layer3_short_data_service_options_field(const dmrgo_layer3_short_data_service_options_t *self, uint8_t *out);
+/* Go: layer3.ShortDataServiceOptions.String. String returns the fields of s as text, for printing. */
+int dmrgo_layer3_short_data_service_options_string(dmrgo_layer3_short_data_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.SourceType.String. */
 int dmrgo_layer3_source_type_string(dmrgo_layer3_source_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.TalkerAliasDataFormat.String. */
@@ -7862,6 +8064,42 @@ int dmrgo_mmdvm_status_v2_string(dmrgo_mmdvm_status_v2_t *self, char *out, size_
 int dmrgo_mmdvm_version_append_binary(const dmrgo_mmdvm_version_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.Access.Applies. Applies reports whether the C_ALOHA population subdivision lets the MS with address ms make a random access (ETSI TS 102 361-4 clause 6.2.1.1.1). */
 int dmrgo_trunk_access_applies(dmrgo_trunk_access_t *self, uint32_t ms, bool emergency, bool *out);
+/* Go: trunk.Appended.Addresses. Addresses returns the addresses of a in the address format. */
+int dmrgo_trunk_appended_addresses(dmrgo_trunk_appended_t *self, dmrgo_trunk_address_list_t *out);
+/* Go: trunk.Appended.Binary. Binary appends the data of a in the binary format to dst, packed most significant bit first, and returns dst and the number of bits. */
+int dmrgo_trunk_appended_binary(dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t *out1);
+/* Go: trunk.Appended.Digits. Digits appends the dialled digits of a in the BCD format to dst as the characters '0' to '9', '*' and '#', and returns dst. */
+int dmrgo_trunk_appended_digits(dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: trunk.Appended.IP. IP returns the IP address of a in the IP format, and whether it is IPv6. */
+int dmrgo_trunk_appended_ip(dmrgo_trunk_appended_t *self, uint8_t ip[16], bool *v6);
+/* Go: trunk.Appended.LIP. LIP appends the octets of the LIP PDU of a to dst and returns dst. */
+int dmrgo_trunk_appended_lip(dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: trunk.Appended.Mixed. Mixed returns the address of a in the mixed format, and whether it is the One-key_talkgroup of DGNA. */
+int dmrgo_trunk_appended_mixed(dmrgo_trunk_appended_t *self, uint32_t *addr, bool *one_key);
+/* Go: trunk.Appended.NMEALong. NMEALong returns the Long NMEA Format Specified of a. */
+int dmrgo_trunk_appended_nmea_long(dmrgo_trunk_appended_t *self, dmrgo_trunk_nmea_long_t *out);
+/* Go: trunk.Appended.NMEAShort. NMEAShort returns the Short NMEA format of a. */
+int dmrgo_trunk_appended_nmea_short(dmrgo_trunk_appended_t *self, dmrgo_trunk_nmea_short_t *out);
+/* Go: trunk.Appended.SetAddresses. SetAddresses sets a to the 1 to 15 addresses of list in the address format, in the fewest blocks that hold them. */
+int dmrgo_trunk_appended_set_addresses(dmrgo_trunk_appended_t *self, bool one_key, const uint32_t *list, size_t list_len);
+/* Go: trunk.Appended.SetBinary. SetBinary sets a to the first n bits of b, packed most significant bit first, in the binary format with the end marker for variable length data: a 0 bit after the data and 1 bits to the end of the last block. */
+int dmrgo_trunk_appended_set_binary(dmrgo_trunk_appended_t *self, const uint8_t *b, size_t b_len, int64_t n);
+/* Go: trunk.Appended.SetDigits. SetDigits sets a to the 1 to 92 dialled digits of digits in the BCD format. */
+int dmrgo_trunk_appended_set_digits(dmrgo_trunk_appended_t *self, const uint8_t *digits, size_t digits_len);
+/* Go: trunk.Appended.SetIP. SetIP sets a to the IP address ip in the IP format: the first 4 octets of ip in one block for IPv4, or all 16 in two blocks for IPv6. */
+int dmrgo_trunk_appended_set_ip(dmrgo_trunk_appended_t *self, const uint8_t ip[16], bool v6);
+/* Go: trunk.Appended.SetLIP. SetLIP sets a to the 1 to 46 octets of a LIP PDU in the LIP format, such as an encoded LIPShortReport. */
+int dmrgo_trunk_appended_set_lip(dmrgo_trunk_appended_t *self, const uint8_t *pdu, size_t pdu_len);
+/* Go: trunk.Appended.SetMixed. SetMixed sets a to the address addr and the UTF-8 text in the mixed format: up to 21 UTF-16 code units. */
+int dmrgo_trunk_appended_set_mixed(dmrgo_trunk_appended_t *self, bool one_key, uint32_t addr, const uint8_t *text, size_t text_len);
+/* Go: trunk.Appended.SetNMEALong. SetNMEALong sets a to the Long NMEA Format Specified of n in two blocks. */
+int dmrgo_trunk_appended_set_nmea_long(dmrgo_trunk_appended_t *self, const dmrgo_trunk_nmea_long_t *n);
+/* Go: trunk.Appended.SetNMEAShort. SetNMEAShort sets a to the Short NMEA format of n in one block. */
+int dmrgo_trunk_appended_set_nmea_short(dmrgo_trunk_appended_t *self, const dmrgo_trunk_nmea_short_t *n);
+/* Go: trunk.Appended.SetText. SetText sets a to the UTF-8 text in the format f: enums.UDTISO7 (up to 52 characters of ISO/IEC 646), enums.UDTISO8 (up to 46 characters of ISO/IEC 8859-1) or enums.UDTUTF16BE (up to 23 UTF-16 code units). */
+int dmrgo_trunk_appended_set_text(dmrgo_trunk_appended_t *self, dmrgo_enums_udt_format_t f, const uint8_t *text, size_t text_len);
+/* Go: trunk.Appended.Text. Text appends the text of a to dst as UTF-8 and returns dst, for the formats enums.UDTISO7, enums.UDTISO8 (read as ISO/IEC 8859-1), enums.UDTUTF16BE and enums.UDTMixed (the text after the address). */
+int dmrgo_trunk_appended_text(dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_trunk_capacity_plus_follower_new makes a zero trunk.CapacityPlusFollower. */
 int dmrgo_trunk_capacity_plus_follower_new(dmrgo_trunk_capacity_plus_follower_t **out);
 /* dmrgo_trunk_capacity_plus_follower_free frees the handle. self may be NULL. */
@@ -7908,6 +8146,16 @@ int dmrgo_trunk_channel_plan_lookup(dmrgo_trunk_channel_plan_t *self, uint16_t n
 int dmrgo_trunk_config_error_error(dmrgo_trunk_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* dmrgo_trunk_config_error_last sets *ok when the last error of this thread holds a trunk.ConfigError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
 int dmrgo_trunk_config_error_last(dmrgo_trunk_config_error_t *out, bool *ok);
+/* Go: trunk.DecodeLIPShortReport. DecodeLIPShortReport decodes an LIPShortReport. */
+int dmrgo_trunk_decode_lip_short_report(const uint8_t data[10], dmrgo_trunk_lip_short_report_t *out);
+/* Go: trunk.DecodeNMEALong. DecodeNMEALong decodes an NMEALong. */
+int dmrgo_trunk_decode_nmea_long(const uint8_t data[22], dmrgo_trunk_nmea_long_t *out);
+/* Go: trunk.DecodeNMEAShort. DecodeNMEAShort decodes an NMEAShort. */
+int dmrgo_trunk_decode_nmea_short(const uint8_t data[10], dmrgo_trunk_nmea_short_t *out);
+/* Go: trunk.DecodeUSBDLIPResponse. DecodeUSBDLIPResponse decodes a USBDLIPResponse. */
+int dmrgo_trunk_decode_usbdlip_response(const uint8_t data[10], dmrgo_trunk_usbdlip_response_t *out);
+/* Go: trunk.DecodeUSBDPollRequest. DecodeUSBDPollRequest decodes a USBDPollRequest. */
+int dmrgo_trunk_decode_usbd_poll_request(const uint8_t data[10], dmrgo_trunk_usbd_poll_request_t *out);
 /* dmrgo_trunk_follower_new makes a zero trunk.Follower. */
 int dmrgo_trunk_follower_new(dmrgo_trunk_follower_t **out);
 /* dmrgo_trunk_follower_free frees the handle. self may be NULL. */
@@ -7956,10 +8204,16 @@ int dmrgo_trunk_hunt_list_at(dmrgo_trunk_hunt_list_t *self, int64_t i, dmrgo_tru
 int dmrgo_trunk_hunt_list_len(dmrgo_trunk_hunt_list_t *self, int64_t *out);
 /* Go: trunk.HuntList.Withdraw. Withdraw removes the channel from the list and keeps the order of the others. */
 int dmrgo_trunk_hunt_list_withdraw(dmrgo_trunk_hunt_list_t *self, uint16_t channel, bool *out);
+/* Go: trunk.LIPShortReport.Encode. Encode encodes an LIPShortReport. */
+int dmrgo_trunk_lip_short_report_encode(dmrgo_trunk_lip_short_report_t *self, uint8_t out[10]);
+/* Go: trunk.LIPShortReport.String. String returns the fields of s as text, for printing. */
+int dmrgo_trunk_lip_short_report_string(dmrgo_trunk_lip_short_report_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_trunk_ms_new makes a zero trunk.MS. */
 int dmrgo_trunk_ms_new(dmrgo_trunk_ms_t **out);
 /* dmrgo_trunk_ms_free frees the handle. self may be NULL. */
 int dmrgo_trunk_ms_free(dmrgo_trunk_ms_t *self);
+/* Go: trunk.MS.AssignGroups. AssignGroups asks the TSCC to give the MS target the DGNA talkgroups of a, by random access to DGNAI (ETSI TS 102 361-4 clause 6.6.8.3). */
+int dmrgo_trunk_ms_assign_groups(dmrgo_trunk_ms_t *self, int64_t now, uint32_t target, const dmrgo_trunk_appended_t *a);
 /* dmrgo_trunk_ms_auth_response_need sets *items and *arena to the room that dmrgo_trunk_ms_auth_response needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_auth_response_need(dmrgo_trunk_ms_t *self, int64_t now, uint32_t response, size_t *items, size_t *arena);
 /* Go: trunk.MS.AuthResponse. AuthResponse sends response, the answer to the challenge of the last OutputAuthChallenge that auth.Response computes, to the TSCC: a C_ACKU, or a P_ACKU on a payload channel, with reason Authentication Response, in the slot after the challenge. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_auth_response_need gives (DMRGO_TRUNK_MS_AUTH_RESPONSE_MAX_ITEMS items). */
@@ -7972,24 +8226,40 @@ int dmrgo_trunk_ms_burst(dmrgo_trunk_ms_t *self, int64_t now, dmrgo_layer2_raw_b
 int dmrgo_trunk_ms_busy(dmrgo_trunk_ms_t *self, bool *out);
 /* Go: trunk.MS.Call. Call asks the TSCC for a voice call to the talkgroup or MS target, by random access. */
 int dmrgo_trunk_ms_call(dmrgo_trunk_ms_t *self, int64_t now, bool group, uint32_t target, const dmrgo_layer3_voice_service_options_t *opts);
+/* Go: trunk.MS.CallAmbient. CallAmbient asks the TSCC for an individual voice call to the MS target with the Ambient Listening Service, by random access, as Call does: the called MS transmits without an action of its user (ETSI TS 102 361-4 clause 6.6.2.6.2). */
+int dmrgo_trunk_ms_call_ambient(dmrgo_trunk_ms_t *self, int64_t now, uint32_t target, const dmrgo_layer3_voice_service_options_t *opts);
 /* Go: trunk.MS.CallData. CallData asks the TSCC for a packet data call to the talkgroup or MS target, as Call does. */
 int dmrgo_trunk_ms_call_data(dmrgo_trunk_ms_t *self, int64_t now, bool group, uint32_t target, const dmrgo_layer3_data_service_options_t *opts);
+/* Go: trunk.MS.CallDuplex. CallDuplex asks the TSCC for a full-duplex voice call to the MS target, by random access, as Call does (ETSI TS 102 361-4 clause 6.6.9.2). */
+int dmrgo_trunk_ms_call_duplex(dmrgo_trunk_ms_t *self, int64_t now, uint32_t target, const dmrgo_layer3_voice_service_options_t *opts);
+/* Go: trunk.MS.CallDuplexData. CallDuplexData asks the TSCC for a full-duplex packet data call to the MS target, by random access, as CallData does (ETSI TS 102 361-4 clause 6.6.10.2). */
+int dmrgo_trunk_ms_call_duplex_data(dmrgo_trunk_ms_t *self, int64_t now, uint32_t target, const dmrgo_layer3_data_service_options_t *opts);
 /* dmrgo_trunk_ms_cancel_need sets *items and *arena to the room that dmrgo_trunk_ms_cancel needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_cancel_need(dmrgo_trunk_ms_t *self, int64_t now, size_t *items, size_t *arena);
 /* Go: trunk.MS.Cancel. Cancel stops the running request. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_cancel_need gives (DMRGO_TRUNK_MS_CANCEL_MAX_ITEMS items). */
 int dmrgo_trunk_ms_cancel(dmrgo_trunk_ms_t *self, int64_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.MS.Deadline. Deadline returns the time at which the MS needs a Tick. */
 int dmrgo_trunk_ms_deadline(dmrgo_trunk_ms_t *self, int64_t *at, bool *ok);
+/* Go: trunk.MS.Divert. Divert asks the TSCC to divert the calls of the MS, or to stop diverting them, by random access (ETSI TS 102 361-4 clause 6.6.7.1). */
+int dmrgo_trunk_ms_divert(dmrgo_trunk_ms_t *self, int64_t now, uint32_t gateway, const dmrgo_layer3_diversion_service_options_t *opts, const dmrgo_trunk_appended_t *a);
 /* dmrgo_trunk_ms_end_call_need sets *items and *arena to the room that dmrgo_trunk_ms_end_call needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_end_call_need(dmrgo_trunk_ms_t *self, int64_t now, size_t *items, size_t *arena);
 /* Go: trunk.MS.EndCall. EndCall ends the own call on the payload channel: it appends the N_Maint P_MAINT DISCON bursts, one per TDMA frame from now, and returns to the TSCC (ETSI TS 102 361-4 clause 6.6.2.3). It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_end_call_need gives (DMRGO_TRUNK_MS_END_CALL_MAX_ITEMS items). */
 int dmrgo_trunk_ms_end_call(dmrgo_trunk_ms_t *self, int64_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* dmrgo_trunk_ms_group_alias_need sets *items and *arena to the room that dmrgo_trunk_ms_group_alias needs for these arguments, without a change to the handle. */
+int dmrgo_trunk_ms_group_alias_need(dmrgo_trunk_ms_t *self, uint32_t tg, size_t *items, size_t *arena);
+/* Go: trunk.MS.GroupAlias. GroupAlias appends the DGNA alias of the talkgroup tg to dst as UTF-8 and returns dst; it appends nothing for a talkgroup without an alias. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_group_alias_need gives (DMRGO_TRUNK_MS_GROUP_ALIAS_MAX_ITEMS items). */
+int dmrgo_trunk_ms_group_alias(dmrgo_trunk_ms_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, uint32_t tg);
+/* Go: trunk.MS.Groups. Groups returns the DGNA talkgroups of the MS. */
+int dmrgo_trunk_ms_groups(dmrgo_trunk_ms_t *self, dmrgo_trunk_dynamic_groups_t *out);
 /* dmrgo_trunk_ms_lost_need sets *items and *arena to the room that dmrgo_trunk_ms_lost needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_lost_need(dmrgo_trunk_ms_t *self, int64_t now, size_t *items, size_t *arena);
 /* Go: trunk.MS.Lost. Lost tells the MS that the receiver lost the signal, as Follower.Lost does. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_lost_need gives (DMRGO_TRUNK_MS_LOST_MAX_ITEMS items). */
 int dmrgo_trunk_ms_lost(dmrgo_trunk_ms_t *self, int64_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.MS.Off. Off reports whether the MS completed PowerOff. */
 int dmrgo_trunk_ms_off(dmrgo_trunk_ms_t *self, bool *out);
+/* Go: trunk.MS.PollShortData. PollShortData asks the TSCC to poll the MS target for UDT short data in the format f, in the given number of appended blocks, by random access (ETSI TS 102 361-4 clause 6.6.5). */
+int dmrgo_trunk_ms_poll_short_data(dmrgo_trunk_ms_t *self, int64_t now, uint32_t target, dmrgo_enums_udt_format_t f, int64_t blocks);
 /* dmrgo_trunk_ms_power_off_need sets *items and *arena to the room that dmrgo_trunk_ms_power_off needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_power_off_need(dmrgo_trunk_ms_t *self, int64_t now, size_t *items, size_t *arena);
 /* Go: trunk.MS.PowerOff. PowerOff de-registers the MS before it is switched off: it sends the de-registration by random access and appends OutputPowerOff when the TSCC accepts it or after T_Dereg (ETSI TS 102 361-4 clause 6.4.6). It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_power_off_need gives (DMRGO_TRUNK_MS_POWER_OFF_MAX_ITEMS items). */
@@ -8002,6 +8272,12 @@ int dmrgo_trunk_ms_quality(dmrgo_trunk_ms_t *self, int64_t now, int64_t level, d
 int dmrgo_trunk_ms_registered(dmrgo_trunk_ms_t *self, bool *out);
 /* Go: trunk.MS.Reset. Reset forgets the site, the registration, the denied list and any request, as after NewMS. */
 int dmrgo_trunk_ms_reset(dmrgo_trunk_ms_t *self);
+/* Go: trunk.MS.SendShortData. SendShortData asks the TSCC to deliver the appended data a as UDT short data to the talkgroup or MS target, or to a gateway, by random access (ETSI TS 102 361-4 clause 6.6.4). */
+int dmrgo_trunk_ms_send_short_data(dmrgo_trunk_ms_t *self, int64_t now, bool group, uint32_t target, const dmrgo_trunk_appended_t *a, const dmrgo_layer3_short_data_service_options_t *opts);
+/* Go: trunk.MS.SetPollResponse. SetPollResponse sets the data that the MS sends when the TSCC polls it for UDT short data with a C_AHOY. */
+int dmrgo_trunk_ms_set_poll_response(dmrgo_trunk_ms_t *self, const dmrgo_trunk_appended_t *a);
+/* Go: trunk.MS.SetUSBDResponse. SetUSBDResponse sets the Poll Response that the MS sends to a USBD Poll Request of the same Service Type for it, such as a USBDLIPResponse in its Payload. */
+int dmrgo_trunk_ms_set_usbd_response(dmrgo_trunk_ms_t *self, const dmrgo_pdu_unified_single_block_data_t *p);
 /* Go: trunk.MS.Site. Site returns what the MS knows about the TSCC. */
 int dmrgo_trunk_ms_site(dmrgo_trunk_ms_t *self, dmrgo_trunk_site_t *out);
 /* Go: trunk.MS.State. State returns the channel state of the MS. */
@@ -8012,6 +8288,14 @@ int dmrgo_trunk_ms_tick_need(dmrgo_trunk_ms_t *self, int64_t now, size_t *items,
 int dmrgo_trunk_ms_tick(dmrgo_trunk_ms_t *self, int64_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.MS.UDT. UDT returns the UDT delivery of the last OutputUDT, as Follower.UDT does. */
 int dmrgo_trunk_ms_udt(dmrgo_trunk_ms_t *self, dmrgo_trunk_udt_t **out);
+/* Go: trunk.NMEALong.Encode. Encode encodes an NMEALong. */
+int dmrgo_trunk_nmea_long_encode(dmrgo_trunk_nmea_long_t *self, uint8_t out[22]);
+/* Go: trunk.NMEALong.String. String returns the fields of s as text, for printing. */
+int dmrgo_trunk_nmea_long_string(dmrgo_trunk_nmea_long_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: trunk.NMEAShort.Encode. Encode encodes an NMEAShort. */
+int dmrgo_trunk_nmea_short_encode(dmrgo_trunk_nmea_short_t *self, uint8_t out[10]);
+/* Go: trunk.NMEAShort.String. String returns the fields of s as text, for printing. */
+int dmrgo_trunk_nmea_short_string(dmrgo_trunk_nmea_short_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: trunk.NewCapacityPlusFollower. NewCapacityPlusFollower returns a CapacityPlusFollower for cfg. */
 int dmrgo_trunk_new_capacity_plus_follower(const dmrgo_trunk_capacity_plus_config_t *cfg, dmrgo_trunk_capacity_plus_follower_t **out);
 /* Go: trunk.NewFollower. NewFollower returns a Follower for cfg. */
@@ -8068,6 +8352,16 @@ int dmrgo_trunk_udt_set_crc_ok(dmrgo_trunk_udt_t *self, bool v);
 int dmrgo_trunk_udt_new(dmrgo_trunk_udt_t **out);
 /* dmrgo_trunk_udt_free frees the handle. self may be NULL. */
 int dmrgo_trunk_udt_free(dmrgo_trunk_udt_t *self);
+/* Go: trunk.UDT.Appended. Appended returns the appended data of u, with the UDT Format and the pad nibbles of its header. */
+int dmrgo_trunk_udt_appended(dmrgo_trunk_udt_t *self, dmrgo_trunk_appended_t *out);
+/* Go: trunk.USBDLIPResponse.Encode. Encode encodes a USBDLIPResponse. */
+int dmrgo_trunk_usbdlip_response_encode(dmrgo_trunk_usbdlip_response_t *self, uint8_t out[10]);
+/* Go: trunk.USBDLIPResponse.String. String returns the fields of s as text, for printing. */
+int dmrgo_trunk_usbdlip_response_string(dmrgo_trunk_usbdlip_response_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: trunk.USBDPollRequest.Encode. Encode encodes a USBDPollRequest. */
+int dmrgo_trunk_usbd_poll_request_encode(dmrgo_trunk_usbd_poll_request_t *self, uint8_t out[10]);
+/* Go: trunk.USBDPollRequest.String. String returns the fields of s as text, for printing. */
+int dmrgo_trunk_usbd_poll_request_string(dmrgo_trunk_usbd_poll_request_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: auth.Response. Response returns the 24-bit response to the challenge for the key K: the octets 257 to 259 of the RC4 keystream keyed with the 3 octets of the challenge, most significant first, and the 16 octets of K, exclusive-or psn. */
 int dmrgo_trunk_auth_response(uint32_t challenge, const uint8_t key[16], uint32_t psn, uint32_t *out);
 /* Go: vocoder.AMBESilence. AMBESilence returns the AMBE+2 frame of silence that MMDVMHost sends to fill a voice burst (DMR_SILENCE_DATA); EncodeAMBE72 of it is the slot B9E881526173002A6B. */

@@ -547,7 +547,7 @@ func out_layer2_pdu_UDTHeader(d *C.dmrgo_pdu_udt_header_t, s *g_layer2_pdu.UDTHe
 	d.emergency = C.bool(s.Emergency)
 	d.option_flag = C.bool(s.OptionFlag)
 	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
-	d.udt_format = C.uint8_t(s.UDTFormat)
+	d.udt_format = C.dmrgo_enums_udt_format_t(s.UDTFormat)
 	d.llid_destination = C.uint32_t(s.LLIDDestination)
 	d.llid_source = C.uint32_t(s.LLIDSource)
 	d.pad_nibble = C.uint8_t(s.PadNibble)
@@ -776,7 +776,7 @@ func in_layer2_pdu_UDTHeader(s *C.dmrgo_pdu_udt_header_t) (d g_layer2_pdu.UDTHea
 	d.Emergency = bool(s.emergency)
 	d.OptionFlag = bool(s.option_flag)
 	d.SAP = g_enums.ServiceAccessPointID(s.sap)
-	d.UDTFormat = uint8(s.udt_format)
+	d.UDTFormat = g_enums.UDTFormat(s.udt_format)
 	d.LLIDDestination = uint32(s.llid_destination)
 	d.LLIDSource = uint32(s.llid_source)
 	d.PadNibble = uint8(s.pad_nibble)
@@ -3367,6 +3367,22 @@ func out_layer3_DataServiceOptions(d *C.dmrgo_layer3_data_service_options_t, s *
 	d.priority_level = C.uint8_t(s.PriorityLevel)
 }
 
+func out_layer3_DiversionServiceOptions(d *C.dmrgo_layer3_diversion_service_options_t, s *g_layer3.DiversionServiceOptions, oc *outc) {
+	_ = oc
+	d.is_privacy = C.bool(s.IsPrivacy)
+	d.set = C.bool(s.Set)
+	d.voice = C.bool(s.Voice)
+	d.packet_data = C.bool(s.PacketData)
+	d.short_data = C.bool(s.ShortData)
+	d.status = C.bool(s.Status)
+}
+
+func out_layer3_PollingServiceOptions(d *C.dmrgo_layer3_polling_service_options_t, s *g_layer3.PollingServiceOptions, oc *outc) {
+	_ = oc
+	d.is_privacy = C.bool(s.IsPrivacy)
+	d.format = C.dmrgo_enums_udt_format_t(s.Format)
+}
+
 func out_layer3_RegistrationServiceOptions(d *C.dmrgo_layer3_registration_service_options_t, s *g_layer3.RegistrationServiceOptions, oc *outc) {
 	_ = oc
 	d.reserved = C.bool(s.Reserved)
@@ -3374,6 +3390,12 @@ func out_layer3_RegistrationServiceOptions(d *C.dmrgo_layer3_registration_servic
 	d.ip_inform = C.bool(s.IPInform)
 	d.power_save = C.uint8_t(s.PowerSave)
 	d.register_ = C.bool(s.Register)
+}
+
+func out_layer3_ShortDataServiceOptions(d *C.dmrgo_layer3_short_data_service_options_t, s *g_layer3.ShortDataServiceOptions, oc *outc) {
+	_ = oc
+	d.is_privacy = C.bool(s.IsPrivacy)
+	d.is_supp_data = C.bool(s.IsSuppData)
 }
 
 func out_layer3_VoiceServiceOptions(d *C.dmrgo_layer3_voice_service_options_t, s *g_layer3.VoiceServiceOptions, oc *outc) {
@@ -3386,12 +3408,34 @@ func out_layer3_VoiceServiceOptions(d *C.dmrgo_layer3_voice_service_options_t, s
 	d.priority_level = C.uint8_t(s.PriorityLevel)
 }
 
+func in_layer3_DiversionServiceOptions(s *C.dmrgo_layer3_diversion_service_options_t) (d g_layer3.DiversionServiceOptions) {
+	d.IsPrivacy = bool(s.is_privacy)
+	d.Set = bool(s.set)
+	d.Voice = bool(s.voice)
+	d.PacketData = bool(s.packet_data)
+	d.ShortData = bool(s.short_data)
+	d.Status = bool(s.status)
+	return
+}
+
+func in_layer3_PollingServiceOptions(s *C.dmrgo_layer3_polling_service_options_t) (d g_layer3.PollingServiceOptions) {
+	d.IsPrivacy = bool(s.is_privacy)
+	d.Format = g_enums.UDTFormat(s.format)
+	return
+}
+
 func in_layer3_RegistrationServiceOptions(s *C.dmrgo_layer3_registration_service_options_t) (d g_layer3.RegistrationServiceOptions) {
 	d.Reserved = bool(s.reserved)
 	d.IsPrivacy = bool(s.is_privacy)
 	d.IPInform = bool(s.ip_inform)
 	d.PowerSave = uint8(s.power_save)
 	d.Register = bool(s.register_)
+	return
+}
+
+func in_layer3_ShortDataServiceOptions(s *C.dmrgo_layer3_short_data_service_options_t) (d g_layer3.ShortDataServiceOptions) {
+	d.IsPrivacy = bool(s.is_privacy)
+	d.IsSuppData = bool(s.is_supp_data)
 	return
 }
 
@@ -4406,6 +4450,111 @@ func in_transport_mmdvm_Version(s *C.dmrgo_mmdvm_version_t) (d g_transport_mmdvm
 	return
 }
 
+func in_trunk_Appended(s *C.dmrgo_trunk_appended_t) (d g_trunk.Appended) {
+	d.Format = g_enums.UDTFormat(s.format)
+	d.PadNibble = uint8(s.pad_nibble)
+	d.Blocks = int(s.blocks)
+	d.Data = *(*[46]byte)(unsafe.Pointer(&s.data))
+	return
+}
+
+func out_trunk_Appended(d *C.dmrgo_trunk_appended_t, s *g_trunk.Appended, oc *outc) {
+	_ = oc
+	d.format = C.dmrgo_enums_udt_format_t(s.Format)
+	d.pad_nibble = C.uint8_t(s.PadNibble)
+	d.blocks = C.int64_t(s.Blocks)
+	*(*[46]byte)(unsafe.Pointer(&d.data)) = s.Data
+}
+
+func out_trunk_AddressList(d *C.dmrgo_trunk_address_list_t, s *g_trunk.AddressList, oc *outc) {
+	_ = oc
+	d.one_key = C.bool(s.OneKey)
+	*(*[15]uint32)(unsafe.Pointer(&d.addresses)) = s.Addresses
+	d.len = C.int64_t(s.Len)
+}
+
+func out_trunk_NMEALong(d *C.dmrgo_trunk_nmea_long_t, s *g_trunk.NMEALong, oc *outc) {
+	_ = oc
+	d.encrypted = C.bool(s.Encrypted)
+	d.north = C.bool(s.North)
+	d.east = C.bool(s.East)
+	d.fix = C.bool(s.Fix)
+	d.speed = C.uint8_t(s.Speed)
+	d.lat_degrees = C.uint8_t(s.LatDegrees)
+	d.lat_minutes = C.uint8_t(s.LatMinutes)
+	d.lat_fraction = C.uint16_t(s.LatFraction)
+	d.lon_degrees = C.uint8_t(s.LonDegrees)
+	d.lon_minutes = C.uint8_t(s.LonMinutes)
+	d.lon_fraction = C.uint16_t(s.LonFraction)
+	d.hours = C.uint8_t(s.Hours)
+	d.minutes = C.uint8_t(s.Minutes)
+	d.seconds = C.uint8_t(s.Seconds)
+	d.spare1 = C.uint8_t(s.Spare1)
+	d.mfid = C.uint8_t(s.MFID)
+	d.spare2 = C.uint8_t(s.Spare2)
+	d.course = C.uint16_t(s.Course)
+	d.spare3 = C.uint64_t(s.Spare3)
+}
+
+func out_trunk_NMEAShort(d *C.dmrgo_trunk_nmea_short_t, s *g_trunk.NMEAShort, oc *outc) {
+	_ = oc
+	d.encrypted = C.bool(s.Encrypted)
+	d.north = C.bool(s.North)
+	d.east = C.bool(s.East)
+	d.fix = C.bool(s.Fix)
+	d.speed = C.uint8_t(s.Speed)
+	d.lat_degrees = C.uint8_t(s.LatDegrees)
+	d.lat_minutes = C.uint8_t(s.LatMinutes)
+	d.lat_fraction = C.uint16_t(s.LatFraction)
+	d.lon_degrees = C.uint8_t(s.LonDegrees)
+	d.lon_minutes = C.uint8_t(s.LonMinutes)
+	d.lon_fraction = C.uint16_t(s.LonFraction)
+	d.hours = C.uint8_t(s.Hours)
+	d.minutes = C.uint8_t(s.Minutes)
+	d.ten_seconds = C.uint8_t(s.TenSeconds)
+}
+
+func in_trunk_NMEALong(s *C.dmrgo_trunk_nmea_long_t) (d g_trunk.NMEALong) {
+	d.Encrypted = bool(s.encrypted)
+	d.North = bool(s.north)
+	d.East = bool(s.east)
+	d.Fix = bool(s.fix)
+	d.Speed = uint8(s.speed)
+	d.LatDegrees = uint8(s.lat_degrees)
+	d.LatMinutes = uint8(s.lat_minutes)
+	d.LatFraction = uint16(s.lat_fraction)
+	d.LonDegrees = uint8(s.lon_degrees)
+	d.LonMinutes = uint8(s.lon_minutes)
+	d.LonFraction = uint16(s.lon_fraction)
+	d.Hours = uint8(s.hours)
+	d.Minutes = uint8(s.minutes)
+	d.Seconds = uint8(s.seconds)
+	d.Spare1 = uint8(s.spare1)
+	d.MFID = uint8(s.mfid)
+	d.Spare2 = uint8(s.spare2)
+	d.Course = uint16(s.course)
+	d.Spare3 = uint64(s.spare3)
+	return
+}
+
+func in_trunk_NMEAShort(s *C.dmrgo_trunk_nmea_short_t) (d g_trunk.NMEAShort) {
+	d.Encrypted = bool(s.encrypted)
+	d.North = bool(s.north)
+	d.East = bool(s.east)
+	d.Fix = bool(s.fix)
+	d.Speed = uint8(s.speed)
+	d.LatDegrees = uint8(s.lat_degrees)
+	d.LatMinutes = uint8(s.lat_minutes)
+	d.LatFraction = uint16(s.lat_fraction)
+	d.LonDegrees = uint8(s.lon_degrees)
+	d.LonMinutes = uint8(s.lon_minutes)
+	d.LonFraction = uint16(s.lon_fraction)
+	d.Hours = uint8(s.hours)
+	d.Minutes = uint8(s.minutes)
+	d.TenSeconds = uint8(s.ten_seconds)
+	return
+}
+
 func out_trunk_Tune(d *C.dmrgo_trunk_tune_t, s *g_trunk.Tune, oc *outc) {
 	_ = oc
 	d.channel = C.uint16_t(s.Channel)
@@ -4458,6 +4607,28 @@ func out_trunk_ConfigError(d *C.dmrgo_trunk_config_error_t, s *g_trunk.ConfigErr
 	_ = oc
 	d.field = arenaStr(oc, s.Field)
 	d.field_len = C.size_t(len(s.Field))
+}
+
+func out_trunk_LIPShortReport(d *C.dmrgo_trunk_lip_short_report_t, s *g_trunk.LIPShortReport, oc *outc) {
+	_ = oc
+	d.pdu_type = C.uint8_t(s.PDUType)
+	d.time_elapsed = C.uint8_t(s.TimeElapsed)
+	d.longitude = C.double(s.Longitude)
+	d.latitude = C.double(s.Latitude)
+	d.position_error = C.dmrgo_layer3_position_error_t(s.PositionError)
+	d.velocity = C.uint8_t(s.Velocity)
+	d.direction = C.uint8_t(s.Direction)
+	d.additional_type = C.bool(s.AdditionalType)
+	d.additional_data = C.uint8_t(s.AdditionalData)
+}
+
+func out_trunk_USBDPollRequest(d *C.dmrgo_trunk_usbd_poll_request_t, s *g_trunk.USBDPollRequest, oc *outc) {
+	_ = oc
+	d.response_delay = C.uint8_t(s.ResponseDelay)
+	d.payload_contents = C.bool(s.PayloadContents)
+	d.reserved = C.bool(s.Reserved)
+	d.parameters = C.uint64_t(s.Parameters)
+	d.target = C.uint32_t(s.Target)
 }
 
 func out_trunk_Neighbor(d *C.dmrgo_trunk_neighbor_t, s *g_trunk.Neighbor, oc *outc) {
@@ -4521,6 +4692,26 @@ func out_trunk_HuntEntry(d *C.dmrgo_trunk_hunt_entry_t, s *g_trunk.HuntEntry, oc
 	d.channel = C.uint16_t(s.Channel)
 	d.color_code = C.dmrgo_enums_color_code_t(s.ColorCode)
 	d.has_color_code = C.bool(s.HasColorCode)
+}
+
+func in_trunk_LIPShortReport(s *C.dmrgo_trunk_lip_short_report_t) (d g_trunk.LIPShortReport) {
+	d.PDUType = uint8(s.pdu_type)
+	d.TimeElapsed = uint8(s.time_elapsed)
+	d.Longitude = float64(s.longitude)
+	d.Latitude = float64(s.latitude)
+	d.PositionError = g_layer3.PositionError(s.position_error)
+	d.Velocity = uint8(s.velocity)
+	d.Direction = uint8(s.direction)
+	d.AdditionalType = bool(s.additional_type)
+	d.AdditionalData = uint8(s.additional_data)
+	return
+}
+
+func out_trunk_DynamicGroups(d *C.dmrgo_trunk_dynamic_groups_t, s *g_trunk.DynamicGroups, oc *outc) {
+	_ = oc
+	*(*[16]uint32)(unsafe.Pointer(&d.groups)) = s.Groups
+	d.one_key = C.uint32_t(s.OneKey)
+	d.has_one_key = C.bool(s.HasOneKey)
 }
 
 func in_trunk_CapacityPlusConfig(s *C.dmrgo_trunk_capacity_plus_config_t) (d g_trunk.CapacityPlusConfig) {
@@ -4629,6 +4820,8 @@ func in_trunk_MSConfig(s *C.dmrgo_trunk_ms_config_t, st *st_trunk_MSConfig) (d g
 	if s.scratch != nil {
 		d.Scratch = get_layer2_Burst(s.scratch).v
 	}
+	d.NoDuplex = bool(s.no_duplex)
+	d.Ambient = bool(s.ambient)
 	return
 }
 
@@ -4665,6 +4858,15 @@ func out_trunk_TSCCOutput(d *C.dmrgo_trunk_tscc_output_t, s *g_trunk.TSCCOutput,
 	out_trunk_Grant(&d.call, &s.Call, oc)
 	d.reason = C.dmrgo_trunk_reason_t(s.Reason)
 	d.challenge = C.uint32_t(s.Challenge)
+}
+
+func in_trunk_USBDPollRequest(s *C.dmrgo_trunk_usbd_poll_request_t) (d g_trunk.USBDPollRequest) {
+	d.ResponseDelay = uint8(s.response_delay)
+	d.PayloadContents = bool(s.payload_contents)
+	d.Reserved = bool(s.reserved)
+	d.Parameters = uint64(s.parameters)
+	d.Target = uint32(s.target)
+	return
 }
 
 type vt_vocoder_AppendDecoder struct {
@@ -6605,12 +6807,24 @@ func fromC_layer3_DataServiceOptions(s *C.dmrgo_layer3_data_service_options_t) g
 	return in_layer3_DataServiceOptions(s)
 }
 
+func fromC_layer3_DiversionServiceOptions(s *C.dmrgo_layer3_diversion_service_options_t) g_layer3.DiversionServiceOptions {
+	return in_layer3_DiversionServiceOptions(s)
+}
+
+func fromC_layer3_PollingServiceOptions(s *C.dmrgo_layer3_polling_service_options_t) g_layer3.PollingServiceOptions {
+	return in_layer3_PollingServiceOptions(s)
+}
+
 func fromC_layer3_RegistrationServiceOptions(s *C.dmrgo_layer3_registration_service_options_t) g_layer3.RegistrationServiceOptions {
 	return in_layer3_RegistrationServiceOptions(s)
 }
 
 func fromC_layer3_ServiceOptions(s *C.dmrgo_layer3_service_options_t) g_layer3.ServiceOptions {
 	return in_layer3_ServiceOptions(s)
+}
+
+func fromC_layer3_ShortDataServiceOptions(s *C.dmrgo_layer3_short_data_service_options_t) g_layer3.ShortDataServiceOptions {
+	return in_layer3_ShortDataServiceOptions(s)
 }
 
 func fromC_layer3_VoiceServiceOptions(s *C.dmrgo_layer3_voice_service_options_t) g_layer3.VoiceServiceOptions {
@@ -7332,6 +7546,21 @@ func fromC_trunk_Access(s *C.dmrgo_trunk_access_t) g_trunk.Access {
 	return in_trunk_Access(s)
 }
 
+func in_trunk_AddressList(s *C.dmrgo_trunk_address_list_t) (d g_trunk.AddressList) {
+	d.OneKey = bool(s.one_key)
+	d.Addresses = *(*[15]uint32)(unsafe.Pointer(&s.addresses))
+	d.Len = int(s.len)
+	return
+}
+
+func fromC_trunk_AddressList(s *C.dmrgo_trunk_address_list_t) g_trunk.AddressList {
+	return in_trunk_AddressList(s)
+}
+
+func fromC_trunk_Appended(s *C.dmrgo_trunk_appended_t) g_trunk.Appended {
+	return in_trunk_Appended(s)
+}
+
 func out_trunk_CapacityPlusConfig(d *C.dmrgo_trunk_capacity_plus_config_t, s *g_trunk.CapacityPlusConfig, oc *outc) {
 	_ = oc
 	if s.Plan != nil {
@@ -7399,6 +7628,17 @@ func fromC_trunk_ConfigError(s *C.dmrgo_trunk_config_error_t) g_trunk.ConfigErro
 	return in_trunk_ConfigError(s)
 }
 
+func in_trunk_DynamicGroups(s *C.dmrgo_trunk_dynamic_groups_t) (d g_trunk.DynamicGroups) {
+	d.Groups = *(*[16]uint32)(unsafe.Pointer(&s.groups))
+	d.OneKey = uint32(s.one_key)
+	d.HasOneKey = bool(s.has_one_key)
+	return
+}
+
+func fromC_trunk_DynamicGroups(s *C.dmrgo_trunk_dynamic_groups_t) g_trunk.DynamicGroups {
+	return in_trunk_DynamicGroups(s)
+}
+
 func out_trunk_FollowerConfig(d *C.dmrgo_trunk_follower_config_t, s *g_trunk.FollowerConfig, oc *outc) {
 	_ = oc
 	if s.SysCode != nil {
@@ -7441,6 +7681,10 @@ func fromC_trunk_Grant(s *C.dmrgo_trunk_grant_t) g_trunk.Grant {
 
 func fromC_trunk_HuntEntry(s *C.dmrgo_trunk_hunt_entry_t) g_trunk.HuntEntry {
 	return in_trunk_HuntEntry(s)
+}
+
+func fromC_trunk_LIPShortReport(s *C.dmrgo_trunk_lip_short_report_t) g_trunk.LIPShortReport {
+	return in_trunk_LIPShortReport(s)
 }
 
 func out_trunk_MSConfig(d *C.dmrgo_trunk_ms_config_t, s *g_trunk.MSConfig, oc *outc) {
@@ -7494,11 +7738,21 @@ func out_trunk_MSConfig(d *C.dmrgo_trunk_ms_config_t, s *g_trunk.MSConfig, oc *o
 		panic(argPanic{})
 	}
 	d.scratch = nil
+	d.no_duplex = C.bool(s.NoDuplex)
+	d.ambient = C.bool(s.Ambient)
 }
 
 func fromC_trunk_MSConfig(s *C.dmrgo_trunk_ms_config_t) g_trunk.MSConfig {
 	var st st_trunk_MSConfig
 	return in_trunk_MSConfig(s, &st)
+}
+
+func fromC_trunk_NMEALong(s *C.dmrgo_trunk_nmea_long_t) g_trunk.NMEALong {
+	return in_trunk_NMEALong(s)
+}
+
+func fromC_trunk_NMEAShort(s *C.dmrgo_trunk_nmea_short_t) g_trunk.NMEAShort {
+	return in_trunk_NMEAShort(s)
 }
 
 func in_trunk_Neighbor(s *C.dmrgo_trunk_neighbor_t) (d g_trunk.Neighbor) {
@@ -7612,6 +7866,38 @@ func fromC_trunk_TSCCOutput(s *C.dmrgo_trunk_tscc_output_t) g_trunk.TSCCOutput {
 
 func fromC_trunk_Tune(s *C.dmrgo_trunk_tune_t) g_trunk.Tune {
 	return in_trunk_Tune(s)
+}
+
+func in_trunk_USBDLIPResponse(s *C.dmrgo_trunk_usbdlip_response_t) (d g_trunk.USBDLIPResponse) {
+	d.TimeElapsed = uint8(s.time_elapsed)
+	d.Longitude = float64(s.longitude)
+	d.Latitude = float64(s.latitude)
+	d.PositionError = g_layer3.PositionError(s.position_error)
+	d.Velocity = uint8(s.velocity)
+	d.Direction = uint8(s.direction)
+	d.Reason = uint8(s.reason)
+	d.HashedSource = uint8(s.hashed_source)
+	return
+}
+
+func out_trunk_USBDLIPResponse(d *C.dmrgo_trunk_usbdlip_response_t, s *g_trunk.USBDLIPResponse, oc *outc) {
+	_ = oc
+	d.time_elapsed = C.uint8_t(s.TimeElapsed)
+	d.longitude = C.double(s.Longitude)
+	d.latitude = C.double(s.Latitude)
+	d.position_error = C.dmrgo_layer3_position_error_t(s.PositionError)
+	d.velocity = C.uint8_t(s.Velocity)
+	d.direction = C.uint8_t(s.Direction)
+	d.reason = C.uint8_t(s.Reason)
+	d.hashed_source = C.uint8_t(s.HashedSource)
+}
+
+func fromC_trunk_USBDLIPResponse(s *C.dmrgo_trunk_usbdlip_response_t) g_trunk.USBDLIPResponse {
+	return in_trunk_USBDLIPResponse(s)
+}
+
+func fromC_trunk_USBDPollRequest(s *C.dmrgo_trunk_usbd_poll_request_t) g_trunk.USBDPollRequest {
+	return in_trunk_USBDPollRequest(s)
 }
 
 func out_vocoder_codec2_Config(d *C.dmrgo_codec2_config_t, s *g_vocoder_codec2.Config, oc *outc) {
@@ -13172,6 +13458,22 @@ func dmrgo_enums_sync_pattern_string(c_self C.dmrgo_enums_sync_pattern_t, c_out 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := g_enums.SyncPattern(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_enums_udt_format_string
+func dmrgo_enums_udt_format_string(c_self C.dmrgo_enums_udt_format_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_enums.UDTFormat(c_self).String()
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -28521,6 +28823,42 @@ func dmrgo_layer3_decode_data_service_options(c_data *C.uint8_t, c_out *C.dmrgo_
 	return C.DMRGO_OK
 }
 
+//export dmrgo_layer3_decode_diversion_service_options
+func dmrgo_layer3_decode_diversion_service_options(c_data *C.uint8_t, c_out *C.dmrgo_layer3_diversion_service_options_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_layer3.DecodeDiversionServiceOptions(*(*[1]byte)(unsafe.Pointer(c_data)))
+	_ = r0
+	if c_out != nil {
+		out_layer3_DiversionServiceOptions(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer3_decode_polling_service_options
+func dmrgo_layer3_decode_polling_service_options(c_data *C.uint8_t, c_out *C.dmrgo_layer3_polling_service_options_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_layer3.DecodePollingServiceOptions(*(*[1]byte)(unsafe.Pointer(c_data)))
+	_ = r0
+	if c_out != nil {
+		out_layer3_PollingServiceOptions(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_layer3_decode_registration_service_options
 func dmrgo_layer3_decode_registration_service_options(c_data *C.uint8_t, c_out *C.dmrgo_layer3_registration_service_options_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -28557,6 +28895,24 @@ func dmrgo_layer3_decode_service_options(c_data *C.uint8_t, c_out *C.dmrgo_layer
 	return C.DMRGO_OK
 }
 
+//export dmrgo_layer3_decode_short_data_service_options
+func dmrgo_layer3_decode_short_data_service_options(c_data *C.uint8_t, c_out *C.dmrgo_layer3_short_data_service_options_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_layer3.DecodeShortDataServiceOptions(*(*[1]byte)(unsafe.Pointer(c_data)))
+	_ = r0
+	if c_out != nil {
+		out_layer3_ShortDataServiceOptions(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_layer3_decode_voice_service_options
 func dmrgo_layer3_decode_voice_service_options(c_data *C.uint8_t, c_out *C.dmrgo_layer3_voice_service_options_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -28575,6 +28931,75 @@ func dmrgo_layer3_decode_voice_service_options(c_data *C.uint8_t, c_out *C.dmrgo
 	return C.DMRGO_OK
 }
 
+//export dmrgo_layer3_diversion_service_options_encode
+func dmrgo_layer3_diversion_service_options_encode(c_self *C.dmrgo_layer3_diversion_service_options_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer3.DiversionServiceOptions
+	x = in_layer3_DiversionServiceOptions(&(*c_self))
+	r0, r1 := x.Encode()
+	out_layer3_DiversionServiceOptions(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		*(*[1]byte)(unsafe.Pointer(&(*(*[1]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer3_diversion_service_options_field
+func dmrgo_layer3_diversion_service_options_field(c_self *C.dmrgo_layer3_diversion_service_options_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer3.DiversionServiceOptions
+	x = in_layer3_DiversionServiceOptions(&(*c_self))
+	r0, r1 := x.Field()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint8_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer3_diversion_service_options_string
+func dmrgo_layer3_diversion_service_options_string(c_self *C.dmrgo_layer3_diversion_service_options_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer3.DiversionServiceOptions
+	x = in_layer3_DiversionServiceOptions(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_layer3_DiversionServiceOptions(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_layer3_motorola_service_options
 func dmrgo_layer3_motorola_service_options(c_out *C.dmrgo_layer3_service_options_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -28584,6 +29009,75 @@ func dmrgo_layer3_motorola_service_options(c_out *C.dmrgo_layer3_service_options
 	if c_out != nil {
 		out_layer3_ServiceOptions(&(*c_out), &r0, oc)
 	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer3_polling_service_options_encode
+func dmrgo_layer3_polling_service_options_encode(c_self *C.dmrgo_layer3_polling_service_options_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer3.PollingServiceOptions
+	x = in_layer3_PollingServiceOptions(&(*c_self))
+	r0, r1 := x.Encode()
+	out_layer3_PollingServiceOptions(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		*(*[1]byte)(unsafe.Pointer(&(*(*[1]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer3_polling_service_options_field
+func dmrgo_layer3_polling_service_options_field(c_self *C.dmrgo_layer3_polling_service_options_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer3.PollingServiceOptions
+	x = in_layer3_PollingServiceOptions(&(*c_self))
+	r0, r1 := x.Field()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint8_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer3_polling_service_options_string
+func dmrgo_layer3_polling_service_options_string(c_self *C.dmrgo_layer3_polling_service_options_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer3.PollingServiceOptions
+	x = in_layer3_PollingServiceOptions(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_layer3_PollingServiceOptions(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -28736,6 +29230,75 @@ func dmrgo_layer3_service_options_string(c_self *C.dmrgo_layer3_service_options_
 	}
 	r0 := x.String()
 	out_layer3_ServiceOptions(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer3_short_data_service_options_encode
+func dmrgo_layer3_short_data_service_options_encode(c_self *C.dmrgo_layer3_short_data_service_options_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer3.ShortDataServiceOptions
+	x = in_layer3_ShortDataServiceOptions(&(*c_self))
+	r0, r1 := x.Encode()
+	out_layer3_ShortDataServiceOptions(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		*(*[1]byte)(unsafe.Pointer(&(*(*[1]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer3_short_data_service_options_field
+func dmrgo_layer3_short_data_service_options_field(c_self *C.dmrgo_layer3_short_data_service_options_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer3.ShortDataServiceOptions
+	x = in_layer3_ShortDataServiceOptions(&(*c_self))
+	r0, r1 := x.Field()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint8_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer3_short_data_service_options_string
+func dmrgo_layer3_short_data_service_options_string(c_self *C.dmrgo_layer3_short_data_service_options_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer3.ShortDataServiceOptions
+	x = in_layer3_ShortDataServiceOptions(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_layer3_ShortDataServiceOptions(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -35808,6 +36371,476 @@ func dmrgo_trunk_access_applies(c_self *C.dmrgo_trunk_access_t, c_ms C.uint32_t,
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_appended_addresses
+func dmrgo_trunk_appended_addresses(c_self *C.dmrgo_trunk_appended_t, c_out *C.dmrgo_trunk_address_list_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.Appended
+	x = in_trunk_Appended(&(*c_self))
+	r0, r1 := x.Addresses()
+	out_trunk_Appended(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		out_trunk_AddressList(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_appended_binary
+func dmrgo_trunk_appended_binary(c_self *C.dmrgo_trunk_appended_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_out1 *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.Appended
+	x = in_trunk_Appended(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1, r2 := x.Binary(a_dst)
+	out_trunk_Appended(&(*c_self), &x, oc)
+	_ = r0
+	_ = r1
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_out1 != nil {
+		*c_out1 = C.int64_t(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r2 != nil {
+		return setErr(r2)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_appended_digits
+func dmrgo_trunk_appended_digits(c_self *C.dmrgo_trunk_appended_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.Appended
+	x = in_trunk_Appended(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.Digits(a_dst)
+	out_trunk_Appended(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_appended_ip
+func dmrgo_trunk_appended_ip(c_self *C.dmrgo_trunk_appended_t, c_ip *C.uint8_t, c_v6 *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.Appended
+	x = in_trunk_Appended(&(*c_self))
+	r0, r1, r2 := x.IP()
+	out_trunk_Appended(&(*c_self), &x, oc)
+	_ = r0
+	_ = r1
+	if c_ip != nil {
+		*(*[16]byte)(unsafe.Pointer(&(*(*[16]C.uint8_t)(unsafe.Pointer(c_ip))))) = r0
+	}
+	if c_v6 != nil {
+		*c_v6 = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r2 != nil {
+		return setErr(r2)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_appended_lip
+func dmrgo_trunk_appended_lip(c_self *C.dmrgo_trunk_appended_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.Appended
+	x = in_trunk_Appended(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.LIP(a_dst)
+	out_trunk_Appended(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_appended_mixed
+func dmrgo_trunk_appended_mixed(c_self *C.dmrgo_trunk_appended_t, c_addr *C.uint32_t, c_one_key *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.Appended
+	x = in_trunk_Appended(&(*c_self))
+	r0, r1, r2 := x.Mixed()
+	out_trunk_Appended(&(*c_self), &x, oc)
+	_ = r0
+	_ = r1
+	if c_addr != nil {
+		*c_addr = C.uint32_t(r0)
+	}
+	if c_one_key != nil {
+		*c_one_key = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r2 != nil {
+		return setErr(r2)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_appended_nmea_long
+func dmrgo_trunk_appended_nmea_long(c_self *C.dmrgo_trunk_appended_t, c_out *C.dmrgo_trunk_nmea_long_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.Appended
+	x = in_trunk_Appended(&(*c_self))
+	r0, r1 := x.NMEALong()
+	out_trunk_Appended(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		out_trunk_NMEALong(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_appended_nmea_short
+func dmrgo_trunk_appended_nmea_short(c_self *C.dmrgo_trunk_appended_t, c_out *C.dmrgo_trunk_nmea_short_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.Appended
+	x = in_trunk_Appended(&(*c_self))
+	r0, r1 := x.NMEAShort()
+	out_trunk_Appended(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		out_trunk_NMEAShort(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_appended_set_addresses
+func dmrgo_trunk_appended_set_addresses(c_self *C.dmrgo_trunk_appended_t, c_one_key C.bool, c_list *C.uint32_t, c_list_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.Appended
+	x = in_trunk_Appended(&(*c_self))
+	if c_list == nil && c_list_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_list []uint32
+	a_list = unsafe.Slice((*uint32)(unsafe.Pointer(c_list)), int(c_list_len))
+	r0 := x.SetAddresses(bool(c_one_key), a_list)
+	out_trunk_Appended(&(*c_self), &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_appended_set_binary
+func dmrgo_trunk_appended_set_binary(c_self *C.dmrgo_trunk_appended_t, c_b *C.uint8_t, c_b_len C.size_t, c_n C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.Appended
+	x = in_trunk_Appended(&(*c_self))
+	if c_b == nil && c_b_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_b []byte
+	a_b = unsafe.Slice((*byte)(unsafe.Pointer(c_b)), int(c_b_len))
+	r0 := x.SetBinary(a_b, int(c_n))
+	out_trunk_Appended(&(*c_self), &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_appended_set_digits
+func dmrgo_trunk_appended_set_digits(c_self *C.dmrgo_trunk_appended_t, c_digits *C.uint8_t, c_digits_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.Appended
+	x = in_trunk_Appended(&(*c_self))
+	if c_digits == nil && c_digits_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_digits []byte
+	a_digits = unsafe.Slice((*byte)(unsafe.Pointer(c_digits)), int(c_digits_len))
+	r0 := x.SetDigits(a_digits)
+	out_trunk_Appended(&(*c_self), &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_appended_set_ip
+func dmrgo_trunk_appended_set_ip(c_self *C.dmrgo_trunk_appended_t, c_ip *C.uint8_t, c_v6 C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.Appended
+	x = in_trunk_Appended(&(*c_self))
+	if c_ip == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	x.SetIP(*(*[16]byte)(unsafe.Pointer(c_ip)), bool(c_v6))
+	out_trunk_Appended(&(*c_self), &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_appended_set_lip
+func dmrgo_trunk_appended_set_lip(c_self *C.dmrgo_trunk_appended_t, c_pdu *C.uint8_t, c_pdu_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.Appended
+	x = in_trunk_Appended(&(*c_self))
+	if c_pdu == nil && c_pdu_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_pdu []byte
+	a_pdu = unsafe.Slice((*byte)(unsafe.Pointer(c_pdu)), int(c_pdu_len))
+	r0 := x.SetLIP(a_pdu)
+	out_trunk_Appended(&(*c_self), &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_appended_set_mixed
+func dmrgo_trunk_appended_set_mixed(c_self *C.dmrgo_trunk_appended_t, c_one_key C.bool, c_addr C.uint32_t, c_text *C.uint8_t, c_text_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.Appended
+	x = in_trunk_Appended(&(*c_self))
+	if c_text == nil && c_text_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_text []byte
+	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	r0 := x.SetMixed(bool(c_one_key), uint32(c_addr), a_text)
+	out_trunk_Appended(&(*c_self), &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_appended_set_nmea_long
+func dmrgo_trunk_appended_set_nmea_long(c_self *C.dmrgo_trunk_appended_t, c_n *C.dmrgo_trunk_nmea_long_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.Appended
+	x = in_trunk_Appended(&(*c_self))
+	var a_n g_trunk.NMEALong
+	var p_n *g_trunk.NMEALong
+	if c_n != nil {
+		a_n = in_trunk_NMEALong(&(*c_n))
+		p_n = &a_n
+	}
+	r0 := x.SetNMEALong(p_n)
+	out_trunk_Appended(&(*c_self), &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_appended_set_nmea_short
+func dmrgo_trunk_appended_set_nmea_short(c_self *C.dmrgo_trunk_appended_t, c_n *C.dmrgo_trunk_nmea_short_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.Appended
+	x = in_trunk_Appended(&(*c_self))
+	var a_n g_trunk.NMEAShort
+	var p_n *g_trunk.NMEAShort
+	if c_n != nil {
+		a_n = in_trunk_NMEAShort(&(*c_n))
+		p_n = &a_n
+	}
+	r0 := x.SetNMEAShort(p_n)
+	out_trunk_Appended(&(*c_self), &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_appended_set_text
+func dmrgo_trunk_appended_set_text(c_self *C.dmrgo_trunk_appended_t, c_f C.dmrgo_enums_udt_format_t, c_text *C.uint8_t, c_text_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.Appended
+	x = in_trunk_Appended(&(*c_self))
+	if c_text == nil && c_text_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_text []byte
+	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	r0 := x.SetText(g_enums.UDTFormat(c_f), a_text)
+	out_trunk_Appended(&(*c_self), &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_appended_text
+func dmrgo_trunk_appended_text(c_self *C.dmrgo_trunk_appended_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.Appended
+	x = in_trunk_Appended(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.Text(a_dst)
+	out_trunk_Appended(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_capacity_plus_follower_new
 func dmrgo_trunk_capacity_plus_follower_new(c_out **C.dmrgo_trunk_capacity_plus_follower_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -36299,6 +37332,96 @@ func dmrgo_trunk_config_error_last(c_out *C.dmrgo_trunk_config_error_t, c_ok *C.
 	}
 	if ok && c_out != nil {
 		*c_out = *(*C.dmrgo_trunk_config_error_t)(unsafe.Pointer(&l.d))
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_decode_lip_short_report
+func dmrgo_trunk_decode_lip_short_report(c_data *C.uint8_t, c_out *C.dmrgo_trunk_lip_short_report_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_trunk.DecodeLIPShortReport(*(*[10]byte)(unsafe.Pointer(c_data)))
+	_ = r0
+	if c_out != nil {
+		out_trunk_LIPShortReport(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_decode_nmea_long
+func dmrgo_trunk_decode_nmea_long(c_data *C.uint8_t, c_out *C.dmrgo_trunk_nmea_long_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_trunk.DecodeNMEALong(*(*[22]byte)(unsafe.Pointer(c_data)))
+	_ = r0
+	if c_out != nil {
+		out_trunk_NMEALong(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_decode_nmea_short
+func dmrgo_trunk_decode_nmea_short(c_data *C.uint8_t, c_out *C.dmrgo_trunk_nmea_short_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_trunk.DecodeNMEAShort(*(*[10]byte)(unsafe.Pointer(c_data)))
+	_ = r0
+	if c_out != nil {
+		out_trunk_NMEAShort(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_decode_usbdlip_response
+func dmrgo_trunk_decode_usbdlip_response(c_data *C.uint8_t, c_out *C.dmrgo_trunk_usbdlip_response_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_trunk.DecodeUSBDLIPResponse(*(*[10]byte)(unsafe.Pointer(c_data)))
+	_ = r0
+	if c_out != nil {
+		*(*g_trunk.USBDLIPResponse)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_decode_usbd_poll_request
+func dmrgo_trunk_decode_usbd_poll_request(c_data *C.uint8_t, c_out *C.dmrgo_trunk_usbd_poll_request_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_trunk.DecodeUSBDPollRequest(*(*[10]byte)(unsafe.Pointer(c_data)))
+	_ = r0
+	if c_out != nil {
+		out_trunk_USBDPollRequest(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
 	}
 	return C.DMRGO_OK
 }
@@ -36801,6 +37924,52 @@ func dmrgo_trunk_hunt_list_withdraw(c_self *C.dmrgo_trunk_hunt_list_t, c_channel
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_lip_short_report_encode
+func dmrgo_trunk_lip_short_report_encode(c_self *C.dmrgo_trunk_lip_short_report_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.LIPShortReport
+	x = in_trunk_LIPShortReport(&(*c_self))
+	r0, r1 := x.Encode()
+	out_trunk_LIPShortReport(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		*(*[10]byte)(unsafe.Pointer(&(*(*[10]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_lip_short_report_string
+func dmrgo_trunk_lip_short_report_string(c_self *C.dmrgo_trunk_lip_short_report_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.LIPShortReport
+	x = in_trunk_LIPShortReport(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_trunk_LIPShortReport(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_ms_new
 func dmrgo_trunk_ms_new(c_out **C.dmrgo_trunk_ms_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -36819,6 +37988,27 @@ func dmrgo_trunk_ms_free(c_self *C.dmrgo_trunk_ms_t) (rc C.int) {
 	}
 	get_trunk_MS(c_self)
 	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_ms_assign_groups
+func dmrgo_trunk_ms_assign_groups(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_target C.uint32_t, c_a *C.dmrgo_trunk_appended_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	var a_a g_trunk.Appended
+	var p_a *g_trunk.Appended
+	if c_a != nil {
+		a_a = in_trunk_Appended(&(*c_a))
+		p_a = &a_a
+	}
+	r0 := h.v.AssignGroups(time.Duration(c_now), uint32(c_target), p_a)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
 	return C.DMRGO_OK
 }
 
@@ -37006,6 +38196,26 @@ func dmrgo_trunk_ms_call(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_group C.
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_ms_call_ambient
+func dmrgo_trunk_ms_call_ambient(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_target C.uint32_t, c_opts *C.dmrgo_layer3_voice_service_options_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	if c_opts == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_opts g_layer3.VoiceServiceOptions
+	a_opts = in_layer3_VoiceServiceOptions(&(*c_opts))
+	r0 := h.v.CallAmbient(time.Duration(c_now), uint32(c_target), a_opts)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_ms_call_data
 func dmrgo_trunk_ms_call_data(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_group C.bool, c_target C.uint32_t, c_opts *C.dmrgo_layer3_data_service_options_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -37017,6 +38227,46 @@ func dmrgo_trunk_ms_call_data(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_gro
 	var a_opts g_layer3.DataServiceOptions
 	a_opts = in_layer3_DataServiceOptions(&(*c_opts))
 	r0 := h.v.CallData(time.Duration(c_now), bool(c_group), uint32(c_target), a_opts)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_ms_call_duplex
+func dmrgo_trunk_ms_call_duplex(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_target C.uint32_t, c_opts *C.dmrgo_layer3_voice_service_options_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	if c_opts == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_opts g_layer3.VoiceServiceOptions
+	a_opts = in_layer3_VoiceServiceOptions(&(*c_opts))
+	r0 := h.v.CallDuplex(time.Duration(c_now), uint32(c_target), a_opts)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_ms_call_duplex_data
+func dmrgo_trunk_ms_call_duplex_data(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_target C.uint32_t, c_opts *C.dmrgo_layer3_data_service_options_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	if c_opts == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_opts g_layer3.DataServiceOptions
+	a_opts = in_layer3_DataServiceOptions(&(*c_opts))
+	r0 := h.v.CallDuplexData(time.Duration(c_now), uint32(c_target), a_opts)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -37108,6 +38358,32 @@ func dmrgo_trunk_ms_deadline(c_self *C.dmrgo_trunk_ms_t, c_at *C.int64_t, c_ok *
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_ms_divert
+func dmrgo_trunk_ms_divert(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_gateway C.uint32_t, c_opts *C.dmrgo_layer3_diversion_service_options_t, c_a *C.dmrgo_trunk_appended_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	if c_opts == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_opts g_layer3.DiversionServiceOptions
+	a_opts = in_layer3_DiversionServiceOptions(&(*c_opts))
+	var a_a g_trunk.Appended
+	var p_a *g_trunk.Appended
+	if c_a != nil {
+		a_a = in_trunk_Appended(&(*c_a))
+		p_a = &a_a
+	}
+	r0 := h.v.Divert(time.Duration(c_now), uint32(c_gateway), a_opts, p_a)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_ms_end_call_need
 func dmrgo_trunk_ms_end_call_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -37167,6 +38443,69 @@ func dmrgo_trunk_ms_end_call(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_dst 
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_ms_group_alias_need
+func dmrgo_trunk_ms_group_alias_need(c_self *C.dmrgo_trunk_ms_t, c_tg C.uint32_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_trunk_MS(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, 63))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_ms_group_alias
+func dmrgo_trunk_ms_group_alias(c_self *C.dmrgo_trunk_ms_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_tg C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	need_items := max(0, 63)
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.GroupAlias(a_dst, uint32(c_tg))
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_ms_groups
+func dmrgo_trunk_ms_groups(c_self *C.dmrgo_trunk_ms_t, c_out *C.dmrgo_trunk_dynamic_groups_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	r0 := h.v.Groups()
+	_ = r0
+	if c_out != nil {
+		out_trunk_DynamicGroups(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
 	return C.DMRGO_OK
 }
 
@@ -37244,6 +38583,21 @@ func dmrgo_trunk_ms_off(c_self *C.dmrgo_trunk_ms_t, c_out *C.bool) (rc C.int) {
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_ms_poll_short_data
+func dmrgo_trunk_ms_poll_short_data(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_target C.uint32_t, c_f C.dmrgo_enums_udt_format_t, c_blocks C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	r0 := h.v.PollShortData(time.Duration(c_now), uint32(c_target), g_enums.UDTFormat(c_f), int(c_blocks))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }
@@ -37400,6 +38754,68 @@ func dmrgo_trunk_ms_reset(c_self *C.dmrgo_trunk_ms_t) (rc C.int) {
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_ms_send_short_data
+func dmrgo_trunk_ms_send_short_data(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_group C.bool, c_target C.uint32_t, c_a *C.dmrgo_trunk_appended_t, c_opts *C.dmrgo_layer3_short_data_service_options_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	var a_a g_trunk.Appended
+	var p_a *g_trunk.Appended
+	if c_a != nil {
+		a_a = in_trunk_Appended(&(*c_a))
+		p_a = &a_a
+	}
+	if c_opts == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_opts g_layer3.ShortDataServiceOptions
+	a_opts = in_layer3_ShortDataServiceOptions(&(*c_opts))
+	r0 := h.v.SendShortData(time.Duration(c_now), bool(c_group), uint32(c_target), p_a, a_opts)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_ms_set_poll_response
+func dmrgo_trunk_ms_set_poll_response(c_self *C.dmrgo_trunk_ms_t, c_a *C.dmrgo_trunk_appended_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	var a_a g_trunk.Appended
+	var p_a *g_trunk.Appended
+	if c_a != nil {
+		a_a = in_trunk_Appended(&(*c_a))
+		p_a = &a_a
+	}
+	h.v.SetPollResponse(p_a)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_ms_set_usbd_response
+func dmrgo_trunk_ms_set_usbd_response(c_self *C.dmrgo_trunk_ms_t, c_p *C.dmrgo_pdu_unified_single_block_data_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	var a_p g_layer2_pdu.UnifiedSingleBlockData
+	var p_p *g_layer2_pdu.UnifiedSingleBlockData
+	if c_p != nil {
+		a_p = in_layer2_pdu_UnifiedSingleBlockData(&(*c_p))
+		p_p = &a_p
+	}
+	h.v.SetUSBDResponse(p_p)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_ms_site
 func dmrgo_trunk_ms_site(c_self *C.dmrgo_trunk_ms_t, c_out *C.dmrgo_trunk_site_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -37508,6 +38924,98 @@ func dmrgo_trunk_ms_udt(c_self *C.dmrgo_trunk_ms_t, c_out **C.dmrgo_trunk_udt_t)
 	if r0 != nil {
 		*c_out = new_trunk_UDT(r0)
 	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_nmea_long_encode
+func dmrgo_trunk_nmea_long_encode(c_self *C.dmrgo_trunk_nmea_long_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.NMEALong
+	x = in_trunk_NMEALong(&(*c_self))
+	r0, r1 := x.Encode()
+	out_trunk_NMEALong(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		*(*[22]byte)(unsafe.Pointer(&(*(*[22]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_nmea_long_string
+func dmrgo_trunk_nmea_long_string(c_self *C.dmrgo_trunk_nmea_long_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.NMEALong
+	x = in_trunk_NMEALong(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_trunk_NMEALong(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_nmea_short_encode
+func dmrgo_trunk_nmea_short_encode(c_self *C.dmrgo_trunk_nmea_short_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.NMEAShort
+	x = in_trunk_NMEAShort(&(*c_self))
+	r0, r1 := x.Encode()
+	out_trunk_NMEAShort(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		*(*[10]byte)(unsafe.Pointer(&(*(*[10]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_nmea_short_string
+func dmrgo_trunk_nmea_short_string(c_self *C.dmrgo_trunk_nmea_short_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.NMEAShort
+	x = in_trunk_NMEAShort(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_trunk_NMEAShort(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -38050,6 +39558,114 @@ func dmrgo_trunk_udt_free(c_self *C.dmrgo_trunk_udt_t) (rc C.int) {
 	}
 	get_trunk_UDT(c_self)
 	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_udt_appended
+func dmrgo_trunk_udt_appended(c_self *C.dmrgo_trunk_udt_t, c_out *C.dmrgo_trunk_appended_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_UDT(c_self)
+	r0 := h.v.Appended()
+	_ = r0
+	if c_out != nil {
+		out_trunk_Appended(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_usbdlip_response_encode
+func dmrgo_trunk_usbdlip_response_encode(c_self *C.dmrgo_trunk_usbdlip_response_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.USBDLIPResponse
+	x = *(*g_trunk.USBDLIPResponse)(unsafe.Pointer(&(*c_self)))
+	r0, r1 := x.Encode()
+	*(*g_trunk.USBDLIPResponse)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	if c_out != nil {
+		*(*[10]byte)(unsafe.Pointer(&(*(*[10]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_usbdlip_response_string
+func dmrgo_trunk_usbdlip_response_string(c_self *C.dmrgo_trunk_usbdlip_response_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.USBDLIPResponse
+	x = *(*g_trunk.USBDLIPResponse)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_trunk.USBDLIPResponse)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_usbd_poll_request_encode
+func dmrgo_trunk_usbd_poll_request_encode(c_self *C.dmrgo_trunk_usbd_poll_request_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.USBDPollRequest
+	x = in_trunk_USBDPollRequest(&(*c_self))
+	r0, r1 := x.Encode()
+	out_trunk_USBDPollRequest(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		*(*[10]byte)(unsafe.Pointer(&(*(*[10]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_usbd_poll_request_string
+func dmrgo_trunk_usbd_poll_request_string(c_self *C.dmrgo_trunk_usbd_poll_request_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk.USBDPollRequest
+	x = in_trunk_USBDPollRequest(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_trunk_USBDPollRequest(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
 	return C.DMRGO_OK
 }
 
@@ -41398,6 +43014,12 @@ func errCode(err error) C.int {
 			return -137
 		case g_trunk.ErrPlanFull:
 			return -138
+		case g_trunk.ErrUDTCharacter:
+			return -216
+		case g_trunk.ErrUDTFormat:
+			return -217
+		case g_trunk.ErrUDTLength:
+			return -218
 		case g_vocoder.ErrDuplicateCodec:
 			return -139
 		case g_vocoder.ErrNilFactory:
@@ -41717,6 +43339,12 @@ func codeErr(code C.int) error {
 		return g_trunk.ErrNotRegistered
 	case -138:
 		return g_trunk.ErrPlanFull
+	case -216:
+		return g_trunk.ErrUDTCharacter
+	case -217:
+		return g_trunk.ErrUDTFormat
+	case -218:
+		return g_trunk.ErrUDTLength
 	case -139:
 		return g_vocoder.ErrDuplicateCodec
 	case -140:
