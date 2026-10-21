@@ -388,7 +388,7 @@ func (r *leanCore) repair(f *leanFEC, b *Burst, cc enums.ColorCode, ccOK bool) {
 				fixed, want = 0x78, uint32(cc&0x0f)<<3
 			}
 			_, cw, _ := r.decodeSmall(f, softEMBCode, false, fixed, want)
-			softPutSmall(out, softEMBCode, cw)
+			leanPutSmall(out, softEMBCode, cw)
 		}
 	case known && kind == layer2.KindData:
 		var fixed, want uint32
@@ -396,7 +396,7 @@ func (r *leanCore) repair(f *leanFEC, b *Burst, cc enums.ColorCode, ccOK bool) {
 			fixed, want = 0xf0, uint32(cc&0x0f)<<4
 		}
 		info, cw, errs := r.decodeSmall(f, softSlotTypeCode, false, fixed, want)
-		softPutSmall(out, softSlotTypeCode, cw)
+		leanPutSmall(out, softSlotTypeCode, cw)
 		if errs > softSmallCodes[softSlotTypeCode].t {
 			break
 		}
@@ -413,5 +413,12 @@ func (r *leanCore) repair(f *leanFEC, b *Burst, cc enums.ColorCode, ccOK bool) {
 	}
 	if b.HasCACH {
 		r.fixTACT(f, b)
+	}
+}
+
+func leanPutSmall(r *layer2.RawBurst, id softSmallID, cw uint32) {
+	c := &softSmallCodes[id]
+	for j := range c.n {
+		softPut(r, c.pos[j], cw>>j&1 != 0)
 	}
 }

@@ -98,7 +98,7 @@ func (p *repairer) voiceBits(e *trackEntry, known *[layer2.BurstBits]bool) bool 
 		return false
 	}
 	for id := softAMBECode; id < softSmallCount; id++ {
-		c := &softSmallCodes[id]
+		c := smallCode(id)
 		for _, q := range c.pos[:c.n] {
 			known[q] = true
 		}

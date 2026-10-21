@@ -150,7 +150,7 @@ func softByteTables(tab *[softParWords * 8 * 256]int32, l []int32) {
 }
 
 func (id softSmallID) gather(llr []int16, l *[softSmallMaxN]int32) uint32 {
-	c := &softSmallCodes[id]
+	c := smallCode(id)
 	var hard uint32
 	for j := range c.n {
 		v := llr[c.pos[j]]
@@ -163,7 +163,7 @@ func (id softSmallID) gather(llr []int16, l *[softSmallMaxN]int32) uint32 {
 }
 
 func (id softSmallID) search(tab *[softTabLen]int32, off, fixed, want uint32, top *softTop) {
-	c := &softSmallCodes[id]
+	c := smallCode(id)
 	var free [16]int
 	nf := 0
 	info := want & fixed
@@ -197,7 +197,7 @@ type softSmallScratch struct {
 
 func (s *softSmallScratch) decode(c softSmallID, llr []int16, fixed, want uint32) (info, cw uint32, errs int) {
 	hard := c.gather(llr, &s.l)
-	softTables(s.tab, s.l[:softSmallCodes[c].n])
+	softTables(s.tab, s.l[:smallCode(c).n])
 	s.top.reset(1)
 	c.search(s.tab, 0, fixed, want, &s.top)
 	return s.top.info[0], s.top.cw[0], bits.OnesCount32(s.top.cw[0] ^ hard)
@@ -216,8 +216,15 @@ func softPut[T int | int16](r *layer2.RawBurst, p T, one bool) {
 	}
 }
 
+func smallCode(id softSmallID) *softSmallCode {
+	if id >= softAMBECode {
+		return &softAMBESmallCodes[id-softAMBECode]
+	}
+	return &softSmallCodes[id]
+}
+
 func softPutSmall(r *layer2.RawBurst, id softSmallID, cw uint32) {
-	c := &softSmallCodes[id]
+	c := smallCode(id)
 	for j := range c.n {
 		softPut(r, c.pos[j], cw>>j&1 != 0)
 	}
@@ -227,7 +234,7 @@ func softAMBEPN(v uint32) uint32 {
 	var f [7]byte
 	f[0], f[1] = byte(v>>(softAMBEC0-8)&0xff), byte(v<<(16-softAMBEC0)&0xff)
 	slot := ambe.Encode(f)
-	c := &softSmallCodes[softAMBECode+1]
+	c := smallCode(softAMBECode + 1)
 	var m uint32
 	for j, p := range c.pos[:c.n] {
 		m |= uint32(slot[p/8]>>(7-p%8)&1) << j
@@ -605,7 +612,7 @@ func (d *softDecoder) decodeAMBE(llr *[softBurstBits]int16, out *layer2.RawBurst
 	slots := hb.VoiceSlots()
 	for i := range frames {
 		id0, id1 := softAMBECode+2*softSmallID(i), softAMBECode+2*softSmallID(i)+1
-		c0, c1 := &softSmallCodes[id0], &softSmallCodes[id1]
+		c0, c1 := smallCode(id0), smallCode(id1)
 		hard0 := id0.gather(llr[:], &s.l)
 		if f, r := vocoder.DecodeAMBE72(slots[i]); r.ErrorsCorrected == 0 && !r.Uncorrectable {
 			frames[i] = f

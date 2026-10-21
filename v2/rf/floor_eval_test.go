@@ -175,7 +175,7 @@ func smallCodeword(c *softSmallCode, info uint32) uint32 {
 }
 
 func (e *floorEval) smallBeats(i int, id softSmallID, fixed, want uint32) bool {
-	c := &softSmallCodes[id]
+	c := smallCode(id)
 	tb := e.truth[i].burst
 	for info := range uint32(1) << c.k {
 		if info&fixed != want {

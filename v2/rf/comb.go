@@ -217,7 +217,7 @@ func voiceFlips(d, x *layer2.RawBurst) [layer2.VoiceSlotsPerBurst]uint8 {
 	var f [layer2.VoiceSlotsPerBurst]uint8
 	for i := range f {
 		for id := softAMBECode + 2*softSmallID(i); id <= softAMBECode+2*softSmallID(i)+1; id++ {
-			c := &softSmallCodes[id]
+			c := smallCode(id)
 			for _, p := range c.pos[:c.n] {
 				f[i] += (d[p/8] ^ x[p/8]) >> (7 - p%8) & 1
 			}

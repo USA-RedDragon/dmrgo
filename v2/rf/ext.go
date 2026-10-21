@@ -416,7 +416,7 @@ func (x *softExt) voiceKnown(b *Burst) bool {
 	}
 	clear(x.known[:])
 	for id := softAMBECode; id < softSmallCount; id++ {
-		c := &softSmallCodes[id]
+		c := smallCode(id)
 		for _, q := range c.pos[:c.n] {
 			x.known[q] = true
 		}
@@ -836,7 +836,7 @@ func (x *softExt) uncoded(b *Burst, core, coh *layer2.RawBurst, update bool) {
 	var nCore, nCoh [layer2.VoiceSlotsPerBurst]int
 	for i := range layer2.VoiceSlotsPerBurst {
 		for id := softAMBECode + 2*softSmallID(i); id <= softAMBECode+2*softSmallID(i)+1; id++ {
-			c := &softSmallCodes[id]
+			c := smallCode(id)
 			for _, p := range c.pos[:c.n] {
 				q, m := p/8, byte(0x80)>>(p%8)
 				nCore[i] += int((b.Fixed[q] ^ core[q]) & m >> (7 - p%8))

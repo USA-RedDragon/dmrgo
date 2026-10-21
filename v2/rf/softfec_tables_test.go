@@ -629,7 +629,7 @@ func (t *softFECTables) gridLayout() error {
 }
 
 func (id softSmallID) bits() []int16 {
-	c := &softSmallCodes[id]
+	c := smallCode(id)
 	return c.pos[:c.n]
 }
 
@@ -645,7 +645,7 @@ type softAMBEView struct {
 
 func softAMBESlot(s int) softAMBEView {
 	id0 := softAMBECode + 2*softSmallID(s)
-	return softAMBEView{id0: id0, id1: id0 + 1, c0: &softSmallCodes[id0], c1: &softSmallCodes[id0+1], c2: &softAMBEC2Pos[s]}
+	return softAMBEView{id0: id0, id1: id0 + 1, c0: smallCode(id0), c1: smallCode(id0 + 1), c2: &softAMBEC2Pos[s]}
 }
 
 func gridIsCodeword(pos *[gridRows][gridCols]int16, rowH *[gridCols]uint8, colH *[gridRows]uint8, img *[softBurstBits]unpacked.Bit) bool {

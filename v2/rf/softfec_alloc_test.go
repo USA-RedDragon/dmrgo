@@ -14,6 +14,6 @@ func TestAllocsSoftDecoders(t *testing.T) {
 		}
 	}
 	t.Logf("sizes in bytes: softDecoder %d, small codes %d, OSD codes %d, trellis %d, small scratch %d, OSD scratch %d",
-		unsafe.Sizeof(*d), unsafe.Sizeof(softSmallCodes), unsafe.Sizeof(softOSDCodes), unsafe.Sizeof(softTrellisTables),
+		unsafe.Sizeof(*d), unsafe.Sizeof(softSmallCodes)+unsafe.Sizeof(softAMBESmallCodes), unsafe.Sizeof(softOSDCodes), unsafe.Sizeof(softTrellisTables),
 		unsafe.Sizeof(d.small), unsafe.Sizeof(d.osd))
 }
