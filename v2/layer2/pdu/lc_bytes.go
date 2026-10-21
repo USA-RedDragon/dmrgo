@@ -116,15 +116,15 @@ func (l LCBytes) ServiceOptions() (so layer3.ServiceOptions, ok bool) {
 }
 
 // SetServiceOptions writes so into octet 2 of a Grp_V_Ch_Usr or
-// UU_V_Ch_Usr LC. It returns ErrNoServiceOptions for other FLCOs and a
-// *dmrgo.FieldRangeError when a field of so does not fit its bits, and then
-// changes nothing.
+// UU_V_Ch_Usr LC. It returns ErrNoServiceOptions for other FLCOs and a nil
+// l, and a *dmrgo.FieldRangeError when a field of so does not fit its bits,
+// and then changes nothing.
 func (l *LCBytes) SetServiceOptions(so layer3.ServiceOptions) error {
 	octet, err := so.Field()
 	if err != nil {
 		return err
 	}
-	if !l.isVoiceChannelUser() {
+	if l == nil || !l.isVoiceChannelUser() {
 		return ErrNoServiceOptions
 	}
 	l[2] = octet
