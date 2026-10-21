@@ -193,7 +193,7 @@ func (t *TSCC) psSet(now time.Duration, addr uint32, rq uint8) uint8 {
 		i = s.nPS
 		s.nPS++
 	}
-	off := uint8(1 + addr%(uint32(1)<<rq-1))
+	off := 1 + uint8(addr%(uint32(1)<<rq-1)&0x7F)
 	s.ps[i] = psRec{addr: addr, rq: rq, offset: off, awakeEnd: now + t.cfg.Awake - counterBlock}
 	return off
 }

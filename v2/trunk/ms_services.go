@@ -222,7 +222,7 @@ func (m *MS) suplExtra(options uint8) uint8 {
 	s := &m.svc
 	var v uint8
 	if s.suplLen > 0 {
-		v = uint8((s.suplLen+1)/12) << 2
+		v = uint8((s.suplLen+1)/12&3) << 2
 	}
 	switch m.kind {
 	case enums.ServiceIndividualVoice, enums.ServiceTalkgroupVoice, enums.ServiceIndividualPacketData, enums.ServiceTalkgroupPacketData:
@@ -538,7 +538,7 @@ func (m *MS) ipAck(now time.Duration, r enums.AckReason, out []Output) []Output 
 func (m *MS) svcUpload(now time.Duration, slot enums.Slot, dest uint32, format uint8, data []byte, out []Output) []Output {
 	n := max(1, (len(data)+2+11)/12)
 	u := &m.svc.up
-	*u = Appended{Format: enums.UDTFormat(format), PadNibble: uint8((n*12 - 2 - len(data)) * 2), Blocks: n}
+	*u = Appended{Format: enums.UDTFormat(format), PadNibble: uint8((n*12 - 2 - len(data)) * 2 & 0x1F), Blocks: n}
 	copy(u.Data[:], data)
 	return m.sendUDT(now+frame, slot, u, dest, false, false, true, pdu.UDTOpcodeInboundHeader, out)
 }

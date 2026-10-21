@@ -195,7 +195,7 @@ func (k TSCCOutputKind) String() string {
 	case TSCCStatus:
 		return "Status"
 	case TSCCStun:
-		return "Stun"
+		return stunName
 	case TSCCInterrupt:
 		return "Interrupt"
 	case TSCCIPAdvice:

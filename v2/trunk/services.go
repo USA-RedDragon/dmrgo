@@ -48,7 +48,7 @@ func (a StunAction) String() string {
 	case StunNone:
 		return "None"
 	case StunStun:
-		return "Stun"
+		return stunName
 	case StunRevive:
 		return "Revive"
 	case StunKill:
