@@ -116,7 +116,10 @@ func readCapture(t testing.TB, path string) []capture {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fr := framer.New(framer.Config{CACH: true, Threshold: -1})
+	fr, err := framer.New(&framer.Config{CACH: true, Threshold: -1})
+	if err != nil {
+		t.Fatal(err)
+	}
 	bursts := fr.Write(stream, len(stream)*8)
 	caps := make([]capture, 0, len(bursts))
 	for _, b := range bursts {

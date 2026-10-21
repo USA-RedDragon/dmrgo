@@ -1,6 +1,7 @@
 package framer_test
 
 import (
+	"errors"
 	"math"
 	"math/rand"
 	"os"
@@ -116,7 +117,7 @@ func TestFramer_SlotPeriod(t *testing.T) {
 		stream = append(stream, burstBits(b)...)
 		stream = append(stream, noise(r, framer.SlotPeriod-layer2.BurstBits)...)
 	}
-	f := framer.New(framer.Config{Threshold: -1, Period: framer.SlotPeriod})
+	f := newFramer(t, &framer.Config{Threshold: -1, Period: framer.SlotPeriod})
 	got := writeChunks(r, f, stream)
 	if len(got) < len(bursts) {
 		t.Fatalf("%d bursts, want %d", len(got), len(bursts))
@@ -179,7 +180,7 @@ func TestFramer_OutboundCACH(t *testing.T) {
 			want = append(want, sent{data, ch})
 		}
 	}
-	f := framer.New(framer.Config{Threshold: -1, CACH: true})
+	f := newFramer(t, &framer.Config{Threshold: -1, CACH: true})
 	got := writeChunks(r, f, stream)
 	if len(got) < len(want) {
 		t.Fatalf("%d bursts, want %d", len(got), len(want))
@@ -209,7 +210,7 @@ func TestFramer_DirectChannel(t *testing.T) {
 		stream = append(stream, burstBits(ts2)...)
 		stream = append(stream, noise(r, framer.SlotPeriod-layer2.BurstBits)...)
 	}
-	got := framer.New(framer.Config{Threshold: -1, Period: framer.SlotPeriod}).Write(pack(stream), len(stream))
+	got := newFramer(t, &framer.Config{Threshold: -1, Period: framer.SlotPeriod}).Write(pack(stream), len(stream))
 	if len(got) != 3 {
 		t.Fatalf("%d bursts", len(got))
 	}
@@ -225,4 +226,29 @@ func must[T any](v T, err error) T {
 		panic(err)
 	}
 	return v
+}
+
+func newFramer(t testing.TB, cfg *framer.Config) *framer.Framer {
+	t.Helper()
+	f, err := framer.New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return f
+}
+
+func TestNewConfig(t *testing.T) {
+	t.Parallel()
+	f := newFramer(t, nil)
+	if got := f.Write(make([]byte, 100), 800); len(got) != 0 {
+		t.Errorf("nil config: %d bursts from zeros", len(got))
+	}
+	if _, err := framer.New(&framer.Config{Period: framer.MaxPeriod + 1}); !errors.Is(err, framer.ErrPeriod) {
+		t.Errorf("Period over MaxPeriod: %v", err)
+	}
+	newFramer(t, &framer.Config{Period: framer.MaxPeriod})
+	var zero framer.Framer
+	if got := zero.Write(make([]byte, 100), 800); len(got) != 0 {
+		t.Errorf("zero Framer: %d bursts", len(got))
+	}
 }

@@ -520,7 +520,10 @@ func collectFramer(d digests) {
 		m, ok := framer.Search(p, 8*len(p), start, 6)
 		d.add("framer/search", "%d %+v %v", start, m, ok)
 	}
-	f := framer.New(framer.Config{})
+	f, err := framer.New(nil)
+	if err != nil {
+		panic(err)
+	}
 	var out []framer.Burst
 	for i := 0; i < len(p); i += 13 {
 		chunk := p[i:min(i+13, len(p))]

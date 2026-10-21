@@ -5320,6 +5320,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_ENUMS_COLOR_CODE_ERROR (-103)
 #define DMRGO_ERR_FEC_UNCORRECTABLE (-110)
 #define DMRGO_ERR_FIELD_RANGE_ERROR (-100)
+#define DMRGO_ERR_FRAMER_PERIOD (-217)
 #define DMRGO_ERR_HYTERA_LENGTH (-197)
 #define DMRGO_ERR_HYTERA_SHORT (-198)
 #define DMRGO_ERR_HYTERA_SIGNATURE (-199)
@@ -6483,6 +6484,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_LAYER2_VOICE_SLOTS_PER_BURST 3
 /* Go: framer.DefaultMaxMisses. DefaultMaxMisses is the default number of bursts without a SYNC that a locked Framer emits before it loses lock. */
 #define DMRGO_FRAMER_DEFAULT_MAX_MISSES 12
+/* Go: framer.MaxPeriod. MaxPeriod is the largest Config.Period. */
+#define DMRGO_FRAMER_MAX_PERIOD 65536
 /* Go: framer.OutboundPeriod. OutboundPeriod is the bit period of bursts in a BS outbound stream: one CACH and one burst. */
 #define DMRGO_FRAMER_OUTBOUND_PERIOD 288
 /* Go: framer.SlotPeriod. SlotPeriod is the bit period of the bursts of one TDMA channel. */
@@ -8378,8 +8381,8 @@ int dmrgo_framer_framer_locked(dmrgo_framer_framer_t *self, bool *out);
 int dmrgo_framer_framer_write_need(dmrgo_framer_framer_t *self, const uint8_t *stream, size_t stream_len, int64_t nbits, size_t *items, size_t *arena);
 /* Go: framer.Framer.Write. Write adds the first nbits bits of stream, packed, the first bit in the most significant bit of stream[0], and returns the bursts they complete, or nil when they complete none. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_framer_framer_write_need gives. */
 int dmrgo_framer_framer_write(dmrgo_framer_framer_t *self, const uint8_t *stream, size_t stream_len, int64_t nbits, dmrgo_framer_burst_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: framer.New. New returns a Framer with the given configuration. */
-int dmrgo_framer_new(const dmrgo_framer_config_t *cfg, dmrgo_framer_framer_t **out);
+/* Go: framer.New. New returns a Framer for cfg. */
+int dmrgo_framer_new(const dmrgo_framer_config_t *c, dmrgo_framer_framer_t **out);
 /* Go: framer.Search. Search returns the first SYNC field in the first nbits bits of stream that starts at or after bit start and is within threshold bits of a SYNC pattern. */
 int dmrgo_framer_search(const uint8_t *stream, size_t stream_len, int64_t nbits, int64_t start, int64_t threshold, dmrgo_framer_match_t *m, bool *ok);
 /* Go: packet.AppendBursts. AppendBursts appends the bursts that Bursts returns to dst and returns the extended slice. */

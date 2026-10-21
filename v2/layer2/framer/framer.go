@@ -1,6 +1,7 @@
 package framer
 
 import (
+	"errors"
 	"math/bits"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -21,7 +22,13 @@ const (
 	// DefaultMaxMisses is the default number of bursts without a SYNC that
 	// a locked Framer emits before it loses lock.
 	DefaultMaxMisses = 12
+	// MaxPeriod is the largest Config.Period.
+	MaxPeriod = 1 << 16
 )
+
+// ErrPeriod is returned by New for a Config.Period over MaxPeriod. Match it
+// with errors.Is.
+var ErrPeriod = errors.New("framer: Period is over MaxPeriod")
 
 var syncPatterns = [...]enums.SyncPattern{
 	enums.SyncBSSourcedVoice,
@@ -121,8 +128,8 @@ type Config struct {
 	// exact SYNC, and a negative value means layer2.DefaultSyncThreshold.
 	Threshold int
 	// Period is the number of bits from one burst to the next while
-	// locked. 0 means OutboundPeriod, and a Period under layer2.BurstBits
-	// means layer2.BurstBits. Use SlotPeriod for the bursts of a single
+	// locked. 0 means OutboundPeriod, a Period under layer2.BurstBits
+	// means layer2.BurstBits, and at most MaxPeriod. Use SlotPeriod for the bursts of a single
 	// TDMA channel, such as one inbound or direct mode channel.
 	Period int
 	// CACH decodes the 24 bits before each burst as a CACH, for a BS
@@ -150,10 +157,18 @@ type Framer struct {
 	channel int
 }
 
-// New returns a Framer with the given configuration. It allocates the
-// stream buffer, which holds at most a CACH and a burst between writes,
-// with room for one more Period of bits.
-func New(cfg Config) *Framer {
+// New returns a Framer for cfg. A nil cfg means the zero Config. It
+// returns ErrPeriod for a Period over MaxPeriod. It allocates the stream
+// buffer, which holds at most a CACH and a burst between writes, with room
+// for one more Period of bits.
+func New(c *Config) (*Framer, error) {
+	var cfg Config
+	if c != nil {
+		cfg = *c
+	}
+	if cfg.Period > MaxPeriod {
+		return nil, ErrPeriod
+	}
 	if cfg.Threshold < 0 {
 		cfg.Threshold = layer2.DefaultSyncThreshold
 	}
@@ -172,7 +187,7 @@ func New(cfg Config) *Framer {
 	}
 	f.search = f.pre + SyncOffset
 	f.buf = make([]byte, 0, (f.pre+layer2.BurstBits+cfg.Period)/8+2)
-	return f
+	return f, nil
 }
 
 // Locked reports whether the Framer is locked on a burst period.

@@ -282,7 +282,10 @@ func TestAllocsFramer(t *testing.T) {
 	for _, raw := range captures(t)["voice.bin"] {
 		stream = append(stream, raw[:]...)
 	}
-	f := framer.New(framer.Config{})
+	f, err := framer.New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	dst := make([]framer.Burst, 0, 16)
 	assertZero(t, "voice.bin", func() {
 		for i := 0; i < len(stream); i += 13 {

@@ -19,7 +19,11 @@ func Example() {
 		n := 100 + i
 		stream[n/8] |= raw[i/8] >> (7 - i%8) & 1 << (7 - n%8)
 	}
-	f := framer.New(framer.Config{Threshold: -1, Period: framer.SlotPeriod})
+	f, err := framer.New(&framer.Config{Threshold: -1, Period: framer.SlotPeriod})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	for _, b := range f.Write(stream, 8*len(stream)) {
 		burst, _ := layer2.NewBurstFromBytes(b.Data)
 		fmt.Println(b.Offset, b.Sync, burst.SlotType.DataType)
