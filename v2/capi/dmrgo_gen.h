@@ -4293,7 +4293,7 @@ struct dmrgo_ipsc_session_output_t {
 	dmrgo_ipsc_session_addr_t addr;
 	/* ID is the peer or master ID of OutputUp, OutputDown and OutputData. */
 	uint32_t id;
-	/* Reason tells why for OutputDown. */
+	/* Reason tells why for OutputDown and OutputDropped. */
 	dmrgo_ipsc_session_reason_t reason;
 };
 

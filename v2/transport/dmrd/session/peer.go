@@ -119,12 +119,20 @@ func NewPeer(cfg *PeerConfig) (*Peer, error) {
 
 // State returns the state of the Peer.
 func (p *Peer) State() State {
+	if p == nil {
+		return 0
+	}
+
 	return p.state
 }
 
 // Reset ends the session without a packet and makes the Peer as
 // NewPeer returned it, so the next Tick sends the RPTL.
 func (p *Peer) Reset() {
+	if p == nil {
+		return
+	}
+
 	p.state, p.started, p.stopped, p.fails, p.salt = StateIdle, false, false, 0, 0
 }
 
@@ -133,6 +141,10 @@ func (p *Peer) Reset() {
 // ReasonStopped. The Peer then does nothing until Reset. It allocates
 // only when dst has no room for MaxOutputs outputs.
 func (p *Peer) Close(_ time.Duration, dst []Output) []Output {
+	if p == nil {
+		return dst
+	}
+
 	if p.stopped {
 		return dst
 	}
@@ -149,6 +161,10 @@ func (p *Peer) Close(_ time.Duration, dst []Output) []Output {
 // Deadline returns the time at which the Peer needs a Tick. ok is false
 // after Close, and for a Peer that NewPeer did not make.
 func (p *Peer) Deadline() (at time.Duration, ok bool) {
+	if p == nil {
+		return 0, false
+	}
+
 	if p.stopped || p.retry == 0 {
 		return 0, false
 	}
@@ -166,6 +182,10 @@ func (p *Peer) Deadline() (at time.Duration, ok bool) {
 // appends the outputs to dst, and allocates only when dst has no room
 // for MaxOutputs outputs.
 func (p *Peer) Tick(now time.Duration, dst []Output) []Output {
+	if p == nil {
+		return dst
+	}
+
 	for range 2 {
 		at, ok := p.Deadline()
 		if !ok || now < at {
@@ -248,6 +268,10 @@ func (p *Peer) send(dst []Output) []Output {
 // a packet it cannot use. It appends the outputs to dst, and allocates
 // only when dst has no room for MaxOutputs outputs.
 func (p *Peer) Packet(now time.Duration, b []byte, dst []Output) []Output {
+	if p == nil {
+		return dst
+	}
+
 	if p.stopped || !p.started || len(b) > MaxPacket {
 		return dst
 	}

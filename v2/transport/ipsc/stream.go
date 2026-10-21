@@ -24,6 +24,10 @@ type Stream struct {
 // then counts Seq up by 1 and Timestamp by 480, one burst. Skip counts up
 // for a lost burst. A nil s or u is a no-op.
 func (s *Stream) Fill(u *User, last bool) {
+	if s == nil {
+		return
+	}
+
 	if s == nil || u == nil {
 		return
 	}
