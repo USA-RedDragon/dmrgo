@@ -127,7 +127,7 @@ func (c *control) tscc(now time.Duration, slot enums.Slot) tsccEvent {
 		return c.mbcContinuation(now, d, slot)
 	case *pdu.DataHeader:
 		c.pending, c.udtOn = pendingNone, false
-		if h := d.UDTHeader; h != nil && h.Opcode == pdu.UDTOpcodeOutboundHeader {
+		if h := d.UDTHeader; h != nil && (h.Opcode == pdu.UDTOpcodeOutboundHeader || h.Opcode == pdu.UDTOpcodeDGNAOutboundHeader) {
 			c.udt = UDT{Header: *h}
 			c.udtWant, c.udtSlot, c.udtOn = int(h.AppendedBlocks)+1, slot, true
 		}

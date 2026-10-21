@@ -12,6 +12,7 @@ import (
 func (m *MS) startAccess(now time.Duration, req request, target uint32, options uint8, emergency bool) {
 	m.req, m.target, m.options, m.emergency = req, target, options, emergency
 	m.ra, m.frames, m.retries, m.raStart, m.waitAnswer = raWaitSlot, 1, 0, now, false
+	m.u.reserved, m.u.proxy = 0, false
 }
 
 func (m *MS) backoff() {
@@ -51,7 +52,8 @@ func (m *MS) frame(now time.Duration, cach *layer2.CACH, out []Output) []Output 
 		m.ra = raWaitAloha
 		return out
 	}
-	m.txRand = pdu.RandomAccessPDU{ServiceOptions: m.options, ServiceKind: uint8(m.kind), TargetAddress: m.target, SourceAddress: m.addr}
+	m.txRand = pdu.RandomAccessPDU{ServiceOptions: m.options, ProxyFlag: m.u.proxy, Reserved: m.u.reserved, ServiceKind: uint8(m.kind),
+		TargetAddress: m.target, SourceAddress: m.addr}
 	m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKRandomAccess, RandomAccessPDU: &m.txRand}
 	m.retries++
 	m.ra, m.frames = raWaitResp, m.f.ctl.site.Access.NRandWait.Frames()+1
@@ -77,6 +79,9 @@ func (m *MS) addressed(now time.Duration, h *layer2.Hint, out []Output) []Output
 	if !m.f.ctl.okData() {
 		return out
 	}
+	if u, ok := m.f.ctl.b.Data.(*pdu.UnifiedSingleBlockData); ok {
+		return m.usbdPoll(now, u, h, out)
+	}
 	c, ok := m.f.ctl.b.Data.(*pdu.CSBK)
 	if !ok || c.FID != enums.FIDStandardized {
 		return out
@@ -89,7 +94,7 @@ func (m *MS) addressed(now time.Duration, h *layer2.Hint, out []Output) []Output
 	case c.AckOutboundPDU != nil && c.AckOutboundPDU.TargetAddress == m.addr:
 		return m.answer(now, enums.AckReason(c.AckOutboundPDU.ReasonCode), out)
 	case c.AhoyPDU != nil:
-		return m.ahoy(now, c.AhoyPDU, h, out)
+		return m.ahoyAny(now, c.AhoyPDU, h, out)
 	case c.MovePDU != nil && c.MovePDU.PhysicalChannel != ChannelAbsolute:
 		return m.moved(now, out)
 	}
@@ -144,6 +149,8 @@ func (m *MS) answer(now time.Duration, r enums.AckReason, out []Output) []Output
 		if r.Type() == enums.AckNACK {
 			return m.fail(ReasonNack, r, out)
 		}
+	case reqShortData, reqPoll, reqDivert, reqDGNA:
+		return m.udtAnswer(now, r, out)
 	case reqNone:
 	}
 	m.waitAnswer, m.reqUntil = true, now+m.answerTO()
@@ -159,7 +166,7 @@ func (m *MS) member(group bool, target uint32) bool {
 			return true
 		}
 	}
-	return false
+	return m.f.dynamic(target)
 }
 
 const maxChallenge = 0xFFFCDF

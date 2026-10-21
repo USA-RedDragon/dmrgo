@@ -99,6 +99,12 @@ type MSConfig struct {
 	Hangtime time.Duration
 	// Scratch is the decode Burst, as in FollowerConfig.
 	Scratch *layer2.Burst
+	// NoDuplex refuses full-duplex calls to the MS with
+	// MS_Duplex_Not_Supported.
+	NoDuplex bool
+	// Ambient accepts Ambient Listening Service calls to the MS. Without
+	// it the MS refuses them with MSNot_Supported.
+	Ambient bool
 }
 
 type raState uint8
@@ -191,6 +197,7 @@ type MS struct {
 	txAck   pdu.AckInboundPDU
 	txAckP  pdu.AckInboundPayloadPDU
 	txMaint pdu.MaintenancePDU
+	u       msUDT
 	noCopy  noCopy
 }
 
@@ -217,6 +224,7 @@ func NewMS(cfg *MSConfig) (*MS, error) {
 		return nil, err
 	}
 	m.f.self = cfg.Address
+	m.u.noDuplex, m.u.ambient = cfg.NoDuplex, cfg.Ambient
 	if cfg.MinLevelHunt != nil {
 		m.minHunt, m.hasHunt = *cfg.MinLevelHunt, true
 	}
@@ -295,6 +303,8 @@ func (m *MS) Reset() {
 	m.auth = authChallenge{}
 	m.denied = [MaxDenied]deniedEntry{}
 	m.berN, m.berIdx, m.hasLevel = 0, 0, false
+	m.u.reset()
+	m.f.dyn = [MaxDynamicGroups]uint32{}
 }
 
 // Call asks the TSCC for a voice call to the talkgroup or MS target, by
@@ -490,7 +500,7 @@ func (m *MS) Deadline() (at time.Duration, ok bool) {
 	if m.pending {
 		at, ok = earliest(at, ok, m.pendingEnd)
 	}
-	return at, ok
+	return m.u.deadline(at, ok)
 }
 
 func earliest(at time.Duration, ok bool, t time.Duration) (time.Duration, bool) {
@@ -501,7 +511,7 @@ func earliest(at time.Duration, ok bool, t time.Duration) (time.Duration, bool) 
 }
 
 func (m *MS) answerTO() time.Duration {
-	if m.req == reqRegister {
+	if m.req == reqRegister || m.udtRequest() {
 		return m.regTO
 	}
 	return m.callTO
@@ -537,7 +547,7 @@ func (m *MS) timers(now time.Duration, out []Output) []Output {
 	if m.pending && now >= m.pendingEnd {
 		m.pending = false
 	}
-	return out
+	return m.udtTimers(now, out)
 }
 
 func (m *MS) follow(now time.Duration, before State, out []Output, n int) []Output {
@@ -569,9 +579,12 @@ func (m *MS) follow(now time.Duration, before State, out []Output, n int) []Outp
 					m.done()
 				}
 				m.pending = false
+				out = m.joined(now, out)
 			}
-		case OutputGrant, OutputCallEnd, OutputBurst, OutputRegistered, OutputRefused, OutputAhoy, OutputUDT, OutputProtect, OutputPowerOff,
-			OutputAuthChallenge:
+		case OutputUDT:
+			out = m.udtIn(now, out)
+		case OutputGrant, OutputCallEnd, OutputBurst, OutputRegistered, OutputRefused, OutputAhoy, OutputProtect, OutputPowerOff,
+			OutputAuthChallenge, OutputDelivered, OutputPolled, OutputGroups, OutputAmbient:
 		}
 	}
 	return out
