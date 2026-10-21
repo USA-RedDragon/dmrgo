@@ -31,7 +31,11 @@ func DecodeFullLinkControlBytes(lc [9]byte) (FullLinkControl, error) {
 // DecodeFullLinkControlBytes does, with the payload in p as
 // DecodeFullLinkControlInto has it. It returns the errors of
 // DecodeFullLinkControlBytes and sets dst to the zero value on an error.
+// It returns an error for a nil dst or p.
 func DecodeFullLinkControlBytesInto(dst *FullLinkControl, p *FullLinkControlPayloads, lc [9]byte) error {
+	if dst == nil || p == nil {
+		return errNil
+	}
 	cw, _ := LCBytes(lc).Codeword(enums.DataTypeVoiceLCHeader)
 	DecodeFullLinkControlInto(dst, p, cw, enums.DataTypeVoiceLCHeader)
 	dst.BurstDataType = 0
@@ -49,8 +53,11 @@ func DecodeFullLinkControlBytesInto(dst *FullLinkControl, p *FullLinkControlPayl
 
 // Bytes returns the 72 LC bits of s packed most significant bit first,
 // without RS(12,9) parity. It ignores BurstDataType and returns the errors
-// that Encode returns for the fields.
+// that Encode returns for the fields, and an error for a nil s.
 func (s *FullLinkControl) Bytes() ([9]byte, error) {
+	if s == nil {
+		return [9]byte{}, errNil
+	}
 	c := *s
 	c.BurstDataType = enums.DataTypeVoiceLCHeader
 	cw, err := c.Encode()

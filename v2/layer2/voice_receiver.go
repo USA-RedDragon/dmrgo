@@ -29,8 +29,11 @@ func (r *VoiceReceiver) Reset() {
 // When burst E completes an embedded LC, Receive returns it with ok set, or
 // with ErrEmbeddedLCUncorrectable. It returns ErrEmbeddedLCSequence when the
 // burst discards a partial embedded LC. It allocates the payload struct of a
-// completed LC; ReceiveInto does not.
+// completed LC; ReceiveInto does not. A nil b is ignored.
 func (r *VoiceReceiver) Receive(b *Burst) (lc pdu.FullLinkControl, ok bool, err error) {
+	if b == nil {
+		return lc, false, nil
+	}
 	bits, res, done, err := r.receive(b)
 	if !done {
 		return lc, false, err
@@ -47,8 +50,15 @@ func (r *VoiceReceiver) Receive(b *Burst) (lc pdu.FullLinkControl, ok bool, err 
 // an embedded LC, ReceiveInto decodes it into dst, with the payload struct
 // of dst in p as pdu.DecodeFullLinkControlInto places it, and returns ok or
 // ErrEmbeddedLCUncorrectable as Receive does. Otherwise it leaves dst as it
-// is. It does not allocate.
+// is. A nil b is ignored, and a nil dst or p returns an error and changes
+// nothing. It does not allocate.
 func (r *VoiceReceiver) ReceiveInto(dst *pdu.FullLinkControl, p *pdu.FullLinkControlPayloads, b *Burst) (ok bool, err error) {
+	if dst == nil || p == nil {
+		return false, errNil
+	}
+	if b == nil {
+		return false, nil
+	}
 	bits, res, done, err := r.receive(b)
 	if !done {
 		return false, err

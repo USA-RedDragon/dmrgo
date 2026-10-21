@@ -182,9 +182,10 @@ func (a *Assembler) InProgress() bool {
 
 // AddBurst adds a decoded burst. A burst that is not data, or whose data did
 // not decode, is ignored. A data block with an uncorrectable FEC result is
-// counted but not used, so the message CRC or CRC-9 catches it.
+// counted but not used, so the message CRC or CRC-9 catches it. A nil b is
+// ignored.
 func (a *Assembler) AddBurst(b *layer2.Burst) (Message, bool, error) {
-	if b.Kind != layer2.KindData || b.Data == nil {
+	if b == nil || b.Kind != layer2.KindData || b.Data == nil {
 		return Message{}, false, nil
 	}
 	if _, ok := blockOf(b.Data); ok && b.FEC.PDU.Uncorrectable {

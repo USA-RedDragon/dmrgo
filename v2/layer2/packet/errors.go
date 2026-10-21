@@ -52,6 +52,7 @@ var (
 	// ErrResponseData is returned for C_RDATA blocks of the wrong count or with
 	// a bad CRC.
 	ErrResponseData = errors.New("invalid response data blocks")
+	errNil          = errors.New("packet: nil pointer argument")
 
 	errResponseLength = fmt.Errorf("%w: length is not 1 or 2 rate 1/2 blocks", ErrResponseData)
 	errResponseCRC    = fmt.Errorf("%w: %w", ErrResponseData, fec.ErrUncorrectable)

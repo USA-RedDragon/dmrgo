@@ -45,6 +45,7 @@ func talkerAliasHeaderBits(format layer3.TalkerAliasDataFormat) int {
 // that follow a header with the given format and length in Code Units
 // (ETSI TS 102 361-2 clause 5.4.3).
 func TalkerAliasBlocks(format layer3.TalkerAliasDataFormat, length int) int {
+	length = max(0, min(length, talkerAliasMaxUnits))
 	need := length*talkerAliasUnitBits(format) - talkerAliasHeaderBits(format)
 	if need <= 0 {
 		return 0
@@ -52,12 +53,13 @@ func TalkerAliasBlocks(format layer3.TalkerAliasDataFormat, length int) int {
 	return min((need+talkerAliasBlockBits-1)/talkerAliasBlockBits, talkerAliasMaxBlocks)
 }
 
-// TalkerAlias returns the alias carried by a Talker Alias header and
-// its blocks, given in order block 1, 2, 3. Only the blocks that the
-// header length calls for are used. It returns ErrTalkerAliasIncomplete
-// when fewer blocks are given, and ErrTalkerAliasInvalidUTF8, with the
-// alias, when the Code Units of the UTF-8 format are not valid UTF-8. It
-// allocates the string; AppendTalkerAlias does not.
+// TalkerAlias returns the alias carried by a Talker Alias header and its
+// blocks, given in order block 1, 2, 3. Only the blocks that the header
+// length calls for are used. It returns ErrTalkerAliasIncomplete when fewer
+// blocks are given or header or a block is nil, and
+// ErrTalkerAliasInvalidUTF8, with the alias, when the Code Units of the
+// UTF-8 format are not valid UTF-8. It allocates the string;
+// AppendTalkerAlias does not.
 func TalkerAlias(header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBlock) (string, error) {
 	var buf [TalkerAliasMaxText]byte
 	n, err := talkerAliasText(&buf, header, blocks...)
@@ -75,6 +77,9 @@ func AppendTalkerAlias(dst []byte, header *FLCTalkerAliasHeader, blocks ...*FLCT
 }
 
 func talkerAliasText(dst *[TalkerAliasMaxText]byte, header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBlock) (int, error) {
+	if header == nil {
+		return 0, ErrTalkerAliasIncomplete
+	}
 	format := header.TalkerAliasDataFormat
 	n := TalkerAliasBlocks(format, header.TalkerAliasDataLength)
 	if len(blocks) < n {
@@ -195,8 +200,11 @@ func EncodeTalkerAlias(alias string, format layer3.TalkerAliasDataFormat) ([]Ful
 // EncodeTalkerAliasInto writes the LCs that EncodeTalkerAlias returns into
 // dst and returns their number, with the errors of EncodeTalkerAlias. The
 // payload of dst[i] is in p[i] and stays valid until the next use of p.
-// dst and p must not be nil.
+// It returns an error for a nil dst or p.
 func EncodeTalkerAliasInto(dst *[talkerAliasMaxBlocks + 1]FullLinkControl, p *[talkerAliasMaxBlocks + 1]FullLinkControlPayloads, alias string, format layer3.TalkerAliasDataFormat) (int, error) {
+	if dst == nil || p == nil {
+		return 0, errNil
+	}
 	var units [talkerAliasMaxUnits]uint16
 	count, err := talkerAliasUnits(&units, alias, format)
 	if err != nil {
@@ -268,8 +276,15 @@ func (a *TalkerAliasAssembler) AppendAdd(dst []byte, lc *FullLinkControl) (alias
 
 // AddInto adds lc as Add does, and writes the alias that Add returns to dst
 // as UTF-8 instead of returning it as a string. It returns the length of
-// the alias, 0 when Add returns an empty alias.
+// the alias, 0 when Add returns an empty alias. A nil dst returns an error
+// and changes nothing.
 func (a *TalkerAliasAssembler) AddInto(dst *[TalkerAliasMaxText]byte, lc *FullLinkControl) (n int, ok bool, err error) {
+	if dst == nil {
+		return 0, false, errNil
+	}
+	if lc == nil {
+		return 0, false, nil
+	}
 	switch {
 	case lc.FLCO == enums.FLCOTalkerAliasHeader && lc.TalkerAliasHeader != nil:
 		h := *lc.TalkerAliasHeader

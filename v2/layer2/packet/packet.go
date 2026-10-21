@@ -166,8 +166,12 @@ func (b *Builder) Segment(header pdu.DataHeader, payload []byte, rate enums.Data
 // that wraps ErrFormat for another header, and ErrNoRetryBlocks when rd flags
 // no block of p. The Packet points to the blocks of p and to storage of b,
 // apart from that of Segment and NewResponse, and is valid until the next
-// Retry. (ETSI TS 102 361-1 clause 9.3.20, ETSI TS 102 361-3 clause 5.4)
+// Retry. It returns an error for a nil p. (ETSI TS 102 361-1 clause
+// 9.3.20, ETSI TS 102 361-3 clause 5.4)
 func (b *Builder) Retry(p *Packet, rd *ResponseData) (Packet, error) {
+	if p == nil {
+		return Packet{}, errNil
+	}
 	h := p.Header
 	n := 0
 	for i := range p.Blocks {

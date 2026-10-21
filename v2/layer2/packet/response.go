@@ -48,8 +48,11 @@ func NewResponseCode(class, typ uint8) (Response, error) {
 }
 
 // ResponseOf returns the Response of a C_RHEAD, with the errors of
-// NewResponseCode.
+// NewResponseCode, and an error for a nil h.
 func ResponseOf(h *pdu.ResponsePacketHeader) (Response, error) {
+	if h == nil {
+		return 0, errNil
+	}
 	return NewResponseCode(h.ResponseClass, h.ResponseType)
 }
 
@@ -175,10 +178,11 @@ func (r *ResponseData) encodeInto(dst *[2]pdu.Rate12Data, blocks int) (int, erro
 
 // DecodeResponseData decodes one or two C_RDATA blocks and checks their CRC.
 // On a CRC failure it returns the decoded flags with an error that wraps
-// ErrResponseData and fec.ErrUncorrectable.
+// ErrResponseData and fec.ErrUncorrectable. It returns ErrResponseData for
+// a nil block.
 func DecodeResponseData(blocks ...*pdu.Rate12Data) (ResponseData, error) {
 	var r ResponseData
-	if len(blocks) != 1 && len(blocks) != 2 {
+	if len(blocks) != 1 && len(blocks) != 2 || blocks[0] == nil || blocks[len(blocks)-1] == nil {
 		return r, ErrResponseData
 	}
 	var buf [2 * 12]byte
@@ -213,8 +217,8 @@ func decodeResponseData(r *ResponseData, buf []byte) error {
 // N(S), or the 3 LSBs of its FSN for ResponseNACKFSNOutOfSequence. A
 // ResponseSACK carries data as C_RDATA blocks; data is ignored otherwise.
 // It returns a *dmrgo.FieldRangeError when the Class of r does not fit in 2
-// bits. It allocates the storage of the Packet; Builder.NewResponse builds into
-// the storage of a Builder.
+// bits, and an error for a nil to. It allocates the storage of the Packet;
+// Builder.NewResponse builds into the storage of a Builder.
 func NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *ResponseData) (Packet, error) {
 	s := new(responseStore)
 	return s.build(to, r, data)
@@ -235,6 +239,9 @@ type responseStore struct {
 }
 
 func (s *responseStore) build(to *pdu.ConfirmedDataHeader, r Response, data *ResponseData) (Packet, error) {
+	if to == nil {
+		return Packet{}, errNil
+	}
 	if r>>5 != 0 {
 		return Packet{}, errResponseClassRange
 	}

@@ -50,8 +50,11 @@ type DataHeader struct {
 
 // Addresses returns the destination LLID as target and the source LLID of
 // the header that is set. ok is false for a proprietary header and when no
-// header is set.
+// header is set, and for a nil s.
 func (s *DataHeader) Addresses() (target, source uint32, ok bool) {
+	if s == nil {
+		return 0, 0, false
+	}
 	switch {
 	case s.UnconfirmedDataHeader != nil:
 		return s.UnconfirmedDataHeader.LLIDDestination, s.UnconfirmedDataHeader.LLIDSource, true

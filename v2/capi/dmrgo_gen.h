@@ -8396,7 +8396,7 @@ int dmrgo_packet_response_data_append_retry_blocks(dmrgo_packet_response_data_t 
 int dmrgo_packet_response_data_encode(dmrgo_packet_response_data_t *self, int64_t blocks, dmrgo_pdu_rate12_data_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: packet.ResponseData.RetryBlocks. RetryBlocks returns the DBSNs flagged for retry in ascending order. */
 int dmrgo_packet_response_data_retry_blocks(dmrgo_packet_response_data_t *self, int64_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: packet.ResponseOf. ResponseOf returns the Response of a C_RHEAD, with the errors of NewResponseCode. */
+/* Go: packet.ResponseOf. ResponseOf returns the Response of a C_RHEAD, with the errors of NewResponseCode, and an error for a nil h. */
 int dmrgo_packet_response_of(const dmrgo_pdu_response_packet_header_t *h, dmrgo_packet_response_t *out);
 /* Go: pdu.AckInboundPDU.Encode. Encode encodes an AckInboundPDU. */
 int dmrgo_pdu_ack_inbound_pdu_encode(dmrgo_pdu_ack_inbound_pdu_t *self, uint8_t out[8]);

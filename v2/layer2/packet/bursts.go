@@ -21,9 +21,12 @@ func Bursts(p Packet, colorCode enums.ColorCode, src layer2.SyncSource) ([]layer
 }
 
 // AppendBursts appends the bursts that Bursts returns to dst and returns the
-// extended slice. On error it returns dst unchanged. It allocates only when
-// dst has no room.
+// extended slice. On error, and for a nil p, it returns dst unchanged with
+// an error. It allocates only when dst has no room.
 func AppendBursts(dst []layer2.RawBurst, p *Packet, colorCode enums.ColorCode, src layer2.SyncSource) ([]layer2.RawBurst, error) {
+	if p == nil {
+		return dst, errNil
+	}
 	n := len(dst)
 	raw, err := layer2.BuildBurst(&p.Header, colorCode, src)
 	if err != nil {
