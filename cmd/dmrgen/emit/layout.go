@@ -33,9 +33,16 @@ func sizesText(sizes []int) string {
 		parts[i] = strconv.Itoa(s)
 	}
 	if len(parts) == 1 {
-		return parts[0]
+		return octetsText(sizes[0])
 	}
-	return strings.Join(parts[:len(parts)-1], ", ") + " or " + parts[len(parts)-1]
+	return strings.Join(parts[:len(parts)-1], ", ") + " or " + parts[len(parts)-1] + " octets"
+}
+
+func octetsText(n int) string {
+	if n == 1 {
+		return "1 octet"
+	}
+	return strconv.Itoa(n) + " octets"
 }
 
 func magicText(pdu parse.PDUStruct) string {
@@ -101,8 +108,8 @@ func emitFrameDecode(f *File, pdu parse.PDUStruct) {
 	sizes := pdu.Frame.Sizes
 	name := pdu.DecodeFuncName(pdu.Name)
 	doc := name + " decodes " + docObject(pdu)
-	doc = strings.TrimSuffix(doc, ".") + " from data, a frame of " + sizesText(sizes) + " octets. It returns "
-	conds := []string{errShort + " when data is shorter than " + strconv.Itoa(sizes[0]) + " octets"}
+	doc = strings.TrimSuffix(doc, ".") + " from data, a frame of " + sizesText(sizes) + ". It returns "
+	conds := []string{errShort + " when data is shorter than " + octetsText(sizes[0])}
 	if len(sizes) == 1 {
 		conds = append(conds, errLength+" when it is longer")
 	} else {
@@ -255,7 +262,7 @@ func readLayoutInt(g *Group, field parse.Field, tmp string, textFail func() *Sta
 func emitFrameEncode(f *File, pdu parse.PDUStruct, ev *errVars) {
 	sizes := pdu.Frame.Sizes
 	enc := encoder{pdu: pdu, bytes: sizes[len(sizes)-1], errs: ev, frame: true}
-	doc := "AppendBinary appends the " + sizesText(sizes) + " octets of s to dst"
+	doc := "AppendBinary appends the " + sizesText(sizes) + " of s to dst"
 	if sf := pdu.Frame.SizeField; sf != "" {
 		doc += ": " + sf + " selects the length, and 0 means " + strconv.Itoa(sizes[0])
 	}

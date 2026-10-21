@@ -20,9 +20,9 @@ func decodeHeader(data []byte) (Header, error) {
 	return result, nil
 }
 
-// AppendBinary appends the 1 octets of s to dst. It returns dst unchanged
-// and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
-// to grow dst.
+// AppendBinary appends the 1 octet of s to dst. It returns dst unchanged and
+// a *dmrgo.FieldRangeError when a field does not fit. It allocates only to
+// grow dst.
 func (s *Header) AppendBinary(dst []byte) ([]byte, error) {
 	_n := len(dst)
 	for range 1 {

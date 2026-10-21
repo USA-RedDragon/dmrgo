@@ -5245,7 +5245,7 @@ int dmrgo_hytera_decode_rrs_check_answer(const uint8_t *data, size_t data_len, d
 int dmrgo_hytera_decode_rrs_radio(const uint8_t *data, size_t data_len, dmrgo_hytera_rrs_radio_t *out);
 /* Go: hytera.DecodeTMPAnswer. DecodeTMPAnswer decodes a TMPAnswer from data. */
 int dmrgo_hytera_decode_tmp_answer(const uint8_t *data, size_t data_len, dmrgo_hytera_tmp_answer_t *out);
-/* Go: hytera.DecodeTMPFlags. DecodeTMPFlags decodes a TMPFlags from data, a frame of 1 octets. */
+/* Go: hytera.DecodeTMPFlags. DecodeTMPFlags decodes a TMPFlags from data, a frame of 1 octet. */
 int dmrgo_hytera_decode_tmp_flags(const uint8_t *data, size_t data_len, dmrgo_hytera_tmp_flags_t *out);
 /* Go: hytera.DecodeTMPGroupAnswer. DecodeTMPGroupAnswer decodes a TMPGroupAnswer from data. */
 int dmrgo_hytera_decode_tmp_group_answer(const uint8_t *data, size_t data_len, dmrgo_hytera_tmp_group_answer_t *out);
@@ -5261,7 +5261,7 @@ int dmrgo_hytera_gps_data_longitude(dmrgo_hytera_gps_data_t *self, double *out);
 int dmrgo_hytera_gps_data_string(dmrgo_hytera_gps_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hytera.GPSData.Valid. Valid reports a position from a fix: Status 'A'. */
 int dmrgo_hytera_gps_data_valid(dmrgo_hytera_gps_data_t *self, bool *out);
-/* Go: hytera.Header.AppendBinary. AppendBinary appends the 1 octets of s to dst. */
+/* Go: hytera.Header.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
 int dmrgo_hytera_header_append_binary(dmrgo_hytera_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hytera.Header.String. String returns the fields of s as text, for printing. */
 int dmrgo_hytera_header_string(dmrgo_hytera_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -5307,7 +5307,7 @@ int dmrgo_hytera_service_string(dmrgo_hytera_service_t self, char *out, size_t o
 int dmrgo_hytera_tmp_answer_append_binary(dmrgo_hytera_tmp_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hytera.TMPAnswer.String. String returns the fields of s as text, for printing. */
 int dmrgo_hytera_tmp_answer_string(dmrgo_hytera_tmp_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: hytera.TMPFlags.AppendBinary. AppendBinary appends the 1 octets of s to dst. */
+/* Go: hytera.TMPFlags.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
 int dmrgo_hytera_tmp_flags_append_binary(dmrgo_hytera_tmp_flags_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hytera.TMPFlags.String. String returns the fields of s as text, for printing. */
 int dmrgo_hytera_tmp_flags_string(dmrgo_hytera_tmp_flags_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -6535,7 +6535,7 @@ int dmrgo_location_format_string(dmrgo_location_format_t self, char *out, size_t
 int dmrgo_ars_decode_message(const uint8_t *data, size_t data_len, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ars.Event.String. String returns the name of e. */
 int dmrgo_ars_event_string(dmrgo_ars_event_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: ars.Header.AppendBinary. AppendBinary appends the 1 octets of s to dst. */
+/* Go: ars.Header.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
 int dmrgo_ars_header_append_binary(dmrgo_ars_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ars.Header.String. String returns the fields of s as text, for printing. */
 int dmrgo_ars_header_string(dmrgo_ars_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -6555,11 +6555,11 @@ int dmrgo_ars_new_failure(uint8_t reason, dmrgo_ars_message_t *out, void *arena,
 int dmrgo_ars_new_query(dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ars.NewRegistration. NewRegistration returns a device registration with the header bits that radios send. */
 int dmrgo_ars_new_registration(dmrgo_ars_event_t event, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: ars.Registration.AppendBinary. AppendBinary appends the 1 octets of s to dst. */
+/* Go: ars.Registration.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
 int dmrgo_ars_registration_append_binary(dmrgo_ars_registration_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ars.Registration.String. String returns the fields of s as text, for printing. */
 int dmrgo_ars_registration_string(dmrgo_ars_registration_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: ars.Response.AppendBinary. AppendBinary appends the 1 octets of s to dst. */
+/* Go: ars.Response.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
 int dmrgo_ars_response_append_binary(dmrgo_ars_response_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ars.Response.String. String returns the fields of s as text, for printing. */
 int dmrgo_ars_response_string(dmrgo_ars_response_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -6613,7 +6613,7 @@ int dmrgo_lrrp_time_string(dmrgo_lrrp_time_t *self, char *out, size_t out_cap, s
 int dmrgo_tms_decode_message(const uint8_t *data, size_t data_len, dmrgo_tms_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: tms.Encoding.String. String returns the name of e. */
 int dmrgo_tms_encoding_string(dmrgo_tms_encoding_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: tms.Header.AppendBinary. AppendBinary appends the 1 octets of s to dst. */
+/* Go: tms.Header.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
 int dmrgo_tms_header_append_binary(dmrgo_tms_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: tms.Header.String. String returns the fields of s as text, for printing. */
 int dmrgo_tms_header_string(dmrgo_tms_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -6631,11 +6631,11 @@ int dmrgo_tms_message_text_utf8(dmrgo_tms_message_t *self, uint8_t *dst, size_t 
 int dmrgo_tms_new_ack(uint8_t seq, dmrgo_tms_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: tms.NewText. NewText returns a text message with sequence number seq, with the header bits that radios send: both extension octets and the UTF-16LE encoding. */
 int dmrgo_tms_new_text(uint8_t seq, bool ack_required, dmrgo_tms_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: tms.SequenceHigh.AppendBinary. AppendBinary appends the 1 octets of s to dst. */
+/* Go: tms.SequenceHigh.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
 int dmrgo_tms_sequence_high_append_binary(dmrgo_tms_sequence_high_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: tms.SequenceHigh.String. String returns the fields of s as text, for printing. */
 int dmrgo_tms_sequence_high_string(dmrgo_tms_sequence_high_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: tms.SequenceLow.AppendBinary. AppendBinary appends the 1 octets of s to dst. */
+/* Go: tms.SequenceLow.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
 int dmrgo_tms_sequence_low_append_binary(dmrgo_tms_sequence_low_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: tms.SequenceLow.String. String returns the fields of s as text, for printing. */
 int dmrgo_tms_sequence_low_string(dmrgo_tms_sequence_low_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

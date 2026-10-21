@@ -132,7 +132,7 @@ func (s *Data) String() string {
 }
 
 var (
-	errDataSize        = errors.New("Data.Size: not one of 53, 55 or 71")
+	errDataSize        = errors.New("Data.Size: not one of 53, 55 or 71 octets")
 	errDataSourceRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "Source",
