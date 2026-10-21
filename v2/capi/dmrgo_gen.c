@@ -62,8 +62,6 @@ const char *dmrgo__gen_strerror(int status) {
 		return "layer2.ErrEmbeddedLCUncorrectable";
 	case -114:
 		return "layer2.ErrReservedDataType";
-	case -115:
-		return "layer2.ErrShortLCIncomplete";
 	case -116:
 		return "layer2.ErrShortLCSequence";
 	case -225:

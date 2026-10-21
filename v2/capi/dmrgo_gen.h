@@ -5308,7 +5308,6 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_LAYER2_EMBEDDED_LC_SEQUENCE (-112)
 #define DMRGO_ERR_LAYER2_EMBEDDED_LC_UNCORRECTABLE (-113)
 #define DMRGO_ERR_LAYER2_RESERVED_DATA_TYPE (-114)
-#define DMRGO_ERR_LAYER2_SHORT_LC_INCOMPLETE (-115)
 #define DMRGO_ERR_LAYER2_SHORT_LC_SEQUENCE (-116)
 #define DMRGO_ERR_LAYER2_SYNC_SOURCE (-225)
 #define DMRGO_ERR_LAYER2_VOICE_POSITION (-226)
@@ -8228,16 +8227,10 @@ int dmrgo_layer2_raw_burst_voice_slots(const dmrgo_layer2_raw_burst_t *self, uin
 int dmrgo_layer2_short_lc_assembler_new(dmrgo_layer2_short_lc_assembler_t **out);
 /* dmrgo_layer2_short_lc_assembler_free frees the handle. self may be NULL. */
 int dmrgo_layer2_short_lc_assembler_free(dmrgo_layer2_short_lc_assembler_t *self);
-/* Go: layer2.ShortLCAssembler.Add. Add adds a decoded CACH and returns the Short LC when the CACH completes it, with done set, as AddFragment and Complete do. */
+/* Go: layer2.ShortLCAssembler.Add. Add adds a decoded CACH and returns the Short LC when the CACH completes it, with done set. */
 int dmrgo_layer2_short_lc_assembler_add(dmrgo_layer2_short_lc_assembler_t *self, const dmrgo_layer2_cach_t *c, dmrgo_pdu_short_lc_t *slc, bool *done);
-/* Go: layer2.ShortLCAssembler.AddFragment. AddFragment adds a 17-bit CACH signalling payload, packed as CACH.Payload holds it, with the LCSS of the TACT of the same CACH. */
-int dmrgo_layer2_short_lc_assembler_add_fragment(dmrgo_layer2_short_lc_assembler_t *self, dmrgo_enums_lcss_t lcss, const uint8_t payload[3], bool *out);
-/* Go: layer2.ShortLCAssembler.AddInto. AddInto adds a decoded CACH as Add does, and decodes a completed Short LC into dst, with its payload struct in p, as CompleteInto does. */
+/* Go: layer2.ShortLCAssembler.AddInto. AddInto adds a decoded CACH as Add does, and decodes a completed Short LC into dst, with its payload struct in p, as pdu.DecodeShortLCInto places it. */
 int dmrgo_layer2_short_lc_assembler_add_into(dmrgo_layer2_short_lc_assembler_t *self, dmrgo_pdu_short_lc_t *dst, dmrgo_pdu_short_lc_payloads_t *p, const dmrgo_layer2_cach_t *c, bool *done);
-/* Go: layer2.ShortLCAssembler.Complete. Complete decodes the assembled Short LC PDU from the 4 accumulated fragments and resets the assembler. */
-int dmrgo_layer2_short_lc_assembler_complete(dmrgo_layer2_short_lc_assembler_t *self, dmrgo_pdu_short_lc_t *out);
-/* Go: layer2.ShortLCAssembler.CompleteInto. CompleteInto decodes the Short LC into dst as Complete does, with the payload struct of dst in p as pdu.DecodeShortLCInto places it. */
-int dmrgo_layer2_short_lc_assembler_complete_into(dmrgo_layer2_short_lc_assembler_t *self, dmrgo_pdu_short_lc_t *dst, dmrgo_pdu_short_lc_payloads_t *p);
 /* Go: layer2.ShortLCAssembler.Count. Count returns the number of fragments accumulated so far. */
 int dmrgo_layer2_short_lc_assembler_count(dmrgo_layer2_short_lc_assembler_t *self, int64_t *out);
 /* Go: layer2.ShortLCAssembler.Reset. Reset clears the assembler state for reuse. */

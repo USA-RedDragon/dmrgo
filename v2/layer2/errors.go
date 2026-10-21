@@ -23,13 +23,10 @@ var (
 	// EmbeddedLCAssembler.Add when the embedded LC of bursts B to E fails
 	// its FEC or its checksum. It wraps fec.ErrUncorrectable.
 	ErrEmbeddedLCUncorrectable error = &wrapError{"embedded LC: " + fec.ErrUncorrectable.Error(), fec.ErrUncorrectable}
-	// ErrShortLCSequence is returned by ShortLCAssembler.Add and AddFragment
+	// ErrShortLCSequence is returned by ShortLCAssembler.Add and AddInto
 	// when a CACH fragment arrives out of sequence or has an LCSS that is not
 	// valid for Short LC. The partial Short LC is discarded.
 	ErrShortLCSequence = errors.New("short LC fragment out of sequence")
-	// ErrShortLCIncomplete is returned by ShortLCAssembler.Complete when the
-	// assembler does not hold 4 fragments in sequence.
-	ErrShortLCIncomplete = errors.New("short LC needs 4 fragments in sequence")
 	// ErrColorCodeMismatch is returned, wrapped, by DecodeFromBytesWith when the
 	// burst's color code differs from DecodeOptions.ColorCode.
 	ErrColorCodeMismatch = errors.New("color code mismatch")

@@ -609,10 +609,7 @@
 		dmrgo_layer2_raw_burst_sync;
 		dmrgo_layer2_raw_burst_voice_slots;
 		dmrgo_layer2_short_lc_assembler_add;
-		dmrgo_layer2_short_lc_assembler_add_fragment;
 		dmrgo_layer2_short_lc_assembler_add_into;
-		dmrgo_layer2_short_lc_assembler_complete;
-		dmrgo_layer2_short_lc_assembler_complete_into;
 		dmrgo_layer2_short_lc_assembler_count;
 		dmrgo_layer2_short_lc_assembler_free;
 		dmrgo_layer2_short_lc_assembler_new;

@@ -48,15 +48,15 @@ func TestPaddingBits(t *testing.T) {
 			e, _ := a.Encode()
 			return a, layer3.DecodeCdefParms([8]byte(q)), e[:]
 		}},
-		{"layer2.ShortLCAssembler.AddFragment", 17, func(p, q []byte) (any, any, []byte) {
+		{"layer2.ShortLCAssembler.Add", 17, func(p, q []byte) (any, any, []byte) {
 			var a, b layer2.ShortLCAssembler
+			var sa, sb pdu.ShortLC
+			var errA, errB error
 			lcss := []enums.LCSS{enums.LCSSFirstFragment, enums.LCSSContinuationFragment, enums.LCSSContinuationFragment, enums.LCSSLastFragment}
 			for _, l := range lcss {
-				_, _ = a.AddFragment(l, [3]byte(p))
-				_, _ = b.AddFragment(l, [3]byte(q))
+				sa, _, errA = a.Add(layer2.CACH{TACT: pdu.TACT{LCSS: l}, Payload: [3]byte(p)})
+				sb, _, errB = b.Add(layer2.CACH{TACT: pdu.TACT{LCSS: l}, Payload: [3]byte(q)})
 			}
-			sa, errA := a.Complete()
-			sb, errB := b.Complete()
 			c := layer2.CACH{Payload: [3]byte(p)}
 			e, _ := c.Encode()
 			back := layer2.DecodeCACH(e)

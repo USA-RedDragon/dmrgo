@@ -28,22 +28,18 @@ var shortLCSequence = [4]enums.LCSS{
 	enums.LCSSLastFragment,
 }
 
-func addShortLCFragments(t *testing.T, a *layer2.ShortLCAssembler, fragments [4][3]byte) {
-	t.Helper()
-	for i := range fragments {
-		ready, err := a.AddFragment(shortLCSequence[i], fragments[i])
-		if err != nil {
-			t.Fatalf("fragment %d: %v", i, err)
-		}
-		if ready != (i == 3) {
-			t.Fatalf("fragment %d: ready=%v", i, ready)
-		}
-	}
+func cachOf(lcss enums.LCSS, payload [3]byte) layer2.CACH {
+	return layer2.CACH{TACT: pdu.TACT{LCSS: lcss}, Payload: payload}
 }
 
 func decodeShortLCFragments(t *testing.T, fragments [4][3]byte) pdu.ShortLC {
 	t.Helper()
 	var a layer2.ShortLCAssembler
+	return addShortLCFragments(t, &a, fragments)
+}
+
+func addShortLCFragments(t *testing.T, a *layer2.ShortLCAssembler, fragments [4][3]byte) pdu.ShortLC {
+	t.Helper()
 	for i, f := range fragments {
 		slc, done, err := a.Add(layer2.CACH{TACT: pdu.TACT{LCSS: shortLCSequence[i]}, Payload: f})
 		if err != nil || done != (i == 3) {
@@ -85,7 +81,7 @@ func TestShortLCAssembler_Lifecycle(t *testing.T) {
 
 	var payload [3]byte
 	for i := 0; i < 3; i++ {
-		ready, err := a.AddFragment(shortLCSequence[i], payload)
+		_, ready, err := a.Add(cachOf(shortLCSequence[i], payload))
 		if err != nil {
 			t.Fatalf("fragment %d: %v", i, err)
 		}
@@ -97,23 +93,28 @@ func TestShortLCAssembler_Lifecycle(t *testing.T) {
 		}
 	}
 
-	ready, err := a.AddFragment(enums.LCSSLastFragment, payload)
+	_, ready, err := a.Add(cachOf(enums.LCSSLastFragment, payload))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !ready {
 		t.Error("should be ready after 4 fragments")
 	}
-	if a.Count() != 4 {
-		t.Errorf("count should be 4, got %d", a.Count())
+	if a.Count() != 0 {
+		t.Errorf("count should be 0 after a complete Short LC, got %d", a.Count())
 	}
 
+	for i := 0; i < 2; i++ {
+		if _, _, err := a.Add(cachOf(shortLCSequence[i], payload)); err != nil {
+			t.Fatal(err)
+		}
+	}
 	a.Reset()
 	if a.Count() != 0 {
 		t.Errorf("count should be 0 after reset, got %d", a.Count())
 	}
-	if _, err := a.Complete(); !errors.Is(err, layer2.ErrShortLCIncomplete) {
-		t.Errorf("Complete after Reset: got %v, want ErrShortLCIncomplete", err)
+	if _, done, err := a.Add(cachOf(enums.LCSSLastFragment, payload)); done || !errors.Is(err, layer2.ErrShortLCSequence) {
+		t.Errorf("Last fragment after Reset: done %t err %v, want ErrShortLCSequence", done, err)
 	}
 }
 
@@ -133,7 +134,6 @@ func TestShortLCAssembler_RejectsBadSequence(t *testing.T) {
 		{"LastAfterFirst", []enums.LCSS{first, last}},
 		{"LastAfterOneContinuation", []enums.LCSS{first, cont, last}},
 		{"ThirdContinuation", []enums.LCSS{first, cont, cont, cont}},
-		{"SingleFragment", []enums.LCSS{single}},
 		{"SingleFragmentMidSequence", []enums.LCSS{first, cont, single}},
 		{"ContinuationAfterLast", []enums.LCSS{first, cont, cont, last, cont}},
 	}
@@ -144,17 +144,15 @@ func TestShortLCAssembler_RejectsBadSequence(t *testing.T) {
 			var a layer2.ShortLCAssembler
 			var payload [3]byte
 			var err error
+			var done bool
 			for _, lcss := range tt.seq {
-				_, err = a.AddFragment(lcss, payload)
+				_, done, err = a.Add(cachOf(lcss, payload))
 			}
-			if !errors.Is(err, layer2.ErrShortLCSequence) {
-				t.Fatalf("last AddFragment: got %v, want ErrShortLCSequence", err)
+			if done || !errors.Is(err, layer2.ErrShortLCSequence) {
+				t.Fatalf("last Add: done %t err %v, want ErrShortLCSequence", done, err)
 			}
 			if a.Count() != 0 {
 				t.Errorf("count after bad fragment: got %d, want 0", a.Count())
-			}
-			if _, err := a.Complete(); !errors.Is(err, layer2.ErrShortLCIncomplete) {
-				t.Errorf("Complete: got %v, want ErrShortLCIncomplete", err)
 			}
 		})
 	}
@@ -168,19 +166,14 @@ func TestShortLCAssembler_FirstRestartsSequence(t *testing.T) {
 	fragments := buildValidShortLCFragments(byte(enums.SLCONullMessage), data)
 
 	var a layer2.ShortLCAssembler
-	if _, err := a.AddFragment(enums.LCSSFirstFragment, garbage); err != nil {
+	if _, _, err := a.Add(cachOf(enums.LCSSFirstFragment, garbage)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := a.AddFragment(enums.LCSSContinuationFragment, garbage); err != nil {
+	if _, _, err := a.Add(cachOf(enums.LCSSContinuationFragment, garbage)); err != nil {
 		t.Fatal(err)
 	}
-	addShortLCFragments(t, &a, fragments)
-
-	slc, err := a.Complete()
+	slc := addShortLCFragments(t, &a, fragments)
 	fecResult := slc.FEC
-	if err != nil {
-		t.Fatal(err)
-	}
 	if fecResult.Uncorrectable || fecResult.ErrorsCorrected != 0 {
 		t.Fatalf("unexpected FEC result %+v", fecResult)
 	}
@@ -189,33 +182,29 @@ func TestShortLCAssembler_FirstRestartsSequence(t *testing.T) {
 	}
 }
 
-func TestShortLCAssembler_CompleteIncomplete(t *testing.T) {
+func TestShortLCAssembler_AddIntoIncomplete(t *testing.T) {
 	t.Parallel()
 	var a layer2.ShortLCAssembler
 	var payload [3]byte
+	dst := pdu.ShortLC{SLCO: enums.SLCOActivityUpdate}
+	var p pdu.ShortLCPayloads
 	for i := 0; i < 3; i++ {
-		if _, err := a.AddFragment(shortLCSequence[i], payload); err != nil {
-			t.Fatal(err)
+		if done, err := a.AddInto(&dst, &p, cachOf(shortLCSequence[i], payload)); done || err != nil {
+			t.Fatalf("fragment %d: done %t err %v", i, done, err)
 		}
-		if _, err := a.Complete(); !errors.Is(err, layer2.ErrShortLCIncomplete) {
-			t.Errorf("Complete with %d fragments: got %v, want ErrShortLCIncomplete", i+1, err)
+		if dst.SLCO != enums.SLCOActivityUpdate {
+			t.Errorf("AddInto with %d fragments changed dst", i+1)
 		}
 	}
 }
 
-func TestShortLCAssembler_Complete_NullMessage(t *testing.T) {
+func TestShortLCAssembler_NullMessage(t *testing.T) {
 	t.Parallel()
 	var data [3]byte
 	fragments := buildValidShortLCFragments(byte(enums.SLCONullMessage), data)
 
-	var a layer2.ShortLCAssembler
-	addShortLCFragments(t, &a, fragments)
-
-	slc, err := a.Complete()
+	slc := decodeShortLCFragments(t, fragments)
 	fecResult := slc.FEC
-	if err != nil {
-		t.Fatal(err)
-	}
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
 	}
@@ -227,20 +216,14 @@ func TestShortLCAssembler_Complete_NullMessage(t *testing.T) {
 	}
 }
 
-func TestShortLCAssembler_Complete_ActivityUpdate(t *testing.T) {
+func TestShortLCAssembler_ActivityUpdate(t *testing.T) {
 	t.Parallel()
 	data := [3]byte{0x53, 0xAB, 0xCD}
 
 	fragments := buildValidShortLCFragments(byte(enums.SLCOActivityUpdate), data)
 
-	var a layer2.ShortLCAssembler
-	addShortLCFragments(t, &a, fragments)
-
-	slc, err := a.Complete()
+	slc := decodeShortLCFragments(t, fragments)
 	fecResult := slc.FEC
-	if err != nil {
-		t.Fatal(err)
-	}
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected uncorrectable error")
 	}

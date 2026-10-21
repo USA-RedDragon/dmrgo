@@ -1,7 +1,6 @@
 package layer2
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
@@ -18,55 +17,53 @@ type ShortLCAssembler struct {
 
 // Reset clears the assembler state for reuse.
 func (a *ShortLCAssembler) Reset() {
-	if a == nil {
-		return
-	}
 	a.fragments = [4][3]byte{}
 	a.count = 0
 }
 
 // Count returns the number of fragments accumulated so far.
 func (a *ShortLCAssembler) Count() int {
-	if a == nil {
-		return 0
-	}
 	return a.count
 }
 
 // Add adds a decoded CACH and returns the Short LC when the CACH completes
-// it, with done set, as AddFragment and Complete do. A CACH whose TACT is
-// uncorrectable has no LCSS, and a Single fragment LCSS is not used in the
-// CACH, so either discards the partial Short LC; Add then returns
-// ErrShortLCSequence when fragments were discarded. It allocates the payload
-// struct of a completed Short LC; AddInto does not.
+// it, with done set. A First fragment starts a new Short LC, and a Last
+// fragment after a First and two Continuation fragments completes it. The
+// FEC field of the ShortLC is the combined result of the BPTC FEC and the
+// CRC-8 check. A CACH whose TACT is uncorrectable has no LCSS, and a Single
+// fragment LCSS is not used in the CACH, so either discards the partial
+// Short LC; Add then returns ErrShortLCSequence when fragments were
+// discarded. A fragment out of order also discards the partial Short LC and
+// returns ErrShortLCSequence. Add allocates the payload struct of a
+// completed Short LC; AddInto does not.
 func (a *ShortLCAssembler) Add(c CACH) (slc pdu.ShortLC, done bool, err error) {
-	if a == nil {
-		return pdu.ShortLC{}, false, dmrgo.ErrNilReceiver
-	}
-	if c.TACT.FEC.Uncorrectable || c.TACT.LCSS == enums.LCSSSingleFragment {
-		n := a.count
-		a.Reset()
-		if n > 0 {
-			return slc, false, ErrShortLCSequence
-		}
-		return slc, false, nil
-	}
-	if done, err = a.AddFragment(c.TACT.LCSS, c.Payload); err != nil || !done {
+	if done, err = a.add(c); err != nil || !done {
 		return slc, false, err
 	}
-	slc, err = a.Complete()
-	return slc, err == nil, err
+	bits, bptcResult := a.decode()
+	slc = pdu.DecodeShortLC(bits)
+	slc.FEC = bptcResult.Combine(slc.FEC)
+	return slc, true, nil
 }
 
-// AddFragment adds a 17-bit CACH signalling payload, packed as CACH.Payload
-// holds it, with the LCSS of the TACT of the same CACH. It ignores the low 7
-// bits of payload[2]. It returns true when a Last fragment follows a
-// First and two Continuation fragments, and the assembler is ready for
-// Complete. Any other LCSS or order discards the partial Short LC and
-// returns ErrShortLCSequence.
-func (a *ShortLCAssembler) AddFragment(lcss enums.LCSS, payload [3]byte) (bool, error) {
-	if a == nil {
-		return false, dmrgo.ErrNilReceiver
+// AddInto adds a decoded CACH as Add does, and decodes a completed Short LC
+// into dst, with its payload struct in p, as pdu.DecodeShortLCInto places
+// it. It leaves dst as it is until the Short LC is complete. It does not
+// allocate.
+func (a *ShortLCAssembler) AddInto(dst *pdu.ShortLC, p *pdu.ShortLCPayloads, c CACH) (done bool, err error) {
+	if done, err = a.add(c); err != nil || !done {
+		return false, err
+	}
+	bits, bptcResult := a.decode()
+	pdu.DecodeShortLCInto(dst, p, bits)
+	dst.FEC = bptcResult.Combine(dst.FEC)
+	return true, nil
+}
+
+func (a *ShortLCAssembler) add(c CACH) (bool, error) {
+	lcss := c.TACT.LCSS
+	if c.TACT.FEC.Uncorrectable {
+		lcss = enums.LCSSSingleFragment
 	}
 	switch lcss {
 	case enums.LCSSFirstFragment:
@@ -81,61 +78,7 @@ func (a *ShortLCAssembler) AddFragment(lcss enums.LCSS, payload [3]byte) (bool, 
 			a.Reset()
 			return false, ErrShortLCSequence
 		}
-	case enums.LCSSSingleFragment:
-		a.Reset()
-		return false, ErrShortLCSequence
 	default:
-		a.Reset()
-		return false, ErrShortLCSequence
-	}
-	a.fragments[a.count] = payload
-	a.count++
-	return a.count == 4, nil
-}
-
-// Complete decodes the assembled Short LC PDU from the 4 accumulated
-// fragments and resets the assembler. The FEC field of the ShortLC is the
-// combined result of the BPTC FEC and the CRC-8 check. Complete returns
-// ErrShortLCIncomplete if the assembler does not hold a full sequence. It
-// allocates the payload struct of the Short LC; CompleteInto does not.
-func (a *ShortLCAssembler) Complete() (pdu.ShortLC, error) {
-	if a == nil {
-		return pdu.ShortLC{}, dmrgo.ErrNilReceiver
-	}
-	if a.count != 4 {
-		return pdu.ShortLC{}, ErrShortLCIncomplete
-	}
-	bits, bptcResult := a.decode()
-	slc := pdu.DecodeShortLC(bits)
-	slc.FEC = bptcResult.Combine(slc.FEC)
-	return slc, nil
-}
-
-// CompleteInto decodes the Short LC into dst as Complete does, with the
-// payload struct of dst in p as pdu.DecodeShortLCInto places it. It returns
-// ErrShortLCIncomplete, and leaves dst as it is, if the assembler does not
-// hold a full sequence. It does not allocate.
-func (a *ShortLCAssembler) CompleteInto(dst *pdu.ShortLC, p *pdu.ShortLCPayloads) error {
-	if a == nil {
-		return dmrgo.ErrNilReceiver
-	}
-	if a.count != 4 {
-		return ErrShortLCIncomplete
-	}
-	bits, bptcResult := a.decode()
-	pdu.DecodeShortLCInto(dst, p, bits)
-	dst.FEC = bptcResult.Combine(dst.FEC)
-	return nil
-}
-
-// AddInto adds a decoded CACH as Add does, and decodes a completed Short LC
-// into dst, with its payload struct in p, as CompleteInto does. It does not
-// allocate.
-func (a *ShortLCAssembler) AddInto(dst *pdu.ShortLC, p *pdu.ShortLCPayloads, c CACH) (done bool, err error) {
-	if a == nil {
-		return false, dmrgo.ErrNilReceiver
-	}
-	if c.TACT.FEC.Uncorrectable || c.TACT.LCSS == enums.LCSSSingleFragment {
 		n := a.count
 		a.Reset()
 		if n > 0 {
@@ -143,11 +86,9 @@ func (a *ShortLCAssembler) AddInto(dst *pdu.ShortLC, p *pdu.ShortLCPayloads, c C
 		}
 		return false, nil
 	}
-	if done, err = a.AddFragment(c.TACT.LCSS, c.Payload); err != nil || !done {
-		return false, err
-	}
-	err = a.CompleteInto(dst, p)
-	return err == nil, err
+	a.fragments[a.count] = c.Payload
+	a.count++
+	return a.count == 4, nil
 }
 
 func (a *ShortLCAssembler) decode() ([5]byte, fec.Result) {

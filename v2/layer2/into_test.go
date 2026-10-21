@@ -99,7 +99,4 @@ func TestShortLCAssembler_AddInto_MatchesAdd(t *testing.T) {
 	if done != 1 {
 		t.Errorf("%d Short LCs, want 1", done)
 	}
-	if err := into.CompleteInto(&dst, &p); !errors.Is(err, layer2.ErrShortLCIncomplete) {
-		t.Errorf("CompleteInto on an incomplete assembler: %v", err)
-	}
 }

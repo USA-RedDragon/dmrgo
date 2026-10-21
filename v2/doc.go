@@ -150,8 +150,8 @@
 //   - layer2.ErrReservedDataType, layer2.ErrColorCodeMismatch: returned by
 //     the burst decoders.
 //   - layer2.ErrVoiceTerminated, layer2.ErrEmbeddedLCSequence,
-//     layer2.ErrShortLCSequence, layer2.ErrShortLCIncomplete: returned by the
-//     voice transmitter and receiver and the Short LC assembler.
+//     layer2.ErrShortLCSequence: returned by the voice transmitter and
+//     receiver and the Short LC assembler.
 //   - layer2.ErrDataType, layer2.ErrSyncSource, layer2.ErrVoicePosition:
 //     returned, some wrapped, by the burst builders and by the SetKind and
 //     SetRawBurst methods of the transports for a data type, sync source or
@@ -192,8 +192,8 @@
 //   - ars.ErrShort, ars.ErrLength, tms.ErrShort, tms.ErrLength,
 //     lrrp.ErrShort, lrrp.ErrLength, lrrp.ErrToken, lrrp.ErrVarint:
 //     returned by the MOTOTRBO decoders.
-//   - hytera.ErrShort, hytera.ErrLength, hytera.ErrSignature,
-//     hytera.ErrText: returned by the HDAP decoders.
+//   - hdap.ErrShort, hdap.ErrLength, hdap.ErrSignature, hdap.ErrText:
+//     returned by the HDAP decoders.
 //   - dmrd.ErrShort, dmrd.ErrLength, dmrd.ErrSignature, dmrd.ErrText,
 //     dmrd.ErrCommand: returned by the transport/dmrd decoders.
 //   - ipsc.ErrShort, ipsc.ErrLength, ipsc.ErrCommand: returned by the
