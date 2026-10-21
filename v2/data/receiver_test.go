@@ -492,3 +492,44 @@ func TestReceiverStrings(t *testing.T) {
 		}
 	}
 }
+
+func TestReceiverProprietaryHeader(t *testing.T) {
+	t.Parallel()
+	u := pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
+		SAP: enums.SAPProprietaryPacketData, LLIDDestination: dstID, LLIDSource: srcID, FullMessageFlag: true}}
+	p, err := packet.NewPacket(u, payload(40), enums.DataTypeRate12)
+	if err != nil {
+		t.Fatal(err)
+	}
+	uh := *p.Header.UnconfirmedDataHeader
+	uh.BlocksToFollow++
+	p.Header.UnconfirmedDataHeader = &uh
+	b, err := packet.Bursts(p, 1, layer2.SyncSourceMS)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ph, err := layer2.BuildBurst(&pdu.DataHeader{Format: pdu.FormatProprietary,
+		ProprietaryHeader: &pdu.ProprietaryHeader{SAP: enums.SAPIPBasedPacketData, MFID: 0x10}}, 1, layer2.SyncSourceMS)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b = slices.Insert(b, 1, ph)
+	check := func(name string, ev []data.Event) {
+		t.Helper()
+		end := ev[len(ev)-1]
+		if got := kinds(ev); got != "CallStart Delivered CallEnd(Quiet)" || end.Stats.Lost != 0 ||
+			ev[1].Message.Proprietary == nil || !bytes.Equal(ev[1].Message.Payload, payload(40)) {
+			t.Errorf("%s: %s, stats %+v", name, got, end.Stats)
+		}
+	}
+	check("time", replay(t, newReceiver(t, nil), timed(0, b)))
+	r := newReceiver(t, &data.ReceiverConfig{Lost: -1})
+	var all []data.Event
+	ev := make([]data.Event, 0, data.MaxEvents)
+	for i := range b {
+		ev = r.Burst(time.Duration(i)*5*time.Millisecond, &b[i], layer2.Hint{HasSeq: true, Seq: uint16(100 + i)}, ev[:0])
+		all = append(all, ev...)
+	}
+	all = append(all, r.Tick(time.Second, ev[:0])...)
+	check("seq", all)
+}
