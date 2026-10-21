@@ -7403,6 +7403,7 @@ func fromC_transport_dmrd_session_ConfigError(s *C.dmrgo_dmrd_session_config_err
 func in_transport_dmrd_session_MasterConfig(s *C.dmrgo_dmrd_session_master_config_t) (d g_transport_dmrd_session.MasterConfig) {
 	d.Dialect = g_transport_dmrd.Dialect(s.dialect)
 	d.Timeout = time.Duration(s.timeout)
+	d.LoginTimeout = time.Duration(s.login_timeout)
 	return
 }
 
@@ -7410,6 +7411,7 @@ func out_transport_dmrd_session_MasterConfig(d *C.dmrgo_dmrd_session_master_conf
 	_ = oc
 	d.dialect = C.dmrgo_dmrd_dialect_t(s.Dialect)
 	d.timeout = C.dmrgo_duration_t(s.Timeout)
+	d.login_timeout = C.dmrgo_duration_t(s.LoginTimeout)
 }
 
 func fromC_transport_dmrd_session_MasterConfig(s *C.dmrgo_dmrd_session_master_config_t) g_transport_dmrd_session.MasterConfig {

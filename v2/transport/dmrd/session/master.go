@@ -17,6 +17,10 @@ type MasterConfig struct {
 	// Timeout is the time without a packet from the repeater after which
 	// the Master ends the session. 0 means TimeoutDefault.
 	Timeout time.Duration
+	// LoginTimeout is the time without a packet from a repeater that has
+	// not finished its login after which the Master ends the session. 0
+	// means LoginTimeoutDefault.
+	LoginTimeout time.Duration
 }
 
 // Master is the master side of the session of one repeater of the MMDVM
@@ -25,8 +29,9 @@ type MasterConfig struct {
 // address. Make it with NewMaster; the zero Master takes no packet. A
 // Master is not safe for concurrent use and must not be copied.
 type Master struct {
-	dialect dmrd.Dialect
-	timeout time.Duration
+	dialect      dmrd.Dialect
+	timeout      time.Duration
+	loginTimeout time.Duration
 
 	tx        []byte
 	state     State
@@ -40,15 +45,21 @@ type Master struct {
 
 // NewMaster returns a Master for cfg in StateIdle. It returns a
 // *ConfigError for a nil cfg, a Dialect other than DialectMMDVM or
-// DialectHBRP, or a negative Timeout. It allocates the Master.
+// DialectHBRP, or a negative Timeout or LoginTimeout. It allocates the
+// Master.
 func NewMaster(cfg *MasterConfig) (*Master, error) {
 	if cfg == nil || (cfg.Dialect != dmrd.DialectMMDVM && cfg.Dialect != dmrd.DialectHBRP) {
 		return nil, errDialect
 	}
-	if cfg.Timeout < 0 {
+	if cfg.Timeout < 0 || cfg.LoginTimeout < 0 {
 		return nil, errTimer
 	}
-	return &Master{dialect: cfg.Dialect, timeout: orDefault(cfg.Timeout, TimeoutDefault), tx: make([]byte, 0, MaxPacket)}, nil
+	return &Master{
+		dialect:      cfg.Dialect,
+		timeout:      orDefault(cfg.Timeout, TimeoutDefault),
+		loginTimeout: orDefault(cfg.LoginTimeout, LoginTimeoutDefault),
+		tx:           make([]byte, 0, MaxPacket),
+	}, nil
 }
 
 // State returns the state of the session.
@@ -143,7 +154,7 @@ func (m *Master) Admit(now time.Duration, salt uint32, password []byte, dst []Ou
 	}
 	m.salt = salt
 	m.passLen = copy(m.pass[:], password)
-	m.state, m.timeoutAt = StateAuth, after(now, m.timeout)
+	m.state, m.timeoutAt = StateAuth, after(now, m.loginTimeout)
 	return m.challenge(dst)
 }
 
@@ -262,17 +273,17 @@ func (m *Master) login(now time.Duration, b []byte, dst []Output) []Output {
 		return dst
 	}
 	if m.state == StateLogin && k.ID == m.id {
-		m.timeoutAt = after(now, m.timeout)
+		m.timeoutAt = after(now, m.loginTimeout)
 		return dst
 	}
 	if m.state == StateAuth && k.ID == m.id {
-		m.timeoutAt = after(now, m.timeout)
+		m.timeoutAt = after(now, m.loginTimeout)
 		return m.challenge(dst)
 	}
 	if m.state != StateIdle {
 		dst = m.down(dst, ReasonLogin)
 	}
-	m.id, m.state, m.timeoutAt = k.ID, StateLogin, after(now, m.timeout)
+	m.id, m.state, m.timeoutAt = k.ID, StateLogin, after(now, m.loginTimeout)
 	return append(dst, Output{Kind: OutputLogin, ID: k.ID})
 }
 
@@ -288,7 +299,7 @@ func (m *Master) token(now time.Duration, b []byte, dst []Output) []Output {
 		dst = m.nak(dst, k.ID)
 		return m.down(dst, ReasonRefused)
 	}
-	m.state, m.timeoutAt = StateConfig, after(now, m.timeout)
+	m.state, m.timeoutAt = StateConfig, after(now, m.loginTimeout)
 	return m.acked(dst)
 }
 

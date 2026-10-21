@@ -19,6 +19,11 @@ const (
 	// TimeoutDefault is the default PeerConfig.Timeout and
 	// MasterConfig.Timeout.
 	TimeoutDefault = 60 * time.Second
+	// LoginTimeoutDefault is the default MasterConfig.LoginTimeout: the
+	// PING_TIME of 5 s times the MAX_MISSED of 3 after which an HBlink3
+	// master drops a repeater, logged in or not. It is longer than the
+	// RetryDefault after which DMRGateway sends a login step again.
+	LoginTimeoutDefault = 15 * time.Second
 	// KeepaliveDefault is the default BridgeConfig.Keepalive, the BCKA
 	// period of FreeDMR.
 	KeepaliveDefault = 10 * time.Second

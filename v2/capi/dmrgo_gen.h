@@ -4055,6 +4055,8 @@ struct dmrgo_dmrd_session_master_config_t {
 	dmrgo_dmrd_dialect_t dialect;
 	/* Timeout is the time without a packet from the repeater after which the Master ends the session. 0 means TimeoutDefault. */
 	dmrgo_duration_t timeout;
+	/* LoginTimeout is the time without a packet from a repeater that has not finished its login after which the Master ends the session. 0 means LoginTimeoutDefault. */
+	dmrgo_duration_t login_timeout;
 };
 
 struct dmrgo_dmrd_session_peer_config_t {
@@ -7041,6 +7043,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DMRD_AUTH_KEY_LEN 20
 /* Go: session.KeepaliveDefault. KeepaliveDefault is the default BridgeConfig.Keepalive, the BCKA period of FreeDMR. */
 #define DMRGO_DMRD_SESSION_KEEPALIVE_DEFAULT INT64_C(10000000000)
+/* Go: session.LoginTimeoutDefault. LoginTimeoutDefault is the default MasterConfig.LoginTimeout: the PING_TIME of 5 s times the MAX_MISSED of 3 after which an HBlink3 master drops a repeater, logged in or not. */
+#define DMRGO_DMRD_SESSION_LOGIN_TIMEOUT_DEFAULT INT64_C(15000000000)
 /* Go: session.MaxOptions. MaxOptions is the longest RPTO options text in octets that DMRGateway sends. */
 #define DMRGO_DMRD_SESSION_MAX_OPTIONS 291
 /* Go: session.MaxOutputs. MaxOutputs is the most outputs that one call of a Peer, Master or Bridge method appends. */
