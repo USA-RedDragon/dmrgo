@@ -11,13 +11,14 @@
 //	if err != nil {
 //		return err
 //	}
+//	var burst layer2.Burst
 //	bursts, err := rx.Write(iq)
 //	if err != nil {
 //		return err
 //	}
 //	for _, b := range bursts {
 //		data, _ := b.Decoded()
-//		burst, err := layer2.NewBurstFromBytes(data)
+//		err := burst.DecodeFromBytes(data)
 //		...
 //	}
 //
