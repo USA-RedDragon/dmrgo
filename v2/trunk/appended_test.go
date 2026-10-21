@@ -102,6 +102,10 @@ func TestAppended_Binary(t *testing.T) {
 	if _, _, err := a.Binary(nil); !errors.Is(err, trunk.ErrUDTLength) {
 		t.Errorf("no end marker: %v", err)
 	}
+	a.Data[0] = 0x7F
+	if _, _, err := a.Binary(nil); !errors.Is(err, trunk.ErrUDTLength) {
+		t.Errorf("no data: %v", err)
+	}
 }
 
 func TestAppended_Addresses(t *testing.T) {
