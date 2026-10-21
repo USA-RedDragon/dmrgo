@@ -34,6 +34,14 @@ const char *dmrgo__gen_strerror(int status) {
 		return "enums.ColorCodeError";
 	case -110:
 		return "fec.ErrUncorrectable";
+	case -197:
+		return "hytera.ErrLength";
+	case -198:
+		return "hytera.ErrShort";
+	case -199:
+		return "hytera.ErrSignature";
+	case -200:
+		return "hytera.ErrText";
 	case -172:
 		return "ip.ErrChecksum";
 	case -173:

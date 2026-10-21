@@ -130,10 +130,10 @@ The table lists every place where the library can allocate. [v2/internal/allocga
 | What may allocate | When | Functions |
 | --- | --- | ---: |
 | The initialization of a package-level variable, such as a lookup table or a joined sentinel error | Once, when the program starts. | 2 |
-| A String, GoString or Error method | When the text is built, for a person to read. | 175 |
+| A String, GoString or Error method | When the text is built, for a person to read. | 190 |
 | A function of internal/text, which formats the values of String and Error methods | When the text is built, for a person to read. | 7 |
 | An exported package-level New function | Once, at construction: it allocates what it returns, sized up front. | 30 |
-| An exported function or method that takes a slice dst and returns a slice of the same type | Only to grow dst when dst has no room. The caller sizes dst. A machine built from other machines may also pass each of them an unexported field sliced to [:0] that its New makes with capacity MaxX of that machine's package, whose fuzz test checks that bound. | 124 |
+| An exported function or method that takes a slice dst and returns a slice of the same type | Only to grow dst when dst has no room. The caller sizes dst. A machine built from other machines may also pass each of them an unexported field sliced to [:0] that its New makes with capacity MaxX of that machine's package, whose fuzz test checks that bound. | 140 |
 | An exported X with an exported twin AppendX or XInto that does not allocate | X allocates the slice, string or struct it returns; the twin writes into storage of the caller. | 22 |
 | An exported X whose whole body is return Twin(nil, its parameters), where Twin allocates only to grow dst | X allocates the slice it returns; Twin with room in dst does not. | 3 |
 | A type assertion or type switch to an interface type, and a goroutine that blocks | Once for each call site and dynamic type, as the runtime fills the cache of the assertion or switch, and when no sudog is free for a goroutine that blocks on a mutex or a channel. The runtime keeps both. | 4 |
