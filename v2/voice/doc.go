@@ -19,4 +19,12 @@
 // signal, or a time without bursts. It does not decide whether a call is for
 // the user: the consumer filters on Call.Target.
 // (ETSI TS 102 361-1 clause 5.1.2, Annex G, ETSI TS 102 361-2 clause 5.2)
+//
+// A Transmitter makes the bursts of one call, as the source of the call or
+// as the relay of the events of a Receiver. A source call follows the
+// channel access policy and the transmit admit criteria, starts with the
+// channel authorization when it begins in hang time, and ends on a Tier 2
+// RC cease command. An Interrupter sends that command to the radio that
+// talks. (ETSI TS 102 361-1 clause 5.2, ETSI TS 102 361-2 clauses 5.1.1.6
+// and 6.3)
 package voice

@@ -5,9 +5,12 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bs"
+	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
+	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
 type driver struct {
@@ -275,6 +278,56 @@ func TestChanAuthNotInHangTime(t *testing.T) {
 	}
 	if bs.SlotChanAuth.String() != "ChanAuth" || bs.SlotChanAuthSelect.String() != "ChanAuthSelect" {
 		t.Error("slot state names")
+	}
+}
+
+// ETSI TS 102 361-2 clauses 5.1.1.6.1.1 and 5.1.1.6.2
+func TestChanAuthWithTransmitter(t *testing.T) {
+	t.Parallel()
+
+	d := keyed(t, bs.Config{ChannelAuth: bs.ChannelAuthSingleSite, CallHang: -1})
+	start := 1500 * time.Millisecond
+	d.until(start)
+	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{ColorCode: 1, Source: layer2.SyncSourceMS, Silence: vocoder.AMBESilenceSlot(), ChanAuth: constants.TMSChanAuth, Queue: 3 * 12})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := tx.Start(start, voice.Call{Group: true, Target: 9, Source: 3120005}, &voice.CallOptions{HangTime: true}); err != nil {
+		t.Fatal(err)
+	}
+	for range 3 * 12 {
+		if err := tx.Frame(vocoder.AMBESilence()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	mark := len(d.all)
+	txOut := make([]voice.Output, 0, voice.MaxOutputs)
+	states := map[voice.TransmitterState]bool{}
+	for now := start; now < start+3*time.Second; now += 10 * time.Millisecond {
+		states[tx.State()] = true
+		for _, o := range tx.Tick(now, txOut[:0]) {
+			if o.Kind == voice.OutputBurst {
+				d.in(o.Due, enums.Slot1, bs.Source{RF: true}, o.Burst)
+			}
+		}
+		mark2 := len(d.all)
+		d.until(now)
+		for _, o := range d.all[mark2:] {
+			if o.Kind == bs.OutputBurst && o.Slot == enums.Slot1 && o.To&bs.ToRF != 0 {
+				for _, e := range tx.Burst(now, &o.Burst, layer2.Hint{}, txOut[:0]) {
+					if e.Kind == voice.OutputBurst {
+						d.in(e.Due, enums.Slot1, bs.Source{RF: true}, e.Burst)
+					}
+				}
+			}
+		}
+		if now == start+time.Second {
+			tx.Stop()
+		}
+	}
+	starts := filter(d.all[mark:], bs.OutputCallStart)
+	if len(starts) != 1 || starts[0].Call.Source != 3120005 || !states[voice.TransmitterChanAuth] || tx.State() != voice.TransmitterIdle {
+		t.Fatalf("starts %+v, states %v", starts, states)
 	}
 }
 
