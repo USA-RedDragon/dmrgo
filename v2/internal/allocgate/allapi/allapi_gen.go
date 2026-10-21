@@ -1344,6 +1344,8 @@ var api = [...]any{
 	trunk.State.String,
 	trunk.StunAction.String,
 	trunk.TSCCOutputKind.String,
+	(*trunk_auth.Key).Response,
+	(*trunk_auth.Keys).Response,
 	trunk_auth.Response,
 	vocoder.AMBESilence,
 	vocoder.AMBESilenceSlot,

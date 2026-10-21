@@ -2426,12 +2426,14 @@ documents:
           - v2/trunk/ms_services.go
           - v2/trunk/tscc_services.go
           - v2/trunk/services.go
+          - v2/trunk/auth/auth.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
               - TestStun_WithoutAuthentication
               - TestStun_Authenticated
               - TestStun_ConfigState
+              - TestStun_AuthKeys
 
       - section: "6.4.10"
         title: "MS Kill"
@@ -2439,11 +2441,13 @@ documents:
           - v2/trunk/ms_services.go
           - v2/trunk/tscc_services.go
           - v2/trunk/services.go
+          - v2/trunk/auth/auth.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
               - TestStun_Authenticated
               - TestStun_ConfigState
+              - TestStun_AuthKeys
 
       - section: "6.4.11"
         title: "IP Connection Advice"

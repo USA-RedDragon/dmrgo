@@ -1274,6 +1274,8 @@
 		dmrgo_trunk_appended_set_nmea_short;
 		dmrgo_trunk_appended_set_text;
 		dmrgo_trunk_appended_text;
+		dmrgo_trunk_auth_key_response;
+		dmrgo_trunk_auth_keys_response;
 		dmrgo_trunk_auth_response;
 		dmrgo_trunk_authenticator_free;
 		dmrgo_trunk_authenticator_from_vtable;
