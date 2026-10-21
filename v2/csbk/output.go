@@ -68,6 +68,9 @@ const (
 	// ServiceWakeup is the BS outbound activation BS_Dwn_Act (ETSI TS 102
 	// 361-1 clause 5.2.2.2.4).
 	ServiceWakeup
+	// ServiceTiming is the TDMA direct mode wide area timing of a Timing,
+	// with CT_CSBK (ETSI TS 102 361-2 clause 6.2).
+	ServiceTiming
 )
 
 // String returns the name of the service. It allocates only for a value
@@ -86,6 +89,8 @@ func (s Service) String() string {
 		return "Unsupported"
 	case ServiceWakeup:
 		return "Wakeup"
+	case ServiceTiming:
+		return "Timing"
 	}
 	return "Service(" + text.Int(int64(s)) + ")"
 }
@@ -153,6 +158,10 @@ const (
 	OutputJoined
 	// OutputExpired is an announced transfer that did not come by Until.
 	OutputExpired
+	// OutputTiming tells the caller of a Timing to set the channel slot
+	// timing from the CT_CSBK in CSBK, which it passed at Due (ETSI TS 102
+	// 361-2 clause 6.2.2.3).
+	OutputTiming
 )
 
 // String returns the name of the kind. It allocates only for a value
@@ -171,6 +180,8 @@ func (k OutputKind) String() string {
 		return "Joined"
 	case OutputExpired:
 		return "Expired"
+	case OutputTiming:
+		return "Timing"
 	}
 	return "OutputKind(" + text.Int(int64(k)) + ")"
 }
@@ -205,8 +216,9 @@ type Output struct {
 	// OutputAnnounced and OutputExpired.
 	Until time.Duration
 	// CSBK is the answer, for OutputDone of a request that ended with an
-	// answer; the request, for OutputRequest; and the CSBK that followed
-	// the Pre_CSBKs, for OutputJoined of a CSBK.
+	// answer; the request, for OutputRequest; the CSBK that followed the
+	// Pre_CSBKs, for OutputJoined of a CSBK; and the CT_CSBK, for
+	// OutputTiming.
 	CSBK pdu.CSBKBytes
 }
 

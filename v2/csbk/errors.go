@@ -35,4 +35,7 @@ var (
 	errAccess     error = &ConfigError{Field: "Access"}
 	errMatch      error = &ConfigError{Field: "Match"}
 	errOACSU      error = &ConfigError{Field: "OACSU"}
+	errID         error = &ConfigError{Field: "ID"}
+	errDynamicID  error = &ConfigError{Field: "DynamicID"}
+	errSlot       error = &ConfigError{Field: "Slot"}
 )

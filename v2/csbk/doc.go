@@ -1,8 +1,9 @@
 // Package csbk runs the CSBK services of one DMR logical channel: a request
 // that waits for its answer, the answers of a radio to the requests that
-// address it, the Pre_CSBKs that announce a CSBK or data, and the wakeup of
-// a BS outbound. (ETSI TS 102 361-1 clause 5.2.2, ETSI TS 102 361-2
-// clauses 5.1.1.1, 5.1.2 and 5.2.2)
+// address it, the Pre_CSBKs that announce a CSBK or data, the wakeup of a
+// BS outbound, and the TDMA direct mode wide area timing. (ETSI TS 102
+// 361-1 clause 5.2.2, ETSI TS 102 361-2 clauses 5.1.1.1, 5.1.2, 5.2.2 and
+// 6.2)
 //
 // Each machine is a state machine without I/O. Each method takes the time
 // now, on a monotonic clock that the caller picks, and appends outputs to a
@@ -26,6 +27,9 @@
 //     announce, joined with the preambles, or that it did not come.
 //   - Wakeup sends BS_Dwn_Act until the BS outbound starts, up to N_Wakeup
 //     times.
+//   - Timing follows, elects and propagates the TDMA direct mode timing
+//     leader with CT_CSBKs, and tells the caller when to take the slot
+//     timing of a CT_CSBK.
 //
 // The machines take a burst with a layer2.Hint, decode it, and drop a CSBK
 // whose CRC fails. A Requester and a Responder take the state of the
