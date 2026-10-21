@@ -7,3 +7,10 @@ packet in hex.
 
 dmrgateway-master.txt: r>m is DMRGateway to the master, m>r the master to DMRGateway.
 mmdvmhost-dmrgateway.txt: host>gw is MMDVMHost to DMRGateway, gw>host the reverse.
+
+hblink3-openbridge.txt was captured on 2026-10-20 on 127.0.0.1 only. HBlink3 1db2730
+bridge.py ran a MASTER system, which a dmrgo client logged into, and an OPENBRIDGE system
+with NETWORK_ID 3129100 and the passphrase passw0rd-longer-than-twenty, bridged on slot 1
+talkgroup 91. The client sent the call of dmrgateway-master.txt on slot 1, and HBlink3
+sent it on the OpenBridge link. Each line is: direction (h>o, HBlink3 to the OpenBridge
+peer), packet in hex.

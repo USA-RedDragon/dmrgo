@@ -380,6 +380,7 @@ sym #define DMRGO_DATA_SENDER_WAIT_RESPONSE ((dmrgo_data_sender_state_t)4)
 sym #define DMRGO_DATA_STATE_CALL ((dmrgo_data_state_t)1)
 sym #define DMRGO_DATA_STATE_IDLE ((dmrgo_data_state_t)0)
 sym #define DMRGO_DATA_STATE_RECEIVING ((dmrgo_data_state_t)2)
+sym #define DMRGO_DMRD_AUTH_KEY_LEN 20
 sym #define DMRGO_DMRD_COMMAND_BCKA ((dmrgo_dmrd_command_t)25)
 sym #define DMRGO_DMRD_COMMAND_BCSQ ((dmrgo_dmrd_command_t)26)
 sym #define DMRGO_DMRD_COMMAND_BCST ((dmrgo_dmrd_command_t)27)
