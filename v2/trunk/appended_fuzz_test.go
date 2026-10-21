@@ -69,6 +69,11 @@ func runAppended(t *testing.T, in []byte) {
 			}
 		}
 	}
+	runAppendedFormats(t, &a)
+}
+
+func runAppendedFormats(t *testing.T, a *trunk.Appended) {
+	var b trunk.Appended
 	if n, err := a.NMEAShort(); err == nil {
 		if err := b.SetNMEAShort(&n); err == nil {
 			if back, _ := b.NMEAShort(); back != n {

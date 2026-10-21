@@ -66,7 +66,6 @@ type msUDT struct {
 	alsWait  bool
 	alsEnd   time.Duration
 	alsFrom  uint32
-	alsEmerg bool
 	alsCall  bool
 	alsUntil time.Duration
 
@@ -115,7 +114,7 @@ func (m *MS) SendShortData(now time.Duration, group bool, target uint32, a *Appe
 		return err
 	}
 	m.req = reqShortData
-	m.u.reserved = uint8(a.Blocks - 1)
+	m.u.reserved = uab(a.Blocks)
 	m.upload(a, target, group, false, pdu.UDTOpcodeInboundHeader, constants.GatewaySDMI, enums.ServiceIndividualShortData)
 	return nil
 }
@@ -137,7 +136,7 @@ func (m *MS) PollShortData(now time.Duration, target uint32, f enums.UDTFormat, 
 	if err := m.request(now, enums.ServiceShortDataPolling, target, field, false); err != nil {
 		return err
 	}
-	m.req, m.u.reserved, m.u.ahoyFrom = reqPoll, uint8(blocks-1), 0
+	m.req, m.u.reserved, m.u.ahoyFrom = reqPoll, uab(blocks), 0
 	return nil
 }
 
@@ -177,7 +176,7 @@ func (m *MS) Divert(now time.Duration, gateway uint32, opts layer3.DiversionServ
 	}
 	m.req = reqDivert
 	if opts.Set {
-		m.u.reserved = uint8(a.Blocks - 1)
+		m.u.reserved = uab(a.Blocks)
 		m.u.proxy = a.Blocks > 1
 		m.upload(a, gateway, false, true, pdu.UDTOpcodeInboundHeader, constants.GatewayDIVERTI, enums.ServiceCallDiversion)
 	}
@@ -206,7 +205,7 @@ func (m *MS) AssignGroups(now time.Duration, target uint32, a *Appended) error {
 		return err
 	}
 	m.req = reqDGNA
-	m.u.reserved = uint8(a.Blocks-1) << 2
+	m.u.reserved = uab(a.Blocks) << 2
 	m.upload(a, target, false, false, pdu.UDTOpcodeDGNAInboundHeader, constants.GatewayDGNAI, enums.ServiceSupplementary)
 	return nil
 }
@@ -293,6 +292,13 @@ func appendAlias(dst []byte, a *[2 * aliasUnits]byte) []byte {
 		n++
 	}
 	return wire.AppendUTF8(dst, a[:2*n], true)
+}
+
+func uab(blocks int) uint8 {
+	if blocks < 1 || blocks > 4 {
+		return 0
+	}
+	return uint8(blocks - 1)
 }
 
 func (m *MS) upload(a *Appended, to uint32, group, div bool, op pdu.UDTOpcode, from uint32, kind enums.ServiceKind) {
@@ -500,7 +506,7 @@ func (m *MS) sendUDT(due time.Duration, slot enums.Slot, a *Appended, to uint32,
 	u := &m.u
 	u.hdr = pdu.UDTHeader{
 		Group: group, ResponseRequested: op == pdu.UDTOpcodeDGNAInboundHeader, OptionFlag: div, SAP: enums.SAPUnifiedDataTransport,
-		UDTFormat: a.Format, LLIDDestination: to, LLIDSource: m.addr, PadNibble: a.PadNibble, AppendedBlocks: uint8(a.Blocks - 1), Opcode: op,
+		UDTFormat: a.Format, LLIDDestination: to, LLIDSource: m.addr, PadNibble: a.PadNibble, AppendedBlocks: uab(a.Blocks), Opcode: op,
 	}
 	u.dh = pdu.DataHeader{Format: pdu.FormatUnifiedDataTransport, UDTHeader: &u.hdr}
 	p, err := u.dh.Encode()
