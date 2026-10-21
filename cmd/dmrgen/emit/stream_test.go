@@ -25,6 +25,12 @@ type Msg struct {
 	Rest []byte ` + "`dmr:\"rest,if:Hd.Type!=3\"`" + `
 }
 
+// Big is a test stream that decodes into the caller's struct.
+// dmr:stream into
+type Big struct {
+	A uint8 ` + "`dmr:\"u8\"`" + `
+}
+
 // Toks is a test token set.
 // dmr:tokens
 type Toks struct {
@@ -50,23 +56,25 @@ func TestStreamCode(t *testing.T) {
 	}
 	assertContains(t, out,
 		"func DecodeMsg(data []byte) (Msg, error) {",
-		"func decodeMsgAt(data []byte, _o int) (Msg, int, error) {",
+		"func decodeMsgAt(result *Msg, data []byte, _o int) (int, error) {",
 		"_end := _o + int(result.Len)",
 		"_l := uint64(len(dst) - (_lp + 2))",
 		"data = data[:_end]",
 		"if (result.Hd.Ext) && (result.Hd.Type != 3 && result.Hd.Type != 4) {",
 		"if result.Hd.Type == 3 {",
 		"if result.Hd.Type != 3 {",
-		"func decodeToksAt(data []byte, _o int) (Toks, int, error) {",
+		"func decodeToksAt(result *Toks, data []byte, _o int) (int, error) {",
 		"case 0x22:",
 		"result.HasID = true",
-		"return Toks{}, 0, ErrToken",
+		"return 0, ErrToken",
 		"result.Lat = float64(int64((uint64(data[_o])<<24|uint64(data[_o+1])<<16|uint64(data[_o+2])<<8|uint64(data[_o+3]))<<32)>>32) * (90.0 / (1 << 31))",
 		"func (s *Msg) AppendBinary(dst []byte) ([]byte, error) {",
 		"func (s *Msg) NameUTF8(dst []byte) []byte {",
 		"func (s *Msg) SetNameUTF8(dst, text []byte) []byte {",
 		"if s.HasLat {",
 		"if s.OK {",
+		"func DecodeBigInto(m *Big, data []byte) error {",
+		"if err == nil && n != len(data) {",
 	)
 	if strings.Contains(out, "func DecodeToks(") {
 		t.Errorf("a token set has an exported Decode\n%s", out)

@@ -142,7 +142,8 @@ func (s *Response) String() string {
 // ends inside a field and ErrLength when a length does not match the data.
 // It does not copy: the byte string fields point into data.
 func DecodeMessage(data []byte) (Message, error) {
-	v, n, err := decodeMessageAt(data, 0)
+	var v Message
+	n, err := decodeMessageAt(&v, data, 0)
 	if err != nil {
 		return Message{}, err
 	}
@@ -152,84 +153,83 @@ func DecodeMessage(data []byte) (Message, error) {
 	return v, nil
 }
 
-func decodeMessageAt(data []byte, _o int) (Message, int, error) {
-	var result Message
+func decodeMessageAt(result *Message, data []byte, _o int) (int, error) {
 	if len(data)-_o < 2 {
-		return Message{}, 0, ErrShort
+		return 0, ErrShort
 	}
 	result.Length = uint16(uint64(data[_o])<<8 | uint64(data[_o+1]))
 	_o += 2
 	_end := _o + int(result.Length)
 	if _end < _o {
-		return Message{}, 0, ErrLength
+		return 0, ErrLength
 	}
 	if _end > len(data) {
-		return Message{}, 0, ErrShort
+		return 0, ErrShort
 	}
 	data = data[:_end]
 	if len(data)-_o < 1 {
-		return Message{}, 0, ErrShort
+		return 0, ErrShort
 	}
 	_vHeader, _err := decodeHeader(data[_o : _o+1])
 	if _err != nil {
-		return Message{}, 0, _err
+		return 0, _err
 	}
 	result.Header = _vHeader
 	_o += 1
 	if (result.Header.Extension) && (result.Header.Type == TypeDeviceRegistration || result.Header.Type == TypeUserRegistration) {
 		if len(data)-_o < 1 {
-			return Message{}, 0, ErrShort
+			return 0, ErrShort
 		}
 		_vRegistration, _err := decodeRegistration(data[_o : _o+1])
 		if _err != nil {
-			return Message{}, 0, _err
+			return 0, _err
 		}
 		result.Registration = _vRegistration
 		_o += 1
 	}
 	if result.Header.Type == TypeDeviceRegistration || result.Header.Type == TypeUserRegistration {
 		if len(data)-_o < 1 {
-			return Message{}, 0, ErrShort
+			return 0, ErrShort
 		}
 		_lDevice := int(uint64(data[_o]))
 		_o += 1
 		if len(data)-_o < _lDevice {
-			return Message{}, 0, ErrShort
+			return 0, ErrShort
 		}
 		result.Device = data[_o : _o+_lDevice]
 		_o += _lDevice
 	}
 	if result.Header.Type == TypeDeviceRegistration || result.Header.Type == TypeUserRegistration {
 		if len(data)-_o < 1 {
-			return Message{}, 0, ErrShort
+			return 0, ErrShort
 		}
 		_lUser := int(uint64(data[_o]))
 		_o += 1
 		if len(data)-_o < _lUser {
-			return Message{}, 0, ErrShort
+			return 0, ErrShort
 		}
 		result.User = data[_o : _o+_lUser]
 		_o += _lUser
 	}
 	if result.Header.Type == TypeDeviceRegistration || result.Header.Type == TypeUserRegistration {
 		if len(data)-_o < 1 {
-			return Message{}, 0, ErrShort
+			return 0, ErrShort
 		}
 		_lPassword := int(uint64(data[_o]))
 		_o += 1
 		if len(data)-_o < _lPassword {
-			return Message{}, 0, ErrShort
+			return 0, ErrShort
 		}
 		result.Password = data[_o : _o+_lPassword]
 		_o += _lPassword
 	}
 	if (result.Header.Extension) && (result.Header.Type == TypeAck || result.Header.Type == TypeUserAck) {
 		if len(data)-_o < 1 {
-			return Message{}, 0, ErrShort
+			return 0, ErrShort
 		}
 		_vResponse, _err := decodeResponse(data[_o : _o+1])
 		if _err != nil {
-			return Message{}, 0, _err
+			return 0, _err
 		}
 		result.Response = _vResponse
 		_o += 1
@@ -237,9 +237,9 @@ func decodeMessageAt(data []byte, _o int) (Message, int, error) {
 	result.Extra = data[_o:len(data)]
 	_o = len(data)
 	if _o != len(data) {
-		return Message{}, 0, ErrLength
+		return 0, ErrLength
 	}
-	return result, _o, nil
+	return _o, nil
 }
 
 // AppendBinary appends s to dst, with Length set to the length of the data.

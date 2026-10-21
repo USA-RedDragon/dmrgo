@@ -95,49 +95,48 @@ func (s *IPv4Header) String() string {
 // does not copy: the byte string fields point into data. It ignores octets
 // after the length that the message gives.
 func DecodeIPv4(data []byte) (IPv4, error) {
-	v, n, err := decodeIPv4At(data, 0)
+	var v IPv4
+	_, err := decodeIPv4At(&v, data, 0)
 	if err != nil {
 		return IPv4{}, err
 	}
-	_ = n
 	return v, nil
 }
 
-func decodeIPv4At(data []byte, _o int) (IPv4, int, error) {
-	var result IPv4
+func decodeIPv4At(result *IPv4, data []byte, _o int) (int, error) {
 	_s := _o
 	if len(data)-_o < 20 {
-		return IPv4{}, 0, ErrShort
+		return 0, ErrShort
 	}
 	_vHeader, _err := decodeIPv4Header(data[_o : _o+20])
 	if _err != nil {
-		return IPv4{}, 0, _err
+		return 0, _err
 	}
 	result.Header = _vHeader
 	_o += 20
 	_end := _s + int(result.Header.TotalLength)
 	if _end < _o {
-		return IPv4{}, 0, ErrLength
+		return 0, ErrLength
 	}
 	if _end > len(data) {
-		return IPv4{}, 0, ErrShort
+		return 0, ErrShort
 	}
 	data = data[:_end]
 	_lOptions := int(result.Header.IHL)*4 - 20
 	if _lOptions < 0 {
-		return IPv4{}, 0, ErrLength
+		return 0, ErrLength
 	}
 	if len(data)-_o < _lOptions {
-		return IPv4{}, 0, ErrShort
+		return 0, ErrShort
 	}
 	result.Options = data[_o : _o+_lOptions]
 	_o += _lOptions
 	result.Payload = data[_o:len(data)]
 	_o = len(data)
 	if _o != len(data) {
-		return IPv4{}, 0, ErrLength
+		return 0, ErrLength
 	}
-	return result, _o, nil
+	return _o, nil
 }
 
 // AppendBinary appends s to dst, with Header.TotalLength set to the length
@@ -220,7 +219,8 @@ func (s *UDPHeader) String() string {
 // inside a field and ErrLength when a length does not match the data. It
 // does not copy: the byte string fields point into data.
 func DecodeUDP(data []byte) (UDP, error) {
-	v, n, err := decodeUDPAt(data, 0)
+	var v UDP
+	n, err := decodeUDPAt(&v, data, 0)
 	if err != nil {
 		return UDP{}, err
 	}
@@ -230,32 +230,31 @@ func DecodeUDP(data []byte) (UDP, error) {
 	return v, nil
 }
 
-func decodeUDPAt(data []byte, _o int) (UDP, int, error) {
-	var result UDP
+func decodeUDPAt(result *UDP, data []byte, _o int) (int, error) {
 	_s := _o
 	if len(data)-_o < 8 {
-		return UDP{}, 0, ErrShort
+		return 0, ErrShort
 	}
 	_vHeader, _err := decodeUDPHeader(data[_o : _o+8])
 	if _err != nil {
-		return UDP{}, 0, _err
+		return 0, _err
 	}
 	result.Header = _vHeader
 	_o += 8
 	_end := _s + int(result.Header.Length)
 	if _end < _o {
-		return UDP{}, 0, ErrLength
+		return 0, ErrLength
 	}
 	if _end > len(data) {
-		return UDP{}, 0, ErrShort
+		return 0, ErrShort
 	}
 	data = data[:_end]
 	result.Payload = data[_o:len(data)]
 	_o = len(data)
 	if _o != len(data) {
-		return UDP{}, 0, ErrLength
+		return 0, ErrLength
 	}
-	return result, _o, nil
+	return _o, nil
 }
 
 // AppendBinary appends s to dst, with Header.Length set to the length of the
