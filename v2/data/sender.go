@@ -85,9 +85,13 @@ type SenderConfig struct {
 	// progress at once, for sliding window flow control. Send queues up to
 	// Window of them to one link, and the Sender sends them one after the
 	// other with the Response Requested flag set only on the last, then
-	// takes one response for all of them. 0 or 1 means stop and wait, one
-	// message at a time; at most MaxWindow. Each message of the window
-	// takes its own packet.Builder. (ETSI TS 102 361-3 clause 5.4.4)
+	// takes one response for all of them. 0 or 1, the default, means stop
+	// and wait: each message asks for its own response. At most MaxWindow.
+	// Each message of the window takes its own packet.Builder. Use a
+	// window only with receivers known to keep every packet of it: the
+	// AnyTone D890UV firmware (also in the BTECH DA-7X2) sends an ACK for
+	// the last packet of a window and keeps only that packet, so the
+	// earlier ones are lost. (ETSI TS 102 361-3 clause 5.4.4)
 	Window int
 	// Seed seeds the random holdoff. Two Senders with the same seed hold
 	// off for the same times, so give each radio its own seed.

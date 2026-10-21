@@ -34,10 +34,13 @@
 // message are each delivered at once, and EventReassembled follows the last
 // one with the whole message (ETSI TS 102 361-1 clause 9.3.25).
 //
+// By default a Sender uses stop and wait: each packet asks for a response.
 // With SenderConfig.Window, a Sender uses sliding window flow control for
 // the IP bearer service: it sends up to 8 C_HEAD packets one after the
 // other, and only the last one asks for a response (ETSI TS 102 361-3
-// clause 5.4.4). A Receiver keeps the result of each packet of a window
+// clause 5.4.4). A window is opt-in because a common radio, the AnyTone
+// D890UV firmware, acknowledges a whole window but keeps only its last
+// packet. A Receiver keeps the result of each packet of a window
 // and answers at the last one for all of them: an ACK with the N(S) of the
 // last packet when all are good, else a response about the first packet
 // that failed, with its N(S) as the status. ETSI TS 102 361-1 Table 8.3

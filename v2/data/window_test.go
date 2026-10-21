@@ -228,6 +228,33 @@ func TestSenderWindowLoopback(t *testing.T) {
 	}
 }
 
+func TestSenderDefaultStopAndWait(t *testing.T) {
+	t.Parallel()
+	l := &winLink{
+		t:  t,
+		tx: newSender(t, &data.SenderConfig{}),
+		rx: newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID}),
+	}
+	msgs := windowMessages(3, 20)
+	if err := l.tx.Send(0, msgs[0]); err != nil {
+		t.Fatal(err)
+	}
+	if err := l.tx.Send(0, msgs[1]); !errors.Is(err, data.ErrBusy) {
+		t.Errorf("second Send: %v", err)
+	}
+	l.tx.Cancel(0, nil)
+	l.tx.Reset()
+	for _, m := range msgs {
+		l.run([]*data.Message{m}, 5*time.Second)
+	}
+	if got := strings.Join(l.heads, " "); got != "0A 1A 2A" {
+		t.Errorf("headers %q", got)
+	}
+	if got := strings.Join(l.resp, "+"); got != "ACK(0)+ACK(1)+ACK(2)" || string(l.got) != "abc" || l.dones() != "0:Delivered/1 1:Delivered/1 2:Delivered/1" {
+		t.Errorf("responses %q, delivered %q, dones %s", got, l.got, l.dones())
+	}
+}
+
 func TestSenderWindowOfEight(t *testing.T) {
 	t.Parallel()
 	l := &winLink{
