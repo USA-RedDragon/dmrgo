@@ -67,8 +67,8 @@ type LIPShortReport struct {
 
 // USBDPollRequest is the Poll Request of the USBD polling service: the
 // payload of an outbound USBD after its Service Type. Decode it from the
-// Payload of a pdu.UnifiedSingleBlockData. (ETSI TS 102 361-4 clause
-// 6.6.11.1, Table 6.76)
+// Payload of a pdu.UnifiedSingleBlockData. (ETSI TS 102 361-4 V1.12.1
+// clause 6.6.11.1, Table 6.76)
 type USBDPollRequest struct {
 	ResponseDelay   uint8  `dmr:"bits:0-1"`   // RD: the poll response is due 1 to 4 TDMA frames later
 	PayloadContents bool   `dmr:"bit:2"`      // PC: Parameters holds data
@@ -79,8 +79,8 @@ type USBDPollRequest struct {
 
 // USBDLIPResponse is the Poll Response of the USBD polling service for
 // LIP: the payload of an inbound USBD with Service Type LIP. Encode it into
-// the Payload of a pdu.UnifiedSingleBlockData. (ETSI TS 102 361-4 clause
-// 6.6.11.3.2, Table 6.79)
+// the Payload of a pdu.UnifiedSingleBlockData. (ETSI TS 102 361-4 V1.12.1
+// clause 6.6.11.3.2, Table 6.79)
 type USBDLIPResponse struct {
 	TimeElapsed   uint8                `dmr:"bits:0-1"`                  // time since the position was found, as in LIPShortReport
 	Longitude     float64              `dmr:"bits:2-26,type:longitude"`  // degrees, -180 to 180

@@ -4,7 +4,7 @@ import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
 // UDTFormat is the 4-bit UDT Format of a UDT header: the format of the
 // appended data. Values that have no constant are reserved (ETSI TS 102
-// 361-4 clause 7.2.27, Table 7.88).
+// 361-4 V1.12.1 clause 7.2.27, Table 7.88).
 type UDTFormat uint8
 
 // The UDTFormat values.
