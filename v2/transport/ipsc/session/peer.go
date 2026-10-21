@@ -158,6 +158,10 @@ func (p *Peer) PeerAt(i int) PeerInfo {
 // when the config has Auth, and returns dst as it is without. It
 // allocates only when dst has no room for auth.TrailerLen more octets.
 func (p *Peer) Sign(dst []byte) []byte {
+	if p == nil {
+		return dst
+	}
+
 	return p.l.sign(dst, nil)
 }
 

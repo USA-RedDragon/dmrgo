@@ -126,6 +126,10 @@ func (m *Master) PeerAt(i int) PeerInfo {
 // when the config has Auth, and returns dst as it is without. It
 // allocates only when dst has no room for auth.TrailerLen more octets.
 func (m *Master) Sign(dst []byte) []byte {
+	if m == nil {
+		return dst
+	}
+
 	return m.l.sign(dst, nil)
 }
 
@@ -134,6 +138,10 @@ func (m *Master) Sign(dst []byte) []byte {
 // through PacketWithKey or AdoptWithKey, and else as Sign does. It
 // allocates only when dst has no room for auth.TrailerLen more octets.
 func (m *Master) SignFor(id uint32, dst []byte) []byte {
+	if m == nil {
+		return dst
+	}
+
 	if i := m.l.find(id); i >= 0 {
 		return m.l.sign(dst, m.l.peers[i].keyOf())
 	}
@@ -253,6 +261,10 @@ func (m *Master) listToAll(dst []Output) []Output {
 // gives ReasonAuth here; pass it to PacketWithKey. It allocates only when
 // dst has no room for MaxOutputs outputs.
 func (m *Master) Packet(now time.Duration, from Addr, p []byte, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	return m.packet(now, from, p, nil, dst)
 }
 
@@ -265,6 +277,10 @@ func (m *Master) Packet(now time.Duration, from Addr, p []byte, dst []Output) []
 // lets one Master serve many repeaters with keys of their own. It
 // allocates only when dst has no room for MaxOutputs outputs.
 func (m *Master) PacketWithKey(now time.Duration, from Addr, key [20]byte, p []byte, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	return m.packet(now, from, p, &key, dst)
 }
 
@@ -353,6 +369,10 @@ func (m *Master) registered(now time.Duration, from Addr, i int, raw *ipsc.Raw, 
 // ReasonFull when MaxPeers leaves no room. It allocates only when dst has
 // no room for MaxOutputs outputs.
 func (m *Master) Adopt(now time.Duration, from Addr, id uint32, mode ipsc.Mode, flags ipsc.Flags, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	return m.adopt(now, from, id, mode, flags, nil, dst)
 }
 
@@ -360,6 +380,10 @@ func (m *Master) Adopt(now time.Duration, from Addr, id uint32, mode ipsc.Mode, 
 // PacketWithKey registers a peer. It allocates only when dst has no room
 // for MaxOutputs outputs.
 func (m *Master) AdoptWithKey(now time.Duration, from Addr, id uint32, mode ipsc.Mode, flags ipsc.Flags, key [20]byte, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	return m.adopt(now, from, id, mode, flags, &key, dst)
 }
 

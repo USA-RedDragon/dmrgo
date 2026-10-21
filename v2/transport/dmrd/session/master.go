@@ -125,6 +125,10 @@ func (m *Master) Tick(now time.Duration, dst []Output) []Output {
 // sends nothing. The zero Master does nothing. It allocates
 // only when dst has no room for MaxOutputs outputs.
 func (m *Master) Resume(now time.Duration, id uint32, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
 	if m.dialect == dmrd.DialectUnknown {
 		return dst
 	}
