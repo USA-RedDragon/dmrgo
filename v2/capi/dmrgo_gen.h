@@ -94,6 +94,34 @@ typedef struct dmrgo_fec_ber_calculator_t dmrgo_fec_ber_calculator_t;
 typedef struct dmrgo_fec_burst_fec_stats_t dmrgo_fec_burst_fec_stats_t;
 /* Go: fec.Result. Result is the outcome of one FEC decode or check step. */
 typedef struct dmrgo_fec_result_t dmrgo_fec_result_t;
+/* Go: hytera.GPSData. GPSData is the position of the location protocol: 40 ASCII octets that hold an NMEA-like fix. */
+typedef struct dmrgo_hytera_gps_data_t dmrgo_hytera_gps_data_t;
+/* Go: hytera.Header. Header is the first octet of a message. */
+typedef struct dmrgo_hytera_header_t dmrgo_hytera_header_t;
+/* Go: hytera.LPAnswer. LPAnswer is the payload of the answer to a standard request. */
+typedef struct dmrgo_hytera_lp_answer_t dmrgo_hytera_lp_answer_t;
+/* Go: hytera.LPEmergency. LPEmergency is the payload of an emergency report. */
+typedef struct dmrgo_hytera_lp_emergency_t dmrgo_hytera_lp_emergency_t;
+/* Go: hytera.LPReport. LPReport is the payload of a condition report: a position that the radio sends on a condition, such as a period. */
+typedef struct dmrgo_hytera_lp_report_t dmrgo_hytera_lp_report_t;
+/* Go: hytera.LPRequest. LPRequest is the payload of a location protocol standard request. */
+typedef struct dmrgo_hytera_lp_request_t dmrgo_hytera_lp_request_t;
+/* Go: hytera.Message. Message is a Hytera DMR Application Protocol (HDAP) message: the header, the opcode of the service, the payload, a checksum and the end octet 0x03. */
+typedef struct dmrgo_hytera_message_t dmrgo_hytera_message_t;
+/* Go: hytera.RRSAnswer. RRSAnswer is the payload of the answer to an RRS registration. */
+typedef struct dmrgo_hytera_rrs_answer_t dmrgo_hytera_rrs_answer_t;
+/* Go: hytera.RRSCheckAnswer. RRSCheckAnswer is the payload of the answer to an RRS online check. */
+typedef struct dmrgo_hytera_rrs_check_answer_t dmrgo_hytera_rrs_check_answer_t;
+/* Go: hytera.RRSRadio. RRSRadio is the payload of an RRS registration, deregistration and online check: the radio IP of the radio. */
+typedef struct dmrgo_hytera_rrs_radio_t dmrgo_hytera_rrs_radio_t;
+/* Go: hytera.TMPAnswer. TMPAnswer is the payload of the answer to a private text. */
+typedef struct dmrgo_hytera_tmp_answer_t dmrgo_hytera_tmp_answer_t;
+/* Go: hytera.TMPFlags. TMPFlags is the high octet of the opcode of a text message protocol (TMP) message. */
+typedef struct dmrgo_hytera_tmp_flags_t dmrgo_hytera_tmp_flags_t;
+/* Go: hytera.TMPGroupAnswer. TMPGroupAnswer is the payload of the answer to a group text. */
+typedef struct dmrgo_hytera_tmp_group_answer_t dmrgo_hytera_tmp_group_answer_t;
+/* Go: hytera.TMPMessage. TMPMessage is the payload of a TMP private or group text without an option field. */
+typedef struct dmrgo_hytera_tmp_message_t dmrgo_hytera_tmp_message_t;
 /* Go: ip.Datagram. Datagram is a UDP datagram of a DMR data packet, from an IPv4 header (SAP IP based packet data) or a compressed UDP/IPv4 header (SAP UDP/IP header compression). */
 typedef struct dmrgo_ip_datagram_t dmrgo_ip_datagram_t;
 /* Go: ip.IPv4. IPv4 is an IPv4 packet: the header, its options and the payload, whose length the header gives (RFC 791 section 3.1). */
@@ -578,6 +606,8 @@ typedef uint8_t dmrgo_enums_slot_t;
 typedef uint64_t dmrgo_enums_sync_pattern_t;
 /* Go: enums.VoiceBurstType. VoiceBurstType is the position of a voice burst in a voice superframe. */
 typedef uint8_t dmrgo_enums_voice_burst_type_t;
+/* Go: hytera.Service. Service is the 7-bit service of a message. */
+typedef uint8_t dmrgo_hytera_service_t;
 /* Go: ip.Port. Port is a UDP port. */
 typedef uint16_t dmrgo_ip_port_t;
 /* Go: ip.Protocol. Protocol is the protocol number of an IPv4 packet (RFC 790). */
@@ -1109,6 +1139,106 @@ struct dmrgo_fec_burst_fec_stats_t {
 	dmrgo_fec_result_t payload;
 	dmrgo_fec_result_t pdu;
 	dmrgo_fec_result_t rc;
+};
+
+struct dmrgo_hytera_gps_data_t {
+	uint8_t status;
+	uint8_t hour;
+	uint8_t minute;
+	uint8_t second;
+	uint8_t day;
+	uint8_t month;
+	uint8_t year;
+	uint8_t north_south;
+	uint8_t latitude_degrees;
+	uint8_t latitude_minutes;
+	uint16_t latitude_fraction;
+	uint8_t east_west;
+	uint16_t longitude_degrees;
+	uint8_t longitude_minutes;
+	uint16_t longitude_fraction;
+	uint8_t speed[3];
+	uint16_t direction;
+};
+
+struct dmrgo_hytera_lp_answer_t {
+	uint32_t request_id;
+	uint8_t radio[4];
+	uint16_t result;
+	dmrgo_hytera_gps_data_t gps;
+};
+
+struct dmrgo_hytera_lp_emergency_t {
+	uint8_t radio[4];
+	uint8_t type_;
+	dmrgo_hytera_gps_data_t gps;
+};
+
+struct dmrgo_hytera_lp_report_t {
+	uint32_t request_id;
+	uint8_t radio[4];
+	dmrgo_hytera_gps_data_t gps;
+};
+
+struct dmrgo_hytera_lp_request_t {
+	uint32_t request_id;
+	uint8_t radio[4];
+};
+
+struct dmrgo_hytera_header_t {
+	bool reliable;
+	dmrgo_hytera_service_t service;
+};
+
+struct dmrgo_hytera_message_t {
+	dmrgo_hytera_header_t header;
+	uint16_t opcode;
+	uint8_t *payload;
+	size_t payload_len;
+	uint8_t checksum;
+	uint8_t end;
+};
+
+struct dmrgo_hytera_rrs_answer_t {
+	uint8_t radio[4];
+	uint8_t result;
+	uint32_t valid_time;
+};
+
+struct dmrgo_hytera_rrs_check_answer_t {
+	uint8_t radio[4];
+	uint8_t result;
+};
+
+struct dmrgo_hytera_rrs_radio_t {
+	uint8_t radio[4];
+};
+
+struct dmrgo_hytera_tmp_answer_t {
+	uint32_t request_id;
+	uint8_t destination[4];
+	uint8_t source[4];
+	uint8_t result;
+};
+
+struct dmrgo_hytera_tmp_flags_t {
+	bool no_ack;
+	bool option;
+	uint8_t reserved;
+};
+
+struct dmrgo_hytera_tmp_group_answer_t {
+	uint32_t request_id;
+	uint8_t destination[4];
+	uint8_t result;
+};
+
+struct dmrgo_hytera_tmp_message_t {
+	uint32_t request_id;
+	uint8_t destination[4];
+	uint8_t source[4];
+	uint8_t *text;
+	size_t text_len;
 };
 
 struct dmrgo_ip_datagram_t {
@@ -2613,6 +2743,10 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ERR_ENUMS_COLOR_CODE_ERROR (-103)
 #define DMRGO_ERR_FEC_UNCORRECTABLE (-110)
 #define DMRGO_ERR_FIELD_RANGE_ERROR (-100)
+#define DMRGO_ERR_HYTERA_LENGTH (-197)
+#define DMRGO_ERR_HYTERA_SHORT (-198)
+#define DMRGO_ERR_HYTERA_SIGNATURE (-199)
+#define DMRGO_ERR_HYTERA_TEXT (-200)
 #define DMRGO_ERR_IP_CHECKSUM (-172)
 #define DMRGO_ERR_IP_FRAGMENT (-173)
 #define DMRGO_ERR_IP_LENGTH (-174)
@@ -3551,6 +3685,46 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ENUMS_VOICE_BURST_F ((dmrgo_enums_voice_burst_type_t)6)
 /* Go: enums.VoiceBurstUnknown. VoiceBurstUnknown is a burst whose superframe position is not known. */
 #define DMRGO_ENUMS_VOICE_BURST_UNKNOWN ((dmrgo_enums_voice_burst_type_t)0)
+/* Go: hytera.LPConditionReport. a position on a condition, such as a period */
+#define DMRGO_HYTERA_LP_CONDITION_REPORT 53251
+/* Go: hytera.LPEmergencyReport. a position sent in an emergency */
+#define DMRGO_HYTERA_LP_EMERGENCY_REPORT 45059
+/* Go: hytera.LPStandardAnswer. the answer to a standard request */
+#define DMRGO_HYTERA_LP_STANDARD_ANSWER 40962
+/* Go: hytera.LPStandardRequest. ask for one position */
+#define DMRGO_HYTERA_LP_STANDARD_REQUEST 40961
+/* Go: hytera.RRSDeregistration. the radio goes offline */
+#define DMRGO_HYTERA_RRS_DEREGISTRATION 1
+/* Go: hytera.RRSOnlineCheck. the server asks if the radio is online */
+#define DMRGO_HYTERA_RRS_ONLINE_CHECK 2
+/* Go: hytera.RRSOnlineCheckAnswer. the answer to an online check */
+#define DMRGO_HYTERA_RRS_ONLINE_CHECK_ANSWER 130
+/* Go: hytera.RRSRegistration. the radio registers */
+#define DMRGO_HYTERA_RRS_REGISTRATION 3
+/* Go: hytera.RRSRegistrationAnswer. the answer to a registration */
+#define DMRGO_HYTERA_RRS_REGISTRATION_ANSWER 128
+/* Go: hytera.ServiceDDS. data delivery states */
+#define DMRGO_HYTERA_SERVICE_DDS ((dmrgo_hytera_service_t)20)
+/* Go: hytera.ServiceDTP. data transmit protocol */
+#define DMRGO_HYTERA_SERVICE_DTP ((dmrgo_hytera_service_t)19)
+/* Go: hytera.ServiceLP. location protocol */
+#define DMRGO_HYTERA_SERVICE_LP ((dmrgo_hytera_service_t)8)
+/* Go: hytera.ServiceRCP. radio control protocol */
+#define DMRGO_HYTERA_SERVICE_RCP ((dmrgo_hytera_service_t)2)
+/* Go: hytera.ServiceRRS. radio registration service */
+#define DMRGO_HYTERA_SERVICE_RRS ((dmrgo_hytera_service_t)17)
+/* Go: hytera.ServiceTMP. text message protocol */
+#define DMRGO_HYTERA_SERVICE_TMP ((dmrgo_hytera_service_t)9)
+/* Go: hytera.ServiceTP. telemetry protocol */
+#define DMRGO_HYTERA_SERVICE_TP ((dmrgo_hytera_service_t)18)
+/* Go: hytera.TMPGroupMessage. a text to a talkgroup */
+#define DMRGO_HYTERA_TMP_GROUP_MESSAGE 177
+/* Go: hytera.TMPGroupMessageAnswer. the answer to a group text */
+#define DMRGO_HYTERA_TMP_GROUP_MESSAGE_ANSWER 178
+/* Go: hytera.TMPPrivateMessage. a text to a radio */
+#define DMRGO_HYTERA_TMP_PRIVATE_MESSAGE 161
+/* Go: hytera.TMPPrivateMessageAnswer. the answer to a private text */
+#define DMRGO_HYTERA_TMP_PRIVATE_MESSAGE_ANSWER 162
 /* Go: ip.DefaultNetwork. DefaultNetwork is the network ID that radios use by default for the IPv4 address of a radio: 12.x.y.z, with the 24-bit radio ID as x.y.z. */
 #define DMRGO_IP_DEFAULT_NETWORK 12
 /* Go: ip.PortARS. MOTOTRBO Automatic Registration Service */
@@ -4562,6 +4736,102 @@ int dmrgo_fec_result_combine(const dmrgo_fec_result_t *self, const dmrgo_fec_res
 int dmrgo_fec_result_err(const dmrgo_fec_result_t *self);
 /* Go: fec.Result.HasErrors. HasErrors returns true if any errors were corrected or if the data is uncorrectable. */
 int dmrgo_fec_result_has_errors(const dmrgo_fec_result_t *self, bool *out);
+/* Go: hytera.DecodeLPAnswer. DecodeLPAnswer decodes an LPAnswer from data. */
+int dmrgo_hytera_decode_lp_answer(const uint8_t *data, size_t data_len, dmrgo_hytera_lp_answer_t *out);
+/* Go: hytera.DecodeLPEmergency. DecodeLPEmergency decodes an LPEmergency from data. */
+int dmrgo_hytera_decode_lp_emergency(const uint8_t *data, size_t data_len, dmrgo_hytera_lp_emergency_t *out);
+/* Go: hytera.DecodeLPReport. DecodeLPReport decodes an LPReport from data. */
+int dmrgo_hytera_decode_lp_report(const uint8_t *data, size_t data_len, dmrgo_hytera_lp_report_t *out);
+/* Go: hytera.DecodeLPRequest. DecodeLPRequest decodes an LPRequest from data. */
+int dmrgo_hytera_decode_lp_request(const uint8_t *data, size_t data_len, dmrgo_hytera_lp_request_t *out);
+/* Go: hytera.DecodeMessage. DecodeMessage decodes a Message from data. */
+int dmrgo_hytera_decode_message(const uint8_t *data, size_t data_len, dmrgo_hytera_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: hytera.DecodeRRSAnswer. DecodeRRSAnswer decodes an RRSAnswer from data. */
+int dmrgo_hytera_decode_rrs_answer(const uint8_t *data, size_t data_len, dmrgo_hytera_rrs_answer_t *out);
+/* Go: hytera.DecodeRRSCheckAnswer. DecodeRRSCheckAnswer decodes an RRSCheckAnswer from data. */
+int dmrgo_hytera_decode_rrs_check_answer(const uint8_t *data, size_t data_len, dmrgo_hytera_rrs_check_answer_t *out);
+/* Go: hytera.DecodeRRSRadio. DecodeRRSRadio decodes an RRSRadio from data. */
+int dmrgo_hytera_decode_rrs_radio(const uint8_t *data, size_t data_len, dmrgo_hytera_rrs_radio_t *out);
+/* Go: hytera.DecodeTMPAnswer. DecodeTMPAnswer decodes a TMPAnswer from data. */
+int dmrgo_hytera_decode_tmp_answer(const uint8_t *data, size_t data_len, dmrgo_hytera_tmp_answer_t *out);
+/* Go: hytera.DecodeTMPFlags. DecodeTMPFlags decodes a TMPFlags from data, a frame of 1 octets. */
+int dmrgo_hytera_decode_tmp_flags(const uint8_t *data, size_t data_len, dmrgo_hytera_tmp_flags_t *out);
+/* Go: hytera.DecodeTMPGroupAnswer. DecodeTMPGroupAnswer decodes a TMPGroupAnswer from data. */
+int dmrgo_hytera_decode_tmp_group_answer(const uint8_t *data, size_t data_len, dmrgo_hytera_tmp_group_answer_t *out);
+/* Go: hytera.DecodeTMPMessage. DecodeTMPMessage decodes a TMPMessage from data. */
+int dmrgo_hytera_decode_tmp_message(const uint8_t *data, size_t data_len, dmrgo_hytera_tmp_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: hytera.GPSData.AppendBinary. AppendBinary appends the 40 octets of s to dst. */
+int dmrgo_hytera_gps_data_append_binary(dmrgo_hytera_gps_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: hytera.GPSData.Latitude. Latitude returns the latitude in degrees, north positive. */
+int dmrgo_hytera_gps_data_latitude(dmrgo_hytera_gps_data_t *self, double *out);
+/* Go: hytera.GPSData.Longitude. Longitude returns the longitude in degrees, east positive. */
+int dmrgo_hytera_gps_data_longitude(dmrgo_hytera_gps_data_t *self, double *out);
+/* Go: hytera.GPSData.String. String returns the fields of s as text, for printing. */
+int dmrgo_hytera_gps_data_string(dmrgo_hytera_gps_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: hytera.GPSData.Valid. Valid reports a position from a fix: Status 'A'. */
+int dmrgo_hytera_gps_data_valid(dmrgo_hytera_gps_data_t *self, bool *out);
+/* Go: hytera.Header.AppendBinary. AppendBinary appends the 1 octets of s to dst. */
+int dmrgo_hytera_header_append_binary(dmrgo_hytera_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: hytera.Header.String. String returns the fields of s as text, for printing. */
+int dmrgo_hytera_header_string(dmrgo_hytera_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: hytera.LPAnswer.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_hytera_lp_answer_append_binary(dmrgo_hytera_lp_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: hytera.LPAnswer.String. String returns the fields of s as text, for printing. */
+int dmrgo_hytera_lp_answer_string(dmrgo_hytera_lp_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: hytera.LPEmergency.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_hytera_lp_emergency_append_binary(dmrgo_hytera_lp_emergency_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: hytera.LPEmergency.String. String returns the fields of s as text, for printing. */
+int dmrgo_hytera_lp_emergency_string(dmrgo_hytera_lp_emergency_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: hytera.LPReport.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_hytera_lp_report_append_binary(dmrgo_hytera_lp_report_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: hytera.LPReport.String. String returns the fields of s as text, for printing. */
+int dmrgo_hytera_lp_report_string(dmrgo_hytera_lp_report_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: hytera.LPRequest.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_hytera_lp_request_append_binary(dmrgo_hytera_lp_request_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: hytera.LPRequest.String. String returns the fields of s as text, for printing. */
+int dmrgo_hytera_lp_request_string(dmrgo_hytera_lp_request_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: hytera.Message.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_hytera_message_append_binary(dmrgo_hytera_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: hytera.Message.ChecksumOK. ChecksumOK reports whether Checksum matches the opcode, the length and the payload. */
+int dmrgo_hytera_message_checksum_ok(dmrgo_hytera_message_t *self, bool *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: hytera.Message.Seal. Seal sets Checksum: the sum of the octets of the opcode, the length and the payload, inverted, plus 0x33. */
+int dmrgo_hytera_message_seal(dmrgo_hytera_message_t *self, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: hytera.Message.String. String returns the fields of s as text, for printing. */
+int dmrgo_hytera_message_string(dmrgo_hytera_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: hytera.RRSAnswer.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_hytera_rrs_answer_append_binary(dmrgo_hytera_rrs_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: hytera.RRSAnswer.String. String returns the fields of s as text, for printing. */
+int dmrgo_hytera_rrs_answer_string(dmrgo_hytera_rrs_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: hytera.RRSCheckAnswer.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_hytera_rrs_check_answer_append_binary(dmrgo_hytera_rrs_check_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: hytera.RRSCheckAnswer.String. String returns the fields of s as text, for printing. */
+int dmrgo_hytera_rrs_check_answer_string(dmrgo_hytera_rrs_check_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: hytera.RRSRadio.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_hytera_rrs_radio_append_binary(dmrgo_hytera_rrs_radio_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: hytera.RRSRadio.String. String returns the fields of s as text, for printing. */
+int dmrgo_hytera_rrs_radio_string(dmrgo_hytera_rrs_radio_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: hytera.Service.String. String returns the name of s. */
+int dmrgo_hytera_service_string(dmrgo_hytera_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: hytera.TMPAnswer.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_hytera_tmp_answer_append_binary(dmrgo_hytera_tmp_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: hytera.TMPAnswer.String. String returns the fields of s as text, for printing. */
+int dmrgo_hytera_tmp_answer_string(dmrgo_hytera_tmp_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: hytera.TMPFlags.AppendBinary. AppendBinary appends the 1 octets of s to dst. */
+int dmrgo_hytera_tmp_flags_append_binary(dmrgo_hytera_tmp_flags_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: hytera.TMPFlags.String. String returns the fields of s as text, for printing. */
+int dmrgo_hytera_tmp_flags_string(dmrgo_hytera_tmp_flags_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: hytera.TMPGroupAnswer.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_hytera_tmp_group_answer_append_binary(dmrgo_hytera_tmp_group_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: hytera.TMPGroupAnswer.String. String returns the fields of s as text, for printing. */
+int dmrgo_hytera_tmp_group_answer_string(dmrgo_hytera_tmp_group_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: hytera.TMPMessage.AppendBinary. AppendBinary appends s to dst. */
+int dmrgo_hytera_tmp_message_append_binary(dmrgo_hytera_tmp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: hytera.TMPMessage.SetTextUTF8. SetTextUTF8 appends text, UTF-8, to dst as UTF-16LE, points Text at the appended octets and returns dst. */
+int dmrgo_hytera_tmp_message_set_text_utf8(dmrgo_hytera_tmp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: hytera.TMPMessage.String. String returns the fields of s as text, for printing. */
+int dmrgo_hytera_tmp_message_string(dmrgo_hytera_tmp_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: hytera.TMPMessage.TextUTF8. TextUTF8 appends Text, UTF-16LE text, to dst as UTF-8 and returns dst. */
+int dmrgo_hytera_tmp_message_text_utf8(dmrgo_hytera_tmp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ip.AppendCompressed. AppendCompressed appends d to dst with a compressed UDP/IPv4 header. */
 int dmrgo_ip_append_compressed(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_datagram_t *d);
 /* Go: ip.AppendIPv4. AppendIPv4 appends d to dst as an IPv4 packet with a UDP datagram, and computes both checksums. */

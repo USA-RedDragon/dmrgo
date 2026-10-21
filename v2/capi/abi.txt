@@ -94,6 +94,10 @@ code DMRGO_ERR_SMS_NOT_TEXT -193
 code DMRGO_ERR_SMS_SHORT -194
 code DMRGO_ERR_SMS_SIGNATURE -195
 code DMRGO_ERR_LOCATION_NO_FIX -196
+code DMRGO_ERR_HYTERA_LENGTH -197
+code DMRGO_ERR_HYTERA_SHORT -198
+code DMRGO_ERR_HYTERA_SIGNATURE -199
+code DMRGO_ERR_HYTERA_TEXT -200
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -626,6 +630,10 @@ sym #define DMRGO_ERR_DVSI_TYPE (-167)
 sym #define DMRGO_ERR_ENUMS_COLOR_CODE_ERROR (-103)
 sym #define DMRGO_ERR_FEC_UNCORRECTABLE (-110)
 sym #define DMRGO_ERR_FIELD_RANGE_ERROR (-100)
+sym #define DMRGO_ERR_HYTERA_LENGTH (-197)
+sym #define DMRGO_ERR_HYTERA_SHORT (-198)
+sym #define DMRGO_ERR_HYTERA_SIGNATURE (-199)
+sym #define DMRGO_ERR_HYTERA_TEXT (-200)
 sym #define DMRGO_ERR_IP_CHECKSUM (-172)
 sym #define DMRGO_ERR_IP_FRAGMENT (-173)
 sym #define DMRGO_ERR_IP_LENGTH (-174)
@@ -697,6 +705,26 @@ sym #define DMRGO_FRAMER_OUTBOUND_PERIOD 288
 sym #define DMRGO_FRAMER_SLOT_PERIOD 576
 sym #define DMRGO_FRAMER_SYNC_BITS 48
 sym #define DMRGO_FRAMER_SYNC_OFFSET 108
+sym #define DMRGO_HYTERA_LP_CONDITION_REPORT 53251
+sym #define DMRGO_HYTERA_LP_EMERGENCY_REPORT 45059
+sym #define DMRGO_HYTERA_LP_STANDARD_ANSWER 40962
+sym #define DMRGO_HYTERA_LP_STANDARD_REQUEST 40961
+sym #define DMRGO_HYTERA_RRS_DEREGISTRATION 1
+sym #define DMRGO_HYTERA_RRS_ONLINE_CHECK 2
+sym #define DMRGO_HYTERA_RRS_ONLINE_CHECK_ANSWER 130
+sym #define DMRGO_HYTERA_RRS_REGISTRATION 3
+sym #define DMRGO_HYTERA_RRS_REGISTRATION_ANSWER 128
+sym #define DMRGO_HYTERA_SERVICE_DDS ((dmrgo_hytera_service_t)20)
+sym #define DMRGO_HYTERA_SERVICE_DTP ((dmrgo_hytera_service_t)19)
+sym #define DMRGO_HYTERA_SERVICE_LP ((dmrgo_hytera_service_t)8)
+sym #define DMRGO_HYTERA_SERVICE_RCP ((dmrgo_hytera_service_t)2)
+sym #define DMRGO_HYTERA_SERVICE_RRS ((dmrgo_hytera_service_t)17)
+sym #define DMRGO_HYTERA_SERVICE_TMP ((dmrgo_hytera_service_t)9)
+sym #define DMRGO_HYTERA_SERVICE_TP ((dmrgo_hytera_service_t)18)
+sym #define DMRGO_HYTERA_TMP_GROUP_MESSAGE 177
+sym #define DMRGO_HYTERA_TMP_GROUP_MESSAGE_ANSWER 178
+sym #define DMRGO_HYTERA_TMP_PRIVATE_MESSAGE 161
+sym #define DMRGO_HYTERA_TMP_PRIVATE_MESSAGE_ANSWER 162
 sym #define DMRGO_IP_DEFAULT_NETWORK 12
 sym #define DMRGO_IP_PORT_ARS ((dmrgo_ip_port_t)4005)
 sym #define DMRGO_IP_PORT_BATTERY ((dmrgo_ip_port_t)4012)
@@ -1252,6 +1280,54 @@ sym int dmrgo_framer_framer_write(dmrgo_framer_framer_t *self, const uint8_t *st
 sym int dmrgo_framer_framer_write_need(dmrgo_framer_framer_t *self, const uint8_t *stream, size_t stream_len, int64_t nbits, size_t *items, size_t *arena);
 sym int dmrgo_framer_new(const dmrgo_framer_config_t *cfg, dmrgo_framer_framer_t **out);
 sym int dmrgo_framer_search(const uint8_t *stream, size_t stream_len, int64_t nbits, int64_t start, int64_t threshold, dmrgo_framer_match_t *m, bool *ok);
+sym int dmrgo_hytera_decode_lp_answer(const uint8_t *data, size_t data_len, dmrgo_hytera_lp_answer_t *out);
+sym int dmrgo_hytera_decode_lp_emergency(const uint8_t *data, size_t data_len, dmrgo_hytera_lp_emergency_t *out);
+sym int dmrgo_hytera_decode_lp_report(const uint8_t *data, size_t data_len, dmrgo_hytera_lp_report_t *out);
+sym int dmrgo_hytera_decode_lp_request(const uint8_t *data, size_t data_len, dmrgo_hytera_lp_request_t *out);
+sym int dmrgo_hytera_decode_message(const uint8_t *data, size_t data_len, dmrgo_hytera_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_hytera_decode_rrs_answer(const uint8_t *data, size_t data_len, dmrgo_hytera_rrs_answer_t *out);
+sym int dmrgo_hytera_decode_rrs_check_answer(const uint8_t *data, size_t data_len, dmrgo_hytera_rrs_check_answer_t *out);
+sym int dmrgo_hytera_decode_rrs_radio(const uint8_t *data, size_t data_len, dmrgo_hytera_rrs_radio_t *out);
+sym int dmrgo_hytera_decode_tmp_answer(const uint8_t *data, size_t data_len, dmrgo_hytera_tmp_answer_t *out);
+sym int dmrgo_hytera_decode_tmp_flags(const uint8_t *data, size_t data_len, dmrgo_hytera_tmp_flags_t *out);
+sym int dmrgo_hytera_decode_tmp_group_answer(const uint8_t *data, size_t data_len, dmrgo_hytera_tmp_group_answer_t *out);
+sym int dmrgo_hytera_decode_tmp_message(const uint8_t *data, size_t data_len, dmrgo_hytera_tmp_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_hytera_gps_data_append_binary(dmrgo_hytera_gps_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_hytera_gps_data_latitude(dmrgo_hytera_gps_data_t *self, double *out);
+sym int dmrgo_hytera_gps_data_longitude(dmrgo_hytera_gps_data_t *self, double *out);
+sym int dmrgo_hytera_gps_data_string(dmrgo_hytera_gps_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_hytera_gps_data_valid(dmrgo_hytera_gps_data_t *self, bool *out);
+sym int dmrgo_hytera_header_append_binary(dmrgo_hytera_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_hytera_header_string(dmrgo_hytera_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_hytera_lp_answer_append_binary(dmrgo_hytera_lp_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_hytera_lp_answer_string(dmrgo_hytera_lp_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_hytera_lp_emergency_append_binary(dmrgo_hytera_lp_emergency_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_hytera_lp_emergency_string(dmrgo_hytera_lp_emergency_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_hytera_lp_report_append_binary(dmrgo_hytera_lp_report_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_hytera_lp_report_string(dmrgo_hytera_lp_report_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_hytera_lp_request_append_binary(dmrgo_hytera_lp_request_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_hytera_lp_request_string(dmrgo_hytera_lp_request_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_hytera_message_append_binary(dmrgo_hytera_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_hytera_message_checksum_ok(dmrgo_hytera_message_t *self, bool *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_hytera_message_seal(dmrgo_hytera_message_t *self, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_hytera_message_string(dmrgo_hytera_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_hytera_rrs_answer_append_binary(dmrgo_hytera_rrs_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_hytera_rrs_answer_string(dmrgo_hytera_rrs_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_hytera_rrs_check_answer_append_binary(dmrgo_hytera_rrs_check_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_hytera_rrs_check_answer_string(dmrgo_hytera_rrs_check_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_hytera_rrs_radio_append_binary(dmrgo_hytera_rrs_radio_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_hytera_rrs_radio_string(dmrgo_hytera_rrs_radio_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_hytera_service_string(dmrgo_hytera_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_hytera_tmp_answer_append_binary(dmrgo_hytera_tmp_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_hytera_tmp_answer_string(dmrgo_hytera_tmp_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_hytera_tmp_flags_append_binary(dmrgo_hytera_tmp_flags_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_hytera_tmp_flags_string(dmrgo_hytera_tmp_flags_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_hytera_tmp_group_answer_append_binary(dmrgo_hytera_tmp_group_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_hytera_tmp_group_answer_string(dmrgo_hytera_tmp_group_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_hytera_tmp_message_append_binary(dmrgo_hytera_tmp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_hytera_tmp_message_set_text_utf8(dmrgo_hytera_tmp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_hytera_tmp_message_string(dmrgo_hytera_tmp_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_hytera_tmp_message_text_utf8(dmrgo_hytera_tmp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ip_append_compressed(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_datagram_t *d);
 sym int dmrgo_ip_append_ipv4(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_datagram_t *d);
 sym int dmrgo_ip_decode(dmrgo_enums_service_access_point_id_t sap, const uint8_t *data, size_t data_len, dmrgo_ip_datagram_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
@@ -2134,6 +2210,7 @@ sym typedef uint8_t dmrgo_enums_slco_t;
 sym typedef uint8_t dmrgo_enums_slot_t;
 sym typedef uint8_t dmrgo_enums_spid_t;
 sym typedef uint8_t dmrgo_enums_voice_burst_type_t;
+sym typedef uint8_t dmrgo_hytera_service_t;
 sym typedef uint8_t dmrgo_ip_protocol_t;
 sym typedef uint8_t dmrgo_layer2_end_hint_t;
 sym typedef uint8_t dmrgo_layer2_kind_t;
@@ -2201,6 +2278,20 @@ type struct dmrgo_field_range_error_t { char *type_; size_t type__len; char *fie
 type struct dmrgo_framer_burst_t { dmrgo_layer2_raw_burst_t data; int64_t offset; dmrgo_enums_sync_pattern_t sync; int64_t distance; bool has_cach; dmrgo_layer2_cach_t cach; int64_t channel; };
 type struct dmrgo_framer_config_t { int64_t threshold; int64_t period; bool cach; int64_t max_misses; };
 type struct dmrgo_framer_match_t { int64_t offset; dmrgo_enums_sync_pattern_t pattern; int64_t distance; };
+type struct dmrgo_hytera_gps_data_t { uint8_t status; uint8_t hour; uint8_t minute; uint8_t second; uint8_t day; uint8_t month; uint8_t year; uint8_t north_south; uint8_t latitude_degrees; uint8_t latitude_minutes; uint16_t latitude_fraction; uint8_t east_west; uint16_t longitude_degrees; uint8_t longitude_minutes; uint16_t longitude_fraction; uint8_t speed[3]; uint16_t direction; };
+type struct dmrgo_hytera_header_t { bool reliable; dmrgo_hytera_service_t service; };
+type struct dmrgo_hytera_lp_answer_t { uint32_t request_id; uint8_t radio[4]; uint16_t result; dmrgo_hytera_gps_data_t gps; };
+type struct dmrgo_hytera_lp_emergency_t { uint8_t radio[4]; uint8_t type_; dmrgo_hytera_gps_data_t gps; };
+type struct dmrgo_hytera_lp_report_t { uint32_t request_id; uint8_t radio[4]; dmrgo_hytera_gps_data_t gps; };
+type struct dmrgo_hytera_lp_request_t { uint32_t request_id; uint8_t radio[4]; };
+type struct dmrgo_hytera_message_t { dmrgo_hytera_header_t header; uint16_t opcode; uint8_t *payload; size_t payload_len; uint8_t checksum; uint8_t end; };
+type struct dmrgo_hytera_rrs_answer_t { uint8_t radio[4]; uint8_t result; uint32_t valid_time; };
+type struct dmrgo_hytera_rrs_check_answer_t { uint8_t radio[4]; uint8_t result; };
+type struct dmrgo_hytera_rrs_radio_t { uint8_t radio[4]; };
+type struct dmrgo_hytera_tmp_answer_t { uint32_t request_id; uint8_t destination[4]; uint8_t source[4]; uint8_t result; };
+type struct dmrgo_hytera_tmp_flags_t { bool no_ack; bool option; uint8_t reserved; };
+type struct dmrgo_hytera_tmp_group_answer_t { uint32_t request_id; uint8_t destination[4]; uint8_t result; };
+type struct dmrgo_hytera_tmp_message_t { uint32_t request_id; uint8_t destination[4]; uint8_t source[4]; uint8_t *text; size_t text_len; };
 type struct dmrgo_ip_datagram_t { uint8_t source[4]; uint8_t destination[4]; dmrgo_ip_port_t source_port; dmrgo_ip_port_t destination_port; uint16_t id; uint8_t ttl; bool compressed; dmrgo_enums_said_t said; dmrgo_enums_daid_t daid; uint8_t *payload; size_t payload_len; };
 type struct dmrgo_ip_ipv4_header_t { uint8_t version; uint8_t ihl; uint8_t tos; uint16_t total_length; uint16_t id; bool reserved; bool dont_fragment; bool more_fragments; uint16_t fragment_offset; uint8_t ttl; dmrgo_ip_protocol_t protocol; uint16_t checksum; uint8_t source[4]; uint8_t destination[4]; };
 type struct dmrgo_ip_ipv4_t { dmrgo_ip_ipv4_header_t header; uint8_t *options; size_t options_len; uint8_t *payload; size_t payload_len; };

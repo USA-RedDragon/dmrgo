@@ -21,6 +21,7 @@ import (
 	g_data "github.com/USA-RedDragon/dmrgo/v2/data"
 	g_enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	g_fec "github.com/USA-RedDragon/dmrgo/v2/fec"
+	g_hytera "github.com/USA-RedDragon/dmrgo/v2/hytera"
 	g_ip "github.com/USA-RedDragon/dmrgo/v2/ip"
 	g_layer2 "github.com/USA-RedDragon/dmrgo/v2/layer2"
 	g_layer2_framer "github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
@@ -834,6 +835,68 @@ func in_fec_BurstFECStats(s *C.dmrgo_fec_burst_fec_stats_t) (d g_fec.BurstFECSta
 	d.Payload = in_fec_Result(&s.payload)
 	d.PDU = in_fec_Result(&s.pdu)
 	d.RC = in_fec_Result(&s.rc)
+	return
+}
+
+func out_hytera_Header(d *C.dmrgo_hytera_header_t, s *g_hytera.Header, oc *outc) {
+	_ = oc
+	d.reliable = C.bool(s.Reliable)
+	d.service = C.dmrgo_hytera_service_t(s.Service)
+}
+
+func out_hytera_Message(d *C.dmrgo_hytera_message_t, s *g_hytera.Message, oc *outc) {
+	_ = oc
+	out_hytera_Header(&d.header, &s.Header, oc)
+	d.opcode = C.uint16_t(s.Opcode)
+	d.payload = (*C.uint8_t)(arenaCopy(oc, s.Payload))
+	d.payload_len = C.size_t(len(s.Payload))
+	d.checksum = C.uint8_t(s.Checksum)
+	d.end = C.uint8_t(s.End)
+}
+
+func out_hytera_TMPFlags(d *C.dmrgo_hytera_tmp_flags_t, s *g_hytera.TMPFlags, oc *outc) {
+	_ = oc
+	d.no_ack = C.bool(s.NoAck)
+	d.option = C.bool(s.Option)
+	d.reserved = C.uint8_t(s.Reserved)
+}
+
+func out_hytera_TMPMessage(d *C.dmrgo_hytera_tmp_message_t, s *g_hytera.TMPMessage, oc *outc) {
+	_ = oc
+	d.request_id = C.uint32_t(s.RequestID)
+	*(*[4]byte)(unsafe.Pointer(&d.destination)) = s.Destination
+	*(*[4]byte)(unsafe.Pointer(&d.source)) = s.Source
+	d.text = (*C.uint8_t)(arenaCopy(oc, s.Text))
+	d.text_len = C.size_t(len(s.Text))
+}
+
+func in_hytera_Header(s *C.dmrgo_hytera_header_t) (d g_hytera.Header) {
+	d.Reliable = bool(s.reliable)
+	d.Service = g_hytera.Service(s.service)
+	return
+}
+
+func in_hytera_Message(s *C.dmrgo_hytera_message_t) (d g_hytera.Message) {
+	d.Header = in_hytera_Header(&s.header)
+	d.Opcode = uint16(s.opcode)
+	d.Payload = unsafe.Slice((*byte)(unsafe.Pointer(s.payload)), int(s.payload_len))
+	d.Checksum = uint8(s.checksum)
+	d.End = uint8(s.end)
+	return
+}
+
+func in_hytera_TMPFlags(s *C.dmrgo_hytera_tmp_flags_t) (d g_hytera.TMPFlags) {
+	d.NoAck = bool(s.no_ack)
+	d.Option = bool(s.option)
+	d.Reserved = uint8(s.reserved)
+	return
+}
+
+func in_hytera_TMPMessage(s *C.dmrgo_hytera_tmp_message_t) (d g_hytera.TMPMessage) {
+	d.RequestID = uint32(s.request_id)
+	d.Destination = *(*[4]byte)(unsafe.Pointer(&s.destination))
+	d.Source = *(*[4]byte)(unsafe.Pointer(&s.source))
+	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
 	return
 }
 
@@ -4683,6 +4746,226 @@ func fromC_fec_BurstFECStats(s *C.dmrgo_fec_burst_fec_stats_t) g_fec.BurstFECSta
 
 func fromC_fec_Result(s *C.dmrgo_fec_result_t) g_fec.Result {
 	return in_fec_Result(s)
+}
+
+func in_hytera_GPSData(s *C.dmrgo_hytera_gps_data_t) (d g_hytera.GPSData) {
+	d.Status = uint8(s.status)
+	d.Hour = uint8(s.hour)
+	d.Minute = uint8(s.minute)
+	d.Second = uint8(s.second)
+	d.Day = uint8(s.day)
+	d.Month = uint8(s.month)
+	d.Year = uint8(s.year)
+	d.NorthSouth = uint8(s.north_south)
+	d.LatitudeDegrees = uint8(s.latitude_degrees)
+	d.LatitudeMinutes = uint8(s.latitude_minutes)
+	d.LatitudeFraction = uint16(s.latitude_fraction)
+	d.EastWest = uint8(s.east_west)
+	d.LongitudeDegrees = uint16(s.longitude_degrees)
+	d.LongitudeMinutes = uint8(s.longitude_minutes)
+	d.LongitudeFraction = uint16(s.longitude_fraction)
+	d.Speed = *(*[3]byte)(unsafe.Pointer(&s.speed))
+	d.Direction = uint16(s.direction)
+	return
+}
+
+func out_hytera_GPSData(d *C.dmrgo_hytera_gps_data_t, s *g_hytera.GPSData, oc *outc) {
+	_ = oc
+	d.status = C.uint8_t(s.Status)
+	d.hour = C.uint8_t(s.Hour)
+	d.minute = C.uint8_t(s.Minute)
+	d.second = C.uint8_t(s.Second)
+	d.day = C.uint8_t(s.Day)
+	d.month = C.uint8_t(s.Month)
+	d.year = C.uint8_t(s.Year)
+	d.north_south = C.uint8_t(s.NorthSouth)
+	d.latitude_degrees = C.uint8_t(s.LatitudeDegrees)
+	d.latitude_minutes = C.uint8_t(s.LatitudeMinutes)
+	d.latitude_fraction = C.uint16_t(s.LatitudeFraction)
+	d.east_west = C.uint8_t(s.EastWest)
+	d.longitude_degrees = C.uint16_t(s.LongitudeDegrees)
+	d.longitude_minutes = C.uint8_t(s.LongitudeMinutes)
+	d.longitude_fraction = C.uint16_t(s.LongitudeFraction)
+	*(*[3]byte)(unsafe.Pointer(&d.speed)) = s.Speed
+	d.direction = C.uint16_t(s.Direction)
+}
+
+func fromC_hytera_GPSData(s *C.dmrgo_hytera_gps_data_t) g_hytera.GPSData {
+	return in_hytera_GPSData(s)
+}
+
+func fromC_hytera_Header(s *C.dmrgo_hytera_header_t) g_hytera.Header {
+	return in_hytera_Header(s)
+}
+
+func in_hytera_LPAnswer(s *C.dmrgo_hytera_lp_answer_t) (d g_hytera.LPAnswer) {
+	d.RequestID = uint32(s.request_id)
+	d.Radio = *(*[4]byte)(unsafe.Pointer(&s.radio))
+	d.Result = uint16(s.result)
+	d.GPS = *(*g_hytera.GPSData)(unsafe.Pointer(&s.gps))
+	return
+}
+
+func out_hytera_LPAnswer(d *C.dmrgo_hytera_lp_answer_t, s *g_hytera.LPAnswer, oc *outc) {
+	_ = oc
+	d.request_id = C.uint32_t(s.RequestID)
+	*(*[4]byte)(unsafe.Pointer(&d.radio)) = s.Radio
+	d.result = C.uint16_t(s.Result)
+	*(*g_hytera.GPSData)(unsafe.Pointer(&d.gps)) = s.GPS
+}
+
+func fromC_hytera_LPAnswer(s *C.dmrgo_hytera_lp_answer_t) g_hytera.LPAnswer {
+	return in_hytera_LPAnswer(s)
+}
+
+func in_hytera_LPEmergency(s *C.dmrgo_hytera_lp_emergency_t) (d g_hytera.LPEmergency) {
+	d.Radio = *(*[4]byte)(unsafe.Pointer(&s.radio))
+	d.Type = uint8(s.type_)
+	d.GPS = *(*g_hytera.GPSData)(unsafe.Pointer(&s.gps))
+	return
+}
+
+func out_hytera_LPEmergency(d *C.dmrgo_hytera_lp_emergency_t, s *g_hytera.LPEmergency, oc *outc) {
+	_ = oc
+	*(*[4]byte)(unsafe.Pointer(&d.radio)) = s.Radio
+	d.type_ = C.uint8_t(s.Type)
+	*(*g_hytera.GPSData)(unsafe.Pointer(&d.gps)) = s.GPS
+}
+
+func fromC_hytera_LPEmergency(s *C.dmrgo_hytera_lp_emergency_t) g_hytera.LPEmergency {
+	return in_hytera_LPEmergency(s)
+}
+
+func in_hytera_LPReport(s *C.dmrgo_hytera_lp_report_t) (d g_hytera.LPReport) {
+	d.RequestID = uint32(s.request_id)
+	d.Radio = *(*[4]byte)(unsafe.Pointer(&s.radio))
+	d.GPS = *(*g_hytera.GPSData)(unsafe.Pointer(&s.gps))
+	return
+}
+
+func out_hytera_LPReport(d *C.dmrgo_hytera_lp_report_t, s *g_hytera.LPReport, oc *outc) {
+	_ = oc
+	d.request_id = C.uint32_t(s.RequestID)
+	*(*[4]byte)(unsafe.Pointer(&d.radio)) = s.Radio
+	*(*g_hytera.GPSData)(unsafe.Pointer(&d.gps)) = s.GPS
+}
+
+func fromC_hytera_LPReport(s *C.dmrgo_hytera_lp_report_t) g_hytera.LPReport {
+	return in_hytera_LPReport(s)
+}
+
+func in_hytera_LPRequest(s *C.dmrgo_hytera_lp_request_t) (d g_hytera.LPRequest) {
+	d.RequestID = uint32(s.request_id)
+	d.Radio = *(*[4]byte)(unsafe.Pointer(&s.radio))
+	return
+}
+
+func out_hytera_LPRequest(d *C.dmrgo_hytera_lp_request_t, s *g_hytera.LPRequest, oc *outc) {
+	_ = oc
+	d.request_id = C.uint32_t(s.RequestID)
+	*(*[4]byte)(unsafe.Pointer(&d.radio)) = s.Radio
+}
+
+func fromC_hytera_LPRequest(s *C.dmrgo_hytera_lp_request_t) g_hytera.LPRequest {
+	return in_hytera_LPRequest(s)
+}
+
+func fromC_hytera_Message(s *C.dmrgo_hytera_message_t) g_hytera.Message {
+	return in_hytera_Message(s)
+}
+
+func in_hytera_RRSAnswer(s *C.dmrgo_hytera_rrs_answer_t) (d g_hytera.RRSAnswer) {
+	d.Radio = *(*[4]byte)(unsafe.Pointer(&s.radio))
+	d.Result = uint8(s.result)
+	d.ValidTime = uint32(s.valid_time)
+	return
+}
+
+func out_hytera_RRSAnswer(d *C.dmrgo_hytera_rrs_answer_t, s *g_hytera.RRSAnswer, oc *outc) {
+	_ = oc
+	*(*[4]byte)(unsafe.Pointer(&d.radio)) = s.Radio
+	d.result = C.uint8_t(s.Result)
+	d.valid_time = C.uint32_t(s.ValidTime)
+}
+
+func fromC_hytera_RRSAnswer(s *C.dmrgo_hytera_rrs_answer_t) g_hytera.RRSAnswer {
+	return in_hytera_RRSAnswer(s)
+}
+
+func in_hytera_RRSCheckAnswer(s *C.dmrgo_hytera_rrs_check_answer_t) (d g_hytera.RRSCheckAnswer) {
+	d.Radio = *(*[4]byte)(unsafe.Pointer(&s.radio))
+	d.Result = uint8(s.result)
+	return
+}
+
+func out_hytera_RRSCheckAnswer(d *C.dmrgo_hytera_rrs_check_answer_t, s *g_hytera.RRSCheckAnswer, oc *outc) {
+	_ = oc
+	*(*[4]byte)(unsafe.Pointer(&d.radio)) = s.Radio
+	d.result = C.uint8_t(s.Result)
+}
+
+func fromC_hytera_RRSCheckAnswer(s *C.dmrgo_hytera_rrs_check_answer_t) g_hytera.RRSCheckAnswer {
+	return in_hytera_RRSCheckAnswer(s)
+}
+
+func in_hytera_RRSRadio(s *C.dmrgo_hytera_rrs_radio_t) (d g_hytera.RRSRadio) {
+	d.Radio = *(*[4]byte)(unsafe.Pointer(&s.radio))
+	return
+}
+
+func out_hytera_RRSRadio(d *C.dmrgo_hytera_rrs_radio_t, s *g_hytera.RRSRadio, oc *outc) {
+	_ = oc
+	*(*[4]byte)(unsafe.Pointer(&d.radio)) = s.Radio
+}
+
+func fromC_hytera_RRSRadio(s *C.dmrgo_hytera_rrs_radio_t) g_hytera.RRSRadio {
+	return in_hytera_RRSRadio(s)
+}
+
+func in_hytera_TMPAnswer(s *C.dmrgo_hytera_tmp_answer_t) (d g_hytera.TMPAnswer) {
+	d.RequestID = uint32(s.request_id)
+	d.Destination = *(*[4]byte)(unsafe.Pointer(&s.destination))
+	d.Source = *(*[4]byte)(unsafe.Pointer(&s.source))
+	d.Result = uint8(s.result)
+	return
+}
+
+func out_hytera_TMPAnswer(d *C.dmrgo_hytera_tmp_answer_t, s *g_hytera.TMPAnswer, oc *outc) {
+	_ = oc
+	d.request_id = C.uint32_t(s.RequestID)
+	*(*[4]byte)(unsafe.Pointer(&d.destination)) = s.Destination
+	*(*[4]byte)(unsafe.Pointer(&d.source)) = s.Source
+	d.result = C.uint8_t(s.Result)
+}
+
+func fromC_hytera_TMPAnswer(s *C.dmrgo_hytera_tmp_answer_t) g_hytera.TMPAnswer {
+	return in_hytera_TMPAnswer(s)
+}
+
+func fromC_hytera_TMPFlags(s *C.dmrgo_hytera_tmp_flags_t) g_hytera.TMPFlags {
+	return in_hytera_TMPFlags(s)
+}
+
+func in_hytera_TMPGroupAnswer(s *C.dmrgo_hytera_tmp_group_answer_t) (d g_hytera.TMPGroupAnswer) {
+	d.RequestID = uint32(s.request_id)
+	d.Destination = *(*[4]byte)(unsafe.Pointer(&s.destination))
+	d.Result = uint8(s.result)
+	return
+}
+
+func out_hytera_TMPGroupAnswer(d *C.dmrgo_hytera_tmp_group_answer_t, s *g_hytera.TMPGroupAnswer, oc *outc) {
+	_ = oc
+	d.request_id = C.uint32_t(s.RequestID)
+	*(*[4]byte)(unsafe.Pointer(&d.destination)) = s.Destination
+	d.result = C.uint8_t(s.Result)
+}
+
+func fromC_hytera_TMPGroupAnswer(s *C.dmrgo_hytera_tmp_group_answer_t) g_hytera.TMPGroupAnswer {
+	return in_hytera_TMPGroupAnswer(s)
+}
+
+func fromC_hytera_TMPMessage(s *C.dmrgo_hytera_tmp_message_t) g_hytera.TMPMessage {
+	return in_hytera_TMPMessage(s)
 }
 
 func fromC_ip_Datagram(s *C.dmrgo_ip_datagram_t) g_ip.Datagram {
@@ -11293,6 +11576,1300 @@ func dmrgo_fec_result_has_errors(c_self *C.dmrgo_fec_result_t, c_out *C.bool) (r
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_decode_lp_answer
+func dmrgo_hytera_decode_lp_answer(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hytera_lp_answer_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_hytera.DecodeLPAnswer(a_data)
+	_ = r0
+	if c_out != nil {
+		*(*g_hytera.LPAnswer)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_decode_lp_emergency
+func dmrgo_hytera_decode_lp_emergency(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hytera_lp_emergency_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_hytera.DecodeLPEmergency(a_data)
+	_ = r0
+	if c_out != nil {
+		*(*g_hytera.LPEmergency)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_decode_lp_report
+func dmrgo_hytera_decode_lp_report(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hytera_lp_report_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_hytera.DecodeLPReport(a_data)
+	_ = r0
+	if c_out != nil {
+		*(*g_hytera.LPReport)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_decode_lp_request
+func dmrgo_hytera_decode_lp_request(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hytera_lp_request_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_hytera.DecodeLPRequest(a_data)
+	_ = r0
+	if c_out != nil {
+		*(*g_hytera.LPRequest)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_decode_message
+func dmrgo_hytera_decode_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hytera_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_hytera.DecodeMessage(a_data)
+	_ = r0
+	if c_out != nil {
+		out_hytera_Message(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_decode_rrs_answer
+func dmrgo_hytera_decode_rrs_answer(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hytera_rrs_answer_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_hytera.DecodeRRSAnswer(a_data)
+	_ = r0
+	if c_out != nil {
+		*(*g_hytera.RRSAnswer)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_decode_rrs_check_answer
+func dmrgo_hytera_decode_rrs_check_answer(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hytera_rrs_check_answer_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_hytera.DecodeRRSCheckAnswer(a_data)
+	_ = r0
+	if c_out != nil {
+		*(*g_hytera.RRSCheckAnswer)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_decode_rrs_radio
+func dmrgo_hytera_decode_rrs_radio(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hytera_rrs_radio_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_hytera.DecodeRRSRadio(a_data)
+	_ = r0
+	if c_out != nil {
+		*(*g_hytera.RRSRadio)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_decode_tmp_answer
+func dmrgo_hytera_decode_tmp_answer(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hytera_tmp_answer_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_hytera.DecodeTMPAnswer(a_data)
+	_ = r0
+	if c_out != nil {
+		*(*g_hytera.TMPAnswer)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_decode_tmp_flags
+func dmrgo_hytera_decode_tmp_flags(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hytera_tmp_flags_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_hytera.DecodeTMPFlags(a_data)
+	_ = r0
+	if c_out != nil {
+		out_hytera_TMPFlags(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_decode_tmp_group_answer
+func dmrgo_hytera_decode_tmp_group_answer(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hytera_tmp_group_answer_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_hytera.DecodeTMPGroupAnswer(a_data)
+	_ = r0
+	if c_out != nil {
+		*(*g_hytera.TMPGroupAnswer)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_decode_tmp_message
+func dmrgo_hytera_decode_tmp_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hytera_tmp_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0, r1 := g_hytera.DecodeTMPMessage(a_data)
+	_ = r0
+	if c_out != nil {
+		out_hytera_TMPMessage(&(*c_out), &r0, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_gps_data_append_binary
+func dmrgo_hytera_gps_data_append_binary(c_self *C.dmrgo_hytera_gps_data_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.GPSData
+	x = *(*g_hytera.GPSData)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_hytera.GPSData)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_gps_data_latitude
+func dmrgo_hytera_gps_data_latitude(c_self *C.dmrgo_hytera_gps_data_t, c_out *C.double) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.GPSData
+	x = *(*g_hytera.GPSData)(unsafe.Pointer(&(*c_self)))
+	r0 := x.Latitude()
+	*(*g_hytera.GPSData)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	if c_out != nil {
+		*c_out = C.double(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_gps_data_longitude
+func dmrgo_hytera_gps_data_longitude(c_self *C.dmrgo_hytera_gps_data_t, c_out *C.double) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.GPSData
+	x = *(*g_hytera.GPSData)(unsafe.Pointer(&(*c_self)))
+	r0 := x.Longitude()
+	*(*g_hytera.GPSData)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	if c_out != nil {
+		*c_out = C.double(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_gps_data_string
+func dmrgo_hytera_gps_data_string(c_self *C.dmrgo_hytera_gps_data_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.GPSData
+	x = *(*g_hytera.GPSData)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_hytera.GPSData)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_gps_data_valid
+func dmrgo_hytera_gps_data_valid(c_self *C.dmrgo_hytera_gps_data_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.GPSData
+	x = *(*g_hytera.GPSData)(unsafe.Pointer(&(*c_self)))
+	r0 := x.Valid()
+	*(*g_hytera.GPSData)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_header_append_binary
+func dmrgo_hytera_header_append_binary(c_self *C.dmrgo_hytera_header_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.Header
+	x = in_hytera_Header(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_hytera_Header(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_header_string
+func dmrgo_hytera_header_string(c_self *C.dmrgo_hytera_header_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.Header
+	x = in_hytera_Header(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_hytera_Header(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_lp_answer_append_binary
+func dmrgo_hytera_lp_answer_append_binary(c_self *C.dmrgo_hytera_lp_answer_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.LPAnswer
+	x = *(*g_hytera.LPAnswer)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_hytera.LPAnswer)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_lp_answer_string
+func dmrgo_hytera_lp_answer_string(c_self *C.dmrgo_hytera_lp_answer_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.LPAnswer
+	x = *(*g_hytera.LPAnswer)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_hytera.LPAnswer)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_lp_emergency_append_binary
+func dmrgo_hytera_lp_emergency_append_binary(c_self *C.dmrgo_hytera_lp_emergency_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.LPEmergency
+	x = *(*g_hytera.LPEmergency)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_hytera.LPEmergency)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_lp_emergency_string
+func dmrgo_hytera_lp_emergency_string(c_self *C.dmrgo_hytera_lp_emergency_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.LPEmergency
+	x = *(*g_hytera.LPEmergency)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_hytera.LPEmergency)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_lp_report_append_binary
+func dmrgo_hytera_lp_report_append_binary(c_self *C.dmrgo_hytera_lp_report_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.LPReport
+	x = *(*g_hytera.LPReport)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_hytera.LPReport)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_lp_report_string
+func dmrgo_hytera_lp_report_string(c_self *C.dmrgo_hytera_lp_report_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.LPReport
+	x = *(*g_hytera.LPReport)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_hytera.LPReport)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_lp_request_append_binary
+func dmrgo_hytera_lp_request_append_binary(c_self *C.dmrgo_hytera_lp_request_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.LPRequest
+	x = *(*g_hytera.LPRequest)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_hytera.LPRequest)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_lp_request_string
+func dmrgo_hytera_lp_request_string(c_self *C.dmrgo_hytera_lp_request_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.LPRequest
+	x = *(*g_hytera.LPRequest)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_hytera.LPRequest)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_message_append_binary
+func dmrgo_hytera_message_append_binary(c_self *C.dmrgo_hytera_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.Message
+	x = in_hytera_Message(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_hytera_Message(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_message_checksum_ok
+func dmrgo_hytera_message_checksum_ok(c_self *C.dmrgo_hytera_message_t, c_out *C.bool, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.Message
+	x = in_hytera_Message(&(*c_self))
+	r0 := x.ChecksumOK()
+	out_hytera_Message(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_message_seal
+func dmrgo_hytera_message_seal(c_self *C.dmrgo_hytera_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.Message
+	x = in_hytera_Message(&(*c_self))
+	x.Seal()
+	out_hytera_Message(&(*c_self), &x, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_message_string
+func dmrgo_hytera_message_string(c_self *C.dmrgo_hytera_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.Message
+	x = in_hytera_Message(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_hytera_Message(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_rrs_answer_append_binary
+func dmrgo_hytera_rrs_answer_append_binary(c_self *C.dmrgo_hytera_rrs_answer_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.RRSAnswer
+	x = *(*g_hytera.RRSAnswer)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_hytera.RRSAnswer)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_rrs_answer_string
+func dmrgo_hytera_rrs_answer_string(c_self *C.dmrgo_hytera_rrs_answer_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.RRSAnswer
+	x = *(*g_hytera.RRSAnswer)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_hytera.RRSAnswer)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_rrs_check_answer_append_binary
+func dmrgo_hytera_rrs_check_answer_append_binary(c_self *C.dmrgo_hytera_rrs_check_answer_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.RRSCheckAnswer
+	x = *(*g_hytera.RRSCheckAnswer)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_hytera.RRSCheckAnswer)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_rrs_check_answer_string
+func dmrgo_hytera_rrs_check_answer_string(c_self *C.dmrgo_hytera_rrs_check_answer_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.RRSCheckAnswer
+	x = *(*g_hytera.RRSCheckAnswer)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_hytera.RRSCheckAnswer)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_rrs_radio_append_binary
+func dmrgo_hytera_rrs_radio_append_binary(c_self *C.dmrgo_hytera_rrs_radio_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.RRSRadio
+	x = *(*g_hytera.RRSRadio)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_hytera.RRSRadio)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_rrs_radio_string
+func dmrgo_hytera_rrs_radio_string(c_self *C.dmrgo_hytera_rrs_radio_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.RRSRadio
+	x = *(*g_hytera.RRSRadio)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_hytera.RRSRadio)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_service_string
+func dmrgo_hytera_service_string(c_self C.dmrgo_hytera_service_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_hytera.Service(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_tmp_answer_append_binary
+func dmrgo_hytera_tmp_answer_append_binary(c_self *C.dmrgo_hytera_tmp_answer_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.TMPAnswer
+	x = *(*g_hytera.TMPAnswer)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_hytera.TMPAnswer)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_tmp_answer_string
+func dmrgo_hytera_tmp_answer_string(c_self *C.dmrgo_hytera_tmp_answer_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.TMPAnswer
+	x = *(*g_hytera.TMPAnswer)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_hytera.TMPAnswer)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_tmp_flags_append_binary
+func dmrgo_hytera_tmp_flags_append_binary(c_self *C.dmrgo_hytera_tmp_flags_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.TMPFlags
+	x = in_hytera_TMPFlags(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_hytera_TMPFlags(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_tmp_flags_string
+func dmrgo_hytera_tmp_flags_string(c_self *C.dmrgo_hytera_tmp_flags_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.TMPFlags
+	x = in_hytera_TMPFlags(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_hytera_TMPFlags(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_tmp_group_answer_append_binary
+func dmrgo_hytera_tmp_group_answer_append_binary(c_self *C.dmrgo_hytera_tmp_group_answer_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.TMPGroupAnswer
+	x = *(*g_hytera.TMPGroupAnswer)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	*(*g_hytera.TMPGroupAnswer)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_tmp_group_answer_string
+func dmrgo_hytera_tmp_group_answer_string(c_self *C.dmrgo_hytera_tmp_group_answer_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.TMPGroupAnswer
+	x = *(*g_hytera.TMPGroupAnswer)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	*(*g_hytera.TMPGroupAnswer)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_tmp_message_append_binary
+func dmrgo_hytera_tmp_message_append_binary(c_self *C.dmrgo_hytera_tmp_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.TMPMessage
+	x = in_hytera_TMPMessage(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	out_hytera_TMPMessage(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_tmp_message_set_text_utf8
+func dmrgo_hytera_tmp_message_set_text_utf8(c_self *C.dmrgo_hytera_tmp_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_text *C.uint8_t, c_text_len C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.TMPMessage
+	x = in_hytera_TMPMessage(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_text == nil && c_text_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_text []byte
+	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
+	r0 := x.SetTextUTF8(a_dst, a_text)
+	out_hytera_TMPMessage(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_tmp_message_string
+func dmrgo_hytera_tmp_message_string(c_self *C.dmrgo_hytera_tmp_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.TMPMessage
+	x = in_hytera_TMPMessage(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_hytera_TMPMessage(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hytera_tmp_message_text_utf8
+func dmrgo_hytera_tmp_message_text_utf8(c_self *C.dmrgo_hytera_tmp_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_hytera.TMPMessage
+	x = in_hytera_TMPMessage(&(*c_self))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0 := x.TextUTF8(a_dst)
+	out_hytera_TMPMessage(&(*c_self), &x, oc)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
@@ -32011,6 +33588,14 @@ func errCode(err error) C.int {
 			return -169
 		case g_fec.ErrUncorrectable:
 			return -110
+		case g_hytera.ErrLength:
+			return -197
+		case g_hytera.ErrShort:
+			return -198
+		case g_hytera.ErrSignature:
+			return -199
+		case g_hytera.ErrText:
+			return -200
 		case g_ip.ErrChecksum:
 			return -172
 		case g_ip.ErrFragment:
@@ -32292,6 +33877,14 @@ func codeErr(code C.int) error {
 		return g_data.ErrBusy
 	case -110:
 		return g_fec.ErrUncorrectable
+	case -197:
+		return g_hytera.ErrLength
+	case -198:
+		return g_hytera.ErrShort
+	case -199:
+		return g_hytera.ErrSignature
+	case -200:
+		return g_hytera.ErrText
 	case -172:
 		return g_ip.ErrChecksum
 	case -173:
