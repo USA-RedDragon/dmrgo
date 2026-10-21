@@ -51,11 +51,6 @@ const (
 	// decoding on a PC. On audio it is Tier2 with four passes over each
 	// data burst, at about twice the compute of Tier2.
 	Tier3
-	// Tier4 is the trellis of Tier3 over a window of five symbols with 200
-	// carrier phases, the exact count for h = 0.27, in one pass and without
-	// a Tier2 receiver beside it, at about 50 times the compute of that
-	// trellis. It is for offline decoding on a PC and needs about 100 MB.
-	Tier4
 )
 
 // ETSI TS 102 361-1 clause 10.2
@@ -137,7 +132,7 @@ type Config struct {
 	MaxWrite int
 	// LookbackSlots is the number of 30 ms slots before the first SYNC it
 	// locks to that the receiver keeps and decodes: 0 means 4 for Tier1, 8
-	// for Tier2, and 16 for Tier3 and Tier4. Tier0 keeps none, and loses
+	// for Tier2, and 16 for Tier3. Tier0 keeps none, and loses
 	// the start of a stream that it enters late.
 	LookbackSlots int
 	// OnBurst, when not nil, takes each burst as the receiver recovers it,
@@ -343,7 +338,7 @@ func checkConfig(cfg *Config) (low bool, err error) {
 	if cfg.Tier == TierDefault {
 		cfg.Tier = Tier0
 	}
-	if cfg.Tier < Tier0 || cfg.Tier > Tier4 {
+	if cfg.Tier < Tier0 || cfg.Tier > Tier3 {
 		return false, &ConfigError{Field: "Tier"}
 	}
 	low = cfg.BasebandHz == iq0LowHz || cfg.BasebandHz == discRate/2

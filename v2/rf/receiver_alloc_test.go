@@ -19,7 +19,7 @@ func TestAllocsReceiver(t *testing.T) {
 	fm, env := rftx.ModulateBS(built.Slots)
 	iq := rftx.Channel(rftx.ToIQ(fm, env, 2e6, 0, 0.9), 2e6, 2.048e6, 1500, 25, 0)
 	const chunk = 1 << 14
-	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3, Tier4} {
+	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 		r := mustNew(Config{Rate: 2.048e6, Tier: tier, MaxWrite: chunk})
 		pos, bursts := 0, 0
 		n := testing.AllocsPerRun(len(iq)/chunk-2, func() {

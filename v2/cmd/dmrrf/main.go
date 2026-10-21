@@ -502,7 +502,7 @@ func runRX(args []string, std stdio) (err error) {
 	format := fs.String("format", "", formatUsage)
 	rate := fs.Float64("rate", 0, "sample rate in Hz (default from a WAV header)")
 	tune := tuningFlags(fs, "tuned frequency in Hz, for -ppm and the ppm figure", "frequency offset of the carrier from the tuned frequency in Hz, as with an offset tune (I/Q only)")
-	tier := fs.Int("tier", 3, "receiver tier 0 to 4: 0 discriminator, 1 with the soft stages, 2 coherent, 3 with the phase in the trellis state, 4 as 3 over a longer window; audio takes 0 to 2 and defaults to the rf default")
+	tier := fs.Int("tier", 3, "receiver tier 0 to 3: 0 discriminator, 1 with the soft stages, 2 coherent, 3 with the phase in the trellis state; audio defaults to the rf default")
 	ambeSpec := fs.String("ambe", "", ambeUsage)
 	pcmPath := fs.String("pcm", "", "write the decoded AMBE+2 voice as 8 kHz 16-bit little-endian PCM to this file, or - for standard output (needs -ambe)")
 	if err := fs.Parse(args); err != nil {
@@ -511,8 +511,8 @@ func runRX(args []string, std stdio) (err error) {
 	if *pcmPath != "" && *ambeSpec == "" {
 		return errors.New("-pcm needs -ambe")
 	}
-	if *tier < 0 || *tier > 4 {
-		return fmt.Errorf("-tier %d, want 0 to 4", *tier)
+	if *tier < 0 || *tier > 3 {
+		return fmt.Errorf("-tier %d, want 0 to 3", *tier)
 	}
 	w := std.out
 	if *pcmPath == "-" {

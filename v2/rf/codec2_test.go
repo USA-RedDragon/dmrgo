@@ -67,7 +67,7 @@ func TestReceiverCodec2Call(t *testing.T) {
 		tier Tier
 		half bool
 	}
-	runs := []run{{Tier0, false}, {Tier1, false}, {Tier2, false}, {Tier3, false}, {Tier4, false}, {Tier0, true}, {Tier1, true}}
+	runs := []run{{Tier0, false}, {Tier1, false}, {Tier2, false}, {Tier3, false}, {Tier0, true}, {Tier1, true}}
 	for _, late := range []bool{false, true} {
 		x, want, start := codec2Call(t, 4, late, 30)
 		for _, rn := range runs {

@@ -140,7 +140,7 @@ func discTierOptions(t Tier) options {
 		o := tier2Options(discOptions())
 		o.CohDataPasses = 4
 		return o
-	case TierDefault, Tier0, Tier4:
+	case TierDefault, Tier0:
 	}
 	return disc0Options()
 }
@@ -165,9 +165,6 @@ func tierOptions(t Tier) options {
 		o.TwoPass, o.TwoPassLevels, o.LogMAP, o.Comb, o.CombMode = true, 2, true, true, 12
 		o.HGate, o.ExactH, o.HGateMin = 0.01, true, 4
 		o.IQTuneMaxHz, o.IQCutHz, o.IQKaiser, o.IQCutAuto = iqTuneMaxHz, 6000, 6, true
-	case Tier4:
-		o.DataPasses, o.DataPrior, o.DataUnchecked = 2, 0.7, true
-		o.Coherent, o.Window, o.ExactPhase, o.BPTCOSD, o.RefinePrior, o.LLRScale = true, 2, true, true, 7, 0.35
 	}
 	return o
 }

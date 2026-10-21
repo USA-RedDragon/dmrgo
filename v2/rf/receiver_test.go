@@ -219,7 +219,7 @@ func BenchmarkReceiver(b *testing.B) {
 		b.Fatal(err)
 	}
 	x := noisyBaseband(built.Slots, 1200, 6, 3)
-	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3, Tier4} {
+	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 		b.Run(strconv.Itoa(int(tier)), func(b *testing.B) {
 			r := mustNew(Config{Rate: basebandRate, Tier: tier})
 			b.ReportAllocs()

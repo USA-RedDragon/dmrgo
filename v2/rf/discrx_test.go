@@ -112,8 +112,8 @@ func TestNewDiscConfig(t *testing.T) {
 	if _, err := NewDisc(DiscConfig{MaxWrite: -1}); err == nil {
 		t.Error("NewDisc took a negative MaxWrite")
 	}
-	if _, err := NewDisc(DiscConfig{Tier: Tier4}); err == nil {
-		t.Error("NewDisc took Tier4")
+	if _, err := NewDisc(DiscConfig{Tier: Tier3 + 1}); err == nil {
+		t.Error("NewDisc took a tier above Tier3")
 	}
 	for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
 		r, err := NewDisc(DiscConfig{Tier: tier, OnBurst: func(*Burst) {}})

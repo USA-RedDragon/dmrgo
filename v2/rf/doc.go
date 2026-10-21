@@ -22,7 +22,7 @@
 //	}
 //
 // The Tier of the Config sets the detection and its cost, from Tier0, which
-// fits a microcontroller, to Tier4, for offline decoding. New allocates every
+// fits a microcontroller, to Tier3, for offline decoding. New allocates every
 // buffer of the Receiver, and Write, WriteBaseband and Flush allocate
 // nothing. The README gives the sensitivity, compute and RAM of each tier.
 // (ETSI TS 102 361-1 clauses 6 and 10)

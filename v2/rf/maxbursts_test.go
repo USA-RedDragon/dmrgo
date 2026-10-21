@@ -63,6 +63,15 @@ func (c rxBoundCase) config() (Config, bool) {
 		o := tierOptions(c.tier)
 		o.Comb = true
 		cfg.opt = &o
+	case 4:
+		if c.tier < Tier3 || c.half {
+			return cfg, false
+		}
+		o := tierOptions(c.tier)
+		o.Comb, o.TwoPass, o.Window, o.PhaseStates = false, false, 2, 0
+		cfg.opt = &o
+	case 5, 6:
+		return cfg, false
 	case 2, 3:
 		if c.half {
 			return cfg, false
@@ -194,7 +203,7 @@ func TestReceiverMaxBursts(t *testing.T) {
 	t.Parallel()
 	s := newRxBoundSignal(t)
 	engines := map[string]int{}
-	tiers := []Tier{Tier0, Tier1, Tier2, Tier3, Tier4}
+	tiers := []Tier{Tier0, Tier1, Tier2, Tier3}
 	for i, tier := range tiers {
 		for j, c := range []rxBoundCase{
 			{baseband: true, mult: 1},
@@ -223,7 +232,7 @@ func TestReceiverMaxBursts(t *testing.T) {
 		for _, c := range []rxBoundCase{
 			{tier: Tier3, baseband: true, mult: 1, inner: inner},
 			{tier: Tier3, baseband: true, mult: 1, lookback: 2, cuts: []byte{1, 9, 30}, inner: inner},
-			{tier: Tier4, mult: 1, inner: inner, cuts: []byte{60}},
+			{tier: Tier3, mult: 1, inner: 3 + inner, cuts: []byte{60}},
 			{tier: Tier3, mult: 2, maxWrite: 999, inner: inner, cuts: []byte{3, 50}},
 		} {
 			if name, n := runRxBounds(t, s, c); name != "" {

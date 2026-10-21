@@ -332,7 +332,7 @@ func renderBlock(d data) []byte {
 		b.WriteString(" No tier allocates after it starts.")
 	}
 	b.WriteString("\n")
-	b.WriteString("- Audio tiers take FM discriminator audio, as from a radio. I/Q tiers take samples at 48 kHz from a software radio. Tier 4 is for offline decoding and is not shown.\n")
+	b.WriteString("- Audio tiers take FM discriminator audio, as from a radio. I/Q tiers take samples at 48 kHz from a software radio.\n")
 	b.WriteString("- [docs/rx](docs/rx/README.md) tells how the sweep measures and what the floors are.\n\n")
 	renderSensitivity(&b, d)
 	var rec []tier

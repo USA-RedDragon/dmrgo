@@ -44,7 +44,7 @@ func TestCaptureXPR8400GainSweep(t *testing.T) {
 	for _, c := range []struct {
 		tier rf.Tier
 		min  int
-	}{{rf.Tier0, 181}, {rf.Tier1, 220}, {rf.Tier2, 339}, {rf.Tier3, 374}, {rf.Tier4, 374}} {
+	}{{rf.Tier0, 181}, {rf.Tier1, 220}, {rf.Tier2, 339}, {rf.Tier3, 374}} {
 		var got [captureStarts]int
 		var wg sync.WaitGroup
 		for k := range got {
