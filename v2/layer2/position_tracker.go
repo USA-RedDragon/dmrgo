@@ -42,7 +42,12 @@ func (p Placement) String() string {
 // superframe, packet by packet, as voice.Receiver does: from the position
 // in the Hint, the voice SYNC of burst A, the LCSS of the EMB of bursts B
 // to F, and the sequence number of the Hint, or one step per burst without
-// one. A bridge that forwards each packet as it comes, such as IPSC to
+// one. The position in the Hint and the voice SYNC come first. After a
+// placed burst, a sequence number that follows the last one places the
+// burst over its LCSS, because a repeater sends a wrong EMB on a weak
+// signal; the LCSS places a burst only without that evidence, or where the
+// sequence number predicts a burst A that has no SYNC. A bridge that
+// forwards each packet as it comes, such as IPSC to
 // HomeBrew DMRD, calls Place for each packet of a slot, so that the voice
 // bursts that the source does not mark get a position. The zero
 // PositionTracker is ready to use. It is not safe for concurrent use.
@@ -113,8 +118,7 @@ func (t *PositionTracker) Place(raw *RawBurst, h *Hint) (lost int, p Placement) 
 	}
 	switch kind {
 	case KindVoice:
-		pos, ok, cont := rawPosition(raw, h)
-		lost, p = t.place(pos, ok, cont, h, 1)
+		lost, p = t.place(rawCue(raw, h), h, 1)
 		if p == PlacementInOrder && h.End == EndWeak {
 			t.known = false
 		}
@@ -164,21 +168,28 @@ func (t *PositionTracker) PlaceDecoded(b *Burst, h *Hint, steps int) (lost int, 
 	if t == nil || b == nil || h == nil {
 		return 0, PlacementInOrder
 	}
-	pos, ok, cont := decodedPosition(b, h)
-	return t.place(pos, ok, cont, h, steps)
+	return t.place(decodedCue(b, h), h, steps)
 }
 
-func (t *PositionTracker) place(strong int, ok, cont bool, h *Hint, steps int) (lost int, p Placement) {
+type cue struct {
+	pos   int8
+	emb   int8
+	fixed bool
+	byEMB bool
+	cont  bool
+}
+
+func (t *PositionTracker) place(c cue, h *Hint, steps int) (lost int, p Placement) {
 	gap, p := t.seqGap(h)
 	if p != PlacementInOrder {
-		h.VoiceBurst = t.behind(strong, ok, cont, gap)
+		h.VoiceBurst = t.behind(c, gap)
 		return 0, p
 	}
 	steps = max(steps, 1)
 	if gap > 0 {
 		steps = gap
 	}
-	idx := t.position(strong, ok, cont, steps, gap > 0)
+	idx := t.position(c, steps, gap > 0)
 	missedA := gap > 0 && t.known && idx == 1 && (int(t.pos)+steps)%VoiceBurstsPerSuperframe == 0
 	switch {
 	case gap > 0 && missedA:
@@ -226,80 +237,84 @@ func (t *PositionTracker) seqGap(h *Hint) (int, Placement) {
 	return 0, PlacementInOrder
 }
 
-func (t *PositionTracker) behind(strong int, ok, cont bool, back int) enums.VoiceBurstType {
-	if ok {
-		v, _ := enums.VoiceBurstAt(strong)
-		return v
+func (t *PositionTracker) behind(c cue, back int) enums.VoiceBurstType {
+	idx := -1
+	switch {
+	case c.fixed:
+		idx = int(c.pos)
+	case t.known:
+		idx = ((int(t.pos)-back)%VoiceBurstsPerSuperframe + VoiceBurstsPerSuperframe) % VoiceBurstsPerSuperframe
+	case c.byEMB:
+		idx = int(c.emb)
 	}
-	if !t.known {
-		return enums.VoiceBurstUnknown
-	}
-	idx := ((int(t.pos)-back)%VoiceBurstsPerSuperframe + VoiceBurstsPerSuperframe) % VoiceBurstsPerSuperframe
-	if idx == 0 || cont && idx != 2 && idx != 3 {
+	if idx == 0 && !c.fixed {
 		return enums.VoiceBurstUnknown
 	}
 	v, _ := enums.VoiceBurstAt(idx)
 	return v
 }
 
-func (t *PositionTracker) position(strong int, ok, cont bool, steps int, bySeq bool) int {
-	if ok {
-		return strong
-	}
-	if !t.known {
-		return -1
+func (t *PositionTracker) position(c cue, steps int, bySeq bool) int {
+	if c.fixed {
+		return int(c.pos)
 	}
 	pred := (int(t.pos) + steps) % VoiceBurstsPerSuperframe
-	if pred == 0 && bySeq {
-		pred = 1
-	}
-	if pred == 0 || cont && pred != 2 && pred != 3 {
+	switch {
+	case t.known && bySeq && pred == 0 && c.byEMB:
+		return int(c.emb)
+	case t.known && bySeq && pred == 0:
+		return 1
+	case t.known && bySeq:
+		return pred
+	case c.byEMB:
+		return int(c.emb)
+	case !t.known || pred == 0 || c.cont && pred != 2 && pred != 3:
 		return -1
 	}
 	return pred
 }
 
-func rawPosition(raw *RawBurst, h *Hint) (pos int, ok, cont bool) {
+func rawCue(raw *RawBurst, h *Hint) cue {
 	if i, ok := h.VoiceBurst.Index(); ok {
-		return i, true, false
+		return cue{pos: int8(i & 7), fixed: true}
 	}
 	s, d := raw.Sync()
 	if d <= DefaultSyncThreshold && isVoiceSync(s) {
-		return 0, true, false
+		return cue{fixed: true}
 	}
 	if d <= DefaultSyncThreshold && h.Kind != KindVoice {
-		return 0, false, false
+		return cue{}
 	}
-	return embPosition(raw.EMB())
+	return embCue(raw.EMB())
 }
 
-func decodedPosition(b *Burst, h *Hint) (pos int, ok, cont bool) {
+func decodedCue(b *Burst, h *Hint) cue {
 	if i, ok := h.VoiceBurst.Index(); ok {
-		return i, true, false
+		return cue{pos: int8(i & 7), fixed: true}
 	}
 	if b.VoiceBurst == enums.VoiceBurstA {
-		return 0, true, false
+		return cue{fixed: true}
 	}
 	if !b.HasEmbeddedSignalling() {
-		return 0, false, false
+		return cue{}
 	}
-	return embPosition(b.EmbeddedSignalling)
+	return embCue(b.EmbeddedSignalling)
 }
 
-func embPosition(emb pdu.EmbeddedSignalling) (pos int, ok, cont bool) {
+func embCue(emb pdu.EmbeddedSignalling) cue {
 	if emb.FEC.Uncorrectable {
-		return 0, false, false
+		return cue{}
 	}
 	switch emb.LCSS {
 	case enums.LCSSFirstFragment:
-		return 1, true, false
+		return cue{emb: 1, byEMB: true}
 	case enums.LCSSLastFragment:
-		return 4, true, false
+		return cue{emb: 4, byEMB: true}
 	case enums.LCSSSingleFragment:
-		return 5, true, false
+		return cue{emb: 5, byEMB: true}
 	case enums.LCSSContinuationFragment:
 	}
-	return 0, false, true
+	return cue{cont: true}
 }
 
 func nearestLost(gap, est int) int {
