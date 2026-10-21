@@ -261,6 +261,10 @@ func TestLCBytes_SetServiceOptionsRange(t *testing.T) {
 	if err := zero.SetServiceOptions(layer3.ServiceOptions{}); !errors.Is(err, pdu.ErrNoServiceOptions) {
 		t.Errorf("GPS LC: %v", err)
 	}
+	var nilLC *pdu.LCBytes
+	if err := nilLC.SetServiceOptions(layer3.ServiceOptions{}); !errors.Is(err, pdu.ErrNoServiceOptions) {
+		t.Errorf("nil LCBytes: %v", err)
+	}
 	if err := l.SetServiceOptions(layer3.ServiceOptions{IsEmergency: true}); err != nil || !soOK(l, layer3.ServiceOptions{IsEmergency: true}) {
 		t.Errorf("emergency: %v, %x", err, l)
 	}
