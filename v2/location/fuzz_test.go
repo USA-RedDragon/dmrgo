@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/hytera"
+	"github.com/USA-RedDragon/dmrgo/v2/hytera/hdap"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/appcapture"
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
@@ -24,7 +24,7 @@ func decodeSeeds(add func(sap uint8, data []byte)) {
 	add(uint8(enums.SAPUDPIPHeaderCompression), g)
 	l, _ := hex.DecodeString("00010000000fa10fa1071a22042468ace0341f4dbc778051118ecd8d118ad47b00636c0006")
 	add(uint8(enums.SAPUDPIPHeaderCompression), l)
-	m := hytera.Message{Header: hytera.Header{Service: hytera.ServiceLP}, Opcode: hytera.LPConditionReport, Payload: []byte("\x00\x00\x00\x09\x0a\x00\x00\x50" + hdapGPS)}
+	m := hdap.Message{Header: hdap.Header{Service: hdap.ServiceLP}, Opcode: hdap.LPConditionReport, Payload: []byte("\x00\x00\x00\x09\x0a\x00\x00\x50" + hdapGPS)}
 	m.Seal()
 	p, _ := m.AppendBinary(nil)
 	h, _ := ip.AppendIPv4(nil, &ip.Datagram{SourcePort: ip.PortHyteraLocation, DestinationPort: ip.PortHyteraLocation, Source: ip.RadioAddress(12, 1), Destination: ip.RadioAddress(13, 2), Payload: p})

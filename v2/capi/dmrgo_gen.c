@@ -30,14 +30,14 @@ const char *dmrgo__gen_strerror(int status) {
 		return "data.ErrBusy";
 	case -110:
 		return "fec.ErrUncorrectable";
-	case -197:
-		return "hytera.ErrLength";
-	case -198:
-		return "hytera.ErrShort";
-	case -199:
-		return "hytera.ErrSignature";
-	case -200:
-		return "hytera.ErrText";
+	case -229:
+		return "hdap.ErrLength";
+	case -230:
+		return "hdap.ErrShort";
+	case -231:
+		return "hdap.ErrSignature";
+	case -232:
+		return "hdap.ErrText";
 	case -172:
 		return "ip.ErrChecksum";
 	case -173:
@@ -164,13 +164,13 @@ const char *dmrgo__gen_strerror(int status) {
 		return "dmrd.ErrSignature";
 	case -205:
 		return "dmrd.ErrText";
-	case -206:
+	case -233:
 		return "hytera.ErrCode";
-	case -207:
+	case -197:
 		return "hytera.ErrLength";
-	case -208:
+	case -198:
 		return "hytera.ErrShort";
-	case -209:
+	case -199:
 		return "hytera.ErrSignature";
 	case -210:
 		return "ipsc.ErrCommand";

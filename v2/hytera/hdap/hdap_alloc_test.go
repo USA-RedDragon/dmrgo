@@ -1,22 +1,22 @@
 //go:build !tinygo
 
-package hytera_test
+package hdap_test
 
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/hytera"
+	"github.com/USA-RedDragon/dmrgo/v2/hytera/hdap"
 )
 
 func TestAllocs(t *testing.T) {
 	data := append([]byte{0x08, 0xa0, 0x02, 0x00, 0x32, 0, 0, 0, 7, 10, 0, 0, 80, 0, 0}, append([]byte(gps), 0xa5, 0x03)...)
 	buf := make([]byte, 0, 128)
 	n := testing.AllocsPerRun(50, func() {
-		m, err := hytera.DecodeMessage(data)
+		m, err := hdap.DecodeMessage(data)
 		if err != nil {
 			panic(err)
 		}
-		a, err := hytera.DecodeLPAnswer(m.Payload)
+		a, err := hdap.DecodeLPAnswer(m.Payload)
 		if err != nil {
 			panic(err)
 		}

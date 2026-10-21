@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/hytera"
+	"github.com/USA-RedDragon/dmrgo/v2/hytera/hdap"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/appcapture"
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
@@ -42,7 +42,7 @@ func tinyAppOps(t *testing.T) []tinyOp {
 	smsText := sms.Text{Format: sms.FormatTMS, Source: 1, Destination: 2, Body: []byte("Hello")}
 	gpsMsg := packet.Message{Header: pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{SAP: enums.SAPUDPIPHeaderCompression}}, Data: gps}
 	hdapMsg := []byte{0x11, 0x00, 0x03, 0x00, 0x04, 0x0a, 0x00, 0x00, 0x50, 0xd1, 0x03}
-	hm := tinyOK(hytera.DecodeMessage(hdapMsg))
+	hm := tinyOK(hdap.DecodeMessage(hdapMsg))
 	buf := make([]byte, 0, 256)
 	var err error
 	ops := []tinyOp{
@@ -65,8 +65,8 @@ func tinyAppOps(t *testing.T) []tinyOp {
 		{"sms.Decode", func() { _, _, err = sms.Decode(buf[:0], &smsMsg.Header, smsMsg.Data) }},
 		{"sms.AppendPacket", func() { _, err = sms.AppendPacket(buf[:0], &smsText, true, &tinySMSHeader) }},
 		{"location.Decoder.Decode", func() { _, err = tinyLocation.Decode(&gpsMsg.Header, gpsMsg.Data) }},
-		{"hytera.DecodeMessage", func() { _, err = hytera.DecodeMessage(hdapMsg) }},
-		{"hytera.Message.AppendBinary", func() { _, err = hm.AppendBinary(buf[:0]) }},
+		{"hdap.DecodeMessage", func() { _, err = hdap.DecodeMessage(hdapMsg) }},
+		{"hdap.Message.AppendBinary", func() { _, err = hm.AppendBinary(buf[:0]) }},
 	}
 	_ = err
 	return ops

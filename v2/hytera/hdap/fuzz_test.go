@@ -1,11 +1,11 @@
-package hytera_test
+package hdap_test
 
 import (
 	"bytes"
 	"errors"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/hytera"
+	"github.com/USA-RedDragon/dmrgo/v2/hytera/hdap"
 )
 
 func FuzzDecode(f *testing.F) {
@@ -20,9 +20,9 @@ func decodeSeeds(add func(data []byte)) {
 }
 
 func fuzzDecode(t *testing.T, data []byte) {
-	m, err := hytera.DecodeMessage(data)
+	m, err := hdap.DecodeMessage(data)
 	if err != nil {
-		if !errors.Is(err, hytera.ErrShort) && !errors.Is(err, hytera.ErrLength) && !errors.Is(err, hytera.ErrSignature) {
+		if !errors.Is(err, hdap.ErrShort) && !errors.Is(err, hdap.ErrLength) && !errors.Is(err, hdap.ErrSignature) {
 			t.Fatalf("DecodeMessage(%x): unexpected error %v", data, err)
 		}
 		return
@@ -32,15 +32,15 @@ func fuzzDecode(t *testing.T, data []byte) {
 		t.Fatalf("DecodeMessage(%x) encodes to %x, %v", data, out, err)
 	}
 	p := m.Payload
-	if a, err := hytera.DecodeLPAnswer(p); err == nil {
+	if a, err := hdap.DecodeLPAnswer(p); err == nil {
 		if b, err := a.AppendBinary(nil); err != nil || !bytes.Equal(b, p) {
 			t.Fatalf("LPAnswer of %x encodes to %x, %v", p, b, err)
 		}
 		_, _ = a.GPS.Latitude(), a.GPS.Longitude()
-	} else if !errors.Is(err, hytera.ErrShort) && !errors.Is(err, hytera.ErrLength) && !errors.Is(err, hytera.ErrSignature) && !errors.Is(err, hytera.ErrText) {
+	} else if !errors.Is(err, hdap.ErrShort) && !errors.Is(err, hdap.ErrLength) && !errors.Is(err, hdap.ErrSignature) && !errors.Is(err, hdap.ErrText) {
 		t.Fatalf("DecodeLPAnswer(%x): %v", p, err)
 	}
-	if tm, err := hytera.DecodeTMPMessage(p); err == nil {
+	if tm, err := hdap.DecodeTMPMessage(p); err == nil {
 		_ = tm.TextUTF8(nil)
 	}
 }

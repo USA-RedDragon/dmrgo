@@ -1,6 +1,6 @@
 //go:build tinygo
 
-package hytera_test
+package hdap_test
 
 import "testing"
 

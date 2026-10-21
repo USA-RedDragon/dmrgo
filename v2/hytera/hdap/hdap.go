@@ -1,4 +1,4 @@
-package hytera
+package hdap
 
 import (
 	"encoding/binary"
@@ -62,7 +62,7 @@ type Message struct {
 	// Header is the first octet.
 	Header Header `dmr:"frame"`
 	// Opcode is the opcode of the service.
-	Opcode uint16 `dmr:"u16"`
+	Opcode Opcode `dmr:"u16"`
 	// Payload is the payload of the opcode.
 	Payload []byte `dmr:"lv16"`
 	// Checksum covers the opcode, the length and the payload. Seal sets
@@ -74,7 +74,7 @@ type Message struct {
 
 func (m *Message) sum() uint8 {
 	var h [4]byte
-	binary.BigEndian.PutUint16(h[0:], m.Opcode)
+	binary.BigEndian.PutUint16(h[0:], uint16(m.Opcode))
 	n := len(m.Payload)
 	if n <= 0xFFFF {
 		binary.BigEndian.PutUint16(h[2:], uint16(n))
