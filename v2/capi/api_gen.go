@@ -38,6 +38,7 @@ import (
 	g_transport_dmrd "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 	g_transport_dmrd_auth "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
 	g_transport_ipsc "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
+	g_transport_ipsc_auth "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
 	g_trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
 	g_vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	g_vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
@@ -7160,12 +7161,12 @@ type h_transport_dmrd_auth_Bridge struct {
 	v *g_transport_dmrd_auth.Bridge
 }
 
-func get_transport_dmrd_auth_Bridge(p *C.dmrgo_auth_bridge_t) *h_transport_dmrd_auth_Bridge {
+func get_transport_dmrd_auth_Bridge(p *C.dmrgo_dmrd_auth_bridge_t) *h_transport_dmrd_auth_Bridge {
 	return lookup[*h_transport_dmrd_auth_Bridge](unsafe.Pointer(p))
 }
 
-func new_transport_dmrd_auth_Bridge(v *g_transport_dmrd_auth.Bridge) *C.dmrgo_auth_bridge_t {
-	return (*C.dmrgo_auth_bridge_t)(newHandle(&h_transport_dmrd_auth_Bridge{v: v}))
+func new_transport_dmrd_auth_Bridge(v *g_transport_dmrd_auth.Bridge) *C.dmrgo_dmrd_auth_bridge_t {
+	return (*C.dmrgo_dmrd_auth_bridge_t)(newHandle(&h_transport_dmrd_auth_Bridge{v: v}))
 }
 
 type h_transport_ipsc_PeerList struct {
@@ -7178,6 +7179,18 @@ func get_transport_ipsc_PeerList(p *C.dmrgo_ipsc_peer_list_t) *h_transport_ipsc_
 
 func new_transport_ipsc_PeerList(v *g_transport_ipsc.PeerList) *C.dmrgo_ipsc_peer_list_t {
 	return (*C.dmrgo_ipsc_peer_list_t)(newHandle(&h_transport_ipsc_PeerList{v: v}))
+}
+
+type h_transport_ipsc_auth_Key struct {
+	v *g_transport_ipsc_auth.Key
+}
+
+func get_transport_ipsc_auth_Key(p *C.dmrgo_ipsc_auth_key_t) *h_transport_ipsc_auth_Key {
+	return lookup[*h_transport_ipsc_auth_Key](unsafe.Pointer(p))
+}
+
+func new_transport_ipsc_auth_Key(v *g_transport_ipsc_auth.Key) *C.dmrgo_ipsc_auth_key_t {
+	return (*C.dmrgo_ipsc_auth_key_t)(newHandle(&h_transport_ipsc_auth_Key{v: v}))
 }
 
 type h_trunk_CapacityPlusFollower struct {
@@ -31108,8 +31121,8 @@ func dmrgo_dmrd_talker_alias_string(c_self *C.dmrgo_dmrd_talker_alias_t, c_out *
 	return C.DMRGO_OK
 }
 
-//export dmrgo_auth_bridge_new
-func dmrgo_auth_bridge_new(c_out **C.dmrgo_auth_bridge_t) (rc C.int) {
+//export dmrgo_dmrd_auth_bridge_new
+func dmrgo_dmrd_auth_bridge_new(c_out **C.dmrgo_dmrd_auth_bridge_t) (rc C.int) {
 	defer recoverTo(&rc)
 	if c_out == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -31118,8 +31131,8 @@ func dmrgo_auth_bridge_new(c_out **C.dmrgo_auth_bridge_t) (rc C.int) {
 	return C.DMRGO_OK
 }
 
-//export dmrgo_auth_bridge_free
-func dmrgo_auth_bridge_free(c_self *C.dmrgo_auth_bridge_t) (rc C.int) {
+//export dmrgo_dmrd_auth_bridge_free
+func dmrgo_dmrd_auth_bridge_free(c_self *C.dmrgo_dmrd_auth_bridge_t) (rc C.int) {
 	defer recoverTo(&rc)
 	if c_self == nil {
 		return C.DMRGO_OK
@@ -31129,8 +31142,8 @@ func dmrgo_auth_bridge_free(c_self *C.dmrgo_auth_bridge_t) (rc C.int) {
 	return C.DMRGO_OK
 }
 
-//export dmrgo_auth_bridge_sign
-func dmrgo_auth_bridge_sign(c_self *C.dmrgo_auth_bridge_t, c_p *C.uint8_t, c_p_len C.size_t) (rc C.int) {
+//export dmrgo_dmrd_auth_bridge_sign
+func dmrgo_dmrd_auth_bridge_sign(c_self *C.dmrgo_dmrd_auth_bridge_t, c_p *C.uint8_t, c_p_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_transport_dmrd_auth_Bridge(c_self)
@@ -31149,8 +31162,8 @@ func dmrgo_auth_bridge_sign(c_self *C.dmrgo_auth_bridge_t, c_p *C.uint8_t, c_p_l
 	return C.DMRGO_OK
 }
 
-//export dmrgo_auth_bridge_verify
-func dmrgo_auth_bridge_verify(c_self *C.dmrgo_auth_bridge_t, c_p *C.uint8_t, c_p_len C.size_t, c_out *C.bool) (rc C.int) {
+//export dmrgo_dmrd_auth_bridge_verify
+func dmrgo_dmrd_auth_bridge_verify(c_self *C.dmrgo_dmrd_auth_bridge_t, c_p *C.uint8_t, c_p_len C.size_t, c_out *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_transport_dmrd_auth_Bridge(c_self)
@@ -31170,8 +31183,8 @@ func dmrgo_auth_bridge_verify(c_self *C.dmrgo_auth_bridge_t, c_p *C.uint8_t, c_p
 	return C.DMRGO_OK
 }
 
-//export dmrgo_auth_new_bridge
-func dmrgo_auth_new_bridge(c_key *C.uint8_t, c_key_len C.size_t, c_out **C.dmrgo_auth_bridge_t) (rc C.int) {
+//export dmrgo_dmrd_auth_new_bridge
+func dmrgo_dmrd_auth_new_bridge(c_key *C.uint8_t, c_key_len C.size_t, c_out **C.dmrgo_dmrd_auth_bridge_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_key == nil && c_key_len > 0 {
@@ -31194,8 +31207,8 @@ func dmrgo_auth_new_bridge(c_key *C.uint8_t, c_key_len C.size_t, c_out **C.dmrgo
 	return C.DMRGO_OK
 }
 
-//export dmrgo_auth_token
-func dmrgo_auth_token(c_d C.dmrgo_dmrd_dialect_t, c_salt C.uint32_t, c_password *C.uint8_t, c_password_len C.size_t, c_out *C.uint8_t) (rc C.int) {
+//export dmrgo_dmrd_auth_token
+func dmrgo_dmrd_auth_token(c_d C.dmrgo_dmrd_dialect_t, c_salt C.uint32_t, c_password *C.uint8_t, c_password_len C.size_t, c_out *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_password == nil && c_password_len > 0 {
@@ -31783,6 +31796,175 @@ func dmrgo_ipsc_user_set_raw_burst(c_self *C.dmrgo_ipsc_user_t, c_raw *C.dmrgo_l
 	}
 	if r0 != nil {
 		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_auth_key_new
+func dmrgo_ipsc_auth_key_new(c_out **C.dmrgo_ipsc_auth_key_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_transport_ipsc_auth_Key(new(g_transport_ipsc_auth.Key))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_auth_key_free
+func dmrgo_ipsc_auth_key_free(c_self *C.dmrgo_ipsc_auth_key_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_transport_ipsc_auth_Key(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_auth_key_sign_need
+func dmrgo_ipsc_auth_key_sign_need(c_self *C.dmrgo_ipsc_auth_key_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_transport_ipsc_auth_Key(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_transport_ipsc_auth.TrailerLen)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_auth_key_sign
+func dmrgo_ipsc_auth_key_sign(c_self *C.dmrgo_ipsc_auth_key_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_transport_ipsc_auth_Key(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	need_items := max(0, int(g_transport_ipsc_auth.TrailerLen))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Sign(a_dst)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_auth_key_verify_need
+func dmrgo_ipsc_auth_key_verify_need(c_self *C.dmrgo_ipsc_auth_key_t, c_p *C.uint8_t, c_p_len C.size_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_transport_ipsc_auth_Key(c_self)
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	_ = h
+	_ = a_p
+	if c_items != nil {
+		*c_items = C.size_t(max(0, len(a_p)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_auth_key_verify
+func dmrgo_ipsc_auth_key_verify(c_self *C.dmrgo_ipsc_auth_key_t, c_p *C.uint8_t, c_p_len C.size_t, c_out0 *C.uint8_t, c_out0_cap C.size_t, c_out0_len *C.size_t, c_out0_need *C.size_t, c_out1 *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_transport_ipsc_auth_Key(c_self)
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = unsafe.Slice((*byte)(unsafe.Pointer(c_p)), int(c_p_len))
+	if c_out0_len == nil || (c_out0 == nil && c_out0_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	need_items := max(0, len(a_p))
+	need_arena := 0
+	_ = need_arena
+	if int(c_out0_cap)-1 < need_items {
+		if c_out0_need != nil {
+			*c_out0_need = C.size_t(0 + need_items + 1)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0, r1 := h.v.Verify(a_p)
+	_ = r0
+	_ = r1
+	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out0)), int(c_out0_cap)), c_out0_len, c_out0_need, r0, oc)
+	if c_out1 != nil {
+		*c_out1 = C.bool(r1)
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_auth_new_key
+func dmrgo_ipsc_auth_new_key(c_k *C.uint8_t, c_out **C.dmrgo_ipsc_auth_key_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_k == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_transport_ipsc_auth.NewKey(*(*[20]byte)(unsafe.Pointer(c_k)))
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_transport_ipsc_auth_Key(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_auth_parse_key
+func dmrgo_ipsc_auth_parse_key(c_s *C.char, c_s_len C.size_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_s == nil && c_s_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := g_transport_ipsc_auth.ParseKey(C.GoStringN(c_s, C.int(c_s_len)))
+	_ = r0
+	if c_out != nil {
+		*(*[20]byte)(unsafe.Pointer(&(*(*[20]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
