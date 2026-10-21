@@ -381,6 +381,7 @@ func (r *DiscReceiver) state96() uint8 {
 }
 
 //go:noinline
+//go:section .text.run96
 func (r *DiscReceiver) run96(x []int16, i0 int, in []uint32) (int, int) {
 	f, tm := &r.f, &r.tm
 	sa, sb, s0, s1, s2, s3, t := tm.sa, tm.sb, tm.s0, tm.s1, tm.s2, tm.s3, tm.t
