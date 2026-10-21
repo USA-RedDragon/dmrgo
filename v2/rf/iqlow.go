@@ -250,6 +250,7 @@ func (r *iqLowRx) fill(x []uint32) int {
 }
 
 //go:noinline
+//go:section .text.halfRun
 func (r *iqLowRx) halfRun(x []uint32) {
 	out := r.buf[r.n : int(r.n)+len(x)]
 	q, step := r.q, r.step

@@ -142,6 +142,7 @@ func cubicAt(six bool, a, b, p0, p1, p2, p3, mu float32) float32 {
 	return p1 + 0.5*mu*(p2-p0+mu*(2*p0-5*p1+4*p2-p3+mu*(3*(p1-p2)+p3-p0)))
 }
 
+//go:section .text.linearAt
 func (tm *leanTiming) linearAt(t float32) float32 {
 	switch {
 	case t >= -1:
@@ -745,6 +746,7 @@ func (r *leanCore) symbol(x, at float32) {
 	}
 }
 
+//go:section .text.pushSym
 func (r *leanCore) pushSym(x float32) {
 	pushSymAt[site1](r, x)
 }
@@ -778,6 +780,7 @@ func isiLevel(q int8, off, thr int32) int32 {
 }
 
 //go:noinline
+//go:section .text.cancelISI
 func (r *leanCore) cancelISI(base int64) {
 	k := roundBits(iqLowISI * llrStepHz / discStepHz * (1 << 16))
 	thr, off, dev := 2*r.llrDev, r.llrOff, r.llrDev*k
@@ -812,6 +815,7 @@ func (r *leanCore) searchSigns() (sym, mid bool) {
 	return r.signsMatch2(r.signs, r.midSigns)
 }
 
+//go:section .text.pushMidSign
 func (r *leanCore) pushMidSign() {
 	midSignAt[site1](r)
 }
@@ -838,6 +842,7 @@ func (r *leanCore) searchHit(sym, mid bool) {
 }
 
 //go:noinline
+//go:section .text.rawSym
 func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
 	pushSymAt[site0](r, x)
 	midSignAt[site0](r)
@@ -847,6 +852,7 @@ func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
 }
 
 //go:noinline
+//go:section .text.lockSym
 func (r *leanCore) lockSym(x, at float32) (again, mid, match bool) {
 	r.lastAt = at
 	pushSymAt[site3](r, x)
@@ -894,6 +900,7 @@ func (r *leanCore) huntSigns(at float32) (again, mid, ok bool) {
 	return again, mid, mid || sym
 }
 
+//go:section .text.huntMid
 func (r *leanCore) huntMid(at float32) bool {
 	if acqKeptAt[site0](r) > 4 {
 		r.midSigns <<= 1
@@ -975,10 +982,12 @@ func ringIdx[_ any](k int64) uint32 {
 	return (hi%leanRing*(1<<32%leanRing) + uint32(k)%leanRing) % leanRing
 }
 
+//go:section .text.sym
 func (r *leanCore) sym(k int64) float32 {
 	return float32(r.ring[ringPos(k)])*discStepHz + r.off
 }
 
+//go:section .text.syncAt
 func (r *leanCore) syncAt(end int64) (rho2 float32, src int, data bool) {
 	var mx, xx int32
 	var sr [numSources]int32
@@ -1598,6 +1607,7 @@ func (r *leanCore) rebuildSigns() {
 	}
 }
 
+//go:section .text.symLLR
 func (r *leanCore) symLLR(k int64) (int16, int16) {
 	x := int32(r.ring[ringPos(k)])*(discStepHz/llrStepHz) + r.llrOff
 	ax := x
