@@ -3607,20 +3607,20 @@ func in_mototrbo_lrrp_Report(s *C.dmrgo_lrrp_report_t) (d g_mototrbo_lrrp.Report
 	d.Success = bool(s.success)
 	d.Error = in_mototrbo_lrrp_OperationError(&s.error)
 	d.HasError = bool(s.has_error)
-	d.Circle2D = *(*g_mototrbo_lrrp.Circle2D)(unsafe.Pointer(&s.circle2_d))
-	d.HasCircle2D = bool(s.has_circle2_d)
-	d.Circle3D = *(*g_mototrbo_lrrp.Circle3D)(unsafe.Pointer(&s.circle3_d))
-	d.HasCircle3D = bool(s.has_circle3_d)
+	d.Circle2D = *(*g_mototrbo_lrrp.Circle2D)(unsafe.Pointer(&s.circle2d))
+	d.HasCircle2D = bool(s.has_circle2d)
+	d.Circle3D = *(*g_mototrbo_lrrp.Circle3D)(unsafe.Pointer(&s.circle3d))
+	d.HasCircle3D = bool(s.has_circle3d)
 	d.Direction = uint8(s.direction)
 	d.HasDirection = bool(s.has_direction)
 	d.LevelOfConfidence = uint8(s.level_of_confidence)
 	d.HasLevelOfConfidence = bool(s.has_level_of_confidence)
-	d.Point2D = *(*g_mototrbo_lrrp.Point2D)(unsafe.Pointer(&s.point2_d))
-	d.HasPoint2D = bool(s.has_point2_d)
-	d.Point3D = *(*g_mototrbo_lrrp.Point3D)(unsafe.Pointer(&s.point3_d))
-	d.HasPoint3D = bool(s.has_point3_d)
-	d.Point3DAccuracy = *(*g_mototrbo_lrrp.Point3DAccuracy)(unsafe.Pointer(&s.point3_d_accuracy))
-	d.HasPoint3DAccuracy = bool(s.has_point3_d_accuracy)
+	d.Point2D = *(*g_mototrbo_lrrp.Point2D)(unsafe.Pointer(&s.point2d))
+	d.HasPoint2D = bool(s.has_point2d)
+	d.Point3D = *(*g_mototrbo_lrrp.Point3D)(unsafe.Pointer(&s.point3d))
+	d.HasPoint3D = bool(s.has_point3d)
+	d.Point3DAccuracy = *(*g_mototrbo_lrrp.Point3DAccuracy)(unsafe.Pointer(&s.point3d_accuracy))
+	d.HasPoint3DAccuracy = bool(s.has_point3d_accuracy)
 	d.Speed = float64(s.speed)
 	d.HasSpeed = bool(s.has_speed)
 	d.VerticalSpeed = float64(s.vertical_speed)
@@ -3687,20 +3687,20 @@ func out_mototrbo_lrrp_Report(d *C.dmrgo_lrrp_report_t, s *g_mototrbo_lrrp.Repor
 	d.success = C.bool(s.Success)
 	out_mototrbo_lrrp_OperationError(&d.error, &s.Error, oc)
 	d.has_error = C.bool(s.HasError)
-	*(*g_mototrbo_lrrp.Circle2D)(unsafe.Pointer(&d.circle2_d)) = s.Circle2D
-	d.has_circle2_d = C.bool(s.HasCircle2D)
-	*(*g_mototrbo_lrrp.Circle3D)(unsafe.Pointer(&d.circle3_d)) = s.Circle3D
-	d.has_circle3_d = C.bool(s.HasCircle3D)
+	*(*g_mototrbo_lrrp.Circle2D)(unsafe.Pointer(&d.circle2d)) = s.Circle2D
+	d.has_circle2d = C.bool(s.HasCircle2D)
+	*(*g_mototrbo_lrrp.Circle3D)(unsafe.Pointer(&d.circle3d)) = s.Circle3D
+	d.has_circle3d = C.bool(s.HasCircle3D)
 	d.direction = C.uint8_t(s.Direction)
 	d.has_direction = C.bool(s.HasDirection)
 	d.level_of_confidence = C.uint8_t(s.LevelOfConfidence)
 	d.has_level_of_confidence = C.bool(s.HasLevelOfConfidence)
-	*(*g_mototrbo_lrrp.Point2D)(unsafe.Pointer(&d.point2_d)) = s.Point2D
-	d.has_point2_d = C.bool(s.HasPoint2D)
-	*(*g_mototrbo_lrrp.Point3D)(unsafe.Pointer(&d.point3_d)) = s.Point3D
-	d.has_point3_d = C.bool(s.HasPoint3D)
-	*(*g_mototrbo_lrrp.Point3DAccuracy)(unsafe.Pointer(&d.point3_d_accuracy)) = s.Point3DAccuracy
-	d.has_point3_d_accuracy = C.bool(s.HasPoint3DAccuracy)
+	*(*g_mototrbo_lrrp.Point2D)(unsafe.Pointer(&d.point2d)) = s.Point2D
+	d.has_point2d = C.bool(s.HasPoint2D)
+	*(*g_mototrbo_lrrp.Point3D)(unsafe.Pointer(&d.point3d)) = s.Point3D
+	d.has_point3d = C.bool(s.HasPoint3D)
+	*(*g_mototrbo_lrrp.Point3DAccuracy)(unsafe.Pointer(&d.point3d_accuracy)) = s.Point3DAccuracy
+	d.has_point3d_accuracy = C.bool(s.HasPoint3DAccuracy)
 	d.speed = C.double(s.Speed)
 	d.has_speed = C.bool(s.HasSpeed)
 	d.vertical_speed = C.double(s.VerticalSpeed)
@@ -4018,7 +4018,7 @@ func out_transport_hytera_Heartbeat(d *C.dmrgo_transport_hytera_heartbeat_t, s *
 	*(*[11]byte)(unsafe.Pointer(&d.reserved)) = s.Reserved
 }
 
-func out_transport_hytera_P2P(d *C.dmrgo_transport_hytera_p2_p_t, s *g_transport_hytera.P2P, oc *outc) {
+func out_transport_hytera_P2P(d *C.dmrgo_transport_hytera_p2p_t, s *g_transport_hytera.P2P, oc *outc) {
 	_ = oc
 	d.op = C.uint8_t(s.Op)
 	d.code = C.uint8_t(s.Code)
@@ -4038,7 +4038,7 @@ func in_transport_hytera_Heartbeat(s *C.dmrgo_transport_hytera_heartbeat_t) (d g
 	return
 }
 
-func in_transport_hytera_P2P(s *C.dmrgo_transport_hytera_p2_p_t) (d g_transport_hytera.P2P) {
+func in_transport_hytera_P2P(s *C.dmrgo_transport_hytera_p2p_t) (d g_transport_hytera.P2P) {
 	d.Op = uint8(s.op)
 	d.Code = uint8(s.code)
 	d.Seq = uint8(s.seq)
@@ -6963,25 +6963,25 @@ func fromC_mototrbo_ars_Response(s *C.dmrgo_ars_response_t) g_mototrbo_ars.Respo
 	return in_mototrbo_ars_Response(s)
 }
 
-func in_mototrbo_lrrp_Circle2D(s *C.dmrgo_lrrp_circle2_d_t) (d g_mototrbo_lrrp.Circle2D) {
+func in_mototrbo_lrrp_Circle2D(s *C.dmrgo_lrrp_circle2d_t) (d g_mototrbo_lrrp.Circle2D) {
 	d.Latitude = float64(s.latitude)
 	d.Longitude = float64(s.longitude)
 	d.Radius = float64(s.radius)
 	return
 }
 
-func out_mototrbo_lrrp_Circle2D(d *C.dmrgo_lrrp_circle2_d_t, s *g_mototrbo_lrrp.Circle2D, oc *outc) {
+func out_mototrbo_lrrp_Circle2D(d *C.dmrgo_lrrp_circle2d_t, s *g_mototrbo_lrrp.Circle2D, oc *outc) {
 	_ = oc
 	d.latitude = C.double(s.Latitude)
 	d.longitude = C.double(s.Longitude)
 	d.radius = C.double(s.Radius)
 }
 
-func fromC_mototrbo_lrrp_Circle2D(s *C.dmrgo_lrrp_circle2_d_t) g_mototrbo_lrrp.Circle2D {
+func fromC_mototrbo_lrrp_Circle2D(s *C.dmrgo_lrrp_circle2d_t) g_mototrbo_lrrp.Circle2D {
 	return in_mototrbo_lrrp_Circle2D(s)
 }
 
-func in_mototrbo_lrrp_Circle3D(s *C.dmrgo_lrrp_circle3_d_t) (d g_mototrbo_lrrp.Circle3D) {
+func in_mototrbo_lrrp_Circle3D(s *C.dmrgo_lrrp_circle3d_t) (d g_mototrbo_lrrp.Circle3D) {
 	d.Latitude = float64(s.latitude)
 	d.Longitude = float64(s.longitude)
 	d.Radius = float64(s.radius)
@@ -6990,7 +6990,7 @@ func in_mototrbo_lrrp_Circle3D(s *C.dmrgo_lrrp_circle3_d_t) (d g_mototrbo_lrrp.C
 	return
 }
 
-func out_mototrbo_lrrp_Circle3D(d *C.dmrgo_lrrp_circle3_d_t, s *g_mototrbo_lrrp.Circle3D, oc *outc) {
+func out_mototrbo_lrrp_Circle3D(d *C.dmrgo_lrrp_circle3d_t, s *g_mototrbo_lrrp.Circle3D, oc *outc) {
 	_ = oc
 	d.latitude = C.double(s.Latitude)
 	d.longitude = C.double(s.Longitude)
@@ -6999,7 +6999,7 @@ func out_mototrbo_lrrp_Circle3D(d *C.dmrgo_lrrp_circle3_d_t, s *g_mototrbo_lrrp.
 	d.altitude_accuracy = C.double(s.AltitudeAccuracy)
 }
 
-func fromC_mototrbo_lrrp_Circle3D(s *C.dmrgo_lrrp_circle3_d_t) g_mototrbo_lrrp.Circle3D {
+func fromC_mototrbo_lrrp_Circle3D(s *C.dmrgo_lrrp_circle3d_t) g_mototrbo_lrrp.Circle3D {
 	return in_mototrbo_lrrp_Circle3D(s)
 }
 
@@ -7011,41 +7011,41 @@ func fromC_mototrbo_lrrp_OperationError(s *C.dmrgo_lrrp_operation_error_t) g_mot
 	return in_mototrbo_lrrp_OperationError(s)
 }
 
-func in_mototrbo_lrrp_Point2D(s *C.dmrgo_lrrp_point2_d_t) (d g_mototrbo_lrrp.Point2D) {
+func in_mototrbo_lrrp_Point2D(s *C.dmrgo_lrrp_point2d_t) (d g_mototrbo_lrrp.Point2D) {
 	d.Latitude = float64(s.latitude)
 	d.Longitude = float64(s.longitude)
 	return
 }
 
-func out_mototrbo_lrrp_Point2D(d *C.dmrgo_lrrp_point2_d_t, s *g_mototrbo_lrrp.Point2D, oc *outc) {
+func out_mototrbo_lrrp_Point2D(d *C.dmrgo_lrrp_point2d_t, s *g_mototrbo_lrrp.Point2D, oc *outc) {
 	_ = oc
 	d.latitude = C.double(s.Latitude)
 	d.longitude = C.double(s.Longitude)
 }
 
-func fromC_mototrbo_lrrp_Point2D(s *C.dmrgo_lrrp_point2_d_t) g_mototrbo_lrrp.Point2D {
+func fromC_mototrbo_lrrp_Point2D(s *C.dmrgo_lrrp_point2d_t) g_mototrbo_lrrp.Point2D {
 	return in_mototrbo_lrrp_Point2D(s)
 }
 
-func in_mototrbo_lrrp_Point3D(s *C.dmrgo_lrrp_point3_d_t) (d g_mototrbo_lrrp.Point3D) {
+func in_mototrbo_lrrp_Point3D(s *C.dmrgo_lrrp_point3d_t) (d g_mototrbo_lrrp.Point3D) {
 	d.Latitude = float64(s.latitude)
 	d.Longitude = float64(s.longitude)
 	d.Altitude = float64(s.altitude)
 	return
 }
 
-func out_mototrbo_lrrp_Point3D(d *C.dmrgo_lrrp_point3_d_t, s *g_mototrbo_lrrp.Point3D, oc *outc) {
+func out_mototrbo_lrrp_Point3D(d *C.dmrgo_lrrp_point3d_t, s *g_mototrbo_lrrp.Point3D, oc *outc) {
 	_ = oc
 	d.latitude = C.double(s.Latitude)
 	d.longitude = C.double(s.Longitude)
 	d.altitude = C.double(s.Altitude)
 }
 
-func fromC_mototrbo_lrrp_Point3D(s *C.dmrgo_lrrp_point3_d_t) g_mototrbo_lrrp.Point3D {
+func fromC_mototrbo_lrrp_Point3D(s *C.dmrgo_lrrp_point3d_t) g_mototrbo_lrrp.Point3D {
 	return in_mototrbo_lrrp_Point3D(s)
 }
 
-func in_mototrbo_lrrp_Point3DAccuracy(s *C.dmrgo_lrrp_point3_d_accuracy_t) (d g_mototrbo_lrrp.Point3DAccuracy) {
+func in_mototrbo_lrrp_Point3DAccuracy(s *C.dmrgo_lrrp_point3d_accuracy_t) (d g_mototrbo_lrrp.Point3DAccuracy) {
 	d.Latitude = float64(s.latitude)
 	d.Longitude = float64(s.longitude)
 	d.Altitude = float64(s.altitude)
@@ -7053,7 +7053,7 @@ func in_mototrbo_lrrp_Point3DAccuracy(s *C.dmrgo_lrrp_point3_d_accuracy_t) (d g_
 	return
 }
 
-func out_mototrbo_lrrp_Point3DAccuracy(d *C.dmrgo_lrrp_point3_d_accuracy_t, s *g_mototrbo_lrrp.Point3DAccuracy, oc *outc) {
+func out_mototrbo_lrrp_Point3DAccuracy(d *C.dmrgo_lrrp_point3d_accuracy_t, s *g_mototrbo_lrrp.Point3DAccuracy, oc *outc) {
 	_ = oc
 	d.latitude = C.double(s.Latitude)
 	d.longitude = C.double(s.Longitude)
@@ -7061,7 +7061,7 @@ func out_mototrbo_lrrp_Point3DAccuracy(d *C.dmrgo_lrrp_point3_d_accuracy_t, s *g
 	d.altitude_accuracy = C.double(s.AltitudeAccuracy)
 }
 
-func fromC_mototrbo_lrrp_Point3DAccuracy(s *C.dmrgo_lrrp_point3_d_accuracy_t) g_mototrbo_lrrp.Point3DAccuracy {
+func fromC_mototrbo_lrrp_Point3DAccuracy(s *C.dmrgo_lrrp_point3d_accuracy_t) g_mototrbo_lrrp.Point3DAccuracy {
 	return in_mototrbo_lrrp_Point3DAccuracy(s)
 }
 
@@ -7375,7 +7375,7 @@ func fromC_transport_hytera_Heartbeat(s *C.dmrgo_transport_hytera_heartbeat_t) g
 	return in_transport_hytera_Heartbeat(s)
 }
 
-func fromC_transport_hytera_P2P(s *C.dmrgo_transport_hytera_p2_p_t) g_transport_hytera.P2P {
+func fromC_transport_hytera_P2P(s *C.dmrgo_transport_hytera_p2p_t) g_transport_hytera.P2P {
 	return in_transport_hytera_P2P(s)
 }
 
@@ -28815,8 +28815,8 @@ func dmrgo_layer3_cdef_parms_rx_frequency_hz(c_self *C.dmrgo_layer3_cdef_parms_t
 	return C.DMRGO_OK
 }
 
-//export dmrgo_layer3_cdef_parms_rx_frequency_m_hz
-func dmrgo_layer3_cdef_parms_rx_frequency_m_hz(c_self *C.dmrgo_layer3_cdef_parms_t, c_out *C.double) (rc C.int) {
+//export dmrgo_layer3_cdef_parms_rx_frequency_mhz
+func dmrgo_layer3_cdef_parms_rx_frequency_mhz(c_self *C.dmrgo_layer3_cdef_parms_t, c_out *C.double) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -28879,8 +28879,8 @@ func dmrgo_layer3_cdef_parms_tx_frequency_hz(c_self *C.dmrgo_layer3_cdef_parms_t
 	return C.DMRGO_OK
 }
 
-//export dmrgo_layer3_cdef_parms_tx_frequency_m_hz
-func dmrgo_layer3_cdef_parms_tx_frequency_m_hz(c_self *C.dmrgo_layer3_cdef_parms_t, c_out *C.double) (rc C.int) {
+//export dmrgo_layer3_cdef_parms_tx_frequency_mhz
+func dmrgo_layer3_cdef_parms_tx_frequency_mhz(c_self *C.dmrgo_layer3_cdef_parms_t, c_out *C.double) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -30238,8 +30238,8 @@ func dmrgo_ars_type_string(c_self C.dmrgo_ars_type_t, c_out *C.char, c_out_cap C
 	return C.DMRGO_OK
 }
 
-//export dmrgo_lrrp_circle2_d_append_binary
-func dmrgo_lrrp_circle2_d_append_binary(c_self *C.dmrgo_lrrp_circle2_d_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+//export dmrgo_lrrp_circle2d_append_binary
+func dmrgo_lrrp_circle2d_append_binary(c_self *C.dmrgo_lrrp_circle2d_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -30267,8 +30267,8 @@ func dmrgo_lrrp_circle2_d_append_binary(c_self *C.dmrgo_lrrp_circle2_d_t, c_dst 
 	return C.DMRGO_OK
 }
 
-//export dmrgo_lrrp_circle2_d_string
-func dmrgo_lrrp_circle2_d_string(c_self *C.dmrgo_lrrp_circle2_d_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+//export dmrgo_lrrp_circle2d_string
+func dmrgo_lrrp_circle2d_string(c_self *C.dmrgo_lrrp_circle2d_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -30289,8 +30289,8 @@ func dmrgo_lrrp_circle2_d_string(c_self *C.dmrgo_lrrp_circle2_d_t, c_out *C.char
 	return C.DMRGO_OK
 }
 
-//export dmrgo_lrrp_circle3_d_append_binary
-func dmrgo_lrrp_circle3_d_append_binary(c_self *C.dmrgo_lrrp_circle3_d_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+//export dmrgo_lrrp_circle3d_append_binary
+func dmrgo_lrrp_circle3d_append_binary(c_self *C.dmrgo_lrrp_circle3d_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -30318,8 +30318,8 @@ func dmrgo_lrrp_circle3_d_append_binary(c_self *C.dmrgo_lrrp_circle3_d_t, c_dst 
 	return C.DMRGO_OK
 }
 
-//export dmrgo_lrrp_circle3_d_string
-func dmrgo_lrrp_circle3_d_string(c_self *C.dmrgo_lrrp_circle3_d_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+//export dmrgo_lrrp_circle3d_string
+func dmrgo_lrrp_circle3d_string(c_self *C.dmrgo_lrrp_circle3d_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -30535,8 +30535,8 @@ func dmrgo_lrrp_operation_error_string(c_self *C.dmrgo_lrrp_operation_error_t, c
 	return C.DMRGO_OK
 }
 
-//export dmrgo_lrrp_point2_d_append_binary
-func dmrgo_lrrp_point2_d_append_binary(c_self *C.dmrgo_lrrp_point2_d_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+//export dmrgo_lrrp_point2d_append_binary
+func dmrgo_lrrp_point2d_append_binary(c_self *C.dmrgo_lrrp_point2d_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -30564,8 +30564,8 @@ func dmrgo_lrrp_point2_d_append_binary(c_self *C.dmrgo_lrrp_point2_d_t, c_dst *C
 	return C.DMRGO_OK
 }
 
-//export dmrgo_lrrp_point2_d_string
-func dmrgo_lrrp_point2_d_string(c_self *C.dmrgo_lrrp_point2_d_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+//export dmrgo_lrrp_point2d_string
+func dmrgo_lrrp_point2d_string(c_self *C.dmrgo_lrrp_point2d_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -30586,8 +30586,8 @@ func dmrgo_lrrp_point2_d_string(c_self *C.dmrgo_lrrp_point2_d_t, c_out *C.char, 
 	return C.DMRGO_OK
 }
 
-//export dmrgo_lrrp_point3_d_append_binary
-func dmrgo_lrrp_point3_d_append_binary(c_self *C.dmrgo_lrrp_point3_d_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+//export dmrgo_lrrp_point3d_append_binary
+func dmrgo_lrrp_point3d_append_binary(c_self *C.dmrgo_lrrp_point3d_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -30615,8 +30615,8 @@ func dmrgo_lrrp_point3_d_append_binary(c_self *C.dmrgo_lrrp_point3_d_t, c_dst *C
 	return C.DMRGO_OK
 }
 
-//export dmrgo_lrrp_point3_d_string
-func dmrgo_lrrp_point3_d_string(c_self *C.dmrgo_lrrp_point3_d_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+//export dmrgo_lrrp_point3d_string
+func dmrgo_lrrp_point3d_string(c_self *C.dmrgo_lrrp_point3d_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -30637,8 +30637,8 @@ func dmrgo_lrrp_point3_d_string(c_self *C.dmrgo_lrrp_point3_d_t, c_out *C.char, 
 	return C.DMRGO_OK
 }
 
-//export dmrgo_lrrp_point3_d_accuracy_append_binary
-func dmrgo_lrrp_point3_d_accuracy_append_binary(c_self *C.dmrgo_lrrp_point3_d_accuracy_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+//export dmrgo_lrrp_point3d_accuracy_append_binary
+func dmrgo_lrrp_point3d_accuracy_append_binary(c_self *C.dmrgo_lrrp_point3d_accuracy_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -30666,8 +30666,8 @@ func dmrgo_lrrp_point3_d_accuracy_append_binary(c_self *C.dmrgo_lrrp_point3_d_ac
 	return C.DMRGO_OK
 }
 
-//export dmrgo_lrrp_point3_d_accuracy_string
-func dmrgo_lrrp_point3_d_accuracy_string(c_self *C.dmrgo_lrrp_point3_d_accuracy_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+//export dmrgo_lrrp_point3d_accuracy_string
+func dmrgo_lrrp_point3d_accuracy_string(c_self *C.dmrgo_lrrp_point3d_accuracy_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -34302,8 +34302,8 @@ func dmrgo_transport_hytera_decode_heartbeat(c_p *C.uint8_t, c_p_len C.size_t, c
 	return C.DMRGO_OK
 }
 
-//export dmrgo_transport_hytera_decode_p2_p
-func dmrgo_transport_hytera_decode_p2_p(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_transport_hytera_p2_p_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+//export dmrgo_transport_hytera_decode_p2p
+func dmrgo_transport_hytera_decode_p2p(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_transport_hytera_p2p_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_arena_len != nil {
@@ -34454,8 +34454,8 @@ func dmrgo_transport_hytera_heartbeat_append_binary(c_self *C.dmrgo_transport_hy
 	return C.DMRGO_OK
 }
 
-//export dmrgo_transport_hytera_p2_p_append_binary
-func dmrgo_transport_hytera_p2_p_append_binary(c_self *C.dmrgo_transport_hytera_p2_p_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+//export dmrgo_transport_hytera_p2p_append_binary
+func dmrgo_transport_hytera_p2p_append_binary(c_self *C.dmrgo_transport_hytera_p2p_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -34482,8 +34482,8 @@ func dmrgo_transport_hytera_p2_p_append_binary(c_self *C.dmrgo_transport_hytera_
 	return C.DMRGO_OK
 }
 
-//export dmrgo_transport_hytera_p2_p_redirect_port
-func dmrgo_transport_hytera_p2_p_redirect_port(c_self *C.dmrgo_transport_hytera_p2_p_t, c_port *C.uint16_t, c_ok *C.bool) (rc C.int) {
+//export dmrgo_transport_hytera_p2p_redirect_port
+func dmrgo_transport_hytera_p2p_redirect_port(c_self *C.dmrgo_transport_hytera_p2p_t, c_port *C.uint16_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -34506,8 +34506,8 @@ func dmrgo_transport_hytera_p2_p_redirect_port(c_self *C.dmrgo_transport_hytera_
 	return C.DMRGO_OK
 }
 
-//export dmrgo_transport_hytera_p2_p_service
-func dmrgo_transport_hytera_p2_p_service(c_self *C.dmrgo_transport_hytera_p2_p_t, c_s *C.dmrgo_transport_hytera_service_t, c_ok *C.bool) (rc C.int) {
+//export dmrgo_transport_hytera_p2p_service
+func dmrgo_transport_hytera_p2p_service(c_self *C.dmrgo_transport_hytera_p2p_t, c_s *C.dmrgo_transport_hytera_service_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {

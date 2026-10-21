@@ -25,6 +25,12 @@ func TestSnake(t *testing.T) {
 		"TSCCOutputKind":                "tscc_output_kind",
 		"ID":                            "id",
 		"DecodeUDPIPv4CompressedHeader": "decode_udp_ipv4_compressed_header",
+		"DecodeP2P":                     "decode_p2p",
+		"Circle2D":                      "circle2d",
+		"Point3DAccuracy":               "point3d_accuracy",
+		"RxFrequencyMHz":                "rx_frequency_mhz",
+		"RxFrequencyHz":                 "rx_frequency_hz",
+		"DeviationHz":                   "deviation_hz",
 	} {
 		if got := snake(in); got != want {
 			t.Errorf("snake(%q) = %q, want %q", in, got, want)
