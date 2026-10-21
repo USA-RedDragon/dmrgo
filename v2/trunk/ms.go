@@ -105,6 +105,26 @@ type MSConfig struct {
 	// Ambient accepts Ambient Listening Service calls to the MS. Without
 	// it the MS refuses them with MSNot_Supported.
 	Ambient bool
+	// Auth, when set, makes the MS authenticate the TSCC before a stun or
+	// revive, and lets it accept a kill, which is always authenticated.
+	// Without it the MS refuses a kill as not supported. (ETSI TS 102
+	// 361-4 clauses 6.4.9.2 and 6.4.10)
+	Auth Authenticator
+	// NoStun makes the MS refuse a stun or revive as not supported.
+	NoStun bool
+	// NoKill makes the MS refuse a kill as not supported.
+	NoKill bool
+	// Stunned starts the MS stunned, for an MS that a TSCC stunned before.
+	Stunned bool
+	// Killed starts the MS killed, for an MS that a TSCC killed before.
+	Killed bool
+	// PowerSave is the PowerSave_RQ of the registrations of the MS, 0 to
+	// 7: the MS asks to be awake for one power save frame in 2^PowerSave.
+	// 0 asks for no power save. (ETSI TS 102 361-4 clause 6.4.7)
+	PowerSave uint8
+	// Awake is T_Awake, the time the MS stays awake after a PDU for it in
+	// power save. 0 means constants.TAwakeDefault.
+	Awake time.Duration
 }
 
 type raState uint8
@@ -198,6 +218,7 @@ type MS struct {
 	txAckP  pdu.AckInboundPayloadPDU
 	txMaint pdu.MaintenancePDU
 	u       msUDT
+	svc     msSvc
 	noCopy  noCopy
 }
 
@@ -225,6 +246,9 @@ func NewMS(cfg *MSConfig) (*MS, error) {
 	}
 	m.f.self = cfg.Address
 	m.u.noDuplex, m.u.ambient = cfg.NoDuplex, cfg.Ambient
+	if err := m.initSvc(cfg); err != nil {
+		return nil, err
+	}
 	if cfg.MinLevelHunt != nil {
 		m.minHunt, m.hasHunt = *cfg.MinLevelHunt, true
 	}
@@ -289,15 +313,15 @@ func (m *MS) Busy() bool {
 	return m.req != reqNone
 }
 
-// Off reports whether the MS completed PowerOff. An MS that is off
-// ignores every input until Reset.
+// Off reports whether the MS completed PowerOff or a TSCC killed it. An MS
+// that is off ignores every input until Reset, and a killed MS for good.
 func (m *MS) Off() bool {
 	return m.off
 }
 
 // Reset forgets the site, the registration, the denied list, the DGNA
-// talkgroups and any request, as after NewMS. It keeps the config and the
-// poll responses.
+// talkgroups and any request, as after NewMS. It keeps the config, the
+// poll responses, and a stun or kill.
 func (m *MS) Reset() {
 	m.f.Reset()
 	m.off, m.registered, m.ra, m.req, m.pending, m.ownCall, m.waitAnswer = false, false, raIdle, reqNone, false, false, false
@@ -306,6 +330,7 @@ func (m *MS) Reset() {
 	m.berN, m.berIdx, m.hasLevel = 0, 0, false
 	m.u.reset()
 	m.f.dyn = [MaxDynamicGroups]uint32{}
+	m.resetSvc()
 }
 
 // Call asks the TSCC for a voice call to the talkgroup or MS target, by
@@ -349,6 +374,8 @@ func (m *MS) request(now time.Duration, kind enums.ServiceKind, target uint32, f
 		return ErrNotOnControl
 	case m.req != reqNone:
 		return ErrBusy
+	case m.svc.stunned:
+		return ErrStunned
 	case target == 0 || target > 0xFFFFFF:
 		return errTarget
 	case m.f.ctl.site.Reg && !m.noReg && !m.Registered():
@@ -447,6 +474,7 @@ func (m *MS) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach 
 	n := len(dst)
 	dst = m.f.Burst(now, raw, h, cach, dst)
 	dst = m.follow(now, before, dst, n)
+	dst = m.svcBurst(now, before, &h, dst, n)
 	switch {
 	case m.f.state == StatePayload && before == StatePayload:
 		return m.payload(now, &h, dst)
@@ -492,6 +520,9 @@ func (m *MS) Deadline() (at time.Duration, ok bool) {
 	if m.off {
 		return 0, false
 	}
+	if m.svc.asleep {
+		return m.sleepDeadline()
+	}
 	at, ok = m.f.Deadline()
 	if m.ra == raWaitSlot && m.randTO > 0 {
 		at, ok = earliest(at, ok, m.raStart+m.randTO)
@@ -505,7 +536,8 @@ func (m *MS) Deadline() (at time.Duration, ok bool) {
 	if m.pending {
 		at, ok = earliest(at, ok, m.pendingEnd)
 	}
-	return m.u.deadline(at, ok)
+	at, ok = m.u.deadline(at, ok)
+	return m.svcDeadline(at, ok)
 }
 
 func earliest(at time.Duration, ok bool, t time.Duration) (time.Duration, bool) {
@@ -516,13 +548,14 @@ func earliest(at time.Duration, ok bool, t time.Duration) (time.Duration, bool) 
 }
 
 func (m *MS) answerTO() time.Duration {
-	if m.req == reqRegister || m.udtRequest() {
-		return m.regTO
+	if m.req == reqCall {
+		return m.callTO
 	}
-	return m.callTO
+	return m.regTO
 }
 
 func (m *MS) timers(now time.Duration, out []Output) []Output {
+	out = m.svcTimers(now, out)
 	n := len(out)
 	before := m.f.state
 	out = m.f.timers(now, out)
@@ -552,7 +585,8 @@ func (m *MS) timers(now time.Duration, out []Output) []Output {
 	if m.pending && now >= m.pendingEnd {
 		m.pending = false
 	}
-	return m.udtTimers(now, out)
+	out = m.udtTimers(now, out)
+	return m.svcLate(now, out)
 }
 
 func (m *MS) follow(now time.Duration, before State, out []Output, n int) []Output {
@@ -570,7 +604,7 @@ func (m *MS) follow(now time.Duration, before State, out []Output, n int) []Outp
 			}
 			if m.req == reqNone && !m.noReg && m.f.ctl.site.Reg && !m.Registered() {
 				m.kind = enums.ServiceRegistration
-				m.startAccess(now, reqRegister, constants.GatewayREGI, regOptions(), false)
+				m.startAccess(now, reqRegister, constants.GatewayREGI, m.regOptions(), false)
 			}
 		case OutputLost:
 			if m.aborts() {
@@ -607,8 +641,8 @@ func (m *MS) leaveTSCC(now time.Duration, reason Reason, out []Output) []Output 
 	return m.f.lose(now, reason, out)
 }
 
-func regOptions() uint8 {
-	v, _ := layer3.RegistrationServiceOptions{Register: true}.Field()
+func (m *MS) regOptions() uint8 {
+	v, _ := layer3.RegistrationServiceOptions{Register: true, PowerSave: m.svc.psRQ}.Field()
 	return v
 }
 

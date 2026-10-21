@@ -3398,6 +3398,13 @@ func out_layer3_ShortDataServiceOptions(d *C.dmrgo_layer3_short_data_service_opt
 	d.is_supp_data = C.bool(s.IsSuppData)
 }
 
+func out_layer3_StatusServiceOptions(d *C.dmrgo_layer3_status_service_options_t, s *g_layer3.StatusServiceOptions, oc *outc) {
+	_ = oc
+	d.group = C.bool(s.Group)
+	d.is_supp_data = C.bool(s.IsSuppData)
+	d.status_high = C.uint8_t(s.StatusHigh)
+}
+
 func out_layer3_VoiceServiceOptions(d *C.dmrgo_layer3_voice_service_options_t, s *g_layer3.VoiceServiceOptions, oc *outc) {
 	_ = oc
 	d.is_emergency = C.bool(s.IsEmergency)
@@ -3436,6 +3443,13 @@ func in_layer3_RegistrationServiceOptions(s *C.dmrgo_layer3_registration_service
 func in_layer3_ShortDataServiceOptions(s *C.dmrgo_layer3_short_data_service_options_t) (d g_layer3.ShortDataServiceOptions) {
 	d.IsPrivacy = bool(s.is_privacy)
 	d.IsSuppData = bool(s.is_supp_data)
+	return
+}
+
+func in_layer3_StatusServiceOptions(s *C.dmrgo_layer3_status_service_options_t) (d g_layer3.StatusServiceOptions) {
+	d.Group = bool(s.group)
+	d.IsSuppData = bool(s.is_supp_data)
+	d.StatusHigh = uint8(s.status_high)
 	return
 }
 
@@ -4555,6 +4569,36 @@ func in_trunk_NMEAShort(s *C.dmrgo_trunk_nmea_short_t) (d g_trunk.NMEAShort) {
 	return
 }
 
+type vt_trunk_Authenticator struct {
+	t    C.dmrgo_trunk_authenticator_vtable_t
+	m0r0 C.uint32_t
+	m0r1 C.bool
+}
+
+func (c *vt_trunk_Authenticator) Response(q0 uint32, q1 uint32) (o0 uint32, o1 bool) {
+	oc := &outc{}
+	_ = oc
+	var code C.int
+	for {
+		code = C.dmrgo_trunk_authenticator_vtable_t__response(&c.t, C.uint32_t(q0), C.uint32_t(q1), &c.m0r0, &c.m0r1)
+		break
+	}
+	_ = code
+	o0 = uint32(c.m0r0)
+	o1 = bool(c.m0r1)
+	return
+}
+
+//export dmrgo_trunk_authenticator_from_vtable
+func dmrgo_trunk_authenticator_from_vtable(c_vt *C.dmrgo_trunk_authenticator_vtable_t, c_out **C.dmrgo_trunk_authenticator_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_vt == nil || c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_trunk_Authenticator(&vt_trunk_Authenticator{t: *c_vt})
+	return C.DMRGO_OK
+}
+
 func out_trunk_Tune(d *C.dmrgo_trunk_tune_t, s *g_trunk.Tune, oc *outc) {
 	_ = oc
 	d.channel = C.uint16_t(s.Channel)
@@ -4596,6 +4640,9 @@ func out_trunk_Output(d *C.dmrgo_trunk_output_t, s *g_trunk.Output, oc *outc) {
 	d.due = C.int64_t(s.Due)
 	d.protect = C.dmrgo_enums_protect_kind_t(s.Protect)
 	d.challenge = C.uint32_t(s.Challenge)
+	d.status = C.dmrgo_trunk_status_t(s.Status)
+	d.stun = C.dmrgo_trunk_stun_action_t(s.Stun)
+	d.rc = C.dmrgo_enums_rc_command_t(s.RC)
 }
 
 func in_trunk_ConfigError(s *C.dmrgo_trunk_config_error_t) (d g_trunk.ConfigError) {
@@ -4822,6 +4869,16 @@ func in_trunk_MSConfig(s *C.dmrgo_trunk_ms_config_t, st *st_trunk_MSConfig) (d g
 	}
 	d.NoDuplex = bool(s.no_duplex)
 	d.Ambient = bool(s.ambient)
+	d.Auth = nil
+	if s.auth != nil {
+		d.Auth = get_trunk_Authenticator(s.auth).v
+	}
+	d.NoStun = bool(s.no_stun)
+	d.NoKill = bool(s.no_kill)
+	d.Stunned = bool(s.stunned)
+	d.Killed = bool(s.killed)
+	d.PowerSave = uint8(s.power_save)
+	d.Awake = time.Duration(s.awake)
 	return
 }
 
@@ -4843,6 +4900,16 @@ func in_trunk_TSCCConfig(s *C.dmrgo_trunk_tscc_config_t) (d g_trunk.TSCCConfig) 
 	d.AnswerTimeout = time.Duration(s.answer_timeout)
 	d.Authenticate = bool(s.authenticate)
 	d.Seed = uint64(s.seed)
+	d.Auth = nil
+	if s.auth != nil {
+		d.Auth = get_trunk_Authenticator(s.auth).v
+	}
+	d.TransmitInterrupt = bool(s.transmit_interrupt)
+	d.MaxCall = time.Duration(s.max_call)
+	d.PowerSave = bool(s.power_save)
+	d.Awake = time.Duration(s.awake)
+	d.IP = bool(s.ip)
+	d.Supplementary = bool(s.supplementary)
 	return
 }
 
@@ -4858,6 +4925,11 @@ func out_trunk_TSCCOutput(d *C.dmrgo_trunk_tscc_output_t, s *g_trunk.TSCCOutput,
 	out_trunk_Grant(&d.call, &s.Call, oc)
 	d.reason = C.dmrgo_trunk_reason_t(s.Reason)
 	d.challenge = C.uint32_t(s.Challenge)
+	d.status = C.dmrgo_trunk_status_t(s.Status)
+	d.stun = C.dmrgo_trunk_stun_action_t(s.Stun)
+	*(*[16]byte)(unsafe.Pointer(&d.ip)) = s.IP
+	d.ipv6 = C.bool(s.IPv6)
+	d.remove = C.bool(s.Remove)
 }
 
 func in_trunk_USBDPollRequest(s *C.dmrgo_trunk_usbd_poll_request_t) (d g_trunk.USBDPollRequest) {
@@ -6827,6 +6899,10 @@ func fromC_layer3_ShortDataServiceOptions(s *C.dmrgo_layer3_short_data_service_o
 	return in_layer3_ShortDataServiceOptions(s)
 }
 
+func fromC_layer3_StatusServiceOptions(s *C.dmrgo_layer3_status_service_options_t) g_layer3.StatusServiceOptions {
+	return in_layer3_StatusServiceOptions(s)
+}
+
 func fromC_layer3_VoiceServiceOptions(s *C.dmrgo_layer3_voice_service_options_t) g_layer3.VoiceServiceOptions {
 	return in_layer3_VoiceServiceOptions(s)
 }
@@ -7740,6 +7816,16 @@ func out_trunk_MSConfig(d *C.dmrgo_trunk_ms_config_t, s *g_trunk.MSConfig, oc *o
 	d.scratch = nil
 	d.no_duplex = C.bool(s.NoDuplex)
 	d.ambient = C.bool(s.Ambient)
+	if s.Auth != nil {
+		panic(argPanic{})
+	}
+	d.auth = nil
+	d.no_stun = C.bool(s.NoStun)
+	d.no_kill = C.bool(s.NoKill)
+	d.stunned = C.bool(s.Stunned)
+	d.killed = C.bool(s.Killed)
+	d.power_save = C.uint8_t(s.PowerSave)
+	d.awake = C.int64_t(s.Awake)
 }
 
 func fromC_trunk_MSConfig(s *C.dmrgo_trunk_ms_config_t) g_trunk.MSConfig {
@@ -7790,6 +7876,9 @@ func in_trunk_Output(s *C.dmrgo_trunk_output_t) (d g_trunk.Output) {
 	d.Due = time.Duration(s.due)
 	d.Protect = g_enums.ProtectKind(s.protect)
 	d.Challenge = uint32(s.challenge)
+	d.Status = g_trunk.Status(s.status)
+	d.Stun = g_trunk.StunAction(s.stun)
+	d.RC = g_enums.RCCommand(s.rc)
 	return
 }
 
@@ -7840,6 +7929,16 @@ func out_trunk_TSCCConfig(d *C.dmrgo_trunk_tscc_config_t, s *g_trunk.TSCCConfig,
 	d.answer_timeout = C.int64_t(s.AnswerTimeout)
 	d.authenticate = C.bool(s.Authenticate)
 	d.seed = C.uint64_t(s.Seed)
+	if s.Auth != nil {
+		panic(argPanic{})
+	}
+	d.auth = nil
+	d.transmit_interrupt = C.bool(s.TransmitInterrupt)
+	d.max_call = C.int64_t(s.MaxCall)
+	d.power_save = C.bool(s.PowerSave)
+	d.awake = C.int64_t(s.Awake)
+	d.ip = C.bool(s.IP)
+	d.supplementary = C.bool(s.Supplementary)
 }
 
 func fromC_trunk_TSCCConfig(s *C.dmrgo_trunk_tscc_config_t) g_trunk.TSCCConfig {
@@ -7857,6 +7956,11 @@ func in_trunk_TSCCOutput(s *C.dmrgo_trunk_tscc_output_t) (d g_trunk.TSCCOutput) 
 	d.Call = in_trunk_Grant(&s.call)
 	d.Reason = g_trunk.Reason(s.reason)
 	d.Challenge = uint32(s.challenge)
+	d.Status = g_trunk.Status(s.status)
+	d.Stun = g_trunk.StunAction(s.stun)
+	d.IP = *(*[16]byte)(unsafe.Pointer(&s.ip))
+	d.IPv6 = bool(s.ipv6)
+	d.Remove = bool(s.remove)
 	return
 }
 
@@ -8433,6 +8537,18 @@ func get_transport_ipsc_auth_Key(p *C.dmrgo_ipsc_auth_key_t) *h_transport_ipsc_a
 
 func new_transport_ipsc_auth_Key(v *g_transport_ipsc_auth.Key) *C.dmrgo_ipsc_auth_key_t {
 	return (*C.dmrgo_ipsc_auth_key_t)(newHandle(&h_transport_ipsc_auth_Key{v: v}))
+}
+
+type h_trunk_Authenticator struct {
+	v g_trunk.Authenticator
+}
+
+func get_trunk_Authenticator(p *C.dmrgo_trunk_authenticator_t) *h_trunk_Authenticator {
+	return lookup[*h_trunk_Authenticator](unsafe.Pointer(p))
+}
+
+func new_trunk_Authenticator(v g_trunk.Authenticator) *C.dmrgo_trunk_authenticator_t {
+	return (*C.dmrgo_trunk_authenticator_t)(newHandle(&h_trunk_Authenticator{v: v}))
 }
 
 type h_trunk_CapacityPlusFollower struct {
@@ -26742,6 +26858,25 @@ func dmrgo_pdu_raw_data_header_string(c_self *C.dmrgo_pdu_raw_data_header_t, c_o
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_reg_window_time
+func dmrgo_pdu_reg_window_time(c_w C.uint8_t, c_out0 *C.int64_t, c_out1 *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0, r1 := g_layer2_pdu.RegWindowTime(uint8(c_w))
+	_ = r0
+	_ = r1
+	if c_out0 != nil {
+		*c_out0 = C.int64_t(r0)
+	}
+	if c_out1 != nil {
+		*c_out1 = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_response_packet_header_encode
 func dmrgo_pdu_response_packet_header_encode(c_self *C.dmrgo_pdu_response_packet_header_t, c_out *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -28913,6 +29048,24 @@ func dmrgo_layer3_decode_short_data_service_options(c_data *C.uint8_t, c_out *C.
 	return C.DMRGO_OK
 }
 
+//export dmrgo_layer3_decode_status_service_options
+func dmrgo_layer3_decode_status_service_options(c_data *C.uint8_t, c_out *C.dmrgo_layer3_status_service_options_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_data == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_layer3.DecodeStatusServiceOptions(*(*[1]byte)(unsafe.Pointer(c_data)))
+	_ = r0
+	if c_out != nil {
+		out_layer3_StatusServiceOptions(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_layer3_decode_voice_service_options
 func dmrgo_layer3_decode_voice_service_options(c_data *C.uint8_t, c_out *C.dmrgo_layer3_voice_service_options_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -29315,6 +29468,75 @@ func dmrgo_layer3_source_type_string(c_self C.dmrgo_layer3_source_type_t, c_out 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := g_layer3.SourceType(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer3_status_service_options_encode
+func dmrgo_layer3_status_service_options_encode(c_self *C.dmrgo_layer3_status_service_options_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer3.StatusServiceOptions
+	x = in_layer3_StatusServiceOptions(&(*c_self))
+	r0, r1 := x.Encode()
+	out_layer3_StatusServiceOptions(&(*c_self), &x, oc)
+	_ = r0
+	if c_out != nil {
+		*(*[1]byte)(unsafe.Pointer(&(*(*[1]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer3_status_service_options_field
+func dmrgo_layer3_status_service_options_field(c_self *C.dmrgo_layer3_status_service_options_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer3.StatusServiceOptions
+	x = in_layer3_StatusServiceOptions(&(*c_self))
+	r0, r1 := x.Field()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint8_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer3_status_service_options_string
+func dmrgo_layer3_status_service_options_string(c_self *C.dmrgo_layer3_status_service_options_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer3.StatusServiceOptions
+	x = in_layer3_StatusServiceOptions(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	out_layer3_StatusServiceOptions(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -36841,6 +37063,37 @@ func dmrgo_trunk_appended_text(c_self *C.dmrgo_trunk_appended_t, c_dst *C.uint8_
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_authenticator_free
+func dmrgo_trunk_authenticator_free(c_self *C.dmrgo_trunk_authenticator_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_trunk_Authenticator(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_authenticator_response
+func dmrgo_trunk_authenticator_response(c_self *C.dmrgo_trunk_authenticator_t, c_addr C.uint32_t, c_challenge C.uint32_t, c_response *C.uint32_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_Authenticator(c_self)
+	r0, r1 := h.v.Response(uint32(c_addr), uint32(c_challenge))
+	_ = r0
+	_ = r1
+	if c_response != nil {
+		*c_response = C.uint32_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_capacity_plus_follower_new
 func dmrgo_trunk_capacity_plus_follower_new(c_out **C.dmrgo_trunk_capacity_plus_follower_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -37991,6 +38244,40 @@ func dmrgo_trunk_ms_free(c_self *C.dmrgo_trunk_ms_t) (rc C.int) {
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_ms_advise_ip
+func dmrgo_trunk_ms_advise_ip(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_ip *C.uint8_t, c_ipv6 C.bool, c_remove C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	if c_ip == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := h.v.AdviseIP(time.Duration(c_now), *(*[16]byte)(unsafe.Pointer(c_ip)), bool(c_ipv6), bool(c_remove))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_ms_asleep
+func dmrgo_trunk_ms_asleep(c_self *C.dmrgo_trunk_ms_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	r0 := h.v.Asleep()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_ms_assign_groups
 func dmrgo_trunk_ms_assign_groups(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_target C.uint32_t, c_a *C.dmrgo_trunk_appended_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -38509,6 +38796,87 @@ func dmrgo_trunk_ms_groups(c_self *C.dmrgo_trunk_ms_t, c_out *C.dmrgo_trunk_dyna
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_ms_interrupt_need
+func dmrgo_trunk_ms_interrupt_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_terminate C.bool, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_trunk_MS(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_trunk.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_ms_interrupt
+func dmrgo_trunk_ms_interrupt(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_terminate C.bool, c_dst *C.dmrgo_trunk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_trunk.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0, r1 := h.v.Interrupt(time.Duration(c_now), bool(c_terminate), a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_trunk_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_trunk_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_ms_killed
+func dmrgo_trunk_ms_killed(c_self *C.dmrgo_trunk_ms_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	r0 := h.v.Killed()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_ms_lost_need
 func dmrgo_trunk_ms_lost_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -38602,6 +38970,21 @@ func dmrgo_trunk_ms_poll_short_data(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t,
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_ms_poll_status
+func dmrgo_trunk_ms_poll_status(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_target C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	r0 := h.v.PollStatus(time.Duration(c_now), uint32(c_target))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_ms_power_off_need
 func dmrgo_trunk_ms_power_off_need(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -38661,6 +39044,22 @@ func dmrgo_trunk_ms_power_off(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_dst
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_ms_power_save_offset
+func dmrgo_trunk_ms_power_save_offset(c_self *C.dmrgo_trunk_ms_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	r0 := h.v.PowerSaveOffset()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint8_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
 	return C.DMRGO_OK
 }
 
@@ -38780,6 +39179,21 @@ func dmrgo_trunk_ms_send_short_data(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t,
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_ms_send_status
+func dmrgo_trunk_ms_send_status(c_self *C.dmrgo_trunk_ms_t, c_now C.int64_t, c_group C.bool, c_target C.uint32_t, c_s C.dmrgo_trunk_status_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	r0 := h.v.SendStatus(time.Duration(c_now), bool(c_group), uint32(c_target), g_trunk.Status(c_s))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_ms_set_poll_response
 func dmrgo_trunk_ms_set_poll_response(c_self *C.dmrgo_trunk_ms_t, c_a *C.dmrgo_trunk_appended_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -38794,6 +39208,41 @@ func dmrgo_trunk_ms_set_poll_response(c_self *C.dmrgo_trunk_ms_t, c_a *C.dmrgo_t
 	h.v.SetPollResponse(p_a)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_ms_set_status
+func dmrgo_trunk_ms_set_status(c_self *C.dmrgo_trunk_ms_t, c_s C.dmrgo_trunk_status_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	r0 := h.v.SetStatus(g_trunk.Status(c_s))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_ms_set_supplementary
+func dmrgo_trunk_ms_set_supplementary(c_self *C.dmrgo_trunk_ms_t, c_format C.uint8_t, c_data *C.uint8_t, c_data_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	if c_data == nil && c_data_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_data []byte
+	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
+	r0 := h.v.SetSupplementary(uint8(c_format), a_data)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }
@@ -38841,6 +39290,22 @@ func dmrgo_trunk_ms_state(c_self *C.dmrgo_trunk_ms_t, c_out *C.dmrgo_trunk_state
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_trunk_state_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_ms_stunned
+func dmrgo_trunk_ms_stunned(c_self *C.dmrgo_trunk_ms_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_MS(c_self)
+	r0 := h.v.Stunned()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -39184,6 +39649,22 @@ func dmrgo_trunk_state_string(c_self C.dmrgo_trunk_state_t, c_out *C.char, c_out
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_stun_action_string
+func dmrgo_trunk_stun_action_string(c_self C.dmrgo_trunk_stun_action_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_trunk.StunAction(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_tscc_new
 func dmrgo_trunk_tscc_new(c_out **C.dmrgo_trunk_tscc_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -39355,6 +39836,51 @@ func dmrgo_trunk_tscc_inbound(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_c
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_tscc_interrupt
+func dmrgo_trunk_tscc_interrupt(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_ch C.uint16_t, c_s C.dmrgo_enums_slot_t, c_cmd C.dmrgo_enums_rc_command_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_TSCC(c_self)
+	r0 := h.v.Interrupt(time.Duration(c_now), uint16(c_ch), g_enums.Slot(c_s), g_enums.RCCommand(c_cmd))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_tscc_kill
+func dmrgo_trunk_tscc_kill(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_addr C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_TSCC(c_self)
+	r0 := h.v.Kill(time.Duration(c_now), uint32(c_addr))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_tscc_mass_register
+func dmrgo_trunk_tscc_mass_register(c_self *C.dmrgo_trunk_tscc_t, c_window C.uint8_t, c_mask C.uint8_t, c_addr C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_TSCC(c_self)
+	r0 := h.v.MassRegister(uint8(c_window), uint8(c_mask), uint32(c_addr))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_tscc_max_outputs
 func dmrgo_trunk_tscc_max_outputs(c_self *C.dmrgo_trunk_tscc_t, c_out *C.int64_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -39429,6 +39955,36 @@ func dmrgo_trunk_tscc_send_short_data(c_self *C.dmrgo_trunk_tscc_t, c_now C.int6
 		p_a = &a_a
 	}
 	r0 := h.v.SendShortData(time.Duration(c_now), bool(c_group), uint32(c_target), p_a)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_tscc_send_status
+func dmrgo_trunk_tscc_send_status(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_group C.bool, c_target C.uint32_t, c_source C.uint32_t, c_s C.dmrgo_trunk_status_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_TSCC(c_self)
+	r0 := h.v.SendStatus(time.Duration(c_now), bool(c_group), uint32(c_target), uint32(c_source), g_trunk.Status(c_s))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_tscc_stun
+func dmrgo_trunk_tscc_stun(c_self *C.dmrgo_trunk_tscc_t, c_now C.int64_t, c_addr C.uint32_t, c_revive C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_TSCC(c_self)
+	r0 := h.v.Stun(time.Duration(c_now), uint32(c_addr), bool(c_revive))
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -43140,12 +43696,16 @@ func errCode(err error) C.int {
 			return -134
 		case g_trunk.ErrChannelNumber:
 			return -135
+		case g_trunk.ErrNoCall:
+			return -219
 		case g_trunk.ErrNotOnControl:
 			return -136
 		case g_trunk.ErrNotRegistered:
 			return -137
 		case g_trunk.ErrPlanFull:
 			return -138
+		case g_trunk.ErrStunned:
+			return -220
 		case g_trunk.ErrUDTCharacter:
 			return -216
 		case g_trunk.ErrUDTFormat:
@@ -43465,12 +44025,16 @@ func codeErr(code C.int) error {
 		return g_trunk.ErrBusy
 	case -135:
 		return g_trunk.ErrChannelNumber
+	case -219:
+		return g_trunk.ErrNoCall
 	case -136:
 		return g_trunk.ErrNotOnControl
 	case -137:
 		return g_trunk.ErrNotRegistered
 	case -138:
 		return g_trunk.ErrPlanFull
+	case -220:
+		return g_trunk.ErrStunned
 	case -216:
 		return g_trunk.ErrUDTCharacter
 	case -217:

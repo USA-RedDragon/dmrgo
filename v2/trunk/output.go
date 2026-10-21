@@ -74,6 +74,23 @@ const (
 	// Service call of Output.Grant: it transmits without an action of its
 	// user until it ends the call at T_ALS or T_ALS_E.
 	OutputAmbient
+	// OutputStatus reports a status in Output.Status: a status call to the
+	// MS or to one of its talkgroups, with the parties in Output.Grant, or
+	// the answer to a status poll of the MS, from Output.Grant.Source.
+	OutputStatus
+	// OutputAccepted reports that the TSCC accepted a request of the MS
+	// that needs no payload channel, such as a status call, a transmit
+	// interrupt or an IP connection advice. Output.Ack holds the reason.
+	OutputAccepted
+	// OutputStun reports that the TSCC stunned, revived or killed the MS,
+	// with the action in Output.Stun.
+	OutputStun
+	// OutputReverseChannel reports the RC command in Output.RC on the
+	// payload channel of the MS. An MS that transmits obeys it.
+	OutputReverseChannel
+	// OutputSleep reports that the MS may switch its receiver off until
+	// Output.Due, its next power save frame.
+	OutputSleep
 )
 
 // String returns the name of the OutputKind.
@@ -113,6 +130,16 @@ func (k OutputKind) String() string {
 		return "Groups"
 	case OutputAmbient:
 		return "Ambient"
+	case OutputStatus:
+		return "Status"
+	case OutputAccepted:
+		return "Accepted"
+	case OutputStun:
+		return "Stun"
+	case OutputReverseChannel:
+		return "ReverseChannel"
+	case OutputSleep:
+		return "Sleep"
 	}
 	return unknownName
 }
@@ -163,6 +190,15 @@ const (
 	// ReasonDiverted is a request that the TSCC answered with the diverted
 	// address of the called party in a UDT, which UDT returns.
 	ReasonDiverted
+	// ReasonInterrupt is a transmit interrupt: the MS left the payload
+	// channel to ask for it, or the TSCC stopped the transmission of the
+	// call.
+	ReasonInterrupt
+	// ReasonCallTimer is the end of the longest call time of a TSCC.
+	ReasonCallTimer
+	// ReasonAuthentication is a failed authentication: no key for the MS,
+	// or a response that the MS refused.
+	ReasonAuthentication
 )
 
 // String returns the name of the Reason.
@@ -200,6 +236,12 @@ func (r Reason) String() string {
 		return "Parked"
 	case ReasonDiverted:
 		return "Diverted"
+	case ReasonInterrupt:
+		return "Interrupt"
+	case ReasonCallTimer:
+		return "CallTimer"
+	case ReasonAuthentication:
+		return "Authentication"
 	}
 	return unknownName
 }
@@ -299,6 +341,12 @@ type Output struct {
 	Protect enums.ProtectKind
 	// Challenge is the 24-bit challenge of OutputAuthChallenge.
 	Challenge uint32
+	// Status is the status of OutputStatus.
+	Status Status
+	// Stun is the action of OutputStun.
+	Stun StunAction
+	// RC is the command of OutputReverseChannel.
+	RC enums.RCCommand
 }
 
 // State is the state of a Follower or an MS.

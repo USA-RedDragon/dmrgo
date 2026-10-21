@@ -117,6 +117,8 @@ code DMRGO_ERR_MMDVM_SHORT -215
 code DMRGO_ERR_TRUNK_UDT_CHARACTER -216
 code DMRGO_ERR_TRUNK_UDT_FORMAT -217
 code DMRGO_ERR_TRUNK_UDT_LENGTH -218
+code DMRGO_ERR_TRUNK_NO_CALL -219
+code DMRGO_ERR_TRUNK_STUNNED -220
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CGAP_CONTINUATION 2
 tag dmrgo_layer2_data_t DMRGO_LAYER2_DATA_PDU_CSBK 3
@@ -582,6 +584,10 @@ sym #define DMRGO_ENUMS_PROTECT_ENABLE_PTT_ONE_MS ((dmrgo_enums_protect_kind_t)3
 sym #define DMRGO_ENUMS_PROTECT_ILLEGALLY_PARKED ((dmrgo_enums_protect_kind_t)2)
 sym #define DMRGO_ENUMS_RC_CEASE_TRANSMISSION_COMMAND ((dmrgo_enums_rc_command_t)4)
 sym #define DMRGO_ENUMS_RC_CEASE_TRANSMISSION_REQUEST ((dmrgo_enums_rc_command_t)5)
+sym #define DMRGO_ENUMS_RC_DECREASE_POWER ((dmrgo_enums_rc_command_t)1)
+sym #define DMRGO_ENUMS_RC_HIGHEST_POWER ((dmrgo_enums_rc_command_t)2)
+sym #define DMRGO_ENUMS_RC_INCREASE_POWER ((dmrgo_enums_rc_command_t)0)
+sym #define DMRGO_ENUMS_RC_LOWEST_POWER ((dmrgo_enums_rc_command_t)3)
 sym #define DMRGO_ENUMS_REASON_AUTH_RESPONSE_MS ((dmrgo_enums_ack_reason_t)72)
 sym #define DMRGO_ENUMS_REASON_AUTH_RESPONSE_TS ((dmrgo_enums_ack_reason_t)100)
 sym #define DMRGO_ENUMS_REASON_CALLED_GROUP_NOT_ALLOWED ((dmrgo_enums_ack_reason_t)47)
@@ -797,7 +803,9 @@ sym #define DMRGO_ERR_TRUNK_CHANNEL_NUMBER (-135)
 sym #define DMRGO_ERR_TRUNK_CONFIG_ERROR (-105)
 sym #define DMRGO_ERR_TRUNK_NOT_ON_CONTROL (-136)
 sym #define DMRGO_ERR_TRUNK_NOT_REGISTERED (-137)
+sym #define DMRGO_ERR_TRUNK_NO_CALL (-219)
 sym #define DMRGO_ERR_TRUNK_PLAN_FULL (-138)
+sym #define DMRGO_ERR_TRUNK_STUNNED (-220)
 sym #define DMRGO_ERR_TRUNK_UDT_CHARACTER (-216)
 sym #define DMRGO_ERR_TRUNK_UDT_FORMAT (-217)
 sym #define DMRGO_ERR_TRUNK_UDT_LENGTH (-218)
@@ -1177,16 +1185,19 @@ sym #define DMRGO_TRUNK_MAX_NEIGHBORS 8
 sym #define DMRGO_TRUNK_MAX_OUTPUTS 10
 sym #define DMRGO_TRUNK_MAX_PAYLOAD_CHANNELS 16
 sym #define DMRGO_TRUNK_MAX_RULES 4
+sym #define DMRGO_TRUNK_MAX_SUPPLEMENTARY 46
 sym #define DMRGO_TRUNK_MAX_TALKGROUPS 32
 sym #define DMRGO_TRUNK_MS_AUTH_RESPONSE_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_MS_BURST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_MS_CANCEL_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_MS_END_CALL_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_MS_GROUP_ALIAS_MAX_ITEMS (63)
+sym #define DMRGO_TRUNK_MS_INTERRUPT_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_MS_LOST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_MS_POWER_OFF_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_MS_QUALITY_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_MS_TICK_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
+sym #define DMRGO_TRUNK_OUTPUT_ACCEPTED ((dmrgo_trunk_output_kind_t)19)
 sym #define DMRGO_TRUNK_OUTPUT_AHOY ((dmrgo_trunk_output_kind_t)9)
 sym #define DMRGO_TRUNK_OUTPUT_AMBIENT ((dmrgo_trunk_output_kind_t)17)
 sym #define DMRGO_TRUNK_OUTPUT_AUTH_CHALLENGE ((dmrgo_trunk_output_kind_t)13)
@@ -1201,15 +1212,22 @@ sym #define DMRGO_TRUNK_OUTPUT_POWER_OFF ((dmrgo_trunk_output_kind_t)12)
 sym #define DMRGO_TRUNK_OUTPUT_PROTECT ((dmrgo_trunk_output_kind_t)11)
 sym #define DMRGO_TRUNK_OUTPUT_REFUSED ((dmrgo_trunk_output_kind_t)8)
 sym #define DMRGO_TRUNK_OUTPUT_REGISTERED ((dmrgo_trunk_output_kind_t)7)
+sym #define DMRGO_TRUNK_OUTPUT_REVERSE_CHANNEL ((dmrgo_trunk_output_kind_t)21)
 sym #define DMRGO_TRUNK_OUTPUT_SITE ((dmrgo_trunk_output_kind_t)2)
+sym #define DMRGO_TRUNK_OUTPUT_SLEEP ((dmrgo_trunk_output_kind_t)22)
+sym #define DMRGO_TRUNK_OUTPUT_STATUS ((dmrgo_trunk_output_kind_t)18)
+sym #define DMRGO_TRUNK_OUTPUT_STUN ((dmrgo_trunk_output_kind_t)20)
 sym #define DMRGO_TRUNK_OUTPUT_TUNE ((dmrgo_trunk_output_kind_t)1)
 sym #define DMRGO_TRUNK_OUTPUT_UDT ((dmrgo_trunk_output_kind_t)10)
+sym #define DMRGO_TRUNK_REASON_AUTHENTICATION ((dmrgo_trunk_reason_t)18)
+sym #define DMRGO_TRUNK_REASON_CALL_TIMER ((dmrgo_trunk_reason_t)17)
 sym #define DMRGO_TRUNK_REASON_CANCELLED ((dmrgo_trunk_reason_t)10)
 sym #define DMRGO_TRUNK_REASON_CLEAR ((dmrgo_trunk_reason_t)3)
 sym #define DMRGO_TRUNK_REASON_DENIED ((dmrgo_trunk_reason_t)13)
 sym #define DMRGO_TRUNK_REASON_DIVERTED ((dmrgo_trunk_reason_t)15)
 sym #define DMRGO_TRUNK_REASON_HANGTIME ((dmrgo_trunk_reason_t)5)
 sym #define DMRGO_TRUNK_REASON_INACTIVE ((dmrgo_trunk_reason_t)4)
+sym #define DMRGO_TRUNK_REASON_INTERRUPT ((dmrgo_trunk_reason_t)16)
 sym #define DMRGO_TRUNK_REASON_MAINTENANCE ((dmrgo_trunk_reason_t)6)
 sym #define DMRGO_TRUNK_REASON_MOVE ((dmrgo_trunk_reason_t)11)
 sym #define DMRGO_TRUNK_REASON_NACK ((dmrgo_trunk_reason_t)7)
@@ -1223,6 +1241,15 @@ sym #define DMRGO_TRUNK_REASON_TIMEOUT ((dmrgo_trunk_reason_t)9)
 sym #define DMRGO_TRUNK_STATE_CONTROL ((dmrgo_trunk_state_t)1)
 sym #define DMRGO_TRUNK_STATE_HUNTING ((dmrgo_trunk_state_t)0)
 sym #define DMRGO_TRUNK_STATE_PAYLOAD ((dmrgo_trunk_state_t)2)
+sym #define DMRGO_TRUNK_STATUS_CANCEL_EMERGENCY ((dmrgo_trunk_status_t)124)
+sym #define DMRGO_TRUNK_STATUS_EMERGENCY ((dmrgo_trunk_status_t)126)
+sym #define DMRGO_TRUNK_STATUS_INTERRUPT ((dmrgo_trunk_status_t)125)
+sym #define DMRGO_TRUNK_STATUS_POLL ((dmrgo_trunk_status_t)127)
+sym #define DMRGO_TRUNK_STATUS_TERMINATE ((dmrgo_trunk_status_t)123)
+sym #define DMRGO_TRUNK_STUN_KILL ((dmrgo_trunk_stun_action_t)3)
+sym #define DMRGO_TRUNK_STUN_NONE ((dmrgo_trunk_stun_action_t)0)
+sym #define DMRGO_TRUNK_STUN_REVIVE ((dmrgo_trunk_stun_action_t)2)
+sym #define DMRGO_TRUNK_STUN_STUN ((dmrgo_trunk_stun_action_t)1)
 sym #define DMRGO_TRUNK_TSCCUDT ((dmrgo_trunk_tscc_output_kind_t)9)
 sym #define DMRGO_TRUNK_TSCCUSBD ((dmrgo_trunk_tscc_output_kind_t)10)
 sym #define DMRGO_TRUNK_TSCC_AUTH_CHALLENGE ((dmrgo_trunk_tscc_output_kind_t)7)
@@ -1232,8 +1259,12 @@ sym #define DMRGO_TRUNK_TSCC_CALL_START ((dmrgo_trunk_tscc_output_kind_t)4)
 sym #define DMRGO_TRUNK_TSCC_DELIVERED ((dmrgo_trunk_tscc_output_kind_t)8)
 sym #define DMRGO_TRUNK_TSCC_DEREGISTERED ((dmrgo_trunk_tscc_output_kind_t)3)
 sym #define DMRGO_TRUNK_TSCC_DIVERSION ((dmrgo_trunk_tscc_output_kind_t)11)
+sym #define DMRGO_TRUNK_TSCC_INTERRUPT ((dmrgo_trunk_tscc_output_kind_t)14)
+sym #define DMRGO_TRUNK_TSCC_IP_ADVICE ((dmrgo_trunk_tscc_output_kind_t)15)
 sym #define DMRGO_TRUNK_TSCC_REFUSED ((dmrgo_trunk_tscc_output_kind_t)6)
 sym #define DMRGO_TRUNK_TSCC_REGISTERED ((dmrgo_trunk_tscc_output_kind_t)2)
+sym #define DMRGO_TRUNK_TSCC_STATUS ((dmrgo_trunk_tscc_output_kind_t)12)
+sym #define DMRGO_TRUNK_TSCC_STUN ((dmrgo_trunk_tscc_output_kind_t)13)
 sym #define DMRGO_VOCODER_MAX_CODECS 8
 sym #define DMRGO_VOICE_DEFAULT_HOLDOFF_MAX 1000000000
 sym #define DMRGO_VOICE_DEFAULT_IDLE_SEARCH 540000000
@@ -1968,6 +1999,7 @@ sym int dmrgo_layer3_decode_polling_service_options(const uint8_t data[1], dmrgo
 sym int dmrgo_layer3_decode_registration_service_options(const uint8_t data[1], dmrgo_layer3_registration_service_options_t *out);
 sym int dmrgo_layer3_decode_service_options(const uint8_t data[1], dmrgo_layer3_service_options_t *out);
 sym int dmrgo_layer3_decode_short_data_service_options(const uint8_t data[1], dmrgo_layer3_short_data_service_options_t *out);
+sym int dmrgo_layer3_decode_status_service_options(const uint8_t data[1], dmrgo_layer3_status_service_options_t *out);
 sym int dmrgo_layer3_decode_voice_service_options(const uint8_t data[1], dmrgo_layer3_voice_service_options_t *out);
 sym int dmrgo_layer3_diversion_service_options_encode(dmrgo_layer3_diversion_service_options_t *self, uint8_t out[1]);
 sym int dmrgo_layer3_diversion_service_options_field(const dmrgo_layer3_diversion_service_options_t *self, uint8_t *out);
@@ -1987,6 +2019,9 @@ sym int dmrgo_layer3_short_data_service_options_encode(dmrgo_layer3_short_data_s
 sym int dmrgo_layer3_short_data_service_options_field(const dmrgo_layer3_short_data_service_options_t *self, uint8_t *out);
 sym int dmrgo_layer3_short_data_service_options_string(dmrgo_layer3_short_data_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_layer3_source_type_string(dmrgo_layer3_source_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_layer3_status_service_options_encode(dmrgo_layer3_status_service_options_t *self, uint8_t out[1]);
+sym int dmrgo_layer3_status_service_options_field(const dmrgo_layer3_status_service_options_t *self, uint8_t *out);
+sym int dmrgo_layer3_status_service_options_string(dmrgo_layer3_status_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_layer3_talker_alias_data_format_string(dmrgo_layer3_talker_alias_data_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_layer3_voice_service_options_encode(dmrgo_layer3_voice_service_options_t *self, uint8_t out[1]);
 sym int dmrgo_layer3_voice_service_options_field(const dmrgo_layer3_voice_service_options_t *self, uint8_t *out);
@@ -2412,6 +2447,7 @@ sym int dmrgo_pdu_rate34_data_set_confirmed(dmrgo_pdu_rate34_data_t *self, uint8
 sym int dmrgo_pdu_rate34_data_string(dmrgo_pdu_rate34_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_pdu_raw_data_header_encode(dmrgo_pdu_raw_data_header_t *self, uint8_t out[10]);
 sym int dmrgo_pdu_raw_data_header_string(dmrgo_pdu_raw_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_pdu_reg_window_time(uint8_t w, int64_t *out0, bool *out1);
 sym int dmrgo_pdu_response_packet_header_encode(dmrgo_pdu_response_packet_header_t *self, uint8_t out[10]);
 sym int dmrgo_pdu_response_packet_header_string(dmrgo_pdu_response_packet_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_pdu_reverse_channel_encode(dmrgo_pdu_reverse_channel_t *self, uint8_t out[2]);
@@ -2564,6 +2600,9 @@ sym int dmrgo_trunk_appended_set_nmea_short(dmrgo_trunk_appended_t *self, const 
 sym int dmrgo_trunk_appended_set_text(dmrgo_trunk_appended_t *self, dmrgo_enums_udt_format_t f, const uint8_t *text, size_t text_len);
 sym int dmrgo_trunk_appended_text(dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_trunk_auth_response(uint32_t challenge, const uint8_t key[16], uint32_t psn, uint32_t *out);
+sym int dmrgo_trunk_authenticator_free(dmrgo_trunk_authenticator_t *self);
+sym int dmrgo_trunk_authenticator_from_vtable(const dmrgo_trunk_authenticator_vtable_t *vt, dmrgo_trunk_authenticator_t **out);
+sym int dmrgo_trunk_authenticator_response(dmrgo_trunk_authenticator_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
 sym int dmrgo_trunk_capacity_plus_follower_burst(dmrgo_trunk_capacity_plus_follower_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const dmrgo_layer2_cach_t *cach, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_trunk_capacity_plus_follower_burst_need(dmrgo_trunk_capacity_plus_follower_t *self, int64_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const dmrgo_layer2_cach_t *cach, size_t *items, size_t *arena);
 sym int dmrgo_trunk_capacity_plus_follower_call(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_trunk_grant_t *g, bool *ok);
@@ -2618,6 +2657,8 @@ sym int dmrgo_trunk_hunt_list_new(dmrgo_trunk_hunt_list_t **out);
 sym int dmrgo_trunk_hunt_list_withdraw(dmrgo_trunk_hunt_list_t *self, uint16_t channel, bool *out);
 sym int dmrgo_trunk_lip_short_report_encode(dmrgo_trunk_lip_short_report_t *self, uint8_t out[10]);
 sym int dmrgo_trunk_lip_short_report_string(dmrgo_trunk_lip_short_report_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_trunk_ms_advise_ip(dmrgo_trunk_ms_t *self, int64_t now, const uint8_t ip[16], bool ipv6, bool remove);
+sym int dmrgo_trunk_ms_asleep(dmrgo_trunk_ms_t *self, bool *out);
 sym int dmrgo_trunk_ms_assign_groups(dmrgo_trunk_ms_t *self, int64_t now, uint32_t target, const dmrgo_trunk_appended_t *a);
 sym int dmrgo_trunk_ms_auth_response(dmrgo_trunk_ms_t *self, int64_t now, uint32_t response, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_trunk_ms_auth_response_need(dmrgo_trunk_ms_t *self, int64_t now, uint32_t response, size_t *items, size_t *arena);
@@ -2639,22 +2680,31 @@ sym int dmrgo_trunk_ms_free(dmrgo_trunk_ms_t *self);
 sym int dmrgo_trunk_ms_group_alias(dmrgo_trunk_ms_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, uint32_t tg);
 sym int dmrgo_trunk_ms_group_alias_need(dmrgo_trunk_ms_t *self, uint32_t tg, size_t *items, size_t *arena);
 sym int dmrgo_trunk_ms_groups(dmrgo_trunk_ms_t *self, dmrgo_trunk_dynamic_groups_t *out);
+sym int dmrgo_trunk_ms_interrupt(dmrgo_trunk_ms_t *self, int64_t now, bool terminate, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_trunk_ms_interrupt_need(dmrgo_trunk_ms_t *self, int64_t now, bool terminate, size_t *items, size_t *arena);
+sym int dmrgo_trunk_ms_killed(dmrgo_trunk_ms_t *self, bool *out);
 sym int dmrgo_trunk_ms_lost(dmrgo_trunk_ms_t *self, int64_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_trunk_ms_lost_need(dmrgo_trunk_ms_t *self, int64_t now, size_t *items, size_t *arena);
 sym int dmrgo_trunk_ms_new(dmrgo_trunk_ms_t **out);
 sym int dmrgo_trunk_ms_off(dmrgo_trunk_ms_t *self, bool *out);
 sym int dmrgo_trunk_ms_poll_short_data(dmrgo_trunk_ms_t *self, int64_t now, uint32_t target, dmrgo_enums_udt_format_t f, int64_t blocks);
+sym int dmrgo_trunk_ms_poll_status(dmrgo_trunk_ms_t *self, int64_t now, uint32_t target);
 sym int dmrgo_trunk_ms_power_off(dmrgo_trunk_ms_t *self, int64_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_trunk_ms_power_off_need(dmrgo_trunk_ms_t *self, int64_t now, size_t *items, size_t *arena);
+sym int dmrgo_trunk_ms_power_save_offset(dmrgo_trunk_ms_t *self, uint8_t *out);
 sym int dmrgo_trunk_ms_quality(dmrgo_trunk_ms_t *self, int64_t now, int64_t level, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_trunk_ms_quality_need(dmrgo_trunk_ms_t *self, int64_t now, int64_t level, size_t *items, size_t *arena);
 sym int dmrgo_trunk_ms_registered(dmrgo_trunk_ms_t *self, bool *out);
 sym int dmrgo_trunk_ms_reset(dmrgo_trunk_ms_t *self);
 sym int dmrgo_trunk_ms_send_short_data(dmrgo_trunk_ms_t *self, int64_t now, bool group, uint32_t target, const dmrgo_trunk_appended_t *a, const dmrgo_layer3_short_data_service_options_t *opts);
+sym int dmrgo_trunk_ms_send_status(dmrgo_trunk_ms_t *self, int64_t now, bool group, uint32_t target, dmrgo_trunk_status_t s);
 sym int dmrgo_trunk_ms_set_poll_response(dmrgo_trunk_ms_t *self, const dmrgo_trunk_appended_t *a);
+sym int dmrgo_trunk_ms_set_status(dmrgo_trunk_ms_t *self, dmrgo_trunk_status_t s);
+sym int dmrgo_trunk_ms_set_supplementary(dmrgo_trunk_ms_t *self, uint8_t format, const uint8_t *data, size_t data_len);
 sym int dmrgo_trunk_ms_set_usbd_response(dmrgo_trunk_ms_t *self, const dmrgo_pdu_unified_single_block_data_t *p);
 sym int dmrgo_trunk_ms_site(dmrgo_trunk_ms_t *self, dmrgo_trunk_site_t *out);
 sym int dmrgo_trunk_ms_state(dmrgo_trunk_ms_t *self, dmrgo_trunk_state_t *out);
+sym int dmrgo_trunk_ms_stunned(dmrgo_trunk_ms_t *self, bool *out);
 sym int dmrgo_trunk_ms_tick(dmrgo_trunk_ms_t *self, int64_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_trunk_ms_tick_need(dmrgo_trunk_ms_t *self, int64_t now, size_t *items, size_t *arena);
 sym int dmrgo_trunk_ms_udt(dmrgo_trunk_ms_t *self, dmrgo_trunk_udt_t **out);
@@ -2669,6 +2719,7 @@ sym int dmrgo_trunk_nmea_short_string(dmrgo_trunk_nmea_short_t *self, char *out,
 sym int dmrgo_trunk_output_kind_string(dmrgo_trunk_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_trunk_reason_string(dmrgo_trunk_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_trunk_state_string(dmrgo_trunk_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_trunk_stun_action_string(dmrgo_trunk_stun_action_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_trunk_tscc_assign_groups(dmrgo_trunk_tscc_t *self, int64_t now, uint32_t target, const dmrgo_trunk_appended_t *a);
 sym int dmrgo_trunk_tscc_deadline(dmrgo_trunk_tscc_t *self, int64_t *at, bool *ok);
 sym int dmrgo_trunk_tscc_diverted(dmrgo_trunk_tscc_t *self, uint32_t addr, dmrgo_layer3_diversion_service_options_t *opts, dmrgo_trunk_appended_t *to, bool *ok);
@@ -2676,6 +2727,9 @@ sym int dmrgo_trunk_tscc_expect_auth(dmrgo_trunk_tscc_t *self, uint32_t addr, ui
 sym int dmrgo_trunk_tscc_free(dmrgo_trunk_tscc_t *self);
 sym int dmrgo_trunk_tscc_inbound(dmrgo_trunk_tscc_t *self, int64_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_trunk_tscc_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_trunk_tscc_inbound_need(dmrgo_trunk_tscc_t *self, int64_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+sym int dmrgo_trunk_tscc_interrupt(dmrgo_trunk_tscc_t *self, int64_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_enums_rc_command_t cmd);
+sym int dmrgo_trunk_tscc_kill(dmrgo_trunk_tscc_t *self, int64_t now, uint32_t addr);
+sym int dmrgo_trunk_tscc_mass_register(dmrgo_trunk_tscc_t *self, uint8_t window, uint8_t mask, uint32_t addr);
 sym int dmrgo_trunk_tscc_max_outputs(dmrgo_trunk_tscc_t *self, int64_t *out);
 sym int dmrgo_trunk_tscc_new(dmrgo_trunk_tscc_t **out);
 sym int dmrgo_trunk_tscc_output_kind_string(dmrgo_trunk_tscc_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -2683,6 +2737,8 @@ sym int dmrgo_trunk_tscc_poll_short_data(dmrgo_trunk_tscc_t *self, int64_t now, 
 sym int dmrgo_trunk_tscc_poll_usbd(dmrgo_trunk_tscc_t *self, int64_t now, uint32_t target, dmrgo_pdu_service_type_t st, uint8_t rd);
 sym int dmrgo_trunk_tscc_registered(dmrgo_trunk_tscc_t *self, uint32_t addr, bool *out);
 sym int dmrgo_trunk_tscc_send_short_data(dmrgo_trunk_tscc_t *self, int64_t now, bool group, uint32_t target, const dmrgo_trunk_appended_t *a);
+sym int dmrgo_trunk_tscc_send_status(dmrgo_trunk_tscc_t *self, int64_t now, bool group, uint32_t target, uint32_t source, dmrgo_trunk_status_t s);
+sym int dmrgo_trunk_tscc_stun(dmrgo_trunk_tscc_t *self, int64_t now, uint32_t addr, bool revive);
 sym int dmrgo_trunk_tscc_tick(dmrgo_trunk_tscc_t *self, int64_t now, dmrgo_trunk_tscc_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_trunk_tscc_tick_need(dmrgo_trunk_tscc_t *self, int64_t now, size_t *items, size_t *arena);
 sym int dmrgo_trunk_tscc_udt(dmrgo_trunk_tscc_t *self, dmrgo_trunk_udt_t **out);
@@ -2898,6 +2954,8 @@ sym typedef uint8_t dmrgo_transport_hytera_service_t;
 sym typedef uint8_t dmrgo_trunk_output_kind_t;
 sym typedef uint8_t dmrgo_trunk_reason_t;
 sym typedef uint8_t dmrgo_trunk_state_t;
+sym typedef uint8_t dmrgo_trunk_status_t;
+sym typedef uint8_t dmrgo_trunk_stun_action_t;
 sym typedef uint8_t dmrgo_trunk_tscc_output_kind_t;
 sym typedef uint8_t dmrgo_voice_end_reason_t;
 sym typedef uint8_t dmrgo_voice_event_kind_t;
@@ -2999,6 +3057,7 @@ type struct dmrgo_layer3_polling_service_options_t { bool is_privacy; dmrgo_enum
 type struct dmrgo_layer3_registration_service_options_t { bool reserved; bool is_privacy; bool ip_inform; uint8_t power_save; bool register_; };
 type struct dmrgo_layer3_service_options_t { bool is_emergency; bool is_privacy; uint8_t reserved; bool is_broadcast; bool is_open_voice_call_mode; uint8_t priority_level; };
 type struct dmrgo_layer3_short_data_service_options_t { bool is_privacy; bool is_supp_data; };
+type struct dmrgo_layer3_status_service_options_t { bool group; bool is_supp_data; uint8_t status_high; };
 type struct dmrgo_layer3_voice_service_options_t { bool is_emergency; bool is_privacy; bool is_supp_data; bool is_broadcast; bool reserved; uint8_t priority_level; };
 type struct dmrgo_location_fix_t { dmrgo_location_format_t format; uint32_t source; uint32_t destination; bool valid; double latitude; double longitude; double altitude; bool has_altitude; double radius; bool has_radius; double speed; bool has_speed; double course; bool has_course; uint16_t year; uint8_t month; uint8_t day; uint8_t hour; uint8_t minute; uint8_t second; bool has_time; };
 type struct dmrgo_lrrp_circle2_d_t { double latitude; double longitude; double radius; };
@@ -3137,6 +3196,7 @@ type struct dmrgo_transport_hytera_p2_p_t { uint8_t op; uint8_t code; uint8_t se
 type struct dmrgo_trunk_access_t { uint8_t mask; uint32_t address; dmrgo_enums_service_function_t function; dmrgo_enums_n_rand_wait_t n_rand_wait; dmrgo_enums_backoff_t backoff; };
 type struct dmrgo_trunk_address_list_t { bool one_key; uint32_t addresses[15]; int64_t len; };
 type struct dmrgo_trunk_appended_t { dmrgo_enums_udt_format_t format; uint8_t pad_nibble; int64_t blocks; uint8_t data[46]; };
+type struct dmrgo_trunk_authenticator_vtable_t { uintptr_t user; int (*response)(uintptr_t user, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok); };
 type struct dmrgo_trunk_capacity_plus_config_t { dmrgo_trunk_channel_plan_t *plan; uint32_t talkgroups[32]; int64_t talkgroups_len; bool individual; bool no_follow; int64_t no_signal; int64_t inactive; int64_t hangtime; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_trunk_channel_rule_t { uint16_t first; uint16_t last; uint64_t rx_hz; uint64_t step_hz; int64_t tx_offset_hz; };
 type struct dmrgo_trunk_channel_t { uint16_t number; uint64_t rx_hz; uint64_t tx_hz; };
@@ -3146,14 +3206,14 @@ type struct dmrgo_trunk_follower_config_t { bool has_sys_code; dmrgo_pdu_sys_cod
 type struct dmrgo_trunk_grant_t { dmrgo_pdu_csbk_opcode_t opcode; dmrgo_enums_service_kind_t service; bool group; uint32_t target; uint32_t source; uint16_t channel; dmrgo_enums_slot_t slot; uint64_t rx_hz; uint64_t tx_hz; dmrgo_enums_color_code_t color_code; bool has_color_code; bool emergency; bool late_entry; bool offset; bool hi_rate; };
 type struct dmrgo_trunk_hunt_entry_t { uint16_t channel; dmrgo_enums_color_code_t color_code; bool has_color_code; };
 type struct dmrgo_trunk_lip_short_report_t { uint8_t pdu_type; uint8_t time_elapsed; double longitude; double latitude; dmrgo_layer3_position_error_t position_error; uint8_t velocity; uint8_t direction; bool additional_type; uint8_t additional_data; };
-type struct dmrgo_trunk_ms_config_t { uint32_t address; uint32_t talkgroups[32]; int64_t talkgroups_len; bool has_sys_code; dmrgo_pdu_sys_code_t sys_code; uint16_t hunt[64]; int64_t hunt_len; dmrgo_trunk_channel_plan_t *plan; dmrgo_enums_slot_t slot; uint64_t seed; bool no_registration; int64_t random_timeout; int64_t call_timeout; int64_t reg_timeout; int64_t pending; int64_t dereg; int64_t denied_life; int64_t dmrla; bool has_min_level_hunt; int64_t min_level_hunt; bool has_min_level_idle; int64_t min_level_idle; int64_t max_ber_permille; bool accept_ras; int64_t no_signal; int64_t inactive; int64_t hangtime; dmrgo_layer2_burst_t *scratch; bool no_duplex; bool ambient; };
+type struct dmrgo_trunk_ms_config_t { uint32_t address; uint32_t talkgroups[32]; int64_t talkgroups_len; bool has_sys_code; dmrgo_pdu_sys_code_t sys_code; uint16_t hunt[64]; int64_t hunt_len; dmrgo_trunk_channel_plan_t *plan; dmrgo_enums_slot_t slot; uint64_t seed; bool no_registration; int64_t random_timeout; int64_t call_timeout; int64_t reg_timeout; int64_t pending; int64_t dereg; int64_t denied_life; int64_t dmrla; bool has_min_level_hunt; int64_t min_level_hunt; bool has_min_level_idle; int64_t min_level_idle; int64_t max_ber_permille; bool accept_ras; int64_t no_signal; int64_t inactive; int64_t hangtime; dmrgo_layer2_burst_t *scratch; bool no_duplex; bool ambient; dmrgo_trunk_authenticator_t *auth; bool no_stun; bool no_kill; bool stunned; bool killed; uint8_t power_save; int64_t awake; };
 type struct dmrgo_trunk_neighbor_t { uint16_t sys_code14; uint16_t channel; bool has_active_conn; bool active_conn; uint8_t confirmed_priority; uint8_t adjacent_priority; };
 type struct dmrgo_trunk_nmea_long_t { bool encrypted; bool north; bool east; bool fix; uint8_t speed; uint8_t lat_degrees; uint8_t lat_minutes; uint16_t lat_fraction; uint8_t lon_degrees; uint8_t lon_minutes; uint16_t lon_fraction; uint8_t hours; uint8_t minutes; uint8_t seconds; uint8_t spare1; uint8_t mfid; uint8_t spare2; uint16_t course; uint64_t spare3; };
 type struct dmrgo_trunk_nmea_short_t { bool encrypted; bool north; bool east; bool fix; uint8_t speed; uint8_t lat_degrees; uint8_t lat_minutes; uint16_t lat_fraction; uint8_t lon_degrees; uint8_t lon_minutes; uint16_t lon_fraction; uint8_t hours; uint8_t minutes; uint8_t ten_seconds; };
-type struct dmrgo_trunk_output_t { dmrgo_trunk_output_kind_t kind; dmrgo_trunk_tune_t tune; dmrgo_trunk_grant_t grant; dmrgo_trunk_reason_t reason; dmrgo_enums_ack_reason_t ack; dmrgo_layer2_raw_burst_t burst; dmrgo_enums_slot_t slot; int64_t due; dmrgo_enums_protect_kind_t protect; uint32_t challenge; };
+type struct dmrgo_trunk_output_t { dmrgo_trunk_output_kind_t kind; dmrgo_trunk_tune_t tune; dmrgo_trunk_grant_t grant; dmrgo_trunk_reason_t reason; dmrgo_enums_ack_reason_t ack; dmrgo_layer2_raw_burst_t burst; dmrgo_enums_slot_t slot; int64_t due; dmrgo_enums_protect_kind_t protect; uint32_t challenge; dmrgo_trunk_status_t status; dmrgo_trunk_stun_action_t stun; dmrgo_enums_rc_command_t rc; };
 type struct dmrgo_trunk_site_t { dmrgo_pdu_sys_code_t sys_code; bool has_sys_code; dmrgo_enums_color_code_t color_code; uint16_t channel; bool reg; uint8_t version; bool offset; bool active_conn; bool site_ts_sync; dmrgo_trunk_access_t access; bool has_access; uint16_t slot_counter; dmrgo_trunk_neighbor_t neighbors[8]; int64_t neighbors_len; };
-type struct dmrgo_trunk_tscc_config_t { dmrgo_pdu_sys_code_t sys_code; dmrgo_enums_color_code_t color_code; uint16_t channel; uint16_t payload[16]; int64_t payload_len; bool reg; int64_t max_registrations; dmrgo_enums_n_rand_wait_t n_rand_wait; dmrgo_enums_backoff_t backoff; int64_t grant_repeats; int64_t clear_repeats; int64_t late_entry; int64_t hangtime; int64_t inactive; int64_t answer_timeout; bool authenticate; uint64_t seed; };
-type struct dmrgo_trunk_tscc_output_t { dmrgo_trunk_tscc_output_kind_t kind; uint16_t channel; dmrgo_enums_slot_t slot; uint8_t cach[3]; dmrgo_layer2_raw_burst_t burst; uint32_t address; dmrgo_enums_ack_reason_t ack; dmrgo_trunk_grant_t call; dmrgo_trunk_reason_t reason; uint32_t challenge; };
+type struct dmrgo_trunk_tscc_config_t { dmrgo_pdu_sys_code_t sys_code; dmrgo_enums_color_code_t color_code; uint16_t channel; uint16_t payload[16]; int64_t payload_len; bool reg; int64_t max_registrations; dmrgo_enums_n_rand_wait_t n_rand_wait; dmrgo_enums_backoff_t backoff; int64_t grant_repeats; int64_t clear_repeats; int64_t late_entry; int64_t hangtime; int64_t inactive; int64_t answer_timeout; bool authenticate; uint64_t seed; dmrgo_trunk_authenticator_t *auth; bool transmit_interrupt; int64_t max_call; bool power_save; int64_t awake; bool ip; bool supplementary; };
+type struct dmrgo_trunk_tscc_output_t { dmrgo_trunk_tscc_output_kind_t kind; uint16_t channel; dmrgo_enums_slot_t slot; uint8_t cach[3]; dmrgo_layer2_raw_burst_t burst; uint32_t address; dmrgo_enums_ack_reason_t ack; dmrgo_trunk_grant_t call; dmrgo_trunk_reason_t reason; uint32_t challenge; dmrgo_trunk_status_t status; dmrgo_trunk_stun_action_t stun; uint8_t ip[16]; bool ipv6; bool remove; };
 type struct dmrgo_trunk_tune_t { uint16_t channel; dmrgo_enums_slot_t slot; uint64_t rx_hz; uint64_t tx_hz; dmrgo_enums_color_code_t color_code; bool has_color_code; };
 type struct dmrgo_trunk_usbd_poll_request_t { uint8_t response_delay; bool payload_contents; bool reserved; uint64_t parameters; uint32_t target; };
 type struct dmrgo_trunk_usbdlip_response_t { uint8_t time_elapsed; double longitude; double latitude; dmrgo_layer3_position_error_t position_error; uint8_t velocity; uint8_t direction; uint8_t reason; uint8_t hashed_source; };

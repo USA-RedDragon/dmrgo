@@ -184,12 +184,16 @@ const char *dmrgo__gen_strerror(int status) {
 		return "trunk.ErrBusy";
 	case -135:
 		return "trunk.ErrChannelNumber";
+	case -219:
+		return "trunk.ErrNoCall";
 	case -136:
 		return "trunk.ErrNotOnControl";
 	case -137:
 		return "trunk.ErrNotRegistered";
 	case -138:
 		return "trunk.ErrPlanFull";
+	case -220:
+		return "trunk.ErrStunned";
 	case -216:
 		return "trunk.ErrUDTCharacter";
 	case -217:

@@ -150,10 +150,10 @@ The table lists every place where the library can allocate. [v2/internal/allocga
 | What may allocate | When | Functions |
 | --- | --- | ---: |
 | The initialization of a package-level variable, such as a lookup table or a joined sentinel error | Once, when the program starts. | 2 |
-| A String, GoString or Error method | When the text is built, for a person to read. | 265 |
+| A String, GoString or Error method | When the text is built, for a person to read. | 266 |
 | A function of internal/text, which formats the values of String and Error methods | When the text is built, for a person to read. | 7 |
 | An exported package-level New function | Once, at construction: it allocates what it returns, sized up front. | 34 |
-| An exported function or method that takes a slice dst and returns a slice of the same type | Only to grow dst when dst has no room. The caller sizes dst. A machine built from other machines may also pass each of them an unexported field sliced to [:0] that its New makes with capacity MaxX of that machine's package, whose fuzz test checks that bound. | 222 |
+| An exported function or method that takes a slice dst and returns a slice of the same type | Only to grow dst when dst has no room. The caller sizes dst. A machine built from other machines may also pass each of them an unexported field sliced to [:0] that its New makes with capacity MaxX of that machine's package, whose fuzz test checks that bound. | 223 |
 | An exported X with an exported twin AppendX or XInto that does not allocate | X allocates the slice, string or struct it returns; the twin writes into storage of the caller. | 22 |
 | An exported X whose whole body is return Twin(nil, its parameters), where Twin allocates only to grow dst | X allocates the slice it returns; Twin with room in dst does not. | 3 |
 | A type assertion or type switch to an interface type, and a goroutine that blocks | Once for each call site and dynamic type, as the runtime fills the cache of the assertion or switch, and when no sudog is free for a goroutine that blocks on a mutex or a channel. The runtime keeps both. | 4 |
@@ -248,12 +248,12 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | Metric | Count |
 | --- | --- |
 | Total sections | 232 |
-| Verified (tests pass) | 187 |
+| Verified (tests pass) | 197 |
 | Failing (tests fail) | 0 |
 | Untested (has source, no tests) | 3 |
-| Unimplemented | 42 |
+| Unimplemented | 32 |
 
-**Overall: 187/232 verified (80.6%)**
+**Overall: 197/232 verified (84.9%)**
 
 ### ETSI TS 102 361-1: Air Interface Protocol
 
@@ -412,7 +412,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 
 ### ETSI TS 102 361-4: DMR Trunking Protocol
 
-98 sections: 58 verified, 0 failing, 3 untested, 37 unimplemented.
+98 sections: 68 verified, 0 failing, 3 untested, 27 unimplemented.
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
@@ -430,17 +430,17 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 6.4.4.1.7 | Registration Demand Received During Random Access Registration | unimplemented | - | - |
 | 6.4.4.1.11 | Registration with MS Authentication | unimplemented | - | - |
 | 6.4.4.1.13 | Talkgroup Subscription and Talkgroup Attachment | unimplemented | - | - |
-| 6.4.5 | Mass Re-registration | unimplemented | - | - |
+| 6.4.5 | Mass Re-registration | verified | 5/5 passed | `v2/trunk/ms_services.go`, `v2/trunk/tscc_services.go`, `v2/layer2/pdu/broadcast_massreg.go` |
 | 6.4.6 | De-registration | verified | 1/1 passed | `v2/trunk/ms.go` |
-| 6.4.7 | Power Save | unimplemented | - | - |
+| 6.4.7 | Power Save | verified | 2/2 passed | `v2/trunk/ms_services.go`, `v2/trunk/tscc_services.go` |
 | 6.4.8 | Authentication Procedures | verified | 9/9 passed | `v2/trunk/auth/auth.go`, `v2/trunk/ms_access.go`, `v2/trunk/tscc.go` |
-| 6.4.9 | MS Stun/Revive | unimplemented | - | - |
-| 6.4.10 | MS Kill | unimplemented | - | - |
-| 6.4.11 | IP Connection Advice | unimplemented | - | - |
+| 6.4.9 | MS Stun/Revive | verified | 3/3 passed | `v2/trunk/ms_services.go`, `v2/trunk/tscc_services.go`, `v2/trunk/services.go` |
+| 6.4.10 | MS Kill | verified | 2/2 passed | `v2/trunk/ms_services.go`, `v2/trunk/tscc_services.go`, `v2/trunk/services.go` |
+| 6.4.11 | IP Connection Advice | verified | 1/1 passed | `v2/trunk/ms_services.go`, `v2/trunk/tscc_services.go` |
 | 6.4.12 | Unsolicited MS Radio Check | verified | 2/2 passed | `v2/trunk/ms_access.go` |
-| 6.4.13 | Supplementary_User Data Service | unimplemented | - | - |
-| 6.4.14 | MS Power Control and MS De-key | unimplemented | - | - |
-| 6.4.15 | Transmit Interrupt for MS De-key | unimplemented | - | - |
+| 6.4.13 | Supplementary_User Data Service | verified | 2/2 passed | `v2/trunk/ms_services.go`, `v2/trunk/tscc_services.go` |
+| 6.4.14 | MS Power Control and MS De-key | verified | 5/5 passed | `v2/trunk/ms_services.go`, `v2/trunk/tscc_services.go`, `v2/enums/rc_command.go` |
+| 6.4.15 | Transmit Interrupt for MS De-key | verified | 2/2 passed | `v2/trunk/ms_services.go`, `v2/trunk/tscc_services.go` |
 | 6.5.1.0 | Format of the Appended Data | unimplemented | - | - |
 | 6.5.1.1 | UDT Block Structure | verified | 2/2 passed | `v2/trunk/control.go` |
 | 6.5.1.2 | UDT Content for Services Carried on the Outbound Channel | verified | 2/2 passed | `v2/trunk/control.go`, `v2/trunk/follower.go` |
@@ -476,7 +476,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 6.6.3.3.2 | MS Procedures for the Packet Data Payload Channel | untested | - | `v2/trunk/ms_access.go` |
 | 6.6.4 | UDT Short Data Message Procedure | verified | 4/4 passed | `v2/trunk/tscc_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/control.go` |
 | 6.6.5 | UDT Short Data Polling Service | verified | 3/3 passed | `v2/trunk/tscc_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go` |
-| 6.6.6 | Status Call Service | unimplemented | - | - |
+| 6.6.6 | Status Call Service | verified | 3/3 passed | `v2/trunk/ms_services.go`, `v2/trunk/tscc_services.go`, `v2/trunk/services.go`, `v2/layer3/status_options.go` |
 | 6.6.7 | Call Diversion | verified | 4/4 passed | `v2/trunk/tscc_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/layer3/udt_service_options.go` |
 | 6.6.8 | Dynamic Group Numbering Assignment Service | verified | 2/2 passed | `v2/trunk/tscc_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/follower.go`, `v2/trunk/control.go` |
 | 6.6.9 | Full-Duplex MS to MS Voice Call Procedures | verified | 2/2 passed | `v2/trunk/tscc_udt.go`, `v2/trunk/tscc.go`, `v2/trunk/ms_udt.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/trunk/follower.go` |
@@ -489,7 +489,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 7.2.9 | Digits | unimplemented | - | - |
 | 7.2.13.3 | Service_Options for a Call Diversion Service Request | verified | 1/1 passed | `v2/layer3/udt_service_options.go` |
 | 7.2.13.5 | Service_Options for an Include Call Service Request | unimplemented | - | - |
-| 7.2.13.6 | Service_Options for a Status Transport Request | unimplemented | - | - |
+| 7.2.13.6 | Service_Options for a Status Transport Request | verified | 1/1 passed | `v2/layer3/status_options.go` |
 | 7.2.13.7 | Service_Options for the UDT Short Data Service | verified | 1/1 passed | `v2/layer3/udt_service_options.go` |
 | 7.2.13.8 | Service Options for the Supplementary Data Service | unimplemented | - | - |
 | 7.2.13.9 | Service Options for a UDT Short Data Polling Request | verified | 1/1 passed | `v2/layer3/udt_service_options.go` |

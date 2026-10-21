@@ -77,11 +77,10 @@ type tsccUDT struct {
 	downI    int
 	downSlot enums.Slot
 	downAck  bool
+	downHold bool
 
 	hdr  pdu.UDTHeader
 	dh   pdu.DataHeader
-	ahoy pdu.AhoyPDU
-	ack  pdu.AckOutboundPDU
 	poll pdu.UnifiedSingleBlockData
 	dxv  pdu.DuplexPrivateVoiceGrantPDU
 	dxd  pdu.DuplexPrivateDataGrantPDU
@@ -131,7 +130,7 @@ func (t *TSCC) SendShortData(now time.Duration, group bool, target uint32, a *Ap
 	if !t.addOp(op) {
 		return ErrBusy
 	}
-	t.download(a, target, constants.GatewaySDMI, group, false, pdu.UDTOpcodeOutboundHeader, enums.Slot1)
+	t.download(a, target, constants.GatewaySDMI, group, false, !group, pdu.UDTOpcodeOutboundHeader, enums.Slot1)
 	if group {
 		t.dropOp(target)
 	}
@@ -159,7 +158,7 @@ func (t *TSCC) AssignGroups(now time.Duration, target uint32, a *Appended) error
 	if !t.addOp(udtOp{kind: opGatewayData, stage: stAck, caller: constants.GatewayDGNAI, called: target, until: now + t.cfg.AnswerTimeout}) {
 		return ErrBusy
 	}
-	t.download(a, target, constants.GatewayDGNAI, false, false, pdu.UDTOpcodeDGNAOutboundHeader, enums.Slot1)
+	t.download(a, target, constants.GatewayDGNAI, false, false, true, pdu.UDTOpcodeDGNAOutboundHeader, enums.Slot1)
 	return nil
 }
 
@@ -180,7 +179,7 @@ func (t *TSCC) PollShortData(now time.Duration, target uint32, blocks int) error
 		return ErrBusy
 	}
 	t.sendAhoy(pdu.AhoyPDU{AppendedBlocks: uab(blocks), ServiceKind: uint8(enums.ServiceShortDataPolling), TargetAddress: target,
-		SourceAddress: constants.GatewaySDMI})
+		SourceAddress: constants.GatewaySDMI}, 0, true)
 	return nil
 }
 
@@ -224,18 +223,6 @@ func (t *TSCC) dropOp(called uint32) {
 			t.u.ops[i] = udtOp{}
 		}
 	}
-}
-
-func (t *TSCC) sendAhoy(a pdu.AhoyPDU) {
-	t.u.ahoy = a
-	t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &t.u.ahoy}
-	t.enqueue(true)
-}
-
-func (t *TSCC) ackFrom(to uint32, r enums.AckReason, from uint32) {
-	t.u.ack = pdu.AckOutboundPDU{ReasonCode: byte(r), TargetAddress: to, AdditionalInfo: from}
-	t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckOutbound, AckOutboundPDU: &t.u.ack}
-	t.enqueue(false)
 }
 
 func (t *TSCC) divIndex(addr uint32) int {
@@ -291,14 +278,14 @@ func (t *TSCC) udtRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOu
 		if !t.addOp(udtOp{kind: opDGNA, caller: src, until: now + constants.TNPTimerDefault}) {
 			return t.refuse(src, enums.ReasonSysBusyRefused, out), true
 		}
-		t.sendAhoy(pdu.AhoyPDU{AppendedBlocks: r.Reserved >> 2 & 0b11, ServiceKind: uint8(kind), TargetAddress: src, SourceAddress: constants.GatewayDGNAI})
+		t.sendAhoy(pdu.AhoyPDU{AppendedBlocks: r.Reserved >> 2 & 0b11, ServiceKind: uint8(kind), TargetAddress: src, SourceAddress: constants.GatewayDGNAI}, 0, true)
 		return out, true
 	case enums.ServiceTalkgroupShortData:
 		if !t.addOp(udtOp{kind: opShortData, caller: src, called: r.TargetAddress, group: true, until: now + constants.TNPTimerDefault}) {
 			return t.refuse(src, enums.ReasonSysBusyRefused, out), true
 		}
 		t.sendAhoy(pdu.AhoyPDU{AppendedBlocks: blocks - 1, ServiceKind: uint8(enums.ServiceIndividualShortData), TargetAddress: src,
-			SourceAddress: constants.GatewaySDMI})
+			SourceAddress: constants.GatewaySDMI}, 0, true)
 		return out, true
 	case enums.ServiceIndividualShortData, enums.ServiceShortDataPolling, enums.ServiceDuplexVoice, enums.ServiceDuplexPacketData:
 	default:
@@ -338,7 +325,7 @@ func (t *TSCC) udtRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOu
 	if op.kind != opShortData {
 		t.sendAck(src, enums.ReasonWait)
 	}
-	t.sendAhoy(a)
+	t.sendAhoy(a, 0, true)
 	return out, true
 }
 
@@ -370,7 +357,7 @@ func (t *TSCC) divertRequest(now time.Duration, r *pdu.RandomAccessPDU, out []TS
 			}
 			out = append(out, TSCCOutput{Kind: TSCCDiversion, Address: d.from})
 		}
-		t.ackFrom(src, enums.ReasonMessageAccepted, r.TargetAddress)
+		t.ackFrom(src, enums.ReasonMessageAccepted, 0, r.TargetAddress)
 		return out
 	case constants.GatewayMSI, constants.GatewayGPI:
 	default:
@@ -379,7 +366,7 @@ func (t *TSCC) divertRequest(now time.Duration, r *pdu.RandomAccessPDU, out []TS
 	if !o.Set || !t.addOp(udtOp{kind: opDivert, caller: src, gateway: r.TargetAddress, opts: r.ServiceOptions, until: now + constants.TNPTimerDefault}) {
 		return t.refuse(src, enums.ReasonSysBusyRefused, out)
 	}
-	t.sendAhoy(pdu.AhoyPDU{ServiceKind: uint8(enums.ServiceCallDiversion), TargetAddress: src, SourceAddress: constants.GatewayDIVERTI})
+	t.sendAhoy(pdu.AhoyPDU{ServiceKind: uint8(enums.ServiceCallDiversion), TargetAddress: src, SourceAddress: constants.GatewayDIVERTI}, 0, true)
 	return out
 }
 
@@ -387,14 +374,14 @@ func (t *TSCC) divertedCall(caller uint32, i int, out []TSCCOutput) []TSCCOutput
 	if t.u.downN > 0 {
 		return t.refuse(caller, enums.ReasonSysBusyRefused, out)
 	}
-	t.download(&t.u.divs[i].to, caller, constants.GatewayDIVERTI, false, true, pdu.UDTOpcodeOutboundHeader, t.u.inSlot)
+	t.download(&t.u.divs[i].to, caller, constants.GatewayDIVERTI, false, true, false, pdu.UDTOpcodeOutboundHeader, t.u.inSlot)
 	return out
 }
 
-func (t *TSCC) download(a *Appended, to, from uint32, group, supp bool, op pdu.UDTOpcode, slot enums.Slot) {
+func (t *TSCC) download(a *Appended, to, from uint32, group, supp, ack bool, op pdu.UDTOpcode, slot enums.Slot) {
 	u := &t.u
 	u.hdr = pdu.UDTHeader{
-		Group: group, ResponseRequested: !group && !supp, SAP: enums.SAPUnifiedDataTransport, UDTFormat: a.Format, LLIDDestination: to,
+		Group: group, ResponseRequested: ack, SAP: enums.SAPUnifiedDataTransport, UDTFormat: a.Format, LLIDDestination: to,
 		LLIDSource: from, PadNibble: a.PadNibble, AppendedBlocks: uab(a.Blocks), SupplementaryFlag: supp, Opcode: op,
 	}
 	u.dh = pdu.DataHeader{Format: pdu.FormatUnifiedDataTransport, UDTHeader: &u.hdr}
@@ -412,12 +399,13 @@ func (t *TSCC) download(a *Appended, to, from uint32, group, supp bool, op pdu.U
 	if slot == enums.SlotUnknown {
 		slot = enums.Slot1
 	}
-	u.downN, u.downI, u.downSlot, u.downAck = 1+a.Blocks, 0, slot, !group && !supp
+	u.downN, u.downI, u.downSlot, u.downAck, u.downHold = 1+a.Blocks, 0, slot, ack, false
 }
 
-func (t *TSCC) udtNext() (p [12]byte, dt enums.DataType, reply, ok bool) {
+func (t *TSCC) udtNext(now time.Duration) (p [12]byte, dt enums.DataType, reply, ok bool) {
 	u := &t.u
-	if u.downN == 0 || u.downSlot != enums.SlotUnknown && u.downSlot != t.slot {
+	if u.downN == 0 || u.downSlot != enums.SlotUnknown && u.downSlot != t.slot ||
+		u.downI == 0 && !u.hdr.Group && !t.awake(u.hdr.LLIDDestination, now) {
 		return p, dt, false, false
 	}
 	p, dt = u.down[u.downI], u.downDT[u.downI]
@@ -441,6 +429,7 @@ func (t *TSCC) udtInbound(now time.Duration, s enums.Slot, out []TSCCOutput) ([]
 		}
 		u.in = UDT{Header: *h}
 		u.inWant, u.inOn, u.inAt = int(h.AppendedBlocks)+1, true, s
+		t.wake(h.LLIDSource, now)
 		return out, true
 	case *pdu.Rate12Data:
 		if !u.inOn || s != u.inAt {
@@ -485,6 +474,9 @@ func (t *TSCC) uploaded(now time.Duration, out []TSCCOutput) []TSCCOutput {
 	in := &t.u.in
 	h := &in.Header
 	src := h.LLIDSource
+	if h.Opcode == pdu.UDTOpcodeInboundHeader && (h.LLIDDestination == constants.GatewayIPI || h.LLIDDestination == constants.GatewaySUPLI) {
+		return t.svcUploaded(now, out)
+	}
 	if h.Opcode == pdu.UDTOpcodeDGNAInboundHeader {
 		i := t.findOp(opDGNA, stUpload, src)
 		if i < 0 {
@@ -517,7 +509,7 @@ func (t *TSCC) uploaded(now time.Duration, out []TSCCOutput) []TSCCOutput {
 		}
 		a := in.Appended()
 		o.until = now + t.cfg.AnswerTimeout
-		t.download(&a, o.caller, src, false, false, pdu.UDTOpcodeOutboundHeader, t.u.inSlot)
+		t.download(&a, o.caller, src, false, false, true, pdu.UDTOpcodeOutboundHeader, t.u.inSlot)
 		return out
 	}
 	return out
@@ -534,7 +526,7 @@ func (t *TSCC) relayUpload(now time.Duration, i int, to uint32, group bool, op p
 		return out
 	}
 	a := t.u.in.Appended()
-	t.download(&a, to, o.caller, group, false, op, t.u.inSlot)
+	t.download(&a, to, o.caller, group, false, !group, op, t.u.inSlot)
 	o.called, o.stage, o.until = to, stAck, now+t.cfg.AnswerTimeout
 	if !group {
 		return out
@@ -542,7 +534,7 @@ func (t *TSCC) relayUpload(now time.Duration, i int, to uint32, group bool, op p
 	caller := o.caller
 	*o = udtOp{}
 	for range udtRepeats {
-		t.ackFrom(caller, enums.ReasonMessageAccepted, to)
+		t.ackFrom(caller, enums.ReasonMessageAccepted, 0, to)
 	}
 	return append(out, TSCCOutput{Kind: TSCCDelivered, Address: caller, Ack: enums.ReasonMessageAccepted, Call: Grant{Group: true, Target: to, Source: caller}})
 }
@@ -571,7 +563,7 @@ func (t *TSCC) divertUploaded(src uint32, out []TSCCOutput) []TSCCOutput {
 		return t.refuse(src, enums.ReasonSysBusyRefused, out)
 	}
 	t.u.divs[k] = diversion{used: true, from: src, opts: layer3.DecodeDiversionServiceOptions([1]byte{o.opts << 1}), to: a}
-	t.ackFrom(src, enums.ReasonMessageAccepted, o.gateway)
+	t.ackFrom(src, enums.ReasonMessageAccepted, 0, o.gateway)
 	return append(out, TSCCOutput{Kind: TSCCDiversion, Address: src})
 }
 
@@ -605,7 +597,7 @@ func (t *TSCC) udtAck(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOutput)
 		case opNone, opShortData, opGatewayPoll, opDivert, opDGNA, opUSBD:
 		}
 		for range udtRepeats {
-			t.ackFrom(op.caller, enums.ReasonMSAccepted, op.called)
+			t.ackFrom(op.caller, enums.ReasonMSAccepted, 0, op.called)
 		}
 		return append(out, TSCCOutput{Kind: TSCCDelivered, Address: op.caller, Ack: enums.ReasonMSAccepted, Call: Grant{Target: op.called, Source: op.caller}}), true
 	}

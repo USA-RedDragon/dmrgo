@@ -9,7 +9,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/pcg"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
-	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
 // MaxPayloadChannels is the most payload channels of a TSCC.
@@ -18,7 +17,7 @@ const MaxPayloadChannels = 16
 const (
 	queueLen   = 32
 	maxSetups  = 4
-	maxEvents  = 2 * maxSetups
+	maxEvents  = 2*maxSetups + svcEvents
 	slotLength = 30 * time.Millisecond
 )
 
@@ -76,6 +75,33 @@ type TSCCConfig struct {
 	Authenticate bool
 	// Seed seeds the random choice of the authentication challenges.
 	Seed uint64
+	// Auth, when set, answers the authentication challenge of an MS before
+	// a stun, revive or kill. (ETSI TS 102 361-4 clauses 6.4.9.2 and
+	// 6.4.10)
+	Auth Authenticator
+	// TransmitInterrupt accepts the transmit interrupt requests of MSs,
+	// status calls with StatusInterrupt and StatusTerminate. (ETSI TS 102
+	// 361-4 clause 6.4.14.3)
+	TransmitInterrupt bool
+	// MaxCall is the longest time of a call. At its end the TSCC stops the
+	// transmission with the reverse channel and clears the call. 0 means
+	// no limit. (ETSI TS 102 361-4 clause 6.4.14.3.2)
+	MaxCall time.Duration
+	// PowerSave gives the MSs that ask for it a power save frame, and
+	// holds the C_AHOY to an MS that sleeps until its frame. (ETSI TS 102
+	// 361-4 clause 6.4.7)
+	PowerSave bool
+	// Awake is T_Awake, as in MSConfig. 0 means constants.TAwakeDefault.
+	Awake time.Duration
+	// IP offers the IP bearer service: the TSCC takes the IP connection
+	// advice of MSs. Without it the TSCC refuses the advice with
+	// IP_Connection_failed. (ETSI TS 102 361-4 clause 6.4.11)
+	IP bool
+	// Supplementary takes the supplementary_user data of call requests
+	// and passes it to the called party before the call. Without it the
+	// TSCC sets up the call without the data. (ETSI TS 102 361-4 clause
+	// 6.4.13)
+	Supplementary bool
 }
 
 // TSCCOutputKind is the kind of a TSCCOutput.
@@ -112,6 +138,22 @@ const (
 	// TSCCDiversion reports that the MS Address set or cleared a call
 	// diversion. Diverted returns it.
 	TSCCDiversion
+	// TSCCStatus reports a status call with Status between the parties in
+	// Call, and the answer of the called MS in Ack. Reason is
+	// ReasonTimeout when the called MS did not answer.
+	TSCCStatus
+	// TSCCStun reports the end of Stun or Kill for the MS Address: Stun
+	// tells the action and Ack holds the final answer of the MS. Reason is
+	// ReasonTimeout when no answer came, and ReasonAuthentication when the
+	// authentication failed.
+	TSCCStun
+	// TSCCInterrupt reports the end of a transmit interrupt of Call for the
+	// MS Address, or for the TSCC when Address is 0. Reason is
+	// ReasonTimeout when the transmission did not stop.
+	TSCCInterrupt
+	// TSCCIPAdvice reports the IP connection advice of the MS Address, in
+	// IP, IPv6 and Remove.
+	TSCCIPAdvice
 )
 
 // String returns the name of the TSCCOutputKind.
@@ -139,6 +181,14 @@ func (k TSCCOutputKind) String() string {
 		return "USBD"
 	case TSCCDiversion:
 		return "Diversion"
+	case TSCCStatus:
+		return "Status"
+	case TSCCStun:
+		return "Stun"
+	case TSCCInterrupt:
+		return "Interrupt"
+	case TSCCIPAdvice:
+		return "IPAdvice"
 	}
 	return unknownName
 }
@@ -157,21 +207,37 @@ type TSCCOutput struct {
 	// Burst is the burst of TSCCBurst.
 	Burst layer2.RawBurst
 	// Address is the MS of TSCCRegistered, TSCCDeregistered,
-	// TSCCRefused, TSCCDelivered, TSCCUDT and TSCCDiversion.
+	// TSCCRefused, TSCCDelivered, TSCCUDT, TSCCDiversion, TSCCStun,
+	// TSCCInterrupt and TSCCIPAdvice.
 	Address uint32
-	// Ack is the reason of TSCCRefused and TSCCDelivered.
+	// Ack is the reason of TSCCRefused and TSCCDelivered, and the answer of
+	// the MS for TSCCStatus and TSCCStun.
 	Ack enums.AckReason
-	// Call is the call of TSCCCallStart and TSCCCallEnd.
+	// Call is the call of TSCCCallStart, TSCCCallEnd and TSCCInterrupt,
+	// and the parties of TSCCStatus.
 	Call Grant
-	// Reason tells why for TSCCCallEnd.
+	// Reason tells why for TSCCCallEnd, TSCCStatus, TSCCStun and
+	// TSCCInterrupt.
 	Reason Reason
 	// Challenge is the 24-bit challenge of TSCCAuthChallenge.
 	Challenge uint32
+	// Status is the status of TSCCStatus.
+	Status Status
+	// Stun is the action of TSCCStun.
+	Stun StunAction
+	// IP holds the IPv4 address of TSCCIPAdvice in its first 4 octets, or
+	// the IPv6 address when IPv6 is set.
+	IP [16]byte
+	// IPv6 reports an IPv6 address in IP.
+	IPv6 bool
+	// Remove reports that the MS removes the address, rather than adds it.
+	Remove bool
 }
 
 type queued struct {
 	p     [12]byte
 	reply bool
+	addr  uint32
 }
 
 type callSlot struct {
@@ -195,6 +261,7 @@ type authWait struct {
 	challenge uint32
 	expect    uint32
 	hasExpect bool
+	ps        uint8
 	until     time.Duration
 }
 
@@ -215,9 +282,11 @@ type setup struct {
 // on its payload slot, clears calls with P_CLEAR, and authenticates the
 // MSs that register when TSCCConfig.Authenticate is set. It also carries
 // UDT short data, UDT and USBD polling, call diversion and DGNA, sets up
-// full-duplex calls and ALS calls (ETSI TS 102 361-4 clauses 6.6.2.6 and
-// 6.6.4 to 6.6.11). Half-duplex data calls, FOACSU and power save are not
-// supported. Make it with NewTSCC.
+// full-duplex calls and ALS calls, and runs power save, mass registration,
+// stun, revive and kill, status calls, transmit interrupts, IP connection
+// advice and supplementary_user data (ETSI TS 102 361-4 clauses 6.4.5 to
+// 6.4.15, 6.6.2.6 and 6.6.4 to 6.6.11). Half-duplex data calls and FOACSU
+// are not supported. Make it with NewTSCC.
 // A TSCC is not safe for concurrent use and must not be copied; go vet
 // reports a copy.
 type TSCC struct {
@@ -250,6 +319,7 @@ type TSCC struct {
 	csys    pdu.ShortLCCSysParms
 	psys    pdu.ShortLCPSysParms
 	u       tsccUDT
+	svc     tsccSvc
 	noCopy  noCopy
 }
 
@@ -312,6 +382,7 @@ func NewTSCC(cfg *TSCCConfig) (*TSCC, error) {
 	t.regs = make([]uint32, c.MaxRegistrations)
 	t.rng = pcg.New(c.Seed)
 	t.b = layer2.NewBurst()
+	t.initSvc()
 	return t, nil
 }
 
@@ -356,6 +427,9 @@ func (t *TSCC) Inbound(now time.Duration, ch uint16, s enums.Slot, raw *layer2.R
 	if o, done := t.udtInbound(now, s, out); done {
 		return o
 	}
+	if o, done := t.svcInbound(now, s, out); done {
+		return o
+	}
 	c, ok := b.Data.(*pdu.CSBK)
 	if !ok || c.FID != enums.FIDStandardized {
 		return out
@@ -396,8 +470,9 @@ func (t *TSCC) payloadIn(now time.Duration, ch uint16, s enums.Slot, raw *layer2
 	} else {
 		cs.inHang = false
 	}
-	rs := &t.calls[t.relaySlot(i)]
-	rs.relay, rs.hasRelay = *raw, true
+	rs := t.relaySlot(i)
+	t.svcRelay(rs)
+	t.calls[rs].relay, t.calls[rs].hasRelay = *raw, true
 	return out
 }
 
@@ -408,20 +483,7 @@ func (t *TSCC) random(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutpu
 	src := r.SourceAddress
 	switch enums.ServiceKind(r.ServiceKind) {
 	case enums.ServiceRegistration:
-		o := layer3.DecodeRegistrationServiceOptions([1]byte{r.ServiceOptions << 1})
-		if !o.Register {
-			if i := t.regIndex(src); i >= 0 {
-				t.nRegs--
-				t.regs[i] = t.regs[t.nRegs]
-				out = append(out, TSCCOutput{Kind: TSCCDeregistered, Address: src})
-			}
-			t.sendAck(src, enums.ReasonRegAccepted)
-			return out
-		}
-		if t.cfg.Authenticate {
-			return t.challenge(now, src, r.ServiceOptions, out)
-		}
-		return t.register(src, out)
+		return t.registration(now, r, out)
 	case enums.ServiceTalkgroupVoice, enums.ServiceIndividualVoice:
 	default:
 		return t.refuse(src, enums.ReasonNotSupported, out)
@@ -455,26 +517,13 @@ func (t *TSCC) random(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutpu
 		t.ahoy = pdu.AhoyPDU{ServiceOptsMirror: r.ServiceOptions, ALS: r.Reserved&alsBit != 0, ServiceKind: uint8(enums.ServiceIndividualVoice),
 			TargetAddress: r.TargetAddress, SourceAddress: src}
 		t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &t.ahoy}
-		t.enqueue(true)
+		t.enqueueTo(r.TargetAddress, true)
 		return out
 	}
 	return t.refuse(src, enums.ReasonSysBusyRefused, out)
 }
 
-func (t *TSCC) register(src uint32, out []TSCCOutput) []TSCCOutput {
-	if t.regIndex(src) < 0 {
-		if t.nRegs == len(t.regs) {
-			return t.refuse(src, enums.ReasonRegRefused, out)
-		}
-		t.regs[t.nRegs] = src
-		t.nRegs++
-		out = append(out, TSCCOutput{Kind: TSCCRegistered, Address: src})
-	}
-	t.sendAck(src, enums.ReasonRegAccepted)
-	return out
-}
-
-func (t *TSCC) challenge(now time.Duration, src uint32, opts uint8, out []TSCCOutput) []TSCCOutput {
+func (t *TSCC) challenge(now time.Duration, src uint32, opts, ps uint8, out []TSCCOutput) []TSCCOutput {
 	w := -1
 	for i := range t.auths {
 		if t.auths[i].used && t.auths[i].addr == src {
@@ -489,7 +538,7 @@ func (t *TSCC) challenge(now time.Duration, src uint32, opts uint8, out []TSCCOu
 		return t.refuse(src, enums.ReasonRegRefused, out)
 	}
 	c := t.rng.Uint32() % (maxChallenge + 1)
-	t.auths[w] = authWait{used: true, addr: src, challenge: c, until: now + t.cfg.AnswerTimeout}
+	t.auths[w] = authWait{used: true, addr: src, challenge: c, ps: ps, until: now + t.cfg.AnswerTimeout}
 	t.ahoy = pdu.AhoyPDU{ServiceOptsMirror: opts, ServiceKind: uint8(enums.ServiceRegistration), TargetAddress: src, SourceAddress: c}
 	t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &t.ahoy}
 	t.enqueue(true)
@@ -508,25 +557,25 @@ func (t *TSCC) ExpectAuth(addr, response uint32) {
 	}
 }
 
-func (t *TSCC) authAnswer(a *pdu.AckInboundPDU, out []TSCCOutput) []TSCCOutput {
+func (t *TSCC) authAnswer(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOutput) []TSCCOutput {
 	for i := range t.auths {
 		w := &t.auths[i]
 		if !w.used || w.addr != a.AdditionalInfo {
 			continue
 		}
-		ok := w.hasExpect && w.expect == a.TargetAddress
+		ok, ps := w.hasExpect && w.expect == a.TargetAddress, w.ps
 		*w = authWait{}
 		if !ok {
 			return t.refuse(a.AdditionalInfo, enums.ReasonRegDenied, out)
 		}
-		return t.register(a.AdditionalInfo, out)
+		return t.admit(now, a.AdditionalInfo, ps, out)
 	}
 	return out
 }
 
 func (t *TSCC) answer(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOutput) []TSCCOutput {
 	if enums.AckReason(a.ReasonCode) == enums.ReasonAuthResponseMS {
-		return t.authAnswer(a, out)
+		return t.authAnswer(now, a, out)
 	}
 	if o, done := t.udtAck(now, a, out); done {
 		return o
@@ -657,6 +706,7 @@ func (t *TSCC) Tick(now time.Duration, dst []TSCCOutput) []TSCCOutput {
 	t.next = now + slotLength
 	out = t.timers(now, out)
 	out = t.udtTimers(now, out)
+	out = t.svcTimers(now, out)
 	out = t.control(out)
 	for c := range t.cfg.PayloadLen {
 		out = t.carrier(c, out)
@@ -703,16 +753,12 @@ func (t *TSCC) timers(now time.Duration, out []TSCCOutput) []TSCCOutput {
 }
 
 func (t *TSCC) control(out []TSCCOutput) []TSCCOutput {
-	p, dt, reply, ok := t.udtNext()
-	switch {
-	case ok:
-	case t.qLen > 0:
-		dt = enums.DataTypeCSBK
-		q := &t.queue[t.qHead]
-		p, reply = q.p, q.reply
-		t.qHead = (t.qHead + 1) % queueLen
-		t.qLen--
-	default:
+	now := t.next - slotLength
+	p, dt, reply, ok := t.udtNext(now)
+	if !ok && (!t.u.downHold || t.u.downN == 0 || t.u.downI == 0) {
+		p, dt, reply, ok = t.dequeue(now)
+	}
+	if !ok {
 		dt = enums.DataTypeCSBK
 		t.aloha = pdu.AlohaPDU{SiteTSSync: true, Version: 1, NRandWait: uint8(t.cfg.NRandWait), Reg: t.cfg.Reg, Backoff: uint8(t.cfg.Backoff), SysIdentCode: t.code}
 		t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAloha, AlohaPDU: &t.aloha}
@@ -765,9 +811,11 @@ func (t *TSCC) emit(idx int, ch uint16, p [12]byte, dt enums.DataType, reply boo
 }
 
 func (t *TSCC) emitRaw(idx int, ch uint16, raw *layer2.RawBurst, reply bool, out []TSCCOutput) []TSCCOutput {
+	t.svc.buf = *raw
+	t.svcEmit(idx)
 	cach, err := t.caches[idx].Next(t.slot, reply, &t.slc)
 	if err != nil {
 		return out
 	}
-	return append(out, TSCCOutput{Kind: TSCCBurst, Channel: ch, Slot: t.slot, CACH: cach, Burst: *raw})
+	return append(out, TSCCOutput{Kind: TSCCBurst, Channel: ch, Slot: t.slot, CACH: cach, Burst: t.svc.buf})
 }
