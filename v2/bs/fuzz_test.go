@@ -19,7 +19,7 @@ func newPool(t testing.TB) []layer2.RawBurst {
 	for _, in := range call(t, 1, 9, 3191868, 2, enums.Slot1, bs.Source{}, 0) {
 		p = append(p, in.raw)
 	}
-	p = append(p, wakeup(t, 1))
+	p = append(p, wakeup(t, 1), preCSBK(t, 1, 9, 3120005), preCSBK(t, 1, 9, 3120001), header(t, 1, 9, 3120001))
 	for _, name := range []string{"d-sms.bin", "m-sms.bin"} {
 		p = append(p, loadBin(t, name)...)
 	}
@@ -46,7 +46,7 @@ func parseScript(data []byte, p []layer2.RawBurst) script {
 		return s
 	}
 	s.cfg = bs.Config{Mode: bs.Mode(data[0] & 1), CACH: data[0]&2 != 0, Activation: bs.Activation(data[0] >> 2 & 1),
-		ColorCode: 1, CallHang: time.Duration(data[0]>>3) * 100 * time.Millisecond}
+		ColorCode: 1, CallHang: time.Duration(data[0]>>3) * 100 * time.Millisecond, ChannelAuth: bs.ChannelAuth(data[1] >> 4 & 3 % 3)}
 	if data[1]&0x80 != 0 {
 		s.cfg.ColorCode = enums.ColorCode(data[1] & 0xF)
 	}
@@ -133,6 +133,8 @@ func seeds() [][]byte {
 		{0x06, 0x01, 0, 32, 1, 3, 0, 255, 3, 0, 255},
 		{0x02, 0x01, 0, 33, 12, 0, 34, 12, 0, 35, 12, 0, 36, 12, 0, 37, 12, 0, 38, 12, 3, 0, 60},
 		{0x03, 0x8F, 0x10, 0, 1, 5, 0, 1, 0x50, 1, 12, 4, 0, 1},
+		{0x02, 0x11, 0, 0, 12, 3, 0, 60, 0, 0, 12, 3, 0, 60, 0, 50, 30, 3, 0, 60, 0, 51, 2, 3, 0, 255},
+		{0x02, 0x21, 0, 0, 12, 3, 0, 60, 0, 0, 12, 0x10, 53, 6, 3, 0, 60, 3, 0, 255},
 	}
 }
 

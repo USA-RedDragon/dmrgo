@@ -60,12 +60,12 @@ func (d *driver) feed(in []input) {
 	}
 }
 
-func header(t *testing.T, cc enums.ColorCode, target, source uint32) layer2.RawBurst {
+func header(t testing.TB, cc enums.ColorCode, target, source uint32) layer2.RawBurst {
 	t.Helper()
 	return call(t, cc, target, source, 0, enums.Slot1, bs.Source{}, 0)[0].raw
 }
 
-func preCSBK(t *testing.T, cc enums.ColorCode, target, source uint32) layer2.RawBurst {
+func preCSBK(t testing.TB, cc enums.ColorCode, target, source uint32) layer2.RawBurst {
 	t.Helper()
 	c := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKPreamble, PreamblePDU: &pdu.PreamblePDU{Group: true, CSBKBlocksToFollow: 3, TargetAddress: target, SourceAddress: source}}
 	b, err := layer2.BuildBurst(&c, cc, layer2.SyncSourceMS)
