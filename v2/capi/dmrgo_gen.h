@@ -598,6 +598,12 @@ typedef struct dmrgo_trunk_udt_t dmrgo_trunk_udt_t;
 typedef struct dmrgo_trunk_usbdlip_response_t dmrgo_trunk_usbdlip_response_t;
 /* Go: trunk.USBDPollRequest. USBDPollRequest is the Poll Request of the USBD polling service: the payload of an outbound USBD after its Service Type. */
 typedef struct dmrgo_trunk_usbd_poll_request_t dmrgo_trunk_usbd_poll_request_t;
+/* Go: auth.Entry. Entry is the Key of the MS Addr. */
+typedef struct dmrgo_trunk_auth_entry_t dmrgo_trunk_auth_entry_t;
+/* Go: auth.Key. Key is the authentication key K and the PSN of one MS. */
+typedef struct dmrgo_trunk_auth_key_t dmrgo_trunk_auth_key_t;
+/* Go: auth.Keys. Keys holds the keys of the MSs that a TSCC authenticates. */
+typedef struct dmrgo_trunk_auth_keys_t dmrgo_trunk_auth_keys_t;
 /* Go: vocoder.AMBEFrame. AMBEFrame holds the 49 information bits of one AMBE+2 vocoder frame, without the frame FEC, packed, the first bit in the most significant bit of byte 0. */
 typedef struct dmrgo_vocoder_ambe_frame_t dmrgo_vocoder_ambe_frame_t;
 /* Go: vocoder.AppendDecoder. AppendDecoder is a Codec that can decode into a buffer of the caller. */
@@ -3409,6 +3415,21 @@ struct dmrgo_trunk_tscc_output_t {
 	uint8_t ip[16];
 	bool ipv6;
 	bool remove;
+};
+
+struct dmrgo_trunk_auth_key_t {
+	uint8_t k[16];
+	uint32_t psn;
+};
+
+struct dmrgo_trunk_auth_entry_t {
+	uint32_t addr;
+	dmrgo_trunk_auth_key_t key;
+};
+
+struct dmrgo_trunk_auth_keys_t {
+	dmrgo_trunk_auth_entry_t *entries;
+	size_t entries_len;
 };
 
 struct dmrgo_vocoder_append_decoder_vtable_t {
@@ -8533,6 +8554,10 @@ int dmrgo_trunk_usbdlip_response_string(dmrgo_trunk_usbdlip_response_t *self, ch
 int dmrgo_trunk_usbd_poll_request_encode(dmrgo_trunk_usbd_poll_request_t *self, uint8_t out[10]);
 /* Go: trunk.USBDPollRequest.String. String returns the fields of s as text, for printing. */
 int dmrgo_trunk_usbd_poll_request_string(dmrgo_trunk_usbd_poll_request_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: auth.Key.Response. Response returns the response of the MS to challenge, as the package function Response computes it, and true. */
+int dmrgo_trunk_auth_key_response(dmrgo_trunk_auth_key_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
+/* Go: auth.Keys.Response. Response returns the response of the MS addr to challenge, and false when Entries has no key for addr or k is nil. */
+int dmrgo_trunk_auth_keys_response(dmrgo_trunk_auth_keys_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: auth.Response. Response returns the 24-bit response to the challenge for the key K: the octets 257 to 259 of the RC4 keystream keyed with the 3 octets of the challenge, most significant first, and the 16 octets of K, exclusive-or psn. */
 int dmrgo_trunk_auth_response(uint32_t challenge, const uint8_t key[16], uint32_t psn, uint32_t *out);
 /* Go: vocoder.AMBESilence. AMBESilence returns the AMBE+2 frame of silence that MMDVMHost sends to fill a voice burst (DMR_SILENCE_DATA); EncodeAMBE72 of it is the slot B9E881526173002A6B. */

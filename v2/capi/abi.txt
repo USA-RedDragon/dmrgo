@@ -2599,6 +2599,8 @@ sym int dmrgo_trunk_appended_set_nmea_long(dmrgo_trunk_appended_t *self, const d
 sym int dmrgo_trunk_appended_set_nmea_short(dmrgo_trunk_appended_t *self, const dmrgo_trunk_nmea_short_t *n);
 sym int dmrgo_trunk_appended_set_text(dmrgo_trunk_appended_t *self, dmrgo_enums_udt_format_t f, const uint8_t *text, size_t text_len);
 sym int dmrgo_trunk_appended_text(dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_trunk_auth_key_response(dmrgo_trunk_auth_key_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
+sym int dmrgo_trunk_auth_keys_response(dmrgo_trunk_auth_keys_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_trunk_auth_response(uint32_t challenge, const uint8_t key[16], uint32_t psn, uint32_t *out);
 sym int dmrgo_trunk_authenticator_free(dmrgo_trunk_authenticator_t *self);
 sym int dmrgo_trunk_authenticator_from_vtable(const dmrgo_trunk_authenticator_vtable_t *vt, dmrgo_trunk_authenticator_t **out);
@@ -3196,6 +3198,9 @@ type struct dmrgo_transport_hytera_p2_p_t { uint8_t op; uint8_t code; uint8_t se
 type struct dmrgo_trunk_access_t { uint8_t mask; uint32_t address; dmrgo_enums_service_function_t function; dmrgo_enums_n_rand_wait_t n_rand_wait; dmrgo_enums_backoff_t backoff; };
 type struct dmrgo_trunk_address_list_t { bool one_key; uint32_t addresses[15]; int64_t len; };
 type struct dmrgo_trunk_appended_t { dmrgo_enums_udt_format_t format; uint8_t pad_nibble; int64_t blocks; uint8_t data[46]; };
+type struct dmrgo_trunk_auth_entry_t { uint32_t addr; dmrgo_trunk_auth_key_t key; };
+type struct dmrgo_trunk_auth_key_t { uint8_t k[16]; uint32_t psn; };
+type struct dmrgo_trunk_auth_keys_t { dmrgo_trunk_auth_entry_t *entries; size_t entries_len; };
 type struct dmrgo_trunk_authenticator_vtable_t { uintptr_t user; int (*response)(uintptr_t user, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok); };
 type struct dmrgo_trunk_capacity_plus_config_t { dmrgo_trunk_channel_plan_t *plan; uint32_t talkgroups[32]; int64_t talkgroups_len; bool individual; bool no_follow; int64_t no_signal; int64_t inactive; int64_t hangtime; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_trunk_channel_rule_t { uint16_t first; uint16_t last; uint64_t rx_hz; uint64_t step_hz; int64_t tx_offset_hz; };

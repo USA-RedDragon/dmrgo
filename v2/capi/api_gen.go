@@ -4941,6 +4941,17 @@ func in_trunk_USBDPollRequest(s *C.dmrgo_trunk_usbd_poll_request_t) (d g_trunk.U
 	return
 }
 
+func in_trunk_auth_Keys(s *C.dmrgo_trunk_auth_keys_t) (d g_trunk_auth.Keys) {
+	d.Entries = unsafe.Slice((*g_trunk_auth.Entry)(unsafe.Pointer(s.entries)), int(s.entries_len))
+	return
+}
+
+func out_trunk_auth_Keys(d *C.dmrgo_trunk_auth_keys_t, s *g_trunk_auth.Keys, oc *outc) {
+	_ = oc
+	d.entries = (*C.dmrgo_trunk_auth_entry_t)(arenaCopy(oc, s.Entries))
+	d.entries_len = C.size_t(len(s.Entries))
+}
+
 type vt_vocoder_AppendDecoder struct {
 	t        C.dmrgo_vocoder_append_decoder_vtable_t
 	m0n0     C.size_t
@@ -8002,6 +8013,42 @@ func fromC_trunk_USBDLIPResponse(s *C.dmrgo_trunk_usbdlip_response_t) g_trunk.US
 
 func fromC_trunk_USBDPollRequest(s *C.dmrgo_trunk_usbd_poll_request_t) g_trunk.USBDPollRequest {
 	return in_trunk_USBDPollRequest(s)
+}
+
+func in_trunk_auth_Entry(s *C.dmrgo_trunk_auth_entry_t) (d g_trunk_auth.Entry) {
+	d.Addr = uint32(s.addr)
+	d.Key = *(*g_trunk_auth.Key)(unsafe.Pointer(&s.key))
+	return
+}
+
+func out_trunk_auth_Entry(d *C.dmrgo_trunk_auth_entry_t, s *g_trunk_auth.Entry, oc *outc) {
+	_ = oc
+	d.addr = C.uint32_t(s.Addr)
+	*(*g_trunk_auth.Key)(unsafe.Pointer(&d.key)) = s.Key
+}
+
+func fromC_trunk_auth_Entry(s *C.dmrgo_trunk_auth_entry_t) g_trunk_auth.Entry {
+	return in_trunk_auth_Entry(s)
+}
+
+func in_trunk_auth_Key(s *C.dmrgo_trunk_auth_key_t) (d g_trunk_auth.Key) {
+	d.K = *(*[16]byte)(unsafe.Pointer(&s.k))
+	d.PSN = uint32(s.psn)
+	return
+}
+
+func out_trunk_auth_Key(d *C.dmrgo_trunk_auth_key_t, s *g_trunk_auth.Key, oc *outc) {
+	_ = oc
+	*(*[16]byte)(unsafe.Pointer(&d.k)) = s.K
+	d.psn = C.uint32_t(s.PSN)
+}
+
+func fromC_trunk_auth_Key(s *C.dmrgo_trunk_auth_key_t) g_trunk_auth.Key {
+	return in_trunk_auth_Key(s)
+}
+
+func fromC_trunk_auth_Keys(s *C.dmrgo_trunk_auth_keys_t) g_trunk_auth.Keys {
+	return in_trunk_auth_Keys(s)
 }
 
 func out_vocoder_codec2_Config(d *C.dmrgo_codec2_config_t, s *g_vocoder_codec2.Config, oc *outc) {
@@ -40353,6 +40400,69 @@ func dmrgo_trunk_usbd_poll_request_string(c_self *C.dmrgo_trunk_usbd_poll_reques
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_auth_key_response
+func dmrgo_trunk_auth_key_response(c_self *C.dmrgo_trunk_auth_key_t, c_addr C.uint32_t, c_challenge C.uint32_t, c_response *C.uint32_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk_auth.Key
+	x = *(*g_trunk_auth.Key)(unsafe.Pointer(&(*c_self)))
+	r0, r1 := x.Response(uint32(c_addr), uint32(c_challenge))
+	*(*g_trunk_auth.Key)(unsafe.Pointer(&(*c_self))) = x
+	_ = r0
+	_ = r1
+	if c_response != nil {
+		*c_response = C.uint32_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_auth_keys_response
+func dmrgo_trunk_auth_keys_response(c_self *C.dmrgo_trunk_auth_keys_t, c_addr C.uint32_t, c_challenge C.uint32_t, c_response *C.uint32_t, c_ok *C.bool, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk_auth.Keys
+	x = in_trunk_auth_Keys(&(*c_self))
+	r0, r1 := x.Response(uint32(c_addr), uint32(c_challenge))
+	out_trunk_auth_Keys(&(*c_self), &x, oc)
+	_ = r0
+	_ = r1
+	if c_response != nil {
+		*c_response = C.uint32_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
