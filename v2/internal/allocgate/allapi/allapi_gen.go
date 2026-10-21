@@ -931,7 +931,7 @@ var api = [...]any{
 	layer3.PollingServiceOptions.Field,
 	layer3.PositionError.String,
 	layer3.RegistrationServiceOptions.Field,
-	layer3.ServiceOptions.Byte,
+	layer3.ServiceOptions.Field,
 	layer3.ShortDataServiceOptions.Field,
 	layer3.SourceType.String,
 	layer3.StatusServiceOptions.Field,

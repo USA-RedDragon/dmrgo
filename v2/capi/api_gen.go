@@ -29124,29 +29124,6 @@ func dmrgo_layer3_registration_service_options_string(c_self *C.dmrgo_layer3_reg
 	return C.DMRGO_OK
 }
 
-//export dmrgo_layer3_service_options_byte
-func dmrgo_layer3_service_options_byte(c_self *C.dmrgo_layer3_service_options_t, c_out *C.uint8_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_layer3.ServiceOptions
-	x = in_layer3_ServiceOptions(&(*c_self))
-	r0, r1 := x.Byte()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.uint8_t(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r1 != nil {
-		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_layer3_service_options_encode
 func dmrgo_layer3_service_options_encode(c_self *C.dmrgo_layer3_service_options_t, c_out *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -29161,6 +29138,29 @@ func dmrgo_layer3_service_options_encode(c_self *C.dmrgo_layer3_service_options_
 	_ = r0
 	if c_out != nil {
 		*(*[1]byte)(unsafe.Pointer(&(*(*[1]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer3_service_options_field
+func dmrgo_layer3_service_options_field(c_self *C.dmrgo_layer3_service_options_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer3.ServiceOptions
+	x = in_layer3_ServiceOptions(&(*c_self))
+	r0, r1 := x.Field()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint8_t(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)

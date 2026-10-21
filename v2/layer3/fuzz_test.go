@@ -29,8 +29,8 @@ func fuzzLayer3(t *testing.T, data []byte) {
 	if err != nil || b[0] != in[0] {
 		t.Fatalf("ServiceOptions of %02x encodes as %02x %v", in[0], b, err)
 	}
-	if v, err := so.Byte(); err != nil || v != in[0] {
-		t.Fatalf("ServiceOptions.Byte of %02x = %02x %v", in[0], v, err)
+	if v, err := so.Field(); err != nil || v != in[0] {
+		t.Fatalf("ServiceOptions.Field of %02x = %02x %v", in[0], v, err)
 	}
 
 	raw := [8]byte(in[1:])

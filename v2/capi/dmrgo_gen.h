@@ -9229,10 +9229,10 @@ int dmrgo_layer3_registration_service_options_encode(dmrgo_layer3_registration_s
 int dmrgo_layer3_registration_service_options_field(const dmrgo_layer3_registration_service_options_t *self, uint8_t *out);
 /* Go: layer3.RegistrationServiceOptions.String. String returns the fields of s as text, for printing. */
 int dmrgo_layer3_registration_service_options_string(dmrgo_layer3_registration_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: layer3.ServiceOptions.Byte. Byte returns s as the Service Options octet, the octet of Encode, with the errors of Encode. */
-int dmrgo_layer3_service_options_byte(const dmrgo_layer3_service_options_t *self, uint8_t *out);
 /* Go: layer3.ServiceOptions.Encode. Encode encodes a ServiceOptions. */
 int dmrgo_layer3_service_options_encode(dmrgo_layer3_service_options_t *self, uint8_t out[1]);
+/* Go: layer3.ServiceOptions.Field. Field returns s as the 8-bit Service Options field, the octet of Encode, with the errors of Encode. */
+int dmrgo_layer3_service_options_field(const dmrgo_layer3_service_options_t *self, uint8_t *out);
 /* Go: layer3.ServiceOptions.String. String returns the fields of s as text, for printing. */
 int dmrgo_layer3_service_options_string(dmrgo_layer3_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.ShortDataServiceOptions.Encode. Encode encodes a ShortDataServiceOptions. */
