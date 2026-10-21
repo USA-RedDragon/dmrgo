@@ -86,8 +86,12 @@ func (p *ChannelPlan) Add(c Channel) error {
 
 // AddCdef adds the channel of the CdefParms of a CG_AP, MV_AP or BC_AP
 // block to the plan, as Add does. Its TX and RX frequencies are those of
-// the MS (ETSI TS 102 361-4 clause C.1.1.4).
+// the MS. It returns an error for a nil c (ETSI TS 102 361-4 clause
+// C.1.1.4).
 func (p *ChannelPlan) AddCdef(c *layer3.CdefParms) error {
+	if c == nil {
+		return errNil
+	}
 	return p.Add(Channel{Number: c.Channel, RXHz: c.RXFrequencyHz(), TXHz: c.TXFrequencyHz()})
 }
 

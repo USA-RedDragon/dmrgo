@@ -45,6 +45,8 @@ var (
 )
 
 var (
+	errNil = errors.New("trunk: nil pointer argument")
+
 	errHunt          error = &dmrgo.ConfigError{Type: "trunk", Field: "Hunt"}
 	errTalkgroups    error = &dmrgo.ConfigError{Type: "trunk", Field: "Talkgroups"}
 	errSysCode       error = &dmrgo.ConfigError{Type: "trunk", Field: "SysCode"}

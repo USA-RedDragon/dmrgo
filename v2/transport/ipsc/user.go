@@ -83,8 +83,9 @@ func (d *Payload) SlotType() (pdu.SlotTypeInfo, bool) {
 }
 
 // RSSI returns the last two trailer octets and whether the packet has them.
+// ok is false for a TrailerLen over the length of Trailer.
 func (d *Payload) RSSI() (uint16, bool) {
-	if d.Flags[0]&0x80 == 0 || d.TrailerLen < 2 {
+	if d.Flags[0]&0x80 == 0 || d.TrailerLen < 2 || int(d.TrailerLen) > len(d.Trailer) {
 		return 0, false
 	}
 	return uint16(d.Trailer[d.TrailerLen-2])<<8 | uint16(d.Trailer[d.TrailerLen-1]), true

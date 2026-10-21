@@ -88,11 +88,14 @@ type Decoder struct {
 // data data: an NMEA RMC sentence to UDP port 10110, an LRRP report with a
 // position to UDP port 4001, or a Hytera HDAP location protocol message
 // with a position to UDP port 3003. It returns ErrNoFix for a packet in
-// none of these formats, for a standard answer whose Result is not 0 and
-// for an HDAP position out of range, and the errors of the ip, lrrp, nmea and hytera packages for a message
-// that does not decode. It does not check the HDAP checksum. It does not
-// allocate.
+// none of these formats, for a standard answer whose Result is not 0, for
+// an HDAP position out of range and for a nil h, and the errors of the ip,
+// lrrp, nmea and hytera packages for a message that does not decode. It
+// does not check the HDAP checksum. It does not allocate.
 func (d *Decoder) Decode(h *pdu.DataHeader, data []byte) (Fix, error) {
+	if h == nil {
+		return Fix{}, ErrNoFix
+	}
 	var sap enums.ServiceAccessPointID
 	switch {
 	case h.UnconfirmedDataHeader != nil:
