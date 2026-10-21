@@ -371,26 +371,27 @@ func (s *Sender) State() SenderState {
 
 // Send starts the message m at now, or queues it in the sliding window.
 // m.Header is a U_HEAD, a C_HEAD, or a DD_HEAD or R_HEAD, with its
-// sub-header set, and m.Rate is the rate of the blocks. Send copies the
-// header and m.Payload, so the caller can reuse them. It sets the block
-// count, pad octets and Full Message Flag, and for a C_HEAD N(S) from the
-// link, S (with SenderConfig.Resync), FSN 1000, a message in one fragment,
-// and the Response Requested flag on the last message of a window only. It
-// sets the Response Requested flag of a short data header with SARQ set.
-// With SenderConfig.Window above 1, a C_HEAD message of the IP bearer
-// service to the link of the messages in progress joins them while fewer
-// than Window are in progress: it goes in the window on air when the last
+// sub-header set, and m.Rate is the rate of the blocks, where the zero
+// value means rate 1/2. Send copies the header and m.Payload, so the
+// caller can reuse them. It sets the block count, pad octets and Full
+// Message Flag, and for a C_HEAD N(S) from the link, S (with
+// SenderConfig.Resync), FSN 1000, a message in one fragment, and the
+// Response Requested flag on the last message of a window only. It sets
+// the Response Requested flag of a short data header with SARQ set. With
+// SenderConfig.Window above 1, a C_HEAD message of the IP bearer service
+// to the link of the messages in progress joins them while fewer than
+// Window are in progress: it goes in the window on air when the last
 // header of that window has not gone yet, else in the next window. Send
 // returns ErrBusy for any other message while a message is in progress, a
-// *ConfigError for another header, a P_HEAD in m.Proprietary, or a
-// confirmed message to a group, and the errors of packet.Builder.Segment,
-// such as packet.ErrTooLong and packet.ErrRate. (ETSI TS 102 361-3 clauses
-// 5.4 and 5.4.4)
+// *ConfigError for a nil m or another header, a P_HEAD in m.Proprietary,
+// or a confirmed message to a group, and the errors of
+// packet.Builder.Segment, such as packet.ErrTooLong and packet.ErrRate.
+// (ETSI TS 102 361-3 clauses 5.4 and 5.4.4)
 func (s *Sender) Send(now time.Duration, m *Message) error {
 	if s.n >= len(s.slots) || s.n > 0 && !s.joins(m) {
 		return ErrBusy
 	}
-	if m.Proprietary != nil {
+	if m == nil || m.Proprietary != nil {
 		return errHeader
 	}
 	at := s.free()
@@ -440,7 +441,11 @@ func (s *Sender) Send(now time.Duration, m *Message) error {
 	} else {
 		e.c.ReSynchronizeFlag = false
 	}
-	p, err := e.pb.Segment(h, m.Payload, m.Rate)
+	rate := m.Rate
+	if rate == enums.DataTypePIHeader {
+		rate = enums.DataTypeRate12
+	}
+	p, err := e.pb.Segment(h, m.Payload, rate)
 	if err != nil {
 		return err
 	}
