@@ -272,8 +272,8 @@ type AudioConfig struct {
 	// symbol 0 restarts both, so the output does not depend on the age of
 	// the Audio. With Floor above 0 it acts only on the symbols where that
 	// difference, less Bias and less Own times the deviation of the symbol,
-	// is more than Floor from 0, by Gain times the excess. The zero value is
-	// off.
+	// is more than Floor from 0, by Gain times the excess. Max, above 0,
+	// bounds the correction. The zero value is off.
 	Droop DroopConfig
 }
 
@@ -292,8 +292,8 @@ type RateDesign struct {
 
 // DroopConfig sets the droop pre-compensation of AudioConfig.
 type DroopConfig struct {
-	Hz, LowHz, Gain  float64
-	Floor, Bias, Own float64
+	Hz, LowHz, Gain       float64
+	Floor, Bias, Own, Max float64
 }
 
 // PulseConfig sets the transmit pulse of Tier1 and Tier2.
@@ -391,11 +391,11 @@ type Audio struct {
 }
 
 type droop struct {
-	a1, a2, g        float64
-	floor, bias, own float64
-	y1, y2           float64
-	c                [64]float64
-	n, lag           int
+	a1, a2, g             float64
+	floor, bias, own, max float64
+	y1, y2                float64
+	c                     [64]float64
+	n, lag                int
 }
 
 func (d *droop) symbol(s int8) {
@@ -413,7 +413,11 @@ func (d *droop) symbol(s int8) {
 	if d.floor > 0 {
 		w = math.Copysign(max(0, math.Abs(w)-d.floor), w)
 	}
-	d.c[d.n&63] = d.g * w
+	c := d.g * w
+	if d.max > 0 {
+		c = math.Copysign(min(math.Abs(c), d.max), c)
+	}
+	d.c[d.n&63] = c
 }
 
 func (d *droop) add(buf []float64) {
@@ -545,7 +549,7 @@ func NewAudio(cfg AudioConfig) (*Audio, error) {
 				lag += int(math.Round(float64(len(a.cbp)/2) * SymbolRate / float64(cfg.Hz)))
 			}
 			a.dr = droop{a1: math.Exp(-2 * math.Pi * d.Hz / SymbolRate), a2: math.Exp(-2 * math.Pi * d.LowHz / SymbolRate),
-				g: d.Gain, floor: d.Floor, bias: d.Bias, own: d.Own, lag: min(lag, 62)}
+				g: d.Gain, floor: d.Floor, bias: d.Bias, own: d.Own, max: d.Max, lag: min(lag, 62)}
 		}
 		return a, nil
 	default:
