@@ -4,7 +4,10 @@
 # test_functions maps spec sections to Go test functions.
 # speccheck runs `go test -v -run <regex>` for each package and verifies pass.
 #
-# Out of scope: state machines, procedures, RF/physical layer, conformance testing.
+# Procedures and state machines are in scope. A clause that is only partly implemented is
+# split into subclause rows, and a row with no source_files and no test_functions shows a
+# procedure without code as unimplemented. A clause that is not listed is not claimed.
+# Out of scope: the RF/physical layer and conformance testing.
 #
 # ignore_files lists Go source files of the v2 module that implement no spec section.
 # Every other non-test, non-generated Go file except doc.go must appear in a section's source_files.
@@ -157,6 +160,15 @@ documents:
   - id: "TS-102-361-1"
     title: "ETSI TS 102 361-1: Air Interface Protocol"
     sections:
+      - section: "5.2.1.6"
+        title: "Transmit admit criteria"
+
+      - section: "5.2.2.1"
+        title: "Direct mode Channel Access"
+
+      - section: "5.2.2.2"
+        title: "Repeater mode channel access, other than 5.2.2.2.4"
+
       - section: "5.2.2.2.4"
         title: "MS TX_Wakeup_Message"
         source_files:
@@ -176,6 +188,9 @@ documents:
             names:
               - TestRequesterChannelAccess
               - TestResponderDenied
+
+      - section: "5.2.2.4"
+        title: "TDMA direct mode channel access"
 
       - section: "6.1"
         title: "Vocoder socket"
@@ -1338,6 +1353,9 @@ documents:
   - id: "TS-102-361-2"
     title: "ETSI TS 102 361-2: DMR Voice and Generic Services and Facilities"
     sections:
+      - section: "5.1.1.6"
+        title: "Channel authorization"
+
       - section: "5.1.2"
         title: "Feature Not Supported (FNS) signalling"
         source_files:
@@ -1395,29 +1413,23 @@ documents:
               - TestTimers_AnnexA1
               - TestConstants_AnnexA2
 
-      - section: "6.3"
-        title: "Reverse Channel Transmitter Interrupt"
-        source_files:
-          - v2/layer2/pdu/reverse_channel.go
-          - v2/enums/rc_command.go
-          - v2/constants/constants.go
-        test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
-            names:
-              - TestReverseChannel_DecodeEncode_RoundTrip
-              - TestReverseChannel_String
-          - package: github.com/USA-RedDragon/dmrgo/v2/enums
-            names:
-              - TestRCCommand_String_CeaseTransmissionCommand
-              - TestRCCommand_String_CeaseTransmissionRequest
-              - TestRCCommand_String_Reserved
-              - TestRCCommand_Cast_CeaseCommand
-              - TestRCCommand_Cast_CeaseRequest
-              - TestRCCommand_Cast_Reserved
-              - TestRCCommand_Values
-          - package: github.com/USA-RedDragon/dmrgo/v2/constants
-            names:
-              - TestTimers_AnnexA1
+      - section: "6.2"
+        title: "TDMA direct mode wide area timing"
+
+      - section: "6.3.1"
+        title: "Reverse Channel Transmitter Interrupt: Repeater Mode"
+
+      - section: "6.3.2"
+        title: "Reverse Channel Transmitter Interrupt: Direct Mode"
+
+      - section: "6.3.3"
+        title: "Voice Interrupt"
+
+      - section: "6.3.4"
+        title: "Emergency Interrupt"
+
+      - section: "6.3.5"
+        title: "Sending Interrupt Request and Retry Mechanism"
 
       - section: "7.1.1"
         title: "Full Link Control PDUs"
@@ -1826,6 +1838,9 @@ documents:
   - id: "TS-102-361-3"
     title: "ETSI TS 102 361-3: DMR Data Protocol"
     sections:
+      - section: "5.2"
+        title: "IP error messages"
+
       - section: "5.3"
         title: "Unconfirmed data DLL bearer service"
         source_files:
@@ -1846,21 +1861,43 @@ documents:
               - TestSenderUnconfirmed
               - TestSenderAccess
 
-      - section: "5.4"
-        title: "Confirmed data DLL bearer service"
+      - section: "5.4.1"
+        title: "Confirmed IP Data Types/PDUs"
         source_files:
           - v2/layer2/pdu/data_header.go
-          - v2/data/errors.go
-          - v2/data/event.go
-          - v2/data/message.go
-          - v2/data/receiver.go
-          - v2/data/sender.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestDataHeader_Confirmed_RoundTrip
               - TestDataHeader_ReservedFormat_RoundTrip
               - TestDataHeader_ResponsePacket_RoundTrip
+
+      - section: "5.4.2"
+        title: "Confirmed IP Data SDL"
+        source_files:
+          - v2/data/errors.go
+          - v2/data/event.go
+          - v2/data/message.go
+          - v2/data/receiver.go
+          - v2/data/sender.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/data
+            names:
+              - TestReceiverConfirmedFaults
+              - TestReceiverSequence
+              - TestReceiverNoAnswer
+              - TestReceiverTransportSeq
+              - TestSenderSequence
+              - TestSenderResponses
+              - TestSenderOtherResponse
+              - TestSenderErrors
+
+      - section: "5.4.3"
+        title: "Confirmed data MSCs"
+        source_files:
+          - v2/data/receiver.go
+          - v2/data/sender.go
+        test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/data
             names:
               - TestReceiverAnyToneThroughXPR
@@ -1879,6 +1916,9 @@ documents:
               - TestSenderResponses
               - TestSenderOtherResponse
               - TestSenderErrors
+
+      - section: "5.4.4"
+        title: "Sliding window confirmed data"
 
       - section: "5.5"
         title: "UDP/IPv4 data"
@@ -2135,8 +2175,40 @@ documents:
               - TestMS_Move
               - TestMS_Quality
 
-      - section: "6.4"
-        title: "Registration, Power Save, and Authentication Procedures"
+      - section: "6.4.1"
+        title: "Registration"
+        source_files:
+          - v2/trunk/ms.go
+          - v2/trunk/tscc.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestMS_RegisterAndCall
+              - TestTSCC_EndToEnd
+
+      - section: "6.4.2"
+        title: "MS Parameter Volatility"
+        source_files:
+          - v2/trunk/ms.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestMS_PowerOff
+              - TestMS_RegDeniedAndRefused
+
+      - section: "6.4.3"
+        title: "Action on Confirmation of a TSCC"
+        source_files:
+          - v2/trunk/ms.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestMS_RegisterAndCall
+              - TestMS_RegDeniedAndRefused
+              - TestMS_DataCallAndEmergency
+
+      - section: "6.4.4.1"
+        title: "Registration by Random Access"
         source_files:
           - v2/trunk/ms.go
           - v2/trunk/ms_access.go
@@ -2146,16 +2218,77 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
               - TestMS_RegisterAndCall
-              - TestMS_PowerOff
               - TestMS_RegDeniedAndRefused
-              - TestMS_RadioCheck
+              - TestMS_NoAnswer
+              - TestMS_RandomTimeout
               - TestTSCC_EndToEnd
           - package: github.com/USA-RedDragon/dmrgo/v2/layer3
             names:
               - TestRegistrationServiceOptions_Table7_55
 
-      - section: "6.5"
-        title: "Unified Data Transport Mechanism"
+      - section: "6.4.4.1.5"
+        title: "Challenge and Response Authentication"
+
+      - section: "6.4.4.1.7"
+        title: "Registration Demand Received During Random Access Registration"
+
+      - section: "6.4.4.1.11"
+        title: "Registration with MS Authentication"
+
+      - section: "6.4.4.1.13"
+        title: "Talkgroup Subscription and Talkgroup Attachment"
+
+      - section: "6.4.5"
+        title: "Mass Re-registration"
+
+      - section: "6.4.6"
+        title: "De-registration"
+        source_files:
+          - v2/trunk/ms.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestMS_PowerOff
+
+      - section: "6.4.7"
+        title: "Power Save"
+
+      - section: "6.4.8"
+        title: "Authentication Procedures"
+
+      - section: "6.4.9"
+        title: "MS Stun/Revive"
+
+      - section: "6.4.10"
+        title: "MS Kill"
+
+      - section: "6.4.11"
+        title: "IP Connection Advice"
+
+      - section: "6.4.12"
+        title: "Unsolicited MS Radio Check"
+        source_files:
+          - v2/trunk/ms_access.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestMS_RadioCheck
+              - TestMS_PayloadProtectAndAhoy
+
+      - section: "6.4.13"
+        title: "Supplementary_User Data Service"
+
+      - section: "6.4.14"
+        title: "MS Power Control and MS De-key"
+
+      - section: "6.4.15"
+        title: "Transmit Interrupt for MS De-key"
+
+      - section: "6.5.1.0"
+        title: "Format of the Appended Data"
+
+      - section: "6.5.1.1"
+        title: "UDT Block Structure"
         source_files:
           - v2/trunk/control.go
         test_functions:
@@ -2164,32 +2297,229 @@ documents:
               - TestFollower_UDT
               - TestFollower_RealUDT
 
-      - section: "6.6"
-        title: "Call Procedures"
+      - section: "6.5.1.2"
+        title: "UDT Content for Services Carried on the Outbound Channel"
+        source_files:
+          - v2/trunk/control.go
+          - v2/trunk/follower.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestFollower_UDT
+              - TestFollower_RealUDT
+
+      - section: "6.5.1.3"
+        title: "UDT Mechanism for the Inbound Channel"
+
+      - section: "6.6.1.1.1"
+        title: "Availability of calling MS"
+
+      - section: "6.6.1.1.2"
+        title: "Availability of Called Party as part of a Call"
+        source_files:
+          - v2/trunk/ms_access.go
+          - v2/trunk/tscc.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestMS_Called
+              - TestMS_PayloadProtectAndAhoy
+              - TestTSCC_NoAnswerAndBusy
+
+      - section: "6.6.1.1.3"
+        title: "General MS Radio Check"
+        source_files:
+          - v2/trunk/ms_access.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestMS_RadioCheck
+
+      - section: "6.6.1.2"
+        title: "Call Cancellation"
+
+      - section: "6.6.1.3"
+        title: "Acknowledgements Sent to Calling MS"
+        source_files:
+          - v2/trunk/ms_access.go
+          - v2/trunk/tscc.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestMS_Refused
+              - TestMS_NoAnswer
+              - TestTSCC_NoAnswerAndBusy
+
+      - section: "6.6.1.4"
+        title: "Called Party (MS) Answering Mechanism (OACSU)"
+        source_files:
+          - v2/trunk/ms_access.go
+          - v2/trunk/tscc.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestMS_Called
+              - TestTSCC_EndToEnd
+
+      - section: "6.6.1.4.1"
+        title: "FOACSU - Called Party Accepts the Call"
+
+      - section: "6.6.1.4.2"
+        title: "FOACSU - Called Party Rejects the Call"
+
+      - section: "6.6.1.5"
+        title: "Maintenance of Call Progress Waiting Timers"
+        source_files:
+          - v2/trunk/ms.go
+          - v2/trunk/tscc.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestMS_CallTimeout
+              - TestTSCC_NoAnswerAndBusy
+
+      - section: "6.6.1.6"
+        title: "Payload Channel Assignment to a Payload Channel"
         source_files:
           - v2/layer2/pdu/csbk.go
           - v2/trunk/follower.go
-          - v2/trunk/ms.go
-          - v2/trunk/ms_access.go
           - v2/trunk/tscc.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestCSBK_PrivateVoiceGrant_Decode
               - TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle
-              - TestCSBK_Clear_Decode
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestFollower_GrantClear
+              - TestFollower_MBCGrant
+              - TestTSCC_EndToEnd
+
+      - section: "6.6.1.7"
+        title: "Calls to ALLMSID, ALLMSIDL and ALLMSIDZ"
+        source_files:
+          - v2/trunk/follower.go
+
+      - section: "6.6.2.1"
+        title: "Voice Call Procedures for the TSCC (single-part set-up)"
+        source_files:
+          - v2/trunk/tscc.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestTSCC_EndToEnd
+              - TestTSCC_NoAnswerAndBusy
+
+      - section: "6.6.2.1.2"
+        title: "TSCC Response to Multi-part Voice Call Set-up"
+
+      - section: "6.6.2.1.5"
+        title: "Availability Check for Voice Calls connected through Gateways"
+
+      - section: "6.6.2.2"
+        title: "Voice Call Procedures for MS (single-part set-up)"
+        source_files:
+          - v2/trunk/ms.go
+          - v2/trunk/ms_access.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestMS_RegisterAndCall
+              - TestMS_Called
+              - TestMS_CallTimeout
+              - TestMS_Refused
+              - TestMS_NoAnswer
+              - TestMS_DataCallAndEmergency
+
+      - section: "6.6.2.2.3"
+        title: "Initiating a Multi-part Voice Call Service"
+
+      - section: "6.6.2.2.4"
+        title: "Response to the Multi-part Voice Service Request"
+
+      - section: "6.6.2.2.9"
+        title: "Call Set-up MSC that also Transfers Supplementary_user Data"
+
+      - section: "6.6.2.3"
+        title: "Procedures for the Voice Payload Channel"
+        source_files:
+          - v2/trunk/follower.go
+          - v2/trunk/ms_access.go
+          - v2/trunk/tscc.go
+        test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
               - TestFollower_GrantClear
               - TestFollower_HangAndInactive
-              - TestFollower_MBCGrant
               - TestFollower_Filters
-              - TestMS_Called
-              - TestMS_CallTimeout
-              - TestMS_Refused
               - TestMS_PayloadProtectAndAhoy
               - TestTSCC_EndToEnd
-              - TestTSCC_NoAnswerAndBusy
+
+      - section: "6.6.2.4"
+        title: "Late Entry"
+        source_files:
+          - v2/trunk/control.go
+          - v2/trunk/tscc.go
+
+      - section: "6.6.2.5"
+        title: "Preferential Call Notification"
+
+      - section: "6.6.2.6"
+        title: "Ambient Listening Service (ALS)"
+
+      - section: "6.6.3.1"
+        title: "Packet Data Call Procedures for the TSCC"
+
+      - section: "6.6.3.2"
+        title: "Packet Data Call Procedures for MS (single-part set-up)"
+        source_files:
+          - v2/trunk/ms.go
+          - v2/trunk/ms_access.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestMS_DataCallAndEmergency
+
+      - section: "6.6.3.2.3"
+        title: "Initiating a Multi-part Packet Data Service"
+
+      - section: "6.6.3.2.4"
+        title: "Response to the Multi-part Packet Data Service Request"
+
+      - section: "6.6.3.2.6"
+        title: "Availability Check to the Called MS (packet data)"
+
+      - section: "6.6.3.3.1"
+        title: "TS Procedures for the Packet Data Payload Channel"
+
+      - section: "6.6.3.3.2"
+        title: "MS Procedures for the Packet Data Payload Channel"
+        source_files:
+          - v2/trunk/ms_access.go
+
+      - section: "6.6.4"
+        title: "UDT Short Data Message Procedure"
+
+      - section: "6.6.5"
+        title: "UDT Short Data Polling Service"
+
+      - section: "6.6.6"
+        title: "Status Call Service"
+
+      - section: "6.6.7"
+        title: "Call Diversion"
+
+      - section: "6.6.8"
+        title: "Dynamic Group Numbering Assignment Service"
+
+      - section: "6.6.9"
+        title: "Full-Duplex MS to MS Voice Call Procedures"
+
+      - section: "6.6.10"
+        title: "Full-Duplex MS to MS Packet Data Call Procedures"
+
+      - section: "6.6.11"
+        title: "Unified Single Block Data Polling Service"
 
       - section: "7.1.1"
         title: "Control Signalling Block (CSBK/MBC/UDT) PDUs"
@@ -2254,7 +2584,7 @@ documents:
               - TestSLCO_TierIII_Values
 
       - section: "7.2"
-        title: "Layer 3 Information Element Coding"
+        title: "Layer 3 Information Element Coding, other than the subclauses below"
         source_files:
           - v2/layer3/cdef_parms.go
           - v2/enums/announcement_type.go
@@ -2283,6 +2613,51 @@ documents:
               - TestBroadcastPDU_AsAdjacentSite_CapacityMax
               - TestBroadcastPDU_AsAnnWDTSCC
               - TestBroadcastPDU_AsChanFreq
+
+      - section: "7.2.9"
+        title: "Digits"
+
+      - section: "7.2.13.3"
+        title: "Service_Options for a Call Diversion Service Request"
+
+      - section: "7.2.13.5"
+        title: "Service_Options for an Include Call Service Request"
+
+      - section: "7.2.13.6"
+        title: "Service_Options for a Status Transport Request"
+
+      - section: "7.2.13.7"
+        title: "Service_Options for the UDT Short Data Service"
+
+      - section: "7.2.13.8"
+        title: "Service Options for the Supplementary Data Service"
+
+      - section: "7.2.13.9"
+        title: "Service Options for a UDT Short Data Polling Request"
+
+      - section: "7.2.14"
+        title: "Service_Options_Mirror"
+
+      - section: "7.2.16"
+        title: "POL_FMT"
+
+      - section: "7.2.19.2"
+        title: "Specify Call Timer Parameters (CallTimer_Parms)"
+
+      - section: "7.2.19.3"
+        title: "Vote Now Advice (Vote_Now)"
+
+      - section: "7.2.19.4"
+        title: "Broadcast Local Time (Local_Time)"
+
+      - section: "7.2.19.5"
+        title: "Broadcast Mass Registration (MassReg)"
+
+      - section: "7.2.19.8"
+        title: "Broadcast General Site Parameters information"
+
+      - section: "7.2.31"
+        title: "STATUS"
 
       - section: "A"
         title: "Timers, constants levels and addresses"
@@ -2314,3 +2689,6 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestSLCO_TierIII_Values
+
+      - section: "B.3"
+        title: "Appended Data Information Elements"
