@@ -413,7 +413,7 @@ func (t *TSCC) Deadline() (at time.Duration, ok bool) {
 func (t *TSCC) Inbound(now time.Duration, ch uint16, s enums.Slot, raw *layer2.RawBurst, h layer2.Hint, dst []TSCCOutput) []TSCCOutput {
 	out := dst
 	opts := layer2.DecodeOptions{Kind: h.Kind}
-	if raw == nil || t.b.DecodeFromBytesWith(*raw, &opts) != nil {
+	if raw == nil || t.b == nil || t.b.DecodeFromBytesWith(*raw, &opts) != nil {
 		return out
 	}
 	if ch != t.cfg.Channel {

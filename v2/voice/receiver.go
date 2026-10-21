@@ -46,7 +46,8 @@ type ReceiverConfig struct {
 }
 
 // Receiver turns the bursts of one logical channel into call events, as
-// the package doc describes. Make it with NewReceiver. A Receiver is not
+// the package doc describes. Make it with NewReceiver; a zero Receiver
+// decodes no burst. A Receiver is not
 // safe for concurrent use and must not be copied; go vet reports a copy.
 type Receiver struct {
 	lostAfter time.Duration
@@ -150,7 +151,7 @@ func (r *Receiver) Expect(now time.Duration, c Call, until time.Duration) {
 // Hint.SyncLost ends the call as Lost does. It allocates only when dst has
 // no room for MaxEvents events.
 func (r *Receiver) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Event) []Event {
-	if raw == nil {
+	if raw == nil || r.b == nil {
 		return r.receive(now, nil, nil, &h, dst)
 	}
 	r.opts.Kind, r.opts.VoiceBurst, r.opts.DataType = h.Kind, enums.VoiceBurstUnknown, nil

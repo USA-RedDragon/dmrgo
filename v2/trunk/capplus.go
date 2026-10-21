@@ -197,7 +197,7 @@ func (f *CapacityPlusFollower) Burst(now time.Duration, raw *layer2.RawBurst, h 
 	if h.Kind == layer2.KindVoice {
 		f.opts.VoiceBurst = h.VoiceBurst
 	}
-	if f.b.DecodeFromBytesWith(*raw, &f.opts) != nil {
+	if f.b == nil || f.b.DecodeFromBytesWith(*raw, &f.opts) != nil {
 		return dst
 	}
 	if f.state == StatePayload && slot == f.call.Slot {

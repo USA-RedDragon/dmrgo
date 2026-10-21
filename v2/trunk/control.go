@@ -65,7 +65,7 @@ type control struct {
 }
 
 func (c *control) decode(raw *layer2.RawBurst, h *layer2.Hint) bool {
-	if raw == nil {
+	if raw == nil || c.b == nil {
 		return false
 	}
 	c.opts.Kind = h.Kind

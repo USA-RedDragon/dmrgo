@@ -3,8 +3,8 @@ package data_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/data"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
 
 func TestNilBurst(t *testing.T) {

@@ -159,7 +159,8 @@ type slot struct {
 }
 
 // Repeater is the base station of one carrier with two slots, as the
-// package doc describes. Make it with New. A Repeater is not safe for
+// package doc describes. Make it with New; the methods of a zero Repeater
+// do nothing, and Inbound, Lost and Reject return an error. A Repeater is not safe for
 // concurrent use and must not be copied.
 type Repeater struct {
 	mode       Mode
@@ -278,6 +279,9 @@ func orDefault(d, def time.Duration) time.Duration {
 // Repeater in StateHibernating, or keyed in ModeNetwork. It keeps the
 // config.
 func (r *Repeater) Reset() {
+	if r.b == nil {
+		return
+	}
 	for i := range r.slots {
 		s := &r.slots[i]
 		s.rx.Reset()
@@ -333,11 +337,15 @@ func (s *slot) busy() bool {
 // Inbound takes a burst received on slot h.Slot from the source from, and
 // appends the outputs to dst. The burst is decoded with what h says about
 // it. RF bursts with another color code than Config.ColorCode are dropped.
-// A burst whose h.Slot is not Slot1 or Slot2 is dropped with no output;
-// CheckSlot tells a bad slot. A nil raw is a transport frame without a
-// burst: only h applies, and Hint.SyncLost ends a call of from on the slot.
-// It allocates only when dst has no room for MaxOutputs outputs.
+// A burst whose h.Slot is not Slot1 or Slot2, or a burst to a zero
+// Repeater, is dropped with no output; CheckSlot tells a bad slot. A nil
+// raw is a transport frame without a burst: only h applies, and
+// Hint.SyncLost ends a call of from on the slot. It allocates only when
+// dst has no room for MaxOutputs outputs.
 func (r *Repeater) Inbound(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, from Source, dst []Output) []Output {
+	if r.b == nil {
+		return dst
+	}
 	s := r.slot(h.Slot)
 	if s == nil {
 		return dst
@@ -429,9 +437,13 @@ func (r *Repeater) key(now time.Duration, dst []Output) []Output {
 
 // Lost tells the Repeater that the transport lost the signal of slot s,
 // such as an MMDVM TAG_LOST. A call of from on s ends. For a slot other
-// than Slot1 or Slot2 it does nothing; CheckSlot tells a bad slot. It
-// allocates only when dst has no room for MaxOutputs outputs.
+// than Slot1 or Slot2, or a zero Repeater, it does nothing; CheckSlot
+// tells a bad slot. It allocates only when dst has no room for MaxOutputs
+// outputs.
 func (r *Repeater) Lost(now time.Duration, s enums.Slot, from Source, dst []Output) []Output {
+	if r.b == nil {
+		return dst
+	}
 	sl := r.slot(s)
 	if sl == nil {
 		return dst
@@ -452,6 +464,9 @@ func (r *Repeater) Lost(now time.Duration, s enums.Slot, from Source, dst []Outp
 // returns ErrSlot for a slot other than Slot1 or Slot2, and does nothing
 // for a slot without a call.
 func (r *Repeater) Reject(s enums.Slot) error {
+	if r.b == nil {
+		return errZero
+	}
 	sl := r.slot(s)
 	if sl == nil {
 		return ErrSlot
@@ -471,6 +486,9 @@ func (r *Repeater) Reject(s enums.Slot) error {
 // regenerated bursts that are due. It allocates only when dst has no room
 // for MaxOutputs outputs.
 func (r *Repeater) Tick(now time.Duration, dst []Output) []Output {
+	if r.b == nil {
+		return dst
+	}
 	dst = r.timers(now, dst)
 	if r.mode == ModeNetwork {
 		return r.flush(now, dst)
@@ -484,6 +502,9 @@ func (r *Repeater) Tick(now time.Duration, dst []Output) []Output {
 // Deadline returns the time at which the Repeater needs a Tick. ok is false
 // when no timer runs.
 func (r *Repeater) Deadline() (at time.Duration, ok bool) {
+	if r.b == nil {
+		return 0, false
+	}
 	var d deadline
 	if r.mode == ModeRF && r.keyed {
 		d.add(r.next - r.lead)

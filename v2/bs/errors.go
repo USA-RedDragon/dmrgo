@@ -19,6 +19,7 @@ func CheckSlot(s enums.Slot) error {
 	}
 	return nil
 }
+var errZero = errors.New("bs: zero Repeater; make it with New")
 
 var (
 	errMode        error = &dmrgo.ConfigError{Type: "bs", Field: "Mode"}

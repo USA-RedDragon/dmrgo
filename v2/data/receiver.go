@@ -287,7 +287,9 @@ func defaultDuration(d, def time.Duration) time.Duration {
 func (r *Receiver) Reset() {
 	r.state, r.call, r.stats = StateIdle, Call{}, Stats{}
 	r.cur = current{}
-	r.asm.Reset()
+	if r.asm != nil {
+		r.asm.Reset()
+	}
 	r.peers.reset()
 	r.u.active = false
 	r.chain.active = false
@@ -307,7 +309,7 @@ func (r *Receiver) State() State {
 // Hint.SyncLost ends the call as Lost does. It allocates only when dst has
 // no room for MaxEvents events.
 func (r *Receiver) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Event) []Event {
-	if raw == nil {
+	if raw == nil || r.b == nil {
 		return r.receive(now, nil, &h, dst)
 	}
 	r.opts.Kind, r.opts.VoiceBurst, r.opts.DataType = h.Kind, enums.VoiceBurstUnknown, nil
@@ -333,6 +335,9 @@ func (r *Receiver) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint,
 // example of voice.Receiver.Decoded shows. It allocates only when dst has
 // no room for MaxEvents events.
 func (r *Receiver) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, dst []Event) []Event {
+	if r.asm == nil {
+		b = nil
+	}
 	return r.receive(now, b, &h, dst)
 }
 

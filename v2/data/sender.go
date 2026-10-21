@@ -361,7 +361,9 @@ func (s *Sender) Reset() {
 	s.n, s.win, s.cur, s.closed = 0, 0, 0, false
 	s.link = nil
 	s.peers.reset()
-	s.asm.Reset()
+	if s.asm != nil {
+		s.asm.Reset()
+	}
 }
 
 // State returns the state of the Sender.
@@ -383,15 +385,21 @@ func (s *Sender) State() SenderState {
 // Window are in progress: it goes in the window on air when the last
 // header of that window has not gone yet, else in the next window. Send
 // returns ErrBusy for any other message while a message is in progress, a
-// *dmrgo.ConfigError for a nil m or another header, a P_HEAD in m.Proprietary,
-// or a confirmed message to a group, and the errors of
-// packet.Builder.Segment, such as packet.ErrTooLong and packet.ErrRate.
-// (ETSI TS 102 361-3 clauses 5.4 and 5.4.4)
+// *dmrgo.ConfigError for a nil m or another header, a P_HEAD in
+// m.Proprietary, or a confirmed message to a group, an error on a zero
+// Sender, and the errors of packet.Builder.Segment, such as
+// packet.ErrTooLong and packet.ErrRate. (ETSI TS 102 361-3 clauses 5.4 and
+// 5.4.4)
 func (s *Sender) Send(now time.Duration, m *Message) error {
-	if s.n >= len(s.slots) || s.n > 0 && !s.joins(m) {
+	switch {
+	case s.asm == nil:
+		return errZero
+	case m == nil:
+		return errHeader
+	case s.n >= len(s.slots) || s.n > 0 && !s.joins(m):
 		return ErrBusy
 	}
-	if m == nil || m.Proprietary != nil {
+	if m.Proprietary != nil {
 		return errHeader
 	}
 	at := s.free()
@@ -548,7 +556,7 @@ func (s *Sender) Cancel(_ time.Duration, dst []Output) []Output {
 // timers. It allocates only when dst has no room for MaxOutputs outputs.
 func (s *Sender) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
 	s.opts.Kind = h.Kind
-	if raw == nil || s.b.DecodeFromBytesWith(*raw, &s.opts) != nil {
+	if raw == nil || s.b == nil || s.b.DecodeFromBytesWith(*raw, &s.opts) != nil {
 		return s.timers(now, dst)
 	}
 	return s.Decoded(now, s.b, h, dst)
@@ -565,7 +573,7 @@ func (s *Sender) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, d
 // MaxOutputs outputs. (ETSI TS 102 361-3 clause 5.4.4)
 func (s *Sender) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
 	dst = s.timers(now, dst)
-	if b == nil || b.Kind != layer2.KindData || b.SlotType.FEC.Uncorrectable || s.state != SenderWaitResponse {
+	if b == nil || s.asm == nil || b.Kind != layer2.KindData || b.SlotType.FEC.Uncorrectable || s.state != SenderWaitResponse {
 		return dst
 	}
 	switch b.SlotType.DataType {

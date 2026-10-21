@@ -10,6 +10,8 @@ import (
 // it with errors.Is.
 var ErrBusy = errors.New("data: message in progress")
 
+var errZero = errors.New("data: zero Sender; make it with NewSender")
+
 var (
 	errColorCode    error = &dmrgo.ConfigError{Type: "data", Field: "ColorCode"}
 	errSource       error = &dmrgo.ConfigError{Type: "data", Field: "Source"}
