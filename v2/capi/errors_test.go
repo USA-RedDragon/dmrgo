@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -51,8 +51,8 @@ func TestErrCodeChain(t *testing.T) {
 		{fmt.Errorf("x: %w", voice.ErrBusy), "DMRGO_ERR_VOICE_BUSY"},
 		{errors.Join(voice.ErrBusy, layer2.ErrVoiceTerminated), "DMRGO_ERR_VOICE_BUSY"},
 		{errors.Join(layer2.ErrVoiceTerminated, voice.ErrBusy), "DMRGO_ERR_LAYER2_VOICE_TERMINATED"},
-		{fmt.Errorf("x: %w", &enums.ColorCodeError{Value: 16}), "DMRGO_ERR_ENUMS_COLOR_CODE_ERROR"},
-		{fmt.Errorf("%w: %w", pdu.ErrNoAddresses, &enums.ColorCodeError{Value: 16}), "DMRGO_ERR_PDU_NO_ADDRESSES"},
+		{fmt.Errorf("x: %w", &dmrgo.ConfigError{Type: "voice", Field: "ColorCode"}), "DMRGO_ERR_CONFIG_ERROR"},
+		{fmt.Errorf("%w: %w", pdu.ErrNoAddresses, &dmrgo.FieldRangeError{Type: "enums", Field: "ColorCode", Bits: 4}), "DMRGO_ERR_PDU_NO_ADDRESSES"},
 	} {
 		want, ok := codes[c.want]
 		if !ok {

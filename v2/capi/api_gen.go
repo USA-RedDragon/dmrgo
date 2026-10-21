@@ -52,6 +52,20 @@ import (
 	"unsafe"
 )
 
+func in_dmrgo_ConfigError(s *C.dmrgo_config_error_t) (d g_dmrgo.ConfigError) {
+	d.Type = C.GoStringN(s.type_, C.int(s.type__len))
+	d.Field = C.GoStringN(s.field, C.int(s.field_len))
+	return
+}
+
+func out_dmrgo_ConfigError(d *C.dmrgo_config_error_t, s *g_dmrgo.ConfigError, oc *outc) {
+	_ = oc
+	d.type_ = arenaStr(oc, s.Type)
+	d.type__len = C.size_t(len(s.Type))
+	d.field = arenaStr(oc, s.Field)
+	d.field_len = C.size_t(len(s.Field))
+}
+
 func in_dmrgo_FieldRangeError(s *C.dmrgo_field_range_error_t) (d g_dmrgo.FieldRangeError) {
 	d.Type = C.GoStringN(s.type_, C.int(s.type__len))
 	d.Field = C.GoStringN(s.field, C.int(s.field_len))
@@ -133,17 +147,6 @@ func in_layer2_pdu_ShortLC(s *C.dmrgo_pdu_short_lc_t, st *st_layer2_pdu_ShortLC)
 	}
 	d.RawPayload = *(*[3]byte)(unsafe.Pointer(&s.raw_payload))
 	return
-}
-
-func in_bs_ConfigError(s *C.dmrgo_bs_config_error_t) (d g_bs.ConfigError) {
-	d.Field = C.GoStringN(s.field, C.int(s.field_len))
-	return
-}
-
-func out_bs_ConfigError(d *C.dmrgo_bs_config_error_t, s *g_bs.ConfigError, oc *outc) {
-	_ = oc
-	d.field = arenaStr(oc, s.Field)
-	d.field_len = C.size_t(len(s.Field))
 }
 
 func in_bs_Config(s *C.dmrgo_bs_config_t) (d g_bs.Config) {
@@ -237,17 +240,6 @@ func out_bs_Output(d *C.dmrgo_bs_output_t, s *g_bs.Output, oc *outc) {
 	out_voice_Call(&d.call, &s.Call, oc)
 	d.end = C.dmrgo_voice_end_reason_t(s.End)
 	d.reason = C.dmrgo_bs_reason_t(s.Reason)
-}
-
-func in_csbk_ConfigError(s *C.dmrgo_csbk_config_error_t) (d g_csbk.ConfigError) {
-	d.Field = C.GoStringN(s.field, C.int(s.field_len))
-	return
-}
-
-func out_csbk_ConfigError(d *C.dmrgo_csbk_config_error_t, s *g_csbk.ConfigError, oc *outc) {
-	_ = oc
-	d.field = arenaStr(oc, s.Field)
-	d.field_len = C.size_t(len(s.Field))
 }
 
 func in_csbk_PreamblesConfig(s *C.dmrgo_csbk_preambles_config_t) (d g_csbk.PreamblesConfig) {
@@ -354,17 +346,6 @@ func in_layer3_ServiceOptions(s *C.dmrgo_layer3_service_options_t) (d g_layer3.S
 	d.IsOpenVoiceCallMode = bool(s.is_open_voice_call_mode)
 	d.PriorityLevel = uint8(s.priority_level)
 	return
-}
-
-func in_data_ConfigError(s *C.dmrgo_data_config_error_t) (d g_data.ConfigError) {
-	d.Field = C.GoStringN(s.field, C.int(s.field_len))
-	return
-}
-
-func out_data_ConfigError(d *C.dmrgo_data_config_error_t, s *g_data.ConfigError, oc *outc) {
-	_ = oc
-	d.field = arenaStr(oc, s.Field)
-	d.field_len = C.size_t(len(s.Field))
 }
 
 type st_data_ReceiverConfig struct {
@@ -858,11 +839,6 @@ func in_data_Message(s *C.dmrgo_data_message_t, st *st_data_Message) (d g_data.M
 	d.Fragmented = bool(s.fragmented)
 	d.Fragments = uint16(s.fragments)
 	return
-}
-
-func out_enums_ColorCodeError(d *C.dmrgo_enums_color_code_error_t, s *g_enums.ColorCodeError, oc *outc) {
-	_ = oc
-	d.value = C.uint8_t(s.Value)
 }
 
 func in_fec_BurstFECStats(s *C.dmrgo_fec_burst_fec_stats_t) (d g_fec.BurstFECStats) {
@@ -4649,17 +4625,6 @@ func out_trunk_Output(d *C.dmrgo_trunk_output_t, s *g_trunk.Output, oc *outc) {
 	d.rc = C.dmrgo_enums_rc_command_t(s.RC)
 }
 
-func in_trunk_ConfigError(s *C.dmrgo_trunk_config_error_t) (d g_trunk.ConfigError) {
-	d.Field = C.GoStringN(s.field, C.int(s.field_len))
-	return
-}
-
-func out_trunk_ConfigError(d *C.dmrgo_trunk_config_error_t, s *g_trunk.ConfigError, oc *outc) {
-	_ = oc
-	d.field = arenaStr(oc, s.Field)
-	d.field_len = C.size_t(len(s.Field))
-}
-
 func out_trunk_LIPShortReport(d *C.dmrgo_trunk_lip_short_report_t, s *g_trunk.LIPShortReport, oc *outc) {
 	_ = oc
 	d.pdu_type = C.uint8_t(s.PDUType)
@@ -5355,17 +5320,6 @@ func dmrgo_dvsi_port_from_vtable(c_vt *C.dmrgo_dvsi_port_vtable_t, c_out **C.dmr
 	return C.DMRGO_OK
 }
 
-func in_voice_ConfigError(s *C.dmrgo_voice_config_error_t) (d g_voice.ConfigError) {
-	d.Field = C.GoStringN(s.field, C.int(s.field_len))
-	return
-}
-
-func out_voice_ConfigError(d *C.dmrgo_voice_config_error_t, s *g_voice.ConfigError, oc *outc) {
-	_ = oc
-	d.field = arenaStr(oc, s.Field)
-	d.field_len = C.size_t(len(s.Field))
-}
-
 func out_voice_Output(d *C.dmrgo_voice_output_t, s *g_voice.Output, oc *outc) {
 	_ = oc
 	d.kind = C.dmrgo_voice_output_kind_t(s.Kind)
@@ -5518,6 +5472,10 @@ func in_voice_CallOptions(s *C.dmrgo_voice_call_options_t, st *st_voice_CallOpti
 	return
 }
 
+func fromC_dmrgo_ConfigError(s *C.dmrgo_config_error_t) g_dmrgo.ConfigError {
+	return in_dmrgo_ConfigError(s)
+}
+
 func fromC_dmrgo_FieldRangeError(s *C.dmrgo_field_range_error_t) g_dmrgo.FieldRangeError {
 	return in_dmrgo_FieldRangeError(s)
 }
@@ -5553,10 +5511,6 @@ func fromC_bs_Config(s *C.dmrgo_bs_config_t) g_bs.Config {
 	return in_bs_Config(s)
 }
 
-func fromC_bs_ConfigError(s *C.dmrgo_bs_config_error_t) g_bs.ConfigError {
-	return in_bs_ConfigError(s)
-}
-
 func in_bs_Output(s *C.dmrgo_bs_output_t) (d g_bs.Output) {
 	d.Kind = g_bs.OutputKind(s.kind)
 	d.Slot = g_enums.Slot(s.slot)
@@ -5579,10 +5533,6 @@ func fromC_bs_Output(s *C.dmrgo_bs_output_t) g_bs.Output {
 
 func fromC_bs_Source(s *C.dmrgo_bs_source_t) g_bs.Source {
 	return in_bs_Source(s)
-}
-
-func fromC_csbk_ConfigError(s *C.dmrgo_csbk_config_error_t) g_csbk.ConfigError {
-	return in_csbk_ConfigError(s)
 }
 
 func out_csbk_Match(d *C.dmrgo_csbk_match_t, s *g_csbk.Match, oc *outc) {
@@ -5724,10 +5674,6 @@ func fromC_data_Call(s *C.dmrgo_data_call_t) g_data.Call {
 	return in_data_Call(s)
 }
 
-func fromC_data_ConfigError(s *C.dmrgo_data_config_error_t) g_data.ConfigError {
-	return in_data_ConfigError(s)
-}
-
 type st_data_Event struct {
 	f_Message st_data_Message
 	p_Retry   g_layer2_packet.ResponseData
@@ -5848,15 +5794,6 @@ func out_data_Stats(d *C.dmrgo_data_stats_t, s *g_data.Stats, oc *outc) {
 
 func fromC_data_Stats(s *C.dmrgo_data_stats_t) g_data.Stats {
 	return in_data_Stats(s)
-}
-
-func in_enums_ColorCodeError(s *C.dmrgo_enums_color_code_error_t) (d g_enums.ColorCodeError) {
-	d.Value = uint8(s.value)
-	return
-}
-
-func fromC_enums_ColorCodeError(s *C.dmrgo_enums_color_code_error_t) g_enums.ColorCodeError {
-	return in_enums_ColorCodeError(s)
 }
 
 func fromC_fec_BurstFECStats(s *C.dmrgo_fec_burst_fec_stats_t) g_fec.BurstFECStats {
@@ -7715,10 +7652,6 @@ func fromC_trunk_ChannelRule(s *C.dmrgo_trunk_channel_rule_t) g_trunk.ChannelRul
 	return in_trunk_ChannelRule(s)
 }
 
-func fromC_trunk_ConfigError(s *C.dmrgo_trunk_config_error_t) g_trunk.ConfigError {
-	return in_trunk_ConfigError(s)
-}
-
 func in_trunk_DynamicGroups(s *C.dmrgo_trunk_dynamic_groups_t) (d g_trunk.DynamicGroups) {
 	d.Groups = *(*[16]uint32)(unsafe.Pointer(&s.groups))
 	d.OneKey = uint32(s.one_key)
@@ -8111,10 +8044,6 @@ func out_voice_CallOptions(d *C.dmrgo_voice_call_options_t, s *g_voice.CallOptio
 func fromC_voice_CallOptions(s *C.dmrgo_voice_call_options_t) g_voice.CallOptions {
 	var st st_voice_CallOptions
 	return in_voice_CallOptions(s, &st)
-}
-
-func fromC_voice_ConfigError(s *C.dmrgo_voice_config_error_t) g_voice.ConfigError {
-	return in_voice_ConfigError(s)
 }
 
 func fromC_voice_Event(s *C.dmrgo_voice_event_t) g_voice.Event {
@@ -8789,6 +8718,54 @@ func new_voice_Transmitter(v *g_voice.Transmitter) *C.dmrgo_voice_transmitter_t 
 	return (*C.dmrgo_voice_transmitter_t)(newHandle(&h_voice_Transmitter{v: v}))
 }
 
+//export dmrgo_config_error_error
+func dmrgo_config_error_error(c_self *C.dmrgo_config_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_dmrgo.ConfigError
+	x = in_dmrgo_ConfigError(&(*c_self))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.Error()
+	out_dmrgo_ConfigError(&(*c_self), &x, oc)
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_config_error_last
+func dmrgo_config_error_last(c_out *C.dmrgo_config_error_t, c_ok *C.bool) C.int {
+	l := C.dmrgo__last()
+	ok := l.kind == -227
+	if c_ok != nil {
+		*c_ok = C.bool(ok)
+	}
+	if ok && c_out != nil {
+		*c_out = *(*C.dmrgo_config_error_t)(unsafe.Pointer(&l.d))
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_field_range_error_error
 func dmrgo_field_range_error_error(c_self *C.dmrgo_field_range_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -8954,54 +8931,6 @@ func dmrgo_bs_check_slot(c_s C.dmrgo_enums_slot_t) (rc C.int) {
 	}
 	if r0 != nil {
 		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_bs_config_error_error
-func dmrgo_bs_config_error_error(c_self *C.dmrgo_bs_config_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_bs.ConfigError
-	x = in_bs_ConfigError(&(*c_self))
-	if c_out == nil && c_out_cap > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := x.Error()
-	out_bs_ConfigError(&(*c_self), &x, oc)
-	_ = r0
-	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_bs_config_error_last
-func dmrgo_bs_config_error_last(c_out *C.dmrgo_bs_config_error_t, c_ok *C.bool) C.int {
-	l := C.dmrgo__last()
-	ok := l.kind == -101
-	if c_ok != nil {
-		*c_ok = C.bool(ok)
-	}
-	if ok && c_out != nil {
-		*c_out = *(*C.dmrgo_bs_config_error_t)(unsafe.Pointer(&l.d))
 	}
 	return C.DMRGO_OK
 }
@@ -9445,54 +9374,6 @@ func dmrgo_bs_state_string(c_self C.dmrgo_bs_state_t, c_out *C.char, c_out_cap C
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_csbk_config_error_error
-func dmrgo_csbk_config_error_error(c_self *C.dmrgo_csbk_config_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_csbk.ConfigError
-	x = in_csbk_ConfigError(&(*c_self))
-	if c_out == nil && c_out_cap > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := x.Error()
-	out_csbk_ConfigError(&(*c_self), &x, oc)
-	_ = r0
-	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_csbk_config_error_last
-func dmrgo_csbk_config_error_last(c_out *C.dmrgo_csbk_config_error_t, c_ok *C.bool) C.int {
-	l := C.dmrgo__last()
-	ok := l.kind == -102
-	if c_ok != nil {
-		*c_ok = C.bool(ok)
-	}
-	if ok && c_out != nil {
-		*c_out = *(*C.dmrgo_csbk_config_error_t)(unsafe.Pointer(&l.d))
 	}
 	return C.DMRGO_OK
 }
@@ -11891,54 +11772,6 @@ func dmrgo_csbk_wakeup_state_string(c_self C.dmrgo_csbk_wakeup_state_t, c_out *C
 	return C.DMRGO_OK
 }
 
-//export dmrgo_data_config_error_error
-func dmrgo_data_config_error_error(c_self *C.dmrgo_data_config_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_data.ConfigError
-	x = in_data_ConfigError(&(*c_self))
-	if c_out == nil && c_out_cap > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := x.Error()
-	out_data_ConfigError(&(*c_self), &x, oc)
-	_ = r0
-	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_data_config_error_last
-func dmrgo_data_config_error_last(c_out *C.dmrgo_data_config_error_t, c_ok *C.bool) C.int {
-	l := C.dmrgo__last()
-	ok := l.kind == -168
-	if c_ok != nil {
-		*c_ok = C.bool(ok)
-	}
-	if ok && c_out != nil {
-		*c_out = *(*C.dmrgo_data_config_error_t)(unsafe.Pointer(&l.d))
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_data_end_reason_string
 func dmrgo_data_end_reason_string(c_self C.dmrgo_data_end_reason_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -13068,41 +12901,6 @@ func dmrgo_enums_backoff_frames(c_self C.dmrgo_enums_backoff_t, c_out *C.int64_t
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_enums_color_code_error_error
-func dmrgo_enums_color_code_error_error(c_self *C.dmrgo_enums_color_code_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_enums.ColorCodeError
-	x = *(*g_enums.ColorCodeError)(unsafe.Pointer(&(*c_self)))
-	if c_out == nil && c_out_cap > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := x.Error()
-	*(*g_enums.ColorCodeError)(unsafe.Pointer(&(*c_self))) = x
-	_ = r0
-	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_enums_color_code_error_last
-func dmrgo_enums_color_code_error_last(c_out *C.dmrgo_enums_color_code_error_t, c_ok *C.bool) C.int {
-	l := C.dmrgo__last()
-	ok := l.kind == -103
-	if c_ok != nil {
-		*c_ok = C.bool(ok)
-	}
-	if ok && c_out != nil {
-		*c_out = *(*C.dmrgo_enums_color_code_error_t)(unsafe.Pointer(&l.d))
 	}
 	return C.DMRGO_OK
 }
@@ -37614,54 +37412,6 @@ func dmrgo_trunk_channel_plan_lookup(c_self *C.dmrgo_trunk_channel_plan_t, c_n C
 	return C.DMRGO_OK
 }
 
-//export dmrgo_trunk_config_error_error
-func dmrgo_trunk_config_error_error(c_self *C.dmrgo_trunk_config_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_trunk.ConfigError
-	x = in_trunk_ConfigError(&(*c_self))
-	if c_out == nil && c_out_cap > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := x.Error()
-	out_trunk_ConfigError(&(*c_self), &x, oc)
-	_ = r0
-	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_trunk_config_error_last
-func dmrgo_trunk_config_error_last(c_out *C.dmrgo_trunk_config_error_t, c_ok *C.bool) C.int {
-	l := C.dmrgo__last()
-	ok := l.kind == -105
-	if c_ok != nil {
-		*c_ok = C.bool(ok)
-	}
-	if ok && c_out != nil {
-		*c_out = *(*C.dmrgo_trunk_config_error_t)(unsafe.Pointer(&l.d))
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_trunk_decode_lip_short_report
 func dmrgo_trunk_decode_lip_short_report(c_data *C.uint8_t, c_out *C.dmrgo_trunk_lip_short_report_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -42141,54 +41891,6 @@ func dmrgo_dvsi_port_write(c_self *C.dmrgo_dvsi_port_t, c_p *C.uint8_t, c_p_len 
 	return C.DMRGO_OK
 }
 
-//export dmrgo_voice_config_error_error
-func dmrgo_voice_config_error_error(c_self *C.dmrgo_voice_config_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_voice.ConfigError
-	x = in_voice_ConfigError(&(*c_self))
-	if c_out == nil && c_out_cap > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := x.Error()
-	out_voice_ConfigError(&(*c_self), &x, oc)
-	_ = r0
-	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_voice_config_error_last
-func dmrgo_voice_config_error_last(c_out *C.dmrgo_voice_config_error_t, c_ok *C.bool) C.int {
-	l := C.dmrgo__last()
-	ok := l.kind == -106
-	if c_ok != nil {
-		*c_ok = C.bool(ok)
-	}
-	if ok && c_out != nil {
-		*c_out = *(*C.dmrgo_voice_config_error_t)(unsafe.Pointer(&l.d))
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_voice_end_reason_string
 func dmrgo_voice_end_reason_string(c_self C.dmrgo_voice_end_reason_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -43891,20 +43593,10 @@ func errCode(err error) C.int {
 			return -150
 		}
 		switch e.(type) {
+		case *g_dmrgo.ConfigError:
+			return -227
 		case *g_dmrgo.FieldRangeError:
 			return -100
-		case *g_bs.ConfigError:
-			return -101
-		case *g_csbk.ConfigError:
-			return -102
-		case *g_data.ConfigError:
-			return -168
-		case *g_enums.ColorCodeError:
-			return -103
-		case *g_trunk.ConfigError:
-			return -105
-		case *g_voice.ConfigError:
-			return -106
 		}
 		switch u := e.(type) {
 		case interface{ Unwrap() []error }:
@@ -43928,64 +43620,18 @@ func setErr(err error) C.int {
 	l := C.dmrgo__last()
 	oc := &outc{arena: unsafe.Slice((*byte)(unsafe.Pointer(&l.arena[0])), len(l.arena))}
 	{
+		var x *g_dmrgo.ConfigError
+		if errors.As(err, &x) {
+			l.kind = -227
+			out_dmrgo_ConfigError((*C.dmrgo_config_error_t)(unsafe.Pointer(&l.d)), x, oc)
+			return code
+		}
+	}
+	{
 		var x *g_dmrgo.FieldRangeError
 		if errors.As(err, &x) {
 			l.kind = -100
 			out_dmrgo_FieldRangeError((*C.dmrgo_field_range_error_t)(unsafe.Pointer(&l.d)), x, oc)
-			return code
-		}
-	}
-	{
-		var x *g_bs.ConfigError
-		if errors.As(err, &x) {
-			l.kind = -101
-			out_bs_ConfigError((*C.dmrgo_bs_config_error_t)(unsafe.Pointer(&l.d)), x, oc)
-			return code
-		}
-	}
-	{
-		var x *g_csbk.ConfigError
-		if errors.As(err, &x) {
-			l.kind = -102
-			out_csbk_ConfigError((*C.dmrgo_csbk_config_error_t)(unsafe.Pointer(&l.d)), x, oc)
-			return code
-		}
-	}
-	{
-		var x *g_data.ConfigError
-		if errors.As(err, &x) {
-			l.kind = -168
-			out_data_ConfigError((*C.dmrgo_data_config_error_t)(unsafe.Pointer(&l.d)), x, oc)
-			return code
-		}
-	}
-	{
-		var x *g_enums.ColorCodeError
-		if errors.As(err, &x) {
-			l.kind = -103
-			out_enums_ColorCodeError((*C.dmrgo_enums_color_code_error_t)(unsafe.Pointer(&l.d)), x, oc)
-			return code
-		}
-	}
-	{
-		if errors.As(err, &x) {
-			l.kind = -104
-			return code
-		}
-	}
-	{
-		var x *g_trunk.ConfigError
-		if errors.As(err, &x) {
-			l.kind = -105
-			out_trunk_ConfigError((*C.dmrgo_trunk_config_error_t)(unsafe.Pointer(&l.d)), x, oc)
-			return code
-		}
-	}
-	{
-		var x *g_voice.ConfigError
-		if errors.As(err, &x) {
-			l.kind = -106
-			out_voice_ConfigError((*C.dmrgo_voice_config_error_t)(unsafe.Pointer(&l.d)), x, oc)
 			return code
 		}
 	}

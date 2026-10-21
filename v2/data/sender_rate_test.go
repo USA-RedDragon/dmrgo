@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
+
 	"github.com/USA-RedDragon/dmrgo/v2/data"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
@@ -40,7 +42,7 @@ func TestSenderZeroRateIsRate12(t *testing.T) {
 func TestSenderNilMessage(t *testing.T) {
 	t.Parallel()
 	s := newSender(t, nil)
-	var ce *data.ConfigError
+	var ce *dmrgo.ConfigError
 	if err := s.Send(0, nil); !errors.As(err, &ce) || ce.Field != "Header" {
 		t.Errorf("Send(nil): %v", err)
 	}

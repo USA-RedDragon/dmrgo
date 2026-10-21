@@ -1,18 +1,10 @@
 package trunk
 
-import "errors"
+import (
+	"errors"
 
-// ConfigError is the error of NewFollower, NewMS and NewTSCC for a config
-// field with a value out of range. Match it with errors.As.
-type ConfigError struct {
-	// Field is the name of the config field.
-	Field string
-}
-
-// Error returns the message of e. It allocates the message.
-func (e *ConfigError) Error() string {
-	return "trunk: " + e.Field + " is out of range"
-}
+	"github.com/USA-RedDragon/dmrgo/v2"
+)
 
 // Errors of the tables and machines. Match them with errors.Is.
 var (
@@ -53,16 +45,16 @@ var (
 )
 
 var (
-	errHunt          error = &ConfigError{Field: "Hunt"}
-	errTalkgroups    error = &ConfigError{Field: "Talkgroups"}
-	errSysCode       error = &ConfigError{Field: "SysCode"}
-	errAddress       error = &ConfigError{Field: "Address"}
-	errTarget        error = &ConfigError{Field: "target"}
-	errDMRLA         error = &ConfigError{Field: "DMRLA"}
-	errColorCode     error = &ConfigError{Field: "ColorCode"}
-	errChannels      error = &ConfigError{Field: "Payload"}
-	errRegistrations error = &ConfigError{Field: "MaxRegistrations"}
-	errPowerSave     error = &ConfigError{Field: "PowerSave"}
-	errStatus        error = &ConfigError{Field: "status"}
-	errSupplementary error = &ConfigError{Field: "supplementary data"}
+	errHunt          error = &dmrgo.ConfigError{Type: "trunk", Field: "Hunt"}
+	errTalkgroups    error = &dmrgo.ConfigError{Type: "trunk", Field: "Talkgroups"}
+	errSysCode       error = &dmrgo.ConfigError{Type: "trunk", Field: "SysCode"}
+	errAddress       error = &dmrgo.ConfigError{Type: "trunk", Field: "Address"}
+	errTarget        error = &dmrgo.ConfigError{Type: "trunk", Field: "target"}
+	errDMRLA         error = &dmrgo.ConfigError{Type: "trunk", Field: "DMRLA"}
+	errColorCode     error = &dmrgo.ConfigError{Type: "trunk", Field: "ColorCode"}
+	errChannels      error = &dmrgo.ConfigError{Type: "trunk", Field: "Payload"}
+	errRegistrations error = &dmrgo.ConfigError{Type: "trunk", Field: "MaxRegistrations"}
+	errPowerSave     error = &dmrgo.ConfigError{Type: "trunk", Field: "PowerSave"}
+	errStatus        error = &dmrgo.ConfigError{Type: "trunk", Field: "status"}
+	errSupplementary error = &dmrgo.ConfigError{Type: "trunk", Field: "supplementary data"}
 )

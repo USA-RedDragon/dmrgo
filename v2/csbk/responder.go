@@ -103,10 +103,10 @@ type Responder struct {
 	answerReady bool
 }
 
-// NewResponder returns a Responder for cfg. It returns a *ConfigError for a
-// nil cfg, an Address of 0 or above 24 bits, a color code above 15, an
-// unknown Source, Access or OACSU. It allocates the Responder, and its
-// Burst unless cfg.Scratch is set.
+// NewResponder returns a Responder for cfg. It returns a *dmrgo.ConfigError
+// for a nil cfg, an Address of 0 or above 24 bits, a color code above 15, an
+// unknown Source, Access or OACSU. It allocates the Responder, and its Burst
+// unless cfg.Scratch is set.
 func NewResponder(cfg *ResponderConfig) (*Responder, error) {
 	switch {
 	case cfg == nil, cfg.Address == 0, cfg.Address>>24 != 0:

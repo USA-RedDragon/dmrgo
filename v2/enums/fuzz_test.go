@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
@@ -65,8 +66,8 @@ func checkVoiceBursts(t *testing.T, b uint8, i int) {
 func checkByteEnums(t *testing.T, b uint8) {
 	t.Helper()
 	cc, err := enums.NewColorCode(b)
-	var ccErr *enums.ColorCodeError
-	if b < 16 && (err != nil || cc != enums.ColorCode(b)) || b >= 16 && (!errors.As(err, &ccErr) || ccErr.Value != b || err.Error() == "") {
+	var rangeErr *dmrgo.FieldRangeError
+	if b < 16 && (err != nil || cc != enums.ColorCode(b)) || b >= 16 && (!errors.As(err, &rangeErr) || rangeErr.Bits != 4 || err.Error() == "") {
 		t.Fatalf("NewColorCode(%d) = %d %v", b, cc, err)
 	}
 	s := enums.Slot(b)

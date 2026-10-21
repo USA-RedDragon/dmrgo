@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
+
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -297,7 +299,7 @@ func TestRegression_BadGPS(t *testing.T) {
 	tx := newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot()})
 	gps := pdu.FLCGPSInfo{Latitude: 500, Longitude: 900}
 	err := tx.Start(0, voice.Call{Target: 2, Source: 1}, &voice.CallOptions{GPS: &gps})
-	var ce *voice.ConfigError
+	var ce *dmrgo.ConfigError
 	if !errors.As(err, &ce) || ce.Field != "GPS" {
 		t.Errorf("Start with a GPS LC that does not encode: %v", err)
 	}

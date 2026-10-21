@@ -173,7 +173,7 @@ type Timing struct {
 	noCopy  noCopy
 }
 
-// NewTiming returns a Timing for cfg. It returns a *ConfigError for a nil
+// NewTiming returns a Timing for cfg. It returns a *dmrgo.ConfigError for a nil
 // cfg, an ID of 0 or above MaxTimingID, a DynamicID above MaxDynamicID or a
 // Slot other than Slot1 or Slot2. It allocates the Timing, and its Burst
 // unless cfg.Scratch is set. The Timing does nothing before Join.

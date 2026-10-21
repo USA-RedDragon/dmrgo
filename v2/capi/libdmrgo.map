@@ -26,8 +26,6 @@
 		dmrgo_bs_cach_reset;
 		dmrgo_bs_channel_auth_string;
 		dmrgo_bs_check_slot;
-		dmrgo_bs_config_error_error;
-		dmrgo_bs_config_error_last;
 		dmrgo_bs_mode_string;
 		dmrgo_bs_new;
 		dmrgo_bs_output_kind_string;
@@ -64,8 +62,8 @@
 		dmrgo_codec2_codec_silence;
 		dmrgo_codec2_new;
 		dmrgo_codec2_new_factory;
-		dmrgo_csbk_config_error_error;
-		dmrgo_csbk_config_error_last;
+		dmrgo_config_error_error;
+		dmrgo_config_error_last;
 		dmrgo_csbk_new_preambles;
 		dmrgo_csbk_new_requester;
 		dmrgo_csbk_new_responder;
@@ -161,8 +159,6 @@
 		dmrgo_csbk_wakeup_tick;
 		dmrgo_csbk_wakeup_tick_need;
 		dmrgo_csbk_wakeup_wake;
-		dmrgo_data_config_error_error;
-		dmrgo_data_config_error_last;
 		dmrgo_data_end_reason_string;
 		dmrgo_data_event_kind_string;
 		dmrgo_data_new_receiver;
@@ -338,8 +334,6 @@
 		dmrgo_enums_activity_id_string;
 		dmrgo_enums_announcement_type_string;
 		dmrgo_enums_backoff_frames;
-		dmrgo_enums_color_code_error_error;
-		dmrgo_enums_color_code_error_last;
 		dmrgo_enums_daid_string;
 		dmrgo_enums_daid_valid;
 		dmrgo_enums_data_type_carries_full_lc;
@@ -1303,8 +1297,6 @@
 		dmrgo_trunk_channel_plan_len;
 		dmrgo_trunk_channel_plan_lookup;
 		dmrgo_trunk_channel_plan_new;
-		dmrgo_trunk_config_error_error;
-		dmrgo_trunk_config_error_last;
 		dmrgo_trunk_decode_lip_short_report;
 		dmrgo_trunk_decode_nmea_long;
 		dmrgo_trunk_decode_nmea_short;
@@ -1470,8 +1462,6 @@
 		dmrgo_vocoder_register;
 		dmrgo_vocoder_unpack_ambe_voice;
 		dmrgo_vocoder_unpack_ambe_voice_flags;
-		dmrgo_voice_config_error_error;
-		dmrgo_voice_config_error_last;
 		dmrgo_voice_end_reason_string;
 		dmrgo_voice_event_kind_string;
 		dmrgo_voice_interrupter_burst;

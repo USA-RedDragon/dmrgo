@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
+
 	"github.com/USA-RedDragon/dmrgo/v2/data"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -559,7 +561,7 @@ func TestNewReceiverErrors(t *testing.T) {
 		{data.ReceiverConfig{Peers: data.MaxPeers + 1}, "Peers"},
 	} {
 		_, err := data.NewReceiver(&c.cfg)
-		var ce *data.ConfigError
+		var ce *dmrgo.ConfigError
 		if !errors.As(err, &ce) || ce.Field != c.field || !strings.Contains(err.Error(), c.field) {
 			t.Errorf("%+v: %v, want a ConfigError for %s", c.cfg, err, c.field)
 		}

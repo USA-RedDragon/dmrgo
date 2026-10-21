@@ -148,7 +148,7 @@ func (m *MS) PollShortData(now time.Duration, target uint32, f enums.UDTFormat, 
 // from DIVERTI. Without opts.Set, gateway is TSI to clear the diversions of
 // the MS or DIVERTI to clear the diversions to it, and a may be nil. The
 // outputs are OutputDelivered with the C_ACKD, or OutputRefused. It returns
-// the errors of Call, and a *ConfigError for another gateway or a missing
+// the errors of Call, and a *dmrgo.ConfigError for another gateway or a missing
 // a.
 func (m *MS) Divert(now time.Duration, gateway uint32, opts layer3.DiversionServiceOptions, a *Appended) error {
 	switch gateway {

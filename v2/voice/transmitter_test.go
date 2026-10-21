@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
+
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -365,7 +367,7 @@ func TestTransmitter_Errors(t *testing.T) {
 	for _, cfg := range []voice.TransmitterConfig{
 		{ColorCode: 16}, {Source: layer2.SyncSource(9)}, {Headers: 9}, {Terminators: 65}, {Headers: 3, Queue: 9}, {Queue: voice.MaxQueue + 1},
 	} {
-		var ce *voice.ConfigError
+		var ce *dmrgo.ConfigError
 		if _, err := voice.NewTransmitter(&cfg); !errors.As(err, &ce) {
 			t.Errorf("%+v: %v", cfg, err)
 		}
@@ -374,10 +376,10 @@ func TestTransmitter_Errors(t *testing.T) {
 	if err := tx.Frame(vocoder.AMBESilence()); !errors.Is(err, voice.ErrNotActive) {
 		t.Errorf("frame before Start: %v", err)
 	}
-	if err := tx.Start(0, voice.Call{Target: 1 << 24}, nil); !errors.As(err, new(*voice.ConfigError)) {
+	if err := tx.Start(0, voice.Call{Target: 1 << 24}, nil); !errors.As(err, new(*dmrgo.FieldRangeError)) {
 		t.Errorf("bad call: %v", err)
 	}
-	if err := tx.Start(0, voice.Call{Target: 1, Source: 2}, &voice.CallOptions{TalkerAlias: "€"}); !errors.As(err, new(*voice.ConfigError)) {
+	if err := tx.Start(0, voice.Call{Target: 1, Source: 2}, &voice.CallOptions{TalkerAlias: "€"}); !errors.As(err, new(*dmrgo.ConfigError)) {
 		t.Errorf("bad alias: %v", err)
 	}
 	if err := tx.Start(0, voice.Call{Target: 1, Source: 2}, nil); err != nil {

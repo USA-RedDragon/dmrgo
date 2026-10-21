@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
+
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
@@ -174,7 +176,7 @@ func TestReceiver_ConfigError(t *testing.T) {
 
 	cc := enums.ColorCode(16)
 	_, err := voice.NewReceiver(&voice.ReceiverConfig{ColorCode: &cc})
-	var ce *voice.ConfigError
+	var ce *dmrgo.ConfigError
 	if !errors.As(err, &ce) || ce.Field != "ColorCode" || ce.Error() == "" {
 		t.Fatalf("err %v", err)
 	}

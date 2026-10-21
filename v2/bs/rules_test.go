@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
+
 	"github.com/USA-RedDragon/dmrgo/v2/bs"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -269,9 +271,9 @@ func TestNew(t *testing.T) {
 	t.Parallel()
 	for _, cfg := range []bs.Config{{ColorCode: 16}, {Mode: 2}, {Activation: 2}, {Pending: bs.MaxPending + 1},
 		{Headers: 9}, {Terminators: 65}, {DataQueue: bs.MaxDataQueue + 1}} {
-		var ce *bs.ConfigError
+		var ce *dmrgo.ConfigError
 		if _, err := bs.New(&cfg); !errors.As(err, &ce) {
-			t.Errorf("New(%+v) = %v, want a *ConfigError", cfg, err)
+			t.Errorf("New(%+v) = %v, want a *dmrgo.ConfigError", cfg, err)
 		}
 	}
 	r := newRepeater(t, nil)

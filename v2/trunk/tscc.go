@@ -329,10 +329,10 @@ type TSCC struct {
 	noCopy  noCopy
 }
 
-// NewTSCC returns a TSCC for cfg. It returns a *ConfigError for a SysCode
-// whose fields do not fit, a color code over 15, a PayloadLen out of range
-// or a payload channel that names no channel. It allocates the TSCC and
-// its registration table.
+// NewTSCC returns a TSCC for cfg. It returns a *dmrgo.ConfigError for a
+// SysCode whose fields do not fit, a color code over 15, a PayloadLen out of
+// range or a payload channel that names no channel. It allocates the TSCC
+// and its registration table.
 func NewTSCC(cfg *TSCCConfig) (*TSCC, error) {
 	if cfg == nil {
 		return nil, errChannels

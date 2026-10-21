@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
+
 	"github.com/USA-RedDragon/dmrgo/v2/csbk"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -52,7 +54,7 @@ func TestStrings(t *testing.T) {
 		{csbk.WakeupSending.String(), "Sending"},
 		{csbk.WakeupWaiting.String(), "Waiting"},
 		{csbk.WakeupState(9).String(), "WakeupState(9)"},
-		{(&csbk.ConfigError{Field: "Retries"}).Error(), "csbk: Retries is out of range"},
+		{(&dmrgo.ConfigError{Type: "csbk", Field: "Retries"}).Error(), "csbk: Retries is out of range"},
 	} {
 		if tt.got != tt.want {
 			t.Errorf("%q, want %q", tt.got, tt.want)

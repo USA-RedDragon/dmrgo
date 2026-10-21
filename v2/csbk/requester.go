@@ -141,9 +141,9 @@ type Requester struct {
 }
 
 // NewRequester returns a Requester for cfg. A nil cfg means the zero
-// RequesterConfig. It returns a *ConfigError for a color code above 15, an
-// unknown Source or Retries above MaxRetries. It allocates the Requester,
-// and its Burst unless cfg.Scratch is set.
+// RequesterConfig. It returns a *dmrgo.ConfigError for a color code above
+// 15, an unknown Source or Retries above MaxRetries. It allocates the
+// Requester, and its Burst unless cfg.Scratch is set.
 func NewRequester(cfg *RequesterConfig) (*Requester, error) {
 	if cfg == nil {
 		cfg = &RequesterConfig{}
@@ -185,9 +185,9 @@ func (q *Requester) State() RequesterState {
 // RequestOACSU starts the presence check of an OACSU individual call from
 // source to target: UU_V_Req with the service options so, answered by
 // UU_Ans_Rsp. The request is time critical whatever opts says, and its
-// access must be polite. The OutputDone has ResultAnswered when the call
-// may proceed, with impolite access. It returns ErrBusy while a request
-// runs, and a *ConfigError for an address above 24 bits, impolite access or
+// access must be polite. The OutputDone has ResultAnswered when the call may
+// proceed, with impolite access. It returns ErrBusy while a request runs,
+// and a *dmrgo.ConfigError for an address above 24 bits, impolite access or
 // a Pre_CSBK count out of range. (ETSI TS 102 361-2 clause 5.2.2.3)
 func (q *Requester) RequestOACSU(now time.Duration, target, source uint32, so layer3.ServiceOptions, opts *RequestOptions) error {
 	var o RequestOptions
@@ -263,7 +263,7 @@ func (q *Requester) RequestCallAlert(now time.Duration, target, source uint32, o
 // from c: from CSBKBytes.Addresses for the standard FID, from the payload
 // for the Motorola CSBKs, and from octets 4 to 6 and 7 to 9 for any other
 // FID. It returns ErrBusy while a request runs, ErrNoAddresses for a
-// standard CSBK without both addresses, and a *ConfigError for a Match
+// standard CSBK without both addresses, and a *dmrgo.ConfigError for a Match
 // without opcodes or a Pre_CSBK count out of range.
 func (q *Requester) Request(now time.Duration, c pdu.CSBKBytes, m Match, opts *RequestOptions) error {
 	var o RequestOptions

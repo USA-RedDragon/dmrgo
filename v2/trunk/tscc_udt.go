@@ -115,7 +115,7 @@ func (t *TSCC) Diverted(addr uint32) (opts layer3.DiversionServiceOptions, to Ap
 // ETSI TS 102 361-4 clause 6.6.4.1.4. An MS acknowledges it with
 // TSCCDelivered. It returns ErrBusy while another download or the table of
 // UDT transactions is full, ErrUDTLength for an a with Blocks out of range
-// and a *ConfigError for a target out of range.
+// and a *dmrgo.ConfigError for a target out of range.
 func (t *TSCC) SendShortData(now time.Duration, group bool, target uint32, a *Appended) error {
 	if _, err := a.size(); err != nil {
 		return err
@@ -167,7 +167,7 @@ func (t *TSCC) AssignGroups(now time.Duration, target uint32, a *Appended) error
 // 6.6.5.1.5). TSCCUDT reports the answer, which UDT returns, and
 // TSCCRefused a C_NACKU. It returns ErrBusy when the table of UDT
 // transactions is full, ErrUDTLength for blocks out of range and a
-// *ConfigError for a target out of range.
+// *dmrgo.ConfigError for a target out of range.
 func (t *TSCC) PollShortData(now time.Duration, target uint32, blocks int) error {
 	if blocks < 1 || blocks > 4 {
 		return ErrUDTLength
@@ -188,7 +188,7 @@ func (t *TSCC) PollShortData(now time.Duration, target uint32, blocks int) error
 // 361-4 clause 6.6.11.1). TSCCUSBD reports the Poll Response, which USBD
 // returns, and TSCCRefused a C_NACKU or no answer. It returns ErrBusy
 // while another download runs or the table of UDT transactions is full,
-// and a *ConfigError for a target or rd out of range.
+// and a *dmrgo.ConfigError for a target or rd out of range.
 func (t *TSCC) PollUSBD(now time.Duration, target uint32, st pdu.ServiceType, rd uint8) error {
 	r := USBDPollRequest{ResponseDelay: rd, Target: target}
 	p, err := r.Encode()

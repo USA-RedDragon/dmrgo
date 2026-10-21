@@ -3,6 +3,8 @@ package trunk
 import (
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
+
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -100,8 +102,8 @@ type CapacityPlusFollower struct {
 	noCopy    noCopy
 }
 
-// NewCapacityPlusFollower returns a CapacityPlusFollower for cfg. A nil
-// cfg means the zero CapacityPlusConfig. It returns a *ConfigError for a
+// NewCapacityPlusFollower returns a CapacityPlusFollower for cfg. A nil cfg
+// means the zero CapacityPlusConfig. It returns a *dmrgo.ConfigError for a
 // TalkgroupsLen out of range. It allocates the Follower, and its Burst
 // unless cfg.Scratch is set.
 func NewCapacityPlusFollower(cfg *CapacityPlusConfig) (*CapacityPlusFollower, error) {
@@ -110,7 +112,7 @@ func NewCapacityPlusFollower(cfg *CapacityPlusConfig) (*CapacityPlusFollower, er
 		cfg = &zero
 	}
 	if cfg.TalkgroupsLen < 0 || cfg.TalkgroupsLen > MaxTalkgroups {
-		return nil, &ConfigError{Field: "TalkgroupsLen"}
+		return nil, &dmrgo.ConfigError{Type: "trunk", Field: "TalkgroupsLen"}
 	}
 	f := &CapacityPlusFollower{
 		talk: cfg.Talkgroups, talkLen: cfg.TalkgroupsLen,

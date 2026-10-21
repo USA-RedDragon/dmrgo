@@ -213,18 +213,11 @@
 // These error types can be matched with errors.As:
 //
 //   - *FieldRangeError: an encoder, setter, getter or function got a value
-//     that does not fit in its bits, or a field with a padding bit set. It
-//     is the one type of this package.
-//   - *enums.ColorCodeError: enums.NewColorCode got a value over 15.
-//   - *csbk.ConfigError: a csbk constructor, request or wakeup got a field
-//     out of range.
-//   - *voice.ConfigError: a voice constructor or Transmitter.Start got a
-//     field out of range.
-//   - *data.ConfigError: a data constructor or Sender.Send got a field out
-//     of range.
-//   - *bs.ConfigError: bs.New got a config field out of range.
-//   - *trunk.ConfigError: a trunk constructor got a config field out of
-//     range.
+//     that does not fit in its bits, or a field with a padding bit set.
+//     enums.NewColorCode returns it for a value over 15.
+//   - *ConfigError: a constructor, or a machine method of bs, csbk, data,
+//     trunk or voice, got a config, option or argument field out of range.
+//     Type names the package.
 //
 // # More
 //

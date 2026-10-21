@@ -14,24 +14,18 @@ void *dmrgo__fnptr2(void) { return (void *)dmrgo__fn2; }
 
 const char *dmrgo__gen_strerror(int status) {
 	switch (status) {
+	case -227:
+		return "dmrgo.ConfigError";
 	case -100:
 		return "dmrgo.FieldRangeError";
-	case -101:
-		return "bs.ConfigError";
 	case -107:
 		return "bs.ErrSlot";
-	case -102:
-		return "csbk.ConfigError";
 	case -108:
 		return "csbk.ErrBusy";
 	case -109:
 		return "csbk.ErrNoAddresses";
-	case -168:
-		return "data.ConfigError";
 	case -169:
 		return "data.ErrBusy";
-	case -103:
-		return "enums.ColorCodeError";
 	case -110:
 		return "fec.ErrUncorrectable";
 	case -197:
@@ -188,8 +182,6 @@ const char *dmrgo__gen_strerror(int status) {
 		return "mmdvm.ErrLength";
 	case -215:
 		return "mmdvm.ErrShort";
-	case -105:
-		return "trunk.ConfigError";
 	case -134:
 		return "trunk.ErrBusy";
 	case -135:
@@ -252,8 +244,6 @@ const char *dmrgo__gen_strerror(int status) {
 		return "dvsi.ErrTimeout";
 	case -167:
 		return "dvsi.ErrType";
-	case -106:
-		return "voice.ConfigError";
 	case -147:
 		return "voice.ErrBusy";
 	case -148:
