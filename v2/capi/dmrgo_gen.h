@@ -9854,6 +9854,10 @@ int dmrgo_mmdvm_dmr_data_hint(dmrgo_mmdvm_dmr_data_t *self, dmrgo_layer2_hint_t 
 int dmrgo_mmdvm_dmr_data_set_hint(dmrgo_mmdvm_dmr_data_t *self, const dmrgo_layer2_hint_t *h);
 /* Go: mmdvm.DMRShortLC.AppendBinary. AppendBinary appends the 9 octets of s to dst. */
 int dmrgo_mmdvm_dmr_short_lc_append_binary(dmrgo_mmdvm_dmr_short_lc_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: mmdvm.DMRShortLC.ShortLC. ShortLC decodes the Short LC that s carries. */
+int dmrgo_mmdvm_dmr_short_lc_short_lc(const dmrgo_mmdvm_dmr_short_lc_t *self, dmrgo_pdu_short_lc_t *out);
+/* Go: mmdvm.DMRShortLC.ShortLCInto. ShortLCInto decodes the Short LC that s carries into dst, with the payload struct in p as pdu.DecodeShortLCInto places it, and the FEC field as ShortLC sets it. */
+int dmrgo_mmdvm_dmr_short_lc_short_lc_into(const dmrgo_mmdvm_dmr_short_lc_t *self, dmrgo_pdu_short_lc_t *dst, dmrgo_pdu_short_lc_payloads_t *p);
 /* Go: mmdvm.DMRShortLC.String. String returns the fields of s as text, for printing. */
 int dmrgo_mmdvm_dmr_short_lc_string(dmrgo_mmdvm_dmr_short_lc_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: mmdvm.DMRStart.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
@@ -9900,6 +9904,8 @@ int dmrgo_mmdvm_mode_string(dmrgo_mmdvm_mode_t self, char *out, size_t out_cap, 
 int dmrgo_mmdvm_nak_append_binary(dmrgo_mmdvm_nak_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.Nak.String. String returns the fields of s as text, for printing. */
 int dmrgo_mmdvm_nak_string(dmrgo_mmdvm_nak_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: mmdvm.NewDMRShortLC. NewDMRShortLC returns the CommandDMRShortLC payload that carries slc: its BPTC coding, the 4 CACH fragments of 17 bits one after the other, as MMDVMHost CDMRShortLC encodes it. */
+int dmrgo_mmdvm_new_dmr_short_lc(const dmrgo_pdu_short_lc_t *slc, dmrgo_mmdvm_dmr_short_lc_t *out);
 /* Go: mmdvm.Next. Next finds the frame at the start of p, as the firmware and MMDVMHost read the stream. */
 int dmrgo_mmdvm_next(const uint8_t *p, size_t p_len, dmrgo_mmdvm_frame_t *f, int64_t *n, dmrgo_mmdvm_status_t *st, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: mmdvm.SetFreq.AppendBinary. AppendBinary appends the 9, 10 or 14 octets of s to dst: Size selects the length, and 0 means 9. */

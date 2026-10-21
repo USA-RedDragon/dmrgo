@@ -68,6 +68,7 @@ ignore_files:
   - v2/transport/mmdvm/errors.go
   - v2/transport/mmdvm/frame.go
   - v2/transport/mmdvm/messages.go
+  - v2/transport/mmdvm/short_lc.go
   - v2/transport/mmdvm/types.go
   - v2/transport/mmdvm/version.go
   - v2/voice/nocopy.go
