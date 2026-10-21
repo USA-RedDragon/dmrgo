@@ -82,12 +82,20 @@ func fraction(data []byte, o int) (float64, int, Status) {
 	return float64(f) / math.Pow(128, float64(o-start)), o, OK
 }
 
+// maxFloatInt is the bound of the integer part of a float number: a
+// float64 holds every integer below it exactly.
+const maxFloatInt = 1 << 53
+
 // Ufloatvar reads an unsigned number at data[o]: a Uintvar integer part,
-// then a Uintvar fraction of n octets over 128 to the power n.
+// then a Uintvar fraction of n octets over 128 to the power n. An integer
+// part of 2^53 or more gives Overflow.
 func Ufloatvar(data []byte, o int) (float64, int, Status) {
 	i, o, st := Uintvar(data, o)
 	if st != OK {
 		return 0, o, st
+	}
+	if i >= maxFloatInt {
+		return 0, o, Overflow
 	}
 	f, o, st := fraction(data, o)
 	if st != OK {
@@ -97,11 +105,15 @@ func Ufloatvar(data []byte, o int) (float64, int, Status) {
 }
 
 // Sfloatvar reads a signed number at data[o]: a Sintvar integer part, then
-// a Uintvar fraction as in Ufloatvar. The sign applies to both parts.
+// a Uintvar fraction as in Ufloatvar. The sign applies to both parts. An
+// integer part of 2^53 or more in magnitude gives Overflow.
 func Sfloatvar(data []byte, o int) (float64, int, Status) {
 	i, neg, o, st := Sintvar(data, o)
 	if st != OK {
 		return 0, o, st
+	}
+	if i >= maxFloatInt || i <= -maxFloatInt {
+		return 0, o, Overflow
 	}
 	f, o, st := fraction(data, o)
 	if st != OK {
@@ -160,7 +172,7 @@ func AppendSintvar(dst []byte, v int64, neg bool) []byte {
 
 // FloatvarFits reports whether AppendUfloatvar, or AppendSfloatvar when
 // signed, can write v: v is finite, not negative unless signed, and its
-// integer part fits in 63 bits.
+// integer part is under 2^53 in magnitude.
 func FloatvarFits(v float64, signed bool) bool {
 	if math.IsNaN(v) || math.IsInf(v, 0) {
 		return false
@@ -168,7 +180,7 @@ func FloatvarFits(v float64, signed bool) bool {
 	if v < 0 && !signed {
 		return false
 	}
-	return math.Abs(v) < 1<<62
+	return math.Abs(v) < maxFloatInt
 }
 
 func splitFloat(v float64, prec int) (i uint64, f uint64) {
