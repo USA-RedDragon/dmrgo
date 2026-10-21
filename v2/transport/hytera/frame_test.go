@@ -100,8 +100,8 @@ func TestFrameHint(t *testing.T) {
 			t.Errorf("%v: %+v", s, h)
 		}
 		var back hytera.Frame
-		if err := back.SetKind(layer2.KindVoice, pos, 0); err != nil || back.SlotType != s {
-			t.Errorf("%v: SetKind %v %v", s, back.SlotType, err)
+		if err := back.SetHint(layer2.Hint{Slot: enums.Slot2, Kind: layer2.KindVoice, VoiceBurst: pos}); err != nil || back.SlotType != s || back.Slot != enums.Slot2 {
+			t.Errorf("%v: SetHint %v %v", s, back.SlotType, err)
 		}
 	}
 	data := map[hytera.SlotType]enums.DataType{
@@ -116,6 +116,9 @@ func TestFrameHint(t *testing.T) {
 			t.Errorf("%v: %+v", s, h)
 		}
 		var back hytera.Frame
+		if err := back.SetHint(layer2.Hint{Kind: layer2.KindData, DataType: dt, HasDataType: true}); err != nil || back.SlotType != s {
+			t.Errorf("%v: SetHint %v %v", dt, back.SlotType, err)
+		}
 		if err := back.SetKind(layer2.KindData, 0, dt); err != nil || back.SlotType != s {
 			t.Errorf("%v: SetKind %v %v", dt, back.SlotType, err)
 		}
@@ -142,13 +145,20 @@ func TestFrameHint(t *testing.T) {
 		{layer2.KindUnknown, 0, 0, nil},
 		{layer2.KindReverseChannel, 0, 0, nil},
 	} {
-		err := f.SetKind(c.k, c.pos, c.dt)
+		err := f.SetHint(layer2.Hint{Kind: c.k, VoiceBurst: c.pos, DataType: c.dt, HasDataType: true})
 		if err == nil || f.SlotType != hytera.SlotTypeCSBK {
 			t.Errorf("%+v: %v %v", c, f.SlotType, err)
 		}
 		if c.want != nil && !errors.Is(err, c.want) {
 			t.Errorf("%+v: %v, want %v", c, err, c.want)
 		}
+	}
+	if err := f.SetHint(layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypePIHeader}); err == nil || f.SlotType != hytera.SlotTypeCSBK {
+		t.Errorf("data without a data type: %v %v", f.SlotType, err)
+	}
+	var nf *hytera.Frame
+	if err := nf.SetHint(layer2.Hint{Kind: layer2.KindVoice, VoiceBurst: enums.VoiceBurstA}); err == nil {
+		t.Error("nil Frame: no error")
 	}
 }
 

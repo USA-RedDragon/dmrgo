@@ -37,7 +37,7 @@ func goOutputs(t *testing.T, frames int) ([]string, [][33]byte) {
 	out := make([]voice.Output, 0, voice.MaxOutputs)
 	for now := time.Duration(0); now < 30*time.Second; now += 10 * time.Millisecond {
 		for _, o := range tx.Tick(now, out[:0]) {
-			keys = append(keys, fmt.Sprintf("%d %x %d %d %d %t %d", o.Kind, o.Burst[:], int64(o.Due), o.Position, o.DataType, o.Fill, o.Reason))
+			keys = append(keys, fmt.Sprintf("%d %x %d %d %d %t %d", o.Kind, o.Burst[:], int64(o.Due), o.Hint.VoiceBurst, o.Hint.DataType, o.Fill, o.Reason))
 			if o.Kind == voice.OutputBurst {
 				bursts = append(bursts, o.Burst)
 			}

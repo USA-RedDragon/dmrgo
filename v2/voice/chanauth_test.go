@@ -47,7 +47,7 @@ func authTransmitter(t *testing.T, cfg voice.TransmitterConfig) *voice.Transmitt
 		t.Fatal(err)
 	}
 	out := tx.Tick(time.Second, nil)
-	if len(out) != 1 || out[0].DataType != enums.DataTypeVoiceLCHeader || out[0].Due != time.Second {
+	if len(out) != 1 || out[0].Hint.DataType != enums.DataTypeVoiceLCHeader || out[0].Due != time.Second {
 		t.Fatalf("ChanAuth PDU %+v", out)
 	}
 	if at, ok := tx.Deadline(); !ok || at != time.Second+cfg.ChanAuth {
@@ -91,7 +91,7 @@ func TestTransmitter_ChanAuth(t *testing.T) {
 	if !ok || at < 1360*ms || at > 1860*ms {
 		t.Fatalf("holdoff to %v", at)
 	}
-	if out := tx.Tick(at, nil); len(out) != 1 || out[0].DataType != enums.DataTypeVoiceLCHeader || out[0].Due != at {
+	if out := tx.Tick(at, nil); len(out) != 1 || out[0].Hint.DataType != enums.DataTypeVoiceLCHeader || out[0].Due != at {
 		t.Fatalf("second ChanAuth PDU %+v", out)
 	}
 	if out := tx.Tick(at+360*ms, nil); len(out) != 0 || tx.State() != voice.TransmitterHeader {
@@ -135,7 +135,7 @@ func TestTransmitter_ChanAuthSkipped(t *testing.T) {
 				t.Fatalf("%v, state %v", err, tx.State())
 			}
 			own, _, _ := outbound(t, 1)
-			if out := tx.Burst(0, &own, layer2.Hint{}, nil); len(out) != 1 || out[0].DataType != enums.DataTypeVoiceLCHeader {
+			if out := tx.Burst(0, &own, layer2.Hint{}, nil); len(out) != 1 || out[0].Hint.DataType != enums.DataTypeVoiceLCHeader {
 				t.Fatalf("outputs %+v", out)
 			}
 		})

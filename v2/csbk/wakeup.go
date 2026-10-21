@@ -234,6 +234,7 @@ func (w *Wakeup) Tick(now time.Duration, dst []Output) []Output {
 	var o *Output
 	dst, o = appendOutput(dst, OutputBurst)
 	o.Burst, o.Due = b, w.due
+	o.Hint = layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeCSBK, HasDataType: true}
 	w.sent++
 	w.state, w.waitUntil = WakeupWaiting, w.due+w.syncWait
 	return dst

@@ -171,36 +171,50 @@ func dataTypeOf(s SlotType) (enums.DataType, bool) {
 	return 0, false
 }
 
-// SetKind sets SlotType from the layer2 view of the burst: KindVoice with
-// pos A to F, or KindData with dt. It returns an error, and changes
-// nothing, for another kind, an error that wraps layer2.ErrVoicePosition
-// for a position that is not A to F, and one that wraps
-// layer2.ErrDataType for a data type that Hytera has no slot type for (MBC,
-// idle, rate 1 and unified single block data).
-func (f *Frame) SetKind(k layer2.Kind, pos enums.VoiceBurstType, dt enums.DataType) error {
+// SetHint sets SlotType from what h says the burst is, as a machine Output
+// gives it: KindVoice with a VoiceBurst of A to F, or KindData with a
+// DataType. It sets Slot when h.Slot is Slot1 or Slot2. It returns an
+// error, and changes nothing, for another kind, a position that is not A
+// to F, a KindData hint without a data type, or a data type that Hytera
+// has no slot type for (MBC, idle, rate 1 and unified single block data).
+// The position and data type errors wrap layer2.ErrVoicePosition and
+// layer2.ErrDataType.
+func (f *Frame) SetHint(h layer2.Hint) error {
 	if f == nil {
 		return dmrgo.ErrNilReceiver
 	}
-
-	s, err := slotTypeOf(k, pos, dt)
+	s, err := slotTypeOf(&h)
 	if err != nil {
 		return err
 	}
 	f.SlotType = s
+	if h.Slot == enums.Slot1 || h.Slot == enums.Slot2 {
+		f.Slot = h.Slot
+	}
 	return nil
 }
 
-func slotTypeOf(k layer2.Kind, pos enums.VoiceBurstType, dt enums.DataType) (SlotType, error) {
-	switch k {
+// SetKind sets SlotType as SetHint does for a Hint of k, pos and dt.
+//
+// Deprecated: use SetHint with the Hint of a machine Output.
+func (f *Frame) SetKind(k layer2.Kind, pos enums.VoiceBurstType, dt enums.DataType) error {
+	return f.SetHint(layer2.Hint{Kind: k, VoiceBurst: pos, DataType: dt, HasDataType: k == layer2.KindData})
+}
+
+func slotTypeOf(h *layer2.Hint) (SlotType, error) {
+	switch h.Kind {
 	case layer2.KindVoice:
-		i, ok := pos.Index()
+		i, ok := h.VoiceBurst.Index()
 		if !ok {
 			return 0, errKindVoice
 		}
 		return SlotTypeVoiceA + SlotType(i&7)*0x1111, nil
 	case layer2.KindData:
+		if !h.HasDataType {
+			return 0, errKindData
+		}
 		for _, s := range [...]SlotType{SlotTypePIHeader, SlotTypeVoiceLCHeader, SlotTypeTerminator, SlotTypeCSBK, SlotTypeDataHeader, SlotTypeRate12, SlotTypeRate34} {
-			if d, _ := dataTypeOf(s); d == dt {
+			if d, _ := dataTypeOf(s); d == h.DataType {
 				return s, nil
 			}
 		}

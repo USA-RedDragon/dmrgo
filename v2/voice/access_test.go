@@ -18,11 +18,11 @@ func shape(out []voice.Output) string {
 		switch {
 		case o.Kind == voice.OutputEnded:
 			pos = append(pos, '.')
-		case o.Position != enums.VoiceBurstUnknown:
-			pos = append(pos, o.Position.String()[0])
-		case o.DataType == enums.DataTypeVoiceLCHeader:
+		case o.Hint.VoiceBurst != enums.VoiceBurstUnknown:
+			pos = append(pos, o.Hint.VoiceBurst.String()[0])
+		case o.Hint.DataType == enums.DataTypeVoiceLCHeader:
 			pos = append(pos, 'h')
-		case o.DataType == enums.DataTypeTerminatorWithLC:
+		case o.Hint.DataType == enums.DataTypeTerminatorWithLC:
 			pos = append(pos, 't')
 		}
 	}

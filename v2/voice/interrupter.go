@@ -262,7 +262,7 @@ func (i *Interrupter) Tick(now time.Duration, dst []Output) []Output {
 	}
 	var o *Output
 	dst, o = appendOutput(dst, OutputBurst, i.due)
-	o.Burst, o.Position = i.rc, enums.VoiceBurstUnknown
+	o.Burst, o.Hint = i.rc, layer2.Hint{Kind: layer2.KindReverseChannel}
 	i.sent++
 	if i.sent < i.repeats {
 		i.due += slotPeriod

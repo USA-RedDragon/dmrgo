@@ -233,6 +233,7 @@
 		dmrgo_dmrd_control_append_binary;
 		dmrgo_dmrd_data_append_binary;
 		dmrgo_dmrd_data_hint;
+		dmrgo_dmrd_data_set_hint;
 		dmrgo_dmrd_data_set_kind;
 		dmrgo_dmrd_data_string;
 		dmrgo_dmrd_decode_bridge;
@@ -441,6 +442,7 @@
 		dmrgo_hytera_frame_append_binary;
 		dmrgo_hytera_frame_has_burst;
 		dmrgo_hytera_frame_hint;
+		dmrgo_hytera_frame_set_hint;
 		dmrgo_hytera_frame_set_kind;
 		dmrgo_hytera_heartbeat_append_binary;
 		dmrgo_hytera_p2p_append_binary;
@@ -756,6 +758,7 @@
 		dmrgo_mmdvm_dmr_data_append_binary;
 		dmrgo_mmdvm_dmr_data_command;
 		dmrgo_mmdvm_dmr_data_hint;
+		dmrgo_mmdvm_dmr_data_set_hint;
 		dmrgo_mmdvm_dmr_short_lc_append_binary;
 		dmrgo_mmdvm_dmr_short_lc_string;
 		dmrgo_mmdvm_dmr_start_append_binary;

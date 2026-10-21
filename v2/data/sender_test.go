@@ -69,6 +69,9 @@ func TestSenderMatchesAnyTone(t *testing.T) {
 		if o.Due != time.Duration(n)*60*time.Millisecond || o.Try != 1 {
 			t.Errorf("burst %d: due %v, try %d", n, o.Due, o.Try)
 		}
+		if st := o.Burst.SlotType(); o.Hint.Kind != layer2.KindData || !o.Hint.HasDataType || o.Hint.DataType != st.DataType {
+			t.Errorf("burst %d: hint %+v for %v", n, o.Hint, st.DataType)
+		}
 		n++
 	}
 	if n != 14 {

@@ -198,6 +198,22 @@ func in_bs_Source(s *C.dmrgo_bs_source_t) (d g_bs.Source) {
 	return
 }
 
+func out_layer2_Hint(d *C.dmrgo_layer2_hint_t, s *g_layer2.Hint, oc *outc) {
+	_ = oc
+	d.slot = C.dmrgo_enums_slot_t(s.Slot)
+	d.kind = C.dmrgo_layer2_kind_t(s.Kind)
+	d.voice_burst = C.dmrgo_enums_voice_burst_type_t(s.VoiceBurst)
+	d.data_type = C.dmrgo_enums_data_type_t(s.DataType)
+	d.has_data_type = C.bool(s.HasDataType)
+	d.seq = C.uint16_t(s.Seq)
+	d.has_seq = C.bool(s.HasSeq)
+	d.seq_bits = C.uint8_t(s.SeqBits)
+	d.stream = C.uint32_t(s.Stream)
+	d.has_stream = C.bool(s.HasStream)
+	d.end = C.dmrgo_layer2_end_hint_t(s.End)
+	d.sync_lost = C.bool(s.SyncLost)
+}
+
 func out_bs_Source(d *C.dmrgo_bs_source_t, s *g_bs.Source, oc *outc) {
 	_ = oc
 	d.rf = C.bool(s.RF)
@@ -234,6 +250,7 @@ func out_bs_Output(d *C.dmrgo_bs_output_t, s *g_bs.Output, oc *outc) {
 	d.has_cach = C.bool(s.HasCACH)
 	*(*[3]byte)(unsafe.Pointer(&d.cach)) = s.CACH
 	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
+	out_layer2_Hint(&d.hint, &s.Hint, oc)
 	d.due = C.dmrgo_duration_t(s.Due)
 	out_bs_Source(&d.from, &s.From, oc)
 	d.service = C.dmrgo_bs_service_t(s.Service)
@@ -314,6 +331,7 @@ func out_csbk_Output(d *C.dmrgo_csbk_output_t, s *g_csbk.Output, oc *outc) {
 	d.result = C.dmrgo_csbk_result_t(s.Result)
 	d.reason = C.dmrgo_csbk_reason_t(s.Reason)
 	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
+	out_layer2_Hint(&d.hint, &s.Hint, oc)
 	d.due = C.dmrgo_duration_t(s.Due)
 	d.target = C.uint32_t(s.Target)
 	d.source = C.uint32_t(s.Source)
@@ -398,6 +416,7 @@ func in_data_SenderConfig(s *C.dmrgo_data_sender_config_t) (d g_data.SenderConfi
 func in_data_Output(s *C.dmrgo_data_output_t) (d g_data.Output) {
 	d.Kind = g_data.OutputKind(s.kind)
 	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	d.Hint = in_layer2_Hint(&s.hint)
 	d.Due = time.Duration(s.due)
 	d.Try = uint8(s.try_)
 	d.Seq = uint8(s.seq)
@@ -411,6 +430,7 @@ func out_data_Output(d *C.dmrgo_data_output_t, s *g_data.Output, oc *outc) {
 	_ = oc
 	d.kind = C.dmrgo_data_output_kind_t(s.Kind)
 	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
+	out_layer2_Hint(&d.hint, &s.Hint, oc)
 	d.due = C.dmrgo_duration_t(s.Due)
 	d.try_ = C.uint8_t(s.Try)
 	d.seq = C.uint8_t(s.Seq)
@@ -3778,22 +3798,6 @@ func out_nmea_RMC(d *C.dmrgo_nmea_rmc_t, s *g_nmea.RMC, oc *outc) {
 	d.mode = C.uint8_t(s.Mode)
 }
 
-func out_layer2_Hint(d *C.dmrgo_layer2_hint_t, s *g_layer2.Hint, oc *outc) {
-	_ = oc
-	d.slot = C.dmrgo_enums_slot_t(s.Slot)
-	d.kind = C.dmrgo_layer2_kind_t(s.Kind)
-	d.voice_burst = C.dmrgo_enums_voice_burst_type_t(s.VoiceBurst)
-	d.data_type = C.dmrgo_enums_data_type_t(s.DataType)
-	d.has_data_type = C.bool(s.HasDataType)
-	d.seq = C.uint16_t(s.Seq)
-	d.has_seq = C.bool(s.HasSeq)
-	d.seq_bits = C.uint8_t(s.SeqBits)
-	d.stream = C.uint32_t(s.Stream)
-	d.has_stream = C.bool(s.HasStream)
-	d.end = C.dmrgo_layer2_end_hint_t(s.End)
-	d.sync_lost = C.bool(s.SyncLost)
-}
-
 type cb1 struct {
 }
 
@@ -4616,6 +4620,7 @@ func out_trunk_Output(d *C.dmrgo_trunk_output_t, s *g_trunk.Output, oc *outc) {
 	d.reason = C.dmrgo_trunk_reason_t(s.Reason)
 	d.ack = C.dmrgo_enums_ack_reason_t(s.Ack)
 	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
+	out_layer2_Hint(&d.hint, &s.Hint, oc)
 	d.slot = C.dmrgo_enums_slot_t(s.Slot)
 	d.due = C.dmrgo_duration_t(s.Due)
 	d.protect = C.dmrgo_enums_protect_kind_t(s.Protect)
@@ -4889,6 +4894,7 @@ func out_trunk_TSCCOutput(d *C.dmrgo_trunk_tscc_output_t, s *g_trunk.TSCCOutput,
 	d.slot = C.dmrgo_enums_slot_t(s.Slot)
 	*(*[3]byte)(unsafe.Pointer(&d.cach)) = s.CACH
 	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
+	out_layer2_Hint(&d.hint, &s.Hint, oc)
 	d.address = C.uint32_t(s.Address)
 	d.ack = C.dmrgo_enums_ack_reason_t(s.Ack)
 	out_trunk_Grant(&d.call, &s.Call, oc)
@@ -5325,8 +5331,7 @@ func out_voice_Output(d *C.dmrgo_voice_output_t, s *g_voice.Output, oc *outc) {
 	d.kind = C.dmrgo_voice_output_kind_t(s.Kind)
 	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
 	d.due = C.dmrgo_duration_t(s.Due)
-	d.position = C.dmrgo_enums_voice_burst_type_t(s.Position)
-	d.data_type = C.dmrgo_enums_data_type_t(s.DataType)
+	out_layer2_Hint(&d.hint, &s.Hint, oc)
 	d.fill = C.bool(s.Fill)
 	d.reason = C.dmrgo_voice_end_reason_t(s.Reason)
 }
@@ -5518,6 +5523,7 @@ func in_bs_Output(s *C.dmrgo_bs_output_t) (d g_bs.Output) {
 	d.HasCACH = bool(s.has_cach)
 	d.CACH = *(*[3]byte)(unsafe.Pointer(&s.cach))
 	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	d.Hint = in_layer2_Hint(&s.hint)
 	d.Due = time.Duration(s.due)
 	d.From = in_bs_Source(&s.from)
 	d.Service = g_bs.Service(s.service)
@@ -5552,6 +5558,7 @@ func in_csbk_Output(s *C.dmrgo_csbk_output_t) (d g_csbk.Output) {
 	d.Result = g_csbk.Result(s.result)
 	d.Reason = g_csbk.Reason(s.reason)
 	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	d.Hint = in_layer2_Hint(&s.hint)
 	d.Due = time.Duration(s.due)
 	d.Target = uint32(s.target)
 	d.Source = uint32(s.source)
@@ -7820,6 +7827,7 @@ func in_trunk_Output(s *C.dmrgo_trunk_output_t) (d g_trunk.Output) {
 	d.Reason = g_trunk.Reason(s.reason)
 	d.Ack = g_enums.AckReason(s.ack)
 	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	d.Hint = in_layer2_Hint(&s.hint)
 	d.Slot = g_enums.Slot(s.slot)
 	d.Due = time.Duration(s.due)
 	d.Protect = g_enums.ProtectKind(s.protect)
@@ -7899,6 +7907,7 @@ func in_trunk_TSCCOutput(s *C.dmrgo_trunk_tscc_output_t) (d g_trunk.TSCCOutput) 
 	d.Slot = g_enums.Slot(s.slot)
 	d.CACH = *(*[3]byte)(unsafe.Pointer(&s.cach))
 	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	d.Hint = in_layer2_Hint(&s.hint)
 	d.Address = uint32(s.address)
 	d.Ack = g_enums.AckReason(s.ack)
 	d.Call = in_trunk_Grant(&s.call)
@@ -8075,8 +8084,7 @@ func in_voice_Output(s *C.dmrgo_voice_output_t) (d g_voice.Output) {
 	d.Kind = g_voice.OutputKind(s.kind)
 	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
 	d.Due = time.Duration(s.due)
-	d.Position = g_enums.VoiceBurstType(s.position)
-	d.DataType = g_enums.DataType(s.data_type)
+	d.Hint = in_layer2_Hint(&s.hint)
 	d.Fill = bool(s.fill)
 	d.Reason = g_voice.EndReason(s.reason)
 	return
@@ -32700,6 +32708,31 @@ func dmrgo_dmrd_data_hint(c_self *C.dmrgo_dmrd_data_t, c_out *C.dmrgo_layer2_hin
 	return C.DMRGO_OK
 }
 
+//export dmrgo_dmrd_data_set_hint
+func dmrgo_dmrd_data_set_hint(c_self *C.dmrgo_dmrd_data_t, c_h *C.dmrgo_layer2_hint_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_dmrd.Data
+	x = in_transport_dmrd_Data(&(*c_self))
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	r0 := x.SetHint(a_h)
+	out_transport_dmrd_Data(&(*c_self), &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_dmrd_data_set_kind
 func dmrgo_dmrd_data_set_kind(c_self *C.dmrgo_dmrd_data_t, c_k C.dmrgo_layer2_kind_t, c_pos C.dmrgo_enums_voice_burst_type_t, c_dt C.dmrgo_enums_data_type_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -34103,6 +34136,31 @@ func dmrgo_hytera_frame_hint(c_self *C.dmrgo_hytera_frame_t, c_out *C.dmrgo_laye
 	return C.DMRGO_OK
 }
 
+//export dmrgo_hytera_frame_set_hint
+func dmrgo_hytera_frame_set_hint(c_self *C.dmrgo_hytera_frame_t, c_h *C.dmrgo_layer2_hint_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_hytera.Frame
+	x = *(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self)))
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	r0 := x.SetHint(a_h)
+	*(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self))) = x
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_hytera_frame_set_kind
 func dmrgo_hytera_frame_set_kind(c_self *C.dmrgo_hytera_frame_t, c_k C.dmrgo_layer2_kind_t, c_pos C.dmrgo_enums_voice_burst_type_t, c_dt C.dmrgo_enums_data_type_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -34798,7 +34856,7 @@ func dmrgo_ipsc_user_raw_burst(c_self *C.dmrgo_ipsc_user_t, c_cc C.dmrgo_enums_c
 }
 
 //export dmrgo_ipsc_user_set_raw_burst
-func dmrgo_ipsc_user_set_raw_burst(c_self *C.dmrgo_ipsc_user_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_k C.dmrgo_layer2_kind_t, c_pos C.dmrgo_enums_voice_burst_type_t, c_dt C.dmrgo_enums_data_type_t) (rc C.int) {
+func dmrgo_ipsc_user_set_raw_burst(c_self *C.dmrgo_ipsc_user_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -34809,7 +34867,12 @@ func dmrgo_ipsc_user_set_raw_burst(c_self *C.dmrgo_ipsc_user_t, c_raw *C.dmrgo_l
 	if c_raw == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := x.SetRawBurst(*(*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), g_layer2.Kind(c_k), g_enums.VoiceBurstType(c_pos), g_enums.DataType(c_dt))
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	r0 := x.SetRawBurst(*(*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h)
 	out_transport_ipsc_User(&(*c_self), &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -35434,6 +35497,31 @@ func dmrgo_mmdvm_dmr_data_hint(c_self *C.dmrgo_mmdvm_dmr_data_t, c_out *C.dmrgo_
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_mmdvm_dmr_data_set_hint
+func dmrgo_mmdvm_dmr_data_set_hint(c_self *C.dmrgo_mmdvm_dmr_data_t, c_h *C.dmrgo_layer2_hint_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_mmdvm.DMRData
+	x = in_transport_mmdvm_DMRData(&(*c_self))
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	r0 := x.SetHint(a_h)
+	out_transport_mmdvm_DMRData(&(*c_self), &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }

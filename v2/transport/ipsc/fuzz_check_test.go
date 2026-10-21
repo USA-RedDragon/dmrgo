@@ -36,7 +36,7 @@ func checkPacket(t *testing.T, p []byte) {
 		if raw, err := u.RawBurst(1, layer2.SyncSourceMS); err == nil {
 			var back ipsc.User
 			h := u.Hint()
-			_ = back.SetRawBurst(raw, h.Kind, h.VoiceBurst, h.DataType)
+			_ = back.SetRawBurst(raw, h)
 		}
 	}
 	if c, err := ipsc.DecodeControl(p); err == nil && c.Opcode != ipsc.OpPeerListReply {

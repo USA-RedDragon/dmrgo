@@ -68,7 +68,7 @@ func controlScript(t testing.TB, p []layer2.RawBurst, in []byte) {
 			t.Fatalf("op %d: %d outputs", op, len(out))
 		}
 		for _, o := range out {
-			if o.Kind == voice.OutputBurst && b.DecodeFromBytes(o.Burst) != nil && o.Position == enums.VoiceBurstUnknown {
+			if o.Kind == voice.OutputBurst && b.DecodeFromBytes(o.Burst) != nil && o.Hint.VoiceBurst == enums.VoiceBurstUnknown {
 				t.Fatalf("op %d: bad burst", op)
 			}
 		}

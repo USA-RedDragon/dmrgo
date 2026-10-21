@@ -377,37 +377,49 @@ func (u *User) RawBurst(cc enums.ColorCode, src layer2.SyncSource) (layer2.RawBu
 }
 
 // SetRawBurst sets Burst and Voice or Data from the 264-bit burst raw and
-// its layer2 view, as an XPR 8400 sends them: KindVoice with the position
-// pos, which picks the layout (the full LC of burst E stays as it is in
-// u.Voice.LC), or KindData with the data type dt. It takes the slot from
-// u.Info and leaves the header and RTP fields as they are. It returns an
-// error for another kind, an error that wraps layer2.ErrVoicePosition for
-// a voice position that is not A to F, one that wraps layer2.ErrDataType
-// for a data type that IPSC does not carry (Idle, rate 1, unified single
-// block and the reserved types), and the errors of vocoder.PackAMBEVoice.
-func (u *User) SetRawBurst(raw layer2.RawBurst, k layer2.Kind, pos enums.VoiceBurstType, dt enums.DataType) error {
+// what h says it is, as a machine Output gives it, in the form an XPR 8400
+// sends: KindVoice with a VoiceBurst of A to F, which picks the layout (the
+// full LC of burst E stays as it is in u.Voice.LC), or KindData with a
+// DataType. It sets the slot bit of Info when h.Slot is Slot1 or Slot2,
+// and leaves the other header and RTP fields as they are. It returns an
+// error, and changes nothing, for another kind, a voice position that is
+// not A to F, a KindData hint without a data type or with one that IPSC
+// does not carry (Idle, rate 1, unified single block and the reserved
+// types), and the errors of vocoder.PackAMBEVoice. The position and data
+// type errors wrap layer2.ErrVoicePosition and layer2.ErrDataType.
+func (u *User) SetRawBurst(raw layer2.RawBurst, h layer2.Hint) error {
 	if u == nil {
 		return dmrgo.ErrNilReceiver
 	}
-
+	info := u.Info
+	switch h.Slot {
+	case enums.Slot1:
+		info &^= 0x20
+	case enums.Slot2:
+		info |= 0x20
+	case enums.SlotUnknown:
+	}
 	var slotBit uint8
-	if u.Info.Slot() == enums.Slot2 {
+	if info.Slot() == enums.Slot2 {
 		slotBit = 0x80
 	}
-	switch k {
+	switch h.Kind {
 	case layer2.KindVoice:
-		v, err := voiceOf(raw, pos, u.Voice.LC)
+		v, err := voiceOf(raw, h.VoiceBurst, u.Voice.LC)
 		if err != nil {
 			return err
 		}
-		u.Burst, u.Voice = BurstVoice|BurstType(slotBit), v
+		u.Info, u.Burst, u.Voice = info, BurstVoice|BurstType(slotBit), v
 		return nil
 	case layer2.KindData:
-		d, err := dataOf(raw, dt, slotBit)
+		if !h.HasDataType {
+			return errDataType
+		}
+		d, err := dataOf(raw, h.DataType, slotBit)
 		if err != nil {
 			return err
 		}
-		u.Burst, u.Data = BurstType(dt), d
+		u.Info, u.Burst, u.Data = info, BurstType(h.DataType), d
 		return nil
 	case layer2.KindUnknown, layer2.KindReverseChannel:
 	}

@@ -212,6 +212,10 @@ type TSCCOutput struct {
 	CACH [3]byte
 	// Burst is the burst of TSCCBurst.
 	Burst layer2.RawBurst
+	// Hint is what Burst is, for a transport: Slot, and KindData with the
+	// data type, or for a relayed burst what the TSCC decoded of it: the
+	// kind, the data type, and voice burst A from its SYNC.
+	Hint layer2.Hint
 	// Address is the MS of TSCCRegistered, TSCCDeregistered,
 	// TSCCRefused, TSCCDelivered, TSCCUDT, TSCCDiversion, TSCCStun,
 	// TSCCInterrupt and TSCCIPAdvice.
@@ -256,6 +260,7 @@ type callSlot struct {
 	clears    int
 	lateNext  time.Duration
 	relay     layer2.RawBurst
+	relayHint layer2.Hint
 	hasRelay  bool
 	clearPDU  [12]byte
 	endReason Reason
@@ -483,7 +488,16 @@ func (t *TSCC) payloadIn(now time.Duration, ch uint16, s enums.Slot, raw *layer2
 	}
 	rs := t.relaySlot(i)
 	t.svcRelay(rs)
-	t.calls[rs].relay, t.calls[rs].hasRelay = *raw, true
+	r := &t.calls[rs]
+	r.relay, r.hasRelay = *raw, true
+	r.relayHint = layer2.Hint{Kind: b.Kind}
+	switch b.Kind {
+	case layer2.KindVoice:
+		r.relayHint.VoiceBurst = b.VoiceBurst
+	case layer2.KindData:
+		r.relayHint.DataType, r.relayHint.HasDataType = b.SlotType.DataType, true
+	case layer2.KindUnknown, layer2.KindReverseChannel:
+	}
 	return out
 }
 
@@ -816,7 +830,7 @@ func (t *TSCC) carrier(c int, out []TSCCOutput) []TSCCOutput {
 		case d <= layer2.DefaultSyncThreshold && sp == enums.SyncMSSourcedData:
 			_ = raw.SetSync(enums.SyncBSSourcedData)
 		}
-		return t.emitRaw(1+c, ch, &raw, false, out)
+		return t.emitRaw(1+c, ch, &raw, cs.relayHint, false, out)
 	}
 	return t.emit(1+c, ch, pdu.PRFillBits(), enums.DataTypeIdle, false, out)
 }
@@ -826,15 +840,16 @@ func (t *TSCC) emit(idx int, ch uint16, p [12]byte, dt enums.DataType, reply boo
 	if err != nil {
 		return out
 	}
-	return t.emitRaw(idx, ch, &raw, reply, out)
+	return t.emitRaw(idx, ch, &raw, layer2.Hint{Kind: layer2.KindData, DataType: dt, HasDataType: true}, reply, out)
 }
 
-func (t *TSCC) emitRaw(idx int, ch uint16, raw *layer2.RawBurst, reply bool, out []TSCCOutput) []TSCCOutput {
+func (t *TSCC) emitRaw(idx int, ch uint16, raw *layer2.RawBurst, h layer2.Hint, reply bool, out []TSCCOutput) []TSCCOutput {
 	t.svc.buf = *raw
 	t.svcEmit(idx)
 	cach, err := t.caches[idx].Next(t.slot, reply, &t.slc)
 	if err != nil {
 		return out
 	}
-	return append(out, TSCCOutput{Kind: TSCCBurst, Channel: ch, Slot: t.slot, CACH: cach, Burst: t.svc.buf})
+	h.Slot = t.slot
+	return append(out, TSCCOutput{Kind: TSCCBurst, Channel: ch, Slot: t.slot, CACH: cach, Burst: t.svc.buf, Hint: h})
 }

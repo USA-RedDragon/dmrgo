@@ -173,13 +173,10 @@ type Output struct {
 	// Due is the time at which the burst goes on air, 60 ms after the one
 	// before it.
 	Due time.Duration
-	// Position is the superframe position of a voice burst, and
-	// VoiceBurstUnknown for a header or terminator.
-	Position enums.VoiceBurstType
-	// DataType is the data type of a header, PI Header or terminator. It is
-	// zero, the value of enums.DataTypePIHeader, for a voice burst, so check
-	// Position first.
-	DataType enums.DataType
+	// Hint is what the burst is, for a transport: KindVoice with the
+	// superframe position, or KindData with the data type of a header, PI
+	// Header or terminator. Its Slot is SlotUnknown.
+	Hint layer2.Hint
 	// Fill reports a voice burst with silence in place of voice that was
 	// not queued in time, or that pads the last superframe. The fills that
 	// Relay queues for lost bursts are voice and do not set it.
@@ -760,13 +757,13 @@ func (t *Transmitter) header(o *Output) {
 	switch {
 	case t.sent >= t.headers && t.piPending() && t.vopts.PIHeader != nil:
 		o.Burst, _ = t.vt.PIHeader()
-		o.DataType = enums.DataTypePIHeader
+		o.Hint = dataHint(enums.DataTypePIHeader)
 		t.piSent = true
 	case t.sent >= t.headers && t.piPending():
-		o.Burst, o.DataType = t.relayPI, enums.DataTypePIHeader
+		o.Burst, o.Hint = t.relayPI, dataHint(enums.DataTypePIHeader)
 		t.piSent = true
 	default:
-		o.Burst, o.DataType = t.vt.Header(), enums.DataTypeVoiceLCHeader
+		o.Burst, o.Hint = t.vt.Header(), dataHint(enums.DataTypeVoiceLCHeader)
 	}
 	t.sent++
 }
@@ -810,7 +807,8 @@ func (t *Transmitter) voice(o *Output) {
 	if b, err := t.vt.AddBurst(t.slots); err == nil {
 		o.Burst = b
 	}
-	o.Position, _ = enums.VoiceBurstAt(t.pos)
+	o.Hint.Kind = layer2.KindVoice
+	o.Hint.VoiceBurst, _ = enums.VoiceBurstAt(t.pos)
 	t.pos = (t.pos + 1) % layer2.VoiceBurstsPerSuperframe
 	if !t.timedOut && t.timeout >= 0 && o.Due+slotPeriod-t.start >= t.timeout {
 		t.ended = t.state == TransmitterEnding
@@ -831,7 +829,7 @@ func (t *Transmitter) startSuperframe() {
 }
 
 func (t *Transmitter) terminator(o *Output, out []Output) []Output {
-	o.Burst, o.DataType = t.vt.Terminator(), enums.DataTypeTerminatorWithLC
+	o.Burst, o.Hint = t.vt.Terminator(), dataHint(enums.DataTypeTerminatorWithLC)
 	t.sent++
 	switch {
 	case t.timedOut && t.ended:
@@ -1010,6 +1008,10 @@ func (t *Transmitter) collect(e *Event) {
 	if _, voiceLC := callOf(pdu.LCBytes(lc), OriginEmbedded); !voiceLC || pdu.LCBytes(lc) == t.call.LC {
 		t.carry, t.hasCarry = t.frags, true
 	}
+}
+
+func dataHint(dt enums.DataType) layer2.Hint {
+	return layer2.Hint{Kind: layer2.KindData, DataType: dt, HasDataType: true}
 }
 
 //go:noinline

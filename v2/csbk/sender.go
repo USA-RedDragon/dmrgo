@@ -132,6 +132,7 @@ func (s *sender) tick(now time.Duration, out []Output) ([]Output, sendEvent) {
 	var o *Output
 	out, o = appendOutput(out, OutputBurst)
 	o.Burst, o.Due = b, s.due
+	o.Hint = layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeCSBK, HasDataType: true}
 	s.sent++
 	if s.sent > s.preambles {
 		s.state = sendIdle

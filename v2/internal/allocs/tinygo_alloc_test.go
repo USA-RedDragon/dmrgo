@@ -599,7 +599,7 @@ func tinyHyteraRun(frame, hb, cmd, buf []byte) []byte {
 	f, _ := hytera.DecodeFrame(frame)
 	buf, _ = f.AppendBinary(buf[:0])
 	h := f.Hint()
-	_ = f.SetKind(h.Kind, h.VoiceBurst, h.DataType)
+	_ = f.SetHint(h)
 	b, _ := hytera.DecodeHeartbeat(hb)
 	buf, _ = b.AppendBinary(buf[:0])
 	c, _ := hytera.DecodeP2P(cmd)
@@ -628,7 +628,7 @@ func tinyIPSCRun(q, buf []byte) []byte {
 	buf, _ = got.AppendBinary(buf[:0])
 	h := got.Hint()
 	if r, err := got.RawBurst(7, layer2.SyncSourceBS); err == nil {
-		_ = got.SetRawBurst(r, h.Kind, h.VoiceBurst, h.DataType)
+		_ = got.SetRawBurst(r, h)
 	}
 	return buf
 }
@@ -638,7 +638,7 @@ func tinyIPSCOps(t *testing.T) []tinyOp {
 	var p [12]byte
 	raw := tinyOK(layer2.BuildDataBurst(p, enums.DataTypeCSBK, 7, layer2.SyncSourceBS))
 	u := ipsc.User{Opcode: ipsc.OpGroupData, Info: 0x20}
-	if err := u.SetRawBurst(raw, layer2.KindData, 0, enums.DataTypeCSBK); err != nil {
+	if err := u.SetRawBurst(raw, layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeCSBK, HasDataType: true}); err != nil {
 		t.Fatal(err)
 	}
 	pkt := tinyOK(u.AppendBinary(make([]byte, 0, 80)))
