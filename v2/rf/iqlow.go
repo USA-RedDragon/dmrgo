@@ -54,8 +54,8 @@ type LowIQConfig struct {
 // LowIQReceiver is the Tier 0 receiver for complex baseband at 9.6 or 12
 // kHz that is already filtered to the channel, as New makes it for a
 // BasebandHz of 9600 or 12000, in memory of the caller. It does not
-// allocate. On a Cortex-M4F at 9.6 kHz it needs about 4.3 MHz and 2 KB
-// with its stack.
+// allocate. On a Cortex-M4F at 9.6 kHz it needs about 5.6 MHz and 2.2 KB
+// with its stack, built with TinyGo -opt z.
 type LowIQReceiver struct {
 	r iqLowRx
 }
