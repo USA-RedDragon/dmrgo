@@ -23,6 +23,7 @@ func TestEncodeShortLCToCACH_RoundTrip(t *testing.T) {
 	fields := must(layer2.EncodeShortLCToCACH(&slc, tact))
 
 	var a layer2.ShortLCAssembler
+	var got pdu.ShortLC
 	for i, field := range fields {
 		c := layer2.DecodeCACH(layer2.CACHDeinterleave(field))
 		if c.TACT.FEC.Uncorrectable || c.TACT.FEC.ErrorsCorrected != 0 {
@@ -31,7 +32,9 @@ func TestEncodeShortLCToCACH_RoundTrip(t *testing.T) {
 		if !c.TACT.AccessType || !c.TACT.TDMAChannel {
 			t.Errorf("field %d: TACT %+v", i, c.TACT)
 		}
-		ready, err := a.AddFragment(c.TACT.LCSS, c.Payload)
+		var ready bool
+		var err error
+		got, ready, err = a.Add(c)
 		if err != nil {
 			t.Fatalf("field %d: %v", i, err)
 		}
@@ -39,10 +42,9 @@ func TestEncodeShortLCToCACH_RoundTrip(t *testing.T) {
 			t.Fatalf("field %d: ready=%v", i, ready)
 		}
 	}
-	got, err := a.Complete()
 	res := got.FEC
-	if err != nil || res.Uncorrectable || res.ErrorsCorrected != 0 {
-		t.Fatalf("complete: %v %+v", err, res)
+	if res.Uncorrectable || res.ErrorsCorrected != 0 {
+		t.Fatalf("complete: %+v", res)
 	}
 	if got.SLCO != slc.SLCO || got.ActivityUpdate == nil || *got.ActivityUpdate != *slc.ActivityUpdate {
 		t.Errorf("got %s", got.String())

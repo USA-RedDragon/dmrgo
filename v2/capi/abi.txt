@@ -9,7 +9,6 @@ code DMRGO_ERR_LAYER2_COLOR_CODE_MISMATCH -111
 code DMRGO_ERR_LAYER2_EMBEDDED_LC_SEQUENCE -112
 code DMRGO_ERR_LAYER2_EMBEDDED_LC_UNCORRECTABLE -113
 code DMRGO_ERR_LAYER2_RESERVED_DATA_TYPE -114
-code DMRGO_ERR_LAYER2_SHORT_LC_INCOMPLETE -115
 code DMRGO_ERR_LAYER2_SHORT_LC_SEQUENCE -116
 code DMRGO_ERR_LAYER2_VOICE_TERMINATED -117
 code DMRGO_ERR_PACKET_BLOCKS_MISSING -118
@@ -756,7 +755,6 @@ sym #define DMRGO_ERR_LAYER2_DATA_TYPE (-224)
 sym #define DMRGO_ERR_LAYER2_EMBEDDED_LC_SEQUENCE (-112)
 sym #define DMRGO_ERR_LAYER2_EMBEDDED_LC_UNCORRECTABLE (-113)
 sym #define DMRGO_ERR_LAYER2_RESERVED_DATA_TYPE (-114)
-sym #define DMRGO_ERR_LAYER2_SHORT_LC_INCOMPLETE (-115)
 sym #define DMRGO_ERR_LAYER2_SHORT_LC_SEQUENCE (-116)
 sym #define DMRGO_ERR_LAYER2_SYNC_SOURCE (-225)
 sym #define DMRGO_ERR_LAYER2_VOICE_POSITION (-226)
@@ -1943,10 +1941,7 @@ sym int dmrgo_layer2_raw_burst_standalone_rcemb(const dmrgo_layer2_raw_burst_t *
 sym int dmrgo_layer2_raw_burst_sync(const dmrgo_layer2_raw_burst_t *self, dmrgo_enums_sync_pattern_t *out0, int64_t *out1);
 sym int dmrgo_layer2_raw_burst_voice_slots(const dmrgo_layer2_raw_burst_t *self, uint8_t out[3][9]);
 sym int dmrgo_layer2_short_lc_assembler_add(dmrgo_layer2_short_lc_assembler_t *self, const dmrgo_layer2_cach_t *c, dmrgo_pdu_short_lc_t *slc, bool *done);
-sym int dmrgo_layer2_short_lc_assembler_add_fragment(dmrgo_layer2_short_lc_assembler_t *self, dmrgo_enums_lcss_t lcss, const uint8_t payload[3], bool *out);
 sym int dmrgo_layer2_short_lc_assembler_add_into(dmrgo_layer2_short_lc_assembler_t *self, dmrgo_pdu_short_lc_t *dst, dmrgo_pdu_short_lc_payloads_t *p, const dmrgo_layer2_cach_t *c, bool *done);
-sym int dmrgo_layer2_short_lc_assembler_complete(dmrgo_layer2_short_lc_assembler_t *self, dmrgo_pdu_short_lc_t *out);
-sym int dmrgo_layer2_short_lc_assembler_complete_into(dmrgo_layer2_short_lc_assembler_t *self, dmrgo_pdu_short_lc_t *dst, dmrgo_pdu_short_lc_payloads_t *p);
 sym int dmrgo_layer2_short_lc_assembler_count(dmrgo_layer2_short_lc_assembler_t *self, int64_t *out);
 sym int dmrgo_layer2_short_lc_assembler_free(dmrgo_layer2_short_lc_assembler_t *self);
 sym int dmrgo_layer2_short_lc_assembler_new(dmrgo_layer2_short_lc_assembler_t **out);

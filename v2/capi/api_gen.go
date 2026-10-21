@@ -17797,28 +17797,6 @@ func dmrgo_layer2_short_lc_assembler_add(c_self *C.dmrgo_layer2_short_lc_assembl
 	return C.DMRGO_OK
 }
 
-//export dmrgo_layer2_short_lc_assembler_add_fragment
-func dmrgo_layer2_short_lc_assembler_add_fragment(c_self *C.dmrgo_layer2_short_lc_assembler_t, c_lcss C.dmrgo_enums_lcss_t, c_payload *C.uint8_t, c_out *C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_layer2_ShortLCAssembler(c_self)
-	if c_payload == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0, r1 := h.v.AddFragment(g_enums.LCSS(c_lcss), *(*[3]byte)(unsafe.Pointer(c_payload)))
-	_ = r0
-	if c_out != nil {
-		*c_out = C.bool(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r1 != nil {
-		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_layer2_short_lc_assembler_add_into
 func dmrgo_layer2_short_lc_assembler_add_into(c_self *C.dmrgo_layer2_short_lc_assembler_t, c_dst *C.dmrgo_pdu_short_lc_t, c_p *C.dmrgo_pdu_short_lc_payloads_t, c_c *C.dmrgo_layer2_cach_t, c_done *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -17851,52 +17829,6 @@ func dmrgo_layer2_short_lc_assembler_add_into(c_self *C.dmrgo_layer2_short_lc_as
 	}
 	if r1 != nil {
 		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_layer2_short_lc_assembler_complete
-func dmrgo_layer2_short_lc_assembler_complete(c_self *C.dmrgo_layer2_short_lc_assembler_t, c_out *C.dmrgo_pdu_short_lc_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_layer2_ShortLCAssembler(c_self)
-	r0, r1 := h.v.Complete()
-	_ = r0
-	if c_out != nil {
-		out_layer2_pdu_ShortLC(&(*c_out), &r0, oc)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r1 != nil {
-		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_layer2_short_lc_assembler_complete_into
-func dmrgo_layer2_short_lc_assembler_complete_into(c_self *C.dmrgo_layer2_short_lc_assembler_t, c_dst *C.dmrgo_pdu_short_lc_t, c_p *C.dmrgo_pdu_short_lc_payloads_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_layer2_ShortLCAssembler(c_self)
-	var a_dst g_layer2_pdu.ShortLC
-	var p_dst *g_layer2_pdu.ShortLC
-	if c_dst != nil {
-		p_dst = &a_dst
-	}
-	var a_p *g_layer2_pdu.ShortLCPayloads
-	if c_p != nil {
-		a_p = get_layer2_pdu_ShortLCPayloads(c_p).v
-	}
-	r0 := h.v.CompleteInto(p_dst, a_p)
-	if c_dst != nil {
-		out_layer2_pdu_ShortLC(&(*c_dst), &a_dst, oc)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }
@@ -43201,8 +43133,6 @@ func errCode(err error) C.int {
 			return -113
 		case g_layer2.ErrReservedDataType:
 			return -114
-		case g_layer2.ErrShortLCIncomplete:
-			return -115
 		case g_layer2.ErrShortLCSequence:
 			return -116
 		case g_layer2.ErrSyncSource:
@@ -43488,8 +43418,6 @@ func codeErr(code C.int) error {
 		return g_layer2.ErrEmbeddedLCUncorrectable
 	case -114:
 		return g_layer2.ErrReservedDataType
-	case -115:
-		return g_layer2.ErrShortLCIncomplete
 	case -116:
 		return g_layer2.ErrShortLCSequence
 	case -225:
