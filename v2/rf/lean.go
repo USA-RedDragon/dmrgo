@@ -303,6 +303,9 @@ func newLean(cfg Config, opt options) *leanRx {
 	}
 	r.df.init(cfg.BasebandHz == discRate)
 	r.iq, r.center = &r.df, r.df.center()
+	if cfg.OffsetHz != 0 {
+		r.retune(float32(cfg.OffsetHz))
+	}
 	if opt.SoftExt {
 		r.ext = softExtOf(&opt, float32(discSPS)/2)
 	}

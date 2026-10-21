@@ -40,6 +40,11 @@ type LowIQConfig struct {
 	// Hz is the rate of the complex baseband: 9600 or 12000. 0 means
 	// 9600.
 	Hz int
+	// OffsetHz is the frequency of the carrier relative to the center of
+	// the I/Q, in Hz, when the oscillator of the radio is known to be off,
+	// as Config.OffsetHz is. It must be under Hz/2 in size. 0 means a
+	// centered carrier.
+	OffsetHz float64
 	// OnBurst receives each burst; the receiver needs it. The burst is
 	// valid only during the call.
 	OnBurst func(*Burst)
@@ -58,6 +63,7 @@ type LowIQReceiver struct {
 var (
 	errLowIQHz      = &ConfigError{Field: "Hz"}
 	errLowIQOnBurst = &ConfigError{Field: "OnBurst"}
+	errLowIQOffset  = &ConfigError{Field: "OffsetHz"}
 )
 
 // Init sets up r for cfg, in place of any state it holds.
@@ -71,7 +77,14 @@ func (r *LowIQReceiver) Init(cfg LowIQConfig) error {
 	if cfg.OnBurst == nil {
 		return errLowIQOnBurst
 	}
-	return r.r.init(cfg.Hz, cfg.OnBurst, cfg.opt)
+	if !(cfg.OffsetHz < float64(cfg.Hz)/2 && cfg.OffsetHz > -float64(cfg.Hz)/2) {
+		return errLowIQOffset
+	}
+	if err := r.r.init(cfg.Hz, cfg.OnBurst, cfg.opt); err != nil {
+		return err
+	}
+	r.r.center(float32(cfg.OffsetHz))
+	return nil
 }
 
 // WriteBaseband processes the samples x and hands the bursts that they
@@ -104,6 +117,11 @@ type iqLowRx struct {
 	buf         [iqLowBuf]int16
 }
 
+func (r *iqLowRx) center(hz float32) {
+	r.hz = hz
+	r.step = roundBits(hz/float32(r.d.hz())*(1<<16)) << 16
+}
+
 func (r *iqLowRx) init(hz int, on func(*Burst), opt *options) error {
 	*r = iqLowRx{}
 	err := r.d.Init(DiscConfig{Hz: hz, OnBurst: on, opt: opt, lowIQ: true})
@@ -122,6 +140,7 @@ func newIQLowRx(cfg Config, opt options) *iqLowNew {
 	if err := r.init(cfg.BasebandHz, cfg.OnBurst, &opt); err != nil {
 		panic(err)
 	}
+	r.center(float32(cfg.OffsetHz))
 	if cfg.OnBurst == nil {
 		r.d.out = make([]Burst, 0, r.d.maxBursts(cfg.MaxWrite))
 	}

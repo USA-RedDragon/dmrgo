@@ -268,6 +268,51 @@ func TestIQSpecHunt(t *testing.T) {
 	}
 }
 
+func TestReceiverOffsetHz(t *testing.T) {
+	t.Parallel()
+	slots, _ := benchStream(t, 6)
+	for _, c := range []struct{ off, set float64 }{{11400, 11000}, {-11000, -11300}} {
+		x := noisyBaseband(slots, c.off, 15, 5)
+		for _, tier := range []Tier{Tier0, Tier1, Tier2, Tier3} {
+			for _, set := range []float64{0, c.set} {
+				r := mustNew(Config{Tier: tier, OffsetHz: set})
+				var got []Burst
+				for k := 0; k < len(x); k += 4096 {
+					got = append(got, must(r.WriteBaseband(x[k:min(k+4096, len(x))]))...)
+				}
+				got = append(got, r.Flush()...)
+				exact, total := exactFrames(slots, got)
+				switch {
+				case set != 0 && exact < total*9/10:
+					t.Errorf("tier %d at %.0f Hz, OffsetHz %.0f: %d of %d voice frames exact", tier-Tier0, c.off, set, exact, total)
+				case set != 0 && math.Abs(r.OffsetHz()-c.off) > 100:
+					t.Errorf("tier %d at %.0f Hz, OffsetHz %.0f: OffsetHz() %.0f", tier-Tier0, c.off, set, r.OffsetHz())
+				case set == 0 && exact > total/10:
+					t.Errorf("tier %d at %.0f Hz without OffsetHz: %d of %d voice frames exact; the test no longer shows the next channel", tier-Tier0, c.off, exact, total)
+				}
+			}
+		}
+	}
+	y := lowIQ(noisyBaseband(slots, 1700, 25, 6), iq0LowHz)
+	for _, set := range []float64{0, 1500} {
+		var r LowIQReceiver
+		var got []Burst
+		if err := r.Init(LowIQConfig{OffsetHz: set, OnBurst: func(b *Burst) { got = append(got, *b) }}); err != nil {
+			t.Fatal(err)
+		}
+		r.WriteBaseband(y)
+		r.Flush()
+		if exact, total := exactFrames(slots, got); exact < total*9/10 {
+			t.Errorf("LowIQReceiver at 1700 Hz, OffsetHz %.0f: %d of %d voice frames exact", set, exact, total)
+		}
+	}
+	for _, c := range []Config{{OffsetHz: 24000}, {OffsetHz: math.NaN()}, {BasebandHz: iq0LowHz, OffsetHz: -4800}} {
+		if _, err := New(c); err == nil {
+			t.Errorf("New took %+v", c)
+		}
+	}
+}
+
 func TestIQAFCAvgNoise(t *testing.T) {
 	t.Parallel()
 	for _, m := range []int{2, 3, 5} {

@@ -129,6 +129,13 @@ type Config struct {
 	// and 12000 Write takes 8-bit I/Q at BasebandHz, and Rate must be 0 or
 	// BasebandHz. 0 means BasebandRate.
 	BasebandHz int
+	// OffsetHz is the frequency of the carrier relative to the center of
+	// the I/Q, in Hz, when the oscillator of the radio is known to be off,
+	// as for an RTL-SDR without ppm correction (rtl_fm -p): the offset that
+	// OffsetHz of a Receiver reported for that radio. The receiver tunes
+	// there before it searches 6.25 kHz around it for the carrier. It must
+	// be under BasebandHz/2 in size. 0 means a centered carrier.
+	OffsetHz float64
 	// MaxWrite is the largest number of bytes in one Write, and twice the
 	// largest number of samples in one WriteBaseband. 0 means 1 << 16.
 	// When OnBurst is nil, a longer call returns ErrWriteTooLong.
@@ -363,6 +370,9 @@ func checkConfig(cfg *Config) (low bool, err error) {
 	case !(cfg.Rate >= float64(cfg.BasebandHz)) || cfg.Rate > 1e9, low && cfg.opt == nil && cfg.Rate != float64(cfg.BasebandHz):
 		return false, &ConfigError{Field: "Rate"}
 	}
+	if !(math.Abs(cfg.OffsetHz) < float64(cfg.BasebandHz)/2) {
+		return false, &ConfigError{Field: "OffsetHz"}
+	}
 	if cfg.MaxWrite < 0 {
 		return false, &ConfigError{Field: "MaxWrite"}
 	}
@@ -469,6 +479,9 @@ func newEngine(cfg Config, opt options) *engine {
 	}
 	if cfg.OnBurst == nil {
 		r.out = make([]Burst, 0, 4*cfg.MaxWrite/(cfg.BasebandHz*3/100*2)+2*len(r.slots)+16)
+	}
+	if cfg.OffsetHz != 0 {
+		r.chz.tune(cfg.OffsetHz)
 	}
 	return r
 }
@@ -673,7 +686,7 @@ func (r *engine) push(x []complex64) {
 }
 
 func (r *engine) tuneOK(hz float64) bool {
-	return r.opt.IQTuneMaxHz <= 0 || math.Abs(hz) <= float64(r.opt.IQTuneMaxHz)
+	return r.opt.IQTuneMaxHz <= 0 || math.Abs(hz-r.cfg.OffsetHz) <= float64(r.opt.IQTuneMaxHz)
 }
 
 func (r *engine) flush() []Burst {
