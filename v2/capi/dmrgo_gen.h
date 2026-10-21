@@ -1676,6 +1676,8 @@ struct dmrgo_data_output_t {
 	dmrgo_packet_response_t response;
 	/* HasResponse reports whether Response is set. */
 	bool has_response;
+	/* Group reports whether the message that ended went to a talkgroup. */
+	bool group;
 };
 
 struct dmrgo_fec_burst_fec_stats_t {
@@ -8040,6 +8042,8 @@ int dmrgo_csbk_wakeup_wake(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, uint
 int dmrgo_csbk_wakeup_state_string(dmrgo_csbk_wakeup_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: data.EndReason.String. String returns the name of the reason. */
 int dmrgo_data_end_reason_string(dmrgo_data_end_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: data.Event.ICMP. ICMP returns the ICMP error message that a radio sends about the IPv4 packet of the EventDelivered or EventReassembled e, for an accessory interface with the MTU mtu, as ip.CheckIPv4 does. */
+int dmrgo_data_event_icmp(dmrgo_data_event_t *self, int64_t mtu, dmrgo_ip_icmp_message_t *m, uint8_t *pointer, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: data.EventKind.String. String returns the name of the kind. */
 int dmrgo_data_event_kind_string(dmrgo_data_event_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: data.NewReceiver. NewReceiver returns a Receiver for cfg. */
@@ -8047,7 +8051,7 @@ int dmrgo_data_new_receiver(const dmrgo_data_receiver_config_t *cfg, dmrgo_data_
 /* Go: data.NewSender. NewSender returns a Sender for cfg. */
 int dmrgo_data_new_sender(const dmrgo_data_sender_config_t *cfg, dmrgo_data_sender_t **out);
 /* Go: data.Output.ICMP. ICMP returns the ICMP error message that the OutputDone o of a message of the IP bearer service reports to the IP layer: ip.ICMPHostUnreachable for a message that used all its tries on air (ResultRetryLimit), that could not finish before SenderConfig.TxLimit (ResultTimeLimit), or that got a NACK for the full memory of the recipient. */
-int dmrgo_data_output_icmp(dmrgo_data_output_t *self, dmrgo_ip_icmp_message_t *m, bool *ok);
+int dmrgo_data_output_icmp(dmrgo_data_output_t *self, dmrgo_ip_icmp_message_t *out);
 /* Go: data.OutputKind.String. String returns the name of the kind. */
 int dmrgo_data_output_kind_string(dmrgo_data_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_data_receiver_free frees the handle. self may be NULL. */

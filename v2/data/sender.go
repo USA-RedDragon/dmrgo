@@ -188,6 +188,8 @@ type Output struct {
 	Response packet.Response
 	// HasResponse reports whether Response is set.
 	HasResponse bool
+	// Group reports whether the message that ended went to a talkgroup.
+	Group bool
 }
 
 // SenderState is the state of a Sender.
@@ -710,6 +712,7 @@ func (s *Sender) finish(k int, result Result, dst []Output) []Output {
 	if e.cHead {
 		o.Seq = e.ns
 	}
+	o.Group = groupOf(&e.pkt.Header)
 	for i := k + 1; i < s.n; i++ {
 		s.ord[i-1] = s.ord[i]
 	}
@@ -875,26 +878,27 @@ func (s *Sender) send(dst []Output) []Output {
 // ip.ICMPHostUnreachable for a message that used all its tries on air
 // (ResultRetryLimit), that could not finish before SenderConfig.TxLimit
 // (ResultTimeLimit), or that got a NACK for the full memory of the
-// recipient. ok is false for any other output. (ETSI TS 102 361-3 clauses
-// 5.2 and 5.4.2.1)
-func (o *Output) ICMP() (m ip.ICMPMessage, ok bool) {
+// recipient. It returns ip.ErrNoICMP for any other output, and for a
+// message to a talkgroup, which goes as a link layer broadcast (RFC 1122
+// clause 3.2.2), and dmrgo.ErrNilReceiver for a nil o. (ETSI TS 102 361-3
+// clauses 5.2 and 5.4.2.1)
+func (o *Output) ICMP() (ip.ICMPMessage, error) {
 	if o == nil {
-		return 0, false
+		return 0, dmrgo.ErrNilReceiver
 	}
-
-	if o.Kind != OutputDone {
-		return 0, false
+	if o.Kind != OutputDone || o.Group {
+		return 0, ip.ErrNoICMP
 	}
 	switch o.Result {
 	case ResultRetryLimit, ResultTimeLimit:
-		return ip.ICMPHostUnreachable, true
+		return ip.ICMPHostUnreachable, nil
 	case ResultRefused:
 		if o.HasResponse && o.Response == packet.ResponseNACKMemoryFull {
-			return ip.ICMPHostUnreachable, true
+			return ip.ICMPHostUnreachable, nil
 		}
 	case ResultSent, ResultDelivered, ResultCancelled:
 	}
-	return 0, false
+	return 0, ip.ErrNoICMP
 }
 
 //go:noinline

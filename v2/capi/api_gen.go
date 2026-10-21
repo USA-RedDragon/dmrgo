@@ -368,77 +368,235 @@ func in_layer3_ServiceOptions(s *C.dmrgo_layer3_service_options_t) (d g_layer3.S
 	return
 }
 
-type st_data_ReceiverConfig struct {
-	p_ColorCode g_enums.ColorCode
+type st_layer2_pdu_DataHeader struct {
+	p_UnconfirmedDataHeader g_layer2_pdu.UnconfirmedDataHeader
+	p_ConfirmedDataHeader   g_layer2_pdu.ConfirmedDataHeader
+	p_ResponsePacketHeader  g_layer2_pdu.ResponsePacketHeader
+	p_DefinedDataHeader     g_layer2_pdu.DefinedDataHeader
+	p_StatusPrecodedHeader  g_layer2_pdu.StatusPrecodedHeader
+	p_RawDataHeader         g_layer2_pdu.RawDataHeader
+	p_UDTHeader             g_layer2_pdu.UDTHeader
+	p_ProprietaryHeader     g_layer2_pdu.ProprietaryHeader
 }
 
-func in_data_ReceiverConfig(s *C.dmrgo_data_receiver_config_t, st *st_data_ReceiverConfig) (d g_data.ReceiverConfig) {
-	if s.has_color_code {
-		st.p_ColorCode = g_enums.ColorCode(s.color_code)
-		d.ColorCode = &st.p_ColorCode
+type st_data_Message struct {
+	f_Header      st_layer2_pdu_DataHeader
+	p_Proprietary g_layer2_pdu.ProprietaryHeader
+}
+
+type st_data_Event struct {
+	f_Message st_data_Message
+	p_Retry   g_layer2_packet.ResponseData
+}
+
+func in_data_Call(s *C.dmrgo_data_call_t) (d g_data.Call) {
+	d.Group = bool(s.group)
+	d.Target = uint32(s.target)
+	d.Source = uint32(s.source)
+	return
+}
+
+func in_layer2_pdu_UnconfirmedDataHeader(s *C.dmrgo_pdu_unconfirmed_data_header_t) (d g_layer2_pdu.UnconfirmedDataHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.Reserved = bool(s.reserved)
+	d.PadOctetCount = uint8(s.pad_octet_count)
+	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.FullMessageFlag = bool(s.full_message_flag)
+	d.BlocksToFollow = uint8(s.blocks_to_follow)
+	d.Reserved2 = uint8(s.reserved2)
+	d.FragmentSequenceNumber = uint8(s.fragment_sequence_number)
+	return
+}
+
+func in_layer2_pdu_ConfirmedDataHeader(s *C.dmrgo_pdu_confirmed_data_header_t) (d g_layer2_pdu.ConfirmedDataHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.Reserved = bool(s.reserved)
+	d.PadOctetCount = uint8(s.pad_octet_count)
+	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.FullMessageFlag = bool(s.full_message_flag)
+	d.BlocksToFollow = uint8(s.blocks_to_follow)
+	d.ReSynchronizeFlag = bool(s.re_synchronize_flag)
+	d.SendSequenceNumber = uint8(s.send_sequence_number)
+	d.FragmentSequenceNumber = uint8(s.fragment_sequence_number)
+	return
+}
+
+func in_layer2_pdu_ResponsePacketHeader(s *C.dmrgo_pdu_response_packet_header_t) (d g_layer2_pdu.ResponsePacketHeader) {
+	d.Reserved = bool(s.reserved)
+	d.ResponseRequested = bool(s.response_requested)
+	d.Reserved2 = uint8(s.reserved2)
+	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.Reserved3 = uint8(s.reserved3)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.FullMessageFlag = bool(s.full_message_flag)
+	d.BlocksToFollow = uint8(s.blocks_to_follow)
+	d.ResponseClass = uint8(s.response_class)
+	d.ResponseType = uint8(s.response_type)
+	d.ResponseStatus = uint8(s.response_status)
+	return
+}
+
+func in_layer2_pdu_DefinedDataHeader(s *C.dmrgo_pdu_defined_data_header_t) (d g_layer2_pdu.DefinedDataHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.AppendedBlocks = uint8(s.appended_blocks)
+	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.DefinedData = g_enums.DDFormat(s.defined_data)
+	d.SARQ = bool(s.sarq)
+	d.FullMessageFlag = bool(s.full_message_flag)
+	d.BitPadding = uint8(s.bit_padding)
+	return
+}
+
+func in_layer2_pdu_StatusPrecodedHeader(s *C.dmrgo_pdu_status_precoded_header_t) (d g_layer2_pdu.StatusPrecodedHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.SourcePort = uint8(s.source_port)
+	d.DestinationPort = uint8(s.destination_port)
+	d.StatusPrecoded = uint16(s.status_precoded)
+	return
+}
+
+func in_layer2_pdu_RawDataHeader(s *C.dmrgo_pdu_raw_data_header_t) (d g_layer2_pdu.RawDataHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.AppendedBlocks = uint8(s.appended_blocks)
+	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.SourcePort = uint8(s.source_port)
+	d.DestinationPort = uint8(s.destination_port)
+	d.SARQ = bool(s.sarq)
+	d.FullMessageFlag = bool(s.full_message_flag)
+	d.BitPadding = uint8(s.bit_padding)
+	return
+}
+
+func in_layer2_pdu_UDTHeader(s *C.dmrgo_pdu_udt_header_t) (d g_layer2_pdu.UDTHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.Emergency = bool(s.emergency)
+	d.OptionFlag = bool(s.option_flag)
+	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.UDTFormat = g_enums.UDTFormat(s.udt_format)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.PadNibble = uint8(s.pad_nibble)
+	d.Reserved = bool(s.reserved)
+	d.AppendedBlocks = uint8(s.appended_blocks)
+	d.SupplementaryFlag = bool(s.supplementary_flag)
+	d.ProtectFlag = bool(s.protect_flag)
+	d.Opcode = g_layer2_pdu.UDTOpcode(s.opcode)
+	return
+}
+
+func in_layer2_pdu_DataHeader(s *C.dmrgo_pdu_data_header_t, st *st_layer2_pdu_DataHeader) (d g_layer2_pdu.DataHeader) {
+	d.FEC = in_fec_Result(&s.fec)
+	d.Format = g_layer2_pdu.Format(s.format)
+	d.AppendedBlocks = uint8(s.appended_blocks)
+	if s.has_unconfirmed_data_header {
+		st.p_UnconfirmedDataHeader = in_layer2_pdu_UnconfirmedDataHeader(&s.unconfirmed_data_header)
+		d.UnconfirmedDataHeader = &st.p_UnconfirmedDataHeader
 	} else {
-		d.ColorCode = nil
+		d.UnconfirmedDataHeader = nil
 	}
-	d.Address = uint32(s.address)
-	d.Respond = bool(s.respond)
-	d.Source = g_layer2.SyncSource(s.source)
-	d.ResponseDelay = time.Duration(s.response_delay)
-	d.MaxBlocks = int(s.max_blocks)
-	d.MaxFragment = int(s.max_fragment)
-	d.MaxMessage = int(s.max_message)
-	d.Peers = int(s.peers)
-	d.Lost = time.Duration(s.lost)
-	d.Hang = time.Duration(s.hang)
-	d.AcceptBadCRC = bool(s.accept_bad_crc)
-	d.Scratch = nil
-	if s.scratch != nil {
-		d.Scratch = get_layer2_Burst(s.scratch).v
+	if s.has_confirmed_data_header {
+		st.p_ConfirmedDataHeader = in_layer2_pdu_ConfirmedDataHeader(&s.confirmed_data_header)
+		d.ConfirmedDataHeader = &st.p_ConfirmedDataHeader
+	} else {
+		d.ConfirmedDataHeader = nil
+	}
+	if s.has_response_packet_header {
+		st.p_ResponsePacketHeader = in_layer2_pdu_ResponsePacketHeader(&s.response_packet_header)
+		d.ResponsePacketHeader = &st.p_ResponsePacketHeader
+	} else {
+		d.ResponsePacketHeader = nil
+	}
+	if s.has_defined_data_header {
+		st.p_DefinedDataHeader = in_layer2_pdu_DefinedDataHeader(&s.defined_data_header)
+		d.DefinedDataHeader = &st.p_DefinedDataHeader
+	} else {
+		d.DefinedDataHeader = nil
+	}
+	if s.has_status_precoded_header {
+		st.p_StatusPrecodedHeader = in_layer2_pdu_StatusPrecodedHeader(&s.status_precoded_header)
+		d.StatusPrecodedHeader = &st.p_StatusPrecodedHeader
+	} else {
+		d.StatusPrecodedHeader = nil
+	}
+	if s.has_raw_data_header {
+		st.p_RawDataHeader = in_layer2_pdu_RawDataHeader(&s.raw_data_header)
+		d.RawDataHeader = &st.p_RawDataHeader
+	} else {
+		d.RawDataHeader = nil
+	}
+	if s.has_udt_header {
+		st.p_UDTHeader = in_layer2_pdu_UDTHeader(&s.udt_header)
+		d.UDTHeader = &st.p_UDTHeader
+	} else {
+		d.UDTHeader = nil
+	}
+	if s.has_proprietary_header {
+		st.p_ProprietaryHeader = *(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&s.proprietary_header))
+		d.ProprietaryHeader = &st.p_ProprietaryHeader
+	} else {
+		d.ProprietaryHeader = nil
+	}
+	d.RawPayload = *(*[10]byte)(unsafe.Pointer(&s.raw_payload))
+	return
+}
+
+func in_data_Message(s *C.dmrgo_data_message_t, st *st_data_Message) (d g_data.Message) {
+	d.Header = in_layer2_pdu_DataHeader(&s.header, &st.f_Header)
+	if s.has_proprietary {
+		st.p_Proprietary = *(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&s.proprietary))
+		d.Proprietary = &st.p_Proprietary
+	} else {
+		d.Proprietary = nil
+	}
+	d.Rate = g_enums.DataType(s.rate)
+	d.Payload = unsafe.Slice((*byte)(unsafe.Pointer(s.payload)), int(s.payload_len))
+	d.BadCRC = bool(s.bad_crc)
+	d.Fragmented = bool(s.fragmented)
+	d.Fragments = uint16(s.fragments)
+	return
+}
+
+func in_layer2_packet_ResponseData(s *C.dmrgo_packet_response_data_t) (d g_layer2_packet.ResponseData) {
+	for i0 := range d.Retry {
+		d.Retry[i0] = bool(s.retry[i0])
 	}
 	return
 }
 
-func in_data_SenderConfig(s *C.dmrgo_data_sender_config_t) (d g_data.SenderConfig) {
-	d.ColorCode = g_enums.ColorCode(s.color_code)
-	d.Source = g_layer2.SyncSource(s.source)
-	d.Access = g_enums.Access(s.access)
-	d.Preambles = int(s.preambles)
-	d.IdleSearch = time.Duration(s.idle_search)
-	d.Holdoff = time.Duration(s.holdoff)
-	d.ResponseWait = time.Duration(s.response_wait)
-	d.TxLimit = time.Duration(s.tx_limit)
-	d.Retries = int(s.retries)
-	d.MaxBlocks = int(s.max_blocks)
-	d.Peers = int(s.peers)
-	d.Resync = bool(s.resync)
-	d.Window = int(s.window)
-	d.Seed = uint64(s.seed)
-	return
-}
-
-func in_data_Output(s *C.dmrgo_data_output_t) (d g_data.Output) {
-	d.Kind = g_data.OutputKind(s.kind)
-	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
-	d.Hint = in_layer2_Hint(&s.hint)
-	d.Due = time.Duration(s.due)
-	d.Try = uint8(s.try_)
-	d.Seq = uint8(s.seq)
-	d.Result = g_data.Result(s.result)
+func in_data_Event(s *C.dmrgo_data_event_t, st *st_data_Event) (d g_data.Event) {
+	d.Kind = g_data.EventKind(s.kind)
+	d.Call = in_data_Call(&s.call)
+	d.Message = in_data_Message(&s.message, &st.f_Message)
 	d.Response = g_layer2_packet.Response(s.response)
-	d.HasResponse = bool(s.has_response)
+	if s.has_retry {
+		st.p_Retry = in_layer2_packet_ResponseData(&s.retry)
+		d.Retry = &st.p_Retry
+	} else {
+		d.Retry = nil
+	}
+	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	d.Due = time.Duration(s.due)
+	d.Reason = g_data.EndReason(s.reason)
+	d.Stats = *(*g_data.Stats)(unsafe.Pointer(&s.stats))
 	return
-}
-
-func out_data_Output(d *C.dmrgo_data_output_t, s *g_data.Output, oc *outc) {
-	_ = oc
-	d.kind = C.dmrgo_data_output_kind_t(s.Kind)
-	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
-	out_layer2_Hint(&d.hint, &s.Hint, oc)
-	d.due = C.dmrgo_duration_t(s.Due)
-	d.try_ = C.uint8_t(s.Try)
-	d.seq = C.uint8_t(s.Seq)
-	d.result = C.dmrgo_data_result_t(s.Result)
-	d.response = C.dmrgo_packet_response_t(s.Response)
-	d.has_response = C.bool(s.HasResponse)
 }
 
 func out_data_Call(d *C.dmrgo_data_call_t, s *g_data.Call, oc *outc) {
@@ -669,198 +827,79 @@ func out_data_Event(d *C.dmrgo_data_event_t, s *g_data.Event, oc *outc) {
 	*(*g_data.Stats)(unsafe.Pointer(&d.stats)) = s.Stats
 }
 
-type st_layer2_pdu_DataHeader struct {
-	p_UnconfirmedDataHeader g_layer2_pdu.UnconfirmedDataHeader
-	p_ConfirmedDataHeader   g_layer2_pdu.ConfirmedDataHeader
-	p_ResponsePacketHeader  g_layer2_pdu.ResponsePacketHeader
-	p_DefinedDataHeader     g_layer2_pdu.DefinedDataHeader
-	p_StatusPrecodedHeader  g_layer2_pdu.StatusPrecodedHeader
-	p_RawDataHeader         g_layer2_pdu.RawDataHeader
-	p_UDTHeader             g_layer2_pdu.UDTHeader
-	p_ProprietaryHeader     g_layer2_pdu.ProprietaryHeader
+type st_data_ReceiverConfig struct {
+	p_ColorCode g_enums.ColorCode
 }
 
-type st_data_Message struct {
-	f_Header      st_layer2_pdu_DataHeader
-	p_Proprietary g_layer2_pdu.ProprietaryHeader
+func in_data_ReceiverConfig(s *C.dmrgo_data_receiver_config_t, st *st_data_ReceiverConfig) (d g_data.ReceiverConfig) {
+	if s.has_color_code {
+		st.p_ColorCode = g_enums.ColorCode(s.color_code)
+		d.ColorCode = &st.p_ColorCode
+	} else {
+		d.ColorCode = nil
+	}
+	d.Address = uint32(s.address)
+	d.Respond = bool(s.respond)
+	d.Source = g_layer2.SyncSource(s.source)
+	d.ResponseDelay = time.Duration(s.response_delay)
+	d.MaxBlocks = int(s.max_blocks)
+	d.MaxFragment = int(s.max_fragment)
+	d.MaxMessage = int(s.max_message)
+	d.Peers = int(s.peers)
+	d.Lost = time.Duration(s.lost)
+	d.Hang = time.Duration(s.hang)
+	d.AcceptBadCRC = bool(s.accept_bad_crc)
+	d.Scratch = nil
+	if s.scratch != nil {
+		d.Scratch = get_layer2_Burst(s.scratch).v
+	}
+	return
 }
 
-func in_layer2_pdu_UnconfirmedDataHeader(s *C.dmrgo_pdu_unconfirmed_data_header_t) (d g_layer2_pdu.UnconfirmedDataHeader) {
+func in_data_SenderConfig(s *C.dmrgo_data_sender_config_t) (d g_data.SenderConfig) {
+	d.ColorCode = g_enums.ColorCode(s.color_code)
+	d.Source = g_layer2.SyncSource(s.source)
+	d.Access = g_enums.Access(s.access)
+	d.Preambles = int(s.preambles)
+	d.IdleSearch = time.Duration(s.idle_search)
+	d.Holdoff = time.Duration(s.holdoff)
+	d.ResponseWait = time.Duration(s.response_wait)
+	d.TxLimit = time.Duration(s.tx_limit)
+	d.Retries = int(s.retries)
+	d.MaxBlocks = int(s.max_blocks)
+	d.Peers = int(s.peers)
+	d.Resync = bool(s.resync)
+	d.Window = int(s.window)
+	d.Seed = uint64(s.seed)
+	return
+}
+
+func in_data_Output(s *C.dmrgo_data_output_t) (d g_data.Output) {
+	d.Kind = g_data.OutputKind(s.kind)
+	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	d.Hint = in_layer2_Hint(&s.hint)
+	d.Due = time.Duration(s.due)
+	d.Try = uint8(s.try_)
+	d.Seq = uint8(s.seq)
+	d.Result = g_data.Result(s.result)
+	d.Response = g_layer2_packet.Response(s.response)
+	d.HasResponse = bool(s.has_response)
 	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.Reserved = bool(s.reserved)
-	d.PadOctetCount = uint8(s.pad_octet_count)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.FullMessageFlag = bool(s.full_message_flag)
-	d.BlocksToFollow = uint8(s.blocks_to_follow)
-	d.Reserved2 = uint8(s.reserved2)
-	d.FragmentSequenceNumber = uint8(s.fragment_sequence_number)
 	return
 }
 
-func in_layer2_pdu_ConfirmedDataHeader(s *C.dmrgo_pdu_confirmed_data_header_t) (d g_layer2_pdu.ConfirmedDataHeader) {
-	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.Reserved = bool(s.reserved)
-	d.PadOctetCount = uint8(s.pad_octet_count)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.FullMessageFlag = bool(s.full_message_flag)
-	d.BlocksToFollow = uint8(s.blocks_to_follow)
-	d.ReSynchronizeFlag = bool(s.re_synchronize_flag)
-	d.SendSequenceNumber = uint8(s.send_sequence_number)
-	d.FragmentSequenceNumber = uint8(s.fragment_sequence_number)
-	return
-}
-
-func in_layer2_pdu_ResponsePacketHeader(s *C.dmrgo_pdu_response_packet_header_t) (d g_layer2_pdu.ResponsePacketHeader) {
-	d.Reserved = bool(s.reserved)
-	d.ResponseRequested = bool(s.response_requested)
-	d.Reserved2 = uint8(s.reserved2)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
-	d.Reserved3 = uint8(s.reserved3)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.FullMessageFlag = bool(s.full_message_flag)
-	d.BlocksToFollow = uint8(s.blocks_to_follow)
-	d.ResponseClass = uint8(s.response_class)
-	d.ResponseType = uint8(s.response_type)
-	d.ResponseStatus = uint8(s.response_status)
-	return
-}
-
-func in_layer2_pdu_DefinedDataHeader(s *C.dmrgo_pdu_defined_data_header_t) (d g_layer2_pdu.DefinedDataHeader) {
-	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.AppendedBlocks = uint8(s.appended_blocks)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.DefinedData = g_enums.DDFormat(s.defined_data)
-	d.SARQ = bool(s.sarq)
-	d.FullMessageFlag = bool(s.full_message_flag)
-	d.BitPadding = uint8(s.bit_padding)
-	return
-}
-
-func in_layer2_pdu_StatusPrecodedHeader(s *C.dmrgo_pdu_status_precoded_header_t) (d g_layer2_pdu.StatusPrecodedHeader) {
-	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.SourcePort = uint8(s.source_port)
-	d.DestinationPort = uint8(s.destination_port)
-	d.StatusPrecoded = uint16(s.status_precoded)
-	return
-}
-
-func in_layer2_pdu_RawDataHeader(s *C.dmrgo_pdu_raw_data_header_t) (d g_layer2_pdu.RawDataHeader) {
-	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.AppendedBlocks = uint8(s.appended_blocks)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.SourcePort = uint8(s.source_port)
-	d.DestinationPort = uint8(s.destination_port)
-	d.SARQ = bool(s.sarq)
-	d.FullMessageFlag = bool(s.full_message_flag)
-	d.BitPadding = uint8(s.bit_padding)
-	return
-}
-
-func in_layer2_pdu_UDTHeader(s *C.dmrgo_pdu_udt_header_t) (d g_layer2_pdu.UDTHeader) {
-	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.Emergency = bool(s.emergency)
-	d.OptionFlag = bool(s.option_flag)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
-	d.UDTFormat = g_enums.UDTFormat(s.udt_format)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.PadNibble = uint8(s.pad_nibble)
-	d.Reserved = bool(s.reserved)
-	d.AppendedBlocks = uint8(s.appended_blocks)
-	d.SupplementaryFlag = bool(s.supplementary_flag)
-	d.ProtectFlag = bool(s.protect_flag)
-	d.Opcode = g_layer2_pdu.UDTOpcode(s.opcode)
-	return
-}
-
-func in_layer2_pdu_DataHeader(s *C.dmrgo_pdu_data_header_t, st *st_layer2_pdu_DataHeader) (d g_layer2_pdu.DataHeader) {
-	d.FEC = in_fec_Result(&s.fec)
-	d.Format = g_layer2_pdu.Format(s.format)
-	d.AppendedBlocks = uint8(s.appended_blocks)
-	if s.has_unconfirmed_data_header {
-		st.p_UnconfirmedDataHeader = in_layer2_pdu_UnconfirmedDataHeader(&s.unconfirmed_data_header)
-		d.UnconfirmedDataHeader = &st.p_UnconfirmedDataHeader
-	} else {
-		d.UnconfirmedDataHeader = nil
-	}
-	if s.has_confirmed_data_header {
-		st.p_ConfirmedDataHeader = in_layer2_pdu_ConfirmedDataHeader(&s.confirmed_data_header)
-		d.ConfirmedDataHeader = &st.p_ConfirmedDataHeader
-	} else {
-		d.ConfirmedDataHeader = nil
-	}
-	if s.has_response_packet_header {
-		st.p_ResponsePacketHeader = in_layer2_pdu_ResponsePacketHeader(&s.response_packet_header)
-		d.ResponsePacketHeader = &st.p_ResponsePacketHeader
-	} else {
-		d.ResponsePacketHeader = nil
-	}
-	if s.has_defined_data_header {
-		st.p_DefinedDataHeader = in_layer2_pdu_DefinedDataHeader(&s.defined_data_header)
-		d.DefinedDataHeader = &st.p_DefinedDataHeader
-	} else {
-		d.DefinedDataHeader = nil
-	}
-	if s.has_status_precoded_header {
-		st.p_StatusPrecodedHeader = in_layer2_pdu_StatusPrecodedHeader(&s.status_precoded_header)
-		d.StatusPrecodedHeader = &st.p_StatusPrecodedHeader
-	} else {
-		d.StatusPrecodedHeader = nil
-	}
-	if s.has_raw_data_header {
-		st.p_RawDataHeader = in_layer2_pdu_RawDataHeader(&s.raw_data_header)
-		d.RawDataHeader = &st.p_RawDataHeader
-	} else {
-		d.RawDataHeader = nil
-	}
-	if s.has_udt_header {
-		st.p_UDTHeader = in_layer2_pdu_UDTHeader(&s.udt_header)
-		d.UDTHeader = &st.p_UDTHeader
-	} else {
-		d.UDTHeader = nil
-	}
-	if s.has_proprietary_header {
-		st.p_ProprietaryHeader = *(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&s.proprietary_header))
-		d.ProprietaryHeader = &st.p_ProprietaryHeader
-	} else {
-		d.ProprietaryHeader = nil
-	}
-	d.RawPayload = *(*[10]byte)(unsafe.Pointer(&s.raw_payload))
-	return
-}
-
-func in_data_Message(s *C.dmrgo_data_message_t, st *st_data_Message) (d g_data.Message) {
-	d.Header = in_layer2_pdu_DataHeader(&s.header, &st.f_Header)
-	if s.has_proprietary {
-		st.p_Proprietary = *(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&s.proprietary))
-		d.Proprietary = &st.p_Proprietary
-	} else {
-		d.Proprietary = nil
-	}
-	d.Rate = g_enums.DataType(s.rate)
-	d.Payload = unsafe.Slice((*byte)(unsafe.Pointer(s.payload)), int(s.payload_len))
-	d.BadCRC = bool(s.bad_crc)
-	d.Fragmented = bool(s.fragmented)
-	d.Fragments = uint16(s.fragments)
-	return
+func out_data_Output(d *C.dmrgo_data_output_t, s *g_data.Output, oc *outc) {
+	_ = oc
+	d.kind = C.dmrgo_data_output_kind_t(s.Kind)
+	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
+	out_layer2_Hint(&d.hint, &s.Hint, oc)
+	d.due = C.dmrgo_duration_t(s.Due)
+	d.try_ = C.uint8_t(s.Try)
+	d.seq = C.uint8_t(s.Seq)
+	d.result = C.dmrgo_data_result_t(s.Result)
+	d.response = C.dmrgo_packet_response_t(s.Response)
+	d.has_response = C.bool(s.HasResponse)
+	d.group = C.bool(s.Group)
 }
 
 func in_fec_BurstFECStats(s *C.dmrgo_fec_burst_fec_stats_t) (d g_fec.BurstFECStats) {
@@ -2943,13 +2982,6 @@ func out_layer2_packet_Packet(d *C.dmrgo_packet_packet_t, s *g_layer2_packet.Pac
 			}
 		}
 	}
-}
-
-func in_layer2_packet_ResponseData(s *C.dmrgo_packet_response_data_t) (d g_layer2_packet.ResponseData) {
-	for i0 := range d.Retry {
-		d.Retry[i0] = bool(s.retry[i0])
-	}
-	return
 }
 
 type st_layer2_packet_Message struct {
@@ -5770,38 +5802,8 @@ func fromC_csbk_WakeupConfig(s *C.dmrgo_csbk_wakeup_config_t) g_csbk.WakeupConfi
 	return in_csbk_WakeupConfig(s)
 }
 
-func in_data_Call(s *C.dmrgo_data_call_t) (d g_data.Call) {
-	d.Group = bool(s.group)
-	d.Target = uint32(s.target)
-	d.Source = uint32(s.source)
-	return
-}
-
 func fromC_data_Call(s *C.dmrgo_data_call_t) g_data.Call {
 	return in_data_Call(s)
-}
-
-type st_data_Event struct {
-	f_Message st_data_Message
-	p_Retry   g_layer2_packet.ResponseData
-}
-
-func in_data_Event(s *C.dmrgo_data_event_t, st *st_data_Event) (d g_data.Event) {
-	d.Kind = g_data.EventKind(s.kind)
-	d.Call = in_data_Call(&s.call)
-	d.Message = in_data_Message(&s.message, &st.f_Message)
-	d.Response = g_layer2_packet.Response(s.response)
-	if s.has_retry {
-		st.p_Retry = in_layer2_packet_ResponseData(&s.retry)
-		d.Retry = &st.p_Retry
-	} else {
-		d.Retry = nil
-	}
-	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
-	d.Due = time.Duration(s.due)
-	d.Reason = g_data.EndReason(s.reason)
-	d.Stats = *(*g_data.Stats)(unsafe.Pointer(&s.stats))
-	return
 }
 
 func fromC_data_Event(s *C.dmrgo_data_event_t) g_data.Event {
@@ -12087,6 +12089,48 @@ func dmrgo_data_end_reason_string(c_self C.dmrgo_data_end_reason_t, c_out *C.cha
 	return C.DMRGO_OK
 }
 
+//export dmrgo_data_event_icmp
+func dmrgo_data_event_icmp(c_self *C.dmrgo_data_event_t, c_mtu C.int64_t, c_m *C.dmrgo_ip_icmp_message_t, c_pointer *C.uint8_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_data.Event
+	var xs st_data_Event
+	x = in_data_Event(&(*c_self), &xs)
+	r0, r1, r2 := x.ICMP(int(c_mtu))
+	out_data_Event(&(*c_self), &x, oc)
+	_ = r0
+	_ = r1
+	if c_m != nil {
+		*c_m = C.dmrgo_ip_icmp_message_t(r0)
+	}
+	if c_pointer != nil {
+		*c_pointer = C.uint8_t(r1)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
+	}
+	if r2 != nil {
+		return setErr(r2)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_data_event_kind_string
 func dmrgo_data_event_kind_string(c_self C.dmrgo_data_event_kind_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -12161,7 +12205,7 @@ func dmrgo_data_new_sender(c_cfg *C.dmrgo_data_sender_config_t, c_out **C.dmrgo_
 }
 
 //export dmrgo_data_output_icmp
-func dmrgo_data_output_icmp(c_self *C.dmrgo_data_output_t, c_m *C.dmrgo_ip_icmp_message_t, c_ok *C.bool) (rc C.int) {
+func dmrgo_data_output_icmp(c_self *C.dmrgo_data_output_t, c_out *C.dmrgo_ip_icmp_message_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -12172,15 +12216,14 @@ func dmrgo_data_output_icmp(c_self *C.dmrgo_data_output_t, c_m *C.dmrgo_ip_icmp_
 	r0, r1 := x.ICMP()
 	out_data_Output(&(*c_self), &x, oc)
 	_ = r0
-	_ = r1
-	if c_m != nil {
-		*c_m = C.dmrgo_ip_icmp_message_t(r0)
-	}
-	if c_ok != nil {
-		*c_ok = C.bool(r1)
+	if c_out != nil {
+		*c_out = C.dmrgo_ip_icmp_message_t(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }

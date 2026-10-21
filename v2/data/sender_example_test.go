@@ -156,7 +156,7 @@ func ExampleOutput_ICMP() {
 			return
 		}
 		for _, o := range tx.Tick(at, outputs[:0]) {
-			if icmp, ok := o.ICMP(); ok {
+			if icmp, err := o.ICMP(); err == nil {
 				fmt.Printf("%v after %d tries: ICMP %v (type %d, code %d)\n", o.Result, o.Try, icmp, icmp.Type(), icmp.Code())
 			}
 		}

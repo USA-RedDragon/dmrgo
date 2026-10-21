@@ -56,7 +56,10 @@
 // does with stop and wait.
 //
 // Output.ICMP gives the ICMP error message that a message that failed
-// reports to the IP layer (ETSI TS 102 361-3 clauses 5.2 and 5.4.2.1).
+// reports to the IP layer, and Event.ICMP the one that a radio sends about
+// an IPv4 packet that it received (ETSI TS 102 361-3 clauses 5.2 and
+// 5.4.2.1). Neither gives one about a message of a group call, which is a
+// link layer broadcast (RFC 1122 clause 3.2.2).
 //
 // Multi-fragment reassembly is tested only against the 14-fragment example
 // of ETSI TS 102 361-1 Table 8.2 and synthetic packets, as no radio at hand

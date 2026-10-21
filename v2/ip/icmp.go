@@ -157,8 +157,9 @@ func DecodeICMPPacket(data []byte) (ICMPPacket, error) {
 // other than the first, or a packet from an address that is not one host
 // (0.0.0.0/8, 127.0.0.0/8, multicast or class E). An ICMP error message
 // about another ICMP message, such as an Echo Request, is allowed. The
-// caller does not send one about a packet that came in a DMR group call,
-// which is a link layer broadcast. It returns another error when the
+// Original does not tell whether a packet came as a link layer broadcast,
+// a DMR group call; data.Output.ICMP and data.Event.ICMP refuse those. It
+// returns another error when the
 // packet is longer than 65535 octets. It allocates only to grow dst.
 // (ETSI TS 102 361-3 clause 5.2)
 func AppendICMPPacket(dst []byte, c *ICMPPacket) ([]byte, error) {
