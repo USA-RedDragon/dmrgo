@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/hytera"
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
@@ -120,6 +121,91 @@ func TestLRRP(t *testing.T) {
 		if _, err := dec.Decode(&m.Header, m.Data); !errors.Is(err, location.ErrNoFix) {
 			t.Errorf("%s: %v", s, err)
 		}
+	}
+}
+
+const hdapGPS = "A200037021225N3412.7300E10850.00000.0121"
+
+func hdapPacket(t testing.TB, service hytera.Service, opcode uint16, payload []byte) packet.Message {
+	t.Helper()
+	m := hytera.Message{Header: hytera.Header{Service: service}, Opcode: opcode, Payload: payload}
+	m.Seal()
+	p, err := m.AppendBinary(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d := ip.Datagram{SourcePort: ip.PortHyteraLocation, DestinationPort: ip.PortHyteraLocation, Source: ip.RadioAddress(12, 5), Destination: ip.RadioAddress(13, 7), Payload: p}
+	data, err := ip.AppendIPv4(nil, &d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return packet.Message{
+		Header: pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
+			SAP: enums.SAPIPBasedPacketData, LLIDDestination: 7, LLIDSource: 5,
+		}},
+		Data: data,
+	}
+}
+
+func TestHDAP(t *testing.T) {
+	t.Parallel()
+
+	radio := []byte{10, 0, 0, 80}
+	answer := append(append([]byte{0, 0, 0, 7}, radio...), append([]byte{0, 0}, hdapGPS...)...)
+	report := append(append([]byte{0, 0, 0, 9}, radio...), hdapGPS...)
+	emergency := append(append([]byte{}, radio...), append([]byte{1}, "V200037021225S3412.7300W10850.00001.5121"...)...)
+	var d location.Decoder
+	for _, tt := range []struct {
+		name    string
+		opcode  uint16
+		payload []byte
+		valid   bool
+		sign    float64
+		speed   float64
+	}{
+		{"standard answer", hytera.LPStandardAnswer, answer, true, 1, 0},
+		{"condition report", hytera.LPConditionReport, report, true, 1, 0},
+		{"emergency report", hytera.LPEmergencyReport, emergency, false, -1, 1.5 * 1852 / 3600},
+	} {
+		m := hdapPacket(t, hytera.ServiceLP, tt.opcode, tt.payload)
+		f, err := d.Decode(&m.Header, m.Data)
+		if err != nil {
+			t.Fatalf("%s: %v", tt.name, err)
+		}
+		if f.Format != location.FormatHDAP || f.Valid != tt.valid || f.Source != 5 || f.Destination != 7 ||
+			!near(f.Latitude, tt.sign*(34+12.73/60), 1e-9) || !near(f.Longitude, tt.sign*(108+50.0/60), 1e-9) ||
+			!f.HasTime || f.Year != 2025 || f.Month != 12 || f.Day != 2 || f.Hour != 20 || f.Minute != 0 || f.Second != 37 ||
+			!f.HasCourse || f.Course != 121 || !f.HasSpeed || !near(f.Speed, tt.speed, 1e-9) || f.HasAltitude || f.HasRadius {
+			t.Errorf("%s: %+v", tt.name, f)
+		}
+	}
+	failed := append([]byte{}, answer...)
+	failed[9] = 1
+	nospeed := append([]byte{}, report...)
+	copy(nospeed[8+34:], "x.0")
+	for _, tt := range []struct {
+		name    string
+		service hytera.Service
+		opcode  uint16
+		payload []byte
+		want    error
+	}{
+		{"failed answer", hytera.ServiceLP, hytera.LPStandardAnswer, failed, location.ErrNoFix},
+		{"request", hytera.ServiceLP, hytera.LPStandardRequest, answer[:8], location.ErrNoFix},
+		{"RRS", hytera.ServiceRRS, hytera.LPStandardAnswer, answer, location.ErrNoFix},
+		{"short", hytera.ServiceLP, hytera.LPConditionReport, report[:20], hytera.ErrShort},
+	} {
+		m := hdapPacket(t, tt.service, tt.opcode, tt.payload)
+		if _, err := d.Decode(&m.Header, m.Data); !errors.Is(err, tt.want) {
+			t.Errorf("%s: %v, want %v", tt.name, err, tt.want)
+		}
+	}
+	m := hdapPacket(t, hytera.ServiceLP, hytera.LPConditionReport, nospeed)
+	if f, err := d.Decode(&m.Header, m.Data); err != nil || f.HasSpeed {
+		t.Errorf("bad speed: %+v, %v", f, err)
+	}
+	if location.FormatHDAP.String() != "HDAP" {
+		t.Error("FormatHDAP name")
 	}
 }
 
