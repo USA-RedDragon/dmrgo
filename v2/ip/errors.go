@@ -25,4 +25,6 @@ var (
 	// ErrChecksum is returned with the Datagram when the IPv4 header
 	// checksum or the UDP checksum does not match.
 	ErrChecksum = errors.New("ip: checksum does not match")
+
+	errNil = errors.New("ip: nil Datagram")
 )
