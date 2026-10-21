@@ -5596,6 +5596,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_VOICE_QUEUE_FULL (-149)
 #define DMRGO_ERR_VOICE_TIMED_OUT (-150)
 #define DMRGO_IPSC_AUTH_KEY_SIGN_MAX_ITEMS (DMRGO_IPSC_AUTH_TRAILER_LEN)
+#define DMRGO_IPSC_SESSION_MASTER_SIGN_FOR_MAX_ITEMS (DMRGO_IPSC_AUTH_TRAILER_LEN)
 #define DMRGO_IPSC_SESSION_MASTER_SIGN_MAX_ITEMS (DMRGO_IPSC_AUTH_TRAILER_LEN)
 #define DMRGO_IPSC_SESSION_PEER_SIGN_MAX_ITEMS (DMRGO_IPSC_AUTH_TRAILER_LEN)
 #define DMRGO_LAYER2_DATA_PDU_BCAP_CONTINUATION 1
@@ -10205,6 +10206,14 @@ int dmrgo_ipsc_session_config_error_error(dmrgo_ipsc_session_config_error_t *sel
 int dmrgo_ipsc_session_config_error_last(dmrgo_ipsc_session_config_error_t *out, bool *ok);
 /* dmrgo_ipsc_session_master_free frees the handle. self may be NULL. */
 int dmrgo_ipsc_session_master_free(dmrgo_ipsc_session_master_t *self);
+/* dmrgo_ipsc_session_master_adopt_need sets *items and *arena to the room that dmrgo_ipsc_session_master_adopt needs for these arguments, without a change to the handle. */
+int dmrgo_ipsc_session_master_adopt_need(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t now, const dmrgo_ipsc_session_addr_t *from, uint32_t id, dmrgo_ipsc_mode_t mode, const dmrgo_ipsc_flags_t *flags, size_t *items, size_t *arena);
+/* Go: session.Master.Adopt. Adopt registers the peer id at from with mode and flags without a registration request and without a reply, for a peer that registered with another Master, such as one of another replica of a server, and now sends its packets here. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_session_master_adopt_need gives. */
+int dmrgo_ipsc_session_master_adopt(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t now, const dmrgo_ipsc_session_addr_t *from, uint32_t id, dmrgo_ipsc_mode_t mode, const dmrgo_ipsc_flags_t *flags, dmrgo_ipsc_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* dmrgo_ipsc_session_master_adopt_with_key_need sets *items and *arena to the room that dmrgo_ipsc_session_master_adopt_with_key needs for these arguments, without a change to the handle. */
+int dmrgo_ipsc_session_master_adopt_with_key_need(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t now, const dmrgo_ipsc_session_addr_t *from, uint32_t id, dmrgo_ipsc_mode_t mode, const dmrgo_ipsc_flags_t *flags, const uint8_t key[20], size_t *items, size_t *arena);
+/* Go: session.Master.AdoptWithKey. AdoptWithKey adopts the peer id as Adopt does, with key, its own key, as PacketWithKey registers a peer. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_session_master_adopt_with_key_need gives. */
+int dmrgo_ipsc_session_master_adopt_with_key(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t now, const dmrgo_ipsc_session_addr_t *from, uint32_t id, dmrgo_ipsc_mode_t mode, const dmrgo_ipsc_flags_t *flags, const uint8_t key[20], dmrgo_ipsc_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* dmrgo_ipsc_session_master_close_need sets *items and *arena to the room that dmrgo_ipsc_session_master_close needs for these arguments, without a change to the handle. */
 int dmrgo_ipsc_session_master_close_need(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
 /* Go: session.Master.Close. Close sends a de-registration request to every registered peer, as DMRlink does when it shuts down, reports OutputDown with ReasonStopped for each, and stops the Master until Reset. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_session_master_close_need gives. */
@@ -10217,6 +10226,10 @@ int dmrgo_ipsc_session_master_max_outputs(dmrgo_ipsc_session_master_t *self, int
 int dmrgo_ipsc_session_master_packet_need(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t now, const dmrgo_ipsc_session_addr_t *from, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
 /* Go: session.Master.Packet. Packet takes the packet p from the address from. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_session_master_packet_need gives. */
 int dmrgo_ipsc_session_master_packet(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t now, const dmrgo_ipsc_session_addr_t *from, const uint8_t *p, size_t p_len, dmrgo_ipsc_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* dmrgo_ipsc_session_master_packet_with_key_need sets *items and *arena to the room that dmrgo_ipsc_session_master_packet_with_key needs for these arguments, without a change to the handle. */
+int dmrgo_ipsc_session_master_packet_with_key_need(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t now, const dmrgo_ipsc_session_addr_t *from, const uint8_t key[20], const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
+/* Go: session.Master.PacketWithKey. PacketWithKey takes the packet p from the address from as Packet does, but checks its trailer with key, the own key of the sending peer, which the caller looks up by the peer ID in octets 1 to 4 of p. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_session_master_packet_with_key_need gives. */
+int dmrgo_ipsc_session_master_packet_with_key(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t now, const dmrgo_ipsc_session_addr_t *from, const uint8_t key[20], const uint8_t *p, size_t p_len, dmrgo_ipsc_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: session.Master.PeerAt. PeerAt returns registered peer i, or the zero PeerInfo when i is not below Peers. */
 int dmrgo_ipsc_session_master_peer_at(dmrgo_ipsc_session_master_t *self, int64_t i, dmrgo_ipsc_session_peer_info_t *out);
 /* Go: session.Master.Peers. Peers returns the number of registered peers. */
@@ -10227,6 +10240,10 @@ int dmrgo_ipsc_session_master_reset(dmrgo_ipsc_session_master_t *self);
 int dmrgo_ipsc_session_master_sign_need(dmrgo_ipsc_session_master_t *self, size_t *items, size_t *arena);
 /* Go: session.Master.Sign. Sign appends the authentication trailer of the packet in dst to dst when the config has Auth, and returns dst as it is without. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_session_master_sign_need gives (DMRGO_IPSC_SESSION_MASTER_SIGN_MAX_ITEMS items). */
 int dmrgo_ipsc_session_master_sign(dmrgo_ipsc_session_master_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* dmrgo_ipsc_session_master_sign_for_need sets *items and *arena to the room that dmrgo_ipsc_session_master_sign_for needs for these arguments, without a change to the handle. */
+int dmrgo_ipsc_session_master_sign_for_need(dmrgo_ipsc_session_master_t *self, uint32_t id, size_t *items, size_t *arena);
+/* Go: session.Master.SignFor. SignFor appends the authentication trailer of the packet in dst for the registered peer id to dst: with the key of the peer when it registered through PacketWithKey or AdoptWithKey, and else as Sign does. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipsc_session_master_sign_for_need gives (DMRGO_IPSC_SESSION_MASTER_SIGN_FOR_MAX_ITEMS items). */
+int dmrgo_ipsc_session_master_sign_for(dmrgo_ipsc_session_master_t *self, uint32_t id, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: session.Master.State. State returns StateRunning, or StateIdle after Close and for a Master that NewMaster did not make. */
 int dmrgo_ipsc_session_master_state(dmrgo_ipsc_session_master_t *self, dmrgo_ipsc_session_state_t *out);
 /* dmrgo_ipsc_session_master_tick_need sets *items and *arena to the room that dmrgo_ipsc_session_master_tick needs for these arguments, without a change to the handle. */

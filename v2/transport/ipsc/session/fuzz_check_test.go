@@ -58,11 +58,11 @@ func checkSession(t *testing.T, data []byte) {
 					t.Fatalf("%d octets", len(o.Packet))
 				}
 				if o.Kind == session.OutputSend {
-					body := o.Packet
-					if useAuth {
-						body = body[:len(body)-10]
+					_, err := ipsc.DecodeControl(o.Packet)
+					if err != nil && len(o.Packet) > 10 {
+						_, err = ipsc.DecodeControl(o.Packet[:len(o.Packet)-10])
 					}
-					if _, err := ipsc.DecodeControl(body); err != nil {
+					if err != nil {
 						t.Fatalf("sent %x: %v", o.Packet, err)
 					}
 				}
@@ -93,6 +93,16 @@ func checkSession(t *testing.T, data []byte) {
 			check(n, m.MaxOutputs())
 			n = len(out)
 			out = m.Packet(now, from, pk, out)
+			check(n, m.MaxOutputs())
+			n = len(out)
+			out = m.PacketWithKey(now, from, key, m.SignFor(9, append([]byte(nil), pk...)), out)
+			check(n, m.MaxOutputs())
+			n = len(out)
+			if len(pk) > 4 && pk[4]&1 == 1 {
+				out = m.AdoptWithKey(now, from, uint32(pk[4]), ipsc.Mode(pk[0]), ipsc.Flags{}, key, out)
+			} else if len(pk) > 4 {
+				out = m.Adopt(now, from, uint32(pk[4]), ipsc.Mode(pk[0]), ipsc.Flags{}, out)
+			}
 			check(n, m.MaxOutputs())
 		}
 		n := len(out)
