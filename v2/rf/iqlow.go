@@ -52,8 +52,8 @@ type LowIQConfig struct {
 // LowIQReceiver is the Tier 0 receiver for complex baseband at 9.6 or 12
 // kHz that is already filtered to the channel, as New makes it for a
 // BasebandHz of 9600 or 12000, in memory of the caller. It does not
-// allocate. On a Cortex-M4F at 9.6 kHz it needs about 3.9 MHz and 2 KB
-// with its stack, built with TinyGo -opt z.
+// allocate. Its methods do nothing before Init. On a Cortex-M4F at 9.6 kHz
+// it needs about 3.9 MHz and 2 KB with its stack, built with TinyGo -opt z.
 type LowIQReceiver struct {
 	r iqLowRx
 }
@@ -95,9 +95,7 @@ func (r *LowIQReceiver) Init(cfg LowIQConfig) error {
 	if !(cfg.OffsetHz < float64(cfg.Hz)/2 && cfg.OffsetHz > -float64(cfg.Hz)/2) {
 		return errLowIQOffset
 	}
-	if err := r.r.init(cfg.Hz, cfg.OnBurst, cfg.opt); err != nil {
-		return err
-	}
+	r.r.init(cfg.Hz, cfg.OnBurst, cfg.opt)
 	r.r.center(float32(cfg.OffsetHz))
 	return nil
 }
@@ -105,7 +103,11 @@ func (r *LowIQReceiver) Init(cfg LowIQConfig) error {
 // WriteBaseband processes the samples x and hands the bursts that they
 // complete to OnBurst. It takes 1 as 4096 of WriteIQ16 and clips each part
 // at ±8.
-func (r *LowIQReceiver) WriteBaseband(x []complex64) { r.r.writeBaseband(x) }
+func (r *LowIQReceiver) WriteBaseband(x []complex64) {
+	if r.r.d.audio != nil {
+		r.r.writeBaseband(x)
+	}
+}
 
 // WriteIQ16 processes the samples x, as a radio chip delivers them, and
 // hands the bursts that they complete to OnBurst. Each word holds I in its
@@ -113,12 +115,19 @@ func (r *LowIQReceiver) WriteBaseband(x []complex64) { r.r.writeBaseband(x) }
 // of a little-endian chip, the pairs of int16 I, Q. The scale does not
 // matter, but I and Q must be above -32768.
 func (r *LowIQReceiver) WriteIQ16(x []uint32) {
+	if r.r.d.audio == nil {
+		return
+	}
 	r.r.d.out = r.r.d.out[:0]
 	r.r.run(x)
 }
 
 // Flush finishes the stream at its end.
-func (r *LowIQReceiver) Flush() { r.r.flush() }
+func (r *LowIQReceiver) Flush() {
+	if r.r.d.audio != nil {
+		r.r.flush()
+	}
+}
 
 type iqLowRx struct {
 	d           DiscReceiver
@@ -137,11 +146,10 @@ func (r *iqLowRx) center(hz float32) {
 	r.step = roundBits(hz/float32(r.d.hz())*(1<<16)) << 16
 }
 
-func (r *iqLowRx) init(hz int, on func(*Burst), opt *options) error {
+func (r *iqLowRx) init(hz int, on func(*Burst), opt *options) {
 	*r = iqLowRx{}
-	err := r.d.Init(DiscConfig{Hz: hz, OnBurst: on, opt: opt, lowIQ: true})
+	r.d.setup(DiscConfig{Hz: hz, OnBurst: on, opt: opt, lowIQ: true}, false)
 	r.d.iqLow = hz == iq0LowHz
-	return err
 }
 
 type iqLowNew struct {
@@ -152,9 +160,7 @@ type iqLowNew struct {
 
 func newIQLowRx(cfg Config, opt options) *iqLowNew {
 	r := &iqLowNew{signed: cfg.Signed}
-	if err := r.init(cfg.BasebandHz, cfg.OnBurst, &opt); err != nil {
-		panic(err)
-	}
+	r.init(cfg.BasebandHz, cfg.OnBurst, &opt)
 	r.center(float32(cfg.OffsetHz))
 	if cfg.OnBurst == nil {
 		r.d.out = make([]Burst, 0, r.d.maxBursts(cfg.MaxWrite))

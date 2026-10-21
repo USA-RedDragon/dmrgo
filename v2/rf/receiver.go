@@ -177,6 +177,7 @@ type slotState struct {
 // Receiver recovers DMR bursts from a stream of I/Q samples. It locks to
 // the slot timing of the first SYNC it finds, follows the timing and the
 // carrier through the transmission, and returns every burst it recovers.
+// Make it with New; a zero Receiver returns no bursts.
 type Receiver struct {
 	e        *engine
 	lean     *leanRx
@@ -496,6 +497,9 @@ func (r *Receiver) OffsetHz() float64 {
 	if r.lean != nil {
 		return float64(r.lean.offsetHz)
 	}
+	if r.e == nil {
+		return 0
+	}
 	return r.e.offsetHz
 }
 
@@ -512,6 +516,9 @@ func (r *Receiver) DeviationHz() float64 {
 	}
 	if r.lean != nil {
 		return float64(r.lean.devHz)
+	}
+	if r.e == nil {
+		return 0
 	}
 	return r.e.devHz
 }
@@ -545,9 +552,10 @@ func (r *Receiver) outBuf() []Burst {
 		return r.iqd.out
 	case r.lean != nil:
 		return r.lean.out
-	default:
+	case r.e != nil:
 		return r.e.out
 	}
+	return nil
 }
 
 // Write processes interleaved 8-bit I/Q at Config.Rate and returns the
@@ -577,6 +585,9 @@ func (r *Receiver) write(iq []byte) []Burst {
 	}
 	if r.lean != nil {
 		return r.lean.write(iq)
+	}
+	if r.e == nil {
+		return nil
 	}
 	return r.e.write(iq)
 }
@@ -609,6 +620,9 @@ func (r *Receiver) writeBaseband(x []complex64) []Burst {
 	if r.lean != nil {
 		return r.lean.writeBaseband(x)
 	}
+	if r.e == nil {
+		return nil
+	}
 	return r.e.writeBaseband(x)
 }
 
@@ -629,6 +643,9 @@ func (r *Receiver) Flush() []Burst {
 	}
 	if r.lean != nil {
 		return r.lean.flush()
+	}
+	if r.e == nil {
+		return nil
 	}
 	return r.e.flush()
 }

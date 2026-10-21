@@ -81,9 +81,7 @@ func newIQ0Rx(cfg Config, opt options) *iq0Rx {
 			}
 		}
 	}
-	if err := r.d.Init(DiscConfig{Hz: hz, OnBurst: on, opt: &opt}); err != nil {
-		panic(err)
-	}
+	r.d.setup(DiscConfig{Hz: hz, OnBurst: on, opt: &opt}, false)
 	return r
 }
 

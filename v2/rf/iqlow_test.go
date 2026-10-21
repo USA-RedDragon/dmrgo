@@ -118,9 +118,7 @@ func TestLowIQWeakNoiseKeepsTune(t *testing.T) {
 func TestIQLowHalfRun(t *testing.T) {
 	t.Parallel()
 	var r iqLowRx
-	if err := r.init(9600, func(*Burst) {}, nil); err != nil {
-		t.Fatal(err)
-	}
+	r.init(9600, func(*Burst) {}, nil)
 	var x [iqLowBuf]uint32
 	for hz := -4700.0; hz <= 4700; hz += 37 {
 		for _, a := range []float64{64, 1000, 32767} {

@@ -57,10 +57,10 @@ type DiscConfig struct {
 // any units, with any gain and DC offset, which the receiver measures
 // itself. With Tier0 it keeps about 1.4 KB of state, for microcontrollers;
 // on a Cortex-M4F it needs about 3.8 MHz and 1.9 KB with its stack, built
-// with TinyGo -opt z. A
-// DiscReceiver that Init sets up in memory of the caller, such as a package
-// variable, uses no heap with OnBurst or AppendBursts. A DiscReceiver is not
-// safe for concurrent use.
+// with TinyGo -opt z. A DiscReceiver that Init sets up in memory of the
+// caller, such as a package variable, uses no heap with OnBurst or
+// AppendBursts. Before Init or NewDisc its methods return no bursts. A
+// DiscReceiver is not safe for concurrent use.
 type DiscReceiver struct {
 	leanCore
 	f   audioFront
@@ -128,6 +128,11 @@ func (r *DiscReceiver) Init(cfg DiscConfig) error {
 	if cfg.Tier != TierDefault && cfg.Tier != Tier0 && cfg.opt == nil {
 		return errDiscTier
 	}
+	r.setup(cfg, dec)
+	return nil
+}
+
+func (r *DiscReceiver) setup(cfg DiscConfig, dec bool) {
 	opt := disc0Options()
 	switch {
 	case cfg.opt != nil:
@@ -164,7 +169,6 @@ func (r *DiscReceiver) Init(cfg DiscConfig) error {
 	if r.f.half {
 		r.center -= halfTaps - 1
 	}
-	return nil
 }
 
 func (r *DiscReceiver) hz() int {
@@ -193,6 +197,9 @@ func (r *DiscReceiver) maxBursts(n int) int {
 // only when dst has no room for len(x)/72+16 bursts, the most that x can
 // complete at the lowest input rate, 9600 Hz.
 func (r *DiscReceiver) AppendBursts(dst []Burst, x []int16) []Burst {
+	if r.audio == nil {
+		return dst
+	}
 	dst = growBursts(dst, r.maxBursts(len(x)))
 	keep, n := r.out, len(dst)
 	r.out = dst[n:n]
@@ -211,6 +218,9 @@ func (r *DiscReceiver) AppendBursts(dst []Burst, x []int16) []Burst {
 // to DiscConfig.MaxWrite samples; a DiscReceiver that Init set up has none,
 // so use AppendBursts.
 func (r *DiscReceiver) Write(x []int16) ([]Burst, error) {
+	if r.audio == nil {
+		return nil, nil
+	}
 	if r.onBurst == nil && r.maxBursts(len(x)) > cap(r.out) {
 		return nil, ErrWriteTooLong
 	}
@@ -224,7 +234,7 @@ func (r *DiscReceiver) Write(x []int16) ([]Burst, error) {
 // DiscReceiver that Init set up without OnBurst has no buffer for them, so
 // there Flush changes nothing and returns nil; use AppendFlush.
 func (r *DiscReceiver) Flush() []Burst {
-	if r.onBurst == nil && cap(r.out) == 0 {
+	if r.audio == nil || r.onBurst == nil && cap(r.out) == 0 {
 		return nil
 	}
 	r.out = r.out[:0]
@@ -236,6 +246,9 @@ func (r *DiscReceiver) Flush() []Burst {
 // to dst and returns the extended slice. It allocates only when dst has no
 // room for 26 bursts, the most that one slot of samples can complete.
 func (r *DiscReceiver) AppendFlush(dst []Burst) []Burst {
+	if r.audio == nil {
+		return dst
+	}
 	dst = growBursts(dst, r.maxBursts(slotSymbols*discSPS))
 	keep, n := r.out, len(dst)
 	r.out = dst[n:n]
