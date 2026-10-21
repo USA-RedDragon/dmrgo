@@ -666,12 +666,12 @@ func emitStreamEncode(f *File, pdu parse.PDUStruct, types map[string]parse.PDUSt
 					if fl.SKind == parse.StreamUintvar {
 						b.Id("_lp").Op(":=").Len(Id("dst"))
 						patch = func(g *Group) {
-							g.Var().Id("_lb").Index(Lit(10)).Byte()
-							g.Id("_lv").Op(":=").Qual(wirePkg, "AppendUintvar").Call(Id("_lb").Index(Empty(), Lit(0)), Uint64().Call(Len(Id("dst")).Op("-").Id("_lp")))
+							g.Id("_l").Op(":=").Uint64().Call(Len(Id("dst")).Op("-").Id("_lp"))
+							g.Id("_k").Op(":=").Qual(wirePkg, "UintvarLen").Call(Id("_l"))
 							g.Id("_m").Op(":=").Len(Id("dst"))
-							g.Id("dst").Op("=").Append(Id("dst"), Id("_lv").Op("..."))
-							g.Copy(Id("dst").Index(Id("_lp").Op("+").Len(Id("_lv")), Empty()), Id("dst").Index(Id("_lp"), Id("_m")))
-							g.Copy(Id("dst").Index(Id("_lp"), Empty()), Id("_lv"))
+							g.For(Range().Id("_k")).Block(Id("dst").Op("=").Append(Id("dst"), Lit(0)))
+							g.Copy(Id("dst").Index(Id("_lp").Op("+").Id("_k"), Empty()), Id("dst").Index(Id("_lp"), Id("_m")))
+							g.Qual(wirePkg, "PutUintvar").Call(Id("dst").Index(Id("_lp"), Id("_lp").Op("+").Id("_k")), Id("_l"))
 						}
 						return
 					}
