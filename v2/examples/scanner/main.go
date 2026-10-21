@@ -55,7 +55,10 @@ func run(w io.Writer, dataDir string) error {
 	fmt.Fprintf(w, "stream: %d bits, %d junk bits, %d bits flipped\n", n, junkBits, flipped)
 
 	r := xorshift(2)
-	f := framer.New(framer.Config{Threshold: -1, CACH: true})
+	f, err := framer.New(&framer.Config{Threshold: -1, CACH: true})
+	if err != nil {
+		return err
+	}
 	chans := [2]*channel{{name: "TS1"}, {name: "TS2"}}
 	cc := enums.ColorCode(colorCode)
 	opts := layer2.DecodeOptions{ColorCode: &cc}

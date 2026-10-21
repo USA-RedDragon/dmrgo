@@ -19112,18 +19112,19 @@ func dmrgo_framer_framer_write(c_self *C.dmrgo_framer_framer_t, c_stream *C.uint
 }
 
 //export dmrgo_framer_new
-func dmrgo_framer_new(c_cfg *C.dmrgo_framer_config_t, c_out **C.dmrgo_framer_framer_t) (rc C.int) {
+func dmrgo_framer_new(c_c *C.dmrgo_framer_config_t, c_out **C.dmrgo_framer_framer_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_cfg == nil {
-		return fail(C.DMRGO_ERR_ARG)
+	var a_c g_layer2_framer.Config
+	var p_c *g_layer2_framer.Config
+	if c_c != nil {
+		a_c = in_layer2_framer_Config(&(*c_c))
+		p_c = &a_c
 	}
-	var a_cfg g_layer2_framer.Config
-	a_cfg = in_layer2_framer_Config(&(*c_cfg))
 	if c_out == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := g_layer2_framer.New(a_cfg)
+	r0, r1 := g_layer2_framer.New(p_c)
 	_ = r0
 	*c_out = nil
 	if r0 != nil {
@@ -19131,6 +19132,9 @@ func dmrgo_framer_new(c_cfg *C.dmrgo_framer_config_t, c_out **C.dmrgo_framer_fra
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -43687,6 +43691,8 @@ func errCode(err error) C.int {
 			return -116
 		case g_layer2.ErrVoiceTerminated:
 			return -117
+		case g_layer2_framer.ErrPeriod:
+			return -217
 		case g_layer2_packet.ErrBlocksMissing:
 			return -118
 		case g_layer2_packet.ErrFormat:
@@ -44018,6 +44024,8 @@ func codeErr(code C.int) error {
 		return g_layer2.ErrShortLCSequence
 	case -117:
 		return g_layer2.ErrVoiceTerminated
+	case -217:
+		return g_layer2_framer.ErrPeriod
 	case -118:
 		return g_layer2_packet.ErrBlocksMissing
 	case -119:

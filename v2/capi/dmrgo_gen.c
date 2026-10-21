@@ -70,6 +70,8 @@ const char *dmrgo__gen_strerror(int status) {
 		return "layer2.ErrShortLCSequence";
 	case -117:
 		return "layer2.ErrVoiceTerminated";
+	case -217:
+		return "framer.ErrPeriod";
 	case -118:
 		return "packet.ErrBlocksMissing";
 	case -119:

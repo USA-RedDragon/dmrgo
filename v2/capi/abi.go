@@ -398,7 +398,10 @@ func framerABI(seed uint64) error {
 
 func framerRun(h *harness, stream, cuts []byte, period byte) (int, error) {
 	cfg := framer.Config{Period: int(period), CACH: period&1 == 0, Threshold: int(period % 5)}
-	gf := framer.New(cfg)
+	gf, err := framer.New(&cfg)
+	if err != nil {
+		return 0, err
+	}
 	ccfg := new(C.dmrgo_framer_config_t)
 	out_layer2_framer_Config(ccfg, &cfg, h.in)
 	var cf *C.dmrgo_framer_framer_t

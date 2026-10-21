@@ -47,7 +47,7 @@ func TestFramer_BufferBound(t *testing.T) {
 	r := rand.New(rand.NewSource(5))
 	stream := testStream(t, r)
 	for _, cfg := range testConfigs {
-		f := New(cfg)
+		f := mustNew(t, &cfg)
 		c := cap(f.buf)
 		var got []Burst
 		for rest := stream; len(rest) > 0; {
@@ -61,7 +61,7 @@ func TestFramer_BufferBound(t *testing.T) {
 				t.Fatalf("%+v: buffer grew from %d to %d for %d bytes", cfg, c, cap(f.buf), n)
 			}
 		}
-		one := New(cfg)
+		one := mustNew(t, &cfg)
 		var want []Burst
 		for i := range stream {
 			want = one.AppendBursts(want, stream[i:i+1], 8)
@@ -69,7 +69,7 @@ func TestFramer_BufferBound(t *testing.T) {
 		if len(got) == 0 || !slices.Equal(got, want) {
 			t.Errorf("%+v: %d bursts, want the %d of single bytes", cfg, len(got), len(want))
 		}
-		if all := New(cfg).AppendBursts(nil, stream, 8*len(stream)); !slices.Equal(all, want) {
+		if all := mustNew(t, &cfg).AppendBursts(nil, stream, 8*len(stream)); !slices.Equal(all, want) {
 			t.Errorf("%+v: %d bursts from one write of the stream, want %d", cfg, len(all), len(want))
 		}
 	}
@@ -80,7 +80,7 @@ func TestFramer_BitPieces(t *testing.T) {
 	r := rand.New(rand.NewSource(6))
 	stream := testStream(t, r)
 	for _, cfg := range testConfigs {
-		all := New(cfg).AppendBursts(nil, stream, 8*len(stream))
+		all := mustNew(t, &cfg).AppendBursts(nil, stream, 8*len(stream))
 		for end := 8*len(stream) - 8; end <= 8*len(stream); end++ {
 			var want []Burst
 			for _, b := range all {
@@ -88,7 +88,7 @@ func TestFramer_BitPieces(t *testing.T) {
 					want = append(want, b)
 				}
 			}
-			f := New(cfg)
+			f := mustNew(t, &cfg)
 			c := cap(f.buf)
 			var got []Burst
 			for from := 0; from < end; {
@@ -109,4 +109,13 @@ func TestFramer_BitPieces(t *testing.T) {
 			}
 		}
 	}
+}
+
+func mustNew(t *testing.T, cfg *Config) *Framer {
+	t.Helper()
+	f, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return f
 }

@@ -154,13 +154,13 @@ func framerSeeds(tb testing.TB) []framerSeed {
 
 func checkFramer(t *testing.T, stream, cuts []byte, c byte) {
 	cfg := fuzzConfig(c)
-	whole := framer.New(cfg).Write(stream, 8*len(stream))
+	whole := newFramer(t, &cfg).Write(stream, 8*len(stream))
 	checkBursts(t, cfg, stream, whole)
 	if !slices.ContainsFunc(cuts, func(b byte) bool { return b != 0 }) {
 		cuts = nil
 	}
 
-	fr := framer.New(cfg)
+	fr := newFramer(t, &cfg)
 	var pieces []framer.Burst
 	var piece []byte
 	for i, from := 0, 0; from < 8*len(stream); i++ {
@@ -243,7 +243,7 @@ func (fb *findsBurst) check(t *testing.T, noise []byte, offset uint16, which byt
 	if !ok || m.Offset != off+framer.SyncOffset {
 		return
 	}
-	got := framer.New(cfg).Write(stream, n)
+	got := newFramer(t, &cfg).Write(stream, n)
 	if len(got) == 0 || got[0].Offset != int64(off) || got[0].Data != layer2.RawBurst(burst) || got[0].Sync == enums.SyncNone {
 		t.Fatalf("burst at %d not found: %+v", off, got[:min(len(got), 1)])
 	}

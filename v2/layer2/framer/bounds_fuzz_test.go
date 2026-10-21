@@ -25,7 +25,7 @@ func framerBoundStream(t *testing.T) []byte {
 
 func runFramerBounds(t *testing.T, stream []byte, cuts []byte, period uint8) int {
 	t.Helper()
-	f := framer.New(framer.Config{Period: int(period), CACH: period&1 == 0, Threshold: int(period % 5)})
+	f := newFramer(t, &framer.Config{Period: int(period), CACH: period&1 == 0, Threshold: int(period % 5)})
 	total := 0
 	for off, i := 0, 0; off < len(stream); i++ {
 		n := 1
