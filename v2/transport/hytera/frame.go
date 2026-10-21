@@ -4,6 +4,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 // FrameLen is the length of a DMR frame in octets.
@@ -39,9 +40,9 @@ type Frame struct {
 	Burst layer2.RawBurst
 	// Pad is octet 58, the octet after the burst in the payload.
 	Pad uint8
-	// CallType is octet 62: 0x00 on the group calls of the DO1KBL
-	// capture, 0x01 on those that Hytera_Homebrew_Bridge builds, 0x0A on
-	// wakeup packets. Call and SetCall read and write it.
+	// CallType is octet 62: 0x01 for a group call and 0x00 for a private
+	// call from a Hytera repeater, 0x0A on wakeup packets. BrandMeister
+	// sends 0x00 on group calls too. Call and SetCall read and write it.
 	CallType uint8
 	// Destination is the talkgroup or radio ID that is called (octets 64
 	// to 66, little-endian).
@@ -124,35 +125,48 @@ func (f *Frame) AppendBinary(dst []byte) ([]byte, error) {
 	return l.AppendBinary(dst)
 }
 
-// Call returns the call of the frame: group for CallType 0x00, as the
-// group calls of a Hytera repeater in the DO1KBL capture carry it, and for
-// 0x01, as Hytera_Homebrew_Bridge sends group calls (OK-DMR names 0x00 a
-// private call, which the capture does not show); target is Destination
-// and source is Source. A nil f gives zero values.
+// Call returns the call of the frame: target is Destination and source is
+// Source. The FLCO of the burst decides group when it is a voice LC header
+// or terminator with a correctable LC, so that the group calls that
+// BrandMeister sends with CallType 0x00 read as group. Otherwise CallType
+// decides: 0x01 is a group call, as Hytera repeaters send it, and any other
+// value is not. A nil f gives zero values.
+//
+// (OK-DMR Hytera_Homebrew_Bridge captures ea5gvk_1.pcapng and
+// do1kbl_BM_Connect.pcapng; OK-DMR dmr-kaitai ip_site_connect_protocol.ksy)
 func (f *Frame) Call() (group bool, target, source uint32) {
 	if f == nil {
 		return false, 0, 0
 	}
-	return f.CallType == 0x00 || f.CallType == 0x01, f.Destination, f.Source
+	group = f.CallType == 0x01
+	if f.SlotType == SlotTypeVoiceLCHeader || f.SlotType == SlotTypeTerminator {
+		if p, res := f.Burst.BPTCPayload(); !res.Uncorrectable {
+			if g, _, _, ok := pdu.LCBytes(p[:9]).Call(); ok {
+				group = g
+			}
+		}
+	}
+	return group, f.Destination, f.Source
 }
 
-// SetCall sets CallType to 0x00 for a group call, as a Hytera repeater
-// sends it, and Destination and Source. No capture shows the CallType of a
-// private call, so it returns an error for group false. It also returns a
-// *dmrgo.FieldRangeError when target or source does not fit in 24 bits,
-// and dmrgo.ErrNilReceiver for a nil f. On an error it changes nothing.
+// SetCall sets CallType to 0x01 for a group call and 0x00 for a private
+// call, as a Hytera repeater sends them, and Destination and Source. It
+// returns a *dmrgo.FieldRangeError when target or source does not fit in 24
+// bits, and dmrgo.ErrNilReceiver for a nil f, and then changes nothing.
 func (f *Frame) SetCall(group bool, target, source uint32) error {
 	switch {
 	case f == nil:
 		return dmrgo.ErrNilReceiver
-	case !group:
-		return errPrivateCall
 	case target>>24 != 0:
 		return errFrameDestinationRange
 	case source>>24 != 0:
 		return errFrameSourceRange
 	}
-	f.CallType, f.Destination, f.Source = 0x00, target, source
+	f.CallType = 0x00
+	if group {
+		f.CallType = 0x01
+	}
+	f.Destination, f.Source = target, source
 	return nil
 }
 
