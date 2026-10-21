@@ -773,8 +773,12 @@ func (r *leanCore) symbol(x, at float32) {
 	}
 }
 
+func symQ(x, off float32) int8 {
+	return int8(max(min(roundBits((x-off)/discStepHz), math.MaxInt8), math.MinInt8))
+}
+
 //go:section .text.pushSym
-func (r *leanCore) pushSym(x float32) {
+func (r *leanCore) pushSymGo(x float32) {
 	pushSymAt[site1](r, x)
 }
 
@@ -923,7 +927,7 @@ func (r *leanCore) rawSym(x float32) (hit, sym, mid bool) {
 //go:section .text.lockSym
 func (r *leanCore) lockSym(x, at float32) (again, mid, match bool) {
 	r.lastAt = at
-	pushSymAt[site3](r, x)
+	r.pushSym(x)
 	if !leanHuntMid {
 		if !r.hunt || r.ns < leanRing {
 			return false, false, false

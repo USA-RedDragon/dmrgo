@@ -138,6 +138,61 @@ dmrgo_iqlow_half:
 	.popsection
 `
 
+const leanPushAsm = `
+	.pushsection .text.dmrgo_lean_push, "ax", %progbits
+	.globl dmrgo_lean_push
+	.p2align 1
+	.type dmrgo_lean_push, %function
+	.thumb_func
+dmrgo_lean_push:
+	ldrb r2, [r0, #154]
+	add r3, r0, r2
+	strb r1, [r3, #8]
+	adds r12, r2, #1
+	cmp r12, #146
+	it eq
+	moveq r12, #0
+	strb r12, [r0, #154]
+	cmp r2, #24
+	ite hs
+	ldrsbhs r12, [r3, #-16]
+	ldrsblo r12, [r3, #130]
+	ldrd r2, r3, [r0, #192]
+	sub r12, r1, r12
+	add r2, r2, r12
+	add r1, r1, r1, lsl #1
+	lsl r3, r3, #1
+	cmp r2, r1, lsl #3
+	it lt
+	addlt r3, r3, #1
+	strd r2, r3, [r0, #192]
+	ldr r2, [r0]
+	adds r2, r2, #1
+	str r2, [r0]
+	bcs 1f
+	bx lr
+1:
+	ldr r3, [r0, #4]
+	adds r3, r3, #1
+	str r3, [r0, #4]
+	bx lr
+	.size dmrgo_lean_push, . - dmrgo_lean_push
+	.popsection
+`
+
+//export dmrgo_lean_push
+func leanPush(p, q uintptr)
+
+//go:noinline
+//go:section .text.pushSym
+func (r *leanCore) pushSym(x float32) {
+	arm.Asm(leanPushAsm)
+	_ = [1]struct{}{}[(unsafe.Offsetof(r.ring)-unsafe.Offsetof(r.ns)-8)|(unsafe.Offsetof(r.head)-unsafe.Offsetof(r.ns)-154)|(unsafe.Offsetof(r.ringSum)-unsafe.Offsetof(r.ns)-192)|(unsafe.Offsetof(r.signs)-unsafe.Offsetof(r.ns)-196)]
+	_ = [1]struct{}{}[leanRing-146]
+	_ = [1]struct{}{}[syncSymbols-24]
+	leanPush(uintptr(unsafe.Pointer(&r.ns)), uintptr(int32(symQ(x, r.off))))
+}
+
 //export dmrgo_iqlow_half
 func iqLowHalf(x, n, out, s, k uintptr)
 

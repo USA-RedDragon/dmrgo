@@ -24,6 +24,18 @@ func TestIQLowHalfAsmLayout(t *testing.T) {
 	}
 }
 
+func TestLeanPushAsmLayout(t *testing.T) {
+	var r leanCore
+	ns := unsafe.Offsetof(r.ns)
+	got := [...]uintptr{unsafe.Offsetof(r.ring) - ns, unsafe.Offsetof(r.head) - ns, unsafe.Offsetof(r.ringSum) - ns, unsafe.Offsetof(r.signs) - ns}
+	if want := [...]uintptr{8, 154, 192, 196}; got != want {
+		t.Fatalf("offsets from ns of ring, head, ringSum, signs: got %v, want %v", got, want)
+	}
+	if leanRing != 146 || syncSymbols != 24 {
+		t.Fatal("the assembly of iqlowhalf_dsp.go takes a ring of 146 and a sync of 24 symbols")
+	}
+}
+
 func TestIQLowHalfAsmTable(t *testing.T) {
 	src, err := os.ReadFile("iqlowhalf_dsp.go")
 	if err != nil {

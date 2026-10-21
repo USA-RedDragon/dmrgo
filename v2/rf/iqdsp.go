@@ -16,6 +16,8 @@ func addAsr10(a, b int32) int32 { return a + b>>10 }
 
 func (r *iqLowRx) halfRun(x []uint32) { r.halfRunGo(x) }
 
+func (r *leanCore) pushSym(x float32) { r.pushSymGo(x) }
+
 func (r *iqLowRx) fill(x []uint32) int {
 	m := min(len(x), iqLowBuf)
 	r.n = 0
