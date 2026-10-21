@@ -48,6 +48,17 @@ func appendedBits(blocks int) int {
 	return 96*blocks - 16
 }
 
+func address(b []byte) uint32 {
+	return uint32(b[0])<<16 | uint32(b[1])<<8 | uint32(b[2])
+}
+
+func padNibbles(free int) uint8 {
+	if free < 0 || free >= 4*32 {
+		return 0
+	}
+	return uint8(free / 4)
+}
+
 func blocksFor(n int) int {
 	for b := 1; b <= 4; b++ {
 		if n <= appendedBits(b) {
@@ -156,7 +167,7 @@ func (a *Appended) Addresses() (AddressList, error) {
 	l.OneKey = bits.Bit(a.Data[:], 7) == 1
 	l.Len = (total - 8) / 24
 	for i := range l.Len {
-		l.Addresses[i] = uint32(bits.Field(a.Data[:], 8+24*i, 24))
+		l.Addresses[i] = address(a.Data[1+3*i:])
 	}
 	return l, nil
 }
@@ -190,7 +201,7 @@ func (a *Appended) SetDigits(digits []byte) error {
 		}
 		bits.SetField(a.Data[:], 4*i, 4, v)
 	}
-	a.PadNibble = uint8((appendedBits(a.Blocks) - 4*n) / 4)
+	a.PadNibble = padNibbles(appendedBits(a.Blocks) - 4*n)
 	a.pad(4 * n)
 	return nil
 }
@@ -307,7 +318,7 @@ func (a *Appended) setSymbols(f enums.UDTFormat, start int, text []byte) error {
 		r, k := utf8.DecodeRune(text[i:])
 		i += k
 		switch {
-		case w == 7 && r >= 0x80, w == 8 && r > 0xFF:
+		case r < 0, w == 7 && r >= 0x80, w == 8 && r > 0xFF:
 			return ErrUDTCharacter
 		case w == 16 && r >= 0x10000:
 			r -= 0x10000
@@ -319,7 +330,7 @@ func (a *Appended) setSymbols(f enums.UDTFormat, start int, text []byte) error {
 		bits.SetField(a.Data[:], o, w, uint64(r))
 		o += w
 	}
-	a.PadNibble = uint8((appendedBits(b) - o) / 4)
+	a.PadNibble = padNibbles(appendedBits(b) - o)
 	a.pad(o)
 	return nil
 }
@@ -353,7 +364,7 @@ func (a *Appended) Text(dst []byte) ([]byte, error) {
 		return wire.AppendUTF8(dst, a.Data[start/8:start/8+2*n], true), nil
 	}
 	for i := range n {
-		c := bits.Field(a.Data[:], start+w*i, w)
+		c := bits.Field(a.Data[:], start+w*i, w) & 0xFF
 		if c == 0 {
 			break
 		}
@@ -369,7 +380,7 @@ func (a *Appended) Mixed() (addr uint32, oneKey bool, err error) {
 	if _, err = a.check(enums.UDTMixed); err != nil {
 		return 0, false, err
 	}
-	return uint32(bits.Field(a.Data[:], 8, 24)), bits.Bit(a.Data[:], 7) == 1, nil
+	return address(a.Data[1:]), bits.Bit(a.Data[:], 7) == 1, nil
 }
 
 // SetNMEAShort sets a to the Short NMEA format of n in one block. It
@@ -462,7 +473,7 @@ func (a *Appended) SetLIP(pdu []byte) error {
 	}
 	a.reset(enums.UDTLIP, blocksFor(8*n))
 	copy(a.Data[:], pdu)
-	a.PadNibble = uint8((appendedBits(a.Blocks) - 8*n) / 4)
+	a.PadNibble = padNibbles(appendedBits(a.Blocks) - 8*n)
 	a.pad(8 * n)
 	return nil
 }

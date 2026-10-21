@@ -38,7 +38,8 @@ func download(t testing.TB, h pdu.UDTHeader, a *trunk.Appended) []layer2.RawBurs
 		copy(blocks[i][:], a.Data[12*i:min(12*i+12, trunk.MaxAppendedOctets)])
 	}
 	pdu.SetMBCLastBlockCRC(blocks)
-	out := []layer2.RawBurst{bsBurst(t, &pdu.DataHeader{Format: pdu.FormatUnifiedDataTransport, UDTHeader: &h}, testCC)}
+	out := make([]layer2.RawBurst, 0, 1+len(blocks))
+	out = append(out, bsBurst(t, &pdu.DataHeader{Format: pdu.FormatUnifiedDataTransport, UDTHeader: &h}, testCC))
 	for _, b := range blocks {
 		raw, err := layer2.BuildDataBurst(b, enums.DataTypeRate12, testCC, layer2.SyncSourceBS)
 		if err != nil {
@@ -50,7 +51,7 @@ func download(t testing.TB, h pdu.UDTHeader, a *trunk.Appended) []layer2.RawBurs
 }
 
 func (r *msRig) feedAll(bursts []layer2.RawBurst) []trunk.Output {
-	var all []trunk.Output
+	all := make([]trunk.Output, 0, trunk.MaxOutputs*len(bursts))
 	for _, b := range bursts {
 		all = append(all, r.feed(b, &idle)...)
 	}

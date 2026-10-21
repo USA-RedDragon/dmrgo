@@ -174,7 +174,7 @@ func ExampleMS_CallDuplex() {
 	_ = s.ms.CallDuplex(s.now, 3120002, layer3.VoiceServiceOptions{})
 	s.send(&pdu.CSBK{Opcode: pdu.CSBKAloha, AlohaPDU: &pdu.AlohaPDU{}})
 	for _, target := range []uint32{3120002, 3120001} {
-		other := uint32(3120001 + 3120002 - target)
+		other := 3120001 + 3120002 - target
 		s.send(&pdu.CSBK{Opcode: pdu.CSBKDuplexPrivateVoiceGrant, DuplexPrivateVoiceGrantPDU: &pdu.DuplexPrivateVoiceGrantPDU{
 			PhysicalChannel: 9, TargetAddress: target, SourceAddress: other}})
 	}
