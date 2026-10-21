@@ -360,8 +360,8 @@ func TestReceiver_TransportPosition(t *testing.T) {
 	b.EmbeddedSignalling.FEC.Uncorrectable = true
 	in[7].decoded = &b
 	got = feed(t, newReceiver(t, nil), in, -1)
-	if p := positions(got); p != "ABCDEFBBCDEF" {
-		t.Errorf("positions %s; a burst without its SYNC where the sequence number predicts A is B", p)
+	if p := positions(got); p != "ABCDEFBCDEFF" {
+		t.Errorf("positions %s; a burst without its SYNC or EMB where the sequence number predicts A is B, the sequence number places the bursts after it over their LCSS, and the LCSS places a burst where the sequence number predicts A", p)
 	}
 }
 
