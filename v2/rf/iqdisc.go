@@ -429,10 +429,17 @@ func (d *iqDisc) hzOf(acc complex64) float32 {
 	return atan2f(imag(acc), real(acc)) * (float32(basebandRate/d.decim) / (2 * math.Pi))
 }
 
+func (r *iqRx) tuneLimit() float32 {
+	if r.d.locked && r.maxHz > 0 {
+		return max(r.maxHz, iqTuneMaxHz)
+	}
+	return r.maxHz
+}
+
 func (r *iqRx) tune(hz, dc float32) {
 	f := &r.d.f
 	scale := f.gain * iqUnitsPerHz
-	if r.maxHz > 0 && abs32(r.conv.hz+hz) > r.maxHz {
+	if lim := r.tuneLimit(); lim > 0 && abs32(r.conv.hz+hz) > lim {
 		return
 	}
 	r.conv.tune(r.conv.hz + hz)

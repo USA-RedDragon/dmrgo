@@ -50,7 +50,7 @@ func combT2Options(o *options) options {
 	t := tierOptions(Tier2)
 	t.ExtLookback = 8
 	t.CohNoCross, t.CohNoNext, t.CohBudget = true, true, 350
-	t.IQTuneMaxHz, t.IQTuneSyncOnly, t.IQAFCAvg = iqTuneMaxHz, true, 5
+	t.IQTuneMaxHz, t.IQTuneSyncOnly, t.IQAFCAvg = iqHuntMaxHz, true, 5
 	t.CohSymNoise = o.CohSymNoise
 	switch {
 	case o.CombBudget < 0:

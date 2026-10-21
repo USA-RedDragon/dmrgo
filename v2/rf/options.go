@@ -150,15 +150,15 @@ func tierOptions(t Tier) options {
 	switch t {
 	case TierDefault, Tier0:
 		o.IQDisc, o.IQHz, o.IQPullAgree, o.LevelUp = true, 12000, true, true
-		o.IQTuneMaxHz, o.IQTuneSyncOnly, o.IQHalfband, o.IQKaiser, o.IQAFCAvg = iqTuneMaxHz, true, 15, 6, 2
+		o.IQTuneMaxHz, o.IQTuneSyncOnly, o.IQHalfband, o.IQKaiser, o.IQAFCAvg = iqHuntMaxHz, true, 15, 6, 3
 	case Tier1:
 		o = tier1Options(o)
 		o.IQDisc, o.IQHz, o.IQPullAgree = true, 12000, true
-		o.IQTuneMaxHz, o.IQTuneSyncOnly, o.IQAFCAvg = iqTuneMaxHz, true, 2
+		o.IQTuneMaxHz, o.IQTuneSyncOnly, o.IQAFCAvg = iqHuntMaxHz, true, 2
 	case Tier2:
 		o = tier2Options(o)
 		o.IQDisc, o.IQHz, o.CohNoCross, o.CohNoNext, o.CohBudget = true, 24000, true, true, 300
-		o.IQTuneMaxHz, o.IQTuneSyncOnly, o.IQAFCAvg = iqTuneMaxHz, true, 5
+		o.IQTuneMaxHz, o.IQTuneSyncOnly, o.IQAFCAvg = iqHuntMaxHz, true, 5
 	case Tier3:
 		o.DataPasses, o.DataPrior, o.DataUnchecked = 2, 0.7, true
 		o.Coherent, o.Window, o.ExactPhase, o.PhaseStates, o.BPTCOSD, o.RefinePrior, o.LLRScale = true, 1, true, 52, true, 7, 0.35
@@ -169,7 +169,10 @@ func tierOptions(t Tier) options {
 	return o
 }
 
-const iqTuneMaxHz = 6250
+const (
+	iqHuntMaxHz = 2500
+	iqTuneMaxHz = 6250
+)
 
 func (o *options) signMiss() uint8 {
 	if o.CohSignMiss > 0 {
