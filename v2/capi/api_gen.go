@@ -8321,6 +8321,18 @@ func new_layer2_EmbeddedLCAssembler(v *g_layer2.EmbeddedLCAssembler) *C.dmrgo_la
 	return (*C.dmrgo_layer2_embedded_lc_assembler_t)(newHandle(&h_layer2_EmbeddedLCAssembler{v: v}))
 }
 
+type h_layer2_PositionTracker struct {
+	v *g_layer2.PositionTracker
+}
+
+func get_layer2_PositionTracker(p *C.dmrgo_layer2_position_tracker_t) *h_layer2_PositionTracker {
+	return lookup[*h_layer2_PositionTracker](unsafe.Pointer(p))
+}
+
+func new_layer2_PositionTracker(v *g_layer2.PositionTracker) *C.dmrgo_layer2_position_tracker_t {
+	return (*C.dmrgo_layer2_position_tracker_t)(newHandle(&h_layer2_PositionTracker{v: v}))
+}
+
 type h_layer2_ShortLCAssembler struct {
 	v *g_layer2.ShortLCAssembler
 }
@@ -17268,6 +17280,141 @@ func dmrgo_layer2_new_voice_transmitter(c_opts *C.dmrgo_layer2_voice_transmitter
 	}
 	if r1 != nil {
 		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer2_placement_string
+func dmrgo_layer2_placement_string(c_self C.dmrgo_layer2_placement_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_layer2.Placement(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer2_position_tracker_new
+func dmrgo_layer2_position_tracker_new(c_out **C.dmrgo_layer2_position_tracker_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_layer2_PositionTracker(new(g_layer2.PositionTracker))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer2_position_tracker_free
+func dmrgo_layer2_position_tracker_free(c_self *C.dmrgo_layer2_position_tracker_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_layer2_PositionTracker(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer2_position_tracker_forget
+func dmrgo_layer2_position_tracker_forget(c_self *C.dmrgo_layer2_position_tracker_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_layer2_PositionTracker(c_self)
+	h.v.Forget()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer2_position_tracker_header
+func dmrgo_layer2_position_tracker_header(c_self *C.dmrgo_layer2_position_tracker_t, c_h *C.dmrgo_layer2_hint_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_layer2_PositionTracker(c_self)
+	var a_h g_layer2.Hint
+	var p_h *g_layer2.Hint
+	if c_h != nil {
+		a_h = in_layer2_Hint(&(*c_h))
+		p_h = &a_h
+	}
+	h.v.Header(p_h)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer2_position_tracker_place
+func dmrgo_layer2_position_tracker_place(c_self *C.dmrgo_layer2_position_tracker_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_lost *C.int64_t, c_p *C.dmrgo_layer2_placement_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_layer2_PositionTracker(c_self)
+	var a_h g_layer2.Hint
+	var p_h *g_layer2.Hint
+	if c_h != nil {
+		a_h = in_layer2_Hint(&(*c_h))
+		p_h = &a_h
+	}
+	r0, r1 := h.v.Place((*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), p_h)
+	_ = r0
+	_ = r1
+	if c_lost != nil {
+		*c_lost = C.int64_t(r0)
+	}
+	if c_p != nil {
+		*c_p = C.dmrgo_layer2_placement_t(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer2_position_tracker_place_decoded
+func dmrgo_layer2_position_tracker_place_decoded(c_self *C.dmrgo_layer2_position_tracker_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_steps C.int64_t, c_lost *C.int64_t, c_p *C.dmrgo_layer2_placement_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_layer2_PositionTracker(c_self)
+	var a_b *g_layer2.Burst
+	if c_b != nil {
+		a_b = get_layer2_Burst(c_b).v
+	}
+	var a_h g_layer2.Hint
+	var p_h *g_layer2.Hint
+	if c_h != nil {
+		a_h = in_layer2_Hint(&(*c_h))
+		p_h = &a_h
+	}
+	r0, r1 := h.v.PlaceDecoded(a_b, p_h, int(c_steps))
+	_ = r0
+	_ = r1
+	if c_lost != nil {
+		*c_lost = C.int64_t(r0)
+	}
+	if c_p != nil {
+		*c_p = C.dmrgo_layer2_placement_t(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer2_position_tracker_reset
+func dmrgo_layer2_position_tracker_reset(c_self *C.dmrgo_layer2_position_tracker_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_layer2_PositionTracker(c_self)
+	h.v.Reset()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
 	}
 	return C.DMRGO_OK
 }

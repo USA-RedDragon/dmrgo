@@ -79,7 +79,7 @@ The programs in [v2/examples](v2/examples) run offline on the captures in `v2/la
   - Decode and encode voice, data and standalone Reverse Channel bursts, including data bursts that carry an EMB in place of the SYNC.
   - Read and write single fields of a 33-byte burst in place with `RawBurst`.
   - Build data bursts from a PDU or a 12-byte payload, and voice superframes with `VoiceTransmitter`.
-  - Receive calls with `VoiceReceiver`, the embedded LC assembler and the CACH Short LC assembler.
+  - Receive calls with `VoiceReceiver`, the embedded LC assembler and the CACH Short LC assembler, and place the voice bursts of a network stream with `PositionTracker`.
   - Check and reseal bursts the way MMDVMHost does.
 - PDUs (`layer2/pdu`), generated from struct tags by `dmrgen`:
   - CSBK and MBC, with the Tier II and Tier III payloads, and the Motorola radio check and call alert.
@@ -275,7 +275,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 6.4 | Reverse Channel | verified | 17/17 passed | `v2/layer2/reverse_channel.go`, `v2/layer2/burst.go` |
 | 7.1.1 | Voice LC header | verified | 10/10 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/voice_transmitter_options.go` |
 | 7.1.2 | Terminator with LC | verified | 7/7 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/full_link_control.go`, `v2/layer2/voice_superframe.go` |
-| 7.1.3 | Embedded signalling | verified | 26/26 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/embedded_signalling.go`, `v2/layer2/embedded_lc.go`, `v2/layer2/embedded_lc_bytes.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/voice_receiver.go`, `v2/layer2/voice_transmitter_options.go` |
+| 7.1.3 | Embedded signalling | verified | 26/26 passed | `v2/layer2/burst.go`, `v2/layer2/pdu/embedded_signalling.go`, `v2/layer2/embedded_lc.go`, `v2/layer2/embedded_lc_bytes.go`, `v2/layer2/voice_superframe.go`, `v2/layer2/voice_receiver.go`, `v2/layer2/position_tracker.go`, `v2/layer2/voice_transmitter_options.go` |
 | 7.1.4 | Short Link Control in CACH | verified | 12/12 passed | `v2/layer2/short_lc_assembler.go`, `v2/layer2/short_lc_cach.go`, `v2/internal/fec/bptc/bptc_cach.go` |
 | 7.2.1 | Control Signalling BlocK (CSBK) | verified | 4/4 passed | `v2/layer2/pdu/csbk.go` |
 | 7.3 | Idle message | verified | 4/4 passed | `v2/layer2/pdu/pr_fill.go`, `v2/layer2/burst.go` |

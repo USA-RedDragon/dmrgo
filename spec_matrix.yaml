@@ -378,6 +378,7 @@ documents:
           - v2/layer2/embedded_lc_bytes.go
           - v2/layer2/voice_superframe.go
           - v2/layer2/voice_receiver.go
+          - v2/layer2/position_tracker.go
           - v2/layer2/voice_transmitter_options.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
