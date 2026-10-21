@@ -25,6 +25,10 @@ const (
 const gridRowMask = 1<<15 - 1
 
 func rowSyndrome15_11(row uint16) int {
+	return rowSyndromeAt[siteRows](row)
+}
+
+func rowSyndromeAt[_ any](row uint16) int {
 	return bits.OnesCount16(row&h1511Check0)&1 | bits.OnesCount16(row&h1511Check1)&1<<1 |
 		bits.OnesCount16(row&h1511Check2)&1<<2 | bits.OnesCount16(row&h1511Check3)&1<<3
 }
@@ -148,7 +152,7 @@ func hammingCorrect(rows *[13]uint16) bool {
 		}
 
 		for r := range rows {
-			if bitPos := hamming15_11_syndrome_table[rowSyndrome15_11(rows[r])]; bitPos != -1 {
+			if bitPos := hamming15_11_syndrome_table[rowSyndromeAt[siteFix](rows[r])]; bitPos != -1 {
 				rows[r] ^= 1 << bitPos
 				fixing = true
 			}
@@ -217,3 +221,8 @@ func encodeRows(rows *[13]uint16, data *[12]byte, reserved uint8) {
 	s := columnSyndromes(rows)
 	rows[9], rows[10], rows[11], rows[12] = s[0], s[1], s[2], s[3]
 }
+
+type (
+	siteFix  struct{}
+	siteRows struct{}
+)
