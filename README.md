@@ -242,24 +242,26 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 
 | Metric | Count |
 | --- | --- |
-| Total sections | 220 |
-| Verified (tests pass) | 151 |
+| Total sections | 223 |
+| Verified (tests pass) | 160 |
 | Failing (tests fail) | 0 |
 | Untested (has source, no tests) | 3 |
-| Unimplemented | 66 |
+| Unimplemented | 60 |
 
-**Overall: 151/220 verified (68.6%)**
+**Overall: 160/223 verified (71.7%)**
 
 ### ETSI TS 102 361-1: Air Interface Protocol
 
-70 sections: 66 verified, 0 failing, 0 untested, 4 unimplemented.
+72 sections: 69 verified, 0 failing, 0 untested, 3 unimplemented.
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
-| 5.2.1.6 | Transmit admit criteria | unimplemented | - | - |
+| 5.2.1.6 | Transmit admit criteria | verified | 2/2 passed | `v2/voice/transmitter.go`, `v2/enums/access.go` |
 | 5.2.2.1 | Direct mode Channel Access | unimplemented | - | - |
-| 5.2.2.2 | Repeater mode channel access, other than 5.2.2.2.4 | unimplemented | - | - |
+| 5.2.2.2 | Repeater mode channel access, other than 5.2.2.2.4, 5.2.2.2.5 and 5.2.2.2.7 | unimplemented | - | - |
 | 5.2.2.2.4 | MS TX_Wakeup_Message | verified | 2/2 passed | `v2/csbk/wakeup.go` |
+| 5.2.2.2.5 | MS Not_In_Call channel access | verified | 1/1 passed | `v2/voice/transmitter.go` |
+| 5.2.2.2.7 | MS My_Call channel access | verified | 1/1 passed | `v2/voice/transmitter.go` |
 | 5.2.2.3 | Non-time critical CSBK ACK/NACK channel access | verified | 2/2 passed | `v2/csbk/sender.go` |
 | 5.2.2.4 | TDMA direct mode channel access | unimplemented | - | - |
 | 6.1 | Vocoder socket | verified | 23/23 passed | `v2/layer2/burst.go`, `v2/vocoder/frame.go`, `v2/internal/fec/ambe/ambe.go`, `v2/vocoder/codec.go`, `v2/layer2/voice_superframe.go`, `v2/internal/fec/golay/golay_23_12_7.go`, `v2/internal/fec/golay/golay_24_12_8.go`, `v2/enums/voice_burst_types.go` |
@@ -329,22 +331,23 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 
 ### ETSI TS 102 361-2: DMR Voice and Generic Services and Facilities
 
-44 sections: 37 verified, 0 failing, 0 untested, 7 unimplemented.
+45 sections: 43 verified, 0 failing, 0 untested, 2 unimplemented.
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
-| 5.1.1.6 | Channel authorization | unimplemented | - | - |
+| 5.1.1.6.1 | BS Channel Authorization Procedures | verified | 6/6 passed | `v2/bs/chanauth.go`, `v2/bs/types.go` |
+| 5.1.1.6.2 | MS Channel Authorization Procedures | verified | 3/3 passed | `v2/voice/chanauth.go` |
 | 5.1.2 | Feature Not Supported (FNS) signalling | verified | 2/2 passed | `v2/csbk/responder.go` |
 | 5.2.2.3 | MS Individual call channel access | verified | 3/3 passed | `v2/csbk/requester.go` |
 | 5.4.2 | Inband positioning data service | verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go` |
 | 5.4.3 | Inband talker alias data service | verified | 5/5 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer3/talker_alias_data_format.go`, `v2/layer2/pdu/talker_alias.go` |
 | 6.1 | Transmit timeout | verified | 2/2 passed | `v2/constants/constants.go` |
-| 6.2 | TDMA direct mode wide area timing | unimplemented | - | - |
+| 6.2 | TDMA direct mode wide area timing | verified | 16/16 passed | `v2/csbk/timing.go` |
 | 6.3.1 | Reverse Channel Transmitter Interrupt: Repeater Mode | unimplemented | - | - |
 | 6.3.2 | Reverse Channel Transmitter Interrupt: Direct Mode | unimplemented | - | - |
-| 6.3.3 | Voice Interrupt | unimplemented | - | - |
-| 6.3.4 | Emergency Interrupt | unimplemented | - | - |
-| 6.3.5 | Sending Interrupt Request and Retry Mechanism | unimplemented | - | - |
+| 6.3.3 | Voice Interrupt | verified | 2/2 passed | `v2/voice/transmitter.go` |
+| 6.3.4 | Emergency Interrupt | verified | 1/1 passed | `v2/voice/transmitter.go` |
+| 6.3.5 | Sending Interrupt Request and Retry Mechanism | verified | 3/3 passed | `v2/voice/interrupter.go` |
 | 7.1.1 | Full Link Control PDUs | verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go` |
 | 7.1.1.1 | Group Voice Channel User LC PDU | verified | 6/6 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/lc_bytes.go` |
 | 7.1.1.2 | Unit to Unit Voice Channel User LC PDU | verified | 6/6 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/lc_bytes.go` |
