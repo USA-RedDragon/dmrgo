@@ -90,8 +90,13 @@ func (l *abiLock) render(syms []string, allowBreak bool) ([]byte, []string, erro
 	for _, s := range syms {
 		now[s] = true
 	}
+	scalars := scalarTypedefs(syms, l.lines)
+	same := map[string]bool{}
+	for s := range now {
+		same[layoutOf(s, scalars)] = true
+	}
 	for s := range l.lines {
-		if !now[s] {
+		if !now[s] && !same[layoutOf(s, scalars)] {
 			broken = append(broken, s)
 		}
 	}
@@ -149,4 +154,34 @@ func (l *abiLock) render(syms []string, allowBreak bool) ([]byte, []string, erro
 		b.WriteString(x + "\n")
 	}
 	return b.Bytes(), broken, nil
+}
+
+func scalarTypedefs(syms []string, old map[string]bool) map[string]string {
+	m := map[string]string{}
+	add := func(s string) {
+		f := strings.Fields(strings.TrimSuffix(s, ";"))
+		if len(f) == 4 && f[0] == "sym" && f[1] == "typedef" && strings.HasSuffix(f[2], "_t") && !strings.HasPrefix(f[2], "dmrgo_") {
+			m[f[3]] = f[2]
+		}
+	}
+	for _, s := range syms {
+		add(s)
+	}
+	for s := range old {
+		add(s)
+	}
+	return m
+}
+
+func layoutOf(line string, scalars map[string]string) string {
+	if !strings.HasPrefix(line, lockType+" ") {
+		return line
+	}
+	f := strings.Fields(line)
+	for i, w := range f {
+		if base, ok := scalars[w]; ok {
+			f[i] = base
+		}
+	}
+	return strings.Join(f, " ")
 }
