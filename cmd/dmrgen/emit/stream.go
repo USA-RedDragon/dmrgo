@@ -662,7 +662,7 @@ func emitStreamEncode(f *File, pdu parse.PDUStruct, types map[string]parse.PDUSt
 					}
 					b.Id("_lp").Op(":=").Len(Id("dst"))
 					appendInt(b, fl.Octets, fl.LE, Lit(0))
-					start := Id("_lp").Op("+").Lit(fl.Octets)
+					start := Parens(Id("_lp").Op("+").Lit(fl.Octets))
 					if fl.Bound == parse.BoundTotal {
 						start = Id("_n")
 					}
@@ -695,7 +695,7 @@ func emitStreamEncode(f *File, pdu parse.PDUStruct, types map[string]parse.PDUSt
 						at := sub.BitStart / 8
 						n := sub.BitWidth / 8
 						fsize := frame.Frame.Sizes[0]
-						start := Id("_fo").Op("+").Lit(fsize)
+						start := Parens(Id("_fo").Op("+").Lit(fsize))
 						if st.BoundMode == parse.BoundTotal {
 							start = Id("_n")
 						}

@@ -52,6 +52,7 @@ func TestStreamCode(t *testing.T) {
 		"func DecodeMsg(data []byte) (Msg, error) {",
 		"func decodeMsgAt(data []byte, _o int) (Msg, int, error) {",
 		"_end := _o + int(result.Len)",
+		"_l := uint64(len(dst) - (_lp + 2))",
 		"data = data[:_end]",
 		"if (result.Hd.Ext) && (result.Hd.Type != 3 && result.Hd.Type != 4) {",
 		"if result.Hd.Type == 3 {",
