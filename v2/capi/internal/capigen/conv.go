@@ -734,7 +734,7 @@ func (g *gen) cStruct(ti *tinfo) error {
 		return v.err
 	}
 	g.memo[key] = memo{}
-	var b strings.Builder
+	var b, plain strings.Builder
 	switch ti.kind {
 	default:
 	case kNArray:
@@ -748,6 +748,7 @@ func (g *gen) cStruct(ti *tinfo) error {
 			return err
 		}
 		lines(&b, "struct "+ti.c+" {", "\t"+d+";", "};", "")
+		plain.WriteString(b.String())
 	case kValue:
 		ms, err := g.members(ti)
 		if err != nil {
@@ -755,22 +756,29 @@ func (g *gen) cStruct(ti *tinfo) error {
 			return err
 		}
 		lines(&b, "struct "+ti.c+" {")
+		lines(&plain, "struct "+ti.c+" {")
 		if len(ms) == 0 {
 			lines(&b, "\tuint8_t unused;")
+			lines(&plain, "\tuint8_t unused;")
 		}
 		for _, m := range ms {
 			if err := g.needDeps(m.field.Type()); err != nil {
 				g.memo[key] = memo{err: err}
 				return err
 			}
+			if d := g.l.full[m.field]; d != "" {
+				lines(&b, "\t/* "+strings.ReplaceAll(d, "*/", "* /")+" */")
+			}
 			for _, d := range m.decls {
 				lines(&b, "\t"+d+";")
+				lines(&plain, "\t"+d+";")
 			}
 		}
 		lines(&b, "};", "")
+		lines(&plain, "};", "")
 	}
 	g.hStructs.WriteString(b.String())
-	g.abiTypes = append(g.abiTypes, "type "+strings.Join(strings.Fields(b.String()), " "))
+	g.abiTypes = append(g.abiTypes, "type "+strings.Join(strings.Fields(plain.String()), " "))
 	return nil
 }
 

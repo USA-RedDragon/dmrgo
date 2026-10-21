@@ -18,6 +18,7 @@ const (
 	cBool     = "bool"
 	cFloat    = "float"
 	cDouble   = "double"
+	cDuration = "dmrgo_duration_t"
 	lockCode  = "code"
 	lockType  = "type"
 )
@@ -381,7 +382,7 @@ func basicC(b *types.Basic) string {
 
 func (g *gen) scalar(t types.Type) (string, bool) {
 	if isDuration(t) {
-		return "int64_t", true
+		return cDuration, true
 	}
 	if ti := g.info(t); ti != nil {
 		if ti.kind == kEnum {

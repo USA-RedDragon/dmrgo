@@ -22,3 +22,20 @@ func TestLockScalarTypedef(t *testing.T) {
 		t.Fatalf("a wider typedef: %v, %v", broken, err)
 	}
 }
+
+func TestLockScalarTypedefPrototype(t *testing.T) {
+	t.Parallel()
+
+	lock, err := parseLock([]byte("abi 1\nsym int f(x_t *self, int64_t now);\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	syms := []string{"sym typedef int64_t dmrgo_duration_t;", "sym int f(x_t *self, dmrgo_duration_t now);"}
+	if _, broken, err := lock.render(syms, false); err != nil || len(broken) != 0 {
+		t.Fatalf("render = %v, %v", broken, err)
+	}
+	lock, _ = parseLock([]byte("abi 1\nsym int f(x_t *self, int64_t now);\n"))
+	if _, broken, err := lock.render([]string{"sym typedef int32_t d_t;", "sym int f(x_t *self, d_t now);"}, false); err == nil || len(broken) != 1 {
+		t.Fatalf("a narrower typedef: %v, %v", broken, err)
+	}
+}
