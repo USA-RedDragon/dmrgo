@@ -102,8 +102,9 @@ func (d *Data) Hint() layer2.Hint {
 // SetKind sets Frame and Value from the layer2 view of the burst:
 // KindVoice with pos A to F, or KindData with dt. Burst A becomes
 // FrameVoiceSync, as MMDVMHost sends it. It returns an error, and changes
-// nothing, for another kind, a position that is not A to F, or a data type
-// above 15.
+// nothing, for another kind, an error that wraps layer2.ErrVoicePosition
+// for a position that is not A to F, and one that wraps layer2.ErrDataType
+// for a data type above 15.
 func (d *Data) SetKind(k layer2.Kind, pos enums.VoiceBurstType, dt enums.DataType) error {
 	switch k {
 	case layer2.KindVoice:

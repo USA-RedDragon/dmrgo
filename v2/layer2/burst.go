@@ -265,7 +265,7 @@ func (b *Burst) decodeVoiceKind(pos enums.VoiceBurstType, nearest enums.SyncPatt
 			b.decodeVoice(pos, enums.SyncNone)
 		}
 	default:
-		return errVoicePosition
+		return ErrVoicePosition
 	}
 	return nil
 }
@@ -719,7 +719,7 @@ func encodeData(d Data, dataType enums.DataType, anyType bool) (enums.DataType, 
 	case !ok:
 		return 0, info, err
 	case !anyType && dt != dataType:
-		return dt, [25]byte{}, errDataType
+		return dt, [25]byte{}, errDataPDUType
 	case err != nil:
 		return dt, [25]byte{}, err
 	}

@@ -58,6 +58,8 @@ const char *dmrgo__gen_strerror(int status) {
 		return "ip.ErrVersion";
 	case -111:
 		return "layer2.ErrColorCodeMismatch";
+	case -224:
+		return "layer2.ErrDataType";
 	case -112:
 		return "layer2.ErrEmbeddedLCSequence";
 	case -113:
@@ -68,6 +70,10 @@ const char *dmrgo__gen_strerror(int status) {
 		return "layer2.ErrShortLCIncomplete";
 	case -116:
 		return "layer2.ErrShortLCSequence";
+	case -225:
+		return "layer2.ErrSyncSource";
+	case -226:
+		return "layer2.ErrVoicePosition";
 	case -117:
 		return "layer2.ErrVoiceTerminated";
 	case -223:

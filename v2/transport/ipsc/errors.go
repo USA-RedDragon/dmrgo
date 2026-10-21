@@ -1,6 +1,10 @@
 package ipsc
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+)
 
 // Errors of the decoders. Each is a static value, so a decode that fails
 // does not allocate. Match them with errors.Is.
@@ -16,10 +20,25 @@ var (
 )
 
 var (
-	errOpcode   = errors.New("ipsc: the opcode does not take this message")
-	errLayout   = errors.New("ipsc: Voice.Layout is not A, BCDF or E")
-	errPayload  = errors.New("ipsc: Data.Bits or Data.TrailerLen does not fit")
-	errBurst    = errors.New("ipsc: the burst cannot be rebuilt from this packet")
-	errKind     = errors.New("ipsc: SetRawBurst: kind is not KindVoice or KindData")
-	errDataType = errors.New("ipsc: SetRawBurst: IPSC carries no burst of this data type")
+	errOpcode  = errors.New("ipsc: the opcode does not take this message")
+	errLayout  = errors.New("ipsc: Voice.Layout is not A, BCDF or E")
+	errPayload = errors.New("ipsc: Data.Bits or Data.TrailerLen does not fit")
+	errBurst   = errors.New("ipsc: the burst cannot be rebuilt from this packet")
+	errKind    = errors.New("ipsc: SetRawBurst: kind is not KindVoice or KindData")
+
+	errVoicePosition error = &wrapError{"ipsc: SetRawBurst: voice position is not A to F", layer2.ErrVoicePosition}
+	errDataType      error = &wrapError{"ipsc: SetRawBurst: IPSC carries no burst of this data type", layer2.ErrDataType}
 )
+
+type wrapError struct {
+	msg string
+	err error
+}
+
+func (e *wrapError) Error() string {
+	return e.msg
+}
+
+func (e *wrapError) Unwrap() error {
+	return e.err
+}

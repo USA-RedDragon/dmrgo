@@ -43689,6 +43689,8 @@ func errCode(err error) C.int {
 			return -178
 		case g_layer2.ErrColorCodeMismatch:
 			return -111
+		case g_layer2.ErrDataType:
+			return -224
 		case g_layer2.ErrEmbeddedLCSequence:
 			return -112
 		case g_layer2.ErrEmbeddedLCUncorrectable:
@@ -43699,6 +43701,10 @@ func errCode(err error) C.int {
 			return -115
 		case g_layer2.ErrShortLCSequence:
 			return -116
+		case g_layer2.ErrSyncSource:
+			return -225
+		case g_layer2.ErrVoicePosition:
+			return -226
 		case g_layer2.ErrVoiceTerminated:
 			return -117
 		case g_layer2_framer.ErrPeriod:
@@ -44022,6 +44028,8 @@ func codeErr(code C.int) error {
 		return g_ip.ErrVersion
 	case -111:
 		return g_layer2.ErrColorCodeMismatch
+	case -224:
+		return g_layer2.ErrDataType
 	case -112:
 		return g_layer2.ErrEmbeddedLCSequence
 	case -113:
@@ -44032,6 +44040,10 @@ func codeErr(code C.int) error {
 		return g_layer2.ErrShortLCIncomplete
 	case -116:
 		return g_layer2.ErrShortLCSequence
+	case -225:
+		return g_layer2.ErrSyncSource
+	case -226:
+		return g_layer2.ErrVoicePosition
 	case -117:
 		return g_layer2.ErrVoiceTerminated
 	case -223:

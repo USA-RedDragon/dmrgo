@@ -36,7 +36,19 @@ var (
 	// ErrVoiceTerminated is returned by VoiceTransmitter methods called after
 	// Terminate.
 	ErrVoiceTerminated = errors.New("voice transmission already terminated")
-	errNotPDU          = errors.New("data is not a PDU type of package pdu")
+	// ErrDataType is returned, wrapped or as is, by the builders and by the
+	// SetKind methods of the transports for a data type that the call cannot
+	// carry: Data of another data type than the slot type, or a data type
+	// that is not BPTC(196,96) coded for BuildDataBurst.
+	ErrDataType = errors.New("the data burst cannot carry this data type")
+	// ErrSyncSource is returned by the builders and the voice transmitter
+	// for a SyncSource that is not one of its values.
+	ErrSyncSource = errors.New("unknown sync source")
+	// ErrVoicePosition is returned, wrapped or as is, for a voice burst
+	// position that is not one of its values, or that is not A to F where
+	// the call needs a burst of a superframe.
+	ErrVoicePosition = errors.New("voice burst position out of range")
+	errNotPDU        = errors.New("data is not a PDU type of package pdu")
 )
 
 type wrapError struct {
@@ -87,23 +99,21 @@ func (e colorCodeMismatchError) Unwrap() error {
 }
 
 var (
-	errDataBurstNoSync = errors.New("a data burst needs a data SYNC pattern; only a decoded data burst with an EMB has SyncNone")
-	errNoData          = errors.New("data burst has no Data")
-	errNilData         = errors.New("cannot build a burst from nil Data")
-	errRCNotOutbound   = errors.New("only a BS-sourced voice burst F carries a reverse channel")
-	errUnknownKind     = errors.New("unknown burst kind")
-	errKindNoEncode    = errors.New("the burst kind does not encode")
-	errKindSync        = errors.New("the burst kind cannot carry its SYNC pattern")
-	errVoicePosition   = errors.New("voice burst position out of range")
-	errNotAToF         = errors.New("the voice burst position is not A to F")
-	errEMBColorCode    = errors.New("a data burst with an EMB needs the color code of its slot type")
-	errPayloadType     = errors.New("the decoded payload has another data type than the slot type; set Data")
-	errNilPointerData  = errors.New("the data burst cannot carry a nil Data pointer")
-	errDataType        = errors.New("the data burst cannot carry Data of another data type")
-	errNotBPTC         = errors.New("the data type is not BPTC(196,96) coded")
-	errSyncSource      = errors.New("unknown sync source")
-	errSyncPattern     = errors.New("not a Table 9.2 SYNC pattern")
-	errMMDVMHostData   = errors.New("MMDVMHost discards bursts of this data type")
+	errDataBurstNoSync       = errors.New("a data burst needs a data SYNC pattern; only a decoded data burst with an EMB has SyncNone")
+	errNoData                = errors.New("data burst has no Data")
+	errNilData               = errors.New("cannot build a burst from nil Data")
+	errRCNotOutbound         = errors.New("only a BS-sourced voice burst F carries a reverse channel")
+	errUnknownKind           = errors.New("unknown burst kind")
+	errKindNoEncode          = errors.New("the burst kind does not encode")
+	errKindSync              = errors.New("the burst kind cannot carry its SYNC pattern")
+	errNotAToF         error = &wrapError{"the voice burst position is not A to F", ErrVoicePosition}
+	errEMBColorCode          = errors.New("a data burst with an EMB needs the color code of its slot type")
+	errPayloadType           = errors.New("the decoded payload has another data type than the slot type; set Data")
+	errNilPointerData        = errors.New("the data burst cannot carry a nil Data pointer")
+	errDataPDUType     error = &wrapError{"the data burst cannot carry Data of another data type", ErrDataType}
+	errNotBPTC         error = &wrapError{"the data type is not BPTC(196,96) coded", ErrDataType}
+	errSyncPattern           = errors.New("not a Table 9.2 SYNC pattern")
+	errMMDVMHostData         = errors.New("MMDVMHost discards bursts of this data type")
 
 	errBurstBPTCReservedRange    = &dmrgo.FieldRangeError{Type: "Burst", Field: "BPTCReserved", Bits: 3}
 	errRawBurstBPTCReservedRange = &dmrgo.FieldRangeError{Type: "RawBurst", Field: "BPTCReserved", Bits: 3}
@@ -112,7 +122,7 @@ var (
 var (
 	errReservedColorCode      = errors.Join(ErrReservedDataType, ErrColorCodeMismatch)
 	errUnknownKindColorCode   = errors.Join(errUnknownKind, ErrColorCodeMismatch)
-	errVoicePositionColorCode = errors.Join(errVoicePosition, ErrColorCodeMismatch)
+	errVoicePositionColorCode = errors.Join(ErrVoicePosition, ErrColorCodeMismatch)
 )
 
 func joinColorCode(err error) error {
@@ -122,7 +132,7 @@ func joinColorCode(err error) error {
 	switch err {
 	case errUnknownKind:
 		return errUnknownKindColorCode
-	case errVoicePosition:
+	case ErrVoicePosition:
 		return errVoicePositionColorCode
 	}
 	return err

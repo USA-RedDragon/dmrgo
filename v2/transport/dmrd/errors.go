@@ -1,6 +1,10 @@
 package dmrd
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+)
 
 // Errors of the decoders. Each is a static value, so a decode that fails
 // does not allocate. Match them with errors.Is.
@@ -22,11 +26,24 @@ var (
 )
 
 var (
-	errDialectCommand = errors.New("dmrd: the dialect has no such message")
-	errTextLength     = errors.New("dmrd: Text is too long or has the wrong length for the message")
-	errBridgeVersion  = errors.New("dmrd: Bridge.Version is not 1, 4 or 5")
-	errBridgeData     = errors.New("dmrd: Bridge.Data does not encode")
-	errKindVoice      = errors.New("dmrd: SetKind: voice position is not A to F")
-	errKindData       = errors.New("dmrd: SetKind: data type does not fit in 4 bits")
-	errKind           = errors.New("dmrd: SetKind: kind is not KindVoice or KindData")
+	errDialectCommand       = errors.New("dmrd: the dialect has no such message")
+	errTextLength           = errors.New("dmrd: Text is too long or has the wrong length for the message")
+	errBridgeVersion        = errors.New("dmrd: Bridge.Version is not 1, 4 or 5")
+	errBridgeData           = errors.New("dmrd: Bridge.Data does not encode")
+	errKindVoice      error = &wrapError{"dmrd: SetKind: voice position is not A to F", layer2.ErrVoicePosition}
+	errKindData       error = &wrapError{"dmrd: SetKind: data type does not fit in 4 bits", layer2.ErrDataType}
+	errKind                 = errors.New("dmrd: SetKind: kind is not KindVoice or KindData")
 )
+
+type wrapError struct {
+	msg string
+	err error
+}
+
+func (e *wrapError) Error() string {
+	return e.msg
+}
+
+func (e *wrapError) Unwrap() error {
+	return e.err
+}

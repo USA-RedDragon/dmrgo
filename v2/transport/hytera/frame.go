@@ -164,30 +164,35 @@ func dataTypeOf(s SlotType) (enums.DataType, bool) {
 
 // SetKind sets SlotType from the layer2 view of the burst: KindVoice with
 // pos A to F, or KindData with dt. It returns an error, and changes
-// nothing, for another kind, a position that is not A to F, or a data type
-// that Hytera has no slot type for (MBC, idle, rate 1 and unified single
-// block data).
+// nothing, for another kind, an error that wraps layer2.ErrVoicePosition
+// for a position that is not A to F, and one that wraps
+// layer2.ErrDataType for a data type that Hytera has no slot type for (MBC,
+// idle, rate 1 and unified single block data).
 func (f *Frame) SetKind(k layer2.Kind, pos enums.VoiceBurstType, dt enums.DataType) error {
-	s, ok := slotTypeOf(k, pos, dt)
-	if !ok {
-		return errKind
+	s, err := slotTypeOf(k, pos, dt)
+	if err != nil {
+		return err
 	}
 	f.SlotType = s
 	return nil
 }
 
-func slotTypeOf(k layer2.Kind, pos enums.VoiceBurstType, dt enums.DataType) (SlotType, bool) {
+func slotTypeOf(k layer2.Kind, pos enums.VoiceBurstType, dt enums.DataType) (SlotType, error) {
 	switch k {
 	case layer2.KindVoice:
 		i, ok := pos.Index()
-		return SlotTypeVoiceA + SlotType(i&7)*0x1111, ok
+		if !ok {
+			return 0, errKindVoice
+		}
+		return SlotTypeVoiceA + SlotType(i&7)*0x1111, nil
 	case layer2.KindData:
 		for _, s := range [...]SlotType{SlotTypePIHeader, SlotTypeVoiceLCHeader, SlotTypeTerminator, SlotTypeCSBK, SlotTypeDataHeader, SlotTypeRate12, SlotTypeRate34} {
 			if d, _ := dataTypeOf(s); d == dt {
-				return s, true
+				return s, nil
 			}
 		}
+		return 0, errKindData
 	case layer2.KindUnknown, layer2.KindReverseChannel:
 	}
-	return 0, false
+	return 0, errKind
 }
