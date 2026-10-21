@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dmrgo WebAssembly decoder</title>
+<style>
+:root { --bg: #fafafa; --fg: #1d1d1f; --muted: #6b6b70; --line: #ddd; --card: #fff; --accent: #2862c9; --bad: #b3261e; --ok: #2b7a3d; color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root { --bg: #141416; --fg: #e8e8ea; --muted: #9a9aa0; --line: #333; --card: #1d1d20; --accent: #7aa7ff; --bad: #ff8a80; --ok: #7fd18c; color-scheme: dark; } }
+body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font: 14px/1.4 system-ui, sans-serif; }
+h1 { font-size: 18px; margin: 0 0 12px; }
+section { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+label { color: var(--muted); }
+input, select, button { font: inherit; }
+button { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer; }
+button.on { background: var(--accent); color: #fff; }
+#drop { border: 2px dashed var(--line); border-radius: 8px; padding: 18px; text-align: center; color: var(--muted); }
+#drop.over { border-color: var(--accent); color: var(--fg); }
+#status { color: var(--muted); }
+.slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.slot h2 { font-size: 15px; margin: 0 0 6px; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; }
+.kv span:nth-child(odd) { color: var(--muted); }
+.tablewrap { overflow-x: auto; max-height: 60vh; overflow-y: auto; }
+table { border-collapse: collapse; width: 100%; font: 12px/1.35 ui-monospace, monospace; }
+th, td { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--line); vertical-align: top; white-space: nowrap; }
+td.d { white-space: normal; min-width: 260px; }
+th { position: sticky; top: 0; background: var(--card); }
+.bad { color: var(--bad); }
+.ok { color: var(--ok); }
+</style>
+</head>
+<body>
+<h1>dmrgo WebAssembly decoder</h1>
+<section>
+  <div class="row">
+    <button id="mic">Start microphone or line-in</button>
+    <select id="device"><option value="">default input</option></select>
+    <label>audio tier <select id="audioTier"><option>0</option><option selected>1</option><option>2</option></select></label>
+    <label>I/Q tier <select id="iqTier"><option>0</option><option>1</option><option selected>2</option><option>3</option></select></label>
+    <label><input type="checkbox" id="idle"> show idle bursts</label>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <button id="rtl">Start RTL-SDR (WebUSB)</button>
+    <label>frequency (MHz) <input id="freq" type="number" value="441.000" step="0.0125" style="width:7em"></label>
+    <label>gain (dB, -1 auto) <input id="gain" type="number" value="29.7" step="0.1" style="width:5em"></label>
+    <label>sample rate <select id="rtlRate"><option value="1024000" selected>1.024 Msps</option><option value="2048000">2.048 Msps</option><option value="960000">0.96 Msps</option></select></label>
+    <button id="clear">Clear</button>
+  </div>
+  <p id="drop">Drop a file here or <input type="file" id="file">: a WAV file of FM discriminator audio (or 2-channel I/Q), or raw I/Q (.cu8 from rtl_sdr, .cs8 from hackrf_transfer, .cs16, .cf32 or .cfile from GNU Radio).<br>
+    <label>format <select id="format"><option value="">from the file name</option><option>wav</option><option>s16</option><option>cu8</option><option>cs8</option><option>cs16</option><option>cf32</option></select></label>
+    <label>sample rate (Hz) <input id="rate" type="number" value="2048000" step="1" style="width:9em"></label>
+  </p>
+  <div id="status">Loading the decoder.</div>
+</section>
+<section class="slots" id="slots"></section>
+<section>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>time (s)</th><th>TS</th><th>CC</th><th>sync</th><th>kind</th><th>details</th><th>FEC</th><th>BER</th></tr></thead>
+      <tbody id="events"></tbody>
+    </table>
+  </div>
+</section>
+<script src="rtlsdr.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
