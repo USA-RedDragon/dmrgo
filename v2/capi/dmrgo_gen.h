@@ -169,6 +169,26 @@ typedef struct dmrgo_pdu_csbk_t dmrgo_pdu_csbk_t;
 typedef struct dmrgo_pdu_csbk_bytes_t dmrgo_pdu_csbk_bytes_t;
 /* Go: pdu.CSBKPayloads. CSBKPayloads holds one payload struct of each type that a CSBK dispatch field points to, for DecodeCSBKInto. */
 typedef struct dmrgo_pdu_csbk_payloads_t dmrgo_pdu_csbk_payloads_t;
+/* Go: pdu.CapacityPlusActivity. CapacityPlusActivity is the channel activity of a Capacity Plus site status: the rest LSN, and per LSN the talkgroup of a group call or the radio of a private voice or data call. */
+typedef struct dmrgo_pdu_capacity_plus_activity_t dmrgo_pdu_capacity_plus_activity_t;
+/* Go: pdu.CapacityPlusDataRevertAnnouncementPDU. CapacityPlusDataRevertAnnouncementPDU is the payload of the MOTOTRBO enhanced data revert window announcement CSBK (FID 0x10, opcode 0x29). */
+typedef struct dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t;
+/* Go: pdu.CapacityPlusDataRevertGrantPDU. CapacityPlusDataRevertGrantPDU is the payload of the MOTOTRBO enhanced data revert window grant CSBK (FID 0x10, opcode 0x2A). */
+typedef struct dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t;
+/* Go: pdu.CapacityPlusGroupVoiceGrant. CapacityPlusGroupVoiceGrant is the payload of the Capacity Plus group voice call grant Full LC (FID 0x10, FLCO 4): LC bits 16 to 71. */
+typedef struct dmrgo_pdu_capacity_plus_group_voice_grant_t dmrgo_pdu_capacity_plus_group_voice_grant_t;
+/* Go: pdu.CapacityPlusNeighborsPDU. CapacityPlusNeighborsPDU is the payload of the Linked Capacity Plus neighbor report CSBK (FID 0x10, opcode 0x3B): the site number and the rest LSN of up to 6 neighbor sites. */
+typedef struct dmrgo_pdu_capacity_plus_neighbors_pdu_t dmrgo_pdu_capacity_plus_neighbors_pdu_t;
+/* Go: pdu.CapacityPlusPreamblePDU. CapacityPlusPreamblePDU is the payload of the Capacity Plus preamble CSBK (FID 0x10, opcode 0x3D). */
+typedef struct dmrgo_pdu_capacity_plus_preamble_pdu_t dmrgo_pdu_capacity_plus_preamble_pdu_t;
+/* Go: pdu.CapacityPlusPrivateVoiceGrant. CapacityPlusPrivateVoiceGrant is the payload of the Capacity Plus private voice call grant Full LC (FID 0x10, FLCO 7): LC bits 16 to 71. */
+typedef struct dmrgo_pdu_capacity_plus_private_voice_grant_t dmrgo_pdu_capacity_plus_private_voice_grant_t;
+/* Go: pdu.CapacityPlusRestChannel. CapacityPlusRestChannel is the payload of the Capacity Plus rest channel Short LC (SLCO 15): Short LC bits 4 to 27. */
+typedef struct dmrgo_pdu_capacity_plus_rest_channel_t dmrgo_pdu_capacity_plus_rest_channel_t;
+/* Go: pdu.CapacityPlusSiteStatusAssembler. CapacityPlusSiteStatusAssembler joins the blocks of a Capacity Plus site status and decodes its activity. */
+typedef struct dmrgo_pdu_capacity_plus_site_status_assembler_t dmrgo_pdu_capacity_plus_site_status_assembler_t;
+/* Go: pdu.CapacityPlusSiteStatusPDU. CapacityPlusSiteStatusPDU is one block of the Capacity Plus site status CSBK (FID 0x10, opcode 0x3E). */
+typedef struct dmrgo_pdu_capacity_plus_site_status_pdu_t dmrgo_pdu_capacity_plus_site_status_pdu_t;
 /* Go: pdu.ChanFreqParms. ChanFreqParms is the C_BCAST header payload with AnnouncementType Chan_Freq, which announces the frequencies of a channel number in the CdefParms of the BC_AP block that follows (ETSI TS 102 361-4 clause 7.2.19.6, Table 7.78). */
 typedef struct dmrgo_pdu_chan_freq_parms_t dmrgo_pdu_chan_freq_parms_t;
 /* Go: pdu.ChannelTimingPDU. ChannelTimingPDU is the channel timing (CT_CSBK) CSBK payload (ETSI TS 102 361-2 clause 7.1.2.6, Table 7.8). */
@@ -502,6 +522,8 @@ typedef int64_t dmrgo_layer2_sync_source_t;
 typedef uint8_t dmrgo_packet_response_t;
 /* Go: pdu.CSBKOpcode. CSBKOpcode is the 6-bit CSBK opcode (CSBKO) of a CSBK or MBC header. */
 typedef uint8_t dmrgo_pdu_csbk_opcode_t;
+/* Go: pdu.CapacityPlusSegment. CapacityPlusSegment tells where a CSBK block sits in a site status or neighbor report that spans several CSBKs. */
+typedef uint8_t dmrgo_pdu_capacity_plus_segment_t;
 /* Go: pdu.EMBInfo. EMBInfo is the 7 information bits of an EMB PDU without the QR(16,7,6) parity, in bits 7 to 1 of one octet as IPSC carries them. */
 typedef uint8_t dmrgo_pdu_emb_info_t;
 /* Go: pdu.Format. Format is the 4-bit Data Packet Format (DPF) of a data header (ETSI TS 102 361-1 clause 9.3.17). */
@@ -1675,6 +1697,51 @@ struct dmrgo_pdu_chan_freq_parms_t {
 	uint16_t channel;
 };
 
+struct dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t {
+	uint8_t reserved;
+	uint16_t target_address;
+	uint8_t window;
+	uint8_t superframe;
+	uint8_t flags;
+	uint16_t reserved2;
+};
+
+struct dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t {
+	uint8_t reserved;
+	uint16_t target_address;
+	uint8_t window;
+	uint8_t superframe;
+	uint32_t reserved2;
+};
+
+struct dmrgo_pdu_capacity_plus_neighbors_pdu_t {
+	dmrgo_pdu_capacity_plus_segment_t segment;
+	bool slot2;
+	uint8_t rest_lsn;
+	bool async;
+	uint8_t site;
+	uint8_t count;
+	uint8_t neighbors[6];
+};
+
+struct dmrgo_pdu_capacity_plus_preamble_pdu_t {
+	bool data;
+	bool group;
+	uint8_t reserved;
+	uint8_t blocks_to_follow;
+	uint32_t target_address;
+	uint8_t reserved2;
+	uint8_t rest_lsn;
+	uint16_t source_address;
+};
+
+struct dmrgo_pdu_capacity_plus_site_status_pdu_t {
+	dmrgo_pdu_capacity_plus_segment_t segment;
+	bool slot2;
+	uint8_t rest_lsn;
+	uint8_t activity[7];
+};
+
 struct dmrgo_pdu_motorola_call_alert_pdu_t {
 	uint16_t reserved;
 	uint32_t target_address;
@@ -1704,6 +1771,40 @@ struct dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t {
 	bool offset;
 	uint32_t target_address;
 	uint32_t source_address;
+};
+
+struct dmrgo_pdu_capacity_plus_activity_t {
+	uint8_t rest_lsn;
+	uint16_t voice;
+	uint8_t talkgroups[16];
+	uint8_t options;
+	uint16_t radio;
+	uint16_t radios[16];
+};
+
+struct dmrgo_pdu_capacity_plus_group_voice_grant_t {
+	dmrgo_layer3_service_options_t service_options;
+	uint16_t reserved;
+	uint8_t group_address;
+	uint8_t reserved2;
+	uint8_t rest_lsn;
+	uint16_t source_address;
+};
+
+struct dmrgo_pdu_capacity_plus_private_voice_grant_t {
+	dmrgo_layer3_service_options_t service_options;
+	uint32_t target_address;
+	uint8_t reserved;
+	uint8_t rest_lsn;
+	uint16_t source_address;
+};
+
+struct dmrgo_pdu_capacity_plus_rest_channel_t {
+	uint8_t marker;
+	uint8_t flags;
+	uint8_t rest_lsn;
+	uint8_t site;
+	uint8_t reserved;
 };
 
 struct dmrgo_pdu_data_header_bytes_t {
@@ -2146,6 +2247,8 @@ struct dmrgo_voice_output_t {
 #define DMRGO_ERR_PACKET_RESPONSE_DATA (-127)
 #define DMRGO_ERR_PACKET_TOO_LONG (-128)
 #define DMRGO_ERR_PACKET_UNEXPECTED_RETRY (-129)
+#define DMRGO_ERR_PDU_CAPACITY_PLUS_INCOMPLETE (-170)
+#define DMRGO_ERR_PDU_CAPACITY_PLUS_SEQUENCE (-171)
 #define DMRGO_ERR_PDU_NO_ADDRESSES (-130)
 #define DMRGO_ERR_PDU_TALKER_ALIAS_INCOMPLETE (-131)
 #define DMRGO_ERR_PDU_TALKER_ALIAS_INVALID_UTF8 (-132)
@@ -3070,6 +3173,16 @@ struct dmrgo_voice_output_t {
 #define DMRGO_PDU_CSBK_BROADCAST ((dmrgo_pdu_csbk_opcode_t)40)
 /* Go: pdu.CSBKBroadcastTalkgroupVoiceGrant. BTV_GRANT */
 #define DMRGO_PDU_CSBK_BROADCAST_TALKGROUP_VOICE_GRANT ((dmrgo_pdu_csbk_opcode_t)50)
+/* Go: pdu.CSBKCapacityPlusDataRevertAnnouncement. enhanced data revert window announcement */
+#define DMRGO_PDU_CSBK_CAPACITY_PLUS_DATA_REVERT_ANNOUNCEMENT ((dmrgo_pdu_csbk_opcode_t)41)
+/* Go: pdu.CSBKCapacityPlusDataRevertGrant. enhanced data revert window grant */
+#define DMRGO_PDU_CSBK_CAPACITY_PLUS_DATA_REVERT_GRANT ((dmrgo_pdu_csbk_opcode_t)42)
+/* Go: pdu.CSBKCapacityPlusNeighbors. neighbor sites of a Linked Capacity Plus site */
+#define DMRGO_PDU_CSBK_CAPACITY_PLUS_NEIGHBORS ((dmrgo_pdu_csbk_opcode_t)59)
+/* Go: pdu.CSBKCapacityPlusPreamble. preamble with the rest LSN */
+#define DMRGO_PDU_CSBK_CAPACITY_PLUS_PREAMBLE ((dmrgo_pdu_csbk_opcode_t)61)
+/* Go: pdu.CSBKCapacityPlusSiteStatus. rest LSN and channel activity */
+#define DMRGO_PDU_CSBK_CAPACITY_PLUS_SITE_STATUS ((dmrgo_pdu_csbk_opcode_t)62)
 /* Go: pdu.CSBKChannelTiming. CT_CSBK */
 #define DMRGO_PDU_CSBK_CHANNEL_TIMING ((dmrgo_pdu_csbk_opcode_t)7)
 /* Go: pdu.CSBKClear. P_CLEAR */
@@ -3112,6 +3225,22 @@ struct dmrgo_voice_output_t {
 #define DMRGO_PDU_CSBK_UNIT_TO_UNIT_VOICE_SERVICE_ANSWER_RESPONSE ((dmrgo_pdu_csbk_opcode_t)5)
 /* Go: pdu.CSBKUnitToUnitVoiceServiceRequest. UU_V_Req */
 #define DMRGO_PDU_CSBK_UNIT_TO_UNIT_VOICE_SERVICE_REQUEST ((dmrgo_pdu_csbk_opcode_t)4)
+/* Go: pdu.CapacityPlusMaxBlocks. CapacityPlusMaxBlocks is the most CSBK blocks of one Capacity Plus site status that CapacityPlusSiteStatusAssembler joins: enough for 16 busy talkgroup LSNs and 16 busy radio LSNs. */
+#define DMRGO_PDU_CAPACITY_PLUS_MAX_BLOCKS 8
+/* Go: pdu.CapacityPlusMaxLSN. CapacityPlusMaxLSN is the highest logical slot number (LSN) of a Capacity Plus site: 8 repeaters of 2 timeslots. */
+#define DMRGO_PDU_CAPACITY_PLUS_MAX_LSN 16
+/* Go: pdu.CapacityPlusSegmentContinuation. a middle block */
+#define DMRGO_PDU_CAPACITY_PLUS_SEGMENT_CONTINUATION ((dmrgo_pdu_capacity_plus_segment_t)0)
+/* Go: pdu.CapacityPlusSegmentFirst. the first block */
+#define DMRGO_PDU_CAPACITY_PLUS_SEGMENT_FIRST ((dmrgo_pdu_capacity_plus_segment_t)2)
+/* Go: pdu.CapacityPlusSegmentLast. the last block */
+#define DMRGO_PDU_CAPACITY_PLUS_SEGMENT_LAST ((dmrgo_pdu_capacity_plus_segment_t)1)
+/* Go: pdu.CapacityPlusSegmentSingle. the only block */
+#define DMRGO_PDU_CAPACITY_PLUS_SEGMENT_SINGLE ((dmrgo_pdu_capacity_plus_segment_t)3)
+/* Go: pdu.FLCOCapacityPlusGroupVoiceGrant. group voice call grant */
+#define DMRGO_PDU_FLCO_CAPACITY_PLUS_GROUP_VOICE_GRANT ((dmrgo_enums_flco_t)4)
+/* Go: pdu.FLCOCapacityPlusPrivateVoiceGrant. private voice call grant */
+#define DMRGO_PDU_FLCO_CAPACITY_PLUS_PRIVATE_VOICE_GRANT ((dmrgo_enums_flco_t)7)
 /* Go: pdu.FormatConfirmed. C_HEAD */
 #define DMRGO_PDU_FORMAT_CONFIRMED ((dmrgo_pdu_format_t)3)
 /* Go: pdu.FormatProprietary. P_HEAD */
@@ -3140,6 +3269,8 @@ struct dmrgo_voice_output_t {
 #define DMRGO_PDU_OPCODE0X38_TALKGROUP_DATA_GRANT_MULTI_ITEM ((dmrgo_pdu_opcode0x38_hint_t)2)
 /* Go: pdu.Opcode0x38Unknown. Opcode0x38Unknown gives no hint. */
 #define DMRGO_PDU_OPCODE0X38_UNKNOWN ((dmrgo_pdu_opcode0x38_hint_t)0)
+/* Go: pdu.SLCOCapacityPlusRestChannel. SLCOCapacityPlusRestChannel is the Short LC opcode of the Capacity Plus rest channel announcement. */
+#define DMRGO_PDU_SLCO_CAPACITY_PLUS_REST_CHANNEL ((dmrgo_enums_slco_t)15)
 /* Go: pdu.ServiceTypeLIP. Location Information Protocol */
 #define DMRGO_PDU_SERVICE_TYPE_LIP ((dmrgo_pdu_service_type_t)0)
 /* Go: pdu.ServiceTypeManufacturerSpecific1. manufacturer specific service 1 */
@@ -4313,6 +4444,16 @@ int dmrgo_pdu_crc_mask(dmrgo_enums_data_type_t dt, uint32_t *mask, int64_t *widt
 int dmrgo_pdu_csbk_addresses(dmrgo_pdu_csbk_t *self, uint32_t *target, uint32_t *source, bool *ok);
 /* Go: pdu.CSBK.AsBSOutboundActivation. AsBSOutboundActivation decodes the RawPayload of a standard FID CSBK with opcode 0x38 as a BS_Dwn_Act PDU. */
 int dmrgo_pdu_csbk_as_bs_outbound_activation(dmrgo_pdu_csbk_t *self, dmrgo_pdu_bs_outbound_activation_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsCapacityPlusDataRevertAnnouncement. AsCapacityPlusDataRevertAnnouncement decodes the RawPayload of an enhanced data revert window announcement CSBK. */
+int dmrgo_pdu_csbk_as_capacity_plus_data_revert_announcement(dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsCapacityPlusDataRevertGrant. AsCapacityPlusDataRevertGrant decodes the RawPayload of an enhanced data revert window grant CSBK. */
+int dmrgo_pdu_csbk_as_capacity_plus_data_revert_grant(dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsCapacityPlusNeighbors. AsCapacityPlusNeighbors decodes the RawPayload of a Linked Capacity Plus neighbor report CSBK. */
+int dmrgo_pdu_csbk_as_capacity_plus_neighbors(dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_neighbors_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsCapacityPlusPreamble. AsCapacityPlusPreamble decodes the RawPayload of a Capacity Plus preamble CSBK. */
+int dmrgo_pdu_csbk_as_capacity_plus_preamble(dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_preamble_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsCapacityPlusSiteStatus. AsCapacityPlusSiteStatus decodes the RawPayload of a Capacity Plus site status CSBK. */
+int dmrgo_pdu_csbk_as_capacity_plus_site_status(dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_site_status_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.AsMotorolaCallAlert. AsMotorolaCallAlert decodes the RawPayload of a Motorola call alert CSBK. */
 int dmrgo_pdu_csbk_as_motorola_call_alert(dmrgo_pdu_csbk_t *self, dmrgo_pdu_motorola_call_alert_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.AsMotorolaCallAlertAck. AsMotorolaCallAlertAck decodes the RawPayload of a Motorola call alert acknowledgement CSBK. */
@@ -4361,6 +4502,58 @@ int dmrgo_pdu_csbk_opcode_string(dmrgo_pdu_csbk_opcode_t self, char *out, size_t
 int dmrgo_pdu_csbk_payloads_new(dmrgo_pdu_csbk_payloads_t **out);
 /* dmrgo_pdu_csbk_payloads_free frees the handle. self may be NULL. */
 int dmrgo_pdu_csbk_payloads_free(dmrgo_pdu_csbk_payloads_t *self);
+/* Go: pdu.CapacityPlusActivity.RadioTarget. RadioTarget returns the target radio of a private voice or data call on lsn. */
+int dmrgo_pdu_capacity_plus_activity_radio_target(dmrgo_pdu_capacity_plus_activity_t *self, uint8_t lsn, uint16_t *radio, bool *ok);
+/* Go: pdu.CapacityPlusActivity.Talkgroup. Talkgroup returns the talkgroup of a group call on lsn. */
+int dmrgo_pdu_capacity_plus_activity_talkgroup(dmrgo_pdu_capacity_plus_activity_t *self, uint8_t lsn, uint8_t *tg, bool *ok);
+/* Go: pdu.CapacityPlusChannel. CapacityPlusChannel returns the repeater and timeslot of a logical slot number: LSN 1 and 2 are timeslots 1 and 2 of repeater 1, LSN 3 and 4 of repeater 2, and so on. */
+int dmrgo_pdu_capacity_plus_channel(uint8_t lsn, uint8_t *repeater, dmrgo_enums_slot_t *slot, bool *ok);
+/* Go: pdu.CapacityPlusDataRevertAnnouncementPDU.Encode. Encode encodes a CapacityPlusDataRevertAnnouncementPDU. */
+int dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_encode(dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t *self, uint8_t out[8]);
+/* Go: pdu.CapacityPlusDataRevertAnnouncementPDU.String. String returns the fields of s as text, for printing. */
+int dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_string(dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: pdu.CapacityPlusDataRevertGrantPDU.Encode. Encode encodes a CapacityPlusDataRevertGrantPDU. */
+int dmrgo_pdu_capacity_plus_data_revert_grant_pdu_encode(dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t *self, uint8_t out[8]);
+/* Go: pdu.CapacityPlusDataRevertGrantPDU.String. String returns the fields of s as text, for printing. */
+int dmrgo_pdu_capacity_plus_data_revert_grant_pdu_string(dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: pdu.CapacityPlusGroupVoiceGrant.Encode. Encode encodes a CapacityPlusGroupVoiceGrant. */
+int dmrgo_pdu_capacity_plus_group_voice_grant_encode(dmrgo_pdu_capacity_plus_group_voice_grant_t *self, uint8_t out[7]);
+/* Go: pdu.CapacityPlusGroupVoiceGrant.String. String returns the fields of s as text, for printing. */
+int dmrgo_pdu_capacity_plus_group_voice_grant_string(dmrgo_pdu_capacity_plus_group_voice_grant_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: pdu.CapacityPlusNeighborsPDU.Encode. Encode encodes a CapacityPlusNeighborsPDU. */
+int dmrgo_pdu_capacity_plus_neighbors_pdu_encode(dmrgo_pdu_capacity_plus_neighbors_pdu_t *self, uint8_t out[8]);
+/* Go: pdu.CapacityPlusNeighborsPDU.Neighbor. Neighbor returns the site number and rest LSN of neighbor i, from 0. */
+int dmrgo_pdu_capacity_plus_neighbors_pdu_neighbor(dmrgo_pdu_capacity_plus_neighbors_pdu_t *self, int64_t i, uint8_t *site, uint8_t *rest_lsn, bool *ok);
+/* Go: pdu.CapacityPlusNeighborsPDU.String. String returns the fields of s as text, for printing. */
+int dmrgo_pdu_capacity_plus_neighbors_pdu_string(dmrgo_pdu_capacity_plus_neighbors_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: pdu.CapacityPlusPreamblePDU.Encode. Encode encodes a CapacityPlusPreamblePDU. */
+int dmrgo_pdu_capacity_plus_preamble_pdu_encode(dmrgo_pdu_capacity_plus_preamble_pdu_t *self, uint8_t out[8]);
+/* Go: pdu.CapacityPlusPreamblePDU.String. String returns the fields of s as text, for printing. */
+int dmrgo_pdu_capacity_plus_preamble_pdu_string(dmrgo_pdu_capacity_plus_preamble_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: pdu.CapacityPlusPrivateVoiceGrant.Encode. Encode encodes a CapacityPlusPrivateVoiceGrant. */
+int dmrgo_pdu_capacity_plus_private_voice_grant_encode(dmrgo_pdu_capacity_plus_private_voice_grant_t *self, uint8_t out[7]);
+/* Go: pdu.CapacityPlusPrivateVoiceGrant.String. String returns the fields of s as text, for printing. */
+int dmrgo_pdu_capacity_plus_private_voice_grant_string(dmrgo_pdu_capacity_plus_private_voice_grant_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: pdu.CapacityPlusRestChannel.Encode. Encode encodes a CapacityPlusRestChannel. */
+int dmrgo_pdu_capacity_plus_rest_channel_encode(dmrgo_pdu_capacity_plus_rest_channel_t *self, uint8_t out[3]);
+/* Go: pdu.CapacityPlusRestChannel.String. String returns the fields of s as text, for printing. */
+int dmrgo_pdu_capacity_plus_rest_channel_string(dmrgo_pdu_capacity_plus_rest_channel_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: pdu.CapacityPlusSegment.String. String returns the name of the CapacityPlusSegment. */
+int dmrgo_pdu_capacity_plus_segment_string(dmrgo_pdu_capacity_plus_segment_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* dmrgo_pdu_capacity_plus_site_status_assembler_new makes a zero pdu.CapacityPlusSiteStatusAssembler. */
+int dmrgo_pdu_capacity_plus_site_status_assembler_new(dmrgo_pdu_capacity_plus_site_status_assembler_t **out);
+/* dmrgo_pdu_capacity_plus_site_status_assembler_free frees the handle. self may be NULL. */
+int dmrgo_pdu_capacity_plus_site_status_assembler_free(dmrgo_pdu_capacity_plus_site_status_assembler_t *self);
+/* Go: pdu.CapacityPlusSiteStatusAssembler.Activity. Activity decodes the last complete status. */
+int dmrgo_pdu_capacity_plus_site_status_assembler_activity(dmrgo_pdu_capacity_plus_site_status_assembler_t *self, dmrgo_pdu_capacity_plus_activity_t *out);
+/* Go: pdu.CapacityPlusSiteStatusAssembler.Add. Add adds a block. */
+int dmrgo_pdu_capacity_plus_site_status_assembler_add(dmrgo_pdu_capacity_plus_site_status_assembler_t *self, const dmrgo_pdu_capacity_plus_site_status_pdu_t *p, bool *out);
+/* Go: pdu.CapacityPlusSiteStatusAssembler.Reset. Reset drops the partial or complete status. */
+int dmrgo_pdu_capacity_plus_site_status_assembler_reset(dmrgo_pdu_capacity_plus_site_status_assembler_t *self);
+/* Go: pdu.CapacityPlusSiteStatusPDU.Encode. Encode encodes a CapacityPlusSiteStatusPDU. */
+int dmrgo_pdu_capacity_plus_site_status_pdu_encode(dmrgo_pdu_capacity_plus_site_status_pdu_t *self, uint8_t out[8]);
+/* Go: pdu.CapacityPlusSiteStatusPDU.String. String returns the fields of s as text, for printing. */
+int dmrgo_pdu_capacity_plus_site_status_pdu_string(dmrgo_pdu_capacity_plus_site_status_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.ChanFreqParms.Encode. Encode encodes a ChanFreqParms. */
 int dmrgo_pdu_chan_freq_parms_encode(dmrgo_pdu_chan_freq_parms_t *self, uint8_t out[8]);
 /* Go: pdu.ChanFreqParms.String. String returns the fields of s as text, for printing. */
@@ -4525,6 +4718,10 @@ int dmrgo_pdu_format_string(dmrgo_pdu_format_t self, char *out, size_t out_cap, 
 int dmrgo_pdu_full_lc_parity_ok(const uint8_t cw[12], dmrgo_enums_data_type_t dt, bool *out);
 /* Go: pdu.FullLinkControl.Addresses. Addresses returns the 24-bit target and source addresses of a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC. */
 int dmrgo_pdu_full_link_control_addresses(dmrgo_pdu_full_link_control_t *self, uint32_t *target, uint32_t *source, bool *ok);
+/* Go: pdu.FullLinkControl.AsCapacityPlusGroupVoiceGrant. AsCapacityPlusGroupVoiceGrant decodes the RawPayload of a Capacity Plus group voice call grant. */
+int dmrgo_pdu_full_link_control_as_capacity_plus_group_voice_grant(dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_capacity_plus_group_voice_grant_t *p, bool *ok);
+/* Go: pdu.FullLinkControl.AsCapacityPlusPrivateVoiceGrant. AsCapacityPlusPrivateVoiceGrant decodes the RawPayload of a Capacity Plus private voice call grant. */
+int dmrgo_pdu_full_link_control_as_capacity_plus_private_voice_grant(dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_capacity_plus_private_voice_grant_t *p, bool *ok);
 /* Go: pdu.FullLinkControl.Bytes. Bytes returns the 72 LC bits of s packed most significant bit first, without RS(12,9) parity. */
 int dmrgo_pdu_full_link_control_bytes(dmrgo_pdu_full_link_control_t *self, uint8_t out[9]);
 /* Go: pdu.FullLinkControl.DataType. DataType returns BurstDataType. */
@@ -4749,6 +4946,8 @@ int dmrgo_pdu_seal(uint8_t p[12], dmrgo_enums_data_type_t dt);
 int dmrgo_pdu_service_type_string(dmrgo_pdu_service_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.SetMBCLastBlockCRC. SetMBCLastBlockCRC writes the last-block CRC-CCITT into bits 80 to 95 of the last of blocks, which holds every continuation block of the MBC in order, packed as MBCLastBlockCRCOK takes them. */
 int dmrgo_pdu_set_mbc_last_block_crc(const uint8_t (*blocks)[12], size_t blocks_len);
+/* Go: pdu.ShortLC.AsCapacityPlusRestChannel. AsCapacityPlusRestChannel decodes the RawPayload of a Capacity Plus rest channel Short LC. */
+int dmrgo_pdu_short_lc_as_capacity_plus_rest_channel(dmrgo_pdu_short_lc_t *self, dmrgo_pdu_capacity_plus_rest_channel_t *p, bool *ok);
 /* Go: pdu.ShortLC.Encode. Encode encodes a ShortLC. */
 int dmrgo_pdu_short_lc_encode(dmrgo_pdu_short_lc_t *self, uint8_t out[5]);
 /* Go: pdu.ShortLC.String. String returns the fields of s as text, for printing. */
