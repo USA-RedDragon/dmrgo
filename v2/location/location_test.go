@@ -181,6 +181,8 @@ func TestHDAP(t *testing.T) {
 	}
 	failed := append([]byte{}, answer...)
 	failed[9] = 1
+	east := append([]byte{}, report...)
+	copy(east[8+24:], "308")
 	nospeed := append([]byte{}, report...)
 	copy(nospeed[8+34:], "x.0")
 	for _, tt := range []struct {
@@ -194,6 +196,7 @@ func TestHDAP(t *testing.T) {
 		{"request", hytera.ServiceLP, hytera.LPStandardRequest, answer[:8], location.ErrNoFix},
 		{"RRS", hytera.ServiceRRS, hytera.LPStandardAnswer, answer, location.ErrNoFix},
 		{"short", hytera.ServiceLP, hytera.LPConditionReport, report[:20], hytera.ErrShort},
+		{"longitude 308", hytera.ServiceLP, hytera.LPConditionReport, east, location.ErrNoFix},
 	} {
 		m := hdapPacket(t, tt.service, tt.opcode, tt.payload)
 		if _, err := d.Decode(&m.Header, m.Data); !errors.Is(err, tt.want) {
