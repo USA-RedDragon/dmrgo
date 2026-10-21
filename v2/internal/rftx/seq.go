@@ -159,7 +159,7 @@ func DataBursts(name string, cfg SeqConfig) ([]layer2.RawBurst, error) {
 	if err != nil {
 		return nil, err
 	}
-	return packet.Bursts(p, cfg.ColorCode, cfg.source())
+	return packet.Bursts(&p, cfg.ColorCode, cfg.source())
 }
 
 func responseBursts(sack bool, cfg SeqConfig) ([]layer2.RawBurst, []string, error) {
@@ -191,7 +191,7 @@ func responseBursts(sack bool, cfg SeqConfig) ([]layer2.RawBurst, []string, erro
 	}
 	h := p.Header.ResponsePacketHeader
 	info = append(info, fmt.Sprintf("response %s class=%d type=%d status=%d %d -> %d", r, h.ResponseClass, h.ResponseType, h.ResponseStatus, h.LLIDSource, h.LLIDDestination))
-	b, err := packet.Bursts(p, cfg.ColorCode, cfg.source())
+	b, err := packet.Bursts(&p, cfg.ColorCode, cfg.source())
 	return b, info, err
 }
 
@@ -226,7 +226,7 @@ func smsBursts(cfg SeqConfig) ([]layer2.RawBurst, error) {
 	if err != nil {
 		return nil, err
 	}
-	data, err := packet.Bursts(p, cfg.ColorCode, cfg.source())
+	data, err := packet.Bursts(&p, cfg.ColorCode, cfg.source())
 	if err != nil {
 		return nil, err
 	}
