@@ -35,7 +35,8 @@ type VoiceTransmitterOptions struct {
 // NewVoiceTransmitter returns a VoiceTransmitter for opts. A nil opts means
 // the zero VoiceTransmitterOptions. It returns ErrSyncSource when Source
 // is unknown, an error when LC or PIHeader does not encode, and a
-// *dmrgo.FieldRangeError when ColorCode does not fit in 4 bits. It allocates the VoiceTransmitter.
+// *dmrgo.FieldRangeError when ColorCode does not fit in 4 bits. It
+// allocates the VoiceTransmitter.
 func NewVoiceTransmitter(opts *VoiceTransmitterOptions) (*VoiceTransmitter, error) {
 	t := new(VoiceTransmitter)
 	if err := t.Reset(opts); err != nil {

@@ -53,9 +53,10 @@ func (a *EmbeddedLCAssembler) Reset() {
 
 // Add adds the embedded signalling field frag of a burst whose EMB carries
 // lcss. When a Last fragment follows a First and two Continuation
-// fragments, Add returns the LC with done set, and ErrEmbeddedLCUncorrectable when its
-// FEC result is uncorrectable. Add returns ErrEmbeddedLCSequence when a
-// fragment out of that order discards a partial LC.
+// fragments, Add returns the LC with done set, and
+// ErrEmbeddedLCUncorrectable when its FEC result is uncorrectable. Add
+// returns ErrEmbeddedLCSequence when a fragment out of that order discards a
+// partial LC.
 func (a *EmbeddedLCAssembler) Add(frag [4]byte, lcss enums.LCSS) (lc [9]byte, res fec.Result, done bool, err error) {
 	if a == nil {
 		return [9]byte{}, fec.Result{}, false, dmrgo.ErrNilReceiver
