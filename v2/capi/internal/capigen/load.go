@@ -19,19 +19,20 @@ import (
 const modulePath = "github.com/USA-RedDragon/dmrgo/v2"
 
 type loader struct {
-	ctx  build.Context
-	root string
-	fset *token.FileSet
-	std  types.Importer
-	pkgs map[string]*types.Package
-	docs map[types.Object]string
-	full map[types.Object]string
-	busy map[string]bool
-	decl map[*types.Func]*ast.FuncDecl
-	info map[*types.Package]*types.Info
-	eff  map[effKey]*effect
-	vals map[types.Object]ast.Expr
-	refs map[string][][]string
+	ctx   build.Context
+	root  string
+	fset  *token.FileSet
+	std   types.Importer
+	pkgs  map[string]*types.Package
+	docs  map[types.Object]string
+	full  map[types.Object]string
+	plain map[types.Object]string
+	busy  map[string]bool
+	decl  map[*types.Func]*ast.FuncDecl
+	info  map[*types.Package]*types.Info
+	eff   map[effKey]*effect
+	vals  map[types.Object]ast.Expr
+	refs  map[string][][]string
 }
 
 func newLoader(root string) *loader {
@@ -41,7 +42,7 @@ func newLoader(root string) *loader {
 	fset := token.NewFileSet()
 	return &loader{
 		ctx: ctx, root: root, fset: fset, std: importer.ForCompiler(fset, "source", nil),
-		pkgs: map[string]*types.Package{}, docs: map[types.Object]string{}, full: map[types.Object]string{}, busy: map[string]bool{},
+		pkgs: map[string]*types.Package{}, docs: map[types.Object]string{}, full: map[types.Object]string{}, plain: map[types.Object]string{}, busy: map[string]bool{},
 		decl: map[*types.Func]*ast.FuncDecl{}, info: map[*types.Package]*types.Info{}, eff: map[effKey]*effect{}, vals: map[types.Object]ast.Expr{}, refs: map[string][][]string{},
 	}
 }
@@ -104,9 +105,11 @@ func (l *loader) collectDocs(files []*ast.File, info *types.Info) {
 		for _, d := range docs {
 			if d != nil {
 				if o := info.Defs[id]; o != nil {
-					text := l.qualify(d.Text(), o.Pkg(), in)
+					plain := l.qualify(d.Text(), o.Pkg(), in)
+					text := qualifyConsts(plain, o.Pkg())
 					l.docs[o] = firstSentence(text)
 					l.full[o] = strings.Join(strings.Fields(text), " ")
+					l.plain[o] = strings.Join(strings.Fields(plain), " ")
 				}
 				return
 			}

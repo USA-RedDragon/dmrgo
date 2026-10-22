@@ -268,7 +268,7 @@ func (g *gen) namedArena(u *types.Named) (string, error) {
 			if !f.Exported() || !g.needsArena(f.Type()) {
 				continue
 			}
-			n, err := g.elemArena(f.Type(), g.l.full[f], f.Pkg())
+			n, err := g.elemArena(f.Type(), g.l.plain[f], f.Pkg())
 			if err != nil {
 				return "", fmt.Errorf("%s.%s: %w", ti.obj.Name(), f.Name(), err)
 			}
@@ -306,7 +306,7 @@ func (g *gen) callNeeds(sm *sigmap, sig *types.Signature) (needs, error) {
 		return n, errors.New("it has more than one output buffer")
 	}
 	if len(sm.slices) == 1 {
-		phrase, ok := boundPhrase(g.l.full[m])
+		phrase, ok := boundPhrase(g.l.plain[m])
 		if !ok {
 			return n, errors.New("its Go doc gives no bound for one call")
 		}

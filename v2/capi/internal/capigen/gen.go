@@ -491,7 +491,7 @@ func (g *gen) typeObject(o *types.TypeName, gn string) error {
 		}
 	}
 	if ti.kind == kHandle {
-		if err := g.lifecycle(ti, gn, (zeroReady(g.l.full[o], o.Name()) || g.valueResult(ti)) && !hasNew(o)); err != nil {
+		if err := g.lifecycle(ti, gn, (zeroReady(g.l.plain[o], o.Name()) || g.valueResult(ti)) && !hasNew(o)); err != nil {
 			return err
 		}
 	}
