@@ -53,8 +53,12 @@
  *   sizeof(size_t) gives DMRGO_ERR_ARG. A vtable method that size does not
  *   cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD. Other
  *   structs, such as outputs, have a fixed layout.
- * - Use a handle from one thread at a time. A vtable user value must stay
- *   valid until the handle made from the vtable is freed.
+ * - Use a handle from one thread at a time. A handle that a call takes,
+ *   such as the port of dmrgo_dvsi_new or the authenticator of a config,
+ *   stays in use by the handle that the call makes: freeing the handle
+ *   that was taken does not stop that use. The user value of a vtable or
+ *   callback must stay valid until the handle made from it and every
+ *   handle that took that handle or callback are freed.
  *
  * The ABI version: DMRGO_ABI_VERSION numbers the C ABI of libdmrgo. It is
  * independent of the version of the Go module and changes only when a
