@@ -2,6 +2,7 @@ package pdu_test
 
 import (
 	"encoding/hex"
+	"errors"
 	"math/rand"
 	"testing"
 
@@ -294,8 +295,8 @@ func TestSeal_RoundTripAndRejects(t *testing.T) {
 	} {
 		b := [12]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
 		before := b
-		if err := pdu.Seal(&b, dt); err == nil || b != before {
-			t.Errorf("dt %d: Seal accepted or changed the block", dt)
+		if err := pdu.Seal(&b, dt); !errors.Is(err, pdu.ErrNoBlockCRC) || b != before {
+			t.Errorf("dt %d: Seal = %v or changed the block, want ErrNoBlockCRC", dt, err)
 		}
 		if pdu.BlockCRCOK(b, dt) {
 			t.Errorf("dt %d: BlockCRCOK true", dt)
