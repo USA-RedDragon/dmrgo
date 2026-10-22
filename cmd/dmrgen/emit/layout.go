@@ -311,9 +311,13 @@ func readLayoutInt(g *Group, field parse.Field, tmp string, textFail func() *Sta
 func emitFrameEncode(f *File, pdu parse.PDUStruct, ev *errVars) {
 	sizes := pdu.Frame.Sizes
 	enc := encoder{pdu: pdu, bytes: sizes[len(sizes)-1], errs: ev, frame: true}
+	def := sizes[0]
+	if pdu.Frame.Open {
+		def = sizes[len(sizes)-1]
+	}
 	doc := "AppendBinary appends the " + sizesText(sizes) + " of s to dst"
 	if sf := pdu.Frame.SizeField; sf != "" {
-		doc += ": " + sf + " selects the length, and 0 means " + strconv.Itoa(sizes[0])
+		doc += ": " + sf + " selects the length, and 0 means " + strconv.Itoa(def)
 	}
 	doc += ". It returns dst unchanged and a *dmrgo.FieldRangeError when a field does not fit"
 	if pdu.Frame.SizeField != "" {
@@ -325,11 +329,13 @@ func emitFrameEncode(f *File, pdu parse.PDUStruct, ev *errVars) {
 		g.Id("_n").Op(":=").Len(Id("dst"))
 		size := Lit(sizes[0])
 		if sf := pdu.Frame.SizeField; sf != "" {
-			g.Id("_size").Op(":=").Lit(sizes[0])
+			g.Id("_size").Op(":=").Lit(def)
 			g.Switch(Id("s").Dot(sf)).BlockFunc(func(sw *Group) {
-				sw.Case(Lit(0), Lit(sizes[0]))
-				for _, s := range sizes[1:] {
-					sw.Case(Lit(s)).Block(Id("_size").Op("=").Lit(s))
+				sw.Case(Lit(0), Lit(def))
+				for _, s := range sizes {
+					if s != def {
+						sw.Case(Lit(s)).Block(Id("_size").Op("=").Lit(s))
+					}
 				}
 				sw.Default().Block(Return(Id("dst"), ev.get("err"+pdu.Name+"Size", errorsNew(pdu.Name+"."+sf+": not one of "+sizesText(sizes)))))
 			})

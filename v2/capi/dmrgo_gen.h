@@ -4556,8 +4556,10 @@ struct dmrgo_mmdvm_status_v1_t {
 	uint8_t nxdn_space;
 	/* POCSAGSpace is the free space of the POCSAG TX buffer. */
 	uint8_t pocsag_space;
-	/* M17Space is the free space of the M17 TX buffer. */
+	/* M17Space is the free space of the M17 TX buffer. MMDVM a816818 to a62fd81 (2020) sent the FM space here. */
 	uint8_t m17_space;
+	/* Size is the length of the payload: 7 to 11, or 0 for 11. */
+	uint8_t size;
 };
 
 struct dmrgo_mmdvm_status_v2_t {
@@ -10479,7 +10481,7 @@ int dmrgo_mmdvm_decode_nak(const uint8_t *data, size_t data_len, dmrgo_mmdvm_nak
 int dmrgo_mmdvm_decode_set_freq(const uint8_t *data, size_t data_len, dmrgo_mmdvm_set_freq_t *out);
 /* Go: mmdvm.DecodeSetMode. DecodeSetMode decodes a SetMode from data, a payload of 1 octet. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 1 octet and DMRGO_ERR_MMDVM_LENGTH when it is longer. */
 int dmrgo_mmdvm_decode_set_mode(const uint8_t *data, size_t data_len, dmrgo_mmdvm_set_mode_t *out);
-/* Go: mmdvm.DecodeStatusV1. DecodeStatusV1 decodes a StatusV1 from data, a payload of 11 octets. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 11 octets and DMRGO_ERR_MMDVM_LENGTH when it is longer. */
+/* Go: mmdvm.DecodeStatusV1. DecodeStatusV1 decodes a StatusV1 from data, a payload of 7, 8, 9, 10 or 11 octets or more. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 7 octets. */
 int dmrgo_mmdvm_decode_status_v1(const uint8_t *data, size_t data_len, dmrgo_mmdvm_status_v1_t *out);
 /* Go: mmdvm.DecodeStatusV2. DecodeStatusV2 decodes a StatusV2 from data, a payload of 17 octets. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 17 octets and DMRGO_ERR_MMDVM_LENGTH when it is longer. */
 int dmrgo_mmdvm_decode_status_v2(const uint8_t *data, size_t data_len, dmrgo_mmdvm_status_v2_t *out);
@@ -10503,7 +10505,7 @@ int dmrgo_mmdvm_set_freq_string(const dmrgo_mmdvm_set_freq_t *self, char *out, s
 int dmrgo_mmdvm_set_mode_append_binary(const dmrgo_mmdvm_set_mode_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.SetMode.String. String returns the fields of s as text, for printing. */
 int dmrgo_mmdvm_set_mode_string(const dmrgo_mmdvm_set_mode_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: mmdvm.StatusV1.AppendBinary. AppendBinary appends the 11 octets of s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit. */
+/* Go: mmdvm.StatusV1.AppendBinary. AppendBinary appends the 7, 8, 9, 10 or 11 octets of s to dst: Size selects the length, and 0 means 11. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error when Size is not one of the lengths. */
 int dmrgo_mmdvm_status_v1_append_binary(const dmrgo_mmdvm_status_v1_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.StatusV1.String. String returns the fields of s as text, for printing. */
 int dmrgo_mmdvm_status_v1_string(const dmrgo_mmdvm_status_v1_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

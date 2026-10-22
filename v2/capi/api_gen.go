@@ -3688,6 +3688,7 @@ func out_transport_mmdvm_StatusV1(d *C.dmrgo_mmdvm_status_v1_t, s *g_transport_m
 	d.nxdn_space = C.uint8_t(s.NXDNSpace)
 	d.pocsag_space = C.uint8_t(s.POCSAGSpace)
 	d.m17_space = C.uint8_t(s.M17Space)
+	d.size = C.uint8_t(s.Size)
 }
 
 func out_transport_mmdvm_StatusV2(d *C.dmrgo_mmdvm_status_v2_t, s *g_transport_mmdvm.StatusV2, oc *outc) {
@@ -3751,6 +3752,7 @@ func in_transport_mmdvm_StatusV1(s *C.dmrgo_mmdvm_status_v1_t) (d g_transport_mm
 	d.NXDNSpace = uint8(s.nxdn_space)
 	d.POCSAGSpace = uint8(s.pocsag_space)
 	d.M17Space = uint8(s.m17_space)
+	d.Size = uint8(s.size)
 	return
 }
 
