@@ -49,25 +49,28 @@ extern "C" {
 enum dmrgo_status {
 	DMRGO_OK = 0,
 	/* A handle is NULL, freed or of another type. */
-	DMRGO_ERR_HANDLE = -2,
+	DMRGO_ERR_HANDLE = -1,
 	/* An argument is NULL or out of range: a fill over its capacity, a
 	 * length over PTRDIFF_MAX or past the end of the address space, or a
 	 * NULL pointer with a nonzero length. */
-	DMRGO_ERR_ARG = -3,
+	DMRGO_ERR_ARG = -2,
 	/* An output did not fit its buffer. The lengths give the full size;
 	 * see the output rules above for the retry. */
-	DMRGO_ERR_SHORT = -6,
+	DMRGO_ERR_SHORT = -3,
 	/* The library panicked. dmrgo_last_error_message gives the panic. */
-	DMRGO_ERR_PANIC = -7,
+	DMRGO_ERR_PANIC = -4,
 	/* The library returned an error that has no status code of its own.
 	 * dmrgo_last_error_message gives it. Codes from -100 down are the
-	 * errors of the library, as dmrgo_gen.h defines them. */
-	DMRGO_ERR_OTHER = -8,
+	 * errors of the library, as dmrgo_gen.h defines them, grouped by
+	 * package. A code keeps its number in every release with the same
+	 * DMRGO_ABI_VERSION, and the number of a removed code is not used
+	 * again. */
+	DMRGO_ERR_OTHER = -5,
 	/* An output passed the bound that the _need function of the call gave,
 	 * which only an implementation in C of a Go interface can cause, such
 	 * as a codec whose decode returns more than frame_samples() samples.
 	 * The call took effect, and the fills are unchanged. */
-	DMRGO_ERR_BOUND = -9
+	DMRGO_ERR_BOUND = -6
 };
 
 #ifndef DMRGO_NO_PROTOTYPES

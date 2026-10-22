@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
 
 permissions:
   contents: read
@@ -78,6 +80,21 @@ jobs:
 
       - name: Check the allocation table of the README against the gate
         run: DMRGO_README=check go test -C v2 -run TestHeapAllocations ./internal/allocgate
+
+  abi-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Fail a release tag while the C ABI lock is a prerelease
+        run: |
+          if grep -qx prerelease v2/capi/abi.txt; then
+            echo "::error file=v2/capi/abi.txt::abi.txt still has the prerelease line; remove it in the release commit"
+            exit 1
+          fi
 
   capi:
     runs-on: ubuntu-24.04

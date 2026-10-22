@@ -51,7 +51,7 @@ func TestErrCodeChain(t *testing.T) {
 		{fmt.Errorf("x: %w", voice.ErrBusy), "DMRGO_ERR_VOICE_BUSY"},
 		{errors.Join(voice.ErrBusy, layer2.ErrVoiceTerminated), "DMRGO_ERR_VOICE_BUSY"},
 		{errors.Join(layer2.ErrVoiceTerminated, voice.ErrBusy), "DMRGO_ERR_LAYER2_VOICE_TERMINATED"},
-		{fmt.Errorf("x: %w", &dmrgo.ConfigError{Type: "voice", Field: "ColorCode"}), "DMRGO_ERR_CONFIG_ERROR"},
+		{fmt.Errorf("x: %w", &dmrgo.ConfigError{Type: "voice", Field: "ColorCode"}), "DMRGO_ERR_CONFIG"},
 		{fmt.Errorf("%w: %w", pdu.ErrNoAddresses, &dmrgo.FieldRangeError{Type: "enums", Field: "ColorCode", Bits: 4}), "DMRGO_ERR_PDU_NO_ADDRESSES"},
 	} {
 		want, ok := codes[c.want]
@@ -62,8 +62,26 @@ func TestErrCodeChain(t *testing.T) {
 			t.Errorf("errCode(%v) = %d, want %s (%d)", c.err, got, c.want, want)
 		}
 	}
-	if got := int(errCode(errors.New("other"))); got != -8 {
-		t.Errorf("errCode(other) = %d, want -8", got)
+	if got := int(errCode(errors.New("other"))); got != -5 {
+		t.Errorf("errCode(other) = %d, want -5", got)
+	}
+}
+
+func TestCodesGapless(t *testing.T) {
+	t.Parallel()
+
+	codes := lockCodes(t)
+	seen := map[int]string{}
+	for name, c := range codes {
+		if strings.HasSuffix(name, "_ERROR") {
+			t.Errorf("%s ends in _ERROR", name)
+		}
+		seen[c] = name
+	}
+	for c := -100; c > -100-len(codes); c-- {
+		if seen[c] == "" {
+			t.Errorf("no code has the number %d", c)
+		}
 	}
 }
 
@@ -103,9 +121,9 @@ func TestLastMessageLength(t *testing.T) {
 		msg               string
 		capx, n, need, rc int
 	}{
-		{strings.Repeat("x", 600), 1024, 511, 512, -6},
+		{strings.Repeat("x", 600), 1024, 511, 512, -3},
 		{"short", 1024, 5, 6, 0},
-		{"short", 3, 2, 6, -6},
+		{"short", 3, 2, 6, -3},
 	} {
 		n, need, rc := lastMessage(c.msg, c.capx)
 		if n != c.n || need != c.need || rc != c.rc {
