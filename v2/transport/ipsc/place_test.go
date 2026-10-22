@@ -46,7 +46,7 @@ func placeAll(t *testing.T, packets [][]byte) string {
 		if err != nil {
 			t.Fatal(err)
 		}
-		h := u.Hint()
+		h := u.Hint(0)
 		raw, err := u.RawBurst(1, layer2.SyncSourceBS)
 		if err != nil {
 			tr.Place(nil, &h)
@@ -147,7 +147,7 @@ func receiverPositions(t *testing.T, packets [][]byte) string {
 		if err != nil {
 			t.Fatal(err)
 		}
-		h := u.Hint()
+		h := u.Hint(0)
 		raw, err := u.RawBurst(1, layer2.SyncSourceBS)
 		now += 60 * time.Millisecond
 		if err != nil {

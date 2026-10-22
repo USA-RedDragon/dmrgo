@@ -18,7 +18,7 @@ func ExampleDecodeFrame() {
 		return
 	}
 	fmt.Println(f.Slot, f.SlotType, f.ColorCode, f.Source, f.Destination, f.HasBurst())
-	h := f.Hint()
+	h := f.Hint(0)
 	fmt.Println(h.Kind, h.DataType)
 	// Output:
 	// TS1 Voice LC Header 1 3191868 91 true

@@ -18,7 +18,7 @@ func ExampleDecodeData() {
 		return
 	}
 	fmt.Println(d.Source, d.Destination, d.Repeater, d.Slot, d.Private, d.Frame, d.Size)
-	h := d.Hint()
+	h := d.Hint(0)
 	fmt.Println(h.Kind, h.DataType)
 	// Output:
 	// DMRD

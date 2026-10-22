@@ -13,7 +13,7 @@ func TestNilReceivers(t *testing.T) {
 	t.Parallel()
 
 	var d *dmrd.Data
-	if h := d.Hint(); h != (layer2.Hint{}) {
+	if h := d.Hint(0); h != (layer2.Hint{}) {
 		t.Errorf("nil Data Hint %+v", h)
 	}
 	var b *dmrd.Bridge

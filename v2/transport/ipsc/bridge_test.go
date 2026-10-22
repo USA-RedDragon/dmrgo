@@ -19,7 +19,7 @@ func TestXPR8400BridgeToDMRD(t *testing.T) {
 		if err != nil {
 			continue
 		}
-		h := u.Hint()
+		h := u.Hint(0)
 		raw, err := u.RawBurst(7, layer2.SyncSourceBS)
 		if err != nil {
 			track[h.Slot].Place(nil, &h)

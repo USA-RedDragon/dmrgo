@@ -94,7 +94,7 @@ func TestFrameHint(t *testing.T) {
 	voice := []hytera.SlotType{hytera.SlotTypeVoiceA, hytera.SlotTypeVoiceB, hytera.SlotTypeVoiceC, hytera.SlotTypeVoiceD, hytera.SlotTypeVoiceE, hytera.SlotTypeVoiceF}
 	for i, s := range voice {
 		f := hytera.Frame{Slot: enums.Slot1, SlotType: s, Seq: 9}
-		h := f.Hint()
+		h := f.Hint(0)
 		pos, _ := enums.VoiceBurstAt(i)
 		if h.Kind != layer2.KindVoice || h.VoiceBurst != pos || h.Slot != enums.Slot1 || !h.HasSeq || h.Seq != 9 || h.SeqBits != 8 {
 			t.Errorf("%v: %+v", s, h)
@@ -112,7 +112,7 @@ func TestFrameHint(t *testing.T) {
 	}
 	for s, dt := range data {
 		f := hytera.Frame{SlotType: s}
-		if h := f.Hint(); h.Kind != layer2.KindData || !h.HasDataType || h.DataType != dt || !f.HasBurst() {
+		if h := f.Hint(0); h.Kind != layer2.KindData || !h.HasDataType || h.DataType != dt || !f.HasBurst() {
 			t.Errorf("%v: %+v", s, h)
 		}
 		var back hytera.Frame
@@ -122,7 +122,7 @@ func TestFrameHint(t *testing.T) {
 	}
 	for _, s := range []hytera.SlotType{hytera.SlotTypeSync, hytera.SlotTypeWakeup, 0x1234, 0xFFFF} {
 		f := hytera.Frame{SlotType: s}
-		if h := f.Hint(); h.Kind != layer2.KindUnknown {
+		if h := f.Hint(0); h.Kind != layer2.KindUnknown {
 			t.Errorf("%v: %+v", s, h)
 		}
 	}

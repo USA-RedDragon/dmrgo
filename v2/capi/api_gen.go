@@ -33894,7 +33894,7 @@ func dmrgo_dmrd_data_call(c_self *C.dmrgo_dmrd_data_t, c_group *C.bool, c_target
 }
 
 //export dmrgo_dmrd_data_hint
-func dmrgo_dmrd_data_hint(c_self *C.dmrgo_dmrd_data_t, c_out *C.dmrgo_layer2_hint_t) (rc C.int) {
+func dmrgo_dmrd_data_hint(c_self *C.dmrgo_dmrd_data_t, c_now C.dmrgo_duration_t, c_out *C.dmrgo_layer2_hint_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -33902,7 +33902,7 @@ func dmrgo_dmrd_data_hint(c_self *C.dmrgo_dmrd_data_t, c_out *C.dmrgo_layer2_hin
 	}
 	var x g_transport_dmrd.Data
 	x = in_transport_dmrd_Data(&(*c_self))
-	r0 := x.Hint()
+	r0 := x.Hint(time.Duration(c_now))
 	_ = r0
 	if c_out != nil {
 		out_layer2_Hint(&(*c_out), &r0, oc)
@@ -37869,7 +37869,7 @@ func dmrgo_hytera_frame_has_burst(c_self *C.dmrgo_hytera_frame_t, c_out *C.bool)
 }
 
 //export dmrgo_hytera_frame_hint
-func dmrgo_hytera_frame_hint(c_self *C.dmrgo_hytera_frame_t, c_out *C.dmrgo_layer2_hint_t) (rc C.int) {
+func dmrgo_hytera_frame_hint(c_self *C.dmrgo_hytera_frame_t, c_now C.dmrgo_duration_t, c_out *C.dmrgo_layer2_hint_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -37877,7 +37877,7 @@ func dmrgo_hytera_frame_hint(c_self *C.dmrgo_hytera_frame_t, c_out *C.dmrgo_laye
 	}
 	var x g_transport_hytera.Frame
 	x = *(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self)))
-	r0 := x.Hint()
+	r0 := x.Hint(time.Duration(c_now))
 	_ = r0
 	if c_out != nil {
 		out_layer2_Hint(&(*c_out), &r0, oc)
@@ -38793,7 +38793,7 @@ func dmrgo_ipsc_user_call(c_self *C.dmrgo_ipsc_user_t, c_group *C.bool, c_target
 }
 
 //export dmrgo_ipsc_user_hint
-func dmrgo_ipsc_user_hint(c_self *C.dmrgo_ipsc_user_t, c_out *C.dmrgo_layer2_hint_t) (rc C.int) {
+func dmrgo_ipsc_user_hint(c_self *C.dmrgo_ipsc_user_t, c_now C.dmrgo_duration_t, c_out *C.dmrgo_layer2_hint_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -38801,7 +38801,7 @@ func dmrgo_ipsc_user_hint(c_self *C.dmrgo_ipsc_user_t, c_out *C.dmrgo_layer2_hin
 	}
 	var x g_transport_ipsc.User
 	x = in_transport_ipsc_User(&(*c_self))
-	r0 := x.Hint()
+	r0 := x.Hint(time.Duration(c_now))
 	_ = r0
 	if c_out != nil {
 		out_layer2_Hint(&(*c_out), &r0, oc)

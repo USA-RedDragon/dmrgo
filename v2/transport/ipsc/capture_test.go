@@ -53,7 +53,7 @@ func TestXPR8400PacketsRoundTrip(t *testing.T) {
 			if err != nil || !bytes.Equal(out, c.p) {
 				t.Fatalf("%x: encode %x %v", c.p, out, err)
 			}
-			if h := u.Hint(); h.Kind == layer2.KindUnknown && !h.SyncLost && u.Burst != 0x26 {
+			if h := u.Hint(0); h.Kind == layer2.KindUnknown && !h.SyncLost && u.Burst != 0x26 {
 				t.Errorf("%x: hint %+v", c.p, h)
 			}
 		case ipsc.OpRegisterRequest, ipsc.OpRegisterReply, ipsc.OpPeerListRequest, ipsc.OpPeerListReply, ipsc.OpAliveRequest, ipsc.OpAliveReply, ipsc.OpDeregisterRequest:
@@ -122,7 +122,7 @@ func TestXPR8400CallsRebuild(t *testing.T) {
 			}
 			t.Fatalf("%x: %v", c.p, err)
 		}
-		h := u.Hint()
+		h := u.Hint(0)
 		var back ipsc.User
 		back.Info = u.Info
 		back.Voice.LC = u.Voice.LC

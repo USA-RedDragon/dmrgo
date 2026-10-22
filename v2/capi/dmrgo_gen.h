@@ -9856,8 +9856,8 @@ int dmrgo_dmrd_dmr_plus_options_append_text(const dmrgo_dmrd_dmr_plus_options_t 
 int dmrgo_dmrd_data_append_binary(const dmrgo_dmrd_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.Data.Call. Call returns the call of the packet: group is the reverse of Private, target is Destination and source is Source. */
 int dmrgo_dmrd_data_call(const dmrgo_dmrd_data_t *self, bool *group, uint32_t *target, uint32_t *source);
-/* Go: dmrd.Data.Hint. Hint returns what the packet tells about its burst, for the service machines: the slot, the voice position or data type, the sequence number (8 bits) and the stream ID. */
-int dmrgo_dmrd_data_hint(const dmrgo_dmrd_data_t *self, dmrgo_layer2_hint_t *out);
+/* Go: dmrd.Data.Hint. Hint returns what the packet tells about its burst, for the service machines: the slot, the voice position or data type, the sequence number (8 bits), the stream ID, and now, the time at which the packet arrived, as At. */
+int dmrgo_dmrd_data_hint(const dmrgo_dmrd_data_t *self, dmrgo_duration_t now, dmrgo_layer2_hint_t *out);
 /* Go: dmrd.Data.SetCall. SetCall sets Private, Destination and Source from the call: group is the reverse of Private. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when target or source does not fit in 24 bits, and DMRGO_ERR_NIL_RECEIVER for a nil d. */
 int dmrgo_dmrd_data_set_call(dmrgo_dmrd_data_t *self, bool group, uint32_t target, uint32_t source);
 /* Go: dmrd.Data.SetHint. SetHint sets Frame and Value from what h says the burst is, as a machine Output gives it: KindVoice with a VoiceBurst of A to F, or KindData with a DataType. The position and data type errors wrap DMRGO_ERR_LAYER2_VOICE_POSITION and DMRGO_ERR_LAYER2_DATA_TYPE. */
@@ -10150,8 +10150,8 @@ int dmrgo_hytera_frame_append_binary(const dmrgo_hytera_frame_t *self, uint8_t *
 int dmrgo_hytera_frame_call(const dmrgo_hytera_frame_t *self, bool *group, uint32_t *target, uint32_t *source);
 /* Go: hytera.Frame.HasBurst. HasBurst reports whether Burst holds a burst: false for SlotTypeSync and SlotTypeWakeup, whose payload is not an ETSI burst, and for a nil f. */
 int dmrgo_hytera_frame_has_burst(const dmrgo_hytera_frame_t *self, bool *out);
-/* Go: hytera.Frame.Hint. Hint returns what the frame tells about its burst, for the service machines: the slot, the voice position or data type from SlotType, and the sequence number (8 bits). */
-int dmrgo_hytera_frame_hint(const dmrgo_hytera_frame_t *self, dmrgo_layer2_hint_t *out);
+/* Go: hytera.Frame.Hint. Hint returns what the frame tells about its burst, for the service machines: the slot, the voice position or data type from SlotType, and the sequence number (8 bits), and now, the time at which the frame arrived, as At. */
+int dmrgo_hytera_frame_hint(const dmrgo_hytera_frame_t *self, dmrgo_duration_t now, dmrgo_layer2_hint_t *out);
 /* Go: hytera.Frame.SetCall. SetCall sets CallType to 0x01 for a group call and 0x00 for a private call, as a Hytera repeater sends them, and Destination and Source. It returns a DMRGO_ERR_FIELD_RANGE when target or source does not fit in 24 bits, and DMRGO_ERR_NIL_RECEIVER for a nil f, and then changes nothing. */
 int dmrgo_hytera_frame_set_call(dmrgo_hytera_frame_t *self, bool group, uint32_t target, uint32_t source);
 /* Go: hytera.Frame.SetHint. SetHint sets SlotType from what h says the burst is, as a machine Output gives it: KindVoice with a VoiceBurst of A to F, or KindData with a DataType. The position and data type errors wrap DMRGO_ERR_LAYER2_VOICE_POSITION and DMRGO_ERR_LAYER2_DATA_TYPE. */
@@ -10236,8 +10236,8 @@ int dmrgo_ipsc_stream_skip(dmrgo_ipsc_stream_t *self, uint16_t n);
 int dmrgo_ipsc_user_append_binary(const dmrgo_ipsc_user_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ipsc.User.Call. Call returns the call of the packet: group for OpGroupVoice and OpGroupData, target is Destination and source is Source. */
 int dmrgo_ipsc_user_call(const dmrgo_ipsc_user_t *self, bool *group, uint32_t *target, uint32_t *source);
-/* Go: ipsc.User.Hint. Hint returns what the packet tells about its burst, for the service machines: the slot from the call info, the RTP sequence number (16 bits), the call control as the stream, burst A or E from the voice layout (a dmrgo_layer2_position_tracker_t places B, C, D and F), the data type of a data packet, EndWeak for the end flag on a voice packet, EndStrong on a terminator or a data packet, and SyncLost for BurstSyncLost. */
-int dmrgo_ipsc_user_hint(const dmrgo_ipsc_user_t *self, dmrgo_layer2_hint_t *out);
+/* Go: ipsc.User.Hint. Hint returns what the packet tells about its burst, for the service machines: the slot from the call info, the RTP sequence number (16 bits), the call control as the stream, burst A or E from the voice layout (a dmrgo_layer2_position_tracker_t places B, C, D and F), the data type of a data packet, EndWeak for the end flag on a voice packet, EndStrong on a terminator or a data packet, SyncLost for BurstSyncLost, and now, the time at which the packet arrived, as At. */
+int dmrgo_ipsc_user_hint(const dmrgo_ipsc_user_t *self, dmrgo_duration_t now, dmrgo_layer2_hint_t *out);
 /* Go: ipsc.User.IsVoice. IsVoice reports whether u carries a voice burst. */
 int dmrgo_ipsc_user_is_voice(const dmrgo_ipsc_user_t *self, bool *out);
 /* Go: ipsc.User.RawBurst. RawBurst rebuilds the 264-bit burst of the packet. */

@@ -21,7 +21,7 @@ func ExampleDecodeUser() {
 			fmt.Println(err)
 			return
 		}
-		h := u.Hint()
+		h := u.Hint(0)
 		fmt.Println(u.Opcode, u.Source, u.Destination, u.Info.Slot(), u.IsVoice(), h.Kind)
 	}
 	// Output:

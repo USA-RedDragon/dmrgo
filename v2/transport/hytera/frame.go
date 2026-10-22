@@ -1,6 +1,8 @@
 package hytera
 
 import (
+	"time"
+
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -179,14 +181,15 @@ func (f *Frame) HasBurst() bool {
 
 // Hint returns what the frame tells about its burst, for the service
 // machines: the slot, the voice position or data type from SlotType, and
-// the sequence number (8 bits). A slot type without a burst kind, such as
-// one that no source names, gives KindUnknown; use HasBurst first. A nil f
-// gives the zero Hint.
-func (f *Frame) Hint() layer2.Hint {
+// the sequence number (8 bits), and now, the time at which the frame
+// arrived, as At. Give now 0 when the time is not known. A slot type
+// without a burst kind, such as one that no source names, gives
+// KindUnknown; use HasBurst first. A nil f gives the zero Hint.
+func (f *Frame) Hint(now time.Duration) layer2.Hint {
 	if f == nil {
 		return layer2.Hint{}
 	}
-	h := layer2.Hint{Slot: f.Slot, Seq: uint16(f.Seq), HasSeq: true, SeqBits: 8}
+	h := layer2.Hint{Slot: f.Slot, Seq: uint16(f.Seq), HasSeq: true, SeqBits: 8, At: now}
 	if f.SlotType >= SlotTypeVoiceA && f.SlotType <= SlotTypeVoiceF && f.SlotType%0x1111 == 0 {
 		h.Kind = layer2.KindVoice
 		h.VoiceBurst, _ = enums.VoiceBurstAt(int(f.SlotType-SlotTypeVoiceA) / 0x1111)

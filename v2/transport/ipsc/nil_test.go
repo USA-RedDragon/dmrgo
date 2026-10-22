@@ -13,7 +13,7 @@ func TestNilReceivers(t *testing.T) {
 	t.Parallel()
 
 	var u *ipsc.User
-	if h := u.Hint(); h != (layer2.Hint{}) {
+	if h := u.Hint(0); h != (layer2.Hint{}) {
 		t.Errorf("nil User Hint %+v", h)
 	}
 	if out, err := u.AppendBinary([]byte{1}); !errors.Is(err, dmrgo.ErrNilReceiver) || len(out) != 1 {

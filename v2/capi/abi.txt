@@ -1664,7 +1664,7 @@ sym int dmrgo_dmrd_control_append_binary(const dmrgo_dmrd_control_t *self, uint8
 sym int dmrgo_dmrd_control_login_salt(const dmrgo_dmrd_control_t *self, uint32_t *salt, bool *ok);
 sym int dmrgo_dmrd_data_append_binary(const dmrgo_dmrd_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_dmrd_data_call(const dmrgo_dmrd_data_t *self, bool *group, uint32_t *target, uint32_t *source);
-sym int dmrgo_dmrd_data_hint(const dmrgo_dmrd_data_t *self, dmrgo_layer2_hint_t *out);
+sym int dmrgo_dmrd_data_hint(const dmrgo_dmrd_data_t *self, dmrgo_duration_t now, dmrgo_layer2_hint_t *out);
 sym int dmrgo_dmrd_data_set_call(dmrgo_dmrd_data_t *self, bool group, uint32_t target, uint32_t source);
 sym int dmrgo_dmrd_data_set_hint(dmrgo_dmrd_data_t *self, const dmrgo_layer2_hint_t *h);
 sym int dmrgo_dmrd_data_string(const dmrgo_dmrd_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -1959,7 +1959,7 @@ sym int dmrgo_hytera_decode_p2p(const uint8_t *p, size_t p_len, dmrgo_hytera_p2p
 sym int dmrgo_hytera_frame_append_binary(const dmrgo_hytera_frame_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_hytera_frame_call(const dmrgo_hytera_frame_t *self, bool *group, uint32_t *target, uint32_t *source);
 sym int dmrgo_hytera_frame_has_burst(const dmrgo_hytera_frame_t *self, bool *out);
-sym int dmrgo_hytera_frame_hint(const dmrgo_hytera_frame_t *self, dmrgo_layer2_hint_t *out);
+sym int dmrgo_hytera_frame_hint(const dmrgo_hytera_frame_t *self, dmrgo_duration_t now, dmrgo_layer2_hint_t *out);
 sym int dmrgo_hytera_frame_set_call(dmrgo_hytera_frame_t *self, bool group, uint32_t target, uint32_t source);
 sym int dmrgo_hytera_frame_set_hint(dmrgo_hytera_frame_t *self, const dmrgo_layer2_hint_t *h);
 sym int dmrgo_hytera_heartbeat_append_binary(const dmrgo_hytera_heartbeat_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
@@ -2037,7 +2037,7 @@ sym int dmrgo_ipsc_stream_fill(dmrgo_ipsc_stream_t *self, dmrgo_ipsc_user_t *u, 
 sym int dmrgo_ipsc_stream_skip(dmrgo_ipsc_stream_t *self, uint16_t n);
 sym int dmrgo_ipsc_user_append_binary(const dmrgo_ipsc_user_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_ipsc_user_call(const dmrgo_ipsc_user_t *self, bool *group, uint32_t *target, uint32_t *source);
-sym int dmrgo_ipsc_user_hint(const dmrgo_ipsc_user_t *self, dmrgo_layer2_hint_t *out);
+sym int dmrgo_ipsc_user_hint(const dmrgo_ipsc_user_t *self, dmrgo_duration_t now, dmrgo_layer2_hint_t *out);
 sym int dmrgo_ipsc_user_is_voice(const dmrgo_ipsc_user_t *self, bool *out);
 sym int dmrgo_ipsc_user_raw_burst(const dmrgo_ipsc_user_t *self, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
 sym int dmrgo_ipsc_user_set_call(dmrgo_ipsc_user_t *self, bool group, uint32_t target, uint32_t source);

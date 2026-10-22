@@ -32,10 +32,10 @@ func checkPacket(t *testing.T, p []byte) {
 		if err != nil || !bytes.Equal(out, p) {
 			t.Fatalf("user round trip %x: %x %v", p, out, err)
 		}
-		_ = u.Hint()
+		_ = u.Hint(0)
 		if raw, err := u.RawBurst(1, layer2.SyncSourceMS); err == nil {
 			var back ipsc.User
-			h := u.Hint()
+			h := u.Hint(0)
 			_, _ = back.SetRawBurst(raw, h)
 		}
 	}

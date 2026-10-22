@@ -36,7 +36,7 @@ func TestBuiltPackets(t *testing.T) {
 		}
 		checkCapture(t, p, &n)
 		if fr, err := hytera.DecodeFrame(p); err == nil && fr.HasBurst() {
-			if h := fr.Hint(); h.VoiceBurst != enums.VoiceBurstUnknown {
+			if h := fr.Hint(0); h.VoiceBurst != enums.VoiceBurstUnknown {
 				positions = append(positions, h.VoiceBurst)
 			}
 		}
