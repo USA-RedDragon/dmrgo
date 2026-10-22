@@ -108,7 +108,7 @@ jobs:
   tinygo:
     runs-on: ubuntu-24.04
     container:
-      image: tinygo/tinygo:0.41.1@sha256:b216f534ddbf277444407b014a3328b5c1ade403cc397f3ab48a14789bf99d0e
+      image: tinygo/tinygo:0.43.0@sha256:3470986dbce0b43cc5c590d46b8770f656528bc3e9f29267214d464c0fbbe9c5
       options: --user root
     # The runner, not root, owns the workspace, so git refuses its status
     # for the VCS stamp of go list and tinygo.
