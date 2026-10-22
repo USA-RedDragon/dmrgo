@@ -120,7 +120,6 @@ func TestEmbeddedFullLinkControl_ReportsEmbeddedFEC(t *testing.T) {
 			flc func([4][32]unpacked.Bit) (pdu.FullLinkControl, fec.Result)
 		}{
 			{decodeLCBits, decodeFLCBits},
-			{decodeLCBitsStrict, decodeFLCBitsStrict},
 		} {
 			lc, want := d.lc(fr)
 			flc, got := d.flc(fr)
@@ -157,7 +156,7 @@ func TestEmbeddedLC_ChecksumMismatch(t *testing.T) {
 	}
 }
 
-func TestEmbeddedLCStrict_MMDVMHostVectors(t *testing.T) {
+func TestEmbeddedLC_MMDVMHostVectors(t *testing.T) {
 	t.Parallel()
 
 	for _, v := range []struct {
@@ -194,15 +193,15 @@ func TestEmbeddedLCStrict_MMDVMHostVectors(t *testing.T) {
 		for i := range fr {
 			copy(fr[i][:], unpacked.Unpack(raw[i*4:i*4+4]))
 		}
-		lc, res := decodeLCBitsStrict(fr)
-		if res.Uncorrectable == v.accept {
-			t.Errorf("%s: accepted %v, MMDVMHost %v", v.raw, !res.Uncorrectable, v.accept)
+		lc, res := decodeLCBits(fr)
+		if v.accept && res.Uncorrectable {
+			t.Errorf("%s: rejected, MMDVMHost accepts it", v.raw)
 			continue
 		}
 		if got := hex.EncodeToString(unpacked.Pack(lc[:])); v.accept && got != v.lc {
 			t.Errorf("%s: LC %s, want %s", v.raw, got, v.lc)
 		}
-		flc, flcRes := decodeFLCBitsStrict(fr)
+		flc, flcRes := decodeFLCBits(fr)
 		if flcRes != res || flc.FEC != res {
 			t.Errorf("%s: Full LC FEC %+v, want %+v", v.raw, flcRes, res)
 		}
@@ -252,12 +251,7 @@ func encodeLCBits(lc [72]unpacked.Bit) [4][32]unpacked.Bit {
 }
 
 func decodeLCBits(f [4][32]unpacked.Bit) ([72]unpacked.Bit, fec.Result) {
-	lc, res := layer2.DecodeEmbeddedLC(fragOctets(f), false)
-	return [72]unpacked.Bit(unpacked.Unpack(lc[:])), res
-}
-
-func decodeLCBitsStrict(f [4][32]unpacked.Bit) ([72]unpacked.Bit, fec.Result) {
-	lc, res := layer2.DecodeEmbeddedLC(fragOctets(f), true)
+	lc, res := layer2.DecodeEmbeddedLC(fragOctets(f))
 	return [72]unpacked.Bit(unpacked.Unpack(lc[:])), res
 }
 
@@ -267,12 +261,7 @@ func encodeFLCBits(lc *pdu.FullLinkControl) ([4][32]unpacked.Bit, error) {
 }
 
 func decodeFLCBits(f [4][32]unpacked.Bit) (pdu.FullLinkControl, fec.Result) {
-	lc := layer2.DecodeEmbeddedFullLinkControl(fragOctets(f), false)
-	return lc, lc.FEC
-}
-
-func decodeFLCBitsStrict(f [4][32]unpacked.Bit) (pdu.FullLinkControl, fec.Result) {
-	lc := layer2.DecodeEmbeddedFullLinkControl(fragOctets(f), true)
+	lc := layer2.DecodeEmbeddedFullLinkControl(fragOctets(f))
 	return lc, lc.FEC
 }
 
@@ -298,25 +287,20 @@ func TestEmbeddedLCAssembler(t *testing.T) {
 	lc := [9]byte{0x00, 0x00, 0x20, 0x00, 0x00, 0x5b, 0x30, 0xb4, 0x3c}
 	frags := layer2.EncodeEmbeddedLC(lc)
 	order := [4]enums.LCSS{enums.LCSSFirstFragment, enums.LCSSContinuationFragment, enums.LCSSContinuationFragment, enums.LCSSLastFragment}
-	for _, strict := range []bool{false, true} {
-		a := layer2.EmbeddedLCAssembler{Strict: strict}
-		for round := range 2 {
-			for i, f := range frags {
-				got, res, done, err := a.Add(f, order[i])
-				if err != nil || done != (i == 3) {
-					t.Fatalf("strict %t round %d fragment %d: done %t err %v", strict, round, i, done, err)
-				}
-				if done && (got != lc || res.HasErrors()) {
-					t.Fatalf("strict %t: LC %x %+v", strict, got, res)
-				}
+	var a layer2.EmbeddedLCAssembler
+	for round := range 2 {
+		for i, f := range frags {
+			got, res, done, err := a.Add(f, order[i])
+			if err != nil || done != (i == 3) {
+				t.Fatalf("round %d fragment %d: done %t err %v", round, i, done, err)
 			}
-		}
-		if a.Reset(); a.Strict != strict {
-			t.Fatal("Reset changed Strict")
+			if done && (got != lc || res.HasErrors()) {
+				t.Fatalf("LC %x %+v", got, res)
+			}
 		}
 	}
 
-	var a layer2.EmbeddedLCAssembler
+	a.Reset()
 	if _, _, _, err := a.Add(frags[1], enums.LCSSContinuationFragment); err != nil {
 		t.Errorf("late entry Continuation: %v", err)
 	}

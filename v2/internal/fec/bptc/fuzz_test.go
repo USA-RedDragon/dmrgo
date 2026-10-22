@@ -210,17 +210,6 @@ func checkEmbeddedLC(t testing.TB, data []byte, mask []byte, parity bool) {
 	if got != packEmbeddedInfo(wantInfo) || res != wantRes {
 		t.Fatalf("DecodeEmbeddedWithCheck(%x) = %x %+v, reference %x %+v", rx, got, res, packEmbeddedInfo(wantInfo), wantRes)
 	}
-
-	got, res = bptc.DecodeEmbeddedStrict(rx)
-	if n == 0 && (got != info || res != (fec.Result{BitsChecked: 128})) {
-		t.Fatalf("DecodeEmbeddedStrict of a clean LC: got %x %+v, want %x", got, res, info)
-	}
-	if !res.Uncorrectable && embeddedDistance(bptc.EncodeEmbedded(got), rx) != res.ErrorsCorrected {
-		t.Fatalf("DecodeEmbeddedStrict(%x) = %x %+v is not a codeword at that distance", rx, got, res)
-	}
-	if wantInfo, wantRes := ref.DecodeEmbeddedStrict(refRx); got != packEmbeddedInfo(wantInfo) || res != wantRes {
-		t.Fatalf("DecodeEmbeddedStrict(%x) = %x %+v, reference %x %+v", rx, got, res, packEmbeddedInfo(wantInfo), wantRes)
-	}
 }
 
 func FuzzEmbeddedLC(f *testing.F) {

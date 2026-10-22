@@ -997,7 +997,7 @@ func (t *Transmitter) collect(e *Event) {
 		return
 	}
 	t.fragNext = 0
-	lc, res := layer2.DecodeEmbeddedLC(t.frags, false)
+	lc, res := layer2.DecodeEmbeddedLC(t.frags)
 	if res.Uncorrectable {
 		return
 	}

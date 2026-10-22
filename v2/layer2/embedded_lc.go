@@ -24,16 +24,12 @@ func EncodeEmbeddedLC(lc [9]byte) [4][4]byte {
 // DecodeEmbeddedLC decodes the 9 LC octets from the embedded signalling
 // fields f of bursts B to E, as RawBurst.EmbeddedData returns them. The FEC
 // result sets Uncorrectable when no nearest BPTC codeword, or more than one,
-// has a 5-bit checksum that matches its LC. With strict set, it corrects the
-// BPTC as MMDVMHost does (CDMREmbeddedData::decodeEmbeddedData).
-func DecodeEmbeddedLC(f [4][4]byte, strict bool) ([9]byte, fec.Result) {
-	return decodeEmbeddedLC(fragmentWords(f), strict)
+// has a 5-bit checksum that matches its LC.
+func DecodeEmbeddedLC(f [4][4]byte) ([9]byte, fec.Result) {
+	return decodeEmbeddedLC(fragmentWords(f))
 }
 
-func decodeEmbeddedLC(fragments [4]uint32, strict bool) ([9]byte, fec.Result) {
-	if strict {
-		return embeddedLCChecksum(bptc.DecodeEmbeddedStrict(fragments))
-	}
+func decodeEmbeddedLC(fragments [4]uint32) ([9]byte, fec.Result) {
 	return embeddedLCChecksum(bptc.DecodeEmbeddedWithCheck(fragments, embeddedLCChecksumValid))
 }
 
@@ -43,9 +39,6 @@ func decodeEmbeddedLC(fragments [4]uint32, strict bool) ([9]byte, fec.Result) {
 // zero EmbeddedLCAssembler is ready to use. It is not safe for concurrent
 // use.
 type EmbeddedLCAssembler struct {
-	// Strict selects the strict decode of DecodeEmbeddedLC. Reset keeps it.
-	Strict bool
-
 	fragments [4]uint32
 	count     int
 }
@@ -55,7 +48,7 @@ func (a *EmbeddedLCAssembler) Reset() {
 	if a == nil {
 		return
 	}
-	*a = EmbeddedLCAssembler{Strict: a.Strict}
+	*a = EmbeddedLCAssembler{}
 }
 
 // Add adds the embedded signalling field frag of a burst whose EMB carries
@@ -98,7 +91,7 @@ func (a *EmbeddedLCAssembler) add(frag uint32, lcss enums.LCSS) ([9]byte, fec.Re
 		return [9]byte{}, fec.Result{}, false, nil
 	}
 	a.count = 0
-	lc, res := decodeEmbeddedLC(a.fragments, a.Strict)
+	lc, res := decodeEmbeddedLC(a.fragments)
 	if res.Uncorrectable {
 		return lc, res, true, ErrEmbeddedLCUncorrectable
 	}
@@ -160,11 +153,11 @@ func encodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4]uint32, error) {
 }
 
 // DecodeEmbeddedFullLinkControl decodes a Full LC from the four embedded
-// signalling fields f of bursts B to E, as DecodeEmbeddedLC(f, strict) does.
+// signalling fields f of bursts B to E, as DecodeEmbeddedLC(f) does.
 // The LC has BurstDataType DataTypeVoiceLCHeader, and its FEC field combines
 // the DecodeEmbeddedLC result and the field decode.
-func DecodeEmbeddedFullLinkControl(f [4][4]byte, strict bool) pdu.FullLinkControl {
-	lc, result := decodeEmbeddedLC(fragmentWords(f), strict)
+func DecodeEmbeddedFullLinkControl(f [4][4]byte) pdu.FullLinkControl {
+	lc, result := decodeEmbeddedLC(fragmentWords(f))
 	flc := pdu.DecodeFullLinkControl(embeddedFullLCCodeword(lc), enums.DataTypeVoiceLCHeader)
 	flc.FEC = combineEmbeddedFEC(result, flc.FEC)
 	return flc

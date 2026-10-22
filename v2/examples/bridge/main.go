@@ -119,7 +119,7 @@ type verified struct {
 
 func verify(bursts []layer2.RawBurst) (verified, error) {
 	var v verified
-	rx := layer2.VoiceReceiver{Strict: true}
+	var rx layer2.VoiceReceiver
 	var b layer2.Burst
 	for i, p := range bursts {
 		if err := b.DecodeFromBytes(p); err != nil {

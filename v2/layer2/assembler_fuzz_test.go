@@ -195,20 +195,19 @@ func (m *embeddedLCModel) add(lcss enums.LCSS) (done, discard bool) {
 type embeddedLCSeed struct {
 	seq, lc []byte
 	at      byte
-	strict  bool
 }
 
 func embeddedLCSeeds() []embeddedLCSeed {
 	lc := groupLC(enums.FIDStandardized)
 	octets := must(lc.Bytes())
 	return []embeddedLCSeed{
-		{[]byte{1, 2, 3, 4, 0, 5, 6, 7, 8, 2}, octets[:], 1, false},
-		{[]byte{}, octets[:], 0, true},
-		{[]byte{0xff, 0xff, 0xff, 0xff, 1, 0, 0, 0, 0, 3, 0, 0, 0, 0, 2}, []byte{}, 3, false},
+		{[]byte{1, 2, 3, 4, 0, 5, 6, 7, 8, 2}, octets[:], 1},
+		{[]byte{}, octets[:], 0},
+		{[]byte{0xff, 0xff, 0xff, 0xff, 1, 0, 0, 0, 0, 3, 0, 0, 0, 0, 2}, []byte{}, 3},
 	}
 }
 
-func checkEmbeddedLCAssembler(t *testing.T, seq, lcv []byte, at byte, strict bool) {
+func checkEmbeddedLCAssembler(t *testing.T, seq, lcv []byte, at byte) {
 	var lc [9]byte
 	copy(lc[:], lcv)
 	type frag struct {
@@ -226,7 +225,7 @@ func checkEmbeddedLCAssembler(t *testing.T, seq, lcv []byte, at byte, strict boo
 		frags = slices.Insert(frags, first, frag{valid[k], lcss[k]})
 	}
 
-	a := layer2.EmbeddedLCAssembler{Strict: strict}
+	var a layer2.EmbeddedLCAssembler
 	var m embeddedLCModel
 	for i, fr := range frags {
 		wantDone, wantDiscard := m.add(fr.lcss)
@@ -247,7 +246,7 @@ func checkEmbeddedLCAssembler(t *testing.T, seq, lcv []byte, at byte, strict boo
 		for k := range in {
 			in[k] = frags[i-3+k].data
 		}
-		if lc2, res2 := layer2.DecodeEmbeddedLC(in, strict); lc2 != got || res2 != res {
+		if lc2, res2 := layer2.DecodeEmbeddedLC(in); lc2 != got || res2 != res {
 			t.Fatalf("fragment %d: assembler gives %x, %+v, DecodeEmbeddedLC %x, %+v", i, got, res, lc2, res2)
 		}
 		if i == first+3 && (got != lc || !clean(res)) {
@@ -269,14 +268,13 @@ func checkEmbeddedLCAssembler(t *testing.T, seq, lcv []byte, at byte, strict boo
 
 func FuzzEmbeddedLCAssembler(f *testing.F) {
 	for _, s := range embeddedLCSeeds() {
-		f.Add(s.seq, s.lc, s.at, s.strict)
+		f.Add(s.seq, s.lc, s.at)
 	}
 	f.Fuzz(checkEmbeddedLCAssembler)
 }
 
 type embeddedLCCodeSeed struct {
 	lc, flc, flips []byte
-	strict         bool
 }
 
 func embeddedLCCodeSeeds() []embeddedLCCodeSeed {
@@ -285,33 +283,31 @@ func embeddedLCCodeSeeds() []embeddedLCCodeSeed {
 	cw := must(lc.Encode())
 	octets := must(lc.Bytes())
 	return []embeddedLCCodeSeed{
-		{octets[:], cw[:], []byte{}, false},
-		{octets[:], cw[:], []byte{17}, true},
-		{octets[:], cw[:], []byte{1, 40, 77, 127}, false},
+		{octets[:], cw[:], []byte{}},
+		{octets[:], cw[:], []byte{17}},
+		{octets[:], cw[:], []byte{1, 40, 77, 127}},
 	}
 }
 
-func checkEmbeddedLCCode(t *testing.T, lcv, flcv, flips []byte, strict bool) {
+func checkEmbeddedLCCode(t *testing.T, lcv, flcv, flips []byte) {
 	var lc [9]byte
 	copy(lc[:], lcv)
 	frags := layer2.EncodeEmbeddedLC(lc)
-	if got, res := layer2.DecodeEmbeddedLC(frags, strict); got != lc || !clean(res) {
+	if got, res := layer2.DecodeEmbeddedLC(frags); got != lc || !clean(res) {
 		t.Fatalf("LC %x comes back as %x, %+v", lc, got, res)
 	}
 	rx := frags
 	seen := map[int]bool{}
-	parityRow := false
 	for _, fl := range flips[:min(len(flips), 16)] {
 		pos := int(fl) % 128
 		if seen[pos] {
 			continue
 		}
 		seen[pos] = true
-		parityRow = pos%8 == 7
 		rx[pos/32][pos%32/8] ^= 0x80 >> (pos % 8)
 	}
-	got, res := layer2.DecodeEmbeddedLC(rx, strict)
-	if len(seen) == 1 && (!strict || !parityRow) && (got != lc || res.Uncorrectable || res.ErrorsCorrected != 1) {
+	got, res := layer2.DecodeEmbeddedLC(rx)
+	if len(seen) == 1 && (got != lc || res.Uncorrectable || res.ErrorsCorrected != 1) {
 		t.Fatalf("LC %x with bit error %v comes back as %x, %+v", lc, seen, got, res)
 	}
 	if !res.Uncorrectable {
@@ -335,7 +331,7 @@ func checkEmbeddedLCCode(t *testing.T, lcv, flcv, flips []byte, strict bool) {
 	if err != nil {
 		return
 	}
-	back := layer2.DecodeEmbeddedFullLinkControl(ef, strict)
+	back := layer2.DecodeEmbeddedFullLinkControl(ef)
 	if back.FEC.HasErrors() || !reflect.DeepEqual(withoutFEC(&back), withoutFEC(&flc)) {
 		t.Fatalf("Full LC %s comes back as %s, FEC %+v", flc.String(), back.String(), back.FEC)
 	}
@@ -343,7 +339,7 @@ func checkEmbeddedLCCode(t *testing.T, lcv, flcv, flips []byte, strict bool) {
 
 func FuzzEmbeddedLC(f *testing.F) {
 	for _, s := range embeddedLCCodeSeeds() {
-		f.Add(s.lc, s.flc, s.flips, s.strict)
+		f.Add(s.lc, s.flc, s.flips)
 	}
 	f.Fuzz(checkEmbeddedLCCode)
 }

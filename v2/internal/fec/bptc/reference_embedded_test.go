@@ -72,9 +72,6 @@ func TestEmbeddedMatchesReference(t *testing.T) {
 		got, gotRes = bptc.DecodeEmbeddedWithCheck(frags, evenInfo)
 		want, wantRes = ref.DecodeEmbeddedWithCheck(refFrags, refEvenInfo)
 		cmp("DecodeEmbeddedWithCheck", got, gotRes, wantRes, want)
-		got, gotRes = bptc.DecodeEmbeddedStrict(frags)
-		want, wantRes = ref.DecodeEmbeddedStrict(refFrags)
-		cmp("DecodeEmbeddedStrict", got, gotRes, wantRes, want)
 	}
 }
 
@@ -107,12 +104,6 @@ func BenchmarkEmbedded(b *testing.B) {
 			_, _ = bptc.DecodeEmbedded(noise)
 		}
 	})
-	b.Run("DecodeStrict/1error", func(b *testing.B) {
-		b.ReportAllocs()
-		for b.Loop() {
-			_, _ = bptc.DecodeEmbeddedStrict(bad)
-		}
-	})
 	b.Run("Encode", func(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {
@@ -128,11 +119,6 @@ func BenchmarkEmbedded(b *testing.B) {
 	b.Run("RefDecode/1error", func(b *testing.B) {
 		for b.Loop() {
 			_, _ = ref.DecodeEmbedded(refBad)
-		}
-	})
-	b.Run("RefDecodeStrict/1error", func(b *testing.B) {
-		for b.Loop() {
-			_, _ = ref.DecodeEmbeddedStrict(refBad)
 		}
 	})
 	b.Run("RefEncode", func(b *testing.B) {

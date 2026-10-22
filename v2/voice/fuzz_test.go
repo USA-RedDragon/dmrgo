@@ -152,7 +152,6 @@ func parseScript(data []byte, p *pool) script {
 		s.cfg.ColorCode = &s.cc
 		s.badCfg = s.cc > 15
 	}
-	s.cfg.Strict = flags&2 != 0
 	s.cfg.Lost = configTime(flags>>2, lost)
 	s.cfg.Hang = configTime(flags>>4, hang)
 	s.txCfg = voice.TransmitterConfig{ColorCode: enums.ColorCode(cc & 15), Source: layer2.SyncSource(flags >> 6),

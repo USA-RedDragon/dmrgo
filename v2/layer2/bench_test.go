@@ -216,12 +216,7 @@ func BenchmarkEmbeddedLC(b *testing.B) {
 	})
 	b.Run("Decode", func(b *testing.B) {
 		for b.Loop() {
-			_, _ = layer2.DecodeEmbeddedLC(f, false)
-		}
-	})
-	b.Run("DecodeStrict", func(b *testing.B) {
-		for b.Loop() {
-			_, _ = layer2.DecodeEmbeddedLC(f, true)
+			_, _ = layer2.DecodeEmbeddedLC(f)
 		}
 	})
 }

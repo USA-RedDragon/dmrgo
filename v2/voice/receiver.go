@@ -35,9 +35,6 @@ type ReceiverConfig struct {
 	// call to constants.AllMSID have no hang time (ETSI TS 102 361-2
 	// clause 5.3.2.3.2).
 	Hang time.Duration
-	// Strict selects the strict embedded LC decode of
-	// layer2.DecodeEmbeddedLC.
-	Strict bool
 	// Scratch, when set, is the Burst that Burst decodes into. Receivers
 	// that run on one goroutine can share one, because a Receiver is done
 	// with it when its method returns. Make it with layer2.NewBurst, so
@@ -52,7 +49,6 @@ type ReceiverConfig struct {
 type Receiver struct {
 	lostAfter time.Duration
 	hang      time.Duration
-	strict    bool
 	b         *layer2.Burst
 	opts      layer2.DecodeOptions
 	cc        enums.ColorCode
@@ -92,7 +88,7 @@ func NewReceiver(cfg *ReceiverConfig) (*Receiver, error) {
 		conf = *cfg
 	}
 	cfg = &conf
-	r := &Receiver{lostAfter: cfg.Lost, hang: cfg.Hang, strict: cfg.Strict, b: cfg.Scratch}
+	r := &Receiver{lostAfter: cfg.Lost, hang: cfg.Hang, b: cfg.Scratch}
 	if cfg.ColorCode != nil {
 		if *cfg.ColorCode > 15 {
 			return nil, errColorCode
@@ -605,7 +601,7 @@ func (r *Receiver) collect(b *layer2.Burst, idx, lost int) (pdu.LCBytes, bool) {
 		return pdu.LCBytes{}, false
 	}
 	r.fragNext = 0
-	lc, res := layer2.DecodeEmbeddedLC(r.frags, r.strict)
+	lc, res := layer2.DecodeEmbeddedLC(r.frags)
 	if res.Uncorrectable {
 		return pdu.LCBytes{}, false
 	}

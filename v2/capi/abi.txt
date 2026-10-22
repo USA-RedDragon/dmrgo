@@ -2116,15 +2116,13 @@ sym int dmrgo_layer2_data_data_type(const dmrgo_layer2_data_t *self, dmrgo_enums
 sym int dmrgo_layer2_data_string(const dmrgo_layer2_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_layer2_decode_cach(const uint8_t bits[3], dmrgo_layer2_cach_t *out);
 sym int dmrgo_layer2_decode_cach_field(const uint8_t on_air[3], dmrgo_layer2_cach_t *out);
-sym int dmrgo_layer2_decode_embedded_full_link_control(const uint8_t f[4][4], bool strict, dmrgo_pdu_full_link_control_t *out);
-sym int dmrgo_layer2_decode_embedded_lc(const uint8_t f[4][4], bool strict, uint8_t data[9], dmrgo_fec_result_t *fec);
+sym int dmrgo_layer2_decode_embedded_full_link_control(const uint8_t f[4][4], dmrgo_pdu_full_link_control_t *out);
+sym int dmrgo_layer2_decode_embedded_lc(const uint8_t f[4][4], uint8_t data[9], dmrgo_fec_result_t *fec);
 sym int dmrgo_layer2_decode_embedded_rc(const uint8_t data[4], dmrgo_pdu_reverse_channel_t *out);
 sym int dmrgo_layer2_embedded_lc_assembler_add(dmrgo_layer2_embedded_lc_assembler_t *self, const uint8_t frag[4], dmrgo_enums_lcss_t lcss, uint8_t lc[9], dmrgo_fec_result_t *res, bool *done);
 sym int dmrgo_layer2_embedded_lc_assembler_free(dmrgo_layer2_embedded_lc_assembler_t *self);
-sym int dmrgo_layer2_embedded_lc_assembler_get_strict(dmrgo_layer2_embedded_lc_assembler_t *self, bool *out);
 sym int dmrgo_layer2_embedded_lc_assembler_new(dmrgo_layer2_embedded_lc_assembler_t **out);
 sym int dmrgo_layer2_embedded_lc_assembler_reset(dmrgo_layer2_embedded_lc_assembler_t *self);
-sym int dmrgo_layer2_embedded_lc_assembler_set_strict(dmrgo_layer2_embedded_lc_assembler_t *self, bool v);
 sym int dmrgo_layer2_encode_embedded_full_link_control(const dmrgo_pdu_full_link_control_t *lc, uint8_t out[4][4]);
 sym int dmrgo_layer2_encode_embedded_lc(const uint8_t lc[9], uint8_t out[4][4]);
 sym int dmrgo_layer2_encode_embedded_rc(const dmrgo_pdu_reverse_channel_t *rc, uint8_t out[4]);
@@ -2180,11 +2178,9 @@ sym int dmrgo_layer2_short_lc_assembler_reset(dmrgo_layer2_short_lc_assembler_t 
 sym int dmrgo_layer2_sync_source_of(dmrgo_enums_sync_pattern_t p, dmrgo_layer2_sync_source_t *src, dmrgo_layer2_kind_t *k, bool *ok);
 sym int dmrgo_layer2_sync_source_sync_patterns(dmrgo_layer2_sync_source_t self, dmrgo_enums_sync_pattern_t *voice, dmrgo_enums_sync_pattern_t *data, bool *ok);
 sym int dmrgo_layer2_voice_receiver_free(dmrgo_layer2_voice_receiver_t *self);
-sym int dmrgo_layer2_voice_receiver_get_strict(dmrgo_layer2_voice_receiver_t *self, bool *out);
 sym int dmrgo_layer2_voice_receiver_new(dmrgo_layer2_voice_receiver_t **out);
 sym int dmrgo_layer2_voice_receiver_receive(dmrgo_layer2_voice_receiver_t *self, dmrgo_layer2_burst_t *b, dmrgo_pdu_full_link_control_t *lc, bool *ok);
 sym int dmrgo_layer2_voice_receiver_reset(dmrgo_layer2_voice_receiver_t *self);
-sym int dmrgo_layer2_voice_receiver_set_strict(dmrgo_layer2_voice_receiver_t *self, bool v);
 sym int dmrgo_layer2_voice_transmitter_add_burst(dmrgo_layer2_voice_transmitter_t *self, const uint8_t slots[3][9], dmrgo_layer2_raw_burst_t *out);
 sym int dmrgo_layer2_voice_transmitter_add_frames(dmrgo_layer2_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *frames, size_t frames_len, dmrgo_layer2_raw_burst_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_layer2_voice_transmitter_add_frames_need(dmrgo_layer2_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *frames, size_t frames_len, size_t *items, size_t *arena);
@@ -3474,6 +3470,6 @@ type struct dmrgo_voice_event_t { dmrgo_voice_event_kind_t kind; dmrgo_voice_cal
 type struct dmrgo_voice_frame_quality_t { uint8_t errors_corrected; bool bad; };
 type struct dmrgo_voice_interrupter_config_t { size_t size; dmrgo_enums_color_code_t color_code; dmrgo_duration_t wait; int64_t retries; int64_t repeats; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_voice_output_t { dmrgo_voice_output_kind_t kind; dmrgo_layer2_raw_burst_t burst; dmrgo_duration_t due; dmrgo_layer2_hint_t hint; bool fill; dmrgo_voice_end_reason_t reason; };
-type struct dmrgo_voice_receiver_config_t { size_t size; bool has_color_code; dmrgo_enums_color_code_t color_code; dmrgo_duration_t lost; dmrgo_duration_t hang; bool strict; dmrgo_layer2_burst_t *scratch; };
+type struct dmrgo_voice_receiver_config_t { size_t size; bool has_color_code; dmrgo_enums_color_code_t color_code; dmrgo_duration_t lost; dmrgo_duration_t hang; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_voice_stats_t { uint16_t bursts; uint16_t lost; uint16_t duplicates; uint16_t late; uint32_t bits_checked; uint32_t bit_errors; dmrgo_duration_t duration; };
 type struct dmrgo_voice_transmitter_config_t { size_t size; dmrgo_enums_color_code_t color_code; dmrgo_layer2_sync_source_t source; uint8_t silence[9]; int64_t headers; int64_t terminators; dmrgo_duration_t timeout; int64_t queue; dmrgo_duration_t lead; dmrgo_enums_access_t access; dmrgo_duration_t idle_search; bool interruptible; dmrgo_duration_t chan_auth; dmrgo_duration_t holdoff_max; uint64_t seed; dmrgo_layer2_burst_t *scratch; };

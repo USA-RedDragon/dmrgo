@@ -422,10 +422,9 @@ func collectEmbedded(d digests) {
 				r.Read(f[i][:])
 			}
 		}
-		got, res := layer2.DecodeEmbeddedLC(f, false)
-		gotS, resS := layer2.DecodeEmbeddedLC(f, true)
-		d.add("emb/decode", "%x %x %+v %x %+v", f, got, res, gotS, resS)
-		flc := layer2.DecodeEmbeddedFullLinkControl(f, n%2 == 0)
+		got, res := layer2.DecodeEmbeddedLC(f)
+		d.add("emb/decode", "%x %x %+v", f, got, res)
+		flc := layer2.DecodeEmbeddedFullLinkControl(f)
 		d.add("emb/flc", "%s %+v", flc.String(), flc.FEC)
 		lcss := []enums.LCSS{enums.LCSSFirstFragment, enums.LCSSContinuationFragment, enums.LCSSContinuationFragment, enums.LCSSLastFragment}
 		for i := range f {

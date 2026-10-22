@@ -66,7 +66,7 @@ func TestVoiceTransmitter_EmbeddedLCRotation(t *testing.T) {
 		if got != want {
 			t.Errorf("superframe %d: wrong embedded LC", sf)
 		}
-		lc := layer2.DecodeEmbeddedFullLinkControl(got, false)
+		lc := layer2.DecodeEmbeddedFullLinkControl(got)
 		if lc.FEC.Uncorrectable || (sf%2 == 1) != (lc.FLCO == enums.FLCOTalkerAliasHeader) {
 			t.Errorf("superframe %d: decoded %s", sf, lc.String())
 		}
