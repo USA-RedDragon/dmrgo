@@ -20,6 +20,38 @@
 // the user: the consumer filters on Call.Target.
 // (ETSI TS 102 361-1 clause 5.1.2, Annex G, ETSI TS 102 361-2 clause 5.2)
 //
+// A burst without a SYNC is voice only by elimination, so a voice burst that
+// the transport does not mark (a zero Hint.Kind, no Hint.VoiceBurst and no
+// Hint.Seq, as from an RF demodulator) must pass a sync check. The Receiver
+// scores the evidence that the burst is voice and not noise as a
+// log-likelihood ratio, the larger of two: the distance of the SYNC field to
+// a voice SYNC, lowered where the timing of the call puts another burst than
+// A; or the distance of the EMB to the codewords of the color code of the
+// call (ReceiverConfig.ColorCode, else that of the Voice LC Header, else the
+// one that most error-free EMBs give, at least two), and, for an EMB within
+// 5 bits of one, the distance of the embedded data to the fragments of the
+// call LC, to a null fragment, or to the fragments of the three superframes
+// before. To that it adds the bit errors that the Golay codes of the three
+// AMBE+2 frames correct, except in a Codec2 call (FID 0xC2), and only as a
+// penalty when the SYNC, EMB and embedded data give no support. It adds the
+// score to the odds that the channel carries the call, which a call start, a
+// Voice LC Header or a PI Header of the call raises, and the end of a call,
+// a Terminator with LC or another data burst lowers. A burst with a strong
+// sum goes out at once. A doubtful one waits, with up to five after it, for
+// a burst whose evidence makes the sum strong, or for a Terminator with LC:
+// then the waiting bursts go out first, late by 60 ms for each burst after
+// them. Waiting bursts are dropped when the sum falls, when no burst comes
+// for 360 ms, on Lost, on a new transport stream, and when the call ends.
+// Before a late entry only those go out that have strong evidence of their
+// own, or a SYNC or an EMB that fits the place and color code of the burst
+// that starts it. A burst identical to the one just before it never counts
+// as strong. Without a call the odds are low, so a late entry needs a much
+// higher score than a burst in a call. A burst that the check drops lowers
+// the odds and is counted in the Lost of the next voice burst, and 13 in a
+// row end the call with EndSyncLost. The embedded LC of a superframe that
+// does not decode alone is decoded from the bitwise majority of it and the
+// two superframes before. (ETSI TS 102 361-1 Annex G.1.1)
+//
 // A Transmitter makes the bursts of one call, as the source of the call or
 // as the relay of the events of a Receiver. A source call follows the
 // channel access policy and the transmit admit criteria, starts with the

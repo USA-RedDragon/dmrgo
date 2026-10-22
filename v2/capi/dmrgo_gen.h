@@ -5362,7 +5362,7 @@ struct dmrgo_voice_interrupter_config_t {
 struct dmrgo_voice_receiver_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
-	/* ColorCode, when set, drops bursts with another color code. Burst A carries no color code, so it does not start a late entry. has_color_code false accepts every color code. */
+	/* ColorCode, when set, drops bursts with another color code, except a voice burst of a call that the transport does not place whose EMB is within 5 bits of a codeword of ColorCode, which goes to the sync check of the package doc. Burst A carries no color code, so it does not start a late entry. has_color_code false accepts every color code. */
 	bool has_color_code;
 	dmrgo_enums_color_code_t color_code;
 	/* Lost is the time without a burst after which a call ends with DMRGO_VOICE_END_LOST. 0 means DMRGO_VOICE_DEFAULT_LOST, and a negative value turns the timer off. */
@@ -7704,7 +7704,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_VOICE_END_NO_OUTBOUND ((dmrgo_voice_end_reason_t)11)
 /* Go: voice.EndSuperseded. EndSuperseded is a new call: an LC with other addresses, or another transport stream. */
 #define DMRGO_VOICE_END_SUPERSEDED ((dmrgo_voice_end_reason_t)7)
-/* Go: voice.EndSyncLost. EndSyncLost is a transport that lost the signal: dmrgo_layer2_hint_t.sync_lost or dmrgo_voice_receiver_lost. */
+/* Go: voice.EndSyncLost. EndSyncLost is a transport that lost the signal, dmrgo_layer2_hint_t.sync_lost or dmrgo_voice_receiver_lost, or 13 voice bursts in a row that failed the sync check of the package doc. */
 #define DMRGO_VOICE_END_SYNC_LOST ((dmrgo_voice_end_reason_t)5)
 /* Go: voice.EndTerminator. EndTerminator is a Terminator with LC. */
 #define DMRGO_VOICE_END_TERMINATOR ((dmrgo_voice_end_reason_t)1)
@@ -7735,7 +7735,7 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: voice.InterrupterWaiting. InterrupterWaiting waits T_RCtimer for the Terminator with LC. */
 #define DMRGO_VOICE_INTERRUPTER_WAITING ((dmrgo_voice_interrupter_state_t)2)
 /* Go: voice.MaxEvents. MaxEvents is the most events that one call of a Receiver method appends. */
-#define DMRGO_VOICE_MAX_EVENTS 6
+#define DMRGO_VOICE_MAX_EVENTS 16
 /* Go: voice.MaxHeaders. MaxHeaders is the most Voice LC Headers before burst A. */
 #define DMRGO_VOICE_MAX_HEADERS 8
 /* Go: voice.MaxOutputs. MaxOutputs is the most outputs that one call of a Transmitter or Interrupter method appends: one burst, and DMRGO_VOICE_OUTPUT_ENDED after the last terminator. */

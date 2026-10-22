@@ -336,7 +336,7 @@ static void test_nullable(void) {
 	OK(dmrgo_voice_new_receiver(NULL, &rx));
 	dmrgo_layer2_hint_t h = {0};
 	dmrgo_voice_event_t ev[DMRGO_VOICE_MAX_EVENTS];
-	unsigned char ar[1024];
+	unsigned char ar[4096];
 	size_t n = 0, al = 0;
 	int rc = dmrgo_voice_receiver_burst(rx, 1000, NULL, &h, ev, DMRGO_VOICE_MAX_EVENTS, &n, NULL, ar, sizeof ar, &al, NULL);
 	CHECK(rc != DMRGO_ERR_ARG && rc != DMRGO_ERR_PANIC);
@@ -517,7 +517,7 @@ static void test_tx(void) {
 	dmrgo_voice_receiver_t *rx = NULL;
 	OK(dmrgo_voice_new_receiver(NULL, &rx));
 	dmrgo_voice_event_t ev[DMRGO_VOICE_MAX_EVENTS];
-	unsigned char arena[1024];
+	unsigned char arena[4096];
 	size_t used = 0;
 	int starts = 0, voice = 0, ends = 0;
 	for (size_t i = 0; i < n; i++) {
@@ -583,7 +583,7 @@ static void test_voice_capture(const char *path) {
 	dmrgo_voice_receiver_t *rx = NULL;
 	OK(dmrgo_voice_new_receiver(NULL, &rx));
 	dmrgo_voice_event_t ev[DMRGO_VOICE_MAX_EVENTS];
-	unsigned char arena[1024];
+	unsigned char arena[4096];
 	int64_t now = 0;
 	int voice = 0, ends = 0, retries = 0;
 	for (size_t off = 0; off + 33 <= n; off += 33) {

@@ -115,7 +115,7 @@ func voicePath(capture []byte) (func() error, error) {
 	}
 	raw := new(C.dmrgo_layer2_raw_burst_t)
 	h := new(C.dmrgo_layer2_hint_t)
-	ev := new([6]C.dmrgo_voice_event_t)
+	ev := new([C.DMRGO_VOICE_MAX_EVENTS]C.dmrgo_voice_event_t)
 	arena := new([4096]byte)
 	var now C.int64_t
 	off := 0
@@ -128,7 +128,7 @@ func voicePath(capture []byte) (func() error, error) {
 		now += 60000000
 		var n C.size_t
 		an := C.size_t(0)
-		return check(dmrgo_voice_receiver_burst(rx, now, raw, h, &ev[0], 6, &n, nil, unsafe.Pointer(&arena[0]), C.size_t(len(arena)), &an, nil))
+		return check(dmrgo_voice_receiver_burst(rx, now, raw, h, &ev[0], C.DMRGO_VOICE_MAX_EVENTS, &n, nil, unsafe.Pointer(&arena[0]), C.size_t(len(arena)), &an, nil))
 	}, nil
 }
 

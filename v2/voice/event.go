@@ -105,8 +105,9 @@ const (
 	EndIdle
 	// EndLost is a time of ReceiverConfig.Lost without a burst.
 	EndLost
-	// EndSyncLost is a transport that lost the signal: Hint.SyncLost or
-	// Receiver.Lost.
+	// EndSyncLost is a transport that lost the signal, Hint.SyncLost or
+	// Receiver.Lost, or 13 voice bursts in a row that failed the sync check
+	// of the package doc.
 	EndSyncLost
 	// EndTransport is the end flag of the transport, Hint.End EndStrong.
 	EndTransport

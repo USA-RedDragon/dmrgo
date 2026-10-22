@@ -53,6 +53,24 @@ func TestRegenerate(t *testing.T) {
 	}
 }
 
+func TestErrors(t *testing.T) {
+	t.Parallel()
+
+	r := rand.New(rand.NewSource(4))
+	for range 1 << 18 {
+		var slot [9]byte
+		r.Read(slot[:])
+		_, res := Decode(slot)
+		a, b := Errors(slot)
+		switch {
+		case res.Uncorrectable != (a < 0):
+			t.Fatalf("Errors(%x) = %d, %d, Decode %+v", slot, a, b, res)
+		case a >= 0 && (a+b != res.ErrorsCorrected || a > 3 || b > 3):
+			t.Fatalf("Errors(%x) = %d, %d, Decode %+v", slot, a, b, res)
+		}
+	}
+}
+
 func frameOf(slot [9]byte) [7]byte {
 	f, _ := Decode(slot)
 	return f
