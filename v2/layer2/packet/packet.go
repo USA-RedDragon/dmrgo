@@ -74,7 +74,9 @@ func layout(n, per int) (blocks, pad int) {
 // pad fields of the header, the Pad Octet Count of a U_HEAD or C_HEAD and
 // the Bit Padding, pad octets times 8, of a DD_HEAD or R_HEAD (ETSI TS
 // 102 361-1 clause 9.3.44), gives confirmed blocks DBSN 0, 1, 2 and so on,
-// and keeps the other header fields. It returns an error that wraps
+// and keeps the other header fields. A C_HEAD, and a DD_HEAD or R_HEAD with
+// Response Requested (A) or SARQ set, has confirmed blocks, with a DBSN and
+// a CRC-9 (ETSI TS 102 361-3 clause 6.0, Table 6.5). It returns an error that wraps
 // ErrRate, ErrFormat or ErrTooLong. It allocates the storage of the Packet;
 // Builder.Segment builds into the storage of a Builder.
 func NewPacket(header pdu.DataHeader, payload []byte, rate enums.DataType) (Packet, error) {
@@ -182,8 +184,8 @@ func (b *Builder) Retry(p *Packet, rd *ResponseData) (Packet, error) {
 		}
 	}
 	count := uint8(n & 0x7F)
-	switch confirmed, _ := isConfirmed(&h); {
-	case !confirmed:
+	switch {
+	case !selective(&h):
 		return Packet{}, errRetryFormat
 	case n == 0:
 		return Packet{}, ErrNoRetryBlocks
@@ -290,6 +292,7 @@ func setBlocks(h *pdu.DataHeader, blocks, pad uint8) error {
 	return nil
 }
 
+// ETSI TS 102 361-3 clause 6.0, Table 6.5
 func isConfirmed(h *pdu.DataHeader) (confirmed, ok bool) {
 	if _, ok := h.AsUnconfirmed(); ok {
 		return false, true
@@ -298,12 +301,23 @@ func isConfirmed(h *pdu.DataHeader) (confirmed, ok bool) {
 		return true, true
 	}
 	if d, ok := h.AsDefinedData(); ok {
-		return d.SARQ, true
+		return d.ResponseRequested || d.SARQ, true
 	}
 	if r, ok := h.AsRawData(); ok {
-		return r.SARQ, true
+		return r.ResponseRequested || r.SARQ, true
 	}
 	return false, false
+}
+
+func selective(h *pdu.DataHeader) bool {
+	if _, ok := h.AsConfirmed(); ok {
+		return true
+	}
+	if d, ok := h.AsDefinedData(); ok {
+		return d.SARQ
+	}
+	r, ok := h.AsRawData()
+	return ok && r.SARQ
 }
 
 func blocksOf(h *pdu.DataHeader) int {

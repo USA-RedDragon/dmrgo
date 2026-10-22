@@ -54,6 +54,7 @@ type session struct {
 	pad     int
 
 	confirmed bool
+	selective bool
 	ops       []byte
 	air       []layer2.RawBurst
 	resp      []layer2.RawBurst
@@ -126,6 +127,11 @@ func (s *session) run(ops []byte, acceptBadCRC bool) {
 
 func (s *session) nextTry() (packet.Packet, bool) {
 	if s.round == 0 || !s.confirmed {
+		return s.p, true
+	}
+	if !s.selective {
+		s.known = true
+		clear(s.good[:])
 		return s.p, true
 	}
 	if !s.rx.InProgress() {
@@ -542,7 +548,8 @@ func (s *session) setup(t *testing.T, kind uint8, fields uint64, dst, src uint32
 	s.src = layer2.SyncSource(fields >> 30 & 3)
 	s.header = fuzzHeader(t, kind, fields, dst, src)
 	s.payload = payload
-	s.confirmed = s.header.Format() == pdu.FormatConfirmed || kind&0x10 != 0 && kind&3 >= 2
+	s.selective = s.header.Format() == pdu.FormatConfirmed || kind&0x10 != 0 && kind&3 >= 2
+	s.confirmed = s.selective || kind&0x80 != 0 && kind&3 >= 2
 	per, err := packet.BlockOctets(s.rate, s.confirmed)
 	if err != nil {
 		t.Fatal(err)
@@ -600,7 +607,7 @@ func roundTripSeeds(t testing.TB) []roundTripSeed {
 			}
 			dst, src, _ := m.Header.Addresses()
 			payload := bytes.Clone(m.Data)
-			for k, kind := range []uint8{0, 1 | 4, 1 | 0x80, 2 | 0x10 | 8, 3 | 0x10, 2} {
+			for k, kind := range []uint8{0, 1 | 4, 1 | 0x80, 2 | 0x10 | 8, 3 | 0x10, 2, 2 | 0x80 | 4, 3 | 0x80} {
 				seeds = append(seeds, roundTripSeed{
 					kind: kind, fields: uint64(i*5+k)<<9 | 0x5, dst: dst, src: src,
 					payload: payload, channel: channels[(i+k)%len(channels)],
