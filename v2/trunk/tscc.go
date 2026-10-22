@@ -823,6 +823,7 @@ func (t *TSCC) Tick(now time.Duration, dst []TSCCOutput) []TSCCOutput {
 	}
 	out = t.timers(at, out)
 	out = t.udtTimers(at, out)
+	out = t.release(at, out)
 	out = t.svcTimers(at, out)
 	out = t.control(out)
 	for c := range t.cfg.PayloadLen {

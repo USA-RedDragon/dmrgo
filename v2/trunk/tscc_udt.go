@@ -85,6 +85,11 @@ type tsccUDT struct {
 
 	hdr  pdu.UDTHeader
 	poll pdu.UnifiedSingleBlockData
+
+	held     UDT
+	heldSlot enums.Slot
+	heldOn   bool
+	hold     heldUpload
 }
 
 // UDT returns a copy of the UDT that the TSCC received for itself with the
@@ -550,14 +555,19 @@ func (t *TSCC) uploaded(now time.Duration, out []TSCCOutput) []TSCCOutput {
 			*o = udtOp{}
 			return append(out, TSCCOutput{Kind: TSCCUDT, Address: src})
 		}
-		if t.u.downN > 0 {
-			return out
-		}
-		a := in.Appended()
-		o.until = now + t.cfg.AnswerTimeout
-		t.download(&a, o.caller, src, false, false, true, pdu.UDTOpcodeOutboundHeader, t.u.inSlot)
-		return out
+		return t.pollAnswer(now, i, out)
 	}
+	return out
+}
+
+func (t *TSCC) pollAnswer(now time.Duration, i int, out []TSCCOutput) []TSCCOutput {
+	o := &t.u.ops[i]
+	if t.u.downN > 0 {
+		return t.hold(now, i, heldUpload{}, out)
+	}
+	a := t.u.in.Appended()
+	o.until = now + t.cfg.AnswerTimeout
+	t.download(&a, o.caller, t.u.in.Header.LLIDSource, false, false, true, pdu.UDTOpcodeOutboundHeader, t.u.inSlot)
 	return out
 }
 
@@ -569,7 +579,7 @@ func (t *TSCC) relayUpload(now time.Duration, i int, to uint32, group bool, op p
 		return t.refuse(caller, enums.AckReasonUDTUploadCRCError, out)
 	}
 	if t.u.downN > 0 {
-		return out
+		return t.hold(now, i, heldUpload{relay: true, to: to, group: group, op: op}, out)
 	}
 	a := t.u.in.Appended()
 	t.download(&a, to, o.caller, group, false, !group, op, t.u.inSlot)
@@ -583,6 +593,58 @@ func (t *TSCC) relayUpload(now time.Duration, i int, to uint32, group bool, op p
 		t.ackFrom(caller, enums.AckReasonMessageAccepted, 0, to)
 	}
 	return append(out, TSCCOutput{Kind: TSCCDelivered, Address: caller, Ack: enums.AckReasonMessageAccepted, Grant: Grant{Group: true, Target: to, Source: caller}})
+}
+
+type heldUpload struct {
+	relay bool
+	group bool
+	to    uint32
+	op    pdu.UDTOpcode
+	at    int
+	of    udtOp
+}
+
+// ETSI TS 102 361-4 clause 6.6.4.5: a C_WACKD restarts TNP_Timer of the
+// caller while the upload waits for the download in progress.
+func (t *TSCC) hold(now time.Duration, i int, h heldUpload, out []TSCCOutput) []TSCCOutput {
+	u := &t.u
+	o := &u.ops[i]
+	if u.heldOn && u.ops[u.hold.at] == u.hold.of {
+		caller, called := o.caller, o.called
+		*o = udtOp{}
+		if caller >= constants.GatewayPSTNI {
+			return append(out, TSCCOutput{Kind: TSCCRefused, Address: called, Ack: enums.AckReasonSysBusyRefused})
+		}
+		return t.refuse(caller, enums.AckReasonSysBusyRefused, out)
+	}
+	if o.caller < constants.GatewayPSTNI {
+		t.sendAck(o.caller, enums.AckReasonWait)
+	}
+	o.until = now + constants.TNPTimerDefault
+	h.at, h.of = i, *o
+	u.held, u.heldSlot, u.heldOn, u.hold = u.in, u.inSlot, true, h
+	return out
+}
+
+func (t *TSCC) release(now time.Duration, out []TSCCOutput) []TSCCOutput {
+	u := &t.u
+	if !u.heldOn || u.downN > 0 {
+		return out
+	}
+	u.heldOn = false
+	h := u.hold
+	if u.ops[h.at] != h.of {
+		return out
+	}
+	in, slot := u.in, u.inSlot
+	u.in, u.inSlot = u.held, u.heldSlot
+	if h.relay {
+		out = t.relayUpload(now, h.at, h.to, h.group, h.op, out)
+	} else {
+		out = t.pollAnswer(now, h.at, out)
+	}
+	u.in, u.inSlot = in, slot
+	return out
 }
 
 func (t *TSCC) divertUploaded(src uint32, out []TSCCOutput) []TSCCOutput {
@@ -710,6 +772,9 @@ func (t *TSCC) udtTimers(now time.Duration, out []TSCCOutput) []TSCCOutput {
 		}
 		op := *o
 		*o = udtOp{}
+		if t.u.heldOn && t.u.hold.at == i {
+			t.u.heldOn = false
+		}
 		r := enums.AckReasonMSAwayRefused
 		if op.stage == stUpload {
 			r = enums.AckReasonRefusedUnknownTS
