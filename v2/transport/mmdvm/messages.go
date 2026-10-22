@@ -297,6 +297,7 @@ type SetFreq struct {
 	// POCSAG is the POCSAG TX frequency in Hz (14 octets).
 	POCSAG uint32 `dmr:"bits:80-111,le"`
 	// Size is the length of the payload: 9, 10 or 14, or 0 for 9.
+	// MMDVMHost sends 14, and MMDVM-IQ dd4a0fc NAKs fewer.
 	Size uint8 `dmr:"-"`
 }
 
