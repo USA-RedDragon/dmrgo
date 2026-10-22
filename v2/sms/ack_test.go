@@ -26,8 +26,8 @@ func TestAppendAck(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	u := h.Data.UnconfirmedDataHeader
-	if out[0] != 'x' || u == nil || u.LLIDSource != 3140598 || u.LLIDDestination != 3191868 || u.SAP != enums.SAPIPBasedPacketData {
+	u, ok := h.Data.AsUnconfirmed()
+	if out[0] != 'x' || !ok || u.LLIDSource != 3140598 || u.LLIDDestination != 3191868 || u.SAP != enums.SAPIPBasedPacketData {
 		t.Fatalf("header %s", h.Data.String())
 	}
 	d, err := ip.Decode(enums.SAPIPBasedPacketData, out[1:])

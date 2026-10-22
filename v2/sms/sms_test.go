@@ -228,7 +228,8 @@ func TestBCDShortData(t *testing.T) {
 		in := sms.Text{Format: sms.FormatDefinedData, DD: enums.DDBCD, Source: 3191868, Destination: 3140598, Body: []byte(tt.digits)}
 		var h sms.Header
 		out, err := sms.AppendPacket(nil, &in, &h)
-		if err != nil || hex.EncodeToString(out) != tt.data || h.Data.DefinedDataHeader == nil || h.Data.DefinedDataHeader.DefinedData != enums.DDBCD {
+		dd, ok := h.Data.AsDefinedData()
+		if err != nil || hex.EncodeToString(out) != tt.data || !ok || dd.DefinedData != enums.DDBCD {
 			t.Fatalf("%s: %x, %v", tt.digits, out, err)
 		}
 		_, got, err := sms.Decode(nil, &h.Data, out)
@@ -237,7 +238,7 @@ func TestBCDShortData(t *testing.T) {
 		}
 	}
 	hsms := unhex(t, appcapture.HSMS)
-	h := pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{DefinedData: enums.DDBCD}}
+	h := setHeader(t, (*pdu.DataHeader).SetDefinedData, pdu.DefinedDataHeader{DefinedData: enums.DDBCD})
 	for _, tt := range []struct {
 		data   []byte
 		format sms.Format
