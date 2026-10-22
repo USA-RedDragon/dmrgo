@@ -67,7 +67,7 @@ func TestZeroReady(t *testing.T) {
 		"Assembler assembles. The zero value has no storage for blocks.":                       false,
 		"Codec codes. The zero Codec is closed.":                                               false,
 	} {
-		name := doc[:strings.Index(doc, " ")]
+		name, _, _ := strings.Cut(doc, " ")
 		if got := zeroReady(doc, name); got != want {
 			t.Errorf("zeroReady(%q) = %t, want %t", doc, got, want)
 		}
