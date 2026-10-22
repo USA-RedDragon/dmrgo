@@ -170,7 +170,7 @@ func (b *Builder) Retry(p *Packet, rd *ResponseData) (Packet, error) {
 		return Packet{}, dmrgo.ErrNilReceiver
 	}
 	if p == nil {
-		return Packet{}, errNil
+		return Packet{}, dmrgo.ErrNilArgument
 	}
 	h := p.Header
 	n := 0

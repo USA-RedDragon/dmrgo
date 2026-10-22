@@ -98,8 +98,6 @@ func (e colorCodeMismatchError) Unwrap() error {
 var (
 	errDataBurstNoSync       = errors.New("layer2: a data burst needs a data SYNC pattern; only a decoded data burst with an EMB has SyncNone")
 	errNoData                = errors.New("layer2: data burst has no Data")
-	errNilData               = errors.New("layer2: cannot build a burst from nil Data")
-	errNil                   = errors.New("layer2: nil pointer argument")
 	errRCNotOutbound         = errors.New("layer2: only a BS-sourced voice burst F carries a reverse channel")
 	errUnknownKind           = errors.New("layer2: unknown burst kind")
 	errKindNoEncode          = errors.New("layer2: the burst kind does not encode")
