@@ -152,6 +152,9 @@ type TMPFlags struct {
 // TMPOpcode builds it.
 //
 //dmr:stream
+//dmr:decodedoc It does not read an option field: for a message whose
+//dmr:decodedoc TMPFlags.Option is true it returns wrong fields, usually
+//dmr:decodedoc without ErrShort or ErrLength.
 type TMPMessage struct {
 	// RequestID identifies the text in its answer.
 	RequestID uint32 `dmr:"u32"`

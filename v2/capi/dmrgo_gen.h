@@ -8318,7 +8318,7 @@ int dmrgo_hdap_decode_tmp_answer(const uint8_t *data, size_t data_len, dmrgo_hda
 int dmrgo_hdap_decode_tmp_flags(const uint8_t *data, size_t data_len, dmrgo_hdap_tmp_flags_t *out);
 /* Go: hdap.DecodeTMPGroupAnswer. DecodeTMPGroupAnswer decodes a TMPGroupAnswer from data. It returns DMRGO_ERR_HDAP_SHORT when data ends inside a field and DMRGO_ERR_HDAP_LENGTH when a length does not match the data. */
 int dmrgo_hdap_decode_tmp_group_answer(const uint8_t *data, size_t data_len, dmrgo_hdap_tmp_group_answer_t *out);
-/* Go: hdap.DecodeTMPMessage. DecodeTMPMessage decodes a TMPMessage from data. It returns DMRGO_ERR_HDAP_SHORT when data ends inside a field and DMRGO_ERR_HDAP_LENGTH when a length does not match the data. */
+/* Go: hdap.DecodeTMPMessage. DecodeTMPMessage decodes a TMPMessage from data. It returns DMRGO_ERR_HDAP_SHORT when data ends inside a field and DMRGO_ERR_HDAP_LENGTH when a length does not match the data. It does not read an option field: for a message whose dmrgo_hdap_tmp_flags_t.option is true it returns wrong fields, usually without DMRGO_ERR_HDAP_SHORT or DMRGO_ERR_HDAP_LENGTH. */
 int dmrgo_hdap_decode_tmp_message(const uint8_t *data, size_t data_len, dmrgo_hdap_tmp_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: hdap.GPSData.AppendBinary. AppendBinary appends the 40 octets of s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit. */
 int dmrgo_hdap_gps_data_append_binary(const dmrgo_hdap_gps_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);

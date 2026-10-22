@@ -27,6 +27,7 @@ type Msg struct {
 
 // Big is a test stream that decodes into the caller's struct.
 // dmr:stream into
+// dmr:decodedoc It reads A only.
 type Big struct {
 	A uint8 ` + "`dmr:\"u8\"`" + `
 }
@@ -82,6 +83,7 @@ func TestStreamCode(t *testing.T) {
 		"if s.HasLat {",
 		"if s.OK {",
 		"func DecodeBigInto(m *Big, data []byte) error {",
+		"It reads A only.",
 		"if err == nil && n != len(data) {",
 	)
 	if strings.Contains(out, "func DecodeToks(") {
