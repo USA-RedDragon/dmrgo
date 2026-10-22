@@ -200,6 +200,12 @@ func (g *gen) cbBody(sig *types.Signature, call, fp string) (string, []string, e
 		lines(&w, "if grown {", "continue", "}", "}")
 	}
 	lines(&w, "break", "}")
+	if g.ioCount {
+		lines(&w, "if code != C.DMRGO_OK {", b.errName+" = codeErr(code)", "}")
+		w.WriteString(b.post.String())
+		lines(&w, "if o0 < 0 || o0 > len(q0) {", "o0, "+b.errName+" = 0, codeErr(C.DMRGO_ERR_BOUND)", "}", "return", "}", "")
+		return w.String(), b.fields, nil
+	}
 	if b.errName != "" {
 		lines(&w, "if code != C.DMRGO_OK {", b.errName+" = codeErr(code)", "return", "}")
 	} else {
@@ -433,6 +439,9 @@ func (g *gen) vtable(ti *tinfo) (string, string, error) {
 		}
 		all := append([]string{userParam}, cps...)
 		if d := g.l.docs[m]; d != "" {
+			if isIO(m) {
+				d += " *out is the count of bytes that the function read or wrote, from 0 to p_len, and the library takes it also when the function returns an error; a count out of that range gives DMRGO_ERR_BOUND."
+			}
 			lines(&hb, "\t/* "+d+" */")
 		}
 		lines(&hb, "\tint (*"+mn+")("+strings.Join(all, ", ")+");")
@@ -445,7 +454,9 @@ func (g *gen) vtable(ti *tinfo) (string, string, error) {
 		lines(&ib, "static inline int "+tr+"("+strings.Join(append([]string{"const " + vt + " *t"}, cps...), ", ")+") {",
 			"\tif (!t->"+mn+")", "\t\treturn DMRGO_ERR_NO_METHOD;",
 			"\treturn t->"+mn+"("+strings.Join(append([]string{"t->user"}, names...), ", ")+");", "}", "")
+		g.ioCount = isIO(m)
 		body, fs, err := g.cbBody(sig, "C."+tr+"(&c.t", fmt.Sprintf("m%d", i))
+		g.ioCount = false
 		if err != nil {
 			return "", "", fmt.Errorf("method %s: %w", m.Name(), err)
 		}
@@ -475,8 +486,15 @@ func (g *gen) vtable(ti *tinfo) (string, string, error) {
 }
 
 func isRead(m *types.Func) bool {
-	sig := m.Signature()
-	if m.Name() != "Read" || sig.Params().Len() != 1 || sig.Results().Len() != 2 {
+	return m.Name() == "Read" && ioShape(m.Signature())
+}
+
+func isIO(m *types.Func) bool {
+	return isRead(m) || m.Name() == "Write" && ioShape(m.Signature())
+}
+
+func ioShape(sig *types.Signature) bool {
+	if sig.Params().Len() != 1 || sig.Results().Len() != 2 {
 		return false
 	}
 	sl, ok := sig.Params().At(0).Type().(*types.Slice)

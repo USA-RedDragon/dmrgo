@@ -96,6 +96,7 @@ type gen struct {
 	curMethod   *types.Func
 	curFn       *types.Func
 	fillBuf     bool
+	ioCount     bool
 	curRecv     *tinfo
 	unbounded   []string
 	lock        *abiLock

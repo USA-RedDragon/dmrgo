@@ -109,8 +109,9 @@ enum dmrgo_status {
 	DMRGO_ERR_OTHER = -5,
 	/* An output passed the bound that the _need function of the call gave,
 	 * which only an implementation in C of a Go interface can cause, such
-	 * as a codec whose decode returns more than frame_samples() samples.
-	 * The call took effect, and the fills are unchanged. */
+	 * as a codec whose decode returns more than frame_samples() samples,
+	 * or a port whose read or write gives a count past p_len. The call
+	 * took effect, and the fills are unchanged. */
 	DMRGO_ERR_BOUND = -6,
 	/* A vtable has no function for a method that the library called: its
 	 * size does not cover the method, or the function is NULL. */
