@@ -823,12 +823,20 @@ typedef uint8_t dmrgo_layer3_source_type_t;
 typedef uint8_t dmrgo_layer3_talker_alias_data_format_t;
 /* Go: location.Format. Format is the format that a position came in. */
 typedef uint8_t dmrgo_location_format_t;
+/* Go: ars.Encoding. Encoding is the 5-bit coding of the identifiers of a registration. */
+typedef uint8_t dmrgo_ars_encoding_t;
 /* Go: ars.Event. Event is the 2-bit event of a device registration. */
 typedef uint8_t dmrgo_ars_event_t;
+/* Go: ars.FailureReason. FailureReason is the reason in Response.Value of an answer whose Header.AckRequired marks a failure. */
+typedef uint8_t dmrgo_ars_failure_reason_t;
 /* Go: ars.Type. Type is the 4-bit PDU type of a message. */
 typedef uint8_t dmrgo_ars_type_t;
 /* Go: lrrp.DocumentID. DocumentID identifies the kind of a message. */
 typedef uint8_t dmrgo_lrrp_document_id_t;
+/* Go: lrrp.ResultCode. ResultCode is the result code of an answer or report (tokens 0x37 and 0x39). */
+typedef uint32_t dmrgo_lrrp_result_code_t;
+/* Go: lrrp.TriggerCondition. TriggerCondition is the condition of a triggered request that sends a report (token 0x4A). */
+typedef uint32_t dmrgo_lrrp_trigger_condition_t;
 /* Go: tms.Encoding. Encoding is the 5-bit character coding of the text. */
 typedef uint8_t dmrgo_tms_encoding_t;
 /* Go: tms.Type. Type is the kind of a message: the control bit and the 4-bit PDU type of the first header octet. */
@@ -3346,14 +3354,14 @@ struct dmrgo_ars_registration_t {
 	bool extension;
 	/* Event is the event of a device registration. */
 	dmrgo_ars_event_t event;
-	/* Encoding is the coding of the identifiers, 0 for ASCII. */
-	uint8_t encoding;
+	/* Encoding is the coding of the identifiers. */
+	dmrgo_ars_encoding_t encoding;
 };
 
 struct dmrgo_ars_response_t {
 	/* Extension reports that a further header octet follows. */
 	bool extension;
-	/* Value is the refresh time of a successful device registration, in units of 30 minutes, 0 for none. When Header.AckRequired marks a failure it is the reason: 0 device not authorized, 1 user ID not valid, 2 user validation timeout, 127 transmission failure. */
+	/* Value is the refresh time of a successful device registration, in units of 30 minutes, 0 for none. When Header.AckRequired marks a failure it is the FailureReason. */
 	uint8_t value;
 };
 
@@ -3420,8 +3428,8 @@ struct dmrgo_lrrp_request_t {
 	/* Distance is the distance of a distance trigger, in meters. */
 	uint32_t distance;
 	bool has_distance;
-	/* TriggerCondition is the condition that sends a report, such as 2 for an emergency. */
-	uint32_t trigger_condition;
+	/* TriggerCondition is the condition that sends a report. */
+	dmrgo_lrrp_trigger_condition_t trigger_condition;
 	bool has_trigger_condition;
 	/* ProtocolVersion is the requested protocol version. */
 	uint32_t protocol_version;
@@ -3461,8 +3469,8 @@ struct dmrgo_lrrp_time_t {
 };
 
 struct dmrgo_lrrp_operation_error_t {
-	/* Code is the result code, such as 0x10 for no GPS fix. */
-	uint32_t code;
+	/* Code is the result code. */
+	dmrgo_lrrp_result_code_t code;
 	/* Info is the text of the error. */
 	uint8_t *info;
 	size_t info_len;
@@ -3510,7 +3518,7 @@ struct dmrgo_lrrp_report_t {
 	uint32_t protocol_version;
 	bool has_protocol_version;
 	/* Result is the result code of the request. */
-	uint32_t result;
+	dmrgo_lrrp_result_code_t result;
 	bool has_result;
 	/* Success reports a request that succeeded. */
 	bool success;
@@ -6799,12 +6807,22 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_LOCATION_FORMAT_LRRP ((dmrgo_location_format_t)2)
 /* Go: location.FormatNMEA. FormatNMEA is an NMEA RMC sentence to UDP port 10110, as AnyTone radios send. */
 #define DMRGO_LOCATION_FORMAT_NMEA ((dmrgo_location_format_t)1)
+/* Go: ars.EncodingASCII. ASCII characters */
+#define DMRGO_ARS_ENCODING_ASCII ((dmrgo_ars_encoding_t)0)
 /* Go: ars.EventInitial. the radio registers after power on or a channel change */
 #define DMRGO_ARS_EVENT_INITIAL ((dmrgo_ars_event_t)1)
 /* Go: ars.EventNone. no event, as in a user registration */
 #define DMRGO_ARS_EVENT_NONE ((dmrgo_ars_event_t)0)
 /* Go: ars.EventRefresh. the radio registers again before its registration ends */
 #define DMRGO_ARS_EVENT_REFRESH ((dmrgo_ars_event_t)2)
+/* Go: ars.FailureDeviceNotAuthorized. the radio may not register */
+#define DMRGO_ARS_FAILURE_DEVICE_NOT_AUTHORIZED ((dmrgo_ars_failure_reason_t)0)
+/* Go: ars.FailureTransmission. the answer could not be sent */
+#define DMRGO_ARS_FAILURE_TRANSMISSION ((dmrgo_ars_failure_reason_t)127)
+/* Go: ars.FailureUserIDNotValid. the user ID is not known */
+#define DMRGO_ARS_FAILURE_USER_ID_NOT_VALID ((dmrgo_ars_failure_reason_t)1)
+/* Go: ars.FailureUserValidationTimeout. the user validation timed out */
+#define DMRGO_ARS_FAILURE_USER_VALIDATION_TIMEOUT ((dmrgo_ars_failure_reason_t)2)
 /* Go: ars.TypeAck. the answer to a device registration or a query */
 #define DMRGO_ARS_TYPE_ACK ((dmrgo_ars_type_t)15)
 /* Go: ars.TypeDeviceDeregistration. a radio leaves */
@@ -6839,6 +6857,18 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_LRRP_DOCUMENT_TRIGGERED_REQUEST ((dmrgo_lrrp_document_id_t)9)
 /* Go: lrrp.DocumentUnsolicitedReport. a position sent without a request */
 #define DMRGO_LRRP_DOCUMENT_UNSOLICITED_REPORT ((dmrgo_lrrp_document_id_t)19)
+/* Go: lrrp.ResultDuplicateRequest. the request ID is already in use */
+#define DMRGO_LRRP_RESULT_DUPLICATE_REQUEST ((dmrgo_lrrp_result_code_t)22)
+/* Go: lrrp.ResultGPSInitializing. the GPS receiver has no good fix yet */
+#define DMRGO_LRRP_RESULT_GPS_INITIALIZING ((dmrgo_lrrp_result_code_t)512)
+/* Go: lrrp.ResultInvalidCommand. the radio does not understand the request */
+#define DMRGO_LRRP_RESULT_INVALID_COMMAND ((dmrgo_lrrp_result_code_t)10)
+/* Go: lrrp.ResultNoGPS. the radio has no GPS fix */
+#define DMRGO_LRRP_RESULT_NO_GPS ((dmrgo_lrrp_result_code_t)16)
+/* Go: lrrp.ResultSuccess. the request succeeded */
+#define DMRGO_LRRP_RESULT_SUCCESS ((dmrgo_lrrp_result_code_t)0)
+/* Go: lrrp.TriggerEmergency. TriggerEmergency sends a report when the radio declares an emergency. */
+#define DMRGO_LRRP_TRIGGER_EMERGENCY ((dmrgo_lrrp_trigger_condition_t)2)
 /* Go: tms.EncodingNone. no coding given */
 #define DMRGO_TMS_ENCODING_NONE ((dmrgo_tms_encoding_t)0)
 /* Go: tms.EncodingUTF16LE. UTF-16LE (UCS-2) */
@@ -9614,8 +9644,12 @@ int dmrgo_location_decoder_decode(dmrgo_location_decoder_t *self, const dmrgo_pd
 int dmrgo_location_format_string(dmrgo_location_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ars.DecodeMessage. DecodeMessage decodes a Message from data. It returns DMRGO_ERR_ARS_SHORT when data ends inside a field and DMRGO_ERR_ARS_LENGTH when a length does not match the data. */
 int dmrgo_ars_decode_message(const uint8_t *data, size_t data_len, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ars.Encoding.String. String returns the name of e. */
+int dmrgo_ars_encoding_string(dmrgo_ars_encoding_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ars.Event.String. String returns the name of e. */
 int dmrgo_ars_event_string(dmrgo_ars_event_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: ars.FailureReason.String. String returns the name of r. */
+int dmrgo_ars_failure_reason_string(dmrgo_ars_failure_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ars.Header.AppendBinary. AppendBinary appends the 1 octet of s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit. */
 int dmrgo_ars_header_append_binary(const dmrgo_ars_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ars.Header.String. String returns the fields of s as text, for printing. */
@@ -9630,8 +9664,8 @@ int dmrgo_ars_message_set_device_id(dmrgo_ars_message_t *self, uint8_t *dst, siz
 int dmrgo_ars_message_string(const dmrgo_ars_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ars.NewAck. NewAck returns the answer to a successful device registration, with the refresh time in units of 30 minutes, 0 for none. It returns a DMRGO_ERR_FIELD_RANGE when refresh does not fit in 7 bits. */
 int dmrgo_ars_new_ack(uint8_t refresh, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: ars.NewFailure. NewFailure returns the answer to a device registration that failed, with the reason that Response describes. It returns a DMRGO_ERR_FIELD_RANGE when reason does not fit in 7 bits. */
-int dmrgo_ars_new_failure(uint8_t reason, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ars.NewFailure. NewFailure returns the answer to a device registration that failed, with the reason reason. It returns a DMRGO_ERR_FIELD_RANGE when reason does not fit in 7 bits. */
+int dmrgo_ars_new_failure(dmrgo_ars_failure_reason_t reason, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ars.NewQuery. NewQuery returns the query that asks a radio to register again. */
 int dmrgo_ars_new_query(dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ars.NewRegistration. NewRegistration returns a device registration with the header bits that radios send. */
@@ -9686,10 +9720,14 @@ int dmrgo_lrrp_report_string(const dmrgo_lrrp_report_t *self, char *out, size_t 
 int dmrgo_lrrp_request_append_binary(const dmrgo_lrrp_request_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Request.String. String returns the fields of s as text, for printing. */
 int dmrgo_lrrp_request_string(const dmrgo_lrrp_request_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: lrrp.ResultCode.String. String returns the name of r. */
+int dmrgo_lrrp_result_code_string(dmrgo_lrrp_result_code_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.Time.AppendBinary. AppendBinary appends the 5 octets of s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit. */
 int dmrgo_lrrp_time_append_binary(const dmrgo_lrrp_time_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Time.String. String returns the fields of s as text, for printing. */
 int dmrgo_lrrp_time_string(const dmrgo_lrrp_time_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: lrrp.TriggerCondition.String. String returns the name of c. */
+int dmrgo_lrrp_trigger_condition_string(dmrgo_lrrp_trigger_condition_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: tms.DecodeMessage. DecodeMessage decodes a Message from data. It returns DMRGO_ERR_TMS_SHORT when data ends inside a field and DMRGO_ERR_TMS_LENGTH when a length does not match the data. */
 int dmrgo_tms_decode_message(const uint8_t *data, size_t data_len, dmrgo_tms_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: tms.Encoding.String. String returns the name of e. */

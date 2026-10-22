@@ -62,6 +62,51 @@ func (e Event) String() string {
 	return "Event(" + text.Int(int64(e)) + ")"
 }
 
+// Encoding is the 5-bit coding of the identifiers of a registration.
+type Encoding uint8
+
+// The Encoding values.
+const (
+	EncodingASCII Encoding = 0 // ASCII characters
+)
+
+// String returns the name of e. It allocates only for a value without a
+// name.
+func (e Encoding) String() string {
+	if e == EncodingASCII {
+		return "ASCII"
+	}
+	return "Encoding(" + text.Int(int64(e)) + ")"
+}
+
+// FailureReason is the reason in Response.Value of an answer whose
+// Header.AckRequired marks a failure.
+type FailureReason uint8
+
+// The FailureReason values.
+const (
+	FailureDeviceNotAuthorized   FailureReason = 0   // the radio may not register
+	FailureUserIDNotValid        FailureReason = 1   // the user ID is not known
+	FailureUserValidationTimeout FailureReason = 2   // the user validation timed out
+	FailureTransmission          FailureReason = 127 // the answer could not be sent
+)
+
+// String returns the name of r. It allocates only for a value without a
+// name.
+func (r FailureReason) String() string {
+	switch r {
+	case FailureDeviceNotAuthorized:
+		return "Device Not Authorized"
+	case FailureUserIDNotValid:
+		return "User ID Not Valid"
+	case FailureUserValidationTimeout:
+		return "User Validation Timeout"
+	case FailureTransmission:
+		return "Transmission Failure"
+	}
+	return "FailureReason(" + text.Int(int64(r)) + ")"
+}
+
 // Header is the first header octet of a message.
 //
 //dmr:frame 1
@@ -87,8 +132,8 @@ type Registration struct {
 	Extension bool `dmr:"bit:0"`
 	// Event is the event of a device registration.
 	Event Event `dmr:"bits:1-2,enum"`
-	// Encoding is the coding of the identifiers, 0 for ASCII.
-	Encoding uint8 `dmr:"bits:3-7"`
+	// Encoding is the coding of the identifiers.
+	Encoding Encoding `dmr:"bits:3-7,enum"`
 }
 
 // Response is the second header octet of an answer.
@@ -99,8 +144,7 @@ type Response struct {
 	Extension bool `dmr:"bit:0"`
 	// Value is the refresh time of a successful device registration, in
 	// units of 30 minutes, 0 for none. When Header.AckRequired marks a
-	// failure it is the reason: 0 device not authorized, 1 user ID not
-	// valid, 2 user validation timeout, 127 transmission failure.
+	// failure it is the FailureReason.
 	Value uint8 `dmr:"bits:1-7"`
 }
 

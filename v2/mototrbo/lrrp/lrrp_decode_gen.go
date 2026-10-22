@@ -416,7 +416,7 @@ func decodeOperationErrorAt(result *OperationError, data []byte, _o int) (int, e
 	if _vCode>>32 != 0 {
 		return 0, ErrVarint
 	}
-	result.Code = uint32(_vCode)
+	result.Code = ResultCode(_vCode)
 	_o = _on
 	_vlInfo, _on, _st := wire.Uintvar(data, _o)
 	if _st != wire.OK {
@@ -459,7 +459,7 @@ func (s *OperationError) String() string {
 		return "<nil>"
 	}
 
-	return "OperationError{ Code: " + text.Int(int64(s.Code)) + ", Info: " + text.Bytes(s.Info[:]) + " }"
+	return "OperationError{ Code: " + s.Code.String() + ", Info: " + text.Bytes(s.Info[:]) + " }"
 }
 
 func decodeReportAt(result *Report, data []byte, _o int) (int, error) {
@@ -529,7 +529,7 @@ func decodeReportAt(result *Report, data []byte, _o int) (int, error) {
 			if _vResult>>32 != 0 {
 				return 0, ErrVarint
 			}
-			result.Result = uint32(_vResult)
+			result.Result = ResultCode(_vResult)
 			_o = _on
 			result.HasResult = true
 		case 0x38:
@@ -740,7 +740,7 @@ func (s *Report) String() string {
 		return "<nil>"
 	}
 
-	return "Report{ RequestID: " + text.Bytes(s.RequestID[:]) + ", ShortRequestID: " + text.Int(int64(s.ShortRequestID)) + ", Time: " + s.Time.String() + ", ProtocolVersion: " + text.Int(int64(s.ProtocolVersion)) + ", Result: " + text.Int(int64(s.Result)) + ", Success: " + text.Bool(s.Success) + ", Error: " + s.Error.String() + ", Circle2D: " + s.Circle2D.String() + ", Circle3D: " + s.Circle3D.String() + ", Direction: " + text.Int(int64(s.Direction)) + ", LevelOfConfidence: " + text.Int(int64(s.LevelOfConfidence)) + ", Point2D: " + s.Point2D.String() + ", Point3D: " + s.Point3D.String() + ", Point3DAccuracy: " + s.Point3DAccuracy.String() + ", Speed: " + text.Fixed(s.Speed) + ", VerticalSpeed: " + text.Fixed(s.VerticalSpeed) + " }"
+	return "Report{ RequestID: " + text.Bytes(s.RequestID[:]) + ", ShortRequestID: " + text.Int(int64(s.ShortRequestID)) + ", Time: " + s.Time.String() + ", ProtocolVersion: " + text.Int(int64(s.ProtocolVersion)) + ", Result: " + s.Result.String() + ", Success: " + text.Bool(s.Success) + ", Error: " + s.Error.String() + ", Circle2D: " + s.Circle2D.String() + ", Circle3D: " + s.Circle3D.String() + ", Direction: " + text.Int(int64(s.Direction)) + ", LevelOfConfidence: " + text.Int(int64(s.LevelOfConfidence)) + ", Point2D: " + s.Point2D.String() + ", Point3D: " + s.Point3D.String() + ", Point3DAccuracy: " + s.Point3DAccuracy.String() + ", Speed: " + text.Fixed(s.Speed) + ", VerticalSpeed: " + text.Fixed(s.VerticalSpeed) + " }"
 }
 
 func decodeRequestAt(result *Request, data []byte, _o int) (int, error) {
@@ -817,7 +817,7 @@ func decodeRequestAt(result *Request, data []byte, _o int) (int, error) {
 			if _vTriggerCondition>>32 != 0 {
 				return 0, ErrVarint
 			}
-			result.TriggerCondition = uint32(_vTriggerCondition)
+			result.TriggerCondition = TriggerCondition(_vTriggerCondition)
 			_o = _on
 			result.HasTriggerCondition = true
 		case 0x3F:
@@ -939,7 +939,7 @@ func (s *Request) String() string {
 		return "<nil>"
 	}
 
-	return "Request{ RequestID: " + text.Bytes(s.RequestID[:]) + ", ShortRequestID: " + text.Int(int64(s.ShortRequestID)) + ", Periodic: " + text.Bool(s.Periodic) + ", OneShot: " + text.Bool(s.OneShot) + ", Interval: " + text.Int(int64(s.Interval)) + ", Distance: " + text.Int(int64(s.Distance)) + ", TriggerCondition: " + text.Int(int64(s.TriggerCondition)) + ", ProtocolVersion: " + text.Int(int64(s.ProtocolVersion)) + ", Accuracy: " + text.Bool(s.Accuracy) + ", AccuracyAndTime: " + text.Bool(s.AccuracyAndTime) + ", Time: " + text.Bool(s.Time) + ", Altitude: " + text.Bool(s.Altitude) + ", Speed: " + text.Bool(s.Speed) + ", Direction: " + text.Bool(s.Direction) + ", VerticalSpeed: " + text.Bool(s.VerticalSpeed) + ", LevelOfConfidence: " + text.Int(int64(s.LevelOfConfidence)) + " }"
+	return "Request{ RequestID: " + text.Bytes(s.RequestID[:]) + ", ShortRequestID: " + text.Int(int64(s.ShortRequestID)) + ", Periodic: " + text.Bool(s.Periodic) + ", OneShot: " + text.Bool(s.OneShot) + ", Interval: " + text.Int(int64(s.Interval)) + ", Distance: " + text.Int(int64(s.Distance)) + ", TriggerCondition: " + s.TriggerCondition.String() + ", ProtocolVersion: " + text.Int(int64(s.ProtocolVersion)) + ", Accuracy: " + text.Bool(s.Accuracy) + ", AccuracyAndTime: " + text.Bool(s.AccuracyAndTime) + ", Time: " + text.Bool(s.Time) + ", Altitude: " + text.Bool(s.Altitude) + ", Speed: " + text.Bool(s.Speed) + ", Direction: " + text.Bool(s.Direction) + ", VerticalSpeed: " + text.Bool(s.VerticalSpeed) + ", LevelOfConfidence: " + text.Int(int64(s.LevelOfConfidence)) + " }"
 }
 
 // DecodeMessageInto decodes a Message from data. It returns ErrShort when

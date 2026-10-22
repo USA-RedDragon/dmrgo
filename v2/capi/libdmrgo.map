@@ -2,7 +2,9 @@ DMRGO_1 {
 	global:
 		dmrgo_abi_version;
 		dmrgo_ars_decode_message;
+		dmrgo_ars_encoding_string;
 		dmrgo_ars_event_string;
+		dmrgo_ars_failure_reason_string;
 		dmrgo_ars_header_append_binary;
 		dmrgo_ars_header_string;
 		dmrgo_ars_message_append_binary;
@@ -846,8 +848,10 @@ DMRGO_1 {
 		dmrgo_lrrp_report_string;
 		dmrgo_lrrp_request_append_binary;
 		dmrgo_lrrp_request_string;
+		dmrgo_lrrp_result_code_string;
 		dmrgo_lrrp_time_append_binary;
 		dmrgo_lrrp_time_string;
+		dmrgo_lrrp_trigger_condition_string;
 		dmrgo_mmdvm_ack_append_binary;
 		dmrgo_mmdvm_ack_string;
 		dmrgo_mmdvm_append_frame;

@@ -48,7 +48,7 @@ func TestAnswers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fail, err := ars.NewFailure(0)
+	fail, err := ars.NewFailure(ars.FailureDeviceNotAuthorized)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,5 +112,17 @@ func TestNames(t *testing.T) {
 
 	if ars.TypeAck.String() != "Ack" || ars.Type(2).String() != "Type(2)" || ars.EventRefresh.String() != "Refresh" || ars.Event(3).String() != "Event(3)" {
 		t.Error("names")
+	}
+	if ars.EncodingASCII.String() != "ASCII" || ars.Encoding(1).String() != "Encoding(1)" {
+		t.Error("Encoding names")
+	}
+	for r, want := range map[ars.FailureReason]string{
+		ars.FailureDeviceNotAuthorized: "Device Not Authorized", ars.FailureUserIDNotValid: "User ID Not Valid",
+		ars.FailureUserValidationTimeout: "User Validation Timeout", ars.FailureTransmission: "Transmission Failure",
+		ars.FailureReason(3): "FailureReason(3)",
+	} {
+		if r.String() != want {
+			t.Errorf("%d: %s", r, r.String())
+		}
 	}
 }
