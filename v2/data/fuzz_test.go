@@ -185,6 +185,9 @@ func checkRxScript(t *testing.T, in rxInput, p []layer2.RawBurst) {
 		if len(ev) > data.MaxEvents {
 			t.Fatalf("op %d: %d events, more than MaxEvents", i, len(ev))
 		}
+		if n := payloadOctets(ev); n > r.MaxOutputOctets() {
+			t.Fatalf("op %d: payloads of %d octets, more than MaxOutputOctets %d", i, n, r.MaxOutputOctets())
+		}
 		for _, e := range ev {
 			if e.Kind < data.EventCallStart || e.Kind > data.EventReassembled {
 				t.Fatalf("op %d: event kind %v", i, e.Kind)

@@ -331,6 +331,24 @@ static void test_ipsc_bound(void) {
 	printf("ipsc: the master arena bound counts a shared packet once\n");
 }
 
+static void test_data_bound(void) {
+	dmrgo_data_receiver_t *rx = NULL;
+	OK(dmrgo_data_new_receiver(NULL, &rx));
+	dmrgo_layer2_hint_t h = {0};
+	size_t items = 0, arena = 0;
+	OK(dmrgo_data_receiver_burst_need(rx, 0, NULL, &h, &items, &arena));
+	CHECK(items == DMRGO_DATA_MAX_EVENTS && arena >= DMRGO_DATA_DEFAULT_MAX_FRAGMENT + DMRGO_DATA_DEFAULT_MAX_MESSAGE && arena < 4096);
+	OK(dmrgo_data_receiver_free(rx));
+	dmrgo_data_receiver_config_t cfg = {.size = sizeof cfg};
+	cfg.max_fragment = 100;
+	cfg.max_message = 200;
+	OK(dmrgo_data_new_receiver(&cfg, &rx));
+	OK(dmrgo_data_receiver_tick_need(rx, 0, &items, &arena));
+	CHECK(arena >= 300 && arena < 1024);
+	OK(dmrgo_data_receiver_free(rx));
+	printf("data: the receiver arena bound follows MaxFragment and MaxMessage\n");
+}
+
 static void test_nullable(void) {
 	dmrgo_voice_receiver_t *rx = NULL;
 	OK(dmrgo_voice_new_receiver(NULL, &rx));
@@ -1111,6 +1129,7 @@ int main(int argc, char **argv) {
 	test_udt_copy();
 	test_authenticator();
 	test_ipsc_bound();
+	test_data_bound();
 	test_nullable();
 	test_tx();
 	test_voice_capture(argv[1]);

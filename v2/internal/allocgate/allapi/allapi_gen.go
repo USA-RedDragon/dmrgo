@@ -152,6 +152,7 @@ var api = [...]any{
 	(*data.Receiver).Deadline,
 	(*data.Receiver).Decoded,
 	(*data.Receiver).Lost,
+	(*data.Receiver).MaxOutputOctets,
 	(*data.Receiver).Reset,
 	(*data.Receiver).State,
 	(*data.Receiver).Tick,

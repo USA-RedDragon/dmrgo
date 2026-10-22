@@ -84,6 +84,7 @@ ignore_files:
   - v2/transport/mmdvm/version.go
   - v2/voice/nocopy.go
   - v2/data/nocopy.go
+  - v2/data/bound.go
   - v2/internal/fecref/ambe/ambe.go
   - v2/internal/fecref/bptc/bptc_196_96.go
   - v2/internal/fecref/bptc/bptc_cach.go

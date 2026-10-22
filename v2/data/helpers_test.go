@@ -94,6 +94,9 @@ func replay(t testing.TB, r *data.Receiver, bursts []timedBurst) []data.Event {
 		if len(ev) > data.MaxEvents {
 			t.Fatalf("%d events, more than MaxEvents", len(ev))
 		}
+		if n := payloadOctets(ev); n > r.MaxOutputOctets() {
+			t.Fatalf("payloads of %d octets, more than MaxOutputOctets %d", n, r.MaxOutputOctets())
+		}
 		for _, e := range ev {
 			e.Message.Payload = append([]byte(nil), e.Message.Payload...)
 			all = append(all, e)
