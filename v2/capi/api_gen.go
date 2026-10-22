@@ -35401,55 +35401,25 @@ func dmrgo_dmrd_auth_bridge_key_free(c_self *C.dmrgo_dmrd_auth_bridge_key_t) (rc
 	return C.DMRGO_OK
 }
 
-//export dmrgo_dmrd_auth_bridge_key_sign_need
-func dmrgo_dmrd_auth_bridge_key_sign_need(c_self *C.dmrgo_dmrd_auth_bridge_key_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	h := get_transport_dmrd_auth_BridgeKey(c_self)
-	_ = h
-	if c_items != nil {
-		*c_items = C.size_t(max(0, 0))
-	}
-	if c_arena != nil {
-		*c_arena = C.size_t(0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_auth_bridge_key_sign
-func dmrgo_dmrd_auth_bridge_key_sign(c_self *C.dmrgo_dmrd_auth_bridge_key_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+//export dmrgo_dmrd_auth_bridge_key_sign_in_place
+func dmrgo_dmrd_auth_bridge_key_sign_in_place(c_self *C.dmrgo_dmrd_auth_bridge_key_t, c_p *C.uint8_t, c_p_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	h := get_transport_dmrd_auth_BridgeKey(c_self)
-	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	nf_dst := int(*c_dst_len)
-	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
-	a_dst := full_dst[:*c_dst_len]
-	need_items := max(0, 0)
-	need_arena := 0
-	_ = need_arena
-	if int(c_dst_cap)-nf_dst < need_items {
-		if c_dst_need != nil {
-			*c_dst_need = C.size_t(nf_dst + need_items)
-		}
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	r0, r1 := h.v.Sign(a_dst)
-	_ = r0
-	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if oc.short {
-		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
-	}
+	var a_p []byte
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
+	r0 := h.v.SignInPlace(a_p)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	*c_dst_len = C.size_t(nf_dst)
-	if r1 != nil {
-		return setErr(r1)
+	if r0 != nil {
+		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }
@@ -35740,8 +35710,8 @@ func dmrgo_dmrdsession_bridge_packet(c_self *C.dmrgo_dmrdsession_bridge_t, c_now
 	return C.DMRGO_OK
 }
 
-//export dmrgo_dmrdsession_bridge_sign
-func dmrgo_dmrdsession_bridge_sign(c_self *C.dmrgo_dmrdsession_bridge_t, c_p *C.uint8_t, c_p_len C.size_t) (rc C.int) {
+//export dmrgo_dmrdsession_bridge_sign_in_place
+func dmrgo_dmrdsession_bridge_sign_in_place(c_self *C.dmrgo_dmrdsession_bridge_t, c_p *C.uint8_t, c_p_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
@@ -35753,7 +35723,7 @@ func dmrgo_dmrdsession_bridge_sign(c_self *C.dmrgo_dmrdsession_bridge_t, c_p *C.
 	}
 	var a_p []byte
 	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
-	r0 := h.v.Sign(a_p)
+	r0 := h.v.SignInPlace(a_p)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -39079,7 +39049,7 @@ func dmrgo_ipscsession_master_sign(c_self *C.dmrgo_ipscsession_master_t, c_dst *
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.Sign(a_dst)
+	r0, r1 := h.v.Sign(a_dst)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -39089,6 +39059,9 @@ func dmrgo_ipscsession_master_sign(c_self *C.dmrgo_ipscsession_master_t, c_dst *
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
 	return C.DMRGO_OK
 }
 
@@ -39129,7 +39102,7 @@ func dmrgo_ipscsession_master_sign_for(c_self *C.dmrgo_ipscsession_master_t, c_i
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.SignFor(uint32(c_id), a_dst)
+	r0, r1 := h.v.SignFor(uint32(c_id), a_dst)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -39139,6 +39112,9 @@ func dmrgo_ipscsession_master_sign_for(c_self *C.dmrgo_ipscsession_master_t, c_i
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
 	return C.DMRGO_OK
 }
 
@@ -39704,7 +39680,7 @@ func dmrgo_ipscsession_peer_sign(c_self *C.dmrgo_ipscsession_peer_t, c_dst *C.ui
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.Sign(a_dst)
+	r0, r1 := h.v.Sign(a_dst)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -39714,6 +39690,9 @@ func dmrgo_ipscsession_peer_sign(c_self *C.dmrgo_ipscsession_peer_t, c_dst *C.ui
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
 	return C.DMRGO_OK
 }
 

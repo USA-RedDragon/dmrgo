@@ -119,35 +119,35 @@ func tagIs(p []byte, t string) bool {
 	return p[0] == t[0] && p[1] == t[1] && p[2] == t[2] && p[3] == t[3]
 }
 
-// Sign writes the signature of the OpenBridge packet in dst, as
+// SignInPlace writes the signature of the OpenBridge packet p, as
 // dmrd.Bridge.AppendBinary and dmrd.BridgeControl.AppendBinary encode it
-// with space for the signature, into its last octets, and returns dst:
-// HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag
-// (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of
-// a control packet, and keyed BLAKE2b-128 over the octets before the hash
-// of a DMRE packet. It returns dst unchanged and an error when the packet
-// is none of these, and dmrgo.ErrNilReceiver for a nil b. It keeps the
-// length of dst and does not allocate.
-func (b *BridgeKey) Sign(dst []byte) ([]byte, error) {
+// with space for the signature, into its last octets: HMAC-SHA1 over the
+// first 53 octets of a version 1 packet and over the tag (and talkgroup
+// and stream of BCSQ, or only the version octet of BCVE) of a control
+// packet, and keyed BLAKE2b-128 over the octets before the hash
+// of a DMRE packet. It changes nothing and returns an error when the
+// packet is none of these, and dmrgo.ErrNilReceiver for a nil b. It does
+// not allocate.
+func (b *BridgeKey) SignInPlace(p []byte) error {
 	if b == nil {
-		return dst, dmrgo.ErrNilReceiver
+		return dmrgo.ErrNilReceiver
 	}
-	msg, sig, keyed, ok := span(dst)
+	msg, sig, keyed, ok := span(p)
 	if !ok {
-		return dst, errPacket
+		return errPacket
 	}
 	if keyed {
 		h := b.blake(msg)
 		copy(sig, h[:])
-		return dst, nil
+		return nil
 	}
 	h := b.sha1(msg)
 	copy(sig, h[:])
-	return dst, nil
+	return nil
 }
 
 // Verify reports whether the OpenBridge packet p carries the signature of
-// the key, as Sign would write it, and then returns p without its
+// the key, as SignInPlace would write it, and then returns p without its
 // signature. It reports false, with a nil body, otherwise and for a nil b.
 // It returns at most len(p) octets. It compares the signature in constant time,
 // and does not allocate.

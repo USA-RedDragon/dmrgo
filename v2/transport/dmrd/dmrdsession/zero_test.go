@@ -13,7 +13,7 @@ func TestZeroValues(t *testing.T) {
 	lines := readCapture(t, "hblink3-openbridge.txt")
 	pkts := [][]byte{lines[0].p, mmdvmConfig(1), ctl(dmrd.CommandRPTL, 1), ack(1), nil}
 	var b dmrdsession.Bridge
-	if err := b.Sign(append([]byte(nil), lines[0].p...)); err == nil {
+	if err := b.SignInPlace(append([]byte(nil), lines[0].p...)); err == nil {
 		t.Fatal("zero Bridge signed")
 	}
 	var p dmrdsession.Peer

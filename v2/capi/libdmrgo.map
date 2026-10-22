@@ -188,8 +188,7 @@ DMRGO_1 {
 		dmrgo_data_state_string;
 		dmrgo_dmrd_append_free_dmr_static;
 		dmrgo_dmrd_auth_bridge_key_free;
-		dmrgo_dmrd_auth_bridge_key_sign;
-		dmrgo_dmrd_auth_bridge_key_sign_need;
+		dmrgo_dmrd_auth_bridge_key_sign_in_place;
 		dmrgo_dmrd_auth_bridge_key_verify;
 		dmrgo_dmrd_auth_bridge_key_verify_need;
 		dmrgo_dmrd_auth_new_bridge_key;
@@ -297,7 +296,7 @@ DMRGO_1 {
 		dmrgo_dmrdsession_bridge_free;
 		dmrgo_dmrdsession_bridge_packet;
 		dmrgo_dmrdsession_bridge_packet_need;
-		dmrgo_dmrdsession_bridge_sign;
+		dmrgo_dmrdsession_bridge_sign_in_place;
 		dmrgo_dmrdsession_bridge_state;
 		dmrgo_dmrdsession_bridge_tick;
 		dmrgo_dmrdsession_bridge_tick_need;

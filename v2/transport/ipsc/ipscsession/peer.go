@@ -159,14 +159,15 @@ func (p *Peer) PeerAt(i int) PeerInfo {
 }
 
 // Sign appends the authentication trailer of the packet in dst to dst
-// when the config has Auth, and returns dst as it is without. It
-// allocates only when dst has no room for auth.TrailerLen more octets.
-func (p *Peer) Sign(dst []byte) []byte {
+// when the config has Auth, and returns dst as it is without. It returns
+// dst unchanged and dmrgo.ErrNilReceiver for a nil p. It allocates only
+// when dst has no room for auth.TrailerLen more octets.
+func (p *Peer) Sign(dst []byte) ([]byte, error) {
 	if p == nil {
-		return dst
+		return dst, dmrgo.ErrNilReceiver
 	}
 
-	return p.l.sign(dst, nil)
+	return p.l.sign(dst, nil), nil
 }
 
 // Reset forgets the master and the peers without a packet, so the next
