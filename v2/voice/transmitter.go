@@ -899,7 +899,9 @@ func (t *Transmitter) finish(out []Output, reason EndReason) []Output {
 }
 
 // Relay takes an event of a Receiver and sends the call again: an
-// EventCallStart starts it with its headers, voice is queued, a PI Header
+// EventCallStart starts it with its headers, the first due at now plus
+// TransmitterConfig.Lead, so that each burst goes out as it comes and is
+// due Lead later, voice is queued, a PI Header
 // is sent after the headers, and an EventCallEnd ends it. Voice that comes
 // before its EventCallStart is dropped and counted, as is voice that does
 // not fit in the queue. A lost burst becomes a fill, whether a later
@@ -974,7 +976,7 @@ func (t *Transmitter) relayStart(now time.Duration, c *Call) error {
 	switch t.state {
 	case TransmitterIdle:
 		t.relay = true
-		return t.begin(now, c, nil, false)
+		return t.begin(now+t.lead, c, nil, false)
 	case TransmitterEnding, TransmitterHeader, TransmitterVoice:
 		if t.relay && !t.timedOut && !t.hasNext && (t.stopping || t.state == TransmitterEnding) {
 			t.next, t.hasNext, t.oldSlots = *c, true, t.length
