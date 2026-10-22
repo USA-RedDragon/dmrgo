@@ -805,9 +805,12 @@ func (t *TSCC) Tick(now time.Duration, dst []TSCCOutput) []TSCCOutput {
 		if at < t.next {
 			return out
 		}
-		d := uint64(at) - uint64(t.next)
-		t.skip(d / uint64(slotLength))
-		at -= time.Duration(d % uint64(slotLength))
+		if d := at - t.next; d >= 0 {
+			t.skip(d / slotLength)
+			at -= d % slotLength
+		} else {
+			t.skip(math.MaxInt64 / slotLength)
+		}
 	}
 	t.started = true
 	t.slot = t.slot.Other()
@@ -833,8 +836,8 @@ func (t *TSCC) advance() {
 	}
 }
 
-func (t *TSCC) skip(n uint64) {
-	if n > math.MaxInt64-uint64(t.skipped) {
+func (t *TSCC) skip(n time.Duration) {
+	if int64(n) > math.MaxInt64-t.skipped {
 		t.skipped = math.MaxInt64
 	} else {
 		t.skipped += int64(n)
