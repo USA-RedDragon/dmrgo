@@ -135,6 +135,9 @@ func validateModifierKinds(f *Field) error {
 }
 
 func validateDigits(f *Field) error {
+	if f.NulZero && f.Encoding != EncodingDecimal {
+		return errors.New("nulzero requires a dec integer field")
+	}
 	if f.Kind == FieldPacked {
 		return nil
 	}

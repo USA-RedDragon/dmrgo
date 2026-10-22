@@ -1,7 +1,6 @@
 package hdap_test
 
 import (
-	"bytes"
 	"errors"
 	"testing"
 
@@ -25,9 +24,21 @@ func checkRoundTrip[T any, P interface {
 		return
 	}
 	out, err := P(&v).AppendBinary(nil)
-	if err != nil || !bytes.Equal(out, data) {
+	if err != nil || !nulZeroEqual(out, data) {
 		t.Fatalf("%s(%x) encodes to %x, %v", name, data, out, err)
 	}
+}
+
+func nulZeroEqual(out, data []byte) bool {
+	if len(out) != len(data) {
+		return false
+	}
+	for i := range out {
+		if out[i] != data[i] && (data[i] != 0 || out[i] != '0') {
+			return false
+		}
+	}
+	return true
 }
 
 func gpsSeed(prefix ...byte) []byte {

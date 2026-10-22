@@ -238,6 +238,7 @@ func fromHDAP(f Fix, data []byte) (Fix, error) {
 		return Fix{}, ErrNoFix
 	}
 	var g hdap.GPSData
+	var at int
 	switch m.Opcode {
 	case hdap.LPStandardAnswer:
 		a, err := hdap.DecodeLPAnswer(m.Payload)
@@ -250,7 +251,7 @@ func fromHDAP(f Fix, data []byte) (Fix, error) {
 		if a.Result != 0 {
 			return f, ErrNoPosition
 		}
-		g = a.GPS
+		g, at = a.GPS, 10
 	case hdap.LPConditionReport:
 		r, err := hdap.DecodeLPReport(m.Payload)
 		if err != nil {
@@ -258,13 +259,13 @@ func fromHDAP(f Fix, data []byte) (Fix, error) {
 		}
 		binary.BigEndian.PutUint32(f.RequestID[:], r.RequestID)
 		f.RequestIDLength = 4
-		g = r.GPS
+		g, at = r.GPS, 8
 	case hdap.LPEmergencyReport:
 		e, err := hdap.DecodeLPEmergency(m.Payload)
 		if err != nil {
 			return Fix{}, err
 		}
-		g = e.GPS
+		g, at = e.GPS, 5
 	default:
 		return Fix{}, ErrNoFix
 	}
@@ -276,15 +277,24 @@ func fromHDAP(f Fix, data []byte) (Fix, error) {
 	if v, ok := knots(g.Speed); ok {
 		f.Speed, f.HasSpeed = v*knot, true
 	}
-	if g.Direction <= 360 {
+	if d := m.Payload[at+37 : at+40]; g.Direction <= 360 && (d[0] != 0 || d[1] != 0 || d[2] != 0) {
 		f.Course, f.HasCourse = float64(g.Direction), true
 	}
-	if g.Day != 0 && g.Day <= 31 && g.Month >= 1 && g.Month <= 12 && g.Hour <= 23 && g.Minute <= 59 && g.Second <= 60 {
+	if t := m.Payload[at+1 : at+13]; nulFree(t) && g.Day != 0 && g.Day <= 31 && g.Month >= 1 && g.Month <= 12 && g.Hour <= 23 && g.Minute <= 59 && g.Second <= 60 {
 		f.Year, f.Month, f.Day = 2000+uint16(g.Year), g.Month, g.Day
 		f.Hour, f.Minute, f.Second = g.Hour, g.Minute, g.Second
 		f.HasTime = true
 	}
 	return f, nil
+}
+
+func nulFree(b []byte) bool {
+	for _, c := range b {
+		if c == 0 {
+			return false
+		}
+	}
+	return true
 }
 
 func knots(t [3]byte) (float64, bool) {

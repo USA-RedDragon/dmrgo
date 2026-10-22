@@ -450,57 +450,69 @@ func decodeGPSData(data []byte) (GPSData, error) {
 	var result GPSData
 	result.Status = uint8(uint64(data[0]))
 	var _vHour uint64
-	for _i := 1; _i < 3; _i++ {
-		_c := data[_i]
-		if _c < '0' || _c > '9' {
-			return GPSData{}, ErrText
+	if data[1] != 0 || data[2] != 0 {
+		for _i := 1; _i < 3; _i++ {
+			_c := data[_i]
+			if _c < '0' || _c > '9' {
+				return GPSData{}, ErrText
+			}
+			_vHour = _vHour*10 + uint64(_c-'0')
 		}
-		_vHour = _vHour*10 + uint64(_c-'0')
 	}
 	result.Hour = uint8(_vHour)
 	var _vMinute uint64
-	for _i := 3; _i < 5; _i++ {
-		_c := data[_i]
-		if _c < '0' || _c > '9' {
-			return GPSData{}, ErrText
+	if data[3] != 0 || data[4] != 0 {
+		for _i := 3; _i < 5; _i++ {
+			_c := data[_i]
+			if _c < '0' || _c > '9' {
+				return GPSData{}, ErrText
+			}
+			_vMinute = _vMinute*10 + uint64(_c-'0')
 		}
-		_vMinute = _vMinute*10 + uint64(_c-'0')
 	}
 	result.Minute = uint8(_vMinute)
 	var _vSecond uint64
-	for _i := 5; _i < 7; _i++ {
-		_c := data[_i]
-		if _c < '0' || _c > '9' {
-			return GPSData{}, ErrText
+	if data[5] != 0 || data[6] != 0 {
+		for _i := 5; _i < 7; _i++ {
+			_c := data[_i]
+			if _c < '0' || _c > '9' {
+				return GPSData{}, ErrText
+			}
+			_vSecond = _vSecond*10 + uint64(_c-'0')
 		}
-		_vSecond = _vSecond*10 + uint64(_c-'0')
 	}
 	result.Second = uint8(_vSecond)
 	var _vDay uint64
-	for _i := 7; _i < 9; _i++ {
-		_c := data[_i]
-		if _c < '0' || _c > '9' {
-			return GPSData{}, ErrText
+	if data[7] != 0 || data[8] != 0 {
+		for _i := 7; _i < 9; _i++ {
+			_c := data[_i]
+			if _c < '0' || _c > '9' {
+				return GPSData{}, ErrText
+			}
+			_vDay = _vDay*10 + uint64(_c-'0')
 		}
-		_vDay = _vDay*10 + uint64(_c-'0')
 	}
 	result.Day = uint8(_vDay)
 	var _vMonth uint64
-	for _i := 9; _i < 11; _i++ {
-		_c := data[_i]
-		if _c < '0' || _c > '9' {
-			return GPSData{}, ErrText
+	if data[9] != 0 || data[10] != 0 {
+		for _i := 9; _i < 11; _i++ {
+			_c := data[_i]
+			if _c < '0' || _c > '9' {
+				return GPSData{}, ErrText
+			}
+			_vMonth = _vMonth*10 + uint64(_c-'0')
 		}
-		_vMonth = _vMonth*10 + uint64(_c-'0')
 	}
 	result.Month = uint8(_vMonth)
 	var _vYear uint64
-	for _i := 11; _i < 13; _i++ {
-		_c := data[_i]
-		if _c < '0' || _c > '9' {
-			return GPSData{}, ErrText
+	if data[11] != 0 || data[12] != 0 {
+		for _i := 11; _i < 13; _i++ {
+			_c := data[_i]
+			if _c < '0' || _c > '9' {
+				return GPSData{}, ErrText
+			}
+			_vYear = _vYear*10 + uint64(_c-'0')
 		}
-		_vYear = _vYear*10 + uint64(_c-'0')
 	}
 	result.Year = uint8(_vYear)
 	result.NorthSouth = uint8(uint64(data[13]))
@@ -561,12 +573,14 @@ func decodeGPSData(data []byte) (GPSData, error) {
 	result.LongitudeFraction = uint16(_vLongitudeFraction)
 	copy(result.Speed[0:3], data[34:37])
 	var _vDirection uint64
-	for _i := 37; _i < 40; _i++ {
-		_c := data[_i]
-		if _c < '0' || _c > '9' {
-			return GPSData{}, ErrText
+	if data[37] != 0 || data[38] != 0 || data[39] != 0 {
+		for _i := 37; _i < 40; _i++ {
+			_c := data[_i]
+			if _c < '0' || _c > '9' {
+				return GPSData{}, ErrText
+			}
+			_vDirection = _vDirection*10 + uint64(_c-'0')
 		}
-		_vDirection = _vDirection*10 + uint64(_c-'0')
 	}
 	result.Direction = uint16(_vDirection)
 	return result, nil

@@ -200,14 +200,16 @@ type TMPGroupAnswer struct {
 type GPSData struct {
 	// Status is 'A' for a valid fix and 'V' for none.
 	Status uint8 `dmr:"bits:0-7"`
-	// Hour, Minute and Second are the UTC time of the fix.
-	Hour   uint8 `dmr:"bits:8-23,dec"`
-	Minute uint8 `dmr:"bits:24-39,dec"`
-	Second uint8 `dmr:"bits:40-55,dec"`
+	// Hour, Minute and Second are the UTC time of the fix. A radio that
+	// has no time sends NUL octets, which give 0.
+	Hour   uint8 `dmr:"bits:8-23,dec,nulzero"`
+	Minute uint8 `dmr:"bits:24-39,dec,nulzero"`
+	Second uint8 `dmr:"bits:40-55,dec,nulzero"`
 	// Day, Month and Year are the UTC date of the fix, Year in two digits.
-	Day   uint8 `dmr:"bits:56-71,dec"`
-	Month uint8 `dmr:"bits:72-87,dec"`
-	Year  uint8 `dmr:"bits:88-103,dec"`
+	// A radio that has no date sends NUL octets, which give 0.
+	Day   uint8 `dmr:"bits:56-71,dec,nulzero"`
+	Month uint8 `dmr:"bits:72-87,dec,nulzero"`
+	Year  uint8 `dmr:"bits:88-103,dec,nulzero"`
 	// NorthSouth is 'N' or 'S'.
 	NorthSouth uint8 `dmr:"bits:104-111"`
 	// LatitudeDegrees, LatitudeMinutes and LatitudeFraction are the
@@ -222,10 +224,12 @@ type GPSData struct {
 	LongitudeDegrees  uint16 `dmr:"bits:192-215,dec"`
 	LongitudeMinutes  uint8  `dmr:"bits:216-231,dec"`
 	LongitudeFraction uint16 `dmr:"bits:240-271,dec"`
-	// Speed is the speed in knots as ASCII text, such as "0.2".
+	// Speed is the speed in knots as ASCII text, such as "0.2", or NUL
+	// octets when the radio sends no speed.
 	Speed [3]byte `dmr:"bits:272-295,packed"`
-	// Direction is the course in degrees from north, 0 to 359.
-	Direction uint16 `dmr:"bits:296-319,dec"`
+	// Direction is the course in degrees from north, 0 to 359. A radio
+	// that sends no course sends NUL octets, which give 0.
+	Direction uint16 `dmr:"bits:296-319,dec,nulzero"`
 }
 
 // LPRequest is the payload of a location protocol standard request.

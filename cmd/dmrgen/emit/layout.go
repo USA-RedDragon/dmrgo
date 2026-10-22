@@ -240,11 +240,25 @@ func readLayoutInt(g *Group, field parse.Field, tmp string, textFail func() *Sta
 		}
 		g.Id(tmp).Op("=").Add(e)
 	case parse.EncodingDecimal:
-		g.For(Id("_i").Op(":=").Lit(a), Id("_i").Op("<").Lit(a+n), Id("_i").Op("++")).Block(
+		loop := For(Id("_i").Op(":=").Lit(a), Id("_i").Op("<").Lit(a+n), Id("_i").Op("++")).Block(
 			Id("_c").Op(":=").Id("data").Index(Id("_i")),
 			If(Id("_c").Op("<").LitRune('0').Op("||").Id("_c").Op(">").LitRune('9')).Block(textFail()),
 			Id(tmp).Op("=").Id(tmp).Op("*").Lit(10).Op("+").Uint64().Call(Id("_c").Op("-").LitRune('0')),
 		)
+		if !field.NulZero {
+			g.Add(loop)
+			break
+		}
+		var cond *Statement
+		for i := range n {
+			term := Id("data").Index(Lit(a + i)).Op("!=").Lit(0)
+			if cond == nil {
+				cond = term
+			} else {
+				cond = cond.Op("||").Add(term)
+			}
+		}
+		g.If(cond).Block(loop)
 	case parse.EncodingHex:
 		g.For(Id("_i").Op(":=").Lit(a), Id("_i").Op("<").Lit(a+n), Id("_i").Op("++")).Block(
 			Id("_c").Op(":=").Id("data").Index(Id("_i")),

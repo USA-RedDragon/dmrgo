@@ -201,6 +201,35 @@ func TestHDAPFailedAnswer(t *testing.T) {
 	}
 }
 
+func TestHDAPNulFields(t *testing.T) {
+	t.Parallel()
+
+	raw, err := hex.DecodeString("08a002003200000003002337fb0000410000000000000000000000004e353030332e383737314530313432362e353330320000000000007003")
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := hdap.DecodeMessage(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := hdapPacket(t, m.Header.Service, m.Opcode, m.Payload)
+	var d location.Decoder
+	f, err := d.Decode(&p.Header, p.Data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.Format != location.FormatHDAP || !f.Valid || !near(f.Latitude, 50+3.8771/60, 1e-9) || !near(f.Longitude, 14+26.5302/60, 1e-9) ||
+		f.HasTime || f.HasSpeed || f.HasCourse || !f.HasResult || f.Result != 0 {
+		t.Errorf("%+v", f)
+	}
+	half := append([]byte{}, m.Payload...)
+	copy(half[10+7:], "221026")
+	p = hdapPacket(t, m.Header.Service, m.Opcode, half)
+	if f, err := d.Decode(&p.Header, p.Data); err != nil || f.HasTime {
+		t.Errorf("date without a time: %+v, %v", f, err)
+	}
+}
+
 func TestHDAP(t *testing.T) {
 	t.Parallel()
 
