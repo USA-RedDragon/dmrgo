@@ -181,7 +181,7 @@ func TestVoiceReceiver_SequenceOverWrongEMB(t *testing.T) {
 	}
 	seq := []layer2.RawBurst{raws[1], raws[2], c, raws[4], raws[5], raws[6]}
 	var r layer2.VoiceReceiver
-	var got []enums.VoiceBurstType
+	got := make([]enums.VoiceBurstType, 0, len(seq))
 	lcs := 0
 	for i, raw := range seq {
 		b := must(layer2.NewBurstFromBytes(raw))
