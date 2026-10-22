@@ -9728,6 +9728,8 @@ int dmrgo_nmea_parse_rmc(const uint8_t *s, size_t s_len, dmrgo_nmea_rmc_t *out);
 int dmrgo_shortdata_append_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *text, size_t text_len);
 /* Go: shortdata.DecodeHyteraText. DecodeHyteraText decodes a HyteraText from data. It returns DMRGO_ERR_SHORTDATA_SHORT when data ends inside a field and DMRGO_ERR_SHORTDATA_LENGTH when a length does not match the data. */
 int dmrgo_shortdata_decode_hytera_text(const uint8_t *data, size_t data_len, dmrgo_shortdata_hytera_text_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: shortdata.DecodeText. DecodeText appends the text in data, coded as format says, to dst as UTF-8 and returns dst. It returns dst unchanged and DMRGO_ERR_SHORTDATA_FORMAT for a reserved format. */
+int dmrgo_shortdata_decode_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *data, size_t data_len);
 /* Go: shortdata.HyteraText.AppendBinary. AppendBinary appends s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE or another error when a field does not fit. */
 int dmrgo_shortdata_hytera_text_append_binary(const dmrgo_shortdata_hytera_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: shortdata.HyteraText.SetTextUTF8. SetTextUTF8 appends text, UTF-8, to dst as UTF-16LE, then a NUL character, points Text at the appended octets and returns dst. */
@@ -9736,8 +9738,6 @@ int dmrgo_shortdata_hytera_text_set_text_utf8(dmrgo_shortdata_hytera_text_t *sel
 int dmrgo_shortdata_hytera_text_string(const dmrgo_shortdata_hytera_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: shortdata.HyteraText.TextUTF8. TextUTF8 appends Text, UTF-16LE text, to dst as UTF-8 and returns dst. */
 int dmrgo_shortdata_hytera_text_text_utf8(const dmrgo_shortdata_hytera_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: shortdata.Text. Text appends the text in data, coded as format says, to dst as UTF-8 and returns dst. It returns dst unchanged and DMRGO_ERR_SHORTDATA_FORMAT for a reserved format. */
-int dmrgo_shortdata_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *data, size_t data_len);
 /* Go: sms.AnyToneText.AppendBinary. AppendBinary appends s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE or another error when a field does not fit. */
 int dmrgo_sms_anytone_text_append_binary(const dmrgo_sms_anytone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: sms.AnyToneText.SetTextUTF8. SetTextUTF8 appends text, UTF-8, to dst as UTF-16LE, then a NUL character, points Text at the appended octets and returns dst. */

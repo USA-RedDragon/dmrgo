@@ -2807,11 +2807,11 @@ sym int dmrgo_pdu_vnap_continuation_string(const dmrgo_pdu_vnap_continuation_t *
 sym int dmrgo_pdu_vote_now_parms_string(const dmrgo_pdu_vote_now_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_shortdata_append_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *text, size_t text_len);
 sym int dmrgo_shortdata_decode_hytera_text(const uint8_t *data, size_t data_len, dmrgo_shortdata_hytera_text_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_shortdata_decode_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *data, size_t data_len);
 sym int dmrgo_shortdata_hytera_text_append_binary(const dmrgo_shortdata_hytera_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_shortdata_hytera_text_set_text_utf8(dmrgo_shortdata_hytera_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_shortdata_hytera_text_string(const dmrgo_shortdata_hytera_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_shortdata_hytera_text_text_utf8(const dmrgo_shortdata_hytera_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-sym int dmrgo_shortdata_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *data, size_t data_len);
 sym int dmrgo_sms_anytone_text_append_binary(const dmrgo_sms_anytone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_sms_anytone_text_set_text_utf8(dmrgo_sms_anytone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_sms_anytone_text_string(const dmrgo_sms_anytone_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

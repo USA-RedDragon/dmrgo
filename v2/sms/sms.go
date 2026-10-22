@@ -115,7 +115,7 @@ func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 			t.Body = dst[n:]
 			return dst, t, nil
 		}
-		dst, err := shortdata.Text(dst, d.DefinedData, data)
+		dst, err := shortdata.DecodeText(dst, d.DefinedData, data)
 		if err != nil {
 			return dst, Text{}, err
 		}

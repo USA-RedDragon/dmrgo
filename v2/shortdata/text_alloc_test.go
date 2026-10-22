@@ -23,7 +23,7 @@ func TestAllocs(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		if _, err := shortdata.Text(enc[len(enc):], enums.DDUTF16LE, enc); err != nil {
+		if _, err := shortdata.DecodeText(enc[len(enc):], enums.DDUTF16LE, enc); err != nil {
 			panic(err)
 		}
 		if _, err := h.AppendBinary(buf[:0]); err != nil {

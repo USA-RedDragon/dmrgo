@@ -7,7 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/internal/wire"
 )
 
-// Text appends the text in data, coded as format says, to dst as UTF-8 and
+// DecodeText appends the text in data, coded as format says, to dst as UTF-8 and
 // returns dst. The text ends at the first NUL character, so the pad octets
 // of the last block are dropped, and its trailing DEL characters, which a
 // block filled with 1 bits leaves, are dropped too. Binary data is appended unchanged, NUL
@@ -24,7 +24,7 @@ import (
 // ErrFormat for a reserved format. It allocates only to grow dst. (ETSI TS
 // 102 361-1 clause 9.3.38, ETSI TS 102 361-4 clauses 7.2.9, B.3.3 and
 // B.3.4)
-func Text(dst []byte, format enums.DDFormat, data []byte) ([]byte, error) {
+func DecodeText(dst []byte, format enums.DDFormat, data []byte) ([]byte, error) {
 	from := len(dst)
 	switch format {
 	case enums.DDUTF8:

@@ -22,11 +22,11 @@ func ExampleDecodeHyteraText() {
 	// 4500 HYT TEST
 }
 
-// ExampleText reads the text of a defined data packet with DD format
+// ExampleDecodeText reads the text of a defined data packet with DD format
 // UTF-16BE.
-func ExampleText() {
+func ExampleDecodeText() {
 	data, _ := shortdata.AppendText(nil, enums.DDUTF16BE, []byte("Hello"))
-	text, err := shortdata.Text(nil, enums.DDUTF16BE, append(data, 0, 0, 0, 0))
+	text, err := shortdata.DecodeText(nil, enums.DDUTF16BE, append(data, 0, 0, 0, 0))
 	fmt.Printf("%s %v\n", text, err)
 	// Output:
 	// Hello <nil>
@@ -48,7 +48,7 @@ func ExampleAppendText_codings() {
 			fmt.Println(err)
 			return
 		}
-		text, err := shortdata.Text(nil, c.format, data)
+		text, err := shortdata.DecodeText(nil, c.format, data)
 		fmt.Printf("%s: % x %s %v\n", c.format, data, text, err)
 	}
 	// Output:

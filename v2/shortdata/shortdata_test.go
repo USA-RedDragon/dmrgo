@@ -108,13 +108,13 @@ func TestText(t *testing.T) {
 		{enums.DDUTF16LE, []byte{'H', 0, 0x7F, 0, 0, 0}, "H"},
 	}
 	for _, tt := range tests {
-		got, err := shortdata.Text([]byte("x"), tt.format, tt.data)
+		got, err := shortdata.DecodeText([]byte("x"), tt.format, tt.data)
 		if err != nil || string(got) != "x"+tt.want {
 			t.Errorf("Text(%s, %x) = %q, %v, want %q", tt.format, tt.data, got, err, tt.want)
 		}
 	}
 	for _, f := range []enums.DDFormat{0x19, 0x3F} {
-		if got, err := shortdata.Text([]byte("x"), f, []byte("a")); !errors.Is(err, shortdata.ErrFormat) || string(got) != "x" {
+		if got, err := shortdata.DecodeText([]byte("x"), f, []byte("a")); !errors.Is(err, shortdata.ErrFormat) || string(got) != "x" {
 			t.Errorf("Text(%s) = %q, %v", f, got, err)
 		}
 		if got, err := shortdata.AppendText([]byte("x"), f, []byte("a")); !errors.Is(err, shortdata.ErrFormat) || string(got) != "x" {
@@ -132,7 +132,7 @@ func TestAppendText(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		back, err := shortdata.Text(nil, f, enc)
+		back, err := shortdata.DecodeText(nil, f, enc)
 		if err != nil || !bytes.Equal(back, in) {
 			t.Errorf("%s: %x gave %q, %v", f, enc, back, err)
 		}
@@ -173,7 +173,7 @@ func TestAppendTextCodings(t *testing.T) {
 			t.Errorf("AppendText(%s, %q) = %x, %v, want %x", tt.format, tt.text, got, err, tt.want)
 			continue
 		}
-		back, err := shortdata.Text(nil, tt.format, got[1:])
+		back, err := shortdata.DecodeText(nil, tt.format, got[1:])
 		if err != nil || string(back) != tt.text {
 			t.Errorf("Text(%s, %x) = %q, %v, want %q", tt.format, got[1:], back, err, tt.text)
 		}
