@@ -438,6 +438,10 @@ func (m *MS) udtIn(now time.Duration, out []Output) []Output {
 	if !u.CRCOK || h.Group || h.LLIDDestination != m.addr {
 		return out
 	}
+	slot := m.f.ctl.udtSlot
+	if slot == enums.SlotUnknown {
+		slot = m.slot
+	}
 	switch {
 	case h.Opcode == pdu.UDTOpcodeDGNAOutboundHeader:
 		a := u.Appended()
@@ -445,7 +449,7 @@ func (m *MS) udtIn(now time.Duration, out []Output) []Output {
 			return out
 		}
 		out = append(out, Output{Kind: OutputGroups})
-		return m.ackU(now+frame, m.slot, enums.AckReasonMSAccepted, h.LLIDSource, out)
+		return m.ackU(now+frame, slot, enums.AckReasonMSAccepted, h.LLIDSource, out)
 	case h.SupplementaryFlag && h.LLIDSource == constants.GatewayDIVERTI:
 		if m.req != reqNone && m.req != reqDereg && m.req != reqRegister {
 			return m.fail(ReasonDiverted, 0, out)
@@ -454,11 +458,11 @@ func (m *MS) udtIn(now time.Duration, out []Output) []Output {
 	case m.req == reqPoll && h.LLIDSource == m.target:
 		m.done()
 		out = append(out, Output{Kind: OutputDelivered, Ack: enums.AckReasonMSAccepted})
-		return m.ackU(now+frame, m.slot, enums.AckReasonMSAccepted, h.LLIDSource, out)
+		return m.ackU(now+frame, slot, enums.AckReasonMSAccepted, h.LLIDSource, out)
 	case h.SupplementaryFlag:
 		return out
 	}
-	return m.ackU(now+frame, m.slot, enums.AckReasonMSAccepted, h.LLIDSource, out)
+	return m.ackU(now+frame, slot, enums.AckReasonMSAccepted, h.LLIDSource, out)
 }
 
 func (m *MS) assign(a *Appended) bool {
