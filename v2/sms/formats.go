@@ -11,12 +11,13 @@ type IPText struct {
 
 // AnyToneText is the payload of the text that AnyTone radios send to UDP
 // port 5016 in their DMR Standard mode: the octets 00 0d 00 0a, then the
-// text in UTF-16LE and a NUL character.
+// text in UTF-16LE. Some radios end the text with a NUL character.
 //
 //dmr:stream
 type AnyToneText struct {
 	// Prefix is the fixed prefix 0x000D000A.
 	Prefix uint32 `dmr:"u32,const:0x000D000A"`
-	// Text is the text in UTF-16LE, then a NUL character.
+	// Text is the text in UTF-16LE, then a NUL character when the radio
+	// sends one. SetTextUTF8 adds the NUL.
 	Text []byte `dmr:"rest,utf16le,nul"`
 }

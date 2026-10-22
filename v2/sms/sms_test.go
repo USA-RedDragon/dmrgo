@@ -197,7 +197,7 @@ func TestErrors(t *testing.T) {
 		body   string
 	}{
 		{sms.FormatHytera, ""}, {sms.FormatHytera, "\x00"}, {sms.FormatHytera, "\x00A"}, {sms.FormatHytera, "A\x00B"},
-		{sms.FormatIP, "\r\n\x00"}, {sms.FormatIP, "\r\nA\x00"}, {sms.FormatIP, "\r\n中\x00\x00"},
+		{sms.FormatIP, "\r\n"}, {sms.FormatIP, "\r\nA"}, {sms.FormatIP, "\r\n\x00"}, {sms.FormatIP, "\r\nA\x00"}, {sms.FormatIP, "\r\n中\x00\x00"},
 	} {
 		if b, err := sms.AppendPacket([]byte("x"), &sms.Text{Format: tt.format, Body: []byte(tt.body)}, &h); !errors.Is(err, sms.ErrFormat) || string(b) != "x" {
 			t.Errorf("%s %q built: %x, %v", tt.format, tt.body, b, err)
@@ -321,9 +321,12 @@ func TestAppendPacketAfterDst(t *testing.T) {
 func TestPort5016FirstCharacter(t *testing.T) {
 	t.Parallel()
 
-	bodies := []string{"", "A", "中文", "一", "€5", "Ā", "ÿ", "\x7fA", "😀", "\r\n", "\r\nA", "\r\n中", "\r\nA\x00B", "\x00"}
+	bodies := []string{"", "A", "中文", "一", "€5", "Ā", "ÿ", "\x7fA", "😀", "\r\n", "\r\nA", "\r\n中", "\r\nA\x00B", "\x00", "\rA", "\n\r"}
 	for _, f := range []sms.Format{sms.FormatIP, sms.FormatAnyTone} {
 		for _, body := range bodies {
+			if f == sms.FormatIP && strings.HasPrefix(body, "\r\n") {
+				continue
+			}
 			in := sms.Text{Format: f, Source: 1, Destination: 2, Body: []byte(body)}
 			var h sms.Header
 			out, err := sms.AppendPacket(nil, &in, &h)
@@ -351,5 +354,74 @@ func TestPort5016SamePayload(t *testing.T) {
 	}
 	if _, err := sms.AppendPacket(nil, &sms.Text{Format: sms.FormatIP, Body: []byte("\r\nA\x00")}, &h); !errors.Is(err, sms.ErrFormat) {
 		t.Fatalf("IP CR LF A NUL: %v", err)
+	}
+}
+
+func TestPort5016Senders(t *testing.T) {
+	t.Parallel()
+
+	d878 := ipMessage(t, appcapture.D878Text)
+	hytera := ipMessage(t, appcapture.HyteraIPText)
+	u, _ := hytera.Header.AsUnconfirmed()
+	u.SAP = enums.SAPUDPIPHeaderCompression
+	if err := hytera.Header.SetUnconfirmed(u); err != nil {
+		t.Fatal(err)
+	}
+	da7x2 := ipMessage(t, appcapture.DMRText)
+	pro0 := ipMessage(t, appcapture.BTECH6X2ProTest)
+	pro1 := ipMessage(t, appcapture.BTECH6X2ProHello1)
+	pro2 := ipMessage(t, appcapture.BTECH6X2ProHello2)
+	for _, tt := range []struct {
+		name   string
+		m      *packet.Message
+		format sms.Format
+		body   string
+	}{
+		{"AnyTone D878, no NUL", &d878, sms.FormatAnyTone, "TEST"},
+		{"BTECH 6X2 Pro 1, no NUL", &pro0, sms.FormatAnyTone, "TEST"},
+		{"BTECH 6X2 Pro 2, no NUL", &pro1, sms.FormatAnyTone, "HELLO"},
+		{"BTECH 6X2 Pro 3, no NUL", &pro2, sms.FormatAnyTone, "HELLO"},
+		{"AnyTone DA-7X2, NUL", &da7x2, sms.FormatAnyTone, "DMR TEST"},
+		{"Hytera, UTF-16BE", &hytera, sms.FormatIP, "Test Message Hytera to DSDFME"},
+	} {
+		if _, got, err := sms.Decode(nil, &tt.m.Header, tt.m.Data); err != nil || got.Format != tt.format || string(got.Body) != tt.body {
+			t.Errorf("%s: %s %q, %v", tt.name, got.Format, got.Body, err)
+		}
+	}
+}
+
+func TestPort5016Lead(t *testing.T) {
+	t.Parallel()
+
+	for _, tt := range []struct {
+		payload, body string
+		format        sms.Format
+	}{
+		{"000d000a", "", sms.FormatAnyTone},
+		{"000d000a2d4e8765", "中文", sms.FormatAnyTone},
+		{"000d000a41004200", "AB", sms.FormatAnyTone},
+		{"000d000a410042000000", "AB", sms.FormatAnyTone},
+		{"000d000a4100420000", "AB", sms.FormatAnyTone},
+		{"000d000a00410042", "䄀䈀", sms.FormatAnyTone},
+		{"000d000a480045004c004c004f0000", "HELLO", sms.FormatAnyTone},
+		{"000d00", "\r", sms.FormatIP},
+		{"000d0041", "\rA", sms.FormatIP},
+		{"00410042", "AB", sms.FormatIP},
+		{"0041004200000000", "AB", sms.FormatIP},
+		{"", "", sms.FormatIP},
+	} {
+		var h sms.Header
+		out, err := sms.AppendPacket(nil, &sms.Text{Format: sms.FormatIP, Source: 1, Destination: 2, Body: []byte("x")}, &h)
+		if err != nil {
+			t.Fatal(err)
+		}
+		p := unhex(t, tt.payload)
+		out = append(out[:28:28], p...)
+		out[2], out[3] = byte(len(out)>>8), byte(len(out))
+		out[24], out[25] = byte((8+len(p))>>8), byte(8+len(p))
+		out[10], out[11], out[26], out[27] = 0, 0, 0, 0
+		if _, got, err := sms.Decode(nil, &h.Data, out); (err != nil && !errors.Is(err, ip.ErrChecksum)) || got.Format != tt.format || string(got.Body) != tt.body {
+			t.Errorf("%s: %s %q, %v", tt.payload, got.Format, got.Body, err)
+		}
 	}
 }
