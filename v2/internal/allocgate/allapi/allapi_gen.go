@@ -1463,6 +1463,7 @@ var api = [...]any{
 	(*trunk.TSCC).Registered,
 	(*trunk.TSCC).SendShortData,
 	(*trunk.TSCC).SendStatus,
+	(*trunk.TSCC).Skipped,
 	(*trunk.TSCC).Stun,
 	(*trunk.TSCC).Tick,
 	(*trunk.TSCC).UDT,

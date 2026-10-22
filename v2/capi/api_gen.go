@@ -4993,6 +4993,7 @@ func in_trunk_TSCCConfig(s *C.dmrgo_trunk_tscc_config_t) (d g_trunk.TSCCConfig) 
 	d.Awake = time.Duration(s.awake)
 	d.IP = bool(s.ip)
 	d.Supplementary = bool(s.supplementary)
+	d.Lead = time.Duration(s.lead)
 	return
 }
 
@@ -5003,6 +5004,7 @@ func out_trunk_TSCCOutput(d *C.dmrgo_trunk_tscc_output_t, s *g_trunk.TSCCOutput,
 	d.slot = C.dmrgo_enums_slot_t(s.Slot)
 	*(*[3]byte)(unsafe.Pointer(&d.cach)) = s.CACH
 	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
+	d.due = C.dmrgo_duration_t(s.Due)
 	out_layer2_Hint(&d.hint, &s.Hint, oc)
 	d.address = C.uint32_t(s.Address)
 	d.ack = C.dmrgo_enums_ack_reason_t(s.Ack)
@@ -8155,6 +8157,7 @@ func out_trunk_TSCCConfig(d *C.dmrgo_trunk_tscc_config_t, s *g_trunk.TSCCConfig,
 	d.awake = C.dmrgo_duration_t(s.Awake)
 	d.ip = C.bool(s.IP)
 	d.supplementary = C.bool(s.Supplementary)
+	d.lead = C.dmrgo_duration_t(s.Lead)
 }
 
 func fromC_trunk_TSCCConfig(s *C.dmrgo_trunk_tscc_config_t) g_trunk.TSCCConfig {
@@ -8167,6 +8170,7 @@ func in_trunk_TSCCOutput(s *C.dmrgo_trunk_tscc_output_t) (d g_trunk.TSCCOutput) 
 	d.Slot = g_enums.Slot(s.slot)
 	d.CACH = *(*[3]byte)(unsafe.Pointer(&s.cach))
 	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	d.Due = time.Duration(s.due)
 	d.Hint = in_layer2_Hint(&s.hint)
 	d.Address = uint32(s.address)
 	d.Ack = g_enums.AckReason(s.ack)
@@ -43727,6 +43731,22 @@ func dmrgo_trunk_tscc_send_status(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_du
 	}
 	if r0 != nil {
 		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_tscc_skipped
+func dmrgo_trunk_tscc_skipped(c_self *C.dmrgo_trunk_tscc_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_trunk_TSCC(c_self)
+	r0 := h.v.Skipped()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
 	}
 	return C.DMRGO_OK
 }

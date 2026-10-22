@@ -79,7 +79,7 @@ func runTSCC(t *testing.T, pool burstPool, in []byte) {
 		}
 		if kind&1 == 0 {
 			raw := pool[int(arg)%len(pool)]
-			out = ts.Inbound(now, ch, &raw, layer2.Hint{Slot: enums.Slot(1+arg>>7)}, out[:0])
+			out = ts.Inbound(now, ch, &raw, layer2.Hint{Slot: enums.Slot(1 + arg>>7)}, out[:0])
 			for _, o := range out {
 				if o.Kind == trunk.TSCCAuthChallenge && kind&2 != 0 {
 					ts.ExpectAuth(o.Address, 0x123456)

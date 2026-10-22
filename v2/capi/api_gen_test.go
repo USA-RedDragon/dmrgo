@@ -1504,6 +1504,7 @@ var entryPoints = map[string]any{
 	"dmrgo_trunk_tscc_registered":                                      dmrgo_trunk_tscc_registered,
 	"dmrgo_trunk_tscc_send_short_data":                                 dmrgo_trunk_tscc_send_short_data,
 	"dmrgo_trunk_tscc_send_status":                                     dmrgo_trunk_tscc_send_status,
+	"dmrgo_trunk_tscc_skipped":                                         dmrgo_trunk_tscc_skipped,
 	"dmrgo_trunk_tscc_stun":                                            dmrgo_trunk_tscc_stun,
 	"dmrgo_trunk_tscc_tick_need":                                       dmrgo_trunk_tscc_tick_need,
 	"dmrgo_trunk_tscc_tick":                                            dmrgo_trunk_tscc_tick,

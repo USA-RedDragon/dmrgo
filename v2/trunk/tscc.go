@@ -111,6 +111,9 @@ type TSCCConfig struct {
 	// TSCC sets up the call without the data. (ETSI TS 102 361-4 clause
 	// 6.4.13)
 	Supplementary bool
+	// Lead makes Tick emit the bursts of a slot this long before its Due
+	// time, so that an RF FIFO can be filled ahead. 0 means at Due.
+	Lead time.Duration
 }
 
 // TSCCOutputKind is the kind of a TSCCOutput.
@@ -218,6 +221,9 @@ type TSCCOutput struct {
 	CACH [3]byte
 	// Burst is the burst of TSCCBurst.
 	Burst layer2.RawBurst
+	// Due is the start of the 30 ms slot of TSCCBurst, the time at which
+	// it goes on air.
+	Due time.Duration
 	// Hint is what Burst is, for a transport: Slot, and KindData with the
 	// data type, or for a relayed burst what the TSCC decoded of it: the
 	// kind, the data type, and voice burst A from its SYNC.
@@ -321,7 +327,9 @@ type TSCC struct {
 	rng     pcg.Source
 	slot    enums.Slot
 	ticks   uint32
+	started bool
 	next    time.Duration
+	skipped int64
 	counter uint16
 	caches  [1 + MaxPayloadChannels]bs.CACH
 	b       *layer2.Burst
@@ -357,6 +365,9 @@ func NewTSCC(cfg *TSCCConfig) (*TSCC, error) {
 		if ch := c.Payload[i]; ch == ChannelNull || ch >= ChannelAbsolute {
 			return nil, errChannels
 		}
+	}
+	if c.Lead < 0 {
+		return nil, errLead
 	}
 	if c.MaxRegistrations < 0 || c.MaxRegistrations > maxRegistrations {
 		return nil, errRegistrations
@@ -404,15 +415,27 @@ func (t *TSCC) Registered(addr uint32) bool {
 	return t.regIndex(addr) >= 0
 }
 
-// Deadline returns the time of the next Tick: the TSCC sends one burst
-// per 30 ms slot. It is the time of the last Tick plus 30 ms, or 0 before
-// the first Tick.
+// Deadline returns the time of the next Tick: the start of the next 30 ms
+// slot minus TSCCConfig.Lead, or 0 before the first Tick.
 func (t *TSCC) Deadline() (at time.Duration, ok bool) {
 	if t == nil {
 		return 0, false
 	}
 
-	return t.next, true
+	if !t.started {
+		return 0, true
+	}
+	return t.next - t.cfg.Lead, true
+}
+
+// Skipped returns the number of slots that Tick did not send because it
+// came more than one slot late.
+func (t *TSCC) Skipped() int64 {
+	if t == nil {
+		return 0
+	}
+
+	return t.skipped
 }
 
 // Inbound takes the burst raw that the TSCC received on the inbound
@@ -733,20 +756,33 @@ func (t *TSCC) startClear(i int, reason Reason, out []TSCCOutput) []TSCCOutput {
 	return out
 }
 
-// Tick sends the outbound bursts of one 30 ms slot: on the TSCC a queued
-// PDU or a C_ALOHA, and on each payload channel with a call the relayed
-// inbound burst, P_CLEAR or an idle burst, each with its CACH. It runs the
-// call timers and appends the outputs to dst. The slots alternate from
-// TS1 at the first Tick. It allocates only when dst has no room for
-// MaxTSCCOutputs outputs.
+// Tick runs the call timers that are due at now and sends the outbound
+// bursts of the slot that is due: on the TSCC a queued PDU or a C_ALOHA,
+// and on each payload channel with a call the relayed inbound burst,
+// P_CLEAR or an idle burst, each with its CACH. It appends the outputs to
+// dst. The first Tick starts the slot clock at now with TS1, and each
+// slot after it starts 30 ms later. A Tick before Deadline does nothing,
+// and a Tick that comes more than one slot late sends only the last slot
+// that is due and counts the others in Skipped. It allocates only when
+// dst has no room for MaxTSCCOutputs outputs.
 func (t *TSCC) Tick(now time.Duration, dst []TSCCOutput) []TSCCOutput {
 	if t == nil {
 		return dst
 	}
 
 	out := dst
+	at := now
+	if t.started {
+		e := now + t.cfg.Lead
+		if e < t.next {
+			return out
+		}
+		t.skip((e - t.next) / slotLength)
+		at = e - (e-t.next)%slotLength
+	}
+	t.started = true
 	t.slot = t.slot.Other()
-	t.next = now + slotLength
+	t.next = at + slotLength
 	out = t.timers(now, out)
 	out = t.udtTimers(now, out)
 	out = t.svcTimers(now, out)
@@ -754,11 +790,23 @@ func (t *TSCC) Tick(now time.Duration, dst []TSCCOutput) []TSCCOutput {
 	for c := range t.cfg.PayloadLen {
 		out = t.carrier(c, out)
 	}
+	t.advance()
+	return out
+}
+
+func (t *TSCC) advance() {
 	t.ticks++
 	if t.ticks%4 == 0 {
 		t.counter = (t.counter + 1) % 512
 	}
-	return out
+}
+
+func (t *TSCC) skip(n time.Duration) {
+	t.skipped += int64(n)
+	for range n % (4 * 512) {
+		t.slot = t.slot.Other()
+		t.advance()
+	}
 }
 
 func (t *TSCC) timers(now time.Duration, out []TSCCOutput) []TSCCOutput {
@@ -864,5 +912,5 @@ func (t *TSCC) emitRaw(idx int, ch uint16, raw *layer2.RawBurst, h layer2.Hint, 
 		return out
 	}
 	h.Slot = t.slot
-	return append(out, TSCCOutput{Kind: TSCCBurst, Channel: ch, Slot: t.slot, CACH: cach, Burst: t.svc.buf, Hint: h})
+	return append(out, TSCCOutput{Kind: TSCCBurst, Channel: ch, Slot: t.slot, CACH: cach, Burst: t.svc.buf, Due: t.next - slotLength, Hint: h})
 }
