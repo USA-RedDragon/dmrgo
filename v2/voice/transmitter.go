@@ -193,9 +193,10 @@ type Output struct {
 	// Header or terminator, or KindReverseChannel. Its Slot is the Slot of
 	// the config.
 	Hint layer2.Hint
-	// Fill reports a voice burst with silence in place of voice that was
-	// not queued in time, or that pads the last superframe. The fills that
-	// Relay queues for lost bursts are voice and do not set it.
+	// Fill reports a voice burst with a fill in place of voice that was
+	// not queued in time, or with silence that pads the last superframe.
+	// The fills that Relay queues for bursts that the Receiver reports lost
+	// are voice and do not set it.
 	Fill bool
 	// Reason is why the transmission ended: EndTerminator after a normal
 	// end, EndLost for a relayed call that was lost, EndTimeout after
@@ -808,6 +809,10 @@ func (t *Transmitter) voice(o *Output) {
 	if t.pos == 0 {
 		t.startSuperframe()
 	}
+	fill := t.fill()
+	if t.relay && t.state == TransmitterVoice && t.hasLast && t.underruns == 0 {
+		fill = &t.last
+	}
 	silent := 0
 	for i := range t.slots {
 		if t.ownSlots() > 0 {
@@ -818,7 +823,7 @@ func (t *Transmitter) voice(o *Output) {
 				t.oldSlots--
 			}
 		} else {
-			t.slots[i], o.Fill = *t.fill(), true
+			t.slots[i], o.Fill = *fill, true
 			silent++
 		}
 	}
@@ -893,9 +898,13 @@ func (t *Transmitter) finish(out []Output, reason EndReason) []Output {
 // EventCallStart starts it with its headers, voice is queued, a PI Header
 // is sent after the headers, and an EventCallEnd ends it. Voice that comes
 // before its EventCallStart is dropped and counted, as is voice that does
-// not fit in the queue. A lost burst becomes a fill: the first repeats the
-// last vocoder slot, later ones are silence, or the last slot for a FID
-// other than enums.FIDStandardized and enums.FIDMotorola. The embedded LC
+// not fit in the queue. A lost burst becomes a fill, whether a later
+// EventVoice reports it in Lost or the queue is empty when its Tick comes:
+// the first of a run repeats the last vocoder slot in all three slots,
+// later ones are silence, or the last slot for a FID other than
+// enums.FIDStandardized and enums.FIDMotorola, as MMDVMHost
+// CDMRSlot::insertSilence does. A burst that the queue ran out of is not
+// filled again when Lost reports it. The embedded LC
 // of each complete received superframe is sent in the next superframe that
 // starts, and the call LC when none was received. It returns ErrBusy for
 // an EventCallStart while a call that is not ending runs, and
@@ -989,6 +998,7 @@ func (t *Transmitter) relayVoice(e *Event) {
 		return
 	}
 	fills := int(e.Lost)
+	repeat := !next && t.hasLast && t.underruns == 0
 	if !next {
 		fills -= t.underruns
 		t.underruns = 0
@@ -998,7 +1008,7 @@ func (t *Transmitter) relayVoice(e *Event) {
 			break
 		}
 		for range layer2.VoiceSlotsPerBurst {
-			if i == 0 && t.hasLast && !next {
+			if i == 0 && repeat {
 				t.push(&t.last)
 			} else {
 				t.push(t.fillFor(next))
