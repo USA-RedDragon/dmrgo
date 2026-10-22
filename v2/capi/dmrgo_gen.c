@@ -103,9 +103,9 @@ const char *dmrgo__gen_strerror(int status) {
 	case -145:
 		return "pdu: PDU has no address fields";
 	case -146:
-		return "the data type has no RS(12,9) Full LC mask";
+		return "pdu: the data type has no RS(12,9) Full LC mask";
 	case -147:
-		return "PDU has no group or individual flag";
+		return "pdu: PDU has no group or individual flag";
 	case -148:
 		return "pdu: PDU has no Service Options field";
 	case -149:
@@ -115,7 +115,7 @@ const char *dmrgo__gen_strerror(int status) {
 	case -151:
 		return "pdu: talker alias too long";
 	case -152:
-		return "the opcode does not select the payload";
+		return "pdu: the opcode does not select the payload";
 	case -153:
 		return "location: packet carries no position";
 	case -154:
