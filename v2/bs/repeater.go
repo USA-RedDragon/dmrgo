@@ -509,7 +509,7 @@ func (r *Repeater) isWakeup(b *layer2.Burst, raw *layer2.RawBurst) bool {
 
 func (r *Repeater) key(now time.Duration, dst []Output) []Output {
 	r.keyed, r.lastActivity = true, now
-	r.next, r.nextSlot = now, enums.Slot2
+	r.next, r.nextSlot = now+r.lead, enums.Slot2
 	r.gen.Reset()
 	dst, _ = appendOutput(dst, OutputKey)
 	return dst

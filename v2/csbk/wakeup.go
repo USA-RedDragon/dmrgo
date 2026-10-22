@@ -160,7 +160,7 @@ func (w *Wakeup) Wake(now time.Duration, bs, source uint32) error {
 	if err != nil {
 		return err
 	}
-	w.csbk, w.bs, w.source, w.sent, w.due, w.state = pdu.CSBKBytes(octets), bs, source, 0, now, WakeupSending
+	w.csbk, w.bs, w.source, w.sent, w.due, w.state = pdu.CSBKBytes(octets), bs, source, 0, now+w.lead, WakeupSending
 	return nil
 }
 
@@ -246,7 +246,7 @@ func (w *Wakeup) Tick(now time.Duration, dst []Output) []Output {
 		if w.sent >= w.attempts {
 			return w.done(dst, ResultNoAnswer)
 		}
-		w.state, w.due = WakeupSending, max(w.waitUntil, now)
+		w.state, w.due = WakeupSending, max(w.waitUntil, now)+w.lead
 	}
 	if w.state != WakeupSending || now < w.due-w.lead {
 		return dst

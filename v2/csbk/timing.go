@@ -710,13 +710,13 @@ func (m *Timing) Tick(now time.Duration, dst []Output) []Output {
 	if m.pend != ctNone && m.sending == 0 && now >= m.pendAt {
 		switch {
 		case !m.busy:
-			m.sending, m.sendDue = m.fill(m.pendAt), m.pendAt
+			m.sending, m.sendDue = m.fill(m.pendAt), m.pendAt+m.lead
 			m.sendBurst, _ = m.encode()
 			if m.sending > 0 && m.state >= TimingLeaderAndTimingKnown {
 				m.rhotLow, m.rhotHigh = rhotKnownLow, constants.CTRHOTMax
 			}
 			if m.pend == ctRequest && m.state < TimingLeaderAndTimingKnown {
-				m.noLeader.set(m.pendAt + constants.NoLeader)
+				m.noLeader.set(m.sendDue + constants.NoLeader)
 			}
 			m.pend = ctNone
 		case now-m.pendStart >= ctGiveUp:

@@ -418,4 +418,15 @@ func TestTransmitter_Lead(t *testing.T) {
 	if len(out) != 1 || out[0].Due != time.Second {
 		t.Fatalf("%+v", out)
 	}
+
+	tx = newTransmitter(t, &voice.TransmitterConfig{Silence: vocoder.AMBESilenceSlot(), Lead: 20 * time.Millisecond})
+	tx.Channel(0, true)
+	if err := tx.Start(0, voice.Call{Target: 2, Source: 1}, nil); err != nil {
+		t.Fatal(err)
+	}
+	tx.Channel(time.Second, false)
+	out = tx.Tick(time.Second, nil)
+	if len(out) != 1 || out[0].Due != time.Second+20*time.Millisecond {
+		t.Fatalf("after an idle channel: %+v", out)
+	}
 }

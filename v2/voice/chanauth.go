@@ -66,7 +66,7 @@ func (t *Transmitter) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint,
 		if lc, ok := b.Data.(*pdu.FullLinkControl); ok {
 			if _, source, ok := lc.Addresses(); ok {
 				if source == t.call.Source {
-					t.grant(now)
+					t.grant(now + t.lead)
 					return dst
 				}
 				t.due, t.head, t.length = now, 0, 0
@@ -101,7 +101,7 @@ func (t *Transmitter) authTick(dst []Output) []Output {
 		t.due, t.head, t.length = t.waitUntil, 0, 0
 		return t.finish(dst, EndNoOutbound)
 	}
-	t.authWaiting, t.due = false, t.waitUntil
+	t.authWaiting, t.due = false, t.waitUntil+t.lead
 	if t.holdoffMax > 0 {
 		t.due += t.rng.Duration(t.holdoffMax)
 	}
