@@ -5,8 +5,6 @@ package pdu_test
 import "testing"
 
 func TestFuzzSeeds(t *testing.T) {
-	t.Parallel()
-
 	bptcSeeds(t, func(kind uint8, data []byte) { fuzzBPTCPDU(t, kind, data) })
 	smallSeeds(t, func(kind uint8, data []byte) { fuzzSmallPDU(t, kind, data) })
 	editorSeeds(t, func(kind uint8, data []byte, target, source uint32, group bool, v uint8) {

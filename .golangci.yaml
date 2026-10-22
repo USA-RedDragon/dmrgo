@@ -140,10 +140,10 @@ linters:
           - gosec
         text: G204|G703
       # testing.AllocsPerRun panics in a parallel test.
-      - path: _alloc_test\.go$
+      - path: (_alloc_test|layer2/pdu/fuzz_tinygo_test)\.go$
         linters:
           - paralleltest
-        text: ^Function TestAllocs\w* missing the call to method parallel
+        text: ^Function Test(Allocs\w*|FuzzSeeds) missing the call to method parallel
       - path: v2/(capi|internal/digest/xcrypto)/go\.mod$
         linters:
           - gomoddirectives
