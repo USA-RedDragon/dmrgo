@@ -5,11 +5,12 @@
 //
 // DecodeX decodes a PDU and X.Encode encodes it. cmd/dmrgen generates most of
 // these functions from the dmr struct tags. A CSBK, MBC header, Full LC,
-// Short LC or data header keeps its payload as bits in RawPayload, and its
-// opcode or format selects the layout of the bits, so the two cannot
-// disagree. AsX decodes RawPayload as the payload X and reports false when
-// the opcode selects another payload. SetX encodes the payload X into
-// RawPayload and sets the opcode that selects it. The payloads have no DecodeX
+// Short LC or data header keeps its payload only as bits in RawPayload, and
+// its opcode or format selects the layout of the bits. AsX decodes
+// RawPayload as the payload X and reports false when the opcode selects
+// another payload. SetX encodes the payload X into RawPayload and sets the
+// opcode with it. A caller that changes Opcode, FID, FLCO or SLCO by hand
+// changes the layout that the same bits are read with. The payloads have no DecodeX
 // or Encode of their own. No decode allocates. (ETSI TS 102 361-1 clause 9)
 //
 // # Bit order
@@ -44,7 +45,9 @@
 // on an uncorrectable result: the fields are set from the received bits and
 // FEC.Uncorrectable is set. FEC.Err returns fec.ErrUncorrectable for a
 // caller that wants an error. Functions that decode a bare value, such as
-// DecodeEMBCodeword, return the fec.Result with it.
+// DecodeEMBCodeword, return the fec.Result with it. SetX and the other
+// setters keep FEC, so a decoded PDU edited with them still reports the
+// result of its decode.
 //
 // # CSBK and MBC payloads
 //

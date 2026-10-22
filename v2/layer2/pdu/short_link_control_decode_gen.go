@@ -241,9 +241,9 @@ func (s *ShortLC) AsNullMessage() (p ShortLCNullMessage, ok bool) {
 }
 
 // SetNullMessage makes s carry p as a ShortLCNullMessage payload: it sets
-// SLCO to enums.SLCONullMessage and RawPayload, and keeps the other fields.
-// It returns a *dmrgo.FieldRangeError when a field of p does not fit its
-// bits, and then leaves s as it is.
+// SLCO to enums.SLCONullMessage and RawPayload, and keeps FEC. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *ShortLC) SetNullMessage(p ShortLCNullMessage) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -272,9 +272,9 @@ func (s *ShortLC) AsActivityUpdate() (p ShortLCActivityUpdate, ok bool) {
 }
 
 // SetActivityUpdate makes s carry p as a ShortLCActivityUpdate payload: it
-// sets SLCO to enums.SLCOActivityUpdate and RawPayload, and keeps the other
-// fields. It returns a *dmrgo.FieldRangeError when a field of p does not fit
-// its bits, and then leaves s as it is.
+// sets SLCO to enums.SLCOActivityUpdate and RawPayload, and keeps FEC. It
+// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
+// and then leaves s as it is.
 func (s *ShortLC) SetActivityUpdate(p ShortLCActivityUpdate) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -303,9 +303,9 @@ func (s *ShortLC) AsCSysParms() (p ShortLCCSysParms, ok bool) {
 }
 
 // SetCSysParms makes s carry p as a ShortLCCSysParms payload: it sets SLCO
-// to enums.SLCOCSysParms and RawPayload, and keeps the other fields. It
-// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
-// and then leaves s as it is.
+// to enums.SLCOCSysParms and RawPayload, and keeps FEC. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *ShortLC) SetCSysParms(p ShortLCCSysParms) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -334,9 +334,9 @@ func (s *ShortLC) AsPSysParms() (p ShortLCPSysParms, ok bool) {
 }
 
 // SetPSysParms makes s carry p as a ShortLCPSysParms payload: it sets SLCO
-// to enums.SLCOPSysParms and RawPayload, and keeps the other fields. It
-// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
-// and then leaves s as it is.
+// to enums.SLCOPSysParms and RawPayload, and keeps FEC. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *ShortLC) SetPSysParms(p ShortLCPSysParms) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver

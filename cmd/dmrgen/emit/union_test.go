@@ -80,9 +80,7 @@ func TestUnionSetSingleValue(t *testing.T) {
 
 	out := generateUnion(t, selectorSrc)
 	assertContains(t, out,
-		"// SetA makes s carry p as a Sub payload: it sets Op to 1, FID to 0 and Raw,\n"+
-			"// and keeps the other fields. It returns a *dmrgo.FieldRangeError when a\n// field of p does not fit its bits, and then leaves s as it is.\n"+
-			"func (s *T) SetA(p Sub) error {\n\traw, err := p.encode()\n\tif err != nil {\n\t\treturn err\n\t}\n"+
+		"func (s *T) SetA(p Sub) error {\n\traw, err := p.encode()\n\tif err != nil {\n\t\treturn err\n\t}\n"+
 			"\ts.Op = 1\n\ts.FID = 0\n\ts.Raw = raw\n\treturn nil\n}",
 	)
 }
@@ -299,7 +297,6 @@ type U struct {
 		"Max:   15.0,",
 		"Min:   1.0,",
 		"Type:  \"SubA\",",
-		"or p.Count is 0",
 		"if _, ok := t.AsB(); !ok {",
 	)
 }

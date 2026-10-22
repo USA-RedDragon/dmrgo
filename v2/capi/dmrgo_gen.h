@@ -8917,21 +8917,21 @@ int dmrgo_pdu_data_header_full_message(const dmrgo_pdu_data_header_t *self, bool
 int dmrgo_pdu_data_header_sap(const dmrgo_pdu_data_header_t *self, dmrgo_enums_sap_t *sap, bool *ok);
 /* Go: pdu.DataHeader.SetAddresses. SetAddresses sets the destination and source LLIDs of the header. It returns DMRGO_ERR_PDU_NO_ADDRESSES for a proprietary header and a header of an unknown format, and a DMRGO_ERR_FIELD_RANGE when an LLID does not fit in 24 bits, and then changes nothing. */
 int dmrgo_pdu_data_header_set_addresses(dmrgo_pdu_data_header_t *self, uint32_t destination, uint32_t source);
-/* Go: pdu.DataHeader.SetConfirmed. SetConfirmed makes s carry p as a ConfirmedDataHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.DataHeader.SetConfirmed. SetConfirmed makes s carry p as a ConfirmedDataHeader payload: it sets RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_data_header_set_confirmed(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_confirmed_data_header_t *p);
-/* Go: pdu.DataHeader.SetDefinedData. SetDefinedData makes s carry p as a DefinedDataHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.DataHeader.SetDefinedData. SetDefinedData makes s carry p as a DefinedDataHeader payload: it sets RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_data_header_set_defined_data(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_defined_data_header_t *p);
-/* Go: pdu.DataHeader.SetProprietary. SetProprietary makes s carry p as a ProprietaryHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.DataHeader.SetProprietary. SetProprietary makes s carry p as a ProprietaryHeader payload: it sets RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_data_header_set_proprietary(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_proprietary_header_t *p);
-/* Go: pdu.DataHeader.SetRawData. SetRawData makes s carry p as a RawDataHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits or p.AppendedBlocks is 0, and then leaves s as it is. */
+/* Go: pdu.DataHeader.SetRawData. SetRawData makes s carry p as a RawDataHeader payload: it sets RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits or p.AppendedBlocks is 0, and then leaves s as it is. */
 int dmrgo_pdu_data_header_set_raw_data(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_raw_data_header_t *p);
-/* Go: pdu.DataHeader.SetResponse. SetResponse makes s carry p as a ResponsePacketHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.DataHeader.SetResponse. SetResponse makes s carry p as a ResponsePacketHeader payload: it sets RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_data_header_set_response(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_response_packet_header_t *p);
-/* Go: pdu.DataHeader.SetStatusPrecoded. SetStatusPrecoded makes s carry p as a StatusPrecodedHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.DataHeader.SetStatusPrecoded. SetStatusPrecoded makes s carry p as a StatusPrecodedHeader payload: it sets RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_data_header_set_status_precoded(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_status_precoded_header_t *p);
-/* Go: pdu.DataHeader.SetUDT. SetUDT makes s carry p as a UDTHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.DataHeader.SetUDT. SetUDT makes s carry p as a UDTHeader payload: it sets RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_data_header_set_udt(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_udt_header_t *p);
-/* Go: pdu.DataHeader.SetUnconfirmed. SetUnconfirmed makes s carry p as an UnconfirmedDataHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.DataHeader.SetUnconfirmed. SetUnconfirmed makes s carry p as an UnconfirmedDataHeader payload: it sets RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_data_header_set_unconfirmed(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_unconfirmed_data_header_t *p);
 /* Go: pdu.DataHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_data_header_string(const dmrgo_pdu_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -9321,13 +9321,13 @@ int dmrgo_pdu_short_lc_as_null_message(const dmrgo_pdu_short_lc_t *self, dmrgo_p
 int dmrgo_pdu_short_lc_as_p_sys_parms(const dmrgo_pdu_short_lc_t *self, dmrgo_pdu_short_lc_p_sys_parms_t *p, bool *ok);
 /* Go: pdu.ShortLC.Encode. Encode encodes a ShortLC. */
 int dmrgo_pdu_short_lc_encode(const dmrgo_pdu_short_lc_t *self, uint8_t out[5]);
-/* Go: pdu.ShortLC.SetActivityUpdate. SetActivityUpdate makes s carry p as a ShortLCActivityUpdate payload: it sets SLCO to enums.SLCOActivityUpdate and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.ShortLC.SetActivityUpdate. SetActivityUpdate makes s carry p as a ShortLCActivityUpdate payload: it sets SLCO to enums.SLCOActivityUpdate and RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_short_lc_set_activity_update(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_activity_update_t *p);
-/* Go: pdu.ShortLC.SetCSysParms. SetCSysParms makes s carry p as a ShortLCCSysParms payload: it sets SLCO to enums.SLCOCSysParms and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.ShortLC.SetCSysParms. SetCSysParms makes s carry p as a ShortLCCSysParms payload: it sets SLCO to enums.SLCOCSysParms and RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_short_lc_set_c_sys_parms(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_c_sys_parms_t *p);
-/* Go: pdu.ShortLC.SetNullMessage. SetNullMessage makes s carry p as a ShortLCNullMessage payload: it sets SLCO to enums.SLCONullMessage and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.ShortLC.SetNullMessage. SetNullMessage makes s carry p as a ShortLCNullMessage payload: it sets SLCO to enums.SLCONullMessage and RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_short_lc_set_null_message(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_null_message_t *p);
-/* Go: pdu.ShortLC.SetPSysParms. SetPSysParms makes s carry p as a ShortLCPSysParms payload: it sets SLCO to enums.SLCOPSysParms and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.ShortLC.SetPSysParms. SetPSysParms makes s carry p as a ShortLCPSysParms payload: it sets SLCO to enums.SLCOPSysParms and RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_short_lc_set_p_sys_parms(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_p_sys_parms_t *p);
 /* Go: pdu.ShortLC.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_short_lc_string(const dmrgo_pdu_short_lc_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

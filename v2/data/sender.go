@@ -385,8 +385,8 @@ func (s *Sender) State() SenderState {
 }
 
 // Send starts the message m at now, or queues it in the sliding window.
-// m.Header is a U_HEAD, a C_HEAD, or a DD_HEAD or R_HEAD, with its
-// sub-header set, and m.Rate is the rate of the blocks, where the zero
+// m.Header is a U_HEAD, a C_HEAD, or a DD_HEAD or R_HEAD that a SetX method
+// of pdu.DataHeader set, and m.Rate is the rate of the blocks, where the zero
 // value means rate 1/2. Send copies the header and m.Payload, so the
 // caller can reuse them. It sets the block count, pad octets and Full
 // Message Flag, and for a C_HEAD N(S) from the link, S (with
