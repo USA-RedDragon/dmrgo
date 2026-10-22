@@ -2,9 +2,12 @@ package ars
 
 import "github.com/USA-RedDragon/dmrgo/v2"
 
+const typeName = "ars"
+
 var (
-	errValue    = &dmrgo.FieldRangeError{Type: "ars", Field: "Value", Bits: 7}
-	errDeviceID = &dmrgo.FieldRangeError{Type: "ars", Field: "SetDeviceID", Bits: 24}
+	errValue    = &dmrgo.FieldRangeError{Type: typeName, Field: "Value", Bits: 7}
+	errDeviceID = &dmrgo.FieldRangeError{Type: typeName, Field: "SetDeviceID", Bits: 24}
+	errReason   = &dmrgo.ConfigError{Type: typeName, Field: "reason"}
 )
 
 // DeviceID returns the radio ID that Device holds, and false when Device is
@@ -76,11 +79,13 @@ func NewAck(refresh uint8) (Message, error) {
 }
 
 // NewFailure returns the answer to a device registration that failed, with
-// the reason reason. It returns a *dmrgo.FieldRangeError when reason does
-// not fit in 7 bits.
+// the reason reason, 00 02 FF 00 on the wire for FailureDeviceNotAuthorized.
+// The answer defines only that reason (MOTOTRBO ARS specification 02.00
+// clause 3.4.3), so NewFailure returns a *dmrgo.ConfigError for each other
+// value.
 func NewFailure(reason FailureReason) (Message, error) {
-	if reason > 127 {
-		return Message{}, errValue
+	if reason != FailureDeviceNotAuthorized {
+		return Message{}, errReason
 	}
 	return Message{
 		Header:   Header{Extension: true, AckRequired: true, Priority: true, Control: true, Type: TypeAck},

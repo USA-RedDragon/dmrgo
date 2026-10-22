@@ -6937,13 +6937,13 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ARS_EVENT_NONE ((dmrgo_ars_event_t)0)
 /* Go: ars.EventRefresh. the radio registers again before its registration ends */
 #define DMRGO_ARS_EVENT_REFRESH ((dmrgo_ars_event_t)2)
-/* Go: ars.FailureDeviceNotAuthorized. the radio may not register */
+/* Go: ars.FailureDeviceNotAuthorized. in DMRGO_ARS_TYPE_ACK: the radio may not register */
 #define DMRGO_ARS_FAILURE_DEVICE_NOT_AUTHORIZED ((dmrgo_ars_failure_reason_t)0)
-/* Go: ars.FailureTransmission. the answer could not be sent */
+/* Go: ars.FailureTransmission. in DMRGO_ARS_TYPE_USER_ACK: a transmission failure, as each value from 3 to 127 */
 #define DMRGO_ARS_FAILURE_TRANSMISSION ((dmrgo_ars_failure_reason_t)127)
-/* Go: ars.FailureUserIDNotValid. the user ID is not known */
+/* Go: ars.FailureUserIDNotValid. in DMRGO_ARS_TYPE_USER_ACK: the user ID is not known */
 #define DMRGO_ARS_FAILURE_USER_ID_NOT_VALID ((dmrgo_ars_failure_reason_t)1)
-/* Go: ars.FailureUserValidationTimeout. the user validation timed out */
+/* Go: ars.FailureUserValidationTimeout. in DMRGO_ARS_TYPE_USER_ACK: the user validation timed out */
 #define DMRGO_ARS_FAILURE_USER_VALIDATION_TIMEOUT ((dmrgo_ars_failure_reason_t)2)
 /* Go: ars.TypeAck. the answer to a device registration or a query */
 #define DMRGO_ARS_TYPE_ACK ((dmrgo_ars_type_t)15)
@@ -9792,7 +9792,7 @@ int dmrgo_ars_decode_message(const uint8_t *data, size_t data_len, dmrgo_ars_mes
 int dmrgo_ars_encoding_string(dmrgo_ars_encoding_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ars.Event.String. String returns the name of e. */
 int dmrgo_ars_event_string(dmrgo_ars_event_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: ars.FailureReason.String. String returns the name of r: "Transmission Failure" for each value from 3 to 127. */
+/* Go: ars.FailureReason.String. String returns the name of r: "Device Not Authorized" for 0, its meaning in a DMRGO_ARS_TYPE_ACK, though in a DMRGO_ARS_TYPE_USER_ACK 0 is a transmission failure, and "Transmission Failure" for each value from 3 to 127. */
 int dmrgo_ars_failure_reason_string(dmrgo_ars_failure_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ars.Header.AppendBinary. AppendBinary appends the 1 octet of s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit. */
 int dmrgo_ars_header_append_binary(const dmrgo_ars_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
@@ -9808,7 +9808,7 @@ int dmrgo_ars_message_set_device_id(dmrgo_ars_message_t *self, uint8_t *dst, siz
 int dmrgo_ars_message_string(const dmrgo_ars_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ars.NewAck. NewAck returns the answer to a successful device registration, with the refresh time in units of 30 minutes, 0 for none. It returns a DMRGO_ERR_FIELD_RANGE when refresh does not fit in 7 bits. */
 int dmrgo_ars_new_ack(uint8_t refresh, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: ars.NewFailure. NewFailure returns the answer to a device registration that failed, with the reason reason. It returns a DMRGO_ERR_FIELD_RANGE when reason does not fit in 7 bits. */
+/* Go: ars.NewFailure. NewFailure returns the answer to a device registration that failed, with the reason reason, 00 02 FF 00 on the wire for DMRGO_ARS_FAILURE_DEVICE_NOT_AUTHORIZED. The answer defines only that reason (MOTOTRBO ARS specification 02.00 clause 3.4.3), so NewFailure returns a DMRGO_ERR_CONFIG for each other value. */
 int dmrgo_ars_new_failure(dmrgo_ars_failure_reason_t reason, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ars.NewQuery. NewQuery returns the query that asks a radio to register again, with the header bits that servers send: acknowledgement required and priority, 00 01 74 on the wire. */
 int dmrgo_ars_new_query(dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
