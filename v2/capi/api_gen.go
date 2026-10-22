@@ -48274,6 +48274,32 @@ func errCode1(e error) C.int {
 	return C.DMRGO_ERR_OTHER
 }
 
+func errWalk(err error, f func(C.int) bool) bool {
+	for e := err; e != nil; {
+		c := errCode1(e)
+		if ce, ok := e.(codeError); ok {
+			c = C.int(ce)
+		}
+		if c != C.DMRGO_ERR_OTHER && f(c) {
+			return true
+		}
+		switch u := e.(type) {
+		case interface{ Unwrap() []error }:
+			for _, x := range u.Unwrap() {
+				if errWalk(x, f) {
+					return true
+				}
+			}
+			return false
+		case interface{ Unwrap() error }:
+			e = u.Unwrap()
+		default:
+			return false
+		}
+	}
+	return false
+}
+
 func setErr(err error) C.int {
 	code := setLast(errCode(err), err.Error())
 	setChain(err)

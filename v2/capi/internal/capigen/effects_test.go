@@ -14,7 +14,10 @@ func TestEffects(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m := pkg.Scope().Lookup("M").Type().(*types.Named)
+	m, ok := pkg.Scope().Lookup("M").Type().(*types.Named)
+	if !ok {
+		t.Fatal("no type M")
+	}
 	method := func(name string) *types.Func {
 		for f := range m.Methods() {
 			if f.Name() == name {
@@ -52,7 +55,13 @@ func TestEffects(t *testing.T) {
 			t.Errorf("M.%s: effects %s, want %s", c.name, got, c.want)
 		}
 	}
-	fn := func(name string) *types.Func { return pkg.Scope().Lookup(name).(*types.Func) }
+	fn := func(name string) *types.Func {
+		f, ok := pkg.Scope().Lookup(name).(*types.Func)
+		if !ok {
+			t.Fatalf("no func %s", name)
+		}
+		return f
+	}
 	for _, c := range []struct {
 		name  string
 		param int
