@@ -105,8 +105,9 @@ func Ufloatvar(data []byte, o int) (float64, int, Status) {
 }
 
 // Sfloatvar reads a signed number at data[o]: a Sintvar integer part, then
-// a Uintvar fraction as in Ufloatvar. The sign applies to both parts. An
-// integer part of 2^53 or more in magnitude gives Overflow.
+// a Uintvar fraction as in Ufloatvar. The sign applies to both parts, and
+// the sign bit on a zero gives a negative zero. An integer part of 2^53 or
+// more in magnitude gives Overflow.
 func Sfloatvar(data []byte, o int) (float64, int, Status) {
 	i, neg, o, st := Sintvar(data, o)
 	if st != OK {
@@ -120,7 +121,7 @@ func Sfloatvar(data []byte, o int) (float64, int, Status) {
 		return 0, o, st
 	}
 	if neg {
-		return float64(i) - f, o, OK
+		return -(float64(-i) + f), o, OK
 	}
 	return float64(i) + f, o, OK
 }

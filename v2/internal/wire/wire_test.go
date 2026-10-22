@@ -78,6 +78,13 @@ func TestFloatvar(t *testing.T) {
 	if st != wire.OK || v != -43.0/128 || n != 2 {
 		t.Errorf("Sfloatvar(40 2b) = %v, %d, %d", v, n, st)
 	}
+	v, n, st = wire.Sfloatvar([]byte{0x40, 0x00}, 0)
+	if st != wire.OK || v != 0 || !math.Signbit(v) || n != 2 {
+		t.Errorf("Sfloatvar(40 00) = %v, %d, %d", v, n, st)
+	}
+	if b := wire.AppendSfloatvar(nil, v, 1); !bytes.Equal(b, []byte{0x40, 0x00}) {
+		t.Errorf("AppendSfloatvar(-0) = %x", b)
+	}
 	v, _, st = wire.Sfloatvar([]byte{0x82, 0x53, 0x80, 0x40}, 0)
 	if st != wire.OK || v != 339+64.0/16384 {
 		t.Errorf("Sfloatvar = %v, %d", v, st)
