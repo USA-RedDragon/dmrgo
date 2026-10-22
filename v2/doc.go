@@ -156,6 +156,32 @@
 // The C API of the library, libdmrgo, is in v2/capi, a module of its own.
 // It has an ABI number of its own; the README says how it is versioned.
 //
+// # State machines
+//
+// The machines of bs, csbk, data, trunk and voice have no I/O and share one
+// method set. Each method takes the time now, on a monotonic clock that the
+// caller picks, and appends its outputs to the slice dst of the caller:
+//
+//   - Burst(now, raw, h, dst) decodes the RawBurst raw with what the
+//     layer2.Hint h says about it. A nil raw is a transport frame without a
+//     burst: only h applies. bs.Repeater calls it Inbound and also takes the
+//     source of the burst, trunk.TSCC calls it Inbound and also takes the
+//     carrier, and the other trunk machines also take the CACH.
+//   - Decoded(now, b, h, dst) takes a burst that the caller decoded once,
+//     so that one burst can feed several machines.
+//   - Lost(now, dst) reports the loss of the signal. A machine that only
+//     sends runs Tick.
+//   - Tick(now, dst) runs what is due at now, and Deadline tells when the
+//     next Tick is due. A Tick before Deadline does nothing.
+//   - State reports the state, and Reset ends the work without an output.
+//
+// A machine whose Tick sends bursts at their Due time has a Lead in its
+// config: Tick emits a burst that long before its Due time, so that a
+// transmit FIFO can be filled ahead, and Deadline is Due minus Lead. The
+// Hint of each burst that a machine sends carries its slot. A zero machine
+// does nothing: its methods that start work return ErrZeroValue. Make it
+// with its constructor.
+//
 // # Errors
 //
 // No function or method of the library panics on its input. A method
