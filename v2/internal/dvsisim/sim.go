@@ -106,6 +106,11 @@ type Device struct {
 	Garbage []byte
 	// Drop is the number of next replies to lose.
 	Drop int
+	// Late is the number of next replies to hold back until the host
+	// writes its next packet, as a reply that comes after the host timed
+	// out.
+	Late int
+	late []byte
 	// Reject is the status byte of the response to a RATEP field.
 	Reject byte
 	// Errs lists every problem found in the packets written.
@@ -259,10 +264,19 @@ func (d *Device) reply(t byte, fields []byte) {
 		}
 		b = append(b, x)
 	}
+	if d.Late > 0 {
+		d.Late--
+		d.late = append(d.late[:0], b...)
+		return
+	}
 	d.emit(b)
 }
 
 func (d *Device) packet(b []byte) {
+	if len(d.late) > 0 {
+		d.emit(d.late)
+		d.late = d.late[:0]
+	}
 	n := len(b) - 4
 	fields := b[4:]
 	if d.parity {

@@ -53,9 +53,12 @@ type timeouter interface {
 }
 
 // Codec is a vocoder.Codec that runs on a DVSI chip at the DMR AMBE+2
-// rate. Each Decode and Encode sends one packet and waits for the reply. A
-// Codec is not safe for concurrent use, and Codecs that share one Port
-// must not be used at the same time. The zero Codec is closed.
+// rate. Each Decode and Encode sends one packet and waits for the reply.
+// After a Decode or Encode that got no reply, the next one first sends a
+// product ID query and drops the replies that come before its response,
+// so that a late reply does not answer a later request. A Codec is not
+// safe for concurrent use, and Codecs that share one Port must not be used
+// at the same time. The zero Codec is closed.
 type Codec struct {
 	port     Port
 	dl       deadliner
@@ -63,6 +66,8 @@ type Codec struct {
 	channel  int
 	parity   bool
 	closed   bool
+	stale    bool
+	query    []byte
 	product  string
 	version  string
 	rxN      int
@@ -83,7 +88,8 @@ var _ vocoder.Codec = (*Codec)(nil)
 // dmrgo.ErrNilArgument for a nil port, ErrChannel for a channel outside 0
 // to MaxChannel, ErrTimeout when the chip does not reply, ErrStatus when it rejects
 // a field, and the errors of port. It allocates the Codec and the product
-// and version strings.
+// and version strings, and the query packet that resynchronizes it after a
+// timeout.
 func New(port Port, cfg *Config) (*Codec, error) {
 	var conf Config
 	if cfg != nil {
@@ -115,6 +121,7 @@ func New(port Port, cfg *Config) (*Codec, error) {
 		return nil, err
 	}
 	c.consume(n)
+	c.query = AppendQuery(nil, c.parity)
 	p, n, err := c.control(AppendQuery(c.tx[:0], c.parity))
 	if err != nil {
 		return nil, err
@@ -264,6 +271,19 @@ func (c *Codec) fill(start time.Time) error {
 	}
 }
 
+func (c *Codec) resync() error {
+	if !c.stale {
+		return nil
+	}
+	_, n, err := c.control(c.query)
+	if err != nil {
+		return err
+	}
+	c.consume(n)
+	c.stale = false
+	return nil
+}
+
 func (c *Codec) send(pkt []byte) (time.Time, error) {
 	if err := c.write(pkt); err != nil {
 		return time.Time{}, err
@@ -337,6 +357,9 @@ func (c *Codec) Encode(pcm []int16) ([9]byte, error) {
 	if len(pcm) != FrameSamples {
 		return slot, ErrSamples
 	}
+	if err := c.resync(); err != nil {
+		return slot, err
+	}
 	n := putSpeech(c.tx[:cap(c.tx)], c.channel, pcm, c.parity)
 	start, err := c.send(c.tx[:n])
 	if err != nil {
@@ -345,6 +368,7 @@ func (c *Codec) Encode(pcm []int16) ([9]byte, error) {
 	for {
 		p, n, err := c.next(start, c.parity, TypeChannel)
 		if err != nil {
+			c.stale = true
 			return slot, err
 		}
 		ch, body, err := p.walk(TypeChannel, fieldChannelData)
@@ -371,6 +395,9 @@ func (c *Codec) Decode(dst []int16, slot [9]byte) ([]int16, error) {
 	if c.closed || c.port == nil {
 		return dst, ErrClosed
 	}
+	if err := c.resync(); err != nil {
+		return dst, err
+	}
 	pkt, err := AppendChannel(c.tx[:0], c.channel, slot[:], FrameBits, c.parity)
 	if err != nil {
 		return dst, err
@@ -382,6 +409,7 @@ func (c *Codec) Decode(dst []int16, slot [9]byte) ([]int16, error) {
 	for {
 		p, n, err := c.next(start, c.parity, TypeSpeech)
 		if err != nil {
+			c.stale = true
 			return dst, err
 		}
 		out, ch, err := p.AppendSamples(dst)
