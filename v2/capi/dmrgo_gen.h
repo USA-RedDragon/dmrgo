@@ -5711,7 +5711,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_BS_OUTPUT_KEY ((dmrgo_bs_output_kind_t)5)
 /* Go: bs.OutputRejected. OutputRejected is a source that the Repeater refused. */
 #define DMRGO_BS_OUTPUT_REJECTED ((dmrgo_bs_output_kind_t)4)
-/* Go: bs.ReasonHangTime. ReasonHangTime is a call to another target in the call hang time of the slot (ETSI TS 102 361-1 clause 5.2.1.4). */
+/* Go: bs.ReasonHangTime. ReasonHangTime is a call to another target from another Source in the call hang time of the slot (ETSI TS 102 361-1 clause 5.2.1.4). */
 #define DMRGO_BS_REASON_HANG_TIME ((dmrgo_bs_reason_t)2)
 /* Go: bs.ReasonRejected. ReasonRejected is a call that the caller refused with dmrgo_bs_repeater_reject. */
 #define DMRGO_BS_REASON_REJECTED ((dmrgo_bs_reason_t)4)

@@ -130,8 +130,10 @@ const (
 	// OutputCallEnd is the end of the call or data on a slot. Slot, From,
 	// Service, Call and End are set.
 	OutputCallEnd
-	// OutputRejected is a source that the Repeater refused. Slot, From,
-	// Reason and, when known, Call are set.
+	// OutputRejected is a source that the Repeater refused. Slot, From and
+	// Reason are set. Call is set for ReasonTimeout, and for ReasonSlotBusy
+	// and ReasonHangTime when the refused burst carries the full LC, as a
+	// Voice LC header does; else it is zero.
 	OutputRejected
 	// OutputKey is the wakeup of the transmitter in ModeRF.
 	OutputKey
@@ -188,8 +190,11 @@ const (
 	// ReasonSlotBusy is a slot that another source owns. The source waits in
 	// the queue of Config.Pending when it has room.
 	ReasonSlotBusy Reason = iota + 1
-	// ReasonHangTime is a call to another target in the call hang time of
-	// the slot (ETSI TS 102 361-1 clause 5.2.1.4).
+	// ReasonHangTime is a call to another target from another Source in
+	// the call hang time of the slot (ETSI TS 102 361-1 clause 5.2.1.4).
+	// All RF MSs are one Source, so the call of the slot owner, or of any
+	// RF MS after an RF call, takes the slot for any target, as MMDVMHost
+	// does; the politeness rules of the MSs keep the others off.
 	ReasonHangTime
 	// ReasonTimeout is a call that ran longer than Config.Timeout. The rest
 	// of the call is dropped.
