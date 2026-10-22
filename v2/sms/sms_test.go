@@ -11,6 +11,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/appcapture"
+	"github.com/USA-RedDragon/dmrgo/v2/ip"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -197,6 +198,19 @@ func TestErrors(t *testing.T) {
 	}
 	if sms.FormatHytera.String() != "Hytera" || sms.Format(9).String() != "Format(9)" {
 		t.Error("names")
+	}
+}
+
+func TestBadChecksum(t *testing.T) {
+	t.Parallel()
+
+	for _, at := range []int{10, 26} {
+		m := ipMessage(t, appcapture.TMS)
+		m.Data[at] ^= 0x01
+		_, got, err := sms.Decode(nil, &m.Header, m.Data)
+		if !errors.Is(err, ip.ErrChecksum) || got.Format != sms.FormatTMS || string(got.Body) != "MOTO TEST" {
+			t.Errorf("octet %d: %+v %q, %v", at, got, got.Body, err)
+		}
 	}
 }
 

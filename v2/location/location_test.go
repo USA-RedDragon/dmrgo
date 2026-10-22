@@ -105,6 +105,20 @@ func lrrpPacket(t *testing.T, payload string) packet.Message {
 	}
 }
 
+func TestBadChecksum(t *testing.T) {
+	t.Parallel()
+
+	var dec location.Decoder
+	for _, at := range []int{10, 26} {
+		m := lrrpPacket(t, "071a22042468ace0341f4dbc778051118ecd8d118ad47b00636c0006")
+		m.Data[at] ^= 0x01
+		f, err := dec.Decode(&m.Header, m.Data)
+		if !errors.Is(err, ip.ErrChecksum) || f.Format != location.FormatLRRP || !near(f.Latitude, 12.345345, 1e-6) {
+			t.Errorf("octet %d: %+v, %v", at, f, err)
+		}
+	}
+}
+
 func TestLRRP(t *testing.T) {
 	t.Parallel()
 

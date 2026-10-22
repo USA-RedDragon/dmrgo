@@ -1,6 +1,8 @@
 package location
 
 import (
+	"errors"
+
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/hytera/hdap"
@@ -91,7 +93,10 @@ type Decoder struct {
 // with a position to UDP port 3003. It returns ErrNoFix for a packet in
 // none of these formats, for a standard answer whose Result is not 0, for
 // an HDAP position out of range, dmrgo.ErrNilArgument for a nil h, and the errors of the ip,
-// lrrp, nmea and hytera packages for a message that does not decode. It
+// lrrp, nmea and hytera packages for a message that does not decode, and
+// the Fix with ip.ErrChecksum for a position whose IPv4 or UDP checksum
+// does not match, as the block CRCs of the packet already checked its
+// octets. It
 // does not check the HDAP checksum. It does not allocate.
 func (d *Decoder) Decode(h *pdu.DataHeader, data []byte) (Fix, error) {
 	if d == nil {
@@ -108,13 +113,21 @@ func (d *Decoder) Decode(h *pdu.DataHeader, data []byte) (Fix, error) {
 	} else {
 		return Fix{}, ErrNoFix
 	}
-	dg, err := ip.Decode(sap, data)
-	if err != nil {
-		return Fix{}, err
+	dg, sumErr := ip.Decode(sap, data)
+	if sumErr != nil && !errors.Is(sumErr, ip.ErrChecksum) {
+		return Fix{}, sumErr
 	}
 	var f Fix
 	target, source, _ := h.Addresses()
 	f.Source, f.Destination = source, target
+	f, err := d.fromDatagram(f, &dg)
+	if err != nil {
+		return Fix{}, err
+	}
+	return f, sumErr
+}
+
+func (d *Decoder) fromDatagram(f Fix, dg *ip.Datagram) (Fix, error) {
 	switch dg.DestinationPort {
 	case ip.PortNMEA:
 		r, err := nmea.ParseRMC(dg.Payload)
