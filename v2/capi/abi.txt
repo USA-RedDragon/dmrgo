@@ -2496,7 +2496,6 @@ sym int dmrgo_pdu_csbk_set_unit_to_unit_voice_service_answer_response(dmrgo_pdu_
 sym int dmrgo_pdu_csbk_set_unit_to_unit_voice_service_request(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t *p);
 sym int dmrgo_pdu_csbk_string(const dmrgo_pdu_csbk_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_pdu_data_header_addresses(const dmrgo_pdu_data_header_t *self, uint32_t *target, uint32_t *source, bool *ok);
-sym int dmrgo_pdu_data_header_appended_blocks(const dmrgo_pdu_data_header_t *self, uint8_t *out);
 sym int dmrgo_pdu_data_header_as_confirmed_data_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_confirmed_data_header_t *p, bool *ok);
 sym int dmrgo_pdu_data_header_as_defined_data_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_defined_data_header_t *p, bool *ok);
 sym int dmrgo_pdu_data_header_as_proprietary_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_proprietary_header_t *p, bool *ok);
@@ -2505,6 +2504,7 @@ sym int dmrgo_pdu_data_header_as_response_packet_header(const dmrgo_pdu_data_hea
 sym int dmrgo_pdu_data_header_as_status_precoded_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_status_precoded_header_t *p, bool *ok);
 sym int dmrgo_pdu_data_header_as_udt_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_udt_header_t *p, bool *ok);
 sym int dmrgo_pdu_data_header_as_unconfirmed_data_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_unconfirmed_data_header_t *p, bool *ok);
+sym int dmrgo_pdu_data_header_blocks_to_follow(const dmrgo_pdu_data_header_t *self, int64_t *n, bool *ok);
 sym int dmrgo_pdu_data_header_bytes_addresses(const dmrgo_pdu_data_header_bytes_t *self, uint32_t *target, uint32_t *source, bool *ok);
 sym int dmrgo_pdu_data_header_bytes_crc_ok(const dmrgo_pdu_data_header_bytes_t *self, bool *out);
 sym int dmrgo_pdu_data_header_bytes_format(const dmrgo_pdu_data_header_bytes_t *self, dmrgo_pdu_format_t *out);
@@ -2515,6 +2515,8 @@ sym int dmrgo_pdu_data_header_bytes_set_group(dmrgo_pdu_data_header_bytes_t *sel
 sym int dmrgo_pdu_data_header_data_type(const dmrgo_pdu_data_header_t *self, dmrgo_enums_data_type_t *out);
 sym int dmrgo_pdu_data_header_encode(const dmrgo_pdu_data_header_t *self, uint8_t out[12]);
 sym int dmrgo_pdu_data_header_format(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_format_t *out);
+sym int dmrgo_pdu_data_header_full_message(const dmrgo_pdu_data_header_t *self, bool *full, bool *ok);
+sym int dmrgo_pdu_data_header_sap(const dmrgo_pdu_data_header_t *self, dmrgo_enums_sap_t *sap, bool *ok);
 sym int dmrgo_pdu_data_header_set_addresses(dmrgo_pdu_data_header_t *self, uint32_t destination, uint32_t source);
 sym int dmrgo_pdu_data_header_set_confirmed_data_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_confirmed_data_header_t *p);
 sym int dmrgo_pdu_data_header_set_defined_data_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_defined_data_header_t *p);
@@ -3402,7 +3404,7 @@ type struct dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t { uint16_t physical_
 type struct dmrgo_pdu_talkgroup_data_grant_pdu_t { uint16_t physical_channel; bool logical_channel; bool hi_rate; bool emergency; bool offset; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_talkgroup_voice_grant_pdu_t { uint16_t physical_channel; bool logical_channel; bool late_entry; bool emergency; bool offset; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_udp_ipv4_compressed_header_t { uint16_t ipv4_identification; dmrgo_enums_said_t said; dmrgo_enums_daid_t daid; uint8_t header_compression_opcode; dmrgo_enums_spid_t spid; dmrgo_enums_dpid_t dpid; uint16_t extended_header1; uint16_t extended_header2; };
-type struct dmrgo_pdu_udt_header_t { bool group; bool response_requested; bool emergency; bool option_flag; dmrgo_enums_sap_t sap; dmrgo_enums_udt_format_t udt_format; uint32_t llid_destination; uint32_t llid_source; uint8_t pad_nibble; bool reserved; uint8_t appended_blocks; bool supplementary_flag; bool protect_flag; dmrgo_pdu_udt_opcode_t opcode; };
+type struct dmrgo_pdu_udt_header_t { bool group; bool response_requested; bool emergency; bool option_flag; dmrgo_enums_sap_t sap; dmrgo_enums_udt_format_t udt_format; uint32_t llid_destination; uint32_t llid_source; uint8_t pad_nibble; bool reserved; uint8_t uab; bool supplementary_flag; bool protect_flag; dmrgo_pdu_udt_opcode_t opcode; };
 type struct dmrgo_pdu_unconfirmed_data_header_t { bool group; bool response_requested; bool reserved; uint8_t pad_octet_count; dmrgo_enums_sap_t sap; uint32_t llid_destination; uint32_t llid_source; bool full_message_flag; uint8_t blocks_to_follow; uint8_t reserved2; uint8_t fragment_sequence_number; };
 type struct dmrgo_pdu_unified_single_block_data_t { dmrgo_fec_result_t fec; dmrgo_pdu_service_type_t service_type; uint8_t payload[10]; };
 type struct dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t { dmrgo_layer3_service_options_t service_options; uint8_t answer_response; uint32_t target_address; uint32_t source_address; };

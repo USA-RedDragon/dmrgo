@@ -411,7 +411,7 @@ func (t *TSCC) download(a *Appended, to, from uint32, group, supp, ack bool, op 
 	u := &t.u
 	u.hdr = pdu.UDTHeader{
 		Group: group, ResponseRequested: ack, SAP: enums.SAPUnifiedDataTransport, UDTFormat: a.Format, LLIDDestination: to,
-		LLIDSource: from, PadNibble: a.PadNibble, AppendedBlocks: uab(a.Blocks), SupplementaryFlag: supp, Opcode: op,
+		LLIDSource: from, PadNibble: a.PadNibble, UAB: uab(a.Blocks), SupplementaryFlag: supp, Opcode: op,
 	}
 	var dh pdu.DataHeader
 	if dh.SetUDTHeader(u.hdr) != nil {
@@ -460,7 +460,7 @@ func (t *TSCC) udtInbound(now time.Duration, s enums.Slot, out []TSCCOutput) ([]
 			return out, true
 		}
 		u.in = UDT{Header: h}
-		u.inWant, u.inOn, u.inAt = int(h.AppendedBlocks)+1, true, s
+		u.inWant, u.inOn, u.inAt = int(h.UAB)+1, true, s
 		t.wake(h.LLIDSource, now)
 		return out, true
 	case *pdu.Rate12Data:

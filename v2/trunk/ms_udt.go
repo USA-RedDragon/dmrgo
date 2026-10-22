@@ -555,7 +555,7 @@ func (m *MS) sendUDT(due time.Duration, slot enums.Slot, a *Appended, to uint32,
 	var dh pdu.DataHeader
 	err := dh.SetUDTHeader(pdu.UDTHeader{
 		Group: group, ResponseRequested: op == pdu.UDTOpcodeDGNAInboundHeader, OptionFlag: div, SAP: enums.SAPUnifiedDataTransport,
-		UDTFormat: a.Format, LLIDDestination: to, LLIDSource: m.addr, PadNibble: a.PadNibble, AppendedBlocks: uab(a.Blocks), SupplementaryFlag: supp,
+		UDTFormat: a.Format, LLIDDestination: to, LLIDSource: m.addr, PadNibble: a.PadNibble, UAB: uab(a.Blocks), SupplementaryFlag: supp,
 		Opcode: op,
 	})
 	if err != nil {

@@ -2324,7 +2324,7 @@ func out_layer2_pdu_UDTHeader(d *C.dmrgo_pdu_udt_header_t, s *g_layer2_pdu.UDTHe
 	d.llid_source = C.uint32_t(s.LLIDSource)
 	d.pad_nibble = C.uint8_t(s.PadNibble)
 	d.reserved = C.bool(s.Reserved)
-	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
+	d.uab = C.uint8_t(s.UAB)
 	d.supplementary_flag = C.bool(s.SupplementaryFlag)
 	d.protect_flag = C.bool(s.ProtectFlag)
 	d.opcode = C.dmrgo_pdu_udt_opcode_t(s.Opcode)
@@ -2397,7 +2397,7 @@ func in_layer2_pdu_UDTHeader(s *C.dmrgo_pdu_udt_header_t) (d g_layer2_pdu.UDTHea
 	d.LLIDSource = uint32(s.llid_source)
 	d.PadNibble = uint8(s.pad_nibble)
 	d.Reserved = bool(s.reserved)
-	d.AppendedBlocks = uint8(s.appended_blocks)
+	d.UAB = uint8(s.uab)
 	d.SupplementaryFlag = bool(s.supplementary_flag)
 	d.ProtectFlag = bool(s.protect_flag)
 	d.Opcode = g_layer2_pdu.UDTOpcode(s.opcode)
@@ -23357,26 +23357,6 @@ func dmrgo_pdu_data_header_addresses(c_self *C.dmrgo_pdu_data_header_t, c_target
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_data_header_appended_blocks
-func dmrgo_pdu_data_header_appended_blocks(c_self *C.dmrgo_pdu_data_header_t, c_out *C.uint8_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_layer2_pdu.DataHeader
-	x = in_layer2_pdu_DataHeader(&(*c_self))
-	r0 := x.AppendedBlocks()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.uint8_t(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_pdu_data_header_as_confirmed_data_header
 func dmrgo_pdu_data_header_as_confirmed_data_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_confirmed_data_header_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -23569,6 +23549,30 @@ func dmrgo_pdu_data_header_as_unconfirmed_data_header(c_self *C.dmrgo_pdu_data_h
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_data_header_blocks_to_follow
+func dmrgo_pdu_data_header_blocks_to_follow(c_self *C.dmrgo_pdu_data_header_t, c_n *C.int64_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	r0, r1 := x.BlocksToFollow()
+	_ = r0
+	_ = r1
+	if c_n != nil {
+		*c_n = C.int64_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_data_header_data_type
 func dmrgo_pdu_data_header_data_type(c_self *C.dmrgo_pdu_data_header_t, c_out *C.dmrgo_enums_data_type_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -23625,6 +23629,54 @@ func dmrgo_pdu_data_header_format(c_self *C.dmrgo_pdu_data_header_t, c_out *C.dm
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_pdu_format_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_full_message
+func dmrgo_pdu_data_header_full_message(c_self *C.dmrgo_pdu_data_header_t, c_full *C.bool, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	r0, r1 := x.FullMessage()
+	_ = r0
+	_ = r1
+	if c_full != nil {
+		*c_full = C.bool(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_sap
+func dmrgo_pdu_data_header_sap(c_self *C.dmrgo_pdu_data_header_t, c_sap *C.dmrgo_enums_sap_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	r0, r1 := x.SAP()
+	_ = r0
+	_ = r1
+	if c_sap != nil {
+		*c_sap = C.dmrgo_enums_sap_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)

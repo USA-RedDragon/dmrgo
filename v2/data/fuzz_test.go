@@ -49,7 +49,7 @@ func pool(t testing.TB) []layer2.RawBurst {
 		p = append(p, build(t, h, payload(20), enums.DataTypeRate34)...)
 	}
 	udt := setHeader(t, (*pdu.DataHeader).SetUDTHeader, pdu.UDTHeader{
-		LLIDDestination: dstID, LLIDSource: srcID, AppendedBlocks: 0, Opcode: pdu.UDTOpcodeInboundHeader})
+		LLIDDestination: dstID, LLIDSource: srcID, UAB: 0, Opcode: pdu.UDTOpcodeInboundHeader})
 	blocks := [][12]byte{{1, 2, 3}}
 	pdu.SetMBCLastBlockCRC(blocks)
 	for _, d := range []layer2.Data{&udt, &pdu.Rate12Data{Data: blocks[0]}} {

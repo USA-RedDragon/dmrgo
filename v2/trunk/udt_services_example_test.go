@@ -62,7 +62,7 @@ func (s *exampleSite) print() {
 }
 
 func (s *exampleSite) udt(h pdu.UDTHeader, a *trunk.Appended) {
-	h.UDTFormat, h.PadNibble, h.AppendedBlocks = a.Format, a.PadNibble, uint8(a.Blocks-1)
+	h.UDTFormat, h.PadNibble, h.UAB = a.Format, a.PadNibble, uint8(a.Blocks-1)
 	if h.Opcode == 0 {
 		h.Opcode = pdu.UDTOpcodeOutboundHeader
 	}

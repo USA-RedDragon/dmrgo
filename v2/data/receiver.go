@@ -586,7 +586,7 @@ func (r *Receiver) header(now time.Duration, dh *pdu.DataHeader, cc enums.ColorC
 	r.cur.pending = int(r.cur.blocks)
 	r.u.active = false
 	if uh, ok := dh.AsUDTHeader(); ok {
-		r.u = udt{active: true, need: int(uh.AppendedBlocks) + 1, header: uh}
+		r.u = udt{active: true, need: int(uh.UAB) + 1, header: uh}
 		r.cur.pending = r.u.need
 		r.settle()
 		return out
