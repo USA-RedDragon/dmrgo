@@ -7413,10 +7413,10 @@ func fromC_voice_ReceiverConfig(s *C.dmrgo_voice_receiver_config_t) g_voice.Rece
 }
 
 func in_voice_Stats(s *C.dmrgo_voice_stats_t) (d g_voice.Stats) {
-	d.Bursts = uint16(s.bursts)
-	d.Lost = uint16(s.lost)
-	d.Duplicates = uint16(s.duplicates)
-	d.Late = uint16(s.late)
+	d.Bursts = uint32(s.bursts)
+	d.Lost = uint32(s.lost)
+	d.Duplicates = uint32(s.duplicates)
+	d.Late = uint32(s.late)
 	d.BitsChecked = uint32(s.bits_checked)
 	d.BitErrors = uint32(s.bit_errors)
 	d.Duration = time.Duration(s.duration)
@@ -7425,10 +7425,10 @@ func in_voice_Stats(s *C.dmrgo_voice_stats_t) (d g_voice.Stats) {
 
 func out_voice_Stats(d *C.dmrgo_voice_stats_t, s *g_voice.Stats, oc *outc) {
 	_ = oc
-	d.bursts = C.uint16_t(s.Bursts)
-	d.lost = C.uint16_t(s.Lost)
-	d.duplicates = C.uint16_t(s.Duplicates)
-	d.late = C.uint16_t(s.Late)
+	d.bursts = C.uint32_t(s.Bursts)
+	d.lost = C.uint32_t(s.Lost)
+	d.duplicates = C.uint32_t(s.Duplicates)
+	d.late = C.uint32_t(s.Late)
 	d.bits_checked = C.uint32_t(s.BitsChecked)
 	d.bit_errors = C.uint32_t(s.BitErrors)
 	d.duration = C.dmrgo_duration_t(s.Duration)

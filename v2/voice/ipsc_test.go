@@ -101,8 +101,8 @@ func TestReceiver_IPSCLostBurstA(t *testing.T) {
 		packets   []string
 		noEMB     bool
 		positions string
-		dups      uint16
-		lost      uint16
+		dups      uint32
+		lost      uint32
 	}{
 		{"call", ipscCall, false, "ABCDEF", 0, 0},
 		{"lost A", ipscLostA, false, "BCDEF", 1, 1},

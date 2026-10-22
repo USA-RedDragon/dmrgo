@@ -425,7 +425,7 @@ func (r *Receiver) callLC(now time.Duration, c *Call, out []Event) []Event {
 			if r.call.Origin == OriginExpected {
 				r.call.LC, r.call.Options, r.call.FID = c.LC, c.Options, c.FID
 			} else if c.Origin == OriginHeader {
-				r.stats.Duplicates++
+				r.stats.Duplicates = addSat32(r.stats.Duplicates, 1)
 			}
 			r.last = now
 			return out
@@ -537,11 +537,11 @@ func (r *Receiver) voice(now time.Duration, b *layer2.Burst, raw *layer2.RawBurs
 	idx, lost, p := r.track.place(b, &r.raw, h, now)
 	switch p {
 	case duplicate:
-		r.stats.Duplicates++
+		r.stats.Duplicates = addSat32(r.stats.Duplicates, 1)
 		r.last = now
 		return out
 	case late:
-		r.stats.Late++
+		r.stats.Late = addSat32(r.stats.Late, 1)
 		r.last = now
 		return out
 	case placed:
@@ -561,8 +561,8 @@ func (r *Receiver) voice(now time.Duration, b *layer2.Burst, raw *layer2.RawBurs
 		}
 	}
 
-	r.stats.Bursts++
-	r.stats.Lost = addSat16(r.stats.Lost, lost)
+	r.stats.Bursts = addSat32(r.stats.Bursts, 1)
+	r.stats.Lost = addSat32(r.stats.Lost, lost)
 	var e *Event
 	out, e = appendEvent(out, EventVoice, &r.call)
 	e.Burst, e.Lost = r.raw, sat8(lost)
@@ -634,15 +634,15 @@ func appendEvent(out []Event, k EventKind, c *Call) ([]Event, *Event) {
 	return out, e
 }
 
-func addSat16(a uint16, n int) uint16 {
-	sum := int(a) + n
-	if sum >= 0xFFFF {
-		return 0xFFFF
+func addSat32(a uint32, n int) uint32 {
+	sum := int64(a) + int64(n)
+	if sum >= 0xFFFFFFFF {
+		return 0xFFFFFFFF
 	}
 	if sum <= 0 {
 		return 0
 	}
-	return uint16(sum)
+	return uint32(sum)
 }
 
 func sat8(n int) uint8 {

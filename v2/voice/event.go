@@ -161,18 +161,19 @@ func (r EndReason) String() string {
 	return fmt.Sprintf("EndReason(%d)", uint8(r))
 }
 
-// Stats counts what a Receiver saw during a call.
+// Stats counts what a Receiver saw during a call. Bursts, Lost, Duplicates
+// and Late stop at the largest uint32.
 type Stats struct {
 	// Bursts is the number of voice bursts of the call.
-	Bursts uint16
+	Bursts uint32
 	// Lost is the number of voice bursts that did not arrive.
-	Lost uint16
+	Lost uint32
 	// Duplicates is the number of bursts dropped as copies of an earlier
 	// one, voice bursts and Voice LC Headers.
-	Duplicates uint16
+	Duplicates uint32
 	// Late is the number of voice bursts dropped because their sequence
 	// number was behind the last one.
-	Late uint16
+	Late uint32
 	// BitsChecked is the number of vocoder bits that the AMBE+2 FEC
 	// covered.
 	BitsChecked uint32

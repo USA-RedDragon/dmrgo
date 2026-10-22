@@ -54,7 +54,7 @@ func TestReceiver_LostAfterHeader(t *testing.T) {
 				t.Errorf("lost counts %v", n)
 			}
 			end := find(got, voice.EventCallEnd)
-			if len(end) != 1 || end[0].Stats.Lost != uint16(lost) || end[0].Stats.Bursts != uint16(18-lost) {
+			if len(end) != 1 || end[0].Stats.Lost != uint32(lost) || end[0].Stats.Bursts != uint32(18-lost) {
 				t.Errorf("end %+v", end)
 			}
 		})
@@ -95,7 +95,7 @@ func TestReceiver_LostAfterHeaderSeq(t *testing.T) {
 			if want := "ABCDEFABCDEF"[tt.lost:]; positions(got) != want {
 				t.Errorf("positions %s, want %s", positions(got), want)
 			}
-			if end := find(got, voice.EventCallEnd); len(end) != 1 || end[0].Stats.Lost != uint16(tt.lost) {
+			if end := find(got, voice.EventCallEnd); len(end) != 1 || end[0].Stats.Lost != uint32(tt.lost) {
 				t.Errorf("end %+v", end)
 			}
 		})
