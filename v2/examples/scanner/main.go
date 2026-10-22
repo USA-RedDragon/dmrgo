@@ -97,12 +97,12 @@ func loadBursts(path string) ([]layer2.RawBurst, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(data)%33 != 0 {
+	if len(data)%layer2.RawBurstSize != 0 {
 		return nil, fmt.Errorf("%s: %d bytes is not a whole number of bursts", path, len(data))
 	}
-	out := make([]layer2.RawBurst, len(data)/33)
+	out := make([]layer2.RawBurst, len(data)/layer2.RawBurstSize)
 	for i := range out {
-		out[i] = [33]byte(data[i*33:])
+		out[i] = layer2.RawBurst(data[i*layer2.RawBurstSize:])
 	}
 	return out, nil
 }

@@ -40,8 +40,8 @@ func TestBadCRCFails(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i := 0; i+burstSize <= len(raw); i += burstSize {
-		rb := layer2.RawBurst(raw[i : i+burstSize])
+	for i := 0; i+layer2.RawBurstSize <= len(raw); i += layer2.RawBurstSize {
+		rb := layer2.RawBurst(raw[i : i+layer2.RawBurstSize])
 		if st := rb.SlotType(); st.DataType != enums.DataTypeDataHeader {
 			continue
 		}

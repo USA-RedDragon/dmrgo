@@ -1003,6 +1003,7 @@ sym #define DMRGO_LAYER2_KIND_VOICE ((dmrgo_layer2_kind_t)1)
 sym #define DMRGO_LAYER2_PLACEMENT_DUPLICATE ((dmrgo_layer2_placement_t)1)
 sym #define DMRGO_LAYER2_PLACEMENT_IN_ORDER ((dmrgo_layer2_placement_t)0)
 sym #define DMRGO_LAYER2_PLACEMENT_LATE ((dmrgo_layer2_placement_t)2)
+sym #define DMRGO_LAYER2_RAW_BURST_SIZE 33
 sym #define DMRGO_LAYER2_SYNC_SOURCE_BS ((dmrgo_layer2_sync_source_t)0)
 sym #define DMRGO_LAYER2_SYNC_SOURCE_DIRECT_TS1 ((dmrgo_layer2_sync_source_t)2)
 sym #define DMRGO_LAYER2_SYNC_SOURCE_DIRECT_TS2 ((dmrgo_layer2_sync_source_t)3)

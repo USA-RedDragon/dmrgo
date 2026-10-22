@@ -15,8 +15,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-const burstSize = 33
-
 type tally struct {
 	file                    string
 	bursts, voice, data     int
@@ -31,17 +29,17 @@ func (t *tally) failf(i int, format string, args ...any) {
 
 func checkCapture(name string, raw []byte) *tally {
 	t := &tally{file: name}
-	if len(raw)%burstSize != 0 {
-		t.failf(0, "length %d is not a multiple of %d", len(raw), burstSize)
+	if len(raw)%layer2.RawBurstSize != 0 {
+		t.failf(0, "length %d is not a multiple of %d", len(raw), layer2.RawBurstSize)
 		return t
 	}
 	var rx layer2.VoiceReceiver
 	var frags [4][4]byte
-	for i := 0; i < len(raw)/burstSize; i++ {
-		in := [burstSize]byte(raw[i*burstSize : (i+1)*burstSize])
+	b := layer2.NewBurst()
+	for i := 0; i < len(raw)/layer2.RawBurstSize; i++ {
+		in := [layer2.RawBurstSize]byte(raw[i*layer2.RawBurstSize : (i+1)*layer2.RawBurstSize])
 		t.bursts++
-		b, err := layer2.NewBurstFromBytes(in)
-		if err != nil {
+		if err := b.DecodeFromBytes(in); err != nil {
 			t.failf(i, "decode: %v", err)
 			continue
 		}
