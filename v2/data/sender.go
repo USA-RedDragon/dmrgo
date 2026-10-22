@@ -427,27 +427,29 @@ func (s *Sender) State() SenderState {
 
 // Send starts the message m at now, or queues it in the sliding window.
 // m.Header is a U_HEAD, a C_HEAD, or a DD_HEAD or R_HEAD that a SetX method
-// of pdu.DataHeader set, and m.Rate is the rate of the blocks, where the zero
-// value means rate 1/2. Send copies the header and m.Payload, so the
+// of pdu.DataHeader set, and m.Rate is the rate of the blocks, where the
+// zero value means rate 1/2. Send copies the header and m.Payload, so the
 // caller can reuse them. It sets the block count, pad octets and Full
-// Message Flag, and for a C_HEAD N(S) from the link, S (with
-// SenderConfig.Resync), FSN 1000, a message in one fragment, and the
-// Response Requested flag on the last message of a window only. A DD_HEAD
-// or R_HEAD message is confirmed when its Response Requested flag (A) is
-// set, and Send sets A when SARQ is set, as A 0 with SARQ 1 is reserved
-// (ETSI TS 102 361-3 clause 6.4, Table 6.5). With
-// SenderConfig.Window above 1, a C_HEAD message of the IP bearer service
-// to the link of the messages in progress joins them while fewer than
-// Window are in progress: it goes in the window on air when the last
+// Message Flag, so the Blocks to Follow or Appended Blocks of m.Header does
+// not matter. A DD_HEAD can leave its Appended Blocks 0, but
+// pdu.DataHeader.SetRawData needs 1 to 63, as an Appended Blocks of 0 makes
+// the header an SP_HEAD (ETSI TS 102 361-1 Table 9.17A). For a C_HEAD it
+// sets N(S) from the link, S (with SenderConfig.Resync), FSN 1000, a
+// message in one fragment, and the Response Requested flag on the last
+// message of a window only. A DD_HEAD or R_HEAD message is confirmed when
+// its Response Requested flag (A) is set, and Send sets A when SARQ is set,
+// as A 0 with SARQ 1 is reserved (ETSI TS 102 361-3 clause 6.4, Table 6.5).
+// With SenderConfig.Window above 1, a C_HEAD message of the IP bearer
+// service to the link of the messages in progress joins them while fewer
+// than Window are in progress: it goes in the window on air when the last
 // header of that window has not gone yet, else in the next window. Send
 // returns ErrBusy for any other message while a message is in progress,
-// dmrgo.ErrNilArgument for a nil m, a *dmrgo.ConfigError for another
-// header (Field "Header"), a P_HEAD in m.Proprietary (Field
-// "Proprietary") or a confirmed message to a group (Field
-// "Header.Group"), dmrgo.ErrZeroValue on a zero Sender, and the errors of
-// packet.Builder.Segment, such as packet.ErrNoRoom for a message of more
-// than SenderConfig.MaxBlocks blocks and packet.ErrRate. (ETSI TS 102 361-3
-// clauses 5.4 and 5.4.4)
+// dmrgo.ErrNilArgument for a nil m, a *dmrgo.ConfigError for another header
+// (Field "Header"), a P_HEAD in m.Proprietary (Field "Proprietary") or a
+// confirmed message to a group (Field "Header.Group"), dmrgo.ErrZeroValue
+// on a zero Sender, and the errors of packet.Builder.Segment, such as
+// packet.ErrNoRoom for a message of more than SenderConfig.MaxBlocks blocks
+// and packet.ErrRate. (ETSI TS 102 361-3 clauses 5.4 and 5.4.4)
 func (s *Sender) Send(now time.Duration, m *Message) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver

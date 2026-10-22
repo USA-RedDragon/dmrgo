@@ -11,6 +11,23 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
+func TestSenderDefinedDataWithoutAppendedBlocks(t *testing.T) {
+	t.Parallel()
+	l := &link{
+		t:  t,
+		tx: newSender(t, &data.SenderConfig{Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1}),
+		rx: newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID}),
+	}
+	m := message(t, 40)
+	m.Header = setHeader(t, (*pdu.DataHeader).SetDefinedData, pdu.DefinedDataHeader{
+		SAP: enums.SAPShortData, LLIDDestination: dstID, LLIDSource: srcID, DefinedData: enums.DDBinary, ResponseRequested: true,
+	})
+	l.run(m, 10*time.Second)
+	if len(l.done) != 1 || l.done[0].Result != data.ResultDelivered || len(l.got) != 1 || !bytes.Equal(l.got[0], payload(40)) {
+		t.Fatalf("done %+v, delivered %x", l.done, l.got)
+	}
+}
+
 func TestReceiverRemovesPadsOfWholeResend(t *testing.T) {
 	t.Parallel()
 	dd := setHeader(t, (*pdu.DataHeader).SetDefinedData, pdu.DefinedDataHeader{
