@@ -137,12 +137,12 @@
 //     DMRGateway link and OpenBridge.
 //   - transport/dmrd/auth: the login token of transport/dmrd and the
 //     signatures of OpenBridge.
-//   - transport/dmrd/session: the login, keepalive and retry sessions of
-//     transport/dmrd, without I/O.
+//   - transport/dmrd/dmrdsession: the login, keepalive and OpenBridge
+//     sessions of transport/dmrd, without I/O.
 //   - transport/ipsc: Motorola IP Site Connect.
 //   - transport/ipsc/auth: the authentication trailer of IPSC packets.
-//   - transport/ipsc/session: the registration, peer list and keepalives of
-//     IPSC, without I/O.
+//   - transport/ipsc/ipscsession: the registration, keepalive and peer list
+//     of IPSC, without I/O.
 //   - transport/hytera: Hytera IP Multi-Site Connect.
 //   - transport/mmdvm: the serial protocol of an MMDVM modem.
 //
