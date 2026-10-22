@@ -7809,7 +7809,7 @@ int dmrgo_bs_cach_new(dmrgo_bs_cach_t **out);
 int dmrgo_bs_cach_free(dmrgo_bs_cach_t *self);
 /* Go: bs.CACH.First. First reports whether the next call of Next starts a new Short LC, so that the caller builds the Short LC only then. */
 int dmrgo_bs_cach_first(dmrgo_bs_cach_t *self, bool *out);
-/* Go: bs.CACH.Next. Next returns the CACH field before the outbound burst of tc, in transmit order, packed as dmrgo_layer2_decode_cach_field takes it. It returns DMRGO_ERR_BS_SLOT for a tc other than DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2, and the error of dmrgo_pdu_short_lc_encode, after which First stays true. slc may be NULL. */
+/* Go: bs.CACH.Next. Next returns the CACH field before the outbound burst of tc, in transmit order, packed as dmrgo_layer2_decode_cach_field takes it. It returns DMRGO_ERR_BS_SLOT for a tc other than DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2, DMRGO_ERR_NIL_ARGUMENT for a NULL slc when First is true, and the error of dmrgo_pdu_short_lc_encode; after an error First stays true. slc may be NULL. */
 int dmrgo_bs_cach_next(dmrgo_bs_cach_t *self, dmrgo_enums_slot_t tc, bool busy, const dmrgo_pdu_short_lc_t *slc, uint8_t out[3]);
 /* Go: bs.CACH.Reset. Reset makes the next Next start a new Short LC. */
 int dmrgo_bs_cach_reset(dmrgo_bs_cach_t *self);

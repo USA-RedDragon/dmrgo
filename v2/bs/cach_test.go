@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/bs"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -46,5 +47,20 @@ func TestCACH(t *testing.T) {
 	c.Reset()
 	if !c.First() {
 		t.Error("Reset did not restart the Short LC")
+	}
+}
+
+func TestCACHNilShortLC(t *testing.T) {
+	t.Parallel()
+	var c bs.CACH
+	if _, err := c.Next(enums.Slot1, false, nil); !errors.Is(err, dmrgo.ErrNilArgument) || !c.First() {
+		t.Fatalf("nil Short LC at the first fragment: %v, First %v", err, c.First())
+	}
+	var slc pdu.ShortLC
+	if _, err := c.Next(enums.Slot1, false, &slc); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Next(enums.Slot2, true, nil); err != nil {
+		t.Errorf("nil Short LC after the first fragment: %v", err)
 	}
 }
