@@ -25,9 +25,9 @@ func nmeaPacket(t *testing.T, body string) packet.Message {
 		t.Fatal(err)
 	}
 	return packet.Message{
-		Header: pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
+		Header: setHeader(t, (*pdu.DataHeader).SetUnconfirmed, pdu.UnconfirmedDataHeader{
 			SAP: enums.SAPIPBasedPacketData, LLIDDestination: 7, LLIDSource: 5,
-		}},
+		}),
 		Data: data,
 	}
 }

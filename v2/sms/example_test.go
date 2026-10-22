@@ -50,7 +50,7 @@ func ExampleAppendAck() {
 		fmt.Println(err)
 		return
 	}
-	u := ackHeader.Data.UnconfirmedDataHeader
+	u, _ := ackHeader.Data.AsUnconfirmed()
 	fmt.Printf("%d octets from %d to %d\n", len(ack), u.LLIDSource, u.LLIDDestination)
 	// Output:
 	// 33 octets from 3140598 to 3191868
