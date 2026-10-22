@@ -109,7 +109,7 @@ func checkResync(t testing.TB, garbage []byte, chunk uint8, datagram bool) {
 		t.Fatal(err)
 	}
 	d.Garbage = garbage
-	pcm, err := c.Decode(pairs[0].Slot)
+	pcm, err := c.Decode(nil, pairs[0].Slot)
 	if err != nil && !errors.Is(err, dvsi.ErrTimeout) {
 		t.Fatalf("Decode after garbage %x = %v", garbage, err)
 	}

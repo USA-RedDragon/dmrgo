@@ -20,9 +20,14 @@ type Codec interface {
 	FrameSamples() int
 	// Encode encodes exactly FrameSamples samples into one 72-bit frame.
 	Encode(pcm []int16) ([9]byte, error)
-	// Decode decodes one 72-bit frame into FrameSamples samples. It returns
-	// at most FrameSamples() samples.
-	Decode(slot [9]byte) ([]int16, error)
+	// Decode decodes one 72-bit frame, appends its FrameSamples samples to
+	// dst and returns the extended slice. On error it returns dst unchanged.
+	// It allocates only when dst has no room for FrameSamples more samples.
+	Decode(dst []int16, slot [9]byte) ([]int16, error)
+	// Reset starts a new call: the decoder drops what it learned from the
+	// frames of the call before, such as a detected mode. A Codec without
+	// such state does nothing.
+	Reset()
 	// Silence returns a frame that decodes to silence, for padding the last
 	// burst of a call.
 	Silence() [9]byte
@@ -31,15 +36,4 @@ type Codec interface {
 	// the codec by a name that both ends agree on out of band (ETSI TS 102
 	// 361-1 Table 9.21 NOTE).
 	FID() enums.FeatureSetID
-}
-
-// AppendDecoder is a Codec that can decode into a buffer of the caller.
-// Match it with a type assertion on a Codec.
-type AppendDecoder interface {
-	Codec
-
-	// AppendDecode decodes one 72-bit frame as Decode does, appends the
-	// FrameSamples samples to dst and returns the extended slice; dst needs
-	// room for FrameSamples() samples. On error it returns dst unchanged.
-	AppendDecode(dst []int16, slot [9]byte) ([]int16, error)
 }

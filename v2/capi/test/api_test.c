@@ -71,8 +71,11 @@ static void test_errors(void) {
 	CHECK(dmrgo_layer2_burst_new(NULL) == DMRGO_ERR_ARG);
 	OK(dmrgo_layer2_burst_free(NULL));
 
-	dmrgo_vocoder_codec_t *c = NULL;
-	CHECK(dmrgo_vocoder_new("no such codec", 13, &c) == DMRGO_ERR_VOCODER_UNKNOWN_CODEC);
+	dmrgo_codec2_config_t c2cfg = {0};
+	c2cfg.mode = 1600;
+	dmrgo_codec2_codec_t *c2 = NULL;
+	int rc = dmrgo_codec2_new(&c2cfg, &c2);
+	CHECK((rc == DMRGO_ERR_CODEC2_UNSUPPORTED_MODE || rc == DMRGO_ERR_CODEC2_UNAVAILABLE) && c2 == NULL);
 }
 
 static void test_pdu(void) {
@@ -298,14 +301,13 @@ static int c_frame_samples(uintptr_t user, int64_t *out) {
 	return 0;
 }
 
-static int c_decode(uintptr_t user, const uint8_t slot[9], int16_t *out, size_t cap, size_t *len, size_t *need) {
-	*need = 160;
-	*len = 0;
-	if (cap < 160)
+static int c_decode(uintptr_t user, int16_t *dst, size_t cap, size_t *len, size_t *need, const uint8_t slot[9]) {
+	*need = *len + 160;
+	if (cap < *need)
 		return DMRGO_ERR_SHORT;
-	*len = 160;
-	for (int i = 0; i < 160; i++)
-		out[i] = (int16_t)(slot[0] + *(int *)user);
+	for (size_t i = 0; i < 160; i++)
+		dst[*len + i] = (int16_t)(slot[0] + *(int *)user);
+	*len += 160;
 	return 0;
 }
 
@@ -335,53 +337,45 @@ static int c_close(uintptr_t user) {
 	return 0;
 }
 
-static int bias = 1000;
+static int resets;
 
-static int liar_decode(uintptr_t user, const uint8_t slot[9], int16_t *out, size_t cap, size_t *len, size_t *need) {
+static int c_reset(uintptr_t user) {
 	(void)user;
-	(void)slot;
-	*need = 200;
-	*len = 0;
-	if (cap < 200)
-		return DMRGO_ERR_SHORT;
-	memset(out, 0, 200 * sizeof *out);
-	*len = 200;
+	resets++;
 	return 0;
 }
 
-static int liar_factory(uintptr_t user, dmrgo_vocoder_codec_t **out) {
+static int bias = 1000;
+
+static int liar_decode(uintptr_t user, int16_t *dst, size_t cap, size_t *len, size_t *need, const uint8_t slot[9]) {
 	(void)user;
-	dmrgo_vocoder_codec_vtable_t vt = {0, c_close, liar_decode, c_encode, c_fid, c_frame_samples, c_silence};
-	return dmrgo_vocoder_codec_from_vtable(&vt, out);
+	(void)slot;
+	*need = *len + 200;
+	if (cap < *need)
+		return DMRGO_ERR_SHORT;
+	memset(dst + *len, 0, 200 * sizeof *dst);
+	*len += 200;
+	return 0;
 }
 
 static void test_liar(void) {
-	dmrgo_vocoder_register_factory_fn_t f = {liar_factory, 0};
-	OK(dmrgo_vocoder_register("liar", 4, f));
+	dmrgo_vocoder_codec_vtable_t vt = {0, c_close, liar_decode, c_encode, c_fid, c_frame_samples, c_reset, c_silence};
 	dmrgo_vocoder_codec_t *c = NULL;
-	OK(dmrgo_vocoder_new("liar", 4, &c));
+	OK(dmrgo_vocoder_codec_from_vtable(&vt, &c));
 	uint8_t slot[9] = {0};
 	size_t items = 0, ab = 0, n = 0, need = 0;
 	OK(dmrgo_vocoder_codec_decode_need(c, slot, &items, &ab));
 	CHECK(items == 160);
 	int16_t pcm[400];
-	CHECK(dmrgo_vocoder_codec_decode(c, slot, pcm, items, &n, &need) == DMRGO_ERR_BOUND);
+	CHECK(dmrgo_vocoder_codec_decode(c, pcm, items, &n, &need, slot) == DMRGO_ERR_BOUND);
 	CHECK(dmrgo_last_error_code() == DMRGO_ERR_BOUND);
 	OK(dmrgo_vocoder_codec_free(c));
 }
 
-static int c_factory(uintptr_t user, dmrgo_vocoder_codec_t **out) {
-	(void)user;
-	dmrgo_vocoder_codec_vtable_t vt = {(uintptr_t)&bias, c_close, c_decode, c_encode, c_fid, c_frame_samples, c_silence};
-	return dmrgo_vocoder_codec_from_vtable(&vt, out);
-}
-
 static void test_vocoder(void) {
-	dmrgo_vocoder_register_factory_fn_t f = {c_factory, 0};
-	OK(dmrgo_vocoder_register("ctest", 5, f));
-	CHECK(dmrgo_vocoder_register("ctest", 5, f) == DMRGO_ERR_VOCODER_DUPLICATE_CODEC);
+	dmrgo_vocoder_codec_vtable_t vt = {(uintptr_t)&bias, c_close, c_decode, c_encode, c_fid, c_frame_samples, c_reset, c_silence};
 	dmrgo_vocoder_codec_t *c = NULL;
-	OK(dmrgo_vocoder_new("ctest", 5, &c));
+	OK(dmrgo_vocoder_codec_from_vtable(&vt, &c));
 	int64_t fs = 0;
 	OK(dmrgo_vocoder_codec_frame_samples(c, &fs));
 	CHECK(fs == 160);
@@ -391,8 +385,10 @@ static void test_vocoder(void) {
 	uint8_t slot[9] = {7};
 	int16_t pcm[200];
 	size_t n = 0;
-	OK(dmrgo_vocoder_codec_decode(c, slot, pcm, 200, &n, NULL));
+	OK(dmrgo_vocoder_codec_decode(c, pcm, 200, &n, NULL, slot));
 	CHECK(n == 160 && pcm[0] == 1007 && pcm[159] == 1007);
+	OK(dmrgo_vocoder_codec_reset(c));
+	CHECK(resets == 1);
 	uint8_t enc[9];
 	pcm[0] = 9;
 	OK(dmrgo_vocoder_codec_encode(c, pcm, 160, enc));
@@ -402,22 +398,20 @@ static void test_vocoder(void) {
 	OK(dmrgo_vocoder_codec_free(c));
 
 	dmrgo_codec2_config_t cfg = {0};
-	dmrgo_vocoder_register_factory_fn_t c2 = {0};
-	OK(dmrgo_codec2_new_factory(&cfg, &c2));
-	CHECK(c2.fn != NULL);
-	OK(dmrgo_vocoder_register("c2test", 6, c2));
-	int rc = dmrgo_vocoder_new("c2test", 6, &c);
+	dmrgo_codec2_codec_t *c2 = NULL;
+	int rc = dmrgo_codec2_new(&cfg, &c2);
 	if (rc == DMRGO_ERR_CODEC2_UNAVAILABLE) {
 		printf("vocoder: C codec ok, codec2 skipped (built without libcodec2)\n");
 		return;
 	}
 	OK(rc);
-	dmrgo_vocoder_codec_silence(c, slot);
-	OK(dmrgo_vocoder_codec_decode(c, slot, pcm, 200, &n, NULL));
+	dmrgo_codec2_codec_silence(c2, slot);
+	n = 0;
+	OK(dmrgo_codec2_codec_decode(c2, pcm, 200, &n, NULL, slot));
 	CHECK(n == 160);
-	OK(dmrgo_vocoder_codec_close(c));
-	OK(dmrgo_vocoder_codec_free(c));
-	printf("vocoder: C codec and codec2 through vocoder.Register\n");
+	OK(dmrgo_codec2_codec_close(c2));
+	OK(dmrgo_codec2_codec_free(c2));
+	printf("vocoder: C codec and codec2\n");
 }
 
 static void test_last_error(void) {
@@ -472,48 +466,41 @@ static void test_partial(void) {
 	OK(dmrgo_layer2_voice_transmitter_free(tx));
 }
 
-static int small_factory(uintptr_t user, dmrgo_vocoder_codec_t **out) {
-	*out = NULL;
-	return user == 7 ? 0 : DMRGO_ERR_ARG;
-}
+static int small_user_calls;
 
-static void test_small_user(void) {
-	dmrgo_vocoder_register_factory_fn_t f = {small_factory, 7};
-	OK(dmrgo_vocoder_register("small", 5, f));
-	dmrgo_vocoder_codec_t *c = (dmrgo_vocoder_codec_t *)1;
-	OK(dmrgo_vocoder_new("small", 5, &c));
-	CHECK(c == NULL);
-}
-
-static int names_fac(uintptr_t user, dmrgo_vocoder_codec_t **out) {
-	(void)user;
-	*out = NULL;
+static int small_lc(uintptr_t user, int64_t superframe, dmrgo_pdu_full_link_control_t *out, bool *out_ok) {
+	(void)superframe;
+	(void)out;
+	*out_ok = false;
+	if (user != 7)
+		return DMRGO_ERR_ARG;
+	small_user_calls++;
 	return 0;
 }
 
-static void test_arena(void) {
-	dmrgo_vocoder_register_factory_fn_t f = {names_fac, 0};
-	OK(dmrgo_vocoder_register("arena1", 6, f));
-	dmrgo_string_t names[2 * DMRGO_VOCODER_MAX_CODECS];
-	char arena[512];
-	size_t n = 0, used = 0;
-	OK(dmrgo_vocoder_append_names(names, 2 * DMRGO_VOCODER_MAX_CODECS, &n, NULL, arena, sizeof arena, &used, NULL));
-	size_t first = n;
-	char copy[DMRGO_VOCODER_MAX_CODECS][32];
-	for (size_t i = 0; i < first; i++)
-		snprintf(copy[i], sizeof copy[i], "%.*s", (int)names[i].len, names[i].ptr);
-	OK(dmrgo_vocoder_append_names(names, 2 * DMRGO_VOCODER_MAX_CODECS, &n, NULL, arena, sizeof arena, &used, NULL));
-	CHECK(n == 2 * first);
-	for (size_t i = 0; i < first; i++) {
-		CHECK(names[i].len == strlen(copy[i]) && memcmp(names[i].ptr, copy[i], names[i].len) == 0);
-		CHECK(names[first + i].len == names[i].len && memcmp(names[first + i].ptr, copy[i], names[i].len) == 0);
-	}
-	size_t m = 0, need = 0, fill = 0;
-	CHECK(dmrgo_vocoder_names(names, 2 * DMRGO_VOCODER_MAX_CODECS, &m, NULL, NULL, 0, &fill, &need) == DMRGO_ERR_SHORT);
-	CHECK(fill == 0 && need > 0);
-	char odd[600];
-	OK(dmrgo_vocoder_names(names, 2 * DMRGO_VOCODER_MAX_CODECS, &m, NULL, odd + 1, need, &fill, NULL));
-	CHECK(fill > 0 && fill <= need);
+static void test_small_user(void) {
+	dmrgo_layer2_voice_transmitter_options_t opts;
+	memset(&opts, 0, sizeof opts);
+	dmrgo_layer3_service_options_t so = {0};
+	OK(dmrgo_pdu_new_voice_lc(true, 9990, 3191868, &so, &opts.lc));
+	opts.color_code = 1;
+	opts.source = DMRGO_LAYER2_SYNC_SOURCE_MS;
+	opts.embedded_lc.fn = small_lc;
+	opts.embedded_lc.user = 7;
+	dmrgo_layer2_voice_transmitter_t *tx = NULL;
+	OK(dmrgo_layer2_new_voice_transmitter(&opts, &tx));
+	dmrgo_layer2_raw_burst_t bursts[64];
+	size_t n = 0;
+	OK(dmrgo_layer2_voice_transmitter_append_headers(tx, bursts, 64, &n, NULL));
+	dmrgo_vocoder_ambe_frame_t frames[18];
+	for (int i = 0; i < 18; i++)
+		OK(dmrgo_vocoder_ambe_silence(&frames[i]));
+	OK(dmrgo_layer2_voice_transmitter_append_frames(tx, bursts, 64, &n, NULL, frames, 18));
+	CHECK(small_user_calls == 1);
+	OK(dmrgo_layer2_voice_transmitter_free(tx));
+}
+
+static void test_handle_errors(void) {
 	CHECK(strcmp(dmrgo_strerror(DMRGO_ERR_HANDLE), "invalid handle") == 0);
 	char small[4];
 	size_t ml = 0;
@@ -655,7 +642,7 @@ static void test_dvsi(void) {
 	CHECK(nl == 9 && strcmp(name, "AMBE3000R") == 0);
 	int16_t pcm[160];
 	size_t n = 0;
-	OK(dmrgo_dvsi_codec_decode(codec, chip_slot, pcm, 160, &n, NULL));
+	OK(dmrgo_dvsi_codec_decode(codec, pcm, 160, &n, NULL, chip_slot));
 	CHECK(n == 160 && pcm[0] == -8000 && pcm[159] == 7900);
 	for (int i = 0; i < 160; i++)
 		pcm[i] = (int16_t)(7 * i);
@@ -665,7 +652,7 @@ static void test_dvsi(void) {
 	CHECK(dmrgo_dvsi_codec_encode(codec, pcm, 100, slot) == DMRGO_ERR_DVSI_SAMPLES);
 	CHECK(c.decodes == 1 && c.encodes == 1 && c.parity == 1);
 	OK(dmrgo_dvsi_codec_close(codec));
-	CHECK(dmrgo_dvsi_codec_decode(codec, chip_slot, pcm, 160, &n, NULL) == DMRGO_ERR_DVSI_CLOSED);
+	CHECK((n = 0, dmrgo_dvsi_codec_decode(codec, pcm, 160, &n, NULL, chip_slot)) == DMRGO_ERR_DVSI_CLOSED);
 	OK(dmrgo_dvsi_codec_free(codec));
 	OK(dmrgo_dvsi_port_free(port));
 }
@@ -685,7 +672,7 @@ int main(int argc, char **argv) {
 	test_last_error();
 	test_partial();
 	test_small_user();
-	test_arena();
+	test_handle_errors();
 	test_liar();
 	test_dvsi();
 	if (failures) {

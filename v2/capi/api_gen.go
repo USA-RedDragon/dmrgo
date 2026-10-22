@@ -5019,175 +5019,17 @@ func out_trunk_auth_Keys(d *C.dmrgo_trunk_auth_keys_t, s *g_trunk_auth.Keys, oc 
 	d.entries_len = C.size_t(len(s.Entries))
 }
 
-type vt_vocoder_AppendDecoder struct {
-	t        C.dmrgo_vocoder_append_decoder_vtable_t
-	m0n0     C.size_t
-	m0n0need C.size_t
-	m0a1     [9]C.uint8_t
-	m2a0     [9]C.uint8_t
-	m2b0     []int16
-	m2n0     C.size_t
-	m2n0need C.size_t
-	m3r0     [9]C.uint8_t
-	m3g0     [9]byte
-	m4r0     C.dmrgo_enums_feature_set_id_t
-	m5r0     C.int64_t
-	m6r0     [9]C.uint8_t
-	m6g0     [9]byte
-}
-
-func (c *vt_vocoder_AppendDecoder) AppendDecode(q0 []int16, q1 [9]byte) (o0 []int16, o1 error) {
-	oc := &outc{}
-	_ = oc
-	d := q0
-	*(*[9]byte)(unsafe.Pointer(&c.m0a1)) = q1
-	var code C.int
-	for {
-		c.m0n0 = C.size_t(len(d))
-		c.m0n0need = 0
-		code = C.dmrgo_vocoder_append_decoder_vtable_t__append_decode(&c.t, (*C.int16_t)(unsafe.Pointer(unsafe.SliceData(d[:cap(d)]))), C.size_t(cap(d)), &c.m0n0, &c.m0n0need, &c.m0a1[0])
-		if code == C.DMRGO_ERR_SHORT {
-			grown := false
-			if int(c.m0n0need) > cap(d) {
-				d = slices.Grow(d, int(c.m0n0need)-len(d))
-				grown = true
-			}
-			if grown {
-				continue
-			}
-		}
-		break
-	}
-	if code != C.DMRGO_OK {
-		o1 = codeErr(code)
-		return
-	}
-	o0 = d[:c.m0n0]
-	return
-}
-
-func (c *vt_vocoder_AppendDecoder) Close() (o0 error) {
-	oc := &outc{}
-	_ = oc
-	var code C.int
-	for {
-		code = C.dmrgo_vocoder_append_decoder_vtable_t__close(&c.t)
-		break
-	}
-	if code != C.DMRGO_OK {
-		o0 = codeErr(code)
-		return
-	}
-	return
-}
-
-func (c *vt_vocoder_AppendDecoder) Decode(q0 [9]byte) (o0 []int16, o1 error) {
-	oc := &outc{}
-	_ = oc
-	*(*[9]byte)(unsafe.Pointer(&c.m2a0)) = q0
-	var code C.int
-	for {
-		c.m2n0need = 0
-		code = C.dmrgo_vocoder_append_decoder_vtable_t__decode(&c.t, &c.m2a0[0], (*C.int16_t)(unsafe.Pointer(unsafe.SliceData(c.m2b0))), C.size_t(len(c.m2b0)), &c.m2n0, &c.m2n0need)
-		if code == C.DMRGO_ERR_SHORT {
-			grown := false
-			if int(c.m2n0need) > len(c.m2b0) {
-				c.m2b0 = make([]int16, c.m2n0need)
-				grown = true
-			}
-			if grown {
-				continue
-			}
-		}
-		break
-	}
-	if code != C.DMRGO_OK {
-		o1 = codeErr(code)
-		return
-	}
-	o0 = slices.Clone(c.m2b0[:c.m2n0])
-	return
-}
-
-func (c *vt_vocoder_AppendDecoder) Encode(q0 []int16) (o0 [9]byte, o1 error) {
-	oc := &outc{}
-	_ = oc
-	var code C.int
-	for {
-		code = C.dmrgo_vocoder_append_decoder_vtable_t__encode(&c.t, (*C.int16_t)(unsafe.Pointer(unsafe.SliceData(q0))), C.size_t(len(q0)), &c.m3r0[0])
-		break
-	}
-	if code != C.DMRGO_OK {
-		o1 = codeErr(code)
-		return
-	}
-	c.m3g0 = *(*[9]byte)(unsafe.Pointer(&c.m3r0))
-	o0 = c.m3g0
-	return
-}
-
-func (c *vt_vocoder_AppendDecoder) FID() (o0 g_enums.FeatureSetID) {
-	oc := &outc{}
-	_ = oc
-	var code C.int
-	for {
-		code = C.dmrgo_vocoder_append_decoder_vtable_t__fid(&c.t, &c.m4r0)
-		break
-	}
-	_ = code
-	o0 = g_enums.FeatureSetID(c.m4r0)
-	return
-}
-
-func (c *vt_vocoder_AppendDecoder) FrameSamples() (o0 int) {
-	oc := &outc{}
-	_ = oc
-	var code C.int
-	for {
-		code = C.dmrgo_vocoder_append_decoder_vtable_t__frame_samples(&c.t, &c.m5r0)
-		break
-	}
-	_ = code
-	o0 = int(c.m5r0)
-	return
-}
-
-func (c *vt_vocoder_AppendDecoder) Silence() (o0 [9]byte) {
-	oc := &outc{}
-	_ = oc
-	var code C.int
-	for {
-		code = C.dmrgo_vocoder_append_decoder_vtable_t__silence(&c.t, &c.m6r0[0])
-		break
-	}
-	_ = code
-	c.m6g0 = *(*[9]byte)(unsafe.Pointer(&c.m6r0))
-	o0 = c.m6g0
-	return
-}
-
-//export dmrgo_vocoder_append_decoder_from_vtable
-func dmrgo_vocoder_append_decoder_from_vtable(c_vt *C.dmrgo_vocoder_append_decoder_vtable_t, c_out **C.dmrgo_vocoder_append_decoder_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_vt == nil || c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_vocoder_AppendDecoder(&vt_vocoder_AppendDecoder{t: *c_vt})
-	return C.DMRGO_OK
-}
-
 type vt_vocoder_Codec struct {
 	t        C.dmrgo_vocoder_codec_vtable_t
-	m1a0     [9]C.uint8_t
-	m1b0     []int16
 	m1n0     C.size_t
 	m1n0need C.size_t
+	m1a1     [9]C.uint8_t
 	m2r0     [9]C.uint8_t
 	m2g0     [9]byte
 	m3r0     C.dmrgo_enums_feature_set_id_t
 	m4r0     C.int64_t
-	m5r0     [9]C.uint8_t
-	m5g0     [9]byte
+	m6r0     [9]C.uint8_t
+	m6g0     [9]byte
 }
 
 func (c *vt_vocoder_Codec) Close() (o0 error) {
@@ -5205,18 +5047,20 @@ func (c *vt_vocoder_Codec) Close() (o0 error) {
 	return
 }
 
-func (c *vt_vocoder_Codec) Decode(q0 [9]byte) (o0 []int16, o1 error) {
+func (c *vt_vocoder_Codec) Decode(q0 []int16, q1 [9]byte) (o0 []int16, o1 error) {
 	oc := &outc{}
 	_ = oc
-	*(*[9]byte)(unsafe.Pointer(&c.m1a0)) = q0
+	d := q0
+	*(*[9]byte)(unsafe.Pointer(&c.m1a1)) = q1
 	var code C.int
 	for {
+		c.m1n0 = C.size_t(len(d))
 		c.m1n0need = 0
-		code = C.dmrgo_vocoder_codec_vtable_t__decode(&c.t, &c.m1a0[0], (*C.int16_t)(unsafe.Pointer(unsafe.SliceData(c.m1b0))), C.size_t(len(c.m1b0)), &c.m1n0, &c.m1n0need)
+		code = C.dmrgo_vocoder_codec_vtable_t__decode(&c.t, (*C.int16_t)(unsafe.Pointer(unsafe.SliceData(d[:cap(d)]))), C.size_t(cap(d)), &c.m1n0, &c.m1n0need, &c.m1a1[0])
 		if code == C.DMRGO_ERR_SHORT {
 			grown := false
-			if int(c.m1n0need) > len(c.m1b0) {
-				c.m1b0 = make([]int16, c.m1n0need)
+			if int(c.m1n0need) > cap(d) {
+				d = slices.Grow(d, int(c.m1n0need)-len(d))
 				grown = true
 			}
 			if grown {
@@ -5229,7 +5073,7 @@ func (c *vt_vocoder_Codec) Decode(q0 [9]byte) (o0 []int16, o1 error) {
 		o1 = codeErr(code)
 		return
 	}
-	o0 = slices.Clone(c.m1b0[:c.m1n0])
+	o0 = d[:c.m1n0]
 	return
 }
 
@@ -5276,17 +5120,29 @@ func (c *vt_vocoder_Codec) FrameSamples() (o0 int) {
 	return
 }
 
+func (c *vt_vocoder_Codec) Reset() {
+	oc := &outc{}
+	_ = oc
+	var code C.int
+	for {
+		code = C.dmrgo_vocoder_codec_vtable_t__reset(&c.t)
+		break
+	}
+	_ = code
+	return
+}
+
 func (c *vt_vocoder_Codec) Silence() (o0 [9]byte) {
 	oc := &outc{}
 	_ = oc
 	var code C.int
 	for {
-		code = C.dmrgo_vocoder_codec_vtable_t__silence(&c.t, &c.m5r0[0])
+		code = C.dmrgo_vocoder_codec_vtable_t__silence(&c.t, &c.m6r0[0])
 		break
 	}
 	_ = code
-	c.m5g0 = *(*[9]byte)(unsafe.Pointer(&c.m5r0))
-	o0 = c.m5g0
+	c.m6g0 = *(*[9]byte)(unsafe.Pointer(&c.m6r0))
+	o0 = c.m6g0
 	return
 }
 
@@ -8887,18 +8743,6 @@ func get_trunk_UDT(p *C.dmrgo_trunk_udt_t) *h_trunk_UDT {
 
 func new_trunk_UDT(v *g_trunk.UDT) *C.dmrgo_trunk_udt_t {
 	return (*C.dmrgo_trunk_udt_t)(newHandle(&h_trunk_UDT{v: v}))
-}
-
-type h_vocoder_AppendDecoder struct {
-	v g_vocoder.AppendDecoder
-}
-
-func get_vocoder_AppendDecoder(p *C.dmrgo_vocoder_append_decoder_t) *h_vocoder_AppendDecoder {
-	return lookup[*h_vocoder_AppendDecoder](unsafe.Pointer(p))
-}
-
-func new_vocoder_AppendDecoder(v g_vocoder.AppendDecoder) *C.dmrgo_vocoder_append_decoder_t {
-	return (*C.dmrgo_vocoder_append_decoder_t)(newHandle(&h_vocoder_AppendDecoder{v: v}))
 }
 
 type h_vocoder_Codec struct {
@@ -43970,212 +43814,6 @@ func dmrgo_vocoder_ambe_silence_slot(c_out *C.uint8_t) (rc C.int) {
 	return C.DMRGO_OK
 }
 
-//export dmrgo_vocoder_append_decoder_free
-func dmrgo_vocoder_append_decoder_free(c_self *C.dmrgo_vocoder_append_decoder_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_self == nil {
-		return C.DMRGO_OK
-	}
-	get_vocoder_AppendDecoder(c_self)
-	deleteHandle(unsafe.Pointer(c_self))
-	return C.DMRGO_OK
-}
-
-//export dmrgo_vocoder_append_decoder_append_decode_need
-func dmrgo_vocoder_append_decoder_append_decode_need(c_self *C.dmrgo_vocoder_append_decoder_t, c_slot *C.uint8_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	h := get_vocoder_AppendDecoder(c_self)
-	if c_slot == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	_ = h
-	if c_items != nil {
-		*c_items = C.size_t(max(0, int(h.v.FrameSamples())))
-	}
-	if c_arena != nil {
-		*c_arena = C.size_t(0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_vocoder_append_decoder_append_decode
-func dmrgo_vocoder_append_decoder_append_decode(c_self *C.dmrgo_vocoder_append_decoder_t, c_dst *C.int16_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_slot *C.uint8_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_vocoder_AppendDecoder(c_self)
-	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	nf_dst := int(*c_dst_len)
-	full_dst := unsafe.Slice((*int16)(unsafe.Pointer(c_dst)), int(c_dst_cap))
-	a_dst := full_dst[:*c_dst_len]
-	if c_slot == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	need_items := max(0, int(h.v.FrameSamples()))
-	need_arena := 0
-	_ = need_arena
-	if int(c_dst_cap)-nf_dst < need_items {
-		if c_dst_need != nil {
-			*c_dst_need = C.size_t(nf_dst + need_items)
-		}
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	r0, r1 := h.v.AppendDecode(a_dst, *(*[9]byte)(unsafe.Pointer(c_slot)))
-	_ = r0
-	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if oc.short {
-		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	*c_dst_len = C.size_t(nf_dst)
-	if r1 != nil {
-		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_vocoder_append_decoder_close
-func dmrgo_vocoder_append_decoder_close(c_self *C.dmrgo_vocoder_append_decoder_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_vocoder_AppendDecoder(c_self)
-	r0 := h.v.Close()
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_vocoder_append_decoder_decode_need
-func dmrgo_vocoder_append_decoder_decode_need(c_self *C.dmrgo_vocoder_append_decoder_t, c_slot *C.uint8_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	h := get_vocoder_AppendDecoder(c_self)
-	if c_slot == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	_ = h
-	if c_items != nil {
-		*c_items = C.size_t(max(0, int(h.v.FrameSamples())))
-	}
-	if c_arena != nil {
-		*c_arena = C.size_t(0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_vocoder_append_decoder_decode
-func dmrgo_vocoder_append_decoder_decode(c_self *C.dmrgo_vocoder_append_decoder_t, c_slot *C.uint8_t, c_out *C.int16_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_vocoder_AppendDecoder(c_self)
-	if c_slot == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	need_items := max(0, int(h.v.FrameSamples()))
-	need_arena := 0
-	_ = need_arena
-	if int(c_out_cap) < need_items {
-		if c_out_need != nil {
-			*c_out_need = C.size_t(0 + need_items)
-		}
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	r0, r1 := h.v.Decode(*(*[9]byte)(unsafe.Pointer(c_slot)))
-	_ = r0
-	putSlice(unsafe.Slice((*int16)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
-	if oc.short {
-		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r1 != nil {
-		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_vocoder_append_decoder_encode
-func dmrgo_vocoder_append_decoder_encode(c_self *C.dmrgo_vocoder_append_decoder_t, c_pcm *C.int16_t, c_pcm_len C.size_t, c_out *C.uint8_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_vocoder_AppendDecoder(c_self)
-	if c_pcm == nil && c_pcm_len > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var a_pcm []int16
-	a_pcm = unsafe.Slice((*int16)(unsafe.Pointer(c_pcm)), int(c_pcm_len))
-	r0, r1 := h.v.Encode(a_pcm)
-	_ = r0
-	if c_out != nil {
-		*(*[9]byte)(unsafe.Pointer(&(*(*[9]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r1 != nil {
-		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_vocoder_append_decoder_fid
-func dmrgo_vocoder_append_decoder_fid(c_self *C.dmrgo_vocoder_append_decoder_t, c_out *C.dmrgo_enums_feature_set_id_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_vocoder_AppendDecoder(c_self)
-	r0 := h.v.FID()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.dmrgo_enums_feature_set_id_t(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_vocoder_append_decoder_frame_samples
-func dmrgo_vocoder_append_decoder_frame_samples(c_self *C.dmrgo_vocoder_append_decoder_t, c_out *C.int64_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_vocoder_AppendDecoder(c_self)
-	r0 := h.v.FrameSamples()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.int64_t(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_vocoder_append_decoder_silence
-func dmrgo_vocoder_append_decoder_silence(c_self *C.dmrgo_vocoder_append_decoder_t, c_out *C.uint8_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_vocoder_AppendDecoder(c_self)
-	r0 := h.v.Silence()
-	_ = r0
-	if c_out != nil {
-		*(*[9]byte)(unsafe.Pointer(&(*(*[9]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_vocoder_codec_free
 func dmrgo_vocoder_codec_free(c_self *C.dmrgo_vocoder_codec_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -44220,34 +43858,38 @@ func dmrgo_vocoder_codec_decode_need(c_self *C.dmrgo_vocoder_codec_t, c_slot *C.
 }
 
 //export dmrgo_vocoder_codec_decode
-func dmrgo_vocoder_codec_decode(c_self *C.dmrgo_vocoder_codec_t, c_slot *C.uint8_t, c_out *C.int16_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+func dmrgo_vocoder_codec_decode(c_self *C.dmrgo_vocoder_codec_t, c_dst *C.int16_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_slot *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_vocoder_Codec(c_self)
-	if c_slot == nil {
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*int16)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_slot == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	need_items := max(0, int(h.v.FrameSamples()))
 	need_arena := 0
 	_ = need_arena
-	if int(c_out_cap) < need_items {
-		if c_out_need != nil {
-			*c_out_need = C.size_t(0 + need_items)
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0, r1 := h.v.Decode(*(*[9]byte)(unsafe.Pointer(c_slot)))
+	r0, r1 := h.v.Decode(a_dst, *(*[9]byte)(unsafe.Pointer(c_slot)))
 	_ = r0
-	putSlice(unsafe.Slice((*int16)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
 		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_dst_len = C.size_t(nf_dst)
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -44304,6 +43946,18 @@ func dmrgo_vocoder_codec_frame_samples(c_self *C.dmrgo_vocoder_codec_t, c_out *C
 	if c_out != nil {
 		*c_out = C.int64_t(r0)
 	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_vocoder_codec_reset
+func dmrgo_vocoder_codec_reset(c_self *C.dmrgo_vocoder_codec_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_vocoder_Codec(c_self)
+	h.v.Reset()
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -44471,62 +44125,6 @@ func dmrgo_codec2_codec_free(c_self *C.dmrgo_codec2_codec_t) (rc C.int) {
 	return C.DMRGO_OK
 }
 
-//export dmrgo_codec2_codec_append_decode_need
-func dmrgo_codec2_codec_append_decode_need(c_self *C.dmrgo_codec2_codec_t, c_slot *C.uint8_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	h := get_vocoder_codec2_Codec(c_self)
-	if c_slot == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	_ = h
-	if c_items != nil {
-		*c_items = C.size_t(max(0, int(h.v.FrameSamples())))
-	}
-	if c_arena != nil {
-		*c_arena = C.size_t(0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_codec2_codec_append_decode
-func dmrgo_codec2_codec_append_decode(c_self *C.dmrgo_codec2_codec_t, c_dst *C.int16_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_slot *C.uint8_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_vocoder_codec2_Codec(c_self)
-	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	nf_dst := int(*c_dst_len)
-	full_dst := unsafe.Slice((*int16)(unsafe.Pointer(c_dst)), int(c_dst_cap))
-	a_dst := full_dst[:*c_dst_len]
-	if c_slot == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	need_items := max(0, int(h.v.FrameSamples()))
-	need_arena := 0
-	_ = need_arena
-	if int(c_dst_cap)-nf_dst < need_items {
-		if c_dst_need != nil {
-			*c_dst_need = C.size_t(nf_dst + need_items)
-		}
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	r0, r1 := h.v.AppendDecode(a_dst, *(*[9]byte)(unsafe.Pointer(c_slot)))
-	_ = r0
-	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if oc.short {
-		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	*c_dst_len = C.size_t(nf_dst)
-	if r1 != nil {
-		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_codec2_codec_close
 func dmrgo_codec2_codec_close(c_self *C.dmrgo_codec2_codec_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -44560,34 +44158,38 @@ func dmrgo_codec2_codec_decode_need(c_self *C.dmrgo_codec2_codec_t, c_slot *C.ui
 }
 
 //export dmrgo_codec2_codec_decode
-func dmrgo_codec2_codec_decode(c_self *C.dmrgo_codec2_codec_t, c_slot *C.uint8_t, c_out *C.int16_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+func dmrgo_codec2_codec_decode(c_self *C.dmrgo_codec2_codec_t, c_dst *C.int16_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_slot *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_vocoder_codec2_Codec(c_self)
-	if c_slot == nil {
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*int16)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_slot == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	need_items := max(0, int(h.v.FrameSamples()))
 	need_arena := 0
 	_ = need_arena
-	if int(c_out_cap) < need_items {
-		if c_out_need != nil {
-			*c_out_need = C.size_t(0 + need_items)
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0, r1 := h.v.Decode(*(*[9]byte)(unsafe.Pointer(c_slot)))
+	r0, r1 := h.v.Decode(a_dst, *(*[9]byte)(unsafe.Pointer(c_slot)))
 	_ = r0
-	putSlice(unsafe.Slice((*int16)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
 		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_dst_len = C.size_t(nf_dst)
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -44888,62 +44490,6 @@ func dmrgo_dvsi_codec_free(c_self *C.dmrgo_dvsi_codec_t) (rc C.int) {
 	return C.DMRGO_OK
 }
 
-//export dmrgo_dvsi_codec_append_decode_need
-func dmrgo_dvsi_codec_append_decode_need(c_self *C.dmrgo_dvsi_codec_t, c_slot *C.uint8_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	h := get_vocoder_dvsi_Codec(c_self)
-	if c_slot == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	_ = h
-	if c_items != nil {
-		*c_items = C.size_t(max(0, int(h.v.FrameSamples())))
-	}
-	if c_arena != nil {
-		*c_arena = C.size_t(0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dvsi_codec_append_decode
-func dmrgo_dvsi_codec_append_decode(c_self *C.dmrgo_dvsi_codec_t, c_dst *C.int16_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_slot *C.uint8_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_vocoder_dvsi_Codec(c_self)
-	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	nf_dst := int(*c_dst_len)
-	full_dst := unsafe.Slice((*int16)(unsafe.Pointer(c_dst)), int(c_dst_cap))
-	a_dst := full_dst[:*c_dst_len]
-	if c_slot == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	need_items := max(0, int(h.v.FrameSamples()))
-	need_arena := 0
-	_ = need_arena
-	if int(c_dst_cap)-nf_dst < need_items {
-		if c_dst_need != nil {
-			*c_dst_need = C.size_t(nf_dst + need_items)
-		}
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	r0, r1 := h.v.AppendDecode(a_dst, *(*[9]byte)(unsafe.Pointer(c_slot)))
-	_ = r0
-	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if oc.short {
-		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	*c_dst_len = C.size_t(nf_dst)
-	if r1 != nil {
-		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_dvsi_codec_close
 func dmrgo_dvsi_codec_close(c_self *C.dmrgo_dvsi_codec_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -44977,34 +44523,38 @@ func dmrgo_dvsi_codec_decode_need(c_self *C.dmrgo_dvsi_codec_t, c_slot *C.uint8_
 }
 
 //export dmrgo_dvsi_codec_decode
-func dmrgo_dvsi_codec_decode(c_self *C.dmrgo_dvsi_codec_t, c_slot *C.uint8_t, c_out *C.int16_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+func dmrgo_dvsi_codec_decode(c_self *C.dmrgo_dvsi_codec_t, c_dst *C.int16_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_slot *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_vocoder_dvsi_Codec(c_self)
-	if c_slot == nil {
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*int16)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	if c_slot == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	need_items := max(0, int(h.v.FrameSamples()))
 	need_arena := 0
 	_ = need_arena
-	if int(c_out_cap) < need_items {
-		if c_out_need != nil {
-			*c_out_need = C.size_t(0 + need_items)
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0, r1 := h.v.Decode(*(*[9]byte)(unsafe.Pointer(c_slot)))
+	r0, r1 := h.v.Decode(a_dst, *(*[9]byte)(unsafe.Pointer(c_slot)))
 	_ = r0
-	putSlice(unsafe.Slice((*int16)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
 		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_dst_len = C.size_t(nf_dst)
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -45104,6 +44654,18 @@ func dmrgo_dvsi_codec_product(c_self *C.dmrgo_dvsi_codec_t, c_out *C.char, c_out
 	if oc.short {
 		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
 	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_codec_reset
+func dmrgo_dvsi_codec_reset(c_self *C.dmrgo_dvsi_codec_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_vocoder_dvsi_Codec(c_self)
+	h.v.Reset()
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}

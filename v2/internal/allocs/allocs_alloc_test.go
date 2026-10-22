@@ -307,7 +307,7 @@ func TestAllocsDVSI(t *testing.T) {
 		pkt := make([]byte, 0, dvsi.MaxPacketLen)
 		assertZero(t, "dvsi", func() {
 			for _, p := range pairs {
-				pcm, _ = c.AppendDecode(pcm[:0], p.Slot)
+				pcm, _ = c.Decode(pcm[:0], p.Slot)
 				_, _ = c.Encode(p.PCM[:])
 				pkt, _ = dvsi.AppendSpeech(pkt[:0], 1, p.PCM[:], true)
 				q, _, _ := dvsi.Parse(pkt, true)
