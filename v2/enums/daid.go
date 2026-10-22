@@ -34,8 +34,3 @@ func (daid DAID) String() string {
 	}
 	return unknownName
 }
-
-// Valid reports whether daid fits the 4-bit DAID field.
-func (daid DAID) Valid() bool {
-	return daid <= 15
-}

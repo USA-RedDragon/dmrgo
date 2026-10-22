@@ -25,8 +25,3 @@ func (said SAID) String() string {
 	}
 	return unknownName
 }
-
-// Valid reports whether said fits the 4-bit SAID field.
-func (said SAID) Valid() bool {
-	return said <= 15
-}

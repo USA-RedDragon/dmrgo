@@ -75,29 +75,3 @@ func (fsid FeatureSetID) String() string {
 
 	return "Unknown FeatureSetID: " + text.Int(int64(fsid))
 }
-
-// Valid reports whether fsid is a value that ETSI TS 102 361 defines.
-func (fsid FeatureSetID) Valid() bool {
-	switch fsid {
-	case FIDStandardized,
-		FIDFlydeMicro,
-		FIDProdEl,
-		FIDTridentMicroSystems,
-		FIDRadiodata,
-		FIDHYTScienceTech,
-		FIDAselsan,
-		FIDKirisun,
-		FIDDMRAssociation,
-		FIDMotorola,
-		FIDEMC,
-		FIDEMC2,
-		FIDJVCKenwood,
-		FIDRadioActivity,
-		FIDRadioActivity2,
-		FIDTait,
-		FIDHYTScienceTech2,
-		FIDVertexStandard:
-		return true
-	}
-	return false
-}

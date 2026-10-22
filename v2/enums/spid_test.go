@@ -38,13 +38,3 @@ func TestSPIDToPort(t *testing.T) {
 		t.Errorf("SPIDToPort(ExtendedHeader) = %d, want 0", p)
 	}
 }
-
-func TestSPID_Valid(t *testing.T) {
-	t.Parallel()
-	if !enums.SPID(0).Valid() {
-		t.Error("SPID(0) is not valid")
-	}
-	if enums.SPID(128).Valid() {
-		t.Error("SPID(128) is valid")
-	}
-}

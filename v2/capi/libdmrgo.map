@@ -374,7 +374,6 @@
 		dmrgo_enums_announcement_type_string;
 		dmrgo_enums_backoff_frames;
 		dmrgo_enums_daid_string;
-		dmrgo_enums_daid_valid;
 		dmrgo_enums_data_type_carries_full_lc;
 		dmrgo_enums_data_type_is_bptc;
 		dmrgo_enums_data_type_is_reserved;
@@ -382,11 +381,8 @@
 		dmrgo_enums_dd_format_string;
 		dmrgo_enums_dpid_string;
 		dmrgo_enums_dpid_to_port;
-		dmrgo_enums_dpid_valid;
 		dmrgo_enums_feature_set_id_string;
-		dmrgo_enums_feature_set_id_valid;
 		dmrgo_enums_flco_string;
-		dmrgo_enums_flco_valid;
 		dmrgo_enums_lcss_string;
 		dmrgo_enums_n_rand_wait_frames;
 		dmrgo_enums_nearest_sync_pattern;
@@ -394,7 +390,6 @@
 		dmrgo_enums_protect_kind_string;
 		dmrgo_enums_rc_command_string;
 		dmrgo_enums_said_string;
-		dmrgo_enums_said_valid;
 		dmrgo_enums_service_access_point_id_string;
 		dmrgo_enums_service_function_invites;
 		dmrgo_enums_service_function_string;
@@ -405,7 +400,6 @@
 		dmrgo_enums_slot_string;
 		dmrgo_enums_spid_string;
 		dmrgo_enums_spid_to_port;
-		dmrgo_enums_spid_valid;
 		dmrgo_enums_sync_pattern_string;
 		dmrgo_enums_udt_format_string;
 		dmrgo_enums_voice_burst_at;

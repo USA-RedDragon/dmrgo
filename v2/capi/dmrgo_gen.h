@@ -8080,14 +8080,10 @@ int dmrgo_enums_announcement_type_string(dmrgo_enums_announcement_type_t self, c
 int dmrgo_enums_backoff_frames(dmrgo_enums_backoff_t self, int64_t *out);
 /* Go: enums.DAID.String. */
 int dmrgo_enums_daid_string(dmrgo_enums_daid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: enums.DAID.Valid. Valid reports whether daid fits the 4-bit DAID field. */
-int dmrgo_enums_daid_valid(dmrgo_enums_daid_t self, bool *out);
 /* Go: enums.DDFormat.String. String returns the name of f. */
 int dmrgo_enums_dd_format_string(dmrgo_enums_dd_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.DPID.String. */
 int dmrgo_enums_dpid_string(dmrgo_enums_dpid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: enums.DPID.Valid. Valid reports whether dpid fits the 7-bit DPID field. */
-int dmrgo_enums_dpid_valid(dmrgo_enums_dpid_t self, bool *out);
 /* Go: enums.DPIDToPort. DPIDToPort returns the UDP port of dpid. */
 int dmrgo_enums_dpid_to_port(dmrgo_enums_dpid_t dpid, uint16_t *out);
 /* Go: enums.DataType.CarriesFullLC. CarriesFullLC reports whether a burst of data type dt carries a Full LC with RS(12,9) parity: a Voice LC Header or a Terminator with LC. */
@@ -8100,12 +8096,8 @@ int dmrgo_enums_data_type_is_reserved(dmrgo_enums_data_type_t self, bool *out);
 int dmrgo_enums_data_type_string(dmrgo_enums_data_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.FLCO.String. */
 int dmrgo_enums_flco_string(dmrgo_enums_flco_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: enums.FLCO.Valid. Valid reports whether flco is a value that ETSI TS 102 361 defines. */
-int dmrgo_enums_flco_valid(dmrgo_enums_flco_t self, bool *out);
 /* Go: enums.FeatureSetID.String. String returns the name of the FeatureSetID. */
 int dmrgo_enums_feature_set_id_string(dmrgo_enums_feature_set_id_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: enums.FeatureSetID.Valid. Valid reports whether fsid is a value that ETSI TS 102 361 defines. */
-int dmrgo_enums_feature_set_id_valid(dmrgo_enums_feature_set_id_t self, bool *out);
 /* Go: enums.LCSS.String. */
 int dmrgo_enums_lcss_string(dmrgo_enums_lcss_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.NRandWait.Frames. Frames returns the number of TDMA frames, NWait, of the code (ETSI TS 102 361-4 Table 6.2). */
@@ -8120,14 +8112,10 @@ int dmrgo_enums_protect_kind_string(dmrgo_enums_protect_kind_t self, char *out, 
 int dmrgo_enums_rc_command_string(dmrgo_enums_rc_command_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.SAID.String. */
 int dmrgo_enums_said_string(dmrgo_enums_said_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: enums.SAID.Valid. Valid reports whether said fits the 4-bit SAID field. */
-int dmrgo_enums_said_valid(dmrgo_enums_said_t self, bool *out);
 /* Go: enums.SLCO.String. String returns the name of the SLCO. */
 int dmrgo_enums_slco_string(dmrgo_enums_slco_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.SPID.String. */
 int dmrgo_enums_spid_string(dmrgo_enums_spid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: enums.SPID.Valid. Valid reports whether spid fits the 7-bit SPID field. */
-int dmrgo_enums_spid_valid(dmrgo_enums_spid_t self, bool *out);
 /* Go: enums.SPIDToPort. SPIDToPort returns the UDP port of spid. */
 int dmrgo_enums_spid_to_port(dmrgo_enums_spid_t spid, uint16_t *out);
 /* Go: enums.ServiceAccessPointID.String. String returns the name of the SAP. */

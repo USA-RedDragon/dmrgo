@@ -3,7 +3,6 @@ package enums_test
 import (
 	"errors"
 	"math/bits"
-	"strings"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
@@ -82,26 +81,11 @@ func checkByteEnums(t *testing.T, b uint8) {
 
 func checkNames(t *testing.T, b uint8) {
 	t.Helper()
-	valid := []struct {
-		name  string
-		ok    bool
-		label string
-	}{
-		{"FLCO", enums.FLCO(b).Valid(), enums.FLCO(b).String()},
-		{"FeatureSetID", enums.FeatureSetID(b).Valid(), enums.FeatureSetID(b).String()},
-		{"DAID", enums.DAID(b).Valid(), enums.DAID(b).String()},
-		{"SAID", enums.SAID(b).Valid(), enums.SAID(b).String()},
-		{"DPID", enums.DPID(b).Valid(), enums.DPID(b).String()},
-		{"SPID", enums.SPID(b).Valid(), enums.SPID(b).String()},
-	}
-	for _, c := range valid {
-		if c.ok == strings.HasPrefix(c.label, "Unknown") {
-			t.Fatalf("%s %d: Valid %t, String %q", c.name, b, c.ok, c.label)
-		}
-	}
 	_ = enums.DPIDToPort(enums.DPID(b))
 	_ = enums.SPIDToPort(enums.SPID(b))
 	for _, name := range []string{
+		enums.FLCO(b).String(), enums.FeatureSetID(b).String(), enums.DAID(b).String(), enums.SAID(b).String(),
+		enums.DPID(b).String(), enums.SPID(b).String(),
 		enums.Access(b).String(), enums.ActivityID(b).String(), enums.AnnouncementType(b).String(),
 		enums.LCSS(b).String(), enums.RCCommand(b).String(), enums.ServiceAccessPointID(b).String(),
 		enums.SLCO(b).String(), enums.DataType(b).String(),

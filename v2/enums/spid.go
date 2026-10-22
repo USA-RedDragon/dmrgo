@@ -43,8 +43,3 @@ func (spid SPID) String() string {
 	}
 	return unknownName
 }
-
-// Valid reports whether spid fits the 7-bit SPID field.
-func (spid SPID) Valid() bool {
-	return spid <= 127
-}

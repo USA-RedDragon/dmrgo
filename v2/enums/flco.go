@@ -37,19 +37,3 @@ func (flco FLCO) String() string {
 	}
 	return "Unknown"
 }
-
-// Valid reports whether flco is a value that ETSI TS 102 361 defines.
-func (flco FLCO) Valid() bool {
-	switch flco {
-	case FLCOGroupVoiceChannelUser,
-		FLCOUnitToUnitVoiceChannelUser,
-		FLCOTalkerAliasHeader,
-		FLCOTalkerAliasBlock1,
-		FLCOTalkerAliasBlock2,
-		FLCOTalkerAliasBlock3,
-		FLCOGPSInfo,
-		FLCOTerminatorDataLinkControl:
-		return true
-	}
-	return false
-}
