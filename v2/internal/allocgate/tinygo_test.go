@@ -19,7 +19,7 @@ import (
 
 var tinyGoTargets = []string{"pico", "riscv-qemu"}
 
-var tinyGoSiteRE = regexp.MustCompile(`^(.+\.go):(\d+)\.\d+`)
+var tinyGoSiteRE = regexp.MustCompile(`^(.+\.go):(\d+)[.:]\d+`)
 
 func TestAllAPIUpToDate(t *testing.T) {
 	t.Parallel()
