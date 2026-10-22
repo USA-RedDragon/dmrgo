@@ -4,13 +4,17 @@ package pdu
 
 import (
 	"fmt"
+	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	texttest "github.com/USA-RedDragon/dmrgo/v2/internal/text/texttest"
 	"testing"
 )
 
 func (s *FullLinkControl) fmtString() string {
 	_ret := "FullLinkControl{ "
-	_ret += fmt.Sprintf("BurstDataType: %v, ProtectFlag: %t, Reserved: %t, FLCO: %v, FID: %v, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.BurstDataType, s.ProtectFlag, s.Reserved, s.FLCO, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
+	if s.BurstDataType == enums.DataTypeVoiceLCHeader || s.BurstDataType == enums.DataTypeTerminatorWithLC {
+		_ret += fmt.Sprintf("BurstDataType: %v, ", s.BurstDataType)
+	}
+	_ret += fmt.Sprintf("ProtectFlag: %t, Reserved: %t, FLCO: %v, FID: %v, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.ProtectFlag, s.Reserved, s.FLCO, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 	if v, ok := s.AsGroupVoice(); ok {
 		_ret += v.String()
 	} else if v, ok := s.AsUnitToUnit(); ok {

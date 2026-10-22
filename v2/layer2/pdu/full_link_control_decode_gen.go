@@ -98,7 +98,10 @@ func (s *FullLinkControl) String() string {
 	}
 
 	_ret := "FullLinkControl{ "
-	_ret += "BurstDataType: " + s.BurstDataType.String() + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Reserved: " + text.Bool(s.Reserved) + ", FLCO: " + s.FLCO.String() + ", FID: " + s.FID.String() + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, "
+	if s.BurstDataType == enums.DataTypeVoiceLCHeader || s.BurstDataType == enums.DataTypeTerminatorWithLC {
+		_ret += "BurstDataType: " + s.BurstDataType.String() + ", "
+	}
+	_ret += "ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Reserved: " + text.Bool(s.Reserved) + ", FLCO: " + s.FLCO.String() + ", FID: " + s.FID.String() + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, "
 	if v, ok := s.AsGroupVoice(); ok {
 		_ret += v.String()
 	} else if v, ok := s.AsUnitToUnit(); ok {
