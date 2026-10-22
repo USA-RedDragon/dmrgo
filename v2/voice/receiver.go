@@ -43,9 +43,9 @@ type ReceiverConfig struct {
 }
 
 // Receiver turns the bursts of one logical channel into call events, as
-// the package doc describes. Make it with NewReceiver; a zero Receiver
-// decodes no burst. A Receiver is not
-// safe for concurrent use and must not be copied; go vet reports a copy.
+// the package doc describes. The zero Receiver does nothing. Make it with
+// NewReceiver. A Receiver is not safe for concurrent use and must not be
+// copied; go vet reports a copy.
 type Receiver struct {
 	lostAfter time.Duration
 	hang      time.Duration
@@ -139,7 +139,7 @@ func (r *Receiver) State() State {
 // comes later sets Call.LC without an event, and one with other addresses
 // ends the call and starts a new one.
 func (r *Receiver) Expect(now time.Duration, c Call, until time.Duration) {
-	if r == nil {
+	if r == nil || r.b == nil {
 		return
 	}
 
@@ -160,11 +160,11 @@ func (r *Receiver) Expect(now time.Duration, c Call, until time.Duration) {
 // Hint.SyncLost ends the call as Lost does. It allocates only when dst has
 // no room for MaxEvents events.
 func (r *Receiver) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Event) []Event {
-	if r == nil {
+	if r == nil || r.b == nil {
 		return dst
 	}
 
-	if raw == nil || r.b == nil {
+	if raw == nil {
 		return r.receive(now, nil, nil, &h, dst)
 	}
 	r.opts.Kind, r.opts.VoiceBurst, r.opts.DataType = h.Kind, enums.VoiceBurstUnknown, nil
@@ -190,7 +190,7 @@ func (r *Receiver) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint,
 // transport event without a burst, such as an MMDVM TAG_LOST, call Lost.
 // It allocates only when dst has no room for MaxEvents events.
 func (r *Receiver) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, dst []Event) []Event {
-	if r == nil {
+	if r == nil || r.b == nil {
 		return dst
 	}
 
@@ -201,7 +201,7 @@ func (r *Receiver) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, ds
 // MMDVM TAG_LOST. A call ends with EndSyncLost. It appends the events to
 // dst, and allocates only when dst has no room for MaxEvents events.
 func (r *Receiver) Lost(now time.Duration, dst []Event) []Event {
-	if r == nil {
+	if r == nil || r.b == nil {
 		return dst
 	}
 
@@ -214,7 +214,7 @@ func (r *Receiver) Lost(now time.Duration, dst []Event) []Event {
 // of the hang time. A Tick before Deadline does nothing. It allocates only
 // when dst has no room for MaxEvents events.
 func (r *Receiver) Tick(now time.Duration, dst []Event) []Event {
-	if r == nil {
+	if r == nil || r.b == nil {
 		return dst
 	}
 
