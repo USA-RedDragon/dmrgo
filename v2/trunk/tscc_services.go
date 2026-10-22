@@ -625,7 +625,7 @@ func (t *TSCC) svcRelay(i int) {
 	s.relayF[i] = s.vIdx[i] == 5
 }
 
-func (t *TSCC) svcEmit(idx int) {
+func (t *TSCC) svcEmit(idx int, h *layer2.Hint) {
 	if idx == 0 {
 		return
 	}
@@ -648,6 +648,7 @@ func (t *TSCC) svcEmit(idx int) {
 		if p, err := s.cs.Encode(); err == nil {
 			if b, err := layer2.BuildDataBurst(p, enums.DataTypeCSBK, t.cfg.ColorCode, layer2.SyncSourceBS); err == nil {
 				s.buf = b
+				*h = layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeCSBK, HasDataType: true}
 			}
 		}
 		return
