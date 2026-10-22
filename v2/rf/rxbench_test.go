@@ -320,19 +320,75 @@ func receiveLowIQ(y []complex64) []Burst {
 	return append(out, r.flushAll()...)
 }
 
-func runBench(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, e benchEntry, cases []benchCase) []benchPoint {
-	t.Helper()
+type benchPool struct {
+	mu   sync.Mutex
+	cond *sync.Cond
+	q    [][]func()
+}
+
+func newBenchPool(workers, levels int) *benchPool {
+	p := &benchPool{q: make([][]func(), levels)}
+	p.cond = sync.NewCond(&p.mu)
+	for range workers {
+		go p.work()
+	}
+	return p
+}
+
+func (p *benchPool) work() {
+	for {
+		p.mu.Lock()
+		var f func()
+		for f == nil {
+			for i, q := range p.q {
+				if len(q) > 0 {
+					f, p.q[i] = q[0], q[1:]
+					break
+				}
+			}
+			if f == nil {
+				p.cond.Wait()
+			}
+		}
+		p.mu.Unlock()
+		f()
+	}
+}
+
+func (p *benchPool) do(prio int, f func()) {
+	p.mu.Lock()
+	p.q[prio] = append(p.q[prio], f)
+	p.mu.Unlock()
+	p.cond.Signal()
+}
+
+func (p *benchPool) wait(prio int, f func()) {
+	done := make(chan struct{})
+	p.do(prio, func() {
+		defer close(done)
+		f()
+	})
+	<-done
+}
+
+type benchRun struct {
+	t     testing.TB
+	pool  *benchPool
+	prio  int
+	sig   benchSignal
+	truth []benchSlot
+	e     benchEntry
+}
+
+func runBench(r benchRun, cases []benchCase) []benchPoint {
 	res := make([]map[string]*benchScore, len(cases))
 	var wg sync.WaitGroup
-	sem := make(chan struct{}, runtime.NumCPU())
 	for i, c := range cases {
 		wg.Add(1)
-		go func() {
+		r.pool.do(r.prio, func() {
 			defer wg.Done()
-			sem <- struct{}{}
-			defer func() { <-sem }()
-			res[i] = scoreBench(truth, benchReceive(t, noisyBaseband(slots, 1400, c.cn, c.seed), e))
-		}()
+			res[i] = scoreBench(r.truth, benchReceive(r.t, r.sig.noisy(c.cn, c.seed), r.e))
+		})
 	}
 	wg.Wait()
 	byCN := map[float64]map[string]*benchScore{}
@@ -405,8 +461,8 @@ func deepStreams(e benchEntry) int {
 	return 4096
 }
 
-func deepen(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, e benchEntry, pts []benchPoint) []benchPoint {
-	t.Helper()
+func deepen(r benchRun, pts []benchPoint) []benchPoint {
+	e := r.e
 	done := map[string]bool{}
 	for i := range pts {
 		p := &pts[i]
@@ -430,7 +486,7 @@ func deepen(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, e benchEntry, 
 				cases[j] = benchCase{p.CN, seed}
 				seed++
 			}
-			add := runBench(t, slots, truth, e, cases)[0]
+			add := runBench(r, cases)[0]
 			p.Seeds += add.Seeds
 			for k, v := range add.Payloads {
 				a := p.Payloads[k]
@@ -451,7 +507,7 @@ func deepen(t testing.TB, slots []rftx.BSSlot, truth []benchSlot, e benchEntry, 
 	return pts
 }
 
-func falsePerHour(e benchEntry) float64 {
+func falsePerHour(e benchEntry, noise benchSignal) float64 {
 	const seconds = 300
 	n, total := 0, 0
 	t := e.tier
@@ -463,7 +519,7 @@ func falsePerHour(e benchEntry) float64 {
 			panic(err)
 		}
 		for seed := uint64(1); total < seconds*hz; seed++ {
-			a := discAudio(noisyBaseband(nil, 0, 0, seed), hz)
+			a := discAudio(noise.noisy(0, seed), hz)
 			must(r.writeAll(a))
 			total += len(a)
 		}
@@ -472,7 +528,7 @@ func falsePerHour(e benchEntry) float64 {
 	case benchIQLow:
 		r := mustNew(RxConfig{Tier: Tier0, Rate: iq0LowHz, Format: IQFormatCU8})
 		for seed := uint64(1); total < seconds*iq0LowHz; seed++ {
-			y := lowIQ(noisyBaseband(nil, 0, 0, seed), iq0LowHz)
+			y := lowIQ(noise.noisy(0, seed), iq0LowHz)
 			n += len(must(r.writeBB(y)))
 			total += len(y)
 		}
@@ -481,7 +537,7 @@ func falsePerHour(e benchEntry) float64 {
 	}
 	r := mustNew(RxConfig{Rate: basebandRate, Tier: t, Format: IQFormatCU8})
 	for seed := uint64(1); total < seconds*basebandRate; seed++ {
-		x := noisyBaseband(nil, 0, 0, seed)
+		x := noise.noisy(0, seed)
 		n += len(must(r.writeBB(x)))
 		total += len(x)
 	}
@@ -612,19 +668,43 @@ func TestRxBench(t *testing.T) {
 		t.Fatal(err)
 	}
 	slots, truth := benchStream(t, 6)
-	out := benchData{Machine: base.Machine}
-	for _, e := range benchEntries() {
-		bt := benchTier{Mode: e.mode, Tier: e.number()}
+	fs, ft := benchStream(t, 30)
+	sig, fsig, noise := cleanBaseband(slots, 1400), cleanBaseband(fs, 1400), cleanBaseband(nil, 0)
+	entries := benchEntries()
+	pool := newBenchPool(runtime.GOMAXPROCS(0), len(entries))
+	tiers := make([]benchTier, len(entries))
+	var wg sync.WaitGroup
+	for i, e := range entries {
 		want, have := base.find(e)
-		bt.Fast = runBench(t, slots, truth, e, fastCases(e))
+		if full && !benchTierSelected(e) && have {
+			tiers[i] = want
+			continue
+		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			bt := benchTier{Mode: e.mode, Tier: e.number()}
+			prio := benchPriority(e)
+			bt.Fast = runBench(benchRun{t, pool, prio, sig, truth, e}, fastCases(e))
+			if full {
+				r := benchRun{t, pool, prio, fsig, ft, e}
+				bt.Full = deepen(r, runBench(r, fullCases()))
+				pool.wait(prio, func() { bt.FalsePerHour = falsePerHour(e, noise) })
+			}
+			tiers[i] = bt
+		}()
+	}
+	wg.Wait()
+	out := benchData{Machine: base.Machine}
+	for i, e := range entries {
+		bt := tiers[i]
+		want, have := base.find(e)
 		if full && !benchTierSelected(e) && have {
 			out.Tiers = append(out.Tiers, want)
 			continue
 		}
 		if full {
-			fs, ft := benchStream(t, 30)
-			bt.Full = deepen(t, fs, ft, e, runBench(t, fs, ft, e, fullCases()))
-			x := noisyBaseband(fs, 1400, 6, 1)
+			x := fsig.noisy(6, 1)
 			bt.Allocs = steadyAllocs(x, e)
 			bt.RAMBytes = receiverRAM(e)
 			var cpu float64
@@ -639,7 +719,6 @@ func TestRxBench(t *testing.T) {
 				cpu = cpuSeconds(func() { receiveBaseband(x, e.tier) })
 			}
 			bt.NsPerSecond = cpu * 1e9 / (float64(len(x)) / basebandRate)
-			bt.FalsePerHour = falsePerHour(e)
 		}
 		if have {
 			if !fast {
@@ -659,6 +738,17 @@ func TestRxBench(t *testing.T) {
 		if err := os.WriteFile(rxbenchPath, append(b, '\n'), 0o600); err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+func benchPriority(e benchEntry) int {
+	return slices.IndexFunc(benchEntriesByCost(), func(x benchEntry) bool { return x == e })
+}
+
+func benchEntriesByCost() []benchEntry {
+	return []benchEntry{
+		{benchIQ, Tier3}, {benchAudio, Tier3}, {benchAudio, Tier2}, {benchIQ, Tier2}, {benchIQ, Tier1},
+		{benchIQ, Tier0}, {benchIQLow, Tier0}, {benchAudio, Tier1}, {benchAudio, Tier0},
 	}
 }
 
