@@ -3,6 +3,7 @@ package layer2_test
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -126,4 +127,26 @@ func ExampleVoiceTransmitter() {
 	// Voice Embedded Signalling
 	// Voice Embedded Signalling
 	// Data Terminator With LC
+}
+
+// ExamplePositionTracker_Place counts the bursts lost when an IPSC repeater
+// sends one sync lost packet for the bursts it did not receive: the arrival
+// times give the count that the sequence numbers do not.
+func ExamplePositionTracker_Place() {
+	frames := [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame{vocoder.AMBESilence(), vocoder.AMBESilence(), vocoder.AMBESilence()}
+	a, err := layer2.BuildVoiceBurst(frames, enums.VoiceBurstA, pdu.EmbeddedSignalling{}, [4]byte{}, layer2.SyncSourceBS)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	var tr layer2.PositionTracker
+	start := 10 * time.Second
+	h := layer2.Hint{Kind: layer2.KindVoice, VoiceBurst: enums.VoiceBurstA, Seq: 100, HasSeq: true, At: start}
+	tr.Place(&a, &h)
+	h = layer2.Hint{Seq: 101, HasSeq: true, SyncLost: true, At: start + 60*time.Millisecond}
+	tr.Place(nil, &h)
+	h = layer2.Hint{Kind: layer2.KindVoice, VoiceBurst: enums.VoiceBurstA, Seq: 102, HasSeq: true, At: start + 720*time.Millisecond}
+	lost, _ := tr.Place(&a, &h)
+	fmt.Println(h.VoiceBurst, lost)
+	// Output: A 11
 }

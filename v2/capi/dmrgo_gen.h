@@ -1034,6 +1034,8 @@ struct dmrgo_layer2_hint_t {
 	bool has_seq;
 	/* SeqBits is the width of Seq in bits, after which it wraps to 0. 0 means 16, as for an RTP sequence number. The DMRD sequence number of HomeBrew has 8. */
 	uint8_t seq_bits;
+	/* At is the time at which the packet arrived, on the clock of the caller, as the now of the session machines. 0 means not known, as for a replay without times. PositionTracker counts the 60 ms burst periods since the burst before it to find the bursts lost after a sync loss, or fewer than the missing sequence numbers. */
+	dmrgo_duration_t at;
 	/* Stream is the transport stream ID. HasStream reports whether it is set. */
 	uint32_t stream;
 	/* HasStream reports whether Stream is set. */
