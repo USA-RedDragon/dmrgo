@@ -182,6 +182,72 @@ func (g *gen) doc(o types.Object, goName string) string {
 	return "Go: " + goName + ". " + d
 }
 
+var errWord = regexp.MustCompile(`\*?(?:\b[a-z][a-z0-9]*\.)?\b(?:Err[A-Z]\w*|[A-Z]\w*Error)\b`)
+
+// fnDoc is the doc of a func or method: the first sentence of its Go doc,
+// a C form of a view sentence, and its sentences about errors, with the
+// Go error names as their C codes.
+func (g *gen) fnDoc(o *types.Func, goName string) string {
+	d := g.doc(o, goName)
+	if strings.Contains(d, "without a copy") {
+		arg := "its argument"
+		if ps := o.Signature().Params(); ps.Len() > 0 && ps.At(0).Name() != "" {
+			arg = ps.At(0).Name()
+		}
+		i := strings.Index(d, ". ") + 2
+		d = d[:i] + "It copies " + arg + " into *out, which does not keep " + arg + "."
+	}
+	head := "Go: " + goName + ". "
+	if strings.HasPrefix(d, head) {
+		d = head + errWord.ReplaceAllStringFunc(d[len(head):], func(w string) string { return g.errC(o.Pkg(), w) })
+	}
+	full := g.l.full[o]
+	first := g.l.docs[o]
+	var errs []string
+	for _, sent := range strings.SplitAfter(full, ". ") {
+		sent = strings.TrimSpace(sent)
+		if sent == "" || strings.HasPrefix(first, strings.TrimSuffix(sent, ".")) || !errWord.MatchString(sent) {
+			continue
+		}
+		errs = append(errs, errWord.ReplaceAllStringFunc(sent, func(w string) string { return g.errC(o.Pkg(), w) }))
+	}
+	if len(errs) > 0 {
+		d += " " + strings.ReplaceAll(strings.Join(errs, " "), "*/", "* /")
+	}
+	return d
+}
+
+// errC maps a Go error name of a doc, such as ErrBusy, sms.ErrNil or
+// *dmrgo.ConfigError, to its C code, or returns w.
+func (g *gen) errC(p *types.Package, w string) string {
+	name := strings.TrimPrefix(w, "*")
+	pkg := p
+	if q, n, ok := strings.Cut(name, "."); ok {
+		pkg = nil
+		for _, c := range g.pkgs {
+			if c.Name() == q {
+				pkg = c
+				break
+			}
+		}
+		name = n
+	}
+	if pkg == nil {
+		return w
+	}
+	switch o := pkg.Scope().Lookup(name).(type) {
+	case *types.Var:
+		if isError(o.Type()) && o.Exported() {
+			return g.varCode(pkg, name)
+		}
+	case *types.TypeName:
+		if ti := g.infos[o]; ti != nil && isErrType(ti) {
+			return g.typeCode(ti)
+		}
+	}
+	return w
+}
+
 func (g *gen) claim(c, goName string) error {
 	if o, ok := g.cnames[c]; ok {
 		g.collisions = append(g.collisions, fmt.Sprintf("C name %s maps both %s and %s", c, o, goName))
@@ -247,7 +313,7 @@ func (g *gen) object(p *types.Package, o types.Object) error {
 			e.Err = "generic func"
 		} else {
 			g.curFn = o
-			err := g.addFunc(&e, g.funcName(p, o.Name()), g.doc(o, gn), nil, rNone, g.qual(p)+"."+o.Name(), o.Signature(), nil)
+			err := g.addFunc(&e, g.funcName(p, o.Name()), g.fnDoc(o, gn), nil, rNone, g.qual(p)+"."+o.Name(), o.Signature(), nil)
 			g.curFn = nil
 			if err != nil {
 				return err
@@ -447,7 +513,7 @@ func (g *gen) typeObject(o *types.TypeName, gn string) error {
 			if ti.kind == kOpen {
 				g.curFn = nil
 			}
-			err := g.addFunc(&me, ti.base+"_"+snake(m.Name()), g.doc(m, gn+"."+m.Name()), ti, rk, m.Name(), m.Signature(), nil)
+			err := g.addFunc(&me, ti.base+"_"+snake(m.Name()), g.fnDoc(m, gn+"."+m.Name()), ti, rk, m.Name(), m.Signature(), nil)
 			g.curMethod, g.curRecv, g.fillBuf, g.curFn = nil, nil, false, nil
 			if err != nil {
 				return err

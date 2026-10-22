@@ -333,6 +333,19 @@ static void test_ipsc_bound(void) {
 	printf("ipsc: the master arena bound counts a shared packet once\n");
 }
 
+static void test_nullable(void) {
+	dmrgo_voice_receiver_t *rx = NULL;
+	OK(dmrgo_voice_new_receiver(NULL, &rx));
+	dmrgo_layer2_hint_t h = {0};
+	dmrgo_voice_event_t ev[DMRGO_VOICE_MAX_EVENTS];
+	unsigned char ar[1024];
+	size_t n = 0, al = 0;
+	int rc = dmrgo_voice_receiver_burst(rx, 1000, NULL, &h, ev, DMRGO_VOICE_MAX_EVENTS, &n, NULL, ar, sizeof ar, &al, NULL);
+	CHECK(rc != DMRGO_ERR_ARG && rc != DMRGO_ERR_PANIC);
+	OK(dmrgo_voice_receiver_free(rx));
+	printf("nullable: a pointer that the comment says may be NULL is a Go nil\n");
+}
+
 static void test_error_is(void) {
 	dmrgo_pdu_rate12_data_t blk = {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}};
 	dmrgo_packet_response_data_t rd;
@@ -984,6 +997,7 @@ int main(int argc, char **argv) {
 	test_udt_copy();
 	test_authenticator();
 	test_ipsc_bound();
+	test_nullable();
 	test_tx();
 	test_voice_capture(argv[1]);
 	test_vocoder();

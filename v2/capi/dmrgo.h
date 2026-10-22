@@ -41,8 +41,9 @@
  *   output is in/out: the call reads it and writes back what the Go call
  *   changed. Every input array and string is copied or used only during
  *   the call.
- * - A NULL pointer argument gives DMRGO_ERR_ARG, except where the comment
- *   of the function says that it may be NULL, which is a Go nil.
+ * - A NULL input pointer gives DMRGO_ERR_ARG, except where the comment of
+ *   the function says that it may be NULL, which is a Go nil. An output
+ *   pointer to a value, a count or a need may be NULL to drop that output.
  * - A config, options or vtable struct whose first member is size_t size
  *   is sized: set size to sizeof the struct before the call, for example
  *   T cfg = {.size = sizeof cfg}. The library reads only the members that
