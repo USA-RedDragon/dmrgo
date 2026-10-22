@@ -26,7 +26,7 @@ func TestConfigFromDMRGatewayFormat(t *testing.T) {
 	t.Parallel()
 
 	p := dmrGatewayConfig(t, 3191868, 9, 8, 10)
-	c, err := dmrd.ConfigOf(p)
+	c, err := dmrd.MMDVMConfigOf(p)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func TestConfigFromDMRGatewayFormat(t *testing.T) {
 func TestConfigSetters(t *testing.T) {
 	t.Parallel()
 
-	var c dmrd.Config
+	var c dmrd.MMDVMConfig
 	c.Reset()
 	c.SetID(42)
 	if err := c.SetCallsign([]byte("N0CALL")); err != nil {
@@ -74,7 +74,7 @@ func TestConfigSetters(t *testing.T) {
 	if err := c.SetSlots(4); err != nil {
 		t.Fatal(err)
 	}
-	got, err := dmrd.ConfigOf(c[:])
+	got, err := dmrd.MMDVMConfigOf(c[:])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,15 +106,15 @@ func TestConfigOfErrors(t *testing.T) {
 	t.Parallel()
 
 	p := dmrGatewayConfig(t, 1, 1, 1, 1)
-	if _, err := dmrd.ConfigOf(p[:301]); !errors.Is(err, dmrd.ErrShort) {
+	if _, err := dmrd.MMDVMConfigOf(p[:301]); !errors.Is(err, dmrd.ErrShort) {
 		t.Error(err)
 	}
-	if _, err := dmrd.ConfigOf(append(p, 0)); !errors.Is(err, dmrd.ErrLength) {
+	if _, err := dmrd.MMDVMConfigOf(append(p, 0)); !errors.Is(err, dmrd.ErrLength) {
 		t.Error(err)
 	}
 	q := append([]byte{}, p...)
 	q[3] = 'X'
-	if _, err := dmrd.ConfigOf(q); !errors.Is(err, dmrd.ErrSignature) {
+	if _, err := dmrd.MMDVMConfigOf(q); !errors.Is(err, dmrd.ErrSignature) {
 		t.Error(err)
 	}
 }

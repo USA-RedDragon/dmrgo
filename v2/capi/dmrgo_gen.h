@@ -447,8 +447,6 @@ typedef struct dmrgo_sms_text_t dmrgo_sms_text_t;
 typedef struct dmrgo_dmrd_bridge_t dmrgo_dmrd_bridge_t;
 /* Go: dmrd.BridgeControl. BridgeControl is a control packet of FreeDMR's enhanced OpenBridge, each with a 20-octet HMAC-SHA1 signature: BCKA (keepalive, every 10 s), BCSQ (the receiver asks the sender to stop a stream to a talkgroup), BCST (stun: stop all traffic) and BCVE (the protocol version, every 60 s). */
 typedef struct dmrgo_dmrd_bridge_control_t dmrgo_dmrd_bridge_control_t;
-/* Go: dmrd.Config. Config is the 302-octet RPTC configuration message of DialectMMDVM, as a view: its methods read and write the fields in place. */
-typedef struct dmrgo_dmrd_config_t dmrgo_dmrd_config_t;
 /* Go: dmrd.Control. Control is a login, keepalive, close, beacon, report, options or local link message: every message of a dialect but DMRD, DMRA, DMRG, RPTC and the OpenBridge messages. */
 typedef struct dmrgo_dmrd_control_t dmrgo_dmrd_control_t;
 /* Go: dmrd.DMRPlusOptions. DMRPlusOptions is the DMR+ startup options text that a repeater sends in Control.Text of an RPTO, for example "StartRef=4013;RelinkTime=15;UserLink=1;TS1_1=262;TS1_2=1;". */
@@ -463,6 +461,8 @@ typedef struct dmrgo_dmrd_hbrp_config_t dmrgo_dmrd_hbrp_config_t;
 typedef struct dmrgo_dmrd_local_position_t dmrgo_dmrd_local_position_t;
 /* Go: dmrd.LocalTalkerAlias. LocalTalkerAlias is a DMRA message of DialectLocal, from MMDVMHost to DMRGateway: TalkerAlias without the repeater ID. */
 typedef struct dmrgo_dmrd_local_talker_alias_t dmrgo_dmrd_local_talker_alias_t;
+/* Go: dmrd.MMDVMConfig. MMDVMConfig is the 302-octet RPTC configuration message of DialectMMDVM, as a view: its methods read and write the fields in place. */
+typedef struct dmrgo_dmrd_mmdvm_config_t dmrgo_dmrd_mmdvm_config_t;
 /* Go: dmrd.OptionValue. OptionValue is one DMR+ startup option. */
 typedef struct dmrgo_dmrd_option_value_t dmrgo_dmrd_option_value_t;
 /* Go: dmrd.Position. Position is a DMRG message of DialectMMDVM: the GPS position that a radio sent, in the 18-octet form that DMRGateway builds toward a master. */
@@ -3732,10 +3732,6 @@ struct dmrgo_dmrd_bridge_control_t {
 	uint8_t signature[20];
 };
 
-struct dmrgo_dmrd_config_t {
-	uint8_t v[302];
-};
-
 struct dmrgo_dmrd_control_t {
 	/* Command is the message. */
 	dmrgo_dmrd_command_t command;
@@ -3857,6 +3853,10 @@ struct dmrgo_dmrd_hbrp_config_t {
 	uint8_t v[306];
 };
 
+struct dmrgo_dmrd_mmdvm_config_t {
+	uint8_t v[302];
+};
+
 struct dmrgo_dmrdsession_output_t {
 	/* Kind is the kind of the output. */
 	dmrgo_dmrdsession_output_kind_t kind;
@@ -3908,7 +3908,7 @@ struct dmrgo_dmrdsession_peer_config_t {
 	/* Password is the password of the master. The Peer copies it. */
 	uint8_t *password;
 	size_t password_len;
-	/* Config is the RPTC message: a dmrd.Config (302 octets) for DialectMMDVM, a dmrd.HBRPConfig (306 octets) for DialectHBRP. The Peer copies it. */
+	/* Config is the RPTC message: a dmrd.MMDVMConfig (302 octets) for DialectMMDVM, a dmrd.HBRPConfig (306 octets) for DialectHBRP. The Peer copies it. */
 	uint8_t *config;
 	size_t config_len;
 	/* Options is the RPTO options text, at most MaxOptions octets, which the Peer sends after the RPTC is acknowledged. Empty sends no RPTO. DialectHBRP has no RPTO. */
@@ -9706,70 +9706,6 @@ int dmrgo_dmrd_bridge_control_append_binary(const dmrgo_dmrd_bridge_control_t *s
 int dmrgo_dmrd_classify(const uint8_t *p, size_t p_len, dmrgo_dmrd_dialect_t d, dmrgo_dmrd_command_t *out);
 /* Go: dmrd.Command.String. String returns the tag of the command. */
 int dmrgo_dmrd_command_string(dmrgo_dmrd_command_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: dmrd.Config.Callsign. Callsign returns the callsign of the repeater. */
-int dmrgo_dmrd_config_callsign(const dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: dmrd.Config.ColorCode. ColorCode returns the color code, 2 digits. It returns DMRGO_ERR_DMRD_TEXT when the field holds a character that is not a digit. */
-int dmrgo_dmrd_config_color_code(const dmrgo_dmrd_config_t *self, dmrgo_enums_color_code_t *out);
-/* Go: dmrd.Config.Description. Description returns the description of the repeater as free text. */
-int dmrgo_dmrd_config_description(const dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: dmrd.Config.Height. Height returns the antenna height above ground in meters, 3 digits. It returns DMRGO_ERR_DMRD_TEXT when the field holds a character that is not a digit. */
-int dmrgo_dmrd_config_height(const dmrgo_dmrd_config_t *self, uint16_t *out);
-/* Go: dmrd.Config.ID. ID returns the repeater ID. */
-int dmrgo_dmrd_config_id(const dmrgo_dmrd_config_t *self, uint32_t *out);
-/* Go: dmrd.Config.Latitude. Latitude returns the latitude as text, 8 characters, North positive. */
-int dmrgo_dmrd_config_latitude(const dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: dmrd.Config.Location. Location returns the location of the repeater as free text. */
-int dmrgo_dmrd_config_location(const dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: dmrd.Config.Longitude. Longitude returns the longitude as text, 9 characters, East positive. */
-int dmrgo_dmrd_config_longitude(const dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: dmrd.Config.PackageID. PackageID returns the package and its version. */
-int dmrgo_dmrd_config_package_id(const dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: dmrd.Config.Power. Power returns the transmit power in dBm, 2 digits. It returns DMRGO_ERR_DMRD_TEXT when the field holds a character that is not a digit. */
-int dmrgo_dmrd_config_power(const dmrgo_dmrd_config_t *self, uint8_t *out);
-/* Go: dmrd.Config.RXFrequency. RXFrequency returns the receive frequency in Hz, 9 digits. It returns DMRGO_ERR_DMRD_TEXT when the field holds a character that is not a digit. */
-int dmrgo_dmrd_config_rx_frequency(const dmrgo_dmrd_config_t *self, uint32_t *out);
-/* Go: dmrd.Config.Reset. Reset sets c to an empty Config: the fixed octets, spaces in the text fields and zero in the number fields. */
-int dmrgo_dmrd_config_reset(dmrgo_dmrd_config_t *self);
-/* Go: dmrd.Config.SetCallsign. SetCallsign sets the callsign of the repeater. It pads v with spaces, and returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v is longer than 8 octets. */
-int dmrgo_dmrd_config_set_callsign(dmrgo_dmrd_config_t *self, const uint8_t *v, size_t v_len);
-/* Go: dmrd.Config.SetColorCode. SetColorCode sets the color code, 2 digits. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v does not fit. */
-int dmrgo_dmrd_config_set_color_code(dmrgo_dmrd_config_t *self, dmrgo_enums_color_code_t v);
-/* Go: dmrd.Config.SetDescription. SetDescription sets the description of the repeater as free text. It pads v with spaces, and returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v is longer than 19 octets. */
-int dmrgo_dmrd_config_set_description(dmrgo_dmrd_config_t *self, const uint8_t *v, size_t v_len);
-/* Go: dmrd.Config.SetHeight. SetHeight sets the antenna height above ground in meters, 3 digits. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v does not fit. */
-int dmrgo_dmrd_config_set_height(dmrgo_dmrd_config_t *self, uint16_t v);
-/* Go: dmrd.Config.SetID. SetID sets the repeater ID. */
-int dmrgo_dmrd_config_set_id(dmrgo_dmrd_config_t *self, uint32_t v);
-/* Go: dmrd.Config.SetLatitude. SetLatitude sets the latitude as text, 8 characters, North positive. It pads v with spaces, and returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v is longer than 8 octets. */
-int dmrgo_dmrd_config_set_latitude(dmrgo_dmrd_config_t *self, const uint8_t *v, size_t v_len);
-/* Go: dmrd.Config.SetLocation. SetLocation sets the location of the repeater as free text. It pads v with spaces, and returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v is longer than 20 octets. */
-int dmrgo_dmrd_config_set_location(dmrgo_dmrd_config_t *self, const uint8_t *v, size_t v_len);
-/* Go: dmrd.Config.SetLongitude. SetLongitude sets the longitude as text, 9 characters, East positive. It pads v with spaces, and returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v is longer than 9 octets. */
-int dmrgo_dmrd_config_set_longitude(dmrgo_dmrd_config_t *self, const uint8_t *v, size_t v_len);
-/* Go: dmrd.Config.SetPackageID. SetPackageID sets the package and its version. It pads v with spaces, and returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v is longer than 40 octets. */
-int dmrgo_dmrd_config_set_package_id(dmrgo_dmrd_config_t *self, const uint8_t *v, size_t v_len);
-/* Go: dmrd.Config.SetPower. SetPower sets the transmit power in dBm, 2 digits. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v does not fit. */
-int dmrgo_dmrd_config_set_power(dmrgo_dmrd_config_t *self, uint8_t v);
-/* Go: dmrd.Config.SetRXFrequency. SetRXFrequency sets the receive frequency in Hz, 9 digits. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v does not fit. */
-int dmrgo_dmrd_config_set_rx_frequency(dmrgo_dmrd_config_t *self, uint32_t v);
-/* Go: dmrd.Config.SetSlots. SetSlots sets the slots digit: 1 or 2 for one slot, 3 for both in duplex, 4 for simplex (DMO). It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v does not fit. */
-int dmrgo_dmrd_config_set_slots(dmrgo_dmrd_config_t *self, uint8_t v);
-/* Go: dmrd.Config.SetSoftwareID. SetSoftwareID sets the software and its version. It pads v with spaces, and returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v is longer than 40 octets. */
-int dmrgo_dmrd_config_set_software_id(dmrgo_dmrd_config_t *self, const uint8_t *v, size_t v_len);
-/* Go: dmrd.Config.SetTXFrequency. SetTXFrequency sets the transmit frequency in Hz, 9 digits. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v does not fit. */
-int dmrgo_dmrd_config_set_tx_frequency(dmrgo_dmrd_config_t *self, uint32_t v);
-/* Go: dmrd.Config.SetURL. SetURL sets the web page of the repeater. It pads v with spaces, and returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v is longer than 124 octets. */
-int dmrgo_dmrd_config_set_url(dmrgo_dmrd_config_t *self, const uint8_t *v, size_t v_len);
-/* Go: dmrd.Config.Slots. Slots returns the slots digit: 1 or 2 for one slot, 3 for both in duplex, 4 for simplex (DMO). It returns DMRGO_ERR_DMRD_TEXT when the field holds a character that is not a digit. */
-int dmrgo_dmrd_config_slots(const dmrgo_dmrd_config_t *self, uint8_t *out);
-/* Go: dmrd.Config.SoftwareID. SoftwareID returns the software and its version. */
-int dmrgo_dmrd_config_software_id(const dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: dmrd.Config.TXFrequency. TXFrequency returns the transmit frequency in Hz, 9 digits. It returns DMRGO_ERR_DMRD_TEXT when the field holds a character that is not a digit. */
-int dmrgo_dmrd_config_tx_frequency(const dmrgo_dmrd_config_t *self, uint32_t *out);
-/* Go: dmrd.Config.URL. URL returns the web page of the repeater. */
-int dmrgo_dmrd_config_url(const dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: dmrd.ConfigOf. It copies p into *out, which does not keep p. It returns DMRGO_ERR_DMRD_SHORT, DMRGO_ERR_DMRD_LENGTH, or DMRGO_ERR_DMRD_SIGNATURE when p does not start with "RPTC". */
-int dmrgo_dmrd_config_of(const uint8_t *p, size_t p_len, dmrgo_dmrd_config_t *out, bool *out_ok);
 /* Go: dmrd.Control.AppendBinary. AppendBinary appends the message c in dialect d to dst. It returns dst unchanged and an error when d has no such message, or when Text is set on a message without text, and DMRGO_ERR_NIL_RECEIVER for a nil c. */
 int dmrgo_dmrd_control_append_binary(const dmrgo_dmrd_control_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_dmrd_dialect_t d);
 /* Go: dmrd.Control.LoginSalt. LoginSalt returns the salt of the acknowledgement c that answers RPTL: the 4 octets of a DialectMMDVM RPTACK, or Salt of a DialectHBRP MSTACK with HasSalt. */
@@ -9880,6 +9816,70 @@ int dmrgo_dmrd_local_talker_alias_append_binary(const dmrgo_dmrd_local_talker_al
 int dmrgo_dmrd_local_talker_alias_lc(const dmrgo_dmrd_local_talker_alias_t *self, dmrgo_pdu_full_link_control_t *out);
 /* Go: dmrd.LocalTalkerAlias.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_local_talker_alias_string(const dmrgo_dmrd_local_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: dmrd.MMDVMConfig.Callsign. Callsign returns the callsign of the repeater. */
+int dmrgo_dmrd_mmdvm_config_callsign(const dmrgo_dmrd_mmdvm_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: dmrd.MMDVMConfig.ColorCode. ColorCode returns the color code, 2 digits. It returns DMRGO_ERR_DMRD_TEXT when the field holds a character that is not a digit. */
+int dmrgo_dmrd_mmdvm_config_color_code(const dmrgo_dmrd_mmdvm_config_t *self, dmrgo_enums_color_code_t *out);
+/* Go: dmrd.MMDVMConfig.Description. Description returns the description of the repeater as free text. */
+int dmrgo_dmrd_mmdvm_config_description(const dmrgo_dmrd_mmdvm_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: dmrd.MMDVMConfig.Height. Height returns the antenna height above ground in meters, 3 digits. It returns DMRGO_ERR_DMRD_TEXT when the field holds a character that is not a digit. */
+int dmrgo_dmrd_mmdvm_config_height(const dmrgo_dmrd_mmdvm_config_t *self, uint16_t *out);
+/* Go: dmrd.MMDVMConfig.ID. ID returns the repeater ID. */
+int dmrgo_dmrd_mmdvm_config_id(const dmrgo_dmrd_mmdvm_config_t *self, uint32_t *out);
+/* Go: dmrd.MMDVMConfig.Latitude. Latitude returns the latitude as text, 8 characters, North positive. */
+int dmrgo_dmrd_mmdvm_config_latitude(const dmrgo_dmrd_mmdvm_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: dmrd.MMDVMConfig.Location. Location returns the location of the repeater as free text. */
+int dmrgo_dmrd_mmdvm_config_location(const dmrgo_dmrd_mmdvm_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: dmrd.MMDVMConfig.Longitude. Longitude returns the longitude as text, 9 characters, East positive. */
+int dmrgo_dmrd_mmdvm_config_longitude(const dmrgo_dmrd_mmdvm_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: dmrd.MMDVMConfig.PackageID. PackageID returns the package and its version. */
+int dmrgo_dmrd_mmdvm_config_package_id(const dmrgo_dmrd_mmdvm_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: dmrd.MMDVMConfig.Power. Power returns the transmit power in dBm, 2 digits. It returns DMRGO_ERR_DMRD_TEXT when the field holds a character that is not a digit. */
+int dmrgo_dmrd_mmdvm_config_power(const dmrgo_dmrd_mmdvm_config_t *self, uint8_t *out);
+/* Go: dmrd.MMDVMConfig.RXFrequency. RXFrequency returns the receive frequency in Hz, 9 digits. It returns DMRGO_ERR_DMRD_TEXT when the field holds a character that is not a digit. */
+int dmrgo_dmrd_mmdvm_config_rx_frequency(const dmrgo_dmrd_mmdvm_config_t *self, uint32_t *out);
+/* Go: dmrd.MMDVMConfig.Reset. Reset sets c to an empty MMDVMConfig: the fixed octets, spaces in the text fields and zero in the number fields. */
+int dmrgo_dmrd_mmdvm_config_reset(dmrgo_dmrd_mmdvm_config_t *self);
+/* Go: dmrd.MMDVMConfig.SetCallsign. SetCallsign sets the callsign of the repeater. It pads v with spaces, and returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v is longer than 8 octets. */
+int dmrgo_dmrd_mmdvm_config_set_callsign(dmrgo_dmrd_mmdvm_config_t *self, const uint8_t *v, size_t v_len);
+/* Go: dmrd.MMDVMConfig.SetColorCode. SetColorCode sets the color code, 2 digits. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v does not fit. */
+int dmrgo_dmrd_mmdvm_config_set_color_code(dmrgo_dmrd_mmdvm_config_t *self, dmrgo_enums_color_code_t v);
+/* Go: dmrd.MMDVMConfig.SetDescription. SetDescription sets the description of the repeater as free text. It pads v with spaces, and returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v is longer than 19 octets. */
+int dmrgo_dmrd_mmdvm_config_set_description(dmrgo_dmrd_mmdvm_config_t *self, const uint8_t *v, size_t v_len);
+/* Go: dmrd.MMDVMConfig.SetHeight. SetHeight sets the antenna height above ground in meters, 3 digits. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v does not fit. */
+int dmrgo_dmrd_mmdvm_config_set_height(dmrgo_dmrd_mmdvm_config_t *self, uint16_t v);
+/* Go: dmrd.MMDVMConfig.SetID. SetID sets the repeater ID. */
+int dmrgo_dmrd_mmdvm_config_set_id(dmrgo_dmrd_mmdvm_config_t *self, uint32_t v);
+/* Go: dmrd.MMDVMConfig.SetLatitude. SetLatitude sets the latitude as text, 8 characters, North positive. It pads v with spaces, and returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v is longer than 8 octets. */
+int dmrgo_dmrd_mmdvm_config_set_latitude(dmrgo_dmrd_mmdvm_config_t *self, const uint8_t *v, size_t v_len);
+/* Go: dmrd.MMDVMConfig.SetLocation. SetLocation sets the location of the repeater as free text. It pads v with spaces, and returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v is longer than 20 octets. */
+int dmrgo_dmrd_mmdvm_config_set_location(dmrgo_dmrd_mmdvm_config_t *self, const uint8_t *v, size_t v_len);
+/* Go: dmrd.MMDVMConfig.SetLongitude. SetLongitude sets the longitude as text, 9 characters, East positive. It pads v with spaces, and returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v is longer than 9 octets. */
+int dmrgo_dmrd_mmdvm_config_set_longitude(dmrgo_dmrd_mmdvm_config_t *self, const uint8_t *v, size_t v_len);
+/* Go: dmrd.MMDVMConfig.SetPackageID. SetPackageID sets the package and its version. It pads v with spaces, and returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v is longer than 40 octets. */
+int dmrgo_dmrd_mmdvm_config_set_package_id(dmrgo_dmrd_mmdvm_config_t *self, const uint8_t *v, size_t v_len);
+/* Go: dmrd.MMDVMConfig.SetPower. SetPower sets the transmit power in dBm, 2 digits. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v does not fit. */
+int dmrgo_dmrd_mmdvm_config_set_power(dmrgo_dmrd_mmdvm_config_t *self, uint8_t v);
+/* Go: dmrd.MMDVMConfig.SetRXFrequency. SetRXFrequency sets the receive frequency in Hz, 9 digits. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v does not fit. */
+int dmrgo_dmrd_mmdvm_config_set_rx_frequency(dmrgo_dmrd_mmdvm_config_t *self, uint32_t v);
+/* Go: dmrd.MMDVMConfig.SetSlots. SetSlots sets the slots digit: 1 or 2 for one slot, 3 for both in duplex, 4 for simplex (DMO). It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v does not fit. */
+int dmrgo_dmrd_mmdvm_config_set_slots(dmrgo_dmrd_mmdvm_config_t *self, uint8_t v);
+/* Go: dmrd.MMDVMConfig.SetSoftwareID. SetSoftwareID sets the software and its version. It pads v with spaces, and returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v is longer than 40 octets. */
+int dmrgo_dmrd_mmdvm_config_set_software_id(dmrgo_dmrd_mmdvm_config_t *self, const uint8_t *v, size_t v_len);
+/* Go: dmrd.MMDVMConfig.SetTXFrequency. SetTXFrequency sets the transmit frequency in Hz, 9 digits. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v does not fit. */
+int dmrgo_dmrd_mmdvm_config_set_tx_frequency(dmrgo_dmrd_mmdvm_config_t *self, uint32_t v);
+/* Go: dmrd.MMDVMConfig.SetURL. SetURL sets the web page of the repeater. It pads v with spaces, and returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v is longer than 124 octets. */
+int dmrgo_dmrd_mmdvm_config_set_url(dmrgo_dmrd_mmdvm_config_t *self, const uint8_t *v, size_t v_len);
+/* Go: dmrd.MMDVMConfig.Slots. Slots returns the slots digit: 1 or 2 for one slot, 3 for both in duplex, 4 for simplex (DMO). It returns DMRGO_ERR_DMRD_TEXT when the field holds a character that is not a digit. */
+int dmrgo_dmrd_mmdvm_config_slots(const dmrgo_dmrd_mmdvm_config_t *self, uint8_t *out);
+/* Go: dmrd.MMDVMConfig.SoftwareID. SoftwareID returns the software and its version. */
+int dmrgo_dmrd_mmdvm_config_software_id(const dmrgo_dmrd_mmdvm_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: dmrd.MMDVMConfig.TXFrequency. TXFrequency returns the transmit frequency in Hz, 9 digits. It returns DMRGO_ERR_DMRD_TEXT when the field holds a character that is not a digit. */
+int dmrgo_dmrd_mmdvm_config_tx_frequency(const dmrgo_dmrd_mmdvm_config_t *self, uint32_t *out);
+/* Go: dmrd.MMDVMConfig.URL. URL returns the web page of the repeater. */
+int dmrgo_dmrd_mmdvm_config_url(const dmrgo_dmrd_mmdvm_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: dmrd.MMDVMConfigOf. It copies p into *out, which does not keep p. It returns DMRGO_ERR_DMRD_SHORT, DMRGO_ERR_DMRD_LENGTH, or DMRGO_ERR_DMRD_SIGNATURE when p does not start with "RPTC". */
+int dmrgo_dmrd_mmdvm_config_of(const uint8_t *p, size_t p_len, dmrgo_dmrd_mmdvm_config_t *out, bool *out_ok);
 /* Go: dmrd.ParseDMRPlusOptions. ParseDMRPlusOptions parses a DMR+ startup options text: Key=Value pairs separated by semicolons, with spaces around them ignored. It skips pairs with an unknown key or without "=", and returns DMRGO_ERR_DMRD_TEXT, with the options parsed so far, when a value is not a decimal number below 2^32. */
 int dmrgo_dmrd_parse_dmr_plus_options(const uint8_t *text, size_t text_len, dmrgo_dmrd_dmr_plus_options_t *out);
 /* Go: dmrd.ParseFreeDMROptions. ParseFreeDMROptions parses a FreeDMR options text as FreeDMR does: Key=Value pairs separated by semicolons, keys in the exact case, the last pair of a key wins, and pairs with no "=" or more than one are skipped. It returns DMRGO_ERR_DMRD_TEXT and no options for a text longer than MaxFreeDMROptionsLen, and DMRGO_ERR_DMRD_TEXT with all the valid options when a value is not a number, or is out of range for a 0 or 1 option or DirectDialSlot. */
@@ -10031,7 +10031,7 @@ int dmrgo_hytera_slot_type_string(dmrgo_hytera_slot_type_t self, char *out, size
 /* Go: ipsc.AppendPeerListReply. AppendPeerListReply appends an OpPeerListReply of master with entries to dst. */
 int dmrgo_ipsc_append_peer_list_reply(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, uint32_t master, const dmrgo_ipsc_peer_entry_t *entries, size_t entries_len);
 /* Go: ipsc.BurstType.DataType. DataType returns the DMR data type of a data burst, 0x00 to 0x08. */
-int dmrgo_ipsc_burst_type_data_type(dmrgo_ipsc_burst_type_t self, dmrgo_enums_data_type_t *out0, bool *out1);
+int dmrgo_ipsc_burst_type_data_type(dmrgo_ipsc_burst_type_t self, dmrgo_enums_data_type_t *data_type, bool *ok);
 /* Go: ipsc.BurstType.String. String returns the name of b: the data type, Voice, SyncLost or Raw, with " slot 2" when bit 7 is set. */
 int dmrgo_ipsc_burst_type_string(dmrgo_ipsc_burst_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ipsc.BurstType.Type. Type returns b without bit 7, the slot 2 bit of voice and BurstSyncLost, for a comparison with BurstVoice, BurstSyncLost, BurstRaw and the data types. */

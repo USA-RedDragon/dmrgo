@@ -101,7 +101,7 @@ func command(t testing.TB, p []byte, d dmrd.Dialect) dmrd.Command {
 }
 
 func mmdvmConfig(id uint32) []byte {
-	var c dmrd.Config
+	var c dmrd.MMDVMConfig
 	copy(c[:], "RPTC")
 	for i := 4; i < len(c); i++ {
 		c[i] = ' '

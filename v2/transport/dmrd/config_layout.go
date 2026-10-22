@@ -2,7 +2,7 @@
 
 package dmrd
 
-//dmr:view Config 302
+//dmr:view MMDVMConfig 302
 //dmr:magic 0-31="RPTC"
 type configLayout struct {
 	// ID is the repeater ID.

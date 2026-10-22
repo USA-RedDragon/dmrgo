@@ -18,7 +18,7 @@ type PeerConfig struct {
 	ID uint32
 	// Password is the password of the master. The Peer copies it.
 	Password []byte
-	// Config is the RPTC message: a dmrd.Config (302 octets) for
+	// Config is the RPTC message: a dmrd.MMDVMConfig (302 octets) for
 	// DialectMMDVM, a dmrd.HBRPConfig (306 octets) for DialectHBRP. The
 	// Peer copies it.
 	Config []byte
@@ -79,7 +79,7 @@ func NewPeer(cfg *PeerConfig) (*Peer, error) {
 	}
 	switch cfg.Dialect {
 	case dmrd.DialectMMDVM:
-		c, err := dmrd.ConfigOf(cfg.Config)
+		c, err := dmrd.MMDVMConfigOf(cfg.Config)
 		if err != nil || c.ID() != cfg.ID {
 			return nil, errConfig
 		}

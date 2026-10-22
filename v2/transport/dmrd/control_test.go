@@ -182,7 +182,7 @@ func TestRepeaterID(t *testing.T) {
 	data, _ := (&dmrd.Data{Repeater: id, Slot: 1}).AppendBinary(nil)
 	alias, _ := (&dmrd.TalkerAlias{Repeater: id}).AppendBinary(nil)
 	pos, _ := (&dmrd.Position{Repeater: id}).AppendBinary(nil)
-	var cfg dmrd.Config
+	var cfg dmrd.MMDVMConfig
 	cfg.Reset()
 	cfg.SetID(id)
 	var hcfg dmrd.HBRPConfig
