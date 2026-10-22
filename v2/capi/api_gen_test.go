@@ -1129,6 +1129,7 @@ var entryPoints = map[string]any{
 	"dmrgo_dmrd_position_append_binary":                                dmrgo_dmrd_position_append_binary,
 	"dmrgo_dmrd_position_lc":                                           dmrgo_dmrd_position_lc,
 	"dmrgo_dmrd_position_string":                                       dmrgo_dmrd_position_string,
+	"dmrgo_dmrd_repeater_id":                                           dmrgo_dmrd_repeater_id,
 	"dmrgo_dmrd_talker_alias_append_binary":                            dmrgo_dmrd_talker_alias_append_binary,
 	"dmrgo_dmrd_talker_alias_lc":                                       dmrgo_dmrd_talker_alias_lc,
 	"dmrgo_dmrd_talker_alias_string":                                   dmrgo_dmrd_talker_alias_string,

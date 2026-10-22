@@ -241,6 +241,57 @@ func Classify(p []byte, d Dialect) Command {
 	return best
 }
 
+// RepeaterID returns the repeater ID of the message p of dialect d, by its
+// command as Classify gives it: the repeater of a DMRD, DMRA or DMRG, the
+// ID of an RPTC, and the ID of every control message that carries one. ok
+// is false for a message without one, for one that does not decode, and
+// for a DialectMMDVM RPTACK, whose 4 octets are the salt when it answers
+// RPTL. It does not allocate.
+func RepeaterID(p []byte, d Dialect) (id uint32, ok bool) {
+	var err error
+	switch c := Classify(p, d); c {
+	case CommandDMRD:
+		var m Data
+		m, err = DecodeData(p)
+		id = m.Repeater
+	case CommandDMRA, CommandDMRG:
+		if d == DialectLocal {
+			return 0, false
+		}
+		if c == CommandDMRA {
+			var m TalkerAlias
+			m, err = DecodeTalkerAlias(p)
+			id = m.Repeater
+		} else {
+			var m Position
+			m, err = DecodePosition(p)
+			id = m.Repeater
+		}
+	case CommandRPTC:
+		if d == DialectHBRP {
+			var c *HBRPConfig
+			if c, err = HBRPConfigOf(p); err == nil {
+				id, err = c.ID()
+			}
+		} else {
+			var c *Config
+			if c, err = ConfigOf(p); err == nil {
+				id = c.ID()
+			}
+		}
+	case CommandRPTACK, CommandUnknown, CommandDMRP, CommandDMRB, CommandDMRT, CommandDMRE, CommandBCKA, CommandBCSQ, CommandBCST, CommandBCVE:
+		return 0, false
+	default:
+		var m Control
+		m, err = DecodeControl(p, d)
+		id = m.ID
+	}
+	if err != nil {
+		return 0, false
+	}
+	return id, true
+}
+
 func hasTag(p []byte, t string) bool {
 	if len(p) < len(t) {
 		return false

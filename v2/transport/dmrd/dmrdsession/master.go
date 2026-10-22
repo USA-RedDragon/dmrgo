@@ -280,7 +280,7 @@ func (m *Master) Packet(now time.Duration, b []byte, dst []Output) []Output {
 		if !dataOK(b, c) {
 			return dst
 		}
-		id := repeaterOf(b, c)
+		id, _ := dmrd.RepeaterID(b, m.dialect)
 		if m.state != StateRunning || id != m.id {
 			return m.nak(dst, id)
 		}
@@ -383,23 +383,4 @@ func (m *Master) config(now time.Duration, b []byte, dst []Output) []Output {
 	}
 	m.asked = true
 	return append(dst, Output{Kind: OutputConfig, Packet: b, ID: m.id})
-}
-
-func repeaterOf(b []byte, c dmrd.Command) uint32 {
-	switch c {
-	case dmrd.CommandDMRD:
-		if d, err := dmrd.DecodeData(b); err == nil {
-			return d.Repeater
-		}
-	case dmrd.CommandDMRA:
-		if a, err := dmrd.DecodeTalkerAlias(b); err == nil {
-			return a.Repeater
-		}
-	case dmrd.CommandDMRG:
-		if g, err := dmrd.DecodePosition(b); err == nil {
-			return g.Repeater
-		}
-	default:
-	}
-	return 0
 }

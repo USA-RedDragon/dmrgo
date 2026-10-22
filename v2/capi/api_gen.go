@@ -35314,6 +35314,33 @@ func dmrgo_dmrd_position_string(c_self *C.dmrgo_dmrd_position_t, c_out *C.char, 
 	return C.DMRGO_OK
 }
 
+//export dmrgo_dmrd_repeater_id
+func dmrgo_dmrd_repeater_id(c_p *C.uint8_t, c_p_len C.size_t, c_d C.dmrgo_dmrd_dialect_t, c_id *C.uint32_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
+	r0, r1 := g_transport_dmrd.RepeaterID(a_p, g_transport_dmrd.Dialect(c_d))
+	_ = r0
+	_ = r1
+	if c_id != nil {
+		*c_id = C.uint32_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_dmrd_talker_alias_append_binary
 func dmrgo_dmrd_talker_alias_append_binary(c_self *C.dmrgo_dmrd_talker_alias_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
