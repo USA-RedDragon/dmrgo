@@ -31267,7 +31267,7 @@ func dmrgo_ars_message_set_device_id(c_self *C.dmrgo_ars_message_t, c_dst *C.uin
 	nf_dst := int(*c_dst_len)
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
-	r0 := x.SetDeviceID(a_dst, uint32(c_id))
+	r0, r1 := x.SetDeviceID(a_dst, uint32(c_id))
 	var ws_self C.dmrgo_ars_message_t
 	ws_self = *c_self
 	ws_self.device = (*C.uint8_t)(arenaCopy(oc, x.Device))
@@ -31284,6 +31284,9 @@ func dmrgo_ars_message_set_device_id(c_self *C.dmrgo_ars_message_t, c_dst *C.uin
 	*c_dst_len = C.size_t(nf_dst)
 	if c_arena_len != nil {
 		*c_arena_len = C.size_t(oc.need)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }

@@ -2,7 +2,10 @@ package ars
 
 import "github.com/USA-RedDragon/dmrgo/v2"
 
-var errValue = &dmrgo.FieldRangeError{Type: "ars", Field: "Value", Bits: 7}
+var (
+	errValue    = &dmrgo.FieldRangeError{Type: "ars", Field: "Value", Bits: 7}
+	errDeviceID = &dmrgo.FieldRangeError{Type: "ars", Field: "SetDeviceID", Bits: 24}
+)
 
 // DeviceID returns the radio ID that Device holds, and false when Device is
 // empty, holds a character that is not a digit or a number over 24 bits.
@@ -24,10 +27,15 @@ func (m *Message) DeviceID() (uint32, bool) {
 }
 
 // SetDeviceID appends the radio ID id to dst in decimal ASCII digits,
-// points Device at them and returns dst. It allocates only to grow dst.
-func (m *Message) SetDeviceID(dst []byte, id uint32) []byte {
+// points Device at them and returns dst. It returns dst unchanged and a
+// *dmrgo.FieldRangeError when id does not fit in 24 bits, and
+// dmrgo.ErrNilReceiver for a nil m. It allocates only to grow dst.
+func (m *Message) SetDeviceID(dst []byte, id uint32) ([]byte, error) {
 	if m == nil {
-		return dst
+		return dst, dmrgo.ErrNilReceiver
+	}
+	if id > 0xFFFFFF {
+		return dst, errDeviceID
 	}
 	n := len(dst)
 	var b [10]byte
@@ -42,7 +50,7 @@ func (m *Message) SetDeviceID(dst []byte, id uint32) []byte {
 	}
 	dst = append(dst, b[i:]...)
 	m.Device = dst[n:]
-	return dst
+	return dst, nil
 }
 
 // NewRegistration returns a device registration with the header bits that

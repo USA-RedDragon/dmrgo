@@ -9658,7 +9658,7 @@ int dmrgo_ars_header_string(const dmrgo_ars_header_t *self, char *out, size_t ou
 int dmrgo_ars_message_append_binary(const dmrgo_ars_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ars.Message.DeviceID. DeviceID returns the radio ID that Device holds, and false when Device is empty, holds a character that is not a digit or a number over 24 bits. */
 int dmrgo_ars_message_device_id(const dmrgo_ars_message_t *self, uint32_t *value, bool *ok);
-/* Go: ars.Message.SetDeviceID. SetDeviceID appends the radio ID id to dst in decimal ASCII digits, points Device at them and returns dst. */
+/* Go: ars.Message.SetDeviceID. SetDeviceID appends the radio ID id to dst in decimal ASCII digits, points Device at them and returns dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when id does not fit in 24 bits, and DMRGO_ERR_NIL_RECEIVER for a nil m. */
 int dmrgo_ars_message_set_device_id(dmrgo_ars_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, uint32_t id, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ars.Message.String. String returns the fields of s as text, for printing. */
 int dmrgo_ars_message_string(const dmrgo_ars_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
