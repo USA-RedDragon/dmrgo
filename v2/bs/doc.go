@@ -13,8 +13,9 @@
 // The Repeater checks the color code of RF bursts, gives each slot to one
 // source at a time, and refuses or queues the others. It regenerates every
 // burst that it repeats: voice through a voice.Receiver and a
-// voice.Transmitter in relay mode, with new FEC, EMB, embedded LC and the
-// local color code, and data, CSBK and header bursts from their corrected
+// voice.Transmitter in relay mode, with new AMBE+2 FEC where
+// voice.Transmitter.Relay says, EMB, embedded LC and the local color code,
+// and data, CSBK and header bursts from their corrected
 // payload. After a voice call it holds the slot for the call hang time and
 // sends Terminators with the call LC, and after confirmed data it sends
 // TD_LC for the data hang time. The Pre_CSBKs before data or a CSBK

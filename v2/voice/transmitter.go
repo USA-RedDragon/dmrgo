@@ -7,6 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/ambe"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/pcg"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -904,11 +905,16 @@ func (t *Transmitter) finish(out []Output, reason EndReason) []Output {
 // later ones are silence, or the last slot for a FID other than
 // enums.FIDStandardized and enums.FIDMotorola, as MMDVMHost
 // CDMRSlot::insertSilence does. A burst that the queue ran out of is not
-// filled again when Lost reports it. The embedded LC
-// of each complete received superframe is sent in the next superframe that
-// starts, and the call LC when none was received. It returns ErrBusy for
-// an EventCallStart while a call that is not ending runs, and
-// dmrgo.ErrNilArgument for a nil e.
+// filled again when Lost reports it. For a FID of enums.FIDStandardized or
+// enums.FIDMotorola, each AMBE+2 vocoder slot is decoded and encoded
+// again, so that the bit errors that the Golay codes correct are not
+// passed on, as MMDVMHost CAMBEFEC::regenerateDMR does; a slot with
+// section A uncorrectable (FrameQuality.Bad), or with 6 or more errors and
+// 2 or more in section A, is sent as received. Other FIDs, such as Codec2,
+// are sent as received. The embedded LC of each complete received
+// superframe is sent in the next superframe that starts, and the call LC
+// when none was received. It returns ErrBusy for an EventCallStart while
+// a call that is not ending runs, and dmrgo.ErrNilArgument for a nil e.
 func (t *Transmitter) Relay(now time.Duration, e *Event) error {
 	if t == nil {
 		return dmrgo.ErrNilReceiver
@@ -977,10 +983,14 @@ func (t *Transmitter) relayStart(now time.Duration, c *Call) error {
 }
 
 func (t *Transmitter) fill() *[9]byte {
-	if t.relay && t.hasLast && t.call.FID != enums.FIDStandardized && t.call.FID != enums.FIDMotorola {
+	if t.relay && t.hasLast && !ambeFID(t.call.FID) {
 		return &t.last
 	}
 	return &t.silence
+}
+
+func ambeFID(fid enums.FID) bool {
+	return fid == enums.FIDStandardized || fid == enums.FIDMotorola
 }
 
 func (t *Transmitter) fillFor(next bool) *[9]byte {
@@ -1019,10 +1029,17 @@ func (t *Transmitter) relayVoice(e *Event) {
 		t.dropped++
 		return
 	}
+	fid := t.call.FID
+	if next {
+		fid = t.next.FID
+	}
 	packed := e.Burst.VoiceSlots()
 	for i := range packed {
 		s := &t.queue[(t.head+t.length)%len(t.queue)]
 		*s = packed[i]
+		if ambeFID(fid) {
+			*s, _ = ambe.Regenerate(*s)
+		}
 		t.length++
 		if !next {
 			t.last, t.hasLast = *s, true
