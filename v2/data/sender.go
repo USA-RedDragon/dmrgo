@@ -263,10 +263,15 @@ type slot struct {
 // it waits for the response and resends: the blocks that a SACK asks for,
 // the whole packet after a NACK for a bad CRC or no response, and the
 // whole packet again as a first try after a NACK for N(S) out of sequence,
-// which some radios send for a lost block. It sends one message at a time,
-// or with SenderConfig.Window a sliding window of C_HEAD messages of the
-// IP bearer service to one link. Make it with NewSender. A Sender is not
-// safe for concurrent use and must not be copied; go vet reports a copy.
+// which some radios send for a lost block. When the Status of a NACK for
+// N(S) out of sequence, the VI of the receiver, is not the N(S) of the
+// message and SenderConfig.Resync is off, the message takes N(S) VI + 1
+// and the messages after it follow on, so that a message that never
+// arrived does not stop the link (ETSI TS 102 361-1 clause 9.3.24, Table
+// 8.3). It sends one message at a time, or with SenderConfig.Window a
+// sliding window of C_HEAD messages of the IP bearer service to one link.
+// Make it with NewSender. A Sender is not safe for concurrent use and must
+// not be copied; go vet reports a copy.
 type Sender struct {
 	cc           enums.ColorCode
 	source       layer2.SyncSource
@@ -690,18 +695,23 @@ func (s *Sender) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst 
 	if err != nil {
 		rd = nil
 	}
-	return s.answered(now, code, j, rd, dst)
+	return s.answered(now, code, j, rh.ResponseStatus, rd, dst)
 }
 
-func (s *Sender) answered(now time.Duration, code packet.Response, j int, rd *packet.ResponseData, dst []Output) []Output {
+func (s *Sender) answered(now time.Duration, code packet.Response, j int, status uint8, rd *packet.ResponseData, dst []Output) []Output {
 	w, k := s.win, 0
+	renumber := code == packet.ResponseNACKOutOfSequence && !s.resync && s.link != nil && status != s.slots[s.ord[0]].ns
 	for i := range w {
 		e := &s.slots[s.ord[k]]
 		e.last, e.hasLast = code, true
 		switch {
 		case code == packet.ResponseNACKOutOfSequence:
-			if c, ok := e.pkt.Header.AsConfirmed(); s.resync && e.cHead && ok {
-				c.ReSynchronizeFlag = true
+			if c, ok := e.pkt.Header.AsConfirmed(); e.cHead && ok {
+				c.ReSynchronizeFlag = c.ReSynchronizeFlag || s.resync
+				if renumber {
+					e.ns = (status + 1 + uint8(i&7)) & 7
+					c.SendSequenceNumber = e.ns
+				}
 				_ = e.pkt.Header.SetConfirmed(c)
 			}
 			e.try = e.pkt
@@ -717,6 +727,9 @@ func (s *Sender) answered(now time.Duration, code packet.Response, j int, rd *pa
 		default:
 			dst = s.finish(k, ResultRefused, dst)
 		}
+	}
+	if renumber {
+		s.link.seq = (status + 1 + uint8(w&7)) & 7
 	}
 	return s.next(now, dst)
 }
