@@ -845,7 +845,7 @@ typedef uint8_t dmrgo_dmrd_option_state_t;
 typedef uint8_t dmrgo_dmrdsession_output_kind_t;
 /* Go: dmrdsession.Reason. Reason tells why a session ended. */
 typedef uint8_t dmrgo_dmrdsession_reason_t;
-/* Go: dmrdsession.State. State is the state of a dmrdsession. */
+/* Go: dmrdsession.State. State is the state of a session. */
 typedef uint8_t dmrgo_dmrdsession_state_t;
 /* Go: hytera.Service. Service is octet 20 of a P2P packet: the service that the repeater asks for. */
 typedef uint8_t dmrgo_hytera_service_t;
@@ -3892,9 +3892,9 @@ struct dmrgo_dmrdsession_master_config_t {
 	size_t size;
 	/* Dialect is dmrd.DialectMMDVM or dmrd.DialectHBRP. */
 	dmrgo_dmrd_dialect_t dialect;
-	/* Timeout is the time without a packet from the repeater after which the Master ends the dmrdsession. 0 means TimeoutDefault. */
+	/* Timeout is the time without a packet from the repeater after which the Master ends the session. 0 means TimeoutDefault. */
 	dmrgo_duration_t timeout;
-	/* LoginTimeout is the time after the first RPTL of a login, and after the RPTK that proves the password, in which the repeater must finish its login, or the Master ends the dmrdsession. A repeated RPTL does not restart it. 0 means LoginTimeoutDefault. */
+	/* LoginTimeout is the time after the first RPTL of a login, and after the RPTK that proves the password, in which the repeater must finish its login, or the Master ends the session. A repeated RPTL does not restart it. 0 means LoginTimeoutDefault. */
 	dmrgo_duration_t login_timeout;
 };
 
@@ -9960,7 +9960,7 @@ int dmrgo_dmrdsession_master_reset(dmrgo_dmrdsession_master_t *self);
 int dmrgo_dmrdsession_master_resume_need(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, uint32_t id, size_t *items, size_t *arena);
 /* Go: dmrdsession.Master.Resume. Resume starts the logged-in session of the repeater id without a login, for a repeater that logged in to another Master, such as one of another replica of a server, and now sends its packets here. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrdsession_master_resume_need gives. */
 int dmrgo_dmrdsession_master_resume(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, uint32_t id, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: dmrdsession.Master.State. State returns the state of the dmrdsession. */
+/* Go: dmrdsession.Master.State. State returns the state of the session. */
 int dmrgo_dmrdsession_master_state(dmrgo_dmrdsession_master_t *self, dmrgo_dmrdsession_state_t *out);
 /* dmrgo_dmrdsession_master_tick_need sets *items and *arena to the room that dmrgo_dmrdsession_master_tick needs for these arguments, without a change to the handle. */
 int dmrgo_dmrdsession_master_tick_need(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);

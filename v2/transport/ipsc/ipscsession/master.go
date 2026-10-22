@@ -389,9 +389,11 @@ func (m *Master) registered(now time.Duration, from Addr, i int, raw *ipsc.Raw, 
 // one of another replica of a server, and now sends its packets here. key
 // is the own key of the peer, as Packet takes it, and nil means the key of
 // the config. A new peer has ModeDefault and zero Flags until its next
-// keepalive. It reports OutputUp for a new peer, restarts the Timeout of a
-// registered one, and gives OutputDropped with ReasonFull when MaxPeers
-// leaves no room. It allocates only when dst has no room for MaxOutputs
+// keepalive. It reports OutputUp for a new peer. For a registered peer it
+// restarts the Timeout, keeps Mode and Flags, and takes from and key as
+// the new address and key, so a nil key moves a peer with its own key
+// into the system of the config. It gives OutputDropped with ReasonFull
+// when MaxPeers leaves no room. It allocates only when dst has no room for MaxOutputs
 // outputs.
 func (m *Master) Adopt(now time.Duration, from Addr, id uint32, key *[20]byte, dst []Output) []Output {
 	if m == nil {
