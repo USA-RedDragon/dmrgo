@@ -6903,7 +6903,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DMRDSESSION_MAX_OUTPUTS 4
 /* Go: dmrdsession.MaxPacket. MaxPacket is the longest packet in octets that the machines take. */
 #define DMRGO_DMRDSESSION_MAX_PACKET 512
-/* Go: dmrdsession.OutputConfig. OutputConfig reports the RPTC that the Master accepted, in Output.Packet. */
+/* Go: dmrdsession.OutputConfig. OutputConfig reports the RPTC of the repeater in Output.ID at a Master, in Output.Packet. */
 #define DMRGO_DMRDSESSION_OUTPUT_CONFIG ((dmrgo_dmrdsession_output_kind_t)5)
 /* Go: dmrdsession.OutputData. OutputData is a DMRD, DMRA or DMRG packet, or for a Bridge a DMRD or DMRE packet with a good signature, in Output.Packet, with its command in Output.Command. */
 #define DMRGO_DMRDSESSION_OUTPUT_DATA ((dmrgo_dmrdsession_output_kind_t)7)
@@ -6937,7 +6937,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DMRDSESSION_RETRY_DEFAULT INT64_C(10000000000)
 /* Go: dmrdsession.StateAuth. StateAuth is a Peer that sent RPTK, or a Master that sent the salt. */
 #define DMRGO_DMRDSESSION_STATE_AUTH ((dmrgo_dmrdsession_state_t)3)
-/* Go: dmrdsession.StateConfig. StateConfig is a Peer that sent RPTC, or a Master that waits for it. */
+/* Go: dmrdsession.StateConfig. StateConfig is a Peer that sent RPTC, or a Master that waits for it or for Accept or Refuse. */
 #define DMRGO_DMRDSESSION_STATE_CONFIG ((dmrgo_dmrdsession_state_t)4)
 /* Go: dmrdsession.StateIdle. StateIdle has no session: a Peer after Close, a Master before an RPTL or after the end of a session, a Bridge that has not heard its peer within Timeout. */
 #define DMRGO_DMRDSESSION_STATE_IDLE ((dmrgo_dmrdsession_state_t)0)
@@ -9922,6 +9922,10 @@ int dmrgo_dmrdsession_bridge_tick_need(dmrgo_dmrdsession_bridge_t *self, dmrgo_d
 int dmrgo_dmrdsession_bridge_tick(dmrgo_dmrdsession_bridge_t *self, dmrgo_duration_t now, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* dmrgo_dmrdsession_master_free frees the handle. self may be NULL. */
 int dmrgo_dmrdsession_master_free(dmrgo_dmrdsession_master_t *self);
+/* dmrgo_dmrdsession_master_accept_need sets *items and *arena to the room that dmrgo_dmrdsession_master_accept needs for these arguments, without a change to the handle. */
+int dmrgo_dmrdsession_master_accept_need(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+/* Go: dmrdsession.Master.Accept. Accept answers the RPTC of OutputConfig with an acknowledgement. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrdsession_master_accept_need gives. */
+int dmrgo_dmrdsession_master_accept(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* dmrgo_dmrdsession_master_admit_need sets *items and *arena to the room that dmrgo_dmrdsession_master_admit needs for these arguments, without a change to the handle. */
 int dmrgo_dmrdsession_master_admit_need(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, uint32_t salt, const uint8_t *password, size_t password_len, size_t *items, size_t *arena);
 /* Go: dmrdsession.Master.Admit. Admit answers the RPTL of OutputLogin with the salt, which the caller draws at random, and keeps the login token of the salt and the password of the repeater, of any length, to check the RPTK. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrdsession_master_admit_need gives. */
@@ -9940,7 +9944,7 @@ int dmrgo_dmrdsession_master_packet_need(dmrgo_dmrdsession_master_t *self, dmrgo
 int dmrgo_dmrdsession_master_packet(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, const uint8_t *b, size_t b_len, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* dmrgo_dmrdsession_master_refuse_need sets *items and *arena to the room that dmrgo_dmrdsession_master_refuse needs for these arguments, without a change to the handle. */
 int dmrgo_dmrdsession_master_refuse_need(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
-/* Go: dmrdsession.Master.Refuse. Refuse answers the RPTL of OutputLogin, or ends a session, with MSTNAK and OutputDown with ReasonRefused. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrdsession_master_refuse_need gives. */
+/* Go: dmrdsession.Master.Refuse. Refuse answers the RPTL of OutputLogin or the RPTC of OutputConfig, or ends a session, with MSTNAK and OutputDown with ReasonRefused. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrdsession_master_refuse_need gives. */
 int dmrgo_dmrdsession_master_refuse(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: dmrdsession.Master.Reset. Reset ends the session without a packet or an output. */
 int dmrgo_dmrdsession_master_reset(dmrgo_dmrdsession_master_t *self);

@@ -53,8 +53,9 @@ const (
 	// OutputLogin reports the RPTL of the repeater in Output.ID at a
 	// Master. Call Master.Admit or Master.Refuse.
 	OutputLogin
-	// OutputConfig reports the RPTC that the Master accepted, in
-	// Output.Packet.
+	// OutputConfig reports the RPTC of the repeater in Output.ID at a
+	// Master, in Output.Packet. Check it, and call Master.Accept or
+	// Master.Refuse.
 	OutputConfig
 	// OutputOptions reports the RPTO options text that the Master
 	// accepted, in Output.Packet.
@@ -155,7 +156,8 @@ const (
 	StateLogin
 	// StateAuth is a Peer that sent RPTK, or a Master that sent the salt.
 	StateAuth
-	// StateConfig is a Peer that sent RPTC, or a Master that waits for it.
+	// StateConfig is a Peer that sent RPTC, or a Master that waits for it
+	// or for Accept or Refuse.
 	StateConfig
 	// StateOptions is a Peer that sent RPTO.
 	StateOptions

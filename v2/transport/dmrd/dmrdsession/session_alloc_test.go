@@ -31,8 +31,9 @@ func TestAllocsSession(t *testing.T) {
 				}
 			}
 			if m.State() == dmrdsession.StateLogin {
-				mo = m.Admit(0, 7, pass, mo[:0])
+				mo = m.Admit(now, 7, pass, mo[:0])
 			}
+			mo = m.Accept(now, mo)
 			po = po[:0]
 			for _, o := range mo {
 				if o.Kind == dmrdsession.OutputSend {
@@ -50,7 +51,7 @@ func TestAllocsSession(t *testing.T) {
 		po = b.Packet(now, bo[0].Packet, po[:0])
 		mo = m.Resume(now, 99, mo[:0])
 		mo = m.Resume(now, 1234, mo[:0])
-		po = p.Close(0, po[:0])
+		po = p.Close(now, po[:0])
 	}
 	run()
 	if p.State() != dmrdsession.StateIdle || m.State() != dmrdsession.StateRunning || b.State() != dmrdsession.StateRunning {

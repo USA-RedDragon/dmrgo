@@ -1176,6 +1176,7 @@ var api = [...]any{
 	(*transport_dmrd_dmrdsession.Bridge).SignInPlace,
 	(*transport_dmrd_dmrdsession.Bridge).State,
 	(*transport_dmrd_dmrdsession.Bridge).Tick,
+	(*transport_dmrd_dmrdsession.Master).Accept,
 	(*transport_dmrd_dmrdsession.Master).Admit,
 	(*transport_dmrd_dmrdsession.Master).Close,
 	(*transport_dmrd_dmrdsession.Master).Deadline,

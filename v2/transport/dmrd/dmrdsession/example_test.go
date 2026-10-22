@@ -36,8 +36,17 @@ func Example() {
 				case dmrdsession.OutputSend:
 					toPeer = keep(toPeer, o)
 				case dmrdsession.OutputLogin:
-					for _, a := range master.Admit(0, 0xfcb17c08, []byte("passw0rd"), nil) {
+					for _, a := range master.Admit(now, 0xfcb17c08, []byte("passw0rd"), nil) {
 						toPeer = keep(toPeer, a)
+					}
+				case dmrdsession.OutputConfig:
+					fmt.Println("master event:", o.Kind)
+					for _, a := range master.Accept(now, nil) {
+						if a.Kind == dmrdsession.OutputSend {
+							toPeer = keep(toPeer, a)
+						} else {
+							fmt.Println("master event:", a.Kind)
+						}
 					}
 				default:
 					fmt.Println("master event:", o.Kind)

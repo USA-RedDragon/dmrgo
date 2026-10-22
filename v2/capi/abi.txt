@@ -1731,6 +1731,8 @@ sym int dmrgo_dmrdsession_bridge_sign_in_place(dmrgo_dmrdsession_bridge_t *self,
 sym int dmrgo_dmrdsession_bridge_state(dmrgo_dmrdsession_bridge_t *self, dmrgo_dmrdsession_state_t *out);
 sym int dmrgo_dmrdsession_bridge_tick(dmrgo_dmrdsession_bridge_t *self, dmrgo_duration_t now, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_dmrdsession_bridge_tick_need(dmrgo_dmrdsession_bridge_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+sym int dmrgo_dmrdsession_master_accept(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_dmrdsession_master_accept_need(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 sym int dmrgo_dmrdsession_master_admit(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, uint32_t salt, const uint8_t *password, size_t password_len, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_dmrdsession_master_admit_need(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, uint32_t salt, const uint8_t *password, size_t password_len, size_t *items, size_t *arena);
 sym int dmrgo_dmrdsession_master_close(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
