@@ -390,9 +390,10 @@ func AppendAck(dst []byte, t *Text, h *Header) ([]byte, error) {
 		return dst[:n], err
 	}
 	k := copy(dst[n:], dst[i0:])
-	h.unconfirmed = pdu.UnconfirmedDataHeader{SAP: enums.SAPIPBasedPacketData,
-		LLIDDestination: t.Source, LLIDSource: t.Destination, FullMessageFlag: true}
-	h.Data = pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &h.unconfirmed}
+	if err = h.Data.SetUnconfirmed(pdu.UnconfirmedDataHeader{SAP: enums.SAPIPBasedPacketData,
+		LLIDDestination: t.Source, LLIDSource: t.Destination, FullMessageFlag: true}); err != nil {
+		return dst[:n], err
+	}
 	return dst[:n+k], nil
 }
 
