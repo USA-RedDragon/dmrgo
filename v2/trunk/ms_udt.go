@@ -100,6 +100,9 @@ func (m *MS) SendShortData(now time.Duration, group bool, target uint32, a *Appe
 	if m == nil {
 		return dmrgo.ErrNilReceiver
 	}
+	if m.f.ctl.b == nil {
+		return dmrgo.ErrZeroValue
+	}
 
 	kind := enums.ServiceKindIndividualShortData
 	if group {
@@ -131,6 +134,9 @@ func (m *MS) PollShortData(now time.Duration, target uint32, f enums.UDTFormat, 
 	if m == nil {
 		return dmrgo.ErrNilReceiver
 	}
+	if m.f.ctl.b == nil {
+		return dmrgo.ErrZeroValue
+	}
 
 	field, err := layer3.PollingServiceOptions{Format: f}.Field()
 	if err != nil {
@@ -159,6 +165,9 @@ func (m *MS) PollShortData(now time.Duration, target uint32, f enums.UDTFormat, 
 func (m *MS) Divert(now time.Duration, gateway uint32, opts layer3.DiversionServiceOptions, a *Appended) error {
 	if m == nil {
 		return dmrgo.ErrNilReceiver
+	}
+	if m.f.ctl.b == nil {
+		return dmrgo.ErrZeroValue
 	}
 
 	switch gateway {
@@ -204,6 +213,9 @@ func (m *MS) AssignGroups(now time.Duration, target uint32, a *Appended) error {
 	if m == nil {
 		return dmrgo.ErrNilReceiver
 	}
+	if m.f.ctl.b == nil {
+		return dmrgo.ErrZeroValue
+	}
 
 	if a == nil {
 		return dmrgo.ErrNilArgument
@@ -234,6 +246,9 @@ func (m *MS) CallDuplex(now time.Duration, target uint32, opts layer3.VoiceServi
 	if m == nil {
 		return dmrgo.ErrNilReceiver
 	}
+	if m.f.ctl.b == nil {
+		return dmrgo.ErrZeroValue
+	}
 
 	field, err := opts.Field()
 	if err != nil {
@@ -248,6 +263,9 @@ func (m *MS) CallDuplex(now time.Duration, target uint32, opts layer3.VoiceServi
 func (m *MS) CallDuplexData(now time.Duration, target uint32, opts layer3.DataServiceOptions) error {
 	if m == nil {
 		return dmrgo.ErrNilReceiver
+	}
+	if m.f.ctl.b == nil {
+		return dmrgo.ErrZeroValue
 	}
 
 	field, err := opts.Field()
@@ -264,6 +282,9 @@ func (m *MS) CallDuplexData(now time.Duration, target uint32, opts layer3.DataSe
 func (m *MS) CallAmbient(now time.Duration, target uint32, opts layer3.VoiceServiceOptions) error {
 	if m == nil {
 		return dmrgo.ErrNilReceiver
+	}
+	if m.f.ctl.b == nil {
+		return dmrgo.ErrZeroValue
 	}
 
 	if err := m.Call(now, false, target, opts); err != nil {

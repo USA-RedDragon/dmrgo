@@ -133,6 +133,9 @@ func (t *TSCC) SendShortData(now time.Duration, group bool, target uint32, a *Ap
 	if t == nil {
 		return dmrgo.ErrNilReceiver
 	}
+	if t.b == nil {
+		return dmrgo.ErrZeroValue
+	}
 
 	if _, err := a.size(); err != nil {
 		return err
@@ -162,6 +165,9 @@ func (t *TSCC) SendShortData(now time.Duration, group bool, target uint32, a *Ap
 func (t *TSCC) AssignGroups(now time.Duration, target uint32, a *Appended) error {
 	if t == nil {
 		return dmrgo.ErrNilReceiver
+	}
+	if t.b == nil {
+		return dmrgo.ErrZeroValue
 	}
 
 	if a == nil {
@@ -196,6 +202,9 @@ func (t *TSCC) PollShortData(now time.Duration, target uint32, blocks int) error
 	if t == nil {
 		return dmrgo.ErrNilReceiver
 	}
+	if t.b == nil {
+		return dmrgo.ErrZeroValue
+	}
 
 	if blocks < 1 || blocks > 4 {
 		return ErrUDTLength
@@ -220,6 +229,9 @@ func (t *TSCC) PollShortData(now time.Duration, target uint32, blocks int) error
 func (t *TSCC) PollUSBD(now time.Duration, target uint32, st pdu.ServiceType, rd uint8) error {
 	if t == nil {
 		return dmrgo.ErrNilReceiver
+	}
+	if t.b == nil {
+		return dmrgo.ErrZeroValue
 	}
 
 	r := USBDPollRequest{ResponseDelay: rd, Target: target}

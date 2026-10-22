@@ -182,6 +182,9 @@ func (m *MS) SendStatus(now time.Duration, group bool, target uint32, s Status) 
 	if m == nil {
 		return dmrgo.ErrNilReceiver
 	}
+	if m.f.ctl.b == nil {
+		return dmrgo.ErrZeroValue
+	}
 
 	if s >= StatusPoll {
 		return errStatus
@@ -196,6 +199,9 @@ func (m *MS) SendStatus(now time.Duration, group bool, target uint32, s Status) 
 func (m *MS) PollStatus(now time.Duration, target uint32) error {
 	if m == nil {
 		return dmrgo.ErrNilReceiver
+	}
+	if m.f.ctl.b == nil {
+		return dmrgo.ErrZeroValue
 	}
 
 	return m.statusRequest(now, reqStatus, false, target, StatusPoll)
@@ -249,6 +255,9 @@ func (m *MS) suplExtra(options uint8) uint8 {
 func (m *MS) Interrupt(now time.Duration, terminate bool, dst []Output) ([]Output, error) {
 	if m == nil {
 		return dst, dmrgo.ErrNilReceiver
+	}
+	if m.f.ctl.b == nil {
+		return dst, dmrgo.ErrZeroValue
 	}
 
 	dst = m.timers(now, dst)
@@ -308,6 +317,9 @@ func (m *MS) resume(now time.Duration, out []Output) []Output {
 func (m *MS) AdviseIP(now time.Duration, ip [16]byte, ipv6, remove bool) error {
 	if m == nil {
 		return dmrgo.ErrNilReceiver
+	}
+	if m.f.ctl.b == nil {
+		return dmrgo.ErrZeroValue
 	}
 
 	switch {

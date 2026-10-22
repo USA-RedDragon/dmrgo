@@ -162,8 +162,10 @@ type deniedEntry struct {
 // calls by random access, answers C_AHOY and P_AHOY, follows C_MOVE and
 // P_PROTECT, and ends its own calls with P_MAINT (ETSI TS 102 361-4
 // clauses 6.2 to 6.6). The consumer sends the voice of a granted call with
-// a voice.Transmitter with the MS SYNC. Make it with NewMS. An MS is not
-// safe for concurrent use and must not be copied; go vet reports a copy.
+// a voice.Transmitter with the MS SYNC. Make it with NewMS; the methods of
+// a zero MS do nothing, and those that start a request return
+// dmrgo.ErrZeroValue. An MS is not safe for concurrent use and must not be
+// copied; go vet reports a copy.
 type MS struct {
 	f         Follower
 	addr      uint32
@@ -372,6 +374,9 @@ func (m *MS) Call(now time.Duration, group bool, target uint32, opts layer3.Voic
 	if m == nil {
 		return dmrgo.ErrNilReceiver
 	}
+	if m.f.ctl.b == nil {
+		return dmrgo.ErrZeroValue
+	}
 
 	kind := enums.ServiceKindIndividualVoice
 	if group {
@@ -390,6 +395,9 @@ func (m *MS) Call(now time.Duration, group bool, target uint32, opts layer3.Voic
 func (m *MS) CallData(now time.Duration, group bool, target uint32, opts layer3.DataServiceOptions) error {
 	if m == nil {
 		return dmrgo.ErrNilReceiver
+	}
+	if m.f.ctl.b == nil {
+		return dmrgo.ErrZeroValue
 	}
 
 	kind := enums.ServiceKindIndividualPacketData
@@ -427,7 +435,7 @@ func (m *MS) request(now time.Duration, kind enums.ServiceKind, target uint32, f
 // that holds no registration appends OutputPowerOff at once. It allocates
 // only when dst has no room for MaxOutputs outputs.
 func (m *MS) PowerOff(now time.Duration, dst []Output) []Output {
-	if m == nil {
+	if m == nil || m.f.ctl.b == nil {
 		return dst
 	}
 
@@ -456,7 +464,7 @@ func (m *MS) PowerOff(now time.Duration, dst []Output) []Output {
 // appends the outputs to dst, and allocates only when dst has no room for
 // MaxOutputs outputs.
 func (m *MS) Quality(now time.Duration, level int, dst []Output) []Output {
-	if m == nil {
+	if m == nil || m.f.ctl.b == nil {
 		return dst
 	}
 
@@ -472,7 +480,7 @@ func (m *MS) Quality(now time.Duration, level int, dst []Output) []Output {
 // ReasonCancelled when one ran, and allocates only when dst has no room
 // for MaxOutputs outputs.
 func (m *MS) Cancel(now time.Duration, dst []Output) []Output {
-	if m == nil {
+	if m == nil || m.f.ctl.b == nil {
 		return dst
 	}
 
@@ -488,7 +496,7 @@ func (m *MS) Cancel(now time.Duration, dst []Output) []Output {
 // TSCC (ETSI TS 102 361-4 clause 6.6.2.3). It does nothing outside the own
 // call, and allocates only when dst has no room for MaxOutputs outputs.
 func (m *MS) EndCall(now time.Duration, dst []Output) []Output {
-	if m == nil {
+	if m == nil || m.f.ctl.b == nil {
 		return dst
 	}
 
@@ -520,7 +528,7 @@ func (m *MS) EndCall(now time.Duration, dst []Output) []Output {
 // Lost does, else it runs the timers. It allocates only when dst has no
 // room for MaxOutputs outputs.
 func (m *MS) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
-	if m == nil {
+	if m == nil || m.f.ctl.b == nil {
 		return dst
 	}
 
@@ -544,7 +552,7 @@ func (m *MS) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach 
 // Decoded on each. It allocates only when dst has no room for MaxOutputs
 // outputs.
 func (m *MS) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
-	if m == nil {
+	if m == nil || m.f.ctl.b == nil {
 		return dst
 	}
 
@@ -595,7 +603,7 @@ func (m *MS) burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach 
 // Lost tells the MS that the receiver lost the signal, as Follower.Lost
 // does. It allocates only when dst has no room for MaxOutputs outputs.
 func (m *MS) Lost(now time.Duration, dst []Output) []Output {
-	if m == nil {
+	if m == nil || m.f.ctl.b == nil {
 		return dst
 	}
 
@@ -613,7 +621,7 @@ func (m *MS) Lost(now time.Duration, dst []Output) []Output {
 // dst. A Tick before Deadline does nothing. It allocates only when dst has
 // no room for MaxOutputs outputs.
 func (m *MS) Tick(now time.Duration, dst []Output) []Output {
-	if m == nil {
+	if m == nil || m.f.ctl.b == nil {
 		return dst
 	}
 
@@ -626,7 +634,7 @@ func (m *MS) Tick(now time.Duration, dst []Output) []Output {
 // Deadline returns the time at which the MS needs a Tick. ok is false
 // when no timer runs.
 func (m *MS) Deadline() (at time.Duration, ok bool) {
-	if m == nil {
+	if m == nil || m.f.ctl.b == nil {
 		return 0, false
 	}
 

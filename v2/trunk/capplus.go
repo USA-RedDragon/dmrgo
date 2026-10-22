@@ -64,8 +64,9 @@ type CapacityPlusConfig struct {
 // timeslot of the LSN in Slot. A Grant from a site status has Opcode
 // pdu.CSBKCapacityPlusSiteStatus and LateEntry set; one from a Voice LC
 // Header has Opcode 0. No public spec describes the protocol; the decoding
-// follows recordings of real systems. Make it with NewCapacityPlusFollower.
-// A CapacityPlusFollower is not safe for concurrent use and must not be
+// follows recordings of real systems. Make it with NewCapacityPlusFollower;
+// the methods of a zero CapacityPlusFollower do nothing. A
+// CapacityPlusFollower is not safe for concurrent use and must not be
 // copied.
 type CapacityPlusFollower struct {
 	plan     ChannelPlan
@@ -192,7 +193,7 @@ func (f *CapacityPlusFollower) Reset() {
 // Lost does, else it runs the timers. It allocates only when dst has no
 // room for MaxOutputs outputs.
 func (f *CapacityPlusFollower) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
-	if f == nil {
+	if f == nil || f.b == nil {
 		return dst
 	}
 
@@ -207,7 +208,7 @@ func (f *CapacityPlusFollower) Burst(now time.Duration, raw *layer2.RawBurst, h 
 // Decoded on each. It allocates only when dst has no room for MaxOutputs
 // outputs.
 func (f *CapacityPlusFollower) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
-	if f == nil {
+	if f == nil || f.b == nil {
 		return dst
 	}
 
@@ -271,7 +272,7 @@ func (f *CapacityPlusFollower) burst(now time.Duration, raw *layer2.RawBurst, b 
 // returns to the rest channel as on Inactive. It appends the outputs to
 // dst, and allocates only when dst has no room for MaxOutputs outputs.
 func (f *CapacityPlusFollower) Lost(now time.Duration, dst []Output) []Output {
-	if f == nil {
+	if f == nil || f.b == nil {
 		return dst
 	}
 
@@ -287,7 +288,7 @@ func (f *CapacityPlusFollower) Lost(now time.Duration, dst []Output) []Output {
 // Tick or Burst asks for the first repeater. It allocates only when dst
 // has no room for MaxOutputs outputs.
 func (f *CapacityPlusFollower) Tick(now time.Duration, dst []Output) []Output {
-	if f == nil {
+	if f == nil || f.b == nil {
 		return dst
 	}
 
@@ -297,7 +298,7 @@ func (f *CapacityPlusFollower) Tick(now time.Duration, dst []Output) []Output {
 // Deadline returns the time at which the Follower needs a Tick. ok is
 // false when no timer runs.
 func (f *CapacityPlusFollower) Deadline() (at time.Duration, ok bool) {
-	if f == nil {
+	if f == nil || f.b == nil {
 		return 0, false
 	}
 

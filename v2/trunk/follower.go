@@ -76,8 +76,9 @@ type FollowerConfig struct {
 // broadcasts and grants, follows the grants of the calls it wants to their
 // payload channels, and returns to the TSCC on P_CLEAR, after the hang time
 // or when the payload channel goes quiet (ETSI TS 102 361-4 clauses 6.3
-// and 6.6). Make it with NewFollower. A Follower is not safe for
-// concurrent use and must not be copied; go vet reports a copy.
+// and 6.6). Make it with NewFollower; the methods of a zero Follower do
+// nothing. A Follower is not safe for concurrent use and must not be
+// copied; go vet reports a copy.
 type Follower struct {
 	ctl       control
 	cach      layer2.CACH
@@ -253,7 +254,7 @@ func (f *Follower) Reset() {
 // does, else it runs the timers. It allocates only when dst has no room
 // for MaxOutputs outputs.
 func (f *Follower) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
-	if f == nil {
+	if f == nil || f.ctl.b == nil {
 		return dst
 	}
 
@@ -273,7 +274,7 @@ func (f *Follower) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint,
 // Decoded on each. It allocates only when dst has no room for MaxOutputs
 // outputs.
 func (f *Follower) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
-	if f == nil {
+	if f == nil || f.ctl.b == nil {
 		return dst
 	}
 
@@ -317,7 +318,7 @@ func (f *Follower) burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint,
 // channel the call ends as on TV_Inactive. It appends the outputs to dst,
 // and allocates only when dst has no room for MaxOutputs outputs.
 func (f *Follower) Lost(now time.Duration, dst []Output) []Output {
-	if f == nil {
+	if f == nil || f.ctl.b == nil {
 		return dst
 	}
 
@@ -333,7 +334,7 @@ func (f *Follower) Lost(now time.Duration, dst []Output) []Output {
 // first hunt list channel. A Tick before Deadline does nothing. It
 // allocates only when dst has no room for MaxOutputs outputs.
 func (f *Follower) Tick(now time.Duration, dst []Output) []Output {
-	if f == nil {
+	if f == nil || f.ctl.b == nil {
 		return dst
 	}
 
@@ -343,7 +344,7 @@ func (f *Follower) Tick(now time.Duration, dst []Output) []Output {
 // Deadline returns the time at which the Follower needs a Tick. ok is
 // false when no timer runs.
 func (f *Follower) Deadline() (at time.Duration, ok bool) {
-	if f == nil {
+	if f == nil || f.ctl.b == nil {
 		return 0, false
 	}
 

@@ -268,6 +268,9 @@ func (t *TSCC) MassRegister(window, mask uint8, addr uint32) error {
 	if t == nil {
 		return dmrgo.ErrNilReceiver
 	}
+	if t.b == nil {
+		return dmrgo.ErrZeroValue
+	}
 
 	if window > 15 || mask > 24 || addr > 0xFFFFFF {
 		return errTarget
@@ -289,6 +292,9 @@ func (t *TSCC) Stun(now time.Duration, addr uint32, revive bool) error {
 	if t == nil {
 		return dmrgo.ErrNilReceiver
 	}
+	if t.b == nil {
+		return dmrgo.ErrZeroValue
+	}
 
 	act := StunStun
 	if revive {
@@ -303,6 +309,9 @@ func (t *TSCC) Stun(now time.Duration, addr uint32, revive bool) error {
 func (t *TSCC) Kill(now time.Duration, addr uint32) error {
 	if t == nil {
 		return dmrgo.ErrNilReceiver
+	}
+	if t.b == nil {
+		return dmrgo.ErrZeroValue
 	}
 
 	return t.stun(now, addr, StunKill)
@@ -524,6 +533,9 @@ func (t *TSCC) SendStatus(now time.Duration, group bool, target, source uint32, 
 	if t == nil {
 		return dmrgo.ErrNilReceiver
 	}
+	if t.b == nil {
+		return dmrgo.ErrZeroValue
+	}
 
 	if target == 0 || target > 0xFFFFFF || source == 0 || source > 0xFFFFFF || s > StatusPoll || group && s == StatusPoll {
 		return errTarget
@@ -579,6 +591,9 @@ func (t *TSCC) startRC(now time.Duration, i int, cmd enums.RCCommand, by uint32,
 func (t *TSCC) Interrupt(now time.Duration, ch uint16, s enums.Slot, cmd enums.RCCommand) error {
 	if t == nil {
 		return dmrgo.ErrNilReceiver
+	}
+	if t.b == nil {
+		return dmrgo.ErrZeroValue
 	}
 
 	if cmd > enums.RCCeaseTransmissionRequest {

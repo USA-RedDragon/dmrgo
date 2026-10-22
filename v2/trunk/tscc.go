@@ -311,8 +311,9 @@ type setup struct {
 // stun, revive and kill, status calls, transmit interrupts, IP connection
 // advice and supplementary_user data (ETSI TS 102 361-4 clauses 6.4.5 to
 // 6.4.15, 6.6.2.6 and 6.6.4 to 6.6.11). Half-duplex data calls and FOACSU
-// are not supported. Make it with NewTSCC.
-// A TSCC is not safe for concurrent use and must not be copied; go vet
+// are not supported. Make it with NewTSCC; the methods of a zero TSCC do
+// nothing, and those that start a service return dmrgo.ErrZeroValue. A
+// TSCC is not safe for concurrent use and must not be copied; go vet
 // reports a copy.
 type TSCC struct {
 	cfg     TSCCConfig
@@ -434,7 +435,7 @@ func (t *TSCC) Registered(addr uint32) bool {
 // Deadline returns the time of the next Tick: the start of the next 30 ms
 // slot minus TSCCConfig.Lead, or 0 before the first Tick.
 func (t *TSCC) Deadline() (at time.Duration, ok bool) {
-	if t == nil {
+	if t == nil || t.b == nil {
 		return 0, false
 	}
 
@@ -462,7 +463,7 @@ func (t *TSCC) Skipped() int64 {
 // SlotUnknown do nothing. It allocates only when dst has no room for
 // MaxTSCCOutputs outputs.
 func (t *TSCC) Inbound(now time.Duration, ch uint16, raw *layer2.RawBurst, h layer2.Hint, dst []TSCCOutput) []TSCCOutput {
-	if t == nil {
+	if t == nil || t.b == nil {
 		return dst
 	}
 
@@ -782,7 +783,7 @@ func (t *TSCC) startClear(i int, reason Reason, out []TSCCOutput) []TSCCOutput {
 // that is due and counts the others in Skipped. It allocates only when
 // dst has no room for MaxTSCCOutputs outputs.
 func (t *TSCC) Tick(now time.Duration, dst []TSCCOutput) []TSCCOutput {
-	if t == nil {
+	if t == nil || t.b == nil {
 		return dst
 	}
 
