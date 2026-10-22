@@ -18,7 +18,7 @@ func TestZeroValues(t *testing.T) {
 		if out := p.Packet(0, masterAddr, pk, nil); len(out) != 0 {
 			t.Fatalf("zero Peer took %x", pk)
 		}
-		if out := m.Packet(0, masterAddr, pk, nil); len(out) != 0 {
+		if out := m.Packet(0, masterAddr, pk, nil, nil); len(out) != 0 {
 			t.Fatalf("zero Master took %x", pk)
 		}
 	}

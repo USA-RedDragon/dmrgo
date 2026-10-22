@@ -21,7 +21,7 @@ func TestTimersDoNotWrap(t *testing.T) {
 		t.Fatalf("second tick %v", kinds(out))
 	}
 	m, _ := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1})
-	m.Packet(now, xprAddr, ctl(ipsc.OpRegisterRequest, 7), nil)
+	m.Packet(now, xprAddr, ctl(ipsc.OpRegisterRequest, 7), nil, nil)
 	if out := m.Tick(now, nil); len(out) != 0 || m.Peers() != 1 {
 		t.Fatalf("master dropped the peer at once %v", kinds(out))
 	}
