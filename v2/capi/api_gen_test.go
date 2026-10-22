@@ -1590,6 +1590,7 @@ var entryPoints = map[string]any{
 	"dmrgo_voice_interrupter_free":                                     dmrgo_voice_interrupter_free,
 	"dmrgo_voice_interrupter_burst_need":                               dmrgo_voice_interrupter_burst_need,
 	"dmrgo_voice_interrupter_burst":                                    dmrgo_voice_interrupter_burst,
+	"dmrgo_voice_interrupter_cancel_need":                              dmrgo_voice_interrupter_cancel_need,
 	"dmrgo_voice_interrupter_cancel":                                   dmrgo_voice_interrupter_cancel,
 	"dmrgo_voice_interrupter_deadline":                                 dmrgo_voice_interrupter_deadline,
 	"dmrgo_voice_interrupter_decoded_need":                             dmrgo_voice_interrupter_decoded_need,

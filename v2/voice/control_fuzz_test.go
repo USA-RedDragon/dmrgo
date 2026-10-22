@@ -103,7 +103,7 @@ func controlScript(t testing.TB, p []layer2.RawBurst, in []byte) {
 		case 7:
 			out = irq.Burst(now, &raw, layer2.Hint{}, out)
 		case 8:
-			irq.Cancel()
+			out = irq.Cancel(now, out)
 		case 9:
 			tx.Reset()
 			irq.Reset()
