@@ -1,5 +1,5 @@
 module github.com/USA-RedDragon/dmrgo/cmd/dmrgen
 
-go 1.27.2
+go 1.27.3
 
 require github.com/dave/jennifer v1.7.1
