@@ -26,7 +26,7 @@ func TestNetworkAndGroupPrefix(t *testing.T) {
 				if err != nil {
 					t.Fatalf("%s: %v", f, err)
 				}
-				u, ok := h.Data.AsUnconfirmedDataHeader()
+				u, ok := h.Data.AsUnconfirmed()
 				if !ok {
 					t.Fatalf("%s: header %v is not a U_HEAD", f, &h.Data)
 				}

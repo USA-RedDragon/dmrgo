@@ -11,25 +11,25 @@ func TestDataHeaderBytes_MatchesGeneratedCodec(t *testing.T) {
 
 	headers := []pdu.DataHeader{
 		dataHeaderBytesBuild(func(h *pdu.DataHeader) error {
-			return h.SetUDTHeader(pdu.UDTHeader{LLIDDestination: 1, LLIDSource: 2, Opcode: pdu.UDTOpcodeOutboundHeader, UAB: 1})
+			return h.SetUDT(pdu.UDTHeader{LLIDDestination: 1, LLIDSource: 2, Opcode: pdu.UDTOpcodeOutboundHeader, UAB: 1})
 		}),
 		dataHeaderBytesBuild(func(h *pdu.DataHeader) error {
-			return h.SetResponsePacketHeader(pdu.ResponsePacketHeader{LLIDDestination: 1, LLIDSource: 2, BlocksToFollow: 1})
+			return h.SetResponse(pdu.ResponsePacketHeader{LLIDDestination: 1, LLIDSource: 2, BlocksToFollow: 1})
 		}),
 		dataHeaderBytesBuild(func(h *pdu.DataHeader) error {
-			return h.SetUnconfirmedDataHeader(pdu.UnconfirmedDataHeader{Group: true, LLIDDestination: 1, LLIDSource: 2, BlocksToFollow: 3})
+			return h.SetUnconfirmed(pdu.UnconfirmedDataHeader{Group: true, LLIDDestination: 1, LLIDSource: 2, BlocksToFollow: 3})
 		}),
 		dataHeaderBytesBuild(func(h *pdu.DataHeader) error {
-			return h.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{LLIDDestination: 1, LLIDSource: 2, BlocksToFollow: 3})
+			return h.SetConfirmed(pdu.ConfirmedDataHeader{LLIDDestination: 1, LLIDSource: 2, BlocksToFollow: 3})
 		}),
 		dataHeaderBytesBuild(func(h *pdu.DataHeader) error {
-			return h.SetDefinedDataHeader(pdu.DefinedDataHeader{LLIDDestination: 1, LLIDSource: 2, AppendedBlocks: 2})
+			return h.SetDefinedData(pdu.DefinedDataHeader{LLIDDestination: 1, LLIDSource: 2, AppendedBlocks: 2})
 		}),
 		dataHeaderBytesBuild(func(h *pdu.DataHeader) error {
-			return h.SetRawDataHeader(pdu.RawDataHeader{Group: true, LLIDDestination: 1, LLIDSource: 2, AppendedBlocks: 2})
+			return h.SetRawData(pdu.RawDataHeader{Group: true, LLIDDestination: 1, LLIDSource: 2, AppendedBlocks: 2})
 		}),
 		dataHeaderBytesBuild(func(h *pdu.DataHeader) error {
-			return h.SetStatusPrecodedHeader(pdu.StatusPrecodedHeader{LLIDDestination: 1, LLIDSource: 2, StatusPrecoded: 0x155})
+			return h.SetStatusPrecoded(pdu.StatusPrecodedHeader{LLIDDestination: 1, LLIDSource: 2, StatusPrecoded: 0x155})
 		}),
 	}
 	for _, dh := range headers {
@@ -54,24 +54,24 @@ func TestDataHeaderBytes_MatchesGeneratedCodec(t *testing.T) {
 		}
 		want := dh
 		noErr(want.SetAddresses(0xABCDEF, 0x123456))
-		if p, ok := want.AsUnconfirmedDataHeader(); ok {
+		if p, ok := want.AsUnconfirmed(); ok {
 			p.Group = group
-			noErr(want.SetUnconfirmedDataHeader(p))
-		} else if p, ok := want.AsConfirmedDataHeader(); ok {
+			noErr(want.SetUnconfirmed(p))
+		} else if p, ok := want.AsConfirmed(); ok {
 			p.Group = group
-			noErr(want.SetConfirmedDataHeader(p))
-		} else if p, ok := want.AsDefinedDataHeader(); ok {
+			noErr(want.SetConfirmed(p))
+		} else if p, ok := want.AsDefinedData(); ok {
 			p.Group = group
-			noErr(want.SetDefinedDataHeader(p))
-		} else if p, ok := want.AsRawDataHeader(); ok {
+			noErr(want.SetDefinedData(p))
+		} else if p, ok := want.AsRawData(); ok {
 			p.Group = group
-			noErr(want.SetRawDataHeader(p))
-		} else if p, ok := want.AsStatusPrecodedHeader(); ok {
+			noErr(want.SetRawData(p))
+		} else if p, ok := want.AsStatusPrecoded(); ok {
 			p.Group = group
-			noErr(want.SetStatusPrecodedHeader(p))
-		} else if p, ok := want.AsUDTHeader(); ok {
+			noErr(want.SetStatusPrecoded(p))
+		} else if p, ok := want.AsUDT(); ok {
 			p.Group = group
-			noErr(want.SetUDTHeader(p))
+			noErr(want.SetUDT(p))
 		}
 		if must(got.Encode()) != must(want.Encode()) {
 			t.Fatalf("%s: edited header decodes as %s, want %s", dh.Format(), got.String(), want.String())

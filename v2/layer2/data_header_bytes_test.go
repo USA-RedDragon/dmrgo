@@ -11,22 +11,22 @@ import (
 
 func headerGroup(t *testing.T, h *pdu.DataHeader) bool {
 	t.Helper()
-	if p, ok := h.AsUnconfirmedDataHeader(); ok {
+	if p, ok := h.AsUnconfirmed(); ok {
 		return p.Group
 	}
-	if p, ok := h.AsConfirmedDataHeader(); ok {
+	if p, ok := h.AsConfirmed(); ok {
 		return p.Group
 	}
-	if p, ok := h.AsDefinedDataHeader(); ok {
+	if p, ok := h.AsDefinedData(); ok {
 		return p.Group
 	}
-	if p, ok := h.AsStatusPrecodedHeader(); ok {
+	if p, ok := h.AsStatusPrecoded(); ok {
 		return p.Group
 	}
-	if p, ok := h.AsRawDataHeader(); ok {
+	if p, ok := h.AsRawData(); ok {
 		return p.Group
 	}
-	if p, ok := h.AsUDTHeader(); ok {
+	if p, ok := h.AsUDT(); ok {
 		return p.Group
 	}
 	return false

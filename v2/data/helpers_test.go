@@ -144,7 +144,7 @@ func setHeader[P any](t testing.TB, set func(*pdu.DataHeader, P) error, p P) pdu
 
 func confirmedOf(t testing.TB, h *pdu.DataHeader) pdu.ConfirmedDataHeader {
 	t.Helper()
-	c, ok := h.AsConfirmedDataHeader()
+	c, ok := h.AsConfirmed()
 	if !ok {
 		t.Fatalf("header %v is not a C_HEAD", h)
 	}
@@ -155,7 +155,7 @@ func editConfirmed(t testing.TB, h *pdu.DataHeader, edit func(*pdu.ConfirmedData
 	t.Helper()
 	c := confirmedOf(t, h)
 	edit(&c)
-	if err := h.SetConfirmedDataHeader(c); err != nil {
+	if err := h.SetConfirmed(c); err != nil {
 		t.Fatal(err)
 	}
 }

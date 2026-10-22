@@ -25,7 +25,7 @@ type UnconfirmedDataHeader struct {
 }
 
 // DataHeader is the data header PDU. The Data Packet Format in RawPayload
-// selects its view: AsConfirmedDataHeader, for example, decodes it for
+// selects its view: AsConfirmed, for example, decodes it for
 // FormatConfirmed. (ETSI TS 102 361-1 clause 9.2)
 //
 //dmr:crc crc_ccitt
@@ -33,14 +33,14 @@ type UnconfirmedDataHeader struct {
 //dmr:input_size 96
 //dmr:get Format Format bits:4-7 the Data Packet Format (DPF) of the header
 //dmr:get appendedBlocks uint8 bits:2-3+12-15,only:Format=FormatShortDataDefined|FormatShortDataRawOrStatusPrecoded the Appended Blocks (AB)
-//dmr:variant UnconfirmedDataHeader UnconfirmedDataHeader Format=FormatUnconfirmed
-//dmr:variant ConfirmedDataHeader ConfirmedDataHeader Format=FormatConfirmed
-//dmr:variant ResponsePacketHeader ResponsePacketHeader Format=FormatResponsePacket
-//dmr:variant DefinedDataHeader DefinedDataHeader Format=FormatShortDataDefined
-//dmr:variant StatusPrecodedHeader StatusPrecodedHeader Format=FormatShortDataRawOrStatusPrecoded appendedBlocks==0
-//dmr:variant RawDataHeader RawDataHeader Format=FormatShortDataRawOrStatusPrecoded appendedBlocks!=0
-//dmr:variant UDTHeader UDTHeader Format=FormatUnifiedDataTransport
-//dmr:variant ProprietaryHeader ProprietaryHeader Format=FormatProprietary
+//dmr:variant Unconfirmed UnconfirmedDataHeader Format=FormatUnconfirmed
+//dmr:variant Confirmed ConfirmedDataHeader Format=FormatConfirmed
+//dmr:variant Response ResponsePacketHeader Format=FormatResponsePacket
+//dmr:variant DefinedData DefinedDataHeader Format=FormatShortDataDefined
+//dmr:variant StatusPrecoded StatusPrecodedHeader Format=FormatShortDataRawOrStatusPrecoded appendedBlocks==0
+//dmr:variant RawData RawDataHeader Format=FormatShortDataRawOrStatusPrecoded appendedBlocks!=0
+//dmr:variant UDT UDTHeader Format=FormatUnifiedDataTransport
+//dmr:variant Proprietary ProprietaryHeader Format=FormatProprietary
 type DataHeader struct {
 	FEC fec.Result `dmr:"-"` // result of the header CRC check
 
@@ -56,25 +56,25 @@ func (s *DataHeader) Addresses() (target, source uint32, ok bool) {
 	if s == nil {
 		return 0, 0, false
 	}
-	if p, ok := s.AsUnconfirmedDataHeader(); ok {
+	if p, ok := s.AsUnconfirmed(); ok {
 		return p.LLIDDestination, p.LLIDSource, true
 	}
-	if p, ok := s.AsConfirmedDataHeader(); ok {
+	if p, ok := s.AsConfirmed(); ok {
 		return p.LLIDDestination, p.LLIDSource, true
 	}
-	if p, ok := s.AsResponsePacketHeader(); ok {
+	if p, ok := s.AsResponse(); ok {
 		return p.LLIDDestination, p.LLIDSource, true
 	}
-	if p, ok := s.AsDefinedDataHeader(); ok {
+	if p, ok := s.AsDefinedData(); ok {
 		return p.LLIDDestination, p.LLIDSource, true
 	}
-	if p, ok := s.AsStatusPrecodedHeader(); ok {
+	if p, ok := s.AsStatusPrecoded(); ok {
 		return p.LLIDDestination, p.LLIDSource, true
 	}
-	if p, ok := s.AsRawDataHeader(); ok {
+	if p, ok := s.AsRawData(); ok {
 		return p.LLIDDestination, p.LLIDSource, true
 	}
-	if p, ok := s.AsUDTHeader(); ok {
+	if p, ok := s.AsUDT(); ok {
 		return p.LLIDDestination, p.LLIDSource, true
 	}
 	return 0, 0, false
@@ -91,33 +91,33 @@ func (s *DataHeader) SetAddresses(destination, source uint32) error {
 	if err := checkAddresses(destination, source, errDataHeaderTargetRange, errDataHeaderSourceRange); err != nil {
 		return err
 	}
-	if p, ok := s.AsUnconfirmedDataHeader(); ok {
+	if p, ok := s.AsUnconfirmed(); ok {
 		p.LLIDDestination, p.LLIDSource = destination, source
-		return s.SetUnconfirmedDataHeader(p)
+		return s.SetUnconfirmed(p)
 	}
-	if p, ok := s.AsConfirmedDataHeader(); ok {
+	if p, ok := s.AsConfirmed(); ok {
 		p.LLIDDestination, p.LLIDSource = destination, source
-		return s.SetConfirmedDataHeader(p)
+		return s.SetConfirmed(p)
 	}
-	if p, ok := s.AsResponsePacketHeader(); ok {
+	if p, ok := s.AsResponse(); ok {
 		p.LLIDDestination, p.LLIDSource = destination, source
-		return s.SetResponsePacketHeader(p)
+		return s.SetResponse(p)
 	}
-	if p, ok := s.AsDefinedDataHeader(); ok {
+	if p, ok := s.AsDefinedData(); ok {
 		p.LLIDDestination, p.LLIDSource = destination, source
-		return s.SetDefinedDataHeader(p)
+		return s.SetDefinedData(p)
 	}
-	if p, ok := s.AsStatusPrecodedHeader(); ok {
+	if p, ok := s.AsStatusPrecoded(); ok {
 		p.LLIDDestination, p.LLIDSource = destination, source
-		return s.SetStatusPrecodedHeader(p)
+		return s.SetStatusPrecoded(p)
 	}
-	if p, ok := s.AsRawDataHeader(); ok {
+	if p, ok := s.AsRawData(); ok {
 		p.LLIDDestination, p.LLIDSource = destination, source
-		return s.SetRawDataHeader(p)
+		return s.SetRawData(p)
 	}
-	if p, ok := s.AsUDTHeader(); ok {
+	if p, ok := s.AsUDT(); ok {
 		p.LLIDDestination, p.LLIDSource = destination, source
-		return s.SetUDTHeader(p)
+		return s.SetUDT(p)
 	}
 	return ErrNoAddresses
 }
@@ -130,25 +130,25 @@ func (s *DataHeader) BlocksToFollow() (n int, ok bool) {
 	if s == nil {
 		return 0, false
 	}
-	if u, ok := s.AsUnconfirmedDataHeader(); ok {
+	if u, ok := s.AsUnconfirmed(); ok {
 		return int(u.BlocksToFollow), true
 	}
-	if c, ok := s.AsConfirmedDataHeader(); ok {
+	if c, ok := s.AsConfirmed(); ok {
 		return int(c.BlocksToFollow), true
 	}
-	if r, ok := s.AsResponsePacketHeader(); ok {
+	if r, ok := s.AsResponse(); ok {
 		return int(r.BlocksToFollow), true
 	}
-	if d, ok := s.AsDefinedDataHeader(); ok {
+	if d, ok := s.AsDefinedData(); ok {
 		return int(d.AppendedBlocks), true
 	}
-	if r, ok := s.AsRawDataHeader(); ok {
+	if r, ok := s.AsRawData(); ok {
 		return int(r.AppendedBlocks), true
 	}
-	if _, ok := s.AsStatusPrecodedHeader(); ok {
+	if _, ok := s.AsStatusPrecoded(); ok {
 		return 0, true
 	}
-	if u, ok := s.AsUDTHeader(); ok {
+	if u, ok := s.AsUDT(); ok {
 		return int(u.UAB) + 1, true
 	}
 	return 0, false
@@ -160,25 +160,25 @@ func (s *DataHeader) SAP() (sap enums.SAP, ok bool) {
 	if s == nil {
 		return 0, false
 	}
-	if u, ok := s.AsUnconfirmedDataHeader(); ok {
+	if u, ok := s.AsUnconfirmed(); ok {
 		return u.SAP, true
 	}
-	if c, ok := s.AsConfirmedDataHeader(); ok {
+	if c, ok := s.AsConfirmed(); ok {
 		return c.SAP, true
 	}
-	if r, ok := s.AsResponsePacketHeader(); ok {
+	if r, ok := s.AsResponse(); ok {
 		return r.SAP, true
 	}
-	if d, ok := s.AsDefinedDataHeader(); ok {
+	if d, ok := s.AsDefinedData(); ok {
 		return d.SAP, true
 	}
-	if r, ok := s.AsRawDataHeader(); ok {
+	if r, ok := s.AsRawData(); ok {
 		return r.SAP, true
 	}
-	if p, ok := s.AsStatusPrecodedHeader(); ok {
+	if p, ok := s.AsStatusPrecoded(); ok {
 		return p.SAP, true
 	}
-	if u, ok := s.AsUDTHeader(); ok {
+	if u, ok := s.AsUDT(); ok {
 		return u.SAP, true
 	}
 	return 0, false
@@ -191,16 +191,16 @@ func (s *DataHeader) FullMessage() (full, ok bool) {
 	if s == nil {
 		return false, false
 	}
-	if u, ok := s.AsUnconfirmedDataHeader(); ok {
+	if u, ok := s.AsUnconfirmed(); ok {
 		return u.FullMessageFlag, true
 	}
-	if c, ok := s.AsConfirmedDataHeader(); ok {
+	if c, ok := s.AsConfirmed(); ok {
 		return c.FullMessageFlag, true
 	}
-	if d, ok := s.AsDefinedDataHeader(); ok {
+	if d, ok := s.AsDefinedData(); ok {
 		return d.FullMessageFlag, true
 	}
-	if r, ok := s.AsRawDataHeader(); ok {
+	if r, ok := s.AsRawData(); ok {
 		return r.FullMessageFlag, true
 	}
 	return false, false

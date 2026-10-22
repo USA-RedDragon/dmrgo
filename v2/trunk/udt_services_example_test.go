@@ -67,7 +67,7 @@ func (s *exampleSite) udt(h pdu.UDTHeader, a *trunk.Appended) {
 		h.Opcode = pdu.UDTOpcodeOutboundHeader
 	}
 	var dh pdu.DataHeader
-	_ = dh.SetUDTHeader(h)
+	_ = dh.SetUDT(h)
 	s.send(&dh)
 	blocks := make([][12]byte, a.Blocks)
 	for i := range blocks {

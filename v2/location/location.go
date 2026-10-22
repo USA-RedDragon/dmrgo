@@ -101,9 +101,9 @@ func (d *Decoder) Decode(h *pdu.DataHeader, data []byte) (Fix, error) {
 		return Fix{}, ErrNoFix
 	}
 	var sap enums.SAP
-	if u, ok := h.AsUnconfirmedDataHeader(); ok {
+	if u, ok := h.AsUnconfirmed(); ok {
 		sap = u.SAP
-	} else if c, ok := h.AsConfirmedDataHeader(); ok {
+	} else if c, ok := h.AsConfirmed(); ok {
 		sap = c.SAP
 	} else {
 		return Fix{}, ErrNoFix

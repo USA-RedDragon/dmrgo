@@ -65,7 +65,7 @@ func runPacketBounds(t *testing.T, data []byte, rateSel byte, conf bool, retry [
 		t.Fatalf("Response returned %d blocks", len(r.Blocks))
 	}
 	if conf {
-		to, _ := p.Header.AsConfirmedDataHeader()
+		to, _ := p.Header.AsConfirmed()
 		ack, _ := b.NewResponse(&to, packet.ResponseSACK, &rd)
 		if len(ack.Blocks) > maxBoundBlocks {
 			t.Fatalf("NewResponse returned %d blocks", len(ack.Blocks))

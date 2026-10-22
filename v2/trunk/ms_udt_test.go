@@ -39,7 +39,7 @@ func download(t testing.TB, h pdu.UDTHeader, a *trunk.Appended) []layer2.RawBurs
 	}
 	pdu.SetMBCLastBlockCRC(blocks)
 	out := make([]layer2.RawBurst, 0, 1+len(blocks))
-	out = append(out, bsBurst(t, withPDU(t, &pdu.DataHeader{}, (*pdu.DataHeader).SetUDTHeader, h), testCC))
+	out = append(out, bsBurst(t, withPDU(t, &pdu.DataHeader{}, (*pdu.DataHeader).SetUDT, h), testCC))
 	for _, b := range blocks {
 		raw, err := layer2.BuildDataBurst(b, enums.DataTypeRate12, testCC, layer2.SyncSourceBS)
 		if err != nil {
@@ -80,7 +80,7 @@ func uploaded(t *testing.T, out []trunk.Output) (pdu.UDTHeader, trunk.Appended) 
 	if !ok || dh.FEC.Uncorrectable {
 		t.Fatalf("UDT header %T", b.Data)
 	}
-	h, ok := dh.AsUDTHeader()
+	h, ok := dh.AsUDT()
 	if !ok {
 		t.Fatalf("UDT header format %v", dh.Format())
 	}

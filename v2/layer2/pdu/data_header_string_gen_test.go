@@ -20,21 +20,21 @@ func TestUnconfirmedDataHeaderStringMatchesFmt(t *testing.T) {
 func (s *DataHeader) fmtString() string {
 	_ret := "DataHeader{ "
 	_ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, Format: %d, appendedBlocks: %d, ", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.Format(), s.appendedBlocks())
-	if v, ok := s.AsUnconfirmedDataHeader(); ok {
+	if v, ok := s.AsUnconfirmed(); ok {
 		_ret += v.String()
-	} else if v, ok := s.AsConfirmedDataHeader(); ok {
+	} else if v, ok := s.AsConfirmed(); ok {
 		_ret += v.String()
-	} else if v, ok := s.AsResponsePacketHeader(); ok {
+	} else if v, ok := s.AsResponse(); ok {
 		_ret += v.String()
-	} else if v, ok := s.AsDefinedDataHeader(); ok {
+	} else if v, ok := s.AsDefinedData(); ok {
 		_ret += v.String()
-	} else if v, ok := s.AsStatusPrecodedHeader(); ok {
+	} else if v, ok := s.AsStatusPrecoded(); ok {
 		_ret += v.String()
-	} else if v, ok := s.AsRawDataHeader(); ok {
+	} else if v, ok := s.AsRawData(); ok {
 		_ret += v.String()
-	} else if v, ok := s.AsUDTHeader(); ok {
+	} else if v, ok := s.AsUDT(); ok {
 		_ret += v.String()
-	} else if v, ok := s.AsProprietaryHeader(); ok {
+	} else if v, ok := s.AsProprietary(); ok {
 		_ret += v.String()
 	} else {
 		_ret += fmt.Sprintf("RawPayload: %x", s.RawPayload)

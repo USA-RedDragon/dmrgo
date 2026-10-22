@@ -14,10 +14,10 @@ func TestMessageUDPIPv4(t *testing.T) {
 	t.Parallel()
 
 	unconfirmed := func(sap enums.SAP) pdu.DataHeader {
-		return header(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{SAP: sap})
+		return header(t, (*pdu.DataHeader).SetUnconfirmed, pdu.UnconfirmedDataHeader{SAP: sap})
 	}
-	confirmed := header(t, (*pdu.DataHeader).SetConfirmedDataHeader, pdu.ConfirmedDataHeader{SAP: enums.SAPUDPIPHeaderCompression})
-	defined := header(t, (*pdu.DataHeader).SetDefinedDataHeader, pdu.DefinedDataHeader{SAP: enums.SAPUDPIPHeaderCompression})
+	confirmed := header(t, (*pdu.DataHeader).SetConfirmed, pdu.ConfirmedDataHeader{SAP: enums.SAPUDPIPHeaderCompression})
+	defined := header(t, (*pdu.DataHeader).SetDefinedData, pdu.DefinedDataHeader{SAP: enums.SAPUDPIPHeaderCompression})
 	tests := []struct {
 		name    string
 		header  pdu.DataHeader

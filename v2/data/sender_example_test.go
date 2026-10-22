@@ -25,7 +25,7 @@ func ExampleSender() {
 		return
 	}
 	m := &data.Message{Rate: enums.DataTypeRate12, Payload: []byte("a confirmed message of a few blocks")}
-	if err := m.Header.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{
+	if err := m.Header.SetConfirmed(pdu.ConfirmedDataHeader{
 		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001,
 	}); err != nil {
 		fmt.Println(err)
@@ -87,7 +87,7 @@ func ExampleSender_window() {
 	}
 	for _, text := range []string{"one", "two", "three"} {
 		m := &data.Message{Rate: enums.DataTypeRate12, Payload: []byte(text)}
-		if err := m.Header.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{
+		if err := m.Header.SetConfirmed(pdu.ConfirmedDataHeader{
 			SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001,
 		}); err != nil {
 			fmt.Println(err)
@@ -112,7 +112,7 @@ func ExampleSender_window() {
 			for _, e := range rx.Burst(o.Due, &o.Burst, layer2.Hint{}, events[:0]) {
 				switch e.Kind {
 				case data.EventDelivered:
-					c, _ := e.Message.Header.AsConfirmedDataHeader()
+					c, _ := e.Message.Header.AsConfirmed()
 					fmt.Printf("delivered %q, response requested %v\n", e.Message.Payload, c.ResponseRequested)
 				case data.EventRespond:
 					replies = append(replies, e)
@@ -139,7 +139,7 @@ func ExampleOutput_ICMP() {
 		return
 	}
 	m := &data.Message{Rate: enums.DataTypeRate12, Payload: []byte("no one hears this")}
-	if err := m.Header.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{
+	if err := m.Header.SetConfirmed(pdu.ConfirmedDataHeader{
 		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001,
 	}); err != nil {
 		fmt.Println(err)

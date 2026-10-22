@@ -132,7 +132,7 @@ func (c *control) tscc(now time.Duration, slot enums.Slot) tsccEvent {
 		return c.mbcContinuation(now, d, slot)
 	case *pdu.DataHeader:
 		c.pending, c.udtOn = pendingNone, false
-		if h, ok := d.AsUDTHeader(); ok && (h.Opcode == pdu.UDTOpcodeOutboundHeader || h.Opcode == pdu.UDTOpcodeDGNAOutboundHeader) {
+		if h, ok := d.AsUDT(); ok && (h.Opcode == pdu.UDTOpcodeOutboundHeader || h.Opcode == pdu.UDTOpcodeDGNAOutboundHeader) {
 			c.udt = UDT{Header: h}
 			c.udtWant, c.udtSlot, c.udtOn = int(h.UAB)+1, slot, true
 		}
@@ -279,14 +279,14 @@ func (c *control) mbcContinuation(now time.Duration, m *pdu.MBCContinuation, slo
 	}
 	switch kind {
 	case pendingChanFreq:
-		bc := m.AsBCAP()
+		bc := m.BCAP()
 		if bc.FEC.Uncorrectable || bc.Cdeftype != 0 || bc.CdefParms.Channel != c.pendChan {
 			return eventNone
 		}
 		_ = c.plan.AddCdef(&bc.CdefParms)
 		return eventTSCC
 	case pendingGrant:
-		cg := m.AsCGAP()
+		cg := m.CGAP()
 		if cg.FEC.Uncorrectable || cg.Cdeftype != 0 {
 			return eventNone
 		}
@@ -296,7 +296,7 @@ func (c *control) mbcContinuation(now time.Duration, m *pdu.MBCContinuation, slo
 		g.ColorCode, g.HasColorCode = cg.ColorCode, true
 		return c.newGrant(now, &g)
 	case pendingMove:
-		mv := m.AsMVAP()
+		mv := m.MVAP()
 		if mv.FEC.Uncorrectable || mv.Cdeftype != 0 {
 			return eventNone
 		}

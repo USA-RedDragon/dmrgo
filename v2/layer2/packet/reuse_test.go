@@ -79,7 +79,7 @@ func TestAssembler_HeaderInPlace(t *testing.T) {
 	}
 	a := packet.NewAssembler(127)
 	h := p.Header
-	c := get(t, &h, (*pdu.DataHeader).AsConfirmedDataHeader)
+	c := get(t, &h, (*pdu.DataHeader).AsConfirmed)
 	if _, _, err := a.Add(&h); err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestAssembler_HeaderInPlace(t *testing.T) {
 	}
 	c.LLIDSource++
 	c.BlocksToFollow = 2
-	mustSet(t, h.SetConfirmedDataHeader(c))
+	mustSet(t, h.SetConfirmed(c))
 	if _, _, err := a.Add(&h); err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +109,7 @@ func TestAssembler_HeaderInPlace(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if rh := get(t, &resp.Header, (*pdu.DataHeader).AsResponsePacketHeader); rh.LLIDDestination != c.LLIDSource {
+	if rh := get(t, &resp.Header, (*pdu.DataHeader).AsResponse); rh.LLIDDestination != c.LLIDSource {
 		t.Errorf("response %+v", rh)
 	}
 }
@@ -264,7 +264,7 @@ func TestResponseData_Append(t *testing.T) {
 func TestAssembler_ResponseLength(t *testing.T) {
 	t.Parallel()
 
-	h := header(t, (*pdu.DataHeader).SetResponsePacketHeader, pdu.ResponsePacketHeader{BlocksToFollow: 3, ResponseClass: 2})
+	h := header(t, (*pdu.DataHeader).SetResponse, pdu.ResponsePacketHeader{BlocksToFollow: 3, ResponseClass: 2})
 	a := packet.NewAssembler(127)
 	if _, _, err := a.Add(encodeHeader(t, &h)); err != nil {
 		t.Fatal(err)

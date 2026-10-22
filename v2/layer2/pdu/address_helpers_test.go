@@ -74,7 +74,7 @@ func TestDataHeader_Addresses(t *testing.T) {
 	t.Parallel()
 
 	var dh pdu.DataHeader
-	noErr(dh.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{}))
+	noErr(dh.SetConfirmed(pdu.ConfirmedDataHeader{}))
 	if dh.SetAddresses(3120002, 3120001) != nil {
 		t.Fatal("SetAddresses failed")
 	}
@@ -83,7 +83,7 @@ func TestDataHeader_Addresses(t *testing.T) {
 		t.Errorf("Addresses = %d %d %v", dst, src, ok)
 	}
 	var proprietary pdu.DataHeader
-	noErr(proprietary.SetProprietaryHeader(pdu.ProprietaryHeader{}))
+	noErr(proprietary.SetProprietary(pdu.ProprietaryHeader{}))
 	if _, _, ok := proprietary.Addresses(); ok || proprietary.SetAddresses(1, 2) == nil {
 		t.Error("a proprietary header has addresses")
 	}

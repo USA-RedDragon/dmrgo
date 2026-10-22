@@ -86,7 +86,7 @@ func packetABI(seed uint64) error {
 	messages := 0
 	for i := range 12 {
 		var header pdu.DataHeader
-		if err := header.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{
+		if err := header.SetConfirmed(pdu.ConfirmedDataHeader{
 			ResponseRequested: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001,
 			FullMessageFlag: true, SendSequenceNumber: uint8(i % 8)}); err != nil {
 			return err

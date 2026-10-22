@@ -47,9 +47,9 @@ func (m *Message) UDPIPv4() (header pdu.UDPIPv4CompressedHeader, payload []byte,
 		return pdu.UDPIPv4CompressedHeader{}, nil, false
 	}
 	var sap enums.SAP
-	if u, ok := m.Header.AsUnconfirmedDataHeader(); ok {
+	if u, ok := m.Header.AsUnconfirmed(); ok {
 		sap = u.SAP
-	} else if c, ok := m.Header.AsConfirmedDataHeader(); ok {
+	} else if c, ok := m.Header.AsConfirmed(); ok {
 		sap = c.SAP
 	} else {
 		return header, nil, false
@@ -205,7 +205,7 @@ func (a *Assembler) addHeader(h *pdu.DataHeader) (Message, bool, error) {
 	if h.FEC.Uncorrectable {
 		return Message{}, false, ErrHeaderCRC
 	}
-	if p, ok := h.AsProprietaryHeader(); ok {
+	if p, ok := h.AsProprietary(); ok {
 		if !a.active || a.count != 0 || a.msg.Proprietary != nil || a.expect == 0 {
 			return Message{}, false, ErrNoHeader
 		}
@@ -224,7 +224,7 @@ func (a *Assembler) addHeader(h *pdu.DataHeader) (Message, bool, error) {
 	}
 	a.Reset()
 	confirmed, ok := isConfirmed(h)
-	if _, isResponse := h.AsResponsePacketHeader(); !ok && !isResponse {
+	if _, isResponse := h.AsResponse(); !ok && !isResponse {
 		return Message{}, false, nil
 	}
 	if blocksOf(h)*maxBlockOctets > len(a.blocks) {
@@ -234,7 +234,7 @@ func (a *Assembler) addHeader(h *pdu.DataHeader) (Message, bool, error) {
 	a.msg.Header = *h
 	a.total = blocksOf(h)
 	a.expect = a.total
-	if c, ok := h.AsConfirmedDataHeader(); ok {
+	if c, ok := h.AsConfirmed(); ok {
 		a.ns = c.SendSequenceNumber
 	}
 	return a.finishIfEmpty()
@@ -245,18 +245,18 @@ func (a *Assembler) isRetry(h *pdu.DataHeader) bool {
 		return false
 	}
 	prev := &a.msg.Header
-	if c, ok := h.AsConfirmedDataHeader(); ok {
-		p, _ := prev.AsConfirmedDataHeader()
+	if c, ok := h.AsConfirmed(); ok {
+		p, _ := prev.AsConfirmed()
 		return c.SAP == p.SAP && c.LLIDSource == p.LLIDSource &&
 			c.LLIDDestination == p.LLIDDestination && c.SendSequenceNumber == a.ns
 	}
-	if c, ok := h.AsDefinedDataHeader(); ok {
-		p, _ := prev.AsDefinedDataHeader()
+	if c, ok := h.AsDefinedData(); ok {
+		p, _ := prev.AsDefinedData()
 		return c.SARQ && c.SAP == p.SAP && c.LLIDSource == p.LLIDSource &&
 			c.LLIDDestination == p.LLIDDestination && c.DefinedData == p.DefinedData
 	}
-	if c, ok := h.AsRawDataHeader(); ok {
-		p, pok := prev.AsRawDataHeader()
+	if c, ok := h.AsRawData(); ok {
+		p, pok := prev.AsRawData()
 		return pok && c.SARQ && c.SAP == p.SAP && c.LLIDSource == p.LLIDSource && c.LLIDDestination == p.LLIDDestination &&
 			c.SourcePort == p.SourcePort && c.DestinationPort == p.DestinationPort
 	}
@@ -393,7 +393,7 @@ func (a *Assembler) Response() (Packet, error) {
 	if a == nil {
 		return Packet{}, dmrgo.ErrNilReceiver
 	}
-	h, ok := a.msg.Header.AsConfirmedDataHeader()
+	h, ok := a.msg.Header.AsConfirmed()
 	if !a.active || !ok {
 		return Packet{}, errNoConfirmed
 	}

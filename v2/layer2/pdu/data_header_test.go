@@ -34,9 +34,9 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 	if dh.DataType() != enums.DataTypeDataHeader {
 		t.Errorf("DataType() = %d, want DataTypeDataHeader", dh.DataType())
 	}
-	u, ok := dh.AsUnconfirmedDataHeader()
+	u, ok := dh.AsUnconfirmed()
 	if !ok {
-		t.Fatal("AsUnconfirmedDataHeader should be ok")
+		t.Fatal("AsUnconfirmed should be ok")
 	}
 	if !u.Group {
 		t.Error("Group should be true")
@@ -91,13 +91,13 @@ func TestDataHeader_FormatDispatch(t *testing.T) {
 			if fecResult.Uncorrectable {
 				t.Fatalf("DecodeDataHeader returned uncorrectable FEC for format %s", tt.name)
 			}
-			if _, ok := dh.AsUnconfirmedDataHeader(); ok {
+			if _, ok := dh.AsUnconfirmed(); ok {
 				t.Errorf("format %s should not be a U_HEAD", tt.name)
 			}
-			if _, ok := dh.AsUDTHeader(); tt.name == "UDT" && !ok {
+			if _, ok := dh.AsUDT(); tt.name == "UDT" && !ok {
 				t.Error("UDT format should be a UDT_HEAD")
 			}
-			if _, ok := dh.AsProprietaryHeader(); tt.name == "Proprietary" && !ok {
+			if _, ok := dh.AsProprietary(); tt.name == "Proprietary" && !ok {
 				t.Error("Proprietary format should be a P_HEAD")
 			}
 		})
@@ -117,7 +117,7 @@ func buildDataHeader(setup func(b *[12]byte)) [12]byte {
 func TestDataHeader_Confirmed_RoundTrip(t *testing.T) {
 	t.Parallel()
 	var original pdu.DataHeader
-	if err := original.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{
+	if err := original.SetConfirmed(pdu.ConfirmedDataHeader{
 		Group:                  true,
 		ResponseRequested:      false,
 		PadOctetCount:          17,
@@ -142,9 +142,9 @@ func TestDataHeader_Confirmed_RoundTrip(t *testing.T) {
 	if decoded.Format() != pdu.FormatConfirmed {
 		t.Errorf("Format = %d, want FormatConfirmed", decoded.Format())
 	}
-	cdh, ok := decoded.AsConfirmedDataHeader()
+	cdh, ok := decoded.AsConfirmed()
 	if !ok {
-		t.Fatal("AsConfirmedDataHeader is not ok")
+		t.Fatal("AsConfirmed is not ok")
 	}
 	if !cdh.Group {
 		t.Error("Group should be true")
@@ -181,7 +181,7 @@ func TestDataHeader_Confirmed_RoundTrip(t *testing.T) {
 func TestDataHeader_ResponsePacket_RoundTrip(t *testing.T) {
 	t.Parallel()
 	var original pdu.DataHeader
-	if err := original.SetResponsePacketHeader(pdu.ResponsePacketHeader{
+	if err := original.SetResponse(pdu.ResponsePacketHeader{
 		SAP:             4,
 		LLIDDestination: 100,
 		LLIDSource:      200,
@@ -202,9 +202,9 @@ func TestDataHeader_ResponsePacket_RoundTrip(t *testing.T) {
 	if decoded.Format() != pdu.FormatResponsePacket {
 		t.Errorf("Format = %d, want FormatResponsePacket", decoded.Format())
 	}
-	rph, ok := decoded.AsResponsePacketHeader()
+	rph, ok := decoded.AsResponse()
 	if !ok {
-		t.Fatal("AsResponsePacketHeader is not ok")
+		t.Fatal("AsResponse is not ok")
 	}
 	if rph.SAP != 4 {
 		t.Errorf("SAP = %d, want 4", rph.SAP)
@@ -232,7 +232,7 @@ func TestDataHeader_ResponsePacket_RoundTrip(t *testing.T) {
 func TestDataHeader_DefinedData_RoundTrip(t *testing.T) {
 	t.Parallel()
 	var original pdu.DataHeader
-	if err := original.SetDefinedDataHeader(pdu.DefinedDataHeader{
+	if err := original.SetDefinedData(pdu.DefinedDataHeader{
 		Group:             true,
 		ResponseRequested: false,
 		AppendedBlocks:    3,
@@ -256,9 +256,9 @@ func TestDataHeader_DefinedData_RoundTrip(t *testing.T) {
 	if decoded.Format() != pdu.FormatShortDataDefined {
 		t.Errorf("Format = %d, want FormatShortDataDefined", decoded.Format())
 	}
-	ddh, ok := decoded.AsDefinedDataHeader()
+	ddh, ok := decoded.AsDefinedData()
 	if !ok {
-		t.Fatal("AsDefinedDataHeader is not ok")
+		t.Fatal("AsDefinedData is not ok")
 	}
 	if !ddh.Group {
 		t.Error("Group should be true")
@@ -289,7 +289,7 @@ func TestDataHeader_DefinedData_RoundTrip(t *testing.T) {
 func TestDataHeader_RawData_RoundTrip(t *testing.T) {
 	t.Parallel()
 	var original pdu.DataHeader
-	if err := original.SetRawDataHeader(pdu.RawDataHeader{
+	if err := original.SetRawData(pdu.RawDataHeader{
 		Group:             true,
 		ResponseRequested: true,
 		AppendedBlocks:    2,
@@ -314,9 +314,9 @@ func TestDataHeader_RawData_RoundTrip(t *testing.T) {
 	if decoded.Format() != pdu.FormatShortDataRawOrStatusPrecoded {
 		t.Errorf("Format = %d, want FormatShortDataRawOrStatusPrecoded", decoded.Format())
 	}
-	rdh, ok := decoded.AsRawDataHeader()
+	rdh, ok := decoded.AsRawData()
 	if !ok {
-		t.Fatal("AsRawDataHeader is not ok")
+		t.Fatal("AsRawData is not ok")
 	}
 	if !rdh.Group {
 		t.Error("Group should be true")
@@ -336,15 +336,15 @@ func TestDataHeader_RawData_RoundTrip(t *testing.T) {
 	if !rdh.FullMessageFlag {
 		t.Error("FullMessageFlag should be true")
 	}
-	if _, ok := decoded.AsStatusPrecodedHeader(); ok {
-		t.Error("AsStatusPrecodedHeader should not be ok for non-zero AppendedBlocks")
+	if _, ok := decoded.AsStatusPrecoded(); ok {
+		t.Error("AsStatusPrecoded should not be ok for non-zero AppendedBlocks")
 	}
 }
 
 func TestDataHeader_StatusPrecoded_RoundTrip(t *testing.T) {
 	t.Parallel()
 	var original pdu.DataHeader
-	if err := original.SetStatusPrecodedHeader(pdu.StatusPrecodedHeader{
+	if err := original.SetStatusPrecoded(pdu.StatusPrecodedHeader{
 		Group:             false,
 		ResponseRequested: true,
 		SAP:               10,
@@ -366,9 +366,9 @@ func TestDataHeader_StatusPrecoded_RoundTrip(t *testing.T) {
 	if decoded.Format() != pdu.FormatShortDataRawOrStatusPrecoded {
 		t.Errorf("Format = %d, want FormatShortDataRawOrStatusPrecoded", decoded.Format())
 	}
-	sph, ok := decoded.AsStatusPrecodedHeader()
+	sph, ok := decoded.AsStatusPrecoded()
 	if !ok {
-		t.Fatal("AsStatusPrecodedHeader is not ok")
+		t.Fatal("AsStatusPrecoded is not ok")
 	}
 	if sph.ResponseRequested != true {
 		t.Error("ResponseRequested should be true")
@@ -388,8 +388,8 @@ func TestDataHeader_StatusPrecoded_RoundTrip(t *testing.T) {
 	if sph.StatusPrecoded != 512 {
 		t.Errorf("StatusPrecoded = %d, want 512", sph.StatusPrecoded)
 	}
-	if _, ok := decoded.AsRawDataHeader(); ok {
-		t.Error("AsRawDataHeader should not be ok for zero AppendedBlocks")
+	if _, ok := decoded.AsRawData(); ok {
+		t.Error("AsRawData should not be ok for zero AppendedBlocks")
 	}
 }
 
@@ -418,9 +418,9 @@ func TestDataHeader_UDT_Decode(t *testing.T) {
 	if dh.Format() != pdu.FormatUnifiedDataTransport {
 		t.Fatalf("Format = %d, want UDT", dh.Format())
 	}
-	u, ok := dh.AsUDTHeader()
+	u, ok := dh.AsUDT()
 	if !ok {
-		t.Fatal("AsUDTHeader should be ok")
+		t.Fatal("AsUDT should be ok")
 	}
 	if !u.Group || u.ResponseRequested || !u.Emergency || !u.OptionFlag {
 		t.Errorf("octet 0 flags = G:%t A:%t E:%t Opt:%t, want G/E/Opt set and A clear", u.Group, u.ResponseRequested, u.Emergency, u.OptionFlag)
@@ -448,7 +448,7 @@ func TestDataHeader_UDT_Decode(t *testing.T) {
 func TestDataHeader_UDT_RoundTrip(t *testing.T) {
 	t.Parallel()
 	var original pdu.DataHeader
-	if err := original.SetUDTHeader(pdu.UDTHeader{
+	if err := original.SetUDT(pdu.UDTHeader{
 		ResponseRequested: true,
 		OptionFlag:        true,
 		UDTFormat:         0b0111,
@@ -466,8 +466,8 @@ func TestDataHeader_UDT_RoundTrip(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected CRC failure")
 	}
-	want, _ := original.AsUDTHeader()
-	if got, ok := decoded.AsUDTHeader(); !ok || got != want {
+	want, _ := original.AsUDT()
+	if got, ok := decoded.AsUDT(); !ok || got != want {
 		t.Errorf("round trip = %+v (%t), want %+v", got, ok, want)
 	}
 }
@@ -487,9 +487,9 @@ func TestDataHeader_Proprietary_Decode(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected CRC failure")
 	}
-	p, ok := dh.AsProprietaryHeader()
+	p, ok := dh.AsProprietary()
 	if !ok {
-		t.Fatal("AsProprietaryHeader should be ok")
+		t.Fatal("AsProprietary should be ok")
 	}
 	if p.SAP != 0b1001 || p.MFID != 0x10 {
 		t.Errorf("SAP=%d MFID=0x%02X, want 9 0x10", p.SAP, p.MFID)
@@ -509,7 +509,7 @@ func TestDataHeader_Proprietary_RoundTrip(t *testing.T) {
 	bits.SetBit(mfData[:], 40, 1)
 	want := pdu.ProprietaryHeader{SAP: 9, MFID: 0x68, ManufacturerData: mfData}
 	var original pdu.DataHeader
-	if err := original.SetProprietaryHeader(want); err != nil {
+	if err := original.SetProprietary(want); err != nil {
 		t.Fatal(err)
 	}
 	decoded := pdu.DecodeDataHeader(must(original.Encode()))
@@ -517,7 +517,7 @@ func TestDataHeader_Proprietary_RoundTrip(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected CRC failure")
 	}
-	if got, ok := decoded.AsProprietaryHeader(); !ok || got != want {
+	if got, ok := decoded.AsProprietary(); !ok || got != want {
 		t.Errorf("round trip = %+v (%t), want %+v", got, ok, want)
 	}
 }
@@ -598,7 +598,7 @@ func TestDataHeader_AppendedBlocksOnlyForShortData(t *testing.T) {
 
 	uhead := [12]byte{0x02, 0x3b, 0x2f, 0xeb, 0xf6, 0x30, 0xb4, 0x3c, 0x88, 0x00, 0xe5, 0x00}
 	dh := pdu.DecodeDataHeader(uhead)
-	u, ok := dh.AsUnconfirmedDataHeader()
+	u, ok := dh.AsUnconfirmed()
 	if dh.FEC.Uncorrectable || !ok {
 		t.Fatalf("U_HEAD did not decode: %s", dh.String())
 	}

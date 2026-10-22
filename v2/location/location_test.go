@@ -97,7 +97,7 @@ func lrrpPacket(t *testing.T, payload string) packet.Message {
 		t.Fatal(err)
 	}
 	return packet.Message{
-		Header: setHeader(t, (*pdu.DataHeader).SetConfirmedDataHeader, pdu.ConfirmedDataHeader{
+		Header: setHeader(t, (*pdu.DataHeader).SetConfirmed, pdu.ConfirmedDataHeader{
 			SAP: enums.SAPIPBasedPacketData, LLIDDestination: 7, LLIDSource: 5,
 		}),
 		Data: data,
@@ -149,7 +149,7 @@ func hdapPacket(t testing.TB, service hdap.Service, opcode hdap.Opcode, payload 
 		t.Fatal(err)
 	}
 	return packet.Message{
-		Header: setHeader(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{
+		Header: setHeader(t, (*pdu.DataHeader).SetUnconfirmed, pdu.UnconfirmedDataHeader{
 			SAP: enums.SAPIPBasedPacketData, LLIDDestination: 7, LLIDSource: 5,
 		}),
 		Data: data,
@@ -225,7 +225,7 @@ func TestNotLocation(t *testing.T) {
 	t.Parallel()
 
 	var d location.Decoder
-	m := packet.Message{Header: setHeader(t, (*pdu.DataHeader).SetDefinedDataHeader, pdu.DefinedDataHeader{})}
+	m := packet.Message{Header: setHeader(t, (*pdu.DataHeader).SetDefinedData, pdu.DefinedDataHeader{})}
 	if _, err := d.Decode(&m.Header, m.Data); !errors.Is(err, location.ErrNoFix) {
 		t.Errorf("DD_HEAD: %v", err)
 	}

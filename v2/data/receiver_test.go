@@ -145,7 +145,7 @@ func confirmedHeader(t testing.TB, ns uint8) pdu.DataHeader {
 
 func sapHeader(t testing.TB, sap enums.SAP, ns uint8, resync bool) pdu.DataHeader {
 	t.Helper()
-	return setHeader(t, (*pdu.DataHeader).SetConfirmedDataHeader, pdu.ConfirmedDataHeader{
+	return setHeader(t, (*pdu.DataHeader).SetConfirmed, pdu.ConfirmedDataHeader{
 		ResponseRequested: true, SAP: sap, LLIDDestination: dstID, LLIDSource: srcID,
 		FullMessageFlag: true, ReSynchronizeFlag: resync, SendSequenceNumber: ns, FragmentSequenceNumber: 0b1000,
 	})
@@ -193,7 +193,7 @@ func responses(t *testing.T, ev []data.Event) (string, []int) {
 		if m.Response != nil && retry == nil {
 			retry = m.Response.RetryBlocks()
 		}
-		rh, ok := m.Header.AsResponsePacketHeader()
+		rh, ok := m.Header.AsResponse()
 		if !ok {
 			t.Fatalf("response header %v is not a C_RHEAD", &m.Header)
 		}
@@ -361,7 +361,7 @@ func TestReceiverProprietarySAP(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		prop := setHeader(t, (*pdu.DataHeader).SetProprietaryHeader, pdu.ProprietaryHeader{SAP: c.sap, MFID: 0x10})
+		prop := setHeader(t, (*pdu.DataHeader).SetProprietary, pdu.ProprietaryHeader{SAP: c.sap, MFID: 0x10})
 		ph, err := layer2.BuildBurst(&prop, 1, layer2.SyncSourceMS)
 		if err != nil {
 			t.Fatal(err)
@@ -392,7 +392,7 @@ func statuses(t *testing.T, ev []data.Event) []uint8 {
 			t.Fatal(err)
 		}
 		if dh, ok := b.Data.(*pdu.DataHeader); ok {
-			if rh, ok := dh.AsResponsePacketHeader(); ok {
+			if rh, ok := dh.AsResponse(); ok {
 				s = append(s, rh.ResponseStatus)
 			}
 		}
@@ -443,7 +443,7 @@ func TestReceiverTransportSeq(t *testing.T) {
 
 func TestReceiverEnds(t *testing.T) {
 	t.Parallel()
-	u := setHeader(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{
+	u := setHeader(t, (*pdu.DataHeader).SetUnconfirmed, pdu.UnconfirmedDataHeader{
 		SAP: enums.SAPIPBasedPacketData, LLIDDestination: dstID, LLIDSource: srcID, FullMessageFlag: true})
 	pkt := build(t, u, payload(40), enums.DataTypeRate1)
 	voice, err := layer2.BuildVoiceBurst([3]vocoder.AMBEFrame{}, enums.VoiceBurstA, pdu.EmbeddedSignalling{}, [4]byte{}, layer2.SyncSourceMS)
@@ -498,7 +498,7 @@ func TestReceiverEnds(t *testing.T) {
 
 func TestReceiverUDT(t *testing.T) {
 	t.Parallel()
-	h := setHeader(t, (*pdu.DataHeader).SetUDTHeader, pdu.UDTHeader{
+	h := setHeader(t, (*pdu.DataHeader).SetUDT, pdu.UDTHeader{
 		SAP: enums.SAPShortData, UDTFormat: 4, LLIDDestination: dstID, LLIDSource: srcID,
 		PadNibble: 2, UAB: 1, Opcode: pdu.UDTOpcodeInboundHeader,
 	})
@@ -519,7 +519,7 @@ func TestReceiverUDT(t *testing.T) {
 	}
 	m := ev[1].Message
 	want := append(payload(12), "dmrgo UDT"...)
-	if uh, ok := m.Header.AsUDTHeader(); !ok || uh.Opcode != pdu.UDTOpcodeInboundHeader || !bytes.Equal(m.Payload, want) {
+	if uh, ok := m.Header.AsUDT(); !ok || uh.Opcode != pdu.UDTOpcodeInboundHeader || !bytes.Equal(m.Payload, want) {
 		t.Errorf("message %+v, payload %q", m.Header, m.Payload)
 	}
 
@@ -592,25 +592,25 @@ func TestReceiverStrings(t *testing.T) {
 
 func TestReceiverProprietaryHeader(t *testing.T) {
 	t.Parallel()
-	u := setHeader(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{
+	u := setHeader(t, (*pdu.DataHeader).SetUnconfirmed, pdu.UnconfirmedDataHeader{
 		SAP: enums.SAPProprietaryPacketData, LLIDDestination: dstID, LLIDSource: srcID, FullMessageFlag: true})
 	p, err := packet.NewPacket(u, payload(40), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
-	uh, ok := p.Header.AsUnconfirmedDataHeader()
+	uh, ok := p.Header.AsUnconfirmed()
 	if !ok {
 		t.Fatalf("header %v is not a U_HEAD", &p.Header)
 	}
 	uh.BlocksToFollow++
-	if err := p.Header.SetUnconfirmedDataHeader(uh); err != nil {
+	if err := p.Header.SetUnconfirmed(uh); err != nil {
 		t.Fatal(err)
 	}
 	b, err := packet.Bursts(&p, 1, layer2.SyncSourceMS)
 	if err != nil {
 		t.Fatal(err)
 	}
-	prop := setHeader(t, (*pdu.DataHeader).SetProprietaryHeader, pdu.ProprietaryHeader{SAP: enums.SAPIPBasedPacketData, MFID: 0x10})
+	prop := setHeader(t, (*pdu.DataHeader).SetProprietary, pdu.ProprietaryHeader{SAP: enums.SAPIPBasedPacketData, MFID: 0x10})
 	ph, err := layer2.BuildBurst(&prop, 1, layer2.SyncSourceMS)
 	if err != nil {
 		t.Fatal(err)

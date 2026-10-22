@@ -48,7 +48,7 @@ func TestAllocsBuildBurst(t *testing.T) {
 	term := lc
 	term.BurstDataType = enums.DataTypeTerminatorWithLC
 	var header pdu.DataHeader
-	mustSet(header.SetUnconfirmedDataHeader(pdu.UnconfirmedDataHeader{Group: true, SAP: 4, BlocksToFollow: 3}))
+	mustSet(header.SetUnconfirmed(pdu.UnconfirmedDataHeader{Group: true, SAP: 4, BlocksToFollow: 3}))
 	var mbc pdu.MBCHeader
 	mustSet(mbc.SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF}))
 	type pduCase struct {

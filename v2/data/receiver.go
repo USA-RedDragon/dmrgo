@@ -585,7 +585,7 @@ func (r *Receiver) header(now time.Duration, dh *pdu.DataHeader, cc enums.ColorC
 	r.readHeader(dh)
 	r.cur.pending = int(r.cur.blocks)
 	r.u.active = false
-	if uh, ok := dh.AsUDTHeader(); ok {
+	if uh, ok := dh.AsUDT(); ok {
 		r.u = udt{active: true, need: int(uh.UAB) + 1, header: uh}
 		r.cur.pending = r.u.need
 		r.settle()
@@ -609,23 +609,23 @@ func (r *Receiver) header(now time.Duration, dh *pdu.DataHeader, cc enums.ColorC
 }
 
 func (r *Receiver) readHeader(dh *pdu.DataHeader) {
-	if u, ok := dh.AsUnconfirmedDataHeader(); ok {
+	if u, ok := dh.AsUnconfirmed(); ok {
 		r.cur.sap, r.cur.blocks, r.cur.full = u.SAP, u.BlocksToFollow, u.FullMessageFlag
-	} else if c, ok := dh.AsConfirmedDataHeader(); ok {
+	} else if c, ok := dh.AsConfirmed(); ok {
 		r.cur.sap, r.cur.blocks, r.cur.full = c.SAP, c.BlocksToFollow, c.FullMessageFlag
 		r.cur.answer, r.cur.ns, r.cur.resync = c.ResponseRequested, c.SendSequenceNumber, c.ReSynchronizeFlag
 		r.cur.fsn = c.FragmentSequenceNumber
-	} else if d, ok := dh.AsDefinedDataHeader(); ok {
+	} else if d, ok := dh.AsDefinedData(); ok {
 		r.cur.sap, r.cur.blocks, r.cur.full = d.SAP, d.AppendedBlocks, d.FullMessageFlag
 		r.cur.answer = d.ResponseRequested && d.SARQ
-	} else if d, ok := dh.AsRawDataHeader(); ok {
+	} else if d, ok := dh.AsRawData(); ok {
 		r.cur.sap, r.cur.blocks, r.cur.full = d.SAP, d.AppendedBlocks, d.FullMessageFlag
 		r.cur.answer = d.ResponseRequested && d.SARQ
-	} else if p, ok := dh.AsResponsePacketHeader(); ok {
+	} else if p, ok := dh.AsResponse(); ok {
 		r.cur.sap, r.cur.blocks = p.SAP, p.BlocksToFollow
-	} else if p, ok := dh.AsStatusPrecodedHeader(); ok {
+	} else if p, ok := dh.AsStatusPrecoded(); ok {
 		r.cur.sap = p.SAP
-	} else if p, ok := dh.AsUDTHeader(); ok {
+	} else if p, ok := dh.AsUDT(); ok {
 		r.cur.sap = p.SAP
 	}
 }
@@ -716,7 +716,7 @@ func (r *Receiver) udtBlock(b *layer2.Burst, out []Event) []Event {
 	}
 	n = max(n-2-int(r.u.header.PadNibble)/2, 0)
 	var hd pdu.DataHeader
-	_ = hd.SetUDTHeader(r.u.header)
+	_ = hd.SetUDT(r.u.header)
 	var e *Event
 	out, e = appendEvent(out, EventDelivered, &r.call)
 	e.Message = Message{
@@ -881,7 +881,7 @@ func ipBearer(sap enums.SAP) bool {
 }
 
 func (r *Receiver) response(m *packet.Message, err error, out []Event) []Event {
-	rh, ok := m.Header.AsResponsePacketHeader()
+	rh, ok := m.Header.AsResponse()
 	if !ok {
 		return out
 	}

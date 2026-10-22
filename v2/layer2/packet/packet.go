@@ -202,17 +202,17 @@ func (b *Builder) Retry(p *Packet, rd *ResponseData) (Packet, error) {
 }
 
 func retryHeader(h *pdu.DataHeader, count uint8) error {
-	if c, ok := h.AsConfirmedDataHeader(); ok {
+	if c, ok := h.AsConfirmed(); ok {
 		c.FullMessageFlag, c.BlocksToFollow = false, count
-		return h.SetConfirmedDataHeader(c)
+		return h.SetConfirmed(c)
 	}
-	if d, ok := h.AsDefinedDataHeader(); ok {
+	if d, ok := h.AsDefinedData(); ok {
 		d.FullMessageFlag, d.AppendedBlocks = false, count
-		return h.SetDefinedDataHeader(d)
+		return h.SetDefinedData(d)
 	}
-	r, _ := h.AsRawDataHeader()
+	r, _ := h.AsRawData()
 	r.FullMessageFlag, r.AppendedBlocks = false, count
-	return h.SetRawDataHeader(r)
+	return h.SetRawData(r)
 }
 
 func (b *Builder) block(i int, chunk []byte, confirmed bool) layer2.Data {
@@ -269,36 +269,36 @@ func (b *Builder) setLayout(h *pdu.DataHeader, n int, rate enums.DataType) (bool
 }
 
 func setBlocks(h *pdu.DataHeader, blocks, pad uint8) error {
-	if u, ok := h.AsUnconfirmedDataHeader(); ok {
+	if u, ok := h.AsUnconfirmed(); ok {
 		u.BlocksToFollow, u.PadOctetCount = blocks, pad
-		return h.SetUnconfirmedDataHeader(u)
+		return h.SetUnconfirmed(u)
 	}
-	if c, ok := h.AsConfirmedDataHeader(); ok {
+	if c, ok := h.AsConfirmed(); ok {
 		c.BlocksToFollow, c.PadOctetCount = blocks, pad
-		return h.SetConfirmedDataHeader(c)
+		return h.SetConfirmed(c)
 	}
-	if d, ok := h.AsDefinedDataHeader(); ok {
+	if d, ok := h.AsDefinedData(); ok {
 		d.AppendedBlocks = blocks
-		return h.SetDefinedDataHeader(d)
+		return h.SetDefinedData(d)
 	}
-	if r, ok := h.AsRawDataHeader(); ok {
+	if r, ok := h.AsRawData(); ok {
 		r.AppendedBlocks = blocks
-		return h.SetRawDataHeader(r)
+		return h.SetRawData(r)
 	}
 	return nil
 }
 
 func isConfirmed(h *pdu.DataHeader) (confirmed, ok bool) {
-	if _, ok := h.AsUnconfirmedDataHeader(); ok {
+	if _, ok := h.AsUnconfirmed(); ok {
 		return false, true
 	}
-	if _, ok := h.AsConfirmedDataHeader(); ok {
+	if _, ok := h.AsConfirmed(); ok {
 		return true, true
 	}
-	if d, ok := h.AsDefinedDataHeader(); ok {
+	if d, ok := h.AsDefinedData(); ok {
 		return d.SARQ, true
 	}
-	if r, ok := h.AsRawDataHeader(); ok {
+	if r, ok := h.AsRawData(); ok {
 		return r.SARQ, true
 	}
 	return false, false
@@ -315,10 +315,10 @@ func fullMessage(h *pdu.DataHeader) bool {
 }
 
 func padOf(h *pdu.DataHeader) int {
-	if u, ok := h.AsUnconfirmedDataHeader(); ok {
+	if u, ok := h.AsUnconfirmed(); ok {
 		return int(u.PadOctetCount)
 	}
-	if c, ok := h.AsConfirmedDataHeader(); ok {
+	if c, ok := h.AsConfirmed(); ok {
 		return int(c.PadOctetCount)
 	}
 	return 0

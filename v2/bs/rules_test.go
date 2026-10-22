@@ -222,7 +222,7 @@ func TestConfirmedDataHang(t *testing.T) {
 	t.Parallel()
 	b := packet.NewBuilder(16)
 	var h pdu.DataHeader
-	if err := h.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{
+	if err := h.SetConfirmed(pdu.ConfirmedDataHeader{
 		ResponseRequested: true, SAP: 4, LLIDDestination: 3191868, LLIDSource: 3120000, FullMessageFlag: true, SendSequenceNumber: 5}); err != nil {
 		t.Fatal(err)
 	}

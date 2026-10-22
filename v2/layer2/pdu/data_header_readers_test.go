@@ -20,28 +20,28 @@ func TestDataHeader_Readers(t *testing.T) {
 		full, fullOK bool
 	}{
 		{"U_HEAD", func(h *pdu.DataHeader) error {
-			return h.SetUnconfirmedDataHeader(pdu.UnconfirmedDataHeader{SAP: sap, BlocksToFollow: 5, FullMessageFlag: true})
+			return h.SetUnconfirmed(pdu.UnconfirmedDataHeader{SAP: sap, BlocksToFollow: 5, FullMessageFlag: true})
 		}, 5, true, true, true, true},
 		{"C_HEAD", func(h *pdu.DataHeader) error {
-			return h.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{SAP: sap, BlocksToFollow: 7})
+			return h.SetConfirmed(pdu.ConfirmedDataHeader{SAP: sap, BlocksToFollow: 7})
 		}, 7, true, true, false, true},
 		{"C_RHEAD", func(h *pdu.DataHeader) error {
-			return h.SetResponsePacketHeader(pdu.ResponsePacketHeader{SAP: sap, BlocksToFollow: 1})
+			return h.SetResponse(pdu.ResponsePacketHeader{SAP: sap, BlocksToFollow: 1})
 		}, 1, true, true, false, false},
 		{"DD_HEAD", func(h *pdu.DataHeader) error {
-			return h.SetDefinedDataHeader(pdu.DefinedDataHeader{SAP: sap, AppendedBlocks: 3, FullMessageFlag: true})
+			return h.SetDefinedData(pdu.DefinedDataHeader{SAP: sap, AppendedBlocks: 3, FullMessageFlag: true})
 		}, 3, true, true, true, true},
 		{"R_HEAD", func(h *pdu.DataHeader) error {
-			return h.SetRawDataHeader(pdu.RawDataHeader{SAP: sap, AppendedBlocks: 2})
+			return h.SetRawData(pdu.RawDataHeader{SAP: sap, AppendedBlocks: 2})
 		}, 2, true, true, false, true},
 		{"SP_HEAD", func(h *pdu.DataHeader) error {
-			return h.SetStatusPrecodedHeader(pdu.StatusPrecodedHeader{SAP: sap})
+			return h.SetStatusPrecoded(pdu.StatusPrecodedHeader{SAP: sap})
 		}, 0, true, true, false, false},
 		{"UDT_HEAD", func(h *pdu.DataHeader) error {
-			return h.SetUDTHeader(pdu.UDTHeader{SAP: sap, UAB: 3})
+			return h.SetUDT(pdu.UDTHeader{SAP: sap, UAB: 3})
 		}, 4, true, true, false, false},
 		{"P_HEAD", func(h *pdu.DataHeader) error {
-			return h.SetProprietaryHeader(pdu.ProprietaryHeader{SAP: sap})
+			return h.SetProprietary(pdu.ProprietaryHeader{SAP: sap})
 		}, 0, false, false, false, false},
 	}
 	for _, tt := range tests {

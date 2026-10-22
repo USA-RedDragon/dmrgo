@@ -30,7 +30,7 @@
 // octet and returns nothing. The errors are:
 //   - a *dmrgo.FieldRangeError when a value does not fit its field, such as an
 //     FLCO over 6 bits for LCBytes.SetFLCO, a field of the payload of a SetX
-//     method, or the AppendedBlocks 0 of DataHeader.SetRawDataHeader;
+//     method, or the AppendedBlocks 0 of DataHeader.SetRawData;
 //   - ErrWrongOpcode when a SetX method that takes the opcode gets one that
 //     does not select X;
 //   - ErrNoAddresses and ErrNoServiceOptions when the PDU has no such field.
@@ -70,7 +70,7 @@
 // its opcode (ETSI TS 102 361-4 clause 7.1.1.1). DecodeMBCContinuation
 // decodes every continuation block in the same way, because the layout
 // depends on the header. Pick the layout from MBCHeader.Opcode with
-// MBCContinuation.AsCGAP, AsMVAP, AsBCAP or AsVNAP. A CG_AP or MV_AP block
+// MBCContinuation.CGAP, MVAP, BCAP or VNAP. A CG_AP or MV_AP block
 // follows a header whose PhysicalChannel is 0xFFF. The last-block CRC covers
 // every continuation block (ETSI TS 102 361-1 clause 7.4.0), so the FEC
 // field of one decoded block applies only when the MBC has one continuation

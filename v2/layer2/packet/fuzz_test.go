@@ -163,12 +163,12 @@ func (s *session) sack() *packet.ResponseData {
 		s.failf("SACK arrived without response data")
 		return nil
 	}
-	h, ok := m.Header.AsResponsePacketHeader()
+	h, ok := m.Header.AsResponse()
 	if r, err := packet.ResponseOf(&h); !ok || err != nil || r != packet.ResponseSACK {
 		s.failf("response is not a SACK")
 		return nil
 	}
-	c, ok := s.p.Header.AsConfirmedDataHeader()
+	c, ok := s.p.Header.AsConfirmed()
 	if !ok || h.LLIDDestination != c.LLIDSource || h.LLIDSource != c.LLIDDestination ||
 		h.SAP != c.SAP || h.ResponseStatus != c.SendSequenceNumber {
 		s.failf("SACK header does not answer the packet")
@@ -334,7 +334,7 @@ func (s *session) checkUnconfirmed(m *packet.Message, done bool, err error, last
 
 func (s *session) finish(m *packet.Message) {
 	s.done = true
-	if c, ok := m.Header.AsConfirmedDataHeader(); ok {
+	if c, ok := m.Header.AsConfirmed(); ok {
 		ack, err := s.rxb.NewResponse(&c, packet.ResponseACK, nil)
 		if err != nil {
 			s.failf("ACK does not build")
@@ -344,7 +344,7 @@ func (s *session) finish(m *packet.Message) {
 		if s.fail != "" {
 			return
 		}
-		rh, ok := r.Header.AsResponsePacketHeader()
+		rh, ok := r.Header.AsResponse()
 		if code, err := packet.ResponseOf(&rh); !ok || err != nil || code != packet.ResponseACK || r.Response != nil {
 			s.failf("ACK did not arrive as an ACK")
 		}
@@ -453,16 +453,16 @@ func dbsnOf(d layer2.Data) int {
 }
 
 func fullFlag(h *pdu.DataHeader) bool {
-	if u, ok := h.AsUnconfirmedDataHeader(); ok {
+	if u, ok := h.AsUnconfirmed(); ok {
 		return u.FullMessageFlag
 	}
-	if c, ok := h.AsConfirmedDataHeader(); ok {
+	if c, ok := h.AsConfirmed(); ok {
 		return c.FullMessageFlag
 	}
-	if d, ok := h.AsDefinedDataHeader(); ok {
+	if d, ok := h.AsDefinedData(); ok {
 		return d.FullMessageFlag
 	}
-	if r, ok := h.AsRawDataHeader(); ok {
+	if r, ok := h.AsRawData(); ok {
 		return r.FullMessageFlag
 	}
 	return true
@@ -475,21 +475,21 @@ func fuzzHeader(t *testing.T, kind uint8, fields uint64, dst, src uint32) pdu.Da
 	sap := enums.SAP(fields & 0xF)
 	switch kind & 3 {
 	case 0:
-		return header(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{
+		return header(t, (*pdu.DataHeader).SetUnconfirmed, pdu.UnconfirmedDataHeader{
 			Group: group, ResponseRequested: resp, SAP: sap, LLIDDestination: dst, LLIDSource: src,
 			FullMessageFlag: kind&0x20 == 0, FragmentSequenceNumber: uint8(fields>>4) & 0xF})
 	case 1:
-		return header(t, (*pdu.DataHeader).SetConfirmedDataHeader, pdu.ConfirmedDataHeader{
+		return header(t, (*pdu.DataHeader).SetConfirmed, pdu.ConfirmedDataHeader{
 			Group: group, ResponseRequested: resp, SAP: sap, LLIDDestination: dst, LLIDSource: src,
 			FullMessageFlag: true, ReSynchronizeFlag: fields&0x100 != 0, SendSequenceNumber: uint8(fields>>9) & 7,
 			FragmentSequenceNumber: uint8(fields>>4) & 0xF})
 	case 2:
-		return header(t, (*pdu.DataHeader).SetDefinedDataHeader, pdu.DefinedDataHeader{
+		return header(t, (*pdu.DataHeader).SetDefinedData, pdu.DefinedDataHeader{
 			Group: group, ResponseRequested: resp, SAP: sap, LLIDDestination: dst, LLIDSource: src,
 			DefinedData: enums.DDFormat(fields>>12) & 0x3F, SARQ: kind&0x10 != 0, FullMessageFlag: true,
 			BitPadding: uint8(fields >> 18)})
 	default:
-		return header(t, (*pdu.DataHeader).SetRawDataHeader, pdu.RawDataHeader{
+		return header(t, (*pdu.DataHeader).SetRawData, pdu.RawDataHeader{
 			Group: group, ResponseRequested: resp, SAP: sap, AppendedBlocks: 1, LLIDDestination: dst, LLIDSource: src,
 			SourcePort: uint8(fields>>12) & 7, DestinationPort: uint8(fields>>15) & 7, SARQ: kind&0x10 != 0,
 			FullMessageFlag: true, BitPadding: uint8(fields >> 18)})
@@ -624,7 +624,7 @@ func builtBursts(t testing.TB, data []byte) []byte {
 	add(p)
 	var rd packet.ResponseData
 	rd.Retry[1] = true
-	to := get(t, &p.Header, (*pdu.DataHeader).AsConfirmedDataHeader)
+	to := get(t, &p.Header, (*pdu.DataHeader).AsConfirmed)
 	sack, err := b.NewResponse(&to, packet.ResponseSACK, &rd)
 	if err != nil {
 		t.Fatal(err)
@@ -637,14 +637,14 @@ func builtBursts(t testing.TB, data []byte) []byte {
 	add(sack)
 	uh := unconfirmedHeader()
 	uh.SAP = enums.SAPProprietaryPacketData
-	u, err := b.Segment(header(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, uh), data[:20], enums.DataTypeRate12)
+	u, err := b.Segment(header(t, (*pdu.DataHeader).SetUnconfirmed, uh), data[:20], enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
-	head := get(t, &u.Header, (*pdu.DataHeader).AsUnconfirmedDataHeader)
+	head := get(t, &u.Header, (*pdu.DataHeader).AsUnconfirmed)
 	head.BlocksToFollow++
-	mustSet(t, u.Header.SetUnconfirmedDataHeader(head))
-	prop := header(t, (*pdu.DataHeader).SetProprietaryHeader, pdu.ProprietaryHeader{SAP: 9, MFID: 0x10})
+	mustSet(t, u.Header.SetUnconfirmed(head))
+	prop := header(t, (*pdu.DataHeader).SetProprietary, pdu.ProprietaryHeader{SAP: 9, MFID: 0x10})
 	for _, d := range append([]layer2.Data{&u.Header, &prop}, u.Blocks...) {
 		raw, err := layer2.BuildBurst(d, 1, layer2.SyncSourceMS)
 		if err != nil {

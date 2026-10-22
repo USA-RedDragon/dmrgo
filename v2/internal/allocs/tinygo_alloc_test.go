@@ -48,7 +48,7 @@ func tinyOK[T any](v T, err error) T {
 
 func tinyUnconfirmed(p pdu.UnconfirmedDataHeader) pdu.DataHeader {
 	var h pdu.DataHeader
-	_ = tinyOK(struct{}{}, h.SetUnconfirmedDataHeader(p))
+	_ = tinyOK(struct{}{}, h.SetUnconfirmed(p))
 	return h
 }
 
@@ -219,7 +219,7 @@ func tinyServiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 
 	b := packet.NewBuilder(127)
 	var h pdu.DataHeader
-	_ = tinyOK(struct{}{}, h.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{SAP: 4, LLIDDestination: 2, LLIDSource: 1, FullMessageFlag: true}))
+	_ = tinyOK(struct{}{}, h.SetConfirmed(pdu.ConfirmedDataHeader{SAP: 4, LLIDDestination: 2, LLIDSource: 1, FullMessageFlag: true}))
 	p := tinyOK(b.Segment(h, make([]byte, 100), enums.DataTypeRate12))
 	var rd packet.ResponseData
 	rd.Retry[2], rd.Retry[5] = true, true

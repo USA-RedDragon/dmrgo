@@ -21,7 +21,7 @@ func udtBursts(t testing.TB, dst uint32, text string, damage bool) []layer2.RawB
 	if damage {
 		blocks[0][0] ^= 1
 	}
-	h := withPDU(t, &pdu.DataHeader{}, (*pdu.DataHeader).SetUDTHeader, pdu.UDTHeader{
+	h := withPDU(t, &pdu.DataHeader{}, (*pdu.DataHeader).SetUDT, pdu.UDTHeader{
 		LLIDDestination: dst, LLIDSource: 3120002, UAB: 1, Opcode: pdu.UDTOpcodeOutboundHeader})
 	out := make([]layer2.RawBurst, 0, 1+len(blocks))
 	out = append(out, bsBurst(t, h, testCC))
