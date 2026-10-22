@@ -157,7 +157,7 @@ func TestSupplementary_VoiceCall(t *testing.T) {
 	if _, ok := has(c.log, trunk.OutputUDT); !ok {
 		t.Fatal("C got no supplementary data")
 	}
-	if u := c.ms.UDT(); string(u.Data[:len(data)]) != string(data) || !u.Header.SupplementaryFlag || u.Header.LLIDDestination != 3120003 || u.Header.UDTFormat != 4 {
+	if u := udtOf(c.ms.UDT()); string(u.Data[:len(data)]) != string(data) || !u.Header.SupplementaryFlag || u.Header.LLIDDestination != 3120003 || u.Header.UDTFormat != 4 {
 		t.Errorf("C UDT %+v", u)
 	}
 	if _, ok := s.event(trunk.TSCCCallStart); !ok {

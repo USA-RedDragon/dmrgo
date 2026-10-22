@@ -72,6 +72,7 @@ type tsccUDT struct {
 	inOn     bool
 	inAt     enums.Slot
 	got      UDT
+	hasGot   bool
 	usbd     pdu.UnifiedSingleBlockData
 
 	down     [5][12]byte
@@ -86,15 +87,15 @@ type tsccUDT struct {
 	poll pdu.UnifiedSingleBlockData
 }
 
-// UDT returns the UDT that the TSCC received for itself with the last
-// TSCCUDT, such as the answer to PollShortData. It points into the TSCC
-// and changes with the next TSCCUDT. (ETSI TS 102 361-4 clause 6.6.5.1.5)
-func (t *TSCC) UDT() *UDT {
+// UDT returns a copy of the UDT that the TSCC received for itself with the
+// last TSCCUDT, such as the answer to PollShortData. ok is false before the
+// first TSCCUDT. (ETSI TS 102 361-4 clause 6.6.5.1.5)
+func (t *TSCC) UDT() (u UDT, ok bool) {
 	if t == nil {
-		return nil
+		return UDT{}, false
 	}
 
-	return &t.u.got
+	return t.u.got, t.u.hasGot
 }
 
 // USBD returns the USBD Poll Response of the last TSCCUSBD. (ETSI TS 102
@@ -533,7 +534,7 @@ func (t *TSCC) uploaded(now time.Duration, out []TSCCOutput) []TSCCOutput {
 			return out
 		}
 		if o.kind == opGatewayPoll {
-			t.u.got = *in
+			t.u.got, t.u.hasGot = *in, true
 			*o = udtOp{}
 			return append(out, TSCCOutput{Kind: TSCCUDT, Address: src})
 		}

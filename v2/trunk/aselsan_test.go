@@ -26,7 +26,7 @@ func TestFollower_RealUDT(t *testing.T) {
 				continue
 			}
 			udts++
-			u := f.UDT()
+			u, _ := f.UDT()
 			want := pdu.UDTHeader{SAP: enums.SAPUnifiedDataTransport, UDTFormat: 9, LLIDDestination: 3109823, LLIDSource: 3169855, Opcode: pdu.UDTOpcodeOutboundHeader}
 			if !u.CRCOK || u.Header != want || hex.EncodeToString(u.Data[:12*int(u.Header.AppendedBlocks+1)-2]) != "060008c02f73cc305e35" {
 				t.Errorf("UDT %+v, CRCOK %v, data %x", u.Header, u.CRCOK, u.Data[:12*int(u.Header.AppendedBlocks+1)-2])

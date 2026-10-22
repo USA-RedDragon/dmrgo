@@ -237,7 +237,7 @@ func TestMS_ShortDataReceive(t *testing.T) {
 	if k := ackSent(t, &out[1]); k.ReasonCode != byte(enums.AckReasonMSAccepted) || k.TargetAddress != peer || k.AdditionalInfo != msAddr {
 		t.Errorf("C_ACKU %+v", k)
 	}
-	got := r.ms.UDT().Appended()
+	got := udtOf(r.ms.UDT()).Appended()
 	if text, err := got.Text(nil); err != nil || string(text) != "hello" {
 		t.Errorf("text %q %v", text, err)
 	}
@@ -426,7 +426,7 @@ func TestMS_CallDiverted(t *testing.T) {
 	if out[1].Reason != trunk.ReasonDiverted {
 		t.Errorf("reason %v", out[1].Reason)
 	}
-	got := r.ms.UDT().Appended()
+	got := udtOf(r.ms.UDT()).Appended()
 	if l, err := got.Addresses(); err != nil || l.Addresses[0] != 3120077 {
 		t.Errorf("diverted to %+v %v", l, err)
 	}

@@ -68,8 +68,8 @@ func TestTSCC_ShortData(t *testing.T) {
 	if _, ok := has(b.log, trunk.OutputUDT); !ok {
 		t.Fatal("B got no UDT")
 	}
-	got := b.ms.UDT().Appended()
-	if s, err := got.Text(nil); err != nil || string(s) != "trunked short data" || b.ms.UDT().Header.LLIDSource != 3120001 {
+	got := udtOf(b.ms.UDT()).Appended()
+	if s, err := got.Text(nil); err != nil || string(s) != "trunked short data" || udtOf(b.ms.UDT()).Header.LLIDSource != 3120001 {
 		t.Errorf("B got %q %v", s, err)
 	}
 	if e, ok := s.event(trunk.TSCCDelivered); !ok || e.Address != 3120001 || e.Grant.Target != 3120002 {
@@ -121,7 +121,7 @@ func TestTSCC_Polling(t *testing.T) {
 		t.Fatal(err)
 	}
 	waitLog(s, a, trunk.OutputDelivered)
-	got := a.ms.UDT().Appended()
+	got := udtOf(a.ms.UDT()).Appended()
 	if n, err := got.NMEAShort(); err != nil || n.LatDegrees != 41 {
 		t.Errorf("polled %+v %v", n, err)
 	}
@@ -147,8 +147,8 @@ func TestTSCC_Polling(t *testing.T) {
 	if e := waitEvent(s, trunk.TSCCUDT); e.Address != 3120002 {
 		t.Errorf("TSCCUDT %+v", e)
 	}
-	u := s.tscc.UDT().Appended()
-	if n, err := u.NMEAShort(); err != nil || n.LonDegrees != 87 || s.tscc.UDT().Header.LLIDDestination != constants.GatewaySDMI {
+	u := udtOf(s.tscc.UDT()).Appended()
+	if n, err := u.NMEAShort(); err != nil || n.LonDegrees != 87 || udtOf(s.tscc.UDT()).Header.LLIDDestination != constants.GatewaySDMI {
 		t.Errorf("gateway poll %+v %v", n, err)
 	}
 
@@ -204,7 +204,7 @@ func TestTSCC_Diversion(t *testing.T) {
 	if r := waitLog(s, a, trunk.OutputRefused); r.Reason != trunk.ReasonDiverted {
 		t.Fatalf("call to a diverted MS %+v", r)
 	}
-	u := a.ms.UDT().Appended()
+	u := udtOf(a.ms.UDT()).Appended()
 	if l, err := u.Addresses(); err != nil || l.Addresses[0] != 3120003 {
 		t.Errorf("diverted to %+v %v", l, err)
 	}

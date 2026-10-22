@@ -100,7 +100,8 @@ func ExampleMS_PollShortData() {
 	var a trunk.Appended
 	_ = a.SetNMEAShort(&trunk.NMEAShort{North: true, Fix: true, LatDegrees: 41, LonDegrees: 87, Speed: 3})
 	s.udt(pdu.UDTHeader{LLIDDestination: 3120001, LLIDSource: 3120002}, &a)
-	got := s.ms.UDT().Appended()
+	u, _ := s.ms.UDT()
+	got := u.Appended()
 	n, _ := got.NMEAShort()
 	fmt.Println("latitude", n.LatDegrees, "longitude", n.LonDegrees, "speed", n.Speed)
 	// Output:
