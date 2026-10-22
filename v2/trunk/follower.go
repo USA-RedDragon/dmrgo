@@ -451,6 +451,7 @@ func (f *Follower) control(now time.Duration, h *layer2.Hint, out []Output) []Ou
 	f.sysErrs = 0
 	if f.state == StateHunting {
 		if !f.ctl.site.HasSysCode {
+			f.ctl.hasLast = false
 			return out
 		}
 		f.state, f.started = StateControl, true
