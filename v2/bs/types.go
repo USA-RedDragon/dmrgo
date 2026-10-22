@@ -316,6 +316,12 @@ const (
 	// T_BS_ChanAuthRsp runs out or a burst with its source address comes
 	// (ETSI TS 102 361-2 clause 5.1.1.6.1).
 	SlotChanAuth
+	// SlotPreamble repeats the Pre_CSBKs of one source before its data or
+	// CSBK. The CACH marks the slot busy and the Activity Update carries
+	// the data or CSBK activity until the data header or the CSBK comes, or
+	// Config.Lost passes without a Pre_CSBK (ETSI TS 102 361-1 clause 6.3,
+	// ETSI TS 102 361-2 clause 7.1.2.5).
+	SlotPreamble
 )
 
 // String returns the name of the slot state. It allocates only for a value
@@ -338,6 +344,8 @@ func (s SlotState) String() string {
 		return "ChanAuthSelect"
 	case SlotChanAuth:
 		return "ChanAuth"
+	case SlotPreamble:
+		return "Preamble"
 	}
 	return "SlotState(" + text.Int(int64(s)) + ")"
 }
