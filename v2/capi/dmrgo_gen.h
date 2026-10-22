@@ -4502,7 +4502,7 @@ struct dmrgo_mmdvm_set_freq_t {
 	uint8_t rf_level;
 	/* POCSAG is the POCSAG TX frequency in Hz (14 octets). */
 	uint32_t pocsag;
-	/* Size is the length of the payload: 9, 10 or 14, or 0 for 9. MMDVMHost sends 14, and MMDVM-IQ dd4a0fc NAKs fewer. */
+	/* Size is the length of the payload: 9, 10 or 14, or 0 for 14. */
 	uint8_t size;
 };
 
@@ -10477,7 +10477,7 @@ int dmrgo_mmdvm_decode_dmr_start(const uint8_t *data, size_t data_len, dmrgo_mmd
 int dmrgo_mmdvm_decode_debug(const dmrgo_mmdvm_frame_t *f, dmrgo_mmdvm_debug_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: mmdvm.DecodeNak. DecodeNak decodes a Nak from data, a payload of 2 octets. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 2 octets and DMRGO_ERR_MMDVM_LENGTH when it is longer. */
 int dmrgo_mmdvm_decode_nak(const uint8_t *data, size_t data_len, dmrgo_mmdvm_nak_t *out);
-/* Go: mmdvm.DecodeSetFreq. DecodeSetFreq decodes a SetFreq from data, a payload of 9, 10 or 14 octets. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 9 octets and DMRGO_ERR_MMDVM_LENGTH when its length is not one of these. */
+/* Go: mmdvm.DecodeSetFreq. DecodeSetFreq decodes a SetFreq from data, a payload of 9, 10 or 14 octets or more. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 9 octets and DMRGO_ERR_MMDVM_LENGTH when it is shorter than 14 octets and its length is not one of these. */
 int dmrgo_mmdvm_decode_set_freq(const uint8_t *data, size_t data_len, dmrgo_mmdvm_set_freq_t *out);
 /* Go: mmdvm.DecodeSetMode. DecodeSetMode decodes a SetMode from data, a payload of 1 octet. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 1 octet and DMRGO_ERR_MMDVM_LENGTH when it is longer. */
 int dmrgo_mmdvm_decode_set_mode(const uint8_t *data, size_t data_len, dmrgo_mmdvm_set_mode_t *out);
@@ -10497,7 +10497,7 @@ int dmrgo_mmdvm_nak_string(const dmrgo_mmdvm_nak_t *self, char *out, size_t out_
 int dmrgo_mmdvm_new_dmr_short_lc(const dmrgo_pdu_short_lc_t *slc, dmrgo_mmdvm_dmr_short_lc_t *out);
 /* Go: mmdvm.Next. Next finds the frame at the start of p, as the firmware and MMDVMHost read the stream. */
 int dmrgo_mmdvm_next(const uint8_t *p, size_t p_len, dmrgo_mmdvm_frame_t *f, int64_t *n, dmrgo_mmdvm_next_result_t *r, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: mmdvm.SetFreq.AppendBinary. AppendBinary appends the 9, 10 or 14 octets of s to dst: Size selects the length, and 0 means 9. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error when Size is not one of the lengths. */
+/* Go: mmdvm.SetFreq.AppendBinary. AppendBinary appends the 9, 10 or 14 octets of s to dst: Size selects the length, and 0 means 14. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error when Size is not one of the lengths. */
 int dmrgo_mmdvm_set_freq_append_binary(const dmrgo_mmdvm_set_freq_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.SetFreq.String. String returns the fields of s as text, for printing. */
 int dmrgo_mmdvm_set_freq_string(const dmrgo_mmdvm_set_freq_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
