@@ -363,7 +363,7 @@ func (t *TSCC) udtRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOu
 
 func (t *TSCC) divertRequest(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutput) []TSCCOutput {
 	src := r.SourceAddress
-	o := layer3.DecodeDiversionServiceOptions([1]byte{r.ServiceOptions << 1})
+	o := layer3.DiversionServiceOptionsOf(r.ServiceOptions)
 	switch r.TargetAddress {
 	case constants.GatewayTSI, constants.GatewayDIVERTI:
 		if o.Set {
@@ -596,7 +596,7 @@ func (t *TSCC) divertUploaded(src uint32, out []TSCCOutput) []TSCCOutput {
 	if k < 0 {
 		return t.refuse(src, enums.AckReasonSysBusyRefused, out)
 	}
-	t.u.divs[k] = diversion{used: true, from: src, opts: layer3.DecodeDiversionServiceOptions([1]byte{o.opts << 1}), to: a}
+	t.u.divs[k] = diversion{used: true, from: src, opts: layer3.DiversionServiceOptionsOf(o.opts), to: a}
 	t.ackFrom(src, enums.AckReasonMessageAccepted, 0, o.gateway)
 	return append(out, TSCCOutput{Kind: TSCCDiversion, Address: src})
 }

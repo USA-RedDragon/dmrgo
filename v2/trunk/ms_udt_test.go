@@ -258,7 +258,7 @@ func TestMS_PollShortData(t *testing.T) {
 	}
 	rq := randSent(t, r)
 	if rq.ServiceKind != uint8(enums.ServiceKindShortDataPolling) || rq.TargetAddress != peer || rq.Reserved != 0 ||
-		layer3.DecodePollingServiceOptions([1]byte{rq.ServiceOptions << 1}).Format != enums.UDTNMEA {
+		layer3.PollingServiceOptionsOf(rq.ServiceOptions).Format != enums.UDTNMEA {
 		t.Fatalf("C_RAND %+v", rq)
 	}
 	wantKinds(t, "C_WACKD", r.feed(ack(t, enums.AckReasonWait), &idle))
@@ -381,7 +381,7 @@ func TestMS_Divert(t *testing.T) {
 	}
 	rq := randSent(t, r)
 	if rq.ServiceKind != uint8(enums.ServiceKindCallDiversion) || rq.TargetAddress != constants.GatewayMSI || rq.ProxyFlag ||
-		layer3.DecodeDiversionServiceOptions([1]byte{rq.ServiceOptions << 1}) != opts {
+		layer3.DiversionServiceOptionsOf(rq.ServiceOptions) != opts {
 		t.Fatalf("C_RAND %+v", rq)
 	}
 	out := r.feed(ahoyBurst(t, enums.ServiceKindCallDiversion, constants.GatewayDIVERTI, msAddr, false, 0), &idle)

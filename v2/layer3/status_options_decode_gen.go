@@ -43,6 +43,22 @@ func (s *StatusServiceOptions) Encode() ([1]byte, error) {
 	return data, nil
 }
 
+// Field returns s as the 7-bit ServiceOptions of a C_RAND, in the low bits
+// of the octet, with the errors of Encode. StatusServiceOptionsOf is its
+// inverse. (ETSI TS 102 361-4 clause 7.2.13.6, Table 7.57)
+func (s StatusServiceOptions) Field() (uint8, error) {
+	b, err := s.Encode()
+	return b[0] >> 1, err
+}
+
+// StatusServiceOptionsOf decodes a StatusServiceOptions from the 7-bit
+// ServiceOptions of a C_RAND in the low bits of field, as Field returns it.
+// It ignores the high bit of field. (ETSI TS 102 361-4 clause 7.2.13.6,
+// Table 7.57)
+func StatusServiceOptionsOf(field uint8) StatusServiceOptions {
+	return DecodeStatusServiceOptions([1]byte{field << 1})
+}
+
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *StatusServiceOptions) String() string {

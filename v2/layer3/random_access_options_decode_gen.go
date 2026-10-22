@@ -57,6 +57,22 @@ func (s *VoiceServiceOptions) Encode() ([1]byte, error) {
 	return data, nil
 }
 
+// Field returns s as the 7-bit ServiceOptions of a C_RAND, in the low bits
+// of the octet, with the errors of Encode. VoiceServiceOptionsOf is its
+// inverse. (ETSI TS 102 361-4 clause 7.2.13.1, Table 7.52)
+func (s VoiceServiceOptions) Field() (uint8, error) {
+	b, err := s.Encode()
+	return b[0] >> 1, err
+}
+
+// VoiceServiceOptionsOf decodes a VoiceServiceOptions from the 7-bit
+// ServiceOptions of a C_RAND in the low bits of field, as Field returns it.
+// It ignores the high bit of field. (ETSI TS 102 361-4 clause 7.2.13.1,
+// Table 7.52)
+func VoiceServiceOptionsOf(field uint8) VoiceServiceOptions {
+	return DecodeVoiceServiceOptions([1]byte{field << 1})
+}
+
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *VoiceServiceOptions) String() string {
@@ -113,6 +129,22 @@ func (s *DataServiceOptions) Encode() ([1]byte, error) {
 	return data, nil
 }
 
+// Field returns s as the 7-bit ServiceOptions of a C_RAND, in the low bits
+// of the octet, with the errors of Encode. DataServiceOptionsOf is its
+// inverse. (ETSI TS 102 361-4 clause 7.2.13.2, Table 7.53)
+func (s DataServiceOptions) Field() (uint8, error) {
+	b, err := s.Encode()
+	return b[0] >> 1, err
+}
+
+// DataServiceOptionsOf decodes a DataServiceOptions from the 7-bit
+// ServiceOptions of a C_RAND in the low bits of field, as Field returns it.
+// It ignores the high bit of field. (ETSI TS 102 361-4 clause 7.2.13.2,
+// Table 7.53)
+func DataServiceOptionsOf(field uint8) DataServiceOptions {
+	return DecodeDataServiceOptions([1]byte{field << 1})
+}
+
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *DataServiceOptions) String() string {
@@ -163,6 +195,22 @@ func (s *RegistrationServiceOptions) Encode() ([1]byte, error) {
 		data[0] |= 0x02
 	}
 	return data, nil
+}
+
+// Field returns s as the 7-bit ServiceOptions of a C_RAND, in the low bits
+// of the octet, with the errors of Encode. RegistrationServiceOptionsOf is
+// its inverse. (ETSI TS 102 361-4 clause 7.2.13.4, Table 7.55)
+func (s RegistrationServiceOptions) Field() (uint8, error) {
+	b, err := s.Encode()
+	return b[0] >> 1, err
+}
+
+// RegistrationServiceOptionsOf decodes a RegistrationServiceOptions from the
+// 7-bit ServiceOptions of a C_RAND in the low bits of field, as Field
+// returns it. It ignores the high bit of field.
+// (ETSI TS 102 361-4 clause 7.2.13.4, Table 7.55)
+func RegistrationServiceOptionsOf(field uint8) RegistrationServiceOptions {
+	return DecodeRegistrationServiceOptions([1]byte{field << 1})
 }
 
 // String returns the fields of s as text, for printing. It allocates the

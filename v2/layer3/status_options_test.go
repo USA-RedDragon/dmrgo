@@ -22,7 +22,7 @@ func TestStatusServiceOptions_Table7_57(t *testing.T) {
 		if err != nil || got != c.want {
 			t.Errorf("%+v: Field %07b %v, want %07b", c.o, got, err, c.want)
 		}
-		if back := layer3.DecodeStatusServiceOptions([1]byte{got << 1}); back != c.o {
+		if back := layer3.StatusServiceOptionsOf(got); back != c.o {
 			t.Errorf("%07b decodes as %+v, want %+v", got, back, c.o)
 		}
 	}

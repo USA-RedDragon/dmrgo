@@ -30126,6 +30126,21 @@ func dmrgo_layer3_data_service_options_string(c_self *C.dmrgo_layer3_data_servic
 	return C.DMRGO_OK
 }
 
+//export dmrgo_layer3_data_service_options_of
+func dmrgo_layer3_data_service_options_of(c_field C.uint8_t, c_out *C.dmrgo_layer3_data_service_options_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_layer3.DataServiceOptionsOf(uint8(c_field))
+	_ = r0
+	if c_out != nil {
+		out_layer3_DataServiceOptions(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_layer3_decode_cdef_parms
 func dmrgo_layer3_decode_cdef_parms(c_data *C.uint8_t, c_out *C.dmrgo_layer3_cdef_parms_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -30358,6 +30373,21 @@ func dmrgo_layer3_diversion_service_options_string(c_self *C.dmrgo_layer3_divers
 	return C.DMRGO_OK
 }
 
+//export dmrgo_layer3_diversion_service_options_of
+func dmrgo_layer3_diversion_service_options_of(c_field C.uint8_t, c_out *C.dmrgo_layer3_diversion_service_options_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_layer3.DiversionServiceOptionsOf(uint8(c_field))
+	_ = r0
+	if c_out != nil {
+		out_layer3_DiversionServiceOptions(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_layer3_motorola_service_options
 func dmrgo_layer3_motorola_service_options(c_out *C.dmrgo_layer3_service_options_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -30437,6 +30467,21 @@ func dmrgo_layer3_polling_service_options_string(c_self *C.dmrgo_layer3_polling_
 	r0 := x.String()
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer3_polling_service_options_of
+func dmrgo_layer3_polling_service_options_of(c_field C.uint8_t, c_out *C.dmrgo_layer3_polling_service_options_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_layer3.PollingServiceOptionsOf(uint8(c_field))
+	_ = r0
+	if c_out != nil {
+		out_layer3_PollingServiceOptions(&(*c_out), &r0, oc)
+	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -30526,6 +30571,21 @@ func dmrgo_layer3_registration_service_options_string(c_self *C.dmrgo_layer3_reg
 	r0 := x.String()
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer3_registration_service_options_of
+func dmrgo_layer3_registration_service_options_of(c_field C.uint8_t, c_out *C.dmrgo_layer3_registration_service_options_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_layer3.RegistrationServiceOptionsOf(uint8(c_field))
+	_ = r0
+	if c_out != nil {
+		out_layer3_RegistrationServiceOptions(&(*c_out), &r0, oc)
+	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -30672,6 +30732,21 @@ func dmrgo_layer3_short_data_service_options_string(c_self *C.dmrgo_layer3_short
 	return C.DMRGO_OK
 }
 
+//export dmrgo_layer3_short_data_service_options_of
+func dmrgo_layer3_short_data_service_options_of(c_field C.uint8_t, c_out *C.dmrgo_layer3_short_data_service_options_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_layer3.ShortDataServiceOptionsOf(uint8(c_field))
+	_ = r0
+	if c_out != nil {
+		out_layer3_ShortDataServiceOptions(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_layer3_source_type_string
 func dmrgo_layer3_source_type_string(c_self C.dmrgo_layer3_source_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -30761,6 +30836,21 @@ func dmrgo_layer3_status_service_options_string(c_self *C.dmrgo_layer3_status_se
 	return C.DMRGO_OK
 }
 
+//export dmrgo_layer3_status_service_options_of
+func dmrgo_layer3_status_service_options_of(c_field C.uint8_t, c_out *C.dmrgo_layer3_status_service_options_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_layer3.StatusServiceOptionsOf(uint8(c_field))
+	_ = r0
+	if c_out != nil {
+		out_layer3_StatusServiceOptions(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_layer3_talker_alias_data_format_string
 func dmrgo_layer3_talker_alias_data_format_string(c_self C.dmrgo_layer3_talker_alias_data_format_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -30844,6 +30934,21 @@ func dmrgo_layer3_voice_service_options_string(c_self *C.dmrgo_layer3_voice_serv
 	r0 := x.String()
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_layer3_voice_service_options_of
+func dmrgo_layer3_voice_service_options_of(c_field C.uint8_t, c_out *C.dmrgo_layer3_voice_service_options_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_layer3.VoiceServiceOptionsOf(uint8(c_field))
+	_ = r0
+	if c_out != nil {
+		out_layer3_VoiceServiceOptions(&(*c_out), &r0, oc)
+	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
