@@ -36,7 +36,8 @@ var (
 	// ErrDataType is returned, wrapped or as is, by the builders and by the
 	// SetHint methods of the transports for a data type that the call cannot
 	// carry: Data of another data type than the slot type, or a data type
-	// that is not BPTC(196,96) coded for BuildDataBurst.
+	// that is not BPTC(196,96) coded for BuildDataBurst, and wrapped by
+	// MMDVMHostSeal for a data type that MMDVMHost discards.
 	ErrDataType = errors.New("layer2: the data burst cannot carry this data type")
 	// ErrSyncSource is returned by the builders and the voice transmitter
 	// for a SyncSource that is not one of its values.
@@ -109,7 +110,7 @@ var (
 	errDataPDUType     error = &wrapError{"the data burst cannot carry Data of another data type", ErrDataType}
 	errNotBPTC         error = &wrapError{"the data type is not BPTC(196,96) coded", ErrDataType}
 	errSyncPattern           = errors.New("layer2: not a Table 9.2 SYNC pattern")
-	errMMDVMHostData         = errors.New("layer2: MMDVMHost discards bursts of this data type")
+	errMMDVMHostData   error = &wrapError{"MMDVMHost discards bursts of this data type", ErrDataType}
 
 	errBurstBPTCReservedRange    = &dmrgo.FieldRangeError{Type: "Burst", Field: "BPTCReserved", Bits: 3}
 	errRawBurstBPTCReservedRange = &dmrgo.FieldRangeError{Type: "RawBurst", Field: "BPTCReserved", Bits: 3}

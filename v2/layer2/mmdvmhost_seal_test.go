@@ -1,9 +1,11 @@
 package layer2_test
 
 import (
+	"errors"
 	"math/rand"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -83,5 +85,21 @@ func TestMMDVMHostSeal_IdentityOnAcceptedCaptures(t *testing.T) {
 	}
 	if n == 0 {
 		t.Fatal("no accepted data bursts")
+	}
+}
+
+func TestMMDVMHostSeal_NilPayload(t *testing.T) {
+	t.Parallel()
+
+	for dt := enums.DataType(0); dt <= 0x0F; dt++ {
+		if err := layer2.MMDVMHostSeal(dt, nil); !errors.Is(err, dmrgo.ErrNilArgument) {
+			t.Errorf("dt %d: nil p gave %v", dt, err)
+		}
+	}
+	for _, dt := range []enums.DataType{enums.DataTypeIdle, enums.DataTypeUnifiedSingleBlock, enums.DataTypeReserved} {
+		var p [12]byte
+		if err := layer2.MMDVMHostSeal(dt, &p); !errors.Is(err, layer2.ErrDataType) {
+			t.Errorf("dt %d: %v, want ErrDataType", dt, err)
+		}
 	}
 }
