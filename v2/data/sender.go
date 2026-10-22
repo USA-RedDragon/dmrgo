@@ -27,6 +27,10 @@ const (
 	// channel before it holds off, the largest T_IdleSrch (ETSI TS 102
 	// 361-1 clause F.1).
 	DefaultIdleSearch = 540 * time.Millisecond
+	// DefaultPreambles is the number of preamble CSBKs before a header
+	// that radios send, such as the AnyTone D890UV firmware before its own
+	// SMS.
+	DefaultPreambles = 5
 	// MaxPreambles is the most preamble CSBKs before a header.
 	MaxPreambles = 64
 	// MaxRetries is the most transmissions of one message.
@@ -46,8 +50,9 @@ type SenderConfig struct {
 	// channel idle (ETSI TS 102 361-1 clause 5.2.1.6).
 	Access enums.Access
 	// Preambles is the number of preamble CSBKs before the header of each
-	// try, so that a radio in power save wakes up. 0 sends none; at most
-	// MaxPreambles. Radios send 5.
+	// try, so that a radio in power save wakes up. 0 means
+	// DefaultPreambles, and a negative value sends none; at most
+	// MaxPreambles.
 	Preambles int
 	// IdleSearch is the time that a polite Sender waits for an idle
 	// channel before it holds off. 0 means DefaultIdleSearch, and a
@@ -317,8 +322,14 @@ func NewSender(cfg *SenderConfig) (*Sender, error) {
 	if cfg.Access > enums.AccessImpolite {
 		return nil, errAccess
 	}
-	if cfg.Preambles < 0 || cfg.Preambles > MaxPreambles {
+	preambles := cfg.Preambles
+	switch {
+	case preambles > MaxPreambles:
 		return nil, errPreambles
+	case preambles == 0:
+		preambles = DefaultPreambles
+	case preambles < 0:
+		preambles = 0
 	}
 	retries, err := limit(cfg.Retries, constants.NRetryLimit, MaxRetries, errRetries)
 	if err != nil {
@@ -340,7 +351,7 @@ func NewSender(cfg *SenderConfig) (*Sender, error) {
 		cc:           cfg.ColorCode,
 		source:       cfg.Source,
 		access:       cfg.Access,
-		preambles:    cfg.Preambles,
+		preambles:    preambles,
 		idleSearch:   max(defaultDuration(cfg.IdleSearch, DefaultIdleSearch), 0),
 		holdoff:      max(defaultDuration(cfg.Holdoff, constants.THoldoffMax), 0),
 		responseWait: max(defaultDuration(cfg.ResponseWait, constants.TResponseWait), 0),

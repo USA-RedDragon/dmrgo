@@ -59,7 +59,7 @@ func TestAllocsSenderLoopback(t *testing.T) {
 }
 
 func TestAllocsSenderWindow(t *testing.T) {
-	tx := newSender(t, &data.SenderConfig{Window: 3})
+	tx := newSender(t, &data.SenderConfig{Preambles: -1, Window: 3})
 	rx := newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID})
 	msgs := windowMessages(t, 3, 60)
 	out := make([]data.Output, 0, data.MaxOutputs)

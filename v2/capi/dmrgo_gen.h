@@ -1407,7 +1407,7 @@ struct dmrgo_data_sender_config_t {
 	dmrgo_layer2_sync_source_t source;
 	/* Access is the channel access policy. The zero value, enums.AccessPoliteOwnCC, sends only while Channel last reported the channel idle (ETSI TS 102 361-1 clause 5.2.1.6). */
 	dmrgo_enums_access_t access;
-	/* Preambles is the number of preamble CSBKs before the header of each try, so that a radio in power save wakes up. 0 sends none; at most MaxPreambles. Radios send 5. */
+	/* Preambles is the number of preamble CSBKs before the header of each try, so that a radio in power save wakes up. 0 means DefaultPreambles, and a negative value sends none; at most MaxPreambles. */
 	int64_t preambles;
 	/* IdleSearch is the time that a polite Sender waits for an idle channel before it holds off. 0 means DefaultIdleSearch, and a negative value holds off at once. */
 	dmrgo_duration_t idle_search;
@@ -5943,6 +5943,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DATA_DEFAULT_MAX_MESSAGE 1500
 /* Go: data.DefaultPeers. DefaultPeers is the number of links whose sequence number a Receiver or a Sender keeps. */
 #define DMRGO_DATA_DEFAULT_PEERS 8
+/* Go: data.DefaultPreambles. DefaultPreambles is the number of preamble CSBKs before a header that radios send, such as the AnyTone D890UV firmware before its own SMS. */
+#define DMRGO_DATA_DEFAULT_PREAMBLES 5
 /* Go: data.EndIdle. EndIdle is an idle burst after the last packet. */
 #define DMRGO_DATA_END_IDLE ((dmrgo_data_end_reason_t)2)
 /* Go: data.EndQuiet. EndQuiet is a time of ReceiverConfig.Hang without a burst. */
