@@ -91,6 +91,7 @@ type peer struct {
 	source, target uint32
 	seq            uint8
 	acked          uint8
+	ackedFrom      uint8
 	hasAcked       bool
 	stamp          uint32
 	used           bool
