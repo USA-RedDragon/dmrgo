@@ -182,11 +182,11 @@ type Timing struct {
 	noCopy  noCopy
 }
 
-// NewTiming returns a Timing for cfg. It returns a *dmrgo.ConfigError for a nil
-// cfg, an ID of 0 or above MaxTimingID, a DynamicID above MaxDynamicID, a
-// Slot other than Slot1 or Slot2 or a negative Lead. It allocates the Timing, and its Burst
-// unless cfg.Scratch is set. The Timing does nothing before Join.
-// (ETSI TS 102 361-2 clause 6.2)
+// NewTiming returns a Timing for cfg. It returns a *dmrgo.ConfigError for
+// a nil cfg, an ID of 0 or above MaxTimingID, a DynamicID above
+// MaxDynamicID, a Slot other than Slot1 or Slot2, or a negative Lead. It
+// allocates the Timing, and its Burst unless cfg.Scratch is set. The
+// Timing does nothing before Join. (ETSI TS 102 361-2 clause 6.2)
 func NewTiming(cfg *TimingConfig) (*Timing, error) {
 	switch {
 	case cfg == nil, cfg.ID == 0, cfg.ID > MaxTimingID:

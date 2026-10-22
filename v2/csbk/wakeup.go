@@ -66,8 +66,8 @@ func (s WakeupState) String() string {
 // with MS sourced SYNC, waits T_SyncWu for a BS sourced burst with the color
 // code of the BS, and sends again up to N_Wakeup times. Make it with
 // NewWakeup; a zero Wakeup does nothing, and its Wake returns
-// dmrgo.ErrZeroValue. A Wakeup is not safe for concurrent use and must not be copied;
-// go vet reports a copy. (ETSI TS 102 361-1 clause 5.2.2.2.4)
+// dmrgo.ErrZeroValue. A Wakeup is not safe for concurrent use and must not
+// be copied; go vet reports a copy. (ETSI TS 102 361-1 clause 5.2.2.2.4)
 type Wakeup struct {
 	cc       enums.ColorCode
 	syncWait time.Duration
