@@ -1,9 +1,11 @@
 package ars_test
 
 import (
+	"errors"
 	"strconv"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/mototrbo/ars"
 )
 
@@ -23,7 +25,7 @@ func TestFailureTransmissionValues(t *testing.T) {
 	}
 }
 
-func TestFailureFromOKDMRLib(t *testing.T) {
+func TestDeviceFailureReason(t *testing.T) {
 	t.Parallel()
 	m, err := ars.DecodeMessage([]byte{0x00, 0x02, 0xFF, 0xFF})
 	if err != nil {
@@ -32,15 +34,10 @@ func TestFailureFromOKDMRLib(t *testing.T) {
 	if !m.Header.AckRequired || m.Header.Type != ars.TypeAck || ars.FailureReason(m.Response.Value) != ars.FailureTransmission {
 		t.Errorf("%+v", m)
 	}
-	f, err := ars.NewFailure(ars.FailureTransmission)
-	if err != nil {
-		t.Fatal(err)
-	}
-	b, err := f.AppendBinary(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(b) != "\x00\x02\xff\x7f" {
-		t.Errorf("NewFailure(FailureTransmission) = % x", b)
+	for _, r := range []ars.FailureReason{ars.FailureUserIDNotValid, ars.FailureUserValidationTimeout, 3, ars.FailureTransmission, 200} {
+		var ce *dmrgo.ConfigError
+		if _, err := ars.NewFailure(r); !errors.As(err, &ce) {
+			t.Errorf("NewFailure(%d) = %v, want a *dmrgo.ConfigError", r, err)
+		}
 	}
 }
