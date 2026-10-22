@@ -401,7 +401,8 @@ func (s *Sender) State() SenderState {
 // *dmrgo.ConfigError for a nil m or another header, a P_HEAD in
 // m.Proprietary, or a confirmed message to a group, an error on a zero
 // Sender, and the errors of packet.Builder.Segment, such as
-// packet.ErrTooLong and packet.ErrRate. (ETSI TS 102 361-3 clauses 5.4 and
+// packet.ErrNoRoom for a message of more than SenderConfig.MaxBlocks blocks
+// and packet.ErrRate. (ETSI TS 102 361-3 clauses 5.4 and
 // 5.4.4)
 func (s *Sender) Send(now time.Duration, m *Message) error {
 	if s == nil {

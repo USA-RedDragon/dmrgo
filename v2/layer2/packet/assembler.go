@@ -74,8 +74,9 @@ func (m *Message) UDPIPv4() (header pdu.UDPIPv4CompressedHeader, payload []byte,
 // completes it. The Assembler copies the headers and blocks it gets, so the
 // caller can reuse a layer2.Burst or PDU after Add or AddBurst returns. It
 // keeps the storage that NewAssembler allocates from packet to packet, so
-// that it does not allocate. The zero value has no storage for blocks: a
-// header of a packet with blocks returns ErrTooLong. A Message points into
+// that it does not allocate. The zero value has no storage for blocks, so
+// it takes only packets without data blocks: a header of a packet with
+// blocks returns ErrNoRoom. Use NewAssembler for others. A Message points into
 // the Assembler, so an Assembler must not be copied after first use; go vet
 // reports a copy. An Assembler is not safe for concurrent use.
 type Assembler struct {
@@ -232,7 +233,7 @@ func (a *Assembler) addHeader(h *pdu.DataHeader) (Message, bool, error) {
 		return Message{}, false, nil
 	}
 	if blocksOf(h)*maxBlockOctets > len(a.blocks) {
-		return Message{}, false, ErrTooLong
+		return Message{}, false, ErrNoRoom
 	}
 	a.active, a.confirmed = true, confirmed
 	a.msg.Header = *h

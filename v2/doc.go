@@ -187,10 +187,10 @@
 //     SetRawBurst methods of the transports for a data type, sync source or
 //     voice position that the call cannot take.
 //   - packet.ErrNoHeader, packet.ErrRateChange, packet.ErrRate,
-//     packet.ErrFormat, packet.ErrTooLong, packet.ErrResponseData,
-//     packet.ErrUnexpectedRetry, packet.ErrNoFirstTry,
-//     packet.ErrNoRetryBlocks: returned by packet segmentation and
-//     reassembly.
+//     packet.ErrFormat, packet.ErrTooLong, packet.ErrNoRoom,
+//     packet.ErrResponseData, packet.ErrUnexpectedRetry,
+//     packet.ErrNoFirstTry, packet.ErrNoRetryBlocks: returned by packet
+//     segmentation and reassembly.
 //   - pdu.ErrTalkerAliasIncomplete, pdu.ErrTalkerAliasLength,
 //     pdu.ErrTalkerAliasInvalidUTF8: returned by the talker alias functions.
 //   - pdu.ErrCapacityPlusSequence, pdu.ErrCapacityPlusIncomplete: returned
