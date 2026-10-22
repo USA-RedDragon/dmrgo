@@ -86,8 +86,11 @@ func TestResetAndLost(t *testing.T) {
 	r := mustResponder(t, &csbk.ResponderConfig{Address: anytone})
 	r.Channel(0, true)
 	r.Burst(0, burstOf(t, injectedRadioCheck, layer2.SyncSourceBS), layer2.Hint{}, nil)
-	if out := r.Lost(ms, nil); len(out) != 1 || out[0].Kind != csbk.OutputBurst {
-		t.Errorf("Lost gave %+v", out)
+	if out := r.Lost(ms, nil); len(out) != 0 {
+		t.Errorf("Lost gave %+v before the next slot", out)
+	}
+	if out := r.Tick(60*ms, nil); len(out) != 1 || out[0].Kind != csbk.OutputBurst || out[0].Due != 60*ms {
+		t.Errorf("Tick after Lost gave %+v", out)
 	}
 	r.Burst(0, burstOf(t, injectedRadioCheck, layer2.SyncSourceBS), layer2.Hint{}, nil)
 	r.Reset()

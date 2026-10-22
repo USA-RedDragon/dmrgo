@@ -3,7 +3,6 @@ package csbk_test
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/csbk"
@@ -24,17 +23,17 @@ func Example() {
 	out = q.Tick(0, out[:0])
 	request := out[0].Burst
 
-	out = r.Burst(0, &request, layer2.Hint{}, out[:0])
+	out = r.Burst(out[0].Due, &request, layer2.Hint{}, out[:0])
 	fmt.Println(out[0].Kind, out[0].Service, "from", out[0].Source)
 	at, _ := r.Deadline()
 	out = r.Tick(at, out[:0])
-	answer := out[0].Burst
+	answer, due := out[0].Burst, out[0].Due
 
-	out = q.Burst(at+30*time.Millisecond, &answer, layer2.Hint{}, out[:0])
-	fmt.Println(out[0].Kind, out[0].Result)
+	out = q.Burst(due, &answer, layer2.Hint{}, out[:0])
+	fmt.Println(out[0].Kind, out[0].Result, "at", due)
 	// Output:
 	// Request OACSU from 1001
-	// Done Answered
+	// Done Answered at 60ms
 }
 
 // ExampleRequester_RequestRadioCheck sends a radio check with 5 preambles

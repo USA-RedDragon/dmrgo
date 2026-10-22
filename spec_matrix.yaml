@@ -178,12 +178,18 @@ documents:
         source_files:
           - v2/trunk/ms.go
           - v2/trunk/ms_access.go
+          - v2/csbk/sender.go
+          - v2/csbk/responder.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
               - TestMS_AnswerSlotGrid
               - TestMS_RandomAccessSlotGrid
               - TestMS_EndCallSlotGrid
+          - package: github.com/USA-RedDragon/dmrgo/v2/csbk
+            names:
+              - TestResponder_AnswerSlotGrid
+              - TestResponder_PoliteAnswerSlotGrid
 
       - section: "5.2.1.6"
         title: "Transmit admit criteria"
