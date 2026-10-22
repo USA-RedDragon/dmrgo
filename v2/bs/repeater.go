@@ -833,16 +833,16 @@ func (r *Repeater) admit(now time.Duration, s *slot, from Source, lc *pdu.LCByte
 		if s.owner == from {
 			return true, dst
 		}
-		return false, r.refuse(now, s, from, ReasonSlotBusy, dst)
+		return false, r.refuse(now, s, from, ReasonSlotBusy, lc, dst)
 	case SlotCallHang:
 		if s.owner == from || lc != nil && sameTarget(lc, &s.call) {
 			return true, dst
 		}
-		return false, r.refuse(now, s, from, ReasonHangTime, dst)
+		return false, r.refuse(now, s, from, ReasonHangTime, lc, dst)
 	case SlotIdle, SlotDataHang, SlotChanAuth, SlotChanAuthSelect:
 	}
 	if r.pendingMax > 0 && s.npend > 0 && s.pend[0].from != from {
-		return false, r.refuse(now, s, from, ReasonSlotBusy, dst)
+		return false, r.refuse(now, s, from, ReasonSlotBusy, lc, dst)
 	}
 	for j := range s.npend {
 		if s.pend[j].from == from {
@@ -859,7 +859,7 @@ func sameTarget(lc *pdu.LCBytes, c *voice.Call) bool {
 	return ok && target == c.Target && group == c.Group
 }
 
-func (r *Repeater) refuse(now time.Duration, s *slot, from Source, reason Reason, dst []Output) []Output {
+func (r *Repeater) refuse(now time.Duration, s *slot, from Source, reason Reason, lc *pdu.LCBytes, dst []Output) []Output {
 	for j := range s.npend {
 		if s.pend[j].from == from {
 			s.pend[j].last = now
@@ -874,6 +874,13 @@ func (r *Repeater) refuse(now time.Duration, s *slot, from Source, reason Reason
 	var o *Output
 	dst, o = appendOutput(dst, OutputRejected)
 	o.Slot, o.From, o.Reason = s.id, from, reason
+	if lc == nil {
+		return dst
+	}
+	if group, target, source, ok := lc.Call(); ok {
+		so, _ := lc.ServiceOptions()
+		o.Call = voice.Call{Group: group, Target: target, Source: source, Options: so, FID: lc.FID(), LC: *lc, Origin: voice.OriginHeader}
+	}
 	return dst
 }
 
