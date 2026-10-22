@@ -52,11 +52,11 @@ ignore_files:
   - v2/transport/dmrd/dmrplus.go
   - v2/transport/dmrd/freedmr.go
   - v2/transport/dmrd/errors.go
-  - v2/transport/dmrd/session/bridge.go
-  - v2/transport/dmrd/session/errors.go
-  - v2/transport/dmrd/session/master.go
-  - v2/transport/dmrd/session/output.go
-  - v2/transport/dmrd/session/peer.go
+  - v2/transport/dmrd/dmrdsession/bridge.go
+  - v2/transport/dmrd/dmrdsession/errors.go
+  - v2/transport/dmrd/dmrdsession/master.go
+  - v2/transport/dmrd/dmrdsession/output.go
+  - v2/transport/dmrd/dmrdsession/peer.go
   - v2/transport/hytera/errors.go
   - v2/transport/hytera/frame.go
   - v2/transport/hytera/layout.go
@@ -67,11 +67,11 @@ ignore_files:
   - v2/transport/ipsc/errors.go
   - v2/transport/ipsc/layout.go
   - v2/transport/ipsc/stream.go
-  - v2/transport/ipsc/session/bound.go
-  - v2/transport/ipsc/session/errors.go
-  - v2/transport/ipsc/session/master.go
-  - v2/transport/ipsc/session/output.go
-  - v2/transport/ipsc/session/peer.go
+  - v2/transport/ipsc/ipscsession/bound.go
+  - v2/transport/ipsc/ipscsession/errors.go
+  - v2/transport/ipsc/ipscsession/master.go
+  - v2/transport/ipsc/ipscsession/output.go
+  - v2/transport/ipsc/ipscsession/peer.go
   - v2/transport/ipsc/types.go
   - v2/transport/ipsc/user.go
   - v2/transport/mmdvm/dmr.go
