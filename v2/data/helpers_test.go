@@ -12,6 +12,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/data"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 type timedBurst struct {
@@ -130,4 +131,31 @@ func kinds(ev []data.Event) string {
 		}
 	}
 	return b.String()
+}
+
+func setHeader[P any](t testing.TB, set func(*pdu.DataHeader, P) error, p P) pdu.DataHeader {
+	t.Helper()
+	var h pdu.DataHeader
+	if err := set(&h, p); err != nil {
+		t.Fatal(err)
+	}
+	return h
+}
+
+func confirmedOf(t testing.TB, h *pdu.DataHeader) pdu.ConfirmedDataHeader {
+	t.Helper()
+	c, ok := h.AsConfirmedDataHeader()
+	if !ok {
+		t.Fatalf("header %v is not a C_HEAD", h)
+	}
+	return c
+}
+
+func editConfirmed(t testing.TB, h *pdu.DataHeader, edit func(*pdu.ConfirmedDataHeader)) {
+	t.Helper()
+	c := confirmedOf(t, h)
+	edit(&c)
+	if err := h.SetConfirmedDataHeader(c); err != nil {
+		t.Fatal(err)
+	}
 }

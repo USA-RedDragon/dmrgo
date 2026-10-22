@@ -8,6 +8,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/data"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 // ETSI TS 102 361-1 V2.6.1 clause 8.2.0, Table 8.2.
@@ -18,8 +19,8 @@ func TestReceiverSpecFragmentExample(t *testing.T) {
 	all := make([]timedBurst, 0, 70*len(fsn))
 	joined := make([]byte, 0, fragMax*len(fsn))
 	for i, f := range fsn {
-		h := confirmedHeader(uint8(i) & 7)
-		h.ConfirmedDataHeader.FragmentSequenceNumber = f
+		h := confirmedHeader(t, uint8(i)&7)
+		editConfirmed(t, &h, func(c *pdu.ConfirmedDataHeader) { c.FragmentSequenceNumber = f })
 		p := payload(fragMax)
 		p[0], p[1] = byte(i), f
 		joined = append(joined, p...)

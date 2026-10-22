@@ -13,15 +13,13 @@ import (
 func talkerAliasLC() pdu.FullLinkControl {
 	var data [48]unpacked.Bit
 	copy(data[:], unpacked.Unpack([]byte("KI5VMF")))
-	return pdu.FullLinkControl{
-		FLCO: enums.FLCOTalkerAliasHeader,
-		FID:  enums.FIDStandardized,
-		TalkerAliasHeader: &pdu.FLCTalkerAliasHeader{
-			TalkerAliasDataFormat: layer3.TalkerAliasISOEightBit,
-			TalkerAliasDataLength: 6,
-			TalkerAliasData:       unpacked.Uint(data[:]),
-		},
-	}
+	var lc pdu.FullLinkControl
+	mustSet(lc.SetTalkerAliasHeader(pdu.FLCTalkerAliasHeader{
+		TalkerAliasDataFormat: layer3.TalkerAliasISOEightBit,
+		TalkerAliasDataLength: 6,
+		TalkerAliasData:       unpacked.Uint(data[:]),
+	}))
+	return lc
 }
 
 func superframeLC(t *testing.T, bursts []layer2.RawBurst, sf int) [4][4]byte {

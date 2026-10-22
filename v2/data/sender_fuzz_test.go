@@ -19,9 +19,10 @@ func txPool(t testing.TB) []layer2.RawBurst {
 	for _, r := range []packet.Response{packet.ResponseACK, packet.ResponseSACK, packet.ResponseNACKPacketCRC,
 		packet.ResponseNACKOutOfSequence, packet.ResponseNACKMemoryFull} {
 		for ns := range uint8(8) {
-			h := confirmedHeader(ns).ConfirmedDataHeader
+			ch := confirmedHeader(t, ns)
+			h := confirmedOf(t, &ch)
 			h.BlocksToFollow = 7
-			resp, err := packet.NewResponse(h, r, &rd)
+			resp, err := packet.NewResponse(&h, r, &rd)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -35,12 +36,13 @@ func txPool(t testing.TB) []layer2.RawBurst {
 	return p
 }
 
-func txMessages() []*data.Message {
-	u := &data.Message{Header: pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
-		LLIDDestination: dstID, LLIDSource: srcID}}, Rate: enums.DataTypeRate1, Payload: payload(30)}
-	dd := &data.Message{Header: pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{
-		LLIDDestination: dstID, LLIDSource: srcID, SARQ: true}}, Rate: enums.DataTypeRate12, Payload: payload(20)}
-	return []*data.Message{message(60), message(10), u, dd, message(500)}
+func txMessages(t testing.TB) []*data.Message {
+	t.Helper()
+	u := &data.Message{Header: setHeader(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{
+		LLIDDestination: dstID, LLIDSource: srcID}), Rate: enums.DataTypeRate1, Payload: payload(30)}
+	dd := &data.Message{Header: setHeader(t, (*pdu.DataHeader).SetDefinedDataHeader, pdu.DefinedDataHeader{
+		LLIDDestination: dstID, LLIDSource: srcID, SARQ: true}), Rate: enums.DataTypeRate12, Payload: payload(20)}
+	return []*data.Message{message(t, 60), message(t, 10), u, dd, message(t, 500)}
 }
 
 func checkTxScript(t *testing.T, in []byte, p []layer2.RawBurst, msgs []*data.Message) {
@@ -133,7 +135,7 @@ func txSeeds() [][]byte {
 }
 
 func FuzzSender(f *testing.F) {
-	p, msgs := txPool(f), txMessages()
+	p, msgs := txPool(f), txMessages(f)
 	for _, s := range txSeeds() {
 		f.Add(s)
 	}

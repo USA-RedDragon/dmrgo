@@ -44,8 +44,8 @@ func TestCSBK_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	if csbk.FID != enums.FIDMotorola {
 		t.Errorf("FID = %#x, want %#x", csbk.FID, byte(enums.FIDMotorola))
 	}
-	if csbk.PrivateVoiceGrantPDU != nil {
-		t.Error("PrivateVoiceGrantPDU should be nil for a manufacturer FID")
+	if _, ok := csbk.AsPrivateVoiceGrant(); ok {
+		t.Error("AsPrivateVoiceGrant should be false for a manufacturer FID")
 	}
 	if csbk.RawPayload != payload {
 		t.Error("RawPayload does not hold the payload")
@@ -74,18 +74,18 @@ func TestCSBK_UnknownOpcodeKeepsRawPayload(t *testing.T) {
 	}
 }
 
-func TestCSBK_StandardFIDDoesNotFillRawPayload(t *testing.T) {
+func TestCSBK_StandardFIDSelectsPayload(t *testing.T) {
 	t.Parallel()
 
 	payload := testPayload64()
 	infoBits := buildCSBK(byte(pdu.CSBKPrivateVoiceGrant), payload)
 
 	csbk := pdu.DecodeCSBK(infoBits)
-	if csbk.PrivateVoiceGrantPDU == nil {
-		t.Fatal("PrivateVoiceGrantPDU should be set for the SFID")
+	if _, ok := csbk.AsPrivateVoiceGrant(); !ok {
+		t.Fatal("AsPrivateVoiceGrant should be true for the SFID")
 	}
-	if csbk.RawPayload != [8]byte{} {
-		t.Error("RawPayload should be empty when a layout matched")
+	if csbk.RawPayload != payload {
+		t.Error("RawPayload does not hold the payload")
 	}
 }
 
@@ -112,8 +112,8 @@ func TestFLC_ManufacturerFIDKeepsRawPayload(t *testing.T) {
 	if decoded.FID != enums.FIDMotorola {
 		t.Errorf("FeatureSetID = %#x, want %#x", decoded.FID, enums.FIDMotorola)
 	}
-	if decoded.GroupVoice != nil {
-		t.Error("GroupVoice should be nil for a manufacturer FID")
+	if _, ok := decoded.AsGroupVoice(); ok {
+		t.Error("AsGroupVoice should be false for a manufacturer FID")
 	}
 	if decoded.RawPayload != payload {
 		t.Error("RawPayload does not hold the payload")
@@ -174,7 +174,9 @@ func TestFLC_AddressesIgnoreFID(t *testing.T) {
 			if !ok || target != 9990 || source != 3191868 {
 				t.Errorf("FID %#x FLCO %d: Addresses() = %d, %d, %v, want 9990, 3191868, true", fid, flco, target, source, ok)
 			}
-			if fid == enums.FIDMotorola && (flc.GroupVoice != nil || flc.UnitToUnit != nil) {
+			_, gv := flc.AsGroupVoice()
+			_, uu := flc.AsUnitToUnit()
+			if fid == enums.FIDMotorola && (gv || uu) {
 				t.Errorf("FID %#x FLCO %d: variant decoded for a manufacturer FID", fid, flco)
 			}
 		}

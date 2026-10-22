@@ -9,7 +9,6 @@
 package pdu
 
 import (
-	"errors"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
@@ -199,74 +198,13 @@ func (s *ShortLCPSysParms) String() string {
 
 // DecodeShortLC decodes a ShortLC. data holds the 36 bits of the PDU packed,
 // the first bit in the most significant bit of data[0]. The low 4 bits of
-// data[4] are ignored. It allocates the payload struct that the dispatch
-// field points to; DecodeShortLCInto does not.
-// (ETSI TS 102 361-1 clause 9.1.7)
+// data[4] are ignored. (ETSI TS 102 361-1 clause 9.1.7)
 func DecodeShortLC(data [5]byte) ShortLC {
 	var result ShortLC
 	result.FEC.Uncorrectable = !crc.CheckCRC8(data[:], 28, uint8((uint64(data[3])<<8|uint64(data[4]))>>4&0xFF))
 	result.SLCO = enums.SLCO(uint64(data[0]) >> 4)
-	var _dispatchBytes [3]byte
-	bits.Copy(_dispatchBytes[:], 0, data[:], 4, 24)
-	switch result.SLCO {
-	case enums.SLCONullMessage:
-		_decoded := decodeShortLCNullMessage(_dispatchBytes)
-		result.NullMessage = &_decoded
-	case enums.SLCOActivityUpdate:
-		_decoded := decodeShortLCActivityUpdate(_dispatchBytes)
-		result.ActivityUpdate = &_decoded
-	case enums.SLCOCSysParms:
-		_decoded := decodeShortLCCSysParms(_dispatchBytes)
-		result.CSysParms = &_decoded
-	case enums.SLCOPSysParms:
-		_decoded := decodeShortLCPSysParms(_dispatchBytes)
-		result.PSysParms = &_decoded
-	default:
-		bits.Copy(result.RawPayload[:], 0, data[:], 4, 24)
-	}
+	bits.Copy(result.RawPayload[:], 0, data[:], 4, 24)
 	return result
-}
-
-// ShortLCPayloads holds one payload struct of each type that
-// a ShortLC dispatch field points to, for DecodeShortLCInto.
-// The zero value is ready to use.
-type ShortLCPayloads struct {
-	shortLCNullMessage    ShortLCNullMessage
-	shortLCActivityUpdate ShortLCActivityUpdate
-	shortLCCSysParms      ShortLCCSysParms
-	shortLCPSysParms      ShortLCPSysParms
-}
-
-// DecodeShortLCInto decodes data into dst as DecodeShortLC does,
-// but points the dispatch field of dst into p, so it does not allocate.
-// The payload stays valid until the next decode into p. A nil dst or
-// p does nothing.
-func DecodeShortLCInto(dst *ShortLC, p *ShortLCPayloads, data [5]byte) {
-	if dst == nil || p == nil {
-		return
-	}
-	*dst = ShortLC{}
-	result := dst
-	result.FEC.Uncorrectable = !crc.CheckCRC8(data[:], 28, uint8((uint64(data[3])<<8|uint64(data[4]))>>4&0xFF))
-	result.SLCO = enums.SLCO(uint64(data[0]) >> 4)
-	var _dispatchBytes [3]byte
-	bits.Copy(_dispatchBytes[:], 0, data[:], 4, 24)
-	switch result.SLCO {
-	case enums.SLCONullMessage:
-		p.shortLCNullMessage = decodeShortLCNullMessage(_dispatchBytes)
-		result.NullMessage = &p.shortLCNullMessage
-	case enums.SLCOActivityUpdate:
-		p.shortLCActivityUpdate = decodeShortLCActivityUpdate(_dispatchBytes)
-		result.ActivityUpdate = &p.shortLCActivityUpdate
-	case enums.SLCOCSysParms:
-		p.shortLCCSysParms = decodeShortLCCSysParms(_dispatchBytes)
-		result.CSysParms = &p.shortLCCSysParms
-	case enums.SLCOPSysParms:
-		p.shortLCPSysParms = decodeShortLCPSysParms(_dispatchBytes)
-		result.PSysParms = &p.shortLCPSysParms
-	default:
-		bits.Copy(result.RawPayload[:], 0, data[:], 4, 24)
-	}
 }
 
 // Encode encodes a ShortLC. It returns the 36 bits packed, the first bit in
@@ -278,78 +216,11 @@ func (s *ShortLC) Encode() ([5]byte, error) {
 	}
 
 	var data [5]byte
-	_payload := ""
-	if s.NullMessage != nil {
-		_payload = "NullMessage"
-	}
-	if s.ActivityUpdate != nil {
-		if _payload != "" {
-			return [5]byte{}, errShortLCPayloads
-		}
-		_payload = "ActivityUpdate"
-	}
-	if s.CSysParms != nil {
-		if _payload != "" {
-			return [5]byte{}, errShortLCPayloads
-		}
-		_payload = "CSysParms"
-	}
-	if s.PSysParms != nil {
-		if _payload != "" {
-			return [5]byte{}, errShortLCPayloads
-		}
-		_payload = "PSysParms"
-	}
-	switch {
-	case s.NullMessage != nil:
-		_pduBytes, err := s.NullMessage.Encode()
-		if err != nil {
-			return [5]byte{}, err
-		}
-		bits.Copy(data[:], 4, _pduBytes[:], 0, 24)
-	case s.ActivityUpdate != nil:
-		_pduBytes, err := s.ActivityUpdate.Encode()
-		if err != nil {
-			return [5]byte{}, err
-		}
-		bits.Copy(data[:], 4, _pduBytes[:], 0, 24)
-	case s.CSysParms != nil:
-		_pduBytes, err := s.CSysParms.Encode()
-		if err != nil {
-			return [5]byte{}, err
-		}
-		bits.Copy(data[:], 4, _pduBytes[:], 0, 24)
-	case s.PSysParms != nil:
-		_pduBytes, err := s.PSysParms.Encode()
-		if err != nil {
-			return [5]byte{}, err
-		}
-		bits.Copy(data[:], 4, _pduBytes[:], 0, 24)
-	default:
-		bits.Copy(data[:], 4, s.RawPayload[:], 0, 24)
-	}
 	if uint64(s.SLCO)>>4 != 0 {
 		return [5]byte{}, errShortLCSLCORange
 	}
 	data[0] = data[0]&^0xF0 | byte(uint64(s.SLCO)<<4)&0xF0
-	if _payload != "" {
-		var result ShortLC
-		result.SLCO = enums.SLCO(uint64(data[0]) >> 4)
-		_want := "RawPayload"
-		switch result.SLCO {
-		case enums.SLCONullMessage:
-			_want = "NullMessage"
-		case enums.SLCOActivityUpdate:
-			_want = "ActivityUpdate"
-		case enums.SLCOCSysParms:
-			_want = "CSysParms"
-		case enums.SLCOPSysParms:
-			_want = "PSysParms"
-		}
-		if _payload != _want {
-			return [5]byte{}, errShortLCPayload
-		}
-	}
+	bits.Copy(data[:], 4, s.RawPayload[:], 0, 24)
 	_crcVal := uint64(crc.CRC8(data[:], 28))
 	data[3] = data[3]&^0x0F | byte(_crcVal>>4)&0x0F
 	data[4] = data[4]&^0xF0 | byte(_crcVal<<4)&0xF0
@@ -365,20 +236,139 @@ func (s *ShortLC) String() string {
 
 	_ret := "ShortLC{ "
 	_ret += "SLCO: " + s.SLCO.String() + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, "
-	switch {
-	case s.NullMessage != nil:
-		_ret += s.NullMessage.String()
-	case s.ActivityUpdate != nil:
-		_ret += s.ActivityUpdate.String()
-	case s.CSysParms != nil:
-		_ret += s.CSysParms.String()
-	case s.PSysParms != nil:
-		_ret += s.PSysParms.String()
-	default:
+	if v, ok := s.AsNullMessage(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsActivityUpdate(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsCSysParms(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsPSysParms(); ok {
+		_ret += v.String()
+	} else {
 		_ret += "RawPayload: " + text.Hex(s.RawPayload[:])
 	}
 	_ret += " }"
 	return _ret
+}
+
+// AsNullMessage decodes RawPayload as a ShortLCNullMessage payload. ok is
+// false unless SLCO is enums.SLCONullMessage.
+func (s *ShortLC) AsNullMessage() (p ShortLCNullMessage, ok bool) {
+	if s == nil {
+		return ShortLCNullMessage{}, false
+	}
+
+	if !(s.SLCO == enums.SLCONullMessage) {
+		return p, false
+	}
+	return decodeShortLCNullMessage(s.RawPayload), true
+}
+
+// SetNullMessage makes s carry p as a ShortLCNullMessage payload: it sets
+// SLCO to enums.SLCONullMessage and RawPayload, and keeps the other fields.
+// It returns the error of p.Encode, and then leaves s as it is.
+func (s *ShortLC) SetNullMessage(p ShortLCNullMessage) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.SLCO = enums.SLCONullMessage
+	s.RawPayload = raw
+	return nil
+}
+
+// AsActivityUpdate decodes RawPayload as a ShortLCActivityUpdate payload. ok
+// is false unless SLCO is enums.SLCOActivityUpdate.
+func (s *ShortLC) AsActivityUpdate() (p ShortLCActivityUpdate, ok bool) {
+	if s == nil {
+		return ShortLCActivityUpdate{}, false
+	}
+
+	if !(s.SLCO == enums.SLCOActivityUpdate) {
+		return p, false
+	}
+	return decodeShortLCActivityUpdate(s.RawPayload), true
+}
+
+// SetActivityUpdate makes s carry p as a ShortLCActivityUpdate payload: it
+// sets SLCO to enums.SLCOActivityUpdate and RawPayload, and keeps the other
+// fields. It returns the error of p.Encode, and then leaves s as it is.
+func (s *ShortLC) SetActivityUpdate(p ShortLCActivityUpdate) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.SLCO = enums.SLCOActivityUpdate
+	s.RawPayload = raw
+	return nil
+}
+
+// AsCSysParms decodes RawPayload as a ShortLCCSysParms payload. ok is false
+// unless SLCO is enums.SLCOCSysParms.
+func (s *ShortLC) AsCSysParms() (p ShortLCCSysParms, ok bool) {
+	if s == nil {
+		return ShortLCCSysParms{}, false
+	}
+
+	if !(s.SLCO == enums.SLCOCSysParms) {
+		return p, false
+	}
+	return decodeShortLCCSysParms(s.RawPayload), true
+}
+
+// SetCSysParms makes s carry p as a ShortLCCSysParms payload: it sets SLCO
+// to enums.SLCOCSysParms and RawPayload, and keeps the other fields. It
+// returns the error of p.Encode, and then leaves s as it is.
+func (s *ShortLC) SetCSysParms(p ShortLCCSysParms) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.SLCO = enums.SLCOCSysParms
+	s.RawPayload = raw
+	return nil
+}
+
+// AsPSysParms decodes RawPayload as a ShortLCPSysParms payload. ok is false
+// unless SLCO is enums.SLCOPSysParms.
+func (s *ShortLC) AsPSysParms() (p ShortLCPSysParms, ok bool) {
+	if s == nil {
+		return ShortLCPSysParms{}, false
+	}
+
+	if !(s.SLCO == enums.SLCOPSysParms) {
+		return p, false
+	}
+	return decodeShortLCPSysParms(s.RawPayload), true
+}
+
+// SetPSysParms makes s carry p as a ShortLCPSysParms payload: it sets SLCO
+// to enums.SLCOPSysParms and RawPayload, and keeps the other fields. It
+// returns the error of p.Encode, and then leaves s as it is.
+func (s *ShortLC) SetPSysParms(p ShortLCPSysParms) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.SLCO = enums.SLCOPSysParms
+	s.RawPayload = raw
+	return nil
 }
 
 var (
@@ -427,11 +417,9 @@ var (
 		Field: "CommonSlotCounter",
 		Type:  "ShortLCPSysParms",
 	}
-	errShortLCPayloads  = errors.New("ShortLC: more than one payload field is set")
 	errShortLCSLCORange = &dmrgo.FieldRangeError{
 		Bits:  4,
 		Field: "SLCO",
 		Type:  "ShortLC",
 	}
-	errShortLCPayload = errors.New("ShortLC: the payload field that is set is not the one that SLCO selects")
 )

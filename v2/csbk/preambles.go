@@ -3,7 +3,6 @@ package csbk
 import (
 	"time"
 
-	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -115,8 +114,8 @@ func (p *Preambles) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, d
 	kind, c, octets := classify(b)
 	switch kind {
 	case rxCSBK:
-		if c.FID == enums.FIDStandardized && c.PreamblePDU != nil {
-			return p.preamble(now, c.PreamblePDU, dst)
+		if pre, ok := c.AsPreamble(); ok {
+			return p.preamble(now, &pre, dst)
 		}
 		return p.join(dst, false, &octets)
 	case rxMBCHeader:

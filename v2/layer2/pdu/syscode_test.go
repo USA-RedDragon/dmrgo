@@ -71,13 +71,19 @@ func TestSysCode_ShortLCSysParms(t *testing.T) {
 	if must(c.NetID()) != code.Net || must(c.SiteID()) != code.Site || must(c.SysCode()) != code {
 		t.Errorf("C_SYS_Parms: net %d site %d code %+v", must(c.NetID()), must(c.SiteID()), must(c.SysCode()))
 	}
-	slc := pdu.ShortLC{SLCO: enums.SLCOCSysParms, CSysParms: &c}
+	var slc pdu.ShortLC
+	if err := slc.SetCSysParms(c); err != nil {
+		t.Fatal(err)
+	}
+	if slc.SLCO != enums.SLCOCSysParms {
+		t.Errorf("SetCSysParms: SLCO %v", slc.SLCO)
+	}
 	bits, err := slc.Encode()
 	if err != nil {
 		t.Fatal(err)
 	}
 	got := pdu.DecodeShortLC(bits)
-	if got.CSysParms == nil || must(got.CSysParms.SysCode()) != code {
+	if gc, ok := got.AsCSysParms(); !ok || must(gc.SysCode()) != code {
 		t.Errorf("decoded %s", got.String())
 	}
 

@@ -28,7 +28,9 @@ func TestCSBKBytes_SMSCaptures(t *testing.T) {
 			if !c.CRCOK() || c.Opcode() != pdu.CSBKPreamble || c.Opcode() != dc.Opcode || c.FID() != dc.FID {
 				t.Fatalf("%s burst %d: CRC %t, opcode %s", name, i, c.CRCOK(), c.Opcode())
 			}
-			if d := pdu.DecodeCSBK(c); d.PreamblePDU == nil || *d.PreamblePDU != *dc.PreamblePDU {
+			pre, preOK := dc.AsPreamble()
+			d := pdu.DecodeCSBK(c)
+			if dp, ok := d.AsPreamble(); !ok || !preOK || dp != pre {
 				t.Fatalf("%s burst %d: DecodeCSBK differs from the burst decode", name, i)
 			}
 			if must(dc.Encode()) != p {
@@ -38,7 +40,7 @@ func TestCSBKBytes_SMSCaptures(t *testing.T) {
 			wantT, wantS, _ := dc.Addresses()
 			gotT, gotS, ok := c.Addresses()
 			g, gok := c.Group()
-			if !ok || !gok || gotT != wantT || gotS != wantS || g != dc.PreamblePDU.Group {
+			if !ok || !gok || gotT != wantT || gotS != wantS || g != pre.Group {
 				t.Fatalf("%s burst %d: Addresses %d %d %t, Group %t %t", name, i, gotT, gotS, ok, g, gok)
 			}
 			editPreamble(t, fmt.Sprintf("%s burst %d", name, i), r, c, dc, rng)
@@ -72,10 +74,10 @@ func editPreamble(t *testing.T, where string, r layer2.RawBurst, c pdu.CSBKBytes
 		}
 	}
 	want := *dc
-	pre := *dc.PreamblePDU
-	want.PreamblePDU = &pre
 	noErr(want.SetAddresses(newT, newS))
-	want.PreamblePDU.Group = newG
+	pre, _ := want.AsPreamble()
+	pre.Group = newG
+	noErr(want.SetPreamble(pre))
 	if must(want.Encode()) != [12]byte(e) {
 		t.Fatalf("%s: CSBKBytes edit %x, CSBK edit %x", where, e, must(want.Encode()))
 	}
@@ -89,7 +91,8 @@ func editPreamble(t *testing.T, where string, r layer2.RawBurst, c pdu.CSBKBytes
 	if !ok || nb.FEC.PDU.HasErrors() {
 		t.Fatalf("%s: edited burst does not decode as a clean CSBK", where)
 	}
-	if dt, ds, _ := nc.Addresses(); dt != newT || ds != newS || nc.PreamblePDU.Group != newG {
-		t.Fatalf("%s: edited CSBK decodes as %d %d %t", where, dt, ds, nc.PreamblePDU.Group)
+	np, npOK := nc.AsPreamble()
+	if dt, ds, _ := nc.Addresses(); !npOK || dt != newT || ds != newS || np.Group != newG {
+		t.Fatalf("%s: edited CSBK decodes as %d %d %t", where, dt, ds, np.Group)
 	}
 }

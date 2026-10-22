@@ -30,13 +30,9 @@ func silenceSlot() [9]byte {
 }
 
 func groupLC(fid enums.FID) pdu.FullLinkControl {
-	gv := &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3191868}
-	lc := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, FID: fid}
-	if fid == enums.FIDStandardized {
-		lc.GroupVoice = gv
-	} else {
-		lc.RawPayload = must(gv.Encode())
-	}
+	var lc pdu.FullLinkControl
+	mustSet(lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3191868}))
+	lc.FID = fid
 	return lc
 }
 

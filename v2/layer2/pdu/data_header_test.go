@@ -34,17 +34,18 @@ func TestDataHeader_UnconfirmedDecode(t *testing.T) {
 	if dh.DataType() != enums.DataTypeDataHeader {
 		t.Errorf("DataType() = %d, want DataTypeDataHeader", dh.DataType())
 	}
-	if dh.UnconfirmedDataHeader == nil {
-		t.Fatal("UnconfirmedDataHeader should not be nil")
+	u, ok := dh.AsUnconfirmedDataHeader()
+	if !ok {
+		t.Fatal("AsUnconfirmedDataHeader should be ok")
 	}
-	if !dh.UnconfirmedDataHeader.Group {
+	if !u.Group {
 		t.Error("Group should be true")
 	}
-	if !dh.UnconfirmedDataHeader.FullMessageFlag {
+	if !u.FullMessageFlag {
 		t.Error("FullMessageFlag should be true")
 	}
-	if dh.UnconfirmedDataHeader.BlocksToFollow != 10 {
-		t.Errorf("BlocksToFollow = %d, want 10", dh.UnconfirmedDataHeader.BlocksToFollow)
+	if u.BlocksToFollow != 10 {
+		t.Errorf("BlocksToFollow = %d, want 10", u.BlocksToFollow)
 	}
 
 	s := dh.String()
@@ -90,14 +91,14 @@ func TestDataHeader_FormatDispatch(t *testing.T) {
 			if fecResult.Uncorrectable {
 				t.Fatalf("DecodeDataHeader returned uncorrectable FEC for format %s", tt.name)
 			}
-			if dh.UnconfirmedDataHeader != nil {
-				t.Errorf("format %s should have nil UnconfirmedDataHeader", tt.name)
+			if _, ok := dh.AsUnconfirmedDataHeader(); ok {
+				t.Errorf("format %s should not be a U_HEAD", tt.name)
 			}
-			if tt.name == "UDT" && dh.UDTHeader == nil {
-				t.Error("UDT format should populate UDTHeader")
+			if _, ok := dh.AsUDTHeader(); tt.name == "UDT" && !ok {
+				t.Error("UDT format should be a UDT_HEAD")
 			}
-			if tt.name == "Proprietary" && dh.ProprietaryHeader == nil {
-				t.Error("Proprietary format should populate ProprietaryHeader")
+			if _, ok := dh.AsProprietaryHeader(); tt.name == "Proprietary" && !ok {
+				t.Error("Proprietary format should be a P_HEAD")
 			}
 		})
 	}
@@ -115,21 +116,21 @@ func buildDataHeader(setup func(b *[12]byte)) [12]byte {
 
 func TestDataHeader_Confirmed_RoundTrip(t *testing.T) {
 	t.Parallel()
-	original := &pdu.DataHeader{
-		Format: pdu.FormatConfirmed,
-		ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
-			Group:                  true,
-			ResponseRequested:      false,
-			PadOctetCount:          17,
-			SAP:                    4,
-			LLIDDestination:        9990,
-			LLIDSource:             3120101,
-			FullMessageFlag:        true,
-			BlocksToFollow:         10,
-			ReSynchronizeFlag:      true,
-			SendSequenceNumber:     3,
-			FragmentSequenceNumber: 7,
-		},
+	var original pdu.DataHeader
+	if err := original.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{
+		Group:                  true,
+		ResponseRequested:      false,
+		PadOctetCount:          17,
+		SAP:                    4,
+		LLIDDestination:        9990,
+		LLIDSource:             3120101,
+		FullMessageFlag:        true,
+		BlocksToFollow:         10,
+		ReSynchronizeFlag:      true,
+		SendSequenceNumber:     3,
+		FragmentSequenceNumber: 7,
+	}); err != nil {
+		t.Fatal(err)
 	}
 
 	infoBits := must(original.Encode())
@@ -138,13 +139,13 @@ func TestDataHeader_Confirmed_RoundTrip(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
 	}
-	if decoded.Format != pdu.FormatConfirmed {
-		t.Errorf("Format = %d, want FormatConfirmed", decoded.Format)
+	if decoded.Format() != pdu.FormatConfirmed {
+		t.Errorf("Format = %d, want FormatConfirmed", decoded.Format())
 	}
-	if decoded.ConfirmedDataHeader == nil {
-		t.Fatal("ConfirmedDataHeader is nil")
+	cdh, ok := decoded.AsConfirmedDataHeader()
+	if !ok {
+		t.Fatal("AsConfirmedDataHeader is not ok")
 	}
-	cdh := decoded.ConfirmedDataHeader
 	if !cdh.Group {
 		t.Error("Group should be true")
 	}
@@ -179,17 +180,17 @@ func TestDataHeader_Confirmed_RoundTrip(t *testing.T) {
 
 func TestDataHeader_ResponsePacket_RoundTrip(t *testing.T) {
 	t.Parallel()
-	original := &pdu.DataHeader{
-		Format: pdu.FormatResponsePacket,
-		ResponsePacketHeader: &pdu.ResponsePacketHeader{
-			SAP:             4,
-			LLIDDestination: 100,
-			LLIDSource:      200,
-			BlocksToFollow:  5,
-			ResponseClass:   1,
-			ResponseType:    3,
-			ResponseStatus:  2,
-		},
+	var original pdu.DataHeader
+	if err := original.SetResponsePacketHeader(pdu.ResponsePacketHeader{
+		SAP:             4,
+		LLIDDestination: 100,
+		LLIDSource:      200,
+		BlocksToFollow:  5,
+		ResponseClass:   1,
+		ResponseType:    3,
+		ResponseStatus:  2,
+	}); err != nil {
+		t.Fatal(err)
 	}
 
 	infoBits := must(original.Encode())
@@ -198,13 +199,13 @@ func TestDataHeader_ResponsePacket_RoundTrip(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
 	}
-	if decoded.Format != pdu.FormatResponsePacket {
-		t.Errorf("Format = %d, want FormatResponsePacket", decoded.Format)
+	if decoded.Format() != pdu.FormatResponsePacket {
+		t.Errorf("Format = %d, want FormatResponsePacket", decoded.Format())
 	}
-	if decoded.ResponsePacketHeader == nil {
-		t.Fatal("ResponsePacketHeader is nil")
+	rph, ok := decoded.AsResponsePacketHeader()
+	if !ok {
+		t.Fatal("AsResponsePacketHeader is not ok")
 	}
-	rph := decoded.ResponsePacketHeader
 	if rph.SAP != 4 {
 		t.Errorf("SAP = %d, want 4", rph.SAP)
 	}
@@ -230,21 +231,20 @@ func TestDataHeader_ResponsePacket_RoundTrip(t *testing.T) {
 
 func TestDataHeader_DefinedData_RoundTrip(t *testing.T) {
 	t.Parallel()
-	original := &pdu.DataHeader{
-		Format:         pdu.FormatShortDataDefined,
-		AppendedBlocks: 3,
-		DefinedDataHeader: &pdu.DefinedDataHeader{
-			Group:             true,
-			ResponseRequested: false,
-			AppendedBlocks:    3,
-			SAP:               10,
-			LLIDDestination:   5000,
-			LLIDSource:        6000,
-			DefinedData:       15,
-			SARQ:              true,
-			FullMessageFlag:   true,
-			BitPadding:        0,
-		},
+	var original pdu.DataHeader
+	if err := original.SetDefinedDataHeader(pdu.DefinedDataHeader{
+		Group:             true,
+		ResponseRequested: false,
+		AppendedBlocks:    3,
+		SAP:               10,
+		LLIDDestination:   5000,
+		LLIDSource:        6000,
+		DefinedData:       15,
+		SARQ:              true,
+		FullMessageFlag:   true,
+		BitPadding:        0,
+	}); err != nil {
+		t.Fatal(err)
 	}
 
 	infoBits := must(original.Encode())
@@ -253,13 +253,13 @@ func TestDataHeader_DefinedData_RoundTrip(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
 	}
-	if decoded.Format != pdu.FormatShortDataDefined {
-		t.Errorf("Format = %d, want FormatShortDataDefined", decoded.Format)
+	if decoded.Format() != pdu.FormatShortDataDefined {
+		t.Errorf("Format = %d, want FormatShortDataDefined", decoded.Format())
 	}
-	if decoded.DefinedDataHeader == nil {
-		t.Fatal("DefinedDataHeader is nil")
+	ddh, ok := decoded.AsDefinedDataHeader()
+	if !ok {
+		t.Fatal("AsDefinedDataHeader is not ok")
 	}
-	ddh := decoded.DefinedDataHeader
 	if !ddh.Group {
 		t.Error("Group should be true")
 	}
@@ -288,22 +288,21 @@ func TestDataHeader_DefinedData_RoundTrip(t *testing.T) {
 
 func TestDataHeader_RawData_RoundTrip(t *testing.T) {
 	t.Parallel()
-	original := &pdu.DataHeader{
-		Format:         pdu.FormatShortDataRawOrStatusPrecoded,
-		AppendedBlocks: 2,
-		RawDataHeader: &pdu.RawDataHeader{
-			Group:             true,
-			ResponseRequested: true,
-			AppendedBlocks:    2,
-			SAP:               10,
-			LLIDDestination:   1000,
-			LLIDSource:        2000,
-			SourcePort:        3,
-			DestinationPort:   5,
-			SARQ:              false,
-			FullMessageFlag:   true,
-			BitPadding:        0,
-		},
+	var original pdu.DataHeader
+	if err := original.SetRawDataHeader(pdu.RawDataHeader{
+		Group:             true,
+		ResponseRequested: true,
+		AppendedBlocks:    2,
+		SAP:               10,
+		LLIDDestination:   1000,
+		LLIDSource:        2000,
+		SourcePort:        3,
+		DestinationPort:   5,
+		SARQ:              false,
+		FullMessageFlag:   true,
+		BitPadding:        0,
+	}); err != nil {
+		t.Fatal(err)
 	}
 
 	infoBits := must(original.Encode())
@@ -312,13 +311,13 @@ func TestDataHeader_RawData_RoundTrip(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
 	}
-	if decoded.Format != pdu.FormatShortDataRawOrStatusPrecoded {
-		t.Errorf("Format = %d, want FormatShortDataRawOrStatusPrecoded", decoded.Format)
+	if decoded.Format() != pdu.FormatShortDataRawOrStatusPrecoded {
+		t.Errorf("Format = %d, want FormatShortDataRawOrStatusPrecoded", decoded.Format())
 	}
-	if decoded.RawDataHeader == nil {
-		t.Fatal("RawDataHeader is nil")
+	rdh, ok := decoded.AsRawDataHeader()
+	if !ok {
+		t.Fatal("AsRawDataHeader is not ok")
 	}
-	rdh := decoded.RawDataHeader
 	if !rdh.Group {
 		t.Error("Group should be true")
 	}
@@ -337,26 +336,25 @@ func TestDataHeader_RawData_RoundTrip(t *testing.T) {
 	if !rdh.FullMessageFlag {
 		t.Error("FullMessageFlag should be true")
 	}
-	if decoded.StatusPrecodedHeader != nil {
-		t.Error("StatusPrecodedHeader should be nil for non-zero AppendedBlocks")
+	if _, ok := decoded.AsStatusPrecodedHeader(); ok {
+		t.Error("AsStatusPrecodedHeader should not be ok for non-zero AppendedBlocks")
 	}
 }
 
 func TestDataHeader_StatusPrecoded_RoundTrip(t *testing.T) {
 	t.Parallel()
-	original := &pdu.DataHeader{
-		Format:         pdu.FormatShortDataRawOrStatusPrecoded,
-		AppendedBlocks: 0,
-		StatusPrecodedHeader: &pdu.StatusPrecodedHeader{
-			Group:             false,
-			ResponseRequested: true,
-			SAP:               10,
-			LLIDDestination:   3000,
-			LLIDSource:        4000,
-			SourcePort:        1,
-			DestinationPort:   2,
-			StatusPrecoded:    512,
-		},
+	var original pdu.DataHeader
+	if err := original.SetStatusPrecodedHeader(pdu.StatusPrecodedHeader{
+		Group:             false,
+		ResponseRequested: true,
+		SAP:               10,
+		LLIDDestination:   3000,
+		LLIDSource:        4000,
+		SourcePort:        1,
+		DestinationPort:   2,
+		StatusPrecoded:    512,
+	}); err != nil {
+		t.Fatal(err)
 	}
 
 	infoBits := must(original.Encode())
@@ -365,13 +363,13 @@ func TestDataHeader_StatusPrecoded_RoundTrip(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeDataHeader returned uncorrectable FEC")
 	}
-	if decoded.Format != pdu.FormatShortDataRawOrStatusPrecoded {
-		t.Errorf("Format = %d, want FormatShortDataRawOrStatusPrecoded", decoded.Format)
+	if decoded.Format() != pdu.FormatShortDataRawOrStatusPrecoded {
+		t.Errorf("Format = %d, want FormatShortDataRawOrStatusPrecoded", decoded.Format())
 	}
-	if decoded.StatusPrecodedHeader == nil {
-		t.Fatal("StatusPrecodedHeader is nil")
+	sph, ok := decoded.AsStatusPrecodedHeader()
+	if !ok {
+		t.Fatal("AsStatusPrecodedHeader is not ok")
 	}
-	sph := decoded.StatusPrecodedHeader
 	if sph.ResponseRequested != true {
 		t.Error("ResponseRequested should be true")
 	}
@@ -390,8 +388,8 @@ func TestDataHeader_StatusPrecoded_RoundTrip(t *testing.T) {
 	if sph.StatusPrecoded != 512 {
 		t.Errorf("StatusPrecoded = %d, want 512", sph.StatusPrecoded)
 	}
-	if decoded.RawDataHeader != nil {
-		t.Error("RawDataHeader should be nil for zero AppendedBlocks")
+	if _, ok := decoded.AsRawDataHeader(); ok {
+		t.Error("AsRawDataHeader should not be ok for zero AppendedBlocks")
 	}
 }
 
@@ -417,12 +415,12 @@ func TestDataHeader_UDT_Decode(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected CRC failure")
 	}
-	if dh.Format != pdu.FormatUnifiedDataTransport {
-		t.Fatalf("Format = %d, want UDT", dh.Format)
+	if dh.Format() != pdu.FormatUnifiedDataTransport {
+		t.Fatalf("Format = %d, want UDT", dh.Format())
 	}
-	u := dh.UDTHeader
-	if u == nil {
-		t.Fatal("UDTHeader should not be nil")
+	u, ok := dh.AsUDTHeader()
+	if !ok {
+		t.Fatal("AsUDTHeader should be ok")
 	}
 	if !u.Group || u.ResponseRequested || !u.Emergency || !u.OptionFlag {
 		t.Errorf("octet 0 flags = G:%t A:%t E:%t Opt:%t, want G/E/Opt set and A clear", u.Group, u.ResponseRequested, u.Emergency, u.OptionFlag)
@@ -449,27 +447,28 @@ func TestDataHeader_UDT_Decode(t *testing.T) {
 
 func TestDataHeader_UDT_RoundTrip(t *testing.T) {
 	t.Parallel()
-	original := &pdu.DataHeader{
-		Format: pdu.FormatUnifiedDataTransport,
-		UDTHeader: &pdu.UDTHeader{
-			ResponseRequested: true,
-			OptionFlag:        true,
-			UDTFormat:         0b0111,
-			LLIDDestination:   0xFFFED4,
-			LLIDSource:        3120101,
-			PadNibble:         7,
-			AppendedBlocks:    3,
-			ProtectFlag:       true,
-			Opcode:            pdu.UDTOpcodeInboundHeader,
-		},
+	var original pdu.DataHeader
+	if err := original.SetUDTHeader(pdu.UDTHeader{
+		ResponseRequested: true,
+		OptionFlag:        true,
+		UDTFormat:         0b0111,
+		LLIDDestination:   0xFFFED4,
+		LLIDSource:        3120101,
+		PadNibble:         7,
+		AppendedBlocks:    3,
+		ProtectFlag:       true,
+		Opcode:            pdu.UDTOpcodeInboundHeader,
+	}); err != nil {
+		t.Fatal(err)
 	}
 	decoded := pdu.DecodeDataHeader(must(original.Encode()))
 	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected CRC failure")
 	}
-	if decoded.UDTHeader == nil || *decoded.UDTHeader != *original.UDTHeader {
-		t.Errorf("round trip = %+v, want %+v", decoded.UDTHeader, original.UDTHeader)
+	want, _ := original.AsUDTHeader()
+	if got, ok := decoded.AsUDTHeader(); !ok || got != want {
+		t.Errorf("round trip = %+v (%t), want %+v", got, ok, want)
 	}
 }
 
@@ -488,9 +487,9 @@ func TestDataHeader_Proprietary_Decode(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected CRC failure")
 	}
-	p := dh.ProprietaryHeader
-	if p == nil {
-		t.Fatal("ProprietaryHeader should not be nil")
+	p, ok := dh.AsProprietaryHeader()
+	if !ok {
+		t.Fatal("AsProprietaryHeader should be ok")
 	}
 	if p.SAP != 0b1001 || p.MFID != 0x10 {
 		t.Errorf("SAP=%d MFID=0x%02X, want 9 0x10", p.SAP, p.MFID)
@@ -508,17 +507,18 @@ func TestDataHeader_Proprietary_RoundTrip(t *testing.T) {
 	var mfData [8]byte
 	bits.SetBit(mfData[:], 3, 1)
 	bits.SetBit(mfData[:], 40, 1)
-	original := &pdu.DataHeader{
-		Format:            pdu.FormatProprietary,
-		ProprietaryHeader: &pdu.ProprietaryHeader{SAP: 9, MFID: 0x68, ManufacturerData: mfData},
+	want := pdu.ProprietaryHeader{SAP: 9, MFID: 0x68, ManufacturerData: mfData}
+	var original pdu.DataHeader
+	if err := original.SetProprietaryHeader(want); err != nil {
+		t.Fatal(err)
 	}
 	decoded := pdu.DecodeDataHeader(must(original.Encode()))
 	fecResult := decoded.FEC
 	if fecResult.Uncorrectable {
 		t.Fatal("unexpected CRC failure")
 	}
-	if decoded.ProprietaryHeader == nil || *decoded.ProprietaryHeader != *original.ProprietaryHeader {
-		t.Errorf("round trip = %+v, want %+v", decoded.ProprietaryHeader, original.ProprietaryHeader)
+	if got, ok := decoded.AsProprietaryHeader(); !ok || got != want {
+		t.Errorf("round trip = %+v (%t), want %+v", got, ok, want)
 	}
 }
 
@@ -536,8 +536,8 @@ func TestDataHeader_ReservedFormat_RoundTrip(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("CRC failed")
 	}
-	if dh.Format != 0b0100 {
-		t.Fatalf("Format = %04b, want 0100", dh.Format)
+	if dh.Format() != 0b0100 {
+		t.Fatalf("Format = %04b, want 0100", dh.Format())
 	}
 	if got := must(dh.Encode()); got != in {
 		t.Errorf("Encode(Decode(x)) = %v, want %v", got, in)
@@ -597,28 +597,26 @@ func TestDataHeader_AppendedBlocksOnlyForShortData(t *testing.T) {
 	t.Parallel()
 
 	uhead := [12]byte{0x02, 0x3b, 0x2f, 0xeb, 0xf6, 0x30, 0xb4, 0x3c, 0x88, 0x00, 0xe5, 0x00}
-	var into pdu.DataHeader
-	var p pdu.DataHeaderPayloads
-	pdu.DecodeDataHeaderInto(&into, &p, uhead)
-	for _, dh := range []pdu.DataHeader{pdu.DecodeDataHeader(uhead), into} {
-		if dh.FEC.Uncorrectable || dh.UnconfirmedDataHeader == nil {
-			t.Fatalf("U_HEAD did not decode: %s", dh.String())
-		}
-		if u := dh.UnconfirmedDataHeader; u.PadOctetCount != 11 || u.BlocksToFollow != 8 {
-			t.Fatalf("POC %d BF %d, want 11 and 8", u.PadOctetCount, u.BlocksToFollow)
-		}
-		if dh.AppendedBlocks != 0 {
-			t.Errorf("U_HEAD AppendedBlocks = %d, want 0", dh.AppendedBlocks)
-		}
-		if s := dh.String(); strings.Contains(s, "AppendedBlocks: 11") {
-			t.Errorf("String shows the POC as AppendedBlocks: %s", s)
-		}
+	dh := pdu.DecodeDataHeader(uhead)
+	u, ok := dh.AsUnconfirmedDataHeader()
+	if dh.FEC.Uncorrectable || !ok {
+		t.Fatalf("U_HEAD did not decode: %s", dh.String())
+	}
+	if u.PadOctetCount != 11 || u.BlocksToFollow != 8 {
+		t.Fatalf("POC %d BF %d, want 11 and 8", u.PadOctetCount, u.BlocksToFollow)
+	}
+	if dh.AppendedBlocks() != 0 {
+		t.Errorf("U_HEAD AppendedBlocks = %d, want 0", dh.AppendedBlocks())
+	}
+	if s := dh.String(); strings.Contains(s, "AppendedBlocks: 11") {
+		t.Errorf("String shows the POC as AppendedBlocks: %s", s)
 	}
 	for _, f := range []pdu.Format{pdu.FormatShortDataDefined, pdu.FormatShortDataRawOrStatusPrecoded} {
 		h := uhead
 		h[0] = h[0]&^0x3F | 0x20 | byte(f)
 		h[1] = h[1]&^0x0F | 0x05
-		if got := pdu.DecodeDataHeader(h).AppendedBlocks; got != 0x25 {
+		dh := pdu.DecodeDataHeader(h)
+		if got := dh.AppendedBlocks(); got != 0x25 {
 			t.Errorf("format %d: AppendedBlocks = %d, want %d", f, got, 0x25)
 		}
 	}

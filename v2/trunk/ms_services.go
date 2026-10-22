@@ -75,8 +75,7 @@ type msSvc struct {
 	massAt      time.Duration
 	massEnd     time.Duration
 
-	txAckvit pdu.AckvitationPDU
-	up       Appended
+	up Appended
 }
 
 func (m *MS) initSvc(cfg *MSConfig) error {
@@ -328,16 +327,18 @@ func (m *MS) AdviseIP(now time.Duration, ip [16]byte, ipv6, remove bool) error {
 
 func (m *MS) svcCSBK(now time.Duration, c *pdu.CSBK, h *layer2.Hint, out []Output) ([]Output, bool) {
 	s := &m.svc
-	switch {
-	case c.BroadcastPDU != nil:
-		if v, ok := c.BroadcastPDU.AsMassReg(); ok {
+	if b, ok := c.AsBroadcast(); ok {
+		if v, ok := b.AsMassReg(); ok {
 			m.massReg(now, &v)
 		}
-	case c.AhoyPDU != nil:
-		return m.svcAhoy(now, c.AhoyPDU, h, out)
-	case c.AckOutboundPDU != nil && c.AckOutboundPDU.TargetAddress == m.addr:
+		return out, false
+	}
+	if a, ok := c.AsAhoy(); ok {
+		return m.svcAhoy(now, &a, h, out)
+	}
+	if a, ok := c.AsAckOutbound(); ok && a.TargetAddress == m.addr {
 		s.awakeEnd, s.asleep = now+s.awake, false
-		return m.svcAck(now, c.AckOutboundPDU, h, out)
+		return m.svcAck(now, &a, h, out)
 	}
 	return out, false
 }
@@ -402,12 +403,11 @@ func (m *MS) statusAhoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out [
 	if a.GroupIndividual {
 		return out
 	}
-	m.txAck = pdu.AckInboundPDU{ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: a.SourceAddress, AdditionalInfo: m.addr}
+	ack := pdu.AckInboundPDU{ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: a.SourceAddress, AdditionalInfo: m.addr}
 	if st == StatusPoll {
-		m.txAck.ReasonCode, m.txAck.ResponseInfo = byte(enums.AckReasonStatusPollAcceptedMS), uint8(s.status)
+		ack.ReasonCode, ack.ResponseInfo = byte(enums.AckReasonStatusPollAcceptedMS), uint8(s.status)
 	}
-	m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInbound, AckInboundPDU: &m.txAck}
-	return m.send(now+frame, m.replySlot(h), out)
+	return m.sendAck(now+frame, m.replySlot(h), ack, out)
 }
 
 func (m *MS) stunAhoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Output) []Output {
@@ -431,15 +431,13 @@ func (m *MS) stunAhoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []O
 		s.stunChal = m.rng.Uint32() % (maxAddress + 1)
 	}
 	s.stunWait, s.stunAct, s.stunGw, s.stunUntil = true, act, gw, now+m.regTO
-	s.txAckvit = pdu.AckvitationPDU{ServiceKindFlag: act == StunRevive, ServiceKind: uint8(enums.ServiceKindSupplementary), TargetAddress: s.stunChal, SourceAddress: m.addr}
-	m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckvitation, AckvitationPDU: &s.txAckvit}
-	return m.send(now+frame, m.replySlot(h), out)
+	m.tx = pdu.CSBK{LastBlock: true}
+	err := m.tx.SetAckvitation(pdu.AckvitationPDU{ServiceKindFlag: act == StunRevive, ServiceKind: uint8(enums.ServiceKindSupplementary), TargetAddress: s.stunChal, SourceAddress: m.addr})
+	return m.send(err, now+frame, m.replySlot(h), out)
 }
 
 func (m *MS) finalAck(now time.Duration, gw uint32, r enums.AckReason, h *layer2.Hint, out []Output) []Output {
-	m.txAck = pdu.AckInboundPDU{ReasonCode: byte(r), TargetAddress: gw, AdditionalInfo: m.addr}
-	m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInbound, AckInboundPDU: &m.txAck}
-	return m.send(now+frame, m.replySlot(h), out)
+	return m.sendAck(now+frame, m.replySlot(h), pdu.AckInboundPDU{ReasonCode: byte(r), TargetAddress: gw, AdditionalInfo: m.addr}, out)
 }
 
 func (m *MS) applyStun(act StunAction, out []Output) []Output {

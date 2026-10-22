@@ -81,10 +81,7 @@ type tsccUDT struct {
 	downHold bool
 
 	hdr  pdu.UDTHeader
-	dh   pdu.DataHeader
 	poll pdu.UnifiedSingleBlockData
-	dxv  pdu.DuplexPrivateVoiceGrantPDU
-	dxd  pdu.DuplexPrivateDataGrantPDU
 }
 
 // UDT returns the UDT that the TSCC received for itself with the last
@@ -416,8 +413,11 @@ func (t *TSCC) download(a *Appended, to, from uint32, group, supp, ack bool, op 
 		Group: group, ResponseRequested: ack, SAP: enums.SAPUnifiedDataTransport, UDTFormat: a.Format, LLIDDestination: to,
 		LLIDSource: from, PadNibble: a.PadNibble, AppendedBlocks: uab(a.Blocks), SupplementaryFlag: supp, Opcode: op,
 	}
-	u.dh = pdu.DataHeader{Format: pdu.FormatUnifiedDataTransport, UDTHeader: &u.hdr}
-	p, err := u.dh.Encode()
+	var dh pdu.DataHeader
+	if dh.SetUDTHeader(u.hdr) != nil {
+		return
+	}
+	p, err := dh.Encode()
 	if err != nil {
 		return
 	}
@@ -454,12 +454,12 @@ func (t *TSCC) udtInbound(now time.Duration, s enums.Slot, out []TSCCOutput) ([]
 	u := &t.u
 	switch d := t.b.Data.(type) {
 	case *pdu.DataHeader:
-		h := d.UDTHeader
+		h, ok := d.AsUDTHeader()
 		u.inOn = false
-		if h == nil || h.Opcode != pdu.UDTOpcodeInboundHeader && h.Opcode != pdu.UDTOpcodeDGNAInboundHeader {
+		if !ok || h.Opcode != pdu.UDTOpcodeInboundHeader && h.Opcode != pdu.UDTOpcodeDGNAInboundHeader {
 			return out, true
 		}
-		u.in = UDT{Header: *h}
+		u.in = UDT{Header: h}
 		u.inWant, u.inOn, u.inAt = int(h.AppendedBlocks)+1, true, s
 		t.wake(h.LLIDSource, now)
 		return out, true
@@ -663,16 +663,18 @@ func (t *TSCC) duplexGrant(now time.Duration, op *udtOp, out []TSCCOutput) []TSC
 
 func (t *TSCC) duplexSend(g *Grant, caller bool) {
 	ts2 := g.Slot == enums.Slot2
+	t.cs = pdu.CSBK{LastBlock: true}
+	var err error
 	if g.Service == enums.ServiceKindDuplexPacketData {
-		t.u.dxd = pdu.DuplexPrivateDataGrantPDU{PhysicalChannel: g.Channel, LogicalChannel: ts2, Emergency: g.Emergency, CallDirection: caller,
-			TargetAddress: g.Target, SourceAddress: g.Source}
-		t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKDuplexPrivateDataGrant, DuplexPrivateDataGrantPDU: &t.u.dxd}
+		err = t.cs.SetDuplexPrivateDataGrant(pdu.DuplexPrivateDataGrantPDU{PhysicalChannel: g.Channel, LogicalChannel: ts2, Emergency: g.Emergency, CallDirection: caller,
+			TargetAddress: g.Target, SourceAddress: g.Source})
 	} else {
-		t.u.dxv = pdu.DuplexPrivateVoiceGrantPDU{PhysicalChannel: g.Channel, LogicalChannel: ts2, Emergency: g.Emergency, CallDirection: caller,
-			TargetAddress: g.Target, SourceAddress: g.Source}
-		t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKDuplexPrivateVoiceGrant, DuplexPrivateVoiceGrantPDU: &t.u.dxv}
+		err = t.cs.SetDuplexPrivateVoiceGrant(pdu.DuplexPrivateVoiceGrantPDU{PhysicalChannel: g.Channel, LogicalChannel: ts2, Emergency: g.Emergency, CallDirection: caller,
+			TargetAddress: g.Target, SourceAddress: g.Source})
 	}
-	t.enqueue(false)
+	if err == nil {
+		t.enqueue(false)
+	}
 }
 
 func duplex(g *Grant) bool {

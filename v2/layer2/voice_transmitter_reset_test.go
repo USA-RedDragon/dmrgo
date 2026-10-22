@@ -34,7 +34,7 @@ func TestVoiceTransmitter_Reset(t *testing.T) {
 
 	first := &layer2.VoiceTransmitterOptions{LC: groupLC(enums.FIDStandardized), ColorCode: 1, Silence: vocoder.AMBESilenceSlot()}
 	lc2 := groupLC(enums.FIDStandardized)
-	lc2.GroupVoice = &pdu.FLCGroupVoice{GroupAddress: 9, SourceAddress: 3120001}
+	mustSet(lc2.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 9, SourceAddress: 3120001}))
 	second := &layer2.VoiceTransmitterOptions{LC: lc2, ColorCode: 7, Source: layer2.SyncSourceMS, Silence: vocoder.AMBESilenceSlot(),
 		PIHeader: &pdu.PIHeader{AlgorithmID: 1, KeyID: 2}}
 	want := transmit(t, must(layer2.NewVoiceTransmitter(second)), 40)

@@ -9,7 +9,6 @@
 package pdu
 
 import (
-	"errors"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	bits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
@@ -19,9 +18,8 @@ import (
 )
 
 // DecodeMBCHeader decodes an MBCHeader. data holds the 96 bits of the PDU
-// packed, the first bit in the most significant bit of data[0]. It allocates
-// the payload struct that the dispatch field points to; DecodeMBCHeaderInto
-// does not. (ETSI TS 102 361-1 clause 7.4.1)
+// packed, the first bit in the most significant bit of data[0].
+// (ETSI TS 102 361-1 clause 7.4.1)
 func DecodeMBCHeader(data [12]byte) MBCHeader {
 	var result MBCHeader
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xAAAA)
@@ -29,120 +27,8 @@ func DecodeMBCHeader(data [12]byte) MBCHeader {
 	result.ProtectFlag = data[0]&0x40 != 0
 	result.Opcode = CSBKOpcode(uint64(data[0]) & 0x3F)
 	result.FID = enums.FID(uint64(data[1]))
-	var _dispatchBytes [8]byte
-	copy(_dispatchBytes[0:8], data[2:10])
-	if result.FID == 0 {
-		switch result.Opcode {
-		case CSBKPrivateVoiceGrant:
-			_decoded := decodePrivateVoiceGrantPDU(_dispatchBytes)
-			result.PrivateVoiceGrantPDU = &_decoded
-		case CSBKTalkgroupVoiceGrant:
-			_decoded := decodeTalkgroupVoiceGrantPDU(_dispatchBytes)
-			result.TalkgroupVoiceGrantPDU = &_decoded
-		case CSBKBroadcastTalkgroupVoiceGrant:
-			_decoded := decodeBroadcastTalkgroupVoiceGrantPDU(_dispatchBytes)
-			result.BroadcastTalkgroupVoiceGrantPDU = &_decoded
-		case CSBKPrivateDataGrant:
-			_decoded := decodePrivateDataGrantPDU(_dispatchBytes)
-			result.PrivateDataGrantPDU = &_decoded
-		case CSBKTalkgroupDataGrant:
-			_decoded := decodeTalkgroupDataGrantPDU(_dispatchBytes)
-			result.TalkgroupDataGrantPDU = &_decoded
-		case CSBKDuplexPrivateVoiceGrant:
-			_decoded := decodeDuplexPrivateVoiceGrantPDU(_dispatchBytes)
-			result.DuplexPrivateVoiceGrantPDU = &_decoded
-		case CSBKDuplexPrivateDataGrant:
-			_decoded := decodeDuplexPrivateDataGrantPDU(_dispatchBytes)
-			result.DuplexPrivateDataGrantPDU = &_decoded
-		case CSBKPrivateDataGrantMultiItem:
-			_decoded := decodePrivateDataGrantMultiItemPDU(_dispatchBytes)
-			result.PrivateDataGrantMultiItemPDU = &_decoded
-		case CSBKMove:
-			_decoded := decodeMovePDU(_dispatchBytes)
-			result.MovePDU = &_decoded
-		case CSBKBroadcast:
-			_decoded := decodeBroadcastPDU(_dispatchBytes)
-			result.BroadcastPDU = &_decoded
-		default:
-			copy(result.RawPayload[0:8], data[2:10])
-		}
-	} else {
-		copy(result.RawPayload[0:8], data[2:10])
-	}
+	copy(result.RawPayload[0:8], data[2:10])
 	return result
-}
-
-// MBCHeaderPayloads holds one payload struct of each type that
-// an MBCHeader dispatch field points to, for DecodeMBCHeaderInto.
-// The zero value is ready to use.
-type MBCHeaderPayloads struct {
-	privateVoiceGrantPDU            PrivateVoiceGrantPDU
-	talkgroupVoiceGrantPDU          TalkgroupVoiceGrantPDU
-	broadcastTalkgroupVoiceGrantPDU BroadcastTalkgroupVoiceGrantPDU
-	privateDataGrantPDU             PrivateDataGrantPDU
-	talkgroupDataGrantPDU           TalkgroupDataGrantPDU
-	duplexPrivateVoiceGrantPDU      DuplexPrivateVoiceGrantPDU
-	duplexPrivateDataGrantPDU       DuplexPrivateDataGrantPDU
-	privateDataGrantMultiItemPDU    PrivateDataGrantMultiItemPDU
-	movePDU                         MovePDU
-	broadcastPDU                    BroadcastPDU
-}
-
-// DecodeMBCHeaderInto decodes data into dst as DecodeMBCHeader does,
-// but points the dispatch field of dst into p, so it does not allocate.
-// The payload stays valid until the next decode into p. A nil dst or
-// p does nothing.
-func DecodeMBCHeaderInto(dst *MBCHeader, p *MBCHeaderPayloads, data [12]byte) {
-	if dst == nil || p == nil {
-		return
-	}
-	*dst = MBCHeader{}
-	result := dst
-	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xAAAA)
-	result.LastBlock = data[0]&0x80 != 0
-	result.ProtectFlag = data[0]&0x40 != 0
-	result.Opcode = CSBKOpcode(uint64(data[0]) & 0x3F)
-	result.FID = enums.FID(uint64(data[1]))
-	var _dispatchBytes [8]byte
-	copy(_dispatchBytes[0:8], data[2:10])
-	if result.FID == 0 {
-		switch result.Opcode {
-		case CSBKPrivateVoiceGrant:
-			p.privateVoiceGrantPDU = decodePrivateVoiceGrantPDU(_dispatchBytes)
-			result.PrivateVoiceGrantPDU = &p.privateVoiceGrantPDU
-		case CSBKTalkgroupVoiceGrant:
-			p.talkgroupVoiceGrantPDU = decodeTalkgroupVoiceGrantPDU(_dispatchBytes)
-			result.TalkgroupVoiceGrantPDU = &p.talkgroupVoiceGrantPDU
-		case CSBKBroadcastTalkgroupVoiceGrant:
-			p.broadcastTalkgroupVoiceGrantPDU = decodeBroadcastTalkgroupVoiceGrantPDU(_dispatchBytes)
-			result.BroadcastTalkgroupVoiceGrantPDU = &p.broadcastTalkgroupVoiceGrantPDU
-		case CSBKPrivateDataGrant:
-			p.privateDataGrantPDU = decodePrivateDataGrantPDU(_dispatchBytes)
-			result.PrivateDataGrantPDU = &p.privateDataGrantPDU
-		case CSBKTalkgroupDataGrant:
-			p.talkgroupDataGrantPDU = decodeTalkgroupDataGrantPDU(_dispatchBytes)
-			result.TalkgroupDataGrantPDU = &p.talkgroupDataGrantPDU
-		case CSBKDuplexPrivateVoiceGrant:
-			p.duplexPrivateVoiceGrantPDU = decodeDuplexPrivateVoiceGrantPDU(_dispatchBytes)
-			result.DuplexPrivateVoiceGrantPDU = &p.duplexPrivateVoiceGrantPDU
-		case CSBKDuplexPrivateDataGrant:
-			p.duplexPrivateDataGrantPDU = decodeDuplexPrivateDataGrantPDU(_dispatchBytes)
-			result.DuplexPrivateDataGrantPDU = &p.duplexPrivateDataGrantPDU
-		case CSBKPrivateDataGrantMultiItem:
-			p.privateDataGrantMultiItemPDU = decodePrivateDataGrantMultiItemPDU(_dispatchBytes)
-			result.PrivateDataGrantMultiItemPDU = &p.privateDataGrantMultiItemPDU
-		case CSBKMove:
-			p.movePDU = decodeMovePDU(_dispatchBytes)
-			result.MovePDU = &p.movePDU
-		case CSBKBroadcast:
-			p.broadcastPDU = decodeBroadcastPDU(_dispatchBytes)
-			result.BroadcastPDU = &p.broadcastPDU
-		default:
-			copy(result.RawPayload[0:8], data[2:10])
-		}
-	} else {
-		copy(result.RawPayload[0:8], data[2:10])
-	}
 }
 
 // Encode encodes an MBCHeader. It returns the 96 bits packed, the first bit
@@ -153,128 +39,6 @@ func (s *MBCHeader) Encode() ([12]byte, error) {
 	}
 
 	var data [12]byte
-	_payload := ""
-	if s.PrivateVoiceGrantPDU != nil {
-		_payload = "PrivateVoiceGrantPDU"
-	}
-	if s.TalkgroupVoiceGrantPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errMBCHeaderPayloads
-		}
-		_payload = "TalkgroupVoiceGrantPDU"
-	}
-	if s.BroadcastTalkgroupVoiceGrantPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errMBCHeaderPayloads
-		}
-		_payload = "BroadcastTalkgroupVoiceGrantPDU"
-	}
-	if s.PrivateDataGrantPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errMBCHeaderPayloads
-		}
-		_payload = "PrivateDataGrantPDU"
-	}
-	if s.TalkgroupDataGrantPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errMBCHeaderPayloads
-		}
-		_payload = "TalkgroupDataGrantPDU"
-	}
-	if s.DuplexPrivateVoiceGrantPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errMBCHeaderPayloads
-		}
-		_payload = "DuplexPrivateVoiceGrantPDU"
-	}
-	if s.DuplexPrivateDataGrantPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errMBCHeaderPayloads
-		}
-		_payload = "DuplexPrivateDataGrantPDU"
-	}
-	if s.PrivateDataGrantMultiItemPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errMBCHeaderPayloads
-		}
-		_payload = "PrivateDataGrantMultiItemPDU"
-	}
-	if s.MovePDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errMBCHeaderPayloads
-		}
-		_payload = "MovePDU"
-	}
-	if s.BroadcastPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errMBCHeaderPayloads
-		}
-		_payload = "BroadcastPDU"
-	}
-	switch {
-	case s.PrivateVoiceGrantPDU != nil:
-		_pduBytes, err := s.PrivateVoiceGrantPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.TalkgroupVoiceGrantPDU != nil:
-		_pduBytes, err := s.TalkgroupVoiceGrantPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.BroadcastTalkgroupVoiceGrantPDU != nil:
-		_pduBytes, err := s.BroadcastTalkgroupVoiceGrantPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.PrivateDataGrantPDU != nil:
-		_pduBytes, err := s.PrivateDataGrantPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.TalkgroupDataGrantPDU != nil:
-		_pduBytes, err := s.TalkgroupDataGrantPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.DuplexPrivateVoiceGrantPDU != nil:
-		_pduBytes, err := s.DuplexPrivateVoiceGrantPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.DuplexPrivateDataGrantPDU != nil:
-		_pduBytes, err := s.DuplexPrivateDataGrantPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.PrivateDataGrantMultiItemPDU != nil:
-		_pduBytes, err := s.PrivateDataGrantMultiItemPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.MovePDU != nil:
-		_pduBytes, err := s.MovePDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.BroadcastPDU != nil:
-		_pduBytes, err := s.BroadcastPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	default:
-		copy(data[2:10], s.RawPayload[0:8])
-	}
 	if s.LastBlock {
 		data[0] |= 0x80
 	}
@@ -289,39 +53,7 @@ func (s *MBCHeader) Encode() ([12]byte, error) {
 		return [12]byte{}, errMBCHeaderFIDRange
 	}
 	data[1] = byte(uint64(s.FID))
-	if _payload != "" {
-		var result MBCHeader
-		result.Opcode = CSBKOpcode(uint64(data[0]) & 0x3F)
-		result.FID = enums.FID(uint64(data[1]))
-		_want := "RawPayload"
-		if result.FID == 0 {
-			switch result.Opcode {
-			case CSBKPrivateVoiceGrant:
-				_want = "PrivateVoiceGrantPDU"
-			case CSBKTalkgroupVoiceGrant:
-				_want = "TalkgroupVoiceGrantPDU"
-			case CSBKBroadcastTalkgroupVoiceGrant:
-				_want = "BroadcastTalkgroupVoiceGrantPDU"
-			case CSBKPrivateDataGrant:
-				_want = "PrivateDataGrantPDU"
-			case CSBKTalkgroupDataGrant:
-				_want = "TalkgroupDataGrantPDU"
-			case CSBKDuplexPrivateVoiceGrant:
-				_want = "DuplexPrivateVoiceGrantPDU"
-			case CSBKDuplexPrivateDataGrant:
-				_want = "DuplexPrivateDataGrantPDU"
-			case CSBKPrivateDataGrantMultiItem:
-				_want = "PrivateDataGrantMultiItemPDU"
-			case CSBKMove:
-				_want = "MovePDU"
-			case CSBKBroadcast:
-				_want = "BroadcastPDU"
-			}
-		}
-		if _payload != _want {
-			return [12]byte{}, errMBCHeaderPayload
-		}
-	}
+	copy(data[2:10], s.RawPayload[0:8])
 	_crcVal := crc.CCITT(data[:10])
 	data[10] = byte(_crcVal>>8) ^ 0xAA
 	data[11] = byte(_crcVal) ^ 0xAA
@@ -337,32 +69,356 @@ func (s *MBCHeader) String() string {
 
 	_ret := "MBCHeader{ "
 	_ret += "FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + ", FID: " + text.Int(int64(s.FID)) + ", "
-	switch {
-	case s.PrivateVoiceGrantPDU != nil:
-		_ret += s.PrivateVoiceGrantPDU.String()
-	case s.TalkgroupVoiceGrantPDU != nil:
-		_ret += s.TalkgroupVoiceGrantPDU.String()
-	case s.BroadcastTalkgroupVoiceGrantPDU != nil:
-		_ret += s.BroadcastTalkgroupVoiceGrantPDU.String()
-	case s.PrivateDataGrantPDU != nil:
-		_ret += s.PrivateDataGrantPDU.String()
-	case s.TalkgroupDataGrantPDU != nil:
-		_ret += s.TalkgroupDataGrantPDU.String()
-	case s.DuplexPrivateVoiceGrantPDU != nil:
-		_ret += s.DuplexPrivateVoiceGrantPDU.String()
-	case s.DuplexPrivateDataGrantPDU != nil:
-		_ret += s.DuplexPrivateDataGrantPDU.String()
-	case s.PrivateDataGrantMultiItemPDU != nil:
-		_ret += s.PrivateDataGrantMultiItemPDU.String()
-	case s.MovePDU != nil:
-		_ret += s.MovePDU.String()
-	case s.BroadcastPDU != nil:
-		_ret += s.BroadcastPDU.String()
-	default:
+	if v, ok := s.AsPrivateVoiceGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsTalkgroupVoiceGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsBroadcastTalkgroupVoiceGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsPrivateDataGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsTalkgroupDataGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsDuplexPrivateVoiceGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsDuplexPrivateDataGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsPrivateDataGrantMultiItem(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsMove(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsBroadcast(); ok {
+		_ret += v.String()
+	} else {
 		_ret += "RawPayload: " + text.Hex(s.RawPayload[:])
 	}
 	_ret += " }"
 	return _ret
+}
+
+// AsPrivateVoiceGrant decodes RawPayload as a PrivateVoiceGrantPDU payload.
+// ok is false unless Opcode is CSBKPrivateVoiceGrant and FID is 0.
+func (s *MBCHeader) AsPrivateVoiceGrant() (p PrivateVoiceGrantPDU, ok bool) {
+	if s == nil {
+		return PrivateVoiceGrantPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKPrivateVoiceGrant && s.FID == 0) {
+		return p, false
+	}
+	return decodePrivateVoiceGrantPDU(s.RawPayload), true
+}
+
+// SetPrivateVoiceGrant makes s carry p as a PrivateVoiceGrantPDU payload: it
+// sets Opcode to CSBKPrivateVoiceGrant, FID to 0 and RawPayload, and keeps
+// the other fields. It returns the error of p.Encode, and then leaves s as
+// it is.
+func (s *MBCHeader) SetPrivateVoiceGrant(p PrivateVoiceGrantPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKPrivateVoiceGrant
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsTalkgroupVoiceGrant decodes RawPayload as a TalkgroupVoiceGrantPDU
+// payload. ok is false unless Opcode is CSBKTalkgroupVoiceGrant and FID is
+// 0.
+func (s *MBCHeader) AsTalkgroupVoiceGrant() (p TalkgroupVoiceGrantPDU, ok bool) {
+	if s == nil {
+		return TalkgroupVoiceGrantPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKTalkgroupVoiceGrant && s.FID == 0) {
+		return p, false
+	}
+	return decodeTalkgroupVoiceGrantPDU(s.RawPayload), true
+}
+
+// SetTalkgroupVoiceGrant makes s carry p as a TalkgroupVoiceGrantPDU
+// payload: it sets Opcode to CSBKTalkgroupVoiceGrant, FID to 0 and
+// RawPayload, and keeps the other fields. It returns the error of p.Encode,
+// and then leaves s as it is.
+func (s *MBCHeader) SetTalkgroupVoiceGrant(p TalkgroupVoiceGrantPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKTalkgroupVoiceGrant
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsBroadcastTalkgroupVoiceGrant decodes RawPayload as a
+// BroadcastTalkgroupVoiceGrantPDU payload. ok is false unless Opcode is
+// CSBKBroadcastTalkgroupVoiceGrant and FID is 0.
+func (s *MBCHeader) AsBroadcastTalkgroupVoiceGrant() (p BroadcastTalkgroupVoiceGrantPDU, ok bool) {
+	if s == nil {
+		return BroadcastTalkgroupVoiceGrantPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKBroadcastTalkgroupVoiceGrant && s.FID == 0) {
+		return p, false
+	}
+	return decodeBroadcastTalkgroupVoiceGrantPDU(s.RawPayload), true
+}
+
+// SetBroadcastTalkgroupVoiceGrant makes s carry p as a
+// BroadcastTalkgroupVoiceGrantPDU payload: it sets Opcode to
+// CSBKBroadcastTalkgroupVoiceGrant, FID to 0 and RawPayload, and keeps the
+// other fields. It returns the error of p.Encode, and then leaves s as it
+// is.
+func (s *MBCHeader) SetBroadcastTalkgroupVoiceGrant(p BroadcastTalkgroupVoiceGrantPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKBroadcastTalkgroupVoiceGrant
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsPrivateDataGrant decodes RawPayload as a PrivateDataGrantPDU payload. ok
+// is false unless Opcode is CSBKPrivateDataGrant and FID is 0.
+func (s *MBCHeader) AsPrivateDataGrant() (p PrivateDataGrantPDU, ok bool) {
+	if s == nil {
+		return PrivateDataGrantPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKPrivateDataGrant && s.FID == 0) {
+		return p, false
+	}
+	return decodePrivateDataGrantPDU(s.RawPayload), true
+}
+
+// SetPrivateDataGrant makes s carry p as a PrivateDataGrantPDU payload: it
+// sets Opcode to CSBKPrivateDataGrant, FID to 0 and RawPayload, and keeps
+// the other fields. It returns the error of p.Encode, and then leaves s as
+// it is.
+func (s *MBCHeader) SetPrivateDataGrant(p PrivateDataGrantPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKPrivateDataGrant
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsTalkgroupDataGrant decodes RawPayload as a TalkgroupDataGrantPDU
+// payload. ok is false unless Opcode is CSBKTalkgroupDataGrant and FID is 0.
+func (s *MBCHeader) AsTalkgroupDataGrant() (p TalkgroupDataGrantPDU, ok bool) {
+	if s == nil {
+		return TalkgroupDataGrantPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKTalkgroupDataGrant && s.FID == 0) {
+		return p, false
+	}
+	return decodeTalkgroupDataGrantPDU(s.RawPayload), true
+}
+
+// SetTalkgroupDataGrant makes s carry p as a TalkgroupDataGrantPDU payload:
+// it sets Opcode to CSBKTalkgroupDataGrant, FID to 0 and RawPayload, and
+// keeps the other fields. It returns the error of p.Encode, and then leaves
+// s as it is.
+func (s *MBCHeader) SetTalkgroupDataGrant(p TalkgroupDataGrantPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKTalkgroupDataGrant
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsDuplexPrivateVoiceGrant decodes RawPayload as a
+// DuplexPrivateVoiceGrantPDU payload. ok is false unless Opcode is
+// CSBKDuplexPrivateVoiceGrant and FID is 0.
+func (s *MBCHeader) AsDuplexPrivateVoiceGrant() (p DuplexPrivateVoiceGrantPDU, ok bool) {
+	if s == nil {
+		return DuplexPrivateVoiceGrantPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKDuplexPrivateVoiceGrant && s.FID == 0) {
+		return p, false
+	}
+	return decodeDuplexPrivateVoiceGrantPDU(s.RawPayload), true
+}
+
+// SetDuplexPrivateVoiceGrant makes s carry p as a DuplexPrivateVoiceGrantPDU
+// payload: it sets Opcode to CSBKDuplexPrivateVoiceGrant, FID to 0 and
+// RawPayload, and keeps the other fields. It returns the error of p.Encode,
+// and then leaves s as it is.
+func (s *MBCHeader) SetDuplexPrivateVoiceGrant(p DuplexPrivateVoiceGrantPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKDuplexPrivateVoiceGrant
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsDuplexPrivateDataGrant decodes RawPayload as a DuplexPrivateDataGrantPDU
+// payload. ok is false unless Opcode is CSBKDuplexPrivateDataGrant and FID
+// is 0.
+func (s *MBCHeader) AsDuplexPrivateDataGrant() (p DuplexPrivateDataGrantPDU, ok bool) {
+	if s == nil {
+		return DuplexPrivateDataGrantPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKDuplexPrivateDataGrant && s.FID == 0) {
+		return p, false
+	}
+	return decodeDuplexPrivateDataGrantPDU(s.RawPayload), true
+}
+
+// SetDuplexPrivateDataGrant makes s carry p as a DuplexPrivateDataGrantPDU
+// payload: it sets Opcode to CSBKDuplexPrivateDataGrant, FID to 0 and
+// RawPayload, and keeps the other fields. It returns the error of p.Encode,
+// and then leaves s as it is.
+func (s *MBCHeader) SetDuplexPrivateDataGrant(p DuplexPrivateDataGrantPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKDuplexPrivateDataGrant
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsPrivateDataGrantMultiItem decodes RawPayload as a
+// PrivateDataGrantMultiItemPDU payload. ok is false unless Opcode is
+// CSBKPrivateDataGrantMultiItem and FID is 0.
+func (s *MBCHeader) AsPrivateDataGrantMultiItem() (p PrivateDataGrantMultiItemPDU, ok bool) {
+	if s == nil {
+		return PrivateDataGrantMultiItemPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKPrivateDataGrantMultiItem && s.FID == 0) {
+		return p, false
+	}
+	return decodePrivateDataGrantMultiItemPDU(s.RawPayload), true
+}
+
+// SetPrivateDataGrantMultiItem makes s carry p as a
+// PrivateDataGrantMultiItemPDU payload: it sets Opcode to
+// CSBKPrivateDataGrantMultiItem, FID to 0 and RawPayload, and keeps the
+// other fields. It returns the error of p.Encode, and then leaves s as it
+// is.
+func (s *MBCHeader) SetPrivateDataGrantMultiItem(p PrivateDataGrantMultiItemPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKPrivateDataGrantMultiItem
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsMove decodes RawPayload as a MovePDU payload. ok is false unless Opcode
+// is CSBKMove and FID is 0.
+func (s *MBCHeader) AsMove() (p MovePDU, ok bool) {
+	if s == nil {
+		return MovePDU{}, false
+	}
+
+	if !(s.Opcode == CSBKMove && s.FID == 0) {
+		return p, false
+	}
+	return decodeMovePDU(s.RawPayload), true
+}
+
+// SetMove makes s carry p as a MovePDU payload: it sets Opcode to CSBKMove,
+// FID to 0 and RawPayload, and keeps the other fields. It returns the error
+// of p.Encode, and then leaves s as it is.
+func (s *MBCHeader) SetMove(p MovePDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKMove
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsBroadcast decodes RawPayload as a BroadcastPDU payload. ok is false
+// unless Opcode is CSBKBroadcast and FID is 0.
+func (s *MBCHeader) AsBroadcast() (p BroadcastPDU, ok bool) {
+	if s == nil {
+		return BroadcastPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKBroadcast && s.FID == 0) {
+		return p, false
+	}
+	return decodeBroadcastPDU(s.RawPayload), true
+}
+
+// SetBroadcast makes s carry p as a BroadcastPDU payload: it sets Opcode to
+// CSBKBroadcast, FID to 0 and RawPayload, and keeps the other fields. It
+// returns the error of p.Encode, and then leaves s as it is.
+func (s *MBCHeader) SetBroadcast(p BroadcastPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKBroadcast
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
 }
 
 // DecodeMBCContinuation decodes an MBCContinuation. data holds the 96 bits
@@ -689,7 +745,6 @@ func (s *VNAPContinuation) String() string {
 }
 
 var (
-	errMBCHeaderPayloads    = errors.New("MBCHeader: more than one payload field is set")
 	errMBCHeaderOpcodeRange = &dmrgo.FieldRangeError{
 		Bits:  6,
 		Field: "Opcode",
@@ -700,7 +755,6 @@ var (
 		Field: "FID",
 		Type:  "MBCHeader",
 	}
-	errMBCHeaderPayload         = errors.New("MBCHeader: the payload field that is set is not the one that Opcode and FID select")
 	errMBCContinuationDataRange = &dmrgo.FieldRangeError{
 		Bits:  95,
 		Field: "Data",

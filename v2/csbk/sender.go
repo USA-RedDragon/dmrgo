@@ -48,8 +48,7 @@ type sender struct {
 	timer        time.Duration
 	due          time.Duration
 
-	pre  pdu.CSBK
-	preP pdu.PreamblePDU
+	pre pdu.CSBK
 }
 
 func (s *sender) init(cc enums.ColorCode, src layer2.SyncSource, idleSearch, holdoffMax time.Duration, seed uint64) {
@@ -143,8 +142,10 @@ func (s *sender) tick(now time.Duration, out []Output) ([]Output, sendEvent) {
 }
 
 func (s *sender) preamble(cbf int) pdu.CSBKBytes {
-	s.preP = pdu.PreamblePDU{Group: s.group, CSBKBlocksToFollow: byte(cbf & 0xFF), TargetAddress: s.target, SourceAddress: s.source}
-	s.pre = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKPreamble, PreamblePDU: &s.preP}
+	s.pre = pdu.CSBK{LastBlock: true}
+	if s.pre.SetPreamble(pdu.PreamblePDU{Group: s.group, CSBKBlocksToFollow: byte(cbf & 0xFF), TargetAddress: s.target, SourceAddress: s.source}) != nil {
+		return pdu.CSBKBytes{}
+	}
 	octets, _ := s.pre.Encode()
 	return pdu.CSBKBytes(octets)
 }

@@ -230,7 +230,8 @@ func decodeResponseData(r *ResponseData, buf []byte) error {
 // N(S), or the 3 LSBs of its FSN for ResponseNACKFSNOutOfSequence. A
 // ResponseSACK carries data as C_RDATA blocks; data is ignored otherwise.
 // It returns a *dmrgo.FieldRangeError when the Class of r does not fit in 2
-// bits, and an error for a nil to. It allocates the storage of the Packet;
+// bits or a field of to does not fit in the response header, and an error
+// for a nil to. It allocates the storage of the Packet;
 // Builder.NewResponse builds into the storage of a Builder.
 func NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *ResponseData) (Packet, error) {
 	s := new(responseStore)
@@ -247,7 +248,6 @@ func (b *Builder) NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *Res
 }
 
 type responseStore struct {
-	header pdu.ResponsePacketHeader
 	rate12 [2]pdu.Rate12Data
 	blocks [2]layer2.Data
 }
@@ -263,7 +263,7 @@ func (s *responseStore) build(to *pdu.ConfirmedDataHeader, r Response, data *Res
 	if r == ResponseNACKFSNOutOfSequence {
 		status = to.FragmentSequenceNumber & 0b111
 	}
-	s.header = pdu.ResponsePacketHeader{
+	header := pdu.ResponsePacketHeader{
 		SAP:             to.SAP,
 		LLIDDestination: to.LLIDSource,
 		LLIDSource:      to.LLIDDestination,
@@ -281,10 +281,11 @@ func (s *responseStore) build(to *pdu.ConfirmedDataHeader, r Response, data *Res
 			s.blocks[i] = &s.rate12[i]
 		}
 		blocks = s.blocks[:n]
-		s.header.BlocksToFollow = uint8(n & 0xFF)
+		header.BlocksToFollow = uint8(n & 0xFF)
 	}
-	return Packet{
-		Header: pdu.DataHeader{Format: pdu.FormatResponsePacket, ResponsePacketHeader: &s.header},
-		Blocks: blocks,
-	}, nil
+	var h pdu.DataHeader
+	if err := h.SetResponsePacketHeader(header); err != nil {
+		return Packet{}, err
+	}
+	return Packet{Header: h, Blocks: blocks}, nil
 }

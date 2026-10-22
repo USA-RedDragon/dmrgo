@@ -47,10 +47,9 @@ func (k Kind) String() string {
 	return "Kind(" + text.Int(int64(k)) + ")"
 }
 
-// Burst represents a DMR burst. A decode stores the PDU of a data burst, and
-// the payload struct that it points to, in the Burst, so a Burst must not be
-// copied after its first decode; go vet reports a copy. The zero Burst is
-// ready to use.
+// Burst represents a DMR burst. A decode stores the PDU of a data burst in
+// the Burst, so a Burst must not be copied after its first decode; go vet
+// reports a copy. The zero Burst is ready to use.
 type Burst struct {
 	// Kind is the kind of the burst.
 	Kind Kind
@@ -97,8 +96,8 @@ type Burst struct {
 	ReverseChannel pdu.ReverseChannel
 
 	// Data is the decoded PDU of a data burst, nil only for a reserved data
-	// type. It points into the Burst, which reuses the PDU and its payload
-	// struct: the next decode overwrites them, so copy them to keep them.
+	// type. It points into the Burst, which reuses the PDU: the next decode
+	// overwrites it, so copy it to keep it.
 	Data Data
 	// FEC reports the FEC and CRC results of the decode.
 	FEC fec.BurstFECStats
@@ -115,21 +114,17 @@ type Burst struct {
 }
 
 type decodeStore struct {
-	csbk              pdu.CSBK
-	csbkPayloads      pdu.CSBKPayloads
-	lc                pdu.FullLinkControl
-	lcPayloads        pdu.FullLinkControlPayloads
-	dataHeaderPayload pdu.DataHeaderPayloads
-	mbcHeaderPayloads pdu.MBCHeaderPayloads
-	piHeader          pdu.PIHeader
-	dataHeader        pdu.DataHeader
-	rate12            pdu.Rate12Data
-	rate34            pdu.Rate34Data
-	rate1             pdu.Rate1Data
-	mbcHeader         pdu.MBCHeader
-	mbcCont           pdu.MBCContinuation
-	usbd              pdu.UnifiedSingleBlockData
-	prFill            pdu.PRFill
+	csbk       pdu.CSBK
+	lc         pdu.FullLinkControl
+	piHeader   pdu.PIHeader
+	dataHeader pdu.DataHeader
+	rate12     pdu.Rate12Data
+	rate34     pdu.Rate34Data
+	rate1      pdu.Rate1Data
+	mbcHeader  pdu.MBCHeader
+	mbcCont    pdu.MBCContinuation
+	usbd       pdu.UnifiedSingleBlockData
+	prFill     pdu.PRFill
 }
 
 func (b *Burst) reset(data RawBurst) {
@@ -562,12 +557,12 @@ func decodePayload(st *decodeStore, dt enums.DataType, payload *[25]byte, sync e
 	switch dt {
 	case enums.DataTypeCSBK:
 		d := &st.csbk
-		pdu.DecodeCSBKInto(d, &st.csbkPayloads, p96)
+		*d = pdu.DecodeCSBK(p96)
 		d.Hint0x38 = opcode0x38Hint(sync)
 		return d, d.FEC, nil
 	case enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC:
 		d := &st.lc
-		pdu.DecodeFullLinkControlInto(d, &st.lcPayloads, p96, dt)
+		*d = pdu.DecodeFullLinkControl(p96, dt)
 		return d, d.FEC, nil
 	case enums.DataTypePIHeader:
 		d := &st.piHeader
@@ -575,7 +570,7 @@ func decodePayload(st *decodeStore, dt enums.DataType, payload *[25]byte, sync e
 		return d, d.FEC, nil
 	case enums.DataTypeDataHeader:
 		d := &st.dataHeader
-		pdu.DecodeDataHeaderInto(d, &st.dataHeaderPayload, p96)
+		*d = pdu.DecodeDataHeader(p96)
 		return d, d.FEC, nil
 	case enums.DataTypeRate34:
 		d := &st.rate34
@@ -591,7 +586,7 @@ func decodePayload(st *decodeStore, dt enums.DataType, payload *[25]byte, sync e
 		return d, fec.Result{}, nil
 	case enums.DataTypeMBCHeader:
 		d := &st.mbcHeader
-		pdu.DecodeMBCHeaderInto(d, &st.mbcHeaderPayloads, p96)
+		*d = pdu.DecodeMBCHeader(p96)
 		return d, d.FEC, nil
 	case enums.DataTypeMBCContinuation:
 		d := &st.mbcCont

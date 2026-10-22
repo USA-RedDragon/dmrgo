@@ -22,18 +22,14 @@ func lcBurst(p [12]byte, dt enums.DataType, cc enums.ColorCode) ([33]byte, error
 func TestBuildDataBurst_ProducesCorrectSize(t *testing.T) {
 	t.Parallel()
 
-	flc := &pdu.FullLinkControl{
-		BurstDataType: enums.DataTypeVoiceLCHeader,
-		FLCO:          enums.FLCOGroupVoiceChannelUser,
-		FID:           enums.FIDStandardized,
-		GroupVoice: &pdu.FLCGroupVoice{
-			ServiceOptions: layer3.ServiceOptions{
-				PriorityLevel: 0,
-			},
-			GroupAddress:  9990,
-			SourceAddress: 3120101,
+	flc := &pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader}
+	mustSet(flc.SetGroupVoice(pdu.FLCGroupVoice{
+		ServiceOptions: layer3.ServiceOptions{
+			PriorityLevel: 0,
 		},
-	}
+		GroupAddress:  9990,
+		SourceAddress: 3120101,
+	}))
 
 	lcBytes := must(flc.Encode())
 
@@ -54,15 +50,11 @@ func TestBuildDataBurst_ProducesCorrectSize(t *testing.T) {
 func TestBuildDataBurst_Terminator(t *testing.T) {
 	t.Parallel()
 
-	flc := &pdu.FullLinkControl{
-		BurstDataType: enums.DataTypeTerminatorWithLC,
-		FLCO:          enums.FLCOGroupVoiceChannelUser,
-		FID:           enums.FIDStandardized,
-		GroupVoice: &pdu.FLCGroupVoice{
-			GroupAddress:  1,
-			SourceAddress: 2,
-		},
-	}
+	flc := &pdu.FullLinkControl{BurstDataType: enums.DataTypeTerminatorWithLC}
+	mustSet(flc.SetGroupVoice(pdu.FLCGroupVoice{
+		GroupAddress:  1,
+		SourceAddress: 2,
+	}))
 
 	lcBytes := must(flc.Encode())
 
@@ -79,15 +71,11 @@ func TestBuildDataBurst_Terminator(t *testing.T) {
 func TestBuildDataBurst_ColorCodeRange(t *testing.T) {
 	t.Parallel()
 
-	flc := &pdu.FullLinkControl{
-		BurstDataType: enums.DataTypeVoiceLCHeader,
-		FLCO:          enums.FLCOGroupVoiceChannelUser,
-		FID:           enums.FIDStandardized,
-		GroupVoice: &pdu.FLCGroupVoice{
-			GroupAddress:  100,
-			SourceAddress: 200,
-		},
-	}
+	flc := &pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader}
+	mustSet(flc.SetGroupVoice(pdu.FLCGroupVoice{
+		GroupAddress:  100,
+		SourceAddress: 200,
+	}))
 
 	lcBytes := must(flc.Encode())
 

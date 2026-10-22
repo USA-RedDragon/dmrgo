@@ -96,9 +96,7 @@ func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 	var t Text
 	target, source, _ := h.Addresses()
 	t.Source, t.Destination = source, target
-	switch {
-	case h.DefinedDataHeader != nil:
-		d := h.DefinedDataHeader
+	if d, ok := h.AsDefinedDataHeader(); ok {
 		t.Group, t.DD = d.Group, d.DefinedData
 		if d.DefinedData == enums.DDBinary {
 			return dst, Text{}, ErrNotText
@@ -123,12 +121,14 @@ func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 		t.Format = FormatDefinedData
 		t.Body = dst[n:]
 		return dst, t, nil
-	case h.UnconfirmedDataHeader != nil:
-		t.Group = h.UnconfirmedDataHeader.Group
-		return decodeIP(dst, h.UnconfirmedDataHeader.SAP, data, t)
-	case h.ConfirmedDataHeader != nil:
-		t.Group = h.ConfirmedDataHeader.Group
-		return decodeIP(dst, h.ConfirmedDataHeader.SAP, data, t)
+	}
+	if u, ok := h.AsUnconfirmedDataHeader(); ok {
+		t.Group = u.Group
+		return decodeIP(dst, u.SAP, data, t)
+	}
+	if c, ok := h.AsConfirmedDataHeader(); ok {
+		t.Group = c.Group
+		return decodeIP(dst, c.SAP, data, t)
 	}
 	return dst, Text{}, ErrNotText
 }
@@ -185,16 +185,10 @@ func decodeIP(dst []byte, sap enums.SAP, data []byte, t Text) ([]byte, Text, err
 	return dst, t, nil
 }
 
-// Header holds the data header that AppendPacket builds. Data points into
-// the Header, so a Header must not be copied after AppendPacket; go vet
-// reports a copy.
+// Header holds the data header that AppendPacket builds.
 type Header struct {
-	_ noCopy
 	// Data is the data header, for packet.NewPacket or a data sender.
-	Data        pdu.DataHeader
-	unconfirmed pdu.UnconfirmedDataHeader
-	confirmed   pdu.ConfirmedDataHeader
-	defined     pdu.DefinedDataHeader
+	Data pdu.DataHeader
 }
 
 // AppendPacket appends the user data of t in its format to dst, sets h to
@@ -222,8 +216,9 @@ func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error
 		if dst, err = shortdata.AppendText(dst, t.DD, t.Body); err != nil {
 			return dst[:n], err
 		}
-		h.defined = definedHeader(t, t.DD, confirmed)
-		h.Data = pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &h.defined}
+		if err = h.Data.SetDefinedDataHeader(definedHeader(t, t.DD, confirmed)); err != nil {
+			return dst[:n], err
+		}
 		return dst, nil
 	case FormatHytera:
 		var ht shortdata.HyteraText
@@ -233,8 +228,9 @@ func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error
 			return dst[:n], err
 		}
 		k := copy(dst[n:], dst[p0:])
-		h.defined = definedHeader(t, enums.DDBCD, confirmed)
-		h.Data = pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &h.defined}
+		if err = h.Data.SetDefinedDataHeader(definedHeader(t, enums.DDBCD, confirmed)); err != nil {
+			return dst[:n], err
+		}
 		return dst[:n+k], nil
 	case FormatTMS, FormatIP, FormatAnyTone:
 	default:
@@ -290,17 +286,17 @@ func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error
 		return dst[:n], err
 	}
 	k := copy(dst[n:], dst[i0:])
-	dst = dst[:n+k]
 	if confirmed {
-		h.confirmed = pdu.ConfirmedDataHeader{Group: t.Group, ResponseRequested: true, SAP: enums.SAPIPBasedPacketData,
-			LLIDDestination: t.Destination, LLIDSource: t.Source, FullMessageFlag: true}
-		h.Data = pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &h.confirmed}
+		err = h.Data.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{Group: t.Group, ResponseRequested: true, SAP: enums.SAPIPBasedPacketData,
+			LLIDDestination: t.Destination, LLIDSource: t.Source, FullMessageFlag: true})
 	} else {
-		h.unconfirmed = pdu.UnconfirmedDataHeader{Group: t.Group, SAP: enums.SAPIPBasedPacketData,
-			LLIDDestination: t.Destination, LLIDSource: t.Source, FullMessageFlag: true}
-		h.Data = pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &h.unconfirmed}
+		err = h.Data.SetUnconfirmedDataHeader(pdu.UnconfirmedDataHeader{Group: t.Group, SAP: enums.SAPIPBasedPacketData,
+			LLIDDestination: t.Destination, LLIDSource: t.Source, FullMessageFlag: true})
 	}
-	return dst, nil
+	if err != nil {
+		return dst[:n], err
+	}
+	return dst[:n+k], nil
 }
 
 func definedHeader(t *Text, dd enums.DDFormat, confirmed bool) pdu.DefinedDataHeader {

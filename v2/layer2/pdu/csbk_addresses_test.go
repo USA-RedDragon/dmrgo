@@ -10,24 +10,24 @@ func TestCSBK_Addresses(t *testing.T) {
 	t.Parallel()
 
 	csbks := []pdu.CSBK{
-		{Opcode: pdu.CSBKUnitToUnitVoiceServiceRequest, UnitToUnitVoiceServiceRequestPDU: &pdu.UnitToUnitVoiceServiceRequestPDU{}},
-		{Opcode: pdu.CSBKUnitToUnitVoiceServiceAnswerResponse, UnitToUnitVoiceServiceAnswerResponsePDU: &pdu.UnitToUnitVoiceServiceAnswerResponsePDU{}},
-		{Opcode: pdu.CSBKNegativeAcknowledgement, NegativeAcknowledgementPDU: &pdu.NegativeAcknowledgementPDU{}},
-		{Opcode: pdu.CSBKPreamble, PreamblePDU: &pdu.PreamblePDU{}},
-		{Opcode: pdu.CSBKPrivateVoiceGrant, PrivateVoiceGrantPDU: &pdu.PrivateVoiceGrantPDU{}},
-		{Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{}},
-		{Opcode: pdu.CSBKBroadcastTalkgroupVoiceGrant, BroadcastTalkgroupVoiceGrantPDU: &pdu.BroadcastTalkgroupVoiceGrantPDU{}},
-		{Opcode: pdu.CSBKPrivateDataGrant, PrivateDataGrantPDU: &pdu.PrivateDataGrantPDU{}},
-		{Opcode: pdu.CSBKTalkgroupDataGrant, TalkgroupDataGrantPDU: &pdu.TalkgroupDataGrantPDU{}},
-		{Opcode: pdu.CSBKDuplexPrivateVoiceGrant, DuplexPrivateVoiceGrantPDU: &pdu.DuplexPrivateVoiceGrantPDU{}},
-		{Opcode: pdu.CSBKDuplexPrivateDataGrant, DuplexPrivateDataGrantPDU: &pdu.DuplexPrivateDataGrantPDU{}},
-		{Opcode: pdu.CSBKPrivateDataGrantMultiItem, PrivateDataGrantMultiItemPDU: &pdu.PrivateDataGrantMultiItemPDU{}},
-		{Opcode: pdu.CSBKClear, ClearPDU: &pdu.ClearPDU{}},
-		{Opcode: pdu.CSBKProtect, ProtectPDU: &pdu.ProtectPDU{}},
-		{Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{}},
-		{Opcode: pdu.CSBKRandomAccess, RandomAccessPDU: &pdu.RandomAccessPDU{}},
-		{Opcode: pdu.CSBKAckvitation, AckvitationPDU: &pdu.AckvitationPDU{}},
-		{Opcode: pdu.CSBKMaintenance, MaintenancePDU: &pdu.MaintenancePDU{}},
+		addrCSBK((*pdu.CSBK).SetUnitToUnitVoiceServiceRequest, pdu.UnitToUnitVoiceServiceRequestPDU{}),
+		addrCSBK((*pdu.CSBK).SetUnitToUnitVoiceServiceAnswerResponse, pdu.UnitToUnitVoiceServiceAnswerResponsePDU{}),
+		addrCSBK((*pdu.CSBK).SetNegativeAcknowledgement, pdu.NegativeAcknowledgementPDU{}),
+		addrCSBK((*pdu.CSBK).SetPreamble, pdu.PreamblePDU{}),
+		addrCSBK((*pdu.CSBK).SetPrivateVoiceGrant, pdu.PrivateVoiceGrantPDU{}),
+		addrCSBK((*pdu.CSBK).SetTalkgroupVoiceGrant, pdu.TalkgroupVoiceGrantPDU{}),
+		addrCSBK((*pdu.CSBK).SetBroadcastTalkgroupVoiceGrant, pdu.BroadcastTalkgroupVoiceGrantPDU{}),
+		addrCSBK((*pdu.CSBK).SetPrivateDataGrant, pdu.PrivateDataGrantPDU{}),
+		addrCSBK((*pdu.CSBK).SetTalkgroupDataGrant, pdu.TalkgroupDataGrantPDU{}),
+		addrCSBK((*pdu.CSBK).SetDuplexPrivateVoiceGrant, pdu.DuplexPrivateVoiceGrantPDU{}),
+		addrCSBK((*pdu.CSBK).SetDuplexPrivateDataGrant, pdu.DuplexPrivateDataGrantPDU{}),
+		addrCSBK((*pdu.CSBK).SetPrivateDataGrantMultiItem, pdu.PrivateDataGrantMultiItemPDU{}),
+		addrCSBK((*pdu.CSBK).SetClear, pdu.ClearPDU{}),
+		addrCSBK((*pdu.CSBK).SetProtect, pdu.ProtectPDU{}),
+		addrCSBK((*pdu.CSBK).SetAhoy, pdu.AhoyPDU{}),
+		addrCSBK((*pdu.CSBK).SetRandomAccess, pdu.RandomAccessPDU{}),
+		addrCSBK((*pdu.CSBK).SetAckvitation, pdu.AckvitationPDU{}),
+		addrCSBK((*pdu.CSBK).SetMaintenance, pdu.MaintenancePDU{}),
 		{Opcode: pdu.CSBKBSOutboundActivation},
 	}
 	for _, c := range csbks {
@@ -50,10 +50,10 @@ func TestCSBK_Addresses(t *testing.T) {
 
 	none := []pdu.CSBK{
 		{},
-		{Opcode: pdu.CSBKAloha, AlohaPDU: &pdu.AlohaPDU{MSAddress: 9}},
-		{Opcode: pdu.CSBKMove, MovePDU: &pdu.MovePDU{MSAddress: 9}},
-		{Opcode: pdu.CSBKAckOutbound, AckOutboundPDU: &pdu.AckOutboundPDU{TargetAddress: 9}},
-		{Opcode: pdu.CSBKChannelTiming, ChannelTimingPDU: &pdu.ChannelTimingPDU{}},
+		addrCSBK((*pdu.CSBK).SetAloha, pdu.AlohaPDU{MSAddress: 9}),
+		addrCSBK((*pdu.CSBK).SetMove, pdu.MovePDU{MSAddress: 9}),
+		addrCSBK((*pdu.CSBK).SetAckOutbound, pdu.AckOutboundPDU{TargetAddress: 9}),
+		addrCSBK((*pdu.CSBK).SetChannelTiming, pdu.ChannelTimingPDU{}),
 		{Opcode: pdu.CSBKTalkgroupDataGrantMultiItem, FID: 0x10},
 		{Opcode: pdu.CSBKPreamble, FID: 0x10},
 	}
@@ -62,4 +62,10 @@ func TestCSBK_Addresses(t *testing.T) {
 			t.Errorf("%s FID %#x: has addresses", c.Opcode, uint8(c.FID))
 		}
 	}
+}
+
+func addrCSBK[P any](set func(*pdu.CSBK, P) error, p P) pdu.CSBK {
+	var c pdu.CSBK
+	noErr(set(&c, p))
+	return c
 }

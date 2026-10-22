@@ -294,9 +294,11 @@ func TestSetAddressesErrors(t *testing.T) {
 	}
 	lcb := must(pdu.NewVoiceLCBytes(true, 91, 3191868, layer3.ServiceOptions{}))
 	lc := must(pdu.NewVoiceLC(true, 91, 3191868, layer3.ServiceOptions{}))
-	pre := pdu.CSBK{Opcode: pdu.CSBKPreamble, PreamblePDU: &pdu.PreamblePDU{TargetAddress: 1, SourceAddress: 2}}
+	var pre pdu.CSBK
+	noErr(pre.SetPreamble(pdu.PreamblePDU{TargetAddress: 1, SourceAddress: 2}))
 	csbkb := pdu.CSBKBytes(must(pre.Encode()))
-	hdr := pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{LLIDDestination: 1, LLIDSource: 2}}
+	var hdr pdu.DataHeader
+	noErr(hdr.SetUnconfirmedDataHeader(pdu.UnconfirmedDataHeader{LLIDDestination: 1, LLIDSource: 2}))
 	hdrb := pdu.DataHeaderBytes(must(hdr.Encode()))
 	setters := []setter{
 		{"LCBytes", "LCBytes", "TargetAddress", "SourceAddress", func(a, b uint32) (bool, error) {
@@ -310,22 +312,18 @@ func TestSetAddressesErrors(t *testing.T) {
 		}},
 		{"FullLinkControl", "FullLinkControl", "TargetAddress", "SourceAddress", func(a, b uint32) (bool, error) {
 			l := lc
-			gv := *lc.GroupVoice
-			l.GroupVoice = &gv
 			err := l.SetAddresses(a, b)
-			return gv == *lc.GroupVoice, err
+			return l == lc, err
 		}, func() error {
-			l := pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser}
+			l := pdu.FullLinkControl{FLCO: enums.FLCOGPSInfo}
 			return l.SetAddresses(1, 2)
 		}},
 		{"CSBK", "CSBK", "TargetAddress", "SourceAddress", func(a, b uint32) (bool, error) {
 			c := pre
-			p := *pre.PreamblePDU
-			c.PreamblePDU = &p
 			err := c.SetAddresses(a, b)
-			return p == *pre.PreamblePDU, err
+			return c == pre, err
 		}, func() error {
-			c := pdu.CSBK{Opcode: pdu.CSBKPreamble}
+			c := pdu.CSBK{Opcode: pdu.CSBKChannelTiming}
 			return c.SetAddresses(1, 2)
 		}},
 		{"CSBKBytes", "CSBKBytes", "TargetAddress", "SourceAddress", func(a, b uint32) (bool, error) {
@@ -339,12 +337,11 @@ func TestSetAddressesErrors(t *testing.T) {
 		}},
 		{"DataHeader", "DataHeader", "LLIDDestination", "LLIDSource", func(a, b uint32) (bool, error) {
 			h := hdr
-			u := *hdr.UnconfirmedDataHeader
-			h.UnconfirmedDataHeader = &u
 			err := h.SetAddresses(a, b)
-			return u == *hdr.UnconfirmedDataHeader, err
+			return h == hdr, err
 		}, func() error {
 			var h pdu.DataHeader
+			noErr(h.SetProprietaryHeader(pdu.ProprietaryHeader{}))
 			return h.SetAddresses(1, 2)
 		}},
 		{"DataHeaderBytes", "DataHeaderBytes", "LLIDDestination", "LLIDSource", func(a, b uint32) (bool, error) {

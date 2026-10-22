@@ -84,6 +84,7 @@ The programs in [v2/examples](v2/examples) run offline on the captures in `v2/la
 - PDUs (`layer2/pdu`), generated from struct tags by `dmrgen`:
   - CSBK and MBC, with the Tier II and Tier III payloads, and the Motorola radio check and call alert.
   - Full LC and Short LC, with their payloads.
+  - A CSBK, MBC header, Full LC, Short LC or data header keeps its payload as bits, and its opcode or format selects their layout. `AsX` reads the payload X, and `SetX` writes it and sets the opcode.
   - Data headers, data blocks at rate 1/2, 3/4 and 1, USBD and the compressed UDP/IPv4 header.
   - Slot type, EMB, TACT, PI header, Reverse Channel and PR FILL.
   - Byte-level editors for LC, CSBK and data header octets, and `Seal` to recompute parity or CRC.
@@ -154,9 +155,9 @@ The table lists every place where the library can allocate. [v2/internal/allocga
 | The initialization of a package-level variable, such as a lookup table or a joined sentinel error | Once, when the program starts. | 2 |
 | A String, GoString or Error method | When the text is built, for a person to read. | 263 |
 | A function of internal/text, which formats the values of String and Error methods | When the text is built, for a person to read. | 7 |
-| An exported package-level New function | Once, at construction: it allocates what it returns, sized up front. | 35 |
+| An exported package-level New function | Once, at construction: it allocates what it returns, sized up front. | 34 |
 | An exported function or method that takes a slice dst and returns a slice of the same type | Only to grow dst when dst has no room. The caller sizes dst. A machine built from other machines may also pass each of them an unexported field sliced to [:0] that its New makes with capacity MaxX of that machine's package, whose fuzz test checks that bound. | 241 |
-| An exported X with an exported twin AppendX or XInto that does not allocate | X allocates the slice, string or struct it returns; the twin writes into storage of the caller. | 26 |
+| An exported X with an exported twin AppendX or XInto that does not allocate | X allocates the slice, string or struct it returns; the twin writes into storage of the caller. | 12 |
 | An exported X whose whole body is return Twin(nil, its parameters), where Twin allocates only to grow dst | X allocates the slice it returns; Twin with room in dst does not. | 3 |
 | A type assertion or type switch to an interface type, and a goroutine that blocks | Once for each call site and dynamic type, as the runtime fills the cache of the assertion or switch, and when no sudog is free for a goroutine that blocks on a mutex or a channel. The runtime keeps both. | 4 |
 | A method of an interface that the library declares for the caller to implement, such as the Read and Write of a dvsi.Port | When the method of the caller allocates. The code of the library on the path does not. | 1 |

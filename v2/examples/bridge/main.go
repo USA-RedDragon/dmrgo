@@ -206,14 +206,13 @@ func toGroupCall(lc *pdu.FullLinkControl) error {
 	if lc.FID != enums.FIDStandardized {
 		return fmt.Errorf("cannot rewrite an LC of FID %s", lc.FID)
 	}
-	switch {
-	case lc.UnitToUnit != nil:
-		lc.GroupVoice = &pdu.FLCGroupVoice{ServiceOptions: lc.UnitToUnit.ServiceOptions}
-		lc.UnitToUnit = nil
-	case lc.GroupVoice == nil:
+	if u, ok := lc.AsUnitToUnit(); ok {
+		if err := lc.SetGroupVoice(pdu.FLCGroupVoice{ServiceOptions: u.ServiceOptions}); err != nil {
+			return fmt.Errorf("cannot rewrite a %s LC: %w", lc.FLCO, err)
+		}
+	} else if _, ok := lc.AsGroupVoice(); !ok {
 		return fmt.Errorf("cannot rewrite a %s LC", lc.FLCO)
 	}
-	lc.FLCO = enums.FLCOGroupVoiceChannelUser
 	if err := lc.SetAddresses(newTarget, newSource); err != nil {
 		return fmt.Errorf("cannot set addresses of a %s LC: %w", lc.FLCO, err)
 	}
@@ -233,7 +232,7 @@ func bridgeSMS(w io.Writer, path string) error {
 		}
 		switch d := b.Data.(type) {
 		case *pdu.CSBK:
-			if d.PreamblePDU == nil || d.SetAddresses(newTarget, newSource) != nil {
+			if _, ok := d.AsPreamble(); !ok || d.SetAddresses(newTarget, newSource) != nil {
 				continue
 			}
 			preambles++

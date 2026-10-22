@@ -9,29 +9,34 @@ import (
 )
 
 func csbkGroup(c *pdu.CSBK) (group, ok bool) {
-	switch {
-	case c.PreamblePDU != nil:
-		return c.PreamblePDU.Group, true
-	case c.ClearPDU != nil:
-		return c.ClearPDU.GroupIndividual, true
-	case c.ProtectPDU != nil:
-		return c.ProtectPDU.GroupIndividual, true
-	case c.AhoyPDU != nil:
-		return c.AhoyPDU.GroupIndividual, true
+	if p, ok := c.AsPreamble(); ok {
+		return p.Group, true
+	}
+	if p, ok := c.AsClear(); ok {
+		return p.GroupIndividual, true
+	}
+	if p, ok := c.AsProtect(); ok {
+		return p.GroupIndividual, true
+	}
+	if p, ok := c.AsAhoy(); ok {
+		return p.GroupIndividual, true
 	}
 	return false, false
 }
 
 func setCSBKGroup(c *pdu.CSBK, group bool) {
-	switch {
-	case c.PreamblePDU != nil:
-		c.PreamblePDU.Group = group
-	case c.ClearPDU != nil:
-		c.ClearPDU.GroupIndividual = group
-	case c.ProtectPDU != nil:
-		c.ProtectPDU.GroupIndividual = group
-	case c.AhoyPDU != nil:
-		c.AhoyPDU.GroupIndividual = group
+	if p, ok := c.AsPreamble(); ok {
+		p.Group = group
+		noErr(c.SetPreamble(p))
+	} else if p, ok := c.AsClear(); ok {
+		p.GroupIndividual = group
+		noErr(c.SetClear(p))
+	} else if p, ok := c.AsProtect(); ok {
+		p.GroupIndividual = group
+		noErr(c.SetProtect(p))
+	} else if p, ok := c.AsAhoy(); ok {
+		p.GroupIndividual = group
+		noErr(c.SetAhoy(p))
 	}
 }
 
@@ -56,7 +61,7 @@ func TestCSBKBytes_ReproducerPreamble(t *testing.T) {
 	}
 	c.Reseal()
 	noErr(want.SetAddresses(9, 0x23383B))
-	want.PreamblePDU.Group = true
+	setCSBKGroup(&want, true)
 	if b := must(want.Encode()); b != [12]byte(c) || !c.CRCOK() {
 		t.Fatalf("CSBKBytes %x, CSBK.Encode %x", c, b)
 	}

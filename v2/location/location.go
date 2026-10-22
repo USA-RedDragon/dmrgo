@@ -101,12 +101,11 @@ func (d *Decoder) Decode(h *pdu.DataHeader, data []byte) (Fix, error) {
 		return Fix{}, ErrNoFix
 	}
 	var sap enums.SAP
-	switch {
-	case h.UnconfirmedDataHeader != nil:
-		sap = h.UnconfirmedDataHeader.SAP
-	case h.ConfirmedDataHeader != nil:
-		sap = h.ConfirmedDataHeader.SAP
-	default:
+	if u, ok := h.AsUnconfirmedDataHeader(); ok {
+		sap = u.SAP
+	} else if c, ok := h.AsConfirmedDataHeader(); ok {
+		sap = c.SAP
+	} else {
 		return Fix{}, ErrNoFix
 	}
 	dg, err := ip.Decode(sap, data)

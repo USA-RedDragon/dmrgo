@@ -86,10 +86,6 @@ type tsccSvc struct {
 	protTo  [2 * MaxPayloadChannels]uint32
 	supl    [maxSupl]suplOp
 	ip      [maxIP]ipOp
-	ahoy    pdu.AhoyPDU
-	ack     pdu.AckOutboundPDU
-	bcast   pdu.BroadcastPDU
-	prot    pdu.ProtectPDU
 	cs      pdu.CSBK
 	rcPDU   pdu.ReverseChannel
 	buf     layer2.RawBurst
@@ -200,9 +196,10 @@ func (t *TSCC) psSet(now time.Duration, addr uint32, rq uint8) uint8 {
 
 func (t *TSCC) ackFrom(addr uint32, r enums.AckReason, info uint8, from uint32) {
 	s := &t.svc
-	s.ack = pdu.AckOutboundPDU{ResponseInfo: info, ReasonCode: byte(r), TargetAddress: addr, AdditionalInfo: from}
-	s.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckOutbound, AckOutboundPDU: &s.ack}
-	t.sendCSBK(0, false)
+	s.cs = pdu.CSBK{LastBlock: true}
+	if s.cs.SetAckOutbound(pdu.AckOutboundPDU{ResponseInfo: info, ReasonCode: byte(r), TargetAddress: addr, AdditionalInfo: from}) == nil {
+		t.sendCSBK(0, false)
+	}
 }
 
 func (t *TSCC) refuseFrom(addr uint32, r enums.AckReason, from uint32, out []TSCCOutput) []TSCCOutput {
@@ -212,9 +209,10 @@ func (t *TSCC) refuseFrom(addr uint32, r enums.AckReason, from uint32, out []TSC
 
 func (t *TSCC) sendAhoy(a pdu.AhoyPDU, addr uint32, reply bool) {
 	s := &t.svc
-	s.ahoy = a
-	s.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &s.ahoy}
-	t.sendCSBK(addr, reply)
+	s.cs = pdu.CSBK{LastBlock: true}
+	if s.cs.SetAhoy(a) == nil {
+		t.sendCSBK(addr, reply)
+	}
 }
 
 func (t *TSCC) registration(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutput) []TSCCOutput {
@@ -275,10 +273,11 @@ func (t *TSCC) MassRegister(window, mask uint8, addr uint32) error {
 		return errTarget
 	}
 	s := &t.svc
-	s.bcast = pdu.BroadcastPDU{AnnouncementType: enums.AnnouncementMassReg, BroadcastParms1: uint16(window)<<5 | uint16(mask),
-		Reg: t.cfg.Reg, Backoff: uint8(t.cfg.Backoff), SysIdentCode: t.code, BroadcastParms2: addr}
-	s.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKBroadcast, BroadcastPDU: &s.bcast}
-	t.sendCSBK(0, false)
+	s.cs = pdu.CSBK{LastBlock: true}
+	if s.cs.SetBroadcast(pdu.BroadcastPDU{AnnouncementType: enums.AnnouncementMassReg, BroadcastParms1: uint16(window)<<5 | uint16(mask),
+		Reg: t.cfg.Reg, Backoff: uint8(t.cfg.Backoff), SysIdentCode: t.code, BroadcastParms2: addr}) == nil {
+		t.sendCSBK(0, false)
+	}
 	return nil
 }
 
@@ -428,13 +427,14 @@ func (t *TSCC) svcInbound(now time.Duration, out []TSCCOutput) ([]TSCCOutput, bo
 	if d.FID != enums.FIDStandardized {
 		return out, true
 	}
-	switch {
-	case d.AckvitationPDU != nil:
-		return t.ackvit(now, d.AckvitationPDU, out), true
-	case d.AckInboundPDU != nil:
-		return t.svcAnswer(now, d.AckInboundPDU, out)
-	case d.RandomAccessPDU != nil:
-		return t.svcRandom(now, d.RandomAccessPDU, out)
+	if a, ok := d.AsAckvitation(); ok {
+		return t.ackvit(now, &a, out), true
+	}
+	if a, ok := d.AsAckInbound(); ok {
+		return t.svcAnswer(now, &a, out)
+	}
+	if r, ok := d.AsRandomAccess(); ok {
+		return t.svcRandom(now, &r, out)
 	}
 	return out, false
 }
@@ -622,8 +622,10 @@ func (t *TSCC) svcEmit(idx int) {
 	idle := synced && sp == enums.SyncBSSourcedData && s.buf.SlotType().DataType == enums.DataTypeIdle
 	if idle && s.protect[k] > 0 {
 		s.protect[k]--
-		s.prot = pdu.ProtectPDU{ProtectKind: uint8(enums.ProtectEnablePTTOneMS), TargetAddress: s.protTo[k], SourceAddress: constants.GatewayTSI}
-		s.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKProtect, ProtectPDU: &s.prot}
+		s.cs = pdu.CSBK{LastBlock: true}
+		if s.cs.SetProtect(pdu.ProtectPDU{ProtectKind: uint8(enums.ProtectEnablePTTOneMS), TargetAddress: s.protTo[k], SourceAddress: constants.GatewayTSI}) != nil {
+			return
+		}
 		if p, err := s.cs.Encode(); err == nil {
 			if b, err := layer2.BuildDataBurst(p, enums.DataTypeCSBK, t.cfg.ColorCode, layer2.SyncSourceBS); err == nil {
 				s.buf = b

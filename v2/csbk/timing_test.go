@@ -26,7 +26,10 @@ func ctBurst(t *testing.T, f ctf) *layer2.RawBurst {
 	t.Helper()
 	p := pdu.ChannelTimingPDU{Generation: f.gen, SyncAge: f.sa, LeaderDynamicIdentifier: f.ldi, LeaderIdentifier: f.lid, NewLeader: f.nl,
 		ChannelTimingOp1: f.cto&2 != 0, ChannelTimingOp0: f.cto&1 != 0, SourceDynamicIdentifier: f.sdi, SourceIdentifier: f.sid}
-	c := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKChannelTiming, ChannelTimingPDU: &p}
+	c := pdu.CSBK{LastBlock: true}
+	if err := c.SetChannelTiming(p); err != nil {
+		t.Fatal(err)
+	}
 	b, err := layer2.BuildBurst(&c, csbk.AllSiteColorCode, layer2.SyncSourceDirectTS2)
 	if err != nil {
 		t.Fatal(err)
@@ -41,10 +44,13 @@ func ctOf(t *testing.T, raw layer2.RawBurst) ctf {
 		t.Fatal(err)
 	}
 	c, ok := b.Data.(*pdu.CSBK)
-	if !ok || c.ChannelTimingPDU == nil || b.SlotType.ColorCode != csbk.AllSiteColorCode {
+	if !ok {
 		t.Fatalf("not a CT_CSBK: %T, color code %d", b.Data, b.SlotType.ColorCode)
 	}
-	p := c.ChannelTimingPDU
+	p, ok := c.AsChannelTiming()
+	if !ok || b.SlotType.ColorCode != csbk.AllSiteColorCode {
+		t.Fatalf("not a CT_CSBK: %T, color code %d", b.Data, b.SlotType.ColorCode)
+	}
 	var cto uint8
 	if p.ChannelTimingOp1 {
 		cto = 2

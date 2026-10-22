@@ -24,12 +24,12 @@ func ExampleSender() {
 		fmt.Println(err)
 		return
 	}
-	m := &data.Message{
-		Header: pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
-			SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001,
-		}},
-		Rate:    enums.DataTypeRate12,
-		Payload: []byte("a confirmed message of a few blocks"),
+	m := &data.Message{Rate: enums.DataTypeRate12, Payload: []byte("a confirmed message of a few blocks")}
+	if err := m.Header.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{
+		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001,
+	}); err != nil {
+		fmt.Println(err)
+		return
 	}
 	if err := tx.Send(0, m); err != nil {
 		fmt.Println(err)
@@ -86,12 +86,12 @@ func ExampleSender_window() {
 		return
 	}
 	for _, text := range []string{"one", "two", "three"} {
-		m := &data.Message{
-			Header: pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
-				SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001,
-			}},
-			Rate:    enums.DataTypeRate12,
-			Payload: []byte(text),
+		m := &data.Message{Rate: enums.DataTypeRate12, Payload: []byte(text)}
+		if err := m.Header.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{
+			SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001,
+		}); err != nil {
+			fmt.Println(err)
+			return
 		}
 		if err := tx.Send(0, m); err != nil {
 			fmt.Println(err)
@@ -112,8 +112,8 @@ func ExampleSender_window() {
 			for _, e := range rx.Burst(o.Due, &o.Burst, layer2.Hint{}, events[:0]) {
 				switch e.Kind {
 				case data.EventDelivered:
-					fmt.Printf("delivered %q, response requested %v\n", e.Message.Payload,
-						e.Message.Header.ConfirmedDataHeader.ResponseRequested)
+					c, _ := e.Message.Header.AsConfirmedDataHeader()
+					fmt.Printf("delivered %q, response requested %v\n", e.Message.Payload, c.ResponseRequested)
 				case data.EventRespond:
 					replies = append(replies, e)
 				case data.EventCallStart, data.EventResponse, data.EventCallEnd, data.EventReassembled:
@@ -138,12 +138,12 @@ func ExampleOutput_ICMP() {
 		fmt.Println(err)
 		return
 	}
-	m := &data.Message{
-		Header: pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
-			SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001,
-		}},
-		Rate:    enums.DataTypeRate12,
-		Payload: []byte("no one hears this"),
+	m := &data.Message{Rate: enums.DataTypeRate12, Payload: []byte("no one hears this")}
+	if err := m.Header.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{
+		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001,
+	}); err != nil {
+		fmt.Println(err)
+		return
 	}
 	if err := tx.Send(0, m); err != nil {
 		fmt.Println(err)

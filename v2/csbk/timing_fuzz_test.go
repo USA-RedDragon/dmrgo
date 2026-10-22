@@ -32,7 +32,9 @@ func timingScript(t testing.TB, in []byte) {
 				if err := b.DecodeFromBytes(o.Burst); err != nil || b.SlotType.ColorCode != csbk.AllSiteColorCode {
 					t.Fatalf("op %d: burst %v", op, err)
 				}
-				if c, ok := b.Data.(*pdu.CSBK); !ok || c.ChannelTimingPDU == nil {
+				if c, ok := b.Data.(*pdu.CSBK); !ok {
+					t.Fatalf("op %d: not a CT_CSBK", op)
+				} else if _, ok := c.AsChannelTiming(); !ok {
 					t.Fatalf("op %d: not a CT_CSBK", op)
 				}
 			}
@@ -49,7 +51,11 @@ func timingScript(t testing.TB, in []byte) {
 			p := pdu.ChannelTimingPDU{SyncAge: uint16(f[0])<<3 | uint16(f[1]>>5), Generation: f[1] & 0x1F, LeaderIdentifier: uint32(f[2])<<12 | uint32(f[3])<<4 | uint32(f[4]>>4),
 				NewLeader: f[4]&8 != 0, LeaderDynamicIdentifier: f[4] >> 1 & 3, ChannelTimingOp1: f[4]&1 != 0, SourceIdentifier: uint32(f[5])<<12 | uint32(f[6])<<4 | uint32(f[7]>>4),
 				SourceDynamicIdentifier: f[7] >> 1 & 3, ChannelTimingOp0: f[7]&1 != 0}
-			raw, err := layer2.BuildBurst(&pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKChannelTiming, ChannelTimingPDU: &p}, csbk.AllSiteColorCode, layer2.SyncSourceDirectTS1)
+			c := pdu.CSBK{LastBlock: true}
+			if err := c.SetChannelTiming(p); err != nil {
+				t.Fatal(err)
+			}
+			raw, err := layer2.BuildBurst(&c, csbk.AllSiteColorCode, layer2.SyncSourceDirectTS1)
 			if err != nil {
 				t.Fatal(err)
 			}

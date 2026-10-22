@@ -48,9 +48,17 @@ func fuzzTalkerAlias(t *testing.T, alias string, format, order uint8, extra []by
 	}
 	blocks := make([]*pdu.FLCTalkerAliasBlock, 0, len(decoded)-1)
 	for _, lc := range decoded[1:] {
-		blocks = append(blocks, lc.TalkerAliasBlock)
+		blk, ok := lc.AsTalkerAliasBlock()
+		if !ok {
+			t.Fatalf("EncodeTalkerAlias(%q, %s) block is %s", alias, tf, lc.String())
+		}
+		blocks = append(blocks, &blk)
 	}
-	got, err := pdu.TalkerAlias(decoded[0].TalkerAliasHeader, blocks...)
+	header, ok := decoded[0].AsTalkerAliasHeader()
+	if !ok {
+		t.Fatalf("EncodeTalkerAlias(%q, %s) header is %s", alias, tf, decoded[0].String())
+	}
+	got, err := pdu.TalkerAlias(&header, blocks...)
 	if tf == layer3.TalkerAliasUTF8 && !utf8.ValidString(alias) {
 		if !errors.Is(err, pdu.ErrTalkerAliasInvalidUTF8) {
 			t.Fatalf("TalkerAlias of invalid UTF-8 %q: %q %v", alias, got, err)
@@ -61,7 +69,7 @@ func fuzzTalkerAlias(t *testing.T, alias string, format, order uint8, extra []by
 		t.Fatalf("TalkerAlias(EncodeTalkerAlias(%q, %s)) = %q %v", alias, tf, got, err)
 	}
 	if len(blocks) > 0 {
-		if _, err := pdu.TalkerAlias(decoded[0].TalkerAliasHeader, blocks[:len(blocks)-1]...); !errors.Is(err, pdu.ErrTalkerAliasIncomplete) {
+		if _, err := pdu.TalkerAlias(&header, blocks[:len(blocks)-1]...); !errors.Is(err, pdu.ErrTalkerAliasIncomplete) {
 			t.Fatalf("TalkerAlias without the last block of %q: %v", alias, err)
 		}
 	}

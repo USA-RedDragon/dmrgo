@@ -48,11 +48,11 @@ func TestBuilder_RetrySACK(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := r.Header.ConfirmedDataHeader
+	c := get(t, &r.Header, (*pdu.DataHeader).AsConfirmedDataHeader)
 	if c.FullMessageFlag || c.BlocksToFollow != 2 || c.SendSequenceNumber != 5 || len(r.Blocks) != 2 {
 		t.Fatalf("retry header %+v with %d blocks", c, len(r.Blocks))
 	}
-	if !p.Header.ConfirmedDataHeader.FullMessageFlag || int(p.Header.ConfirmedDataHeader.BlocksToFollow) != len(p.Blocks) {
+	if first := get(t, &p.Header, (*pdu.DataHeader).AsConfirmedDataHeader); !first.FullMessageFlag || int(first.BlocksToFollow) != len(p.Blocks) {
 		t.Fatal("Retry changed the first try")
 	}
 	for i, want := range []uint8{1, 3} {
@@ -76,7 +76,7 @@ func TestBuilder_RetryAll(t *testing.T) {
 		t.Fatal(err)
 	}
 	r, err := tx.Retry(&p, nil)
-	if err != nil || len(r.Blocks) != len(p.Blocks) || r.Header.ConfirmedDataHeader.FullMessageFlag {
+	if err != nil || len(r.Blocks) != len(p.Blocks) || get(t, &r.Header, (*pdu.DataHeader).AsConfirmedDataHeader).FullMessageFlag {
 		t.Fatalf("retry all: %v, %d blocks", err, len(r.Blocks))
 	}
 	rx := packet.NewAssembler(127)
@@ -90,8 +90,8 @@ func TestBuilder_RetryShortData(t *testing.T) {
 	t.Parallel()
 
 	for _, h := range []pdu.DataHeader{
-		{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{SAP: enums.SAPShortData, LLIDDestination: 1, LLIDSource: 2, SARQ: true, FullMessageFlag: true}},
-		{Format: pdu.FormatShortDataRawOrStatusPrecoded, RawDataHeader: &pdu.RawDataHeader{SAP: enums.SAPShortData, LLIDDestination: 1, LLIDSource: 2, SARQ: true, FullMessageFlag: true}},
+		header(t, (*pdu.DataHeader).SetDefinedDataHeader, pdu.DefinedDataHeader{SAP: enums.SAPShortData, LLIDDestination: 1, LLIDSource: 2, SARQ: true, FullMessageFlag: true}),
+		header(t, (*pdu.DataHeader).SetRawDataHeader, pdu.RawDataHeader{SAP: enums.SAPShortData, AppendedBlocks: 1, LLIDDestination: 1, LLIDSource: 2, SARQ: true, FullMessageFlag: true}),
 	} {
 		tx := packet.NewBuilder(127)
 		p, err := tx.Segment(h, payload(30), enums.DataTypeRate12)
@@ -101,12 +101,12 @@ func TestBuilder_RetryShortData(t *testing.T) {
 		var rd packet.ResponseData
 		rd.Retry[0], rd.Retry[2] = true, true
 		r, err := tx.Retry(&p, &rd)
-		if err != nil || r.Header.AppendedBlocks != 2 || len(r.Blocks) != 2 {
-			t.Fatalf("%v: %v, AB %d, %d blocks", h.Format, err, r.Header.AppendedBlocks, len(r.Blocks))
+		if err != nil || r.Header.AppendedBlocks() != 2 || len(r.Blocks) != 2 {
+			t.Fatalf("%v: %v, AB %d, %d blocks", h.Format(), err, r.Header.AppendedBlocks(), len(r.Blocks))
 		}
 		enc := encodeHeader(t, &r.Header)
-		if enc.AppendedBlocks != 2 || enc.Format != h.Format {
-			t.Errorf("%v: encoded AB %d", h.Format, enc.AppendedBlocks)
+		if enc.AppendedBlocks() != 2 || enc.Format() != h.Format() || fullFlag(enc) {
+			t.Errorf("%v: encoded AB %d", h.Format(), enc.AppendedBlocks())
 		}
 	}
 }
@@ -122,7 +122,7 @@ func TestBuilder_RetryErrors(t *testing.T) {
 	if _, err := b.Retry(&u, nil); !errors.Is(err, packet.ErrFormat) {
 		t.Errorf("unconfirmed: %v, want ErrFormat", err)
 	}
-	h := pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{SAP: enums.SAPShortData, FullMessageFlag: true}}
+	h := header(t, (*pdu.DataHeader).SetDefinedDataHeader, pdu.DefinedDataHeader{SAP: enums.SAPShortData, FullMessageFlag: true})
 	d, err := packet.NewPacket(h, payload(10), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)

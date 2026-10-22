@@ -4,12 +4,13 @@
 // data blocks.
 //
 // DecodeX decodes a PDU and X.Encode encodes it. cmd/dmrgen generates most of
-// these functions from the dmr struct tags. The payloads of a CSBK, MBC, Full
-// LC, Short LC or data header decode with their parent, which sets the
-// payload field of its opcode, so they have no DecodeX of their own. DecodeX
-// allocates the payload struct that the field points to. DecodeXInto decodes
-// into a caller's struct and points the field into a caller's XPayloads, so
-// that a reused pair decodes without allocating. (ETSI TS 102 361-1 clause 9)
+// these functions from the dmr struct tags. A CSBK, MBC header, Full LC,
+// Short LC or data header keeps its payload as bits in RawPayload, and its
+// opcode or format selects the layout of the bits, so the two cannot
+// disagree. AsX decodes RawPayload as the payload X and reports false when
+// the opcode selects another payload. SetX encodes the payload X into
+// RawPayload and sets the opcode that selects it. The payloads have no DecodeX
+// of their own. No decode allocates. (ETSI TS 102 361-1 clause 9)
 //
 // # Bit order
 //
@@ -43,22 +44,21 @@
 //
 // # CSBK and MBC payloads
 //
-// The FID redefines the CSBKO (ETSI TS 102 361-1 Table 9.21), so the payload
-// fields of CSBK and MBCHeader apply only to the standard FID. The payloads
-// of other FIDs and of opcodes without a layout stay in RawPayload. Encode
-// returns an error when more than one payload field is set, or when Opcode
-// and FID do not select the payload field that is set.
+// The FID redefines the CSBKO (ETSI TS 102 361-1 Table 9.21), so the As
+// methods of CSBK and MBCHeader apply only to the standard FID, except the
+// Motorola ones below. The payloads of other FIDs and of opcodes without a
+// layout are read from RawPayload.
 //
 // Opcode 0x38 is BS_Dwn_Act in Tier II and TD_GRANT_MI in Tier III, and the
-// CSBK does not say which, so its payload stays in RawPayload. Read it with
-// CSBK.AsBSOutboundActivation or CSBK.AsTalkgroupDataGrantMultiItem, and set
-// it with CSBK.SetBSOutboundActivation or CSBK.SetTalkgroupDataGrantMultiItem.
-// When the CSBK comes from a burst, CSBK.Hint0x38 gives the likely meaning.
+// CSBK does not say which. Read it with CSBK.AsBSOutboundActivation or
+// CSBK.AsTalkgroupDataGrantMultiItem, and set it with
+// CSBK.SetBSOutboundActivation or CSBK.SetTalkgroupDataGrantMultiItem. When
+// the CSBK comes from a burst, CSBK.Hint0x38 gives the likely meaning.
 //
-// The radio check, call alert and call alert acknowledgement of the
-// Motorola feature set (FID 0x10) also stay in RawPayload. Read them with
-// CSBK.AsMotorolaRadioCheck, CSBK.AsMotorolaCallAlert and
-// CSBK.AsMotorolaCallAlertAck, and set them with the matching Set methods.
+// Read the radio check, call alert and call alert acknowledgement of the
+// Motorola feature set (FID 0x10) with CSBK.AsMotorolaRadioCheck,
+// CSBK.AsMotorolaCallAlert and CSBK.AsMotorolaCallAlertAck, and set them
+// with the matching Set methods.
 //
 // The header of a grant, C_MOVE or C_BCAST MBC carries the CSBK payload of
 // its opcode (ETSI TS 102 361-4 clause 7.1.1.1). DecodeMBCContinuation

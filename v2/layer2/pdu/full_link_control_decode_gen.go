@@ -21,9 +21,8 @@ import (
 )
 
 // DecodeFullLinkControl decodes a FullLinkControl. data holds the 96 bits of
-// the PDU packed, the first bit in the most significant bit of data[0]. It
-// allocates the payload struct that the dispatch field points to;
-// DecodeFullLinkControlInto does not. (ETSI TS 102 361-1 clause 9.1.6)
+// the PDU packed, the first bit in the most significant bit of data[0].
+// (ETSI TS 102 361-1 clause 9.1.6)
 func DecodeFullLinkControl(data [12]byte, burstDataType enums.DataType) FullLinkControl {
 	var result FullLinkControl
 	result.BurstDataType = burstDataType
@@ -47,108 +46,8 @@ func DecodeFullLinkControl(data [12]byte, burstDataType enums.DataType) FullLink
 	result.Reserved = data[0]&0x40 != 0
 	result.FLCO = enums.FLCO(uint64(data[0]) & 0x3F)
 	result.FID = enums.FID(uint64(data[1]))
-	var _dispatchBytes [7]byte
-	copy(_dispatchBytes[0:7], data[2:9])
-	if result.FID == 0 {
-		switch result.FLCO {
-		case enums.FLCOGroupVoiceChannelUser:
-			_decoded := decodeFLCGroupVoice(_dispatchBytes)
-			result.GroupVoice = &_decoded
-		case enums.FLCOUnitToUnitVoiceChannelUser:
-			_decoded := decodeFLCUnitToUnit(_dispatchBytes)
-			result.UnitToUnit = &_decoded
-		case enums.FLCOGPSInfo:
-			_decoded := decodeFLCGPSInfo(_dispatchBytes)
-			result.GPSInfo = &_decoded
-		case enums.FLCOTalkerAliasHeader:
-			_decoded := decodeFLCTalkerAliasHeader(_dispatchBytes)
-			result.TalkerAliasHeader = &_decoded
-		case enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3:
-			_decoded := decodeFLCTalkerAliasBlock(_dispatchBytes)
-			result.TalkerAliasBlock = &_decoded
-		case enums.FLCOTerminatorDataLinkControl:
-			_decoded := decodeFLCTerminatorDataLinkControl(_dispatchBytes)
-			result.TerminatorDataLinkControl = &_decoded
-		default:
-			copy(result.RawPayload[0:7], data[2:9])
-		}
-	} else {
-		copy(result.RawPayload[0:7], data[2:9])
-	}
+	copy(result.RawPayload[0:7], data[2:9])
 	return result
-}
-
-// FullLinkControlPayloads holds one payload struct of each type that
-// a FullLinkControl dispatch field points to, for DecodeFullLinkControlInto.
-// The zero value is ready to use.
-type FullLinkControlPayloads struct {
-	flcGroupVoice                FLCGroupVoice
-	flcUnitToUnit                FLCUnitToUnit
-	flcgpsInfo                   FLCGPSInfo
-	flcTalkerAliasHeader         FLCTalkerAliasHeader
-	flcTalkerAliasBlock          FLCTalkerAliasBlock
-	flcTerminatorDataLinkControl FLCTerminatorDataLinkControl
-}
-
-// DecodeFullLinkControlInto decodes data into dst as DecodeFullLinkControl does,
-// but points the dispatch field of dst into p, so it does not allocate.
-// The payload stays valid until the next decode into p. A nil dst or
-// p does nothing.
-func DecodeFullLinkControlInto(dst *FullLinkControl, p *FullLinkControlPayloads, data [12]byte, burstDataType enums.DataType) {
-	if dst == nil || p == nil {
-		return
-	}
-	*dst = FullLinkControl{}
-	result := dst
-	result.BurstDataType = burstDataType
-	_cw := data
-	switch result.BurstDataType {
-	case enums.DataTypeVoiceLCHeader:
-		_cw[9] ^= 0x96
-		_cw[10] ^= 0x96
-		_cw[11] ^= 0x96
-	case enums.DataTypeTerminatorWithLC:
-		_cw[9] ^= 0x99
-		_cw[10] ^= 0x99
-		_cw[11] ^= 0x99
-	}
-	var _fecData [9]byte
-	_fecData, result.FEC = reedsolomon.Decode(_cw)
-	if !result.FEC.Uncorrectable {
-		copy(data[:9], _fecData[:])
-	}
-	result.ProtectFlag = data[0]&0x80 != 0
-	result.Reserved = data[0]&0x40 != 0
-	result.FLCO = enums.FLCO(uint64(data[0]) & 0x3F)
-	result.FID = enums.FID(uint64(data[1]))
-	var _dispatchBytes [7]byte
-	copy(_dispatchBytes[0:7], data[2:9])
-	if result.FID == 0 {
-		switch result.FLCO {
-		case enums.FLCOGroupVoiceChannelUser:
-			p.flcGroupVoice = decodeFLCGroupVoice(_dispatchBytes)
-			result.GroupVoice = &p.flcGroupVoice
-		case enums.FLCOUnitToUnitVoiceChannelUser:
-			p.flcUnitToUnit = decodeFLCUnitToUnit(_dispatchBytes)
-			result.UnitToUnit = &p.flcUnitToUnit
-		case enums.FLCOGPSInfo:
-			p.flcgpsInfo = decodeFLCGPSInfo(_dispatchBytes)
-			result.GPSInfo = &p.flcgpsInfo
-		case enums.FLCOTalkerAliasHeader:
-			p.flcTalkerAliasHeader = decodeFLCTalkerAliasHeader(_dispatchBytes)
-			result.TalkerAliasHeader = &p.flcTalkerAliasHeader
-		case enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3:
-			p.flcTalkerAliasBlock = decodeFLCTalkerAliasBlock(_dispatchBytes)
-			result.TalkerAliasBlock = &p.flcTalkerAliasBlock
-		case enums.FLCOTerminatorDataLinkControl:
-			p.flcTerminatorDataLinkControl = decodeFLCTerminatorDataLinkControl(_dispatchBytes)
-			result.TerminatorDataLinkControl = &p.flcTerminatorDataLinkControl
-		default:
-			copy(result.RawPayload[0:7], data[2:9])
-		}
-	} else {
-		copy(result.RawPayload[0:7], data[2:9])
-	}
 }
 
 // Encode encodes a FullLinkControl. It returns the 96 bits packed, the first
@@ -160,80 +59,6 @@ func (s *FullLinkControl) Encode() ([12]byte, error) {
 	}
 
 	var data [12]byte
-	_payload := ""
-	if s.GroupVoice != nil {
-		_payload = "GroupVoice"
-	}
-	if s.UnitToUnit != nil {
-		if _payload != "" {
-			return [12]byte{}, errFullLinkControlPayloads
-		}
-		_payload = "UnitToUnit"
-	}
-	if s.GPSInfo != nil {
-		if _payload != "" {
-			return [12]byte{}, errFullLinkControlPayloads
-		}
-		_payload = "GPSInfo"
-	}
-	if s.TalkerAliasHeader != nil {
-		if _payload != "" {
-			return [12]byte{}, errFullLinkControlPayloads
-		}
-		_payload = "TalkerAliasHeader"
-	}
-	if s.TalkerAliasBlock != nil {
-		if _payload != "" {
-			return [12]byte{}, errFullLinkControlPayloads
-		}
-		_payload = "TalkerAliasBlock"
-	}
-	if s.TerminatorDataLinkControl != nil {
-		if _payload != "" {
-			return [12]byte{}, errFullLinkControlPayloads
-		}
-		_payload = "TerminatorDataLinkControl"
-	}
-	switch {
-	case s.GroupVoice != nil:
-		_pduBytes, err := s.GroupVoice.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:9], _pduBytes[0:7])
-	case s.UnitToUnit != nil:
-		_pduBytes, err := s.UnitToUnit.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:9], _pduBytes[0:7])
-	case s.GPSInfo != nil:
-		_pduBytes, err := s.GPSInfo.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:9], _pduBytes[0:7])
-	case s.TalkerAliasHeader != nil:
-		_pduBytes, err := s.TalkerAliasHeader.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:9], _pduBytes[0:7])
-	case s.TalkerAliasBlock != nil:
-		_pduBytes, err := s.TalkerAliasBlock.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:9], _pduBytes[0:7])
-	case s.TerminatorDataLinkControl != nil:
-		_pduBytes, err := s.TerminatorDataLinkControl.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:9], _pduBytes[0:7])
-	default:
-		copy(data[2:9], s.RawPayload[0:7])
-	}
 	if s.ProtectFlag {
 		data[0] |= 0x80
 	}
@@ -248,31 +73,7 @@ func (s *FullLinkControl) Encode() ([12]byte, error) {
 		return [12]byte{}, errFullLinkControlFIDRange
 	}
 	data[1] = byte(uint64(s.FID))
-	if _payload != "" {
-		var result FullLinkControl
-		result.FLCO = enums.FLCO(uint64(data[0]) & 0x3F)
-		result.FID = enums.FID(uint64(data[1]))
-		_want := "RawPayload"
-		if result.FID == 0 {
-			switch result.FLCO {
-			case enums.FLCOGroupVoiceChannelUser:
-				_want = "GroupVoice"
-			case enums.FLCOUnitToUnitVoiceChannelUser:
-				_want = "UnitToUnit"
-			case enums.FLCOGPSInfo:
-				_want = "GPSInfo"
-			case enums.FLCOTalkerAliasHeader:
-				_want = "TalkerAliasHeader"
-			case enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3:
-				_want = "TalkerAliasBlock"
-			case enums.FLCOTerminatorDataLinkControl:
-				_want = "TerminatorDataLinkControl"
-			}
-		}
-		if _payload != _want {
-			return [12]byte{}, errFullLinkControlPayload
-		}
-	}
+	copy(data[2:9], s.RawPayload[0:7])
 	_encoded := reedsolomon.Encode([9]byte(data[:9]))
 	switch s.BurstDataType {
 	case enums.DataTypeVoiceLCHeader:
@@ -299,24 +100,221 @@ func (s *FullLinkControl) String() string {
 
 	_ret := "FullLinkControl{ "
 	_ret += "BurstDataType: " + s.BurstDataType.String() + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Reserved: " + text.Bool(s.Reserved) + ", FLCO: " + s.FLCO.String() + ", FID: " + s.FID.String() + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, "
-	switch {
-	case s.GroupVoice != nil:
-		_ret += s.GroupVoice.String()
-	case s.UnitToUnit != nil:
-		_ret += s.UnitToUnit.String()
-	case s.GPSInfo != nil:
-		_ret += s.GPSInfo.String()
-	case s.TalkerAliasHeader != nil:
-		_ret += s.TalkerAliasHeader.String()
-	case s.TalkerAliasBlock != nil:
-		_ret += s.TalkerAliasBlock.String()
-	case s.TerminatorDataLinkControl != nil:
-		_ret += s.TerminatorDataLinkControl.String()
-	default:
+	if v, ok := s.AsGroupVoice(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsUnitToUnit(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsGPSInfo(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsTalkerAliasHeader(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsTalkerAliasBlock(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsTerminatorDataLinkControl(); ok {
+		_ret += v.String()
+	} else {
 		_ret += "RawPayload: " + text.Hex(s.RawPayload[:])
 	}
 	_ret += " }"
 	return _ret
+}
+
+// AsGroupVoice decodes RawPayload as an FLCGroupVoice payload. ok is false
+// unless FLCO is enums.FLCOGroupVoiceChannelUser and FID is 0.
+func (s *FullLinkControl) AsGroupVoice() (p FLCGroupVoice, ok bool) {
+	if s == nil {
+		return FLCGroupVoice{}, false
+	}
+
+	if !(s.FLCO == enums.FLCOGroupVoiceChannelUser && s.FID == 0) {
+		return p, false
+	}
+	return decodeFLCGroupVoice(s.RawPayload), true
+}
+
+// SetGroupVoice makes s carry p as an FLCGroupVoice payload: it sets FLCO to
+// enums.FLCOGroupVoiceChannelUser, FID to 0 and RawPayload, and keeps the
+// other fields. It returns the error of p.Encode, and then leaves s as it
+// is.
+func (s *FullLinkControl) SetGroupVoice(p FLCGroupVoice) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.FLCO = enums.FLCOGroupVoiceChannelUser
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsUnitToUnit decodes RawPayload as an FLCUnitToUnit payload. ok is false
+// unless FLCO is enums.FLCOUnitToUnitVoiceChannelUser and FID is 0.
+func (s *FullLinkControl) AsUnitToUnit() (p FLCUnitToUnit, ok bool) {
+	if s == nil {
+		return FLCUnitToUnit{}, false
+	}
+
+	if !(s.FLCO == enums.FLCOUnitToUnitVoiceChannelUser && s.FID == 0) {
+		return p, false
+	}
+	return decodeFLCUnitToUnit(s.RawPayload), true
+}
+
+// SetUnitToUnit makes s carry p as an FLCUnitToUnit payload: it sets FLCO to
+// enums.FLCOUnitToUnitVoiceChannelUser, FID to 0 and RawPayload, and keeps
+// the other fields. It returns the error of p.Encode, and then leaves s as
+// it is.
+func (s *FullLinkControl) SetUnitToUnit(p FLCUnitToUnit) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.FLCO = enums.FLCOUnitToUnitVoiceChannelUser
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsGPSInfo decodes RawPayload as an FLCGPSInfo payload. ok is false unless
+// FLCO is enums.FLCOGPSInfo and FID is 0.
+func (s *FullLinkControl) AsGPSInfo() (p FLCGPSInfo, ok bool) {
+	if s == nil {
+		return FLCGPSInfo{}, false
+	}
+
+	if !(s.FLCO == enums.FLCOGPSInfo && s.FID == 0) {
+		return p, false
+	}
+	return decodeFLCGPSInfo(s.RawPayload), true
+}
+
+// SetGPSInfo makes s carry p as an FLCGPSInfo payload: it sets FLCO to
+// enums.FLCOGPSInfo, FID to 0 and RawPayload, and keeps the other fields. It
+// returns the error of p.Encode, and then leaves s as it is.
+func (s *FullLinkControl) SetGPSInfo(p FLCGPSInfo) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.FLCO = enums.FLCOGPSInfo
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsTalkerAliasHeader decodes RawPayload as an FLCTalkerAliasHeader payload.
+// ok is false unless FLCO is enums.FLCOTalkerAliasHeader and FID is 0.
+func (s *FullLinkControl) AsTalkerAliasHeader() (p FLCTalkerAliasHeader, ok bool) {
+	if s == nil {
+		return FLCTalkerAliasHeader{}, false
+	}
+
+	if !(s.FLCO == enums.FLCOTalkerAliasHeader && s.FID == 0) {
+		return p, false
+	}
+	return decodeFLCTalkerAliasHeader(s.RawPayload), true
+}
+
+// SetTalkerAliasHeader makes s carry p as an FLCTalkerAliasHeader payload:
+// it sets FLCO to enums.FLCOTalkerAliasHeader, FID to 0 and RawPayload, and
+// keeps the other fields. It returns the error of p.Encode, and then leaves
+// s as it is.
+func (s *FullLinkControl) SetTalkerAliasHeader(p FLCTalkerAliasHeader) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.FLCO = enums.FLCOTalkerAliasHeader
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsTalkerAliasBlock decodes RawPayload as an FLCTalkerAliasBlock payload.
+// ok is false unless FLCO is enums.FLCOTalkerAliasBlock1,
+// enums.FLCOTalkerAliasBlock2 or enums.FLCOTalkerAliasBlock3 and FID is 0.
+func (s *FullLinkControl) AsTalkerAliasBlock() (p FLCTalkerAliasBlock, ok bool) {
+	if s == nil {
+		return FLCTalkerAliasBlock{}, false
+	}
+
+	if !((s.FLCO == enums.FLCOTalkerAliasBlock1 || s.FLCO == enums.FLCOTalkerAliasBlock2 || s.FLCO == enums.FLCOTalkerAliasBlock3) && s.FID == 0) {
+		return p, false
+	}
+	return decodeFLCTalkerAliasBlock(s.RawPayload), true
+}
+
+// SetTalkerAliasBlock makes s carry p as an FLCTalkerAliasBlock payload: it
+// sets FLCO to flco, FID to 0 and RawPayload, and keeps the other fields. It
+// returns an error when flco is not enums.FLCOTalkerAliasBlock1,
+// enums.FLCOTalkerAliasBlock2 or enums.FLCOTalkerAliasBlock3 and the error
+// of p.Encode, and then leaves s as it is.
+func (s *FullLinkControl) SetTalkerAliasBlock(flco enums.FLCO, p FLCTalkerAliasBlock) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	if !(flco == enums.FLCOTalkerAliasBlock1 || flco == enums.FLCOTalkerAliasBlock2 || flco == enums.FLCOTalkerAliasBlock3) {
+		return errFullLinkControlTalkerAliasBlockFLCO
+	}
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.FLCO = flco
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsTerminatorDataLinkControl decodes RawPayload as an
+// FLCTerminatorDataLinkControl payload. ok is false unless FLCO is
+// enums.FLCOTerminatorDataLinkControl and FID is 0.
+func (s *FullLinkControl) AsTerminatorDataLinkControl() (p FLCTerminatorDataLinkControl, ok bool) {
+	if s == nil {
+		return FLCTerminatorDataLinkControl{}, false
+	}
+
+	if !(s.FLCO == enums.FLCOTerminatorDataLinkControl && s.FID == 0) {
+		return p, false
+	}
+	return decodeFLCTerminatorDataLinkControl(s.RawPayload), true
+}
+
+// SetTerminatorDataLinkControl makes s carry p as an
+// FLCTerminatorDataLinkControl payload: it sets FLCO to
+// enums.FLCOTerminatorDataLinkControl, FID to 0 and RawPayload, and keeps
+// the other fields. It returns the error of p.Encode, and then leaves s as
+// it is.
+func (s *FullLinkControl) SetTerminatorDataLinkControl(p FLCTerminatorDataLinkControl) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.FLCO = enums.FLCOTerminatorDataLinkControl
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
 }
 
 // ETSI TS 102 361-2 clause 7.1.1.1, Table 7.1
@@ -631,7 +629,6 @@ func (s *FLCTerminatorDataLinkControl) String() string {
 }
 
 var (
-	errFullLinkControlPayloads  = errors.New("FullLinkControl: more than one payload field is set")
 	errFullLinkControlFLCORange = &dmrgo.FieldRangeError{
 		Bits:  6,
 		Field: "FLCO",
@@ -642,9 +639,9 @@ var (
 		Field: "FID",
 		Type:  "FullLinkControl",
 	}
-	errFullLinkControlPayload           = errors.New("FullLinkControl: the payload field that is set is not the one that FLCO and FID select")
-	errFullLinkControlBurstDataTypeMask = errors.New("FullLinkControl.BurstDataType: no FEC mask for the value")
-	errFLCGroupVoiceGroupAddressRange   = &dmrgo.FieldRangeError{
+	errFullLinkControlBurstDataTypeMask    = errors.New("FullLinkControl.BurstDataType: no FEC mask for the value")
+	errFullLinkControlTalkerAliasBlockFLCO = errors.New("FullLinkControl.SetTalkerAliasBlock: flco is not enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2 or enums.FLCOTalkerAliasBlock3")
+	errFLCGroupVoiceGroupAddressRange      = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "GroupAddress",
 		Type:  "FLCGroupVoice",

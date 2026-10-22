@@ -8,33 +8,34 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// MBCHeader is the header block of a Multi Block Control (MBC) PDU (ETSI TS 102 361-1 clause 7.4.1).
+// MBCHeader is the header block of a Multi Block Control (MBC) PDU. Opcode
+// and FID select the view of RawPayload: AsMove, for example, decodes it for
+// Opcode CSBKMove and the standard FID 0. (ETSI TS 102 361-1 clause 7.4.1)
 //
 //dmr:crc crc_ccitt
 //dmr:crc_mask 0xAAAA
 //dmr:input_size 96
 //dmr:dispatch_if FID==0
+//dmr:variant PrivateVoiceGrant PrivateVoiceGrantPDU Opcode=CSBKPrivateVoiceGrant
+//dmr:variant TalkgroupVoiceGrant TalkgroupVoiceGrantPDU Opcode=CSBKTalkgroupVoiceGrant
+//dmr:variant BroadcastTalkgroupVoiceGrant BroadcastTalkgroupVoiceGrantPDU Opcode=CSBKBroadcastTalkgroupVoiceGrant
+//dmr:variant PrivateDataGrant PrivateDataGrantPDU Opcode=CSBKPrivateDataGrant
+//dmr:variant TalkgroupDataGrant TalkgroupDataGrantPDU Opcode=CSBKTalkgroupDataGrant
+//dmr:variant DuplexPrivateVoiceGrant DuplexPrivateVoiceGrantPDU Opcode=CSBKDuplexPrivateVoiceGrant
+//dmr:variant DuplexPrivateDataGrant DuplexPrivateDataGrantPDU Opcode=CSBKDuplexPrivateDataGrant
+//dmr:variant PrivateDataGrantMultiItem PrivateDataGrantMultiItemPDU Opcode=CSBKPrivateDataGrantMultiItem
+//dmr:variant Move MovePDU Opcode=CSBKMove
+//dmr:variant Broadcast BroadcastPDU Opcode=CSBKBroadcast
 type MBCHeader struct {
 	FEC         fec.Result `dmr:"-"`         // result of the CRC check
 	LastBlock   bool       `dmr:"bit:0"`     // LB bit, false in an MBC header
 	ProtectFlag bool       `dmr:"bit:1"`     // PF bit
-	Opcode      CSBKOpcode `dmr:"bits:2-7"`  // CSBKO, selects the payload field
-	FID         enums.FID  `dmr:"bits:8-15"` // feature set ID, only the standard FID has payload fields
+	Opcode      CSBKOpcode `dmr:"bits:2-7"`  // CSBKO, selects the payload
+	FID         enums.FID  `dmr:"bits:8-15"` // feature set ID, only the standard FID has As methods
 
-	PrivateVoiceGrantPDU            *PrivateVoiceGrantPDU            `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateVoiceGrant"`            // PV_GRANT payload, or nil
-	TalkgroupVoiceGrantPDU          *TalkgroupVoiceGrantPDU          `dmr:"bits:16-79,dispatch:Opcode=CSBKTalkgroupVoiceGrant"`          // TV_GRANT payload, or nil
-	BroadcastTalkgroupVoiceGrantPDU *BroadcastTalkgroupVoiceGrantPDU `dmr:"bits:16-79,dispatch:Opcode=CSBKBroadcastTalkgroupVoiceGrant"` // BTV_GRANT payload, or nil
-	PrivateDataGrantPDU             *PrivateDataGrantPDU             `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateDataGrant"`             // PD_GRANT payload, or nil
-	TalkgroupDataGrantPDU           *TalkgroupDataGrantPDU           `dmr:"bits:16-79,dispatch:Opcode=CSBKTalkgroupDataGrant"`           // TD_GRANT payload, or nil
-	DuplexPrivateVoiceGrantPDU      *DuplexPrivateVoiceGrantPDU      `dmr:"bits:16-79,dispatch:Opcode=CSBKDuplexPrivateVoiceGrant"`      // PV_GRANT_DX payload, or nil
-	DuplexPrivateDataGrantPDU       *DuplexPrivateDataGrantPDU       `dmr:"bits:16-79,dispatch:Opcode=CSBKDuplexPrivateDataGrant"`       // PD_GRANT_DX payload, or nil
-	PrivateDataGrantMultiItemPDU    *PrivateDataGrantMultiItemPDU    `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateDataGrantMultiItem"`    // PD_GRANT_MI payload, or nil
-	MovePDU                         *MovePDU                         `dmr:"bits:16-79,dispatch:Opcode=CSBKMove"`                         // C_MOVE payload, or nil
-	BroadcastPDU                    *BroadcastPDU                    `dmr:"bits:16-79,dispatch:Opcode=CSBKBroadcast"`                    // C_BCAST payload, or nil
-
-	// RawPayload holds header octets 2 to 9 (bits 16 to 79) when no payload
-	// field is set.
-	RawPayload [8]byte `dmr:"bits:16-79,raw,fallback"`
+	// RawPayload holds header octets 2 to 9 (bits 16 to 79), the payload
+	// that Opcode and FID select.
+	RawPayload [8]byte `dmr:"bits:16-79,raw,union"`
 }
 
 // DataType returns enums.DataTypeMBCHeader.

@@ -71,8 +71,8 @@ func TestAssembler_Captures(t *testing.T) {
 				t.Fatalf("got %d messages", len(msgs))
 			}
 			m := msgs[0]
-			if m.Header.Format != tt.format || m.DataType != enums.DataTypeRate12 || len(m.Data) != tt.size {
-				t.Fatalf("format %d type %d len %d", m.Header.Format, m.DataType, len(m.Data))
+			if m.Header.Format() != tt.format || m.DataType != enums.DataTypeRate12 || len(m.Data) != tt.size {
+				t.Fatalf("format %d type %d len %d", m.Header.Format(), m.DataType, len(m.Data))
 			}
 			if !bytes.Contains(m.Data, tt.want) {
 				t.Errorf("data %x does not hold the text", m.Data)
@@ -119,7 +119,7 @@ func badHeader(t *testing.T) *layer2.Burst {
 		t.Fatal(err)
 	}
 	h, ok := b.Data.(*pdu.DataHeader)
-	if !ok || !h.FEC.Uncorrectable || h.Format != pdu.FormatConfirmed {
+	if !ok || !h.FEC.Uncorrectable || h.Format() != pdu.FormatConfirmed {
 		t.Fatalf("corrupt header decodes as %T %+v", b.Data, b.Data)
 	}
 	return b
@@ -270,15 +270,52 @@ func feed(t *testing.T, a *packet.Assembler, p packet.Packet) (*packet.Message, 
 	return m, err
 }
 
+func header[P any](t testing.TB, set func(*pdu.DataHeader, P) error, p P) pdu.DataHeader {
+	t.Helper()
+	var h pdu.DataHeader
+	if err := set(&h, p); err != nil {
+		t.Fatalf("set header: %v", err)
+	}
+	return h
+}
+
+func get[P any](t testing.TB, h *pdu.DataHeader, as func(*pdu.DataHeader) (P, bool)) P {
+	t.Helper()
+	p, ok := as(h)
+	if !ok {
+		t.Fatalf("header of format %v does not carry %T", h.Format(), p)
+	}
+	return p
+}
+
+func mustSet(t testing.TB, err error) {
+	t.Helper()
+	if err != nil {
+		t.Fatalf("set header: %v", err)
+	}
+}
+
+func unconfirmedHeader() pdu.UnconfirmedDataHeader {
+	return pdu.UnconfirmedDataHeader{
+		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001, FullMessageFlag: true}
+}
+
+func confirmedHeader() pdu.ConfirmedDataHeader {
+	return pdu.ConfirmedDataHeader{
+		ResponseRequested: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002,
+		LLIDSource: 3120001, FullMessageFlag: true, SendSequenceNumber: 5, FragmentSequenceNumber: 8}
+}
+
 func unconfirmed() pdu.DataHeader {
-	return pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
-		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001, FullMessageFlag: true}}
+	var h pdu.DataHeader
+	_ = h.SetUnconfirmedDataHeader(unconfirmedHeader())
+	return h
 }
 
 func confirmed() pdu.DataHeader {
-	return pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
-		ResponseRequested: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002,
-		LLIDSource: 3120001, FullMessageFlag: true, SendSequenceNumber: 5, FragmentSequenceNumber: 8}}
+	var h pdu.DataHeader
+	_ = h.SetConfirmedDataHeader(confirmedHeader())
+	return h
 }
 
 func payload(n int) []byte {
@@ -300,7 +337,7 @@ func TestSegment_RoundTrip(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				per, _ := packet.BlockOctets(rate, h.Format == pdu.FormatConfirmed)
+				per, _ := packet.BlockOctets(rate, h.Format() == pdu.FormatConfirmed)
 				blocks, pad := packet.Layout(n, per)
 				if len(p.Blocks) != blocks || (blocks*per-pad-4) != n {
 					t.Fatalf("n=%d blocks %d pad %d", n, len(p.Blocks), pad)
@@ -308,12 +345,12 @@ func TestSegment_RoundTrip(t *testing.T) {
 				a := packet.NewAssembler(127)
 				m, err := feed(t, a, p)
 				if err != nil || m == nil || !bytes.Equal(m.Data, payload(n)) || m.DataType != rate {
-					t.Fatalf("%s n=%d rate %d: err %v msg %+v", h.Format.String(), n, rate, err, m)
+					t.Fatalf("%s n=%d rate %d: err %v msg %+v", h.Format().String(), n, rate, err, m)
 				}
 			}
 		}
 	}
-	if h := unconfirmed(); h.UnconfirmedDataHeader.BlocksToFollow != 0 {
+	if h := unconfirmed(); get(t, &h, (*pdu.DataHeader).AsUnconfirmedDataHeader).BlocksToFollow != 0 {
 		t.Error("Segment changed the caller's header")
 	}
 }
@@ -325,7 +362,7 @@ func TestSegment_HeaderFields(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	u := p.Header.UnconfirmedDataHeader
+	u := get(t, &p.Header, (*pdu.DataHeader).AsUnconfirmedDataHeader)
 	if u.BlocksToFollow != 5 || u.PadOctetCount != 9 || p.Header.DataType() != enums.DataTypeDataHeader {
 		t.Fatalf("BF %d POC %d", u.BlocksToFollow, u.PadOctetCount)
 	}
@@ -333,7 +370,7 @@ func TestSegment_HeaderFields(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := p.Header.ConfirmedDataHeader
+	c := get(t, &p.Header, (*pdu.DataHeader).AsConfirmedDataHeader)
 	if c.BlocksToFollow != 3 || c.PadOctetCount != 3 {
 		t.Fatalf("BF %d POC %d", c.BlocksToFollow, c.PadOctetCount)
 	}
@@ -359,10 +396,13 @@ func TestSegment_Errors(t *testing.T) {
 	if _, err := packet.NewPacket(unconfirmed(), nil, enums.DataTypeCSBK); !errors.Is(err, packet.ErrRate) {
 		t.Errorf("rate: %v", err)
 	}
-	if _, err := packet.NewPacket(pdu.DataHeader{Format: pdu.FormatUnconfirmed}, nil, enums.DataTypeRate12); !errors.Is(err, packet.ErrFormat) {
-		t.Errorf("nil sub-header: %v", err)
+	if _, err := packet.NewPacket(header(t, (*pdu.DataHeader).SetStatusPrecodedHeader, pdu.StatusPrecodedHeader{}), nil, enums.DataTypeRate12); !errors.Is(err, packet.ErrFormat) {
+		t.Errorf("SP_HEAD: %v", err)
 	}
-	if _, err := packet.NewPacket(pdu.DataHeader{Format: pdu.FormatProprietary, ProprietaryHeader: &pdu.ProprietaryHeader{}}, nil, enums.DataTypeRate12); !errors.Is(err, packet.ErrFormat) {
+	if _, err := packet.NewPacket(header(t, (*pdu.DataHeader).SetUDTHeader, pdu.UDTHeader{}), nil, enums.DataTypeRate12); !errors.Is(err, packet.ErrFormat) {
+		t.Errorf("UDT_HEAD: %v", err)
+	}
+	if _, err := packet.NewPacket(header(t, (*pdu.DataHeader).SetProprietaryHeader, pdu.ProprietaryHeader{}), nil, enums.DataTypeRate12); !errors.Is(err, packet.ErrFormat) {
 		t.Errorf("proprietary: %v", err)
 	}
 	if _, err := packet.NewPacket(unconfirmed(), payload(127*12-3), enums.DataTypeRate12); !errors.Is(err, packet.ErrTooLong) {
@@ -371,7 +411,7 @@ func TestSegment_Errors(t *testing.T) {
 	if _, err := packet.NewPacket(unconfirmed(), payload(127*12-4), enums.DataTypeRate12); err != nil {
 		t.Errorf("127 blocks: %v", err)
 	}
-	dd := pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{}}
+	dd := header(t, (*pdu.DataHeader).SetDefinedDataHeader, pdu.DefinedDataHeader{})
 	if _, err := packet.NewPacket(dd, payload(64*12), enums.DataTypeRate12); !errors.Is(err, packet.ErrTooLong) {
 		t.Errorf("short data too long: %v", err)
 	}
@@ -381,19 +421,19 @@ func TestSegment_ShortData(t *testing.T) {
 	t.Parallel()
 
 	for _, sarq := range []bool{false, true} {
-		h := pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{
-			SAP: enums.SAPShortData, LLIDDestination: 1, LLIDSource: 2, DefinedData: 2, SARQ: sarq, FullMessageFlag: true}}
+		h := header(t, (*pdu.DataHeader).SetDefinedDataHeader, pdu.DefinedDataHeader{
+			SAP: enums.SAPShortData, LLIDDestination: 1, LLIDSource: 2, DefinedData: 2, SARQ: sarq, FullMessageFlag: true})
 		p, err := packet.NewPacket(h, utf16le("hello"), enums.DataTypeRate12)
 		if err != nil {
 			t.Fatal(err)
 		}
 		a := packet.NewAssembler(127)
 		m, err := feed(t, a, p)
-		if err != nil || m.Header.DefinedDataHeader.AppendedBlocks != 2 || !bytes.HasPrefix(m.Data, utf16le("hello")) || len(m.Data) != map[bool]int{false: 20, true: 16}[sarq] {
+		if err != nil || get(t, &m.Header, (*pdu.DataHeader).AsDefinedDataHeader).AppendedBlocks != 2 || !bytes.HasPrefix(m.Data, utf16le("hello")) || len(m.Data) != map[bool]int{false: 20, true: 16}[sarq] {
 			t.Fatalf("sarq %v: %v %+v", sarq, err, m)
 		}
 	}
-	h := pdu.DataHeader{Format: pdu.FormatShortDataRawOrStatusPrecoded, RawDataHeader: &pdu.RawDataHeader{SAP: 10, SourcePort: 1, DestinationPort: 2, FullMessageFlag: true}}
+	h := header(t, (*pdu.DataHeader).SetRawDataHeader, pdu.RawDataHeader{SAP: 10, AppendedBlocks: 1, SourcePort: 1, DestinationPort: 2, FullMessageFlag: true})
 	p, err := packet.NewPacket(h, payload(30), enums.DataTypeRate34)
 	if err != nil {
 		t.Fatal(err)
@@ -490,8 +530,8 @@ func TestAssembler_SelectiveRetry(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rh := resp.Header.ResponsePacketHeader
-	if r, err := packet.ResponseOf(rh); err != nil || r != packet.ResponseSACK || rh.ResponseStatus != 5 || rh.LLIDDestination != 3120001 || rh.LLIDSource != 3120002 || len(resp.Blocks) != 1 {
+	rh := get(t, &resp.Header, (*pdu.DataHeader).AsResponsePacketHeader)
+	if r, err := packet.ResponseOf(&rh); err != nil || r != packet.ResponseSACK || rh.ResponseStatus != 5 || rh.LLIDDestination != 3120001 || rh.LLIDSource != 3120002 || len(resp.Blocks) != 1 {
 		t.Fatalf("response %+v", rh)
 	}
 
@@ -510,9 +550,9 @@ func TestAssembler_SelectiveRetry(t *testing.T) {
 func retryAndACK(t *testing.T, rx, tx *packet.Assembler, p packet.Packet, data []byte, retry []int) {
 	t.Helper()
 	rh2 := p.Header
-	c := *rh2.ConfirmedDataHeader
+	c := get(t, &rh2, (*pdu.DataHeader).AsConfirmedDataHeader)
 	c.BlocksToFollow = uint8(len(retry))
-	rh2.ConfirmedDataHeader = &c
+	mustSet(t, rh2.SetConfirmedDataHeader(c))
 	if m, err := add(rx, encodeHeader(t, &rh2)); m != nil || err != nil {
 		t.Fatal(m, err)
 	}
@@ -524,7 +564,8 @@ func retryAndACK(t *testing.T, rx, tx *packet.Assembler, p packet.Packet, data [
 		t.Fatalf("after retry: %v %+v", err, m)
 	}
 
-	ack, err := packet.NewResponse(p.Header.ConfirmedDataHeader, packet.ResponseACK, nil)
+	to := get(t, &p.Header, (*pdu.DataHeader).AsConfirmedDataHeader)
+	ack, err := packet.NewResponse(&to, packet.ResponseACK, nil)
 	if err != nil || len(ack.Blocks) != 0 {
 		t.Fatal(err)
 	}
@@ -532,7 +573,8 @@ func retryAndACK(t *testing.T, rx, tx *packet.Assembler, p packet.Packet, data [
 	if err != nil || am == nil {
 		t.Fatalf("ACK: %v %+v", err, am)
 	}
-	if r, err := packet.ResponseOf(am.Header.ResponsePacketHeader); err != nil || r != packet.ResponseACK {
+	ackHeader := get(t, &am.Header, (*pdu.DataHeader).AsResponsePacketHeader)
+	if r, err := packet.ResponseOf(&ackHeader); err != nil || r != packet.ResponseACK {
 		t.Fatalf("ACK: %v %v", err, r)
 	}
 }
@@ -560,8 +602,8 @@ func TestAssembler_Errors(t *testing.T) {
 	if _, err := add(a, &pdu.Rate34Data{}); !errors.Is(err, packet.ErrRateChange) {
 		t.Errorf("rate change: %v", err)
 	}
-	prop := &pdu.DataHeader{Format: pdu.FormatProprietary, ProprietaryHeader: &pdu.ProprietaryHeader{SAP: 9, MFID: 0x10}}
-	if _, err := add(a, prop); !errors.Is(err, packet.ErrNoHeader) {
+	prop := header(t, (*pdu.DataHeader).SetProprietaryHeader, pdu.ProprietaryHeader{SAP: 9, MFID: 0x10})
+	if _, err := add(a, &prop); !errors.Is(err, packet.ErrNoHeader) {
 		t.Errorf("lone P_HEAD: %v", err)
 	}
 }
@@ -569,20 +611,21 @@ func TestAssembler_Errors(t *testing.T) {
 func TestAssembler_ProprietaryHeader(t *testing.T) {
 	t.Parallel()
 
-	h := unconfirmed()
-	h.UnconfirmedDataHeader.SAP = enums.SAPProprietaryPacketData
-	p, err := packet.NewPacket(h, payload(20), enums.DataTypeRate12)
+	uh := unconfirmedHeader()
+	uh.SAP = enums.SAPProprietaryPacketData
+	p, err := packet.NewPacket(header(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, uh), payload(20), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
-	u := *p.Header.UnconfirmedDataHeader
+	u := get(t, &p.Header, (*pdu.DataHeader).AsUnconfirmedDataHeader)
 	u.BlocksToFollow++
-	p.Header.UnconfirmedDataHeader = &u
+	mustSet(t, p.Header.SetUnconfirmedDataHeader(u))
 	a := packet.NewAssembler(127)
 	if _, err := add(a, encodeHeader(t, &p.Header)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := add(a, encodeHeader(t, &pdu.DataHeader{Format: pdu.FormatProprietary, ProprietaryHeader: &pdu.ProprietaryHeader{SAP: 9, MFID: 0x10}})); err != nil {
+	prop := header(t, (*pdu.DataHeader).SetProprietaryHeader, pdu.ProprietaryHeader{SAP: 9, MFID: 0x10})
+	if _, err := add(a, encodeHeader(t, &prop)); err != nil {
 		t.Fatal(err)
 	}
 	var m *packet.Message
@@ -675,10 +718,13 @@ func TestResponseCodes(t *testing.T) {
 	if _, err := packet.ResponseOf(&pdu.ResponsePacketHeader{ResponseType: 8}); !errors.As(err, &rangeErr) || rangeErr.Field != "Type" {
 		t.Errorf("ResponseOf with type 8: error %v, want the FieldRangeError of Type", err)
 	}
-	h := confirmed()
-	r, err := packet.NewResponse(h.ConfirmedDataHeader, packet.ResponseNACKFSNOutOfSequence, nil)
-	if err != nil || r.Header.ResponsePacketHeader.ResponseStatus != 0 || r.Header.ResponsePacketHeader.ResponseClass != 1 {
-		t.Errorf("FSN NACK status: %+v", r.Header.ResponsePacketHeader)
+	to := confirmedHeader()
+	r, err := packet.NewResponse(&to, packet.ResponseNACKFSNOutOfSequence, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rh := get(t, &r.Header, (*pdu.DataHeader).AsResponsePacketHeader); rh.ResponseStatus != 0 || rh.ResponseClass != 1 {
+		t.Errorf("FSN NACK status: %+v", rh)
 	}
 }
 

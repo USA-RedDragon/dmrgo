@@ -13,10 +13,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-func ipHeader(group bool, sap enums.SAP) pdu.DataHeader {
-	return pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
+func ipHeader(t testing.TB, group bool, sap enums.SAP) pdu.DataHeader {
+	t.Helper()
+	return setHeader(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{
 		SAP: sap, Group: group, LLIDDestination: 9, LLIDSource: 3120001,
-	}}
+	})
 }
 
 func TestOutputICMPGroup(t *testing.T) {
@@ -24,7 +25,7 @@ func TestOutputICMPGroup(t *testing.T) {
 	for _, group := range []bool{false, true} {
 		s := newSender(t, &data.SenderConfig{TxLimit: 300 * time.Millisecond})
 		s.Channel(0, true)
-		m := &data.Message{Header: ipHeader(group, enums.SAPIPBasedPacketData), Rate: enums.DataTypeRate12, Payload: payload(40)}
+		m := &data.Message{Header: ipHeader(t, group, enums.SAPIPBasedPacketData), Rate: enums.DataTypeRate12, Payload: payload(40)}
 		if err := s.Send(0, m); err != nil {
 			t.Fatal(err)
 		}
@@ -60,7 +61,7 @@ func TestEventICMP(t *testing.T) {
 		e := data.Event{
 			Kind:    c.kind,
 			Call:    data.Call{Group: c.call, Target: 9, Source: 3120001},
-			Message: data.Message{Header: ipHeader(c.group, c.sap), Payload: bad},
+			Message: data.Message{Header: ipHeader(t, c.group, c.sap), Payload: bad},
 		}
 		m, pointer, err := e.ICMP(576)
 		if c.ok && (err != nil || m != ip.ICMPBadHeader || pointer != 0) || !c.ok && !errors.Is(err, ip.ErrNoICMP) {
@@ -71,7 +72,7 @@ func TestEventICMP(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e := data.Event{Kind: data.EventDelivered, Message: data.Message{Header: ipHeader(false, enums.SAPIPBasedPacketData), Payload: tms}}
+	e := data.Event{Kind: data.EventDelivered, Message: data.Message{Header: ipHeader(t, false, enums.SAPIPBasedPacketData), Payload: tms}}
 	if _, _, err := e.ICMP(576); !errors.Is(err, ip.ErrNoICMP) {
 		t.Errorf("good packet: %v", err)
 	}

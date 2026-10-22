@@ -112,14 +112,19 @@ func generatedCall() ([]layer2.RawBurst, error) {
 	if err != nil {
 		return nil, err
 	}
-	gps := pdu.FullLinkControl{FLCO: enums.FLCOGPSInfo, GPSInfo: &pdu.FLCGPSInfo{
+	var gps pdu.FullLinkControl
+	if err := gps.SetGPSInfo(pdu.FLCGPSInfo{
 		PositionError: layer3.PositionLessThan20M, Longitude: -97.7431, Latitude: 30.2672,
-	}}
+	}); err != nil {
+		return nil, err
+	}
+	var lc pdu.FullLinkControl
+	if err := lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 3100, SourceAddress: 3141592}); err != nil {
+		return nil, err
+	}
 	rotation = append(rotation, gps)
 	tx, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{
-		LC: pdu.FullLinkControl{FLCO: enums.FLCOGroupVoiceChannelUser, GroupVoice: &pdu.FLCGroupVoice{
-			GroupAddress: 3100, SourceAddress: 3141592,
-		}},
+		LC:        lc,
 		ColorCode: colorCode,
 		Source:    layer2.SyncSourceBS,
 		Silence:   vocoder.AMBESilenceSlot(),
@@ -260,7 +265,10 @@ func (c *channel) embedded(w io.Writer, lc *pdu.FullLinkControl) {
 			c.call = d
 		}
 	case enums.FLCOGPSInfo:
-		g := lc.GPSInfo
+		g, ok := lc.AsGPSInfo()
+		if !ok {
+			return
+		}
 		if pos := fmt.Sprintf("lat %.4f lon %.4f (%s)", g.Latitude, g.Longitude, g.PositionError.String()); pos != c.gps {
 			fmt.Fprintf(w, "%s GPS: %s\n", c.name, pos)
 			c.gps = pos
@@ -283,7 +291,7 @@ func describe(lc *pdu.FullLinkControl) string {
 		return lc.FLCO.String()
 	}
 	kind := "private"
-	if lc.GroupVoice != nil {
+	if _, ok := lc.AsGroupVoice(); ok {
 		kind = "group"
 	}
 	return fmt.Sprintf("%s %d -> %d", kind, src, dst)

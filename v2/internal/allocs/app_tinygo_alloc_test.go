@@ -38,9 +38,9 @@ func tinyAppOps(t *testing.T) []tinyOp {
 	reg := []byte{0x00, 0x0c, 0xf0, 0x20, 0x07, '3', '1', '9', '1', '8', '6', '8', 0x00, 0x00}
 	a := tinyOK(ars.DecodeMessage(reg))
 	loc := tinyOK(hex.DecodeString("071a22042468ace0341f4dbc778051118ecd8d118ad47b00636c0006"))
-	smsMsg := packet.Message{Header: pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3140598, LLIDSource: 3191868}}, Data: tmsIP}
+	smsMsg := packet.Message{Header: tinyUnconfirmed(pdu.UnconfirmedDataHeader{SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3140598, LLIDSource: 3191868}), Data: tmsIP}
 	smsText := sms.Text{Format: sms.FormatTMS, Source: 1, Destination: 2, Body: []byte("Hello")}
-	gpsMsg := packet.Message{Header: pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{SAP: enums.SAPUDPIPHeaderCompression}}, Data: gps}
+	gpsMsg := packet.Message{Header: tinyUnconfirmed(pdu.UnconfirmedDataHeader{SAP: enums.SAPUDPIPHeaderCompression}), Data: gps}
 	hdapMsg := []byte{0x11, 0x00, 0x03, 0x00, 0x04, 0x0a, 0x00, 0x00, 0x50, 0xd1, 0x03}
 	hm := tinyOK(hdap.DecodeMessage(hdapMsg))
 	buf := make([]byte, 0, 256)

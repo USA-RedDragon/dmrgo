@@ -221,8 +221,11 @@ func TestDataSMS(t *testing.T) {
 func TestConfirmedDataHang(t *testing.T) {
 	t.Parallel()
 	b := packet.NewBuilder(16)
-	h := pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
-		ResponseRequested: true, SAP: 4, LLIDDestination: 3191868, LLIDSource: 3120000, FullMessageFlag: true, SendSequenceNumber: 5}}
+	var h pdu.DataHeader
+	if err := h.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{
+		ResponseRequested: true, SAP: 4, LLIDDestination: 3191868, LLIDSource: 3120000, FullMessageFlag: true, SendSequenceNumber: 5}); err != nil {
+		t.Fatal(err)
+	}
 	p, err := b.Segment(h, make([]byte, 30), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)

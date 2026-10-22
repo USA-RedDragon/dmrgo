@@ -11,19 +11,23 @@ import (
 
 func headerGroup(t *testing.T, h *pdu.DataHeader) bool {
 	t.Helper()
-	switch {
-	case h.UnconfirmedDataHeader != nil:
-		return h.UnconfirmedDataHeader.Group
-	case h.ConfirmedDataHeader != nil:
-		return h.ConfirmedDataHeader.Group
-	case h.DefinedDataHeader != nil:
-		return h.DefinedDataHeader.Group
-	case h.StatusPrecodedHeader != nil:
-		return h.StatusPrecodedHeader.Group
-	case h.RawDataHeader != nil:
-		return h.RawDataHeader.Group
-	case h.UDTHeader != nil:
-		return h.UDTHeader.Group
+	if p, ok := h.AsUnconfirmedDataHeader(); ok {
+		return p.Group
+	}
+	if p, ok := h.AsConfirmedDataHeader(); ok {
+		return p.Group
+	}
+	if p, ok := h.AsDefinedDataHeader(); ok {
+		return p.Group
+	}
+	if p, ok := h.AsStatusPrecodedHeader(); ok {
+		return p.Group
+	}
+	if p, ok := h.AsRawDataHeader(); ok {
+		return p.Group
+	}
+	if p, ok := h.AsUDTHeader(); ok {
+		return p.Group
 	}
 	return false
 }
@@ -44,7 +48,7 @@ func TestDataHeaderBytes_SMSCaptures(t *testing.T) {
 			r := frame
 			p, _ := r.BPTCPayload()
 			h := pdu.DataHeaderBytes(p)
-			if !h.CRCOK() || h.Format() != dh.Format {
+			if !h.CRCOK() || h.Format() != dh.Format() {
 				t.Fatalf("%s burst %d: CRC %t, format %s", name, i, h.CRCOK(), h.Format())
 			}
 			formats[h.Format()]++

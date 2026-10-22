@@ -8,6 +8,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/data"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
 func fragmentBursts(t *testing.T, fsn []uint8, n int) ([]timedBurst, []byte) {
@@ -15,8 +16,8 @@ func fragmentBursts(t *testing.T, fsn []uint8, n int) ([]timedBurst, []byte) {
 	all := make([]timedBurst, 0, 8*len(fsn))
 	joined := make([]byte, 0, n*len(fsn))
 	for i, f := range fsn {
-		h := confirmedHeader(uint8(i) & 7)
-		h.ConfirmedDataHeader.FragmentSequenceNumber = f
+		h := confirmedHeader(t, uint8(i)&7)
+		editConfirmed(t, &h, func(c *pdu.ConfirmedDataHeader) { c.FragmentSequenceNumber = f })
 		p := payload(n)
 		p[0] = byte(i)
 		joined = append(joined, p...)

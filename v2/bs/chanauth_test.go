@@ -63,7 +63,10 @@ func header(t testing.TB, target, source uint32) layer2.RawBurst {
 
 func preCSBK(t testing.TB, source uint32) layer2.RawBurst {
 	t.Helper()
-	c := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKPreamble, PreamblePDU: &pdu.PreamblePDU{Group: true, CSBKBlocksToFollow: 3, TargetAddress: 9, SourceAddress: source}}
+	c := pdu.CSBK{LastBlock: true}
+	if err := c.SetPreamble(pdu.PreamblePDU{Group: true, CSBKBlocksToFollow: 3, TargetAddress: 9, SourceAddress: source}); err != nil {
+		t.Fatal(err)
+	}
 	b, err := layer2.BuildBurst(&c, 1, layer2.SyncSourceMS)
 	if err != nil {
 		t.Fatal(err)

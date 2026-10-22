@@ -113,22 +113,21 @@ func (s *ShortLCPSysParms) SiteID() (uint16, error) {
 	return siteID(s.MODEL, s.NetSiteRaw), nil
 }
 
-// ShortLC is the Short Link Control (Short LC) PDU. Encode returns an error
-// unless SLCO selects the one payload field that is set.
-// (ETSI TS 102 361-1 clause 9.1.7)
+// ShortLC is the Short Link Control (Short LC) PDU. SLCO selects the view
+// of RawPayload: AsActivityUpdate, for example, decodes it for SLCO
+// enums.SLCOActivityUpdate. (ETSI TS 102 361-1 clause 9.1.7)
 //
 //dmr:crc crc_8
 //dmr:input_size 36
+//dmr:variant NullMessage ShortLCNullMessage SLCO=enums.SLCONullMessage
+//dmr:variant ActivityUpdate ShortLCActivityUpdate SLCO=enums.SLCOActivityUpdate
+//dmr:variant CSysParms ShortLCCSysParms SLCO=enums.SLCOCSysParms
+//dmr:variant PSysParms ShortLCPSysParms SLCO=enums.SLCOPSysParms
 type ShortLC struct {
 	SLCO enums.SLCO `dmr:"bits:0-3,enum"` // Short Link Control Opcode (SLCO)
 	FEC  fec.Result `dmr:"-"`             // result of the CRC-8 check
 
-	NullMessage    *ShortLCNullMessage    `dmr:"bits:4-27,dispatch:SLCO=enums.SLCONullMessage"`    // Null Message payload
-	ActivityUpdate *ShortLCActivityUpdate `dmr:"bits:4-27,dispatch:SLCO=enums.SLCOActivityUpdate"` // Activity Update payload
-	CSysParms      *ShortLCCSysParms      `dmr:"bits:4-27,dispatch:SLCO=enums.SLCOCSysParms"`      // C_SYS_Parms payload
-	PSysParms      *ShortLCPSysParms      `dmr:"bits:4-27,dispatch:SLCO=enums.SLCOPSysParms"`      // P_SYS_Parms payload
-
-	// RawPayload holds bits 4 to 27 when no payload field is set, packed
+	// RawPayload holds bits 4 to 27, the payload that SLCO selects, packed
 	// most significant bit first: bit 4 is the top bit of byte 0.
-	RawPayload [3]byte `dmr:"bits:4-27,raw,fallback"`
+	RawPayload [3]byte `dmr:"bits:4-27,raw,union"`
 }

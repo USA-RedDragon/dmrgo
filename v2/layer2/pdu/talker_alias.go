@@ -186,12 +186,10 @@ func putUnit(units *[talkerAliasMaxUnits]uint16, n int, u uint16) int {
 // that carry alias in the given format, with the SFID. DataType is not set.
 // It returns ErrTalkerAliasLength when the alias needs more than 31 Code
 // Units or more than three blocks, and an error when a character is not in
-// the format. It allocates the LCs and their payloads;
-// EncodeTalkerAliasInto does not.
+// the format. It allocates the slice; EncodeTalkerAliasInto does not.
 func EncodeTalkerAlias(alias string, format layer3.TalkerAliasDataFormat) ([]FullLinkControl, error) {
 	var lcs [talkerAliasMaxBlocks + 1]FullLinkControl
-	p := new([talkerAliasMaxBlocks + 1]FullLinkControlPayloads)
-	n, err := EncodeTalkerAliasInto(&lcs, p, alias, format)
+	n, err := EncodeTalkerAliasInto(&lcs, alias, format)
 	if err != nil {
 		return nil, err
 	}
@@ -199,11 +197,10 @@ func EncodeTalkerAlias(alias string, format layer3.TalkerAliasDataFormat) ([]Ful
 }
 
 // EncodeTalkerAliasInto writes the LCs that EncodeTalkerAlias returns into
-// dst and returns their number, with the errors of EncodeTalkerAlias. The
-// payload of dst[i] is in p[i] and stays valid until the next use of p.
-// It returns an error for a nil dst or p.
-func EncodeTalkerAliasInto(dst *[talkerAliasMaxBlocks + 1]FullLinkControl, p *[talkerAliasMaxBlocks + 1]FullLinkControlPayloads, alias string, format layer3.TalkerAliasDataFormat) (int, error) {
-	if dst == nil || p == nil {
+// dst and returns their number, with the errors of EncodeTalkerAlias. It
+// returns an error for a nil dst.
+func EncodeTalkerAliasInto(dst *[talkerAliasMaxBlocks + 1]FullLinkControl, alias string, format layer3.TalkerAliasDataFormat) (int, error) {
+	if dst == nil {
 		return 0, errNil
 	}
 	var units [talkerAliasMaxUnits]uint16
@@ -217,21 +214,25 @@ func EncodeTalkerAliasInto(dst *[talkerAliasMaxBlocks + 1]FullLinkControl, p *[t
 		return 0, ErrTalkerAliasLength
 	}
 	n := TalkerAliasBlocks(format, count)
-	header := &p[0].flcTalkerAliasHeader
-	*header = FLCTalkerAliasHeader{TalkerAliasDataFormat: format, TalkerAliasDataLength: count}
+	header := FLCTalkerAliasHeader{TalkerAliasDataFormat: format, TalkerAliasDataLength: count}
 	var stream [(talkerAliasStreamBits + 7) / 8]byte
 	for j := range count {
 		bits.SetField(stream[:], j*unit, unit, uint64(units[j]))
 	}
 	skip := talkerAliasHeaderBits(format) - 48
 	header.TalkerAliasData = bits.Field64(stream[:], 0, 48+skip)
-	dst[0] = FullLinkControl{FLCO: enums.FLCOTalkerAliasHeader, FID: enums.FIDStandardized, TalkerAliasHeader: header}
+	dst[0] = FullLinkControl{}
+	if err := dst[0].SetTalkerAliasHeader(header); err != nil {
+		return 0, err
+	}
 	opcodes := [talkerAliasMaxBlocks]enums.FLCO{enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2, enums.FLCOTalkerAliasBlock3}
 	for i := range n {
-		block := &p[i+1].flcTalkerAliasBlock
-		*block = FLCTalkerAliasBlock{}
+		var block FLCTalkerAliasBlock
 		bits.Copy(block.TalkerAliasData[:], 0, stream[:], skip+48+i*talkerAliasBlockBits, talkerAliasBlockBits)
-		dst[i+1] = FullLinkControl{FLCO: opcodes[i], FID: enums.FIDStandardized, TalkerAliasBlock: block}
+		dst[i+1] = FullLinkControl{}
+		if err := dst[i+1].SetTalkerAliasBlock(opcodes[i], block); err != nil {
+			return 0, err
+		}
 	}
 	return n + 1, nil
 }
@@ -298,9 +299,7 @@ func (a *TalkerAliasAssembler) AddInto(dst *[TalkerAliasMaxText]byte, lc *FullLi
 	if lc == nil {
 		return 0, false, nil
 	}
-	switch {
-	case lc.FLCO == enums.FLCOTalkerAliasHeader && lc.TalkerAliasHeader != nil:
-		h := *lc.TalkerAliasHeader
+	if h, ok := lc.AsTalkerAliasHeader(); ok {
 		if !a.hasHeader || a.header != h {
 			if a.hasHeader {
 				a.hasBlock = [talkerAliasMaxBlocks]bool{}
@@ -309,15 +308,14 @@ func (a *TalkerAliasAssembler) AddInto(dst *[TalkerAliasMaxText]byte, lc *FullLi
 			a.hasHeader = true
 			a.completed = false
 		}
-	case lc.TalkerAliasBlock != nil && lc.FLCO >= enums.FLCOTalkerAliasBlock1 && lc.FLCO <= enums.FLCOTalkerAliasBlock3:
-		b := *lc.TalkerAliasBlock
+	} else if b, ok := lc.AsTalkerAliasBlock(); ok {
 		i := int(lc.FLCO - enums.FLCOTalkerAliasBlock1)
 		if !a.hasBlock[i] || a.blocks[i] != b {
 			a.blocks[i] = b
 			a.hasBlock[i] = true
 			a.completed = false
 		}
-	default:
+	} else {
 		return 0, false, nil
 	}
 	if !a.hasHeader || a.completed {

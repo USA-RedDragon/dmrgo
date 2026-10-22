@@ -67,17 +67,18 @@ func TestCSBK_PreamblePDU_Decode(t *testing.T) {
 	if csbk.Opcode != pdu.CSBKPreamble {
 		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.Opcode), byte(pdu.CSBKPreamble))
 	}
-	if csbk.PreamblePDU == nil {
-		t.Fatal("PreamblePDU should not be nil")
+	csbkPreamble, ok := csbk.AsPreamble()
+	if !ok {
+		t.Fatal("PreamblePDU did not decode")
 	}
-	if !csbk.PreamblePDU.Data {
+	if !csbkPreamble.Data {
 		t.Error("PreamblePDU.Data should be true")
 	}
-	if csbk.PreamblePDU.Group {
+	if csbkPreamble.Group {
 		t.Error("PreamblePDU.Group should be false")
 	}
-	if csbk.PreamblePDU.CSBKBlocksToFollow != 5 {
-		t.Errorf("CSBKBlocksToFollow = %d, want 5", csbk.PreamblePDU.CSBKBlocksToFollow)
+	if csbkPreamble.CSBKBlocksToFollow != 5 {
+		t.Errorf("CSBKBlocksToFollow = %d, want 5", csbkPreamble.CSBKBlocksToFollow)
 	}
 	if !csbk.LastBlock {
 		t.Error("LastBlock should be true")
@@ -109,17 +110,18 @@ func TestCSBK_NegativeAck_Decode(t *testing.T) {
 	if csbk.Opcode != pdu.CSBKNegativeAcknowledgement {
 		t.Errorf("CSBKOpcode = %08b, want NegativeAck", byte(csbk.Opcode))
 	}
-	if csbk.NegativeAcknowledgementPDU == nil {
-		t.Fatal("NegativeAcknowledgementPDU should not be nil")
+	csbkNegativeAcknowledgement, ok := csbk.AsNegativeAcknowledgement()
+	if !ok {
+		t.Fatal("NegativeAcknowledgementPDU did not decode")
 	}
-	if csbk.NegativeAcknowledgementPDU.AdditionalInfo != layer3.AdditionalInfoValid {
+	if csbkNegativeAcknowledgement.AdditionalInfo != layer3.AdditionalInfoValid {
 		t.Error("AdditionalInfo should be Valid")
 	}
-	if csbk.NegativeAcknowledgementPDU.ServiceType != pdu.CSBKOpcode(3) {
-		t.Errorf("ServiceType = %d, want 3", csbk.NegativeAcknowledgementPDU.ServiceType)
+	if csbkNegativeAcknowledgement.ServiceType != pdu.CSBKOpcode(3) {
+		t.Errorf("ServiceType = %d, want 3", csbkNegativeAcknowledgement.ServiceType)
 	}
-	if csbk.NegativeAcknowledgementPDU.ReasonCode != 0x42 {
-		t.Errorf("ReasonCode = 0x%02X, want 0x42", csbk.NegativeAcknowledgementPDU.ReasonCode)
+	if csbkNegativeAcknowledgement.ReasonCode != 0x42 {
+		t.Errorf("ReasonCode = 0x%02X, want 0x42", csbkNegativeAcknowledgement.ReasonCode)
 	}
 }
 
@@ -164,7 +166,7 @@ func TestCSBK_BSOutboundActivation_Decode(t *testing.T) {
 	}
 	csbkAct, ok := csbk.AsBSOutboundActivation()
 	if !ok {
-		t.Fatal("BSOutboundActivationPDU should not be nil")
+		t.Fatal("BSOutboundActivationPDU did not decode")
 	}
 	if ((csbkAct.BSAddress >> 0) & 1) != 1 {
 		t.Error("BSAddress last bit should be 1")
@@ -208,7 +210,7 @@ func TestCSBK_BSOutboundActivation_EncodeDecodeCycle(t *testing.T) {
 	}
 	decodedAct, ok := decoded.AsBSOutboundActivation()
 	if !ok {
-		t.Fatal("BSOutboundActivationPDU should not be nil")
+		t.Fatal("BSOutboundActivationPDU did not decode")
 	}
 	if decodedAct.BSAddress != uint32(unpacked.Uint(bsAddr[:])) {
 		t.Error("BSAddress mismatch after encode-decode cycle")
@@ -236,11 +238,12 @@ func TestCSBK_UnitToUnitVoiceServiceRequest_Decode(t *testing.T) {
 	if csbk.Opcode != pdu.CSBKUnitToUnitVoiceServiceRequest {
 		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.Opcode), byte(pdu.CSBKUnitToUnitVoiceServiceRequest))
 	}
-	if csbk.UnitToUnitVoiceServiceRequestPDU == nil {
-		t.Fatal("UnitToUnitVoiceServiceRequestPDU should not be nil")
+	csbkUnitToUnitVoiceServiceRequest, ok := csbk.AsUnitToUnitVoiceServiceRequest()
+	if !ok {
+		t.Fatal("UnitToUnitVoiceServiceRequestPDU did not decode")
 	}
-	if csbk.UnitToUnitVoiceServiceRequestPDU.ServiceOptions != serviceOptions(0x80) {
-		t.Errorf("ServiceOptions = %+v, want 0x80", csbk.UnitToUnitVoiceServiceRequestPDU.ServiceOptions)
+	if csbkUnitToUnitVoiceServiceRequest.ServiceOptions != serviceOptions(0x80) {
+		t.Errorf("ServiceOptions = %+v, want 0x80", csbkUnitToUnitVoiceServiceRequest.ServiceOptions)
 	}
 
 	str := csbk.String()
@@ -258,17 +261,13 @@ func TestCSBK_UnitToUnitVoiceServiceRequest_EncodeDecodeCycle(t *testing.T) {
 	var sourceAddr [24]unpacked.Bit
 	sourceAddr[12] = 1
 
-	original := &pdu.CSBK{
-		LastBlock: true,
-		Opcode:    pdu.CSBKUnitToUnitVoiceServiceRequest,
-		FID:       0x00,
-		UnitToUnitVoiceServiceRequestPDU: &pdu.UnitToUnitVoiceServiceRequestPDU{
-			ServiceOptions: serviceOptions(0x42),
-			Reserved:       0,
-			TargetAddress:  uint32(unpacked.Uint(targetAddr[:])),
-			SourceAddress:  uint32(unpacked.Uint(sourceAddr[:])),
-		},
-	}
+	original := &pdu.CSBK{LastBlock: true}
+	noErr(original.SetUnitToUnitVoiceServiceRequest(pdu.UnitToUnitVoiceServiceRequestPDU{
+		ServiceOptions: serviceOptions(0x42),
+		Reserved:       0,
+		TargetAddress:  uint32(unpacked.Uint(targetAddr[:])),
+		SourceAddress:  uint32(unpacked.Uint(sourceAddr[:])),
+	}))
 
 	encoded := must(original.Encode())
 	decoded := pdu.DecodeCSBK(encoded)
@@ -276,16 +275,17 @@ func TestCSBK_UnitToUnitVoiceServiceRequest_EncodeDecodeCycle(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if decoded.UnitToUnitVoiceServiceRequestPDU == nil {
-		t.Fatal("UnitToUnitVoiceServiceRequestPDU should not be nil")
+	decodedUnitToUnitVoiceServiceRequest, ok := decoded.AsUnitToUnitVoiceServiceRequest()
+	if !ok {
+		t.Fatal("UnitToUnitVoiceServiceRequestPDU did not decode")
 	}
-	if decoded.UnitToUnitVoiceServiceRequestPDU.ServiceOptions != serviceOptions(0x42) {
-		t.Errorf("ServiceOptions = %+v, want 0x42", decoded.UnitToUnitVoiceServiceRequestPDU.ServiceOptions)
+	if decodedUnitToUnitVoiceServiceRequest.ServiceOptions != serviceOptions(0x42) {
+		t.Errorf("ServiceOptions = %+v, want 0x42", decodedUnitToUnitVoiceServiceRequest.ServiceOptions)
 	}
-	if decoded.UnitToUnitVoiceServiceRequestPDU.TargetAddress != uint32(unpacked.Uint(targetAddr[:])) {
+	if decodedUnitToUnitVoiceServiceRequest.TargetAddress != uint32(unpacked.Uint(targetAddr[:])) {
 		t.Error("TargetAddress mismatch after encode-decode cycle")
 	}
-	if decoded.UnitToUnitVoiceServiceRequestPDU.SourceAddress != uint32(unpacked.Uint(sourceAddr[:])) {
+	if decodedUnitToUnitVoiceServiceRequest.SourceAddress != uint32(unpacked.Uint(sourceAddr[:])) {
 		t.Error("SourceAddress mismatch after encode-decode cycle")
 	}
 }
@@ -309,14 +309,15 @@ func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_Decode(t *testing.T) {
 	if csbk.Opcode != pdu.CSBKUnitToUnitVoiceServiceAnswerResponse {
 		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.Opcode), byte(pdu.CSBKUnitToUnitVoiceServiceAnswerResponse))
 	}
-	if csbk.UnitToUnitVoiceServiceAnswerResponsePDU == nil {
-		t.Fatal("UnitToUnitVoiceServiceAnswerResponsePDU should not be nil")
+	csbkUnitToUnitVoiceServiceAnswerResponse, ok := csbk.AsUnitToUnitVoiceServiceAnswerResponse()
+	if !ok {
+		t.Fatal("UnitToUnitVoiceServiceAnswerResponsePDU did not decode")
 	}
-	if csbk.UnitToUnitVoiceServiceAnswerResponsePDU.ServiceOptions != serviceOptions(0x40) {
-		t.Errorf("ServiceOptions = %+v, want 0x40", csbk.UnitToUnitVoiceServiceAnswerResponsePDU.ServiceOptions)
+	if csbkUnitToUnitVoiceServiceAnswerResponse.ServiceOptions != serviceOptions(0x40) {
+		t.Errorf("ServiceOptions = %+v, want 0x40", csbkUnitToUnitVoiceServiceAnswerResponse.ServiceOptions)
 	}
-	if csbk.UnitToUnitVoiceServiceAnswerResponsePDU.AnswerResponse != 0x20 {
-		t.Errorf("AnswerResponse = 0x%02X, want 0x20", csbk.UnitToUnitVoiceServiceAnswerResponsePDU.AnswerResponse)
+	if csbkUnitToUnitVoiceServiceAnswerResponse.AnswerResponse != 0x20 {
+		t.Errorf("AnswerResponse = 0x%02X, want 0x20", csbkUnitToUnitVoiceServiceAnswerResponse.AnswerResponse)
 	}
 
 	str := csbk.String()
@@ -335,17 +336,13 @@ func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_EncodeDecodeCycle(t *testing.
 	sourceAddr[0] = 1
 	sourceAddr[23] = 1
 
-	original := &pdu.CSBK{
-		LastBlock: true,
-		Opcode:    pdu.CSBKUnitToUnitVoiceServiceAnswerResponse,
-		FID:       0x00,
-		UnitToUnitVoiceServiceAnswerResponsePDU: &pdu.UnitToUnitVoiceServiceAnswerResponsePDU{
-			ServiceOptions: serviceOptions(0x81),
-			AnswerResponse: 0x03,
-			TargetAddress:  uint32(unpacked.Uint(targetAddr[:])),
-			SourceAddress:  uint32(unpacked.Uint(sourceAddr[:])),
-		},
-	}
+	original := &pdu.CSBK{LastBlock: true}
+	noErr(original.SetUnitToUnitVoiceServiceAnswerResponse(pdu.UnitToUnitVoiceServiceAnswerResponsePDU{
+		ServiceOptions: serviceOptions(0x81),
+		AnswerResponse: 0x03,
+		TargetAddress:  uint32(unpacked.Uint(targetAddr[:])),
+		SourceAddress:  uint32(unpacked.Uint(sourceAddr[:])),
+	}))
 
 	encoded := must(original.Encode())
 	decoded := pdu.DecodeCSBK(encoded)
@@ -353,19 +350,20 @@ func TestCSBK_UnitToUnitVoiceServiceAnswerResponse_EncodeDecodeCycle(t *testing.
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if decoded.UnitToUnitVoiceServiceAnswerResponsePDU == nil {
-		t.Fatal("UnitToUnitVoiceServiceAnswerResponsePDU should not be nil")
+	decodedUnitToUnitVoiceServiceAnswerResponse, ok := decoded.AsUnitToUnitVoiceServiceAnswerResponse()
+	if !ok {
+		t.Fatal("UnitToUnitVoiceServiceAnswerResponsePDU did not decode")
 	}
-	if decoded.UnitToUnitVoiceServiceAnswerResponsePDU.ServiceOptions != serviceOptions(0x81) {
-		t.Errorf("ServiceOptions = %+v, want 0x81", decoded.UnitToUnitVoiceServiceAnswerResponsePDU.ServiceOptions)
+	if decodedUnitToUnitVoiceServiceAnswerResponse.ServiceOptions != serviceOptions(0x81) {
+		t.Errorf("ServiceOptions = %+v, want 0x81", decodedUnitToUnitVoiceServiceAnswerResponse.ServiceOptions)
 	}
-	if decoded.UnitToUnitVoiceServiceAnswerResponsePDU.AnswerResponse != 0x03 {
-		t.Errorf("AnswerResponse = 0x%02X, want 0x03", decoded.UnitToUnitVoiceServiceAnswerResponsePDU.AnswerResponse)
+	if decodedUnitToUnitVoiceServiceAnswerResponse.AnswerResponse != 0x03 {
+		t.Errorf("AnswerResponse = 0x%02X, want 0x03", decodedUnitToUnitVoiceServiceAnswerResponse.AnswerResponse)
 	}
-	if decoded.UnitToUnitVoiceServiceAnswerResponsePDU.TargetAddress != uint32(unpacked.Uint(targetAddr[:])) {
+	if decodedUnitToUnitVoiceServiceAnswerResponse.TargetAddress != uint32(unpacked.Uint(targetAddr[:])) {
 		t.Error("TargetAddress mismatch after encode-decode cycle")
 	}
-	if decoded.UnitToUnitVoiceServiceAnswerResponsePDU.SourceAddress != uint32(unpacked.Uint(sourceAddr[:])) {
+	if decodedUnitToUnitVoiceServiceAnswerResponse.SourceAddress != uint32(unpacked.Uint(sourceAddr[:])) {
 		t.Error("SourceAddress mismatch after encode-decode cycle")
 	}
 }
@@ -394,22 +392,23 @@ func TestCSBK_ChannelTiming_Decode(t *testing.T) {
 	if csbk.Opcode != pdu.CSBKChannelTiming {
 		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.Opcode), byte(pdu.CSBKChannelTiming))
 	}
-	if csbk.ChannelTimingPDU == nil {
-		t.Fatal("ChannelTimingPDU should not be nil")
+	csbkChannelTiming, ok := csbk.AsChannelTiming()
+	if !ok {
+		t.Fatal("ChannelTimingPDU did not decode")
 	}
-	if !csbk.ChannelTimingPDU.NewLeader {
+	if !csbkChannelTiming.NewLeader {
 		t.Error("NewLeader should be true")
 	}
-	if !csbk.ChannelTimingPDU.ChannelTimingOp1 {
+	if !csbkChannelTiming.ChannelTimingOp1 {
 		t.Error("ChannelTimingOp1 (bit 39) should be true")
 	}
-	if csbk.ChannelTimingPDU.ChannelTimingOp0 {
+	if csbkChannelTiming.ChannelTimingOp0 {
 		t.Error("ChannelTimingOp0 (bit 63) should be false")
 	}
-	if ((csbk.ChannelTimingPDU.LeaderDynamicIdentifier>>1)&1) != 1 || ((csbk.ChannelTimingPDU.LeaderDynamicIdentifier>>0)&1) != 1 {
+	if ((csbkChannelTiming.LeaderDynamicIdentifier>>1)&1) != 1 || ((csbkChannelTiming.LeaderDynamicIdentifier>>0)&1) != 1 {
 		t.Error("LeaderDynamicIdentifier should be 0b11")
 	}
-	if ((csbk.ChannelTimingPDU.SourceDynamicIdentifier>>1)&1) != 1 || ((csbk.ChannelTimingPDU.SourceDynamicIdentifier>>0)&1) != 0 {
+	if ((csbkChannelTiming.SourceDynamicIdentifier>>1)&1) != 1 || ((csbkChannelTiming.SourceDynamicIdentifier>>0)&1) != 0 {
 		t.Error("SourceDynamicIdentifier should be 0b10")
 	}
 
@@ -438,23 +437,19 @@ func TestCSBK_ChannelTiming_EncodeDecodeCycle(t *testing.T) {
 	var sourceDynID [2]unpacked.Bit
 	sourceDynID[1] = 1
 
-	original := &pdu.CSBK{
-		LastBlock: true,
-		Opcode:    pdu.CSBKChannelTiming,
-		FID:       0x00,
-		ChannelTimingPDU: &pdu.ChannelTimingPDU{
-			SyncAge:                 uint16(unpacked.Uint(syncAge[:])),
-			Generation:              uint8(unpacked.Uint(generation[:])),
-			LeaderIdentifier:        uint32(unpacked.Uint(leaderID[:])),
-			NewLeader:               true,
-			LeaderDynamicIdentifier: uint8(unpacked.Uint(leaderDynID[:])),
-			ChannelTimingOp0:        false,
-			SourceIdentifier:        uint32(unpacked.Uint(sourceID[:])),
-			Reserved:                false,
-			SourceDynamicIdentifier: uint8(unpacked.Uint(sourceDynID[:])),
-			ChannelTimingOp1:        true,
-		},
-	}
+	original := &pdu.CSBK{LastBlock: true}
+	noErr(original.SetChannelTiming(pdu.ChannelTimingPDU{
+		SyncAge:                 uint16(unpacked.Uint(syncAge[:])),
+		Generation:              uint8(unpacked.Uint(generation[:])),
+		LeaderIdentifier:        uint32(unpacked.Uint(leaderID[:])),
+		NewLeader:               true,
+		LeaderDynamicIdentifier: uint8(unpacked.Uint(leaderDynID[:])),
+		ChannelTimingOp0:        false,
+		SourceIdentifier:        uint32(unpacked.Uint(sourceID[:])),
+		Reserved:                false,
+		SourceDynamicIdentifier: uint8(unpacked.Uint(sourceDynID[:])),
+		ChannelTimingOp1:        true,
+	}))
 
 	encoded := must(original.Encode())
 	if bits.Bit(encoded[:], 16+39) != 1 {
@@ -468,34 +463,35 @@ func TestCSBK_ChannelTiming_EncodeDecodeCycle(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if decoded.ChannelTimingPDU == nil {
-		t.Fatal("ChannelTimingPDU should not be nil")
+	decodedChannelTiming, ok := decoded.AsChannelTiming()
+	if !ok {
+		t.Fatal("ChannelTimingPDU did not decode")
 	}
-	if decoded.ChannelTimingPDU.SyncAge != uint16(unpacked.Uint(syncAge[:])) {
+	if decodedChannelTiming.SyncAge != uint16(unpacked.Uint(syncAge[:])) {
 		t.Error("SyncAge mismatch after encode-decode cycle")
 	}
-	if decoded.ChannelTimingPDU.Generation != uint8(unpacked.Uint(generation[:])) {
+	if decodedChannelTiming.Generation != uint8(unpacked.Uint(generation[:])) {
 		t.Error("Generation mismatch after encode-decode cycle")
 	}
-	if decoded.ChannelTimingPDU.LeaderIdentifier != uint32(unpacked.Uint(leaderID[:])) {
+	if decodedChannelTiming.LeaderIdentifier != uint32(unpacked.Uint(leaderID[:])) {
 		t.Error("LeaderIdentifier mismatch after encode-decode cycle")
 	}
-	if decoded.ChannelTimingPDU.NewLeader != true {
+	if decodedChannelTiming.NewLeader != true {
 		t.Error("NewLeader should be true after encode-decode cycle")
 	}
-	if decoded.ChannelTimingPDU.LeaderDynamicIdentifier != uint8(unpacked.Uint(leaderDynID[:])) {
+	if decodedChannelTiming.LeaderDynamicIdentifier != uint8(unpacked.Uint(leaderDynID[:])) {
 		t.Error("LeaderDynamicIdentifier mismatch after encode-decode cycle")
 	}
-	if decoded.ChannelTimingPDU.ChannelTimingOp1 != true {
+	if decodedChannelTiming.ChannelTimingOp1 != true {
 		t.Error("ChannelTimingOp1 should be true after encode-decode cycle")
 	}
-	if decoded.ChannelTimingPDU.ChannelTimingOp0 != false {
+	if decodedChannelTiming.ChannelTimingOp0 != false {
 		t.Error("ChannelTimingOp0 should be false after encode-decode cycle")
 	}
-	if decoded.ChannelTimingPDU.SourceIdentifier != uint32(unpacked.Uint(sourceID[:])) {
+	if decodedChannelTiming.SourceIdentifier != uint32(unpacked.Uint(sourceID[:])) {
 		t.Error("SourceIdentifier mismatch after encode-decode cycle")
 	}
-	if decoded.ChannelTimingPDU.SourceDynamicIdentifier != uint8(unpacked.Uint(sourceDynID[:])) {
+	if decodedChannelTiming.SourceDynamicIdentifier != uint8(unpacked.Uint(sourceDynID[:])) {
 		t.Error("SourceDynamicIdentifier mismatch after encode-decode cycle")
 	}
 }

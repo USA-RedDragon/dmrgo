@@ -328,11 +328,12 @@ func (m *Timing) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst 
 		return dst
 	}
 	kind, c, octets := classify(b)
-	if kind != rxCSBK || c.FID != enums.FIDStandardized || c.ChannelTimingPDU == nil {
+	ct, ok := c.AsChannelTiming()
+	if kind != rxCSBK || !ok {
 		return dst
 	}
 	m.emitted = false
-	rx := c.ChannelTimingPDU
+	rx := &ct
 	if m.pend != ctNone {
 		var eval bool
 		if dst, eval = m.pending(now, rx, octets, dst); !eval {
@@ -632,7 +633,10 @@ func (m *Timing) setLeader(lw uint32) {
 }
 
 func (m *Timing) encode() (layer2.RawBurst, bool) {
-	m.build = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKChannelTiming, ChannelTimingPDU: &m.ct}
+	m.build = pdu.CSBK{LastBlock: true}
+	if m.build.SetChannelTiming(m.ct) != nil {
+		return layer2.RawBurst{}, false
+	}
 	octets, err := m.build.Encode()
 	if err != nil {
 		return layer2.RawBurst{}, false

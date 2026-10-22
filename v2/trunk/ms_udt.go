@@ -70,10 +70,7 @@ type msUDT struct {
 	alsCall  bool
 	alsUntil time.Duration
 
-	hdr   pdu.UDTHeader
-	dh    pdu.DataHeader
 	blk   [4][12]byte
-	ackU  pdu.AckInboundPDU
 	usbdP pdu.UnifiedSingleBlockData
 }
 
@@ -550,20 +547,21 @@ func (m *MS) usbdPoll(now time.Duration, p *pdu.UnifiedSingleBlockData, h *layer
 }
 
 func (m *MS) ackU(due time.Duration, slot enums.Slot, r enums.AckReason, to uint32, out []Output) []Output {
-	m.u.ackU = pdu.AckInboundPDU{ReasonCode: byte(r), TargetAddress: to, AdditionalInfo: m.addr}
-	m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInbound, AckInboundPDU: &m.u.ackU}
-	return m.send(due, slot, out)
+	return m.sendAck(due, slot, pdu.AckInboundPDU{ReasonCode: byte(r), TargetAddress: to, AdditionalInfo: m.addr}, out)
 }
 
 func (m *MS) sendUDT(due time.Duration, slot enums.Slot, a *Appended, to uint32, group, div, supp bool, op pdu.UDTOpcode, out []Output) []Output {
 	u := &m.u
-	u.hdr = pdu.UDTHeader{
+	var dh pdu.DataHeader
+	err := dh.SetUDTHeader(pdu.UDTHeader{
 		Group: group, ResponseRequested: op == pdu.UDTOpcodeDGNAInboundHeader, OptionFlag: div, SAP: enums.SAPUnifiedDataTransport,
 		UDTFormat: a.Format, LLIDDestination: to, LLIDSource: m.addr, PadNibble: a.PadNibble, AppendedBlocks: uab(a.Blocks), SupplementaryFlag: supp,
 		Opcode: op,
+	})
+	if err != nil {
+		return out
 	}
-	u.dh = pdu.DataHeader{Format: pdu.FormatUnifiedDataTransport, UDTHeader: &u.hdr}
-	p, err := u.dh.Encode()
+	p, err := dh.Encode()
 	if err != nil {
 		return out
 	}

@@ -85,9 +85,12 @@ func packetABI(seed uint64) error {
 	rates := []enums.DataType{enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1}
 	messages := 0
 	for i := range 12 {
-		header := pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
+		var header pdu.DataHeader
+		if err := header.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{
 			ResponseRequested: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3120002, LLIDSource: 3120001,
-			FullMessageFlag: true, SendSequenceNumber: uint8(i % 8)}}
+			FullMessageFlag: true, SendSequenceNumber: uint8(i % 8)}); err != nil {
+			return err
+		}
 		payload := make([]byte, 1+h.rng.IntN(900))
 		for k := range payload {
 			payload[k] = byte(k*31 + i)

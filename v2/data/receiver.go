@@ -167,7 +167,6 @@ type Receiver struct {
 	u       udt
 	chain   chain
 	maxFrag int
-	hdr     pdu.UDTHeader
 	to      pdu.ConfirmedDataHeader
 	pkt     packet.Packet
 	vi      uint8
@@ -537,11 +536,15 @@ func (r *Receiver) touch(now time.Duration) {
 
 func (r *Receiver) preamble(now time.Duration, b *layer2.Burst, out []Event) []Event {
 	c, ok := b.Data.(*pdu.CSBK)
-	if !ok || c.FEC.Uncorrectable || c.PreamblePDU == nil || !c.PreamblePDU.Data || r.state == StateReceiving {
+	if !ok || c.FEC.Uncorrectable || r.state == StateReceiving {
 		r.touch(now)
 		return out
 	}
-	p := c.PreamblePDU
+	p, ok := c.AsPreamble()
+	if !ok || !p.Data {
+		r.touch(now)
+		return out
+	}
 	call := Call{Group: p.Group, Target: p.TargetAddress, Source: p.SourceAddress}
 	return r.begin(now, &call, out)
 }
@@ -552,7 +555,7 @@ func (r *Receiver) header(now time.Duration, dh *pdu.DataHeader, cc enums.ColorC
 		r.touch(now)
 		return out
 	}
-	if dh.Format == pdu.FormatProprietary {
+	if dh.Format() == pdu.FormatProprietary {
 		r.touch(now)
 		m, done, err := r.asm.Add(dh)
 		switch {
@@ -573,7 +576,7 @@ func (r *Receiver) header(now time.Duration, dh *pdu.DataHeader, cc enums.ColorC
 	out = r.begin(now, &c, out)
 	prev := r.cur
 	r.cur = current{
-		call: c, format: dh.Format, cc: cc, full: true,
+		call: c, format: dh.Format(), cc: cc, full: true,
 		hasSeq: h.HasSeq, seq: h.Seq, seqBits: h.SeqBits, lastBlock: now,
 	}
 	if r.hasCC {
@@ -582,8 +585,8 @@ func (r *Receiver) header(now time.Duration, dh *pdu.DataHeader, cc enums.ColorC
 	r.readHeader(dh)
 	r.cur.pending = int(r.cur.blocks)
 	r.u.active = false
-	if dh.Format == pdu.FormatUnifiedDataTransport && dh.UDTHeader != nil {
-		r.u = udt{active: true, need: int(dh.UDTHeader.AppendedBlocks) + 1, header: *dh.UDTHeader}
+	if uh, ok := dh.AsUDTHeader(); ok {
+		r.u = udt{active: true, need: int(uh.AppendedBlocks) + 1, header: uh}
 		r.cur.pending = r.u.need
 		r.settle()
 		return out
@@ -606,29 +609,24 @@ func (r *Receiver) header(now time.Duration, dh *pdu.DataHeader, cc enums.ColorC
 }
 
 func (r *Receiver) readHeader(dh *pdu.DataHeader) {
-	switch {
-	case dh.UnconfirmedDataHeader != nil:
-		u := dh.UnconfirmedDataHeader
+	if u, ok := dh.AsUnconfirmedDataHeader(); ok {
 		r.cur.sap, r.cur.blocks, r.cur.full = u.SAP, u.BlocksToFollow, u.FullMessageFlag
-	case dh.ConfirmedDataHeader != nil:
-		c := dh.ConfirmedDataHeader
+	} else if c, ok := dh.AsConfirmedDataHeader(); ok {
 		r.cur.sap, r.cur.blocks, r.cur.full = c.SAP, c.BlocksToFollow, c.FullMessageFlag
 		r.cur.answer, r.cur.ns, r.cur.resync = c.ResponseRequested, c.SendSequenceNumber, c.ReSynchronizeFlag
 		r.cur.fsn = c.FragmentSequenceNumber
-	case dh.DefinedDataHeader != nil:
-		d := dh.DefinedDataHeader
+	} else if d, ok := dh.AsDefinedDataHeader(); ok {
 		r.cur.sap, r.cur.blocks, r.cur.full = d.SAP, d.AppendedBlocks, d.FullMessageFlag
 		r.cur.answer = d.ResponseRequested && d.SARQ
-	case dh.RawDataHeader != nil:
-		d := dh.RawDataHeader
+	} else if d, ok := dh.AsRawDataHeader(); ok {
 		r.cur.sap, r.cur.blocks, r.cur.full = d.SAP, d.AppendedBlocks, d.FullMessageFlag
 		r.cur.answer = d.ResponseRequested && d.SARQ
-	case dh.ResponsePacketHeader != nil:
-		r.cur.sap, r.cur.blocks = dh.ResponsePacketHeader.SAP, dh.ResponsePacketHeader.BlocksToFollow
-	case dh.StatusPrecodedHeader != nil:
-		r.cur.sap = dh.StatusPrecodedHeader.SAP
-	case dh.UDTHeader != nil:
-		r.cur.sap = dh.UDTHeader.SAP
+	} else if p, ok := dh.AsResponsePacketHeader(); ok {
+		r.cur.sap, r.cur.blocks = p.SAP, p.BlocksToFollow
+	} else if p, ok := dh.AsStatusPrecodedHeader(); ok {
+		r.cur.sap = p.SAP
+	} else if p, ok := dh.AsUDTHeader(); ok {
+		r.cur.sap = p.SAP
 	}
 }
 
@@ -717,11 +715,12 @@ func (r *Receiver) udtBlock(b *layer2.Burst, out []Event) []Event {
 		n += copy(r.u.buf[n:], r.u.blocks[i][:])
 	}
 	n = max(n-2-int(r.u.header.PadNibble)/2, 0)
-	r.hdr = r.u.header
+	var hd pdu.DataHeader
+	_ = hd.SetUDTHeader(r.u.header)
 	var e *Event
 	out, e = appendEvent(out, EventDelivered, &r.call)
 	e.Message = Message{
-		Header:  pdu.DataHeader{Format: pdu.FormatUnifiedDataTransport, UDTHeader: &r.hdr},
+		Header:  hd,
 		Rate:    enums.DataTypeRate12,
 		Payload: r.u.buf[:n],
 		BadCRC:  !ok,
@@ -732,7 +731,7 @@ func (r *Receiver) udtBlock(b *layer2.Burst, out []Event) []Event {
 
 func (r *Receiver) complete(now time.Duration, m *packet.Message, done bool, err error, out []Event) []Event {
 	r.cur.pending = 0
-	if done && m.Header.Format == pdu.FormatResponsePacket {
+	if done && m.Header.Format() == pdu.FormatResponsePacket {
 		return r.response(m, err, out)
 	}
 	held := r.windowed() && r.win.held(r.cur.ns)
@@ -882,11 +881,11 @@ func ipBearer(sap enums.SAP) bool {
 }
 
 func (r *Receiver) response(m *packet.Message, err error, out []Event) []Event {
-	rh := m.Header.ResponsePacketHeader
-	if rh == nil {
+	rh, ok := m.Header.AsResponsePacketHeader()
+	if !ok {
 		return out
 	}
-	code, cerr := packet.ResponseOf(rh)
+	code, cerr := packet.ResponseOf(&rh)
 	if cerr != nil {
 		return out
 	}

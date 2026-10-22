@@ -23,8 +23,8 @@ func msBurst(t testing.TB, c *pdu.CSBK) layer2.RawBurst {
 func newInboundPool(t testing.TB) burstPool {
 	t.Helper()
 	rnd := func(kind enums.ServiceKind, opts uint8, target uint32) layer2.RawBurst {
-		return msBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKRandomAccess, RandomAccessPDU: &pdu.RandomAccessPDU{
-			ServiceOptions: opts, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: 3120001}})
+		return msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetRandomAccess, pdu.RandomAccessPDU{
+			ServiceOptions: opts, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: 3120001}))
 	}
 	return burstPool{
 		rnd(enums.ServiceKindRegistration, 1, 0xFFFEC6),
@@ -32,13 +32,13 @@ func newInboundPool(t testing.TB) burstPool {
 		rnd(enums.ServiceKindTalkgroupVoice, 0, 9),
 		rnd(enums.ServiceKindIndividualVoice, 0, 3120002),
 		rnd(enums.ServiceKindStatusTransport, 0, 3120002),
-		msBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInbound, AckInboundPDU: &pdu.AckInboundPDU{
-			ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: 3120001, AdditionalInfo: 3120002}}),
-		msBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKMaintenance, MaintenancePDU: &pdu.MaintenancePDU{TargetAddress: 9, SourceAddress: 3120001}}),
+		msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAckInbound, pdu.AckInboundPDU{
+			ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: 3120001, AdditionalInfo: 3120002})),
+		msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetMaintenance, pdu.MaintenancePDU{TargetAddress: 9, SourceAddress: 3120001})),
 		voiceLCRaw(t, enums.DataTypeVoiceLCHeader),
 		voiceLCRaw(t, enums.DataTypeTerminatorWithLC),
-		msBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInbound, AckInboundPDU: &pdu.AckInboundPDU{
-			ReasonCode: byte(enums.AckReasonAuthResponseMS), TargetAddress: 0x123456, AdditionalInfo: 3120001}}),
+		msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAckInbound, pdu.AckInboundPDU{
+			ReasonCode: byte(enums.AckReasonAuthResponseMS), TargetAddress: 0x123456, AdditionalInfo: 3120001})),
 	}
 }
 

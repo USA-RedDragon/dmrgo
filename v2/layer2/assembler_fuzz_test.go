@@ -122,26 +122,20 @@ func checkShortLCAssembler(t *testing.T, seq, slcv []byte, at, tactv byte) {
 		fields = slices.Insert(fields, first, valid[:]...)
 	}
 
-	var a, b layer2.ShortLCAssembler
+	var a layer2.ShortLCAssembler
 	var m shortLCModel
-	var dst pdu.ShortLC
-	var p pdu.ShortLCPayloads
 	for i, field := range fields {
 		c := layer2.DecodeCACHField(field)
 		wantDone, wantDiscard := m.add(c)
 		slc, done, err := a.Add(c)
-		done2, err2 := b.AddInto(&dst, &p, c)
 		if done != wantDone || errors.Is(err, layer2.ErrShortLCSequence) != wantDiscard || (err != nil) != wantDiscard {
 			t.Fatalf("field %d (%+v): done %v, %v, want %v, discard %v", i, c.TACT, done, err, wantDone, wantDiscard)
 		}
-		if done2 != done || (err2 == nil) != (err == nil) || a.Count() != m.count || b.Count() != m.count {
-			t.Fatalf("field %d: AddInto %v, %v, counts %d, %d, want %v, %v, %d", i, done2, err2, a.Count(), b.Count(), done, err, m.count)
+		if a.Count() != m.count {
+			t.Fatalf("field %d: count %d, want %d", i, a.Count(), m.count)
 		}
 		if !done {
 			continue
-		}
-		if !reflect.DeepEqual(slc, dst) {
-			t.Fatalf("field %d: Add gives %s, AddInto %s", i, slc.String(), dst.String())
 		}
 		if i == first+3 {
 			if !clean(slc.FEC) || !reflect.DeepEqual(withoutFEC(&slc), withoutFEC(&want)) {
@@ -342,12 +336,6 @@ func checkEmbeddedLCCode(t *testing.T, lcv, flcv, flips []byte, strict bool) {
 		return
 	}
 	back := layer2.DecodeEmbeddedFullLinkControl(ef, strict)
-	var into pdu.FullLinkControl
-	var p pdu.FullLinkControlPayloads
-	layer2.DecodeEmbeddedFullLinkControlInto(&into, &p, ef, strict)
-	if !reflect.DeepEqual(back, into) {
-		t.Fatalf("DecodeEmbeddedFullLinkControl gives %s, the Into form %s", back.String(), into.String())
-	}
 	if back.FEC.HasErrors() || !reflect.DeepEqual(withoutFEC(&back), withoutFEC(&flc)) {
 		t.Fatalf("Full LC %s comes back as %s, FEC %+v", flc.String(), back.String(), back.FEC)
 	}

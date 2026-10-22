@@ -85,15 +85,18 @@ func TestTalkerAlias_HeaderBits7Bit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	h := lcs[0].TalkerAliasHeader
-	if lcs[0].FLCO != enums.FLCOTalkerAliasHeader || lcs[0].FID != enums.FIDStandardized {
-		t.Errorf("FLCO %v FID %v", lcs[0].FLCO, lcs[0].FID)
+	h, ok := lcs[0].AsTalkerAliasHeader()
+	if !ok || lcs[0].FLCO != enums.FLCOTalkerAliasHeader || lcs[0].FID != enums.FIDStandardized {
+		t.Fatalf("FLCO %v FID %v", lcs[0].FLCO, lcs[0].FID)
 	}
 	if h.TalkerAliasData>>42 != 0b1000100 || h.TalkerAliasDataLength != 1 {
 		t.Errorf("header %+v", h)
 	}
 	lcs, _ = pdu.EncodeTalkerAlias("D", layer3.TalkerAliasUTF8)
-	h = lcs[0].TalkerAliasHeader
+	h, ok = lcs[0].AsTalkerAliasHeader()
+	if !ok {
+		t.Fatal("UTF-8 LC 0 is not a header")
+	}
 	if h.TalkerAliasData>>48 != 0 || h.TalkerAliasData>>40 != 'D' {
 		t.Errorf("UTF-8 header %+v", h)
 	}
@@ -149,13 +152,18 @@ func TestTalkerAlias_Errors(t *testing.T) {
 		t.Error("unknown format accepted")
 	}
 	lcs, _ := pdu.EncodeTalkerAlias("KI5VMF Jacob", layer3.TalkerAliasUTF8)
-	if _, err := pdu.TalkerAlias(lcs[0].TalkerAliasHeader); !errors.Is(err, pdu.ErrTalkerAliasIncomplete) {
+	hdr, ok := lcs[0].AsTalkerAliasHeader()
+	if !ok {
+		t.Fatal("LC 0 is not a header")
+	}
+	if _, err := pdu.TalkerAlias(&hdr); !errors.Is(err, pdu.ErrTalkerAliasIncomplete) {
 		t.Errorf("missing block: %v", err)
 	}
-	if _, err := pdu.TalkerAlias(lcs[0].TalkerAliasHeader, nil); !errors.Is(err, pdu.ErrTalkerAliasIncomplete) {
+	if _, err := pdu.TalkerAlias(&hdr, nil); !errors.Is(err, pdu.ErrTalkerAliasIncomplete) {
 		t.Errorf("nil block: %v", err)
 	}
-	bad := *lcs[0].TalkerAliasHeader
+	bad := hdr
+
 	bad.TalkerAliasDataLength = 1
 	bad.TalkerAliasData = 0xC3 << 40
 	if _, err := pdu.TalkerAlias(&bad); err == nil {

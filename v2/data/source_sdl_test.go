@@ -108,7 +108,7 @@ func TestSenderSourceSDL(t *testing.T) {
 			var out []data.Output
 			switch st.do {
 			case "send":
-				if err := s.Send(st.at, message(10)); err != nil {
+				if err := s.Send(st.at, message(t, 10)); err != nil {
 					t.Fatal(err)
 				}
 			case "busy", "idle":

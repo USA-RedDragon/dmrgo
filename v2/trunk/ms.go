@@ -212,15 +212,11 @@ type MS struct {
 	pendingEnd time.Duration
 	pending    bool
 
-	auth    authChallenge
-	tx      pdu.CSBK
-	txRand  pdu.RandomAccessPDU
-	txAck   pdu.AckInboundPDU
-	txAckP  pdu.AckInboundPayloadPDU
-	txMaint pdu.MaintenancePDU
-	u       msUDT
-	svc     msSvc
-	noCopy  noCopy
+	auth   authChallenge
+	tx     pdu.CSBK
+	u      msUDT
+	svc    msSvc
+	noCopy noCopy
 }
 
 // NewMS returns an MS for cfg. It returns a *dmrgo.ConfigError for an
@@ -503,10 +499,10 @@ func (m *MS) EndCall(now time.Duration, dst []Output) []Output {
 	if to == m.addr {
 		to = g.Source
 	}
-	m.txMaint = pdu.MaintenancePDU{TargetAddress: to, SourceAddress: m.addr}
-	m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKMaintenance, MaintenancePDU: &m.txMaint}
+	m.tx = pdu.CSBK{LastBlock: true}
+	err := m.tx.SetMaintenance(pdu.MaintenancePDU{TargetAddress: to, SourceAddress: m.addr})
 	for i := range constants.NMaint {
-		dst = m.send(now+time.Duration(i)*frame, g.Slot, dst)
+		dst = m.send(err, now+time.Duration(i)*frame, g.Slot, dst)
 	}
 	m.ownCall = false
 	return m.f.leave(now, ReasonMaintenance, dst)

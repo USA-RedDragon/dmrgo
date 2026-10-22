@@ -73,7 +73,7 @@ func fuzzSmallPDU(t *testing.T, kind uint8, data []byte) {
 	case smallShortLC:
 		b := [5]byte(in[:5])
 		checkCodec(t, "ShortLC", b, pdu.DecodeShortLC, (*pdu.ShortLC).Encode, (*pdu.ShortLC).String)
-		checkInto(t, "ShortLC", b, [5]byte(in[5:10]), pdu.DecodeShortLC, pdu.DecodeShortLCInto)
+		checkDecodeNoAlloc(t, "ShortLC", b, pdu.DecodeShortLC)
 	case smallTACT:
 		checkCodec(t, "TACT", [1]byte(in[:1]), pdu.DecodeTACT, (*pdu.TACT).Encode, (*pdu.TACT).String)
 	case smallReverseChannel:

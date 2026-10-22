@@ -36,10 +36,8 @@ func TestPaddingBits(t *testing.T) {
 			return a, pdu.DecodeSlotType([3]byte(q)), e[:]
 		}},
 		{"pdu.ShortLC", 36, func(p, q []byte) (any, any, []byte) {
-			var a, b pdu.ShortLC
-			var pa, pb pdu.ShortLCPayloads
-			pdu.DecodeShortLCInto(&a, &pa, [5]byte(p))
-			pdu.DecodeShortLCInto(&b, &pb, [5]byte(q))
+			a := pdu.DecodeShortLC([5]byte(p))
+			b := pdu.DecodeShortLC([5]byte(q))
 			e, _ := a.Encode()
 			return a.String(), b.String(), e[:]
 		}},

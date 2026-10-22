@@ -182,18 +182,17 @@ func TestShortLCAssembler_FirstRestartsSequence(t *testing.T) {
 	}
 }
 
-func TestShortLCAssembler_AddIntoIncomplete(t *testing.T) {
+func TestShortLCAssembler_AddIncomplete(t *testing.T) {
 	t.Parallel()
 	var a layer2.ShortLCAssembler
 	var payload [3]byte
-	dst := pdu.ShortLC{SLCO: enums.SLCOActivityUpdate}
-	var p pdu.ShortLCPayloads
 	for i := 0; i < 3; i++ {
-		if done, err := a.AddInto(&dst, &p, cachOf(shortLCSequence[i], payload)); done || err != nil {
+		slc, done, err := a.Add(cachOf(shortLCSequence[i], payload))
+		if done || err != nil {
 			t.Fatalf("fragment %d: done %t err %v", i, done, err)
 		}
-		if dst.SLCO != enums.SLCOActivityUpdate {
-			t.Errorf("AddInto with %d fragments changed dst", i+1)
+		if slc != (pdu.ShortLC{}) {
+			t.Errorf("Add with %d fragments returned %s", i+1, slc.String())
 		}
 	}
 }
@@ -211,7 +210,7 @@ func TestShortLCAssembler_NullMessage(t *testing.T) {
 	if slc.SLCO != enums.SLCONullMessage {
 		t.Errorf("expected SLCONullMessage, got %d", slc.SLCO)
 	}
-	if slc.NullMessage == nil {
+	if _, ok := slc.AsNullMessage(); !ok {
 		t.Error("NullMessage should not be nil")
 	}
 }
@@ -230,20 +229,21 @@ func TestShortLCAssembler_ActivityUpdate(t *testing.T) {
 	if slc.SLCO != enums.SLCOActivityUpdate {
 		t.Errorf("expected SLCOActivityUpdate, got %d", slc.SLCO)
 	}
-	if slc.ActivityUpdate == nil {
-		t.Fatal("ActivityUpdate should not be nil")
+	au, ok := slc.AsActivityUpdate()
+	if !ok {
+		t.Fatal("not an ActivityUpdate")
 	}
-	if slc.ActivityUpdate.TS1ActivityID != 5 {
-		t.Errorf("expected TS1ActivityID=5, got %d", slc.ActivityUpdate.TS1ActivityID)
+	if au.TS1ActivityID != 5 {
+		t.Errorf("expected TS1ActivityID=5, got %d", au.TS1ActivityID)
 	}
-	if slc.ActivityUpdate.TS2ActivityID != 3 {
-		t.Errorf("expected TS2ActivityID=3, got %d", slc.ActivityUpdate.TS2ActivityID)
+	if au.TS2ActivityID != 3 {
+		t.Errorf("expected TS2ActivityID=3, got %d", au.TS2ActivityID)
 	}
-	if slc.ActivityUpdate.HashTS1 != 0xAB {
-		t.Errorf("expected HashTS1=0xAB, got 0x%02X", slc.ActivityUpdate.HashTS1)
+	if au.HashTS1 != 0xAB {
+		t.Errorf("expected HashTS1=0xAB, got 0x%02X", au.HashTS1)
 	}
-	if slc.ActivityUpdate.HashTS2 != 0xCD {
-		t.Errorf("expected HashTS2=0xCD, got 0x%02X", slc.ActivityUpdate.HashTS2)
+	if au.HashTS2 != 0xCD {
+		t.Errorf("expected HashTS2=0xCD, got 0x%02X", au.HashTS2)
 	}
 }
 
@@ -264,14 +264,14 @@ func TestShortLCAssembler_Add(t *testing.T) {
 
 func TestShortLCAssembler_RoundTrip_EncodeShortLC(t *testing.T) {
 	t.Parallel()
-	original := pdu.ShortLC{
-		SLCO: enums.SLCOActivityUpdate,
-		ActivityUpdate: &pdu.ShortLCActivityUpdate{
-			TS1ActivityID: 15,
-			TS2ActivityID: 8,
-			HashTS1:       0x12,
-			HashTS2:       0x34,
-		},
+	var original pdu.ShortLC
+	if err := original.SetActivityUpdate(pdu.ShortLCActivityUpdate{
+		TS1ActivityID: 15,
+		TS2ActivityID: 8,
+		HashTS1:       0x12,
+		HashTS2:       0x34,
+	}); err != nil {
+		t.Fatal(err)
 	}
 	encoded := must(original.Encode())
 	fragments := encodeCACHFragments(encoded)
@@ -281,20 +281,21 @@ func TestShortLCAssembler_RoundTrip_EncodeShortLC(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("round-trip failed: uncorrectable")
 	}
-	if slc.ActivityUpdate == nil {
-		t.Fatal("ActivityUpdate is nil after round-trip")
+	au, ok := slc.AsActivityUpdate()
+	if !ok {
+		t.Fatal("not an ActivityUpdate after round-trip")
 	}
-	if slc.ActivityUpdate.TS1ActivityID != 15 {
-		t.Errorf("TS1ActivityID: got %d, want 15", slc.ActivityUpdate.TS1ActivityID)
+	if au.TS1ActivityID != 15 {
+		t.Errorf("TS1ActivityID: got %d, want 15", au.TS1ActivityID)
 	}
-	if slc.ActivityUpdate.TS2ActivityID != 8 {
-		t.Errorf("TS2ActivityID: got %d, want 8", slc.ActivityUpdate.TS2ActivityID)
+	if au.TS2ActivityID != 8 {
+		t.Errorf("TS2ActivityID: got %d, want 8", au.TS2ActivityID)
 	}
-	if slc.ActivityUpdate.HashTS1 != 0x12 {
-		t.Errorf("HashTS1: got 0x%02X, want 0x12", slc.ActivityUpdate.HashTS1)
+	if au.HashTS1 != 0x12 {
+		t.Errorf("HashTS1: got 0x%02X, want 0x12", au.HashTS1)
 	}
-	if slc.ActivityUpdate.HashTS2 != 0x34 {
-		t.Errorf("HashTS2: got 0x%02X, want 0x34", slc.ActivityUpdate.HashTS2)
+	if au.HashTS2 != 0x34 {
+		t.Errorf("HashTS2: got 0x%02X, want 0x34", au.HashTS2)
 	}
 }
 
@@ -331,25 +332,10 @@ func TestShortLCAssembler_Nil(t *testing.T) {
 	if nilAsm.Count() != 0 {
 		t.Error("nil Count")
 	}
-	var a layer2.ShortLCAssembler
-	var dst pdu.ShortLC
-	var p pdu.ShortLCPayloads
 	for i, f := range fragments {
 		c := cachOf(shortLCSequence[i], f)
 		if _, done, err := nilAsm.Add(c); done || err != nil {
 			t.Fatalf("nil Add: %t %v", done, err)
 		}
-		if done, err := nilAsm.AddInto(&dst, &p, c); done || err != nil {
-			t.Fatalf("nil AddInto: %t %v", done, err)
-		}
-		if done, err := a.AddInto(nil, &p, c); done || err != nil {
-			t.Fatalf("AddInto nil dst: %t %v", done, err)
-		}
-		if done, err := a.AddInto(&dst, nil, c); done || err != nil {
-			t.Fatalf("AddInto nil p: %t %v", done, err)
-		}
-	}
-	if a.Count() != 0 {
-		t.Errorf("nil arguments changed the assembler: count %d", a.Count())
 	}
 }

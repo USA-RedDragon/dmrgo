@@ -34,9 +34,9 @@ func decodeSeeds(add func(sap uint8, data []byte)) {
 var fuzzDecoder location.Decoder
 
 func fuzzDecode(t *testing.T, sap uint8, data []byte) {
-	m := packet.Message{Header: pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
+	m := packet.Message{Header: setHeader(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{
 		SAP: enums.SAP(sap & 0xF), LLIDDestination: 2, LLIDSource: 1,
-	}}, Data: data}
+	}), Data: data}
 	f, err := fuzzDecoder.Decode(&m.Header, m.Data)
 	if err != nil {
 		return

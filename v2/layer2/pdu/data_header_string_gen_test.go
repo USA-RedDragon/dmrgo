@@ -19,25 +19,24 @@ func TestUnconfirmedDataHeaderStringMatchesFmt(t *testing.T) {
 
 func (s *DataHeader) fmtString() string {
 	_ret := "DataHeader{ "
-	_ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, Format: %d, AppendedBlocks: %d, ", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.Format, s.AppendedBlocks)
-	switch {
-	case s.UnconfirmedDataHeader != nil:
-		_ret += s.UnconfirmedDataHeader.String()
-	case s.ConfirmedDataHeader != nil:
-		_ret += s.ConfirmedDataHeader.String()
-	case s.ResponsePacketHeader != nil:
-		_ret += s.ResponsePacketHeader.String()
-	case s.DefinedDataHeader != nil:
-		_ret += s.DefinedDataHeader.String()
-	case s.StatusPrecodedHeader != nil:
-		_ret += s.StatusPrecodedHeader.String()
-	case s.RawDataHeader != nil:
-		_ret += s.RawDataHeader.String()
-	case s.UDTHeader != nil:
-		_ret += s.UDTHeader.String()
-	case s.ProprietaryHeader != nil:
-		_ret += s.ProprietaryHeader.String()
-	default:
+	_ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, Format: %d, AppendedBlocks: %d, ", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.Format(), s.AppendedBlocks())
+	if v, ok := s.AsUnconfirmedDataHeader(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsConfirmedDataHeader(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsResponsePacketHeader(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsDefinedDataHeader(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsStatusPrecodedHeader(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsRawDataHeader(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsUDTHeader(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsProprietaryHeader(); ok {
+		_ret += v.String()
+	} else {
 		_ret += fmt.Sprintf("RawPayload: %x", s.RawPayload)
 	}
 	_ret += " }"

@@ -18,7 +18,12 @@ func ExampleTiming() {
 	}
 	m.Join(0)
 	beacon := pdu.ChannelTimingPDU{LeaderDynamicIdentifier: 3, LeaderIdentifier: 7, ChannelTimingOp1: true, ChannelTimingOp0: true, SourceDynamicIdentifier: 3, SourceIdentifier: 7}
-	raw, _ := layer2.BuildBurst(&pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKChannelTiming, ChannelTimingPDU: &beacon}, csbk.AllSiteColorCode, layer2.SyncSourceDirectTS2)
+	c := pdu.CSBK{LastBlock: true}
+	if err := c.SetChannelTiming(beacon); err != nil {
+		fmt.Println(err)
+		return
+	}
+	raw, _ := layer2.BuildBurst(&c, csbk.AllSiteColorCode, layer2.SyncSourceDirectTS2)
 	out := make([]csbk.Output, 0, csbk.MaxOutputs)
 	for _, o := range m.Burst(time.Minute, &raw, layer2.Hint{}, out[:0]) {
 		fmt.Println(o.Kind, o.Service)

@@ -512,10 +512,11 @@ func (f *Follower) payload(now time.Duration, ok bool, h *layer2.Hint, out []Out
 		f.inHang = false
 	case enums.DataTypeCSBK:
 		c, isCSBK := b.Data.(*pdu.CSBK)
-		if isCSBK && f.ctl.dataOK() && c.FID == enums.FIDStandardized && c.ClearPDU != nil && f.clears(c.ClearPDU) {
+		cl, isClear := c.AsClear()
+		if isCSBK && f.ctl.dataOK() && c.FID == enums.FIDStandardized && isClear && f.clears(&cl) {
 			f.cleared, f.clearedAt, f.hasClear = f.call, now, true
 			out = f.leave(now, ReasonClear, out)
-			if ch := c.ClearPDU.PhysicalChannel; ch != ChannelNull && ch != ChannelAbsolute && ch != f.ctl.site.Channel {
+			if ch := cl.PhysicalChannel; ch != ChannelNull && ch != ChannelAbsolute && ch != f.ctl.site.Channel {
 				out = out[:len(out)-1]
 				out = f.moveTo(now, ch, out)
 			}

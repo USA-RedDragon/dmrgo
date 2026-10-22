@@ -41,12 +41,8 @@ func Example() {
 // ExampleFieldRangeError matches the error of a group address that does not
 // fit in its 24 bits.
 func ExampleFieldRangeError() {
-	lc := pdu.FullLinkControl{
-		BurstDataType: enums.DataTypeVoiceLCHeader,
-		FLCO:          enums.FLCOGroupVoiceChannelUser,
-		GroupVoice:    &pdu.FLCGroupVoice{GroupAddress: 1 << 24},
-	}
-	_, err := lc.Encode()
+	lc := pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader}
+	err := lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 1 << 24})
 	var rangeErr *dmrgo.FieldRangeError
 	if errors.As(err, &rangeErr) {
 		fmt.Println(rangeErr.Field, rangeErr.Bits)

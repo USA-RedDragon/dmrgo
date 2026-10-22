@@ -34,7 +34,10 @@ func TestLCBytes_Capture(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if tgt, src, _ := f.Addresses(); f.GroupVoice == nil || tgt != 91 || src != 3100999 {
+	if _, isGroup := f.AsGroupVoice(); !isGroup {
+		t.Fatalf("decoded %s", f.String())
+	}
+	if tgt, src, _ := f.Addresses(); tgt != 91 || src != 3100999 {
 		t.Fatalf("decoded %s", f.String())
 	}
 	cw := must(l.Codeword(enums.DataTypeVoiceLCHeader))
@@ -208,7 +211,9 @@ func TestNewVoiceLC(t *testing.T) {
 	for _, group := range []bool{true, false} {
 		so := layer3.ServiceOptions{IsPrivacy: true, PriorityLevel: 2}
 		f := must(pdu.NewVoiceLC(group, 91, 3191868, so))
-		if f.FID != enums.FIDStandardized || f.BurstDataType != enums.DataTypeVoiceLCHeader || (f.GroupVoice != nil) != group || (f.UnitToUnit != nil) == group {
+		_, isGroup := f.AsGroupVoice()
+		_, isUnit := f.AsUnitToUnit()
+		if f.FID != enums.FIDStandardized || f.BurstDataType != enums.DataTypeVoiceLCHeader || isGroup != group || isUnit == group {
 			t.Fatalf("group %t: %s", group, f.String())
 		}
 		if tgt, src, ok := f.Addresses(); !ok || tgt != 91 || src != 3191868 {

@@ -80,26 +80,13 @@ func checkCodec[B comparable, T any](t *testing.T, name string, in B, dec func(B
 	return out
 }
 
-func checkInto[B any, T any, P any](t *testing.T, name string, in, other B, dec func(B) T, into func(*T, *P, B)) {
+func checkDecodeNoAlloc[B any, T any](t *testing.T, name string, in B, dec func(B) T) {
 	t.Helper()
 	var dst T
-	var p P
-	into(&dst, &p, other)
-	into(&dst, &p, in)
-	want := dec(in)
-	if !reflect.DeepEqual(dst, want) {
-		t.Fatalf("%s: Into over a used destination differs from Decode for %v", name, in)
+	if n := testing.AllocsPerRun(1, func() { dst = dec(in) }); n != 0 {
+		t.Fatalf("%s: Decode allocates %v times", name, n)
 	}
-	if n := testing.AllocsPerRun(1, func() { into(&dst, &p, in) }); n != 0 {
-		t.Fatalf("%s: Into allocates %v times", name, n)
-	}
-}
-
-func invert(b [12]byte) [12]byte {
-	for i := range b {
-		b[i] = ^b[i]
-	}
-	return b
+	_ = dst
 }
 
 var bptcKinds = [...]enums.DataType{
@@ -168,24 +155,21 @@ func fuzzBPTCPDU(t *testing.T, kind uint8, data []byte) {
 		out = checkCodec(t, dt.String(), in,
 			func(b [12]byte) pdu.FullLinkControl { return pdu.DecodeFullLinkControl(b, dt) },
 			(*pdu.FullLinkControl).Encode, (*pdu.FullLinkControl).String)
-		checkInto(t, dt.String(), in, invert(in),
-			func(b [12]byte) pdu.FullLinkControl { return pdu.DecodeFullLinkControl(b, dt) },
-			func(d *pdu.FullLinkControl, p *pdu.FullLinkControlPayloads, b [12]byte) {
-				pdu.DecodeFullLinkControlInto(d, p, b, dt)
-			})
+		checkDecodeNoAlloc(t, dt.String(), in,
+			func(b [12]byte) pdu.FullLinkControl { return pdu.DecodeFullLinkControl(b, dt) })
 	case 2:
 		out = checkCodec(t, "CSBK", in, pdu.DecodeCSBK, (*pdu.CSBK).Encode, (*pdu.CSBK).String)
-		checkInto(t, "CSBK", in, invert(in), pdu.DecodeCSBK, pdu.DecodeCSBKInto)
+		checkDecodeNoAlloc(t, "CSBK", in, pdu.DecodeCSBK)
 		checkCSBKViews(t, out)
 	case 3:
 		out = checkCodec(t, "MBCHeader", in, pdu.DecodeMBCHeader, (*pdu.MBCHeader).Encode, (*pdu.MBCHeader).String)
-		checkInto(t, "MBCHeader", in, invert(in), pdu.DecodeMBCHeader, pdu.DecodeMBCHeaderInto)
+		checkDecodeNoAlloc(t, "MBCHeader", in, pdu.DecodeMBCHeader)
 	case 4:
 		out = checkCodec(t, "MBCContinuation", in, pdu.DecodeMBCContinuation, (*pdu.MBCContinuation).Encode, (*pdu.MBCContinuation).String)
 		checkMBCViews(t, in, out)
 	case 5:
 		out = checkCodec(t, "DataHeader", in, pdu.DecodeDataHeader, (*pdu.DataHeader).Encode, (*pdu.DataHeader).String)
-		checkInto(t, "DataHeader", in, invert(in), pdu.DecodeDataHeader, pdu.DecodeDataHeaderInto)
+		checkDecodeNoAlloc(t, "DataHeader", in, pdu.DecodeDataHeader)
 	case 6:
 		out = checkCodec(t, "USBD", in, pdu.DecodeUnifiedSingleBlockData, (*pdu.UnifiedSingleBlockData).Encode, (*pdu.UnifiedSingleBlockData).String)
 	case 7:
@@ -349,11 +333,6 @@ func checkConfirmed(t *testing.T, in [12]byte) {
 func checkFullLCBytes(t *testing.T, lc [9]byte) {
 	t.Helper()
 	v, err := pdu.DecodeFullLinkControlBytes(lc)
-	var into pdu.FullLinkControl
-	var p pdu.FullLinkControlPayloads
-	if intoErr := pdu.DecodeFullLinkControlBytesInto(&into, &p, lc); (intoErr == nil) != (err == nil) || !reflect.DeepEqual(into, v) {
-		t.Fatalf("DecodeFullLinkControlBytesInto(%x) differs from DecodeFullLinkControlBytes", lc)
-	}
 	if err != nil {
 		return
 	}

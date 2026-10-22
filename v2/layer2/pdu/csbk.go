@@ -451,54 +451,57 @@ const (
 	Opcode0x38TalkgroupDataGrantMultiItem
 )
 
-// CSBK is the Control Signalling Block (CSBK) PDU (ETSI TS 102 361-1 clause 9.1.8).
+// CSBK is the Control Signalling Block (CSBK) PDU. Opcode and FID select
+// the view of RawPayload: AsPreamble, for example, decodes it for Opcode
+// CSBKPreamble and the standard FID 0. (ETSI TS 102 361-1 clause 9.1.8)
 //
 //dmr:crc crc_ccitt
 //dmr:crc_mask 0xA5A5
 //dmr:input_size 96
 //dmr:dispatch_if FID==0
+//dmr:variant UnitToUnitVoiceServiceRequest UnitToUnitVoiceServiceRequestPDU Opcode=CSBKUnitToUnitVoiceServiceRequest
+//dmr:variant UnitToUnitVoiceServiceAnswerResponse UnitToUnitVoiceServiceAnswerResponsePDU Opcode=CSBKUnitToUnitVoiceServiceAnswerResponse
+//dmr:variant NegativeAcknowledgement NegativeAcknowledgementPDU Opcode=CSBKNegativeAcknowledgement
+//dmr:variant Preamble PreamblePDU Opcode=CSBKPreamble
+//dmr:variant ChannelTiming ChannelTimingPDU Opcode=CSBKChannelTiming
+//dmr:variant PrivateVoiceGrant PrivateVoiceGrantPDU Opcode=CSBKPrivateVoiceGrant
+//dmr:variant TalkgroupVoiceGrant TalkgroupVoiceGrantPDU Opcode=CSBKTalkgroupVoiceGrant
+//dmr:variant BroadcastTalkgroupVoiceGrant BroadcastTalkgroupVoiceGrantPDU Opcode=CSBKBroadcastTalkgroupVoiceGrant
+//dmr:variant PrivateDataGrant PrivateDataGrantPDU Opcode=CSBKPrivateDataGrant
+//dmr:variant TalkgroupDataGrant TalkgroupDataGrantPDU Opcode=CSBKTalkgroupDataGrant
+//dmr:variant DuplexPrivateVoiceGrant DuplexPrivateVoiceGrantPDU Opcode=CSBKDuplexPrivateVoiceGrant
+//dmr:variant DuplexPrivateDataGrant DuplexPrivateDataGrantPDU Opcode=CSBKDuplexPrivateDataGrant
+//dmr:variant PrivateDataGrantMultiItem PrivateDataGrantMultiItemPDU Opcode=CSBKPrivateDataGrantMultiItem
+//dmr:variant Move MovePDU Opcode=CSBKMove
+//dmr:variant Aloha AlohaPDU Opcode=CSBKAloha
+//dmr:variant Broadcast BroadcastPDU Opcode=CSBKBroadcast
+//dmr:variant Clear ClearPDU Opcode=CSBKClear
+//dmr:variant Protect ProtectPDU Opcode=CSBKProtect
+//dmr:variant Ahoy AhoyPDU Opcode=CSBKAhoy
+//dmr:variant AckOutbound AckOutboundPDU Opcode=CSBKAckOutbound
+//dmr:variant AckInbound AckInboundPDU Opcode=CSBKAckInbound
+//dmr:variant AckOutboundPayload AckOutboundPayloadPDU Opcode=CSBKAckOutboundPayload
+//dmr:variant AckInboundPayload AckInboundPayloadPDU Opcode=CSBKAckInboundPayload
+//dmr:variant RandomAccess RandomAccessPDU Opcode=CSBKRandomAccess
+//dmr:variant Ackvitation AckvitationPDU Opcode=CSBKAckvitation
+//dmr:variant Maintenance MaintenancePDU Opcode=CSBKMaintenance
+//dmr:variant MotorolaRadioCheck MotorolaRadioCheckPDU Opcode=CSBKMotorolaRadioCheck FID=enums.FIDMotorola
+//dmr:variant MotorolaCallAlert MotorolaCallAlertPDU Opcode=CSBKMotorolaCallAlert FID=enums.FIDMotorola
+//dmr:variant MotorolaCallAlertAck MotorolaCallAlertAckPDU Opcode=CSBKMotorolaCallAlertAck FID=enums.FIDMotorola
 type CSBK struct {
 	LastBlock   bool       `dmr:"bit:0"`     // LB bit, true for the last block
 	ProtectFlag bool       `dmr:"bit:1"`     // PF bit
-	Opcode      CSBKOpcode `dmr:"bits:2-7"`  // CSBKO, selects the payload field
-	FID         enums.FID  `dmr:"bits:8-15"` // feature set ID, only the standard FID has payload fields
+	Opcode      CSBKOpcode `dmr:"bits:2-7"`  // CSBKO, selects the payload
+	FID         enums.FID  `dmr:"bits:8-15"` // feature set ID, selects the payload with Opcode
 	FEC         fec.Result `dmr:"-"`         // result of the CRC check
 	// Hint0x38 is the likely meaning of opcode 0x38. DecodeCSBK leaves it
 	// Opcode0x38Unknown. layer2.Burst sets it from the SYNC of the burst,
 	// which a network relay can rewrite.
 	Hint0x38 Opcode0x38Hint `dmr:"-"`
 
-	UnitToUnitVoiceServiceRequestPDU        *UnitToUnitVoiceServiceRequestPDU        `dmr:"bits:16-79,dispatch:Opcode=CSBKUnitToUnitVoiceServiceRequest"`        // UU_V_Req payload, or nil
-	UnitToUnitVoiceServiceAnswerResponsePDU *UnitToUnitVoiceServiceAnswerResponsePDU `dmr:"bits:16-79,dispatch:Opcode=CSBKUnitToUnitVoiceServiceAnswerResponse"` // UU_Ans_Rsp payload, or nil
-	NegativeAcknowledgementPDU              *NegativeAcknowledgementPDU              `dmr:"bits:16-79,dispatch:Opcode=CSBKNegativeAcknowledgement"`              // NACK_Rsp payload, or nil
-	PreamblePDU                             *PreamblePDU                             `dmr:"bits:16-79,dispatch:Opcode=CSBKPreamble"`                             // Pre_CSBK payload, or nil
-	ChannelTimingPDU                        *ChannelTimingPDU                        `dmr:"bits:16-79,dispatch:Opcode=CSBKChannelTiming"`                        // CT_CSBK payload, or nil
-
-	PrivateVoiceGrantPDU            *PrivateVoiceGrantPDU            `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateVoiceGrant"`            // PV_GRANT payload, or nil
-	TalkgroupVoiceGrantPDU          *TalkgroupVoiceGrantPDU          `dmr:"bits:16-79,dispatch:Opcode=CSBKTalkgroupVoiceGrant"`          // TV_GRANT payload, or nil
-	BroadcastTalkgroupVoiceGrantPDU *BroadcastTalkgroupVoiceGrantPDU `dmr:"bits:16-79,dispatch:Opcode=CSBKBroadcastTalkgroupVoiceGrant"` // BTV_GRANT payload, or nil
-	PrivateDataGrantPDU             *PrivateDataGrantPDU             `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateDataGrant"`             // PD_GRANT payload, or nil
-	TalkgroupDataGrantPDU           *TalkgroupDataGrantPDU           `dmr:"bits:16-79,dispatch:Opcode=CSBKTalkgroupDataGrant"`           // TD_GRANT payload, or nil
-	DuplexPrivateVoiceGrantPDU      *DuplexPrivateVoiceGrantPDU      `dmr:"bits:16-79,dispatch:Opcode=CSBKDuplexPrivateVoiceGrant"`      // PV_GRANT_DX payload, or nil
-	DuplexPrivateDataGrantPDU       *DuplexPrivateDataGrantPDU       `dmr:"bits:16-79,dispatch:Opcode=CSBKDuplexPrivateDataGrant"`       // PD_GRANT_DX payload, or nil
-	PrivateDataGrantMultiItemPDU    *PrivateDataGrantMultiItemPDU    `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateDataGrantMultiItem"`    // PD_GRANT_MI payload, or nil
-	MovePDU                         *MovePDU                         `dmr:"bits:16-79,dispatch:Opcode=CSBKMove"`                         // C_MOVE payload, or nil
-	AlohaPDU                        *AlohaPDU                        `dmr:"bits:16-79,dispatch:Opcode=CSBKAloha"`                        // C_ALOHA payload, or nil
-	BroadcastPDU                    *BroadcastPDU                    `dmr:"bits:16-79,dispatch:Opcode=CSBKBroadcast"`                    // C_BCAST payload, or nil
-	ClearPDU                        *ClearPDU                        `dmr:"bits:16-79,dispatch:Opcode=CSBKClear"`                        // P_CLEAR payload, or nil
-	ProtectPDU                      *ProtectPDU                      `dmr:"bits:16-79,dispatch:Opcode=CSBKProtect"`                      // P_PROTECT payload, or nil
-	AhoyPDU                         *AhoyPDU                         `dmr:"bits:16-79,dispatch:Opcode=CSBKAhoy"`                         // C_AHOY or P_AHOY payload, or nil
-	AckOutboundPDU                  *AckOutboundPDU                  `dmr:"bits:16-79,dispatch:Opcode=CSBKAckOutbound"`                  // C_ACKD payload, or nil
-	AckInboundPDU                   *AckInboundPDU                   `dmr:"bits:16-79,dispatch:Opcode=CSBKAckInbound"`                   // C_ACKU payload, or nil
-	AckOutboundPayloadPDU           *AckOutboundPayloadPDU           `dmr:"bits:16-79,dispatch:Opcode=CSBKAckOutboundPayload"`           // P_ACKD payload, or nil
-	AckInboundPayloadPDU            *AckInboundPayloadPDU            `dmr:"bits:16-79,dispatch:Opcode=CSBKAckInboundPayload"`            // P_ACKU payload, or nil
-	RandomAccessPDU                 *RandomAccessPDU                 `dmr:"bits:16-79,dispatch:Opcode=CSBKRandomAccess"`                 // C_RAND payload, or nil
-	AckvitationPDU                  *AckvitationPDU                  `dmr:"bits:16-79,dispatch:Opcode=CSBKAckvitation"`                  // C_ACKVIT payload, or nil
-	MaintenancePDU                  *MaintenancePDU                  `dmr:"bits:16-79,dispatch:Opcode=CSBKMaintenance"`                  // P_MAINT payload, or nil
-
-	// RawPayload holds CSBK octets 2 to 9 (bits 16 to 79) when no payload
-	// field is set, as for opcode 0x38 or a manufacturer FID.
-	RawPayload [8]byte `dmr:"bits:16-79,raw,fallback"`
+	// RawPayload holds CSBK octets 2 to 9 (bits 16 to 79), the payload that
+	// Opcode and FID select.
+	RawPayload [8]byte `dmr:"bits:16-79,raw,union"`
 }
 
 // AsBSOutboundActivation decodes the RawPayload of a standard FID CSBK with
@@ -527,9 +530,9 @@ func (s *CSBK) AsTalkgroupDataGrantMultiItem() (p TalkgroupDataGrantMultiItemPDU
 }
 
 // SetBSOutboundActivation makes s a standard FID BS_Dwn_Act CSBK that
-// carries p: it sets Opcode, FID, Hint0x38 and RawPayload, clears the
-// payload fields and keeps LastBlock and ProtectFlag. It returns the error
-// of p.Encode and leaves s as it is on an error.
+// carries p: it sets Opcode, FID, Hint0x38 and RawPayload, and keeps the
+// other fields. It returns the error of p.Encode and leaves s as it is on an
+// error.
 func (s *CSBK) SetBSOutboundActivation(p BSOutboundActivationPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -557,14 +560,7 @@ func (s *CSBK) SetTalkgroupDataGrantMultiItem(p TalkgroupDataGrantMultiItemPDU) 
 }
 
 func (s *CSBK) setOpcode0x38(payload [8]byte, hint Opcode0x38Hint) {
-	*s = CSBK{
-		LastBlock:   s.LastBlock,
-		ProtectFlag: s.ProtectFlag,
-		Opcode:      CSBKBSOutboundActivation,
-		FID:         enums.FIDStandardized,
-		Hint0x38:    hint,
-		RawPayload:  payload,
-	}
+	s.Opcode, s.FID, s.Hint0x38, s.RawPayload = CSBKBSOutboundActivation, enums.FIDStandardized, hint, payload
 }
 
 // NewBSOutboundActivation returns the BS_Dwn_Act CSBK, with LastBlock set,

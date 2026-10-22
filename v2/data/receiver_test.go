@@ -54,8 +54,8 @@ func TestReceiverSMSCaptures(t *testing.T) {
 			t.Errorf("%s: call %+v, want %+v", c.name, ev[0].Call, want)
 		}
 		m := ev[1].Message
-		if m.Header.Format != c.format || len(m.Payload) != c.octets || m.Rate != enums.DataTypeRate12 || m.BadCRC {
-			t.Errorf("%s: %v, %d octets, %v, bad CRC %v", c.name, m.Header.Format, len(m.Payload), m.Rate, m.BadCRC)
+		if m.Header.Format() != c.format || len(m.Payload) != c.octets || m.Rate != enums.DataTypeRate12 || m.BadCRC {
+			t.Errorf("%s: %v, %d octets, %v, bad CRC %v", c.name, m.Header.Format(), len(m.Payload), m.Rate, m.BadCRC)
 		}
 		if !strings.Contains(utf16(m.Payload), "TEST KI5VMF") {
 			t.Errorf("%s: text %q", c.name, utf16(m.Payload))
@@ -138,15 +138,17 @@ func build(t testing.TB, h pdu.DataHeader, payload []byte, rate enums.DataType) 
 	return b
 }
 
-func confirmedHeader(ns uint8) pdu.DataHeader {
-	return sapHeader(enums.SAPIPBasedPacketData, ns, false)
+func confirmedHeader(t testing.TB, ns uint8) pdu.DataHeader {
+	t.Helper()
+	return sapHeader(t, enums.SAPIPBasedPacketData, ns, false)
 }
 
-func sapHeader(sap enums.SAP, ns uint8, resync bool) pdu.DataHeader {
-	return pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
+func sapHeader(t testing.TB, sap enums.SAP, ns uint8, resync bool) pdu.DataHeader {
+	t.Helper()
+	return setHeader(t, (*pdu.DataHeader).SetConfirmedDataHeader, pdu.ConfirmedDataHeader{
 		ResponseRequested: true, SAP: sap, LLIDDestination: dstID, LLIDSource: srcID,
 		FullMessageFlag: true, ReSynchronizeFlag: resync, SendSequenceNumber: ns, FragmentSequenceNumber: 0b1000,
-	}}
+	})
 }
 
 func timed(start time.Duration, bursts []layer2.RawBurst, drop ...int) []timedBurst {
@@ -191,7 +193,10 @@ func responses(t *testing.T, ev []data.Event) (string, []int) {
 		if m.Response != nil && retry == nil {
 			retry = m.Response.RetryBlocks()
 		}
-		rh := m.Header.ResponsePacketHeader
+		rh, ok := m.Header.AsResponsePacketHeader()
+		if !ok {
+			t.Fatalf("response header %v is not a C_RHEAD", &m.Header)
+		}
 		if rh.LLIDDestination != srcID || rh.LLIDSource != dstID {
 			t.Errorf("response from %d to %d", rh.LLIDSource, rh.LLIDDestination)
 		}
@@ -201,8 +206,8 @@ func responses(t *testing.T, ev []data.Event) (string, []int) {
 
 func TestReceiverConfirmedFaults(t *testing.T) {
 	t.Parallel()
-	good := build(t, confirmedHeader(0), payload(60), enums.DataTypeRate12)
-	short := build(t, sapHeader(enums.SAPShortData, 0, false), payload(60), enums.DataTypeRate12)
+	good := build(t, confirmedHeader(t, 0), payload(60), enums.DataTypeRate12)
+	short := build(t, sapHeader(t, enums.SAPShortData, 0, false), payload(60), enums.DataTypeRate12)
 	if len(good) != 8 {
 		t.Fatalf("%d bursts, want a header and 7 blocks", len(good))
 	}
@@ -263,7 +268,7 @@ func TestReceiverConfirmedFaults(t *testing.T) {
 
 func retryBursts(t *testing.T, good []layer2.RawBurst, dbsn ...int) []layer2.RawBurst {
 	t.Helper()
-	p, err := packet.NewPacket(confirmedHeader(0), payload(60), enums.DataTypeRate12)
+	p, err := packet.NewPacket(confirmedHeader(t, 0), payload(60), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -315,7 +320,7 @@ func TestReceiverSequence(t *testing.T) {
 	} {
 		bursts := make([]timedBurst, 0, 64)
 		for i, p := range c.pkts {
-			b := build(t, sapHeader(c.sap, p.ns, p.resync), payload(p.n), enums.DataTypeRate12)
+			b := build(t, sapHeader(t, c.sap, p.ns, p.resync), payload(p.n), enums.DataTypeRate12)
 			bursts = append(bursts, timed(time.Duration(i)*time.Second, b)...)
 		}
 		ev := replay(t, newReceiver(t, &data.ReceiverConfig{Respond: true}), bursts)
@@ -347,19 +352,17 @@ func TestReceiverProprietarySAP(t *testing.T) {
 		{enums.SAPIPBasedPacketData, 2},
 		{enums.SAPShortData, 1},
 	} {
-		p, err := packet.NewPacket(sapHeader(enums.SAPProprietaryPacketData, 0, false), payload(20), enums.DataTypeRate12)
+		p, err := packet.NewPacket(sapHeader(t, enums.SAPProprietaryPacketData, 0, false), payload(20), enums.DataTypeRate12)
 		if err != nil {
 			t.Fatal(err)
 		}
-		ch := *p.Header.ConfirmedDataHeader
-		ch.BlocksToFollow++
-		p.Header.ConfirmedDataHeader = &ch
+		editConfirmed(t, &p.Header, func(c *pdu.ConfirmedDataHeader) { c.BlocksToFollow++ })
 		b, err := packet.Bursts(&p, 1, layer2.SyncSourceMS)
 		if err != nil {
 			t.Fatal(err)
 		}
-		ph, err := layer2.BuildBurst(&pdu.DataHeader{Format: pdu.FormatProprietary,
-			ProprietaryHeader: &pdu.ProprietaryHeader{SAP: c.sap, MFID: 0x10}}, 1, layer2.SyncSourceMS)
+		prop := setHeader(t, (*pdu.DataHeader).SetProprietaryHeader, pdu.ProprietaryHeader{SAP: c.sap, MFID: 0x10})
+		ph, err := layer2.BuildBurst(&prop, 1, layer2.SyncSourceMS)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -388,8 +391,10 @@ func statuses(t *testing.T, ev []data.Event) []uint8 {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if dh, ok := b.Data.(*pdu.DataHeader); ok && dh.ResponsePacketHeader != nil {
-			s = append(s, dh.ResponsePacketHeader.ResponseStatus)
+		if dh, ok := b.Data.(*pdu.DataHeader); ok {
+			if rh, ok := dh.AsResponsePacketHeader(); ok {
+				s = append(s, rh.ResponseStatus)
+			}
 		}
 	}
 	return s
@@ -397,15 +402,15 @@ func statuses(t *testing.T, ev []data.Event) []uint8 {
 
 func TestReceiverNoAnswer(t *testing.T) {
 	t.Parallel()
-	group := confirmedHeader(0)
-	group.ConfirmedDataHeader.Group = true
+	group := confirmedHeader(t, 0)
+	editConfirmed(t, &group, func(c *pdu.ConfirmedDataHeader) { c.Group = true })
 	for _, c := range []struct {
 		name string
 		cfg  data.ReceiverConfig
 		h    pdu.DataHeader
 	}{
-		{"not respond", data.ReceiverConfig{}, confirmedHeader(0)},
-		{"other address", data.ReceiverConfig{Respond: true, Address: 99}, confirmedHeader(0)},
+		{"not respond", data.ReceiverConfig{}, confirmedHeader(t, 0)},
+		{"other address", data.ReceiverConfig{Respond: true, Address: 99}, confirmedHeader(t, 0)},
 		{"group", data.ReceiverConfig{Respond: true}, group},
 	} {
 		ev := replay(t, newReceiver(t, &c.cfg), timed(0, build(t, c.h, payload(20), enums.DataTypeRate34)))
@@ -417,7 +422,7 @@ func TestReceiverNoAnswer(t *testing.T) {
 
 func TestReceiverTransportSeq(t *testing.T) {
 	t.Parallel()
-	good := build(t, confirmedHeader(0), payload(60), enums.DataTypeRate12)
+	good := build(t, confirmedHeader(t, 0), payload(60), enums.DataTypeRate12)
 	r := newReceiver(t, &data.ReceiverConfig{Respond: true, Lost: -1})
 	ev := make([]data.Event, 0, data.MaxEvents)
 	var all []data.Event
@@ -438,8 +443,8 @@ func TestReceiverTransportSeq(t *testing.T) {
 
 func TestReceiverEnds(t *testing.T) {
 	t.Parallel()
-	u := pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
-		SAP: enums.SAPIPBasedPacketData, LLIDDestination: dstID, LLIDSource: srcID, FullMessageFlag: true}}
+	u := setHeader(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{
+		SAP: enums.SAPIPBasedPacketData, LLIDDestination: dstID, LLIDSource: srcID, FullMessageFlag: true})
 	pkt := build(t, u, payload(40), enums.DataTypeRate1)
 	voice, err := layer2.BuildVoiceBurst([3]vocoder.AMBEFrame{}, enums.VoiceBurstA, pdu.EmbeddedSignalling{}, [4]byte{}, layer2.SyncSourceMS)
 	if err != nil {
@@ -450,9 +455,9 @@ func TestReceiverEnds(t *testing.T) {
 		t.Fatal(err)
 	}
 	other := u
-	oh := *u.UnconfirmedDataHeader
-	oh.LLIDSource = 42
-	other.UnconfirmedDataHeader = &oh
+	if err := other.SetAddresses(dstID, 42); err != nil {
+		t.Fatal(err)
+	}
 	otherPkt := build(t, other, payload(10), enums.DataTypeRate12)
 	for _, c := range []struct {
 		name   string
@@ -493,10 +498,10 @@ func TestReceiverEnds(t *testing.T) {
 
 func TestReceiverUDT(t *testing.T) {
 	t.Parallel()
-	h := pdu.DataHeader{Format: pdu.FormatUnifiedDataTransport, UDTHeader: &pdu.UDTHeader{
+	h := setHeader(t, (*pdu.DataHeader).SetUDTHeader, pdu.UDTHeader{
 		SAP: enums.SAPShortData, UDTFormat: 4, LLIDDestination: dstID, LLIDSource: srcID,
 		PadNibble: 2, AppendedBlocks: 1, Opcode: pdu.UDTOpcodeInboundHeader,
-	}}
+	})
 	blocks := [][12]byte{[12]byte(payload(12)), {}}
 	copy(blocks[1][:], "dmrgo UDT!")
 	pdu.SetMBCLastBlockCRC(blocks)
@@ -514,7 +519,7 @@ func TestReceiverUDT(t *testing.T) {
 	}
 	m := ev[1].Message
 	want := append(payload(12), "dmrgo UDT"...)
-	if m.Header.UDTHeader == nil || m.Header.UDTHeader.Opcode != pdu.UDTOpcodeInboundHeader || !bytes.Equal(m.Payload, want) {
+	if uh, ok := m.Header.AsUDTHeader(); !ok || uh.Opcode != pdu.UDTOpcodeInboundHeader || !bytes.Equal(m.Payload, want) {
 		t.Errorf("message %+v, payload %q", m.Header, m.Payload)
 	}
 
@@ -534,7 +539,7 @@ func TestReceiverUDT(t *testing.T) {
 
 func TestReceiverDropped(t *testing.T) {
 	t.Parallel()
-	good := build(t, confirmedHeader(0), payload(40), enums.DataTypeRate12)
+	good := build(t, confirmedHeader(t, 0), payload(40), enums.DataTypeRate12)
 	ev := replay(t, newReceiver(t, nil), timed(0, good[1:]))
 	if len(ev) != 0 {
 		t.Errorf("events %s for blocks without a header", kinds(ev))
@@ -587,21 +592,26 @@ func TestReceiverStrings(t *testing.T) {
 
 func TestReceiverProprietaryHeader(t *testing.T) {
 	t.Parallel()
-	u := pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
-		SAP: enums.SAPProprietaryPacketData, LLIDDestination: dstID, LLIDSource: srcID, FullMessageFlag: true}}
+	u := setHeader(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{
+		SAP: enums.SAPProprietaryPacketData, LLIDDestination: dstID, LLIDSource: srcID, FullMessageFlag: true})
 	p, err := packet.NewPacket(u, payload(40), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
-	uh := *p.Header.UnconfirmedDataHeader
+	uh, ok := p.Header.AsUnconfirmedDataHeader()
+	if !ok {
+		t.Fatalf("header %v is not a U_HEAD", &p.Header)
+	}
 	uh.BlocksToFollow++
-	p.Header.UnconfirmedDataHeader = &uh
+	if err := p.Header.SetUnconfirmedDataHeader(uh); err != nil {
+		t.Fatal(err)
+	}
 	b, err := packet.Bursts(&p, 1, layer2.SyncSourceMS)
 	if err != nil {
 		t.Fatal(err)
 	}
-	ph, err := layer2.BuildBurst(&pdu.DataHeader{Format: pdu.FormatProprietary,
-		ProprietaryHeader: &pdu.ProprietaryHeader{SAP: enums.SAPIPBasedPacketData, MFID: 0x10}}, 1, layer2.SyncSourceMS)
+	prop := setHeader(t, (*pdu.DataHeader).SetProprietaryHeader, pdu.ProprietaryHeader{SAP: enums.SAPIPBasedPacketData, MFID: 0x10})
+	ph, err := layer2.BuildBurst(&prop, 1, layer2.SyncSourceMS)
 	if err != nil {
 		t.Fatal(err)
 	}

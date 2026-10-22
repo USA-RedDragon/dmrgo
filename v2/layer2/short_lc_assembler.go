@@ -40,8 +40,7 @@ func (a *ShortLCAssembler) Count() int {
 // fragment LCSS is not used in the CACH, so either discards the partial
 // Short LC; Add then returns ErrShortLCSequence when fragments were
 // discarded. A fragment out of order also discards the partial Short LC and
-// returns ErrShortLCSequence. A nil a does nothing. Add allocates the
-// payload struct of a completed Short LC; AddInto does not.
+// returns ErrShortLCSequence. A nil a does nothing. Add does not allocate.
 func (a *ShortLCAssembler) Add(c CACH) (slc pdu.ShortLC, done bool, err error) {
 	if a == nil {
 		return slc, false, nil
@@ -53,23 +52,6 @@ func (a *ShortLCAssembler) Add(c CACH) (slc pdu.ShortLC, done bool, err error) {
 	slc = pdu.DecodeShortLC(bits)
 	slc.FEC = bptcResult.Combine(slc.FEC)
 	return slc, true, nil
-}
-
-// AddInto adds a decoded CACH as Add does, and decodes a completed Short LC
-// into dst, with its payload struct in p, as pdu.DecodeShortLCInto places
-// it. It leaves dst as it is until the Short LC is complete. A nil a, dst
-// or p does nothing. It does not allocate.
-func (a *ShortLCAssembler) AddInto(dst *pdu.ShortLC, p *pdu.ShortLCPayloads, c CACH) (done bool, err error) {
-	if a == nil || dst == nil || p == nil {
-		return false, nil
-	}
-	if done, err = a.add(c); err != nil || !done {
-		return false, err
-	}
-	bits, bptcResult := a.decode()
-	pdu.DecodeShortLCInto(dst, p, bits)
-	dst.FEC = bptcResult.Combine(dst.FEC)
-	return true, nil
 }
 
 func (a *ShortLCAssembler) add(c CACH) (bool, error) {

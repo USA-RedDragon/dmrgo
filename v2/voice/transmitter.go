@@ -267,7 +267,6 @@ type Transmitter struct {
 	vopts layer2.VoiceTransmitterOptions
 	pi    pdu.PIHeader
 	lc    pdu.FullLinkControl
-	lcp   pdu.FullLinkControlPayloads
 
 	state      TransmitterState
 	call       Call
@@ -289,9 +288,7 @@ type Transmitter struct {
 	slots  [layer2.VoiceSlotsPerBurst][9]byte
 
 	ta        [4]pdu.FullLinkControl
-	taP       [4]pdu.FullLinkControlPayloads
 	nTA       int
-	gps       pdu.FLCGPSInfo
 	gpsLC     pdu.FullLinkControl
 	nExtras   int
 	nextExtra int
@@ -546,7 +543,8 @@ func (t *Transmitter) setLC(c *Call) error {
 		}
 		lc.SetFID(c.FID)
 	}
-	if pdu.DecodeFullLinkControlBytesInto(&t.lc, &t.lcp, lc) != nil {
+	var err error
+	if t.lc, err = pdu.DecodeFullLinkControlBytes(lc); err != nil {
 		return errCall
 	}
 	c.LC = lc
@@ -556,7 +554,7 @@ func (t *Transmitter) setLC(c *Call) error {
 func (t *Transmitter) setExtras(opts *CallOptions) error {
 	t.nTA = 0
 	if opts.TalkerAlias != "" {
-		n, err := pdu.EncodeTalkerAliasInto(&t.ta, &t.taP, opts.TalkerAlias, opts.TalkerAliasFormat)
+		n, err := pdu.EncodeTalkerAliasInto(&t.ta, opts.TalkerAlias, opts.TalkerAliasFormat)
 		if err != nil {
 			return errTalkerAlias
 		}
@@ -564,9 +562,8 @@ func (t *Transmitter) setExtras(opts *CallOptions) error {
 	}
 	t.nExtras = t.nTA
 	if opts.GPS != nil {
-		t.gps = *opts.GPS
-		t.gpsLC = pdu.FullLinkControl{FLCO: enums.FLCOGPSInfo, GPSInfo: &t.gps}
-		if _, err := t.gpsLC.Bytes(); err != nil {
+		t.gpsLC = pdu.FullLinkControl{}
+		if err := t.gpsLC.SetGPSInfo(*opts.GPS); err != nil {
 			return errGPS
 		}
 		t.nExtras++

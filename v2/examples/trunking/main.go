@@ -45,17 +45,23 @@ func outboundCSBKs(w io.Writer, sc pdu.SysCode) error {
 	if err != nil {
 		return err
 	}
-	csbks := []*pdu.CSBK{
-		{LastBlock: true, Opcode: pdu.CSBKAloha, AlohaPDU: &pdu.AlohaPDU{
-			TSCCAS: true, SiteTSSync: true, Version: 1, NRandWait: 5, Reg: true, Backoff: 3, SysIdentCode: code}},
-		{LastBlock: true, Opcode: pdu.CSBKBroadcast, BroadcastPDU: &pdu.BroadcastPDU{Reg: true, Backoff: 2, SysIdentCode: code}},
-		{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{
-			PhysicalChannel: 42, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3120001}},
-		{LastBlock: true, Opcode: pdu.CSBKPrivateVoiceGrant, PrivateVoiceGrantPDU: &pdu.PrivateVoiceGrantPDU{
-			PhysicalChannel: 43, TargetAddress: 3120002, SourceAddress: 3120001}},
-		{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{TargetAddress: 3120002, SourceAddress: 3120001}},
-		{LastBlock: true, Opcode: pdu.CSBKAckOutbound, AckOutboundPDU: &pdu.AckOutboundPDU{ReasonCode: 0x62, TargetAddress: 3120002}},
-		{LastBlock: true, Opcode: pdu.CSBKMove, MovePDU: &pdu.MovePDU{Mask: 3, Reg: true, Backoff: 4, PhysicalChannel: 12, MSAddress: 3120002}},
+	csbks := make([]*pdu.CSBK, 7)
+	for i := range csbks {
+		csbks[i] = &pdu.CSBK{LastBlock: true}
+	}
+	if err := errors.Join(
+		csbks[0].SetAloha(pdu.AlohaPDU{
+			TSCCAS: true, SiteTSSync: true, Version: 1, NRandWait: 5, Reg: true, Backoff: 3, SysIdentCode: code}),
+		csbks[1].SetBroadcast(pdu.BroadcastPDU{Reg: true, Backoff: 2, SysIdentCode: code}),
+		csbks[2].SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{
+			PhysicalChannel: 42, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3120001}),
+		csbks[3].SetPrivateVoiceGrant(pdu.PrivateVoiceGrantPDU{
+			PhysicalChannel: 43, TargetAddress: 3120002, SourceAddress: 3120001}),
+		csbks[4].SetAhoy(pdu.AhoyPDU{TargetAddress: 3120002, SourceAddress: 3120001}),
+		csbks[5].SetAckOutbound(pdu.AckOutboundPDU{ReasonCode: 0x62, TargetAddress: 3120002}),
+		csbks[6].SetMove(pdu.MovePDU{Mask: 3, Reg: true, Backoff: 4, PhysicalChannel: 12, MSAddress: 3120002}),
+	); err != nil {
+		return err
 	}
 	for _, c := range csbks {
 		got, b, err := roundTripCSBK(c, layer2.SyncSourceBS)
@@ -80,8 +86,12 @@ func outboundCSBKs(w io.Writer, sc pdu.SysCode) error {
 	if err != nil {
 		return err
 	}
+	ap, ok := aloha.AsAloha()
+	if !ok {
+		return fmt.Errorf("C_ALOHA decoded as %s", aloha.Opcode)
+	}
 	var got pdu.SysCode
-	if got.Unpack(aloha.AlohaPDU.SysIdentCode); got != sc {
+	if got.Unpack(ap.SysIdentCode); got != sc {
 		return fmt.Errorf("C_ALOHA SYScode %+v, want %+v", got, sc)
 	}
 	fmt.Fprintf(w, "C_ALOHA SYScode 0x%04x: model %d net %d site %d par %d\n", code, got.Model, got.Net, got.Site, got.Par)
@@ -133,14 +143,17 @@ func opcode0x38(w io.Writer) error {
 }
 
 func randomAccess(w io.Writer) error {
-	c := &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKRandomAccess, RandomAccessPDU: &pdu.RandomAccessPDU{
-		TargetAddress: 9, SourceAddress: 3120001}}
+	ra := pdu.RandomAccessPDU{TargetAddress: 9, SourceAddress: 3120001}
+	c := &pdu.CSBK{LastBlock: true}
+	if err := c.SetRandomAccess(ra); err != nil {
+		return err
+	}
 	got, b, err := roundTripCSBK(c, layer2.SyncSourceMS)
 	if err != nil {
 		return err
 	}
-	if b.SyncPattern != enums.SyncMSSourcedData || got.RandomAccessPDU == nil || *got.RandomAccessPDU != *c.RandomAccessPDU {
-		return fmt.Errorf("C_RAND: sync %s, PDU %v", b.SyncPattern, got.RandomAccessPDU)
+	if back, ok := got.AsRandomAccess(); b.SyncPattern != enums.SyncMSSourcedData || !ok || back != ra {
+		return fmt.Errorf("C_RAND: sync %s, PDU %v", b.SyncPattern, back)
 	}
 	fmt.Fprintf(w, "inbound %s ok, sync %s\n", got.Opcode, b.SyncPattern)
 	return nil
@@ -148,7 +161,10 @@ func randomAccess(w io.Writer) error {
 
 func mbcGrant(w io.Writer) error {
 	grant := pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF, TargetAddress: 9, SourceAddress: 3120001}
-	hdr := pdu.MBCHeader{Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &grant}
+	var hdr pdu.MBCHeader
+	if err := hdr.SetTalkgroupVoiceGrant(grant); err != nil {
+		return err
+	}
 	cgap := pdu.CGAPContinuation{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, ColorCode: colorCode,
 		CdefParms: layer3.CdefParms{Channel: 0xFFF, TXMHz: 451, TXKHz: 1000, RXMHz: 456, RXKHz: 1000}}
 	hraw, err := layer2.BuildBurst(&hdr, colorCode, layer2.SyncSourceBS)
@@ -164,8 +180,9 @@ func mbcGrant(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if gotHdr.FEC.Uncorrectable || gotHdr.TalkgroupVoiceGrantPDU == nil || *gotHdr.TalkgroupVoiceGrantPDU != grant {
-		return fmt.Errorf("MBC header grant %+v, want %+v", gotHdr.TalkgroupVoiceGrantPDU, grant)
+	gotGrant, ok := gotHdr.AsTalkgroupVoiceGrant()
+	if gotHdr.FEC.Uncorrectable || !ok || gotGrant != grant {
+		return fmt.Errorf("MBC header grant %+v, want %+v", gotGrant, grant)
 	}
 
 	gotCont, _, err := decodeAs[*pdu.MBCContinuation](craw)
@@ -179,8 +196,8 @@ func mbcGrant(w io.Writer) error {
 	if gotCGAP.CdefParms != cgap.CdefParms {
 		return fmt.Errorf("CGAP %+v, want %+v", gotCGAP.CdefParms, cgap.CdefParms)
 	}
-	fmt.Fprintf(w, "MBC %s ch 0x%X tg %d: TX %.4f MHz RX %.4f MHz\n", gotHdr.Opcode, gotHdr.TalkgroupVoiceGrantPDU.PhysicalChannel,
-		gotHdr.TalkgroupVoiceGrantPDU.TargetAddress, gotCGAP.CdefParms.TXFrequencyMHz(), gotCGAP.CdefParms.RXFrequencyMHz())
+	fmt.Fprintf(w, "MBC %s ch 0x%X tg %d: TX %.4f MHz RX %.4f MHz\n", gotHdr.Opcode, gotGrant.PhysicalChannel,
+		gotGrant.TargetAddress, gotCGAP.CdefParms.TXFrequencyMHz(), gotCGAP.CdefParms.RXFrequencyMHz())
 	return nil
 }
 
@@ -203,19 +220,20 @@ func cachSysParms(w io.Writer) error {
 			return err
 		}
 		cs.Reg, cs.CommonSlotCounter, ps.CommonSlotCounter = true, 123, 123
-		for _, slc := range []*pdu.ShortLC{
-			{SLCO: enums.SLCOCSysParms, CSysParms: &cs},
-			{SLCO: enums.SLCOPSysParms, PSysParms: &ps},
-		} {
+		var cslc, pslc pdu.ShortLC
+		if err := errors.Join(cslc.SetCSysParms(cs), pslc.SetPSysParms(ps)); err != nil {
+			return err
+		}
+		for _, slc := range []*pdu.ShortLC{&cslc, &pslc} {
 			got, err := cachRoundTrip(&asm, slc)
 			if err != nil {
 				return err
 			}
 			var back pdu.SysCode
-			if got.CSysParms != nil {
-				back, err = got.CSysParms.SysCode()
-			} else if got.PSysParms != nil {
-				back, err = got.PSysParms.SysCode()
+			if p, ok := got.AsCSysParms(); ok {
+				back, err = p.SysCode()
+			} else if p, ok := got.AsPSysParms(); ok {
+				back, err = p.SysCode()
 			}
 			if err != nil {
 				return err

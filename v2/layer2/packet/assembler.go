@@ -9,9 +9,9 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-// Message is a reassembled packet. Data, the sub-headers of Header,
-// Proprietary and Response point into the storage of the Assembler and are
-// valid until its next Add, AddBurst, Lost or Reset.
+// Message is a reassembled packet. Data, Proprietary and Response point into
+// the storage of the Assembler and are valid until its next Add, AddBurst,
+// Lost or Reset.
 type Message struct {
 	// Header is the first header block.
 	Header pdu.DataHeader
@@ -47,12 +47,11 @@ func (m *Message) UDPIPv4() (header pdu.UDPIPv4CompressedHeader, payload []byte,
 		return pdu.UDPIPv4CompressedHeader{}, nil, false
 	}
 	var sap enums.SAP
-	switch {
-	case m.Header.UnconfirmedDataHeader != nil:
-		sap = m.Header.UnconfirmedDataHeader.SAP
-	case m.Header.ConfirmedDataHeader != nil:
-		sap = m.Header.ConfirmedDataHeader.SAP
-	default:
+	if u, ok := m.Header.AsUnconfirmedDataHeader(); ok {
+		sap = u.SAP
+	} else if c, ok := m.Header.AsConfirmedDataHeader(); ok {
+		sap = c.SAP
+	} else {
 		return header, nil, false
 	}
 	if sap != enums.SAPUDPIPHeaderCompression || len(m.Data) < 5 {
@@ -110,61 +109,17 @@ type Assembler struct {
 
 // NewAssembler returns an Assembler for packets of up to maxBlocks data
 // blocks of any rate. It allocates 24 bytes for each block on top of the
-// Assembler itself, 740 bytes on a 32-bit target and 880 on a 64-bit one,
-// so 16 blocks take about 1.1 KB on a microcontroller and 127, the most
-// that a header counts, about 3.8 KB. A maxBlocks over 127 means 127, and
+// Assembler itself, 532 bytes on a 32-bit target and 640 on a 64-bit one,
+// so 16 blocks take about 0.9 KB on a microcontroller and 127, the most
+// that a header counts, about 3.6 KB. A maxBlocks over 127 means 127, and
 // one under 0 means 0.
 func NewAssembler(maxBlocks int) *Assembler {
 	return &Assembler{blocks: make([]byte, max(0, min(maxBlocks, maxBlocksPerPacket))*maxBlockOctets)}
 }
 
 type store struct {
-	unconfirmed    pdu.UnconfirmedDataHeader
-	confirmed      pdu.ConfirmedDataHeader
-	response       pdu.ResponsePacketHeader
-	defined        pdu.DefinedDataHeader
-	statusPrecoded pdu.StatusPrecodedHeader
-	raw            pdu.RawDataHeader
-	udt            pdu.UDTHeader
-	proprietary    pdu.ProprietaryHeader
-	second         pdu.ProprietaryHeader
-	responseData   ResponseData
-}
-
-func (s *store) copyHeader(dst, src *pdu.DataHeader) {
-	*dst = *src
-	if src.UnconfirmedDataHeader != nil {
-		s.unconfirmed = *src.UnconfirmedDataHeader
-		dst.UnconfirmedDataHeader = &s.unconfirmed
-	}
-	if src.ConfirmedDataHeader != nil {
-		s.confirmed = *src.ConfirmedDataHeader
-		dst.ConfirmedDataHeader = &s.confirmed
-	}
-	if src.ResponsePacketHeader != nil {
-		s.response = *src.ResponsePacketHeader
-		dst.ResponsePacketHeader = &s.response
-	}
-	if src.DefinedDataHeader != nil {
-		s.defined = *src.DefinedDataHeader
-		dst.DefinedDataHeader = &s.defined
-	}
-	if src.StatusPrecodedHeader != nil {
-		s.statusPrecoded = *src.StatusPrecodedHeader
-		dst.StatusPrecodedHeader = &s.statusPrecoded
-	}
-	if src.RawDataHeader != nil {
-		s.raw = *src.RawDataHeader
-		dst.RawDataHeader = &s.raw
-	}
-	if src.UDTHeader != nil {
-		s.udt = *src.UDTHeader
-		dst.UDTHeader = &s.udt
-	}
-	if src.ProprietaryHeader != nil {
-		s.proprietary = *src.ProprietaryHeader
-		dst.ProprietaryHeader = &s.proprietary
-	}
+	second       pdu.ProprietaryHeader
+	responseData ResponseData
 }
 
 // Reset discards any partial packet. It keeps AcceptBadCRC.
@@ -250,11 +205,11 @@ func (a *Assembler) addHeader(h *pdu.DataHeader) (Message, bool, error) {
 	if h.FEC.Uncorrectable {
 		return Message{}, false, ErrHeaderCRC
 	}
-	if h.Format == pdu.FormatProprietary && h.ProprietaryHeader != nil {
+	if p, ok := h.AsProprietaryHeader(); ok {
 		if !a.active || a.count != 0 || a.msg.Proprietary != nil || a.expect == 0 {
 			return Message{}, false, ErrNoHeader
 		}
-		a.store.second = *h.ProprietaryHeader
+		a.store.second = p
 		a.msg.Proprietary = &a.store.second
 		a.expect--
 		a.total--
@@ -269,39 +224,40 @@ func (a *Assembler) addHeader(h *pdu.DataHeader) (Message, bool, error) {
 	}
 	a.Reset()
 	confirmed, ok := isConfirmed(h)
-	if !ok && (h.Format != pdu.FormatResponsePacket || h.ResponsePacketHeader == nil) {
+	if _, isResponse := h.AsResponsePacketHeader(); !ok && !isResponse {
 		return Message{}, false, nil
 	}
 	if blocksOf(h)*maxBlockOctets > len(a.blocks) {
 		return Message{}, false, ErrTooLong
 	}
 	a.active, a.confirmed = true, confirmed
-	a.store.copyHeader(&a.msg.Header, h)
+	a.msg.Header = *h
 	a.total = blocksOf(h)
 	a.expect = a.total
-	if h.ConfirmedDataHeader != nil && h.Format == pdu.FormatConfirmed {
-		a.ns = h.ConfirmedDataHeader.SendSequenceNumber
+	if c, ok := h.AsConfirmedDataHeader(); ok {
+		a.ns = c.SendSequenceNumber
 	}
 	return a.finishIfEmpty()
 }
 
 func (a *Assembler) isRetry(h *pdu.DataHeader) bool {
-	if !a.active || !a.confirmed || h.Format != a.msg.Header.Format || fullMessage(h) && a.count < a.expect {
+	if !a.active || !a.confirmed || h.Format() != a.msg.Header.Format() || fullMessage(h) && a.count < a.expect {
 		return false
 	}
 	prev := &a.msg.Header
-	switch {
-	case h.Format == pdu.FormatConfirmed && h.ConfirmedDataHeader != nil && prev.ConfirmedDataHeader != nil:
-		c, p := h.ConfirmedDataHeader, prev.ConfirmedDataHeader
+	if c, ok := h.AsConfirmedDataHeader(); ok {
+		p, _ := prev.AsConfirmedDataHeader()
 		return c.SAP == p.SAP && c.LLIDSource == p.LLIDSource &&
 			c.LLIDDestination == p.LLIDDestination && c.SendSequenceNumber == a.ns
-	case h.Format == pdu.FormatShortDataDefined && h.DefinedDataHeader != nil && prev.DefinedDataHeader != nil:
-		c, p := h.DefinedDataHeader, prev.DefinedDataHeader
+	}
+	if c, ok := h.AsDefinedDataHeader(); ok {
+		p, _ := prev.AsDefinedDataHeader()
 		return c.SARQ && c.SAP == p.SAP && c.LLIDSource == p.LLIDSource &&
 			c.LLIDDestination == p.LLIDDestination && c.DefinedData == p.DefinedData
-	case h.Format == pdu.FormatShortDataRawOrStatusPrecoded && h.RawDataHeader != nil && prev.RawDataHeader != nil:
-		c, p := h.RawDataHeader, prev.RawDataHeader
-		return c.SARQ && c.SAP == p.SAP && c.LLIDSource == p.LLIDSource && c.LLIDDestination == p.LLIDDestination &&
+	}
+	if c, ok := h.AsRawDataHeader(); ok {
+		p, pok := prev.AsRawDataHeader()
+		return pok && c.SARQ && c.SAP == p.SAP && c.LLIDSource == p.LLIDSource && c.LLIDDestination == p.LLIDDestination &&
 			c.SourcePort == p.SourcePort && c.DestinationPort == p.DestinationPort
 	}
 	return false
@@ -437,8 +393,8 @@ func (a *Assembler) Response() (Packet, error) {
 	if a == nil {
 		return Packet{}, dmrgo.ErrNilReceiver
 	}
-	h := a.msg.Header.ConfirmedDataHeader
-	if !a.active || h == nil {
+	h, ok := a.msg.Header.AsConfirmedDataHeader()
+	if !a.active || !ok {
 		return Packet{}, errNoConfirmed
 	}
 	if !fullMessage(&a.msg.Header) {
@@ -448,7 +404,7 @@ func (a *Assembler) Response() (Packet, error) {
 	for i, ok := range a.valid[:a.total] {
 		rd.Retry[i] = !ok || !a.hasBlocks
 	}
-	return a.resp.build(h, ResponseSACK, &rd)
+	return a.resp.build(&h, ResponseSACK, &rd)
 }
 
 func (a *Assembler) finish() (Message, bool, error) {
@@ -470,14 +426,14 @@ func (a *Assembler) finish() (Message, bool, error) {
 	accept := a.acceptBadCRC()
 	a.Reset()
 	err := a.fill(&m, buf, complete)
-	if err != nil && m.Header.Format != pdu.FormatResponsePacket && complete && accept {
+	if err != nil && m.Header.Format() != pdu.FormatResponsePacket && complete && accept {
 		err = nil
 	}
 	return m, true, err
 }
 
 func (a *Assembler) fill(m *Message, buf []byte, complete bool) error {
-	if m.Header.Format == pdu.FormatResponsePacket {
+	if m.Header.Format() == pdu.FormatResponsePacket {
 		if len(buf) != 12 && len(buf) != 24 {
 			return errResponseLength
 		}

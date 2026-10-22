@@ -30,25 +30,12 @@ func NewDMRShortLC(slc *pdu.ShortLC) (DMRShortLC, error) {
 }
 
 // ShortLC decodes the Short LC that s carries. Its FEC field combines the
-// BPTC result and the CRC-8 check. It allocates the payload struct;
-// ShortLCInto does not.
+// BPTC result and the CRC-8 check. It does not allocate.
 func (s DMRShortLC) ShortLC() pdu.ShortLC {
 	info, res := s.info()
 	slc := pdu.DecodeShortLC(info)
 	slc.FEC = res.Combine(slc.FEC)
 	return slc
-}
-
-// ShortLCInto decodes the Short LC that s carries into dst, with the
-// payload struct in p as pdu.DecodeShortLCInto places it, and the FEC field
-// as ShortLC sets it. A nil dst or p is a no-op. It does not allocate.
-func (s DMRShortLC) ShortLCInto(dst *pdu.ShortLC, p *pdu.ShortLCPayloads) {
-	if dst == nil || p == nil {
-		return
-	}
-	info, res := s.info()
-	pdu.DecodeShortLCInto(dst, p, info)
-	dst.FEC = res.Combine(dst.FEC)
 }
 
 func (s DMRShortLC) info() ([5]byte, fec.Result) {

@@ -47,14 +47,10 @@ func TestAllocsBuildBurst(t *testing.T) {
 	lc := must(pdu.NewVoiceLC(true, 91, 3191868, layer3.MotorolaServiceOptions()))
 	term := lc
 	term.BurstDataType = enums.DataTypeTerminatorWithLC
-	header := pdu.DataHeader{
-		Format:                pdu.FormatUnconfirmed,
-		UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{Group: true, SAP: 4, BlocksToFollow: 3},
-	}
-	mbc := pdu.MBCHeader{
-		Opcode:                 pdu.CSBKTalkgroupVoiceGrant,
-		TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF},
-	}
+	var header pdu.DataHeader
+	mustSet(header.SetUnconfirmedDataHeader(pdu.UnconfirmedDataHeader{Group: true, SAP: 4, BlocksToFollow: 3}))
+	var mbc pdu.MBCHeader
+	mustSet(mbc.SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF}))
 	type pduCase struct {
 		name  string
 		build func() error

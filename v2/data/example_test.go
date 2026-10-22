@@ -30,7 +30,7 @@ func ExampleReceiver() {
 			case data.EventCallStart:
 				fmt.Printf("data call from %d to %d\n", e.Call.Source, e.Call.Target)
 			case data.EventDelivered:
-				fmt.Printf("%v packet, %d octets\n", e.Message.Header.Format, len(e.Message.Payload))
+				fmt.Printf("%v packet, %d octets\n", e.Message.Header.Format(), len(e.Message.Payload))
 			case data.EventCallEnd:
 				fmt.Printf("end: %v after %v\n", e.Reason, e.Stats.Duration)
 			case data.EventResponse, data.EventRespond, data.EventReassembled:

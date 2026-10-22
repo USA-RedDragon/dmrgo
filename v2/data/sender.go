@@ -243,11 +243,6 @@ type slot struct {
 	limitAt   time.Duration
 	last      packet.Response
 	hasLast   bool
-
-	u   pdu.UnconfirmedDataHeader
-	c   pdu.ConfirmedDataHeader
-	dd  pdu.DefinedDataHeader
-	raw pdu.RawDataHeader
 }
 
 // Sender sends data messages on one logical channel: the preamble CSBKs,
@@ -297,7 +292,6 @@ type Sender struct {
 	respUntil time.Duration
 	limitAt   time.Duration
 
-	pre    pdu.PreamblePDU
 	csbk   pdu.CSBK
 	noCopy noCopy
 }
@@ -427,49 +421,29 @@ func (s *Sender) Send(now time.Duration, m *Message) error {
 	at := s.free()
 	e := &s.slots[at]
 	h := m.Header
-	switch {
-	case h.Format == pdu.FormatUnconfirmed && h.UnconfirmedDataHeader != nil:
-		e.u = *h.UnconfirmedDataHeader
-		e.u.FullMessageFlag = true
-		h.UnconfirmedDataHeader = &e.u
-		e.confirmed = false
-	case h.Format == pdu.FormatConfirmed && h.ConfirmedDataHeader != nil:
-		if h.ConfirmedDataHeader.Group {
-			return errMessageGroup
-		}
-		e.c = *h.ConfirmedDataHeader
-		e.c.FullMessageFlag, e.c.ResponseRequested, e.c.FragmentSequenceNumber = true, true, 0b1000
-		h.ConfirmedDataHeader = &e.c
-		e.confirmed = true
-	case h.Format == pdu.FormatShortDataDefined && h.DefinedDataHeader != nil:
-		e.dd = *h.DefinedDataHeader
-		e.dd.FullMessageFlag = true
-		e.dd.ResponseRequested = e.dd.ResponseRequested || e.dd.SARQ
-		h.DefinedDataHeader = &e.dd
-		e.confirmed = e.dd.SARQ
-	case h.Format == pdu.FormatShortDataRawOrStatusPrecoded && h.RawDataHeader != nil:
-		e.raw = *h.RawDataHeader
-		e.raw.FullMessageFlag = true
-		e.raw.ResponseRequested = e.raw.ResponseRequested || e.raw.SARQ
-		h.RawDataHeader = &e.raw
-		e.confirmed = e.raw.SARQ
-	default:
-		return errHeader
+	c, err := sendHeader(&h, e)
+	if err != nil {
+		return err
 	}
 	if e.confirmed && groupOf(&h) {
 		return errMessageGroup
 	}
-	e.cHead = h.Format == pdu.FormatConfirmed
-	e.windowed = e.cHead && ipBearer(e.c.SAP)
+	e.cHead = h.Format() == pdu.FormatConfirmed
+	e.windowed = e.cHead && ipBearer(c.SAP)
 	if s.n == 0 {
 		s.call, s.link = callOf(&h), nil
 		if e.cHead {
 			link, found := s.peers.lookup(s.call.Source, s.call.Target)
-			e.c.ReSynchronizeFlag = s.resync && !found
+			c.ReSynchronizeFlag = s.resync && !found
 			s.link = link
 		}
 	} else {
-		e.c.ReSynchronizeFlag = false
+		c.ReSynchronizeFlag = false
+	}
+	if e.cHead {
+		if err := h.SetConfirmedDataHeader(c); err != nil {
+			return err
+		}
 	}
 	rate := m.Rate
 	if rate == enums.DataTypePIHeader {
@@ -493,12 +467,40 @@ func (s *Sender) Send(now time.Duration, m *Message) error {
 	return nil
 }
 
+func sendHeader(h *pdu.DataHeader, e *slot) (pdu.ConfirmedDataHeader, error) {
+	if u, ok := h.AsUnconfirmedDataHeader(); ok {
+		u.FullMessageFlag = true
+		e.confirmed = false
+		return pdu.ConfirmedDataHeader{}, h.SetUnconfirmedDataHeader(u)
+	}
+	if c, ok := h.AsConfirmedDataHeader(); ok {
+		if c.Group {
+			return c, errMessageGroup
+		}
+		c.FullMessageFlag, c.ResponseRequested, c.FragmentSequenceNumber = true, true, 0b1000
+		e.confirmed = true
+		return c, nil
+	}
+	if d, ok := h.AsDefinedDataHeader(); ok {
+		d.FullMessageFlag = true
+		d.ResponseRequested = d.ResponseRequested || d.SARQ
+		e.confirmed = d.SARQ
+		return pdu.ConfirmedDataHeader{}, h.SetDefinedDataHeader(d)
+	}
+	if r, ok := h.AsRawDataHeader(); ok {
+		r.FullMessageFlag = true
+		r.ResponseRequested = r.ResponseRequested || r.SARQ
+		e.confirmed = r.SARQ
+		return pdu.ConfirmedDataHeader{}, h.SetRawDataHeader(r)
+	}
+	return pdu.ConfirmedDataHeader{}, errHeader
+}
+
 func (s *Sender) joins(m *Message) bool {
-	h := &m.Header
-	if !s.slots[s.ord[0]].windowed || h.Format != pdu.FormatConfirmed || h.ConfirmedDataHeader == nil {
+	c, ok := m.Header.AsConfirmedDataHeader()
+	if !s.slots[s.ord[0]].windowed || !ok {
 		return false
 	}
-	c := h.ConfirmedDataHeader
 	return ipBearer(c.SAP) && !c.Group && c.LLIDDestination == s.call.Target && c.LLIDSource == s.call.Source
 }
 
@@ -517,8 +519,11 @@ func (s *Sender) free() int {
 
 func (s *Sender) join(k int) {
 	e := &s.slots[s.ord[k]]
-	if c := e.pkt.Header.ConfirmedDataHeader; e.tries == 0 && e.cHead && c != nil && s.link != nil {
+	if c, ok := e.pkt.Header.AsConfirmedDataHeader(); e.tries == 0 && e.cHead && ok && s.link != nil {
 		e.ns, c.SendSequenceNumber = s.link.seq, s.link.seq
+		if e.pkt.Header.SetConfirmedDataHeader(c) == nil {
+			e.try.Header = e.pkt.Header
+		}
 		s.link.seq = (s.link.seq + 1) & 7
 	}
 	e.tries++
@@ -620,14 +625,14 @@ func (s *Sender) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst 
 		return dst
 	}
 	m, done, err := s.asm.AddBurst(b)
-	if !done || m.Header.Format != pdu.FormatResponsePacket {
+	if !done {
 		return dst
 	}
-	rh := m.Header.ResponsePacketHeader
-	if rh == nil || rh.LLIDDestination != s.call.Source || rh.LLIDSource != s.call.Target {
+	rh, ok := m.Header.AsResponsePacketHeader()
+	if !ok || rh.LLIDDestination != s.call.Source || rh.LLIDSource != s.call.Target {
 		return dst
 	}
-	code, cerr := packet.ResponseOf(rh)
+	code, cerr := packet.ResponseOf(&rh)
 	if cerr != nil {
 		return dst
 	}
@@ -657,8 +662,9 @@ func (s *Sender) answered(now time.Duration, code packet.Response, j int, rd *pa
 		e.last, e.hasLast = code, true
 		switch {
 		case code == packet.ResponseNACKOutOfSequence:
-			if c := e.pkt.Header.ConfirmedDataHeader; s.resync && e.cHead && c != nil {
+			if c, ok := e.pkt.Header.AsConfirmedDataHeader(); s.resync && e.cHead && ok {
 				c.ReSynchronizeFlag = true
+				_ = e.pkt.Header.SetConfirmedDataHeader(c)
 			}
 			e.try = e.pkt
 			k++
@@ -829,24 +835,29 @@ func (s *Sender) send(dst []Output) []Output {
 		pre = s.preambles
 	}
 	var d layer2.Data
+	var err error
 	switch {
 	case s.idx < pre:
-		s.pre = pdu.PreamblePDU{
+		s.csbk = pdu.CSBK{LastBlock: true}
+		err = s.csbk.SetPreamble(pdu.PreamblePDU{
 			Data: true, Group: s.call.Group, CSBKBlocksToFollow: byte(min(s.total-1-s.idx, 0xFF) & 0xFF),
 			TargetAddress: s.call.Target, SourceAddress: s.call.Source,
-		}
-		s.csbk = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKPreamble, PreamblePDU: &s.pre}
+		})
 		d = &s.csbk
 	case s.idx == pre:
-		if c := e.try.Header.ConfirmedDataHeader; e.cHead && c != nil {
+		if c, ok := e.try.Header.AsConfirmedDataHeader(); e.cHead && ok {
 			c.ResponseRequested = s.cur == s.win-1
 			s.closed = s.closed || c.ResponseRequested
+			err = e.try.Header.SetConfirmedDataHeader(c)
 		}
 		d = &e.try.Header
 	default:
 		d = e.try.Blocks[s.idx-pre-1]
 	}
-	raw, err := layer2.BuildBurst(d, s.cc, s.source)
+	var raw layer2.RawBurst
+	if err == nil {
+		raw, err = layer2.BuildBurst(d, s.cc, s.source)
+	}
 	if err != nil {
 		for s.n > 0 {
 			dst = s.finish(0, ResultRefused, dst)

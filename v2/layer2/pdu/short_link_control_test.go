@@ -31,11 +31,11 @@ func TestShortLC_NullMessage_Decode(t *testing.T) {
 	if slc.SLCO != enums.SLCONullMessage {
 		t.Errorf("expected SLCONullMessage, got %d", slc.SLCO)
 	}
-	if slc.NullMessage == nil {
-		t.Fatal("NullMessage should not be nil")
+	if _, ok := slc.AsNullMessage(); !ok {
+		t.Fatal("AsNullMessage ok = false")
 	}
-	if slc.ActivityUpdate != nil {
-		t.Error("ActivityUpdate should be nil for NullMessage")
+	if _, ok := slc.AsActivityUpdate(); ok {
+		t.Error("AsActivityUpdate ok = true for NullMessage")
 	}
 }
 
@@ -53,34 +53,33 @@ func TestShortLC_ActivityUpdate_Decode(t *testing.T) {
 	if slc.SLCO != enums.SLCOActivityUpdate {
 		t.Errorf("expected SLCOActivityUpdate, got %d", slc.SLCO)
 	}
-	if slc.ActivityUpdate == nil {
-		t.Fatal("ActivityUpdate should not be nil")
+	au, ok := slc.AsActivityUpdate()
+	if !ok {
+		t.Fatal("AsActivityUpdate ok = false")
 	}
-	if slc.ActivityUpdate.TS1ActivityID != 5 {
-		t.Errorf("expected TS1ActivityID=5, got %d", slc.ActivityUpdate.TS1ActivityID)
+	if au.TS1ActivityID != 5 {
+		t.Errorf("expected TS1ActivityID=5, got %d", au.TS1ActivityID)
 	}
-	if slc.ActivityUpdate.TS2ActivityID != 3 {
-		t.Errorf("expected TS2ActivityID=3, got %d", slc.ActivityUpdate.TS2ActivityID)
+	if au.TS2ActivityID != 3 {
+		t.Errorf("expected TS2ActivityID=3, got %d", au.TS2ActivityID)
 	}
-	if slc.ActivityUpdate.HashTS1 != 0xAB {
-		t.Errorf("expected HashTS1=0xAB, got 0x%02X", slc.ActivityUpdate.HashTS1)
+	if au.HashTS1 != 0xAB {
+		t.Errorf("expected HashTS1=0xAB, got 0x%02X", au.HashTS1)
 	}
-	if slc.ActivityUpdate.HashTS2 != 0xCD {
-		t.Errorf("expected HashTS2=0xCD, got 0x%02X", slc.ActivityUpdate.HashTS2)
+	if au.HashTS2 != 0xCD {
+		t.Errorf("expected HashTS2=0xCD, got 0x%02X", au.HashTS2)
 	}
 }
 
 func TestShortLC_EncodeDecodeRoundTrip(t *testing.T) {
 	t.Parallel()
-	original := pdu.ShortLC{
-		SLCO: enums.SLCOActivityUpdate,
-		ActivityUpdate: &pdu.ShortLCActivityUpdate{
-			TS1ActivityID: 7,
-			TS2ActivityID: 2,
-			HashTS1:       0x42,
-			HashTS2:       0xFF,
-		},
-	}
+	var original pdu.ShortLC
+	noErr(original.SetActivityUpdate(pdu.ShortLCActivityUpdate{
+		TS1ActivityID: 7,
+		TS2ActivityID: 2,
+		HashTS1:       0x42,
+		HashTS2:       0xFF,
+	}))
 
 	encoded := must(original.Encode())
 	decoded := pdu.DecodeShortLC(encoded)
@@ -91,20 +90,21 @@ func TestShortLC_EncodeDecodeRoundTrip(t *testing.T) {
 	if decoded.SLCO != enums.SLCOActivityUpdate {
 		t.Errorf("SLCO mismatch: got %d", decoded.SLCO)
 	}
-	if decoded.ActivityUpdate == nil {
-		t.Fatal("ActivityUpdate is nil after round-trip")
+	au, ok := decoded.AsActivityUpdate()
+	if !ok {
+		t.Fatal("AsActivityUpdate ok = false after round-trip")
 	}
-	if decoded.ActivityUpdate.TS1ActivityID != 7 {
-		t.Errorf("TS1ActivityID: got %d, want 7", decoded.ActivityUpdate.TS1ActivityID)
+	if au.TS1ActivityID != 7 {
+		t.Errorf("TS1ActivityID: got %d, want 7", au.TS1ActivityID)
 	}
-	if decoded.ActivityUpdate.TS2ActivityID != 2 {
-		t.Errorf("TS2ActivityID: got %d, want 2", decoded.ActivityUpdate.TS2ActivityID)
+	if au.TS2ActivityID != 2 {
+		t.Errorf("TS2ActivityID: got %d, want 2", au.TS2ActivityID)
 	}
-	if decoded.ActivityUpdate.HashTS1 != 0x42 {
-		t.Errorf("HashTS1: got 0x%02X, want 0x42", decoded.ActivityUpdate.HashTS1)
+	if au.HashTS1 != 0x42 {
+		t.Errorf("HashTS1: got 0x%02X, want 0x42", au.HashTS1)
 	}
-	if decoded.ActivityUpdate.HashTS2 != 0xFF {
-		t.Errorf("HashTS2: got 0x%02X, want 0xFF", decoded.ActivityUpdate.HashTS2)
+	if au.HashTS2 != 0xFF {
+		t.Errorf("HashTS2: got 0x%02X, want 0xFF", au.HashTS2)
 	}
 }
 

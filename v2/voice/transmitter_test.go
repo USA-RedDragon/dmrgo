@@ -212,7 +212,8 @@ func TestTransmitter_RoundTrip(t *testing.T) {
 	}
 	gpsSeen := false
 	for _, e := range find(got, voice.EventEmbedded) {
-		gpsSeen = gpsSeen || e.LC.GPSInfo != nil
+		_, ok := e.LC.AsGPSInfo()
+		gpsSeen = gpsSeen || ok
 	}
 	if !gpsSeen {
 		t.Error("no GPS")

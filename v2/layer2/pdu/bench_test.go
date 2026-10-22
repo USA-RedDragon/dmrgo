@@ -27,27 +27,15 @@ func BenchmarkPDUDecode(b *testing.B) {
 	mbc := benchPayloads(enums.DataTypeMBCHeader)
 	usbd := benchPayloads(enums.DataTypeUnifiedSingleBlock)
 	r12 := benchPayloads(enums.DataTypeRate12)
-	var csbkDst pdu.CSBK
-	var csbkP pdu.CSBKPayloads
-	var lcDst pdu.FullLinkControl
-	var lcP pdu.FullLinkControlPayloads
-	var dhDst pdu.DataHeader
-	var dhP pdu.DataHeaderPayloads
-	var mbcDst pdu.MBCHeader
-	var mbcP pdu.MBCHeaderPayloads
 	cases := []struct {
 		name string
 		fn   func(i int)
 	}{
 		{"CSBK", func(i int) { _ = pdu.DecodeCSBK(csbk[i]) }},
-		{"CSBKInto", func(i int) { pdu.DecodeCSBKInto(&csbkDst, &csbkP, csbk[i]) }},
 		{"FullLinkControl", func(i int) { _ = pdu.DecodeFullLinkControl(lc[i], enums.DataTypeVoiceLCHeader) }},
-		{"FullLinkControlInto", func(i int) {
-			pdu.DecodeFullLinkControlInto(&lcDst, &lcP, lc[i], enums.DataTypeVoiceLCHeader)
-		}},
 		{"PIHeader", func(i int) { _ = pdu.DecodePIHeader(pi[i]) }},
-		{"DataHeaderInto", func(i int) { pdu.DecodeDataHeaderInto(&dhDst, &dhP, dh[i]) }},
-		{"MBCHeaderInto", func(i int) { pdu.DecodeMBCHeaderInto(&mbcDst, &mbcP, mbc[i]) }},
+		{"DataHeader", func(i int) { _ = pdu.DecodeDataHeader(dh[i]) }},
+		{"MBCHeader", func(i int) { _ = pdu.DecodeMBCHeader(mbc[i]) }},
 		{"MBCContinuation", func(i int) { _ = pdu.DecodeMBCContinuation(mbc[i]) }},
 		{"UnifiedSingleBlockData", func(i int) { _ = pdu.DecodeUnifiedSingleBlockData(usbd[i]) }},
 		{"Rate12Data", func(i int) { _ = pdu.DecodeRate12Data(r12[i]) }},
@@ -72,10 +60,6 @@ func BenchmarkPDUDecode(b *testing.B) {
 func BenchmarkPDUBytes(b *testing.B) {
 	csbk := benchPayloads(enums.DataTypeCSBK)
 	lc := benchPayloads(enums.DataTypeVoiceLCHeader)
-	var csbkDst pdu.CSBK
-	var csbkP pdu.CSBKPayloads
-	var lcDst pdu.FullLinkControl
-	var lcP pdu.FullLinkControlPayloads
 	csbkPDU := pdu.DecodeCSBK(csbk[0])
 	lcPDU := pdu.DecodeFullLinkControl(lc[0], enums.DataTypeVoiceLCHeader)
 	cases := []struct {
@@ -83,12 +67,9 @@ func BenchmarkPDUBytes(b *testing.B) {
 		fn   func(i int)
 	}{
 		{"DecodeCSBK", func(i int) { _ = pdu.DecodeCSBK(csbk[i]) }},
-		{"DecodeCSBKInto", func(i int) { pdu.DecodeCSBKInto(&csbkDst, &csbkP, csbk[i]) }},
 		{"CSBKEncode", func(int) { _, _ = csbkPDU.Encode() }},
 		{"DecodeFullLCCodeword", func(i int) { _, _, _ = pdu.DecodeFullLCCodeword(lc[i], enums.DataTypeVoiceLCHeader) }},
-		{"DecodeFullLinkControlBytesInto", func(i int) {
-			_ = pdu.DecodeFullLinkControlBytesInto(&lcDst, &lcP, [9]byte(lc[i][:9]))
-		}},
+		{"DecodeFullLinkControlBytes", func(i int) { _, _ = pdu.DecodeFullLinkControlBytes([9]byte(lc[i][:9])) }},
 		{"FullLinkControlEncode", func(int) { _, _ = lcPDU.Encode() }},
 		{"Seal", func(i int) { _ = pdu.Seal(&csbk[i], enums.DataTypeCSBK) }},
 		{"BlockCRCOK", func(i int) { _ = pdu.BlockCRCOK(csbk[i], enums.DataTypeCSBK) }},

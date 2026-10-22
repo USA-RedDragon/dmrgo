@@ -26,7 +26,11 @@ func TestNetworkAndGroupPrefix(t *testing.T) {
 				if err != nil {
 					t.Fatalf("%s: %v", f, err)
 				}
-				d, err := ip.Decode(h.Data.UnconfirmedDataHeader.SAP, out)
+				u, ok := h.Data.AsUnconfirmedDataHeader()
+				if !ok {
+					t.Fatalf("%s: header %v is not a U_HEAD", f, &h.Data)
+				}
+				d, err := ip.Decode(u.SAP, out)
 				if err != nil {
 					t.Fatalf("%s: %v", f, err)
 				}

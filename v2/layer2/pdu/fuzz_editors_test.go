@@ -9,37 +9,51 @@ import (
 )
 
 func dataHeaderGroup(h *pdu.DataHeader) (group, ok bool) {
-	switch {
-	case h.UnconfirmedDataHeader != nil:
-		return h.UnconfirmedDataHeader.Group, true
-	case h.ConfirmedDataHeader != nil:
-		return h.ConfirmedDataHeader.Group, true
-	case h.DefinedDataHeader != nil:
-		return h.DefinedDataHeader.Group, true
-	case h.RawDataHeader != nil:
-		return h.RawDataHeader.Group, true
-	case h.StatusPrecodedHeader != nil:
-		return h.StatusPrecodedHeader.Group, true
-	case h.UDTHeader != nil:
-		return h.UDTHeader.Group, true
+	if p, ok := h.AsUnconfirmedDataHeader(); ok {
+		return p.Group, true
+	}
+	if p, ok := h.AsConfirmedDataHeader(); ok {
+		return p.Group, true
+	}
+	if p, ok := h.AsDefinedDataHeader(); ok {
+		return p.Group, true
+	}
+	if p, ok := h.AsRawDataHeader(); ok {
+		return p.Group, true
+	}
+	if p, ok := h.AsStatusPrecodedHeader(); ok {
+		return p.Group, true
+	}
+	if p, ok := h.AsUDTHeader(); ok {
+		return p.Group, true
 	}
 	return false, false
 }
 
-func setDataHeaderGroup(h *pdu.DataHeader, group bool) {
-	switch {
-	case h.UnconfirmedDataHeader != nil:
-		h.UnconfirmedDataHeader.Group = group
-	case h.ConfirmedDataHeader != nil:
-		h.ConfirmedDataHeader.Group = group
-	case h.DefinedDataHeader != nil:
-		h.DefinedDataHeader.Group = group
-	case h.RawDataHeader != nil:
-		h.RawDataHeader.Group = group
-	case h.StatusPrecodedHeader != nil:
-		h.StatusPrecodedHeader.Group = group
-	case h.UDTHeader != nil:
-		h.UDTHeader.Group = group
+func setDataHeaderGroup(t *testing.T, h *pdu.DataHeader, group bool) {
+	t.Helper()
+	var err error
+	if p, ok := h.AsUnconfirmedDataHeader(); ok {
+		p.Group = group
+		err = h.SetUnconfirmedDataHeader(p)
+	} else if p, ok := h.AsConfirmedDataHeader(); ok {
+		p.Group = group
+		err = h.SetConfirmedDataHeader(p)
+	} else if p, ok := h.AsDefinedDataHeader(); ok {
+		p.Group = group
+		err = h.SetDefinedDataHeader(p)
+	} else if p, ok := h.AsRawDataHeader(); ok {
+		p.Group = group
+		err = h.SetRawDataHeader(p)
+	} else if p, ok := h.AsStatusPrecodedHeader(); ok {
+		p.Group = group
+		err = h.SetStatusPrecodedHeader(p)
+	} else if p, ok := h.AsUDTHeader(); ok {
+		p.Group = group
+		err = h.SetUDTHeader(p)
+	}
+	if err != nil {
+		t.Fatalf("set Group of %s: %v", h.String(), err)
 	}
 }
 
@@ -189,7 +203,7 @@ func checkDataHeaderBytes(t *testing.T, h pdu.DataHeaderBytes, target, source ui
 		t.Fatalf("resealed data header %x fails its CRC", h)
 	}
 	dec := pdu.DecodeDataHeader(h)
-	if dec.FEC.HasErrors() || dec.Format != h.Format() {
+	if dec.FEC.HasErrors() || dec.Format() != h.Format() {
 		t.Fatalf("DataHeaderBytes %x differs from DataHeader %s", h, dec.String())
 	}
 	wt, ws, wok := dec.Addresses()
@@ -208,7 +222,7 @@ func checkDataHeaderBytes(t *testing.T, h pdu.DataHeaderBytes, target, source ui
 	if e.SetGroup(group) != wgok {
 		t.Fatalf("DataHeaderBytes %x SetGroup ok differs from Group", h)
 	}
-	setDataHeaderGroup(&want, group)
+	setDataHeaderGroup(t, &want, group)
 	e.Reseal()
 	if b := must(want.Encode()); b != [12]byte(e) {
 		t.Fatalf("DataHeaderBytes %x edit gives %x, DataHeader edit %x", h, e, b)

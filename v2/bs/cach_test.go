@@ -14,7 +14,10 @@ func TestCACH(t *testing.T) {
 	t.Parallel()
 	var c bs.CACH
 	au := pdu.ShortLCActivityUpdate{TS2ActivityID: enums.ActivityGroupVoice, HashTS2: 63}
-	slc := pdu.ShortLC{SLCO: enums.SLCOActivityUpdate, ActivityUpdate: &au}
+	var slc pdu.ShortLC
+	if err := slc.SetActivityUpdate(au); err != nil {
+		t.Fatal(err)
+	}
 	var asm layer2.ShortLCAssembler
 	for i := range 8 {
 		if c.First() != (i%4 == 0) {
@@ -33,7 +36,7 @@ func TestCACH(t *testing.T) {
 		if done != (i%4 == 3) || err != nil {
 			t.Fatalf("field %d: done %v, %v", i, done, err)
 		}
-		if done && (out.ActivityUpdate == nil || *out.ActivityUpdate != au) {
+		if got, ok := out.AsActivityUpdate(); done && (!ok || got != au) {
 			t.Fatalf("field %d: Short LC %v", i, out)
 		}
 	}

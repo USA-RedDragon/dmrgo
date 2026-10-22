@@ -29,6 +29,14 @@ func bsBurst(t testing.TB, d layer2.Data, cc enums.ColorCode) layer2.RawBurst {
 	return raw
 }
 
+func withPDU[T, P any](t testing.TB, x *T, set func(*T, P) error, p P) *T {
+	t.Helper()
+	if err := set(x, p); err != nil {
+		t.Fatalf("set %T on %T: %v", p, x, err)
+	}
+	return x
+}
+
 func sysIdent(t testing.TB) uint16 {
 	t.Helper()
 	v, err := testSys.Pack()
@@ -40,20 +48,20 @@ func sysIdent(t testing.TB) uint16 {
 
 func aloha(t testing.TB) layer2.RawBurst {
 	t.Helper()
-	return bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAloha, AlohaPDU: &pdu.AlohaPDU{
-		Version: 1, NRandWait: 2, Reg: true, Backoff: 3, SysIdentCode: sysIdent(t)}}, testCC)
+	return bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAloha, pdu.AlohaPDU{
+		Version: 1, NRandWait: 2, Reg: true, Backoff: 3, SysIdentCode: sysIdent(t)}), testCC)
 }
 
 func tvGrant(t testing.TB, tg uint32, ch uint16, ts2 bool) layer2.RawBurst {
 	t.Helper()
-	return bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{
-		PhysicalChannel: ch, LogicalChannel: ts2, TargetAddress: tg, SourceAddress: 3120001}}, testCC)
+	return bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetTalkgroupVoiceGrant, pdu.TalkgroupVoiceGrantPDU{
+		PhysicalChannel: ch, LogicalChannel: ts2, TargetAddress: tg, SourceAddress: 3120001}), testCC)
 }
 
 func pClear(t testing.TB, tg uint32) layer2.RawBurst {
 	t.Helper()
-	return bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKClear, ClearPDU: &pdu.ClearPDU{
-		GroupIndividual: true, TargetAddress: tg, SourceAddress: 3120001}}, testCC)
+	return bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetClear, pdu.ClearPDU{
+		GroupIndividual: true, TargetAddress: tg, SourceAddress: 3120001}), testCC)
 }
 
 func terminator(t testing.TB, tg uint32) layer2.RawBurst {
@@ -68,8 +76,8 @@ func terminator(t testing.TB, tg uint32) layer2.RawBurst {
 
 func mbcGrant(t testing.TB, tg uint32, cdef layer3.CdefParms, cc enums.ColorCode) [2]layer2.RawBurst {
 	t.Helper()
-	h := &pdu.MBCHeader{Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{
-		PhysicalChannel: trunk.ChannelAbsolute, LogicalChannel: true, TargetAddress: tg, SourceAddress: 3120001}}
+	h := withPDU(t, &pdu.MBCHeader{}, (*pdu.MBCHeader).SetTalkgroupVoiceGrant, pdu.TalkgroupVoiceGrantPDU{
+		PhysicalChannel: trunk.ChannelAbsolute, LogicalChannel: true, TargetAddress: tg, SourceAddress: 3120001})
 	cg := pdu.CGAPContinuation{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, ColorCode: cc, CdefParms: cdef}
 	p, err := cg.Encode()
 	if err != nil {

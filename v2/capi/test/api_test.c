@@ -107,14 +107,20 @@ static void test_pdu(void) {
 	dmrgo_layer3_service_options_t so = {0};
 	dmrgo_pdu_full_link_control_t lc;
 	OK(dmrgo_pdu_new_voice_lc(true, 91, 3191868, &so, &lc));
-	CHECK(lc.has_group_voice && lc.group_voice.group_address == 91 && !lc.has_unit_to_unit);
+	dmrgo_pdu_flc_group_voice_t gv;
+	dmrgo_pdu_flc_unit_to_unit_t uu;
+	bool isgv, isuu;
+	OK(dmrgo_pdu_full_link_control_as_group_voice(&lc, &gv, &isgv));
+	OK(dmrgo_pdu_full_link_control_as_unit_to_unit(&lc, &uu, &isuu));
+	CHECK(isgv && gv.group_address == 91 && !isuu);
 	lc.burst_data_type = DMRGO_ENUMS_DATA_TYPE_VOICE_LC_HEADER;
 	uint8_t lcbits[12];
 	OK(dmrgo_pdu_full_link_control_encode(&lc, lcbits));
 	dmrgo_pdu_full_link_control_t lc2;
 	OK(dmrgo_pdu_decode_full_link_control(lcbits, DMRGO_ENUMS_DATA_TYPE_VOICE_LC_HEADER, &lc2));
 	OK(dmrgo_pdu_full_link_control_addresses(&lc2, &target, &source, &ok));
-	CHECK(ok && target == 91 && source == 3191868 && lc2.has_group_voice && !lc2.fec.uncorrectable);
+	OK(dmrgo_pdu_full_link_control_as_group_voice(&lc2, &gv, &isgv));
+	CHECK(ok && target == 91 && source == 3191868 && isgv && !lc2.fec.uncorrectable);
 	printf("pdu: CSBK and Full LC round trips\n");
 }
 

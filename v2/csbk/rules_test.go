@@ -59,14 +59,14 @@ func TestOACSU(t *testing.T) {
 		c := pdu.DecodeCSBK(done[0].CSBK)
 		switch tt.answer {
 		case csbk.OACSUNotSupported:
-			n := c.NegativeAcknowledgementPDU
-			if n == nil || n.ServiceType != pdu.CSBKUnitToUnitVoiceServiceRequest || csbk.Reason(n.ReasonCode) != csbk.ReasonNotSupported ||
+			n, ok := c.AsNegativeAcknowledgement()
+			if !ok || n.ServiceType != pdu.CSBKUnitToUnitVoiceServiceRequest || csbk.Reason(n.ReasonCode) != csbk.ReasonNotSupported ||
 				n.SourceType != layer3.SourceTypeMS || n.TargetAddress != 1001 || n.SourceAddress != 1002 || done[0].Reason != csbk.ReasonNotSupported {
 				t.Errorf("NACK_Rsp %+v", n)
 			}
 		case csbk.OACSUProceed, csbk.OACSUDeny:
-			a := c.UnitToUnitVoiceServiceAnswerResponsePDU
-			if a == nil || a.TargetAddress != 1001 || a.SourceAddress != 1002 || a.ServiceOptions.PriorityLevel != 2 {
+			a, ok := c.AsUnitToUnitVoiceServiceAnswerResponse()
+			if !ok || a.TargetAddress != 1001 || a.SourceAddress != 1002 || a.ServiceOptions.PriorityLevel != 2 {
 				t.Errorf("UU_Ans_Rsp %+v", a)
 			}
 		}
@@ -220,12 +220,18 @@ func TestRequesterErrors(t *testing.T) {
 func TestRequesterCustom(t *testing.T) {
 	t.Parallel()
 
-	c := pdu.CSBK{Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{TargetAddress: 2, SourceAddress: 1}}
+	var c pdu.CSBK
+	if err := c.SetAhoy(pdu.AhoyPDU{TargetAddress: 2, SourceAddress: 1}); err != nil {
+		t.Fatal(err)
+	}
 	req, err := c.Encode()
 	if err != nil {
 		t.Fatal(err)
 	}
-	ack := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKMaintenance, MaintenancePDU: &pdu.MaintenancePDU{TargetAddress: 1, SourceAddress: 2}}
+	ack := pdu.CSBK{LastBlock: true}
+	if err := ack.SetMaintenance(pdu.MaintenancePDU{TargetAddress: 1, SourceAddress: 2}); err != nil {
+		t.Fatal(err)
+	}
 	ackOctets, err := ack.Encode()
 	if err != nil {
 		t.Fatal(err)
@@ -252,7 +258,10 @@ func TestResponderFNS(t *testing.T) {
 	t.Parallel()
 
 	ahoy := func(target uint32, group bool) layer2.RawBurst {
-		c := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{GroupIndividual: group, TargetAddress: target, SourceAddress: 5}}
+		c := pdu.CSBK{LastBlock: true}
+		if err := c.SetAhoy(pdu.AhoyPDU{GroupIndividual: group, TargetAddress: target, SourceAddress: 5}); err != nil {
+			t.Fatal(err)
+		}
 		b, err := layer2.BuildBurst(&c, 0, layer2.SyncSourceBS)
 		if err != nil {
 			t.Fatal(err)
@@ -277,8 +286,9 @@ func TestResponderFNS(t *testing.T) {
 		t.Fatalf("outputs %+v", out)
 	}
 	out := run(t, r, time.Second)
-	n := pdu.DecodeCSBK([12]byte(bptc(t, &out[0]))).NegativeAcknowledgementPDU
-	if n == nil || n.ServiceType != pdu.CSBKAhoy || n.TargetAddress != 5 || n.SourceAddress != 9 {
+	nc := pdu.DecodeCSBK([12]byte(bptc(t, &out[0])))
+	n, ok := nc.AsNegativeAcknowledgement()
+	if !ok || n.ServiceType != pdu.CSBKAhoy || n.TargetAddress != 5 || n.SourceAddress != 9 {
 		t.Errorf("NACK_Rsp %+v", n)
 	}
 
@@ -310,14 +320,20 @@ func TestPreamblesData(t *testing.T) {
 	t.Parallel()
 
 	pre := func(cbf byte, target uint32) *layer2.RawBurst {
-		c := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKPreamble, PreamblePDU: &pdu.PreamblePDU{Data: true, CSBKBlocksToFollow: cbf, TargetAddress: target, SourceAddress: 1}}
+		c := pdu.CSBK{LastBlock: true}
+		if err := c.SetPreamble(pdu.PreamblePDU{Data: true, CSBKBlocksToFollow: cbf, TargetAddress: target, SourceAddress: 1}); err != nil {
+			t.Fatal(err)
+		}
 		b, err := layer2.BuildBurst(&c, 1, layer2.SyncSourceMS)
 		if err != nil {
 			t.Fatal(err)
 		}
 		return &b
 	}
-	h := pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{LLIDDestination: 2, LLIDSource: 1, BlocksToFollow: 1}}
+	var h pdu.DataHeader
+	if err := h.SetUnconfirmedDataHeader(pdu.UnconfirmedDataHeader{LLIDDestination: 2, LLIDSource: 1, BlocksToFollow: 1}); err != nil {
+		t.Fatal(err)
+	}
 	header, err := layer2.BuildBurst(&h, 1, layer2.SyncSourceMS)
 	if err != nil {
 		t.Fatal(err)

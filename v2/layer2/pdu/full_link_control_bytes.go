@@ -11,7 +11,6 @@ import (
 // parity, as a FullLinkControl. FEC and BurstDataType are left at their
 // zero values; set BurstDataType before Encode. It returns an error when
 // the decoded LC does not encode back to lc, so that no bit of lc is lost.
-// It allocates the payload struct; DecodeFullLinkControlBytesInto does not.
 func DecodeFullLinkControlBytes(lc [9]byte) (FullLinkControl, error) {
 	cw, _ := LCBytes(lc).Codeword(enums.DataTypeVoiceLCHeader)
 	f := DecodeFullLinkControl(cw, enums.DataTypeVoiceLCHeader)
@@ -25,30 +24,6 @@ func DecodeFullLinkControlBytes(lc [9]byte) (FullLinkControl, error) {
 		return FullLinkControl{}, errRoundTrip
 	}
 	return f, nil
-}
-
-// DecodeFullLinkControlBytesInto decodes lc into dst as
-// DecodeFullLinkControlBytes does, with the payload in p as
-// DecodeFullLinkControlInto has it. It returns the errors of
-// DecodeFullLinkControlBytes and sets dst to the zero value on an error.
-// It returns an error for a nil dst or p.
-func DecodeFullLinkControlBytesInto(dst *FullLinkControl, p *FullLinkControlPayloads, lc [9]byte) error {
-	if dst == nil || p == nil {
-		return errNil
-	}
-	cw, _ := LCBytes(lc).Codeword(enums.DataTypeVoiceLCHeader)
-	DecodeFullLinkControlInto(dst, p, cw, enums.DataTypeVoiceLCHeader)
-	dst.BurstDataType = 0
-	dst.FEC = fec.Result{}
-	got, err := dst.Bytes()
-	if err == nil && got != lc {
-		err = errRoundTrip
-	}
-	if err != nil {
-		*dst = FullLinkControl{}
-		return err
-	}
-	return nil
 }
 
 // Bytes returns the 72 LC bits of s packed most significant bit first,

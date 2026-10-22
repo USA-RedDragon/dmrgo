@@ -32,8 +32,8 @@ func (r *VoiceReceiver) Reset() {
 // sets b.VoiceBurst to its superframe position as the package doc describes.
 // When burst E completes an embedded LC, Receive returns it with ok set, or
 // with ErrEmbeddedLCUncorrectable. It returns ErrEmbeddedLCSequence when the
-// burst discards a partial embedded LC. It allocates the payload struct of a
-// completed LC; ReceiveInto does not. A nil b is ignored.
+// burst discards a partial embedded LC. It does not allocate. A nil b is
+// ignored.
 func (r *VoiceReceiver) Receive(b *Burst) (lc pdu.FullLinkControl, ok bool, err error) {
 	if r == nil {
 		return pdu.FullLinkControl{}, false, dmrgo.ErrNilReceiver
@@ -51,34 +51,6 @@ func (r *VoiceReceiver) Receive(b *Burst) (lc pdu.FullLinkControl, ok bool, err 
 		return lc, false, ErrEmbeddedLCUncorrectable
 	}
 	return lc, true, nil
-}
-
-// ReceiveInto takes the next burst as Receive does. When burst E completes
-// an embedded LC, ReceiveInto decodes it into dst, with the payload struct
-// of dst in p as pdu.DecodeFullLinkControlInto places it, and returns ok or
-// ErrEmbeddedLCUncorrectable as Receive does. Otherwise it leaves dst as it
-// is. A nil b is ignored, and a nil dst or p returns an error and changes
-// nothing. It does not allocate.
-func (r *VoiceReceiver) ReceiveInto(dst *pdu.FullLinkControl, p *pdu.FullLinkControlPayloads, b *Burst) (ok bool, err error) {
-	if r == nil {
-		return false, dmrgo.ErrNilReceiver
-	}
-	if dst == nil || p == nil {
-		return false, errNil
-	}
-	if b == nil {
-		return false, nil
-	}
-	bits, res, done, err := r.receive(b)
-	if !done {
-		return false, err
-	}
-	pdu.DecodeFullLinkControlInto(dst, p, embeddedFullLCCodeword(bits), enums.DataTypeVoiceLCHeader)
-	dst.FEC = combineEmbeddedFEC(res, dst.FEC)
-	if dst.FEC.Uncorrectable {
-		return false, ErrEmbeddedLCUncorrectable
-	}
-	return true, nil
 }
 
 func (r *VoiceReceiver) receive(b *Burst) (lc [9]byte, res fec.Result, done bool, err error) {

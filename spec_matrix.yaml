@@ -162,7 +162,6 @@ ignore_files:
   - v2/shortdata/hytera.go
   - v2/sms/errors.go
   - v2/sms/formats.go
-  - v2/sms/nocopy.go
   - v2/sms/sms.go
   - v2/trunk/errors.go
   - v2/trunk/nocopy.go
@@ -439,7 +438,7 @@ documents:
               - TestShortLCAssembler_CombinedFEC
               - TestShortLCAssembler_RejectsBadSequence
               - TestShortLCAssembler_FirstRestartsSequence
-              - TestShortLCAssembler_AddIntoIncomplete
+              - TestShortLCAssembler_AddIncomplete
               - TestEncodeShortLCToCACH_RoundTrip
               - TestEncodeShortLCToCACH_Error
 
@@ -903,7 +902,7 @@ documents:
             names:
               - TestCSBK_ManufacturerFIDKeepsRawPayload
               - TestCSBK_UnknownOpcodeKeepsRawPayload
-              - TestCSBK_StandardFIDDoesNotFillRawPayload
+              - TestCSBK_StandardFIDSelectsPayload
               - TestFLC_ManufacturerFIDKeepsRawPayload
               - TestFLC_AddressesIgnoreFID
               - TestFLC_UnknownFLCOKeepsRawValues
