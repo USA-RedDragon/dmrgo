@@ -23,7 +23,12 @@ func parseLayoutDirective(pdu *PDUStruct, name, arg string) error {
 			return errors.New("duplicate dmr:frame directive")
 		}
 		var sizes []int
+		open := false
 		for _, s := range strings.Fields(arg) {
+			if open {
+				return fmt.Errorf("dmr:frame: only the last size can end in +, got %q", arg)
+			}
+			s, open = strings.CutSuffix(s, "+")
 			n, err := strconv.Atoi(s)
 			if err != nil || n <= 0 {
 				return fmt.Errorf("invalid dmr:frame size %q", s)
@@ -33,7 +38,7 @@ func parseLayoutDirective(pdu *PDUStruct, name, arg string) error {
 			}
 			sizes = append(sizes, n)
 		}
-		pdu.Frame = &FrameDirective{Sizes: sizes}
+		pdu.Frame = &FrameDirective{Sizes: sizes, Open: open}
 	case directiveView:
 		if pdu.View != nil {
 			return errors.New("duplicate dmr:view directive")
@@ -247,6 +252,9 @@ func checkFrameSizes(pdu *PDUStruct) error {
 			continue
 		}
 		if f.Tail {
+			if pdu.Frame.Open {
+				return fmt.Errorf("field %s: a tail cannot end an open dmr:frame", f.Name)
+			}
 			if f.Kind != FieldPacked || f.BitStart%8 != 0 || f.BitEnd+1 != sizes[len(sizes)-1]*8 || len(f.ExtraBitRanges) > 0 {
 				return fmt.Errorf("field %s: tail needs a packed field that starts on an octet and ends the longest frame", f.Name)
 			}

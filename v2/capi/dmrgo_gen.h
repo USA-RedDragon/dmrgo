@@ -10414,9 +10414,9 @@ int dmrgo_mmdvm_debug_append_binary(const dmrgo_mmdvm_debug_t *self, uint8_t *ds
 int dmrgo_mmdvm_debug_count(const dmrgo_mmdvm_debug_t *self, int64_t *out);
 /* Go: mmdvm.DecodeAck. DecodeAck decodes an Ack from data, a payload of 1 octet. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 1 octet and DMRGO_ERR_MMDVM_LENGTH when it is longer. */
 int dmrgo_mmdvm_decode_ack(const uint8_t *data, size_t data_len, dmrgo_mmdvm_ack_t *out);
-/* Go: mmdvm.DecodeConfigV1. DecodeConfigV1 decodes a ConfigV1 from data, a payload of 23 octets. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 23 octets and DMRGO_ERR_MMDVM_LENGTH when it is longer. */
+/* Go: mmdvm.DecodeConfigV1. DecodeConfigV1 decodes a ConfigV1 from data, a payload of 23 octets or more. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 23 octets. */
 int dmrgo_mmdvm_decode_config_v1(const uint8_t *data, size_t data_len, dmrgo_mmdvm_config_v1_t *out);
-/* Go: mmdvm.DecodeConfigV2. DecodeConfigV2 decodes a ConfigV2 from data, a payload of 37 octets. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 37 octets and DMRGO_ERR_MMDVM_LENGTH when it is longer. */
+/* Go: mmdvm.DecodeConfigV2. DecodeConfigV2 decodes a ConfigV2 from data, a payload of 37 octets or more. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 37 octets. */
 int dmrgo_mmdvm_decode_config_v2(const uint8_t *data, size_t data_len, dmrgo_mmdvm_config_v2_t *out);
 /* Go: mmdvm.DecodeDMRAbort. DecodeDMRAbort decodes a DMRAbort from data, a payload of 1 octet. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 1 octet and DMRGO_ERR_MMDVM_LENGTH when it is longer. */
 int dmrgo_mmdvm_decode_dmr_abort(const uint8_t *data, size_t data_len, dmrgo_mmdvm_dmr_abort_t *out);

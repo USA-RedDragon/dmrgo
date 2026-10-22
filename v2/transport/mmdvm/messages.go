@@ -113,7 +113,7 @@ type StatusV1 struct {
 // MMDVMHost setConfig2 writes it and the MMDVM firmware reads it. Levels
 // are 0 to 255 for 0 to 100 percent.
 //
-//dmr:frame 37
+//dmr:frame 37+
 //dmr:payload
 //dmr:const 1-1=0
 //dmr:const 8-9=0
@@ -197,9 +197,10 @@ type ConfigV2 struct {
 
 // ConfigV1 is the payload of a CommandSetConfig frame of protocol 1, as
 // MMDVMHost setConfig1 writes it and the MMDVM_HS firmware reads it.
-// Levels are 0 to 255 for 0 to 100 percent.
+// Levels are 0 to 255 for 0 to 100 percent. MMDVMCal cf37046 sends one
+// octet more, which the firmware and DecodeConfigV1 ignore.
 //
-//dmr:frame 23
+//dmr:frame 23+
 //dmr:payload
 //dmr:const 1-1=0
 //dmr:const 8-8=0
