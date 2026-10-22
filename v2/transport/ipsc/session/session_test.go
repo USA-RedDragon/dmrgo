@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/session"
 )
@@ -385,16 +386,28 @@ func TestMasterKeepaliveRegisters(t *testing.T) {
 func TestConfigErrors(t *testing.T) {
 	t.Parallel()
 
-	var ce *session.ConfigError
-	for i, cfg := range []*session.PeerConfig{nil, {Alive: -1}, {MaxMissed: -1}, {MaxPeers: -1}, {MaxPeers: 6000}} {
-		if _, err := session.NewPeer(cfg); !errors.As(err, &ce) || ce.Error() == "" {
+	var ce *dmrgo.ConfigError
+	for i, tc := range []struct {
+		cfg   *session.PeerConfig
+		field string
+	}{{&session.PeerConfig{Alive: -1}, "Alive"}, {&session.PeerConfig{MaxMissed: -1}, "MaxMissed"}, {&session.PeerConfig{MaxPeers: -1}, "MaxPeers"}, {&session.PeerConfig{MaxPeers: 6000}, "MaxPeers"}} {
+		if _, err := session.NewPeer(tc.cfg); !errors.As(err, &ce) || ce.Type != "ipsc/session" || ce.Field != tc.field {
 			t.Errorf("peer %d: %v", i, err)
 		}
 	}
-	for i, cfg := range []*session.MasterConfig{nil, {Timeout: -1}, {MaxPeers: 6000}} {
-		if _, err := session.NewMaster(cfg); !errors.As(err, &ce) {
+	for i, tc := range []struct {
+		cfg   *session.MasterConfig
+		field string
+	}{{&session.MasterConfig{Timeout: -1}, "Timeout"}, {&session.MasterConfig{MaxPeers: 6000}, "MaxPeers"}} {
+		if _, err := session.NewMaster(tc.cfg); !errors.As(err, &ce) || ce.Field != tc.field {
 			t.Errorf("master %d: %v", i, err)
 		}
+	}
+	if _, err := session.NewPeer(nil); !errors.Is(err, dmrgo.ErrNilArgument) {
+		t.Errorf("nil peer config: %v", err)
+	}
+	if _, err := session.NewMaster(nil); !errors.Is(err, dmrgo.ErrNilArgument) {
+		t.Errorf("nil master config: %v", err)
 	}
 }
 

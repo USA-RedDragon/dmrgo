@@ -4021,17 +4021,6 @@ func out_transport_dmrd_session_Output(d *C.dmrgo_dmrd_session_output_t, s *g_tr
 	d.state = C.dmrgo_dmrd_session_state_t(s.State)
 }
 
-func in_transport_dmrd_session_ConfigError(s *C.dmrgo_dmrd_session_config_error_t) (d g_transport_dmrd_session.ConfigError) {
-	d.Field = C.GoStringN(s.field, C.int(s.field_len))
-	return
-}
-
-func out_transport_dmrd_session_ConfigError(d *C.dmrgo_dmrd_session_config_error_t, s *g_transport_dmrd_session.ConfigError, oc *outc) {
-	_ = oc
-	d.field = arenaStr(oc, s.Field)
-	d.field_len = C.size_t(len(s.Field))
-}
-
 func in_transport_dmrd_session_BridgeConfig(s *C.dmrgo_dmrd_session_bridge_config_t) (d g_transport_dmrd_session.BridgeConfig) {
 	d.Key = unsafe.Slice((*byte)(unsafe.Pointer(s.key)), int(s.key_len))
 	d.Enhanced = bool(s.enhanced)
@@ -4180,17 +4169,6 @@ func in_transport_ipsc_User(s *C.dmrgo_ipsc_user_t) (d g_transport_ipsc.User) {
 	d.Voice = *(*g_transport_ipsc.Voice)(unsafe.Pointer(&s.voice))
 	d.Data = in_transport_ipsc_Payload(&s.data)
 	return
-}
-
-func in_transport_ipsc_session_ConfigError(s *C.dmrgo_ipsc_session_config_error_t) (d g_transport_ipsc_session.ConfigError) {
-	d.Field = C.GoStringN(s.field, C.int(s.field_len))
-	return
-}
-
-func out_transport_ipsc_session_ConfigError(d *C.dmrgo_ipsc_session_config_error_t, s *g_transport_ipsc_session.ConfigError, oc *outc) {
-	_ = oc
-	d.field = arenaStr(oc, s.Field)
-	d.field_len = C.size_t(len(s.Field))
 }
 
 func out_transport_ipsc_session_Output(d *C.dmrgo_ipsc_session_output_t, s *g_transport_ipsc_session.Output, oc *outc) {
@@ -7381,10 +7359,6 @@ func fromC_transport_dmrd_session_BridgeConfig(s *C.dmrgo_dmrd_session_bridge_co
 	return in_transport_dmrd_session_BridgeConfig(s)
 }
 
-func fromC_transport_dmrd_session_ConfigError(s *C.dmrgo_dmrd_session_config_error_t) g_transport_dmrd_session.ConfigError {
-	return in_transport_dmrd_session_ConfigError(s)
-}
-
 func in_transport_dmrd_session_MasterConfig(s *C.dmrgo_dmrd_session_master_config_t) (d g_transport_dmrd_session.MasterConfig) {
 	d.Dialect = g_transport_dmrd.Dialect(s.dialect)
 	d.Timeout = time.Duration(s.timeout)
@@ -7606,10 +7580,6 @@ func out_transport_ipsc_session_Addr(d *C.dmrgo_ipsc_session_addr_t, s *g_transp
 
 func fromC_transport_ipsc_session_Addr(s *C.dmrgo_ipsc_session_addr_t) g_transport_ipsc_session.Addr {
 	return in_transport_ipsc_session_Addr(s)
-}
-
-func fromC_transport_ipsc_session_ConfigError(s *C.dmrgo_ipsc_session_config_error_t) g_transport_ipsc_session.ConfigError {
-	return in_transport_ipsc_session_ConfigError(s)
 }
 
 func out_transport_ipsc_session_MasterConfig(d *C.dmrgo_ipsc_session_master_config_t, s *g_transport_ipsc_session.MasterConfig, oc *outc) {
@@ -35180,54 +35150,6 @@ func dmrgo_dmrd_session_bridge_tick(c_self *C.dmrgo_dmrd_session_bridge_t, c_now
 	return C.DMRGO_OK
 }
 
-//export dmrgo_dmrd_session_config_error_error
-func dmrgo_dmrd_session_config_error_error(c_self *C.dmrgo_dmrd_session_config_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_transport_dmrd_session.ConfigError
-	x = in_transport_dmrd_session_ConfigError(&(*c_self))
-	if c_out == nil && c_out_cap > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := x.Error()
-	out_transport_dmrd_session_ConfigError(&(*c_self), &x, oc)
-	_ = r0
-	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_session_config_error_last
-func dmrgo_dmrd_session_config_error_last(c_out *C.dmrgo_dmrd_session_config_error_t, c_ok *C.bool) C.int {
-	l := C.dmrgo__last()
-	ok := l.kind == -235
-	if c_ok != nil {
-		*c_ok = C.bool(ok)
-	}
-	if ok && c_out != nil {
-		*c_out = *(*C.dmrgo_dmrd_session_config_error_t)(unsafe.Pointer(&l.d))
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_dmrd_session_master_free
 func dmrgo_dmrd_session_master_free(c_self *C.dmrgo_dmrd_session_master_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -37543,54 +37465,6 @@ func dmrgo_ipsc_auth_parse_key(c_s *C.char, c_s_len C.size_t, c_out *C.uint8_t) 
 	}
 	if r1 != nil {
 		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_ipsc_session_config_error_error
-func dmrgo_ipsc_session_config_error_error(c_self *C.dmrgo_ipsc_session_config_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_transport_ipsc_session.ConfigError
-	x = in_transport_ipsc_session_ConfigError(&(*c_self))
-	if c_out == nil && c_out_cap > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := x.Error()
-	out_transport_ipsc_session_ConfigError(&(*c_self), &x, oc)
-	_ = r0
-	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_ipsc_session_config_error_last
-func dmrgo_ipsc_session_config_error_last(c_out *C.dmrgo_ipsc_session_config_error_t, c_ok *C.bool) C.int {
-	l := C.dmrgo__last()
-	ok := l.kind == -236
-	if c_ok != nil {
-		*c_ok = C.bool(ok)
-	}
-	if ok && c_out != nil {
-		*c_out = *(*C.dmrgo_ipsc_session_config_error_t)(unsafe.Pointer(&l.d))
 	}
 	return C.DMRGO_OK
 }
@@ -47178,6 +47052,8 @@ func dmrgo_voice_transmitter_state_string(c_self C.dmrgo_voice_transmitter_state
 func errCode(err error) C.int {
 	for e := err; e != nil; {
 		switch e {
+		case g_dmrgo.ErrNilArgument:
+			return -238
 		case g_dmrgo.ErrNilReceiver:
 			return -228
 		case g_bs.ErrSlot:
@@ -47422,10 +47298,6 @@ func errCode(err error) C.int {
 			return -227
 		case *g_dmrgo.FieldRangeError:
 			return -100
-		case *g_transport_dmrd_session.ConfigError:
-			return -235
-		case *g_transport_ipsc_session.ConfigError:
-			return -236
 		}
 		switch u := e.(type) {
 		case interface{ Unwrap() []error }:
@@ -47464,27 +47336,13 @@ func setErr(err error) C.int {
 			return code
 		}
 	}
-	{
-		var x *g_transport_dmrd_session.ConfigError
-		if errors.As(err, &x) {
-			l.kind = -235
-			out_transport_dmrd_session_ConfigError((*C.dmrgo_dmrd_session_config_error_t)(unsafe.Pointer(&l.d)), x, oc)
-			return code
-		}
-	}
-	{
-		var x *g_transport_ipsc_session.ConfigError
-		if errors.As(err, &x) {
-			l.kind = -236
-			out_transport_ipsc_session_ConfigError((*C.dmrgo_ipsc_session_config_error_t)(unsafe.Pointer(&l.d)), x, oc)
-			return code
-		}
-	}
 	return code
 }
 
 func codeErr(code C.int) error {
 	switch code {
+	case -238:
+		return g_dmrgo.ErrNilArgument
 	case -228:
 		return g_dmrgo.ErrNilReceiver
 	case -107:

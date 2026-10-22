@@ -1,23 +1,12 @@
 package session
 
-// ConfigError is the error of NewPeer and NewMaster for a config field
-// with a value out of range. Match it with errors.As.
-type ConfigError struct {
-	// Field is the name of the config field.
-	Field string
-}
+import "github.com/USA-RedDragon/dmrgo/v2"
 
-// Error returns the message of e. It allocates the message.
-func (e *ConfigError) Error() string {
-	if e == nil {
-		return "<nil>"
-	}
-
-	return "session: " + e.Field + " is out of range"
-}
+const errType = "ipsc/session"
 
 var (
-	errID       error = &ConfigError{Field: "config"}
-	errTimer    error = &ConfigError{Field: "timer"}
-	errMaxPeers error = &ConfigError{Field: "MaxPeers"}
+	errTimeout   error = &dmrgo.ConfigError{Type: errType, Field: "Timeout"}
+	errAlive     error = &dmrgo.ConfigError{Type: errType, Field: "Alive"}
+	errMaxMissed error = &dmrgo.ConfigError{Type: errType, Field: "MaxMissed"}
+	errMaxPeers  error = &dmrgo.ConfigError{Type: errType, Field: "MaxPeers"}
 )

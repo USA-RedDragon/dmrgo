@@ -3,6 +3,7 @@ package session
 import (
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
 )
 
@@ -47,15 +48,16 @@ type Master struct {
 	noCopy   noCopy
 }
 
-// NewMaster returns a Master for cfg. It returns a *ConfigError for a nil
-// cfg, a negative Timeout or a MaxPeers above MaxPeersLimit. It allocates
+// NewMaster returns a Master for cfg. It returns dmrgo.ErrNilArgument for a
+// nil cfg and a *dmrgo.ConfigError for a negative Timeout or a MaxPeers
+// outside [0, MaxPeersLimit]. It allocates
 // the Master, its peer table and its key.
 func NewMaster(cfg *MasterConfig) (*Master, error) {
 	if cfg == nil {
-		return nil, errID
+		return nil, dmrgo.ErrNilArgument
 	}
 	if cfg.Timeout < 0 {
-		return nil, errTimer
+		return nil, errTimeout
 	}
 	if cfg.MaxPeers < 0 || cfg.MaxPeers > MaxPeersLimit {
 		return nil, errMaxPeers

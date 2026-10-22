@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/session"
@@ -39,7 +40,7 @@ func TestMasterLoginTimeout(t *testing.T) {
 	if at, _ := m2.Deadline(); at != 108*s || m2.State() != session.StateRunning {
 		t.Fatalf("running deadline %v %v", at, m2.State())
 	}
-	var ce *session.ConfigError
+	var ce *dmrgo.ConfigError
 	if _, err := session.NewMaster(&session.MasterConfig{Dialect: dmrd.DialectMMDVM, LoginTimeout: -1}); !errors.As(err, &ce) {
 		t.Fatalf("negative LoginTimeout: %v", err)
 	}

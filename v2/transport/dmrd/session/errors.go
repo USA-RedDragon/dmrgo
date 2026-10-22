@@ -1,28 +1,22 @@
 package session
 
-import "errors"
+import (
+	"errors"
 
-// ConfigError is the error of NewPeer, NewMaster and NewBridge for a
-// config field with a value out of range. Match it with errors.As.
-type ConfigError struct {
-	// Field is the name of the config field.
-	Field string
-}
+	"github.com/USA-RedDragon/dmrgo/v2"
+)
 
-// Error returns the message of e. It allocates the message.
-func (e *ConfigError) Error() string {
-	if e == nil {
-		return "<nil>"
-	}
-
-	return "session: " + e.Field + " is out of range"
-}
+const errType = "dmrd/session"
 
 var (
-	errDialect error = &ConfigError{Field: "Dialect"}
-	errConfig  error = &ConfigError{Field: nameConfig}
-	errOptions error = &ConfigError{Field: nameOptions}
-	errTimer   error = &ConfigError{Field: "timer"}
+	errDialect      error = &dmrgo.ConfigError{Type: errType, Field: "Dialect"}
+	errConfig       error = &dmrgo.ConfigError{Type: errType, Field: nameConfig}
+	errOptions      error = &dmrgo.ConfigError{Type: errType, Field: nameOptions}
+	errRetry        error = &dmrgo.ConfigError{Type: errType, Field: "Retry"}
+	errTimeout      error = &dmrgo.ConfigError{Type: errType, Field: "Timeout"}
+	errBackoff      error = &dmrgo.ConfigError{Type: errType, Field: "Backoff"}
+	errLoginTimeout error = &dmrgo.ConfigError{Type: errType, Field: "LoginTimeout"}
+	errKeepalive    error = &dmrgo.ConfigError{Type: errType, Field: "Keepalive"}
 )
 
 var errNoKey = errors.New("session: the Bridge has no key; make it with NewBridge")

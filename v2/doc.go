@@ -148,6 +148,8 @@
 // These errors can be matched with errors.Is. Each is a static value.
 //
 //   - ErrNilReceiver: a method was called on a nil pointer.
+//   - ErrNilArgument: a function or method got a nil pointer, func or
+//     interface argument that it needs.
 //   - fec.ErrUncorrectable: an FEC or CRC check failed. It is wrapped by
 //     layer2.ErrEmbeddedLCUncorrectable, packet.ErrMessageCRC and
 //     packet.ErrBlocksMissing, which layer2.VoiceReceiver and
@@ -230,7 +232,7 @@
 //     enums.NewColorCode returns it for a value over 15.
 //   - *ConfigError: a constructor, or a machine method of bs, csbk, data,
 //     trunk or voice, got a config, option or argument field out of range.
-//     Type names the package.
+//     Type names the package, such as "trunk" or "dmrd/session".
 //
 // # More
 //

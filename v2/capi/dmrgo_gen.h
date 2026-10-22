@@ -480,8 +480,6 @@ typedef struct dmrgo_dmrd_auth_bridge_key_t dmrgo_dmrd_auth_bridge_key_t;
 typedef struct dmrgo_dmrd_session_bridge_t dmrgo_dmrd_session_bridge_t;
 /* Go: session.BridgeConfig. BridgeConfig configures NewBridge. */
 typedef struct dmrgo_dmrd_session_bridge_config_t dmrgo_dmrd_session_bridge_config_t;
-/* Go: session.ConfigError. ConfigError is the error of NewPeer, NewMaster and NewBridge for a config field with a value out of range. */
-typedef struct dmrgo_dmrd_session_config_error_t dmrgo_dmrd_session_config_error_t;
 /* Go: session.Master. Master is the master side of the session of one repeater of the MMDVM network protocol or of HBRP. */
 typedef struct dmrgo_dmrd_session_master_t dmrgo_dmrd_session_master_t;
 /* Go: session.MasterConfig. MasterConfig configures NewMaster. */
@@ -522,8 +520,6 @@ typedef struct dmrgo_ipsc_voice_t dmrgo_ipsc_voice_t;
 typedef struct dmrgo_ipsc_auth_key_t dmrgo_ipsc_auth_key_t;
 /* Go: session.Addr. Addr is the IPv4 address and UDP port of an IPSC peer, as a peer list carries it. */
 typedef struct dmrgo_ipsc_session_addr_t dmrgo_ipsc_session_addr_t;
-/* Go: session.ConfigError. ConfigError is the error of NewPeer and NewMaster for a config field with a value out of range. */
-typedef struct dmrgo_ipsc_session_config_error_t dmrgo_ipsc_session_config_error_t;
 /* Go: session.Master. Master is the master of an IPSC system, as DMRlink and ipsc2hbrp run it: it registers peers, answers their keepalives, sends the peer list to every peer when one asks for it and when a peer leaves or times out, and passes the voice and data packets of registered peers on. */
 typedef struct dmrgo_ipsc_session_master_t dmrgo_ipsc_session_master_t;
 /* Go: session.MasterConfig. MasterConfig configures NewMaster. */
@@ -4040,12 +4036,6 @@ struct dmrgo_dmrd_session_bridge_config_t {
 	dmrgo_duration_t timeout;
 };
 
-struct dmrgo_dmrd_session_config_error_t {
-	/* Field is the name of the config field. */
-	char *field;
-	size_t field_len;
-};
-
 struct dmrgo_dmrd_session_master_config_t {
 	/* Dialect is dmrd.DialectMMDVM or dmrd.DialectHBRP. */
 	dmrgo_dmrd_dialect_t dialect;
@@ -4273,12 +4263,6 @@ struct dmrgo_ipsc_session_addr_t {
 	uint8_t ip[4];
 	/* Port is the UDP port. */
 	uint16_t port;
-};
-
-struct dmrgo_ipsc_session_config_error_t {
-	/* Field is the name of the config field. */
-	char *field;
-	size_t field_len;
 };
 
 struct dmrgo_ipsc_session_output_t {
@@ -5485,7 +5469,6 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_DATA_BUSY (-169)
 #define DMRGO_ERR_DMRD_COMMAND (-201)
 #define DMRGO_ERR_DMRD_LENGTH (-202)
-#define DMRGO_ERR_DMRD_SESSION_CONFIG_ERROR (-235)
 #define DMRGO_ERR_DMRD_SHORT (-203)
 #define DMRGO_ERR_DMRD_SIGNATURE (-204)
 #define DMRGO_ERR_DMRD_TEXT (-205)
@@ -5515,7 +5498,6 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_HYTERA_SIGNATURE (-199)
 #define DMRGO_ERR_IPSC_COMMAND (-210)
 #define DMRGO_ERR_IPSC_LENGTH (-211)
-#define DMRGO_ERR_IPSC_SESSION_CONFIG_ERROR (-236)
 #define DMRGO_ERR_IPSC_SHORT (-212)
 #define DMRGO_ERR_IP_CHECKSUM (-172)
 #define DMRGO_ERR_IP_FRAGMENT (-173)
@@ -5542,6 +5524,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_MMDVM_COMMAND (-213)
 #define DMRGO_ERR_MMDVM_LENGTH (-214)
 #define DMRGO_ERR_MMDVM_SHORT (-215)
+#define DMRGO_ERR_NIL_ARGUMENT (-238)
 #define DMRGO_ERR_NIL_RECEIVER (-228)
 #define DMRGO_ERR_NMEA_CHECKSUM (-152)
 #define DMRGO_ERR_NMEA_FIELD (-153)
@@ -10024,10 +10007,6 @@ int dmrgo_dmrd_session_bridge_state(dmrgo_dmrd_session_bridge_t *self, dmrgo_dmr
 int dmrgo_dmrd_session_bridge_tick_need(dmrgo_dmrd_session_bridge_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: session.Bridge.Tick. Tick sends the BCKA of an enhanced Bridge when it is due, the first at the first Tick, and reports OutputDown with ReasonTimeout when the peer sent nothing for Timeout. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_session_bridge_tick_need gives. */
 int dmrgo_dmrd_session_bridge_tick(dmrgo_dmrd_session_bridge_t *self, dmrgo_duration_t now, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: session.ConfigError.Error. Error returns the message of e. */
-int dmrgo_dmrd_session_config_error_error(dmrgo_dmrd_session_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* dmrgo_dmrd_session_config_error_last sets *ok when the last error of this thread holds a session.ConfigError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
-int dmrgo_dmrd_session_config_error_last(dmrgo_dmrd_session_config_error_t *out, bool *ok);
 /* dmrgo_dmrd_session_master_free frees the handle. self may be NULL. */
 int dmrgo_dmrd_session_master_free(dmrgo_dmrd_session_master_t *self);
 /* dmrgo_dmrd_session_master_admit_need sets *items and *arena to the room that dmrgo_dmrd_session_master_admit needs for these arguments, without a change to the handle. */
@@ -10210,10 +10189,6 @@ int dmrgo_ipsc_auth_key_verify(dmrgo_ipsc_auth_key_t *self, const uint8_t *p, si
 int dmrgo_ipsc_auth_new_key(const uint8_t k[20], dmrgo_ipsc_auth_key_t **out);
 /* Go: auth.ParseKey. ParseKey parses the hex key of a MOTOTRBO or DMRlink configuration: up to 40 hex digits, padded on the left with zeros to 20 octets as DMRlink does. */
 int dmrgo_ipsc_auth_parse_key(const char *s, size_t s_len, uint8_t out[20]);
-/* Go: session.ConfigError.Error. Error returns the message of e. */
-int dmrgo_ipsc_session_config_error_error(dmrgo_ipsc_session_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* dmrgo_ipsc_session_config_error_last sets *ok when the last error of this thread holds a session.ConfigError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
-int dmrgo_ipsc_session_config_error_last(dmrgo_ipsc_session_config_error_t *out, bool *ok);
 /* dmrgo_ipsc_session_master_free frees the handle. self may be NULL. */
 int dmrgo_ipsc_session_master_free(dmrgo_ipsc_session_master_t *self);
 /* dmrgo_ipsc_session_master_adopt_need sets *items and *arena to the room that dmrgo_ipsc_session_master_adopt needs for these arguments, without a change to the handle. */

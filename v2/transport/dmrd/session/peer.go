@@ -4,6 +4,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/digest"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
@@ -66,14 +67,15 @@ type Peer struct {
 	noCopy    noCopy
 }
 
-// NewPeer returns a Peer for cfg. It returns a *ConfigError for a Dialect
+// NewPeer returns a Peer for cfg. It returns dmrgo.ErrNilArgument for a nil
+// cfg and a *dmrgo.ConfigError for a Dialect
 // other than DialectMMDVM or DialectHBRP, a Config that is not an RPTC of
 // the dialect for ID, Options in DialectHBRP or longer than MaxOptions,
 // or a negative timer. It allocates the Peer and its copies of the
 // config.
 func NewPeer(cfg *PeerConfig) (*Peer, error) {
 	if cfg == nil {
-		return nil, errDialect
+		return nil, dmrgo.ErrNilArgument
 	}
 	switch cfg.Dialect {
 	case dmrd.DialectMMDVM:
@@ -100,8 +102,13 @@ func NewPeer(cfg *PeerConfig) (*Peer, error) {
 	default:
 		return nil, errDialect
 	}
-	if cfg.Retry < 0 || cfg.Timeout < 0 || cfg.Backoff < 0 {
-		return nil, errTimer
+	switch {
+	case cfg.Retry < 0:
+		return nil, errRetry
+	case cfg.Timeout < 0:
+		return nil, errTimeout
+	case cfg.Backoff < 0:
+		return nil, errBackoff
 	}
 	p := &Peer{
 		dialect: cfg.Dialect,

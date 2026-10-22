@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/session"
@@ -495,32 +496,56 @@ func TestBridgeKeepalive(t *testing.T) {
 func TestConfigErrors(t *testing.T) {
 	t.Parallel()
 
-	var ce *session.ConfigError
+	var ce *dmrgo.ConfigError
 	long := make([]byte, session.MaxOptions+1)
-	for i, cfg := range []*session.PeerConfig{
-		nil,
-		{Dialect: dmrd.DialectLocal, ID: 1, Config: mmdvmConfig(1)},
-		{Dialect: dmrd.DialectMMDVM, ID: 2, Config: mmdvmConfig(1)},
-		{Dialect: dmrd.DialectMMDVM, ID: 1, Config: hbrpConfig(1)},
-		{Dialect: dmrd.DialectHBRP, ID: 1, Config: mmdvmConfig(1)},
-		{Dialect: dmrd.DialectHBRP, ID: 2, Config: hbrpConfig(1)},
-		{Dialect: dmrd.DialectHBRP, ID: 1, Config: hbrpConfig(1), Options: []byte("a")},
-		{Dialect: dmrd.DialectMMDVM, ID: 1, Config: mmdvmConfig(1), Options: long},
-		{Dialect: dmrd.DialectMMDVM, ID: 1, Config: mmdvmConfig(1), Retry: -1},
+	for i, tc := range []struct {
+		cfg   session.PeerConfig
+		field string
+	}{
+		{session.PeerConfig{Dialect: dmrd.DialectLocal, ID: 1, Config: mmdvmConfig(1)}, "Dialect"},
+		{session.PeerConfig{Dialect: dmrd.DialectMMDVM, ID: 2, Config: mmdvmConfig(1)}, "Config"},
+		{session.PeerConfig{Dialect: dmrd.DialectMMDVM, ID: 1, Config: hbrpConfig(1)}, "Config"},
+		{session.PeerConfig{Dialect: dmrd.DialectHBRP, ID: 1, Config: mmdvmConfig(1)}, "Config"},
+		{session.PeerConfig{Dialect: dmrd.DialectHBRP, ID: 2, Config: hbrpConfig(1)}, "Config"},
+		{session.PeerConfig{Dialect: dmrd.DialectHBRP, ID: 1, Config: hbrpConfig(1), Options: []byte("a")}, "Options"},
+		{session.PeerConfig{Dialect: dmrd.DialectMMDVM, ID: 1, Config: mmdvmConfig(1), Options: long}, "Options"},
+		{session.PeerConfig{Dialect: dmrd.DialectMMDVM, ID: 1, Config: mmdvmConfig(1), Retry: -1}, "Retry"},
+		{session.PeerConfig{Dialect: dmrd.DialectMMDVM, ID: 1, Config: mmdvmConfig(1), Timeout: -1}, "Timeout"},
+		{session.PeerConfig{Dialect: dmrd.DialectMMDVM, ID: 1, Config: mmdvmConfig(1), Backoff: -1}, "Backoff"},
 	} {
-		if _, err := session.NewPeer(cfg); !errors.As(err, &ce) || ce.Error() == "" {
+		if _, err := session.NewPeer(&tc.cfg); !errors.As(err, &ce) || ce.Type != "dmrd/session" || ce.Field != tc.field {
 			t.Errorf("peer %d: %v", i, err)
 		}
 	}
-	for i, cfg := range []*session.MasterConfig{nil, {}, {Dialect: dmrd.DialectLocal}, {Dialect: dmrd.DialectMMDVM, Timeout: -1}} {
-		if _, err := session.NewMaster(cfg); !errors.As(err, &ce) {
+	for i, tc := range []struct {
+		cfg   session.MasterConfig
+		field string
+	}{
+		{session.MasterConfig{}, "Dialect"},
+		{session.MasterConfig{Dialect: dmrd.DialectLocal}, "Dialect"},
+		{session.MasterConfig{Dialect: dmrd.DialectMMDVM, Timeout: -1}, "Timeout"},
+		{session.MasterConfig{Dialect: dmrd.DialectMMDVM, LoginTimeout: -1}, "LoginTimeout"},
+	} {
+		if _, err := session.NewMaster(&tc.cfg); !errors.As(err, &ce) || ce.Field != tc.field {
 			t.Errorf("master %d: %v", i, err)
 		}
 	}
-	for i, cfg := range []*session.BridgeConfig{nil, {Keepalive: -1}, {Timeout: -1}} {
-		if _, err := session.NewBridge(cfg); !errors.As(err, &ce) {
+	for i, tc := range []struct {
+		cfg   session.BridgeConfig
+		field string
+	}{{session.BridgeConfig{Keepalive: -1}, "Keepalive"}, {session.BridgeConfig{Timeout: -1}, "Timeout"}} {
+		if _, err := session.NewBridge(&tc.cfg); !errors.As(err, &ce) || ce.Field != tc.field {
 			t.Errorf("bridge %d: %v", i, err)
 		}
+	}
+	if _, err := session.NewPeer(nil); !errors.Is(err, dmrgo.ErrNilArgument) {
+		t.Errorf("nil peer config: %v", err)
+	}
+	if _, err := session.NewMaster(nil); !errors.Is(err, dmrgo.ErrNilArgument) {
+		t.Errorf("nil master config: %v", err)
+	}
+	if _, err := session.NewBridge(nil); !errors.Is(err, dmrgo.ErrNilArgument) {
+		t.Errorf("nil bridge config: %v", err)
 	}
 }
 
