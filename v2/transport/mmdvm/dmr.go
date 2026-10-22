@@ -1,6 +1,7 @@
 package mmdvm
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 )
@@ -119,10 +120,11 @@ func (d *DMRData) Command() Command {
 // AppendBinary appends the payload to dst: nothing for a lost frame, else
 // the control octet, the burst and the RSSI when HasRSSI is set. Wrap it
 // with AppendFrame and Command. It does not allocate when dst has room for
-// DMRDataLen+2 more octets, and fails only for a nil d, with ErrCommand.
+// DMRDataLen+2 more octets, and fails only for a nil d, with
+// dmrgo.ErrNilReceiver.
 func (d *DMRData) AppendBinary(dst []byte) ([]byte, error) {
 	if d == nil {
-		return dst, ErrCommand
+		return dst, dmrgo.ErrNilReceiver
 	}
 	if d.Lost {
 		return dst, nil
@@ -166,11 +168,11 @@ func (d *DMRData) Hint() layer2.Hint {
 // for voice burst A, and N 1 to 5 for voice bursts B to F. It sets Slot
 // when h.Slot is Slot1 or Slot2, and Lost from h.SyncLost. It returns an
 // error, and changes nothing, for another kind, a position that is not A
-// to F, a KindData hint without a data type, a data type above 15, or a
-// nil d. A SyncLost hint needs no kind.
+// to F, a KindData hint without a data type, or a data type above 15, and
+// dmrgo.ErrNilReceiver for a nil d. A SyncLost hint needs no kind.
 func (d *DMRData) SetHint(h layer2.Hint) error {
 	if d == nil {
-		return errNilDMRData
+		return dmrgo.ErrNilReceiver
 	}
 	var c Control
 	switch {

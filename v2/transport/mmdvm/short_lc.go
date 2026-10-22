@@ -1,6 +1,7 @@
 package mmdvm
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
@@ -12,10 +13,11 @@ const cachFragmentBits = 17
 // NewDMRShortLC returns the CommandDMRShortLC payload that carries slc: its
 // BPTC coding, the 4 CACH fragments of 17 bits one after the other, as
 // MMDVMHost CDMRShortLC encodes it. It returns the errors of slc.Encode,
-// and an error for a nil slc (ETSI TS 102 361-1 clause 7.1.4, Annex B.2.3).
+// and dmrgo.ErrNilArgument for a nil slc (ETSI TS 102 361-1 clause 7.1.4,
+// Annex B.2.3).
 func NewDMRShortLC(slc *pdu.ShortLC) (DMRShortLC, error) {
 	if slc == nil {
-		return DMRShortLC{}, errNilShortLC
+		return DMRShortLC{}, dmrgo.ErrNilArgument
 	}
 	info, err := slc.Encode()
 	if err != nil {

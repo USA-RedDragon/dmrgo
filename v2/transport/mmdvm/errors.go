@@ -21,6 +21,4 @@ var (
 	errHintVoice    = errors.New("mmdvm: SetHint: voice position is not A to F")
 	errHintData     = errors.New("mmdvm: SetHint: no data type, or it does not fit in 4 bits")
 	errHintKind     = errors.New("mmdvm: SetHint: kind is not KindVoice or KindData")
-	errNilDMRData   = errors.New("mmdvm: nil *DMRData")
-	errNilShortLC   = errors.New("mmdvm: NewDMRShortLC: nil *pdu.ShortLC")
 )

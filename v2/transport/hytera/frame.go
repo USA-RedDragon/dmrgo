@@ -92,12 +92,12 @@ func DecodeFrame(p []byte) (Frame, error) {
 
 // AppendBinary appends the 72-octet frame to dst. It returns dst unchanged
 // and an error when Slot is not Slot1 or Slot2, ColorCode is above 15, or
-// Destination or Source does not fit in 24 bits. A nil f gives the error of
-// a bad Slot. It allocates only when dst has no room for FrameLen more
-// octets.
+// Destination or Source does not fit in 24 bits. A nil f gives
+// dmrgo.ErrNilReceiver. It allocates only when dst has no room for FrameLen
+// more octets.
 func (f *Frame) AppendBinary(dst []byte) ([]byte, error) {
 	if f == nil {
-		return dst, errSlot
+		return dst, dmrgo.ErrNilReceiver
 	}
 	var l frameLayout
 	switch f.Slot {

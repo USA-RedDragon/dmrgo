@@ -99,11 +99,11 @@ func DecodeBridge(p []byte) (Bridge, error) {
 // b.Signature as it is: sign the packet afterward with package auth. It
 // returns dst unchanged and an error for another version, when Data.Size
 // does not fit the version (0 or 53 for version 1, 0 or 55 for 4 and 5), or
-// with the errors of Data.AppendBinary. A nil b gives ErrCommand. It
-// allocates only to grow dst.
+// with the errors of Data.AppendBinary. A nil b gives
+// dmrgo.ErrNilReceiver. It allocates only to grow dst.
 func (b *Bridge) AppendBinary(dst []byte) ([]byte, error) {
 	if b == nil {
-		return dst, ErrCommand
+		return dst, dmrgo.ErrNilReceiver
 	}
 	d := b.Data
 	switch b.Version {
