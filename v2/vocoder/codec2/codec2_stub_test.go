@@ -17,7 +17,7 @@ func TestStubUnavailable(t *testing.T) {
 	if _, err := c.Encode(make([]int16, FrameSamples)); !errors.Is(err, ErrUnavailable) {
 		t.Errorf("Encode error = %v", err)
 	}
-	if _, err := c.Decode([9]byte{}); !errors.Is(err, ErrUnavailable) {
+	if _, err := c.Decode(nil, [9]byte{}); !errors.Is(err, ErrUnavailable) {
 		t.Errorf("Decode error = %v", err)
 	}
 	c.Reset()

@@ -45,8 +45,6 @@
 		dmrgo_bs_service_string;
 		dmrgo_bs_slot_state_string;
 		dmrgo_bs_state_string;
-		dmrgo_codec2_codec_append_decode;
-		dmrgo_codec2_codec_append_decode_need;
 		dmrgo_codec2_codec_close;
 		dmrgo_codec2_codec_decode;
 		dmrgo_codec2_codec_decode_mode;
@@ -345,8 +343,6 @@
 		dmrgo_dvsi_append_rate_dmr;
 		dmrgo_dvsi_append_reset;
 		dmrgo_dvsi_append_speech;
-		dmrgo_dvsi_codec_append_decode;
-		dmrgo_dvsi_codec_append_decode_need;
 		dmrgo_dvsi_codec_close;
 		dmrgo_dvsi_codec_decode;
 		dmrgo_dvsi_codec_decode_need;
@@ -356,6 +352,7 @@
 		dmrgo_dvsi_codec_free;
 		dmrgo_dvsi_codec_product;
 		dmrgo_dvsi_codec_product_need;
+		dmrgo_dvsi_codec_reset;
 		dmrgo_dvsi_codec_silence;
 		dmrgo_dvsi_codec_version;
 		dmrgo_dvsi_codec_version_need;
@@ -1534,17 +1531,6 @@
 		dmrgo_version;
 		dmrgo_vocoder_ambe_silence;
 		dmrgo_vocoder_ambe_silence_slot;
-		dmrgo_vocoder_append_decoder_append_decode;
-		dmrgo_vocoder_append_decoder_append_decode_need;
-		dmrgo_vocoder_append_decoder_close;
-		dmrgo_vocoder_append_decoder_decode;
-		dmrgo_vocoder_append_decoder_decode_need;
-		dmrgo_vocoder_append_decoder_encode;
-		dmrgo_vocoder_append_decoder_fid;
-		dmrgo_vocoder_append_decoder_frame_samples;
-		dmrgo_vocoder_append_decoder_free;
-		dmrgo_vocoder_append_decoder_from_vtable;
-		dmrgo_vocoder_append_decoder_silence;
 		dmrgo_vocoder_codec_close;
 		dmrgo_vocoder_codec_decode;
 		dmrgo_vocoder_codec_decode_need;
@@ -1553,6 +1539,7 @@
 		dmrgo_vocoder_codec_frame_samples;
 		dmrgo_vocoder_codec_free;
 		dmrgo_vocoder_codec_from_vtable;
+		dmrgo_vocoder_codec_reset;
 		dmrgo_vocoder_codec_silence;
 		dmrgo_vocoder_decode_ambe72;
 		dmrgo_vocoder_encode_ambe72;

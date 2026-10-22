@@ -35,7 +35,7 @@ type Config struct {
 	FID enums.FeatureSetID
 }
 
-var _ vocoder.AppendDecoder = (*Codec)(nil)
+var _ vocoder.Codec = (*Codec)(nil)
 
 func (cfg Config) withDefaults() (Config, error) {
 	if cfg.FID == 0 {

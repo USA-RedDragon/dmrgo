@@ -10,13 +10,13 @@ func TestAllocsAutoDecode(t *testing.T) {
 	dst := make([]int16, 0, FrameSamples)
 	i := 0
 	allocs := testing.AllocsPerRun(100, func() {
-		dst, _ = c.AppendDecode(dst[:0], slots[i%len(slots)])
+		dst, _ = c.Decode(dst[:0], slots[i%len(slots)])
 		i++
 		if i%7 == 0 {
 			c.Reset()
 		}
 	})
 	if allocs != 0 {
-		t.Errorf("AppendDecode in ModeAuto: %.1f allocations", allocs)
+		t.Errorf("Decode in ModeAuto: %.1f allocations", allocs)
 	}
 }

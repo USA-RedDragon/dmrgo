@@ -239,26 +239,12 @@ func (c *Codec) Encode(pcm []int16) ([9]byte, error) {
 	return slot, nil
 }
 
-// Decode decodes one 72-bit frame into FrameSamples samples. The bits after
-// the Codec2 frame are ignored, except that ModeAuto detects the mode from
-// them. It returns at most FrameSamples() samples. It allocates the samples;
-// AppendDecode does not.
-func (c *Codec) Decode(slot [9]byte) ([]int16, error) {
-	if c == nil {
-		return nil, dmrgo.ErrNilReceiver
-	}
-
-	if c.enc == nil {
-		return nil, ErrClosed
-	}
-	return c.AppendDecode(make([]int16, 0, FrameSamples), slot)
-}
-
-// AppendDecode decodes one 72-bit frame as Decode does, appends the
-// FrameSamples samples to dst and returns the extended slice. It does not
-// allocate when dst has room for FrameSamples more samples. On error it
-// returns dst unchanged.
-func (c *Codec) AppendDecode(dst []int16, slot [9]byte) ([]int16, error) {
+// Decode decodes one 72-bit frame, appends its FrameSamples samples to dst
+// and returns the extended slice. The bits after the Codec2 frame are
+// ignored, except that ModeAuto detects the mode from them. It returns
+// ErrClosed after Close, with dst unchanged. It does not allocate when dst
+// has room for FrameSamples more samples.
+func (c *Codec) Decode(dst []int16, slot [9]byte) ([]int16, error) {
 	if c == nil {
 		return dst, dmrgo.ErrNilReceiver
 	}

@@ -633,9 +633,6 @@ typedef struct dmrgo_trunk_auth_key_t dmrgo_trunk_auth_key_t;
 typedef struct dmrgo_trunk_auth_keys_t dmrgo_trunk_auth_keys_t;
 /* Go: vocoder.AMBEFrame. AMBEFrame holds the 49 information bits of one AMBE+2 vocoder frame, without the frame FEC, packed, the first bit in the most significant bit of byte 0. */
 typedef struct dmrgo_vocoder_ambe_frame_t dmrgo_vocoder_ambe_frame_t;
-/* Go: vocoder.AppendDecoder. AppendDecoder is a Codec that can decode into a buffer of the caller. */
-typedef struct dmrgo_vocoder_append_decoder_t dmrgo_vocoder_append_decoder_t;
-typedef struct dmrgo_vocoder_append_decoder_vtable_t dmrgo_vocoder_append_decoder_vtable_t;
 /* Go: vocoder.Codec. Codec converts between 8 kHz 16-bit mono PCM and the 72 raw on-air bits of one of the three vocoder frames of a DMR voice burst, packed, the first bit in the most significant bit of byte 0, as layer2.RawBurst.VoiceSlots returns them. */
 typedef struct dmrgo_vocoder_codec_t dmrgo_vocoder_codec_t;
 typedef struct dmrgo_vocoder_codec_vtable_t dmrgo_vocoder_codec_vtable_t;
@@ -5223,24 +5220,14 @@ struct dmrgo_trunk_auth_keys_t {
 	size_t entries_len;
 };
 
-struct dmrgo_vocoder_append_decoder_vtable_t {
-	uintptr_t user;
-	int (*append_decode)(uintptr_t user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
-	int (*close)(uintptr_t user);
-	int (*decode)(uintptr_t user, const uint8_t slot[9], int16_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
-	int (*encode)(uintptr_t user, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
-	int (*fid)(uintptr_t user, dmrgo_enums_feature_set_id_t *out);
-	int (*frame_samples)(uintptr_t user, int64_t *out);
-	int (*silence)(uintptr_t user, uint8_t out[9]);
-};
-
 struct dmrgo_vocoder_codec_vtable_t {
 	uintptr_t user;
 	int (*close)(uintptr_t user);
-	int (*decode)(uintptr_t user, const uint8_t slot[9], int16_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+	int (*decode)(uintptr_t user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
 	int (*encode)(uintptr_t user, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
 	int (*fid)(uintptr_t user, dmrgo_enums_feature_set_id_t *out);
 	int (*frame_samples)(uintptr_t user, int64_t *out);
+	int (*reset)(uintptr_t user);
 	int (*silence)(uintptr_t user, uint8_t out[9]);
 };
 
@@ -10733,42 +10720,22 @@ int dmrgo_trunk_auth_response(uint32_t challenge, const uint8_t key[16], uint32_
 int dmrgo_vocoder_ambe_silence(dmrgo_vocoder_ambe_frame_t *out);
 /* Go: vocoder.AMBESilenceSlot. AMBESilenceSlot returns the 72 on-air bits of the AMBE+2 silence frame, EncodeAMBE72(AMBESilence()), the slot B9E881526173002A6B. */
 int dmrgo_vocoder_ambe_silence_slot(uint8_t out[9]);
-/* dmrgo_vocoder_append_decoder_free frees the handle. self may be NULL. */
-int dmrgo_vocoder_append_decoder_free(dmrgo_vocoder_append_decoder_t *self);
-/* dmrgo_vocoder_append_decoder_append_decode_need sets *items and *arena to the room that dmrgo_vocoder_append_decoder_append_decode needs for these arguments, without a change to the handle. */
-int dmrgo_vocoder_append_decoder_append_decode_need(dmrgo_vocoder_append_decoder_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
-/* Go: vocoder.AppendDecoder.AppendDecode. AppendDecode decodes one 72-bit frame as Decode does, appends the FrameSamples samples to dst and returns the extended slice; dst needs room for FrameSamples() samples. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_vocoder_append_decoder_append_decode_need gives. */
-int dmrgo_vocoder_append_decoder_append_decode(dmrgo_vocoder_append_decoder_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
-/* Go: vocoder.AppendDecoder.Close. */
-int dmrgo_vocoder_append_decoder_close(dmrgo_vocoder_append_decoder_t *self);
-/* dmrgo_vocoder_append_decoder_decode_need sets *items and *arena to the room that dmrgo_vocoder_append_decoder_decode needs for these arguments, without a change to the handle. */
-int dmrgo_vocoder_append_decoder_decode_need(dmrgo_vocoder_append_decoder_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
-/* Go: vocoder.AppendDecoder.Decode. Decode decodes one 72-bit frame into FrameSamples samples. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_vocoder_append_decoder_decode_need gives. */
-int dmrgo_vocoder_append_decoder_decode(dmrgo_vocoder_append_decoder_t *self, const uint8_t slot[9], int16_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: vocoder.AppendDecoder.Encode. Encode encodes exactly FrameSamples samples into one 72-bit frame. */
-int dmrgo_vocoder_append_decoder_encode(dmrgo_vocoder_append_decoder_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
-/* Go: vocoder.AppendDecoder.FID. FID returns the Feature set ID to send in the Full LC of calls that use this codec. */
-int dmrgo_vocoder_append_decoder_fid(dmrgo_vocoder_append_decoder_t *self, dmrgo_enums_feature_set_id_t *out);
-/* Go: vocoder.AppendDecoder.FrameSamples. FrameSamples returns the number of PCM samples in one frame. */
-int dmrgo_vocoder_append_decoder_frame_samples(dmrgo_vocoder_append_decoder_t *self, int64_t *out);
-/* Go: vocoder.AppendDecoder.Silence. Silence returns a frame that decodes to silence, for padding the last burst of a call. */
-int dmrgo_vocoder_append_decoder_silence(dmrgo_vocoder_append_decoder_t *self, uint8_t out[9]);
-/* dmrgo_vocoder_append_decoder_from_vtable makes a AppendDecoder whose methods call the functions of vt with vt->user. */
-int dmrgo_vocoder_append_decoder_from_vtable(const dmrgo_vocoder_append_decoder_vtable_t *vt, dmrgo_vocoder_append_decoder_t **out);
 /* dmrgo_vocoder_codec_free frees the handle. self may be NULL. */
 int dmrgo_vocoder_codec_free(dmrgo_vocoder_codec_t *self);
 /* Go: vocoder.Codec.Close. */
 int dmrgo_vocoder_codec_close(dmrgo_vocoder_codec_t *self);
 /* dmrgo_vocoder_codec_decode_need sets *items and *arena to the room that dmrgo_vocoder_codec_decode needs for these arguments, without a change to the handle. */
 int dmrgo_vocoder_codec_decode_need(dmrgo_vocoder_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
-/* Go: vocoder.Codec.Decode. Decode decodes one 72-bit frame into FrameSamples samples. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_vocoder_codec_decode_need gives. */
-int dmrgo_vocoder_codec_decode(dmrgo_vocoder_codec_t *self, const uint8_t slot[9], int16_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: vocoder.Codec.Decode. Decode decodes one 72-bit frame, appends its FrameSamples samples to dst and returns the extended slice. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_vocoder_codec_decode_need gives. */
+int dmrgo_vocoder_codec_decode(dmrgo_vocoder_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
 /* Go: vocoder.Codec.Encode. Encode encodes exactly FrameSamples samples into one 72-bit frame. */
 int dmrgo_vocoder_codec_encode(dmrgo_vocoder_codec_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
 /* Go: vocoder.Codec.FID. FID returns the Feature set ID to send in the Full LC of calls that use this codec. */
 int dmrgo_vocoder_codec_fid(dmrgo_vocoder_codec_t *self, dmrgo_enums_feature_set_id_t *out);
 /* Go: vocoder.Codec.FrameSamples. FrameSamples returns the number of PCM samples in one frame. */
 int dmrgo_vocoder_codec_frame_samples(dmrgo_vocoder_codec_t *self, int64_t *out);
+/* Go: vocoder.Codec.Reset. Reset starts a new call: the decoder drops what it learned from the frames of the call before, such as a detected mode. */
+int dmrgo_vocoder_codec_reset(dmrgo_vocoder_codec_t *self);
 /* Go: vocoder.Codec.Silence. Silence returns a frame that decodes to silence, for padding the last burst of a call. */
 int dmrgo_vocoder_codec_silence(dmrgo_vocoder_codec_t *self, uint8_t out[9]);
 /* dmrgo_vocoder_codec_from_vtable makes a Codec whose methods call the functions of vt with vt->user. */
@@ -10787,16 +10754,12 @@ int dmrgo_vocoder_unpack_ambe_voice(const uint8_t data[19], dmrgo_vocoder_ambe_f
 int dmrgo_vocoder_unpack_ambe_voice_flags(const uint8_t data[19], dmrgo_vocoder_ambe_frame_t frames[3], bool bad[3]);
 /* dmrgo_codec2_codec_free frees the handle. self may be NULL. */
 int dmrgo_codec2_codec_free(dmrgo_codec2_codec_t *self);
-/* dmrgo_codec2_codec_append_decode_need sets *items and *arena to the room that dmrgo_codec2_codec_append_decode needs for these arguments, without a change to the handle. */
-int dmrgo_codec2_codec_append_decode_need(dmrgo_codec2_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
-/* Go: codec2.Codec.AppendDecode. AppendDecode decodes one 72-bit frame as Decode does, appends the FrameSamples samples to dst and returns the extended slice. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_codec2_codec_append_decode_need gives. */
-int dmrgo_codec2_codec_append_decode(dmrgo_codec2_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
 /* Go: codec2.Codec.Close. Close frees the libcodec2 states. */
 int dmrgo_codec2_codec_close(dmrgo_codec2_codec_t *self);
 /* dmrgo_codec2_codec_decode_need sets *items and *arena to the room that dmrgo_codec2_codec_decode needs for these arguments, without a change to the handle. */
 int dmrgo_codec2_codec_decode_need(dmrgo_codec2_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
-/* Go: codec2.Codec.Decode. Decode decodes one 72-bit frame into FrameSamples samples. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_codec2_codec_decode_need gives. */
-int dmrgo_codec2_codec_decode(dmrgo_codec2_codec_t *self, const uint8_t slot[9], int16_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: codec2.Codec.Decode. Decode decodes one 72-bit frame, appends its FrameSamples samples to dst and returns the extended slice. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_codec2_codec_decode_need gives. */
+int dmrgo_codec2_codec_decode(dmrgo_codec2_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
 /* Go: codec2.Codec.DecodeMode. DecodeMode returns the mode of the frames of the current call: the configured mode, or for ModeAuto the detected mode. */
 int dmrgo_codec2_codec_decode_mode(dmrgo_codec2_codec_t *self, dmrgo_codec2_mode_t *out);
 /* Go: codec2.Codec.Encode. Encode encodes exactly FrameSamples samples into one 72-bit frame, in Mode2400 for ModeAuto. */
@@ -10827,16 +10790,12 @@ int dmrgo_dvsi_append_reset(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_
 int dmrgo_dvsi_append_speech(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t channel, const int16_t *pcm, size_t pcm_len, bool parity);
 /* dmrgo_dvsi_codec_free frees the handle. self may be NULL. */
 int dmrgo_dvsi_codec_free(dmrgo_dvsi_codec_t *self);
-/* dmrgo_dvsi_codec_append_decode_need sets *items and *arena to the room that dmrgo_dvsi_codec_append_decode needs for these arguments, without a change to the handle. */
-int dmrgo_dvsi_codec_append_decode_need(dmrgo_dvsi_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
-/* Go: dvsi.Codec.AppendDecode. AppendDecode decodes one 72-bit frame as Decode does, appends the FrameSamples samples to dst and returns the extended slice; dst needs room for FrameSamples more samples. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dvsi_codec_append_decode_need gives. */
-int dmrgo_dvsi_codec_append_decode(dmrgo_dvsi_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
 /* Go: dvsi.Codec.Close. Close marks the Codec closed; later Encode and Decode calls return ErrClosed. */
 int dmrgo_dvsi_codec_close(dmrgo_dvsi_codec_t *self);
 /* dmrgo_dvsi_codec_decode_need sets *items and *arena to the room that dmrgo_dvsi_codec_decode needs for these arguments, without a change to the handle. */
 int dmrgo_dvsi_codec_decode_need(dmrgo_dvsi_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
-/* Go: dvsi.Codec.Decode. Decode has the chip decode one 72-bit frame with FEC into FrameSamples samples. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dvsi_codec_decode_need gives. */
-int dmrgo_dvsi_codec_decode(dmrgo_dvsi_codec_t *self, const uint8_t slot[9], int16_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: dvsi.Codec.Decode. Decode has the chip decode one 72-bit frame with FEC, appends the FrameSamples samples to dst and returns the extended slice. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dvsi_codec_decode_need gives. */
+int dmrgo_dvsi_codec_decode(dmrgo_dvsi_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
 /* Go: dvsi.Codec.Encode. Encode has the chip encode exactly FrameSamples samples into one 72-bit frame with FEC. */
 int dmrgo_dvsi_codec_encode(dmrgo_dvsi_codec_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
 /* Go: dvsi.Codec.FID. FID returns enums.FIDStandardized, the Feature set ID of calls with the ETSI standard vocoder, AMBE+2. */
@@ -10847,6 +10806,8 @@ int dmrgo_dvsi_codec_frame_samples(dmrgo_dvsi_codec_t *self, int64_t *out);
 int dmrgo_dvsi_codec_product_need(dmrgo_dvsi_codec_t *self, size_t *items, size_t *arena);
 /* Go: dvsi.Codec.Product. Product returns the product name that the chip reported in New, such as "AMBE3000R". It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dvsi_codec_product_need gives (DMRGO_DVSI_CODEC_PRODUCT_MAX_ITEMS items). */
 int dmrgo_dvsi_codec_product(dmrgo_dvsi_codec_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: dvsi.Codec.Reset. Reset does nothing: the Codec keeps no state between frames. */
+int dmrgo_dvsi_codec_reset(dmrgo_dvsi_codec_t *self);
 /* Go: dvsi.Codec.Silence. Silence returns vocoder.AMBESilenceSlot. */
 int dmrgo_dvsi_codec_silence(dmrgo_dvsi_codec_t *self, uint8_t out[9]);
 /* dmrgo_dvsi_codec_version_need sets *items and *arena to the room that dmrgo_dvsi_codec_version needs for these arguments, without a change to the handle. */

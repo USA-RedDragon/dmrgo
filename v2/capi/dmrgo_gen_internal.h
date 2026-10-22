@@ -13,40 +13,12 @@ static inline int dmrgo_trunk_authenticator_vtable_t__response(const dmrgo_trunk
 	return t->response(t->user, addr, challenge, response, ok);
 }
 
-static inline int dmrgo_vocoder_append_decoder_vtable_t__append_decode(const dmrgo_vocoder_append_decoder_vtable_t *t, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]) {
-	return t->append_decode(t->user, dst, dst_cap, dst_len, dst_need, slot);
-}
-
-static inline int dmrgo_vocoder_append_decoder_vtable_t__close(const dmrgo_vocoder_append_decoder_vtable_t *t) {
-	return t->close(t->user);
-}
-
-static inline int dmrgo_vocoder_append_decoder_vtable_t__decode(const dmrgo_vocoder_append_decoder_vtable_t *t, const uint8_t slot[9], int16_t *out, size_t out_cap, size_t *out_len, size_t *out_need) {
-	return t->decode(t->user, slot, out, out_cap, out_len, out_need);
-}
-
-static inline int dmrgo_vocoder_append_decoder_vtable_t__encode(const dmrgo_vocoder_append_decoder_vtable_t *t, const int16_t *pcm, size_t pcm_len, uint8_t out[9]) {
-	return t->encode(t->user, pcm, pcm_len, out);
-}
-
-static inline int dmrgo_vocoder_append_decoder_vtable_t__fid(const dmrgo_vocoder_append_decoder_vtable_t *t, dmrgo_enums_feature_set_id_t *out) {
-	return t->fid(t->user, out);
-}
-
-static inline int dmrgo_vocoder_append_decoder_vtable_t__frame_samples(const dmrgo_vocoder_append_decoder_vtable_t *t, int64_t *out) {
-	return t->frame_samples(t->user, out);
-}
-
-static inline int dmrgo_vocoder_append_decoder_vtable_t__silence(const dmrgo_vocoder_append_decoder_vtable_t *t, uint8_t out[9]) {
-	return t->silence(t->user, out);
-}
-
 static inline int dmrgo_vocoder_codec_vtable_t__close(const dmrgo_vocoder_codec_vtable_t *t) {
 	return t->close(t->user);
 }
 
-static inline int dmrgo_vocoder_codec_vtable_t__decode(const dmrgo_vocoder_codec_vtable_t *t, const uint8_t slot[9], int16_t *out, size_t out_cap, size_t *out_len, size_t *out_need) {
-	return t->decode(t->user, slot, out, out_cap, out_len, out_need);
+static inline int dmrgo_vocoder_codec_vtable_t__decode(const dmrgo_vocoder_codec_vtable_t *t, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]) {
+	return t->decode(t->user, dst, dst_cap, dst_len, dst_need, slot);
 }
 
 static inline int dmrgo_vocoder_codec_vtable_t__encode(const dmrgo_vocoder_codec_vtable_t *t, const int16_t *pcm, size_t pcm_len, uint8_t out[9]) {
@@ -59,6 +31,10 @@ static inline int dmrgo_vocoder_codec_vtable_t__fid(const dmrgo_vocoder_codec_vt
 
 static inline int dmrgo_vocoder_codec_vtable_t__frame_samples(const dmrgo_vocoder_codec_vtable_t *t, int64_t *out) {
 	return t->frame_samples(t->user, out);
+}
+
+static inline int dmrgo_vocoder_codec_vtable_t__reset(const dmrgo_vocoder_codec_vtable_t *t) {
+	return t->reset(t->user);
 }
 
 static inline int dmrgo_vocoder_codec_vtable_t__silence(const dmrgo_vocoder_codec_vtable_t *t, uint8_t out[9]) {

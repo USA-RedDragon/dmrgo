@@ -72,7 +72,7 @@ type Codec struct {
 	resetPad [350]byte
 }
 
-var _ vocoder.AppendDecoder = (*Codec)(nil)
+var _ vocoder.Codec = (*Codec)(nil)
 
 // New sets up the chip behind port for the DMR AMBE+2 rate and returns a
 // Codec for it. Unless cfg.NoReset, it first sends 350 zero bytes, which
@@ -358,23 +358,12 @@ func (c *Codec) Encode(pcm []int16) ([9]byte, error) {
 	}
 }
 
-// Decode has the chip decode one 72-bit frame with FEC into FrameSamples
-// samples. It returns at most FrameSamples samples. It allocates the
-// samples; AppendDecode does not.
-func (c *Codec) Decode(slot [9]byte) ([]int16, error) {
-	if c == nil {
-		return nil, dmrgo.ErrNilReceiver
-	}
-
-	return c.AppendDecode(make([]int16, 0, FrameSamples), slot)
-}
-
-// AppendDecode decodes one 72-bit frame as Decode does, appends the
-// FrameSamples samples to dst and returns the extended slice; dst needs
-// room for FrameSamples more samples. It returns
+// Decode has the chip decode one 72-bit frame with FEC, appends the
+// FrameSamples samples to dst and returns the extended slice. It returns
 // ErrClosed after Close, ErrTimeout when the chip does not reply, and the
-// errors of the Port, with dst unchanged. It allocates only to grow dst.
-func (c *Codec) AppendDecode(dst []int16, slot [9]byte) ([]int16, error) {
+// errors of the Port, with dst unchanged. It allocates only when dst has no
+// room for FrameSamples more samples.
+func (c *Codec) Decode(dst []int16, slot [9]byte) ([]int16, error) {
 	if c == nil {
 		return dst, dmrgo.ErrNilReceiver
 	}
@@ -404,6 +393,9 @@ func (c *Codec) AppendDecode(dst []int16, slot [9]byte) ([]int16, error) {
 		return out, nil
 	}
 }
+
+// Reset does nothing: the Codec keeps no state between frames.
+func (c *Codec) Reset() {}
 
 // Close marks the Codec closed; later Encode and Decode calls return
 // ErrClosed. It does not close the Port. Close is idempotent and returns

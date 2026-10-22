@@ -507,12 +507,12 @@ func codec2ABI(seed uint64) error {
 			slot[k] = byte(h.rng.IntN(256))
 		}
 		cs := (*C.uint8_t)(unsafe.Pointer(&slot[0]))
-		pcm, gerr := gc.AppendDecode(nil, slot)
+		pcm, gerr := gc.Decode(nil, slot)
 		want := make([]int16, len(pcm))
-		err := runAppend(h, "codec2.Codec.AppendDecode", want, gerr, func(*C.int16_t) int16 { return 0 },
-			func(it, a *C.size_t) C.int { return C.dmrgo_codec2_codec_append_decode_need(cc, cs, it, a) },
+		err := runAppend(h, "codec2.Codec.Decode", want, gerr, func(*C.int16_t) int16 { return 0 },
+			func(it, a *C.size_t) C.int { return C.dmrgo_codec2_codec_decode_need(cc, cs, it, a) },
 			func(d *C.int16_t, c C.size_t, nn, nd *C.size_t, _ unsafe.Pointer, _ C.size_t, _, _ *C.size_t) C.int {
-				return C.dmrgo_codec2_codec_append_decode(cc, d, c, nn, nd, cs)
+				return C.dmrgo_codec2_codec_decode(cc, d, c, nn, nd, cs)
 			})
 		if err != nil {
 			return err

@@ -222,11 +222,9 @@ func codec2Call(w io.Writer, captured *pdu.FullLinkControl) error {
 	defer func() { _ = dec.Close() }()
 	var out []int16
 	for _, s := range c.slots {
-		p, err := dec.Decode(s)
-		if err != nil {
+		if out, err = dec.Decode(out, s); err != nil {
 			return err
 		}
-		out = append(out, p...)
 	}
 	_, _ = fmt.Fprintf(w, "codec2 decode: %d samples, audible %t\n", len(out), rms(out) > 500)
 	return nil

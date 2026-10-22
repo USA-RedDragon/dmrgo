@@ -70,16 +70,8 @@ func (c *Codec) Encode([]int16) ([9]byte, error) {
 	return [9]byte{}, ErrUnavailable
 }
 
-// Decode returns ErrUnavailable. It returns at most FrameSamples() samples.
-func (c *Codec) Decode([9]byte) ([]int16, error) {
-	if c == nil {
-		return nil, ErrUnavailable
-	}
-	return nil, ErrUnavailable
-}
-
-// AppendDecode returns dst and ErrUnavailable.
-func (c *Codec) AppendDecode(dst []int16, _ [9]byte) ([]int16, error) {
+// Decode returns dst and ErrUnavailable.
+func (c *Codec) Decode(dst []int16, _ [9]byte) ([]int16, error) {
 	if c == nil {
 		return dst, ErrUnavailable
 	}

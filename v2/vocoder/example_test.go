@@ -20,13 +20,16 @@ func (lsbCodec) Encode(pcm []int16) ([9]byte, error) {
 	return s, nil
 }
 
-func (lsbCodec) Decode(slot [9]byte) ([]int16, error) {
-	pcm := make([]int16, 160)
+func (lsbCodec) Decode(dst []int16, slot [9]byte) ([]int16, error) {
+	n := len(dst)
+	dst = append(dst, make([]int16, 160)...)
 	for i := range 72 {
-		pcm[i] = int16(slot[i/8] >> (7 - i%8) & 1)
+		dst[n+i] = int16(slot[i/8] >> (7 - i%8) & 1)
 	}
-	return pcm, nil
+	return dst, nil
 }
+
+func (lsbCodec) Reset() {}
 
 func (lsbCodec) Silence() [9]byte        { return [9]byte{} }
 func (lsbCodec) FID() enums.FeatureSetID { return enums.FIDStandardized }
@@ -40,7 +43,7 @@ func ExampleCodec() {
 	pcm := make([]int16, c.FrameSamples())
 	pcm[0], pcm[2] = 1, 1
 	slot, _ := c.Encode(pcm)
-	out, _ := c.Decode(slot)
+	out, _ := c.Decode(nil, slot)
 	fmt.Println(c.FID(), out[:4])
 	// Output:
 	// Standardized FID [1 0 1 0]

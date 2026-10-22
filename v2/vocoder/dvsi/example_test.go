@@ -22,7 +22,7 @@ func ExampleNew() {
 		_ = conn.Close()
 		log.Fatal(err)
 	}
-	pcm, err := c.Decode(vocoder.AMBESilenceSlot())
+	pcm, err := c.Decode(nil, vocoder.AMBESilenceSlot())
 	fmt.Println(c.Product(), len(pcm), "samples", err)
 	_ = c.Close()
 	_ = conn.Close()
