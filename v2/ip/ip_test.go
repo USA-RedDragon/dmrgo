@@ -6,6 +6,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/appcapture"
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
@@ -137,6 +138,20 @@ func TestDecodeErrors(t *testing.T) {
 				t.Fatalf("Decode = %v, want %v", err, tt.want)
 			}
 		})
+	}
+}
+
+func TestNilArguments(t *testing.T) {
+	t.Parallel()
+
+	if out, err := ip.AppendIPv4([]byte("x"), nil); !errors.Is(err, dmrgo.ErrNilArgument) || string(out) != "x" {
+		t.Errorf("AppendIPv4: %q, %v", out, err)
+	}
+	if out, err := ip.AppendCompressed([]byte("x"), nil); !errors.Is(err, dmrgo.ErrNilArgument) || string(out) != "x" {
+		t.Errorf("AppendCompressed: %q, %v", out, err)
+	}
+	if out, err := ip.AppendICMPPacket([]byte("x"), nil); !errors.Is(err, dmrgo.ErrNilArgument) || string(out) != "x" {
+		t.Errorf("AppendICMPPacket: %q, %v", out, err)
 	}
 }
 

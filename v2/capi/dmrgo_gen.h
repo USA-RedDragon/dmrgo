@@ -5374,45 +5374,45 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_ARS_LENGTH (-155)
 #define DMRGO_ERR_ARS_SHORT (-156)
 #define DMRGO_ERR_BS_SLOT (-105)
-#define DMRGO_ERR_CODEC2_CLOSED (-201)
-#define DMRGO_ERR_CODEC2_FRAME_LENGTH (-202)
-#define DMRGO_ERR_CODEC2_UNAVAILABLE (-203)
-#define DMRGO_ERR_CODEC2_UNSUPPORTED_MODE (-204)
+#define DMRGO_ERR_CODEC2_CLOSED (-200)
+#define DMRGO_ERR_CODEC2_FRAME_LENGTH (-201)
+#define DMRGO_ERR_CODEC2_UNAVAILABLE (-202)
+#define DMRGO_ERR_CODEC2_UNSUPPORTED_MODE (-203)
 #define DMRGO_ERR_CONFIG (-100)
 #define DMRGO_ERR_CSBK_BUSY (-106)
 #define DMRGO_ERR_CSBK_NO_ADDRESSES (-107)
 #define DMRGO_ERR_DATA_BUSY (-108)
-#define DMRGO_ERR_DMRD_COMMAND (-176)
-#define DMRGO_ERR_DMRD_LENGTH (-177)
-#define DMRGO_ERR_DMRD_SHORT (-178)
-#define DMRGO_ERR_DMRD_SIGNATURE (-179)
-#define DMRGO_ERR_DMRD_TEXT (-180)
-#define DMRGO_ERR_DVSI_BITS (-205)
-#define DMRGO_ERR_DVSI_CHANNEL (-206)
-#define DMRGO_ERR_DVSI_CLOSED (-207)
-#define DMRGO_ERR_DVSI_FIELD (-208)
-#define DMRGO_ERR_DVSI_INCOMPLETE (-209)
-#define DMRGO_ERR_DVSI_LENGTH (-210)
-#define DMRGO_ERR_DVSI_PARITY (-211)
-#define DMRGO_ERR_DVSI_PORT (-212)
-#define DMRGO_ERR_DVSI_SAMPLES (-213)
-#define DMRGO_ERR_DVSI_START (-214)
-#define DMRGO_ERR_DVSI_STATUS (-215)
-#define DMRGO_ERR_DVSI_TIMEOUT (-216)
-#define DMRGO_ERR_DVSI_TYPE (-217)
+#define DMRGO_ERR_DMRD_COMMAND (-175)
+#define DMRGO_ERR_DMRD_LENGTH (-176)
+#define DMRGO_ERR_DMRD_SHORT (-177)
+#define DMRGO_ERR_DMRD_SIGNATURE (-178)
+#define DMRGO_ERR_DMRD_TEXT (-179)
+#define DMRGO_ERR_DVSI_BITS (-204)
+#define DMRGO_ERR_DVSI_CHANNEL (-205)
+#define DMRGO_ERR_DVSI_CLOSED (-206)
+#define DMRGO_ERR_DVSI_FIELD (-207)
+#define DMRGO_ERR_DVSI_INCOMPLETE (-208)
+#define DMRGO_ERR_DVSI_LENGTH (-209)
+#define DMRGO_ERR_DVSI_PARITY (-210)
+#define DMRGO_ERR_DVSI_PORT (-211)
+#define DMRGO_ERR_DVSI_SAMPLES (-212)
+#define DMRGO_ERR_DVSI_START (-213)
+#define DMRGO_ERR_DVSI_STATUS (-214)
+#define DMRGO_ERR_DVSI_TIMEOUT (-215)
+#define DMRGO_ERR_DVSI_TYPE (-216)
 #define DMRGO_ERR_FEC_UNCORRECTABLE (-109)
 #define DMRGO_ERR_FIELD_RANGE (-101)
 #define DMRGO_ERR_HDAP_LENGTH (-110)
 #define DMRGO_ERR_HDAP_SHORT (-111)
 #define DMRGO_ERR_HDAP_SIGNATURE (-112)
 #define DMRGO_ERR_HDAP_TEXT (-113)
-#define DMRGO_ERR_HYTERA_CODE (-181)
-#define DMRGO_ERR_HYTERA_LENGTH (-182)
-#define DMRGO_ERR_HYTERA_SHORT (-183)
-#define DMRGO_ERR_HYTERA_SIGNATURE (-184)
-#define DMRGO_ERR_IPSC_COMMAND (-185)
-#define DMRGO_ERR_IPSC_LENGTH (-186)
-#define DMRGO_ERR_IPSC_SHORT (-187)
+#define DMRGO_ERR_HYTERA_CODE (-180)
+#define DMRGO_ERR_HYTERA_LENGTH (-181)
+#define DMRGO_ERR_HYTERA_SHORT (-182)
+#define DMRGO_ERR_HYTERA_SIGNATURE (-183)
+#define DMRGO_ERR_IPSC_COMMAND (-184)
+#define DMRGO_ERR_IPSC_LENGTH (-185)
+#define DMRGO_ERR_IPSC_SHORT (-186)
 #define DMRGO_ERR_IP_CHECKSUM (-114)
 #define DMRGO_ERR_IP_FRAGMENT (-115)
 #define DMRGO_ERR_IP_LENGTH (-116)
@@ -5435,9 +5435,9 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_LRRP_SHORT (-158)
 #define DMRGO_ERR_LRRP_TOKEN (-159)
 #define DMRGO_ERR_LRRP_VARINT (-160)
-#define DMRGO_ERR_MMDVM_COMMAND (-188)
-#define DMRGO_ERR_MMDVM_LENGTH (-189)
-#define DMRGO_ERR_MMDVM_SHORT (-190)
+#define DMRGO_ERR_MMDVM_COMMAND (-187)
+#define DMRGO_ERR_MMDVM_LENGTH (-188)
+#define DMRGO_ERR_MMDVM_SHORT (-189)
 #define DMRGO_ERR_NIL_ARGUMENT (-102)
 #define DMRGO_ERR_NIL_RECEIVER (-103)
 #define DMRGO_ERR_NMEA_CHECKSUM (-163)
@@ -5472,27 +5472,26 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_SHORTDATA_SHORT (-169)
 #define DMRGO_ERR_SMS_FORMAT (-170)
 #define DMRGO_ERR_SMS_LENGTH (-171)
-#define DMRGO_ERR_SMS_NIL (-172)
-#define DMRGO_ERR_SMS_NOT_TEXT (-173)
-#define DMRGO_ERR_SMS_SHORT (-174)
-#define DMRGO_ERR_SMS_SIGNATURE (-175)
+#define DMRGO_ERR_SMS_NOT_TEXT (-172)
+#define DMRGO_ERR_SMS_SHORT (-173)
+#define DMRGO_ERR_SMS_SIGNATURE (-174)
 #define DMRGO_ERR_TMS_LENGTH (-161)
 #define DMRGO_ERR_TMS_SHORT (-162)
-#define DMRGO_ERR_TRUNK_BUSY (-191)
-#define DMRGO_ERR_TRUNK_CHANNEL_NUMBER (-192)
-#define DMRGO_ERR_TRUNK_NOT_ON_CONTROL (-193)
-#define DMRGO_ERR_TRUNK_NOT_REGISTERED (-194)
-#define DMRGO_ERR_TRUNK_NO_CALL (-195)
-#define DMRGO_ERR_TRUNK_PLAN_FULL (-196)
-#define DMRGO_ERR_TRUNK_STUNNED (-197)
-#define DMRGO_ERR_TRUNK_UDT_CHARACTER (-198)
-#define DMRGO_ERR_TRUNK_UDT_FORMAT (-199)
-#define DMRGO_ERR_TRUNK_UDT_LENGTH (-200)
-#define DMRGO_ERR_VOICE_BUSY (-218)
-#define DMRGO_ERR_VOICE_INTERRUPT_BUSY (-219)
-#define DMRGO_ERR_VOICE_NOT_ACTIVE (-220)
-#define DMRGO_ERR_VOICE_QUEUE_FULL (-221)
-#define DMRGO_ERR_VOICE_TIMED_OUT (-222)
+#define DMRGO_ERR_TRUNK_BUSY (-190)
+#define DMRGO_ERR_TRUNK_CHANNEL_NUMBER (-191)
+#define DMRGO_ERR_TRUNK_NOT_ON_CONTROL (-192)
+#define DMRGO_ERR_TRUNK_NOT_REGISTERED (-193)
+#define DMRGO_ERR_TRUNK_NO_CALL (-194)
+#define DMRGO_ERR_TRUNK_PLAN_FULL (-195)
+#define DMRGO_ERR_TRUNK_STUNNED (-196)
+#define DMRGO_ERR_TRUNK_UDT_CHARACTER (-197)
+#define DMRGO_ERR_TRUNK_UDT_FORMAT (-198)
+#define DMRGO_ERR_TRUNK_UDT_LENGTH (-199)
+#define DMRGO_ERR_VOICE_BUSY (-217)
+#define DMRGO_ERR_VOICE_INTERRUPT_BUSY (-218)
+#define DMRGO_ERR_VOICE_NOT_ACTIVE (-219)
+#define DMRGO_ERR_VOICE_QUEUE_FULL (-220)
+#define DMRGO_ERR_VOICE_TIMED_OUT (-221)
 #define DMRGO_ERR_ZERO_VALUE (-104)
 #define DMRGO_IPSCAUTH_KEY_SIGN_MAX_ITEMS (DMRGO_IPSCAUTH_TRAILER_LEN)
 #define DMRGO_IPSCSESSION_MASTER_SIGN_FOR_MAX_ITEMS (DMRGO_IPSCAUTH_TRAILER_LEN)
@@ -8005,7 +8004,7 @@ int dmrgo_data_sender_decoded_need(dmrgo_data_sender_t *self, dmrgo_duration_t n
 int dmrgo_data_sender_decoded(dmrgo_data_sender_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: data.Sender.Reset. Reset ends every message without outputs and forgets the sequence numbers of every link and the channel state. */
 int dmrgo_data_sender_reset(dmrgo_data_sender_t *self);
-/* Go: data.Sender.Send. Send starts the message m at now, or queues it in the sliding window. Send returns DMRGO_ERR_DATA_BUSY for any other message while a message is in progress, a DMRGO_ERR_CONFIG for a nil m or another header, a P_HEAD in m.Proprietary, or a confirmed message to a group, an error on a zero Sender, and the errors of packet.Builder.Segment, such as DMRGO_ERR_PACKET_NO_ROOM for a message of more than SenderConfig.MaxBlocks blocks and DMRGO_ERR_PACKET_RATE. m may be NULL. */
+/* Go: data.Sender.Send. Send starts the message m at now, or queues it in the sliding window. Send returns DMRGO_ERR_DATA_BUSY for any other message while a message is in progress, DMRGO_ERR_NIL_ARGUMENT for a nil m, a DMRGO_ERR_CONFIG for another header, a P_HEAD in m.Proprietary, or a confirmed message to a group, an error on a zero Sender, and the errors of packet.Builder.Segment, such as DMRGO_ERR_PACKET_NO_ROOM for a message of more than SenderConfig.MaxBlocks blocks and DMRGO_ERR_PACKET_RATE. m may be NULL. */
 int dmrgo_data_sender_send(dmrgo_data_sender_t *self, dmrgo_duration_t now, const dmrgo_data_message_t *m);
 /* Go: data.Sender.State. State returns the state of the Sender. */
 int dmrgo_data_sender_state(dmrgo_data_sender_t *self, dmrgo_data_sender_state_t *out);
@@ -8233,11 +8232,11 @@ int dmrgo_hdap_tmp_message_text_utf8(const dmrgo_hdap_tmp_message_t *self, uint8
 int dmrgo_hdap_tmp_opcode(const dmrgo_hdap_tmp_flags_t *f, dmrgo_hdap_tmp_type_t t, dmrgo_hdap_opcode_t *out);
 /* Go: hdap.TMPType.String. String returns the name of t. */
 int dmrgo_hdap_tmp_type_string(dmrgo_hdap_tmp_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: ip.AppendCompressed. AppendCompressed appends d to dst with a compressed UDP/IPv4 header. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when SAID or DAID does not fit, and an error for a nil d. d may be NULL. */
+/* Go: ip.AppendCompressed. AppendCompressed appends d to dst with a compressed UDP/IPv4 header. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when SAID or DAID does not fit, and DMRGO_ERR_NIL_ARGUMENT for a nil d. d may be NULL. */
 int dmrgo_ip_append_compressed(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_datagram_t *d);
-/* Go: ip.AppendICMPPacket. AppendICMPPacket appends c to dst as an IPv4 packet with an ICMP message, and computes both checksums. It returns dst unchanged and DMRGO_ERR_IP_NO_ICMP when RFC 1122 clause 3.2.2 forbids an ICMP error message about Original: an ICMP error message (Type 3, 4, 5, 11 or 12, or an ICMP Type that Original does not hold), a packet to the broadcast address 255.255.255.255 or a multicast address, a fragment other than the first, or a packet from an address that is not one host (0.0.0.0/8, 127.0.0.0/8, multicast or class E). c may be NULL. */
+/* Go: ip.AppendICMPPacket. AppendICMPPacket appends c to dst as an IPv4 packet with an ICMP message, and computes both checksums. It returns dst unchanged and DMRGO_ERR_IP_NO_ICMP when RFC 1122 clause 3.2.2 forbids an ICMP error message about Original: an ICMP error message (Type 3, 4, 5, 11 or 12, or an ICMP Type that Original does not hold), a packet to the broadcast address 255.255.255.255 or a multicast address, a fragment other than the first, or a packet from an address that is not one host (0.0.0.0/8, 127.0.0.0/8, multicast or class E). It returns DMRGO_ERR_NIL_ARGUMENT for a nil c, and another error when the packet is longer than 65535 octets. c may be NULL. */
 int dmrgo_ip_append_icmp_packet(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_icmp_packet_t *c);
-/* Go: ip.AppendIPv4. AppendIPv4 appends d to dst as an IPv4 packet with a UDP datagram, and computes both checksums. d may be NULL. */
+/* Go: ip.AppendIPv4. AppendIPv4 appends d to dst as an IPv4 packet with a UDP datagram, and computes both checksums. It returns dst unchanged and an error when the datagram is longer than 65515 octets, or DMRGO_ERR_NIL_ARGUMENT for a nil d. d may be NULL. */
 int dmrgo_ip_append_ipv4(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_datagram_t *d);
 /* Go: ip.CheckIPv4. CheckIPv4 returns the ICMP error message that a radio sends for the IPv4 packet data that it received for an accessory interface with the MTU mtu: ICMPBadHeader with the octet in error when the header is not a valid IPv4 header, or ICMPFragmentationNeeded when the packet is longer than mtu and has the DF flag set. */
 int dmrgo_ip_check_ipv4(const uint8_t *data, size_t data_len, int64_t mtu, dmrgo_ip_icmp_message_t *m, uint8_t *pointer, bool *ok);
@@ -9609,7 +9608,7 @@ int dmrgo_layer3_voice_service_options_of(uint8_t field, dmrgo_layer3_voice_serv
 int dmrgo_location_decoder_new(dmrgo_location_decoder_t **out);
 /* dmrgo_location_decoder_free frees the handle. self may be NULL. */
 int dmrgo_location_decoder_free(dmrgo_location_decoder_t *self);
-/* Go: location.Decoder.Decode. Decode returns the position in a data packet, with header h and user data data: an NMEA RMC sentence to UDP port 10110, an LRRP report with a position to UDP port 4001, or a Hytera HDAP location protocol message with a position to UDP port 3003. It returns DMRGO_ERR_LOCATION_NO_FIX for a packet in none of these formats, for a standard answer whose Result is not 0, for an HDAP position out of range and for a nil h, and the errors of the ip, lrrp, nmea and hytera packages for a message that does not decode. h may be NULL. */
+/* Go: location.Decoder.Decode. Decode returns the position in a data packet, with header h and user data data: an NMEA RMC sentence to UDP port 10110, an LRRP report with a position to UDP port 4001, or a Hytera HDAP location protocol message with a position to UDP port 3003. It returns DMRGO_ERR_LOCATION_NO_FIX for a packet in none of these formats, for a standard answer whose Result is not 0, for an HDAP position out of range, DMRGO_ERR_NIL_ARGUMENT for a nil h, and the errors of the ip, lrrp, nmea and hytera packages for a message that does not decode. h may be NULL. */
 int dmrgo_location_decoder_decode(dmrgo_location_decoder_t *self, const dmrgo_pdu_data_header_t *h, const uint8_t *data, size_t data_len, dmrgo_location_fix_t *out);
 /* Go: location.Format.String. String returns the name of f. */
 int dmrgo_location_format_string(dmrgo_location_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -9655,7 +9654,7 @@ int dmrgo_lrrp_circle2d_string(const dmrgo_lrrp_circle2d_t *self, char *out, siz
 int dmrgo_lrrp_circle3d_append_binary(const dmrgo_lrrp_circle3d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Circle3D.String. String returns the fields of s as text, for printing. */
 int dmrgo_lrrp_circle3d_string(const dmrgo_lrrp_circle3d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: lrrp.DecodeMessageInto. DecodeMessageInto decodes a Message from data. It returns DMRGO_ERR_LRRP_SHORT when data ends inside a field, DMRGO_ERR_LRRP_LENGTH when a length does not match the data and DMRGO_ERR_LRRP_VARINT for a number that does not fit its field. The call sets all of *m and does not read it. m may be NULL. */
+/* Go: lrrp.DecodeMessageInto. DecodeMessageInto decodes a Message from data. It returns DMRGO_ERR_LRRP_SHORT when data ends inside a field, DMRGO_ERR_LRRP_LENGTH when a length does not match the data and DMRGO_ERR_LRRP_VARINT for a number that does not fit its field. It returns DMRGO_ERR_NIL_ARGUMENT for a nil m. The call sets all of *m and does not read it. m may be NULL. */
 int dmrgo_lrrp_decode_message_into(dmrgo_lrrp_message_t *m, const uint8_t *data, size_t data_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: lrrp.DocumentID.String. String returns the name of d. */
 int dmrgo_lrrp_document_id_string(dmrgo_lrrp_document_id_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -9747,9 +9746,9 @@ int dmrgo_sms_anytone_text_set_text_utf8(dmrgo_sms_anytone_text_t *self, uint8_t
 int dmrgo_sms_anytone_text_string(const dmrgo_sms_anytone_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: sms.AnyToneText.TextUTF8. TextUTF8 appends Text, UTF-16LE text, to dst as UTF-8 and returns dst. */
 int dmrgo_sms_anytone_text_text_utf8(const dmrgo_sms_anytone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: sms.AppendPacket. AppendPacket appends the user data of t in its format to dst, sets h to the data header to send it with, and returns dst. It returns dst unchanged and DMRGO_ERR_SMS_FORMAT for an unknown format and for FormatDefinedData with DD format binary, which holds no text, or BCD, which Decode reads as FormatHytera, DMRGO_ERR_SMS_NIL for a nil t or h, or the errors of the packages that build the message. t and h may be NULL. */
+/* Go: sms.AppendPacket. AppendPacket appends the user data of t in its format to dst, sets h to the data header to send it with, and returns dst. It returns dst unchanged and DMRGO_ERR_SMS_FORMAT for an unknown format and for FormatDefinedData with DD format binary, which holds no text, or BCD, which Decode reads as FormatHytera, DMRGO_ERR_NIL_ARGUMENT for a nil t or h, or the errors of the packages that build the message. t and h may be NULL. */
 int dmrgo_sms_append_packet(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_sms_text_t *t, bool confirmed, dmrgo_sms_header_t *h);
-/* Go: sms.Decode. Decode appends the text of a data packet, with header h and user data data, to dst as UTF-8, and returns dst and the Text, whose Body points into dst. It returns DMRGO_ERR_SMS_NOT_TEXT for a packet in none of these formats and for defined data with DD format binary, the errors of the ip, tms and shortdata packages for a message that does not decode, and DMRGO_ERR_SMS_NIL for a nil h. h may be NULL. */
+/* Go: sms.Decode. Decode appends the text of a data packet, with header h and user data data, to dst as UTF-8, and returns dst and the Text, whose Body points into dst. It returns DMRGO_ERR_SMS_NOT_TEXT for a packet in none of these formats and for defined data with DD format binary, the errors of the ip, tms and shortdata packages for a message that does not decode, and DMRGO_ERR_NIL_ARGUMENT for a nil h. h may be NULL. */
 int dmrgo_sms_decode(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_pdu_data_header_t *h, const uint8_t *data, size_t data_len, dmrgo_sms_text_t *text, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: sms.DecodeAnyToneText. DecodeAnyToneText decodes an AnyToneText from data. It returns DMRGO_ERR_SMS_SHORT when data ends inside a field, DMRGO_ERR_SMS_LENGTH when a length does not match the data and DMRGO_ERR_SMS_SIGNATURE when a fixed field does not hold its value. */
 int dmrgo_sms_decode_anytone_text(const uint8_t *data, size_t data_len, dmrgo_sms_anytone_text_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
 	"github.com/USA-RedDragon/dmrgo/v2/sms"
 )
@@ -61,13 +62,13 @@ func TestNilArguments(t *testing.T) {
 	t.Parallel()
 
 	var h sms.Header
-	if out, err := sms.AppendPacket([]byte("x"), nil, false, &h); !errors.Is(err, sms.ErrNil) || string(out) != "x" {
+	if out, err := sms.AppendPacket([]byte("x"), nil, false, &h); !errors.Is(err, dmrgo.ErrNilArgument) || string(out) != "x" {
 		t.Errorf("nil Text: %q %v", out, err)
 	}
-	if _, err := sms.AppendPacket(nil, &sms.Text{Format: sms.FormatIP}, false, nil); !errors.Is(err, sms.ErrNil) {
+	if _, err := sms.AppendPacket(nil, &sms.Text{Format: sms.FormatIP}, false, nil); !errors.Is(err, dmrgo.ErrNilArgument) {
 		t.Errorf("nil Header: %v", err)
 	}
-	if _, _, err := sms.Decode(nil, nil, []byte{1}); !errors.Is(err, sms.ErrNil) {
+	if _, _, err := sms.Decode(nil, nil, []byte{1}); !errors.Is(err, dmrgo.ErrNilArgument) {
 		t.Errorf("Decode nil header: %v", err)
 	}
 }

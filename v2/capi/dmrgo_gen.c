@@ -155,106 +155,104 @@ const char *dmrgo__gen_strerror(int status) {
 	case -171:
 		return "sms: length does not match the payload";
 	case -172:
-		return "sms: nil argument";
-	case -173:
 		return "sms: packet is not a text message";
-	case -174:
+	case -173:
 		return "sms: payload too short";
-	case -175:
+	case -174:
 		return "sms: AnyTone text without its prefix";
-	case -176:
+	case -175:
 		return "dmrd: packet is not a message of this kind";
-	case -177:
+	case -176:
 		return "dmrd: packet length does not match its message";
-	case -178:
+	case -177:
 		return "dmrd: packet too short";
-	case -179:
+	case -178:
 		return "dmrd: packet does not have the octets of its message";
-	case -180:
+	case -179:
 		return "dmrd: number holds a character that is not a digit";
-	case -181:
+	case -180:
 		return "hytera: slot or color code field is not one of its values";
-	case -182:
+	case -181:
 		return "hytera: packet length does not match its message";
-	case -183:
+	case -182:
 		return "hytera: packet too short";
-	case -184:
+	case -183:
 		return "hytera: packet does not have the octets of its message";
-	case -185:
+	case -184:
 		return "ipsc: packet is not a message of this kind";
-	case -186:
+	case -185:
 		return "ipsc: packet length does not match its message";
-	case -187:
+	case -186:
 		return "ipsc: packet too short";
-	case -188:
+	case -187:
 		return "mmdvm: frame is not a message of this kind";
-	case -189:
+	case -188:
 		return "mmdvm: payload length does not match its message";
-	case -190:
+	case -189:
 		return "mmdvm: payload too short";
-	case -191:
+	case -190:
 		return "trunk: request in progress";
-	case -192:
+	case -191:
 		return "trunk: channel number out of range";
-	case -195:
-		return "trunk: no call";
-	case -193:
-		return "trunk: not on a TSCC";
 	case -194:
+		return "trunk: no call";
+	case -192:
+		return "trunk: not on a TSCC";
+	case -193:
 		return "trunk: not registered";
-	case -196:
+	case -195:
 		return "trunk: table full";
-	case -197:
+	case -196:
 		return "trunk: stunned";
-	case -198:
+	case -197:
 		return "trunk: character out of range for the UDT format";
-	case -199:
+	case -198:
 		return "trunk: appended data in another UDT format";
-	case -200:
+	case -199:
 		return "trunk: appended data length out of range";
-	case -201:
+	case -200:
 		return "codec2: codec is closed";
-	case -202:
+	case -201:
 		return "codec2: wrong number of samples";
-	case -203:
+	case -202:
 		return "codec2: built without libcodec2";
-	case -204:
+	case -203:
 		return "codec2: unsupported mode";
-	case -205:
+	case -204:
 		return "dvsi: bad number of channel bits";
-	case -206:
+	case -205:
 		return "dvsi: bad channel";
-	case -207:
+	case -206:
 		return "dvsi: codec is closed";
-	case -208:
+	case -207:
 		return "dvsi: bad field";
-	case -209:
+	case -208:
 		return "dvsi: incomplete packet";
-	case -210:
+	case -209:
 		return "dvsi: bad packet length";
-	case -211:
+	case -210:
 		return "dvsi: bad parity";
-	case -212:
+	case -211:
 		return "dvsi: port returned a bad byte count";
-	case -213:
+	case -212:
 		return "dvsi: bad number of samples";
-	case -214:
+	case -213:
 		return "dvsi: no start byte";
-	case -215:
+	case -214:
 		return "dvsi: device reported an error";
-	case -216:
+	case -215:
 		return "dvsi: device timed out";
-	case -217:
+	case -216:
 		return "dvsi: unknown packet type";
-	case -218:
+	case -217:
 		return "voice: transmission in progress";
-	case -219:
+	case -218:
 		return "voice: interrupt request in progress";
-	case -220:
+	case -219:
 		return "voice: no call takes voice";
-	case -221:
+	case -220:
 		return "voice: queue full";
-	case -222:
+	case -221:
 		return "voice: transmit timeout";
 	}
 	return "unknown status";

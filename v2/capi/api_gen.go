@@ -48862,108 +48862,106 @@ func errCode1(e error) C.int {
 		return -170
 	case g_sms.ErrLength:
 		return -171
-	case g_sms.ErrNil:
-		return -172
 	case g_sms.ErrNotText:
-		return -173
+		return -172
 	case g_sms.ErrShort:
-		return -174
+		return -173
 	case g_sms.ErrSignature:
-		return -175
+		return -174
 	case g_transport_dmrd.ErrCommand:
-		return -176
+		return -175
 	case g_transport_dmrd.ErrLength:
-		return -177
+		return -176
 	case g_transport_dmrd.ErrShort:
-		return -178
+		return -177
 	case g_transport_dmrd.ErrSignature:
-		return -179
+		return -178
 	case g_transport_dmrd.ErrText:
-		return -180
+		return -179
 	case g_transport_hytera.ErrCode:
-		return -181
+		return -180
 	case g_transport_hytera.ErrLength:
-		return -182
+		return -181
 	case g_transport_hytera.ErrShort:
-		return -183
+		return -182
 	case g_transport_hytera.ErrSignature:
-		return -184
+		return -183
 	case g_transport_ipsc.ErrCommand:
-		return -185
+		return -184
 	case g_transport_ipsc.ErrLength:
-		return -186
+		return -185
 	case g_transport_ipsc.ErrShort:
-		return -187
+		return -186
 	case g_transport_mmdvm.ErrCommand:
-		return -188
+		return -187
 	case g_transport_mmdvm.ErrLength:
-		return -189
+		return -188
 	case g_transport_mmdvm.ErrShort:
-		return -190
+		return -189
 	case g_trunk.ErrBusy:
-		return -191
+		return -190
 	case g_trunk.ErrChannelNumber:
-		return -192
+		return -191
 	case g_trunk.ErrNoCall:
-		return -195
-	case g_trunk.ErrNotOnControl:
-		return -193
-	case g_trunk.ErrNotRegistered:
 		return -194
+	case g_trunk.ErrNotOnControl:
+		return -192
+	case g_trunk.ErrNotRegistered:
+		return -193
 	case g_trunk.ErrPlanFull:
-		return -196
+		return -195
 	case g_trunk.ErrStunned:
-		return -197
+		return -196
 	case g_trunk.ErrUDTCharacter:
-		return -198
+		return -197
 	case g_trunk.ErrUDTFormat:
-		return -199
+		return -198
 	case g_trunk.ErrUDTLength:
-		return -200
+		return -199
 	case g_vocoder_codec2.ErrClosed:
-		return -201
+		return -200
 	case g_vocoder_codec2.ErrFrameLength:
-		return -202
+		return -201
 	case g_vocoder_codec2.ErrUnavailable:
-		return -203
+		return -202
 	case g_vocoder_codec2.ErrUnsupportedMode:
-		return -204
+		return -203
 	case g_vocoder_dvsi.ErrBits:
-		return -205
+		return -204
 	case g_vocoder_dvsi.ErrChannel:
-		return -206
+		return -205
 	case g_vocoder_dvsi.ErrClosed:
-		return -207
+		return -206
 	case g_vocoder_dvsi.ErrField:
-		return -208
+		return -207
 	case g_vocoder_dvsi.ErrIncomplete:
-		return -209
+		return -208
 	case g_vocoder_dvsi.ErrLength:
-		return -210
+		return -209
 	case g_vocoder_dvsi.ErrParity:
-		return -211
+		return -210
 	case g_vocoder_dvsi.ErrPort:
-		return -212
+		return -211
 	case g_vocoder_dvsi.ErrSamples:
-		return -213
+		return -212
 	case g_vocoder_dvsi.ErrStart:
-		return -214
+		return -213
 	case g_vocoder_dvsi.ErrStatus:
-		return -215
+		return -214
 	case g_vocoder_dvsi.ErrTimeout:
-		return -216
+		return -215
 	case g_vocoder_dvsi.ErrType:
-		return -217
+		return -216
 	case g_voice.ErrBusy:
-		return -218
+		return -217
 	case g_voice.ErrInterruptBusy:
-		return -219
+		return -218
 	case g_voice.ErrNotActive:
-		return -220
+		return -219
 	case g_voice.ErrQueueFull:
-		return -221
+		return -220
 	case g_voice.ErrTimedOut:
-		return -222
+		return -221
 	}
 	switch e.(type) {
 	case *g_dmrgo.ConfigError:
@@ -49167,106 +49165,104 @@ func codeErr(code C.int) error {
 	case -171:
 		return g_sms.ErrLength
 	case -172:
-		return g_sms.ErrNil
-	case -173:
 		return g_sms.ErrNotText
-	case -174:
+	case -173:
 		return g_sms.ErrShort
-	case -175:
+	case -174:
 		return g_sms.ErrSignature
-	case -176:
+	case -175:
 		return g_transport_dmrd.ErrCommand
-	case -177:
+	case -176:
 		return g_transport_dmrd.ErrLength
-	case -178:
+	case -177:
 		return g_transport_dmrd.ErrShort
-	case -179:
+	case -178:
 		return g_transport_dmrd.ErrSignature
-	case -180:
+	case -179:
 		return g_transport_dmrd.ErrText
-	case -181:
+	case -180:
 		return g_transport_hytera.ErrCode
-	case -182:
+	case -181:
 		return g_transport_hytera.ErrLength
-	case -183:
+	case -182:
 		return g_transport_hytera.ErrShort
-	case -184:
+	case -183:
 		return g_transport_hytera.ErrSignature
-	case -185:
+	case -184:
 		return g_transport_ipsc.ErrCommand
-	case -186:
+	case -185:
 		return g_transport_ipsc.ErrLength
-	case -187:
+	case -186:
 		return g_transport_ipsc.ErrShort
-	case -188:
+	case -187:
 		return g_transport_mmdvm.ErrCommand
-	case -189:
+	case -188:
 		return g_transport_mmdvm.ErrLength
-	case -190:
+	case -189:
 		return g_transport_mmdvm.ErrShort
-	case -191:
+	case -190:
 		return g_trunk.ErrBusy
-	case -192:
+	case -191:
 		return g_trunk.ErrChannelNumber
-	case -195:
-		return g_trunk.ErrNoCall
-	case -193:
-		return g_trunk.ErrNotOnControl
 	case -194:
+		return g_trunk.ErrNoCall
+	case -192:
+		return g_trunk.ErrNotOnControl
+	case -193:
 		return g_trunk.ErrNotRegistered
-	case -196:
+	case -195:
 		return g_trunk.ErrPlanFull
-	case -197:
+	case -196:
 		return g_trunk.ErrStunned
-	case -198:
+	case -197:
 		return g_trunk.ErrUDTCharacter
-	case -199:
+	case -198:
 		return g_trunk.ErrUDTFormat
-	case -200:
+	case -199:
 		return g_trunk.ErrUDTLength
-	case -201:
+	case -200:
 		return g_vocoder_codec2.ErrClosed
-	case -202:
+	case -201:
 		return g_vocoder_codec2.ErrFrameLength
-	case -203:
+	case -202:
 		return g_vocoder_codec2.ErrUnavailable
-	case -204:
+	case -203:
 		return g_vocoder_codec2.ErrUnsupportedMode
-	case -205:
+	case -204:
 		return g_vocoder_dvsi.ErrBits
-	case -206:
+	case -205:
 		return g_vocoder_dvsi.ErrChannel
-	case -207:
+	case -206:
 		return g_vocoder_dvsi.ErrClosed
-	case -208:
+	case -207:
 		return g_vocoder_dvsi.ErrField
-	case -209:
+	case -208:
 		return g_vocoder_dvsi.ErrIncomplete
-	case -210:
+	case -209:
 		return g_vocoder_dvsi.ErrLength
-	case -211:
+	case -210:
 		return g_vocoder_dvsi.ErrParity
-	case -212:
+	case -211:
 		return g_vocoder_dvsi.ErrPort
-	case -213:
+	case -212:
 		return g_vocoder_dvsi.ErrSamples
-	case -214:
+	case -213:
 		return g_vocoder_dvsi.ErrStart
-	case -215:
+	case -214:
 		return g_vocoder_dvsi.ErrStatus
-	case -216:
+	case -215:
 		return g_vocoder_dvsi.ErrTimeout
-	case -217:
+	case -216:
 		return g_vocoder_dvsi.ErrType
-	case -218:
+	case -217:
 		return g_voice.ErrBusy
-	case -219:
+	case -218:
 		return g_voice.ErrInterruptBusy
-	case -220:
+	case -219:
 		return g_voice.ErrNotActive
-	case -221:
+	case -220:
 		return g_voice.ErrQueueFull
-	case -222:
+	case -221:
 		return g_voice.ErrTimedOut
 	}
 	return codeError(code)

@@ -397,9 +397,9 @@ func (s *Sender) State() SenderState {
 // to the link of the messages in progress joins them while fewer than
 // Window are in progress: it goes in the window on air when the last
 // header of that window has not gone yet, else in the next window. Send
-// returns ErrBusy for any other message while a message is in progress, a
-// *dmrgo.ConfigError for a nil m or another header, a P_HEAD in
-// m.Proprietary, or a confirmed message to a group, an error on a zero
+// returns ErrBusy for any other message while a message is in progress,
+// dmrgo.ErrNilArgument for a nil m, a *dmrgo.ConfigError for another
+// header, a P_HEAD in m.Proprietary, or a confirmed message to a group, an error on a zero
 // Sender, and the errors of packet.Builder.Segment, such as
 // packet.ErrNoRoom for a message of more than SenderConfig.MaxBlocks blocks
 // and packet.ErrRate. (ETSI TS 102 361-3 clauses 5.4 and
@@ -412,7 +412,7 @@ func (s *Sender) Send(now time.Duration, m *Message) error {
 	case s.asm == nil:
 		return errZero
 	case m == nil:
-		return errHeader
+		return dmrgo.ErrNilArgument
 	case s.n >= len(s.slots) || s.n > 0 && !s.joins(m):
 		return ErrBusy
 	}

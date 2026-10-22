@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/hytera/hdap"
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
@@ -233,6 +234,9 @@ func TestNotLocation(t *testing.T) {
 	m.Data[22], m.Data[23] = 0x0f, 0xa7
 	if _, err := d.Decode(&m.Header, m.Data); err == nil {
 		t.Error("a datagram with a bad checksum decoded")
+	}
+	if _, err := d.Decode(nil, m.Data); !errors.Is(err, dmrgo.ErrNilArgument) {
+		t.Errorf("nil header: %v", err)
 	}
 	if location.FormatLRRP.String() != "LRRP" || location.Format(7).String() != "Format(7)" {
 		t.Error("names")

@@ -7,6 +7,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/mototrbo/lrrp"
 )
 
@@ -142,6 +143,9 @@ func TestErrors(t *testing.T) {
 		if err := lrrp.DecodeMessageInto(&m, tt.data); !errors.Is(err, tt.want) || m.Document != 0 {
 			t.Errorf("%x: %v, want %v", tt.data, err, tt.want)
 		}
+	}
+	if err := lrrp.DecodeMessageInto(nil, data); !errors.Is(err, dmrgo.ErrNilArgument) {
+		t.Errorf("nil m: %v", err)
 	}
 }
 
