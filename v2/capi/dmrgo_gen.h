@@ -10691,14 +10691,10 @@ int dmrgo_trunk_tscc_output_kind_string(dmrgo_trunk_tscc_output_kind_t self, cha
 int dmrgo_trunk_udt_get_header(dmrgo_trunk_udt_t *self, dmrgo_pdu_udt_header_t *out);
 /* Go: trunk.UDT.Header. Header is the C_UDTHD header. */
 int dmrgo_trunk_udt_set_header(dmrgo_trunk_udt_t *self, const dmrgo_pdu_udt_header_t *v);
-/* Go: trunk.UDT.Data. Data holds the Len octets of the appended blocks before the CRC of the last block. */
-int dmrgo_trunk_udt_get_data(dmrgo_trunk_udt_t *self, uint8_t out[48]);
-/* Go: trunk.UDT.Data. Data holds the Len octets of the appended blocks before the CRC of the last block. */
-int dmrgo_trunk_udt_set_data(dmrgo_trunk_udt_t *self, const uint8_t v[48]);
-/* Go: trunk.UDT.Len. Len is the number of octets of Data in use. */
-int dmrgo_trunk_udt_get_len(dmrgo_trunk_udt_t *self, int64_t *out);
-/* Go: trunk.UDT.Len. Len is the number of octets of Data in use. */
-int dmrgo_trunk_udt_set_len(dmrgo_trunk_udt_t *self, int64_t v);
+/* Go: trunk.UDT.Data. Data holds the 12*(Header.AppendedBlocks+1)-2 octets of the appended blocks before the CRC of the last block. */
+int dmrgo_trunk_udt_get_data(dmrgo_trunk_udt_t *self, uint8_t out[46]);
+/* Go: trunk.UDT.Data. Data holds the 12*(Header.AppendedBlocks+1)-2 octets of the appended blocks before the CRC of the last block. */
+int dmrgo_trunk_udt_set_data(dmrgo_trunk_udt_t *self, const uint8_t v[46]);
 /* Go: trunk.UDT.CRCOK. CRCOK reports whether the CRC of the last block checks. */
 int dmrgo_trunk_udt_get_crc_ok(dmrgo_trunk_udt_t *self, bool *out);
 /* Go: trunk.UDT.CRCOK. CRCOK reports whether the CRC of the last block checks. */
