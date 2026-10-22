@@ -25,6 +25,7 @@ func TestParseRejectsBadLayouts(t *testing.T) {
 		{"dec on bool", "// dmr:frame 1\ntype T struct {\n A bool " + tag("bit:0") + "\n B uint8 " + tag("bits:1-7") + "\n}", ""},
 		{"swap16 odd", "// dmr:frame 3\ntype T struct {\n A [3]byte " + tag("bits:0-23,packed,swap16") + "\n}", "even number"},
 		{"text in a frame", "// dmr:frame 2\ntype T struct {\n A [2]byte " + tag("bits:0-15,packed,text") + "\n}", "text requires dmr:view"},
+		{"nulzero without dec", "// dmr:frame 1\ntype T struct {\n A uint8 " + tag("bits:0-7,nulzero") + "\n}", "nulzero requires a dec"},
 		{"bias with dec", "// dmr:frame 2\ntype T struct {\n A uint8 " + tag("bits:0-15,dec,bias:1") + "\n}", "bias cannot be combined"},
 		{"two sizes without Size", "// dmr:frame 1 2\ntype T struct {\n A uint8 " + tag("bits:0-7") + "\n B uint8 " + tag("bits:8-15") + "\n}", "integer field Size"},
 		{"field crosses a size", "// dmr:frame 1 2\ntype T struct {\n Size uint8 " + tag("-") + "\n A uint16 " + tag("bits:0-15") + "\n}", "crosses the end of a 1-octet frame"},

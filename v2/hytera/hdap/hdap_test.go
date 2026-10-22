@@ -44,6 +44,33 @@ func TestRRSRegistration(t *testing.T) {
 	}
 }
 
+func TestLocationAnswerNul(t *testing.T) {
+	t.Parallel()
+
+	raw, err := hex.DecodeString("08a002003200000003002337fb0000410000000000000000000000004e353030332e383737314530313432362e353330320000000000007003")
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := hdap.DecodeMessage(raw)
+	if err != nil || !m.ChecksumOK() {
+		t.Fatalf("message: %v", err)
+	}
+	a, err := hdap.DecodeLPAnswer(m.Payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	g := &a.GPS
+	if a.RequestID != 3 || a.Radio != [4]byte{0, 0x23, 0x37, 0xfb} || !g.Valid() || g.Hour != 0 || g.Day != 0 || g.Month != 0 || g.Direction != 0 ||
+		g.Speed != [3]byte{} || math.Abs(g.Latitude()-(50+3.8771/60)) > 1e-9 || math.Abs(g.Longitude()-(14+26.5302/60)) > 1e-9 {
+		t.Fatalf("got %s", a.String())
+	}
+	bad := append([]byte{}, m.Payload...)
+	bad[10+1] = '1'
+	if _, err := hdap.DecodeLPAnswer(bad); !errors.Is(err, hdap.ErrText) {
+		t.Errorf("a NUL after a digit: %v", err)
+	}
+}
+
 func TestLocationAnswer(t *testing.T) {
 	t.Parallel()
 

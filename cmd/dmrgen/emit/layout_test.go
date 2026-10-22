@@ -91,6 +91,19 @@ func TestFrameTailFieldsNeedTheirSize(t *testing.T) {
 	)
 }
 
+func TestFrameDecimalNul(t *testing.T) {
+	t.Parallel()
+
+	out := mustGenerate(t, "// Fix is a test frame.\n// dmr:frame 3\ntype Fix struct {\n\tH uint8 `dmr:\"bits:0-15,dec,nulzero\"`\n\tM uint8 `dmr:\"bits:16-23,dec\"`\n}\n")
+	assertContains(t, out,
+		"if data[0] != 0 || data[1] != 0 {\n\t\tfor _i := 0; _i < 2; _i++ {",
+		"for _i := 2; _i < 3; _i++ {",
+	)
+	if strings.Contains(out, "if data[2] != 0 {") {
+		t.Error("a dec field without nulzero accepts NUL")
+	}
+}
+
 func TestFrameEncodings(t *testing.T) {
 	t.Parallel()
 

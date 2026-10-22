@@ -123,6 +123,10 @@ type Field struct {
 	// Swap16 marks a packed field whose octet pairs are swapped (swap16).
 	Swap16 bool
 
+	// NulZero marks a dec field that reads as 0 when all its octets are
+	// NUL (nulzero).
+	NulZero bool
+
 	// Text marks a packed field of a dmr:view that holds ASCII text padded
 	// with spaces (text).
 	Text bool
@@ -937,6 +941,8 @@ func applyFlag(f *Field, mod string) error {
 		f.Encoding = EncodingHex
 	case "swap16":
 		f.Swap16 = true
+	case "nulzero":
+		f.NulZero = true
 	case "text":
 		f.Text = true
 	case "tail":

@@ -1476,11 +1476,11 @@ struct dmrgo_fec_burst_fec_stats_t {
 struct dmrgo_hdap_gps_data_t {
 	/* Status is 'A' for a valid fix and 'V' for none. */
 	uint8_t status;
-	/* Hour, Minute and Second are the UTC time of the fix. */
+	/* Hour, Minute and Second are the UTC time of the fix. A radio that has no time sends NUL octets, which give 0. */
 	uint8_t hour;
 	uint8_t minute;
 	uint8_t second;
-	/* Day, Month and Year are the UTC date of the fix, Year in two digits. */
+	/* Day, Month and Year are the UTC date of the fix, Year in two digits. A radio that has no date sends NUL octets, which give 0. */
 	uint8_t day;
 	uint8_t month;
 	uint8_t year;
@@ -1496,9 +1496,9 @@ struct dmrgo_hdap_gps_data_t {
 	uint16_t longitude_degrees;
 	uint8_t longitude_minutes;
 	uint16_t longitude_fraction;
-	/* Speed is the speed in knots as ASCII text, such as "0.2". */
+	/* Speed is the speed in knots as ASCII text, such as "0.2", or NUL octets when the radio sends no speed. */
 	uint8_t speed[3];
-	/* Direction is the course in degrees from north, 0 to 359. */
+	/* Direction is the course in degrees from north, 0 to 359. A radio that sends no course sends NUL octets, which give 0. */
 	uint16_t direction;
 };
 
