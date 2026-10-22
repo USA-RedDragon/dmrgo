@@ -54,15 +54,15 @@ type NMEALong struct {
 // direction. Decode it from the first 10 octets of the LIP data. (ETSI TS
 // 102 361-4 clause B.3.10, ETSI TS 100 392-18-1 clause 6.2.1)
 type LIPShortReport struct {
-	PDUType        uint8                `dmr:"bits:0-1"`                  // PDU type, 0 for a short location report
-	TimeElapsed    uint8                `dmr:"bits:2-3"`                  // time since the position was found: 0 under 5 s, 1 under 5 min, 2 under 30 min, 3 unknown
-	Longitude      float64              `dmr:"bits:4-28,type:longitude"`  // degrees, -180 to 180
-	Latitude       float64              `dmr:"bits:29-52,type:latitude"`  // degrees, -90 to 90
-	PositionError  layer3.PositionError `dmr:"bits:53-55,delegate,noptr"` // position error
-	Velocity       uint8                `dmr:"bits:56-62"`                // horizontal velocity code, 127 for unknown
-	Direction      uint8                `dmr:"bits:63-66"`                // direction of travel in steps of 22.5 degrees, 0 is north
-	AdditionalType bool                 `dmr:"bit:67"`                    // AdditionalData is user defined, false for the reason for sending
-	AdditionalData uint8                `dmr:"bits:68-75"`                // reason for sending or user defined data
+	PDUType        uint8                   `dmr:"bits:0-1"`                  // PDU type, 0 for a short location report
+	TimeElapsed    uint8                   `dmr:"bits:2-3"`                  // time since the position was found: 0 under 5 s, 1 under 5 min, 2 under 30 min, 3 unknown
+	Longitude      float64                 `dmr:"bits:4-28,type:longitude"`  // degrees, -180 to 180
+	Latitude       float64                 `dmr:"bits:29-52,type:latitude"`  // degrees, -90 to 90
+	PositionError  layer3.PositionAccuracy `dmr:"bits:53-55,delegate,noptr"` // position error
+	Velocity       uint8                   `dmr:"bits:56-62"`                // horizontal velocity code, 127 for unknown
+	Direction      uint8                   `dmr:"bits:63-66"`                // direction of travel in steps of 22.5 degrees, 0 is north
+	AdditionalType bool                    `dmr:"bit:67"`                    // AdditionalData is user defined, false for the reason for sending
+	AdditionalData uint8                   `dmr:"bits:68-75"`                // reason for sending or user defined data
 }
 
 // USBDPollRequest is the Poll Request of the USBD polling service: the
@@ -82,12 +82,12 @@ type USBDPollRequest struct {
 // the Payload of a pdu.UnifiedSingleBlockData. (ETSI TS 102 361-4 V1.12.1
 // clause 6.6.11.3.2, Table 6.79)
 type USBDLIPResponse struct {
-	TimeElapsed   uint8                `dmr:"bits:0-1"`                  // time since the position was found, as in LIPShortReport
-	Longitude     float64              `dmr:"bits:2-26,type:longitude"`  // degrees, -180 to 180
-	Latitude      float64              `dmr:"bits:27-50,type:latitude"`  // degrees, -90 to 90
-	PositionError layer3.PositionError `dmr:"bits:51-53,delegate,noptr"` // position error
-	Velocity      uint8                `dmr:"bits:54-60"`                // horizontal velocity code, 127 for unknown
-	Direction     uint8                `dmr:"bits:61-64"`                // direction of travel in steps of 22.5 degrees
-	Reason        uint8                `dmr:"bits:65-67"`                // reason for sending, 0 for a response to an immediate request
-	HashedSource  uint8                `dmr:"bits:68-75"`                // 8-bit hash of the source address, as pdu.AddressHash
+	TimeElapsed   uint8                   `dmr:"bits:0-1"`                  // time since the position was found, as in LIPShortReport
+	Longitude     float64                 `dmr:"bits:2-26,type:longitude"`  // degrees, -180 to 180
+	Latitude      float64                 `dmr:"bits:27-50,type:latitude"`  // degrees, -90 to 90
+	PositionError layer3.PositionAccuracy `dmr:"bits:51-53,delegate,noptr"` // position error
+	Velocity      uint8                   `dmr:"bits:54-60"`                // horizontal velocity code, 127 for unknown
+	Direction     uint8                   `dmr:"bits:61-64"`                // direction of travel in steps of 22.5 degrees
+	Reason        uint8                   `dmr:"bits:65-67"`                // reason for sending, 0 for a response to an immediate request
+	HashedSource  uint8                   `dmr:"bits:68-75"`                // 8-bit hash of the source address, as pdu.AddressHash
 }

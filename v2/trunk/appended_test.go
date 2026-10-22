@@ -277,7 +277,7 @@ func TestAppended_NMEAIPLIP(t *testing.T) {
 	if ip, v6, err := a.IP(); err != nil || !v6 || ip != v6addr || a.Blocks != 2 {
 		t.Errorf("IPv6 %v %v %v", ip, v6, err)
 	}
-	r := trunk.LIPShortReport{TimeElapsed: 1, Longitude: -90, Latitude: 45, PositionError: layer3.PositionError(2), Velocity: 28, Direction: 4}
+	r := trunk.LIPShortReport{TimeElapsed: 1, Longitude: -90, Latitude: 45, PositionError: layer3.PositionAccuracy(2), Velocity: 28, Direction: 4}
 	p, err := r.Encode()
 	if err != nil {
 		t.Fatal(err)

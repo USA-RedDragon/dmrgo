@@ -1815,7 +1815,7 @@ documents:
       - section: "7.2.15"
         title: "Position Error"
         source_files:
-          - v2/layer3/position_error.go
+          - v2/layer3/position_accuracy.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer3
             names:

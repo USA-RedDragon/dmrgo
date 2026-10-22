@@ -813,8 +813,8 @@ typedef uint8_t dmrgo_pdu_slot_type_info_t;
 typedef uint8_t dmrgo_pdu_udt_opcode_t;
 /* Go: layer3.AdditionalInformationField. AdditionalInformationField is the 1-bit Additional Information Field: it tells whether the additional information of a PDU is valid (ETSI TS 102 361-2 clause 7.2.6, Table 7.15). */
 typedef uint8_t dmrgo_layer3_additional_information_field_t;
-/* Go: layer3.PositionError. PositionError is the 3-bit accuracy of a GPS position (ETSI TS 102 361-2 clause 7.2.15). */
-typedef uint8_t dmrgo_layer3_position_error_t;
+/* Go: layer3.PositionAccuracy. PositionAccuracy is the 3-bit Position_Error field: the accuracy of a GPS position (ETSI TS 102 361-2 clause 7.2.15). */
+typedef uint8_t dmrgo_layer3_position_accuracy_t;
 /* Go: layer3.SourceType. SourceType is the 1-bit Source Type: it tells whether a BS or an MS sent the PDU (ETSI TS 102 361-2 clause 7.2.5, Table 7.14). */
 typedef uint8_t dmrgo_layer3_source_type_t;
 /* Go: layer3.TalkerAliasDataFormat. TalkerAliasDataFormat is the 2-bit character encoding of a talker alias (ETSI TS 102 361-2 clause 7.2.18, Table 7.25). */
@@ -3101,7 +3101,7 @@ struct dmrgo_pdu_flc_gps_info_t {
 	/* reserved */
 	uint8_t reserved;
 	/* Position Error */
-	dmrgo_layer3_position_error_t position_error;
+	dmrgo_layer3_position_accuracy_t position_error;
 	/* degrees, -180 to 180 */
 	double longitude;
 	/* degrees, -90 to 90 */
@@ -4777,7 +4777,7 @@ struct dmrgo_trunk_lip_short_report_t {
 	/* degrees, -90 to 90 */
 	double latitude;
 	/* position error */
-	dmrgo_layer3_position_error_t position_error;
+	dmrgo_layer3_position_accuracy_t position_error;
 	/* horizontal velocity code, 127 for unknown */
 	uint8_t velocity;
 	/* direction of travel in steps of 22.5 degrees, 0 is north */
@@ -4796,7 +4796,7 @@ struct dmrgo_trunk_usbd_lip_response_t {
 	/* degrees, -90 to 90 */
 	double latitude;
 	/* position error */
-	dmrgo_layer3_position_error_t position_error;
+	dmrgo_layer3_position_accuracy_t position_error;
 	/* horizontal velocity code, 127 for unknown */
 	uint8_t velocity;
 	/* direction of travel in steps of 22.5 degrees */
@@ -6720,21 +6720,21 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: layer3.AdditionalInfoValid. the additional information is valid */
 #define DMRGO_LAYER3_ADDITIONAL_INFO_VALID ((dmrgo_layer3_additional_information_field_t)1)
 /* Go: layer3.PositionErrorUnknown. position error not known */
-#define DMRGO_LAYER3_POSITION_ERROR_UNKNOWN ((dmrgo_layer3_position_error_t)7)
+#define DMRGO_LAYER3_POSITION_ERROR_UNKNOWN ((dmrgo_layer3_position_accuracy_t)7)
 /* Go: layer3.PositionLessThan200KM. less than or equal to 200 km */
-#define DMRGO_LAYER3_POSITION_LESS_THAN200_KM ((dmrgo_layer3_position_error_t)5)
+#define DMRGO_LAYER3_POSITION_LESS_THAN200_KM ((dmrgo_layer3_position_accuracy_t)5)
 /* Go: layer3.PositionLessThan200M. less than 200 m */
-#define DMRGO_LAYER3_POSITION_LESS_THAN200M ((dmrgo_layer3_position_error_t)2)
+#define DMRGO_LAYER3_POSITION_LESS_THAN200M ((dmrgo_layer3_position_accuracy_t)2)
 /* Go: layer3.PositionLessThan20KM. less than 20 km */
-#define DMRGO_LAYER3_POSITION_LESS_THAN20_KM ((dmrgo_layer3_position_error_t)4)
+#define DMRGO_LAYER3_POSITION_LESS_THAN20_KM ((dmrgo_layer3_position_accuracy_t)4)
 /* Go: layer3.PositionLessThan20M. less than 20 m */
-#define DMRGO_LAYER3_POSITION_LESS_THAN20M ((dmrgo_layer3_position_error_t)1)
+#define DMRGO_LAYER3_POSITION_LESS_THAN20M ((dmrgo_layer3_position_accuracy_t)1)
 /* Go: layer3.PositionLessThan2KM. less than 2 km */
-#define DMRGO_LAYER3_POSITION_LESS_THAN2_KM ((dmrgo_layer3_position_error_t)3)
+#define DMRGO_LAYER3_POSITION_LESS_THAN2_KM ((dmrgo_layer3_position_accuracy_t)3)
 /* Go: layer3.PositionLessThan2M. less than 2 m */
-#define DMRGO_LAYER3_POSITION_LESS_THAN2M ((dmrgo_layer3_position_error_t)0)
+#define DMRGO_LAYER3_POSITION_LESS_THAN2M ((dmrgo_layer3_position_accuracy_t)0)
 /* Go: layer3.PositionMoreThan200KM. more than 200 km */
-#define DMRGO_LAYER3_POSITION_MORE_THAN200_KM ((dmrgo_layer3_position_error_t)6)
+#define DMRGO_LAYER3_POSITION_MORE_THAN200_KM ((dmrgo_layer3_position_accuracy_t)6)
 /* Go: layer3.SourceTypeBS. BS sourced */
 #define DMRGO_LAYER3_SOURCE_TYPE_BS ((dmrgo_layer3_source_type_t)0)
 /* Go: layer3.SourceTypeMS. MS sourced */
@@ -9500,8 +9500,8 @@ int dmrgo_layer3_polling_service_options_encode(const dmrgo_layer3_polling_servi
 int dmrgo_layer3_polling_service_options_field(const dmrgo_layer3_polling_service_options_t *self, uint8_t *out);
 /* Go: layer3.PollingServiceOptions.String. String returns the fields of s as text, for printing. */
 int dmrgo_layer3_polling_service_options_string(const dmrgo_layer3_polling_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: layer3.PositionError.String. */
-int dmrgo_layer3_position_error_string(dmrgo_layer3_position_error_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: layer3.PositionAccuracy.String. */
+int dmrgo_layer3_position_accuracy_string(dmrgo_layer3_position_accuracy_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.RegistrationServiceOptions.Encode. Encode encodes a RegistrationServiceOptions. */
 int dmrgo_layer3_registration_service_options_encode(const dmrgo_layer3_registration_service_options_t *self, uint8_t out[1]);
 /* Go: layer3.RegistrationServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */

@@ -136,10 +136,10 @@ type FLCUnitToUnit struct {
 // FLCGPSInfo is the GPS information (GPS_Info) Full LC payload (ETSI TS 102
 // 361-2 clause 7.1.1.3, Table 7.3).
 type FLCGPSInfo struct {
-	Reserved      uint8                `dmr:"bits:0-3"`                 // reserved
-	PositionError layer3.PositionError `dmr:"bits:4-6,delegate,noptr"`  // Position Error
-	Longitude     float64              `dmr:"bits:7-31,type:longitude"` // degrees, -180 to 180
-	Latitude      float64              `dmr:"bits:32-55,type:latitude"` // degrees, -90 to 90
+	Reserved      uint8                   `dmr:"bits:0-3"`                 // reserved
+	PositionError layer3.PositionAccuracy `dmr:"bits:4-6,delegate,noptr"`  // Position Error
+	Longitude     float64                 `dmr:"bits:7-31,type:longitude"` // degrees, -180 to 180
+	Latitude      float64                 `dmr:"bits:32-55,type:latitude"` // degrees, -90 to 90
 }
 
 // FLCTalkerAliasHeader is the talker alias header information

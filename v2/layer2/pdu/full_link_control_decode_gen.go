@@ -414,7 +414,7 @@ func (s *FLCUnitToUnit) String() string {
 func decodeFLCGPSInfo(data [7]byte) FLCGPSInfo {
 	var result FLCGPSInfo
 	result.Reserved = uint8(uint64(data[0]) >> 4)
-	result.PositionError = layer3.PositionError(uint64(data[0]) >> 1 & 0x7)
+	result.PositionError = layer3.PositionAccuracy(uint64(data[0]) >> 1 & 0x7)
 	result.Longitude = float64(int32(uint32((uint64(data[0])<<24|uint64(data[1])<<16|uint64(data[2])<<8|uint64(data[3]))&0x1FFFFFF)<<7)>>7) * 360.0 / (1 << 25)
 	result.Latitude = float64(int32(uint32(uint64(data[4])<<16|uint64(data[5])<<8|uint64(data[6]))<<8)>>8) * 180.0 / (1 << 24)
 	return result

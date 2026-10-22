@@ -10,7 +10,7 @@ func TestPositionError_Constants(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		value    PositionError
+		value    PositionAccuracy
 		expected uint8
 	}{
 		{"LessThan2M", PositionLessThan2M, 0},
@@ -38,7 +38,7 @@ func TestPositionError_String(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		value    PositionError
+		value    PositionAccuracy
 		contains string
 	}{
 		{PositionLessThan2M, "PositionLessThan2M"},
@@ -67,14 +67,14 @@ func TestPositionErrorString(t *testing.T) {
 	t.Parallel()
 
 	for i := uint8(0); i <= 7; i++ {
-		pe := PositionError(i)
+		pe := PositionAccuracy(i)
 		name := pe.String()
 		if name == "Unknown" {
 			t.Errorf("(%d).String() returned Unknown", i)
 		}
 	}
 
-	name := (PositionError(99)).String()
+	name := (PositionAccuracy(99)).String()
 	if name != "Unknown" {
 		t.Errorf("(99).String() = %q, want Unknown", name)
 	}
