@@ -1438,7 +1438,7 @@ struct dmrgo_data_sender_config_t {
 	dmrgo_layer2_sync_source_t source;
 	/* Access is the channel access policy. The zero value, DMRGO_ENUMS_ACCESS_POLITE_OWN_C_C, sends only while Channel last reported the channel idle (ETSI TS 102 361-1 clause 5.2.1.6). */
 	dmrgo_enums_access_t access;
-	/* Preambles is the number of preamble CSBKs before the header of each try, so that a radio in power save wakes up. 0 means DMRGO_DATA_DEFAULT_PREAMBLES, and a negative value sends none; at most DMRGO_DATA_MAX_PREAMBLES. */
+	/* Preambles is the number of preamble CSBKs before the header of each try, so that a radio in power save wakes up. A try that starts within DMRGO_DATA_DEFAULT_HANG of a response from the target sends at most one, as the target is still in the data call, and one Pre_CSBK is the ChanAuth PDU of data in channel hangtime (ETSI TS 102 361-2 clause 5.1.1.6.0). 0 means DMRGO_DATA_DEFAULT_PREAMBLES, and a negative value sends none; at most DMRGO_DATA_MAX_PREAMBLES. */
 	int64_t preambles;
 	/* IdleSearch is the time that a polite Sender waits for an idle channel before it holds off. 0 means DMRGO_DATA_DEFAULT_IDLE_SEARCH, and a negative value holds off at once. */
 	dmrgo_duration_t idle_search;
