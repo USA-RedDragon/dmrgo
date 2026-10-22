@@ -632,7 +632,7 @@ func (g *gen) errorsGo() {
 			typs = append(typs, e)
 		}
 	}
-	lines(&w, "func errCode(err error) C.int {", "for e := err; e != nil; {")
+	lines(&w, "func errCode1(e error) C.int {")
 	if len(vars) > 0 {
 		lines(&w, "switch e {")
 		for _, e := range vars {
@@ -647,10 +647,8 @@ func (g *gen) errorsGo() {
 		}
 		lines(&w, "}")
 	}
-	lines(&w, "switch u := e.(type) {", "case interface{ Unwrap() []error }:", "for _, x := range u.Unwrap() {",
-		"if c := errCode(x); c != C.DMRGO_ERR_OTHER {", "return c", "}", "}", "return C.DMRGO_ERR_OTHER",
-		"case interface{ Unwrap() error }:", "e = u.Unwrap()", "default:", "e = nil", "}", "}", "return C.DMRGO_ERR_OTHER", "}", "")
-	lines(&w, "func setErr(err error) C.int {", "code := setLast(errCode(err), err.Error())")
+	lines(&w, "return C.DMRGO_ERR_OTHER", "}", "")
+	lines(&w, "func setErr(err error) C.int {", "code := setLast(errCode(err), err.Error())", "setChain(err)")
 	if len(typs) > 0 {
 		g.imports["errors"] = true
 		lines(&w, "l := C.dmrgo__last()", "oc := &outc{arena: unsafe.Slice((*byte)(unsafe.Pointer(&l.arena[0])), len(l.arena))}")
@@ -677,9 +675,9 @@ func (g *gen) errorsGo() {
 	lines(&g.genC, "\t}", "\treturn \"unknown status\";", "}", "")
 	lines(&g.genC, "static _Thread_local dmrgo__last_t last;", "", "dmrgo__last_t *dmrgo__last(void) { return &last; }", "",
 		"void dmrgo__fail(int code) {", "\tconst char *m = dmrgo_strerror(code);", "\tsize_t n = strlen(m);", "\tlast.code = code;",
-		"\tlast.kind = 0;", "\tlast.msg_len = n;", "\tif (n > sizeof last.msg - 1)", "\t\tn = sizeof last.msg - 1;",
+		"\tlast.kind = 0;", "\tlast.chain_len = 0;", "\tlast.msg_len = n;", "\tif (n > sizeof last.msg - 1)", "\t\tn = sizeof last.msg - 1;",
 		"\tmemcpy(last.msg, m, n);", "\tlast.msg[n] = 0;", "}")
-	lines(&g.internal, "typedef struct dmrgo__last_t {", "\tint code;", "\tint kind;", "\tsize_t msg_len;", "\tchar msg[512];", "\tunion {", "\t\tchar none;")
+	lines(&g.internal, "typedef struct dmrgo__last_t {", "\tint code;", "\tint kind;", "\tint chain_len;", "\tint chain[16];", "\tsize_t msg_len;", "\tchar msg[512];", "\tunion {", "\t\tchar none;")
 	for i, e := range typs {
 		lines(&g.internal, fmt.Sprintf("\t\t%s k%d;", e.ti.c, i))
 	}

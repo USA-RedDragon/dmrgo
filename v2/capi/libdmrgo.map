@@ -619,6 +619,7 @@
 		dmrgo_ipsc_user_set_call;
 		dmrgo_ipsc_user_set_raw_burst;
 		dmrgo_last_error_code;
+		dmrgo_last_error_is;
 		dmrgo_last_error_message;
 		dmrgo_layer2_build_burst;
 		dmrgo_layer2_build_data_burst;

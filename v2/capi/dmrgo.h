@@ -85,6 +85,13 @@ int dmrgo_version(char *buf, size_t cap, size_t *len, size_t *need);
  * function returned on this thread, or DMRGO_OK. */
 int dmrgo_last_error_code(void);
 
+/* dmrgo_last_error_is sets *out when the last error that a function
+ * returned on this thread has the status code status, or wraps an error that
+ * has it, as Go errors.Is reports: a DMRGO_ERR_PACKET_MESSAGE_CRC error also
+ * is DMRGO_ERR_FEC_UNCORRECTABLE. It returns DMRGO_ERR_ARG for a NULL out
+ * and does not change the last error. */
+int dmrgo_last_error_is(int status, bool *out);
+
 /* dmrgo_last_error_message writes the message of the last error that a
  * function returned on this thread, as a result string. The library keeps
  * the first 511 bytes of a message; it returns DMRGO_ERR_SHORT when the
