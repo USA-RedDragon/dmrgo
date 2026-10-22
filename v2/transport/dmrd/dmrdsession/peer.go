@@ -147,7 +147,7 @@ func (p *Peer) Reset() {
 // DMRGateway does when it closes, and reports OutputDown with
 // ReasonStopped. The Peer then does nothing until Reset. It allocates
 // only when dst has no room for MaxOutputs outputs.
-func (p *Peer) Close(dst []Output) []Output {
+func (p *Peer) Close(now time.Duration, dst []Output) []Output {
 	if p == nil {
 		return dst
 	}

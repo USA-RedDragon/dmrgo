@@ -9928,13 +9928,13 @@ int dmrgo_dmrdsession_bridge_tick(dmrgo_dmrdsession_bridge_t *self, dmrgo_durati
 /* dmrgo_dmrdsession_master_free frees the handle. self may be NULL. */
 int dmrgo_dmrdsession_master_free(dmrgo_dmrdsession_master_t *self);
 /* dmrgo_dmrdsession_master_admit_need sets *items and *arena to the room that dmrgo_dmrdsession_master_admit needs for these arguments, without a change to the handle. */
-int dmrgo_dmrdsession_master_admit_need(dmrgo_dmrdsession_master_t *self, uint32_t salt, const uint8_t *password, size_t password_len, size_t *items, size_t *arena);
+int dmrgo_dmrdsession_master_admit_need(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, uint32_t salt, const uint8_t *password, size_t password_len, size_t *items, size_t *arena);
 /* Go: dmrdsession.Master.Admit. Admit answers the RPTL of OutputLogin with the salt, which the caller draws at random, and keeps the password of the repeater, of which it uses at most MaxPassword octets, to check the RPTK. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrdsession_master_admit_need gives. */
-int dmrgo_dmrdsession_master_admit(dmrgo_dmrdsession_master_t *self, uint32_t salt, const uint8_t *password, size_t password_len, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_dmrdsession_master_admit(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, uint32_t salt, const uint8_t *password, size_t password_len, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* dmrgo_dmrdsession_master_close_need sets *items and *arena to the room that dmrgo_dmrdsession_master_close needs for these arguments, without a change to the handle. */
-int dmrgo_dmrdsession_master_close_need(dmrgo_dmrdsession_master_t *self, size_t *items, size_t *arena);
+int dmrgo_dmrdsession_master_close_need(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: dmrdsession.Master.Close. Close ends a session with MSTCL, as a master that shuts down sends it, and OutputDown with ReasonStopped. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrdsession_master_close_need gives. */
-int dmrgo_dmrdsession_master_close(dmrgo_dmrdsession_master_t *self, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_dmrdsession_master_close(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: dmrdsession.Master.Deadline. Deadline returns the time at which the Master needs a Tick. */
 int dmrgo_dmrdsession_master_deadline(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t *at, bool *ok);
 /* Go: dmrdsession.Master.ID. ID returns the repeater ID of the session, from its last RPTL. */
@@ -9944,9 +9944,9 @@ int dmrgo_dmrdsession_master_packet_need(dmrgo_dmrdsession_master_t *self, dmrgo
 /* Go: dmrdsession.Master.Packet. Packet takes the packet b from the repeater. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrdsession_master_packet_need gives. */
 int dmrgo_dmrdsession_master_packet(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, const uint8_t *b, size_t b_len, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* dmrgo_dmrdsession_master_refuse_need sets *items and *arena to the room that dmrgo_dmrdsession_master_refuse needs for these arguments, without a change to the handle. */
-int dmrgo_dmrdsession_master_refuse_need(dmrgo_dmrdsession_master_t *self, size_t *items, size_t *arena);
+int dmrgo_dmrdsession_master_refuse_need(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: dmrdsession.Master.Refuse. Refuse answers the RPTL of OutputLogin, or ends a session, with MSTNAK and OutputDown with ReasonRefused. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrdsession_master_refuse_need gives. */
-int dmrgo_dmrdsession_master_refuse(dmrgo_dmrdsession_master_t *self, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_dmrdsession_master_refuse(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: dmrdsession.Master.Reset. Reset ends the session without a packet or an output. */
 int dmrgo_dmrdsession_master_reset(dmrgo_dmrdsession_master_t *self);
 /* dmrgo_dmrdsession_master_resume_need sets *items and *arena to the room that dmrgo_dmrdsession_master_resume needs for these arguments, without a change to the handle. */
@@ -9970,9 +9970,9 @@ int dmrgo_dmrdsession_output_kind_string(dmrgo_dmrdsession_output_kind_t self, c
 /* dmrgo_dmrdsession_peer_free frees the handle. self may be NULL. */
 int dmrgo_dmrdsession_peer_free(dmrgo_dmrdsession_peer_t *self);
 /* dmrgo_dmrdsession_peer_close_need sets *items and *arena to the room that dmrgo_dmrdsession_peer_close needs for these arguments, without a change to the handle. */
-int dmrgo_dmrdsession_peer_close_need(dmrgo_dmrdsession_peer_t *self, size_t *items, size_t *arena);
+int dmrgo_dmrdsession_peer_close_need(dmrgo_dmrdsession_peer_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: dmrdsession.Peer.Close. Close ends the session: it sends RPTCL when the Peer is logged in, as DMRGateway does when it closes, and reports OutputDown with ReasonStopped. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrdsession_peer_close_need gives. */
-int dmrgo_dmrdsession_peer_close(dmrgo_dmrdsession_peer_t *self, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_dmrdsession_peer_close(dmrgo_dmrdsession_peer_t *self, dmrgo_duration_t now, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: dmrdsession.Peer.Deadline. Deadline returns the time at which the Peer needs a Tick. */
 int dmrgo_dmrdsession_peer_deadline(dmrgo_dmrdsession_peer_t *self, dmrgo_duration_t *at, bool *ok);
 /* dmrgo_dmrdsession_peer_packet_need sets *items and *arena to the room that dmrgo_dmrdsession_peer_packet needs for these arguments, without a change to the handle. */
@@ -10120,9 +10120,9 @@ int dmrgo_ipscsession_master_adopt_with_key_need(dmrgo_ipscsession_master_t *sel
 /* Go: ipscsession.Master.AdoptWithKey. AdoptWithKey adopts the peer id as Adopt does, with key, its own key, as PacketWithKey registers a peer. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_master_adopt_with_key_need gives. */
 int dmrgo_ipscsession_master_adopt_with_key(dmrgo_ipscsession_master_t *self, dmrgo_duration_t now, const dmrgo_ipscsession_addr_t *from, uint32_t id, dmrgo_ipsc_mode_t mode, const dmrgo_ipsc_flags_t *flags, const uint8_t key[20], dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* dmrgo_ipscsession_master_close_need sets *items and *arena to the room that dmrgo_ipscsession_master_close needs for these arguments, without a change to the handle. */
-int dmrgo_ipscsession_master_close_need(dmrgo_ipscsession_master_t *self, size_t *items, size_t *arena);
+int dmrgo_ipscsession_master_close_need(dmrgo_ipscsession_master_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: ipscsession.Master.Close. Close sends a de-registration request to every registered peer, as DMRlink does when it shuts down, reports OutputDown with ReasonStopped for each, and stops the Master until Reset. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_master_close_need gives. */
-int dmrgo_ipscsession_master_close(dmrgo_ipscsession_master_t *self, dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_ipscsession_master_close(dmrgo_ipscsession_master_t *self, dmrgo_duration_t now, dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ipscsession.Master.Deadline. Deadline returns the time at which the Master needs a Tick: when the first peer times out. */
 int dmrgo_ipscsession_master_deadline(dmrgo_ipscsession_master_t *self, dmrgo_duration_t *at, bool *ok);
 /* Go: ipscsession.Master.MaxOutputOctets. MaxOutputOctets returns the most octets that the packets of the outputs of one call of the Master hold, where outputs that share a packet count it once: the packet that the call builds, the body of an OutputData and the de-registration of each peer. */
@@ -10166,9 +10166,9 @@ int dmrgo_ipscsession_output_kind_string(dmrgo_ipscsession_output_kind_t self, c
 /* dmrgo_ipscsession_peer_free frees the handle. self may be NULL. */
 int dmrgo_ipscsession_peer_free(dmrgo_ipscsession_peer_t *self);
 /* dmrgo_ipscsession_peer_close_need sets *items and *arena to the room that dmrgo_ipscsession_peer_close needs for these arguments, without a change to the handle. */
-int dmrgo_ipscsession_peer_close_need(dmrgo_ipscsession_peer_t *self, size_t *items, size_t *arena);
+int dmrgo_ipscsession_peer_close_need(dmrgo_ipscsession_peer_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: ipscsession.Peer.Close. Close sends a de-registration request to the master and to every peer whose link is up, as DMRlink does when it leaves, reports OutputDown with ReasonStopped for the master, and stops the Peer until Reset. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_peer_close_need gives. */
-int dmrgo_ipscsession_peer_close(dmrgo_ipscsession_peer_t *self, dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_ipscsession_peer_close(dmrgo_ipscsession_peer_t *self, dmrgo_duration_t now, dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ipscsession.Peer.Deadline. Deadline returns the time at which the Peer needs a Tick. */
 int dmrgo_ipscsession_peer_deadline(dmrgo_ipscsession_peer_t *self, dmrgo_duration_t *at, bool *ok);
 /* Go: ipscsession.Peer.Master. Master returns the ID of the master, which its registration reply gave. */
@@ -10178,9 +10178,9 @@ int dmrgo_ipscsession_peer_max_output_octets(dmrgo_ipscsession_peer_t *self, int
 /* Go: ipscsession.Peer.MaxOutputs. MaxOutputs returns the most outputs that one call of the Peer appends. */
 int dmrgo_ipscsession_peer_max_outputs(dmrgo_ipscsession_peer_t *self, int64_t *out);
 /* dmrgo_ipscsession_peer_packet_need sets *items and *arena to the room that dmrgo_ipscsession_peer_packet needs for these arguments, without a change to the handle. */
-int dmrgo_ipscsession_peer_packet_need(dmrgo_ipscsession_peer_t *self, const dmrgo_ipscsession_addr_t *from, const uint8_t *b, size_t b_len, size_t *items, size_t *arena);
+int dmrgo_ipscsession_peer_packet_need(dmrgo_ipscsession_peer_t *self, dmrgo_duration_t now, const dmrgo_ipscsession_addr_t *from, const uint8_t *b, size_t b_len, size_t *items, size_t *arena);
 /* Go: ipscsession.Peer.Packet. Packet takes the packet p from the address from. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_peer_packet_need gives. */
-int dmrgo_ipscsession_peer_packet(dmrgo_ipscsession_peer_t *self, const dmrgo_ipscsession_addr_t *from, const uint8_t *b, size_t b_len, dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_ipscsession_peer_packet(dmrgo_ipscsession_peer_t *self, dmrgo_duration_t now, const dmrgo_ipscsession_addr_t *from, const uint8_t *b, size_t b_len, dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ipscsession.Peer.PeerAt. PeerAt returns peer i of the list, or the zero PeerInfo when i is not below Peers. */
 int dmrgo_ipscsession_peer_peer_at(dmrgo_ipscsession_peer_t *self, int64_t i, dmrgo_ipscsession_peer_info_t *out);
 /* Go: ipscsession.Peer.Peers. Peers returns the number of other peers that the Peer knows from the peer list. */

@@ -155,7 +155,7 @@ func (m *Master) Resume(now time.Duration, id uint32, dst []Output) []Output {
 // uses at most MaxPassword octets, to check the RPTK. It does nothing in
 // another state. It allocates only when dst has no room for MaxOutputs
 // outputs.
-func (m *Master) Admit(salt uint32, password []byte, dst []Output) []Output {
+func (m *Master) Admit(now time.Duration, salt uint32, password []byte, dst []Output) []Output {
 	if m == nil {
 		return dst
 	}
@@ -172,7 +172,7 @@ func (m *Master) Admit(salt uint32, password []byte, dst []Output) []Output {
 // Refuse answers the RPTL of OutputLogin, or ends a session, with MSTNAK
 // and OutputDown with ReasonRefused. It does nothing in StateIdle. It
 // allocates only when dst has no room for MaxOutputs outputs.
-func (m *Master) Refuse(dst []Output) []Output {
+func (m *Master) Refuse(now time.Duration, dst []Output) []Output {
 	if m == nil {
 		return dst
 	}
@@ -187,7 +187,7 @@ func (m *Master) Refuse(dst []Output) []Output {
 // Close ends a session with MSTCL, as a master that shuts down sends it,
 // and OutputDown with ReasonStopped. It does nothing in StateIdle. It
 // allocates only when dst has no room for MaxOutputs outputs.
-func (m *Master) Close(dst []Output) []Output {
+func (m *Master) Close(now time.Duration, dst []Output) []Output {
 	if m == nil {
 		return dst
 	}

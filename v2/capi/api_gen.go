@@ -35884,7 +35884,7 @@ func dmrgo_dmrdsession_master_free(c_self *C.dmrgo_dmrdsession_master_t) (rc C.i
 }
 
 //export dmrgo_dmrdsession_master_admit_need
-func dmrgo_dmrdsession_master_admit_need(c_self *C.dmrgo_dmrdsession_master_t, c_salt C.uint32_t, c_password *C.uint8_t, c_password_len C.size_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_dmrdsession_master_admit_need(c_self *C.dmrgo_dmrdsession_master_t, c_now C.dmrgo_duration_t, c_salt C.uint32_t, c_password *C.uint8_t, c_password_len C.size_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_transport_dmrd_dmrdsession_Master(c_self)
 	if c_password == nil && c_password_len > 0 {
@@ -35904,7 +35904,7 @@ func dmrgo_dmrdsession_master_admit_need(c_self *C.dmrgo_dmrdsession_master_t, c
 }
 
 //export dmrgo_dmrdsession_master_admit
-func dmrgo_dmrdsession_master_admit(c_self *C.dmrgo_dmrdsession_master_t, c_salt C.uint32_t, c_password *C.uint8_t, c_password_len C.size_t, c_dst *C.dmrgo_dmrdsession_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_dmrdsession_master_admit(c_self *C.dmrgo_dmrdsession_master_t, c_now C.dmrgo_duration_t, c_salt C.uint32_t, c_password *C.uint8_t, c_password_len C.size_t, c_dst *C.dmrgo_dmrdsession_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if !lenOK(unsafe.Pointer(c_password), c_password_len, unsafe.Sizeof(*c_password)) {
@@ -35955,7 +35955,7 @@ func dmrgo_dmrdsession_master_admit(c_self *C.dmrgo_dmrdsession_master_t, c_salt
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.Admit(uint32(c_salt), a_password, a_dst)
+	r0 := h.v.Admit(time.Duration(c_now), uint32(c_salt), a_password, a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{
@@ -35991,7 +35991,7 @@ func dmrgo_dmrdsession_master_admit(c_self *C.dmrgo_dmrdsession_master_t, c_salt
 }
 
 //export dmrgo_dmrdsession_master_close_need
-func dmrgo_dmrdsession_master_close_need(c_self *C.dmrgo_dmrdsession_master_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_dmrdsession_master_close_need(c_self *C.dmrgo_dmrdsession_master_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_transport_dmrd_dmrdsession_Master(c_self)
 	_ = h
@@ -36005,7 +36005,7 @@ func dmrgo_dmrdsession_master_close_need(c_self *C.dmrgo_dmrdsession_master_t, c
 }
 
 //export dmrgo_dmrdsession_master_close
-func dmrgo_dmrdsession_master_close(c_self *C.dmrgo_dmrdsession_master_t, c_dst *C.dmrgo_dmrdsession_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_dmrdsession_master_close(c_self *C.dmrgo_dmrdsession_master_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_dmrdsession_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
@@ -36048,7 +36048,7 @@ func dmrgo_dmrdsession_master_close(c_self *C.dmrgo_dmrdsession_master_t, c_dst 
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.Close(a_dst)
+	r0 := h.v.Close(time.Duration(c_now), a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{
@@ -36227,7 +36227,7 @@ func dmrgo_dmrdsession_master_packet(c_self *C.dmrgo_dmrdsession_master_t, c_now
 }
 
 //export dmrgo_dmrdsession_master_refuse_need
-func dmrgo_dmrdsession_master_refuse_need(c_self *C.dmrgo_dmrdsession_master_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_dmrdsession_master_refuse_need(c_self *C.dmrgo_dmrdsession_master_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_transport_dmrd_dmrdsession_Master(c_self)
 	_ = h
@@ -36241,7 +36241,7 @@ func dmrgo_dmrdsession_master_refuse_need(c_self *C.dmrgo_dmrdsession_master_t, 
 }
 
 //export dmrgo_dmrdsession_master_refuse
-func dmrgo_dmrdsession_master_refuse(c_self *C.dmrgo_dmrdsession_master_t, c_dst *C.dmrgo_dmrdsession_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_dmrdsession_master_refuse(c_self *C.dmrgo_dmrdsession_master_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_dmrdsession_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
@@ -36284,7 +36284,7 @@ func dmrgo_dmrdsession_master_refuse(c_self *C.dmrgo_dmrdsession_master_t, c_dst
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.Refuse(a_dst)
+	r0 := h.v.Refuse(time.Duration(c_now), a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{
@@ -36660,7 +36660,7 @@ func dmrgo_dmrdsession_peer_free(c_self *C.dmrgo_dmrdsession_peer_t) (rc C.int) 
 }
 
 //export dmrgo_dmrdsession_peer_close_need
-func dmrgo_dmrdsession_peer_close_need(c_self *C.dmrgo_dmrdsession_peer_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_dmrdsession_peer_close_need(c_self *C.dmrgo_dmrdsession_peer_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_transport_dmrd_dmrdsession_Peer(c_self)
 	_ = h
@@ -36674,7 +36674,7 @@ func dmrgo_dmrdsession_peer_close_need(c_self *C.dmrgo_dmrdsession_peer_t, c_ite
 }
 
 //export dmrgo_dmrdsession_peer_close
-func dmrgo_dmrdsession_peer_close(c_self *C.dmrgo_dmrdsession_peer_t, c_dst *C.dmrgo_dmrdsession_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_dmrdsession_peer_close(c_self *C.dmrgo_dmrdsession_peer_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_dmrdsession_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
@@ -36717,7 +36717,7 @@ func dmrgo_dmrdsession_peer_close(c_self *C.dmrgo_dmrdsession_peer_t, c_dst *C.d
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.Close(a_dst)
+	r0 := h.v.Close(time.Duration(c_now), a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{
@@ -38622,7 +38622,7 @@ func dmrgo_ipscsession_master_adopt_with_key(c_self *C.dmrgo_ipscsession_master_
 }
 
 //export dmrgo_ipscsession_master_close_need
-func dmrgo_ipscsession_master_close_need(c_self *C.dmrgo_ipscsession_master_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_ipscsession_master_close_need(c_self *C.dmrgo_ipscsession_master_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_transport_ipsc_ipscsession_Master(c_self)
 	_ = h
@@ -38636,7 +38636,7 @@ func dmrgo_ipscsession_master_close_need(c_self *C.dmrgo_ipscsession_master_t, c
 }
 
 //export dmrgo_ipscsession_master_close
-func dmrgo_ipscsession_master_close(c_self *C.dmrgo_ipscsession_master_t, c_dst *C.dmrgo_ipscsession_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_ipscsession_master_close(c_self *C.dmrgo_ipscsession_master_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_ipscsession_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
@@ -38679,7 +38679,7 @@ func dmrgo_ipscsession_master_close(c_self *C.dmrgo_ipscsession_master_t, c_dst 
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.Close(a_dst)
+	r0 := h.v.Close(time.Duration(c_now), a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{
@@ -39346,7 +39346,7 @@ func dmrgo_ipscsession_peer_free(c_self *C.dmrgo_ipscsession_peer_t) (rc C.int) 
 }
 
 //export dmrgo_ipscsession_peer_close_need
-func dmrgo_ipscsession_peer_close_need(c_self *C.dmrgo_ipscsession_peer_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_ipscsession_peer_close_need(c_self *C.dmrgo_ipscsession_peer_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_transport_ipsc_ipscsession_Peer(c_self)
 	_ = h
@@ -39360,7 +39360,7 @@ func dmrgo_ipscsession_peer_close_need(c_self *C.dmrgo_ipscsession_peer_t, c_ite
 }
 
 //export dmrgo_ipscsession_peer_close
-func dmrgo_ipscsession_peer_close(c_self *C.dmrgo_ipscsession_peer_t, c_dst *C.dmrgo_ipscsession_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_ipscsession_peer_close(c_self *C.dmrgo_ipscsession_peer_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_ipscsession_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
@@ -39403,7 +39403,7 @@ func dmrgo_ipscsession_peer_close(c_self *C.dmrgo_ipscsession_peer_t, c_dst *C.d
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.Close(a_dst)
+	r0 := h.v.Close(time.Duration(c_now), a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{
@@ -39511,7 +39511,7 @@ func dmrgo_ipscsession_peer_max_outputs(c_self *C.dmrgo_ipscsession_peer_t, c_ou
 }
 
 //export dmrgo_ipscsession_peer_packet_need
-func dmrgo_ipscsession_peer_packet_need(c_self *C.dmrgo_ipscsession_peer_t, c_from *C.dmrgo_ipscsession_addr_t, c_b *C.uint8_t, c_b_len C.size_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_ipscsession_peer_packet_need(c_self *C.dmrgo_ipscsession_peer_t, c_now C.dmrgo_duration_t, c_from *C.dmrgo_ipscsession_addr_t, c_b *C.uint8_t, c_b_len C.size_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_transport_ipsc_ipscsession_Peer(c_self)
 	if c_from == nil {
@@ -39534,7 +39534,7 @@ func dmrgo_ipscsession_peer_packet_need(c_self *C.dmrgo_ipscsession_peer_t, c_fr
 }
 
 //export dmrgo_ipscsession_peer_packet
-func dmrgo_ipscsession_peer_packet(c_self *C.dmrgo_ipscsession_peer_t, c_from *C.dmrgo_ipscsession_addr_t, c_b *C.uint8_t, c_b_len C.size_t, c_dst *C.dmrgo_ipscsession_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_ipscsession_peer_packet(c_self *C.dmrgo_ipscsession_peer_t, c_now C.dmrgo_duration_t, c_from *C.dmrgo_ipscsession_addr_t, c_b *C.uint8_t, c_b_len C.size_t, c_dst *C.dmrgo_ipscsession_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if !lenOK(unsafe.Pointer(c_b), c_b_len, unsafe.Sizeof(*c_b)) {
@@ -39588,7 +39588,7 @@ func dmrgo_ipscsession_peer_packet(c_self *C.dmrgo_ipscsession_peer_t, c_from *C
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.Packet(*(*g_transport_ipsc_ipscsession.Addr)(unsafe.Pointer(c_from)), a_b, a_dst)
+	r0 := h.v.Packet(time.Duration(c_now), *(*g_transport_ipsc_ipscsession.Addr)(unsafe.Pointer(c_from)), a_b, a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{

@@ -183,6 +183,12 @@ linters:
         linters:
           - gocyclo
         text: \(\*Guard\)\.Apply
+      # Every method of a session machine that appends outputs takes the
+      # time now, also when it does not read it, so that all have one shape.
+      - path: v2/transport/(dmrd/dmrdsession|ipsc/ipscsession)/
+        linters:
+          - revive
+        text: "^unused-parameter: parameter 'now' seems to be unused"
       # jennifer's DSL is written with a dot import.
       - path: cmd/dmrgen/emit/
         linters:
