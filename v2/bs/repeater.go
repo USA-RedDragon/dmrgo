@@ -157,6 +157,7 @@ type slot struct {
 	hasCall   bool
 	service   Service
 	reason    Reason
+	rejected  bool
 	last      time.Duration
 	hangUntil time.Duration
 	hang      layer2.RawBurst
@@ -324,7 +325,7 @@ func (r *Repeater) Reset() {
 		s.rx.Reset()
 		s.tx.Reset()
 		s.jit.Reset()
-		s.state, s.hasCall, s.head, s.count, s.npend = SlotIdle, false, 0, 0, 0
+		s.state, s.hasCall, s.rejected, s.head, s.count, s.npend = SlotIdle, false, false, 0, 0, 0
 	}
 	r.keyed = r.mode == ModeNetwork
 	r.gen.Reset()
@@ -615,7 +616,9 @@ func (r *Repeater) Lost(now time.Duration, s enums.Slot, from Source, dst []Outp
 
 // Reject refuses the call on slot s, as for an access rule of the caller,
 // typically on its OutputCallStart. The Repeater drops the rest of the call
-// and gives it no hang time; OutputCallEnd follows when the call ends. It
+// and gives it no hang time. The next call of a method that takes dst
+// appends an OutputRejected with ReasonRejected, and OutputCallEnd follows
+// when the call ends. It
 // returns dmrgo.ErrZeroValue on a zero Repeater and ErrSlot for a slot
 // other than Slot1 or Slot2, and does nothing for a slot without a call.
 func (r *Repeater) Reject(s enums.Slot) error {
@@ -632,7 +635,7 @@ func (r *Repeater) Reject(s enums.Slot) error {
 	if sl.state == SlotVoice || sl.state == SlotData {
 		sl.tx.Reset()
 		sl.head, sl.count = 0, 0
-		sl.state, sl.reason = SlotRejected, ReasonRejected
+		sl.state, sl.reason, sl.rejected = SlotRejected, ReasonRejected, true
 	}
 	return nil
 }
@@ -741,6 +744,9 @@ func (r *Repeater) Deadline() (at time.Duration, ok bool) {
 		if t, tok := s.jit.Deadline(); tok {
 			d.add(t)
 		}
+		if s.rejected {
+			d.add(s.last)
+		}
 		switch s.state {
 		case SlotVoice, SlotData, SlotRejected, SlotPreamble:
 			d.add(s.last + r.lost)
@@ -771,6 +777,15 @@ func (d *deadline) add(t time.Duration) {
 func (r *Repeater) timers(now time.Duration, dst []Output) []Output {
 	for i := range r.slots {
 		s := &r.slots[i]
+		if s.rejected {
+			s.rejected = false
+			var o *Output
+			dst, o = appendOutput(dst, OutputRejected)
+			o.Slot, o.From, o.Reason = s.id, s.owner, ReasonRejected
+			if s.hasCall {
+				o.Call = s.call
+			}
+		}
 		dst = r.events(now, s, s.rx.Tick(now, r.ev[:0]), dst)
 		switch s.state {
 		case SlotVoice, SlotRejected:

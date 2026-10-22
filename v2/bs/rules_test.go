@@ -2,6 +2,7 @@ package bs_test
 
 import (
 	"errors"
+	"slices"
 	"testing"
 	"time"
 
@@ -176,12 +177,22 @@ func TestReject(t *testing.T) {
 	if err := r.Reject(enums.Slot1); err != nil {
 		t.Fatal(err)
 	}
+	if at, ok := r.Deadline(); !ok || at > 0 {
+		t.Errorf("deadline %v %v after Reject", at, ok)
+	}
 	got := run(t, r, in[1:], 2*time.Second)
 	if n := len(filter(got, bs.OutputBurst)); n != 0 {
 		t.Errorf("%d bursts of a rejected call", n)
 	}
+	rej := filter(got, bs.OutputRejected)
+	if len(rej) != 1 || rej[0].Reason != bs.ReasonRejected || rej[0].Slot != enums.Slot1 || rej[0].From.Peer != 4 || rej[0].Call.Source != 3191868 {
+		t.Errorf("rejected outputs %+v", rej)
+	}
 	if len(filter(got, bs.OutputCallEnd)) != 1 {
 		t.Error("no call end")
+	}
+	if i, j := slices.IndexFunc(got, func(o bs.Output) bool { return o.Kind == bs.OutputRejected }), slices.IndexFunc(got, func(o bs.Output) bool { return o.Kind == bs.OutputCallEnd }); i < 0 || i > j {
+		t.Errorf("OutputRejected at %d, OutputCallEnd at %d", i, j)
 	}
 	if !errors.Is(r.Reject(enums.SlotUnknown), bs.ErrSlot) {
 		t.Error("Reject of SlotUnknown")

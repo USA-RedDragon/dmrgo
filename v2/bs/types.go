@@ -131,9 +131,10 @@ const (
 	// Service, Call and End are set.
 	OutputCallEnd
 	// OutputRejected is a source that the Repeater refused. Slot, From and
-	// Reason are set. Call is set for ReasonTimeout, and for ReasonSlotBusy
-	// and ReasonHangTime when the refused burst carries the full LC, as a
-	// Voice LC header does; else it is zero.
+	// Reason are set. Call is set for ReasonTimeout, for ReasonRejected
+	// when the Repeater knows the call, and for ReasonSlotBusy and
+	// ReasonHangTime when the refused burst carries the full LC, as a Voice
+	// LC header does; else it is zero.
 	OutputRejected
 	// OutputKey is the wakeup of the transmitter in ModeRF.
 	OutputKey
