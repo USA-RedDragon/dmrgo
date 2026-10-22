@@ -3757,22 +3757,32 @@ struct dmrgo_nmea_rmc_t {
 	uint8_t second;
 	/* Millisecond is the fraction of Second, from the first three digits after the decimal point. */
 	uint16_t millisecond;
+	/* HasTime reports a UTC time field that is not empty. */
+	bool has_time;
 	/* Valid reports status A. Status V, a warning of the receiver, gives false. */
 	bool valid;
 	/* Latitude is in degrees, north positive. */
 	double latitude;
 	/* Longitude is in degrees, east positive. */
 	double longitude;
+	/* HasPosition reports a latitude and a longitude that are not empty. */
+	bool has_position;
 	/* Speed is the speed over ground in knots. */
 	double speed;
+	/* HasSpeed reports a speed field that is not empty. */
+	bool has_speed;
 	/* Course is the course over ground in degrees true. */
 	double course;
+	/* HasCourse reports a course field that is not empty. */
+	bool has_course;
 	/* Day is the day of the UTC date, 1 to 31. */
 	uint8_t day;
 	/* Month is the month of the UTC date, 1 to 12. */
 	uint8_t month;
 	/* Year is 2000 plus the two-digit year of the UTC date. */
 	uint16_t year;
+	/* HasDate reports a UTC date field that is not empty. */
+	bool has_date;
 	/* MagneticVariation is in degrees, east positive. */
 	double magnetic_variation;
 	/* Mode is the mode indicator of NMEA 0183 2.3 and later, such as 'A' for autonomous, or 0 when the sentence has none. */
