@@ -1178,11 +1178,14 @@ func (c *cb0) call(q0 int) (o0 *g_layer2_pdu.FullLinkControl) {
 	_ = oc
 	var code C.int
 	for {
+		c.r0 = *new(C.dmrgo_pdu_full_link_control_t)
 		c.ok0 = false
 		code = C.dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t__call(c.f, C.int64_t(q0), &c.r0, &c.ok0)
 		break
 	}
-	_ = code
+	if code != C.DMRGO_OK {
+		return
+	}
 	if c.ok0 {
 		c.g0 = in_layer2_pdu_FullLinkControl(&c.r0)
 		o0 = &c.g0
@@ -3884,10 +3887,14 @@ func (c *vt_trunk_Authenticator) Response(q0 uint32, q1 uint32) (o0 uint32, o1 b
 	_ = oc
 	var code C.int
 	for {
+		c.m0r0 = *new(C.uint32_t)
+		c.m0r1 = *new(C.bool)
 		code = C.dmrgo_trunk_authenticator_vtable_t__response(&c.t, C.uint32_t(q0), C.uint32_t(q1), &c.m0r0, &c.m0r1)
 		break
 	}
-	_ = code
+	if code != C.DMRGO_OK {
+		return
+	}
 	o0 = uint32(c.m0r0)
 	o1 = bool(c.m0r1)
 	return
@@ -4328,6 +4335,7 @@ func (c *vt_vocoder_Codec) Encode(q0 []int16) (o0 [9]byte, o1 error) {
 	_ = oc
 	var code C.int
 	for {
+		c.m2r0 = *new([9]C.uint8_t)
 		code = C.dmrgo_vocoder_codec_vtable_t__encode(&c.t, (*C.int16_t)(unsafe.Pointer(unsafe.SliceData(q0))), C.size_t(len(q0)), &c.m2r0[0])
 		break
 	}
@@ -4345,10 +4353,13 @@ func (c *vt_vocoder_Codec) FID() (o0 g_enums.FID) {
 	_ = oc
 	var code C.int
 	for {
+		c.m3r0 = *new(C.dmrgo_enums_fid_t)
 		code = C.dmrgo_vocoder_codec_vtable_t__fid(&c.t, &c.m3r0)
 		break
 	}
-	_ = code
+	if code != C.DMRGO_OK {
+		return
+	}
 	o0 = g_enums.FID(c.m3r0)
 	return
 }
@@ -4358,10 +4369,13 @@ func (c *vt_vocoder_Codec) FrameSamples() (o0 int) {
 	_ = oc
 	var code C.int
 	for {
+		c.m4r0 = *new(C.int64_t)
 		code = C.dmrgo_vocoder_codec_vtable_t__frame_samples(&c.t, &c.m4r0)
 		break
 	}
-	_ = code
+	if code != C.DMRGO_OK {
+		return
+	}
 	o0 = int(c.m4r0)
 	return
 }
@@ -4371,10 +4385,13 @@ func (c *vt_vocoder_Codec) Silence() (o0 [9]byte) {
 	_ = oc
 	var code C.int
 	for {
+		c.m5r0 = *new([9]C.uint8_t)
 		code = C.dmrgo_vocoder_codec_vtable_t__silence(&c.t, &c.m5r0[0])
 		break
 	}
-	_ = code
+	if code != C.DMRGO_OK {
+		return
+	}
 	c.m5g0 = *(*[9]byte)(unsafe.Pointer(&c.m5r0))
 	o0 = c.m5g0
 	return
@@ -4388,7 +4405,9 @@ func (c *vt_vocoder_Codec) Reset() {
 		code = C.dmrgo_vocoder_codec_vtable_t__reset(&c.t)
 		break
 	}
-	_ = code
+	if code != C.DMRGO_OK {
+		return
+	}
 	return
 }
 
@@ -4444,6 +4463,7 @@ func (c *vt_vocoder_dvsi_Port) Read(q0 []byte) (o0 int, o1 error) {
 	_ = oc
 	var code C.int
 	for {
+		c.m0r0 = *new(C.int64_t)
 		code = C.dmrgo_dvsi_port_vtable_t__read(&c.t, (*C.uint8_t)(unsafe.Pointer(unsafe.SliceData(q0))), C.size_t(len(q0)), &c.m0r0)
 		break
 	}
@@ -4460,6 +4480,7 @@ func (c *vt_vocoder_dvsi_Port) Write(q0 []byte) (o0 int, o1 error) {
 	_ = oc
 	var code C.int
 	for {
+		c.m1r0 = *new(C.int64_t)
 		code = C.dmrgo_dvsi_port_vtable_t__write(&c.t, (*C.uint8_t)(unsafe.Pointer(unsafe.SliceData(q0))), C.size_t(len(q0)), &c.m1r0)
 		break
 	}
