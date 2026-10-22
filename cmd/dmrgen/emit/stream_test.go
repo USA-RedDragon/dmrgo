@@ -49,7 +49,9 @@ func TestStreamCode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	parse.SetUnexportedDecode(pdus)
+	if err := parse.SetUnexportedDecode(pdus); err != nil {
+		t.Fatal(err)
+	}
 	out, err := render(t, pdus)
 	if err != nil {
 		t.Fatal(err)

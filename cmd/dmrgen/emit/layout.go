@@ -75,7 +75,7 @@ type sizeGroup struct {
 func sizeGroups(pdu parse.PDUStruct) []sizeGroup {
 	var out []sizeGroup
 	for _, field := range pdu.Fields {
-		if field.Skip || field.NoEncode || field.Kind == parse.FieldDispatch {
+		if field.Skip || field.NoEncode {
 			continue
 		}
 		size := 0
