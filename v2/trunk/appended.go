@@ -232,7 +232,7 @@ func (a *Appended) SetDigits(digits []byte) error {
 
 // Digits appends the dialled digits of a in the BCD format to dst as the
 // characters '0' to '9', '*' and '#', and returns dst. The digits end
-// before the pad nibbles or at the first DigitNULL. It returns
+// before the pad nibbles or at the first constants.DigitNull. It returns
 // ErrUDTFormat for another format, ErrUDTLength for a PadNibble over the
 // size of the blocks, and ErrUDTCharacter for a reserved digit code. It
 // allocates only to grow dst. (ETSI TS 102 361-4 clause B.3.3 and clause

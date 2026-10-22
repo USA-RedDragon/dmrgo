@@ -11,8 +11,8 @@ import (
 const pkgName = "voice"
 
 var (
-	// ErrBusy is returned by Start, and by Relay for a CallStart, while a
-	// transmission runs.
+	// ErrBusy is returned by Start, and by Relay for an EventCallStart,
+	// while a transmission runs.
 	ErrBusy = errors.New("voice: transmission in progress")
 	// ErrInterruptBusy is returned by Interrupter.Interrupt while a request
 	// runs.

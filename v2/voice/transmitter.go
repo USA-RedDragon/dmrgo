@@ -883,15 +883,16 @@ func (t *Transmitter) finish(out []Output, reason EndReason) []Output {
 	return out
 }
 
-// Relay takes an event of a Receiver and sends the call again: a
-// CallStart starts it with its headers, voice is queued, a PI Header is
-// sent after the headers, and a CallEnd ends it. Voice that comes before
-// its CallStart is dropped and counted, as is voice that does not fit in
-// the queue. A lost burst becomes a fill: the first repeats the last
-// vocoder slot, later ones are silence. The embedded LC of each complete
-// received superframe is sent in the next superframe that starts, and the
-// call LC when none was received. It returns ErrBusy for a CallStart while
-// a call that is not ending runs, and dmrgo.ErrNilArgument for a nil e.
+// Relay takes an event of a Receiver and sends the call again: an
+// EventCallStart starts it with its headers, voice is queued, a PI Header
+// is sent after the headers, and an EventCallEnd ends it. Voice that comes
+// before its EventCallStart is dropped and counted, as is voice that does
+// not fit in the queue. A lost burst becomes a fill: the first repeats the
+// last vocoder slot, later ones are silence. The embedded LC of each
+// complete received superframe is sent in the next superframe that starts,
+// and the call LC when none was received. It returns ErrBusy for an
+// EventCallStart while a call that is not ending runs, and
+// dmrgo.ErrNilArgument for a nil e.
 func (t *Transmitter) Relay(now time.Duration, e *Event) error {
 	if t == nil {
 		return dmrgo.ErrNilReceiver
