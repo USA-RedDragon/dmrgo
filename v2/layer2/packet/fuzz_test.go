@@ -447,6 +447,7 @@ func (s *session) plan() bool {
 	for k := range n {
 		sent := s.order[k]
 		raw := s.air[sent]
+		s.altered = s.altered || sent != k || s.opOf[k]&7 == fateDuplicate
 		switch s.opOf[k] & 7 {
 		case fateLost:
 			s.events = append(s.events, event{sent: sent, class: eventLost, lost: true})
