@@ -41,14 +41,8 @@ func decodeUnconfirmedDataHeader(data [10]byte) UnconfirmedDataHeader {
 	return result
 }
 
-// Encode encodes an UnconfirmedDataHeader. It returns the 80 bits packed,
-// the first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-1 clause 9.2.6)
-func (s *UnconfirmedDataHeader) Encode() ([10]byte, error) {
-	if s == nil {
-		return [10]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-1 clause 9.2.6
+func (s *UnconfirmedDataHeader) encode() ([10]byte, error) {
 	var data [10]byte
 	if s.Group {
 		data[0] |= 0x80
@@ -209,15 +203,16 @@ func (s *DataHeader) AsUnconfirmedDataHeader() (p UnconfirmedDataHeader, ok bool
 }
 
 // SetUnconfirmedDataHeader makes s carry p as an UnconfirmedDataHeader
-// payload: it sets RawPayload, and keeps the other fields. It returns the
-// error of p.Encode and an error when the payload does not meet the
-// conditions of AsUnconfirmedDataHeader, and then leaves s as it is.
+// payload: it sets RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits and an
+// error when the payload does not meet the conditions of
+// AsUnconfirmedDataHeader, and then leaves s as it is.
 func (s *DataHeader) SetUnconfirmedDataHeader(p UnconfirmedDataHeader) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -244,15 +239,16 @@ func (s *DataHeader) AsConfirmedDataHeader() (p ConfirmedDataHeader, ok bool) {
 }
 
 // SetConfirmedDataHeader makes s carry p as a ConfirmedDataHeader payload:
-// it sets RawPayload, and keeps the other fields. It returns the error of
-// p.Encode and an error when the payload does not meet the conditions of
+// it sets RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits and an
+// error when the payload does not meet the conditions of
 // AsConfirmedDataHeader, and then leaves s as it is.
 func (s *DataHeader) SetConfirmedDataHeader(p ConfirmedDataHeader) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -279,15 +275,16 @@ func (s *DataHeader) AsResponsePacketHeader() (p ResponsePacketHeader, ok bool) 
 }
 
 // SetResponsePacketHeader makes s carry p as a ResponsePacketHeader payload:
-// it sets RawPayload, and keeps the other fields. It returns the error of
-// p.Encode and an error when the payload does not meet the conditions of
+// it sets RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits and an
+// error when the payload does not meet the conditions of
 // AsResponsePacketHeader, and then leaves s as it is.
 func (s *DataHeader) SetResponsePacketHeader(p ResponsePacketHeader) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -314,15 +311,16 @@ func (s *DataHeader) AsDefinedDataHeader() (p DefinedDataHeader, ok bool) {
 }
 
 // SetDefinedDataHeader makes s carry p as a DefinedDataHeader payload: it
-// sets RawPayload, and keeps the other fields. It returns the error of
-// p.Encode and an error when the payload does not meet the conditions of
+// sets RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits and an
+// error when the payload does not meet the conditions of
 // AsDefinedDataHeader, and then leaves s as it is.
 func (s *DataHeader) SetDefinedDataHeader(p DefinedDataHeader) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -350,15 +348,16 @@ func (s *DataHeader) AsStatusPrecodedHeader() (p StatusPrecodedHeader, ok bool) 
 }
 
 // SetStatusPrecodedHeader makes s carry p as a StatusPrecodedHeader payload:
-// it sets RawPayload, and keeps the other fields. It returns the error of
-// p.Encode and an error when the payload does not meet the conditions of
+// it sets RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits and an
+// error when the payload does not meet the conditions of
 // AsStatusPrecodedHeader, and then leaves s as it is.
 func (s *DataHeader) SetStatusPrecodedHeader(p StatusPrecodedHeader) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -386,15 +385,16 @@ func (s *DataHeader) AsRawDataHeader() (p RawDataHeader, ok bool) {
 }
 
 // SetRawDataHeader makes s carry p as a RawDataHeader payload: it sets
-// RawPayload, and keeps the other fields. It returns the error of p.Encode
-// and an error when the payload does not meet the conditions of
-// AsRawDataHeader, and then leaves s as it is.
+// RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits and an
+// error when the payload does not meet the conditions of AsRawDataHeader,
+// and then leaves s as it is.
 func (s *DataHeader) SetRawDataHeader(p RawDataHeader) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -421,15 +421,15 @@ func (s *DataHeader) AsUDTHeader() (p UDTHeader, ok bool) {
 }
 
 // SetUDTHeader makes s carry p as a UDTHeader payload: it sets RawPayload,
-// and keeps the other fields. It returns the error of p.Encode and an error
-// when the payload does not meet the conditions of AsUDTHeader, and then
-// leaves s as it is.
+// and keeps the other fields. It returns a *dmrgo.FieldRangeError when a
+// field of p does not fit its bits and an error when the payload does not
+// meet the conditions of AsUDTHeader, and then leaves s as it is.
 func (s *DataHeader) SetUDTHeader(p UDTHeader) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -456,15 +456,16 @@ func (s *DataHeader) AsProprietaryHeader() (p ProprietaryHeader, ok bool) {
 }
 
 // SetProprietaryHeader makes s carry p as a ProprietaryHeader payload: it
-// sets RawPayload, and keeps the other fields. It returns the error of
-// p.Encode and an error when the payload does not meet the conditions of
+// sets RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits and an
+// error when the payload does not meet the conditions of
 // AsProprietaryHeader, and then leaves s as it is.
 func (s *DataHeader) SetProprietaryHeader(p ProprietaryHeader) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -499,14 +500,8 @@ func decodeConfirmedDataHeader(data [10]byte) ConfirmedDataHeader {
 	return result
 }
 
-// Encode encodes a ConfirmedDataHeader. It returns the 80 bits packed, the
-// first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-1 clause 9.2.1, Table 9.10)
-func (s *ConfirmedDataHeader) Encode() ([10]byte, error) {
-	if s == nil {
-		return [10]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-1 clause 9.2.1, Table 9.10
+func (s *ConfirmedDataHeader) encode() ([10]byte, error) {
 	var data [10]byte
 	if s.Group {
 		data[0] |= 0x80
@@ -591,14 +586,8 @@ func decodeResponsePacketHeader(data [10]byte) ResponsePacketHeader {
 	return result
 }
 
-// Encode encodes a ResponsePacketHeader. It returns the 80 bits packed, the
-// first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-1 clause 9.2.4, Table 9.13)
-func (s *ResponsePacketHeader) Encode() ([10]byte, error) {
-	if s == nil {
-		return [10]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-1 clause 9.2.4, Table 9.13
+func (s *ResponsePacketHeader) encode() ([10]byte, error) {
 	var data [10]byte
 	if s.Reserved {
 		data[0] |= 0x80
@@ -685,14 +674,8 @@ func decodeDefinedDataHeader(data [10]byte) DefinedDataHeader {
 	return result
 }
 
-// Encode encodes a DefinedDataHeader. It returns the 80 bits packed, the
-// first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-1 clause 9.2.12, Table 9.17C)
-func (s *DefinedDataHeader) Encode() ([10]byte, error) {
-	if s == nil {
-		return [10]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-1 clause 9.2.12, Table 9.17C
+func (s *DefinedDataHeader) encode() ([10]byte, error) {
 	var data [10]byte
 	if s.Group {
 		data[0] |= 0x80
@@ -770,14 +753,8 @@ func decodeRawDataHeader(data [10]byte) RawDataHeader {
 	return result
 }
 
-// Encode encodes a RawDataHeader. It returns the 80 bits packed, the first
-// bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-1 clause 9.2.11, Table 9.17B)
-func (s *RawDataHeader) Encode() ([10]byte, error) {
-	if s == nil {
-		return [10]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-1 clause 9.2.11, Table 9.17B
+func (s *RawDataHeader) encode() ([10]byte, error) {
 	var data [10]byte
 	if s.Group {
 		data[0] |= 0x80
@@ -852,14 +829,8 @@ func decodeStatusPrecodedHeader(data [10]byte) StatusPrecodedHeader {
 	return result
 }
 
-// Encode encodes a StatusPrecodedHeader. It returns the 80 bits packed, the
-// first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-1 clause 9.2.10, Table 9.17A)
-func (s *StatusPrecodedHeader) Encode() ([10]byte, error) {
-	if s == nil {
-		return [10]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-1 clause 9.2.10, Table 9.17A
+func (s *StatusPrecodedHeader) encode() ([10]byte, error) {
 	var data [10]byte
 	if s.Group {
 		data[0] |= 0x80
@@ -936,14 +907,8 @@ func decodeUDTHeader(data [10]byte) UDTHeader {
 	return result
 }
 
-// Encode encodes a UDTHeader. It returns the 80 bits packed, the first bit
-// in the most significant bit of byte 0. (ETSI TS 102 361-1 clause 9.2.13,
-// Table 9.17D, ETSI TS 102 361-4 Tables 7.24 and 7.28)
-func (s *UDTHeader) Encode() ([10]byte, error) {
-	if s == nil {
-		return [10]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-1 clause 9.2.13, Table 9.17D, ETSI TS 102 361-4 Tables 7.24 and 7.28
+func (s *UDTHeader) encode() ([10]byte, error) {
 	var data [10]byte
 	if s.Group {
 		data[0] |= 0x80
@@ -1023,14 +988,8 @@ func decodeProprietaryHeader(data [10]byte) ProprietaryHeader {
 	return result
 }
 
-// Encode encodes a ProprietaryHeader. It returns the 80 bits packed, the
-// first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-1 clause 9.2.9, Table 9.17)
-func (s *ProprietaryHeader) Encode() ([10]byte, error) {
-	if s == nil {
-		return [10]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-1 clause 9.2.9, Table 9.17
+func (s *ProprietaryHeader) encode() ([10]byte, error) {
 	var data [10]byte
 	if uint64(s.SAP)>>4 != 0 {
 		return [10]byte{}, errProprietaryHeaderSAPRange

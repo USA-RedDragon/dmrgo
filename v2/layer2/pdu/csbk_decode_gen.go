@@ -41,14 +41,8 @@ func decodeBSOutboundActivationPDU(data [8]byte) BSOutboundActivationPDU {
 	return result
 }
 
-// Encode encodes a BSOutboundActivationPDU. It returns the 64 bits packed,
-// the first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-2 clause 7.1.2.1)
-func (s *BSOutboundActivationPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-2 clause 7.1.2.1
+func (s *BSOutboundActivationPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	_valReserved := uint64(s.Reserved)
 	data[0] = byte(_valReserved >> 8)
@@ -92,14 +86,8 @@ func decodeUnitToUnitVoiceServiceRequestPDU(data [8]byte) UnitToUnitVoiceService
 	return result
 }
 
-// Encode encodes a UnitToUnitVoiceServiceRequestPDU. It returns the 64 bits
-// packed, the first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-2 clause 7.1.2.2)
-func (s *UnitToUnitVoiceServiceRequestPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-2 clause 7.1.2.2
+func (s *UnitToUnitVoiceServiceRequestPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	_serviceOptionsBytes, err := s.ServiceOptions.Encode()
 	if err != nil {
@@ -146,14 +134,8 @@ func decodeUnitToUnitVoiceServiceAnswerResponsePDU(data [8]byte) UnitToUnitVoice
 	return result
 }
 
-// Encode encodes a UnitToUnitVoiceServiceAnswerResponsePDU. It returns the
-// 64 bits packed, the first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-2 clause 7.1.2.3)
-func (s *UnitToUnitVoiceServiceAnswerResponsePDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-2 clause 7.1.2.3
+func (s *UnitToUnitVoiceServiceAnswerResponsePDU) encode() ([8]byte, error) {
 	var data [8]byte
 	_serviceOptionsBytes, err := s.ServiceOptions.Encode()
 	if err != nil {
@@ -200,14 +182,8 @@ func decodeNegativeAcknowledgementPDU(data [8]byte) NegativeAcknowledgementPDU {
 	return result
 }
 
-// Encode encodes a NegativeAcknowledgementPDU. It returns the 64 bits
-// packed, the first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-2 clause 7.1.2.4)
-func (s *NegativeAcknowledgementPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-2 clause 7.1.2.4
+func (s *NegativeAcknowledgementPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.AdditionalInfo)>>1 != 0 {
 		return [8]byte{}, errNegativeAcknowledgementPDUAdditionalInfoRange
@@ -261,13 +237,8 @@ func decodePreamblePDU(data [8]byte) PreamblePDU {
 	return result
 }
 
-// Encode encodes a PreamblePDU. It returns the 64 bits packed, the first bit
-// in the most significant bit of byte 0. (ETSI TS 102 361-2 clause 7.1.2.5)
-func (s *PreamblePDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-2 clause 7.1.2.5
+func (s *PreamblePDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if s.Data {
 		data[0] |= 0x80
@@ -323,14 +294,8 @@ func decodeChannelTimingPDU(data [8]byte) ChannelTimingPDU {
 	return result
 }
 
-// Encode encodes a ChannelTimingPDU. It returns the 64 bits packed, the
-// first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-2 clause 7.1.2.6, Table 7.8)
-func (s *ChannelTimingPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-2 clause 7.1.2.6, Table 7.8
+func (s *ChannelTimingPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.SyncAge)>>11 != 0 {
 		return [8]byte{}, errChannelTimingPDUSyncAgeRange
@@ -402,14 +367,8 @@ func decodePrivateVoiceGrantPDU(data [8]byte) PrivateVoiceGrantPDU {
 	return result
 }
 
-// Encode encodes a PrivateVoiceGrantPDU. It returns the 64 bits packed, the
-// first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.1.1)
-func (s *PrivateVoiceGrantPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.1.1
+func (s *PrivateVoiceGrantPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [8]byte{}, errPrivateVoiceGrantPDUPhysicalChannelRange
@@ -469,14 +428,8 @@ func decodeTalkgroupVoiceGrantPDU(data [8]byte) TalkgroupVoiceGrantPDU {
 	return result
 }
 
-// Encode encodes a TalkgroupVoiceGrantPDU. It returns the 64 bits packed,
-// the first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.1.1)
-func (s *TalkgroupVoiceGrantPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.1.1
+func (s *TalkgroupVoiceGrantPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [8]byte{}, errTalkgroupVoiceGrantPDUPhysicalChannelRange
@@ -536,14 +489,8 @@ func decodeBroadcastTalkgroupVoiceGrantPDU(data [8]byte) BroadcastTalkgroupVoice
 	return result
 }
 
-// Encode encodes a BroadcastTalkgroupVoiceGrantPDU. It returns the 64 bits
-// packed, the first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.1.1)
-func (s *BroadcastTalkgroupVoiceGrantPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.1.1
+func (s *BroadcastTalkgroupVoiceGrantPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [8]byte{}, errBroadcastTalkgroupVoiceGrantPDUPhysicalChannelRange
@@ -603,14 +550,8 @@ func decodePrivateDataGrantPDU(data [8]byte) PrivateDataGrantPDU {
 	return result
 }
 
-// Encode encodes a PrivateDataGrantPDU. It returns the 64 bits packed, the
-// first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.1.1)
-func (s *PrivateDataGrantPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.1.1
+func (s *PrivateDataGrantPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [8]byte{}, errPrivateDataGrantPDUPhysicalChannelRange
@@ -670,14 +611,8 @@ func decodeTalkgroupDataGrantPDU(data [8]byte) TalkgroupDataGrantPDU {
 	return result
 }
 
-// Encode encodes a TalkgroupDataGrantPDU. It returns the 64 bits packed, the
-// first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.1.1)
-func (s *TalkgroupDataGrantPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.1.1
+func (s *TalkgroupDataGrantPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [8]byte{}, errTalkgroupDataGrantPDUPhysicalChannelRange
@@ -737,14 +672,8 @@ func decodeDuplexPrivateVoiceGrantPDU(data [8]byte) DuplexPrivateVoiceGrantPDU {
 	return result
 }
 
-// Encode encodes a DuplexPrivateVoiceGrantPDU. It returns the 64 bits
-// packed, the first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.1.1)
-func (s *DuplexPrivateVoiceGrantPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.1.1
+func (s *DuplexPrivateVoiceGrantPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [8]byte{}, errDuplexPrivateVoiceGrantPDUPhysicalChannelRange
@@ -804,14 +733,8 @@ func decodeDuplexPrivateDataGrantPDU(data [8]byte) DuplexPrivateDataGrantPDU {
 	return result
 }
 
-// Encode encodes a DuplexPrivateDataGrantPDU. It returns the 64 bits packed,
-// the first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.1.1)
-func (s *DuplexPrivateDataGrantPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.1.1
+func (s *DuplexPrivateDataGrantPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [8]byte{}, errDuplexPrivateDataGrantPDUPhysicalChannelRange
@@ -871,14 +794,8 @@ func decodePrivateDataGrantMultiItemPDU(data [8]byte) PrivateDataGrantMultiItemP
 	return result
 }
 
-// Encode encodes a PrivateDataGrantMultiItemPDU. It returns the 64 bits
-// packed, the first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.1.1)
-func (s *PrivateDataGrantMultiItemPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.1.1
+func (s *PrivateDataGrantMultiItemPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [8]byte{}, errPrivateDataGrantMultiItemPDUPhysicalChannelRange
@@ -938,14 +855,8 @@ func decodeTalkgroupDataGrantMultiItemPDU(data [8]byte) TalkgroupDataGrantMultiI
 	return result
 }
 
-// Encode encodes a TalkgroupDataGrantMultiItemPDU. It returns the 64 bits
-// packed, the first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.1.1)
-func (s *TalkgroupDataGrantMultiItemPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.1.1
+func (s *TalkgroupDataGrantMultiItemPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [8]byte{}, errTalkgroupDataGrantMultiItemPDUPhysicalChannelRange
@@ -1006,13 +917,8 @@ func decodeMovePDU(data [8]byte) MovePDU {
 	return result
 }
 
-// Encode encodes a MovePDU. It returns the 64 bits packed, the first bit in
-// the most significant bit of byte 0. (ETSI TS 102 361-4 clause 7.1.1.1.3)
-func (s *MovePDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.1.3
+func (s *MovePDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.Reserved1)>>9 != 0 {
 		return [8]byte{}, errMovePDUReserved1Range
@@ -1086,14 +992,8 @@ func decodeAlohaPDU(data [8]byte) AlohaPDU {
 	return result
 }
 
-// Encode encodes an AlohaPDU. It returns the 64 bits packed, the first bit
-// in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.1.4)
-func (s *AlohaPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.1.4
+func (s *AlohaPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if s.Reserved1 {
 		data[0] |= 0x80
@@ -1170,14 +1070,8 @@ func decodeBroadcastPDU(data [8]byte) BroadcastPDU {
 	return result
 }
 
-// Encode encodes a BroadcastPDU. It returns the 64 bits packed, the first
-// bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.1.5, Table 7.20, clause 7.2.19)
-func (s *BroadcastPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.1.5, Table 7.20, clause 7.2.19
+func (s *BroadcastPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [8]byte{}, errBroadcastPDUAnnouncementTypeRange
@@ -1232,13 +1126,8 @@ func decodeClearPDU(data [8]byte) ClearPDU {
 	return result
 }
 
-// Encode encodes a ClearPDU. It returns the 64 bits packed, the first bit in
-// the most significant bit of byte 0. (ETSI TS 102 361-4 clause 7.1.1.3.2)
-func (s *ClearPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.3.2
+func (s *ClearPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.PhysicalChannel)>>12 != 0 {
 		return [8]byte{}, errClearPDUPhysicalChannelRange
@@ -1294,14 +1183,8 @@ func decodeProtectPDU(data [8]byte) ProtectPDU {
 	return result
 }
 
-// Encode encodes a ProtectPDU. It returns the 64 bits packed, the first bit
-// in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.3.3)
-func (s *ProtectPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.3.3
+func (s *ProtectPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.Reserved)>>12 != 0 {
 		return [8]byte{}, errProtectPDUReservedRange
@@ -1357,14 +1240,8 @@ func decodeAhoyPDU(data [8]byte) AhoyPDU {
 	return result
 }
 
-// Encode encodes an AhoyPDU. It returns the 64 bits packed, the first bit in
-// the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clauses 7.1.1.1.6 and 7.1.1.3.4)
-func (s *AhoyPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clauses 7.1.1.1.6 and 7.1.1.3.4
+func (s *AhoyPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ServiceOptsMirror)>>7 != 0 {
 		return [8]byte{}, errAhoyPDUServiceOptsMirrorRange
@@ -1425,14 +1302,8 @@ func decodeAckOutboundPDU(data [8]byte) AckOutboundPDU {
 	return result
 }
 
-// Encode encodes an AckOutboundPDU. It returns the 64 bits packed, the first
-// bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.1.7)
-func (s *AckOutboundPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.1.7
+func (s *AckOutboundPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ResponseInfo)>>7 != 0 {
 		return [8]byte{}, errAckOutboundPDUResponseInfoRange
@@ -1482,14 +1353,8 @@ func decodeAckInboundPDU(data [8]byte) AckInboundPDU {
 	return result
 }
 
-// Encode encodes an AckInboundPDU. It returns the 64 bits packed, the first
-// bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.2.3)
-func (s *AckInboundPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.2.3
+func (s *AckInboundPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ResponseInfo)>>7 != 0 {
 		return [8]byte{}, errAckInboundPDUResponseInfoRange
@@ -1539,14 +1404,8 @@ func decodeAckOutboundPayloadPDU(data [8]byte) AckOutboundPayloadPDU {
 	return result
 }
 
-// Encode encodes an AckOutboundPayloadPDU. It returns the 64 bits packed,
-// the first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.3.5)
-func (s *AckOutboundPayloadPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.3.5
+func (s *AckOutboundPayloadPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ResponseInfo)>>7 != 0 {
 		return [8]byte{}, errAckOutboundPayloadPDUResponseInfoRange
@@ -1596,14 +1455,8 @@ func decodeAckInboundPayloadPDU(data [8]byte) AckInboundPayloadPDU {
 	return result
 }
 
-// Encode encodes an AckInboundPayloadPDU. It returns the 64 bits packed, the
-// first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.4.2)
-func (s *AckInboundPayloadPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.4.2
+func (s *AckInboundPayloadPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ResponseInfo)>>7 != 0 {
 		return [8]byte{}, errAckInboundPayloadPDUResponseInfoRange
@@ -1654,14 +1507,8 @@ func decodeRandomAccessPDU(data [8]byte) RandomAccessPDU {
 	return result
 }
 
-// Encode encodes a RandomAccessPDU. It returns the 64 bits packed, the first
-// bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.2.1)
-func (s *RandomAccessPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.2.1
+func (s *RandomAccessPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ServiceOptions)>>7 != 0 {
 		return [8]byte{}, errRandomAccessPDUServiceOptionsRange
@@ -1718,14 +1565,8 @@ func decodeAckvitationPDU(data [8]byte) AckvitationPDU {
 	return result
 }
 
-// Encode encodes an AckvitationPDU. It returns the 64 bits packed, the first
-// bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.2.2)
-func (s *AckvitationPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.2.2
+func (s *AckvitationPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.ServiceOptsMirror)>>7 != 0 {
 		return [8]byte{}, errAckvitationPDUServiceOptsMirrorRange
@@ -1784,14 +1625,8 @@ func decodeMaintenancePDU(data [8]byte) MaintenancePDU {
 	return result
 }
 
-// Encode encodes a MaintenancePDU. It returns the 64 bits packed, the first
-// bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.1.4.3)
-func (s *MaintenancePDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.1.4.3
+func (s *MaintenancePDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.Reserved)>>12 != 0 {
 		return [8]byte{}, errMaintenancePDUReservedRange
@@ -1967,14 +1802,14 @@ func (s *CSBK) AsUnitToUnitVoiceServiceRequest() (p UnitToUnitVoiceServiceReques
 // SetUnitToUnitVoiceServiceRequest makes s carry p as a
 // UnitToUnitVoiceServiceRequestPDU payload: it sets Opcode to
 // CSBKUnitToUnitVoiceServiceRequest, FID to 0 and RawPayload, and keeps the
-// other fields. It returns the error of p.Encode, and then leaves s as it
-// is.
+// other fields. It returns a *dmrgo.FieldRangeError when a field of p does
+// not fit its bits, and then leaves s as it is.
 func (s *CSBK) SetUnitToUnitVoiceServiceRequest(p UnitToUnitVoiceServiceRequestPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2001,14 +1836,14 @@ func (s *CSBK) AsUnitToUnitVoiceServiceAnswerResponse() (p UnitToUnitVoiceServic
 // SetUnitToUnitVoiceServiceAnswerResponse makes s carry p as a
 // UnitToUnitVoiceServiceAnswerResponsePDU payload: it sets Opcode to
 // CSBKUnitToUnitVoiceServiceAnswerResponse, FID to 0 and RawPayload, and
-// keeps the other fields. It returns the error of p.Encode, and then leaves
-// s as it is.
+// keeps the other fields. It returns a *dmrgo.FieldRangeError when a field
+// of p does not fit its bits, and then leaves s as it is.
 func (s *CSBK) SetUnitToUnitVoiceServiceAnswerResponse(p UnitToUnitVoiceServiceAnswerResponsePDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2034,14 +1869,15 @@ func (s *CSBK) AsNegativeAcknowledgement() (p NegativeAcknowledgementPDU, ok boo
 
 // SetNegativeAcknowledgement makes s carry p as a NegativeAcknowledgementPDU
 // payload: it sets Opcode to CSBKNegativeAcknowledgement, FID to 0 and
-// RawPayload, and keeps the other fields. It returns the error of p.Encode,
-// and then leaves s as it is.
+// RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetNegativeAcknowledgement(p NegativeAcknowledgementPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2066,13 +1902,14 @@ func (s *CSBK) AsPreamble() (p PreamblePDU, ok bool) {
 
 // SetPreamble makes s carry p as a PreamblePDU payload: it sets Opcode to
 // CSBKPreamble, FID to 0 and RawPayload, and keeps the other fields. It
-// returns the error of p.Encode, and then leaves s as it is.
+// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
+// and then leaves s as it is.
 func (s *CSBK) SetPreamble(p PreamblePDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2097,13 +1934,14 @@ func (s *CSBK) AsChannelTiming() (p ChannelTimingPDU, ok bool) {
 
 // SetChannelTiming makes s carry p as a ChannelTimingPDU payload: it sets
 // Opcode to CSBKChannelTiming, FID to 0 and RawPayload, and keeps the other
-// fields. It returns the error of p.Encode, and then leaves s as it is.
+// fields. It returns a *dmrgo.FieldRangeError when a field of p does not fit
+// its bits, and then leaves s as it is.
 func (s *CSBK) SetChannelTiming(p ChannelTimingPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2128,14 +1966,14 @@ func (s *CSBK) AsPrivateVoiceGrant() (p PrivateVoiceGrantPDU, ok bool) {
 
 // SetPrivateVoiceGrant makes s carry p as a PrivateVoiceGrantPDU payload: it
 // sets Opcode to CSBKPrivateVoiceGrant, FID to 0 and RawPayload, and keeps
-// the other fields. It returns the error of p.Encode, and then leaves s as
-// it is.
+// the other fields. It returns a *dmrgo.FieldRangeError when a field of p
+// does not fit its bits, and then leaves s as it is.
 func (s *CSBK) SetPrivateVoiceGrant(p PrivateVoiceGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2161,14 +1999,15 @@ func (s *CSBK) AsTalkgroupVoiceGrant() (p TalkgroupVoiceGrantPDU, ok bool) {
 
 // SetTalkgroupVoiceGrant makes s carry p as a TalkgroupVoiceGrantPDU
 // payload: it sets Opcode to CSBKTalkgroupVoiceGrant, FID to 0 and
-// RawPayload, and keeps the other fields. It returns the error of p.Encode,
-// and then leaves s as it is.
+// RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetTalkgroupVoiceGrant(p TalkgroupVoiceGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2195,14 +2034,14 @@ func (s *CSBK) AsBroadcastTalkgroupVoiceGrant() (p BroadcastTalkgroupVoiceGrantP
 // SetBroadcastTalkgroupVoiceGrant makes s carry p as a
 // BroadcastTalkgroupVoiceGrantPDU payload: it sets Opcode to
 // CSBKBroadcastTalkgroupVoiceGrant, FID to 0 and RawPayload, and keeps the
-// other fields. It returns the error of p.Encode, and then leaves s as it
-// is.
+// other fields. It returns a *dmrgo.FieldRangeError when a field of p does
+// not fit its bits, and then leaves s as it is.
 func (s *CSBK) SetBroadcastTalkgroupVoiceGrant(p BroadcastTalkgroupVoiceGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2227,14 +2066,14 @@ func (s *CSBK) AsPrivateDataGrant() (p PrivateDataGrantPDU, ok bool) {
 
 // SetPrivateDataGrant makes s carry p as a PrivateDataGrantPDU payload: it
 // sets Opcode to CSBKPrivateDataGrant, FID to 0 and RawPayload, and keeps
-// the other fields. It returns the error of p.Encode, and then leaves s as
-// it is.
+// the other fields. It returns a *dmrgo.FieldRangeError when a field of p
+// does not fit its bits, and then leaves s as it is.
 func (s *CSBK) SetPrivateDataGrant(p PrivateDataGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2259,14 +2098,14 @@ func (s *CSBK) AsTalkgroupDataGrant() (p TalkgroupDataGrantPDU, ok bool) {
 
 // SetTalkgroupDataGrant makes s carry p as a TalkgroupDataGrantPDU payload:
 // it sets Opcode to CSBKTalkgroupDataGrant, FID to 0 and RawPayload, and
-// keeps the other fields. It returns the error of p.Encode, and then leaves
-// s as it is.
+// keeps the other fields. It returns a *dmrgo.FieldRangeError when a field
+// of p does not fit its bits, and then leaves s as it is.
 func (s *CSBK) SetTalkgroupDataGrant(p TalkgroupDataGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2292,14 +2131,15 @@ func (s *CSBK) AsDuplexPrivateVoiceGrant() (p DuplexPrivateVoiceGrantPDU, ok boo
 
 // SetDuplexPrivateVoiceGrant makes s carry p as a DuplexPrivateVoiceGrantPDU
 // payload: it sets Opcode to CSBKDuplexPrivateVoiceGrant, FID to 0 and
-// RawPayload, and keeps the other fields. It returns the error of p.Encode,
-// and then leaves s as it is.
+// RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetDuplexPrivateVoiceGrant(p DuplexPrivateVoiceGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2325,14 +2165,15 @@ func (s *CSBK) AsDuplexPrivateDataGrant() (p DuplexPrivateDataGrantPDU, ok bool)
 
 // SetDuplexPrivateDataGrant makes s carry p as a DuplexPrivateDataGrantPDU
 // payload: it sets Opcode to CSBKDuplexPrivateDataGrant, FID to 0 and
-// RawPayload, and keeps the other fields. It returns the error of p.Encode,
-// and then leaves s as it is.
+// RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetDuplexPrivateDataGrant(p DuplexPrivateDataGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2359,14 +2200,14 @@ func (s *CSBK) AsPrivateDataGrantMultiItem() (p PrivateDataGrantMultiItemPDU, ok
 // SetPrivateDataGrantMultiItem makes s carry p as a
 // PrivateDataGrantMultiItemPDU payload: it sets Opcode to
 // CSBKPrivateDataGrantMultiItem, FID to 0 and RawPayload, and keeps the
-// other fields. It returns the error of p.Encode, and then leaves s as it
-// is.
+// other fields. It returns a *dmrgo.FieldRangeError when a field of p does
+// not fit its bits, and then leaves s as it is.
 func (s *CSBK) SetPrivateDataGrantMultiItem(p PrivateDataGrantMultiItemPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2390,14 +2231,15 @@ func (s *CSBK) AsMove() (p MovePDU, ok bool) {
 }
 
 // SetMove makes s carry p as a MovePDU payload: it sets Opcode to CSBKMove,
-// FID to 0 and RawPayload, and keeps the other fields. It returns the error
-// of p.Encode, and then leaves s as it is.
+// FID to 0 and RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetMove(p MovePDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2422,13 +2264,14 @@ func (s *CSBK) AsAloha() (p AlohaPDU, ok bool) {
 
 // SetAloha makes s carry p as an AlohaPDU payload: it sets Opcode to
 // CSBKAloha, FID to 0 and RawPayload, and keeps the other fields. It returns
-// the error of p.Encode, and then leaves s as it is.
+// a *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetAloha(p AlohaPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2453,13 +2296,14 @@ func (s *CSBK) AsBroadcast() (p BroadcastPDU, ok bool) {
 
 // SetBroadcast makes s carry p as a BroadcastPDU payload: it sets Opcode to
 // CSBKBroadcast, FID to 0 and RawPayload, and keeps the other fields. It
-// returns the error of p.Encode, and then leaves s as it is.
+// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
+// and then leaves s as it is.
 func (s *CSBK) SetBroadcast(p BroadcastPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2484,13 +2328,14 @@ func (s *CSBK) AsClear() (p ClearPDU, ok bool) {
 
 // SetClear makes s carry p as a ClearPDU payload: it sets Opcode to
 // CSBKClear, FID to 0 and RawPayload, and keeps the other fields. It returns
-// the error of p.Encode, and then leaves s as it is.
+// a *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetClear(p ClearPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2515,13 +2360,14 @@ func (s *CSBK) AsProtect() (p ProtectPDU, ok bool) {
 
 // SetProtect makes s carry p as a ProtectPDU payload: it sets Opcode to
 // CSBKProtect, FID to 0 and RawPayload, and keeps the other fields. It
-// returns the error of p.Encode, and then leaves s as it is.
+// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
+// and then leaves s as it is.
 func (s *CSBK) SetProtect(p ProtectPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2545,14 +2391,15 @@ func (s *CSBK) AsAhoy() (p AhoyPDU, ok bool) {
 }
 
 // SetAhoy makes s carry p as an AhoyPDU payload: it sets Opcode to CSBKAhoy,
-// FID to 0 and RawPayload, and keeps the other fields. It returns the error
-// of p.Encode, and then leaves s as it is.
+// FID to 0 and RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetAhoy(p AhoyPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2577,13 +2424,14 @@ func (s *CSBK) AsAckOutbound() (p AckOutboundPDU, ok bool) {
 
 // SetAckOutbound makes s carry p as an AckOutboundPDU payload: it sets
 // Opcode to CSBKAckOutbound, FID to 0 and RawPayload, and keeps the other
-// fields. It returns the error of p.Encode, and then leaves s as it is.
+// fields. It returns a *dmrgo.FieldRangeError when a field of p does not fit
+// its bits, and then leaves s as it is.
 func (s *CSBK) SetAckOutbound(p AckOutboundPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2608,13 +2456,14 @@ func (s *CSBK) AsAckInbound() (p AckInboundPDU, ok bool) {
 
 // SetAckInbound makes s carry p as an AckInboundPDU payload: it sets Opcode
 // to CSBKAckInbound, FID to 0 and RawPayload, and keeps the other fields. It
-// returns the error of p.Encode, and then leaves s as it is.
+// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
+// and then leaves s as it is.
 func (s *CSBK) SetAckInbound(p AckInboundPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2639,14 +2488,14 @@ func (s *CSBK) AsAckOutboundPayload() (p AckOutboundPayloadPDU, ok bool) {
 
 // SetAckOutboundPayload makes s carry p as an AckOutboundPayloadPDU payload:
 // it sets Opcode to CSBKAckOutboundPayload, FID to 0 and RawPayload, and
-// keeps the other fields. It returns the error of p.Encode, and then leaves
-// s as it is.
+// keeps the other fields. It returns a *dmrgo.FieldRangeError when a field
+// of p does not fit its bits, and then leaves s as it is.
 func (s *CSBK) SetAckOutboundPayload(p AckOutboundPayloadPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2671,14 +2520,14 @@ func (s *CSBK) AsAckInboundPayload() (p AckInboundPayloadPDU, ok bool) {
 
 // SetAckInboundPayload makes s carry p as an AckInboundPayloadPDU payload:
 // it sets Opcode to CSBKAckInboundPayload, FID to 0 and RawPayload, and
-// keeps the other fields. It returns the error of p.Encode, and then leaves
-// s as it is.
+// keeps the other fields. It returns a *dmrgo.FieldRangeError when a field
+// of p does not fit its bits, and then leaves s as it is.
 func (s *CSBK) SetAckInboundPayload(p AckInboundPayloadPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2703,13 +2552,14 @@ func (s *CSBK) AsRandomAccess() (p RandomAccessPDU, ok bool) {
 
 // SetRandomAccess makes s carry p as a RandomAccessPDU payload: it sets
 // Opcode to CSBKRandomAccess, FID to 0 and RawPayload, and keeps the other
-// fields. It returns the error of p.Encode, and then leaves s as it is.
+// fields. It returns a *dmrgo.FieldRangeError when a field of p does not fit
+// its bits, and then leaves s as it is.
 func (s *CSBK) SetRandomAccess(p RandomAccessPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2734,13 +2584,14 @@ func (s *CSBK) AsAckvitation() (p AckvitationPDU, ok bool) {
 
 // SetAckvitation makes s carry p as an AckvitationPDU payload: it sets
 // Opcode to CSBKAckvitation, FID to 0 and RawPayload, and keeps the other
-// fields. It returns the error of p.Encode, and then leaves s as it is.
+// fields. It returns a *dmrgo.FieldRangeError when a field of p does not fit
+// its bits, and then leaves s as it is.
 func (s *CSBK) SetAckvitation(p AckvitationPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2765,13 +2616,14 @@ func (s *CSBK) AsMaintenance() (p MaintenancePDU, ok bool) {
 
 // SetMaintenance makes s carry p as a MaintenancePDU payload: it sets Opcode
 // to CSBKMaintenance, FID to 0 and RawPayload, and keeps the other fields.
-// It returns the error of p.Encode, and then leaves s as it is.
+// It returns a *dmrgo.FieldRangeError when a field of p does not fit its
+// bits, and then leaves s as it is.
 func (s *CSBK) SetMaintenance(p MaintenancePDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2797,14 +2649,15 @@ func (s *CSBK) AsMotorolaRadioCheck() (p MotorolaRadioCheckPDU, ok bool) {
 
 // SetMotorolaRadioCheck makes s carry p as a MotorolaRadioCheckPDU payload:
 // it sets Opcode to CSBKMotorolaRadioCheck, FID to enums.FIDMotorola and
-// RawPayload, and keeps the other fields. It returns the error of p.Encode,
-// and then leaves s as it is.
+// RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetMotorolaRadioCheck(p MotorolaRadioCheckPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2830,14 +2683,15 @@ func (s *CSBK) AsMotorolaCallAlert() (p MotorolaCallAlertPDU, ok bool) {
 
 // SetMotorolaCallAlert makes s carry p as a MotorolaCallAlertPDU payload: it
 // sets Opcode to CSBKMotorolaCallAlert, FID to enums.FIDMotorola and
-// RawPayload, and keeps the other fields. It returns the error of p.Encode,
-// and then leaves s as it is.
+// RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetMotorolaCallAlert(p MotorolaCallAlertPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -2863,14 +2717,15 @@ func (s *CSBK) AsMotorolaCallAlertAck() (p MotorolaCallAlertAckPDU, ok bool) {
 
 // SetMotorolaCallAlertAck makes s carry p as a MotorolaCallAlertAckPDU
 // payload: it sets Opcode to CSBKMotorolaCallAlertAck, FID to
-// enums.FIDMotorola and RawPayload, and keeps the other fields. It returns
-// the error of p.Encode, and then leaves s as it is.
+// enums.FIDMotorola and RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *CSBK) SetMotorolaCallAlertAck(p MotorolaCallAlertAckPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}

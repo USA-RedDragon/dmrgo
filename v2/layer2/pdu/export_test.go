@@ -1,5 +1,9 @@
 package pdu
 
+func EncodePayload[N any](p interface{ encode() (N, error) }) (N, error) {
+	return p.encode()
+}
+
 func DecodeFLCGPSInfo(data [7]byte) FLCGPSInfo {
 	return decodeFLCGPSInfo(data)
 }

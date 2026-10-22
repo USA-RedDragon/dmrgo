@@ -50,16 +50,15 @@ func ExampleDecodeCSBK() {
 // ExampleBroadcastPDU_AsLocalTime reads the local time that a TSCC
 // broadcasts in C_BCAST Local_Time.
 func ExampleBroadcastPDU_AsLocalTime() {
-	t := pdu.LocalTimeParms{
-		AnnouncementType: enums.AnnouncementLocalTime, Day: 21, Month: 10, UTCOffset: 5, UTCOffsetLags: true,
-		Backoff: 1, SysIdentCode: 0x4015, Hours: 11, Minutes: 49, Seconds: 50, DayOfWeek: 4,
-	}
-	payload, err := t.Encode()
+	in := pdu.CSBK{LastBlock: true}
+	err := in.SetBroadcast(pdu.BroadcastPDU{
+		AnnouncementType: enums.AnnouncementLocalTime, BroadcastParms1: 21<<9 | 10<<5 | 5<<1 | 1,
+		Backoff: 1, SysIdentCode: 0x4015, BroadcastParms2: 11<<19 | 49<<13 | 50<<7 | 4<<4,
+	})
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	in := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKBroadcast, RawPayload: payload}
 	bits, err := in.Encode()
 	if err != nil {
 		fmt.Println(err)

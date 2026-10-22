@@ -120,21 +120,28 @@ func capPlusStatusBurst(t testing.TB, slot2 bool, rest uint8, activity ...byte) 
 	t.Helper()
 	p := pdu.CapacityPlusSiteStatusPDU{Segment: pdu.CapacityPlusSegmentSingle, Slot2: slot2, RestLSN: rest}
 	copy(p.Activity[:], activity)
-	payload, err := p.Encode()
-	if err != nil {
-		t.Fatal(err)
+	var payload [8]byte
+	payload[0] = byte(p.Segment)<<6 | rest&0x1F
+	if slot2 {
+		payload[0] |= 0x20
 	}
-	return bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKCapacityPlusSiteStatus, FID: enums.FIDMotorola, RawPayload: payload}, testCC)
+	copy(payload[1:], p.Activity[:])
+	c := &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKCapacityPlusSiteStatus, FID: enums.FIDMotorola, RawPayload: payload}
+	if got, ok := c.AsCapacityPlusSiteStatus(); !ok || got != p {
+		t.Fatalf("site status %x reads as %+v %t, want %+v", payload, got, ok, p)
+	}
+	return bsBurst(t, c, testCC)
 }
 
 func capPlusGrantBurst(t testing.TB, tg uint8, rest uint8) layer2.RawBurst {
 	t.Helper()
 	g := pdu.CapacityPlusGroupVoiceGrant{GroupAddress: tg, RestLSN: rest, SourceAddress: 1400}
-	payload, err := g.Encode()
-	if err != nil {
-		t.Fatal(err)
+	payload := [7]byte{0, 0, 0, tg, rest & 0x1F, byte(g.SourceAddress >> 8), byte(g.SourceAddress)}
+	lc := &pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader, FLCO: pdu.FLCOCapacityPlusGroupVoiceGrant, FID: enums.FIDMotorola, RawPayload: payload}
+	if got, ok := lc.AsCapacityPlusGroupVoiceGrant(); !ok || got != g {
+		t.Fatalf("group grant %x reads as %+v %t, want %+v", payload, got, ok, g)
 	}
-	return bsBurst(t, &pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader, FLCO: pdu.FLCOCapacityPlusGroupVoiceGrant, FID: enums.FIDMotorola, RawPayload: payload}, testCC)
+	return bsBurst(t, lc, testCC)
 }
 
 func capPlusPlan(t testing.TB) *trunk.ChannelPlan {

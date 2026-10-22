@@ -134,14 +134,14 @@ func (s *FullLinkControl) AsGroupVoice() (p FLCGroupVoice, ok bool) {
 
 // SetGroupVoice makes s carry p as an FLCGroupVoice payload: it sets FLCO to
 // enums.FLCOGroupVoiceChannelUser, FID to 0 and RawPayload, and keeps the
-// other fields. It returns the error of p.Encode, and then leaves s as it
-// is.
+// other fields. It returns a *dmrgo.FieldRangeError when a field of p does
+// not fit its bits, and then leaves s as it is.
 func (s *FullLinkControl) SetGroupVoice(p FLCGroupVoice) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -166,14 +166,14 @@ func (s *FullLinkControl) AsUnitToUnit() (p FLCUnitToUnit, ok bool) {
 
 // SetUnitToUnit makes s carry p as an FLCUnitToUnit payload: it sets FLCO to
 // enums.FLCOUnitToUnitVoiceChannelUser, FID to 0 and RawPayload, and keeps
-// the other fields. It returns the error of p.Encode, and then leaves s as
-// it is.
+// the other fields. It returns a *dmrgo.FieldRangeError when a field of p
+// does not fit its bits, and then leaves s as it is.
 func (s *FullLinkControl) SetUnitToUnit(p FLCUnitToUnit) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -198,13 +198,14 @@ func (s *FullLinkControl) AsGPSInfo() (p FLCGPSInfo, ok bool) {
 
 // SetGPSInfo makes s carry p as an FLCGPSInfo payload: it sets FLCO to
 // enums.FLCOGPSInfo, FID to 0 and RawPayload, and keeps the other fields. It
-// returns the error of p.Encode, and then leaves s as it is.
+// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
+// and then leaves s as it is.
 func (s *FullLinkControl) SetGPSInfo(p FLCGPSInfo) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -229,14 +230,14 @@ func (s *FullLinkControl) AsTalkerAliasHeader() (p FLCTalkerAliasHeader, ok bool
 
 // SetTalkerAliasHeader makes s carry p as an FLCTalkerAliasHeader payload:
 // it sets FLCO to enums.FLCOTalkerAliasHeader, FID to 0 and RawPayload, and
-// keeps the other fields. It returns the error of p.Encode, and then leaves
-// s as it is.
+// keeps the other fields. It returns a *dmrgo.FieldRangeError when a field
+// of p does not fit its bits, and then leaves s as it is.
 func (s *FullLinkControl) SetTalkerAliasHeader(p FLCTalkerAliasHeader) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -263,8 +264,9 @@ func (s *FullLinkControl) AsTalkerAliasBlock() (p FLCTalkerAliasBlock, ok bool) 
 // SetTalkerAliasBlock makes s carry p as an FLCTalkerAliasBlock payload: it
 // sets FLCO to flco, FID to 0 and RawPayload, and keeps the other fields. It
 // returns an error when flco is not enums.FLCOTalkerAliasBlock1,
-// enums.FLCOTalkerAliasBlock2 or enums.FLCOTalkerAliasBlock3 and the error
-// of p.Encode, and then leaves s as it is.
+// enums.FLCOTalkerAliasBlock2 or enums.FLCOTalkerAliasBlock3 and a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *FullLinkControl) SetTalkerAliasBlock(flco enums.FLCO, p FLCTalkerAliasBlock) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -273,7 +275,7 @@ func (s *FullLinkControl) SetTalkerAliasBlock(flco enums.FLCO, p FLCTalkerAliasB
 	if !(flco == enums.FLCOTalkerAliasBlock1 || flco == enums.FLCOTalkerAliasBlock2 || flco == enums.FLCOTalkerAliasBlock3) {
 		return errFullLinkControlTalkerAliasBlockFLCO
 	}
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -300,14 +302,14 @@ func (s *FullLinkControl) AsTerminatorDataLinkControl() (p FLCTerminatorDataLink
 // SetTerminatorDataLinkControl makes s carry p as an
 // FLCTerminatorDataLinkControl payload: it sets FLCO to
 // enums.FLCOTerminatorDataLinkControl, FID to 0 and RawPayload, and keeps
-// the other fields. It returns the error of p.Encode, and then leaves s as
-// it is.
+// the other fields. It returns a *dmrgo.FieldRangeError when a field of p
+// does not fit its bits, and then leaves s as it is.
 func (s *FullLinkControl) SetTerminatorDataLinkControl(p FLCTerminatorDataLinkControl) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -328,14 +330,8 @@ func decodeFLCGroupVoice(data [7]byte) FLCGroupVoice {
 	return result
 }
 
-// Encode encodes an FLCGroupVoice. It returns the 56 bits packed, the first
-// bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-2 clause 7.1.1.1, Table 7.1)
-func (s *FLCGroupVoice) Encode() ([7]byte, error) {
-	if s == nil {
-		return [7]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-2 clause 7.1.1.1, Table 7.1
+func (s *FLCGroupVoice) encode() ([7]byte, error) {
 	var data [7]byte
 	_serviceOptionsBytes, err := s.ServiceOptions.Encode()
 	if err != nil {
@@ -380,14 +376,8 @@ func decodeFLCUnitToUnit(data [7]byte) FLCUnitToUnit {
 	return result
 }
 
-// Encode encodes an FLCUnitToUnit. It returns the 56 bits packed, the first
-// bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-2 clause 7.1.1.2, Table 7.2)
-func (s *FLCUnitToUnit) Encode() ([7]byte, error) {
-	if s == nil {
-		return [7]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-2 clause 7.1.1.2, Table 7.2
+func (s *FLCUnitToUnit) encode() ([7]byte, error) {
 	var data [7]byte
 	_serviceOptionsBytes, err := s.ServiceOptions.Encode()
 	if err != nil {
@@ -431,14 +421,8 @@ func decodeFLCGPSInfo(data [7]byte) FLCGPSInfo {
 	return result
 }
 
-// Encode encodes an FLCGPSInfo. It returns the 56 bits packed, the first bit
-// in the most significant bit of byte 0. (ETSI TS 102 361-2 clause 7.1.1.3,
-// Table 7.3)
-func (s *FLCGPSInfo) Encode() ([7]byte, error) {
-	if s == nil {
-		return [7]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-2 clause 7.1.1.3, Table 7.3
+func (s *FLCGPSInfo) encode() ([7]byte, error) {
 	var data [7]byte
 	if uint64(s.Reserved)>>4 != 0 {
 		return [7]byte{}, errFLCGPSInfoReservedRange
@@ -488,14 +472,8 @@ func decodeFLCTalkerAliasHeader(data [7]byte) FLCTalkerAliasHeader {
 	return result
 }
 
-// Encode encodes an FLCTalkerAliasHeader. It returns the 56 bits packed, the
-// first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-2 clause 7.1.1.4, Table 7.4)
-func (s *FLCTalkerAliasHeader) Encode() ([7]byte, error) {
-	if s == nil {
-		return [7]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-2 clause 7.1.1.4, Table 7.4
+func (s *FLCTalkerAliasHeader) encode() ([7]byte, error) {
 	var data [7]byte
 	if uint64(s.TalkerAliasDataFormat)>>2 != 0 {
 		return [7]byte{}, errFLCTalkerAliasHeaderTalkerAliasDataFormatRange
@@ -536,14 +514,8 @@ func decodeFLCTalkerAliasBlock(data [7]byte) FLCTalkerAliasBlock {
 	return result
 }
 
-// Encode encodes an FLCTalkerAliasBlock. It returns the 56 bits packed, the
-// first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-2 clause 7.1.1.5, Table 7.5)
-func (s *FLCTalkerAliasBlock) Encode() ([7]byte, error) {
-	if s == nil {
-		return [7]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-2 clause 7.1.1.5, Table 7.5
+func (s *FLCTalkerAliasBlock) encode() ([7]byte, error) {
 	var data [7]byte
 	copy(data[0:7], s.TalkerAliasData[0:7])
 	return data, nil
@@ -573,14 +545,8 @@ func decodeFLCTerminatorDataLinkControl(data [7]byte) FLCTerminatorDataLinkContr
 	return result
 }
 
-// Encode encodes an FLCTerminatorDataLinkControl. It returns the 56 bits
-// packed, the first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-3 clause 7.1.1.1, Table 7.1)
-func (s *FLCTerminatorDataLinkControl) Encode() ([7]byte, error) {
-	if s == nil {
-		return [7]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-3 clause 7.1.1.1, Table 7.1
+func (s *FLCTerminatorDataLinkControl) encode() ([7]byte, error) {
 	var data [7]byte
 	if uint64(s.LLIDDestination)>>24 != 0 {
 		return [7]byte{}, errFLCTerminatorDataLinkControlLLIDDestinationRange

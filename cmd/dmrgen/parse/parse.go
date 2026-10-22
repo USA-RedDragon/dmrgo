@@ -267,6 +267,21 @@ type PDUStruct struct {
 	// Decode function is unexported: the variant types and the dmr:subpdu
 	// structs. SetUnexportedDecode fills it.
 	UnexportedDecode map[string]bool
+
+	// UnexportedEncode holds the names of the variant types and of the
+	// dmr:subpdu structs without a CRC or FEC of the package, whose Encode
+	// is the unexported encode method that the parent calls.
+	UnexportedEncode map[string]bool
+}
+
+// EncodeFuncName returns the name of the encode method of the struct
+// typeName of the package of p: encode for a variant type or sub-PDU,
+// Encode otherwise.
+func (p *PDUStruct) EncodeFuncName(typeName string) string {
+	if p.UnexportedEncode[typeName] {
+		return "encode"
+	}
+	return "Encode"
 }
 
 // UnionField returns the union field of p, or nil.
@@ -308,6 +323,7 @@ func (p *PDUStruct) DecodeFuncName(typeName string) string {
 // a struct of the package or its size differs from the union field.
 func SetUnexportedDecode(pdus []PDUStruct) error {
 	sub := map[string]bool{}
+	enc := map[string]bool{}
 	byName := map[string]*PDUStruct{}
 	for i := range pdus {
 		byName[pdus[i].Name] = &pdus[i]
@@ -315,6 +331,7 @@ func SetUnexportedDecode(pdus []PDUStruct) error {
 	for _, p := range pdus {
 		if p.SubPDU {
 			sub[p.Name] = true
+			enc[p.Name] = p.CRC == nil && p.FEC == nil
 		}
 		for _, v := range p.Variants {
 			t, ok := byName[v.Type]
@@ -329,6 +346,7 @@ func SetUnexportedDecode(pdus []PDUStruct) error {
 				return fmt.Errorf("struct %s variant %s: type %s must be a plain PDU struct", p.Name, v.Name, v.Type)
 			}
 			sub[v.Type] = true
+			enc[v.Type] = true
 		}
 		if p.Stream != nil {
 			for _, f := range p.Stream.Fields {
@@ -340,6 +358,7 @@ func SetUnexportedDecode(pdus []PDUStruct) error {
 	}
 	for i := range pdus {
 		pdus[i].UnexportedDecode = sub
+		pdus[i].UnexportedEncode = enc
 	}
 	return nil
 }

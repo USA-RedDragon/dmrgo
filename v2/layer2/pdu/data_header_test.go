@@ -549,25 +549,25 @@ func TestDataHeaderSubEncodersSetFormat(t *testing.T) {
 
 	encode := map[pdu.Format]func() ([10]byte, error){
 		pdu.FormatUnconfirmed: func() ([10]byte, error) {
-			return (&pdu.UnconfirmedDataHeader{}).Encode()
+			return pdu.EncodePayload(&pdu.UnconfirmedDataHeader{})
 		},
 		pdu.FormatConfirmed: func() ([10]byte, error) {
-			return (&pdu.ConfirmedDataHeader{}).Encode()
+			return pdu.EncodePayload(&pdu.ConfirmedDataHeader{})
 		},
 		pdu.FormatResponsePacket: func() ([10]byte, error) {
-			return (&pdu.ResponsePacketHeader{}).Encode()
+			return pdu.EncodePayload(&pdu.ResponsePacketHeader{})
 		},
 		pdu.FormatShortDataDefined: func() ([10]byte, error) {
-			return (&pdu.DefinedDataHeader{}).Encode()
+			return pdu.EncodePayload(&pdu.DefinedDataHeader{})
 		},
 		pdu.FormatShortDataRawOrStatusPrecoded: func() ([10]byte, error) {
-			return (&pdu.RawDataHeader{AppendedBlocks: 1}).Encode()
+			return pdu.EncodePayload(&pdu.RawDataHeader{AppendedBlocks: 1})
 		},
 		pdu.FormatUnifiedDataTransport: func() ([10]byte, error) {
-			return (&pdu.UDTHeader{}).Encode()
+			return pdu.EncodePayload(&pdu.UDTHeader{})
 		},
 		pdu.FormatProprietary: func() ([10]byte, error) {
-			return (&pdu.ProprietaryHeader{}).Encode()
+			return pdu.EncodePayload(&pdu.ProprietaryHeader{})
 		},
 	}
 	for format, enc := range encode {
@@ -584,7 +584,7 @@ func TestDataHeaderSubEncodersSetFormat(t *testing.T) {
 func TestStatusPrecodedEncoderClearsAppendedBlocks(t *testing.T) {
 	t.Parallel()
 
-	hdr := must((&pdu.StatusPrecodedHeader{Group: true, SAP: 0xF}).Encode())
+	hdr := must(pdu.EncodePayload(&pdu.StatusPrecodedHeader{Group: true, SAP: 0xF}))
 	if got := pdu.Format(uint8(bits.Field(hdr[:], 4, 4))); got != pdu.FormatShortDataRawOrStatusPrecoded {
 		t.Errorf("Format bits = %d, want %d", got, pdu.FormatShortDataRawOrStatusPrecoded)
 	}

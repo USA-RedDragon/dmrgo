@@ -81,8 +81,8 @@ func TestUnionSetSingleValue(t *testing.T) {
 	out := generateUnion(t, selectorSrc)
 	assertContains(t, out,
 		"// SetA makes s carry p as a Sub payload: it sets Op to 1, FID to 0 and Raw,\n"+
-			"// and keeps the other fields. It returns the error of p.Encode, and then\n// leaves s as it is.\n"+
-			"func (s *T) SetA(p Sub) error {\n\traw, err := p.Encode()\n\tif err != nil {\n\t\treturn err\n\t}\n"+
+			"// and keeps the other fields. It returns a *dmrgo.FieldRangeError when a\n// field of p does not fit its bits, and then leaves s as it is.\n"+
+			"func (s *T) SetA(p Sub) error {\n\traw, err := p.encode()\n\tif err != nil {\n\t\treturn err\n\t}\n"+
 			"\ts.Op = 1\n\ts.FID = 0\n\ts.Raw = raw\n\treturn nil\n}",
 	)
 }
@@ -92,11 +92,8 @@ func TestUnionSetMultiValueSelector(t *testing.T) {
 
 	out := generateUnion(t, selectorSrc)
 	assertContains(t, out,
-		"// SetB makes s carry p as a Sub payload: it sets Op to op, FID to 5 and Raw,\n"+
-			"// and keeps the other fields. It returns an error when op is not 2 or 3 and\n"+
-			"// the error of p.Encode, and then leaves s as it is.\n"+
-			"func (s *T) SetB(op uint8, p Sub) error {\n\tif !(op == 2 || op == 3) {\n\t\treturn errTBOp\n\t}\n"+
-			"\traw, err := p.Encode()\n\tif err != nil {\n\t\treturn err\n\t}\n"+
+		"func (s *T) SetB(op uint8, p Sub) error {\n\tif !(op == 2 || op == 3) {\n\t\treturn errTBOp\n\t}\n"+
+			"\traw, err := p.encode()\n\tif err != nil {\n\t\treturn err\n\t}\n"+
 			"\ts.Op = op\n\ts.FID = 5\n\ts.Raw = raw\n\treturn nil\n}",
 		`errors.New("T.SetB: op is not 2 or 3")`,
 	)
@@ -160,10 +157,7 @@ func TestUnionSetChecksGetterCondition(t *testing.T) {
 
 	out := generateUnion(t, getterSrc)
 	assertContains(t, out,
-		"// SetZ makes s carry p as a Sub16 payload: it sets Raw, and keeps the other\n"+
-			"// fields. It returns the error of p.Encode and an error when the payload\n"+
-			"// does not meet the conditions of AsZ, and then leaves s as it is.\n"+
-			"func (s *G) SetZ(p Sub16) error {\n\traw, err := p.Encode()\n\tif err != nil {\n\t\treturn err\n\t}\n"+
+		"func (s *G) SetZ(p Sub16) error {\n\traw, err := p.encode()\n\tif err != nil {\n\t\treturn err\n\t}\n"+
 			"\tt := *s\n\tt.Raw = raw\n\tif _, ok := t.AsZ(); !ok {\n\t\treturn errGZPayload\n\t}\n\t*s = t\n\treturn nil\n}",
 		"func (s *G) SetY(p Sub16) error {",
 		"if _, ok := t.AsY(); !ok {\n\t\treturn errGYPayload\n\t}",

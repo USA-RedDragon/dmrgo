@@ -18,13 +18,7 @@ func decodeCapacityPlusRestChannel(data [3]byte) CapacityPlusRestChannel {
 	return result
 }
 
-// Encode encodes a CapacityPlusRestChannel. It returns the 24 bits packed,
-// the first bit in the most significant bit of byte 0.
-func (s *CapacityPlusRestChannel) Encode() ([3]byte, error) {
-	if s == nil {
-		return [3]byte{}, dmrgo.ErrNilReceiver
-	}
-
+func (s *CapacityPlusRestChannel) encode() ([3]byte, error) {
 	var data [3]byte
 	data[0] = byte(uint64(s.Marker))
 	if uint64(s.Flags)>>3 != 0 {
@@ -64,13 +58,7 @@ func decodeCapacityPlusSiteStatusPDU(data [8]byte) CapacityPlusSiteStatusPDU {
 	return result
 }
 
-// Encode encodes a CapacityPlusSiteStatusPDU. It returns the 64 bits packed,
-// the first bit in the most significant bit of byte 0.
-func (s *CapacityPlusSiteStatusPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+func (s *CapacityPlusSiteStatusPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.Segment)>>2 != 0 {
 		return [8]byte{}, errCapacityPlusSiteStatusPDUSegmentRange
@@ -108,13 +96,7 @@ func decodeCapacityPlusNeighborsPDU(data [8]byte) CapacityPlusNeighborsPDU {
 	return result
 }
 
-// Encode encodes a CapacityPlusNeighborsPDU. It returns the 64 bits packed,
-// the first bit in the most significant bit of byte 0.
-func (s *CapacityPlusNeighborsPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+func (s *CapacityPlusNeighborsPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.Segment)>>2 != 0 {
 		return [8]byte{}, errCapacityPlusNeighborsPDUSegmentRange
@@ -164,13 +146,7 @@ func decodeCapacityPlusPreamblePDU(data [8]byte) CapacityPlusPreamblePDU {
 	return result
 }
 
-// Encode encodes a CapacityPlusPreamblePDU. It returns the 64 bits packed,
-// the first bit in the most significant bit of byte 0.
-func (s *CapacityPlusPreamblePDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+func (s *CapacityPlusPreamblePDU) encode() ([8]byte, error) {
 	var data [8]byte
 	if s.Data {
 		data[0] |= 0x80
@@ -224,13 +200,7 @@ func decodeCapacityPlusDataRevertAnnouncementPDU(data [8]byte) CapacityPlusDataR
 	return result
 }
 
-// Encode encodes a CapacityPlusDataRevertAnnouncementPDU. It returns the 64
-// bits packed, the first bit in the most significant bit of byte 0.
-func (s *CapacityPlusDataRevertAnnouncementPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+func (s *CapacityPlusDataRevertAnnouncementPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	data[0] = byte(uint64(s.Reserved))
 	_valTargetAddress := uint64(s.TargetAddress)
@@ -264,13 +234,7 @@ func decodeCapacityPlusDataRevertGrantPDU(data [8]byte) CapacityPlusDataRevertGr
 	return result
 }
 
-// Encode encodes a CapacityPlusDataRevertGrantPDU. It returns the 64 bits
-// packed, the first bit in the most significant bit of byte 0.
-func (s *CapacityPlusDataRevertGrantPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+func (s *CapacityPlusDataRevertGrantPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	data[0] = byte(uint64(s.Reserved))
 	_valTargetAddress := uint64(s.TargetAddress)
@@ -310,13 +274,7 @@ func decodeCapacityPlusGroupVoiceGrant(data [7]byte) CapacityPlusGroupVoiceGrant
 	return result
 }
 
-// Encode encodes a CapacityPlusGroupVoiceGrant. It returns the 56 bits
-// packed, the first bit in the most significant bit of byte 0.
-func (s *CapacityPlusGroupVoiceGrant) Encode() ([7]byte, error) {
-	if s == nil {
-		return [7]byte{}, dmrgo.ErrNilReceiver
-	}
-
+func (s *CapacityPlusGroupVoiceGrant) encode() ([7]byte, error) {
 	var data [7]byte
 	_serviceOptionsBytes, err := s.ServiceOptions.Encode()
 	if err != nil {
@@ -362,13 +320,7 @@ func decodeCapacityPlusPrivateVoiceGrant(data [7]byte) CapacityPlusPrivateVoiceG
 	return result
 }
 
-// Encode encodes a CapacityPlusPrivateVoiceGrant. It returns the 56 bits
-// packed, the first bit in the most significant bit of byte 0.
-func (s *CapacityPlusPrivateVoiceGrant) Encode() ([7]byte, error) {
-	if s == nil {
-		return [7]byte{}, dmrgo.ErrNilReceiver
-	}
-
+func (s *CapacityPlusPrivateVoiceGrant) encode() ([7]byte, error) {
 	var data [7]byte
 	_serviceOptionsBytes, err := s.ServiceOptions.Encode()
 	if err != nil {

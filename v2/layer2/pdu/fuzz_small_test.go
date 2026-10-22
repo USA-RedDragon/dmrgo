@@ -85,7 +85,7 @@ func fuzzSmallPDU(t *testing.T, kind uint8, data []byte) {
 	case smallRate1:
 		checkRate1(t, in)
 	case smallGPS:
-		checkCodec(t, "FLCGPSInfo", [7]byte(in[:7]), pdu.DecodeFLCGPSInfo, (*pdu.FLCGPSInfo).Encode, (*pdu.FLCGPSInfo).String)
+		checkCodec(t, "FLCGPSInfo", [7]byte(in[:7]), pdu.DecodeFLCGPSInfo, func(p *pdu.FLCGPSInfo) ([7]byte, error) { return pdu.EncodePayload(p) }, (*pdu.FLCGPSInfo).String)
 	case smallEMBCodeword:
 		checkEMBCodeword(t, uint16(in[0])<<8|uint16(in[1]), in[2])
 	case smallSlotTypeCodeword:

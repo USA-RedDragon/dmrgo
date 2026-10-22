@@ -41,16 +41,16 @@ func fuzzCapacityPlus(t *testing.T, data []byte) {
 		var lcRaw [7]byte
 		copy(lcRaw[:], raw[1:])
 		lc := pdu.FullLinkControl{FLCO: pdu.FLCOCapacityPlusGroupVoiceGrant, FID: enums.FIDMotorola, RawPayload: lcRaw}
-		if g, ok := lc.AsCapacityPlusGroupVoiceGrant(); !ok || must(g.Encode()) != lcRaw {
+		if g, ok := lc.AsCapacityPlusGroupVoiceGrant(); !ok || must(pdu.EncodePayload(&g)) != lcRaw {
 			t.Fatalf("group grant %x does not round trip", lcRaw)
 		}
 		lc.FLCO = pdu.FLCOCapacityPlusPrivateVoiceGrant
-		if g, ok := lc.AsCapacityPlusPrivateVoiceGrant(); !ok || must(g.Encode()) != lcRaw {
+		if g, ok := lc.AsCapacityPlusPrivateVoiceGrant(); !ok || must(pdu.EncodePayload(&g)) != lcRaw {
 			t.Fatalf("private grant %x does not round trip", lcRaw)
 		}
 		s := pdu.ShortLC{SLCO: pdu.SLCOCapacityPlusRestChannel, RawPayload: [3]byte{raw[0], raw[1], raw[2]}}
 		r, ok := s.AsCapacityPlusRestChannel()
-		if ok != (raw[0] == 0x10) || ok && must(r.Encode()) != s.RawPayload {
+		if ok != (raw[0] == 0x10) || ok && must(pdu.EncodePayload(&r)) != s.RawPayload {
 			t.Fatalf("rest channel %x: %+v %t", s.RawPayload, r, ok)
 		}
 	}
@@ -59,7 +59,7 @@ func fuzzCapacityPlus(t *testing.T, data []byte) {
 func checkCapPlusPayload(t *testing.T, c *pdu.CSBK, raw [8]byte, asm *pdu.CapacityPlusSiteStatusAssembler) {
 	t.Helper()
 	if p, ok := c.AsCapacityPlusSiteStatus(); ok {
-		if must(p.Encode()) != raw {
+		if must(pdu.EncodePayload(&p)) != raw {
 			t.Fatalf("site status %x does not round trip", raw)
 		}
 		if done, err := asm.Add(&p); done && err == nil {
@@ -78,7 +78,7 @@ func checkCapPlusPayload(t *testing.T, c *pdu.CSBK, raw [8]byte, asm *pdu.Capaci
 		}
 	}
 	if p, ok := c.AsCapacityPlusNeighbors(); ok {
-		if must(p.Encode()) != raw {
+		if must(pdu.EncodePayload(&p)) != raw {
 			t.Fatalf("neighbors %x does not round trip", raw)
 		}
 		for i := range 7 {
@@ -87,13 +87,13 @@ func checkCapPlusPayload(t *testing.T, c *pdu.CSBK, raw [8]byte, asm *pdu.Capaci
 			}
 		}
 	}
-	if p, ok := c.AsCapacityPlusPreamble(); ok && must(p.Encode()) != raw {
+	if p, ok := c.AsCapacityPlusPreamble(); ok && must(pdu.EncodePayload(&p)) != raw {
 		t.Fatalf("preamble %x does not round trip", raw)
 	}
-	if p, ok := c.AsCapacityPlusDataRevertAnnouncement(); ok && must(p.Encode()) != raw {
+	if p, ok := c.AsCapacityPlusDataRevertAnnouncement(); ok && must(pdu.EncodePayload(&p)) != raw {
 		t.Fatalf("revert announcement %x does not round trip", raw)
 	}
-	if p, ok := c.AsCapacityPlusDataRevertGrant(); ok && must(p.Encode()) != raw {
+	if p, ok := c.AsCapacityPlusDataRevertGrant(); ok && must(pdu.EncodePayload(&p)) != raw {
 		t.Fatalf("revert grant %x does not round trip", raw)
 	}
 }
