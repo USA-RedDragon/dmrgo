@@ -112,10 +112,10 @@ func (s *Point2D) AppendBinary(dst []byte) ([]byte, error) {
 
 	_n := len(dst)
 	_vLatitude := math.Round(math.Abs(s.Latitude) / (90.0 / (1 << 31)))
-	if !(_vLatitude <= 2.147483647e+09) {
+	if !(_vLatitude <= 2.147483648e+09) {
 		return dst[:_n], errPoint2DLatitudeRange
 	}
-	_vLatitudeRaw := uint64(_vLatitude)
+	_vLatitudeRaw := uint64(min(_vLatitude, 2.147483647e+09))
 	if s.Latitude < 0 && _vLatitudeRaw != 0 {
 		_vLatitudeRaw |= uint64(0x80000000)
 	}
@@ -175,10 +175,10 @@ func (s *Circle2D) AppendBinary(dst []byte) ([]byte, error) {
 
 	_n := len(dst)
 	_vLatitude := math.Round(math.Abs(s.Latitude) / (90.0 / (1 << 31)))
-	if !(_vLatitude <= 2.147483647e+09) {
+	if !(_vLatitude <= 2.147483648e+09) {
 		return dst[:_n], errCircle2DLatitudeRange
 	}
-	_vLatitudeRaw := uint64(_vLatitude)
+	_vLatitudeRaw := uint64(min(_vLatitude, 2.147483647e+09))
 	if s.Latitude < 0 && _vLatitudeRaw != 0 {
 		_vLatitudeRaw |= uint64(0x80000000)
 	}
@@ -242,10 +242,10 @@ func (s *Point3D) AppendBinary(dst []byte) ([]byte, error) {
 
 	_n := len(dst)
 	_vLatitude := math.Round(math.Abs(s.Latitude) / (90.0 / (1 << 31)))
-	if !(_vLatitude <= 2.147483647e+09) {
+	if !(_vLatitude <= 2.147483648e+09) {
 		return dst[:_n], errPoint3DLatitudeRange
 	}
-	_vLatitudeRaw := uint64(_vLatitude)
+	_vLatitudeRaw := uint64(min(_vLatitude, 2.147483647e+09))
 	if s.Latitude < 0 && _vLatitudeRaw != 0 {
 		_vLatitudeRaw |= uint64(0x80000000)
 	}
@@ -318,10 +318,10 @@ func (s *Point3DAccuracy) AppendBinary(dst []byte) ([]byte, error) {
 
 	_n := len(dst)
 	_vLatitude := math.Round(math.Abs(s.Latitude) / (90.0 / (1 << 31)))
-	if !(_vLatitude <= 2.147483647e+09) {
+	if !(_vLatitude <= 2.147483648e+09) {
 		return dst[:_n], errPoint3DAccuracyLatitudeRange
 	}
-	_vLatitudeRaw := uint64(_vLatitude)
+	_vLatitudeRaw := uint64(min(_vLatitude, 2.147483647e+09))
 	if s.Latitude < 0 && _vLatitudeRaw != 0 {
 		_vLatitudeRaw |= uint64(0x80000000)
 	}
@@ -407,10 +407,10 @@ func (s *Circle3D) AppendBinary(dst []byte) ([]byte, error) {
 
 	_n := len(dst)
 	_vLatitude := math.Round(math.Abs(s.Latitude) / (90.0 / (1 << 31)))
-	if !(_vLatitude <= 2.147483647e+09) {
+	if !(_vLatitude <= 2.147483648e+09) {
 		return dst[:_n], errCircle3DLatitudeRange
 	}
-	_vLatitudeRaw := uint64(_vLatitude)
+	_vLatitudeRaw := uint64(min(_vLatitude, 2.147483647e+09))
 	if s.Latitude < 0 && _vLatitudeRaw != 0 {
 		_vLatitudeRaw |= uint64(0x80000000)
 	}
@@ -1129,8 +1129,8 @@ var (
 	errPoint2DLatitudeRange = &dmrgo.FieldRangeError{
 		Bits:   32,
 		Field:  "Latitude",
-		Max:    89.99999995809048,
-		Min:    -89.99999995809048,
+		Max:    90.0,
+		Min:    -90.0,
 		Signed: true,
 		Type:   "Point2D",
 	}
@@ -1145,8 +1145,8 @@ var (
 	errCircle2DLatitudeRange = &dmrgo.FieldRangeError{
 		Bits:   32,
 		Field:  "Latitude",
-		Max:    89.99999995809048,
-		Min:    -89.99999995809048,
+		Max:    90.0,
+		Min:    -90.0,
 		Signed: true,
 		Type:   "Circle2D",
 	}
@@ -1166,8 +1166,8 @@ var (
 	errPoint3DLatitudeRange = &dmrgo.FieldRangeError{
 		Bits:   32,
 		Field:  "Latitude",
-		Max:    89.99999995809048,
-		Min:    -89.99999995809048,
+		Max:    90.0,
+		Min:    -90.0,
 		Signed: true,
 		Type:   "Point3D",
 	}
@@ -1188,8 +1188,8 @@ var (
 	errPoint3DAccuracyLatitudeRange = &dmrgo.FieldRangeError{
 		Bits:   32,
 		Field:  "Latitude",
-		Max:    89.99999995809048,
-		Min:    -89.99999995809048,
+		Max:    90.0,
+		Min:    -90.0,
 		Signed: true,
 		Type:   "Point3DAccuracy",
 	}
@@ -1215,8 +1215,8 @@ var (
 	errCircle3DLatitudeRange = &dmrgo.FieldRangeError{
 		Bits:   32,
 		Field:  "Latitude",
-		Max:    89.99999995809048,
-		Min:    -89.99999995809048,
+		Max:    90.0,
+		Min:    -90.0,
 		Signed: true,
 		Type:   "Circle3D",
 	}
