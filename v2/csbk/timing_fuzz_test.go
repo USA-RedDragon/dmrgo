@@ -31,6 +31,9 @@ func timingScript(t testing.TB, in []byte) {
 		}
 		for _, o := range out {
 			if o.Kind == csbk.OutputBurst {
+				if o.Hint.Kind != layer2.KindData || o.Hint.DataType != enums.DataTypeCSBK || o.Hint.Slot == enums.SlotUnknown {
+					t.Fatalf("op %d: Hint %+v", op, o.Hint)
+				}
 				if err := b.DecodeFromBytes(o.Burst); err != nil || b.SlotType.ColorCode != csbk.AllSiteColorCode {
 					t.Fatalf("op %d: burst %v", op, err)
 				}
@@ -82,7 +85,7 @@ func timingScript(t testing.TB, in []byte) {
 			}
 		case 6:
 			now += time.Duration(f[0]) * time.Millisecond
-			out = m.Tick(now, out[:0])
+			out = timingQuiet(m, now, op, out[:0])
 		default:
 			if op&0x10 != 0 {
 				m.Reset()
@@ -93,6 +96,16 @@ func timingScript(t testing.TB, in []byte) {
 		}
 		check(op)
 	}
+}
+
+func timingQuiet(m *csbk.Timing, now time.Duration, op byte, out []csbk.Output) []csbk.Output {
+	switch op >> 4 & 3 {
+	case 1:
+		return m.Burst(now, nil, layer2.Hint{SyncLost: op&0x40 != 0}, out)
+	case 2:
+		return m.Lost(now, out)
+	}
+	return m.Tick(now, out)
 }
 
 func timingSeeds() [][]byte {
