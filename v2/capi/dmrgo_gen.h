@@ -3467,6 +3467,12 @@ struct dmrgo_location_fix_t {
 	uint8_t minute;
 	uint8_t second;
 	bool has_time;
+	/* Result is the result code of the answer, when HasResult is set: an lrrp.ResultCode for FormatLRRP, and the Result of a standard answer for FormatHDAP. 0 is success. */
+	uint32_t result;
+	bool has_result;
+	/* RequestID holds the identifier of the request that the report answers, in its first RequestIDLength octets: the LRRP request ID, or the RequestID of an HDAP answer or condition report, big-endian. An LRRP request ID longer than 16 octets gives RequestIDLength 0. */
+	uint8_t request_id[16];
+	uint8_t request_id_length;
 };
 
 struct dmrgo_ars_header_t {
@@ -5537,6 +5543,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_LAYER2_VOICE_POSITION (-226)
 #define DMRGO_ERR_LAYER2_VOICE_TERMINATED (-117)
 #define DMRGO_ERR_LOCATION_NO_FIX (-196)
+#define DMRGO_ERR_LOCATION_NO_POSITION (-239)
 #define DMRGO_ERR_LRRP_LENGTH (-187)
 #define DMRGO_ERR_LRRP_SHORT (-188)
 #define DMRGO_ERR_LRRP_TOKEN (-189)
@@ -9656,7 +9663,7 @@ int dmrgo_layer3_voice_service_options_string(dmrgo_layer3_voice_service_options
 int dmrgo_location_decoder_new(dmrgo_location_decoder_t **out);
 /* dmrgo_location_decoder_free frees the handle. self may be NULL. */
 int dmrgo_location_decoder_free(dmrgo_location_decoder_t *self);
-/* Go: location.Decoder.Decode. Decode returns the position in a data packet, with header h and user data data: an NMEA RMC sentence to UDP port 10110, an LRRP report with a position to UDP port 4001, or a Hytera HDAP location protocol message with a position to UDP port 3003. */
+/* Go: location.Decoder.Decode. Decode returns the position in a data packet, with header h and user data data: an NMEA RMC sentence to UDP port 10110, an LRRP report or answer to UDP port 4001, or a Hytera HDAP location protocol answer or report to UDP port 3003. */
 int dmrgo_location_decoder_decode(dmrgo_location_decoder_t *self, const dmrgo_pdu_data_header_t *h, const uint8_t *data, size_t data_len, dmrgo_location_fix_t *out);
 /* Go: location.Format.String. String returns the name of f. */
 int dmrgo_location_format_string(dmrgo_location_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

@@ -17,6 +17,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/location"
+	"github.com/USA-RedDragon/dmrgo/v2/mototrbo/lrrp"
 )
 
 func near(a, b, eps float64) bool { return math.Abs(a-b) < eps }
@@ -129,7 +130,8 @@ func TestLRRP(t *testing.T) {
 		t.Fatal(err)
 	}
 	if f.Format != location.FormatLRRP || f.Source != 5 || !near(f.Latitude, 12.345345, 1e-6) || !near(f.Longitude, 24.668866, 1e-6) ||
-		!f.HasRadius || f.Radius != 99.0/128 || !f.HasSpeed || f.Speed != 6.0/128 || !f.HasTime || f.Year != 2003 || f.HasCourse {
+		!f.HasRadius || f.Radius != 99.0/128 || !f.HasSpeed || f.Speed != 6.0/128 || !f.HasTime || f.Year != 2003 || f.HasCourse ||
+		f.HasResult || hex.EncodeToString(f.RequestID[:f.RequestIDLength]) != "2468ace0" {
 		t.Errorf("got %+v", f)
 	}
 	m = lrrpPacket(t, "0d0e6910000000f00000008101205647")
@@ -140,10 +142,25 @@ func TestLRRP(t *testing.T) {
 	if !f.HasAltitude || f.Altitude != 129.25 || !f.HasCourse || f.Course != 142 || !near(f.Longitude, -22.5, 1e-9) {
 		t.Errorf("point 3D %+v", f)
 	}
-	for _, s := range []string{"090922042468ace034313c", "110722042468ace038"} {
-		m = lrrpPacket(t, s)
-		if _, err := dec.Decode(&m.Header, m.Data); !errors.Is(err, location.ErrNoFix) {
-			t.Errorf("%s: %v", s, err)
+	m = lrrpPacket(t, "090922042468ace034313c")
+	if _, err := dec.Decode(&m.Header, m.Data); !errors.Is(err, location.ErrNoFix) {
+		t.Errorf("request: %v", err)
+	}
+	for _, tt := range []struct {
+		data   string
+		result uint32
+		id     string
+	}{
+		{"110722042468ace038", 0, "2468ace0"},
+		{"070c22042468ace0390503515355", 5, "2468ace0"},
+		{"07082204000000073710", uint32(lrrp.ResultNoGPS), "00000007"},
+		{"07052307378400", uint32(lrrp.ResultGPSInitializing), "07"},
+	} {
+		m = lrrpPacket(t, tt.data)
+		f, err := dec.Decode(&m.Header, m.Data)
+		if !errors.Is(err, location.ErrNoPosition) || f.Format != location.FormatLRRP || f.Source != 5 || f.Valid ||
+			!f.HasResult || f.Result != tt.result || hex.EncodeToString(f.RequestID[:f.RequestIDLength]) != tt.id {
+			t.Errorf("%s: %+v, %v", tt.data, f, err)
 		}
 	}
 }
@@ -168,6 +185,19 @@ func hdapPacket(t testing.TB, service hdap.Service, opcode hdap.Opcode, payload 
 			SAP: enums.SAPIPBasedPacketData, LLIDDestination: 7, LLIDSource: 5,
 		}),
 		Data: data,
+	}
+}
+
+func TestHDAPFailedAnswer(t *testing.T) {
+	t.Parallel()
+
+	failed := append([]byte{0, 0, 0, 7, 10, 0, 0, 80, 0, 1}, hdapGPS...)
+	var d location.Decoder
+	m := hdapPacket(t, hdap.ServiceLP, hdap.LPStandardAnswer, failed)
+	f, err := d.Decode(&m.Header, m.Data)
+	if !errors.Is(err, location.ErrNoPosition) || f.Format != location.FormatHDAP || f.Valid || !f.HasResult || f.Result != 1 ||
+		f.RequestIDLength != 4 || [4]byte(f.RequestID[:4]) != [4]byte{0, 0, 0, 7} {
+		t.Errorf("%+v, %v", f, err)
 	}
 }
 
@@ -216,7 +246,7 @@ func TestHDAP(t *testing.T) {
 		payload []byte
 		want    error
 	}{
-		{"failed answer", hdap.ServiceLP, hdap.LPStandardAnswer, failed, location.ErrNoFix},
+		{"failed answer", hdap.ServiceLP, hdap.LPStandardAnswer, failed, location.ErrNoPosition},
 		{"request", hdap.ServiceLP, hdap.LPStandardRequest, answer[:8], location.ErrNoFix},
 		{"RRS", hdap.ServiceRRS, hdap.LPStandardAnswer, answer, location.ErrNoFix},
 		{"short", hdap.ServiceLP, hdap.LPConditionReport, report[:20], hdap.ErrShort},
