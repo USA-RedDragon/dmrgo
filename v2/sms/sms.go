@@ -100,7 +100,8 @@ type Text struct {
 
 // Decode appends the text of a data packet, with header h and user data
 // data, to dst as UTF-8, and returns dst and the Text, whose Body points
-// into dst. It finds the format from the header and the UDP port: TMS on
+// into dst. data is the Data of a packet.Message, without the pad octets
+// that the Bit Padding of a DD_HEAD counts. It finds the format from the header and the UDP port: TMS on
 // port 4007, IP or AnyTone text on port 5016, and defined data. Defined
 // data with DD format BCD is FormatHytera when it has the HyteraText
 // layout: an even length of at least 6 octets, 2 octets and then a UTF-16LE
@@ -125,9 +126,6 @@ func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 		t.Group, t.DD, t.Confirmed = d.Group, d.DefinedData, d.ResponseRequested
 		if d.DefinedData == enums.DDBinary {
 			return dst, Text{}, ErrNotText
-		}
-		if pad := int(d.BitPadding / 8); pad <= len(data) {
-			data = data[:len(data)-pad]
 		}
 		if d.DefinedData == enums.DDBCD && hyteraLayout(data) {
 			ht, err := shortdata.DecodeHyteraText(data)

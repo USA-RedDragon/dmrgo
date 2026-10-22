@@ -42,7 +42,7 @@ func TestReceiverSMSCaptures(t *testing.T) {
 		end    time.Duration
 	}{
 		{"d-sms", pdu.FormatUnconfirmed, 56, 5, 960 * time.Millisecond},
-		{"h-sms", pdu.FormatShortDataDefined, 32, 3, 840 * time.Millisecond},
+		{"h-sms", pdu.FormatShortDataDefined, 26, 3, 840 * time.Millisecond},
 		{"m-sms", pdu.FormatUnconfirmed, 62, 6, 1020 * time.Millisecond},
 	} {
 		ev := replay(t, newReceiver(t, nil), readBin(t, "../layer2/testdata/"+c.name+".bin", 0))

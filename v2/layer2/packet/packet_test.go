@@ -50,7 +50,7 @@ func TestAssembler_Captures(t *testing.T) {
 	}{
 		{"d-sms", pdu.FormatUnconfirmed, 56, utf16le("TEST KI5VMF")},
 		{"m-sms", pdu.FormatUnconfirmed, 62, utf16le("TEST KI5VMF")},
-		{"h-sms", pdu.FormatShortDataDefined, 32, utf16le("TEST KI5VMF")},
+		{"h-sms", pdu.FormatShortDataDefined, 26, utf16le("TEST KI5VMF")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.file, func(t *testing.T) {
@@ -429,7 +429,11 @@ func TestSegment_ShortData(t *testing.T) {
 		}
 		a := packet.NewAssembler(127)
 		m, err := feed(t, a, p)
-		if err != nil || get(t, &m.Header, (*pdu.DataHeader).AsDefinedData).AppendedBlocks != 2 || !bytes.HasPrefix(m.Data, utf16le("hello")) || len(m.Data) != map[bool]int{false: 20, true: 16}[sarq] {
+		if err != nil || m == nil {
+			t.Fatalf("sarq %v: %v", sarq, err)
+		}
+		d := get(t, &m.Header, (*pdu.DataHeader).AsDefinedData)
+		if d.AppendedBlocks != 2 || d.BitPadding != map[bool]uint8{false: 80, true: 48}[sarq] || !bytes.Equal(m.Data, utf16le("hello")) {
 			t.Fatalf("sarq %v: %v %+v", sarq, err, m)
 		}
 	}
@@ -439,7 +443,7 @@ func TestSegment_ShortData(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := packet.NewAssembler(127)
-	if m, err := feed(t, a, p); err != nil || !bytes.HasPrefix(m.Data, payload(30)) {
+	if m, err := feed(t, a, p); err != nil || !bytes.Equal(m.Data, payload(30)) || get(t, &p.Header, (*pdu.DataHeader).AsRawData).BitPadding != 16 {
 		t.Fatalf("raw: %v", err)
 	}
 }

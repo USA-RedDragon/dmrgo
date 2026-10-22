@@ -71,7 +71,9 @@ func layout(n, per int) (blocks, pad int) {
 
 // NewPacket splits payload into the data blocks of one packet at the given
 // rate and returns them with a copy of header. It sets the block count and
-// pad fields of the header, gives confirmed blocks DBSN 0, 1, 2 and so on,
+// pad fields of the header, the Pad Octet Count of a U_HEAD or C_HEAD and
+// the Bit Padding, pad octets times 8, of a DD_HEAD or R_HEAD (ETSI TS
+// 102 361-1 clause 9.3.44), gives confirmed blocks DBSN 0, 1, 2 and so on,
 // and keeps the other header fields. It returns an error that wraps
 // ErrRate, ErrFormat or ErrTooLong. It allocates the storage of the Packet;
 // Builder.Segment builds into the storage of a Builder.
@@ -256,7 +258,7 @@ func (b *Builder) setLayout(h *pdu.DataHeader, n int, rate enums.DataType) (bool
 	}
 	blocks, pad := layout(n, per)
 	limit := maxBlocks
-	if f := h.Format(); f == pdu.FormatShortDataDefined || f == pdu.FormatShortDataRawOrStatusPrecoded {
+	if shortData(h) {
 		limit = 63
 	}
 	if blocks > limit {
@@ -278,11 +280,11 @@ func setBlocks(h *pdu.DataHeader, blocks, pad uint8) error {
 		return h.SetConfirmed(c)
 	}
 	if d, ok := h.AsDefinedData(); ok {
-		d.AppendedBlocks = blocks
+		d.AppendedBlocks, d.BitPadding = blocks, pad*8
 		return h.SetDefinedData(d)
 	}
 	if r, ok := h.AsRawData(); ok {
-		r.AppendedBlocks = blocks
+		r.AppendedBlocks, r.BitPadding = blocks, pad*8
 		return h.SetRawData(r)
 	}
 	return nil
@@ -314,12 +316,23 @@ func fullMessage(h *pdu.DataHeader) bool {
 	return full || !ok
 }
 
+func shortData(h *pdu.DataHeader) bool {
+	f := h.Format()
+	return f == pdu.FormatShortDataDefined || f == pdu.FormatShortDataRawOrStatusPrecoded
+}
+
 func padOf(h *pdu.DataHeader) int {
 	if u, ok := h.AsUnconfirmed(); ok {
 		return int(u.PadOctetCount)
 	}
 	if c, ok := h.AsConfirmed(); ok {
 		return int(c.PadOctetCount)
+	}
+	if d, ok := h.AsDefinedData(); ok {
+		return int(d.BitPadding / 8)
+	}
+	if r, ok := h.AsRawData(); ok {
+		return int(r.BitPadding / 8)
 	}
 	return 0
 }
