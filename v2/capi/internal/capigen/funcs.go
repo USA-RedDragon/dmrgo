@@ -13,6 +13,7 @@ type sliceOut struct {
 }
 
 type sigmap struct {
+	notes      []string
 	fn         *types.Func
 	pidx       int
 	arena      bool
@@ -436,6 +437,11 @@ func (g *gen) mapResult(sm *sigmap, n string, t types.Type, r string) error {
 			sm.cps = append(sm.cps, ti.c+" **"+n)
 			sm.gps = append(sm.gps, cn+" **C."+ti.c)
 			lines(&sm.pre, "if "+cn+" == nil {", "return fail(C.DMRGO_ERR_ARG)", "}")
+			if sm.fn != nil && sm.fn.Signature().Recv() != nil && g.l.effects(sm.fn, -1).ret && !isRef(e) {
+				lines(&sm.post, "*"+cn+" = nil", "if "+r+" != nil {", "cp := *"+r, "*"+cn+" = "+g.newer(ti)+"(&cp)", "}")
+				sm.notes = append(sm.notes, " In C, *"+n+" is a new handle to a copy, which does not change with self; free it with "+ti.base+"_free.")
+				return nil
+			}
 			lines(&sm.post, "*"+cn+" = nil", "if "+r+" != nil {", "*"+cn+" = "+g.newer(ti)+"("+r+")", "}")
 			return nil
 		}
@@ -800,7 +806,7 @@ func (g *gen) wrapper(cname, doc string, recv *tinfo, rk recvKind, call string, 
 			return "", "", err
 		}
 	}
-	doc += note
+	doc += note + strings.Join(sm.notes, "")
 	callLine(&w, &sm, ld, rvars, target)
 	w.WriteString(sm.after.String())
 	for _, r := range rvars {

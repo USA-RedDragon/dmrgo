@@ -1191,6 +1191,7 @@ var entryPoints = map[string]any{
 	"dmrgo_ipsc_opcode_string":                                         dmrgo_ipsc_opcode_string,
 	"dmrgo_ipsc_payload_rssi":                                          dmrgo_ipsc_payload_rssi,
 	"dmrgo_ipsc_payload_slot_type":                                     dmrgo_ipsc_payload_slot_type,
+	"dmrgo_ipsc_peer_list_new":                                         dmrgo_ipsc_peer_list_new,
 	"dmrgo_ipsc_peer_list_free":                                        dmrgo_ipsc_peer_list_free,
 	"dmrgo_ipsc_peer_list_entry":                                       dmrgo_ipsc_peer_list_entry,
 	"dmrgo_ipsc_peer_list_len":                                         dmrgo_ipsc_peer_list_len,

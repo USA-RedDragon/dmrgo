@@ -255,6 +255,40 @@ static void test_sized(void) {
 	printf("sized: config and vtable structs read only the members their size covers\n");
 }
 
+static void test_udt_copy(void) {
+	dmrgo_trunk_follower_config_t cfg = {.size = sizeof cfg};
+	dmrgo_trunk_follower_t *f = NULL;
+	int rc = dmrgo_trunk_new_follower(&cfg, &f);
+	if (rc != DMRGO_OK) {
+		fprintf(stderr, "new follower: %d\n", rc);
+		failures++;
+		return;
+	}
+	dmrgo_trunk_udt_t *u1 = NULL, *u2 = NULL, *u3 = NULL;
+	OK(dmrgo_trunk_follower_udt(f, &u1));
+	OK(dmrgo_trunk_follower_udt(f, &u2));
+	CHECK(u1 != NULL && u2 != NULL && u1 != u2);
+	OK(dmrgo_trunk_udt_set_len(u1, 40));
+	int64_t len = -1;
+	OK(dmrgo_trunk_udt_get_len(u2, &len));
+	CHECK(len == 0);
+	OK(dmrgo_trunk_follower_udt(f, &u3));
+	OK(dmrgo_trunk_udt_get_len(u3, &len));
+	CHECK(len == 0);
+	OK(dmrgo_trunk_udt_free(u1));
+	OK(dmrgo_trunk_udt_free(u2));
+	OK(dmrgo_trunk_udt_free(u3));
+	OK(dmrgo_trunk_follower_free(f));
+
+	dmrgo_ipsc_peer_list_t *pl = NULL;
+	OK(dmrgo_ipsc_peer_list_new(&pl));
+	uint8_t pkt[32] = {0};
+	rc = dmrgo_ipsc_peer_list_of(pkt, sizeof pkt, pl);
+	CHECK(rc != DMRGO_ERR_PANIC && rc != DMRGO_ERR_HANDLE);
+	OK(dmrgo_ipsc_peer_list_free(pl));
+	printf("udt: a machine's UDT reaches C as a copy\n");
+}
+
 static void test_error_is(void) {
 	dmrgo_pdu_rate12_data_t blk = {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}};
 	dmrgo_packet_response_data_t rd;
@@ -903,6 +937,7 @@ int main(int argc, char **argv) {
 	test_bad_args();
 	test_error_is();
 	test_sized();
+	test_udt_copy();
 	test_tx();
 	test_voice_capture(argv[1]);
 	test_vocoder();

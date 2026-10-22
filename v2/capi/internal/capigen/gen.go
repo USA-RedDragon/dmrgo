@@ -414,7 +414,7 @@ func (g *gen) typeObject(o *types.TypeName, gn string) error {
 		}
 	}
 	if ti.kind == kHandle {
-		if err := g.lifecycle(ti, gn, zeroReady(g.l.full[o], o.Name()) && !hasNew(o)); err != nil {
+		if err := g.lifecycle(ti, gn, (zeroReady(g.l.full[o], o.Name()) || g.valueResult(ti)) && !hasNew(o)); err != nil {
 			return err
 		}
 	}
@@ -554,6 +554,40 @@ func zeroReady(doc, name string) bool {
 			rest := doc[i+len(lead):]
 			if strings.HasPrefix(rest, "ready") || strings.HasPrefix(rest, "empty") || strings.HasPrefix(rest, "an empty") {
 				return true
+			}
+		}
+	}
+	return false
+}
+
+// valueResult reports whether a func or method returns the handle type of
+// ti by value, which the C form copies into a handle of the caller.
+func (g *gen) valueResult(ti *tinfo) bool {
+	check := func(sig *types.Signature) bool {
+		for v := range sig.Results().Variables() {
+			if types.Identical(v.Type(), ti.named) {
+				return true
+			}
+		}
+		return false
+	}
+	for _, p := range g.pkgs {
+		for _, n := range p.Scope().Names() {
+			switch o := p.Scope().Lookup(n).(type) {
+			case *types.Func:
+				if o.Exported() && check(o.Signature()) {
+					return true
+				}
+			case *types.TypeName:
+				nt, ok := o.Type().(*types.Named)
+				if !ok || !o.Exported() {
+					continue
+				}
+				for m := range nt.Methods() {
+					if m.Exported() && check(m.Signature()) {
+						return true
+					}
+				}
 			}
 		}
 	}

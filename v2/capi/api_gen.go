@@ -37790,6 +37790,16 @@ func dmrgo_ipsc_payload_slot_type(c_self *C.dmrgo_ipsc_payload_t, c_slot_type_in
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ipsc_peer_list_new
+func dmrgo_ipsc_peer_list_new(c_out **C.dmrgo_ipsc_peer_list_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_transport_ipsc_PeerList(new(g_transport_ipsc.PeerList))
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ipsc_peer_list_free
 func dmrgo_ipsc_peer_list_free(c_self *C.dmrgo_ipsc_peer_list_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -42772,7 +42782,8 @@ func dmrgo_trunk_follower_udt(c_self *C.dmrgo_trunk_follower_t, c_out **C.dmrgo_
 	_ = r0
 	*c_out = nil
 	if r0 != nil {
-		*c_out = new_trunk_UDT(r0)
+		cp := *r0
+		*c_out = new_trunk_UDT(&cp)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -44130,7 +44141,8 @@ func dmrgo_trunk_ms_udt(c_self *C.dmrgo_trunk_ms_t, c_out **C.dmrgo_trunk_udt_t)
 	_ = r0
 	*c_out = nil
 	if r0 != nil {
-		*c_out = new_trunk_UDT(r0)
+		cp := *r0
+		*c_out = new_trunk_UDT(&cp)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -44821,7 +44833,8 @@ func dmrgo_trunk_tscc_udt(c_self *C.dmrgo_trunk_tscc_t, c_out **C.dmrgo_trunk_ud
 	_ = r0
 	*c_out = nil
 	if r0 != nil {
-		*c_out = new_trunk_UDT(r0)
+		cp := *r0
+		*c_out = new_trunk_UDT(&cp)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
