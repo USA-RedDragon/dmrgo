@@ -49,6 +49,14 @@ type tinfo struct {
 }
 
 func snake(s string) string {
+	if rest, ok := strings.CutPrefix(s, "DD"); ok && rest != "" {
+		switch {
+		case unicode.IsDigit(rune(rest[0])):
+			return "dd_" + strings.ToLower(rest)
+		case unicode.IsUpper(rune(rest[0])):
+			return "dd_" + snake(rest)
+		}
+	}
 	for _, w := range []string{"AnyTone", "MHz", "KHz", "kHz"} {
 		if before, after, ok := strings.Cut(s, w); ok {
 			var parts []string
