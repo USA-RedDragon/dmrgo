@@ -12221,6 +12221,12 @@ func dmrgo_data_receiver_burst_need(c_self *C.dmrgo_data_receiver_t, c_now C.dmr
 func dmrgo_data_receiver_burst(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_data_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -12228,12 +12234,6 @@ func dmrgo_data_receiver_burst(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_du
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_data_Receiver(c_self)
 	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -12350,6 +12350,12 @@ func dmrgo_data_receiver_decoded_need(c_self *C.dmrgo_data_receiver_t, c_now C.d
 func dmrgo_data_receiver_decoded(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_data_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -12357,12 +12363,6 @@ func dmrgo_data_receiver_decoded(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_data_Receiver(c_self)
 	var a_b *g_layer2.Burst
 	if c_b != nil {
@@ -12452,6 +12452,12 @@ func dmrgo_data_receiver_lost_need(c_self *C.dmrgo_data_receiver_t, c_now C.dmrg
 func dmrgo_data_receiver_lost(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_data_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -12459,12 +12465,6 @@ func dmrgo_data_receiver_lost(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_dur
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_data_Receiver(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -12573,6 +12573,12 @@ func dmrgo_data_receiver_tick_need(c_self *C.dmrgo_data_receiver_t, c_now C.dmrg
 func dmrgo_data_receiver_tick(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_data_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -12580,12 +12586,6 @@ func dmrgo_data_receiver_tick(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_dur
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_data_Receiver(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -14175,6 +14175,12 @@ func dmrgo_hdap_decode_lp_request(c_data *C.uint8_t, c_data_len C.size_t, c_out 
 func dmrgo_hdap_decode_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hdap_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -14182,12 +14188,6 @@ func dmrgo_hdap_decode_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14373,6 +14373,12 @@ func dmrgo_hdap_decode_tmp_group_answer(c_data *C.uint8_t, c_data_len C.size_t, 
 func dmrgo_hdap_decode_tmp_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_hdap_tmp_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -14380,12 +14386,6 @@ func dmrgo_hdap_decode_tmp_message(c_data *C.uint8_t, c_data_len C.size_t, c_out
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15299,13 +15299,6 @@ func dmrgo_hdap_tmp_message_append_binary(c_self *C.dmrgo_hdap_tmp_message_t, c_
 func dmrgo_hdap_tmp_message_set_text_utf8(c_self *C.dmrgo_hdap_tmp_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_text *C.uint8_t, c_text_len C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15315,6 +15308,13 @@ func dmrgo_hdap_tmp_message_set_text_utf8(c_self *C.dmrgo_hdap_tmp_message_t, c_
 	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15588,6 +15588,12 @@ func dmrgo_ip_dpid_port(c_dpid C.dmrgo_enums_dpid_t, c_out *C.dmrgo_ip_port_t) (
 func dmrgo_ip_decode(c_sap C.dmrgo_enums_sap_t, c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_ip_datagram_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -15595,12 +15601,6 @@ func dmrgo_ip_decode(c_sap C.dmrgo_enums_sap_t, c_data *C.uint8_t, c_data_len C.
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15630,6 +15630,12 @@ func dmrgo_ip_decode(c_sap C.dmrgo_enums_sap_t, c_data *C.uint8_t, c_data_len C.
 func dmrgo_ip_decode_icmp(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_ip_icmp_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -15637,12 +15643,6 @@ func dmrgo_ip_decode_icmp(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15672,6 +15672,12 @@ func dmrgo_ip_decode_icmp(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo
 func dmrgo_ip_decode_icmp_packet(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_ip_icmp_packet_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -15679,12 +15685,6 @@ func dmrgo_ip_decode_icmp_packet(c_data *C.uint8_t, c_data_len C.size_t, c_out *
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15714,6 +15714,12 @@ func dmrgo_ip_decode_icmp_packet(c_data *C.uint8_t, c_data_len C.size_t, c_out *
 func dmrgo_ip_decode_ipv4(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_ip_ipv4_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -15721,12 +15727,6 @@ func dmrgo_ip_decode_ipv4(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15756,6 +15756,12 @@ func dmrgo_ip_decode_ipv4(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo
 func dmrgo_ip_decode_udp(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_ip_udp_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -15763,12 +15769,6 @@ func dmrgo_ip_decode_udp(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -19792,6 +19792,9 @@ func dmrgo_packet_assembler_add_need(c_self *C.dmrgo_packet_assembler_t, c_d *C.
 func dmrgo_packet_assembler_add(c_self *C.dmrgo_packet_assembler_t, c_d *C.dmrgo_layer2_data_t, c_message *C.dmrgo_packet_message_t, c_ok *C.bool, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -19799,9 +19802,6 @@ func dmrgo_packet_assembler_add(c_self *C.dmrgo_packet_assembler_t, c_d *C.dmrgo
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_layer2_packet_Assembler(c_self)
 	if c_d == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -19919,6 +19919,9 @@ func dmrgo_packet_assembler_add_burst_need(c_self *C.dmrgo_packet_assembler_t, c
 func dmrgo_packet_assembler_add_burst(c_self *C.dmrgo_packet_assembler_t, c_b *C.dmrgo_layer2_burst_t, c_message *C.dmrgo_packet_message_t, c_ok *C.bool, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -19926,9 +19929,6 @@ func dmrgo_packet_assembler_add_burst(c_self *C.dmrgo_packet_assembler_t, c_b *C
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_layer2_packet_Assembler(c_self)
 	var a_b *g_layer2.Burst
 	if c_b != nil {
@@ -20067,6 +20067,9 @@ func dmrgo_packet_assembler_lost_need(c_self *C.dmrgo_packet_assembler_t, c_item
 func dmrgo_packet_assembler_lost(c_self *C.dmrgo_packet_assembler_t, c_message *C.dmrgo_packet_message_t, c_ok *C.bool, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -20074,9 +20077,6 @@ func dmrgo_packet_assembler_lost(c_self *C.dmrgo_packet_assembler_t, c_message *
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_layer2_packet_Assembler(c_self)
 	need_arena := (3048)*int(unsafe.Sizeof(*new(byte))) + 16
 	if int(c_arena_cap)-oc.need < need_arena {
@@ -20203,6 +20203,9 @@ func dmrgo_packet_assembler_response_need(c_self *C.dmrgo_packet_assembler_t, c_
 func dmrgo_packet_assembler_response(c_self *C.dmrgo_packet_assembler_t, c_out *C.dmrgo_packet_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -20210,9 +20213,6 @@ func dmrgo_packet_assembler_response(c_self *C.dmrgo_packet_assembler_t, c_out *
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_layer2_packet_Assembler(c_self)
 	need_arena := (127) * (int(unsafe.Sizeof(C.dmrgo_layer2_data_t{})) + 16 + 0)
 	if int(c_arena_cap)-oc.need < need_arena {
@@ -20287,6 +20287,9 @@ func dmrgo_packet_builder_new_response_need(c_self *C.dmrgo_packet_builder_t, c_
 func dmrgo_packet_builder_new_response(c_self *C.dmrgo_packet_builder_t, c_to *C.dmrgo_pdu_confirmed_data_header_t, c_r C.dmrgo_packet_response_t, c_data *C.dmrgo_packet_response_data_t, c_out *C.dmrgo_packet_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -20294,9 +20297,6 @@ func dmrgo_packet_builder_new_response(c_self *C.dmrgo_packet_builder_t, c_to *C
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_layer2_packet_Builder(c_self)
 	var a_to g_layer2_pdu.ConfirmedDataHeader
 	var p_to *g_layer2_pdu.ConfirmedDataHeader
@@ -20373,6 +20373,9 @@ func dmrgo_packet_builder_retry_need(c_self *C.dmrgo_packet_builder_t, c_p *C.dm
 func dmrgo_packet_builder_retry(c_self *C.dmrgo_packet_builder_t, c_p *C.dmrgo_packet_t, c_rd *C.dmrgo_packet_response_data_t, c_out *C.dmrgo_packet_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -20380,9 +20383,6 @@ func dmrgo_packet_builder_retry(c_self *C.dmrgo_packet_builder_t, c_p *C.dmrgo_p
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_layer2_packet_Builder(c_self)
 	var a_p g_layer2_packet.Packet
 	var p_p *g_layer2_packet.Packet
@@ -20458,6 +20458,12 @@ func dmrgo_packet_builder_segment_need(c_self *C.dmrgo_packet_builder_t, c_heade
 func dmrgo_packet_builder_segment(c_self *C.dmrgo_packet_builder_t, c_header *C.dmrgo_pdu_data_header_t, c_payload *C.uint8_t, c_payload_len C.size_t, c_rate C.dmrgo_enums_data_type_t, c_out *C.dmrgo_packet_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_payload), c_payload_len, unsafe.Sizeof(*c_payload)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -20465,12 +20471,6 @@ func dmrgo_packet_builder_segment(c_self *C.dmrgo_packet_builder_t, c_header *C.
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_payload), c_payload_len, unsafe.Sizeof(*c_payload)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_layer2_packet_Builder(c_self)
 	if c_header == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -20652,6 +20652,12 @@ func dmrgo_packet_new_builder(c_max_blocks C.int64_t, c_out **C.dmrgo_packet_bui
 func dmrgo_packet_new_packet(c_header *C.dmrgo_pdu_data_header_t, c_payload *C.uint8_t, c_payload_len C.size_t, c_rate C.dmrgo_enums_data_type_t, c_out *C.dmrgo_packet_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_payload), c_payload_len, unsafe.Sizeof(*c_payload)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -20659,12 +20665,6 @@ func dmrgo_packet_new_packet(c_header *C.dmrgo_pdu_data_header_t, c_payload *C.u
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_payload), c_payload_len, unsafe.Sizeof(*c_payload)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_header == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20700,6 +20700,9 @@ func dmrgo_packet_new_packet(c_header *C.dmrgo_pdu_data_header_t, c_payload *C.u
 func dmrgo_packet_new_response(c_to *C.dmrgo_pdu_confirmed_data_header_t, c_r C.dmrgo_packet_response_t, c_data *C.dmrgo_packet_response_data_t, c_out *C.dmrgo_packet_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -20707,9 +20710,6 @@ func dmrgo_packet_new_response(c_to *C.dmrgo_pdu_confirmed_data_header_t, c_r C.
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	var a_to g_layer2_pdu.ConfirmedDataHeader
 	var p_to *g_layer2_pdu.ConfirmedDataHeader
 	if c_to != nil {
@@ -30522,6 +30522,12 @@ func dmrgo_location_format_string(c_self C.dmrgo_location_format_t, c_out *C.cha
 func dmrgo_ars_decode_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_ars_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -30529,12 +30535,6 @@ func dmrgo_ars_decode_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.d
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30693,6 +30693,12 @@ func dmrgo_ars_message_device_id(c_self *C.dmrgo_ars_message_t, c_value *C.uint3
 func dmrgo_ars_message_set_device_id(c_self *C.dmrgo_ars_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_id C.uint32_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -30700,12 +30706,6 @@ func dmrgo_ars_message_set_device_id(c_self *C.dmrgo_ars_message_t, c_dst *C.uin
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30766,6 +30766,9 @@ func dmrgo_ars_message_string(c_self *C.dmrgo_ars_message_t, c_out *C.char, c_ou
 func dmrgo_ars_new_ack(c_refresh C.uint8_t, c_out *C.dmrgo_ars_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -30773,9 +30776,6 @@ func dmrgo_ars_new_ack(c_refresh C.uint8_t, c_out *C.dmrgo_ars_message_t, c_aren
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	r0, r1 := g_mototrbo_ars.NewAck(uint8(c_refresh))
 	_ = r0
 	if c_out != nil {
@@ -30800,6 +30800,9 @@ func dmrgo_ars_new_ack(c_refresh C.uint8_t, c_out *C.dmrgo_ars_message_t, c_aren
 func dmrgo_ars_new_failure(c_reason C.uint8_t, c_out *C.dmrgo_ars_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -30807,9 +30810,6 @@ func dmrgo_ars_new_failure(c_reason C.uint8_t, c_out *C.dmrgo_ars_message_t, c_a
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	r0, r1 := g_mototrbo_ars.NewFailure(uint8(c_reason))
 	_ = r0
 	if c_out != nil {
@@ -30834,6 +30834,9 @@ func dmrgo_ars_new_failure(c_reason C.uint8_t, c_out *C.dmrgo_ars_message_t, c_a
 func dmrgo_ars_new_query(c_out *C.dmrgo_ars_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -30841,9 +30844,6 @@ func dmrgo_ars_new_query(c_out *C.dmrgo_ars_message_t, c_arena unsafe.Pointer, c
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	r0 := g_mototrbo_ars.NewQuery()
 	_ = r0
 	if c_out != nil {
@@ -30865,6 +30865,9 @@ func dmrgo_ars_new_query(c_out *C.dmrgo_ars_message_t, c_arena unsafe.Pointer, c
 func dmrgo_ars_new_registration(c_event C.dmrgo_ars_event_t, c_out *C.dmrgo_ars_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -30872,9 +30875,6 @@ func dmrgo_ars_new_registration(c_event C.dmrgo_ars_event_t, c_out *C.dmrgo_ars_
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	r0 := g_mototrbo_ars.NewRegistration(g_mototrbo_ars.Event(c_event))
 	_ = r0
 	if c_out != nil {
@@ -31135,6 +31135,12 @@ func dmrgo_lrrp_circle3d_string(c_self *C.dmrgo_lrrp_circle3d_t, c_out *C.char, 
 func dmrgo_lrrp_decode_message_into(c_m *C.dmrgo_lrrp_message_t, c_data *C.uint8_t, c_data_len C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -31142,12 +31148,6 @@ func dmrgo_lrrp_decode_message_into(c_m *C.dmrgo_lrrp_message_t, c_data *C.uint8
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	var a_m g_mototrbo_lrrp.Message
 	var p_m *g_mototrbo_lrrp.Message
 	if c_m != nil {
@@ -31646,6 +31646,12 @@ func dmrgo_lrrp_time_string(c_self *C.dmrgo_lrrp_time_t, c_out *C.char, c_out_ca
 func dmrgo_tms_decode_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_tms_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -31653,12 +31659,6 @@ func dmrgo_tms_decode_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.d
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31817,13 +31817,6 @@ func dmrgo_tms_message_sequence(c_self *C.dmrgo_tms_message_t, c_value *C.uint8_
 func dmrgo_tms_message_set_text_utf8(c_self *C.dmrgo_tms_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_text *C.uint8_t, c_text_len C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31833,6 +31826,13 @@ func dmrgo_tms_message_set_text_utf8(c_self *C.dmrgo_tms_message_t, c_dst *C.uin
 	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31926,6 +31926,9 @@ func dmrgo_tms_message_text_utf8(c_self *C.dmrgo_tms_message_t, c_dst *C.uint8_t
 func dmrgo_tms_new_ack(c_seq C.uint8_t, c_out *C.dmrgo_tms_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -31933,9 +31936,6 @@ func dmrgo_tms_new_ack(c_seq C.uint8_t, c_out *C.dmrgo_tms_message_t, c_arena un
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	r0, r1 := g_mototrbo_tms.NewAck(uint8(c_seq))
 	_ = r0
 	if c_out != nil {
@@ -31960,6 +31960,9 @@ func dmrgo_tms_new_ack(c_seq C.uint8_t, c_out *C.dmrgo_tms_message_t, c_arena un
 func dmrgo_tms_new_text(c_seq C.uint8_t, c_ack_required C.bool, c_out *C.dmrgo_tms_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -31967,9 +31970,6 @@ func dmrgo_tms_new_text(c_seq C.uint8_t, c_ack_required C.bool, c_out *C.dmrgo_t
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	r0, r1 := g_mototrbo_tms.NewText(uint8(c_seq), bool(c_ack_required))
 	_ = r0
 	if c_out != nil {
@@ -32183,6 +32183,12 @@ func dmrgo_shortdata_append_text(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len
 func dmrgo_shortdata_decode_hytera_text(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_shortdata_hytera_text_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -32190,12 +32196,6 @@ func dmrgo_shortdata_decode_hytera_text(c_data *C.uint8_t, c_data_len C.size_t, 
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32256,13 +32256,6 @@ func dmrgo_shortdata_hytera_text_append_binary(c_self *C.dmrgo_shortdata_hytera_
 func dmrgo_shortdata_hytera_text_set_text_utf8(c_self *C.dmrgo_shortdata_hytera_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_text *C.uint8_t, c_text_len C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32272,6 +32265,13 @@ func dmrgo_shortdata_hytera_text_set_text_utf8(c_self *C.dmrgo_shortdata_hytera_
 	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32430,13 +32430,6 @@ func dmrgo_sms_anytone_text_append_binary(c_self *C.dmrgo_sms_anytone_text_t, c_
 func dmrgo_sms_anytone_text_set_text_utf8(c_self *C.dmrgo_sms_anytone_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_text *C.uint8_t, c_text_len C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32446,6 +32439,13 @@ func dmrgo_sms_anytone_text_set_text_utf8(c_self *C.dmrgo_sms_anytone_text_t, c_
 	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32586,13 +32586,6 @@ func dmrgo_sms_append_packet(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.
 func dmrgo_sms_decode(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_h *C.dmrgo_pdu_data_header_t, c_data *C.uint8_t, c_data_len C.size_t, c_text *C.dmrgo_sms_text_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32602,6 +32595,13 @@ func dmrgo_sms_decode(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t,
 	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32647,6 +32647,12 @@ func dmrgo_sms_decode(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t,
 func dmrgo_sms_decode_anytone_text(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_sms_anytone_text_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -32654,12 +32660,6 @@ func dmrgo_sms_decode_anytone_text(c_data *C.uint8_t, c_data_len C.size_t, c_out
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32689,6 +32689,12 @@ func dmrgo_sms_decode_anytone_text(c_data *C.uint8_t, c_data_len C.size_t, c_out
 func dmrgo_sms_decode_ip_text(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_sms_ip_text_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -32696,12 +32702,6 @@ func dmrgo_sms_decode_ip_text(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.d
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_data), c_data_len, unsafe.Sizeof(*c_data)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_data == nil && c_data_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32781,13 +32781,6 @@ func dmrgo_sms_ip_text_append_binary(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uin
 func dmrgo_sms_ip_text_set_text_utf8(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_text *C.uint8_t, c_text_len C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32797,6 +32790,13 @@ func dmrgo_sms_ip_text_set_text_utf8(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uin
 	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -33973,6 +33973,12 @@ func dmrgo_dmrd_decode_bridge_control(c_p *C.uint8_t, c_p_len C.size_t, c_out *C
 func dmrgo_dmrd_decode_control(c_p *C.uint8_t, c_p_len C.size_t, c_d C.dmrgo_dmrd_dialect_t, c_out *C.dmrgo_dmrd_control_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -33980,12 +33986,6 @@ func dmrgo_dmrd_decode_control(c_p *C.uint8_t, c_p_len C.size_t, c_d C.dmrgo_dmr
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -35071,6 +35071,12 @@ func dmrgo_dmrd_parse_dmr_plus_options(c_text *C.uint8_t, c_text_len C.size_t, c
 func dmrgo_dmrd_parse_free_dmr_options(c_text *C.uint8_t, c_text_len C.size_t, c_out *C.dmrgo_dmrd_free_dmr_options_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_text), c_text_len, unsafe.Sizeof(*c_text)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -35078,12 +35084,6 @@ func dmrgo_dmrd_parse_free_dmr_options(c_text *C.uint8_t, c_text_len C.size_t, c
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_text), c_text_len, unsafe.Sizeof(*c_text)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_text == nil && c_text_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -35594,13 +35594,6 @@ func dmrgo_dmrd_session_bridge_packet_need(c_self *C.dmrgo_dmrd_session_bridge_t
 func dmrgo_dmrd_session_bridge_packet(c_self *C.dmrgo_dmrd_session_bridge_t, c_now C.dmrgo_duration_t, c_p *C.uint8_t, c_p_len C.size_t, c_dst *C.dmrgo_dmrd_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -35610,6 +35603,13 @@ func dmrgo_dmrd_session_bridge_packet(c_self *C.dmrgo_dmrd_session_bridge_t, c_n
 	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
 	h := get_transport_dmrd_session_Bridge(c_self)
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
@@ -35734,6 +35734,12 @@ func dmrgo_dmrd_session_bridge_tick_need(c_self *C.dmrgo_dmrd_session_bridge_t, 
 func dmrgo_dmrd_session_bridge_tick(c_self *C.dmrgo_dmrd_session_bridge_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_dmrd_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -35741,12 +35747,6 @@ func dmrgo_dmrd_session_bridge_tick(c_self *C.dmrgo_dmrd_session_bridge_t, c_now
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_transport_dmrd_session_Bridge(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -35844,13 +35844,6 @@ func dmrgo_dmrd_session_master_admit_need(c_self *C.dmrgo_dmrd_session_master_t,
 func dmrgo_dmrd_session_master_admit(c_self *C.dmrgo_dmrd_session_master_t, c_salt C.uint32_t, c_password *C.uint8_t, c_password_len C.size_t, c_dst *C.dmrgo_dmrd_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if !lenOK(unsafe.Pointer(c_password), c_password_len, unsafe.Sizeof(*c_password)) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -35860,6 +35853,13 @@ func dmrgo_dmrd_session_master_admit(c_self *C.dmrgo_dmrd_session_master_t, c_sa
 	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
 	h := get_transport_dmrd_session_Master(c_self)
 	if c_password == nil && c_password_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
@@ -35945,6 +35945,12 @@ func dmrgo_dmrd_session_master_close_need(c_self *C.dmrgo_dmrd_session_master_t,
 func dmrgo_dmrd_session_master_close(c_self *C.dmrgo_dmrd_session_master_t, c_dst *C.dmrgo_dmrd_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -35952,12 +35958,6 @@ func dmrgo_dmrd_session_master_close(c_self *C.dmrgo_dmrd_session_master_t, c_ds
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_transport_dmrd_session_Master(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -36080,13 +36080,6 @@ func dmrgo_dmrd_session_master_packet_need(c_self *C.dmrgo_dmrd_session_master_t
 func dmrgo_dmrd_session_master_packet(c_self *C.dmrgo_dmrd_session_master_t, c_now C.dmrgo_duration_t, c_b *C.uint8_t, c_b_len C.size_t, c_dst *C.dmrgo_dmrd_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if !lenOK(unsafe.Pointer(c_b), c_b_len, unsafe.Sizeof(*c_b)) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -36096,6 +36089,13 @@ func dmrgo_dmrd_session_master_packet(c_self *C.dmrgo_dmrd_session_master_t, c_n
 	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
 	h := get_transport_dmrd_session_Master(c_self)
 	if c_b == nil && c_b_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
@@ -36181,6 +36181,12 @@ func dmrgo_dmrd_session_master_refuse_need(c_self *C.dmrgo_dmrd_session_master_t
 func dmrgo_dmrd_session_master_refuse(c_self *C.dmrgo_dmrd_session_master_t, c_dst *C.dmrgo_dmrd_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -36188,12 +36194,6 @@ func dmrgo_dmrd_session_master_refuse(c_self *C.dmrgo_dmrd_session_master_t, c_d
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_transport_dmrd_session_Master(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -36286,6 +36286,12 @@ func dmrgo_dmrd_session_master_resume_need(c_self *C.dmrgo_dmrd_session_master_t
 func dmrgo_dmrd_session_master_resume(c_self *C.dmrgo_dmrd_session_master_t, c_now C.dmrgo_duration_t, c_id C.uint32_t, c_dst *C.dmrgo_dmrd_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -36293,12 +36299,6 @@ func dmrgo_dmrd_session_master_resume(c_self *C.dmrgo_dmrd_session_master_t, c_n
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_transport_dmrd_session_Master(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -36395,6 +36395,12 @@ func dmrgo_dmrd_session_master_tick_need(c_self *C.dmrgo_dmrd_session_master_t, 
 func dmrgo_dmrd_session_master_tick(c_self *C.dmrgo_dmrd_session_master_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_dmrd_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -36402,12 +36408,6 @@ func dmrgo_dmrd_session_master_tick(c_self *C.dmrgo_dmrd_session_master_t, c_now
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_transport_dmrd_session_Master(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -36614,6 +36614,12 @@ func dmrgo_dmrd_session_peer_close_need(c_self *C.dmrgo_dmrd_session_peer_t, c_i
 func dmrgo_dmrd_session_peer_close(c_self *C.dmrgo_dmrd_session_peer_t, c_dst *C.dmrgo_dmrd_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -36621,12 +36627,6 @@ func dmrgo_dmrd_session_peer_close(c_self *C.dmrgo_dmrd_session_peer_t, c_dst *C
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_transport_dmrd_session_Peer(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -36733,13 +36733,6 @@ func dmrgo_dmrd_session_peer_packet_need(c_self *C.dmrgo_dmrd_session_peer_t, c_
 func dmrgo_dmrd_session_peer_packet(c_self *C.dmrgo_dmrd_session_peer_t, c_now C.dmrgo_duration_t, c_b *C.uint8_t, c_b_len C.size_t, c_dst *C.dmrgo_dmrd_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if !lenOK(unsafe.Pointer(c_b), c_b_len, unsafe.Sizeof(*c_b)) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -36749,6 +36742,13 @@ func dmrgo_dmrd_session_peer_packet(c_self *C.dmrgo_dmrd_session_peer_t, c_now C
 	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
 	h := get_transport_dmrd_session_Peer(c_self)
 	if c_b == nil && c_b_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
@@ -36862,6 +36862,12 @@ func dmrgo_dmrd_session_peer_tick_need(c_self *C.dmrgo_dmrd_session_peer_t, c_no
 func dmrgo_dmrd_session_peer_tick(c_self *C.dmrgo_dmrd_session_peer_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_dmrd_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -36869,12 +36875,6 @@ func dmrgo_dmrd_session_peer_tick(c_self *C.dmrgo_dmrd_session_peer_t, c_now C.d
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_transport_dmrd_session_Peer(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -37031,6 +37031,12 @@ func dmrgo_hytera_decode_heartbeat(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dm
 func dmrgo_hytera_decode_p2p(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_hytera_p2p_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -37038,12 +37044,6 @@ func dmrgo_hytera_decode_p2p(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_hy
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -37552,6 +37552,12 @@ func dmrgo_ipsc_decode_control(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_
 func dmrgo_ipsc_decode_raw(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_ipsc_raw_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -37559,12 +37565,6 @@ func dmrgo_ipsc_decode_raw(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_ipsc
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38366,6 +38366,12 @@ func dmrgo_ipsc_session_master_adopt_need(c_self *C.dmrgo_ipsc_session_master_t,
 func dmrgo_ipsc_session_master_adopt(c_self *C.dmrgo_ipsc_session_master_t, c_now C.dmrgo_duration_t, c_from *C.dmrgo_ipsc_session_addr_t, c_id C.uint32_t, c_mode C.dmrgo_ipsc_mode_t, c_flags *C.dmrgo_ipsc_flags_t, c_dst *C.dmrgo_ipsc_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -38373,12 +38379,6 @@ func dmrgo_ipsc_session_master_adopt(c_self *C.dmrgo_ipsc_session_master_t, c_no
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_transport_ipsc_session_Master(c_self)
 	if c_from == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -38474,6 +38474,12 @@ func dmrgo_ipsc_session_master_adopt_with_key_need(c_self *C.dmrgo_ipsc_session_
 func dmrgo_ipsc_session_master_adopt_with_key(c_self *C.dmrgo_ipsc_session_master_t, c_now C.dmrgo_duration_t, c_from *C.dmrgo_ipsc_session_addr_t, c_id C.uint32_t, c_mode C.dmrgo_ipsc_mode_t, c_flags *C.dmrgo_ipsc_flags_t, c_key *C.uint8_t, c_dst *C.dmrgo_ipsc_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -38481,12 +38487,6 @@ func dmrgo_ipsc_session_master_adopt_with_key(c_self *C.dmrgo_ipsc_session_maste
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_transport_ipsc_session_Master(c_self)
 	if c_from == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -38576,6 +38576,12 @@ func dmrgo_ipsc_session_master_close_need(c_self *C.dmrgo_ipsc_session_master_t,
 func dmrgo_ipsc_session_master_close(c_self *C.dmrgo_ipsc_session_master_t, c_dst *C.dmrgo_ipsc_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -38583,12 +38589,6 @@ func dmrgo_ipsc_session_master_close(c_self *C.dmrgo_ipsc_session_master_t, c_ds
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_transport_ipsc_session_Master(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -38730,13 +38730,6 @@ func dmrgo_ipsc_session_master_packet_need(c_self *C.dmrgo_ipsc_session_master_t
 func dmrgo_ipsc_session_master_packet(c_self *C.dmrgo_ipsc_session_master_t, c_now C.dmrgo_duration_t, c_from *C.dmrgo_ipsc_session_addr_t, c_p *C.uint8_t, c_p_len C.size_t, c_dst *C.dmrgo_ipsc_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38746,6 +38739,13 @@ func dmrgo_ipsc_session_master_packet(c_self *C.dmrgo_ipsc_session_master_t, c_n
 	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
 	h := get_transport_ipsc_session_Master(c_self)
 	if c_from == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -38846,13 +38846,6 @@ func dmrgo_ipsc_session_master_packet_with_key_need(c_self *C.dmrgo_ipsc_session
 func dmrgo_ipsc_session_master_packet_with_key(c_self *C.dmrgo_ipsc_session_master_t, c_now C.dmrgo_duration_t, c_from *C.dmrgo_ipsc_session_addr_t, c_key *C.uint8_t, c_p *C.uint8_t, c_p_len C.size_t, c_dst *C.dmrgo_ipsc_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -38862,6 +38855,13 @@ func dmrgo_ipsc_session_master_packet_with_key(c_self *C.dmrgo_ipsc_session_mast
 	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
 	h := get_transport_ipsc_session_Master(c_self)
 	if c_from == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -39113,6 +39113,12 @@ func dmrgo_ipsc_session_master_tick_need(c_self *C.dmrgo_ipsc_session_master_t, 
 func dmrgo_ipsc_session_master_tick(c_self *C.dmrgo_ipsc_session_master_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_ipsc_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -39120,12 +39126,6 @@ func dmrgo_ipsc_session_master_tick(c_self *C.dmrgo_ipsc_session_master_t, c_now
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_transport_ipsc_session_Master(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -39300,6 +39300,12 @@ func dmrgo_ipsc_session_peer_close_need(c_self *C.dmrgo_ipsc_session_peer_t, c_i
 func dmrgo_ipsc_session_peer_close(c_self *C.dmrgo_ipsc_session_peer_t, c_dst *C.dmrgo_ipsc_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -39307,12 +39313,6 @@ func dmrgo_ipsc_session_peer_close(c_self *C.dmrgo_ipsc_session_peer_t, c_dst *C
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_transport_ipsc_session_Peer(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -39474,13 +39474,6 @@ func dmrgo_ipsc_session_peer_packet_need(c_self *C.dmrgo_ipsc_session_peer_t, c_
 func dmrgo_ipsc_session_peer_packet(c_self *C.dmrgo_ipsc_session_peer_t, c_from *C.dmrgo_ipsc_session_addr_t, c_b *C.uint8_t, c_b_len C.size_t, c_dst *C.dmrgo_ipsc_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if !lenOK(unsafe.Pointer(c_b), c_b_len, unsafe.Sizeof(*c_b)) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -39490,6 +39483,13 @@ func dmrgo_ipsc_session_peer_packet(c_self *C.dmrgo_ipsc_session_peer_t, c_from 
 	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
 	h := get_transport_ipsc_session_Peer(c_self)
 	if c_from == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -39688,6 +39688,12 @@ func dmrgo_ipsc_session_peer_tick_need(c_self *C.dmrgo_ipsc_session_peer_t, c_no
 func dmrgo_ipsc_session_peer_tick(c_self *C.dmrgo_ipsc_session_peer_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_ipsc_session_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -39695,12 +39701,6 @@ func dmrgo_ipsc_session_peer_tick(c_self *C.dmrgo_ipsc_session_peer_t, c_now C.d
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_transport_ipsc_session_Peer(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -40753,6 +40753,9 @@ func dmrgo_mmdvm_decode_dmr_start(c_data *C.uint8_t, c_data_len C.size_t, c_out 
 func dmrgo_mmdvm_decode_debug(c_f *C.dmrgo_mmdvm_frame_t, c_out *C.dmrgo_mmdvm_debug_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -40760,9 +40763,6 @@ func dmrgo_mmdvm_decode_debug(c_f *C.dmrgo_mmdvm_frame_t, c_out *C.dmrgo_mmdvm_d
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_f == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -40922,6 +40922,12 @@ func dmrgo_mmdvm_decode_status_v2(c_data *C.uint8_t, c_data_len C.size_t, c_out 
 func dmrgo_mmdvm_decode_version(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_mmdvm_version_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -40929,12 +40935,6 @@ func dmrgo_mmdvm_decode_version(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -41063,6 +41063,12 @@ func dmrgo_mmdvm_new_dmr_short_lc(c_slc *C.dmrgo_pdu_short_lc_t, c_out *C.dmrgo_
 func dmrgo_mmdvm_next(c_p *C.uint8_t, c_p_len C.size_t, c_f *C.dmrgo_mmdvm_frame_t, c_n *C.int64_t, c_st *C.dmrgo_mmdvm_status_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -41070,12 +41076,6 @@ func dmrgo_mmdvm_next(c_p *C.uint8_t, c_p_len C.size_t, c_f *C.dmrgo_mmdvm_frame
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_p == nil && c_p_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -46405,6 +46405,12 @@ func dmrgo_dvsi_packet_response(c_self *C.dmrgo_dvsi_packet_t, c_f C.dmrgo_dvsi_
 func dmrgo_dvsi_parse(c_b *C.uint8_t, c_b_len C.size_t, c_parity C.bool, c_packet *C.dmrgo_dvsi_packet_t, c_n *C.int64_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_b), c_b_len, unsafe.Sizeof(*c_b)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -46412,12 +46418,6 @@ func dmrgo_dvsi_parse(c_b *C.uint8_t, c_b_len C.size_t, c_parity C.bool, c_packe
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_b), c_b_len, unsafe.Sizeof(*c_b)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	if c_b == nil && c_b_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -47051,6 +47051,12 @@ func dmrgo_voice_receiver_burst_need(c_self *C.dmrgo_voice_receiver_t, c_now C.d
 func dmrgo_voice_receiver_burst(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -47058,12 +47064,6 @@ func dmrgo_voice_receiver_burst(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_voice_Receiver(c_self)
 	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
@@ -47180,6 +47180,12 @@ func dmrgo_voice_receiver_decoded_need(c_self *C.dmrgo_voice_receiver_t, c_now C
 func dmrgo_voice_receiver_decoded(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_voice_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -47187,12 +47193,6 @@ func dmrgo_voice_receiver_decoded(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrg
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_voice_Receiver(c_self)
 	var a_b *g_layer2.Burst
 	if c_b != nil {
@@ -47299,6 +47299,12 @@ func dmrgo_voice_receiver_lost_need(c_self *C.dmrgo_voice_receiver_t, c_now C.dm
 func dmrgo_voice_receiver_lost(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_voice_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -47306,12 +47312,6 @@ func dmrgo_voice_receiver_lost(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_d
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_voice_Receiver(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -47420,6 +47420,12 @@ func dmrgo_voice_receiver_tick_need(c_self *C.dmrgo_voice_receiver_t, c_now C.dm
 func dmrgo_voice_receiver_tick(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_voice_event_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_arena_len != nil {
 		if *c_arena_len > c_arena_cap {
 			return fail(C.DMRGO_ERR_ARG)
@@ -47427,12 +47433,6 @@ func dmrgo_voice_receiver_tick(c_self *C.dmrgo_voice_receiver_t, c_now C.dmrgo_d
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
 	h := get_voice_Receiver(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)

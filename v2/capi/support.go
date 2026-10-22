@@ -256,7 +256,7 @@ func (o *outc) reported() int {
 
 func (o *outc) setArena(p unsafe.Pointer, n C.size_t) {
 	if p != nil && n > 0 {
-		o.arena = unsafe.Slice((*byte)(p), int(n))
+		o.arena = cSlice[byte](p, n)
 	}
 }
 

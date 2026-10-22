@@ -804,10 +804,10 @@ func (g *gen) wrapper(cname, doc string, recv *tinfo, rk recvKind, call string, 
 	}
 	var w strings.Builder
 	lines(&w, "//export "+cname, "func "+cname+"("+strings.Join(sm.gps, ", ")+") (rc C.int) {", "defer recoverTo(&rc)", "oc := &outc{}")
+	lenChecks(&w, sm.gps)
 	if sm.arena {
 		lines(&w, "if c_arena_len != nil {", "if *c_arena_len > c_arena_cap {", "return fail(C.DMRGO_ERR_ARG)", "}", "oc.need = int(*c_arena_len)", "}", "oc.setArena(c_arena, c_arena_cap)")
 	}
-	lenChecks(&w, sm.gps)
 	w.WriteString(sm.pre.String())
 	bounded, note := g.stateful(&w, &sm, sig, cname, rk, ld == nil)
 	if bounded {

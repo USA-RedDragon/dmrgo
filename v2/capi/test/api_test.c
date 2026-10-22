@@ -389,6 +389,11 @@ static void test_bad_args(void) {
 	char s[8];
 	size_t sl = 0;
 	CHECK(dmrgo_ars_message_string(&am, s, SIZE_MAX, &sl, NULL) == DMRGO_ERR_ARG);
+	unsigned char ar[64];
+	size_t al = 0;
+	dmrgo_ip_datagram_t dg;
+	uint8_t ipk[20] = {0x45};
+	CHECK(dmrgo_ip_decode(0, ipk, sizeof ipk, &dg, ar, SIZE_MAX, &al, NULL) == DMRGO_ERR_ARG);
 	printf("bad args: DMRGO_ERR_ARG for bad fills and lengths, never a panic\n");
 }
 
