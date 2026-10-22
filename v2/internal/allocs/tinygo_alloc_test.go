@@ -127,16 +127,16 @@ func tinyRawBurstOps(t *testing.T, r *rand.Rand) []tinyOp {
 	emb := voice.EMB()
 	return []tinyOp{
 		{"layer2.RawBurst.SlotType", func() { st = csbk.SlotType() }},
-		{"layer2.RawBurst.SetSlotType", func() { rb.SetSlotType(st) }},
+		{"layer2.RawBurst.SetSlotType", func() { _ = rb.SetSlotType(st) }},
 		{"layer2.RawBurst.Sync", func() { _, _ = csbk.Sync() }},
 		{"layer2.RawBurst.EMB", func() { emb = voice.EMB() }},
-		{"layer2.RawBurst.SetEMB", func() { rb.SetEMB(emb) }},
+		{"layer2.RawBurst.SetEMB", func() { _ = rb.SetEMB(emb) }},
 		{"layer2.RawBurst.BPTCPayload", func() { p12, _ = csbk.BPTCPayload() }},
 		{"layer2.RawBurst.SetBPTCPayload", func() { rb.SetBPTCPayload(p12) }},
 		{"layer2.RawBurst.Rate34Payload", func() { p18, _ = r34.Rate34Payload() }},
 		{"layer2.RawBurst.SetRate34Payload", func() { rb.SetRate34Payload(p18) }},
 		{"layer2.RawBurst.AMBEFrames", func() { frames, _ = voice.AMBEFrames() }},
-		{"layer2.RawBurst.SetAMBEFrames", func() { rb.SetAMBEFrames(frames) }},
+		{"layer2.RawBurst.SetAMBEFrames", func() { _ = rb.SetAMBEFrames(frames) }},
 	}
 }
 
@@ -449,7 +449,7 @@ func tinyAlloc(run func()) (bytes, mallocs float64) {
 func tinyDVSIOps(t *testing.T) []tinyOp {
 	t.Helper()
 	pairs := dvsisim.Pairs(2)
-	var ops []tinyOp
+	ops := make([]tinyOp, 0, 4)
 	for _, opt := range []dvsisim.Options{{}, {Chunk: 3}, {Datagram: true}} {
 		d := dvsisim.New(pairs, opt)
 		c := tinyOK(dvsi.New(d, nil))
