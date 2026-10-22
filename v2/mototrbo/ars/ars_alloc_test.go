@@ -18,7 +18,10 @@ func TestAllocs(t *testing.T) {
 		}
 		id, _ := m.DeviceID()
 		r := ars.NewRegistration(ars.EventRefresh)
-		b := r.SetDeviceID(buf[:0], id)
+		b, err := r.SetDeviceID(buf[:0], id)
+		if err != nil {
+			panic(err)
+		}
 		if _, err := r.AppendBinary(b[len(b):]); err != nil {
 			panic(err)
 		}

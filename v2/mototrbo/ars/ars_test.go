@@ -6,6 +6,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/mototrbo/ars"
 )
 
@@ -34,7 +35,9 @@ func TestRegistration(t *testing.T) {
 		t.Fatalf("got %s", m.String())
 	}
 	n := ars.NewRegistration(ars.EventInitial)
-	n.SetDeviceID(nil, 3191868)
+	if _, err := n.SetDeviceID(nil, 3191868); err != nil {
+		t.Fatal(err)
+	}
 	out, err := n.AppendBinary(nil)
 	if err != nil || !bytes.Equal(out, data) {
 		t.Errorf("NewRegistration = %x, %v, want %x", out, err, data)
@@ -87,9 +90,21 @@ func TestDeviceID(t *testing.T) {
 		}
 	}
 	var m ars.Message
-	buf := m.SetDeviceID([]byte("x"), 0)
-	if string(buf) != "x0" || string(m.Device) != "0" {
-		t.Errorf("SetDeviceID(0) = %q, %q", buf, m.Device)
+	buf, err := m.SetDeviceID([]byte("x"), 0)
+	if err != nil || string(buf) != "x0" || string(m.Device) != "0" {
+		t.Errorf("SetDeviceID(0) = %q, %q, %v", buf, m.Device, err)
+	}
+	buf, err = m.SetDeviceID([]byte("x"), 0xFFFFFF)
+	if id, ok := m.DeviceID(); err != nil || string(buf) != "x16777215" || !ok || id != 0xFFFFFF {
+		t.Errorf("SetDeviceID(0xFFFFFF) = %q, %v", buf, err)
+	}
+	var fe *dmrgo.FieldRangeError
+	if buf, err := m.SetDeviceID([]byte("x"), 0x1000000); !errors.As(err, &fe) || fe.Bits != 24 || string(buf) != "x" {
+		t.Errorf("SetDeviceID(0x1000000) = %q, %v", buf, err)
+	}
+	var nilMsg *ars.Message
+	if _, err := nilMsg.SetDeviceID(nil, 1); !errors.Is(err, dmrgo.ErrNilReceiver) {
+		t.Errorf("nil m: %v", err)
 	}
 }
 
