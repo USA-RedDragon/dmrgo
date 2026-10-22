@@ -17,8 +17,14 @@ func TestNilReceivers(t *testing.T) {
 	if h := d.Hint(); h != (layer2.Hint{}) {
 		t.Errorf("nil DMRData Hint %+v", h)
 	}
-	if out, err := d.AppendBinary([]byte{1}); !errors.Is(err, mmdvm.ErrCommand) || len(out) != 1 {
+	if out, err := d.AppendBinary([]byte{1}); !errors.Is(err, dmrgo.ErrNilReceiver) || len(out) != 1 {
 		t.Errorf("nil DMRData AppendBinary %x, %v", out, err)
+	}
+	if err := d.SetHint(layer2.Hint{}); !errors.Is(err, dmrgo.ErrNilReceiver) {
+		t.Errorf("nil DMRData SetHint %v", err)
+	}
+	if _, err := mmdvm.NewDMRShortLC(nil); !errors.Is(err, dmrgo.ErrNilArgument) {
+		t.Errorf("NewDMRShortLC(nil) %v", err)
 	}
 	if c := d.Command(); c != 0 {
 		t.Errorf("nil DMRData Command %v", c)

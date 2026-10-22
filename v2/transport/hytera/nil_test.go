@@ -16,7 +16,7 @@ func TestNilReceivers(t *testing.T) {
 	if h := f.Hint(); h != (layer2.Hint{}) {
 		t.Errorf("nil Frame Hint %+v", h)
 	}
-	if out, err := f.AppendBinary([]byte{1}); err == nil || errors.Is(err, hytera.ErrShort) || len(out) != 1 {
+	if out, err := f.AppendBinary([]byte{1}); !errors.Is(err, dmrgo.ErrNilReceiver) || len(out) != 1 {
 		t.Errorf("nil Frame AppendBinary %x, %v", out, err)
 	}
 	if f.HasBurst() {

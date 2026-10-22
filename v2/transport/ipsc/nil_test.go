@@ -16,7 +16,7 @@ func TestNilReceivers(t *testing.T) {
 	if h := u.Hint(); h != (layer2.Hint{}) {
 		t.Errorf("nil User Hint %+v", h)
 	}
-	if out, err := u.AppendBinary([]byte{1}); err == nil || errors.Is(err, ipsc.ErrShort) || len(out) != 1 {
+	if out, err := u.AppendBinary([]byte{1}); !errors.Is(err, dmrgo.ErrNilReceiver) || len(out) != 1 {
 		t.Errorf("nil User AppendBinary %x, %v", out, err)
 	}
 	if u.IsVoice() {

@@ -264,11 +264,11 @@ func decodeData(p []byte) (Payload, error) {
 // trailer. It returns dst unchanged and an error for an opcode that is not
 // a user packet, an unknown voice layout, a data payload that does not fit,
 // and a *dmrgo.FieldRangeError for a Source or
-// Destination over 24 bits or a PayloadType over 7. A nil u gives the error
-// of an opcode that is not a user packet. It allocates only to grow dst.
+// Destination over 24 bits or a PayloadType over 7. A nil u gives
+// dmrgo.ErrNilReceiver. It allocates only to grow dst.
 func (u *User) AppendBinary(dst []byte) ([]byte, error) {
 	if u == nil {
-		return dst, errOpcode
+		return dst, dmrgo.ErrNilReceiver
 	}
 	return u.appendBinary(dst)
 }
