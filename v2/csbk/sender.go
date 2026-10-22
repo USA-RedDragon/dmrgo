@@ -15,6 +15,7 @@ const (
 	sendIdle sendState = iota
 	sendQualify
 	sendHoldoff
+	sendWait
 	sendBursts
 )
 
@@ -86,7 +87,7 @@ func (s *sender) stop() {
 
 func (s *sender) channel(now time.Duration, busy bool) {
 	s.busy = busy
-	if s.state == sendQualify && !busy {
+	if (s.state == sendQualify || s.state == sendWait) && !busy {
 		s.state, s.due = sendBursts, now+s.lead
 	}
 }
@@ -97,7 +98,7 @@ func (s *sender) deadline() (time.Duration, bool) {
 		return s.timer, true
 	case sendBursts:
 		return s.due - s.lead, true
-	case sendIdle:
+	case sendIdle, sendWait:
 	}
 	return 0, false
 }
@@ -113,9 +114,11 @@ func (s *sender) tick(now time.Duration, out []Output) ([]Output, sendEvent) {
 		case s.timeCritical:
 			s.state = sendIdle
 			return out, sendDenied
+		case s.holdoffMax < 0:
+			s.state = sendWait
 		default:
 			s.state = sendHoldoff
-			s.timer += holdoff(&s.rng, s.holdoffMax)
+			s.timer = max(s.timer, now) + max(holdoff(&s.rng, s.holdoffMax), 1)
 		}
 	}
 	if s.state != sendBursts || now < s.due-s.lead {

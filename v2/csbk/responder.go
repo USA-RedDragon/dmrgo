@@ -184,7 +184,7 @@ func (r *Responder) State() ResponderState {
 		return 0
 	}
 	switch r.s.state {
-	case sendQualify, sendHoldoff:
+	case sendQualify, sendHoldoff, sendWait:
 		return ResponderAccess
 	case sendBursts:
 		return ResponderSending
