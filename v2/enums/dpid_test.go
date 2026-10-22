@@ -38,13 +38,3 @@ func TestDPIDToPort(t *testing.T) {
 		t.Errorf("DPIDToPort(ExtendedHeader) = %d, want 0", p)
 	}
 }
-
-func TestDPID_Valid(t *testing.T) {
-	t.Parallel()
-	if !enums.DPID(0).Valid() {
-		t.Error("DPID(0) is not valid")
-	}
-	if enums.DPID(128).Valid() {
-		t.Error("DPID(128) is valid")
-	}
-}

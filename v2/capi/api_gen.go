@@ -12996,21 +12996,6 @@ func dmrgo_enums_daid_string(c_self C.dmrgo_enums_daid_t, c_out *C.char, c_out_c
 	return C.DMRGO_OK
 }
 
-//export dmrgo_enums_daid_valid
-func dmrgo_enums_daid_valid(c_self C.dmrgo_enums_daid_t, c_out *C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	r0 := g_enums.DAID(c_self).Valid()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.bool(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_enums_dd_format_string
 func dmrgo_enums_dd_format_string(c_self C.dmrgo_enums_dd_format_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -13037,21 +13022,6 @@ func dmrgo_enums_dpid_string(c_self C.dmrgo_enums_dpid_t, c_out *C.char, c_out_c
 	r0 := g_enums.DPID(c_self).String()
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_enums_dpid_valid
-func dmrgo_enums_dpid_valid(c_self C.dmrgo_enums_dpid_t, c_out *C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	r0 := g_enums.DPID(c_self).Valid()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.bool(r0)
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -13150,21 +13120,6 @@ func dmrgo_enums_flco_string(c_self C.dmrgo_enums_flco_t, c_out *C.char, c_out_c
 	return C.DMRGO_OK
 }
 
-//export dmrgo_enums_flco_valid
-func dmrgo_enums_flco_valid(c_self C.dmrgo_enums_flco_t, c_out *C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	r0 := g_enums.FLCO(c_self).Valid()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.bool(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_enums_feature_set_id_string
 func dmrgo_enums_feature_set_id_string(c_self C.dmrgo_enums_feature_set_id_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -13175,21 +13130,6 @@ func dmrgo_enums_feature_set_id_string(c_self C.dmrgo_enums_feature_set_id_t, c_
 	r0 := g_enums.FeatureSetID(c_self).String()
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_enums_feature_set_id_valid
-func dmrgo_enums_feature_set_id_valid(c_self C.dmrgo_enums_feature_set_id_t, c_out *C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	r0 := g_enums.FeatureSetID(c_self).Valid()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.bool(r0)
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -13315,21 +13255,6 @@ func dmrgo_enums_said_string(c_self C.dmrgo_enums_said_t, c_out *C.char, c_out_c
 	return C.DMRGO_OK
 }
 
-//export dmrgo_enums_said_valid
-func dmrgo_enums_said_valid(c_self C.dmrgo_enums_said_t, c_out *C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	r0 := g_enums.SAID(c_self).Valid()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.bool(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_enums_slco_string
 func dmrgo_enums_slco_string(c_self C.dmrgo_enums_slco_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -13356,21 +13281,6 @@ func dmrgo_enums_spid_string(c_self C.dmrgo_enums_spid_t, c_out *C.char, c_out_c
 	r0 := g_enums.SPID(c_self).String()
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_enums_spid_valid
-func dmrgo_enums_spid_valid(c_self C.dmrgo_enums_spid_t, c_out *C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	r0 := g_enums.SPID(c_self).Valid()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.bool(r0)
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}

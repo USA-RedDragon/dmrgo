@@ -24,13 +24,3 @@ func TestSAIDString(t *testing.T) {
 		}
 	}
 }
-
-func TestSAID_Valid(t *testing.T) {
-	t.Parallel()
-	if !enums.SAID(0).Valid() {
-		t.Error("SAID(0) is not valid")
-	}
-	if enums.SAID(16).Valid() {
-		t.Error("SAID(16) is valid")
-	}
-}

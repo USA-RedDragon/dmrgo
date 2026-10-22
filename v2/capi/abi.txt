@@ -1768,7 +1768,6 @@ sym int dmrgo_enums_activity_id_string(dmrgo_enums_activity_id_t self, char *out
 sym int dmrgo_enums_announcement_type_string(dmrgo_enums_announcement_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_backoff_frames(dmrgo_enums_backoff_t self, int64_t *out);
 sym int dmrgo_enums_daid_string(dmrgo_enums_daid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-sym int dmrgo_enums_daid_valid(dmrgo_enums_daid_t self, bool *out);
 sym int dmrgo_enums_data_type_carries_full_lc(dmrgo_enums_data_type_t self, bool *out);
 sym int dmrgo_enums_data_type_is_bptc(dmrgo_enums_data_type_t self, bool *out);
 sym int dmrgo_enums_data_type_is_reserved(dmrgo_enums_data_type_t self, bool *out);
@@ -1776,11 +1775,8 @@ sym int dmrgo_enums_data_type_string(dmrgo_enums_data_type_t self, char *out, si
 sym int dmrgo_enums_dd_format_string(dmrgo_enums_dd_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_dpid_string(dmrgo_enums_dpid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_dpid_to_port(dmrgo_enums_dpid_t dpid, uint16_t *out);
-sym int dmrgo_enums_dpid_valid(dmrgo_enums_dpid_t self, bool *out);
 sym int dmrgo_enums_feature_set_id_string(dmrgo_enums_feature_set_id_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-sym int dmrgo_enums_feature_set_id_valid(dmrgo_enums_feature_set_id_t self, bool *out);
 sym int dmrgo_enums_flco_string(dmrgo_enums_flco_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-sym int dmrgo_enums_flco_valid(dmrgo_enums_flco_t self, bool *out);
 sym int dmrgo_enums_lcss_string(dmrgo_enums_lcss_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_n_rand_wait_frames(dmrgo_enums_n_rand_wait_t self, int64_t *out);
 sym int dmrgo_enums_nearest_sync_pattern(const uint8_t field[6], dmrgo_enums_sync_pattern_t *out0, int64_t *out1);
@@ -1788,7 +1784,6 @@ sym int dmrgo_enums_new_color_code(uint8_t v, dmrgo_enums_color_code_t *out);
 sym int dmrgo_enums_protect_kind_string(dmrgo_enums_protect_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_rc_command_string(dmrgo_enums_rc_command_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_said_string(dmrgo_enums_said_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-sym int dmrgo_enums_said_valid(dmrgo_enums_said_t self, bool *out);
 sym int dmrgo_enums_service_access_point_id_string(dmrgo_enums_service_access_point_id_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_service_function_invites(dmrgo_enums_service_function_t self, dmrgo_enums_service_kind_t k, bool *out);
 sym int dmrgo_enums_service_function_string(dmrgo_enums_service_function_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -1799,7 +1794,6 @@ sym int dmrgo_enums_slot_other(dmrgo_enums_slot_t self, dmrgo_enums_slot_t *out)
 sym int dmrgo_enums_slot_string(dmrgo_enums_slot_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_spid_string(dmrgo_enums_spid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_spid_to_port(dmrgo_enums_spid_t spid, uint16_t *out);
-sym int dmrgo_enums_spid_valid(dmrgo_enums_spid_t self, bool *out);
 sym int dmrgo_enums_sync_pattern_string(dmrgo_enums_sync_pattern_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_udt_format_string(dmrgo_enums_udt_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_voice_burst_at(int64_t i, dmrgo_enums_voice_burst_type_t *v, bool *ok);

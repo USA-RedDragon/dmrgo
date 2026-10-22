@@ -25,13 +25,3 @@ func TestDAIDString(t *testing.T) {
 		}
 	}
 }
-
-func TestDAID_Valid(t *testing.T) {
-	t.Parallel()
-	if !enums.DAID(0).Valid() {
-		t.Error("DAID(0) is not valid")
-	}
-	if enums.DAID(16).Valid() {
-		t.Error("DAID(16) is valid")
-	}
-}

@@ -54,28 +54,6 @@ func TestFeatureSetIDString_UnknownID(t *testing.T) {
 	}
 }
 
-func TestFeatureSetID_ValidValues(t *testing.T) {
-	t.Parallel()
-
-	validIDs := []int{
-		0x0, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB,
-		0x10, 0x13, 0x1C, 0x20, 0x33, 0x3C, 0x58, 0x68, 0x77,
-	}
-	for _, id := range validIDs {
-		if !FeatureSetID(id).Valid() {
-			t.Errorf("FeatureSetID(%d) is not valid", id)
-		}
-	}
-}
-
-func TestFeatureSetID_InvalidValue(t *testing.T) {
-	t.Parallel()
-
-	if FeatureSetID(0xFF).Valid() {
-		t.Error("FeatureSetID(0xFF) is valid")
-	}
-}
-
 func TestFeatureSetID_RoundTrip(t *testing.T) {
 	t.Parallel()
 
