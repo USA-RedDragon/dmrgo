@@ -808,7 +808,7 @@ func (g *gen) cStruct(ti *tinfo) error {
 				return err
 			}
 			if d := g.l.full[m.field]; d != "" {
-				lines(&b, "\t/* "+strings.ReplaceAll(d, "*/", "* /")+" */")
+				lines(&b, "\t/* "+strings.ReplaceAll(nilC(d, m.decls), "*/", "* /")+" */")
 			}
 			for _, d := range m.decls {
 				lines(&b, "\t"+d+";")

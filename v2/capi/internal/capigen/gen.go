@@ -1116,7 +1116,7 @@ func (g *gen) finish(opt Options) (*Output, error) {
 	if terr != nil {
 		return nil, terr
 	}
-	out := &Output{Test: test, Go: src, H: h.Bytes(), Internal: ib.Bytes(), C: cb.Bytes(), Lock: lockOut, Map: mb.Bytes(), Exports: g.exports, Broken: broken, Unbounded: g.unbounded}
+	out := &Output{Test: test, Go: src, H: []byte(cDocs(h.String(), cRefs(g.exports))), Internal: ib.Bytes(), C: cb.Bytes(), Lock: lockOut, Map: mb.Bytes(), Exports: g.exports, Broken: broken, Unbounded: g.unbounded}
 	if ferr != nil {
 		return out, fmt.Errorf("gofmt: %w", ferr)
 	}
