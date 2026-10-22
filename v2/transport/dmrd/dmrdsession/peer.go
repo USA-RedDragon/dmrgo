@@ -273,7 +273,9 @@ func (p *Peer) send(dst []Output) []Output {
 // Peer sent again: in DialectHBRP an MSTACK with the salt, and in
 // DialectMMDVM an RPTACK whose 4 octets are the salt and not the ID. In
 // DialectHBRP the token is of the salt text as the master sent it, in
-// upper or lower case. It ignores
+// upper or lower case. In DialectMMDVM it also takes an RPTACK after the
+// RPTL, an MSTNAK and an MSTCL without the repeater ID, as xlxd and urfd
+// send them and DMRGateway takes them. It ignores
 // a packet it cannot use. It appends the outputs to dst, and allocates
 // only when dst has no room for MaxOutputs outputs.
 func (p *Peer) Packet(now time.Duration, b []byte, dst []Output) []Output {
@@ -291,13 +293,20 @@ func (p *Peer) Packet(now time.Duration, b []byte, dst []Output) []Output {
 			dst = append(dst, Output{Kind: OutputData, Packet: b, Command: c})
 		}
 	case dmrd.CommandRPTACK, dmrd.CommandMSTACK:
+		if p.bare(b, c) {
+			if p.state == StateLogin {
+				return dst
+			}
+			m := dmrd.Control{Command: c}
+			return p.acked(now, &m, b, dst)
+		}
 		m, err := dmrd.DecodeControl(b, p.dialect)
 		if err != nil {
 			return dst
 		}
 		return p.acked(now, &m, b, dst)
 	case dmrd.CommandMSTNAK:
-		if _, err := dmrd.DecodeControl(b, p.dialect); err != nil || p.state == StateWait {
+		if _, err := dmrd.DecodeControl(b, p.dialect); err != nil && !p.bare(b, c) || p.state == StateWait {
 			return dst
 		}
 		dst = append(dst, Output{Kind: OutputDown, Reason: ReasonRefused, State: p.state})
@@ -307,7 +316,7 @@ func (p *Peer) Packet(now time.Duration, b []byte, dst []Output) []Output {
 		}
 		p.wait(now)
 	case dmrd.CommandMSTCL:
-		if _, err := dmrd.DecodeControl(b, p.dialect); err != nil || p.state == StateWait {
+		if _, err := dmrd.DecodeControl(b, p.dialect); err != nil && !p.bare(b, c) || p.state == StateWait {
 			return dst
 		}
 		dst = append(dst, Output{Kind: OutputDown, Reason: ReasonClosed, State: p.state})
@@ -354,6 +363,20 @@ func (p *Peer) acked(now time.Duration, m *dmrd.Control, b []byte, dst []Output)
 	}
 	p.retryAt, p.timeoutAt = after(now, p.retry), after(now, p.timeout)
 	return p.send(dst)
+}
+
+func (p *Peer) bare(b []byte, c dmrd.Command) bool {
+	if p.dialect != dmrd.DialectMMDVM {
+		return false
+	}
+	switch c {
+	case dmrd.CommandRPTACK, dmrd.CommandMSTNAK:
+		return len(b) == 6
+	case dmrd.CommandMSTCL:
+		return len(b) == 5
+	default:
+	}
+	return false
 }
 
 func (p *Peer) up(now time.Duration, dst []Output) []Output {
