@@ -19,6 +19,11 @@ var (
 	// ErrTooLong is returned when the payload needs more than 127 blocks,
 	// or more than the header can count.
 	ErrTooLong = errors.New("packet: payload needs too many blocks")
+	// ErrNoRoom is returned by Assembler.Add and AddBurst, and by
+	// Builder.Segment and Retry, for a packet with more data blocks than
+	// the storage that NewAssembler or NewBuilder allocated. A zero
+	// Assembler or Builder has room for none.
+	ErrNoRoom = errors.New("packet: packet has more blocks than the storage holds")
 	// ErrNoHeader is returned for a data block that no header announced.
 	ErrNoHeader = errors.New("packet: data block without a header")
 	// ErrRateChange is returned when the data type changes within a packet. The

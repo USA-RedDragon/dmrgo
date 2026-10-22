@@ -90,12 +90,12 @@ func NewPacket(header pdu.DataHeader, payload []byte, rate enums.DataType) (Pack
 
 // Builder builds packets into storage that NewBuilder allocates once, so
 // that it does not allocate. A Packet that a Builder returns points into this
-// storage, through its Blocks, and is valid until the next
-// call of the same method on the Builder, except that Retry leaves a Packet
-// from Segment as it is. The zero value has no storage for blocks: Segment
-// and Retry return ErrTooLong for a packet with blocks, and NewResponse
-// works. A Packet points into the Builder, so a Builder must not be copied
-// after first use; go vet reports a copy. A Builder is not safe for
+// storage, through its Blocks, and is valid until the next call of the same
+// method on the Builder, except that Retry leaves a Packet from Segment as it
+// is. The zero value has no storage for blocks: Segment and Retry return
+// ErrNoRoom for a packet with blocks, and NewResponse works. Use NewBuilder
+// for others. A Packet points into the Builder, so a Builder must not be
+// copied after first use; go vet reports a copy. A Builder is not safe for
 // concurrent use.
 type Builder struct {
 	buf    []byte
@@ -142,7 +142,7 @@ func (b *Builder) Segment(header pdu.DataHeader, payload []byte, rate enums.Data
 	per, _ := blockOctets(rate, confirmed)
 	n := blocksOf(&header)
 	if n > len(b.blocks) {
-		return Packet{}, ErrTooLong
+		return Packet{}, ErrNoRoom
 	}
 	size := n*per - crcOctets
 	clear(b.buf[copy(b.buf[:size], payload):size])
@@ -186,7 +186,7 @@ func (b *Builder) Retry(p *Packet, rd *ResponseData) (Packet, error) {
 	case n == 0:
 		return Packet{}, ErrNoRetryBlocks
 	case n > len(b.retry.blocks):
-		return Packet{}, ErrTooLong
+		return Packet{}, ErrNoRoom
 	}
 	if err := retryHeader(&h, count); err != nil {
 		return Packet{}, err

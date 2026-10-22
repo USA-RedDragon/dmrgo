@@ -430,7 +430,7 @@ func TestSenderErrors(t *testing.T) {
 		{"group", group, &dmrgo.ConfigError{Type: "data", Field: "Header.Group"}},
 		{"UDT", udt, &dmrgo.ConfigError{Type: "data", Field: "Header"}},
 		{"P_HEAD", prop, &dmrgo.ConfigError{Type: "data", Field: "Header"}},
-		{"too long", message(t, 200), packet.ErrTooLong},
+		{"too long", message(t, 200), packet.ErrNoRoom},
 		{"rate", &data.Message{Header: confirmedHeader(t, 0), Rate: enums.DataTypeCSBK}, packet.ErrRate},
 	} {
 		err := s.Send(0, c.m)
