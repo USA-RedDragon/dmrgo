@@ -735,6 +735,9 @@ func (r *Receiver) complete(now time.Duration, m *packet.Message, done bool, err
 	if done && m.Header.Format() == pdu.FormatResponsePacket {
 		return r.response(m, err, out)
 	}
+	if r.windowed() {
+		r.jump()
+	}
 	held := r.windowed() && r.win.held(r.cur.ns)
 	if !done {
 		return r.answer(now, r.missing(), out)
@@ -904,6 +907,33 @@ func (r *Receiver) answers() bool {
 	return r.respond && c.answer && !c.call.Group && (r.address == 0 || c.call.Target == r.address)
 }
 
+func (r *Receiver) jump() {
+	c := &r.cur
+	if r.win.n > 0 || c.resync {
+		return
+	}
+	p, _ := r.peers.lookup(c.call.Source, c.call.Target)
+	if p == nil || !p.hasAcked {
+		return
+	}
+	span := (p.acked-p.ackedFrom)&7 + 1
+	if span == 1 && c.answer || (p.acked-c.ns)&7 < span {
+		return
+	}
+	w := &r.win
+	for next := (p.acked + 1) & 7; next != c.ns && w.n < MaxWindow-1; next = (next + 1) & 7 {
+		w.ns[w.n], w.resp[w.n], w.blocks[w.n] = next, packet.ResponseSACK, 0
+		w.n++
+	}
+}
+
+func (r *Receiver) acked(ns uint8) {
+	p, _ := r.peers.lookup(r.cur.call.Source, r.cur.call.Target)
+	if p != nil {
+		p.acked, p.ackedFrom, p.hasAcked = ns, r.win.ns[0], true
+	}
+}
+
 func (r *Receiver) windowed() bool {
 	c := &r.cur
 	return r.respond && c.format == pdu.FormatConfirmed && ipBearer(c.sap) && !c.call.Group &&
@@ -940,6 +970,9 @@ func (r *Receiver) answer(now time.Duration, resp packet.Response, out []Event) 
 			if r.to.BlocksToFollow == 0 {
 				r.to.BlocksToFollow = MaxBlocks
 			}
+		}
+		if resp == packet.ResponseACK {
+			r.acked(r.to.SendSequenceNumber)
 		}
 		r.win.n = 0
 	}

@@ -572,3 +572,85 @@ func TestReceiverWindow(t *testing.T) {
 		}
 	}
 }
+
+func TestSenderWindowLostFirstHeader(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct {
+		name   string
+		window int
+		n      int
+		drop   func(seq, try uint8, i int) bool
+		lose   func(i int) bool
+		heads  string
+		resp   string
+		dones  string
+		got    string
+	}{
+		{
+			name: "first of a new window", window: 3, n: 6,
+			drop:  func(seq, try uint8, i int) bool { return seq == 3 && try == 1 && i == 0 },
+			heads: "0 1 2A 3 4 5A 3r 4r 5rA", resp: "ACK(2)+SACK(3)+ACK(5)",
+			dones: "0:Delivered/1 1:Delivered/1 2:Delivered/1 3:Delivered/2 4:Delivered/2 5:Delivered/2", got: "abcdef",
+		},
+		{
+			name: "first of a resent window", window: 3, n: 6,
+			drop: func(seq, try uint8, i int) bool {
+				return seq == 3 && (try == 1 && i == 3 || try == 2 && i == 0)
+			},
+			heads: "0 1 2A 3 4 5A 3r 4r 5rA 3r 4r 5rA", resp: "ACK(2)+SACK(3)+SACK(3)+ACK(5)",
+			dones: "0:Delivered/1 1:Delivered/1 2:Delivered/1 3:Delivered/3 4:Delivered/3 5:Delivered/3", got: "abcdef",
+		},
+		{
+			name: "window after a lost ACK", window: 3, n: 6,
+			lose:  func(i int) bool { return i == 0 },
+			heads: "0 1 2A 0r 1r 2rA 3 4 5A", resp: "ACK(2)+ACK(2)+ACK(5)",
+			dones: "0:Delivered/2 1:Delivered/2 2:Delivered/2 3:Delivered/1 4:Delivered/1 5:Delivered/1", got: "abcabcdef",
+		},
+		{
+			name: "first of a window of two", window: 2, n: 4,
+			drop:  func(seq, try uint8, i int) bool { return seq == 2 && try == 1 && i == 0 },
+			heads: "0 1A 2 3A 2r 3rA", resp: "ACK(1)+SACK(2)+ACK(3)",
+			dones: "0:Delivered/1 1:Delivered/1 2:Delivered/2 3:Delivered/2", got: "abcd",
+		},
+	} {
+		l := &winLink{
+			t:    t,
+			tx:   newSender(t, &data.SenderConfig{Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1, Retries: 3, Window: c.window}),
+			rx:   newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID}),
+			drop: c.drop,
+			lose: c.lose,
+		}
+		msgs := windowMessages(t, c.n, 60)
+		l.run(msgs[:c.window], 20*time.Second)
+		l.lose = nil
+		l.run(msgs[c.window:], 20*time.Second)
+		if got := strings.Join(l.heads, " "); got != c.heads {
+			t.Errorf("%s: headers %q, want %q", c.name, got, c.heads)
+		}
+		if got := strings.Join(l.resp, "+"); got != c.resp {
+			t.Errorf("%s: responses %q, want %q", c.name, got, c.resp)
+		}
+		if got := l.dones(); got != c.dones {
+			t.Errorf("%s: dones %q, want %q", c.name, got, c.dones)
+		}
+		if string(l.got) != c.got {
+			t.Errorf("%s: delivered %q, want %q", c.name, l.got, c.got)
+		}
+	}
+}
+
+func TestSenderStopAndWaitSkipsNoSequenceCheck(t *testing.T) {
+	t.Parallel()
+	l := &winLink{
+		t:    t,
+		tx:   newSender(t, &data.SenderConfig{Preambles: -1, Retries: 1}),
+		rx:   newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID}),
+		drop: func(seq, _ uint8, _ int) bool { return seq == 1 },
+	}
+	for _, m := range windowMessages(t, 3, 20) {
+		l.run([]*data.Message{m}, 5*time.Second)
+	}
+	if got := strings.Join(l.resp, "+"); got != "ACK(0)+ACK(2)" || string(l.got) != "ac" {
+		t.Errorf("responses %q, delivered %q, dones %s", got, l.got, l.dones())
+	}
+}
