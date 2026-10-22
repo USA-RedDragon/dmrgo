@@ -164,6 +164,7 @@ func loadBin(t testing.TB, name string) []layer2.RawBurst {
 
 func loadGolden(t *testing.T, name string) []layer2.RawBurst {
 	t.Helper()
+	f, err := os.Open("testdata/golden_bursts.txt")
 	if err != nil {
 		t.Fatal(err)
 	}

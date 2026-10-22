@@ -22,6 +22,7 @@ type xprBurst struct {
 
 func loadXPR(t *testing.T) []xprBurst {
 	t.Helper()
+	f, err := os.Open("testdata/xpr8400_bs_voice.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
