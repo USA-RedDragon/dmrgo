@@ -97,12 +97,15 @@ type ResponderConfig struct {
 	// MS. Their OutputRequest stays. (ETSI TS 102 361-2 clause 5.1.2)
 	NoFNS bool
 	// IdleSearch is T_IdleSrch, the wait for an idle channel before a
-	// polite answer. 0 means DefaultIdleSearch, and a negative value does
-	// not wait.
+	// polite answer other than NACK_Rsp. 0 means DefaultIdleSearch, and a
+	// negative value does not wait.
 	IdleSearch time.Duration
 	// HoldoffMax is the upper end of the random holdoff T_Holdoff of a
-	// NACK_Rsp. 0 means DefaultHoldoffMax, and a negative value means no
-	// holdoff.
+	// NACK_Rsp: a polite NACK_Rsp on a busy channel waits a random
+	// holdoff, and then another while the channel stays busy. 0 means
+	// DefaultHoldoffMax, and a negative value means no holdoff: the
+	// NACK_Rsp waits for an idle channel. (ETSI TS 102 361-2 clause
+	// 5.1.2.2)
 	HoldoffMax time.Duration
 	// Seed seeds the generator of the random holdoff.
 	Seed uint64
