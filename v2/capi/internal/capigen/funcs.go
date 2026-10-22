@@ -14,6 +14,7 @@ type sliceOut struct {
 
 type sigmap struct {
 	notes      []string
+	nullable   []string
 	fn         *types.Func
 	pidx       int
 	arena      bool
@@ -111,6 +112,7 @@ func (g *gen) mapParam(sm *sigmap, n string, t types.Type, dst bool, owner *tinf
 			sm.args = append(sm.args, "*"+g.getter(ti)+"("+cn+").v")
 			return nil
 		case kOpen:
+			sm.nullable = append(sm.nullable, n)
 			sm.cps = append(sm.cps, ti.c+" *"+n)
 			sm.gps = append(sm.gps, cn+" *C."+ti.c)
 			lines(&sm.pre, "var "+a+" "+g.goType(t), "if "+cn+" != nil {", a+" = "+g.getter(ti)+"("+cn+").v", "}")
@@ -209,6 +211,9 @@ func (g *gen) ptrDecl(t types.Type, n string) (string, error) {
 func (g *gen) mapPtrParam(sm *sigmap, n string, e types.Type, dst bool) error {
 	cn := "c_" + n
 	a := "a_" + n
+	if !dst {
+		sm.nullable = append(sm.nullable, n)
+	}
 	if ti := g.info(e); ti != nil && ti.kind == kHandle {
 		sm.cps = append(sm.cps, ti.c+" *"+n)
 		sm.gps = append(sm.gps, cn+" *C."+ti.c)
@@ -807,6 +812,13 @@ func (g *gen) wrapper(cname, doc string, recv *tinfo, rk recvKind, call string, 
 		}
 	}
 	doc += note + strings.Join(sm.notes, "")
+	switch len(sm.nullable) {
+	case 0:
+	case 1:
+		doc += " " + sm.nullable[0] + " may be NULL."
+	default:
+		doc += " " + strings.Join(sm.nullable[:len(sm.nullable)-1], ", ") + " and " + sm.nullable[len(sm.nullable)-1] + " may be NULL."
+	}
 	callLine(&w, &sm, ld, rvars, target)
 	w.WriteString(sm.after.String())
 	for _, r := range rvars {

@@ -43,6 +43,19 @@ func TestGenerated(t *testing.T) {
 			t.Errorf("dmrgo_gen.h has names that %s matches: %q", re, m)
 		}
 	}
+	protoDoc := regexp.MustCompile(`(?m)^/\* Go: .*\*/\nint dmrgo_`)
+	goErr := regexp.MustCompile(`\bErr[A-Z]\w*`)
+	for _, d := range protoDoc.FindAll(out.H, -1) {
+		if m := goErr.Find(d); m != nil {
+			t.Errorf("a function comment names the Go error %s: %s", m, d)
+		}
+		if bytes.Contains(d, []byte("without a copy")) {
+			t.Errorf("a function comment says without a copy for a call that copies: %s", d)
+		}
+	}
+	if !bytes.Contains(out.H, []byte(" may be NULL.")) {
+		t.Error("no function comment says which pointer may be NULL")
+	}
 	mapped := 0
 	for _, e := range out.Exports {
 		if e.Err != "" {
