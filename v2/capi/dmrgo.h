@@ -51,7 +51,9 @@
  *   its end without a new ABI version, and a program built against an
  *   older dmrgo_gen.h works with a newer library. A size below
  *   sizeof(size_t) gives DMRGO_ERR_ARG. A vtable method that size does not
- *   cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD. Other
+ *   cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD. A
+ *   vtable function that returns a value other than DMRGO_OK and the
+ *   statuses of this API fails the call with DMRGO_ERR_OTHER. Other
  *   structs, such as outputs, have a fixed layout.
  * - Use a handle from one thread at a time. A handle that a call takes,
  *   such as the port of dmrgo_dvsi_new or the authenticator of a config,

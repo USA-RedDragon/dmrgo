@@ -961,7 +961,14 @@ func (g *gen) errorsGo() {
 	for _, e := range vars {
 		lines(&w, fmt.Sprintf("case %d:", g.lock.code(e.code)), "return "+e.goRef)
 	}
-	lines(&w, "}", "if code > 0 {", "return statusError(code)", "}", "return codeError(code)", "}", "")
+	lines(&w, "}", "if code > 0 || !knownCode(code) {", "return statusError(code)", "}", "return codeError(code)", "}", "")
+	lines(&w, "func knownCode(code C.int) bool {", "switch code {",
+		"case C.DMRGO_ERR_HANDLE, C.DMRGO_ERR_ARG, C.DMRGO_ERR_SHORT, C.DMRGO_ERR_PANIC, C.DMRGO_ERR_OTHER, C.DMRGO_ERR_BOUND, C.DMRGO_ERR_NO_METHOD:",
+		"return true")
+	for _, e := range g.errs {
+		lines(&w, fmt.Sprintf("case %d:", g.lock.code(e.code)), "return true")
+	}
+	lines(&w, "}", "return false", "}", "")
 	g.goFuncs.WriteString(w.String())
 	lines(&g.genC, "const char *dmrgo__gen_strerror(int status) {", "\tswitch (status) {")
 	for _, e := range g.errs {
