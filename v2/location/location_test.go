@@ -120,6 +120,19 @@ func TestBadChecksum(t *testing.T) {
 	}
 }
 
+func TestLRRPWholeSpeed(t *testing.T) {
+	t.Parallel()
+
+	m := lrrpPacket(t, "1315232f341f4ad07b2e66474326660a4d56e46b0b5620")
+	f, err := new(location.Decoder).Decode(&m.Header, m.Data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !f.HasSpeed || f.Speed != 11 || !near(f.Latitude, 50.106308, 1e-6) {
+		t.Errorf("whole speed %+v", f)
+	}
+}
+
 func TestLRRP(t *testing.T) {
 	t.Parallel()
 

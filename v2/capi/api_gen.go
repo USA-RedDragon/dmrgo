@@ -2873,6 +2873,8 @@ func out_mototrbo_lrrp_Report(d *C.dmrgo_lrrp_report_t, s *g_mototrbo_lrrp.Repor
 	d.has_point3d = C.bool(s.HasPoint3D)
 	*(*g_mototrbo_lrrp.Point3DAccuracy)(unsafe.Pointer(&d.point3d_accuracy)) = s.Point3DAccuracy
 	d.has_point3d_accuracy = C.bool(s.HasPoint3DAccuracy)
+	d.speed_whole = C.uint32_t(s.SpeedWhole)
+	d.has_speed_whole = C.bool(s.HasSpeedWhole)
 	d.speed = C.double(s.Speed)
 	d.has_speed = C.bool(s.HasSpeed)
 	d.vertical_speed = C.double(s.VerticalSpeed)
@@ -2948,6 +2950,8 @@ func in_mototrbo_lrrp_Report(s *C.dmrgo_lrrp_report_t) (d g_mototrbo_lrrp.Report
 	d.HasPoint3D = bool(s.has_point3d)
 	d.Point3DAccuracy = *(*g_mototrbo_lrrp.Point3DAccuracy)(unsafe.Pointer(&s.point3d_accuracy))
 	d.HasPoint3DAccuracy = bool(s.has_point3d_accuracy)
+	d.SpeedWhole = uint32(s.speed_whole)
+	d.HasSpeedWhole = bool(s.has_speed_whole)
 	d.Speed = float64(s.speed)
 	d.HasSpeed = bool(s.has_speed)
 	d.VerticalSpeed = float64(s.vertical_speed)

@@ -248,6 +248,10 @@ type Report struct {
 	// Point3DAccuracy is a position with an altitude and its accuracy.
 	Point3DAccuracy    Point3DAccuracy `dmr:"stream,token:0x6A"`
 	HasPoint3DAccuracy bool            `dmr:"-"`
+	// SpeedWhole is the horizontal speed in whole meters per second, which
+	// some radios send in place of Speed.
+	SpeedWhole    uint32 `dmr:"uintvar,token:0x6B"`
+	HasSpeedWhole bool   `dmr:"-"`
 	// Speed is the horizontal speed in meters per second.
 	Speed    float64 `dmr:"ufloatvar,token:0x6C"`
 	HasSpeed bool    `dmr:"-"`
