@@ -133,6 +133,29 @@ func TestLRRPWholeSpeed(t *testing.T) {
 	}
 }
 
+func TestLRRPWholeShapes(t *testing.T) {
+	t.Parallel()
+
+	for _, c := range []struct {
+		payload string
+		lat     float64
+		alt     float64
+		radius  bool
+	}{
+		{"0d19220431323334341fa5fb128053b13a24bdd67ac6c202804403", -34.612821, 68, true},
+		{"0711341fa5ca6d3467b13a5784d67ab88a8042", -34.613366, 66, false},
+	} {
+		m := lrrpPacket(t, c.payload)
+		f, err := new(location.Decoder).Decode(&m.Header, m.Data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !f.Valid || !near(f.Latitude, c.lat, 1e-6) || !f.HasAltitude || f.Altitude != c.alt || f.HasRadius != c.radius {
+			t.Errorf("%s: %+v", c.payload, f)
+		}
+	}
+}
+
 func TestLRRP(t *testing.T) {
 	t.Parallel()
 

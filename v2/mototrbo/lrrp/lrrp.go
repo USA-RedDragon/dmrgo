@@ -156,6 +156,40 @@ type Point3D struct {
 	Altitude float64 `dmr:"sfloatvar"`
 }
 
+// Point3DWhole is a position with an altitude in whole meters (token 0x67),
+// which radios in Buenos Aires send in place of Point3D.
+//
+//dmr:stream
+type Point3DWhole struct {
+	// Latitude is in degrees, north positive. Its top bit is the sign
+	// and the other 31 bits the magnitude, as radios send it.
+	Latitude float64 `dmr:"i32,signmag,scale:90/31"`
+	// Longitude is in degrees, east positive.
+	Longitude float64 `dmr:"i32,scale:360/32"`
+	// Altitude is in meters.
+	Altitude int32 `dmr:"sintvar"`
+}
+
+// Circle3DWhole is a position with an altitude and the accuracy of both,
+// in whole meters (token 0x53), which radios in Buenos Aires send in place
+// of Circle3D.
+//
+//dmr:stream
+type Circle3DWhole struct {
+	// Latitude is in degrees, north positive. Its top bit is the sign
+	// and the other 31 bits the magnitude, as radios send it.
+	Latitude float64 `dmr:"i32,signmag,scale:90/31"`
+	// Longitude is in degrees, east positive.
+	Longitude float64 `dmr:"i32,scale:360/32"`
+	// Radius is the radius of the circle that holds the position, in
+	// meters.
+	Radius uint32 `dmr:"uintvar"`
+	// Altitude is in meters.
+	Altitude int32 `dmr:"sintvar"`
+	// AltitudeAccuracy is in meters.
+	AltitudeAccuracy uint32 `dmr:"uintvar"`
+}
+
 // Point3DAccuracy is a position with an altitude and its accuracy (token
 // 0x6A).
 //
@@ -230,6 +264,10 @@ type Report struct {
 	// Circle2D is a position with its accuracy.
 	Circle2D    Circle2D `dmr:"stream,token:0x51"`
 	HasCircle2D bool     `dmr:"-"`
+	// Circle3DWhole is a position with an altitude and its accuracy in
+	// whole meters.
+	Circle3DWhole    Circle3DWhole `dmr:"stream,token:0x53"`
+	HasCircle3DWhole bool          `dmr:"-"`
 	// Circle3D is a position with an altitude and its accuracy.
 	Circle3D    Circle3D `dmr:"stream,token:0x55"`
 	HasCircle3D bool     `dmr:"-"`
@@ -242,6 +280,9 @@ type Report struct {
 	// Point2D is a position.
 	Point2D    Point2D `dmr:"stream,token:0x66"`
 	HasPoint2D bool    `dmr:"-"`
+	// Point3DWhole is a position with an altitude in whole meters.
+	Point3DWhole    Point3DWhole `dmr:"stream,token:0x67"`
+	HasPoint3DWhole bool         `dmr:"-"`
 	// Point3D is a position with an altitude.
 	Point3D    Point3D `dmr:"stream,token:0x69"`
 	HasPoint3D bool    `dmr:"-"`

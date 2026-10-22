@@ -407,6 +407,8 @@ typedef struct dmrgo_ars_response_t dmrgo_ars_response_t;
 typedef struct dmrgo_lrrp_circle2d_t dmrgo_lrrp_circle2d_t;
 /* Go: lrrp.Circle3D. Circle3D is a position with an altitude and the accuracy of both (token 0x55). */
 typedef struct dmrgo_lrrp_circle3d_t dmrgo_lrrp_circle3d_t;
+/* Go: lrrp.Circle3DWhole. Circle3DWhole is a position with an altitude and the accuracy of both, in whole meters (token 0x53), which radios in Buenos Aires send in place of Circle3D. */
+typedef struct dmrgo_lrrp_circle3d_whole_t dmrgo_lrrp_circle3d_whole_t;
 /* Go: lrrp.Message. Message is a MOTOTRBO Location Request and Response Protocol message, the payload of a UDP datagram to port 4001. */
 typedef struct dmrgo_lrrp_message_t dmrgo_lrrp_message_t;
 /* Go: lrrp.OperationError. OperationError is the result of a request that failed, with its text (token 0x39). */
@@ -417,6 +419,8 @@ typedef struct dmrgo_lrrp_point2d_t dmrgo_lrrp_point2d_t;
 typedef struct dmrgo_lrrp_point3d_t dmrgo_lrrp_point3d_t;
 /* Go: lrrp.Point3DAccuracy. Point3DAccuracy is a position with an altitude and its accuracy (token 0x6A). */
 typedef struct dmrgo_lrrp_point3d_accuracy_t dmrgo_lrrp_point3d_accuracy_t;
+/* Go: lrrp.Point3DWhole. Point3DWhole is a position with an altitude in whole meters (token 0x67), which radios in Buenos Aires send in place of Point3D. */
+typedef struct dmrgo_lrrp_point3d_whole_t dmrgo_lrrp_point3d_whole_t;
 /* Go: lrrp.Report. Report holds the tokens of a report or an answer. */
 typedef struct dmrgo_lrrp_report_t dmrgo_lrrp_report_t;
 /* Go: lrrp.Request. Request holds the tokens of a request. */
@@ -3422,6 +3426,19 @@ struct dmrgo_lrrp_circle3d_t {
 	double altitude_accuracy;
 };
 
+struct dmrgo_lrrp_circle3d_whole_t {
+	/* Latitude is in degrees, north positive. Its top bit is the sign and the other 31 bits the magnitude, as radios send it. */
+	double latitude;
+	/* Longitude is in degrees, east positive. */
+	double longitude;
+	/* Radius is the radius of the circle that holds the position, in meters. */
+	uint32_t radius;
+	/* Altitude is in meters. */
+	int32_t altitude;
+	/* AltitudeAccuracy is in meters. */
+	uint32_t altitude_accuracy;
+};
+
 struct dmrgo_lrrp_request_t {
 	/* RequestID is the identifier that the reports carry. */
 	uint8_t *request_id;
@@ -3495,6 +3512,15 @@ struct dmrgo_lrrp_point2d_t {
 	double longitude;
 };
 
+struct dmrgo_lrrp_point3d_whole_t {
+	/* Latitude is in degrees, north positive. Its top bit is the sign and the other 31 bits the magnitude, as radios send it. */
+	double latitude;
+	/* Longitude is in degrees, east positive. */
+	double longitude;
+	/* Altitude is in meters. */
+	int32_t altitude;
+};
+
 struct dmrgo_lrrp_point3d_t {
 	/* Latitude is in degrees, north positive. Its top bit is the sign and the other 31 bits the magnitude, as radios send it. */
 	double latitude;
@@ -3540,6 +3566,9 @@ struct dmrgo_lrrp_report_t {
 	/* Circle2D is a position with its accuracy. */
 	dmrgo_lrrp_circle2d_t circle2d;
 	bool has_circle2d;
+	/* Circle3DWhole is a position with an altitude and its accuracy in whole meters. */
+	dmrgo_lrrp_circle3d_whole_t circle3d_whole;
+	bool has_circle3d_whole;
 	/* Circle3D is a position with an altitude and its accuracy. */
 	dmrgo_lrrp_circle3d_t circle3d;
 	bool has_circle3d;
@@ -3552,6 +3581,9 @@ struct dmrgo_lrrp_report_t {
 	/* Point2D is a position. */
 	dmrgo_lrrp_point2d_t point2d;
 	bool has_point2d;
+	/* Point3DWhole is a position with an altitude in whole meters. */
+	dmrgo_lrrp_point3d_whole_t point3d_whole;
+	bool has_point3d_whole;
 	/* Point3D is a position with an altitude. */
 	dmrgo_lrrp_point3d_t point3d;
 	bool has_point3d;
@@ -9723,6 +9755,10 @@ int dmrgo_lrrp_circle2d_string(const dmrgo_lrrp_circle2d_t *self, char *out, siz
 int dmrgo_lrrp_circle3d_append_binary(const dmrgo_lrrp_circle3d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Circle3D.String. String returns the fields of s as text, for printing. */
 int dmrgo_lrrp_circle3d_string(const dmrgo_lrrp_circle3d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: lrrp.Circle3DWhole.AppendBinary. AppendBinary appends s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE or another error when a field does not fit. */
+int dmrgo_lrrp_circle3d_whole_append_binary(const dmrgo_lrrp_circle3d_whole_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: lrrp.Circle3DWhole.String. String returns the fields of s as text, for printing. */
+int dmrgo_lrrp_circle3d_whole_string(const dmrgo_lrrp_circle3d_whole_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.DecodeMessageInto. DecodeMessageInto decodes a Message from data. It returns DMRGO_ERR_LRRP_SHORT when data ends inside a field, DMRGO_ERR_LRRP_LENGTH when a length does not match the data and DMRGO_ERR_LRRP_VARINT for a number that does not fit its field. It returns DMRGO_ERR_NIL_ARGUMENT for a NULL m. The call sets all of *m and does not read it. m may be NULL. */
 int dmrgo_lrrp_decode_message_into(dmrgo_lrrp_message_t *m, const uint8_t *data, size_t data_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: lrrp.DocumentID.String. String returns the name of d. */
@@ -9747,6 +9783,10 @@ int dmrgo_lrrp_point3d_string(const dmrgo_lrrp_point3d_t *self, char *out, size_
 int dmrgo_lrrp_point3d_accuracy_append_binary(const dmrgo_lrrp_point3d_accuracy_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Point3DAccuracy.String. String returns the fields of s as text, for printing. */
 int dmrgo_lrrp_point3d_accuracy_string(const dmrgo_lrrp_point3d_accuracy_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: lrrp.Point3DWhole.AppendBinary. AppendBinary appends s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE or another error when a field does not fit. */
+int dmrgo_lrrp_point3d_whole_append_binary(const dmrgo_lrrp_point3d_whole_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: lrrp.Point3DWhole.String. String returns the fields of s as text, for printing. */
+int dmrgo_lrrp_point3d_whole_string(const dmrgo_lrrp_point3d_whole_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.Report.AppendBinary. AppendBinary appends s to dst: each field that is set, as its token and value, in the order of the fields. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE or another error when a field does not fit. */
 int dmrgo_lrrp_report_append_binary(const dmrgo_lrrp_report_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Report.String. String returns the fields of s as text, for printing. */
