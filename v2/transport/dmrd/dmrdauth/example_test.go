@@ -1,11 +1,11 @@
-package auth_test
+package dmrdauth_test
 
 import (
 	"encoding/hex"
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
-	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdauth"
 )
 
 // ExampleToken computes the login token for the salt of an RPTACK and
@@ -16,10 +16,10 @@ func ExampleToken() {
 	a, _ := dmrd.DecodeControl(ack, dmrd.DialectMMDVM)
 	k, _ := dmrd.DecodeControl(rptk, dmrd.DialectMMDVM)
 
-	token, err := auth.Token(dmrd.DialectMMDVM, a.ID, []byte("passw0rd"))
+	token, err := dmrdauth.Token(dmrd.DialectMMDVM, a.ID, []byte("passw0rd"))
 	fmt.Printf("%x %v\n", token, err)
 	fmt.Println(token == k.Token)
-	fmt.Println(auth.VerifyToken(dmrd.DialectMMDVM, a.ID, []byte("passw0rd"), k.Token[:]))
+	fmt.Println(dmrdauth.VerifyToken(dmrd.DialectMMDVM, a.ID, []byte("passw0rd"), k.Token[:]))
 	// Output:
 	// c95b349a634da769f56cab69f361bc30c6e5ea9a127fd973ef40a9f6a329dcfb <nil>
 	// true

@@ -135,12 +135,12 @@
 //   - transport/dmrd: the protocols of the 53-octet DMRD packet: the MMDVM
 //     network protocol, the HomeBrew Repeater Protocol, the MMDVMHost to
 //     DMRGateway link and OpenBridge.
-//   - transport/dmrd/auth: the login token of transport/dmrd and the
+//   - transport/dmrd/dmrdauth: the login token of transport/dmrd and the
 //     signatures of OpenBridge.
 //   - transport/dmrd/dmrdsession: the login, keepalive and OpenBridge
 //     sessions of transport/dmrd, without I/O.
 //   - transport/ipsc: Motorola IP Site Connect.
-//   - transport/ipsc/auth: the authentication trailer of IPSC packets.
+//   - transport/ipsc/ipscauth: the authentication trailer of IPSC packets.
 //   - transport/ipsc/ipscsession: the registration, keepalive and peer list
 //     of IPSC, without I/O.
 //   - transport/hytera: Hytera IP Multi-Site Connect.
@@ -252,7 +252,7 @@
 //     dvsi.ErrBits, dvsi.ErrStatus, dvsi.ErrTimeout, dvsi.ErrPort,
 //     dvsi.ErrClosed: returned by the DVSI packet parser and Codec.
 //
-// The auth packages export no errors. They return an error for a dialect,
+// The packages dmrdauth and ipscauth export no errors. They return an error for a dialect,
 // key or packet that they do not take.
 //
 // These error types can be matched with errors.As:

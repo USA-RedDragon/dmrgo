@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
-	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscauth"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession"
 )
 
@@ -14,14 +14,14 @@ func TestKeyedRepliesCarryAuthFlag(t *testing.T) {
 
 	lines := readXPR(t)
 	const xpr = 0x0004ce2e
-	key, _ := auth.ParseKey("1234")
+	key, _ := ipscauth.ParseKey("1234")
 	m, _ := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1})
-	signer := auth.NewKey(key)
+	signer := ipscauth.NewKey(key)
 	for _, step := range []struct{ in, want ipsc.Opcode }{{ipsc.OpRegisterRequest, ipsc.OpRegisterReply}, {ipsc.OpAliveRequest, ipsc.OpAliveReply}} {
 		in, _ := signer.Sign(append([]byte(nil), xprPacket(t, lines, step.in, xpr)...))
 		out := m.Packet(0, xprAddr, in, &key, nil)
 		want := xprPacket(t, lines, step.want, 1)
-		if len(out) == 0 || out[0].Kind != ipscsession.OutputSend || !bytes.Equal(out[0].Packet[:len(out[0].Packet)-auth.TrailerLen], want) {
+		if len(out) == 0 || out[0].Kind != ipscsession.OutputSend || !bytes.Equal(out[0].Packet[:len(out[0].Packet)-ipscauth.TrailerLen], want) {
 			t.Fatalf("%v: %x, want %x", step.in, out[0].Packet, want)
 		}
 	}

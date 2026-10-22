@@ -3,7 +3,7 @@ package dmrd
 import "github.com/USA-RedDragon/dmrgo/v2"
 
 // Bridge is an OpenBridge data packet between two masters. OpenBridge has
-// no login: each packet carries its own signature, which package auth
+// no login: each packet carries its own signature, which package dmrdauth
 // computes and checks.
 //
 // Version 1 is the form of BrandMeister, HBlink3, DMRHub and FreeDMR without
@@ -40,7 +40,7 @@ type Bridge struct {
 // ErrShort or ErrLength for another length, ErrSignature when the version
 // octet of a DMRE packet is not 4 for 85 octets or 5 for 89, and the errors
 // of DecodeData.
-// It does not check the signature (see package auth) and does not
+// It does not check the signature (see package dmrdauth) and does not
 // allocate.
 func DecodeBridge(p []byte) (Bridge, error) {
 	switch {
@@ -96,7 +96,7 @@ func DecodeBridge(p []byte) (Bridge, error) {
 }
 
 // AppendBinary appends the packet b to dst in the form of b.Version, with
-// b.Signature as it is: sign the packet afterward with package auth. It
+// b.Signature as it is: sign the packet afterward with package dmrdauth. It
 // returns dst unchanged and an error for another version, when Data.Size
 // does not fit the version (0 or 53 for version 1, 0 or 55 for 4 and 5), or
 // with the errors of Data.AppendBinary. A nil b gives

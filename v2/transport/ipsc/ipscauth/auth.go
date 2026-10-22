@@ -1,10 +1,10 @@
-// Package auth signs and checks the authentication trailer of IPSC packets:
+// Package ipscauth signs and checks the authentication trailer of IPSC packets:
 // the first 10 octets of HMAC-SHA1 of the packet, with a 20-octet key.
 // Package ipsc has none of this code, so a program that only encodes and
 // decodes does not link it. Nothing here allocates but NewKey.
 //
 // (DMRlink; ipsc2hbrp; captures of a Motorola XPR 8400, 2026-10-15)
-package auth
+package ipscauth
 
 import (
 	"errors"
@@ -17,7 +17,7 @@ import (
 const TrailerLen = 10
 
 var (
-	errKeyText = errors.New("auth: key is not up to 40 hex digits")
+	errKeyText = errors.New("ipscauth: key is not up to 40 hex digits")
 )
 
 // Key holds an IPSC authentication key and the HMAC state that signing

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
-	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdauth"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession"
 )
 
@@ -14,7 +14,7 @@ func fuzzSeeds() [][]byte {
 		b, _ := (&dmrd.Control{Command: c, ID: id}).AppendBinary(nil, dmrd.DialectMMDVM)
 		return b
 	}
-	tok, _ := auth.Token(dmrd.DialectMMDVM, 7, []byte("pw"))
+	tok, _ := dmrdauth.Token(dmrd.DialectMMDVM, 7, []byte("pw"))
 	rptk, _ := (&dmrd.Control{Command: dmrd.CommandRPTK, ID: 1234, Token: tok}).AppendBinary(nil, dmrd.DialectMMDVM)
 	join := func(ps ...[]byte) []byte {
 		var out []byte

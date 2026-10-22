@@ -1,4 +1,4 @@
-package auth_test
+package dmrdauth_test
 
 import (
 	"bufio"
@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
-	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdauth"
 )
 
 func TestTokenOfDMRGatewayCapture(t *testing.T) {
@@ -35,14 +35,14 @@ func TestTokenOfDMRGatewayCapture(t *testing.T) {
 		case c.Command == dmrd.CommandRPTACK && salt == 0:
 			salt = c.ID
 		case c.Command == dmrd.CommandRPTK:
-			want, err := auth.Token(dmrd.DialectMMDVM, salt, []byte("passw0rd"))
+			want, err := dmrdauth.Token(dmrd.DialectMMDVM, salt, []byte("passw0rd"))
 			if err != nil || want != c.Token {
 				t.Fatalf("token %x, DMRGateway sent %x (%v)", want, c.Token, err)
 			}
-			if !auth.VerifyToken(dmrd.DialectMMDVM, salt, []byte("passw0rd"), c.Token[:]) {
+			if !dmrdauth.VerifyToken(dmrd.DialectMMDVM, salt, []byte("passw0rd"), c.Token[:]) {
 				t.Fatal("VerifyToken rejects the token of DMRGateway")
 			}
-			if auth.VerifyToken(dmrd.DialectMMDVM, salt, []byte("passw0rD"), c.Token[:]) {
+			if dmrdauth.VerifyToken(dmrd.DialectMMDVM, salt, []byte("passw0rD"), c.Token[:]) {
 				t.Fatal("VerifyToken accepts a wrong password")
 			}
 			checked = true
@@ -61,7 +61,7 @@ func TestHBlink3OpenBridge(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer f.Close()
-	b := auth.NewBridgeKey([]byte("passw0rd-longer-than-twenty"))
+	b := dmrdauth.NewBridgeKey([]byte("passw0rd-longer-than-twenty"))
 	n := 0
 	sc := bufio.NewScanner(f)
 	for sc.Scan() {

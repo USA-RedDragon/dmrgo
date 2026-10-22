@@ -23,7 +23,7 @@ type MasterConfig struct {
 	// Auth turns on the HMAC-SHA1 trailer with Key: the Master drops a
 	// packet without a good trailer and signs what it sends.
 	Auth bool
-	// Key is the authentication key (see auth.ParseKey).
+	// Key is the authentication key (see ipscauth.ParseKey).
 	Key [20]byte
 	// Timeout is the time without a packet from a peer after which the
 	// Master drops it. 0 means TimeoutDefault.
@@ -148,7 +148,7 @@ func (m *Master) Peer(id uint32) (info PeerInfo, ok bool) {
 // Sign appends the authentication trailer of the packet in dst to dst
 // when the config has Auth, and returns dst as it is without. It returns
 // dst unchanged and dmrgo.ErrNilReceiver for a nil m. It allocates only
-// when dst has no room for auth.TrailerLen more octets.
+// when dst has no room for ipscauth.TrailerLen more octets.
 func (m *Master) Sign(dst []byte) ([]byte, error) {
 	if m == nil {
 		return dst, dmrgo.ErrNilReceiver
@@ -161,7 +161,7 @@ func (m *Master) Sign(dst []byte) ([]byte, error) {
 // registered peer id to dst: with the own key of the peer when it
 // registered with one, and else as Sign does. It
 // returns dst unchanged and dmrgo.ErrNilReceiver for a nil m. It allocates
-// only when dst has no room for auth.TrailerLen more octets.
+// only when dst has no room for ipscauth.TrailerLen more octets.
 func (m *Master) SignFor(id uint32, dst []byte) ([]byte, error) {
 	if m == nil {
 		return dst, dmrgo.ErrNilReceiver

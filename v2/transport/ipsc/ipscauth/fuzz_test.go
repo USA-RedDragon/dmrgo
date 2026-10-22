@@ -1,12 +1,12 @@
 //go:build !tinygo
 
-package auth_test
+package ipscauth_test
 
 import (
 	"bytes"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscauth"
 )
 
 func FuzzKey(f *testing.F) {
@@ -14,11 +14,11 @@ func FuzzKey(f *testing.F) {
 	f.Add("", []byte{})
 	f.Add("0123456789abcdef0123456789ABCDEF01234567", make([]byte, 80))
 	f.Fuzz(func(t *testing.T, s string, p []byte) {
-		k, err := auth.ParseKey(s)
+		k, err := ipscauth.ParseKey(s)
 		if err != nil {
 			return
 		}
-		key := auth.NewKey(k)
+		key := ipscauth.NewKey(k)
 		signed, _ := key.Sign(append([]byte(nil), p...))
 		body, ok := key.Verify(signed)
 		if !ok || !bytes.Equal(body, p) {

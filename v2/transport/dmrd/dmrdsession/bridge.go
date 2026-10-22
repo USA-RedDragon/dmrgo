@@ -5,12 +5,12 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
-	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdauth"
 )
 
 // BridgeConfig configures NewBridge.
 type BridgeConfig struct {
-	// Key is the passphrase of the OpenBridge link (see auth.NewBridgeKey).
+	// Key is the passphrase of the OpenBridge link (see dmrdauth.NewBridgeKey).
 	Key []byte
 	// Enhanced turns on FreeDMR's enhanced OpenBridge: the Bridge sends a
 	// BCKA every Keepalive and takes the peer as down after Timeout
@@ -31,7 +31,7 @@ type BridgeConfig struct {
 // NewBridge; the zero Bridge takes no packet. A Bridge is not safe for
 // concurrent use and must not be copied.
 type Bridge struct {
-	key       *auth.BridgeKey
+	key       *dmrdauth.BridgeKey
 	enhanced  bool
 	keepalive time.Duration
 	timeout   time.Duration
@@ -56,7 +56,7 @@ func NewBridge(cfg *BridgeConfig) (*Bridge, error) {
 		return nil, errTimeout
 	}
 	b := &Bridge{
-		key:       auth.NewBridgeKey(cfg.Key),
+		key:       dmrdauth.NewBridgeKey(cfg.Key),
 		enhanced:  cfg.Enhanced,
 		keepalive: orDefault(cfg.Keepalive, KeepaliveDefault),
 		timeout:   orDefault(cfg.Timeout, TimeoutDefault),
@@ -79,7 +79,7 @@ func (b *Bridge) State() State {
 }
 
 // SignInPlace writes the signature of the OpenBridge packet p into its last
-// octets, as auth.BridgeKey.SignInPlace does. It returns an error for a
+// octets, as dmrdauth.BridgeKey.SignInPlace does. It returns an error for a
 // Bridge that NewBridge did not make. It does not allocate.
 func (b *Bridge) SignInPlace(p []byte) error {
 	if b == nil {

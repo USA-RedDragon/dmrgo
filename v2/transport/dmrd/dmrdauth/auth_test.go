@@ -1,4 +1,4 @@
-package auth_test
+package dmrdauth_test
 
 import (
 	"bytes"
@@ -7,13 +7,13 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
-	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdauth"
 )
 
 func TestTokenHBRPSpecExample(t *testing.T) {
 	t.Parallel()
 
-	got, err := auth.Token(dmrd.DialectHBRP, 0x0A7ED498, []byte("DL5DI"))
+	got, err := dmrdauth.Token(dmrd.DialectHBRP, 0x0A7ED498, []byte("DL5DI"))
 	if err != nil || hex.EncodeToString(got[:]) != "cbf0e29abbd11c6573825d36a664e3064441f91fc815ac5dc5ca570d4c4a5f85" {
 		t.Fatalf("%x %v", got, err)
 	}
@@ -22,28 +22,28 @@ func TestTokenHBRPSpecExample(t *testing.T) {
 func TestTokenMMDVM(t *testing.T) {
 	t.Parallel()
 
-	got, err := auth.Token(dmrd.DialectMMDVM, 0xDEADBEEF, []byte("passw0rd"))
+	got, err := dmrdauth.Token(dmrd.DialectMMDVM, 0xDEADBEEF, []byte("passw0rd"))
 	if err != nil || hex.EncodeToString(got[:]) != "7dc06de70732a897f9b0a50886a3e875c8cedb39c66b393867adfb20621dfcd6" {
 		t.Fatalf("%x %v", got, err)
 	}
-	if _, err := auth.Token(dmrd.DialectLocal, 1, nil); err == nil {
+	if _, err := dmrdauth.Token(dmrd.DialectLocal, 1, nil); err == nil {
 		t.Error("local dialect: no error")
 	}
-	if !auth.VerifyToken(dmrd.DialectMMDVM, 0xDEADBEEF, []byte("passw0rd"), got[:]) {
+	if !dmrdauth.VerifyToken(dmrd.DialectMMDVM, 0xDEADBEEF, []byte("passw0rd"), got[:]) {
 		t.Error("VerifyToken rejects its token")
 	}
 	for i := range got {
 		bad := got
 		bad[i] ^= 0x10
-		if auth.VerifyToken(dmrd.DialectMMDVM, 0xDEADBEEF, []byte("passw0rd"), bad[:]) {
+		if dmrdauth.VerifyToken(dmrd.DialectMMDVM, 0xDEADBEEF, []byte("passw0rd"), bad[:]) {
 			t.Errorf("VerifyToken accepts a change in octet %d", i)
 		}
 	}
-	if auth.VerifyToken(dmrd.DialectMMDVM, 0xDEADBEEF, []byte("passw0rd"), got[:31]) || auth.VerifyToken(dmrd.DialectLocal, 0xDEADBEEF, []byte("passw0rd"), got[:]) {
+	if dmrdauth.VerifyToken(dmrd.DialectMMDVM, 0xDEADBEEF, []byte("passw0rd"), got[:31]) || dmrdauth.VerifyToken(dmrd.DialectLocal, 0xDEADBEEF, []byte("passw0rd"), got[:]) {
 		t.Error("VerifyToken accepts a short token or the local dialect")
 	}
 	long := bytes.Repeat([]byte("x"), 300)
-	got, err = auth.Token(dmrd.DialectMMDVM, 0xDEADBEEF, long)
+	got, err = dmrdauth.Token(dmrd.DialectMMDVM, 0xDEADBEEF, long)
 	if err != nil || got != sha256.Sum256(append([]byte{0xDE, 0xAD, 0xBE, 0xEF}, long...)) {
 		t.Errorf("300-octet password: %x %v", got, err)
 	}
@@ -61,7 +61,7 @@ func packet(tag string, msgLen, n int) []byte {
 func TestBridgeSignaturesMatchPython(t *testing.T) {
 	t.Parallel()
 
-	b := auth.NewBridgeKey([]byte("passw0rd"))
+	b := dmrdauth.NewBridgeKey([]byte("passw0rd"))
 	tests := []struct {
 		p      []byte
 		sigAt  int
@@ -97,7 +97,7 @@ func TestBridgeSignaturesMatchPython(t *testing.T) {
 func TestBridgeLongKey(t *testing.T) {
 	t.Parallel()
 
-	b := auth.NewBridgeKey(bytes.Repeat([]byte("k"), 100))
+	b := dmrdauth.NewBridgeKey(bytes.Repeat([]byte("k"), 100))
 	p := packet("DMRD", 53, 73)
 	if err := b.SignInPlace(p); err != nil || hex.EncodeToString(p[53:]) != "074d5ec72685e6bd0cbb917aabb83108726b943a" {
 		t.Fatalf("%x %v", p[53:], err)
@@ -106,7 +106,7 @@ func TestBridgeLongKey(t *testing.T) {
 	if err := b.SignInPlace(e); err != nil || hex.EncodeToString(e[69:]) != "a943a3ca14b6731ef293c0eed48a9760" {
 		t.Fatalf("DMRE with a 100-octet key: %x %v", e[69:], err)
 	}
-	if _, ok := auth.NewBridgeKey(bytes.Repeat([]byte("k"), auth.KeyLen)).Verify(e); !ok {
+	if _, ok := dmrdauth.NewBridgeKey(bytes.Repeat([]byte("k"), dmrdauth.KeyLen)).Verify(e); !ok {
 		t.Error("the key is not cut at KeyLen")
 	}
 	for _, p := range [][]byte{nil, []byte("RPTL1234"), packet("DMRD", 53, 72)} {
@@ -121,7 +121,7 @@ func TestBridgeLongKey(t *testing.T) {
 func TestBridgeKeyNil(t *testing.T) {
 	t.Parallel()
 
-	var b *auth.BridgeKey
+	var b *dmrdauth.BridgeKey
 	p := packet("DMRD", 53, 73)
 	if err := b.SignInPlace(p); err == nil {
 		t.Fatal("nil BridgeKey signs")

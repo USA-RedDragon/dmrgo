@@ -19,7 +19,7 @@
 // Decode functions never allocate and never panic. They return the static
 // errors ErrShort, ErrLength and ErrCommand, which errors.Is matches. The
 // packets are without the 10-octet HMAC-SHA1 trailer of authenticated IPSC,
-// which package auth signs and checks.
+// which package ipscauth signs and checks.
 //
 // (DMRlink ipsc_const.py; ipsc2hbrp and DMRHub; captures of a Motorola XPR
 // 8400, 2026-10-15 to 2026-10-20)

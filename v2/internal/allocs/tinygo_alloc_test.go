@@ -22,10 +22,10 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
-	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdauth"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/hytera"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
-	ipscauth "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscauth"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder/dvsi"
@@ -492,7 +492,7 @@ func tinyDMRDOps(t *testing.T) []tinyOp {
 	login := []byte("RPTK00040178cbf0e29abbd11c6573825d36a664e3064441f91fc815ac5dc5ca570d4c4a5f85")
 	opts := []byte("StartRef=4013;RelinkTime=15;UserLink=1;TS1_1=262;")
 	buf := make([]byte, 0, 128)
-	signer := auth.NewBridgeKey([]byte("passw0rd"))
+	signer := dmrdauth.NewBridgeKey([]byte("passw0rd"))
 	bridge := append(make([]byte, 0, 73), pkt[:53]...)
 	bridge = append(bridge, make([]byte, 20)...)
 	dmre := tinyOK((&dmrd.Bridge{Version: 5, Data: d}).AppendBinary(make([]byte, 0, 89)))
@@ -508,9 +508,9 @@ func tinyDMRDOps(t *testing.T) []tinyOp {
 	}}, {"dmrd bridge", func() {
 		buf = tinyBridgeRun(dmre, buf)
 		buf = tinyBridgeRun(bridge, buf)
-	}}, {"dmrd/auth", func() {
-		tok, _ := auth.Token(dmrd.DialectHBRP, 0x0A7ED498, []byte("DL5DI"))
-		_ = auth.VerifyToken(dmrd.DialectHBRP, 0x0A7ED498, []byte("DL5DI"), tok[:])
+	}}, {"dmrdauth", func() {
+		tok, _ := dmrdauth.Token(dmrd.DialectHBRP, 0x0A7ED498, []byte("DL5DI"))
+		_ = dmrdauth.VerifyToken(dmrd.DialectHBRP, 0x0A7ED498, []byte("DL5DI"), tok[:])
 		_ = signer.SignInPlace(bridge)
 		_, _ = signer.Verify(bridge)
 		_ = signer.SignInPlace(dmre)

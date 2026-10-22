@@ -7,7 +7,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/digest"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
-	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdauth"
 )
 
 // PeerConfig configures NewPeer.
@@ -245,7 +245,7 @@ func (p *Peer) send(dst []Output) []Output {
 			h.Write(p.saltText[:])
 			h.Write(p.pass)
 			tok = h.Sum()
-		} else if t, err := auth.Token(p.dialect, p.salt, p.pass); err == nil {
+		} else if t, err := dmrdauth.Token(p.dialect, p.salt, p.pass); err == nil {
 			tok = t
 		}
 		return send(dst, appendControl(p.tx[:0], p.dialect, dmrd.Control{Command: dmrd.CommandRPTK, ID: p.id, Token: tok}))

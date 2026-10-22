@@ -20,7 +20,7 @@ type Control struct {
 	Salt uint32
 	// HasSalt reports whether Salt is set.
 	HasSalt bool
-	// Token is the login token of an RPTK (see package auth).
+	// Token is the login token of an RPTK (see package dmrdauth).
 	Token [32]byte
 	// Text is the rest of an RPTO (options), RPTG (home position), RPTRSSI
 	// or RPTINTR (slot and value) or DMRT (trunking command) message. A
