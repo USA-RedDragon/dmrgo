@@ -96,20 +96,20 @@ type Text struct {
 }
 
 // Decode appends the text of a data packet, with header h and user data
-// data, to dst as UTF-8, and returns
-// dst and the Text, whose Body points into dst. It finds the format from
-// the header and the UDP port: TMS on port 4007, IP or AnyTone text on
-// port 5016, and defined data. Defined data with DD format BCD is
-// FormatHytera when it has the HyteraText layout: an even length of at
-// least 6 octets, 2 octets and then a UTF-16LE text of at least one
-// character that ends in 00 00, with only 00 octets after it. Other BCD
-// data is FormatDefinedData; BCD digits that end in six or more 0 digits
-// can have that layout too. It returns ErrNotText for a packet in none of
-// these formats and for defined data with DD format binary, the errors
-// of the ip, tms and shortdata packages for a message that does not
-// decode, the Text with ip.ErrChecksum for a text whose IPv4 or UDP
-// checksum does not match, as the block CRCs of the packet already
-// checked its octets, and dmrgo.ErrNilArgument for a nil h. It allocates only to grow dst.
+// data, to dst as UTF-8, and returns dst and the Text, whose Body points
+// into dst. It finds the format from the header and the UDP port: TMS on
+// port 4007, IP or AnyTone text on port 5016, and defined data. Defined
+// data with DD format BCD is FormatHytera when it has the HyteraText
+// layout: an even length of at least 6 octets, 2 octets and then a UTF-16LE
+// text of at least one character that ends in 00 00, with only 00 octets
+// after it. Other BCD data is FormatDefinedData; BCD digits that end in six
+// or more 0 digits can have that layout too. It returns ErrNotText for a
+// packet in none of these formats and for defined data with DD format
+// binary, the errors of the ip, tms and shortdata packages for a message
+// that does not decode, the Text with ip.ErrChecksum for a text whose IPv4
+// or UDP checksum does not match, as the block CRCs of the packet already
+// checked its octets, and dmrgo.ErrNilArgument for a nil h. It allocates
+// only to grow dst.
 func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 	if h == nil {
 		return dst, Text{}, dmrgo.ErrNilArgument
@@ -239,17 +239,15 @@ type Header struct {
 // the data header to send it with, and returns dst. An IP format uses an
 // IPv4 header (SAP IP based packet data) with the radio addresses of
 // network t.Network and a group address with prefix t.GroupPrefix, and a
-// C_HEAD when t.Confirmed is set. Defined data sets the Response
-// Requested flag (A) when t.Confirmed is set. A TMS text starts with a CR
-// LF.
-// Only FormatAnyTone and FormatHytera end the text with a NUL; the Format
-// values say why. BCD digits that would have the HyteraText layout get an octet FF, the
-// end of the digits, so that Decode reads them as FormatDefinedData.
-// It returns dst unchanged and ErrFormat for an unknown format and for
-// FormatDefinedData with DD format binary, which holds no text,
-// dmrgo.ErrNilArgument for a nil t or h, or the errors of the packages
-// that build the message. It allocates only to
-// grow dst.
+// C_HEAD when t.Confirmed is set. Defined data sets the Response Requested
+// flag (A) when t.Confirmed is set. A TMS text starts with a CR LF. Only
+// FormatAnyTone and FormatHytera end the text with a NUL; the Format values
+// say why. BCD digits that would have the HyteraText layout get an octet
+// FF, the end of the digits, so that Decode reads them as
+// FormatDefinedData. It returns dst unchanged and ErrFormat for an unknown
+// format and for FormatDefinedData with DD format binary, which holds no
+// text, dmrgo.ErrNilArgument for a nil t or h, or the errors of the
+// packages that build the message. It allocates only to grow dst.
 func AppendPacket(dst []byte, t *Text, h *Header) ([]byte, error) {
 	if t == nil || h == nil {
 		return dst, dmrgo.ErrNilArgument
