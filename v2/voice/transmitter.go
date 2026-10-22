@@ -301,6 +301,7 @@ type Transmitter struct {
 	reason     EndReason
 	piSent     bool
 	underruns  int
+	debt       int
 
 	queue  [][9]byte
 	head   int
@@ -555,7 +556,7 @@ func (t *Transmitter) begin(at time.Duration, c *Call, opts *CallOptions, keep b
 	t.call = *c
 	t.state, t.start, t.due, t.sent = TransmitterHeader, at, at, 0
 	t.pos, t.superframe, t.timedOut, t.ended, t.stopping = 0, 0, false, false, false
-	t.reason, t.piSent, t.underruns = 0, false, 0
+	t.reason, t.piSent, t.underruns, t.debt = 0, false, 0, 0
 	t.fragNext, t.hasCarry, t.hasLast, t.hasRelayPI = 0, false, false, false
 	if !keep {
 		t.head, t.length = 0, 0
@@ -911,7 +912,10 @@ func (t *Transmitter) finish(out []Output, reason EndReason) []Output {
 // enums.FIDStandardized and enums.FIDMotorola, as MMDVMHost
 // CDMRSlot::insertSilence does. A burst that the queue ran out of is not
 // filled again when Lost reports it, and fills stop short of the room
-// that the burst after them needs. For a FID of enums.FIDStandardized or
+// that the burst after them needs. A burst that comes after the Tick that
+// filled for it is sent one slot late, and so are the bursts after it, so
+// the fill of the next burst that Lost reports is left out, which wins
+// that slot back. For a FID of enums.FIDStandardized or
 // enums.FIDMotorola, each AMBE+2 vocoder slot is decoded and encoded
 // again, so that the bit errors that the Golay codes correct are not
 // passed on, as MMDVMHost CAMBEFEC::regenerateDMR does; a slot with
@@ -1019,8 +1023,11 @@ func (t *Transmitter) relayVoice(e *Event) {
 	fills := int(e.Lost)
 	repeat := !next && t.hasLast && t.underruns == 0 || next && t.hasNextLast
 	if !next {
+		t.debt += max(t.underruns-fills, 0)
 		fills -= t.underruns
 		t.underruns = 0
+		skip := min(t.debt, max(fills, 0))
+		t.debt, fills = t.debt-skip, fills-skip
 	}
 	for i := range fills {
 		if t.Room() < 2*layer2.VoiceSlotsPerBurst {
