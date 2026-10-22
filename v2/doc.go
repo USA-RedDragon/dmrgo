@@ -262,7 +262,7 @@
 //     enums.NewColorCode returns it for a value over 15.
 //   - *ConfigError: a constructor, or a machine method of bs, csbk, data,
 //     trunk or voice, got a config, option or argument field out of range.
-//     Type names the package, such as "trunk" or "dmrd/session".
+//     Type names the package, such as "trunk" or "dmrdsession".
 //
 // # More
 //
