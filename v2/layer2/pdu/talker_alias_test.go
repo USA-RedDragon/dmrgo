@@ -164,12 +164,12 @@ func TestTalkerAlias_Errors(t *testing.T) {
 	}
 	bad := hdr
 
-	bad.TalkerAliasDataLength = 1
-	bad.TalkerAliasData = 0xC3 << 40
+	bad.TalkerAliasDataLength = 2
+	bad.TalkerAliasData = 0xC341 << 32
 	if _, err := pdu.TalkerAlias(&bad); err == nil {
 		t.Error("invalid UTF-8 accepted")
 	}
-	if got, err := pdu.AppendTalkerAlias([]byte("x"), &bad); !errors.Is(err, pdu.ErrTalkerAliasInvalidUTF8) || string(got) != "x\xc3" {
+	if got, err := pdu.AppendTalkerAlias([]byte("x"), &bad); !errors.Is(err, pdu.ErrTalkerAliasInvalidUTF8) || string(got) != "x\xc3A" {
 		t.Errorf("AppendTalkerAlias of invalid UTF-8: %q, %v", got, err)
 	}
 	var a pdu.TalkerAliasAssembler

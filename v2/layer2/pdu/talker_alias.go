@@ -59,8 +59,10 @@ func TalkerAliasBlocks(format layer3.TalkerAliasDataFormat, length int) int {
 // length calls for are used. It returns ErrTalkerAliasIncomplete when fewer
 // blocks are given or header or a block is nil, and
 // ErrTalkerAliasInvalidUTF8, with the alias, when the Code Units of the
-// UTF-8 format are not valid UTF-8. It allocates the string;
-// AppendTalkerAlias does not.
+// UTF-8 format are not valid UTF-8. When only the last character of a UTF-8
+// alias is not complete, as when a sender cuts a long alias to fit, it
+// removes that character and returns the rest with no error. It allocates
+// the string; AppendTalkerAlias does not.
 func TalkerAlias(header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBlock) (string, error) {
 	var buf [TalkerAliasMaxText]byte
 	n, err := talkerAliasText(&buf, header, blocks...)
@@ -113,10 +115,13 @@ func writeTalkerAliasText(dst *[TalkerAliasMaxText]byte, format layer3.TalkerAli
 			dst[n] = byte(u & 0xFF)
 			n++
 		}
-		if !utf8.Valid(dst[:n]) {
-			return n, ErrTalkerAliasInvalidUTF8
+		if utf8.Valid(dst[:n]) {
+			return n, nil
 		}
-		return n, nil
+		if v := n - cutRune(dst[:n]); v < n && utf8.Valid(dst[:v]) {
+			return v, nil
+		}
+		return n, ErrTalkerAliasInvalidUTF8
 	case layer3.TalkerAliasUTF16:
 		for i := 0; i < len(units); i++ {
 			r := rune(units[i])
@@ -138,6 +143,18 @@ func writeTalkerAliasText(dst *[TalkerAliasMaxText]byte, format layer3.TalkerAli
 		n += utf8.EncodeRune(dst[n:], rune(u))
 	}
 	return n, nil
+}
+
+func cutRune(p []byte) int {
+	for k := len(p) - 1; k >= max(0, len(p)-utf8.UTFMax+1); k-- {
+		if utf8.RuneStart(p[k]) {
+			if utf8.FullRune(p[k:]) {
+				return 0
+			}
+			return len(p) - k
+		}
+	}
+	return 0
 }
 
 func talkerAliasUnits(units *[talkerAliasMaxUnits]uint16, alias string, format layer3.TalkerAliasDataFormat) (int, error) {
