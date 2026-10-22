@@ -8,6 +8,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
+// ExampleNearestSyncPattern finds the SYNC pattern of a field with one bit
+// error.
 func ExampleNearestSyncPattern() {
 	field := [6]byte{0x75, 0x5F, 0xD7, 0xDF, 0x75, 0xF6}
 	pattern, distance := enums.NearestSyncPattern(field)

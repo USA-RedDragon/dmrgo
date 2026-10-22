@@ -11,6 +11,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
+// Example decodes a Voice LC Header burst, checks its FEC, reads the
+// addresses of its Full LC and encodes it back to the same 33 bytes.
 func Example() {
 	raw := [33]byte{
 		68, 75, 3, 135, 36, 66, 12, 240, 21, 240,
@@ -36,6 +38,8 @@ func Example() {
 	// true <nil>
 }
 
+// ExampleFieldRangeError matches the error of a group address that does not
+// fit in its 24 bits.
 func ExampleFieldRangeError() {
 	lc := pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
@@ -51,6 +55,8 @@ func ExampleFieldRangeError() {
 	// GroupAddress 24
 }
 
+// ExampleConfigError matches the error of a color code over 15 in a
+// constructor config.
 func ExampleConfigError() {
 	_, err := voice.NewTransmitter(&voice.TransmitterConfig{ColorCode: 16})
 	var configErr *dmrgo.ConfigError

@@ -49,6 +49,7 @@ func ExampleCodec() {
 	// Standardized FID [1 0 1 0]
 }
 
+// ExampleDecodeAMBE72 corrects one bit error in the silence frame.
 func ExampleDecodeAMBE72() {
 	slot := vocoder.AMBESilenceSlot()
 	slot[0] ^= 0x80 >> 5
