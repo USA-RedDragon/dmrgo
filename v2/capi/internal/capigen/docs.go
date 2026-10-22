@@ -11,8 +11,11 @@ var (
 	typeSel   = regexp.MustCompile(`(^|[^\w.])((?:[a-z][a-z0-9]*\.)?)([A-Z]\w*)((?:\.[A-Z]\w*)+)`)
 	goHead    = regexp.MustCompile(`^Go: [\w.]+\.(?:\s|$)`)
 	nilAt     = regexp.MustCompile(`(^|\. )Nil `)
+	nilLow    = regexp.MustCompile(`\bnil\b`)
 	goSel     = regexp.MustCompile(`\b([a-z][a-z0-9]*)((?:\.[A-Z]\w*)+)(\(\))?`)
 	goroutine = regexp.MustCompile(`\bgoroutine\b`)
+	bareWord  = regexp.MustCompile(`\b[A-Z]\w*\b`)
+	nilWord   = regexp.MustCompile(`\b(?:(a nil error)|(nil otherwise)|(non-nil)|nil|Nil)\b`)
 )
 
 func stdRef(name string) (string, bool) {
@@ -62,7 +65,7 @@ func cDocs(h string, refs map[string]string) string {
 		body := goroutine.ReplaceAllString(h[i+3:i+j], "thread")
 		head := goHead.FindString(body)
 		b.WriteString(h[:i+3] + head)
-		b.WriteString(goRef.ReplaceAllStringFunc(body[len(head):], func(w string) string {
+		b.WriteString(goRef.ReplaceAllStringFunc(nilWords(body[len(head):]), func(w string) string {
 			art, name, ok := strings.Cut(w, " ")
 			if !ok {
 				art, name = "", w
@@ -88,20 +91,39 @@ func cDocs(h string, refs map[string]string) string {
 	return b.String()
 }
 
-// nilC gives the C form of a "Nil" that starts a sentence of the doc d of
-// a member with the declarations decls: the has_ flag false for an
-// optional value, or NULL for a pointer to a handle.
+// nilWords gives the C form of each nil in the comment text d: DMRGO_OK
+// for a nil error, and NULL for any other nil.
+func nilWords(d string) string {
+	return nilWord.ReplaceAllStringFunc(d, func(w string) string {
+		switch m := nilWord.FindStringSubmatch(w); {
+		case m[1] != "":
+			return "DMRGO_OK"
+		case m[2] != "":
+			return "DMRGO_OK otherwise"
+		case m[3] != "":
+			return "non-NULL"
+		}
+		return "NULL"
+	})
+}
+
+// nilC gives the C form of each nil in the doc d of a member with the
+// declarations decls: the has_ flag false for an optional value, NULL for
+// a pointer to a handle, or a false out_ok for the return of a callback.
 func nilC(d string, decls []string) string {
 	var c string
 	switch {
 	case len(decls) == 2 && strings.HasPrefix(decls[0], "bool has_"):
-		c = cName(decls[0]) + " false "
+		c = cName(decls[0]) + " false"
 	case len(decls) == 1 && strings.Contains(decls[0], " *"):
-		c = "NULL "
+		c = "NULL"
+	case len(decls) == 1 && strings.Contains(decls[0], "_fn_t "):
+		return strings.ReplaceAll(d, "A nil return", "A false *out_ok")
 	default:
 		return d
 	}
-	return nilAt.ReplaceAllString(d, "${1}"+c)
+	d = nilAt.ReplaceAllString(d, "${1}"+c+" ")
+	return nilLow.ReplaceAllString(d, c)
 }
 
 // selDocs gives the C form of each selector on the receiver or a parameter
@@ -216,6 +238,48 @@ func typeOf(pkg *types.Package, pkgName, name string) *types.TypeName {
 		}
 	}
 	return nil
+}
+
+// qualifyConsts gives each bare exported constant in the doc d, such as
+// SlotUnknown, its qualified Go name, such as enums.SlotUnknown, which
+// cDocs then names in C. A name that starts the doc, the name of what the
+// doc is about, stays as it is, and so does one in a selector or a call.
+func qualifyConsts(d string, pkg *types.Package) string {
+	var b strings.Builder
+	last := 0
+	for _, m := range bareWord.FindAllStringIndex(d, -1) {
+		if m[0] == 0 || d[m[0]-1] == '.' || m[1] < len(d) && d[m[1]] == '(' ||
+			m[1]+1 < len(d) && d[m[1]] == '.' && d[m[1]+1] >= 'A' && d[m[1]+1] <= 'Z' {
+			continue
+		}
+		if c := constIn(pkg, d[m[0]:m[1]]); c != nil {
+			b.WriteString(d[last:m[0]] + c.Pkg().Name() + ".")
+			last = m[0]
+		}
+	}
+	b.WriteString(d[last:])
+	return b.String()
+}
+
+// constIn finds the exported constant name in pkg, or else in the one
+// package that pkg imports that has it.
+func constIn(pkg *types.Package, name string) *types.Const {
+	if c, ok := pkg.Scope().Lookup(name).(*types.Const); ok && c.Exported() {
+		return c
+	}
+	var found *types.Const
+	for _, p := range pkg.Imports() {
+		if !strings.HasPrefix(p.Path(), modulePath) || strings.Contains(p.Path(), "/internal/") {
+			continue
+		}
+		if c, ok := p.Scope().Lookup(name).(*types.Const); ok && c.Exported() {
+			if found != nil {
+				return nil
+			}
+			found = c
+		}
+	}
+	return found
 }
 
 // typeIn finds the exported type name in pkg, or else in the one package

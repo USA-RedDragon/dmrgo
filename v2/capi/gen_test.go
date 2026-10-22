@@ -136,4 +136,42 @@ func checkDocRefs(t *testing.T, out *capigen.Output) {
 	if len(goBad) > 0 {
 		t.Errorf("dmrgo_gen.h comments name %d Go exports, such as %q", len(goBad), goBad[:min(len(goBad), 5)])
 	}
+	checkGoWords(t, out, comment.FindAll(h, -1))
+}
+
+func checkGoWords(t *testing.T, out *capigen.Output, comments [][]byte) {
+	t.Helper()
+	consts, other := map[string]bool{}, map[string]bool{}
+	for _, e := range out.Exports {
+		n := e.Go[strings.LastIndex(e.Go, ".")+1:]
+		if e.Kind == "const" && e.Err == "" {
+			consts[n] = true
+		} else {
+			other[n] = true
+		}
+	}
+	for n := range other {
+		delete(consts, n)
+	}
+	word := regexp.MustCompile(`\b[A-Z]\w*\b`)
+	nilRe := regexp.MustCompile(`\b[Nn]il\b`)
+	var constBad, nilBad []string
+	for _, c := range comments {
+		for _, m := range word.FindAllIndex(c, -1) {
+			before := m[0] > 0 && c[m[0]-1] == '.'
+			after := m[1]+1 < len(c) && c[m[1]] == '.' && (c[m[1]+1] >= 'A' && c[m[1]+1] <= 'Z')
+			if consts[string(c[m[0]:m[1]])] && m[0] != 3 && !before && !after {
+				constBad = append(constBad, string(c[m[0]:m[1]]))
+			}
+		}
+		if m := nilRe.FindAll(c, -1); m != nil {
+			nilBad = append(nilBad, string(c))
+		}
+	}
+	if len(constBad) > 0 {
+		t.Errorf("dmrgo_gen.h comments name %d Go constants, such as %q", len(constBad), constBad[:min(len(constBad), 5)])
+	}
+	if len(nilBad) > 0 {
+		t.Errorf("dmrgo_gen.h has %d comments that say nil, which C calls NULL, such as %q", len(nilBad), nilBad[:min(len(nilBad), 3)])
+	}
 }

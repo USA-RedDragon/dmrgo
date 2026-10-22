@@ -42,9 +42,26 @@ func TestNilC(t *testing.T) {
 		{"It is set. Nil means it makes its own.", []string{"dmrgo_layer2_burst_t *scratch"}, "It is set. NULL means it makes its own."},
 		{"With a nil or empty Hunt. Nil is none.", []string{"uint32_t *hunt", "size_t hunt_len"}, "With a nil or empty Hunt. Nil is none."},
 		{"A Nilsson. Nil", []string{"bool has_x", "int x"}, "A Nilsson. Nil"},
+		{"The P_HEAD, or nil. When nil, none.", []string{"bool has_proprietary", "dmrgo_pdu_proprietary_header_t proprietary"}, "The P_HEAD, or has_proprietary false. When has_proprietary false, none."},
+		{"A nil return keeps LC.", []string{"dmrgo_x_fn_t embedded_lc"}, "A false *out_ok keeps LC."},
 	} {
 		if got := nilC(c.d, c.decls); got != c.want {
 			t.Errorf("nilC(%q) = %q, want %q", c.d, got, c.want)
+		}
+	}
+}
+
+func TestNilWords(t *testing.T) {
+	t.Parallel()
+
+	for in, want := range map[string]string{
+		"Encode returns 3 and a nil error.":          "Encode returns 3 and DMRGO_OK.",
+		"Err returns X when set, and nil otherwise.": "Err returns X when set, and DMRGO_OK otherwise.",
+		"For a nil cfg or a non-nil rd. Nil is 0.":   "For a NULL cfg or a non-NULL rd. NULL is 0.",
+		"A Nilsson and vanilla.":                     "A Nilsson and vanilla.",
+	} {
+		if got := nilWords(in); got != want {
+			t.Errorf("nilWords(%q) = %q, want %q", in, got, want)
 		}
 	}
 }
