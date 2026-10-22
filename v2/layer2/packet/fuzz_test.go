@@ -18,6 +18,12 @@ const fuzzRounds = 8
 const maxEvents = 2 * 128
 
 const (
+	maxPattern = 64
+	maxChannel = 128
+	maxPayload = 4096
+)
+
+const (
 	fateLost      = 3
 	fateSilent    = 4
 	fateDuplicate = 5
@@ -621,14 +627,21 @@ func roundTripSeeds(t testing.TB) []roundTripSeed {
 
 func FuzzRoundTrip(f *testing.F) {
 	for _, s := range roundTripSeeds(f) {
-		f.Add(s.kind, s.fields, s.dst, s.src, s.payload, s.channel)
+		f.Add(s.kind, s.fields, s.dst, s.src, uint16(len(s.payload)), s.payload[:min(len(s.payload), maxPattern)], s.channel)
 	}
 	s := newSession()
-	f.Fuzz(func(t *testing.T, kind uint8, fields uint64, dst, src uint32, payload, channel []byte) {
+	buf := make([]byte, maxPayload)
+	f.Fuzz(func(t *testing.T, kind uint8, fields uint64, dst, src uint32, size uint16, pattern, channel []byte) {
+		payload := buf[:int(size)%maxPayload]
+		pattern = pattern[:min(len(pattern), maxPattern)]
+		clear(payload)
+		for i := 0; len(pattern) > 0 && i < len(payload); {
+			i += copy(payload[i:], pattern)
+		}
 		if !s.setup(t, kind, fields, dst, src, payload) {
 			return
 		}
-		s.run(channel, kind&0x20 != 0 && kind&3 != 0)
+		s.run(channel[:min(len(channel), maxChannel)], kind&0x20 != 0 && kind&3 != 0)
 		if s.fail != "" {
 			t.Fatalf("round %d event %d: %s\nheader %+v rate %v blocks %d", s.round, s.at, s.fail, s.header, s.rate, len(s.p.Blocks))
 		}
