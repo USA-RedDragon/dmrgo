@@ -302,8 +302,7 @@ func (p *Peer) Packet(now time.Duration, b []byte, dst []Output) []Output {
 		}
 		dst = append(dst, Output{Kind: OutputDown, Reason: ReasonRefused, State: p.state})
 		if p.state == StateRunning {
-			p.state = StateLogin
-			p.retryAt, p.timeoutAt = after(now, p.retry), after(now, p.timeout)
+			p.state, p.waitAt = StateWait, after(now, p.retry)
 			return dst
 		}
 		p.wait(now)
