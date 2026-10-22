@@ -94,7 +94,7 @@ func (r *Repeater) burstSource(b *layer2.Burst, raw *layer2.RawBurst) (uint32, b
 	if b.Kind != layer2.KindData || b.SlotType.FEC.Uncorrectable {
 		return 0, false
 	}
-	p, res := raw.BPTCPayload()
+	p, res := r.bptc(raw)
 	if res.Uncorrectable {
 		return 0, false
 	}
@@ -136,7 +136,7 @@ func (r *Repeater) chanAuthPDU(b *layer2.Burst, raw *layer2.RawBurst) (out layer
 		out, err = layer2.BuildDataBurst(cw, enums.DataTypeVoiceLCHeader, r.cc, layer2.SyncSourceBS)
 		return out, source, true, err == nil
 	case enums.DataTypeCSBK:
-		p, res := raw.BPTCPayload()
+		p, res := r.bptc(raw)
 		c := pdu.CSBKBytes(p)
 		if res.Uncorrectable || b.SlotType.FEC.Uncorrectable || !c.CRCOK() || c.FID() != enums.FIDStandardized || c.Opcode() != pdu.CSBKPreamble {
 			return out, 0, false, false

@@ -348,8 +348,46 @@ func TestDecodedMatchesInbound(t *testing.T) {
 			}
 		}
 	}
+	for seed := uint64(1); seed <= 64; seed++ {
+		for name, in := range inputs {
+			flipped := flip(in, seed)
+			for _, mode := range []bs.Mode{bs.ModeRF, bs.ModeNetwork} {
+				cfg := &bs.Config{Mode: mode, ColorCode: 1, CACH: true}
+				want := run(t, newRepeater(t, cfg), flipped, 2*time.Second)
+				got := runWith(t, newRepeater(t, cfg), flipped, 2*time.Second, layer2.NewBurst())
+				if len(got) != len(want) {
+					t.Fatalf("%s seed %d mode %d: %d outputs, want %d", name, seed, mode, len(got), len(want))
+				}
+				for i := range got {
+					if got[i] != want[i] {
+						t.Fatalf("%s seed %d mode %d: output %d is %+v, want %+v", name, seed, mode, i, got[i], want[i])
+					}
+				}
+			}
+		}
+	}
 	var zero bs.Repeater
 	if out := zero.Decoded(0, nil, layer2.Hint{Slot: enums.Slot1}, rf, nil); len(out) != 0 {
 		t.Error("zero Repeater Decoded gave outputs")
 	}
+}
+
+func flip(in []input, seed uint64) []input {
+	out := make([]input, len(in))
+	copy(out, in)
+	x := seed*0x9E3779B97F4A7C15 | 1
+	for i := range out {
+		x ^= x << 13
+		x ^= x >> 7
+		x ^= x << 17
+		n := int(x % 24)
+		for range n {
+			x ^= x << 13
+			x ^= x >> 7
+			x ^= x << 17
+			bit := int(x % (8 * uint64(len(out[i].raw))))
+			out[i].raw[bit/8] ^= 0x80 >> (bit % 8)
+		}
+	}
+	return out
 }
