@@ -6,4 +6,9 @@
 // examples of the Motorola specification, which Motorola does not publish.
 // It does no I/O and does not allocate except to grow a slice of the
 // caller.
+//
+// A latitude is a sign bit, set for south, and 31 bits of magnitude; a
+// longitude is a two's complement number. Radios in Buenos Aires and
+// Australia send the latitude so (SDRTrunk issue 1118 and pull request 1114;
+// VIGIA 8dc426d modules/lrrpDecoder.js and its logged reports).
 package lrrp

@@ -123,7 +123,7 @@ type Time struct {
 //dmr:stream
 type Point2D struct {
 	// Latitude is in degrees, north positive.
-	Latitude float64 `dmr:"i32,scale:90/31"`
+	Latitude float64 `dmr:"i32,signmag,scale:90/31"`
 	// Longitude is in degrees, east positive.
 	Longitude float64 `dmr:"i32,scale:360/32"`
 }
@@ -133,7 +133,7 @@ type Point2D struct {
 //dmr:stream
 type Circle2D struct {
 	// Latitude is in degrees, north positive.
-	Latitude float64 `dmr:"i32,scale:90/31"`
+	Latitude float64 `dmr:"i32,signmag,scale:90/31"`
 	// Longitude is in degrees, east positive.
 	Longitude float64 `dmr:"i32,scale:360/32"`
 	// Radius is the radius of the circle that holds the position, in
@@ -146,7 +146,7 @@ type Circle2D struct {
 //dmr:stream
 type Point3D struct {
 	// Latitude is in degrees, north positive.
-	Latitude float64 `dmr:"i32,scale:90/31"`
+	Latitude float64 `dmr:"i32,signmag,scale:90/31"`
 	// Longitude is in degrees, east positive.
 	Longitude float64 `dmr:"i32,scale:360/32"`
 	// Altitude is in meters.
@@ -159,7 +159,7 @@ type Point3D struct {
 //dmr:stream
 type Point3DAccuracy struct {
 	// Latitude is in degrees, north positive.
-	Latitude float64 `dmr:"i32,scale:90/31"`
+	Latitude float64 `dmr:"i32,signmag,scale:90/31"`
 	// Longitude is in degrees, east positive.
 	Longitude float64 `dmr:"i32,scale:360/32"`
 	// Altitude is in meters.
@@ -174,7 +174,7 @@ type Point3DAccuracy struct {
 //dmr:stream
 type Circle3D struct {
 	// Latitude is in degrees, north positive.
-	Latitude float64 `dmr:"i32,scale:90/31"`
+	Latitude float64 `dmr:"i32,signmag,scale:90/31"`
 	// Longitude is in degrees, east positive.
 	Longitude float64 `dmr:"i32,scale:360/32"`
 	// Radius is the radius of the circle that holds the position, in
