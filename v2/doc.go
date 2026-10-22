@@ -255,8 +255,8 @@
 //   - ip.ErrShort, ip.ErrLength, ip.ErrVersion, ip.ErrProtocol,
 //     ip.ErrFragment, ip.ErrSAP, ip.ErrChecksum: returned by the ip
 //     decoders.
-//   - ip.ErrNoICMP: returned by ip.AppendICMPPacket and package data for a
-//     packet that gets no ICMP error message.
+//   - ip.ErrNoICMP: returned by ip.AppendICMPPacket for a packet that must
+//     not get an ICMP error message.
 //   - sms.ErrShort, sms.ErrLength, sms.ErrSignature, sms.ErrNotText,
 //     sms.ErrFormat, sms.ErrNil: returned by package sms, which also returns the
 //     errors of the ip, tms and shortdata packages.
