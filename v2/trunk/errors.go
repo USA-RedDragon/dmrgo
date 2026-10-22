@@ -37,10 +37,11 @@ var (
 // Errors of the appended data of a UDT. Match them with errors.Is.
 var (
 	// ErrUDTFormat is returned for appended data in another UDT Format
-	// than the method reads or writes.
+	// than the method reads or writes, or in a Format over 15.
 	ErrUDTFormat = errors.New("trunk: appended data in another UDT format")
 	// ErrUDTLength is returned for data that does not fit in 1 to 4
-	// appended blocks, or for blocks whose size does not match the format.
+	// appended blocks, for blocks whose size does not match the format, and
+	// for a PadNibble over 31.
 	ErrUDTLength = errors.New("trunk: appended data length out of range")
 	// ErrUDTCharacter is returned for a character or digit that the UDT
 	// Format cannot hold.

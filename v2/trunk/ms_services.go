@@ -154,8 +154,8 @@ func (m *MS) SetStatus(s Status) error {
 // of the next request that asks for it: a SendStatus, or a Call or CallData
 // with IsSuppData. The MS uploads it when the TSCC asks for it with a
 // C_AHOY from SUPLI, and keeps a copy until then. A nil a clears it. It
-// returns ErrUDTLength for an a with Blocks out of range. (ETSI TS 102 361-4
-// clause 6.4.13)
+// returns ErrUDTLength for an a with Blocks or PadNibble out of range, and
+// ErrUDTFormat for a Format over 15. (ETSI TS 102 361-4 clause 6.4.13)
 func (m *MS) SetSupplementary(a *Appended) error {
 	if m == nil {
 		return dmrgo.ErrNilReceiver
