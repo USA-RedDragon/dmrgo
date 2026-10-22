@@ -8324,7 +8324,7 @@ int dmrgo_hdap_decode_tmp_answer(const uint8_t *data, size_t data_len, dmrgo_hda
 int dmrgo_hdap_decode_tmp_flags(const uint8_t *data, size_t data_len, dmrgo_hdap_tmp_flags_t *out);
 /* Go: hdap.DecodeTMPGroupAnswer. DecodeTMPGroupAnswer decodes a TMPGroupAnswer from data. It returns DMRGO_ERR_HDAP_SHORT when data ends inside a field and DMRGO_ERR_HDAP_LENGTH when a length does not match the data. */
 int dmrgo_hdap_decode_tmp_group_answer(const uint8_t *data, size_t data_len, dmrgo_hdap_tmp_group_answer_t *out);
-/* Go: hdap.DecodeTMPMessage. DecodeTMPMessage decodes a TMPMessage from data. It returns DMRGO_ERR_HDAP_SHORT when data ends inside a field and DMRGO_ERR_HDAP_LENGTH when a length does not match the data. It does not read an option field: for a message whose dmrgo_hdap_tmp_flags_t.option is true it returns wrong fields, usually without DMRGO_ERR_HDAP_SHORT or DMRGO_ERR_HDAP_LENGTH. */
+/* Go: hdap.DecodeTMPMessage. DecodeTMPMessage decodes a TMPMessage from data. It returns DMRGO_ERR_HDAP_SHORT when data ends inside a field. */
 int dmrgo_hdap_decode_tmp_message(const uint8_t *data, size_t data_len, dmrgo_hdap_tmp_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: hdap.GPSData.AppendBinary. AppendBinary appends the 40 octets of s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit. */
 int dmrgo_hdap_gps_data_append_binary(const dmrgo_hdap_gps_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
@@ -8420,7 +8420,7 @@ int dmrgo_ip_compressed_ports(const dmrgo_pdu_udp_ipv4_compressed_header_t *h, d
 int dmrgo_ip_dpid_port(dmrgo_enums_dpid_t dpid, dmrgo_ip_port_t *out);
 /* Go: ip.Decode. Decode decodes the UDP datagram at the start of data, the user data of a packet with the given SAP. It returns DMRGO_ERR_IP_SAP for a SAP that does not carry IP, and for an IPv4 header DMRGO_ERR_IP_SHORT, DMRGO_ERR_IP_LENGTH, DMRGO_ERR_IP_VERSION, DMRGO_ERR_IP_PROTOCOL or DMRGO_ERR_IP_FRAGMENT. When a checksum does not match it returns the Datagram with DMRGO_ERR_IP_CHECKSUM. */
 int dmrgo_ip_decode(dmrgo_enums_sap_t sap, const uint8_t *data, size_t data_len, dmrgo_ip_datagram_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: ip.DecodeICMP. DecodeICMP decodes an ICMP from data. It returns DMRGO_ERR_IP_SHORT when data ends inside a field and DMRGO_ERR_IP_LENGTH when a length does not match the data. */
+/* Go: ip.DecodeICMP. DecodeICMP decodes an ICMP from data. It returns DMRGO_ERR_IP_SHORT when data ends inside a field. */
 int dmrgo_ip_decode_icmp(const uint8_t *data, size_t data_len, dmrgo_ip_icmp_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ip.DecodeICMPPacket. DecodeICMPPacket decodes the ICMP message in the IPv4 packet at the start of data. It returns DMRGO_ERR_IP_SHORT, DMRGO_ERR_IP_LENGTH, DMRGO_ERR_IP_VERSION or DMRGO_ERR_IP_FRAGMENT for the IPv4 header, and DMRGO_ERR_IP_PROTOCOL for a packet that does not carry ICMP. When a checksum does not match it returns the ICMPPacket with DMRGO_ERR_IP_CHECKSUM. */
 int dmrgo_ip_decode_icmp_packet(const uint8_t *data, size_t data_len, dmrgo_ip_icmp_packet_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
@@ -9916,7 +9916,7 @@ int dmrgo_tms_type_string(dmrgo_tms_type_t self, char *out, size_t out_cap, size
 int dmrgo_nmea_parse_rmc(const uint8_t *s, size_t s_len, dmrgo_nmea_rmc_t *out);
 /* Go: shortdata.AppendText. AppendText appends the UTF-8 text to dst, coded as format says, and returns dst. It returns dst unchanged and DMRGO_ERR_SHORTDATA_FORMAT for a reserved format, or DMRGO_ERR_SHORTDATA_CHARACTER for a character that BCD, 7-bit text or the ISO/IEC 8859 part cannot hold. Invalid UTF-8 gives U+FFFD, or DMRGO_ERR_SHORTDATA_CHARACTER for BCD, 7-bit text and ISO/IEC 8859. */
 int dmrgo_shortdata_append_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *text, size_t text_len);
-/* Go: shortdata.DecodeHyteraText. DecodeHyteraText decodes a HyteraText from data. It returns DMRGO_ERR_SHORTDATA_SHORT when data ends inside a field and DMRGO_ERR_SHORTDATA_LENGTH when a length does not match the data. */
+/* Go: shortdata.DecodeHyteraText. DecodeHyteraText decodes a HyteraText from data. It returns DMRGO_ERR_SHORTDATA_SHORT when data ends inside a field. */
 int dmrgo_shortdata_decode_hytera_text(const uint8_t *data, size_t data_len, dmrgo_shortdata_hytera_text_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: shortdata.DecodeText. DecodeText appends the text in data, coded as format says, to dst as UTF-8 and returns dst. It returns dst unchanged and DMRGO_ERR_SHORTDATA_FORMAT for a reserved format. */
 int dmrgo_shortdata_decode_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *data, size_t data_len);
@@ -9942,9 +9942,9 @@ int dmrgo_sms_append_ack(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *
 int dmrgo_sms_append_packet(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_sms_text_t *t, dmrgo_sms_header_t *h);
 /* Go: sms.Decode. Decode appends the text of a data packet, with header h and user data data, to dst as UTF-8, and returns dst and the Text, whose Body points into dst. It returns DMRGO_ERR_SMS_NOT_TEXT for a packet in none of these formats and for defined data with DD format binary, the errors of the ip, tms and shortdata packages for a message that does not decode, the Text with DMRGO_ERR_IP_CHECKSUM for a text whose IPv4 or UDP checksum does not match, as the block CRCs of the packet already checked its octets, and DMRGO_ERR_NIL_ARGUMENT for a NULL h. h may be NULL. */
 int dmrgo_sms_decode(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_pdu_data_header_t *h, const uint8_t *data, size_t data_len, dmrgo_sms_text_t *text, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: sms.DecodeAnyToneText. DecodeAnyToneText decodes an AnyToneText from data. It returns DMRGO_ERR_SMS_SHORT when data ends inside a field, DMRGO_ERR_SMS_LENGTH when a length does not match the data and DMRGO_ERR_SMS_SIGNATURE when a fixed field does not hold its value. */
+/* Go: sms.DecodeAnyToneText. DecodeAnyToneText decodes an AnyToneText from data. It returns DMRGO_ERR_SMS_SHORT when data ends inside a field and DMRGO_ERR_SMS_SIGNATURE when a fixed field does not hold its value. */
 int dmrgo_sms_decode_anytone_text(const uint8_t *data, size_t data_len, dmrgo_sms_anytone_text_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: sms.DecodeIPText. DecodeIPText decodes an IPText from data. It returns DMRGO_ERR_SMS_SHORT when data ends inside a field and DMRGO_ERR_SMS_LENGTH when a length does not match the data. */
+/* Go: sms.DecodeIPText. DecodeIPText decodes an IPText from data. It returns DMRGO_ERR_SMS_SHORT when data ends inside a field. */
 int dmrgo_sms_decode_ip_text(const uint8_t *data, size_t data_len, dmrgo_sms_ip_text_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: sms.Format.String. String returns the name of f. */
 int dmrgo_sms_format_string(dmrgo_sms_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

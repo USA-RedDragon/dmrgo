@@ -222,10 +222,10 @@ func (s *TMPFlags) String() string {
 }
 
 // DecodeTMPMessage decodes a TMPMessage from data. It returns ErrShort when
-// data ends inside a field and ErrLength when a length does not match the
-// data. It does not copy: the byte string fields point into data. It does
-// not read an option field: for a message whose TMPFlags.Option is true it
-// returns wrong fields, usually without ErrShort or ErrLength.
+// data ends inside a field. It does not copy: the byte string fields point
+// into data. Text takes the rest of data, so data of 12 octets or more
+// decodes without an error. It does not read an option field: for a message
+// whose TMPFlags.Option is true it returns wrong fields and no error.
 func DecodeTMPMessage(data []byte) (TMPMessage, error) {
 	var v TMPMessage
 	n, err := decodeTMPMessageAt(&v, data, 0)

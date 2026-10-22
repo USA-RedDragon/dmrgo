@@ -423,7 +423,9 @@ func streamConds(pdu parse.PDUStruct) []string {
 			parse.StreamArray, parse.StreamFlag:
 		}
 	}
-	if hasLen || !pdu.Stream.Trailing {
+	fs := pdu.Stream.Fields
+	rest := len(fs) > 0 && fs[len(fs)-1].SKind == parse.StreamBytes && fs[len(fs)-1].Length == parse.LengthRest && fs[len(fs)-1].If == nil
+	if hasLen || !pdu.Stream.Trailing && !rest {
 		conds = append(conds, errLength+" when a length does not match the data")
 	}
 	if consts {

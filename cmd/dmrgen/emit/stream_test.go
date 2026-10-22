@@ -90,3 +90,27 @@ func TestStreamCode(t *testing.T) {
 		t.Errorf("a token set has an exported Decode\n%s", out)
 	}
 }
+
+func TestStreamRestDoc(t *testing.T) {
+	t.Parallel()
+
+	src := `// Txt is a test stream that ends with the rest of the data.
+// dmr:stream
+type Txt struct {
+	A    uint8  ` + "`dmr:\"u8\"`" + `
+	Rest []byte ` + "`dmr:\"rest\"`" + `
+}
+`
+	pdus, err := parse.Source("test.go", header+src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, err := render(t, pdus)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertContains(t, out, "It returns ErrShort when data ends")
+	if strings.Contains(out, "ErrLength when") {
+		t.Error("the decode doc of a stream that ends with an unconditional rest names ErrLength")
+	}
+}

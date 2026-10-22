@@ -9,8 +9,8 @@ import (
 )
 
 // DecodeHyteraText decodes a HyteraText from data. It returns ErrShort when
-// data ends inside a field and ErrLength when a length does not match the
-// data. It does not copy: the byte string fields point into data.
+// data ends inside a field. It does not copy: the byte string fields point
+// into data.
 func DecodeHyteraText(data []byte) (HyteraText, error) {
 	var v HyteraText
 	n, err := decodeHyteraTextAt(&v, data, 0)

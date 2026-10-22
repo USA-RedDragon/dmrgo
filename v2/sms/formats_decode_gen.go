@@ -11,9 +11,8 @@ import (
 )
 
 // DecodeIPText decodes an IPText from data. It returns ErrShort when data
-// ends inside a field and ErrLength when a length does not match the data.
-// It does not copy: the byte string fields point into data.
-// (ETSI TS 102 361-3 clause 5.7.1)
+// ends inside a field. It does not copy: the byte string fields point into
+// data. (ETSI TS 102 361-3 clause 5.7.1)
 func DecodeIPText(data []byte) (IPText, error) {
 	var v IPText
 	n, err := decodeIPTextAt(&v, data, 0)
@@ -79,9 +78,8 @@ func (s *IPText) String() string {
 }
 
 // DecodeAnyToneText decodes an AnyToneText from data. It returns ErrShort
-// when data ends inside a field, ErrLength when a length does not match the
-// data and ErrSignature when a fixed field does not hold its value. It does
-// not copy: the byte string fields point into data.
+// when data ends inside a field and ErrSignature when a fixed field does not
+// hold its value. It does not copy: the byte string fields point into data.
 func DecodeAnyToneText(data []byte) (AnyToneText, error) {
 	var v AnyToneText
 	n, err := decodeAnyToneTextAt(&v, data, 0)
