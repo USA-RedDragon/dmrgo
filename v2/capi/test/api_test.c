@@ -63,12 +63,12 @@ static void test_errors(void) {
 	CHECK(cc == 7);
 
 	dmrgo_layer2_burst_t *b = NULL;
-	OK(dmrgo_layer2_burst_new(&b));
+	OK(dmrgo_layer2_new_burst(&b));
 	OK(dmrgo_layer2_burst_free(b));
 	dmrgo_layer2_kind_t k;
 	CHECK(dmrgo_layer2_burst_get_kind(b, &k) == DMRGO_ERR_HANDLE);
 	CHECK(dmrgo_layer2_burst_get_kind(NULL, &k) == DMRGO_ERR_HANDLE);
-	CHECK(dmrgo_layer2_burst_new(NULL) == DMRGO_ERR_ARG);
+	CHECK(dmrgo_layer2_new_burst(NULL) == DMRGO_ERR_ARG);
 	OK(dmrgo_layer2_burst_free(NULL));
 
 	dmrgo_codec2_config_t c2cfg = {0};
@@ -112,6 +112,28 @@ static void test_pdu(void) {
 	OK(dmrgo_pdu_full_link_control_addresses(&lc2, &target, &source, &ok));
 	CHECK(ok && target == 91 && source == 3191868 && lc2.has_group_voice && !lc2.fec.uncorrectable);
 	printf("pdu: CSBK and Full LC round trips\n");
+}
+
+static void test_names(void) {
+	dmrgo_layer3_cdef_parms_t cp = {0};
+	cp.tx_mhz = 446;
+	cp.tx_khz = 1;
+	cp.rx_mhz = 446;
+	cp.rx_khz = 2;
+	CHECK(cp.tx_khz + cp.rx_khz == 3);
+	dmrgo_tms_header_t th = {0};
+	th.type = 0;
+	dmrgo_ipsc_opcode_t op = 0;
+	OK(dmrgo_ipsc_func_user_opcode(true, false, &op));
+	CHECK(op == DMRGO_IPSC_OP_GROUP_VOICE);
+	dmrgo_sms_anytone_text_t at = {0};
+	CHECK(at.text == NULL && th.type == 0);
+	dmrgo_framer_t *f = NULL;
+	OK(dmrgo_framer_free(f));
+	dmrgo_layer2_burst_t *b = NULL;
+	OK(dmrgo_layer2_new_burst(&b));
+	OK(dmrgo_layer2_burst_free(b));
+	printf("names: C names without Go keywords, blanks or split units\n");
 }
 
 static void test_layer2(void) {
@@ -295,13 +317,13 @@ static void test_voice_capture(const char *path) {
 	printf("voice: parrot capture, %d voice bursts\n", voice);
 }
 
-static int c_frame_samples(uintptr_t user, int64_t *out) {
+static int c_frame_samples(void *user, int64_t *out) {
 	(void)user;
 	*out = 160;
 	return 0;
 }
 
-static int c_decode(uintptr_t user, int16_t *dst, size_t cap, size_t *len, size_t *need, const uint8_t slot[9]) {
+static int c_decode(void *user, int16_t *dst, size_t cap, size_t *len, size_t *need, const uint8_t slot[9]) {
 	*need = *len + 160;
 	if (cap < *need)
 		return DMRGO_ERR_SHORT;
@@ -311,7 +333,7 @@ static int c_decode(uintptr_t user, int16_t *dst, size_t cap, size_t *len, size_
 	return 0;
 }
 
-static int c_encode(uintptr_t user, const int16_t *pcm, size_t n, uint8_t out[9]) {
+static int c_encode(void *user, const int16_t *pcm, size_t n, uint8_t out[9]) {
 	(void)user;
 	if (n != 160)
 		return DMRGO_ERR_CODEC2_FRAME_LENGTH;
@@ -320,26 +342,26 @@ static int c_encode(uintptr_t user, const int16_t *pcm, size_t n, uint8_t out[9]
 	return 0;
 }
 
-static int c_silence(uintptr_t user, uint8_t out[9]) {
+static int c_silence(void *user, uint8_t out[9]) {
 	(void)user;
 	memset(out, 0, 9);
 	return 0;
 }
 
-static int c_fid(uintptr_t user, dmrgo_enums_fid_t *out) {
+static int c_fid(void *user, dmrgo_enums_fid_t *out) {
 	(void)user;
 	*out = 0x42;
 	return 0;
 }
 
-static int c_close(uintptr_t user) {
+static int c_close(void *user) {
 	(void)user;
 	return 0;
 }
 
 static int resets;
 
-static int c_reset(uintptr_t user) {
+static int c_reset(void *user) {
 	(void)user;
 	resets++;
 	return 0;
@@ -347,7 +369,7 @@ static int c_reset(uintptr_t user) {
 
 static int bias = 1000;
 
-static int liar_decode(uintptr_t user, int16_t *dst, size_t cap, size_t *len, size_t *need, const uint8_t slot[9]) {
+static int liar_decode(void *user, int16_t *dst, size_t cap, size_t *len, size_t *need, const uint8_t slot[9]) {
 	(void)user;
 	(void)slot;
 	*need = *len + 200;
@@ -373,7 +395,7 @@ static void test_liar(void) {
 }
 
 static void test_vocoder(void) {
-	dmrgo_vocoder_codec_vtable_t vt = {(uintptr_t)&bias, c_close, c_decode, c_encode, c_fid, c_frame_samples, c_reset, c_silence};
+	dmrgo_vocoder_codec_vtable_t vt = {&bias, c_close, c_decode, c_encode, c_fid, c_frame_samples, c_reset, c_silence};
 	dmrgo_vocoder_codec_t *c = NULL;
 	OK(dmrgo_vocoder_codec_from_vtable(&vt, &c));
 	int64_t fs = 0;
@@ -416,11 +438,11 @@ static void test_vocoder(void) {
 
 static void test_last_error(void) {
 	dmrgo_layer2_burst_t *b = NULL;
-	OK(dmrgo_layer2_burst_new(&b));
+	OK(dmrgo_layer2_new_burst(&b));
 	OK(dmrgo_layer2_burst_free(b));
 	CHECK(dmrgo_layer2_burst_free(b) == DMRGO_ERR_HANDLE);
 	CHECK(dmrgo_last_error_code() == DMRGO_ERR_HANDLE);
-	CHECK(dmrgo_layer2_burst_new(NULL) == DMRGO_ERR_ARG);
+	CHECK(dmrgo_layer2_new_burst(NULL) == DMRGO_ERR_ARG);
 	CHECK(dmrgo_last_error_code() == DMRGO_ERR_ARG);
 	char small[2];
 	size_t n = 0;
@@ -436,7 +458,7 @@ static void test_last_error(void) {
 	dmrgo_config_error_t ce = {0};
 	bool ok = false;
 	OK(dmrgo_config_error_last(&ce, &ok));
-	CHECK(ok && ce.type__len == 5 && memcmp(ce.type_, "voice", 5) == 0 && ce.field_len == 9 && memcmp(ce.field, "ColorCode", 9) == 0);
+	CHECK(ok && ce.type_len == 5 && memcmp(ce.type, "voice", 5) == 0 && ce.field_len == 9 && memcmp(ce.field, "ColorCode", 9) == 0);
 	char msg[256];
 	OK(dmrgo_last_error_message(msg, sizeof msg, &n, NULL));
 	CHECK(strcmp(msg, "voice: ColorCode is out of range") == 0);
@@ -468,11 +490,11 @@ static void test_partial(void) {
 
 static int small_user_calls;
 
-static int small_lc(uintptr_t user, int64_t superframe, dmrgo_pdu_full_link_control_t *out, bool *out_ok) {
+static int small_lc(void *user, int64_t superframe, dmrgo_pdu_full_link_control_t *out, bool *out_ok) {
 	(void)superframe;
 	(void)out;
 	*out_ok = false;
-	if (user != 7)
+	if (user != (void *)7)
 		return DMRGO_ERR_ARG;
 	small_user_calls++;
 	return 0;
@@ -486,7 +508,7 @@ static void test_small_user(void) {
 	opts.color_code = 1;
 	opts.source = DMRGO_LAYER2_SYNC_SOURCE_MS;
 	opts.embedded_lc.fn = small_lc;
-	opts.embedded_lc.user = 7;
+	opts.embedded_lc.user = (void *)7;
 	dmrgo_layer2_voice_transmitter_t *tx = NULL;
 	OK(dmrgo_layer2_new_voice_transmitter(&opts, &tx));
 	dmrgo_layer2_raw_burst_t bursts[64];
@@ -551,7 +573,7 @@ static void chip_packet(struct chip *c) {
 		return;
 	}
 	CHECK((size_t)n == c->in_n);
-	if (p.type_ == DMRGO_DVSI_TYPE_CONTROL && p.fields_len > 0) {
+	if (p.type == DMRGO_DVSI_TYPE_CONTROL && p.fields_len > 0) {
 		static const uint8_t ready[] = {0x39};
 		static const uint8_t query[] = "\x30" "AMBE3000R\0" "\x31" "V120\0";
 		static const uint8_t rate[] = {0x0A, 0x00, 0x0B, 0x00};
@@ -578,7 +600,7 @@ static void chip_packet(struct chip *c) {
 		return;
 	}
 	size_t len = 0;
-	if (p.type_ == DMRGO_DVSI_TYPE_CHANNEL) {
+	if (p.type == DMRGO_DVSI_TYPE_CHANNEL) {
 		uint8_t data[24];
 		size_t dn = 0;
 		int64_t bits = 0, ch = -1;
@@ -601,7 +623,7 @@ static void chip_packet(struct chip *c) {
 	c->out_n += len;
 }
 
-static int chip_write(uintptr_t user, const uint8_t *p, size_t n, int64_t *out) {
+static int chip_write(void *user, const uint8_t *p, size_t n, int64_t *out) {
 	struct chip *c = (struct chip *)user;
 	for (size_t i = 0; i < n; i++) {
 		if (c->in_n == 0 && p[i] != 0x61)
@@ -616,7 +638,7 @@ static int chip_write(uintptr_t user, const uint8_t *p, size_t n, int64_t *out) 
 	return DMRGO_OK;
 }
 
-static int chip_read(uintptr_t user, uint8_t *p, size_t n, int64_t *out) {
+static int chip_read(void *user, uint8_t *p, size_t n, int64_t *out) {
 	struct chip *c = (struct chip *)user;
 	size_t k = c->out_n < n ? c->out_n : n;
 	if (k > 7)
@@ -630,7 +652,7 @@ static int chip_read(uintptr_t user, uint8_t *p, size_t n, int64_t *out) {
 
 static void test_dvsi(void) {
 	static struct chip c;
-	dmrgo_dvsi_port_vtable_t vt = {(uintptr_t)&c, chip_read, chip_write};
+	dmrgo_dvsi_port_vtable_t vt = {&c, chip_read, chip_write};
 	dmrgo_dvsi_port_t *port = NULL;
 	OK(dmrgo_dvsi_port_from_vtable(&vt, &port));
 	dmrgo_dvsi_config_t cfg = {0};
@@ -666,6 +688,7 @@ int main(int argc, char **argv) {
 	test_errors();
 	test_pdu();
 	test_layer2();
+	test_names();
 	test_tx();
 	test_voice_capture(argv[1]);
 	test_vocoder();

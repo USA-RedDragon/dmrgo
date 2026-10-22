@@ -399,13 +399,14 @@ func (g *gen) needFunc(cname string, recv *tinfo, rk recvKind, sig *types.Signat
 	}
 	ai, _ := appendForm(sig)
 	params := sig.Params()
+	pnames, _ := g.sigNames(sig, g.curMethod, "arena", "items", "self")
 	for i := 0; i < params.Len(); i++ {
 		if i == ai {
 			sm.args = append(sm.args, "nil")
 			continue
 		}
 		p := params.At(i)
-		if err := g.mapParam(&sm, paramName(p, i), p.Type(), false, nil, nil); err != nil {
+		if err := g.mapParam(&sm, pnames[i], p.Type(), false, nil, nil); err != nil {
 			return err
 		}
 	}

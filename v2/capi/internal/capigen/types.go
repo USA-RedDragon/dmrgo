@@ -2,6 +2,7 @@ package capigen
 
 import (
 	"fmt"
+	"go/token"
 	"go/types"
 	"path"
 	"slices"
@@ -13,7 +14,7 @@ type kind int
 
 const (
 	dstName   = "dst"
-	userParam = "uintptr_t user"
+	userParam = "void *user"
 	cFalse    = "false"
 	cBool     = "bool"
 	cFloat    = "float"
@@ -46,6 +47,23 @@ type tinfo struct {
 }
 
 func snake(s string) string {
+	for _, w := range []string{"AnyTone", "MHz", "KHz", "kHz"} {
+		if before, after, ok := strings.Cut(s, w); ok {
+			var parts []string
+			if before != "" {
+				parts = append(parts, snake(before))
+			}
+			parts = append(parts, strings.ToLower(w))
+			if after != "" {
+				parts = append(parts, snake(after))
+			}
+			return strings.Join(parts, "_")
+		}
+	}
+	return snakeWords(s)
+}
+
+func snakeWords(s string) string {
 	var words []string
 	r := []rune(s)
 	for i := 0; i < len(r); {
@@ -92,7 +110,7 @@ func snake(s string) string {
 }
 
 func acronyms(w string) []string {
-	known := []string{"CRC", "OK", "FLC", "GPS", "UDP", "IP", "IPv4", "IPv6", "TSCC", "WD", "LC", "C", "P"}
+	known := []string{"CRC", "OK", "FLC", "GPS", "UDP", "IP", "IPv4", "IPv6", "TSCC", "USBD", "UDT", "LIP", "WD", "LC", "C", "P"}
 	if slices.Contains(known, w) || !strings.ContainsFunc(w, unicode.IsUpper) {
 		return []string{w}
 	}
@@ -126,8 +144,7 @@ func cKeyword(s string) string {
 	case "auto", "break", "case", "char", "const", "continue", "default", "do", "double", "else", "enum", "extern",
 		"float", "for", "goto", "if", "inline", "int", "long", "register", "restrict", "return", "short", "signed",
 		"sizeof", "static", "struct", "switch", "typedef", "union", "unsigned", "void", "volatile", "while", "bool",
-		"true", "false", "type", "range", "func", "var", "chan", "map", "go", "select", "package", "import",
-		"interface", "fallthrough", "defer", "self", "user", "class", "new", "delete", "this", "template", "typename",
+		"true", "false", "class", "new", "delete", "this", "template", "typename",
 		"namespace", "operator", "private", "protected", "public", "virtual", "friend", "throw", "try", "catch", "using",
 		"explicit", "mutable", "export", "and", "or", "not", "xor", "bitand", "bitor", "compl", "and_eq", "or_eq",
 		"xor_eq", "not_eq", "nullptr", "decltype", "noexcept", "alignas", "alignof", "constexpr", "thread_local",
@@ -138,7 +155,30 @@ func cKeyword(s string) string {
 	return s
 }
 
+func comp(n, suffix string) string {
+	return strings.TrimSuffix(n, "_") + suffix
+}
+
+func goField(n string) string {
+	if token.Lookup(n).IsKeyword() {
+		return "_" + n
+	}
+	return n
+}
+
 func (g *gen) prefix(p *types.Package) string {
+	if c, ok := g.prefixes[p.Path()]; ok {
+		return c
+	}
+	c, err := g.lock.prefix(p.Path(), func() string { return g.prefixRule(p) })
+	if err != nil {
+		g.collisions = append(g.collisions, err.Error())
+	}
+	g.prefixes[p.Path()] = c
+	return c
+}
+
+func (g *gen) prefixRule(p *types.Package) string {
 	if p.Path() == modulePath {
 		return "dmrgo_"
 	}
@@ -152,6 +192,14 @@ func (g *gen) prefix(p *types.Package) string {
 		return "dmrgo_" + path.Base(path.Dir(p.Path())) + "_" + p.Name() + "_"
 	}
 	return "dmrgo_" + p.Name() + "_"
+}
+
+func (g *gen) typeBase(p *types.Package, name string) string {
+	pfx := g.prefix(p)
+	if pfx != "dmrgo_" && strings.HasSuffix(pfx, "_"+snake(name)+"_") {
+		return strings.TrimSuffix(pfx, "_")
+	}
+	return pfx + snake(name)
 }
 
 func (g *gen) goID(p *types.Package) string {
@@ -236,7 +284,7 @@ func (g *gen) classify() {
 				continue
 			}
 			n, _ := tn.Type().(*types.Named)
-			ti := &tinfo{obj: tn, named: n, base: g.prefix(p) + snake(name), id: g.goID(p) + "_" + name}
+			ti := &tinfo{obj: tn, named: n, base: g.typeBase(p, name), id: g.goID(p) + "_" + name}
 			ti.c = ti.base + "_t"
 			g.infos[tn] = ti
 			g.order = append(g.order, ti)

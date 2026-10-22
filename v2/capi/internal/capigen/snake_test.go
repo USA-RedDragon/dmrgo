@@ -34,6 +34,13 @@ func TestSnake(t *testing.T) {
 		"RxFrequencyMHz":                "rx_frequency_mhz",
 		"RxFrequencyHz":                 "rx_frequency_hz",
 		"DeviationHz":                   "deviation_hz",
+		"TXMHz":                         "tx_mhz",
+		"RXkHz":                         "rx_khz",
+		"TXKHz":                         "tx_khz",
+		"AnyToneText":                   "anytone_text",
+		"TSCCUDT":                       "tscc_udt",
+		"TSCCUSBD":                      "tscc_usbd",
+		"USBDLIPResponse":               "usbd_lip_response",
 	} {
 		if got := snake(in); got != want {
 			t.Errorf("snake(%q) = %q, want %q", in, got, want)
@@ -44,13 +51,21 @@ func TestSnake(t *testing.T) {
 func TestCKeyword(t *testing.T) {
 	t.Parallel()
 
-	for _, k := range []string{"class", "new", "delete", "this", "default", "signed", "user", "template", "and"} {
+	for _, k := range []string{"class", "new", "delete", "this", "default", "signed", "template", "and"} {
 		if got := cKeyword(k); got != k+"_" {
 			t.Errorf("cKeyword(%q) = %q", k, got)
 		}
 	}
-	if got := cKeyword("burst"); got != "burst" {
-		t.Errorf("cKeyword(burst) = %q", got)
+	for _, k := range []string{"burst", "type", "user", "self", "range", "func"} {
+		if got := cKeyword(k); got != k {
+			t.Errorf("cKeyword(%q) = %q", k, got)
+		}
+	}
+	if got := comp(cKeyword("class"), "_len"); got != "class_len" {
+		t.Errorf("comp = %q", got)
+	}
+	if got := goField("type"); got != "_type" {
+		t.Errorf("goField(type) = %q", got)
 	}
 }
 

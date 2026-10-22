@@ -403,11 +403,11 @@ func framerRun(h *harness, stream, cuts []byte, period byte) (int, error) {
 	}
 	ccfg := new(C.dmrgo_framer_config_t)
 	out_layer2_framer_Config(ccfg, &cfg, h.in)
-	var cf *C.dmrgo_framer_framer_t
+	var cf *C.dmrgo_framer_t
 	if rc := C.dmrgo_framer_new(ccfg, &cf); rc != C.DMRGO_OK {
 		return 0, fmt.Errorf("new %d", rc)
 	}
-	defer C.dmrgo_framer_framer_free(cf)
+	defer C.dmrgo_framer_free(cf)
 	cs := C.CBytes(stream)
 	defer C.free(cs)
 	total := 0
@@ -423,10 +423,10 @@ func framerRun(h *harness, stream, cuts []byte, period byte) (int, error) {
 		total += len(want)
 		err := runAppend(h, "Framer.AppendBursts", want, nil, fromC_layer2_framer_Burst,
 			func(it, a *C.size_t) C.int {
-				return C.dmrgo_framer_framer_append_bursts_need(cf, p, C.size_t(n), C.int64_t(nbits), it, a)
+				return C.dmrgo_framer_append_bursts_need(cf, p, C.size_t(n), C.int64_t(nbits), it, a)
 			},
 			func(d *C.dmrgo_framer_burst_t, c C.size_t, nn, nd *C.size_t, _ unsafe.Pointer, _ C.size_t, _, _ *C.size_t) C.int {
-				return C.dmrgo_framer_framer_append_bursts(cf, d, c, nn, nd, p, C.size_t(n), C.int64_t(nbits))
+				return C.dmrgo_framer_append_bursts(cf, d, c, nn, nd, p, C.size_t(n), C.int64_t(nbits))
 			})
 		if err != nil {
 			return total, err

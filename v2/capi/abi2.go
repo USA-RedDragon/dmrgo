@@ -100,7 +100,7 @@ func packetABI(seed uint64) error {
 			func(it, a *C.size_t) C.int {
 				return C.dmrgo_packet_builder_segment_need(cb, ch, (*C.uint8_t)(cpay), C.size_t(len(payload)), C.dmrgo_enums_data_type_t(rate), it, a)
 			},
-			func(o *C.dmrgo_packet_packet_t, ar unsafe.Pointer, ac C.size_t, an, ann *C.size_t) C.int {
+			func(o *C.dmrgo_packet_t, ar unsafe.Pointer, ac C.size_t, an, ann *C.size_t) C.int {
 				return C.dmrgo_packet_builder_segment(cb, ch, (*C.uint8_t)(cpay), C.size_t(len(payload)), C.dmrgo_enums_data_type_t(rate), o, ar, ac, an, ann)
 			})
 		C.free(cpay)
@@ -156,7 +156,7 @@ func packetABI(seed uint64) error {
 		gr, gerr := ga.Response()
 		_, err = runValue(h, "Assembler.Response", gr, gerr, fromC_layer2_packet_Packet,
 			func(it, a *C.size_t) C.int { return C.dmrgo_packet_assembler_response_need(ca, it, a) },
-			func(o *C.dmrgo_packet_packet_t, ar unsafe.Pointer, ac C.size_t, an, ann *C.size_t) C.int {
+			func(o *C.dmrgo_packet_t, ar unsafe.Pointer, ac C.size_t, an, ann *C.size_t) C.int {
 				return C.dmrgo_packet_assembler_response(ca, o, ar, ac, an, ann)
 			})
 		if err != nil {
@@ -171,7 +171,7 @@ func packetABI(seed uint64) error {
 		gq, gerr := gb.Retry(&gp, &rd)
 		_, err = runValue(h, "Builder.Retry", gq, gerr, fromC_layer2_packet_Packet,
 			func(it, a *C.size_t) C.int { return C.dmrgo_packet_builder_retry_need(cb, cp, crd, it, a) },
-			func(o *C.dmrgo_packet_packet_t, ar unsafe.Pointer, ac C.size_t, an, ann *C.size_t) C.int {
+			func(o *C.dmrgo_packet_t, ar unsafe.Pointer, ac C.size_t, an, ann *C.size_t) C.int {
 				return C.dmrgo_packet_builder_retry(cb, cp, crd, o, ar, ac, an, ann)
 			})
 		if err != nil {

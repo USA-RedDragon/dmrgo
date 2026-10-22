@@ -103,6 +103,7 @@ type gen struct {
 	funcSyms    []string
 	capiDir     string
 	collisions  []string
+	prefixes    map[string]string
 
 	hScalars, hStructs, hConsts, hProtos strings.Builder
 	goConv, goFuncs, internal, genC      strings.Builder
@@ -125,7 +126,10 @@ func Generate(capiDir string, lock []byte, opt Options) (*Output, error) {
 	g := &gen{
 		l: l, pkgs: pkgs, closed: map[string]bool{"layer2.Data": true}, infos: map[*types.TypeName]*tinfo{},
 		imports: map[string]bool{}, memo: map[string]memo{}, cnames: map[string]string{},
-		usedHandles: map[*tinfo]bool{}, scratch: map[*tinfo][]string{}, lock: al, capiDir: capiDir,
+		usedHandles: map[*tinfo]bool{}, scratch: map[*tinfo][]string{}, lock: al, capiDir: capiDir, prefixes: map[string]string{},
+	}
+	for _, p := range pkgs {
+		g.prefix(p)
 	}
 	g.classify()
 	for name := range g.closed {
@@ -236,7 +240,7 @@ func (g *gen) object(p *types.Package, o types.Object) error {
 		e := Export{Go: gn, Kind: "func"}
 		if o.Signature().TypeParams().Len() > 0 {
 			e.Err = "generic func"
-		} else if err := g.addFunc(&e, g.prefix(p)+snake(o.Name()), g.doc(o, gn), nil, rNone, g.qual(p)+"."+o.Name(), o.Signature(), nil); err != nil {
+		} else if err := g.addFunc(&e, g.funcName(p, o.Name()), g.doc(o, gn), nil, rNone, g.qual(p)+"."+o.Name(), o.Signature(), nil); err != nil {
 			return err
 		}
 		g.exports = append(g.exports, e)
@@ -244,6 +248,21 @@ func (g *gen) object(p *types.Package, o types.Object) error {
 		return g.typeObject(o, gn)
 	}
 	return nil
+}
+
+func (g *gen) funcName(p *types.Package, name string) string {
+	c := g.prefix(p) + snake(name)
+	sc := p.Scope()
+	for _, t := range sc.Names() {
+		tn, ok := sc.Lookup(t).(*types.TypeName)
+		if !ok || !tn.Exported() || !strings.HasPrefix(name, t) {
+			continue
+		}
+		if u, ok := sc.Lookup(name[len(t):]).(*types.TypeName); ok && u.Exported() {
+			return g.prefix(p) + "func_" + snake(name)
+		}
+	}
+	return c
 }
 
 func (g *gen) typeObject(o *types.TypeName, gn string) error {
@@ -286,7 +305,7 @@ func (g *gen) typeObject(o *types.TypeName, gn string) error {
 		}
 	}
 	if ti.kind == kHandle {
-		if err := g.lifecycle(ti, gn, zeroReady(g.l.full[o], o.Name())); err != nil {
+		if err := g.lifecycle(ti, gn, zeroReady(g.l.full[o], o.Name()) && !hasNew(o)); err != nil {
 			return err
 		}
 	}
@@ -427,6 +446,18 @@ func zeroReady(doc, name string) bool {
 		}
 	}
 	return false
+}
+
+func hasNew(o *types.TypeName) bool {
+	f, ok := o.Pkg().Scope().Lookup("New" + o.Name()).(*types.Func)
+	if !ok || f.Signature().Params().Len() != 0 || f.Signature().Results().Len() != 1 {
+		return false
+	}
+	r := f.Signature().Results().At(0).Type()
+	if p, ok := r.(*types.Pointer); ok {
+		r = p.Elem()
+	}
+	return types.Identical(r, o.Type())
 }
 
 func (g *gen) lifecycle(ti *tinfo, gn string, zero bool) error {
