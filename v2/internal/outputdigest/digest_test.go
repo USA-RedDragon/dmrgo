@@ -520,7 +520,7 @@ func collectFramer(d digests) {
 		m, ok := framer.Search(p, 8*len(p), start, 6)
 		d.add("framer/search", "%d %+v %v", start, m, ok)
 	}
-	f, err := framer.New(nil)
+	f, err := framer.New(&framer.Config{Threshold: -1})
 	if err != nil {
 		panic(err)
 	}
@@ -530,7 +530,7 @@ func collectFramer(d digests) {
 		out = f.AppendBursts(out[:0], chunk, 8*len(chunk))
 		for _, b := range out {
 			d.add("framer/write", "{Data:%v Offset:%v Sync:%v Distance:%v HasCACH:%v CACH:%s Channel:%v}",
-				b.Data, b.Offset, b.Sync, b.Distance, b.HasCACH, cachString(b.CACH), b.Channel)
+				b.Data, b.Offset, b.Sync, b.Distance, b.HasCACH, cachString(b.CACH), uint8(b.Slot))
 		}
 	}
 }

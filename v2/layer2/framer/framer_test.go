@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/unpacked"
@@ -70,38 +71,38 @@ func TestSearch(t *testing.T) {
 	r := rand.New(rand.NewSource(1))
 	burst := flip(loadVoice(t)[1], 110, 130, 150)
 	stream := pack(append(noise(r, 1004), burstBits(burst)...))
-	m, ok := framer.Search(stream, 8*len(stream), 0, -1)
+	m, ok := framer.Search(stream, 8*len(stream), 0, 0)
 	if !ok || m.Offset != 1004+framer.SyncOffset || m.Pattern != enums.SyncBSSourcedVoice || m.Distance != 3 {
 		t.Fatalf("got %+v %v", m, ok)
 	}
 	if _, ok := framer.Search(stream, 8*len(stream), 0, 2); ok {
 		t.Error("threshold 2 matched a SYNC with 3 errors")
 	}
-	if _, ok := framer.Search(stream, 8*len(stream), m.Offset+1, -1); ok {
+	if _, ok := framer.Search(stream, 8*len(stream), m.Offset+1, 0); ok {
 		t.Error("found a second SYNC")
 	}
 	end := m.Offset + framer.SyncBits
 	if end%8 != 0 {
 		t.Fatalf("the SYNC ends at bit %d, inside a byte", end)
 	}
-	if _, ok := framer.Search(stream[:end/8], end, 0, -1); !ok {
+	if _, ok := framer.Search(stream[:end/8], end, 0, 0); !ok {
 		t.Error("missed a SYNC that ends the stream")
 	}
-	if _, ok := framer.Search(stream[:end/8], end+8, 0, -1); !ok {
+	if _, ok := framer.Search(stream[:end/8], end+8, 0, 0); !ok {
 		t.Error("missed a SYNC with nbits over the stream")
 	}
 	for cut := end - 7; cut < end; cut++ {
-		if _, ok := framer.Search(stream, cut, 0, -1); ok {
+		if _, ok := framer.Search(stream, cut, 0, 0); ok {
 			t.Errorf("matched a SYNC cut at bit %d", cut)
 		}
 	}
-	if _, ok := framer.Search(stream, 8*len(stream), -5, -1); !ok {
+	if _, ok := framer.Search(stream, 8*len(stream), -5, 0); !ok {
 		t.Error("negative start")
 	}
-	if _, ok := framer.Search(stream, 8*len(stream), math.MaxInt, -1); ok {
+	if _, ok := framer.Search(stream, 8*len(stream), math.MaxInt, 0); ok {
 		t.Error("found a SYNC after the end of the stream")
 	}
-	if _, ok := framer.Search(stream, -1, 0, -1); ok {
+	if _, ok := framer.Search(stream, -1, 0, 0); ok {
 		t.Error("found a SYNC in a negative bit count")
 	}
 }
@@ -117,7 +118,7 @@ func TestFramer_SlotPeriod(t *testing.T) {
 		stream = append(stream, burstBits(b)...)
 		stream = append(stream, noise(r, framer.SlotPeriod-layer2.BurstBits)...)
 	}
-	f := newFramer(t, &framer.Config{Threshold: -1, Period: framer.SlotPeriod})
+	f := newFramer(t, &framer.Config{Period: framer.SlotPeriod})
 	got := writeChunks(r, f, stream)
 	if len(got) < len(bursts) {
 		t.Fatalf("%d bursts, want %d", len(got), len(bursts))
@@ -129,8 +130,8 @@ func TestFramer_SlotPeriod(t *testing.T) {
 		if want := int64(777 + i*framer.SlotPeriod); got[i].Offset != want {
 			t.Errorf("burst %d offset %d, want %d", i, got[i].Offset, want)
 		}
-		if got[i].Channel != 0 || got[i].HasCACH {
-			t.Errorf("burst %d channel %d", i, got[i].Channel)
+		if got[i].Slot != enums.SlotUnknown || got[i].HasCACH {
+			t.Errorf("burst %d slot %v", i, got[i].Slot)
 		}
 		dec, err := layer2.NewBurstFromBytes(got[i].Data)
 		if err != nil {
@@ -160,7 +161,7 @@ func TestFramer_OutboundCACH(t *testing.T) {
 	idle := [33]byte(must(layer2.BuildDataBurst([12]byte{}, enums.DataTypeIdle, 1, layer2.SyncSourceBS)))
 	type sent struct {
 		data    [33]byte
-		channel int
+		channel enums.Slot
 	}
 	var want []sent
 	stream := noise(r, 1234)
@@ -177,18 +178,18 @@ func TestFramer_OutboundCACH(t *testing.T) {
 			unpacked.UnpackAt(txBits[:], tx[:], 0)
 			stream = append(stream, txBits[:]...)
 			stream = append(stream, burstBits(data)...)
-			want = append(want, sent{data, ch})
+			want = append(want, sent{data, enums.Slot(ch)})
 		}
 	}
-	f := newFramer(t, &framer.Config{Threshold: -1, CACH: true})
+	f := newFramer(t, &framer.Config{CACH: true})
 	got := writeChunks(r, f, stream)
 	if len(got) < len(want) {
 		t.Fatalf("%d bursts, want %d", len(got), len(want))
 	}
 	for i, w := range want {
 		g := got[i]
-		if g.Data != w.data || g.Channel != w.channel || !g.HasCACH || !g.CACH.TACT.AccessType {
-			t.Fatalf("burst %d: channel %d, want %d, CACH %+v", i, g.Channel, w.channel, g.CACH)
+		if g.Data != w.data || g.Slot != w.channel || !g.HasCACH || !g.CACH.TACT.AccessType {
+			t.Fatalf("burst %d: slot %v, want %v, CACH %+v", i, g.Slot, w.channel, g.CACH)
 		}
 		if bits.Bit(g.CACH.Payload[:], (i/2)%17) != 1 {
 			t.Errorf("burst %d: CACH payload", i)
@@ -210,12 +211,12 @@ func TestFramer_DirectChannel(t *testing.T) {
 		stream = append(stream, burstBits(ts2)...)
 		stream = append(stream, noise(r, framer.SlotPeriod-layer2.BurstBits)...)
 	}
-	got := newFramer(t, &framer.Config{Threshold: -1, Period: framer.SlotPeriod}).Write(pack(stream), len(stream))
+	got := newFramer(t, &framer.Config{Period: framer.SlotPeriod}).Write(pack(stream), len(stream))
 	if len(got) != 3 {
 		t.Fatalf("%d bursts", len(got))
 	}
 	for i, g := range got {
-		if g.Channel != 2 || g.Sync != enums.SyncTDMA2Data {
+		if g.Slot != enums.Slot2 || g.Sync != enums.SyncTDMA2Data {
 			t.Errorf("burst %d: %+v", i, g)
 		}
 	}
@@ -243,9 +244,13 @@ func TestNewConfig(t *testing.T) {
 	if got := f.Write(make([]byte, 100), 800); len(got) != 0 {
 		t.Errorf("nil config: %d bursts from zeros", len(got))
 	}
-	if _, err := framer.New(&framer.Config{Period: framer.MaxPeriod + 1}); !errors.Is(err, framer.ErrPeriod) {
-		t.Errorf("Period over MaxPeriod: %v", err)
+	for _, p := range []int{-1, 1, layer2.BurstBits - 1, framer.MaxPeriod + 1} {
+		var ce *dmrgo.ConfigError
+		if _, err := framer.New(&framer.Config{Period: p}); !errors.As(err, &ce) || ce.Field != "Period" {
+			t.Errorf("Period %d: %v", p, err)
+		}
 	}
+	newFramer(t, &framer.Config{Period: layer2.BurstBits})
 	newFramer(t, &framer.Config{Period: framer.MaxPeriod})
 	var zero framer.Framer
 	if got := zero.Write(make([]byte, 100), 800); len(got) != 0 {

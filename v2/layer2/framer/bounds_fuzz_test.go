@@ -25,7 +25,7 @@ func framerBoundStream(t *testing.T) []byte {
 
 func runFramerBounds(t *testing.T, stream []byte, cuts []byte, period uint8) int {
 	t.Helper()
-	f := newFramer(t, &framer.Config{Period: int(period), CACH: period&1 == 0, Threshold: int(period % 5)})
+	f := newFramer(t, &framer.Config{Period: fuzzPeriod(period), CACH: period&1 == 0, Threshold: int(period % 5)})
 	total := 0
 	for off, i := 0, 0; off < len(stream); i++ {
 		n := 1
@@ -63,4 +63,11 @@ func FuzzFramerBounds(f *testing.F) {
 	f.Fuzz(func(t *testing.T, stream, cuts []byte, period uint8) {
 		_ = runFramerBounds(t, stream, cuts, period)
 	})
+}
+
+func fuzzPeriod(p uint8) int {
+	if p == 0 {
+		return 0
+	}
+	return layer2.BurstBits + int(p)
 }

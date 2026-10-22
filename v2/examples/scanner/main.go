@@ -55,7 +55,7 @@ func run(w io.Writer, dataDir string) error {
 	fmt.Fprintf(w, "stream: %d bits, %d junk bits, %d bits flipped\n", n, junkBits, flipped)
 
 	r := xorshift(2)
-	f, err := framer.New(&framer.Config{Threshold: -1, CACH: true})
+	f, err := framer.New(&framer.Config{CACH: true})
 	if err != nil {
 		return err
 	}
@@ -74,14 +74,14 @@ func run(w io.Writer, dataDir string) error {
 				first = fb.Offset
 			}
 			n++
-			if fb.Channel != 1 && fb.Channel != 2 {
+			if fb.Slot != enums.Slot1 && fb.Slot != enums.Slot2 {
 				continue
 			}
 			if err := b.DecodeFromBytesWith(fb.Data, &opts); err != nil {
-				fmt.Fprintf(w, "TS%d burst at bit %d: %v\n", fb.Channel, fb.Offset, err)
+				fmt.Fprintf(w, "%v burst at bit %d: %v\n", fb.Slot, fb.Offset, err)
 				continue
 			}
-			chans[fb.Channel-1].receive(w, &b)
+			chans[fb.Slot-1].receive(w, &b)
 		}
 		stream = stream[chunk:]
 	}

@@ -27,8 +27,11 @@ func nearestAt(stream []byte, i int) (enums.SyncPattern, int) {
 
 func refSearch(stream []byte, nbits, start, threshold int) (int, int, bool) {
 	n := max(0, min(nbits, 8*len(stream)))
-	if threshold < 0 {
+	switch {
+	case threshold == 0:
 		threshold = layer2.DefaultSyncThreshold
+	case threshold < 0:
+		threshold = 0
 	}
 	for i := max(start, 0); i+framer.SyncBits <= n; i++ {
 		if _, d := nearestAt(stream, i); d <= threshold {
@@ -48,7 +51,7 @@ func searchSeeds(tb testing.TB) []searchSeed {
 	tb.Helper()
 	var seeds []searchSeed
 	for _, b := range loadVoice(tb)[:3] {
-		seeds = append(seeds, searchSeed{append([]byte{0x5a, 0x3c}, b[:]...), 8 * 35, 0, -1})
+		seeds = append(seeds, searchSeed{append([]byte{0x5a, 0x3c}, b[:]...), 8 * 35, 0, 0})
 	}
 	return append(seeds, searchSeed{[]byte{0xff}, -3, -9, 0})
 }
@@ -80,8 +83,11 @@ func fuzzConfig(c byte) framer.Config {
 }
 
 func threshold(cfg framer.Config) int {
-	if cfg.Threshold < 0 {
+	switch {
+	case cfg.Threshold == 0:
 		return layer2.DefaultSyncThreshold
+	case cfg.Threshold < 0:
+		return 0
 	}
 	return cfg.Threshold
 }
@@ -128,8 +134,8 @@ func checkBursts(t *testing.T, cfg framer.Config, stream []byte, got []framer.Bu
 				t.Fatalf("burst %d at %d: CACH %+v, stream has %x", i, off, b.CACH, c)
 			}
 		}
-		if b.Channel < 0 || b.Channel > 2 {
-			t.Fatalf("burst %d: channel %d", i, b.Channel)
+		if b.Slot > enums.Slot2 {
+			t.Fatalf("burst %d: slot %v", i, b.Slot)
 		}
 	}
 }

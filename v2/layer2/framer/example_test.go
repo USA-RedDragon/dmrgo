@@ -19,7 +19,7 @@ func Example() {
 		n := 100 + i
 		stream[n/8] |= raw[i/8] >> (7 - i%8) & 1 << (7 - n%8)
 	}
-	f, err := framer.New(&framer.Config{Threshold: -1, Period: framer.SlotPeriod})
+	f, err := framer.New(&framer.Config{Period: framer.SlotPeriod})
 	if err != nil {
 		fmt.Println(err)
 		return

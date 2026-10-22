@@ -401,8 +401,15 @@ func framerABI(seed uint64) error {
 	return h.recheck()
 }
 
+func framerPeriod(p byte) int {
+	if p == 0 {
+		return 0
+	}
+	return layer2.BurstBits + int(p)
+}
+
 func framerRun(h *harness, stream, cuts []byte, period byte) (int, error) {
-	cfg := framer.Config{Period: int(period), CACH: period&1 == 0, Threshold: int(period % 5)}
+	cfg := framer.Config{Period: framerPeriod(period), CACH: period&1 == 0, Threshold: int(period % 5)}
 	gf, err := framer.New(&cfg)
 	if err != nil {
 		return 0, err
