@@ -12,6 +12,6 @@ func TestFuzzSeeds(t *testing.T) {
 	}
 	tp, msgs := txPool(t), txMessages(t)
 	for _, in := range txSeeds() {
-		checkTxScript(t, in, tp, msgs)
+		checkTxScript(t, &in, tp, msgs)
 	}
 }

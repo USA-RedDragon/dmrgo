@@ -11,6 +11,7 @@ import (
 const (
 	maxBoundBlocks = 127
 	maxBoundData   = 3048
+	maxRetryMap    = (len(packet.ResponseData{}.Retry) + 7) / 8
 )
 
 func runPacketBounds(t *testing.T, data []byte, rateSel byte, conf bool, retry []byte) {
@@ -29,8 +30,9 @@ func runPacketBounds(t *testing.T, data []byte, rateSel byte, conf bool, retry [
 		return
 	}
 	var rd packet.ResponseData
-	for i, v := range retry {
-		rd.Retry[int(v)%len(rd.Retry)] = i%2 == 0
+	retry = retry[:min(len(retry), maxRetryMap)]
+	for i := range rd.Retry {
+		rd.Retry[i] = i/8 < len(retry) && retry[i/8]>>(i%8)&1 != 0
 	}
 	q, _ := b.Retry(&p, &rd)
 	if len(q.Blocks) > maxBoundBlocks {
@@ -86,13 +88,27 @@ func TestPacketBounds(t *testing.T) {
 	for _, n := range []int{0, 1, 11, 100, 1000, 3000, 4000} {
 		for r := range byte(3) {
 			runPacketBounds(t, payload(n), r, false, nil)
-			runPacketBounds(t, payload(n), r, true, []byte{1, 2, 3, 126})
+			runPacketBounds(t, payload(n), r, true, []byte{0x0A})
 		}
 	}
 }
 
 func FuzzPacketBounds(f *testing.F) {
-	f.Add(payload(40), byte(0), true, []byte{1, 2})
-	f.Add(payload(3000), byte(2), false, []byte{})
-	f.Fuzz(runPacketBounds)
+	f.Add(uint16(40), payload(40), byte(0), byte(0), true, []byte{0x02})
+	f.Add(uint16(3000), payload(maxPattern), byte(7*maxPattern%256), byte(2), false, []byte{})
+	buf := make([]byte, maxPayload)
+	f.Fuzz(func(t *testing.T, size uint16, pattern []byte, step, rateSel byte, conf bool, retry []byte) {
+		runPacketBounds(t, fillPattern(buf[:int(size)%maxPayload], pattern[:min(len(pattern), maxPattern)], step), rateSel, conf, retry)
+	})
+}
+
+func fillPattern(data, pattern []byte, step byte) []byte {
+	clear(data)
+	for i := 0; len(pattern) > 0 && i < len(data); i += len(pattern) {
+		n := copy(data[i:], pattern)
+		for j := range n {
+			data[i+j] += byte(i/len(pattern)) * step
+		}
+	}
+	return data
 }

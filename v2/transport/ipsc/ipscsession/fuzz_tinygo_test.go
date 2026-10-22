@@ -11,8 +11,9 @@ import (
 func TestTinyGoFuzzSeeds(t *testing.T) {
 	t.Parallel()
 
+	pool := fuzzPool()
 	for _, s := range fuzzSeeds() {
-		checkSession(t, s)
+		checkSession(t, pool, s)
 	}
 }
 

@@ -12,6 +12,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/shortdata"
 )
 
+const maxText = 128
+
 func FuzzText(f *testing.F) {
 	textSeeds(func(format uint8, data []byte) { f.Add(format, data) })
 	f.Fuzz(fuzzText)
@@ -32,6 +34,7 @@ func textSeeds(add func(format uint8, data []byte)) {
 }
 
 func fuzzText(t *testing.T, format uint8, data []byte) {
+	data = data[:min(len(data), maxText)]
 	f := enums.DDFormat(format & 0x3F)
 	got, err := shortdata.DecodeText(nil, f, data)
 	if err != nil {

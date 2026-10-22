@@ -12,7 +12,10 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-const maxFuzzOps = 512
+const (
+	maxFuzzOps = 512
+	maxScript  = 128
+)
 
 type rig struct {
 	q    *csbk.Requester
@@ -117,9 +120,31 @@ func (g *rig) step(t testing.TB, op, arg byte) {
 	g.check(t, op)
 }
 
-func runScript(t testing.TB, g *rig, in []byte) {
+func scriptLoop(n int, from, to, reps uint8) (lo, hi, total int) {
+	lo = min(int(from), n)
+	hi = max(min(int(to), n), lo)
+	return lo, hi, min(n+int(reps)*(hi-lo), maxFuzzOps)
+}
+
+func scriptIndex(s, lo, hi int, reps uint8) int {
+	if s < hi {
+		return s
+	}
+	s -= hi
+	w := int(reps) * (hi - lo)
+	if s < w {
+		return lo + s%(hi-lo)
+	}
+	return hi + s - w
+}
+
+func runScript(t testing.TB, g *rig, in []byte, from, to, reps uint8) {
 	t.Helper()
-	for i := 0; i+1 < len(in) && i < 2*maxFuzzOps; i += 2 {
+	in = in[:min(len(in), maxScript)]
+	n := len(in) / 2
+	lo, hi, total := scriptLoop(n, from, to, reps)
+	for s := range total {
+		i := 2 * scriptIndex(s, lo, hi, reps)
 		g.step(t, in[i], in[i+1])
 	}
 }
@@ -138,15 +163,16 @@ func fuzzSeeds() [][]byte {
 func TestFuzzSeeds(t *testing.T) {
 	t.Parallel()
 	for _, in := range fuzzSeeds() {
-		runScript(t, newRig(t), in)
+		runScript(t, newRig(t), in, 0, 0, 0)
 	}
 }
 
 func FuzzMachines(f *testing.F) {
 	for _, in := range fuzzSeeds() {
-		f.Add(in)
+		f.Add(in, uint8(0), uint8(0), uint8(0))
 	}
-	f.Fuzz(func(t *testing.T, in []byte) {
-		runScript(t, newRig(t), in)
+	f.Add([]byte{4, 0x01, 1, 0x21, 15, 0x0F}, uint8(1), uint8(3), uint8(40))
+	f.Fuzz(func(t *testing.T, in []byte, from, to, reps uint8) {
+		runScript(t, newRig(t), in, from, to, reps)
 	})
 }

@@ -10,8 +10,8 @@ func TestUDTFuzzCorpus(t *testing.T) {
 		runAppended(t, in)
 	}
 	pool := newUDTPool(t)
-	for _, in := range msUDTSeeds() {
-		runMSUDT(t, pool, in)
+	for _, s := range msUDTSeeds() {
+		runMSUDT(t, pool, s)
 	}
 	tpool := newTSCCUDTPool(t)
 	for _, in := range tsccUDTSeeds() {

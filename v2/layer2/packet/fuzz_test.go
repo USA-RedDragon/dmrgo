@@ -21,6 +21,8 @@ const (
 	maxPattern = 64
 	maxChannel = 128
 	maxPayload = 4096
+	maxOps     = 128
+	maxRaw     = 4 * 33
 )
 
 const (
@@ -632,12 +634,7 @@ func FuzzRoundTrip(f *testing.F) {
 	s := newSession()
 	buf := make([]byte, maxPayload)
 	f.Fuzz(func(t *testing.T, kind uint8, fields uint64, dst, src uint32, size uint16, pattern, channel []byte) {
-		payload := buf[:int(size)%maxPayload]
-		pattern = pattern[:min(len(pattern), maxPattern)]
-		clear(payload)
-		for i := 0; len(pattern) > 0 && i < len(payload); {
-			i += copy(payload[i:], pattern)
-		}
+		payload := fillPattern(buf[:int(size)%maxPayload], pattern[:min(len(pattern), maxPattern)], 0)
 		if !s.setup(t, kind, fields, dst, src, payload) {
 			return
 		}
@@ -648,9 +645,9 @@ func FuzzRoundTrip(f *testing.F) {
 	})
 }
 
-func burstSeeds(t testing.TB) [][]byte {
+func burstSeeds(t testing.TB) (seeds [][]byte, pool []layer2.RawBurst) {
 	t.Helper()
-	var seeds [][]byte
+	streams := make([][]byte, 0, 4)
 	for _, name := range []string{"d-sms", "h-sms", "m-sms"} {
 		data, err := os.ReadFile("../testdata/" + name + ".bin")
 		if err != nil {
@@ -661,9 +658,35 @@ func burstSeeds(t testing.TB) [][]byte {
 			in = append(in, byte(i/33)&0x30)
 			in = append(in, data[i:i+33]...)
 		}
-		seeds = append(seeds, in)
+		streams = append(streams, in)
 	}
-	return append(seeds, builtBursts(t, roundTripSeeds(t)[0].payload))
+	streams = append(streams, builtBursts(t, roundTripSeeds(t)[0].payload))
+	at := map[layer2.RawBurst]byte{}
+	for _, in := range streams {
+		var ops []byte
+		for len(in) > 0 {
+			op := in[0]
+			in = in[1:]
+			if op&0xC0 != 0 {
+				ops = append(ops, op)
+				continue
+			}
+			raw := layer2.RawBurst(in[:33])
+			in = in[33:]
+			i, ok := at[raw]
+			if !ok {
+				i = byte(len(pool))
+				at[raw] = i
+				pool = append(pool, raw)
+			}
+			ops = append(ops, i)
+		}
+		seeds = append(seeds, ops)
+	}
+	if len(pool) > 0x3F-maxRaw/33 {
+		t.Fatalf("%d bursts in the pool", len(pool))
+	}
+	return seeds, pool
 }
 
 func builtBursts(t testing.TB, data []byte) []byte {
@@ -729,35 +752,53 @@ func builtBursts(t testing.TB, data []byte) []byte {
 type anyBursts struct {
 	a       *packet.Assembler
 	b       layer2.Burst
+	pool    []layer2.RawBurst
 	missing []int
 }
 
-func newAnyBursts() *anyBursts {
-	return &anyBursts{a: packet.NewAssembler(127), missing: make([]int, 0, 127)}
+func newAnyBursts(pool []layer2.RawBurst) *anyBursts {
+	return &anyBursts{a: packet.NewAssembler(127), pool: pool, missing: make([]int, 0, 127)}
 }
 
-func (r *anyBursts) feed(t *testing.T, acceptBadCRC bool, in []byte) {
+func (r *anyBursts) feed(t *testing.T, acceptBadCRC bool, ops, raw []byte) {
 	t.Helper()
 	a := r.a
 	a.Reset()
 	a.AcceptBadCRC = acceptBadCRC
-	for len(in) > 0 {
-		op := in[0]
-		in = in[1:]
+	var flip layer2.RawBurst
+	for len(ops) > 0 {
+		op := ops[0]
+		ops = ops[1:]
 		var m packet.Message
 		var done bool
 		var err error
-		switch {
-		case op&0xC0 == 0x40:
+		switch op & 0xC0 {
+		case 0x40:
 			m, done, err = a.Lost()
-		case op&0xC0 == 0x80:
+		case 0x80:
 			a.Reset()
-		case len(in) >= 33:
-			_ = r.b.DecodeFromBytes(layer2.RawBurst(in[:33]))
-			in = in[33:]
-			m, done, err = a.AddBurst(&r.b)
+		case 0xC0:
+			if len(ops) > 0 {
+				bit := (int(op&0x3F)<<8 | int(ops[0])) % (8 * len(flip))
+				ops = ops[1:]
+				flip[bit/8] ^= 0x80 >> (bit % 8)
+			}
 		default:
-			in = nil
+			var in layer2.RawBurst
+			switch i := int(op); {
+			case i < len(r.pool):
+				in = r.pool[i]
+			case (i-len(r.pool)+1)*len(in) <= len(raw):
+				in = layer2.RawBurst(raw[(i-len(r.pool))*len(in):])
+			default:
+				continue
+			}
+			for j := range in {
+				in[j] ^= flip[j]
+			}
+			flip = layer2.RawBurst{}
+			_ = r.b.DecodeFromBytes(in)
+			m, done, err = a.AddBurst(&r.b)
 		}
 		checkAnyResult(t, &m, done, err)
 		r.missing = a.AppendMissing(r.missing[:0])
@@ -769,13 +810,15 @@ func (r *anyBursts) feed(t *testing.T, acceptBadCRC bool, in []byte) {
 }
 
 func FuzzAssemblerBursts(f *testing.F) {
-	for _, in := range burstSeeds(f) {
-		f.Add(false, in)
-		f.Add(true, in)
+	seeds, pool := burstSeeds(f)
+	for _, ops := range seeds {
+		f.Add(false, ops, []byte(nil))
+		f.Add(true, ops, []byte(nil))
 	}
-	r := newAnyBursts()
-	f.Fuzz(func(t *testing.T, acceptBadCRC bool, in []byte) {
-		r.feed(t, acceptBadCRC, in)
+	f.Add(false, append([]byte{byte(len(pool))}, seeds[0][1:]...), pool[seeds[0][0]][:])
+	r := newAnyBursts(pool)
+	f.Fuzz(func(t *testing.T, acceptBadCRC bool, ops, raw []byte) {
+		r.feed(t, acceptBadCRC, ops[:min(len(ops), maxOps)], raw[:min(len(raw), maxRaw)])
 	})
 }
 

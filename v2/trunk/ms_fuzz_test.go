@@ -22,22 +22,17 @@ func newMSPool(t testing.TB) burstPool {
 	return append(newPool(t), ack(t, enums.AckReasonRegAccepted), ack(t, enums.AckReasonWait), ack(t, enums.AckReasonSysBusyRefused), ahoy, own, challenge)
 }
 
-func runMS(t *testing.T, pool burstPool, in []byte) {
-	cfg := trunk.MSConfig{Address: msAddr}
-	if len(in) > 0 {
-		cfg.Seed = uint64(in[0])
-		cfg.NoRegistration = in[0]&1 != 0
-		in = in[1:]
-	}
+func runMS(t *testing.T, pool burstPool, s opSeed) {
+	cfg := trunk.MSConfig{Address: msAddr, Seed: uint64(s.cfg), NoRegistration: s.cfg&1 != 0}
+	script := s.script()
 	ms, err := trunk.NewMS(&cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	out := make([]trunk.Output, 0, trunk.MaxOutputs)
 	now := time.Duration(0)
-	for op := 0; op < maxFuzzOps && len(in) >= 2; op++ {
-		kind, arg := in[0], in[1]
-		in = in[2:]
+	for op := range script.total {
+		kind, arg := script.op(op)
 		now += time.Duration(arg) * 5 * time.Millisecond
 		cach := idle
 		if kind&0x80 != 0 {
@@ -82,21 +77,22 @@ func runMS(t *testing.T, pool burstPool, in []byte) {
 	}
 }
 
-func msSeeds() [][]byte {
-	return [][]byte{
-		{0, 0, 0, 0, 0, 0, 7, 0, 7, 3, 1, 0, 0, 0, 8, 0, 11, 5, 0},
-		{1, 0, 0, 3, 3, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 4, 0, 0, 10},
-		{2, 0, 0, 0, 0, 0, 10, 0, 0, 4, 200, 6, 0},
-		{0, 0, 0, 0, 0, 3, 1, 0x10, 12, 4, 0, 0x10, 12, 4, 0},
+func msSeeds() []opSeed {
+	return []opSeed{
+		{cfg: 0, ops: []byte{0, 0, 0, 0, 0, 7, 0, 7, 3, 1, 0, 0, 0, 8, 0, 11, 5, 0}},
+		{cfg: 1, ops: []byte{0, 0, 3, 3, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 4, 0, 0, 10}},
+		{cfg: 2, ops: []byte{0, 0, 0, 0, 0, 10, 0, 0, 4, 200, 6, 0}},
+		{cfg: 0, ops: []byte{0, 0, 0, 0, 3, 1, 0x10, 12, 4, 0, 0x10, 12, 4, 0}},
+		{cfg: 0, ops: []byte{0, 0, 0, 0, 0, 7, 0, 7, 3, 1, 0, 0, 0, 8, 0, 1, 0, 4, 5, 0}, from: 7, to: 9, reps: 40},
 	}
 }
 
 func FuzzMS(f *testing.F) {
 	for _, s := range msSeeds() {
-		f.Add(s)
+		f.Add(s.cfg, s.ops, s.from, s.to, s.reps)
 	}
 	pool := newMSPool(f)
-	f.Fuzz(func(t *testing.T, in []byte) {
-		runMS(t, pool, in)
+	f.Fuzz(func(t *testing.T, cfg uint8, ops []byte, from, to, reps uint8) {
+		runMS(t, pool, opSeed{cfg: cfg, ops: ops, from: from, to: to, reps: reps})
 	})
 }

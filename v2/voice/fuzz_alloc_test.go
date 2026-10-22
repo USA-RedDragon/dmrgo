@@ -15,8 +15,8 @@ func TestAllocsReceiverCorpus(t *testing.T) {
 	events2 := make([]voice.Event, 0, voice.MaxEvents)
 	outs := make([]voice.Output, 0, voice.MaxOutputs)
 	scratch := layer2.NewBurst()
-	for i, in := range append(seeds(p), corpusFiles(t, "FuzzReceiver")...) {
-		s := parseScript(in, p)
+	for i, in := range append(seeds(p), rxCorpus(t)...) {
+		s := parseScript(&in, p)
 		if s.badCfg {
 			continue
 		}

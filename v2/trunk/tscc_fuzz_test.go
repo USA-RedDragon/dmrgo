@@ -56,23 +56,20 @@ func voiceLCRaw(t testing.TB, dt enums.DataType) layer2.RawBurst {
 	return raw
 }
 
-func runTSCC(t *testing.T, pool burstPool, in []byte) {
+func runTSCC(t *testing.T, pool burstPool, in opSeed) {
 	cfg := tsccConfig()
-	if len(in) > 0 {
-		cfg.PayloadLen = 1 + int(in[0]&1)
-		cfg.Reg = in[0]&2 != 0
-		cfg.Authenticate = in[0]&4 != 0
-		in = in[1:]
-	}
+	cfg.PayloadLen = 1 + int(in.cfg&1)
+	cfg.Reg = in.cfg&2 != 0
+	cfg.Authenticate = in.cfg&4 != 0
 	ts, err := trunk.NewTSCC(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	out := make([]trunk.TSCCOutput, 0, trunk.MaxTSCCOutputs)
 	now := time.Duration(0)
-	for op := 0; op < maxFuzzOps && len(in) >= 2; op++ {
-		kind, arg := in[0], in[1]
-		in = in[2:]
+	script := in.script()
+	for op := range script.total {
+		kind, arg := script.op(op)
 		ch := uint16(tsccChannel)
 		if kind&0x80 != 0 {
 			ch = 10 + uint16(kind>>6&1)
@@ -100,20 +97,21 @@ func runTSCC(t *testing.T, pool burstPool, in []byte) {
 	}
 }
 
-func tsccSeeds() [][]byte {
-	return [][]byte{
-		{3, 0, 0, 1, 7, 2, 2, 1, 7, 0x81, 7, 6, 3, 1, 200},
-		{0, 3, 3, 1, 7, 5, 5, 1, 255, 0xc0, 8, 0x80, 6, 1, 255},
-		{6, 2, 0, 1, 1, 0, 9, 1, 7, 0, 0, 1, 255, 1, 255, 1, 255},
+func tsccSeeds() []opSeed {
+	return []opSeed{
+		{cfg: 3, ops: []byte{0, 0, 1, 7, 2, 2, 1, 7, 0x81, 7, 6, 3, 1, 200}},
+		{cfg: 0, ops: []byte{3, 3, 1, 7, 5, 5, 1, 255, 0xc0, 8, 0x80, 6, 1, 255}},
+		{cfg: 6, ops: []byte{2, 0, 1, 1, 0, 9, 1, 7, 0, 0, 1, 255, 1, 255, 1, 255}},
+		{cfg: 3, ops: []byte{0, 0, 1, 7, 0, 2, 0, 7, 1, 1, 0, 8, 1, 7}, from: 3, to: 5, reps: 40},
 	}
 }
 
 func FuzzTSCC(f *testing.F) {
 	for _, s := range tsccSeeds() {
-		f.Add(s)
+		f.Add(s.cfg, s.ops, s.from, s.to, s.reps)
 	}
 	pool := newInboundPool(f)
-	f.Fuzz(func(t *testing.T, in []byte) {
-		runTSCC(t, pool, in)
+	f.Fuzz(func(t *testing.T, cfg uint8, ops []byte, from, to, reps uint8) {
+		runTSCC(t, pool, opSeed{cfg: cfg, ops: ops, from: from, to: to, reps: reps})
 	})
 }

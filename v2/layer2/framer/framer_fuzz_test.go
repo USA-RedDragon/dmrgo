@@ -1,6 +1,7 @@
 package framer_test
 
 import (
+	"bytes"
 	"math/bits"
 	"reflect"
 	"slices"
@@ -11,6 +12,60 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/framer"
 )
+
+const (
+	maxScript   = 128
+	maxCuts     = 128
+	maxStream   = 4096
+	maxBitFlips = 64
+	maxNoise    = 128
+)
+
+func fuzzStream(pool [][33]byte, script, flips []byte) []byte {
+	script = script[:min(len(script), maxScript)]
+	var s []byte
+	for i := 0; i < len(script) && len(s) < maxStream; {
+		op := script[i]
+		i++
+		n := int(op&0x3f) + 1
+		switch op >> 6 {
+		case 0:
+			end := min(i+n, len(script))
+			s = append(s, script[i:end]...)
+			i = end
+		case 1:
+			if i+2 > len(script) {
+				i = len(script)
+				break
+			}
+			count := (int(op&0x3f)<<8 | int(script[i])) + 1
+			s = append(s, bytes.Repeat([]byte{script[i+1]}, min(count, maxStream-len(s)))...)
+			i += 2
+		case 2:
+			if i >= len(script) {
+				break
+			}
+			r := int(script[i]) + 1
+			i++
+			d := min(n, len(s))
+			for k := 0; k < r && d > 0 && len(s) < maxStream; k++ {
+				s = append(s, s[len(s)-d:]...)
+			}
+		case 3:
+			if len(pool) > 0 {
+				b := pool[int(op&0x3f)%len(pool)]
+				s = append(s, b[:]...)
+			}
+		}
+	}
+	s = s[:min(len(s), maxStream)]
+	flips = flips[:min(len(flips), maxBitFlips)]
+	for k := 0; k+1 < len(flips) && len(s) > 0; k += 2 {
+		i := (int(flips[k])<<8 | int(flips[k+1])) % (8 * len(s))
+		s[i/8] ^= 0x80 >> (i % 8)
+	}
+	return s
+}
 
 func syncAt(stream []byte, i int) uint64 {
 	var v uint64
@@ -141,25 +196,27 @@ func checkBursts(t *testing.T, cfg framer.Config, stream []byte, got []framer.Bu
 }
 
 type framerSeed struct {
-	stream, cuts []byte
+	script, cuts []byte
 	cfg          byte
 }
 
-func framerSeeds(tb testing.TB) []framerSeed {
-	tb.Helper()
-	var stream []byte
-	for _, b := range loadVoice(tb)[:8] {
-		stream = append(append(stream, 0x12, 0x34, 0x56), b[:]...)
+func framerSeeds(pool [][33]byte) []framerSeed {
+	script := make([]byte, 0, 40)
+	for k := range 8 {
+		script = append(script, 0x02, 0x12, 0x34, 0x56, 0xc0|byte(k))
 	}
+	tail := append([]byte{0x1e}, pool[0][2:]...)
 	return []framerSeed{
-		{stream, []byte{}, 0x10},
-		{stream, []byte{1, 7, 200, 0, 13}, 0x01},
-		{stream[5:], []byte{255}, 0xe8},
+		{script, []byte{}, 0x10},
+		{script, []byte{1, 7, 200, 0, 13}, 0x01},
+		{append(tail, script[5:]...), []byte{255}, 0xe8},
 	}
 }
 
-func checkFramer(t *testing.T, stream, cuts []byte, c byte) {
+func checkFramer(t *testing.T, pool [][33]byte, script, flips, cuts []byte, c byte) {
 	cfg := fuzzConfig(c)
+	stream := fuzzStream(pool, script, flips)
+	cuts = cuts[:min(len(cuts), maxCuts)]
 	whole := newFramer(t, &cfg).Write(stream, 8*len(stream))
 	checkBursts(t, cfg, stream, whole)
 	if !slices.ContainsFunc(cuts, func(b byte) bool { return b != 0 }) {
@@ -186,10 +243,13 @@ func checkFramer(t *testing.T, stream, cuts []byte, c byte) {
 }
 
 func FuzzFramer(f *testing.F) {
-	for _, s := range framerSeeds(f) {
-		f.Add(s.stream, s.cuts, s.cfg)
+	pool := loadVoice(f)
+	for _, s := range framerSeeds(pool) {
+		f.Add(s.script, []byte{}, s.cuts, s.cfg)
 	}
-	f.Fuzz(checkFramer)
+	f.Fuzz(func(t *testing.T, script, flips, cuts []byte, c byte) {
+		checkFramer(t, pool, script, flips, cuts, c)
+	})
 }
 
 type findsBurstSeed struct {
@@ -223,6 +283,7 @@ func newFindsBurst(tb testing.TB) *findsBurst {
 
 func (fb *findsBurst) check(t *testing.T, noise []byte, offset uint16, which byte, flips []byte, c byte) {
 	cfg := fuzzConfig(c)
+	noise = noise[:min(len(noise), maxNoise)]
 	burst := fb.synced[int(which)%len(fb.synced)]
 	thr := threshold(cfg)
 	for _, fl := range flips[:min(len(flips), thr)] {

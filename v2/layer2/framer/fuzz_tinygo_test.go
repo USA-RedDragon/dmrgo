@@ -10,8 +10,9 @@ func TestTinyGoFuzzSeeds(t *testing.T) {
 	for _, s := range searchSeeds(t) {
 		checkSearch(t, s.stream, s.nbits, s.start, s.threshold)
 	}
-	for _, s := range framerSeeds(t) {
-		checkFramer(t, s.stream, s.cuts, s.cfg)
+	pool := loadVoice(t)
+	for _, s := range framerSeeds(pool) {
+		checkFramer(t, pool, s.script, nil, s.cuts, s.cfg)
 	}
 	fb := newFindsBurst(t)
 	for _, s := range findsBurstSeeds {

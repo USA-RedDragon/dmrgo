@@ -67,14 +67,26 @@ func TestDifferentialBLAKE2b(t *testing.T) {
 	}
 }
 
+const (
+	maxPattern = 128
+	maxMsg     = 4096
+)
+
 func FuzzBLAKE2b(f *testing.F) {
 	for _, n := range []int{0, 1, 127, 128, 129, 255, 256, 257} {
-		f.Add(uint8(16), make([]byte, n%65), make([]byte, n), uint64(n))
+		f.Add(uint8(16), make([]byte, n%65), uint16(n), []byte(nil), uint64(n))
 	}
-	f.Fuzz(func(t *testing.T, size uint8, key, msg []byte, seed uint64) {
+	buf := make([]byte, maxMsg)
+	f.Fuzz(func(t *testing.T, size uint8, key []byte, n uint16, pattern []byte, seed uint64) {
 		s := 1 + int(size)%64
 		if len(key) > 64 {
 			key = key[:64]
+		}
+		msg := buf[:int(n)%maxMsg]
+		pattern = pattern[:min(len(pattern), maxPattern)]
+		clear(msg)
+		for i := 0; len(pattern) > 0 && i < len(msg); {
+			i += copy(msg[i:], pattern)
 		}
 		checkBLAKE2b(t, rand.New(rand.NewPCG(seed, 10)), s, key, msg)
 	})

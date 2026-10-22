@@ -7,6 +7,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
+const (
+	maxBoundsAlias = 64
+	maxBoundsRaw   = 14 * 9
+)
+
 func runTalkerAliasBounds(t *testing.T, alias string, raw []byte) {
 	t.Helper()
 	var a pdu.TalkerAliasAssembler
@@ -44,5 +49,7 @@ func TestTalkerAliasBounds(t *testing.T) {
 func FuzzTalkerAliasBounds(f *testing.F) {
 	f.Add("N0CALL", []byte{0x04, 0x00, 0xff, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46})
 	f.Add("ä alias", []byte{0x05, 0x00, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x06, 0x00, 1, 2, 3, 4, 5, 6, 7})
-	f.Fuzz(runTalkerAliasBounds)
+	f.Fuzz(func(t *testing.T, alias string, raw []byte) {
+		runTalkerAliasBounds(t, alias[:min(len(alias), maxBoundsAlias)], raw[:min(len(raw), maxBoundsRaw)])
+	})
 }

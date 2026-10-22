@@ -10,12 +10,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-func timingScript(t testing.TB, in []byte) {
+const maxTimingScript = 14 * 9
+
+func timingScript(t testing.TB, cfg uint8, in []byte, from, to, reps uint8) {
 	t.Helper()
-	if len(in) < 1 {
-		return
-	}
-	m, err := csbk.NewTiming(&csbk.TimingConfig{ID: uint32(in[0])<<4 | 1, DynamicID: in[0] >> 6, Slot: enums.Slot(in[0]>>5&1 + 1), Seed: uint64(in[0])})
+	m, err := csbk.NewTiming(&csbk.TimingConfig{ID: uint32(cfg)<<4 | 1, DynamicID: cfg >> 6, Slot: enums.Slot(cfg>>5&1 + 1), Seed: uint64(cfg)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,8 +47,10 @@ func timingScript(t testing.TB, in []byte) {
 			t.Fatalf("op %d: leader %v in %v", op, ok, m.State())
 		}
 	}
-	in = in[1:]
-	for i := 0; i+9 <= len(in) && i < 9*maxFuzzOps; i += 9 {
+	in = in[:min(len(in), maxTimingScript)]
+	lo, hi, total := scriptLoop(len(in)/9, from, to, reps)
+	for s := range total {
+		i := 9 * scriptIndex(s, lo, hi, reps)
 		op, f := in[i], in[i+1:i+9]
 		switch op & 7 {
 		case 0, 1, 2:
@@ -108,27 +109,33 @@ func timingQuiet(m *csbk.Timing, now time.Duration, op byte, out []csbk.Output) 
 	return m.Tick(now, out)
 }
 
-func timingSeeds() [][]byte {
-	return [][]byte{
-		{0x95, 5, 54, 0, 0, 0, 0, 0, 0, 0, 5, 54, 0, 0, 0, 0, 0, 0, 0},
-		{0x81, 0, 0, 0, 0, 0x70, 0x07, 0, 0, 0x76, 5, 1, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0},
-		{0x42, 0, 0, 0x28, 0, 0, 0x6A, 0, 0, 0x34, 5, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x30, 1, 0, 0, 0, 0, 0, 0, 0},
-		{0xC3, 0x13, 0, 0, 0, 0, 0, 0, 0, 0, 5, 120, 0, 0, 0, 0, 0, 0, 0, 0x17, 0, 0, 0, 0, 0, 0, 0, 0},
+type timingSeed struct {
+	cfg uint8
+	in  []byte
+}
+
+func timingSeeds() []timingSeed {
+	return []timingSeed{
+		{0x95, []byte{5, 54, 0, 0, 0, 0, 0, 0, 0, 5, 54, 0, 0, 0, 0, 0, 0, 0}},
+		{0x81, []byte{0, 0, 0, 0, 0x70, 0x07, 0, 0, 0x76, 5, 1, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0}},
+		{0x42, []byte{0, 0, 0x28, 0, 0, 0x6A, 0, 0, 0x34, 5, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x30, 1, 0, 0, 0, 0, 0, 0, 0}},
+		{0xC3, []byte{0x13, 0, 0, 0, 0, 0, 0, 0, 0, 5, 120, 0, 0, 0, 0, 0, 0, 0, 0x17, 0, 0, 0, 0, 0, 0, 0, 0}},
 	}
 }
 
 func TestTimingFuzzSeeds(t *testing.T) {
 	t.Parallel()
-	for _, in := range timingSeeds() {
-		timingScript(t, in)
+	for _, s := range timingSeeds() {
+		timingScript(t, s.cfg, s.in, 0, 0, 0)
 	}
 }
 
 func FuzzTiming(f *testing.F) {
-	for _, in := range timingSeeds() {
-		f.Add(in)
+	for _, s := range timingSeeds() {
+		f.Add(s.cfg, s.in, uint8(0), uint8(0), uint8(0))
 	}
-	f.Fuzz(func(t *testing.T, in []byte) {
-		timingScript(t, in)
+	f.Add(uint8(0x95), timingSeeds()[0].in, uint8(0), uint8(1), uint8(40))
+	f.Fuzz(func(t *testing.T, cfg uint8, in []byte, from, to, reps uint8) {
+		timingScript(t, cfg, in, from, to, reps)
 	})
 }

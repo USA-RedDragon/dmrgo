@@ -1,4 +1,5 @@
 go test fuzz v1
-[]byte("00000000000000\xffW\xd7Y\xf5\xde0000000000000")
+[]byte("@\r0\x05\xffW\xd7Y\xf5\xde@\f0")
+[]byte("")
 []byte("0")
 byte('\x00')

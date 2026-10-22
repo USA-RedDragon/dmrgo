@@ -7,16 +7,16 @@ import "testing"
 func TestFuzzCorpus(t *testing.T) {
 	t.Parallel()
 	pool := newPool(t)
-	for _, in := range fuzzSeeds() {
-		runFollower(t, pool, in)
+	for _, s := range fuzzSeeds() {
+		runFollower(t, pool, s)
 	}
 	capPool := newCapPlusPool(t)
-	for _, in := range capPlusFuzzSeeds() {
-		runCapPlusFollower(t, capPool, in)
+	for _, s := range capPlusFuzzSeeds() {
+		runCapPlusFollower(t, capPool, s)
 	}
 	msPool := newMSPool(t)
-	for _, in := range msSeeds() {
-		runMS(t, msPool, in)
+	for _, s := range msSeeds() {
+		runMS(t, msPool, s)
 	}
 	inPool := newInboundPool(t)
 	for _, in := range tsccSeeds() {

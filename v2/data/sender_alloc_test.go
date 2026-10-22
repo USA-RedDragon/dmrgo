@@ -113,9 +113,11 @@ func TestAllocsSenderWindow(t *testing.T) {
 
 func TestAllocsSenderCorpus(t *testing.T) {
 	p, msgs := txPool(t), txMessages(t)
-	for i, in := range append(txSeeds(), corpusFiles(t, "FuzzSender")...) {
-		base := testing.AllocsPerRun(3, func() { checkTxScript(t, in[:min(len(in), 3)], p, msgs) })
-		allocs := testing.AllocsPerRun(3, func() { checkTxScript(t, in, p, msgs) })
+	for i, in := range append(txSeeds(), txCorpus(t)...) {
+		cfg := in
+		cfg.ops = nil
+		base := testing.AllocsPerRun(3, func() { checkTxScript(t, &cfg, p, msgs) })
+		allocs := testing.AllocsPerRun(3, func() { checkTxScript(t, &in, p, msgs) })
 		if allocs > base {
 			t.Errorf("input %d: %v allocations, %v of them in NewSender", i, allocs, base)
 		}
