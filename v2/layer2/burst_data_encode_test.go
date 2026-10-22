@@ -1,9 +1,11 @@
 package layer2_test
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -172,12 +174,20 @@ func TestBurstEncode_FullLCDataTypeMustMatchSlotType(t *testing.T) {
 	}
 }
 
-var _ = []layer2.Data{
-	(*pdu.FullLinkControl)(nil), (*pdu.CSBK)(nil), (*pdu.PIHeader)(nil), (*pdu.DataHeader)(nil),
-	(*pdu.MBCHeader)(nil), (*pdu.MBCContinuation)(nil), (*pdu.CGAPContinuation)(nil),
-	(*pdu.MVAPContinuation)(nil), (*pdu.BCAPContinuation)(nil), (*pdu.VNAPContinuation)(nil),
-	(*pdu.UnifiedSingleBlockData)(nil), (*pdu.Rate12Data)(nil), (*pdu.Rate34Data)(nil),
-	(*pdu.Rate1Data)(nil), (*pdu.PRFill)(nil),
+func TestBuildBurst_TypedNilData(t *testing.T) {
+	t.Parallel()
+
+	for _, d := range []layer2.Data{
+		(*pdu.FullLinkControl)(nil), (*pdu.CSBK)(nil), (*pdu.PIHeader)(nil), (*pdu.DataHeader)(nil),
+		(*pdu.MBCHeader)(nil), (*pdu.MBCContinuation)(nil), (*pdu.CGAPContinuation)(nil),
+		(*pdu.MVAPContinuation)(nil), (*pdu.BCAPContinuation)(nil), (*pdu.VNAPContinuation)(nil),
+		(*pdu.UnifiedSingleBlockData)(nil), (*pdu.Rate12Data)(nil), (*pdu.Rate34Data)(nil),
+		(*pdu.Rate1Data)(nil), (*pdu.PRFill)(nil),
+	} {
+		if _, err := layer2.BuildBurst(d, 1, layer2.SyncSourceBS); !errors.Is(err, dmrgo.ErrNilArgument) {
+			t.Errorf("BuildBurst(%T(nil)) = %v, want dmrgo.ErrNilArgument", d, err)
+		}
+	}
 }
 
 type customData struct{ info [12]byte }
@@ -226,7 +236,7 @@ func TestBurstEncode_DataErrors(t *testing.T) {
 		{"NilData", dataBurst(enums.DataTypeCSBK, nil), "no Data"},
 		{"CSBKAsRate34", dataBurst(enums.DataTypeRate34, csbk), "cannot carry Data of another data type"},
 		{"LCAsCSBK", dataBurst(enums.DataTypeCSBK, &pdu.FullLinkControl{}), "cannot carry"},
-		{"TypedNil", dataBurst(enums.DataTypeCSBK, (*pdu.CSBK)(nil)), "cannot carry"},
+		{"TypedNil", dataBurst(enums.DataTypeCSBK, (*pdu.CSBK)(nil)), "nil argument"},
 		{"ReservedType", dataBurst(enums.DataTypeReserved, csbk), "cannot carry"},
 		{"BadField", dataBurst(enums.DataTypeCSBK, &pdu.CSBK{Opcode: 0x40}), "CSBK.Opcode"},
 	}

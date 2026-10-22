@@ -770,7 +770,7 @@ func pduInfo(d Data, info *[25]byte) (enums.DataType, bool, error) {
 	default:
 		return bptcInfo(d, info)
 	}
-	return 0, false, errNilPointerData
+	return 0, false, dmrgo.ErrNilArgument
 }
 
 func bptcInfo(d Data, info *[25]byte) (enums.DataType, bool, error) {
@@ -780,79 +780,79 @@ func bptcInfo(d Data, info *[25]byte) (enums.DataType, bool, error) {
 	switch p := d.(type) {
 	case *pdu.FullLinkControl:
 		if p == nil {
-			return 0, false, errNilPointerData
+			return 0, false, dmrgo.ErrNilArgument
 		}
 		dt = p.DataType()
 		c, err = p.Encode()
 	case *pdu.CSBK:
 		if p == nil {
-			return 0, false, errNilPointerData
+			return 0, false, dmrgo.ErrNilArgument
 		}
 		dt = p.DataType()
 		c, err = p.Encode()
 	case *pdu.PIHeader:
 		if p == nil {
-			return 0, false, errNilPointerData
+			return 0, false, dmrgo.ErrNilArgument
 		}
 		dt = p.DataType()
 		c, err = p.Encode()
 	case *pdu.DataHeader:
 		if p == nil {
-			return 0, false, errNilPointerData
+			return 0, false, dmrgo.ErrNilArgument
 		}
 		dt = p.DataType()
 		c, err = p.Encode()
 	case *pdu.MBCHeader:
 		if p == nil {
-			return 0, false, errNilPointerData
+			return 0, false, dmrgo.ErrNilArgument
 		}
 		dt = p.DataType()
 		c, err = p.Encode()
 	case *pdu.MBCContinuation:
 		if p == nil {
-			return 0, false, errNilPointerData
+			return 0, false, dmrgo.ErrNilArgument
 		}
 		dt = p.DataType()
 		c, err = p.Encode()
 	case *pdu.CGAPContinuation:
 		if p == nil {
-			return 0, false, errNilPointerData
+			return 0, false, dmrgo.ErrNilArgument
 		}
 		dt = p.DataType()
 		c, err = p.Encode()
 	case *pdu.MVAPContinuation:
 		if p == nil {
-			return 0, false, errNilPointerData
+			return 0, false, dmrgo.ErrNilArgument
 		}
 		dt = p.DataType()
 		c, err = p.Encode()
 	case *pdu.BCAPContinuation:
 		if p == nil {
-			return 0, false, errNilPointerData
+			return 0, false, dmrgo.ErrNilArgument
 		}
 		dt = p.DataType()
 		c, err = p.Encode()
 	case *pdu.VNAPContinuation:
 		if p == nil {
-			return 0, false, errNilPointerData
+			return 0, false, dmrgo.ErrNilArgument
 		}
 		dt = p.DataType()
 		c, err = p.Encode()
 	case *pdu.UnifiedSingleBlockData:
 		if p == nil {
-			return 0, false, errNilPointerData
+			return 0, false, dmrgo.ErrNilArgument
 		}
 		dt = p.DataType()
 		c, err = p.Encode()
 	case *pdu.Rate12Data:
 		if p == nil {
-			return 0, false, errNilPointerData
+			return 0, false, dmrgo.ErrNilArgument
 		}
 		dt = p.DataType()
 		c, err = p.Encode()
 	case *pdu.PRFill:
 		if p == nil {
-			return 0, false, errNilPointerData
+			return 0, false, dmrgo.ErrNilArgument
 		}
 		dt = p.DataType()
 		c, err = p.Encode()

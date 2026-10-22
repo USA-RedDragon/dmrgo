@@ -106,7 +106,6 @@ var (
 	errNotAToF         error = &wrapError{"the voice burst position is not A to F", ErrVoicePosition}
 	errEMBColorCode          = errors.New("layer2: a data burst with an EMB needs the color code of its slot type")
 	errPayloadType           = errors.New("layer2: the decoded payload has another data type than the slot type; set Data")
-	errNilPointerData        = errors.New("layer2: the data burst cannot carry a nil Data pointer")
 	errDataPDUType     error = &wrapError{"the data burst cannot carry Data of another data type", ErrDataType}
 	errNotBPTC         error = &wrapError{"the data type is not BPTC(196,96) coded", ErrDataType}
 	errSyncPattern           = errors.New("layer2: not a Table 9.2 SYNC pattern")
