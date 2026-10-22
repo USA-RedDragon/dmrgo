@@ -270,20 +270,11 @@ static void test_udt_copy(void) {
 		failures++;
 		return;
 	}
-	dmrgo_trunk_udt_t *u1 = NULL, *u2 = NULL, *u3 = NULL;
-	OK(dmrgo_trunk_follower_udt(f, &u1));
-	OK(dmrgo_trunk_follower_udt(f, &u2));
-	CHECK(u1 != NULL && u2 != NULL && u1 != u2);
-	OK(dmrgo_trunk_udt_set_len(u1, 40));
-	int64_t len = -1;
-	OK(dmrgo_trunk_udt_get_len(u2, &len));
-	CHECK(len == 0);
-	OK(dmrgo_trunk_follower_udt(f, &u3));
-	OK(dmrgo_trunk_udt_get_len(u3, &len));
-	CHECK(len == 0);
-	OK(dmrgo_trunk_udt_free(u1));
-	OK(dmrgo_trunk_udt_free(u2));
-	OK(dmrgo_trunk_udt_free(u3));
+	dmrgo_trunk_udt_t u;
+	memset(&u, 0xab, sizeof u);
+	bool ok = true;
+	OK(dmrgo_trunk_follower_udt(f, &u, &ok));
+	CHECK(!ok && u.crc_ok == false && u.data[0] == 0);
 	OK(dmrgo_trunk_follower_free(f));
 
 	dmrgo_ipsc_peer_list_t *pl = NULL;
