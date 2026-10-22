@@ -726,6 +726,16 @@ func (m *Timing) Tick(now time.Duration, dst []Output) []Output {
 	return dst
 }
 
+// Lost tells the Timing that the transport lost the signal. It runs the
+// timers as Tick does, and allocates only when dst has no room for
+// MaxOutputs outputs. (ETSI TS 102 361-2 clause 6.2)
+func (m *Timing) Lost(now time.Duration, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+	return m.Tick(now, dst)
+}
+
 func (m *Timing) timers(now time.Duration) {
 	if m.noLeader.due(now) && m.pend == ctNone {
 		m.schedule(now, ctRequest)

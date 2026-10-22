@@ -39,6 +39,34 @@ func (a OACSUAnswer) String() string {
 	return "OACSUAnswer(" + text.Int(int64(a)) + ")"
 }
 
+// ResponderState is the state of a Responder.
+type ResponderState uint8
+
+// The ResponderState values.
+const (
+	// ResponderIdle has no answer to send.
+	ResponderIdle ResponderState = iota
+	// ResponderAccess waits for an idle channel or the end of a holdoff
+	// before it sends the answer.
+	ResponderAccess
+	// ResponderSending sends the answer at the next Tick.
+	ResponderSending
+)
+
+// String returns the name of the state. It allocates only for a value
+// without a name.
+func (s ResponderState) String() string {
+	switch s {
+	case ResponderIdle:
+		return idleName
+	case ResponderAccess:
+		return accessName
+	case ResponderSending:
+		return sendingName
+	}
+	return "ResponderState(" + text.Int(int64(s)) + ")"
+}
+
 // ResponderConfig configures NewResponder.
 type ResponderConfig struct {
 	// Address is the 24-bit address of the radio. The Responder answers
@@ -137,12 +165,20 @@ func (r *Responder) Reset() {
 	r.s.busy = false
 }
 
-// Pending reports whether an answer waits to go out.
-func (r *Responder) Pending() bool {
+// State returns the state of the Responder. It is not ResponderIdle while
+// an answer waits to go out.
+func (r *Responder) State() ResponderState {
 	if r == nil {
-		return false
+		return 0
 	}
-	return r.s.state != sendIdle
+	switch r.s.state {
+	case sendQualify, sendHoldoff:
+		return ResponderAccess
+	case sendBursts:
+		return ResponderSending
+	case sendIdle:
+	}
+	return ResponderIdle
 }
 
 // Channel reports whether the logical channel is busy, as

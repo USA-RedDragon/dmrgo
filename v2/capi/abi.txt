@@ -362,9 +362,12 @@ sym #define DMRGO_CSBK_REQUESTER_LOST_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 sym #define DMRGO_CSBK_REQUESTER_SENDING ((dmrgo_csbk_requester_state_t)2)
 sym #define DMRGO_CSBK_REQUESTER_TICK_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 sym #define DMRGO_CSBK_REQUESTER_WAITING ((dmrgo_csbk_requester_state_t)3)
+sym #define DMRGO_CSBK_RESPONDER_ACCESS ((dmrgo_csbk_responder_state_t)1)
 sym #define DMRGO_CSBK_RESPONDER_BURST_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 sym #define DMRGO_CSBK_RESPONDER_DECODED_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
+sym #define DMRGO_CSBK_RESPONDER_IDLE ((dmrgo_csbk_responder_state_t)0)
 sym #define DMRGO_CSBK_RESPONDER_LOST_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
+sym #define DMRGO_CSBK_RESPONDER_SENDING ((dmrgo_csbk_responder_state_t)2)
 sym #define DMRGO_CSBK_RESPONDER_TICK_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 sym #define DMRGO_CSBK_RESULT_ANSWERED ((dmrgo_csbk_result_t)1)
 sym #define DMRGO_CSBK_RESULT_CANCELED ((dmrgo_csbk_result_t)6)
@@ -385,6 +388,7 @@ sym #define DMRGO_CSBK_TIMING_LEADER ((dmrgo_csbk_timing_state_t)3)
 sym #define DMRGO_CSBK_TIMING_LEADER_AND_TIMING_KNOWN ((dmrgo_csbk_timing_state_t)2)
 sym #define DMRGO_CSBK_TIMING_LEADER_AND_TIMING_UNKNOWN ((dmrgo_csbk_timing_state_t)0)
 sym #define DMRGO_CSBK_TIMING_LEADER_UNKNOWN ((dmrgo_csbk_timing_state_t)1)
+sym #define DMRGO_CSBK_TIMING_LOST_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 sym #define DMRGO_CSBK_TIMING_TERMINATOR_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 sym #define DMRGO_CSBK_TIMING_TICK_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 sym #define DMRGO_CSBK_WAKEUP_BURST_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
@@ -1543,8 +1547,9 @@ sym int dmrgo_csbk_responder_decoded_need(dmrgo_csbk_responder_t *self, dmrgo_du
 sym int dmrgo_csbk_responder_free(dmrgo_csbk_responder_t *self);
 sym int dmrgo_csbk_responder_lost(dmrgo_csbk_responder_t *self, dmrgo_duration_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_csbk_responder_lost_need(dmrgo_csbk_responder_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
-sym int dmrgo_csbk_responder_pending(dmrgo_csbk_responder_t *self, bool *out);
 sym int dmrgo_csbk_responder_reset(dmrgo_csbk_responder_t *self);
+sym int dmrgo_csbk_responder_state(dmrgo_csbk_responder_t *self, dmrgo_csbk_responder_state_t *out);
+sym int dmrgo_csbk_responder_state_string(dmrgo_csbk_responder_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_csbk_responder_tick(dmrgo_csbk_responder_t *self, dmrgo_duration_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_csbk_responder_tick_need(dmrgo_csbk_responder_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 sym int dmrgo_csbk_result_string(dmrgo_csbk_result_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -1558,6 +1563,8 @@ sym int dmrgo_csbk_timing_decoded_need(dmrgo_csbk_timing_t *self, dmrgo_duration
 sym int dmrgo_csbk_timing_free(dmrgo_csbk_timing_t *self);
 sym int dmrgo_csbk_timing_join(dmrgo_csbk_timing_t *self, dmrgo_duration_t now);
 sym int dmrgo_csbk_timing_leader(dmrgo_csbk_timing_t *self, uint8_t *dynamic_id, uint32_t *id, bool *ok);
+sym int dmrgo_csbk_timing_lost(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_csbk_timing_lost_need(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 sym int dmrgo_csbk_timing_reset(dmrgo_csbk_timing_t *self);
 sym int dmrgo_csbk_timing_state(dmrgo_csbk_timing_t *self, dmrgo_csbk_timing_state_t *out);
 sym int dmrgo_csbk_timing_state_string(dmrgo_csbk_timing_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -3095,6 +3102,7 @@ sym typedef uint8_t dmrgo_csbk_output_kind_t;
 sym typedef uint8_t dmrgo_csbk_preambles_state_t;
 sym typedef uint8_t dmrgo_csbk_reason_t;
 sym typedef uint8_t dmrgo_csbk_requester_state_t;
+sym typedef uint8_t dmrgo_csbk_responder_state_t;
 sym typedef uint8_t dmrgo_csbk_result_t;
 sym typedef uint8_t dmrgo_csbk_service_t;
 sym typedef uint8_t dmrgo_csbk_timing_state_t;

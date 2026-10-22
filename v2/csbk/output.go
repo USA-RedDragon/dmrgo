@@ -8,7 +8,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-const idleName = "Idle"
+const (
+	idleName    = "Idle"
+	accessName  = "Access"
+	sendingName = "Sending"
+)
 
 // MaxOutputs is the most outputs that one call of a machine method appends.
 const MaxOutputs = 2

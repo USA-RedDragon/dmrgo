@@ -10093,28 +10093,28 @@ func dmrgo_csbk_responder_lost(c_self *C.dmrgo_csbk_responder_t, c_now C.dmrgo_d
 	return C.DMRGO_OK
 }
 
-//export dmrgo_csbk_responder_pending
-func dmrgo_csbk_responder_pending(c_self *C.dmrgo_csbk_responder_t, c_out *C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_csbk_Responder(c_self)
-	r0 := h.v.Pending()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.bool(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_csbk_responder_reset
 func dmrgo_csbk_responder_reset(c_self *C.dmrgo_csbk_responder_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Responder(c_self)
 	h.v.Reset()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_responder_state
+func dmrgo_csbk_responder_state(c_self *C.dmrgo_csbk_responder_t, c_out *C.dmrgo_csbk_responder_state_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_csbk_Responder(c_self)
+	r0 := h.v.State()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_csbk_responder_state_t(r0)
+	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -10183,6 +10183,22 @@ func dmrgo_csbk_responder_tick(c_self *C.dmrgo_csbk_responder_t, c_now C.dmrgo_d
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_responder_state_string
+func dmrgo_csbk_responder_state_string(c_self C.dmrgo_csbk_responder_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_csbk.ResponderState(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
 	return C.DMRGO_OK
 }
 
@@ -10464,6 +10480,68 @@ func dmrgo_csbk_timing_leader(c_self *C.dmrgo_csbk_timing_t, c_dynamic_id *C.uin
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_lost_need
+func dmrgo_csbk_timing_lost_need(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_csbk_Timing(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_csbk.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_csbk_timing_lost
+func dmrgo_csbk_timing_lost(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_csbk_Timing(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_csbk.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Lost(time.Duration(c_now), a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_csbk_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_csbk_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
 	return C.DMRGO_OK
 }
 
