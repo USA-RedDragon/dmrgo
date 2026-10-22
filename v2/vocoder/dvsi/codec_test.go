@@ -234,6 +234,40 @@ func TestCodecTimeout(t *testing.T) {
 	checkSim(t, d)
 }
 
+func TestCodecLateReply(t *testing.T) {
+	t.Parallel()
+
+	pairs := dvsisim.Pairs(6)
+	for _, opt := range []dvsisim.Options{{}, {Chunk: 3}, {Datagram: true}} {
+		d := dvsisim.New(pairs, opt)
+		c, err := dvsi.New(d, &dvsi.Config{Timeout: 20 * time.Millisecond})
+		if err != nil {
+			t.Fatal(err)
+		}
+		d.Late = 1
+		if _, err := c.Decode(nil, pairs[0].Slot); !errors.Is(err, dvsi.ErrTimeout) {
+			t.Fatalf("%+v: Decode with a late reply = %v", opt, err)
+		}
+		for i, p := range pairs[1:] {
+			pcm, err := c.Decode(nil, p.Slot)
+			if err != nil || !slices.Equal(pcm, p.PCM[:]) {
+				t.Fatalf("%+v: Decode %d after a late reply = %v, right audio %v", opt, i+1, err, slices.Equal(pcm, p.PCM[:]))
+			}
+		}
+		d.Late = 1
+		if _, err := c.Encode(pairs[0].PCM[:]); !errors.Is(err, dvsi.ErrTimeout) {
+			t.Fatalf("%+v: Encode with a late reply = %v", opt, err)
+		}
+		for i, p := range pairs[1:] {
+			slot, err := c.Encode(p.PCM[:])
+			if err != nil || slot != p.Slot {
+				t.Fatalf("%+v: Encode %d after a late reply = %x, %v", opt, i+1, slot, err)
+			}
+		}
+		checkSim(t, d)
+	}
+}
+
 type deadlinePort struct {
 	*dvsisim.Device
 	deadlines int
