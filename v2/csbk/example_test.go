@@ -11,6 +11,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
+// Example sends an OACSU call request from a Requester to a
+// Responder and reads the answer back.
 func Example() {
 	q, _ := csbk.NewRequester(&csbk.RequesterConfig{ColorCode: 1, Source: layer2.SyncSourceMS})
 	r, _ := csbk.NewResponder(&csbk.ResponderConfig{Address: 1002, ColorCode: 1, Source: layer2.SyncSourceMS})
@@ -35,6 +37,8 @@ func Example() {
 	// Done Answered
 }
 
+// ExampleRequester_RequestRadioCheck sends a radio check with 5 preambles
+// and no retries, and reports NoAnswer when no radio replies.
 func ExampleRequester_RequestRadioCheck() {
 	q, _ := csbk.NewRequester(&csbk.RequesterConfig{ColorCode: 7, Source: layer2.SyncSourceMS, Retries: -1})
 	if err := q.RequestRadioCheck(0, 3140598, 3191868, &csbk.RequestOptions{Preambles: 5}); err != nil {
@@ -60,6 +64,8 @@ func ExampleRequester_RequestRadioCheck() {
 	// 6 bursts, NoAnswer at 2.3s
 }
 
+// ExamplePreambles follows the Pre_CSBKs of a call alert and
+// reports the end of the announced blocks, then the CSBK that they announce.
 func ExamplePreambles() {
 	q, _ := csbk.NewRequester(&csbk.RequesterConfig{Source: layer2.SyncSourceMS})
 	_ = q.RequestCallAlert(0, 3191868, 3140598, &csbk.RequestOptions{Preambles: 2})
@@ -82,6 +88,8 @@ func ExamplePreambles() {
 	// Joined to 3191868 until 0s
 }
 
+// ExampleWakeup sends BS_Dwn_Act to wake a repeater and reports
+// NoAnswer when the repeater does not reply.
 func ExampleWakeup() {
 	w, _ := csbk.NewWakeup(&csbk.WakeupConfig{ColorCode: 7})
 	_ = w.Wake(0, 314926, 3191868)

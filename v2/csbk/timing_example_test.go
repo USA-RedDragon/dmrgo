@@ -10,6 +10,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
+// ExampleTiming joins the channel timing of a leader from a
+// CT_CSBK beacon and counts the CT_CSBK_Prop bursts that it then sends.
 func ExampleTiming() {
 	m, err := csbk.NewTiming(&csbk.TimingConfig{ID: 100, DynamicID: 2, Slot: enums.Slot1, Seed: 1})
 	if err != nil {

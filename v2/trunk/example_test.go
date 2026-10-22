@@ -11,6 +11,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/trunk/trunkauth"
 )
 
+// ExampleFollower reads the site from an Aloha and tunes to the
+// channel of a talkgroup voice grant.
 func ExampleFollower() {
 	var plan trunk.ChannelPlan
 	_ = plan.AddRule(trunk.ChannelRule{First: 1, Last: 200, RXHz: 451_000_000, StepHz: 12_500})

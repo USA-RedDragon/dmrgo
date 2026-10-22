@@ -9,6 +9,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
+// Example finds a burst at a bit offset in a stream of bits and
+// decodes it.
 func Example() {
 	lc := pdu.LCBytes{0x00, 0x00, 0x00, 0x00, 0x00, 0x5b, 0x00, 0x30, 0x39}
 	cw, _ := lc.Codeword(enums.DataTypeTerminatorWithLC)

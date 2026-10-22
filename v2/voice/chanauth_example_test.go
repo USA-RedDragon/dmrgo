@@ -12,6 +12,9 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
+// ExampleTransmitter_Burst starts a call with channel
+// authentication and moves to the Header state when the repeater sends
+// back the header.
 func ExampleTransmitter_Burst() {
 	tx, err := voice.NewTransmitter(&voice.TransmitterConfig{ColorCode: 1, Source: layer2.SyncSourceMS, Silence: vocoder.AMBESilenceSlot(), ChanAuth: constants.TMSChanAuth})
 	if err != nil {
