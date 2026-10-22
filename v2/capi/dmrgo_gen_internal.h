@@ -65,10 +65,6 @@ static inline int dmrgo_vocoder_codec_vtable_t__silence(const dmrgo_vocoder_code
 	return t->silence(t->user, out);
 }
 
-static inline int dmrgo_vocoder_register_factory_fn_t__call(dmrgo_vocoder_register_factory_fn_t f, dmrgo_vocoder_codec_t **out) {
-	return f.fn(f.user, out);
-}
-
 static inline int dmrgo_dvsi_port_vtable_t__read(const dmrgo_dvsi_port_vtable_t *t, uint8_t *p, size_t p_len, int64_t *out) {
 	return t->read(t->user, p, p_len, out);
 }

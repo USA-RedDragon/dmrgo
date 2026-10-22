@@ -8,7 +8,6 @@ package main
 #include "dmrgo_gen_internal.h"
 
 void *dmrgo__fnptr0(void);
-void *dmrgo__fnptr1(void);
 */
 import "C"
 
@@ -5299,49 +5298,6 @@ func dmrgo_vocoder_codec_from_vtable(c_vt *C.dmrgo_vocoder_codec_vtable_t, c_out
 	}
 	*c_out = new_vocoder_Codec(&vt_vocoder_Codec{t: *c_vt})
 	return C.DMRGO_OK
-}
-
-func fnout1(v func() (g_vocoder.Codec, error)) C.dmrgo_vocoder_register_factory_fn_t {
-	if v == nil {
-		return C.dmrgo_vocoder_register_factory_fn_t{}
-	}
-	return C.dmrgo_vocoder_register_factory_fn_t{fn: (*[0]byte)(C.dmrgo__fnptr1()), user: newUser(v)}
-}
-
-type cb1 struct {
-	f  C.dmrgo_vocoder_register_factory_fn_t
-	r0 *C.dmrgo_vocoder_codec_t
-}
-
-func fnin1(p C.dmrgo_vocoder_register_factory_fn_t) func() (g_vocoder.Codec, error) {
-	if p.fn == nil {
-		return nil
-	}
-	if unsafe.Pointer(p.fn) == C.dmrgo__fnptr1() {
-		return hvalue[func() (g_vocoder.Codec, error)](uintptr(p.user))
-	}
-	c := &cb1{f: p}
-	return c.call
-}
-
-func (c *cb1) call() (o0 g_vocoder.Codec, o1 error) {
-	oc := &outc{}
-	_ = oc
-	var code C.int
-	for {
-		code = C.dmrgo_vocoder_register_factory_fn_t__call(c.f, &c.r0)
-		break
-	}
-	if code != C.DMRGO_OK {
-		o1 = codeErr(code)
-		return
-	}
-	if c.r0 != nil {
-		o0 = get_vocoder_Codec(c.r0).v
-		deleteHandle(unsafe.Pointer(c.r0))
-		c.r0 = nil
-	}
-	return
 }
 
 func in_vocoder_codec2_Config(s *C.dmrgo_codec2_config_t) (d g_vocoder_codec2.Config) {
@@ -44220,54 +44176,6 @@ func dmrgo_vocoder_append_decoder_silence(c_self *C.dmrgo_vocoder_append_decoder
 	return C.DMRGO_OK
 }
 
-//export dmrgo_vocoder_append_names
-func dmrgo_vocoder_append_names(c_dst *C.dmrgo_string_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
-	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	nf_dst := int(*c_dst_len)
-	var a_dst []string
-	r0 := g_vocoder.AppendNames(a_dst)
-	_ = r0
-	{
-		base := nf_dst
-		total := base + len(r0)
-		if c_dst_need != nil {
-			*c_dst_need = C.size_t(total)
-		}
-		if total > int(c_dst_cap) {
-			oc.short = true
-		} else {
-			cs := unsafe.Slice((*C.dmrgo_string_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
-			for i := range r0 {
-				cs[base+i].ptr = arenaStr(oc, r0[i])
-				cs[base+i].len = C.size_t(len(r0[i]))
-			}
-			nf_dst = total
-		}
-	}
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_vocoder_codec_free
 func dmrgo_vocoder_codec_free(c_self *C.dmrgo_vocoder_codec_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -44461,76 +44369,6 @@ func dmrgo_vocoder_encode_ambe72(c_info *C.dmrgo_vocoder_ambe_frame_t, c_out *C.
 	return C.DMRGO_OK
 }
 
-//export dmrgo_vocoder_names
-func dmrgo_vocoder_names(c_out *C.dmrgo_string_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
-	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := g_vocoder.Names()
-	_ = r0
-	{
-		src := r0
-		*(c_out_len) = C.size_t(min(len(src), int(c_out_cap)))
-		if c_out_need != nil {
-			*c_out_need = C.size_t(len(src))
-		}
-		if len(src) > int(c_out_cap) {
-			oc.short = true
-		}
-		if c_out != nil {
-			cs := unsafe.Slice((*C.dmrgo_string_t)(unsafe.Pointer(c_out)), int(c_out_cap))
-			for i := range min(len(src), len(cs)) {
-				cs[i].ptr = arenaStr(oc, src[i])
-				cs[i].len = C.size_t(len(src[i]))
-			}
-		}
-	}
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_vocoder_new
-func dmrgo_vocoder_new(c_name *C.char, c_name_len C.size_t, c_out **C.dmrgo_vocoder_codec_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_name == nil && c_name_len > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0, r1 := g_vocoder.New(C.GoStringN(c_name, C.int(c_name_len)))
-	_ = r0
-	*c_out = nil
-	if r0 != nil {
-		*c_out = new_vocoder_Codec(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r1 != nil {
-		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_vocoder_pack_ambe_voice
 func dmrgo_vocoder_pack_ambe_voice(c_frames *C.dmrgo_vocoder_ambe_frame_t, c_out *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -44576,46 +44414,6 @@ func dmrgo_vocoder_pack_ambe_voice_flags(c_frames *C.dmrgo_vocoder_ambe_frame_t,
 	}
 	if r1 != nil {
 		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo__fn1
-func dmrgo__fn1(user C.uintptr_t, c_out **C.dmrgo_vocoder_codec_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	fv := hvalue[func() (g_vocoder.Codec, error)](uintptr(user))
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0, r1 := fv()
-	_ = r0
-	*c_out = nil
-	if r0 != nil {
-		*c_out = new_vocoder_Codec(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r1 != nil {
-		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_vocoder_register
-func dmrgo_vocoder_register(c_name *C.char, c_name_len C.size_t, c_factory C.dmrgo_vocoder_register_factory_fn_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_name == nil && c_name_len > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := g_vocoder.Register(C.GoStringN(c_name, C.int(c_name_len)), fnin1(c_factory))
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }
@@ -44936,27 +44734,6 @@ func dmrgo_codec2_new(c_p *C.dmrgo_codec2_config_t, c_out **C.dmrgo_codec2_codec
 	}
 	if r1 != nil {
 		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_codec2_new_factory
-func dmrgo_codec2_new_factory(c_cfg *C.dmrgo_codec2_config_t, c_out *C.dmrgo_vocoder_register_factory_fn_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	var a_cfg g_vocoder_codec2.Config
-	var p_cfg *g_vocoder_codec2.Config
-	if c_cfg != nil {
-		a_cfg = in_vocoder_codec2_Config(&(*c_cfg))
-		p_cfg = &a_cfg
-	}
-	r0 := g_vocoder_codec2.NewFactory(p_cfg)
-	_ = r0
-	if c_out != nil {
-		*c_out = fnout1(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
 	}
 	return C.DMRGO_OK
 }
@@ -47242,14 +47019,6 @@ func errCode(err error) C.int {
 			return -217
 		case g_trunk.ErrUDTLength:
 			return -218
-		case g_vocoder.ErrDuplicateCodec:
-			return -139
-		case g_vocoder.ErrNilFactory:
-			return -140
-		case g_vocoder.ErrRegistryFull:
-			return -141
-		case g_vocoder.ErrUnknownCodec:
-			return -142
 		case g_vocoder_codec2.ErrClosed:
 			return -143
 		case g_vocoder_codec2.ErrFrameLength:
@@ -47531,14 +47300,6 @@ func codeErr(code C.int) error {
 		return g_trunk.ErrUDTFormat
 	case -218:
 		return g_trunk.ErrUDTLength
-	case -139:
-		return g_vocoder.ErrDuplicateCodec
-	case -140:
-		return g_vocoder.ErrNilFactory
-	case -141:
-		return g_vocoder.ErrRegistryFull
-	case -142:
-		return g_vocoder.ErrUnknownCodec
 	case -143:
 		return g_vocoder_codec2.ErrClosed
 	case -144:

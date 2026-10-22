@@ -1,7 +1,6 @@
 package vocoder_test
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -32,18 +31,10 @@ func (lsbCodec) Decode(slot [9]byte) ([]int16, error) {
 func (lsbCodec) Silence() [9]byte        { return [9]byte{} }
 func (lsbCodec) FID() enums.FeatureSetID { return enums.FIDStandardized }
 
-func ExampleNew() {
-	err := vocoder.Register("example-lsb", func() (vocoder.Codec, error) { return lsbCodec{}, nil })
-	if err != nil && !errors.Is(err, vocoder.ErrDuplicateCodec) {
-		fmt.Println(err)
-		return
-	}
-
-	c, err := vocoder.New("example-lsb")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+// ExampleCodec implements Codec with a toy codec that keeps the lowest bit
+// of the first 72 samples, and runs one frame through it.
+func ExampleCodec() {
+	var c vocoder.Codec = lsbCodec{}
 	defer c.Close()
 
 	pcm := make([]int16, c.FrameSamples())
@@ -51,12 +42,8 @@ func ExampleNew() {
 	slot, _ := c.Encode(pcm)
 	out, _ := c.Decode(slot)
 	fmt.Println(c.FID(), out[:4])
-
-	_, err = vocoder.New("no-such-codec")
-	fmt.Println(err)
 	// Output:
 	// Standardized FID [1 0 1 0]
-	// vocoder: unknown codec
 }
 
 func ExampleDecodeAMBE72() {

@@ -135,7 +135,7 @@ The programs in [v2/examples](v2/examples) run offline on the captures in `v2/la
 - Burst finding in a demodulated bit stream (`layer2/framer`).
 - Vocoders (`vocoder`):
   - The AMBE+2 frame FEC. AMBE+2 itself is not included.
-  - A `Codec` interface with a registry, and a Codec2 codec (`vocoder/codec2`).
+  - A `Codec` interface and a Codec2 codec (`vocoder/codec2`).
   - AMBE+2 on a DVSI AMBE-3000R or AMBE-3003 chip (`vocoder/dvsi`), such as a ThumbDV, a DVstick or an AMBEserver. See [DVSI](#dvsi).
 - A C API (`v2/capi`): libdmrgo, a shared library with the C form of the whole library (`dmrgo.h` and `dmrgo_gen.h`). It is a module of its own, so its cgo stays out of `v2`. `make -C v2/capi` builds it.
 - No cgo in the `v2` module outside `vocoder/codec2`.
@@ -178,13 +178,10 @@ The counts are of exported functions and methods, for linux/amd64 with cgo. `DMR
 
 `vocoder/codec2` links the system libcodec2 (LGPL 2.1) with cgo. A program that imports it needs a C compiler, libcodec2 and pkg-config, for example `apt-get install libcodec2-dev pkg-config`. Build with `-tags nocodec2` or `CGO_ENABLED=0` to leave it out: `codec2.New` then returns `codec2.ErrUnavailable`. TinyGo builds always leave it out.
 
-The package does not register itself. A program that creates codecs by name registers it once at startup:
+Create a codec with `codec2.New`:
 
 ```go
-if err := vocoder.Register(codec2.Name, codec2.NewFactory(nil)); err != nil {
-	return err
-}
-enc, err := vocoder.New(codec2.Name)
+enc, err := codec2.New(nil)
 ```
 
 | Item | Value |

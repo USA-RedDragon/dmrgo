@@ -11,14 +11,10 @@ import (
 	"path/filepath"
 	"slices"
 	"strconv"
-	"sync"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
-	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
-
-var registerOnce sync.Once
 
 func newCodec(t *testing.T, cfg Config) *Codec {
 	t.Helper()
@@ -113,24 +109,6 @@ func TestNew(t *testing.T) {
 	}
 	if _, err := New(&Config{Mode: 1600}); !errors.Is(err, ErrUnsupportedMode) {
 		t.Errorf("New(1600) error = %v, want ErrUnsupportedMode", err)
-	}
-}
-
-func TestRegistered(t *testing.T) {
-	t.Parallel()
-
-	registerOnce.Do(func() { _ = vocoder.Register(Name, NewFactory(nil)) })
-	c, err := vocoder.New(Name)
-	if err != nil {
-		t.Fatal(err)
-	}
-	cc, ok := c.(*Codec)
-	if !ok {
-		t.Fatalf("vocoder.New returned %T", c)
-	}
-	defer func() { _ = cc.Close() }()
-	if cc.Mode() != ModeAuto || cc.FID() != DefaultFID {
-		t.Errorf("registered codec: mode %d FID %#x", cc.Mode(), cc.FID())
 	}
 }
 
