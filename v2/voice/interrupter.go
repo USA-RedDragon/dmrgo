@@ -44,6 +44,10 @@ type InterrupterConfig struct {
 	// Repeats is the number of standalone RC bursts of each try, 60 ms
 	// apart. 0 means 1; at most MaxRepeats. (ETSI TS 102 361-2 clause 6.3.5)
 	Repeats int
+	// Lead makes Tick emit a burst this long before its Due time, so that
+	// an RF FIFO can be filled ahead. 0 means at Due; it must not be
+	// negative. T_RCtimer counts from the Due times.
+	Lead time.Duration
 	// Scratch, when set, is the Burst that Burst decodes into. Machines
 	// that run on one goroutine can share one. Nil means the Interrupter
 	// makes its own. (ETSI TS 102 361-2 clause 6.3.5)
@@ -96,6 +100,7 @@ type Interrupter struct {
 	wait    time.Duration
 	retries int
 	repeats int
+	lead    time.Duration
 
 	state     InterrupterState
 	rc        layer2.RawBurst
@@ -113,8 +118,9 @@ type Interrupter struct {
 // NewInterrupter returns an Interrupter for cfg. A nil cfg means the zero
 // InterrupterConfig. It returns a *dmrgo.ConfigError for a color code
 // above 15, a Slot that is not an enums.Slot value, Retries above
-// MaxRetries, or Repeats out of range. It allocates the Interrupter, and
-// its Burst unless cfg.Scratch is set. (ETSI TS 102 361-2 clause 6.3.5)
+// MaxRetries, Repeats out of range, or a negative Lead. It allocates the
+// Interrupter, and its Burst unless cfg.Scratch is set. (ETSI TS 102 361-2
+// clause 6.3.5)
 func NewInterrupter(cfg *InterrupterConfig) (*Interrupter, error) {
 	var conf InterrupterConfig
 	if cfg != nil {
@@ -130,8 +136,11 @@ func NewInterrupter(cfg *InterrupterConfig) (*Interrupter, error) {
 		return nil, errRetries
 	case cfg.Repeats < 0 || cfg.Repeats > MaxRepeats:
 		return nil, errRepeats
+	case cfg.Lead < 0:
+		return nil, errLead
 	}
-	i := &Interrupter{cc: cfg.ColorCode, slot: cfg.Slot, wait: cfg.Wait, retries: cfg.Retries, repeats: max(cfg.Repeats, 1), b: cfg.Scratch}
+	i := &Interrupter{cc: cfg.ColorCode, slot: cfg.Slot, wait: cfg.Wait, retries: cfg.Retries, repeats: max(cfg.Repeats, 1),
+		lead: cfg.Lead, b: cfg.Scratch}
 	switch {
 	case i.retries == 0:
 		i.retries = 1
@@ -168,11 +177,11 @@ func (i *Interrupter) State() InterrupterState {
 }
 
 // Interrupt starts an interrupt request with the RC command cmd, whose
-// first standalone RC burst is due at now: enums.RCCeaseTransmissionRequest
-// for a radio that is party to the call, enums.RCCeaseTransmissionCommand
-// for an emergency call. It returns ErrInterruptBusy while a request runs, and a
-// *dmrgo.ConfigError for another command. (ETSI TS 102 361-2 clauses 6.3.3 and
-// 6.3.4)
+// first standalone RC burst is due at now plus InterrupterConfig.Lead:
+// enums.RCCeaseTransmissionRequest for a radio that is party to the call,
+// enums.RCCeaseTransmissionCommand for an emergency call. It returns
+// ErrInterruptBusy while a request runs, and a *dmrgo.ConfigError for
+// another command. (ETSI TS 102 361-2 clauses 6.3.3 and 6.3.4)
 func (i *Interrupter) Interrupt(now time.Duration, cmd enums.RCCommand) error {
 	if i == nil {
 		return dmrgo.ErrNilReceiver
@@ -201,7 +210,7 @@ func (i *Interrupter) Interrupt(now time.Duration, cmd enums.RCCommand) error {
 }
 
 func (i *Interrupter) try(at time.Duration) {
-	i.state, i.sent, i.due = InterrupterSending, 0, at
+	i.state, i.sent, i.due = InterrupterSending, 0, at+i.lead
 	i.tries++
 }
 
@@ -292,7 +301,7 @@ func (i *Interrupter) Tick(now time.Duration, dst []Output) []Output {
 		}
 		i.try(max(i.waitUntil, now))
 	}
-	if i.state != InterrupterSending || now < i.due {
+	if i.state != InterrupterSending || now < i.due-i.lead {
 		return dst
 	}
 	var o *Output
@@ -316,7 +325,7 @@ func (i *Interrupter) Deadline() (at time.Duration, ok bool) {
 
 	switch i.state {
 	case InterrupterSending:
-		return i.due, true
+		return i.due - i.lead, true
 	case InterrupterWaiting:
 		return i.waitUntil, i.wait >= 0
 	case InterrupterIdle:

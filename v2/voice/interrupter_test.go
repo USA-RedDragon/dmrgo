@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -184,7 +185,7 @@ func TestInterrupter_RCPI(t *testing.T) {
 func TestInterrupter_States(t *testing.T) {
 	t.Parallel()
 
-	for _, cfg := range []voice.InterrupterConfig{{ColorCode: 16}, {Retries: voice.MaxRetries + 1}, {Repeats: voice.MaxRepeats + 1}, {Repeats: -1}} {
+	for _, cfg := range []voice.InterrupterConfig{{ColorCode: 16}, {Retries: voice.MaxRetries + 1}, {Repeats: voice.MaxRepeats + 1}, {Repeats: -1}, {Lead: -1}} {
 		if _, err := voice.NewInterrupter(&cfg); err == nil {
 			t.Errorf("%+v: no error", cfg)
 		}
@@ -255,4 +256,27 @@ func transmissionEnd(t *testing.T) layer2.RawBurst {
 	tx.Stop()
 	out := drain(t, tx, 10)
 	return out[len(out)-2].Burst
+}
+
+func TestInterrupter_Lead(t *testing.T) {
+	t.Parallel()
+
+	const lead = 20 * time.Millisecond
+	i, err := voice.NewInterrupter(&voice.InterrupterConfig{Lead: lead, Retries: -1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := i.Interrupt(time.Second, enums.RCCeaseTransmissionRequest); err != nil {
+		t.Fatal(err)
+	}
+	if at, ok := i.Deadline(); !ok || at != time.Second {
+		t.Fatalf("Deadline %v %t", at, ok)
+	}
+	out := i.Tick(time.Second, nil)
+	if len(out) != 1 || out[0].Kind != voice.OutputBurst || out[0].Due != time.Second+lead {
+		t.Fatalf("%+v", out)
+	}
+	if at, ok := i.Deadline(); !ok || at != time.Second+lead+constants.TRCTimer {
+		t.Fatalf("T_RCtimer deadline %v, want it from Due", at)
+	}
 }
