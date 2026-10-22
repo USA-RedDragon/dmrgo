@@ -1897,6 +1897,7 @@ sym int dmrgo_hdap_message_checksum_ok(const dmrgo_hdap_message_t *self, bool *o
 sym int dmrgo_hdap_message_seal(dmrgo_hdap_message_t *self);
 sym int dmrgo_hdap_message_string(const dmrgo_hdap_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_hdap_opcode_string(dmrgo_hdap_opcode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_hdap_opcode_tmp(dmrgo_hdap_opcode_t self, dmrgo_hdap_tmp_flags_t *tmp_flags, dmrgo_hdap_tmp_type_t *tmp_type);
 sym int dmrgo_hdap_rrs_answer_append_binary(const dmrgo_hdap_rrs_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_hdap_rrs_answer_string(const dmrgo_hdap_rrs_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_hdap_rrs_check_answer_append_binary(const dmrgo_hdap_rrs_check_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
@@ -1914,6 +1915,7 @@ sym int dmrgo_hdap_tmp_message_append_binary(const dmrgo_hdap_tmp_message_t *sel
 sym int dmrgo_hdap_tmp_message_set_text_utf8(dmrgo_hdap_tmp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_hdap_tmp_message_string(const dmrgo_hdap_tmp_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_hdap_tmp_message_text_utf8(const dmrgo_hdap_tmp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_hdap_tmp_opcode(const dmrgo_hdap_tmp_flags_t *f, dmrgo_hdap_tmp_type_t t, dmrgo_hdap_opcode_t *out);
 sym int dmrgo_hdap_tmp_type_string(dmrgo_hdap_tmp_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_hytera_decode_frame(const uint8_t *p, size_t p_len, dmrgo_hytera_frame_t *out);
 sym int dmrgo_hytera_decode_heartbeat(const uint8_t *p, size_t p_len, dmrgo_hytera_heartbeat_t *out);

@@ -4,7 +4,8 @@ import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
 // Opcode is the 16-bit opcode of a message. Its values depend on the
 // service. In the text message protocol (TMP) the high octet is the
-// TMPFlags and the low octet is a TMPType.
+// TMPFlags and the low octet is a TMPType: TMP splits it and TMPOpcode
+// builds it.
 type Opcode uint16
 
 // The opcodes of the radio registration service (RRS) and the location
@@ -45,6 +46,31 @@ func (o Opcode) String() string {
 		return "LPConditionReport"
 	}
 	return "Opcode(" + text.Int(int64(o)) + ")"
+}
+
+// TMP returns the TMPFlags and the TMPType of a text message protocol
+// (TMP) opcode: its high and low octets.
+func (o Opcode) TMP() (TMPFlags, TMPType) {
+	b := [1]byte{byte(o >> 8)}
+	f, _ := DecodeTMPFlags(b[:])
+	return f, TMPType(o & 0xFF)
+}
+
+// TMPOpcode returns the text message protocol (TMP) opcode of the flags f and
+// the service type t, the inverse of Opcode.TMP. It returns a
+// *dmrgo.FieldRangeError when f.Reserved does not fit in 6 bits.
+func TMPOpcode(f TMPFlags, t TMPType) (Opcode, error) {
+	if f.Reserved>>6 != 0 {
+		return 0, errTMPFlagsReservedRange
+	}
+	o := Opcode(f.Reserved)<<8 | Opcode(t)
+	if f.NoAck {
+		o |= 0x8000
+	}
+	if f.Option {
+		o |= 0x4000
+	}
+	return o, nil
 }
 
 // TMPType is the service type of the text message protocol (TMP), the low
@@ -122,7 +148,8 @@ type TMPFlags struct {
 }
 
 // TMPMessage is the payload of a TMP private or group text without an
-// option field.
+// option field. Opcode.TMP splits the opcode of the message, and
+// TMPOpcode builds it.
 //
 //dmr:stream
 type TMPMessage struct {
@@ -136,7 +163,8 @@ type TMPMessage struct {
 	Text []byte `dmr:"rest,utf16le"`
 }
 
-// TMPAnswer is the payload of the answer to a private text.
+// TMPAnswer is the payload of the answer to a private text. Opcode.TMP splits
+// the opcode of the answer, and TMPOpcode builds it.
 //
 //dmr:stream
 type TMPAnswer struct {

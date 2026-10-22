@@ -464,6 +464,7 @@ DMRGO_1 {
 		dmrgo_hdap_message_seal;
 		dmrgo_hdap_message_string;
 		dmrgo_hdap_opcode_string;
+		dmrgo_hdap_opcode_tmp;
 		dmrgo_hdap_rrs_answer_append_binary;
 		dmrgo_hdap_rrs_answer_string;
 		dmrgo_hdap_rrs_check_answer_append_binary;
@@ -481,6 +482,7 @@ DMRGO_1 {
 		dmrgo_hdap_tmp_message_set_text_utf8;
 		dmrgo_hdap_tmp_message_string;
 		dmrgo_hdap_tmp_message_text_utf8;
+		dmrgo_hdap_tmp_opcode;
 		dmrgo_hdap_tmp_type_string;
 		dmrgo_hytera_decode_frame;
 		dmrgo_hytera_decode_heartbeat;

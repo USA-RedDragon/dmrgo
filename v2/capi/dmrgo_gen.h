@@ -8137,6 +8137,8 @@ int dmrgo_hdap_message_seal(dmrgo_hdap_message_t *self);
 int dmrgo_hdap_message_string(const dmrgo_hdap_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.Opcode.String. String returns the name of o. */
 int dmrgo_hdap_opcode_string(dmrgo_hdap_opcode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: hdap.Opcode.TMP. TMP returns the TMPFlags and the TMPType of a text message protocol (TMP) opcode: its high and low octets. */
+int dmrgo_hdap_opcode_tmp(dmrgo_hdap_opcode_t self, dmrgo_hdap_tmp_flags_t *tmp_flags, dmrgo_hdap_tmp_type_t *tmp_type);
 /* Go: hdap.RRSAnswer.AppendBinary. AppendBinary appends s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE or another error when a field does not fit. */
 int dmrgo_hdap_rrs_answer_append_binary(const dmrgo_hdap_rrs_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hdap.RRSAnswer.String. String returns the fields of s as text, for printing. */
@@ -8171,6 +8173,8 @@ int dmrgo_hdap_tmp_message_set_text_utf8(dmrgo_hdap_tmp_message_t *self, uint8_t
 int dmrgo_hdap_tmp_message_string(const dmrgo_hdap_tmp_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.TMPMessage.TextUTF8. TextUTF8 appends Text, UTF-16LE text, to dst as UTF-8 and returns dst. */
 int dmrgo_hdap_tmp_message_text_utf8(const dmrgo_hdap_tmp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: hdap.TMPOpcode. TMPOpcode returns the text message protocol (TMP) opcode of the flags f and the service type t, the inverse of Opcode.TMP. It returns a DMRGO_ERR_FIELD_RANGE when f.Reserved does not fit in 6 bits. */
+int dmrgo_hdap_tmp_opcode(const dmrgo_hdap_tmp_flags_t *f, dmrgo_hdap_tmp_type_t t, dmrgo_hdap_opcode_t *out);
 /* Go: hdap.TMPType.String. String returns the name of t. */
 int dmrgo_hdap_tmp_type_string(dmrgo_hdap_tmp_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ip.AppendCompressed. AppendCompressed appends d to dst with a compressed UDP/IPv4 header. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when SAID or DAID does not fit, and an error for a nil d. d may be NULL. */
