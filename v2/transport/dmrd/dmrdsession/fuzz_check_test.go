@@ -108,7 +108,10 @@ func checkSession(t *testing.T, data []byte) {
 			step(func(o []dmrdsession.Output) []dmrdsession.Output {
 				o = m.Packet(now, pk, o)
 				if m.State() == dmrdsession.StateLogin {
-					o = m.Admit(0, 7, []byte("pw"), o)
+					o = m.Admit(now, 7, []byte("pw"), o)
+				}
+				if m.State() == dmrdsession.StateConfig && len(pk)%2 == 0 {
+					o = m.Accept(now, o)
 				}
 				return o
 			})
@@ -116,8 +119,9 @@ func checkSession(t *testing.T, data []byte) {
 			step(func(o []dmrdsession.Output) []dmrdsession.Output { return b.Packet(now, pk, o) })
 		})
 		step(func(o []dmrdsession.Output) []dmrdsession.Output { return m.Resume(now, 1234, o) })
-		step(func(o []dmrdsession.Output) []dmrdsession.Output { return p.Close(0, o) })
-		step(func(o []dmrdsession.Output) []dmrdsession.Output { return m.Close(0, o) })
-		step(func(o []dmrdsession.Output) []dmrdsession.Output { return m.Refuse(0, o) })
+		step(func(o []dmrdsession.Output) []dmrdsession.Output { return m.Accept(now, o) })
+		step(func(o []dmrdsession.Output) []dmrdsession.Output { return p.Close(now, o) })
+		step(func(o []dmrdsession.Output) []dmrdsession.Output { return m.Close(now, o) })
+		step(func(o []dmrdsession.Output) []dmrdsession.Output { return m.Refuse(now, o) })
 	}
 }

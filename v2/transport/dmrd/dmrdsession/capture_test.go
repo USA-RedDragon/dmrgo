@@ -105,8 +105,17 @@ func TestMasterReplaysDMRGateway(t *testing.T) {
 				if o.ID != 0x003010af {
 					t.Fatalf("login of %x", o.ID)
 				}
-				sent = append(sent, sends(m.Admit(0, 0xfcb17c08, []byte("passw0rd"), nil))...)
+				sent = append(sent, sends(m.Admit(l.at, 0xfcb17c08, []byte("passw0rd"), nil))...)
 				events = append(events, o.Kind)
+			case dmrdsession.OutputConfig:
+				events = append(events, o.Kind)
+				for _, a := range m.Accept(l.at, nil) {
+					if a.Kind == dmrdsession.OutputSend {
+						sent = append(sent, append([]byte(nil), a.Packet...))
+					} else {
+						events = append(events, a.Kind)
+					}
+				}
 			default:
 				events = append(events, o.Kind)
 			}

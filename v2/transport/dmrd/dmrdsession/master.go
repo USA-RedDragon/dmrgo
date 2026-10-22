@@ -38,6 +38,7 @@ type Master struct {
 	id        uint32
 	salt      uint32
 	tok       [32]byte
+	asked     bool
 	timeoutAt time.Duration
 	noCopy    noCopy
 }
@@ -90,7 +91,7 @@ func (m *Master) Reset() {
 		return
 	}
 
-	m.state, m.id, m.salt, m.tok = StateIdle, 0, 0, [32]byte{}
+	m.state, m.id, m.salt, m.tok, m.asked = StateIdle, 0, 0, [32]byte{}, false
 }
 
 // Deadline returns the time at which the Master needs a Tick. ok is false
@@ -143,7 +144,7 @@ func (m *Master) Resume(now time.Duration, id uint32, dst []Output) []Output {
 	if m.state != StateIdle {
 		dst = m.down(dst, ReasonLogin)
 	}
-	m.id, m.state, m.tok, m.timeoutAt = id, StateRunning, [32]byte{}, after(now, m.timeout)
+	m.id, m.state, m.tok, m.asked, m.timeoutAt = id, StateRunning, [32]byte{}, false, after(now, m.timeout)
 	return append(dst, Output{Kind: OutputUp, ID: id})
 }
 
@@ -166,9 +167,31 @@ func (m *Master) Admit(now time.Duration, salt uint32, password []byte, dst []Ou
 	return m.challenge(dst)
 }
 
-// Refuse answers the RPTL of OutputLogin, or ends a session, with MSTNAK
-// and OutputDown with ReasonRefused. It does nothing in StateIdle. It
-// allocates only when dst has no room for MaxOutputs outputs.
+// Accept answers the RPTC of OutputConfig with an acknowledgement. In
+// StateConfig it completes the login with OutputUp and starts Timeout. It
+// does nothing when no RPTC waits for an answer. It allocates only when
+// dst has no room for MaxOutputs outputs.
+func (m *Master) Accept(now time.Duration, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
+	if !m.asked {
+		return dst
+	}
+	m.asked = false
+	dst = m.acked(dst)
+	if m.state == StateConfig {
+		m.state, m.tok, m.timeoutAt = StateRunning, [32]byte{}, after(now, m.timeout)
+		dst = append(dst, Output{Kind: OutputUp, ID: m.id})
+	}
+	return dst
+}
+
+// Refuse answers the RPTL of OutputLogin or the RPTC of OutputConfig, or
+// ends a session, with MSTNAK and OutputDown with ReasonRefused. It does
+// nothing in StateIdle. It allocates only when dst has no room for
+// MaxOutputs outputs.
 func (m *Master) Refuse(now time.Duration, dst []Output) []Output {
 	if m == nil {
 		return dst
@@ -198,7 +221,7 @@ func (m *Master) Close(now time.Duration, dst []Output) []Output {
 
 func (m *Master) down(dst []Output, r Reason) []Output {
 	dst = append(dst, Output{Kind: OutputDown, ID: m.id, Reason: r, State: m.state})
-	m.state, m.tok = StateIdle, [32]byte{}
+	m.state, m.tok, m.asked = StateIdle, [32]byte{}, false
 	return dst
 }
 
@@ -227,8 +250,9 @@ func (m *Master) nak(dst []Output, id uint32) []Output {
 // Packet takes the packet b from the repeater. An RPTL starts a login and
 // reports OutputLogin, or gets the same salt again while the Master waits
 // for the RPTK. An RPTK with the token of the salt and the password gets
-// an acknowledgement, and another token MSTNAK. An RPTC for the ID gets an
-// acknowledgement and completes the login with OutputConfig and OutputUp.
+// an acknowledgement, and another token MSTNAK. An RPTC for the ID, in
+// StateConfig or StateRunning, reports OutputConfig and waits for Accept
+// or Refuse; in StateConfig LoginTimeout still runs.
 // In StateRunning an RPTO gets an acknowledgement and OutputOptions, a
 // ping gets a pong and OutputPong, an RPTCL ends the session with ReasonClosed, and
 // DMRD, DMRA, DMRG, RPTG, RPTRSSI and RPTINTR are passed on. A packet of
@@ -354,14 +378,11 @@ func (m *Master) config(now time.Duration, b []byte, dst []Output) []Output {
 	if (m.state != StateConfig && m.state != StateRunning) || id != m.id {
 		return m.nak(dst, id)
 	}
-	m.timeoutAt = after(now, m.timeout)
-	dst = m.acked(dst)
-	dst = append(dst, Output{Kind: OutputConfig, Packet: b, ID: m.id})
-	if m.state == StateConfig {
-		m.state, m.tok = StateRunning, [32]byte{}
-		dst = append(dst, Output{Kind: OutputUp, ID: m.id})
+	if m.state == StateRunning {
+		m.timeoutAt = after(now, m.timeout)
 	}
-	return dst
+	m.asked = true
+	return append(dst, Output{Kind: OutputConfig, Packet: b, ID: m.id})
 }
 
 func repeaterOf(b []byte, c dmrd.Command) uint32 {

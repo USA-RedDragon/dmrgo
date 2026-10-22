@@ -390,8 +390,19 @@ func TestMasterLogin(t *testing.T) {
 	if !nak(m.Packet(3*s, mmdvmConfig(6), nil)) || !nak(m.Packet(3*s, ctl(dmrd.CommandRPTPING, 5), nil)) {
 		t.Fatal("config of another ID or ping before config")
 	}
-	sameKinds(t, kinds(m.Packet(4*s, mmdvmConfig(5), nil)), dmrdsession.OutputSend, dmrdsession.OutputConfig, dmrdsession.OutputUp)
-	sameKinds(t, kinds(m.Packet(4*s, mmdvmConfig(5), nil)), dmrdsession.OutputSend, dmrdsession.OutputConfig)
+	if out := m.Accept(4*s, nil); len(out) != 0 {
+		t.Fatalf("Accept before RPTC %v", kinds(out))
+	}
+	sameKinds(t, kinds(m.Packet(4*s, mmdvmConfig(5), nil)), dmrdsession.OutputConfig)
+	if m.State() != dmrdsession.StateConfig {
+		t.Fatalf("state before Accept %v", m.State())
+	}
+	sameKinds(t, kinds(m.Accept(4*s, nil)), dmrdsession.OutputSend, dmrdsession.OutputUp)
+	if out := m.Accept(4*s, nil); len(out) != 0 {
+		t.Fatalf("second Accept %v", kinds(out))
+	}
+	sameKinds(t, kinds(m.Packet(4*s, mmdvmConfig(5), nil)), dmrdsession.OutputConfig)
+	sameKinds(t, kinds(m.Accept(4*s, nil)), dmrdsession.OutputSend)
 	pos := make([]byte, 0, 25)
 	pos = append(pos, ctl(dmrd.CommandRPTG, 5)...)
 	pos = append(pos, "+30.2672-097.7431"...)

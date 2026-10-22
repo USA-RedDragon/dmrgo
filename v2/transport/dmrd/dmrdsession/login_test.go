@@ -38,12 +38,36 @@ func TestMasterLoginTimeout(t *testing.T) {
 		t.Fatalf("config deadline %v", at)
 	}
 	m2.Packet(8*s, mmdvmConfig(5), nil)
+	if at, _ := m2.Deadline(); at != 9*s || m2.State() != dmrdsession.StateConfig {
+		t.Fatalf("deadline before Accept %v %v", at, m2.State())
+	}
+	m2.Accept(8*s, nil)
 	if at, _ := m2.Deadline(); at != 108*s || m2.State() != dmrdsession.StateRunning {
 		t.Fatalf("running deadline %v %v", at, m2.State())
 	}
 	var ce *dmrgo.ConfigError
 	if _, err := dmrdsession.NewMaster(&dmrdsession.MasterConfig{Dialect: dmrd.DialectMMDVM, LoginTimeout: -1}); !errors.As(err, &ce) {
 		t.Fatalf("negative LoginTimeout: %v", err)
+	}
+}
+
+func TestMasterRefuseConfig(t *testing.T) {
+	t.Parallel()
+
+	m, _ := dmrdsession.NewMaster(&dmrdsession.MasterConfig{Dialect: dmrd.DialectMMDVM})
+	tok, _ := auth.Token(dmrd.DialectMMDVM, 7, []byte("pw"))
+	m.Packet(0, ctl(dmrd.CommandRPTL, 5), nil)
+	m.Admit(0, 7, []byte("pw"), nil)
+	m.Packet(0, rptk(5, tok), nil)
+	if out := m.Packet(0, mmdvmConfig(5), nil); len(out) != 1 || out[0].Kind != dmrdsession.OutputConfig || out[0].ID != 5 {
+		t.Fatalf("RPTC %+v", out)
+	}
+	out := m.Refuse(0, nil)
+	if len(out) != 2 || command(t, out[0].Packet, dmrd.DialectMMDVM) != dmrd.CommandMSTNAK || out[1].Kind != dmrdsession.OutputDown || out[1].State != dmrdsession.StateConfig || out[1].Reason != dmrdsession.ReasonRefused {
+		t.Fatalf("Refuse %+v", out)
+	}
+	if out = m.Accept(0, nil); len(out) != 0 || m.State() != dmrdsession.StateIdle {
+		t.Fatalf("Accept after Refuse %+v %v", out, m.State())
 	}
 }
 

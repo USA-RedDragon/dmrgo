@@ -1148,6 +1148,8 @@ var entryPoints = map[string]any{
 	"dmrgo_dmrdsession_bridge_tick_need":                               dmrgo_dmrdsession_bridge_tick_need,
 	"dmrgo_dmrdsession_bridge_tick":                                    dmrgo_dmrdsession_bridge_tick,
 	"dmrgo_dmrdsession_master_free":                                    dmrgo_dmrdsession_master_free,
+	"dmrgo_dmrdsession_master_accept_need":                             dmrgo_dmrdsession_master_accept_need,
+	"dmrgo_dmrdsession_master_accept":                                  dmrgo_dmrdsession_master_accept,
 	"dmrgo_dmrdsession_master_admit_need":                              dmrgo_dmrdsession_master_admit_need,
 	"dmrgo_dmrdsession_master_admit":                                   dmrgo_dmrdsession_master_admit,
 	"dmrgo_dmrdsession_master_close_need":                              dmrgo_dmrdsession_master_close_need,
