@@ -1,6 +1,7 @@
 package emit
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/USA-RedDragon/dmrgo/cmd/dmrgen/parse"
@@ -182,13 +183,86 @@ func setParamName(field string) string {
 	return name
 }
 
+type preCheck struct {
+	field    parse.Field
+	min, max uint64
+	text     string
+}
+
+func shifted(r [][2]int, by int) [][2]int {
+	out := make([][2]int, len(r))
+	for i, x := range r {
+		out[i] = [2]int{x[0] - by, x[1] - by}
+	}
+	return out
+}
+
+func sameRanges(a, b [][2]int) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func fixedByConst(t *parse.PDUStruct, ranges [][2]int, c parse.VariantCond) bool {
+	for _, k := range t.Consts {
+		if !sameRanges(k.Ranges, ranges) {
+			continue
+		}
+		if c.Guard != nil {
+			return c.Guard.Op == "==" && k.Value == c.Guard.Value
+		}
+		return len(c.Values) == 1 && c.Values[0] == k.Value
+	}
+	return false
+}
+
+func payloadCheck(pdu parse.PDUStruct, union *parse.Field, v parse.Variant, c parse.VariantCond) (fixed bool, pc *preCheck) {
+	g := pdu.GetterByName(c.Field)
+	t := pdu.Types[v.Type]
+	if g == nil || t == nil {
+		return false, nil
+	}
+	ranges := shifted(g.Ranges(), union.BitStart)
+	if fixedByConst(t, ranges, c) {
+		return true, nil
+	}
+	f := t.FieldByName(c.Field)
+	if f == nil || !sameRanges(f.Ranges(), ranges) || c.Guard == nil || c.Guard.Op != "!=" || f.Kind == parse.FieldBool {
+		return false, nil
+	}
+	n, err := strconv.ParseUint(c.Guard.Value, 10, 64)
+	top := uint64(1)<<f.BitWidth - 1
+	switch {
+	case err != nil:
+		return false, nil
+	case n == 0:
+		return false, &preCheck{field: *f, min: 1, max: top, text: "p." + f.Name + " is 0"}
+	case n == top:
+		return false, &preCheck{field: *f, min: 0, max: top - 1, text: "p." + f.Name + " is " + c.Guard.Value}
+	}
+	return false, nil
+}
+
 func emitSet(f *File, pdu parse.PDUStruct, union *parse.Field, v parse.Variant, ev *errVars) error {
 	var sets []setCond
+	var pres []preCheck
 	check := false
 	var params []Code
 	for _, c := range v.Conds {
 		if !settable(pdu, c) {
-			check = true
+			fixed, pc := payloadCheck(pdu, union, v, c)
+			switch {
+			case pc != nil:
+				pres = append(pres, *pc)
+			case !fixed:
+				check = true
+			}
 			continue
 		}
 		switch {
@@ -213,10 +287,14 @@ func emitSet(f *File, pdu parse.PDUStruct, union *parse.Field, v parse.Variant, 
 	var errs []string
 	for _, sc := range sets {
 		if sc.param != "" {
-			errs = append(errs, "an error when "+sc.param+" is not "+orList(sc.cond.Values))
+			errs = append(errs, "ErrWrongOpcode when "+sc.param+" is not "+orList(sc.cond.Values))
 		}
 	}
-	errs = append(errs, "a *dmrgo.FieldRangeError when a field of p does not fit its bits")
+	rangeErr := "a *dmrgo.FieldRangeError when a field of p does not fit its bits"
+	for _, pc := range pres {
+		rangeErr += " or " + pc.text
+	}
+	errs = append(errs, rangeErr)
 	if check {
 		errs = append(errs, "an error when the payload does not meet the conditions of As"+v.Name)
 	}
@@ -233,8 +311,22 @@ func emitSet(f *File, pdu parse.PDUStruct, union *parse.Field, v parse.Variant, 
 			for _, val := range sc.cond.Values[1:] {
 				cond = cond.Op("||").Id(sc.param).Op("==").Add(emitDispatchConstant(val, pdu))
 			}
-			name := "err" + pdu.Name + v.Name + sc.cond.Field
-			b.If(Op("!").Parens(cond)).Block(Return(ev.get(name, errorsNew(pdu.Name+".Set"+v.Name+": "+sc.param+" is not "+orList(sc.cond.Values)))))
+			b.If(Op("!").Parens(cond)).Block(Return(Id("ErrWrongOpcode")))
+		}
+		for _, pc := range pres {
+			def := Op("&").Qual(rootPkg, "FieldRangeError").Values(Dict{
+				Id("Type"):  Lit(v.Type),
+				Id("Field"): Lit(pc.field.Name),
+				Id("Bits"):  Lit(pc.field.BitWidth),
+				Id("Min"):   Lit(float64(pc.min)),
+				Id("Max"):   Lit(float64(pc.max)),
+			})
+			name := "err" + pdu.Name + "Set" + v.Name + pc.field.Name
+			bad := Id("p").Dot(pc.field.Name).Op("<").Id(strconv.FormatUint(pc.min, 10)).Op("||").Id("p").Dot(pc.field.Name).Op(">").Id(strconv.FormatUint(pc.max, 10))
+			if pc.min == 0 {
+				bad = Id("p").Dot(pc.field.Name).Op(">").Id(strconv.FormatUint(pc.max, 10))
+			}
+			b.If(bad).Block(Return(ev.get(name, def)))
 		}
 		b.List(Id("raw"), Err()).Op(":=").Id("p").Dot(pdu.EncodeFuncName(v.Type)).Call()
 		b.If(Err().Op("!=").Nil()).Block(Return(Err()))

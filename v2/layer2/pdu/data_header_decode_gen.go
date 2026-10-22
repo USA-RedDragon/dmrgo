@@ -13,7 +13,6 @@
 package pdu
 
 import (
-	"errors"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
@@ -204,9 +203,8 @@ func (s *DataHeader) AsUnconfirmedDataHeader() (p UnconfirmedDataHeader, ok bool
 
 // SetUnconfirmedDataHeader makes s carry p as an UnconfirmedDataHeader
 // payload: it sets RawPayload, and keeps the other fields. It returns a
-// *dmrgo.FieldRangeError when a field of p does not fit its bits and an
-// error when the payload does not meet the conditions of
-// AsUnconfirmedDataHeader, and then leaves s as it is.
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *DataHeader) SetUnconfirmedDataHeader(p UnconfirmedDataHeader) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -216,12 +214,7 @@ func (s *DataHeader) SetUnconfirmedDataHeader(p UnconfirmedDataHeader) error {
 	if err != nil {
 		return err
 	}
-	t := *s
-	t.RawPayload = raw
-	if _, ok := t.AsUnconfirmedDataHeader(); !ok {
-		return errDataHeaderUnconfirmedDataHeaderPayload
-	}
-	*s = t
+	s.RawPayload = raw
 	return nil
 }
 
@@ -240,9 +233,8 @@ func (s *DataHeader) AsConfirmedDataHeader() (p ConfirmedDataHeader, ok bool) {
 
 // SetConfirmedDataHeader makes s carry p as a ConfirmedDataHeader payload:
 // it sets RawPayload, and keeps the other fields. It returns a
-// *dmrgo.FieldRangeError when a field of p does not fit its bits and an
-// error when the payload does not meet the conditions of
-// AsConfirmedDataHeader, and then leaves s as it is.
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *DataHeader) SetConfirmedDataHeader(p ConfirmedDataHeader) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -252,12 +244,7 @@ func (s *DataHeader) SetConfirmedDataHeader(p ConfirmedDataHeader) error {
 	if err != nil {
 		return err
 	}
-	t := *s
-	t.RawPayload = raw
-	if _, ok := t.AsConfirmedDataHeader(); !ok {
-		return errDataHeaderConfirmedDataHeaderPayload
-	}
-	*s = t
+	s.RawPayload = raw
 	return nil
 }
 
@@ -276,9 +263,8 @@ func (s *DataHeader) AsResponsePacketHeader() (p ResponsePacketHeader, ok bool) 
 
 // SetResponsePacketHeader makes s carry p as a ResponsePacketHeader payload:
 // it sets RawPayload, and keeps the other fields. It returns a
-// *dmrgo.FieldRangeError when a field of p does not fit its bits and an
-// error when the payload does not meet the conditions of
-// AsResponsePacketHeader, and then leaves s as it is.
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *DataHeader) SetResponsePacketHeader(p ResponsePacketHeader) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -288,12 +274,7 @@ func (s *DataHeader) SetResponsePacketHeader(p ResponsePacketHeader) error {
 	if err != nil {
 		return err
 	}
-	t := *s
-	t.RawPayload = raw
-	if _, ok := t.AsResponsePacketHeader(); !ok {
-		return errDataHeaderResponsePacketHeaderPayload
-	}
-	*s = t
+	s.RawPayload = raw
 	return nil
 }
 
@@ -312,9 +293,8 @@ func (s *DataHeader) AsDefinedDataHeader() (p DefinedDataHeader, ok bool) {
 
 // SetDefinedDataHeader makes s carry p as a DefinedDataHeader payload: it
 // sets RawPayload, and keeps the other fields. It returns a
-// *dmrgo.FieldRangeError when a field of p does not fit its bits and an
-// error when the payload does not meet the conditions of
-// AsDefinedDataHeader, and then leaves s as it is.
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *DataHeader) SetDefinedDataHeader(p DefinedDataHeader) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -324,12 +304,7 @@ func (s *DataHeader) SetDefinedDataHeader(p DefinedDataHeader) error {
 	if err != nil {
 		return err
 	}
-	t := *s
-	t.RawPayload = raw
-	if _, ok := t.AsDefinedDataHeader(); !ok {
-		return errDataHeaderDefinedDataHeaderPayload
-	}
-	*s = t
+	s.RawPayload = raw
 	return nil
 }
 
@@ -349,9 +324,8 @@ func (s *DataHeader) AsStatusPrecodedHeader() (p StatusPrecodedHeader, ok bool) 
 
 // SetStatusPrecodedHeader makes s carry p as a StatusPrecodedHeader payload:
 // it sets RawPayload, and keeps the other fields. It returns a
-// *dmrgo.FieldRangeError when a field of p does not fit its bits and an
-// error when the payload does not meet the conditions of
-// AsStatusPrecodedHeader, and then leaves s as it is.
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *DataHeader) SetStatusPrecodedHeader(p StatusPrecodedHeader) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -361,12 +335,7 @@ func (s *DataHeader) SetStatusPrecodedHeader(p StatusPrecodedHeader) error {
 	if err != nil {
 		return err
 	}
-	t := *s
-	t.RawPayload = raw
-	if _, ok := t.AsStatusPrecodedHeader(); !ok {
-		return errDataHeaderStatusPrecodedHeaderPayload
-	}
-	*s = t
+	s.RawPayload = raw
 	return nil
 }
 
@@ -386,24 +355,21 @@ func (s *DataHeader) AsRawDataHeader() (p RawDataHeader, ok bool) {
 
 // SetRawDataHeader makes s carry p as a RawDataHeader payload: it sets
 // RawPayload, and keeps the other fields. It returns a
-// *dmrgo.FieldRangeError when a field of p does not fit its bits and an
-// error when the payload does not meet the conditions of AsRawDataHeader,
-// and then leaves s as it is.
+// *dmrgo.FieldRangeError when a field of p does not fit its bits or
+// p.AppendedBlocks is 0, and then leaves s as it is.
 func (s *DataHeader) SetRawDataHeader(p RawDataHeader) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
+	if p.AppendedBlocks < 1 || p.AppendedBlocks > 63 {
+		return errDataHeaderSetRawDataHeaderAppendedBlocks
+	}
 	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
-	t := *s
-	t.RawPayload = raw
-	if _, ok := t.AsRawDataHeader(); !ok {
-		return errDataHeaderRawDataHeaderPayload
-	}
-	*s = t
+	s.RawPayload = raw
 	return nil
 }
 
@@ -422,8 +388,7 @@ func (s *DataHeader) AsUDTHeader() (p UDTHeader, ok bool) {
 
 // SetUDTHeader makes s carry p as a UDTHeader payload: it sets RawPayload,
 // and keeps the other fields. It returns a *dmrgo.FieldRangeError when a
-// field of p does not fit its bits and an error when the payload does not
-// meet the conditions of AsUDTHeader, and then leaves s as it is.
+// field of p does not fit its bits, and then leaves s as it is.
 func (s *DataHeader) SetUDTHeader(p UDTHeader) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -433,12 +398,7 @@ func (s *DataHeader) SetUDTHeader(p UDTHeader) error {
 	if err != nil {
 		return err
 	}
-	t := *s
-	t.RawPayload = raw
-	if _, ok := t.AsUDTHeader(); !ok {
-		return errDataHeaderUDTHeaderPayload
-	}
-	*s = t
+	s.RawPayload = raw
 	return nil
 }
 
@@ -457,9 +417,8 @@ func (s *DataHeader) AsProprietaryHeader() (p ProprietaryHeader, ok bool) {
 
 // SetProprietaryHeader makes s carry p as a ProprietaryHeader payload: it
 // sets RawPayload, and keeps the other fields. It returns a
-// *dmrgo.FieldRangeError when a field of p does not fit its bits and an
-// error when the payload does not meet the conditions of
-// AsProprietaryHeader, and then leaves s as it is.
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *DataHeader) SetProprietaryHeader(p ProprietaryHeader) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -469,12 +428,7 @@ func (s *DataHeader) SetProprietaryHeader(p ProprietaryHeader) error {
 	if err != nil {
 		return err
 	}
-	t := *s
-	t.RawPayload = raw
-	if _, ok := t.AsProprietaryHeader(); !ok {
-		return errDataHeaderProprietaryHeaderPayload
-	}
-	*s = t
+	s.RawPayload = raw
 	return nil
 }
 
@@ -1050,15 +1004,14 @@ var (
 		Field: "FragmentSequenceNumber",
 		Type:  "UnconfirmedDataHeader",
 	}
-	errDataHeaderUnconfirmedDataHeaderPayload = errors.New("DataHeader.SetUnconfirmedDataHeader: the payload does not meet the conditions of AsUnconfirmedDataHeader")
-	errDataHeaderConfirmedDataHeaderPayload   = errors.New("DataHeader.SetConfirmedDataHeader: the payload does not meet the conditions of AsConfirmedDataHeader")
-	errDataHeaderResponsePacketHeaderPayload  = errors.New("DataHeader.SetResponsePacketHeader: the payload does not meet the conditions of AsResponsePacketHeader")
-	errDataHeaderDefinedDataHeaderPayload     = errors.New("DataHeader.SetDefinedDataHeader: the payload does not meet the conditions of AsDefinedDataHeader")
-	errDataHeaderStatusPrecodedHeaderPayload  = errors.New("DataHeader.SetStatusPrecodedHeader: the payload does not meet the conditions of AsStatusPrecodedHeader")
-	errDataHeaderRawDataHeaderPayload         = errors.New("DataHeader.SetRawDataHeader: the payload does not meet the conditions of AsRawDataHeader")
-	errDataHeaderUDTHeaderPayload             = errors.New("DataHeader.SetUDTHeader: the payload does not meet the conditions of AsUDTHeader")
-	errDataHeaderProprietaryHeaderPayload     = errors.New("DataHeader.SetProprietaryHeader: the payload does not meet the conditions of AsProprietaryHeader")
-	errConfirmedDataHeaderPadOctetCountRange  = &dmrgo.FieldRangeError{
+	errDataHeaderSetRawDataHeaderAppendedBlocks = &dmrgo.FieldRangeError{
+		Bits:  6,
+		Field: "AppendedBlocks",
+		Max:   63.0,
+		Min:   1.0,
+		Type:  "RawDataHeader",
+	}
+	errConfirmedDataHeaderPadOctetCountRange = &dmrgo.FieldRangeError{
 		Bits:  5,
 		Field: "PadOctetCount",
 		Type:  "ConfirmedDataHeader",

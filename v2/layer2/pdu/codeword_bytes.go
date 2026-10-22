@@ -83,13 +83,6 @@ func DecodeFullLCCodeword(cw [12]byte, dt enums.DataType) ([9]byte, fec.Result, 
 	return lc, res, nil
 }
 
-type noFullLCError enums.DataType
-
-// Error returns the message of e. It allocates the message.
-func (e noFullLCError) Error() string {
-	return "data type " + enums.DataType(e).String() + " carries no RS(12,9) Full LC"
-}
-
 type noBlockCRCError enums.DataType
 
 // Error returns the message of e. It allocates the message.
@@ -100,7 +93,7 @@ func (e noBlockCRCError) Error() string {
 func fullLCMask(dt enums.DataType) ([3]byte, error) {
 	mask, width, ok := CRCMask(dt)
 	if !ok || width != 24 {
-		return [3]byte{}, noFullLCError(dt)
+		return [3]byte{}, ErrNoFullLCMask
 	}
 	return [3]byte{byte(mask >> 16 & 0xFF), byte(mask >> 8 & 0xFF), byte(mask & 0xFF)}, nil
 }

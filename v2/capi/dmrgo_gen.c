@@ -103,148 +103,152 @@ const char *dmrgo__gen_strerror(int status) {
 	case -145:
 		return "pdu: PDU has no address fields";
 	case -146:
-		return "pdu: PDU has no Service Options field";
+		return "the data type has no RS(12,9) Full LC mask";
 	case -147:
-		return "pdu: talker alias blocks missing";
+		return "pdu: PDU has no Service Options field";
 	case -148:
-		return "pdu: talker alias is not valid UTF-8";
+		return "pdu: talker alias blocks missing";
 	case -149:
-		return "pdu: talker alias too long";
+		return "pdu: talker alias is not valid UTF-8";
 	case -150:
-		return "location: packet carries no position";
+		return "pdu: talker alias too long";
 	case -151:
-		return "ars: length does not match the message";
+		return "the opcode does not select the payload";
 	case -152:
-		return "ars: message too short";
+		return "location: packet carries no position";
 	case -153:
-		return "lrrp: length does not match the message";
+		return "ars: length does not match the message";
 	case -154:
-		return "lrrp: message too short";
+		return "ars: message too short";
 	case -155:
-		return "lrrp: unknown token";
+		return "lrrp: length does not match the message";
 	case -156:
-		return "lrrp: number does not fit its field";
+		return "lrrp: message too short";
 	case -157:
-		return "tms: length does not match the message";
+		return "lrrp: unknown token";
 	case -158:
-		return "tms: message too short";
+		return "lrrp: number does not fit its field";
 	case -159:
-		return "nmea: checksum is missing or does not match";
+		return "tms: length does not match the message";
 	case -160:
-		return "nmea: field is malformed or out of range";
+		return "tms: message too short";
 	case -161:
-		return "nmea: not an RMC sentence";
+		return "nmea: checksum is missing or does not match";
 	case -162:
-		return "shortdata: character does not fit the DD format";
+		return "nmea: field is malformed or out of range";
 	case -163:
-		return "shortdata: DD format is not a supported text coding";
+		return "nmea: not an RMC sentence";
 	case -164:
-		return "shortdata: length does not match the data";
+		return "shortdata: character does not fit the DD format";
 	case -165:
-		return "shortdata: data too short";
+		return "shortdata: DD format is not a supported text coding";
 	case -166:
-		return "sms: unknown format";
+		return "shortdata: length does not match the data";
 	case -167:
-		return "sms: length does not match the payload";
+		return "shortdata: data too short";
 	case -168:
-		return "sms: nil argument";
+		return "sms: unknown format";
 	case -169:
-		return "sms: packet is not a text message";
+		return "sms: length does not match the payload";
 	case -170:
-		return "sms: payload too short";
+		return "sms: nil argument";
 	case -171:
-		return "sms: AnyTone text without its prefix";
+		return "sms: packet is not a text message";
 	case -172:
-		return "dmrd: packet is not a message of this kind";
+		return "sms: payload too short";
 	case -173:
-		return "dmrd: packet length does not match its message";
+		return "sms: AnyTone text without its prefix";
 	case -174:
-		return "dmrd: packet too short";
+		return "dmrd: packet is not a message of this kind";
 	case -175:
-		return "dmrd: packet does not have the octets of its message";
+		return "dmrd: packet length does not match its message";
 	case -176:
-		return "dmrd: number holds a character that is not a digit";
+		return "dmrd: packet too short";
 	case -177:
-		return "hytera: slot or color code field is not one of its values";
+		return "dmrd: packet does not have the octets of its message";
 	case -178:
-		return "hytera: packet length does not match its message";
+		return "dmrd: number holds a character that is not a digit";
 	case -179:
-		return "hytera: packet too short";
+		return "hytera: slot or color code field is not one of its values";
 	case -180:
-		return "hytera: packet does not have the octets of its message";
+		return "hytera: packet length does not match its message";
 	case -181:
-		return "ipsc: packet is not a message of this kind";
+		return "hytera: packet too short";
 	case -182:
-		return "ipsc: packet length does not match its message";
+		return "hytera: packet does not have the octets of its message";
 	case -183:
-		return "ipsc: packet too short";
+		return "ipsc: packet is not a message of this kind";
 	case -184:
-		return "mmdvm: frame is not a message of this kind";
+		return "ipsc: packet length does not match its message";
 	case -185:
-		return "mmdvm: payload length does not match its message";
+		return "ipsc: packet too short";
 	case -186:
-		return "mmdvm: payload too short";
+		return "mmdvm: frame is not a message of this kind";
 	case -187:
-		return "trunk: request in progress";
+		return "mmdvm: payload length does not match its message";
 	case -188:
-		return "trunk: channel number out of range";
-	case -191:
-		return "trunk: no call";
+		return "mmdvm: payload too short";
 	case -189:
-		return "trunk: not on a TSCC";
+		return "trunk: request in progress";
 	case -190:
-		return "trunk: not registered";
-	case -192:
-		return "trunk: table full";
+		return "trunk: channel number out of range";
 	case -193:
-		return "trunk: stunned";
+		return "trunk: no call";
+	case -191:
+		return "trunk: not on a TSCC";
+	case -192:
+		return "trunk: not registered";
 	case -194:
-		return "trunk: character out of range for the UDT format";
+		return "trunk: table full";
 	case -195:
-		return "trunk: appended data in another UDT format";
+		return "trunk: stunned";
 	case -196:
-		return "trunk: appended data length out of range";
+		return "trunk: character out of range for the UDT format";
 	case -197:
-		return "codec2: codec is closed";
+		return "trunk: appended data in another UDT format";
 	case -198:
-		return "codec2: wrong number of samples";
+		return "trunk: appended data length out of range";
 	case -199:
-		return "codec2: built without libcodec2";
+		return "codec2: codec is closed";
 	case -200:
-		return "codec2: unsupported mode";
+		return "codec2: wrong number of samples";
 	case -201:
-		return "dvsi: bad number of channel bits";
+		return "codec2: built without libcodec2";
 	case -202:
-		return "dvsi: bad channel";
+		return "codec2: unsupported mode";
 	case -203:
-		return "dvsi: codec is closed";
+		return "dvsi: bad number of channel bits";
 	case -204:
-		return "dvsi: bad field";
+		return "dvsi: bad channel";
 	case -205:
-		return "dvsi: incomplete packet";
+		return "dvsi: codec is closed";
 	case -206:
-		return "dvsi: bad packet length";
+		return "dvsi: bad field";
 	case -207:
-		return "dvsi: bad parity";
+		return "dvsi: incomplete packet";
 	case -208:
-		return "dvsi: port returned a bad byte count";
+		return "dvsi: bad packet length";
 	case -209:
-		return "dvsi: bad number of samples";
+		return "dvsi: bad parity";
 	case -210:
-		return "dvsi: no start byte";
+		return "dvsi: port returned a bad byte count";
 	case -211:
-		return "dvsi: device reported an error";
+		return "dvsi: bad number of samples";
 	case -212:
-		return "dvsi: device timed out";
+		return "dvsi: no start byte";
 	case -213:
-		return "dvsi: unknown packet type";
+		return "dvsi: device reported an error";
 	case -214:
-		return "voice: transmission in progress";
+		return "dvsi: device timed out";
 	case -215:
-		return "voice: no call takes voice";
+		return "dvsi: unknown packet type";
 	case -216:
-		return "voice: queue full";
+		return "voice: transmission in progress";
 	case -217:
+		return "voice: no call takes voice";
+	case -218:
+		return "voice: queue full";
+	case -219:
 		return "voice: transmit timeout";
 	}
 	return "unknown status";

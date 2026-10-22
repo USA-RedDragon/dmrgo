@@ -18,6 +18,14 @@ var (
 	// payload field that holds them is nil.
 	ErrNoAddresses = errors.New("pdu: PDU has no address fields")
 	errNil         = errors.New("pdu: nil pointer argument")
+	// ErrWrongOpcode is returned by a SetX method that takes the opcode,
+	// such as FullLinkControl.SetTalkerAliasBlock, when the opcode does not
+	// select the payload X.
+	ErrWrongOpcode = errors.New("the opcode does not select the payload")
+	// ErrNoFullLCMask is returned by FullLinkControl.Encode and
+	// LCBytes.Codeword for a data type other than DataTypeVoiceLCHeader and
+	// DataTypeTerminatorWithLC, which have no RS(12,9) Full LC mask.
+	ErrNoFullLCMask = errors.New("the data type has no RS(12,9) Full LC mask")
 	// ErrNoServiceOptions is returned by LCBytes.SetServiceOptions when the
 	// FLCO of the LC has no Service Options field.
 	ErrNoServiceOptions = errors.New("pdu: PDU has no Service Options field")

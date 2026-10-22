@@ -92,10 +92,9 @@ func TestUnionSetMultiValueSelector(t *testing.T) {
 
 	out := generateUnion(t, selectorSrc)
 	assertContains(t, out,
-		"func (s *T) SetB(op uint8, p Sub) error {\n\tif !(op == 2 || op == 3) {\n\t\treturn errTBOp\n\t}\n"+
+		"func (s *T) SetB(op uint8, p Sub) error {\n\tif !(op == 2 || op == 3) {\n\t\treturn ErrWrongOpcode\n\t}\n"+
 			"\traw, err := p.encode()\n\tif err != nil {\n\t\treturn err\n\t}\n"+
 			"\ts.Op = op\n\ts.FID = 5\n\ts.Raw = raw\n\treturn nil\n}",
-		`errors.New("T.SetB: op is not 2 or 3")`,
 	)
 }
 
@@ -276,4 +275,55 @@ type T struct {
 		"result.P = _p",
 		`return "T{ P: " + text.Bool(s.P) + ", Op: " + text.Int(int64(s.Op)) + " }"`,
 	)
+}
+
+func TestUnionSetChecksPayloadField(t *testing.T) {
+	t.Parallel()
+
+	out := generateUnion(t, `// dmr:const 0-3=1
+type SubA struct {
+	Count uint8 `+"`dmr:\"bits:4-7\"`"+`
+	X     uint8 `+"`dmr:\"bits:8-15\"`"+`
+}
+
+// dmr:get Kind uint8 bits:0-3 the kind of the payload
+// dmr:get Count uint8 bits:4-7 the count of the payload
+// dmr:variant A SubA Kind=1 Count!=0
+// dmr:variant B SubA Kind=2
+type U struct {
+	Raw [2]byte `+"`dmr:\"bits:0-15,raw,union\"`"+`
+}`)
+	assertContains(t, out,
+		"func (s *U) SetA(p SubA) error {\n\tif p.Count < 1 || p.Count > 15 {\n\t\treturn errUSetACount\n\t}\n\traw, err := p.encode()\n\tif err != nil {\n\t\treturn err\n\t}\n\ts.Raw = raw\n\treturn nil\n}",
+		"errUSetACount = &dmrgo.FieldRangeError{",
+		"Max:   15.0,",
+		"Min:   1.0,",
+		"Type:  \"SubA\",",
+		"or p.Count is 0",
+		"if _, ok := t.AsB(); !ok {",
+	)
+}
+
+func TestFECMaskExportedError(t *testing.T) {
+	t.Parallel()
+
+	pdus, err := parse.Source("test.go", header+`// dmr:fec reed_solomon_12_9_4
+// dmr:input DT
+// dmr:fec_mask DT err:ErrNoMask 1=0x969696
+type T struct {
+	DT  uint8      `+"`dmr:\"-\"`"+`
+	FEC fec.Result `+"`dmr:\"-\"`"+`
+	A   [9]byte    `+"`dmr:\"bits:0-71,raw\"`"+`
+}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, err := render(t, pdus)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertContains(t, out, "return [12]byte{}, ErrNoMask")
+	if strings.Contains(out, "errTDTMask") {
+		t.Errorf("generated a mask error beside err:ErrNoMask\n%s", out)
+	}
 }

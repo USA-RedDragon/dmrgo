@@ -11,7 +11,6 @@
 package pdu
 
 import (
-	"errors"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	reedsolomon "github.com/USA-RedDragon/dmrgo/v2/internal/fec/reedsolomon"
@@ -85,7 +84,7 @@ func (s *FullLinkControl) Encode() ([12]byte, error) {
 		_encoded[10] ^= 0x99
 		_encoded[11] ^= 0x99
 	default:
-		return [12]byte{}, errFullLinkControlBurstDataTypeMask
+		return [12]byte{}, ErrNoFullLCMask
 	}
 	data = _encoded
 	return data, nil
@@ -263,7 +262,7 @@ func (s *FullLinkControl) AsTalkerAliasBlock() (p FLCTalkerAliasBlock, ok bool) 
 
 // SetTalkerAliasBlock makes s carry p as an FLCTalkerAliasBlock payload: it
 // sets FLCO to flco, FID to 0 and RawPayload, and keeps the other fields. It
-// returns an error when flco is not enums.FLCOTalkerAliasBlock1,
+// returns ErrWrongOpcode when flco is not enums.FLCOTalkerAliasBlock1,
 // enums.FLCOTalkerAliasBlock2 or enums.FLCOTalkerAliasBlock3 and a
 // *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
 // leaves s as it is.
@@ -273,7 +272,7 @@ func (s *FullLinkControl) SetTalkerAliasBlock(flco enums.FLCO, p FLCTalkerAliasB
 	}
 
 	if !(flco == enums.FLCOTalkerAliasBlock1 || flco == enums.FLCOTalkerAliasBlock2 || flco == enums.FLCOTalkerAliasBlock3) {
-		return errFullLinkControlTalkerAliasBlockFLCO
+		return ErrWrongOpcode
 	}
 	raw, err := p.encode()
 	if err != nil {
@@ -605,9 +604,7 @@ var (
 		Field: "FID",
 		Type:  "FullLinkControl",
 	}
-	errFullLinkControlBurstDataTypeMask    = errors.New("FullLinkControl.BurstDataType: no FEC mask for the value")
-	errFullLinkControlTalkerAliasBlockFLCO = errors.New("FullLinkControl.SetTalkerAliasBlock: flco is not enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2 or enums.FLCOTalkerAliasBlock3")
-	errFLCGroupVoiceGroupAddressRange      = &dmrgo.FieldRangeError{
+	errFLCGroupVoiceGroupAddressRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "GroupAddress",
 		Type:  "FLCGroupVoice",
