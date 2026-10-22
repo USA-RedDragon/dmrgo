@@ -13,9 +13,11 @@ type Control struct {
 	Mode Mode
 	// Flags is the flags of the sender (0x90, 0x91, 0x96 to 0x99).
 	Flags Flags
-	// Peers is the number of peers in an OpRegisterReply, or the length in
-	// octets of the peer list of an OpPeerListReply.
+	// Peers is the number of peers in an OpRegisterReply.
 	Peers uint16
+	// ListLen is the length in octets of the peer list of an
+	// OpPeerListReply, 11 for each peer.
+	ListLen uint16
 	// Version is the protocol version (0x90, 0x91, 0x94 to 0x97), for
 	// example 04 02 04 01.
 	Version [4]byte
@@ -65,14 +67,14 @@ func DecodeControl(p []byte) (Control, error) {
 		if _, err := PeerListOf(p); err != nil {
 			return Control{}, err
 		}
-		return Control{Opcode: op, ID: uint32(p[1])<<24 | uint32(p[2])<<16 | uint32(p[3])<<8 | uint32(p[4]), Peers: uint16(p[5])<<8 | uint16(p[6])}, nil
+		return Control{Opcode: op, ID: uint32(p[1])<<24 | uint32(p[2])<<16 | uint32(p[3])<<8 | uint32(p[4]), ListLen: uint16(p[5])<<8 | uint16(p[6])}, nil
 	default:
 	}
 	return Control{}, ErrCommand
 }
 
 // AppendBinary appends the packet c to dst, without the authentication
-// trailer. An OpPeerListReply appends only its header; use
+// trailer. An OpPeerListReply appends only its header, with ListLen; use
 // AppendPeerListReply for the entries. It returns dst unchanged and an
 // error for an opcode that is not a peer control packet, and
 // dmrgo.ErrNilReceiver for a nil c. It allocates only to grow dst.
@@ -101,7 +103,8 @@ func (c Control) appendBinary(dst []byte) ([]byte, error) {
 		m := ctlModeFlags{Opcode: c.Opcode, ID: c.ID, Mode: c.Mode, Flags: c.Flags}
 		return m.AppendBinary(dst)
 	case OpPeerListReply:
-		return AppendPeerListReply(dst, c.ID, nil), nil
+		return append(dst, byte(OpPeerListReply), byte(c.ID>>24&0xFF), byte(c.ID>>16&0xFF), byte(c.ID>>8&0xFF), byte(c.ID&0xFF),
+			byte(c.ListLen>>8), byte(c.ListLen&0xFF)), nil
 	default:
 	}
 	return dst, errOpcode

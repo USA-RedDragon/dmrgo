@@ -6497,6 +6497,7 @@ func in_transport_ipsc_Control(s *C.dmrgo_ipsc_control_t) (d g_transport_ipsc.Co
 	d.Mode = g_transport_ipsc.Mode(s.mode)
 	d.Flags = *(*g_transport_ipsc.Flags)(unsafe.Pointer(&s.flags))
 	d.Peers = uint16(s.peers)
+	d.ListLen = uint16(s.list_len)
 	d.Version = *(*[4]byte)(unsafe.Pointer(&s.version))
 	return
 }
@@ -6508,6 +6509,7 @@ func out_transport_ipsc_Control(d *C.dmrgo_ipsc_control_t, s *g_transport_ipsc.C
 	d.mode = C.dmrgo_ipsc_mode_t(s.Mode)
 	*(*g_transport_ipsc.Flags)(unsafe.Pointer(&d.flags)) = s.Flags
 	d.peers = C.uint16_t(s.Peers)
+	d.list_len = C.uint16_t(s.ListLen)
 	*(*[4]byte)(unsafe.Pointer(&d.version)) = s.Version
 }
 
@@ -33916,6 +33918,30 @@ func dmrgo_dmrd_control_append_binary(c_self *C.dmrgo_dmrd_control_t, c_dst *C.u
 	*c_dst_len = C.size_t(nf_dst)
 	if r1 != nil {
 		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_control_login_salt
+func dmrgo_dmrd_control_login_salt(c_self *C.dmrgo_dmrd_control_t, c_salt *C.uint32_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_transport_dmrd.Control
+	x = in_transport_dmrd_Control(&(*c_self))
+	r0, r1 := x.LoginSalt()
+	_ = r0
+	_ = r1
+	if c_salt != nil {
+		*c_salt = C.uint32_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
 	}
 	return C.DMRGO_OK
 }

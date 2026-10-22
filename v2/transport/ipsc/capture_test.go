@@ -63,6 +63,9 @@ func TestXPR8400PacketsRoundTrip(t *testing.T) {
 			}
 			out, err := m.AppendBinary(nil)
 			if m.Opcode == ipsc.OpPeerListReply {
+				if err != nil || !bytes.Equal(out, c.p[:7]) || int(m.ListLen) != len(c.p)-7 {
+					t.Fatalf("%x: peer list header %x, ListLen %d, %v", c.p, out, m.ListLen, err)
+				}
 				l, _ := ipsc.PeerListOf(c.p)
 				entries := make([]ipsc.PeerEntry, l.Len())
 				for i := range entries {

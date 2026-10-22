@@ -1662,6 +1662,7 @@ sym int dmrgo_dmrd_config_software_id(const dmrgo_dmrd_config_t *self, uint8_t *
 sym int dmrgo_dmrd_config_tx_frequency(const dmrgo_dmrd_config_t *self, uint32_t *out);
 sym int dmrgo_dmrd_config_url(const dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_dmrd_control_append_binary(const dmrgo_dmrd_control_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_dmrd_dialect_t d);
+sym int dmrgo_dmrd_control_login_salt(const dmrgo_dmrd_control_t *self, uint32_t *salt, bool *ok);
 sym int dmrgo_dmrd_data_append_binary(const dmrgo_dmrd_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_dmrd_data_call(const dmrgo_dmrd_data_t *self, bool *group, uint32_t *target, uint32_t *source);
 sym int dmrgo_dmrd_data_hint(const dmrgo_dmrd_data_t *self, dmrgo_layer2_hint_t *out);
@@ -3257,7 +3258,7 @@ type struct dmrgo_ip_ipv4_header_t { uint8_t version; uint8_t ihl; uint8_t tos; 
 type struct dmrgo_ip_ipv4_t { dmrgo_ip_ipv4_header_t header; uint8_t *options; size_t options_len; uint8_t *payload; size_t payload_len; };
 type struct dmrgo_ip_udp_header_t { dmrgo_ip_port_t source_port; dmrgo_ip_port_t destination_port; uint16_t length; uint16_t checksum; };
 type struct dmrgo_ip_udp_t { dmrgo_ip_udp_header_t header; uint8_t *payload; size_t payload_len; };
-type struct dmrgo_ipsc_control_t { dmrgo_ipsc_opcode_t opcode; uint32_t id; dmrgo_ipsc_mode_t mode; dmrgo_ipsc_flags_t flags; uint16_t peers; uint8_t version[4]; };
+type struct dmrgo_ipsc_control_t { dmrgo_ipsc_opcode_t opcode; uint32_t id; dmrgo_ipsc_mode_t mode; dmrgo_ipsc_flags_t flags; uint16_t peers; uint16_t list_len; uint8_t version[4]; };
 type struct dmrgo_ipsc_flags_t { uint8_t v[4]; };
 type struct dmrgo_ipsc_payload_t { uint8_t status; uint16_t words; bool has_body; uint8_t flags[2]; uint16_t bits; uint8_t octets[26]; uint8_t trailer[16]; uint8_t trailer_len; };
 type struct dmrgo_ipsc_peer_entry_t { uint32_t id; uint8_t ip[4]; uint16_t port; dmrgo_ipsc_mode_t mode; };

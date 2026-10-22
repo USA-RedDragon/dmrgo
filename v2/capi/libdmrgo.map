@@ -231,6 +231,7 @@ DMRGO_1 {
 		dmrgo_dmrd_config_tx_frequency;
 		dmrgo_dmrd_config_url;
 		dmrgo_dmrd_control_append_binary;
+		dmrgo_dmrd_control_login_salt;
 		dmrgo_dmrd_data_append_binary;
 		dmrgo_dmrd_data_call;
 		dmrgo_dmrd_data_hint;
