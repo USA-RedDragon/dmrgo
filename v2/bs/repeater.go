@@ -90,7 +90,10 @@ type Config struct {
 	// MaxDataQueue.
 	DataQueue int
 	// Silence is the 72-bit vocoder slot that fills lost voice. The zero
-	// value means vocoder.AMBESilenceSlot.
+	// value means vocoder.AMBESilenceSlot. A call with a FID other than
+	// enums.FIDStandardized and enums.FIDMotorola, such as a Codec2 call,
+	// repeats its last vocoder slot instead, as voice.TransmitterConfig
+	// says.
 	Silence [9]byte
 	// Lead makes Tick emit an outbound burst this long before its Due time
 	// in ModeRF, so that a transmit FIFO can be filled ahead. 0 means at

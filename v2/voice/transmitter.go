@@ -53,7 +53,11 @@ type TransmitterConfig struct {
 	// Silence is the 72-bit slot that fills a burst when no voice is
 	// queued, and pads the last superframe, packed as
 	// layer2.RawBurst.VoiceSlots returns it. The zero value means
-	// vocoder.AMBESilenceSlot(). A Codec2 caller sets its own.
+	// vocoder.AMBESilenceSlot(). A Codec2 caller sets its own. A relayed
+	// call with a FID other than enums.FIDStandardized and
+	// enums.FIDMotorola, such as a Codec2 call, repeats its last vocoder
+	// slot in place of Silence once it has one, as MMDVMHost does, because
+	// the silence of one codec is noise to another.
 	Silence [9]byte
 	// Headers is the number of Voice LC Headers before burst A. 0 means
 	// 1, as ETSI TS 102 361-1 clause 5.1.2.2 gives; at most MaxHeaders.
@@ -812,7 +816,7 @@ func (t *Transmitter) voice(o *Output) {
 				t.oldSlots--
 			}
 		} else {
-			t.slots[i], o.Fill = t.silence, true
+			t.slots[i], o.Fill = *t.fill(), true
 			silent++
 		}
 	}
@@ -888,10 +892,11 @@ func (t *Transmitter) finish(out []Output, reason EndReason) []Output {
 // is sent after the headers, and an EventCallEnd ends it. Voice that comes
 // before its EventCallStart is dropped and counted, as is voice that does
 // not fit in the queue. A lost burst becomes a fill: the first repeats the
-// last vocoder slot, later ones are silence. The embedded LC of each
-// complete received superframe is sent in the next superframe that starts,
-// and the call LC when none was received. It returns ErrBusy for an
-// EventCallStart while a call that is not ending runs, and
+// last vocoder slot, later ones are silence, or the last slot for a FID
+// other than enums.FIDStandardized and enums.FIDMotorola. The embedded LC
+// of each complete received superframe is sent in the next superframe that
+// starts, and the call LC when none was received. It returns ErrBusy for
+// an EventCallStart while a call that is not ending runs, and
 // dmrgo.ErrNilArgument for a nil e.
 func (t *Transmitter) Relay(now time.Duration, e *Event) error {
 	if t == nil {
@@ -960,6 +965,20 @@ func (t *Transmitter) relayStart(now time.Duration, c *Call) error {
 	return ErrBusy
 }
 
+func (t *Transmitter) fill() *[9]byte {
+	if t.relay && t.hasLast && t.call.FID != enums.FIDStandardized && t.call.FID != enums.FIDMotorola {
+		return &t.last
+	}
+	return &t.silence
+}
+
+func (t *Transmitter) fillFor(next bool) *[9]byte {
+	if next {
+		return &t.silence
+	}
+	return t.fill()
+}
+
 func (t *Transmitter) relayVoice(e *Event) {
 	next := t.hasNext && e.Call.sameParties(&t.next)
 	active := t.relay && !t.stopping && (t.state == TransmitterHeader || t.state == TransmitterVoice)
@@ -980,7 +999,7 @@ func (t *Transmitter) relayVoice(e *Event) {
 			if i == 0 && t.hasLast && !next {
 				t.push(&t.last)
 			} else {
-				t.push(&t.silence)
+				t.push(t.fillFor(next))
 			}
 		}
 	}
