@@ -399,7 +399,8 @@ func (s *Sender) State() SenderState {
 // header of that window has not gone yet, else in the next window. Send
 // returns ErrBusy for any other message while a message is in progress,
 // dmrgo.ErrNilArgument for a nil m, a *dmrgo.ConfigError for another
-// header, a P_HEAD in m.Proprietary, or a confirmed message to a group, an error on a zero
+// header (Field "Header"), a P_HEAD in m.Proprietary (Field
+// "Proprietary"), or a confirmed message to a group (Field "Header.Group"), an error on a zero
 // Sender, and the errors of packet.Builder.Segment, such as
 // packet.ErrNoRoom for a message of more than SenderConfig.MaxBlocks blocks
 // and packet.ErrRate. (ETSI TS 102 361-3 clauses 5.4 and
@@ -417,7 +418,7 @@ func (s *Sender) Send(now time.Duration, m *Message) error {
 		return ErrBusy
 	}
 	if m.Proprietary != nil {
-		return errHeader
+		return errProprietary
 	}
 	at := s.free()
 	e := &s.slots[at]
