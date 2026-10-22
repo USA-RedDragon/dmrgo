@@ -112,6 +112,43 @@ func TestBuilder_RetryShortData(t *testing.T) {
 	}
 }
 
+func TestBuilder_RetryWholeMessage(t *testing.T) {
+	t.Parallel()
+
+	for _, h := range []pdu.DataHeader{
+		header(t, (*pdu.DataHeader).SetDefinedData, pdu.DefinedDataHeader{SAP: enums.SAPShortData, LLIDDestination: 1, LLIDSource: 2, ResponseRequested: true, FullMessageFlag: true}),
+		header(t, (*pdu.DataHeader).SetRawData, pdu.RawDataHeader{SAP: enums.SAPShortData, AppendedBlocks: 1, LLIDDestination: 1, LLIDSource: 2, ResponseRequested: true, FullMessageFlag: true}),
+	} {
+		data := payload(30)
+		tx := packet.NewBuilder(127)
+		p, err := tx.Segment(h, data, enums.DataTypeRate12)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r, err := tx.Retry(&p, nil)
+		if err != nil {
+			t.Fatalf("%v: %v", h.Format(), err)
+		}
+		if r.Header != p.Header || len(r.Blocks) != len(p.Blocks) {
+			t.Fatalf("%v: header %+v with %d blocks, want the first try", h.Format(), r.Header, len(r.Blocks))
+		}
+		for i := range p.Blocks {
+			if r.Blocks[i] != p.Blocks[i] {
+				t.Errorf("%v: block %d is not block %d of the first try", h.Format(), i, i)
+			}
+		}
+		m, err := feed(t, packet.NewAssembler(127), r)
+		if err != nil || m == nil || !bytes.Equal(m.Data[:len(data)], data) {
+			t.Fatalf("%v: got %v %+v", h.Format(), err, m)
+		}
+		var rd packet.ResponseData
+		rd.Retry[0] = true
+		if _, err := tx.Retry(&p, &rd); !errors.Is(err, packet.ErrFormat) {
+			t.Errorf("%v: selective retry without SARQ: %v, want ErrFormat", h.Format(), err)
+		}
+	}
+}
+
 func TestBuilder_RetryErrors(t *testing.T) {
 	t.Parallel()
 

@@ -3,7 +3,6 @@ package packet_test
 import (
 	"bytes"
 	"encoding/hex"
-	"errors"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -85,10 +84,11 @@ func TestAnyToneDefinedData(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if _, err := tx.Retry(&p, nil); !errors.Is(err, packet.ErrFormat) {
-				t.Errorf("Retry without SARQ: %v, want ErrFormat", err)
+			r, err := tx.Retry(&p, nil)
+			if err != nil {
+				t.Fatalf("Retry without SARQ: %v", err)
 			}
-			got, err := packet.Bursts(&p, 7, layer2.SyncSourceMS)
+			got, err := packet.Bursts(&r, 7, layer2.SyncSourceMS)
 			if err != nil {
 				t.Fatal(err)
 			}

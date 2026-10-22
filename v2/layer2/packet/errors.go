@@ -60,10 +60,11 @@ var (
 	// a bad CRC.
 	ErrResponseData = errors.New("packet: invalid response data blocks")
 
-	errResponseLength = fmt.Errorf("%w: length is not 1 or 2 rate 1/2 blocks", ErrResponseData)
-	errResponseCRC    = fmt.Errorf("%w: %w", ErrResponseData, fec.ErrUncorrectable)
-	errNoConfirmed    = fmt.Errorf("%w: no confirmed packet in progress", ErrFormat)
-	errRetryFormat    = fmt.Errorf("%w: only a confirmed or SARQ packet has a later try", ErrFormat)
+	errResponseLength  = fmt.Errorf("%w: length is not 1 or 2 rate 1/2 blocks", ErrResponseData)
+	errResponseCRC     = fmt.Errorf("%w: %w", ErrResponseData, fec.ErrUncorrectable)
+	errNoConfirmed     = fmt.Errorf("%w: no confirmed packet in progress", ErrFormat)
+	errRetryFormat     = fmt.Errorf("%w: only a confirmed packet has a later try", ErrFormat)
+	errSelectiveFormat = fmt.Errorf("%w: only a C_HEAD or a packet with SARQ set has a selective retry", ErrFormat)
 
 	errResponseClassRange = &dmrgo.FieldRangeError{Type: "Response", Field: "Class", Bits: 2}
 	errResponseTypeRange  = &dmrgo.FieldRangeError{Type: "Response", Field: "Type", Bits: 3}
