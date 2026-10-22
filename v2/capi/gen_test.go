@@ -59,6 +59,9 @@ func TestGenerated(t *testing.T) {
 			t.Errorf("a function comment says without a copy for a call that copies: %s", d)
 		}
 	}
+	if m := regexp.MustCompile(`[^.]*\bgoroutines?\b`).FindAll(out.H, 3); m != nil {
+		t.Errorf("dmrgo_gen.h comments say goroutine, which C has no word for: %q", m)
+	}
 	if m := regexp.MustCompile(`DMRGO_ERR_NIL_RECEIVER for a nil \w+`).FindAll(out.H, 3); m != nil {
 		t.Errorf("a function comment gives DMRGO_ERR_NIL_RECEIVER for a receiver, which C passes as self: %q", m)
 	}
