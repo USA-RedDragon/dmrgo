@@ -30,8 +30,9 @@ func (c *CACH) First() bool {
 // order, packed as layer2.DecodeCACHField takes it. busy is the AT bit.
 // When First is true, Next encodes slc and sends its first fragment; else
 // it ignores slc and sends the next fragment. It returns ErrSlot for a tc
-// other than Slot1 or Slot2, and the error of pdu.ShortLC.Encode, after
-// which First stays true.
+// other than Slot1 or Slot2, dmrgo.ErrNilArgument for a nil slc when First
+// is true, and the error of pdu.ShortLC.Encode; after an error First stays
+// true.
 func (c *CACH) Next(tc enums.Slot, busy bool, slc *pdu.ShortLC) ([3]byte, error) {
 	if c == nil {
 		return [3]byte{}, dmrgo.ErrNilReceiver
