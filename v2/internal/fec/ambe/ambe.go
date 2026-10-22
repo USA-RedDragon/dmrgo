@@ -6,6 +6,8 @@
 package ambe
 
 import (
+	"math/bits"
+
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/golay"
 )
@@ -68,4 +70,24 @@ func Encode(frame [7]byte) [9]byte {
 			c0>>sh&1<<3 | c1>>sh&1<<2 | c2>>sh&1<<1 | c3>>sh&1) & 0xFF)
 	}
 	return slot
+}
+
+// Regenerate decodes slot and encodes it again, so that the bit errors that
+// Decode corrects are not passed on, as MMDVMHost CAMBEFEC::regenerateDMR
+// does. It returns slot unchanged and false when section A is
+// uncorrectable, or when 6 or more errors with 2 or more in section A make
+// regenerateDMR mute the frame (AMBEFEC.cpp lines 843-883, g4klx/MMDVMHost
+// 9384d683).
+func Regenerate(slot [9]byte) ([9]byte, bool) {
+	frame, res := Decode(slot)
+	if res.Uncorrectable {
+		return slot, false
+	}
+	out := Encode(frame)
+	o0, o1, _, _ := columns(&out)
+	s0, s1, _, _ := columns(&slot)
+	if bits.OnesCount32((o0<<6|o1>>12)^(s0<<6|s1>>12)) >= 2 && res.ErrorsCorrected >= 6 {
+		return slot, false
+	}
+	return out, true
 }

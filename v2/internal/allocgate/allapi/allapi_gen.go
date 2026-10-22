@@ -323,6 +323,7 @@ var api = [...]any{
 	internal_dvsisim.Pairs,
 	internal_fec_ambe.Decode,
 	internal_fec_ambe.Encode,
+	internal_fec_ambe.Regenerate,
 	internal_fec_bptc.Decode196,
 	internal_fec_bptc.DecodeCACH,
 	internal_fec_bptc.DecodeEmbedded,
