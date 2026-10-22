@@ -3816,7 +3816,7 @@ struct dmrgo_sms_text_t {
 	uint8_t sequence;
 	/* AckRequired reports that a FormatTMS message asks for an acknowledgement. */
 	bool ack_required;
-	/* Body is the text in UTF-8, without the CR LF that MOTOTRBO radios put before it and without a NUL after it. */
+	/* Body is the text in UTF-8, without the CR LF that MOTOTRBO radios put before it. Decode drops a NUL after the text in every format. AppendPacket adds one only for FormatAnyTone and FormatHytera, and sends a NUL that Body ends with. */
 	uint8_t *body;
 	size_t body_len;
 };
