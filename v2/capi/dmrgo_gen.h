@@ -2094,8 +2094,10 @@ struct dmrgo_packet_message_t {
 	/* Proprietary is the P_HEAD sent as the second header, or nil. */
 	bool has_proprietary;
 	dmrgo_pdu_proprietary_header_t proprietary;
-	/* DataType is the rate of the data blocks, or 0 without blocks. */
+	/* DataType is the rate of the data blocks. It is set only when Blocks is over 0. */
 	dmrgo_enums_data_type_t data_type;
+	/* Blocks is the number of data blocks that Data was built from, 0 for a packet without data blocks, such as a header-only response, or one whose blocks all failed their FEC. */
+	int64_t blocks;
 	/* Data is the user data. The pad octets of a U_HEAD or C_HEAD packet are removed when the header is a first try (Full Message Flag set). A packet that a later try started, because the first header was lost, keeps them, as only a first try counts them. A short data packet keeps all octets before the CRC; its Bit Padding is in the header. It holds at most 3048 bytes: 127 blocks of at most 24 octets. (ETSI TS 102 361-1 clause 9.3.20) */
 	uint8_t *data;
 	size_t data_len;

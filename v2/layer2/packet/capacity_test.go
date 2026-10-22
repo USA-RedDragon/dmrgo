@@ -38,6 +38,16 @@ func TestCapacity(t *testing.T) {
 	}
 	m, err := feed(t, packet.NewAssembler(n), p)
 	if err != nil || m == nil || !bytes.Equal(m.Data, data) {
-		t.Errorf("packet of %d blocks into an Assembler for %d: %v", n, n, err)
+		t.Fatalf("packet of %d blocks into an Assembler for %d: %v", n, n, err)
+	}
+	if m.Blocks != n || m.DataType != enums.DataTypeRate12 {
+		t.Errorf("Blocks %d DataType %v, want %d Rate12", m.Blocks, m.DataType, n)
+	}
+	ack, err := packet.NewResponse(confirmed().ConfirmedDataHeader, packet.ResponseACK, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m, err := feed(t, &none, ack); err != nil || m == nil || m.Blocks != 0 {
+		t.Errorf("ACK into the zero Assembler: %+v %v", m, err)
 	}
 }
