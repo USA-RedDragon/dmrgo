@@ -59,6 +59,37 @@ func relayTimes(t *testing.T, cfg *voice.TransmitterConfig, arrive map[int]time.
 	return got
 }
 
+func TestRelayWinsBackALateBurstAtTheNextLoss(t *testing.T) {
+	t.Parallel()
+	arrive, lost := map[int]time.Duration{}, map[int]uint8{13: 1}
+	for i := 1; i <= 20; i++ {
+		if i != 12 {
+			arrive[i] = time.Duration(i) * slot
+		}
+	}
+	arrive[5] += 2 * time.Millisecond
+	got := relayTimes(t, &voice.TransmitterConfig{Queue: voice.MaxQueue}, arrive, lost, 20)
+	for i := 1; i <= 20; i++ {
+		r, ok := got[i]
+		if i == 12 {
+			continue
+		}
+		if !ok {
+			t.Fatalf("burst %d not sent", i)
+		}
+		want := time.Duration(0)
+		switch {
+		case i == 5:
+			want = 58 * time.Millisecond
+		case i > 5 && i < 12:
+			want = slot
+		}
+		if hold := r.emitted - arrive[i]; hold != want {
+			t.Errorf("burst %d held %v, want %v", i, hold, want)
+		}
+	}
+}
+
 func TestRelayKeepsLead(t *testing.T) {
 	t.Parallel()
 	lead := 20 * time.Millisecond
