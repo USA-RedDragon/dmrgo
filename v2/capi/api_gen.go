@@ -38357,7 +38357,7 @@ func dmrgo_ipsc_session_master_adopt_need(c_self *C.dmrgo_ipsc_session_master_t,
 		*c_items = C.size_t(max(0, int(h.v.MaxOutputs())))
 	}
 	if c_arena != nil {
-		*c_arena = C.size_t(max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16))
+		*c_arena = C.size_t(max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(h.v.MaxOutputs())))
 	}
 	return C.DMRGO_OK
 }
@@ -38392,7 +38392,7 @@ func dmrgo_ipsc_session_master_adopt(c_self *C.dmrgo_ipsc_session_master_t, c_no
 	nf_dst := int(*c_dst_len)
 	a_dst := h.sc0[:0]
 	need_items := max(0, int(h.v.MaxOutputs()))
-	need_arena := max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16)
+	need_arena := max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(h.v.MaxOutputs()))
 	_ = need_arena
 	if int(c_dst_cap)-nf_dst < need_items {
 		if c_dst_need != nil {
@@ -38465,7 +38465,7 @@ func dmrgo_ipsc_session_master_adopt_with_key_need(c_self *C.dmrgo_ipsc_session_
 		*c_items = C.size_t(max(0, int(h.v.MaxOutputs())))
 	}
 	if c_arena != nil {
-		*c_arena = C.size_t(max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16))
+		*c_arena = C.size_t(max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(h.v.MaxOutputs())))
 	}
 	return C.DMRGO_OK
 }
@@ -38503,7 +38503,7 @@ func dmrgo_ipsc_session_master_adopt_with_key(c_self *C.dmrgo_ipsc_session_maste
 	nf_dst := int(*c_dst_len)
 	a_dst := h.sc0[:0]
 	need_items := max(0, int(h.v.MaxOutputs()))
-	need_arena := max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16)
+	need_arena := max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(h.v.MaxOutputs()))
 	_ = need_arena
 	if int(c_dst_cap)-nf_dst < need_items {
 		if c_dst_need != nil {
@@ -38567,7 +38567,7 @@ func dmrgo_ipsc_session_master_close_need(c_self *C.dmrgo_ipsc_session_master_t,
 		*c_items = C.size_t(max(0, int(h.v.MaxOutputs())))
 	}
 	if c_arena != nil {
-		*c_arena = C.size_t(max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16))
+		*c_arena = C.size_t(max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(h.v.MaxOutputs())))
 	}
 	return C.DMRGO_OK
 }
@@ -38596,7 +38596,7 @@ func dmrgo_ipsc_session_master_close(c_self *C.dmrgo_ipsc_session_master_t, c_ds
 	nf_dst := int(*c_dst_len)
 	a_dst := h.sc0[:0]
 	need_items := max(0, int(h.v.MaxOutputs()))
-	need_arena := max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16)
+	need_arena := max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(h.v.MaxOutputs()))
 	_ = need_arena
 	if int(c_dst_cap)-nf_dst < need_items {
 		if c_dst_need != nil {
@@ -38671,6 +38671,22 @@ func dmrgo_ipsc_session_master_deadline(c_self *C.dmrgo_ipsc_session_master_t, c
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ipsc_session_master_max_output_octets
+func dmrgo_ipsc_session_master_max_output_octets(c_self *C.dmrgo_ipsc_session_master_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_transport_ipsc_session_Master(c_self)
+	r0 := h.v.MaxOutputOctets()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ipsc_session_master_max_outputs
 func dmrgo_ipsc_session_master_max_outputs(c_self *C.dmrgo_ipsc_session_master_t, c_out *C.int64_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -38705,7 +38721,7 @@ func dmrgo_ipsc_session_master_packet_need(c_self *C.dmrgo_ipsc_session_master_t
 		*c_items = C.size_t(max(0, int(h.v.MaxOutputs())))
 	}
 	if c_arena != nil {
-		*c_arena = C.size_t(max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16))
+		*c_arena = C.size_t(max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(h.v.MaxOutputs())))
 	}
 	return C.DMRGO_OK
 }
@@ -38745,7 +38761,7 @@ func dmrgo_ipsc_session_master_packet(c_self *C.dmrgo_ipsc_session_master_t, c_n
 	nf_dst := int(*c_dst_len)
 	a_dst := h.sc0[:0]
 	need_items := max(0, int(h.v.MaxOutputs()))
-	need_arena := max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16)
+	need_arena := max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(h.v.MaxOutputs()))
 	_ = need_arena
 	if int(c_dst_cap)-nf_dst < need_items {
 		if c_dst_need != nil {
@@ -38821,7 +38837,7 @@ func dmrgo_ipsc_session_master_packet_with_key_need(c_self *C.dmrgo_ipsc_session
 		*c_items = C.size_t(max(0, int(h.v.MaxOutputs())))
 	}
 	if c_arena != nil {
-		*c_arena = C.size_t(max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16))
+		*c_arena = C.size_t(max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(h.v.MaxOutputs())))
 	}
 	return C.DMRGO_OK
 }
@@ -38864,7 +38880,7 @@ func dmrgo_ipsc_session_master_packet_with_key(c_self *C.dmrgo_ipsc_session_mast
 	nf_dst := int(*c_dst_len)
 	a_dst := h.sc0[:0]
 	need_items := max(0, int(h.v.MaxOutputs()))
-	need_arena := max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16)
+	need_arena := max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(h.v.MaxOutputs()))
 	_ = need_arena
 	if int(c_dst_cap)-nf_dst < need_items {
 		if c_dst_need != nil {
@@ -39088,7 +39104,7 @@ func dmrgo_ipsc_session_master_tick_need(c_self *C.dmrgo_ipsc_session_master_t, 
 		*c_items = C.size_t(max(0, int(h.v.MaxOutputs())))
 	}
 	if c_arena != nil {
-		*c_arena = C.size_t(max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16))
+		*c_arena = C.size_t(max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(h.v.MaxOutputs())))
 	}
 	return C.DMRGO_OK
 }
@@ -39117,7 +39133,7 @@ func dmrgo_ipsc_session_master_tick(c_self *C.dmrgo_ipsc_session_master_t, c_now
 	nf_dst := int(*c_dst_len)
 	a_dst := h.sc0[:0]
 	need_items := max(0, int(h.v.MaxOutputs()))
-	need_arena := max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16)
+	need_arena := max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(h.v.MaxOutputs()))
 	_ = need_arena
 	if int(c_dst_cap)-nf_dst < need_items {
 		if c_dst_need != nil {
@@ -39275,7 +39291,7 @@ func dmrgo_ipsc_session_peer_close_need(c_self *C.dmrgo_ipsc_session_peer_t, c_i
 		*c_items = C.size_t(max(0, int(h.v.MaxOutputs())))
 	}
 	if c_arena != nil {
-		*c_arena = C.size_t(max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16))
+		*c_arena = C.size_t(max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(h.v.MaxOutputs())))
 	}
 	return C.DMRGO_OK
 }
@@ -39304,7 +39320,7 @@ func dmrgo_ipsc_session_peer_close(c_self *C.dmrgo_ipsc_session_peer_t, c_dst *C
 	nf_dst := int(*c_dst_len)
 	a_dst := h.sc0[:0]
 	need_items := max(0, int(h.v.MaxOutputs()))
-	need_arena := max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16)
+	need_arena := max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(h.v.MaxOutputs()))
 	_ = need_arena
 	if int(c_dst_cap)-nf_dst < need_items {
 		if c_dst_need != nil {
@@ -39399,6 +39415,22 @@ func dmrgo_ipsc_session_peer_master(c_self *C.dmrgo_ipsc_session_peer_t, c_id *C
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ipsc_session_peer_max_output_octets
+func dmrgo_ipsc_session_peer_max_output_octets(c_self *C.dmrgo_ipsc_session_peer_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_transport_ipsc_session_Peer(c_self)
+	r0 := h.v.MaxOutputOctets()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ipsc_session_peer_max_outputs
 func dmrgo_ipsc_session_peer_max_outputs(c_self *C.dmrgo_ipsc_session_peer_t, c_out *C.int64_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -39433,7 +39465,7 @@ func dmrgo_ipsc_session_peer_packet_need(c_self *C.dmrgo_ipsc_session_peer_t, c_
 		*c_items = C.size_t(max(0, int(h.v.MaxOutputs())))
 	}
 	if c_arena != nil {
-		*c_arena = C.size_t(max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16))
+		*c_arena = C.size_t(max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(h.v.MaxOutputs())))
 	}
 	return C.DMRGO_OK
 }
@@ -39473,7 +39505,7 @@ func dmrgo_ipsc_session_peer_packet(c_self *C.dmrgo_ipsc_session_peer_t, c_from 
 	nf_dst := int(*c_dst_len)
 	a_dst := h.sc0[:0]
 	need_items := max(0, int(h.v.MaxOutputs()))
-	need_arena := max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16)
+	need_arena := max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(h.v.MaxOutputs()))
 	_ = need_arena
 	if int(c_dst_cap)-nf_dst < need_items {
 		if c_dst_need != nil {
@@ -39647,7 +39679,7 @@ func dmrgo_ipsc_session_peer_tick_need(c_self *C.dmrgo_ipsc_session_peer_t, c_no
 		*c_items = C.size_t(max(0, int(h.v.MaxOutputs())))
 	}
 	if c_arena != nil {
-		*c_arena = C.size_t(max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16))
+		*c_arena = C.size_t(max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(h.v.MaxOutputs())))
 	}
 	return C.DMRGO_OK
 }
@@ -39676,7 +39708,7 @@ func dmrgo_ipsc_session_peer_tick(c_self *C.dmrgo_ipsc_session_peer_t, c_now C.d
 	nf_dst := int(*c_dst_len)
 	a_dst := h.sc0[:0]
 	need_items := max(0, int(h.v.MaxOutputs()))
-	need_arena := max(0, int(h.v.MaxOutputs())) * ((int(g_transport_ipsc_session.MaxPacket))*int(unsafe.Sizeof(*new(byte))) + 16)
+	need_arena := max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(h.v.MaxOutputs()))
 	_ = need_arena
 	if int(c_dst_cap)-nf_dst < need_items {
 		if c_dst_need != nil {

@@ -24,6 +24,8 @@
  *   valid, and set it to 0 to reuse the arena. *arena_need is the fill the
  *   call needs, at any alignment of the arena. arena may be NULL with
  *   arena_cap 0 to ask for the size. Items are aligned for their type.
+ *   Outputs of one call that hold the same Go data, such as one packet
+ *   that a machine sends to every peer, share one copy in the arena.
  * - When an output does not fit, the call returns DMRGO_ERR_SHORT and
  *   leaves every fill unchanged. A call on a handle has a _need function
  *   that gives the items and arena bytes the call can use for the same

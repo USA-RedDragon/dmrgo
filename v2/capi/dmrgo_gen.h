@@ -10246,6 +10246,8 @@ int dmrgo_ipsc_session_master_close_need(dmrgo_ipsc_session_master_t *self, size
 int dmrgo_ipsc_session_master_close(dmrgo_ipsc_session_master_t *self, dmrgo_ipsc_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: session.Master.Deadline. Deadline returns the time at which the Master needs a Tick: when the first peer times out. */
 int dmrgo_ipsc_session_master_deadline(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t *at, bool *ok);
+/* Go: session.Master.MaxOutputOctets. MaxOutputOctets returns the most octets that the packets of the outputs of one call of the Master hold, where outputs that share a packet count it once: the packet that the call builds, the body of an OutputData and the de-registration of each peer. */
+int dmrgo_ipsc_session_master_max_output_octets(dmrgo_ipsc_session_master_t *self, int64_t *out);
 /* Go: session.Master.MaxOutputs. MaxOutputs returns the most outputs that one call of the Master appends. */
 int dmrgo_ipsc_session_master_max_outputs(dmrgo_ipsc_session_master_t *self, int64_t *out);
 /* dmrgo_ipsc_session_master_packet_need sets *items and *arena to the room that dmrgo_ipsc_session_master_packet needs for these arguments, without a change to the handle. */
@@ -10292,6 +10294,8 @@ int dmrgo_ipsc_session_peer_close(dmrgo_ipsc_session_peer_t *self, dmrgo_ipsc_se
 int dmrgo_ipsc_session_peer_deadline(dmrgo_ipsc_session_peer_t *self, dmrgo_duration_t *at, bool *ok);
 /* Go: session.Peer.Master. Master returns the ID of the master, which its registration reply gave. */
 int dmrgo_ipsc_session_peer_master(dmrgo_ipsc_session_peer_t *self, uint32_t *id, bool *ok);
+/* Go: session.Peer.MaxOutputOctets. MaxOutputOctets returns the most octets that the packets of the outputs of one call of the Peer hold, where outputs that share a packet count it once: the body of an OutputData and the four control packets that the Peer builds. */
+int dmrgo_ipsc_session_peer_max_output_octets(dmrgo_ipsc_session_peer_t *self, int64_t *out);
 /* Go: session.Peer.MaxOutputs. MaxOutputs returns the most outputs that one call of the Peer appends. */
 int dmrgo_ipsc_session_peer_max_outputs(dmrgo_ipsc_session_peer_t *self, int64_t *out);
 /* dmrgo_ipsc_session_peer_packet_need sets *items and *arena to the room that dmrgo_ipsc_session_peer_packet needs for these arguments, without a change to the handle. */
