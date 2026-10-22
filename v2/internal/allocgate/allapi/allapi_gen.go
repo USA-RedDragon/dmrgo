@@ -65,6 +65,7 @@ var api = [...]any{
 	(*bs.Repeater).Deadline,
 	(*bs.Repeater).Decoded,
 	(*bs.Repeater).Inbound,
+	(*bs.Repeater).JitterStats,
 	(*bs.Repeater).Lost,
 	(*bs.Repeater).Reject,
 	(*bs.Repeater).Reset,

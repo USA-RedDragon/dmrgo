@@ -25,7 +25,9 @@
 // Null). It wakes up on BS_Dwn_Act or any valid burst and hibernates after
 // T_MSInactiv without activity. With Config.ChannelAuth it repeats the
 // ChanAuth PDU of one MS that starts a transmission in hang time, and
-// gives the slot only to that MS.
+// gives the slot only to that MS. The bursts of a network source go
+// through a voice.Jitter per slot, Config.Jitter, which puts them back in
+// order and plays them at a fixed delay.
 //
 // CACH makes the CACH alone, for a consumer with its own slot logic.
 package bs

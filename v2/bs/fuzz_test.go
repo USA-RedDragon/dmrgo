@@ -29,6 +29,7 @@ func newPool(t testing.TB) []layer2.RawBurst {
 type script struct {
 	cfg bs.Config
 	ops []op
+	seq [4]uint16
 }
 
 type op struct {
@@ -61,6 +62,9 @@ func parseScript(in fuzzInput, p []layer2.RawBurst) script {
 	if data[1]&0x80 != 0 {
 		s.cfg.ColorCode = enums.ColorCode(data[1] & 0xF)
 	}
+	if data[1]&0x40 != 0 {
+		s.cfg.Jitter = -1
+	}
 	ops := data[2 : 2+(len(data)-2)/3*3]
 	loop := ops[len(ops)-3*min(int(in.loop), len(ops)/3):]
 	s.ops = make([]op, 0, min(len(ops)/3+int(in.reps)*len(loop)/3, maxOps))
@@ -88,7 +92,14 @@ func (s *script) add(now *time.Duration, p []layer2.RawBurst, a, b, c byte) {
 	if a&0x40 != 0 {
 		o.raw[b%33] ^= 1 << (c % 8)
 	}
-	o.h = layer2.Hint{Slot: o.slot, SyncLost: a&0x80 != 0 && b&1 != 0, End: layer2.EndHint(b >> 6 % 3)}
+	o.h = layer2.Hint{Slot: o.slot, SyncLost: a&0x80 != 0 && b&1 != 0, End: layer2.EndHint(b >> 6 % 3), At: *now}
+	if src := a >> 4 & 3; src != 0 && c&0x20 == 0 {
+		s.seq[src]++
+		o.h.Seq, o.h.HasSeq = s.seq[src]-uint16(c>>6), true
+		if c&0x10 != 0 {
+			o.h.SeqBits, o.h.Seq = 8, o.h.Seq&0xFF
+		}
+	}
 	s.ops = append(s.ops, o)
 }
 

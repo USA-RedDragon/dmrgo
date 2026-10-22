@@ -38,6 +38,7 @@ DMRGO_1 {
 		dmrgo_bs_repeater_free;
 		dmrgo_bs_repeater_inbound;
 		dmrgo_bs_repeater_inbound_need;
+		dmrgo_bs_repeater_jitter_stats;
 		dmrgo_bs_repeater_lost;
 		dmrgo_bs_repeater_lost_need;
 		dmrgo_bs_repeater_reject;
