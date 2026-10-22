@@ -30,15 +30,19 @@ func NewDMRShortLC(slc *pdu.ShortLC) (DMRShortLC, error) {
 }
 
 // ShortLC decodes the Short LC that s carries. Its FEC field combines the
-// BPTC result and the CRC-8 check. It does not allocate.
-func (s DMRShortLC) ShortLC() pdu.ShortLC {
+// BPTC result and the CRC-8 check. It does not allocate. A nil s gives the
+// zero ShortLC.
+func (s *DMRShortLC) ShortLC() pdu.ShortLC {
+	if s == nil {
+		return pdu.ShortLC{}
+	}
 	info, res := s.info()
 	slc := pdu.DecodeShortLC(info)
 	slc.FEC = res.Combine(slc.FEC)
 	return slc
 }
 
-func (s DMRShortLC) info() ([5]byte, fec.Result) {
+func (s *DMRShortLC) info() ([5]byte, fec.Result) {
 	var fragments [4]uint32
 	for i := range fragments {
 		fragments[i] = uint32(bits.Field(s.LC[:], i*cachFragmentBits, cachFragmentBits) & (1<<cachFragmentBits - 1))

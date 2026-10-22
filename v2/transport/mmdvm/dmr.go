@@ -101,9 +101,11 @@ func DecodeDMRData(f Frame) (DMRData, error) {
 
 // Command returns the command of the frame: CommandDMRData1 or
 // CommandDMRData2, or CommandDMRLost1 or CommandDMRLost2 when Lost is set.
-// A Slot other than Slot1 gives the slot 2 command.
-func (d DMRData) Command() Command {
+// A Slot other than Slot1 gives the slot 2 command, and a nil d gives 0.
+func (d *DMRData) Command() Command {
 	switch {
+	case d == nil:
+		return 0
 	case d.Slot == enums.Slot1 && d.Lost:
 		return CommandDMRLost1
 	case d.Slot == enums.Slot1:

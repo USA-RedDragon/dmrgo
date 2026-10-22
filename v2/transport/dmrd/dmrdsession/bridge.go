@@ -61,7 +61,7 @@ func NewBridge(cfg *BridgeConfig) (*Bridge, error) {
 		keepalive: orDefault(cfg.Keepalive, KeepaliveDefault),
 		timeout:   orDefault(cfg.Timeout, TimeoutDefault),
 	}
-	b.bcka, _ = dmrd.BridgeControl{Command: dmrd.CommandBCKA}.AppendBinary(nil)
+	b.bcka, _ = (&dmrd.BridgeControl{Command: dmrd.CommandBCKA}).AppendBinary(nil)
 	if _, err := b.key.Sign(b.bcka); err != nil {
 		return nil, err
 	}

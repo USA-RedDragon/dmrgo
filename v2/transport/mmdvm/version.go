@@ -1,5 +1,7 @@
 package mmdvm
 
+import "github.com/USA-RedDragon/dmrgo/v2"
+
 // Version is the payload of a CommandGetVersion reply. Protocol 1 (MMDVM_HS)
 // sends only the description; protocol 2 (MMDVM) adds the capabilities,
 // the CPU and the 16-octet unique ID.
@@ -46,9 +48,12 @@ func DecodeVersion(p []byte) (Version, error) {
 
 // AppendBinary appends the payload to dst: for protocol 2 the protocol,
 // the capabilities, the CPU, the UDID and the description, else the
-// protocol and the description. It allocates only to grow dst and never
-// fails.
-func (v Version) AppendBinary(dst []byte) ([]byte, error) {
+// protocol and the description. It allocates only to grow dst, and fails
+// only for a nil v, with dmrgo.ErrNilReceiver.
+func (v *Version) AppendBinary(dst []byte) ([]byte, error) {
+	if v == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
 	dst = append(dst, v.Protocol)
 	if v.Protocol == 2 {
 		dst = append(dst, byte(v.Capabilities&0xFF), byte(v.Capabilities>>8), byte(v.CPU))
@@ -70,9 +75,9 @@ type Debug struct {
 }
 
 // Count returns the number of numbers: 0 for CommandDebug1 and
-// CommandDebugDump, up to 4 for CommandDebug5.
-func (d Debug) Count() int {
-	if d.Command >= CommandDebug1 && d.Command <= CommandDebug5 {
+// CommandDebugDump and a nil d, up to 4 for CommandDebug5.
+func (d *Debug) Count() int {
+	if d != nil && d.Command >= CommandDebug1 && d.Command <= CommandDebug5 {
 		return int(d.Command - CommandDebug1)
 	}
 	return 0
@@ -99,8 +104,12 @@ func DecodeDebug(f Frame) (Debug, error) {
 
 // AppendBinary appends the payload to dst: the text and the numbers. Wrap
 // it with AppendFrame and Command. It returns dst unchanged and an error
-// when Command is not a debug command. It allocates only to grow dst.
-func (d Debug) AppendBinary(dst []byte) ([]byte, error) {
+// when Command is not a debug command, and dmrgo.ErrNilReceiver for a nil
+// d. It allocates only to grow dst.
+func (d *Debug) AppendBinary(dst []byte) ([]byte, error) {
+	if d == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
 	if d.Command != CommandDebugDump && (d.Command < CommandDebug1 || d.Command > CommandDebug5) {
 		return dst, errDebugCommand
 	}

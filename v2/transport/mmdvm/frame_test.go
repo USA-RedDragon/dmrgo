@@ -100,10 +100,10 @@ func TestDMRData(t *testing.T) {
 	if p, _ := lost.AppendBinary(nil); len(p) != 0 {
 		t.Errorf("%x", p)
 	}
-	if c := (mmdvm.DMRData{Slot: enums.Slot1, Lost: true}).Command(); c != mmdvm.CommandDMRLost1 {
+	if c := (&mmdvm.DMRData{Slot: enums.Slot1, Lost: true}).Command(); c != mmdvm.CommandDMRLost1 {
 		t.Error(c)
 	}
-	if c := (mmdvm.DMRData{Slot: enums.Slot2}).Command(); c != mmdvm.CommandDMRData2 {
+	if c := (&mmdvm.DMRData{Slot: enums.Slot2}).Command(); c != mmdvm.CommandDMRData2 {
 		t.Error(c)
 	}
 	for _, c := range []struct {
@@ -170,7 +170,7 @@ func TestDebug(t *testing.T) {
 	if err != nil || dump.Count() != 0 || !bytes.Equal(dump.Text, []byte{1, 2}) {
 		t.Errorf("%+v %v", dump, err)
 	}
-	if _, err := (mmdvm.Debug{Command: mmdvm.CommandAck}).AppendBinary(nil); err == nil {
+	if _, err := (&mmdvm.Debug{Command: mmdvm.CommandAck}).AppendBinary(nil); err == nil {
 		t.Error("Ack encodes as debug")
 	}
 }

@@ -168,8 +168,8 @@ func (u *User) SetCall(group bool, target, source uint32) error {
 	return nil
 }
 
-// IsVoice reports whether u carries a voice burst.
-func (u User) IsVoice() bool { return u.Burst&0x7F == BurstVoice }
+// IsVoice reports whether u carries a voice burst. It is false for a nil u.
+func (u *User) IsVoice() bool { return u != nil && u.Burst&0x7F == BurstVoice }
 
 // DecodeUser decodes the user packet p, without the authentication trailer
 // (see package auth). It returns ErrCommand for another opcode, ErrShort,

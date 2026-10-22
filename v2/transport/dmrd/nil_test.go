@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 )
@@ -18,5 +19,13 @@ func TestNilReceivers(t *testing.T) {
 	var b *dmrd.Bridge
 	if out, err := b.AppendBinary([]byte{1}); !errors.Is(err, dmrd.ErrCommand) || len(out) != 1 {
 		t.Errorf("nil Bridge AppendBinary %x, %v", out, err)
+	}
+	var c *dmrd.Control
+	if out, err := c.AppendBinary([]byte{1}, dmrd.DialectMMDVM); !errors.Is(err, dmrgo.ErrNilReceiver) || len(out) != 1 {
+		t.Errorf("nil Control AppendBinary %x, %v", out, err)
+	}
+	var bc *dmrd.BridgeControl
+	if out, err := bc.AppendBinary([]byte{1}); !errors.Is(err, dmrgo.ErrNilReceiver) || len(out) != 1 {
+		t.Errorf("nil BridgeControl AppendBinary %x, %v", out, err)
 	}
 }

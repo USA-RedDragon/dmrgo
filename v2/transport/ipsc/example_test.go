@@ -36,7 +36,7 @@ func ExampleDecodeControl() {
 	c, err := ipsc.DecodeControl(p)
 	fmt.Println(c.Opcode, c.ID, c.Mode.Digital(), c.Mode.Operational(), err)
 
-	alive, _ := ipsc.Control{Opcode: ipsc.OpAliveRequest, ID: 3149999, Mode: c.Mode, Flags: c.Flags, Version: c.Version}.AppendBinary(nil)
+	alive, _ := (&ipsc.Control{Opcode: ipsc.OpAliveRequest, ID: 3149999, Mode: c.Mode, Flags: c.Flags, Version: c.Version}).AppendBinary(nil)
 	fmt.Printf("%x\n", alive)
 	// Output:
 	// RegisterRequest 314926 true true <nil>

@@ -9,7 +9,7 @@ import (
 )
 
 func ctl(op ipsc.Opcode, id uint32) []byte {
-	b, _ := ipsc.Control{Opcode: op, ID: id, Mode: 0x6a}.AppendBinary(nil)
+	b, _ := (&ipsc.Control{Opcode: op, ID: id, Mode: 0x6a}).AppendBinary(nil)
 	return b
 }
 

@@ -159,7 +159,7 @@ func TestPeerRetryTimeoutBackoff(t *testing.T) {
 }
 
 func mmdvmCtl(c dmrd.Command, id uint32) []byte {
-	b, _ := dmrd.Control{Command: c, ID: id}.AppendBinary(nil, dmrd.DialectMMDVM)
+	b, _ := (&dmrd.Control{Command: c, ID: id}).AppendBinary(nil, dmrd.DialectMMDVM)
 	return b
 }
 
@@ -172,7 +172,7 @@ func ctl(c dmrd.Command, id uint32) []byte {
 }
 
 func rptk(id uint32, tk [32]byte) []byte {
-	b, _ := dmrd.Control{Command: dmrd.CommandRPTK, ID: id, Token: tk}.AppendBinary(nil, dmrd.DialectMMDVM)
+	b, _ := (&dmrd.Control{Command: dmrd.CommandRPTK, ID: id, Token: tk}).AppendBinary(nil, dmrd.DialectMMDVM)
 	return b
 }
 
