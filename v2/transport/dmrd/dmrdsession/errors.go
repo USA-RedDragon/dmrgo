@@ -1,10 +1,6 @@
 package dmrdsession
 
-import (
-	"errors"
-
-	"github.com/USA-RedDragon/dmrgo/v2"
-)
+import "github.com/USA-RedDragon/dmrgo/v2"
 
 const errType = "dmrdsession"
 
@@ -18,5 +14,3 @@ var (
 	errLoginTimeout error = &dmrgo.ConfigError{Type: errType, Field: "LoginTimeout"}
 	errKeepalive    error = &dmrgo.ConfigError{Type: errType, Field: "Keepalive"}
 )
-
-var errNoKey = errors.New("dmrdsession: the Bridge has no key; make it with NewBridge")

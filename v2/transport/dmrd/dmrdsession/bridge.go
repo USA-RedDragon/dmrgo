@@ -79,15 +79,16 @@ func (b *Bridge) State() State {
 }
 
 // SignInPlace writes the signature of the OpenBridge packet p into its last
-// octets, as dmrdauth.BridgeKey.SignInPlace does. It returns an error for a
-// Bridge that NewBridge did not make. It does not allocate.
+// octets, as dmrdauth.BridgeKey.SignInPlace does. It returns
+// dmrgo.ErrZeroValue for a Bridge that NewBridge did not make. It does not
+// allocate.
 func (b *Bridge) SignInPlace(p []byte) error {
 	if b == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
 	if b.key == nil {
-		return errNoKey
+		return dmrgo.ErrZeroValue
 	}
 	return b.key.SignInPlace(p)
 }
