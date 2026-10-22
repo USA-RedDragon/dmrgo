@@ -10263,7 +10263,7 @@ int dmrgo_hytera_decode_frame(const uint8_t *p, size_t p_len, dmrgo_hytera_frame
 int dmrgo_hytera_decode_heartbeat(const uint8_t *p, size_t p_len, dmrgo_hytera_heartbeat_t *out);
 /* Go: hytera.DecodeP2P. DecodeP2P decodes the P2P command p. It returns DMRGO_ERR_HYTERA_SHORT, or DMRGO_ERR_HYTERA_SIGNATURE when p does not start with "P2P". */
 int dmrgo_hytera_decode_p2p(const uint8_t *p, size_t p_len, dmrgo_hytera_p2p_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: hytera.Frame.AppendBinary. AppendBinary appends the 72-octet frame to dst. A NULL f gives DMRGO_ERR_NIL_RECEIVER. */
+/* Go: hytera.Frame.AppendBinary. AppendBinary appends the 72-octet frame to dst. It returns dst unchanged and an error that wraps DMRGO_ERR_HYTERA_CODE when Slot is not DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2, and a DMRGO_ERR_FIELD_RANGE when ColorCode is above 15 or Destination or Source does not fit in 24 bits. A NULL f gives DMRGO_ERR_NIL_RECEIVER. */
 int dmrgo_hytera_frame_append_binary(const dmrgo_hytera_frame_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hytera.Frame.Call. Call returns the call of the frame: target is Destination and source is Source. */
 int dmrgo_hytera_frame_call(const dmrgo_hytera_frame_t *self, bool *group, uint32_t *target, uint32_t *source);
@@ -10273,7 +10273,7 @@ int dmrgo_hytera_frame_has_burst(const dmrgo_hytera_frame_t *self, bool *out);
 int dmrgo_hytera_frame_hint(const dmrgo_hytera_frame_t *self, dmrgo_duration_t now, dmrgo_layer2_hint_t *out);
 /* Go: hytera.Frame.SetCall. SetCall sets CallType to 0x01 for a group call and 0x00 for a private call, as a Hytera repeater sends them, and Destination and Source. It returns a DMRGO_ERR_FIELD_RANGE when target or source does not fit in 24 bits, and DMRGO_ERR_ARG for a NULL self, and then changes nothing. */
 int dmrgo_hytera_frame_set_call(dmrgo_hytera_frame_t *self, bool group, uint32_t target, uint32_t source);
-/* Go: hytera.Frame.SetHint. SetHint sets SlotType from what h says the burst is, as a machine Output gives it: DMRGO_LAYER2_KIND_VOICE with a VoiceBurst of A to F, or DMRGO_LAYER2_KIND_DATA with a DataType. The position and data type errors wrap DMRGO_ERR_LAYER2_VOICE_POSITION and DMRGO_ERR_LAYER2_DATA_TYPE. */
+/* Go: hytera.Frame.SetHint. SetHint sets SlotType from what h says the burst is, as a machine Output gives it: DMRGO_LAYER2_KIND_VOICE with a VoiceBurst of A to F, or DMRGO_LAYER2_KIND_DATA with a DataType. The kind, position and data type errors wrap DMRGO_ERR_LAYER2_KIND, DMRGO_ERR_LAYER2_VOICE_POSITION and DMRGO_ERR_LAYER2_DATA_TYPE. */
 int dmrgo_hytera_frame_set_hint(dmrgo_hytera_frame_t *self, const dmrgo_layer2_hint_t *h);
 /* Go: hytera.Heartbeat.AppendBinary. AppendBinary appends the heartbeat, or the keepalive, to dst. It returns DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_hytera_heartbeat_append_binary(const dmrgo_hytera_heartbeat_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);

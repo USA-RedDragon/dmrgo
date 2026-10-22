@@ -93,8 +93,9 @@ func DecodeFrame(p []byte) (Frame, error) {
 }
 
 // AppendBinary appends the 72-octet frame to dst. It returns dst unchanged
-// and an error when Slot is not Slot1 or Slot2, ColorCode is above 15, or
-// Destination or Source does not fit in 24 bits. A nil f gives
+// and an error that wraps ErrCode when Slot is not Slot1 or Slot2, and a
+// *dmrgo.FieldRangeError when ColorCode is above 15 or Destination or Source
+// does not fit in 24 bits. A nil f gives
 // dmrgo.ErrNilReceiver. It allocates only when dst has no room for FrameLen
 // more octets.
 func (f *Frame) AppendBinary(dst []byte) ([]byte, error) {
@@ -111,7 +112,7 @@ func (f *Frame) AppendBinary(dst []byte) ([]byte, error) {
 		return dst, errSlot
 	}
 	if f.ColorCode > 15 {
-		return dst, errColor
+		return dst, errFrameColorCodeRange
 	}
 	l.ColorCode = uint16(f.ColorCode) * 0x1111
 	l.Port, l.Mark, l.Seq, l.PacketType = f.Port, f.Mark, f.Seq, f.PacketType
@@ -252,8 +253,8 @@ func dataTypeOf(s SlotType) (enums.DataType, bool) {
 // error, and changes nothing, for another kind, a position that is not A
 // to F, a KindData hint without a data type, or a data type that Hytera
 // has no slot type for (MBC, idle, rate 1 and unified single block data).
-// The position and data type errors wrap layer2.ErrVoicePosition and
-// layer2.ErrDataType.
+// The kind, position and data type errors wrap layer2.ErrKind,
+// layer2.ErrVoicePosition and layer2.ErrDataType.
 func (f *Frame) SetHint(h layer2.Hint) error {
 	if f == nil {
 		return dmrgo.ErrNilReceiver
