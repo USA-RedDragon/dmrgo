@@ -401,7 +401,7 @@ documents:
               - TestEmbeddedLC_RoundTrip
               - TestEmbeddedLC_ChecksumMismatch
               - TestEmbeddedLC_EncodeRejectsBadLC
-              - TestEmbeddedLCStrict_MMDVMHostVectors
+              - TestEmbeddedLC_MMDVMHostVectors
               - TestEmbeddedLC_FiveErrors
               - TestVoiceTransmitter_Transmission
               - TestVoiceTransmitter_ReverseChannel
@@ -415,7 +415,7 @@ documents:
               - TestVoiceReceiver_LateEntry
               - TestVoiceReceiver_LostBurst
               - TestVoiceReceiver_UncorrectableLC
-              - TestVoiceReceiver_Strict
+              - TestVoiceReceiver_EmbeddedLCBitError
               - TestVoiceReceiver_DataBurstResets
               - TestVoiceReceiver_UncorrectableEMB
               - TestVoiceReceiver_Captures
@@ -1028,7 +1028,6 @@ documents:
               - TestEmbeddedLC_DifferentPatterns
               - TestEmbeddedLC_CapturedSuperframe
               - TestEmbeddedLC_UpToThreeErrorsCorrected
-              - TestEmbeddedLCStrict_RowErrors
               - TestEmbeddedLC_TieResolvedByCheck
               - TestEmbeddedLC_RandomWordsRejected
               - TestEmbeddedLC_ParityRowErrorCorrected
@@ -1511,7 +1510,7 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/voice
             names:
-              - TestTransmitter_Interrupt
+              - TestTransmitter_ReverseChannel
               - TestTransmitter_InterruptEnding
 
       - section: "6.3.4"
@@ -1521,7 +1520,7 @@ documents:
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/voice
             names:
-              - TestTransmitter_Interrupt
+              - TestTransmitter_ReverseChannel
 
       - section: "6.3.5"
         title: "Sending Interrupt Request and Retry Mechanism"

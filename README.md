@@ -323,7 +323,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 9.3.19 | Logical Link ID (LLID) | verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/csbk.go` |
 | 9.3.32 | Control Signalling BlocK Opcode (CSBKO) | verified | 1/1 passed | `v2/layer2/pdu/csbk.go` |
 | B.1.1 | BPTC (196,96) | verified | 11/11 passed | `v2/internal/fec/bptc/bptc_196_96.go` |
-| B.2.1 | Variable length BPTC for embedded signalling | verified | 16/16 passed | `v2/internal/fec/bptc/bptc_embedded_lc.go` |
+| B.2.1 | Variable length BPTC for embedded signalling | verified | 15/15 passed | `v2/internal/fec/bptc/bptc_embedded_lc.go` |
 | B.2.2 | Single Burst Variable length BPTC | verified | 14/14 passed | `v2/internal/fec/bptc/bptc_single_burst.go` |
 | B.2.3 | Variable length BPTC for CACH signalling | verified | 13/13 passed | `v2/internal/fec/bptc/bptc_cach.go` |
 | B.2.4 | Rate ¾ Trellis code | verified | 10/10 passed | `v2/internal/fec/trellis/trellis_3_4.go` |
