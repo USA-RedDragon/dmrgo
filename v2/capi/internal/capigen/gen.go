@@ -220,7 +220,7 @@ func (g *gen) fnDoc(o *types.Func, goName string) string {
 	return d
 }
 
-// errC maps a Go error name of a doc, such as ErrBusy, sms.ErrNil or
+// errC maps a Go error name of a doc, such as ErrBusy, sms.ErrShort or
 // *dmrgo.ConfigError, to its C code, or returns w.
 func (g *gen) errC(p *types.Package, w string) string {
 	name := strings.TrimPrefix(w, "*")
