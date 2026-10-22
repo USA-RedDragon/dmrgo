@@ -3,6 +3,7 @@ package capigen
 import (
 	"fmt"
 	"go/types"
+	"slices"
 	"strings"
 )
 
@@ -35,9 +36,37 @@ func (g *gen) members(ti *tinfo) ([]member, error) {
 			return nil, fmt.Errorf("field %s: %w", f.Name(), err)
 		}
 		m.decls = d
+		if ti.sized && m.name == "size" {
+			return nil, fmt.Errorf("field %s: the name size is the size field of a sized struct", f.Name())
+		}
 		out = append(out, m)
 	}
+	if ti.sized {
+		lockOrder(out, g.lock.sizedLine(ti.c))
+	}
 	return out, nil
+}
+
+// lockOrder puts the members that the lock line has first, in its order,
+// so that a sized struct only grows at the end.
+func lockOrder(ms []member, line string) {
+	if line == "" {
+		return
+	}
+	pos := map[string]int{}
+	body := strings.TrimSuffix(strings.TrimPrefix(line[strings.Index(line, "{")+1:], " size_t size;"), "};")
+	for i, d := range strings.Split(body, ";") {
+		if d = strings.TrimSpace(d); d != "" {
+			pos[cName(d)] = i + 1
+		}
+	}
+	at := func(m member) int {
+		if p, ok := pos[cName(m.decls[0])]; ok {
+			return p
+		}
+		return len(pos) + 1
+	}
+	slices.SortStableFunc(ms, func(a, b member) int { return at(a) - at(b) })
 }
 
 func (g *gen) fieldDecls(n string, t types.Type) ([]string, error) {
@@ -404,6 +433,9 @@ func (g *gen) subStorage(st, pfx, field string, t types.Type) string {
 
 func (g *gen) inSlice(w *strings.Builder, u *types.Slice, d, ptr, n string) error {
 	e := u.Elem()
+	if g.isSized(e) {
+		return fmt.Errorf("a slice of a sized struct")
+	}
 	if g.alias(e) {
 		lines(w, d+" = cSlice["+g.goType(e)+"](unsafe.Pointer("+ptr+"), "+n+")")
 		return nil
@@ -697,6 +729,9 @@ func (g *gen) structOut(w *strings.Builder, ti *tinfo, name string) error {
 	}
 	lines(w, "func "+name+"(d *C."+ti.c+", s *"+g.goType(ti.named)+", oc *outc) {")
 	lines(w, "_ = oc")
+	if ti.sized {
+		lines(w, "d.size = C.size_t(unsafe.Sizeof(*d))")
+	}
 	if len(ms) == 0 {
 		lines(w, "_ = d", "_ = s")
 	}
@@ -759,7 +794,11 @@ func (g *gen) cStruct(ti *tinfo) error {
 		}
 		lines(&b, "struct "+ti.c+" {")
 		lines(&plain, "struct "+ti.c+" {")
-		if len(ms) == 0 {
+		if ti.sized {
+			lines(&b, "\t/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */", "\tsize_t size;")
+			lines(&plain, "\tsize_t size;")
+		}
+		if len(ms) == 0 && !ti.sized {
 			lines(&b, "\tuint8_t unused;")
 			lines(&plain, "\tuint8_t unused;")
 		}

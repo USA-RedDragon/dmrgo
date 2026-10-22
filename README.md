@@ -137,7 +137,7 @@ The programs in [v2/examples](v2/examples) run offline on the captures in `v2/la
   - The AMBE+2 frame FEC. AMBE+2 itself is not included.
   - A `Codec` interface and a Codec2 codec (`vocoder/codec2`).
   - AMBE+2 on a DVSI AMBE-3000R or AMBE-3003 chip (`vocoder/dvsi`), such as a ThumbDV, a DVstick or an AMBEserver. See [DVSI](#dvsi).
-- A C API (`v2/capi`): libdmrgo, a shared library with the C form of the whole library (`dmrgo.h` and `dmrgo_gen.h`). It is a module of its own, so its cgo stays out of `v2`. `make -C v2/capi` builds it.
+- A C API (`v2/capi`): libdmrgo, a shared library with the C form of the whole library (`dmrgo.h` and `dmrgo_gen.h`). It is a module of its own, so its cgo stays out of `v2`. `make -C v2/capi` builds it. The C ABI has its own number, `DMRGO_ABI_VERSION`, which is independent of the Go module version and changes only when a C declaration breaks programs built against the older header; the soname `libdmrgo.so.N` follows it. Config, options and vtable structs start with `size_t size`, so they can get members at the end without a new ABI version.
 - No cgo in the `v2` module outside `vocoder/codec2`.
 - No allocation on the hot path: see [Allocation](#allocation).
 

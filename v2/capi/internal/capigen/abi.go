@@ -112,6 +112,28 @@ func (l *abiLock) renumber(names []string, tags map[string][]string) {
 	l.gone = map[string]int{}
 }
 
+const sizedHead = "{ size_t size;"
+
+// sizedLine returns the lock line of the struct c when it has a size field.
+func (l *abiLock) sizedLine(c string) string {
+	head := lockType + " struct " + c + " " + sizedHead
+	for line := range l.lines {
+		if strings.HasPrefix(line, head) {
+			return line
+		}
+	}
+	return ""
+}
+
+// grown reports whether line, a struct with a size field, is old with
+// members added at the end.
+func grown(old, line string) bool {
+	if !strings.HasPrefix(old, lockType+" struct ") || !strings.Contains(old, sizedHead) {
+		return false
+	}
+	return strings.HasPrefix(line, strings.TrimSuffix(old, "};"))
+}
+
 func (l *abiLock) prefix(path string, rule func() string) (string, error) {
 	l.upfx[path] = true
 	if p, ok := l.pfx[path]; ok {
@@ -161,7 +183,7 @@ func (l *abiLock) render(syms []string, allowBreak bool) ([]byte, []string, erro
 		same[layoutOf(s, scalars)] = true
 	}
 	for s := range l.lines {
-		if !now[s] && !same[layoutOf(s, scalars)] {
+		if !now[s] && !same[layoutOf(s, scalars)] && !slices.ContainsFunc(syms, func(n string) bool { return grown(s, n) }) {
 			broken = append(broken, s)
 		}
 	}

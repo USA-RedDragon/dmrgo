@@ -30,7 +30,37 @@
  *   arguments, without a change to the handle. The call checks that room
  *   first: with less it returns DMRGO_ERR_SHORT before it runs, so the
  *   handle does not change. A call on a handle without a bound says so in
- *   its comment. A call without a handle can be repeated.
+ *   its comment. A call without a handle can be repeated, and it changes
+ *   its in/out arguments only when it returns DMRGO_OK or a library error.
+ *
+ * Inputs follow these rules:
+ *
+ * - A const pointer is only read. A pointer that is not const and not an
+ *   output is in/out: the call reads it and writes back what the Go call
+ *   changed. Every input array and string is copied or used only during
+ *   the call.
+ * - A NULL pointer argument gives DMRGO_ERR_ARG, except where the comment
+ *   of the function says that it may be NULL, which is a Go nil.
+ * - A config, options or vtable struct whose first member is size_t size
+ *   is sized: set size to sizeof the struct before the call, for example
+ *   T cfg = {.size = sizeof cfg}. The library reads only the members that
+ *   size covers and takes the rest as zero, so a struct can get members at
+ *   its end without a new ABI version, and a program built against an
+ *   older dmrgo_gen.h works with a newer library. A size below
+ *   sizeof(size_t) gives DMRGO_ERR_ARG. A vtable method that size does not
+ *   cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD. Other
+ *   structs, such as outputs, have a fixed layout.
+ * - Use a handle from one thread at a time. A vtable user value must stay
+ *   valid until the handle made from the vtable is freed.
+ *
+ * The ABI version: DMRGO_ABI_VERSION numbers the C ABI of libdmrgo. It is
+ * independent of the version of the Go module and changes only when a
+ * declaration changes in a way that breaks a program built against the
+ * older header, such as a removed function or a changed layout of a
+ * struct that is not sized. The soname of the library follows it:
+ * libdmrgo.so.1 for ABI version 1, and the symbols have the version node
+ * DMRGO_1. New functions, codes and members at the end of a sized struct
+ * keep the ABI version.
  */
 
 #ifndef DMRGO_H
@@ -70,7 +100,10 @@ enum dmrgo_status {
 	 * which only an implementation in C of a Go interface can cause, such
 	 * as a codec whose decode returns more than frame_samples() samples.
 	 * The call took effect, and the fills are unchanged. */
-	DMRGO_ERR_BOUND = -6
+	DMRGO_ERR_BOUND = -6,
+	/* A vtable has no function for a method that the library called: its
+	 * size does not cover the method, or the function is NULL. */
+	DMRGO_ERR_NO_METHOD = -7
 };
 
 #ifndef DMRGO_NO_PROTOTYPES

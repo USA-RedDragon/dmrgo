@@ -1014,6 +1014,8 @@ struct dmrgo_pdu_short_lc_t {
 };
 
 struct dmrgo_bs_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* Mode selects RF repeater or network arbiter. */
 	dmrgo_bs_mode_t mode;
 	/* ColorCode is the color code of the bursts the Repeater sends, and the only one it takes from RF. */
@@ -1171,11 +1173,15 @@ struct dmrgo_csbk_match_t {
 };
 
 struct dmrgo_csbk_preambles_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* Scratch, when set, is the Burst that Burst decodes into, as for RequesterConfig.Scratch. */
 	dmrgo_layer2_burst_t *scratch;
 };
 
 struct dmrgo_csbk_requester_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* ColorCode is the color code of the slot types of the bursts sent. */
 	dmrgo_enums_color_code_t color_code;
 	/* Source selects the SYNC pattern: layer2.SyncSourceBS, the zero value, for a repeater outbound, layer2.SyncSourceMS for a radio. */
@@ -1195,6 +1201,8 @@ struct dmrgo_csbk_requester_config_t {
 };
 
 struct dmrgo_csbk_responder_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* Address is the 24-bit address of the radio. The Responder answers the CSBKs that address it. */
 	uint32_t address;
 	/* ColorCode is the color code of the slot types of the bursts sent. */
@@ -1222,6 +1230,8 @@ struct dmrgo_csbk_responder_config_t {
 };
 
 struct dmrgo_csbk_timing_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* ID is MS_ID, the 20-bit identifier of the radio in its wide area timing identifier, from 1 to MaxTimingID. The Timing picks a new one when another radio uses it (ETSI TS 102 361-2 clause 6.2.3.7). */
 	uint32_t id;
 	/* DynamicID is MS_DI, the leader preference of the radio from 0 to MaxDynamicID. 0 means the radio is not eligible to be the leader. (ETSI TS 102 361-2 clause 7.2.9) */
@@ -1235,6 +1245,8 @@ struct dmrgo_csbk_timing_config_t {
 };
 
 struct dmrgo_csbk_wakeup_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* ColorCode is the color code of the BS, of the slot type of the BS_Dwn_Act bursts and of the outbound that ends the wakeup. */
 	dmrgo_enums_color_code_t color_code;
 	/* SyncWait is T_SyncWu, the wait for the outbound after each BS_Dwn_Act. 0 means DefaultSyncWait, and a negative value waits until the outbound or Cancel. */
@@ -1279,6 +1291,8 @@ struct dmrgo_csbk_output_t {
 };
 
 struct dmrgo_csbk_request_options_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* Access is the channel access policy of each try. A polite try waits for Channel to report an idle channel. */
 	dmrgo_enums_access_t access;
 	/* TimeCritical denies the request when the channel stays busy for T_IdleSrch, without a random holdoff (ETSI TS 102 361-2 Figure 5.22). */
@@ -1589,6 +1603,8 @@ struct dmrgo_data_event_t {
 };
 
 struct dmrgo_data_receiver_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* ColorCode, when set, drops bursts with another color code, and is the color code of the responses. Nil accepts every color code and answers with the color code of the packet. */
 	bool has_color_code;
 	dmrgo_enums_color_code_t color_code;
@@ -1619,6 +1635,8 @@ struct dmrgo_data_receiver_config_t {
 };
 
 struct dmrgo_data_sender_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* ColorCode is the color code of the bursts. */
 	dmrgo_enums_color_code_t color_code;
 	/* Source selects the SYNC patterns: layer2.SyncSourceBS, the zero value, for a repeater outbound, layer2.SyncSourceMS for a radio. */
@@ -2832,6 +2850,8 @@ struct dmrgo_pdu_reverse_channel_t {
 };
 
 struct dmrgo_layer2_decode_options_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* SyncThreshold is the largest Hamming distance at which the SYNC field matches a SYNC pattern. 0 selects DefaultSyncThreshold; a negative value accepts exact matches only. */
 	int64_t sync_threshold;
 	/* ColorCode, when set, is the expected color code. DecodeFromBytesWith returns ErrColorCodeMismatch when the slot type or EMB of the burst carries another one. A voice burst A carries no color code and is not checked. */
@@ -2870,6 +2890,8 @@ struct dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t {
 };
 
 struct dmrgo_layer2_voice_transmitter_options_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* LC is the Full LC of the call. The Voice LC Header and the Terminator with LC carry it, with its FID, and so does the embedded LC unless EmbeddedLC or SetEmbeddedLC replaces it. LC.BurstDataType is ignored. */
 	dmrgo_pdu_full_link_control_t lc;
 	/* ColorCode is the color code of the slot types and EMBs. */
@@ -2903,6 +2925,8 @@ struct dmrgo_framer_burst_t {
 };
 
 struct dmrgo_framer_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* Threshold is the largest SYNC distance accepted. 0 accepts only an exact SYNC, and a negative value means layer2.DefaultSyncThreshold. */
 	int64_t threshold;
 	/* Period is the number of bits from one burst to the next while locked. 0 means OutboundPeriod, a Period under layer2.BurstBits means layer2.BurstBits, and at most MaxPeriod. Use SlotPeriod for the bursts of a single TDMA channel, such as one inbound or direct mode channel. */
@@ -4021,6 +4045,8 @@ struct dmrgo_dmrd_session_output_t {
 };
 
 struct dmrgo_dmrd_session_bridge_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* Key is the passphrase of the OpenBridge link (see auth.NewBridgeKey). */
 	uint8_t *key;
 	size_t key_len;
@@ -4033,6 +4059,8 @@ struct dmrgo_dmrd_session_bridge_config_t {
 };
 
 struct dmrgo_dmrd_session_master_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* Dialect is dmrd.DialectMMDVM or dmrd.DialectHBRP. */
 	dmrgo_dmrd_dialect_t dialect;
 	/* Timeout is the time without a packet from the repeater after which the Master ends the session. 0 means TimeoutDefault. */
@@ -4042,6 +4070,8 @@ struct dmrgo_dmrd_session_master_config_t {
 };
 
 struct dmrgo_dmrd_session_peer_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* Dialect is dmrd.DialectMMDVM or dmrd.DialectHBRP. */
 	dmrgo_dmrd_dialect_t dialect;
 	/* ID is the repeater ID. */
@@ -4289,6 +4319,8 @@ struct dmrgo_ipsc_session_peer_info_t {
 };
 
 struct dmrgo_ipsc_session_master_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* ID is the peer ID of the master. */
 	uint32_t id;
 	/* Mode is the mode that the master sends. 0 means ModeDefault. */
@@ -4308,6 +4340,8 @@ struct dmrgo_ipsc_session_master_config_t {
 };
 
 struct dmrgo_ipsc_session_peer_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* ID is the peer ID. */
 	uint32_t id;
 	/* Mode is the mode that the peer sends. 0 means ModeDefault. */
@@ -4763,11 +4797,16 @@ struct dmrgo_trunk_nmea_short_t {
 };
 
 struct dmrgo_trunk_authenticator_vtable_t {
+	/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. */
+	size_t size;
 	void *user;
+	/* Response returns the response of the MS addr to challenge. */
 	int (*response)(void *user, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
 };
 
 struct dmrgo_trunk_capacity_plus_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* Plan, when set, maps the repeaters of the site to frequencies: channel number n is repeater n, which carries LSN 2n-1 on timeslot 1 and LSN 2n on timeslot 2. The Follower copies it and hunts over the repeaters that it names, in number order. Without a plan the Follower hunts nothing, and the consumer keeps the receiver on one repeater. */
 	dmrgo_trunk_channel_plan_t *plan;
 	/* Talkgroups holds the first TalkgroupsLen talkgroups to follow. TalkgroupsLen 0 follows every talkgroup. */
@@ -4998,6 +5037,8 @@ struct dmrgo_trunk_site_t {
 };
 
 struct dmrgo_trunk_follower_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* SysCode, when set, is the system to follow: a TSCC with another MODEL, NET or SITE is skipped. Nil follows the first TSCC found. */
 	bool has_sys_code;
 	dmrgo_pdu_sys_code_t sys_code;
@@ -5041,6 +5082,8 @@ struct dmrgo_trunk_hunt_entry_t {
 };
 
 struct dmrgo_trunk_ms_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* Address is the 24-bit individual address of the MS, 1 to 0xFFFCDF. */
 	uint32_t address;
 	/* Talkgroups holds the first TalkgroupsLen talkgroups whose calls the MS follows and whose radio checks it answers. Its own calls and the individual calls to it are always followed. */
@@ -5115,6 +5158,8 @@ struct dmrgo_trunk_ms_config_t {
 };
 
 struct dmrgo_trunk_tscc_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* SysCode is the C_SYScode of the site. */
 	dmrgo_pdu_sys_code_t sys_code;
 	/* ColorCode is the color code of the TSCC and its payload channels. */
@@ -5221,17 +5266,27 @@ struct dmrgo_trunk_auth_keys_t {
 };
 
 struct dmrgo_vocoder_codec_vtable_t {
+	/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. */
+	size_t size;
 	void *user;
 	int (*close)(void *user);
+	/* Decode decodes one 72-bit frame, appends its FrameSamples samples to dst and returns the extended slice. */
 	int (*decode)(void *user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
+	/* Encode encodes exactly FrameSamples samples into one 72-bit frame. */
 	int (*encode)(void *user, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
+	/* FID returns the Feature set ID to send in the Full LC of calls that use this codec. */
 	int (*fid)(void *user, dmrgo_enums_fid_t *out);
+	/* FrameSamples returns the number of PCM samples in one frame. */
 	int (*frame_samples)(void *user, int64_t *out);
-	int (*reset)(void *user);
+	/* Silence returns a frame that decodes to silence, for padding the last burst of a call. */
 	int (*silence)(void *user, uint8_t out[9]);
+	/* Reset starts a new call: the decoder drops what it learned from the frames of the call before, such as a detected mode. */
+	int (*reset)(void *user);
 };
 
 struct dmrgo_codec2_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* Mode is the Codec2 bit rate. Zero is ModeAuto: the decoder detects Mode2400 or Mode3200 from the padding of the frames of each call, and the encoder uses Mode2400. */
 	dmrgo_codec2_mode_t mode;
 	/* FID is the Feature set ID to send in the Full LC. Zero selects DefaultFID. FID 0 is the ETSI feature set, which repeaters treat as AMBE, so it cannot be selected. */
@@ -5239,6 +5294,8 @@ struct dmrgo_codec2_config_t {
 };
 
 struct dmrgo_dvsi_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* Channel is the vocoder channel of the chip, 0 to MaxChannel. The AMBE-3000R has only channel 0. */
 	int64_t channel;
 	/* Timeout is the longest wait for each reply. Zero selects DefaultTimeout. */
@@ -5258,12 +5315,18 @@ struct dmrgo_dvsi_packet_t {
 };
 
 struct dmrgo_dvsi_port_vtable_t {
+	/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. */
+	size_t size;
 	void *user;
+	/* Read reads bytes from the chip into p. */
 	int (*read)(void *user, uint8_t *p, size_t p_len, int64_t *out);
+	/* Write writes the bytes of p to the chip. */
 	int (*write)(void *user, const uint8_t *p, size_t p_len, int64_t *out);
 };
 
 struct dmrgo_voice_call_options_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* PIHeader, when set, is sent after the Voice LC Headers. */
 	bool has_pi_header;
 	dmrgo_pdu_pi_header_t pi_header;
@@ -5345,6 +5408,8 @@ struct dmrgo_voice_output_t {
 };
 
 struct dmrgo_voice_interrupter_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* ColorCode is the color code of the EMB of the standalone RC bursts. The EMB also has PI set, as an RC for the other logical channel. (ETSI TS 102 361-1 clause 6.4.2 and Table 9.19, ETSI TS 102 361-2 clause 6.3.5) */
 	dmrgo_enums_color_code_t color_code;
 	/* Wait is T_RCtimer, the wait for the Terminator with LC after each try. 0 means constants.TRCTimer (600 ms), and a negative value waits until the terminator or Cancel. (ETSI TS 102 361-2 clause A.1) */
@@ -5358,6 +5423,8 @@ struct dmrgo_voice_interrupter_config_t {
 };
 
 struct dmrgo_voice_receiver_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* ColorCode, when set, drops bursts with another color code. Burst A carries no color code, so it does not start a late entry. Nil accepts every color code. */
 	bool has_color_code;
 	dmrgo_enums_color_code_t color_code;
@@ -5372,6 +5439,8 @@ struct dmrgo_voice_receiver_config_t {
 };
 
 struct dmrgo_voice_transmitter_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
 	/* ColorCode is the color code of the slot types and EMBs. */
 	dmrgo_enums_color_code_t color_code;
 	/* Source selects the SYNC patterns: layer2.SyncSourceBS, the zero value, for a repeater outbound, layer2.SyncSourceMS for a radio. */

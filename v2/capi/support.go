@@ -88,6 +88,23 @@ func growOK(need C.size_t, have int) bool {
 	return need <= maxGrow && int(need) > have
 }
 
+func sizedIn(dst, src unsafe.Pointer, n uintptr) bool {
+	size := uintptr(*(*C.size_t)(src))
+	if size < unsafe.Sizeof(C.size_t(0)) {
+		return false
+	}
+	k := min(size, n)
+	copy(unsafe.Slice((*byte)(dst), k), unsafe.Slice((*byte)(src), k))
+	return true
+}
+
+func sizedOut(dst, src unsafe.Pointer, n uintptr) {
+	size := *(*C.size_t)(dst)
+	k := min(uintptr(size), n)
+	copy(unsafe.Slice((*byte)(dst), k), unsafe.Slice((*byte)(src), k))
+	*(*C.size_t)(dst) = size
+}
+
 func cSlice[E any](p unsafe.Pointer, n C.size_t) []E {
 	var z E
 	if !lenOK(p, n, unsafe.Sizeof(z)) {
@@ -127,7 +144,11 @@ func setLast(code C.int, msg string) C.int {
 
 func errWalk(err error, f func(C.int) bool) bool {
 	for e := err; e != nil; {
-		if c := errCode1(e); c != C.DMRGO_ERR_OTHER && f(c) {
+		c := errCode1(e)
+		if ce, ok := e.(codeError); ok {
+			c = C.int(ce)
+		}
+		if c != C.DMRGO_ERR_OTHER && f(c) {
 			return true
 		}
 		switch u := e.(type) {

@@ -26,6 +26,8 @@ const char *dmrgo_strerror(int status) {
 		return "error without a status code";
 	case DMRGO_ERR_BOUND:
 		return "output passed the bound of its _need function";
+	case DMRGO_ERR_NO_METHOD:
+		return "vtable has no function for the method";
 	}
 	return dmrgo__gen_strerror(status);
 }

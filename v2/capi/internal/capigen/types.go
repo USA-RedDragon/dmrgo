@@ -44,6 +44,7 @@ type tinfo struct {
 	id    string
 	impls []*types.Named
 	why   string
+	sized bool
 }
 
 func snake(s string) string {
@@ -296,6 +297,73 @@ func (g *gen) classify() {
 			g.implementers(ti)
 		}
 	}
+	g.markSized()
+}
+
+// markSized marks the config and option structs that the API only takes
+// as inputs, and the structs that the lock already has with a size field:
+// their C form starts with size_t size, so they can grow at the end.
+func (g *gen) markSized() {
+	used := map[*types.Named]bool{}
+	var mark func(t types.Type)
+	mark = func(t types.Type) {
+		switch u := t.(type) {
+		case *types.Pointer:
+			mark(u.Elem())
+		case *types.Slice:
+			mark(u.Elem())
+		case *types.Array:
+			mark(u.Elem())
+		case *types.Named:
+			used[u] = true
+		}
+	}
+	results := func(sig *types.Signature) {
+		for v := range sig.Results().Variables() {
+			mark(v.Type())
+		}
+	}
+	for _, ti := range g.order {
+		if ti.named == nil {
+			continue
+		}
+		if s := underStruct(ti.named); s != nil {
+			for f := range s.Fields() {
+				if f.Exported() {
+					mark(f.Type())
+				}
+			}
+		}
+		if it := underInterface(ti.named); it != nil {
+			for m := range it.Methods() {
+				results(m.Signature())
+			}
+		}
+		for m := range ti.named.Methods() {
+			if m.Exported() {
+				results(m.Signature())
+			}
+		}
+	}
+	for _, p := range g.pkgs {
+		for _, n := range p.Scope().Names() {
+			if f, ok := p.Scope().Lookup(n).(*types.Func); ok && f.Exported() {
+				results(f.Signature())
+			}
+		}
+	}
+	for _, ti := range g.order {
+		if ti.kind != kValue {
+			continue
+		}
+		n := ti.obj.Name()
+		ti.sized = (strings.HasSuffix(n, "Config") || strings.HasSuffix(n, "Options")) && !used[ti.named] || g.lock.sizedLine(ti.c) != ""
+	}
+}
+
+func (g *gen) isSized(t types.Type) bool {
+	ti := g.info(t)
+	return ti != nil && ti.sized
 }
 
 func (g *gen) classifyType(ti *tinfo, ptrRet map[*types.Named]bool) {
@@ -462,7 +530,7 @@ func (g *gen) alias(t types.Type) bool {
 		return u.Len() > 0 && g.alias(u.Elem())
 	case *types.Named:
 		ti := g.info(u)
-		if ti == nil {
+		if ti == nil || ti.sized {
 			return false
 		}
 		switch ti.kind {

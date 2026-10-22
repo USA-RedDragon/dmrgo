@@ -1,4 +1,4 @@
-{
+DMRGO_1 {
 	global:
 		dmrgo_abi_version;
 		dmrgo_ars_decode_message;
