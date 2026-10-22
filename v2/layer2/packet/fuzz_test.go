@@ -65,6 +65,8 @@ type session struct {
 	good      [128]bool
 	known     bool
 	done      bool
+	altered   bool
+	octets    []byte
 
 	fail  string
 	round int
@@ -81,6 +83,7 @@ func newSession() *session {
 		resp:    make([]layer2.RawBurst, 0, 3),
 		events:  make([]event, 0, maxEvents),
 		missing: make([]int, 0, 127),
+		octets:  make([]byte, 0, 127*24),
 	}
 }
 
@@ -104,7 +107,7 @@ func (s *session) run(ops []byte, acceptBadCRC bool) {
 	s.rx.AcceptBadCRC = acceptBadCRC
 	s.ack.Reset()
 	s.ops = ops
-	s.known, s.done, s.fail = true, false, ""
+	s.known, s.done, s.altered, s.fail = true, false, false, ""
 	clear(s.good[:])
 	for s.round = 0; s.round < fuzzRounds+2 && !s.done && s.fail == ""; s.round++ {
 		if s.round == fuzzRounds {
@@ -364,7 +367,7 @@ func (s *session) checkResult(m *packet.Message, done bool, err error) {
 			s.failf("undocumented error")
 		}
 	case done:
-		if !m.BadCRC && !s.samePacket(m) {
+		if !m.BadCRC && !s.samePacket(m) && (!s.altered || !s.wellFormed(m)) {
 			s.failf("Message without an error is not the packet that was sent")
 		}
 	}
@@ -385,6 +388,43 @@ func (s *session) samePacket(m *packet.Message) bool {
 	}
 	return len(m.Data) == len(s.payload)+pad && bytes.Equal(m.Data[:len(s.payload)], s.payload) &&
 		!slices.ContainsFunc(m.Data[len(s.payload):], func(b byte) bool { return b != 0 })
+}
+
+func (s *session) wellFormed(m *packet.Message) bool {
+	if m.Header.Format != s.p.Header.Format {
+		return false
+	}
+	per, err := packet.BlockOctets(m.DataType, s.confirmed)
+	if err != nil {
+		return false
+	}
+	pad := 0
+	switch h := m.Header; {
+	case !fullFlag(&h):
+	case h.UnconfirmedDataHeader != nil:
+		pad = int(h.UnconfirmedDataHeader.PadOctetCount)
+	case h.ConfirmedDataHeader != nil:
+		pad = int(h.ConfirmedDataHeader.PadOctetCount)
+	}
+	s.octets = append(s.octets[:0], m.Data...)
+	for range pad {
+		s.octets = append(s.octets, 0)
+	}
+	return len(s.octets)+4 == blocksOf(&m.Header)*per && packet.MessageCRC(s.octets) == m.CRC
+}
+
+func blocksOf(h *pdu.DataHeader) int {
+	switch {
+	case h.UnconfirmedDataHeader != nil:
+		return int(h.UnconfirmedDataHeader.BlocksToFollow)
+	case h.ConfirmedDataHeader != nil:
+		return int(h.ConfirmedDataHeader.BlocksToFollow)
+	case h.DefinedDataHeader != nil:
+		return int(h.DefinedDataHeader.AppendedBlocks)
+	case h.RawDataHeader != nil:
+		return int(h.RawDataHeader.AppendedBlocks)
+	}
+	return 0
 }
 
 func (s *session) plan() bool {
@@ -421,6 +461,7 @@ func (s *session) plan() bool {
 			}
 		}
 		e := s.classify(raw, sent)
+		s.altered = s.altered || e.class == eventUnknown
 		accounted = accounted && (e.class == eventIntact || e.class == eventLost && sent != 0)
 		s.events = append(s.events, e)
 	}

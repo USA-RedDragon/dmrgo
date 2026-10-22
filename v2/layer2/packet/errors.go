@@ -28,8 +28,10 @@ var (
 	// Assembler drops the header and keeps the packet in progress, as MMDVMHost
 	// does. It wraps fec.ErrUncorrectable. (ETSI TS 102 361-1 clause B.3.8)
 	ErrHeaderCRC = fmt.Errorf("packet: data header CRC does not match: %w", fec.ErrUncorrectable)
-	// ErrMessageCRC is returned with the Message whose message CRC failed.
-	// It wraps fec.ErrUncorrectable.
+	// ErrMessageCRC is returned with the Message whose message CRC failed,
+	// or whose Pad Octet Count is more than the octets before the CRC, as
+	// when a damaged slot type gives the blocks the wrong rate. It wraps
+	// fec.ErrUncorrectable. (ETSI TS 102 361-1 clause 9.3.22)
 	ErrMessageCRC = fmt.Errorf("packet: message CRC-32 does not match: %w", fec.ErrUncorrectable)
 	// ErrBlocksMissing is returned when the blocks of a confirmed packet
 	// have all arrived but some failed their CRC-9. Missing lists them and

@@ -2104,7 +2104,7 @@ struct dmrgo_packet_message_t {
 	/* Response is the decoded C_RDATA of a SACK response packet, or nil. */
 	bool has_response;
 	dmrgo_packet_response_data_t response;
-	/* BadCRC reports that the message CRC failed, or, with Assembler.AcceptBadCRC, that Data holds a confirmed block whose CRC-9 failed. */
+	/* BadCRC reports that the message CRC failed, that the Pad Octet Count of a first try is more than the octets before the CRC, or, with Assembler.AcceptBadCRC, that Data holds a confirmed block whose CRC-9 failed. (ETSI TS 102 361-1 clause 9.3.22) */
 	bool bad_crc;
 };
 
