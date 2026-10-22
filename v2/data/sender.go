@@ -413,11 +413,11 @@ func (s *Sender) State() SenderState {
 // returns ErrBusy for any other message while a message is in progress,
 // dmrgo.ErrNilArgument for a nil m, a *dmrgo.ConfigError for another
 // header (Field "Header"), a P_HEAD in m.Proprietary (Field
-// "Proprietary"), or a confirmed message to a group (Field "Header.Group"), an error on a zero
-// Sender, and the errors of packet.Builder.Segment, such as
-// packet.ErrNoRoom for a message of more than SenderConfig.MaxBlocks blocks
-// and packet.ErrRate. (ETSI TS 102 361-3 clauses 5.4 and
-// 5.4.4)
+// "Proprietary") or a confirmed message to a group (Field
+// "Header.Group"), an error on a zero Sender, and the errors of
+// packet.Builder.Segment, such as packet.ErrNoRoom for a message of more
+// than SenderConfig.MaxBlocks blocks and packet.ErrRate. (ETSI TS 102 361-3
+// clauses 5.4 and 5.4.4)
 func (s *Sender) Send(now time.Duration, m *Message) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver

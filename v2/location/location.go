@@ -99,21 +99,20 @@ type Decoder struct {
 	report lrrp.Message
 }
 
-// Decode returns the position in a data packet, with header h and user
-// data data: an NMEA RMC sentence to UDP port 10110, an LRRP report or
-// answer to UDP port 4001, or a Hytera HDAP location protocol answer or
-// report to UDP port 3003. For a report or answer without a position,
-// such as the answer of a radio without a GNSS fix, an NMEA sentence with
-// an empty position or an HDAP standard answer whose Result is not 0, it
-// returns the Fix, with its Format, addresses, Result, RequestID and the
-// fields that the message has, and ErrNoPosition. It returns ErrNoFix for
-// a packet in none of these formats, for an LRRP request and for an HDAP
-// position out of range, dmrgo.ErrNilArgument for a nil h, the errors of
-// the ip, lrrp, nmea and hdap packages for a message that does not decode,
-// and the Fix with ip.ErrChecksum for a position whose IPv4 or UDP
-// checksum does not match, as the block CRCs of the packet already
-// checked its octets. It does not check the HDAP checksum. It does not
-// allocate.
+// Decode returns the position in a data packet, with header h and user data
+// data: an NMEA RMC sentence to UDP port 10110, an LRRP report or answer to
+// UDP port 4001, or a Hytera HDAP location protocol answer or report to UDP
+// port 3003. For a report or answer without a position, such as the answer
+// of a radio without a GNSS fix, an NMEA sentence with an empty position or
+// an HDAP standard answer whose Result is not 0, it returns the Fix, with
+// its Format, addresses, Result, RequestID and the fields that the message
+// has, and ErrNoPosition. It returns ErrNoFix for a packet in none of these
+// formats, for an LRRP request and for an HDAP position out of range,
+// dmrgo.ErrNilArgument for a nil h, the errors of the ip, lrrp, nmea and
+// hdap packages for a message that does not decode, and the Fix with
+// ip.ErrChecksum for a position whose IPv4 or UDP checksum does not match,
+// as the block CRCs of the packet already checked its octets. It does not
+// check the HDAP checksum. It does not allocate.
 func (d *Decoder) Decode(h *pdu.DataHeader, data []byte) (Fix, error) {
 	if d == nil {
 		return Fix{}, dmrgo.ErrNilReceiver
