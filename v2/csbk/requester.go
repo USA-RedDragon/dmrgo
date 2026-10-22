@@ -379,7 +379,7 @@ func (q *Requester) begin(now time.Duration, c pdu.CSBKBytes, target, source uin
 
 func (q *Requester) sync() {
 	switch q.s.state {
-	case sendQualify, sendHoldoff:
+	case sendQualify, sendHoldoff, sendWait:
 		q.state = RequesterAccess
 	case sendBursts:
 		q.state = RequesterSending
