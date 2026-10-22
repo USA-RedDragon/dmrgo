@@ -1,6 +1,7 @@
 package dmrd_test
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -72,5 +73,53 @@ func TestSetHintNil(t *testing.T) {
 	var d *dmrd.Data
 	if err := d.SetHint(layer2.Hint{Kind: layer2.KindVoice, VoiceBurst: enums.VoiceBurstA}); err == nil {
 		t.Fatal("nil Data: no error")
+	}
+}
+
+func TestHintLostAfterMMDVMHostHeader(t *testing.T) {
+	t.Parallel()
+
+	var call []dmrd.Data
+	for _, c := range readCapture(t, "mmdvmhost-dmrgateway.txt") {
+		if c.dir != "host>gw" || dmrd.Classify(c.p, dmrd.DialectLocal) != dmrd.CommandDMRD {
+			continue
+		}
+		d, err := dmrd.DecodeData(c.p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		call = append(call, d)
+	}
+	if len(call) != 8 || call[0].Seq != 0 {
+		t.Fatalf("%d DMRD packets from MMDVMHost, first sequence number %d", len(call), call[0].Seq)
+	}
+	for _, c := range []struct {
+		name string
+		keep []int
+		seq  []uint8
+		want string
+	}{
+		{"call", []int{0, 1, 2, 3, 4, 5, 6, 7}, nil, "A0B0C0D0E0F0"},
+		{"burst A lost", []int{0, 2, 3, 4, 5, 6, 7}, nil, "B1C0D0E0F0"},
+		{"late entry at burst E", []int{0, 5, 6, 7}, []uint8{0, 1, 2, 3}, "E0F0"},
+		{"late entry at burst E, E lost", []int{0, 6, 7}, []uint8{0, 2, 3}, "F1"},
+		{"one counter for both slots, as ipsc2hbpc", []int{0, 1, 2, 3, 4, 5, 6, 7}, []uint8{0, 2, 4, 6, 8, 10, 12, 14}, "A0B0C0D0E0F0"},
+	} {
+		var tr layer2.PositionTracker
+		got := ""
+		for i, k := range c.keep {
+			d := call[k]
+			if c.seq != nil {
+				d.Seq = c.seq[i]
+			}
+			h := d.Hint(0)
+			lost, _ := tr.Place(&d.Burst, &h)
+			if j, ok := h.VoiceBurst.Index(); ok && h.Kind == layer2.KindVoice {
+				got += string("ABCDEF"[j]) + strconv.Itoa(lost)
+			}
+		}
+		if got != c.want {
+			t.Errorf("%s: %s, want %s", c.name, got, c.want)
+		}
 	}
 }
