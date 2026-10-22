@@ -21,12 +21,13 @@ var (
 )
 
 var (
-	errOpcode  = errors.New("ipsc: the opcode does not take this message")
-	errLayout  = errors.New("ipsc: Voice.Layout is not A, BCDF or E")
-	errPayload = errors.New("ipsc: Data.Bits or Data.TrailerLen does not fit")
-	errBurst   = errors.New("ipsc: the burst cannot be rebuilt from this packet")
-	errKind    = errors.New("ipsc: SetRawBurst: kind is not KindVoice or KindData")
-	errSlot    = errors.New("ipsc: slot is not Slot1 or Slot2")
+	errOpcode   = errors.New("ipsc: the opcode does not take this message")
+	errPeerList = errors.New("ipsc: Control.AppendBinary writes no peer entries: use AppendPeerListReply")
+	errLayout   = errors.New("ipsc: Voice.Layout is not A, BCDF or E")
+	errPayload  = errors.New("ipsc: Data.Bits or Data.TrailerLen does not fit")
+	errBurst    = errors.New("ipsc: the burst cannot be rebuilt from this packet")
+	errKind     = errors.New("ipsc: SetRawBurst: kind is not KindVoice or KindData")
+	errSlot     = errors.New("ipsc: slot is not Slot1 or Slot2")
 
 	errVoicePosition error = &wrapError{"ipsc: SetRawBurst: voice position is not A to F", layer2.ErrVoicePosition}
 	errDataType      error = &wrapError{"ipsc: SetRawBurst: IPSC carries no burst of this data type", layer2.ErrDataType}
