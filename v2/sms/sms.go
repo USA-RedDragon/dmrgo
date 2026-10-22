@@ -101,19 +101,22 @@ type Text struct {
 // Decode appends the text of a data packet, with header h and user data
 // data, to dst as UTF-8, and returns dst and the Text, whose Body points
 // into dst. data is the Data of a packet.Message, without the pad octets
-// that the Bit Padding of a DD_HEAD counts. It finds the format from the header and the UDP port: TMS on
-// port 4007, IP or AnyTone text on port 5016, and defined data. Defined
-// data with DD format BCD is FormatHytera when it has the HyteraText
-// layout: an even length of at least 6 octets, 2 octets and then a UTF-16LE
-// text of at least one character that ends in 00 00, with only 00 octets
-// after it. Other BCD data is FormatDefinedData; BCD digits that end in six
-// or more 0 digits can have that layout too. It returns ErrNotText for a
-// packet in none of these formats and for defined data with DD format
-// binary, the errors of the ip, tms and shortdata packages for a message
-// that does not decode, the Text with ip.ErrChecksum for a text whose IPv4
-// or UDP checksum does not match, as the block CRCs of the packet already
-// checked its octets, and dmrgo.ErrNilArgument for a nil h. It allocates
-// only to grow dst.
+// that the Bit Padding of a DD_HEAD counts. It finds the format from the
+// header and the UDP port: TMS on port 4007, IP or AnyTone text on port
+// 5016, and defined data. A text on port 5016 is FormatAnyTone when it has
+// the AnyToneText layout: an even length of at least 6 octets that starts
+// with 00 0d 00 0a and ends in 00 00. Other text on port 5016 is FormatIP.
+// Defined data with DD format BCD is FormatHytera when it has the
+// HyteraText layout: an even length of at least 6 octets, 2 octets and then
+// a UTF-16LE text of at least one character that ends in 00 00, with only
+// 00 octets after it. Other BCD data is FormatDefinedData; BCD digits that
+// end in six or more 0 digits can have that layout too. It returns
+// ErrNotText for a packet in none of these formats and for defined data
+// with DD format binary, the errors of the ip, tms and shortdata packages
+// for a message that does not decode, the Text with ip.ErrChecksum for a
+// text whose IPv4 or UDP checksum does not match, as the block CRCs of the
+// packet already checked its octets, and dmrgo.ErrNilArgument for a nil h.
+// It allocates only to grow dst.
 func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 	if h == nil {
 		return dst, Text{}, dmrgo.ErrNilArgument
@@ -208,7 +211,7 @@ func decodeIP(dst []byte, sap enums.SAP, data []byte, t Text) ([]byte, Text, err
 		dst = msg.TextUTF8(dst)
 	case ip.PortText:
 		p := d.Payload
-		if len(p) >= 6 && p[0] == 0 && p[1] == 0x0D && p[2] == 0 && p[3] == 0x0A && p[4] != 0 && p[5] == 0 {
+		if anyToneLayout(p) {
 			a, err := DecodeAnyToneText(p)
 			if err != nil {
 				return dst, Text{}, err
@@ -249,9 +252,13 @@ type Header struct {
 // format, for FormatDefinedData with DD format binary, which holds no text,
 // and for a FormatHytera text without the HyteraText layout, which Decode
 // reads as FormatDefinedData: a Body that is empty, starts with a NUL, or
-// has a character other than NUL after a NUL. It returns
-// dmrgo.ErrNilArgument for a nil t or h, or the errors of the packages that
-// build the message. It allocates only to grow dst.
+// has a character other than NUL after a NUL, and for a FormatIP text with
+// the AnyToneText layout, which Decode reads as FormatAnyTone: a Body that
+// starts with CR LF and ends in a NUL. Such a text and an AnyTone text give
+// the same octets: the IP text CR LF A NUL and the AnyTone text U+4100 are
+// both 00 0d 00 0a 00 41 00 00. It returns dmrgo.ErrNilArgument for a nil t
+// or h, or the errors of the packages that build the message. It allocates
+// only to grow dst.
 func AppendPacket(dst []byte, t *Text, h *Header) ([]byte, error) {
 	if t == nil || h == nil {
 		return dst, dmrgo.ErrNilArgument
@@ -337,6 +344,9 @@ func AppendPacket(dst []byte, t *Text, h *Header) ([]byte, error) {
 		var e IPText
 		p0 = len(dst)
 		dst = e.SetTextUTF8(dst, t.Body)
+		if anyToneLayout(dst[p0:]) {
+			return dst[:n], ErrFormat
+		}
 	}
 	d.Payload = dst[p0:]
 	i0 := len(dst)
@@ -401,6 +411,11 @@ func AppendAck(dst []byte, t *Text, h *Header) ([]byte, error) {
 		return dst[:n], err
 	}
 	return dst[:n+k], nil
+}
+
+func anyToneLayout(p []byte) bool {
+	n := len(p)
+	return n >= 6 && n%2 == 0 && p[0] == 0 && p[1] == 0x0D && p[2] == 0 && p[3] == 0x0A && p[n-2] == 0 && p[n-1] == 0
 }
 
 func definedHeader(t *Text, dd enums.DDFormat) pdu.DefinedDataHeader {

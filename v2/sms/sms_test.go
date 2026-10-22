@@ -192,9 +192,15 @@ func TestErrors(t *testing.T) {
 	if b, err := sms.AppendPacket([]byte("x"), &sms.Text{Format: sms.FormatDefinedData, DD: enums.DDBinary, Body: []byte("1")}, &h); !errors.Is(err, sms.ErrFormat) || string(b) != "x" {
 		t.Errorf("binary text built: %q, %v", b, err)
 	}
-	for _, body := range []string{"", "\x00", "\x00A", "A\x00B"} {
-		if b, err := sms.AppendPacket([]byte("x"), &sms.Text{Format: sms.FormatHytera, Body: []byte(body)}, &h); !errors.Is(err, sms.ErrFormat) || string(b) != "x" {
-			t.Errorf("Hytera %q built: %x, %v", body, b, err)
+	for _, tt := range []struct {
+		format sms.Format
+		body   string
+	}{
+		{sms.FormatHytera, ""}, {sms.FormatHytera, "\x00"}, {sms.FormatHytera, "\x00A"}, {sms.FormatHytera, "A\x00B"},
+		{sms.FormatIP, "\r\n\x00"}, {sms.FormatIP, "\r\nA\x00"}, {sms.FormatIP, "\r\n中\x00\x00"},
+	} {
+		if b, err := sms.AppendPacket([]byte("x"), &sms.Text{Format: tt.format, Body: []byte(tt.body)}, &h); !errors.Is(err, sms.ErrFormat) || string(b) != "x" {
+			t.Errorf("%s %q built: %x, %v", tt.format, tt.body, b, err)
 		}
 	}
 	bin := setHeader(t, (*pdu.DataHeader).SetDefinedData, pdu.DefinedDataHeader{DefinedData: enums.DDBinary})
@@ -309,5 +315,41 @@ func TestAppendPacketAfterDst(t *testing.T) {
 		if _, got, err := sms.Decode(nil, &h.Data, out[3:]); err != nil || got.Format != f || string(got.Body) != "hi" {
 			t.Errorf("%s: decoded %+v %q, %v", f, got, got.Body, err)
 		}
+	}
+}
+
+func TestPort5016FirstCharacter(t *testing.T) {
+	t.Parallel()
+
+	bodies := []string{"", "A", "中文", "一", "€5", "Ā", "ÿ", "\x7fA", "😀", "\r\n", "\r\nA", "\r\n中", "\r\nA\x00B", "\x00"}
+	for _, f := range []sms.Format{sms.FormatIP, sms.FormatAnyTone} {
+		for _, body := range bodies {
+			in := sms.Text{Format: f, Source: 1, Destination: 2, Body: []byte(body)}
+			var h sms.Header
+			out, err := sms.AppendPacket(nil, &in, &h)
+			if err != nil {
+				t.Fatalf("%s %q: %v", f, body, err)
+			}
+			want, _, _ := strings.Cut(body, "\x00")
+			if _, got, err := sms.Decode(nil, &h.Data, out); err != nil || got.Format != f || string(got.Body) != want {
+				t.Errorf("%s %q: decoded %s %q, %v", f, body, got.Format, got.Body, err)
+			}
+		}
+	}
+}
+
+func TestPort5016SamePayload(t *testing.T) {
+	t.Parallel()
+
+	var h sms.Header
+	out, err := sms.AppendPacket(nil, &sms.Text{Format: sms.FormatAnyTone, Body: []byte("䄀")}, &h)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := unhex(t, "000d000a00410000"); !bytes.HasSuffix(out, want) {
+		t.Fatalf("AnyTone 䄀: %x, want %x, the UTF-16BE of the IP text CR LF A NUL", out, want)
+	}
+	if _, err := sms.AppendPacket(nil, &sms.Text{Format: sms.FormatIP, Body: []byte("\r\nA\x00")}, &h); !errors.Is(err, sms.ErrFormat) {
+		t.Fatalf("IP CR LF A NUL: %v", err)
 	}
 }
