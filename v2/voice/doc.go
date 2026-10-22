@@ -59,4 +59,9 @@
 // RC cease command. An Interrupter sends that command to the radio that
 // talks. (ETSI TS 102 361-1 clause 5.2, ETSI TS 102 361-2 clauses 5.1.1.6
 // and 6.3)
+//
+// A Jitter goes in front of a Receiver that takes a network stream. It puts
+// the packets back in the order of their sequence numbers and plays them a
+// fixed delay after they were sent, as the Jitter of MMDVMHost does, so
+// that network jitter adds no fills and reordering loses no voice.
 package voice

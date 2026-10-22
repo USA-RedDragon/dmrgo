@@ -4532,6 +4532,15 @@ func out_voice_Output(d *C.dmrgo_voice_output_t, s *g_voice.Output, oc *outc) {
 	d.reason = C.dmrgo_voice_end_reason_t(s.Reason)
 }
 
+func in_voice_JitterPacket(s *C.dmrgo_voice_jitter_packet_t) (d g_voice.JitterPacket) {
+	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	d.HasBurst = bool(s.has_burst)
+	d.Hint = in_layer2_Hint(&s.hint)
+	d.Source = uint32(s.source)
+	d.Due = time.Duration(s.due)
+	return
+}
+
 func in_voice_InterrupterConfig(s *C.dmrgo_voice_interrupter_config_t) (d g_voice.InterrupterConfig) {
 	d.ColorCode = g_enums.ColorCode(s.color_code)
 	d.Wait = time.Duration(s.wait)
@@ -4542,6 +4551,12 @@ func in_voice_InterrupterConfig(s *C.dmrgo_voice_interrupter_config_t) (d g_voic
 		d.Scratch = get_layer2_Burst(s.scratch).v
 	}
 	d.Slot = g_enums.Slot(s.slot)
+	d.Lead = time.Duration(s.lead)
+	return
+}
+
+func in_voice_JitterConfig(s *C.dmrgo_voice_jitter_config_t) (d g_voice.JitterConfig) {
+	d.Delay = time.Duration(s.delay)
 	d.Lead = time.Duration(s.lead)
 	return
 }
@@ -7515,6 +7530,50 @@ func fromC_voice_InterrupterConfig(s *C.dmrgo_voice_interrupter_config_t) g_voic
 	return in_voice_InterrupterConfig(s)
 }
 
+func out_voice_JitterConfig(d *C.dmrgo_voice_jitter_config_t, s *g_voice.JitterConfig, oc *outc) {
+	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
+	d.delay = C.dmrgo_duration_t(s.Delay)
+	d.lead = C.dmrgo_duration_t(s.Lead)
+}
+
+func fromC_voice_JitterConfig(s *C.dmrgo_voice_jitter_config_t) g_voice.JitterConfig {
+	return in_voice_JitterConfig(s)
+}
+
+func out_voice_JitterPacket(d *C.dmrgo_voice_jitter_packet_t, s *g_voice.JitterPacket, oc *outc) {
+	_ = oc
+	*(*g_layer2.RawBurst)(unsafe.Pointer(&d.burst)) = s.Burst
+	d.has_burst = C.bool(s.HasBurst)
+	out_layer2_Hint(&d.hint, &s.Hint, oc)
+	d.source = C.uint32_t(s.Source)
+	d.due = C.dmrgo_duration_t(s.Due)
+}
+
+func fromC_voice_JitterPacket(s *C.dmrgo_voice_jitter_packet_t) g_voice.JitterPacket {
+	return in_voice_JitterPacket(s)
+}
+
+func in_voice_JitterStats(s *C.dmrgo_voice_jitter_stats_t) (d g_voice.JitterStats) {
+	d.Late = uint32(s.late)
+	d.Duplicates = uint32(s.duplicates)
+	d.Overflows = uint32(s.overflows)
+	d.Resyncs = uint32(s.resyncs)
+	return
+}
+
+func out_voice_JitterStats(d *C.dmrgo_voice_jitter_stats_t, s *g_voice.JitterStats, oc *outc) {
+	_ = oc
+	d.late = C.uint32_t(s.Late)
+	d.duplicates = C.uint32_t(s.Duplicates)
+	d.overflows = C.uint32_t(s.Overflows)
+	d.resyncs = C.uint32_t(s.Resyncs)
+}
+
+func fromC_voice_JitterStats(s *C.dmrgo_voice_jitter_stats_t) g_voice.JitterStats {
+	return in_voice_JitterStats(s)
+}
+
 func in_voice_Output(s *C.dmrgo_voice_output_t) (d g_voice.Output) {
 	d.Kind = g_voice.OutputKind(s.kind)
 	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
@@ -8128,6 +8187,18 @@ func get_voice_Interrupter(p *C.dmrgo_voice_interrupter_t) *h_voice_Interrupter 
 
 func new_voice_Interrupter(v *g_voice.Interrupter) *C.dmrgo_voice_interrupter_t {
 	return (*C.dmrgo_voice_interrupter_t)(newHandle(&h_voice_Interrupter{v: v}))
+}
+
+type h_voice_Jitter struct {
+	v *g_voice.Jitter
+}
+
+func get_voice_Jitter(p *C.dmrgo_voice_jitter_t) *h_voice_Jitter {
+	return lookup[*h_voice_Jitter](unsafe.Pointer(p))
+}
+
+func new_voice_Jitter(v *g_voice.Jitter) *C.dmrgo_voice_jitter_t {
+	return (*C.dmrgo_voice_jitter_t)(newHandle(&h_voice_Jitter{v: v}))
 }
 
 type h_voice_Receiver struct {
@@ -47929,6 +48000,155 @@ func dmrgo_voice_interrupter_state_string(c_self C.dmrgo_voice_interrupter_state
 	return C.DMRGO_OK
 }
 
+//export dmrgo_voice_jitter_free
+func dmrgo_voice_jitter_free(c_self *C.dmrgo_voice_jitter_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil {
+		return C.DMRGO_OK
+	}
+	get_voice_Jitter(c_self)
+	deleteHandle(unsafe.Pointer(c_self))
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_jitter_deadline
+func dmrgo_voice_jitter_deadline(c_self *C.dmrgo_voice_jitter_t, c_at *C.dmrgo_duration_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Jitter(c_self)
+	r0, r1 := h.v.Deadline()
+	_ = r0
+	_ = r1
+	if c_at != nil {
+		*c_at = C.dmrgo_duration_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_jitter_len
+func dmrgo_voice_jitter_len(c_self *C.dmrgo_voice_jitter_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Jitter(c_self)
+	r0 := h.v.Len()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_jitter_pop
+func dmrgo_voice_jitter_pop(c_self *C.dmrgo_voice_jitter_t, c_now C.dmrgo_duration_t, c_p *C.dmrgo_voice_jitter_packet_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Jitter(c_self)
+	var a_p g_voice.JitterPacket
+	var p_p *g_voice.JitterPacket
+	if c_p != nil {
+		a_p = in_voice_JitterPacket(&(*c_p))
+		p_p = &a_p
+	}
+	r0 := h.v.Pop(time.Duration(c_now), p_p)
+	var ws_p C.dmrgo_voice_jitter_packet_t
+	if c_p != nil {
+		ws_p = *c_p
+		*(*g_layer2.RawBurst)(unsafe.Pointer(&ws_p.burst)) = a_p.Burst
+		ws_p.has_burst = C.bool(a_p.HasBurst)
+		out_layer2_Hint(&ws_p.hint, &a_p.Hint, oc)
+		ws_p.source = C.uint32_t(a_p.Source)
+		ws_p.due = C.dmrgo_duration_t(a_p.Due)
+	}
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_p != nil {
+		*c_p = ws_p
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_jitter_push
+func dmrgo_voice_jitter_push(c_self *C.dmrgo_voice_jitter_t, c_now C.dmrgo_duration_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_src C.uint32_t, c_out *C.dmrgo_voice_jitter_result_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Jitter(c_self)
+	if c_h == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
+	r0 := h.v.Push(time.Duration(c_now), (*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h, uint32(c_src))
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_voice_jitter_result_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_jitter_reset
+func dmrgo_voice_jitter_reset(c_self *C.dmrgo_voice_jitter_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Jitter(c_self)
+	h.v.Reset()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_jitter_stats
+func dmrgo_voice_jitter_stats(c_self *C.dmrgo_voice_jitter_t, c_out *C.dmrgo_voice_jitter_stats_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Jitter(c_self)
+	r0 := h.v.Stats()
+	_ = r0
+	if c_out != nil {
+		*(*g_voice.JitterStats)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_jitter_result_string
+func dmrgo_voice_jitter_result_string(c_self C.dmrgo_voice_jitter_result_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_voice.JitterResult(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_voice_new_interrupter
 func dmrgo_voice_new_interrupter(c_cfg *C.dmrgo_voice_interrupter_config_t, c_out **C.dmrgo_voice_interrupter_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -47951,6 +48171,38 @@ func dmrgo_voice_new_interrupter(c_cfg *C.dmrgo_voice_interrupter_config_t, c_ou
 	*c_out = nil
 	if r0 != nil {
 		*c_out = new_voice_Interrupter(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_new_jitter
+func dmrgo_voice_new_jitter(c_cfg *C.dmrgo_voice_jitter_config_t, c_out **C.dmrgo_voice_jitter_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	var a_cfg g_voice.JitterConfig
+	var p_cfg *g_voice.JitterConfig
+	var z_cfg C.dmrgo_voice_jitter_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_cfg != nil {
+		a_cfg = in_voice_JitterConfig(&z_cfg)
+		p_cfg = &a_cfg
+	}
+	if c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := g_voice.NewJitter(p_cfg)
+	_ = r0
+	*c_out = nil
+	if r0 != nil {
+		*c_out = new_voice_Jitter(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)

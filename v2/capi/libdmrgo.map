@@ -1622,7 +1622,16 @@ DMRGO_1 {
 		dmrgo_voice_interrupter_state_string;
 		dmrgo_voice_interrupter_tick;
 		dmrgo_voice_interrupter_tick_need;
+		dmrgo_voice_jitter_deadline;
+		dmrgo_voice_jitter_free;
+		dmrgo_voice_jitter_len;
+		dmrgo_voice_jitter_pop;
+		dmrgo_voice_jitter_push;
+		dmrgo_voice_jitter_reset;
+		dmrgo_voice_jitter_result_string;
+		dmrgo_voice_jitter_stats;
 		dmrgo_voice_new_interrupter;
+		dmrgo_voice_new_jitter;
 		dmrgo_voice_new_receiver;
 		dmrgo_voice_new_transmitter;
 		dmrgo_voice_origin_string;
