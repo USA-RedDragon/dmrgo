@@ -366,7 +366,7 @@ static void test_error_is(void) {
 	CHECK(is);
 	CHECK(DMRGO_ERR_HANDLE == -1 && DMRGO_ERR_ARG == -2 && DMRGO_ERR_SHORT == -3 && DMRGO_ERR_PANIC == -4 && DMRGO_ERR_OTHER == -5 && DMRGO_ERR_BOUND == -6);
 	CHECK(DMRGO_ERR_CONFIG == -100 && DMRGO_ERR_FIELD_RANGE == -101);
-	CHECK(strcmp(dmrgo_strerror(DMRGO_ERR_PACKET_MESSAGE_CRC), "message CRC-32 does not match: fec: uncorrectable") == 0);
+	CHECK(strcmp(dmrgo_strerror(DMRGO_ERR_PACKET_MESSAGE_CRC), "packet: message CRC-32 does not match: fec: uncorrectable") == 0);
 	printf("error is: wrapped errors are visible through dmrgo_last_error_is\n");
 }
 
@@ -684,7 +684,7 @@ static int liar_decode(void *user, int16_t *dst, size_t cap, size_t *len, size_t
 }
 
 static void test_liar(void) {
-	dmrgo_vocoder_codec_vtable_t vt = {sizeof vt, 0, c_close, liar_decode, c_encode, c_fid, c_frame_samples, c_reset, c_silence};
+	dmrgo_vocoder_codec_vtable_t vt = {sizeof vt, 0, c_close, liar_decode, c_encode, c_fid, c_frame_samples, c_silence, c_reset};
 	dmrgo_vocoder_codec_t *c = NULL;
 	OK(dmrgo_vocoder_codec_from_vtable(&vt, &c));
 	uint8_t slot[9] = {0};
@@ -698,7 +698,7 @@ static void test_liar(void) {
 }
 
 static void test_vocoder(void) {
-	dmrgo_vocoder_codec_vtable_t vt = {sizeof vt, &bias, c_close, c_decode, c_encode, c_fid, c_frame_samples, c_reset, c_silence};
+	dmrgo_vocoder_codec_vtable_t vt = {sizeof vt, &bias, c_close, c_decode, c_encode, c_fid, c_frame_samples, c_silence, c_reset};
 	dmrgo_vocoder_codec_t *c = NULL;
 	OK(dmrgo_vocoder_codec_from_vtable(&vt, &c));
 	int64_t fs = 0;
@@ -766,7 +766,7 @@ static void test_last_error(void) {
 	char msg[256];
 	OK(dmrgo_last_error_message(msg, sizeof msg, &n, NULL));
 	CHECK(strcmp(msg, "voice: ColorCode is out of range") == 0);
-	CHECK(strcmp(dmrgo_strerror(DMRGO_ERR_PDU_NO_ADDRESSES), "PDU has no address fields") == 0);
+	CHECK(strcmp(dmrgo_strerror(DMRGO_ERR_PDU_NO_ADDRESSES), "pdu: PDU has no address fields") == 0);
 }
 
 static void test_partial(void) {
