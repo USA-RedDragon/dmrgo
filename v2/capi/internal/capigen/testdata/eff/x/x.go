@@ -1,10 +1,91 @@
 package x
 
+import (
+	"errors"
+	"strings"
+)
+
 type M struct {
 	N    int
 	Data []byte
 	Sub  S
+	S2   S
 	P    *S
+	Any  any
+	Map  map[int]*S
+	E    E
+	Sb   strings.Builder
+	Err  error
+	Ch   chan []byte
+}
+
+type E struct {
+	S
+	K int
+}
+
+func (s *S) SetA() { s.A = 1 }
+
+func (s S) Poke() { s.B[0] = 1 }
+
+func (m *M) CommaOK() {
+	if v, ok := m.Any.(*S); ok {
+		v.A = 1
+	}
+}
+
+func (m *M) MapOK() {
+	if v, ok := m.Map[1]; ok {
+		v.A = 1
+	}
+}
+
+func (m *M) TypeSwitch() {
+	switch v := m.Any.(type) {
+	case *S:
+		v.A = 1
+	}
+}
+
+func (m *M) Reassign(c bool) {
+	d := m.Data
+	if c {
+		d = m.Sub.B
+	}
+	d[0] = 1
+}
+
+func (m *M) CopyFill() {
+	c := *m
+	copy(c.Data, "ab")
+}
+
+func (m *M) BoxFill() {
+	v := S{B: m.Data}
+	copy(v.B, "x")
+}
+
+func (m *M) Promoted() { m.E.A = 1 }
+
+func (m *M) PromotedMethod() { m.E.SetA() }
+
+func (m *M) Builder() { m.Sb.WriteString("x") }
+
+func (m *M) As(err error) bool { return errors.As(err, &m.Err) }
+
+func (m *M) Del() { delete(m.Map, 1) }
+
+func (m *M) Send() {
+	m.Ch <- m.Data
+}
+
+func (m M) ValuePoke() { m.Data[0] = 1 }
+
+type pair struct{ d, s []byte }
+
+func Fill(dst, src []byte) {
+	pr := pair{dst, src}
+	copy(pr.d, pr.s)
 }
 
 type S struct {

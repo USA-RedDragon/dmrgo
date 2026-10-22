@@ -50,6 +50,19 @@ func TestEffects(t *testing.T) {
 		{"Unknown", "all"},
 		{"Closure", "map[N:3]"},
 		{"Box", "map[]"},
+		{"CommaOK", "map[Any:1]"},
+		{"MapOK", "map[Map:1]"},
+		{"TypeSwitch", "map[Any:1]"},
+		{"Reassign", "all"},
+		{"CopyFill", "map[Data:2]"},
+		{"BoxFill", "map[Data:2]"},
+		{"Promoted", "map[E:1]"},
+		{"PromotedMethod", "map[E:1]"},
+		{"Builder", "map[Sb:3]"},
+		{"As", "map[Err:3]"},
+		{"Del", "map[Map:1]"},
+		{"Send", "map[Data:3]"},
+		{"ValuePoke", "map[Data:2]"},
 	} {
 		if got := str(l.effects(method(c.name), -1)); got != c.want {
 			t.Errorf("M.%s: effects %s, want %s", c.name, got, c.want)
@@ -72,6 +85,8 @@ func TestEffects(t *testing.T) {
 		{"Into", 0, "map[Data:1]"},
 		{"Into", 1, "map[]"},
 		{"Look", 0, "map[]"},
+		{"Fill", 0, "map[:2]"},
+		{"Fill", 1, "map[:2]"},
 	} {
 		if got := str(l.effects(fn(c.name), c.param)); got != c.want {
 			t.Errorf("%s param %d: effects %s, want %s", c.name, c.param, got, c.want)

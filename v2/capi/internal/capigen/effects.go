@@ -68,6 +68,7 @@ type analyzer struct {
 	eff     *effect
 	root    types.Object
 	aliases map[types.Object]apath
+	changed bool
 	parent  map[ast.Node]ast.Node
 	resVars map[types.Object]bool
 }
@@ -128,7 +129,7 @@ func (l *loader) effects(fn *types.Func, param int) *effect {
 		return true
 	})
 	for {
-		before := len(a.aliases)
+		a.changed = false
 		a.eff = &effect{}
 		ast.Inspect(fd.Body, func(n ast.Node) bool {
 			if id, ok := n.(*ast.Ident); ok {
@@ -140,7 +141,7 @@ func (l *loader) effects(fn *types.Func, param int) *effect {
 			}
 			return !a.eff.all
 		})
-		if len(a.aliases) == before || a.eff.all {
+		if !a.changed || a.eff.all {
 			break
 		}
 	}
@@ -202,8 +203,7 @@ func (l *loader) overwrites(fn *types.Func, param int) bool {
 }
 
 func nilCheck(e ast.Expr, obj types.Object, info *types.Info) bool {
-	switch x := ast.Unparen(e).(type) {
-	case *ast.BinaryExpr:
+	if x, ok := ast.Unparen(e).(*ast.BinaryExpr); ok {
 		switch x.Op {
 		case token.LOR, token.LAND:
 			return nilCheck(x.X, obj, info) && nilCheck(x.Y, obj, info)
@@ -213,6 +213,7 @@ func nilCheck(e ast.Expr, obj types.Object, info *types.Info) bool {
 			if lok && rok && (info.Uses[l] == obj && r.Name == "nil" || info.Uses[r] == obj && l.Name == "nil") {
 				return true
 			}
+		default:
 		}
 	}
 	found := false
@@ -351,12 +352,16 @@ func (a *analyzer) step(top ast.Expr, p *apath, structRoot *bool) (ast.Expr, boo
 		}
 		if sel.Kind() == types.FieldVal {
 			if *structRoot {
-				p.field = x.Sel.Name
+				p.field = a.topField(top, sel, x.Sel.Name)
+				p.deeper = p.deeper || len(sel.Index()) > 1
 			} else {
 				p.deeper = true
 			}
 			*structRoot = false
 			return x, true, false
+		}
+		if *structRoot && len(sel.Index()) > 1 {
+			p.field = a.topField(top, sel, x.Sel.Name)
 		}
 		next := a.methodCall(x, sel, *p)
 		if next == nil {
@@ -390,21 +395,66 @@ func (a *analyzer) step(top ast.Expr, p *apath, structRoot *bool) (ast.Expr, boo
 			*structRoot = false
 			return x, true, false
 		}
+	case *ast.KeyValueExpr, *ast.CompositeLit:
+		return a.litStep(top, p, structRoot)
+	}
+	return nil, false, false
+}
+
+// litStep climbs from a reference in a composite literal to the literal,
+// which then holds the reference as a box.
+func (a *analyzer) litStep(top ast.Expr, p *apath, structRoot *bool) (ast.Expr, bool, bool) {
+	t := a.typeOf(top)
+	switch x := a.parent[top].(type) {
 	case *ast.KeyValueExpr:
-		if t := a.typeOf(top); x.Value == top && t != nil && isRef(t) {
+		if x.Value == top && t != nil && isRef(t) {
 			return x, true, false
 		}
 	case *ast.CompositeLit:
-		if t := a.typeOf(top); t == nil || !isRef(t) {
-			if _, ok := top.(*ast.KeyValueExpr); !ok {
-				return nil, false, false
-			}
+		if _, kv := top.(*ast.KeyValueExpr); !kv && (t == nil || !isRef(t)) {
+			return nil, false, false
 		}
 		p.copy, p.box = true, true
 		*structRoot = false
 		return x, true, false
 	}
 	return nil, false, false
+}
+
+// topField is the field of the struct of top through which sel goes: the
+// field itself, or the embedded field that holds a promoted field or
+// method.
+func (a *analyzer) topField(top ast.Expr, sel *types.Selection, name string) string {
+	if len(sel.Index()) < 2 {
+		return name
+	}
+	if s := structOf(a.typeOf(top)); s != nil && sel.Index()[0] < s.NumFields() {
+		return s.Field(sel.Index()[0]).Name()
+	}
+	return name
+}
+
+// refArg reports whether the argument arg, which a copy alias of id
+// starts, reaches memory that the copy shares with the original: a slice
+// or pointer that the copy holds, not the copy itself.
+func (a *analyzer) refArg(arg ast.Expr, id *ast.Ident, box bool) bool {
+	t := a.typeOf(arg)
+	if t == nil {
+		return true
+	}
+	switch x := ast.Unparen(arg).(type) {
+	case *ast.SliceExpr:
+		if xt := a.typeOf(x.X); xt != nil {
+			if _, ok := xt.Underlying().(*types.Array); ok {
+				return a.throughRef(x.X, id, box)
+			}
+		}
+	case *ast.UnaryExpr:
+		if xt := a.typeOf(x.X); x.Op == token.AND && xt != nil && !isRef(xt) {
+			return a.throughRef(x.X, id, box)
+		}
+	}
+	return isRef(t) || a.throughRef(arg, id, box)
 }
 
 func (a *analyzer) throughRef(e ast.Expr, id *ast.Ident, box bool) bool {
@@ -574,8 +624,39 @@ func (a *analyzer) alias(lhs, rhs ast.Expr, p apath) {
 			}
 		}
 	}
-	if _, ok := a.aliases[v]; !ok {
+	a.addAlias(v, p)
+}
+
+func (a *analyzer) addAlias(v types.Object, p apath) {
+	old, ok := a.aliases[v]
+	if !ok {
 		a.aliases[v] = p
+		a.changed = true
+		return
+	}
+	if old == p {
+		return
+	}
+	m := apath{deeper: old.deeper || p.deeper, copy: old.copy && p.copy, box: old.box && p.box}
+	if old.field == p.field {
+		m.field = old.field
+	}
+	if m != old {
+		a.aliases[v] = m
+		a.changed = true
+	}
+}
+
+func (a *analyzer) switchAlias(ts *ast.TypeSwitchStmt, p apath) {
+	for _, c := range ts.Body.List {
+		if v, ok := a.info.Implicits[c].(*types.Var); ok && isRef(v.Type()) {
+			q := p
+			switch v.Type().Underlying().(type) {
+			case *types.Struct, *types.Array:
+				q.copy, q.box = true, true
+			}
+			a.addAlias(v, q)
+		}
 	}
 }
 
@@ -606,7 +687,15 @@ func (a *analyzer) context(top ast.Expr, id *ast.Ident, p apath) ast.Expr {
 				continue
 			}
 			if len(x.Lhs) == len(x.Rhs) {
+				if ts, ok := a.parent[x].(*ast.TypeSwitchStmt); ok && ts.Assign == x {
+					a.switchAlias(ts, p)
+					return nil
+				}
 				a.alias(x.Lhs[i], top, p)
+				return nil
+			}
+			if len(x.Rhs) == 1 && len(x.Lhs) == 2 {
+				a.alias(x.Lhs[0], top, p)
 				return nil
 			}
 		}
@@ -642,18 +731,12 @@ func (a *analyzer) context(top ast.Expr, id *ast.Ident, p apath) ast.Expr {
 		}
 	case *ast.ReturnStmt:
 		a.eff.ret = true
+	case *ast.SendStmt:
+		if x.Value == top {
+			a.escape(p)
+		}
 	}
 	return nil
-}
-
-func (a *analyzer) argRef(arg ast.Expr, id *ast.Ident, p apath) ast.Expr {
-	if !p.copy || id == nil {
-		return nil
-	}
-	if a.throughRef(arg, id, p.box) {
-		return nil
-	}
-	return arg
 }
 
 func (a *analyzer) results(call *ast.CallExpr, p apath) ast.Expr {
@@ -720,14 +803,17 @@ func (a *analyzer) argCall(call *ast.CallExpr, i int, p apath, id *ast.Ident) bo
 	if t := a.typeOf(call.Args[i]); t != nil && !isRef(t) {
 		return false
 	}
+	if p.copy && id != nil && !a.refArg(call.Args[i], id, p.box) {
+		return false
+	}
 	fn, b := a.callee(call)
 	if b != nil {
 		switch b.Name() {
-		case "copy", "append", "clear":
+		case "copy", "append", "clear", "delete":
 			if i == 0 {
 				q := p
 				q.deeper = true
-				a.write(q, a.argRef(call.Args[0], id, p), id)
+				a.write(q, nil, nil)
 			}
 		}
 		return b.Name() == "append" && i == 0
@@ -744,11 +830,6 @@ func (a *analyzer) argCall(call *ast.CallExpr, i int, p apath, id *ast.Ident) bo
 	}
 	params := fn.Signature().Params()
 	pt := params.At(min(i, params.Len()-1)).Type()
-	if p.copy && !a.throughRef(call.Args[i], id, p.box) && !isPtr(pt) {
-		if _, ok := pt.Underlying().(*types.Slice); ok {
-			return false
-		}
-	}
 	if a.l.decl[fn.Origin()] != nil {
 		e := a.l.effects(fn, i)
 		a.apply(e, p, pt)
@@ -843,9 +924,23 @@ func stdWrites(fn *types.Func, i int) bool {
 	switch pkg {
 	case "fmt":
 		return strings.Contains(name, "scan") || strings.Contains(name, "Scan") || strings.HasPrefix(name, "Append") && i == 0
-	case "strings", "errors", "math", "math/bits", "unicode", "hash/crc32", "hash/crc64", "hash/adler32", "bytes", "time", "unicode/utf16":
+	case "errors":
+		return name == "As" && i == 1
+	case "strings", "bytes":
+		if recv && i == -1 {
+			switch name {
+			case "Len", "Cap", methString, "Bytes", "Available", "AvailableBuffer", "Size":
+				return false
+			}
+			return true
+		}
 		if recv {
 			return strings.HasPrefix(name, "Read") && i == 0
+		}
+		return false
+	case "math", "math/bits", "unicode", "hash/crc32", "hash/crc64", "hash/adler32", "time", "unicode/utf16":
+		if recv {
+			return i == -1 && name != methString || strings.HasPrefix(name, "Read") && i == 0
 		}
 		return false
 	case "strconv":

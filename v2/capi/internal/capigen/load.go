@@ -76,7 +76,7 @@ func (l *loader) load(p string) (*types.Package, error) {
 		files = append(files, af)
 	}
 	info := &types.Info{Defs: map[*ast.Ident]types.Object{}, Uses: map[*ast.Ident]types.Object{},
-		Types: map[ast.Expr]types.TypeAndValue{}, Selections: map[*ast.SelectorExpr]*types.Selection{}}
+		Types: map[ast.Expr]types.TypeAndValue{}, Selections: map[*ast.SelectorExpr]*types.Selection{}, Implicits: map[ast.Node]types.Object{}}
 	conf := types.Config{Importer: l, Sizes: types.SizesFor("gc", "amd64"), FakeImportC: true}
 	pkg, err := conf.Check(p, l.fset, files, info)
 	if err != nil {
