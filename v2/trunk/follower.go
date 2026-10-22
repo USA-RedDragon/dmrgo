@@ -103,6 +103,8 @@ type Follower struct {
 	sysErrs   int
 	call      Grant
 	lastBurst time.Duration
+	slotAt    time.Duration
+	hasSlotAt bool
 	hangEnd   time.Duration
 	inHang    bool
 	cleared   Grant
@@ -468,7 +470,7 @@ func (f *Follower) control(now time.Duration, h *layer2.Hint, out []Output) []Ou
 	if !f.wants(now, g) {
 		return out
 	}
-	f.call, f.lastBurst, f.inHang = *g, now, false
+	f.call, f.lastBurst, f.inHang, f.hasSlotAt = *g, now, false, false
 	f.state = StatePayload
 	return append(out, Output{Kind: OutputTune, Tune: g.tune()})
 }
@@ -526,6 +528,9 @@ func (f *Follower) payload(now time.Duration, ok bool, h *layer2.Hint, out []Out
 		return out
 	}
 	f.lastBurst = now
+	if h.Slot == f.call.Slot {
+		f.slotAt, f.hasSlotAt = now, true
+	}
 	if b.Kind == layer2.KindVoice {
 		f.inHang = false
 		return out
