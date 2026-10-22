@@ -4,7 +4,7 @@
 
 Decode and encode DMR (Digital Mobile Radio) bursts and PDUs as defined in [ETSI TS 102 361](https://www.etsi.org/standards) parts 1 to 4.
 
-[DMRHub](https://github.com/USA-RedDragon/DMRHub) and [ipsc2mmdvm](https://github.com/USA-RedDragon/ipsc2mmdvm) use it.
+[DMRHub](https://github.com/USA-RedDragon/DMRHub) and [ipsc2hbrp](https://github.com/USA-RedDragon/ipsc2hbrp) use it.
 
 ## Installation
 
