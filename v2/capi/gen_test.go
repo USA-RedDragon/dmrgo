@@ -43,6 +43,10 @@ func TestGenerated(t *testing.T) {
 			t.Errorf("dmrgo_gen.h has names that %s matches: %q", re, m)
 		}
 	}
+	goLead := regexp.MustCompile(`/\* Go: [\w.]+\.`)
+	if m := regexp.MustCompile(`\b[a-z][a-z0-9]*\.[A-Z]\w*`).FindAll(goLead.ReplaceAll(out.H, []byte("/*")), 5); m != nil {
+		t.Errorf("dmrgo_gen.h comments name Go identifiers: %q", m)
+	}
 	protoDoc := regexp.MustCompile(`(?m)^/\* Go: .*\*/\nint dmrgo_`)
 	goErr := regexp.MustCompile(`\bErr[A-Z]\w*`)
 	for _, d := range protoDoc.FindAll(out.H, -1) {
