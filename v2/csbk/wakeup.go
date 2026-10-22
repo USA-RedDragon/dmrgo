@@ -58,7 +58,8 @@ func (s WakeupState) String() string {
 // Wakeup is the MS side of the BS outbound activation: it sends BS_Dwn_Act
 // with MS sourced SYNC, waits T_SyncWu for a BS sourced burst with the color
 // code of the BS, and sends again up to N_Wakeup times. Make it with
-// NewWakeup. A Wakeup is not safe for concurrent use and must not be copied;
+// NewWakeup; a zero Wakeup does nothing, and its Wake returns
+// dmrgo.ErrZeroValue. A Wakeup is not safe for concurrent use and must not be copied;
 // go vet reports a copy. (ETSI TS 102 361-1 clause 5.2.2.2.4)
 type Wakeup struct {
 	cc       enums.ColorCode
@@ -123,10 +124,14 @@ func (w *Wakeup) State() WakeupState {
 
 // Wake starts the wakeup of the BS with address bs by the radio source. The
 // first BS_Dwn_Act goes out at the next Tick. It returns ErrBusy while a
-// wakeup runs, and a *dmrgo.ConfigError for an address above 24 bits.
+// wakeup runs, dmrgo.ErrZeroValue on a zero Wakeup, and a
+// *dmrgo.ConfigError for an address above 24 bits.
 func (w *Wakeup) Wake(now time.Duration, bs, source uint32) error {
 	if w == nil {
 		return dmrgo.ErrNilReceiver
+	}
+	if w.d.b == nil {
+		return dmrgo.ErrZeroValue
 	}
 	if w.state != WakeupIdle {
 		return ErrBusy

@@ -83,7 +83,8 @@ type ResponderConfig struct {
 // Responder answers the CSBK requests that address one radio on one
 // logical channel, as the package doc describes. It answers one request at
 // a time: a request that comes before the answer to the one before has
-// gone out replaces it. Make it with NewResponder. A Responder is not safe
+// gone out replaces it. Make it with NewResponder; a zero Responder does
+// nothing. A Responder is not safe
 // for concurrent use and must not be copied; go vet reports a copy.
 type Responder struct {
 	address     uint32
@@ -170,7 +171,7 @@ func (r *Responder) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint
 // whose CRC fails is dropped. It allocates only when dst has no room for
 // MaxOutputs outputs.
 func (r *Responder) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
-	if r == nil {
+	if r == nil || r.d.b == nil {
 		return dst
 	}
 	dst = r.Tick(now, dst)

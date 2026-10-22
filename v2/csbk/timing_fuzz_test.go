@@ -19,7 +19,9 @@ func timingScript(t testing.TB, in []byte) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m.Join(0)
+	if err := m.Join(0); err != nil {
+		t.Fatal(err)
+	}
 	out := make([]csbk.Output, 0, csbk.MaxOutputs)
 	var b layer2.Burst
 	var now time.Duration
@@ -85,7 +87,9 @@ func timingScript(t testing.TB, in []byte) {
 			if op&0x10 != 0 {
 				m.Reset()
 			}
-			m.Join(now)
+			if err := m.Join(now); err != nil {
+				t.Fatal(err)
+			}
 		}
 		check(op)
 	}

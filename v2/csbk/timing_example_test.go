@@ -16,7 +16,10 @@ func ExampleTiming() {
 		fmt.Println(err)
 		return
 	}
-	m.Join(0)
+	if err := m.Join(0); err != nil {
+		fmt.Println(err)
+		return
+	}
 	beacon := pdu.ChannelTimingPDU{LeaderDynamicIdentifier: 3, LeaderIdentifier: 7, ChannelTimingOp1: true, ChannelTimingOp0: true, SourceDynamicIdentifier: 3, SourceIdentifier: 7}
 	c := pdu.CSBK{LastBlock: true}
 	if err := c.SetChannelTiming(beacon); err != nil {

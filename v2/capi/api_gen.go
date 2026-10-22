@@ -10433,9 +10433,12 @@ func dmrgo_csbk_timing_join(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duratio
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_csbk_Timing(c_self)
-	h.v.Join(time.Duration(c_now))
+	r0 := h.v.Join(time.Duration(c_now))
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }
