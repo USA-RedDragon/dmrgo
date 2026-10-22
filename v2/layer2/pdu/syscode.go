@@ -21,7 +21,7 @@ func (m NetworkModel) NetBits() (int, error) {
 	if m > NetworkModelHuge {
 		return 0, errNetworkModelRange
 	}
-	return netSiteBits(uint8(m)), nil
+	return netSiteBits(m), nil
 }
 
 // SiteBits returns the width of the SITE field for the model, with the
@@ -30,7 +30,7 @@ func (m NetworkModel) SiteBits() (int, error) {
 	if m > NetworkModelHuge {
 		return 0, errNetworkModelRange
 	}
-	return netSiteLen - netSiteBits(uint8(m)), nil
+	return netSiteLen - netSiteBits(m), nil
 }
 
 // SysCode is the 16-bit C_SYScode: MODEL (2 bits), NET and SITE (12 bits
@@ -48,10 +48,10 @@ func (s SysCode) check() error {
 	if s.Model > NetworkModelHuge {
 		return errSysCodeModelRange
 	}
-	if s.Net>>netSiteBits(uint8(s.Model)) != 0 {
+	if s.Net>>netSiteBits(s.Model) != 0 {
 		return sysCodeNetRange(s.Model)
 	}
-	if s.Site>>(netSiteLen-netSiteBits(uint8(s.Model))) != 0 {
+	if s.Site>>(netSiteLen-netSiteBits(s.Model)) != 0 {
 		return sysCodeSiteRange(s.Model)
 	}
 	if s.Par > 3 {
@@ -67,7 +67,7 @@ func (s SysCode) Pack() (uint16, error) {
 	if err := s.check(); err != nil {
 		return 0, err
 	}
-	return uint16(s.Model)<<14 | s.Net<<(2+netSiteLen-netSiteBits(uint8(s.Model))) | s.Site<<2 | uint16(s.Par), nil
+	return uint16(s.Model)<<14 | s.Net<<(2+netSiteLen-netSiteBits(s.Model)) | s.Site<<2 | uint16(s.Par), nil
 }
 
 // Pack14 returns the 14 most significant bits of the C_SYScode, the form
@@ -92,10 +92,10 @@ func (s *SysCode) Unpack(v uint16) {
 		return
 	}
 	model := NetworkModel(v >> 14)
-	siteBits := netSiteLen - netSiteBits(uint8(model))
+	siteBits := netSiteLen - netSiteBits(model)
 	*s = SysCode{
 		Model: model,
-		Net:   (v >> (2 + siteBits)) & (1<<netSiteBits(uint8(model)) - 1),
+		Net:   (v >> (2 + siteBits)) & (1<<netSiteBits(model) - 1),
 		Site:  (v >> 2) & (1<<siteBits - 1),
 		Par:   uint8(v & 3),
 	}
@@ -116,7 +116,7 @@ func (s *SysCode) Unpack14(v uint16) error {
 	return nil
 }
 
-func checkNetSite(model uint8, netSite uint16, modelErr, netSiteErr error) error {
+func checkNetSite(model NetworkModel, netSite uint16, modelErr, netSiteErr error) error {
 	switch {
 	case model>>2 != 0:
 		return modelErr
@@ -126,7 +126,7 @@ func checkNetSite(model uint8, netSite uint16, modelErr, netSiteErr error) error
 	return nil
 }
 
-func sysCodeFromShortLC(model uint8, netSite uint16, modelErr, netSiteErr error) (SysCode, error) {
+func sysCodeFromShortLC(model NetworkModel, netSite uint16, modelErr, netSiteErr error) (SysCode, error) {
 	var s SysCode
 	if err := checkNetSite(model, netSite, modelErr, netSiteErr); err != nil {
 		return s, err
@@ -142,7 +142,7 @@ func (s *ShortLCCSysParms) SysCode() (SysCode, error) {
 	if s == nil {
 		return SysCode{}, dmrgo.ErrNilReceiver
 	}
-	return sysCodeFromShortLC(s.MODEL, s.NetSiteRaw, errShortLCCSysParmsMODELRange, errShortLCCSysParmsNetSiteRawRange)
+	return sysCodeFromShortLC(s.Model, s.NetSiteRaw, errShortLCCSysParmsModelRange, errShortLCCSysParmsNetSiteRawRange)
 }
 
 // SetSysCode sets MODEL and NetSiteRaw from c. c.Par is ignored.
@@ -154,7 +154,7 @@ func (s *ShortLCCSysParms) SetSysCode(c SysCode) error {
 	if err != nil {
 		return err
 	}
-	s.MODEL, s.NetSiteRaw = uint8(c.Model), netSite
+	s.Model, s.NetSiteRaw = c.Model, netSite
 	return nil
 }
 
@@ -164,7 +164,7 @@ func (s *ShortLCPSysParms) SysCode() (SysCode, error) {
 	if s == nil {
 		return SysCode{}, dmrgo.ErrNilReceiver
 	}
-	return sysCodeFromShortLC(s.MODEL, s.NetSiteRaw, errShortLCPSysParmsMODELRange, errShortLCPSysParmsNetSiteRawRange)
+	return sysCodeFromShortLC(s.Model, s.NetSiteRaw, errShortLCPSysParmsModelRange, errShortLCPSysParmsNetSiteRawRange)
 }
 
 // SetSysCode sets MODEL and NetSiteRaw from c. c.Par is ignored.
@@ -176,7 +176,7 @@ func (s *ShortLCPSysParms) SetSysCode(c SysCode) error {
 	if err != nil {
 		return err
 	}
-	s.MODEL, s.NetSiteRaw = uint8(c.Model), netSite
+	s.Model, s.NetSiteRaw = c.Model, netSite
 	return nil
 }
 
@@ -207,15 +207,16 @@ func sysCodeSiteRange(m NetworkModel) error {
 }
 
 const (
-	sysCodeType = "SysCode"
-	sysCodeNet  = "Net"
-	sysCodeSite = "Site"
+	sysCodeType  = "SysCode"
+	sysCodeNet   = "Net"
+	sysCodeSite  = "Site"
+	sysCodeModel = "Model"
 )
 
 var (
 	errSysCode14Range        = &dmrgo.FieldRangeError{Type: sysCodeType, Field: "Unpack14", Bits: 14}
 	errNetworkModelRange     = &dmrgo.FieldRangeError{Type: "pdu", Field: "NetworkModel", Bits: 2}
-	errSysCodeModelRange     = &dmrgo.FieldRangeError{Type: sysCodeType, Field: "Model", Bits: 2}
+	errSysCodeModelRange     = &dmrgo.FieldRangeError{Type: sysCodeType, Field: sysCodeModel, Bits: 2}
 	errSysCodeParRange       = &dmrgo.FieldRangeError{Type: sysCodeType, Field: "Par", Bits: 2}
 	errSysCodeNetRangeTiny   = &dmrgo.FieldRangeError{Type: sysCodeType, Field: sysCodeNet, Bits: 9}
 	errSysCodeNetRangeSmall  = &dmrgo.FieldRangeError{Type: sysCodeType, Field: sysCodeNet, Bits: 7}

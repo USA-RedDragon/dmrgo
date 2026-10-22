@@ -171,7 +171,7 @@ func TestBroadcastPDUStringMatchesFmt(t *testing.T) {
 }
 
 func (s *ClearPDU) fmtString() string {
-	return fmt.Sprintf("ClearPDU{ PhysicalChannel: %d, Reserved1: %t, Reserved2: %d, GroupIndividual: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.Reserved1, s.Reserved2, s.GroupIndividual, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("ClearPDU{ PhysicalChannel: %d, Reserved1: %t, Reserved2: %d, Group: %t, TargetAddress: %d, SourceAddress: %d }", s.PhysicalChannel, s.Reserved1, s.Reserved2, s.Group, s.TargetAddress, s.SourceAddress)
 }
 
 func TestClearPDUStringMatchesFmt(t *testing.T) {
@@ -180,7 +180,7 @@ func TestClearPDUStringMatchesFmt(t *testing.T) {
 }
 
 func (s *ProtectPDU) fmtString() string {
-	return fmt.Sprintf("ProtectPDU{ Reserved: %d, ProtectKind: %d, GroupIndividual: %t, TargetAddress: %d, SourceAddress: %d }", s.Reserved, s.ProtectKind, s.GroupIndividual, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("ProtectPDU{ Reserved: %d, ProtectKind: %d, Group: %t, TargetAddress: %d, SourceAddress: %d }", s.Reserved, s.ProtectKind, s.Group, s.TargetAddress, s.SourceAddress)
 }
 
 func TestProtectPDUStringMatchesFmt(t *testing.T) {
@@ -189,7 +189,7 @@ func TestProtectPDUStringMatchesFmt(t *testing.T) {
 }
 
 func (s *AhoyPDU) fmtString() string {
-	return fmt.Sprintf("AhoyPDU{ ServiceOptsMirror: %d, ServiceKindFlag: %t, ALS: %t, GroupIndividual: %t, AppendedBlocks: %d, ServiceKind: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptsMirror, s.ServiceKindFlag, s.ALS, s.GroupIndividual, s.AppendedBlocks, s.ServiceKind, s.TargetAddress, s.SourceAddress)
+	return fmt.Sprintf("AhoyPDU{ ServiceOptsMirror: %d, ServiceKindFlag: %t, ALS: %t, Group: %t, UAB: %d, ServiceKind: %d, TargetAddress: %d, SourceAddress: %d }", s.ServiceOptsMirror, s.ServiceKindFlag, s.ALS, s.Group, s.UAB, s.ServiceKind, s.TargetAddress, s.SourceAddress)
 }
 
 func TestAhoyPDUStringMatchesFmt(t *testing.T) {

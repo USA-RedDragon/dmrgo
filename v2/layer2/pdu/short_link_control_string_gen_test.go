@@ -27,7 +27,7 @@ func TestShortLCActivityUpdateStringMatchesFmt(t *testing.T) {
 }
 
 func (s *ShortLCCSysParms) fmtString() string {
-	return fmt.Sprintf("ShortLCCSysParms{ MODEL: %d, NetSiteRaw: %d, Reg: %t, CommonSlotCounter: %d }", s.MODEL, s.NetSiteRaw, s.Reg, s.CommonSlotCounter)
+	return fmt.Sprintf("ShortLCCSysParms{ Model: %d, NetSiteRaw: %d, Reg: %t, CommonSlotCounter: %d }", s.Model, s.NetSiteRaw, s.Reg, s.CommonSlotCounter)
 }
 
 func TestShortLCCSysParmsStringMatchesFmt(t *testing.T) {
@@ -36,7 +36,7 @@ func TestShortLCCSysParmsStringMatchesFmt(t *testing.T) {
 }
 
 func (s *ShortLCPSysParms) fmtString() string {
-	return fmt.Sprintf("ShortLCPSysParms{ MODEL: %d, NetSiteRaw: %d, PayloadChannelType: %t, CommonSlotCounter: %d }", s.MODEL, s.NetSiteRaw, s.PayloadChannelType, s.CommonSlotCounter)
+	return fmt.Sprintf("ShortLCPSysParms{ Model: %d, NetSiteRaw: %d, PayloadChannelType: %t, CommonSlotCounter: %d }", s.Model, s.NetSiteRaw, s.PayloadChannelType, s.CommonSlotCounter)
 }
 
 func TestShortLCPSysParmsStringMatchesFmt(t *testing.T) {

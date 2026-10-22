@@ -1120,7 +1120,7 @@ func decodeClearPDU(data [8]byte) ClearPDU {
 	result.PhysicalChannel = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
 	result.Reserved1 = data[1]&0x08 != 0
 	result.Reserved2 = uint8(uint64(data[1]) >> 1 & 0x3)
-	result.GroupIndividual = data[1]&0x01 != 0
+	result.Group = data[1]&0x01 != 0
 	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
 	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
@@ -1142,7 +1142,7 @@ func (s *ClearPDU) encode() ([8]byte, error) {
 		return [8]byte{}, errClearPDUReserved2Range
 	}
 	data[1] = data[1]&^0x06 | byte(uint64(s.Reserved2)<<1)&0x06
-	if s.GroupIndividual {
+	if s.Group {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
@@ -1169,7 +1169,7 @@ func (s *ClearPDU) String() string {
 		return "<nil>"
 	}
 
-	return "ClearPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", Reserved1: " + text.Bool(s.Reserved1) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", GroupIndividual: " + text.Bool(s.GroupIndividual) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
+	return "ClearPDU{ PhysicalChannel: " + text.Int(int64(s.PhysicalChannel)) + ", Reserved1: " + text.Bool(s.Reserved1) + ", Reserved2: " + text.Int(int64(s.Reserved2)) + ", Group: " + text.Bool(s.Group) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // ETSI TS 102 361-4 clause 7.1.1.3.3
@@ -1177,7 +1177,7 @@ func decodeProtectPDU(data [8]byte) ProtectPDU {
 	var result ProtectPDU
 	result.Reserved = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 4)
 	result.ProtectKind = uint8(uint64(data[1]) >> 1 & 0x7)
-	result.GroupIndividual = data[1]&0x01 != 0
+	result.Group = data[1]&0x01 != 0
 	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
 	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	return result
@@ -1196,7 +1196,7 @@ func (s *ProtectPDU) encode() ([8]byte, error) {
 		return [8]byte{}, errProtectPDUProtectKindRange
 	}
 	data[1] = data[1]&^0x0E | byte(uint64(s.ProtectKind)<<1)&0x0E
-	if s.GroupIndividual {
+	if s.Group {
 		data[1] |= 0x01
 	}
 	if uint64(s.TargetAddress)>>24 != 0 {
@@ -1223,7 +1223,7 @@ func (s *ProtectPDU) String() string {
 		return "<nil>"
 	}
 
-	return "ProtectPDU{ Reserved: " + text.Int(int64(s.Reserved)) + ", ProtectKind: " + text.Int(int64(s.ProtectKind)) + ", GroupIndividual: " + text.Bool(s.GroupIndividual) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
+	return "ProtectPDU{ Reserved: " + text.Int(int64(s.Reserved)) + ", ProtectKind: " + text.Int(int64(s.ProtectKind)) + ", Group: " + text.Bool(s.Group) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // ETSI TS 102 361-4 clauses 7.1.1.1.6 and 7.1.1.3.4
@@ -1232,8 +1232,8 @@ func decodeAhoyPDU(data [8]byte) AhoyPDU {
 	result.ServiceOptsMirror = uint8(uint64(data[0]) >> 1)
 	result.ServiceKindFlag = data[0]&0x01 != 0
 	result.ALS = data[1]&0x80 != 0
-	result.GroupIndividual = data[1]&0x40 != 0
-	result.AppendedBlocks = uint8(uint64(data[1]) >> 4 & 0x3)
+	result.Group = data[1]&0x40 != 0
+	result.UAB = uint8(uint64(data[1]) >> 4 & 0x3)
 	result.ServiceKind = uint8(uint64(data[1]) & 0xF)
 	result.TargetAddress = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
 	result.SourceAddress = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
@@ -1253,13 +1253,13 @@ func (s *AhoyPDU) encode() ([8]byte, error) {
 	if s.ALS {
 		data[1] |= 0x80
 	}
-	if s.GroupIndividual {
+	if s.Group {
 		data[1] |= 0x40
 	}
-	if uint64(s.AppendedBlocks)>>2 != 0 {
-		return [8]byte{}, errAhoyPDUAppendedBlocksRange
+	if uint64(s.UAB)>>2 != 0 {
+		return [8]byte{}, errAhoyPDUUABRange
 	}
-	data[1] = data[1]&^0x30 | byte(uint64(s.AppendedBlocks)<<4)&0x30
+	data[1] = data[1]&^0x30 | byte(uint64(s.UAB)<<4)&0x30
 	if uint64(s.ServiceKind)>>4 != 0 {
 		return [8]byte{}, errAhoyPDUServiceKindRange
 	}
@@ -1288,7 +1288,7 @@ func (s *AhoyPDU) String() string {
 		return "<nil>"
 	}
 
-	return "AhoyPDU{ ServiceOptsMirror: " + text.Int(int64(s.ServiceOptsMirror)) + ", ServiceKindFlag: " + text.Bool(s.ServiceKindFlag) + ", ALS: " + text.Bool(s.ALS) + ", GroupIndividual: " + text.Bool(s.GroupIndividual) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", ServiceKind: " + text.Int(int64(s.ServiceKind)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
+	return "AhoyPDU{ ServiceOptsMirror: " + text.Int(int64(s.ServiceOptsMirror)) + ", ServiceKindFlag: " + text.Bool(s.ServiceKindFlag) + ", ALS: " + text.Bool(s.ALS) + ", Group: " + text.Bool(s.Group) + ", UAB: " + text.Int(int64(s.UAB)) + ", ServiceKind: " + text.Int(int64(s.ServiceKind)) + ", TargetAddress: " + text.Int(int64(s.TargetAddress)) + ", SourceAddress: " + text.Int(int64(s.SourceAddress)) + " }"
 }
 
 // ETSI TS 102 361-4 clause 7.1.1.1.7
@@ -3148,9 +3148,9 @@ var (
 		Field: "ServiceOptsMirror",
 		Type:  "AhoyPDU",
 	}
-	errAhoyPDUAppendedBlocksRange = &dmrgo.FieldRangeError{
+	errAhoyPDUUABRange = &dmrgo.FieldRangeError{
 		Bits:  2,
-		Field: "AppendedBlocks",
+		Field: "UAB",
 		Type:  "AhoyPDU",
 	}
 	errAhoyPDUServiceKindRange = &dmrgo.FieldRangeError{

@@ -259,7 +259,7 @@ func TestResponderFNS(t *testing.T) {
 
 	ahoy := func(target uint32, group bool) layer2.RawBurst {
 		c := pdu.CSBK{LastBlock: true}
-		if err := c.SetAhoy(pdu.AhoyPDU{GroupIndividual: group, TargetAddress: target, SourceAddress: 5}); err != nil {
+		if err := c.SetAhoy(pdu.AhoyPDU{Group: group, TargetAddress: target, SourceAddress: 5}); err != nil {
 			t.Fatal(err)
 		}
 		b, err := layer2.BuildBurst(&c, 0, layer2.SyncSourceBS)

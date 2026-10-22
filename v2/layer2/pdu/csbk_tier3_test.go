@@ -287,8 +287,8 @@ func TestCSBK_Clear_Decode(t *testing.T) {
 	if clr.PhysicalChannel != 0x100 {
 		t.Errorf("PhysicalChannel = 0x%03X, want 0x100", clr.PhysicalChannel)
 	}
-	if !clr.GroupIndividual {
-		t.Error("GroupIndividual should be true")
+	if !clr.Group {
+		t.Error("Group should be true")
 	}
 }
 
@@ -327,11 +327,11 @@ func TestCSBK_Ahoy_Decode(t *testing.T) {
 	if !ahoy.ALS {
 		t.Error("ALS should be true")
 	}
-	if !ahoy.GroupIndividual {
-		t.Error("GroupIndividual should be true")
+	if !ahoy.Group {
+		t.Error("Group should be true")
 	}
-	if ahoy.AppendedBlocks != 2 {
-		t.Errorf("AppendedBlocks = %d, want 2", ahoy.AppendedBlocks)
+	if ahoy.UAB != 2 {
+		t.Errorf("AppendedBlocks = %d, want 2", ahoy.UAB)
 	}
 	if ahoy.ServiceKind != 5 {
 		t.Errorf("ServiceKind = %d, want 5", ahoy.ServiceKind)
@@ -785,7 +785,7 @@ func TestShortLC_CSysParms_NetSite_Models(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			cs := &pdu.ShortLCCSysParms{MODEL: tt.model, NetSiteRaw: netSitePattern()}
+			cs := &pdu.ShortLCCSysParms{Model: pdu.NetworkModel(tt.model), NetSiteRaw: netSitePattern()}
 			if got := must(cs.NetID()); got != tt.wantNetID {
 				t.Errorf("NetID() = %b, want %b", got, tt.wantNetID)
 			}
@@ -803,7 +803,7 @@ func TestShortLC_PSysParms_NetSite_Models(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ps := &pdu.ShortLCPSysParms{MODEL: tt.model, NetSiteRaw: netSitePattern()}
+			ps := &pdu.ShortLCPSysParms{Model: pdu.NetworkModel(tt.model), NetSiteRaw: netSitePattern()}
 			if got := must(ps.NetID()); got != tt.wantNetID {
 				t.Errorf("NetID() = %b, want %b", got, tt.wantNetID)
 			}
@@ -856,7 +856,7 @@ func TestCSBK_Protect_Decode(t *testing.T) {
 	if protect.ProtectKind != 5 {
 		t.Errorf("ProtectKind = %d, want 5", protect.ProtectKind)
 	}
-	if !protect.GroupIndividual {
-		t.Error("GroupIndividual should be true")
+	if !protect.Group {
+		t.Error("Group should be true")
 	}
 }

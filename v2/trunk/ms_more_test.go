@@ -96,7 +96,7 @@ func TestMS_RadioCheck(t *testing.T) {
 		answer bool
 	}{{false, msAddr, true}, {true, 9, true}, {true, 10, false}, {false, msAddr + 1, false}} {
 		ahoy := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAhoy, pdu.AhoyPDU{
-			ServiceKind: uint8(enums.ServiceKindRegistration), GroupIndividual: tt.group, TargetAddress: tt.target, SourceAddress: constants.GatewayALLMSI}), testCC)
+			ServiceKind: uint8(enums.ServiceKindRegistration), Group: tt.group, TargetAddress: tt.target, SourceAddress: constants.GatewayALLMSI}), testCC)
 		out := r.feed(ahoy, &busy)
 		if !tt.answer {
 			wantKinds(t, "radio check for another", out)
@@ -135,7 +135,7 @@ func TestMS_PayloadProtectAndAhoy(t *testing.T) {
 	r.feed(aloha(t), &idle)
 	wantKinds(t, "TV_GRANT", r.feed(tvGrant(t, 9, 5, false), &idle), trunk.OutputGrant, trunk.OutputTune)
 	dis := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetProtect, pdu.ProtectPDU{
-		ProtectKind: uint8(enums.ProtectDisablePTT), GroupIndividual: true, TargetAddress: 9, SourceAddress: 3120001}), testCC)
+		ProtectKind: uint8(enums.ProtectDisablePTT), Group: true, TargetAddress: 9, SourceAddress: 3120001}), testCC)
 	out := r.feed(dis, nil)
 	wantKinds(t, "DIS_PTT", out, trunk.OutputProtect)
 	if out[0].Protect != enums.ProtectDisablePTT {
@@ -149,7 +149,7 @@ func TestMS_PayloadProtectAndAhoy(t *testing.T) {
 		t.Errorf("P_ACKU %v %+v slot %v", ok, ackP, out[1].Slot)
 	}
 	parked := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetProtect, pdu.ProtectPDU{
-		ProtectKind: uint8(enums.ProtectIllegallyParked), GroupIndividual: true, TargetAddress: 9, SourceAddress: 3120005}), testCC)
+		ProtectKind: uint8(enums.ProtectIllegallyParked), Group: true, TargetAddress: 9, SourceAddress: 3120005}), testCC)
 	out = r.feed(parked, nil)
 	wantKinds(t, "ILLEGALLY_PARKED", out, trunk.OutputCallEnd, trunk.OutputTune)
 	if out[0].Reason != trunk.ReasonParked {

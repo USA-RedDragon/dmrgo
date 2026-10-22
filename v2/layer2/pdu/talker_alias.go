@@ -82,7 +82,7 @@ func talkerAliasText(dst *[TalkerAliasMaxText]byte, header *FLCTalkerAliasHeader
 		return 0, ErrTalkerAliasIncomplete
 	}
 	format := header.TalkerAliasDataFormat
-	n := TalkerAliasBlocks(format, header.TalkerAliasDataLength)
+	n := TalkerAliasBlocks(format, int(header.TalkerAliasDataLength))
 	if len(blocks) < n {
 		return 0, ErrTalkerAliasIncomplete
 	}
@@ -98,7 +98,7 @@ func talkerAliasText(dst *[TalkerAliasMaxText]byte, header *FLCTalkerAliasHeader
 	}
 	unit := talkerAliasUnitBits(format)
 	var units [talkerAliasMaxUnits]uint16
-	length := max(0, min(header.TalkerAliasDataLength, used/unit, talkerAliasMaxUnits))
+	length := max(0, min(int(header.TalkerAliasDataLength), used/unit, talkerAliasMaxUnits))
 	for i := range length {
 		units[i] = uint16(bits.Field(stream[:], i*unit, unit) & 0xFFFF)
 	}
@@ -214,7 +214,7 @@ func EncodeTalkerAliasInto(dst *[talkerAliasMaxBlocks + 1]FullLinkControl, alias
 		return 0, ErrTalkerAliasLength
 	}
 	n := TalkerAliasBlocks(format, count)
-	header := FLCTalkerAliasHeader{TalkerAliasDataFormat: format, TalkerAliasDataLength: count}
+	header := FLCTalkerAliasHeader{TalkerAliasDataFormat: format, TalkerAliasDataLength: uint8(count & 0x1F)}
 	var stream [(talkerAliasStreamBits + 7) / 8]byte
 	for j := range count {
 		bits.SetField(stream[:], j*unit, unit, uint64(units[j]))
@@ -321,7 +321,7 @@ func (a *TalkerAliasAssembler) AddInto(dst *[TalkerAliasMaxText]byte, lc *FullLi
 	if !a.hasHeader || a.completed {
 		return 0, false, nil
 	}
-	nb := TalkerAliasBlocks(a.header.TalkerAliasDataFormat, a.header.TalkerAliasDataLength)
+	nb := TalkerAliasBlocks(a.header.TalkerAliasDataFormat, int(a.header.TalkerAliasDataLength))
 	var blocks [talkerAliasMaxBlocks]*FLCTalkerAliasBlock
 	for i := range nb {
 		if !a.hasBlock[i] {

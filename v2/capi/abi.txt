@@ -3326,7 +3326,7 @@ type struct dmrgo_pdu_ack_outbound_payload_pdu_t { uint8_t response_info; uint8_
 type struct dmrgo_pdu_ack_outbound_pdu_t { uint8_t response_info; uint8_t reason_code; bool reserved; uint32_t target_address; uint32_t additional_info; };
 type struct dmrgo_pdu_ackvitation_pdu_t { uint8_t service_opts_mirror; bool service_kind_flag; uint8_t reserved; uint8_t uab; uint8_t service_kind; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_adjacent_site_parms_t { dmrgo_enums_announcement_type_t announcement_type; uint16_t adjacent_sys_code; bool reg; uint8_t backoff; uint16_t sys_ident_code; bool has_active_conn; bool active_conn; uint8_t confirmed_priority; uint8_t adjacent_priority; uint8_t reserved; uint16_t channel; };
-type struct dmrgo_pdu_ahoy_pdu_t { uint8_t service_opts_mirror; bool service_kind_flag; bool als; bool group_individual; uint8_t appended_blocks; uint8_t service_kind; uint32_t target_address; uint32_t source_address; };
+type struct dmrgo_pdu_ahoy_pdu_t { uint8_t service_opts_mirror; bool service_kind_flag; bool als; bool group; uint8_t uab; uint8_t service_kind; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_aloha_pdu_t { bool reserved1; bool tsccas; bool site_ts_sync; uint8_t version; bool offset; bool active_conn; uint8_t mask; uint8_t service_func; uint8_t n_rand_wait; bool reg; uint8_t backoff; uint16_t sys_ident_code; uint32_t ms_address; };
 type struct dmrgo_pdu_ann_wd_tscc_parms_t { dmrgo_enums_announcement_type_t announcement_type; uint8_t reserved; dmrgo_enums_color_code_t color_code1; dmrgo_enums_color_code_t color_code2; bool withdraw1; bool withdraw2; bool reg; uint8_t backoff; uint16_t sys_ident_code; uint16_t channel1; uint16_t channel2; };
 type struct dmrgo_pdu_bcap_continuation_t { dmrgo_fec_result_t fec; bool last_block; bool protect_flag; dmrgo_pdu_csbk_opcode_t opcode; uint8_t reserved1; uint8_t cdeftype; uint8_t reserved2; dmrgo_layer3_cdef_parms_t cdef_parms; };
@@ -3346,7 +3346,7 @@ type struct dmrgo_pdu_capacity_plus_site_status_pdu_t { dmrgo_pdu_capacity_plus_
 type struct dmrgo_pdu_cgap_continuation_t { dmrgo_fec_result_t fec; bool last_block; bool protect_flag; dmrgo_pdu_csbk_opcode_t opcode; uint8_t reserved1; dmrgo_enums_color_code_t color_code; uint8_t cdeftype; uint8_t reserved2; dmrgo_layer3_cdef_parms_t cdef_parms; };
 type struct dmrgo_pdu_chan_freq_parms_t { dmrgo_enums_announcement_type_t announcement_type; uint16_t reserved1; bool reg; uint8_t backoff; uint16_t sys_ident_code; uint16_t reserved2; uint16_t channel; };
 type struct dmrgo_pdu_channel_timing_pdu_t { uint16_t sync_age; uint8_t generation; uint32_t leader_identifier; bool new_leader; uint8_t leader_dynamic_identifier; bool channel_timing_op1; uint32_t source_identifier; bool reserved; uint8_t source_dynamic_identifier; bool channel_timing_op0; };
-type struct dmrgo_pdu_clear_pdu_t { uint16_t physical_channel; bool reserved1; uint8_t reserved2; bool group_individual; uint32_t target_address; uint32_t source_address; };
+type struct dmrgo_pdu_clear_pdu_t { uint16_t physical_channel; bool reserved1; uint8_t reserved2; bool group; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_confirmed_data_header_t { bool group; bool response_requested; bool reserved; uint8_t pad_octet_count; dmrgo_enums_sap_t sap; uint32_t llid_destination; uint32_t llid_source; bool full_message_flag; uint8_t blocks_to_follow; bool re_synchronize_flag; uint8_t send_sequence_number; uint8_t fragment_sequence_number; };
 type struct dmrgo_pdu_csbk_bytes_t { uint8_t v[12]; };
 type struct dmrgo_pdu_csbk_t { bool last_block; bool protect_flag; dmrgo_pdu_csbk_opcode_t opcode; dmrgo_enums_fid_t fid; dmrgo_fec_result_t fec; dmrgo_pdu_opcode0x38_hint_t hint0x38; uint8_t raw_payload[8]; };
@@ -3359,8 +3359,8 @@ type struct dmrgo_pdu_embedded_signalling_t { dmrgo_enums_color_code_t color_cod
 type struct dmrgo_pdu_flc_gps_info_t { uint8_t reserved; dmrgo_layer3_position_error_t position_error; double longitude; double latitude; };
 type struct dmrgo_pdu_flc_group_voice_t { dmrgo_layer3_service_options_t service_options; uint32_t group_address; uint32_t source_address; };
 type struct dmrgo_pdu_flc_talker_alias_block_t { uint8_t talker_alias_data[7]; };
-type struct dmrgo_pdu_flc_talker_alias_header_t { dmrgo_layer3_talker_alias_data_format_t talker_alias_data_format; int64_t talker_alias_data_length; uint64_t talker_alias_data; };
-type struct dmrgo_pdu_flc_terminator_data_link_control_t { uint32_t llid_destination; uint32_t llid_source; bool group_or_individual; bool response_requested; bool full_message_flag; bool reserved; bool re_synchronize_flag; uint8_t send_sequence_number; };
+type struct dmrgo_pdu_flc_talker_alias_header_t { dmrgo_layer3_talker_alias_data_format_t talker_alias_data_format; uint8_t talker_alias_data_length; uint64_t talker_alias_data; };
+type struct dmrgo_pdu_flc_terminator_data_link_control_t { uint32_t llid_destination; uint32_t llid_source; bool group; bool response_requested; bool full_message_flag; bool reserved; bool re_synchronize_flag; uint8_t send_sequence_number; };
 type struct dmrgo_pdu_flc_unit_to_unit_t { dmrgo_layer3_service_options_t service_options; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_full_link_control_t { dmrgo_enums_data_type_t burst_data_type; bool protect_flag; bool reserved; dmrgo_enums_flco_t flco; dmrgo_enums_fid_t fid; dmrgo_fec_result_t fec; uint8_t raw_payload[7]; };
 type struct dmrgo_pdu_gen_site_parms_t { dmrgo_enums_announcement_type_t announcement_type; uint16_t reserved1; bool reg; uint8_t backoff; uint16_t sys_ident_code; bool reserved2; bool hibernating; uint8_t reserved3; uint8_t reserved4; bool reg_without_tg; uint8_t reserved5; };
@@ -3383,7 +3383,7 @@ type struct dmrgo_pdu_private_data_grant_multi_item_pdu_t { uint16_t physical_ch
 type struct dmrgo_pdu_private_data_grant_pdu_t { uint16_t physical_channel; bool logical_channel; bool hi_rate; bool emergency; bool offset; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_private_voice_grant_pdu_t { uint16_t physical_channel; bool logical_channel; bool reserved; bool emergency; bool offset; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_proprietary_header_t { dmrgo_enums_sap_t sap; dmrgo_enums_fid_t mfid; uint8_t manufacturer_data[8]; };
-type struct dmrgo_pdu_protect_pdu_t { uint16_t reserved; uint8_t protect_kind; bool group_individual; uint32_t target_address; uint32_t source_address; };
+type struct dmrgo_pdu_protect_pdu_t { uint16_t reserved; uint8_t protect_kind; bool group; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_random_access_pdu_t { uint8_t service_options; bool proxy_flag; uint8_t reserved; uint8_t service_kind; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_rate12_data_t { uint8_t data[12]; };
 type struct dmrgo_pdu_rate1_data_t { uint8_t data[24]; };
@@ -3392,9 +3392,9 @@ type struct dmrgo_pdu_raw_data_header_t { bool group; bool response_requested; u
 type struct dmrgo_pdu_response_packet_header_t { bool reserved; bool response_requested; uint8_t reserved2; dmrgo_enums_sap_t sap; uint8_t reserved3; uint32_t llid_destination; uint32_t llid_source; bool full_message_flag; uint8_t blocks_to_follow; uint8_t response_class; uint8_t response_type; uint8_t response_status; };
 type struct dmrgo_pdu_reverse_channel_t { dmrgo_enums_rc_command_t rc_command; dmrgo_fec_result_t fec; };
 type struct dmrgo_pdu_short_lc_activity_update_t { dmrgo_enums_activity_id_t ts1_activity_id; dmrgo_enums_activity_id_t ts2_activity_id; uint8_t hash_ts1; uint8_t hash_ts2; };
-type struct dmrgo_pdu_short_lc_c_sys_parms_t { uint8_t model; uint16_t net_site_raw; bool reg; uint16_t common_slot_counter; };
+type struct dmrgo_pdu_short_lc_c_sys_parms_t { dmrgo_pdu_network_model_t model; uint16_t net_site_raw; bool reg; uint16_t common_slot_counter; };
 type struct dmrgo_pdu_short_lc_null_message_t { uint32_t reserved; };
-type struct dmrgo_pdu_short_lc_p_sys_parms_t { uint8_t model; uint16_t net_site_raw; bool payload_channel_type; uint16_t common_slot_counter; };
+type struct dmrgo_pdu_short_lc_p_sys_parms_t { dmrgo_pdu_network_model_t model; uint16_t net_site_raw; bool payload_channel_type; uint16_t common_slot_counter; };
 type struct dmrgo_pdu_short_lc_t { dmrgo_enums_slco_t slco; dmrgo_fec_result_t fec; uint8_t raw_payload[3]; };
 type struct dmrgo_pdu_slot_type_t { dmrgo_enums_color_code_t color_code; dmrgo_enums_data_type_t data_type; dmrgo_fec_result_t fec; };
 type struct dmrgo_pdu_status_precoded_header_t { bool group; bool response_requested; dmrgo_enums_sap_t sap; uint32_t llid_destination; uint32_t llid_source; uint8_t source_port; uint8_t destination_port; uint16_t status_precoded; };

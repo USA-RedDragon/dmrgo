@@ -719,7 +719,7 @@ func (t *TSCC) startClear(i int, reason Reason, out []TSCCOutput) []TSCCOutput {
 	cs := &t.calls[i]
 	g := &cs.grant
 	t.cs = pdu.CSBK{LastBlock: true}
-	if t.cs.SetClear(pdu.ClearPDU{GroupIndividual: g.Group, TargetAddress: g.Target, SourceAddress: g.Source}) != nil {
+	if t.cs.SetClear(pdu.ClearPDU{Group: g.Group, TargetAddress: g.Target, SourceAddress: g.Source}) != nil {
 		return out
 	}
 	p, err := t.cs.Encode()
@@ -808,7 +808,7 @@ func (t *TSCC) control(out []TSCCOutput) []TSCCOutput {
 		}
 	}
 	t.slc = pdu.ShortLC{}
-	_ = t.slc.SetCSysParms(pdu.ShortLCCSysParms{MODEL: uint8(t.cfg.SysCode.Model), NetSiteRaw: t.netSite, Reg: t.cfg.Reg, CommonSlotCounter: t.counter})
+	_ = t.slc.SetCSysParms(pdu.ShortLCCSysParms{Model: t.cfg.SysCode.Model, NetSiteRaw: t.netSite, Reg: t.cfg.Reg, CommonSlotCounter: t.counter})
 	return t.emit(0, t.cfg.Channel, p, dt, reply, out)
 }
 
@@ -819,7 +819,7 @@ func (t *TSCC) carrier(c int, out []TSCCOutput) []TSCCOutput {
 	}
 	cs := &t.calls[2*c+int(t.slot-enums.Slot1)]
 	t.slc = pdu.ShortLC{}
-	_ = t.slc.SetPSysParms(pdu.ShortLCPSysParms{MODEL: uint8(t.cfg.SysCode.Model), NetSiteRaw: t.netSite, CommonSlotCounter: t.counter})
+	_ = t.slc.SetPSysParms(pdu.ShortLCPSysParms{Model: t.cfg.SysCode.Model, NetSiteRaw: t.netSite, CommonSlotCounter: t.counter})
 	ch := t.cfg.Payload[c]
 	switch {
 	case cs.active && cs.clears > 0:

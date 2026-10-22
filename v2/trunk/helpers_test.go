@@ -61,7 +61,7 @@ func tvGrant(t testing.TB, tg uint32, ch uint16, ts2 bool) layer2.RawBurst {
 func pClear(t testing.TB, tg uint32) layer2.RawBurst {
 	t.Helper()
 	return bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetClear, pdu.ClearPDU{
-		GroupIndividual: true, TargetAddress: tg, SourceAddress: 3120001}), testCC)
+		Group: true, TargetAddress: tg, SourceAddress: 3120001}), testCC)
 }
 
 func terminator(t testing.TB, tg uint32) layer2.RawBurst {

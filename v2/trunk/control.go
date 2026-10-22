@@ -84,7 +84,7 @@ func (c *control) cach(cc *layer2.CACH) bool {
 		return false
 	}
 	c.site.SlotCounter, c.counterNew = p.CommonSlotCounter, true
-	code14 := uint16(p.MODEL)<<12 | p.NetSiteRaw
+	code14 := uint16(p.Model)<<12 | p.NetSiteRaw
 	if !c.site.HasSysCode {
 		return false
 	}

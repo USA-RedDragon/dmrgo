@@ -18,7 +18,7 @@ const peer = 3120009
 func ahoyBurst(t testing.TB, kind enums.ServiceKind, src, dst uint32, als bool, blocks uint8) layer2.RawBurst {
 	t.Helper()
 	return bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAhoy, pdu.AhoyPDU{
-		ALS: als, AppendedBlocks: blocks, ServiceKind: uint8(kind), TargetAddress: dst, SourceAddress: src}), testCC)
+		ALS: als, UAB: blocks, ServiceKind: uint8(kind), TargetAddress: dst, SourceAddress: src}), testCC)
 }
 
 func ackFrom(t testing.TB, r enums.AckReason, src uint32) layer2.RawBurst {

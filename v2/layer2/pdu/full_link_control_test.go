@@ -383,7 +383,7 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 				FID:           enums.FIDStandardized,
 			}
 			noErr(original.SetTalkerAliasHeader(pdu.FLCTalkerAliasHeader{
-				TalkerAliasDataLength: tt.dataLength,
+				TalkerAliasDataLength: uint8(tt.dataLength),
 				TalkerAliasData:       msbOf(tt.msb) | aliasData,
 			}))
 
@@ -397,7 +397,7 @@ func TestFullLinkControl_TalkerAliasHeader_DataLength_RoundTrip(t *testing.T) {
 			if !ok {
 				t.Fatal("AsTalkerAliasHeader ok = false")
 			}
-			if hdr.TalkerAliasDataLength != tt.dataLength {
+			if int(hdr.TalkerAliasDataLength) != tt.dataLength {
 				t.Errorf("TalkerAliasDataLength = %d, want %d",
 					hdr.TalkerAliasDataLength, tt.dataLength)
 			}
@@ -427,7 +427,7 @@ func TestFLC_TerminatorDataLinkControl_RoundTrip(t *testing.T) {
 	noErr(original.SetTerminatorDataLinkControl(pdu.FLCTerminatorDataLinkControl{
 		LLIDDestination:    1234567,
 		LLIDSource:         7654321,
-		GroupOrIndividual:  true,
+		Group:              true,
 		ResponseRequested:  true,
 		FullMessageFlag:    true,
 		ReSynchronizeFlag:  false,
@@ -453,8 +453,8 @@ func TestFLC_TerminatorDataLinkControl_RoundTrip(t *testing.T) {
 	if tdlc.LLIDSource != 7654321 {
 		t.Errorf("LLIDSource = %d, want 7654321", tdlc.LLIDSource)
 	}
-	if !tdlc.GroupOrIndividual {
-		t.Error("GroupOrIndividual should be true")
+	if !tdlc.Group {
+		t.Error("Group should be true")
 	}
 	if !tdlc.ResponseRequested {
 		t.Error("ResponseRequested should be true")

@@ -466,7 +466,7 @@ func (s *FLCGPSInfo) String() string {
 func decodeFLCTalkerAliasHeader(data [7]byte) FLCTalkerAliasHeader {
 	var result FLCTalkerAliasHeader
 	result.TalkerAliasDataFormat = layer3.TalkerAliasDataFormat(uint64(data[0]) >> 6)
-	result.TalkerAliasDataLength = int(uint64(data[0]) >> 1 & 0x1F)
+	result.TalkerAliasDataLength = uint8(uint64(data[0]) >> 1 & 0x1F)
 	result.TalkerAliasData = (uint64(data[0])<<48 | uint64(data[1])<<40 | uint64(data[2])<<32 | uint64(data[3])<<24 | uint64(data[4])<<16 | uint64(data[5])<<8 | uint64(data[6])) & 0x1FFFFFFFFFFFF
 	return result
 }
@@ -535,7 +535,7 @@ func decodeFLCTerminatorDataLinkControl(data [7]byte) FLCTerminatorDataLinkContr
 	var result FLCTerminatorDataLinkControl
 	result.LLIDDestination = uint32(uint64(data[0])<<16 | uint64(data[1])<<8 | uint64(data[2]))
 	result.LLIDSource = uint32(uint64(data[3])<<16 | uint64(data[4])<<8 | uint64(data[5]))
-	result.GroupOrIndividual = data[6]&0x80 != 0
+	result.Group = data[6]&0x80 != 0
 	result.ResponseRequested = data[6]&0x40 != 0
 	result.FullMessageFlag = data[6]&0x20 != 0
 	result.Reserved = data[6]&0x10 != 0
@@ -561,7 +561,7 @@ func (s *FLCTerminatorDataLinkControl) encode() ([7]byte, error) {
 	data[3] = byte(_valLLIDSource >> 16)
 	data[4] = byte(_valLLIDSource >> 8)
 	data[5] = byte(_valLLIDSource)
-	if s.GroupOrIndividual {
+	if s.Group {
 		data[6] |= 0x80
 	}
 	if s.ResponseRequested {
@@ -590,7 +590,7 @@ func (s *FLCTerminatorDataLinkControl) String() string {
 		return "<nil>"
 	}
 
-	return "FLCTerminatorDataLinkControl{ LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", GroupOrIndividual: " + text.Bool(s.GroupOrIndividual) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", Reserved: " + text.Bool(s.Reserved) + ", ReSynchronizeFlag: " + text.Bool(s.ReSynchronizeFlag) + ", SendSequenceNumber: " + text.Int(int64(s.SendSequenceNumber)) + " }"
+	return "FLCTerminatorDataLinkControl{ LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", FullMessageFlag: " + text.Bool(s.FullMessageFlag) + ", Reserved: " + text.Bool(s.Reserved) + ", ReSynchronizeFlag: " + text.Bool(s.ReSynchronizeFlag) + ", SendSequenceNumber: " + text.Int(int64(s.SendSequenceNumber)) + " }"
 }
 
 var (

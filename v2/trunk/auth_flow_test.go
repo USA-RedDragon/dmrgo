@@ -16,7 +16,7 @@ var table615Key = [auth.KeyLen]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 1
 func challengeAhoy(t *testing.T, group, flag bool, target, source uint32) pdu.CSBK {
 	t.Helper()
 	return *withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAhoy, pdu.AhoyPDU{
-		ServiceOptsMirror: 1, ServiceKindFlag: flag, GroupIndividual: group, ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: target, SourceAddress: source})
+		ServiceOptsMirror: 1, ServiceKindFlag: flag, Group: group, ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: target, SourceAddress: source})
 }
 
 func TestMS_AuthDuringRegistration(t *testing.T) {

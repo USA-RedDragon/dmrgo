@@ -15,7 +15,7 @@ import (
 func svcAhoy(t testing.TB, kind enums.ServiceKind, flag, group bool, mirror, ab uint8, target, source uint32) layer2.RawBurst {
 	t.Helper()
 	return bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAhoy, pdu.AhoyPDU{ServiceOptsMirror: mirror, ServiceKindFlag: flag,
-		GroupIndividual: group, AppendedBlocks: ab, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: source}), testCC)
+		Group: group, UAB: ab, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: source}), testCC)
 }
 
 func svcAck(t testing.TB, r enums.AckReason, info uint8, from uint32) layer2.RawBurst {

@@ -1483,8 +1483,8 @@ func in_layer2_pdu_AhoyPDU(s *C.dmrgo_pdu_ahoy_pdu_t) (d g_layer2_pdu.AhoyPDU) {
 	d.ServiceOptsMirror = uint8(s.service_opts_mirror)
 	d.ServiceKindFlag = bool(s.service_kind_flag)
 	d.ALS = bool(s.als)
-	d.GroupIndividual = bool(s.group_individual)
-	d.AppendedBlocks = uint8(s.appended_blocks)
+	d.Group = bool(s.group)
+	d.UAB = uint8(s.uab)
 	d.ServiceKind = uint8(s.service_kind)
 	d.TargetAddress = uint32(s.target_address)
 	d.SourceAddress = uint32(s.source_address)
@@ -1520,13 +1520,6 @@ func in_layer2_pdu_AnnWDTSCCParms(s *C.dmrgo_pdu_ann_wd_tscc_parms_t) (d g_layer
 	d.SysIdentCode = uint16(s.sys_ident_code)
 	d.Channel1 = uint16(s.channel1)
 	d.Channel2 = uint16(s.channel2)
-	return
-}
-
-func in_layer2_pdu_FLCTalkerAliasHeader(s *C.dmrgo_pdu_flc_talker_alias_header_t) (d g_layer2_pdu.FLCTalkerAliasHeader) {
-	d.TalkerAliasDataFormat = g_layer3.TalkerAliasDataFormat(s.talker_alias_data_format)
-	d.TalkerAliasDataLength = int(s.talker_alias_data_length)
-	d.TalkerAliasData = uint64(s.talker_alias_data)
 	return
 }
 
@@ -1716,8 +1709,8 @@ func out_layer2_pdu_AhoyPDU(d *C.dmrgo_pdu_ahoy_pdu_t, s *g_layer2_pdu.AhoyPDU, 
 	d.service_opts_mirror = C.uint8_t(s.ServiceOptsMirror)
 	d.service_kind_flag = C.bool(s.ServiceKindFlag)
 	d.als = C.bool(s.ALS)
-	d.group_individual = C.bool(s.GroupIndividual)
-	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
+	d.group = C.bool(s.Group)
+	d.uab = C.uint8_t(s.UAB)
 	d.service_kind = C.uint8_t(s.ServiceKind)
 	d.target_address = C.uint32_t(s.TargetAddress)
 	d.source_address = C.uint32_t(s.SourceAddress)
@@ -1811,7 +1804,7 @@ func out_layer2_pdu_ClearPDU(d *C.dmrgo_pdu_clear_pdu_t, s *g_layer2_pdu.ClearPD
 	d.physical_channel = C.uint16_t(s.PhysicalChannel)
 	d.reserved1 = C.bool(s.Reserved1)
 	d.reserved2 = C.uint8_t(s.Reserved2)
-	d.group_individual = C.bool(s.GroupIndividual)
+	d.group = C.bool(s.Group)
 	d.target_address = C.uint32_t(s.TargetAddress)
 	d.source_address = C.uint32_t(s.SourceAddress)
 }
@@ -1915,7 +1908,7 @@ func out_layer2_pdu_ProtectPDU(d *C.dmrgo_pdu_protect_pdu_t, s *g_layer2_pdu.Pro
 	_ = oc
 	d.reserved = C.uint16_t(s.Reserved)
 	d.protect_kind = C.uint8_t(s.ProtectKind)
-	d.group_individual = C.bool(s.GroupIndividual)
+	d.group = C.bool(s.Group)
 	d.target_address = C.uint32_t(s.TargetAddress)
 	d.source_address = C.uint32_t(s.SourceAddress)
 }
@@ -1997,7 +1990,7 @@ func in_layer2_pdu_ClearPDU(s *C.dmrgo_pdu_clear_pdu_t) (d g_layer2_pdu.ClearPDU
 	d.PhysicalChannel = uint16(s.physical_channel)
 	d.Reserved1 = bool(s.reserved1)
 	d.Reserved2 = uint8(s.reserved2)
-	d.GroupIndividual = bool(s.group_individual)
+	d.Group = bool(s.group)
 	d.TargetAddress = uint32(s.target_address)
 	d.SourceAddress = uint32(s.source_address)
 	return
@@ -2101,7 +2094,7 @@ func in_layer2_pdu_PrivateVoiceGrantPDU(s *C.dmrgo_pdu_private_voice_grant_pdu_t
 func in_layer2_pdu_ProtectPDU(s *C.dmrgo_pdu_protect_pdu_t) (d g_layer2_pdu.ProtectPDU) {
 	d.Reserved = uint16(s.reserved)
 	d.ProtectKind = uint8(s.protect_kind)
-	d.GroupIndividual = bool(s.group_individual)
+	d.Group = bool(s.group)
 	d.TargetAddress = uint32(s.target_address)
 	d.SourceAddress = uint32(s.source_address)
 	return
@@ -2429,7 +2422,7 @@ func in_layer2_pdu_FLCGroupVoice(s *C.dmrgo_pdu_flc_group_voice_t) (d g_layer2_p
 func in_layer2_pdu_FLCTerminatorDataLinkControl(s *C.dmrgo_pdu_flc_terminator_data_link_control_t) (d g_layer2_pdu.FLCTerminatorDataLinkControl) {
 	d.LLIDDestination = uint32(s.llid_destination)
 	d.LLIDSource = uint32(s.llid_source)
-	d.GroupOrIndividual = bool(s.group_or_individual)
+	d.Group = bool(s.group)
 	d.ResponseRequested = bool(s.response_requested)
 	d.FullMessageFlag = bool(s.full_message_flag)
 	d.Reserved = bool(s.reserved)
@@ -2471,18 +2464,11 @@ func out_layer2_pdu_FLCGroupVoice(d *C.dmrgo_pdu_flc_group_voice_t, s *g_layer2_
 	d.source_address = C.uint32_t(s.SourceAddress)
 }
 
-func out_layer2_pdu_FLCTalkerAliasHeader(d *C.dmrgo_pdu_flc_talker_alias_header_t, s *g_layer2_pdu.FLCTalkerAliasHeader, oc *outc) {
-	_ = oc
-	d.talker_alias_data_format = C.dmrgo_layer3_talker_alias_data_format_t(s.TalkerAliasDataFormat)
-	d.talker_alias_data_length = C.int64_t(s.TalkerAliasDataLength)
-	d.talker_alias_data = C.uint64_t(s.TalkerAliasData)
-}
-
 func out_layer2_pdu_FLCTerminatorDataLinkControl(d *C.dmrgo_pdu_flc_terminator_data_link_control_t, s *g_layer2_pdu.FLCTerminatorDataLinkControl, oc *outc) {
 	_ = oc
 	d.llid_destination = C.uint32_t(s.LLIDDestination)
 	d.llid_source = C.uint32_t(s.LLIDSource)
-	d.group_or_individual = C.bool(s.GroupOrIndividual)
+	d.group = C.bool(s.Group)
 	d.response_requested = C.bool(s.ResponseRequested)
 	d.full_message_flag = C.bool(s.FullMessageFlag)
 	d.reserved = C.bool(s.Reserved)
@@ -2544,7 +2530,7 @@ func in_layer2_pdu_MassRegParms(s *C.dmrgo_pdu_mass_reg_parms_t) (d g_layer2_pdu
 
 func out_layer2_pdu_ShortLCCSysParms(d *C.dmrgo_pdu_short_lc_c_sys_parms_t, s *g_layer2_pdu.ShortLCCSysParms, oc *outc) {
 	_ = oc
-	d.model = C.uint8_t(s.MODEL)
+	d.model = C.dmrgo_pdu_network_model_t(s.Model)
 	d.net_site_raw = C.uint16_t(s.NetSiteRaw)
 	d.reg = C.bool(s.Reg)
 	d.common_slot_counter = C.uint16_t(s.CommonSlotCounter)
@@ -2552,14 +2538,14 @@ func out_layer2_pdu_ShortLCCSysParms(d *C.dmrgo_pdu_short_lc_c_sys_parms_t, s *g
 
 func out_layer2_pdu_ShortLCPSysParms(d *C.dmrgo_pdu_short_lc_p_sys_parms_t, s *g_layer2_pdu.ShortLCPSysParms, oc *outc) {
 	_ = oc
-	d.model = C.uint8_t(s.MODEL)
+	d.model = C.dmrgo_pdu_network_model_t(s.Model)
 	d.net_site_raw = C.uint16_t(s.NetSiteRaw)
 	d.payload_channel_type = C.bool(s.PayloadChannelType)
 	d.common_slot_counter = C.uint16_t(s.CommonSlotCounter)
 }
 
 func in_layer2_pdu_ShortLCCSysParms(s *C.dmrgo_pdu_short_lc_c_sys_parms_t) (d g_layer2_pdu.ShortLCCSysParms) {
-	d.MODEL = uint8(s.model)
+	d.Model = g_layer2_pdu.NetworkModel(s.model)
 	d.NetSiteRaw = uint16(s.net_site_raw)
 	d.Reg = bool(s.reg)
 	d.CommonSlotCounter = uint16(s.common_slot_counter)
@@ -2567,7 +2553,7 @@ func in_layer2_pdu_ShortLCCSysParms(s *C.dmrgo_pdu_short_lc_c_sys_parms_t) (d g_
 }
 
 func in_layer2_pdu_ShortLCPSysParms(s *C.dmrgo_pdu_short_lc_p_sys_parms_t) (d g_layer2_pdu.ShortLCPSysParms) {
-	d.MODEL = uint8(s.model)
+	d.Model = g_layer2_pdu.NetworkModel(s.model)
 	d.NetSiteRaw = uint16(s.net_site_raw)
 	d.PayloadChannelType = bool(s.payload_channel_type)
 	d.CommonSlotCounter = uint16(s.common_slot_counter)
@@ -5576,6 +5562,20 @@ func out_layer2_pdu_FLCTalkerAliasBlock(d *C.dmrgo_pdu_flc_talker_alias_block_t,
 
 func fromC_layer2_pdu_FLCTalkerAliasBlock(s *C.dmrgo_pdu_flc_talker_alias_block_t) g_layer2_pdu.FLCTalkerAliasBlock {
 	return in_layer2_pdu_FLCTalkerAliasBlock(s)
+}
+
+func in_layer2_pdu_FLCTalkerAliasHeader(s *C.dmrgo_pdu_flc_talker_alias_header_t) (d g_layer2_pdu.FLCTalkerAliasHeader) {
+	d.TalkerAliasDataFormat = g_layer3.TalkerAliasDataFormat(s.talker_alias_data_format)
+	d.TalkerAliasDataLength = uint8(s.talker_alias_data_length)
+	d.TalkerAliasData = uint64(s.talker_alias_data)
+	return
+}
+
+func out_layer2_pdu_FLCTalkerAliasHeader(d *C.dmrgo_pdu_flc_talker_alias_header_t, s *g_layer2_pdu.FLCTalkerAliasHeader, oc *outc) {
+	_ = oc
+	d.talker_alias_data_format = C.dmrgo_layer3_talker_alias_data_format_t(s.TalkerAliasDataFormat)
+	d.talker_alias_data_length = C.uint8_t(s.TalkerAliasDataLength)
+	d.talker_alias_data = C.uint64_t(s.TalkerAliasData)
 }
 
 func fromC_layer2_pdu_FLCTalkerAliasHeader(s *C.dmrgo_pdu_flc_talker_alias_header_t) g_layer2_pdu.FLCTalkerAliasHeader {
@@ -20242,12 +20242,6 @@ func dmrgo_pdu_append_talker_alias(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_l
 	nf_dst := int(*c_dst_len)
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
-	var a_header g_layer2_pdu.FLCTalkerAliasHeader
-	var p_header *g_layer2_pdu.FLCTalkerAliasHeader
-	if c_header != nil {
-		a_header = in_layer2_pdu_FLCTalkerAliasHeader(&(*c_header))
-		p_header = &a_header
-	}
 	if c_blocks == nil && c_blocks_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20262,7 +20256,7 @@ func dmrgo_pdu_append_talker_alias(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_l
 			a_blocks[i] = &vs[i]
 		}
 	}
-	r0, r1 := g_layer2_pdu.AppendTalkerAlias(a_dst, p_header, a_blocks...)
+	r0, r1 := g_layer2_pdu.AppendTalkerAlias(a_dst, (*g_layer2_pdu.FLCTalkerAliasHeader)(unsafe.Pointer(c_header)), a_blocks...)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -24880,7 +24874,7 @@ func dmrgo_pdu_flc_talker_alias_header_string(c_self *C.dmrgo_pdu_flc_talker_ali
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.FLCTalkerAliasHeader
-	x = in_layer2_pdu_FLCTalkerAliasHeader(&(*c_self))
+	x = *(*g_layer2_pdu.FLCTalkerAliasHeader)(unsafe.Pointer(&(*c_self)))
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25139,7 +25133,7 @@ func dmrgo_pdu_full_link_control_as_talker_alias_header(c_self *C.dmrgo_pdu_full
 	_ = r0
 	_ = r1
 	if c_p != nil {
-		out_layer2_pdu_FLCTalkerAliasHeader(&(*c_p), &r0, oc)
+		*(*g_layer2_pdu.FLCTalkerAliasHeader)(unsafe.Pointer(&(*c_p))) = r0
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -25441,9 +25435,7 @@ func dmrgo_pdu_full_link_control_set_talker_alias_header(c_self *C.dmrgo_pdu_ful
 	if c_p == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	var a_p g_layer2_pdu.FLCTalkerAliasHeader
-	a_p = in_layer2_pdu_FLCTalkerAliasHeader(&(*c_p))
-	r0 := x.SetTalkerAliasHeader(a_p)
+	r0 := x.SetTalkerAliasHeader(*(*g_layer2_pdu.FLCTalkerAliasHeader)(unsafe.Pointer(c_p)))
 	var ws_self C.dmrgo_pdu_full_link_control_t
 	ws_self = *c_self
 	ws_self.flco = C.dmrgo_enums_flco_t(x.FLCO)
@@ -28449,7 +28441,7 @@ func dmrgo_pdu_short_lc_c_sys_parms_set_sys_code(c_self *C.dmrgo_pdu_short_lc_c_
 	r0 := x.SetSysCode(*(*g_layer2_pdu.SysCode)(unsafe.Pointer(c_c)))
 	var ws_self C.dmrgo_pdu_short_lc_c_sys_parms_t
 	ws_self = *c_self
-	ws_self.model = C.uint8_t(x.MODEL)
+	ws_self.model = C.dmrgo_pdu_network_model_t(x.Model)
 	ws_self.net_site_raw = C.uint16_t(x.NetSiteRaw)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -28593,7 +28585,7 @@ func dmrgo_pdu_short_lc_p_sys_parms_set_sys_code(c_self *C.dmrgo_pdu_short_lc_p_
 	r0 := x.SetSysCode(*(*g_layer2_pdu.SysCode)(unsafe.Pointer(c_c)))
 	var ws_self C.dmrgo_pdu_short_lc_p_sys_parms_t
 	ws_self = *c_self
-	ws_self.model = C.uint8_t(x.MODEL)
+	ws_self.model = C.dmrgo_pdu_network_model_t(x.Model)
 	ws_self.net_site_raw = C.uint16_t(x.NetSiteRaw)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -29051,12 +29043,6 @@ func dmrgo_pdu_talker_alias(c_header *C.dmrgo_pdu_flc_talker_alias_header_t, c_b
 	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	var a_header g_layer2_pdu.FLCTalkerAliasHeader
-	var p_header *g_layer2_pdu.FLCTalkerAliasHeader
-	if c_header != nil {
-		a_header = in_layer2_pdu_FLCTalkerAliasHeader(&(*c_header))
-		p_header = &a_header
-	}
 	if c_blocks == nil && c_blocks_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29074,7 +29060,7 @@ func dmrgo_pdu_talker_alias(c_header *C.dmrgo_pdu_flc_talker_alias_header_t, c_b
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1 := g_layer2_pdu.TalkerAlias(p_header, a_blocks...)
+	r0, r1 := g_layer2_pdu.TalkerAlias((*g_layer2_pdu.FLCTalkerAliasHeader)(unsafe.Pointer(c_header)), a_blocks...)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {

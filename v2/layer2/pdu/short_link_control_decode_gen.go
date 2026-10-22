@@ -85,7 +85,7 @@ func (s *ShortLCActivityUpdate) String() string {
 // ETSI TS 102 361-4 clause 7.1.2.1
 func decodeShortLCCSysParms(data [3]byte) ShortLCCSysParms {
 	var result ShortLCCSysParms
-	result.MODEL = uint8(uint64(data[0]) >> 6)
+	result.Model = NetworkModel(uint64(data[0]) >> 6)
 	result.NetSiteRaw = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 2 & 0xFFF)
 	result.Reg = data[1]&0x02 != 0
 	result.CommonSlotCounter = uint16((uint64(data[1])<<8 | uint64(data[2])) & 0x1FF)
@@ -95,10 +95,10 @@ func decodeShortLCCSysParms(data [3]byte) ShortLCCSysParms {
 // ETSI TS 102 361-4 clause 7.1.2.1
 func (s *ShortLCCSysParms) encode() ([3]byte, error) {
 	var data [3]byte
-	if uint64(s.MODEL)>>2 != 0 {
-		return [3]byte{}, errShortLCCSysParmsMODELRange
+	if uint64(s.Model)>>2 != 0 {
+		return [3]byte{}, errShortLCCSysParmsModelRange
 	}
-	data[0] = data[0]&^0xC0 | byte(uint64(s.MODEL)<<6)&0xC0
+	data[0] = data[0]&^0xC0 | byte(uint64(s.Model)<<6)&0xC0
 	if uint64(s.NetSiteRaw)>>12 != 0 {
 		return [3]byte{}, errShortLCCSysParmsNetSiteRawRange
 	}
@@ -124,13 +124,13 @@ func (s *ShortLCCSysParms) String() string {
 		return "<nil>"
 	}
 
-	return "ShortLCCSysParms{ MODEL: " + text.Int(int64(s.MODEL)) + ", NetSiteRaw: " + text.Int(int64(s.NetSiteRaw)) + ", Reg: " + text.Bool(s.Reg) + ", CommonSlotCounter: " + text.Int(int64(s.CommonSlotCounter)) + " }"
+	return "ShortLCCSysParms{ Model: " + text.Int(int64(s.Model)) + ", NetSiteRaw: " + text.Int(int64(s.NetSiteRaw)) + ", Reg: " + text.Bool(s.Reg) + ", CommonSlotCounter: " + text.Int(int64(s.CommonSlotCounter)) + " }"
 }
 
 // ETSI TS 102 361-4 clause 7.1.2.2
 func decodeShortLCPSysParms(data [3]byte) ShortLCPSysParms {
 	var result ShortLCPSysParms
-	result.MODEL = uint8(uint64(data[0]) >> 6)
+	result.Model = NetworkModel(uint64(data[0]) >> 6)
 	result.NetSiteRaw = uint16((uint64(data[0])<<8 | uint64(data[1])) >> 2 & 0xFFF)
 	result.PayloadChannelType = data[1]&0x02 != 0
 	result.CommonSlotCounter = uint16((uint64(data[1])<<8 | uint64(data[2])) & 0x1FF)
@@ -140,10 +140,10 @@ func decodeShortLCPSysParms(data [3]byte) ShortLCPSysParms {
 // ETSI TS 102 361-4 clause 7.1.2.2
 func (s *ShortLCPSysParms) encode() ([3]byte, error) {
 	var data [3]byte
-	if uint64(s.MODEL)>>2 != 0 {
-		return [3]byte{}, errShortLCPSysParmsMODELRange
+	if uint64(s.Model)>>2 != 0 {
+		return [3]byte{}, errShortLCPSysParmsModelRange
 	}
-	data[0] = data[0]&^0xC0 | byte(uint64(s.MODEL)<<6)&0xC0
+	data[0] = data[0]&^0xC0 | byte(uint64(s.Model)<<6)&0xC0
 	if uint64(s.NetSiteRaw)>>12 != 0 {
 		return [3]byte{}, errShortLCPSysParmsNetSiteRawRange
 	}
@@ -169,7 +169,7 @@ func (s *ShortLCPSysParms) String() string {
 		return "<nil>"
 	}
 
-	return "ShortLCPSysParms{ MODEL: " + text.Int(int64(s.MODEL)) + ", NetSiteRaw: " + text.Int(int64(s.NetSiteRaw)) + ", PayloadChannelType: " + text.Bool(s.PayloadChannelType) + ", CommonSlotCounter: " + text.Int(int64(s.CommonSlotCounter)) + " }"
+	return "ShortLCPSysParms{ Model: " + text.Int(int64(s.Model)) + ", NetSiteRaw: " + text.Int(int64(s.NetSiteRaw)) + ", PayloadChannelType: " + text.Bool(s.PayloadChannelType) + ", CommonSlotCounter: " + text.Int(int64(s.CommonSlotCounter)) + " }"
 }
 
 // DecodeShortLC decodes a ShortLC. data holds the 36 bits of the PDU packed,
@@ -367,9 +367,9 @@ var (
 		Field: "TS2ActivityID",
 		Type:  "ShortLCActivityUpdate",
 	}
-	errShortLCCSysParmsMODELRange = &dmrgo.FieldRangeError{
+	errShortLCCSysParmsModelRange = &dmrgo.FieldRangeError{
 		Bits:  2,
-		Field: "MODEL",
+		Field: "Model",
 		Type:  "ShortLCCSysParms",
 	}
 	errShortLCCSysParmsNetSiteRawRange = &dmrgo.FieldRangeError{
@@ -382,9 +382,9 @@ var (
 		Field: "CommonSlotCounter",
 		Type:  "ShortLCCSysParms",
 	}
-	errShortLCPSysParmsMODELRange = &dmrgo.FieldRangeError{
+	errShortLCPSysParmsModelRange = &dmrgo.FieldRangeError{
 		Bits:  2,
-		Field: "MODEL",
+		Field: "Model",
 		Type:  "ShortLCPSysParms",
 	}
 	errShortLCPSysParmsNetSiteRawRange = &dmrgo.FieldRangeError{

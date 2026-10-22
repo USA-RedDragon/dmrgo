@@ -335,7 +335,7 @@ type ClearPDU struct {
 	PhysicalChannel uint16 `dmr:"bits:0-11"`  // channel number to move to, 0 for the control channel
 	Reserved1       bool   `dmr:"bit:12"`     // reserved, 0
 	Reserved2       uint8  `dmr:"bits:13-14"` // reserved, 0
-	GroupIndividual bool   `dmr:"bit:15"`     // true when TargetAddress is a talkgroup
+	Group           bool   `dmr:"bit:15"`     // true when TargetAddress is a talkgroup
 	TargetAddress   uint32 `dmr:"bits:16-39"` // 24-bit target address
 	SourceAddress   uint32 `dmr:"bits:40-63"` // 24-bit source address
 }
@@ -343,11 +343,11 @@ type ClearPDU struct {
 // ProtectPDU is the protect (P_PROTECT) CSBK payload (ETSI TS 102 361-4 clause
 // 7.1.1.3.3).
 type ProtectPDU struct {
-	Reserved        uint16 `dmr:"bits:0-11"`  // reserved, 0
-	ProtectKind     uint8  `dmr:"bits:12-14"` // 0 DIS_PTT, 1 EN_PTT, 2 ILLEGALLY_PARKED, 3 EN_PTT_ONE_MS
-	GroupIndividual bool   `dmr:"bit:15"`     // true when TargetAddress is a talkgroup
-	TargetAddress   uint32 `dmr:"bits:16-39"` // 24-bit target address
-	SourceAddress   uint32 `dmr:"bits:40-63"` // 24-bit source address
+	Reserved      uint16 `dmr:"bits:0-11"`  // reserved, 0
+	ProtectKind   uint8  `dmr:"bits:12-14"` // 0 DIS_PTT, 1 EN_PTT, 2 ILLEGALLY_PARKED, 3 EN_PTT_ONE_MS
+	Group         bool   `dmr:"bit:15"`     // true when TargetAddress is a talkgroup
+	TargetAddress uint32 `dmr:"bits:16-39"` // 24-bit target address
+	SourceAddress uint32 `dmr:"bits:40-63"` // 24-bit source address
 }
 
 // AhoyPDU is the ahoy (C_AHOY and P_AHOY) CSBK payload (ETSI TS 102 361-4
@@ -356,8 +356,8 @@ type AhoyPDU struct {
 	ServiceOptsMirror uint8  `dmr:"bits:0-6"`   // Service_Options of the request that this answers
 	ServiceKindFlag   bool   `dmr:"bit:7"`      // flag whose meaning depends on ServiceKind
 	ALS               bool   `dmr:"bit:8"`      // true when the caller asked for ambient listening
-	GroupIndividual   bool   `dmr:"bit:9"`      // true when TargetAddress is a talkgroup
-	AppendedBlocks    uint8  `dmr:"bits:10-11"` // number of appended data blocks to send
+	Group             bool   `dmr:"bit:9"`      // true when TargetAddress is a talkgroup
+	UAB               uint8  `dmr:"bits:10-11"` // Appended_Blocks: the number of appended data blocks minus one
 	ServiceKind       uint8  `dmr:"bits:12-15"` // service that this PDU supports
 	TargetAddress     uint32 `dmr:"bits:16-39"` // 24-bit target address
 	SourceAddress     uint32 `dmr:"bits:40-63"` // 24-bit source address, or an authentication challenge
