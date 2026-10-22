@@ -1,6 +1,7 @@
 package layer2_test
 
 import (
+	"encoding/hex"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -60,4 +61,26 @@ func TestRate34SingleDibitErrors(t *testing.T) {
 		}
 	}
 	t.Logf("of %d single dibit errors: %d corrected, %d flagged Uncorrectable, %d decoded to a block with a lower path metric", ok+flagged+other, ok, flagged, other)
+}
+
+func TestRate34TailErrorNotFlagged(t *testing.T) {
+	t.Parallel()
+
+	rx := layer2.RawBurst(hexBurst(t, "82509f613d091978fbc8f764560dff57d75df5dce05c641ec3dff96fe30ceb2749"))
+	want, res := rx.Rate34Payload()
+	if hex.EncodeToString(want[:]) != "b5811a2c2b9ce1b5e31486b2c0eb0437336d" || res.ErrorsCorrected != 1 || res.Uncorrectable {
+		t.Errorf("payload %x %+v, want b5811a2c2b9ce1b5e31486b2c0eb0437336d with 1 error corrected", want, res)
+	}
+	sent := rx
+	sent[50/8] ^= 0x80 >> (50 % 8)
+	for bit := range 264 {
+		if bit >= 98 && bit < 166 {
+			continue
+		}
+		r := sent
+		r[bit/8] ^= 0x80 >> (bit % 8)
+		if got, res := r.Rate34Payload(); got != want || res.ErrorsCorrected != 1 || res.Uncorrectable {
+			t.Errorf("bit %d: payload %x %+v, want %x with 1 error corrected", bit, got, res, want)
+		}
+	}
 }

@@ -223,11 +223,12 @@ func TestTrellis34_TwoDibitDistance(t *testing.T) {
 	}
 }
 
-func TestTrellis34_NonzeroFinalStateFlagged(t *testing.T) {
+func TestTrellis34_NonzeroFinalStateNotFlagged(t *testing.T) {
 	t.Parallel()
 
 	r := rand.New(rand.NewSource(6))
-	for range 200 {
+	var flagged int
+	for range 2000 {
 		var tribits [49]byte
 		for i := range tribits {
 			tribits[i] = byte(r.Intn(8))
@@ -246,8 +247,24 @@ func TestTrellis34_NonzeroFinalStateFlagged(t *testing.T) {
 			setDibit(&info, i, d[j])
 		}
 
-		if _, res := Decode(info); !res.Uncorrectable {
-			t.Fatalf("block ending in state %d not flagged: %+v", tribits[48], res)
+		got, res := Decode(info)
+		dec := Encode(got)
+		var near [18]byte
+		for k := range 48 {
+			bit := 3 * k
+			v := uint16(tribits[k]) << (13 - bit%8)
+			near[bit/8] |= byte(v >> 8)
+			if bit/8+1 < len(near) {
+				near[bit/8+1] |= byte(v)
+			}
+		}
+		nearEnc := Encode(near)
+		switch m, mNear := cost(&info, &dec), cost(&info, &nearEnc); {
+		case m > mNear:
+			t.Fatalf("block ending in state %d: decoded metric %d is above %d", tribits[48], m, mNear)
+		case res.Uncorrectable:
+			flagged++
 		}
 	}
+	t.Logf("%d of 2000 blocks ending in another state decode to one of two blocks of equal metric", flagged)
 }

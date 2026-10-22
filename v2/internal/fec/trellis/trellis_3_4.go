@@ -42,12 +42,13 @@ func less(a, b uint64) uint64 {
 // them (see Trellis34BranchMetric in cmd/tablegen).
 //
 // ErrorsCorrected counts the received bits that differ from the decoded
-// block. Uncorrectable is set when a path that ends in another state has a
-// lower metric than the decoded path, or when another path that ends in
-// state 0 has the same metric, so that the decoded block is one of two
-// equally likely blocks. A block with more errors than the code corrects can
-// still decode to a wrong block without Uncorrectable, so callers check the
-// block CRC-9 or the message CRC-32.
+// block. Uncorrectable is set only when another path that ends in state 0
+// has the same metric, so that the decoded block is one of two equally
+// likely blocks. A path that ends in another state and has a lower metric
+// is no block, so it does not flag the decode, as MMDVMHost CDMRTrellis
+// does not. A block with more errors than the code corrects can still
+// decode to a wrong block without Uncorrectable, so callers check the block
+// CRC-9 or the message CRC-32.
 func Decode(info [25]byte) ([18]byte, fec.Result) {
 	rx := deinterleave(&info)
 
@@ -84,7 +85,7 @@ func Decode(info [25]byte) ([18]byte, fec.Result) {
 		prev[k] = uint32((from | from>>20&0xFFF000) & 0xFFFFFF)
 	}
 
-	result := fec.Result{BitsChecked: 196, Uncorrectable: tied&1 != 0 || less(metric, metric&0xFF*lanes) != 0}
+	result := fec.Result{BitsChecked: 196, Uncorrectable: tied&1 != 0}
 
 	var out [18]byte
 	state := uint32(0)
