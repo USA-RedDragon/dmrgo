@@ -210,7 +210,11 @@ func TestPeerSteps(t *testing.T) {
 	states := []dmrdsession.State{dmrdsession.StateAuth, dmrdsession.StateConfig, dmrdsession.StateOptions}
 	p := newPeer()
 	for i, c := range steps {
-		out := p.Packet(s, ack(99), nil)
+		a := ack(1234)
+		if i == 0 {
+			a = ack(99)
+		}
+		out := p.Packet(s, a, nil)
 		if len(out) != 1 || command(t, out[0].Packet, dmrd.DialectMMDVM) != c || p.State() != states[i] {
 			t.Fatalf("step %d: %v %v", i, kinds(out), p.State())
 		}
@@ -594,6 +598,32 @@ func TestPeerRepeatedChallenge(t *testing.T) {
 	}
 	if out := p.Packet(0, []byte("MSTACK00040178"), nil); len(out) != 1 || p.State() != dmrdsession.StateConfig {
 		t.Fatalf("ack after the challenge again: %v %v", kinds(out), p.State())
+	}
+}
+
+func TestPeerRepeatedSaltMMDVM(t *testing.T) {
+	t.Parallel()
+
+	p, _ := dmrdsession.NewPeer(&dmrdsession.PeerConfig{Dialect: dmrd.DialectMMDVM, ID: 3129100, Password: []byte("passw0rd"), Config: mmdvmConfig(3129100), Options: []byte("TS2=91;")})
+	salt := []byte("RPTACK\xfc\xb1\x7c\x08")
+	ack := []byte("RPTACK\x00\x2f\xbf\x0c")
+	p.Tick(0, nil)
+	p.Packet(0, salt, nil)
+	if out := p.Packet(0, salt, nil); len(out) != 0 || p.State() != dmrdsession.StateAuth {
+		t.Fatalf("salt again taken as the ack of the RPTK: %v %v", kinds(out), p.State())
+	}
+	if out := p.Packet(0, ack, nil); len(out) != 1 || p.State() != dmrdsession.StateConfig {
+		t.Fatalf("ack of the RPTK: %v %v", kinds(out), p.State())
+	}
+	if out := p.Packet(0, salt, nil); len(out) != 0 || p.State() != dmrdsession.StateConfig {
+		t.Fatalf("salt again taken as the ack of the RPTC: %v %v", kinds(out), p.State())
+	}
+	p.Packet(0, ack, nil)
+	if out := p.Packet(0, salt, nil); len(out) != 0 || p.State() != dmrdsession.StateOptions {
+		t.Fatalf("salt again taken as the ack of the RPTO: %v %v", kinds(out), p.State())
+	}
+	if out := p.Packet(0, ack, nil); count(out, dmrdsession.OutputUp) != 1 {
+		t.Fatalf("ack of the RPTO: %v %v", kinds(out), p.State())
 	}
 }
 
