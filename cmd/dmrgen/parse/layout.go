@@ -23,11 +23,13 @@ func parseLayoutDirective(pdu *PDUStruct, name, arg string) error {
 			return errors.New("duplicate dmr:frame directive")
 		}
 		var sizes []int
-		open := false
+		open, def := false, 0
 		for _, s := range strings.Fields(arg) {
 			if open {
 				return fmt.Errorf("dmr:frame: only the last size can end in +, got %q", arg)
 			}
+			marked := strings.Contains(s, "*")
+			s = strings.ReplaceAll(s, "*", "")
 			s, open = strings.CutSuffix(s, "+")
 			n, err := strconv.Atoi(s)
 			if err != nil || n <= 0 {
@@ -36,9 +38,21 @@ func parseLayoutDirective(pdu *PDUStruct, name, arg string) error {
 			if len(sizes) > 0 && n <= sizes[len(sizes)-1] {
 				return fmt.Errorf("dmr:frame sizes must be ascending, got %q", arg)
 			}
+			if marked {
+				if def != 0 {
+					return fmt.Errorf("dmr:frame marks more than one default size, got %q", arg)
+				}
+				def = n
+			}
 			sizes = append(sizes, n)
 		}
-		pdu.Frame = &FrameDirective{Sizes: sizes, Open: open}
+		if len(sizes) > 0 && def == 0 {
+			def = sizes[0]
+			if open {
+				def = sizes[len(sizes)-1]
+			}
+		}
+		pdu.Frame = &FrameDirective{Sizes: sizes, Open: open, Default: def}
 	case directiveView:
 		if pdu.View != nil {
 			return errors.New("duplicate dmr:view directive")

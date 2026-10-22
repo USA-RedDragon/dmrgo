@@ -143,7 +143,7 @@ func TestDataSizes(t *testing.T) {
 		t.Fatalf("decode 71: %v %v", got.String(), err)
 	}
 	d.Size = 0
-	if p, err = d.AppendBinary(nil); err != nil || len(p) != 53 {
+	if p, err = d.AppendBinary(nil); err != nil || len(p) != 55 {
 		t.Fatalf("0: %d %v", len(p), err)
 	}
 	d.Size = 54

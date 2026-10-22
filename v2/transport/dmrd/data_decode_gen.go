@@ -50,7 +50,7 @@ func DecodeData(data []byte) (Data, error) {
 }
 
 // AppendBinary appends the 53, 55 or 71 octets of s to dst: Size selects the
-// length, and 0 means 53. It returns dst unchanged and a
+// length, and 0 means 55. It returns dst unchanged and a
 // *dmrgo.FieldRangeError when a field does not fit, or an error when Size is
 // not one of the lengths. It allocates only to grow dst.
 func (s *Data) AppendBinary(dst []byte) ([]byte, error) {
@@ -59,11 +59,11 @@ func (s *Data) AppendBinary(dst []byte) ([]byte, error) {
 	}
 
 	_n := len(dst)
-	_size := 53
+	_size := 55
 	switch s.Size {
-	case 0, 53:
-	case 55:
-		_size = 55
+	case 0, 55:
+	case 53:
+		_size = 53
 	case 71:
 		_size = 71
 	default:

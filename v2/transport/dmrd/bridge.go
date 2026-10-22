@@ -111,6 +111,7 @@ func (b *Bridge) AppendBinary(dst []byte) ([]byte, error) {
 		if d.Size != 0 && d.Size != 53 {
 			return dst, errBridgeData
 		}
+		d.Size = 53
 		n := len(dst)
 		var err error
 		dst, err = d.AppendBinary(dst)

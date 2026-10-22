@@ -25,6 +25,10 @@ func TestBridgeV1(t *testing.T) {
 	if err != nil || !bytes.Equal(out, pkt) {
 		t.Fatalf("encode %x %v", out, err)
 	}
+	b.Data.Size = 0
+	if out, err = b.AppendBinary(nil); err != nil || !bytes.Equal(out, pkt) {
+		t.Fatalf("encode with Size 0: %x %v", out, err)
+	}
 	for _, n := range []int{72, 74, 53} {
 		q := append(append([]byte{}, p...), make([]byte, 20)...)[:n]
 		if n == 74 {
