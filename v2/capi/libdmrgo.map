@@ -1426,6 +1426,8 @@ DMRGO_1 {
 		dmrgo_trunk_capacity_plus_follower_burst_need;
 		dmrgo_trunk_capacity_plus_follower_call;
 		dmrgo_trunk_capacity_plus_follower_deadline;
+		dmrgo_trunk_capacity_plus_follower_decoded;
+		dmrgo_trunk_capacity_plus_follower_decoded_need;
 		dmrgo_trunk_capacity_plus_follower_free;
 		dmrgo_trunk_capacity_plus_follower_lost;
 		dmrgo_trunk_capacity_plus_follower_lost_need;
@@ -1451,6 +1453,8 @@ DMRGO_1 {
 		dmrgo_trunk_follower_burst_need;
 		dmrgo_trunk_follower_call;
 		dmrgo_trunk_follower_deadline;
+		dmrgo_trunk_follower_decoded;
+		dmrgo_trunk_follower_decoded_need;
 		dmrgo_trunk_follower_free;
 		dmrgo_trunk_follower_hunt;
 		dmrgo_trunk_follower_lookup;
@@ -1489,6 +1493,8 @@ DMRGO_1 {
 		dmrgo_trunk_ms_cancel;
 		dmrgo_trunk_ms_cancel_need;
 		dmrgo_trunk_ms_deadline;
+		dmrgo_trunk_ms_decoded;
+		dmrgo_trunk_ms_decoded_need;
 		dmrgo_trunk_ms_divert;
 		dmrgo_trunk_ms_end_call;
 		dmrgo_trunk_ms_end_call_need;

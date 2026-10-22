@@ -5520,14 +5520,17 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_PDU_TALKER_ALIAS_ASSEMBLER_ADD_MAX_ITEMS (DMRGO_PDU_TALKER_ALIAS_MAX_TEXT)
 #define DMRGO_PDU_TALKER_ALIAS_ASSEMBLER_APPEND_ADD_MAX_ITEMS (DMRGO_PDU_TALKER_ALIAS_MAX_TEXT)
 #define DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_BURST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
+#define DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_DECODED_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_LOST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_TICK_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_FOLLOWER_BURST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
+#define DMRGO_TRUNK_FOLLOWER_DECODED_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_FOLLOWER_LOST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_FOLLOWER_TICK_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_AUTH_RESPONSE_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_BURST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_CANCEL_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
+#define DMRGO_TRUNK_MS_DECODED_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_END_CALL_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 #define DMRGO_TRUNK_MS_GROUP_ALIAS_MAX_ITEMS (63)
 #define DMRGO_TRUNK_MS_INTERRUPT_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
@@ -10450,6 +10453,10 @@ int dmrgo_trunk_capacity_plus_follower_burst(dmrgo_trunk_capacity_plus_follower_
 int dmrgo_trunk_capacity_plus_follower_call(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_trunk_grant_t *g, bool *ok);
 /* Go: trunk.CapacityPlusFollower.Deadline. Deadline returns the time at which the Follower needs a Tick. */
 int dmrgo_trunk_capacity_plus_follower_deadline(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_duration_t *at, bool *ok);
+/* dmrgo_trunk_capacity_plus_follower_decoded_need sets *items and *arena to the room that dmrgo_trunk_capacity_plus_follower_decoded needs for these arguments, without a change to the handle. */
+int dmrgo_trunk_capacity_plus_follower_decoded_need(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], size_t *items, size_t *arena);
+/* Go: trunk.CapacityPlusFollower.Decoded. Decoded runs the decoded burst b through the Follower as Burst does, with the Hint h and the CACH field cach. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_capacity_plus_follower_decoded_need gives (DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_DECODED_MAX_ITEMS items). b and cach may be NULL. */
+int dmrgo_trunk_capacity_plus_follower_decoded(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_trunk_capacity_plus_follower_lost_need sets *items and *arena to the room that dmrgo_trunk_capacity_plus_follower_lost needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_capacity_plus_follower_lost_need(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: trunk.CapacityPlusFollower.Lost. Lost tells the Follower that the receiver lost the signal. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_capacity_plus_follower_lost_need gives (DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_LOST_MAX_ITEMS items). */
@@ -10500,6 +10507,10 @@ int dmrgo_trunk_follower_burst(dmrgo_trunk_follower_t *self, dmrgo_duration_t no
 int dmrgo_trunk_follower_call(dmrgo_trunk_follower_t *self, dmrgo_trunk_grant_t *g, bool *ok);
 /* Go: trunk.Follower.Deadline. Deadline returns the time at which the Follower needs a Tick. */
 int dmrgo_trunk_follower_deadline(dmrgo_trunk_follower_t *self, dmrgo_duration_t *at, bool *ok);
+/* dmrgo_trunk_follower_decoded_need sets *items and *arena to the room that dmrgo_trunk_follower_decoded needs for these arguments, without a change to the handle. */
+int dmrgo_trunk_follower_decoded_need(dmrgo_trunk_follower_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], size_t *items, size_t *arena);
+/* Go: trunk.Follower.Decoded. Decoded runs the decoded burst b through the Follower as Burst does, with the Hint h and the CACH field cach. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_follower_decoded_need gives (DMRGO_TRUNK_FOLLOWER_DECODED_MAX_ITEMS items). b and cach may be NULL. */
+int dmrgo_trunk_follower_decoded(dmrgo_trunk_follower_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.Follower.Hunt. Hunt returns the hunt list, with the changes of Ann_WD_TSCC broadcasts. */
 int dmrgo_trunk_follower_hunt(dmrgo_trunk_follower_t *self, dmrgo_trunk_hunt_list_t *out);
 /* Go: trunk.Follower.Lookup. Lookup returns the channel with number n from the channel plan, as ChannelPlan.Lookup does. */
@@ -10576,6 +10587,10 @@ int dmrgo_trunk_ms_cancel_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, siz
 int dmrgo_trunk_ms_cancel(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.MS.Deadline. Deadline returns the time at which the MS needs a Tick. */
 int dmrgo_trunk_ms_deadline(dmrgo_trunk_ms_t *self, dmrgo_duration_t *at, bool *ok);
+/* dmrgo_trunk_ms_decoded_need sets *items and *arena to the room that dmrgo_trunk_ms_decoded needs for these arguments, without a change to the handle. */
+int dmrgo_trunk_ms_decoded_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], size_t *items, size_t *arena);
+/* Go: trunk.MS.Decoded. Decoded runs the decoded burst b through the MS as Burst does, with the Hint h and the CACH field cach. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_decoded_need gives (DMRGO_TRUNK_MS_DECODED_MAX_ITEMS items). b and cach may be NULL. */
+int dmrgo_trunk_ms_decoded(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.MS.Divert. Divert asks the TSCC to divert the calls of the MS, or to stop diverting them, by random access (ETSI TS 102 361-4 clause 6.6.7.1). It returns the errors of Call, and a DMRGO_ERR_CONFIG for another gateway or a missing a. a may be NULL. */
 int dmrgo_trunk_ms_divert(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, uint32_t gateway, const dmrgo_layer3_diversion_service_options_t *opts, const dmrgo_trunk_appended_t *a);
 /* dmrgo_trunk_ms_end_call_need sets *items and *arena to the room that dmrgo_trunk_ms_end_call needs for these arguments, without a change to the handle. */

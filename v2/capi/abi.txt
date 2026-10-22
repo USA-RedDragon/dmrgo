@@ -1274,6 +1274,7 @@ sym #define DMRGO_TMS_TYPE_TEXT ((dmrgo_tms_type_t)0)
 sym #define DMRGO_TRUNKAUTH_KEY_LEN 16
 sym #define DMRGO_TRUNKAUTH_MAX_CHALLENGE 16776415
 sym #define DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_BURST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
+sym #define DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_DECODED_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_LOST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_TICK_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_CAPACITY_PLUS_NO_SIGNAL_DEFAULT INT64_C(5000000000)
@@ -1281,6 +1282,7 @@ sym #define DMRGO_TRUNK_CHANNEL_ABSOLUTE 4095
 sym #define DMRGO_TRUNK_CHANNEL_NULL 0
 sym #define DMRGO_TRUNK_DEFAULT_MAX_BER_PERMILLE 50
 sym #define DMRGO_TRUNK_FOLLOWER_BURST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
+sym #define DMRGO_TRUNK_FOLLOWER_DECODED_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_FOLLOWER_LOST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_FOLLOWER_TICK_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_MAX_APPENDED_OCTETS 46
@@ -1297,6 +1299,7 @@ sym #define DMRGO_TRUNK_MAX_TSCC_OUTPUTS 43
 sym #define DMRGO_TRUNK_MS_AUTH_RESPONSE_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_MS_BURST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_MS_CANCEL_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
+sym #define DMRGO_TRUNK_MS_DECODED_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_MS_END_CALL_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_MS_GROUP_ALIAS_MAX_ITEMS (63)
 sym #define DMRGO_TRUNK_MS_INTERRUPT_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
@@ -2865,6 +2868,8 @@ sym int dmrgo_trunk_capacity_plus_follower_burst(dmrgo_trunk_capacity_plus_follo
 sym int dmrgo_trunk_capacity_plus_follower_burst_need(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], size_t *items, size_t *arena);
 sym int dmrgo_trunk_capacity_plus_follower_call(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_trunk_grant_t *g, bool *ok);
 sym int dmrgo_trunk_capacity_plus_follower_deadline(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_duration_t *at, bool *ok);
+sym int dmrgo_trunk_capacity_plus_follower_decoded(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_trunk_capacity_plus_follower_decoded_need(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], size_t *items, size_t *arena);
 sym int dmrgo_trunk_capacity_plus_follower_free(dmrgo_trunk_capacity_plus_follower_t *self);
 sym int dmrgo_trunk_capacity_plus_follower_lost(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_duration_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_trunk_capacity_plus_follower_lost_need(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
@@ -2890,6 +2895,8 @@ sym int dmrgo_trunk_follower_burst(dmrgo_trunk_follower_t *self, dmrgo_duration_
 sym int dmrgo_trunk_follower_burst_need(dmrgo_trunk_follower_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], size_t *items, size_t *arena);
 sym int dmrgo_trunk_follower_call(dmrgo_trunk_follower_t *self, dmrgo_trunk_grant_t *g, bool *ok);
 sym int dmrgo_trunk_follower_deadline(dmrgo_trunk_follower_t *self, dmrgo_duration_t *at, bool *ok);
+sym int dmrgo_trunk_follower_decoded(dmrgo_trunk_follower_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_trunk_follower_decoded_need(dmrgo_trunk_follower_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], size_t *items, size_t *arena);
 sym int dmrgo_trunk_follower_free(dmrgo_trunk_follower_t *self);
 sym int dmrgo_trunk_follower_hunt(dmrgo_trunk_follower_t *self, dmrgo_trunk_hunt_list_t *out);
 sym int dmrgo_trunk_follower_lookup(dmrgo_trunk_follower_t *self, uint16_t n, dmrgo_trunk_channel_t *c, bool *ok);
@@ -2928,6 +2935,8 @@ sym int dmrgo_trunk_ms_call_duplex_data(dmrgo_trunk_ms_t *self, dmrgo_duration_t
 sym int dmrgo_trunk_ms_cancel(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_trunk_ms_cancel_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 sym int dmrgo_trunk_ms_deadline(dmrgo_trunk_ms_t *self, dmrgo_duration_t *at, bool *ok);
+sym int dmrgo_trunk_ms_decoded(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_trunk_ms_decoded_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], size_t *items, size_t *arena);
 sym int dmrgo_trunk_ms_divert(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, uint32_t gateway, const dmrgo_layer3_diversion_service_options_t *opts, const dmrgo_trunk_appended_t *a);
 sym int dmrgo_trunk_ms_end_call(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_trunk_ms_end_call_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);

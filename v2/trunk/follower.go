@@ -265,8 +265,35 @@ func (f *Follower) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint,
 	return f.burst(now, raw, h, c, dst)
 }
 
+// Decoded runs the decoded burst b through the Follower as Burst does, with
+// the Hint h and the CACH field cach. A nil b is a burst that did not
+// decode, so only h and cach apply; for a transport frame without a burst
+// call Burst with a nil raw. A monitor that feeds a burst to several
+// machines decodes it once with layer2.Burst.DecodeFromBytesWith and calls
+// Decoded on each. It allocates only when dst has no room for MaxOutputs
+// outputs.
+func (f *Follower) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
+	if f == nil {
+		return dst
+	}
+
+	var c *layer2.CACH
+	if cach != nil {
+		f.cach = layer2.DecodeCACHField(*cach)
+		c = &f.cach
+	}
+	prev := f.ctl.b
+	if b != nil {
+		f.ctl.b = b
+	}
+	f.ctl.pre, f.ctl.preOK = true, b != nil
+	dst = f.burst(now, nil, h, c, dst)
+	f.ctl.b, f.ctl.pre = prev, false
+	return dst
+}
+
 func (f *Follower) burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *layer2.CACH, dst []Output) []Output {
-	if raw == nil {
+	if raw == nil && !f.ctl.pre {
 		if h.SyncLost {
 			return f.Lost(now, dst)
 		}
