@@ -202,7 +202,7 @@ func (m *MS) challenged(now time.Duration, c uint32, slot enums.Slot, payload bo
 }
 
 // AuthResponse sends response, the answer to the challenge of the last
-// OutputAuthChallenge that auth.Response computes, to the TSCC: a C_ACKU,
+// OutputAuthChallenge that trunkauth.Response computes, to the TSCC: a C_ACKU,
 // or a P_ACKU on a payload channel, with reason Authentication Response,
 // in the slot after the challenge. It appends that OutputBurst to dst. It
 // does nothing when no challenge waits or that slot has passed, so call it

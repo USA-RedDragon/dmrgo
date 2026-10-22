@@ -8,10 +8,10 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
-	"github.com/USA-RedDragon/dmrgo/v2/trunk/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/trunk/trunkauth"
 )
 
-var table615Key = [auth.KeyLen]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+var table615Key = [trunkauth.KeyLen]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
 func challengeAhoy(t *testing.T, group, flag bool, target, source uint32) pdu.CSBK {
 	t.Helper()
@@ -33,7 +33,7 @@ func TestMS_AuthDuringRegistration(t *testing.T) {
 	}
 	at := r.now
 	wantKinds(t, "no random access retry", r.feed(a, &idle))
-	out = r.ms.AuthResponse(r.now, auth.Response(out[0].Challenge, table615Key, 0), r.out[:0])
+	out = r.ms.AuthResponse(r.now, trunkauth.Response(out[0].Challenge, table615Key, 0), r.out[:0])
 	wantKinds(t, "response", out, trunk.OutputBurst)
 	ackIn, ok := sent(t, &out[0]).AsAckInbound()
 	if !ok || enums.AckReason(ackIn.ReasonCode) != enums.AckReasonAuthResponseMS || ackIn.TargetAddress != 0xE8CA1D ||
@@ -101,7 +101,7 @@ func TestMS_AuthOnPayload(t *testing.T) {
 	ahoy := challengeAhoy(t, false, false, msAddr, 0x7A17C0)
 	out := r.feed(bsBurst(t, &ahoy, testCC), nil)
 	wantKinds(t, "P_AHOY challenge", out, trunk.OutputAuthChallenge)
-	out = r.ms.AuthResponse(r.now, auth.Response(out[0].Challenge, table615Key, 0x010203), r.out[:0])
+	out = r.ms.AuthResponse(r.now, trunkauth.Response(out[0].Challenge, table615Key, 0x010203), r.out[:0])
 	wantKinds(t, "P_ACKU", out, trunk.OutputBurst)
 	ackP, ok := sent(t, &out[0]).AsAckInboundPayload()
 	if !ok || ackP.TargetAddress != 0xE9C81E || enums.AckReason(ackP.ReasonCode) != enums.AckReasonAuthResponseMS ||
@@ -114,7 +114,7 @@ func TestTSCC_Authentication(t *testing.T) {
 	t.Parallel()
 	cfg := tsccConfig()
 	cfg.Authenticate, cfg.Seed, cfg.AnswerTimeout = true, 9, time.Second
-	good := [auth.KeyLen]byte{0xA5, 2}
+	good := [trunkauth.KeyLen]byte{0xA5, 2}
 	s := newSim(t, cfg,
 		&trunk.MSConfig{Address: 3120001, Seed: 1},
 		&trunk.MSConfig{Address: 3120002, Seed: 2},
@@ -125,7 +125,7 @@ func TestTSCC_Authentication(t *testing.T) {
 	s.ms[0].key = &simKey{good, 0}
 	s.ms[1].key = &simKey{good, 0x0A0B0C}
 	s.ms[2].key = &simKey{good, 0}
-	s.ms[3].key = &simKey{[auth.KeyLen]byte{0xA5, 3}, 0}
+	s.ms[3].key = &simKey{[trunkauth.KeyLen]byte{0xA5, 3}, 0}
 
 	s.until(5*time.Second, func() bool { return s.ms[0].ms.Registered() && s.ms[1].ms.Registered() })
 	for _, addr := range []uint32{3120001, 3120002} {
@@ -152,7 +152,7 @@ func TestTSCC_Authentication(t *testing.T) {
 			}
 		case trunk.TSCCAuthChallenge:
 			challenges[e.Address]++
-			if e.Challenge > auth.MaxChallenge {
+			if e.Challenge > trunkauth.MaxChallenge {
 				t.Errorf("challenge %06X over the maximum", e.Challenge)
 			}
 		default:
@@ -184,7 +184,7 @@ func TestTSCC_AuthPSNPerMS(t *testing.T) {
 	t.Parallel()
 	cfg := tsccConfig()
 	cfg.Authenticate, cfg.Seed, cfg.AnswerTimeout = true, 11, time.Second
-	key := [auth.KeyLen]byte{0x5A, 7}
+	key := [trunkauth.KeyLen]byte{0x5A, 7}
 	const psn = 0x123456
 	s := newSim(t, cfg,
 		&trunk.MSConfig{Address: 3120001, Seed: 1},

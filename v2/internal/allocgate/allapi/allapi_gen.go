@@ -49,7 +49,7 @@ import (
 	transport_ipsc_ipscsession "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession"
 	transport_mmdvm "github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm"
 	trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
-	trunk_auth "github.com/USA-RedDragon/dmrgo/v2/trunk/auth"
+	trunk_trunkauth "github.com/USA-RedDragon/dmrgo/v2/trunk/trunkauth"
 	vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
 	vocoder_dvsi "github.com/USA-RedDragon/dmrgo/v2/vocoder/dvsi"
@@ -1482,9 +1482,9 @@ var api = [...]any{
 	trunk.State.String,
 	trunk.StunAction.String,
 	trunk.TSCCOutputKind.String,
-	(*trunk_auth.Key).Response,
-	(*trunk_auth.Keys).Response,
-	trunk_auth.Response,
+	(*trunk_trunkauth.Key).Response,
+	(*trunk_trunkauth.Keys).Response,
+	trunk_trunkauth.Response,
 	vocoder.AMBESilence,
 	vocoder.AMBESilenceSlot,
 	vocoder.DecodeAMBE72,

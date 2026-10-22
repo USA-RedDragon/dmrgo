@@ -1,11 +1,11 @@
-// Package auth computes the answer of a Tier III MS to the authentication
+// Package trunkauth computes the answer of a Tier III MS to the authentication
 // challenge of a TSCC: the RC4 keystream generator, keyed with the
 // challenge and the 128-bit key of the MS, with an optional exclusive-or
 // with the PSN of the MS. Key and Keys are the trunk.Authenticator of an
 // MS and of a TSCC, for the stun, revive and kill procedures. Package trunk
 // has none of this code, so a program that does not authenticate does not
 // link it. It does not allocate. (ETSI TS 102 361-4 clause 6.4.8)
-package auth
+package trunkauth
 
 // KeyLen is the length of the authentication key K in octets (ETSI TS 102
 // 361-4 clause 6.4.8.1.1).

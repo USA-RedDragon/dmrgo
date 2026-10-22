@@ -259,7 +259,7 @@ v2/transport/mmdvm/types.go	65	38
 v2/transport/mmdvm/version.go	40	40
 v2/trunk/appended.go	251	246
 v2/trunk/appended_formats_decode_gen.go	327	325
-v2/trunk/auth/auth.go	29	29
+v2/trunk/trunkauth/auth.go	29	29
 v2/trunk/capplus.go	222	208
 v2/trunk/control.go	229	186
 v2/trunk/follower.go	234	224

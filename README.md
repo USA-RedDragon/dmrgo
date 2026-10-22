@@ -444,9 +444,9 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 6.4.5 | Mass Re-registration | verified | 5/5 passed | `v2/trunk/ms_services.go`, `v2/trunk/tscc_services.go`, `v2/layer2/pdu/broadcast_massreg.go` |
 | 6.4.6 | De-registration | verified | 1/1 passed | `v2/trunk/ms.go` |
 | 6.4.7 | Power Save | verified | 2/2 passed | `v2/trunk/ms_services.go`, `v2/trunk/tscc_services.go` |
-| 6.4.8 | Authentication Procedures | verified | 9/9 passed | `v2/trunk/auth/auth.go`, `v2/trunk/ms_access.go`, `v2/trunk/tscc.go` |
-| 6.4.9 | MS Stun/Revive | verified | 4/4 passed | `v2/trunk/ms_services.go`, `v2/trunk/tscc_services.go`, `v2/trunk/services.go`, `v2/trunk/auth/auth.go` |
-| 6.4.10 | MS Kill | verified | 3/3 passed | `v2/trunk/ms_services.go`, `v2/trunk/tscc_services.go`, `v2/trunk/services.go`, `v2/trunk/auth/auth.go` |
+| 6.4.8 | Authentication Procedures | verified | 9/9 passed | `v2/trunk/trunkauth/auth.go`, `v2/trunk/ms_access.go`, `v2/trunk/tscc.go` |
+| 6.4.9 | MS Stun/Revive | verified | 4/4 passed | `v2/trunk/ms_services.go`, `v2/trunk/tscc_services.go`, `v2/trunk/services.go`, `v2/trunk/trunkauth/auth.go` |
+| 6.4.10 | MS Kill | verified | 3/3 passed | `v2/trunk/ms_services.go`, `v2/trunk/tscc_services.go`, `v2/trunk/services.go`, `v2/trunk/trunkauth/auth.go` |
 | 6.4.11 | IP Connection Advice | verified | 1/1 passed | `v2/trunk/ms_services.go`, `v2/trunk/tscc_services.go` |
 | 6.4.12 | Unsolicited MS Radio Check | verified | 2/2 passed | `v2/trunk/ms_access.go` |
 | 6.4.13 | Supplementary_User Data Service | verified | 2/2 passed | `v2/trunk/ms_services.go`, `v2/trunk/tscc_services.go` |

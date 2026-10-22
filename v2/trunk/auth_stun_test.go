@@ -6,23 +6,23 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
-	"github.com/USA-RedDragon/dmrgo/v2/trunk/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/trunk/trunkauth"
 )
 
 var (
-	_ trunk.Authenticator = (*auth.Key)(nil)
-	_ trunk.Authenticator = (*auth.Keys)(nil)
+	_ trunk.Authenticator = (*trunkauth.Key)(nil)
+	_ trunk.Authenticator = (*trunkauth.Keys)(nil)
 )
 
 func TestStun_AuthKeys(t *testing.T) {
 	t.Parallel()
-	keyA := auth.Key{K: table615Key}
-	keyB := auth.Key{K: table615Key, PSN: 0x010203}
+	keyA := trunkauth.Key{K: table615Key}
+	keyB := trunkauth.Key{K: table615Key, PSN: 0x010203}
 	cfgs := threeMS()
 	cfgs[0].Auth = &keyA
 	cfgs[1].Auth = &keyB
 	cfg := tsccConfig()
-	cfg.Auth = &auth.Keys{Entries: []auth.Entry{{Addr: 3120001, Key: keyA}, {Addr: 3120002, Key: keyA}}}
+	cfg.Auth = &trunkauth.Keys{Entries: []trunkauth.Entry{{Addr: 3120001, Key: keyA}, {Addr: 3120002, Key: keyA}}}
 	s := registeredSim(t, cfg, cfgs...)
 	a, b := s.ms[0], s.ms[1]
 

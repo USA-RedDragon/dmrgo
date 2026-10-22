@@ -2418,11 +2418,11 @@ documents:
       - section: "6.4.8"
         title: "Authentication Procedures"
         source_files:
-          - v2/trunk/auth/auth.go
+          - v2/trunk/trunkauth/auth.go
           - v2/trunk/ms_access.go
           - v2/trunk/tscc.go
         test_functions:
-          - package: github.com/USA-RedDragon/dmrgo/v2/trunk/auth
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk/trunkauth
             names:
               - TestResponseTable6_15
               - TestResponseTable6_16
@@ -2442,7 +2442,7 @@ documents:
           - v2/trunk/ms_services.go
           - v2/trunk/tscc_services.go
           - v2/trunk/services.go
-          - v2/trunk/auth/auth.go
+          - v2/trunk/trunkauth/auth.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:
@@ -2457,7 +2457,7 @@ documents:
           - v2/trunk/ms_services.go
           - v2/trunk/tscc_services.go
           - v2/trunk/services.go
-          - v2/trunk/auth/auth.go
+          - v2/trunk/trunkauth/auth.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/trunk
             names:

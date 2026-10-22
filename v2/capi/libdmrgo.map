@@ -18,9 +18,6 @@
 		dmrgo_ars_response_append_binary;
 		dmrgo_ars_response_string;
 		dmrgo_ars_type_string;
-		dmrgo_auth_key_response;
-		dmrgo_auth_keys_response;
-		dmrgo_auth_response;
 		dmrgo_bs_activation_string;
 		dmrgo_bs_cach_first;
 		dmrgo_bs_cach_free;
@@ -1537,6 +1534,9 @@
 		dmrgo_trunk_usbd_poll_request_string;
 		dmrgo_trunk_usbdlip_response_encode;
 		dmrgo_trunk_usbdlip_response_string;
+		dmrgo_trunkauth_key_response;
+		dmrgo_trunkauth_keys_response;
+		dmrgo_trunkauth_response;
 		dmrgo_version;
 		dmrgo_vocoder_ambe_silence;
 		dmrgo_vocoder_ambe_silence_slot;

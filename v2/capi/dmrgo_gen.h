@@ -625,12 +625,12 @@ typedef struct dmrgo_trunk_udt_t dmrgo_trunk_udt_t;
 typedef struct dmrgo_trunk_usbdlip_response_t dmrgo_trunk_usbdlip_response_t;
 /* Go: trunk.USBDPollRequest. USBDPollRequest is the Poll Request of the USBD polling service: the payload of an outbound USBD after its Service Type. */
 typedef struct dmrgo_trunk_usbd_poll_request_t dmrgo_trunk_usbd_poll_request_t;
-/* Go: auth.Entry. Entry is the Key of the MS Addr. */
-typedef struct dmrgo_auth_entry_t dmrgo_auth_entry_t;
-/* Go: auth.Key. Key is the authentication key K and the PSN of one MS. */
-typedef struct dmrgo_auth_key_t dmrgo_auth_key_t;
-/* Go: auth.Keys. Keys holds the keys of the MSs that a TSCC authenticates. */
-typedef struct dmrgo_auth_keys_t dmrgo_auth_keys_t;
+/* Go: trunkauth.Entry. Entry is the Key of the MS Addr. */
+typedef struct dmrgo_trunkauth_entry_t dmrgo_trunkauth_entry_t;
+/* Go: trunkauth.Key. Key is the authentication key K and the PSN of one MS. */
+typedef struct dmrgo_trunkauth_key_t dmrgo_trunkauth_key_t;
+/* Go: trunkauth.Keys. Keys holds the keys of the MSs that a TSCC authenticates. */
+typedef struct dmrgo_trunkauth_keys_t dmrgo_trunkauth_keys_t;
 /* Go: vocoder.AMBEFrame. AMBEFrame holds the 49 information bits of one AMBE+2 vocoder frame, without the frame FEC, packed, the first bit in the most significant bit of byte 0. */
 typedef struct dmrgo_vocoder_ambe_frame_t dmrgo_vocoder_ambe_frame_t;
 /* Go: vocoder.AppendDecoder. AppendDecoder is a Codec that can decode into a buffer of the caller. */
@@ -5208,23 +5208,23 @@ struct dmrgo_trunk_tscc_output_t {
 	bool remove;
 };
 
-struct dmrgo_auth_key_t {
+struct dmrgo_trunkauth_key_t {
 	/* K is the authentication key of the MS. */
 	uint8_t k[16];
 	/* PSN is the PSN of the MS, or 0 for an MS that uses no PSN. */
 	uint32_t psn;
 };
 
-struct dmrgo_auth_entry_t {
+struct dmrgo_trunkauth_entry_t {
 	/* Addr is the individual address of the MS. */
 	uint32_t addr;
 	/* Key is the key of the MS. */
-	dmrgo_auth_key_t key;
+	dmrgo_trunkauth_key_t key;
 };
 
-struct dmrgo_auth_keys_t {
+struct dmrgo_trunkauth_keys_t {
 	/* Entries holds the key of each MS. The first entry for an address wins. */
-	dmrgo_auth_entry_t *entries;
+	dmrgo_trunkauth_entry_t *entries;
 	size_t entries_len;
 };
 
@@ -7595,10 +7595,10 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_TSCCUDT ((dmrgo_trunk_tscc_output_kind_t)9)
 /* Go: trunk.TSCCUSBD. TSCCUSBD reports a USBD Poll Response, to the poll of the MS Address. */
 #define DMRGO_TRUNK_TSCCUSBD ((dmrgo_trunk_tscc_output_kind_t)10)
-/* Go: auth.KeyLen. KeyLen is the length of the authentication key K in octets (ETSI TS 102 361-4 clause 6.4.8.1.1). */
-#define DMRGO_AUTH_KEY_LEN 16
-/* Go: auth.MaxChallenge. MaxChallenge is the largest challenge that a TSCC sends in the Source Address of a C_AHOY. */
-#define DMRGO_AUTH_MAX_CHALLENGE 16776415
+/* Go: trunkauth.KeyLen. KeyLen is the length of the authentication key K in octets (ETSI TS 102 361-4 clause 6.4.8.1.1). */
+#define DMRGO_TRUNKAUTH_KEY_LEN 16
+/* Go: trunkauth.MaxChallenge. MaxChallenge is the largest challenge that a TSCC sends in the Source Address of a C_AHOY. */
+#define DMRGO_TRUNKAUTH_MAX_CHALLENGE 16776415
 /* Go: vocoder.MaxCodecs. MaxCodecs is the number of codec factories that Register can hold. */
 #define DMRGO_VOCODER_MAX_CODECS 8
 /* Go: codec2.DefaultFID. DefaultFID is the Full LC Feature set ID QRadioLink sends for Codec2 calls. */
@@ -10564,7 +10564,7 @@ int dmrgo_trunk_ms_asleep(dmrgo_trunk_ms_t *self, bool *out);
 int dmrgo_trunk_ms_assign_groups(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, uint32_t target, const dmrgo_trunk_appended_t *a);
 /* dmrgo_trunk_ms_auth_response_need sets *items and *arena to the room that dmrgo_trunk_ms_auth_response needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_auth_response_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, uint32_t response, size_t *items, size_t *arena);
-/* Go: trunk.MS.AuthResponse. AuthResponse sends response, the answer to the challenge of the last OutputAuthChallenge that auth.Response computes, to the TSCC: a C_ACKU, or a P_ACKU on a payload channel, with reason Authentication Response, in the slot after the challenge. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_auth_response_need gives (DMRGO_TRUNK_MS_AUTH_RESPONSE_MAX_ITEMS items). */
+/* Go: trunk.MS.AuthResponse. AuthResponse sends response, the answer to the challenge of the last OutputAuthChallenge that trunkauth.Response computes, to the TSCC: a C_ACKU, or a P_ACKU on a payload channel, with reason Authentication Response, in the slot after the challenge. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_auth_response_need gives (DMRGO_TRUNK_MS_AUTH_RESPONSE_MAX_ITEMS items). */
 int dmrgo_trunk_ms_auth_response(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, uint32_t response, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_trunk_ms_burst_need sets *items and *arena to the room that dmrgo_trunk_ms_burst needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_burst_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, uint8_t cach[3], size_t *items, size_t *arena);
@@ -10748,12 +10748,12 @@ int dmrgo_trunk_usbdlip_response_string(dmrgo_trunk_usbdlip_response_t *self, ch
 int dmrgo_trunk_usbd_poll_request_encode(dmrgo_trunk_usbd_poll_request_t *self, uint8_t out[10]);
 /* Go: trunk.USBDPollRequest.String. String returns the fields of s as text, for printing. */
 int dmrgo_trunk_usbd_poll_request_string(dmrgo_trunk_usbd_poll_request_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: auth.Key.Response. Response returns the response of the MS to challenge, as the package function Response computes it, and true, for any address. */
-int dmrgo_auth_key_response(dmrgo_auth_key_t *self, uint32_t p0, uint32_t challenge, uint32_t *response, bool *ok);
-/* Go: auth.Keys.Response. Response returns the response of the MS addr to challenge, and false when Entries has no key for addr or k is nil. */
-int dmrgo_auth_keys_response(dmrgo_auth_keys_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: auth.Response. Response returns the 24-bit response to the challenge for the key K: the octets 257 to 259 of the RC4 keystream keyed with the 3 octets of the challenge, most significant first, and the 16 octets of K, exclusive-or psn. */
-int dmrgo_auth_response(uint32_t challenge, const uint8_t key[16], uint32_t psn, uint32_t *out);
+/* Go: trunkauth.Key.Response. Response returns the response of the MS to challenge, as the package function Response computes it, and true, for any address. */
+int dmrgo_trunkauth_key_response(dmrgo_trunkauth_key_t *self, uint32_t p0, uint32_t challenge, uint32_t *response, bool *ok);
+/* Go: trunkauth.Keys.Response. Response returns the response of the MS addr to challenge, and false when Entries has no key for addr or k is nil. */
+int dmrgo_trunkauth_keys_response(dmrgo_trunkauth_keys_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: trunkauth.Response. Response returns the 24-bit response to the challenge for the key K: the octets 257 to 259 of the RC4 keystream keyed with the 3 octets of the challenge, most significant first, and the 16 octets of K, exclusive-or psn. */
+int dmrgo_trunkauth_response(uint32_t challenge, const uint8_t key[16], uint32_t psn, uint32_t *out);
 /* Go: vocoder.AMBESilence. AMBESilence returns the AMBE+2 frame of silence that MMDVMHost sends to fill a voice burst (DMR_SILENCE_DATA); EncodeAMBE72 of it is the slot B9E881526173002A6B. */
 int dmrgo_vocoder_ambe_silence(dmrgo_vocoder_ambe_frame_t *out);
 /* Go: vocoder.AMBESilenceSlot. AMBESilenceSlot returns the 72 on-air bits of the AMBE+2 silence frame, EncodeAMBE72(AMBESilence()), the slot B9E881526173002A6B. */

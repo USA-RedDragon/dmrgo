@@ -43,7 +43,7 @@ import (
 	g_transport_ipsc_ipscsession "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession"
 	g_transport_mmdvm "github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm"
 	g_trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
-	g_trunk_auth "github.com/USA-RedDragon/dmrgo/v2/trunk/auth"
+	g_trunk_trunkauth "github.com/USA-RedDragon/dmrgo/v2/trunk/trunkauth"
 	g_vocoder "github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	g_vocoder_codec2 "github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
 	g_vocoder_dvsi "github.com/USA-RedDragon/dmrgo/v2/vocoder/dvsi"
@@ -5010,14 +5010,14 @@ func in_trunk_USBDPollRequest(s *C.dmrgo_trunk_usbd_poll_request_t) (d g_trunk.U
 	return
 }
 
-func in_trunk_auth_Keys(s *C.dmrgo_auth_keys_t) (d g_trunk_auth.Keys) {
-	d.Entries = unsafe.Slice((*g_trunk_auth.Entry)(unsafe.Pointer(s.entries)), int(s.entries_len))
+func in_trunk_trunkauth_Keys(s *C.dmrgo_trunkauth_keys_t) (d g_trunk_trunkauth.Keys) {
+	d.Entries = unsafe.Slice((*g_trunk_trunkauth.Entry)(unsafe.Pointer(s.entries)), int(s.entries_len))
 	return
 }
 
-func out_trunk_auth_Keys(d *C.dmrgo_auth_keys_t, s *g_trunk_auth.Keys, oc *outc) {
+func out_trunk_trunkauth_Keys(d *C.dmrgo_trunkauth_keys_t, s *g_trunk_trunkauth.Keys, oc *outc) {
 	_ = oc
-	d.entries = (*C.dmrgo_auth_entry_t)(arenaCopy(oc, s.Entries))
+	d.entries = (*C.dmrgo_trunkauth_entry_t)(arenaCopy(oc, s.Entries))
 	d.entries_len = C.size_t(len(s.Entries))
 }
 
@@ -8194,40 +8194,40 @@ func fromC_trunk_USBDPollRequest(s *C.dmrgo_trunk_usbd_poll_request_t) g_trunk.U
 	return in_trunk_USBDPollRequest(s)
 }
 
-func in_trunk_auth_Entry(s *C.dmrgo_auth_entry_t) (d g_trunk_auth.Entry) {
+func in_trunk_trunkauth_Entry(s *C.dmrgo_trunkauth_entry_t) (d g_trunk_trunkauth.Entry) {
 	d.Addr = uint32(s.addr)
-	d.Key = *(*g_trunk_auth.Key)(unsafe.Pointer(&s.key))
+	d.Key = *(*g_trunk_trunkauth.Key)(unsafe.Pointer(&s.key))
 	return
 }
 
-func out_trunk_auth_Entry(d *C.dmrgo_auth_entry_t, s *g_trunk_auth.Entry, oc *outc) {
+func out_trunk_trunkauth_Entry(d *C.dmrgo_trunkauth_entry_t, s *g_trunk_trunkauth.Entry, oc *outc) {
 	_ = oc
 	d.addr = C.uint32_t(s.Addr)
-	*(*g_trunk_auth.Key)(unsafe.Pointer(&d.key)) = s.Key
+	*(*g_trunk_trunkauth.Key)(unsafe.Pointer(&d.key)) = s.Key
 }
 
-func fromC_trunk_auth_Entry(s *C.dmrgo_auth_entry_t) g_trunk_auth.Entry {
-	return in_trunk_auth_Entry(s)
+func fromC_trunk_trunkauth_Entry(s *C.dmrgo_trunkauth_entry_t) g_trunk_trunkauth.Entry {
+	return in_trunk_trunkauth_Entry(s)
 }
 
-func in_trunk_auth_Key(s *C.dmrgo_auth_key_t) (d g_trunk_auth.Key) {
+func in_trunk_trunkauth_Key(s *C.dmrgo_trunkauth_key_t) (d g_trunk_trunkauth.Key) {
 	d.K = *(*[16]byte)(unsafe.Pointer(&s.k))
 	d.PSN = uint32(s.psn)
 	return
 }
 
-func out_trunk_auth_Key(d *C.dmrgo_auth_key_t, s *g_trunk_auth.Key, oc *outc) {
+func out_trunk_trunkauth_Key(d *C.dmrgo_trunkauth_key_t, s *g_trunk_trunkauth.Key, oc *outc) {
 	_ = oc
 	*(*[16]byte)(unsafe.Pointer(&d.k)) = s.K
 	d.psn = C.uint32_t(s.PSN)
 }
 
-func fromC_trunk_auth_Key(s *C.dmrgo_auth_key_t) g_trunk_auth.Key {
-	return in_trunk_auth_Key(s)
+func fromC_trunk_trunkauth_Key(s *C.dmrgo_trunkauth_key_t) g_trunk_trunkauth.Key {
+	return in_trunk_trunkauth_Key(s)
 }
 
-func fromC_trunk_auth_Keys(s *C.dmrgo_auth_keys_t) g_trunk_auth.Keys {
-	return in_trunk_auth_Keys(s)
+func fromC_trunk_trunkauth_Keys(s *C.dmrgo_trunkauth_keys_t) g_trunk_trunkauth.Keys {
+	return in_trunk_trunkauth_Keys(s)
 }
 
 func out_vocoder_codec2_Config(d *C.dmrgo_codec2_config_t, s *g_vocoder_codec2.Config, oc *outc) {
@@ -44054,17 +44054,17 @@ func dmrgo_trunk_usbd_poll_request_string(c_self *C.dmrgo_trunk_usbd_poll_reques
 	return C.DMRGO_OK
 }
 
-//export dmrgo_auth_key_response
-func dmrgo_auth_key_response(c_self *C.dmrgo_auth_key_t, c_p0 C.uint32_t, c_challenge C.uint32_t, c_response *C.uint32_t, c_ok *C.bool) (rc C.int) {
+//export dmrgo_trunkauth_key_response
+func dmrgo_trunkauth_key_response(c_self *C.dmrgo_trunkauth_key_t, c_p0 C.uint32_t, c_challenge C.uint32_t, c_response *C.uint32_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	var x g_trunk_auth.Key
-	x = *(*g_trunk_auth.Key)(unsafe.Pointer(&(*c_self)))
+	var x g_trunk_trunkauth.Key
+	x = *(*g_trunk_trunkauth.Key)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Response(uint32(c_p0), uint32(c_challenge))
-	*(*g_trunk_auth.Key)(unsafe.Pointer(&(*c_self))) = x
+	*(*g_trunk_trunkauth.Key)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	_ = r1
 	if c_response != nil {
@@ -44079,8 +44079,8 @@ func dmrgo_auth_key_response(c_self *C.dmrgo_auth_key_t, c_p0 C.uint32_t, c_chal
 	return C.DMRGO_OK
 }
 
-//export dmrgo_auth_keys_response
-func dmrgo_auth_keys_response(c_self *C.dmrgo_auth_keys_t, c_addr C.uint32_t, c_challenge C.uint32_t, c_response *C.uint32_t, c_ok *C.bool, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+//export dmrgo_trunkauth_keys_response
+func dmrgo_trunkauth_keys_response(c_self *C.dmrgo_trunkauth_keys_t, c_addr C.uint32_t, c_challenge C.uint32_t, c_response *C.uint32_t, c_ok *C.bool, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_arena_len != nil {
@@ -44093,10 +44093,10 @@ func dmrgo_auth_keys_response(c_self *C.dmrgo_auth_keys_t, c_addr C.uint32_t, c_
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	var x g_trunk_auth.Keys
-	x = in_trunk_auth_Keys(&(*c_self))
+	var x g_trunk_trunkauth.Keys
+	x = in_trunk_trunkauth_Keys(&(*c_self))
 	r0, r1 := x.Response(uint32(c_addr), uint32(c_challenge))
-	out_trunk_auth_Keys(&(*c_self), &x, oc)
+	out_trunk_trunkauth_Keys(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_response != nil {
@@ -44117,14 +44117,14 @@ func dmrgo_auth_keys_response(c_self *C.dmrgo_auth_keys_t, c_addr C.uint32_t, c_
 	return C.DMRGO_OK
 }
 
-//export dmrgo_auth_response
-func dmrgo_auth_response(c_challenge C.uint32_t, c_key *C.uint8_t, c_psn C.uint32_t, c_out *C.uint32_t) (rc C.int) {
+//export dmrgo_trunkauth_response
+func dmrgo_trunkauth_response(c_challenge C.uint32_t, c_key *C.uint8_t, c_psn C.uint32_t, c_out *C.uint32_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_key == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := g_trunk_auth.Response(uint32(c_challenge), *(*[16]byte)(unsafe.Pointer(c_key)), uint32(c_psn))
+	r0 := g_trunk_trunkauth.Response(uint32(c_challenge), *(*[16]byte)(unsafe.Pointer(c_key)), uint32(c_psn))
 	_ = r0
 	if c_out != nil {
 		*c_out = C.uint32_t(r0)
