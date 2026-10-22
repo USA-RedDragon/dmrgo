@@ -17,8 +17,13 @@ type Message struct {
 	Header pdu.DataHeader
 	// Proprietary is the P_HEAD sent as the second header, or nil.
 	Proprietary *pdu.ProprietaryHeader
-	// DataType is the rate of the data blocks, or 0 without blocks.
+	// DataType is the rate of the data blocks. It is set only when Blocks
+	// is over 0.
 	DataType enums.DataType
+	// Blocks is the number of data blocks that Data was built from, 0 for a
+	// packet without data blocks, such as a header-only response, or one
+	// whose blocks all failed their FEC.
+	Blocks int
 	// Data is the user data. The pad octets of a U_HEAD or C_HEAD packet are
 	// removed when the header is a first try (Full Message Flag set). A packet
 	// that a later try started, because the first header was lost, keeps them,
@@ -418,6 +423,7 @@ func (a *Assembler) finish() (Message, bool, error) {
 	complete := a.hasBlocks
 	if a.hasBlocks {
 		buf = a.blocks[:a.total*a.per]
+		m.Blocks = a.total
 		for i, ok := range a.valid[:a.total] {
 			switch {
 			case a.bad[i]:

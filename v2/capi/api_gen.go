@@ -1329,6 +1329,7 @@ func out_layer2_packet_Message(d *C.dmrgo_packet_message_t, s *g_layer2_packet.M
 		d.proprietary = C.dmrgo_pdu_proprietary_header_t{}
 	}
 	d.data_type = C.dmrgo_enums_data_type_t(s.DataType)
+	d.blocks = C.int64_t(s.Blocks)
 	d.data = (*C.uint8_t)(arenaCopy(oc, s.Data))
 	d.data_len = C.size_t(len(s.Data))
 	d.crc = C.uint32_t(s.CRC)
@@ -1389,6 +1390,7 @@ func in_layer2_packet_Message(s *C.dmrgo_packet_message_t, st *st_layer2_packet_
 		d.Proprietary = nil
 	}
 	d.DataType = g_enums.DataType(s.data_type)
+	d.Blocks = int(s.blocks)
 	d.Data = cSlice[byte](unsafe.Pointer(s.data), s.data_len)
 	d.CRC = uint32(s.crc)
 	if s.has_response {
