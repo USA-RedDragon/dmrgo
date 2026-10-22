@@ -849,6 +849,19 @@ static void test_huge_message_cap(void) {
 	CHECK(strcmp(buf, dmrgo_strerror(DMRGO_ERR_ARG)) == 0);
 }
 
+static void test_empty_arena_item(void) {
+	static _Alignas(16) unsigned char arena[64];
+	dmrgo_pdu_confirmed_data_header_t to;
+	memset(&to, 0, sizeof to);
+	for (size_t fill = 0; fill < 16; fill++) {
+		dmrgo_packet_t p;
+		size_t len = fill, need = 0;
+		OK(dmrgo_packet_new_response(&to, 0, NULL, &p, arena, fill, &len, &need));
+		CHECK(len == fill && need == fill && p.blocks_len == 0);
+		OK(dmrgo_packet_new_response(&to, 0, NULL, &p, arena, fill, &len, &need));
+	}
+}
+
 static void test_partial(void) {
 	dmrgo_layer2_voice_transmitter_options_t opts;
 	memset(&opts, 0, sizeof opts);
@@ -1090,6 +1103,7 @@ int main(int argc, char **argv) {
 	test_vocoder();
 	test_last_error();
 	test_huge_message_cap();
+	test_empty_arena_item();
 	test_partial();
 	test_small_user();
 	test_handle_errors();
