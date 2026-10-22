@@ -9,7 +9,6 @@ package main
 
 void *dmrgo__fnptr0(void);
 void *dmrgo__fnptr1(void);
-void *dmrgo__fnptr2(void);
 */
 import "C"
 
@@ -3832,22 +3831,6 @@ func out_nmea_RMC(d *C.dmrgo_nmea_rmc_t, s *g_nmea.RMC, oc *outc) {
 	d.mode = C.uint8_t(s.Mode)
 }
 
-type cb1 struct {
-}
-
-	oc := &outc{}
-	_ = oc
-	if q0 != nil {
-		pa0 = &c.a0
-	}
-	var code C.int
-	for {
-		break
-	}
-	_ = code
-	return
-}
-
 func out_shortdata_HyteraText(d *C.dmrgo_shortdata_hytera_text_t, s *g_shortdata.HyteraText, oc *outc) {
 	_ = oc
 	d.field = C.uint16_t(s.Field)
@@ -5340,30 +5323,30 @@ func dmrgo_vocoder_codec_from_vtable(c_vt *C.dmrgo_vocoder_codec_vtable_t, c_out
 	return C.DMRGO_OK
 }
 
-func fnout2(v func() (g_vocoder.Codec, error)) C.dmrgo_vocoder_register_factory_fn_t {
+func fnout1(v func() (g_vocoder.Codec, error)) C.dmrgo_vocoder_register_factory_fn_t {
 	if v == nil {
 		return C.dmrgo_vocoder_register_factory_fn_t{}
 	}
-	return C.dmrgo_vocoder_register_factory_fn_t{fn: (*[0]byte)(C.dmrgo__fnptr2()), user: newUser(v)}
+	return C.dmrgo_vocoder_register_factory_fn_t{fn: (*[0]byte)(C.dmrgo__fnptr1()), user: newUser(v)}
 }
 
-type cb2 struct {
+type cb1 struct {
 	f  C.dmrgo_vocoder_register_factory_fn_t
 	r0 *C.dmrgo_vocoder_codec_t
 }
 
-func fnin2(p C.dmrgo_vocoder_register_factory_fn_t) func() (g_vocoder.Codec, error) {
+func fnin1(p C.dmrgo_vocoder_register_factory_fn_t) func() (g_vocoder.Codec, error) {
 	if p.fn == nil {
 		return nil
 	}
-	if unsafe.Pointer(p.fn) == C.dmrgo__fnptr2() {
+	if unsafe.Pointer(p.fn) == C.dmrgo__fnptr1() {
 		return hvalue[func() (g_vocoder.Codec, error)](uintptr(p.user))
 	}
-	c := &cb2{f: p}
+	c := &cb1{f: p}
 	return c.call
 }
 
-func (c *cb2) call() (o0 g_vocoder.Codec, o1 error) {
+func (c *cb1) call() (o0 g_vocoder.Codec, o1 error) {
 	oc := &outc{}
 	_ = oc
 	var code C.int
@@ -31751,7 +31734,6 @@ func dmrgo_nmea_parse_rmc(c_s *C.uint8_t, c_s_len C.size_t, c_out *C.dmrgo_nmea_
 	return C.DMRGO_OK
 }
 
-//export dmrgo__fn1
 //export dmrgo_shortdata_append_text
 func dmrgo_shortdata_append_text(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_format C.dmrgo_enums_dd_format_t, c_text *C.uint8_t, c_text_len C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -44724,8 +44706,8 @@ func dmrgo_vocoder_pack_ambe_voice_flags(c_frames *C.dmrgo_vocoder_ambe_frame_t,
 	return C.DMRGO_OK
 }
 
-//export dmrgo__fn2
-func dmrgo__fn2(user C.uintptr_t, c_out **C.dmrgo_vocoder_codec_t) (rc C.int) {
+//export dmrgo__fn1
+func dmrgo__fn1(user C.uintptr_t, c_out **C.dmrgo_vocoder_codec_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	fv := hvalue[func() (g_vocoder.Codec, error)](uintptr(user))
@@ -44754,7 +44736,7 @@ func dmrgo_vocoder_register(c_name *C.char, c_name_len C.size_t, c_factory C.dmr
 	if c_name == nil && c_name_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := g_vocoder.Register(C.GoStringN(c_name, C.int(c_name_len)), fnin2(c_factory))
+	r0 := g_vocoder.Register(C.GoStringN(c_name, C.int(c_name_len)), fnin1(c_factory))
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -45097,7 +45079,7 @@ func dmrgo_codec2_new_factory(c_cfg *C.dmrgo_codec2_config_t, c_out *C.dmrgo_voc
 	r0 := g_vocoder_codec2.NewFactory(p_cfg)
 	_ = r0
 	if c_out != nil {
-		*c_out = fnout2(r0)
+		*c_out = fnout1(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)

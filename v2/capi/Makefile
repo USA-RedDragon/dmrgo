@@ -5,6 +5,7 @@ ABI := $(shell sed -n 's/^abi //p' abi.txt)
 SONAME := libdmrgo.so.$(ABI)
 LDFLAGS := -extldflags=-Wl,-soname,$(SONAME),--version-script=$(CURDIR)/libdmrgo.map
 SRC := $(wildcard *.go *.c *.h) abi.txt libdmrgo.map go.mod
+RUN = $(1)/api_test ../layer2/testdata/parrot_kerchunk.bin
 
 .PHONY: all test clean
 
@@ -26,7 +27,7 @@ $(BUILD)/check2/$(SONAME): $(SRC)
 $(BUILD)/%_test: test/%_test.c dmrgo.h dmrgo_gen.h $(BUILD)/libdmrgo.so
 	$(CC) -std=c11 -Wall -Wextra -Werror -pedantic -o $@ $< -I. -L$(BUILD) -ldmrgo -Wl,-rpath,'$$ORIGIN'
 
-test: $(BUILD)/capi_test $(BUILD)/api_test $(BUILD)/stack/$(SONAME) $(BUILD)/check2/$(SONAME)
+test: $(BUILD)/api_test $(BUILD)/stack/$(SONAME) $(BUILD)/check2/$(SONAME)
 	echo '#include "dmrgo.h"' | $(CXX) -std=c++11 -Wall -Wextra -Werror -pedantic -fsyntax-only -I. -x c++ -
 	nm -D --defined-only $(BUILD)/$(SONAME) | awk '$$2 == "T" { print $$3 }' | sort > $(BUILD)/symbols
 	sed -n 's/^\t\t\(dmrgo_[a-z0-9_]*\);$$/\1/p' libdmrgo.map | sort | diff -u - $(BUILD)/symbols

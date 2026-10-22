@@ -10,8 +10,6 @@ void *dmrgo__fnptr0(void) { return (void *)dmrgo__fn0; }
 
 void *dmrgo__fnptr1(void) { return (void *)dmrgo__fn1; }
 
-void *dmrgo__fnptr2(void) { return (void *)dmrgo__fn2; }
-
 const char *dmrgo__gen_strerror(int status) {
 	switch (status) {
 	case -227:

@@ -45,8 +45,6 @@
 extern "C" {
 #endif
 
-
-
 /* The status codes of the API. Errors are negative. */
 enum dmrgo_status {
 	DMRGO_OK = 0,
@@ -70,12 +68,6 @@ enum dmrgo_status {
 	DMRGO_ERR_BOUND = -9
 };
 
-
-
-
-
-
-
 #ifndef DMRGO_NO_PROTOTYPES
 
 /* dmrgo_abi_version returns DMRGO_ABI_VERSION of the library. The ABI
@@ -98,19 +90,8 @@ int dmrgo_last_error_code(void);
  * not clear it. */
 int dmrgo_last_error_message(char *buf, size_t cap, size_t *len, size_t *need);
 
-
 /* dmrgo_strerror returns a static message for a status code. */
 const char *dmrgo_strerror(int status);
-
-
-
-
-
-
-
-
-
-
 
 #endif
 
