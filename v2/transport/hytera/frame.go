@@ -141,7 +141,8 @@ func (f *Frame) Call() (group bool, target, source uint32) {
 	group = f.CallType == 0x01
 	if f.SlotType == SlotTypeVoiceLCHeader || f.SlotType == SlotTypeTerminator {
 		if p, res := f.Burst.BPTCPayload(); !res.Uncorrectable {
-			if g, _, _, ok := pdu.LCBytes(p[:9]).Call(); ok {
+			lcb := pdu.LCBytes(p[:9])
+			if g, _, _, ok := lcb.Call(); ok {
 				group = g
 			}
 		}

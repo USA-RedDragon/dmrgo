@@ -13,12 +13,18 @@ import (
 type CSBKBytes [12]byte
 
 // Opcode returns the 6-bit CSBKO, the low 6 bits of octet 0.
-func (c CSBKBytes) Opcode() CSBKOpcode {
+func (c *CSBKBytes) Opcode() CSBKOpcode {
+	if c == nil {
+		return 0
+	}
 	return CSBKOpcode(c[0] & 0x3F)
 }
 
 // FID returns the Feature set ID, octet 1.
-func (c CSBKBytes) FID() enums.FID {
+func (c *CSBKBytes) FID() enums.FID {
+	if c == nil {
+		return 0
+	}
 	return enums.FID(c[1])
 }
 
@@ -49,7 +55,10 @@ func (c CSBKBytes) addressOffsets() (target, source int, ok bool) {
 // which CSBK.Addresses returns them, and ok false for every other CSBK.
 // Octets 4 to 6 hold the target and octets 7 to 9 the source, except in
 // NACK_Rsp, where they are the other way around (ETSI TS 102 361-2 Table 7.6).
-func (c CSBKBytes) Addresses() (target, source uint32, ok bool) {
+func (c *CSBKBytes) Addresses() (target, source uint32, ok bool) {
+	if c == nil {
+		return 0, 0, false
+	}
 	t, s, ok := c.addressOffsets()
 	if !ok {
 		return 0, 0, false
@@ -106,7 +115,10 @@ func (c CSBKBytes) groupBit() (octet int, mask byte, ok bool) {
 // of Pre_CSBK or the G/I bit of P_CLEAR, P_PROTECT, C_AHOY and P_AHOY. ok is
 // false for every other CSBK and for any FID other than the standard FID.
 // (ETSI TS 102 361-2 Table 7.7, ETSI TS 102 361-4 clause 7.1.1)
-func (c CSBKBytes) Group() (group, ok bool) {
+func (c *CSBKBytes) Group() (group, ok bool) {
+	if c == nil {
+		return false, false
+	}
 	o, m, ok := c.groupBit()
 	if !ok {
 		return false, false
@@ -135,8 +147,11 @@ func (c *CSBKBytes) SetGroup(group bool) bool {
 
 // CRCOK reports whether octets 10 and 11 hold the CRC of octets 0 to 9 with
 // the CSBK mask, as BlockCRCOK does.
-func (c CSBKBytes) CRCOK() bool {
-	return BlockCRCOK(c, enums.DataTypeCSBK)
+func (c *CSBKBytes) CRCOK() bool {
+	if c == nil {
+		return false
+	}
+	return BlockCRCOK(*c, enums.DataTypeCSBK)
 }
 
 // Reseal writes the CRC of octets 0 to 9 with the CSBK mask into octets 10

@@ -36,7 +36,10 @@ func NewVoiceLCBytes(group bool, target, source uint32, so layer3.ServiceOptions
 }
 
 // FLCO returns the 6-bit FLCO, bits 2 to 7 of octet 0.
-func (l LCBytes) FLCO() enums.FLCO {
+func (l *LCBytes) FLCO() enums.FLCO {
+	if l == nil {
+		return 0
+	}
 	return enums.FLCO(l[0] & 0x3F)
 }
 
@@ -58,7 +61,10 @@ func (l *LCBytes) SetFLCO(f enums.FLCO) error {
 var errLCBytesFLCORange = &dmrgo.FieldRangeError{Type: "LCBytes", Field: "FLCO", Bits: 6}
 
 // ProtectFlag returns the PF bit, bit 0 of octet 0.
-func (l LCBytes) ProtectFlag() bool {
+func (l *LCBytes) ProtectFlag() bool {
+	if l == nil {
+		return false
+	}
 	return l[0]&0x80 != 0
 }
 
@@ -76,7 +82,10 @@ func (l *LCBytes) SetProtectFlag(pf bool) {
 
 // Reserved returns the Reserved bit, bit 1 of octet 0. The standard does not
 // define it (ETSI TS 102 361-1 clause 9.1.6, Table 9.6).
-func (l LCBytes) Reserved() bool {
+func (l *LCBytes) Reserved() bool {
+	if l == nil {
+		return false
+	}
 	return l[0]&0x40 != 0
 }
 
@@ -93,7 +102,10 @@ func (l *LCBytes) SetReserved(r bool) {
 }
 
 // FID returns the Feature set ID, octet 1.
-func (l LCBytes) FID() enums.FID {
+func (l *LCBytes) FID() enums.FID {
+	if l == nil {
+		return 0
+	}
 	return enums.FID(l[1])
 }
 
@@ -108,7 +120,10 @@ func (l *LCBytes) SetFID(fid enums.FID) {
 // ServiceOptions returns octet 2, the Service Options of a Grp_V_Ch_Usr
 // (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC. ok is false for other FLCOs, which
 // use the octet for other fields.
-func (l LCBytes) ServiceOptions() (so layer3.ServiceOptions, ok bool) {
+func (l *LCBytes) ServiceOptions() (so layer3.ServiceOptions, ok bool) {
+	if l == nil {
+		return layer3.ServiceOptions{}, false
+	}
 	if !l.isVoiceChannelUser() {
 		return so, false
 	}
@@ -141,7 +156,10 @@ func (l LCBytes) isVoiceChannelUser() bool {
 // For a group call the target is the group address. It ignores the FID, as
 // FullLinkControl.Addresses does, so for a manufacturer FID the addresses
 // are a best effort. ok is false for other FLCOs.
-func (l LCBytes) Addresses() (target, source uint32, ok bool) {
+func (l *LCBytes) Addresses() (target, source uint32, ok bool) {
+	if l == nil {
+		return 0, 0, false
+	}
 	if !l.isVoiceChannelUser() {
 		return 0, 0, false
 	}
@@ -172,7 +190,10 @@ func (l *LCBytes) SetAddresses(target, source uint32) error {
 // Call returns the call of a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3)
 // LC: group for FLCO 0, the 24-bit target and the source. ok is false for
 // other FLCOs. It ignores the FID, as Addresses does.
-func (l LCBytes) Call() (group bool, target, source uint32, ok bool) {
+func (l *LCBytes) Call() (group bool, target, source uint32, ok bool) {
+	if l == nil {
+		return false, 0, 0, false
+	}
 	target, source, ok = l.Addresses()
 	return ok && l.FLCO() == enums.FLCOGroupVoiceChannelUser, target, source, ok
 }

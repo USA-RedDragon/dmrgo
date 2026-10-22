@@ -22653,7 +22653,7 @@ func dmrgo_pdu_csbk_bytes_addresses(c_self *C.dmrgo_pdu_csbk_bytes_t, c_target *
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1, r2 := (*(*g_layer2_pdu.CSBKBytes)(unsafe.Pointer(c_self))).Addresses()
+	r0, r1, r2 := (*g_layer2_pdu.CSBKBytes)(unsafe.Pointer(c_self)).Addresses()
 	_ = r0
 	_ = r1
 	_ = r2
@@ -22679,7 +22679,7 @@ func dmrgo_pdu_csbk_bytes_crc_ok(c_self *C.dmrgo_pdu_csbk_bytes_t, c_out *C.bool
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := (*(*g_layer2_pdu.CSBKBytes)(unsafe.Pointer(c_self))).CRCOK()
+	r0 := (*g_layer2_pdu.CSBKBytes)(unsafe.Pointer(c_self)).CRCOK()
 	_ = r0
 	if c_out != nil {
 		*c_out = C.bool(r0)
@@ -22697,7 +22697,7 @@ func dmrgo_pdu_csbk_bytes_fid(c_self *C.dmrgo_pdu_csbk_bytes_t, c_out *C.dmrgo_e
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := (*(*g_layer2_pdu.CSBKBytes)(unsafe.Pointer(c_self))).FID()
+	r0 := (*g_layer2_pdu.CSBKBytes)(unsafe.Pointer(c_self)).FID()
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_enums_fid_t(r0)
@@ -22715,7 +22715,7 @@ func dmrgo_pdu_csbk_bytes_group(c_self *C.dmrgo_pdu_csbk_bytes_t, c_group *C.boo
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1 := (*(*g_layer2_pdu.CSBKBytes)(unsafe.Pointer(c_self))).Group()
+	r0, r1 := (*g_layer2_pdu.CSBKBytes)(unsafe.Pointer(c_self)).Group()
 	_ = r0
 	_ = r1
 	if c_group != nil {
@@ -22737,7 +22737,7 @@ func dmrgo_pdu_csbk_bytes_opcode(c_self *C.dmrgo_pdu_csbk_bytes_t, c_out *C.dmrg
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := (*(*g_layer2_pdu.CSBKBytes)(unsafe.Pointer(c_self))).Opcode()
+	r0 := (*g_layer2_pdu.CSBKBytes)(unsafe.Pointer(c_self)).Opcode()
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_pdu_csbk_opcode_t(r0)
@@ -23954,7 +23954,7 @@ func dmrgo_pdu_data_header_bytes_addresses(c_self *C.dmrgo_pdu_data_header_bytes
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1, r2 := (*(*g_layer2_pdu.DataHeaderBytes)(unsafe.Pointer(c_self))).Addresses()
+	r0, r1, r2 := (*g_layer2_pdu.DataHeaderBytes)(unsafe.Pointer(c_self)).Addresses()
 	_ = r0
 	_ = r1
 	_ = r2
@@ -23980,7 +23980,7 @@ func dmrgo_pdu_data_header_bytes_crc_ok(c_self *C.dmrgo_pdu_data_header_bytes_t,
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := (*(*g_layer2_pdu.DataHeaderBytes)(unsafe.Pointer(c_self))).CRCOK()
+	r0 := (*g_layer2_pdu.DataHeaderBytes)(unsafe.Pointer(c_self)).CRCOK()
 	_ = r0
 	if c_out != nil {
 		*c_out = C.bool(r0)
@@ -23998,7 +23998,7 @@ func dmrgo_pdu_data_header_bytes_format(c_self *C.dmrgo_pdu_data_header_bytes_t,
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := (*(*g_layer2_pdu.DataHeaderBytes)(unsafe.Pointer(c_self))).Format()
+	r0 := (*g_layer2_pdu.DataHeaderBytes)(unsafe.Pointer(c_self)).Format()
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_pdu_format_t(r0)
@@ -24016,7 +24016,7 @@ func dmrgo_pdu_data_header_bytes_group(c_self *C.dmrgo_pdu_data_header_bytes_t, 
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1 := (*(*g_layer2_pdu.DataHeaderBytes)(unsafe.Pointer(c_self))).Group()
+	r0, r1 := (*g_layer2_pdu.DataHeaderBytes)(unsafe.Pointer(c_self)).Group()
 	_ = r0
 	_ = r1
 	if c_group != nil {
@@ -25584,7 +25584,7 @@ func dmrgo_pdu_lc_bytes_addresses(c_self *C.dmrgo_pdu_lc_bytes_t, c_target *C.ui
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1, r2 := (*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self))).Addresses()
+	r0, r1, r2 := (*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self)).Addresses()
 	_ = r0
 	_ = r1
 	_ = r2
@@ -25610,7 +25610,7 @@ func dmrgo_pdu_lc_bytes_call(c_self *C.dmrgo_pdu_lc_bytes_t, c_group *C.bool, c_
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1, r2, r3 := (*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self))).Call()
+	r0, r1, r2, r3 := (*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self)).Call()
 	_ = r0
 	_ = r1
 	_ = r2
@@ -25640,7 +25640,7 @@ func dmrgo_pdu_lc_bytes_codeword(c_self *C.dmrgo_pdu_lc_bytes_t, c_dt C.dmrgo_en
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1 := (*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self))).Codeword(g_enums.DataType(c_dt))
+	r0, r1 := (*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self)).Codeword(g_enums.DataType(c_dt))
 	_ = r0
 	if c_out != nil {
 		*(*[12]byte)(unsafe.Pointer(&(*(*[12]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -25661,7 +25661,7 @@ func dmrgo_pdu_lc_bytes_fid(c_self *C.dmrgo_pdu_lc_bytes_t, c_out *C.dmrgo_enums
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := (*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self))).FID()
+	r0 := (*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self)).FID()
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_enums_fid_t(r0)
@@ -25679,7 +25679,7 @@ func dmrgo_pdu_lc_bytes_flco(c_self *C.dmrgo_pdu_lc_bytes_t, c_out *C.dmrgo_enum
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := (*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self))).FLCO()
+	r0 := (*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self)).FLCO()
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_enums_flco_t(r0)
@@ -25697,7 +25697,7 @@ func dmrgo_pdu_lc_bytes_protect_flag(c_self *C.dmrgo_pdu_lc_bytes_t, c_out *C.bo
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := (*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self))).ProtectFlag()
+	r0 := (*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self)).ProtectFlag()
 	_ = r0
 	if c_out != nil {
 		*c_out = C.bool(r0)
@@ -25715,7 +25715,7 @@ func dmrgo_pdu_lc_bytes_reserved(c_self *C.dmrgo_pdu_lc_bytes_t, c_out *C.bool) 
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := (*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self))).Reserved()
+	r0 := (*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self)).Reserved()
 	_ = r0
 	if c_out != nil {
 		*c_out = C.bool(r0)
@@ -25733,7 +25733,7 @@ func dmrgo_pdu_lc_bytes_service_options(c_self *C.dmrgo_pdu_lc_bytes_t, c_so *C.
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1 := (*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self))).ServiceOptions()
+	r0, r1 := (*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self)).ServiceOptions()
 	_ = r0
 	_ = r1
 	if c_so != nil {

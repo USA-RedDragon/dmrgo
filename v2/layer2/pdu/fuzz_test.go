@@ -342,7 +342,8 @@ func checkFullLCBytes(t *testing.T, lc [9]byte) {
 		t.Fatalf("DecodeFullLinkControlBytes(%x).Bytes() = %x", lc, b)
 	}
 	for _, dt := range []enums.DataType{enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC} {
-		cw := must(pdu.LCBytes(lc).Codeword(dt))
+		lcb := pdu.LCBytes(lc)
+		cw := must(lcb.Codeword(dt))
 		got, res, err := pdu.DecodeFullLCCodeword(cw, dt)
 		if err != nil || res.HasErrors() || got != lc {
 			t.Fatalf("%s: DecodeFullLCCodeword(Codeword(%x)) = %x %+v %v", dt, lc, got, res, err)

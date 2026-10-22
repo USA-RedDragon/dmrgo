@@ -100,7 +100,8 @@ func TestLCBytesCodeword_MatchesTableB18(t *testing.T) {
 		p := matrixParity(lc)
 		for _, dt := range []enums.DataType{enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC} {
 			mask, _, _ := pdu.CRCMask(dt)
-			cw, err := pdu.LCBytes(lc).Codeword(dt)
+			lcb := pdu.LCBytes(lc)
+			cw, err := lcb.Codeword(dt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -130,7 +131,8 @@ func TestLCBytesCodeword_RealCapture(t *testing.T) {
 		{enums.DataTypeTerminatorWithLC, "03000000270630b43c52c0ce"},
 	}
 	for _, tt := range tests {
-		cw, err := pdu.LCBytes(lc).Codeword(tt.dt)
+		lcb := pdu.LCBytes(lc)
+		cw, err := lcb.Codeword(tt.dt)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -170,7 +172,8 @@ func TestFullLinkControlEncode(t *testing.T) {
 		if got := hex.EncodeToString(cw[:]); got != want {
 			t.Errorf("dt %s: FullLinkControl.Encode %s, want %s", dt, got, want)
 		}
-		p := must(pdu.LCBytes(lc).Codeword(dt))
+		lcb := pdu.LCBytes(lc)
+		p := must(lcb.Codeword(dt))
 		p[9], p[10], p[11] = 0, 0, 0
 		if err := pdu.Seal(&p, dt); err != nil || hex.EncodeToString(p[:]) != want {
 			t.Errorf("dt %s: Seal gives %x %v, want %s", dt, p, err, want)
@@ -194,7 +197,8 @@ func TestLCBytesCodeword_RejectsOtherDataTypes(t *testing.T) {
 		if dt == enums.DataTypeVoiceLCHeader || dt == enums.DataTypeTerminatorWithLC {
 			continue
 		}
-		if _, err := (pdu.LCBytes{}).Codeword(dt); err == nil {
+		lcb := pdu.LCBytes{}
+		if _, err := lcb.Codeword(dt); err == nil {
 			t.Errorf("dt %d: no error", dt)
 		}
 		if _, _, err := pdu.DecodeFullLCCodeword([12]byte{}, dt); err == nil {
@@ -210,7 +214,8 @@ func TestDecodeFullLCCodeword_CorrectsAndStrictRejects(t *testing.T) {
 	t.Parallel()
 
 	lc := hex9(t, "03000000270630b43c")
-	cw := must(pdu.LCBytes(lc).Codeword(enums.DataTypeVoiceLCHeader))
+	lcb := pdu.LCBytes(lc)
+	cw := must(lcb.Codeword(enums.DataTypeVoiceLCHeader))
 	got, res, err := pdu.DecodeFullLCCodeword(cw, enums.DataTypeVoiceLCHeader)
 	if err != nil || got != lc || res.HasErrors() {
 		t.Fatalf("clean: %x %+v %v", got, res, err)

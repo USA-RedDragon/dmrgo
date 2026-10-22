@@ -767,7 +767,8 @@ func (r *Repeater) endVoice(now time.Duration, s *slot, reason voice.EndReason, 
 
 func (r *Repeater) single(now time.Duration, s *slot, raw *layer2.RawBurst, dt enums.DataType, from Source, dst []Output) []Output {
 	p, res := raw.BPTCPayload()
-	if res.Uncorrectable || dt == enums.DataTypeCSBK && !pdu.CSBKBytes(p).CRCOK() {
+	cb := pdu.CSBKBytes(p)
+	if res.Uncorrectable || dt == enums.DataTypeCSBK && !cb.CRCOK() {
 		return dst
 	}
 	ok, dst := r.admit(now, s, from, nil, dst)

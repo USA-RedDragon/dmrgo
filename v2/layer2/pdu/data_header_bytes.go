@@ -13,7 +13,10 @@ import (
 type DataHeaderBytes [12]byte
 
 // Format returns the Format, the low 4 bits of octet 0.
-func (h DataHeaderBytes) Format() Format {
+func (h *DataHeaderBytes) Format() Format {
+	if h == nil {
+		return 0
+	}
 	return Format(h[0] & 0x0F)
 }
 
@@ -36,7 +39,10 @@ func (h DataHeaderBytes) hasLLIDs() bool {
 // Addresses returns the destination LLID (octets 2 to 4) as target and the
 // source LLID (octets 5 to 7) of the header. ok is false for a P_HEAD and
 // for the reserved formats.
-func (h DataHeaderBytes) Addresses() (target, source uint32, ok bool) {
+func (h *DataHeaderBytes) Addresses() (target, source uint32, ok bool) {
+	if h == nil {
+		return 0, 0, false
+	}
 	if !h.hasLLIDs() {
 		return 0, 0, false
 	}
@@ -65,7 +71,10 @@ func (h *DataHeaderBytes) SetAddresses(target, source uint32) error {
 // Group returns the Group or Individual flag, bit 7 of octet 0: true for a
 // group destination. ok is false for a C_RHEAD, whose bit 7 is reserved, a
 // P_HEAD and the reserved formats.
-func (h DataHeaderBytes) Group() (group, ok bool) {
+func (h *DataHeaderBytes) Group() (group, ok bool) {
+	if h == nil {
+		return false, false
+	}
 	if !h.hasGroupFlag() {
 		return false, false
 	}
@@ -92,8 +101,11 @@ func (h *DataHeaderBytes) SetGroup(group bool) bool {
 
 // CRCOK reports whether octets 10 and 11 hold the CRC of octets 0 to 9 with
 // the Data Header mask, as BlockCRCOK does.
-func (h DataHeaderBytes) CRCOK() bool {
-	return BlockCRCOK(h, enums.DataTypeDataHeader)
+func (h *DataHeaderBytes) CRCOK() bool {
+	if h == nil {
+		return false
+	}
+	return BlockCRCOK(*h, enums.DataTypeDataHeader)
 }
 
 // Reseal writes the CRC of octets 0 to 9 with the Data Header mask into
