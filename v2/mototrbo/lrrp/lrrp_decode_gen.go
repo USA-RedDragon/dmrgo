@@ -988,14 +988,14 @@ func decodeMessageAt(result *Message, data []byte, _o int) (int, error) {
 		return 0, ErrShort
 	}
 	data = data[:_end]
-	if result.Document == ImmediateRequest || result.Document == TriggeredRequest || result.Document == StopRequest || result.Document == ProtocolRequest {
+	if result.Document == DocumentImmediateRequest || result.Document == DocumentTriggeredRequest || result.Document == DocumentStopRequest || result.Document == DocumentProtocolRequest {
 		_onRequest, _err := decodeRequestAt(&result.Request, data, _o)
 		if _err != nil {
 			return 0, _err
 		}
 		_o = _onRequest
 	}
-	if result.Document != ImmediateRequest && result.Document != TriggeredRequest && result.Document != StopRequest && result.Document != ProtocolRequest {
+	if result.Document != DocumentImmediateRequest && result.Document != DocumentTriggeredRequest && result.Document != DocumentStopRequest && result.Document != DocumentProtocolRequest {
 		_onReport, _err := decodeReportAt(&result.Report, data, _o)
 		if _err != nil {
 			return 0, _err
@@ -1020,14 +1020,14 @@ func (s *Message) AppendBinary(dst []byte) ([]byte, error) {
 	_vDocument := uint64(s.Document)
 	dst = append(dst, byte(_vDocument))
 	_lp := len(dst)
-	if s.Document == ImmediateRequest || s.Document == TriggeredRequest || s.Document == StopRequest || s.Document == ProtocolRequest {
+	if s.Document == DocumentImmediateRequest || s.Document == DocumentTriggeredRequest || s.Document == DocumentStopRequest || s.Document == DocumentProtocolRequest {
 		var _errRequest error
 		dst, _errRequest = s.Request.AppendBinary(dst)
 		if _errRequest != nil {
 			return dst[:_n], _errRequest
 		}
 	}
-	if s.Document != ImmediateRequest && s.Document != TriggeredRequest && s.Document != StopRequest && s.Document != ProtocolRequest {
+	if s.Document != DocumentImmediateRequest && s.Document != DocumentTriggeredRequest && s.Document != DocumentStopRequest && s.Document != DocumentProtocolRequest {
 		var _errReport error
 		dst, _errReport = s.Report.AppendBinary(dst)
 		if _errReport != nil {

@@ -148,7 +148,7 @@ func (d *Decoder) Decode(h *pdu.DataHeader, data []byte) (Fix, error) {
 
 func fromReport(f *Fix, m *lrrp.Message) bool {
 	switch m.Document {
-	case lrrp.ImmediateRequest, lrrp.TriggeredRequest, lrrp.StopRequest, lrrp.ProtocolRequest:
+	case lrrp.DocumentImmediateRequest, lrrp.DocumentTriggeredRequest, lrrp.DocumentStopRequest, lrrp.DocumentProtocolRequest:
 		return false
 	default:
 	}

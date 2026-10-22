@@ -43,7 +43,7 @@ func TestSpecReport(t *testing.T) {
 
 	m := decode(t, specReport)
 	r := &m.Report
-	if m.Document != lrrp.ImmediateReport || !r.HasRequestID || hex.EncodeToString(r.RequestID) != "2468ace0" || !r.HasTime || !r.HasCircle2D || !r.HasSpeed {
+	if m.Document != lrrp.DocumentImmediateReport || !r.HasRequestID || hex.EncodeToString(r.RequestID) != "2468ace0" || !r.HasTime || !r.HasCircle2D || !r.HasSpeed {
 		t.Fatalf("got %s", m.String())
 	}
 	if r.Time != (lrrp.Time{Year: 2003, Month: 6, Day: 30, Hour: 7, Minute: 30}) {
@@ -71,7 +71,7 @@ func TestSpecDocuments(t *testing.T) {
 		t.Errorf("triggered report %s", m.String())
 	}
 	m = decode(t, "0f0622042468ace0")
-	if m.Document != lrrp.StopRequest || !m.Request.HasRequestID {
+	if m.Document != lrrp.DocumentStopRequest || !m.Request.HasRequestID {
 		t.Errorf("stop request %s", m.String())
 	}
 	m = decode(t, "110722042468ace038")
@@ -101,7 +101,7 @@ func TestTRBOnetRequests(t *testing.T) {
 func TestBuildReport(t *testing.T) {
 	t.Parallel()
 
-	m := &lrrp.Message{Document: lrrp.TriggeredReport}
+	m := &lrrp.Message{Document: lrrp.DocumentTriggeredReport}
 	r := &m.Report
 	r.RequestID, r.HasRequestID = []byte{1}, true
 	r.Point3D, r.HasPoint3D = lrrp.Point3D{Latitude: -33.5, Longitude: -70.25, Altitude: -12.5}, true
@@ -152,7 +152,7 @@ func TestErrors(t *testing.T) {
 func TestNames(t *testing.T) {
 	t.Parallel()
 
-	if lrrp.TriggeredReport.String() != "Triggered Location Report" || lrrp.DocumentID(2).String() != "DocumentID(2)" {
+	if lrrp.DocumentTriggeredReport.String() != "Triggered Location Report" || lrrp.DocumentID(2).String() != "DocumentID(2)" {
 		t.Error("names")
 	}
 }
