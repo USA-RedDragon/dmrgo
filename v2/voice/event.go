@@ -205,9 +205,14 @@ const (
 	// are set.
 	EventVoice
 	// EventEmbedded is an embedded LC that is not the call LC, such as GPS
-	// or a talker alias block. Call and LC are set.
+	// or a talker alias block. Call and LC are set. It always comes after
+	// the EventCallStart of its call: on late entry, the Receiver holds the
+	// last one before the call LC and appends it right after
+	// EventCallStart, and drops it when no call LC comes.
 	EventEmbedded
 	// EventTalkerAlias is a complete talker alias. Call and Text are set.
+	// It comes after the EventCallStart of its call, as EventEmbedded does,
+	// and after the EventEmbedded that completed it.
 	EventTalkerAlias
 	// EventPIHeader is a PI Header of the call. Call and Burst are set.
 	EventPIHeader
