@@ -161,8 +161,8 @@ type slot struct {
 }
 
 // Repeater is the base station of one carrier with two slots, as the
-// package doc describes. Make it with New; the methods of a zero Repeater
-// do nothing, and Inbound, Lost and Reject return an error. A Repeater is not safe for
+// package doc describes. Make it with New; a zero Repeater does nothing,
+// and its Reject returns dmrgo.ErrZeroValue. A Repeater is not safe for
 // concurrent use and must not be copied.
 type Repeater struct {
 	mode       Mode
@@ -480,14 +480,14 @@ func (r *Repeater) Lost(now time.Duration, s enums.Slot, from Source, dst []Outp
 // Reject refuses the call on slot s, as for an access rule of the caller,
 // typically on its OutputCallStart. The Repeater drops the rest of the call
 // and gives it no hang time; OutputCallEnd follows when the call ends. It
-// returns ErrSlot for a slot other than Slot1 or Slot2, and does nothing
-// for a slot without a call.
+// returns dmrgo.ErrZeroValue on a zero Repeater and ErrSlot for a slot
+// other than Slot1 or Slot2, and does nothing for a slot without a call.
 func (r *Repeater) Reject(s enums.Slot) error {
 	if r == nil {
 		return dmrgo.ErrNilReceiver
 	}
 	if r.b == nil {
-		return errZero
+		return dmrgo.ErrZeroValue
 	}
 	sl := r.slot(s)
 	if sl == nil {

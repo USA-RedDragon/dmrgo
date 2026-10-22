@@ -186,6 +186,10 @@ func TestReject(t *testing.T) {
 	if !errors.Is(r.Reject(enums.SlotUnknown), bs.ErrSlot) {
 		t.Error("Reject of SlotUnknown")
 	}
+	var zero bs.Repeater
+	if !errors.Is(zero.Reject(enums.Slot1), dmrgo.ErrZeroValue) {
+		t.Error("Reject on a zero Repeater")
+	}
 }
 
 func TestDataSMS(t *testing.T) {
