@@ -1,18 +1,18 @@
-package auth_test
+package trunkauth_test
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/trunk/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/trunk/trunkauth"
 )
 
-var testKey = [auth.KeyLen]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10}
+var testKey = [trunkauth.KeyLen]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10}
 
 func TestResponseTable6_15(t *testing.T) {
 	t.Parallel()
 
-	if got := auth.Response(0x7A17C0, testKey, 0); got != 0xE8CA1D {
+	if got := trunkauth.Response(0x7A17C0, testKey, 0); got != 0xE8CA1D {
 		t.Errorf("Response = %06X, want E8CA1D", got)
 	}
 }
@@ -20,7 +20,7 @@ func TestResponseTable6_15(t *testing.T) {
 func TestResponseTable6_16(t *testing.T) {
 	t.Parallel()
 
-	if got := auth.Response(0x7A17C0, testKey, 0x010203); got != 0xE9C81E {
+	if got := trunkauth.Response(0x7A17C0, testKey, 0x010203); got != 0xE9C81E {
 		t.Errorf("Response with PSN = %06X, want E9C81E", got)
 	}
 }
@@ -28,10 +28,10 @@ func TestResponseTable6_16(t *testing.T) {
 func TestResponseHighBits(t *testing.T) {
 	t.Parallel()
 
-	if auth.Response(0xFF7A17C0, testKey, 0xFF000000) != 0xE8CA1D {
+	if trunkauth.Response(0xFF7A17C0, testKey, 0xFF000000) != 0xE8CA1D {
 		t.Error("bits above 24 changed the response")
 	}
-	if auth.Response(0x7A17C1, testKey, 0) == 0xE8CA1D {
+	if trunkauth.Response(0x7A17C1, testKey, 0) == 0xE8CA1D {
 		t.Error("another challenge gave the same response")
 	}
 }
@@ -39,16 +39,16 @@ func TestResponseHighBits(t *testing.T) {
 func FuzzResponse(f *testing.F) {
 	f.Add(uint32(0x7A17C0), testKey[:], uint32(0))
 	f.Fuzz(func(t *testing.T, challenge uint32, key []byte, psn uint32) {
-		var k [auth.KeyLen]byte
+		var k [trunkauth.KeyLen]byte
 		copy(k[:], key)
-		r := auth.Response(challenge, k, psn)
-		if r > 0xFFFFFF || r^auth.Response(challenge, k, 0) != psn&0xFFFFFF || r != rc4Response(challenge, k, psn) {
+		r := trunkauth.Response(challenge, k, psn)
+		if r > 0xFFFFFF || r^trunkauth.Response(challenge, k, 0) != psn&0xFFFFFF || r != rc4Response(challenge, k, psn) {
 			t.Fatalf("Response(%06X, %x, %06X) = %06X", challenge, k, psn, r)
 		}
 	})
 }
 
-func rc4Response(challenge uint32, k [auth.KeyLen]byte, psn uint32) uint32 {
+func rc4Response(challenge uint32, k [trunkauth.KeyLen]byte, psn uint32) uint32 {
 	key := append([]byte{byte(challenge >> 16), byte(challenge >> 8), byte(challenge)}, k[:]...)
 	s := make([]int, 256)
 	for i := range s {
@@ -73,8 +73,8 @@ func rc4Response(challenge uint32, k [auth.KeyLen]byte, psn uint32) uint32 {
 // ExampleResponse computes the answer of an MS to the challenge of a
 // C_AHOY, with the test vector of ETSI TS 102 361-4 V1.12.1 Table 6.15.
 func ExampleResponse() {
-	key := [auth.KeyLen]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
-	fmt.Printf("%06X\n", auth.Response(0x7A17C0, key, 0))
+	key := [trunkauth.KeyLen]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+	fmt.Printf("%06X\n", trunkauth.Response(0x7A17C0, key, 0))
 	// Output:
 	// E8CA1D
 }

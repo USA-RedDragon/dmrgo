@@ -8,7 +8,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
-	"github.com/USA-RedDragon/dmrgo/v2/trunk/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/trunk/trunkauth"
 )
 
 func ExampleFollower() {
@@ -51,7 +51,7 @@ func ExampleFollower() {
 // ExampleMS_AuthResponse answers the authentication challenge of a TSCC
 // with the key of the MS, as in ETSI TS 102 361-4 V1.12.1 Table 6.15.
 func ExampleMS_AuthResponse() {
-	key := [auth.KeyLen]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+	key := [trunkauth.KeyLen]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 	ms, _ := trunk.NewMS(&trunk.MSConfig{Address: 3120001, NoRegistration: true})
 	out := make([]trunk.Output, 0, trunk.MaxOutputs)
 
@@ -69,7 +69,7 @@ func ExampleMS_AuthResponse() {
 			if o.Kind != trunk.OutputAuthChallenge {
 				continue
 			}
-			out = ms.AuthResponse(now, auth.Response(o.Challenge, key, 0), out[:0])
+			out = ms.AuthResponse(now, trunkauth.Response(o.Challenge, key, 0), out[:0])
 			b, _ := layer2.NewBurstFromBytes(out[0].Burst)
 			c, ok := b.Data.(*pdu.CSBK)
 			if !ok {
