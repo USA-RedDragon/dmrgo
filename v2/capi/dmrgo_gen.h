@@ -660,6 +660,14 @@ typedef struct dmrgo_voice_frame_quality_t dmrgo_voice_frame_quality_t;
 typedef struct dmrgo_voice_interrupter_t dmrgo_voice_interrupter_t;
 /* Go: voice.InterrupterConfig. InterrupterConfig configures NewInterrupter. */
 typedef struct dmrgo_voice_interrupter_config_t dmrgo_voice_interrupter_config_t;
+/* Go: voice.Jitter. Jitter is a network jitter buffer for the packets of one slot, like the Jitter of the DMR Network section of MMDVMHost. */
+typedef struct dmrgo_voice_jitter_t dmrgo_voice_jitter_t;
+/* Go: voice.JitterConfig. JitterConfig configures NewJitter. */
+typedef struct dmrgo_voice_jitter_config_t dmrgo_voice_jitter_config_t;
+/* Go: voice.JitterPacket. JitterPacket is a packet that Pop returns. */
+typedef struct dmrgo_voice_jitter_packet_t dmrgo_voice_jitter_packet_t;
+/* Go: voice.JitterStats. JitterStats counts what a Jitter dropped and how often it started its playout again. */
+typedef struct dmrgo_voice_jitter_stats_t dmrgo_voice_jitter_stats_t;
 /* Go: voice.Output. Output is one result of a Transmitter or an Interrupter. */
 typedef struct dmrgo_voice_output_t dmrgo_voice_output_t;
 /* Go: voice.Receiver. Receiver turns the bursts of one logical channel into call events, as the package doc describes. */
@@ -919,6 +927,8 @@ typedef uint8_t dmrgo_voice_end_reason_t;
 typedef uint8_t dmrgo_voice_event_kind_t;
 /* Go: voice.InterrupterState. InterrupterState is the state of an Interrupter. */
 typedef uint8_t dmrgo_voice_interrupter_state_t;
+/* Go: voice.JitterResult. JitterResult is what Push did with a packet. */
+typedef uint8_t dmrgo_voice_jitter_result_t;
 /* Go: voice.Origin. Origin is where a Receiver learned the identity of a call. */
 typedef uint8_t dmrgo_voice_origin_t;
 /* Go: voice.OutputKind. OutputKind is the kind of an Output. */
@@ -5359,6 +5369,39 @@ struct dmrgo_voice_interrupter_config_t {
 	dmrgo_duration_t lead;
 };
 
+struct dmrgo_voice_jitter_packet_t {
+	/* Burst is the burst of the packet. HasBurst reports whether it is set. */
+	dmrgo_layer2_raw_burst_t burst;
+	/* HasBurst is false for a transport frame without a burst, that Push took with a NULL raw. */
+	bool has_burst;
+	/* Hint is the Hint that Push took, with At set to Due. */
+	dmrgo_layer2_hint_t hint;
+	/* Source is the src that Push took. */
+	uint32_t source;
+	/* Due is the time at which the packet plays: the caller hands it to a Receiver or a Repeater with this time as now. */
+	dmrgo_duration_t due;
+};
+
+struct dmrgo_voice_jitter_stats_t {
+	/* Late is the number of packets dropped as late: those that Push returned DMRGO_VOICE_JITTER_LATE for, and buffered packets that a later packet made late, at the start of the playout or when it moved earlier. */
+	uint32_t late;
+	/* Duplicates is the number of packets that Push returned DMRGO_VOICE_JITTER_DUPLICATE for. */
+	uint32_t duplicates;
+	/* Overflows is the number of packets that Push returned DMRGO_VOICE_JITTER_OVERFLOW for. */
+	uint32_t overflows;
+	/* Resyncs is the number of times the playout started again after a stall longer than the delay, a jump of the sequence number, or a Pop that came more than the delay after a Due time. */
+	uint32_t resyncs;
+};
+
+struct dmrgo_voice_jitter_config_t {
+	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
+	size_t size;
+	/* Delay is the playout delay: the time from the arrival of the packet that came first for its place in the stream to the Pop that returns it. A packet that comes up to Delay later than that, in any order, plays in its place. 0 means DMRGO_VOICE_DEFAULT_JITTER, and a negative value turns the buffer off: Push then returns DMRGO_VOICE_JITTER_BYPASS for every packet. At most DMRGO_VOICE_MAX_JITTER. */
+	dmrgo_duration_t delay;
+	/* Lead is the time from a Pop to the Due time of the packet it returns, for a Transmitter that relays the call with this dmrgo_voice_transmitter_config_t.lead, so that the packet is there before the Transmitter sends its burst. It must not be negative. */
+	dmrgo_duration_t lead;
+};
+
 struct dmrgo_voice_receiver_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
@@ -7686,6 +7729,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_VOICE_DEFAULT_HOLDOFF_MAX 1000000000
 /* Go: voice.DefaultIdleSearch. DefaultIdleSearch is the idle search timer T_IdleSrch of a polite call, the most that ETSI TS 102 361-1 clause F.1 allows. */
 #define DMRGO_VOICE_DEFAULT_IDLE_SEARCH 540000000
+/* Go: voice.DefaultJitter. DefaultJitter is the playout delay of a Jitter when dmrgo_voice_jitter_config_t.delay is 0: 360 ms, the default Jitter of the DMR Network section of MMDVMHost. */
+#define DMRGO_VOICE_DEFAULT_JITTER 360000000
 /* Go: voice.DefaultLost. DefaultLost is the time without a burst after which a Receiver ends a call, when dmrgo_voice_receiver_config_t.lost is 0. */
 #define DMRGO_VOICE_DEFAULT_LOST 1000000000
 /* Go: voice.DefaultQueue. DefaultQueue is the number of vocoder slots that a Transmitter buffers when dmrgo_voice_transmitter_config_t.queue is 0 and dmrgo_voice_transmitter_config_t.headers is 0 or 1: three bursts. */
@@ -7734,10 +7779,22 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_VOICE_INTERRUPTER_SENDING ((dmrgo_voice_interrupter_state_t)1)
 /* Go: voice.InterrupterWaiting. InterrupterWaiting waits T_RCtimer for the Terminator with LC. */
 #define DMRGO_VOICE_INTERRUPTER_WAITING ((dmrgo_voice_interrupter_state_t)2)
+/* Go: voice.JitterBuffered. JitterBuffered is a packet that Pop returns later. */
+#define DMRGO_VOICE_JITTER_BUFFERED ((dmrgo_voice_jitter_result_t)1)
+/* Go: voice.JitterBypass. JitterBypass is a packet that the Jitter does not take: the buffer is off, the packet has no dmrgo_layer2_hint_t.has_seq, or two other streams wait. */
+#define DMRGO_VOICE_JITTER_BYPASS ((dmrgo_voice_jitter_result_t)2)
+/* Go: voice.JitterDuplicate. JitterDuplicate is a packet dropped as a copy of one buffered or played. */
+#define DMRGO_VOICE_JITTER_DUPLICATE ((dmrgo_voice_jitter_result_t)4)
+/* Go: voice.JitterLate. JitterLate is a packet dropped because its Due time has passed, or because a later packet has played. */
+#define DMRGO_VOICE_JITTER_LATE ((dmrgo_voice_jitter_result_t)3)
+/* Go: voice.JitterOverflow. JitterOverflow is a packet dropped because it is too far ahead of the packet that plays next for the buffer to hold it. */
+#define DMRGO_VOICE_JITTER_OVERFLOW ((dmrgo_voice_jitter_result_t)5)
 /* Go: voice.MaxEvents. MaxEvents is the most events that one call of a Receiver method appends. */
 #define DMRGO_VOICE_MAX_EVENTS 16
 /* Go: voice.MaxHeaders. MaxHeaders is the most Voice LC Headers before burst A. */
 #define DMRGO_VOICE_MAX_HEADERS 8
+/* Go: voice.MaxJitter. MaxJitter is the longest playout delay. */
+#define DMRGO_VOICE_MAX_JITTER 2000000000
 /* Go: voice.MaxOutputs. MaxOutputs is the most outputs that one call of a Transmitter or Interrupter method appends: one burst, and DMRGO_VOICE_OUTPUT_ENDED after the last terminator. */
 #define DMRGO_VOICE_MAX_OUTPUTS 2
 /* Go: voice.MaxQueue. MaxQueue is the most vocoder slots that a Transmitter buffers. */
@@ -11025,8 +11082,26 @@ int dmrgo_voice_interrupter_tick_need(dmrgo_voice_interrupter_t *self, dmrgo_dur
 int dmrgo_voice_interrupter_tick(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: voice.InterrupterState.String. String returns the name of the state. */
 int dmrgo_voice_interrupter_state_string(dmrgo_voice_interrupter_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* dmrgo_voice_jitter_free frees the handle. self may be NULL. */
+int dmrgo_voice_jitter_free(dmrgo_voice_jitter_t *self);
+/* Go: voice.Jitter.Deadline. Deadline returns the time at which the next packet is to be popped: its Due time less Lead. */
+int dmrgo_voice_jitter_deadline(dmrgo_voice_jitter_t *self, dmrgo_duration_t *at, bool *ok);
+/* Go: voice.Jitter.Len. Len returns the number of packets that wait. */
+int dmrgo_voice_jitter_len(dmrgo_voice_jitter_t *self, int64_t *out);
+/* Go: voice.Jitter.Pop. Pop returns in p the next packet when now has reached its Due time less Lead, and reports whether it did. p may be NULL. */
+int dmrgo_voice_jitter_pop(dmrgo_voice_jitter_t *self, dmrgo_duration_t now, dmrgo_voice_jitter_packet_t *p, bool *out);
+/* Go: voice.Jitter.Push. Push takes the packet raw with Hint h from the sender src, such as a peer ID, at the time now, and returns what it did with it. raw may be NULL. */
+int dmrgo_voice_jitter_push(dmrgo_voice_jitter_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, uint32_t src, dmrgo_voice_jitter_result_t *out);
+/* Go: voice.Jitter.Reset. Reset drops every packet and forgets the streams and the counts. */
+int dmrgo_voice_jitter_reset(dmrgo_voice_jitter_t *self);
+/* Go: voice.Jitter.Stats. Stats returns the counts since NewJitter or Reset. */
+int dmrgo_voice_jitter_stats(dmrgo_voice_jitter_t *self, dmrgo_voice_jitter_stats_t *out);
+/* Go: voice.JitterResult.String. String returns the name of the result. */
+int dmrgo_voice_jitter_result_string(dmrgo_voice_jitter_result_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: voice.NewInterrupter. NewInterrupter returns an Interrupter for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, a Slot that is not a dmrgo_enums_slot_t value, Retries above DMRGO_VOICE_MAX_RETRIES, Repeats out of range, or a negative Lead. cfg may be NULL. */
 int dmrgo_voice_new_interrupter(const dmrgo_voice_interrupter_config_t *cfg, dmrgo_voice_interrupter_t **out);
+/* Go: voice.NewJitter. NewJitter returns a Jitter for cfg. It returns a DMRGO_ERR_CONFIG for a field out of range. cfg may be NULL. */
+int dmrgo_voice_new_jitter(const dmrgo_voice_jitter_config_t *cfg, dmrgo_voice_jitter_t **out);
 /* Go: voice.NewReceiver. NewReceiver returns a Receiver for cfg. It returns a DMRGO_ERR_CONFIG when the color code is above 15. cfg may be NULL. */
 int dmrgo_voice_new_receiver(const dmrgo_voice_receiver_config_t *cfg, dmrgo_voice_receiver_t **out);
 /* Go: voice.NewTransmitter. NewTransmitter returns a Transmitter for cfg. It returns a DMRGO_ERR_CONFIG for a field out of range. cfg may be NULL. */

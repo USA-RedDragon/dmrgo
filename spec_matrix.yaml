@@ -134,6 +134,7 @@ ignore_files:
   - v2/voice/event.go
   - v2/voice/position.go
   - v2/voice/receiver.go
+  - v2/voice/jitter.go
   - v2/csbk/decode.go
   - v2/csbk/errors.go
   - v2/csbk/nocopy.go

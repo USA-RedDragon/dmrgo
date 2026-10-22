@@ -1394,6 +1394,7 @@ sym #define DMRGO_TRUNK_TSCC_UDT ((dmrgo_trunk_tscc_output_kind_t)9)
 sym #define DMRGO_TRUNK_TSCC_USBD ((dmrgo_trunk_tscc_output_kind_t)10)
 sym #define DMRGO_VOICE_DEFAULT_HOLDOFF_MAX 1000000000
 sym #define DMRGO_VOICE_DEFAULT_IDLE_SEARCH 540000000
+sym #define DMRGO_VOICE_DEFAULT_JITTER 360000000
 sym #define DMRGO_VOICE_DEFAULT_LOST 1000000000
 sym #define DMRGO_VOICE_DEFAULT_QUEUE 9
 sym #define DMRGO_VOICE_END_DATA_SYNC ((dmrgo_voice_end_reason_t)2)
@@ -1423,8 +1424,14 @@ sym #define DMRGO_VOICE_INTERRUPTER_LOST_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 sym #define DMRGO_VOICE_INTERRUPTER_SENDING ((dmrgo_voice_interrupter_state_t)1)
 sym #define DMRGO_VOICE_INTERRUPTER_TICK_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 sym #define DMRGO_VOICE_INTERRUPTER_WAITING ((dmrgo_voice_interrupter_state_t)2)
+sym #define DMRGO_VOICE_JITTER_BUFFERED ((dmrgo_voice_jitter_result_t)1)
+sym #define DMRGO_VOICE_JITTER_BYPASS ((dmrgo_voice_jitter_result_t)2)
+sym #define DMRGO_VOICE_JITTER_DUPLICATE ((dmrgo_voice_jitter_result_t)4)
+sym #define DMRGO_VOICE_JITTER_LATE ((dmrgo_voice_jitter_result_t)3)
+sym #define DMRGO_VOICE_JITTER_OVERFLOW ((dmrgo_voice_jitter_result_t)5)
 sym #define DMRGO_VOICE_MAX_EVENTS 16
 sym #define DMRGO_VOICE_MAX_HEADERS 8
+sym #define DMRGO_VOICE_MAX_JITTER 2000000000
 sym #define DMRGO_VOICE_MAX_OUTPUTS 2
 sym #define DMRGO_VOICE_MAX_QUEUE 192
 sym #define DMRGO_VOICE_MAX_REPEATS 8
@@ -3078,7 +3085,16 @@ sym int dmrgo_voice_interrupter_state(dmrgo_voice_interrupter_t *self, dmrgo_voi
 sym int dmrgo_voice_interrupter_state_string(dmrgo_voice_interrupter_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_voice_interrupter_tick(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_voice_interrupter_tick_need(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+sym int dmrgo_voice_jitter_deadline(dmrgo_voice_jitter_t *self, dmrgo_duration_t *at, bool *ok);
+sym int dmrgo_voice_jitter_free(dmrgo_voice_jitter_t *self);
+sym int dmrgo_voice_jitter_len(dmrgo_voice_jitter_t *self, int64_t *out);
+sym int dmrgo_voice_jitter_pop(dmrgo_voice_jitter_t *self, dmrgo_duration_t now, dmrgo_voice_jitter_packet_t *p, bool *out);
+sym int dmrgo_voice_jitter_push(dmrgo_voice_jitter_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, uint32_t src, dmrgo_voice_jitter_result_t *out);
+sym int dmrgo_voice_jitter_reset(dmrgo_voice_jitter_t *self);
+sym int dmrgo_voice_jitter_result_string(dmrgo_voice_jitter_result_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_voice_jitter_stats(dmrgo_voice_jitter_t *self, dmrgo_voice_jitter_stats_t *out);
 sym int dmrgo_voice_new_interrupter(const dmrgo_voice_interrupter_config_t *cfg, dmrgo_voice_interrupter_t **out);
+sym int dmrgo_voice_new_jitter(const dmrgo_voice_jitter_config_t *cfg, dmrgo_voice_jitter_t **out);
 sym int dmrgo_voice_new_receiver(const dmrgo_voice_receiver_config_t *cfg, dmrgo_voice_receiver_t **out);
 sym int dmrgo_voice_new_transmitter(const dmrgo_voice_transmitter_config_t *cfg, dmrgo_voice_transmitter_t **out);
 sym int dmrgo_voice_origin_string(dmrgo_voice_origin_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -3245,6 +3261,7 @@ sym typedef uint8_t dmrgo_trunk_tscc_output_kind_t;
 sym typedef uint8_t dmrgo_voice_end_reason_t;
 sym typedef uint8_t dmrgo_voice_event_kind_t;
 sym typedef uint8_t dmrgo_voice_interrupter_state_t;
+sym typedef uint8_t dmrgo_voice_jitter_result_t;
 sym typedef uint8_t dmrgo_voice_origin_t;
 sym typedef uint8_t dmrgo_voice_output_kind_t;
 sym typedef uint8_t dmrgo_voice_state_t;
@@ -3521,6 +3538,9 @@ type struct dmrgo_voice_call_t { bool group; uint32_t target; uint32_t source; d
 type struct dmrgo_voice_event_t { dmrgo_voice_event_kind_t kind; dmrgo_voice_call_t call; dmrgo_enums_voice_burst_type_t position; dmrgo_layer2_raw_burst_t burst; dmrgo_voice_frame_quality_t frames[3]; uint8_t lost; dmrgo_pdu_full_link_control_t lc; uint8_t *text; size_t text_len; dmrgo_voice_end_reason_t reason; dmrgo_voice_stats_t stats; };
 type struct dmrgo_voice_frame_quality_t { uint8_t errors_corrected; bool bad; };
 type struct dmrgo_voice_interrupter_config_t { size_t size; dmrgo_enums_color_code_t color_code; dmrgo_duration_t wait; int64_t retries; int64_t repeats; dmrgo_layer2_burst_t *scratch; dmrgo_enums_slot_t slot; dmrgo_duration_t lead; };
+type struct dmrgo_voice_jitter_config_t { size_t size; dmrgo_duration_t delay; dmrgo_duration_t lead; };
+type struct dmrgo_voice_jitter_packet_t { dmrgo_layer2_raw_burst_t burst; bool has_burst; dmrgo_layer2_hint_t hint; uint32_t source; dmrgo_duration_t due; };
+type struct dmrgo_voice_jitter_stats_t { uint32_t late; uint32_t duplicates; uint32_t overflows; uint32_t resyncs; };
 type struct dmrgo_voice_output_t { dmrgo_voice_output_kind_t kind; dmrgo_layer2_raw_burst_t burst; dmrgo_duration_t due; dmrgo_layer2_hint_t hint; bool fill; dmrgo_voice_end_reason_t reason; };
 type struct dmrgo_voice_receiver_config_t { size_t size; bool has_color_code; dmrgo_enums_color_code_t color_code; dmrgo_duration_t lost; dmrgo_duration_t hang; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_voice_stats_t { uint32_t bursts; uint32_t lost; uint32_t duplicates; uint32_t late; uint32_t bits_checked; uint32_t bit_errors; dmrgo_duration_t duration; };
