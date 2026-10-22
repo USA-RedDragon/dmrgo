@@ -112,8 +112,8 @@
 //   - trunk: the Tier III channel tables, a Follower that follows the
 //     calls of a trunked site, an MS that registers and makes calls, and a
 //     TSCC that runs a single site.
-//   - trunk/auth: the answer of an MS to the authentication challenge of a
-//     TSCC.
+//   - trunk/trunkauth: the answer of an MS to the authentication challenge
+//     of a TSCC.
 //
 // Applications in data packets:
 //

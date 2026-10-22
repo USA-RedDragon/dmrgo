@@ -143,15 +143,15 @@ prefix github.com/USA-RedDragon/dmrgo/v2/nmea dmrgo_nmea_
 prefix github.com/USA-RedDragon/dmrgo/v2/shortdata dmrgo_shortdata_
 prefix github.com/USA-RedDragon/dmrgo/v2/sms dmrgo_sms_
 prefix github.com/USA-RedDragon/dmrgo/v2/transport/dmrd dmrgo_dmrd_
-prefix github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth dmrgo_dmrd_auth_
+prefix github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdauth dmrgo_dmrdauth_
 prefix github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession dmrgo_dmrdsession_
 prefix github.com/USA-RedDragon/dmrgo/v2/transport/hytera dmrgo_hytera_
 prefix github.com/USA-RedDragon/dmrgo/v2/transport/ipsc dmrgo_ipsc_
-prefix github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth dmrgo_ipsc_auth_
+prefix github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscauth dmrgo_ipscauth_
 prefix github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession dmrgo_ipscsession_
 prefix github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm dmrgo_mmdvm_
 prefix github.com/USA-RedDragon/dmrgo/v2/trunk dmrgo_trunk_
-prefix github.com/USA-RedDragon/dmrgo/v2/trunk/auth dmrgo_trunk_auth_
+prefix github.com/USA-RedDragon/dmrgo/v2/trunk/trunkauth dmrgo_trunkauth_
 prefix github.com/USA-RedDragon/dmrgo/v2/vocoder dmrgo_vocoder_
 prefix github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2 dmrgo_codec2_
 prefix github.com/USA-RedDragon/dmrgo/v2/vocoder/dvsi dmrgo_dvsi_
@@ -441,6 +441,7 @@ sym #define DMRGO_DATA_SENDER_WAIT_RESPONSE ((dmrgo_data_sender_state_t)4)
 sym #define DMRGO_DATA_STATE_CALL ((dmrgo_data_state_t)1)
 sym #define DMRGO_DATA_STATE_IDLE ((dmrgo_data_state_t)0)
 sym #define DMRGO_DATA_STATE_RECEIVING ((dmrgo_data_state_t)2)
+sym #define DMRGO_DMRDAUTH_KEY_LEN 20
 sym #define DMRGO_DMRDSESSION_KEEPALIVE_DEFAULT INT64_C(10000000000)
 sym #define DMRGO_DMRDSESSION_LOGIN_TIMEOUT_DEFAULT INT64_C(15000000000)
 sym #define DMRGO_DMRDSESSION_MAX_OPTIONS 291
@@ -470,7 +471,6 @@ sym #define DMRGO_DMRDSESSION_STATE_OPTIONS ((dmrgo_dmrdsession_state_t)5)
 sym #define DMRGO_DMRDSESSION_STATE_RUNNING ((dmrgo_dmrdsession_state_t)6)
 sym #define DMRGO_DMRDSESSION_STATE_WAIT ((dmrgo_dmrdsession_state_t)1)
 sym #define DMRGO_DMRDSESSION_TIMEOUT_DEFAULT INT64_C(60000000000)
-sym #define DMRGO_DMRD_AUTH_KEY_LEN 20
 sym #define DMRGO_DMRD_COMMAND_BCKA ((dmrgo_dmrd_command_t)25)
 sym #define DMRGO_DMRD_COMMAND_BCSQ ((dmrgo_dmrd_command_t)26)
 sym #define DMRGO_DMRD_COMMAND_BCST ((dmrgo_dmrd_command_t)27)
@@ -928,9 +928,11 @@ sym #define DMRGO_HYTERA_SLOT_TYPE_VOICE_E ((dmrgo_hytera_slot_type_t)48059)
 sym #define DMRGO_HYTERA_SLOT_TYPE_VOICE_F ((dmrgo_hytera_slot_type_t)52428)
 sym #define DMRGO_HYTERA_SLOT_TYPE_VOICE_LC_HEADER ((dmrgo_hytera_slot_type_t)4369)
 sym #define DMRGO_HYTERA_SLOT_TYPE_WAKEUP ((dmrgo_hytera_slot_type_t)56797)
+sym #define DMRGO_IPSCAUTH_KEY_SIGN_MAX_ITEMS (DMRGO_IPSCAUTH_TRAILER_LEN)
+sym #define DMRGO_IPSCAUTH_TRAILER_LEN 10
 sym #define DMRGO_IPSCSESSION_ALIVE_DEFAULT INT64_C(5000000000)
-sym #define DMRGO_IPSCSESSION_MASTER_SIGN_FOR_MAX_ITEMS (DMRGO_IPSC_AUTH_TRAILER_LEN)
-sym #define DMRGO_IPSCSESSION_MASTER_SIGN_MAX_ITEMS (DMRGO_IPSC_AUTH_TRAILER_LEN)
+sym #define DMRGO_IPSCSESSION_MASTER_SIGN_FOR_MAX_ITEMS (DMRGO_IPSCAUTH_TRAILER_LEN)
+sym #define DMRGO_IPSCSESSION_MASTER_SIGN_MAX_ITEMS (DMRGO_IPSCAUTH_TRAILER_LEN)
 sym #define DMRGO_IPSCSESSION_MAX_CONTROL 26
 sym #define DMRGO_IPSCSESSION_MAX_MISSED_DEFAULT 20
 sym #define DMRGO_IPSCSESSION_MAX_PACKET 1500
@@ -943,7 +945,7 @@ sym #define DMRGO_IPSCSESSION_OUTPUT_DROPPED ((dmrgo_ipscsession_output_kind_t)6
 sym #define DMRGO_IPSCSESSION_OUTPUT_PEERS ((dmrgo_ipscsession_output_kind_t)4)
 sym #define DMRGO_IPSCSESSION_OUTPUT_SEND ((dmrgo_ipscsession_output_kind_t)1)
 sym #define DMRGO_IPSCSESSION_OUTPUT_UP ((dmrgo_ipscsession_output_kind_t)2)
-sym #define DMRGO_IPSCSESSION_PEER_SIGN_MAX_ITEMS (DMRGO_IPSC_AUTH_TRAILER_LEN)
+sym #define DMRGO_IPSCSESSION_PEER_SIGN_MAX_ITEMS (DMRGO_IPSCAUTH_TRAILER_LEN)
 sym #define DMRGO_IPSCSESSION_REASON_ADDRESS ((dmrgo_ipscsession_reason_t)9)
 sym #define DMRGO_IPSCSESSION_REASON_AUTH ((dmrgo_ipscsession_reason_t)5)
 sym #define DMRGO_IPSCSESSION_REASON_CLOSED ((dmrgo_ipscsession_reason_t)2)
@@ -958,8 +960,6 @@ sym #define DMRGO_IPSCSESSION_STATE_IDLE ((dmrgo_ipscsession_state_t)0)
 sym #define DMRGO_IPSCSESSION_STATE_REGISTERING ((dmrgo_ipscsession_state_t)1)
 sym #define DMRGO_IPSCSESSION_STATE_RUNNING ((dmrgo_ipscsession_state_t)2)
 sym #define DMRGO_IPSCSESSION_TIMEOUT_DEFAULT INT64_C(120000000000)
-sym #define DMRGO_IPSC_AUTH_KEY_SIGN_MAX_ITEMS (DMRGO_IPSC_AUTH_TRAILER_LEN)
-sym #define DMRGO_IPSC_AUTH_TRAILER_LEN 10
 sym #define DMRGO_IPSC_BURST_RAW ((dmrgo_ipsc_burst_type_t)31)
 sym #define DMRGO_IPSC_BURST_SYNC_LOST ((dmrgo_ipsc_burst_type_t)19)
 sym #define DMRGO_IPSC_BURST_VOICE ((dmrgo_ipsc_burst_type_t)10)
@@ -1262,8 +1262,8 @@ sym #define DMRGO_TMS_ENCODING_UTF16LE ((dmrgo_tms_encoding_t)4)
 sym #define DMRGO_TMS_TYPE_ACK ((dmrgo_tms_type_t)31)
 sym #define DMRGO_TMS_TYPE_AVAILABILITY ((dmrgo_tms_type_t)16)
 sym #define DMRGO_TMS_TYPE_TEXT ((dmrgo_tms_type_t)0)
-sym #define DMRGO_TRUNK_AUTH_KEY_LEN 16
-sym #define DMRGO_TRUNK_AUTH_MAX_CHALLENGE 16776415
+sym #define DMRGO_TRUNKAUTH_KEY_LEN 16
+sym #define DMRGO_TRUNKAUTH_MAX_CHALLENGE 16776415
 sym #define DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_BURST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_LOST_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
 sym #define DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_TICK_MAX_ITEMS (DMRGO_TRUNK_MAX_OUTPUTS)
@@ -1618,13 +1618,6 @@ sym int dmrgo_data_sender_tick(dmrgo_data_sender_t *self, dmrgo_duration_t now, 
 sym int dmrgo_data_sender_tick_need(dmrgo_data_sender_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 sym int dmrgo_data_state_string(dmrgo_data_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_dmrd_append_free_dmr_static(uint32_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, dmrgo_enums_slot_t s);
-sym int dmrgo_dmrd_auth_bridge_key_free(dmrgo_dmrd_auth_bridge_key_t *self);
-sym int dmrgo_dmrd_auth_bridge_key_sign_in_place(dmrgo_dmrd_auth_bridge_key_t *self, uint8_t *p, size_t p_len);
-sym int dmrgo_dmrd_auth_bridge_key_verify(dmrgo_dmrd_auth_bridge_key_t *self, const uint8_t *p, size_t p_len, uint8_t *body, size_t body_cap, size_t *body_len, size_t *body_need, bool *ok);
-sym int dmrgo_dmrd_auth_bridge_key_verify_need(dmrgo_dmrd_auth_bridge_key_t *self, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
-sym int dmrgo_dmrd_auth_new_bridge_key(const uint8_t *key, size_t key_len, dmrgo_dmrd_auth_bridge_key_t **out);
-sym int dmrgo_dmrd_auth_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, uint8_t out[32]);
-sym int dmrgo_dmrd_auth_verify_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, const uint8_t *token, size_t token_len, bool *out);
 sym int dmrgo_dmrd_bridge_append_binary(const dmrgo_dmrd_bridge_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_dmrd_bridge_control_append_binary(const dmrgo_dmrd_bridge_control_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_dmrd_classify(const uint8_t *p, size_t p_len, dmrgo_dmrd_dialect_t d, dmrgo_dmrd_command_t *out);
@@ -1725,6 +1718,13 @@ sym int dmrgo_dmrd_repeater_id(const uint8_t *p, size_t p_len, dmrgo_dmrd_dialec
 sym int dmrgo_dmrd_talker_alias_append_binary(const dmrgo_dmrd_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_dmrd_talker_alias_lc(const dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_full_link_control_t *out);
 sym int dmrgo_dmrd_talker_alias_string(const dmrgo_dmrd_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_dmrdauth_bridge_key_free(dmrgo_dmrdauth_bridge_key_t *self);
+sym int dmrgo_dmrdauth_bridge_key_sign_in_place(dmrgo_dmrdauth_bridge_key_t *self, uint8_t *p, size_t p_len);
+sym int dmrgo_dmrdauth_bridge_key_verify(dmrgo_dmrdauth_bridge_key_t *self, const uint8_t *p, size_t p_len, uint8_t *body, size_t body_cap, size_t *body_len, size_t *body_need, bool *ok);
+sym int dmrgo_dmrdauth_bridge_key_verify_need(dmrgo_dmrdauth_bridge_key_t *self, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
+sym int dmrgo_dmrdauth_new_bridge_key(const uint8_t *key, size_t key_len, dmrgo_dmrdauth_bridge_key_t **out);
+sym int dmrgo_dmrdauth_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, uint8_t out[32]);
+sym int dmrgo_dmrdauth_verify_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, const uint8_t *token, size_t token_len, bool *out);
 sym int dmrgo_dmrdsession_bridge_deadline(dmrgo_dmrdsession_bridge_t *self, dmrgo_duration_t *at, bool *ok);
 sym int dmrgo_dmrdsession_bridge_free(dmrgo_dmrdsession_bridge_t *self);
 sym int dmrgo_dmrdsession_bridge_packet(dmrgo_dmrdsession_bridge_t *self, dmrgo_duration_t now, const uint8_t *p, size_t p_len, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
@@ -1963,13 +1963,6 @@ sym int dmrgo_ip_udp_header_append_binary(const dmrgo_ip_udp_header_t *self, uin
 sym int dmrgo_ip_udp_header_string(const dmrgo_ip_udp_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_ip_udp_string(const dmrgo_ip_udp_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_ipsc_append_peer_list_reply(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, uint32_t master, const dmrgo_ipsc_peer_entry_t *entries, size_t entries_len);
-sym int dmrgo_ipsc_auth_key_free(dmrgo_ipsc_auth_key_t *self);
-sym int dmrgo_ipsc_auth_key_sign(dmrgo_ipsc_auth_key_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-sym int dmrgo_ipsc_auth_key_sign_need(dmrgo_ipsc_auth_key_t *self, size_t *items, size_t *arena);
-sym int dmrgo_ipsc_auth_key_verify(dmrgo_ipsc_auth_key_t *self, const uint8_t *p, size_t p_len, uint8_t *body, size_t body_cap, size_t *body_len, size_t *body_need, bool *ok);
-sym int dmrgo_ipsc_auth_key_verify_need(dmrgo_ipsc_auth_key_t *self, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
-sym int dmrgo_ipsc_auth_new_key(const uint8_t k[20], dmrgo_ipsc_auth_key_t **out);
-sym int dmrgo_ipsc_auth_parse_key(const char *s, size_t s_len, uint8_t out[20]);
 sym int dmrgo_ipsc_burst_type_data_type(dmrgo_ipsc_burst_type_t self, dmrgo_enums_data_type_t *data_type, bool *ok);
 sym int dmrgo_ipsc_burst_type_string(dmrgo_ipsc_burst_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_ipsc_burst_type_type(dmrgo_ipsc_burst_type_t self, dmrgo_ipsc_burst_type_t *out);
@@ -2009,6 +2002,13 @@ sym int dmrgo_ipsc_user_is_voice(const dmrgo_ipsc_user_t *self, bool *out);
 sym int dmrgo_ipsc_user_raw_burst(const dmrgo_ipsc_user_t *self, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
 sym int dmrgo_ipsc_user_set_call(dmrgo_ipsc_user_t *self, bool group, uint32_t target, uint32_t source);
 sym int dmrgo_ipsc_user_set_raw_burst(dmrgo_ipsc_user_t *self, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_fec_result_t *out);
+sym int dmrgo_ipscauth_key_free(dmrgo_ipscauth_key_t *self);
+sym int dmrgo_ipscauth_key_sign(dmrgo_ipscauth_key_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_ipscauth_key_sign_need(dmrgo_ipscauth_key_t *self, size_t *items, size_t *arena);
+sym int dmrgo_ipscauth_key_verify(dmrgo_ipscauth_key_t *self, const uint8_t *p, size_t p_len, uint8_t *body, size_t body_cap, size_t *body_len, size_t *body_need, bool *ok);
+sym int dmrgo_ipscauth_key_verify_need(dmrgo_ipscauth_key_t *self, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
+sym int dmrgo_ipscauth_new_key(const uint8_t k[20], dmrgo_ipscauth_key_t **out);
+sym int dmrgo_ipscauth_parse_key(const char *s, size_t s_len, uint8_t out[20]);
 sym int dmrgo_ipscsession_addr_of(const uint8_t *ip, size_t ip_len, int64_t port, dmrgo_ipscsession_addr_t *a, bool *ok);
 sym int dmrgo_ipscsession_master_adopt(dmrgo_ipscsession_master_t *self, dmrgo_duration_t now, const dmrgo_ipscsession_addr_t *from, uint32_t id, const uint8_t key[20], dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ipscsession_master_adopt_need(dmrgo_ipscsession_master_t *self, dmrgo_duration_t now, const dmrgo_ipscsession_addr_t *from, uint32_t id, const uint8_t key[20], size_t *items, size_t *arena);
@@ -2836,11 +2836,6 @@ sym int dmrgo_trunk_appended_set_nmea_long(dmrgo_trunk_appended_t *self, const d
 sym int dmrgo_trunk_appended_set_nmea_short(dmrgo_trunk_appended_t *self, const dmrgo_trunk_nmea_short_t *n);
 sym int dmrgo_trunk_appended_set_text(dmrgo_trunk_appended_t *self, dmrgo_enums_udt_format_t f, const uint8_t *text, size_t text_len);
 sym int dmrgo_trunk_appended_text(const dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-sym int dmrgo_trunk_auth_key_as_authenticator(const dmrgo_trunk_auth_key_t *self, dmrgo_trunk_authenticator_t **out);
-sym int dmrgo_trunk_auth_key_response(const dmrgo_trunk_auth_key_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
-sym int dmrgo_trunk_auth_keys_as_authenticator(const dmrgo_trunk_auth_keys_t *self, dmrgo_trunk_authenticator_t **out);
-sym int dmrgo_trunk_auth_keys_response(const dmrgo_trunk_auth_keys_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
-sym int dmrgo_trunk_auth_response(uint32_t challenge, const uint8_t key[16], uint32_t psn, uint32_t *out);
 sym int dmrgo_trunk_authenticator_free(dmrgo_trunk_authenticator_t *self);
 sym int dmrgo_trunk_authenticator_from_vtable(const dmrgo_trunk_authenticator_vtable_t *vt, dmrgo_trunk_authenticator_t **out);
 sym int dmrgo_trunk_authenticator_response(dmrgo_trunk_authenticator_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
@@ -2992,6 +2987,11 @@ sym int dmrgo_trunk_usbd_lip_response_encode(const dmrgo_trunk_usbd_lip_response
 sym int dmrgo_trunk_usbd_lip_response_string(const dmrgo_trunk_usbd_lip_response_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_trunk_usbd_poll_request_encode(const dmrgo_trunk_usbd_poll_request_t *self, uint8_t out[10]);
 sym int dmrgo_trunk_usbd_poll_request_string(const dmrgo_trunk_usbd_poll_request_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_trunkauth_key_as_authenticator(const dmrgo_trunkauth_key_t *self, dmrgo_trunk_authenticator_t **out);
+sym int dmrgo_trunkauth_key_response(const dmrgo_trunkauth_key_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
+sym int dmrgo_trunkauth_keys_as_authenticator(const dmrgo_trunkauth_keys_t *self, dmrgo_trunk_authenticator_t **out);
+sym int dmrgo_trunkauth_keys_response(const dmrgo_trunkauth_keys_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
+sym int dmrgo_trunkauth_response(uint32_t challenge, const uint8_t key[16], uint32_t psn, uint32_t *out);
 sym int dmrgo_vocoder_ambe_silence(dmrgo_vocoder_ambe_frame_t *out);
 sym int dmrgo_vocoder_ambe_silence_slot(uint8_t out[9]);
 sym int dmrgo_vocoder_codec_close(dmrgo_vocoder_codec_t *self);
@@ -3428,9 +3428,6 @@ type struct dmrgo_tms_sequence_low_t { bool extension; uint8_t reserved; uint8_t
 type struct dmrgo_trunk_access_t { uint8_t mask; uint32_t address; dmrgo_enums_service_function_t function; dmrgo_enums_n_rand_wait_t n_rand_wait; dmrgo_enums_backoff_t backoff; };
 type struct dmrgo_trunk_address_list_t { bool one_key; uint32_t addresses[15]; int64_t len; };
 type struct dmrgo_trunk_appended_t { dmrgo_enums_udt_format_t format; uint8_t pad_nibble; int64_t blocks; uint8_t data[46]; };
-type struct dmrgo_trunk_auth_entry_t { uint32_t addr; dmrgo_trunk_auth_key_t key; };
-type struct dmrgo_trunk_auth_key_t { uint8_t k[16]; uint32_t psn; };
-type struct dmrgo_trunk_auth_keys_t { dmrgo_trunk_auth_entry_t *entries; size_t entries_len; };
 type struct dmrgo_trunk_authenticator_vtable_t { size_t size; DMRGO_USER_T user; int (*response)(DMRGO_USER_T user, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok); };
 type struct dmrgo_trunk_capacity_plus_config_t { size_t size; dmrgo_trunk_channel_plan_t *plan; uint32_t talkgroups[32]; int64_t talkgroups_len; bool individual; bool no_follow; dmrgo_duration_t no_signal; dmrgo_duration_t inactive; dmrgo_duration_t hangtime; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_trunk_channel_rule_t { uint16_t first; uint16_t last; uint64_t rx_hz; uint64_t step_hz; int64_t tx_offset_hz; };
@@ -3451,6 +3448,9 @@ type struct dmrgo_trunk_tscc_output_t { dmrgo_trunk_tscc_output_kind_t kind; uin
 type struct dmrgo_trunk_tune_t { uint16_t channel; dmrgo_enums_slot_t slot; uint64_t rx_hz; uint64_t tx_hz; dmrgo_enums_color_code_t color_code; bool has_color_code; };
 type struct dmrgo_trunk_usbd_lip_response_t { uint8_t time_elapsed; double longitude; double latitude; dmrgo_layer3_position_error_t position_error; uint8_t velocity; uint8_t direction; uint8_t reason; uint8_t hashed_source; };
 type struct dmrgo_trunk_usbd_poll_request_t { uint8_t response_delay; bool payload_contents; bool reserved; uint64_t parameters; uint32_t target; };
+type struct dmrgo_trunkauth_entry_t { uint32_t addr; dmrgo_trunkauth_key_t key; };
+type struct dmrgo_trunkauth_key_t { uint8_t k[16]; uint32_t psn; };
+type struct dmrgo_trunkauth_keys_t { dmrgo_trunkauth_entry_t *entries; size_t entries_len; };
 type struct dmrgo_vocoder_ambe_frame_t { uint8_t v[7]; };
 type struct dmrgo_vocoder_codec_vtable_t { size_t size; DMRGO_USER_T user; int (*close)(DMRGO_USER_T user); int (*decode)(DMRGO_USER_T user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]); int (*encode)(DMRGO_USER_T user, const int16_t *pcm, size_t pcm_len, uint8_t out[9]); int (*fid)(DMRGO_USER_T user, dmrgo_enums_fid_t *out); int (*frame_samples)(DMRGO_USER_T user, int64_t *out); int (*silence)(DMRGO_USER_T user, uint8_t out[9]); int (*reset)(DMRGO_USER_T user); };
 type struct dmrgo_voice_call_options_t { size_t size; bool has_pi_header; dmrgo_pdu_pi_header_t pi_header; char *talker_alias; size_t talker_alias_len; dmrgo_layer3_talker_alias_data_format_t talker_alias_format; bool has_gps; dmrgo_pdu_flc_gps_info_t gps; bool in_call; bool hang_time; };
