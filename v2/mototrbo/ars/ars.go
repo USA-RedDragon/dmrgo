@@ -80,10 +80,14 @@ func (e Encoding) String() string {
 }
 
 // FailureReason is the reason in Response.Value of an answer whose
-// Header.AckRequired marks a failure.
+// Header.AckRequired marks a failure. The field has 7 bits. Each value from
+// 3 to 127 is a transmission failure (MOTOTRBO ARS specification 02.00
+// clause 3.4.9).
 type FailureReason uint8
 
-// The FailureReason values.
+// The FailureReason values. FailureTransmission is the value that NewFailure
+// sends for a transmission failure. ok-dmrlib sends 0xFF, which sets the
+// Extension bit; its 7-bit value is also 127.
 const (
 	FailureDeviceNotAuthorized   FailureReason = 0   // the radio may not register
 	FailureUserIDNotValid        FailureReason = 1   // the user ID is not known
@@ -91,17 +95,17 @@ const (
 	FailureTransmission          FailureReason = 127 // the answer could not be sent
 )
 
-// String returns the name of r. It allocates only for a value without a
-// name.
+// String returns the name of r: "Transmission Failure" for each value from
+// 3 to 127. It allocates only for a value above 127.
 func (r FailureReason) String() string {
-	switch r {
-	case FailureDeviceNotAuthorized:
+	switch {
+	case r == FailureDeviceNotAuthorized:
 		return "Device Not Authorized"
-	case FailureUserIDNotValid:
+	case r == FailureUserIDNotValid:
 		return "User ID Not Valid"
-	case FailureUserValidationTimeout:
+	case r == FailureUserValidationTimeout:
 		return "User Validation Timeout"
-	case FailureTransmission:
+	case r <= FailureTransmission:
 		return "Transmission Failure"
 	}
 	return "FailureReason(" + text.Int(int64(r)) + ")"

@@ -9786,7 +9786,7 @@ int dmrgo_ars_decode_message(const uint8_t *data, size_t data_len, dmrgo_ars_mes
 int dmrgo_ars_encoding_string(dmrgo_ars_encoding_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ars.Event.String. String returns the name of e. */
 int dmrgo_ars_event_string(dmrgo_ars_event_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: ars.FailureReason.String. String returns the name of r. */
+/* Go: ars.FailureReason.String. String returns the name of r: "Transmission Failure" for each value from 3 to 127. */
 int dmrgo_ars_failure_reason_string(dmrgo_ars_failure_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ars.Header.AppendBinary. AppendBinary appends the 1 octet of s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit. */
 int dmrgo_ars_header_append_binary(const dmrgo_ars_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);

@@ -134,7 +134,7 @@ func TestNames(t *testing.T) {
 	for r, want := range map[ars.FailureReason]string{
 		ars.FailureDeviceNotAuthorized: "Device Not Authorized", ars.FailureUserIDNotValid: "User ID Not Valid",
 		ars.FailureUserValidationTimeout: "User Validation Timeout", ars.FailureTransmission: "Transmission Failure",
-		ars.FailureReason(3): "FailureReason(3)",
+		ars.FailureReason(3): "Transmission Failure", ars.FailureReason(128): "FailureReason(128)",
 	} {
 		if r.String() != want {
 			t.Errorf("%d: %s", r, r.String())
