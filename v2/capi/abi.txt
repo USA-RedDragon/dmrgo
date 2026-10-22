@@ -2832,7 +2832,7 @@ sym int dmrgo_sms_anytone_text_append_binary(const dmrgo_sms_anytone_text_t *sel
 sym int dmrgo_sms_anytone_text_set_text_utf8(dmrgo_sms_anytone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_sms_anytone_text_string(const dmrgo_sms_anytone_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_sms_anytone_text_text_utf8(const dmrgo_sms_anytone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-sym int dmrgo_sms_append_packet(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_sms_text_t *t, bool confirmed, dmrgo_sms_header_t *h);
+sym int dmrgo_sms_append_packet(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_sms_text_t *t, dmrgo_sms_header_t *h);
 sym int dmrgo_sms_decode(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_pdu_data_header_t *h, const uint8_t *data, size_t data_len, dmrgo_sms_text_t *text, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_sms_decode_anytone_text(const uint8_t *data, size_t data_len, dmrgo_sms_anytone_text_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_sms_decode_ip_text(const uint8_t *data, size_t data_len, dmrgo_sms_ip_text_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
@@ -3468,7 +3468,7 @@ type struct dmrgo_shortdata_hytera_text_t { uint16_t field; uint8_t *text; size_
 type struct dmrgo_sms_anytone_text_t { uint32_t prefix; uint8_t *text; size_t text_len; };
 type struct dmrgo_sms_header_t { dmrgo_pdu_data_header_t data; };
 type struct dmrgo_sms_ip_text_t { uint8_t *text; size_t text_len; };
-type struct dmrgo_sms_text_t { dmrgo_sms_format_t format; uint32_t source; uint32_t destination; bool group; uint8_t network; uint8_t group_prefix; dmrgo_enums_dd_format_t dd; uint8_t sequence; bool ack_required; uint8_t *body; size_t body_len; };
+type struct dmrgo_sms_text_t { dmrgo_sms_format_t format; uint32_t source; uint32_t destination; bool group; bool confirmed; uint8_t network; uint8_t group_prefix; dmrgo_enums_dd_format_t dd; uint8_t sequence; bool ack_required; uint8_t *body; size_t body_len; };
 type struct dmrgo_tms_header_t { bool extension; bool ack_required; bool reserved; dmrgo_tms_type_t type; };
 type struct dmrgo_tms_message_t { uint16_t length; dmrgo_tms_header_t header; uint8_t *address; size_t address_len; uint8_t capability; dmrgo_tms_sequence_low_t sequence_low; dmrgo_tms_sequence_high_t sequence_high; uint8_t *text; size_t text_len; };
 type struct dmrgo_tms_sequence_high_t { bool extension; uint8_t high; dmrgo_tms_encoding_t encoding; };

@@ -23,7 +23,7 @@ func TestNetworkAndGroupPrefix(t *testing.T) {
 			for _, group := range []bool{false, true} {
 				in := sms.Text{Format: f, Source: 1234, Destination: 99, Group: group, Network: c.network, GroupPrefix: c.prefix, Body: []byte("hi")}
 				var h sms.Header
-				out, err := sms.AppendPacket(nil, &in, false, &h)
+				out, err := sms.AppendPacket(nil, &in, &h)
 				if err != nil {
 					t.Fatalf("%s: %v", f, err)
 				}
@@ -62,10 +62,10 @@ func TestNilArguments(t *testing.T) {
 	t.Parallel()
 
 	var h sms.Header
-	if out, err := sms.AppendPacket([]byte("x"), nil, false, &h); !errors.Is(err, dmrgo.ErrNilArgument) || string(out) != "x" {
+	if out, err := sms.AppendPacket([]byte("x"), nil, &h); !errors.Is(err, dmrgo.ErrNilArgument) || string(out) != "x" {
 		t.Errorf("nil Text: %q %v", out, err)
 	}
-	if _, err := sms.AppendPacket(nil, &sms.Text{Format: sms.FormatIP}, false, nil); !errors.Is(err, dmrgo.ErrNilArgument) {
+	if _, err := sms.AppendPacket(nil, &sms.Text{Format: sms.FormatIP}, nil); !errors.Is(err, dmrgo.ErrNilArgument) {
 		t.Errorf("nil Header: %v", err)
 	}
 	if _, _, err := sms.Decode(nil, nil, []byte{1}); !errors.Is(err, dmrgo.ErrNilArgument) {

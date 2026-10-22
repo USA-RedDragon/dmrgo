@@ -60,6 +60,12 @@ type Text struct {
 	Source, Destination uint32
 	// Group reports a message to a talkgroup.
 	Group bool
+	// Confirmed reports a message that asks the data link layer for a
+	// response: a C_HEAD packet for the formats on IP, and a DD_HEAD with
+	// the Response Requested flag (A) for FormatDefinedData and
+	// FormatHytera (ETSI TS 102 361-3 clause 6.4, Table 6.5). Decode sets
+	// it from the header and AppendPacket builds that header.
+	Confirmed bool
 	// Network is the network ID of the IPv4 radio addresses of a FormatTMS,
 	// FormatIP or FormatAnyTone message, Network.x.y.z. The zero value
 	// means ip.DefaultNetwork. Decode sets it from the source address, and
@@ -103,7 +109,7 @@ func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 	target, source, _ := h.Addresses()
 	t.Source, t.Destination = source, target
 	if d, ok := h.AsDefinedData(); ok {
-		t.Group, t.DD = d.Group, d.DefinedData
+		t.Group, t.DD, t.Confirmed = d.Group, d.DefinedData, d.ResponseRequested
 		if d.DefinedData == enums.DDBinary {
 			return dst, Text{}, ErrNotText
 		}
@@ -133,7 +139,7 @@ func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 		return decodeIP(dst, u.SAP, data, t)
 	}
 	if c, ok := h.AsConfirmed(); ok {
-		t.Group = c.Group
+		t.Group, t.Confirmed = c.Group, true
 		return decodeIP(dst, c.SAP, data, t)
 	}
 	return dst, Text{}, ErrNotText
@@ -223,7 +229,9 @@ type Header struct {
 // the data header to send it with, and returns dst. An IP format uses an
 // IPv4 header (SAP IP based packet data) with the radio addresses of
 // network t.Network and a group address with prefix t.GroupPrefix, and a
-// confirmed packet when confirmed is set. A TMS text starts with a CR LF.
+// C_HEAD when t.Confirmed is set. Defined data sets the Response
+// Requested flag (A) when t.Confirmed is set. A TMS text starts with a CR
+// LF.
 // BCD digits that would have the HyteraText layout get an octet FF, the
 // end of the digits, so that Decode reads them as FormatDefinedData.
 // It returns dst unchanged and ErrFormat for an unknown format and for
@@ -231,7 +239,7 @@ type Header struct {
 // dmrgo.ErrNilArgument for a nil t or h, or the errors of the packages
 // that build the message. It allocates only to
 // grow dst.
-func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error) {
+func AppendPacket(dst []byte, t *Text, h *Header) ([]byte, error) {
 	if t == nil || h == nil {
 		return dst, dmrgo.ErrNilArgument
 	}
@@ -249,7 +257,7 @@ func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error
 		if t.DD == enums.DDBCD && hyteraLayout(dst[n:]) {
 			dst = append(dst, 0xFF)
 		}
-		if err = h.Data.SetDefinedData(definedHeader(t, t.DD, confirmed)); err != nil {
+		if err = h.Data.SetDefinedData(definedHeader(t, t.DD)); err != nil {
 			return dst[:n], err
 		}
 		return dst, nil
@@ -261,7 +269,7 @@ func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error
 			return dst[:n], err
 		}
 		k := copy(dst[n:], dst[p0:])
-		if err = h.Data.SetDefinedData(definedHeader(t, enums.DDBCD, confirmed)); err != nil {
+		if err = h.Data.SetDefinedData(definedHeader(t, enums.DDBCD)); err != nil {
 			return dst[:n], err
 		}
 		return dst[:n+k], nil
@@ -319,7 +327,7 @@ func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error
 		return dst[:n], err
 	}
 	k := copy(dst[n:], dst[i0:])
-	if confirmed {
+	if t.Confirmed {
 		err = h.Data.SetConfirmed(pdu.ConfirmedDataHeader{Group: t.Group, ResponseRequested: true, SAP: enums.SAPIPBasedPacketData,
 			LLIDDestination: t.Destination, LLIDSource: t.Source, FullMessageFlag: true})
 	} else {
@@ -332,9 +340,9 @@ func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error
 	return dst[:n+k], nil
 }
 
-func definedHeader(t *Text, dd enums.DDFormat, confirmed bool) pdu.DefinedDataHeader {
+func definedHeader(t *Text, dd enums.DDFormat) pdu.DefinedDataHeader {
 	return pdu.DefinedDataHeader{
-		Group: t.Group, ResponseRequested: confirmed, SAP: enums.SAPShortData,
+		Group: t.Group, ResponseRequested: t.Confirmed, SAP: enums.SAPShortData,
 		LLIDDestination: t.Destination, LLIDSource: t.Source, DefinedData: dd, FullMessageFlag: true,
 	}
 }

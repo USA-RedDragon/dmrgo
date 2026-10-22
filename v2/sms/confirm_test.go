@@ -13,7 +13,8 @@ import (
 func sendText(t *testing.T, text *sms.Text, confirmed bool) (data.Result, int) {
 	t.Helper()
 	var h sms.Header
-	payload, err := sms.AppendPacket(nil, text, confirmed, &h)
+	text.Confirmed = confirmed
+	payload, err := sms.AppendPacket(nil, text, &h)
 	if err != nil {
 		t.Fatal(err)
 	}
