@@ -3401,7 +3401,7 @@ struct dmrgo_ars_message_t {
 };
 
 struct dmrgo_lrrp_circle2d_t {
-	/* Latitude is in degrees, north positive. */
+	/* Latitude is in degrees, north positive. Its top bit is the sign and the other 31 bits the magnitude, as radios send it. */
 	double latitude;
 	/* Longitude is in degrees, east positive. */
 	double longitude;
@@ -3410,7 +3410,7 @@ struct dmrgo_lrrp_circle2d_t {
 };
 
 struct dmrgo_lrrp_circle3d_t {
-	/* Latitude is in degrees, north positive. */
+	/* Latitude is in degrees, north positive. Its top bit is the sign and the other 31 bits the magnitude, as radios send it. */
 	double latitude;
 	/* Longitude is in degrees, east positive. */
 	double longitude;
@@ -3489,14 +3489,14 @@ struct dmrgo_lrrp_operation_error_t {
 };
 
 struct dmrgo_lrrp_point2d_t {
-	/* Latitude is in degrees, north positive. */
+	/* Latitude is in degrees, north positive. Its top bit is the sign and the other 31 bits the magnitude, as radios send it. */
 	double latitude;
 	/* Longitude is in degrees, east positive. */
 	double longitude;
 };
 
 struct dmrgo_lrrp_point3d_t {
-	/* Latitude is in degrees, north positive. */
+	/* Latitude is in degrees, north positive. Its top bit is the sign and the other 31 bits the magnitude, as radios send it. */
 	double latitude;
 	/* Longitude is in degrees, east positive. */
 	double longitude;
@@ -3505,7 +3505,7 @@ struct dmrgo_lrrp_point3d_t {
 };
 
 struct dmrgo_lrrp_point3d_accuracy_t {
-	/* Latitude is in degrees, north positive. */
+	/* Latitude is in degrees, north positive. Its top bit is the sign and the other 31 bits the magnitude, as radios send it. */
 	double latitude;
 	/* Longitude is in degrees, east positive. */
 	double longitude;
