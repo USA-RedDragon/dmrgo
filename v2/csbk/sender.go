@@ -50,6 +50,8 @@ type sender struct {
 	sent         int
 	timer        time.Duration
 	due          time.Duration
+	grid         time.Duration
+	hasGrid      bool
 
 	pre pdu.CSBK
 }
@@ -73,7 +75,7 @@ func (s *sender) start(now time.Duration, c pdu.CSBKBytes, target, source uint32
 func (s *sender) qualify(at, now time.Duration) {
 	switch {
 	case s.access == enums.AccessImpolite || !s.busy:
-		s.state, s.due = sendBursts, now+s.lead
+		s.state, s.due = sendBursts, s.slotAt(now)
 	case s.timeCritical:
 		s.state, s.timer = sendQualify, at
 		if s.idleSearch > 0 {
@@ -94,8 +96,22 @@ func (s *sender) stop() {
 func (s *sender) channel(now time.Duration, busy bool) {
 	s.busy = busy
 	if (s.state == sendQualify || s.state == sendWait) && !busy {
-		s.state, s.due = sendBursts, now+s.lead
+		s.state, s.due = sendBursts, s.slotAt(now)
 	}
+}
+
+func (s *sender) slotAt(now time.Duration) time.Duration {
+	due := now + s.lead
+	switch {
+	case !s.hasGrid:
+		return due
+	case due <= s.grid:
+		return s.grid
+	}
+	if r := (due - s.grid) % BurstInterval; r != 0 {
+		due += BurstInterval - r
+	}
+	return due
 }
 
 func (s *sender) deadline() (time.Duration, bool) {

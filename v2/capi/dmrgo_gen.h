@@ -1249,7 +1249,7 @@ struct dmrgo_csbk_output_t {
 	dmrgo_layer2_raw_burst_t burst;
 	/* Hint is what Burst is, for a transport: DMRGO_LAYER2_KIND_DATA with DMRGO_ENUMS_DATA_TYPE_CSBK, and the Slot of the config of the machine. */
 	dmrgo_layer2_hint_t hint;
-	/* Due is the time at which the burst goes on air, 60 ms after the one before it. */
+	/* Due is the start of the burst to send, the time at which it goes on air, 60 ms after the one before it. The answer of a Responder goes in the slot of its logical channel a TDMA frame after the start of the request, or a whole number of TDMA frames after that. */
 	dmrgo_duration_t due;
 	/* Target and Source are the 24-bit addresses of the request, for DMRGO_CSBK_OUTPUT_DONE and DMRGO_CSBK_OUTPUT_REQUEST, and of the Pre_CSBKs, for DMRGO_CSBK_OUTPUT_ANNOUNCED, DMRGO_CSBK_OUTPUT_JOINED and DMRGO_CSBK_OUTPUT_EXPIRED. */
 	uint32_t target;

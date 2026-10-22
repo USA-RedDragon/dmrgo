@@ -10,7 +10,12 @@
 // slice of the caller. A slice with capacity MaxOutputs never grows, and
 // after the constructor no method allocates. Deadline tells when a machine
 // needs a Tick, and each Tick emits at most one burst, 60 ms after the
-// burst before it.
+// burst before it. now is the start of the received burst; Due is the
+// start of the burst to send. A Responder answers in the next slot of the
+// logical channel of the request, a TDMA frame after its start: the next
+// but one slot of a direct channel, and on the aligned channel timing of a
+// BS the inbound slot of the channel, which starts with its outbound slot
+// (ETSI TS 102 361-1 clauses 5.1.1 and 5.2.1.7, Table 5.1 and Figure 5.23).
 //
 //   - Requester sends a CSBK, after Pre_CSBKs when asked, with the channel
 //     access of the request: polite or impolite, the idle search T_IdleSrch

@@ -206,8 +206,10 @@ type Output struct {
 	// Hint is what Burst is, for a transport: KindData with
 	// enums.DataTypeCSBK, and the Slot of the config of the machine.
 	Hint layer2.Hint
-	// Due is the time at which the burst goes on air, 60 ms after the one
-	// before it.
+	// Due is the start of the burst to send, the time at which it goes on
+	// air, 60 ms after the one before it. The answer of a Responder goes in
+	// the slot of its logical channel a TDMA frame after the start of the
+	// request, or a whole number of TDMA frames after that.
 	Due time.Duration
 	// Target and Source are the 24-bit addresses of the request, for
 	// OutputDone and OutputRequest, and of the Pre_CSBKs, for

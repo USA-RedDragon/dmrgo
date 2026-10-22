@@ -249,6 +249,7 @@ func (r *Responder) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, d
 	}
 	r.service, r.reqTarget, r.reqSource = svc, target, source
 	r.s.timeCritical = timeCritical
+	r.s.grid, r.s.hasGrid = now+BurstInterval, true
 	r.s.start(now, answer, source, target, false, 0)
 	return dst
 }

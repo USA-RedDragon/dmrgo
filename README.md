@@ -283,7 +283,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
-| 5.1.1 | Channel timing relationship | verified | 3/3 passed | `v2/trunk/ms.go`, `v2/trunk/ms_access.go` |
+| 5.1.1 | Channel timing relationship | verified | 5/5 passed | `v2/trunk/ms.go`, `v2/trunk/ms_access.go`, `v2/csbk/sender.go`, `v2/csbk/responder.go` |
 | 5.2.1.6 | Transmit admit criteria | verified | 2/2 passed | `v2/voice/transmitter.go`, `v2/enums/access.go` |
 | 5.2.2.1 | Direct mode Channel Access | unimplemented | - | - |
 | 5.2.2.2 | Repeater mode channel access, other than 5.2.2.2.4, 5.2.2.2.5 and 5.2.2.2.7 | unimplemented | - | - |
