@@ -1,6 +1,7 @@
 package trunk
 
 import (
+	"math"
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/bs"
@@ -13,6 +14,9 @@ import (
 
 // MaxPayloadChannels is the most payload channels of a TSCC.
 const MaxPayloadChannels = 16
+
+// MaxLead is the bound of TSCCConfig.Lead: a Lead must be less than it.
+const MaxLead = time.Second
 
 const maxRegistrations = 1 << 16
 
@@ -114,7 +118,9 @@ type TSCCConfig struct {
 	// 6.4.13)
 	Supplementary bool
 	// Lead makes Tick emit the bursts of a slot this long before its Due
-	// time, so that an RF FIFO can be filled ahead. 0 means at Due.
+	// time, so that an RF FIFO can be filled ahead. 0 means at Due; it must
+	// be at least 0 and less than MaxLead. The timers of the TSCC keep to
+	// the Due times.
 	Lead time.Duration
 }
 
@@ -346,9 +352,9 @@ type TSCC struct {
 // NewTSCC returns a TSCC for cfg. It returns a *dmrgo.ConfigError for a
 // SysCode whose fields do not fit, a color code over 15, a Channel that
 // names no channel, a PayloadLen out of range, a payload channel that names
-// no channel, repeats another or is Channel, a negative GrantRepeats,
-// ClearRepeats or Lead, or a MaxRegistrations out of range. It allocates
-// the TSCC and its registration table.
+// no channel, repeats another or is Channel, a negative GrantRepeats or
+// ClearRepeats, a Lead out of range, or a MaxRegistrations out of range.
+// It allocates the TSCC and its registration table.
 func NewTSCC(cfg *TSCCConfig) (*TSCC, error) {
 	if cfg == nil {
 		return nil, errChannels
@@ -383,7 +389,7 @@ func NewTSCC(cfg *TSCCConfig) (*TSCC, error) {
 	if c.GrantRepeats < 0 || c.ClearRepeats < 0 {
 		return nil, errRepeats
 	}
-	if c.Lead < 0 {
+	if c.Lead < 0 || c.Lead >= MaxLead {
 		return nil, errLead
 	}
 	if c.MaxRegistrations < 0 || c.MaxRegistrations > maxRegistrations {
@@ -446,7 +452,7 @@ func (t *TSCC) Deadline() (at time.Duration, ok bool) {
 }
 
 // Skipped returns the number of slots that Tick did not send because it
-// came more than one slot late.
+// came a slot or more late.
 func (t *TSCC) Skipped() int64 {
 	if t == nil {
 		return 0
@@ -778,31 +784,39 @@ func (t *TSCC) startClear(i int, reason Reason, out []TSCCOutput) []TSCCOutput {
 // and on each payload channel with a call the relayed inbound burst,
 // P_CLEAR or an idle burst, each with its CACH. It appends the outputs to
 // dst. The first Tick starts the slot clock at now with TS1, and each
-// slot after it starts 30 ms later. A Tick before Deadline does nothing,
-// and a Tick that comes more than one slot late sends only the last slot
-// that is due and counts the others in Skipped. It allocates only when
-// dst has no room for MaxTSCCOutputs outputs.
+// slot after it starts 30 ms later. The first slot starts at now plus
+// TSCCConfig.Lead. A Tick before Deadline does nothing, and a Tick that
+// comes a slot or more late sends only the last slot that is due and
+// counts the others in Skipped. The call, answer and service timers run at
+// the start of the slot. It allocates only when dst has no room for
+// MaxTSCCOutputs outputs.
 func (t *TSCC) Tick(now time.Duration, dst []TSCCOutput) []TSCCOutput {
 	if t == nil || t.b == nil {
 		return dst
 	}
 
 	out := dst
-	at := now
+	at := now + t.cfg.Lead
+	if now > math.MaxInt64-t.cfg.Lead {
+		at = math.MaxInt64
+	}
 	if t.started {
-		e := now + t.cfg.Lead
-		if e < t.next {
+		if at < t.next {
 			return out
 		}
-		t.skip((e - t.next) / slotLength)
-		at = e - (e-t.next)%slotLength
+		d := uint64(at) - uint64(t.next)
+		t.skip(d / uint64(slotLength))
+		at -= time.Duration(d % uint64(slotLength))
 	}
 	t.started = true
 	t.slot = t.slot.Other()
 	t.next = at + slotLength
-	out = t.timers(now, out)
-	out = t.udtTimers(now, out)
-	out = t.svcTimers(now, out)
+	if at > math.MaxInt64-slotLength {
+		t.next = math.MaxInt64
+	}
+	out = t.timers(at, out)
+	out = t.udtTimers(at, out)
+	out = t.svcTimers(at, out)
 	out = t.control(out)
 	for c := range t.cfg.PayloadLen {
 		out = t.carrier(c, out)
@@ -818,8 +832,12 @@ func (t *TSCC) advance() {
 	}
 }
 
-func (t *TSCC) skip(n time.Duration) {
-	t.skipped += int64(n)
+func (t *TSCC) skip(n uint64) {
+	if n > math.MaxInt64-uint64(t.skipped) {
+		t.skipped = math.MaxInt64
+	} else {
+		t.skipped += int64(n)
+	}
 	for range n % (4 * 512) {
 		t.slot = t.slot.Other()
 		t.advance()
