@@ -10500,9 +10500,9 @@ int dmrgo_trunk_appended_set_ip(dmrgo_trunk_appended_t *self, const uint8_t ip[1
 int dmrgo_trunk_appended_set_lip(dmrgo_trunk_appended_t *self, const uint8_t *pdu, size_t pdu_len);
 /* Go: trunk.Appended.SetMixed. SetMixed sets a to the address addr and the UTF-8 text in the mixed format: up to 21 UTF-16 code units. It returns DMRGO_ERR_TRUNK_UDT_LENGTH for a too long text or an address over 24 bits. */
 int dmrgo_trunk_appended_set_mixed(dmrgo_trunk_appended_t *self, bool one_key, uint32_t addr, const uint8_t *text, size_t text_len);
-/* Go: trunk.Appended.SetNMEALong. SetNMEALong sets a to the Long NMEA Format Specified of n in two blocks. n may be NULL. */
+/* Go: trunk.Appended.SetNMEALong. SetNMEALong sets a to the Long NMEA Format Specified of n in two blocks. It returns the errors of dmrgo_trunk_nmea_long_encode, and DMRGO_ERR_NIL_ARGUMENT for a nil n. n may be NULL. */
 int dmrgo_trunk_appended_set_nmea_long(dmrgo_trunk_appended_t *self, const dmrgo_trunk_nmea_long_t *n);
-/* Go: trunk.Appended.SetNMEAShort. SetNMEAShort sets a to the Short NMEA format of n in one block. n may be NULL. */
+/* Go: trunk.Appended.SetNMEAShort. SetNMEAShort sets a to the Short NMEA format of n in one block. It returns the errors of dmrgo_trunk_nmea_short_encode, and DMRGO_ERR_NIL_ARGUMENT for a nil n. n may be NULL. */
 int dmrgo_trunk_appended_set_nmea_short(dmrgo_trunk_appended_t *self, const dmrgo_trunk_nmea_short_t *n);
 /* Go: trunk.Appended.SetText. SetText sets a to the UTF-8 text in the format f: DMRGO_ENUMS_UDTISO7 (up to 52 characters of ISO/IEC 646), DMRGO_ENUMS_UDTISO8 (up to 46 characters of ISO/IEC 8859-1) or DMRGO_ENUMS_UDTUTF16BE (up to 23 UTF-16 code units). It returns DMRGO_ERR_TRUNK_UDT_FORMAT for another format, DMRGO_ERR_TRUNK_UDT_LENGTH for an empty or a too long text, and DMRGO_ERR_TRUNK_UDT_CHARACTER for a character that the format cannot hold. */
 int dmrgo_trunk_appended_set_text(dmrgo_trunk_appended_t *self, dmrgo_enums_udt_format_t f, const uint8_t *text, size_t text_len);

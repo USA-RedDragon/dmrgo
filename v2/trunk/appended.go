@@ -435,11 +435,14 @@ func (a *Appended) Mixed() (addr uint32, oneKey bool, err error) {
 }
 
 // SetNMEAShort sets a to the Short NMEA format of n in one block. It
-// returns the errors of NMEAShort.Encode. (ETSI TS 102 361-4 clause
-// B.3.6.1)
+// returns the errors of NMEAShort.Encode, and dmrgo.ErrNilArgument for a
+// nil n. (ETSI TS 102 361-4 clause B.3.6.1)
 func (a *Appended) SetNMEAShort(n *NMEAShort) error {
 	if a == nil {
 		return dmrgo.ErrNilReceiver
+	}
+	if n == nil {
+		return dmrgo.ErrNilArgument
 	}
 
 	p, err := n.Encode()
@@ -466,11 +469,14 @@ func (a *Appended) NMEAShort() (NMEAShort, error) {
 }
 
 // SetNMEALong sets a to the Long NMEA Format Specified of n in two blocks.
-// It returns the errors of NMEALong.Encode. (ETSI TS 102 361-4 clause
-// B.3.6.2)
+// It returns the errors of NMEALong.Encode, and dmrgo.ErrNilArgument for a
+// nil n. (ETSI TS 102 361-4 clause B.3.6.2)
 func (a *Appended) SetNMEALong(n *NMEALong) error {
 	if a == nil {
 		return dmrgo.ErrNilReceiver
+	}
+	if n == nil {
+		return dmrgo.ErrNilArgument
 	}
 
 	p, err := n.Encode()
