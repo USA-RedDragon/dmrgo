@@ -645,9 +645,13 @@ func (s *Sender) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, d
 }
 
 // Decoded takes the response to the confirmed messages in progress from
-// the decoded burst b, as Burst does. A nil b only runs the timers. An ACK
-// or SACK for a C_HEAD message whose Status is not the N(S) of the message
-// answers an earlier message, and is ignored (ETSI TS 102 361-1 Table 8.3).
+// the decoded burst b, as Burst does. A nil b only runs the timers. In stop
+// and wait, a response to a C_HEAD message whose Status is not the N(S) of
+// the message answers an earlier message, and is ignored, as the Status of
+// an ACK, a SACK and a NACK is N(S) (ETSI TS 102 361-3 Table 5.7). A NACK
+// for N(S) out of sequence, whose Status is VI, for FSN out of sequence,
+// whose Status is the FSN, and for an illegal format, whose Status may have
+// no meaning, applies whatever its Status (ETSI TS 102 361-1 Table 8.3).
 // For a sliding window, the Status of the response is the N(S) of a message of
 // the window: an ACK delivers the messages up to that one, a SACK delivers
 // the messages before it and resends its blocks that the SACK flags, and a
@@ -685,7 +689,7 @@ func (s *Sender) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst 
 	}
 	j := 0
 	switch e := &s.slots[s.ord[0]]; {
-	case s.win <= 1 && e.cHead && (code == packet.ResponseACK || code == packet.ResponseSACK) && rh.ResponseStatus != e.ns:
+	case s.win <= 1 && e.cHead && statusIsNS(code) && rh.ResponseStatus != e.ns:
 		return dst
 	case s.win > 1:
 		j = -1
@@ -703,6 +707,10 @@ func (s *Sender) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst 
 		rd = nil
 	}
 	return s.answered(now, code, j, rh.ResponseStatus, rd, dst)
+}
+
+func statusIsNS(code packet.Response) bool {
+	return code != packet.ResponseNACKOutOfSequence && code != packet.ResponseNACKFSNOutOfSequence && code != packet.ResponseNACKIllegalFormat
 }
 
 func (s *Sender) answered(now time.Duration, code packet.Response, j int, status uint8, rd *packet.ResponseData, dst []Output) []Output {
