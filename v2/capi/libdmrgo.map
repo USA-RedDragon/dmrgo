@@ -45,6 +45,7 @@ DMRGO_1 {
 		dmrgo_bs_service_string;
 		dmrgo_bs_slot_state_string;
 		dmrgo_bs_state_string;
+		dmrgo_codec2_codec_as_codec;
 		dmrgo_codec2_codec_close;
 		dmrgo_codec2_codec_decode;
 		dmrgo_codec2_codec_decode_mode;
@@ -343,6 +344,7 @@ DMRGO_1 {
 		dmrgo_dvsi_append_rate_dmr;
 		dmrgo_dvsi_append_reset;
 		dmrgo_dvsi_append_speech;
+		dmrgo_dvsi_codec_as_codec;
 		dmrgo_dvsi_codec_close;
 		dmrgo_dvsi_codec_decode;
 		dmrgo_dvsi_codec_decode_need;
@@ -1375,7 +1377,9 @@ DMRGO_1 {
 		dmrgo_trunk_appended_set_nmea_short;
 		dmrgo_trunk_appended_set_text;
 		dmrgo_trunk_appended_text;
+		dmrgo_trunk_auth_key_as_authenticator;
 		dmrgo_trunk_auth_key_response;
+		dmrgo_trunk_auth_keys_as_authenticator;
 		dmrgo_trunk_auth_keys_response;
 		dmrgo_trunk_auth_response;
 		dmrgo_trunk_authenticator_free;

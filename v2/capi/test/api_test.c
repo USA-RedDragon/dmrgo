@@ -289,6 +289,32 @@ static void test_udt_copy(void) {
 	printf("udt: a machine's UDT reaches C as a copy\n");
 }
 
+static void test_authenticator(void) {
+	dmrgo_trunk_auth_entry_t ent = {0};
+	ent.addr = 99;
+	for (int i = 0; i < 16; i++)
+		ent.key.k[i] = (uint8_t)(i * 7 + 1);
+	dmrgo_trunk_auth_keys_t keys = {&ent, 1};
+	uint32_t want = 0, got = 0;
+	bool ok = false;
+	OK(dmrgo_trunk_auth_keys_response(&keys, 99, 0x123456, &want, &ok));
+	CHECK(ok);
+	dmrgo_trunk_authenticator_t *a = NULL;
+	OK(dmrgo_trunk_auth_keys_as_authenticator(&keys, &a));
+	memset(&ent, 0, sizeof ent);
+	OK(dmrgo_trunk_authenticator_response(a, 99, 0x123456, &got, &ok));
+	CHECK(ok && got == want);
+	OK(dmrgo_trunk_authenticator_free(a));
+	dmrgo_trunk_auth_key_t k = {0};
+	k.k[0] = 1;
+	OK(dmrgo_trunk_auth_key_response(&k, 5, 7, &want, &ok));
+	OK(dmrgo_trunk_auth_key_as_authenticator(&k, &a));
+	OK(dmrgo_trunk_authenticator_response(a, 5, 7, &got, &ok));
+	CHECK(got == want);
+	OK(dmrgo_trunk_authenticator_free(a));
+	printf("authenticator: a Key or Keys makes a trunk.Authenticator\n");
+}
+
 static void test_error_is(void) {
 	dmrgo_pdu_rate12_data_t blk = {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}};
 	dmrgo_packet_response_data_t rd;
@@ -938,6 +964,7 @@ int main(int argc, char **argv) {
 	test_error_is();
 	test_sized();
 	test_udt_copy();
+	test_authenticator();
 	test_tx();
 	test_voice_capture(argv[1]);
 	test_vocoder();

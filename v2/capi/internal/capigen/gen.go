@@ -468,8 +468,87 @@ func (g *gen) typeObject(o *types.TypeName, gn string) error {
 		} else {
 			g.vtableErrs = append(g.vtableErrs, gn+": "+err.Error())
 		}
+		if err := g.asIface(ti, gn); err != nil {
+			return err
+		}
 	}
 	return g.errorType(ti, gn)
+}
+
+// asIface emits, for each value or handle type of the library that
+// implements the open interface ti, a function that makes an interface
+// handle from it, such as dmrgo_trunk_auth_key_authenticator.
+func (g *gen) asIface(ti *tinfo, gn string) error {
+	iface := underInterface(ti.named)
+	for _, im := range ti.impls {
+		ii := g.info(im)
+		if ii == nil || ii.kind != kValue && ii.kind != kNArray && ii.kind != kHandle {
+			continue
+		}
+		c := ii.base + "_as_" + snake(ti.obj.Name())
+		if _, taken := g.cnames[c]; taken {
+			continue
+		}
+		byVal := types.Implements(im, iface)
+		g.cur = c
+		var w strings.Builder
+		var conv []string
+		switch ii.kind {
+		case kHandle:
+			v := "h.v"
+			if byVal {
+				v = "*h.v"
+			}
+			conv = []string{"h := " + g.getter(ii) + "(c_self)", "*c_out = " + g.newer(ti) + "(" + v + ")"}
+		default:
+			st, err := g.storage(im)
+			if err != nil {
+				continue
+			}
+			var pre strings.Builder
+			lines(&pre, "var x "+g.goType(im))
+			sv := ""
+			if st != "" {
+				lines(&pre, "var xs "+st)
+				sv = "xs"
+			}
+			src := g.sizedSrc(&pre, im, "c_self", "(*c_self)", "return fail(C.DMRGO_ERR_ARG)")
+			if g.alias(im) {
+				lines(&pre, "x = *(*"+g.goType(im)+")(unsafe.Pointer(c_self))")
+			} else if err := g.inVal(&pre, im, "x", src, sv, 0); err != nil {
+				continue
+			}
+			lines(&pre, "x = cloneDeep(x)")
+			v := "&x"
+			if byVal {
+				v = "x"
+			}
+			conv = []string{strings.TrimSuffix(pre.String(), "\n"), "*c_out = " + g.newer(ti) + "(" + v + ")"}
+		}
+		if err := g.claim(c, gn); err != nil {
+			return err
+		}
+		self := "const " + ii.c + " *self"
+		if ii.kind == kHandle {
+			self = ii.c + " *self"
+		}
+		lines(&w, "//export "+c, "func "+c+"(c_self *C."+ii.c+", c_out **C."+ti.c+") (rc C.int) {", "defer recoverTo(&rc)",
+			"if c_self == nil || c_out == nil {", "return fail(C.DMRGO_ERR_ARG)", "}")
+		lines(&w, conv...)
+		lines(&w, "return C.DMRGO_OK", "}", "")
+		g.goFuncs.WriteString(w.String())
+		g.funcSyms = append(g.funcSyms, c)
+		p := "int " + c + "(" + self + ", " + ti.c + " **out);"
+		doc := "/* " + c + " makes a " + gn + " from self"
+		if ii.kind != kHandle {
+			doc += ", which it copies"
+		} else {
+			doc += ", which it shares; free both handles"
+		}
+		g.hProtos.WriteString(doc + ". */\n" + p + "\n")
+		g.abiSyms = append(g.abiSyms, "sym "+p)
+	}
+	return nil
 }
 
 func (g *gen) recvKind(ti *tinfo, m *types.Func) (recvKind, string) {

@@ -4687,6 +4687,11 @@ func dmrgo_trunk_authenticator_from_vtable(c_vt *C.dmrgo_trunk_authenticator_vta
 	return C.DMRGO_OK
 }
 
+func in_trunk_auth_Keys(s *C.dmrgo_trunk_auth_keys_t) (d g_trunk_auth.Keys) {
+	d.Entries = cSlice[g_trunk_auth.Entry](unsafe.Pointer(s.entries), s.entries_len)
+	return
+}
+
 func out_trunk_Tune(d *C.dmrgo_trunk_tune_t, s *g_trunk.Tune, oc *outc) {
 	_ = oc
 	d.channel = C.uint16_t(s.Channel)
@@ -5017,11 +5022,6 @@ func in_trunk_USBDPollRequest(s *C.dmrgo_trunk_usbd_poll_request_t) (d g_trunk.U
 	d.Reserved = bool(s.reserved)
 	d.Parameters = uint64(s.parameters)
 	d.Target = uint32(s.target)
-	return
-}
-
-func in_trunk_auth_Keys(s *C.dmrgo_trunk_auth_keys_t) (d g_trunk_auth.Keys) {
-	d.Entries = cSlice[g_trunk_auth.Entry](unsafe.Pointer(s.entries), s.entries_len)
 	return
 }
 
@@ -41894,6 +41894,32 @@ func dmrgo_trunk_authenticator_response(c_self *C.dmrgo_trunk_authenticator_t, c
 	return C.DMRGO_OK
 }
 
+//export dmrgo_trunk_auth_key_as_authenticator
+func dmrgo_trunk_auth_key_as_authenticator(c_self *C.dmrgo_trunk_auth_key_t, c_out **C.dmrgo_trunk_authenticator_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil || c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk_auth.Key
+	x = *(*g_trunk_auth.Key)(unsafe.Pointer(c_self))
+	x = cloneDeep(x)
+	*c_out = new_trunk_Authenticator(&x)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_trunk_auth_keys_as_authenticator
+func dmrgo_trunk_auth_keys_as_authenticator(c_self *C.dmrgo_trunk_auth_keys_t, c_out **C.dmrgo_trunk_authenticator_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil || c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_trunk_auth.Keys
+	x = in_trunk_auth_Keys(&(*c_self))
+	x = cloneDeep(x)
+	*c_out = new_trunk_Authenticator(&x)
+	return C.DMRGO_OK
+}
+
 //export dmrgo_trunk_capacity_plus_follower_free
 func dmrgo_trunk_capacity_plus_follower_free(c_self *C.dmrgo_trunk_capacity_plus_follower_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -45383,6 +45409,28 @@ func dmrgo_vocoder_codec_silence(c_self *C.dmrgo_vocoder_codec_t, c_out *C.uint8
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_codec2_codec_as_codec
+func dmrgo_codec2_codec_as_codec(c_self *C.dmrgo_codec2_codec_t, c_out **C.dmrgo_vocoder_codec_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil || c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_vocoder_codec2_Codec(c_self)
+	*c_out = new_vocoder_Codec(h.v)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dvsi_codec_as_codec
+func dmrgo_dvsi_codec_as_codec(c_self *C.dmrgo_dvsi_codec_t, c_out **C.dmrgo_vocoder_codec_t) (rc C.int) {
+	defer recoverTo(&rc)
+	if c_self == nil || c_out == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_vocoder_dvsi_Codec(c_self)
+	*c_out = new_vocoder_Codec(h.v)
 	return C.DMRGO_OK
 }
 
