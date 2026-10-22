@@ -246,9 +246,12 @@ type Header struct {
 // say why. BCD digits that would have the HyteraText layout get an octet
 // FF, the end of the digits, so that Decode reads them as
 // FormatDefinedData. It returns dst unchanged and ErrFormat for an unknown
-// format and for FormatDefinedData with DD format binary, which holds no
-// text, dmrgo.ErrNilArgument for a nil t or h, or the errors of the
-// packages that build the message. It allocates only to grow dst.
+// format, for FormatDefinedData with DD format binary, which holds no text,
+// and for a FormatHytera text without the HyteraText layout, which Decode
+// reads as FormatDefinedData: a Body that is empty, starts with a NUL, or
+// has a character other than NUL after a NUL. It returns
+// dmrgo.ErrNilArgument for a nil t or h, or the errors of the packages that
+// build the message. It allocates only to grow dst.
 func AppendPacket(dst []byte, t *Text, h *Header) ([]byte, error) {
 	if t == nil || h == nil {
 		return dst, dmrgo.ErrNilArgument
@@ -279,6 +282,9 @@ func AppendPacket(dst []byte, t *Text, h *Header) ([]byte, error) {
 			return dst[:n], err
 		}
 		k := copy(dst[n:], dst[p0:])
+		if !hyteraLayout(dst[n : n+k]) {
+			return dst[:n], ErrFormat
+		}
 		if err = h.Data.SetDefinedData(definedHeader(t, enums.DDBCD)); err != nil {
 			return dst[:n], err
 		}

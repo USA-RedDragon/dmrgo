@@ -17,8 +17,9 @@ var (
 	// ErrNotText is returned for a data packet that does not carry a text
 	// message in a format that the package knows.
 	ErrNotText = errors.New("sms: packet is not a text message")
-	// ErrFormat is returned by AppendPacket for an unknown Format and for
-	// FormatDefinedData with DD format binary, and by AppendAck for a text
+	// ErrFormat is returned by AppendPacket for an unknown Format, for
+	// FormatDefinedData with DD format binary and for a FormatHytera text
+	// that Decode would read as another format, and by AppendAck for a text
 	// that is not an individual FormatTMS text.
 	ErrFormat = errors.New("sms: unknown format")
 )
