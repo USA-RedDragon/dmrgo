@@ -7765,7 +7765,7 @@ int dmrgo_csbk_new_preambles(const dmrgo_csbk_preambles_config_t *cfg, dmrgo_csb
 int dmrgo_csbk_new_requester(const dmrgo_csbk_requester_config_t *cfg, dmrgo_csbk_requester_t **out);
 /* Go: csbk.NewResponder. NewResponder returns a Responder for cfg. It returns a DMRGO_ERR_CONFIG for a nil cfg, an Address of 0 or above 24 bits, a color code above 15, an unknown Source, Access or OACSU, a negative Lead, or a Slot other than SlotUnknown, Slot1 or Slot2. cfg may be NULL. */
 int dmrgo_csbk_new_responder(const dmrgo_csbk_responder_config_t *cfg, dmrgo_csbk_responder_t **out);
-/* Go: csbk.NewTiming. NewTiming returns a Timing for cfg. It returns a DMRGO_ERR_CONFIG for a nil cfg, an ID of 0 or above MaxTimingID, a DynamicID above MaxDynamicID, a Slot other than Slot1 or Slot2 or a negative Lead. cfg may be NULL. */
+/* Go: csbk.NewTiming. NewTiming returns a Timing for cfg. It returns a DMRGO_ERR_CONFIG for a nil cfg, an ID of 0 or above MaxTimingID, a DynamicID above MaxDynamicID, a Slot other than Slot1 or Slot2, or a negative Lead. cfg may be NULL. */
 int dmrgo_csbk_new_timing(const dmrgo_csbk_timing_config_t *cfg, dmrgo_csbk_timing_t **out);
 /* Go: csbk.NewWakeup. NewWakeup returns a Wakeup for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, Attempts out of range, a negative Lead, or a Slot other than SlotUnknown, Slot1 or Slot2. cfg may be NULL. */
 int dmrgo_csbk_new_wakeup(const dmrgo_csbk_wakeup_config_t *cfg, dmrgo_csbk_wakeup_t **out);
