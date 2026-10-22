@@ -14,7 +14,7 @@ const zeroedLen = 256
 // TestNullArguments calls every generated entry point with all arguments
 // NULL or zero, and again with each pointer argument pointing to
 // zeroedLen zeroed elements, more than the longest C array parameter such
-// as the uint8_t out[32] that dmrgo_dmrd_auth_token fills, and fails for
+// as the uint8_t out[32] that dmrgo_dmrdauth_token fills, and fails for
 // each call that returns DMRGO_ERR_PANIC. Function pointers and handles,
 // whose C type is incomplete, stay NULL.
 func TestNullArguments(t *testing.T) {

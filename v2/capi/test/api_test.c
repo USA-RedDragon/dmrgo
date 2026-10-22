@@ -198,12 +198,12 @@ static void test_self_writes(void) {
 	CHECK(dmrgo_data_event_icmp(&ev, 1500, &icmp, &ptr) == rc);
 	CHECK(ev.message.payload == payload);
 
-	dmrgo_trunk_auth_entry_t ent = {0};
+	dmrgo_trunkauth_entry_t ent = {0};
 	ent.addr = 99;
-	dmrgo_trunk_auth_keys_t keys = {&ent, 1};
+	dmrgo_trunkauth_keys_t keys = {&ent, 1};
 	uint32_t resp = 0;
-	OK(dmrgo_trunk_auth_keys_response(&keys, 99, 7, &resp, &ok));
-	OK(dmrgo_trunk_auth_keys_response(&keys, 99, 7, &resp, &ok));
+	OK(dmrgo_trunkauth_keys_response(&keys, 99, 7, &resp, &ok));
+	OK(dmrgo_trunkauth_keys_response(&keys, 99, 7, &resp, &ok));
 	CHECK(ok && keys.entries == &ent && keys.entries_len == 1);
 	printf("self: read-only calls take a const self and no arena\n");
 }
@@ -296,25 +296,25 @@ static void test_udt_copy(void) {
 }
 
 static void test_authenticator(void) {
-	dmrgo_trunk_auth_entry_t ent = {0};
+	dmrgo_trunkauth_entry_t ent = {0};
 	ent.addr = 99;
 	for (int i = 0; i < 16; i++)
 		ent.key.k[i] = (uint8_t)(i * 7 + 1);
-	dmrgo_trunk_auth_keys_t keys = {&ent, 1};
+	dmrgo_trunkauth_keys_t keys = {&ent, 1};
 	uint32_t want = 0, got = 0;
 	bool ok = false;
-	OK(dmrgo_trunk_auth_keys_response(&keys, 99, 0x123456, &want, &ok));
+	OK(dmrgo_trunkauth_keys_response(&keys, 99, 0x123456, &want, &ok));
 	CHECK(ok);
 	dmrgo_trunk_authenticator_t *a = NULL;
-	OK(dmrgo_trunk_auth_keys_as_authenticator(&keys, &a));
+	OK(dmrgo_trunkauth_keys_as_authenticator(&keys, &a));
 	memset(&ent, 0, sizeof ent);
 	OK(dmrgo_trunk_authenticator_response(a, 99, 0x123456, &got, &ok));
 	CHECK(ok && got == want);
 	OK(dmrgo_trunk_authenticator_free(a));
-	dmrgo_trunk_auth_key_t k = {0};
+	dmrgo_trunkauth_key_t k = {0};
 	k.k[0] = 1;
-	OK(dmrgo_trunk_auth_key_response(&k, 5, 7, &want, &ok));
-	OK(dmrgo_trunk_auth_key_as_authenticator(&k, &a));
+	OK(dmrgo_trunkauth_key_response(&k, 5, 7, &want, &ok));
+	OK(dmrgo_trunkauth_key_as_authenticator(&k, &a));
 	OK(dmrgo_trunk_authenticator_response(a, 5, 7, &got, &ok));
 	CHECK(got == want);
 	OK(dmrgo_trunk_authenticator_free(a));
@@ -322,20 +322,20 @@ static void test_authenticator(void) {
 }
 
 static void test_ipsc_bound(void) {
-	dmrgo_ipsc_session_master_config_t cfg = {.size = sizeof cfg};
+	dmrgo_ipscsession_master_config_t cfg = {.size = sizeof cfg};
 	cfg.id = 1;
-	dmrgo_ipsc_session_master_t *m = NULL;
-	OK(dmrgo_ipsc_session_new_master(&cfg, &m));
-	dmrgo_ipsc_session_addr_t from = {{10, 0, 0, 2}, 50000};
+	dmrgo_ipscsession_master_t *m = NULL;
+	OK(dmrgo_ipscsession_new_master(&cfg, &m));
+	dmrgo_ipscsession_addr_t from = {{10, 0, 0, 2}, 50000};
 	uint8_t p[16] = {0x90};
 	size_t items = 0, arena = 0;
-	OK(dmrgo_ipsc_session_master_packet_need(m, 0, &from, p, sizeof p, &items, &arena));
+	OK(dmrgo_ipscsession_master_packet_need(m, 0, &from, p, sizeof p, NULL, &items, &arena));
 	CHECK(items == 32 && arena > 0 && arena < 4096);
-	dmrgo_ipsc_session_output_t out[32];
+	dmrgo_ipscsession_output_t out[32];
 	unsigned char ar[4096];
 	size_t n = 0, al = 0;
-	OK(dmrgo_ipsc_session_master_packet(m, 0, &from, p, sizeof p, out, 32, &n, NULL, ar, sizeof ar, &al, NULL));
-	OK(dmrgo_ipsc_session_master_free(m));
+	OK(dmrgo_ipscsession_master_packet(m, 0, &from, p, sizeof p, NULL, out, 32, &n, NULL, ar, sizeof ar, &al, NULL));
+	OK(dmrgo_ipscsession_master_free(m));
 	printf("ipsc: the master arena bound counts a shared packet once\n");
 }
 
@@ -431,17 +431,17 @@ static void test_in_out(void) {
 
 	uint8_t key[100];
 	memset(key, 'k', sizeof key);
-	dmrgo_dmrd_session_bridge_config_t bc = {.size = sizeof bc};
+	dmrgo_dmrdsession_bridge_config_t bc = {.size = sizeof bc};
 	bc.key = key;
 	bc.key_len = sizeof key;
-	dmrgo_dmrd_session_bridge_t *br = NULL;
-	OK(dmrgo_dmrd_session_new_bridge(&bc, &br));
+	dmrgo_dmrdsession_bridge_t *br = NULL;
+	OK(dmrgo_dmrdsession_new_bridge(&bc, &br));
 	uint8_t p[73] = {'D', 'M', 'R', 'D'};
 	for (int i = 4; i < 53; i++)
 		p[i] = (uint8_t)i;
-	OK(dmrgo_dmrd_session_bridge_sign(br, p, sizeof p));
+	OK(dmrgo_dmrdsession_bridge_sign_in_place(br, p, sizeof p));
 	CHECK(p[53] == 0x07 && p[54] == 0x4d && p[55] == 0x5e && p[56] == 0xc7);
-	OK(dmrgo_dmrd_session_bridge_free(br));
+	OK(dmrgo_dmrdsession_bridge_free(br));
 	printf("in/out: Go writes through pointer and slice arguments reach C\n");
 }
 
