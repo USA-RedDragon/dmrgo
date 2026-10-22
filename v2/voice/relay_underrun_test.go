@@ -6,6 +6,8 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
@@ -100,6 +102,59 @@ func TestRegression_RelayUnderrunThenLostRepeatsOnce(t *testing.T) {
 		}
 		if v[2][j] != sil {
 			t.Errorf("second lost burst slot %d = %x, want silence", j, v[2][j])
+		}
+	}
+}
+
+func TestRegression_RelayPendingCallRepeatsLastSlot(t *testing.T) {
+	t.Parallel()
+
+	sil := vocoder.AMBESilenceSlot()
+	for _, fid := range []enums.FID{enums.FIDStandardized, 0xC2} {
+		tx := newTransmitter(t, &voice.TransmitterConfig{Queue: voice.MaxQueue})
+		a := rcall()
+		lc, _ := pdu.NewVoiceLCBytes(true, 91, 3191869, layer3.ServiceOptions{})
+		lc.SetFID(fid)
+		b := voice.Call{Group: true, Target: 91, Source: 3191869, LC: lc, FID: fid, Origin: voice.OriginHeader}
+		relay := func(e voice.Event) {
+			if err := tx.Relay(slot, &e); err != nil {
+				t.Fatal(err)
+			}
+		}
+		relay(voice.Event{Kind: voice.EventCallStart, Call: a})
+		out := tx.Tick(0, nil)
+		relay(voice.Event{Kind: voice.EventVoice, Call: a, Burst: vburst(t, 0), Position: enums.VoiceBurstA})
+		out = append(out, tx.Tick(slot, nil)...)
+		relay(voice.Event{Kind: voice.EventCallEnd, Call: a})
+		relay(voice.Event{Kind: voice.EventCallStart, Call: b})
+		relay(voice.Event{Kind: voice.EventVoice, Call: b, Burst: vburst(t, 1), Position: enums.VoiceBurstA})
+		relay(voice.Event{Kind: voice.EventVoice, Call: b, Burst: vburst(t, 3), Position: enums.VoiceBurstA, Lost: 1})
+		for i := 2; i < 40; i++ {
+			out = append(out, tx.Tick(time.Duration(i)*slot, nil)...)
+		}
+		var v [][layer2.VoiceSlotsPerBurst][9]byte
+		ended := false
+		for _, o := range out {
+			switch {
+			case o.Kind == voice.OutputEnded:
+				ended = true
+			case ended && o.Kind == voice.OutputBurst && o.Hint.Kind == layer2.KindVoice:
+				v = append(v, o.Burst.VoiceSlots())
+			}
+		}
+		if len(v) < 5 {
+			t.Fatalf("FID %v: %d voice bursts of the pending call", fid, len(v))
+		}
+		for j := range v[1] {
+			if v[1][j] != v[0][2] {
+				t.Errorf("FID %v: lost burst slot %d = %x, want the last slot %x", fid, j, v[1][j], v[0][2])
+			}
+			if v[3][j] != v[2][2] {
+				t.Errorf("FID %v: first underrun slot %d = %x, want the last slot %x", fid, j, v[3][j], v[2][2])
+			}
+			if want := map[bool][9]byte{true: sil, false: v[2][2]}[fid == enums.FIDStandardized]; v[4][j] != want {
+				t.Errorf("FID %v: second underrun slot %d = %x, want %x", fid, j, v[4][j], want)
+			}
 		}
 	}
 }

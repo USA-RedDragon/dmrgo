@@ -313,23 +313,25 @@ type Transmitter struct {
 	nExtras   int
 	nextExtra int
 
-	relay      bool
-	last       [9]byte
-	hasLast    bool
-	frags      [4][4]byte
-	fragNext   int
-	carry      [4][4]byte
-	hasCarry   bool
-	relayPI    layer2.RawBurst
-	hasRelayPI bool
-	next       Call
-	hasNext    bool
-	oldSlots   int
-	nextPI     layer2.RawBurst
-	hasNextPI  bool
-	nextStop   bool
-	nextReason EndReason
-	dropped    int
+	relay       bool
+	last        [9]byte
+	hasLast     bool
+	frags       [4][4]byte
+	fragNext    int
+	carry       [4][4]byte
+	hasCarry    bool
+	relayPI     layer2.RawBurst
+	hasRelayPI  bool
+	next        Call
+	hasNext     bool
+	oldSlots    int
+	nextPI      layer2.RawBurst
+	hasNextPI   bool
+	nextLast    [9]byte
+	hasNextLast bool
+	nextStop    bool
+	nextReason  EndReason
+	dropped     int
 }
 
 // NewTransmitter returns a Transmitter for cfg. A nil cfg means the zero
@@ -889,6 +891,7 @@ func (t *Transmitter) finish(out []Output, reason EndReason) []Output {
 	}
 	t.relay = true
 	t.relayPI, t.hasRelayPI, t.hasNextPI = t.nextPI, t.hasNextPI, false
+	t.last, t.hasLast, t.hasNextLast = t.nextLast, t.hasNextLast, false
 	if t.nextStop {
 		t.stopping, t.reason, t.nextStop = true, t.nextReason, false
 	}
@@ -974,7 +977,7 @@ func (t *Transmitter) relayStart(now time.Duration, c *Call) error {
 	case TransmitterEnding, TransmitterHeader, TransmitterVoice:
 		if t.relay && !t.timedOut && !t.hasNext && (t.stopping || t.state == TransmitterEnding) {
 			t.next, t.hasNext, t.oldSlots = *c, true, t.length
-			t.hasNextPI, t.nextStop = false, false
+			t.hasNextPI, t.nextStop, t.hasNextLast = false, false, false
 			return nil
 		}
 	case TransmitterTimedOut, TransmitterAccess, TransmitterChanAuth:
@@ -994,10 +997,13 @@ func ambeFID(fid enums.FID) bool {
 }
 
 func (t *Transmitter) fillFor(next bool) *[9]byte {
-	if next {
-		return &t.silence
+	if !next {
+		return t.fill()
 	}
-	return t.fill()
+	if t.hasNextLast && !ambeFID(t.next.FID) {
+		return &t.nextLast
+	}
+	return &t.silence
 }
 
 func (t *Transmitter) relayVoice(e *Event) {
@@ -1008,7 +1014,7 @@ func (t *Transmitter) relayVoice(e *Event) {
 		return
 	}
 	fills := int(e.Lost)
-	repeat := !next && t.hasLast && t.underruns == 0
+	repeat := !next && t.hasLast && t.underruns == 0 || next && t.hasNextLast
 	if !next {
 		fills -= t.underruns
 		t.underruns = 0
@@ -1018,9 +1024,12 @@ func (t *Transmitter) relayVoice(e *Event) {
 			break
 		}
 		for range layer2.VoiceSlotsPerBurst {
-			if i == 0 && repeat {
+			switch {
+			case i == 0 && repeat && next:
+				t.push(&t.nextLast)
+			case i == 0 && repeat:
 				t.push(&t.last)
-			} else {
+			default:
 				t.push(t.fillFor(next))
 			}
 		}
@@ -1041,7 +1050,9 @@ func (t *Transmitter) relayVoice(e *Event) {
 			*s, _ = ambe.Regenerate(*s)
 		}
 		t.length++
-		if !next {
+		if next {
+			t.nextLast, t.hasNextLast = *s, true
+		} else {
 			t.last, t.hasLast = *s, true
 		}
 	}
