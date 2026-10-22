@@ -214,6 +214,9 @@ func (g *gen) fnDoc(o *types.Func, goName string) string {
 	if len(errs) > 0 {
 		d += " " + strings.ReplaceAll(strings.Join(errs, " "), "*/", "* /")
 	}
+	if strings.HasPrefix(d, head) {
+		d = head + g.selDocs(d[len(head):], o)
+	}
 	return d
 }
 
@@ -1030,7 +1033,7 @@ func (g *gen) finish(opt Options) (*Output, error) {
 		"typedef struct dmrgo_complex64_t {", "\tfloat re;", "\tfloat im;", "} dmrgo_complex64_t;", "",
 		"typedef struct dmrgo_complex128_t {", "\tdouble re;", "\tdouble im;", "} dmrgo_complex128_t;", "",
 		"typedef struct dmrgo_string_t {", "\tchar *ptr;", "\tsize_t len;", "} dmrgo_string_t;", "",
-		"/* dmrgo_duration_t is a time in nanoseconds, as a Go time.Duration. A now argument is the time since any fixed start, such as a monotonic clock. */",
+		"/* dmrgo_duration_t is a time in nanoseconds. A now argument is the time since any fixed start, such as a monotonic clock. */",
 		"typedef int64_t "+cDuration+";", "")
 	for _, f := range g.fwd {
 		lines2(f)
