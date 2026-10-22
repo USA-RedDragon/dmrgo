@@ -21,6 +21,9 @@ func (r *Repeater) authorize(now time.Duration, s *slot, b *layer2.Burst, raw *l
 	case SlotChanAuthSelect:
 		if burst, source, voiceAuth, ok := r.chanAuthPDU(b, raw); ok && source < s.authSource {
 			s.auth, s.authFrom, s.authSource, s.authVoice = burst, from, source, voiceAuth
+			if s.authPrev == SlotIdle {
+				r.authActivity(s, raw, voiceAuth)
+			}
 			dst = r.forward(now, s, from, dst)
 		}
 		return dst, true
@@ -51,6 +54,9 @@ func (r *Repeater) authorize(now time.Duration, s *slot, b *layer2.Burst, raw *l
 	if !admitted {
 		return dst, true
 	}
+	if s.state == SlotIdle {
+		r.authActivity(s, raw, voiceAuth)
+	}
 	s.authPrev = s.state
 	s.auth, s.authFrom, s.authSource, s.authVoice = burst, from, source, voiceAuth
 	if r.chanAuth == ChannelAuthMultiSite {
@@ -58,6 +64,21 @@ func (r *Repeater) authorize(now time.Duration, s *slot, b *layer2.Burst, raw *l
 		return r.forward(now, s, from, dst), true
 	}
 	return r.authSelected(now, s, dst), true
+}
+
+func (r *Repeater) authActivity(s *slot, raw *layer2.RawBurst, voiceAuth bool) {
+	s.hasCall = false
+	if voiceAuth {
+		if c, ok := lcCall(&r.lc); ok {
+			s.call, s.hasCall = c, true
+			s.activity, s.hash = activityOf(&c), hashOf(c.Target)
+		}
+		return
+	}
+	p, _ := r.bptc(raw)
+	c := pdu.CSBKBytes(p)
+	s.call, s.activity = preambleCall(&c)
+	s.hash, s.hasCall = hashOf(s.call.Target), true
 }
 
 func (r *Repeater) forward(now time.Duration, s *slot, from Source, dst []Output) []Output {
