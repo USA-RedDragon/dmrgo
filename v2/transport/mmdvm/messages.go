@@ -287,9 +287,11 @@ type ConfigV1 struct {
 
 // SetFreq is the payload of a CommandSetFreq frame: the RX and TX
 // frequencies, and from current hosts the RF level and the POCSAG TX
-// frequency.
+// frequency. MMDVMHost sends 14 octets, and MMDVM-IQ dd4a0fc NAKs fewer. A
+// longer payload decodes, as the firmware ignores the octets after the ones
+// it reads.
 //
-//dmr:frame 9 10 14
+//dmr:frame 9 10 14+
 //dmr:payload
 type SetFreq struct {
 	// Reserved is octet 0, 0x00 from MMDVMHost.
@@ -302,8 +304,7 @@ type SetFreq struct {
 	RFLevel uint8 `dmr:"bits:72-79"`
 	// POCSAG is the POCSAG TX frequency in Hz (14 octets).
 	POCSAG uint32 `dmr:"bits:80-111,le"`
-	// Size is the length of the payload: 9, 10 or 14, or 0 for 9.
-	// MMDVMHost sends 14, and MMDVM-IQ dd4a0fc NAKs fewer.
+	// Size is the length of the payload: 9, 10 or 14, or 0 for 14.
 	Size uint8 `dmr:"-"`
 }
 

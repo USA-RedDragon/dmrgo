@@ -74,7 +74,7 @@ func checkPayload(t *testing.T, f mmdvm.Frame) {
 	}
 	if s, err := mmdvm.DecodeSetFreq(f.Payload); err == nil {
 		out, err := s.AppendBinary(nil)
-		if err != nil || !bytes.Equal(out, f.Payload) {
+		if err != nil || !bytes.Equal(out, f.Payload[:min(len(f.Payload), 14)]) {
 			t.Fatalf("set freq %x: %x %v", f.Payload, out, err)
 		}
 	}

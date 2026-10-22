@@ -549,9 +549,10 @@ func (s *ConfigV1) String() string {
 	return "ConfigV1{ Simplex: " + text.Bool(s.Simplex) + ", UseCOSAsLockout: " + text.Bool(s.UseCOSAsLockout) + ", Debug: " + text.Bool(s.Debug) + ", YSFLoDev: " + text.Bool(s.YSFLoDev) + ", PTTInvert: " + text.Bool(s.PTTInvert) + ", TXInvert: " + text.Bool(s.TXInvert) + ", RXInvert: " + text.Bool(s.RXInvert) + ", M17: " + text.Bool(s.M17) + ", POCSAG: " + text.Bool(s.POCSAG) + ", NXDN: " + text.Bool(s.NXDN) + ", P25: " + text.Bool(s.P25) + ", YSF: " + text.Bool(s.YSF) + ", DMR: " + text.Bool(s.DMR) + ", DStar: " + text.Bool(s.DStar) + ", TXDelay: " + text.Int(int64(s.TXDelay)) + ", State: " + text.Int(int64(s.State)) + ", RXLevel: " + text.Int(int64(s.RXLevel)) + ", CWIDTXLevel: " + text.Int(int64(s.CWIDTXLevel)) + ", DMRColorCode: " + text.Int(int64(s.DMRColorCode)) + ", DMRDelay: " + text.Int(int64(s.DMRDelay)) + ", OscOffset: " + text.Int(int64(s.OscOffset)) + ", DStarTXLevel: " + text.Int(int64(s.DStarTXLevel)) + ", DMRTXLevel: " + text.Int(int64(s.DMRTXLevel)) + ", YSFTXLevel: " + text.Int(int64(s.YSFTXLevel)) + ", P25TXLevel: " + text.Int(int64(s.P25TXLevel)) + ", TXDCOffset: " + text.Int(int64(s.TXDCOffset)) + ", RXDCOffset: " + text.Int(int64(s.RXDCOffset)) + ", NXDNTXLevel: " + text.Int(int64(s.NXDNTXLevel)) + ", YSFTXHang: " + text.Int(int64(s.YSFTXHang)) + ", POCSAGTXLevel: " + text.Int(int64(s.POCSAGTXLevel)) + ", FMTXLevel: " + text.Int(int64(s.FMTXLevel)) + ", P25TXHang: " + text.Int(int64(s.P25TXHang)) + ", NXDNTXHang: " + text.Int(int64(s.NXDNTXHang)) + ", M17TXLevel: " + text.Int(int64(s.M17TXLevel)) + ", M17TXHang: " + text.Int(int64(s.M17TXHang)) + " }"
 }
 
-// DecodeSetFreq decodes a SetFreq from data, a payload of 9, 10 or 14
-// octets. It returns ErrShort when data is shorter than 9 octets and
-// ErrLength when its length is not one of these. It does not keep data.
+// DecodeSetFreq decodes a SetFreq from data, a payload of 9, 10 or 14 octets
+// or more. It returns ErrShort when data is shorter than 9 octets and
+// ErrLength when it is shorter than 14 octets and its length is not one of
+// these. It ignores the octets after the first 14. It does not keep data.
 func DecodeSetFreq(data []byte) (SetFreq, error) {
 	switch len(data) {
 	case 9, 10, 14:
@@ -559,10 +560,12 @@ func DecodeSetFreq(data []byte) (SetFreq, error) {
 		if len(data) < 9 {
 			return SetFreq{}, ErrShort
 		}
-		return SetFreq{}, ErrLength
+		if len(data) < 14 {
+			return SetFreq{}, ErrLength
+		}
 	}
 	var result SetFreq
-	result.Size = uint8(len(data))
+	result.Size = uint8(min(len(data), 14))
 	result.Reserved = uint8(uint64(data[0]))
 	var _vRX uint64
 	_vRX = uint64(data[1]) | uint64(data[2])<<8 | uint64(data[3])<<16 | uint64(data[4])<<24
@@ -582,7 +585,7 @@ func DecodeSetFreq(data []byte) (SetFreq, error) {
 }
 
 // AppendBinary appends the 9, 10 or 14 octets of s to dst: Size selects the
-// length, and 0 means 9. It returns dst unchanged and a
+// length, and 0 means 14. It returns dst unchanged and a
 // *dmrgo.FieldRangeError when a field does not fit, or an error when Size is
 // not one of the lengths. It allocates only to grow dst.
 func (s *SetFreq) AppendBinary(dst []byte) ([]byte, error) {
@@ -591,13 +594,13 @@ func (s *SetFreq) AppendBinary(dst []byte) ([]byte, error) {
 	}
 
 	_n := len(dst)
-	_size := 9
+	_size := 14
 	switch s.Size {
-	case 0, 9:
+	case 0, 14:
+	case 9:
+		_size = 9
 	case 10:
 		_size = 10
-	case 14:
-		_size = 14
 	default:
 		return dst, errSetFreqSize
 	}
