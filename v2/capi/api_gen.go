@@ -33212,685 +33212,6 @@ func dmrgo_dmrd_command_string(c_self C.dmrgo_dmrd_command_t, c_out *C.char, c_o
 	return C.DMRGO_OK
 }
 
-//export dmrgo_dmrd_config_callsign
-func dmrgo_dmrd_config_callsign(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).Callsign()
-	_ = r0
-	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_color_code
-func dmrgo_dmrd_config_color_code(c_self *C.dmrgo_dmrd_config_t, c_out *C.dmrgo_enums_color_code_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0, r1 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).ColorCode()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.dmrgo_enums_color_code_t(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r1 != nil {
-		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_description
-func dmrgo_dmrd_config_description(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).Description()
-	_ = r0
-	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_height
-func dmrgo_dmrd_config_height(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint16_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0, r1 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).Height()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.uint16_t(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r1 != nil {
-		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_id
-func dmrgo_dmrd_config_id(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint32_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).ID()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.uint32_t(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_latitude
-func dmrgo_dmrd_config_latitude(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).Latitude()
-	_ = r0
-	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_location
-func dmrgo_dmrd_config_location(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).Location()
-	_ = r0
-	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_longitude
-func dmrgo_dmrd_config_longitude(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).Longitude()
-	_ = r0
-	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_package_id
-func dmrgo_dmrd_config_package_id(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).PackageID()
-	_ = r0
-	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_power
-func dmrgo_dmrd_config_power(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0, r1 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).Power()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.uint8_t(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r1 != nil {
-		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_rx_frequency
-func dmrgo_dmrd_config_rx_frequency(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint32_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0, r1 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).RXFrequency()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.uint32_t(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r1 != nil {
-		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_reset
-func dmrgo_dmrd_config_reset(c_self *C.dmrgo_dmrd_config_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	(*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).Reset()
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_set_callsign
-func dmrgo_dmrd_config_set_callsign(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_v == nil && c_v_len > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var a_v []byte
-	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetCallsign(a_v)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_set_color_code
-func dmrgo_dmrd_config_set_color_code(c_self *C.dmrgo_dmrd_config_t, c_v C.dmrgo_enums_color_code_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetColorCode(g_enums.ColorCode(c_v))
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_set_description
-func dmrgo_dmrd_config_set_description(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_v == nil && c_v_len > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var a_v []byte
-	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetDescription(a_v)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_set_height
-func dmrgo_dmrd_config_set_height(c_self *C.dmrgo_dmrd_config_t, c_v C.uint16_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetHeight(uint16(c_v))
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_set_id
-func dmrgo_dmrd_config_set_id(c_self *C.dmrgo_dmrd_config_t, c_v C.uint32_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	(*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetID(uint32(c_v))
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_set_latitude
-func dmrgo_dmrd_config_set_latitude(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_v == nil && c_v_len > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var a_v []byte
-	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetLatitude(a_v)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_set_location
-func dmrgo_dmrd_config_set_location(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_v == nil && c_v_len > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var a_v []byte
-	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetLocation(a_v)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_set_longitude
-func dmrgo_dmrd_config_set_longitude(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_v == nil && c_v_len > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var a_v []byte
-	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetLongitude(a_v)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_set_package_id
-func dmrgo_dmrd_config_set_package_id(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_v == nil && c_v_len > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var a_v []byte
-	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetPackageID(a_v)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_set_power
-func dmrgo_dmrd_config_set_power(c_self *C.dmrgo_dmrd_config_t, c_v C.uint8_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetPower(uint8(c_v))
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_set_rx_frequency
-func dmrgo_dmrd_config_set_rx_frequency(c_self *C.dmrgo_dmrd_config_t, c_v C.uint32_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetRXFrequency(uint32(c_v))
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_set_slots
-func dmrgo_dmrd_config_set_slots(c_self *C.dmrgo_dmrd_config_t, c_v C.uint8_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetSlots(uint8(c_v))
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_set_software_id
-func dmrgo_dmrd_config_set_software_id(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_v == nil && c_v_len > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var a_v []byte
-	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetSoftwareID(a_v)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_set_tx_frequency
-func dmrgo_dmrd_config_set_tx_frequency(c_self *C.dmrgo_dmrd_config_t, c_v C.uint32_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetTXFrequency(uint32(c_v))
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_set_url
-func dmrgo_dmrd_config_set_url(c_self *C.dmrgo_dmrd_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_v == nil && c_v_len > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var a_v []byte
-	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SetURL(a_v)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_slots
-func dmrgo_dmrd_config_slots(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0, r1 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).Slots()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.uint8_t(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r1 != nil {
-		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_software_id
-func dmrgo_dmrd_config_software_id(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).SoftwareID()
-	_ = r0
-	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_tx_frequency
-func dmrgo_dmrd_config_tx_frequency(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint32_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0, r1 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).TXFrequency()
-	_ = r0
-	if c_out != nil {
-		*c_out = C.uint32_t(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r1 != nil {
-		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_url
-func dmrgo_dmrd_config_url(c_self *C.dmrgo_dmrd_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := (*g_transport_dmrd.Config)(unsafe.Pointer(c_self)).URL()
-	_ = r0
-	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_config_of
-func dmrgo_dmrd_config_of(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_dmrd_config_t, c_out_ok *C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	if c_p == nil && c_p_len > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var a_p []byte
-	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
-	r0, r1 := g_transport_dmrd.ConfigOf(a_p)
-	_ = r0
-	if c_out_ok != nil {
-		*c_out_ok = C.bool(r0 != nil)
-	}
-	if c_out != nil && r0 != nil {
-		*(*g_transport_dmrd.Config)(unsafe.Pointer(&(*c_out))) = (*r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r1 != nil {
-		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_dmrd_control_append_binary
 func dmrgo_dmrd_control_append_binary(c_self *C.dmrgo_dmrd_control_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_d C.dmrgo_dmrd_dialect_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -35190,6 +34511,685 @@ func dmrgo_dmrd_local_talker_alias_string(c_self *C.dmrgo_dmrd_local_talker_alia
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_callsign
+func dmrgo_dmrd_mmdvm_config_callsign(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).Callsign()
+	_ = r0
+	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_color_code
+func dmrgo_dmrd_mmdvm_config_color_code(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_out *C.dmrgo_enums_color_code_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).ColorCode()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_enums_color_code_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_description
+func dmrgo_dmrd_mmdvm_config_description(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).Description()
+	_ = r0
+	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_height
+func dmrgo_dmrd_mmdvm_config_height(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_out *C.uint16_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).Height()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint16_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_id
+func dmrgo_dmrd_mmdvm_config_id(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_out *C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).ID()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint32_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_latitude
+func dmrgo_dmrd_mmdvm_config_latitude(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).Latitude()
+	_ = r0
+	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_location
+func dmrgo_dmrd_mmdvm_config_location(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).Location()
+	_ = r0
+	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_longitude
+func dmrgo_dmrd_mmdvm_config_longitude(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).Longitude()
+	_ = r0
+	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_package_id
+func dmrgo_dmrd_mmdvm_config_package_id(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).PackageID()
+	_ = r0
+	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_power
+func dmrgo_dmrd_mmdvm_config_power(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).Power()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint8_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_rx_frequency
+func dmrgo_dmrd_mmdvm_config_rx_frequency(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_out *C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).RXFrequency()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint32_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_reset
+func dmrgo_dmrd_mmdvm_config_reset(c_self *C.dmrgo_dmrd_mmdvm_config_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	(*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).Reset()
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_set_callsign
+func dmrgo_dmrd_mmdvm_config_set_callsign(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_v == nil && c_v_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_v []byte
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).SetCallsign(a_v)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_set_color_code
+func dmrgo_dmrd_mmdvm_config_set_color_code(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_v C.dmrgo_enums_color_code_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).SetColorCode(g_enums.ColorCode(c_v))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_set_description
+func dmrgo_dmrd_mmdvm_config_set_description(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_v == nil && c_v_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_v []byte
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).SetDescription(a_v)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_set_height
+func dmrgo_dmrd_mmdvm_config_set_height(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_v C.uint16_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).SetHeight(uint16(c_v))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_set_id
+func dmrgo_dmrd_mmdvm_config_set_id(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_v C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	(*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).SetID(uint32(c_v))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_set_latitude
+func dmrgo_dmrd_mmdvm_config_set_latitude(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_v == nil && c_v_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_v []byte
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).SetLatitude(a_v)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_set_location
+func dmrgo_dmrd_mmdvm_config_set_location(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_v == nil && c_v_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_v []byte
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).SetLocation(a_v)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_set_longitude
+func dmrgo_dmrd_mmdvm_config_set_longitude(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_v == nil && c_v_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_v []byte
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).SetLongitude(a_v)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_set_package_id
+func dmrgo_dmrd_mmdvm_config_set_package_id(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_v == nil && c_v_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_v []byte
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).SetPackageID(a_v)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_set_power
+func dmrgo_dmrd_mmdvm_config_set_power(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_v C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).SetPower(uint8(c_v))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_set_rx_frequency
+func dmrgo_dmrd_mmdvm_config_set_rx_frequency(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_v C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).SetRXFrequency(uint32(c_v))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_set_slots
+func dmrgo_dmrd_mmdvm_config_set_slots(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_v C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).SetSlots(uint8(c_v))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_set_software_id
+func dmrgo_dmrd_mmdvm_config_set_software_id(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_v == nil && c_v_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_v []byte
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).SetSoftwareID(a_v)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_set_tx_frequency
+func dmrgo_dmrd_mmdvm_config_set_tx_frequency(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_v C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).SetTXFrequency(uint32(c_v))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_set_url
+func dmrgo_dmrd_mmdvm_config_set_url(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_v *C.uint8_t, c_v_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_v), c_v_len, unsafe.Sizeof(*c_v)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_v == nil && c_v_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_v []byte
+	a_v = cSlice[byte](unsafe.Pointer(c_v), c_v_len)
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).SetURL(a_v)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_slots
+func dmrgo_dmrd_mmdvm_config_slots(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).Slots()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint8_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_software_id
+func dmrgo_dmrd_mmdvm_config_software_id(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).SoftwareID()
+	_ = r0
+	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_tx_frequency
+func dmrgo_dmrd_mmdvm_config_tx_frequency(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_out *C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0, r1 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).TXFrequency()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint32_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_url
+func dmrgo_dmrd_mmdvm_config_url(c_self *C.dmrgo_dmrd_mmdvm_config_t, c_out *C.uint8_t, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := (*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(c_self)).URL()
+	_ = r0
+	putSlice(unsafe.Slice((*byte)(unsafe.Pointer(c_out)), int(c_out_cap)), c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_dmrd_mmdvm_config_of
+func dmrgo_dmrd_mmdvm_config_of(c_p *C.uint8_t, c_p_len C.size_t, c_out *C.dmrgo_dmrd_mmdvm_config_t, c_out_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_p == nil && c_p_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p []byte
+	a_p = cSlice[byte](unsafe.Pointer(c_p), c_p_len)
+	r0, r1 := g_transport_dmrd.MMDVMConfigOf(a_p)
+	_ = r0
+	if c_out_ok != nil {
+		*c_out_ok = C.bool(r0 != nil)
+	}
+	if c_out != nil && r0 != nil {
+		*(*g_transport_dmrd.MMDVMConfig)(unsafe.Pointer(&(*c_out))) = (*r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -37583,17 +37583,17 @@ func dmrgo_ipsc_append_peer_list_reply(c_dst *C.uint8_t, c_dst_cap C.size_t, c_d
 }
 
 //export dmrgo_ipsc_burst_type_data_type
-func dmrgo_ipsc_burst_type_data_type(c_self C.dmrgo_ipsc_burst_type_t, c_out0 *C.dmrgo_enums_data_type_t, c_out1 *C.bool) (rc C.int) {
+func dmrgo_ipsc_burst_type_data_type(c_self C.dmrgo_ipsc_burst_type_t, c_data_type *C.dmrgo_enums_data_type_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	r0, r1 := g_transport_ipsc.BurstType(c_self).DataType()
 	_ = r0
 	_ = r1
-	if c_out0 != nil {
-		*c_out0 = C.dmrgo_enums_data_type_t(r0)
+	if c_data_type != nil {
+		*c_data_type = C.dmrgo_enums_data_type_t(r0)
 	}
-	if c_out1 != nil {
-		*c_out1 = C.bool(r1)
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -37605,6 +37605,9 @@ func dmrgo_ipsc_burst_type_data_type(c_self C.dmrgo_ipsc_burst_type_t, c_out0 *C
 func dmrgo_ipsc_burst_type_string(c_self C.dmrgo_ipsc_burst_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}

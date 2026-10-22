@@ -364,8 +364,8 @@ func (m *Master) config(now time.Duration, b []byte, dst []Output) []Output {
 			id, err = c.ID()
 		}
 	} else {
-		var c *dmrd.Config
-		if c, err = dmrd.ConfigOf(b); err == nil {
+		var c *dmrd.MMDVMConfig
+		if c, err = dmrd.MMDVMConfigOf(b); err == nil {
 			id = c.ID()
 		}
 	}

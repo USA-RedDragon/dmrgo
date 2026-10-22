@@ -274,8 +274,8 @@ func RepeaterID(p []byte, d Dialect) (id uint32, ok bool) {
 				id, err = c.ID()
 			}
 		} else {
-			var c *Config
-			if c, err = ConfigOf(p); err == nil {
+			var c *MMDVMConfig
+			if c, err = MMDVMConfigOf(p); err == nil {
 				id = c.ID()
 			}
 		}

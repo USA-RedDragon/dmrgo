@@ -97,7 +97,7 @@ func checkGatewayPacket(t *testing.T, cmd dmrd.Command, c captured) {
 
 func checkGatewayConfig(t *testing.T, p []byte) {
 	t.Helper()
-	cfg, err := dmrd.ConfigOf(p)
+	cfg, err := dmrd.MMDVMConfigOf(p)
 	if err != nil {
 		t.Fatal(err)
 	}

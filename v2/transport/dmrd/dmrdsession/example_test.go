@@ -12,7 +12,7 @@ import (
 // DMRGateway logs into a master, passing each packet that one sends to the
 // other.
 func Example() {
-	var rptc dmrd.Config
+	var rptc dmrd.MMDVMConfig
 	copy(rptc[:], "RPTC")
 	rptc.SetID(3129100)
 	peer, _ := dmrdsession.NewPeer(&dmrdsession.PeerConfig{

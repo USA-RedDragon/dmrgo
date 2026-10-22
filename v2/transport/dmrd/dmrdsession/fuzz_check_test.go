@@ -64,7 +64,7 @@ func checkOutputs(t *testing.T, before, after []dmrdsession.Output, d dmrd.Diale
 		c := dmrd.Classify(o.Packet, d)
 		switch c {
 		case dmrd.CommandRPTC:
-			if _, err := dmrd.ConfigOf(o.Packet); err != nil {
+			if _, err := dmrd.MMDVMConfigOf(o.Packet); err != nil {
 				if _, err := dmrd.HBRPConfigOf(o.Packet); err != nil {
 					t.Fatalf("sent %q", o.Packet)
 				}

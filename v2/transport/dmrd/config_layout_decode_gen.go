@@ -8,7 +8,7 @@ import (
 )
 
 // ID returns the repeater ID.
-func (c *Config) ID() uint32 {
+func (c *MMDVMConfig) ID() uint32 {
 	if c == nil {
 		return 0
 	}
@@ -22,7 +22,7 @@ func (c *Config) ID() uint32 {
 }
 
 // SetID sets the repeater ID.
-func (c *Config) SetID(v uint32) {
+func (c *MMDVMConfig) SetID(v uint32) {
 	if c == nil {
 		return
 	}
@@ -40,7 +40,7 @@ func (c *Config) SetID(v uint32) {
 
 // Callsign returns the callsign of the repeater. The text has its trailing
 // spaces and NUL octets removed, and points into c.
-func (c *Config) Callsign() []byte {
+func (c *MMDVMConfig) Callsign() []byte {
 	if c == nil {
 		return nil
 	}
@@ -55,13 +55,13 @@ func (c *Config) Callsign() []byte {
 // SetCallsign sets the callsign of the repeater. It pads v with spaces, and
 // returns a *dmrgo.FieldRangeError, and changes nothing, when v is longer
 // than 8 octets.
-func (c *Config) SetCallsign(v []byte) error {
+func (c *MMDVMConfig) SetCallsign(v []byte) error {
 	if c == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
 	if len(v) > 8 {
-		return errConfigCallsignRange
+		return errMMDVMConfigCallsignRange
 	}
 	_k := copy(c[8:16], v)
 	for _i := 8 + _k; _i < 16; _i++ {
@@ -72,7 +72,7 @@ func (c *Config) SetCallsign(v []byte) error {
 
 // RXFrequency returns the receive frequency in Hz, 9 digits. It returns
 // ErrText when the field holds a character that is not a digit.
-func (c *Config) RXFrequency() (uint32, error) {
+func (c *MMDVMConfig) RXFrequency() (uint32, error) {
 	if c == nil {
 		return 0, dmrgo.ErrNilReceiver
 	}
@@ -95,7 +95,7 @@ func (c *Config) RXFrequency() (uint32, error) {
 
 // SetRXFrequency sets the receive frequency in Hz, 9 digits. It returns a
 // *dmrgo.FieldRangeError, and changes nothing, when v does not fit.
-func (c *Config) SetRXFrequency(v uint32) error {
+func (c *MMDVMConfig) SetRXFrequency(v uint32) error {
 	if c == nil {
 		return dmrgo.ErrNilReceiver
 	}
@@ -105,7 +105,7 @@ func (c *Config) SetRXFrequency(v uint32) error {
 		RXFrequency uint32
 	}{v}
 	if uint64(s.RXFrequency) > uint64(0x3b9ac9ff) {
-		return errConfigRXFrequencyRange
+		return errMMDVMConfigRXFrequencyRange
 	}
 	_vRXFrequency := uint64(s.RXFrequency)
 	for _i := 24; _i >= 16; _i-- {
@@ -117,7 +117,7 @@ func (c *Config) SetRXFrequency(v uint32) error {
 
 // TXFrequency returns the transmit frequency in Hz, 9 digits. It returns
 // ErrText when the field holds a character that is not a digit.
-func (c *Config) TXFrequency() (uint32, error) {
+func (c *MMDVMConfig) TXFrequency() (uint32, error) {
 	if c == nil {
 		return 0, dmrgo.ErrNilReceiver
 	}
@@ -140,7 +140,7 @@ func (c *Config) TXFrequency() (uint32, error) {
 
 // SetTXFrequency sets the transmit frequency in Hz, 9 digits. It returns a
 // *dmrgo.FieldRangeError, and changes nothing, when v does not fit.
-func (c *Config) SetTXFrequency(v uint32) error {
+func (c *MMDVMConfig) SetTXFrequency(v uint32) error {
 	if c == nil {
 		return dmrgo.ErrNilReceiver
 	}
@@ -150,7 +150,7 @@ func (c *Config) SetTXFrequency(v uint32) error {
 		TXFrequency uint32
 	}{v}
 	if uint64(s.TXFrequency) > uint64(0x3b9ac9ff) {
-		return errConfigTXFrequencyRange
+		return errMMDVMConfigTXFrequencyRange
 	}
 	_vTXFrequency := uint64(s.TXFrequency)
 	for _i := 33; _i >= 25; _i-- {
@@ -162,7 +162,7 @@ func (c *Config) SetTXFrequency(v uint32) error {
 
 // Power returns the transmit power in dBm, 2 digits. It returns ErrText when
 // the field holds a character that is not a digit.
-func (c *Config) Power() (uint8, error) {
+func (c *MMDVMConfig) Power() (uint8, error) {
 	if c == nil {
 		return 0, dmrgo.ErrNilReceiver
 	}
@@ -185,7 +185,7 @@ func (c *Config) Power() (uint8, error) {
 
 // SetPower sets the transmit power in dBm, 2 digits. It returns a
 // *dmrgo.FieldRangeError, and changes nothing, when v does not fit.
-func (c *Config) SetPower(v uint8) error {
+func (c *MMDVMConfig) SetPower(v uint8) error {
 	if c == nil {
 		return dmrgo.ErrNilReceiver
 	}
@@ -195,7 +195,7 @@ func (c *Config) SetPower(v uint8) error {
 		Power uint8
 	}{v}
 	if uint64(s.Power) > uint64(0x63) {
-		return errConfigPowerRange
+		return errMMDVMConfigPowerRange
 	}
 	_vPower := uint64(s.Power)
 	for _i := 35; _i >= 34; _i-- {
@@ -207,7 +207,7 @@ func (c *Config) SetPower(v uint8) error {
 
 // ColorCode returns the color code, 2 digits. It returns ErrText when the
 // field holds a character that is not a digit.
-func (c *Config) ColorCode() (enums.ColorCode, error) {
+func (c *MMDVMConfig) ColorCode() (enums.ColorCode, error) {
 	if c == nil {
 		return 0, dmrgo.ErrNilReceiver
 	}
@@ -230,7 +230,7 @@ func (c *Config) ColorCode() (enums.ColorCode, error) {
 
 // SetColorCode sets the color code, 2 digits. It returns a
 // *dmrgo.FieldRangeError, and changes nothing, when v does not fit.
-func (c *Config) SetColorCode(v enums.ColorCode) error {
+func (c *MMDVMConfig) SetColorCode(v enums.ColorCode) error {
 	if c == nil {
 		return dmrgo.ErrNilReceiver
 	}
@@ -240,7 +240,7 @@ func (c *Config) SetColorCode(v enums.ColorCode) error {
 		ColorCode enums.ColorCode
 	}{v}
 	if uint64(s.ColorCode) > uint64(0x63) {
-		return errConfigColorCodeRange
+		return errMMDVMConfigColorCodeRange
 	}
 	_vColorCode := uint64(s.ColorCode)
 	for _i := 37; _i >= 36; _i-- {
@@ -252,7 +252,7 @@ func (c *Config) SetColorCode(v enums.ColorCode) error {
 
 // Latitude returns the latitude as text, 8 characters, North positive. The
 // text has its trailing spaces and NUL octets removed, and points into c.
-func (c *Config) Latitude() []byte {
+func (c *MMDVMConfig) Latitude() []byte {
 	if c == nil {
 		return nil
 	}
@@ -267,13 +267,13 @@ func (c *Config) Latitude() []byte {
 // SetLatitude sets the latitude as text, 8 characters, North positive. It
 // pads v with spaces, and returns a *dmrgo.FieldRangeError, and changes
 // nothing, when v is longer than 8 octets.
-func (c *Config) SetLatitude(v []byte) error {
+func (c *MMDVMConfig) SetLatitude(v []byte) error {
 	if c == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
 	if len(v) > 8 {
-		return errConfigLatitudeRange
+		return errMMDVMConfigLatitudeRange
 	}
 	_k := copy(c[38:46], v)
 	for _i := 38 + _k; _i < 46; _i++ {
@@ -284,7 +284,7 @@ func (c *Config) SetLatitude(v []byte) error {
 
 // Longitude returns the longitude as text, 9 characters, East positive. The
 // text has its trailing spaces and NUL octets removed, and points into c.
-func (c *Config) Longitude() []byte {
+func (c *MMDVMConfig) Longitude() []byte {
 	if c == nil {
 		return nil
 	}
@@ -299,13 +299,13 @@ func (c *Config) Longitude() []byte {
 // SetLongitude sets the longitude as text, 9 characters, East positive. It
 // pads v with spaces, and returns a *dmrgo.FieldRangeError, and changes
 // nothing, when v is longer than 9 octets.
-func (c *Config) SetLongitude(v []byte) error {
+func (c *MMDVMConfig) SetLongitude(v []byte) error {
 	if c == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
 	if len(v) > 9 {
-		return errConfigLongitudeRange
+		return errMMDVMConfigLongitudeRange
 	}
 	_k := copy(c[46:55], v)
 	for _i := 46 + _k; _i < 55; _i++ {
@@ -316,7 +316,7 @@ func (c *Config) SetLongitude(v []byte) error {
 
 // Height returns the antenna height above ground in meters, 3 digits. It
 // returns ErrText when the field holds a character that is not a digit.
-func (c *Config) Height() (uint16, error) {
+func (c *MMDVMConfig) Height() (uint16, error) {
 	if c == nil {
 		return 0, dmrgo.ErrNilReceiver
 	}
@@ -340,7 +340,7 @@ func (c *Config) Height() (uint16, error) {
 // SetHeight sets the antenna height above ground in meters, 3 digits. It
 // returns a *dmrgo.FieldRangeError, and changes nothing, when v does not
 // fit.
-func (c *Config) SetHeight(v uint16) error {
+func (c *MMDVMConfig) SetHeight(v uint16) error {
 	if c == nil {
 		return dmrgo.ErrNilReceiver
 	}
@@ -350,7 +350,7 @@ func (c *Config) SetHeight(v uint16) error {
 		Height uint16
 	}{v}
 	if uint64(s.Height) > uint64(0x3e7) {
-		return errConfigHeightRange
+		return errMMDVMConfigHeightRange
 	}
 	_vHeight := uint64(s.Height)
 	for _i := 57; _i >= 55; _i-- {
@@ -362,7 +362,7 @@ func (c *Config) SetHeight(v uint16) error {
 
 // Location returns the location of the repeater as free text. The text has
 // its trailing spaces and NUL octets removed, and points into c.
-func (c *Config) Location() []byte {
+func (c *MMDVMConfig) Location() []byte {
 	if c == nil {
 		return nil
 	}
@@ -377,13 +377,13 @@ func (c *Config) Location() []byte {
 // SetLocation sets the location of the repeater as free text. It pads v with
 // spaces, and returns a *dmrgo.FieldRangeError, and changes nothing, when v
 // is longer than 20 octets.
-func (c *Config) SetLocation(v []byte) error {
+func (c *MMDVMConfig) SetLocation(v []byte) error {
 	if c == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
 	if len(v) > 20 {
-		return errConfigLocationRange
+		return errMMDVMConfigLocationRange
 	}
 	_k := copy(c[58:78], v)
 	for _i := 58 + _k; _i < 78; _i++ {
@@ -394,7 +394,7 @@ func (c *Config) SetLocation(v []byte) error {
 
 // Description returns the description of the repeater as free text. The text
 // has its trailing spaces and NUL octets removed, and points into c.
-func (c *Config) Description() []byte {
+func (c *MMDVMConfig) Description() []byte {
 	if c == nil {
 		return nil
 	}
@@ -409,13 +409,13 @@ func (c *Config) Description() []byte {
 // SetDescription sets the description of the repeater as free text. It pads
 // v with spaces, and returns a *dmrgo.FieldRangeError, and changes nothing,
 // when v is longer than 19 octets.
-func (c *Config) SetDescription(v []byte) error {
+func (c *MMDVMConfig) SetDescription(v []byte) error {
 	if c == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
 	if len(v) > 19 {
-		return errConfigDescriptionRange
+		return errMMDVMConfigDescriptionRange
 	}
 	_k := copy(c[78:97], v)
 	for _i := 78 + _k; _i < 97; _i++ {
@@ -427,7 +427,7 @@ func (c *Config) SetDescription(v []byte) error {
 // Slots returns the slots digit: 1 or 2 for one slot, 3 for both in duplex,
 // 4 for simplex (DMO). It returns ErrText when the field holds a character
 // that is not a digit.
-func (c *Config) Slots() (uint8, error) {
+func (c *MMDVMConfig) Slots() (uint8, error) {
 	if c == nil {
 		return 0, dmrgo.ErrNilReceiver
 	}
@@ -451,7 +451,7 @@ func (c *Config) Slots() (uint8, error) {
 // SetSlots sets the slots digit: 1 or 2 for one slot, 3 for both in duplex,
 // 4 for simplex (DMO). It returns a *dmrgo.FieldRangeError, and changes
 // nothing, when v does not fit.
-func (c *Config) SetSlots(v uint8) error {
+func (c *MMDVMConfig) SetSlots(v uint8) error {
 	if c == nil {
 		return dmrgo.ErrNilReceiver
 	}
@@ -461,7 +461,7 @@ func (c *Config) SetSlots(v uint8) error {
 		Slots uint8
 	}{v}
 	if uint64(s.Slots) > uint64(0x9) {
-		return errConfigSlotsRange
+		return errMMDVMConfigSlotsRange
 	}
 	_vSlots := uint64(s.Slots)
 	for _i := 97; _i >= 97; _i-- {
@@ -473,7 +473,7 @@ func (c *Config) SetSlots(v uint8) error {
 
 // URL returns the web page of the repeater. The text has its trailing spaces
 // and NUL octets removed, and points into c.
-func (c *Config) URL() []byte {
+func (c *MMDVMConfig) URL() []byte {
 	if c == nil {
 		return nil
 	}
@@ -488,13 +488,13 @@ func (c *Config) URL() []byte {
 // SetURL sets the web page of the repeater. It pads v with spaces, and
 // returns a *dmrgo.FieldRangeError, and changes nothing, when v is longer
 // than 124 octets.
-func (c *Config) SetURL(v []byte) error {
+func (c *MMDVMConfig) SetURL(v []byte) error {
 	if c == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
 	if len(v) > 124 {
-		return errConfigURLRange
+		return errMMDVMConfigURLRange
 	}
 	_k := copy(c[98:222], v)
 	for _i := 98 + _k; _i < 222; _i++ {
@@ -505,7 +505,7 @@ func (c *Config) SetURL(v []byte) error {
 
 // SoftwareID returns the software and its version. The text has its trailing
 // spaces and NUL octets removed, and points into c.
-func (c *Config) SoftwareID() []byte {
+func (c *MMDVMConfig) SoftwareID() []byte {
 	if c == nil {
 		return nil
 	}
@@ -520,13 +520,13 @@ func (c *Config) SoftwareID() []byte {
 // SetSoftwareID sets the software and its version. It pads v with spaces,
 // and returns a *dmrgo.FieldRangeError, and changes nothing, when v is
 // longer than 40 octets.
-func (c *Config) SetSoftwareID(v []byte) error {
+func (c *MMDVMConfig) SetSoftwareID(v []byte) error {
 	if c == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
 	if len(v) > 40 {
-		return errConfigSoftwareIDRange
+		return errMMDVMConfigSoftwareIDRange
 	}
 	_k := copy(c[222:262], v)
 	for _i := 222 + _k; _i < 262; _i++ {
@@ -537,7 +537,7 @@ func (c *Config) SetSoftwareID(v []byte) error {
 
 // PackageID returns the package and its version. The text has its trailing
 // spaces and NUL octets removed, and points into c.
-func (c *Config) PackageID() []byte {
+func (c *MMDVMConfig) PackageID() []byte {
 	if c == nil {
 		return nil
 	}
@@ -552,13 +552,13 @@ func (c *Config) PackageID() []byte {
 // SetPackageID sets the package and its version. It pads v with spaces, and
 // returns a *dmrgo.FieldRangeError, and changes nothing, when v is longer
 // than 40 octets.
-func (c *Config) SetPackageID(v []byte) error {
+func (c *MMDVMConfig) SetPackageID(v []byte) error {
 	if c == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
 	if len(v) > 40 {
-		return errConfigPackageIDRange
+		return errMMDVMConfigPackageIDRange
 	}
 	_k := copy(c[262:302], v)
 	for _i := 262 + _k; _i < 302; _i++ {
@@ -567,9 +567,9 @@ func (c *Config) SetPackageID(v []byte) error {
 	return nil
 }
 
-// Reset sets c to an empty Config: the fixed octets, spaces in the text
+// Reset sets c to an empty MMDVMConfig: the fixed octets, spaces in the text
 // fields and zero in the number fields.
-func (c *Config) Reset() {
+func (c *MMDVMConfig) Reset() {
 	if c == nil {
 		return
 	}
@@ -624,7 +624,7 @@ func (c *Config) Reset() {
 	}
 }
 
-func (c *Config) magicOK() bool {
+func (c *MMDVMConfig) magicOK() bool {
 	return c[0] == 0x52 && c[1] == 0x50 && c[2] == 0x54 && c[3] == 0x43
 }
 
@@ -1218,87 +1218,87 @@ func (c *HBRPConfig) magicOK() bool {
 }
 
 var (
-	errConfigCallsignRange = &dmrgo.FieldRangeError{
+	errMMDVMConfigCallsignRange = &dmrgo.FieldRangeError{
 		Bits:  64,
 		Field: "Callsign",
-		Type:  "Config",
+		Type:  "MMDVMConfig",
 	}
-	errConfigRXFrequencyRange = &dmrgo.FieldRangeError{
+	errMMDVMConfigRXFrequencyRange = &dmrgo.FieldRangeError{
 		Bits:  72,
 		Field: "RXFrequency",
 		Max:   9.99999999e+08,
 		Min:   0.0,
-		Type:  "Config",
+		Type:  "MMDVMConfig",
 	}
-	errConfigTXFrequencyRange = &dmrgo.FieldRangeError{
+	errMMDVMConfigTXFrequencyRange = &dmrgo.FieldRangeError{
 		Bits:  72,
 		Field: "TXFrequency",
 		Max:   9.99999999e+08,
 		Min:   0.0,
-		Type:  "Config",
+		Type:  "MMDVMConfig",
 	}
-	errConfigPowerRange = &dmrgo.FieldRangeError{
+	errMMDVMConfigPowerRange = &dmrgo.FieldRangeError{
 		Bits:  16,
 		Field: "Power",
 		Max:   99.0,
 		Min:   0.0,
-		Type:  "Config",
+		Type:  "MMDVMConfig",
 	}
-	errConfigColorCodeRange = &dmrgo.FieldRangeError{
+	errMMDVMConfigColorCodeRange = &dmrgo.FieldRangeError{
 		Bits:  16,
 		Field: "ColorCode",
 		Max:   99.0,
 		Min:   0.0,
-		Type:  "Config",
+		Type:  "MMDVMConfig",
 	}
-	errConfigLatitudeRange = &dmrgo.FieldRangeError{
+	errMMDVMConfigLatitudeRange = &dmrgo.FieldRangeError{
 		Bits:  64,
 		Field: "Latitude",
-		Type:  "Config",
+		Type:  "MMDVMConfig",
 	}
-	errConfigLongitudeRange = &dmrgo.FieldRangeError{
+	errMMDVMConfigLongitudeRange = &dmrgo.FieldRangeError{
 		Bits:  72,
 		Field: "Longitude",
-		Type:  "Config",
+		Type:  "MMDVMConfig",
 	}
-	errConfigHeightRange = &dmrgo.FieldRangeError{
+	errMMDVMConfigHeightRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "Height",
 		Max:   999.0,
 		Min:   0.0,
-		Type:  "Config",
+		Type:  "MMDVMConfig",
 	}
-	errConfigLocationRange = &dmrgo.FieldRangeError{
+	errMMDVMConfigLocationRange = &dmrgo.FieldRangeError{
 		Bits:  160,
 		Field: "Location",
-		Type:  "Config",
+		Type:  "MMDVMConfig",
 	}
-	errConfigDescriptionRange = &dmrgo.FieldRangeError{
+	errMMDVMConfigDescriptionRange = &dmrgo.FieldRangeError{
 		Bits:  152,
 		Field: "Description",
-		Type:  "Config",
+		Type:  "MMDVMConfig",
 	}
-	errConfigSlotsRange = &dmrgo.FieldRangeError{
+	errMMDVMConfigSlotsRange = &dmrgo.FieldRangeError{
 		Bits:  8,
 		Field: "Slots",
 		Max:   9.0,
 		Min:   0.0,
-		Type:  "Config",
+		Type:  "MMDVMConfig",
 	}
-	errConfigURLRange = &dmrgo.FieldRangeError{
+	errMMDVMConfigURLRange = &dmrgo.FieldRangeError{
 		Bits:  992,
 		Field: "URL",
-		Type:  "Config",
+		Type:  "MMDVMConfig",
 	}
-	errConfigSoftwareIDRange = &dmrgo.FieldRangeError{
+	errMMDVMConfigSoftwareIDRange = &dmrgo.FieldRangeError{
 		Bits:  320,
 		Field: "SoftwareID",
-		Type:  "Config",
+		Type:  "MMDVMConfig",
 	}
-	errConfigPackageIDRange = &dmrgo.FieldRangeError{
+	errMMDVMConfigPackageIDRange = &dmrgo.FieldRangeError{
 		Bits:  320,
 		Field: "PackageID",
-		Type:  "Config",
+		Type:  "MMDVMConfig",
 	}
 	errHBRPConfigCallsignRange = &dmrgo.FieldRangeError{
 		Bits:  64,

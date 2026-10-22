@@ -52,7 +52,7 @@ func checkPacket(t *testing.T, p []byte) {
 			t.Fatalf("bridge control round trip %x: %x %v", p, out, err)
 		}
 	}
-	if c, err := dmrd.ConfigOf(p); err == nil {
+	if c, err := dmrd.MMDVMConfigOf(p); err == nil {
 		_, _ = c.RXFrequency()
 		_ = c.Callsign()
 	}
