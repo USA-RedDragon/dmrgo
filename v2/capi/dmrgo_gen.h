@@ -157,7 +157,7 @@ typedef struct dmrgo_layer2_embedded_lc_assembler_t dmrgo_layer2_embedded_lc_ass
 /* Go: layer2.Hint. Hint is what a transport knows about a burst besides its 264 bits, such as the fields of a HomeBrew DMRD, IPSC or MMDVM frame. */
 typedef struct dmrgo_layer2_hint_t dmrgo_layer2_hint_t;
 typedef struct dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t;
-/* Go: layer2.PositionTracker. PositionTracker places the voice bursts of one logical channel in their superframe, packet by packet, as voice.Receiver does: from the position in the Hint, the voice SYNC of burst A, the LCSS of the EMB of bursts B to F, and the sequence number of the Hint, or one step per burst without one. */
+/* Go: layer2.PositionTracker. PositionTracker places the voice bursts of one logical channel in their superframe, packet by packet, as dmrgo_voice_receiver_t does: from the position in the Hint, the voice SYNC of burst A, the LCSS of the EMB of bursts B to F, and the sequence number of the Hint, or one step per burst without one. */
 typedef struct dmrgo_layer2_position_tracker_t dmrgo_layer2_position_tracker_t;
 /* Go: layer2.RawBurst. RawBurst is a 33-octet burst in transmit bit order, the form NewBurstFromBytes takes. */
 typedef struct dmrgo_layer2_raw_burst_t dmrgo_layer2_raw_burst_t;
@@ -217,7 +217,7 @@ typedef struct dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t dmrgo_pdu_broadca
 typedef struct dmrgo_pdu_cgap_continuation_t dmrgo_pdu_cgap_continuation_t;
 /* Go: pdu.CSBK. CSBK is the Control Signalling Block (CSBK) PDU. */
 typedef struct dmrgo_pdu_csbk_t dmrgo_pdu_csbk_t;
-/* Go: pdu.CSBKBytes. CSBKBytes is the 12-octet BPTC(196,96) payload of a CSBK burst, as layer2.RawBurst.BPTCPayload returns it: 80 CSBK bits and the CRC-CCITT XORed with the CSBK mask 0xA5A5. */
+/* Go: pdu.CSBKBytes. CSBKBytes is the 12-octet BPTC(196,96) payload of a CSBK burst, as dmrgo_layer2_raw_burst_bptc_payload returns it: 80 CSBK bits and the CRC-CCITT XORed with the CSBK mask 0xA5A5. */
 typedef struct dmrgo_pdu_csbk_bytes_t dmrgo_pdu_csbk_bytes_t;
 /* Go: pdu.CallTimerParms. CallTimerParms is the C_BCAST payload with AnnouncementType CallTimer_Parms, which sets the call timers of the MSs. */
 typedef struct dmrgo_pdu_call_timer_parms_t dmrgo_pdu_call_timer_parms_t;
@@ -251,7 +251,7 @@ typedef struct dmrgo_pdu_clear_pdu_t dmrgo_pdu_clear_pdu_t;
 typedef struct dmrgo_pdu_confirmed_data_header_t dmrgo_pdu_confirmed_data_header_t;
 /* Go: pdu.DataHeader. DataHeader is the data header PDU. */
 typedef struct dmrgo_pdu_data_header_t dmrgo_pdu_data_header_t;
-/* Go: pdu.DataHeaderBytes. DataHeaderBytes is the 12-octet BPTC(196,96) payload of a data header burst, as layer2.RawBurst.BPTCPayload returns it. */
+/* Go: pdu.DataHeaderBytes. DataHeaderBytes is the 12-octet BPTC(196,96) payload of a data header burst, as dmrgo_layer2_raw_burst_bptc_payload returns it. */
 typedef struct dmrgo_pdu_data_header_bytes_t dmrgo_pdu_data_header_bytes_t;
 /* Go: pdu.DefinedDataHeader. DefinedDataHeader is the defined data header (DD_HEAD) (ETSI TS 102 361-1 clause 9.2.12, Table 9.17C). */
 typedef struct dmrgo_pdu_defined_data_header_t dmrgo_pdu_defined_data_header_t;
@@ -628,14 +628,14 @@ typedef struct dmrgo_trunkauth_key_t dmrgo_trunkauth_key_t;
 typedef struct dmrgo_trunkauth_keys_t dmrgo_trunkauth_keys_t;
 /* Go: vocoder.AMBEFrame. AMBEFrame holds the 49 information bits of one AMBE+2 vocoder frame, without the frame FEC, packed, the first bit in the most significant bit of byte 0. */
 typedef struct dmrgo_vocoder_ambe_frame_t dmrgo_vocoder_ambe_frame_t;
-/* Go: vocoder.Codec. Codec converts between 8 kHz 16-bit mono PCM and the 72 raw on-air bits of one of the three vocoder frames of a DMR voice burst, packed, the first bit in the most significant bit of byte 0, as layer2.RawBurst.VoiceSlots returns them. */
+/* Go: vocoder.Codec. Codec converts between 8 kHz 16-bit mono PCM and the 72 raw on-air bits of one of the three vocoder frames of a DMR voice burst, packed, the first bit in the most significant bit of byte 0, as dmrgo_layer2_raw_burst_voice_slots returns them. */
 typedef struct dmrgo_vocoder_codec_t dmrgo_vocoder_codec_t;
 typedef struct dmrgo_vocoder_codec_vtable_t dmrgo_vocoder_codec_vtable_t;
-/* Go: codec2.Codec. Codec is a Codec2 vocoder.Codec with separate libcodec2 encoder and decoder states. */
+/* Go: codec2.Codec. Codec is a Codec2 dmrgo_vocoder_codec_t with separate libcodec2 encoder and decoder states. */
 typedef struct dmrgo_codec2_codec_t dmrgo_codec2_codec_t;
 /* Go: codec2.Config. Config selects how a Codec encodes and decodes. */
 typedef struct dmrgo_codec2_config_t dmrgo_codec2_config_t;
-/* Go: dvsi.Codec. Codec is a vocoder.Codec that runs on a DVSI chip at the DMR AMBE+2 rate. */
+/* Go: dvsi.Codec. Codec is a dmrgo_vocoder_codec_t that runs on a DVSI chip at the DMR AMBE+2 rate. */
 typedef struct dmrgo_dvsi_codec_t dmrgo_dvsi_codec_t;
 /* Go: dvsi.Config. Config selects how New sets up the chip. */
 typedef struct dmrgo_dvsi_config_t dmrgo_dvsi_config_t;
@@ -979,19 +979,19 @@ struct dmrgo_bs_config_t {
 	dmrgo_bs_activation_t activation;
 	/* CACH makes the Repeater send the CACH and Idle bursts in ModeRF: true for an SDR or a microcontroller modulator, false for an MMDVM modem, whose firmware makes them. */
 	bool cach;
-	/* CallHang is the call hang time T_CallHt. 0 means constants.TCallHang (3 s). A broadcast call and a call to constants.AllMSID have none (ETSI TS 102 361-2 clause 5.3.2.3.2). */
+	/* CallHang is the call hang time T_CallHt. 0 means DMRGO_CONSTANTS_T_CALL_HANG (3 s). A broadcast call and a call to DMRGO_CONSTANTS_ALL_MSID have none (ETSI TS 102 361-2 clause 5.3.2.3.2). */
 	dmrgo_duration_t call_hang;
-	/* DataHang is the data hang time T_DataHngtime after confirmed data. 0 means constants.TDataHangtime (180 ms). */
+	/* DataHang is the data hang time T_DataHngtime after confirmed data. 0 means DMRGO_CONSTANTS_T_DATA_HANGTIME (180 ms). */
 	dmrgo_duration_t data_hang;
 	/* Inactivity is T_MSInactiv. 0 means DefaultInactivity. A negative value keeps the transmitter on once it wakes up. */
 	dmrgo_duration_t inactivity;
-	/* Lost is the time without a burst from the owner of a slot after which its call ends. 0 means voice.DefaultLost (1 s). */
+	/* Lost is the time without a burst from the owner of a slot after which its call ends. 0 means DMRGO_VOICE_DEFAULT_LOST (1 s). */
 	dmrgo_duration_t lost;
-	/* Timeout is the longest call. 0 means constants.TTO (180 s). A longer call ends with a Terminator and the rest of it is dropped. */
+	/* Timeout is the longest call. 0 means DMRGO_CONSTANTS_TTO (180 s). A longer call ends with a Terminator and the rest of it is dropped. */
 	dmrgo_duration_t timeout;
-	/* Headers is the number of Voice LC Headers that start a repeated call. 0 means 1, at most voice.MaxHeaders. */
+	/* Headers is the number of Voice LC Headers that start a repeated call. 0 means 1, at most DMRGO_VOICE_MAX_HEADERS. */
 	int64_t headers;
-	/* Terminators is the number of Terminators with LC that end a repeated call, before the call hang time. 0 means 1, at most voice.MaxTerminators. */
+	/* Terminators is the number of Terminators with LC that end a repeated call, before the call hang time. 0 means 1, at most DMRGO_VOICE_MAX_TERMINATORS. */
 	int64_t terminators;
 	/* Pending is the number of refused sources per slot that wait for the slot and get it in turn when it is free. 0 means DefaultPending, at most MaxPending. A negative value queues none: the first burst after the slot is free takes it. */
 	int64_t pending;
@@ -999,17 +999,17 @@ struct dmrgo_bs_config_t {
 	dmrgo_duration_t pending_age;
 	/* DataQueue is the number of data and CSBK bursts per slot that wait for the outbound channel in ModeRF. 0 means DefaultDataQueue, at most MaxDataQueue. */
 	int64_t data_queue;
-	/* Silence is the 72-bit vocoder slot that fills lost voice. The zero value means vocoder.AMBESilenceSlot. */
+	/* Silence is the 72-bit vocoder slot that fills lost voice. The zero value means dmrgo_vocoder_ambe_silence_slot. */
 	uint8_t silence[9];
 	/* Lead makes Tick emit an outbound burst this long before its Due time in ModeRF, so that a transmit FIFO can be filled ahead. 0 means at Due; it must not be negative. */
 	dmrgo_duration_t lead;
 	/* ChannelAuth selects the channel authorization of RF access in the call and channel hang time in ModeRF. ModeNetwork ignores it. (ETSI TS 102 361-2 clause 5.1.1.6) */
 	dmrgo_bs_channel_auth_t channel_auth;
-	/* ChanAuthResponse is T_BS_ChanAuthRsp, how long the Repeater repeats a ChanAuth PDU while it waits for the authorized MS. 0 means constants.TBSChanAuthRspVoice for a Voice LC Header, and constants.TBSChanAuthRspCSBKSingle or constants.TBSChanAuthRspCSBKMulti for a Pre_CSBK. (ETSI TS 102 361-2 clause A.1) */
+	/* ChanAuthResponse is T_BS_ChanAuthRsp, how long the Repeater repeats a ChanAuth PDU while it waits for the authorized MS. 0 means DMRGO_CONSTANTS_TBS_CHAN_AUTH_RSP_VOICE for a Voice LC Header, and DMRGO_CONSTANTS_TBS_CHAN_AUTH_RSP_CSBK_SINGLE or DMRGO_CONSTANTS_TBS_CHAN_AUTH_RSP_CSBK_MULTI for a Pre_CSBK. (ETSI TS 102 361-2 clause A.1) */
 	dmrgo_duration_t chan_auth_response;
-	/* ChanAuthSelect is T_BS_ChanAuthSel of ChannelAuthMultiSite. 0 means constants.TBSChanAuthSel (240 ms). (ETSI TS 102 361-2 clause A.1) */
+	/* ChanAuthSelect is T_BS_ChanAuthSel of ChannelAuthMultiSite. 0 means DMRGO_CONSTANTS_TBS_CHAN_AUTH_SEL (240 ms). (ETSI TS 102 361-2 clause A.1) */
 	dmrgo_duration_t chan_auth_select;
-	/* Scratch, when set, is the Burst that the Repeater decodes into. It can be shared with other machines on the same goroutine, because the Repeater is done with it when its method returns. Nil means the Repeater makes its own. */
+	/* Scratch, when set, is the Burst that the Repeater decodes into. It can be shared with other machines on the same goroutine, because the Repeater is done with it when its method returns. NULL means the Repeater makes its own. */
 	dmrgo_layer2_burst_t *scratch;
 };
 
@@ -1018,7 +1018,7 @@ struct dmrgo_layer2_raw_burst_t {
 };
 
 struct dmrgo_layer2_hint_t {
-	/* Slot is the TDMA channel, or enums.SlotUnknown. */
+	/* Slot is the TDMA channel, or DMRGO_ENUMS_SLOT_UNKNOWN. */
 	dmrgo_enums_slot_t slot;
 	/* Kind is the burst kind from the transport, for example the DMRD frame type. KindUnknown classifies the burst by its SYNC field. */
 	dmrgo_layer2_kind_t kind;
@@ -1098,7 +1098,7 @@ struct dmrgo_bs_output_t {
 	dmrgo_bs_dest_t to;
 	/* HasCACH reports that CACH is set. */
 	bool has_cach;
-	/* CACH is the CACH field before the burst, in transmit order, packed as layer2.DecodeCACHField takes it. */
+	/* CACH is the CACH field before the burst, in transmit order, packed as dmrgo_layer2_decode_cach_field takes it. */
 	uint8_t cach[3];
 	/* Burst is the burst to send, with the color code and BS SYNC of the Repeater. */
 	dmrgo_layer2_raw_burst_t burst;
@@ -1139,11 +1139,11 @@ struct dmrgo_csbk_requester_config_t {
 	size_t size;
 	/* ColorCode is the color code of the slot types of the bursts sent. */
 	dmrgo_enums_color_code_t color_code;
-	/* Source selects the SYNC pattern: layer2.SyncSourceBS, the zero value, for a repeater outbound, layer2.SyncSourceMS for a radio. */
+	/* Source selects the SYNC pattern: DMRGO_LAYER2_SYNC_SOURCE_BS, the zero value, for a repeater outbound, DMRGO_LAYER2_SYNC_SOURCE_MS for a radio. */
 	dmrgo_layer2_sync_source_t source;
-	/* AckWait is T_AckWait, the wait for the answer after each try. 0 means constants.TAckWait (360 ms), and DefaultMotorolaAckWait for the Motorola radio check and call alert. A negative value waits until an answer or Cancel. (ETSI TS 102 361-2 clause A.1) */
+	/* AckWait is T_AckWait, the wait for the answer after each try. 0 means DMRGO_CONSTANTS_T_ACK_WAIT (360 ms), and DefaultMotorolaAckWait for the Motorola radio check and call alert. A negative value waits until an answer or Cancel. (ETSI TS 102 361-2 clause A.1) */
 	dmrgo_duration_t ack_wait;
-	/* Retries is N_CSBKRetry, the number of tries after the first. 0 means constants.NCSBKRetry (1), a negative value means none, and it is at most MaxRetries. */
+	/* Retries is N_CSBKRetry, the number of tries after the first. 0 means DMRGO_CONSTANTS_NCSBK_RETRY (1), a negative value means none, and it is at most MaxRetries. */
 	int64_t retries;
 	/* IdleSearch is T_IdleSrch, the wait for an idle channel before a polite try. 0 means DefaultIdleSearch, and a negative value does not wait. */
 	dmrgo_duration_t idle_search;
@@ -1151,7 +1151,7 @@ struct dmrgo_csbk_requester_config_t {
 	dmrgo_duration_t holdoff_max;
 	/* Seed seeds the generator of the random holdoff, so that the same inputs give the same outputs. Requesters on one channel need different seeds. */
 	uint64_t seed;
-	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one, because a machine is done with it when its method returns. Make it with layer2.NewBurst. Nil means the Requester makes its own. */
+	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one, because a machine is done with it when its method returns. Make it with dmrgo_layer2_new_burst. NULL means the Requester makes its own. */
 	dmrgo_layer2_burst_t *scratch;
 	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. */
 	dmrgo_duration_t lead;
@@ -1166,7 +1166,7 @@ struct dmrgo_csbk_responder_config_t {
 	uint32_t address;
 	/* ColorCode is the color code of the slot types of the bursts sent. */
 	dmrgo_enums_color_code_t color_code;
-	/* Source selects the SYNC pattern: layer2.SyncSourceBS, the zero value, for a repeater outbound, layer2.SyncSourceMS for a radio. */
+	/* Source selects the SYNC pattern: DMRGO_LAYER2_SYNC_SOURCE_BS, the zero value, for a repeater outbound, DMRGO_LAYER2_SYNC_SOURCE_MS for a radio. */
 	dmrgo_layer2_sync_source_t source;
 	/* Access is the channel access policy of the answers. The zero value is polite to own color code. */
 	dmrgo_enums_access_t access;
@@ -1199,7 +1199,7 @@ struct dmrgo_csbk_timing_config_t {
 	uint32_t id;
 	/* DynamicID is MS_DI, the leader preference of the radio from 0 to MaxDynamicID. 0 means the radio is not eligible to be the leader. (ETSI TS 102 361-2 clause 7.2.9) */
 	uint8_t dynamic_id;
-	/* Slot is the provisioned time slot, enums.Slot1 or enums.Slot2. It selects the TDMA direct mode SYNC of the CT_CSBKs, and is the Slot of the Hint of each burst. (ETSI TS 102 361-2 clause 6.2) */
+	/* Slot is the provisioned time slot, DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2. It selects the TDMA direct mode SYNC of the CT_CSBKs, and is the Slot of the Hint of each burst. (ETSI TS 102 361-2 clause 6.2) */
 	dmrgo_enums_slot_t slot;
 	/* Seed seeds the generator of CT_RHOT and of new identifiers, so that the same inputs give the same outputs. Radios on one channel need different seeds. (ETSI TS 102 361-2 clause 6.2) */
 	uint64_t seed;
@@ -1241,7 +1241,7 @@ struct dmrgo_csbk_output_t {
 	dmrgo_csbk_reason_t reason;
 	/* Burst is the burst to send, for OutputBurst. */
 	dmrgo_layer2_raw_burst_t burst;
-	/* Hint is what Burst is, for a transport: KindData with enums.DataTypeCSBK, and the Slot of the config of the machine. */
+	/* Hint is what Burst is, for a transport: KindData with DMRGO_ENUMS_DATA_TYPE_CSBK, and the Slot of the config of the machine. */
 	dmrgo_layer2_hint_t hint;
 	/* Due is the time at which the burst goes on air, 60 ms after the one before it. */
 	dmrgo_duration_t due;
@@ -1298,12 +1298,12 @@ struct dmrgo_pdu_proprietary_header_t {
 };
 
 struct dmrgo_data_message_t {
-	/* Header is the first header of the packet. Its format and payload give the kind of packet and the addresses. The zero value is a UDT_HEAD with LLIDs 0; set it with a SetX method of pdu.DataHeader. */
+	/* Header is the first header of the packet. Its format and payload give the kind of packet and the addresses. The zero value is a UDT_HEAD with LLIDs 0; set it with a SetX method of dmrgo_pdu_data_header_t. */
 	dmrgo_pdu_data_header_t header;
 	/* Proprietary is the P_HEAD sent as the second header, or nil. */
 	bool has_proprietary;
 	dmrgo_pdu_proprietary_header_t proprietary;
-	/* Rate is the data type of the blocks: enums.DataTypeRate12, enums.DataTypeRate34 or enums.DataTypeRate1. For Sender.Send the zero value means enums.DataTypeRate12. */
+	/* Rate is the data type of the blocks: DMRGO_ENUMS_DATA_TYPE_RATE12, DMRGO_ENUMS_DATA_TYPE_RATE34 or DMRGO_ENUMS_DATA_TYPE_RATE1. For Sender.Send the zero value means DMRGO_ENUMS_DATA_TYPE_RATE12. */
 	dmrgo_enums_data_type_t rate;
 	/* Payload is the user data, without the pad octets and the message CRC. A packet whose first header was lost keeps its pad octets, as only a first try counts them. It holds at most MaxMessage octets (ETSI TS 102 361-1 clause 9.3.20). */
 	uint8_t *payload;
@@ -1369,14 +1369,14 @@ struct dmrgo_data_event_t {
 struct dmrgo_data_receiver_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
-	/* ColorCode, when set, drops bursts with another color code, and is the color code of the responses. Nil accepts every color code and answers with the color code of the packet. */
+	/* ColorCode, when set, drops bursts with another color code, and is the color code of the responses. has_color_code false accepts every color code and answers with the color code of the packet. */
 	bool has_color_code;
 	dmrgo_enums_color_code_t color_code;
 	/* Address is the LLID of this station. A confirmed packet gets a response only when its destination is Address. 0 answers every confirmed packet to a radio, as a gateway does. */
 	uint32_t address;
 	/* Respond makes the Receiver answer confirmed packets with an ACK, NACK or SACK (EventRespond), and drop duplicate and out of sequence packets outside the IP bearer service, as the package doc describes. False delivers every complete packet and answers none, as a scanner or bridge needs. */
 	bool respond;
-	/* Source selects the SYNC of the responses: layer2.SyncSourceBS, the zero value, for a repeater outbound, layer2.SyncSourceMS for a radio. */
+	/* Source selects the SYNC of the responses: DMRGO_LAYER2_SYNC_SOURCE_BS, the zero value, for a repeater outbound, DMRGO_LAYER2_SYNC_SOURCE_MS for a radio. */
 	dmrgo_layer2_sync_source_t source;
 	/* ResponseDelay is the time from the last block of a packet to the first response burst. 0 means one slot period (60 ms), the next burst of the logical channel, and a negative value means at once. */
 	dmrgo_duration_t response_delay;
@@ -1394,7 +1394,7 @@ struct dmrgo_data_receiver_config_t {
 	dmrgo_duration_t hang;
 	/* AcceptBadCRC delivers packets whose CRC failed, with Message.BadCRC set, as packet.Assembler.AcceptBadCRC describes. A confirmed packet still gets a NACK, so that a good copy can follow. */
 	bool accept_bad_crc;
-	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one, because a Receiver is done with it when its method returns. Make it with layer2.NewBurst. Nil means the Receiver makes its own. */
+	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one, because a Receiver is done with it when its method returns. Make it with dmrgo_layer2_new_burst. NULL means the Receiver makes its own. */
 	dmrgo_layer2_burst_t *scratch;
 };
 
@@ -1403,21 +1403,21 @@ struct dmrgo_data_sender_config_t {
 	size_t size;
 	/* ColorCode is the color code of the bursts. */
 	dmrgo_enums_color_code_t color_code;
-	/* Source selects the SYNC patterns: layer2.SyncSourceBS, the zero value, for a repeater outbound, layer2.SyncSourceMS for a radio. */
+	/* Source selects the SYNC patterns: DMRGO_LAYER2_SYNC_SOURCE_BS, the zero value, for a repeater outbound, DMRGO_LAYER2_SYNC_SOURCE_MS for a radio. */
 	dmrgo_layer2_sync_source_t source;
-	/* Access is the channel access policy. The zero value, enums.AccessPoliteOwnCC, sends only while Channel last reported the channel idle (ETSI TS 102 361-1 clause 5.2.1.6). */
+	/* Access is the channel access policy. The zero value, DMRGO_ENUMS_ACCESS_POLITE_OWN_C_C, sends only while Channel last reported the channel idle (ETSI TS 102 361-1 clause 5.2.1.6). */
 	dmrgo_enums_access_t access;
 	/* Preambles is the number of preamble CSBKs before the header of each try, so that a radio in power save wakes up. 0 means DefaultPreambles, and a negative value sends none; at most MaxPreambles. */
 	int64_t preambles;
 	/* IdleSearch is the time that a polite Sender waits for an idle channel before it holds off. 0 means DefaultIdleSearch, and a negative value holds off at once. */
 	dmrgo_duration_t idle_search;
-	/* Holdoff is the longest random holdoff T_Holdoff after a busy channel. 0 means constants.THoldoffMax (2 s), and a negative value turns the holdoff off. */
+	/* Holdoff is the longest random holdoff T_Holdoff after a busy channel. 0 means DMRGO_CONSTANTS_T_HOLDOFF_MAX (2 s), and a negative value turns the holdoff off. */
 	dmrgo_duration_t holdoff;
-	/* ResponseWait is the time T_RspnsWait from the end of the last burst to the response of a confirmed packet. 0 means constants.TResponseWait (180 ms). A response that comes through a network can need more; constants.TResponseWaitSimulcast is 2 s. */
+	/* ResponseWait is the time T_RspnsWait from the end of the last burst to the response of a confirmed packet. 0 means DMRGO_CONSTANTS_T_RESPONSE_WAIT (180 ms). A response that comes through a network can need more; DMRGO_CONSTANTS_T_RESPONSE_WAIT_SIMULCAST is 2 s. */
 	dmrgo_duration_t response_wait;
-	/* TxLimit is the time T_DataTxLmt from Send after which no new try starts. 0 means constants.TDataTxLimit (60 s), and a negative value turns the limit off. */
+	/* TxLimit is the time T_DataTxLmt from Send after which no new try starts. 0 means DMRGO_CONSTANTS_T_DATA_TX_LIMIT (60 s), and a negative value turns the limit off. */
 	dmrgo_duration_t tx_limit;
-	/* Retries is the most transmissions N_RtryLmt of a confirmed message, the first one included. 0 means constants.NRetryLimit (8); at most MaxRetries. */
+	/* Retries is the most transmissions N_RtryLmt of a confirmed message, the first one included. 0 means DMRGO_CONSTANTS_N_RETRY_LIMIT (8); at most MaxRetries. */
 	int64_t retries;
 	/* MaxBlocks is the most data blocks of a packet. 0 means MaxBlocks. Each block takes about 110 bytes, so a microcontroller can set 16. */
 	int64_t max_blocks;
@@ -1425,7 +1425,7 @@ struct dmrgo_data_sender_config_t {
 	int64_t peers;
 	/* Resync sets the S flag on the first packet to a link and on the resend after a NACK for N(S) out of sequence, so that the receiver takes the N(S). ETSI TS 102 361-1 clause 9.3.23 keeps S for special registration messages, so false, the default, never sets it. */
 	bool resync;
-	/* Window is the most C_HEAD messages of the IP bearer service in progress at once, for sliding window flow control. Send queues up to Window of them to one link, and the Sender sends them one after the other with the Response Requested flag set only on the last, then takes one response for all of them. 0 or 1, the default, means stop and wait: each message asks for its own response. At most MaxWindow. Each message of the window takes its own packet.Builder. Use a window only with receivers known to keep every packet of it: the AnyTone D890UV firmware (also in the BTECH DA-7X2) sends an ACK for the last packet of a window and keeps only that packet, so the earlier ones are lost. (ETSI TS 102 361-3 clause 5.4.4) */
+	/* Window is the most C_HEAD messages of the IP bearer service in progress at once, for sliding window flow control. Send queues up to Window of them to one link, and the Sender sends them one after the other with the Response Requested flag set only on the last, then takes one response for all of them. 0 or 1, the default, means stop and wait: each message asks for its own response. At most MaxWindow. Each message of the window takes its own dmrgo_packet_builder_t. Use a window only with receivers known to keep every packet of it: the AnyTone D890UV firmware (also in the BTECH DA-7X2) sends an ACK for the last packet of a window and keeps only that packet, so the earlier ones are lost. (ETSI TS 102 361-3 clause 5.4.4) */
 	int64_t window;
 	/* Seed seeds the random holdoff. Two Senders with the same seed hold off for the same times, so give each radio its own seed. */
 	uint64_t seed;
@@ -1827,7 +1827,7 @@ struct dmrgo_pdu_csbk_t {
 	dmrgo_enums_fid_t fid;
 	/* result of the CRC check */
 	dmrgo_fec_result_t fec;
-	/* Hint0x38 is the likely meaning of opcode 0x38. DecodeCSBK leaves it Opcode0x38Unknown. layer2.Burst sets it from the SYNC of the burst, which a network relay can rewrite. Each SetX resets it, except the two 0x38 setters, which set it. */
+	/* Hint0x38 is the likely meaning of opcode 0x38. DecodeCSBK leaves it Opcode0x38Unknown. dmrgo_layer2_burst_t sets it from the SYNC of the burst, which a network relay can rewrite. Each SetX resets it, except the two 0x38 setters, which set it. */
 	dmrgo_pdu_opcode0x38_hint_t hint0x38;
 	/* RawPayload holds CSBK octets 2 to 9 (bits 16 to 79), the payload that Opcode and FID select. */
 	uint8_t raw_payload[8];
@@ -1844,7 +1844,7 @@ struct dmrgo_pdu_full_link_control_t {
 	dmrgo_enums_flco_t flco;
 	/* FID is the Feature set ID; the As methods apply only to the standard FID 0, and RawPayload holds the payload of any FID. */
 	dmrgo_enums_fid_t fid;
-	/* FEC is the RS(12,9) result; MMDVMHost accepts only an LC with FEC.ErrorsCorrected 0 (layer2.MMDVMHostAccepts). */
+	/* FEC is the RS(12,9) result; MMDVMHost accepts only an LC with FEC.ErrorsCorrected 0 (dmrgo_layer2_mmdvm_host_accepts). */
 	dmrgo_fec_result_t fec;
 	/* RawPayload holds LC bits 16 to 71, the payload that FLCO and FID select, packed most significant bit first: bit 16 is the top bit of byte 0, so the bytes are LC octets 2 to 8. */
 	uint8_t raw_payload[7];
@@ -1853,7 +1853,7 @@ struct dmrgo_pdu_full_link_control_t {
 struct dmrgo_pdu_mbc_continuation_t {
 	/* LB bit, true for the last block, which holds the CRC */
 	bool last_block;
-	/* Data holds bits 1 to 95 of the block, packed most significant bit first. A last block holds the CRC in bits 80 to 95. The low bit of byte 11 is padding: Encode returns a *dmrgo.FieldRangeError when it is set. */
+	/* Data holds bits 1 to 95 of the block, packed most significant bit first. A last block holds the CRC in bits 80 to 95. The low bit of byte 11 is padding: Encode returns a *dmrgo_field_range_error_t when it is set. */
 	uint8_t data[12];
 };
 
@@ -1934,7 +1934,7 @@ struct dmrgo_pdu_unified_single_block_data_t {
 	dmrgo_fec_result_t fec;
 	/* service that the payload carries */
 	dmrgo_pdu_service_type_t service_type;
-	/* Payload holds the 76 bits 4 to 79, packed most significant bit first: bit 4 is the top bit of byte 0 and bit 79 is bit 4 of byte 9. The low 4 bits of byte 9 are padding and must be zero; Encode returns a *dmrgo.FieldRangeError otherwise. */
+	/* Payload holds the 76 bits 4 to 79, packed most significant bit first: bit 4 is the top bit of byte 0 and bit 79 is bit 4 of byte 9. The low 4 bits of byte 9 are padding and must be zero; Encode returns a *dmrgo_field_range_error_t otherwise. */
 	uint8_t payload[10];
 };
 
@@ -2060,7 +2060,7 @@ struct dmrgo_layer2_voice_transmitter_options_t {
 	dmrgo_enums_color_code_t color_code;
 	/* Source selects the SYNC patterns. The zero value is SyncSourceBS. */
 	dmrgo_layer2_sync_source_t source;
-	/* Silence is the 72-bit slot that pads the last superframe, packed as RawBurst.VoiceSlots returns it. The zero value means vocoder.AMBESilenceSlot(). A Codec2 caller sets its own. */
+	/* Silence is the 72-bit slot that pads the last superframe, packed as RawBurst.VoiceSlots returns it. The zero value means dmrgo_vocoder_ambe_silence_slot(). A Codec2 caller sets its own. */
 	uint8_t silence[9];
 	/* PIHeader, when set, adds a PI Header burst after the Voice LC Header (ETSI TS 102 361-1 clause 5.1.2.2, clause 6.2). */
 	bool has_pi_header;
@@ -2070,28 +2070,28 @@ struct dmrgo_layer2_voice_transmitter_options_t {
 };
 
 struct dmrgo_framer_burst_t {
-	/* Data is the burst, ready for layer2.NewBurstFromBytes. */
+	/* Data is the burst, ready for dmrgo_layer2_new_burst_from_bytes. */
 	dmrgo_layer2_raw_burst_t data;
 	/* Offset is the stream index of burst bit 0, counted from the first bit written to the Framer. */
 	int64_t offset;
-	/* Sync is the SYNC pattern of the SYNC field, or enums.SyncNone when the field is not within the threshold of one, as in voice bursts B to F. */
+	/* Sync is the SYNC pattern of the SYNC field, or DMRGO_ENUMS_SYNC_NONE when the field is not within the threshold of one, as in voice bursts B to F. */
 	dmrgo_enums_sync_pattern_t sync;
 	/* Distance is the Hamming distance of the field from the nearest pattern. */
 	int64_t distance;
-	/* HasCACH is set when CACH holds the 24 bits before the burst, in logical order (see layer2.CACHDeinterleave). */
+	/* HasCACH is set when CACH holds the 24 bits before the burst, in logical order (see dmrgo_layer2_cach_deinterleave). */
 	bool has_cach;
 	/* CACH is the CACH decoded from the 24 bits before the burst when HasCACH is set. */
 	dmrgo_layer2_cach_t cach;
-	/* Slot is the TDMA channel, or enums.SlotUnknown. It comes from the TC bit of the CACH, from a direct mode TDMA SYNC pattern, or from the channel of the previous burst. */
+	/* Slot is the TDMA channel, or DMRGO_ENUMS_SLOT_UNKNOWN. It comes from the TC bit of the CACH, from a direct mode TDMA SYNC pattern, or from the channel of the previous burst. */
 	dmrgo_enums_slot_t slot;
 };
 
 struct dmrgo_framer_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
-	/* Threshold is the largest SYNC distance accepted. 0 means layer2.DefaultSyncThreshold, and a negative value accepts only an exact SYNC, as layer2.DecodeOptions.SyncThreshold does. */
+	/* Threshold is the largest SYNC distance accepted. 0 means DMRGO_LAYER2_DEFAULT_SYNC_THRESHOLD, and a negative value accepts only an exact SYNC, as dmrgo_layer2_decode_options_t.sync_threshold does. */
 	int64_t threshold;
-	/* Period is the number of bits from one burst to the next while locked, from layer2.BurstBits to MaxPeriod. 0 means OutboundPeriod. Use SlotPeriod for the bursts of a single TDMA channel, such as one inbound or direct mode channel. */
+	/* Period is the number of bits from one burst to the next while locked, from DMRGO_LAYER2_BURST_BITS to MaxPeriod. 0 means OutboundPeriod. Use SlotPeriod for the bursts of a single TDMA channel, such as one inbound or direct mode channel. */
 	int64_t period;
 	/* CACH decodes the 24 bits before each burst as a CACH, for a BS outbound stream. */
 	bool cach;
@@ -2126,7 +2126,7 @@ struct dmrgo_packet_message_t {
 	dmrgo_enums_data_type_t data_type;
 	/* Blocks is the number of data blocks that Data was built from, 0 for a packet without data blocks, such as a header-only response, or one whose blocks all failed their FEC. */
 	int64_t blocks;
-	/* Data is the user data. The pad octets of a U_HEAD or C_HEAD packet are removed when the header is a first try (Full Message Flag set). A packet that a later try started, because the first header was lost, keeps them, as only a first try counts them. A short data packet keeps all octets before the CRC; its Bit Padding is in the header. It holds at most 3048 bytes: 127 blocks of at most 24 octets. (ETSI TS 102 361-1 clause 9.3.20) */
+	/* Data is the user data. The pad octets of a U_HEAD or C_HEAD packet are removed when the header is a first try (Full Message Flag set). A packet that a later try started, because the first header was lost, keeps them, as only a first try counts them. A DD_HEAD or R_HEAD packet has Bit Padding/8 octets removed on every try, as its retries keep the Bit Padding of the first try. It holds at most 3048 bytes: 127 blocks of at most 24 octets. (ETSI TS 102 361-1 clause 9.3.20, clause 9.3.44) */
 	uint8_t *data;
 	size_t data_len;
 	/* CRC is the received message CRC. */
@@ -2134,7 +2134,7 @@ struct dmrgo_packet_message_t {
 	/* Response is the decoded C_RDATA of a SACK response packet, or nil. */
 	bool has_response;
 	dmrgo_packet_response_data_t response;
-	/* BadCRC reports that the message CRC failed, that the Pad Octet Count of a first try is more than the octets before the CRC, or, with Assembler.AcceptBadCRC, that Data holds a confirmed block whose CRC-9 failed. (ETSI TS 102 361-1 clause 9.3.22) */
+	/* BadCRC reports that the message CRC failed, that the Pad Octet Count of a first try or the Bit Padding/8 is more than the octets before the CRC, or, with Assembler.AcceptBadCRC, that Data holds a confirmed block whose CRC-9 failed. (ETSI TS 102 361-1 clause 9.3.22) */
 	bool bad_crc;
 };
 
@@ -3338,7 +3338,7 @@ struct dmrgo_location_fix_t {
 	uint8_t minute;
 	uint8_t second;
 	bool has_time;
-	/* Result is the result code of the answer, when HasResult is set: an lrrp.ResultCode for FormatLRRP, and the Result of a standard answer for FormatHDAP. 0 is success. */
+	/* Result is the result code of the answer, when HasResult is set: a dmrgo_lrrp_result_code_t for FormatLRRP, and the Result of a standard answer for FormatHDAP. 0 is success. */
 	uint32_t result;
 	bool has_result;
 	/* RequestID holds the identifier of the request that the report answers, in its first RequestIDLength octets: the LRRP request ID, or the RequestID of an HDAP answer or condition report, big-endian. An LRRP request ID longer than 16 octets gives RequestIDLength 0. */
@@ -3693,7 +3693,7 @@ struct dmrgo_sms_text_t {
 	bool group;
 	/* Confirmed reports a message that asks the data link layer for a response: a C_HEAD packet for the formats on IP, and a DD_HEAD with the Response Requested flag (A) for FormatDefinedData and FormatHytera (ETSI TS 102 361-3 clause 6.4, Table 6.5). Decode sets it from the header and AppendPacket builds that header. */
 	bool confirmed;
-	/* Network is the network ID of the IPv4 radio addresses of a FormatTMS, FormatIP or FormatAnyTone message, Network.x.y.z. The zero value means ip.DefaultNetwork. Decode sets it from the source address, and leaves it 0 for a compressed header. */
+	/* Network is the network ID of the IPv4 radio addresses of a FormatTMS, FormatIP or FormatAnyTone message, Network.x.y.z. The zero value means DMRGO_IP_DEFAULT_NETWORK. Decode sets it from the source address, and leaves it 0 for a compressed header. */
 	uint8_t network;
 	/* GroupPrefix is the first octet of the IPv4 multicast address of a group message in those formats. The zero value means 225. Decode sets it from the destination address of a group message. */
 	uint8_t group_prefix;
@@ -3709,7 +3709,7 @@ struct dmrgo_sms_text_t {
 };
 
 struct dmrgo_sms_header_t {
-	/* Data is the data header, for packet.NewPacket or a data sender. */
+	/* Data is the data header, for dmrgo_packet_new_packet or a data sender. */
 	dmrgo_pdu_data_header_t data;
 };
 
@@ -3924,7 +3924,7 @@ struct dmrgo_dmrdsession_output_t {
 struct dmrgo_dmrdsession_bridge_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
-	/* Key is the passphrase of the OpenBridge link (see dmrdauth.NewBridgeKey). */
+	/* Key is the passphrase of the OpenBridge link (see dmrgo_dmrdauth_new_bridge_key). */
 	uint8_t *key;
 	size_t key_len;
 	/* Enhanced turns on FreeDMR's enhanced OpenBridge: the Bridge sends a BCKA every Keepalive and takes the peer as down after Timeout without a packet with a good signature. Without it OpenBridge has no keepalive, and the Bridge only checks signatures. */
@@ -3938,7 +3938,7 @@ struct dmrgo_dmrdsession_bridge_config_t {
 struct dmrgo_dmrdsession_master_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
-	/* Dialect is dmrd.DialectMMDVM or dmrd.DialectHBRP. */
+	/* Dialect is DMRGO_DMRD_DIALECT_MMDVM or DMRGO_DMRD_DIALECT_HBRP. */
 	dmrgo_dmrd_dialect_t dialect;
 	/* Timeout is the time without a packet from the repeater after which the Master ends the session. 0 means TimeoutDefault. */
 	dmrgo_duration_t timeout;
@@ -3949,14 +3949,14 @@ struct dmrgo_dmrdsession_master_config_t {
 struct dmrgo_dmrdsession_peer_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
-	/* Dialect is dmrd.DialectMMDVM or dmrd.DialectHBRP. */
+	/* Dialect is DMRGO_DMRD_DIALECT_MMDVM or DMRGO_DMRD_DIALECT_HBRP. */
 	dmrgo_dmrd_dialect_t dialect;
 	/* ID is the repeater ID. */
 	uint32_t id;
 	/* Password is the password of the master. The Peer copies it. */
 	uint8_t *password;
 	size_t password_len;
-	/* Config is the RPTC message: a dmrd.MMDVMConfig (302 octets) for DialectMMDVM, a dmrd.HBRPConfig (306 octets) for DialectHBRP. The Peer copies it. */
+	/* Config is the RPTC message: a dmrgo_dmrd_mmdvm_config_t (302 octets) for DialectMMDVM, a dmrgo_dmrd_hbrp_config_t (306 octets) for DialectHBRP. The Peer copies it. */
 	uint8_t *config;
 	size_t config_len;
 	/* Options is the RPTO options text, at most MaxOptions octets, which the Peer sends after the RPTC is acknowledged. Empty sends no RPTO. DialectHBRP has no RPTO. */
@@ -4094,7 +4094,7 @@ struct dmrgo_ipsc_voice_t {
 	uint8_t length;
 	/* Control is octet 32: 0x40 on burst A, 0x10 on burst E, and 0x01 when AMBE frame 1 was bad on receive. */
 	uint8_t control;
-	/* AMBE holds the three AMBE+2 frames without FEC (see vocoder.UnpackAMBEVoiceFlags). */
+	/* AMBE holds the three AMBE+2 frames without FEC (see dmrgo_vocoder_unpack_ambe_voice_flags). */
 	uint8_t ambe[19];
 	/* Embedded is the 32-bit embedded signalling field of bursts B to F. */
 	uint8_t embedded[4];
@@ -4204,13 +4204,13 @@ struct dmrgo_ipscsession_master_config_t {
 	uint32_t id;
 	/* Mode is the mode that the master sends. 0 means ModeDefault. */
 	dmrgo_ipsc_mode_t mode;
-	/* Flags is the flags that the master sends. The zero Flags means voice and data calls. The Master sets ipsc.FlagMasterPeer, and ipsc.FlagAuth with Auth. */
+	/* Flags is the flags that the master sends. The zero Flags means voice and data calls. The Master sets DMRGO_IPSC_FLAG_MASTER_PEER, and DMRGO_IPSC_FLAG_AUTH with Auth. */
 	dmrgo_ipsc_flags_t flags;
 	/* Version is the protocol version that the master sends. Zero means VersionDefault. */
 	uint8_t version[4];
 	/* Auth turns on the HMAC-SHA1 trailer with Key: the Master drops a packet without a good trailer and signs what it sends. */
 	bool auth;
-	/* Key is the authentication key (see ipscauth.ParseKey). */
+	/* Key is the authentication key (see dmrgo_ipscauth_parse_key). */
 	uint8_t key[20];
 	/* Timeout is the time without a packet from a peer after which the Master drops it. 0 means TimeoutDefault. */
 	dmrgo_duration_t timeout;
@@ -4227,7 +4227,7 @@ struct dmrgo_ipscsession_peer_config_t {
 	uint32_t id;
 	/* Mode is the mode that the peer sends. 0 means ModeDefault. */
 	dmrgo_ipsc_mode_t mode;
-	/* Flags is the flags that the peer sends. The zero Flags means voice and data calls. The Peer sets ipsc.FlagAuth with Auth. */
+	/* Flags is the flags that the peer sends. The zero Flags means voice and data calls. The Peer sets DMRGO_IPSC_FLAG_AUTH with Auth. */
 	dmrgo_ipsc_flags_t flags;
 	/* Version is the protocol version that the peer sends. Zero means VersionDefault. */
 	uint8_t version[4];
@@ -4235,7 +4235,7 @@ struct dmrgo_ipscsession_peer_config_t {
 	dmrgo_ipscsession_addr_t master;
 	/* Auth turns on the HMAC-SHA1 trailer with Key: the Peer drops a packet without a good trailer and signs what it sends. */
 	bool auth;
-	/* Key is the authentication key (see ipscauth.ParseKey). */
+	/* Key is the authentication key (see dmrgo_ipscauth_parse_key). */
 	uint8_t key[20];
 	/* Alive is the keepalive period. 0 means AliveDefault. */
 	dmrgo_duration_t alive;
@@ -4588,7 +4588,7 @@ struct dmrgo_trunk_access_t {
 struct dmrgo_trunk_address_list_t {
 	/* OneKey reports that Addresses[0] is the One-key_talkgroup of DGNA. */
 	bool one_key;
-	/* Addresses holds the first Len addresses. constants.AddressNull marks an unused entry. */
+	/* Addresses holds the first Len addresses. DMRGO_CONSTANTS_ADDRESS_NULL marks an unused entry. */
 	uint32_t addresses[15];
 	/* Len is the number of entries of Addresses in use: 3, 7, 11 or 15 for 1 to 4 blocks. */
 	int64_t len;
@@ -4706,18 +4706,18 @@ struct dmrgo_trunk_capacity_plus_config_t {
 	bool no_follow;
 	/* NoSignal is the time without a valid Capacity Plus PDU on the rest channel after which the Follower hunts again, and the time it listens on each repeater while it hunts. 0 means CapacityPlusNoSignalDefault, and a negative value turns the timer off. */
 	dmrgo_duration_t no_signal;
-	/* Inactive is the time without a burst of the call after which the Follower returns to the rest channel. 0 means constants.TVInactiveDefault, and a negative value turns the timer off. */
+	/* Inactive is the time without a burst of the call after which the Follower returns to the rest channel. 0 means DMRGO_CONSTANTS_TV_INACTIVE_DEFAULT, and a negative value turns the timer off. */
 	dmrgo_duration_t inactive;
-	/* Hangtime is the time after a Terminator with LC in which the Follower waits for more voice. 0 means constants.TVHangtimeDefault, and a negative value turns the timer off. */
+	/* Hangtime is the time after a Terminator with LC in which the Follower waits for more voice. 0 means DMRGO_CONSTANTS_TV_HANGTIME_DEFAULT, and a negative value turns the timer off. */
 	dmrgo_duration_t hangtime;
-	/* Scratch, when set, is the Burst that the Follower decodes into. Nil means the Follower makes its own. */
+	/* Scratch, when set, is the Burst that the Follower decodes into. NULL means the Follower makes its own. */
 	dmrgo_layer2_burst_t *scratch;
 };
 
 struct dmrgo_trunk_tune_t {
 	/* Channel is the channel number, or CHNULL for the TSCC that the consumer tuned last without a hunt list. */
 	uint16_t channel;
-	/* Slot is the TDMA channel to follow on a payload channel, or enums.SlotUnknown on a TSCC. */
+	/* Slot is the TDMA channel to follow on a payload channel, or DMRGO_ENUMS_SLOT_UNKNOWN on a TSCC. */
 	dmrgo_enums_slot_t slot;
 	/* RXHz is the receive frequency from the channel plan or a CG_AP block, or 0 when not known. */
 	uint64_t rx_hz;
@@ -4851,7 +4851,7 @@ struct dmrgo_trunk_usbd_lip_response_t {
 	uint8_t direction;
 	/* reason for sending, 0 for a response to an immediate request */
 	uint8_t reason;
-	/* 8-bit hash of the source address, as pdu.AddressHash */
+	/* 8-bit hash of the source address, as dmrgo_pdu_address_hash */
 	uint8_t hashed_source;
 };
 
@@ -4869,7 +4869,7 @@ struct dmrgo_trunk_usbd_poll_request_t {
 };
 
 struct dmrgo_trunk_dynamic_groups_t {
-	/* Groups holds ADDRESS1 to ADDRESS15 of the DGNA_Address mode in its first 15 entries and the talkgroup of the DGNA_Alias mode in the last. constants.AddressNull marks an unused entry. */
+	/* Groups holds ADDRESS1 to ADDRESS15 of the DGNA_Address mode in its first 15 entries and the talkgroup of the DGNA_Alias mode in the last. DMRGO_CONSTANTS_ADDRESS_NULL marks an unused entry. */
 	uint32_t groups[16];
 	/* OneKey is the One-key_talkgroup, when HasOneKey is set. */
 	uint32_t one_key;
@@ -4878,7 +4878,7 @@ struct dmrgo_trunk_dynamic_groups_t {
 };
 
 struct dmrgo_trunk_neighbor_t {
-	/* SysCode14 is the 14 most significant bits of the C_SYScode of the adjacent TSCC, as pdu.SysCode.Unpack14 takes them. */
+	/* SysCode14 is the 14 most significant bits of the C_SYScode of the adjacent TSCC, as dmrgo_pdu_sys_code_unpack14 takes them. */
 	uint16_t sys_code14;
 	/* Channel is the channel number of the adjacent TSCC. */
 	uint16_t channel;
@@ -4935,7 +4935,7 @@ struct dmrgo_trunk_udt_t {
 struct dmrgo_trunk_follower_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
-	/* SysCode, when set, is the system to follow: a TSCC with another MODEL, NET or SITE is skipped. Nil follows the first TSCC found. */
+	/* SysCode, when set, is the system to follow: a TSCC with another MODEL, NET or SITE is skipped. has_sys_code false follows the first TSCC found. */
 	bool has_sys_code;
 	dmrgo_pdu_sys_code_t sys_code;
 	/* Hunt, when set, is the hunt list. The Follower copies it, asks for each channel in turn with OutputTune until it finds a TSCC, and adds and withdraws channels on an Ann_WD_TSCC broadcast. With a nil or empty Hunt the consumer keeps the receiver on one TSCC, which is then channel CHNULL. */
@@ -4952,17 +4952,17 @@ struct dmrgo_trunk_follower_config_t {
 	bool data;
 	/* NoFollow reports grants with OutputGrant but never leaves the TSCC, for a receiver that cannot tune, such as the replay of a recording. */
 	bool no_follow;
-	/* NoSignal is T_Nosig, the time without a TSCC burst after which the Follower hunts again, and the time it listens on each hunt list channel. 0 means constants.TNoSignalDefault, and a negative value turns the timer off (ETSI TS 102 361-4 Table A.1). */
+	/* NoSignal is T_Nosig, the time without a TSCC burst after which the Follower hunts again, and the time it listens on each hunt list channel. 0 means DMRGO_CONSTANTS_T_NO_SIGNAL_DEFAULT, and a negative value turns the timer off (ETSI TS 102 361-4 Table A.1). */
 	dmrgo_duration_t no_signal;
-	/* Inactive is TV_Inactive, the time without a burst on the payload channel after which the Follower returns to the TSCC. 0 means constants.TVInactiveDefault, and a negative value turns the timer off. */
+	/* Inactive is TV_Inactive, the time without a burst on the payload channel after which the Follower returns to the TSCC. 0 means DMRGO_CONSTANTS_TV_INACTIVE_DEFAULT, and a negative value turns the timer off. */
 	dmrgo_duration_t inactive;
-	/* Hangtime is the time after a Terminator with LC in which the Follower waits on the payload channel for more voice. 0 means constants.TVHangtimeDefault, and a negative value turns the timer off. */
+	/* Hangtime is the time after a Terminator with LC in which the Follower waits on the payload channel for more voice. 0 means DMRGO_CONSTANTS_TV_HANGTIME_DEFAULT, and a negative value turns the timer off. */
 	dmrgo_duration_t hangtime;
-	/* SysErrors is NSYSerr, the number of C_SYScodes from another system after which the Follower leaves the TSCC. 0 means constants.NSysErrDefault; a negative value is an error. */
+	/* SysErrors is NSYSerr, the number of C_SYScodes from another system after which the Follower leaves the TSCC. 0 means DMRGO_CONSTANTS_N_SYS_ERR_DEFAULT; a negative value is an error. */
 	int64_t sys_errors;
 	/* AcceptRAS takes a CSBK whose CRC fails as valid when its BPTC needed no correction and its BPTC reserved bit R(2) flags RAS. The CRC of a Motorola Capacity Max system with RAS is a MAC with the key of the system, which the Follower cannot check. */
 	bool accept_ras;
-	/* Scratch, when set, is the Burst that the Follower decodes into, as for voice.ReceiverConfig.Scratch. Nil means the Follower makes its own. */
+	/* Scratch, when set, is the Burst that the Follower decodes into, as for dmrgo_voice_receiver_config_t.scratch. NULL means the Follower makes its own. */
 	dmrgo_layer2_burst_t *scratch;
 };
 
@@ -4991,25 +4991,25 @@ struct dmrgo_trunk_ms_config_t {
 	dmrgo_trunk_hunt_list_t *hunt;
 	/* Plan, when set, is the channel plan to start from. */
 	dmrgo_trunk_channel_plan_t *plan;
-	/* Slot is the TDMA channel of the TSCC on which the MS makes random access. SlotUnknown means enums.Slot1. */
+	/* Slot is the TDMA channel of the TSCC on which the MS makes random access. SlotUnknown means DMRGO_ENUMS_SLOT1. */
 	dmrgo_enums_slot_t slot;
 	/* Seed seeds the random choice of the backoff frames. Two MSs with the same seed make the same choices; 0 is a valid seed. */
 	uint64_t seed;
 	/* NoRegistration keeps the MS from registering when the TSCC asks for it with Reg. */
 	bool no_registration;
-	/* RandomTimeout is TRand_TC, the longest time of a random access. 0 means constants.TRandTCDefault, and a negative value turns the timer off. (ETSI TS 102 361-4 clause 6.2.1.1.7) */
+	/* RandomTimeout is TRand_TC, the longest time of a random access. 0 means DMRGO_CONSTANTS_T_RAND_TC_DEFAULT, and a negative value turns the timer off. (ETSI TS 102 361-4 clause 6.2.1.1.7) */
 	dmrgo_duration_t random_timeout;
-	/* CallTimeout is TP_Timer, the longest wait for the grant of a service that needs a payload channel. 0 means constants.TPTimerDefault, and a negative value turns the timer off. */
+	/* CallTimeout is TP_Timer, the longest wait for the grant of a service that needs a payload channel. 0 means DMRGO_CONSTANTS_TP_TIMER_DEFAULT, and a negative value turns the timer off. */
 	dmrgo_duration_t call_timeout;
-	/* RegTimeout is TNP_Timer, the longest wait for the answer to a registration after an intermediate acknowledgement. 0 means constants.TNPTimerDefault, and a negative value turns the timer off. */
+	/* RegTimeout is TNP_Timer, the longest wait for the answer to a registration after an intermediate acknowledgement. 0 means DMRGO_CONSTANTS_TNP_TIMER_DEFAULT, and a negative value turns the timer off. */
 	dmrgo_duration_t reg_timeout;
-	/* Pending is T_Pending, the time a called MS waits for the grant after it accepted a C_AHOY. 0 means constants.TPendingDefault. */
+	/* Pending is T_Pending, the time a called MS waits for the grant after it accepted a C_AHOY. 0 means DMRGO_CONSTANTS_T_PENDING_DEFAULT. */
 	dmrgo_duration_t pending;
-	/* Dereg is T_Dereg, the longest wait for the answer to a de-registration. 0 means constants.TDeregDefault. */
+	/* Dereg is T_Dereg, the longest wait for the answer to a de-registration. 0 means DMRGO_CONSTANTS_T_DEREG_DEFAULT. */
 	dmrgo_duration_t dereg;
-	/* DeniedLife is T_DENREG, how long a Reg_Denied keeps the MS off a SYS_AREA. 0 means constants.TDenRegDefault, and a negative value keeps the entry until Reset. */
+	/* DeniedLife is T_DENREG, how long a Reg_Denied keeps the MS off a SYS_AREA. 0 means DMRGO_CONSTANTS_T_DEN_REG_DEFAULT, and a negative value keeps the entry until Reset. */
 	dmrgo_duration_t denied_life;
-	/* DMRLA is the number of most significant SITE bits in the SYS_AREA of the registration and denied records. 0 means constants.DMRLADefault. */
+	/* DMRLA is the number of most significant SITE bits in the SYS_AREA of the registration and denied records. 0 means DMRGO_CONSTANTS_DMRLA_DEFAULT. */
 	int64_t dmrla;
 	/* MinLevelHunt, when set, is the signal level below which the MS does not confirm a TSCC, as L_Lower_SHort, in the unit of the levels that the consumer passes to Quality. */
 	bool has_min_level_hunt;
@@ -5033,7 +5033,7 @@ struct dmrgo_trunk_ms_config_t {
 	bool no_duplex;
 	/* Ambient accepts Ambient Listening Service calls to the MS. Without it the MS refuses them with MSNot_Supported. */
 	bool ambient;
-	/* Auth, when set, makes the MS authenticate the TSCC before a stun or revive, and lets it accept a kill, which is always authenticated. Without it the MS refuses a kill as not supported. The MS keeps Auth and does not copy what it points to, such as a *trunkauth.Key or a *trunkauth.Keys and its Entries. Do not change it while the MS uses it. (ETSI TS 102 361-4 clauses 6.4.9.2 and 6.4.10) */
+	/* Auth, when set, makes the MS authenticate the TSCC before a stun or revive, and lets it accept a kill, which is always authenticated. Without it the MS refuses a kill as not supported. The MS keeps Auth and does not copy what it points to, such as a *dmrgo_trunkauth_key_t or a *dmrgo_trunkauth_keys_t and its Entries. Do not change it while the MS uses it. (ETSI TS 102 361-4 clauses 6.4.9.2 and 6.4.10) */
 	dmrgo_trunk_authenticator_t *auth;
 	/* NoStun makes the MS refuse a stun or revive as not supported. */
 	bool no_stun;
@@ -5045,7 +5045,7 @@ struct dmrgo_trunk_ms_config_t {
 	bool killed;
 	/* PowerSave is the PowerSave_RQ of the registrations of the MS, 0 to 7: the MS asks to be awake for one power save frame in 2^PowerSave. 0 asks for no power save. (ETSI TS 102 361-4 clause 6.4.7) */
 	uint8_t power_save;
-	/* Awake is T_Awake, the time the MS stays awake after a PDU for it in power save. 0 means constants.TAwakeDefault. */
+	/* Awake is T_Awake, the time the MS stays awake after a PDU for it in power save. 0 means DMRGO_CONSTANTS_T_AWAKE_DEFAULT. */
 	dmrgo_duration_t awake;
 };
 
@@ -5066,7 +5066,7 @@ struct dmrgo_trunk_tscc_config_t {
 	bool reg;
 	/* MaxRegistrations is the size of the registration table, at most 65536. 0 means 64. */
 	int64_t max_registrations;
-	/* NRandWait is the NRand_Wait of C_ALOHA. 0 means the code of constants.NDefaultNW. */
+	/* NRandWait is the NRand_Wait of C_ALOHA. 0 means the code of DMRGO_CONSTANTS_N_DEFAULT_NW. */
 	dmrgo_enums_n_rand_wait_t n_rand_wait;
 	/* Backoff is the backoff number of C_ALOHA. 0 means 3. */
 	dmrgo_enums_backoff_t backoff;
@@ -5076,17 +5076,17 @@ struct dmrgo_trunk_tscc_config_t {
 	int64_t clear_repeats;
 	/* LateEntry is the time between the late entry grants of a call. 0 means 1 s, and a negative value sends none. */
 	dmrgo_duration_t late_entry;
-	/* Hangtime is TV_Hangtime, the time after the end of a transmission in which the call keeps its payload slot. 0 or a negative value means constants.TVHangtimeDefault. */
+	/* Hangtime is TV_Hangtime, the time after the end of a transmission in which the call keeps its payload slot. 0 or a negative value means DMRGO_CONSTANTS_TV_HANGTIME_DEFAULT. */
 	dmrgo_duration_t hangtime;
-	/* Inactive is TV_Inactive, the time without an inbound burst after which the TSCC clears a call that never started. 0 or a negative value means constants.TVInactiveDefault. */
+	/* Inactive is TV_Inactive, the time without an inbound burst after which the TSCC clears a call that never started. 0 or a negative value means DMRGO_CONSTANTS_TV_INACTIVE_DEFAULT. */
 	dmrgo_duration_t inactive;
-	/* AnswerTimeout is how long the TSCC waits for the answer of a called MS to its C_AHOY, and for the answer to an authentication challenge. 0 or a negative value means constants.TPTimerDefault. */
+	/* AnswerTimeout is how long the TSCC waits for the answer of a called MS to its C_AHOY, and for the answer to an authentication challenge. 0 or a negative value means DMRGO_CONSTANTS_TP_TIMER_DEFAULT. */
 	dmrgo_duration_t answer_timeout;
 	/* Authenticate challenges each MS that registers with a C_AHOY, and registers it only when its answer matches the response that the consumer passes to ExpectAuth after TSCCAuthChallenge. A wrong answer gets C_NACKD Reg_Denied, and no answer within AnswerTimeout gets C_NACKD Reg_Refused. */
 	bool authenticate;
 	/* Seed seeds the random choice of the authentication challenges. */
 	uint64_t seed;
-	/* Auth, when set, answers the authentication challenge of an MS before a stun, revive or kill. The TSCC keeps Auth and does not copy what it points to, such as a *trunkauth.Keys and its Entries. Do not change it while the TSCC uses it. (ETSI TS 102 361-4 clauses 6.4.9.2 and 6.4.10) */
+	/* Auth, when set, answers the authentication challenge of an MS before a stun, revive or kill. The TSCC keeps Auth and does not copy what it points to, such as a *dmrgo_trunkauth_keys_t and its Entries. Do not change it while the TSCC uses it. (ETSI TS 102 361-4 clauses 6.4.9.2 and 6.4.10) */
 	dmrgo_trunk_authenticator_t *auth;
 	/* TransmitInterrupt accepts the transmit interrupt requests of MSs, status calls with StatusInterrupt and StatusTerminate. (ETSI TS 102 361-4 clause 6.4.14.3) */
 	bool transmit_interrupt;
@@ -5094,7 +5094,7 @@ struct dmrgo_trunk_tscc_config_t {
 	dmrgo_duration_t max_call;
 	/* PowerSave gives the MSs that ask for it a power save frame, and holds the C_AHOY to an MS that sleeps until its frame. (ETSI TS 102 361-4 clause 6.4.7) */
 	bool power_save;
-	/* Awake is T_Awake, as in MSConfig. 0 or a negative value means constants.TAwakeDefault. */
+	/* Awake is T_Awake, as in MSConfig. 0 or a negative value means DMRGO_CONSTANTS_T_AWAKE_DEFAULT. */
 	dmrgo_duration_t awake;
 	/* IP offers the IP bearer service: the TSCC takes the IP connection advice of MSs. Without it the TSCC refuses the advice with IP_Connection_failed. (ETSI TS 102 361-4 clause 6.4.11) */
 	bool ip;
@@ -5223,7 +5223,7 @@ struct dmrgo_voice_call_options_t {
 	/* TalkerAlias, when not empty, is sent in the embedded LC of every other superframe, in TalkerAliasFormat. */
 	char *talker_alias;
 	size_t talker_alias_len;
-	/* TalkerAliasFormat is the character format of TalkerAlias. The zero value is layer3.TalkerAliasSevenBit. */
+	/* TalkerAliasFormat is the character format of TalkerAlias. The zero value is DMRGO_LAYER3_TALKER_ALIAS_SEVEN_BIT. */
 	dmrgo_layer3_talker_alias_data_format_t talker_alias_format;
 	/* GPS, when set, is sent in the embedded LC of every other superframe, after the talker alias. */
 	bool has_gps;
@@ -5252,7 +5252,7 @@ struct dmrgo_voice_stats_t {
 	uint32_t late;
 	/* BitsChecked is the number of vocoder bits that the AMBE+2 FEC covered. */
 	uint32_t bits_checked;
-	/* BitErrors is the number of bit errors that the AMBE+2 FEC corrected. BitErrors / BitsChecked is the bit error rate, as fec.BERCalculator counts it. */
+	/* BitErrors is the number of bit errors that the AMBE+2 FEC corrected. BitErrors / BitsChecked is the bit error rate, as dmrgo_fec_ber_calculator_t counts it. */
 	uint32_t bit_errors;
 	/* Duration is the time from the start of the call to its end. */
 	dmrgo_duration_t duration;
@@ -5273,7 +5273,7 @@ struct dmrgo_voice_event_t {
 	uint8_t lost;
 	/* LC is the embedded LC of an EventEmbedded. */
 	dmrgo_pdu_full_link_control_t lc;
-	/* Text is the alias of an EventTalkerAlias, in UTF-8, at most pdu.TalkerAliasMaxText bytes. */
+	/* Text is the alias of an EventTalkerAlias, in UTF-8, at most DMRGO_PDU_TALKER_ALIAS_MAX_TEXT bytes. */
 	uint8_t *text;
 	size_t text_len;
 	/* Reason is why the call ended. */
@@ -5302,13 +5302,13 @@ struct dmrgo_voice_interrupter_config_t {
 	size_t size;
 	/* ColorCode is the color code of the EMB of the standalone RC bursts. The EMB also has PI set, as an RC for the other logical channel. (ETSI TS 102 361-1 clause 6.4.2 and Table 9.19, ETSI TS 102 361-2 clause 6.3.5) */
 	dmrgo_enums_color_code_t color_code;
-	/* Wait is T_RCtimer, the wait for the Terminator with LC after each try. 0 means constants.TRCTimer (600 ms), and a negative value waits until the terminator or Cancel. (ETSI TS 102 361-2 clause A.1) */
+	/* Wait is T_RCtimer, the wait for the Terminator with LC after each try. 0 means DMRGO_CONSTANTS_TRC_TIMER (600 ms), and a negative value waits until the terminator or Cancel. (ETSI TS 102 361-2 clause A.1) */
 	dmrgo_duration_t wait;
 	/* Retries is the number of tries after the first. 0 means 1, the one automatic retry of Motorola Transmit Interrupt (MOTOTRBO System Planner 2.3.2), a negative value means none, and it is at most MaxRetries. (ETSI TS 102 361-2 clause 6.3.5) */
 	int64_t retries;
 	/* Repeats is the number of standalone RC bursts of each try, 60 ms apart. 0 means 1; at most MaxRepeats. (ETSI TS 102 361-2 clause 6.3.5) */
 	int64_t repeats;
-	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one. Nil means the Interrupter makes its own. (ETSI TS 102 361-2 clause 6.3.5) */
+	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one. NULL means the Interrupter makes its own. (ETSI TS 102 361-2 clause 6.3.5) */
 	dmrgo_layer2_burst_t *scratch;
 	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. SlotUnknown leaves it unknown. */
 	dmrgo_enums_slot_t slot;
@@ -5319,14 +5319,14 @@ struct dmrgo_voice_interrupter_config_t {
 struct dmrgo_voice_receiver_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
-	/* ColorCode, when set, drops bursts with another color code. Burst A carries no color code, so it does not start a late entry. Nil accepts every color code. */
+	/* ColorCode, when set, drops bursts with another color code. Burst A carries no color code, so it does not start a late entry. has_color_code false accepts every color code. */
 	bool has_color_code;
 	dmrgo_enums_color_code_t color_code;
 	/* Lost is the time without a burst after which a call ends with EndLost. 0 means DefaultLost, and a negative value turns the timer off. */
 	dmrgo_duration_t lost;
-	/* Hang is the call hang time, in which a call to the same target continues the session. 0 means constants.TCallHang (3 s), and a negative value turns session tracking off. A broadcast call and a call to constants.AllMSID have no hang time (ETSI TS 102 361-2 clause 5.3.2.3.2). */
+	/* Hang is the call hang time, in which a call to the same target continues the session. 0 means DMRGO_CONSTANTS_T_CALL_HANG (3 s), and a negative value turns session tracking off. A broadcast call and a call to DMRGO_CONSTANTS_ALL_MSID have no hang time (ETSI TS 102 361-2 clause 5.3.2.3.2). */
 	dmrgo_duration_t hang;
-	/* Scratch, when set, is the Burst that Burst decodes into. Receivers that run on one goroutine can share one, because a Receiver is done with it when its method returns. Make it with layer2.NewBurst, so that no decode allocates. Nil means the Receiver makes its own. */
+	/* Scratch, when set, is the Burst that Burst decodes into. Receivers that run on one goroutine can share one, because a Receiver is done with it when its method returns. Make it with dmrgo_layer2_new_burst, so that no decode allocates. NULL means the Receiver makes its own. */
 	dmrgo_layer2_burst_t *scratch;
 };
 
@@ -5335,15 +5335,15 @@ struct dmrgo_voice_transmitter_config_t {
 	size_t size;
 	/* ColorCode is the color code of the slot types and EMBs. */
 	dmrgo_enums_color_code_t color_code;
-	/* Source selects the SYNC patterns: layer2.SyncSourceBS, the zero value, for a repeater outbound, layer2.SyncSourceMS for a radio. */
+	/* Source selects the SYNC patterns: DMRGO_LAYER2_SYNC_SOURCE_BS, the zero value, for a repeater outbound, DMRGO_LAYER2_SYNC_SOURCE_MS for a radio. */
 	dmrgo_layer2_sync_source_t source;
-	/* Silence is the 72-bit slot that fills a burst when no voice is queued, and pads the last superframe, packed as layer2.RawBurst.VoiceSlots returns it. The zero value means vocoder.AMBESilenceSlot(). A Codec2 caller sets its own. */
+	/* Silence is the 72-bit slot that fills a burst when no voice is queued, and pads the last superframe, packed as dmrgo_layer2_raw_burst_voice_slots returns it. The zero value means dmrgo_vocoder_ambe_silence_slot(). A Codec2 caller sets its own. */
 	uint8_t silence[9];
 	/* Headers is the number of Voice LC Headers before burst A. 0 means 1, as ETSI TS 102 361-1 clause 5.1.2.2 gives; at most MaxHeaders. MMDVMHost sends 3 as a duplex repeater. */
 	int64_t headers;
 	/* Terminators is the number of Terminators with LC at the end of a call. 0 means 1; at most MaxTerminators. */
 	int64_t terminators;
-	/* Timeout is the transmit timeout T_TO. 0 means constants.TTO (180 s), and a negative value turns it off (ETSI TS 102 361-2 clause 6.1). */
+	/* Timeout is the transmit timeout T_TO. 0 means DMRGO_CONSTANTS_TTO (180 s), and a negative value turns it off (ETSI TS 102 361-2 clause 6.1). */
 	dmrgo_duration_t timeout;
 	/* Queue is the number of vocoder slots buffered. 0 means DefaultQueue; at most MaxQueue. It must hold Headers+1 bursts, so that a relayed late entry can send its headers first. */
 	int64_t queue;
@@ -5355,13 +5355,13 @@ struct dmrgo_voice_transmitter_config_t {
 	dmrgo_duration_t idle_search;
 	/* Interruptible makes Interrupt end the call on a Cease Transmission Request. A Cease Transmission Command ends it whatever this says. (ETSI TS 102 361-2 clauses 6.3.3 and 6.3.4) */
 	bool interruptible;
-	/* ChanAuth is T_MS_ChanAuth, the wait for the BS to repeat the ChanAuth PDU of a call that starts in hang time, CallOptions.HangTime. 0 means no channel authorization; constants.TMSChanAuth and constants.TMSChanAuthMultiSite are the recommended values. (ETSI TS 102 361-2 clause 5.1.1.6.2) */
+	/* ChanAuth is T_MS_ChanAuth, the wait for the BS to repeat the ChanAuth PDU of a call that starts in hang time, CallOptions.HangTime. 0 means no channel authorization; DMRGO_CONSTANTS_TMS_CHAN_AUTH and DMRGO_CONSTANTS_TMS_CHAN_AUTH_MULTI_SITE are the recommended values. (ETSI TS 102 361-2 clause 5.1.1.6.2) */
 	dmrgo_duration_t chan_auth;
 	/* HoldoffMax is the upper end of the random holdoff before a new channel authorization try. 0 means DefaultHoldoffMax, and a negative value means no holdoff. (ETSI TS 102 361-2 clause 5.1.1.6.2) */
 	dmrgo_duration_t holdoff_max;
 	/* Seed seeds the generator of the random holdoff, so that the same inputs give the same outputs. (ETSI TS 102 361-2 clause 5.1.1.6.2) */
 	uint64_t seed;
-	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one. Nil means the Transmitter makes its own when ChanAuth is set. (ETSI TS 102 361-2 clause 5.1.1.6.2) */
+	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one. NULL means the Transmitter makes its own when ChanAuth is set. (ETSI TS 102 361-2 clause 5.1.1.6.2) */
 	dmrgo_layer2_burst_t *scratch;
 	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. SlotUnknown leaves it unknown. */
 	dmrgo_enums_slot_t slot;
@@ -7750,27 +7750,27 @@ struct dmrgo_voice_transmitter_config_t {
 
 /* Go: dmrgo.ConfigError.Error. Error returns the message of e. */
 int dmrgo_config_error_error(const dmrgo_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_config_error_last sets *ok when the last error of this thread holds a dmrgo.ConfigError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
+/* dmrgo_config_error_last sets *ok when the last error of this thread holds a dmrgo_config_error_t and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
 int dmrgo_config_error_last(dmrgo_config_error_t *out, bool *ok);
 /* Go: dmrgo.FieldRangeError.Error. Error returns the message of e. */
 int dmrgo_field_range_error_error(const dmrgo_field_range_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_field_range_error_last sets *ok when the last error of this thread holds a dmrgo.FieldRangeError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
+/* dmrgo_field_range_error_last sets *ok when the last error of this thread holds a dmrgo_field_range_error_t and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
 int dmrgo_field_range_error_last(dmrgo_field_range_error_t *out, bool *ok);
 /* Go: bs.Activation.String. String returns the name of the activation. */
 int dmrgo_bs_activation_string(dmrgo_bs_activation_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_bs_cach_new makes a zero bs.CACH. */
+/* dmrgo_bs_cach_new makes a zero dmrgo_bs_cach_t. */
 int dmrgo_bs_cach_new(dmrgo_bs_cach_t **out);
 /* dmrgo_bs_cach_free frees the handle. self may be NULL. */
 int dmrgo_bs_cach_free(dmrgo_bs_cach_t *self);
 /* Go: bs.CACH.First. First reports whether the next call of Next starts a new Short LC, so that the caller builds the Short LC only then. */
 int dmrgo_bs_cach_first(dmrgo_bs_cach_t *self, bool *out);
-/* Go: bs.CACH.Next. Next returns the CACH field before the outbound burst of tc, in transmit order, packed as layer2.DecodeCACHField takes it. It returns DMRGO_ERR_BS_SLOT for a tc other than Slot1 or Slot2, and the error of pdu.ShortLC.Encode, after which First stays true. slc may be NULL. */
+/* Go: bs.CACH.Next. Next returns the CACH field before the outbound burst of tc, in transmit order, packed as dmrgo_layer2_decode_cach_field takes it. It returns DMRGO_ERR_BS_SLOT for a tc other than Slot1 or Slot2, and the error of dmrgo_pdu_short_lc_encode, after which First stays true. slc may be NULL. */
 int dmrgo_bs_cach_next(dmrgo_bs_cach_t *self, dmrgo_enums_slot_t tc, bool busy, const dmrgo_pdu_short_lc_t *slc, uint8_t out[3]);
 /* Go: bs.CACH.Reset. Reset makes the next Next start a new Short LC. */
 int dmrgo_bs_cach_reset(dmrgo_bs_cach_t *self);
 /* Go: bs.ChannelAuth.String. String returns the name of the channel authorization. */
 int dmrgo_bs_channel_auth_string(dmrgo_bs_channel_auth_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: bs.CheckSlot. CheckSlot returns DMRGO_ERR_BS_SLOT for a slot other than enums.Slot1 or enums.Slot2, the slots that Repeater.Inbound and Repeater.Lost drop. */
+/* Go: bs.CheckSlot. CheckSlot returns DMRGO_ERR_BS_SLOT for a slot other than DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2, the slots that Repeater.Inbound and Repeater.Lost drop. */
 int dmrgo_bs_check_slot(dmrgo_enums_slot_t s);
 /* Go: bs.Mode.String. String returns the name of the mode. */
 int dmrgo_bs_mode_string(dmrgo_bs_mode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -8002,7 +8002,7 @@ int dmrgo_csbk_wakeup_wake(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, uint
 int dmrgo_csbk_wakeup_state_string(dmrgo_csbk_wakeup_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: data.EndReason.String. String returns the name of the reason. */
 int dmrgo_data_end_reason_string(dmrgo_data_end_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: data.Event.ICMP. ICMP returns the ICMP error message that a radio sends about the IPv4 packet of the EventDelivered or EventReassembled e, for an accessory interface with the MTU mtu, as ip.CheckIPv4 does. */
+/* Go: data.Event.ICMP. ICMP returns the ICMP error message that a radio sends about the IPv4 packet of the EventDelivered or EventReassembled e, for an accessory interface with the MTU mtu, as dmrgo_ip_check_ipv4 does. */
 int dmrgo_data_event_icmp(const dmrgo_data_event_t *self, int64_t mtu, dmrgo_ip_icmp_message_t *m, uint8_t *pointer, bool *ok);
 /* Go: data.EventKind.String. String returns the name of the kind. */
 int dmrgo_data_event_kind_string(dmrgo_data_event_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -8010,7 +8010,7 @@ int dmrgo_data_event_kind_string(dmrgo_data_event_kind_t self, char *out, size_t
 int dmrgo_data_new_receiver(const dmrgo_data_receiver_config_t *cfg, dmrgo_data_receiver_t **out);
 /* Go: data.NewSender. NewSender returns a Sender for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source or Access, a Preambles, Retries, MaxBlocks, Peers or Window out of range, a negative Lead, or a Slot other than SlotUnknown, Slot1 or Slot2. cfg may be NULL. */
 int dmrgo_data_new_sender(const dmrgo_data_sender_config_t *cfg, dmrgo_data_sender_t **out);
-/* Go: data.Output.ICMP. ICMP returns the ICMP error message that the OutputDone o of a message of the IP bearer service reports to the IP layer: ip.ICMPHostUnreachable for a message that used all its tries on air (ResultRetryLimit), that could not finish before SenderConfig.TxLimit (ResultTimeLimit), or that got a NACK for the full memory of the recipient. */
+/* Go: data.Output.ICMP. ICMP returns the ICMP error message that the OutputDone o of a message of the IP bearer service reports to the IP layer: DMRGO_IP_ICMP_HOST_UNREACHABLE for a message that used all its tries on air (ResultRetryLimit), that could not finish before SenderConfig.TxLimit (ResultTimeLimit), or that got a NACK for the full memory of the recipient. */
 int dmrgo_data_output_icmp(const dmrgo_data_output_t *self, dmrgo_ip_icmp_message_t *m, bool *ok);
 /* Go: data.OutputKind.String. String returns the name of the kind. */
 int dmrgo_data_output_kind_string(dmrgo_data_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -8064,7 +8064,7 @@ int dmrgo_data_sender_lost_need(dmrgo_data_sender_t *self, dmrgo_duration_t now,
 int dmrgo_data_sender_lost(dmrgo_data_sender_t *self, dmrgo_duration_t now, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: data.Sender.Reset. Reset ends every message without outputs and forgets the sequence numbers of every link and the channel state. */
 int dmrgo_data_sender_reset(dmrgo_data_sender_t *self);
-/* Go: data.Sender.Send. Send starts the message m at now, or queues it in the sliding window. Send returns DMRGO_ERR_DATA_BUSY for any other message while a message is in progress, DMRGO_ERR_NIL_ARGUMENT for a nil m, a DMRGO_ERR_CONFIG for another header (Field "Header"), a P_HEAD in m.Proprietary (Field "Proprietary") or a confirmed message to a group (Field "Header.Group"), DMRGO_ERR_ZERO_VALUE on a zero Sender, and the errors of packet.Builder.Segment, such as DMRGO_ERR_PACKET_NO_ROOM for a message of more than SenderConfig.MaxBlocks blocks and DMRGO_ERR_PACKET_RATE. m may be NULL. */
+/* Go: data.Sender.Send. Send starts the message m at now, or queues it in the sliding window. Send returns DMRGO_ERR_DATA_BUSY for any other message while a message is in progress, DMRGO_ERR_NIL_ARGUMENT for a nil m, a DMRGO_ERR_CONFIG for another header (Field "Header"), a P_HEAD in m.Proprietary (Field "Proprietary") or a confirmed message to a group (Field "Header.Group"), DMRGO_ERR_ZERO_VALUE on a zero Sender, and the errors of dmrgo_packet_builder_segment, such as DMRGO_ERR_PACKET_NO_ROOM for a message of more than SenderConfig.MaxBlocks blocks and DMRGO_ERR_PACKET_RATE. m may be NULL. */
 int dmrgo_data_sender_send(dmrgo_data_sender_t *self, dmrgo_duration_t now, const dmrgo_data_message_t *m);
 /* Go: data.Sender.State. State returns the state of the Sender. */
 int dmrgo_data_sender_state(dmrgo_data_sender_t *self, dmrgo_data_sender_state_t *out);
@@ -8162,7 +8162,7 @@ int dmrgo_enums_voice_burst_type_index(dmrgo_enums_voice_burst_type_t self, int6
 int dmrgo_enums_voice_burst_type_lcss(dmrgo_enums_voice_burst_type_t self, dmrgo_enums_lcss_t *lcss, bool *ok);
 /* Go: enums.VoiceBurstType.String. String returns the name of a voice burst type. */
 int dmrgo_enums_voice_burst_type_string(dmrgo_enums_voice_burst_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_fec_ber_calculator_new makes a zero fec.BERCalculator. */
+/* dmrgo_fec_ber_calculator_new makes a zero dmrgo_fec_ber_calculator_t. */
 int dmrgo_fec_ber_calculator_new(dmrgo_fec_ber_calculator_t **out);
 /* dmrgo_fec_ber_calculator_free frees the handle. self may be NULL. */
 int dmrgo_fec_ber_calculator_free(dmrgo_fec_ber_calculator_t *self);
@@ -8362,7 +8362,7 @@ int dmrgo_ip_udp_header_append_binary(const dmrgo_ip_udp_header_t *self, uint8_t
 int dmrgo_ip_udp_header_string(const dmrgo_ip_udp_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer2.BuildBurst. BuildBurst returns the data burst that carries d, with a slot type of color code cc and data type d.DataType() and the data SYNC pattern of src. It returns an error for any other d or when d does not encode, DMRGO_ERR_LAYER2_SYNC_SOURCE when src is unknown, and a DMRGO_ERR_FIELD_RANGE when cc does not fit in 4 bits. */
 int dmrgo_layer2_build_burst(const dmrgo_layer2_data_t *d, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
-/* Go: layer2.BuildDataBurst. BuildDataBurst returns a data burst that carries the BPTC(196,96) payload p, which must already carry its CRC or parity (see pdu.Seal), with a slot type of color code cc and data type dt and the data SYNC pattern of src. It returns DMRGO_ERR_LAYER2_DATA_TYPE, wrapped, when dt is not BPTC coded, DMRGO_ERR_LAYER2_SYNC_SOURCE when src is unknown, and a DMRGO_ERR_FIELD_RANGE when cc does not fit in 4 bits. */
+/* Go: layer2.BuildDataBurst. BuildDataBurst returns a data burst that carries the BPTC(196,96) payload p, which must already carry its CRC or parity (see dmrgo_pdu_seal), with a slot type of color code cc and data type dt and the data SYNC pattern of src. It returns DMRGO_ERR_LAYER2_DATA_TYPE, wrapped, when dt is not BPTC coded, DMRGO_ERR_LAYER2_SYNC_SOURCE when src is unknown, and a DMRGO_ERR_FIELD_RANGE when cc does not fit in 4 bits. */
 int dmrgo_layer2_build_data_burst(const uint8_t p[12], dmrgo_enums_data_type_t dt, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
 /* Go: layer2.BuildRate1DataBurst. BuildRate1DataBurst returns a Rate 1 data burst that carries p, with a slot type of color code cc and the data SYNC pattern of src. It returns DMRGO_ERR_LAYER2_SYNC_SOURCE when src is unknown, and a DMRGO_ERR_FIELD_RANGE when cc does not fit in 4 bits. */
 int dmrgo_layer2_build_rate1_data_burst(const uint8_t p[24], dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
@@ -8374,9 +8374,9 @@ int dmrgo_layer2_build_voice_burst(const dmrgo_vocoder_ambe_frame_t frames[3], d
 int dmrgo_layer2_burst_get_kind(dmrgo_layer2_burst_t *self, dmrgo_layer2_kind_t *out);
 /* Go: layer2.Burst.Kind. Kind is the kind of the burst. */
 int dmrgo_layer2_burst_set_kind(dmrgo_layer2_burst_t *self, dmrgo_layer2_kind_t v);
-/* Go: layer2.Burst.SyncPattern. SyncPattern is the SYNC pattern in the burst center, or enums.SyncNone when the center carries embedded signalling, as in voice bursts B to F and data bursts with an EMB. */
+/* Go: layer2.Burst.SyncPattern. SyncPattern is the SYNC pattern in the burst center, or DMRGO_ENUMS_SYNC_NONE when the center carries embedded signalling, as in voice bursts B to F and data bursts with an EMB. */
 int dmrgo_layer2_burst_get_sync_pattern(dmrgo_layer2_burst_t *self, dmrgo_enums_sync_pattern_t *out);
-/* Go: layer2.Burst.SyncPattern. SyncPattern is the SYNC pattern in the burst center, or enums.SyncNone when the center carries embedded signalling, as in voice bursts B to F and data bursts with an EMB. */
+/* Go: layer2.Burst.SyncPattern. SyncPattern is the SYNC pattern in the burst center, or DMRGO_ENUMS_SYNC_NONE when the center carries embedded signalling, as in voice bursts B to F and data bursts with an EMB. */
 int dmrgo_layer2_burst_set_sync_pattern(dmrgo_layer2_burst_t *self, dmrgo_enums_sync_pattern_t v);
 /* Go: layer2.Burst.NearestSync. NearestSync is the SYNC pattern nearest to the received center field, whatever the classification. */
 int dmrgo_layer2_burst_get_nearest_sync(dmrgo_layer2_burst_t *self, dmrgo_enums_sync_pattern_t *out);
@@ -8424,7 +8424,7 @@ int dmrgo_layer2_burst_get_fec(dmrgo_layer2_burst_t *self, dmrgo_fec_burst_fec_s
 int dmrgo_layer2_burst_set_fec(dmrgo_layer2_burst_t *self, const dmrgo_fec_burst_fec_stats_t *v);
 /* dmrgo_layer2_burst_free frees the handle. self may be NULL. */
 int dmrgo_layer2_burst_free(dmrgo_layer2_burst_t *self);
-/* Go: layer2.Burst.AMBEFrames. AMBEFrames decodes the three voice slots as AMBE+2 frames with vocoder.DecodeAMBE72 and returns them with the combined FEC result. */
+/* Go: layer2.Burst.AMBEFrames. AMBEFrames decodes the three voice slots as AMBE+2 frames with dmrgo_vocoder_decode_ambe72 and returns them with the combined FEC result. */
 int dmrgo_layer2_burst_ambe_frames(dmrgo_layer2_burst_t *self, dmrgo_vocoder_ambe_frame_t ambe_frames[3], dmrgo_fec_result_t *fec);
 /* Go: layer2.Burst.DecodeFromBytes. DecodeFromBytes decodes data into the burst in place. */
 int dmrgo_layer2_burst_decode_from_bytes(dmrgo_layer2_burst_t *self, const dmrgo_layer2_raw_burst_t *data);
@@ -8436,7 +8436,7 @@ int dmrgo_layer2_burst_encode(dmrgo_layer2_burst_t *self, dmrgo_layer2_raw_burst
 int dmrgo_layer2_burst_has_embedded_signalling(dmrgo_layer2_burst_t *self, bool *out);
 /* Go: layer2.Burst.HasReverseChannel. HasReverseChannel reports whether the embedded data field carries an RC PDU: in a standalone RC burst, and in a voice or data burst whose EMB has PI set and LCSS single fragment (ETSI TS 102 361-1 clause 6.4). */
 int dmrgo_layer2_burst_has_reverse_channel(dmrgo_layer2_burst_t *self, bool *out);
-/* Go: layer2.Burst.SetAMBEFrames. SetAMBEFrames sets the three voice slots to the AMBE+2 coding of frames, as vocoder.EncodeAMBE72 returns it. */
+/* Go: layer2.Burst.SetAMBEFrames. SetAMBEFrames sets the three voice slots to the AMBE+2 coding of frames, as dmrgo_vocoder_encode_ambe72 returns it. */
 int dmrgo_layer2_burst_set_ambe_frames(dmrgo_layer2_burst_t *self, const dmrgo_vocoder_ambe_frame_t frames[3]);
 /* Go: layer2.Burst.String. String returns a string representation of the burst. */
 int dmrgo_layer2_burst_string(dmrgo_layer2_burst_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -8460,7 +8460,7 @@ int dmrgo_layer2_decode_embedded_full_link_control(const uint8_t f[4][4], dmrgo_
 int dmrgo_layer2_decode_embedded_lc(const uint8_t f[4][4], uint8_t data[9], dmrgo_fec_result_t *fec);
 /* Go: layer2.DecodeEmbeddedRC. DecodeEmbeddedRC decodes a Reverse Channel PDU from the 32-bit embedded signalling data field, packed, the first bit in the most significant bit of byte 0, as RawBurst.EmbeddedData returns it. */
 int dmrgo_layer2_decode_embedded_rc(const uint8_t data[4], dmrgo_pdu_reverse_channel_t *out);
-/* dmrgo_layer2_embedded_lc_assembler_new makes a zero layer2.EmbeddedLCAssembler. */
+/* dmrgo_layer2_embedded_lc_assembler_new makes a zero dmrgo_layer2_embedded_lc_assembler_t. */
 int dmrgo_layer2_embedded_lc_assembler_new(dmrgo_layer2_embedded_lc_assembler_t **out);
 /* dmrgo_layer2_embedded_lc_assembler_free frees the handle. self may be NULL. */
 int dmrgo_layer2_embedded_lc_assembler_free(dmrgo_layer2_embedded_lc_assembler_t *self);
@@ -8492,7 +8492,7 @@ int dmrgo_layer2_new_burst_from_bytes(const dmrgo_layer2_raw_burst_t *data, dmrg
 int dmrgo_layer2_new_voice_transmitter(const dmrgo_layer2_voice_transmitter_options_t *opts, dmrgo_layer2_voice_transmitter_t **out);
 /* Go: layer2.Placement.String. String returns the name of the placement. */
 int dmrgo_layer2_placement_string(dmrgo_layer2_placement_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_layer2_position_tracker_new makes a zero layer2.PositionTracker. */
+/* dmrgo_layer2_position_tracker_new makes a zero dmrgo_layer2_position_tracker_t. */
 int dmrgo_layer2_position_tracker_new(dmrgo_layer2_position_tracker_t **out);
 /* dmrgo_layer2_position_tracker_free frees the handle. self may be NULL. */
 int dmrgo_layer2_position_tracker_free(dmrgo_layer2_position_tracker_t *self);
@@ -8506,9 +8506,9 @@ int dmrgo_layer2_position_tracker_place(dmrgo_layer2_position_tracker_t *self, c
 int dmrgo_layer2_position_tracker_place_decoded(dmrgo_layer2_position_tracker_t *self, dmrgo_layer2_burst_t *b, dmrgo_layer2_hint_t *h, int64_t steps, int64_t *lost, dmrgo_layer2_placement_t *p);
 /* Go: layer2.PositionTracker.Reset. Reset forgets the call. */
 int dmrgo_layer2_position_tracker_reset(dmrgo_layer2_position_tracker_t *self);
-/* Go: layer2.RawBurst.AMBEFrames. AMBEFrames decodes the three voice slots as AMBE+2 frames with vocoder.DecodeAMBE72, as Burst.AMBEFrames does, and returns them with the combined FEC result. */
+/* Go: layer2.RawBurst.AMBEFrames. AMBEFrames decodes the three voice slots as AMBE+2 frames with dmrgo_vocoder_decode_ambe72, as Burst.AMBEFrames does, and returns them with the combined FEC result. */
 int dmrgo_layer2_raw_burst_ambe_frames(const dmrgo_layer2_raw_burst_t *self, dmrgo_vocoder_ambe_frame_t ambe_frames[3], dmrgo_fec_result_t *fec);
-/* Go: layer2.RawBurst.AMBEVoice. AMBEVoice decodes the three voice slots as AMBEFrames does and packs the frames into the 19-octet IPSC AMBE payload, with the bad flags of frames 2 and 3 set from their FEC results, as vocoder.PackAMBEVoiceFlags does. */
+/* Go: layer2.RawBurst.AMBEVoice. AMBEVoice decodes the three voice slots as AMBEFrames does and packs the frames into the 19-octet IPSC AMBE payload, with the bad flags of frames 2 and 3 set from their FEC results, as dmrgo_vocoder_pack_ambe_voice_flags does. */
 int dmrgo_layer2_raw_burst_ambe_voice(const dmrgo_layer2_raw_burst_t *self, uint8_t p[19], bool bad[3], dmrgo_fec_result_t *res);
 /* Go: layer2.RawBurst.BPTCPayload. BPTCPayload decodes the 196 information bits as BPTC(196,96) and returns the 96 data bits packed most significant bit first, before any CRC or RS(12,9) check. */
 int dmrgo_layer2_raw_burst_bptc_payload(const dmrgo_layer2_raw_burst_t *self, uint8_t data[12], dmrgo_fec_result_t *fec);
@@ -8526,7 +8526,7 @@ int dmrgo_layer2_raw_burst_mmdvm_host_payload(const dmrgo_layer2_raw_burst_t *se
 int dmrgo_layer2_raw_burst_rate1_payload(const dmrgo_layer2_raw_burst_t *self, uint8_t data[24], dmrgo_fec_result_t *fec);
 /* Go: layer2.RawBurst.Rate34Payload. Rate34Payload decodes the 196 information bits as a Rate 3/4 trellis code and returns the 144 data bits packed most significant bit first (ETSI TS 102 361-1 clause B.1.1). */
 int dmrgo_layer2_raw_burst_rate34_payload(const dmrgo_layer2_raw_burst_t *self, uint8_t data[18], dmrgo_fec_result_t *fec);
-/* Go: layer2.RawBurst.SetAMBEFrames. SetAMBEFrames writes the AMBE+2 coding of frames (vocoder.EncodeAMBE72) into the three voice slots. */
+/* Go: layer2.RawBurst.SetAMBEFrames. SetAMBEFrames writes the AMBE+2 coding of frames (dmrgo_vocoder_encode_ambe72) into the three voice slots. */
 int dmrgo_layer2_raw_burst_set_ambe_frames(dmrgo_layer2_raw_burst_t *self, const dmrgo_vocoder_ambe_frame_t frames[3]);
 /* Go: layer2.RawBurst.SetBPTCPayload. SetBPTCPayload encodes p with BPTC(196,96) into the 196 information bits, with the reserved bits R(0) to R(3) zero, and keeps the slot type and SYNC. */
 int dmrgo_layer2_raw_burst_set_bptc_payload(dmrgo_layer2_raw_burst_t *self, const uint8_t p[12]);
@@ -8558,11 +8558,11 @@ int dmrgo_layer2_raw_burst_slot_type(const dmrgo_layer2_raw_burst_t *self, dmrgo
 int dmrgo_layer2_raw_burst_standalone_rc_data(const dmrgo_layer2_raw_burst_t *self, uint8_t out[4]);
 /* Go: layer2.RawBurst.StandaloneRCEMB. StandaloneRCEMB decodes the EMB of a standalone inbound RC burst, burst bits 84 to 91 and 172 to 179 (ETSI TS 102 361-1 clause 6.4.1, Figure 6.7). */
 int dmrgo_layer2_raw_burst_standalone_rcemb(const dmrgo_layer2_raw_burst_t *self, dmrgo_pdu_embedded_signalling_t *out);
-/* Go: layer2.RawBurst.Sync. Sync returns the SYNC pattern nearest to burst bits 108 to 155 and its Hamming distance, as enums.NearestSyncPattern does. */
+/* Go: layer2.RawBurst.Sync. Sync returns the SYNC pattern nearest to burst bits 108 to 155 and its Hamming distance, as dmrgo_enums_nearest_sync_pattern does. */
 int dmrgo_layer2_raw_burst_sync(const dmrgo_layer2_raw_burst_t *self, dmrgo_enums_sync_pattern_t *sync_pattern, int64_t *n);
 /* Go: layer2.RawBurst.VoiceSlots. VoiceSlots returns the three 72-bit vocoder slots of a voice burst as they are on air, before any FEC. */
 int dmrgo_layer2_raw_burst_voice_slots(const dmrgo_layer2_raw_burst_t *self, uint8_t out[3][9]);
-/* dmrgo_layer2_short_lc_assembler_new makes a zero layer2.ShortLCAssembler. */
+/* dmrgo_layer2_short_lc_assembler_new makes a zero dmrgo_layer2_short_lc_assembler_t. */
 int dmrgo_layer2_short_lc_assembler_new(dmrgo_layer2_short_lc_assembler_t **out);
 /* dmrgo_layer2_short_lc_assembler_free frees the handle. self may be NULL. */
 int dmrgo_layer2_short_lc_assembler_free(dmrgo_layer2_short_lc_assembler_t *self);
@@ -8576,7 +8576,7 @@ int dmrgo_layer2_short_lc_assembler_reset(dmrgo_layer2_short_lc_assembler_t *sel
 int dmrgo_layer2_sync_source_sync_patterns(dmrgo_layer2_sync_source_t self, dmrgo_enums_sync_pattern_t *voice, dmrgo_enums_sync_pattern_t *data, bool *ok);
 /* Go: layer2.SyncSourceOf. SyncSourceOf returns the source and the burst kind of the SYNC pattern p: KindVoice or KindData for the voice and data patterns, and SyncSourceMS with KindReverseChannel for the MS-sourced RC pattern. */
 int dmrgo_layer2_sync_source_of(dmrgo_enums_sync_pattern_t p, dmrgo_layer2_sync_source_t *src, dmrgo_layer2_kind_t *k, bool *ok);
-/* dmrgo_layer2_voice_receiver_new makes a zero layer2.VoiceReceiver. */
+/* dmrgo_layer2_voice_receiver_new makes a zero dmrgo_layer2_voice_receiver_t. */
 int dmrgo_layer2_voice_receiver_new(dmrgo_layer2_voice_receiver_t **out);
 /* dmrgo_layer2_voice_receiver_free frees the handle. self may be NULL. */
 int dmrgo_layer2_voice_receiver_free(dmrgo_layer2_voice_receiver_t *self);
@@ -8590,7 +8590,7 @@ int dmrgo_layer2_voice_transmitter_free(dmrgo_layer2_voice_transmitter_t *self);
 int dmrgo_layer2_voice_transmitter_add_burst(dmrgo_layer2_voice_transmitter_t *self, const uint8_t slots[3][9], dmrgo_layer2_raw_burst_t *out);
 /* dmrgo_layer2_voice_transmitter_add_frames_need sets *items and *arena to the room that dmrgo_layer2_voice_transmitter_add_frames needs for these arguments, without a change to the handle. */
 int dmrgo_layer2_voice_transmitter_add_frames_need(dmrgo_layer2_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *frames, size_t frames_len, size_t *items, size_t *arena);
-/* Go: layer2.VoiceTransmitter.AddFrames. AddFrames adds AMBE+2 frames in transmit order, each as the slot vocoder.EncodeAMBE72 returns, and returns the voice bursts they complete and the errors of EncodeAMBE72, as AppendFrames does with a nil dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_layer2_voice_transmitter_add_frames_need gives. */
+/* Go: layer2.VoiceTransmitter.AddFrames. AddFrames adds AMBE+2 frames in transmit order, each as the slot dmrgo_vocoder_encode_ambe72 returns, and returns the voice bursts they complete and the errors of EncodeAMBE72, as AppendFrames does with a nil dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_layer2_voice_transmitter_add_frames_need gives. */
 int dmrgo_layer2_voice_transmitter_add_frames(dmrgo_layer2_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *frames, size_t frames_len, dmrgo_layer2_raw_burst_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_layer2_voice_transmitter_add_slots_need sets *items and *arena to the room that dmrgo_layer2_voice_transmitter_add_slots needs for these arguments, without a change to the handle. */
 int dmrgo_layer2_voice_transmitter_add_slots_need(dmrgo_layer2_voice_transmitter_t *self, const uint8_t (*slots)[9], size_t slots_len, size_t *items, size_t *arena);
@@ -8598,7 +8598,7 @@ int dmrgo_layer2_voice_transmitter_add_slots_need(dmrgo_layer2_voice_transmitter
 int dmrgo_layer2_voice_transmitter_add_slots(dmrgo_layer2_voice_transmitter_t *self, const uint8_t (*slots)[9], size_t slots_len, dmrgo_layer2_raw_burst_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_layer2_voice_transmitter_append_frames_need sets *items and *arena to the room that dmrgo_layer2_voice_transmitter_append_frames needs for these arguments, without a change to the handle. */
 int dmrgo_layer2_voice_transmitter_append_frames_need(dmrgo_layer2_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *frames, size_t frames_len, size_t *items, size_t *arena);
-/* Go: layer2.VoiceTransmitter.AppendFrames. AppendFrames adds AMBE+2 frames in transmit order, each as the slot vocoder.EncodeAMBE72 returns, appends the voice bursts they complete to dst and returns the extended slice, as AppendSlots does, with the errors of EncodeAMBE72. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_layer2_voice_transmitter_append_frames_need gives. */
+/* Go: layer2.VoiceTransmitter.AppendFrames. AppendFrames adds AMBE+2 frames in transmit order, each as the slot dmrgo_vocoder_encode_ambe72 returns, appends the voice bursts they complete to dst and returns the extended slice, as AppendSlots does, with the errors of EncodeAMBE72. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_layer2_voice_transmitter_append_frames_need gives. */
 int dmrgo_layer2_voice_transmitter_append_frames(dmrgo_layer2_voice_transmitter_t *self, dmrgo_layer2_raw_burst_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_vocoder_ambe_frame_t *frames, size_t frames_len);
 /* dmrgo_layer2_voice_transmitter_append_headers_need sets *items and *arena to the room that dmrgo_layer2_voice_transmitter_append_headers needs for these arguments, without a change to the handle. */
 int dmrgo_layer2_voice_transmitter_append_headers_need(dmrgo_layer2_voice_transmitter_t *self, size_t *items, size_t *arena);
@@ -8646,7 +8646,7 @@ int dmrgo_framer_locked(dmrgo_framer_t *self, bool *out);
 int dmrgo_framer_write_need(dmrgo_framer_t *self, const uint8_t *stream, size_t stream_len, int64_t nbits, size_t *items, size_t *arena);
 /* Go: framer.Framer.Write. Write adds the first nbits bits of stream, packed, the first bit in the most significant bit of stream[0], and returns the bursts they complete, or nil when they complete none. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_framer_write_need gives. */
 int dmrgo_framer_write(dmrgo_framer_t *self, const uint8_t *stream, size_t stream_len, int64_t nbits, dmrgo_framer_burst_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: framer.New. New returns a Framer for cfg. It returns a DMRGO_ERR_CONFIG for a Period that is not 0 and not from layer2.BurstBits to MaxPeriod. c may be NULL. */
+/* Go: framer.New. New returns a Framer for cfg. It returns a DMRGO_ERR_CONFIG for a Period that is not 0 and not from DMRGO_LAYER2_BURST_BITS to MaxPeriod. c may be NULL. */
 int dmrgo_framer_new(const dmrgo_framer_config_t *c, dmrgo_framer_t **out);
 /* Go: framer.Search. Search returns the first SYNC field in the first nbits bits of stream that starts at or after bit start and is within threshold bits of a SYNC pattern. */
 int dmrgo_framer_search(const uint8_t *stream, size_t stream_len, int64_t nbits, int64_t start, int64_t threshold, dmrgo_framer_match_t *m, bool *ok);
@@ -8660,7 +8660,7 @@ int dmrgo_packet_assembler_set_accept_bad_crc(dmrgo_packet_assembler_t *self, bo
 int dmrgo_packet_assembler_free(dmrgo_packet_assembler_t *self);
 /* dmrgo_packet_assembler_add_need sets *items and *arena to the room that dmrgo_packet_assembler_add needs for these arguments, without a change to the handle. */
 int dmrgo_packet_assembler_add_need(dmrgo_packet_assembler_t *self, const dmrgo_layer2_data_t *d, size_t *items, size_t *arena);
-/* Go: packet.Assembler.Add. Add adds a decoded PDU: a *pdu.DataHeader, *pdu.Rate12Data, *pdu.Rate34Data or *pdu.Rate1Data, and ignores other PDUs. done is true when the packet is complete, with its Message; on DMRGO_ERR_PACKET_MESSAGE_CRC the Message is returned too. A header with FEC.Uncorrectable set returns DMRGO_ERR_PACKET_HEADER_CRC and changes nothing. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_packet_assembler_add_need gives. */
+/* Go: packet.Assembler.Add. Add adds a decoded PDU: a *dmrgo_pdu_data_header_t, *dmrgo_pdu_rate12_data_t, *dmrgo_pdu_rate34_data_t or *dmrgo_pdu_rate1_data_t, and ignores other PDUs. done is true when the packet is complete, with its Message; on DMRGO_ERR_PACKET_MESSAGE_CRC the Message is returned too. A header with FEC.Uncorrectable set returns DMRGO_ERR_PACKET_HEADER_CRC and changes nothing. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_packet_assembler_add_need gives. */
 int dmrgo_packet_assembler_add(dmrgo_packet_assembler_t *self, const dmrgo_layer2_data_t *d, dmrgo_packet_message_t *message, bool *ok, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* dmrgo_packet_assembler_add_burst_need sets *items and *arena to the room that dmrgo_packet_assembler_add_burst needs for these arguments, without a change to the handle. */
 int dmrgo_packet_assembler_add_burst_need(dmrgo_packet_assembler_t *self, dmrgo_layer2_burst_t *b, size_t *items, size_t *arena);
@@ -8754,7 +8754,7 @@ int dmrgo_pdu_aloha_pdu_string(const dmrgo_pdu_aloha_pdu_t *self, char *out, siz
 int dmrgo_pdu_ann_wd_tscc_parms_string(const dmrgo_pdu_ann_wd_tscc_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.AppendTalkerAlias. AppendTalkerAlias appends the alias that TalkerAlias returns to dst as UTF-8 and returns the extended slice, with the errors of TalkerAlias. With DMRGO_ERR_PDU_TALKER_ALIAS_INCOMPLETE it returns dst unchanged. header may be NULL. */
 int dmrgo_pdu_append_talker_alias(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_pdu_flc_talker_alias_header_t *header, const dmrgo_pdu_flc_talker_alias_block_t *blocks, size_t blocks_len);
-/* Go: pdu.BCAPContinuation.DataType. DataType returns enums.DataTypeMBCContinuation. */
+/* Go: pdu.BCAPContinuation.DataType. DataType returns DMRGO_ENUMS_DATA_TYPE_MBC_CONTINUATION. */
 int dmrgo_pdu_bcap_continuation_data_type(const dmrgo_pdu_bcap_continuation_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.BCAPContinuation.Encode. Encode encodes a BCAPContinuation. */
 int dmrgo_pdu_bcap_continuation_encode(const dmrgo_pdu_bcap_continuation_t *self, uint8_t out[12]);
@@ -8784,7 +8784,7 @@ int dmrgo_pdu_broadcast_pdu_as_vote_now(const dmrgo_pdu_broadcast_pdu_t *self, d
 int dmrgo_pdu_broadcast_pdu_string(const dmrgo_pdu_broadcast_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.BroadcastTalkgroupVoiceGrantPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_string(const dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.CGAPContinuation.DataType. DataType returns enums.DataTypeMBCContinuation. */
+/* Go: pdu.CGAPContinuation.DataType. DataType returns DMRGO_ENUMS_DATA_TYPE_MBC_CONTINUATION. */
 int dmrgo_pdu_cgap_continuation_data_type(const dmrgo_pdu_cgap_continuation_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.CGAPContinuation.Encode. Encode encodes a CGAPContinuation. */
 int dmrgo_pdu_cgap_continuation_encode(const dmrgo_pdu_cgap_continuation_t *self, uint8_t out[12]);
@@ -8866,7 +8866,7 @@ int dmrgo_pdu_csbk_as_talkgroup_voice_grant(const dmrgo_pdu_csbk_t *self, dmrgo_
 int dmrgo_pdu_csbk_as_unit_to_unit_voice_service_answer_response(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.AsUnitToUnitVoiceServiceRequest. AsUnitToUnitVoiceServiceRequest decodes RawPayload as a UnitToUnitVoiceServiceRequestPDU payload. */
 int dmrgo_pdu_csbk_as_unit_to_unit_voice_service_request(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t *p, bool *ok);
-/* Go: pdu.CSBK.DataType. DataType returns enums.DataTypeCSBK. */
+/* Go: pdu.CSBK.DataType. DataType returns DMRGO_ENUMS_DATA_TYPE_CSBK. */
 int dmrgo_pdu_csbk_data_type(const dmrgo_pdu_csbk_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.CSBK.Encode. Encode encodes a CSBK. */
 int dmrgo_pdu_csbk_encode(const dmrgo_pdu_csbk_t *self, uint8_t out[12]);
@@ -8902,11 +8902,11 @@ int dmrgo_pdu_csbk_set_duplex_private_data_grant(dmrgo_pdu_csbk_t *self, const d
 int dmrgo_pdu_csbk_set_duplex_private_voice_grant(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_duplex_private_voice_grant_pdu_t *p);
 /* Go: pdu.CSBK.SetMaintenance. SetMaintenance makes s carry p as a MaintenancePDU payload: it sets Opcode to CSBKMaintenance, FID to 0, Hint0x38 to Opcode0x38Unknown and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_maintenance(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_maintenance_pdu_t *p);
-/* Go: pdu.CSBK.SetMotorolaCallAlert. SetMotorolaCallAlert makes s carry p as a MotorolaCallAlertPDU payload: it sets Opcode to CSBKMotorolaCallAlert, FID to enums.FIDMotorola, Hint0x38 to Opcode0x38Unknown and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.CSBK.SetMotorolaCallAlert. SetMotorolaCallAlert makes s carry p as a MotorolaCallAlertPDU payload: it sets Opcode to CSBKMotorolaCallAlert, FID to DMRGO_ENUMS_FID_MOTOROLA, Hint0x38 to Opcode0x38Unknown and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_motorola_call_alert(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_motorola_call_alert_pdu_t *p);
-/* Go: pdu.CSBK.SetMotorolaCallAlertAck. SetMotorolaCallAlertAck makes s carry p as a MotorolaCallAlertAckPDU payload: it sets Opcode to CSBKMotorolaCallAlertAck, FID to enums.FIDMotorola, Hint0x38 to Opcode0x38Unknown and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.CSBK.SetMotorolaCallAlertAck. SetMotorolaCallAlertAck makes s carry p as a MotorolaCallAlertAckPDU payload: it sets Opcode to CSBKMotorolaCallAlertAck, FID to DMRGO_ENUMS_FID_MOTOROLA, Hint0x38 to Opcode0x38Unknown and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_motorola_call_alert_ack(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_motorola_call_alert_ack_pdu_t *p);
-/* Go: pdu.CSBK.SetMotorolaRadioCheck. SetMotorolaRadioCheck makes s carry p as a MotorolaRadioCheckPDU payload: it sets Opcode to CSBKMotorolaRadioCheck, FID to enums.FIDMotorola, Hint0x38 to Opcode0x38Unknown and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.CSBK.SetMotorolaRadioCheck. SetMotorolaRadioCheck makes s carry p as a MotorolaRadioCheckPDU payload: it sets Opcode to CSBKMotorolaRadioCheck, FID to DMRGO_ENUMS_FID_MOTOROLA, Hint0x38 to Opcode0x38Unknown and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_motorola_radio_check(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_motorola_radio_check_pdu_t *p);
 /* Go: pdu.CSBK.SetMove. SetMove makes s carry p as a MovePDU payload: it sets Opcode to CSBKMove, FID to 0, Hint0x38 to Opcode0x38Unknown and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_move(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_move_pdu_t *p);
@@ -8980,7 +8980,7 @@ int dmrgo_pdu_capacity_plus_private_voice_grant_string(const dmrgo_pdu_capacity_
 int dmrgo_pdu_capacity_plus_rest_channel_string(const dmrgo_pdu_capacity_plus_rest_channel_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.CapacityPlusSegment.String. String returns the name of the CapacityPlusSegment. */
 int dmrgo_pdu_capacity_plus_segment_string(dmrgo_pdu_capacity_plus_segment_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_pdu_capacity_plus_site_status_assembler_new makes a zero pdu.CapacityPlusSiteStatusAssembler. */
+/* dmrgo_pdu_capacity_plus_site_status_assembler_new makes a zero dmrgo_pdu_capacity_plus_site_status_assembler_t. */
 int dmrgo_pdu_capacity_plus_site_status_assembler_new(dmrgo_pdu_capacity_plus_site_status_assembler_t **out);
 /* dmrgo_pdu_capacity_plus_site_status_assembler_free frees the handle. self may be NULL. */
 int dmrgo_pdu_capacity_plus_site_status_assembler_free(dmrgo_pdu_capacity_plus_site_status_assembler_t *self);
@@ -9020,7 +9020,7 @@ int dmrgo_pdu_data_header_as_udt(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_
 int dmrgo_pdu_data_header_as_unconfirmed(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_unconfirmed_data_header_t *p, bool *ok);
 /* Go: pdu.DataHeader.BlocksToFollow. BlocksToFollow returns the number of blocks after the header: the Blocks to Follow of a U_HEAD, C_HEAD or C_RHEAD, the Appended Blocks of a DD_HEAD or R_HEAD, UAB plus one for a UDT_HEAD, and 0 for an SP_HEAD. */
 int dmrgo_pdu_data_header_blocks_to_follow(const dmrgo_pdu_data_header_t *self, int64_t *n, bool *ok);
-/* Go: pdu.DataHeader.DataType. DataType returns enums.DataTypeDataHeader. */
+/* Go: pdu.DataHeader.DataType. DataType returns DMRGO_ENUMS_DATA_TYPE_DATA_HEADER. */
 int dmrgo_pdu_data_header_data_type(const dmrgo_pdu_data_header_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.DataHeader.Encode. Encode encodes a DataHeader. */
 int dmrgo_pdu_data_header_encode(const dmrgo_pdu_data_header_t *self, uint8_t out[12]);
@@ -9182,17 +9182,17 @@ int dmrgo_pdu_full_link_control_encode(const dmrgo_pdu_full_link_control_t *self
 int dmrgo_pdu_full_link_control_service_options(const dmrgo_pdu_full_link_control_t *self, dmrgo_layer3_service_options_t *so, bool *ok);
 /* Go: pdu.FullLinkControl.SetAddresses. SetAddresses sets the target and source addresses of a Grp_V_Ch_Usr or UU_V_Ch_Usr LC of any FID in RawPayload. It returns DMRGO_ERR_PDU_NO_ADDRESSES for other FLCOs and a DMRGO_ERR_FIELD_RANGE when an address does not fit in 24 bits, and then changes nothing. */
 int dmrgo_pdu_full_link_control_set_addresses(dmrgo_pdu_full_link_control_t *self, uint32_t target, uint32_t source);
-/* Go: pdu.FullLinkControl.SetGPSInfo. SetGPSInfo makes s carry p as an FLCGPSInfo payload: it sets FLCO to enums.FLCOGPSInfo, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.FullLinkControl.SetGPSInfo. SetGPSInfo makes s carry p as an FLCGPSInfo payload: it sets FLCO to DMRGO_ENUMS_FLCOGPS_INFO, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_full_link_control_set_gps_info(dmrgo_pdu_full_link_control_t *self, const dmrgo_pdu_flc_gps_info_t *p);
-/* Go: pdu.FullLinkControl.SetGroupVoice. SetGroupVoice makes s carry p as an FLCGroupVoice payload: it sets FLCO to enums.FLCOGroupVoiceChannelUser, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.FullLinkControl.SetGroupVoice. SetGroupVoice makes s carry p as an FLCGroupVoice payload: it sets FLCO to DMRGO_ENUMS_FLCO_GROUP_VOICE_CHANNEL_USER, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_full_link_control_set_group_voice(dmrgo_pdu_full_link_control_t *self, const dmrgo_pdu_flc_group_voice_t *p);
-/* Go: pdu.FullLinkControl.SetTalkerAliasBlock. SetTalkerAliasBlock makes s carry p as an FLCTalkerAliasBlock payload: it sets FLCO to flco, FID to 0 and RawPayload, and keeps the other fields. It returns DMRGO_ERR_PDU_WRONG_OPCODE when flco is not enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2 or enums.FLCOTalkerAliasBlock3 and a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.FullLinkControl.SetTalkerAliasBlock. SetTalkerAliasBlock makes s carry p as an FLCTalkerAliasBlock payload: it sets FLCO to flco, FID to 0 and RawPayload, and keeps the other fields. It returns DMRGO_ERR_PDU_WRONG_OPCODE when flco is not DMRGO_ENUMS_FLCO_TALKER_ALIAS_BLOCK1, DMRGO_ENUMS_FLCO_TALKER_ALIAS_BLOCK2 or DMRGO_ENUMS_FLCO_TALKER_ALIAS_BLOCK3 and a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_full_link_control_set_talker_alias_block(dmrgo_pdu_full_link_control_t *self, dmrgo_enums_flco_t flco, const dmrgo_pdu_flc_talker_alias_block_t *p);
-/* Go: pdu.FullLinkControl.SetTalkerAliasHeader. SetTalkerAliasHeader makes s carry p as an FLCTalkerAliasHeader payload: it sets FLCO to enums.FLCOTalkerAliasHeader, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.FullLinkControl.SetTalkerAliasHeader. SetTalkerAliasHeader makes s carry p as an FLCTalkerAliasHeader payload: it sets FLCO to DMRGO_ENUMS_FLCO_TALKER_ALIAS_HEADER, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_full_link_control_set_talker_alias_header(dmrgo_pdu_full_link_control_t *self, const dmrgo_pdu_flc_talker_alias_header_t *p);
-/* Go: pdu.FullLinkControl.SetTerminatorDataLinkControl. SetTerminatorDataLinkControl makes s carry p as an FLCTerminatorDataLinkControl payload: it sets FLCO to enums.FLCOTerminatorDataLinkControl, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.FullLinkControl.SetTerminatorDataLinkControl. SetTerminatorDataLinkControl makes s carry p as an FLCTerminatorDataLinkControl payload: it sets FLCO to DMRGO_ENUMS_FLCO_TERMINATOR_DATA_LINK_CONTROL, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_full_link_control_set_terminator_data_link_control(dmrgo_pdu_full_link_control_t *self, const dmrgo_pdu_flc_terminator_data_link_control_t *p);
-/* Go: pdu.FullLinkControl.SetUnitToUnit. SetUnitToUnit makes s carry p as an FLCUnitToUnit payload: it sets FLCO to enums.FLCOUnitToUnitVoiceChannelUser, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.FullLinkControl.SetUnitToUnit. SetUnitToUnit makes s carry p as an FLCUnitToUnit payload: it sets FLCO to DMRGO_ENUMS_FLCO_UNIT_TO_UNIT_VOICE_CHANNEL_USER, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_full_link_control_set_unit_to_unit(dmrgo_pdu_full_link_control_t *self, const dmrgo_pdu_flc_unit_to_unit_t *p);
 /* Go: pdu.FullLinkControl.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_full_link_control_string(const dmrgo_pdu_full_link_control_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -9238,7 +9238,7 @@ int dmrgo_pdu_local_time_parms_string(const dmrgo_pdu_local_time_parms_t *self, 
 int dmrgo_pdu_mbc_continuation_bcap(const dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_bcap_continuation_t *out);
 /* Go: pdu.MBCContinuation.CGAP. CGAP decodes the block as the CG_AP continuation of a grant MBC. */
 int dmrgo_pdu_mbc_continuation_cgap(const dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_cgap_continuation_t *out);
-/* Go: pdu.MBCContinuation.DataType. DataType returns enums.DataTypeMBCContinuation. */
+/* Go: pdu.MBCContinuation.DataType. DataType returns DMRGO_ENUMS_DATA_TYPE_MBC_CONTINUATION. */
 int dmrgo_pdu_mbc_continuation_data_type(const dmrgo_pdu_mbc_continuation_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.MBCContinuation.Encode. Encode encodes an MBCContinuation. */
 int dmrgo_pdu_mbc_continuation_encode(const dmrgo_pdu_mbc_continuation_t *self, uint8_t out[12]);
@@ -9270,7 +9270,7 @@ int dmrgo_pdu_mbc_header_as_talkgroup_data_grant(const dmrgo_pdu_mbc_header_t *s
 int dmrgo_pdu_mbc_header_as_talkgroup_data_grant_multi_item(const dmrgo_pdu_mbc_header_t *self, dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t *p, bool *ok);
 /* Go: pdu.MBCHeader.AsTalkgroupVoiceGrant. AsTalkgroupVoiceGrant decodes RawPayload as a TalkgroupVoiceGrantPDU payload. */
 int dmrgo_pdu_mbc_header_as_talkgroup_voice_grant(const dmrgo_pdu_mbc_header_t *self, dmrgo_pdu_talkgroup_voice_grant_pdu_t *p, bool *ok);
-/* Go: pdu.MBCHeader.DataType. DataType returns enums.DataTypeMBCHeader. */
+/* Go: pdu.MBCHeader.DataType. DataType returns DMRGO_ENUMS_DATA_TYPE_MBC_HEADER. */
 int dmrgo_pdu_mbc_header_data_type(const dmrgo_pdu_mbc_header_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.MBCHeader.Encode. Encode encodes an MBCHeader. */
 int dmrgo_pdu_mbc_header_encode(const dmrgo_pdu_mbc_header_t *self, uint8_t out[12]);
@@ -9300,7 +9300,7 @@ int dmrgo_pdu_mbc_header_set_talkgroup_voice_grant(dmrgo_pdu_mbc_header_t *self,
 int dmrgo_pdu_mbc_header_string(const dmrgo_pdu_mbc_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.MBCLastBlockCRCOK. MBCLastBlockCRCOK reports whether bits 80 to 95 of the last of blocks hold the last-block CRC-CCITT that SetMBCLastBlockCRC writes. */
 int dmrgo_pdu_mbc_last_block_crc_ok(const uint8_t (*blocks)[12], size_t blocks_len, bool *out);
-/* Go: pdu.MVAPContinuation.DataType. DataType returns enums.DataTypeMBCContinuation. */
+/* Go: pdu.MVAPContinuation.DataType. DataType returns DMRGO_ENUMS_DATA_TYPE_MBC_CONTINUATION. */
 int dmrgo_pdu_mvap_continuation_data_type(const dmrgo_pdu_mvap_continuation_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.MVAPContinuation.Encode. Encode encodes an MVAPContinuation. */
 int dmrgo_pdu_mvap_continuation_encode(const dmrgo_pdu_mvap_continuation_t *self, uint8_t out[12]);
@@ -9332,13 +9332,13 @@ int dmrgo_pdu_new_bs_outbound_activation(uint32_t bs, uint32_t source, dmrgo_pdu
 int dmrgo_pdu_new_voice_lc(bool group, uint32_t target, uint32_t source, const dmrgo_layer3_service_options_t *so, dmrgo_pdu_full_link_control_t *out);
 /* Go: pdu.NewVoiceLCBytes. NewVoiceLCBytes returns the LC octets of the voice call LC that NewVoiceLC returns: octet 0 holds the FLCO with PF and Reserved clear, octet 1 the standard FID, octet 2 the octet of so.Encode and octets 3 to 8 the addresses. It returns a DMRGO_ERR_FIELD_RANGE when an address does not fit in 24 bits or a field of so does not fit its bits. */
 int dmrgo_pdu_new_voice_lc_bytes(bool group, uint32_t target, uint32_t source, const dmrgo_layer3_service_options_t *so, dmrgo_pdu_lc_bytes_t *out);
-/* Go: pdu.PIHeader.DataType. DataType returns enums.DataTypePIHeader. */
+/* Go: pdu.PIHeader.DataType. DataType returns DMRGO_ENUMS_DATA_TYPE_PI_HEADER. */
 int dmrgo_pdu_pi_header_data_type(const dmrgo_pdu_pi_header_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.PIHeader.Encode. Encode encodes a PIHeader. */
 int dmrgo_pdu_pi_header_encode(const dmrgo_pdu_pi_header_t *self, uint8_t out[12]);
 /* Go: pdu.PIHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_pi_header_string(const dmrgo_pdu_pi_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.PRFill.DataType. DataType returns enums.DataTypeIdle. */
+/* Go: pdu.PRFill.DataType. DataType returns DMRGO_ENUMS_DATA_TYPE_IDLE. */
 int dmrgo_pdu_pr_fill_data_type(const dmrgo_pdu_pr_fill_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.PRFill.Encode. Encode returns PRFillBits and a nil error. */
 int dmrgo_pdu_pr_fill_encode(const dmrgo_pdu_pr_fill_t *self, uint8_t out[12]);
@@ -9368,7 +9368,7 @@ int dmrgo_pdu_rate12_data_confirmed_crc9_ok(const dmrgo_pdu_rate12_data_t *self,
 int dmrgo_pdu_rate12_data_confirmed_dbsn(const dmrgo_pdu_rate12_data_t *self, uint8_t *out);
 /* Go: pdu.Rate12Data.ConfirmedUserData. ConfirmedUserData returns the 10 user data octets of a confirmed block. */
 int dmrgo_pdu_rate12_data_confirmed_user_data(const dmrgo_pdu_rate12_data_t *self, uint8_t out[10]);
-/* Go: pdu.Rate12Data.DataType. DataType returns enums.DataTypeRate12. */
+/* Go: pdu.Rate12Data.DataType. DataType returns DMRGO_ENUMS_DATA_TYPE_RATE12. */
 int dmrgo_pdu_rate12_data_data_type(const dmrgo_pdu_rate12_data_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.Rate12Data.Encode. Encode encodes a Rate12Data. */
 int dmrgo_pdu_rate12_data_encode(const dmrgo_pdu_rate12_data_t *self, uint8_t out[12]);
@@ -9384,7 +9384,7 @@ int dmrgo_pdu_rate1_data_confirmed_crc9_ok(const dmrgo_pdu_rate1_data_t *self, b
 int dmrgo_pdu_rate1_data_confirmed_dbsn(const dmrgo_pdu_rate1_data_t *self, uint8_t *out);
 /* Go: pdu.Rate1Data.ConfirmedUserData. ConfirmedUserData returns the 22 user data octets of a confirmed block. */
 int dmrgo_pdu_rate1_data_confirmed_user_data(const dmrgo_pdu_rate1_data_t *self, uint8_t out[22]);
-/* Go: pdu.Rate1Data.DataType. DataType returns enums.DataTypeRate1. */
+/* Go: pdu.Rate1Data.DataType. DataType returns DMRGO_ENUMS_DATA_TYPE_RATE1. */
 int dmrgo_pdu_rate1_data_data_type(const dmrgo_pdu_rate1_data_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.Rate1Data.Encode. Encode encodes a Rate1Data. */
 int dmrgo_pdu_rate1_data_encode(const dmrgo_pdu_rate1_data_t *self, uint8_t out[24]);
@@ -9400,7 +9400,7 @@ int dmrgo_pdu_rate34_data_confirmed_crc9_ok(const dmrgo_pdu_rate34_data_t *self,
 int dmrgo_pdu_rate34_data_confirmed_dbsn(const dmrgo_pdu_rate34_data_t *self, uint8_t *out);
 /* Go: pdu.Rate34Data.ConfirmedUserData. ConfirmedUserData returns the 16 user data octets of a confirmed block. */
 int dmrgo_pdu_rate34_data_confirmed_user_data(const dmrgo_pdu_rate34_data_t *self, uint8_t out[16]);
-/* Go: pdu.Rate34Data.DataType. DataType returns enums.DataTypeRate34. */
+/* Go: pdu.Rate34Data.DataType. DataType returns DMRGO_ENUMS_DATA_TYPE_RATE34. */
 int dmrgo_pdu_rate34_data_data_type(const dmrgo_pdu_rate34_data_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.Rate34Data.Encode. Encode encodes a Rate34Data. */
 int dmrgo_pdu_rate34_data_encode(const dmrgo_pdu_rate34_data_t *self, uint8_t out[18]);
@@ -9436,13 +9436,13 @@ int dmrgo_pdu_short_lc_as_null_message(const dmrgo_pdu_short_lc_t *self, dmrgo_p
 int dmrgo_pdu_short_lc_as_p_sys_parms(const dmrgo_pdu_short_lc_t *self, dmrgo_pdu_short_lc_p_sys_parms_t *p, bool *ok);
 /* Go: pdu.ShortLC.Encode. Encode encodes a ShortLC. */
 int dmrgo_pdu_short_lc_encode(const dmrgo_pdu_short_lc_t *self, uint8_t out[5]);
-/* Go: pdu.ShortLC.SetActivityUpdate. SetActivityUpdate makes s carry p as a ShortLCActivityUpdate payload: it sets SLCO to enums.SLCOActivityUpdate and RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.ShortLC.SetActivityUpdate. SetActivityUpdate makes s carry p as a ShortLCActivityUpdate payload: it sets SLCO to DMRGO_ENUMS_SLCO_ACTIVITY_UPDATE and RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_short_lc_set_activity_update(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_activity_update_t *p);
-/* Go: pdu.ShortLC.SetCSysParms. SetCSysParms makes s carry p as a ShortLCCSysParms payload: it sets SLCO to enums.SLCOCSysParms and RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.ShortLC.SetCSysParms. SetCSysParms makes s carry p as a ShortLCCSysParms payload: it sets SLCO to DMRGO_ENUMS_SLCOC_SYS_PARMS and RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_short_lc_set_c_sys_parms(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_c_sys_parms_t *p);
-/* Go: pdu.ShortLC.SetNullMessage. SetNullMessage makes s carry p as a ShortLCNullMessage payload: it sets SLCO to enums.SLCONullMessage and RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.ShortLC.SetNullMessage. SetNullMessage makes s carry p as a ShortLCNullMessage payload: it sets SLCO to DMRGO_ENUMS_SLCO_NULL_MESSAGE and RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_short_lc_set_null_message(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_null_message_t *p);
-/* Go: pdu.ShortLC.SetPSysParms. SetPSysParms makes s carry p as a ShortLCPSysParms payload: it sets SLCO to enums.SLCOPSysParms and RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.ShortLC.SetPSysParms. SetPSysParms makes s carry p as a ShortLCPSysParms payload: it sets SLCO to DMRGO_ENUMS_SLCOP_SYS_PARMS and RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_short_lc_set_p_sys_parms(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_p_sys_parms_t *p);
 /* Go: pdu.ShortLC.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_short_lc_string(const dmrgo_pdu_short_lc_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -9502,13 +9502,13 @@ int dmrgo_pdu_sys_code_unpack(dmrgo_pdu_sys_code_t *self, uint16_t v);
 int dmrgo_pdu_sys_code_unpack14(dmrgo_pdu_sys_code_t *self, uint16_t v);
 /* Go: pdu.TACT.Encode. Encode encodes a TACT. */
 int dmrgo_pdu_tact_encode(const dmrgo_pdu_tact_t *self, uint8_t out[1]);
-/* Go: pdu.TACT.Slot. Slot returns the TDMA channel that TDMAChannel gives for the next outbound burst: enums.Slot2 when it is set, else enums.Slot1, in the form that bs.CACH.Next takes. */
+/* Go: pdu.TACT.Slot. Slot returns the TDMA channel that TDMAChannel gives for the next outbound burst: DMRGO_ENUMS_SLOT2 when it is set, else DMRGO_ENUMS_SLOT1, in the form that dmrgo_bs_cach_next takes. */
 int dmrgo_pdu_tact_slot(const dmrgo_pdu_tact_t *self, dmrgo_enums_slot_t *out);
 /* Go: pdu.TACT.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_tact_string(const dmrgo_pdu_tact_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.TalkerAlias. TalkerAlias returns the alias carried by a Talker Alias header and its blocks, given in order block 1, 2, 3. It returns DMRGO_ERR_PDU_TALKER_ALIAS_INCOMPLETE when fewer blocks are given or header or a block is nil, and DMRGO_ERR_PDU_TALKER_ALIAS_INVALID_UTF8, with the alias, when the Code Units of the UTF-8 format are not valid UTF-8. header may be NULL. */
 int dmrgo_pdu_talker_alias(const dmrgo_pdu_flc_talker_alias_header_t *header, const dmrgo_pdu_flc_talker_alias_block_t *blocks, size_t blocks_len, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_pdu_talker_alias_assembler_new makes a zero pdu.TalkerAliasAssembler. */
+/* dmrgo_pdu_talker_alias_assembler_new makes a zero dmrgo_pdu_talker_alias_assembler_t. */
 int dmrgo_pdu_talker_alias_assembler_new(dmrgo_pdu_talker_alias_assembler_t **out);
 /* dmrgo_pdu_talker_alias_assembler_free frees the handle. self may be NULL. */
 int dmrgo_pdu_talker_alias_assembler_free(dmrgo_pdu_talker_alias_assembler_t *self);
@@ -9544,7 +9544,7 @@ int dmrgo_pdu_udt_header_string(const dmrgo_pdu_udt_header_t *self, char *out, s
 int dmrgo_pdu_udt_opcode_string(dmrgo_pdu_udt_opcode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.UnconfirmedDataHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_unconfirmed_data_header_string(const dmrgo_pdu_unconfirmed_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.UnifiedSingleBlockData.DataType. DataType returns enums.DataTypeUnifiedSingleBlock. */
+/* Go: pdu.UnifiedSingleBlockData.DataType. DataType returns DMRGO_ENUMS_DATA_TYPE_UNIFIED_SINGLE_BLOCK. */
 int dmrgo_pdu_unified_single_block_data_data_type(const dmrgo_pdu_unified_single_block_data_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.UnifiedSingleBlockData.Encode. Encode encodes a UnifiedSingleBlockData. */
 int dmrgo_pdu_unified_single_block_data_encode(const dmrgo_pdu_unified_single_block_data_t *self, uint8_t out[12]);
@@ -9554,7 +9554,7 @@ int dmrgo_pdu_unified_single_block_data_string(const dmrgo_pdu_unified_single_bl
 int dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_string(const dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.UnitToUnitVoiceServiceRequestPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_unit_to_unit_voice_service_request_pdu_string(const dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.VNAPContinuation.DataType. DataType returns enums.DataTypeMBCContinuation. */
+/* Go: pdu.VNAPContinuation.DataType. DataType returns DMRGO_ENUMS_DATA_TYPE_MBC_CONTINUATION. */
 int dmrgo_pdu_vnap_continuation_data_type(const dmrgo_pdu_vnap_continuation_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.VNAPContinuation.Encode. Encode encodes a VNAPContinuation. */
 int dmrgo_pdu_vnap_continuation_encode(const dmrgo_pdu_vnap_continuation_t *self, uint8_t out[12]);
@@ -9664,7 +9664,7 @@ int dmrgo_layer3_voice_service_options_field(const dmrgo_layer3_voice_service_op
 int dmrgo_layer3_voice_service_options_string(const dmrgo_layer3_voice_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.VoiceServiceOptionsOf. VoiceServiceOptionsOf decodes a VoiceServiceOptions from the 7-bit ServiceOptions of a C_RAND in the low bits of field, as Field returns it. */
 int dmrgo_layer3_voice_service_options_of(uint8_t field, dmrgo_layer3_voice_service_options_t *out);
-/* dmrgo_location_decoder_new makes a zero location.Decoder. */
+/* dmrgo_location_decoder_new makes a zero dmrgo_location_decoder_t. */
 int dmrgo_location_decoder_new(dmrgo_location_decoder_t **out);
 /* dmrgo_location_decoder_free frees the handle. self may be NULL. */
 int dmrgo_location_decoder_free(dmrgo_location_decoder_t *self);
@@ -10038,7 +10038,7 @@ int dmrgo_dmrd_talker_alias_lc(const dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_
 int dmrgo_dmrd_talker_alias_string(const dmrgo_dmrd_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_dmrdauth_bridge_key_free frees the handle. self may be NULL. */
 int dmrgo_dmrdauth_bridge_key_free(dmrgo_dmrdauth_bridge_key_t *self);
-/* Go: dmrdauth.BridgeKey.SignInPlace. SignInPlace writes the signature of the OpenBridge packet p, as dmrd.Bridge.AppendBinary and dmrd.BridgeControl.AppendBinary encode it with space for the signature, into its last octets: HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over the octets before the hash of a DMRE packet. It changes nothing and returns an error when the packet is none of these, and DMRGO_ERR_NIL_RECEIVER for a nil b. */
+/* Go: dmrdauth.BridgeKey.SignInPlace. SignInPlace writes the signature of the OpenBridge packet p, as dmrgo_dmrd_bridge_append_binary and dmrgo_dmrd_bridge_control_append_binary encode it with space for the signature, into its last octets: HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over the octets before the hash of a DMRE packet. It changes nothing and returns an error when the packet is none of these, and DMRGO_ERR_NIL_RECEIVER for a nil b. */
 int dmrgo_dmrdauth_bridge_key_sign_in_place(dmrgo_dmrdauth_bridge_key_t *self, uint8_t *p, size_t p_len);
 /* dmrgo_dmrdauth_bridge_key_verify_need sets *items and *arena to the room that dmrgo_dmrdauth_bridge_key_verify needs for these arguments, without a change to the handle. */
 int dmrgo_dmrdauth_bridge_key_verify_need(dmrgo_dmrdauth_bridge_key_t *self, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
@@ -10058,7 +10058,7 @@ int dmrgo_dmrdsession_bridge_deadline(dmrgo_dmrdsession_bridge_t *self, dmrgo_du
 int dmrgo_dmrdsession_bridge_packet_need(dmrgo_dmrdsession_bridge_t *self, dmrgo_duration_t now, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
 /* Go: dmrdsession.Bridge.Packet. Packet takes the packet p from the peer. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrdsession_bridge_packet_need gives. */
 int dmrgo_dmrdsession_bridge_packet(dmrgo_dmrdsession_bridge_t *self, dmrgo_duration_t now, const uint8_t *p, size_t p_len, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: dmrdsession.Bridge.SignInPlace. SignInPlace writes the signature of the OpenBridge packet p into its last octets, as dmrdauth.BridgeKey.SignInPlace does. */
+/* Go: dmrdsession.Bridge.SignInPlace. SignInPlace writes the signature of the OpenBridge packet p into its last octets, as dmrgo_dmrdauth_bridge_key_sign_in_place does. */
 int dmrgo_dmrdsession_bridge_sign_in_place(dmrgo_dmrdsession_bridge_t *self, uint8_t *p, size_t p_len);
 /* Go: dmrdsession.Bridge.State. State returns StateRunning when the peer sent a packet with a good signature within Timeout, and StateIdle before that and after. */
 int dmrgo_dmrdsession_bridge_state(dmrgo_dmrdsession_bridge_t *self, dmrgo_dmrdsession_state_t *out);
@@ -10214,7 +10214,7 @@ int dmrgo_ipsc_opcode_string(dmrgo_ipsc_opcode_t self, char *out, size_t out_cap
 int dmrgo_ipsc_payload_rssi(const dmrgo_ipsc_payload_t *self, uint16_t *value, bool *ok);
 /* Go: ipsc.Payload.SlotType. SlotType returns the slot type octet of the trailer and whether the packet has one. */
 int dmrgo_ipsc_payload_slot_type(const dmrgo_ipsc_payload_t *self, dmrgo_pdu_slot_type_info_t *slot_type_info, bool *ok);
-/* dmrgo_ipsc_peer_list_new makes a zero ipsc.PeerList. */
+/* dmrgo_ipsc_peer_list_new makes a zero dmrgo_ipsc_peer_list_t. */
 int dmrgo_ipsc_peer_list_new(dmrgo_ipsc_peer_list_t **out);
 /* dmrgo_ipsc_peer_list_free frees the handle. self may be NULL. */
 int dmrgo_ipsc_peer_list_free(dmrgo_ipsc_peer_list_t *self);
@@ -10234,7 +10234,7 @@ int dmrgo_ipsc_stream_skip(dmrgo_ipsc_stream_t *self, uint16_t n);
 int dmrgo_ipsc_user_append_binary(const dmrgo_ipsc_user_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ipsc.User.Call. Call returns the call of the packet: group for OpGroupVoice and OpGroupData, target is Destination and source is Source. */
 int dmrgo_ipsc_user_call(const dmrgo_ipsc_user_t *self, bool *group, uint32_t *target, uint32_t *source);
-/* Go: ipsc.User.Hint. Hint returns what the packet tells about its burst, for the service machines: the slot from the call info, the RTP sequence number (16 bits), the call control as the stream, burst A or E from the voice layout (a layer2.PositionTracker places B, C, D and F), the data type of a data packet, EndWeak for the end flag on a voice packet, EndStrong on a terminator or a data packet, and SyncLost for BurstSyncLost. */
+/* Go: ipsc.User.Hint. Hint returns what the packet tells about its burst, for the service machines: the slot from the call info, the RTP sequence number (16 bits), the call control as the stream, burst A or E from the voice layout (a dmrgo_layer2_position_tracker_t places B, C, D and F), the data type of a data packet, EndWeak for the end flag on a voice packet, EndStrong on a terminator or a data packet, and SyncLost for BurstSyncLost. */
 int dmrgo_ipsc_user_hint(const dmrgo_ipsc_user_t *self, dmrgo_layer2_hint_t *out);
 /* Go: ipsc.User.IsVoice. IsVoice reports whether u carries a voice burst. */
 int dmrgo_ipsc_user_is_voice(const dmrgo_ipsc_user_t *self, bool *out);
@@ -10502,9 +10502,9 @@ int dmrgo_trunk_appended_set_mixed(dmrgo_trunk_appended_t *self, bool one_key, u
 int dmrgo_trunk_appended_set_nmea_long(dmrgo_trunk_appended_t *self, const dmrgo_trunk_nmea_long_t *n);
 /* Go: trunk.Appended.SetNMEAShort. SetNMEAShort sets a to the Short NMEA format of n in one block. n may be NULL. */
 int dmrgo_trunk_appended_set_nmea_short(dmrgo_trunk_appended_t *self, const dmrgo_trunk_nmea_short_t *n);
-/* Go: trunk.Appended.SetText. SetText sets a to the UTF-8 text in the format f: enums.UDTISO7 (up to 52 characters of ISO/IEC 646), enums.UDTISO8 (up to 46 characters of ISO/IEC 8859-1) or enums.UDTUTF16BE (up to 23 UTF-16 code units). It returns DMRGO_ERR_TRUNK_UDT_FORMAT for another format, DMRGO_ERR_TRUNK_UDT_LENGTH for an empty or a too long text, and DMRGO_ERR_TRUNK_UDT_CHARACTER for a character that the format cannot hold. */
+/* Go: trunk.Appended.SetText. SetText sets a to the UTF-8 text in the format f: DMRGO_ENUMS_UDTISO7 (up to 52 characters of ISO/IEC 646), DMRGO_ENUMS_UDTISO8 (up to 46 characters of ISO/IEC 8859-1) or DMRGO_ENUMS_UDTUTF16BE (up to 23 UTF-16 code units). It returns DMRGO_ERR_TRUNK_UDT_FORMAT for another format, DMRGO_ERR_TRUNK_UDT_LENGTH for an empty or a too long text, and DMRGO_ERR_TRUNK_UDT_CHARACTER for a character that the format cannot hold. */
 int dmrgo_trunk_appended_set_text(dmrgo_trunk_appended_t *self, dmrgo_enums_udt_format_t f, const uint8_t *text, size_t text_len);
-/* Go: trunk.Appended.Text. Text appends the text of a to dst as UTF-8 and returns dst, for the formats enums.UDTISO7, enums.UDTISO8 (read as ISO/IEC 8859-1), enums.UDTUTF16BE and enums.UDTMixed (the text after the address). It returns DMRGO_ERR_TRUNK_UDT_FORMAT for another format and DMRGO_ERR_TRUNK_UDT_LENGTH for a PadNibble over the size of the blocks. */
+/* Go: trunk.Appended.Text. Text appends the text of a to dst as UTF-8 and returns dst, for the formats DMRGO_ENUMS_UDTISO7, DMRGO_ENUMS_UDTISO8 (read as ISO/IEC 8859-1), DMRGO_ENUMS_UDTUTF16BE and DMRGO_ENUMS_UDT_MIXED (the text after the address). It returns DMRGO_ERR_TRUNK_UDT_FORMAT for another format and DMRGO_ERR_TRUNK_UDT_LENGTH for a PadNibble over the size of the blocks. */
 int dmrgo_trunk_appended_text(const dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_trunk_authenticator_free frees the handle. self may be NULL. */
 int dmrgo_trunk_authenticator_free(dmrgo_trunk_authenticator_t *self);
@@ -10512,9 +10512,9 @@ int dmrgo_trunk_authenticator_free(dmrgo_trunk_authenticator_t *self);
 int dmrgo_trunk_authenticator_response(dmrgo_trunk_authenticator_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
 /* dmrgo_trunk_authenticator_from_vtable makes a Authenticator whose methods call the functions of vt with vt->user. */
 int dmrgo_trunk_authenticator_from_vtable(const dmrgo_trunk_authenticator_vtable_t *vt, dmrgo_trunk_authenticator_t **out);
-/* dmrgo_trunkauth_key_as_authenticator makes a trunk.Authenticator from self, which it copies. */
+/* dmrgo_trunkauth_key_as_authenticator makes a dmrgo_trunk_authenticator_t from self, which it copies. */
 int dmrgo_trunkauth_key_as_authenticator(const dmrgo_trunkauth_key_t *self, dmrgo_trunk_authenticator_t **out);
-/* dmrgo_trunkauth_keys_as_authenticator makes a trunk.Authenticator from self, which it copies. */
+/* dmrgo_trunkauth_keys_as_authenticator makes a dmrgo_trunk_authenticator_t from self, which it copies. */
 int dmrgo_trunkauth_keys_as_authenticator(const dmrgo_trunkauth_keys_t *self, dmrgo_trunk_authenticator_t **out);
 /* dmrgo_trunk_capacity_plus_follower_free frees the handle. self may be NULL. */
 int dmrgo_trunk_capacity_plus_follower_free(dmrgo_trunk_capacity_plus_follower_t *self);
@@ -10546,7 +10546,7 @@ int dmrgo_trunk_capacity_plus_follower_state(dmrgo_trunk_capacity_plus_follower_
 int dmrgo_trunk_capacity_plus_follower_tick_need(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: trunk.CapacityPlusFollower.Tick. Tick runs the timers that are due at now and appends their outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_capacity_plus_follower_tick_need gives (DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_TICK_MAX_ITEMS items). */
 int dmrgo_trunk_capacity_plus_follower_tick(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_duration_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* dmrgo_trunk_channel_plan_new makes a zero trunk.ChannelPlan. */
+/* dmrgo_trunk_channel_plan_new makes a zero dmrgo_trunk_channel_plan_t. */
 int dmrgo_trunk_channel_plan_new(dmrgo_trunk_channel_plan_t **out);
 /* dmrgo_trunk_channel_plan_free frees the handle. self may be NULL. */
 int dmrgo_trunk_channel_plan_free(dmrgo_trunk_channel_plan_t *self);
@@ -10606,11 +10606,11 @@ int dmrgo_trunk_follower_tick_need(dmrgo_trunk_follower_t *self, dmrgo_duration_
 int dmrgo_trunk_follower_tick(dmrgo_trunk_follower_t *self, dmrgo_duration_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.Follower.UDT. UDT returns a copy of the UDT delivery of the last OutputUDT. */
 int dmrgo_trunk_follower_udt(dmrgo_trunk_follower_t *self, dmrgo_trunk_udt_t *u, bool *ok);
-/* Go: trunk.Grant.Call. Call returns the voice.Call of a voice grant, for voice.Receiver.Expect. */
+/* Go: trunk.Grant.Call. Call returns the dmrgo_voice_call_t of a voice grant, for dmrgo_voice_receiver_expect. */
 int dmrgo_trunk_grant_call(const dmrgo_trunk_grant_t *self, dmrgo_voice_call_t *out);
 /* Go: trunk.Grant.Data. Data reports whether the grant is for packet data. */
 int dmrgo_trunk_grant_data(const dmrgo_trunk_grant_t *self, bool *out);
-/* dmrgo_trunk_hunt_list_new makes a zero trunk.HuntList. */
+/* dmrgo_trunk_hunt_list_new makes a zero dmrgo_trunk_hunt_list_t. */
 int dmrgo_trunk_hunt_list_new(dmrgo_trunk_hunt_list_t **out);
 /* dmrgo_trunk_hunt_list_free frees the handle. self may be NULL. */
 int dmrgo_trunk_hunt_list_free(dmrgo_trunk_hunt_list_t *self);
@@ -10636,7 +10636,7 @@ int dmrgo_trunk_ms_asleep(dmrgo_trunk_ms_t *self, bool *out);
 int dmrgo_trunk_ms_assign_groups(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, uint32_t target, const dmrgo_trunk_appended_t *a);
 /* dmrgo_trunk_ms_auth_response_need sets *items and *arena to the room that dmrgo_trunk_ms_auth_response needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_auth_response_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, uint32_t response, size_t *items, size_t *arena);
-/* Go: trunk.MS.AuthResponse. AuthResponse sends response, the answer to the challenge of the last OutputAuthChallenge that trunkauth.Response computes, to the TSCC: a C_ACKU, or a P_ACKU on a payload channel, with reason Authentication Response, in the slot after the challenge. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_auth_response_need gives (DMRGO_TRUNK_MS_AUTH_RESPONSE_MAX_ITEMS items). */
+/* Go: trunk.MS.AuthResponse. AuthResponse sends response, the answer to the challenge of the last OutputAuthChallenge that dmrgo_trunkauth_response computes, to the TSCC: a C_ACKU, or a P_ACKU on a payload channel, with reason Authentication Response, in the slot after the challenge. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_auth_response_need gives (DMRGO_TRUNK_MS_AUTH_RESPONSE_MAX_ITEMS items). */
 int dmrgo_trunk_ms_auth_response(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, uint32_t response, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_trunk_ms_burst_need sets *items and *arena to the room that dmrgo_trunk_ms_burst needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_burst_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], size_t *items, size_t *arena);
@@ -10838,9 +10838,9 @@ int dmrgo_vocoder_codec_reset(dmrgo_vocoder_codec_t *self);
 int dmrgo_vocoder_codec_silence(dmrgo_vocoder_codec_t *self, uint8_t out[9]);
 /* dmrgo_vocoder_codec_from_vtable makes a Codec whose methods call the functions of vt with vt->user. */
 int dmrgo_vocoder_codec_from_vtable(const dmrgo_vocoder_codec_vtable_t *vt, dmrgo_vocoder_codec_t **out);
-/* dmrgo_codec2_codec_as_codec makes a vocoder.Codec from self, which it shares; free both handles. */
+/* dmrgo_codec2_codec_as_codec makes a dmrgo_vocoder_codec_t from self, which it shares; free both handles. */
 int dmrgo_codec2_codec_as_codec(dmrgo_codec2_codec_t *self, dmrgo_vocoder_codec_t **out);
-/* dmrgo_dvsi_codec_as_codec makes a vocoder.Codec from self, which it shares; free both handles. */
+/* dmrgo_dvsi_codec_as_codec makes a dmrgo_vocoder_codec_t from self, which it shares; free both handles. */
 int dmrgo_dvsi_codec_as_codec(dmrgo_dvsi_codec_t *self, dmrgo_vocoder_codec_t **out);
 /* Go: vocoder.DecodeAMBE72. DecodeAMBE72 reverses EncodeAMBE72 and corrects the bit errors that the Golay codes allow. */
 int dmrgo_vocoder_decode_ambe72(const uint8_t slot[9], dmrgo_vocoder_ambe_frame_t *ambe_frame, dmrgo_fec_result_t *fec);
@@ -10900,7 +10900,7 @@ int dmrgo_dvsi_codec_decode_need(dmrgo_dvsi_codec_t *self, const uint8_t slot[9]
 int dmrgo_dvsi_codec_decode(dmrgo_dvsi_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
 /* Go: dvsi.Codec.Encode. Encode has the chip encode exactly FrameSamples samples into one 72-bit frame with FEC. It returns DMRGO_ERR_DVSI_SAMPLES for another number of samples, DMRGO_ERR_DVSI_CLOSED after Close, DMRGO_ERR_DVSI_TIMEOUT when the chip does not reply, and the errors of the Port. */
 int dmrgo_dvsi_codec_encode(dmrgo_dvsi_codec_t *self, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
-/* Go: dvsi.Codec.FID. FID returns enums.FIDStandardized, the Feature set ID of calls with the ETSI standard vocoder, AMBE+2. */
+/* Go: dvsi.Codec.FID. FID returns DMRGO_ENUMS_FID_STANDARDIZED, the Feature set ID of calls with the ETSI standard vocoder, AMBE+2. */
 int dmrgo_dvsi_codec_fid(dmrgo_dvsi_codec_t *self, dmrgo_enums_fid_t *out);
 /* Go: dvsi.Codec.FrameSamples. FrameSamples returns FrameSamples. */
 int dmrgo_dvsi_codec_frame_samples(dmrgo_dvsi_codec_t *self, int64_t *out);
@@ -10910,7 +10910,7 @@ int dmrgo_dvsi_codec_product_need(dmrgo_dvsi_codec_t *self, size_t *items, size_
 int dmrgo_dvsi_codec_product(dmrgo_dvsi_codec_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dvsi.Codec.Reset. Reset does nothing: the Codec keeps no state between frames. */
 int dmrgo_dvsi_codec_reset(dmrgo_dvsi_codec_t *self);
-/* Go: dvsi.Codec.Silence. Silence returns vocoder.AMBESilenceSlot. */
+/* Go: dvsi.Codec.Silence. Silence returns dmrgo_vocoder_ambe_silence_slot. */
 int dmrgo_dvsi_codec_silence(dmrgo_dvsi_codec_t *self, uint8_t out[9]);
 /* dmrgo_dvsi_codec_version_need sets *items and *arena to the room that dmrgo_dvsi_codec_version needs for these arguments, without a change to the handle. */
 int dmrgo_dvsi_codec_version_need(dmrgo_dvsi_codec_t *self, size_t *items, size_t *arena);
@@ -10954,7 +10954,7 @@ int dmrgo_voice_interrupter_deadline(dmrgo_voice_interrupter_t *self, dmrgo_dura
 int dmrgo_voice_interrupter_decoded_need(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, size_t *items, size_t *arena);
 /* Go: voice.Interrupter.Decoded. Decoded takes the decoded burst b of the call, which may be nil, and appends the outputs to dst: OutputInterrupted when b is a Terminator with LC after the first standalone RC burst went out. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_interrupter_decoded_need gives (DMRGO_VOICE_INTERRUPTER_DECODED_MAX_ITEMS items). b may be NULL. */
 int dmrgo_voice_interrupter_decoded(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: voice.Interrupter.Interrupt. Interrupt starts an interrupt request with the RC command cmd, whose first standalone RC burst is due at now plus InterrupterConfig.Lead: enums.RCCeaseTransmissionRequest for a radio that is party to the call, enums.RCCeaseTransmissionCommand for an emergency call. It returns DMRGO_ERR_VOICE_INTERRUPT_BUSY while a request runs, and a DMRGO_ERR_CONFIG for another command. */
+/* Go: voice.Interrupter.Interrupt. Interrupt starts an interrupt request with the RC command cmd, whose first standalone RC burst is due at now plus InterrupterConfig.Lead: DMRGO_ENUMS_RC_CEASE_TRANSMISSION_REQUEST for a radio that is party to the call, DMRGO_ENUMS_RC_CEASE_TRANSMISSION_COMMAND for an emergency call. It returns DMRGO_ERR_VOICE_INTERRUPT_BUSY while a request runs, and a DMRGO_ERR_CONFIG for another command. */
 int dmrgo_voice_interrupter_interrupt(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_enums_rc_command_t cmd);
 /* dmrgo_voice_interrupter_lost_need sets *items and *arena to the room that dmrgo_voice_interrupter_lost needs for these arguments, without a change to the handle. */
 int dmrgo_voice_interrupter_lost_need(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
@@ -10966,11 +10966,11 @@ int dmrgo_voice_interrupter_reset(dmrgo_voice_interrupter_t *self);
 int dmrgo_voice_interrupter_state(dmrgo_voice_interrupter_t *self, dmrgo_voice_interrupter_state_t *out);
 /* dmrgo_voice_interrupter_tick_need sets *items and *arena to the room that dmrgo_voice_interrupter_tick needs for these arguments, without a change to the handle. */
 int dmrgo_voice_interrupter_tick_need(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
-/* Go: voice.Interrupter.Tick. Tick runs the timers that are due at now and appends their outputs to dst: at most one standalone RC burst, with Position enums.VoiceBurstUnknown, and OutputInterruptFailed when T_RCtimer ran out after the last try. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_interrupter_tick_need gives (DMRGO_VOICE_INTERRUPTER_TICK_MAX_ITEMS items). */
+/* Go: voice.Interrupter.Tick. Tick runs the timers that are due at now and appends their outputs to dst: at most one standalone RC burst, with Position DMRGO_ENUMS_VOICE_BURST_UNKNOWN, and OutputInterruptFailed when T_RCtimer ran out after the last try. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_interrupter_tick_need gives (DMRGO_VOICE_INTERRUPTER_TICK_MAX_ITEMS items). */
 int dmrgo_voice_interrupter_tick(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: voice.InterrupterState.String. String returns the name of the state. */
 int dmrgo_voice_interrupter_state_string(dmrgo_voice_interrupter_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: voice.NewInterrupter. NewInterrupter returns an Interrupter for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, a Slot that is not an enums.Slot value, Retries above MaxRetries, Repeats out of range, or a negative Lead. cfg may be NULL. */
+/* Go: voice.NewInterrupter. NewInterrupter returns an Interrupter for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, a Slot that is not a dmrgo_enums_slot_t value, Retries above MaxRetries, Repeats out of range, or a negative Lead. cfg may be NULL. */
 int dmrgo_voice_new_interrupter(const dmrgo_voice_interrupter_config_t *cfg, dmrgo_voice_interrupter_t **out);
 /* Go: voice.NewReceiver. NewReceiver returns a Receiver for cfg. It returns a DMRGO_ERR_CONFIG when the color code is above 15. cfg may be NULL. */
 int dmrgo_voice_new_receiver(const dmrgo_voice_receiver_config_t *cfg, dmrgo_voice_receiver_t **out);
@@ -11024,7 +11024,7 @@ int dmrgo_voice_transmitter_decoded_need(dmrgo_voice_transmitter_t *self, dmrgo_
 int dmrgo_voice_transmitter_decoded(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: voice.Transmitter.Dropped. Dropped returns the number of relayed voice bursts that the Transmitter dropped: voice before the LC was known, and voice that did not fit in the queue. */
 int dmrgo_voice_transmitter_dropped(dmrgo_voice_transmitter_t *self, int64_t *out);
-/* Go: voice.Transmitter.Frame. Frame queues one AMBE+2 frame. It returns DMRGO_ERR_VOICE_QUEUE_FULL when Room is 0, DMRGO_ERR_VOICE_TIMED_OUT after T_TO, DMRGO_ERR_VOICE_NOT_ACTIVE when no call takes voice, and the errors of vocoder.EncodeAMBE72. */
+/* Go: voice.Transmitter.Frame. Frame queues one AMBE+2 frame. It returns DMRGO_ERR_VOICE_QUEUE_FULL when Room is 0, DMRGO_ERR_VOICE_TIMED_OUT after T_TO, DMRGO_ERR_VOICE_NOT_ACTIVE when no call takes voice, and the errors of dmrgo_vocoder_encode_ambe72. */
 int dmrgo_voice_transmitter_frame(dmrgo_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *f);
 /* Go: voice.Transmitter.Frames. Frames queues AMBE+2 frames as Frame does. */
 int dmrgo_voice_transmitter_frames(dmrgo_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *f, size_t f_len);
@@ -11050,7 +11050,7 @@ int dmrgo_voice_transmitter_stop(dmrgo_voice_transmitter_t *self);
 int dmrgo_voice_transmitter_tick_need(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: voice.Transmitter.Tick. Tick appends the next burst when now has reached its Due time minus TransmitterConfig.Lead, and OutputEnded after the last terminator, or with EndDenied for a polite call that the channel denied for T_IdleSrch. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_transmitter_tick_need gives (DMRGO_VOICE_TRANSMITTER_TICK_MAX_ITEMS items). */
 int dmrgo_voice_transmitter_tick(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: voice.Transmitter.VocoderSlot. VocoderSlot queues one 72-bit vocoder slot of any codec, packed as layer2.RawBurst.VoiceSlots returns it, as Frame does. */
+/* Go: voice.Transmitter.VocoderSlot. VocoderSlot queues one 72-bit vocoder slot of any codec, packed as dmrgo_layer2_raw_burst_voice_slots returns it, as Frame does. */
 int dmrgo_voice_transmitter_vocoder_slot(dmrgo_voice_transmitter_t *self, const uint8_t s[9]);
 /* Go: voice.Transmitter.VocoderSlots. VocoderSlots queues 72-bit vocoder slots as VocoderSlot does. */
 int dmrgo_voice_transmitter_vocoder_slots(dmrgo_voice_transmitter_t *self, const uint8_t (*s)[9], size_t s_len);
