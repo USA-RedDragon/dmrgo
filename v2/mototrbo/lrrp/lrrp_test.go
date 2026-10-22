@@ -124,6 +124,24 @@ func TestBuildReport(t *testing.T) {
 	}
 }
 
+func TestSouthernLatitudeEncode(t *testing.T) {
+	t.Parallel()
+
+	m := decode(t, "0d0f22042468ace066"+"cfd4bf0a"+"6b86d022")
+	if p := m.Report.Point2D; !near(p.Latitude, -56.1312, 1e-4) || !near(p.Longitude, 151.2093, 1e-6) {
+		t.Errorf("sign and magnitude %s", m.String())
+	}
+	m = &lrrp.Message{Document: lrrp.DocumentTriggeredReport}
+	m.Report.Point2D, m.Report.HasPoint2D = lrrp.Point2D{Latitude: -33.8688, Longitude: -43.2}, true
+	out, err := m.AppendBinary(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := unhex(t, "0d0966"+"b02b40f6"+"e147ae14"); !bytes.Equal(out, want) {
+		t.Errorf("-33.8688,-43.2 encodes to %x, want %x", out, want)
+	}
+}
+
 func TestErrors(t *testing.T) {
 	t.Parallel()
 
