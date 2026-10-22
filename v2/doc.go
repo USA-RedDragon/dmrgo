@@ -164,9 +164,7 @@
 //
 //   - Burst(now, raw, h, dst) decodes the RawBurst raw with what the
 //     layer2.Hint h says about it. A nil raw is a transport frame without a
-//     burst: only h applies. bs.Repeater calls it Inbound and also takes the
-//     source of the burst, trunk.TSCC calls it Inbound and also takes the
-//     carrier, and the other trunk machines also take the CACH.
+//     burst: only h applies.
 //   - Decoded(now, b, h, dst) takes a burst that the caller decoded once,
 //     so that one burst can feed several machines.
 //   - Lost(now, dst) reports the loss of the signal. A machine that only
@@ -174,6 +172,12 @@
 //   - Tick(now, dst) runs what is due at now, and Deadline tells when the
 //     next Tick is due. A Tick before Deadline does nothing.
 //   - State reports the state, and Reset ends the work without an output.
+//
+// Three machines differ. bs.Repeater runs both slots: it calls Burst
+// Inbound, and its Inbound, Decoded and Lost also take the source of the
+// burst, and Lost the slot. The trunk Follower, MS and CapacityPlusFollower
+// also take the CACH in Burst and Decoded. trunk.TSCC runs a whole site and
+// has only Inbound, which also takes the carrier, Tick and Deadline.
 //
 // A machine whose Tick sends bursts at their Due time has a Lead in its
 // config: Tick emits a burst that long before its Due time, so that a
