@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
@@ -145,11 +146,12 @@ func TestTalkerAlias_Errors(t *testing.T) {
 	if _, err := pdu.EncodeTalkerAlias("é", layer3.TalkerAliasSevenBit); err == nil {
 		t.Error("7-bit accepted é")
 	}
-	if _, err := pdu.EncodeTalkerAlias("Ā", layer3.TalkerAliasISOEightBit); err == nil {
-		t.Error("ISO accepted Ā")
+	if _, err := pdu.EncodeTalkerAlias("Ā", layer3.TalkerAliasISOEightBit); !errors.Is(err, pdu.ErrTalkerAliasCharacter) {
+		t.Errorf("ISO Ā: %v, want ErrTalkerAliasCharacter", err)
 	}
-	if _, err := pdu.EncodeTalkerAlias("x", layer3.TalkerAliasDataFormat(4)); err == nil {
-		t.Error("unknown format accepted")
+	var fre *dmrgo.FieldRangeError
+	if _, err := pdu.EncodeTalkerAlias("x", layer3.TalkerAliasDataFormat(4)); !errors.As(err, &fre) {
+		t.Errorf("unknown format: %v, want a *dmrgo.FieldRangeError", err)
 	}
 	lcs, _ := pdu.EncodeTalkerAlias("KI5VMF Jacob", layer3.TalkerAliasUTF8)
 	hdr, ok := lcs[0].AsTalkerAliasHeader()

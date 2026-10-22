@@ -1,7 +1,6 @@
 package pdu
 
 import (
-	"errors"
 	"slices"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -183,7 +182,7 @@ func talkerAliasUnits(units *[talkerAliasMaxUnits]uint16, alias string, format l
 		}
 		for _, r := range alias {
 			if r > limit {
-				return 0, errCharacterFormat
+				return 0, ErrTalkerAliasCharacter
 			}
 			n = putUnit(units, n, uint16(r&0xFFFF))
 		}
@@ -202,8 +201,9 @@ func putUnit(units *[talkerAliasMaxUnits]uint16, n int, u uint16) int {
 // EncodeTalkerAlias returns the Talker Alias header LC and the block LCs
 // that carry alias in the given format, with the SFID. DataType is not set.
 // It returns ErrTalkerAliasLength when the alias needs more than 31 Code
-// Units or more than three blocks, and an error when a character is not in
-// the format. It allocates the slice; EncodeTalkerAliasInto does not.
+// Units or more than three blocks, ErrTalkerAliasCharacter when a character
+// is not in the format, and a *dmrgo.FieldRangeError for a format over 3. It
+// allocates the slice; EncodeTalkerAliasInto does not.
 func EncodeTalkerAlias(alias string, format layer3.TalkerAliasDataFormat) ([]FullLinkControl, error) {
 	var lcs [talkerAliasMaxBlocks + 1]FullLinkControl
 	n, err := EncodeTalkerAliasInto(&lcs, alias, format)
@@ -353,7 +353,4 @@ func (a *TalkerAliasAssembler) AddInto(dst *[TalkerAliasMaxText]byte, lc *FullLi
 	return n, err == nil, err
 }
 
-var (
-	errCharacterFormat = errors.New("pdu: a character of the talker alias is not in its format")
-	errUnknownFormat   = errors.New("pdu: unknown talker alias format")
-)
+var errUnknownFormat = &dmrgo.FieldRangeError{Type: errType, Field: "EncodeTalkerAlias", Bits: 2}

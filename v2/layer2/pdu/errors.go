@@ -2,6 +2,8 @@ package pdu
 
 import "errors"
 
+const errType = "pdu"
+
 // Errors returned by the package. Match them with errors.Is.
 var (
 	// ErrTalkerAliasIncomplete is returned when the blocks that the header
@@ -14,6 +16,9 @@ var (
 	// talker alias are not valid UTF-8, except for a last character that
 	// is not complete.
 	ErrTalkerAliasInvalidUTF8 = errors.New("pdu: talker alias is not valid UTF-8")
+	// ErrTalkerAliasCharacter is returned by EncodeTalkerAlias when a
+	// character of the alias is not in its 7-bit or ISO 8-bit format.
+	ErrTalkerAliasCharacter = errors.New("pdu: a character of the talker alias is not in its format")
 	// ErrNoAddresses is returned by the SetAddresses methods when the PDU
 	// has no address fields: its FLCO, opcode or format has none.
 	ErrNoAddresses = errors.New("pdu: PDU has no address fields")
