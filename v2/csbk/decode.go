@@ -60,7 +60,7 @@ func classify(b *layer2.Burst) (rxKind, *pdu.CSBK, pdu.CSBKBytes) {
 	switch b.SlotType.DataType {
 	case enums.DataTypeCSBK:
 		c, ok := b.Data.(*pdu.CSBK)
-		if !ok || c.FEC.Uncorrectable {
+		if !ok || c == nil || c.FEC.Uncorrectable {
 			return rxNone, nil, pdu.CSBKBytes{}
 		}
 		octets, err := c.Encode()

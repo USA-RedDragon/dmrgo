@@ -511,7 +511,7 @@ func (r *Receiver) data(now time.Duration, b *layer2.Burst, h *layer2.Hint, out 
 	case enums.DataTypeCSBK:
 		return r.preamble(now, b, out)
 	case enums.DataTypeDataHeader:
-		if dh, ok := b.Data.(*pdu.DataHeader); ok {
+		if dh, ok := b.Data.(*pdu.DataHeader); ok && dh != nil {
 			return r.header(now, dh, b.SlotType.ColorCode, h, out)
 		}
 	case enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1:
@@ -537,7 +537,7 @@ func (r *Receiver) touch(now time.Duration) {
 
 func (r *Receiver) preamble(now time.Duration, b *layer2.Burst, out []Event) []Event {
 	c, ok := b.Data.(*pdu.CSBK)
-	if !ok || c.FEC.Uncorrectable || r.state == StateReceiving {
+	if !ok || c == nil || c.FEC.Uncorrectable || r.state == StateReceiving {
 		r.touch(now)
 		return out
 	}
@@ -690,7 +690,7 @@ func (r *Receiver) gap(now time.Duration, h *layer2.Hint) int {
 
 func (r *Receiver) udtBlock(b *layer2.Burst, out []Event) []Event {
 	blk, ok := b.Data.(*pdu.Rate12Data)
-	if !ok || b.FEC.PDU.Uncorrectable {
+	if !ok || blk == nil || b.FEC.PDU.Uncorrectable {
 		r.u.active = false
 		r.cur.pending = 0
 		r.stats.Dropped++
