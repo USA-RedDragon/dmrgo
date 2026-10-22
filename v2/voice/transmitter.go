@@ -319,9 +319,11 @@ type Transmitter struct {
 // TransmitterConfig. It returns a *dmrgo.ConfigError for a field out of
 // range. It allocates the Transmitter and its queue, 72 bytes for each slot.
 func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
-	if cfg == nil {
-		cfg = &TransmitterConfig{}
+	var conf TransmitterConfig
+	if cfg != nil {
+		conf = *cfg
 	}
+	cfg = &conf
 	t := &Transmitter{cc: cfg.ColorCode, source: cfg.Source, silence: cfg.Silence, headers: cfg.Headers,
 		terminators: cfg.Terminators, timeout: cfg.Timeout, lead: cfg.Lead, access: cfg.Access,
 		idleSearch: cfg.IdleSearch, interrupt: cfg.Interruptible, chanAuth: cfg.ChanAuth, holdoffMax: cfg.HoldoffMax,

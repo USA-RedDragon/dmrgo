@@ -66,9 +66,11 @@ type Preambles struct {
 // nil; it has the shape of the other machine constructors. It allocates
 // the Preambles, and its Burst unless cfg.Scratch is set.
 func NewPreambles(cfg *PreamblesConfig) (*Preambles, error) {
-	if cfg == nil {
-		cfg = &PreamblesConfig{}
+	var conf PreamblesConfig
+	if cfg != nil {
+		conf = *cfg
 	}
+	cfg = &conf
 	return &Preambles{d: newDecoder(cfg.Scratch)}, nil
 }
 

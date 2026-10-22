@@ -227,9 +227,11 @@ func (w *window) failed() int {
 // Receiver, its packet.Assembler, its table of links, and its Burst unless
 // cfg.Scratch is set.
 func NewReceiver(cfg *ReceiverConfig) (*Receiver, error) {
-	if cfg == nil {
-		cfg = &ReceiverConfig{}
+	var conf ReceiverConfig
+	if cfg != nil {
+		conf = *cfg
 	}
+	cfg = &conf
 	if _, _, ok := cfg.Source.SyncPatterns(); !ok {
 		return nil, errSource
 	}
