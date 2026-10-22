@@ -48,26 +48,21 @@ func newMSSvcPool(t testing.TB) burstPool {
 		voiceSuperframe(t)[5])
 }
 
-func runMSServices(t *testing.T, pool burstPool, in []byte) {
-	cfg := trunk.MSConfig{Address: msAddr, Talkgroups: [trunk.MaxTalkgroups]uint32{9}, TalkgroupsLen: 1}
-	if len(in) > 0 {
-		cfg.Seed = uint64(in[0])
-		cfg.PowerSave = in[0] & 7
-		cfg.NoStun = in[0]&8 != 0
-		if in[0]&16 != 0 {
-			cfg.Auth = xorAuth(0x5A5A5A)
-		}
-		in = in[1:]
+func runMSServices(t *testing.T, pool burstPool, s opSeed) {
+	cfg := trunk.MSConfig{Address: msAddr, Talkgroups: [trunk.MaxTalkgroups]uint32{9}, TalkgroupsLen: 1,
+		Seed: uint64(s.cfg), PowerSave: s.cfg & 7, NoStun: s.cfg&8 != 0}
+	if s.cfg&16 != 0 {
+		cfg.Auth = xorAuth(0x5A5A5A)
 	}
+	script := s.script()
 	ms, err := trunk.NewMS(&cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	out := make([]trunk.Output, 0, trunk.MaxOutputs)
 	now := time.Duration(0)
-	for op := 0; op < maxFuzzOps && len(in) >= 2; op++ {
-		kind, arg := in[0], in[1]
-		in = in[2:]
+	for op := range script.total {
+		kind, arg := script.op(op)
 		now += time.Duration(arg) * 5 * time.Millisecond
 		var cach [3]byte
 		if kind&0x80 != 0 {
@@ -108,21 +103,22 @@ func runMSServices(t *testing.T, pool burstPool, in []byte) {
 	}
 }
 
-func msSvcSeeds() [][]byte {
-	return [][]byte{
-		{0, 0, 0, 0, 0, 0, 7, 0, 8, 5, 30, 0, 22, 0, 23, 4, 0},
-		{0x13, 0, 0, 0, 0, 0, 7, 0, 22, 0, 26, 0, 23, 4, 200},
-		{2, 0, 0, 0, 0, 0, 7, 0, 27, 4, 20, 0, 21, 4, 50, 7, 1},
+func msSvcSeeds() []opSeed {
+	return []opSeed{
+		{cfg: 0, ops: []byte{0, 0, 0, 0, 0, 7, 0, 8, 5, 30, 0, 22, 0, 23, 4, 0}},
+		{cfg: 0x13, ops: []byte{0, 0, 0, 0, 0, 7, 0, 22, 0, 26, 0, 23, 4, 200}},
+		{cfg: 2, ops: []byte{0, 0, 0, 0, 0, 7, 0, 27, 4, 20, 0, 21, 4, 50, 7, 1}},
+		{cfg: 0, ops: []byte{0, 0, 0, 0, 0, 7, 0, 29, 4, 1, 0, 8, 4, 0}, from: 3, to: 6, reps: 40},
 	}
 }
 
 func FuzzMSServices(f *testing.F) {
 	for _, s := range msSvcSeeds() {
-		f.Add(s)
+		f.Add(s.cfg, s.ops, s.from, s.to, s.reps)
 	}
 	pool := newMSSvcPool(f)
-	f.Fuzz(func(t *testing.T, in []byte) {
-		runMSServices(t, pool, in)
+	f.Fuzz(func(t *testing.T, cfg uint8, ops []byte, from, to, reps uint8) {
+		runMSServices(t, pool, opSeed{cfg: cfg, ops: ops, from: from, to: to, reps: reps})
 	})
 }
 
@@ -165,17 +161,15 @@ func newTSCCSvcPool(t testing.TB) burstPool {
 		voiceSuperframe(t)[0], voiceSuperframe(t)[3])
 }
 
-func runTSCCServices(t *testing.T, pool burstPool, in []byte) {
+func runTSCCServices(t *testing.T, pool burstPool, in opSeed) {
 	cfg := tsccConfig()
-	if len(in) > 0 {
-		cfg.PayloadLen = 1 + int(in[0]&1)
-		cfg.Reg = in[0]&2 != 0
-		cfg.PowerSave, cfg.IP, cfg.Supplementary, cfg.TransmitInterrupt = in[0]&4 != 0, in[0]&8 != 0, in[0]&16 != 0, in[0]&32 != 0
-		cfg.MaxCall = time.Duration(in[0]>>6) * time.Second
-		if in[0]&64 != 0 {
-			cfg.Auth = xorAuth(1)
-		}
-		in = in[1:]
+	c := in.cfg
+	cfg.PayloadLen = 1 + int(c&1)
+	cfg.Reg = c&2 != 0
+	cfg.PowerSave, cfg.IP, cfg.Supplementary, cfg.TransmitInterrupt = c&4 != 0, c&8 != 0, c&16 != 0, c&32 != 0
+	cfg.MaxCall = time.Duration(c>>6) * time.Second
+	if c&64 != 0 {
+		cfg.Auth = xorAuth(1)
 	}
 	ts, err := trunk.NewTSCC(cfg)
 	if err != nil {
@@ -183,9 +177,9 @@ func runTSCCServices(t *testing.T, pool burstPool, in []byte) {
 	}
 	out := make([]trunk.TSCCOutput, 0, trunk.MaxTSCCOutputs)
 	now := time.Duration(0)
-	for op := 0; op < maxFuzzOps && len(in) >= 2; op++ {
-		kind, arg := in[0], in[1]
-		in = in[2:]
+	script := in.script()
+	for op := range script.total {
+		kind, arg := script.op(op)
 		ch := uint16(tsccChannel)
 		if kind&0x80 != 0 {
 			ch = 10 + uint16(kind>>6&1)
@@ -224,20 +218,21 @@ func runTSCCServices(t *testing.T, pool burstPool, in []byte) {
 	}
 }
 
-func tsccSvcSeeds() [][]byte {
-	return [][]byte{
-		{0x3F, 0, 9, 2, 7, 0, 11, 2, 7, 3, 0, 2, 255, 0, 21, 0, 22, 0, 23, 2, 9},
-		{0x7E, 3, 4, 2, 9, 0, 17, 2, 3, 0, 18, 2, 200, 3, 9, 2, 255},
-		{0xBF, 0, 2, 2, 7, 0x80, 24, 0x80, 25, 3, 16, 2, 255, 2, 255},
+func tsccSvcSeeds() []opSeed {
+	return []opSeed{
+		{cfg: 0x3F, ops: []byte{0, 9, 2, 7, 0, 11, 2, 7, 3, 0, 2, 255, 0, 21, 0, 22, 0, 23, 2, 9}},
+		{cfg: 0x7E, ops: []byte{3, 4, 2, 9, 0, 17, 2, 3, 0, 18, 2, 200, 3, 9, 2, 255}},
+		{cfg: 0xBF, ops: []byte{0, 2, 2, 7, 0x80, 24, 0x80, 25, 3, 16, 2, 255, 2, 255}},
+		{cfg: 0x3F, ops: []byte{0, 9, 2, 7, 0, 23, 2, 1, 0, 24, 2, 3, 3, 0, 2, 255}, from: 2, to: 6, reps: 50},
 	}
 }
 
 func FuzzTSCCServices(f *testing.F) {
 	for _, s := range tsccSvcSeeds() {
-		f.Add(s)
+		f.Add(s.cfg, s.ops, s.from, s.to, s.reps)
 	}
 	pool := newTSCCSvcPool(f)
-	f.Fuzz(func(t *testing.T, in []byte) {
-		runTSCCServices(t, pool, in)
+	f.Fuzz(func(t *testing.T, cfg uint8, ops []byte, from, to, reps uint8) {
+		runTSCCServices(t, pool, opSeed{cfg: cfg, ops: ops, from: from, to: to, reps: reps})
 	})
 }

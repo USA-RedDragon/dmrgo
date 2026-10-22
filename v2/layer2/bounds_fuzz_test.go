@@ -9,12 +9,15 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
+const maxBoundsOps = 128
+
 func burstsBound(n int) int {
 	return (n + layer2.VoiceSlotsPerBurst - 1) / layer2.VoiceSlotsPerBurst
 }
 
 func runTransmitterBounds(t *testing.T, data []byte) {
 	t.Helper()
+	data = data[:min(len(data), maxBoundsOps)]
 	lc, err := pdu.NewVoiceLC(true, 9990, 3191868, layer3.ServiceOptions{})
 	if err != nil {
 		t.Fatal(err)

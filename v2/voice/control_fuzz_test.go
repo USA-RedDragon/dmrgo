@@ -45,18 +45,45 @@ func controlPool(t testing.TB) []layer2.RawBurst {
 	return p
 }
 
-func controlScript(t testing.TB, p []layer2.RawBurst, in []byte) {
-	t.Helper()
-	if len(in) < 2 {
-		return
+const (
+	maxControl    = 128
+	maxControlOps = 512
+)
+
+type controlInput struct {
+	c0, c1         uint8
+	ops            []byte
+	from, to, reps uint8
+}
+
+func controlLoop(n int, from, to, reps uint8) (lo, hi, total int) {
+	lo = min(int(from), n)
+	hi = max(min(int(to), n), lo)
+	return lo, hi, min(n+int(reps)*(hi-lo), maxControlOps)
+}
+
+func controlIndex(s, lo, hi int, reps uint8) int {
+	if s < hi {
+		return s
 	}
-	cfg := voice.TransmitterConfig{ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Access: enums.Access(in[0] % 3), IdleSearch: time.Duration(int8(in[0])) * 10 * time.Millisecond,
-		Interruptible: in[0]&0x08 != 0, ChanAuth: time.Duration(in[1]&0x0F) * 60 * time.Millisecond, HoldoffMax: time.Duration(int8(in[1])>>4) * 100 * time.Millisecond, Seed: uint64(in[1])}
+	s -= hi
+	w := int(reps) * (hi - lo)
+	if s < w {
+		return lo + s%(hi-lo)
+	}
+	return hi + s - w
+}
+
+func controlScript(t testing.TB, p []layer2.RawBurst, in *controlInput) {
+	t.Helper()
+	c0, c1 := in.c0, in.c1
+	cfg := voice.TransmitterConfig{ColorCode: 1, Silence: vocoder.AMBESilenceSlot(), Access: enums.Access(c0 % 3), IdleSearch: time.Duration(int8(c0)) * 10 * time.Millisecond,
+		Interruptible: c0&0x08 != 0, ChanAuth: time.Duration(c1&0x0F) * 60 * time.Millisecond, HoldoffMax: time.Duration(int8(c1)>>4) * 100 * time.Millisecond, Seed: uint64(c1)}
 	tx, err := voice.NewTransmitter(&cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
-	irq, err := voice.NewInterrupter(&voice.InterrupterConfig{ColorCode: 1, Retries: int(in[0] >> 6), Repeats: int(in[1]>>6) + 1, Wait: time.Duration(int8(in[1]<<2)) * 20 * time.Millisecond})
+	irq, err := voice.NewInterrupter(&voice.InterrupterConfig{ColorCode: 1, Retries: int(c0 >> 6), Repeats: int(c1>>6) + 1, Wait: time.Duration(int8(c1<<2)) * 20 * time.Millisecond})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,9 +100,11 @@ func controlScript(t testing.TB, p []layer2.RawBurst, in []byte) {
 			}
 		}
 	}
-	in = in[2:]
-	for i := 0; i+2 <= len(in) && i < 1024; i += 2 {
-		op, arg := in[i], in[i+1]
+	ops := in.ops[:min(len(in.ops), maxControl)]
+	lo, hi, total := controlLoop(len(ops)/2, in.from, in.to, in.reps)
+	for s := range total {
+		i := 2 * controlIndex(s, lo, hi, in.reps)
+		op, arg := ops[i], ops[i+1]
 		now += time.Duration(arg&0x0F) * 15 * time.Millisecond
 		raw := p[int(arg>>4)%len(p)]
 		if op&0x80 != 0 {
@@ -130,12 +159,13 @@ func controlScript(t testing.TB, p []layer2.RawBurst, in []byte) {
 	}
 }
 
-func controlSeeds() [][]byte {
-	return [][]byte{
-		{0x00, 0x03, 2, 0x10, 0, 0x20, 1, 0, 15, 0x01, 3, 0x02, 15, 0x0F, 5, 0, 15, 0x0F},
-		{0x08, 0x00, 0, 0, 1, 0, 15, 0x02, 4, 0x80, 15, 0x0F, 15, 0x0F},
-		{0x02, 0x40, 6, 0x04, 15, 0x01, 7, 0x10, 15, 0x0F, 6, 0x05, 15, 0x0F, 8, 0},
-		{0x01, 0x23, 2, 0x10, 0, 0x30, 15, 0x01, 3, 0x61, 15, 0x0F, 2, 0x00, 15, 0x0F, 9, 0},
+func controlSeeds() []controlInput {
+	return []controlInput{
+		{c0: 0x00, c1: 0x03, ops: []byte{2, 0x10, 0, 0x20, 1, 0, 15, 0x01, 3, 0x02, 15, 0x0F, 5, 0, 15, 0x0F}},
+		{c0: 0x08, c1: 0x00, ops: []byte{0, 0, 1, 0, 15, 0x02, 4, 0x80, 15, 0x0F, 15, 0x0F}},
+		{c0: 0x02, c1: 0x40, ops: []byte{6, 0x04, 15, 0x01, 7, 0x10, 15, 0x0F, 6, 0x05, 15, 0x0F, 8, 0}},
+		{c0: 0x01, c1: 0x23, ops: []byte{2, 0x10, 0, 0x30, 15, 0x01, 3, 0x61, 15, 0x0F, 2, 0x00, 15, 0x0F, 9, 0}},
+		{c0: 0x00, c1: 0x03, ops: []byte{2, 0x10, 0, 0x20, 1, 0, 1, 0, 15, 0x04, 3, 0x02, 15, 0x0F, 5, 0, 15, 0x0F}, from: 2, to: 5, reps: 40},
 	}
 }
 
@@ -143,16 +173,16 @@ func TestControlFuzzSeeds(t *testing.T) {
 	t.Parallel()
 	p := controlPool(t)
 	for _, in := range controlSeeds() {
-		controlScript(t, p, in)
+		controlScript(t, p, &in)
 	}
 }
 
 func FuzzCallControl(f *testing.F) {
 	p := controlPool(f)
 	for _, in := range controlSeeds() {
-		f.Add(in)
+		f.Add(in.c0, in.c1, in.ops, in.from, in.to, in.reps)
 	}
-	f.Fuzz(func(t *testing.T, in []byte) {
-		controlScript(t, p, in)
+	f.Fuzz(func(t *testing.T, c0, c1 uint8, ops []byte, from, to, reps uint8) {
+		controlScript(t, p, &controlInput{c0: c0, c1: c1, ops: ops, from: from, to: to, reps: reps})
 	})
 }

@@ -15,24 +15,50 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/sms"
 )
 
+const (
+	maxData    = 128
+	maxMessage = 127 * 24
+)
+
 func FuzzDecode(f *testing.F) {
-	decodeSeeds(func(defined bool, code uint8, data []byte) { f.Add(defined, code, data) })
+	decodeSeeds(func(defined bool, code uint8, data []byte, from, to uint8, repeat uint16) {
+		f.Add(defined, code, data, from, to, repeat)
+	})
 	f.Fuzz(fuzzDecode)
 }
 
-func decodeSeeds(add func(defined bool, code uint8, data []byte)) {
+func decodeSeeds(add func(defined bool, code uint8, data []byte, from, to uint8, repeat uint16)) {
 	for _, s := range []string{appcapture.TMS, appcapture.DMRText} {
 		b, _ := hex.DecodeString(s)
-		add(false, uint8(enums.SAPIPBasedPacketData), b)
+		add(false, uint8(enums.SAPIPBasedPacketData), b, 0, 0, 0)
 	}
 	h, _ := hex.DecodeString(appcapture.HSMS)
-	add(true, uint8(enums.DDBCD), h)
-	add(true, uint8(enums.DDUTF16BE), []byte{0, 'H', 0, 'i'})
+	add(true, uint8(enums.DDBCD), h, 0, 0, 0)
+	add(true, uint8(enums.DDBCD), h, 2, 4, 200)
+	add(true, uint8(enums.DDUTF16BE), []byte{0, 'H', 0, 'i'}, 0, 0, 0)
+	add(true, uint8(enums.DDUTF16BE), []byte{0, 'H', 0, 'i'}, 0, 4, 300)
 	g, _ := hex.DecodeString(appcapture.GPS)
-	add(false, uint8(enums.SAPUDPIPHeaderCompression), g)
+	add(false, uint8(enums.SAPUDPIPHeaderCompression), g, 0, 0, 0)
 }
 
-func fuzzDecode(t *testing.T, defined bool, code uint8, data []byte) {
+func expandMessage(data []byte, from, to uint8, repeat uint16) []byte {
+	data = data[:min(len(data), maxData)]
+	j := min(int(to), len(data))
+	i := min(int(from), j)
+	n := 0
+	if i < j {
+		n = min(int(repeat), (maxMessage-len(data))/(j-i))
+	}
+	msg := make([]byte, 0, len(data)+n*(j-i))
+	msg = append(msg, data[:j]...)
+	for range n {
+		msg = append(msg, data[i:j]...)
+	}
+	return append(msg, data[j:]...)
+}
+
+func fuzzDecode(t *testing.T, defined bool, code uint8, raw []byte, from, to uint8, repeat uint16) {
+	data := expandMessage(raw, from, to, repeat)
 	var m packet.Message
 	m.Data = data
 	if defined {

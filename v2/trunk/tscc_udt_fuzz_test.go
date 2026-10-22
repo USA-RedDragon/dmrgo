@@ -74,13 +74,10 @@ func newTSCCUDTPool(t testing.TB) burstPool {
 	return append(pool, upload(t, pdu.UDTHeader{LLIDDestination: 3120001, LLIDSource: 3120002}, &text)...)
 }
 
-func runTSCCUDT(t *testing.T, pool burstPool, in []byte) {
+func runTSCCUDT(t *testing.T, pool burstPool, in opSeed) {
 	cfg := tsccConfig()
 	cfg.Reg = false
-	if len(in) > 0 {
-		cfg.PayloadLen = 1 + int(in[0]&1)
-		in = in[1:]
-	}
+	cfg.PayloadLen = 1 + int(in.cfg&1)
 	ts, err := trunk.NewTSCC(cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -91,9 +88,9 @@ func runTSCCUDT(t *testing.T, pool burstPool, in []byte) {
 	}
 	out := make([]trunk.TSCCOutput, 0, trunk.MaxTSCCOutputs)
 	now := time.Duration(0)
-	for op := 0; op < maxFuzzOps && len(in) >= 2; op++ {
-		kind, arg := in[0], in[1]
-		in = in[2:]
+	script := in.script()
+	for op := range script.total {
+		kind, arg := script.op(op)
 		ch := uint16(tsccChannel)
 		if kind&0x80 != 0 {
 			ch = 10 + uint16(kind>>6&1)
@@ -130,21 +127,22 @@ func runTSCCUDT(t *testing.T, pool burstPool, in []byte) {
 	}
 }
 
-func tsccUDTSeeds() [][]byte {
-	return [][]byte{
-		{0, 0, 0, 2, 7, 0, 15, 0, 16, 0, 17, 2, 7, 0, 10, 2, 7},
-		{1, 0, 3, 2, 7, 0, 21, 0, 22, 2, 7, 0, 4, 2, 7},
-		{0, 0, 6, 2, 7, 0, 10, 2, 7, 0, 14, 2, 7, 3, 3, 2, 7, 0, 13},
-		{1, 0, 2, 2, 5, 0, 27, 0, 28, 2, 7, 0, 12, 3, 0, 2, 7, 0, 10, 2, 255},
+func tsccUDTSeeds() []opSeed {
+	return []opSeed{
+		{cfg: 0, ops: []byte{0, 0, 2, 7, 0, 15, 0, 16, 0, 17, 2, 7, 0, 10, 2, 7}},
+		{cfg: 1, ops: []byte{0, 3, 2, 7, 0, 21, 0, 22, 2, 7, 0, 4, 2, 7}},
+		{cfg: 0, ops: []byte{0, 6, 2, 7, 0, 10, 2, 7, 0, 14, 2, 7, 3, 3, 2, 7, 0, 13}},
+		{cfg: 1, ops: []byte{0, 2, 2, 5, 0, 27, 0, 28, 2, 7, 0, 12, 3, 0, 2, 7, 0, 10, 2, 255}},
+		{cfg: 0, ops: []byte{0, 0, 2, 7, 0, 15, 0, 16, 0, 17, 2, 1, 0, 10, 2, 7}, from: 1, to: 6, reps: 30},
 	}
 }
 
 func FuzzTSCCUDT(f *testing.F) {
 	for _, s := range tsccUDTSeeds() {
-		f.Add(s)
+		f.Add(s.cfg, s.ops, s.from, s.to, s.reps)
 	}
 	pool := newTSCCUDTPool(f)
-	f.Fuzz(func(t *testing.T, in []byte) {
-		runTSCCUDT(t, pool, in)
+	f.Fuzz(func(t *testing.T, cfg uint8, ops []byte, from, to, reps uint8) {
+		runTSCCUDT(t, pool, opSeed{cfg: cfg, ops: ops, from: from, to: to, reps: reps})
 	})
 }

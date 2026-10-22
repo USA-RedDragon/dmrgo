@@ -9,11 +9,18 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscauth"
 )
 
+const (
+	maxKeyText = 41
+	maxPacket  = 128
+)
+
 func FuzzKey(f *testing.F) {
 	f.Add("1234abcd", []byte{0x96, 0, 0, 0, 1})
 	f.Add("", []byte{})
 	f.Add("0123456789abcdef0123456789ABCDEF01234567", make([]byte, 80))
 	f.Fuzz(func(t *testing.T, s string, p []byte) {
+		s = s[:min(len(s), maxKeyText)]
+		p = p[:min(len(p), maxPacket)]
 		k, err := ipscauth.ParseKey(s)
 		if err != nil {
 			return

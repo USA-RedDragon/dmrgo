@@ -9,12 +9,18 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-func framerBoundStream(t *testing.T) []byte {
-	t.Helper()
+func idleBurst(tb testing.TB) [33]byte {
+	tb.Helper()
 	b, err := layer2.BuildDataBurst(pdu.PRFillBits(), enums.DataTypeIdle, 1, layer2.SyncSourceBS)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
+	return b
+}
+
+func framerBoundStream(t *testing.T) []byte {
+	t.Helper()
+	b := idleBurst(t)
 	s := make([]byte, 0, 8*(3+len(b)))
 	for range 8 {
 		s = append(s, 0, 0, 0)
@@ -58,10 +64,11 @@ func TestFramerBounds(t *testing.T) {
 }
 
 func FuzzFramerBounds(f *testing.F) {
-	f.Add([]byte{0x75, 0x5f, 0xd7, 0xdf, 0x75, 0xf7}, []byte{1}, uint8(1))
-	f.Add([]byte{0xd5, 0xd7, 0xf7, 0x7f, 0xd7, 0x57, 0x00}, []byte{3, 2}, uint8(2))
-	f.Fuzz(func(t *testing.T, stream, cuts []byte, period uint8) {
-		_ = runFramerBounds(t, stream, cuts, period)
+	pool := [][33]byte{idleBurst(f)}
+	f.Add([]byte{0x05, 0x75, 0x5f, 0xd7, 0xdf, 0x75, 0xf7}, []byte{}, []byte{1}, uint8(1))
+	f.Add([]byte{0x06, 0xd5, 0xd7, 0xf7, 0x7f, 0xd7, 0x57, 0x00}, []byte{}, []byte{3, 2}, uint8(2))
+	f.Fuzz(func(t *testing.T, script, flips, cuts []byte, period uint8) {
+		_ = runFramerBounds(t, fuzzStream(pool, script, flips), cuts[:min(len(cuts), maxCuts)], period)
 	})
 }
 

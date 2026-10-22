@@ -12,6 +12,11 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
+const (
+	maxTalkerAlias = 64
+	maxTalkerExtra = 14 * 9
+)
+
 func FuzzTalkerAlias(f *testing.F) {
 	talkerAliasSeeds(func(alias string, format, order uint8, extra []byte) { f.Add(alias, format, order, extra) })
 	f.Fuzz(fuzzTalkerAlias)
@@ -26,6 +31,8 @@ func talkerAliasSeeds(add func(alias string, format, order uint8, extra []byte))
 }
 
 func fuzzTalkerAlias(t *testing.T, alias string, format, order uint8, extra []byte) {
+	alias = alias[:min(len(alias), maxTalkerAlias)]
+	extra = extra[:min(len(extra), maxTalkerExtra)]
 	tf := layer3.TalkerAliasDataFormat(format % 4)
 	lcs, err := pdu.EncodeTalkerAlias(alias, tf)
 	var a pdu.TalkerAliasAssembler

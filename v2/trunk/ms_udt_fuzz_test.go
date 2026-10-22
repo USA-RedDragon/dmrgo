@@ -37,12 +37,9 @@ func newUDTPool(t testing.TB) burstPool {
 	return append(pool, download(t, pdu.UDTHeader{SupplementaryFlag: true, LLIDDestination: msAddr, LLIDSource: constants.GatewayDIVERTI}, &addrs)...)
 }
 
-func runMSUDT(t *testing.T, pool burstPool, in []byte) {
-	cfg := trunk.MSConfig{Address: msAddr, NoRegistration: true}
-	if len(in) > 0 {
-		cfg.Seed, cfg.Ambient, cfg.NoDuplex = uint64(in[0]), in[0]&1 != 0, in[0]&2 != 0
-		in = in[1:]
-	}
+func runMSUDT(t *testing.T, pool burstPool, s opSeed) {
+	cfg := trunk.MSConfig{Address: msAddr, NoRegistration: true, Seed: uint64(s.cfg), Ambient: s.cfg&1 != 0, NoDuplex: s.cfg&2 != 0}
+	script := s.script()
 	ms, err := trunk.NewMS(&cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -53,9 +50,8 @@ func runMSUDT(t *testing.T, pool burstPool, in []byte) {
 	}
 	out := make([]trunk.Output, 0, trunk.MaxOutputs)
 	now := time.Duration(0)
-	for op := 0; op < maxFuzzOps && len(in) >= 2; op++ {
-		kind, arg := in[0], in[1]
-		in = in[2:]
+	for op := range script.total {
+		kind, arg := script.op(op)
 		now += time.Duration(arg) * 5 * time.Millisecond
 		switch kind % 8 {
 		case 0, 1, 2:
@@ -113,21 +109,22 @@ func runMSUDT(t *testing.T, pool burstPool, in []byte) {
 	}
 }
 
-func msUDTSeeds() [][]byte {
-	return [][]byte{
-		{1, 0, 0, 3, 0, 0, 0, 0, 4, 0, 0, 0, 2},
-		{0, 0, 0, 3, 1, 0, 0, 0, 5, 0, 15, 0, 16, 0, 17},
-		{3, 6, 1, 0, 13, 0, 9, 0, 12, 4, 200},
-		{2, 3, 4, 0, 0, 0, 7, 0, 2, 3, 2, 0, 6},
+func msUDTSeeds() []opSeed {
+	return []opSeed{
+		{cfg: 1, ops: []byte{0, 0, 3, 0, 0, 0, 0, 4, 0, 0, 0, 2}},
+		{cfg: 0, ops: []byte{0, 0, 3, 1, 0, 0, 0, 5, 0, 15, 0, 16, 0, 17}},
+		{cfg: 3, ops: []byte{6, 1, 0, 13, 0, 9, 0, 12, 4, 200}},
+		{cfg: 2, ops: []byte{3, 4, 0, 0, 0, 7, 0, 2, 3, 2, 0, 6}},
+		{cfg: 0, ops: []byte{0, 0, 3, 1, 0, 0, 0, 5, 0, 13, 4, 1}, from: 4, to: 6, reps: 40},
 	}
 }
 
 func FuzzMSUDT(f *testing.F) {
 	for _, s := range msUDTSeeds() {
-		f.Add(s)
+		f.Add(s.cfg, s.ops, s.from, s.to, s.reps)
 	}
 	pool := newUDTPool(f)
-	f.Fuzz(func(t *testing.T, in []byte) {
-		runMSUDT(t, pool, in)
+	f.Fuzz(func(t *testing.T, cfg uint8, ops []byte, from, to, reps uint8) {
+		runMSUDT(t, pool, opSeed{cfg: cfg, ops: ops, from: from, to: to, reps: reps})
 	})
 }

@@ -34,8 +34,8 @@ func TestAllocs(t *testing.T) {
 		}
 	}
 	p := newPool(t)
-	for i, data := range append(seeds(), corpusFiles(t, "FuzzRepeater")...) {
-		s := parseScript(data, p)
+	for i, in := range append(seeds(), corpusFiles(t, "FuzzRepeater")...) {
+		s := parseScript(in, p)
 		r := newRepeater(t, &s.cfg)
 		out := make([]bs.Output, 0, bs.MaxOutputs)
 		dec := layer2.NewBurst()

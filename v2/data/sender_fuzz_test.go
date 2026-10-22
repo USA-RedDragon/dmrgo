@@ -45,15 +45,59 @@ func txMessages(t testing.TB) []*data.Message {
 	return []*data.Message{message(t, 60), message(t, 10), u, dd, message(t, 500)}
 }
 
-func checkTxScript(t *testing.T, in []byte, p []layer2.RawBurst, msgs []*data.Message) {
-	t.Helper()
-	get := func(i int) byte {
-		if i < len(in) {
-			return in[i]
-		}
-		return 0
+const maxTxOps = 128
+
+type txInput struct {
+	c0, c1, c2, step uint8
+	ops              []byte
+}
+
+type txOp struct {
+	kind, step, arg uint8
+}
+
+type txDecoder struct {
+	ops  []byte
+	step uint8
+	rep  int
+	op   txOp
+}
+
+func newTxDecoder(in *txInput) txDecoder {
+	return txDecoder{ops: in.ops[:min(len(in.ops), maxTxOps)], step: in.step}
+}
+
+func (d *txDecoder) next() (txOp, bool) {
+	if d.rep > 0 {
+		d.rep--
+		return d.op, true
 	}
-	c0, c1, c2 := get(0), get(1), get(2)
+	if len(d.ops) == 0 {
+		return txOp{}, false
+	}
+	c := d.ops[0]
+	n := 1 + int(c>>3&1) + int(c>>4&1)
+	if n > len(d.ops) {
+		d.ops = nil
+		return txOp{}, false
+	}
+	d.op = txOp{kind: c & 7 % 6, step: d.step}
+	i := 1
+	if c&0x08 != 0 {
+		d.op.step = d.ops[i]
+		i++
+	}
+	if c&0x10 != 0 {
+		d.op.arg = d.ops[i]
+	}
+	d.ops = d.ops[n:]
+	d.rep = int(c >> 5)
+	return d.op, true
+}
+
+func checkTxScript(t *testing.T, in *txInput, p []layer2.RawBurst, msgs []*data.Message) {
+	t.Helper()
+	c0, c1, c2 := in.c0, in.c1, in.c2
 	s, err := data.NewSender(&data.SenderConfig{
 		Window: int(c2 % 10),
 		Access: enums.Access(c0 & 3), Preambles: int(c0 >> 2 & 7), Retries: int(c1 & 7),
@@ -66,9 +110,14 @@ func checkTxScript(t *testing.T, in []byte, p []layer2.RawBurst, msgs []*data.Me
 	out := make([]data.Output, 0, data.MaxOutputs)
 	var now time.Duration
 	active := 0
-	for i := 3; i+2 < len(in) && i < 3+3*512; i += 3 {
-		k, step, arg := in[i]%6, in[i+1], in[i+2]
-		now += time.Duration(step) * time.Millisecond
+	d := newTxDecoder(in)
+	for i := 0; ; i++ {
+		op, ok := d.next()
+		if !ok {
+			break
+		}
+		k, arg := op.kind, op.arg
+		now += time.Duration(op.step) * time.Millisecond
 		out = out[:0]
 		switch k {
 		case 0:
@@ -112,24 +161,23 @@ func checkTxScript(t *testing.T, in []byte, p []layer2.RawBurst, msgs []*data.Me
 	}
 }
 
-func txSeeds() [][]byte {
-	seeds := make([][]byte, 0, 3)
+func txSeeds() []txInput {
+	seeds := make([]txInput, 0, 3)
 	for _, cfg := range [][3]byte{{0, 0, 0}, {0x2A, 0x13, 3}, {0xC2, 0xFF, 8}} {
-		s := make([]byte, 0, 3+3*40)
-		s = append(s, cfg[0], cfg[1], cfg[2])
+		ops := make([]byte, 0, 64)
 		for i := range 40 {
 			switch {
 			case i%10 == 0:
-				s = append(s, 0, 1, byte(i/10))
+				ops = append(ops, 0x18, 1, byte(i/10))
 			case i%7 == 3:
-				s = append(s, 3, 20, byte(i))
+				ops = append(ops, 0x1B, 20, byte(i))
 			case i%11 == 5:
-				s = append(s, 2, 5, byte(i))
+				ops = append(ops, 0x1A, 5, byte(i))
 			default:
-				s = append(s, 1, 60, 0)
+				ops = append(ops, 1)
 			}
 		}
-		seeds = append(seeds, s)
+		seeds = append(seeds, txInput{c0: cfg[0], c1: cfg[1], c2: cfg[2], step: 60, ops: ops})
 	}
 	return seeds
 }
@@ -137,9 +185,9 @@ func txSeeds() [][]byte {
 func FuzzSender(f *testing.F) {
 	p, msgs := txPool(f), txMessages(f)
 	for _, s := range txSeeds() {
-		f.Add(s)
+		f.Add(s.c0, s.c1, s.c2, s.step, s.ops)
 	}
-	f.Fuzz(func(t *testing.T, in []byte) {
-		checkTxScript(t, in, p, msgs)
+	f.Fuzz(func(t *testing.T, c0, c1, c2, step uint8, ops []byte) {
+		checkTxScript(t, &txInput{c0: c0, c1: c1, c2: c2, step: step, ops: ops}, p, msgs)
 	})
 }

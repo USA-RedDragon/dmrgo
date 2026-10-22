@@ -17,10 +17,11 @@ func TestTinyGoFuzzSeeds(t *testing.T) {
 			t.Fatalf("round trip seed %d: %s", i, s.fail)
 		}
 	}
-	r := newAnyBursts()
-	for _, in := range burstSeeds(t) {
-		r.feed(t, false, in)
-		r.feed(t, true, in)
+	seeds, pool := burstSeeds(t)
+	r := newAnyBursts(pool)
+	for _, ops := range seeds {
+		r.feed(t, false, ops, nil)
+		r.feed(t, true, ops, nil)
 	}
 	for _, seed := range responseDataSeeds() {
 		checkResponseData(t, seed.b0, seed.b1, seed.blocks)

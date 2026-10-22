@@ -13,7 +13,8 @@ func TestFuzzSeeds(t *testing.T) {
 	talkerAliasSeeds(func(alias string, format, order uint8, extra []byte) {
 		fuzzTalkerAlias(t, alias, format, order, extra)
 	})
-	capPlusSeeds(t, func(data []byte) { fuzzCapacityPlus(t, data) })
+	pool := capPlusPool(t)
+	capPlusSeeds(pool, func(ops, raw []byte) { fuzzCapacityPlus(t, pool, ops, raw) })
 	broadcastSeeds(func(typ uint8, p1 uint16, reg bool, backoff uint8, sys uint16, p2 uint32) {
 		fuzzBroadcastParms(t, typ, p1, reg, backoff, sys, p2)
 	})

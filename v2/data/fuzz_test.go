@@ -1,6 +1,7 @@
 package data_test
 
 import (
+	"math/bits"
 	"os"
 	"path/filepath"
 	"testing"
@@ -83,15 +84,16 @@ type rxScript struct {
 	ops []rxOp
 }
 
-func parseRxScript(in []byte, p []layer2.RawBurst) *rxScript {
+const maxRxOps = 128
+
+type rxInput struct {
+	c0, c1, step uint8
+	ops          []byte
+}
+
+func parseRxScript(in rxInput, p []layer2.RawBurst) *rxScript {
 	s := &rxScript{}
-	get := func(i int) byte {
-		if i < len(in) {
-			return in[i]
-		}
-		return 0
-	}
-	c0, c1 := get(0), get(1)
+	c0, c1 := in.c0, in.c1
 	s.cfg.Respond = c0&1 != 0
 	if c0&2 != 0 {
 		s.cfg.Address = dstID
@@ -105,21 +107,46 @@ func parseRxScript(in []byte, p []layer2.RawBurst) *rxScript {
 	s.cfg.MaxBlocks = int(c1 >> 4 * 8)
 	s.cfg.Lost = time.Duration(int8(c0&0xE0)) * time.Millisecond
 	s.cfg.Hang = time.Duration(int8(c1)) * 3 * time.Millisecond
+	ops := in.ops[:min(len(in.ops), maxRxOps)]
 	var at time.Duration
 	var seq uint16
-	for i := 2; i+3 < len(in) && len(s.ops) < 512; i += 4 {
-		k, step, idx, flip := in[i], in[i+1], in[i+2], in[i+3]
+	idx := -1
+	for i := 0; i < len(ops); {
+		c := ops[i]
+		i++
+		if i+bits.OnesCount8(c&0xF0) > len(ops) {
+			break
+		}
+		idx++
+		if c&0x10 != 0 {
+			idx = int(ops[i])
+			i++
+		}
+		step := in.step
+		if c&0x20 != 0 {
+			step = ops[i]
+			i++
+		}
+		var flip, ext byte
+		if c&0x40 != 0 {
+			flip = 0x80 | ops[i]
+			i++
+		}
+		if c&0x80 != 0 {
+			ext = ops[i]
+			i++
+		}
 		at += time.Duration(step) * time.Millisecond
-		op := rxOp{kind: k & 3, at: at, raw: p[int(idx)%len(p)]}
+		op := rxOp{kind: c & 3, at: at, raw: p[idx%len(p)]}
 		if flip&0x80 != 0 {
 			bit := int(flip&0x7F) * 2
 			op.raw[bit/8] ^= 1 << (bit % 8)
 		}
-		seq += uint16(k>>6) + 1
+		seq += uint16(ext>>2&3) + 1
 		op.hint = layer2.Hint{
-			SyncLost: k&0x04 != 0,
-			End:      layer2.EndHint(k >> 3 & 3 % 3),
-			HasSeq:   k&0x20 != 0,
+			SyncLost: c&0x04 != 0,
+			End:      layer2.EndHint(ext & 3 % 3),
+			HasSeq:   c&0x08 != 0,
 			Seq:      seq,
 		}
 		s.ops = append(s.ops, op)
@@ -145,7 +172,7 @@ func runRxOp(r *data.Receiver, op *rxOp, dst []data.Event) []data.Event {
 	return r.Burst(op.at, &op.raw, op.hint, dst)
 }
 
-func checkRxScript(t *testing.T, in []byte, p []layer2.RawBurst) {
+func checkRxScript(t *testing.T, in rxInput, p []layer2.RawBurst) {
 	t.Helper()
 	s := parseRxScript(in, p)
 	r, err := data.NewReceiver(&s.cfg)
@@ -175,24 +202,23 @@ func checkRxScript(t *testing.T, in []byte, p []layer2.RawBurst) {
 	}
 }
 
-func rxSeeds() [][]byte {
-	seeds := make([][]byte, 0, 4)
+func rxSeeds() []rxInput {
+	seeds := make([]rxInput, 0, 4)
 	for _, cfg := range [][2]byte{{0, 0}, {3, 0}, {0x0F, 0x17}, {0x23, 0x80}} {
-		s := make([]byte, 0, 2+4*64)
-		s = append(s, cfg[0], cfg[1])
+		ops := make([]byte, 0, 72)
 		for i := range 64 {
-			kind, flip := byte(0), byte(0)
 			switch {
 			case i%17 == 5:
-				kind = 1
+				ops = append(ops, 1)
 			case i%23 == 7:
-				flip = 0x80 | byte(i)
+				ops = append(ops, 0x40, byte(i))
 			case i%29 == 3:
-				kind = 0x20
+				ops = append(ops, 0x08)
+			default:
+				ops = append(ops, 0)
 			}
-			s = append(s, kind, 60, byte(i), flip)
 		}
-		seeds = append(seeds, s)
+		seeds = append(seeds, rxInput{c0: cfg[0], c1: cfg[1], step: 60, ops: ops})
 	}
 	return seeds
 }
@@ -200,9 +226,9 @@ func rxSeeds() [][]byte {
 func FuzzReceiver(f *testing.F) {
 	p := pool(f)
 	for _, s := range rxSeeds() {
-		f.Add(s)
+		f.Add(s.c0, s.c1, s.step, s.ops)
 	}
-	f.Fuzz(func(t *testing.T, in []byte) {
-		checkRxScript(t, in, p)
+	f.Fuzz(func(t *testing.T, c0, c1, step uint8, ops []byte) {
+		checkRxScript(t, rxInput{c0: c0, c1: c1, step: step, ops: ops}, p)
 	})
 }

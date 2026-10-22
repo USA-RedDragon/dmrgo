@@ -1,6 +1,7 @@
 package voice_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -18,7 +19,14 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
-const maxScriptOps = 512
+const (
+	maxScriptOps = 512
+	maxScript    = 128
+	maxRaw       = 4 * 33
+	maxAlias     = 0x1F
+	maxFrames    = 128
+	maxDrop      = 128
+)
 
 type opKind uint8
 
@@ -139,85 +147,112 @@ func newPool(t testing.TB) *pool {
 	return p
 }
 
-func parseScript(data []byte, p *pool) script {
-	r := byteReader{data: data}
+type rxInput struct {
+	flags, cc, lost, hang, seqBits, start uint8
+	ops, raw                              []byte
+}
+
+type scriptState struct {
+	p      *pool
+	cur    int
+	now    time.Duration
+	seq    uint16
+	stream uint32
+}
+
+func parseScript(in *rxInput, p *pool) script {
 	var s script
-	flags := r.next()
-	cc := r.next()
-	lost, hang := r.next(), r.next()
-	seqBits := r.next()
-	start := r.next()
+	flags, cc := in.flags, in.cc
 	if flags&1 != 0 {
 		s.cc = enums.ColorCode(cc)
 		s.cfg.ColorCode = &s.cc
 		s.badCfg = s.cc > 15
 	}
-	s.cfg.Lost = configTime(flags>>2, lost)
-	s.cfg.Hang = configTime(flags>>4, hang)
+	s.cfg.Lost = configTime(flags>>2, in.lost)
+	s.cfg.Hang = configTime(flags>>4, in.hang)
 	s.txCfg = voice.TransmitterConfig{ColorCode: enums.ColorCode(cc & 15), Source: layer2.SyncSource(flags >> 6),
 		Silence: vocoder.AMBESilenceSlot(), Timeout: 10 * time.Second, Queue: voice.MaxQueue}
 
-	cur := p.starts[int(start)%len(p.starts)]
-	var now time.Duration
-	var seq uint16
-	var stream uint32 = 0x1000
+	r := byteReader{data: in.ops[:min(len(in.ops), maxScript)]}
+	raws := byteReader{data: in.raw[:min(len(in.raw), maxRaw)]}
+	st := scriptState{p: p, cur: p.starts[int(in.start)%len(p.starts)], stream: 0x1000}
 	for !r.done() && len(s.ops) < maxScriptOps {
 		code := r.next()
-		now += step(r.next())
-		op := scriptOp{at: now}
-		switch code & 7 {
-		case 0, 1, 6:
-			a := r.next()
-			if a < 0xE0 {
-				cur += int(a >> 5)
-			} else {
-				cur = int(a&0x1F) * len(p.bursts) / 32
-			}
-			cur %= len(p.bursts)
-			op.raw = p.bursts[cur]
-			if code&0x08 != 0 {
-				for range code>>4&3 + 1 {
-					bit := (int(r.next())<<8 | int(r.next())) % 264
-					op.raw[bit/8] ^= 0x80 >> (bit % 8)
-				}
-			}
-			if code&7 == 6 {
-				op.kind = opDecoded
-			}
-			op.hint = readHint(&r, &seq, &stream, seqBits)
-		case 2:
-			for i := range op.raw {
-				op.raw[i] = r.next()
-			}
-			op.hint = readHint(&r, &seq, &stream, seqBits)
-		case 3:
-			op.kind = opLost
-		case 4:
-			op.kind = opTick
-		case 5:
-			op.kind = opExpect
-			f := r.next()
-			op.call = voice.Call{
-				Group:   f&1 != 0,
-				Target:  uint32(r.next())<<16 | uint32(r.next())<<8 | uint32(r.next()),
-				Source:  uint32(r.next())<<16 | uint32(r.next())<<8 | uint32(r.next()),
-				Options: layer3.DecodeServiceOptions([1]byte{r.next()}),
-				Stream:  uint32(f),
-			}
-			op.until = now + step(r.next())
-		case 7:
-			op.kind = opTick
-			if code>>3 < 4 {
-				op.kind = opReset
+		reps := 1
+		if code&0x40 != 0 {
+			reps += int(r.next())
+		}
+		var raw layer2.RawBurst
+		if code&7 == 2 {
+			for i := range raw {
+				raw[i] = raws.next()
 			}
 		}
-		s.ops = append(s.ops, op)
+		body := r.i
+		for range reps {
+			if len(s.ops) == maxScriptOps {
+				break
+			}
+			r.i = body
+			s.ops = append(s.ops, st.op(&r, code, &raw, in.seqBits))
+		}
 	}
 	return s
 }
 
-func readHint(r *byteReader, seq *uint16, stream *uint32, seqBits byte) layer2.Hint {
-	h0, h1, h2 := r.next(), r.next(), r.next()
+func (st *scriptState) op(r *byteReader, code byte, raw *layer2.RawBurst, seqBits byte) scriptOp {
+	st.now += step(r.next())
+	op := scriptOp{at: st.now}
+	hint := code&0x80 != 0
+	switch code & 7 {
+	case 0, 1, 6:
+		a := r.next()
+		if a < 0xE0 {
+			st.cur += int(a >> 5)
+		} else {
+			st.cur = int(a&0x1F) * len(st.p.bursts) / 32
+		}
+		st.cur %= len(st.p.bursts)
+		op.raw = st.p.bursts[st.cur]
+		if code&0x08 != 0 {
+			for range code>>4&3 + 1 {
+				bit := (int(r.next())<<8 | int(r.next())) % 264
+				op.raw[bit/8] ^= 0x80 >> (bit % 8)
+			}
+		}
+		if code&7 == 6 {
+			op.kind = opDecoded
+		}
+		op.hint = readHint(r, hint, &st.seq, &st.stream, seqBits)
+	case 2:
+		op.raw = *raw
+		op.hint = readHint(r, hint, &st.seq, &st.stream, seqBits)
+	case 3:
+		op.kind = opLost
+	case 4:
+		op.kind = opTick
+	case 5:
+		op.kind = opExpect
+		f := r.next()
+		op.call = voice.Call{
+			Group:   f&1 != 0,
+			Target:  uint32(r.next())<<16 | uint32(r.next())<<8 | uint32(r.next()),
+			Source:  uint32(r.next())<<16 | uint32(r.next())<<8 | uint32(r.next()),
+			Options: layer3.DecodeServiceOptions([1]byte{r.next()}),
+			Stream:  uint32(f),
+		}
+		op.until = st.now + step(r.next())
+	case 7:
+		op.kind = opReset
+	}
+	return op
+}
+
+func readHint(r *byteReader, present bool, seq *uint16, stream *uint32, seqBits byte) layer2.Hint {
+	var h0, h1, h2 byte
+	if present {
+		h0, h1, h2 = r.next(), r.next(), r.next()
+	}
 	if h0&0x80 != 0 {
 		*stream++
 	}
@@ -237,50 +272,87 @@ func readHint(r *byteReader, seq *uint16, stream *uint32, seqBits byte) layer2.H
 	}
 }
 
-type scriptSeed []byte
-
-func (s scriptSeed) burst(skip, dt byte, h ...byte) scriptSeed {
-	h = append(h, 0, 0, 0)
-	return append(s, 0, dt, skip<<5, h[0], h[1], h[2])
+type scriptSeed struct {
+	ops  []byte
+	last []byte
+	reps int
 }
 
-func seeds(p *pool) [][]byte {
-	out := make([][]byte, 0, 2*len(p.starts)+2)
+func (s *scriptSeed) flush() {
+	switch {
+	case s.reps == 1:
+		s.ops = append(s.ops, s.last...)
+	case s.reps > 1:
+		s.ops = append(append(s.ops, s.last[0]|0x40, byte(s.reps-1)), s.last[1:]...)
+	}
+	s.last, s.reps = nil, 0
+}
+
+func (s *scriptSeed) op(b ...byte) *scriptSeed {
+	if s.reps > 0 && s.reps < 256 && b[0]&7 != 2 && slices.Equal(b, s.last) {
+		s.reps++
+		return s
+	}
+	s.flush()
+	s.last, s.reps = b, 1
+	return s
+}
+
+func (s *scriptSeed) burst(skip, dt byte, h ...byte) {
+	if len(h) == 0 {
+		s.op(0, dt, skip<<5)
+		return
+	}
+	h = append(h, 0, 0, 0)
+	s.op(0x80, dt, skip<<5, h[0], h[1], h[2])
+}
+
+func (s *scriptSeed) done() []byte {
+	s.flush()
+	return s.ops
+}
+
+func seeds(p *pool) []rxInput {
+	out := make([]rxInput, 0, 2*len(p.starts)+2)
 	for part := range p.starts {
 		end := len(p.bursts)
 		if part+1 < len(p.starts) {
 			end = p.starts[part+1]
 		}
 		n := end - p.starts[part]
-		plain := scriptSeed{0, 0, 0, 0, 0, byte(part)}.burst(0, 0)
-		seqd := scriptSeed{0x01, 1, 0, 0, 0, byte(part)}.burst(0, 0, 1, 1)
+		var plain, seqd scriptSeed
+		plain.burst(0, 0)
+		seqd.burst(0, 0, 1, 1)
 		for range n - 1 {
-			plain = plain.burst(1, 0)
-			seqd = seqd.burst(1, 0, 1, 1)
+			plain.burst(1, 0)
+			seqd.burst(1, 0, 1, 1)
 		}
-		out = append(out, append(plain, 4, 255), seqd)
+		out = append(out, rxInput{start: byte(part), ops: plain.op(4, 255).done()},
+			rxInput{flags: 0x01, cc: 1, start: byte(part), ops: seqd.done()})
 	}
-	lossy := scriptSeed{0x14, 0, 20, 10, 8, 0}.burst(0, 0)
+	var lossy scriptSeed
+	lossy.burst(0, 0)
 	for i := range 60 {
 		switch {
 		case i%11 == 3:
-			lossy = lossy.burst(3, 128)
+			lossy.burst(3, 128)
 		case i%13 == 5:
-			lossy = lossy.burst(0, 64)
+			lossy.burst(0, 64)
 		default:
-			lossy = lossy.burst(1, 0, 0x03, 1)
+			lossy.burst(1, 0, 0x03, 1)
 		}
 	}
-	out = append(out, append(lossy, 3, 0, 4, 250))
-	late := scriptSeed{0, 0, 0, 0, 0, 0}.burst(6, 0)
+	out = append(out, rxInput{flags: 0x14, lost: 20, hang: 10, seqBits: 8, ops: lossy.op(3, 0).op(4, 250).done()})
+	var late scriptSeed
+	late.burst(6, 0)
 	for range 30 {
-		late = late.burst(1, 0)
+		late.burst(1, 0)
 	}
-	late = append(late, 5, 0, 1, 0, 0, 91, 0x30, 0xB4, 0x3C, 0, 250)
+	late.op(5, 0, 1, 0, 0, 91, 0x30, 0xB4, 0x3C, 0, 250)
 	for range 12 {
-		late = late.burst(1, 0)
+		late.burst(1, 0)
 	}
-	out = append(out, append(late, 7, 0, 2, 0, 0x30, 0x2A, 0x5D, 0x8A, 0x9F, 0x13, 0xE6, 0x00, 0x00, 0x00, 0, 0, 0))
+	out = append(out, rxInput{ops: late.op(7, 0).op(2, 0).done(), raw: []byte{0x30, 0x2A, 0x5D, 0x8A, 0x9F, 0x13, 0xE6}})
 	return out
 }
 
@@ -457,16 +529,16 @@ func (r *relayChecker) run(t *testing.T, now time.Duration) {
 func FuzzReceiver(f *testing.F) {
 	p := newPool(f)
 	for _, s := range seeds(p) {
-		f.Add(s)
+		f.Add(s.flags, s.cc, s.lost, s.hang, s.seqBits, s.start, s.ops, s.raw)
 	}
-	f.Fuzz(func(t *testing.T, data []byte) {
-		runScript(t, p, data)
+	f.Fuzz(func(t *testing.T, flags, cc, lost, hang, seqBits, start uint8, ops, raw []byte) {
+		runScript(t, p, &rxInput{flags: flags, cc: cc, lost: lost, hang: hang, seqBits: seqBits, start: start, ops: ops, raw: raw})
 	})
 }
 
-func runScript(t *testing.T, p *pool, data []byte) {
+func runScript(t *testing.T, p *pool, in *rxInput) {
 	t.Helper()
-	s := parseScript(data, p)
+	s := parseScript(in, p)
 	rx, err := voice.NewReceiver(&s.cfg)
 	if s.badCfg {
 		if err == nil {
@@ -538,14 +610,21 @@ type roundTrip struct {
 	errs    bool
 }
 
-func parseRoundTrip(data []byte) roundTrip {
-	r := byteReader{data: data}
+type rtInput struct {
+	flags, cc, headers, terms, so uint8
+	target, source                uint32
+	n, alias                      uint8
+	ramp                          bool
+	text, frames, drop            []byte
+}
+
+func parseRoundTrip(in *rtInput) roundTrip {
 	var rt roundTrip
-	flags, cc, headers, terms, so := r.next(), r.next(), r.next(), r.next(), r.next()
+	flags, cc, headers, terms, so := in.flags, in.cc, in.headers, in.terms, in.so
 	rt.call = voice.Call{
 		Group:   flags&1 != 0,
-		Target:  uint32(r.next())<<16 | uint32(r.next())<<8 | uint32(r.next()),
-		Source:  uint32(r.next())<<16 | uint32(r.next())<<8 | uint32(r.next()),
+		Target:  in.target & 0xFFFFFF,
+		Source:  in.source & 0xFFFFFF,
 		Options: layer3.DecodeServiceOptions([1]byte{so}),
 	}
 	rt.cfg = voice.TransmitterConfig{ColorCode: enums.ColorCode(cc & 15), Source: layer2.SyncSource(flags >> 5 & 3),
@@ -562,22 +641,31 @@ func parseRoundTrip(data []byte) roundTrip {
 	if flags&0x80 != 0 {
 		rt.seqBits = 8
 	}
-	n := int(r.next())
-	alias := r.next()
-	rt.opts.TalkerAliasFormat = layer3.TalkerAliasDataFormat(alias >> 6)
-	text := make([]byte, alias&0x1F)
+	rt.opts.TalkerAliasFormat = layer3.TalkerAliasDataFormat(in.alias >> 6)
+	text := make([]byte, in.alias&maxAlias)
 	for i := range text {
-		text[i] = 0x20 + r.next()%0x5F
+		var c byte
+		if i < len(in.text) {
+			c = in.text[i]
+		}
+		text[i] = 0x20 + c%0x5F
 	}
 	rt.opts.TalkerAlias = string(text)
-	rt.frames = make([]vocoder.AMBEFrame, n)
+	pattern := in.frames[:min(len(in.frames), maxFrames)]
+	rt.frames = make([]vocoder.AMBEFrame, in.n)
 	for i := range rt.frames {
-		for j := range rt.frames[i] {
-			rt.frames[i][j] = r.next()
+		f := &rt.frames[i]
+		if in.ramp {
+			*f = vocoder.AMBEFrame{byte(i), 0xA5, byte(3 * i), 0x5A, byte(i >> 1), 0x0F, 0x80}
 		}
-		rt.frames[i][6] &= 0x80
+		for j := range f {
+			if len(pattern) > 0 {
+				f[j] ^= pattern[(7*i+j)%len(pattern)]
+			}
+		}
+		f[6] &= 0x80
 	}
-	rt.drop = r.data[r.i:]
+	rt.drop = in.drop[:min(len(in.drop), maxDrop)]
 	return rt
 }
 
@@ -629,35 +717,39 @@ func transmit(t *testing.T, tx *voice.Transmitter, rt *roundTrip) []sent {
 
 func FuzzTransmitterRoundTrip(f *testing.F) {
 	for _, s := range roundTripSeeds() {
-		f.Add(s)
+		f.Add(s.flags, s.cc, s.headers, s.terms, s.so, s.target, s.source, s.n, s.alias, s.ramp, s.text, s.frames, s.drop)
 	}
-	f.Fuzz(runRoundTrip)
+	f.Fuzz(func(t *testing.T, flags, cc, headers, terms, so uint8, target, source uint32, n, alias uint8, ramp bool, text, frames, drop []byte) {
+		runRoundTrip(t, &rtInput{flags: flags, cc: cc, headers: headers, terms: terms, so: so, target: target, source: source,
+			n: n, alias: alias, ramp: ramp, text: text, frames: frames, drop: drop})
+	})
 }
 
-func roundTripSeeds() [][]byte {
-	call := []byte{0x00, 0x22, 0x00, 0x04, 0x01, 0x00, 0x0C, 0x1C, 0x30, 0xB4, 0x3C}
-	frames := make([]byte, 0, 7*60)
-	for i := range 60 {
-		frames = append(frames, byte(i), 0xA5, byte(3*i), 0x5A, byte(i>>1), 0x0F, 0x80)
+func roundTripSeeds() []rtInput {
+	call := rtInput{cc: 0x22, terms: 0x04, so: 0x01, target: 3100, source: 3191868}
+	short := call
+	short.n, short.alias, short.text = 18, 0x06, []byte("KI5VMF")
+	full := short
+	full.n, full.alias, full.ramp = 60, 0x46, true
+	with := func(flags byte, drop ...byte) rtInput {
+		s := full
+		s.flags |= flags
+		s.drop = drop
+		return s
 	}
-	full := append(append(append([]byte{}, call...), 60, 0x46, 'K', 'I', '5', 'V', 'M', 'F'), frames...)
-	seqd := append([]byte{}, full...)
-	seqd[0] |= 0x0F
-	errd := append([]byte{}, full...)
-	errd[0] |= 0x12
-	return [][]byte{
-		append(append([]byte{}, call...), 0, 0),
-		append(append([]byte{}, call...), 18, 0x06, 'K', 'I', '5', 'V', 'M', 'F'),
+	return []rtInput{
+		call,
+		short,
 		full,
-		append(append([]byte{}, full...), 0x00, 0x10, 0x00, 0x02, 0x01, 0x80, 0x00, 0x00, 0x40),
-		append(seqd, 0x07, 0x00, 0x24, 0x00, 0x00, 0x18),
-		append(append([]byte{}, full...), 0x1F, 0xFF, 0xF0),
-		append(errd, 0x45, 0x00, 0x7F, 0x41, 0x52, 0x63, 0x74, 0x45, 0x40, 0x56, 0x67, 0x78, 0x49, 0x5A, 0x6B),
+		with(0, 0x00, 0x10, 0x00, 0x02, 0x01, 0x80, 0x00, 0x00, 0x40),
+		with(0x0F, 0x07, 0x00, 0x24, 0x00, 0x00, 0x18),
+		with(0, 0x1F, 0xFF, 0xF0),
+		with(0x12, 0x45, 0x00, 0x7F, 0x41, 0x52, 0x63, 0x74, 0x45, 0x40, 0x56, 0x67, 0x78, 0x49, 0x5A, 0x6B),
 	}
 }
 
-func runRoundTrip(t *testing.T, data []byte) {
-	rt := parseRoundTrip(data)
+func runRoundTrip(t *testing.T, in *rtInput) {
+	rt := parseRoundTrip(in)
 	tx, err := voice.NewTransmitter(&rt.cfg)
 	if err != nil {
 		t.Fatal(err)
@@ -914,27 +1006,86 @@ func checkVoice(t *testing.T, k int, e *voice.Event, arrived []arrival) {
 	}
 }
 
-func corpusFiles(t *testing.T, name string) [][]byte {
+func corpusValue(line string) (any, error) {
+	open := strings.IndexByte(line, '(')
+	if open < 0 || !strings.HasSuffix(line, ")") {
+		return nil, fmt.Errorf("line %q is not a typed value", line)
+	}
+	typ, arg := line[:open], line[open+1:len(line)-1]
+	switch typ {
+	case "[]byte":
+		s, err := strconv.Unquote(arg)
+		return []byte(s), err
+	case "bool":
+		return strconv.ParseBool(arg)
+	case "uint32":
+		v, err := strconv.ParseUint(arg, 0, 32)
+		return uint32(v), err
+	case "uint8":
+		v, err := strconv.ParseUint(arg, 0, 8)
+		return uint8(v), err
+	case "byte":
+		if len(arg) < 2 || arg[0] != '\'' || arg[len(arg)-1] != '\'' {
+			v, err := strconv.ParseUint(arg, 0, 8)
+			return uint8(v), err
+		}
+		c, _, tail, err := strconv.UnquoteChar(arg[1:len(arg)-1], '\'')
+		if err == nil && (tail != "" || c > 0xFF) {
+			err = fmt.Errorf("byte literal %s", arg)
+		}
+		return uint8(c), err
+	}
+	return nil, fmt.Errorf("type %s", typ)
+}
+
+func assignValue(dst, v any) bool {
+	ok := false
+	switch d := dst.(type) {
+	case *uint8:
+		*d, ok = v.(uint8)
+	case *uint32:
+		*d, ok = v.(uint32)
+	case *bool:
+		*d, ok = v.(bool)
+	case *[]byte:
+		*d, ok = v.([]byte)
+	}
+	return ok
+}
+
+func corpusFiles(t *testing.T, name string, each func(), dst ...any) {
 	t.Helper()
 	files, err := filepath.Glob(filepath.Join("testdata/fuzz", name, "*"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	out := make([][]byte, 0, len(files))
 	for _, f := range files {
 		data, err := os.ReadFile(f)
 		if err != nil {
 			t.Fatal(err)
 		}
 		lines := strings.Split(strings.TrimSpace(string(data)), "\n")
-		if len(lines) != 2 || lines[0] != "go test fuzz v1" || !strings.HasPrefix(lines[1], "[]byte(") {
-			t.Fatalf("%s: not a []byte fuzz input", f)
+		if len(lines) != len(dst)+1 || lines[0] != "go test fuzz v1" {
+			t.Fatalf("%s: not a fuzz input of %d values", f, len(dst))
 		}
-		s, err := strconv.Unquote(strings.TrimSuffix(strings.TrimPrefix(lines[1], "[]byte("), ")"))
-		if err != nil {
-			t.Fatalf("%s: %v", f, err)
+		for i, line := range lines[1:] {
+			v, err := corpusValue(line)
+			if err != nil {
+				t.Fatalf("%s: %v", f, err)
+			}
+			if !assignValue(dst[i], v) {
+				t.Fatalf("%s: value %d is %T, want %T", f, i, v, dst[i])
+			}
 		}
-		out = append(out, []byte(s))
+		each()
 	}
+}
+
+func rxCorpus(t *testing.T) []rxInput {
+	t.Helper()
+	var out []rxInput
+	var in rxInput
+	corpusFiles(t, "FuzzReceiver", func() { out = append(out, in) },
+		&in.flags, &in.cc, &in.lost, &in.hang, &in.seqBits, &in.start, &in.ops, &in.raw)
 	return out
 }

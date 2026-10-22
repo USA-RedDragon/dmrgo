@@ -21,28 +21,26 @@ func newCapPlusPool(t testing.TB) burstPool {
 	}
 }
 
-func runCapPlusFollower(t *testing.T, pool burstPool, in []byte) {
+func runCapPlusFollower(t *testing.T, pool burstPool, s opSeed) {
 	cfg := trunk.CapacityPlusConfig{Plan: capPlusPlan(t)}
-	if len(in) > 0 {
-		cfg.Individual = in[0]&1 != 0
-		cfg.NoFollow = in[0]&2 != 0
-		if in[0]&4 != 0 {
-			cfg.Plan = nil
-		}
-		if in[0]&8 != 0 {
-			cfg.TalkgroupsLen, cfg.Talkgroups[0] = 1, 14
-		}
-		in = in[1:]
+	cfg.Individual = s.cfg&1 != 0
+	cfg.NoFollow = s.cfg&2 != 0
+	if s.cfg&4 != 0 {
+		cfg.Plan = nil
 	}
+	if s.cfg&8 != 0 {
+		cfg.TalkgroupsLen, cfg.Talkgroups[0] = 1, 14
+	}
+	script := s.script()
+	rawIn := s.raw[:min(len(s.raw), maxRawScript)]
 	f, err := trunk.NewCapacityPlusFollower(&cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	out := make([]trunk.Output, 0, trunk.MaxOutputs)
 	now := time.Duration(0)
-	for op := 0; op < maxFuzzOps && len(in) >= 2; op++ {
-		kind, arg := in[0], in[1]
-		in = in[2:]
+	for op := range script.total {
+		kind, arg := script.op(op)
 		now += time.Duration(arg) * 10 * time.Millisecond
 		switch kind % 6 {
 		case 0, 1:
@@ -50,8 +48,8 @@ func runCapPlusFollower(t *testing.T, pool burstPool, in []byte) {
 			out = f.Burst(now, &raw, layer2.Hint{Slot: enums.Slot(kind >> 6)}, nil, out[:0])
 		case 2:
 			var raw layer2.RawBurst
-			n := copy(raw[:], in)
-			in = in[n:]
+			n := copy(raw[:], rawIn)
+			rawIn = rawIn[n:]
 			cach := [3]byte{arg, kind, byte(n)}
 			out = f.Burst(now, &raw, layer2.Hint{}, &cach, out[:0])
 		case 3:
@@ -79,21 +77,22 @@ func runCapPlusFollower(t *testing.T, pool burstPool, in []byte) {
 	}
 }
 
-func capPlusFuzzSeeds() [][]byte {
-	return [][]byte{
-		{0, 3, 0, 0, 1, 0, 1, 1, 3, 3, 0, 0, 5, 3, 250},
-		{1, 0, 0, 1, 2, 3, 0, 1, 4, 0, 5, 3, 200},
-		{10, 0, 0, 0, 3, 0, 4, 0, 5, 4, 0, 3, 255, 3, 255},
-		{6, 2, 1, 0xFF, 0xFF, 0xFF, 0x0F},
+func capPlusFuzzSeeds() []opSeed {
+	return []opSeed{
+		{cfg: 0, ops: []byte{3, 0, 0, 1, 0, 1, 1, 3, 3, 0, 0, 5, 3, 250}},
+		{cfg: 1, ops: []byte{0, 0, 1, 2, 3, 0, 1, 4, 0, 5, 3, 200}},
+		{cfg: 10, ops: []byte{0, 0, 0, 3, 0, 4, 0, 5, 4, 0, 3, 255, 3, 255}},
+		{cfg: 6, ops: []byte{2, 1}, raw: []byte{0xFF, 0xFF, 0xFF, 0x0F}},
+		{cfg: 0, ops: []byte{3, 0, 0, 1, 0, 3, 1, 3, 3, 0, 0, 5, 3, 250}, from: 2, to: 5, reps: 20},
 	}
 }
 
 func FuzzCapacityPlusFollower(f *testing.F) {
 	for _, s := range capPlusFuzzSeeds() {
-		f.Add(s)
+		f.Add(s.cfg, s.ops, s.raw, s.from, s.to, s.reps)
 	}
 	pool := newCapPlusPool(f)
-	f.Fuzz(func(t *testing.T, in []byte) {
-		runCapPlusFollower(t, pool, in)
+	f.Fuzz(func(t *testing.T, cfg uint8, ops, raw []byte, from, to, reps uint8) {
+		runCapPlusFollower(t, pool, opSeed{cfg: cfg, ops: ops, raw: raw, from: from, to: to, reps: reps})
 	})
 }
