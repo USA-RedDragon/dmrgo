@@ -57,6 +57,14 @@
 // timer off. A value of a result that can be missing has a HasX bool beside
 // it, such as layer2.Hint.HasDataType and location.Fix.HasAltitude.
 //
+// A machine, Burst, Assembler, Builder or Codec of the library is not safe
+// for concurrent use: use each from one goroutine at a time. A constructor
+// or method keeps a copy of each slice of the caller that it keeps, such as
+// a password or a payload. It keeps a pointer, func or interface of a config
+// as it is, such as a Scratch burst, a trunk.Authenticator or a dvsi.Port.
+// A decoder that returns a slice field, such as ip.Decode, returns a view of
+// its input, and its doc says so.
+//
 // Every field of bits that the library takes or returns is packed in bytes
 // in transmit order: the first bit on air is the most significant bit of
 // byte 0. A 264-bit burst is a [33]byte, a 96-bit PDU a [12]byte and a
@@ -147,6 +155,7 @@
 //     AMBE-3003 chips, and a Codec with such a chip.
 //
 // The C API of the library, libdmrgo, is in v2/capi, a module of its own.
+// It has an ABI number of its own; the README says how it is versioned.
 //
 // # Errors
 //
