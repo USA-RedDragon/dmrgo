@@ -6,6 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
@@ -184,6 +185,7 @@ type Repeater struct {
 	b        *layer2.Burst
 	opts     layer2.DecodeOptions
 	dataType enums.DataType
+	badFEC   bool
 	slots    [2]slot
 	ev       []voice.Event
 	txOut    []voice.Output
@@ -381,14 +383,15 @@ func (r *Repeater) Inbound(now time.Duration, raw *layer2.RawBurst, h layer2.Hin
 	if raw == nil || b.DecodeFromBytesWith(*raw, &r.opts) != nil {
 		b = nil
 	}
-	return r.inbound(now, raw, b, &h, from, dst)
+	r.badFEC = false
+	return r.inbound(now, raw, b, nil, &h, from, dst)
 }
 
 // Decoded takes the burst b, received on slot h.Slot from the source from
 // and decoded by the caller, which may be nil for a burst that did not
-// decode, and runs it through the Repeater as Inbound does. The Repeater
-// sends b as it encodes it again. It allocates only when dst has no room
-// for MaxOutputs outputs.
+// decode, and runs it through the Repeater as Inbound does, with the FEC
+// results of b. The Repeater sends b as it encodes it again. It allocates
+// only when dst has no room for MaxOutputs outputs.
 func (r *Repeater) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, from Source, dst []Output) []Output {
 	if r == nil {
 		return dst
@@ -398,6 +401,7 @@ func (r *Repeater) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, fr
 	}
 	dst = r.timers(now, dst)
 	var raw *layer2.RawBurst
+	orig := b
 	if b != nil {
 		var err error
 		if r.enc, err = b.Encode(); err != nil || from.RF && !r.colorCode(b) {
@@ -406,7 +410,20 @@ func (r *Repeater) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, fr
 			raw = &r.enc
 		}
 	}
-	return r.inbound(now, raw, b, &h, from, dst)
+	r.badFEC = b != nil && b.FEC.Payload.Uncorrectable
+	return r.inbound(now, raw, b, orig, &h, from, dst)
+}
+
+func (r *Repeater) bptc(raw *layer2.RawBurst) ([12]byte, fec.Result) {
+	p, res := raw.BPTCPayload()
+	res.Uncorrectable = res.Uncorrectable || r.badFEC
+	return p, res
+}
+
+func (r *Repeater) rate34(raw *layer2.RawBurst) ([18]byte, fec.Result) {
+	p, res := raw.Rate34Payload()
+	res.Uncorrectable = res.Uncorrectable || r.badFEC
+	return p, res
 }
 
 func (r *Repeater) colorCode(b *layer2.Burst) bool {
@@ -419,13 +436,13 @@ func (r *Repeater) colorCode(b *layer2.Burst) bool {
 	return true
 }
 
-func (r *Repeater) inbound(now time.Duration, raw *layer2.RawBurst, b *layer2.Burst, hp *layer2.Hint, from Source, dst []Output) []Output {
+func (r *Repeater) inbound(now time.Duration, raw *layer2.RawBurst, b, orig *layer2.Burst, hp *layer2.Hint, from Source, dst []Output) []Output {
 	s := r.slot(hp.Slot)
 	h := *hp
 	if b != nil && b.Kind == layer2.KindData && b.SlotType.FEC.Uncorrectable {
 		b = nil
 	}
-	wakeup := b != nil && isWakeup(b, raw)
+	wakeup := b != nil && r.isWakeup(b, raw)
 	hang := r.keyed
 	if !r.keyed {
 		if b == nil || from.RF && r.activation == ActivationWakeup && !wakeup {
@@ -436,6 +453,8 @@ func (r *Repeater) inbound(now time.Duration, raw *layer2.RawBurst, b *layer2.Bu
 	if b == nil {
 		switch {
 		case s.owner != from || !s.repeating():
+		case !from.RF && orig != nil:
+			dst = r.events(now, s, s.rx.Decoded(now, orig, h, r.ev[:0]), dst)
 		case !from.RF && raw != nil:
 			dst = r.events(now, s, s.rx.Burst(now, raw, h, r.ev[:0]), dst)
 		case !from.RF:
@@ -462,7 +481,7 @@ func (r *Repeater) inbound(now time.Duration, raw *layer2.RawBurst, b *layer2.Bu
 	switch b.SlotType.DataType {
 	case enums.DataTypeVoiceLCHeader, enums.DataTypePIHeader, enums.DataTypeTerminatorWithLC:
 		var lc *pdu.LCBytes
-		cw, _ := raw.BPTCPayload()
+		cw, _ := r.bptc(raw)
 		if octets, res, err := pdu.DecodeFullLCCodeword(cw, b.SlotType.DataType); err == nil && !res.Uncorrectable {
 			r.lc = octets
 			lc = &r.lc
@@ -479,11 +498,11 @@ func (r *Repeater) inbound(now time.Duration, raw *layer2.RawBurst, b *layer2.Bu
 	return r.flush(now, dst)
 }
 
-func isWakeup(b *layer2.Burst, raw *layer2.RawBurst) bool {
+func (r *Repeater) isWakeup(b *layer2.Burst, raw *layer2.RawBurst) bool {
 	if b.Kind != layer2.KindData || b.SlotType.DataType != enums.DataTypeCSBK {
 		return false
 	}
-	p, res := raw.BPTCPayload()
+	p, res := r.bptc(raw)
 	c := pdu.CSBKBytes(p)
 	return !res.Uncorrectable && c.CRCOK() && c.Opcode() == pdu.CSBKBSOutboundActivation && c.FID() == 0
 }
@@ -812,7 +831,7 @@ func (r *Repeater) endVoice(now time.Duration, s *slot, reason voice.EndReason, 
 }
 
 func (r *Repeater) single(now time.Duration, s *slot, raw *layer2.RawBurst, dt enums.DataType, from Source, dst []Output) []Output {
-	p, res := raw.BPTCPayload()
+	p, res := r.bptc(raw)
 	cb := pdu.CSBKBytes(p)
 	if res.Uncorrectable || dt == enums.DataTypeCSBK && !cb.CRCOK() {
 		return dst
@@ -832,7 +851,7 @@ func (r *Repeater) single(now time.Duration, s *slot, raw *layer2.RawBurst, dt e
 }
 
 func (r *Repeater) dataHeader(now time.Duration, s *slot, raw *layer2.RawBurst, from Source, dst []Output) []Output {
-	p, res := raw.BPTCPayload()
+	p, res := r.bptc(raw)
 	h := pdu.DataHeaderBytes(p)
 	if res.Uncorrectable || !h.CRCOK() {
 		return dst
@@ -912,7 +931,7 @@ func (r *Repeater) dataBlock(now time.Duration, s *slot, raw *layer2.RawBurst, d
 	var err error
 	switch dt {
 	case enums.DataTypeRate34:
-		p, res := raw.Rate34Payload()
+		p, res := r.rate34(raw)
 		if res.Uncorrectable {
 			return dst
 		}
@@ -921,7 +940,7 @@ func (r *Repeater) dataBlock(now time.Duration, s *slot, raw *layer2.RawBurst, d
 		p, _ := raw.Rate1Payload()
 		out, err = layer2.BuildRate1DataBurst(p, r.cc, layer2.SyncSourceBS)
 	default:
-		p, res := raw.BPTCPayload()
+		p, res := r.bptc(raw)
 		if res.Uncorrectable {
 			return dst
 		}
