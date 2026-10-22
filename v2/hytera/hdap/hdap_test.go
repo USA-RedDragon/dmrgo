@@ -7,6 +7,7 @@ import (
 	"math"
 	"testing"
 
+	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/hytera/hdap"
 )
 
@@ -87,11 +88,11 @@ func TestTextMessage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	flags, err := (&hdap.TMPFlags{}).AppendBinary(nil)
+	op, err := hdap.TMPOpcode(hdap.TMPFlags{}, hdap.TMPPrivateMessage)
 	if err != nil {
 		t.Fatal(err)
 	}
-	msg := hdap.Message{Header: hdap.Header{Reliable: true, Service: hdap.ServiceTMP}, Opcode: hdap.Opcode(flags[0])<<8 | hdap.Opcode(hdap.TMPPrivateMessage), Payload: payload, End: 3}
+	msg := hdap.Message{Header: hdap.Header{Reliable: true, Service: hdap.ServiceTMP}, Opcode: op, Payload: payload, End: 3}
 	msg.Seal()
 	out, err := msg.AppendBinary(nil)
 	if err != nil {
@@ -144,5 +145,29 @@ func TestMessageErrors(t *testing.T) {
 	}
 	if hdap.TMPGroupMessage.String() != "TMPGroupMessage" || hdap.TMPType(0).String() != "TMPType(0)" {
 		t.Error("TMP type names")
+	}
+}
+
+func TestTMPOpcode(t *testing.T) {
+	t.Parallel()
+
+	for v := range 1 << 16 {
+		o := hdap.Opcode(v)
+		f, typ := o.TMP()
+		if f.NoAck != (v&0x8000 != 0) || f.Option != (v&0x4000 != 0) || f.Reserved != uint8(v>>8&0x3F) || typ != hdap.TMPType(v) {
+			t.Fatalf("%#04x: %+v %v", v, f, typ)
+		}
+		back, err := hdap.TMPOpcode(f, typ)
+		hi, _ := f.AppendBinary(nil)
+		if err != nil || back != o || len(hi) != 1 || hi[0] != byte(back>>8) {
+			t.Fatalf("%#04x: TMPOpcode gave %#04x, %v", v, back, err)
+		}
+	}
+	var fre *dmrgo.FieldRangeError
+	if _, err := hdap.TMPOpcode(hdap.TMPFlags{Reserved: 0x40}, hdap.TMPGroupMessage); !errors.As(err, &fre) {
+		t.Errorf("Reserved over 6 bits: %v", err)
+	}
+	if f, typ := hdap.Opcode(0x80B1).TMP(); !f.NoAck || f.Option || typ != hdap.TMPGroupMessage {
+		t.Errorf("0x80B1: %+v %v", f, typ)
 	}
 }

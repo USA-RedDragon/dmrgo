@@ -14057,6 +14057,25 @@ func dmrgo_hdap_opcode_string(c_self C.dmrgo_hdap_opcode_t, c_out *C.char, c_out
 	return C.DMRGO_OK
 }
 
+//export dmrgo_hdap_opcode_tmp
+func dmrgo_hdap_opcode_tmp(c_self C.dmrgo_hdap_opcode_t, c_tmp_flags *C.dmrgo_hdap_tmp_flags_t, c_tmp_type *C.dmrgo_hdap_tmp_type_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0, r1 := g_hytera_hdap.Opcode(c_self).TMP()
+	_ = r0
+	_ = r1
+	if c_tmp_flags != nil {
+		out_hytera_hdap_TMPFlags(&(*c_tmp_flags), &r0, oc)
+	}
+	if c_tmp_type != nil {
+		*c_tmp_type = C.dmrgo_hdap_tmp_type_t(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_hdap_rrs_answer_append_binary
 func dmrgo_hdap_rrs_answer_append_binary(c_self *C.dmrgo_hdap_rrs_answer_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -14543,6 +14562,29 @@ func dmrgo_hdap_tmp_message_text_utf8(c_self *C.dmrgo_hdap_tmp_message_t, c_dst 
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_hdap_tmp_opcode
+func dmrgo_hdap_tmp_opcode(c_f *C.dmrgo_hdap_tmp_flags_t, c_t C.dmrgo_hdap_tmp_type_t, c_out *C.dmrgo_hdap_opcode_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_f == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_f g_hytera_hdap.TMPFlags
+	a_f = in_hytera_hdap_TMPFlags(&(*c_f))
+	r0, r1 := g_hytera_hdap.TMPOpcode(a_f, g_hytera_hdap.TMPType(c_t))
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_hdap_opcode_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r1 != nil {
+		return setErr(r1)
+	}
 	return C.DMRGO_OK
 }
 
