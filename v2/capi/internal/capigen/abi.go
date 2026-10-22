@@ -20,10 +20,12 @@ type abiLock struct {
 	tags  map[string]int
 	lines map[string]bool
 	used  map[string]bool
+	pfx   map[string]string
+	upfx  map[string]bool
 }
 
 func parseLock(b []byte) (*abiLock, error) {
-	l := &abiLock{abi: 1, codes: map[string]int{}, tags: map[string]int{}, lines: map[string]bool{}, used: map[string]bool{}}
+	l := &abiLock{abi: 1, codes: map[string]int{}, tags: map[string]int{}, lines: map[string]bool{}, used: map[string]bool{}, pfx: map[string]string{}, upfx: map[string]bool{}}
 	sc := bufio.NewScanner(bytes.NewReader(b))
 	sc.Buffer(nil, 1<<24)
 	for sc.Scan() {
@@ -51,6 +53,11 @@ func parseLock(b []byte) (*abiLock, error) {
 			}
 		case lockPre:
 			l.pre = true
+		case "prefix":
+			if len(f) != 3 {
+				return nil, fmt.Errorf("abi lock: %q", line)
+			}
+			l.pfx[f[1]] = f[2]
 		case "sym", lockType:
 			l.lines[line] = true
 		default:
@@ -71,6 +78,22 @@ func (l *abiLock) code(name string) int {
 	}
 	l.codes[name] = c
 	return c
+}
+
+func (l *abiLock) prefix(path string, rule func() string) (string, error) {
+	l.upfx[path] = true
+	if p, ok := l.pfx[path]; ok {
+		return p, nil
+	}
+	p := rule()
+	for o, q := range l.pfx {
+		if q == p {
+			delete(l.upfx, path)
+			return "", fmt.Errorf("packages %s and %s have the C prefix %s", o, path, p)
+		}
+	}
+	l.pfx[path] = p
+	return p, nil
 }
 
 func (l *abiLock) tag(union, name string) int {
@@ -149,6 +172,14 @@ func (l *abiLock) render(syms []string, allowBreak bool) ([]byte, []string, erro
 	slices.SortFunc(cs, func(a, b kv) int { return b.v - a.v })
 	for _, c := range cs {
 		fmt.Fprintf(&b, "code %s %d\n", c.k, c.v)
+	}
+	var ps []string
+	for p := range l.upfx {
+		ps = append(ps, "prefix "+p+" "+l.pfx[p])
+	}
+	slices.Sort(ps)
+	for _, p := range ps {
+		b.WriteString(p + "\n")
 	}
 	var ts []kv
 	for k, v := range l.tags {

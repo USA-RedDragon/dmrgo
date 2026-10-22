@@ -474,34 +474,120 @@ const (
 	rArrVal
 )
 
-func paramName(v *types.Var, i int) string {
-	n := v.Name()
-	if n == "" || n == "_" {
-		n = fmt.Sprintf("p%d", i)
+func typeWord(t types.Type, param bool) string {
+	switch u := t.(type) {
+	case *types.Pointer:
+		return typeWord(u.Elem(), param)
+	case *types.Named:
+		if isDuration(u) {
+			if param {
+				return "now"
+			}
+			return "duration"
+		}
+		if u.Obj().Name() == "Result" && u.Obj().Pkg() != nil {
+			return u.Obj().Pkg().Name()
+		}
+		return snake(u.Obj().Name())
+	case *types.Slice:
+		if isByte(u.Elem()) {
+			return "data"
+		}
+		return typeWord(u.Elem(), param) + "s"
+	case *types.Array:
+		if isByte(u.Elem()) {
+			return "data"
+		}
+		return typeWord(u.Elem(), param) + "s"
+	case *types.Basic:
+		switch {
+		case u.Info()&types.IsBoolean != 0:
+			return "ok"
+		case u.Info()&types.IsString != 0:
+			return "text"
+		case u.Kind() == types.Int || u.Kind() == types.Int64:
+			return "n"
+		default:
+			return "value"
+		}
+	case *types.Signature:
+		return "fn"
+	default:
+		return "value"
 	}
-	return cKeyword(snake(n))
 }
 
-func resultNames(sig *types.Signature) []string {
-	res := sig.Results()
-	var out []string
+func uniqueName(used map[string]bool, n string) string {
+	c := n
+	for i := 2; used[c]; i++ {
+		c = fmt.Sprintf("%s%d", n, i)
+	}
+	used[c] = true
+	return c
+}
+
+func (g *gen) ifaceParam(m *types.Func, i int) string {
+	if m == nil {
+		return ""
+	}
+	for _, ti := range g.order {
+		if ti.kind != kOpen {
+			continue
+		}
+		iface := underInterface(ti.named)
+		for k := 0; k < iface.NumMethods(); k++ {
+			im := iface.Method(k)
+			if im.Name() != m.Name() || !types.Identical(im.Signature(), types.NewSignatureType(nil, nil, nil, m.Signature().Params(), m.Signature().Results(), m.Signature().Variadic())) {
+				continue
+			}
+			if n := im.Signature().Params().At(i).Name(); n != "" && n != "_" {
+				return n
+			}
+		}
+	}
+	return ""
+}
+
+func (g *gen) sigNames(sig *types.Signature, m *types.Func, reserved ...string) ([]string, []string) {
 	used := map[string]bool{}
+	for _, r := range reserved {
+		used[r] = true
+	}
+	params, res := sig.Params(), sig.Results()
+	var ps, rs []string
+	for i := 0; i < params.Len(); i++ {
+		v := params.At(i)
+		n := v.Name()
+		if n == "" || n == "_" {
+			n = g.ifaceParam(m, i)
+		}
+		if n == "" || n == "_" {
+			n = typeWord(v.Type(), true)
+		} else {
+			n = snake(n)
+		}
+		ps = append(ps, uniqueName(used, cKeyword(n)))
+	}
+	_, appendRes := appendForm(sig)
+	others := 0
 	for i := 0; i < res.Len(); i++ {
-		used[res.At(i).Name()] = true
+		if i != appendRes && !isError(res.At(i).Type()) {
+			others++
+		}
 	}
 	for i := 0; i < res.Len(); i++ {
 		n := res.At(i).Name()
 		switch {
 		case n != "" && n != "_":
-			n = cKeyword(snake(n))
-		case res.Len() == 1 || (res.Len() == 2 && isError(res.At(1).Type())):
+			n = snake(n)
+		case others == 1 && appendRes < 0:
 			n = "out"
 		default:
-			n = fmt.Sprintf("out%d", i)
+			n = typeWord(res.At(i).Type(), false)
 		}
-		out = append(out, n)
+		rs = append(rs, uniqueName(used, cKeyword(n)))
 	}
-	return out
+	return ps, rs
 }
 
 type lead struct {
@@ -606,20 +692,27 @@ func (g *gen) wrapper(cname, doc string, recv *tinfo, rk recvKind, call string, 
 	if rk != rHandle {
 		owner = nil
 	}
+	reserved := []string{"arena", "items"}
+	if recv != nil {
+		reserved = append(reserved, "self")
+	}
+	if ld != nil && len(ld.c) > 0 {
+		reserved = append(reserved, "user")
+	}
+	pnames, names := g.sigNames(sig, g.curMethod, reserved...)
 	for i := 0; i < params.Len(); i++ {
 		p := params.At(i)
 		var ar *int
 		if i == appendIdx {
 			ar = &appendRes
 		}
-		if err := g.mapParam(&sm, paramName(p, i), p.Type(), p.Name() == dstName, owner, ar); err != nil {
+		if err := g.mapParam(&sm, pnames[i], p.Type(), p.Name() == dstName, owner, ar); err != nil {
 			return "", "", fmt.Errorf("param %s: %w", p.Name(), err)
 		}
 	}
 	if sig.Variadic() {
 		sm.args[len(sm.args)-1] += "..."
 	}
-	names := resultNames(sig)
 	var rvars []string
 	errVar := ""
 	for i := 0; i < res.Len(); i++ {

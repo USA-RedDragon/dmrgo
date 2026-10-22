@@ -39,3 +39,28 @@ func TestLockScalarTypedefPrototype(t *testing.T) {
 		t.Fatalf("a narrower typedef: %v, %v", broken, err)
 	}
 }
+
+func TestLockPrefix(t *testing.T) {
+	t.Parallel()
+
+	lock, err := parseLock([]byte("abi 1\nprefix m/a/pdu dmrgo_pdu_\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p, err := lock.prefix("m/a/pdu", func() string { return "dmrgo_a_pdu_" }); err != nil || p != "dmrgo_pdu_" {
+		t.Errorf("locked prefix = %q, %v", p, err)
+	}
+	if p, err := lock.prefix("m/b/pdu", func() string { return "dmrgo_b_pdu_" }); err != nil || p != "dmrgo_b_pdu_" {
+		t.Errorf("new prefix = %q, %v", p, err)
+	}
+	if _, err := lock.prefix("m/c/pdu", func() string { return "dmrgo_pdu_" }); err == nil {
+		t.Error("a new package took a locked prefix")
+	}
+	out, _, err := lock.render(nil, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "abi 1\nprefix m/a/pdu dmrgo_pdu_\nprefix m/b/pdu dmrgo_b_pdu_\n"; string(out) != want {
+		t.Errorf("lock %q, want %q", out, want)
+	}
+}

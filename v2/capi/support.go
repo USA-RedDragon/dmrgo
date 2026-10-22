@@ -61,23 +61,8 @@ func lookup[T any](p unsafe.Pointer) T {
 	return v
 }
 
-func hvalue[T any](h uintptr) T {
-	if h == 0 {
-		panic(handlePanic{})
-	}
-	v, ok := cgo.Handle(h).Value().(T)
-	if !ok {
-		panic(handlePanic{})
-	}
-	return v
-}
-
 func newHandle(v any) unsafe.Pointer {
 	return C.dmrgo__ptr(C.uintptr_t(cgo.NewHandle(v)))
-}
-
-func newUser(v any) C.uintptr_t {
-	return C.uintptr_t(cgo.NewHandle(v))
 }
 
 func deleteHandle(p unsafe.Pointer) {

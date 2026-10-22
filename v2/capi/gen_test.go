@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"os"
+	"regexp"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/capi/internal/capigen"
@@ -31,6 +32,15 @@ func TestGenerated(t *testing.T) {
 		}
 		if !bytes.Equal(got, want) {
 			t.Errorf("%s is out of date; run go generate ./... in the root module", name)
+		}
+	}
+	for _, re := range []*regexp.Regexp{
+		regexp.MustCompile(`\b[a-z][a-z0-9_]*__[a-z0-9_]*\b`),
+		regexp.MustCompile(`[(,] *(?:const )?[a-z0-9_]+ \**(?:p|out)[0-9]+[,)\[]`),
+		regexp.MustCompile(`\b(?:type|user|self|range|func)_\b`),
+	} {
+		if m := re.FindAll(out.H, 5); m != nil {
+			t.Errorf("dmrgo_gen.h has names that %s matches: %q", re, m)
 		}
 	}
 	mapped := 0

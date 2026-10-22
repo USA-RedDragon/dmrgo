@@ -44,14 +44,14 @@ func (g *gen) fieldDecls(n string, t types.Type) ([]string, error) {
 	switch u := t.(type) {
 	case *types.Basic:
 		if u.Kind() == types.String {
-			return []string{"char *" + n, "size_t " + n + "_len"}, nil
+			return []string{"char *" + n, "size_t " + comp(n, "_len")}, nil
 		}
 	case *types.Slice:
 		e, err := g.elemDecl(u.Elem(), "*"+n)
 		if err != nil {
 			return nil, err
 		}
-		return []string{e, "size_t " + n + "_len"}, nil
+		return []string{e, "size_t " + comp(n, "_len")}, nil
 	case *types.Pointer:
 		if c, ok := g.handleC(u.Elem()); ok {
 			return []string{c + " *" + n}, nil
@@ -60,7 +60,7 @@ func (g *gen) fieldDecls(n string, t types.Type) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		return []string{"bool has_" + n, d}, nil
+		return []string{"bool has_" + comp(n, ""), d}, nil
 	case *types.Named:
 		if c, ok := g.handleC(u); ok && g.kindOf(u) == kOpen {
 			return []string{c + " *" + n}, nil
@@ -364,21 +364,22 @@ func (g *gen) outVal(w *strings.Builder, t types.Type, dst, src string, depth in
 	}
 }
 
-func (g *gen) inField(w *strings.Builder, t types.Type, d, s, n, st string) error {
+func (g *gen) inField(w *strings.Builder, t types.Type, d, s, cn, st string) error {
+	n, nl, nh := goField(cn), goField(comp(cn, "_len")), goField("has_"+comp(cn, ""))
 	switch u := t.(type) {
 	case *types.Basic:
 		if u.Kind() == types.String {
-			lines(w, d+" = C.GoStringN("+s+"."+n+", C.int("+s+"."+n+"_len))")
+			lines(w, d+" = C.GoStringN("+s+"."+n+", C.int("+s+"."+nl+"))")
 			return nil
 		}
 	case *types.Slice:
-		return g.inSlice(w, u, d, s+"."+n, s+"."+n+"_len")
+		return g.inSlice(w, u, d, s+"."+n, s+"."+nl)
 	case *types.Pointer:
 		if ti := g.info(u.Elem()); ti != nil && (ti.kind == kHandle || ti.kind == kOpen) {
 			lines(w, d+" = nil", "if "+s+"."+n+" != nil {", d+" = "+g.getter(ti)+"("+s+"."+n+").v", "}")
 			return nil
 		}
-		lines(w, "if "+s+".has_"+n+" {")
+		lines(w, "if "+s+"."+nh+" {")
 		if err := g.inVal(w, u.Elem(), st+".p_"+strings.TrimPrefix(d, "d."), s+"."+n, g.subStorage(st, "s_", strings.TrimPrefix(d, "d."), u.Elem()), 0); err != nil {
 			return err
 		}
@@ -461,15 +462,16 @@ func (g *gen) inSlice(w *strings.Builder, u *types.Slice, d, ptr, n string) erro
 	return nil
 }
 
-func (g *gen) outField(w *strings.Builder, t types.Type, d, n, s string) error {
+func (g *gen) outField(w *strings.Builder, t types.Type, d, cn, s string) error {
+	n, nl, nh := goField(cn), goField(comp(cn, "_len")), goField("has_"+comp(cn, ""))
 	switch u := t.(type) {
 	case *types.Basic:
 		if u.Kind() == types.String {
-			lines(w, d+"."+n+" = arenaStr(oc, "+s+")", d+"."+n+"_len = C.size_t(len("+s+"))")
+			lines(w, d+"."+n+" = arenaStr(oc, "+s+")", d+"."+nl+" = C.size_t(len("+s+"))")
 			return nil
 		}
 	case *types.Slice:
-		return g.outArena(w, u, d+"."+n, d+"."+n+"_len", s)
+		return g.outArena(w, u, d+"."+n, d+"."+nl, s)
 	case *types.Pointer:
 		if _, ok := g.handleC(u.Elem()); ok {
 			lines(w, "if "+s+" != nil {", "panic(argPanic{})", "}", d+"."+n+" = nil")
@@ -479,11 +481,11 @@ func (g *gen) outField(w *strings.Builder, t types.Type, d, n, s string) error {
 		if err != nil {
 			return err
 		}
-		lines(w, "if "+s+" != nil {", d+".has_"+n+" = true")
+		lines(w, "if "+s+" != nil {", d+"."+nh+" = true")
 		if err := g.outVal(w, u.Elem(), d+"."+n, "(*"+s+")", 0); err != nil {
 			return err
 		}
-		lines(w, "} else {", d+".has_"+n+" = false", d+"."+n+" = "+g.zeroLit(c, u.Elem()), "}")
+		lines(w, "} else {", d+"."+nh+" = false", d+"."+n+" = "+g.zeroLit(c, u.Elem()), "}")
 		return nil
 	case *types.Named:
 		if ti := g.info(u); ti != nil && ti.kind == kOpen {
