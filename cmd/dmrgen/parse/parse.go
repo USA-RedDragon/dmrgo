@@ -194,7 +194,7 @@ type ConstDirective struct {
 type FrameDirective struct {
 	Sizes     []int  // allowed frame lengths in octets, ascending
 	SizeField string // the dmr:"-" field that holds the length, when there is more than one
-	Open      bool   // a + after the last size: a longer frame decodes too, and its octets after the last size are ignored
+	Open      bool   // a + after the last size: a longer frame decodes too, its octets after the last size are ignored, and Size 0 means the last size
 }
 
 // ViewDirective is a dmr:view directive.

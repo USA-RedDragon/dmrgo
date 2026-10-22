@@ -51,9 +51,12 @@ type StatusV2 struct {
 
 // StatusV1 is the payload of a CommandGetStatus reply of protocol 1
 // (MMDVM_HS firmware): the enabled modes, the modem state, its flags and the
-// free space of each TX buffer.
+// free space of each TX buffer. Older firmware sends fewer octets, as
+// MMDVMHost reads them: MMDVM before protocol 2 sent 7 to 11, MMDVM_HS 8 to
+// 11, MMDVM-SDR sends 8 and OpenGD77 10. The spaces that a short reply
+// lacks are 0.
 //
-//dmr:frame 11
+//dmr:frame 7 8 9 10 11+
 //dmr:payload
 //dmr:const 1-1=0
 //dmr:const 16-16=0
@@ -105,8 +108,11 @@ type StatusV1 struct {
 	NXDNSpace uint8 `dmr:"bits:64-71"`
 	// POCSAGSpace is the free space of the POCSAG TX buffer.
 	POCSAGSpace uint8 `dmr:"bits:72-79"`
-	// M17Space is the free space of the M17 TX buffer.
+	// M17Space is the free space of the M17 TX buffer. MMDVM a816818 to
+	// a62fd81 (2020) sent the FM space here.
 	M17Space uint8 `dmr:"bits:80-87"`
+	// Size is the length of the payload: 7 to 11, or 0 for 11.
+	Size uint8 `dmr:"-"`
 }
 
 // ConfigV2 is the payload of a CommandSetConfig frame of protocol 2, as

@@ -132,6 +132,7 @@ func TestFrameOpenAcceptsLonger(t *testing.T) {
 		"case 1, 3:",
 		"if len(data) < 3 {\n\t\t\treturn Grow{}, ErrLength\n\t\t}",
 		"result.Size = uint8(min(len(data), 3))",
+		"_size := 3\n\tswitch s.Size {\n\tcase 0, 3:\n\tcase 1:\n\t\t_size = 1",
 	)
 	if strings.Contains(out, "return Open{}, ErrLength") {
 		t.Errorf("open frame still returns ErrLength:\n%s", out)

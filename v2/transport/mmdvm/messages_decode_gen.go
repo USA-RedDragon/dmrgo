@@ -104,17 +104,15 @@ func (s *StatusV2) String() string {
 	return "StatusV2{ State: " + text.Int(int64(s.State)) + ", CD: " + text.Bool(s.CD) + ", DACOverflow: " + text.Bool(s.DACOverflow) + ", Lockout: " + text.Bool(s.Lockout) + ", TXOverflow: " + text.Bool(s.TXOverflow) + ", RXOverflow: " + text.Bool(s.RXOverflow) + ", ADCOverflow: " + text.Bool(s.ADCOverflow) + ", TX: " + text.Bool(s.TX) + ", DStarSpace: " + text.Int(int64(s.DStarSpace)) + ", DMRSpace1: " + text.Int(int64(s.DMRSpace1)) + ", DMRSpace2: " + text.Int(int64(s.DMRSpace2)) + ", YSFSpace: " + text.Int(int64(s.YSFSpace)) + ", P25Space: " + text.Int(int64(s.P25Space)) + ", NXDNSpace: " + text.Int(int64(s.NXDNSpace)) + ", FMSpace: " + text.Int(int64(s.FMSpace)) + ", POCSAGSpace: " + text.Int(int64(s.POCSAGSpace)) + " }"
 }
 
-// DecodeStatusV1 decodes a StatusV1 from data, a payload of 11 octets. It
-// returns ErrShort when data is shorter than 11 octets and ErrLength when it
-// is longer. It does not keep data.
+// DecodeStatusV1 decodes a StatusV1 from data, a payload of 7, 8, 9, 10 or
+// 11 octets or more. It returns ErrShort when data is shorter than 7 octets.
+// It ignores the octets after the first 11. It does not keep data.
 func DecodeStatusV1(data []byte) (StatusV1, error) {
-	if len(data) < 11 {
+	if len(data) < 7 {
 		return StatusV1{}, ErrShort
 	}
-	if len(data) != 11 {
-		return StatusV1{}, ErrLength
-	}
 	var result StatusV1
+	result.Size = uint8(min(len(data), 11))
 	result.M17 = data[0]&0x80 != 0
 	result.POCSAG = data[0]&0x20 != 0
 	result.NXDN = data[0]&0x10 != 0
@@ -134,23 +132,46 @@ func DecodeStatusV1(data []byte) (StatusV1, error) {
 	result.DMRSpace1 = uint8(uint64(data[4]))
 	result.DMRSpace2 = uint8(uint64(data[5]))
 	result.YSFSpace = uint8(uint64(data[6]))
-	result.P25Space = uint8(uint64(data[7]))
-	result.NXDNSpace = uint8(uint64(data[8]))
-	result.POCSAGSpace = uint8(uint64(data[9]))
-	result.M17Space = uint8(uint64(data[10]))
+	if len(data) >= 8 {
+		result.P25Space = uint8(uint64(data[7]))
+	}
+	if len(data) >= 9 {
+		result.NXDNSpace = uint8(uint64(data[8]))
+	}
+	if len(data) >= 10 {
+		result.POCSAGSpace = uint8(uint64(data[9]))
+	}
+	if len(data) >= 11 {
+		result.M17Space = uint8(uint64(data[10]))
+	}
 	return result, nil
 }
 
-// AppendBinary appends the 11 octets of s to dst. It returns dst unchanged
-// and a *dmrgo.FieldRangeError when a field does not fit. It allocates only
-// to grow dst.
+// AppendBinary appends the 7, 8, 9, 10 or 11 octets of s to dst: Size
+// selects the length, and 0 means 11. It returns dst unchanged and a
+// *dmrgo.FieldRangeError when a field does not fit, or an error when Size is
+// not one of the lengths. It allocates only to grow dst.
 func (s *StatusV1) AppendBinary(dst []byte) ([]byte, error) {
 	if s == nil {
 		return dst, dmrgo.ErrNilReceiver
 	}
 
 	_n := len(dst)
-	for range 11 {
+	_size := 11
+	switch s.Size {
+	case 0, 11:
+	case 7:
+		_size = 7
+	case 8:
+		_size = 8
+	case 9:
+		_size = 9
+	case 10:
+		_size = 10
+	default:
+		return dst, errStatusV1Size
+	}
+	for range _size {
 		dst = append(dst, 0)
 	}
 	data := dst[_n:]
@@ -201,10 +222,18 @@ func (s *StatusV1) AppendBinary(dst []byte) ([]byte, error) {
 	data[4] = byte(uint64(s.DMRSpace1))
 	data[5] = byte(uint64(s.DMRSpace2))
 	data[6] = byte(uint64(s.YSFSpace))
-	data[7] = byte(uint64(s.P25Space))
-	data[8] = byte(uint64(s.NXDNSpace))
-	data[9] = byte(uint64(s.POCSAGSpace))
-	data[10] = byte(uint64(s.M17Space))
+	if _size >= 8 {
+		data[7] = byte(uint64(s.P25Space))
+	}
+	if _size >= 9 {
+		data[8] = byte(uint64(s.NXDNSpace))
+	}
+	if _size >= 10 {
+		data[9] = byte(uint64(s.POCSAGSpace))
+	}
+	if _size >= 11 {
+		data[10] = byte(uint64(s.M17Space))
+	}
 	data[0] = data[0]&^0x40 | byte(uint64(0)<<6)&0x40
 	data[2] = data[2]&^0x80 | byte(uint64(0)<<7)&0x80
 	return dst, nil
@@ -871,6 +900,7 @@ func (s *DMRShortLC) String() string {
 }
 
 var (
+	errStatusV1Size              = errors.New("StatusV1.Size: not one of 7, 8, 9, 10 or 11 octets")
 	errConfigV2DMRColorCodeRange = &dmrgo.FieldRangeError{
 		Bits:  8,
 		Field: "DMRColorCode",
