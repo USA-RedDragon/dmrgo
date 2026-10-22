@@ -205,8 +205,9 @@ type Output struct {
 	Packet []byte
 	// Command is the command of OutputData and OutputMessage.
 	Command dmrd.Command
-	// ID is the repeater ID of OutputLogin, OutputUp, OutputDown and
-	// OutputPong at a Master.
+	// ID is the repeater ID of the session: a Master sets it in every
+	// output but OutputSend, a Peer only in OutputUp, and a Bridge in
+	// none.
 	ID uint32
 	// Reason tells why for OutputDown.
 	Reason Reason

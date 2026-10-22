@@ -197,10 +197,11 @@ type Output struct {
 	// Packet is the packet of OutputSend and OutputData. It holds at most
 	// MaxPacket octets.
 	Packet []byte
-	// Addr is where to send OutputSend, and the address of the peer of
-	// OutputUp and OutputData.
+	// Addr is where to send OutputSend, and the address of the peer or
+	// master of every other output but OutputPeers.
 	Addr Addr
-	// ID is the peer or master ID of OutputUp, OutputDown and OutputData.
+	// ID is the peer or master ID of OutputUp, OutputDown and OutputData,
+	// and of OutputDropped when the packet has one.
 	ID uint32
 	// Reason tells why for OutputDown and OutputDropped.
 	Reason Reason
