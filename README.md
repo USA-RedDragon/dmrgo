@@ -98,16 +98,16 @@ The programs in [v2/examples](v2/examples) run offline on the captures in `v2/la
   - `location`: positions in every format that radios report: the NMEA RMC sentence of AnyTone radios and the LRRP reports of MOTOTRBO and Hytera radios.
   - `nmea`: `ParseRMC` decodes the NMEA 0183 RMC sentence that radios such as AnyTone send in a UDP datagram, and checks its checksum.
   - `mototrbo/ars`, `mototrbo/lrrp`, `mototrbo/tms`: the MOTOTRBO registration (UDP port 4005), location (port 4001) and text message (port 4007) services.
-  - `hytera`: the Hytera DMR Application Protocol (HDAP): the frame with its checksum, and the radio registration, location and text message services.
+  - `hytera/hdap`: the Hytera DMR Application Protocol (HDAP): the frame with its checksum, and the radio registration, location and text message services.
 - Voice calls (`voice`), without I/O or goroutines:
   - `Receiver` turns the bursts of one logical channel into call events: call start with where the call came from, voice bursts with their superframe position, lost count and frame quality, embedded GPS and talker alias, and call end with a reason. It handles late entry, duplicate and lost bursts, transport hints (`layer2.Hint`) and the call hang time.
   - `Transmitter` sends a call one burst per 60 ms slot: from AMBE+2 frames with the headers, embedded talker alias and GPS, padding, terminators and the transmit timeout, or as a relay of the events of a `Receiver`, with the local color code and SYNC. A call follows the polite or impolite channel access and the transmit admit criteria, waits for the BS to authorize it in hang time, and ends on a Tier 2 RC cease command.
   - `Interrupter` sends a Tier 2 RC cease command in standalone RC bursts and waits T_RCtimer for the Terminator with LC of the call, with retries.
-  - `Timing` runs the TDMA direct mode wide area timing with CT_CSBKs: it follows, elects and appoints the timing leader, propagates its beacon, answers requests, corrects radios with old timing, and beacons as the leader.
 - CSBK services (`csbk`), without I/O or goroutines:
   - `Requester` sends a CSBK request, after Pre_CSBKs when asked, with polite or impolite channel access, the random holdoff, T_AckWait and N_CSBKRetry, and reports the answer, a NACK_Rsp, or why none came. It knows the OACSU presence check (UU_V_Req) and the Motorola radio check and call alert.
   - `Responder` answers the CSBKs that address a radio: UU_Ans_Rsp, the Motorola radio check answer and call alert acknowledgement, and the Feature Not Supported NACK_Rsp.
   - `Preambles` joins Pre_CSBKs with the CSBK or data that they announce, and `Wakeup` sends BS_Dwn_Act until the BS outbound starts.
+  - `Timing` runs the TDMA direct mode wide area timing with CT_CSBKs: it follows, elects and appoints the timing leader, propagates its beacon, answers requests, corrects radios with old timing, and beacons as the leader.
 - Base station (`bs`), without I/O or goroutines:
   - `Repeater` is a two-slot repeater or hotspot, or the slot arbiter of a network server. It gives each slot to one source and queues or refuses the others, holds the call hang time, regenerates every repeated burst with new FEC and the local color code, and in RF mode sends one burst per 30 ms with the CACH, the AT bit, the Activity Update, Idle bursts, Terminators in the call hang time and TD_LC in the data hang time. It wakes up on BS_Dwn_Act or any burst and hibernates after T_MSInactiv. With channel authorization it repeats the ChanAuth PDU of one MS that starts in hang time, single site or multi-site. Its outbound stream for a voice call matches a Motorola XPR 8400 bit for bit.
   - `CACH` makes the CACH and Short LC fragments alone.
@@ -167,7 +167,7 @@ The counts are of exported functions and methods, for linux/amd64 with cgo. `DMR
 <!-- allocgate:end -->
 
 - Each exported function that a rule covers says in its doc when it allocates.
-- Do not copy `layer2.Burst`, `packet.Assembler`, `packet.Builder`, `voice.Receiver`, `data.Receiver`, `data.Sender`, `trunk.Follower`, `trunk.MS` or `trunk.TSCC` after first use. They keep pointers into their own storage, and `go vet` reports a copy.
+- Do not copy a machine or a `layer2.Burst` after first use. They keep pointers into their own storage, and `go vet` reports a copy.
 - A `layer2.Burst` keeps its decoded `Data` until the next decode into it. `packet.Builder` and `packet.Assembler` keep their results the same way.
 - Three checks keep this true, with no list of functions to maintain:
   - [v2/internal/allocgate](v2/internal/allocgate) follows the machine code of each exported function to the heap allocator.
@@ -216,7 +216,7 @@ codec, err := dvsi.New(conn, nil)
 
 ## TinyGo
 
-The library builds with TinyGo 0.41 for microcontrollers (for example RP2040, RP2350, ESP32-C3) and for WebAssembly.
+The library builds with TinyGo 0.41 for microcontrollers (for example RP2040, RP2350, ESP32-C3) and for WebAssembly. TinyGo 0.41 needs Go 1.24 to 1.26 installed.
 
 ```sh
 cd v2
@@ -229,9 +229,20 @@ The example prints its counts on the serial console once a second.
 - Decode and encode make no heap garbage at the default stack size of these targets (8 KB). TinyGo puts each local variable larger than 256 bytes on the heap, and the library has no such local on those paths.
 - `vocoder/codec2` always uses its stub, so `codec2.New` returns `codec2.ErrUnavailable`.
 
+## Versioning
+
+- The `v2` module follows semantic versioning. A new package, function, method, struct field, constant or enum value comes in a minor release. A change that breaks code that compiles comes only in a new major version.
+- A minor release can add a value to an enum type, so give a switch over an enum a default case.
+- The minimum Go version rises only in a minor release, and the release notes say so.
+- libdmrgo, the C API, has its own ABI number (`DMRGO_ABI_VERSION`) and soname (`libdmrgo.so.N`). It is built from the `v2` tag, and `v2/capi` has no tags of its own. A change that breaks C code that compiles against `dmrgo.h`, or a program that links an older libdmrgo, gives a new ABI number and soname. v2.0.0 has ABI 1.
+
 ## Tooling
 
-- `go generate ./...` from the repository root runs `cmd/tablegen`, which writes the FEC and CRC lookup tables (`tables_gen.go`), and `cmd/dmrgen`, which writes the decoder and encoder of each struct with `dmr` field tags (`*_decode_gen.go`). Do not edit generated files.
+- `go generate ./...` from the repository root runs four generators. Do not edit the files they write.
+  - `cmd/tablegen` writes the FEC and CRC lookup tables (`tables_gen.go`).
+  - `cmd/dmrgen` writes the decoder and encoder of each struct with `dmr` field tags (`*_decode_gen.go`).
+  - `v2/internal/allocgate/apigen` writes the program that calls every export for the allocation gate (`allapi_gen.go`).
+  - `v2/capi/internal/capigen` writes the C API of libdmrgo: the `*_gen*` files, `libdmrgo.map` and `abi.txt` in `v2/capi`.
 - `env CGO_ENABLED=0 go run -C cmd/speccheck . -update-readme` runs the tests that `spec_matrix.yaml` maps to each ETSI clause and writes the table below. `-check-readme` fails when the table is out of date.
 
 ## ETSI TS 102 361 Specification Coverage
