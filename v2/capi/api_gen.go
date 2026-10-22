@@ -37582,6 +37582,56 @@ func dmrgo_ipsc_append_peer_list_reply(c_dst *C.uint8_t, c_dst_cap C.size_t, c_d
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ipsc_burst_type_data_type
+func dmrgo_ipsc_burst_type_data_type(c_self C.dmrgo_ipsc_burst_type_t, c_out0 *C.dmrgo_enums_data_type_t, c_out1 *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0, r1 := g_transport_ipsc.BurstType(c_self).DataType()
+	_ = r0
+	_ = r1
+	if c_out0 != nil {
+		*c_out0 = C.dmrgo_enums_data_type_t(r0)
+	}
+	if c_out1 != nil {
+		*c_out1 = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_burst_type_string
+func dmrgo_ipsc_burst_type_string(c_self C.dmrgo_ipsc_burst_type_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_transport_ipsc.BurstType(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipsc_burst_type_type
+func dmrgo_ipsc_burst_type_type(c_self C.dmrgo_ipsc_burst_type_t, c_out *C.dmrgo_ipsc_burst_type_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_transport_ipsc.BurstType(c_self).Type()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_ipsc_burst_type_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ipsc_call_info_end
 func dmrgo_ipsc_call_info_end(c_self C.dmrgo_ipsc_call_info_t, c_out *C.bool) (rc C.int) {
 	defer recoverTo(&rc)

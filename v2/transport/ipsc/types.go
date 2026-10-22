@@ -225,7 +225,7 @@ func UserOpcode(group, data bool) Opcode {
 // burst, BurstVoice for a voice burst, BurstRaw for the raw information
 // bits of a burst that the repeater could not decode, and BurstSyncLost for
 // a placeholder of a burst that it lost. Bit 7 is slot 2 on voice and
-// BurstSyncLost.
+// BurstSyncLost, so compare the value that Type returns.
 type BurstType uint8
 
 // The BurstType values other than the data types 0x00 to 0x08.
@@ -234,6 +234,42 @@ const (
 	BurstSyncLost BurstType = 0x13
 	BurstRaw      BurstType = 0x1F
 )
+
+// Type returns b without bit 7, the slot 2 bit of voice and BurstSyncLost,
+// for a comparison with BurstVoice, BurstSyncLost, BurstRaw and the data
+// types.
+func (b BurstType) Type() BurstType { return b & 0x7F }
+
+// DataType returns the DMR data type of a data burst, 0x00 to 0x08. ok is
+// false for another value.
+func (b BurstType) DataType() (enums.DataType, bool) {
+	if b > BurstType(enums.DataTypeRate34) {
+		return 0, false
+	}
+	return enums.DataType(b), true
+}
+
+// String returns the name of b: the data type, Voice, SyncLost or Raw,
+// with " slot 2" when bit 7 is set. It allocates only for a value without
+// a name.
+func (b BurstType) String() string {
+	if dt, ok := b.DataType(); ok {
+		return dt.String()
+	}
+	switch b {
+	case BurstVoice:
+		return "Voice"
+	case BurstVoice | 0x80:
+		return "Voice slot 2"
+	case BurstSyncLost:
+		return "SyncLost"
+	case BurstSyncLost | 0x80:
+		return "SyncLost slot 2"
+	case BurstRaw:
+		return "Raw"
+	}
+	return "BurstType(" + text.Int(int64(b)) + ")"
+}
 
 // VoiceLayout is the form of a voice packet, which tells some superframe
 // positions.

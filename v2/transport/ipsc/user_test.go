@@ -11,6 +11,36 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
 )
 
+func TestBurstType(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		b    ipsc.BurstType
+		typ  ipsc.BurstType
+		dt   enums.DataType
+		ok   bool
+		name string
+	}{
+		{0x00, 0x00, enums.DataTypePIHeader, true, enums.DataTypePIHeader.String()},
+		{0x08, 0x08, enums.DataTypeRate34, true, enums.DataTypeRate34.String()},
+		{ipsc.BurstVoice, ipsc.BurstVoice, 0, false, "Voice"},
+		{ipsc.BurstVoice | 0x80, ipsc.BurstVoice, 0, false, "Voice slot 2"},
+		{ipsc.BurstSyncLost | 0x80, ipsc.BurstSyncLost, 0, false, "SyncLost slot 2"},
+		{ipsc.BurstRaw, ipsc.BurstRaw, 0, false, "Raw"},
+		{0x09, 0x09, 0, false, "BurstType(9)"},
+	}
+	for _, tt := range tests {
+		dt, ok := tt.b.DataType()
+		if tt.b.Type() != tt.typ || dt != tt.dt || ok != tt.ok || tt.b.String() != tt.name {
+			t.Errorf("%#x: Type %#x, DataType %v %v, String %q", byte(tt.b), byte(tt.b.Type()), dt, ok, tt.b.String())
+		}
+	}
+	u := ipsc.User{Burst: ipsc.BurstVoice | 0x80}
+	if !u.IsVoice() {
+		t.Error("slot 2 voice is not voice")
+	}
+}
+
 func TestDecodeErrors(t *testing.T) {
 	t.Parallel()
 

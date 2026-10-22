@@ -539,6 +539,9 @@ DMRGO_1 {
 		dmrgo_ipsc_auth_key_verify_need;
 		dmrgo_ipsc_auth_new_key;
 		dmrgo_ipsc_auth_parse_key;
+		dmrgo_ipsc_burst_type_data_type;
+		dmrgo_ipsc_burst_type_string;
+		dmrgo_ipsc_burst_type_type;
 		dmrgo_ipsc_call_info_end;
 		dmrgo_ipsc_call_info_privacy;
 		dmrgo_ipsc_call_info_set_end;
