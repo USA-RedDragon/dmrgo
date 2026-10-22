@@ -64,3 +64,38 @@ func TestLockPrefix(t *testing.T) {
 		t.Errorf("lock %q, want %q", out, want)
 	}
 }
+
+func TestLockSizedGrowth(t *testing.T) {
+	t.Parallel()
+
+	old := "abi 1\ntype struct x_t { size_t size; int a; };\ntype struct y_t { int a; };\n"
+	for _, c := range []struct {
+		line string
+		brk  bool
+	}{
+		{"type struct x_t { size_t size; int a; int b; };", false},
+		{"type struct x_t { size_t size; int b; int a; };", true},
+		{"type struct x_t { size_t size; };", true},
+	} {
+		lock, err := parseLock([]byte(old))
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, broken, err := lock.render([]string{c.line, "type struct y_t { int a; };"}, false)
+		if (err != nil) != c.brk {
+			t.Errorf("%s: broken %v, err %v", c.line, broken, err)
+		}
+	}
+	lock, _ := parseLock([]byte(old))
+	if _, _, err := lock.render([]string{"type struct x_t { size_t size; int a; };", "type struct y_t { int a; int b; };"}, false); err == nil {
+		t.Error("growth of a struct without a size field passed")
+	}
+	if got := lock.sizedLine("x_t"); got != "type struct x_t { size_t size; int a; };" {
+		t.Errorf("sizedLine = %q", got)
+	}
+	ms := []member{{name: "b", decls: []string{"int b"}}, {name: "c", decls: []string{"int c"}}, {name: "a", decls: []string{"char *a", "size_t a_len"}}}
+	lockOrder(ms, "type struct x_t { size_t size; char *a; size_t a_len; int b; };")
+	if ms[0].name != "a" || ms[1].name != "b" || ms[2].name != "c" {
+		t.Errorf("lockOrder = %v", ms)
+	}
+}

@@ -30,7 +30,7 @@ $(BUILD)/%_test: test/%_test.c dmrgo.h dmrgo_gen.h $(BUILD)/libdmrgo.so
 test: $(BUILD)/api_test $(BUILD)/stack/$(SONAME) $(BUILD)/check2/$(SONAME)
 	echo '#include "dmrgo.h"' | $(CXX) -std=c++11 -Wall -Wextra -Werror -pedantic -fsyntax-only -I. -x c++ -
 	nm -D --defined-only $(BUILD)/$(SONAME) | awk '$$2 == "T" { print $$3 }' | sort > $(BUILD)/symbols
-	sed -n 's/^\t\t\(dmrgo_[a-z0-9_]*\);$$/\1/p' libdmrgo.map | sort | diff -u - $(BUILD)/symbols
+	sed -n 's/^\t\t\(dmrgo_[a-z0-9_]*\);$$/\1@@DMRGO_$(ABI)/p' libdmrgo.map | sort | diff -u - $(BUILD)/symbols
 	$(call RUN,$(BUILD))
 	LD_LIBRARY_PATH=$(BUILD)/stack sh -c '$(call RUN,$(BUILD))'
 	LD_LIBRARY_PATH=$(BUILD)/check2 sh -c '$(call RUN,$(BUILD))'

@@ -10,42 +10,62 @@ static inline int dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t__call(
 }
 
 static inline int dmrgo_trunk_authenticator_vtable_t__response(const dmrgo_trunk_authenticator_vtable_t *t, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok) {
+	if (!t->response)
+		return DMRGO_ERR_NO_METHOD;
 	return t->response(t->user, addr, challenge, response, ok);
 }
 
 static inline int dmrgo_vocoder_codec_vtable_t__close(const dmrgo_vocoder_codec_vtable_t *t) {
+	if (!t->close)
+		return DMRGO_ERR_NO_METHOD;
 	return t->close(t->user);
 }
 
 static inline int dmrgo_vocoder_codec_vtable_t__decode(const dmrgo_vocoder_codec_vtable_t *t, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]) {
+	if (!t->decode)
+		return DMRGO_ERR_NO_METHOD;
 	return t->decode(t->user, dst, dst_cap, dst_len, dst_need, slot);
 }
 
 static inline int dmrgo_vocoder_codec_vtable_t__encode(const dmrgo_vocoder_codec_vtable_t *t, const int16_t *pcm, size_t pcm_len, uint8_t out[9]) {
+	if (!t->encode)
+		return DMRGO_ERR_NO_METHOD;
 	return t->encode(t->user, pcm, pcm_len, out);
 }
 
 static inline int dmrgo_vocoder_codec_vtable_t__fid(const dmrgo_vocoder_codec_vtable_t *t, dmrgo_enums_fid_t *out) {
+	if (!t->fid)
+		return DMRGO_ERR_NO_METHOD;
 	return t->fid(t->user, out);
 }
 
 static inline int dmrgo_vocoder_codec_vtable_t__frame_samples(const dmrgo_vocoder_codec_vtable_t *t, int64_t *out) {
+	if (!t->frame_samples)
+		return DMRGO_ERR_NO_METHOD;
 	return t->frame_samples(t->user, out);
 }
 
-static inline int dmrgo_vocoder_codec_vtable_t__reset(const dmrgo_vocoder_codec_vtable_t *t) {
-	return t->reset(t->user);
-}
-
 static inline int dmrgo_vocoder_codec_vtable_t__silence(const dmrgo_vocoder_codec_vtable_t *t, uint8_t out[9]) {
+	if (!t->silence)
+		return DMRGO_ERR_NO_METHOD;
 	return t->silence(t->user, out);
 }
 
+static inline int dmrgo_vocoder_codec_vtable_t__reset(const dmrgo_vocoder_codec_vtable_t *t) {
+	if (!t->reset)
+		return DMRGO_ERR_NO_METHOD;
+	return t->reset(t->user);
+}
+
 static inline int dmrgo_dvsi_port_vtable_t__read(const dmrgo_dvsi_port_vtable_t *t, uint8_t *p, size_t p_len, int64_t *out) {
+	if (!t->read)
+		return DMRGO_ERR_NO_METHOD;
 	return t->read(t->user, p, p_len, out);
 }
 
 static inline int dmrgo_dvsi_port_vtable_t__write(const dmrgo_dvsi_port_vtable_t *t, const uint8_t *p, size_t p_len, int64_t *out) {
+	if (!t->write)
+		return DMRGO_ERR_NO_METHOD;
 	return t->write(t->user, p, p_len, out);
 }
 

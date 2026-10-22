@@ -45,7 +45,6 @@ func TestLockPrerelease(t *testing.T) {
 	}
 }
 
-
 func TestLockRetired(t *testing.T) {
 	t.Parallel()
 

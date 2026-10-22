@@ -4028,6 +4028,13 @@ func in_transport_dmrd_session_BridgeConfig(s *C.dmrgo_dmrd_session_bridge_confi
 	return
 }
 
+func in_transport_dmrd_session_MasterConfig(s *C.dmrgo_dmrd_session_master_config_t) (d g_transport_dmrd_session.MasterConfig) {
+	d.Dialect = g_transport_dmrd.Dialect(s.dialect)
+	d.Timeout = time.Duration(s.timeout)
+	d.LoginTimeout = time.Duration(s.login_timeout)
+	return
+}
+
 func in_transport_dmrd_session_PeerConfig(s *C.dmrgo_dmrd_session_peer_config_t) (d g_transport_dmrd_session.PeerConfig) {
 	d.Dialect = g_transport_dmrd.Dialect(s.dialect)
 	d.ID = uint32(s.id)
@@ -4671,7 +4678,11 @@ func dmrgo_trunk_authenticator_from_vtable(c_vt *C.dmrgo_trunk_authenticator_vta
 	if c_vt == nil || c_out == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	*c_out = new_trunk_Authenticator(&vt_trunk_Authenticator{t: *c_vt})
+	var z C.dmrgo_trunk_authenticator_vtable_t
+	if !sizedIn(unsafe.Pointer(&z), unsafe.Pointer(c_vt), unsafe.Sizeof(z)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_trunk_Authenticator(&vt_trunk_Authenticator{t: z})
 	return C.DMRGO_OK
 }
 
@@ -5022,8 +5033,8 @@ type vt_vocoder_Codec struct {
 	m2g0     [9]byte
 	m3r0     C.dmrgo_enums_fid_t
 	m4r0     C.int64_t
-	m6r0     [9]C.uint8_t
-	m6g0     [9]byte
+	m5r0     [9]C.uint8_t
+	m5g0     [9]byte
 }
 
 func (c *vt_vocoder_Codec) Close() (o0 error) {
@@ -5114,6 +5125,20 @@ func (c *vt_vocoder_Codec) FrameSamples() (o0 int) {
 	return
 }
 
+func (c *vt_vocoder_Codec) Silence() (o0 [9]byte) {
+	oc := &outc{}
+	_ = oc
+	var code C.int
+	for {
+		code = C.dmrgo_vocoder_codec_vtable_t__silence(&c.t, &c.m5r0[0])
+		break
+	}
+	_ = code
+	c.m5g0 = *(*[9]byte)(unsafe.Pointer(&c.m5r0))
+	o0 = c.m5g0
+	return
+}
+
 func (c *vt_vocoder_Codec) Reset() {
 	oc := &outc{}
 	_ = oc
@@ -5126,27 +5151,17 @@ func (c *vt_vocoder_Codec) Reset() {
 	return
 }
 
-func (c *vt_vocoder_Codec) Silence() (o0 [9]byte) {
-	oc := &outc{}
-	_ = oc
-	var code C.int
-	for {
-		code = C.dmrgo_vocoder_codec_vtable_t__silence(&c.t, &c.m6r0[0])
-		break
-	}
-	_ = code
-	c.m6g0 = *(*[9]byte)(unsafe.Pointer(&c.m6r0))
-	o0 = c.m6g0
-	return
-}
-
 //export dmrgo_vocoder_codec_from_vtable
 func dmrgo_vocoder_codec_from_vtable(c_vt *C.dmrgo_vocoder_codec_vtable_t, c_out **C.dmrgo_vocoder_codec_t) (rc C.int) {
 	defer recoverTo(&rc)
 	if c_vt == nil || c_out == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	*c_out = new_vocoder_Codec(&vt_vocoder_Codec{t: *c_vt})
+	var z C.dmrgo_vocoder_codec_vtable_t
+	if !sizedIn(unsafe.Pointer(&z), unsafe.Pointer(c_vt), unsafe.Sizeof(z)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_vocoder_Codec(&vt_vocoder_Codec{t: z})
 	return C.DMRGO_OK
 }
 
@@ -5221,7 +5236,11 @@ func dmrgo_dvsi_port_from_vtable(c_vt *C.dmrgo_dvsi_port_vtable_t, c_out **C.dmr
 	if c_vt == nil || c_out == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	*c_out = new_vocoder_dvsi_Port(&vt_vocoder_dvsi_Port{t: *c_vt})
+	var z C.dmrgo_dvsi_port_vtable_t
+	if !sizedIn(unsafe.Pointer(&z), unsafe.Pointer(c_vt), unsafe.Sizeof(z)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	*c_out = new_vocoder_dvsi_Port(&vt_vocoder_dvsi_Port{t: z})
 	return C.DMRGO_OK
 }
 
@@ -5386,6 +5405,7 @@ func fromC_dmrgo_FieldRangeError(s *C.dmrgo_field_range_error_t) g_dmrgo.FieldRa
 
 func out_bs_Config(d *C.dmrgo_bs_config_t, s *g_bs.Config, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.mode = C.dmrgo_bs_mode_t(s.Mode)
 	d.color_code = C.dmrgo_enums_color_code_t(s.ColorCode)
 	d.activation = C.dmrgo_bs_activation_t(s.Activation)
@@ -5474,6 +5494,7 @@ func fromC_csbk_Output(s *C.dmrgo_csbk_output_t) g_csbk.Output {
 
 func out_csbk_PreamblesConfig(d *C.dmrgo_csbk_preambles_config_t, s *g_csbk.PreamblesConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	if s.Scratch != nil {
 		panic(argPanic{})
 	}
@@ -5486,6 +5507,7 @@ func fromC_csbk_PreamblesConfig(s *C.dmrgo_csbk_preambles_config_t) g_csbk.Pream
 
 func out_csbk_RequestOptions(d *C.dmrgo_csbk_request_options_t, s *g_csbk.RequestOptions, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.access = C.dmrgo_enums_access_t(s.Access)
 	d.time_critical = C.bool(s.TimeCritical)
 	d.preambles = C.int64_t(s.Preambles)
@@ -5498,6 +5520,7 @@ func fromC_csbk_RequestOptions(s *C.dmrgo_csbk_request_options_t) g_csbk.Request
 
 func out_csbk_RequesterConfig(d *C.dmrgo_csbk_requester_config_t, s *g_csbk.RequesterConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.color_code = C.dmrgo_enums_color_code_t(s.ColorCode)
 	d.source = C.dmrgo_layer2_sync_source_t(s.Source)
 	d.ack_wait = C.dmrgo_duration_t(s.AckWait)
@@ -5517,6 +5540,7 @@ func fromC_csbk_RequesterConfig(s *C.dmrgo_csbk_requester_config_t) g_csbk.Reque
 
 func out_csbk_ResponderConfig(d *C.dmrgo_csbk_responder_config_t, s *g_csbk.ResponderConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.address = C.uint32_t(s.Address)
 	d.color_code = C.dmrgo_enums_color_code_t(s.ColorCode)
 	d.source = C.dmrgo_layer2_sync_source_t(s.Source)
@@ -5540,6 +5564,7 @@ func fromC_csbk_ResponderConfig(s *C.dmrgo_csbk_responder_config_t) g_csbk.Respo
 
 func out_csbk_TimingConfig(d *C.dmrgo_csbk_timing_config_t, s *g_csbk.TimingConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.id = C.uint32_t(s.ID)
 	d.dynamic_id = C.uint8_t(s.DynamicID)
 	d.slot = C.dmrgo_enums_slot_t(s.Slot)
@@ -5556,6 +5581,7 @@ func fromC_csbk_TimingConfig(s *C.dmrgo_csbk_timing_config_t) g_csbk.TimingConfi
 
 func out_csbk_WakeupConfig(d *C.dmrgo_csbk_wakeup_config_t, s *g_csbk.WakeupConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.color_code = C.dmrgo_enums_color_code_t(s.ColorCode)
 	d.sync_wait = C.dmrgo_duration_t(s.SyncWait)
 	d.attempts = C.int64_t(s.Attempts)
@@ -5589,6 +5615,7 @@ func fromC_data_Output(s *C.dmrgo_data_output_t) g_data.Output {
 
 func out_data_ReceiverConfig(d *C.dmrgo_data_receiver_config_t, s *g_data.ReceiverConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	if s.ColorCode != nil {
 		d.has_color_code = true
 		d.color_code = C.dmrgo_enums_color_code_t((*s.ColorCode))
@@ -5620,6 +5647,7 @@ func fromC_data_ReceiverConfig(s *C.dmrgo_data_receiver_config_t) g_data.Receive
 
 func out_data_SenderConfig(d *C.dmrgo_data_sender_config_t, s *g_data.SenderConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.color_code = C.dmrgo_enums_color_code_t(s.ColorCode)
 	d.source = C.dmrgo_layer2_sync_source_t(s.Source)
 	d.access = C.dmrgo_enums_access_t(s.Access)
@@ -5977,6 +6005,7 @@ func fromC_layer2_Data(s *C.dmrgo_layer2_data_t) g_layer2.Data {
 
 func out_layer2_DecodeOptions(d *C.dmrgo_layer2_decode_options_t, s *g_layer2.DecodeOptions, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.sync_threshold = C.int64_t(s.SyncThreshold)
 	if s.ColorCode != nil {
 		d.has_color_code = true
@@ -6007,6 +6036,7 @@ func fromC_layer2_Hint(s *C.dmrgo_layer2_hint_t) g_layer2.Hint {
 
 func out_layer2_VoiceTransmitterOptions(d *C.dmrgo_layer2_voice_transmitter_options_t, s *g_layer2.VoiceTransmitterOptions, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	out_layer2_pdu_FullLinkControl(&d.lc, &s.LC, oc)
 	d.color_code = C.dmrgo_enums_color_code_t(s.ColorCode)
 	d.source = C.dmrgo_layer2_sync_source_t(s.Source)
@@ -6043,6 +6073,7 @@ func fromC_layer2_framer_Burst(s *C.dmrgo_framer_burst_t) g_layer2_framer.Burst 
 
 func out_layer2_framer_Config(d *C.dmrgo_framer_config_t, s *g_layer2_framer.Config, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.threshold = C.int64_t(s.Threshold)
 	d.period = C.int64_t(s.Period)
 	d.cach = C.bool(s.CACH)
@@ -7154,6 +7185,7 @@ func fromC_transport_dmrd_TalkerAlias(s *C.dmrgo_dmrd_talker_alias_t) g_transpor
 
 func out_transport_dmrd_session_BridgeConfig(d *C.dmrgo_dmrd_session_bridge_config_t, s *g_transport_dmrd_session.BridgeConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.key = (*C.uint8_t)(arenaCopy(oc, s.Key))
 	d.key_len = C.size_t(len(s.Key))
 	d.enhanced = C.bool(s.Enhanced)
@@ -7165,15 +7197,9 @@ func fromC_transport_dmrd_session_BridgeConfig(s *C.dmrgo_dmrd_session_bridge_co
 	return in_transport_dmrd_session_BridgeConfig(s)
 }
 
-func in_transport_dmrd_session_MasterConfig(s *C.dmrgo_dmrd_session_master_config_t) (d g_transport_dmrd_session.MasterConfig) {
-	d.Dialect = g_transport_dmrd.Dialect(s.dialect)
-	d.Timeout = time.Duration(s.timeout)
-	d.LoginTimeout = time.Duration(s.login_timeout)
-	return
-}
-
 func out_transport_dmrd_session_MasterConfig(d *C.dmrgo_dmrd_session_master_config_t, s *g_transport_dmrd_session.MasterConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.dialect = C.dmrgo_dmrd_dialect_t(s.Dialect)
 	d.timeout = C.dmrgo_duration_t(s.Timeout)
 	d.login_timeout = C.dmrgo_duration_t(s.LoginTimeout)
@@ -7199,6 +7225,7 @@ func fromC_transport_dmrd_session_Output(s *C.dmrgo_dmrd_session_output_t) g_tra
 
 func out_transport_dmrd_session_PeerConfig(d *C.dmrgo_dmrd_session_peer_config_t, s *g_transport_dmrd_session.PeerConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.dialect = C.dmrgo_dmrd_dialect_t(s.Dialect)
 	d.id = C.uint32_t(s.ID)
 	d.password = (*C.uint8_t)(arenaCopy(oc, s.Password))
@@ -7390,6 +7417,7 @@ func fromC_transport_ipsc_session_Addr(s *C.dmrgo_ipsc_session_addr_t) g_transpo
 
 func out_transport_ipsc_session_MasterConfig(d *C.dmrgo_ipsc_session_master_config_t, s *g_transport_ipsc_session.MasterConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.id = C.uint32_t(s.ID)
 	d.mode = C.dmrgo_ipsc_mode_t(s.Mode)
 	*(*g_transport_ipsc.Flags)(unsafe.Pointer(&d.flags)) = s.Flags
@@ -7419,6 +7447,7 @@ func fromC_transport_ipsc_session_Output(s *C.dmrgo_ipsc_session_output_t) g_tra
 
 func out_transport_ipsc_session_PeerConfig(d *C.dmrgo_ipsc_session_peer_config_t, s *g_transport_ipsc_session.PeerConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.id = C.uint32_t(s.ID)
 	d.mode = C.dmrgo_ipsc_mode_t(s.Mode)
 	*(*g_transport_ipsc.Flags)(unsafe.Pointer(&d.flags)) = s.Flags
@@ -7633,6 +7662,7 @@ func fromC_trunk_Appended(s *C.dmrgo_trunk_appended_t) g_trunk.Appended {
 
 func out_trunk_CapacityPlusConfig(d *C.dmrgo_trunk_capacity_plus_config_t, s *g_trunk.CapacityPlusConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	if s.Plan != nil {
 		panic(argPanic{})
 	}
@@ -7707,6 +7737,7 @@ func fromC_trunk_DynamicGroups(s *C.dmrgo_trunk_dynamic_groups_t) g_trunk.Dynami
 
 func out_trunk_FollowerConfig(d *C.dmrgo_trunk_follower_config_t, s *g_trunk.FollowerConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	if s.SysCode != nil {
 		d.has_sys_code = true
 		*(*g_layer2_pdu.SysCode)(unsafe.Pointer(&d.sys_code)) = (*s.SysCode)
@@ -7755,6 +7786,7 @@ func fromC_trunk_LIPShortReport(s *C.dmrgo_trunk_lip_short_report_t) g_trunk.LIP
 
 func out_trunk_MSConfig(d *C.dmrgo_trunk_ms_config_t, s *g_trunk.MSConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.address = C.uint32_t(s.Address)
 	*(*[32]uint32)(unsafe.Pointer(&d.talkgroups)) = s.Talkgroups
 	d.talkgroups_len = C.int64_t(s.TalkgroupsLen)
@@ -7903,6 +7935,7 @@ func fromC_trunk_Site(s *C.dmrgo_trunk_site_t) g_trunk.Site {
 
 func out_trunk_TSCCConfig(d *C.dmrgo_trunk_tscc_config_t, s *g_trunk.TSCCConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	*(*g_layer2_pdu.SysCode)(unsafe.Pointer(&d.sys_code)) = s.SysCode
 	d.color_code = C.dmrgo_enums_color_code_t(s.ColorCode)
 	d.channel = C.uint16_t(s.Channel)
@@ -8040,6 +8073,7 @@ func fromC_trunk_auth_Keys(s *C.dmrgo_trunk_auth_keys_t) g_trunk_auth.Keys {
 
 func out_vocoder_codec2_Config(d *C.dmrgo_codec2_config_t, s *g_vocoder_codec2.Config, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.mode = C.dmrgo_codec2_mode_t(s.Mode)
 	d.fid = C.dmrgo_enums_fid_t(s.FID)
 }
@@ -8050,6 +8084,7 @@ func fromC_vocoder_codec2_Config(s *C.dmrgo_codec2_config_t) g_vocoder_codec2.Co
 
 func out_vocoder_dvsi_Config(d *C.dmrgo_dvsi_config_t, s *g_vocoder_dvsi.Config, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.channel = C.int64_t(s.Channel)
 	d.timeout = C.dmrgo_duration_t(s.Timeout)
 	d.no_reset = C.bool(s.NoReset)
@@ -8070,6 +8105,7 @@ func fromC_voice_Call(s *C.dmrgo_voice_call_t) g_voice.Call {
 
 func out_voice_CallOptions(d *C.dmrgo_voice_call_options_t, s *g_voice.CallOptions, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	if s.PIHeader != nil {
 		d.has_pi_header = true
 		out_layer2_pdu_PIHeader(&d.pi_header, &(*s.PIHeader), oc)
@@ -8107,6 +8143,7 @@ func fromC_voice_FrameQuality(s *C.dmrgo_voice_frame_quality_t) g_voice.FrameQua
 
 func out_voice_InterrupterConfig(d *C.dmrgo_voice_interrupter_config_t, s *g_voice.InterrupterConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.color_code = C.dmrgo_enums_color_code_t(s.ColorCode)
 	d.wait = C.dmrgo_duration_t(s.Wait)
 	d.retries = C.int64_t(s.Retries)
@@ -8137,6 +8174,7 @@ func fromC_voice_Output(s *C.dmrgo_voice_output_t) g_voice.Output {
 
 func out_voice_ReceiverConfig(d *C.dmrgo_voice_receiver_config_t, s *g_voice.ReceiverConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	if s.ColorCode != nil {
 		d.has_color_code = true
 		d.color_code = C.dmrgo_enums_color_code_t((*s.ColorCode))
@@ -8186,6 +8224,7 @@ func fromC_voice_Stats(s *C.dmrgo_voice_stats_t) g_voice.Stats {
 
 func out_voice_TransmitterConfig(d *C.dmrgo_voice_transmitter_config_t, s *g_voice.TransmitterConfig, oc *outc) {
 	_ = oc
+	d.size = C.size_t(unsafe.Sizeof(*d))
 	d.color_code = C.dmrgo_enums_color_code_t(s.ColorCode)
 	d.source = C.dmrgo_layer2_sync_source_t(s.Source)
 	*(*[9]byte)(unsafe.Pointer(&d.silence)) = s.Silence
@@ -9058,8 +9097,12 @@ func dmrgo_bs_new(c_cfg *C.dmrgo_bs_config_t, c_out **C.dmrgo_bs_repeater_t) (rc
 	oc := &outc{}
 	var a_cfg g_bs.Config
 	var p_cfg *g_bs.Config
+	var z_cfg C.dmrgo_bs_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_bs_Config(&(*c_cfg))
+		a_cfg = in_bs_Config(&z_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -9499,8 +9542,12 @@ func dmrgo_csbk_new_preambles(c_cfg *C.dmrgo_csbk_preambles_config_t, c_out **C.
 	oc := &outc{}
 	var a_cfg g_csbk.PreamblesConfig
 	var p_cfg *g_csbk.PreamblesConfig
+	var z_cfg C.dmrgo_csbk_preambles_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_csbk_PreamblesConfig(&(*c_cfg))
+		a_cfg = in_csbk_PreamblesConfig(&z_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -9527,8 +9574,12 @@ func dmrgo_csbk_new_requester(c_cfg *C.dmrgo_csbk_requester_config_t, c_out **C.
 	oc := &outc{}
 	var a_cfg g_csbk.RequesterConfig
 	var p_cfg *g_csbk.RequesterConfig
+	var z_cfg C.dmrgo_csbk_requester_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_csbk_RequesterConfig(&(*c_cfg))
+		a_cfg = in_csbk_RequesterConfig(&z_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -9555,8 +9606,12 @@ func dmrgo_csbk_new_responder(c_cfg *C.dmrgo_csbk_responder_config_t, c_out **C.
 	oc := &outc{}
 	var a_cfg g_csbk.ResponderConfig
 	var p_cfg *g_csbk.ResponderConfig
+	var z_cfg C.dmrgo_csbk_responder_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_csbk_ResponderConfig(&(*c_cfg))
+		a_cfg = in_csbk_ResponderConfig(&z_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -9583,8 +9638,12 @@ func dmrgo_csbk_new_timing(c_cfg *C.dmrgo_csbk_timing_config_t, c_out **C.dmrgo_
 	oc := &outc{}
 	var a_cfg g_csbk.TimingConfig
 	var p_cfg *g_csbk.TimingConfig
+	var z_cfg C.dmrgo_csbk_timing_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_csbk_TimingConfig(&(*c_cfg))
+		a_cfg = in_csbk_TimingConfig(&z_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -9611,8 +9670,12 @@ func dmrgo_csbk_new_wakeup(c_cfg *C.dmrgo_csbk_wakeup_config_t, c_out **C.dmrgo_
 	oc := &outc{}
 	var a_cfg g_csbk.WakeupConfig
 	var p_cfg *g_csbk.WakeupConfig
+	var z_cfg C.dmrgo_csbk_wakeup_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_csbk_WakeupConfig(&(*c_cfg))
+		a_cfg = in_csbk_WakeupConfig(&z_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -10408,8 +10471,12 @@ func dmrgo_csbk_requester_request(c_self *C.dmrgo_csbk_requester_t, c_now C.dmrg
 	a_m = in_csbk_Match(&(*c_m))
 	var a_opts g_csbk.RequestOptions
 	var p_opts *g_csbk.RequestOptions
+	var z_opts C.dmrgo_csbk_request_options_t
+	if c_opts != nil && !sizedIn(unsafe.Pointer(&z_opts), unsafe.Pointer(c_opts), unsafe.Sizeof(z_opts)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_opts != nil {
-		a_opts = in_csbk_RequestOptions(&(*c_opts))
+		a_opts = in_csbk_RequestOptions(&z_opts)
 		p_opts = &a_opts
 	}
 	r0 := h.v.Request(time.Duration(c_now), *(*g_layer2_pdu.CSBKBytes)(unsafe.Pointer(c_c)), a_m, p_opts)
@@ -10429,8 +10496,12 @@ func dmrgo_csbk_requester_request_call_alert(c_self *C.dmrgo_csbk_requester_t, c
 	h := get_csbk_Requester(c_self)
 	var a_opts g_csbk.RequestOptions
 	var p_opts *g_csbk.RequestOptions
+	var z_opts C.dmrgo_csbk_request_options_t
+	if c_opts != nil && !sizedIn(unsafe.Pointer(&z_opts), unsafe.Pointer(c_opts), unsafe.Sizeof(z_opts)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_opts != nil {
-		a_opts = in_csbk_RequestOptions(&(*c_opts))
+		a_opts = in_csbk_RequestOptions(&z_opts)
 		p_opts = &a_opts
 	}
 	r0 := h.v.RequestCallAlert(time.Duration(c_now), uint32(c_target), uint32(c_source), p_opts)
@@ -10455,8 +10526,12 @@ func dmrgo_csbk_requester_request_oacsu(c_self *C.dmrgo_csbk_requester_t, c_now 
 	a_so = in_layer3_ServiceOptions(&(*c_so))
 	var a_opts g_csbk.RequestOptions
 	var p_opts *g_csbk.RequestOptions
+	var z_opts C.dmrgo_csbk_request_options_t
+	if c_opts != nil && !sizedIn(unsafe.Pointer(&z_opts), unsafe.Pointer(c_opts), unsafe.Sizeof(z_opts)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_opts != nil {
-		a_opts = in_csbk_RequestOptions(&(*c_opts))
+		a_opts = in_csbk_RequestOptions(&z_opts)
 		p_opts = &a_opts
 	}
 	r0 := h.v.RequestOACSU(time.Duration(c_now), uint32(c_target), uint32(c_source), a_so, p_opts)
@@ -10476,8 +10551,12 @@ func dmrgo_csbk_requester_request_radio_check(c_self *C.dmrgo_csbk_requester_t, 
 	h := get_csbk_Requester(c_self)
 	var a_opts g_csbk.RequestOptions
 	var p_opts *g_csbk.RequestOptions
+	var z_opts C.dmrgo_csbk_request_options_t
+	if c_opts != nil && !sizedIn(unsafe.Pointer(&z_opts), unsafe.Pointer(c_opts), unsafe.Sizeof(z_opts)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_opts != nil {
-		a_opts = in_csbk_RequestOptions(&(*c_opts))
+		a_opts = in_csbk_RequestOptions(&z_opts)
 		p_opts = &a_opts
 	}
 	r0 := h.v.RequestRadioCheck(time.Duration(c_now), uint32(c_target), uint32(c_source), p_opts)
@@ -12006,8 +12085,12 @@ func dmrgo_data_new_receiver(c_cfg *C.dmrgo_data_receiver_config_t, c_out **C.dm
 	var a_cfg g_data.ReceiverConfig
 	var p_cfg *g_data.ReceiverConfig
 	var s_cfg st_data_ReceiverConfig
+	var z_cfg C.dmrgo_data_receiver_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_data_ReceiverConfig(&(*c_cfg), &s_cfg)
+		a_cfg = in_data_ReceiverConfig(&z_cfg, &s_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -12034,8 +12117,12 @@ func dmrgo_data_new_sender(c_cfg *C.dmrgo_data_sender_config_t, c_out **C.dmrgo_
 	oc := &outc{}
 	var a_cfg g_data.SenderConfig
 	var p_cfg *g_data.SenderConfig
+	var z_cfg C.dmrgo_data_sender_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_data_SenderConfig(&(*c_cfg))
+		a_cfg = in_data_SenderConfig(&z_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -14774,7 +14861,8 @@ func dmrgo_hdap_message_seal(c_self *C.dmrgo_hdap_message_t) (rc C.int) {
 	var x g_hytera_hdap.Message
 	x = in_hytera_hdap_Message(&(*c_self))
 	x.Seal()
-	ws_self := *c_self
+	var ws_self C.dmrgo_hdap_message_t
+	ws_self = *c_self
 	ws_self.checksum = C.uint8_t(x.Checksum)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -15243,7 +15331,8 @@ func dmrgo_hdap_tmp_message_set_text_utf8(c_self *C.dmrgo_hdap_tmp_message_t, c_
 	var a_text []byte
 	a_text = cSlice[byte](unsafe.Pointer(c_text), c_text_len)
 	r0 := x.SetTextUTF8(a_dst, a_text)
-	ws_self := *c_self
+	var ws_self C.dmrgo_hdap_tmp_message_t
+	ws_self = *c_self
 	ws_self.text = (*C.uint8_t)(arenaCopy(oc, x.Text))
 	ws_self.text_len = C.size_t(len(x.Text))
 	_ = r0
@@ -16900,8 +16989,12 @@ func dmrgo_layer2_burst_decode_from_bytes_with(c_self *C.dmrgo_layer2_burst_t, c
 	var a_opts g_layer2.DecodeOptions
 	var p_opts *g_layer2.DecodeOptions
 	var s_opts st_layer2_DecodeOptions
+	var z_opts C.dmrgo_layer2_decode_options_t
+	if c_opts != nil && !sizedIn(unsafe.Pointer(&z_opts), unsafe.Pointer(c_opts), unsafe.Sizeof(z_opts)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_opts != nil {
-		a_opts = in_layer2_DecodeOptions(&(*c_opts), &s_opts)
+		a_opts = in_layer2_DecodeOptions(&z_opts, &s_opts)
 		p_opts = &a_opts
 	}
 	r0 := h.v.DecodeFromBytesWith(*(*g_layer2.RawBurst)(unsafe.Pointer(c_data)), p_opts)
@@ -17668,8 +17761,12 @@ func dmrgo_layer2_new_voice_transmitter(c_opts *C.dmrgo_layer2_voice_transmitter
 	var a_opts g_layer2.VoiceTransmitterOptions
 	var p_opts *g_layer2.VoiceTransmitterOptions
 	var s_opts st_layer2_VoiceTransmitterOptions
+	var z_opts C.dmrgo_layer2_voice_transmitter_options_t
+	if c_opts != nil && !sizedIn(unsafe.Pointer(&z_opts), unsafe.Pointer(c_opts), unsafe.Sizeof(z_opts)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_opts != nil {
-		a_opts = in_layer2_VoiceTransmitterOptions(&(*c_opts), &s_opts)
+		a_opts = in_layer2_VoiceTransmitterOptions(&z_opts, &s_opts)
 		p_opts = &a_opts
 	}
 	if c_out == nil {
@@ -19162,8 +19259,12 @@ func dmrgo_layer2_voice_transmitter_reset(c_self *C.dmrgo_layer2_voice_transmitt
 	var a_opts g_layer2.VoiceTransmitterOptions
 	var p_opts *g_layer2.VoiceTransmitterOptions
 	var s_opts st_layer2_VoiceTransmitterOptions
+	var z_opts C.dmrgo_layer2_voice_transmitter_options_t
+	if c_opts != nil && !sizedIn(unsafe.Pointer(&z_opts), unsafe.Pointer(c_opts), unsafe.Sizeof(z_opts)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_opts != nil {
-		a_opts = in_layer2_VoiceTransmitterOptions(&(*c_opts), &s_opts)
+		a_opts = in_layer2_VoiceTransmitterOptions(&z_opts, &s_opts)
 		p_opts = &a_opts
 	}
 	r0 := h.v.Reset(p_opts)
@@ -19487,8 +19588,12 @@ func dmrgo_framer_new(c_c *C.dmrgo_framer_config_t, c_out **C.dmrgo_framer_t) (r
 	oc := &outc{}
 	var a_c g_layer2_framer.Config
 	var p_c *g_layer2_framer.Config
+	var z_c C.dmrgo_framer_config_t
+	if c_c != nil && !sizedIn(unsafe.Pointer(&z_c), unsafe.Pointer(c_c), unsafe.Sizeof(z_c)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_c != nil {
-		a_c = in_layer2_framer_Config(&(*c_c))
+		a_c = in_layer2_framer_Config(&z_c)
 		p_c = &a_c
 	}
 	if c_out == nil {
@@ -22214,7 +22319,8 @@ func dmrgo_pdu_csbk_set_addresses(c_self *C.dmrgo_pdu_csbk_t, c_target C.uint32_
 	var xs st_layer2_pdu_CSBK
 	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
 	r0 := x.SetAddresses(uint32(c_target), uint32(c_source))
-	ws_self := *c_self
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
 	out_layer2_pdu_CSBK(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22240,7 +22346,8 @@ func dmrgo_pdu_csbk_set_bs_outbound_activation(c_self *C.dmrgo_pdu_csbk_t, c_p *
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetBSOutboundActivation(*(*g_layer2_pdu.BSOutboundActivationPDU)(unsafe.Pointer(c_p)))
-	ws_self := *c_self
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
 	out_layer2_pdu_CSBK(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22266,7 +22373,8 @@ func dmrgo_pdu_csbk_set_motorola_call_alert(c_self *C.dmrgo_pdu_csbk_t, c_p *C.d
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetMotorolaCallAlert(*(*g_layer2_pdu.MotorolaCallAlertPDU)(unsafe.Pointer(c_p)))
-	ws_self := *c_self
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
 	out_layer2_pdu_CSBK(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22292,7 +22400,8 @@ func dmrgo_pdu_csbk_set_motorola_call_alert_ack(c_self *C.dmrgo_pdu_csbk_t, c_p 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetMotorolaCallAlertAck(*(*g_layer2_pdu.MotorolaCallAlertAckPDU)(unsafe.Pointer(c_p)))
-	ws_self := *c_self
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
 	out_layer2_pdu_CSBK(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22320,7 +22429,8 @@ func dmrgo_pdu_csbk_set_motorola_radio_check(c_self *C.dmrgo_pdu_csbk_t, c_p *C.
 	var a_p g_layer2_pdu.MotorolaRadioCheckPDU
 	a_p = in_layer2_pdu_MotorolaRadioCheckPDU(&(*c_p))
 	r0 := x.SetMotorolaRadioCheck(a_p)
-	ws_self := *c_self
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
 	out_layer2_pdu_CSBK(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22348,7 +22458,8 @@ func dmrgo_pdu_csbk_set_talkgroup_data_grant_multi_item(c_self *C.dmrgo_pdu_csbk
 	var a_p g_layer2_pdu.TalkgroupDataGrantMultiItemPDU
 	a_p = in_layer2_pdu_TalkgroupDataGrantMultiItemPDU(&(*c_p))
 	r0 := x.SetTalkgroupDataGrantMultiItem(a_p)
-	ws_self := *c_self
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
 	out_layer2_pdu_CSBK(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -23467,7 +23578,8 @@ func dmrgo_pdu_data_header_set_addresses(c_self *C.dmrgo_pdu_data_header_t, c_de
 	var xs st_layer2_pdu_DataHeader
 	x = in_layer2_pdu_DataHeader(&(*c_self), &xs)
 	r0 := x.SetAddresses(uint32(c_destination), uint32(c_source))
-	ws_self := *c_self
+	var ws_self C.dmrgo_pdu_data_header_t
+	ws_self = *c_self
 	if x.UnconfirmedDataHeader != nil {
 		ws_self.has_unconfirmed_data_header = true
 		out_layer2_pdu_UnconfirmedDataHeader(&ws_self.unconfirmed_data_header, &(*x.UnconfirmedDataHeader), oc)
@@ -25162,7 +25274,8 @@ func dmrgo_pdu_full_link_control_set_addresses(c_self *C.dmrgo_pdu_full_link_con
 	var xs st_layer2_pdu_FullLinkControl
 	x = in_layer2_pdu_FullLinkControl(&(*c_self), &xs)
 	r0 := x.SetAddresses(uint32(c_target), uint32(c_source))
-	ws_self := *c_self
+	var ws_self C.dmrgo_pdu_full_link_control_t
+	ws_self = *c_self
 	if x.GroupVoice != nil {
 		ws_self.has_group_voice = true
 		out_layer2_pdu_FLCGroupVoice(&ws_self.group_voice, &(*x.GroupVoice), oc)
@@ -27071,7 +27184,8 @@ func dmrgo_pdu_rate12_data_set_confirmed(c_self *C.dmrgo_pdu_rate12_data_t, c_db
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetConfirmed(uint8(c_dbsn), *(*[10]byte)(unsafe.Pointer(c_user_data)))
-	ws_self := *c_self
+	var ws_self C.dmrgo_pdu_rate12_data_t
+	ws_self = *c_self
 	*(*[12]byte)(unsafe.Pointer(&ws_self.data)) = x.Data
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -27243,7 +27357,8 @@ func dmrgo_pdu_rate1_data_set_confirmed(c_self *C.dmrgo_pdu_rate1_data_t, c_dbsn
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetConfirmed(uint8(c_dbsn), *(*[22]byte)(unsafe.Pointer(c_user_data)))
-	ws_self := *c_self
+	var ws_self C.dmrgo_pdu_rate1_data_t
+	ws_self = *c_self
 	*(*[24]byte)(unsafe.Pointer(&ws_self.data)) = x.Data
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -27415,7 +27530,8 @@ func dmrgo_pdu_rate34_data_set_confirmed(c_self *C.dmrgo_pdu_rate34_data_t, c_db
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetConfirmed(uint8(c_dbsn), *(*[16]byte)(unsafe.Pointer(c_user_data)))
-	ws_self := *c_self
+	var ws_self C.dmrgo_pdu_rate34_data_t
+	ws_self = *c_self
 	*(*[18]byte)(unsafe.Pointer(&ws_self.data)) = x.Data
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -27843,7 +27959,8 @@ func dmrgo_pdu_short_lc_c_sys_parms_set_sys_code(c_self *C.dmrgo_pdu_short_lc_c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetSysCode(*(*g_layer2_pdu.SysCode)(unsafe.Pointer(c_c)))
-	ws_self := *c_self
+	var ws_self C.dmrgo_pdu_short_lc_c_sys_parms_t
+	ws_self = *c_self
 	ws_self.model = C.uint8_t(x.MODEL)
 	ws_self.net_site_raw = C.uint16_t(x.NetSiteRaw)
 	if oc.short {
@@ -28032,7 +28149,8 @@ func dmrgo_pdu_short_lc_p_sys_parms_set_sys_code(c_self *C.dmrgo_pdu_short_lc_p_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetSysCode(*(*g_layer2_pdu.SysCode)(unsafe.Pointer(c_c)))
-	ws_self := *c_self
+	var ws_self C.dmrgo_pdu_short_lc_p_sys_parms_t
+	ws_self = *c_self
 	ws_self.model = C.uint8_t(x.MODEL)
 	ws_self.net_site_raw = C.uint16_t(x.NetSiteRaw)
 	if oc.short {
@@ -28426,7 +28544,8 @@ func dmrgo_pdu_sys_code_unpack(c_self *C.dmrgo_pdu_sys_code_t, c_v C.uint16_t) (
 	var x g_layer2_pdu.SysCode
 	x = *(*g_layer2_pdu.SysCode)(unsafe.Pointer(&(*c_self)))
 	x.Unpack(uint16(c_v))
-	ws_self := *c_self
+	var ws_self C.dmrgo_pdu_sys_code_t
+	ws_self = *c_self
 	*(*g_layer2_pdu.SysCode)(unsafe.Pointer(&ws_self)) = x
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -28445,7 +28564,8 @@ func dmrgo_pdu_sys_code_unpack14(c_self *C.dmrgo_pdu_sys_code_t, c_v C.uint16_t)
 	var x g_layer2_pdu.SysCode
 	x = *(*g_layer2_pdu.SysCode)(unsafe.Pointer(&(*c_self)))
 	r0 := x.Unpack14(uint16(c_v))
-	ws_self := *c_self
+	var ws_self C.dmrgo_pdu_sys_code_t
+	ws_self = *c_self
 	*(*g_layer2_pdu.SysCode)(unsafe.Pointer(&ws_self)) = x
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -30597,7 +30717,8 @@ func dmrgo_ars_message_set_device_id(c_self *C.dmrgo_ars_message_t, c_dst *C.uin
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0 := x.SetDeviceID(a_dst, uint32(c_id))
-	ws_self := *c_self
+	var ws_self C.dmrgo_ars_message_t
+	ws_self = *c_self
 	ws_self.device = (*C.uint8_t)(arenaCopy(oc, x.Device))
 	ws_self.device_len = C.size_t(len(x.Device))
 	_ = r0
@@ -31728,7 +31849,8 @@ func dmrgo_tms_message_set_text_utf8(c_self *C.dmrgo_tms_message_t, c_dst *C.uin
 	var a_text []byte
 	a_text = cSlice[byte](unsafe.Pointer(c_text), c_text_len)
 	r0 := x.SetTextUTF8(a_dst, a_text)
-	ws_self := *c_self
+	var ws_self C.dmrgo_tms_message_t
+	ws_self = *c_self
 	ws_self.text = (*C.uint8_t)(arenaCopy(oc, x.Text))
 	ws_self.text_len = C.size_t(len(x.Text))
 	_ = r0
@@ -32166,7 +32288,8 @@ func dmrgo_shortdata_hytera_text_set_text_utf8(c_self *C.dmrgo_shortdata_hytera_
 	var a_text []byte
 	a_text = cSlice[byte](unsafe.Pointer(c_text), c_text_len)
 	r0 := x.SetTextUTF8(a_dst, a_text)
-	ws_self := *c_self
+	var ws_self C.dmrgo_shortdata_hytera_text_t
+	ws_self = *c_self
 	ws_self.text = (*C.uint8_t)(arenaCopy(oc, x.Text))
 	ws_self.text_len = C.size_t(len(x.Text))
 	_ = r0
@@ -32339,7 +32462,8 @@ func dmrgo_sms_anytone_text_set_text_utf8(c_self *C.dmrgo_sms_anytone_text_t, c_
 	var a_text []byte
 	a_text = cSlice[byte](unsafe.Pointer(c_text), c_text_len)
 	r0 := x.SetTextUTF8(a_dst, a_text)
-	ws_self := *c_self
+	var ws_self C.dmrgo_sms_anytone_text_t
+	ws_self = *c_self
 	ws_self.text = (*C.uint8_t)(arenaCopy(oc, x.Text))
 	ws_self.text_len = C.size_t(len(x.Text))
 	_ = r0
@@ -32689,7 +32813,8 @@ func dmrgo_sms_ip_text_set_text_utf8(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uin
 	var a_text []byte
 	a_text = cSlice[byte](unsafe.Pointer(c_text), c_text_len)
 	r0 := x.SetTextUTF8(a_dst, a_text)
-	ws_self := *c_self
+	var ws_self C.dmrgo_sms_ip_text_t
+	ws_self = *c_self
 	ws_self.text = (*C.uint8_t)(arenaCopy(oc, x.Text))
 	ws_self.text_len = C.size_t(len(x.Text))
 	_ = r0
@@ -33722,7 +33847,8 @@ func dmrgo_dmrd_data_set_call(c_self *C.dmrgo_dmrd_data_t, c_group C.bool, c_tar
 	var x g_transport_dmrd.Data
 	x = in_transport_dmrd_Data(&(*c_self))
 	r0 := x.SetCall(bool(c_group), uint32(c_target), uint32(c_source))
-	ws_self := *c_self
+	var ws_self C.dmrgo_dmrd_data_t
+	ws_self = *c_self
 	ws_self.source = C.uint32_t(x.Source)
 	ws_self.destination = C.uint32_t(x.Destination)
 	ws_self.private_ = C.bool(x.Private)
@@ -33751,7 +33877,8 @@ func dmrgo_dmrd_data_set_hint(c_self *C.dmrgo_dmrd_data_t, c_h *C.dmrgo_layer2_h
 	var a_h g_layer2.Hint
 	a_h = in_layer2_Hint(&(*c_h))
 	r0 := x.SetHint(a_h)
-	ws_self := *c_self
+	var ws_self C.dmrgo_dmrd_data_t
+	ws_self = *c_self
 	ws_self.slot = C.dmrgo_enums_slot_t(x.Slot)
 	ws_self.frame = C.dmrgo_dmrd_frame_type_t(x.Frame)
 	ws_self.value = C.uint8_t(x.Value)
@@ -36348,8 +36475,12 @@ func dmrgo_dmrd_session_new_bridge(c_cfg *C.dmrgo_dmrd_session_bridge_config_t, 
 	oc := &outc{}
 	var a_cfg g_transport_dmrd_session.BridgeConfig
 	var p_cfg *g_transport_dmrd_session.BridgeConfig
+	var z_cfg C.dmrgo_dmrd_session_bridge_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_transport_dmrd_session_BridgeConfig(&(*c_cfg))
+		a_cfg = in_transport_dmrd_session_BridgeConfig(&z_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -36374,10 +36505,20 @@ func dmrgo_dmrd_session_new_bridge(c_cfg *C.dmrgo_dmrd_session_bridge_config_t, 
 func dmrgo_dmrd_session_new_master(c_cfg *C.dmrgo_dmrd_session_master_config_t, c_out **C.dmrgo_dmrd_session_master_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	var a_cfg g_transport_dmrd_session.MasterConfig
+	var p_cfg *g_transport_dmrd_session.MasterConfig
+	var z_cfg C.dmrgo_dmrd_session_master_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_cfg != nil {
+		a_cfg = in_transport_dmrd_session_MasterConfig(&z_cfg)
+		p_cfg = &a_cfg
+	}
 	if c_out == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1 := g_transport_dmrd_session.NewMaster((*g_transport_dmrd_session.MasterConfig)(unsafe.Pointer(c_cfg)))
+	r0, r1 := g_transport_dmrd_session.NewMaster(p_cfg)
 	_ = r0
 	*c_out = nil
 	if r0 != nil {
@@ -36398,8 +36539,12 @@ func dmrgo_dmrd_session_new_peer(c_cfg *C.dmrgo_dmrd_session_peer_config_t, c_ou
 	oc := &outc{}
 	var a_cfg g_transport_dmrd_session.PeerConfig
 	var p_cfg *g_transport_dmrd_session.PeerConfig
+	var z_cfg C.dmrgo_dmrd_session_peer_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_transport_dmrd_session_PeerConfig(&(*c_cfg))
+		a_cfg = in_transport_dmrd_session_PeerConfig(&z_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -37032,7 +37177,8 @@ func dmrgo_hytera_frame_set_call(c_self *C.dmrgo_hytera_frame_t, c_group C.bool,
 	var x g_transport_hytera.Frame
 	x = *(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self)))
 	r0 := x.SetCall(bool(c_group), uint32(c_target), uint32(c_source))
-	ws_self := *c_self
+	var ws_self C.dmrgo_hytera_frame_t
+	ws_self = *c_self
 	ws_self.call_type = C.uint8_t(x.CallType)
 	ws_self.destination = C.uint32_t(x.Destination)
 	ws_self.source = C.uint32_t(x.Source)
@@ -37061,7 +37207,8 @@ func dmrgo_hytera_frame_set_hint(c_self *C.dmrgo_hytera_frame_t, c_h *C.dmrgo_la
 	var a_h g_layer2.Hint
 	a_h = in_layer2_Hint(&(*c_h))
 	r0 := x.SetHint(a_h)
-	ws_self := *c_self
+	var ws_self C.dmrgo_hytera_frame_t
+	ws_self = *c_self
 	ws_self.slot = C.dmrgo_enums_slot_t(x.Slot)
 	ws_self.slot_type = C.dmrgo_hytera_slot_type_t(x.SlotType)
 	if oc.short {
@@ -37755,7 +37902,8 @@ func dmrgo_ipsc_stream_fill(c_self *C.dmrgo_ipsc_stream_t, c_u *C.dmrgo_ipsc_use
 		p_u = &a_u
 	}
 	x.Fill(p_u, bool(c_last))
-	ws_self := *c_self
+	var ws_self C.dmrgo_ipsc_stream_t
+	ws_self = *c_self
 	ws_self.seq = C.uint16_t(x.Seq)
 	ws_self.timestamp = C.uint32_t(x.Timestamp)
 	ws_self.sent = C.uint32_t(x.Sent)
@@ -37787,7 +37935,8 @@ func dmrgo_ipsc_stream_skip(c_self *C.dmrgo_ipsc_stream_t, c_n C.uint16_t) (rc C
 	var x g_transport_ipsc.Stream
 	x = *(*g_transport_ipsc.Stream)(unsafe.Pointer(&(*c_self)))
 	x.Skip(uint16(c_n))
-	ws_self := *c_self
+	var ws_self C.dmrgo_ipsc_stream_t
+	ws_self = *c_self
 	ws_self.seq = C.uint16_t(x.Seq)
 	ws_self.timestamp = C.uint32_t(x.Timestamp)
 	if oc.short {
@@ -37929,7 +38078,8 @@ func dmrgo_ipsc_user_set_call(c_self *C.dmrgo_ipsc_user_t, c_group C.bool, c_tar
 	var x g_transport_ipsc.User
 	x = in_transport_ipsc_User(&(*c_self))
 	r0 := x.SetCall(bool(c_group), uint32(c_target), uint32(c_source))
-	ws_self := *c_self
+	var ws_self C.dmrgo_ipsc_user_t
+	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_ipsc_opcode_t(x.Opcode)
 	ws_self.source = C.uint32_t(x.Source)
 	ws_self.destination = C.uint32_t(x.Destination)
@@ -37961,7 +38111,8 @@ func dmrgo_ipsc_user_set_raw_burst(c_self *C.dmrgo_ipsc_user_t, c_raw *C.dmrgo_l
 	var a_h g_layer2.Hint
 	a_h = in_layer2_Hint(&(*c_h))
 	r0, r1 := x.SetRawBurst(*(*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h)
-	ws_self := *c_self
+	var ws_self C.dmrgo_ipsc_user_t
+	ws_self = *c_self
 	ws_self.info = C.dmrgo_ipsc_call_info_t(x.Info)
 	ws_self.burst = C.dmrgo_ipsc_burst_type_t(x.Burst)
 	*(*g_transport_ipsc.Voice)(unsafe.Pointer(&ws_self.voice)) = x.Voice
@@ -39016,8 +39167,12 @@ func dmrgo_ipsc_session_new_master(c_cfg *C.dmrgo_ipsc_session_master_config_t, 
 	oc := &outc{}
 	var a_cfg g_transport_ipsc_session.MasterConfig
 	var p_cfg *g_transport_ipsc_session.MasterConfig
+	var z_cfg C.dmrgo_ipsc_session_master_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_transport_ipsc_session_MasterConfig(&(*c_cfg))
+		a_cfg = in_transport_ipsc_session_MasterConfig(&z_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -39044,8 +39199,12 @@ func dmrgo_ipsc_session_new_peer(c_cfg *C.dmrgo_ipsc_session_peer_config_t, c_ou
 	oc := &outc{}
 	var a_cfg g_transport_ipsc_session.PeerConfig
 	var p_cfg *g_transport_ipsc_session.PeerConfig
+	var z_cfg C.dmrgo_ipsc_session_peer_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_transport_ipsc_session_PeerConfig(&(*c_cfg))
+		a_cfg = in_transport_ipsc_session_PeerConfig(&z_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -40118,7 +40277,8 @@ func dmrgo_mmdvm_dmr_data_set_hint(c_self *C.dmrgo_mmdvm_dmr_data_t, c_h *C.dmrg
 	var a_h g_layer2.Hint
 	a_h = in_layer2_Hint(&(*c_h))
 	r0 := x.SetHint(a_h)
-	ws_self := *c_self
+	var ws_self C.dmrgo_mmdvm_dmr_data_t
+	ws_self = *c_self
 	ws_self.slot = C.dmrgo_enums_slot_t(x.Slot)
 	ws_self.lost = C.bool(x.Lost)
 	ws_self.control = C.dmrgo_mmdvm_control_t(x.Control)
@@ -41412,7 +41572,8 @@ func dmrgo_trunk_appended_set_addresses(c_self *C.dmrgo_trunk_appended_t, c_one_
 	var a_list []uint32
 	a_list = cSlice[uint32](unsafe.Pointer(c_list), c_list_len)
 	r0 := x.SetAddresses(bool(c_one_key), a_list)
-	ws_self := *c_self
+	var ws_self C.dmrgo_trunk_appended_t
+	ws_self = *c_self
 	out_trunk_Appended(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -41442,7 +41603,8 @@ func dmrgo_trunk_appended_set_binary(c_self *C.dmrgo_trunk_appended_t, c_b *C.ui
 	var a_b []byte
 	a_b = cSlice[byte](unsafe.Pointer(c_b), c_b_len)
 	r0 := x.SetBinary(a_b, int(c_n))
-	ws_self := *c_self
+	var ws_self C.dmrgo_trunk_appended_t
+	ws_self = *c_self
 	out_trunk_Appended(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -41472,7 +41634,8 @@ func dmrgo_trunk_appended_set_digits(c_self *C.dmrgo_trunk_appended_t, c_digits 
 	var a_digits []byte
 	a_digits = cSlice[byte](unsafe.Pointer(c_digits), c_digits_len)
 	r0 := x.SetDigits(a_digits)
-	ws_self := *c_self
+	var ws_self C.dmrgo_trunk_appended_t
+	ws_self = *c_self
 	out_trunk_Appended(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -41497,7 +41660,8 @@ func dmrgo_trunk_appended_set_ip(c_self *C.dmrgo_trunk_appended_t, c_ip *C.uint8
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	x.SetIP(*(*[16]byte)(unsafe.Pointer(c_ip)), bool(c_v6))
-	ws_self := *c_self
+	var ws_self C.dmrgo_trunk_appended_t
+	ws_self = *c_self
 	out_trunk_Appended(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -41524,7 +41688,8 @@ func dmrgo_trunk_appended_set_lip(c_self *C.dmrgo_trunk_appended_t, c_pdu *C.uin
 	var a_pdu []byte
 	a_pdu = cSlice[byte](unsafe.Pointer(c_pdu), c_pdu_len)
 	r0 := x.SetLIP(a_pdu)
-	ws_self := *c_self
+	var ws_self C.dmrgo_trunk_appended_t
+	ws_self = *c_self
 	out_trunk_Appended(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -41554,7 +41719,8 @@ func dmrgo_trunk_appended_set_mixed(c_self *C.dmrgo_trunk_appended_t, c_one_key 
 	var a_text []byte
 	a_text = cSlice[byte](unsafe.Pointer(c_text), c_text_len)
 	r0 := x.SetMixed(bool(c_one_key), uint32(c_addr), a_text)
-	ws_self := *c_self
+	var ws_self C.dmrgo_trunk_appended_t
+	ws_self = *c_self
 	out_trunk_Appended(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -41582,7 +41748,8 @@ func dmrgo_trunk_appended_set_nmea_long(c_self *C.dmrgo_trunk_appended_t, c_n *C
 		p_n = &a_n
 	}
 	r0 := x.SetNMEALong(p_n)
-	ws_self := *c_self
+	var ws_self C.dmrgo_trunk_appended_t
+	ws_self = *c_self
 	out_trunk_Appended(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -41610,7 +41777,8 @@ func dmrgo_trunk_appended_set_nmea_short(c_self *C.dmrgo_trunk_appended_t, c_n *
 		p_n = &a_n
 	}
 	r0 := x.SetNMEAShort(p_n)
-	ws_self := *c_self
+	var ws_self C.dmrgo_trunk_appended_t
+	ws_self = *c_self
 	out_trunk_Appended(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -41640,7 +41808,8 @@ func dmrgo_trunk_appended_set_text(c_self *C.dmrgo_trunk_appended_t, c_f C.dmrgo
 	var a_text []byte
 	a_text = cSlice[byte](unsafe.Pointer(c_text), c_text_len)
 	r0 := x.SetText(g_enums.UDTFormat(c_f), a_text)
-	ws_self := *c_self
+	var ws_self C.dmrgo_trunk_appended_t
+	ws_self = *c_self
 	out_trunk_Appended(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -44068,8 +44237,12 @@ func dmrgo_trunk_new_capacity_plus_follower(c_cfg *C.dmrgo_trunk_capacity_plus_c
 	oc := &outc{}
 	var a_cfg g_trunk.CapacityPlusConfig
 	var p_cfg *g_trunk.CapacityPlusConfig
+	var z_cfg C.dmrgo_trunk_capacity_plus_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_trunk_CapacityPlusConfig(&(*c_cfg))
+		a_cfg = in_trunk_CapacityPlusConfig(&z_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -44097,8 +44270,12 @@ func dmrgo_trunk_new_follower(c_cfg *C.dmrgo_trunk_follower_config_t, c_out **C.
 	var a_cfg g_trunk.FollowerConfig
 	var p_cfg *g_trunk.FollowerConfig
 	var s_cfg st_trunk_FollowerConfig
+	var z_cfg C.dmrgo_trunk_follower_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_trunk_FollowerConfig(&(*c_cfg), &s_cfg)
+		a_cfg = in_trunk_FollowerConfig(&z_cfg, &s_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -44126,8 +44303,12 @@ func dmrgo_trunk_new_ms(c_cfg *C.dmrgo_trunk_ms_config_t, c_out **C.dmrgo_trunk_
 	var a_cfg g_trunk.MSConfig
 	var p_cfg *g_trunk.MSConfig
 	var s_cfg st_trunk_MSConfig
+	var z_cfg C.dmrgo_trunk_ms_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_trunk_MSConfig(&(*c_cfg), &s_cfg)
+		a_cfg = in_trunk_MSConfig(&z_cfg, &s_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -44154,8 +44335,12 @@ func dmrgo_trunk_new_tscc(c_cfg *C.dmrgo_trunk_tscc_config_t, c_out **C.dmrgo_tr
 	oc := &outc{}
 	var a_cfg g_trunk.TSCCConfig
 	var p_cfg *g_trunk.TSCCConfig
+	var z_cfg C.dmrgo_trunk_tscc_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_trunk_TSCCConfig(&(*c_cfg))
+		a_cfg = in_trunk_TSCCConfig(&z_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -45531,8 +45716,12 @@ func dmrgo_codec2_new(c_p *C.dmrgo_codec2_config_t, c_out **C.dmrgo_codec2_codec
 	oc := &outc{}
 	var a_p g_vocoder_codec2.Config
 	var p_p *g_vocoder_codec2.Config
+	var z_p C.dmrgo_codec2_config_t
+	if c_p != nil && !sizedIn(unsafe.Pointer(&z_p), unsafe.Pointer(c_p), unsafe.Sizeof(z_p)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_p != nil {
-		a_p = in_vocoder_codec2_Config(&(*c_p))
+		a_p = in_vocoder_codec2_Config(&z_p)
 		p_p = &a_p
 	}
 	if c_out == nil {
@@ -45990,8 +46179,12 @@ func dmrgo_dvsi_new(c_port *C.dmrgo_dvsi_port_t, c_cfg *C.dmrgo_dvsi_config_t, c
 	}
 	var a_cfg g_vocoder_dvsi.Config
 	var p_cfg *g_vocoder_dvsi.Config
+	var z_cfg C.dmrgo_dvsi_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_vocoder_dvsi_Config(&(*c_cfg))
+		a_cfg = in_vocoder_dvsi_Config(&z_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -46600,8 +46793,12 @@ func dmrgo_voice_new_interrupter(c_cfg *C.dmrgo_voice_interrupter_config_t, c_ou
 	oc := &outc{}
 	var a_cfg g_voice.InterrupterConfig
 	var p_cfg *g_voice.InterrupterConfig
+	var z_cfg C.dmrgo_voice_interrupter_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_voice_InterrupterConfig(&(*c_cfg))
+		a_cfg = in_voice_InterrupterConfig(&z_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -46629,8 +46826,12 @@ func dmrgo_voice_new_receiver(c_cfg *C.dmrgo_voice_receiver_config_t, c_out **C.
 	var a_cfg g_voice.ReceiverConfig
 	var p_cfg *g_voice.ReceiverConfig
 	var s_cfg st_voice_ReceiverConfig
+	var z_cfg C.dmrgo_voice_receiver_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_voice_ReceiverConfig(&(*c_cfg), &s_cfg)
+		a_cfg = in_voice_ReceiverConfig(&z_cfg, &s_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -46657,8 +46858,12 @@ func dmrgo_voice_new_transmitter(c_cfg *C.dmrgo_voice_transmitter_config_t, c_ou
 	oc := &outc{}
 	var a_cfg g_voice.TransmitterConfig
 	var p_cfg *g_voice.TransmitterConfig
+	var z_cfg C.dmrgo_voice_transmitter_config_t
+	if c_cfg != nil && !sizedIn(unsafe.Pointer(&z_cfg), unsafe.Pointer(c_cfg), unsafe.Sizeof(z_cfg)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_cfg != nil {
-		a_cfg = in_voice_TransmitterConfig(&(*c_cfg))
+		a_cfg = in_voice_TransmitterConfig(&z_cfg)
 		p_cfg = &a_cfg
 	}
 	if c_out == nil {
@@ -47601,8 +47806,12 @@ func dmrgo_voice_transmitter_start(c_self *C.dmrgo_voice_transmitter_t, c_at C.d
 	var a_opts g_voice.CallOptions
 	var p_opts *g_voice.CallOptions
 	var s_opts st_voice_CallOptions
+	var z_opts C.dmrgo_voice_call_options_t
+	if c_opts != nil && !sizedIn(unsafe.Pointer(&z_opts), unsafe.Pointer(c_opts), unsafe.Sizeof(z_opts)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_opts != nil {
-		a_opts = in_voice_CallOptions(&(*c_opts), &s_opts)
+		a_opts = in_voice_CallOptions(&z_opts, &s_opts)
 		p_opts = &a_opts
 	}
 	r0 := h.v.Start(time.Duration(c_at), a_c, p_opts)

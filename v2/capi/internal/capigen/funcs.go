@@ -164,6 +164,7 @@ func (g *gen) mapParam(sm *sigmap, n string, t types.Type, dst bool, owner *tinf
 	if err != nil {
 		return err
 	}
+	src = g.sizedSrc(&sm.pre, t, cn, src, "return fail(C.DMRGO_ERR_ARG)")
 	st, err := g.storage(t)
 	if err != nil {
 		return err
@@ -179,6 +180,18 @@ func (g *gen) mapParam(sm *sigmap, n string, t types.Type, dst bool, owner *tinf
 	}
 	sm.args = append(sm.args, a)
 	return nil
+}
+
+// sizedSrc copies the sized struct at the C pointer cn into a zeroed
+// struct and returns it, or returns src for another type.
+func (g *gen) sizedSrc(w *strings.Builder, t types.Type, cn, src, onErr string) string {
+	ti := g.info(t)
+	if ti == nil || !ti.sized {
+		return src
+	}
+	z := "z_" + strings.TrimPrefix(cn, "c_")
+	lines(w, "var "+z+" C."+ti.c, "if "+cn+" != nil && !sizedIn(unsafe.Pointer(&"+z+"), unsafe.Pointer("+cn+"), unsafe.Sizeof("+z+")) {", onErr, "}")
+	return z
 }
 
 func (g *gen) ptrDecl(t types.Type, n string) (string, error) {
@@ -247,6 +260,9 @@ func (g *gen) mapPtrParam(sm *sigmap, n string, e types.Type, dst bool) error {
 	}
 	lines(&sm.pre, "var "+a+" "+g.goType(e), "var p_"+n+" *"+g.goType(e))
 	if dst {
+		if g.isSized(e) {
+			return fmt.Errorf("a sized struct as an output")
+		}
 		sm.cps = append(sm.cps, d)
 		lines(&sm.pre, "if "+cn+" != nil {", "p_"+n+" = &"+a, "}")
 		lines(&sm.after, "if "+cn+" != nil {")
@@ -271,6 +287,7 @@ func (g *gen) mapPtrParam(sm *sigmap, n string, e types.Type, dst bool) error {
 		lines(&sm.pre, "var s_"+n+" "+st)
 		sv = "s_" + n
 	}
+	src = g.sizedSrc(&sm.pre, e, cn, src, "return fail(C.DMRGO_ERR_ARG)")
 	lines(&sm.pre, "if "+cn+" != nil {")
 	if err := g.inVal(&sm.pre, e, a, src, sv, 0); err != nil {
 		return err
@@ -352,6 +369,9 @@ func (g *gen) mapSliceParam(sm *sigmap, n string, sl *types.Slice, owner *tinfo,
 
 func (g *gen) mapResult(sm *sigmap, n string, t types.Type, r string) error {
 	cn := "c_" + n
+	if p, ok := t.(*types.Pointer); ok && g.isSized(p.Elem()) || g.isSized(t) {
+		return fmt.Errorf("a sized struct as a result")
+	}
 	if c, ok := g.scalar(t); ok {
 		sm.cps = append(sm.cps, c+" *"+n)
 		sm.gps = append(sm.gps, cn+" *"+g.cgoType(c))
@@ -660,7 +680,7 @@ func (g *gen) mapRecv(sm *sigmap, recv *tinfo, rk recvKind, call string) (string
 			lines(&sm.pre, "var xs "+st)
 			sv = "xs"
 		}
-		if err := g.inVal(&sm.pre, recv.named, "x", "(*c_self)", sv, 0); err != nil {
+		if err := g.inVal(&sm.pre, recv.named, "x", g.sizedSrc(&sm.pre, recv.named, "c_self", "(*c_self)", "return fail(C.DMRGO_ERR_ARG)"), sv, 0); err != nil {
 			return "", err
 		}
 		if eff != nil {
@@ -855,6 +875,7 @@ func (g *gen) writeBack(sm *sigmap, t types.Type, eff *effect, cvar, govar strin
 	if _, ok := t.(*types.Array); ok {
 		ref = "*(*" + ct + ")(unsafe.Pointer(" + cvar + "))"
 	}
+	sized := g.isSized(t)
 	var w strings.Builder
 	ti := g.info(t)
 	staged := false
@@ -885,16 +906,21 @@ func (g *gen) writeBack(sm *sigmap, t types.Type, eff *effect, cvar, govar strin
 	if !staged {
 		return nil
 	}
+	load, store := ws+" = "+ref, ref+" = "+ws
+	if sized {
+		z := "z_" + strings.TrimPrefix(cvar, "c_")
+		load, store = ws+" = "+z, "sizedOut(unsafe.Pointer("+cvar+"), unsafe.Pointer(&"+ws+"), unsafe.Sizeof("+ws+"))"
+	}
 	if nullable {
-		lines(&sm.after, "var "+ws+" "+ct, "if "+cvar+" != nil {", ws+" = "+ref)
+		lines(&sm.after, "var "+ws+" "+ct, "if "+cvar+" != nil {", load)
 		sm.after.WriteString(w.String())
 		lines(&sm.after, "}")
-		lines(&sm.commit, "if "+cvar+" != nil {", ref+" = "+ws, "}")
+		lines(&sm.commit, "if "+cvar+" != nil {", store, "}")
 		return nil
 	}
-	lines(&sm.after, ws+" := "+ref)
+	lines(&sm.after, "var "+ws+" "+ct, load)
 	sm.after.WriteString(w.String())
-	lines(&sm.commit, ref+" = "+ws)
+	lines(&sm.commit, store)
 	return nil
 }
 

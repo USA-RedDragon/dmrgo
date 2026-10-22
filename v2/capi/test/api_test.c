@@ -71,7 +71,7 @@ static void test_errors(void) {
 	CHECK(dmrgo_layer2_new_burst(NULL) == DMRGO_ERR_ARG);
 	OK(dmrgo_layer2_burst_free(NULL));
 
-	dmrgo_codec2_config_t c2cfg = {0};
+	dmrgo_codec2_config_t c2cfg = {.size = sizeof c2cfg};
 	c2cfg.mode = 1600;
 	dmrgo_codec2_codec_t *c2 = NULL;
 	int rc = dmrgo_codec2_new(&c2cfg, &c2);
@@ -198,6 +198,59 @@ static void test_self_writes(void) {
 	printf("self: read-only calls take a const self and no arena\n");
 }
 
+static int enc_only(void *user, const int16_t *pcm, size_t n, uint8_t out[9]) {
+	(void)user;
+	(void)pcm;
+	(void)n;
+	memset(out, 0x5a, 9);
+	return DMRGO_OK;
+}
+
+static void test_sized(void) {
+	dmrgo_voice_transmitter_config_t cfg;
+	memset(&cfg, 0, sizeof cfg);
+	cfg.color_code = 1;
+	cfg.source = DMRGO_LAYER2_SYNC_SOURCE_MS;
+	cfg.headers = 9;
+	dmrgo_voice_transmitter_t *vt = NULL;
+	CHECK(dmrgo_voice_new_transmitter(&cfg, &vt) == DMRGO_ERR_ARG);
+	cfg.size = sizeof cfg;
+	CHECK(dmrgo_voice_new_transmitter(&cfg, &vt) == DMRGO_ERR_CONFIG);
+	cfg.size = offsetof(dmrgo_voice_transmitter_config_t, headers);
+	OK(dmrgo_voice_new_transmitter(&cfg, &vt));
+	OK(dmrgo_voice_transmitter_free(vt));
+	struct {
+		dmrgo_voice_transmitter_config_t c;
+		uint64_t newer[4];
+	} big;
+	memset(&big, 0xee, sizeof big);
+	memset(&big.c, 0, sizeof big.c);
+	big.c.size = sizeof big;
+	big.c.color_code = 1;
+	big.c.source = DMRGO_LAYER2_SYNC_SOURCE_MS;
+	OK(dmrgo_voice_new_transmitter(&big.c, &vt));
+	OK(dmrgo_voice_transmitter_free(vt));
+
+	dmrgo_vocoder_codec_vtable_t vtab = {sizeof vtab, NULL, NULL, NULL, enc_only, NULL, NULL, NULL, NULL};
+	vtab.size = offsetof(dmrgo_vocoder_codec_vtable_t, fid);
+	dmrgo_vocoder_codec_t *c = NULL;
+	OK(dmrgo_vocoder_codec_from_vtable(&vtab, &c));
+	int16_t pcm[160] = {0};
+	uint8_t enc[9] = {0};
+	OK(dmrgo_vocoder_codec_encode(c, pcm, 160, enc));
+	CHECK(enc[0] == 0x5a);
+	dmrgo_enums_fid_t fid = 7;
+	OK(dmrgo_vocoder_codec_fid(c, &fid));
+	CHECK(fid == 0);
+	uint8_t slot[9] = {0};
+	size_t n = 0;
+	CHECK(dmrgo_vocoder_codec_decode(c, pcm, 160, &n, NULL, slot) == DMRGO_ERR_NO_METHOD);
+	OK(dmrgo_vocoder_codec_free(c));
+	vtab.size = 0;
+	CHECK(dmrgo_vocoder_codec_from_vtable(&vtab, &c) == DMRGO_ERR_ARG);
+	printf("sized: config and vtable structs read only the members their size covers\n");
+}
+
 static void test_error_is(void) {
 	dmrgo_pdu_rate12_data_t blk = {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}};
 	dmrgo_packet_response_data_t rd;
@@ -268,7 +321,7 @@ static void test_in_out(void) {
 
 	uint8_t key[100];
 	memset(key, 'k', sizeof key);
-	dmrgo_dmrd_session_bridge_config_t bc = {0};
+	dmrgo_dmrd_session_bridge_config_t bc = {.size = sizeof bc};
 	bc.key = key;
 	bc.key_len = sizeof key;
 	dmrgo_dmrd_session_bridge_t *br = NULL;
@@ -324,6 +377,7 @@ static void test_layer2(void) {
 static void test_tx(void) {
 	dmrgo_layer2_voice_transmitter_options_t opts;
 	memset(&opts, 0, sizeof opts);
+	opts.size = sizeof opts;
 	dmrgo_layer3_service_options_t so = {0};
 	OK(dmrgo_pdu_new_voice_lc(true, 9990, 3191868, &so, &opts.lc));
 	opts.color_code = 1;
@@ -390,6 +444,7 @@ static void test_tx(void) {
 
 	dmrgo_voice_transmitter_config_t cfg;
 	memset(&cfg, 0, sizeof cfg);
+	cfg.size = sizeof cfg;
 	cfg.color_code = 1;
 	cfg.source = DMRGO_LAYER2_SYNC_SOURCE_MS;
 	cfg.queue = 27;
@@ -528,7 +583,7 @@ static int liar_decode(void *user, int16_t *dst, size_t cap, size_t *len, size_t
 }
 
 static void test_liar(void) {
-	dmrgo_vocoder_codec_vtable_t vt = {0, c_close, liar_decode, c_encode, c_fid, c_frame_samples, c_reset, c_silence};
+	dmrgo_vocoder_codec_vtable_t vt = {sizeof vt, 0, c_close, liar_decode, c_encode, c_fid, c_frame_samples, c_reset, c_silence};
 	dmrgo_vocoder_codec_t *c = NULL;
 	OK(dmrgo_vocoder_codec_from_vtable(&vt, &c));
 	uint8_t slot[9] = {0};
@@ -542,7 +597,7 @@ static void test_liar(void) {
 }
 
 static void test_vocoder(void) {
-	dmrgo_vocoder_codec_vtable_t vt = {&bias, c_close, c_decode, c_encode, c_fid, c_frame_samples, c_reset, c_silence};
+	dmrgo_vocoder_codec_vtable_t vt = {sizeof vt, &bias, c_close, c_decode, c_encode, c_fid, c_frame_samples, c_reset, c_silence};
 	dmrgo_vocoder_codec_t *c = NULL;
 	OK(dmrgo_vocoder_codec_from_vtable(&vt, &c));
 	int64_t fs = 0;
@@ -566,7 +621,7 @@ static void test_vocoder(void) {
 	OK(dmrgo_vocoder_codec_close(c));
 	OK(dmrgo_vocoder_codec_free(c));
 
-	dmrgo_codec2_config_t cfg = {0};
+	dmrgo_codec2_config_t cfg = {.size = sizeof cfg};
 	dmrgo_codec2_codec_t *c2 = NULL;
 	int rc = dmrgo_codec2_new(&cfg, &c2);
 	if (rc == DMRGO_ERR_CODEC2_UNAVAILABLE) {
@@ -598,6 +653,7 @@ static void test_last_error(void) {
 	CHECK(dmrgo_last_error_code() == DMRGO_ERR_SHORT && n == 1 && sneed > 2);
 	dmrgo_voice_transmitter_config_t cfg;
 	memset(&cfg, 0, sizeof cfg);
+	cfg.size = sizeof cfg;
 	cfg.color_code = 16;
 	cfg.source = DMRGO_LAYER2_SYNC_SOURCE_MS;
 	dmrgo_voice_transmitter_t *vt = NULL;
@@ -615,6 +671,7 @@ static void test_last_error(void) {
 static void test_partial(void) {
 	dmrgo_layer2_voice_transmitter_options_t opts;
 	memset(&opts, 0, sizeof opts);
+	opts.size = sizeof opts;
 	dmrgo_layer3_service_options_t so = {0};
 	OK(dmrgo_pdu_new_voice_lc(true, 9990, 3191868, &so, &opts.lc));
 	opts.color_code = 1;
@@ -650,6 +707,7 @@ static int small_lc(void *user, int64_t superframe, dmrgo_pdu_full_link_control_
 static void test_small_user(void) {
 	dmrgo_layer2_voice_transmitter_options_t opts;
 	memset(&opts, 0, sizeof opts);
+	opts.size = sizeof opts;
 	dmrgo_layer3_service_options_t so = {0};
 	OK(dmrgo_pdu_new_voice_lc(true, 9990, 3191868, &so, &opts.lc));
 	opts.color_code = 1;
@@ -799,10 +857,10 @@ static int chip_read(void *user, uint8_t *p, size_t n, int64_t *out) {
 
 static void test_dvsi(void) {
 	static struct chip c;
-	dmrgo_dvsi_port_vtable_t vt = {&c, chip_read, chip_write};
+	dmrgo_dvsi_port_vtable_t vt = {sizeof vt, &c, chip_read, chip_write};
 	dmrgo_dvsi_port_t *port = NULL;
 	OK(dmrgo_dvsi_port_from_vtable(&vt, &port));
-	dmrgo_dvsi_config_t cfg = {0};
+	dmrgo_dvsi_config_t cfg = {.size = sizeof cfg};
 	dmrgo_dvsi_codec_t *codec = NULL;
 	OK(dmrgo_dvsi_new(port, &cfg, &codec));
 	char name[DMRGO_DVSI_MAX_PRODUCT_LEN + 1];
@@ -840,6 +898,7 @@ int main(int argc, char **argv) {
 	test_in_out();
 	test_bad_args();
 	test_error_is();
+	test_sized();
 	test_tx();
 	test_voice_capture(argv[1]);
 	test_vocoder();

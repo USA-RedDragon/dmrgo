@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/types"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -386,9 +387,23 @@ func (g *gen) vtable(ti *tinfo) (string, string, error) {
 	var gw strings.Builder
 	var fields []string
 	var methods strings.Builder
-	lines(&hb, "struct "+vt+" {", "\tvoid *user;")
+	lines(&hb, "struct "+vt+" {", "\t/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. */", "\tsize_t size;", "\tvoid *user;")
+	var plain strings.Builder
+	lines(&plain, "struct "+vt+" {", "\tsize_t size;", "\tvoid *user;")
+	ms := make([]*types.Func, 0, iface.NumMethods())
 	for i := 0; i < iface.NumMethods(); i++ {
-		m := iface.Method(i)
+		ms = append(ms, iface.Method(i))
+	}
+	if old := g.lock.sizedLine(vt); old != "" {
+		at := func(m *types.Func) int {
+			if i := strings.Index(old, "(*"+cKeyword(snake(m.Name()))+")("); i >= 0 {
+				return i
+			}
+			return len(old)
+		}
+		slices.SortStableFunc(ms, func(a, b *types.Func) int { return at(a) - at(b) })
+	}
+	for i, m := range ms {
 		sig := m.Signature()
 		g.fillBuf = isRead(m)
 		cps, err := g.cParams(sig)
@@ -401,13 +416,18 @@ func (g *gen) vtable(ti *tinfo) (string, string, error) {
 			mn += "_fn"
 		}
 		all := append([]string{userParam}, cps...)
+		if d := g.l.docs[m]; d != "" {
+			lines(&hb, "\t/* "+d+" */")
+		}
 		lines(&hb, "\tint (*"+mn+")("+strings.Join(all, ", ")+");")
+		lines(&plain, "\tint (*"+mn+")("+strings.Join(all, ", ")+");")
 		var names []string
 		for _, p := range cps {
 			names = append(names, cName(p))
 		}
 		tr := vt + "__" + mn
 		lines(&ib, "static inline int "+tr+"("+strings.Join(append([]string{"const " + vt + " *t"}, cps...), ", ")+") {",
+			"\tif (!t->"+mn+")", "\t\treturn DMRGO_ERR_NO_METHOD;",
 			"\treturn t->"+mn+"("+strings.Join(append([]string{"t->user"}, names...), ", ")+");", "}", "")
 		body, fs, err := g.cbBody(sig, "C."+tr+"(&c.t", fmt.Sprintf("m%d", i))
 		if err != nil {
@@ -417,6 +437,7 @@ func (g *gen) vtable(ti *tinfo) (string, string, error) {
 		methods.WriteString("func (c *vt_" + ti.id + ") " + m.Name() + body)
 	}
 	lines(&hb, "};", "")
+	lines(&plain, "};")
 	lines(&gw, "type vt_"+ti.id+" struct {", "t C."+vt)
 	for _, f := range fields {
 		lines(&gw, f)
@@ -425,10 +446,12 @@ func (g *gen) vtable(ti *tinfo) (string, string, error) {
 	gw.WriteString(methods.String())
 	cname := ti.base + "_from_vtable"
 	lines(&gw, "//export "+cname, "func "+cname+"(c_vt *C."+vt+", c_out **C."+ti.c+") (rc C.int) {", "defer recoverTo(&rc)",
-		"if c_vt == nil || c_out == nil {", "return fail(C.DMRGO_ERR_ARG)", "}", "*c_out = "+g.newer(ti)+"(&vt_"+ti.id+"{t: *c_vt})", "return C.DMRGO_OK", "}", "")
+		"if c_vt == nil || c_out == nil {", "return fail(C.DMRGO_ERR_ARG)", "}", "var z C."+vt,
+		"if !sizedIn(unsafe.Pointer(&z), unsafe.Pointer(c_vt), unsafe.Sizeof(z)) {", "return fail(C.DMRGO_ERR_ARG)", "}",
+		"*c_out = "+g.newer(ti)+"(&vt_"+ti.id+"{t: z})", "return C.DMRGO_OK", "}", "")
 	g.fwd = append(g.fwd, "typedef struct "+vt+" "+vt+";")
 	g.hStructs.WriteString(hb.String())
-	g.abiTypes = append(g.abiTypes, "type "+strings.Join(strings.Fields(hb.String()), " "))
+	g.abiTypes = append(g.abiTypes, "type "+strings.Join(strings.Fields(plain.String()), " "))
 	g.internal.WriteString(ib.String())
 	g.goConv.WriteString(gw.String())
 	proto := "/* " + cname + " makes a " + ti.obj.Name() + " whose methods call the functions of vt with vt->user. */\nint " + cname + "(const " + vt + " *vt, " + ti.c + " **out);\n"

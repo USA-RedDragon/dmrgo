@@ -87,7 +87,7 @@ func layer2Path() (func() error, error) {
 }
 
 func txPath() (func() error, error) {
-	opts := new(C.dmrgo_layer2_voice_transmitter_options_t)
+	opts := sized(new(C.dmrgo_layer2_voice_transmitter_options_t))
 	so := new(C.dmrgo_layer3_service_options_t)
 	if err := check(dmrgo_pdu_new_voice_lc(true, 9990, 3191868, so, &opts.lc)); err != nil {
 		return nil, err
@@ -137,7 +137,7 @@ func voicePath(capture []byte) (func() error, error) {
 }
 
 func partialC() (int, int, error) {
-	opts := new(C.dmrgo_layer2_voice_transmitter_options_t)
+	opts := sized(new(C.dmrgo_layer2_voice_transmitter_options_t))
 	so := new(C.dmrgo_layer3_service_options_t)
 	if err := check(dmrgo_pdu_new_voice_lc(true, 9990, 3191868, so, &opts.lc)); err != nil {
 		return 0, 0, err
@@ -237,7 +237,7 @@ func outputKeyC(o *C.dmrgo_voice_output_t) string {
 
 func transmitterFuzzC(alias string, frames int, seed uint64) ([]string, int, error) {
 	rng := rand.New(rand.NewPCG(seed, 2))
-	cfg := new(C.dmrgo_voice_transmitter_config_t)
+	cfg := sized(new(C.dmrgo_voice_transmitter_config_t))
 	cfg.color_code = 1
 	cfg.source = C.DMRGO_LAYER2_SYNC_SOURCE_MS
 	cfg.queue = 192
@@ -248,7 +248,7 @@ func transmitterFuzzC(alias string, frames int, seed uint64) ([]string, int, err
 	defer dmrgo_voice_transmitter_free(tx)
 	call := new(C.dmrgo_voice_call_t)
 	call.group, call.target, call.source = true, 9990, 3191868
-	opts := new(C.dmrgo_voice_call_options_t)
+	opts := sized(new(C.dmrgo_voice_call_options_t))
 	ab := C.CBytes([]byte(alias))
 	defer C.free(ab)
 	opts.talker_alias, opts.talker_alias_len = (*C.char)(ab), C.size_t(len(alias))

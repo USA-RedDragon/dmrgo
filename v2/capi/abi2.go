@@ -226,7 +226,7 @@ func bsABI(seed uint64) error {
 	if err != nil {
 		return err
 	}
-	ccfg := new(C.dmrgo_bs_config_t)
+	ccfg := sized(new(C.dmrgo_bs_config_t))
 	out_bs_Config(ccfg, &cfg, h.in)
 	var cr *C.dmrgo_bs_repeater_t
 	if rc := C.dmrgo_bs_new(ccfg, &cr); rc != C.DMRGO_OK {
@@ -303,7 +303,7 @@ func csbkABI(seed uint64) error {
 		return err
 	}
 	cq, cr, cw, cp := new(*C.dmrgo_csbk_requester_t), new(*C.dmrgo_csbk_responder_t), new(*C.dmrgo_csbk_wakeup_t), new(*C.dmrgo_csbk_preambles_t)
-	cqc, crc, cwc, cpc := new(C.dmrgo_csbk_requester_config_t), new(C.dmrgo_csbk_responder_config_t), new(C.dmrgo_csbk_wakeup_config_t), new(C.dmrgo_csbk_preambles_config_t)
+	cqc, crc, cwc, cpc := sized(new(C.dmrgo_csbk_requester_config_t)), sized(new(C.dmrgo_csbk_responder_config_t)), sized(new(C.dmrgo_csbk_wakeup_config_t)), sized(new(C.dmrgo_csbk_preambles_config_t))
 	out_csbk_RequesterConfig(cqc, &qcfg, h.in)
 	out_csbk_ResponderConfig(crc, &rcfg, h.in)
 	out_csbk_WakeupConfig(cwc, &wcfg, h.in)
@@ -491,7 +491,7 @@ func newABIMS(h *harness, i int) (*abiMS, error) {
 	if err != nil {
 		return nil, err
 	}
-	cmc := new(C.dmrgo_trunk_ms_config_t)
+	cmc := sized(new(C.dmrgo_trunk_ms_config_t))
 	out_trunk_MSConfig(cmc, &mc, h.in)
 	m := &abiMS{g: g, channel: 1}
 	if rc := C.dmrgo_trunk_new_ms(cmc, &m.c); rc != C.DMRGO_OK {
@@ -560,7 +560,7 @@ func trunkABI(seed uint64, payload, nms int) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	ccfg := new(C.dmrgo_trunk_tscc_config_t)
+	ccfg := sized(new(C.dmrgo_trunk_tscc_config_t))
 	out_trunk_TSCCConfig(ccfg, &cfg, h.in)
 	var ct *C.dmrgo_trunk_tscc_t
 	if rc := C.dmrgo_trunk_new_tscc(ccfg, &ct); rc != C.DMRGO_OK {
@@ -585,7 +585,7 @@ func trunkABI(seed uint64, payload, nms int) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	cfc := new(C.dmrgo_trunk_follower_config_t)
+	cfc := sized(new(C.dmrgo_trunk_follower_config_t))
 	out_trunk_FollowerConfig(cfc, &fcfg, h.in)
 	var cf *C.dmrgo_trunk_follower_t
 	if rc := C.dmrgo_trunk_new_follower(cfc, &cf); rc != C.DMRGO_OK {

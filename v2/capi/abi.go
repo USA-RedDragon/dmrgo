@@ -50,6 +50,11 @@ func (h *harness) free() {
 	C.free(h.inMem)
 }
 
+func sized[T any](p *T) *T {
+	*(*C.size_t)(unsafe.Pointer(p)) = C.size_t(unsafe.Sizeof(*p))
+	return p
+}
+
 func jsonOf(v any) string {
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -175,7 +180,7 @@ func voiceABI(seed uint64) error {
 	if err != nil {
 		return err
 	}
-	ccfg := new(C.dmrgo_voice_transmitter_config_t)
+	ccfg := sized(new(C.dmrgo_voice_transmitter_config_t))
 	out_voice_TransmitterConfig(ccfg, &gcfg, h.in)
 	var ctx *C.dmrgo_voice_transmitter_t
 	if rc := C.dmrgo_voice_new_transmitter(ccfg, &ctx); rc != C.DMRGO_OK {
@@ -187,7 +192,7 @@ func voiceABI(seed uint64) error {
 	if err := gtx.Start(0, call, &opts); err != nil {
 		return err
 	}
-	cc, co := new(C.dmrgo_voice_call_t), new(C.dmrgo_voice_call_options_t)
+	cc, co := new(C.dmrgo_voice_call_t), sized(new(C.dmrgo_voice_call_options_t))
 	out_voice_Call(cc, &call, h.in)
 	out_voice_CallOptions(co, &opts, h.in)
 	if rc := C.dmrgo_voice_transmitter_start(ctx, 0, cc, co); rc != C.DMRGO_OK {
@@ -285,7 +290,7 @@ func layer2txABI(seed uint64) error {
 	if err != nil {
 		return err
 	}
-	copts := new(C.dmrgo_layer2_voice_transmitter_options_t)
+	copts := sized(new(C.dmrgo_layer2_voice_transmitter_options_t))
 	out_layer2_VoiceTransmitterOptions(copts, &gopts, h.in)
 	var ctx *C.dmrgo_layer2_voice_transmitter_t
 	if rc := C.dmrgo_layer2_new_voice_transmitter(copts, &ctx); rc != C.DMRGO_OK {
@@ -401,7 +406,7 @@ func framerRun(h *harness, stream, cuts []byte, period byte) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	ccfg := new(C.dmrgo_framer_config_t)
+	ccfg := sized(new(C.dmrgo_framer_config_t))
 	out_layer2_framer_Config(ccfg, &cfg, h.in)
 	var cf *C.dmrgo_framer_t
 	if rc := C.dmrgo_framer_new(ccfg, &cf); rc != C.DMRGO_OK {
@@ -491,7 +496,7 @@ func codec2ABI(seed uint64) error {
 		return err
 	}
 	defer gc.Close()
-	ccfg := new(C.dmrgo_codec2_config_t)
+	ccfg := sized(new(C.dmrgo_codec2_config_t))
 	out_vocoder_codec2_Config(ccfg, &cfg, h.in)
 	var cc *C.dmrgo_codec2_codec_t
 	if rc := C.dmrgo_codec2_new(ccfg, &cc); rc != C.DMRGO_OK {
