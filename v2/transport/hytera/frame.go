@@ -182,9 +182,13 @@ func (f *Frame) HasBurst() bool {
 // Hint returns what the frame tells about its burst, for the service
 // machines: the slot, the voice position or data type from SlotType, and
 // the sequence number (8 bits), and now, the time at which the frame
-// arrived, as At. Give now 0 when the time is not known. A slot type
-// without a burst kind, such as one that no source names, gives
-// KindUnknown; use HasBurst first. A nil f gives the zero Hint.
+// arrived, as At. Give now 0 when the time is not known. A data slot type
+// gives the data type of the slot type in the burst instead when the burst
+// has a data SYNC pattern and its slot type decodes, because that field has
+// FEC and Hytera_Homebrew_Bridge sends CSBK and data bursts with
+// SlotTypeTerminator. A slot type without a burst kind, such as one that no
+// source names, gives KindUnknown; use HasBurst first. A nil f gives the
+// zero Hint.
 func (f *Frame) Hint(now time.Duration) layer2.Hint {
 	if f == nil {
 		return layer2.Hint{}
@@ -196,9 +200,29 @@ func (f *Frame) Hint(now time.Duration) layer2.Hint {
 		return h
 	}
 	if dt, ok := dataTypeOf(f.SlotType); ok {
+		if bdt, ok := burstDataType(&f.Burst); ok {
+			dt = bdt
+		}
 		h.Kind, h.DataType, h.HasDataType = layer2.KindData, dt, true
 	}
 	return h
+}
+
+func burstDataType(b *layer2.RawBurst) (enums.DataType, bool) {
+	var sync [6]byte
+	for i := range sync {
+		sync[i] = b[13+i]<<4 | b[14+i]>>4
+	}
+	p, d := enums.NearestSyncPattern(sync)
+	if _, k, ok := layer2.SyncSourceOf(p); !ok || k != layer2.KindData || d > layer2.DefaultSyncThreshold {
+		return 0, false
+	}
+	cw := (uint32(b[12])&0x3F)<<14 | uint32(b[13])>>4<<10 | (uint32(b[19])&0x0F)<<6 | uint32(b[20])>>2
+	info, res := pdu.DecodeSlotTypeCodeword(cw)
+	if res.Uncorrectable {
+		return 0, false
+	}
+	return info.SlotType().DataType, true
 }
 
 func dataTypeOf(s SlotType) (enums.DataType, bool) {

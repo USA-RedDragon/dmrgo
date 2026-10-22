@@ -30,8 +30,8 @@ func checkPacket(t *testing.T, p []byte) {
 		}
 		h := f.Hint(0)
 		back := f
-		if err := back.SetHint(h); err == nil && back.SlotType != f.SlotType {
-			t.Fatalf("%x: SetHint gives %v, want %v", p, back.SlotType, f.SlotType)
+		if err := back.SetHint(h); err == nil && back.SlotType != f.SlotType && back.Hint(0) != h {
+			t.Fatalf("%x: SetHint gives %v, want %v or a slot type with the same Hint", p, back.SlotType, f.SlotType)
 		}
 	}
 	if h, err := hytera.DecodeHeartbeat(p); err == nil {
