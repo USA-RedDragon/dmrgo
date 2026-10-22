@@ -16,19 +16,32 @@ import (
 )
 
 func noisyBaseband(slots []rftx.BSSlot, offsetHz, cn float64, seed uint64) []complex64 {
+	return cleanBaseband(slots, offsetHz).noisy(cn, seed)
+}
+
+type benchSignal struct {
+	re, im []float64
+}
+
+func cleanBaseband(slots []rftx.BSSlot, offsetHz float64) benchSignal {
 	fm, env := rftx.ModulateBS(slots)
 	pad := int(0.3 * basebandRate)
-	x := make([]complex64, len(fm)+2*pad)
+	s := benchSignal{make([]float64, len(fm)+2*pad), make([]float64, len(fm)+2*pad)}
+	var ph float64
+	for k := range fm {
+		ph += 2 * math.Pi * (fm[k] + offsetHz) / basebandRate
+		s.re[pad+k], s.im[pad+k] = env[k]*math.Cos(ph), env[k]*math.Sin(ph)
+	}
+	return s
+}
+
+func (s benchSignal) noisy(cn float64, seed uint64) []complex64 {
+	x := make([]complex64, len(s.re))
 	rng := rand.New(rand.NewPCG(seed, seed+1))
 	sigma := math.Sqrt(basebandRate/(math.Pow(10, cn/10)*12500)) / math.Sqrt2
-	var ph float64
+	re, im := s.re[:len(x)], s.im[:len(x)]
 	for i := range x {
-		var re, im float64
-		if k := i - pad; k >= 0 && k < len(fm) {
-			ph += 2 * math.Pi * (fm[k] + offsetHz) / basebandRate
-			re, im = env[k]*math.Cos(ph), env[k]*math.Sin(ph)
-		}
-		x[i] = complex(float32(re+rng.NormFloat64()*sigma), float32(im+rng.NormFloat64()*sigma))
+		x[i] = complex(float32(re[i]+rng.NormFloat64()*sigma), float32(im[i]+rng.NormFloat64()*sigma))
 	}
 	return x
 }
