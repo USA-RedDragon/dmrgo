@@ -108,6 +108,7 @@ type gen struct {
 	capiDir     string
 	collisions  []string
 	prefixes    map[string]string
+	unions      []string
 
 	hScalars, hStructs, hConsts, hProtos strings.Builder
 	goConv, goFuncs, internal, genC      strings.Builder
@@ -1018,6 +1019,19 @@ func (g *gen) convertAll() {
 	}
 }
 
+func (g *gen) alignsGo() {
+	slices.Sort(g.unions)
+	var w strings.Builder
+	lines(&w, "func cAlign(p any) uintptr {", "switch p.(type) {")
+	for _, c := range g.unions {
+		fn := "dmrgo__align_" + strings.TrimSuffix(strings.TrimPrefix(c, "dmrgo_"), "_t")
+		lines(&g.internal, "enum { "+fn+" = _Alignof("+c+") };", "")
+		lines(&w, "case *C."+c+":", "return C."+fn)
+	}
+	lines(&w, "}", "return 0", "}", "")
+	g.goFuncs.WriteString(w.String())
+}
+
 func (g *gen) finish(opt Options) (*Output, error) {
 	g.convertAll()
 	if len(g.collisions) > 0 {
@@ -1025,6 +1039,7 @@ func (g *gen) finish(opt Options) (*Output, error) {
 	}
 	g.handles()
 	g.errorsGo()
+	g.alignsGo()
 	var h bytes.Buffer
 	lines2 := func(s ...string) {
 		for _, l := range s {

@@ -862,6 +862,20 @@ static void test_empty_arena_item(void) {
 	}
 }
 
+static void test_union_alignment(void) {
+	static _Alignas(64) unsigned char arena[8192];
+	dmrgo_pdu_data_header_t h;
+	memset(&h, 0, sizeof h);
+	h.raw_payload[0] = 0x02;
+	uint8_t payload[12] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+	for (size_t fill = 0; fill < 16; fill++) {
+		dmrgo_packet_t p;
+		size_t len = fill, need = 0;
+		OK(dmrgo_packet_new_packet(&h, payload, sizeof payload, DMRGO_ENUMS_DATA_TYPE_RATE12, &p, arena, sizeof arena, &len, &need));
+		CHECK(p.blocks_len > 0 && (uintptr_t)p.blocks % _Alignof(dmrgo_layer2_data_t) == 0);
+	}
+}
+
 static void test_partial(void) {
 	dmrgo_layer2_voice_transmitter_options_t opts;
 	memset(&opts, 0, sizeof opts);
@@ -1104,6 +1118,7 @@ int main(int argc, char **argv) {
 	test_last_error();
 	test_huge_message_cap();
 	test_empty_arena_item();
+	test_union_alignment();
 	test_partial();
 	test_small_user();
 	test_handle_errors();

@@ -49513,3 +49513,11 @@ func codeErr(code C.int) error {
 	}
 	return codeError(code)
 }
+
+func cAlign(p any) uintptr {
+	switch p.(type) {
+	case *C.dmrgo_layer2_data_t:
+		return C.dmrgo__align_layer2_data
+	}
+	return 0
+}

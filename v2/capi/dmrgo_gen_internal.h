@@ -87,4 +87,6 @@ typedef struct dmrgo__last_t {
 dmrgo__last_t *dmrgo__last(void);
 void dmrgo__fail(int code);
 
+enum { dmrgo__align_layer2_data = _Alignof(dmrgo_layer2_data_t) };
+
 #endif
