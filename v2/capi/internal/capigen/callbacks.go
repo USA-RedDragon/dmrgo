@@ -217,7 +217,7 @@ func (b *cbuild) param(i int, t types.Type, variadic bool) error {
 		b.fields = append(b.fields, n+" C.size_t", n+"need C.size_t")
 		lines(&b.pre, "d := "+q)
 		lines(&b.loopSet, "c."+n+" = C.size_t(len(d))", "c."+n+"need = 0")
-		lines(&b.grow, "if int(c."+n+"need) > cap(d) {", "d = slices.Grow(d, int(c."+n+"need)-len(d))", "grown = true", "}")
+		lines(&b.grow, "if growOK(c."+n+"need, cap(d)) {", "d = slices.Grow(d, int(c."+n+"need)-len(d))", "grown = true", "}")
 		b.cargs = append(b.cargs, "(*"+ge+")(unsafe.Pointer(unsafe.SliceData(d[:cap(d)])))", "C.size_t(cap(d))", "&c."+n, "&c."+n+"need")
 		g.imports["slices"] = true
 		return nil
@@ -284,7 +284,7 @@ func (b *cbuild) result(i int, t types.Type, isAppend bool) error {
 		b.errName = o
 		return nil
 	case isAppend:
-		lines(&b.post, o+" = d[:c."+fmt.Sprintf("%sn%d", b.fp, b.appendIdx)+"]")
+		lines(&b.post, o+" = d[:min(c."+fmt.Sprintf("%sn%d", b.fp, b.appendIdx)+", C.size_t(cap(d)))]")
 		return nil
 	case isString(t) || isSliceAlias(g, t):
 		return b.bufResult(i, t, o)
@@ -364,12 +364,12 @@ func (b *cbuild) bufResult(i int, t types.Type, o string) error {
 	b.fields = append(b.fields, bf+" []"+et, n+" C.size_t", n+"need C.size_t")
 	b.cargs = append(b.cargs, "(*"+ge+")(unsafe.Pointer(unsafe.SliceData(c."+bf+")))", "C.size_t(len(c."+bf+"))", "&c."+n, "&c."+n+"need")
 	lines(&b.loopSet, "c."+n+"need = 0")
-	lines(&b.grow, "if int(c."+n+"need) > len(c."+bf+") {", "c."+bf+" = make([]"+et+", c."+n+"need)", "grown = true", "}")
+	lines(&b.grow, "if growOK(c."+n+"need, len(c."+bf+")) {", "c."+bf+" = make([]"+et+", c."+n+"need)", "grown = true", "}")
 	if isString(t) {
-		lines(&b.post, o+" = string(c."+bf+"[:c."+n+"])")
+		lines(&b.post, o+" = string(c."+bf+"[:min(c."+n+", C.size_t(len(c."+bf+")))])")
 		return nil
 	}
-	lines(&b.post, o+" = slices.Clone(c."+bf+"[:c."+n+"])")
+	lines(&b.post, o+" = slices.Clone(c."+bf+"[:min(c."+n+", C.size_t(len(c."+bf+")))])")
 	g.imports["slices"] = true
 	return nil
 }

@@ -46,6 +46,43 @@ func TestNullArguments(t *testing.T) {
 	}
 }
 
+// TestHugeLengths calls every generated entry point with each unsigned
+// argument, such as a length or a capacity, at its largest value and each
+// pointer argument pointing to zeroed memory, and fails for each call that
+// returns DMRGO_ERR_PANIC.
+func TestHugeLengths(t *testing.T) {
+	t.Parallel()
+
+	names := make([]string, 0, len(entryPoints))
+	for n := range entryPoints {
+		names = append(names, n)
+	}
+	slices.Sort(names)
+	for _, name := range names {
+		f := reflect.ValueOf(entryPoints[name])
+		ft := f.Type()
+		args := make([]reflect.Value, ft.NumIn())
+		for i := range args {
+			at := ft.In(i)
+			args[i] = reflect.New(at).Elem()
+			switch at.Kind() {
+			case reflect.Uint, reflect.Uint64, reflect.Uintptr, reflect.Uint32:
+				args[i].SetUint(^uint64(0) >> (64 - 8*at.Size()))
+			case reflect.Pointer:
+				if at.Elem().Kind() != reflect.Array || at.Elem().Len() != 0 {
+					if p, ok := zeroedMemory(at.Elem()); ok {
+						args[i] = p
+					}
+				}
+			}
+		}
+		out := f.Call(args)
+		if len(out) == 1 && out[0].CanInt() && out[0].Int() == errPanic {
+			t.Errorf("%s: DMRGO_ERR_PANIC", name)
+		}
+	}
+}
+
 func zeroedMemory(t reflect.Type) (p reflect.Value, ok bool) {
 	defer func() {
 		if recover() != nil {

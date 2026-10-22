@@ -88,7 +88,7 @@ func (g *gen) mapParam(sm *sigmap, n string, t types.Type, dst bool, owner *tinf
 		sm.cps = append(sm.cps, "const char *"+n, "size_t "+n+"_len")
 		sm.gps = append(sm.gps, cn+" *C.char", cn+"_len C.size_t")
 		lines(&sm.pre, "if "+cn+" == nil && "+cn+"_len > 0 {", "return fail(C.DMRGO_ERR_ARG)", "}")
-		sm.args = append(sm.args, "C.GoStringN("+cn+", C.int("+cn+"_len))")
+		sm.args = append(sm.args, "cStr("+cn+", "+cn+"_len)")
 		return nil
 	}
 	if s, ok := t.(*types.Signature); ok {
@@ -772,6 +772,7 @@ func (g *gen) wrapper(cname, doc string, recv *tinfo, rk recvKind, call string, 
 	if sm.arena {
 		lines(&w, "if c_arena_len != nil {", "if *c_arena_len > c_arena_cap {", "return fail(C.DMRGO_ERR_ARG)", "}", "oc.need = int(*c_arena_len)", "}", "oc.setArena(c_arena, c_arena_cap)")
 	}
+	lenChecks(&w, sm.gps)
 	w.WriteString(sm.pre.String())
 	bounded, note := g.stateful(&w, &sm, sig, cname, rk, ld == nil)
 	if bounded {
@@ -904,6 +905,33 @@ func (g *gen) cgoTypeOf(t types.Type) string {
 	}
 	c, _ := g.ctype(t)
 	return g.cgoType(c)
+}
+
+func lenChecks(w *strings.Builder, gps []string) {
+	types := map[string]string{}
+	for _, p := range gps {
+		n, t, _ := strings.Cut(p, " ")
+		types[n] = t
+	}
+	for _, p := range gps {
+		n, t, _ := strings.Cut(p, " ")
+		if t != "C.size_t" {
+			continue
+		}
+		base, ok := strings.CutSuffix(n, "_len")
+		if !ok {
+			base, ok = strings.CutSuffix(n, "_cap")
+		}
+		bt, has := types[base]
+		if !ok || !has {
+			continue
+		}
+		size := "unsafe.Sizeof(*" + base + ")"
+		if bt == "unsafe.Pointer" {
+			size = "1"
+		}
+		lines(w, "if !lenOK(unsafe.Pointer("+base+"), "+n+", "+size+") {", "return fail(C.DMRGO_ERR_ARG)", "}")
+	}
 }
 
 func (g *gen) protoDoc(doc string) string {

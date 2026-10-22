@@ -12,6 +12,7 @@ import "C"
 
 import (
 	"fmt"
+	"math"
 	"runtime/cgo"
 	"runtime/debug"
 	"strings"
@@ -69,6 +70,43 @@ func deleteHandle(p unsafe.Pointer) {
 	if h, ok := handleOf(p); ok {
 		h.Delete()
 	}
+}
+
+func lenOK(p unsafe.Pointer, n C.size_t, size uintptr) bool {
+	if n == 0 {
+		return true
+	}
+	if p == nil || uint64(n) > uint64(math.MaxInt)/uint64(max(size, 1)) {
+		return false
+	}
+	return uintptr(n)*max(size, 1) <= ^uintptr(0)-uintptr(p)
+}
+
+const maxGrow = 1 << 24
+
+func growOK(need C.size_t, have int) bool {
+	return need <= maxGrow && int(need) > have
+}
+
+func cSlice[E any](p unsafe.Pointer, n C.size_t) []E {
+	var z E
+	if !lenOK(p, n, unsafe.Sizeof(z)) {
+		panic(argPanic{})
+	}
+	if p == nil {
+		return nil
+	}
+	return unsafe.Slice((*E)(p), int(n))
+}
+
+func cStr(p *C.char, n C.size_t) string {
+	if !lenOK(unsafe.Pointer(p), n, 1) {
+		panic(argPanic{})
+	}
+	if n == 0 {
+		return ""
+	}
+	return string(unsafe.Slice((*byte)(unsafe.Pointer(p)), int(n)))
 }
 
 func fail(code C.int) C.int {
