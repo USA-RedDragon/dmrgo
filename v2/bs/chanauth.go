@@ -16,6 +16,7 @@ func (r *Repeater) authorize(now time.Duration, s *slot, b *layer2.Burst, raw *l
 			return dst, true
 		}
 		r.authEnd(now, s)
+		s.authed = true
 		return dst, false
 	case SlotChanAuthSelect:
 		if burst, source, voiceAuth, ok := r.chanAuthPDU(b, raw); ok && source < s.authSource {
@@ -24,7 +25,15 @@ func (r *Repeater) authorize(now time.Duration, s *slot, b *layer2.Burst, raw *l
 		}
 		return dst, true
 	case SlotIdle, SlotCallHang:
-	case SlotVoice, SlotData, SlotDataHang, SlotRejected:
+		s.authed = false
+	case SlotData, SlotDataHang:
+		return dst, false
+	case SlotVoice, SlotRejected:
+		if s.authed && from == s.authFrom {
+			if source, ok := r.burstSource(b, raw); ok && source != s.authSource {
+				return dst, true
+			}
+		}
 		return dst, false
 	}
 	if !hang || !from.RF && r.chanAuth != ChannelAuthMultiSite {
