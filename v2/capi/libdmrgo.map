@@ -1522,13 +1522,6 @@
 		dmrgo_trunk_tscc_udt;
 		dmrgo_trunk_tscc_usbd;
 		dmrgo_trunk_udt_appended;
-		dmrgo_trunk_udt_free;
-		dmrgo_trunk_udt_get_crc_ok;
-		dmrgo_trunk_udt_get_data;
-		dmrgo_trunk_udt_get_header;
-		dmrgo_trunk_udt_set_crc_ok;
-		dmrgo_trunk_udt_set_data;
-		dmrgo_trunk_udt_set_header;
 		dmrgo_trunk_usbd_poll_request_encode;
 		dmrgo_trunk_usbd_poll_request_string;
 		dmrgo_trunk_usbdlip_response_encode;

@@ -141,3 +141,10 @@ func readCapture(t testing.TB, path string) []capture {
 	}
 	return caps
 }
+
+func udtOf(u trunk.UDT, ok bool) *trunk.UDT {
+	if !ok {
+		return nil
+	}
+	return &u
+}

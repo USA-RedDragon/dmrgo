@@ -241,7 +241,7 @@ func ExampleMS_SetSupplementary() {
 	s.onMS = func(i int, o *trunk.Output) {
 		switch {
 		case i == 1 && o.Kind == trunk.OutputUDT:
-			u := s.ms[1].UDT()
+			u, _ := s.ms[1].UDT()
 			fmt.Printf("MS 1 got %q\n", u.Data[:9])
 		case i == 1 && o.Kind == trunk.OutputGrant:
 			fmt.Println("MS 1 got the grant from", o.Grant.Source)

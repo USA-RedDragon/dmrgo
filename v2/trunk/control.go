@@ -56,6 +56,8 @@ type control struct {
 	counterNew bool
 	acceptRAS  bool
 	udt        UDT
+	hasUDT     bool
+	udtRx      UDT
 	udtBlocks  [4][12]byte
 	udtN       int
 	udtWant    int
@@ -135,7 +137,7 @@ func (c *control) tscc(now time.Duration, slot enums.Slot) tsccEvent {
 	case *pdu.DataHeader:
 		c.pending, c.udtOn = pendingNone, false
 		if h, ok := d.AsUDT(); ok && (h.Opcode == pdu.UDTOpcodeOutboundHeader || h.Opcode == pdu.UDTOpcodeDGNAOutboundHeader) {
-			c.udt, c.udtN = UDT{Header: h}, 0
+			c.udtRx, c.udtN = UDT{Header: h}, 0
 			c.udtWant, c.udtSlot, c.udtOn = int(h.UAB)+1, slot, true
 		}
 		return eventTSCC
@@ -150,14 +152,15 @@ func (c *control) udtBlock(d *pdu.Rate12Data, slot enums.Slot) tsccEvent {
 		return eventNone
 	}
 	c.udtBlocks[c.udtN] = d.Data
-	copy(c.udt.Data[c.udtN*12:], d.Data[:])
+	copy(c.udtRx.Data[c.udtN*12:], d.Data[:])
 	c.udtN++
 	if c.udtN < c.udtWant {
 		return eventTSCC
 	}
 	c.udtOn = false
-	clear(c.udt.Data[12*c.udtN-2:])
-	c.udt.CRCOK = pdu.MBCLastBlockCRCOK(c.udtBlocks[:c.udtN])
+	clear(c.udtRx.Data[12*c.udtN-2:])
+	c.udtRx.CRCOK = pdu.MBCLastBlockCRCOK(c.udtBlocks[:c.udtN])
+	c.udt, c.hasUDT = c.udtRx, true
 	return eventUDT
 }
 

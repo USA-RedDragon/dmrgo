@@ -56,7 +56,7 @@ func TestFollower_UDT(t *testing.T) {
 			}
 		}
 		wantKinds(t, "UDT", out, trunk.OutputUDT)
-		u := f.UDT()
+		u, _ := f.UDT()
 		if u.CRCOK == damage || u.Header.AppendedBlocks != 1 || u.Header.LLIDDestination != msAddr || u.Header.LLIDSource != 3120002 {
 			t.Errorf("damage %v: UDT %+v", damage, u)
 		}

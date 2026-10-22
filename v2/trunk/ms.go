@@ -300,14 +300,14 @@ func (m *MS) Site() Site {
 	return m.f.ctl.site
 }
 
-// UDT returns the UDT delivery of the last OutputUDT, as Follower.UDT
-// does.
-func (m *MS) UDT() *UDT {
+// UDT returns a copy of the UDT delivery of the last OutputUDT, as
+// Follower.UDT does.
+func (m *MS) UDT() (u UDT, ok bool) {
 	if m == nil {
-		return nil
+		return UDT{}, false
 	}
 
-	return &m.f.ctl.udt
+	return m.f.ctl.udt, m.f.ctl.hasUDT
 }
 
 // Registered reports whether the MS holds a registration record for the

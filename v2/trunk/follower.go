@@ -548,14 +548,14 @@ func (f *Follower) moveTo(now time.Duration, ch uint16, out []Output) []Output {
 	return append(out, Output{Kind: OutputTune, Tune: t})
 }
 
-// UDT returns the UDT delivery of the last OutputUDT. It points into the
-// Follower and holds until the next call of a method of the Follower.
-func (f *Follower) UDT() *UDT {
+// UDT returns a copy of the UDT delivery of the last OutputUDT. ok is
+// false before the first one.
+func (f *Follower) UDT() (u UDT, ok bool) {
 	if f == nil {
-		return nil
+		return UDT{}, false
 	}
 
-	return &f.ctl.udt
+	return f.ctl.udt, f.ctl.hasUDT
 }
 
 func (f *Follower) leave(now time.Duration, reason Reason, out []Output) []Output {
