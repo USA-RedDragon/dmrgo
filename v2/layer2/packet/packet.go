@@ -305,36 +305,13 @@ func isConfirmed(h *pdu.DataHeader) (confirmed, ok bool) {
 }
 
 func blocksOf(h *pdu.DataHeader) int {
-	if u, ok := h.AsUnconfirmedDataHeader(); ok {
-		return int(u.BlocksToFollow)
-	}
-	if c, ok := h.AsConfirmedDataHeader(); ok {
-		return int(c.BlocksToFollow)
-	}
-	if r, ok := h.AsResponsePacketHeader(); ok {
-		return int(r.BlocksToFollow)
-	}
-	if f := h.Format(); f == pdu.FormatShortDataDefined || f == pdu.FormatShortDataRawOrStatusPrecoded {
-		return int(h.AppendedBlocks())
-	}
-	return 0
+	n, _ := h.BlocksToFollow()
+	return n
 }
 
-// ETSI TS 102 361-1 clause 9.3.20
 func fullMessage(h *pdu.DataHeader) bool {
-	if u, ok := h.AsUnconfirmedDataHeader(); ok {
-		return u.FullMessageFlag
-	}
-	if c, ok := h.AsConfirmedDataHeader(); ok {
-		return c.FullMessageFlag
-	}
-	if d, ok := h.AsDefinedDataHeader(); ok {
-		return d.FullMessageFlag
-	}
-	if r, ok := h.AsRawDataHeader(); ok {
-		return r.FullMessageFlag
-	}
-	return true
+	full, ok := h.FullMessage()
+	return full || !ok
 }
 
 func padOf(h *pdu.DataHeader) int {

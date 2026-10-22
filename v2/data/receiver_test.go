@@ -500,7 +500,7 @@ func TestReceiverUDT(t *testing.T) {
 	t.Parallel()
 	h := setHeader(t, (*pdu.DataHeader).SetUDTHeader, pdu.UDTHeader{
 		SAP: enums.SAPShortData, UDTFormat: 4, LLIDDestination: dstID, LLIDSource: srcID,
-		PadNibble: 2, AppendedBlocks: 1, Opcode: pdu.UDTOpcodeInboundHeader,
+		PadNibble: 2, UAB: 1, Opcode: pdu.UDTOpcodeInboundHeader,
 	})
 	blocks := [][12]byte{[12]byte(payload(12)), {}}
 	copy(blocks[1][:], "dmrgo UDT!")

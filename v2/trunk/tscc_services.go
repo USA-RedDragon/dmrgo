@@ -780,7 +780,7 @@ func (t *TSCC) svcUploaded(now time.Duration, out []TSCCOutput) []TSCCOutput {
 				t.ackFrom(src, enums.AckReasonIPConnectionFailed, 0, constants.GatewayIPI)
 				return out
 			}
-			o := TSCCOutput{Kind: TSCCIPAdvice, Address: src, IPv6: u.Header.AppendedBlocks > 0, Remove: op.remove}
+			o := TSCCOutput{Kind: TSCCIPAdvice, Address: src, IPv6: u.Header.UAB > 0, Remove: op.remove}
 			copy(o.IP[:], u.blocks[0][:])
 			if o.IPv6 {
 				copy(o.IP[12:], u.blocks[1][:4])

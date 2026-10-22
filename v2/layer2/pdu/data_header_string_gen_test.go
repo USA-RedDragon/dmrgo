@@ -19,7 +19,7 @@ func TestUnconfirmedDataHeaderStringMatchesFmt(t *testing.T) {
 
 func (s *DataHeader) fmtString() string {
 	_ret := "DataHeader{ "
-	_ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, Format: %d, AppendedBlocks: %d, ", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.Format(), s.AppendedBlocks())
+	_ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, Format: %d, appendedBlocks: %d, ", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.Format(), s.appendedBlocks())
 	if v, ok := s.AsUnconfirmedDataHeader(); ok {
 		_ret += v.String()
 	} else if v, ok := s.AsConfirmedDataHeader(); ok {
@@ -94,7 +94,7 @@ func TestStatusPrecodedHeaderStringMatchesFmt(t *testing.T) {
 }
 
 func (s *UDTHeader) fmtString() string {
-	return fmt.Sprintf("UDTHeader{ Group: %t, ResponseRequested: %t, Emergency: %t, OptionFlag: %t, SAP: %d, UDTFormat: %d, LLIDDestination: %d, LLIDSource: %d, PadNibble: %d, Reserved: %t, AppendedBlocks: %d, SupplementaryFlag: %t, ProtectFlag: %t, Opcode: %d }", s.Group, s.ResponseRequested, s.Emergency, s.OptionFlag, s.SAP, s.UDTFormat, s.LLIDDestination, s.LLIDSource, s.PadNibble, s.Reserved, s.AppendedBlocks, s.SupplementaryFlag, s.ProtectFlag, s.Opcode)
+	return fmt.Sprintf("UDTHeader{ Group: %t, ResponseRequested: %t, Emergency: %t, OptionFlag: %t, SAP: %d, UDTFormat: %d, LLIDDestination: %d, LLIDSource: %d, PadNibble: %d, Reserved: %t, UAB: %d, SupplementaryFlag: %t, ProtectFlag: %t, Opcode: %d }", s.Group, s.ResponseRequested, s.Emergency, s.OptionFlag, s.SAP, s.UDTFormat, s.LLIDDestination, s.LLIDSource, s.PadNibble, s.Reserved, s.UAB, s.SupplementaryFlag, s.ProtectFlag, s.Opcode)
 }
 
 func TestUDTHeaderStringMatchesFmt(t *testing.T) {

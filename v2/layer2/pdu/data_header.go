@@ -32,13 +32,13 @@ type UnconfirmedDataHeader struct {
 //dmr:crc_mask 0xCCCC
 //dmr:input_size 96
 //dmr:get Format Format bits:4-7 the Data Packet Format (DPF) of the header
-//dmr:get AppendedBlocks uint8 bits:2-3+12-15,only:Format=FormatShortDataDefined|FormatShortDataRawOrStatusPrecoded the Appended Blocks (AB) of a DD_HEAD, R_HEAD or SP_HEAD
+//dmr:get appendedBlocks uint8 bits:2-3+12-15,only:Format=FormatShortDataDefined|FormatShortDataRawOrStatusPrecoded the Appended Blocks (AB)
 //dmr:variant UnconfirmedDataHeader UnconfirmedDataHeader Format=FormatUnconfirmed
 //dmr:variant ConfirmedDataHeader ConfirmedDataHeader Format=FormatConfirmed
 //dmr:variant ResponsePacketHeader ResponsePacketHeader Format=FormatResponsePacket
 //dmr:variant DefinedDataHeader DefinedDataHeader Format=FormatShortDataDefined
-//dmr:variant StatusPrecodedHeader StatusPrecodedHeader Format=FormatShortDataRawOrStatusPrecoded AppendedBlocks==0
-//dmr:variant RawDataHeader RawDataHeader Format=FormatShortDataRawOrStatusPrecoded AppendedBlocks!=0
+//dmr:variant StatusPrecodedHeader StatusPrecodedHeader Format=FormatShortDataRawOrStatusPrecoded appendedBlocks==0
+//dmr:variant RawDataHeader RawDataHeader Format=FormatShortDataRawOrStatusPrecoded appendedBlocks!=0
 //dmr:variant UDTHeader UDTHeader Format=FormatUnifiedDataTransport
 //dmr:variant ProprietaryHeader ProprietaryHeader Format=FormatProprietary
 type DataHeader struct {
@@ -120,6 +120,90 @@ func (s *DataHeader) SetAddresses(destination, source uint32) error {
 		return s.SetUDTHeader(p)
 	}
 	return ErrNoAddresses
+}
+
+// BlocksToFollow returns the number of blocks after the header: the Blocks
+// to Follow of a U_HEAD, C_HEAD or C_RHEAD, the Appended Blocks of a DD_HEAD
+// or R_HEAD, UAB plus one for a UDT_HEAD, and 0 for an SP_HEAD. ok is false
+// for a P_HEAD and the reserved formats.
+func (s *DataHeader) BlocksToFollow() (n int, ok bool) {
+	if s == nil {
+		return 0, false
+	}
+	if u, ok := s.AsUnconfirmedDataHeader(); ok {
+		return int(u.BlocksToFollow), true
+	}
+	if c, ok := s.AsConfirmedDataHeader(); ok {
+		return int(c.BlocksToFollow), true
+	}
+	if r, ok := s.AsResponsePacketHeader(); ok {
+		return int(r.BlocksToFollow), true
+	}
+	if d, ok := s.AsDefinedDataHeader(); ok {
+		return int(d.AppendedBlocks), true
+	}
+	if r, ok := s.AsRawDataHeader(); ok {
+		return int(r.AppendedBlocks), true
+	}
+	if _, ok := s.AsStatusPrecodedHeader(); ok {
+		return 0, true
+	}
+	if u, ok := s.AsUDTHeader(); ok {
+		return int(u.UAB) + 1, true
+	}
+	return 0, false
+}
+
+// SAP returns the SAP identifier of the header. ok is false for a P_HEAD,
+// whose SAP field has another place, and the reserved formats.
+func (s *DataHeader) SAP() (sap enums.SAP, ok bool) {
+	if s == nil {
+		return 0, false
+	}
+	if u, ok := s.AsUnconfirmedDataHeader(); ok {
+		return u.SAP, true
+	}
+	if c, ok := s.AsConfirmedDataHeader(); ok {
+		return c.SAP, true
+	}
+	if r, ok := s.AsResponsePacketHeader(); ok {
+		return r.SAP, true
+	}
+	if d, ok := s.AsDefinedDataHeader(); ok {
+		return d.SAP, true
+	}
+	if r, ok := s.AsRawDataHeader(); ok {
+		return r.SAP, true
+	}
+	if p, ok := s.AsStatusPrecodedHeader(); ok {
+		return p.SAP, true
+	}
+	if u, ok := s.AsUDTHeader(); ok {
+		return u.SAP, true
+	}
+	return 0, false
+}
+
+// FullMessage returns the Full Message Flag (F) of a U_HEAD, C_HEAD, DD_HEAD
+// or R_HEAD: true for the first try of a packet. ok is false for the other
+// formats. (ETSI TS 102 361-1 clause 9.3.20)
+func (s *DataHeader) FullMessage() (full, ok bool) {
+	if s == nil {
+		return false, false
+	}
+	if u, ok := s.AsUnconfirmedDataHeader(); ok {
+		return u.FullMessageFlag, true
+	}
+	if c, ok := s.AsConfirmedDataHeader(); ok {
+		return c.FullMessageFlag, true
+	}
+	if d, ok := s.AsDefinedDataHeader(); ok {
+		return d.FullMessageFlag, true
+	}
+	if r, ok := s.AsRawDataHeader(); ok {
+		return r.FullMessageFlag, true
+	}
+	return false, false
 }
 
 // Format is the 4-bit Data Packet Format (DPF) of a data header (ETSI TS 102
@@ -301,7 +385,7 @@ type UDTHeader struct {
 	LLIDSource        uint32          `dmr:"bits:40-63"` // source LLID
 	PadNibble         uint8           `dmr:"bits:64-68"` // number of pad nibbles appended to the user data
 	Reserved          bool            `dmr:"bit:69"`     // reserved
-	AppendedBlocks    uint8           `dmr:"bits:70-71"` // UDT Appended Blocks (UAB): the number of appended blocks minus one
+	UAB               uint8           `dmr:"bits:70-71"` // UDT Appended Blocks (UAB): the number of appended blocks minus one
 	SupplementaryFlag bool            `dmr:"bit:72"`     // Supplementary Flag (SF): true for supplementary data, false for short data
 	ProtectFlag       bool            `dmr:"bit:73"`     // Protect Flag (PF)
 	Opcode            UDTOpcode       `dmr:"bits:74-79"` // UDT Opcode (UDTO)

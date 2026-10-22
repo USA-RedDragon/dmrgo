@@ -13,7 +13,7 @@ import (
 
 func upload(t testing.TB, h pdu.UDTHeader, a *trunk.Appended) []layer2.RawBurst {
 	t.Helper()
-	h.UDTFormat, h.PadNibble, h.AppendedBlocks = a.Format, a.PadNibble, uint8(a.Blocks-1)
+	h.UDTFormat, h.PadNibble, h.UAB = a.Format, a.PadNibble, uint8(a.Blocks-1)
 	if h.Opcode == 0 {
 		h.Opcode = pdu.UDTOpcodeInboundHeader
 	}

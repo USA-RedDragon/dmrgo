@@ -431,8 +431,8 @@ func TestDataHeader_UDT_Decode(t *testing.T) {
 	if u.LLIDDestination != 0x123456 || u.LLIDSource != 0xABCDEF {
 		t.Errorf("addresses = %X/%X, want 123456/ABCDEF", u.LLIDDestination, u.LLIDSource)
 	}
-	if u.PadNibble != 0b10011 || u.Reserved || u.AppendedBlocks != 0b10 {
-		t.Errorf("octet 8 = pad %d rsvd %t UAB %d, want 19 false 2", u.PadNibble, u.Reserved, u.AppendedBlocks)
+	if u.PadNibble != 0b10011 || u.Reserved || u.UAB != 0b10 {
+		t.Errorf("octet 8 = pad %d rsvd %t UAB %d, want 19 false 2", u.PadNibble, u.Reserved, u.UAB)
 	}
 	if !u.SupplementaryFlag || u.ProtectFlag || u.Opcode != pdu.UDTOpcodeOutboundHeader {
 		t.Errorf("octet 9 = SF %t PF %t op %d, want true false C_UDTHD", u.SupplementaryFlag, u.ProtectFlag, u.Opcode)
@@ -455,7 +455,7 @@ func TestDataHeader_UDT_RoundTrip(t *testing.T) {
 		LLIDDestination:   0xFFFED4,
 		LLIDSource:        3120101,
 		PadNibble:         7,
-		AppendedBlocks:    3,
+		UAB:               3,
 		ProtectFlag:       true,
 		Opcode:            pdu.UDTOpcodeInboundHeader,
 	}); err != nil {
@@ -605,8 +605,8 @@ func TestDataHeader_AppendedBlocksOnlyForShortData(t *testing.T) {
 	if u.PadOctetCount != 11 || u.BlocksToFollow != 8 {
 		t.Fatalf("POC %d BF %d, want 11 and 8", u.PadOctetCount, u.BlocksToFollow)
 	}
-	if dh.AppendedBlocks() != 0 {
-		t.Errorf("U_HEAD AppendedBlocks = %d, want 0", dh.AppendedBlocks())
+	if n, ok := dh.BlocksToFollow(); !ok || n != 8 {
+		t.Errorf("U_HEAD BlocksToFollow = %d %v, want 8", n, ok)
 	}
 	if s := dh.String(); strings.Contains(s, "AppendedBlocks: 11") {
 		t.Errorf("String shows the POC as AppendedBlocks: %s", s)
@@ -616,8 +616,8 @@ func TestDataHeader_AppendedBlocksOnlyForShortData(t *testing.T) {
 		h[0] = h[0]&^0x3F | 0x20 | byte(f)
 		h[1] = h[1]&^0x0F | 0x05
 		dh := pdu.DecodeDataHeader(h)
-		if got := dh.AppendedBlocks(); got != 0x25 {
-			t.Errorf("format %d: AppendedBlocks = %d, want %d", f, got, 0x25)
+		if got, ok := dh.BlocksToFollow(); !ok || got != 0x25 {
+			t.Errorf("format %d: BlocksToFollow = %d %v, want %d", f, got, ok, 0x25)
 		}
 	}
 }

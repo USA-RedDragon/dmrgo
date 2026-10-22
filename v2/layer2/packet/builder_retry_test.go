@@ -101,12 +101,13 @@ func TestBuilder_RetryShortData(t *testing.T) {
 		var rd packet.ResponseData
 		rd.Retry[0], rd.Retry[2] = true, true
 		r, err := tx.Retry(&p, &rd)
-		if err != nil || r.Header.AppendedBlocks() != 2 || len(r.Blocks) != 2 {
-			t.Fatalf("%v: %v, AB %d, %d blocks", h.Format(), err, r.Header.AppendedBlocks(), len(r.Blocks))
+		ab, _ := r.Header.BlocksToFollow()
+		if err != nil || ab != 2 || len(r.Blocks) != 2 {
+			t.Fatalf("%v: %v, AB %d, %d blocks", h.Format(), err, ab, len(r.Blocks))
 		}
 		enc := encodeHeader(t, &r.Header)
-		if enc.AppendedBlocks() != 2 || enc.Format() != h.Format() || fullFlag(enc) {
-			t.Errorf("%v: encoded AB %d", h.Format(), enc.AppendedBlocks())
+		if ab, _ := enc.BlocksToFollow(); ab != 2 || enc.Format() != h.Format() || fullFlag(enc) {
+			t.Errorf("%v: encoded AB %d", h.Format(), ab)
 		}
 	}
 }

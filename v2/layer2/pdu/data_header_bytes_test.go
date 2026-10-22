@@ -11,7 +11,7 @@ func TestDataHeaderBytes_MatchesGeneratedCodec(t *testing.T) {
 
 	headers := []pdu.DataHeader{
 		dataHeaderBytesBuild(func(h *pdu.DataHeader) error {
-			return h.SetUDTHeader(pdu.UDTHeader{LLIDDestination: 1, LLIDSource: 2, Opcode: pdu.UDTOpcodeOutboundHeader, AppendedBlocks: 1})
+			return h.SetUDTHeader(pdu.UDTHeader{LLIDDestination: 1, LLIDSource: 2, Opcode: pdu.UDTOpcodeOutboundHeader, UAB: 1})
 		}),
 		dataHeaderBytesBuild(func(h *pdu.DataHeader) error {
 			return h.SetResponsePacketHeader(pdu.ResponsePacketHeader{LLIDDestination: 1, LLIDSource: 2, BlocksToFollow: 1})

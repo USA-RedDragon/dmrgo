@@ -1,6 +1,7 @@
 package emit
 
 import (
+	"go/token"
 	"slices"
 	"strconv"
 	"strings"
@@ -42,7 +43,7 @@ func emitGetter(f *File, pdu parse.PDUStruct, union *parse.Field, g parse.Field)
 	}
 	text := g.Name + " returns " + g.Doc + "."
 	if g.OnlyField != "" {
-		text += " It returns " + map[bool]string{true: "false", false: "0"}[g.Kind == parse.FieldBool] + " unless " + condText(parse.VariantCond{Field: g.OnlyField, Values: g.OnlyValues}) + "."
+		text += " It returns " + map[bool]string{true: "false", false: "0"}[g.Kind == parse.FieldBool] + " unless " + condText(pdu, parse.VariantCond{Field: g.OnlyField, Values: g.OnlyValues}) + "."
 	}
 	comment(f, text)
 	var genErr error
@@ -116,14 +117,18 @@ func condsCode(pdu parse.PDUStruct, conds []parse.VariantCond) (*Statement, erro
 	return e, nil
 }
 
-func condText(c parse.VariantCond) string {
+func condText(pdu parse.PDUStruct, c parse.VariantCond) string {
+	name := c.Field
+	if g := pdu.GetterByName(name); g != nil && !token.IsExported(name) {
+		name = g.Doc
+	}
 	if c.Guard != nil {
 		if c.Guard.Op == "!=" {
-			return c.Field + " is not " + c.Guard.Value
+			return name + " is not " + c.Guard.Value
 		}
-		return c.Field + " is " + c.Guard.Value
+		return name + " is " + c.Guard.Value
 	}
-	return c.Field + " is " + orList(c.Values)
+	return name + " is " + orList(c.Values)
 }
 
 func orList(vals []string) string {
@@ -143,7 +148,7 @@ func andList(parts []string) string {
 func emitAs(f *File, pdu parse.PDUStruct, union *parse.Field, v parse.Variant) error {
 	texts := make([]string, len(v.Conds))
 	for i, c := range v.Conds {
-		texts[i] = condText(c)
+		texts[i] = condText(pdu, c)
 	}
 	comment(f, "As"+v.Name+" decodes "+union.Name+" as "+article(v.Type)+" "+v.Type+" payload. ok is false unless "+andList(texts)+".")
 	cond, err := condsCode(pdu, v.Conds)
@@ -233,7 +238,7 @@ func payloadCheck(pdu parse.PDUStruct, union *parse.Field, v parse.Variant, c pa
 	if fixedByConst(t, ranges, c) {
 		return true, nil
 	}
-	f := t.FieldByName(c.Field)
+	f := t.FieldByName(strings.ToUpper(c.Field[:1]) + c.Field[1:])
 	if f == nil || !sameRanges(f.Ranges(), ranges) || c.Guard == nil || c.Guard.Op != "!=" || f.Kind == parse.FieldBool {
 		return false, nil
 	}

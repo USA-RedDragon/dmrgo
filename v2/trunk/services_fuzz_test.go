@@ -145,7 +145,7 @@ func newTSCCSvcPool(t testing.TB) burstPool {
 	}
 	head := func(dst uint32, uab uint8) layer2.RawBurst {
 		return msData(withPDU(t, &pdu.DataHeader{}, (*pdu.DataHeader).SetUDTHeader, pdu.UDTHeader{UDTFormat: 6,
-			LLIDDestination: dst, LLIDSource: 3120001, AppendedBlocks: uab, SupplementaryFlag: true, Opcode: pdu.UDTOpcodeInboundHeader}))
+			LLIDDestination: dst, LLIDSource: 3120001, UAB: uab, SupplementaryFlag: true, Opcode: pdu.UDTOpcodeInboundHeader}))
 	}
 	block := msData(&pdu.Rate12Data{Data: [12]byte{10, 1, 2, 3}})
 	return append(newInboundPool(t),

@@ -138,7 +138,7 @@ func (s *DataHeader) String() string {
 	}
 
 	_ret := "DataHeader{ "
-	_ret += "FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, Format: " + text.Int(int64(s.Format())) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks())) + ", "
+	_ret += "FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, Format: " + text.Int(int64(s.Format())) + ", appendedBlocks: " + text.Int(int64(s.appendedBlocks())) + ", "
 	if v, ok := s.AsUnconfirmedDataHeader(); ok {
 		_ret += v.String()
 	} else if v, ok := s.AsConfirmedDataHeader(); ok {
@@ -171,14 +171,9 @@ func (s *DataHeader) Format() Format {
 	return Format(uint64(s.RawPayload[0]) & 0xF)
 }
 
-// AppendedBlocks returns the Appended Blocks (AB) of a DD_HEAD, R_HEAD or
-// SP_HEAD. It returns 0 unless Format is FormatShortDataDefined or
-// FormatShortDataRawOrStatusPrecoded.
-func (s *DataHeader) AppendedBlocks() uint8 {
-	if s == nil {
-		return 0
-	}
-
+// appendedBlocks returns the Appended Blocks (AB). It returns 0 unless
+// Format is FormatShortDataDefined or FormatShortDataRawOrStatusPrecoded.
+func (s *DataHeader) appendedBlocks() uint8 {
 	if !(s.Format() == FormatShortDataDefined || s.Format() == FormatShortDataRawOrStatusPrecoded) {
 		return 0
 	}
@@ -310,13 +305,13 @@ func (s *DataHeader) SetDefinedDataHeader(p DefinedDataHeader) error {
 
 // AsStatusPrecodedHeader decodes RawPayload as a StatusPrecodedHeader
 // payload. ok is false unless Format is FormatShortDataRawOrStatusPrecoded
-// and AppendedBlocks is 0.
+// and the Appended Blocks (AB) is 0.
 func (s *DataHeader) AsStatusPrecodedHeader() (p StatusPrecodedHeader, ok bool) {
 	if s == nil {
 		return StatusPrecodedHeader{}, false
 	}
 
-	if !(s.Format() == FormatShortDataRawOrStatusPrecoded && s.AppendedBlocks() == 0) {
+	if !(s.Format() == FormatShortDataRawOrStatusPrecoded && s.appendedBlocks() == 0) {
 		return p, false
 	}
 	return decodeStatusPrecodedHeader(s.RawPayload), true
@@ -340,14 +335,14 @@ func (s *DataHeader) SetStatusPrecodedHeader(p StatusPrecodedHeader) error {
 }
 
 // AsRawDataHeader decodes RawPayload as a RawDataHeader payload. ok is false
-// unless Format is FormatShortDataRawOrStatusPrecoded and AppendedBlocks is
-// not 0.
+// unless Format is FormatShortDataRawOrStatusPrecoded and the Appended
+// Blocks (AB) is not 0.
 func (s *DataHeader) AsRawDataHeader() (p RawDataHeader, ok bool) {
 	if s == nil {
 		return RawDataHeader{}, false
 	}
 
-	if !(s.Format() == FormatShortDataRawOrStatusPrecoded && s.AppendedBlocks() != 0) {
+	if !(s.Format() == FormatShortDataRawOrStatusPrecoded && s.appendedBlocks() != 0) {
 		return p, false
 	}
 	return decodeRawDataHeader(s.RawPayload), true
@@ -854,7 +849,7 @@ func decodeUDTHeader(data [10]byte) UDTHeader {
 	result.LLIDSource = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	result.PadNibble = uint8(uint64(data[8]) >> 3)
 	result.Reserved = data[8]&0x04 != 0
-	result.AppendedBlocks = uint8(uint64(data[8]) & 0x3)
+	result.UAB = uint8(uint64(data[8]) & 0x3)
 	result.SupplementaryFlag = data[9]&0x80 != 0
 	result.ProtectFlag = data[9]&0x40 != 0
 	result.Opcode = UDTOpcode(uint64(data[9]) & 0x3F)
@@ -905,10 +900,10 @@ func (s *UDTHeader) encode() ([10]byte, error) {
 	if s.Reserved {
 		data[8] |= 0x04
 	}
-	if uint64(s.AppendedBlocks)>>2 != 0 {
-		return [10]byte{}, errUDTHeaderAppendedBlocksRange
+	if uint64(s.UAB)>>2 != 0 {
+		return [10]byte{}, errUDTHeaderUABRange
 	}
-	data[8] = data[8]&^0x03 | byte(uint64(s.AppendedBlocks))&0x03
+	data[8] = data[8]&^0x03 | byte(uint64(s.UAB))&0x03
 	if s.SupplementaryFlag {
 		data[9] |= 0x80
 	}
@@ -930,7 +925,7 @@ func (s *UDTHeader) String() string {
 		return "<nil>"
 	}
 
-	return "UDTHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Emergency: " + text.Bool(s.Emergency) + ", OptionFlag: " + text.Bool(s.OptionFlag) + ", SAP: " + text.Int(int64(s.SAP)) + ", UDTFormat: " + text.Int(int64(s.UDTFormat)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", PadNibble: " + text.Int(int64(s.PadNibble)) + ", Reserved: " + text.Bool(s.Reserved) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", SupplementaryFlag: " + text.Bool(s.SupplementaryFlag) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + " }"
+	return "UDTHeader{ Group: " + text.Bool(s.Group) + ", ResponseRequested: " + text.Bool(s.ResponseRequested) + ", Emergency: " + text.Bool(s.Emergency) + ", OptionFlag: " + text.Bool(s.OptionFlag) + ", SAP: " + text.Int(int64(s.SAP)) + ", UDTFormat: " + text.Int(int64(s.UDTFormat)) + ", LLIDDestination: " + text.Int(int64(s.LLIDDestination)) + ", LLIDSource: " + text.Int(int64(s.LLIDSource)) + ", PadNibble: " + text.Int(int64(s.PadNibble)) + ", Reserved: " + text.Bool(s.Reserved) + ", UAB: " + text.Int(int64(s.UAB)) + ", SupplementaryFlag: " + text.Bool(s.SupplementaryFlag) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + " }"
 }
 
 // ETSI TS 102 361-1 clause 9.2.9, Table 9.17
@@ -1201,9 +1196,9 @@ var (
 		Field: "PadNibble",
 		Type:  "UDTHeader",
 	}
-	errUDTHeaderAppendedBlocksRange = &dmrgo.FieldRangeError{
+	errUDTHeaderUABRange = &dmrgo.FieldRangeError{
 		Bits:  2,
-		Field: "AppendedBlocks",
+		Field: "UAB",
 		Type:  "UDTHeader",
 	}
 	errUDTHeaderOpcodeRange = &dmrgo.FieldRangeError{

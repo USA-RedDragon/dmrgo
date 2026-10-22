@@ -134,7 +134,7 @@ func (c *control) tscc(now time.Duration, slot enums.Slot) tsccEvent {
 		c.pending, c.udtOn = pendingNone, false
 		if h, ok := d.AsUDTHeader(); ok && (h.Opcode == pdu.UDTOpcodeOutboundHeader || h.Opcode == pdu.UDTOpcodeDGNAOutboundHeader) {
 			c.udt = UDT{Header: h}
-			c.udtWant, c.udtSlot, c.udtOn = int(h.AppendedBlocks)+1, slot, true
+			c.udtWant, c.udtSlot, c.udtOn = int(h.UAB)+1, slot, true
 		}
 		return eventTSCC
 	case *pdu.Rate12Data:

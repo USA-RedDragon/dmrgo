@@ -29,7 +29,7 @@ func ackFrom(t testing.TB, r enums.AckReason, src uint32) layer2.RawBurst {
 
 func download(t testing.TB, h pdu.UDTHeader, a *trunk.Appended) []layer2.RawBurst {
 	t.Helper()
-	h.UDTFormat, h.PadNibble, h.AppendedBlocks = a.Format, a.PadNibble, uint8(a.Blocks-1)
+	h.UDTFormat, h.PadNibble, h.UAB = a.Format, a.PadNibble, uint8(a.Blocks-1)
 	if h.Opcode == 0 {
 		h.Opcode = pdu.UDTOpcodeOutboundHeader
 	}
@@ -84,7 +84,7 @@ func uploaded(t *testing.T, out []trunk.Output) (pdu.UDTHeader, trunk.Appended) 
 	if !ok {
 		t.Fatalf("UDT header format %v", dh.Format())
 	}
-	a := trunk.Appended{Format: h.UDTFormat, PadNibble: h.PadNibble, Blocks: int(h.AppendedBlocks) + 1}
+	a := trunk.Appended{Format: h.UDTFormat, PadNibble: h.PadNibble, Blocks: int(h.UAB) + 1}
 	if len(out) < 1+a.Blocks {
 		t.Fatalf("%d outputs for %d blocks", len(out), a.Blocks)
 	}

@@ -1068,7 +1068,6 @@ DMRGO_1 {
 		dmrgo_pdu_csbk_set_unit_to_unit_voice_service_request;
 		dmrgo_pdu_csbk_string;
 		dmrgo_pdu_data_header_addresses;
-		dmrgo_pdu_data_header_appended_blocks;
 		dmrgo_pdu_data_header_as_confirmed_data_header;
 		dmrgo_pdu_data_header_as_defined_data_header;
 		dmrgo_pdu_data_header_as_proprietary_header;
@@ -1077,6 +1076,7 @@ DMRGO_1 {
 		dmrgo_pdu_data_header_as_status_precoded_header;
 		dmrgo_pdu_data_header_as_udt_header;
 		dmrgo_pdu_data_header_as_unconfirmed_data_header;
+		dmrgo_pdu_data_header_blocks_to_follow;
 		dmrgo_pdu_data_header_bytes_addresses;
 		dmrgo_pdu_data_header_bytes_crc_ok;
 		dmrgo_pdu_data_header_bytes_format;
@@ -1087,6 +1087,8 @@ DMRGO_1 {
 		dmrgo_pdu_data_header_data_type;
 		dmrgo_pdu_data_header_encode;
 		dmrgo_pdu_data_header_format;
+		dmrgo_pdu_data_header_full_message;
+		dmrgo_pdu_data_header_sap;
 		dmrgo_pdu_data_header_set_addresses;
 		dmrgo_pdu_data_header_set_confirmed_data_header;
 		dmrgo_pdu_data_header_set_defined_data_header;
