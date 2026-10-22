@@ -244,8 +244,9 @@ func (s TransmitterState) String() string {
 // channel, one per Tick, 60 ms apart. In source mode, Start begins a call
 // and Frame, Frames, VocoderSlot and VocoderSlots queue its voice. In relay
 // mode, Relay takes the events of a Receiver and sends the call again with
-// the local color code and SYNC. Make it with NewTransmitter. A Transmitter is not
-// safe for concurrent use and must not be copied.
+// the local color code and SYNC. The zero Transmitter does nothing: Start
+// and Relay return dmrgo.ErrZeroValue. Make it with NewTransmitter. A
+// Transmitter is not safe for concurrent use and must not be copied.
 type Transmitter struct {
 	cc          enums.ColorCode
 	source      layer2.SyncSource
@@ -426,6 +427,9 @@ func (t *Transmitter) Dropped() int {
 func (t *Transmitter) Start(at time.Duration, c Call, opts *CallOptions) error {
 	if t == nil {
 		return dmrgo.ErrNilReceiver
+	}
+	if t.queue == nil {
+		return dmrgo.ErrZeroValue
 	}
 
 	if t.state != TransmitterIdle {
@@ -877,14 +881,17 @@ func (t *Transmitter) finish(out []Output, reason EndReason) []Output {
 // vocoder slot, later ones are silence. The embedded LC of each complete
 // received superframe is sent in the next superframe that starts, and the
 // call LC when none was received. It returns ErrBusy for a CallStart while
-// a call that is not ending runs, and an error for a nil e.
+// a call that is not ending runs, and dmrgo.ErrNilArgument for a nil e.
 func (t *Transmitter) Relay(now time.Duration, e *Event) error {
 	if t == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
+	if t.queue == nil {
+		return dmrgo.ErrZeroValue
+	}
 	if e == nil {
-		return errNilEvent
+		return dmrgo.ErrNilArgument
 	}
 	switch e.Kind {
 	case EventCallStart:

@@ -83,7 +83,8 @@ func (s InterrupterState) String() string {
 // reverse channel of the call, waits T_RCtimer for the Terminator with LC
 // of the call, and tries again up to InterrupterConfig.Retries times. The
 // caller sends the bursts on the reverse channel and feeds the bursts of
-// the call to Burst. Make it with NewInterrupter. An Interrupter is not
+// the call to Burst. The zero Interrupter does nothing: Interrupt returns
+// dmrgo.ErrZeroValue. Make it with NewInterrupter. An Interrupter is not
 // safe for concurrent use and must not be copied. (ETSI TS 102 361-2
 // clause 6.3.5)
 type Interrupter struct {
@@ -170,6 +171,9 @@ func (i *Interrupter) Interrupt(now time.Duration, cmd enums.RCCommand) error {
 	if i == nil {
 		return dmrgo.ErrNilReceiver
 	}
+	if i.b == nil {
+		return dmrgo.ErrZeroValue
+	}
 
 	if i.state != InterrupterIdle {
 		return ErrInterruptBusy
@@ -215,7 +219,7 @@ func (i *Interrupter) Cancel(now time.Duration, dst []Output) []Output {
 // the timers, as Lost does. It allocates only when dst has no room for
 // MaxOutputs outputs. (ETSI TS 102 361-2 clause 6.3.5)
 func (i *Interrupter) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
-	if i == nil {
+	if i == nil || i.b == nil {
 		return dst
 	}
 
