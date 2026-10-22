@@ -8138,6 +8138,8 @@ int dmrgo_data_receiver_decoded(dmrgo_data_receiver_t *self, dmrgo_duration_t no
 int dmrgo_data_receiver_lost_need(dmrgo_data_receiver_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: data.Receiver.Lost. Lost tells the Receiver that the transport lost the signal, such as an MMDVM TAG_LOST. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_receiver_lost_need gives. */
 int dmrgo_data_receiver_lost(dmrgo_data_receiver_t *self, dmrgo_duration_t now, dmrgo_data_event_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: data.Receiver.MaxOutputOctets. MaxOutputOctets returns the most octets that the dmrgo_data_message_t.payload of the events of one call of the Receiver hold: one packet completes in a call, with a payload of at most dmrgo_data_receiver_config_t.max_fragment octets, or 48 for a UDT, and the message that it completes holds at most dmrgo_data_receiver_config_t.max_message octets. */
+int dmrgo_data_receiver_max_output_octets(dmrgo_data_receiver_t *self, int64_t *out);
 /* Go: data.Receiver.Reset. Reset ends any data call without events and forgets the packet in progress and the sequence numbers of every link. */
 int dmrgo_data_receiver_reset(dmrgo_data_receiver_t *self);
 /* Go: data.Receiver.State. State returns the state of the Receiver. */

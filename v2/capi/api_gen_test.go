@@ -148,6 +148,7 @@ var entryPoints = map[string]any{
 	"dmrgo_data_receiver_decoded":                                      dmrgo_data_receiver_decoded,
 	"dmrgo_data_receiver_lost_need":                                    dmrgo_data_receiver_lost_need,
 	"dmrgo_data_receiver_lost":                                         dmrgo_data_receiver_lost,
+	"dmrgo_data_receiver_max_output_octets":                            dmrgo_data_receiver_max_output_octets,
 	"dmrgo_data_receiver_reset":                                        dmrgo_data_receiver_reset,
 	"dmrgo_data_receiver_state":                                        dmrgo_data_receiver_state,
 	"dmrgo_data_receiver_tick_need":                                    dmrgo_data_receiver_tick_need,

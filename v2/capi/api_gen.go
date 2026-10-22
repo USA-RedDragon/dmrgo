@@ -11771,7 +11771,7 @@ func dmrgo_data_receiver_burst_need(c_self *C.dmrgo_data_receiver_t, c_now C.dmr
 		*c_items = C.size_t(max(0, int(g_data.MaxEvents)))
 	}
 	if c_arena != nil {
-		*c_arena = C.size_t(max(0, int(g_data.MaxEvents)) * ((int(g_data.MaxMessage))*int(unsafe.Sizeof(*new(byte))) + 16))
+		*c_arena = C.size_t(max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(g_data.MaxEvents)))
 	}
 	return C.DMRGO_OK
 }
@@ -11805,7 +11805,7 @@ func dmrgo_data_receiver_burst(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_du
 	nf_dst := int(*c_dst_len)
 	a_dst := h.sc0[:0]
 	need_items := max(0, int(g_data.MaxEvents))
-	need_arena := max(0, int(g_data.MaxEvents)) * ((int(g_data.MaxMessage))*int(unsafe.Sizeof(*new(byte))) + 16)
+	need_arena := max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(g_data.MaxEvents))
 	_ = need_arena
 	if int(c_dst_cap)-nf_dst < need_items {
 		if c_dst_need != nil {
@@ -11900,7 +11900,7 @@ func dmrgo_data_receiver_decoded_need(c_self *C.dmrgo_data_receiver_t, c_now C.d
 		*c_items = C.size_t(max(0, int(g_data.MaxEvents)))
 	}
 	if c_arena != nil {
-		*c_arena = C.size_t(max(0, int(g_data.MaxEvents)) * ((int(g_data.MaxMessage))*int(unsafe.Sizeof(*new(byte))) + 16))
+		*c_arena = C.size_t(max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(g_data.MaxEvents)))
 	}
 	return C.DMRGO_OK
 }
@@ -11938,7 +11938,7 @@ func dmrgo_data_receiver_decoded(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_
 	nf_dst := int(*c_dst_len)
 	a_dst := h.sc0[:0]
 	need_items := max(0, int(g_data.MaxEvents))
-	need_arena := max(0, int(g_data.MaxEvents)) * ((int(g_data.MaxMessage))*int(unsafe.Sizeof(*new(byte))) + 16)
+	need_arena := max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(g_data.MaxEvents))
 	_ = need_arena
 	if int(c_dst_cap)-nf_dst < need_items {
 		if c_dst_need != nil {
@@ -12002,7 +12002,7 @@ func dmrgo_data_receiver_lost_need(c_self *C.dmrgo_data_receiver_t, c_now C.dmrg
 		*c_items = C.size_t(max(0, int(g_data.MaxEvents)))
 	}
 	if c_arena != nil {
-		*c_arena = C.size_t(max(0, int(g_data.MaxEvents)) * ((int(g_data.MaxMessage))*int(unsafe.Sizeof(*new(byte))) + 16))
+		*c_arena = C.size_t(max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(g_data.MaxEvents)))
 	}
 	return C.DMRGO_OK
 }
@@ -12031,7 +12031,7 @@ func dmrgo_data_receiver_lost(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_dur
 	nf_dst := int(*c_dst_len)
 	a_dst := h.sc0[:0]
 	need_items := max(0, int(g_data.MaxEvents))
-	need_arena := max(0, int(g_data.MaxEvents)) * ((int(g_data.MaxMessage))*int(unsafe.Sizeof(*new(byte))) + 16)
+	need_arena := max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(g_data.MaxEvents))
 	_ = need_arena
 	if int(c_dst_cap)-nf_dst < need_items {
 		if c_dst_need != nil {
@@ -12086,6 +12086,22 @@ func dmrgo_data_receiver_lost(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_dur
 	return C.DMRGO_OK
 }
 
+//export dmrgo_data_receiver_max_output_octets
+func dmrgo_data_receiver_max_output_octets(c_self *C.dmrgo_data_receiver_t, c_out *C.int64_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_data_Receiver(c_self)
+	r0 := h.v.MaxOutputOctets()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.int64_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_data_receiver_reset
 func dmrgo_data_receiver_reset(c_self *C.dmrgo_data_receiver_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -12123,7 +12139,7 @@ func dmrgo_data_receiver_tick_need(c_self *C.dmrgo_data_receiver_t, c_now C.dmrg
 		*c_items = C.size_t(max(0, int(g_data.MaxEvents)))
 	}
 	if c_arena != nil {
-		*c_arena = C.size_t(max(0, int(g_data.MaxEvents)) * ((int(g_data.MaxMessage))*int(unsafe.Sizeof(*new(byte))) + 16))
+		*c_arena = C.size_t(max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(g_data.MaxEvents)))
 	}
 	return C.DMRGO_OK
 }
@@ -12152,7 +12168,7 @@ func dmrgo_data_receiver_tick(c_self *C.dmrgo_data_receiver_t, c_now C.dmrgo_dur
 	nf_dst := int(*c_dst_len)
 	a_dst := h.sc0[:0]
 	need_items := max(0, int(g_data.MaxEvents))
-	need_arena := max(0, int(g_data.MaxEvents)) * ((int(g_data.MaxMessage))*int(unsafe.Sizeof(*new(byte))) + 16)
+	need_arena := max(0, int(h.v.MaxOutputOctets())) + 16*max(0, int(g_data.MaxEvents))
 	_ = need_arena
 	if int(c_dst_cap)-nf_dst < need_items {
 		if c_dst_need != nil {
