@@ -13,6 +13,7 @@ const (
 	directiveStream = "dmr:stream"
 	directiveTokens = "dmr:tokens"
 	directiveBound  = "dmr:bound"
+	directiveDoc    = "dmr:decodedoc"
 )
 
 // StreamKind is how a field of a dmr:stream or dmr:tokens struct is stored.
@@ -109,7 +110,10 @@ type StreamDirective struct {
 	Tokens   bool // dmr:tokens
 	Trailing bool // dmr:stream trailing: Decode ignores octets after the bound
 	Into     bool // dmr:stream into: DecodeXInto fills a struct of the caller, for a struct over 256 octets
-	Fields   []StreamField
+	// DecodeDoc is set by dmr:decodedoc Text: sentences that the doc of
+	// the Decode function adds after the generated text.
+	DecodeDoc string
+	Fields    []StreamField
 	// BoundPath is set by dmr:bound Path [total]: an integer of a frame
 	// field that gives the length of the stream.
 	BoundPath string
@@ -158,6 +162,11 @@ func parseStreamStruct(name string, structType *ast.StructType, doc *ast.Comment
 				return pdu, fmt.Errorf("dmr:tokens takes no argument, got %q", arg)
 			}
 			pdu.Stream.Tokens = true
+		case directiveDoc:
+			if arg == "" {
+				return pdu, fmt.Errorf("dmr:decodedoc wants a text")
+			}
+			pdu.Stream.DecodeDoc = strings.TrimSpace(pdu.Stream.DecodeDoc + " " + arg)
 		case directiveBound:
 			parts := strings.Fields(arg)
 			if len(parts) == 0 || len(parts) > 2 || !strings.Contains(parts[0], ".") {

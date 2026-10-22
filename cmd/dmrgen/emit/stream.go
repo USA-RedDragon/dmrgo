@@ -455,6 +455,9 @@ func emitStreamDecode(f *File, pdu parse.PDUStruct, types map[string]parse.PDUSt
 		if pdu.Stream.Trailing {
 			doc += " It ignores octets after the length that the message gives."
 		}
+		if pdu.Stream.DecodeDoc != "" {
+			doc += " " + pdu.Stream.DecodeDoc
+		}
 		if pdu.Stream.Into {
 			comment(f, name+"Into decodes "+strings.TrimPrefix(strings.TrimPrefix(doc, name+" decodes "), "")+" into m. On an error m is the zero "+pdu.Name+". It returns dmrgo.ErrNilArgument for a nil m."+docCite(pdu))
 			f.Func().Id(name+"Into").Params(Id("m").Op("*").Id(pdu.Name), Id("data").Index().Byte()).Error().BlockFunc(func(g *Group) {
