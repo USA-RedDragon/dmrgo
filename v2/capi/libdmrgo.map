@@ -1632,18 +1632,18 @@ DMRGO_1 {
 		dmrgo_voice_transmitter_frame;
 		dmrgo_voice_transmitter_frames;
 		dmrgo_voice_transmitter_free;
-		dmrgo_voice_transmitter_interrupt;
 		dmrgo_voice_transmitter_relay;
 		dmrgo_voice_transmitter_reset;
+		dmrgo_voice_transmitter_reverse_channel;
 		dmrgo_voice_transmitter_room;
-		dmrgo_voice_transmitter_slot;
-		dmrgo_voice_transmitter_slots;
 		dmrgo_voice_transmitter_start;
 		dmrgo_voice_transmitter_state;
 		dmrgo_voice_transmitter_state_string;
 		dmrgo_voice_transmitter_stop;
 		dmrgo_voice_transmitter_tick;
 		dmrgo_voice_transmitter_tick_need;
+		dmrgo_voice_transmitter_vocoder_slot;
+		dmrgo_voice_transmitter_vocoder_slots;
 	local:
 		*;
 };

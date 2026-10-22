@@ -44,7 +44,7 @@ func TestInterrupter_StopsTransmitter(t *testing.T) {
 				if err := in.Interrupt(now, cmd); err != nil {
 					t.Fatal(err)
 				}
-				if err := in.Interrupt(now, cmd); !errors.Is(err, voice.ErrBusy) {
+				if err := in.Interrupt(now, cmd); !errors.Is(err, voice.ErrInterruptBusy) {
 					t.Fatalf("second Interrupt: %v", err)
 				}
 			}
@@ -55,7 +55,7 @@ func TestInterrupter_StopsTransmitter(t *testing.T) {
 				if err := b.DecodeFromBytes(o.Burst); err != nil || b.Kind != layer2.KindReverseChannel || b.EmbeddedSignalling.ColorCode != 4 {
 					t.Fatalf("RC burst: %v, kind %v", err, b.Kind)
 				}
-				if !tx.Interrupt(b.ReverseChannel) {
+				if !tx.ReverseChannel(b.ReverseChannel) {
 					t.Fatal("Transmitter ignored the RC command")
 				}
 			}

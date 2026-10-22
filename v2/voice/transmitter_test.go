@@ -191,7 +191,7 @@ func TestTransmitter_RoundTrip(t *testing.T) {
 	for i := range 3 * 6 * 6 {
 		var s [9]byte
 		s[i%72/8] = 0x80 >> (i % 8)
-		if err := tx.Slot(s); err != nil {
+		if err := tx.VocoderSlot(s); err != nil {
 			t.Fatal(err)
 		}
 	}

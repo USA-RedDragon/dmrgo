@@ -163,7 +163,7 @@ func (i *Interrupter) State() InterrupterState {
 // Interrupt starts an interrupt request with the RC command cmd, whose
 // first standalone RC burst is due at now: enums.RCCeaseTransmissionRequest
 // for a radio that is party to the call, enums.RCCeaseTransmissionCommand
-// for an emergency call. It returns ErrBusy while a request runs, and a
+// for an emergency call. It returns ErrInterruptBusy while a request runs, and a
 // *dmrgo.ConfigError for another command. (ETSI TS 102 361-2 clauses 6.3.3 and
 // 6.3.4)
 func (i *Interrupter) Interrupt(now time.Duration, cmd enums.RCCommand) error {
@@ -172,7 +172,7 @@ func (i *Interrupter) Interrupt(now time.Duration, cmd enums.RCCommand) error {
 	}
 
 	if i.state != InterrupterIdle {
-		return ErrBusy
+		return ErrInterruptBusy
 	}
 	if cmd != enums.RCCeaseTransmissionCommand && cmd != enums.RCCeaseTransmissionRequest {
 		return errCommand

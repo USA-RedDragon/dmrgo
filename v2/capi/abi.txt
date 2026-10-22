@@ -119,9 +119,10 @@ code DMRGO_ERR_DVSI_STATUS -215
 code DMRGO_ERR_DVSI_TIMEOUT -216
 code DMRGO_ERR_DVSI_TYPE -217
 code DMRGO_ERR_VOICE_BUSY -218
-code DMRGO_ERR_VOICE_NOT_ACTIVE -219
-code DMRGO_ERR_VOICE_QUEUE_FULL -220
-code DMRGO_ERR_VOICE_TIMED_OUT -221
+code DMRGO_ERR_VOICE_INTERRUPT_BUSY -219
+code DMRGO_ERR_VOICE_NOT_ACTIVE -220
+code DMRGO_ERR_VOICE_QUEUE_FULL -221
+code DMRGO_ERR_VOICE_TIMED_OUT -222
 prefix github.com/USA-RedDragon/dmrgo/v2 dmrgo_
 prefix github.com/USA-RedDragon/dmrgo/v2/bs dmrgo_bs_
 prefix github.com/USA-RedDragon/dmrgo/v2/constants dmrgo_constants_
@@ -884,9 +885,10 @@ sym #define DMRGO_ERR_TRUNK_UDT_CHARACTER (-198)
 sym #define DMRGO_ERR_TRUNK_UDT_FORMAT (-199)
 sym #define DMRGO_ERR_TRUNK_UDT_LENGTH (-200)
 sym #define DMRGO_ERR_VOICE_BUSY (-218)
-sym #define DMRGO_ERR_VOICE_NOT_ACTIVE (-219)
-sym #define DMRGO_ERR_VOICE_QUEUE_FULL (-220)
-sym #define DMRGO_ERR_VOICE_TIMED_OUT (-221)
+sym #define DMRGO_ERR_VOICE_INTERRUPT_BUSY (-219)
+sym #define DMRGO_ERR_VOICE_NOT_ACTIVE (-220)
+sym #define DMRGO_ERR_VOICE_QUEUE_FULL (-221)
+sym #define DMRGO_ERR_VOICE_TIMED_OUT (-222)
 sym #define DMRGO_ERR_ZERO_VALUE (-104)
 sym #define DMRGO_FRAMER_DEFAULT_MAX_MISSES 12
 sym #define DMRGO_FRAMER_MAX_PERIOD 65536
@@ -3067,18 +3069,18 @@ sym int dmrgo_voice_transmitter_dropped(dmrgo_voice_transmitter_t *self, int64_t
 sym int dmrgo_voice_transmitter_frame(dmrgo_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *f);
 sym int dmrgo_voice_transmitter_frames(dmrgo_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *f, size_t f_len);
 sym int dmrgo_voice_transmitter_free(dmrgo_voice_transmitter_t *self);
-sym int dmrgo_voice_transmitter_interrupt(dmrgo_voice_transmitter_t *self, const dmrgo_pdu_reverse_channel_t *rc, bool *out);
 sym int dmrgo_voice_transmitter_relay(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, const dmrgo_voice_event_t *e);
 sym int dmrgo_voice_transmitter_reset(dmrgo_voice_transmitter_t *self);
+sym int dmrgo_voice_transmitter_reverse_channel(dmrgo_voice_transmitter_t *self, const dmrgo_pdu_reverse_channel_t *rc, bool *out);
 sym int dmrgo_voice_transmitter_room(dmrgo_voice_transmitter_t *self, int64_t *out);
-sym int dmrgo_voice_transmitter_slot(dmrgo_voice_transmitter_t *self, const uint8_t s[9]);
-sym int dmrgo_voice_transmitter_slots(dmrgo_voice_transmitter_t *self, const uint8_t (*s)[9], size_t s_len);
 sym int dmrgo_voice_transmitter_start(dmrgo_voice_transmitter_t *self, dmrgo_duration_t at, const dmrgo_voice_call_t *c, const dmrgo_voice_call_options_t *opts);
 sym int dmrgo_voice_transmitter_state(dmrgo_voice_transmitter_t *self, dmrgo_voice_transmitter_state_t *out);
 sym int dmrgo_voice_transmitter_state_string(dmrgo_voice_transmitter_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_voice_transmitter_stop(dmrgo_voice_transmitter_t *self);
 sym int dmrgo_voice_transmitter_tick(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_voice_transmitter_tick_need(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+sym int dmrgo_voice_transmitter_vocoder_slot(dmrgo_voice_transmitter_t *self, const uint8_t s[9]);
+sym int dmrgo_voice_transmitter_vocoder_slots(dmrgo_voice_transmitter_t *self, const uint8_t (*s)[9], size_t s_len);
 sym typedef int64_t dmrgo_codec2_mode_t;
 sym typedef int64_t dmrgo_duration_t;
 sym typedef int64_t dmrgo_layer2_sync_source_t;
