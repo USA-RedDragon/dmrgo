@@ -173,6 +173,9 @@ func (f *Field) DigitWidth() int {
 }
 
 func validateLayout(pdu *PDUStruct, maxBit int) error {
+	if pdu.Payload && pdu.Frame == nil {
+		return errors.New("dmr:payload requires dmr:frame")
+	}
 	if pdu.Frame == nil && pdu.View == nil {
 		if len(pdu.Magic) > 0 {
 			return errors.New("dmr:magic requires dmr:frame or dmr:view")

@@ -238,6 +238,7 @@ type PDUStruct struct {
 	SourceFile   string            // source file path
 	HasInputSize bool              // true if dmr:input_size was given
 	SubPDU       bool              // true if dmr:subpdu was given
+	Payload      bool              // true if dmr:payload was given: the frame is the payload of a message
 
 	// Frame is set by dmr:frame: the struct is a byte frame of one of
 	// Frame.Sizes octets, decoded from a slice with an error and encoded with
@@ -520,6 +521,10 @@ func parseStruct(name string, structType *ast.StructType, doc *ast.CommentGroup,
 			text := strings.TrimSpace(strings.TrimPrefix(c.Text, "//"))
 			if text == "dmr:subpdu" {
 				pdu.SubPDU = true
+				continue
+			}
+			if text == "dmr:payload" {
+				pdu.Payload = true
 				continue
 			}
 			if strings.HasPrefix(text, "dmr:") {

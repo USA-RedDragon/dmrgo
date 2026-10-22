@@ -108,7 +108,11 @@ func emitFrameDecode(f *File, pdu parse.PDUStruct) {
 	sizes := pdu.Frame.Sizes
 	name := pdu.DecodeFuncName(pdu.Name)
 	doc := name + " decodes " + docObject(pdu)
-	doc = strings.TrimSuffix(doc, ".") + " from data, a frame of " + sizesText(sizes) + ". It returns "
+	noun := " from data, a frame of "
+	if pdu.Payload {
+		noun = " from data, a payload of "
+	}
+	doc = strings.TrimSuffix(doc, ".") + noun + sizesText(sizes) + ". It returns "
 	conds := []string{errShort + " when data is shorter than " + octetsText(sizes[0])}
 	if len(sizes) == 1 {
 		conds = append(conds, errLength+" when it is longer")

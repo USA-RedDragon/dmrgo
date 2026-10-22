@@ -6,7 +6,7 @@ import text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
 import "github.com/USA-RedDragon/dmrgo/v2"
 
-// DecodeDMRAloha decodes a DMRAloha from data, a frame of 33 octets. It
+// DecodeDMRAloha decodes a DMRAloha from data, a payload of 33 octets. It
 // returns ErrShort when data is shorter than 33 octets and ErrLength when it
 // is longer. It does not keep data.
 func DecodeDMRAloha(data []byte) (DMRAloha, error) {
