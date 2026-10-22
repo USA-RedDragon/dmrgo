@@ -140,7 +140,7 @@ func (r Reason) String() string {
 	return unknownName
 }
 
-// State is the state of a dmrdsession.
+// State is the state of a session.
 type State uint8
 
 // The State values.

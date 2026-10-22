@@ -69,6 +69,14 @@ func TestMasterRefuseConfig(t *testing.T) {
 	if out = m.Accept(0, nil); len(out) != 0 || m.State() != dmrdsession.StateIdle {
 		t.Fatalf("Accept after Refuse %+v %v", out, m.State())
 	}
+	m.Packet(0, ctl(dmrd.CommandRPTL, 5), nil)
+	m.Admit(0, 7, []byte("pw"), nil)
+	m.Packet(0, rptk(5, tok), nil)
+	m.Packet(0, mmdvmConfig(5), nil)
+	out = m.Accept(dmrdsession.LoginTimeoutDefault, nil)
+	if len(out) != 1 || out[0].Kind != dmrdsession.OutputDown || out[0].Reason != dmrdsession.ReasonTimeout || m.State() != dmrdsession.StateIdle {
+		t.Fatalf("Accept after LoginTimeout %+v %v", out, m.State())
+	}
 }
 
 func TestMasterLongPassword(t *testing.T) {
