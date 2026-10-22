@@ -484,7 +484,7 @@ func appointed(t *testing.T) *tdriver {
 	d.rx(minute, ctf{gen: 1, sa: 40, ldi: 2, lid: 100, nl: true, cto: 2, sid: 300})
 	d.state(csbk.TimingLeader)
 	got := d.txs(d.until(minute + time.Second))
-	if len(got) != 1 || got[0].first != minute || got[0].n != 10 || got[0].f != beaconOf(2, 100) {
+	if len(got) != 1 || got[0].first != minute+30*ms || got[0].n != 10 || got[0].f != beaconOf(2, 100) {
 		t.Fatalf("beacon %+v", got)
 	}
 	return d

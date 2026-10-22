@@ -180,6 +180,12 @@ type Timing struct {
 	sendDue   time.Duration
 	sendBurst layer2.RawBurst
 
+	grid    time.Duration
+	hasGrid bool
+	rxAt    time.Duration
+	hasRx   bool
+	rxOther bool
+
 	emitted bool
 	build   pdu.CSBK
 	ct      pdu.ChannelTimingPDU
@@ -243,6 +249,7 @@ func (m *Timing) Reset() {
 	m.joined, m.busy, m.state, m.lwatid, m.gen, m.syncRef = false, false, TimingLeaderAndTimingUnknown, 0, 0, 0
 	m.noLeader, m.syncAge, m.warning, m.beacon = timer{}, timer{}, timer{}, timer{}
 	m.pend, m.sending, m.rhotLow, m.rhotHigh = ctNone, 0, 0, constants.CTRHOTMax
+	m.hasGrid, m.hasRx = false, false
 }
 
 // State returns the state of the Timing. (ETSI TS 102 361-2 clause 6.2)
@@ -330,10 +337,13 @@ func (m *Timing) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, d
 // Decoded takes the decoded burst b, which may be nil, from either slot,
 // and evaluates a CT_CSBK in it: it appends OutputTiming to dst when the
 // radio takes the slot timing of b, and starts, keeps or cancels the
-// CT_CSBK that the radio sends. A CSBK whose CRC fails is dropped. It
-// allocates only when dst has no room for MaxOutputs outputs. (ETSI TS 102
-// 361-2 clauses 6.2.3.2 to 6.2.3.11)
-func (m *Timing) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
+// CT_CSBK that the radio sends. The SYNC of b, or else h.Slot, tells the
+// slot of b; a burst of unknown slot counts as one in the provisioned
+// slot. The CT_CSBKs of the radio go on the slot timing that it took,
+// after b. A CSBK whose CRC fails is dropped. It allocates only when dst
+// has no room for MaxOutputs outputs. (ETSI TS 102 361-2 clauses 6.2.2.1,
+// 6.2.2.2 and 6.2.3.2 to 6.2.3.11)
+func (m *Timing) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, dst []Output) []Output {
 	if m == nil {
 		return dst
 	}
@@ -348,6 +358,7 @@ func (m *Timing) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst 
 		return dst
 	}
 	m.emitted = false
+	m.rxAt, m.hasRx, m.rxOther = now, true, m.otherSlot(b, h.Slot)
 	rx := &ct
 	if m.pend != ctNone {
 		var eval bool
@@ -497,6 +508,10 @@ func (m *Timing) take(now time.Duration, octets pdu.CSBKBytes, dst []Output) []O
 		return dst
 	}
 	m.emitted = true
+	m.grid, m.hasGrid = now, true
+	if m.rxOther {
+		m.grid += BurstInterval / 2
+	}
 	var o *Output
 	dst, o = appendOutput(dst, OutputTiming)
 	o.Service, o.CSBK, o.Due = ServiceTiming, octets, now
@@ -719,7 +734,8 @@ func (m *Timing) Tick(now time.Duration, dst []Output) []Output {
 	if m.pend != ctNone && m.sending == 0 && now >= m.pendAt {
 		switch {
 		case !m.busy:
-			m.sending, m.sendDue = m.fill(m.pendAt), m.pendAt+m.lead
+			m.sendDue = m.slotAt(m.pendAt + m.lead)
+			m.sending = m.fill(m.sendDue - m.lead)
 			m.sendBurst, _ = m.encode()
 			if m.sending > 0 && m.state >= TimingLeaderAndTimingKnown {
 				m.rhotLow, m.rhotHigh = rhotKnownLow, constants.CTRHOTMax
@@ -743,6 +759,35 @@ func (m *Timing) Tick(now time.Duration, dst []Output) []Output {
 	m.sending--
 	m.sendDue += BurstInterval
 	return dst
+}
+
+func (m *Timing) otherSlot(b *layer2.Burst, hint enums.Slot) bool {
+	s := hint
+	switch b.SyncPattern {
+	case enums.SyncTDMA1Data, enums.SyncTDMA1Voice:
+		s = enums.Slot1
+	case enums.SyncTDMA2Data, enums.SyncTDMA2Voice:
+		s = enums.Slot2
+	default:
+	}
+	return (s == enums.Slot1 || s == enums.Slot2) && s != m.slot
+}
+
+func (m *Timing) slotAt(t time.Duration) time.Duration {
+	if m.hasRx {
+		t = max(t, m.rxAt+BurstInterval/2)
+	}
+	if !m.hasGrid {
+		return t
+	}
+	r := (t - m.grid) % BurstInterval
+	if r < 0 {
+		r += BurstInterval
+	}
+	if r != 0 {
+		t += BurstInterval - r
+	}
+	return t
 }
 
 // Lost tells the Timing that the transport lost the signal. It runs the
