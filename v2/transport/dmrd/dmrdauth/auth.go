@@ -18,8 +18,8 @@ import (
 // master and the password: SHA-256 of the salt and the password. In
 // DialectMMDVM the salt is its 4 octets as RPTACK sent them; in DialectHBRP
 // it is its 8 hex digits in upper case, as in the example of the
-// specification. It returns an error for another dialect, and does not
-// allocate.
+// specification. It returns an error that wraps dmrd.ErrCommand for
+// another dialect, and does not allocate.
 func Token(d dmrd.Dialect, salt uint32, password []byte) ([32]byte, error) {
 	var prefix [8]byte
 	var n int
@@ -125,8 +125,8 @@ func tagIs(p []byte, t string) bool {
 // first 53 octets of a version 1 packet and over the tag (and talkgroup
 // and stream of BCSQ, or only the version octet of BCVE) of a control
 // packet, and keyed BLAKE2b-128 over the octets before the hash
-// of a DMRE packet. It changes nothing and returns an error when the
-// packet is none of these, and dmrgo.ErrNilReceiver for a nil b. It does
+// of a DMRE packet. It changes nothing and returns an error that wraps
+// dmrd.ErrCommand when the packet is none of these, and dmrgo.ErrNilReceiver for a nil b. It does
 // not allocate.
 func (b *BridgeKey) SignInPlace(p []byte) error {
 	if b == nil {

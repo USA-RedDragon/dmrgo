@@ -10153,13 +10153,13 @@ int dmrgo_dmrd_position_string(const dmrgo_dmrd_position_t *self, char *out, siz
 int dmrgo_dmrd_repeater_id(const uint8_t *p, size_t p_len, dmrgo_dmrd_dialect_t d, uint32_t *id, bool *ok);
 /* Go: dmrd.TalkerAlias.AppendBinary. AppendBinary appends the 15 or 19 octets of s to dst: Size selects the length, and 0 means 15. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error that wraps DMRGO_ERR_DMRD_LENGTH when Size is not one of the lengths. */
 int dmrgo_dmrd_talker_alias_append_binary(const dmrgo_dmrd_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: dmrd.TalkerAlias.LC. LC decodes the talker alias block as the Full LC it came from: FLCO Talker Alias Header plus Type, standard FID, and Data. It returns an error when Type is above 3, and DMRGO_ERR_ARG for a NULL self. */
+/* Go: dmrd.TalkerAlias.LC. LC decodes the talker alias block as the Full LC it came from: FLCO Talker Alias Header plus Type, standard FID, and Data. It returns a DMRGO_ERR_FIELD_RANGE when Type is above 3, and DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_dmrd_talker_alias_lc(const dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_full_link_control_t *out);
 /* Go: dmrd.TalkerAlias.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_talker_alias_string(const dmrgo_dmrd_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_dmrdauth_bridge_key_free frees the handle. self may be NULL. */
 int dmrgo_dmrdauth_bridge_key_free(dmrgo_dmrdauth_bridge_key_t *self);
-/* Go: dmrdauth.BridgeKey.SignInPlace. SignInPlace writes the signature of the OpenBridge packet p, as dmrgo_dmrd_bridge_append_binary and dmrgo_dmrd_bridge_control_append_binary encode it with space for the signature, into its last octets: HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over the octets before the hash of a DMRE packet. It changes nothing and returns an error when the packet is none of these, and DMRGO_ERR_HANDLE for a NULL self. */
+/* Go: dmrdauth.BridgeKey.SignInPlace. SignInPlace writes the signature of the OpenBridge packet p, as dmrgo_dmrd_bridge_append_binary and dmrgo_dmrd_bridge_control_append_binary encode it with space for the signature, into its last octets: HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over the octets before the hash of a DMRE packet. It changes nothing and returns an error that wraps DMRGO_ERR_DMRD_COMMAND when the packet is none of these, and DMRGO_ERR_HANDLE for a NULL self. */
 int dmrgo_dmrdauth_bridge_key_sign_in_place(dmrgo_dmrdauth_bridge_key_t *self, uint8_t *p, size_t p_len);
 /* dmrgo_dmrdauth_bridge_key_verify_need sets *items and *arena to the room that dmrgo_dmrdauth_bridge_key_verify needs for these arguments, without a change to the handle. */
 int dmrgo_dmrdauth_bridge_key_verify_need(dmrgo_dmrdauth_bridge_key_t *self, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
@@ -10167,7 +10167,7 @@ int dmrgo_dmrdauth_bridge_key_verify_need(dmrgo_dmrdauth_bridge_key_t *self, con
 int dmrgo_dmrdauth_bridge_key_verify(dmrgo_dmrdauth_bridge_key_t *self, const uint8_t *p, size_t p_len, uint8_t *body, size_t body_cap, size_t *body_len, size_t *body_need, bool *ok);
 /* Go: dmrdauth.NewBridgeKey. NewBridgeKey returns a BridgeKey for key, the passphrase of the OpenBridge link as plain octets. */
 int dmrgo_dmrdauth_new_bridge_key(const uint8_t *key, size_t key_len, dmrgo_dmrdauth_bridge_key_t **out);
-/* Go: dmrdauth.Token. Token returns the login token of an RPTK message for the salt of the master and the password: SHA-256 of the salt and the password. */
+/* Go: dmrdauth.Token. Token returns the login token of an RPTK message for the salt of the master and the password: SHA-256 of the salt and the password. It returns an error that wraps DMRGO_ERR_DMRD_COMMAND for another dialect, and does not allocate. */
 int dmrgo_dmrdauth_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, uint8_t out[32]);
 /* Go: dmrdauth.VerifyToken. VerifyToken reports whether token, from an RPTK message, is the login token of the salt and the password, as Token computes it. */
 int dmrgo_dmrdauth_verify_token(dmrgo_dmrd_dialect_t d, uint32_t salt, const uint8_t *password, size_t password_len, const uint8_t *token, size_t token_len, bool *out);
@@ -10179,7 +10179,7 @@ int dmrgo_dmrdsession_bridge_deadline(dmrgo_dmrdsession_bridge_t *self, dmrgo_du
 int dmrgo_dmrdsession_bridge_packet_need(dmrgo_dmrdsession_bridge_t *self, dmrgo_duration_t now, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
 /* Go: dmrdsession.Bridge.Packet. Packet takes the packet p from the peer. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrdsession_bridge_packet_need gives. */
 int dmrgo_dmrdsession_bridge_packet(dmrgo_dmrdsession_bridge_t *self, dmrgo_duration_t now, const uint8_t *p, size_t p_len, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: dmrdsession.Bridge.SignInPlace. SignInPlace writes the signature of the OpenBridge packet p into its last octets, as dmrgo_dmrdauth_bridge_key_sign_in_place does. */
+/* Go: dmrdsession.Bridge.SignInPlace. SignInPlace writes the signature of the OpenBridge packet p into its last octets, as dmrgo_dmrdauth_bridge_key_sign_in_place does. It returns DMRGO_ERR_ZERO_VALUE for a Bridge that NewBridge did not make. */
 int dmrgo_dmrdsession_bridge_sign_in_place(dmrgo_dmrdsession_bridge_t *self, uint8_t *p, size_t p_len);
 /* Go: dmrdsession.Bridge.State. State returns DMRGO_DMRDSESSION_STATE_RUNNING when the peer sent a packet with a good signature within Timeout, and DMRGO_DMRDSESSION_STATE_IDLE before that and after. */
 int dmrgo_dmrdsession_bridge_state(dmrgo_dmrdsession_bridge_t *self, dmrgo_dmrdsession_state_t *out);
