@@ -93,8 +93,11 @@ func (r *VoiceReceiver) place(b *Burst, h *Hint, err error) (lc [9]byte, res fec
 		return lc, res, false, err
 	}
 	b.VoiceBurst = h.VoiceBurst
+	if h.End == EndWeak {
+		r.pos.known = false
+	}
 	lcss, ok := b.VoiceBurst.LCSS()
-	if !ok || b.VoiceBurst == enums.VoiceBurstF {
+	if !ok || b.VoiceBurst == enums.VoiceBurstF || !b.HasEmbeddedSignalling() {
 		if e := r.lc.discard(); err == nil {
 			err = e
 		}

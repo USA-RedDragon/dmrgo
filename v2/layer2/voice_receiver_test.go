@@ -285,3 +285,51 @@ func TestVoiceReceiver_IgnoresStandaloneRC(t *testing.T) {
 		t.Errorf("LCs %v, errors %v", got.lcs, got.errs)
 	}
 }
+
+func TestVoiceReceiver_BurstWithoutEMB(t *testing.T) {
+	t.Parallel()
+
+	raws := transmission(t, groupLC(enums.FIDStandardized), 12)
+	if err := raws[3].SetSync(enums.SyncReserved); err != nil {
+		t.Fatal(err)
+	}
+	if b := must(layer2.NewBurstFromBytes(raws[3])); b.Kind != layer2.KindVoice || b.HasEmbeddedSignalling() {
+		t.Fatalf("burst C with the reserved SYNC decodes as %s", b.String())
+	}
+	got := receiveAll(t, raws)
+	checkPositions(t, got.positions, "-ABCDEFABCDEF-")
+	if len(got.lcs) != 1 || len(got.badLCs) != 0 {
+		t.Errorf("LCs %v, bad LCs %v; want one LC at burst 11", got.lcs, got.badLCs)
+	}
+	if _, ok := got.lcs[11]; !ok {
+		t.Errorf("no LC at burst 11")
+	}
+	if !errors.Is(got.errs[3], layer2.ErrEmbeddedLCSequence) {
+		t.Errorf("errors %v, want ErrEmbeddedLCSequence at burst 3", got.errs)
+	}
+}
+
+func TestVoiceReceiver_WeakEndMatchesPlace(t *testing.T) {
+	t.Parallel()
+
+	raws := transmission(t, groupLC(enums.FIDStandardized), 12)
+	var r layer2.VoiceReceiver
+	var pt layer2.PositionTracker
+	for i := range raws {
+		h := layer2.Hint{}
+		if i == 3 || i == 8 {
+			h.End = layer2.EndWeak
+		}
+		b := must(layer2.NewBurstFromBytes(raws[i]))
+		_, _, _ = r.Receive(b, &h)
+		ph := h
+		pt.Place(&raws[i], &ph)
+		want := ph.VoiceBurst
+		if b.Kind != layer2.KindVoice {
+			want = enums.VoiceBurstUnknown
+		}
+		if b.VoiceBurst != want {
+			t.Errorf("burst %d: VoiceReceiver %s, Place %s", i, b.VoiceBurst.String(), want.String())
+		}
+	}
+}
