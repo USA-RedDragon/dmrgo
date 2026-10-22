@@ -47,6 +47,12 @@ func TestZeroValues(t *testing.T) {
 	if got, err := nm.Sign([]byte{1}); !errors.Is(err, dmrgo.ErrNilReceiver) || len(got) != 1 {
 		t.Fatalf("nil Master Sign %x, %v", got, err)
 	}
+	if _, ok := nm.Peer(7); ok {
+		t.Fatal("nil Master Peer")
+	}
+	if _, ok := np.Peer(7); ok {
+		t.Fatal("Peer of a nil Peer")
+	}
 	if got, err := nm.SignFor(7, []byte{1}); !errors.Is(err, dmrgo.ErrNilReceiver) || len(got) != 1 {
 		t.Fatalf("nil Master SignFor %x, %v", got, err)
 	}

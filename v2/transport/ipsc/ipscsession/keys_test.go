@@ -145,7 +145,7 @@ func TestMasterAdopt(t *testing.T) {
 
 	m, _ := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1, MaxPeers: 1})
 	out := m.Adopt(0, xprAddr, 7, nil, nil)
-	if len(out) != 1 || out[0].Kind != ipscsession.OutputUp || out[0].ID != 7 || m.Peers() != 1 || m.PeerAt(0).Mode != 0x6a {
+	if len(out) != 1 || out[0].Kind != ipscsession.OutputUp || out[0].ID != 7 || m.Peers() != 1 || m.PeerAt(0).Mode != 0x6a || !peerOK(m.Peer(7)) || peerOK(m.Peer(8)) {
 		t.Fatalf("adopt %+v", out)
 	}
 	if out = m.Adopt(time.Second, xprAddr, 7, nil, nil); len(out) != 0 {

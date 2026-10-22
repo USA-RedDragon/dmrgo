@@ -588,6 +588,7 @@ DMRGO_1 {
 		dmrgo_ipscsession_master_max_outputs;
 		dmrgo_ipscsession_master_packet;
 		dmrgo_ipscsession_master_packet_need;
+		dmrgo_ipscsession_master_peer;
 		dmrgo_ipscsession_master_peer_at;
 		dmrgo_ipscsession_master_peers;
 		dmrgo_ipscsession_master_reset;
@@ -610,6 +611,7 @@ DMRGO_1 {
 		dmrgo_ipscsession_peer_max_outputs;
 		dmrgo_ipscsession_peer_packet;
 		dmrgo_ipscsession_peer_packet_need;
+		dmrgo_ipscsession_peer_peer;
 		dmrgo_ipscsession_peer_peer_at;
 		dmrgo_ipscsession_peer_peers;
 		dmrgo_ipscsession_peer_reset;
