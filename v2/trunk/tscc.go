@@ -306,23 +306,23 @@ type setup struct {
 	opts   uint8
 }
 
-// TSCC is a Tier III dedicated TSCC with its payload channels, for a
-// single site (ETSI TS 102 361-4 clauses 6.2, 6.4.4, 6.4.8 and 6.6). It sends
-// C_ALOHA and the C_SYS_Parms Short LC, reserves the inbound slot of a
-// PDU that solicits an answer with the AT bit, registers MSs, sets up
-// talkgroup voice calls and individual voice calls with OACSU, sends
-// grants and late entry grants, relays the inbound bursts of each call
-// on its payload slot, clears calls with P_CLEAR, and authenticates the
-// MSs that register when TSCCConfig.Authenticate is set. It also carries
-// UDT short data, UDT and USBD polling, call diversion and DGNA, sets up
-// full-duplex calls and ALS calls, and runs power save, mass registration,
-// stun, revive and kill, status calls, transmit interrupts, IP connection
-// advice and supplementary_user data (ETSI TS 102 361-4 clauses 6.4.5 to
-// 6.4.15, 6.6.2.6 and 6.6.4 to 6.6.11). Half-duplex data calls and FOACSU
-// are not supported. Make it with NewTSCC; the methods of a zero TSCC do
-// nothing, and those that start a service return dmrgo.ErrZeroValue. A
-// TSCC is not safe for concurrent use and must not be copied; go vet
-// reports a copy.
+// TSCC is a Tier III dedicated TSCC with its payload channels, for a single
+// site (ETSI TS 102 361-4 clauses 6.2, 6.4.4, 6.4.8 and 6.6). It sends
+// C_ALOHA and the C_SYS_Parms Short LC, withdraws the inbound slot of the
+// answer to a PDU that solicits one with the AT bit of the CACH after that
+// PDU, registers MSs, sets up talkgroup voice calls and individual voice
+// calls with OACSU, sends grants and late entry grants, relays the inbound
+// bursts of each call on its payload slot, clears calls with P_CLEAR, and
+// authenticates the MSs that register when TSCCConfig.Authenticate is set.
+// It also carries UDT short data, UDT and USBD polling, call diversion and
+// DGNA, sets up full-duplex calls and ALS calls, and runs power save, mass
+// registration, stun, revive and kill, status calls, transmit interrupts, IP
+// connection advice and supplementary_user data (ETSI TS 102 361-4 clauses
+// 6.4.5 to 6.4.15, 6.6.2.6 and 6.6.4 to 6.6.11). Half-duplex data calls and
+// FOACSU are not supported. Make it with NewTSCC; the methods of a zero TSCC
+// do nothing, and those that start a service return dmrgo.ErrZeroValue. A
+// TSCC is not safe for concurrent use and must not be copied; go vet reports
+// a copy.
 type TSCC struct {
 	cfg     TSCCConfig
 	code    uint16
@@ -343,6 +343,7 @@ type TSCC struct {
 	skipped int64
 	counter uint16
 	caches  [1 + MaxPayloadChannels]bs.CACH
+	atNext  bool
 	b       *layer2.Burst
 	cs      pdu.CSBK
 	slc     pdu.ShortLC
@@ -948,7 +949,11 @@ func (t *TSCC) emit(idx int, ch uint16, p [12]byte, dt enums.DataType, reply boo
 func (t *TSCC) emitRaw(idx int, ch uint16, raw *layer2.RawBurst, h layer2.Hint, reply bool, out []TSCCOutput) []TSCCOutput {
 	t.svc.buf = *raw
 	t.svcEmit(idx, &h)
-	cach, err := t.caches[idx].Next(t.slot, reply, &t.slc)
+	busy := false
+	if idx == 0 {
+		busy, t.atNext = t.atNext, reply
+	}
+	cach, err := t.caches[idx].Next(t.slot, busy, &t.slc)
 	if err != nil {
 		return out
 	}

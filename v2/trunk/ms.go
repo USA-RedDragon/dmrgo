@@ -517,8 +517,16 @@ func (m *MS) EndCall(now time.Duration, dst []Output) []Output {
 		to = g.Source
 	}
 	due := now
-	if at := m.f.slotAt; m.f.hasSlotAt && now > at {
-		if r := (now - at) % frame; r != 0 {
+	if m.f.hasSlotAt {
+		at := m.f.slotAt
+		if g.Offset {
+			at += slotLength
+		}
+		r := (now - at) % frame
+		if r < 0 {
+			r += frame
+		}
+		if r != 0 {
 			due = now + frame - r
 		}
 	}
@@ -534,11 +542,14 @@ func (m *MS) EndCall(now time.Duration, dst []Output) []Output {
 // Burst decodes the burst raw with what the Hint h says about it, and the
 // CACH field before it, in transmit order, when cach is not nil, as
 // Follower.Burst does, runs the random access and the requests, and appends
-// the outputs to dst. On the TSCC the MS counts TDMA frames by the bursts of
-// its Slot, so h.Slot should be set; random access needs the CACH, for its
-// AT bit. A nil raw is a transport frame without a burst: with Hint.SyncLost
-// it does what Lost does, else it runs the timers. It allocates only when
-// dst has no room for MaxOutputs outputs.
+// the outputs to dst. now is the start of the burst. On the TSCC the MS
+// counts TDMA frames by the bursts of its Slot, so h.Slot should be set.
+// Random access needs the CACH for its AT bit: the CACH before the bursts of
+// the other slot on an aligned timing TSCC, and of its Slot on an offset
+// timing TSCC, which has the AT bit of the inbound slot that the MS sends
+// in, 30 ms later. A nil raw is a transport frame without a burst: with
+// Hint.SyncLost it does what Lost does, else it runs the timers. It
+// allocates only when dst has no room for MaxOutputs outputs.
 func (m *MS) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
 	if m == nil || m.f.ctl.b == nil {
 		return dst
@@ -603,10 +614,40 @@ func (m *MS) burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach 
 		return m.leaveTSCC(now, ReasonQuality, dst)
 	}
 	dst = m.addressed(now, &h, dst)
-	if m.f.state == StateControl && (h.Slot == enums.SlotUnknown || h.Slot == m.slot) {
-		dst = m.frame(now, c, dst)
+	if m.f.state != StateControl {
+		return dst
 	}
-	return dst
+	if slotOfBurst(&h, c) == m.slot.Other() {
+		return m.otherFrame(now, c, dst)
+	}
+	return m.frame(now, c, dst)
+}
+
+func slotOfBurst(h *layer2.Hint, c *layer2.CACH) enums.Slot {
+	switch {
+	case h.Slot != enums.SlotUnknown:
+		return h.Slot
+	case c != nil && !c.TACT.FEC.Uncorrectable:
+		return slotOf(c.TACT.TDMAChannel)
+	}
+	return enums.SlotUnknown
+}
+
+// replyDue is the start of the inbound slot of the answer to the outbound
+// burst that started at now: the next TDMA frame after the end of the
+// burst. The inbound slot of a logical channel starts with its outbound
+// slot on an aligned timing channel, and 30 ms after it on an offset
+// timing channel (ETSI TS 102 361-1 clauses 4.2 and 5.1.1, ETSI TS 102 361-4
+// clauses 4.8 and 6.2.1.1.3).
+func (m *MS) replyDue(now time.Duration) time.Duration {
+	offset := m.f.ctl.site.Offset
+	if m.f.state == StatePayload {
+		offset = m.f.call.Offset
+	}
+	if offset {
+		return now + frame + slotLength
+	}
+	return now + frame
 }
 
 // Lost tells the MS that the receiver lost the signal, as Follower.Lost

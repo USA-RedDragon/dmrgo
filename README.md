@@ -269,20 +269,21 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 
 | Metric | Count |
 | --- | --- |
-| Total sections | 232 |
-| Verified (tests pass) | 197 |
+| Total sections | 233 |
+| Verified (tests pass) | 198 |
 | Failing (tests fail) | 0 |
 | Untested (has source, no tests) | 3 |
 | Unimplemented | 32 |
 
-**Overall: 197/232 verified (84.9%)**
+**Overall: 198/233 verified (85.0%)**
 
 ### ETSI TS 102 361-1: Air Interface Protocol
 
-72 sections: 69 verified, 0 failing, 0 untested, 3 unimplemented.
+73 sections: 70 verified, 0 failing, 0 untested, 3 unimplemented.
 
 | Section | Title | Status | Tests | Source Files |
 | --- | --- | --- | --- | --- |
+| 5.1.1 | Channel timing relationship | verified | 3/3 passed | `v2/trunk/ms.go`, `v2/trunk/ms_access.go` |
 | 5.2.1.6 | Transmit admit criteria | verified | 2/2 passed | `v2/voice/transmitter.go`, `v2/enums/access.go` |
 | 5.2.2.1 | Direct mode Channel Access | unimplemented | - | - |
 | 5.2.2.2 | Repeater mode channel access, other than 5.2.2.2.4, 5.2.2.2.5 and 5.2.2.2.7 | unimplemented | - | - |
@@ -442,7 +443,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 5.2 | Tier III Signalling | verified | 4/4 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/burst.go` |
 | 5.3 | Modes of Control Channel | verified | 2/2 passed | `v2/layer2/burst.go` |
 | 5.4 | CSBK/MBC/UDT/USBD Block Structure | verified | 4/4 passed | `v2/layer2/pdu/csbk.go`, `v2/layer2/pdu/mbc.go`, `v2/layer2/pdu/data_header.go` |
-| 6.2 | Random Access Procedures | verified | 11/11 passed | `v2/layer2/pdu/csbk.go`, `v2/constants/constants.go`, `v2/enums/service_kind.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go` |
+| 6.2 | Random Access Procedures | verified | 13/13 passed | `v2/layer2/pdu/csbk.go`, `v2/constants/constants.go`, `v2/enums/service_kind.go`, `v2/trunk/ms.go`, `v2/trunk/ms_access.go` |
 | 6.3 | Control Channel Acquisition and Retention | verified | 8/8 passed | `v2/trunk/control.go`, `v2/trunk/follower.go`, `v2/trunk/plan.go`, `v2/trunk/site.go` |
 | 6.4.1 | Registration | verified | 2/2 passed | `v2/trunk/ms.go`, `v2/trunk/tscc.go` |
 | 6.4.2 | MS Parameter Volatility | verified | 2/2 passed | `v2/trunk/ms.go` |

@@ -4818,7 +4818,7 @@ struct dmrgo_trunk_output_t {
 	dmrgo_layer2_hint_t hint;
 	/* Slot is the TDMA channel of DMRGO_TRUNK_OUTPUT_BURST. */
 	dmrgo_enums_slot_t slot;
-	/* Due is the time at which to transmit DMRGO_TRUNK_OUTPUT_BURST. */
+	/* Due is the start of the inbound slot of DMRGO_TRUNK_OUTPUT_BURST, the time at which to transmit it. */
 	dmrgo_duration_t due;
 	/* Protect is the kind of DMRGO_TRUNK_OUTPUT_PROTECT. */
 	dmrgo_enums_protect_kind_t protect;

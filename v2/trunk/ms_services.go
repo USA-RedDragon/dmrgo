@@ -383,7 +383,7 @@ func (m *MS) svcAhoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Ou
 		if n := int(a.UAB) + 1; n < s.supl.Blocks {
 			s.supl.Blocks, s.supl.PadNibble = n, 0
 		}
-		out = m.sendUDT(now+frame, m.replySlot(h), &s.supl, constants.GatewaySUPLI, false, false, true, pdu.UDTOpcodeInboundHeader, out)
+		out = m.sendUDT(m.replyDue(now), m.replySlot(h), &s.supl, constants.GatewaySUPLI, false, false, true, pdu.UDTOpcodeInboundHeader, out)
 		s.hasSupl = false
 		return out, true
 	case kind == enums.ServiceKindStatusTransport:
@@ -420,7 +420,7 @@ func (m *MS) statusAhoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out [
 	if st == StatusPoll {
 		ack.ReasonCode, ack.ResponseInfo = byte(enums.AckReasonStatusPollAcceptedMS), uint8(s.status)
 	}
-	return m.sendAck(now+frame, m.replySlot(h), ack, out)
+	return m.sendAck(m.replyDue(now), m.replySlot(h), ack, out)
 }
 
 func (m *MS) stunAhoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Output) []Output {
@@ -446,11 +446,11 @@ func (m *MS) stunAhoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []O
 	s.stunWait, s.stunAct, s.stunGw, s.stunUntil = true, act, gw, now+m.regTO
 	m.tx = pdu.CSBK{LastBlock: true}
 	err := m.tx.SetAckvitation(pdu.AckvitationPDU{ServiceKindFlag: act == StunRevive, ServiceKind: uint8(enums.ServiceKindSupplementary), TargetAddress: s.stunChal, SourceAddress: m.addr})
-	return m.send(err, now+frame, m.replySlot(h), out)
+	return m.send(err, m.replyDue(now), m.replySlot(h), out)
 }
 
 func (m *MS) finalAck(now time.Duration, gw uint32, r enums.AckReason, h *layer2.Hint, out []Output) []Output {
-	return m.sendAck(now+frame, m.replySlot(h), pdu.AckInboundPDU{ReasonCode: byte(r), TargetAddress: gw, AdditionalInfo: m.addr}, out)
+	return m.sendAck(m.replyDue(now), m.replySlot(h), pdu.AckInboundPDU{ReasonCode: byte(r), TargetAddress: gw, AdditionalInfo: m.addr}, out)
 }
 
 func (m *MS) applyStun(act StunAction, out []Output) []Output {
@@ -551,7 +551,7 @@ func (m *MS) svcUpload(now time.Duration, slot enums.Slot, dest uint32, format u
 	u := &m.svc.up
 	*u = Appended{Format: enums.UDTFormat(format), PadNibble: uint8((n*12 - 2 - len(data)) * 2 & 0x1F), Blocks: n}
 	copy(u.Data[:], data)
-	return m.sendUDT(now+frame, slot, u, dest, false, false, true, pdu.UDTOpcodeInboundHeader, out)
+	return m.sendUDT(m.replyDue(now), slot, u, dest, false, false, true, pdu.UDTOpcodeInboundHeader, out)
 }
 
 func (m *MS) massReg(now time.Duration, v *pdu.MassRegParms) {

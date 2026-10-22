@@ -173,6 +173,18 @@ documents:
   - id: "TS-102-361-1"
     title: "ETSI TS 102 361-1: Air Interface Protocol"
     sections:
+      - section: "5.1.1"
+        title: "Channel timing relationship"
+        source_files:
+          - v2/trunk/ms.go
+          - v2/trunk/ms_access.go
+        test_functions:
+          - package: github.com/USA-RedDragon/dmrgo/v2/trunk
+            names:
+              - TestMS_AnswerSlotGrid
+              - TestMS_RandomAccessSlotGrid
+              - TestMS_EndCallSlotGrid
+
       - section: "5.2.1.6"
         title: "Transmit admit criteria"
         source_files:
@@ -2295,6 +2307,8 @@ documents:
               - TestMS_RegisterAndCall
               - TestMS_RandomTimeout
               - TestMS_DataCallAndEmergency
+              - TestMS_RandomAccessSlotGrid
+              - TestTSCC_WithdrawsTheAnswerSlot
               - TestTSCC_EndToEnd
 
       - section: "6.3"
