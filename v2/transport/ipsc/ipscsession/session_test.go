@@ -353,7 +353,7 @@ func TestLoopbackClose(t *testing.T) {
 func TestMasterKeepaliveRegisters(t *testing.T) {
 	t.Parallel()
 
-	alive, _ := ipsc.Control{Opcode: ipsc.OpAliveRequest, ID: 7, Mode: 0x6a}.AppendBinary(nil)
+	alive, _ := (&ipsc.Control{Opcode: ipsc.OpAliveRequest, ID: 7, Mode: 0x6a}).AppendBinary(nil)
 	open, _ := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1})
 	if out := open.Packet(0, xprAddr, alive, nil); !isDrop(out, 7, ipscsession.ReasonUnregistered) {
 		t.Fatal("keepalive of a peer that is not registered taken without Auth")
@@ -364,16 +364,16 @@ func TestMasterKeepaliveRegisters(t *testing.T) {
 	if len(out) != 2 || out[1].Kind != ipscsession.OutputUp {
 		t.Fatalf("authenticated keepalive %v", kinds(out))
 	}
-	other, _ := ipsc.Control{Opcode: ipsc.OpRegisterRequest, ID: 8}.AppendBinary(nil)
+	other, _ := (&ipsc.Control{Opcode: ipsc.OpRegisterRequest, ID: 8}).AppendBinary(nil)
 	if out = m.Packet(0, masterAddr, m.Sign(other), nil); !isDrop(out, 8, ipscsession.ReasonFull) {
 		t.Fatal("registered beyond MaxPeers")
 	}
-	dereg, _ := ipsc.Control{Opcode: ipsc.OpDeregisterRequest, ID: 7}.AppendBinary(nil)
+	dereg, _ := (&ipsc.Control{Opcode: ipsc.OpDeregisterRequest, ID: 7}).AppendBinary(nil)
 	if out = m.Packet(0, masterAddr, m.Sign(dereg), nil); !isDrop(out, 7, ipscsession.ReasonAddress) || m.Peers() != 1 {
 		t.Fatal("de-registration from another address")
 	}
 	for _, op := range []ipsc.Opcode{ipsc.OpPeerRegisterRequest, ipsc.OpPeerAliveRequest} {
-		c, _ := ipsc.Control{Opcode: op, ID: 7}.AppendBinary(nil)
+		c, _ := (&ipsc.Control{Opcode: op, ID: 7}).AppendBinary(nil)
 		if out = m.Packet(time.Second, xprAddr, m.Sign(c), nil); len(out) != 1 || out[0].Kind != ipscsession.OutputSend {
 			t.Fatalf("%v: %v", op, kinds(out))
 		}

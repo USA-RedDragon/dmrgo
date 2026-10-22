@@ -1,5 +1,7 @@
 package dmrd
 
+import "github.com/USA-RedDragon/dmrgo/v2"
+
 // Bridge is an OpenBridge data packet between two masters. OpenBridge has
 // no login: each packet carries its own signature, which package auth
 // computes and checks.
@@ -188,9 +190,16 @@ func DecodeBridgeControl(p []byte) (BridgeControl, error) {
 
 // AppendBinary appends the packet c to dst, with c.Signature as it is. It
 // returns dst unchanged and an error for another Command, and a
-// *dmrgo.FieldRangeError when TalkGroup does not fit in 24 bits. It
-// allocates only to grow dst.
-func (c BridgeControl) AppendBinary(dst []byte) ([]byte, error) {
+// *dmrgo.FieldRangeError when TalkGroup does not fit in 24 bits, and
+// dmrgo.ErrNilReceiver for a nil c. It allocates only to grow dst.
+func (c *BridgeControl) AppendBinary(dst []byte) ([]byte, error) {
+	if c == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+	return c.appendBinary(dst)
+}
+
+func (c BridgeControl) appendBinary(dst []byte) ([]byte, error) {
 	switch c.Command {
 	case CommandBCKA, CommandBCST:
 		m := bcTag{Signature: c.Signature}

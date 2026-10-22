@@ -126,7 +126,7 @@ func TestFrameHint(t *testing.T) {
 			t.Errorf("%v: %+v", s, h)
 		}
 	}
-	if (hytera.Frame{SlotType: hytera.SlotTypeSync}).HasBurst() || (hytera.Frame{SlotType: hytera.SlotTypeWakeup}).HasBurst() {
+	if (&hytera.Frame{SlotType: hytera.SlotTypeSync}).HasBurst() || (&hytera.Frame{SlotType: hytera.SlotTypeWakeup}).HasBurst() {
 		t.Error("sync or wakeup has a burst")
 	}
 	f := hytera.Frame{SlotType: hytera.SlotTypeCSBK}

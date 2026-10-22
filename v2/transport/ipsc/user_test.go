@@ -51,7 +51,7 @@ func TestEncodeMisuse(t *testing.T) {
 	if out, err := (&ipsc.User{Opcode: ipsc.OpGroupVoice, Source: 1 << 24}).AppendBinary([]byte{9}); err == nil || !bytes.Equal(out, []byte{9}) {
 		t.Errorf("source over 24 bits: %x %v", out, err)
 	}
-	if _, err := (ipsc.Control{Opcode: ipsc.OpGroupVoice}).AppendBinary(nil); err == nil {
+	if _, err := (&ipsc.Control{Opcode: ipsc.OpGroupVoice}).AppendBinary(nil); err == nil {
 		t.Error("control with a user opcode: no error")
 	}
 	var u ipsc.User

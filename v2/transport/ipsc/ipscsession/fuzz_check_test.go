@@ -18,7 +18,7 @@ func fuzzSeeds() [][]byte {
 		return out
 	}
 	ctl := func(op ipsc.Opcode, id uint32) []byte {
-		b, _ := ipsc.Control{Opcode: op, ID: id, Mode: 0x6a}.AppendBinary(nil)
+		b, _ := (&ipsc.Control{Opcode: op, ID: id, Mode: 0x6a}).AppendBinary(nil)
 		return b
 	}
 	list := ipsc.AppendPeerListReply(nil, 1, []ipsc.PeerEntry{{ID: 2, IP: [4]byte{10, 0, 0, 2}, Port: 1}, {ID: 3, IP: [4]byte{10, 0, 0, 3}, Port: 1}})

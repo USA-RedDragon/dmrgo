@@ -11,11 +11,11 @@ import (
 
 func fuzzSeeds() [][]byte {
 	ctl := func(c dmrd.Command, id uint32) []byte {
-		b, _ := dmrd.Control{Command: c, ID: id}.AppendBinary(nil, dmrd.DialectMMDVM)
+		b, _ := (&dmrd.Control{Command: c, ID: id}).AppendBinary(nil, dmrd.DialectMMDVM)
 		return b
 	}
 	tok, _ := auth.Token(dmrd.DialectMMDVM, 7, []byte("pw"))
-	rptk, _ := dmrd.Control{Command: dmrd.CommandRPTK, ID: 1234, Token: tok}.AppendBinary(nil, dmrd.DialectMMDVM)
+	rptk, _ := (&dmrd.Control{Command: dmrd.CommandRPTK, ID: 1234, Token: tok}).AppendBinary(nil, dmrd.DialectMMDVM)
 	join := func(ps ...[]byte) []byte {
 		var out []byte
 		for _, p := range ps {

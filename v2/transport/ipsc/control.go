@@ -1,5 +1,7 @@
 package ipsc
 
+import "github.com/USA-RedDragon/dmrgo/v2"
+
 // Control is a peer control packet, opcodes 0x90 to 0x9B. Fields that the
 // opcode does not carry are zero.
 type Control struct {
@@ -72,9 +74,16 @@ func DecodeControl(p []byte) (Control, error) {
 // AppendBinary appends the packet c to dst, without the authentication
 // trailer. An OpPeerListReply appends only its header; use
 // AppendPeerListReply for the entries. It returns dst unchanged and an
-// error for an opcode that is not a peer control packet. It allocates only
-// to grow dst.
-func (c Control) AppendBinary(dst []byte) ([]byte, error) {
+// error for an opcode that is not a peer control packet, and
+// dmrgo.ErrNilReceiver for a nil c. It allocates only to grow dst.
+func (c *Control) AppendBinary(dst []byte) ([]byte, error) {
+	if c == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+	return c.appendBinary(dst)
+}
+
+func (c Control) appendBinary(dst []byte) ([]byte, error) {
 	switch c.Opcode {
 	case OpRegisterRequest, OpAliveRequest, OpAliveReply:
 		m := ctlFull{Opcode: c.Opcode, ID: c.ID, Mode: c.Mode, Flags: c.Flags, Version: c.Version}
@@ -133,11 +142,16 @@ func PeerListOf(p []byte) (PeerList, error) {
 	return PeerList{b: p[7:]}, nil
 }
 
-// Len returns the number of entries.
-func (l PeerList) Len() int { return len(l.b) / 11 }
+// Len returns the number of entries, 0 for a nil l.
+func (l *PeerList) Len() int {
+	if l == nil {
+		return 0
+	}
+	return len(l.b) / 11
+}
 
 // Entry returns entry i, or the zero PeerEntry when i is not below Len.
-func (l PeerList) Entry(i int) PeerEntry {
+func (l *PeerList) Entry(i int) PeerEntry {
 	if i < 0 || i >= l.Len() {
 		return PeerEntry{}
 	}
@@ -182,8 +196,12 @@ func DecodeRaw(p []byte) (Raw, error) {
 	return Raw{Opcode: m.Opcode, ID: m.ID, Body: p[5:]}, nil
 }
 
-// AppendBinary appends r to dst. It allocates only to grow dst.
-func (r Raw) AppendBinary(dst []byte) []byte {
+// AppendBinary appends r to dst. A nil r appends nothing. It allocates
+// only to grow dst.
+func (r *Raw) AppendBinary(dst []byte) []byte {
+	if r == nil {
+		return dst
+	}
 	m := ctlID{Opcode: r.Opcode, ID: r.ID}
 	dst, _ = m.AppendBinary(dst)
 	return append(dst, r.Body...)

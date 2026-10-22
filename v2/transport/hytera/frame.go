@@ -172,9 +172,9 @@ func (f *Frame) SetCall(group bool, target, source uint32) error {
 }
 
 // HasBurst reports whether Burst holds a burst: false for SlotTypeSync and
-// SlotTypeWakeup, whose payload is not an ETSI burst.
-func (f Frame) HasBurst() bool {
-	return f.SlotType != SlotTypeSync && f.SlotType != SlotTypeWakeup
+// SlotTypeWakeup, whose payload is not an ETSI burst, and for a nil f.
+func (f *Frame) HasBurst() bool {
+	return f != nil && f.SlotType != SlotTypeSync && f.SlotType != SlotTypeWakeup
 }
 
 // Hint returns what the frame tells about its burst, for the service

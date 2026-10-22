@@ -1,5 +1,7 @@
 package dmrd
 
+import "github.com/USA-RedDragon/dmrgo/v2"
+
 // Control is a login, keepalive, close, beacon, report, options or local
 // link message: every message of a dialect but DMRD, DMRA, DMRG, RPTC and
 // the OpenBridge messages.
@@ -115,8 +117,16 @@ func decodeHex(p []byte, n int) (uint32, error) {
 // AppendBinary appends the message c in dialect d to dst. HasSalt selects
 // the long form of a DialectHBRP MSTACK. It returns dst unchanged and an
 // error when d has no such message, or when Text is set on a message
-// without text. It allocates only to grow dst.
-func (c Control) AppendBinary(dst []byte, d Dialect) ([]byte, error) {
+// without text, and dmrgo.ErrNilReceiver for a nil c. It allocates only to
+// grow dst.
+func (c *Control) AppendBinary(dst []byte, d Dialect) ([]byte, error) {
+	if c == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+	return c.appendBinary(dst, d)
+}
+
+func (c Control) appendBinary(dst []byte, d Dialect) ([]byte, error) {
 	if !c.Command.inDialect(d) {
 		return dst, errDialectCommand
 	}

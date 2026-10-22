@@ -1,5 +1,7 @@
 package hytera
 
+import "github.com/USA-RedDragon/dmrgo/v2"
+
 // HeartbeatLen is the length of the heartbeat of the P2P service in octets.
 const HeartbeatLen = 20
 
@@ -40,9 +42,13 @@ func DecodeHeartbeat(p []byte) (Heartbeat, error) {
 	return h, nil
 }
 
-// AppendBinary appends the heartbeat, or the keepalive, to dst. It
-// allocates only when dst has no room for HeartbeatLen more octets.
-func (h Heartbeat) AppendBinary(dst []byte) ([]byte, error) {
+// AppendBinary appends the heartbeat, or the keepalive, to dst. It returns
+// dmrgo.ErrNilReceiver for a nil h. It allocates only when dst has no room
+// for HeartbeatLen more octets.
+func (h *Heartbeat) AppendBinary(dst []byte) ([]byte, error) {
+	if h == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
 	if h.Keepalive {
 		return append(dst, h.Code), nil
 	}
@@ -98,9 +104,13 @@ func DecodeP2P(p []byte) (P2P, error) {
 	return c, nil
 }
 
-// AppendBinary appends the command and its body to dst. It allocates only
-// when dst has no room for P2PHeaderLen+len(c.Body) more octets.
-func (c P2P) AppendBinary(dst []byte) ([]byte, error) {
+// AppendBinary appends the command and its body to dst. It returns
+// dmrgo.ErrNilReceiver for a nil c. It allocates only when dst has no room
+// for P2PHeaderLen+len(c.Body) more octets.
+func (c *P2P) AppendBinary(dst []byte) ([]byte, error) {
+	if c == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
 	l := p2pLayout{Op: c.Op, Code: c.Code, Seq: c.Seq, Status: c.Status}
 	copy(l.R5[:], c.Reserved[:7])
 	copy(l.R16[:], c.Reserved[7:])
@@ -113,18 +123,19 @@ func (c P2P) AppendBinary(dst []byte) ([]byte, error) {
 
 // Service returns octet 20, the service that the command is about. ok is
 // false for a body shorter than 4 octets, such as that of an
-// acknowledgement.
-func (c P2P) Service() (s Service, ok bool) {
-	if len(c.Body) < 4 {
+// acknowledgement, and for a nil c.
+func (c *P2P) Service() (s Service, ok bool) {
+	if c == nil || len(c.Body) < 4 {
 		return 0, false
 	}
 	return Service(c.Body[0]), true
 }
 
 // RedirectPort returns the UDP port of a redirect: a body that ends in FF
-// 01 and the port, little-endian. ok is false for another body.
-func (c P2P) RedirectPort() (port uint16, ok bool) {
-	if len(c.Body) != 8 || c.Body[4] != 0xFF || c.Body[5] != 0x01 {
+// 01 and the port, little-endian. ok is false for another body and for a
+// nil c.
+func (c *P2P) RedirectPort() (port uint16, ok bool) {
+	if c == nil || len(c.Body) != 8 || c.Body[4] != 0xFF || c.Body[5] != 0x01 {
 		return 0, false
 	}
 	return uint16(c.Body[6]) | uint16(c.Body[7])<<8, true

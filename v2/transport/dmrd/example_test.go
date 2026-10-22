@@ -29,7 +29,7 @@ func ExampleDecodeData() {
 // ExampleControl_AppendBinary builds the keepalive of repeater 3149999 and
 // decodes the login that DMRGateway sent.
 func ExampleControl_AppendBinary() {
-	ping, _ := dmrd.Control{Command: dmrd.CommandRPTPING, ID: 3149999}.AppendBinary(nil, dmrd.DialectMMDVM)
+	ping, _ := (&dmrd.Control{Command: dmrd.CommandRPTPING, ID: 3149999}).AppendBinary(nil, dmrd.DialectMMDVM)
 	fmt.Printf("%x\n", ping)
 
 	login, _ := hex.DecodeString("5250544c003010af")
