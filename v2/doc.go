@@ -194,6 +194,12 @@
 //     by the Capacity Plus site status assembler.
 //   - pdu.ErrNoAddresses: returned by the SetAddresses methods for a PDU
 //     without address fields.
+//   - pdu.ErrNoGroupFlag: returned by the SetGroup methods for a PDU
+//     without a group or individual flag.
+//   - pdu.ErrWrongOpcode: returned by a SetX method that takes the opcode
+//     when the opcode does not select the payload X.
+//   - pdu.ErrNoFullLCMask: returned by FullLinkControl.Encode and
+//     LCBytes.Codeword for a data type without an RS(12,9) Full LC mask.
 //   - pdu.ErrNoServiceOptions: returned by LCBytes.SetServiceOptions for an
 //     LC without a Service Options field.
 //   - framer.ErrPeriod: returned by framer.New for a Period over
