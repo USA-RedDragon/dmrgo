@@ -82,8 +82,6 @@ func checkByteEnums(t *testing.T, b uint8) {
 
 func checkNames(t *testing.T, b uint8) {
 	t.Helper()
-	_ = enums.DPIDToPort(enums.DPID(b))
-	_ = enums.SPIDToPort(enums.SPID(b))
 	for _, name := range []string{
 		enums.FLCO(b).String(), enums.FID(b).String(), enums.DAID(b).String(), enums.SAID(b).String(),
 		enums.DPID(b).String(), enums.SPID(b).String(),

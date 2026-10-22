@@ -1,6 +1,10 @@
 package ip
 
-import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
+import (
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
+)
 
 // Protocol is the protocol number of an IPv4 packet (RFC 790).
 type Protocol uint8
@@ -94,4 +98,83 @@ func (p Port) String() string {
 		return "NMEA"
 	}
 	return text.Int(int64(p))
+}
+
+// DPIDPort returns the UDP port of dpid: PortText for DPIDTextMessage and
+// PortLocation for DPIDLocationProtocol. It returns 0 for
+// DPIDExtendedHeader, whose port is in the Extended Header, and for a
+// manufacturer specific or reserved DPID, whose port the radio configures.
+// (ETSI TS 102 361-3 clause 7.2.1.2, Table 7.18)
+func DPIDPort(dpid enums.DPID) Port {
+	switch dpid {
+	case enums.DPIDTextMessage:
+		return PortText
+	case enums.DPIDLocationProtocol:
+		return PortLocation
+	case enums.DPIDExtendedHeader:
+	}
+	return 0
+}
+
+// PortDPID returns the DPID of the UDP port p. ok is false for a port that
+// has no DPID, which goes in the Extended Header with DPIDExtendedHeader.
+func PortDPID(p Port) (dpid enums.DPID, ok bool) {
+	switch p {
+	case PortText:
+		return enums.DPIDTextMessage, true
+	case PortLocation:
+		return enums.DPIDLocationProtocol, true
+	default:
+		return enums.DPIDExtendedHeader, false
+	}
+}
+
+// SPIDPort returns the UDP port of spid: PortText for SPIDTextMessage and
+// PortLocation for SPIDLocationProtocol. It returns 0 for
+// SPIDExtendedHeader, whose port is in the Extended Header, and for a
+// manufacturer specific or reserved SPID, whose port the radio configures.
+// (ETSI TS 102 361-3 clause 7.2.1.1, Table 7.17)
+func SPIDPort(spid enums.SPID) Port {
+	switch spid {
+	case enums.SPIDTextMessage:
+		return PortText
+	case enums.SPIDLocationProtocol:
+		return PortLocation
+	case enums.SPIDExtendedHeader:
+	}
+	return 0
+}
+
+// PortSPID returns the SPID of the UDP port p. ok is false for a port that
+// has no SPID, which goes in the Extended Header with SPIDExtendedHeader.
+func PortSPID(p Port) (spid enums.SPID, ok bool) {
+	switch p {
+	case PortText:
+		return enums.SPIDTextMessage, true
+	case PortLocation:
+		return enums.SPIDLocationProtocol, true
+	default:
+		return enums.SPIDExtendedHeader, false
+	}
+}
+
+// CompressedPorts returns the UDP source and destination ports of a
+// compressed UDP/IPv4 header: the port of the SPID or DPID, or the port in
+// an Extended Header when the SPID or DPID is 0. A manufacturer specific or
+// reserved SPID or DPID gives port 0. A nil h gives 0 and 0. (ETSI TS 102
+// 361-3 clauses 7.2.1.1 and 7.2.1.2)
+func CompressedPorts(h *pdu.UDPIPv4CompressedHeader) (source, destination Port) {
+	if h == nil {
+		return 0, 0
+	}
+	source, destination = SPIDPort(h.SPID), DPIDPort(h.DPID)
+	switch {
+	case h.SPID == enums.SPIDExtendedHeader && h.DPID == enums.DPIDExtendedHeader:
+		source, destination = Port(h.ExtendedHeader1), Port(h.ExtendedHeader2)
+	case h.SPID == enums.SPIDExtendedHeader:
+		source = Port(h.ExtendedHeader1)
+	case h.DPID == enums.DPIDExtendedHeader:
+		destination = Port(h.ExtendedHeader1)
+	}
+	return source, destination
 }

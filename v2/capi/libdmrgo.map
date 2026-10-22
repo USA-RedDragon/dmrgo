@@ -382,7 +382,6 @@
 		dmrgo_enums_dd_format_string;
 		dmrgo_enums_dpid_is_manufacturer_specific;
 		dmrgo_enums_dpid_string;
-		dmrgo_enums_dpid_to_port;
 		dmrgo_enums_fid_string;
 		dmrgo_enums_flco_string;
 		dmrgo_enums_lcss_string;
@@ -403,7 +402,6 @@
 		dmrgo_enums_slot_string;
 		dmrgo_enums_spid_is_manufacturer_specific;
 		dmrgo_enums_spid_string;
-		dmrgo_enums_spid_to_port;
 		dmrgo_enums_sync_pattern_string;
 		dmrgo_enums_udt_format_string;
 		dmrgo_enums_voice_burst_at;
@@ -502,11 +500,13 @@
 		dmrgo_ip_append_icmp_packet;
 		dmrgo_ip_append_ipv4;
 		dmrgo_ip_check_ipv4;
+		dmrgo_ip_compressed_ports;
 		dmrgo_ip_decode;
 		dmrgo_ip_decode_icmp;
 		dmrgo_ip_decode_icmp_packet;
 		dmrgo_ip_decode_ipv4;
 		dmrgo_ip_decode_udp;
+		dmrgo_ip_dpid_port;
 		dmrgo_ip_group_address;
 		dmrgo_ip_icmp_append_binary;
 		dmrgo_ip_icmp_header_append_binary;
@@ -520,9 +520,12 @@
 		dmrgo_ip_ipv4_header_append_binary;
 		dmrgo_ip_ipv4_header_string;
 		dmrgo_ip_ipv4_string;
+		dmrgo_ip_port_dpid;
+		dmrgo_ip_port_spid;
 		dmrgo_ip_port_string;
 		dmrgo_ip_protocol_string;
 		dmrgo_ip_radio_address;
+		dmrgo_ip_spid_port;
 		dmrgo_ip_udp_append_binary;
 		dmrgo_ip_udp_header_append_binary;
 		dmrgo_ip_udp_header_string;
@@ -1297,7 +1300,6 @@
 		dmrgo_pdu_talkgroup_voice_grant_pdu_string;
 		dmrgo_pdu_udp_ipv4_compressed_header_encode;
 		dmrgo_pdu_udp_ipv4_compressed_header_octets;
-		dmrgo_pdu_udp_ipv4_compressed_header_ports;
 		dmrgo_pdu_udp_ipv4_compressed_header_string;
 		dmrgo_pdu_udt_header_encode;
 		dmrgo_pdu_udt_header_string;

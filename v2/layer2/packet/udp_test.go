@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/ip"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -22,8 +23,8 @@ func TestMessageUDPIPv4(t *testing.T) {
 		header  pdu.DataHeader
 		data    []byte
 		ok      bool
-		src     uint16
-		dst     uint16
+		src     ip.Port
+		dst     ip.Port
 		payload []byte
 	}{
 		{"both ports in extended headers", unconfirmed(enums.SAPUDPIPHeaderCompression), []byte{0, 1, 0, 0, 0, 0x27, 0x7e, 0x27, 0x7e, 'x'}, true, 10110, 10110, []byte("x")},
@@ -50,7 +51,7 @@ func TestMessageUDPIPv4(t *testing.T) {
 				}
 				return
 			}
-			if src, dst := h.Ports(); src != tt.src || dst != tt.dst || h.IPv4Identification != 1 {
+			if src, dst := ip.CompressedPorts(&h); src != tt.src || dst != tt.dst || h.IPv4Identification != 1 {
 				t.Errorf("header %+v ports %d %d, want %d %d", h, src, dst, tt.src, tt.dst)
 			}
 			if !bytes.Equal(payload, tt.payload) {

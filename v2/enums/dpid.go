@@ -14,21 +14,6 @@ const (
 	DPIDLocationProtocol DPID = 2 // Port 5017
 )
 
-// DPIDToPort returns the UDP port of dpid. It returns 0 for
-// DPIDExtendedHeader and for a DPID that has no fixed port.
-func DPIDToPort(dpid DPID) uint16 {
-	switch dpid {
-	case DPIDTextMessage:
-		return 5016
-	case DPIDLocationProtocol:
-		return 5017
-	case DPIDExtendedHeader:
-		return 0
-	default:
-		return 0
-	}
-}
-
 // String returns the name of the DPID. It allocates only for a value
 // without a constant.
 func (dpid DPID) String() string {

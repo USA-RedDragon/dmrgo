@@ -14,21 +14,6 @@ const (
 	SPIDLocationProtocol SPID = 2 // Port 5017
 )
 
-// SPIDToPort returns the UDP port of spid. It returns 0 for
-// SPIDExtendedHeader and for a SPID that has no fixed port.
-func SPIDToPort(spid SPID) uint16 {
-	switch spid {
-	case SPIDTextMessage:
-		return 5016
-	case SPIDLocationProtocol:
-		return 5017
-	case SPIDExtendedHeader:
-		return 0
-	default:
-		return 0
-	}
-}
-
 // String returns the name of the SPID. It allocates only for a value
 // without a constant.
 func (spid SPID) String() string {

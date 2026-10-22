@@ -13,6 +13,7 @@ import (
 	"slices"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/ip"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -120,7 +121,7 @@ func unconfirmed(w io.Writer) error {
 	got := pdu.DecodeUDPIPv4CompressedHeader([9]byte(m.Data[:9]))
 	u := m.Header.UnconfirmedDataHeader
 	fmt.Fprintf(w, "unconfirmed: %d bursts, BF=%d POC=%d, port %d, text %q: ok\n",
-		len(bursts), u.BlocksToFollow, u.PadOctetCount, enums.DPIDToPort(got.DPID), m.Data[9:])
+		len(bursts), u.BlocksToFollow, u.PadOctetCount, uint16(ip.DPIDPort(got.DPID)), m.Data[9:])
 	return nil
 }
 

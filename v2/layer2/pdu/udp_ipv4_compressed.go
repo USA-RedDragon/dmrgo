@@ -33,24 +33,3 @@ func (s *UDPIPv4CompressedHeader) Octets() int {
 	}
 	return n
 }
-
-// Ports returns the UDP source and destination ports: the port of the SPID
-// or DPID, or the port in an Extended Header when the SPID or DPID is 0. A
-// manufacturer specific or reserved SPID or DPID gives port 0, as the radio
-// configures its port. (ETSI TS 102 361-3 clauses 7.2.1.1 and 7.2.1.2)
-func (s *UDPIPv4CompressedHeader) Ports() (source, destination uint16) {
-	if s == nil {
-		return 0, 0
-	}
-	source = enums.SPIDToPort(s.SPID)
-	destination = enums.DPIDToPort(s.DPID)
-	switch {
-	case s.SPID == enums.SPIDExtendedHeader && s.DPID == enums.DPIDExtendedHeader:
-		source, destination = s.ExtendedHeader1, s.ExtendedHeader2
-	case s.SPID == enums.SPIDExtendedHeader:
-		source = s.ExtendedHeader1
-	case s.DPID == enums.DPIDExtendedHeader:
-		destination = s.ExtendedHeader1
-	}
-	return source, destination
-}

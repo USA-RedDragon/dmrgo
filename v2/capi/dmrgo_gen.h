@@ -1876,6 +1876,25 @@ struct dmrgo_ip_icmp_packet_t {
 	size_t original_len;
 };
 
+struct dmrgo_pdu_udp_ipv4_compressed_header_t {
+	/* Identification field of the IPv4 header */
+	uint16_t ipv4_identification;
+	/* source IP address identifier */
+	dmrgo_enums_said_t said;
+	/* destination IP address identifier */
+	dmrgo_enums_daid_t daid;
+	/* 2-bit header compression opcode; bit 24 is the MSB */
+	uint8_t header_compression_opcode;
+	/* source port identifier */
+	dmrgo_enums_spid_t spid;
+	/* destination port identifier */
+	dmrgo_enums_dpid_t dpid;
+	/* source port if SPID is 0, else destination port if DPID is 0, else payload */
+	uint16_t extended_header1;
+	/* destination port if SPID and DPID are 0, else payload */
+	uint16_t extended_header2;
+};
+
 struct dmrgo_ip_icmp_header_t {
 	/* Message is the Type and Code. */
 	dmrgo_ip_icmp_message_t message;
@@ -2929,25 +2948,6 @@ struct dmrgo_packet_message_t {
 	dmrgo_packet_response_data_t response;
 	/* BadCRC reports that the message CRC failed, or, with Assembler.AcceptBadCRC, that Data holds a confirmed block whose CRC-9 failed. */
 	bool bad_crc;
-};
-
-struct dmrgo_pdu_udp_ipv4_compressed_header_t {
-	/* Identification field of the IPv4 header */
-	uint16_t ipv4_identification;
-	/* source IP address identifier */
-	dmrgo_enums_said_t said;
-	/* destination IP address identifier */
-	dmrgo_enums_daid_t daid;
-	/* 2-bit header compression opcode; bit 24 is the MSB */
-	uint8_t header_compression_opcode;
-	/* source port identifier */
-	dmrgo_enums_spid_t spid;
-	/* destination port identifier */
-	dmrgo_enums_dpid_t dpid;
-	/* source port if SPID is 0, else destination port if DPID is 0, else payload */
-	uint16_t extended_header1;
-	/* destination port if SPID and DPID are 0, else payload */
-	uint16_t extended_header2;
 };
 
 struct dmrgo_pdu_adjacent_site_parms_t {
@@ -8080,8 +8080,6 @@ int dmrgo_enums_dd_format_string(dmrgo_enums_dd_format_t self, char *out, size_t
 int dmrgo_enums_dpid_is_manufacturer_specific(dmrgo_enums_dpid_t self, bool *out);
 /* Go: enums.DPID.String. String returns the name of the DPID. */
 int dmrgo_enums_dpid_string(dmrgo_enums_dpid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: enums.DPIDToPort. DPIDToPort returns the UDP port of dpid. */
-int dmrgo_enums_dpid_to_port(dmrgo_enums_dpid_t dpid, uint16_t *out);
 /* Go: enums.DataType.CarriesFullLC. CarriesFullLC reports whether a burst of data type dt carries a Full LC with RS(12,9) parity: a Voice LC Header or a Terminator with LC. */
 int dmrgo_enums_data_type_carries_full_lc(dmrgo_enums_data_type_t self, bool *out);
 /* Go: enums.DataType.IsBPTC. IsBPTC reports whether a burst of data type dt carries 96 information bits coded with BPTC(196,96): every data type except Rate 3/4, Rate 1 and the reserved values (ETSI TS 102 361-1 clause B.1.1). */
@@ -8118,8 +8116,6 @@ int dmrgo_enums_slco_string(dmrgo_enums_slco_t self, char *out, size_t out_cap, 
 int dmrgo_enums_spid_is_manufacturer_specific(dmrgo_enums_spid_t self, bool *out);
 /* Go: enums.SPID.String. String returns the name of the SPID. */
 int dmrgo_enums_spid_string(dmrgo_enums_spid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: enums.SPIDToPort. SPIDToPort returns the UDP port of spid. */
-int dmrgo_enums_spid_to_port(dmrgo_enums_spid_t spid, uint16_t *out);
 /* Go: enums.ServiceFunction.Invites. Invites reports whether the Service_Function invites a random access for the service kind k. */
 int dmrgo_enums_service_function_invites(dmrgo_enums_service_function_t self, dmrgo_enums_service_kind_t k, bool *out);
 /* Go: enums.ServiceFunction.String. String returns the name of the ServiceFunction. */
@@ -8278,6 +8274,10 @@ int dmrgo_ip_append_icmp_packet(uint8_t *dst, size_t dst_cap, size_t *dst_len, s
 int dmrgo_ip_append_ipv4(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_datagram_t *d);
 /* Go: ip.CheckIPv4. CheckIPv4 returns the ICMP error message that a radio sends for the IPv4 packet data that it received for an accessory interface with the MTU mtu: ICMPBadHeader with the octet in error when the header is not a valid IPv4 header, or ICMPFragmentationNeeded when the packet is longer than mtu and has the DF flag set. */
 int dmrgo_ip_check_ipv4(const uint8_t *data, size_t data_len, int64_t mtu, dmrgo_ip_icmp_message_t *m, uint8_t *pointer, bool *ok);
+/* Go: ip.CompressedPorts. CompressedPorts returns the UDP source and destination ports of a compressed UDP/IPv4 header: the port of the SPID or DPID, or the port in an Extended Header when the SPID or DPID is 0. */
+int dmrgo_ip_compressed_ports(dmrgo_pdu_udp_ipv4_compressed_header_t *h, dmrgo_ip_port_t *source, dmrgo_ip_port_t *destination);
+/* Go: ip.DPIDPort. DPIDPort returns the UDP port of dpid: PortText for DPIDTextMessage and PortLocation for DPIDLocationProtocol. */
+int dmrgo_ip_dpid_port(dmrgo_enums_dpid_t dpid, dmrgo_ip_port_t *out);
 /* Go: ip.Decode. Decode decodes the UDP datagram at the start of data, the user data of a packet with the given SAP. */
 int dmrgo_ip_decode(dmrgo_enums_sap_t sap, const uint8_t *data, size_t data_len, dmrgo_ip_datagram_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ip.DecodeICMP. DecodeICMP decodes an ICMP from data. */
@@ -8316,10 +8316,16 @@ int dmrgo_ip_ipv4_header_append_binary(dmrgo_ip_ipv4_header_t *self, uint8_t *ds
 int dmrgo_ip_ipv4_header_string(dmrgo_ip_ipv4_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ip.Port.String. String returns the name of p, or its number when it has no name. */
 int dmrgo_ip_port_string(dmrgo_ip_port_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: ip.PortDPID. PortDPID returns the DPID of the UDP port p. */
+int dmrgo_ip_port_dpid(dmrgo_ip_port_t p, dmrgo_enums_dpid_t *dpid, bool *ok);
+/* Go: ip.PortSPID. PortSPID returns the SPID of the UDP port p. */
+int dmrgo_ip_port_spid(dmrgo_ip_port_t p, dmrgo_enums_spid_t *spid, bool *ok);
 /* Go: ip.Protocol.String. String returns the name of p. */
 int dmrgo_ip_protocol_string(dmrgo_ip_protocol_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ip.RadioAddress. RadioAddress returns the IPv4 address of the radio with the 24-bit radio ID id: network.x.y.z. */
 int dmrgo_ip_radio_address(uint8_t network, uint32_t id, uint8_t out[4]);
+/* Go: ip.SPIDPort. SPIDPort returns the UDP port of spid: PortText for SPIDTextMessage and PortLocation for SPIDLocationProtocol. */
+int dmrgo_ip_spid_port(dmrgo_enums_spid_t spid, dmrgo_ip_port_t *out);
 /* Go: ip.UDP.AppendBinary. AppendBinary appends s to dst, with Header.Length set to the length of the data. */
 int dmrgo_ip_udp_append_binary(dmrgo_ip_udp_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ip.UDP.String. String returns the fields of s as text, for printing. */
@@ -9444,8 +9450,6 @@ int dmrgo_pdu_talkgroup_voice_grant_pdu_string(dmrgo_pdu_talkgroup_voice_grant_p
 int dmrgo_pdu_udp_ipv4_compressed_header_encode(dmrgo_pdu_udp_ipv4_compressed_header_t *self, uint8_t out[9]);
 /* Go: pdu.UDPIPv4CompressedHeader.Octets. Octets returns the length of the compressed header: 5 octets, plus 2 for each port that an Extended Header carries because its SPID or DPID is 0. */
 int dmrgo_pdu_udp_ipv4_compressed_header_octets(dmrgo_pdu_udp_ipv4_compressed_header_t *self, int64_t *out);
-/* Go: pdu.UDPIPv4CompressedHeader.Ports. Ports returns the UDP source and destination ports: the port of the SPID or DPID, or the port in an Extended Header when the SPID or DPID is 0. */
-int dmrgo_pdu_udp_ipv4_compressed_header_ports(dmrgo_pdu_udp_ipv4_compressed_header_t *self, uint16_t *source, uint16_t *destination);
 /* Go: pdu.UDPIPv4CompressedHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_udp_ipv4_compressed_header_string(dmrgo_pdu_udp_ipv4_compressed_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.UDTHeader.Encode. Encode encodes a UDTHeader. */
