@@ -41,6 +41,10 @@ type RequesterConfig struct {
 	// inputs give the same outputs. Requesters on one channel need
 	// different seeds.
 	Seed uint64
+	// Lead makes Tick emit a burst this long before its Due time, so that
+	// an RF FIFO can be filled ahead. 0 means at Due; it must not be
+	// negative. The timers of the machine keep to the Due times.
+	Lead time.Duration
 	// Scratch, when set, is the Burst that Burst decodes into. Machines
 	// that run on one goroutine can share one, because a machine is done
 	// with it when its method returns. Make it with layer2.NewBurst. Nil
@@ -142,7 +146,7 @@ type Requester struct {
 
 // NewRequester returns a Requester for cfg. A nil cfg means the zero
 // RequesterConfig. It returns a *dmrgo.ConfigError for a color code above
-// 15, an unknown Source or Retries above MaxRetries. It allocates the
+// 15, an unknown Source, Retries above MaxRetries or a negative Lead. It allocates the
 // Requester, and its Burst unless cfg.Scratch is set.
 func NewRequester(cfg *RequesterConfig) (*Requester, error) {
 	var conf RequesterConfig
@@ -159,6 +163,9 @@ func NewRequester(cfg *RequesterConfig) (*Requester, error) {
 	if cfg.Retries > MaxRetries {
 		return nil, errRetries
 	}
+	if cfg.Lead < 0 {
+		return nil, errLead
+	}
 	q := &Requester{ackWait: cfg.AckWait, retries: cfg.Retries}
 	switch {
 	case q.retries == 0:
@@ -167,6 +174,7 @@ func NewRequester(cfg *RequesterConfig) (*Requester, error) {
 		q.retries = 0
 	}
 	q.s.init(cfg.ColorCode, cfg.Source, cfg.IdleSearch, cfg.HoldoffMax, cfg.Seed)
+	q.s.lead = cfg.Lead
 	q.d = newDecoder(cfg.Scratch)
 	return q, nil
 }

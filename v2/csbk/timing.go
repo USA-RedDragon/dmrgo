@@ -59,6 +59,10 @@ type TimingConfig struct {
 	// the same inputs give the same outputs. Radios on one channel need
 	// different seeds. (ETSI TS 102 361-2 clause 6.2)
 	Seed uint64
+	// Lead makes Tick emit a burst this long before its Due time, so that
+	// an RF FIFO can be filled ahead. 0 means at Due; it must not be
+	// negative. The timers of the machine keep to the Due times.
+	Lead time.Duration
 	// Scratch, when set, is the Burst that Burst decodes into, as for
 	// RequesterConfig.Scratch. (ETSI TS 102 361-2 clause 6.2)
 	Scratch *layer2.Burst
@@ -142,6 +146,7 @@ func (t *timer) due(now time.Duration) bool {
 // must not be copied; go vet reports a copy. (ETSI TS 102 361-2 clause 6.2)
 type Timing struct {
 	src    layer2.SyncSource
+	lead   time.Duration
 	di     uint8
 	id     uint32
 	rng    pcg.Source
@@ -176,8 +181,8 @@ type Timing struct {
 }
 
 // NewTiming returns a Timing for cfg. It returns a *dmrgo.ConfigError for a nil
-// cfg, an ID of 0 or above MaxTimingID, a DynamicID above MaxDynamicID or a
-// Slot other than Slot1 or Slot2. It allocates the Timing, and its Burst
+// cfg, an ID of 0 or above MaxTimingID, a DynamicID above MaxDynamicID, a
+// Slot other than Slot1 or Slot2 or a negative Lead. It allocates the Timing, and its Burst
 // unless cfg.Scratch is set. The Timing does nothing before Join.
 // (ETSI TS 102 361-2 clause 6.2)
 func NewTiming(cfg *TimingConfig) (*Timing, error) {
@@ -186,8 +191,10 @@ func NewTiming(cfg *TimingConfig) (*Timing, error) {
 		return nil, errID
 	case cfg.DynamicID > MaxDynamicID:
 		return nil, errDynamicID
+	case cfg.Lead < 0:
+		return nil, errLead
 	}
-	m := &Timing{di: cfg.DynamicID, id: cfg.ID, rng: seedPCG(cfg.Seed), d: newDecoder(cfg.Scratch)}
+	m := &Timing{di: cfg.DynamicID, id: cfg.ID, lead: cfg.Lead, rng: seedPCG(cfg.Seed), d: newDecoder(cfg.Scratch)}
 	switch cfg.Slot {
 	case enums.Slot1:
 		m.src = layer2.SyncSourceDirectTS1
@@ -715,7 +722,7 @@ func (m *Timing) Tick(now time.Duration, dst []Output) []Output {
 			m.pendAt = now + m.rhot()
 		}
 	}
-	if m.sending == 0 || now < m.sendDue {
+	if m.sending == 0 || now < m.sendDue-m.lead {
 		return dst
 	}
 	var o *Output
@@ -772,7 +779,7 @@ func (m *Timing) Deadline() (at time.Duration, ok bool) {
 	}
 	switch {
 	case m.sending > 0:
-		d.add(m.sendDue)
+		d.add(m.sendDue - m.lead)
 	case m.pend != ctNone:
 		d.add(m.pendAt)
 	}
