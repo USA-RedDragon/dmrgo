@@ -3,7 +3,7 @@
 // (registration, service start, redirect and heartbeat) and the DMR service
 // (one 72-octet frame per burst, and a 1-octet keepalive). It does no IO
 // and keeps no state. The RDAC service and the Hytera application
-// protocols (HRNP, HSTRP, HDAP) are not here.
+// protocols HRNP and HSTRP are not here. HDAP is in package hytera/hdap.
 //
 // Hytera publishes no specification. The layouts follow a real capture
 // where the sources disagree, and every field whose meaning no source
