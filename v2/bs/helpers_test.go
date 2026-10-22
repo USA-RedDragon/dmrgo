@@ -66,6 +66,11 @@ func merge(a, b []input) []input {
 
 func run(t *testing.T, r *bs.Repeater, in []input, end time.Duration) []bs.Output {
 	t.Helper()
+	return runWith(t, r, in, end, nil)
+}
+
+func runWith(t *testing.T, r *bs.Repeater, in []input, end time.Duration, scratch *layer2.Burst) []bs.Output {
+	t.Helper()
 	out := make([]bs.Output, 0, bs.MaxOutputs)
 	var got []bs.Output
 	keep := func() {
@@ -84,7 +89,15 @@ func run(t *testing.T, r *bs.Repeater, in []input, end time.Duration) []bs.Outpu
 			if err := bs.CheckSlot(h.Slot); err != nil {
 				t.Fatal(err)
 			}
-			out = r.Inbound(in[0].at, &in[0].raw, h, in[0].from, out[:0])
+			if scratch != nil {
+				var b *layer2.Burst
+				if scratch.DecodeFromBytes(in[0].raw) == nil {
+					b = scratch
+				}
+				out = r.Decoded(in[0].at, b, h, in[0].from, out[:0])
+			} else {
+				out = r.Inbound(in[0].at, &in[0].raw, h, in[0].from, out[:0])
+			}
 			keep()
 			in = in[1:]
 		}

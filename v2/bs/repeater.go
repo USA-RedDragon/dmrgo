@@ -195,6 +195,7 @@ type Repeater struct {
 	slc          pdu.ShortLC
 	idle         layer2.RawBurst
 	lc           pdu.LCBytes
+	enc          layer2.RawBurst
 	noCopy       noCopy
 }
 
@@ -358,11 +359,7 @@ func (r *Repeater) Inbound(now time.Duration, raw *layer2.RawBurst, h layer2.Hin
 		return dst
 	}
 
-	if r.b == nil {
-		return dst
-	}
-	s := r.slot(h.Slot)
-	if s == nil {
+	if r.b == nil || r.slot(h.Slot) == nil {
 		return dst
 	}
 	dst = r.timers(now, dst)
@@ -378,7 +375,51 @@ func (r *Repeater) Inbound(now time.Duration, raw *layer2.RawBurst, h layer2.Hin
 		r.opts.ColorCode = &r.cc
 	}
 	b := r.b
-	if raw == nil || b.DecodeFromBytesWith(*raw, &r.opts) != nil || b.Kind == layer2.KindData && b.SlotType.FEC.Uncorrectable {
+	if raw == nil || b.DecodeFromBytesWith(*raw, &r.opts) != nil {
+		b = nil
+	}
+	return r.inbound(now, raw, b, &h, from, dst)
+}
+
+// Decoded takes the burst b, received on slot h.Slot from the source from
+// and decoded by the caller, which may be nil for a burst that did not
+// decode, and runs it through the Repeater as Inbound does. The Repeater
+// sends b as it encodes it again. It allocates only when dst has no room
+// for MaxOutputs outputs.
+func (r *Repeater) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, from Source, dst []Output) []Output {
+	if r == nil {
+		return dst
+	}
+	if r.b == nil || r.slot(h.Slot) == nil {
+		return dst
+	}
+	dst = r.timers(now, dst)
+	var raw *layer2.RawBurst
+	if b != nil {
+		var err error
+		if r.enc, err = b.Encode(); err != nil || from.RF && !r.colorCode(b) {
+			b = nil
+		} else {
+			raw = &r.enc
+		}
+	}
+	return r.inbound(now, raw, b, &h, from, dst)
+}
+
+func (r *Repeater) colorCode(b *layer2.Burst) bool {
+	switch {
+	case b.Kind == layer2.KindData:
+		return b.SlotType.ColorCode == r.cc
+	case b.HasEmbeddedSignalling():
+		return b.EmbeddedSignalling.ColorCode == r.cc
+	}
+	return true
+}
+
+func (r *Repeater) inbound(now time.Duration, raw *layer2.RawBurst, b *layer2.Burst, hp *layer2.Hint, from Source, dst []Output) []Output {
+	s := r.slot(hp.Slot)
+	h := *hp
+	if b != nil && b.Kind == layer2.KindData && b.SlotType.FEC.Uncorrectable {
 		b = nil
 	}
 	wakeup := b != nil && isWakeup(b, raw)
@@ -392,8 +433,10 @@ func (r *Repeater) Inbound(now time.Duration, raw *layer2.RawBurst, h layer2.Hin
 	if b == nil {
 		switch {
 		case s.owner != from || !s.repeating():
-		case !from.RF:
+		case !from.RF && raw != nil:
 			dst = r.events(now, s, s.rx.Burst(now, raw, h, r.ev[:0]), dst)
+		case !from.RF:
+			dst = r.events(now, s, s.rx.Decoded(now, nil, h, r.ev[:0]), dst)
 		case h.SyncLost:
 			dst = r.events(now, s, s.rx.Lost(now, r.ev[:0]), dst)
 		}

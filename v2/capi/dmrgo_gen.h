@@ -5310,6 +5310,7 @@ struct dmrgo_voice_transmitter_config_t {
 	dmrgo_layer2_burst_t *scratch;
 };
 
+#define DMRGO_BS_REPEATER_DECODED_MAX_ITEMS (DMRGO_BS_MAX_OUTPUTS)
 #define DMRGO_BS_REPEATER_INBOUND_MAX_ITEMS (DMRGO_BS_MAX_OUTPUTS)
 #define DMRGO_BS_REPEATER_LOST_MAX_ITEMS (DMRGO_BS_MAX_OUTPUTS)
 #define DMRGO_BS_REPEATER_TICK_MAX_ITEMS (DMRGO_BS_MAX_OUTPUTS)
@@ -7692,6 +7693,10 @@ int dmrgo_bs_reason_string(dmrgo_bs_reason_t self, char *out, size_t out_cap, si
 int dmrgo_bs_repeater_free(dmrgo_bs_repeater_t *self);
 /* Go: bs.Repeater.Deadline. Deadline returns the time at which the Repeater needs a Tick. */
 int dmrgo_bs_repeater_deadline(dmrgo_bs_repeater_t *self, dmrgo_duration_t *at, bool *ok);
+/* dmrgo_bs_repeater_decoded_need sets *items and *arena to the room that dmrgo_bs_repeater_decoded needs for these arguments, without a change to the handle. */
+int dmrgo_bs_repeater_decoded_need(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, const dmrgo_bs_source_t *from, size_t *items, size_t *arena);
+/* Go: bs.Repeater.Decoded. Decoded takes the burst b, received on slot h.Slot from the source from and decoded by the caller, which may be nil for a burst that did not decode, and runs it through the Repeater as Inbound does. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_bs_repeater_decoded_need gives (DMRGO_BS_REPEATER_DECODED_MAX_ITEMS items). */
+int dmrgo_bs_repeater_decoded(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, const dmrgo_bs_source_t *from, dmrgo_bs_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_bs_repeater_inbound_need sets *items and *arena to the room that dmrgo_bs_repeater_inbound needs for these arguments, without a change to the handle. */
 int dmrgo_bs_repeater_inbound_need(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const dmrgo_bs_source_t *from, size_t *items, size_t *arena);
 /* Go: bs.Repeater.Inbound. Inbound takes a burst received on slot h.Slot from the source from, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_bs_repeater_inbound_need gives (DMRGO_BS_REPEATER_INBOUND_MAX_ITEMS items). raw may be NULL. */

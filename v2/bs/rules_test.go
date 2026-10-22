@@ -320,3 +320,36 @@ func TestSuperseded(t *testing.T) {
 		t.Error("owner refused")
 	}
 }
+
+func TestDecodedMatchesInbound(t *testing.T) {
+	t.Parallel()
+	inputs := map[string][]input{
+		"voice": call(t, 1, 9, 3191868, 2, enums.Slot1, rf, 0),
+		"net":   call(t, 1, 9, 3191868, 2, enums.Slot2, bs.Source{Peer: 4}, 0),
+	}
+	for _, name := range []string{"d-sms.bin", "h-sms.bin", "m-sms.bin"} {
+		inputs[name] = timed(loadBin(t, name), enums.Slot2, rf, 0)
+	}
+	for name, in := range inputs {
+		for _, mode := range []bs.Mode{bs.ModeRF, bs.ModeNetwork} {
+			cfg := &bs.Config{Mode: mode, ColorCode: 1, CACH: true}
+			want := run(t, newRepeater(t, cfg), in, 2*time.Second)
+			got := runWith(t, newRepeater(t, cfg), in, 2*time.Second, layer2.NewBurst())
+			if len(want) < 10 {
+				t.Fatalf("%s mode %d: only %d outputs", name, mode, len(want))
+			}
+			if len(got) != len(want) {
+				t.Fatalf("%s mode %d: %d outputs, want %d", name, mode, len(got), len(want))
+			}
+			for i := range got {
+				if got[i] != want[i] {
+					t.Errorf("%s mode %d: output %d is %+v, want %+v", name, mode, i, got[i], want[i])
+				}
+			}
+		}
+	}
+	var zero bs.Repeater
+	if out := zero.Decoded(0, nil, layer2.Hint{Slot: enums.Slot1}, rf, nil); len(out) != 0 {
+		t.Error("zero Repeater Decoded gave outputs")
+	}
+}

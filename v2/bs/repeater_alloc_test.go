@@ -38,13 +38,16 @@ func TestAllocs(t *testing.T) {
 		s := parseScript(data, p)
 		r := newRepeater(t, &s.cfg)
 		out := make([]bs.Output, 0, bs.MaxOutputs)
+		dec := layer2.NewBurst()
 		allocs := testing.AllocsPerRun(3, func() {
 			r.Reset()
 			for k := range s.ops {
 				o := &s.ops[k]
 				switch o.kind {
-				case 0, 1, 2:
+				case 0, 1:
 					out = r.Inbound(o.at, &o.raw, o.h, o.from, out[:0])
+				case 2:
+					out = r.Decoded(o.at, decoded(dec, &o.raw), o.h, o.from, out[:0])
 				case 3:
 					out = r.Tick(o.at, out[:0])
 				case 4:
