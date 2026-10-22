@@ -91,3 +91,15 @@ func Regenerate(slot [9]byte) ([9]byte, bool) {
 	}
 	return out, true
 }
+
+// Errors returns the bit errors that Decode corrects in section A and in
+// section B of slot. a is -1 when section A is uncorrectable.
+func Errors(slot [9]byte) (a, b int) {
+	c0, c1, c2, _ := columns(&slot)
+	d, resA := golay.Decode24128(c0<<6 | c1>>12)
+	if resA.Uncorrectable {
+		return -1, 0
+	}
+	_, resB := golay.Decode23127((c1&0xFFF)<<11 | c2>>7 ^ ambeScrambleTable[d]>>1)
+	return resA.ErrorsCorrected, resB.ErrorsCorrected
+}
