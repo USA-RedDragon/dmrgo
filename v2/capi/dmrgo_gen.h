@@ -1274,7 +1274,7 @@ struct dmrgo_pdu_proprietary_header_t {
 };
 
 struct dmrgo_data_message_t {
-	/* Header is the first header of the packet. Its Format and sub-header give the kind of packet and the addresses. */
+	/* Header is the first header of the packet. Its format and payload give the kind of packet and the addresses. The zero value is a UDT_HEAD with LLIDs 0; set it with a SetX method of pdu.DataHeader. */
 	dmrgo_pdu_data_header_t header;
 	/* Proprietary is the P_HEAD sent as the second header, or nil. */
 	bool has_proprietary;

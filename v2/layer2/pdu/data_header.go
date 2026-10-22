@@ -26,7 +26,9 @@ type UnconfirmedDataHeader struct {
 
 // DataHeader is the data header PDU. The Data Packet Format in RawPayload
 // selects its view: AsConfirmed, for example, decodes it for
-// FormatConfirmed. (ETSI TS 102 361-1 clause 9.2)
+// FormatConfirmed. Format 0 is FormatUnifiedDataTransport, so the zero value
+// is a valid UDT_HEAD with LLIDs 0 that encodes with a good CRC: set a header
+// with a SetX method before it goes on air. (ETSI TS 102 361-1 clause 9.2)
 //
 //dmr:crc crc_ccitt
 //dmr:crc_mask 0xCCCC
