@@ -149,6 +149,10 @@ func (s *sim) record() {
 	for _, o := range s.tout {
 		if o.Kind != trunk.TSCCBurst {
 			s.events = append(s.events, o)
+		} else if o.Hint.HasDataType {
+			if b, err := layer2.NewBurstFromBytes(o.Burst); err == nil && b.Kind == layer2.KindData && b.SlotType.DataType != o.Hint.DataType {
+				s.t.Errorf("TSCC burst on %d %v is %v, its Hint says %v", o.Channel, o.Slot, b.SlotType.DataType, o.Hint.DataType)
+			}
 		}
 		if k, ok := s.keys[o.Address]; ok && o.Kind == trunk.TSCCAuthChallenge {
 			s.tscc.ExpectAuth(o.Address, trunkauth.Response(o.Challenge, k.k, k.psn))

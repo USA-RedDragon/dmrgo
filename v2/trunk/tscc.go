@@ -947,7 +947,7 @@ func (t *TSCC) emit(idx int, ch uint16, p [12]byte, dt enums.DataType, reply boo
 
 func (t *TSCC) emitRaw(idx int, ch uint16, raw *layer2.RawBurst, h layer2.Hint, reply bool, out []TSCCOutput) []TSCCOutput {
 	t.svc.buf = *raw
-	t.svcEmit(idx)
+	t.svcEmit(idx, &h)
 	cach, err := t.caches[idx].Next(t.slot, reply, &t.slc)
 	if err != nil {
 		return out
