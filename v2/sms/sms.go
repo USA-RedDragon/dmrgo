@@ -20,18 +20,22 @@ type Format uint8
 // The Format values.
 const (
 	// FormatTMS is a MOTOTRBO text message to UDP port 4007, as AnyTone
-	// radios send in M-SMS mode.
+	// radios send in M-SMS mode. AppendPacket sends no NUL after the text.
 	FormatTMS Format = iota + 1
 	// FormatIP is an ETSI text message to UDP port 5016 in UTF-16BE.
+	// AppendPacket sends no NUL after the text.
 	FormatIP
 	// FormatAnyTone is the text to UDP port 5016 that AnyTone radios send
-	// in DMR Standard mode.
+	// in DMR Standard mode. AppendPacket sends one UTF-16 NUL after the
+	// text, as the radio shows old characters after a text without it.
 	FormatAnyTone
 	// FormatDefinedData is a short data packet (DD_HEAD) whose DD format
-	// gives the coding of the text.
+	// gives the coding of the text. AppendPacket sends no NUL after the
+	// text.
 	FormatDefinedData
 	// FormatHytera is the short data packet that AnyTone radios send in
-	// H-SMS mode: DD format 1 (BCD) and the HyteraText layout.
+	// H-SMS mode: DD format 1 (BCD) and the HyteraText layout. AppendPacket
+	// sends one UTF-16 NUL after the text, as Hytera radios do.
 	FormatHytera
 )
 
@@ -85,7 +89,9 @@ type Text struct {
 	// acknowledgement.
 	AckRequired bool
 	// Body is the text in UTF-8, without the CR LF that MOTOTRBO radios put
-	// before it and without a NUL after it.
+	// before it. Decode drops a NUL after the text in every format.
+	// AppendPacket adds one only for FormatAnyTone and FormatHytera, and
+	// sends a NUL that Body ends with.
 	Body []byte
 }
 
@@ -236,7 +242,8 @@ type Header struct {
 // C_HEAD when t.Confirmed is set. Defined data sets the Response
 // Requested flag (A) when t.Confirmed is set. A TMS text starts with a CR
 // LF.
-// BCD digits that would have the HyteraText layout get an octet FF, the
+// Only FormatAnyTone and FormatHytera end the text with a NUL; the Format
+// values say why. BCD digits that would have the HyteraText layout get an octet FF, the
 // end of the digits, so that Decode reads them as FormatDefinedData.
 // It returns dst unchanged and ErrFormat for an unknown format and for
 // FormatDefinedData with DD format binary, which holds no text,
