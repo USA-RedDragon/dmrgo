@@ -2072,14 +2072,13 @@ documents:
               - TestDecodeErrors
               - TestAppendIPv4ZeroChecksum
               - TestAddresses
+              - TestPortIDs
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
               - TestSAIDString
               - TestDAIDString
               - TestSPIDString
-              - TestSPIDToPort
               - TestDPIDString
-              - TestDPIDToPort
 
       - section: "5.6"
         title: "UDP/IPv4 header compression"
@@ -2090,11 +2089,14 @@ documents:
           - v2/enums/daid.go
           - v2/enums/spid.go
           - v2/enums/dpid.go
+          - v2/ip/port.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestUDPIPv4CompressedHeader_RoundTrip
-              - TestUDPIPv4CompressedHeader_Ports
+          - package: github.com/USA-RedDragon/dmrgo/v2/ip
+            names:
+              - TestCompressedPorts
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/packet
             names:
               - TestMessageUDPIPv4
@@ -2181,7 +2183,9 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestUDPIPv4CompressedHeader_RoundTrip
-              - TestUDPIPv4CompressedHeader_Ports
+          - package: github.com/USA-RedDragon/dmrgo/v2/ip
+            names:
+              - TestCompressedPorts
 
       - section: "A"
         title: "PDP timers and constants in DMR"

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/ip"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/nmea"
@@ -85,7 +86,7 @@ func checkReport(t *testing.T, n int, m *packet.Message, w [3]uint8) {
 	if !ok {
 		t.Fatalf("report %d: no compressed UDP/IPv4 header in %q", n, m.Data)
 	}
-	src, dst := udp.Ports()
+	src, dst := ip.CompressedPorts(&udp)
 	if udp.IPv4Identification != 1 || udp.SAID != enums.SAIDRadioNetwork || udp.DAID != enums.DAIDRadioNetwork ||
 		udp.HeaderCompressionOpcode != 0 || udp.Octets() != 9 || src != 10110 || dst != 10110 {
 		t.Fatalf("report %d: %s, ports %d %d", n, udp.String(), src, dst)

@@ -13058,21 +13058,6 @@ func dmrgo_enums_dpid_string(c_self C.dmrgo_enums_dpid_t, c_out *C.char, c_out_c
 	return C.DMRGO_OK
 }
 
-//export dmrgo_enums_dpid_to_port
-func dmrgo_enums_dpid_to_port(c_dpid C.dmrgo_enums_dpid_t, c_out *C.uint16_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	r0 := g_enums.DPIDToPort(g_enums.DPID(c_dpid))
-	_ = r0
-	if c_out != nil {
-		*c_out = C.uint16_t(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_enums_data_type_carries_full_lc
 func dmrgo_enums_data_type_carries_full_lc(c_self C.dmrgo_enums_data_type_t, c_out *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -13357,21 +13342,6 @@ func dmrgo_enums_spid_string(c_self C.dmrgo_enums_spid_t, c_out *C.char, c_out_c
 	r0 := g_enums.SPID(c_self).String()
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_enums_spid_to_port
-func dmrgo_enums_spid_to_port(c_spid C.dmrgo_enums_spid_t, c_out *C.uint16_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	r0 := g_enums.SPIDToPort(g_enums.SPID(c_spid))
-	_ = r0
-	if c_out != nil {
-		*c_out = C.uint16_t(r0)
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -15232,6 +15202,40 @@ func dmrgo_ip_check_ipv4(c_data *C.uint8_t, c_data_len C.size_t, c_mtu C.int64_t
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ip_compressed_ports
+func dmrgo_ip_compressed_ports(c_h *C.dmrgo_pdu_udp_ipv4_compressed_header_t, c_source *C.dmrgo_ip_port_t, c_destination *C.dmrgo_ip_port_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0, r1 := g_ip.CompressedPorts((*g_layer2_pdu.UDPIPv4CompressedHeader)(unsafe.Pointer(c_h)))
+	_ = r0
+	_ = r1
+	if c_source != nil {
+		*c_source = C.dmrgo_ip_port_t(r0)
+	}
+	if c_destination != nil {
+		*c_destination = C.dmrgo_ip_port_t(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_dpid_port
+func dmrgo_ip_dpid_port(c_dpid C.dmrgo_enums_dpid_t, c_out *C.dmrgo_ip_port_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_ip.DPIDPort(g_enums.DPID(c_dpid))
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_ip_port_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ip_decode
 func dmrgo_ip_decode(c_sap C.dmrgo_enums_sap_t, c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_ip_datagram_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -15763,6 +15767,44 @@ func dmrgo_ip_port_string(c_self C.dmrgo_ip_port_t, c_out *C.char, c_out_cap C.s
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ip_port_dpid
+func dmrgo_ip_port_dpid(c_p C.dmrgo_ip_port_t, c_dpid *C.dmrgo_enums_dpid_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0, r1 := g_ip.PortDPID(g_ip.Port(c_p))
+	_ = r0
+	_ = r1
+	if c_dpid != nil {
+		*c_dpid = C.dmrgo_enums_dpid_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_port_spid
+func dmrgo_ip_port_spid(c_p C.dmrgo_ip_port_t, c_spid *C.dmrgo_enums_spid_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0, r1 := g_ip.PortSPID(g_ip.Port(c_p))
+	_ = r0
+	_ = r1
+	if c_spid != nil {
+		*c_spid = C.dmrgo_enums_spid_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ip_protocol_string
 func dmrgo_ip_protocol_string(c_self C.dmrgo_ip_protocol_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -15787,6 +15829,21 @@ func dmrgo_ip_radio_address(c_network C.uint8_t, c_id C.uint32_t, c_out *C.uint8
 	_ = r0
 	if c_out != nil {
 		*(*[4]byte)(unsafe.Pointer(&(*(*[4]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_spid_port
+func dmrgo_ip_spid_port(c_spid C.dmrgo_enums_spid_t, c_out *C.dmrgo_ip_port_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_ip.SPIDPort(g_enums.SPID(c_spid))
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_ip_port_t(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -28397,31 +28454,6 @@ func dmrgo_pdu_udp_ipv4_compressed_header_octets(c_self *C.dmrgo_pdu_udp_ipv4_co
 	_ = r0
 	if c_out != nil {
 		*c_out = C.int64_t(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_pdu_udp_ipv4_compressed_header_ports
-func dmrgo_pdu_udp_ipv4_compressed_header_ports(c_self *C.dmrgo_pdu_udp_ipv4_compressed_header_t, c_source *C.uint16_t, c_destination *C.uint16_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_layer2_pdu.UDPIPv4CompressedHeader
-	x = *(*g_layer2_pdu.UDPIPv4CompressedHeader)(unsafe.Pointer(&(*c_self)))
-	r0, r1 := x.Ports()
-	*(*g_layer2_pdu.UDPIPv4CompressedHeader)(unsafe.Pointer(&(*c_self))) = x
-	_ = r0
-	_ = r1
-	if c_source != nil {
-		*c_source = C.uint16_t(r0)
-	}
-	if c_destination != nil {
-		*c_destination = C.uint16_t(r1)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)

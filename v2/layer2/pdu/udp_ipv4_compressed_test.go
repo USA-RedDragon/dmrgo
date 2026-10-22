@@ -3,7 +3,6 @@ package pdu_test
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
@@ -65,30 +64,6 @@ func TestUDPIPv4CompressedHeader_NonContiguousHCOpcode(t *testing.T) {
 		decoded := pdu.DecodeUDPIPv4CompressedHeader(encoded)
 		if decoded.HeaderCompressionOpcode != opcode {
 			t.Errorf("opcode %d: HeaderCompressionOpcode = %d", opcode, decoded.HeaderCompressionOpcode)
-		}
-	}
-}
-
-func TestUDPIPv4CompressedHeader_Ports(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		spid     enums.SPID
-		dpid     enums.DPID
-		octets   int
-		src, dst uint16
-	}{
-		{enums.SPIDExtendedHeader, enums.DPIDExtendedHeader, 9, 0x1111, 0x2222},
-		{enums.SPIDExtendedHeader, enums.DPIDLocationProtocol, 7, 0x1111, 5017},
-		{enums.SPIDTextMessage, enums.DPIDExtendedHeader, 7, 5016, 0x1111},
-		{enums.SPIDLocationProtocol, enums.DPIDTextMessage, 5, 5017, 5016},
-		{enums.SPID(95), enums.DPID(95), 5, 0, 0},
-	}
-	for _, tt := range tests {
-		h := pdu.UDPIPv4CompressedHeader{SPID: tt.spid, DPID: tt.dpid, ExtendedHeader1: 0x1111, ExtendedHeader2: 0x2222}
-		src, dst := h.Ports()
-		if h.Octets() != tt.octets || src != tt.src || dst != tt.dst {
-			t.Errorf("SPID %d DPID %d: %d octets, ports %d %d, want %d octets, ports %d %d",
-				tt.spid, tt.dpid, h.Octets(), src, dst, tt.octets, tt.src, tt.dst)
 		}
 	}
 }

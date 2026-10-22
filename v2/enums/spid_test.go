@@ -25,16 +25,3 @@ func TestSPIDString(t *testing.T) {
 		}
 	}
 }
-
-func TestSPIDToPort(t *testing.T) {
-	t.Parallel()
-	if p := enums.SPIDToPort(enums.SPIDTextMessage); p != 5016 {
-		t.Errorf("SPIDToPort(TextMessage) = %d, want 5016", p)
-	}
-	if p := enums.SPIDToPort(enums.SPIDLocationProtocol); p != 5017 {
-		t.Errorf("SPIDToPort(LocationProtocol) = %d, want 5017", p)
-	}
-	if p := enums.SPIDToPort(enums.SPIDExtendedHeader); p != 0 {
-		t.Errorf("SPIDToPort(ExtendedHeader) = %d, want 0", p)
-	}
-}

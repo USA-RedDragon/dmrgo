@@ -1772,7 +1772,6 @@ sym int dmrgo_enums_data_type_string(dmrgo_enums_data_type_t self, char *out, si
 sym int dmrgo_enums_dd_format_string(dmrgo_enums_dd_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_dpid_is_manufacturer_specific(dmrgo_enums_dpid_t self, bool *out);
 sym int dmrgo_enums_dpid_string(dmrgo_enums_dpid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-sym int dmrgo_enums_dpid_to_port(dmrgo_enums_dpid_t dpid, uint16_t *out);
 sym int dmrgo_enums_fid_string(dmrgo_enums_fid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_flco_string(dmrgo_enums_flco_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_lcss_string(dmrgo_enums_lcss_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -1793,7 +1792,6 @@ sym int dmrgo_enums_slot_other(dmrgo_enums_slot_t self, dmrgo_enums_slot_t *out)
 sym int dmrgo_enums_slot_string(dmrgo_enums_slot_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_spid_is_manufacturer_specific(dmrgo_enums_spid_t self, bool *out);
 sym int dmrgo_enums_spid_string(dmrgo_enums_spid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-sym int dmrgo_enums_spid_to_port(dmrgo_enums_spid_t spid, uint16_t *out);
 sym int dmrgo_enums_sync_pattern_string(dmrgo_enums_sync_pattern_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_udt_format_string(dmrgo_enums_udt_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_voice_burst_at(int64_t i, dmrgo_enums_voice_burst_type_t *v, bool *ok);
@@ -1892,11 +1890,13 @@ sym int dmrgo_ip_append_compressed(uint8_t *dst, size_t dst_cap, size_t *dst_len
 sym int dmrgo_ip_append_icmp_packet(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_icmp_packet_t *c);
 sym int dmrgo_ip_append_ipv4(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_ip_datagram_t *d);
 sym int dmrgo_ip_check_ipv4(const uint8_t *data, size_t data_len, int64_t mtu, dmrgo_ip_icmp_message_t *m, uint8_t *pointer, bool *ok);
+sym int dmrgo_ip_compressed_ports(dmrgo_pdu_udp_ipv4_compressed_header_t *h, dmrgo_ip_port_t *source, dmrgo_ip_port_t *destination);
 sym int dmrgo_ip_decode(dmrgo_enums_sap_t sap, const uint8_t *data, size_t data_len, dmrgo_ip_datagram_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ip_decode_icmp(const uint8_t *data, size_t data_len, dmrgo_ip_icmp_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ip_decode_icmp_packet(const uint8_t *data, size_t data_len, dmrgo_ip_icmp_packet_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ip_decode_ipv4(const uint8_t *data, size_t data_len, dmrgo_ip_ipv4_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ip_decode_udp(const uint8_t *data, size_t data_len, dmrgo_ip_udp_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ip_dpid_port(dmrgo_enums_dpid_t dpid, dmrgo_ip_port_t *out);
 sym int dmrgo_ip_group_address(uint8_t prefix, uint32_t group, uint8_t out[4]);
 sym int dmrgo_ip_icmp_append_binary(dmrgo_ip_icmp_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ip_icmp_header_append_binary(dmrgo_ip_icmp_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
@@ -1910,9 +1910,12 @@ sym int dmrgo_ip_ipv4_append_binary(dmrgo_ip_ipv4_t *self, uint8_t *dst, size_t 
 sym int dmrgo_ip_ipv4_header_append_binary(dmrgo_ip_ipv4_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_ip_ipv4_header_string(dmrgo_ip_ipv4_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_ip_ipv4_string(dmrgo_ip_ipv4_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_ip_port_dpid(dmrgo_ip_port_t p, dmrgo_enums_dpid_t *dpid, bool *ok);
+sym int dmrgo_ip_port_spid(dmrgo_ip_port_t p, dmrgo_enums_spid_t *spid, bool *ok);
 sym int dmrgo_ip_port_string(dmrgo_ip_port_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_ip_protocol_string(dmrgo_ip_protocol_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_ip_radio_address(uint8_t network, uint32_t id, uint8_t out[4]);
+sym int dmrgo_ip_spid_port(dmrgo_enums_spid_t spid, dmrgo_ip_port_t *out);
 sym int dmrgo_ip_udp_append_binary(dmrgo_ip_udp_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ip_udp_header_append_binary(dmrgo_ip_udp_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_ip_udp_header_string(dmrgo_ip_udp_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -2685,7 +2688,6 @@ sym int dmrgo_pdu_talkgroup_voice_grant_pdu_encode(dmrgo_pdu_talkgroup_voice_gra
 sym int dmrgo_pdu_talkgroup_voice_grant_pdu_string(dmrgo_pdu_talkgroup_voice_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_pdu_udp_ipv4_compressed_header_encode(dmrgo_pdu_udp_ipv4_compressed_header_t *self, uint8_t out[9]);
 sym int dmrgo_pdu_udp_ipv4_compressed_header_octets(dmrgo_pdu_udp_ipv4_compressed_header_t *self, int64_t *out);
-sym int dmrgo_pdu_udp_ipv4_compressed_header_ports(dmrgo_pdu_udp_ipv4_compressed_header_t *self, uint16_t *source, uint16_t *destination);
 sym int dmrgo_pdu_udp_ipv4_compressed_header_string(dmrgo_pdu_udp_ipv4_compressed_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_pdu_udt_header_encode(dmrgo_pdu_udt_header_t *self, uint8_t out[10]);
 sym int dmrgo_pdu_udt_header_string(dmrgo_pdu_udt_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

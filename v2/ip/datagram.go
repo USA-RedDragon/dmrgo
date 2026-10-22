@@ -104,10 +104,10 @@ func decodeCompressed(data []byte) (Datagram, error) {
 	if len(data) < n {
 		return Datagram{}, ErrShort
 	}
-	src, dst := h.Ports()
+	src, dst := CompressedPorts(&h)
 	return Datagram{
-		SourcePort:      Port(src),
-		DestinationPort: Port(dst),
+		SourcePort:      src,
+		DestinationPort: dst,
 		ID:              h.IPv4Identification,
 		Compressed:      true,
 		SAID:            h.SAID,
@@ -193,21 +193,12 @@ func AppendCompressed(dst []byte, d *Datagram) ([]byte, error) {
 	h := pdu.UDPIPv4CompressedHeader{IPv4Identification: d.ID, SAID: d.SAID, DAID: d.DAID}
 	var ext [2]uint16
 	k := 0
-	switch d.SourcePort {
-	case PortText:
-		h.SPID = enums.SPIDTextMessage
-	case PortLocation:
-		h.SPID = enums.SPIDLocationProtocol
-	default:
+	var ok bool
+	if h.SPID, ok = PortSPID(d.SourcePort); !ok {
 		ext[0] = uint16(d.SourcePort)
 		k = 1
 	}
-	switch d.DestinationPort {
-	case PortText:
-		h.DPID = enums.DPIDTextMessage
-	case PortLocation:
-		h.DPID = enums.DPIDLocationProtocol
-	default:
+	if h.DPID, ok = PortDPID(d.DestinationPort); !ok {
 		ext[k] = uint16(d.DestinationPort)
 	}
 	h.ExtendedHeader1, h.ExtendedHeader2 = ext[0], ext[1]

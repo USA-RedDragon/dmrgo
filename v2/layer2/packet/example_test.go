@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/ip"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -80,8 +81,8 @@ func ExampleMessage_UDPIPv4() {
 		}
 	}
 	h, payload, ok := msg.UDPIPv4()
-	src, dst := h.Ports()
-	fmt.Println(ok, h.Octets(), src, dst)
+	src, dst := ip.CompressedPorts(&h)
+	fmt.Println(ok, h.Octets(), uint16(src), uint16(dst))
 	r, err := nmea.ParseRMC(payload)
 	fmt.Printf("%.4f %.4f %t %v\n", r.Latitude, r.Longitude, r.Valid, err)
 	// Output:
