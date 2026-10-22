@@ -32,7 +32,6 @@ const (
 	FieldPacked                     // bits:S-E,packed to packed bytes
 	FieldLongitude                  // bits:S-E,type:longitude to float64
 	FieldLatitude                   // bits:S-E,type:latitude to float64
-	FieldDispatch                   // bits:S-E,dispatch:Field=Val1|Val2 to a sub-PDU pointer
 )
 
 const (
@@ -81,22 +80,15 @@ type Field struct {
 	DelegateNoPtr bool // true if the delegate constructor returns a value
 	Stride        int  // for array delegates: each element spans Stride bits
 
-	DispatchFieldName string   // field name to switch on (e.g. "CSBKOpcode")
-	DispatchValues    []string // constant names (e.g. ["CSBKBSOutboundActivationPDU"])
-
-	// When is an optional secondary guard (when:<Field><Op><Value>) that
-	// disambiguates dispatch fields sharing the same primary dispatch value.
-	When *Guard
-
-	// OnlyField and OnlyValues come from only:<Field>=<Value>[|<Value>]:
-	// decode sets an integer field only when OnlyField holds one of the
-	// constants, and leaves it zero otherwise.
+	// OnlyField and OnlyValues come from only:<Field>=<Value>[|<Value>] on
+	// a dmr:get getter: the getter returns the bits only when OnlyField
+	// holds one of the constants, and zero otherwise.
 	OnlyField  string
 	OnlyValues []string
 
-	// Fallback marks a raw field that receives the dispatch payload when no
-	// dispatch variant is decoded, and is encoded when no variant is set.
-	Fallback bool
+	// Union marks the raw field of a tagged union: it holds the payload
+	// bits, and the dmr:variant directives give the views of them.
+	Union bool
 
 	// ExtraBitRanges holds the bit ranges after the first of a non-contiguous
 	// field: "bits:3+12-15" gives [{12,15}].
@@ -133,8 +125,13 @@ type Field struct {
 	// with spaces (text).
 	Text bool
 
-	// Doc is the doc comment of the field, for the methods of a dmr:view.
+	// Doc is the doc comment of the field, for the methods of a dmr:view,
+	// or the description of a dmr:get getter.
 	Doc string
+
+	// Getter marks a dmr:get getter: a method that reads the bits from the
+	// union field.
+	Getter bool
 }
 
 // Encoding is how an integer field is stored.
@@ -204,6 +201,24 @@ type MagicDirective struct {
 	Bytes []byte // the octets
 }
 
+// VariantCond is one condition of a dmr:variant directive: Field=V1|V2 holds when
+// Field equals one of the constants Values, and Field==N or Field!=N is the
+// comparison Guard.
+type VariantCond struct {
+	Field  string
+	Values []string
+	Guard  *Guard
+}
+
+// Variant is a dmr:variant directive: the payload type Type is the view of
+// the union field when all Conds hold. The generator writes AsName and
+// SetName methods for it.
+type Variant struct {
+	Name  string
+	Type  string
+	Conds []VariantCond
+}
+
 // PDUStruct represents a tagged DMR PDU struct ready for code generation.
 type PDUStruct struct {
 	Name         string            // struct name
@@ -215,7 +230,7 @@ type PDUStruct struct {
 	FECMask      *FECMaskDirective // optional per-value FEC parity mask
 	Consts       []ConstDirective  // bits with a fixed value
 	Inputs       []string          // dmr:"-" fields passed to Decode as parameters
-	DispatchIf   *Guard            // optional guard required before dispatching
+	DispatchIf   *Guard            // condition of every variant that has no condition on its field
 	SpecRef      string            // first parenthesized ETSI citation of the doc comment
 	SourceFile   string            // source file path
 	HasInputSize bool              // true if dmr:input_size was given
@@ -238,10 +253,38 @@ type PDUStruct struct {
 	// encode writes.
 	Magic []MagicDirective
 
+	// Variants holds the dmr:variant directives of a tagged union.
+	Variants []Variant
+
+	// Getters holds the dmr:get directives: methods that read bits of the
+	// union field, such as a selector that lies inside the payload. Their
+	// bit ranges count from the start of the PDU.
+	Getters []Field
+
 	// UnexportedDecode holds the names of the structs of the package whose
-	// Decode function is unexported: the dispatch field types and the
-	// dmr:subpdu structs. SetUnexportedDecode fills it.
+	// Decode function is unexported: the variant types and the dmr:subpdu
+	// structs. SetUnexportedDecode fills it.
 	UnexportedDecode map[string]bool
+}
+
+// UnionField returns the union field of p, or nil.
+func (p *PDUStruct) UnionField() *Field {
+	for i := range p.Fields {
+		if p.Fields[i].Union {
+			return &p.Fields[i]
+		}
+	}
+	return nil
+}
+
+// GetterByName returns the dmr:get getter with the given name, or nil.
+func (p *PDUStruct) GetterByName(name string) *Field {
+	for i := range p.Getters {
+		if p.Getters[i].Name == name {
+			return &p.Getters[i]
+		}
+	}
+	return nil
 }
 
 // DecodeFuncName returns the name of the Decode function of the struct
@@ -257,19 +300,33 @@ func (p *PDUStruct) DecodeFuncName(typeName string) string {
 }
 
 // SetUnexportedDecode marks the Decode function of every sub-PDU of pdus,
-// the structs of one package, as unexported: the types of the dispatch
-// fields and the structs with a dmr:subpdu directive. Users reach a sub-PDU
-// through the dispatch field or method of its parent.
-func SetUnexportedDecode(pdus []PDUStruct) {
+// the structs of one package, as unexported: the variant types and the
+// structs with a dmr:subpdu directive. Users reach a sub-PDU through the
+// As method of its parent. It returns an error when a variant type is not
+// a struct of the package or its size differs from the union field.
+func SetUnexportedDecode(pdus []PDUStruct) error {
 	sub := map[string]bool{}
+	byName := map[string]*PDUStruct{}
+	for i := range pdus {
+		byName[pdus[i].Name] = &pdus[i]
+	}
 	for _, p := range pdus {
 		if p.SubPDU {
 			sub[p.Name] = true
 		}
-		for _, f := range p.Fields {
-			if f.Kind == FieldDispatch && f.PointedType != "" {
-				sub[f.PointedType] = true
+		for _, v := range p.Variants {
+			t, ok := byName[v.Type]
+			if !ok {
+				return fmt.Errorf("struct %s variant %s: type %s is not a PDU struct of the package", p.Name, v.Name, v.Type)
 			}
+			u := p.UnionField()
+			if t.InputSize != u.BitWidth {
+				return fmt.Errorf("struct %s variant %s: type %s has %d bits, union field %s has %d", p.Name, v.Name, v.Type, t.InputSize, u.Name, u.BitWidth)
+			}
+			if t.FEC != nil || t.CRC != nil || len(t.Inputs) > 0 || t.Stream != nil || t.Frame != nil || t.View != nil {
+				return fmt.Errorf("struct %s variant %s: type %s must be a plain PDU struct", p.Name, v.Name, v.Type)
+			}
+			sub[v.Type] = true
 		}
 		if p.Stream != nil {
 			for _, f := range p.Stream.Fields {
@@ -282,6 +339,7 @@ func SetUnexportedDecode(pdus []PDUStruct) {
 	for i := range pdus {
 		pdus[i].UnexportedDecode = sub
 	}
+	return nil
 }
 
 // FieldByName returns the field with the given name, or nil.
@@ -395,6 +453,9 @@ func parseStruct(name string, structType *ast.StructType, doc *ast.CommentGroup,
 		if err != nil {
 			return pdu, false, fmt.Errorf("field %s: %w", fieldName, err)
 		}
+		if f.OnlyField != "" {
+			return pdu, false, fmt.Errorf("field %s: only: is valid only on dmr:get", fieldName)
+		}
 		f.Doc = fieldDoc
 		pdu.Fields = append(pdu.Fields, f)
 	}
@@ -424,7 +485,7 @@ func parseStruct(name string, structType *ast.StructType, doc *ast.CommentGroup,
 				continue
 			}
 			if strings.HasPrefix(text, "dmr:") {
-				if err := parseDirective(&pdu, text); err != nil {
+				if err := parseDirective(&pdu, text, baseTypes); err != nil {
 					return pdu, false, err
 				}
 				continue
@@ -445,7 +506,7 @@ func parseStruct(name string, structType *ast.StructType, doc *ast.CommentGroup,
 	return pdu, true, nil
 }
 
-func parseDirective(pdu *PDUStruct, text string) error {
+func parseDirective(pdu *PDUStruct, text string, baseTypes map[string]string) error {
 	name, arg, _ := strings.Cut(text, " ")
 	arg = strings.TrimSpace(arg)
 	if arg == "" {
@@ -499,15 +560,6 @@ func parseDirective(pdu *PDUStruct, text string) error {
 			}
 			pdu.Inputs = append(pdu.Inputs, in)
 		}
-	case "dmr:dispatch_if":
-		if pdu.DispatchIf != nil {
-			return errors.New("duplicate dmr:dispatch_if directive")
-		}
-		g, err := parseGuard(arg)
-		if err != nil {
-			return fmt.Errorf("dmr:dispatch_if: %w", err)
-		}
-		pdu.DispatchIf = g
 	case "dmr:const":
 		c, err := parseConst(arg)
 		if err != nil {
@@ -516,6 +568,8 @@ func parseDirective(pdu *PDUStruct, text string) error {
 		pdu.Consts = append(pdu.Consts, c)
 	case directiveFrame, directiveView, directiveMagic:
 		return parseLayoutDirective(pdu, name, arg)
+	case "dmr:dispatch_if", "dmr:variant", "dmr:get":
+		return parseUnionDirective(pdu, name, arg, baseTypes)
 	case "dmr:fec_mask":
 		if pdu.FECMask != nil {
 			return errors.New("duplicate dmr:fec_mask directive")
@@ -529,6 +583,96 @@ func parseDirective(pdu *PDUStruct, text string) error {
 		return fmt.Errorf("unknown directive %q", name)
 	}
 	return nil
+}
+
+func parseUnionDirective(pdu *PDUStruct, name, arg string, baseTypes map[string]string) error {
+	switch name {
+	case "dmr:dispatch_if":
+		if pdu.DispatchIf != nil {
+			return errors.New("duplicate dmr:dispatch_if directive")
+		}
+		g, err := parseGuard(arg)
+		if err != nil {
+			return fmt.Errorf("dmr:dispatch_if: %w", err)
+		}
+		pdu.DispatchIf = g
+	case "dmr:variant":
+		v, err := parseVariant(arg)
+		if err != nil {
+			return fmt.Errorf("dmr:variant: %w", err)
+		}
+		pdu.Variants = append(pdu.Variants, v)
+	default:
+		g, err := parseGetter(arg, baseTypes)
+		if err != nil {
+			return fmt.Errorf("dmr:get: %w", err)
+		}
+		pdu.Getters = append(pdu.Getters, g)
+	}
+	return nil
+}
+
+func parseVariant(arg string) (Variant, error) {
+	parts := strings.Fields(arg)
+	if len(parts) < 3 {
+		return Variant{}, fmt.Errorf("want Name Type VariantCond..., got %q", arg)
+	}
+	v := Variant{Name: parts[0], Type: parts[1]}
+	if !token.IsExported(v.Name) || !token.IsIdentifier(v.Type) {
+		return v, fmt.Errorf("bad name %q or type %q", v.Name, v.Type)
+	}
+	for _, c := range parts[2:] {
+		cond, err := parseVariantCond(c)
+		if err != nil {
+			return v, err
+		}
+		if slices.ContainsFunc(v.Conds, func(d VariantCond) bool { return d.Field == cond.Field }) {
+			return v, fmt.Errorf("variant %s has two conditions on %s", v.Name, cond.Field)
+		}
+		v.Conds = append(v.Conds, cond)
+	}
+	return v, nil
+}
+
+func parseVariantCond(s string) (VariantCond, error) {
+	if strings.Contains(s, "==") || strings.Contains(s, "!=") {
+		g, err := parseGuard(s)
+		if err != nil {
+			return VariantCond{}, err
+		}
+		return VariantCond{Field: g.Field, Guard: g}, nil
+	}
+	field, values, ok := strings.Cut(s, "=")
+	if !ok || field == "" || values == "" {
+		return VariantCond{}, fmt.Errorf("condition must be Field=Value[|Value], Field==N or Field!=N: %q", s)
+	}
+	c := VariantCond{Field: field, Values: strings.Split(values, "|")}
+	if slices.Contains(c.Values, "") {
+		return c, fmt.Errorf("empty value in %q", s)
+	}
+	return c, nil
+}
+
+func parseGetter(arg string, baseTypes map[string]string) (Field, error) {
+	parts := strings.Fields(arg)
+	if len(parts) < 4 {
+		return Field{}, fmt.Errorf("want Name Type Tag Description, got %q", arg)
+	}
+	f, err := parseTag(parts[0], parts[2], parts[1], baseTypes)
+	if err != nil {
+		return f, fmt.Errorf("getter %s: %w", parts[0], err)
+	}
+	switch f.Kind {
+	case FieldBool, FieldUint, FieldEnum:
+	case FieldInt, FieldRaw, FieldDelegate, FieldPacked, FieldLongitude, FieldLatitude:
+		return f, fmt.Errorf("getter %s must be a bool or an unsigned integer", f.Name)
+	}
+	if f.Signed || f.Encoding != EncodingBits || f.Bias != 0 {
+		return f, fmt.Errorf("getter %s takes no signed, encoding or bias modifier", f.Name)
+	}
+	f.Doc = strings.Join(parts[3:], " ")
+	f.Getter = true
+	return f, nil
 }
 
 func parseConst(arg string) (ConstDirective, error) {
@@ -672,19 +816,6 @@ func applyModifier(f *Field, mod string, seen *modifierSet) error {
 			return fmt.Errorf("invalid stride: %q", mod)
 		}
 		f.Stride = stride
-	case "dispatch":
-		f.Kind = FieldDispatch
-		field, values, ok := strings.Cut(arg, "=")
-		if !ok || field == "" || values == "" {
-			return fmt.Errorf("dispatch modifier must be dispatch:Field=Value[|Value]: %q", mod)
-		}
-		f.DispatchFieldName = field
-		f.DispatchValues = strings.Split(values, "|")
-		for _, v := range f.DispatchValues {
-			if v == "" {
-				return fmt.Errorf("empty dispatch value in %q", mod)
-			}
-		}
 	case "only":
 		field, values, ok := strings.Cut(arg, "=")
 		if !ok || field == "" || values == "" {
@@ -695,12 +826,6 @@ func applyModifier(f *Field, mod string, seen *modifierSet) error {
 		if slices.Contains(f.OnlyValues, "") {
 			return fmt.Errorf("empty only value in %q", mod)
 		}
-	case "when":
-		g, err := parseGuard(arg)
-		if err != nil {
-			return fmt.Errorf("when modifier: %w", err)
-		}
-		f.When = g
 	case "bias":
 		bias, err := strconv.ParseUint(arg, 10, 32)
 		if err != nil || bias == 0 {
@@ -729,8 +854,8 @@ func applyFlag(f *Field, mod string) error {
 		f.DelegateNoPtr = true
 	case "no_encode":
 		f.NoEncode = true
-	case "fallback":
-		f.Fallback = true
+	case "union":
+		f.Union = true
 	case "le":
 		f.Encoding = EncodingLE
 	case "dec":
@@ -823,10 +948,6 @@ func validateField(f *Field) error {
 		if f.BitWidth < 2 || f.BitWidth > 32 {
 			return fmt.Errorf("latitude/longitude width %d out of range 2-32", f.BitWidth)
 		}
-	case FieldDispatch:
-		if !f.IsPointer {
-			return fmt.Errorf("dispatch field must be a pointer, got %s", f.GoType)
-		}
 	}
 	return nil
 }
@@ -858,14 +979,12 @@ func validateModifiers(f *Field) error {
 		return errors.New("noptr requires delegate")
 	case f.Stride > 0 && f.Kind != FieldDelegate:
 		return errors.New("stride requires delegate")
-	case f.Fallback && f.Kind != FieldRaw:
-		return errors.New("fallback requires raw")
-	case f.When != nil && f.Kind != FieldDispatch:
-		return errors.New("when: requires dispatch")
+	case f.Union && f.Kind != FieldRaw:
+		return errors.New("union requires raw")
+	case f.Union && f.NoEncode:
+		return errors.New("union and no_encode cannot be combined")
 	case f.OnlyField != "" && f.Kind != FieldUint && f.Kind != FieldInt && f.Kind != FieldEnum:
 		return errors.New("only: requires an integer field")
-	case f.NoEncode && f.Kind == FieldDispatch:
-		return errors.New("no_encode is not valid on dispatch fields")
 	case f.Signed && (f.Kind != FieldInt || !isSignedBase(f.BaseType)):
 		return fmt.Errorf("signed requires a signed integer field, got %s", f.GoType)
 	case f.Signed && f.BitWidth < 2:
@@ -880,7 +999,7 @@ func allowsNonContiguous(f *Field) bool {
 		return true
 	case FieldDelegate:
 		return f.DelegateNoPtr && f.Stride == 0
-	case FieldBool, FieldRaw, FieldPacked, FieldLongitude, FieldLatitude, FieldDispatch:
+	case FieldBool, FieldRaw, FieldPacked, FieldLongitude, FieldLatitude:
 	}
 	return false
 }
@@ -900,8 +1019,6 @@ func kindName(f *Field) string {
 		return "struct delegate"
 	case FieldLongitude, FieldLatitude:
 		return "latitude/longitude"
-	case FieldDispatch:
-		return "dispatch"
 	case FieldUint, FieldInt, FieldEnum:
 	}
 	return "integer"
@@ -956,21 +1073,6 @@ func checkIntWidth(f *Field) error {
 }
 
 func validateStruct(pdu *PDUStruct, maxBit int) error {
-	var dispatch []*Field
-	var fallback *Field
-	for i := range pdu.Fields {
-		f := &pdu.Fields[i]
-		switch {
-		case f.Kind == FieldDispatch && !f.Skip:
-			dispatch = append(dispatch, f)
-		case f.Fallback:
-			if fallback != nil {
-				return fmt.Errorf("multiple fallback fields: %s and %s", fallback.Name, f.Name)
-			}
-			fallback = f
-		}
-	}
-
 	if maxBit >= pdu.InputSize {
 		return fmt.Errorf("fields extend to bit %d beyond input size %d", maxBit, pdu.InputSize)
 	}
@@ -982,10 +1084,7 @@ func validateStruct(pdu *PDUStruct, maxBit int) error {
 		}
 	}
 
-	if err := checkDispatch(pdu, dispatch, fallback); err != nil {
-		return err
-	}
-	if err := checkOnly(pdu); err != nil {
+	if err := checkUnion(pdu); err != nil {
 		return err
 	}
 	if err := checkOverlap(pdu); err != nil {
@@ -1011,85 +1110,78 @@ func validateStruct(pdu *PDUStruct, maxBit int) error {
 	return nil
 }
 
-func checkDispatch(pdu *PDUStruct, dispatch []*Field, fallback *Field) error {
-	if len(dispatch) == 0 {
-		if fallback != nil {
-			return fmt.Errorf("fallback field %s without dispatch fields", fallback.Name)
+func checkUnion(pdu *PDUStruct) error {
+	var union *Field
+	for i := range pdu.Fields {
+		if !pdu.Fields[i].Union {
+			continue
 		}
-		if pdu.DispatchIf != nil {
-			return errors.New("dmr:dispatch_if without dispatch fields")
+		if union != nil {
+			return fmt.Errorf("multiple union fields: %s and %s", union.Name, pdu.Fields[i].Name)
 		}
+		union = &pdu.Fields[i]
+	}
+	switch {
+	case union == nil && (len(pdu.Variants) > 0 || len(pdu.Getters) > 0 || pdu.DispatchIf != nil):
+		return errors.New("dmr:variant, dmr:get and dmr:dispatch_if need a union field")
+	case union == nil:
 		return nil
+	case len(pdu.Variants) == 0:
+		return fmt.Errorf("union field %s without dmr:variant directives", union.Name)
 	}
-	first := dispatch[0]
-	for _, f := range dispatch[1:] {
-		if f.BitStart != first.BitStart || f.BitEnd != first.BitEnd {
-			return fmt.Errorf("dispatch field %s range %d-%d differs from %s range %d-%d",
-				f.Name, f.BitStart, f.BitEnd, first.Name, first.BitStart, first.BitEnd)
+	for i, g := range pdu.Getters {
+		if pdu.FieldByName(g.Name) != nil || slices.ContainsFunc(pdu.Getters[:i], func(h Field) bool { return h.Name == g.Name }) {
+			return fmt.Errorf("getter %s has the name of a field or getter", g.Name)
 		}
-		if f.DispatchFieldName != first.DispatchFieldName {
-			return fmt.Errorf("dispatch field %s switches on %s, %s switches on %s",
-				f.Name, f.DispatchFieldName, first.Name, first.DispatchFieldName)
+		for _, r := range g.Ranges() {
+			if r[0] < union.BitStart || r[1] > union.BitEnd {
+				return fmt.Errorf("getter %s bits %d-%d are outside union field %s", g.Name, r[0], r[1], union.Name)
+			}
 		}
-	}
-	if fallback != nil && (fallback.BitStart != first.BitStart || fallback.BitEnd != first.BitEnd) {
-		return fmt.Errorf("fallback field %s range %d-%d differs from dispatch range %d-%d",
-			fallback.Name, fallback.BitStart, fallback.BitEnd, first.BitStart, first.BitEnd)
-	}
-	if err := checkGuardField(pdu, first.DispatchFieldName); err != nil {
-		return fmt.Errorf("dispatch: %w", err)
-	}
-	if pdu.DispatchIf != nil {
-		if err := checkGuard(pdu, pdu.DispatchIf); err != nil {
-			return fmt.Errorf("dmr:dispatch_if: %w", err)
+		if g.OnlyField != "" {
+			c := VariantCond{Field: g.OnlyField, Values: g.OnlyValues}
+			if err := checkCond(pdu, c, pdu.Getters[:i]); err != nil {
+				return fmt.Errorf("getter %s only: %w", g.Name, err)
+			}
 		}
 	}
-	for _, f := range dispatch {
-		if f.When != nil {
-			if err := checkGuard(pdu, f.When); err != nil {
-				return fmt.Errorf("field %s when: %w", f.Name, err)
+	for i := range pdu.Variants {
+		v := &pdu.Variants[i]
+		if slices.ContainsFunc(pdu.Variants[:i], func(w Variant) bool { return w.Name == v.Name }) {
+			return fmt.Errorf("duplicate variant %s", v.Name)
+		}
+		if pdu.DispatchIf != nil && !slices.ContainsFunc(v.Conds, func(c VariantCond) bool { return c.Field == pdu.DispatchIf.Field }) {
+			v.Conds = append(v.Conds, VariantCond{Field: pdu.DispatchIf.Field, Guard: pdu.DispatchIf})
+		}
+		for _, c := range v.Conds {
+			if err := checkCond(pdu, c, pdu.Getters); err != nil {
+				return fmt.Errorf("variant %s: %w", v.Name, err)
 			}
 		}
 	}
 	return nil
 }
 
-func checkGuard(pdu *PDUStruct, g *Guard) error {
-	if err := checkGuardField(pdu, g.Field); err != nil {
-		return err
-	}
-	f := pdu.FieldByName(g.Field)
-	isBoolLit := g.Value == "true" || g.Value == "false"
-	if (f.GoType == typeBool) != isBoolLit {
-		return fmt.Errorf("value %s does not match type %s of %s", g.Value, f.GoType, g.Field)
-	}
-	return nil
-}
-
-func checkOnly(pdu *PDUStruct) error {
-	for i, f := range pdu.Fields {
-		if f.OnlyField == "" {
-			continue
-		}
-		if err := checkGuardField(pdu, f.OnlyField); err != nil {
-			return fmt.Errorf("field %s only: %w", f.Name, err)
-		}
-		if !slices.ContainsFunc(pdu.Fields[:i], func(g Field) bool { return g.Name == f.OnlyField }) {
-			return fmt.Errorf("field %s only: %s must come before it", f.Name, f.OnlyField)
+func checkCond(pdu *PDUStruct, c VariantCond, getters []Field) error {
+	f := pdu.FieldByName(c.Field)
+	if f == nil {
+		for i := range getters {
+			if getters[i].Name == c.Field {
+				f = &getters[i]
+			}
 		}
 	}
-	return nil
-}
-
-func checkGuardField(pdu *PDUStruct, name string) error {
-	f := pdu.FieldByName(name)
 	switch {
 	case f == nil:
-		return fmt.Errorf("unknown field %q", name)
-	case f.Skip && !pdu.IsInput(name):
-		return fmt.Errorf("field %q is dmr:\"-\" and not a dmr:input, so it is never set during decode", name)
-	case f.Kind == FieldDispatch && !f.Skip:
-		return fmt.Errorf("field %q is a dispatch field", name)
+		return fmt.Errorf("unknown field %q", c.Field)
+	case f.Skip && !pdu.IsInput(c.Field):
+		return fmt.Errorf("field %q is dmr:\"-\" and not a dmr:input, so it is never set during decode", c.Field)
+	case f.Union:
+		return fmt.Errorf("field %q is the union field", c.Field)
+	case c.Guard != nil && (f.GoType == typeBool) != (c.Guard.Value == "true" || c.Guard.Value == "false"):
+		return fmt.Errorf("value %s does not match type %s of %s", c.Guard.Value, f.GoType, c.Field)
+	case c.Guard == nil && f.GoType == typeBool:
+		return fmt.Errorf("bool field %s needs %s==true or %s==false", c.Field, c.Field, c.Field)
 	}
 	return nil
 }
@@ -1097,7 +1189,7 @@ func checkGuardField(pdu *PDUStruct, name string) error {
 func checkOverlap(pdu *PDUStruct) error {
 	owner := map[int]string{}
 	for _, f := range pdu.Fields {
-		if f.Skip || f.Kind == FieldDispatch || f.Fallback || f.NoEncode {
+		if f.Skip || f.NoEncode {
 			continue
 		}
 		for _, r := range f.Ranges() {

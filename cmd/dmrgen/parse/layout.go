@@ -190,8 +190,8 @@ func validateLayout(pdu *PDUStruct, maxBit int) error {
 	switch {
 	case pdu.FEC != nil, pdu.CRC != nil, pdu.FECMask != nil:
 		return errors.New("dmr:frame and dmr:view cannot have dmr:fec or dmr:crc")
-	case len(pdu.Inputs) > 0, pdu.DispatchIf != nil, pdu.SubPDU, pdu.HasInputSize:
-		return errors.New("dmr:frame and dmr:view cannot have dmr:input, dmr:dispatch_if, dmr:subpdu or dmr:input_size")
+	case len(pdu.Inputs) > 0, pdu.DispatchIf != nil, pdu.SubPDU, pdu.HasInputSize, len(pdu.Variants) > 0, len(pdu.Getters) > 0:
+		return errors.New("dmr:frame and dmr:view cannot have dmr:input, dmr:dispatch_if, dmr:variant, dmr:get, dmr:subpdu or dmr:input_size")
 	}
 	var size int
 	if pdu.Frame != nil {
@@ -224,7 +224,7 @@ func checkLayoutKinds(pdu *PDUStruct) error {
 		}
 		switch f.Kind {
 		case FieldBool, FieldUint, FieldInt, FieldEnum, FieldRaw, FieldPacked:
-		case FieldDelegate, FieldLongitude, FieldLatitude, FieldDispatch:
+		case FieldDelegate, FieldLongitude, FieldLatitude:
 			return fmt.Errorf("field %s: %s fields are not supported in dmr:frame or dmr:view", f.Name, kindName(&f))
 		}
 		if f.Text && pdu.View == nil {

@@ -71,8 +71,10 @@ func run(v2Root string) error {
 	if err != nil {
 		return err
 	}
-	for _, pdus := range pkgs {
-		parse.SetUnexportedDecode(pdus)
+	for dir, pdus := range pkgs {
+		if err := parse.SetUnexportedDecode(pdus); err != nil {
+			return fmt.Errorf("%s: %w", dir, err)
+		}
 	}
 	guard := nilguard.New(v2Root)
 	for _, sf := range files {

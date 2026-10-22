@@ -6,9 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"go/token"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -172,23 +170,20 @@ func GenerateFile(pdus []parse.PDUStruct, pkgName string) (*File, error) {
 			f.Line()
 			continue
 		}
-		if err := emitDecode(f, pdu, false); err != nil {
+		if err := emitDecode(f, pdu); err != nil {
 			return nil, fmt.Errorf("generating decode for %s: %w", pdu.Name, err)
 		}
 		f.Line()
-		if payloads := dispatchPayloads(pdu); len(payloads) > 0 {
-			emitPayloads(f, pdu, payloads)
-			f.Line()
-			if err := emitDecode(f, pdu, true); err != nil {
-				return nil, fmt.Errorf("generating decode for %s: %w", pdu.Name, err)
-			}
-			f.Line()
-		}
 		if err := emitEncode(f, pdu, ev); err != nil {
 			return nil, fmt.Errorf("generating encode for %s: %w", pdu.Name, err)
 		}
 		f.Line()
 		emitString(f, pdu, false)
+		if pdu.UnionField() != nil {
+			if err := emitUnion(f, pdu, ev); err != nil {
+				return nil, fmt.Errorf("generating union for %s: %w", pdu.Name, err)
+			}
+		}
 	}
 	if len(ev.names) > 0 {
 		f.Line()
@@ -280,7 +275,7 @@ func article(name string) string {
 	return "a"
 }
 
-func emitDecode(f *File, pdu parse.PDUStruct, into bool) error {
+func emitDecode(f *File, pdu parse.PDUStruct) error {
 	codec, hasFEC, err := resolveCodec(pdu)
 	if err != nil {
 		return err
@@ -289,15 +284,7 @@ func emitDecode(f *File, pdu parse.PDUStruct, into bool) error {
 	if hasFEC {
 		inputSize = codec.InputSize
 	}
-	return emitDecodeBytes(f, pdu, into, codec, inputSize)
-}
-
-func decodeName(pdu parse.PDUStruct, typeName string, into bool) string {
-	name := pdu.DecodeFuncName(typeName)
-	if into {
-		name += "Into"
-	}
-	return name
+	return emitDecodeBytes(f, pdu, codec, inputSize)
 }
 
 func decodeDoc(n int) string {
@@ -341,33 +328,17 @@ func comment(f *File, text string) {
 	}
 }
 
-func emitDecodeBytes(f *File, pdu parse.PDUStruct, into bool, codec *FECCodecInfo, inputSize int) error {
-	name := decodeName(pdu, pdu.Name, into)
-	exported := !pdu.UnexportedDecode[pdu.Name]
-	switch {
-	case into && exported:
-		plain := decodeName(pdu, pdu.Name, false)
-		f.Comment(name + " decodes data into dst as " + plain + " does,")
-		f.Comment("but points the dispatch field of dst into p, so it does not allocate.")
-		f.Comment("The payload stays valid until the next decode into p. A nil dst or")
-		f.Comment("p does nothing.")
-	case !exported:
+func emitDecodeBytes(f *File, pdu parse.PDUStruct, codec *FECCodecInfo, inputSize int) error {
+	name := pdu.DecodeFuncName(pdu.Name)
+	if pdu.UnexportedDecode[pdu.Name] {
 		if pdu.SpecRef != "" {
 			f.Comment(pdu.SpecRef)
 		}
-	default:
-		text := name + " decodes " + docObject(pdu) + " " + decodeDoc(inputSize)
-		if len(dispatchPayloads(pdu)) > 0 {
-			text += " It allocates the payload struct that the dispatch field points to; " + name + "Into does not."
-		}
-		comment(f, text+docCite(pdu))
+	} else {
+		comment(f, name+" decodes "+docObject(pdu)+" "+decodeDoc(inputSize)+docCite(pdu))
 	}
 
-	var params []Code
-	if into {
-		params = append(params, Id("dst").Op("*").Id(pdu.Name), Id("p").Op("*").Id(payloadsTypeName(pdu)))
-	}
-	params = append(params, Id("data").Index(Lit(packedSize(inputSize))).Byte())
+	params := []Code{Id("data").Index(Lit(packedSize(inputSize))).Byte()}
 	for _, in := range pdu.Inputs {
 		field := pdu.FieldByName(in)
 		if field == nil {
@@ -376,21 +347,9 @@ func emitDecodeBytes(f *File, pdu parse.PDUStruct, into bool, codec *FECCodecInf
 		params = append(params, Id(inputParamName(in)).Add(qualType(*field, pdu)))
 	}
 
-	var fn *Statement
-	if into {
-		fn = f.Func().Id(name).Params(params...)
-	} else {
-		fn = f.Func().Id(name).Params(params...).Id(pdu.Name)
-	}
 	var genErr error
-	fn.BlockFunc(func(g *Group) {
-		if into {
-			g.If(Id("dst").Op("==").Nil().Op("||").Id("p").Op("==").Nil()).Block(Return())
-			g.Op("*").Id("dst").Op("=").Id(pdu.Name).Values()
-			g.Id("result").Op(":=").Id("dst")
-		} else {
-			g.Var().Id("result").Id(pdu.Name)
-		}
+	f.Func().Id(name).Params(params...).Id(pdu.Name).BlockFunc(func(g *Group) {
+		g.Var().Id("result").Id(pdu.Name)
 		for _, in := range pdu.Inputs {
 			g.Id("result").Dot(in).Op("=").Id(inputParamName(in))
 		}
@@ -421,37 +380,12 @@ func emitDecodeBytes(f *File, pdu parse.PDUStruct, into bool, codec *FECCodecInf
 			)
 		}
 
-		var dispatchFields []parse.Field
 		for _, field := range pdu.Fields {
-			if field.Skip {
-				continue
-			}
-			if field.Kind == parse.FieldDispatch {
-				dispatchFields = append(dispatchFields, field)
-				continue
-			}
-			if field.Fallback {
-				continue
-			}
-			if field.OnlyField != "" {
-				g.If(onlyCondition(field, pdu)).BlockFunc(func(b *Group) {
-					emitFieldDecode(b, field, pdu)
-				})
-				continue
-			}
-			emitFieldDecode(g, field, pdu)
-		}
-
-		if len(dispatchFields) > 0 {
-			if err := emitDispatchSwitch(g, dispatchFields, pdu, into); err != nil {
-				genErr = err
-				return
+			if !field.Skip {
+				emitFieldDecode(g, field, pdu)
 			}
 		}
-
-		if !into {
-			g.Return(Id("result"))
-		}
+		g.Return(Id("result"))
 	})
 	return genErr
 }
@@ -648,201 +582,7 @@ func emitFECMask(g *Group, pdu parse.PDUStruct, codec *FECCodecInfo, src *Statem
 	return genErr
 }
 
-func emitDispatchSwitch(g *Group, fields []parse.Field, pdu parse.PDUStruct, into bool) error {
-	bitStart := fields[0].BitStart
-	n := fields[0].BitEnd - bitStart + 1
-
-	tmpVar := "_dispatchBytes"
-	g.Var().Id(tmpVar).Index(Lit(packedSize(n))).Byte()
-	addAll(g, copyBits(idOf(tmpVar), 0, dataBuf, bitStart, n))
-
-	var raw []Code
-	if fb := fallbackField(pdu); fb != nil {
-		raw = copyBits(fieldOf("result", fb.Name), 0, dataBuf, bitStart, fb.BitWidth)
-	}
-	stmt, err := dispatchSelect(fields, pdu, func(field parse.Field) []Code {
-		return dispatchDecodeBlock(pdu, field, tmpVar, into)
-	}, raw)
-	if err != nil {
-		return err
-	}
-	g.Add(stmt)
-	return nil
-}
-
-func dispatchSelect(fields []parse.Field, pdu parse.PDUStruct, pick func(parse.Field) []Code, raw []Code) (*Statement, error) {
-	type dispatchGroup struct {
-		values []string
-		fields []parse.Field
-	}
-	var groups []dispatchGroup
-	groupIndex := map[string]int{}
-	for _, field := range fields {
-		key := strings.Join(field.DispatchValues, "|")
-		if idx, ok := groupIndex[key]; ok {
-			groups[idx].fields = append(groups[idx].fields, field)
-		} else {
-			groupIndex[key] = len(groups)
-			groups = append(groups, dispatchGroup{values: field.DispatchValues, fields: []parse.Field{field}})
-		}
-	}
-
-	var genErr error
-	sw := Switch(Id("result").Dot(fields[0].DispatchFieldName)).BlockFunc(func(sw *Group) {
-		for _, grp := range groups {
-			caseValues := make([]Code, len(grp.values))
-			for i, val := range grp.values {
-				caseValues[i] = emitDispatchConstant(val, pdu)
-			}
-
-			if len(grp.fields) == 1 && grp.fields[0].When == nil {
-				sw.Case(caseValues...).Block(pick(grp.fields[0])...)
-				continue
-			}
-			sw.Case(caseValues...).BlockFunc(func(caseBody *Group) {
-				if err := emitGuardedDispatch(caseBody, grp.fields, pick, raw); err != nil && genErr == nil {
-					genErr = err
-				}
-			})
-		}
-		if raw != nil {
-			sw.Default().Block(raw...)
-		}
-	})
-	if genErr != nil {
-		return nil, genErr
-	}
-
-	if pdu.DispatchIf == nil {
-		return sw, nil
-	}
-	cond, err := emitGuardCondition(pdu.DispatchIf)
-	if err != nil {
-		return nil, fmt.Errorf("dmr:dispatch_if: %w", err)
-	}
-	stmt := If(cond).Block(sw)
-	if raw != nil {
-		stmt.Else().Block(raw...)
-	}
-	return stmt, nil
-}
-
-func fallbackField(pdu parse.PDUStruct) *parse.Field {
-	for i := range pdu.Fields {
-		if pdu.Fields[i].Fallback {
-			return &pdu.Fields[i]
-		}
-	}
-	return nil
-}
-
-func dispatchDecodeBlock(pdu parse.PDUStruct, field parse.Field, tmpVar string, into bool) []Code {
-	typ := dispatchTypeName(field)
-	decode := Id(decodeName(pdu, typ, false)).Call(Id(tmpVar))
-	if into {
-		slot := Id("p").Dot(payloadFieldName(typ))
-		return []Code{
-			slot.Clone().Op("=").Add(decode),
-			Id("result").Dot(field.Name).Op("=").Op("&").Add(slot.Clone()),
-		}
-	}
-	return []Code{
-		Id("_decoded").Op(":=").Add(decode),
-		Id("result").Dot(field.Name).Op("=").Op("&").Id("_decoded"),
-	}
-}
-
-func dispatchPayloads(pdu parse.PDUStruct) []string {
-	var types []string
-	for _, field := range pdu.Fields {
-		if field.Skip || field.Kind != parse.FieldDispatch {
-			continue
-		}
-		if typ := dispatchTypeName(field); !slices.Contains(types, typ) {
-			types = append(types, typ)
-		}
-	}
-	return types
-}
-
-func payloadsTypeName(pdu parse.PDUStruct) string {
-	return pdu.Name + "Payloads"
-}
-
-func payloadFieldName(typ string) string {
-	n := 0
-	for n < len(typ) && typ[n] >= 'A' && typ[n] <= 'Z' {
-		n++
-	}
-	if n > 1 && n < len(typ) {
-		n--
-	}
-	name := strings.ToLower(typ[:n]) + typ[n:]
-	if token.IsKeyword(name) {
-		name += "_"
-	}
-	return name
-}
-
-func emitPayloads(f *File, pdu parse.PDUStruct, types []string) {
-	name := payloadsTypeName(pdu)
-	f.Comment(name + " holds one payload struct of each type that")
-	f.Comment(article(pdu.Name) + " " + pdu.Name + " dispatch field points to, for Decode" + pdu.Name + "Into.")
-	f.Comment("The zero value is ready to use.")
-	f.Type().Id(name).StructFunc(func(g *Group) {
-		for _, typ := range types {
-			g.Id(payloadFieldName(typ)).Id(typ)
-		}
-	})
-}
-
-func dispatchTypeName(field parse.Field) string {
-	if field.IsPointer && field.PointedType != "" {
-		return field.PointedType
-	}
-	return field.TypeName
-}
-
-func emitGuardedDispatch(g *Group, fields []parse.Field, pick func(parse.Field) []Code, raw []Code) error {
-	var guarded []parse.Field
-	var fallback *parse.Field
-	for i := range fields {
-		if fields[i].When != nil {
-			guarded = append(guarded, fields[i])
-			continue
-		}
-		if fallback != nil {
-			return fmt.Errorf("dispatch fields %s and %s share values and neither has a when: guard", fallback.Name, fields[i].Name)
-		}
-		fb := fields[i]
-		fallback = &fb
-	}
-
-	var chain *Statement
-	for i, field := range guarded {
-		guardCond, err := emitGuardCondition(field.When)
-		if err != nil {
-			return fmt.Errorf("field %s: %w", field.Name, err)
-		}
-		if i == 0 {
-			chain = If(guardCond).Block(pick(field)...)
-		} else {
-			chain.Else().If(guardCond).Block(pick(field)...)
-		}
-	}
-	switch {
-	case fallback != nil:
-		chain.Else().Block(pick(*fallback)...)
-	case raw != nil:
-		chain.Else().Block(raw...)
-	}
-	g.Add(chain)
-	return nil
-}
-
-func emitGuardCondition(guard *parse.Guard) (*Statement, error) {
-	lhs := Id("result").Dot(guard.Field)
-
+func guardCondition(lhs *Statement, guard *parse.Guard) (*Statement, error) {
 	var val *Statement
 	switch guard.Value {
 	case "true", "false":
@@ -864,14 +604,6 @@ func emitGuardCondition(guard *parse.Guard) (*Statement, error) {
 	default:
 		return nil, fmt.Errorf("unsupported guard operator %q", guard.Op)
 	}
-}
-
-func onlyCondition(field parse.Field, pdu parse.PDUStruct) *Statement {
-	cond := Id("result").Dot(field.OnlyField).Op("==").Add(emitDispatchConstant(field.OnlyValues[0], pdu))
-	for _, v := range field.OnlyValues[1:] {
-		cond = cond.Op("||").Id("result").Dot(field.OnlyField).Op("==").Add(emitDispatchConstant(v, pdu))
-	}
-	return cond
 }
 
 func emitDispatchConstant(val string, pdu parse.PDUStruct) Code {
@@ -932,7 +664,12 @@ func (t *stringText) code() *Statement {
 }
 
 func (t *stringText) field(field parse.Field, pdu parse.PDUStruct, sep string) bool {
-	src := func() *Statement { return Id("s").Dot(field.Name) }
+	src := func() *Statement {
+		if field.Getter {
+			return Id("s").Dot(field.Name).Call()
+		}
+		return Id("s").Dot(field.Name)
+	}
 	text := func(fn string, arg Code) Code { return Qual(textPkg, fn).Call(arg) }
 	str := func() Code { return src().Dot("String").Call() }
 	if field.Skip {
@@ -947,14 +684,15 @@ func (t *stringText) field(field parse.Field, pdu parse.PDUStruct, sep string) b
 			t.value("%t", fec("Uncorrectable"), text("Bool", fec("Uncorrectable")))
 			t.str("}")
 			return true
+		case pdu.IsInput(field.Name) && field.GoType == "bool":
+			t.str(sep + field.Name + ": ")
+			t.value("%t", src(), text("Bool", src()))
+			return true
 		case pdu.IsInput(field.Name):
 			t.str(sep + field.Name + ": ")
 			t.value("%v", src(), str())
 			return true
 		}
-		return false
-	}
-	if field.Kind == parse.FieldDispatch {
 		return false
 	}
 	t.str(sep + field.Name + ": ")
@@ -993,20 +731,16 @@ func emitString(f *File, pdu parse.PDUStruct, fmtRef bool) {
 		f.Comment("String returns the fields of s as text, for printing. It allocates the")
 		f.Comment("string.")
 	}
-	var dispatch []parse.Field
 	hasStride := false
 	for _, field := range pdu.Fields {
-		switch {
-		case field.Skip:
-		case field.Kind == parse.FieldDispatch:
-			dispatch = append(dispatch, field)
-		case field.Stride > 0 && field.ArrayLen > 0:
+		if !field.Skip && field.Stride > 0 && field.ArrayLen > 0 {
 			hasStride = true
 		}
 	}
+	union := pdu.UnionField()
 	t := &stringText{fmtRef: fmtRef}
 	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id(name).Params().String().BlockFunc(func(g *Group) {
-		if len(dispatch) == 0 && !hasStride {
+		if union == nil && !hasStride {
 			t.str(pdu.Name + "{ ")
 			sep := ""
 			for _, field := range pdu.Fields {
@@ -1018,11 +752,11 @@ func emitString(f *File, pdu parse.PDUStruct, fmtRef bool) {
 			g.Return(t.code())
 			return
 		}
-		emitStringConcat(g, t, pdu, dispatch)
+		emitStringConcat(g, t, pdu, union)
 	})
 }
 
-func emitStringConcat(g *Group, t *stringText, pdu parse.PDUStruct, dispatch []parse.Field) {
+func emitStringConcat(g *Group, t *stringText, pdu parse.PDUStruct, union *parse.Field) {
 	g.Id("_ret").Op(":=").Lit(pdu.Name + "{ ")
 	n := 0
 	add := func() {
@@ -1035,12 +769,9 @@ func emitStringConcat(g *Group, t *stringText, pdu parse.PDUStruct, dispatch []p
 	for _, field := range pdu.Fields {
 		switch {
 		case field.Skip:
-		case field.Kind == parse.FieldDispatch, field.Fallback:
+		case field.Union:
 			continue
 		case field.Stride > 0 && field.ArrayLen > 0:
-			if n > 0 {
-				t.str(", ")
-			}
 			add()
 			g.Id("_ret").Op("+=").Lit(sep + field.Name + ": [")
 			g.For(Id("_i").Op(":=").Range().Id("s").Dot(field.Name)).Block(
@@ -1058,29 +789,38 @@ func emitStringConcat(g *Group, t *stringText, pdu parse.PDUStruct, dispatch []p
 			sep = ", "
 		}
 	}
-	if len(dispatch) == 0 {
+	if union == nil {
 		add()
 		g.Id("_ret").Op("+=").Lit(" }")
 		g.Return(Id("_ret"))
 		return
 	}
-	if n > 0 {
+	for _, getter := range pdu.Getters {
+		if t.field(getter, pdu, sep) {
+			n++
+			sep = ", "
+		}
+	}
+	if sep != "" {
 		t.str(", ")
+		n++
 	}
 	add()
-	g.Switch().BlockFunc(func(sw *Group) {
-		for _, field := range dispatch {
-			sw.Case(Id("s").Dot(field.Name).Op("!=").Nil()).Block(
-				Id("_ret").Op("+=").Id("s").Dot(field.Name).Dot("String").Call(),
-			)
+	src := func() *Statement { return Id("s").Dot(union.Name) }
+	t.str(union.Name + ": ")
+	t.value("%x", src(), Qual(textPkg, "Hex").Call(src().Index(Empty(), Empty())))
+	var chain *Statement
+	for _, v := range pdu.Variants {
+		test := []Code{List(Id("v"), Id("ok")).Op(":=").Id("s").Dot("As" + v.Name).Call(), Id("ok")}
+		body := Id("_ret").Op("+=").Id("v").Dot("String").Call()
+		if chain == nil {
+			chain = If(test...).Block(body)
+			continue
 		}
-		if fb := fallbackField(pdu); fb != nil {
-			src := func() *Statement { return Id("s").Dot(fb.Name) }
-			t.str(fb.Name + ": ")
-			t.value("%x", src(), Qual(textPkg, "Hex").Call(src().Index(Empty(), Empty())))
-			sw.Default().Block(Id("_ret").Op("+=").Add(t.code()))
-		}
-	})
+		chain.Else().If(test...).Block(body)
+	}
+	chain.Else().Block(Id("_ret").Op("+=").Add(t.code()))
+	g.Add(chain)
 	g.Id("_ret").Op("+=").Lit(" }")
 	g.Return(Id("_ret"))
 }
@@ -1122,8 +862,6 @@ func emitFieldDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 		// ETSI TS 102 361-2 clause 7.2.16, clause 7.2.17
 		g.Add(target).Op("=").Float64().Call(signExtend(field, Uint32().Call(readUint(field)))).
 			Op("*").Lit(coordSpan(field)).Op("/").Parens(Lit(1).Op("<<").Lit(field.BitWidth))
-
-	case parse.FieldDispatch:
 	}
 }
 
@@ -1143,7 +881,7 @@ func emitDelegateDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	if field.IsQualified {
 		call = Qual(resolveImportPath(field.TypePkg, pdu.SourceFile), "Decode"+field.TypeName).Call(Id(tmpVar))
 	} else {
-		call = Id(decodeName(pdu, field.TypeName, false)).Call(Id(tmpVar))
+		call = Id(pdu.DecodeFuncName(field.TypeName)).Call(Id(tmpVar))
 	}
 
 	if field.Stride > 0 && field.ArrayLen > 0 {
@@ -1179,10 +917,7 @@ func emitEncode(f *File, pdu parse.PDUStruct, ev *errVars) error {
 		Error(),
 	).BlockFunc(func(g *Group) {
 		g.Var().Id("data").Index(Lit(enc.bytes)).Byte()
-		if err := enc.fields(g); err != nil {
-			genErr = err
-			return
-		}
+		enc.fields(g)
 		switch {
 		case pdu.CRC != nil:
 			emitCRCEncode(g, pdu, outputSize)
@@ -1235,27 +970,9 @@ func (e encoder) failRange(field parse.Field, lo, hi Code) *Statement {
 	return e.fail(e.errs.get("err"+e.pdu.Name+field.Name+"Range", def))
 }
 
-func (e encoder) fields(g *Group) error {
-	var regularFields []parse.Field
-	var dispatchFields []parse.Field
+func (e encoder) fields(g *Group) {
 	for _, field := range e.pdu.Fields {
-		if field.Skip {
-			continue
-		}
-		switch {
-		case field.Kind == parse.FieldDispatch:
-			dispatchFields = append(dispatchFields, field)
-		case field.Fallback:
-		default:
-			regularFields = append(regularFields, field)
-		}
-	}
-	if len(dispatchFields) > 0 {
-		e.payload(g, dispatchFields)
-		e.dispatch(g, dispatchFields)
-	}
-	for _, field := range regularFields {
-		if field.NoEncode {
+		if field.Skip || field.NoEncode {
 			continue
 		}
 		e.field(g, field)
@@ -1263,109 +980,6 @@ func (e encoder) fields(g *Group) error {
 	for i, c := range e.pdu.Consts {
 		e.constant(g, c, i)
 	}
-	if len(dispatchFields) > 0 {
-		return e.checkPayload(g, dispatchFields)
-	}
-	return nil
-}
-
-func (e encoder) payload(g *Group, fields []parse.Field) {
-	g.Id("_payload").Op(":=").Lit("")
-	for i, field := range fields {
-		set := []Code{Id("_payload").Op("=").Lit(field.Name)}
-		if i > 0 {
-			set = append([]Code{If(Id("_payload").Op("!=").Lit("")).Block(
-				e.fail(e.errs.get("err"+e.pdu.Name+"Payloads", errorsNew(e.pdu.Name+": more than one payload field is set"))),
-			)}, set...)
-		}
-		g.If(Id("s").Dot(field.Name).Op("!=").Nil()).Block(set...)
-	}
-}
-
-func (e encoder) checkPayload(g *Group, fields []parse.Field) error {
-	selectors := dispatchSelectors(e.pdu, fields)
-	none := "no payload"
-	if fb := fallbackField(e.pdu); fb != nil {
-		none = fb.Name
-	}
-	verb := " select "
-	if len(selectors) == 1 {
-		verb = " selects "
-	}
-	sel, err := dispatchSelect(fields, e.pdu, func(field parse.Field) []Code {
-		return []Code{Id("_want").Op("=").Lit(field.Name)}
-	}, nil)
-	if err != nil {
-		return err
-	}
-	g.If(Id("_payload").Op("!=").Lit("")).BlockFunc(func(b *Group) {
-		b.Var().Id("result").Id(e.pdu.Name)
-		for _, name := range selectors {
-			if e.pdu.IsInput(name) {
-				b.Id("result").Dot(name).Op("=").Id("s").Dot(name)
-				continue
-			}
-			emitFieldDecode(b, *e.pdu.FieldByName(name), e.pdu)
-		}
-		b.Id("_want").Op(":=").Lit(none)
-		b.Add(sel)
-		b.If(Id("_payload").Op("!=").Id("_want")).Block(
-			e.fail(e.errs.get("err"+e.pdu.Name+"Payload", errorsNew(e.pdu.Name+": the payload field that is set is not the one that "+joinNames(selectors)+strings.TrimRight(verb, " ")))),
-		)
-	})
-	return nil
-}
-
-func dispatchSelectors(pdu parse.PDUStruct, fields []parse.Field) []string {
-	var names []string
-	add := func(name string) {
-		for _, n := range names {
-			if n == name {
-				return
-			}
-		}
-		names = append(names, name)
-	}
-	add(fields[0].DispatchFieldName)
-	if pdu.DispatchIf != nil {
-		add(pdu.DispatchIf.Field)
-	}
-	for _, f := range fields {
-		if f.When != nil {
-			add(f.When.Field)
-		}
-	}
-	return names
-}
-
-func joinNames(names []string) string {
-	if len(names) == 1 {
-		return names[0]
-	}
-	return strings.Join(names[:len(names)-1], ", ") + " and " + names[len(names)-1]
-}
-
-func (e encoder) dispatch(g *Group, fields []parse.Field) {
-	bitStart := fields[0].BitStart
-	n := fields[0].BitEnd - bitStart + 1
-
-	g.Switch().BlockFunc(func(sw *Group) {
-		for _, field := range fields {
-			store := copyBits(dataBuf, bitStart, idOf("_pduBytes"), 0, n)
-			body := make([]Code, 0, 2+len(store))
-			body = append(body,
-				List(Id("_pduBytes"), Err()).Op(":=").Id("s").Dot(field.Name).Dot(encodeFnName).Call(),
-				If(Err().Op("!=").Nil()).Block(e.fail(Err())),
-			)
-			body = append(body, store...)
-			sw.Case(Id("s").Dot(field.Name).Op("!=").Nil()).Block(body...)
-		}
-		if fb := fallbackField(e.pdu); fb != nil {
-			sw.Default().BlockFunc(func(d *Group) {
-				e.raw(d, *fb)
-			})
-		}
-	})
 }
 
 func emitCRCEncode(g *Group, pdu parse.PDUStruct, outputSize int) {
@@ -1440,8 +1054,6 @@ func (e encoder) field(g *Group, field parse.Field) {
 			g.Id(raw).Op("=").Min(Id(raw), Lit(half-1))
 		}
 		addAll(g, writePacked(dataBuf, field.BitStart, field.BitWidth, Uint64().Call(Int64().Call(Id(raw))), "_val"+field.Name))
-
-	case parse.FieldDispatch:
 	}
 }
 
@@ -1535,7 +1147,7 @@ func isIntegerField(field parse.Field) bool {
 		return true
 	case parse.FieldDelegate:
 		return field.DelegateNoPtr && field.Stride == 0
-	case parse.FieldBool, parse.FieldRaw, parse.FieldPacked, parse.FieldLongitude, parse.FieldLatitude, parse.FieldDispatch:
+	case parse.FieldBool, parse.FieldRaw, parse.FieldPacked, parse.FieldLongitude, parse.FieldLatitude:
 	}
 	return false
 }

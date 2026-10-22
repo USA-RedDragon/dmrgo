@@ -3,6 +3,7 @@ package parse_test
 import (
 	"io/fs"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -127,45 +128,27 @@ type T struct {
 			want: "missing argument",
 		},
 		{
-			name: "when value not a number",
-			src: `type T struct {
-	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
-	K  uint8 ` + "`dmr:\"bits:8-15\"`" + `
-	A  *Sub  ` + "`dmr:\"bits:16-23,dispatch:Op=1,when:K==abc\"`" + `
-}`,
-			want: "must be true, false, or a decimal integer",
-		},
-		{
-			name: "when missing operator",
-			src: `type T struct {
-	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
-	A  *Sub  ` + "`dmr:\"bits:16-23,dispatch:Op=1,when:K\"`" + `
-}`,
-			want: "missing operator",
-		},
-		{
-			name: "when bool value on integer field",
-			src: `type T struct {
-	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
-	K  uint8 ` + "`dmr:\"bits:8-15\"`" + `
-	A  *Sub  ` + "`dmr:\"bits:16-23,dispatch:Op=1,when:K==true\"`" + `
-}`,
-			want: "does not match type",
-		},
-		{
-			name: "when on unknown field",
-			src: `type T struct {
-	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
-	A  *Sub  ` + "`dmr:\"bits:16-23,dispatch:Op=1,when:Nope==1\"`" + `
-}`,
-			want: "unknown field",
-		},
-		{
-			name: "when without dispatch",
+			name: "removed when: modifier",
 			src: `type T struct {
 	Op uint8 ` + "`dmr:\"bits:0-7,when:Op==1\"`" + `
 }`,
-			want: "when: requires dispatch",
+			want: "unrecognized modifier",
+		},
+		{
+			name: "removed dispatch: modifier",
+			src: `type T struct {
+	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
+	A  *Sub  ` + "`dmr:\"bits:8-15,dispatch:Op=1\"`" + `
+}`,
+			want: "unrecognized modifier",
+		},
+		{
+			name: "removed fallback flag",
+			src: `type T struct {
+	Op uint8   ` + "`dmr:\"bits:0-7\"`" + `
+	R  [1]byte ` + "`dmr:\"bits:8-15,raw,fallback\"`" + `
+}`,
+			want: "unrecognized modifier",
 		},
 		{
 			name: "reversed range",
@@ -231,48 +214,6 @@ type T struct {
 	A [3]Sub ` + "`dmr:\"bits:0-95,delegate,stride:x\"`" + `
 }`,
 			want: "invalid stride",
-		},
-		{
-			name: "dispatch ranges differ",
-			src: `type T struct {
-	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
-	A  *Sub  ` + "`dmr:\"bits:8-15,dispatch:Op=1\"`" + `
-	B  *Sub  ` + "`dmr:\"bits:8-23,dispatch:Op=2\"`" + `
-}`,
-			want: "differs from",
-		},
-		{
-			name: "dispatch switch fields differ",
-			src: `type T struct {
-	Op  uint8 ` + "`dmr:\"bits:0-3\"`" + `
-	Op2 uint8 ` + "`dmr:\"bits:4-7\"`" + `
-	A   *Sub  ` + "`dmr:\"bits:8-15,dispatch:Op=1\"`" + `
-	B   *Sub  ` + "`dmr:\"bits:8-15,dispatch:Op2=2\"`" + `
-}`,
-			want: "switches on",
-		},
-		{
-			name: "dispatch on unknown field",
-			src: `type T struct {
-	A *Sub ` + "`dmr:\"bits:8-15,dispatch:Op=1\"`" + `
-}`,
-			want: "unknown field",
-		},
-		{
-			name: "dispatch non-pointer",
-			src: `type T struct {
-	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
-	A  Sub   ` + "`dmr:\"bits:8-15,dispatch:Op=1\"`" + `
-}`,
-			want: "must be a pointer",
-		},
-		{
-			name: "dispatch missing value",
-			src: `type T struct {
-	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
-	A  *Sub  ` + "`dmr:\"bits:8-15,dispatch:Op=\"`" + `
-}`,
-			want: "dispatch modifier must be",
 		},
 		{
 			name: "crc range overlaps field",
@@ -550,6 +491,11 @@ func TestParseValidStruct(t *testing.T) {
 // dmr:crc crc_ccitt
 // dmr:crc_mask 0xA5A5
 // dmr:input_size 96
+// dmr:dispatch_if DataType==0
+// dmr:get Low uint8 bits:16-19,only:Op=3 the low bits of the payload
+// dmr:variant A Sub Op=1|2
+// dmr:variant B Sub Op=3 Low!=2 DataType==1
+// dmr:input DataType
 // T is a test PDU (ETSI TS 102 361-1 clause 1).
 type T struct {
 	FEC      fec.Result `+"`dmr:\"-\"`"+`
@@ -558,7 +504,7 @@ type T struct {
 	Op       Opcode `+"`dmr:\"bits:2-7\"`"+`
 	Split    uint8  `+"`dmr:\"bits:1+8-11\"`"+`
 	Rsvd     uint8  `+"`dmr:\"bits:12-15\"`"+`
-	A        *Sub   `+"`dmr:\"bits:16-79,dispatch:Op=1|2\"`"+`
+	Raw      [8]byte `+"`dmr:\"bits:16-79,raw,union\"`"+`
 }`)
 	if len(pdus) != 1 {
 		t.Fatalf("got %d structs, want 1", len(pdus))
@@ -581,9 +527,27 @@ type T struct {
 	if split.BitWidth != 5 || len(split.ExtraBitRanges) != 1 {
 		t.Errorf("Split = %+v", split)
 	}
-	a := p.FieldByName("A")
-	if a.Kind != parse.FieldDispatch || len(a.DispatchValues) != 2 {
-		t.Errorf("A = %+v", a)
+	if u := p.UnionField(); u == nil || u.Name != "Raw" || u.Kind != parse.FieldRaw {
+		t.Errorf("UnionField = %+v", u)
+	}
+	want := []parse.Variant{
+		{Name: "A", Type: "Sub", Conds: []parse.VariantCond{
+			{Field: "Op", Values: []string{"1", "2"}},
+			{Field: "DataType", Guard: &parse.Guard{Field: "DataType", Op: "==", Value: "0"}},
+		}},
+		{Name: "B", Type: "Sub", Conds: []parse.VariantCond{
+			{Field: "Op", Values: []string{"3"}},
+			{Field: "Low", Guard: &parse.Guard{Field: "Low", Op: "!=", Value: "2"}},
+			{Field: "DataType", Guard: &parse.Guard{Field: "DataType", Op: "==", Value: "1"}},
+		}},
+	}
+	if !reflect.DeepEqual(p.Variants, want) {
+		t.Errorf("Variants = %+v, want %+v", p.Variants, want)
+	}
+	low := p.GetterByName("Low")
+	if low == nil || !low.Getter || low.BitStart != 16 || low.BitEnd != 19 || low.OnlyField != "Op" ||
+		low.Doc != "the low bits of the payload" || p.FieldByName("Low") != nil {
+		t.Errorf("Low = %+v", low)
 	}
 	if !p.FieldByName("DataType").Skip {
 		t.Error("DataType should be skipped")
@@ -644,22 +608,23 @@ func TestParseAllowsIntentionalOverlap(t *testing.T) {
 	t.Parallel()
 
 	mustParse(t, `type T struct {
+	Low    uint8 `+"`dmr:\"bits:0-1\"`"+`
 	Format uint8 `+"`dmr:\"bits:4-7\"`"+`
 	Blocks uint8 `+"`dmr:\"bits:2-3+12-15,no_encode\"`"+`
 	Other  uint8 `+"`dmr:\"bits:2-3\"`"+`
-	A      *Sub  `+"`dmr:\"bits:0-79,dispatch:Format=1\"`"+`
-	B      *Sub  `+"`dmr:\"bits:0-79,dispatch:Format=2\"`"+`
+	Mid    uint8 `+"`dmr:\"bits:8-15\"`"+`
 }`)
 }
 
-func TestParseWhenOnSkipFieldRequiresInput(t *testing.T) {
+func TestParseVariantGuardOnSkipFieldRequiresInput(t *testing.T) {
 	t.Parallel()
 
-	body := `type T struct {
-	Mode bool  ` + "`dmr:\"-\"`" + `
-	Op   uint8 ` + "`dmr:\"bits:0-7\"`" + `
-	A    *Sub  ` + "`dmr:\"bits:8-15,dispatch:Op=1,when:Mode==true\"`" + `
-	B    *Sub  ` + "`dmr:\"bits:8-15,dispatch:Op=1,when:Mode==false\"`" + `
+	body := `// dmr:variant A Sub Op=1 Mode==true
+// dmr:variant B Sub Op=1 Mode==false
+type T struct {
+	Mode bool    ` + "`dmr:\"-\"`" + `
+	Op   uint8   ` + "`dmr:\"bits:0-7\"`" + `
+	Raw  [1]byte ` + "`dmr:\"bits:8-15,raw,union\"`" + `
 }`
 	_, err := parseSrc(t, body)
 	if err == nil || !strings.Contains(err.Error(), "not a dmr:input") {
@@ -719,106 +684,255 @@ type T struct {
 	}
 }
 
-func TestParseRejectsBadFallbackAndDispatchIf(t *testing.T) {
+func TestParseRejectsBadUnion(t *testing.T) {
 	t.Parallel()
 
+	const fields = `type T struct {
+	M  bool    ` + "`dmr:\"bit:0\"`" + `
+	Op uint8   ` + "`dmr:\"bits:1-7\"`" + `
+	R  [2]byte ` + "`dmr:\"bits:8-23,raw,union\"`" + `
+}`
 	tests := []struct {
 		name string
 		src  string
 		want string
 	}{
 		{
-			name: "fallback not raw",
+			name: "union not raw",
 			src: `type T struct {
 	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
-	R  uint8 ` + "`dmr:\"bits:8-15,fallback\"`" + `
+	R  uint8 ` + "`dmr:\"bits:8-15,union\"`" + `
 }`,
-			want: "fallback requires raw",
+			want: "union requires raw",
 		},
 		{
-			name: "fallback without dispatch",
-			src: `type T struct {
-	Op uint8      ` + "`dmr:\"bits:0-7\"`" + `
-	R  [1]byte ` + "`dmr:\"bits:8-15,raw,fallback\"`" + `
+			name: "union with no_encode",
+			src: `// dmr:variant A Sub Op=1
+type T struct {
+	Op uint8   ` + "`dmr:\"bits:0-7\"`" + `
+	R  [1]byte ` + "`dmr:\"bits:8-15,raw,union,no_encode\"`" + `
 }`,
-			want: "without dispatch fields",
+			want: "union and no_encode cannot be combined",
 		},
 		{
-			name: "fallback range differs",
-			src: `type T struct {
-	Op uint8      ` + "`dmr:\"bits:0-7\"`" + `
-	A  *Sub       ` + "`dmr:\"bits:8-15,dispatch:Op=1\"`" + `
-	R  [1]byte ` + "`dmr:\"bits:8-11,raw,fallback\"`" + `
+			name: "two unions",
+			src: `// dmr:variant A Sub Op=1
+type T struct {
+	Op uint8   ` + "`dmr:\"bits:0-7\"`" + `
+	R  [1]byte ` + "`dmr:\"bits:8-15,raw,union\"`" + `
+	S  [1]byte ` + "`dmr:\"bits:16-23,raw,union\"`" + `
 }`,
-			want: "differs from dispatch range",
+			want: "multiple union fields: R and S",
 		},
 		{
-			name: "two fallbacks",
-			src: `type T struct {
-	Op uint8      ` + "`dmr:\"bits:0-7\"`" + `
-	A  *Sub       ` + "`dmr:\"bits:8-15,dispatch:Op=1\"`" + `
-	R  [1]byte ` + "`dmr:\"bits:8-15,raw,fallback\"`" + `
-	S  [1]byte ` + "`dmr:\"bits:8-15,raw,fallback\"`" + `
-}`,
-			want: "multiple fallback fields",
+			name: "union without variant",
+			src:  fields,
+			want: "union field R without dmr:variant directives",
 		},
 		{
-			name: "dispatch_if without dispatch",
+			name: "variant without union",
+			src: `// dmr:variant A Sub Op=1
+type T struct {
+	Op uint8   ` + "`dmr:\"bits:0-7\"`" + `
+	R  [1]byte ` + "`dmr:\"bits:8-15,raw\"`" + `
+}`,
+			want: "need a union field",
+		},
+		{
+			name: "dispatch_if without union",
 			src: `// dmr:dispatch_if Op==0
 type T struct {
 	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
 }`,
-			want: "without dispatch fields",
+			want: "need a union field",
+		},
+		{
+			name: "getter without union",
+			src: `// dmr:get K uint8 bits:8-11 the kind
+type T struct {
+	Op uint8   ` + "`dmr:\"bits:0-7\"`" + `
+	R  [1]byte ` + "`dmr:\"bits:8-15,raw\"`" + `
+}`,
+			want: "need a union field",
+		},
+		{
+			name: "unknown condition field",
+			src:  "// dmr:variant A Sub Nope=1\n" + fields,
+			want: `variant A: unknown field "Nope"`,
+		},
+		{
+			name: "unknown guard field",
+			src:  "// dmr:variant A Sub Op=1 Nope==1\n" + fields,
+			want: `variant A: unknown field "Nope"`,
+		},
+		{
+			name: "duplicate variant",
+			src:  "// dmr:variant A Sub Op=1\n// dmr:variant A Sub Op=2\n" + fields,
+			want: "duplicate variant A",
+		},
+		{
+			name: "two conditions on one field",
+			src:  "// dmr:variant A Sub Op=1 Op!=2\n" + fields,
+			want: "variant A has two conditions on Op",
+		},
+		{
+			name: "condition on the union field",
+			src:  "// dmr:variant A Sub R=1\n" + fields,
+			want: `field "R" is the union field`,
+		},
+		{
+			name: "variant without condition",
+			src:  "// dmr:variant A Sub\n" + fields,
+			want: "want Name Type VariantCond",
+		},
+		{
+			name: "unexported variant name",
+			src:  "// dmr:variant a Sub Op=1\n" + fields,
+			want: "bad name",
+		},
+		{
+			name: "qualified variant type",
+			src:  "// dmr:variant A pkg.Sub Op=1\n" + fields,
+			want: "bad name",
+		},
+		{
+			name: "condition without value",
+			src:  "// dmr:variant A Sub Op\n" + fields,
+			want: "condition must be Field=Value[|Value], Field==N or Field!=N",
+		},
+		{
+			name: "condition with empty value",
+			src:  "// dmr:variant A Sub Op=1|\n" + fields,
+			want: "empty value",
+		},
+		{
+			name: "guard value not a number",
+			src:  "// dmr:variant A Sub Op==abc\n" + fields,
+			want: "must be true, false, or a decimal integer",
+		},
+		{
+			name: "bool guard on integer field",
+			src:  "// dmr:variant A Sub Op==true\n" + fields,
+			want: "value true does not match type uint8 of Op",
+		},
+		{
+			name: "integer guard on bool field",
+			src:  "// dmr:variant A Sub Op=1 M==1\n" + fields,
+			want: "value 1 does not match type bool of M",
+		},
+		{
+			name: "value list on bool field",
+			src:  "// dmr:variant A Sub M=true\n" + fields,
+			want: "bool field M needs M==true or M==false",
+		},
+		{
+			name: "dispatch_if missing operator",
+			src:  "// dmr:dispatch_if Op\n// dmr:variant A Sub Op=1\n" + fields,
+			want: "missing operator",
+		},
+		{
+			name: "dispatch_if bad value",
+			src:  "// dmr:dispatch_if Op==x\n// dmr:variant A Sub M==true\n" + fields,
+			want: "must be true, false, or a decimal integer",
+		},
+		{
+			name: "dispatch_if on unknown field",
+			src:  "// dmr:dispatch_if Nope==0\n// dmr:variant A Sub Op=1\n" + fields,
+			want: `variant A: unknown field "Nope"`,
 		},
 		{
 			name: "dispatch_if on unset field",
-			src: `// dmr:dispatch_if M==true
+			src: `// dmr:dispatch_if N==true
+// dmr:variant A Sub Op=1
 type T struct {
-	M  bool  ` + "`dmr:\"-\"`" + `
-	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
-	A  *Sub  ` + "`dmr:\"bits:8-15,dispatch:Op=1\"`" + `
+	N  bool    ` + "`dmr:\"-\"`" + `
+	Op uint8   ` + "`dmr:\"bits:0-7\"`" + `
+	R  [1]byte ` + "`dmr:\"bits:8-15,raw,union\"`" + `
 }`,
 			want: "not a dmr:input",
 		},
 		{
-			name: "dispatch_if bad value",
-			src: `// dmr:dispatch_if Op==x
-type T struct {
-	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
-	A  *Sub  ` + "`dmr:\"bits:8-15,dispatch:Op=1\"`" + `
-}`,
-			want: "must be true, false, or a decimal integer",
+			name: "getter outside the union",
+			src:  "// dmr:get K uint8 bits:4-11 the kind\n// dmr:variant A Sub Op=1\n" + fields,
+			want: "getter K bits 4-11 are outside union field R",
 		},
 		{
-			name: "only on bool",
-			src: `type T struct {
-	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
-	B  bool  ` + "`dmr:\"bit:8,only:Op=1\"`" + `
-}`,
-			want: "only: requires an integer field",
+			name: "getter extra range outside the union",
+			src:  "// dmr:get K uint8 bits:8-9+24-25 the kind\n// dmr:variant A Sub Op=1\n" + fields,
+			want: "getter K bits 24-25 are outside union field R",
 		},
 		{
-			name: "only without value",
-			src: `type T struct {
-	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
-	K  uint8 ` + "`dmr:\"bits:8-15,only:Op=\"`" + `
-}`,
+			name: "getter named like a field",
+			src:  "// dmr:get Op uint8 bits:8-11 the kind\n// dmr:variant A Sub Op=1\n" + fields,
+			want: "getter Op has the name of a field or getter",
+		},
+		{
+			name: "two getters with one name",
+			src:  "// dmr:get K uint8 bits:8-11 the kind\n// dmr:get K uint8 bits:12-15 the kind\n// dmr:variant A Sub Op=1\n" + fields,
+			want: "getter K has the name of a field or getter",
+		},
+		{
+			name: "getter without description",
+			src:  "// dmr:get K uint8 bits:8-11\n// dmr:variant A Sub Op=1\n" + fields,
+			want: "want Name Type Tag Description",
+		},
+		{
+			name: "signed getter type",
+			src:  "// dmr:get K int bits:8-11 the kind\n// dmr:variant A Sub Op=1\n" + fields,
+			want: "getter K must be a bool or an unsigned integer",
+		},
+		{
+			name: "raw getter",
+			src:  "// dmr:get K [1]byte bits:8-15,raw the kind\n// dmr:variant A Sub Op=1\n" + fields,
+			want: "getter K must be a bool or an unsigned integer",
+		},
+		{
+			name: "getter with bias",
+			src:  "// dmr:get K uint8 bits:8-15,bias:1 the kind\n// dmr:variant A Sub Op=1\n" + fields,
+			want: "getter K takes no signed, encoding or bias modifier",
+		},
+		{
+			name: "getter only: on unknown field",
+			src:  "// dmr:get K uint8 bits:8-11,only:Nope=1 the kind\n// dmr:variant A Sub Op=1\n" + fields,
+			want: `getter K only: unknown field "Nope"`,
+		},
+		{
+			name: "getter only: on later getter",
+			src:  "// dmr:get K uint8 bits:8-11,only:L=1 the kind\n// dmr:get L uint8 bits:12-15 the length\n// dmr:variant A Sub Op=1\n" + fields,
+			want: `getter K only: unknown field "L"`,
+		},
+		{
+			name: "getter only: on bool field",
+			src:  "// dmr:get K uint8 bits:8-11,only:M=1 the kind\n// dmr:variant A Sub Op=1\n" + fields,
+			want: "bool field M needs M==true or M==false",
+		},
+		{
+			name: "getter only: without value",
+			src:  "// dmr:get K uint8 bits:8-11,only:Op= the kind\n// dmr:variant A Sub Op=1\n" + fields,
 			want: "only modifier must be",
 		},
 		{
-			name: "only on unknown field",
-			src: `type T struct {
-	K uint8 ` + "`dmr:\"bits:8-15,only:Op=1\"`" + `
-}`,
-			want: "unknown field",
+			name: "bool getter with only:",
+			src:  "// dmr:get K bool bit:8,only:Op=1 the flag\n// dmr:variant A Sub Op=1\n" + fields,
+			want: "only: requires an integer field",
 		},
 		{
-			name: "only on later field",
+			name: "only: on a plain field",
 			src: `type T struct {
-	K  uint8 ` + "`dmr:\"bits:8-15,only:Op=1\"`" + `
 	Op uint8 ` + "`dmr:\"bits:0-7\"`" + `
+	K  uint8 ` + "`dmr:\"bits:8-15,only:Op=1\"`" + `
 }`,
-			want: "must come before it",
+			want: "field K: only: is valid only on dmr:get",
+		},
+		{
+			name: "variant in a frame",
+			src: `// dmr:frame 2
+// dmr:variant A Sub Op=1
+type T struct {
+	Op uint8   ` + "`dmr:\"bits:0-7\"`" + `
+	R  [1]byte ` + "`dmr:\"bits:8-15,raw,union\"`" + `
+}`,
+			want: "dmr:frame and dmr:view cannot have",
 		},
 	}
 	for _, tt := range tests {
@@ -883,5 +997,97 @@ func TestParseIgnoresUntaggedStructs(t *testing.T) {
 }`)
 	if len(pdus) != 0 {
 		t.Errorf("got %d structs, want 0", len(pdus))
+	}
+}
+
+func TestSetUnexportedDecode(t *testing.T) {
+	t.Parallel()
+
+	const top = `// dmr:variant A Sub Op=1
+type T struct {
+	Op uint8   ` + "`dmr:\"bits:0-7\"`" + `
+	R  [2]byte ` + "`dmr:\"bits:8-23,raw,union\"`" + `
+}
+`
+	tests := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "unknown variant type",
+			src:  top,
+			want: "struct T variant A: type Sub is not a PDU struct of the package",
+		},
+		{
+			name: "variant type of another size",
+			src: top + `type Sub struct {
+	X uint8 ` + "`dmr:\"bits:0-7\"`" + `
+}`,
+			want: "struct T variant A: type Sub has 8 bits, union field R has 16",
+		},
+		{
+			name: "variant type with a CRC",
+			src: top + `// dmr:crc crc_8
+// dmr:input_size 16
+type Sub struct {
+	FEC fec.Result ` + "`dmr:\"-\"`" + `
+	X   uint8      ` + "`dmr:\"bits:0-7\"`" + `
+}`,
+			want: "struct T variant A: type Sub must be a plain PDU struct",
+		},
+		{
+			name: "variant type with an input",
+			src: top + `// dmr:input M
+type Sub struct {
+	M bool   ` + "`dmr:\"-\"`" + `
+	X uint16 ` + "`dmr:\"bits:0-15\"`" + `
+}`,
+			want: "struct T variant A: type Sub must be a plain PDU struct",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			pdus := mustParse(t, tt.src)
+			err := parse.SetUnexportedDecode(pdus)
+			if err == nil || err.Error() != tt.want {
+				t.Fatalf("got error %v, want %q", err, tt.want)
+			}
+		})
+	}
+}
+
+func TestSetUnexportedDecodeMarksVariantTypes(t *testing.T) {
+	t.Parallel()
+
+	pdus := mustParse(t, `// dmr:variant A Sub Op=1
+// dmr:variant B Sub Op=2
+type T struct {
+	Op uint8   `+"`dmr:\"bits:0-7\"`"+`
+	R  [2]byte `+"`dmr:\"bits:8-23,raw,union\"`"+`
+}
+
+type Sub struct {
+	X uint16 `+"`dmr:\"bits:0-15\"`"+`
+}
+
+type Other struct {
+	Y uint8 `+"`dmr:\"bits:0-7\"`"+`
+}`)
+	if err := parse.SetUnexportedDecode(pdus); err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range pdus {
+		if !p.UnexportedDecode["Sub"] || p.UnexportedDecode["Other"] || p.UnexportedDecode["T"] {
+			t.Errorf("%s: UnexportedDecode = %v, want only Sub", p.Name, p.UnexportedDecode)
+		}
+	}
+	if got := pdus[0].DecodeFuncName("Sub"); got != "decodeSub" {
+		t.Errorf("DecodeFuncName(Sub) = %q", got)
+	}
+	if got := pdus[0].DecodeFuncName("Other"); got != "DecodeOther" {
+		t.Errorf("DecodeFuncName(Other) = %q", got)
 	}
 }

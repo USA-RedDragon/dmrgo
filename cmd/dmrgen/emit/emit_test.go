@@ -109,52 +109,6 @@ type T struct {
 	}
 }
 
-func TestSharedDispatchValueWithoutGuardIsRejected(t *testing.T) {
-	t.Parallel()
-
-	_, err := generate(t, `type Sub struct {
-	X uint8 `+"`dmr:\"bits:0-7\"`"+`
-}
-type T struct {
-	Op uint8 `+"`dmr:\"bits:0-7\"`"+`
-	A  *Sub  `+"`dmr:\"bits:8-15,dispatch:Op=1\"`"+`
-	B  *Sub  `+"`dmr:\"bits:8-15,dispatch:Op=1\"`"+`
-}`)
-	if err == nil || !strings.Contains(err.Error(), "neither has a when: guard") {
-		t.Fatalf("expected guard error, got %v", err)
-	}
-}
-
-func TestGuardedDispatch(t *testing.T) {
-	t.Parallel()
-
-	out := mustGenerate(t, `type Sub struct {
-	X uint8 `+"`dmr:\"bits:0-7\"`"+`
-}
-type T struct {
-	Op uint8 `+"`dmr:\"bits:0-7\"`"+`
-	K  uint8 `+"`dmr:\"bits:8-15\"`"+`
-	A  *Sub  `+"`dmr:\"bits:16-23,dispatch:Op=1,when:K==0\"`"+`
-	B  *Sub  `+"`dmr:\"bits:16-23,dispatch:Op=1\"`"+`
-}`)
-	assertContains(t, out, "if result.K == 0 {", "} else {")
-}
-
-func TestOnlyFieldIsDecodedForItsValues(t *testing.T) {
-	t.Parallel()
-
-	out := mustGenerate(t, `const (
-	OpA uint8 = 1
-	OpB uint8 = 2
-)
-type T struct {
-	Op uint8 `+"`dmr:\"bits:0-7\"`"+`
-	K  uint8 `+"`dmr:\"bits:8-11+14-15,no_encode,only:Op=OpA|OpB\"`"+`
-	L  uint8 `+"`dmr:\"bits:12-13\"`"+`
-}`)
-	assertContains(t, out, "if result.Op == OpA || result.Op == OpB {\n\t\tvar _tmpK uint64")
-}
-
 func TestSignedFieldIsSignExtended(t *testing.T) {
 	t.Parallel()
 
@@ -223,83 +177,6 @@ type T struct {
 	)
 }
 
-func TestDispatchIfAndFallback(t *testing.T) {
-	t.Parallel()
-
-	out := mustGenerate(t, `type Sub struct {
-	X uint8 `+"`dmr:\"bits:0-7\"`"+`
-}
-
-// dmr:dispatch_if FID==0
-type T struct {
-	Op  uint8       `+"`dmr:\"bits:0-7\"`"+`
-	FID uint8       `+"`dmr:\"bits:8-15\"`"+`
-	A   *Sub        `+"`dmr:\"bits:16-23,dispatch:Op=1\"`"+`
-	Raw [1]byte     `+"`dmr:\"bits:16-23,raw,fallback\"`"+`
-}`)
-	assertContains(t, out,
-		"if result.FID == 0 {",
-		"\tdefault:\n\t\t\tresult.Raw[0] = data[2]",
-		"} else {\n\t\tresult.Raw[0] = data[2]",
-		"\tdefault:\n\t\tdata[2] = s.Raw[0]",
-		`_ret += "Raw: " + text.Hex(s.Raw[:])`,
-	)
-	if strings.Count(out, "data[2] = s.Raw[0]") != 1 {
-		t.Error("fallback should only be encoded in the dispatch default branch")
-	}
-}
-
-func TestEncodeChecksDispatchField(t *testing.T) {
-	t.Parallel()
-
-	out := mustGenerate(t, `type Sub struct {
-	X uint8 `+"`dmr:\"bits:0-7\"`"+`
-}
-
-// dmr:input Mode
-// dmr:dispatch_if FID==0
-type T struct {
-	Mode bool       `+"`dmr:\"-\"`"+`
-	Op   uint8      `+"`dmr:\"bits:0-7\"`"+`
-	FID  uint8      `+"`dmr:\"bits:8-15\"`"+`
-	A    *Sub       `+"`dmr:\"bits:16-23,dispatch:Op=1,when:Mode==true\"`"+`
-	B    *Sub       `+"`dmr:\"bits:16-23,dispatch:Op=2\"`"+`
-	Raw  [1]byte    `+"`dmr:\"bits:16-23,raw,fallback\"`"+`
-}`)
-	assertContains(t, out,
-		"if s.A != nil {\n\t\t_payload = \"A\"\n\t}",
-		"if s.B != nil {\n\t\tif _payload != \"\" {",
-		`return [3]byte{}, errTPayloads`,
-		`errTPayloads = errors.New("T: more than one payload field is set")`,
-		"\tif _payload != \"\" {\n\t\tvar result T\n\t\tresult.Op = uint8(uint64(data[0]))\n\t\tresult.FID = uint8(uint64(data[1]))\n\t\tresult.Mode = s.Mode\n\t\t_want := \"Raw\"",
-		"\t\t\t\tif result.Mode {\n\t\t\t\t\t_want = \"A\"\n\t\t\t\t}",
-		"\t\t\tcase 2:\n\t\t\t\t_want = \"B\"",
-		`return [3]byte{}, errTPayload`,
-		`errTPayload  = errors.New("T: the payload field that is set is not the one that Op, FID and Mode select")`,
-	)
-	if strings.Contains(out, "[...]struct") {
-		t.Error("the payload check builds an array, which is a large local on 32-bit targets")
-	}
-}
-
-func TestGuardedDispatchFallsBackToRaw(t *testing.T) {
-	t.Parallel()
-
-	out := mustGenerate(t, `type Sub struct {
-	X uint8 `+"`dmr:\"bits:0-7\"`"+`
-}
-
-// dmr:input Mode
-type T struct {
-	Mode bool       `+"`dmr:\"-\"`"+`
-	Op   uint8      `+"`dmr:\"bits:0-7\"`"+`
-	K    uint8      `+"`dmr:\"bits:8-15\"`"+`
-	A    *Sub       `+"`dmr:\"bits:16-23,dispatch:Op=1,when:K==2\"`"+`
-	Raw  [1]byte    `+"`dmr:\"bits:16-23,raw,fallback\"`"+`
-}`)
-	assertContains(t, out, "if result.K == 2 {", "} else {\n\t\t\tresult.Raw[0] = data[2]")
-}
-
 func TestEncodeReportsOutOfRangeValues(t *testing.T) {
 	t.Parallel()
 
@@ -351,29 +228,6 @@ type T struct {
 	)
 }
 
-func TestInputsBecomeDecodeParameters(t *testing.T) {
-	t.Parallel()
-
-	out := mustGenerate(t, `type Sub struct {
-	X uint8 `+"`dmr:\"bits:0-7\"`"+`
-}
-
-// dmr:input Mode
-type T struct {
-	Mode bool  `+"`dmr:\"-\"`"+`
-	Op   uint8 `+"`dmr:\"bits:0-7\"`"+`
-	A    *Sub  `+"`dmr:\"bits:8-15,dispatch:Op=1,when:Mode==false\"`"+`
-	B    *Sub  `+"`dmr:\"bits:8-15,dispatch:Op=1,when:Mode==true\"`"+`
-}`)
-	assertContains(t, out,
-		"func DecodeT(data [2]byte, mode bool) T {",
-		"_decoded := DecodeSub(_dispatchBytes)",
-		"result.Mode = mode",
-		"if !result.Mode {",
-		"} else if result.Mode {",
-	)
-}
-
 func TestDecodeReportsFECInTheFECField(t *testing.T) {
 	t.Parallel()
 
@@ -421,36 +275,6 @@ func TestRawFieldIsPackedMSBFirstWithZeroPadding(t *testing.T) {
 	)
 }
 
-func TestSubPDUDecodeIsUnexported(t *testing.T) {
-	t.Parallel()
-
-	pdus, err := parse.Source("test.go", header+`type Kind uint8
-func (o Kind) String() string { return "" }
-type Sub struct {
-	A uint8 `+"`dmr:\"bits:0-7\"`"+`
-}
-//dmr:subpdu
-type Marked struct {
-	B uint8 `+"`dmr:\"bits:0-7\"`"+`
-}
-type Top struct {
-	Op  Kind `+"`dmr:\"bits:0-7,enum\"`"+`
-	Sub *Sub `+"`dmr:\"bits:8-15,dispatch:Op=1\"`"+`
-}`)
-	if err != nil {
-		t.Fatalf("parse: %v", err)
-	}
-	parse.SetUnexportedDecode(pdus)
-	out, err := render(t, pdus)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assertContains(t, out, "func decodeSub(", "func decodeMarked(", "func DecodeTop(", "= decodeSub(")
-	if strings.Contains(out, "func DecodeSub(") || strings.Contains(out, "func DecodeMarked(") {
-		t.Errorf("sub-PDU Decode is exported\n%s", out)
-	}
-}
-
 func TestGeneratedHeaderAndDocs(t *testing.T) {
 	t.Parallel()
 
@@ -472,71 +296,6 @@ type EmbeddedSignalling struct {
 		"// Encode encodes an EmbeddedSignalling. It returns",
 		"// (ETSI TS 102 361-1 clause 9.1.2)\nfunc (s *EmbeddedSignalling) Encode(",
 		"// ETSI TS 102 361-1 clause 9.1.2\n",
-	)
-}
-
-func TestDecodeIntoUsesPayloadStorage(t *testing.T) {
-	t.Parallel()
-
-	out := mustGenerate(t, `type Sub struct {
-	X uint8 `+"`dmr:\"bits:0-7\"`"+`
-}
-type BSPDU struct {
-	Y uint8 `+"`dmr:\"bits:0-7\"`"+`
-}
-
-// dmr:input Mode
-type T struct {
-	Mode bool   `+"`dmr:\"-\"`"+`
-	Op   uint8  `+"`dmr:\"bits:0-7\"`"+`
-	A    *Sub   `+"`dmr:\"bits:8-15,dispatch:Op=1,when:Mode==false\"`"+`
-	B    *Sub   `+"`dmr:\"bits:8-15,dispatch:Op=1,when:Mode==true\"`"+`
-	C    *BSPDU `+"`dmr:\"bits:8-15,dispatch:Op=2\"`"+`
-}`)
-	assertContains(t, out,
-		"// TPayloads holds one payload struct of each type that\n// a T dispatch field points to, for DecodeTInto.\n// The zero value is ready to use.\ntype TPayloads struct {\n\tsub   Sub\n\tbspdu BSPDU\n}",
-		"func DecodeTInto(dst *T, p *TPayloads, data [2]byte, mode bool) {\n\tif dst == nil || p == nil {\n\t\treturn\n\t}\n\t*dst = T{}\n\tresult := dst\n\tresult.Mode = mode\n",
-		"p.sub = DecodeSub(_dispatchBytes)\n\t\t\tresult.A = &p.sub",
-		"p.sub = DecodeSub(_dispatchBytes)\n\t\t\tresult.B = &p.sub",
-		"p.bspdu = DecodeBSPDU(_dispatchBytes)\n\t\tresult.C = &p.bspdu",
-		"func DecodeT(data [2]byte, mode bool) T {",
-		"_decoded := DecodeSub(_dispatchBytes)\n\t\t\tresult.A = &_decoded",
-	)
-	_, into, _ := strings.Cut(out, "func DecodeTInto(")
-	into, _, _ = strings.Cut(into, "\n}\n")
-	if strings.Count(into, "return") != 1 || strings.Contains(into, "_decoded") {
-		t.Errorf("DecodeTInto returns or allocates a payload:\n%s", into)
-	}
-}
-
-func TestNoPayloadsWithoutDispatch(t *testing.T) {
-	t.Parallel()
-
-	out := mustGenerate(t, `type T struct {
-	A uint8 `+"`dmr:\"bits:0-7\"`"+`
-}`)
-	if strings.Contains(out, "Payloads") || strings.Contains(out, "Into(") {
-		t.Errorf("PDU without dispatch fields has an Into decoder:\n%s", out)
-	}
-}
-
-func TestInputNamedLikeIntoParameterIsRenamed(t *testing.T) {
-	t.Parallel()
-
-	out := mustGenerate(t, `type Sub struct {
-	X uint8 `+"`dmr:\"bits:0-7\"`"+`
-}
-
-// dmr:input P
-type T struct {
-	P  bool  `+"`dmr:\"-\"`"+`
-	Op uint8 `+"`dmr:\"bits:0-7\"`"+`
-	A  *Sub  `+"`dmr:\"bits:8-15,dispatch:Op=1\"`"+`
-}`)
-	assertContains(t, out,
-		"func DecodeT(data [2]byte, _p bool) T {",
-		"func DecodeTInto(dst *T, p *TPayloads, data [2]byte, _p bool) {",
-		"result.P = _p",
 	)
 }
 
