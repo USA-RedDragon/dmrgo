@@ -37,12 +37,12 @@ func loadBursts(path string) ([]layer2.RawBurst, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(data)%33 != 0 {
+	if len(data)%layer2.RawBurstSize != 0 {
 		return nil, fmt.Errorf("%s: %d bytes is not a whole number of bursts", path, len(data))
 	}
-	bursts := make([]layer2.RawBurst, 0, len(data)/33)
-	for i := 0; i < len(data); i += 33 {
-		bursts = append(bursts, [33]byte(data[i:i+33]))
+	bursts := make([]layer2.RawBurst, 0, len(data)/layer2.RawBurstSize)
+	for i := 0; i < len(data); i += layer2.RawBurstSize {
+		bursts = append(bursts, layer2.RawBurst(data[i:]))
 	}
 	return bursts, nil
 }
@@ -152,12 +152,12 @@ func regenerate(lc pdu.FullLinkControl, frames []vocoder.AMBEFrame) ([]layer2.Ra
 func checkRegenerated(bursts []layer2.RawBurst, captured []layer2.RawBurst, frames []vocoder.AMBEFrame) (clean, framesOK bool, identical int) {
 	clean, framesOK = true, true
 	var got []vocoder.AMBEFrame
+	b := layer2.NewBurst()
 	for i, p := range bursts {
 		if i < len(captured) && p == captured[i] {
 			identical++
 		}
-		b, err := layer2.NewBurstFromBytes(p)
-		if err != nil || b.FEC.Aggregate().HasErrors() {
+		if err := b.DecodeFromBytes(p); err != nil || b.FEC.Aggregate().HasErrors() {
 			clean = false
 		}
 		if b.Kind == layer2.KindVoice {
@@ -179,8 +179,8 @@ func checkRegenerated(bursts []layer2.RawBurst, captured []layer2.RawBurst, fram
 	return clean, framesOK, identical
 }
 
-func rewriteTarget(header [33]byte, target uint32) (before, after, sameAsCodeword bool, decoded uint32, err error) {
-	p, _ := layer2.RawBurst(header).BPTCPayload()
+func rewriteTarget(header layer2.RawBurst, target uint32) (before, after, sameAsCodeword bool, decoded uint32, err error) {
+	p, _ := header.BPTCPayload()
 	lc := pdu.LCBytes(p[:9])
 	_, source, _ := lc.Addresses()
 	if err = lc.SetAddresses(target, source); err != nil {

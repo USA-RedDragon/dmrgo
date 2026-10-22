@@ -60,19 +60,19 @@ func capture(w io.Writer, path string) error {
 	if err != nil {
 		return err
 	}
-	if len(raw)%33 != 0 {
-		return fmt.Errorf("length %d is not a multiple of 33", len(raw))
+	if len(raw)%layer2.RawBurstSize != 0 {
+		return fmt.Errorf("length %d is not a multiple of %d", len(raw), layer2.RawBurstSize)
 	}
 	a := packet.NewAssembler(127)
 	n := 0
-	for off := 0; off < len(raw); off += 33 {
-		b, err := layer2.NewBurstFromBytes([33]byte(raw[off:]))
-		if err != nil {
-			return fmt.Errorf("burst %d: %w", off/33, err)
+	b := layer2.NewBurst()
+	for off := 0; off < len(raw); off += layer2.RawBurstSize {
+		if err := b.DecodeFromBytes(layer2.RawBurst(raw[off:])); err != nil {
+			return fmt.Errorf("burst %d: %w", off/layer2.RawBurstSize, err)
 		}
 		m, done, err := a.AddBurst(b)
 		if err != nil {
-			return fmt.Errorf("burst %d: %w", off/33, err)
+			return fmt.Errorf("burst %d: %w", off/layer2.RawBurstSize, err)
 		}
 		if !done {
 			continue

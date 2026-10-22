@@ -18,8 +18,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder/codec2"
 )
 
-const burstSize = 33
-
 type call struct {
 	lc     *pdu.FullLinkControl
 	cc     enums.ColorCode
@@ -35,12 +33,12 @@ func readBursts(path string) ([]layer2.RawBurst, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(data)%burstSize != 0 {
-		return nil, fmt.Errorf("%s: %d bytes is not a multiple of %d", path, len(data), burstSize)
+	if len(data)%layer2.RawBurstSize != 0 {
+		return nil, fmt.Errorf("%s: %d bytes is not a multiple of %d", path, len(data), layer2.RawBurstSize)
 	}
-	bursts := make([]layer2.RawBurst, len(data)/burstSize)
+	bursts := make([]layer2.RawBurst, len(data)/layer2.RawBurstSize)
 	for i := range bursts {
-		copy(bursts[i][:], data[i*burstSize:])
+		copy(bursts[i][:], data[i*layer2.RawBurstSize:])
 	}
 	return bursts, nil
 }
@@ -48,9 +46,9 @@ func readBursts(path string) ([]layer2.RawBurst, error) {
 func receive(bursts []layer2.RawBurst) (call, error) {
 	var c call
 	var rx layer2.VoiceReceiver
+	b := layer2.NewBurst()
 	for i, raw := range bursts {
-		b, err := layer2.NewBurstFromBytes(raw)
-		if err != nil {
+		if err := b.DecodeFromBytes(raw); err != nil {
 			return c, fmt.Errorf("burst %d: %w", i, err)
 		}
 		_, ok, err := rx.Receive(b)
@@ -63,7 +61,8 @@ func receive(bursts []layer2.RawBurst) (call, error) {
 		switch b.Kind {
 		case layer2.KindData:
 			if lc, isLC := b.Data.(*pdu.FullLinkControl); isLC && b.SlotType.DataType == enums.DataTypeVoiceLCHeader {
-				c.lc, c.cc = lc, b.SlotType.ColorCode
+				l := *lc
+				c.lc, c.cc = &l, b.SlotType.ColorCode
 			}
 		case layer2.KindVoice:
 			if s, _, found := layer2.SyncSourceOf(b.SyncPattern); found {

@@ -12,12 +12,16 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
+// RawBurstSize is the length of a RawBurst in octets: the 264 bits of a
+// burst.
+const RawBurstSize = 33
+
 // RawBurst is a 33-octet burst in transmit bit order, the form
 // NewBurstFromBytes takes. Its methods read or write one field and leave
 // every other bit as it is; they do not classify the burst. The getters have
 // value receivers and the setters have pointer receivers.
 // (ETSI TS 102 361-1 Annex E)
-type RawBurst [33]byte
+type RawBurst [RawBurstSize]byte
 
 func (r *RawBurst) field(first, a, second, b int) uint64 {
 	return bits.Field(r[:], first, a)<<b | bits.Field(r[:], second, b)

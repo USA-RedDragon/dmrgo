@@ -46,12 +46,12 @@ func loadBursts(path string) ([]layer2.RawBurst, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(raw)%33 != 0 {
+	if len(raw)%layer2.RawBurstSize != 0 {
 		return nil, fmt.Errorf("%s: %d bytes is not a whole number of bursts", path, len(raw))
 	}
-	out := make([]layer2.RawBurst, 0, len(raw)/33)
-	for i := 0; i < len(raw); i += 33 {
-		out = append(out, [33]byte(raw[i:i+33]))
+	out := make([]layer2.RawBurst, 0, len(raw)/layer2.RawBurstSize)
+	for i := 0; i < len(raw); i += layer2.RawBurstSize {
+		out = append(out, layer2.RawBurst(raw[i:]))
 	}
 	return out, nil
 }
@@ -260,12 +260,11 @@ func bridgeSMS(w io.Writer, path string) error {
 	return nil
 }
 
-func checkSMSBurst(b *layer2.Burst, p [33]byte) error {
+func checkSMSBurst(b *layer2.Burst, p layer2.RawBurst) error {
 	if err := b.DecodeFromBytes(p); err != nil {
 		return err
 	}
-	raw := layer2.RawBurst(p)
-	payload, _ := raw.BPTCPayload()
+	payload, _ := p.BPTCPayload()
 	if b.FEC.PDU.HasErrors() || !layer2.MMDVMHostAccepts(b.SlotType.DataType, payload) {
 		return fmt.Errorf("rewritten %s does not check", b.SlotType.DataType)
 	}

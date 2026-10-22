@@ -6617,6 +6617,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_LAYER2_PLACEMENT_IN_ORDER ((dmrgo_layer2_placement_t)0)
 /* Go: layer2.PlacementLate. PlacementLate is a burst whose sequence number is at most 32 behind the last one. */
 #define DMRGO_LAYER2_PLACEMENT_LATE ((dmrgo_layer2_placement_t)2)
+/* Go: layer2.RawBurstSize. RawBurstSize is the length of a RawBurst in octets: the 264 bits of a burst. */
+#define DMRGO_LAYER2_RAW_BURST_SIZE 33
 /* Go: layer2.SyncSourceBS. SyncSourceBS is a BS-sourced (outbound) transmission. */
 #define DMRGO_LAYER2_SYNC_SOURCE_BS ((dmrgo_layer2_sync_source_t)0)
 /* Go: layer2.SyncSourceDirectTS1. SyncSourceDirectTS1 is a direct mode transmission on TDMA time slot 1. */
