@@ -908,7 +908,8 @@ func (t *Transmitter) finish(out []Output, reason EndReason) []Output {
 // later ones are silence, or the last slot for a FID other than
 // enums.FIDStandardized and enums.FIDMotorola, as MMDVMHost
 // CDMRSlot::insertSilence does. A burst that the queue ran out of is not
-// filled again when Lost reports it. For a FID of enums.FIDStandardized or
+// filled again when Lost reports it, and fills stop short of the room
+// that the burst after them needs. For a FID of enums.FIDStandardized or
 // enums.FIDMotorola, each AMBE+2 vocoder slot is decoded and encoded
 // again, so that the bit errors that the Golay codes correct are not
 // passed on, as MMDVMHost CAMBEFEC::regenerateDMR does; a slot with
@@ -1020,7 +1021,7 @@ func (t *Transmitter) relayVoice(e *Event) {
 		t.underruns = 0
 	}
 	for i := range fills {
-		if t.Room() < layer2.VoiceSlotsPerBurst {
+		if t.Room() < 2*layer2.VoiceSlotsPerBurst {
 			break
 		}
 		for range layer2.VoiceSlotsPerBurst {
