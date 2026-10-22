@@ -31,8 +31,8 @@ type FollowerConfig struct {
 	// Plan, when set, is the channel plan to start from. The Follower
 	// copies it and adds the channels that CG_AP and Chan_Freq announce.
 	Plan *ChannelPlan
-	// Talkgroups holds the first TalkgroupsLen talkgroups to follow.
-	// TalkgroupsLen 0 follows every talkgroup.
+	// Talkgroups holds the first TalkgroupsLen 24-bit talkgroups to
+	// follow. TalkgroupsLen 0 follows every talkgroup.
 	Talkgroups [MaxTalkgroups]uint32
 	// TalkgroupsLen is the number of entries of Talkgroups in use.
 	TalkgroupsLen int
@@ -60,7 +60,7 @@ type FollowerConfig struct {
 	Hangtime time.Duration
 	// SysErrors is NSYSerr, the number of C_SYScodes from another system
 	// after which the Follower leaves the TSCC. 0 means
-	// constants.NSysErrDefault.
+	// constants.NSysErrDefault; a negative value is an error.
 	SysErrors int
 	// AcceptRAS takes a CSBK whose CRC fails as valid when its BPTC needed
 	// no correction and its BPTC reserved bit R(2) flags RAS. The CRC of a
@@ -114,8 +114,9 @@ type Follower struct {
 
 // NewFollower returns a Follower for cfg. A nil cfg means the zero
 // FollowerConfig. It returns a *dmrgo.ConfigError for a HuntLen or
-// TalkgroupsLen out of range, a hunt list channel that names no channel, or
-// a SysCode whose fields do not fit. It allocates the Follower, and its
+// TalkgroupsLen out of range, a hunt list channel that names no channel, a
+// talkgroup over 24 bits, a negative SysErrors, or a SysCode whose fields
+// do not fit. It allocates the Follower, and its
 // Burst unless cfg.Scratch is set.
 func NewFollower(cfg *FollowerConfig) (*Follower, error) {
 	f := &Follower{}
@@ -134,6 +135,14 @@ func (f *Follower) init(cfg *FollowerConfig) error {
 	}
 	if cfg.TalkgroupsLen < 0 || cfg.TalkgroupsLen > MaxTalkgroups {
 		return errTalkgroups
+	}
+	for i := range cfg.TalkgroupsLen {
+		if cfg.Talkgroups[i] > 0xFFFFFF {
+			return errTalkgroups
+		}
+	}
+	if cfg.SysErrors < 0 {
+		return errSysErrors
 	}
 	f.talk, f.talkLen, f.indiv, f.data, f.noFollow = cfg.Talkgroups, cfg.TalkgroupsLen, cfg.Individual, cfg.Data, cfg.NoFollow
 	f.noSignal, f.inactive, f.hangtime, f.sysErrMax = cfg.NoSignal, cfg.Inactive, cfg.Hangtime, cfg.SysErrors
@@ -163,7 +172,7 @@ func (f *Follower) init(cfg *FollowerConfig) error {
 	if f.hangtime == 0 {
 		f.hangtime = constants.TVHangtimeDefault
 	}
-	if f.sysErrMax <= 0 {
+	if f.sysErrMax == 0 {
 		f.sysErrMax = constants.NSysErrDefault
 	}
 	if f.ctl.b == nil {

@@ -5038,7 +5038,7 @@ struct dmrgo_trunk_follower_config_t {
 	int64_t hunt_len;
 	/* Plan, when set, is the channel plan to start from. The Follower copies it and adds the channels that CG_AP and Chan_Freq announce. */
 	dmrgo_trunk_channel_plan_t *plan;
-	/* Talkgroups holds the first TalkgroupsLen talkgroups to follow. TalkgroupsLen 0 follows every talkgroup. */
+	/* Talkgroups holds the first TalkgroupsLen 24-bit talkgroups to follow. TalkgroupsLen 0 follows every talkgroup. */
 	uint32_t talkgroups[32];
 	/* TalkgroupsLen is the number of entries of Talkgroups in use. */
 	int64_t talkgroups_len;
@@ -5054,7 +5054,7 @@ struct dmrgo_trunk_follower_config_t {
 	dmrgo_duration_t inactive;
 	/* Hangtime is the time after a Terminator with LC in which the Follower waits on the payload channel for more voice. 0 means constants.TVHangtimeDefault, and a negative value turns the timer off. */
 	dmrgo_duration_t hangtime;
-	/* SysErrors is NSYSerr, the number of C_SYScodes from another system after which the Follower leaves the TSCC. 0 means constants.NSysErrDefault. */
+	/* SysErrors is NSYSerr, the number of C_SYScodes from another system after which the Follower leaves the TSCC. 0 means constants.NSysErrDefault; a negative value is an error. */
 	int64_t sys_errors;
 	/* AcceptRAS takes a CSBK whose CRC fails as valid when its BPTC needed no correction and its BPTC reserved bit R(2) flags RAS. The CRC of a Motorola Capacity Max system with RAS is a MAC with the key of the system, which the Follower cannot check. */
 	bool accept_ras;
@@ -5074,7 +5074,7 @@ struct dmrgo_trunk_hunt_entry_t {
 struct dmrgo_trunk_ms_config_t {
 	/* Address is the 24-bit individual address of the MS, 1 to 0xFFFCDF. */
 	uint32_t address;
-	/* Talkgroups holds the first TalkgroupsLen talkgroups whose calls the MS follows and whose radio checks it answers. Its own calls and the individual calls to it are always followed. */
+	/* Talkgroups holds the first TalkgroupsLen 24-bit talkgroups whose calls the MS follows and whose radio checks it answers. Its own calls and the individual calls to it are always followed. */
 	uint32_t talkgroups[32];
 	/* TalkgroupsLen is the number of entries of Talkgroups in use. */
 	int64_t talkgroups_len;
@@ -5150,9 +5150,9 @@ struct dmrgo_trunk_tscc_config_t {
 	dmrgo_pdu_sys_code_t sys_code;
 	/* ColorCode is the color code of the TSCC and its payload channels. */
 	dmrgo_enums_color_code_t color_code;
-	/* Channel is the channel number of the TSCC, for the outputs of its carrier. */
+	/* Channel is the channel number of the TSCC, for the outputs of its carrier: 1 to 0xFFE. */
 	uint16_t channel;
-	/* Payload holds the first PayloadLen channel numbers of the payload channels. Each has two slots for calls. */
+	/* Payload holds the first PayloadLen channel numbers of the payload channels, each 1 to 0xFFE, different from each other and from Channel. Each has two slots for calls. */
 	uint16_t payload[16];
 	/* PayloadLen is the number of entries of Payload in use, 1 or more. */
 	int64_t payload_len;
@@ -5164,17 +5164,17 @@ struct dmrgo_trunk_tscc_config_t {
 	dmrgo_enums_n_rand_wait_t n_rand_wait;
 	/* Backoff is the backoff number of C_ALOHA. 0 means 3. */
 	dmrgo_enums_backoff_t backoff;
-	/* GrantRepeats is the number of times the TSCC sends a grant. 0 means 2. */
+	/* GrantRepeats is the number of times the TSCC sends a grant. 0 means 2; a negative value is an error. */
 	int64_t grant_repeats;
-	/* ClearRepeats is the number of times the TSCC sends P_CLEAR. 0 means 3. */
+	/* ClearRepeats is the number of times the TSCC sends P_CLEAR. 0 means 3; a negative value is an error. */
 	int64_t clear_repeats;
 	/* LateEntry is the time between the late entry grants of a call. 0 means 1 s, and a negative value sends none. */
 	dmrgo_duration_t late_entry;
-	/* Hangtime is TV_Hangtime, the time after the end of a transmission in which the call keeps its payload slot. 0 means constants.TVHangtimeDefault. */
+	/* Hangtime is TV_Hangtime, the time after the end of a transmission in which the call keeps its payload slot. 0 or a negative value means constants.TVHangtimeDefault. */
 	dmrgo_duration_t hangtime;
-	/* Inactive is TV_Inactive, the time without an inbound burst after which the TSCC clears a call that never started. 0 means constants.TVInactiveDefault. */
+	/* Inactive is TV_Inactive, the time without an inbound burst after which the TSCC clears a call that never started. 0 or a negative value means constants.TVInactiveDefault. */
 	dmrgo_duration_t inactive;
-	/* AnswerTimeout is how long the TSCC waits for the answer of a called MS to its C_AHOY, and for the answer to an authentication challenge. 0 means constants.TPTimerDefault. */
+	/* AnswerTimeout is how long the TSCC waits for the answer of a called MS to its C_AHOY, and for the answer to an authentication challenge. 0 or a negative value means constants.TPTimerDefault. */
 	dmrgo_duration_t answer_timeout;
 	/* Authenticate challenges each MS that registers with a C_AHOY, and registers it only when its answer matches the response that the consumer passes to ExpectAuth after TSCCAuthChallenge. A wrong answer gets C_NACKD Reg_Denied, and no answer within AnswerTimeout gets C_NACKD Reg_Refused. */
 	bool authenticate;
@@ -5184,11 +5184,11 @@ struct dmrgo_trunk_tscc_config_t {
 	dmrgo_trunk_authenticator_t *auth;
 	/* TransmitInterrupt accepts the transmit interrupt requests of MSs, status calls with StatusInterrupt and StatusTerminate. (ETSI TS 102 361-4 clause 6.4.14.3) */
 	bool transmit_interrupt;
-	/* MaxCall is the longest time of a call. At its end the TSCC stops the transmission with the reverse channel and clears the call. 0 means no limit. (ETSI TS 102 361-4 clause 6.4.14.3.2) */
+	/* MaxCall is the longest time of a call. At its end the TSCC stops the transmission with the reverse channel and clears the call. 0 or a negative value means no limit. (ETSI TS 102 361-4 clause 6.4.14.3.2) */
 	dmrgo_duration_t max_call;
 	/* PowerSave gives the MSs that ask for it a power save frame, and holds the C_AHOY to an MS that sleeps until its frame. (ETSI TS 102 361-4 clause 6.4.7) */
 	bool power_save;
-	/* Awake is T_Awake, as in MSConfig. 0 means constants.TAwakeDefault. */
+	/* Awake is T_Awake, as in MSConfig. 0 or a negative value means constants.TAwakeDefault. */
 	dmrgo_duration_t awake;
 	/* IP offers the IP bearer service: the TSCC takes the IP connection advice of MSs. Without it the TSCC refuses the advice with IP_Connection_failed. (ETSI TS 102 361-4 clause 6.4.11) */
 	bool ip;

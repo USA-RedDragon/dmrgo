@@ -32,9 +32,9 @@ const DefaultMaxBERPermille = 50
 type MSConfig struct {
 	// Address is the 24-bit individual address of the MS, 1 to 0xFFFCDF.
 	Address uint32
-	// Talkgroups holds the first TalkgroupsLen talkgroups whose calls the
-	// MS follows and whose radio checks it answers. Its own calls and the
-	// individual calls to it are always followed.
+	// Talkgroups holds the first TalkgroupsLen 24-bit talkgroups whose
+	// calls the MS follows and whose radio checks it answers. Its own calls
+	// and the individual calls to it are always followed.
 	Talkgroups [MaxTalkgroups]uint32
 	// TalkgroupsLen is the number of entries of Talkgroups in use.
 	TalkgroupsLen int
@@ -220,7 +220,8 @@ type MS struct {
 }
 
 // NewMS returns an MS for cfg. It returns a *dmrgo.ConfigError for an
-// Address out of range and for the errors of NewFollower. It allocates the
+// Address out of range, a Slot that is not SlotUnknown, Slot1 or Slot2, and
+// for the errors of NewFollower. It allocates the
 // MS, and its Burst unless cfg.Scratch is set.
 func NewMS(cfg *MSConfig) (*MS, error) {
 	if cfg == nil || cfg.Address == 0 || cfg.Address > maxAddress {
@@ -228,6 +229,9 @@ func NewMS(cfg *MSConfig) (*MS, error) {
 	}
 	if cfg.DMRLA < 0 || cfg.DMRLA > 10 {
 		return nil, errDMRLA
+	}
+	if cfg.Slot != enums.SlotUnknown && cfg.Slot != enums.Slot1 && cfg.Slot != enums.Slot2 {
+		return nil, errSlot
 	}
 	m := &MS{
 		addr: cfg.Address, slot: cfg.Slot, noReg: cfg.NoRegistration, randTO: cfg.RandomTimeout, callTO: cfg.CallTimeout,

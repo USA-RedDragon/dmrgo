@@ -37,10 +37,11 @@ type TSCCConfig struct {
 	// ColorCode is the color code of the TSCC and its payload channels.
 	ColorCode enums.ColorCode
 	// Channel is the channel number of the TSCC, for the outputs of its
-	// carrier.
+	// carrier: 1 to 0xFFE.
 	Channel uint16
 	// Payload holds the first PayloadLen channel numbers of the payload
-	// channels. Each has two slots for calls.
+	// channels, each 1 to 0xFFE, different from each other and from
+	// Channel. Each has two slots for calls.
 	Payload [MaxPayloadChannels]uint16
 	// PayloadLen is the number of entries of Payload in use, 1 or more.
 	PayloadLen int
@@ -56,25 +57,25 @@ type TSCCConfig struct {
 	// Backoff is the backoff number of C_ALOHA. 0 means 3.
 	Backoff enums.Backoff
 	// GrantRepeats is the number of times the TSCC sends a grant. 0 means
-	// 2.
+	// 2; a negative value is an error.
 	GrantRepeats int
 	// ClearRepeats is the number of times the TSCC sends P_CLEAR. 0 means
-	// 3.
+	// 3; a negative value is an error.
 	ClearRepeats int
 	// LateEntry is the time between the late entry grants of a call. 0
 	// means 1 s, and a negative value sends none.
 	LateEntry time.Duration
 	// Hangtime is TV_Hangtime, the time after the end of a transmission in
-	// which the call keeps its payload slot. 0 means
+	// which the call keeps its payload slot. 0 or a negative value means
 	// constants.TVHangtimeDefault.
 	Hangtime time.Duration
 	// Inactive is TV_Inactive, the time without an inbound burst after
-	// which the TSCC clears a call that never started. 0 means
-	// constants.TVInactiveDefault.
+	// which the TSCC clears a call that never started. 0 or a negative
+	// value means constants.TVInactiveDefault.
 	Inactive time.Duration
 	// AnswerTimeout is how long the TSCC waits for the answer of a called
 	// MS to its C_AHOY, and for the answer to an authentication challenge.
-	// 0 means constants.TPTimerDefault.
+	// 0 or a negative value means constants.TPTimerDefault.
 	AnswerTimeout time.Duration
 	// Authenticate challenges each MS that registers with a C_AHOY, and
 	// registers it only when its answer matches the response that the
@@ -93,14 +94,15 @@ type TSCCConfig struct {
 	// 361-4 clause 6.4.14.3)
 	TransmitInterrupt bool
 	// MaxCall is the longest time of a call. At its end the TSCC stops the
-	// transmission with the reverse channel and clears the call. 0 means
-	// no limit. (ETSI TS 102 361-4 clause 6.4.14.3.2)
+	// transmission with the reverse channel and clears the call. 0 or a
+	// negative value means no limit. (ETSI TS 102 361-4 clause 6.4.14.3.2)
 	MaxCall time.Duration
 	// PowerSave gives the MSs that ask for it a power save frame, and
 	// holds the C_AHOY to an MS that sleeps until its frame. (ETSI TS 102
 	// 361-4 clause 6.4.7)
 	PowerSave bool
-	// Awake is T_Awake, as in MSConfig. 0 means constants.TAwakeDefault.
+	// Awake is T_Awake, as in MSConfig. 0 or a negative value means
+	// constants.TAwakeDefault.
 	Awake time.Duration
 	// IP offers the IP bearer service: the TSCC takes the IP connection
 	// advice of MSs. Without it the TSCC refuses the advice with
@@ -341,9 +343,11 @@ type TSCC struct {
 }
 
 // NewTSCC returns a TSCC for cfg. It returns a *dmrgo.ConfigError for a
-// SysCode whose fields do not fit, a color code over 15, a PayloadLen out of
-// range, a payload channel that names no channel or a MaxRegistrations out
-// of range. It allocates the TSCC and its registration table.
+// SysCode whose fields do not fit, a color code over 15, a Channel that
+// names no channel, a PayloadLen out of range, a payload channel that names
+// no channel, repeats another or is Channel, a negative GrantRepeats,
+// ClearRepeats or Lead, or a MaxRegistrations out of range. It allocates
+// the TSCC and its registration table.
 func NewTSCC(cfg *TSCCConfig) (*TSCC, error) {
 	if cfg == nil {
 		return nil, errChannels
@@ -358,13 +362,25 @@ func NewTSCC(cfg *TSCCConfig) (*TSCC, error) {
 	if c.ColorCode > 15 {
 		return nil, errColorCode
 	}
+	if c.Channel == ChannelNull || c.Channel >= ChannelAbsolute {
+		return nil, errChannel
+	}
 	if c.PayloadLen < 1 || c.PayloadLen > MaxPayloadChannels {
 		return nil, errChannels
 	}
 	for i := range c.PayloadLen {
-		if ch := c.Payload[i]; ch == ChannelNull || ch >= ChannelAbsolute {
+		ch := c.Payload[i]
+		if ch == ChannelNull || ch >= ChannelAbsolute || ch == c.Channel {
 			return nil, errChannels
 		}
+		for j := range i {
+			if c.Payload[j] == ch {
+				return nil, errChannels
+			}
+		}
+	}
+	if c.GrantRepeats < 0 || c.ClearRepeats < 0 {
+		return nil, errRepeats
 	}
 	if c.Lead < 0 {
 		return nil, errLead
@@ -381,10 +397,10 @@ func NewTSCC(cfg *TSCCConfig) (*TSCC, error) {
 	if c.Backoff == 0 {
 		c.Backoff = 3
 	}
-	if c.GrantRepeats <= 0 {
+	if c.GrantRepeats == 0 {
 		c.GrantRepeats = 2
 	}
-	if c.ClearRepeats <= 0 {
+	if c.ClearRepeats == 0 {
 		c.ClearRepeats = 3
 	}
 	if c.LateEntry == 0 {
