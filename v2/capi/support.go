@@ -199,32 +199,6 @@ func cloneValue(v reflect.Value) {
 	}
 }
 
-func errWalk(err error, f func(C.int) bool) bool {
-	for e := err; e != nil; {
-		c := errCode1(e)
-		if ce, ok := e.(codeError); ok {
-			c = C.int(ce)
-		}
-		if c != C.DMRGO_ERR_OTHER && f(c) {
-			return true
-		}
-		switch u := e.(type) {
-		case interface{ Unwrap() []error }:
-			for _, x := range u.Unwrap() {
-				if errWalk(x, f) {
-					return true
-				}
-			}
-			return false
-		case interface{ Unwrap() error }:
-			e = u.Unwrap()
-		default:
-			return false
-		}
-	}
-	return false
-}
-
 func errCode(err error) C.int {
 	code := C.int(C.DMRGO_ERR_OTHER)
 	errWalk(err, func(c C.int) bool {
@@ -405,6 +379,8 @@ func dmrgo_last_error_code() C.int {
 	return C.dmrgo__last().code
 }
 
+const devel = "(devel)"
+
 var version string
 
 func moduleVersion() string {
@@ -415,7 +391,7 @@ func moduleVersion() string {
 	if !ok {
 		return "(unknown)"
 	}
-	v := "(devel)"
+	v := devel
 	for _, d := range bi.Deps {
 		if d.Path == modulePath {
 			v = d.Version
@@ -424,7 +400,7 @@ func moduleVersion() string {
 			}
 		}
 	}
-	if v != "(devel)" && v != "" {
+	if v != devel && v != "" {
 		return v
 	}
 	rev, dirty := "", ""
@@ -439,9 +415,9 @@ func moduleVersion() string {
 		}
 	}
 	if rev != "" {
-		return "(devel) " + rev[:min(len(rev), 12)] + dirty
+		return devel + " " + rev[:min(len(rev), 12)] + dirty
 	}
-	return "(devel)"
+	return devel
 }
 
 //export dmrgo_version

@@ -74,6 +74,7 @@ func TestHugeLengths(t *testing.T) {
 						args[i] = p
 					}
 				}
+			default:
 			}
 		}
 		out := f.Call(args)

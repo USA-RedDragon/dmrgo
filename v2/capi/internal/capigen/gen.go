@@ -341,7 +341,7 @@ func isErrType(ti *tinfo) bool {
 // codeNames lists the error codes of the API in package order, and by name
 // in a package, and the tags of each union by name.
 func (g *gen) codeNames() ([]string, map[string][]string) {
-	var names []string
+	names := make([]string, 0, 2*len(g.pkgs))
 	for _, p := range g.pkgs {
 		var ns []string
 		sc := p.Scope()
@@ -365,7 +365,7 @@ func (g *gen) codeNames() ([]string, map[string][]string) {
 		if ti.kind != kClosed {
 			continue
 		}
-		var ts []string
+		ts := make([]string, 0, len(ti.impls))
 		for _, im := range ti.impls {
 			ts = append(ts, g.tagName(ti, g.info(im)))
 		}
@@ -578,7 +578,7 @@ func (g *gen) asIface(ti *tinfo, gn string) error {
 				lines(&pre, "var xs "+st)
 				sv = "xs"
 			}
-			src := g.sizedSrc(&pre, im, "c_self", "(*c_self)", "return fail(C.DMRGO_ERR_ARG)")
+			src := g.sizedSrc(&pre, im, "c_self", "(*c_self)")
 			if g.alias(im) {
 				lines(&pre, "x = *(*"+g.goType(im)+")(unsafe.Pointer(c_self))")
 			} else if err := g.inVal(&pre, im, "x", src, sv, 0); err != nil {
@@ -932,6 +932,7 @@ func (g *gen) errorsGo() {
 		lines(&w, "}")
 	}
 	lines(&w, "return C.DMRGO_ERR_OTHER", "}", "")
+	lines(&w, "func errWalk(err error, f func(C.int) bool) bool {", "for e := err; e != nil; {", "c := errCode1(e)", "if ce, ok := e.(codeError); ok {", "c = C.int(ce)", "}", "if c != C.DMRGO_ERR_OTHER && f(c) {", "return true", "}", "switch u := e.(type) {", "case interface{ Unwrap() []error }:", "for _, x := range u.Unwrap() {", "if errWalk(x, f) {", "return true", "}", "}", "return false", "case interface{ Unwrap() error }:", "e = u.Unwrap()", "default:", "return false", "}", "}", "return false", "}", "")
 	lines(&w, "func setErr(err error) C.int {", "code := setLast(errCode(err), err.Error())", "setChain(err)")
 	if len(typs) > 0 {
 		g.imports["errors"] = true

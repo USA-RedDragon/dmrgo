@@ -167,7 +167,7 @@ func (g *gen) mapParam(sm *sigmap, n string, t types.Type, dst bool, owner *tinf
 	if err != nil {
 		return err
 	}
-	src = g.sizedSrc(&sm.pre, t, cn, src, "return fail(C.DMRGO_ERR_ARG)")
+	src = g.sizedSrc(&sm.pre, t, cn, src)
 	st, err := g.storage(t)
 	if err != nil {
 		return err
@@ -187,13 +187,13 @@ func (g *gen) mapParam(sm *sigmap, n string, t types.Type, dst bool, owner *tinf
 
 // sizedSrc copies the sized struct at the C pointer cn into a zeroed
 // struct and returns it, or returns src for another type.
-func (g *gen) sizedSrc(w *strings.Builder, t types.Type, cn, src, onErr string) string {
+func (g *gen) sizedSrc(w *strings.Builder, t types.Type, cn, src string) string {
 	ti := g.info(t)
 	if ti == nil || !ti.sized {
 		return src
 	}
 	z := "z_" + strings.TrimPrefix(cn, "c_")
-	lines(w, "var "+z+" C."+ti.c, "if "+cn+" != nil && !sizedIn(unsafe.Pointer(&"+z+"), unsafe.Pointer("+cn+"), unsafe.Sizeof("+z+")) {", onErr, "}")
+	lines(w, "var "+z+" C."+ti.c, "if "+cn+" != nil && !sizedIn(unsafe.Pointer(&"+z+"), unsafe.Pointer("+cn+"), unsafe.Sizeof("+z+")) {", "return fail(C.DMRGO_ERR_ARG)", "}")
 	return z
 }
 
@@ -293,7 +293,7 @@ func (g *gen) mapPtrParam(sm *sigmap, n string, e types.Type, dst bool) error {
 		lines(&sm.pre, "var s_"+n+" "+st)
 		sv = "s_" + n
 	}
-	src = g.sizedSrc(&sm.pre, e, cn, src, "return fail(C.DMRGO_ERR_ARG)")
+	src = g.sizedSrc(&sm.pre, e, cn, src)
 	lines(&sm.pre, "if "+cn+" != nil {")
 	if err := g.inVal(&sm.pre, e, a, src, sv, 0); err != nil {
 		return err
@@ -437,46 +437,7 @@ func (g *gen) mapResult(sm *sigmap, n string, t types.Type, r string) error {
 		return g.mapSliceResult(sm, n, sl, r)
 	}
 	if p, ok := t.(*types.Pointer); ok {
-		e := p.Elem()
-		if ti := g.info(e); ti != nil && ti.kind == kHandle {
-			sm.cps = append(sm.cps, ti.c+" **"+n)
-			sm.gps = append(sm.gps, cn+" **C."+ti.c)
-			lines(&sm.pre, "if "+cn+" == nil {", "return fail(C.DMRGO_ERR_ARG)", "}")
-			if sm.fn != nil && sm.fn.Signature().Recv() != nil && g.l.effects(sm.fn, -1).ret && !isRef(e) {
-				lines(&sm.post, "*"+cn+" = nil", "if "+r+" != nil {", "cp := *"+r, "*"+cn+" = "+g.newer(ti)+"(&cp)", "}")
-				sm.notes = append(sm.notes, " In C, *"+n+" is a new handle to a copy, which does not change with self; free it with "+ti.base+"_free.")
-				return nil
-			}
-			lines(&sm.post, "*"+cn+" = nil", "if "+r+" != nil {", "*"+cn+" = "+g.newer(ti)+"("+r+")", "}")
-			return nil
-		}
-		if err := g.needDeps(e); err != nil {
-			return err
-		}
-		d, err := g.ptrDecl(e, n)
-		if err != nil {
-			return err
-		}
-		bt, err := g.baseGo(e)
-		if err != nil {
-			return err
-		}
-		if g.needsArena(e) {
-			sm.arena = true
-			sm.arenaTypes = append(sm.arenaTypes, e)
-		}
-		sm.cps = append(sm.cps, d, "bool *"+n+"_ok")
-		sm.gps = append(sm.gps, cn+" "+bt, cn+"_ok *C.bool")
-		dst, err := g.arrayPtr(e, cn)
-		if err != nil {
-			return err
-		}
-		lines(&sm.post, "if "+cn+"_ok != nil {", "*"+cn+"_ok = C.bool("+r+" != nil)", "}", "if "+cn+" != nil && "+r+" != nil {")
-		if err := g.outVal(&sm.post, e, dst, "(*"+r+")", 0); err != nil {
-			return err
-		}
-		lines(&sm.post, "}")
-		return nil
+		return g.mapPtrResult(sm, n, p.Elem(), r)
 	}
 	if err := g.needDeps(t); err != nil {
 		return err
@@ -501,6 +462,49 @@ func (g *gen) mapResult(sm *sigmap, n string, t types.Type, r string) error {
 	}
 	lines(&sm.post, "if "+cn+" != nil {")
 	if err := g.outVal(&sm.post, t, dst, r, 0); err != nil {
+		return err
+	}
+	lines(&sm.post, "}")
+	return nil
+}
+
+func (g *gen) mapPtrResult(sm *sigmap, n string, e types.Type, r string) error {
+	cn := "c_" + n
+	if ti := g.info(e); ti != nil && ti.kind == kHandle {
+		sm.cps = append(sm.cps, ti.c+" **"+n)
+		sm.gps = append(sm.gps, cn+" **C."+ti.c)
+		lines(&sm.pre, "if "+cn+" == nil {", "return fail(C.DMRGO_ERR_ARG)", "}")
+		if sm.fn != nil && sm.fn.Signature().Recv() != nil && g.l.effects(sm.fn, -1).ret && !isRef(e) {
+			lines(&sm.post, "*"+cn+" = nil", "if "+r+" != nil {", "cp := *"+r, "*"+cn+" = "+g.newer(ti)+"(&cp)", "}")
+			sm.notes = append(sm.notes, " In C, *"+n+" is a new handle to a copy, which does not change with self; free it with "+ti.base+"_free.")
+			return nil
+		}
+		lines(&sm.post, "*"+cn+" = nil", "if "+r+" != nil {", "*"+cn+" = "+g.newer(ti)+"("+r+")", "}")
+		return nil
+	}
+	if err := g.needDeps(e); err != nil {
+		return err
+	}
+	d, err := g.ptrDecl(e, n)
+	if err != nil {
+		return err
+	}
+	bt, err := g.baseGo(e)
+	if err != nil {
+		return err
+	}
+	if g.needsArena(e) {
+		sm.arena = true
+		sm.arenaTypes = append(sm.arenaTypes, e)
+	}
+	sm.cps = append(sm.cps, d, "bool *"+n+"_ok")
+	sm.gps = append(sm.gps, cn+" "+bt, cn+"_ok *C.bool")
+	dst, err := g.arrayPtr(e, cn)
+	if err != nil {
+		return err
+	}
+	lines(&sm.post, "if "+cn+"_ok != nil {", "*"+cn+"_ok = C.bool("+r+" != nil)", "}", "if "+cn+" != nil && "+r+" != nil {")
+	if err := g.outVal(&sm.post, e, dst, "(*"+r+")", 0); err != nil {
 		return err
 	}
 	lines(&sm.post, "}")
@@ -691,7 +695,7 @@ func (g *gen) mapRecv(sm *sigmap, recv *tinfo, rk recvKind, call string) (string
 			lines(&sm.pre, "var xs "+st)
 			sv = "xs"
 		}
-		if err := g.inVal(&sm.pre, recv.named, "x", g.sizedSrc(&sm.pre, recv.named, "c_self", "(*c_self)", "return fail(C.DMRGO_ERR_ARG)"), sv, 0); err != nil {
+		if err := g.inVal(&sm.pre, recv.named, "x", g.sizedSrc(&sm.pre, recv.named, "c_self", "(*c_self)"), sv, 0); err != nil {
 			return "", err
 		}
 		if eff != nil {

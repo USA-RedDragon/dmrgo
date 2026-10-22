@@ -237,85 +237,15 @@ func (a *analyzer) use(id *ast.Ident, p apath) {
 	var top ast.Expr = id
 	structRoot := p.field == "" && !p.deeper && !p.box && structOf(a.info.Uses[id].Type()) != nil
 	for top != nil {
-	climb:
 		for {
-			switch x := a.parent[top].(type) {
-			case *ast.ParenExpr:
-				top = x
-				continue
-			case *ast.SelectorExpr:
-				if x.X != top {
-					break climb
-				}
-				sel := a.info.Selections[x]
-				if sel == nil {
-					break climb
-				}
-				if sel.Kind() == types.FieldVal {
-					if structRoot {
-						p.field = x.Sel.Name
-					} else {
-						p.deeper = true
-					}
-					structRoot = false
-					top = x
-					continue
-				}
-				top = a.methodCall(x, sel, p)
-				if top == nil {
-					return
-				}
-				p.deeper = true
-				structRoot = false
-				continue
-			case *ast.IndexExpr:
-				if x.X == top {
-					p.deeper = true
-					structRoot = false
-					top = x
-					continue
-				}
-			case *ast.SliceExpr:
-				if x.X == top {
-					top = x
-					continue
-				}
-			case *ast.StarExpr:
-				top = x
-				continue
-			case *ast.UnaryExpr:
-				if x.Op == token.AND && x.X == top {
-					top = x
-					continue
-				}
-			case *ast.CallExpr:
-				if len(x.Args) == 1 && x.Args[0] == top && a.isType(x.Fun) {
-					structRoot = false
-					top = x
-					continue
-				}
-			case *ast.TypeAssertExpr:
-				if x.X == top {
-					top = x
-					continue
-				}
-			case *ast.KeyValueExpr:
-				if t := a.typeOf(top); x.Value == top && t != nil && isRef(t) {
-					top = x
-					continue
-				}
-			case *ast.CompositeLit:
-				if t := a.typeOf(top); t == nil || !isRef(t) {
-					if _, ok := top.(*ast.KeyValueExpr); !ok {
-						break
-					}
-				}
-				p.copy, p.box = true, true
-				structRoot = false
-				top = x
-				continue
+			next, climbed, stop := a.step(top, &p, &structRoot)
+			if stop {
+				return
 			}
-			break
+			if !climbed {
+				break
+			}
+			top = next
 		}
 		next := a.context(top, id, p)
 		if next == nil {
@@ -327,13 +257,86 @@ func (a *analyzer) use(id *ast.Ident, p apath) {
 	}
 }
 
+// step climbs from top to its parent when the parent still names the
+// same memory, such as a field, an index or a conversion of top, and
+// updates p. stop is set when a method call ends the use.
+func (a *analyzer) step(top ast.Expr, p *apath, structRoot *bool) (ast.Expr, bool, bool) {
+	switch x := a.parent[top].(type) {
+	case *ast.ParenExpr:
+		return x, true, false
+	case *ast.SelectorExpr:
+		if x.X != top {
+			return nil, false, false
+		}
+		sel := a.info.Selections[x]
+		if sel == nil {
+			return nil, false, false
+		}
+		if sel.Kind() == types.FieldVal {
+			if *structRoot {
+				p.field = x.Sel.Name
+			} else {
+				p.deeper = true
+			}
+			*structRoot = false
+			return x, true, false
+		}
+		next := a.methodCall(x, sel, *p)
+		if next == nil {
+			return nil, false, true
+		}
+		p.deeper = true
+		*structRoot = false
+		return next, true, false
+	case *ast.IndexExpr:
+		if x.X == top {
+			p.deeper = true
+			*structRoot = false
+			return x, true, false
+		}
+	case *ast.SliceExpr:
+		if x.X == top {
+			return x, true, false
+		}
+	case *ast.StarExpr:
+		return x, true, false
+	case *ast.TypeAssertExpr:
+		if x.X == top {
+			return x, true, false
+		}
+	case *ast.UnaryExpr:
+		if x.Op == token.AND && x.X == top {
+			return x, true, false
+		}
+	case *ast.CallExpr:
+		if len(x.Args) == 1 && x.Args[0] == top && a.isType(x.Fun) {
+			*structRoot = false
+			return x, true, false
+		}
+	case *ast.KeyValueExpr:
+		if t := a.typeOf(top); x.Value == top && t != nil && isRef(t) {
+			return x, true, false
+		}
+	case *ast.CompositeLit:
+		if t := a.typeOf(top); t == nil || !isRef(t) {
+			if _, ok := top.(*ast.KeyValueExpr); !ok {
+				return nil, false, false
+			}
+		}
+		p.copy, p.box = true, true
+		*structRoot = false
+		return x, true, false
+	}
+	return nil, false, false
+}
+
 func (a *analyzer) throughRef(e ast.Expr, id *ast.Ident, box bool) bool {
 	for e != nil && e != ast.Expr(id) {
 		switch x := e.(type) {
 		case *ast.ParenExpr:
 			e = x.X
 		case *ast.SelectorExpr:
-			if t := a.typeOf(x.X); t != nil && isPtr(t) && !(box && ast.Unparen(x.X) == ast.Expr(id)) {
+			if t := a.typeOf(x.X); t != nil && isPtr(t) && (!box || ast.Unparen(x.X) != ast.Expr(id)) {
 				return true
 			}
 			e = x.X
