@@ -874,12 +874,8 @@ func (r *Repeater) refuse(now time.Duration, s *slot, from Source, reason Reason
 	var o *Output
 	dst, o = appendOutput(dst, OutputRejected)
 	o.Slot, o.From, o.Reason = s.id, from, reason
-	if lc == nil {
-		return dst
-	}
-	if group, target, source, ok := lc.Call(); ok {
-		so, _ := lc.ServiceOptions()
-		o.Call = voice.Call{Group: group, Target: target, Source: source, Options: so, FID: lc.FID(), LC: *lc, Origin: voice.OriginHeader}
+	if lc != nil {
+		o.Call, _ = lcCall(lc)
 	}
 	return dst
 }
@@ -1002,21 +998,33 @@ func (r *Repeater) preamble(now time.Duration, s *slot, c *pdu.CSBKBytes, dt enu
 	case !pre || s.repeating():
 		return
 	}
+	s.state, s.owner, s.service, s.last = SlotPreamble, from, ServiceData, now
+	s.call, s.activity = preambleCall(c)
+	s.hash, s.hasCall = hashOf(s.call.Target), true
+}
+
+func preambleCall(c *pdu.CSBKBytes) (voice.Call, enums.ActivityID) {
 	target, source, _ := c.Addresses()
 	group, _ := c.Group()
-	s.state, s.owner, s.service, s.last = SlotPreamble, from, ServiceData, now
-	s.call, s.hasCall = voice.Call{Group: group, Target: target, Source: source}, true
-	s.hash = hashOf(target)
+	call := voice.Call{Group: group, Target: target, Source: source}
 	switch data := c[2]&0x80 != 0; {
 	case data && group:
-		s.activity = enums.ActivityGroupData
+		return call, enums.ActivityGroupData
 	case data:
-		s.activity = enums.ActivityIndividualData
+		return call, enums.ActivityIndividualData
 	case group:
-		s.activity = enums.ActivityGroupCSBK
-	default:
-		s.activity = enums.ActivityIndividualCSBK
+		return call, enums.ActivityGroupCSBK
 	}
+	return call, enums.ActivityIndividualCSBK
+}
+
+func lcCall(lc *pdu.LCBytes) (voice.Call, bool) {
+	group, target, source, ok := lc.Call()
+	if !ok {
+		return voice.Call{}, false
+	}
+	so, _ := lc.ServiceOptions()
+	return voice.Call{Group: group, Target: target, Source: source, Options: so, FID: lc.FID(), LC: *lc, Origin: voice.OriginHeader}, true
 }
 
 func (r *Repeater) dataHeader(now time.Duration, s *slot, raw *layer2.RawBurst, from Source, dst []Output) []Output {
