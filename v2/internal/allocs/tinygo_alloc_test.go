@@ -653,8 +653,6 @@ func tinyIPSCOps(t *testing.T) []tinyOp {
 }
 
 func TestTinyGoAllocs(t *testing.T) {
-	t.Parallel()
-
 	r := rand.New(rand.NewSource(1))
 	ops := slices.Concat(tinyBurstOps(t, r), tinyRawBurstOps(t, r), tinyVoiceOps(t, r), tinyServiceOps(t, r), tinyCSBKOps(t), tinyCACHOps(t), tinyFramerOps(t, r), tinyPDUOps(t, r), tinyDVSIOps(t), tinyAppOps(t), tinyDMRDOps(t), tinyIPSCOps(t), tinyHyteraOps(t), tinyMMDVMOps(t), tinyDigestOps())
 
