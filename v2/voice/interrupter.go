@@ -207,8 +207,9 @@ func (i *Interrupter) Cancel() {
 
 // Burst decodes the burst raw of the call with what the Hint h says about
 // it, runs it through the Interrupter as Decoded does, and appends the
-// outputs to dst. It allocates only when dst has no room for MaxOutputs
-// outputs. (ETSI TS 102 361-2 clause 6.3.5)
+// outputs to dst. A nil raw, a transport frame without a burst, only runs
+// the timers, as Lost does. It allocates only when dst has no room for
+// MaxOutputs outputs. (ETSI TS 102 361-2 clause 6.3.5)
 func (i *Interrupter) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, dst []Output) []Output {
 	if i == nil {
 		return dst
