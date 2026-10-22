@@ -25,14 +25,16 @@ type Message struct {
 	// whose blocks all failed their FEC.
 	Blocks int
 	// Data is the user data. The pad octets of a U_HEAD or C_HEAD packet are
-	// removed when the header is a first try (Full Message Flag set). A packet
-	// that a later try started, because the first header was lost, has them
-	// removed too when every DBSN from 0 to one less than the Blocks to Follow
-	// of the header that started it arrived, in that try or a later one, and
-	// the message CRC holds: such a header, as a sender sends it after no
-	// response or a NACK, keeps the Pad Octet Count of the first try, though
-	// ETSI TS 102 361-1 clause 9.3.20 has a receiver read it only on a first
-	// try. Otherwise a packet that a later try started keeps them. A DD_HEAD
+	// removed when the header is a first try (Full Message Flag set). A
+	// C_HEAD packet that a later try started, because the first header was
+	// lost, has them removed too when every DBSN from 0 to one less than the
+	// Blocks to Follow of the header that started it arrived, in that try or
+	// a later one, and the message CRC holds: such a header, as a sender
+	// sends it after no response or a NACK, keeps the Pad Octet Count of the
+	// first try, though ETSI TS 102 361-1 clause 9.3.20 has a receiver read
+	// it only on a first try. Otherwise a packet that a later try started
+	// keeps them, and so does a U_HEAD packet with the Full Message Flag
+	// clear, which no sender retries. A DD_HEAD
 	// or R_HEAD packet has Bit Padding/8 octets removed on every try, as its
 	// retries keep the Bit Padding of the first try.
 	// It holds at most 3048 bytes: 127 blocks of at most 24 octets.
@@ -494,7 +496,7 @@ func (a *Assembler) fill(m *Message, buf []byte, complete bool) error {
 	case fullMessage(&m.Header) || shortData(&m.Header):
 		m.Data = buf[:max(n-pad, 0)]
 		m.BadCRC = m.BadCRC || pad > n
-	case complete && crcOK && pad <= n:
+	case complete && crcOK && pad <= n && m.Header.Format() == pdu.FormatConfirmed:
 		m.Data = buf[:n-pad]
 	}
 	if !crcOK {
