@@ -200,21 +200,27 @@ func (a *Assembler) Lost() (Message, bool, error) {
 // *pdu.Rate34Data or *pdu.Rate1Data, and ignores other PDUs. done is true
 // when the packet is complete, with its Message; on ErrMessageCRC the
 // Message is returned too. A header with pdu.DataHeader.FEC.Uncorrectable
-// set returns ErrHeaderCRC and changes nothing. The package doc gives the rules for
-// headers.
+// set returns ErrHeaderCRC and changes nothing. A nil pointer of one of
+// these types returns dmrgo.ErrNilArgument and changes nothing. The package
+// doc gives the rules for headers.
 func (a *Assembler) Add(d layer2.Data) (Message, bool, error) {
 	if a == nil {
 		return Message{}, false, dmrgo.ErrNilReceiver
 	}
 	switch v := d.(type) {
 	case *pdu.DataHeader:
+		if v == nil {
+			return Message{}, false, dmrgo.ErrNilArgument
+		}
 		return a.addHeader(v)
-	default:
+	case *pdu.Rate12Data, *pdu.Rate34Data, *pdu.Rate1Data:
 		b, ok := blockOf(d)
 		if !ok {
-			return Message{}, false, nil
+			return Message{}, false, dmrgo.ErrNilArgument
 		}
 		return a.addBlock(b, true)
+	default:
+		return Message{}, false, nil
 	}
 }
 
