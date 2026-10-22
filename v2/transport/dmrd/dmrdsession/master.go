@@ -14,11 +14,11 @@ type MasterConfig struct {
 	// Dialect is dmrd.DialectMMDVM or dmrd.DialectHBRP.
 	Dialect dmrd.Dialect
 	// Timeout is the time without a packet from the repeater after which
-	// the Master ends the dmrdsession. 0 means TimeoutDefault.
+	// the Master ends the session. 0 means TimeoutDefault.
 	Timeout time.Duration
 	// LoginTimeout is the time after the first RPTL of a login, and
 	// after the RPTK that proves the password, in which the repeater must
-	// finish its login, or the Master ends the dmrdsession. A repeated RPTL
+	// finish its login, or the Master ends the session. A repeated RPTL
 	// does not restart it. 0 means LoginTimeoutDefault.
 	LoginTimeout time.Duration
 }
@@ -67,7 +67,7 @@ func NewMaster(cfg *MasterConfig) (*Master, error) {
 	}, nil
 }
 
-// State returns the state of the dmrdsession.
+// State returns the state of the session.
 func (m *Master) State() State {
 	if m == nil {
 		return 0
@@ -161,16 +161,19 @@ func (m *Master) Admit(now time.Duration, salt uint32, password []byte, dst []Ou
 	if m.state != StateLogin {
 		return dst
 	}
-	m.salt = salt
-	m.tok, _ = auth.Token(m.dialect, salt, password)
-	m.state = StateAuth
+	tok, err := auth.Token(m.dialect, salt, password)
+	if err != nil {
+		return m.Refuse(now, dst)
+	}
+	m.salt, m.tok, m.state = salt, tok, StateAuth
 	return m.challenge(dst)
 }
 
 // Accept answers the RPTC of OutputConfig with an acknowledgement. In
-// StateConfig it completes the login with OutputUp and starts Timeout. It
-// does nothing when no RPTC waits for an answer. It allocates only when
-// dst has no room for MaxOutputs outputs.
+// StateConfig it completes the login with OutputUp and starts Timeout;
+// after LoginTimeout it ends the session with OutputDown and ReasonTimeout
+// instead, as Tick does. It does nothing when no RPTC waits for an answer.
+// It allocates only when dst has no room for MaxOutputs outputs.
 func (m *Master) Accept(now time.Duration, dst []Output) []Output {
 	if m == nil {
 		return dst
@@ -178,6 +181,9 @@ func (m *Master) Accept(now time.Duration, dst []Output) []Output {
 
 	if !m.asked {
 		return dst
+	}
+	if m.state == StateConfig && now >= m.timeoutAt {
+		return m.down(dst, ReasonTimeout)
 	}
 	m.asked = false
 	dst = m.acked(dst)
