@@ -4467,7 +4467,7 @@ struct dmrgo_mmdvm_set_freq_t {
 	uint8_t rf_level;
 	/* POCSAG is the POCSAG TX frequency in Hz (14 octets). */
 	uint32_t pocsag;
-	/* Size is the length of the payload: 9, 10 or 14, or 0 for 9. */
+	/* Size is the length of the payload: 9, 10 or 14, or 0 for 9. MMDVMHost sends 14, and MMDVM-IQ dd4a0fc NAKs fewer. */
 	uint8_t size;
 };
 
