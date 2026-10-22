@@ -9698,7 +9698,7 @@ int dmrgo_ars_message_string(const dmrgo_ars_message_t *self, char *out, size_t 
 int dmrgo_ars_new_ack(uint8_t refresh, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ars.NewFailure. NewFailure returns the answer to a device registration that failed, with the reason reason. It returns a DMRGO_ERR_FIELD_RANGE when reason does not fit in 7 bits. */
 int dmrgo_ars_new_failure(dmrgo_ars_failure_reason_t reason, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: ars.NewQuery. NewQuery returns the query that asks a radio to register again. */
+/* Go: ars.NewQuery. NewQuery returns the query that asks a radio to register again, with the header bits that servers send: acknowledgement required and priority, 00 01 74 on the wire. */
 int dmrgo_ars_new_query(dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ars.NewRegistration. NewRegistration returns a device registration with the header bits that radios send. */
 int dmrgo_ars_new_registration(dmrgo_ars_event_t event, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);

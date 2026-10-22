@@ -59,7 +59,7 @@ func TestAnswers(t *testing.T) {
 	for _, tt := range []struct {
 		m    ars.Message
 		want string
-	}{{ack, "0002bf01"}, {fail, "0002ff00"}, {q, "000114"}} {
+	}{{ack, "0002bf01"}, {fail, "0002ff00"}, {q, "000174"}} {
 		out, err := tt.m.AppendBinary(nil)
 		if err != nil || hex.EncodeToString(out) != tt.want {
 			t.Errorf("%s = %x, %v, want %s", tt.m.String(), out, err, tt.want)

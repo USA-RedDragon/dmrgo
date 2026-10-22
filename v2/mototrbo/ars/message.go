@@ -88,7 +88,9 @@ func NewFailure(reason FailureReason) (Message, error) {
 	}, nil
 }
 
-// NewQuery returns the query that asks a radio to register again.
+// NewQuery returns the query that asks a radio to register again, with the
+// header bits that servers send: acknowledgement required and priority, 00
+// 01 74 on the wire.
 func NewQuery() Message {
-	return Message{Header: Header{Control: true, Type: TypeQuery}}
+	return Message{Header: Header{AckRequired: true, Priority: true, Control: true, Type: TypeQuery}}
 }
