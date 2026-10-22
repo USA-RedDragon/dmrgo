@@ -90,7 +90,7 @@ func checkBurst(t *testing.T, p []byte, f hytera.Frame, n *captureCounts) {
 		n.empty++
 		return
 	}
-	h := f.Hint()
+	h := f.Hint(0)
 	sync, _ := f.Burst.Sync()
 	switch h.Kind {
 	case layer2.KindVoice:

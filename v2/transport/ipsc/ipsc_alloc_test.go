@@ -14,7 +14,7 @@ func TestAllocsIPSC(t *testing.T) {
 		for _, p := range seeds {
 			if u, err := ipsc.DecodeUser(p); err == nil {
 				buf, _ = u.AppendBinary(buf[:0])
-				h := u.Hint()
+				h := u.Hint(0)
 				if raw, err := u.RawBurst(7, layer2.SyncSourceBS); err == nil {
 					_, _ = u.SetRawBurst(raw, h)
 				}

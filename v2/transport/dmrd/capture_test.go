@@ -70,7 +70,7 @@ func checkGatewayPacket(t *testing.T, cmd dmrd.Command, c captured) {
 		if err != nil || !bytes.Equal(out, c.p) {
 			t.Fatalf("DMRD %x: encode %x %v", c.p, out, err)
 		}
-		if h := d.Hint(); h.Kind == layer2.KindUnknown {
+		if h := d.Hint(0); h.Kind == layer2.KindUnknown {
 			t.Fatalf("DMRD %x: hint %+v", c.p, h)
 		}
 	case dmrd.CommandRPTC:

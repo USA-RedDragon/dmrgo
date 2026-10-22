@@ -51,7 +51,7 @@ func TestBurstRawRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if h := got.Hint(); h.Kind != layer2.KindData || !h.HasDataType || h.DataType != enums.DataTypeRate34 || h.Slot != enums.Slot2 {
+	if h := got.Hint(0); h.Kind != layer2.KindData || !h.HasDataType || h.DataType != enums.DataTypeRate34 || h.Slot != enums.Slot2 {
 		t.Fatalf("hint %+v", h)
 	}
 	back, err := got.RawBurst(1, layer2.SyncSourceBS)
@@ -87,7 +87,7 @@ func TestXPR8400BurstRaw(t *testing.T) {
 			t.Fatalf("%x: info %x", c.p, info)
 		}
 		back := ipsc.User{Info: u.Info}
-		h := u.Hint()
+		h := u.Hint(0)
 		h.DataType = enums.DataTypeRate34
 		res, err := back.SetRawBurst(raw, h)
 		if err != nil {

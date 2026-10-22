@@ -13,7 +13,7 @@ func TestAllocsData(t *testing.T) {
 	n := testing.AllocsPerRun(100, func() {
 		d, _ := dmrd.DecodeData(p)
 		buf, _ = d.AppendBinary(buf[:0])
-		_ = d.Hint()
+		_ = d.Hint(0)
 	})
 	if n != 0 {
 		t.Fatalf("%v allocations", n)

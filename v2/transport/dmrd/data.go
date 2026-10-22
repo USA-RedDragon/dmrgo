@@ -1,6 +1,8 @@
 package dmrd
 
 import (
+	"time"
+
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
@@ -77,9 +79,11 @@ type Data struct {
 
 // Hint returns what the packet tells about its burst, for the service
 // machines: the slot, the voice position or data type, the sequence number
-// (8 bits) and the stream ID. A FrameVoice packet with a position above 5
-// gives KindVoice with the position unknown. A nil d gives the zero Hint.
-func (d *Data) Hint() layer2.Hint {
+// (8 bits), the stream ID, and now, the time at which the packet arrived,
+// as At. Give now 0 when the time is not known. A FrameVoice packet with a
+// position above 5 gives KindVoice with the position unknown. A nil d gives
+// the zero Hint.
+func (d *Data) Hint(now time.Duration) layer2.Hint {
 	if d == nil {
 		return layer2.Hint{}
 	}
@@ -90,6 +94,7 @@ func (d *Data) Hint() layer2.Hint {
 		SeqBits:   8,
 		Stream:    d.Stream,
 		HasStream: true,
+		At:        now,
 	}
 	switch d.Frame {
 	case FrameVoiceSync:

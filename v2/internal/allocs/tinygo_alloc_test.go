@@ -498,7 +498,7 @@ func tinyDMRDOps(t *testing.T) []tinyOp {
 	return []tinyOp{{"dmrd", func() {
 		got, _ := dmrd.DecodeData(pkt)
 		buf, _ = got.AppendBinary(buf[:0])
-		_ = got.Hint()
+		_ = got.Hint(0)
 		c, _ := dmrd.DecodeControl(login, dmrd.DialectHBRP)
 		buf, _ = c.AppendBinary(buf[:0], dmrd.DialectHBRP)
 		_ = dmrd.Classify(pkt, dmrd.DialectMMDVM)
@@ -596,7 +596,7 @@ func tinyMMDVMOps(t *testing.T) []tinyOp {
 func tinyHyteraRun(frame, hb, cmd, buf []byte) []byte {
 	f, _ := hytera.DecodeFrame(frame)
 	buf, _ = f.AppendBinary(buf[:0])
-	h := f.Hint()
+	h := f.Hint(0)
 	_ = f.SetHint(h)
 	b, _ := hytera.DecodeHeartbeat(hb)
 	buf, _ = b.AppendBinary(buf[:0])
@@ -624,7 +624,7 @@ func tinyHyteraOps(t *testing.T) []tinyOp {
 func tinyIPSCRun(q, buf []byte) []byte {
 	got, _ := ipsc.DecodeUser(q)
 	buf, _ = got.AppendBinary(buf[:0])
-	h := got.Hint()
+	h := got.Hint(0)
 	if r, err := got.RawBurst(7, layer2.SyncSourceBS); err == nil {
 		_, _ = got.SetRawBurst(r, h)
 	}

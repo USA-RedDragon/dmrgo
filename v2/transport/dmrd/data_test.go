@@ -79,7 +79,7 @@ func TestDataHint(t *testing.T) {
 	}
 	for _, tt := range tests {
 		tt.d.Slot, tt.d.Seq, tt.d.Stream = enums.Slot2, 200, 77
-		h := tt.d.Hint()
+		h := tt.d.Hint(0)
 		if h.Kind != tt.kind || h.VoiceBurst != tt.pos || h.DataType != tt.dt || h.HasDataType != tt.hasD {
 			t.Errorf("%v: hint %+v", tt.d.String(), h)
 		}

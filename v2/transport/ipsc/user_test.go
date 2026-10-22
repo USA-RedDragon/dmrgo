@@ -140,7 +140,7 @@ func TestBuildAndRebuild(t *testing.T) {
 	if err != nil || back != raw {
 		t.Fatalf("rebuilt %x, want %x (%v)", back, raw, err)
 	}
-	if h := got.Hint(); h.Kind != layer2.KindData || h.DataType != enums.DataTypeCSBK || h.Slot != enums.Slot2 {
+	if h := got.Hint(0); h.Kind != layer2.KindData || h.DataType != enums.DataTypeCSBK || h.Slot != enums.Slot2 {
 		t.Fatalf("hint %+v", h)
 	}
 }

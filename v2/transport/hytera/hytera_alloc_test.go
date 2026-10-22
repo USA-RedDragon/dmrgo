@@ -13,7 +13,7 @@ func TestAllocsHytera(t *testing.T) {
 		for _, p := range seeds {
 			if f, err := hytera.DecodeFrame(p); err == nil {
 				buf, _ = f.AppendBinary(buf[:0])
-				h := f.Hint()
+				h := f.Hint(0)
 				_ = f.SetHint(h)
 				_ = f.HasBurst()
 			}

@@ -53,7 +53,7 @@ func TestSetHintFromTransmitter(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			got := back.Hint()
+			got := back.Hint(0)
 			if got.Slot != enums.Slot2 || got.Kind != o.Hint.Kind || got.VoiceBurst != o.Hint.VoiceBurst ||
 				got.HasDataType != o.Hint.HasDataType || got.DataType != o.Hint.DataType {
 				t.Fatalf("hint %+v, sent %+v", got, o.Hint)

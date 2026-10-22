@@ -28,7 +28,7 @@ func checkPacket(t *testing.T, p []byte) {
 		if err != nil || !bytes.Equal(out, p) {
 			t.Fatalf("frame round trip %x: %x %v", p, out, err)
 		}
-		h := f.Hint()
+		h := f.Hint(0)
 		back := f
 		if err := back.SetHint(h); err == nil && back.SlotType != f.SlotType {
 			t.Fatalf("%x: SetHint gives %v, want %v", p, back.SlotType, f.SlotType)

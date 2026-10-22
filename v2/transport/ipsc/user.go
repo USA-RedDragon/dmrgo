@@ -1,6 +1,8 @@
 package ipsc
 
 import (
+	"time"
+
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
@@ -332,13 +334,14 @@ func appendPayload(dst []byte, d Payload) ([]byte, error) {
 // the call control as the stream, burst A or E from the voice layout (a
 // layer2.PositionTracker places B, C, D and F), the data type of a
 // data packet, EndWeak for the end flag on a voice packet, EndStrong on a
-// terminator or a data packet, and SyncLost for BurstSyncLost. A nil u
-// gives the zero Hint.
-func (u *User) Hint() layer2.Hint {
+// terminator or a data packet, SyncLost for BurstSyncLost, and now, the
+// time at which the packet arrived, as At. Give now 0 when the time is not
+// known. A nil u gives the zero Hint.
+func (u *User) Hint(now time.Duration) layer2.Hint {
 	if u == nil {
 		return layer2.Hint{}
 	}
-	h := layer2.Hint{Slot: u.Info.Slot(), Seq: u.RTP.Seq, HasSeq: true, Stream: u.CallControl, HasStream: true}
+	h := layer2.Hint{Slot: u.Info.Slot(), Seq: u.RTP.Seq, HasSeq: true, Stream: u.CallControl, HasStream: true, At: now}
 	switch {
 	case u.IsVoice():
 		h.Kind = layer2.KindVoice
