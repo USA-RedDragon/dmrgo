@@ -85,7 +85,7 @@ func TestStatus_DeliveryAndPoll(t *testing.T) {
 	if acc, _ := has(a.log, trunk.OutputAccepted); acc.Ack != enums.AckReasonMSAccepted {
 		t.Errorf("A accepted %+v", acc)
 	}
-	if e, ok := s.event(trunk.TSCCStatus); !ok || e.Status != 42 || e.Ack != enums.AckReasonMSAccepted || e.Call.Target != 3120003 || e.Call.Source != 3120001 {
+	if e, ok := s.event(trunk.TSCCStatus); !ok || e.Status != 42 || e.Ack != enums.AckReasonMSAccepted || e.Grant.Target != 3120003 || e.Grant.Source != 3120001 {
 		t.Errorf("TSCCStatus %+v %v", e, ok)
 	}
 
@@ -122,7 +122,7 @@ func TestStatus_DeliveryAndPoll(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { _, ok := s.event(trunk.TSCCStatus); return ok })
-	if e, _ := s.event(trunk.TSCCStatus); e.Ack != enums.AckReasonMSAccepted || e.Call.Source != 0xFFFECB || e.Status != 5 {
+	if e, _ := s.event(trunk.TSCCStatus); e.Ack != enums.AckReasonMSAccepted || e.Grant.Source != 0xFFFECB || e.Status != 5 {
 		t.Errorf("dispatcher status %+v", e)
 	}
 	if err := s.tscc.SendStatus(s.now, true, 9, 1, trunk.StatusPoll); err == nil {
@@ -188,9 +188,9 @@ func groupCall(t *testing.T, s *sim, a, b *simMS) trunk.Grant {
 	}
 	s.until(3*time.Second, func() bool { return a.ms.State() == trunk.StatePayload && b.ms.State() == trunk.StatePayload })
 	g, _ := s.event(trunk.TSCCCallStart)
-	s.inject(a, voiceLC(t, enums.DataTypeVoiceLCHeader), g.Call.Slot)
+	s.inject(a, voiceLC(t, enums.DataTypeVoiceLCHeader), g.Grant.Slot)
 	s.run(60 * time.Millisecond)
-	return g.Call
+	return g.Grant
 }
 
 func TestInterrupt_PayloadInterrupt(t *testing.T) {

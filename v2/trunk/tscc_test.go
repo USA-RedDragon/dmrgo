@@ -235,24 +235,24 @@ func TestTSCC_EndToEnd(t *testing.T) {
 	}
 	s.until(3*time.Second, func() bool { return a.ms.State() == trunk.StatePayload && b.ms.State() == trunk.StatePayload })
 	start, ok := s.event(trunk.TSCCCallStart)
-	if !ok || !start.Call.Group || start.Call.Target != 9 || start.Call.Source != 3120001 {
+	if !ok || !start.Grant.Group || start.Grant.Target != 9 || start.Grant.Source != 3120001 {
 		t.Fatalf("TSCCCallStart %+v %v", start, ok)
 	}
-	if a.channel != start.Call.Channel || b.channel != start.Call.Channel || c.channel != tsccChannel {
-		t.Errorf("channels a %d b %d c %d, grant %d", a.channel, b.channel, c.channel, start.Call.Channel)
+	if a.channel != start.Grant.Channel || b.channel != start.Grant.Channel || c.channel != tsccChannel {
+		t.Errorf("channels a %d b %d c %d, grant %d", a.channel, b.channel, c.channel, start.Grant.Channel)
 	}
 	if _, ok := has(c.log, trunk.OutputGrant); !ok {
 		t.Error("C saw no grant")
 	}
-	s.inject(a, voiceLC(t, enums.DataTypeVoiceLCHeader), start.Call.Slot)
+	s.inject(a, voiceLC(t, enums.DataTypeVoiceLCHeader), start.Grant.Slot)
 	s.run(60 * time.Millisecond)
-	s.inject(a, voiceLC(t, enums.DataTypeTerminatorWithLC), start.Call.Slot)
+	s.inject(a, voiceLC(t, enums.DataTypeTerminatorWithLC), start.Grant.Slot)
 	s.until(3*time.Second, func() bool { _, ok := s.event(trunk.TSCCCallEnd); return ok })
 	end, _ := s.event(trunk.TSCCCallEnd)
 	if s.relayed != 1 {
 		t.Errorf("%d relayed Voice LC Headers, want 1", s.relayed)
 	}
-	if end.Reason != trunk.ReasonHangtime || end.Call.Target != 9 {
+	if end.Reason != trunk.ReasonHangtime || end.Grant.Target != 9 {
 		t.Errorf("TSCCCallEnd %+v", end)
 	}
 	s.run(300 * time.Millisecond)
@@ -286,7 +286,7 @@ func individualCall(t *testing.T, s *sim) {
 	s.msOutputs(a, s.mout)
 	s.until(2*time.Second, func() bool { _, ok := s.event(trunk.TSCCCallEnd); return ok && c.ms.State() == trunk.StateControl })
 	end, _ := s.event(trunk.TSCCCallEnd)
-	if end.Reason != trunk.ReasonMaintenance || end.Call.Group || end.Call.Target != 3120003 {
+	if end.Reason != trunk.ReasonMaintenance || end.Grant.Group || end.Grant.Target != 3120003 {
 		t.Errorf("TSCCCallEnd %+v", end)
 	}
 }

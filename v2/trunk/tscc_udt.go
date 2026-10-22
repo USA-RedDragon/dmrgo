@@ -568,7 +568,7 @@ func (t *TSCC) relayUpload(now time.Duration, i int, to uint32, group bool, op p
 	for range udtRepeats {
 		t.ackFrom(caller, enums.AckReasonMessageAccepted, 0, to)
 	}
-	return append(out, TSCCOutput{Kind: TSCCDelivered, Address: caller, Ack: enums.AckReasonMessageAccepted, Call: Grant{Group: true, Target: to, Source: caller}})
+	return append(out, TSCCOutput{Kind: TSCCDelivered, Address: caller, Ack: enums.AckReasonMessageAccepted, Grant: Grant{Group: true, Target: to, Source: caller}})
 }
 
 func (t *TSCC) divertUploaded(src uint32, out []TSCCOutput) []TSCCOutput {
@@ -623,15 +623,15 @@ func (t *TSCC) udtAck(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOutput)
 				*o = op
 				return out, true
 			}
-			return append(out, TSCCOutput{Kind: TSCCDelivered, Address: op.caller, Ack: r, Call: Grant{Target: op.called, Source: op.caller}}), true
+			return append(out, TSCCOutput{Kind: TSCCDelivered, Address: op.caller, Ack: r, Grant: Grant{Target: op.called, Source: op.caller}}), true
 		case opGatewayData:
-			return append(out, TSCCOutput{Kind: TSCCDelivered, Address: op.caller, Ack: r, Call: Grant{Target: op.called, Source: op.caller}}), true
+			return append(out, TSCCOutput{Kind: TSCCDelivered, Address: op.caller, Ack: r, Grant: Grant{Target: op.called, Source: op.caller}}), true
 		case opNone, opShortData, opGatewayPoll, opDivert, opDGNA, opUSBD:
 		}
 		for range udtRepeats {
 			t.ackFrom(op.caller, enums.AckReasonMSAccepted, 0, op.called)
 		}
-		return append(out, TSCCOutput{Kind: TSCCDelivered, Address: op.caller, Ack: enums.AckReasonMSAccepted, Call: Grant{Target: op.called, Source: op.caller}}), true
+		return append(out, TSCCOutput{Kind: TSCCDelivered, Address: op.caller, Ack: enums.AckReasonMSAccepted, Grant: Grant{Target: op.called, Source: op.caller}}), true
 	}
 	return out, false
 }
@@ -656,7 +656,7 @@ func (t *TSCC) duplexGrant(now time.Duration, op *udtOp, out []TSCCOutput) []TSC
 			t.duplexSend(&g2, false)
 			t.duplexSend(&g, true)
 		}
-		return append(out, TSCCOutput{Kind: TSCCCallStart, Call: g})
+		return append(out, TSCCOutput{Kind: TSCCCallStart, Grant: g})
 	}
 	return t.refuse(op.caller, enums.AckReasonSysBusyRefused, out)
 }
