@@ -10728,9 +10728,9 @@ int dmrgo_trunk_tscc_diverted(dmrgo_trunk_tscc_t *self, uint32_t addr, dmrgo_lay
 /* Go: trunk.TSCC.ExpectAuth. ExpectAuth sets response as the answer that the TSCC accepts from the MS addr to the challenge of the last TSCCAuthChallenge for addr. */
 int dmrgo_trunk_tscc_expect_auth(dmrgo_trunk_tscc_t *self, uint32_t addr, uint32_t response);
 /* dmrgo_trunk_tscc_inbound_need sets *items and *arena to the room that dmrgo_trunk_tscc_inbound needs for these arguments, without a change to the handle. */
-int dmrgo_trunk_tscc_inbound_need(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
-/* Go: trunk.TSCC.Inbound. Inbound takes the burst raw that the TSCC received on the inbound channel of carrier ch in slot s, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_tscc_inbound_need gives (DMRGO_TRUNK_TSCC_INBOUND_MAX_ITEMS items). */
-int dmrgo_trunk_tscc_inbound(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_trunk_tscc_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_trunk_tscc_inbound_need(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint16_t ch, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+/* Go: trunk.TSCC.Inbound. Inbound takes the burst raw that the TSCC received on the inbound channel of carrier ch in the slot h.Slot, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_tscc_inbound_need gives (DMRGO_TRUNK_TSCC_INBOUND_MAX_ITEMS items). */
+int dmrgo_trunk_tscc_inbound(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint16_t ch, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_trunk_tscc_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.TSCC.Interrupt. Interrupt sends the RC command cmd to the MS that transmits on slot s of the payload channel ch, in the embedded signalling of the other slot of the carrier. */
 int dmrgo_trunk_tscc_interrupt(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_enums_rc_command_t cmd);
 /* Go: trunk.TSCC.Kill. Kill asks the MS addr to disable itself for good, with a C_AHOY from KILLI, as Stun does. */

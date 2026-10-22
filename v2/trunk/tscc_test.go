@@ -109,7 +109,7 @@ func (s *sim) step() {
 		if collided {
 			continue
 		}
-		s.tout = s.tscc.Inbound(s.now, p.ch, p.slot, &p.raw, layer2.Hint{}, s.tout[:0])
+		s.tout = s.tscc.Inbound(s.now, p.ch, &p.raw, layer2.Hint{Slot: p.slot}, s.tout[:0])
 		s.record()
 	}
 	s.tout = s.tscc.Tick(s.now, s.tout[:0])

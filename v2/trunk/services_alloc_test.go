@@ -27,8 +27,8 @@ func TestAllocsTSCCServices(t *testing.T) {
 		_ = ts.SendStatus(now, false, 3120002, 0xFFFECB, 3)
 		_ = ts.MassRegister(2, 0, 0)
 		for i := range pool {
-			out = ts.Inbound(now, tsccChannel, enums.Slot1, &pool[i], layer2.Hint{}, out[:0])
-			out = ts.Inbound(now, 10, enums.Slot1, &pool[i], layer2.Hint{}, out[:0])
+			out = ts.Inbound(now, tsccChannel, &pool[i], layer2.Hint{Slot: enums.Slot1}, out[:0])
+			out = ts.Inbound(now, 10, &pool[i], layer2.Hint{Slot: enums.Slot1}, out[:0])
 			_ = ts.Interrupt(now, 10, enums.Slot1, enums.RCCeaseTransmissionRequest)
 			for range 8 {
 				now += 30 * time.Millisecond

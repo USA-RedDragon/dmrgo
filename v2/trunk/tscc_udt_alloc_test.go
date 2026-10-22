@@ -28,7 +28,7 @@ func TestAllocsTSCCUDT(t *testing.T) {
 	now := time.Duration(0)
 	run := func() {
 		for i := range pool {
-			out = ts.Inbound(now, tsccChannel, enums.Slot1, &pool[i], layer2.Hint{}, out[:0])
+			out = ts.Inbound(now, tsccChannel, &pool[i], layer2.Hint{Slot: enums.Slot1}, out[:0])
 			for range 4 {
 				now += 30 * time.Millisecond
 				out = ts.Tick(now, out[:0])

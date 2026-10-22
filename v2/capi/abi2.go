@@ -459,16 +459,16 @@ func abiCall(h *harness, m *abiMS, now time.Duration, tg uint32) error {
 func abiInboundRun(h *harness, gt *trunk.TSCC, ct *C.dmrgo_trunk_tscc_t, now time.Duration, p abiInbound, tout []trunk.TSCCOutput) ([]trunk.TSCCOutput, error) {
 	r := p.raw
 	hint := layer2.Hint{Slot: p.slot, Kind: layer2.KindData}
-	tout = gt.Inbound(now, p.ch, p.slot, &r, hint, tout[:0])
+	tout = gt.Inbound(now, p.ch, &r, hint, tout[:0])
 	cn, ch := C.int64_t(now), cHint(hint)
 	cr := p.raw
-	pch, ps := C.uint16_t(p.ch), C.dmrgo_enums_slot_t(p.slot)
+	pch := C.uint16_t(p.ch)
 	return tout, runAppend(h, "TSCC.Inbound", tout, nil, fromC_trunk_TSCCOutput,
 		func(it, a *C.size_t) C.int {
-			return C.dmrgo_trunk_tscc_inbound_need(ct, cn, pch, ps, cRaw(&cr), ch, it, a)
+			return C.dmrgo_trunk_tscc_inbound_need(ct, cn, pch, cRaw(&cr), ch, it, a)
 		},
 		func(d *C.dmrgo_trunk_tscc_output_t, c C.size_t, n, nn *C.size_t, _ unsafe.Pointer, _ C.size_t, _, _ *C.size_t) C.int {
-			return C.dmrgo_trunk_tscc_inbound(ct, cn, pch, ps, cRaw(&cr), ch, d, c, n, nn)
+			return C.dmrgo_trunk_tscc_inbound(ct, cn, pch, cRaw(&cr), ch, d, c, n, nn)
 		})
 }
 
