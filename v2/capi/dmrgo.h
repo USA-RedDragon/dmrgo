@@ -59,6 +59,8 @@
  *   that was taken does not stop that use. The user value of a vtable or
  *   callback must stay valid until the handle made from it and every
  *   handle that took that handle or callback are freed.
+ * - libdmrgo runs the Go runtime, whose threads a child of fork() does not
+ *   have, so a child process calls libdmrgo only after an exec.
  *
  * The ABI version: DMRGO_ABI_VERSION numbers the C ABI of libdmrgo. It is
  * independent of the version of the Go module and changes only when a
