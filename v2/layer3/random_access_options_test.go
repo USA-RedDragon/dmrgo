@@ -21,7 +21,7 @@ func TestVoiceServiceOptions_Table7_52(t *testing.T) {
 		if err != nil || got != tt.want {
 			t.Errorf("%+v.Field() = %07b, %v, want %07b", tt.o, got, err, tt.want)
 		}
-		if back := layer3.DecodeVoiceServiceOptions([1]byte{got << 1}); back != tt.o {
+		if back := layer3.VoiceServiceOptionsOf(got); back != tt.o {
 			t.Errorf("DecodeVoiceServiceOptions(%07b) = %+v, want %+v", got, back, tt.o)
 		}
 	}

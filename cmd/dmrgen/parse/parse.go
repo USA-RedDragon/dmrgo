@@ -240,6 +240,12 @@ type PDUStruct struct {
 	SubPDU       bool              // true if dmr:subpdu was given
 	Payload      bool              // true if dmr:payload was given: the frame is the payload of a message
 
+	// FieldName is set by dmr:field: the struct is a field of fewer than 8
+	// bits of another PDU, named FieldName in the docs, and gets a Field
+	// method and an XOf function that convert it to and from the field
+	// value in the low bits of a uint8.
+	FieldName string
+
 	// Frame is set by dmr:frame: the struct is a byte frame of one of
 	// Frame.Sizes octets, decoded from a slice with an error and encoded with
 	// AppendBinary.
@@ -603,6 +609,8 @@ func parseDirective(pdu *PDUStruct, text string, baseTypes map[string]string) er
 			}
 			pdu.Inputs = append(pdu.Inputs, in)
 		}
+	case "dmr:field":
+		pdu.FieldName = arg
 	case "dmr:const":
 		c, err := parseConst(arg)
 		if err != nil {
@@ -1145,6 +1153,9 @@ func validateStruct(pdu *PDUStruct, maxBit int) error {
 		}
 	}
 
+	if pdu.FieldName != "" && (pdu.InputSize >= 8 || pdu.FEC != nil || pdu.CRC != nil || len(pdu.Inputs) > 0 || len(pdu.Variants) > 0) {
+		return errors.New("dmr:field needs a struct of fewer than 8 bits without FEC, CRC, inputs or variants")
+	}
 	if err := checkUnion(pdu); err != nil {
 		return err
 	}

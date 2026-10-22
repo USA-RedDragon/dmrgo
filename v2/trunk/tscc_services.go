@@ -217,7 +217,7 @@ func (t *TSCC) sendAhoy(a pdu.AhoyPDU, addr uint32, reply bool) {
 
 func (t *TSCC) registration(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutput) []TSCCOutput {
 	src := r.SourceAddress
-	o := layer3.DecodeRegistrationServiceOptions([1]byte{r.ServiceOptions << 1})
+	o := layer3.RegistrationServiceOptionsOf(r.ServiceOptions)
 	if o.IPInform {
 		return t.ipAdvice(now, r, &o, out)
 	}
@@ -458,7 +458,7 @@ func (t *TSCC) svcRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOu
 
 func (t *TSCC) statusRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutput) []TSCCOutput {
 	src, target := r.SourceAddress, r.TargetAddress
-	o := layer3.DecodeStatusServiceOptions([1]byte{r.ServiceOptions << 1})
+	o := layer3.StatusServiceOptionsOf(r.ServiceOptions)
 	st := Status(o.StatusHigh)<<2 | Status(r.Reserved&3)
 	if st == StatusInterrupt || st == StatusTerminate {
 		return t.interruptRequest(now, src, target, o.Group, st == StatusTerminate, out)

@@ -44,6 +44,22 @@ func (s *ShortDataServiceOptions) Encode() ([1]byte, error) {
 	return data, nil
 }
 
+// Field returns s as the 7-bit ServiceOptions of a C_RAND, in the low bits
+// of the octet, with the errors of Encode. ShortDataServiceOptionsOf is its
+// inverse. (ETSI TS 102 361-4 clause 7.2.13.7, Table 7.58)
+func (s ShortDataServiceOptions) Field() (uint8, error) {
+	b, err := s.Encode()
+	return b[0] >> 1, err
+}
+
+// ShortDataServiceOptionsOf decodes a ShortDataServiceOptions from the 7-bit
+// ServiceOptions of a C_RAND in the low bits of field, as Field returns it.
+// It ignores the high bit of field. (ETSI TS 102 361-4 clause 7.2.13.7,
+// Table 7.58)
+func ShortDataServiceOptionsOf(field uint8) ShortDataServiceOptions {
+	return DecodeShortDataServiceOptions([1]byte{field << 1})
+}
+
 // String returns the fields of s as text, for printing. It allocates the
 // string.
 func (s *ShortDataServiceOptions) String() string {
@@ -85,6 +101,22 @@ func (s *PollingServiceOptions) Encode() ([1]byte, error) {
 	data[0] = data[0]&^0x80 | byte(_const0>>1<<7)&0x80
 	data[0] = data[0]&^0x20 | byte(_const0<<5)&0x20
 	return data, nil
+}
+
+// Field returns s as the 7-bit ServiceOptions of a C_RAND, in the low bits
+// of the octet, with the errors of Encode. PollingServiceOptionsOf is its
+// inverse. (ETSI TS 102 361-4 clause 7.2.13.9, Table 7.60)
+func (s PollingServiceOptions) Field() (uint8, error) {
+	b, err := s.Encode()
+	return b[0] >> 1, err
+}
+
+// PollingServiceOptionsOf decodes a PollingServiceOptions from the 7-bit
+// ServiceOptions of a C_RAND in the low bits of field, as Field returns it.
+// It ignores the high bit of field. (ETSI TS 102 361-4 clause 7.2.13.9,
+// Table 7.60)
+func PollingServiceOptionsOf(field uint8) PollingServiceOptions {
+	return DecodePollingServiceOptions([1]byte{field << 1})
 }
 
 // String returns the fields of s as text, for printing. It allocates the
@@ -141,6 +173,22 @@ func (s *DiversionServiceOptions) Encode() ([1]byte, error) {
 	}
 	data[0] = data[0]&^0x80 | byte(uint64(0)<<7)&0x80
 	return data, nil
+}
+
+// Field returns s as the 7-bit ServiceOptions of a C_RAND, in the low bits
+// of the octet, with the errors of Encode. DiversionServiceOptionsOf is its
+// inverse. (ETSI TS 102 361-4 clause 7.2.13.3, Table 7.54)
+func (s DiversionServiceOptions) Field() (uint8, error) {
+	b, err := s.Encode()
+	return b[0] >> 1, err
+}
+
+// DiversionServiceOptionsOf decodes a DiversionServiceOptions from the 7-bit
+// ServiceOptions of a C_RAND in the low bits of field, as Field returns it.
+// It ignores the high bit of field. (ETSI TS 102 361-4 clause 7.2.13.3,
+// Table 7.54)
+func DiversionServiceOptionsOf(field uint8) DiversionServiceOptions {
+	return DecodeDiversionServiceOptions([1]byte{field << 1})
 }
 
 // String returns the fields of s as text, for printing. It allocates the

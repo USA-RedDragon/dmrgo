@@ -23,10 +23,10 @@ func TestUDTServiceOptions_Tables7_54_7_58_7_60(t *testing.T) {
 	if err != nil || v != 0b0011001 {
 		t.Errorf("diversion %07b %v", v, err)
 	}
-	if back := layer3.DecodeDiversionServiceOptions([1]byte{v << 1}); back != d {
+	if back := layer3.DiversionServiceOptionsOf(v); back != d {
 		t.Errorf("diversion %+v", back)
 	}
-	if back := layer3.DecodePollingServiceOptions([1]byte{0b0000101 << 1}); back.Format != enums.UDTNMEA {
+	if back := layer3.PollingServiceOptionsOf(0b0000101); back.Format != enums.UDTNMEA {
 		t.Errorf("polling %+v", back)
 	}
 	if back := layer3.DecodeShortDataServiceOptions([1]byte{0xFF}); !back.IsSuppData || !back.IsPrivacy {

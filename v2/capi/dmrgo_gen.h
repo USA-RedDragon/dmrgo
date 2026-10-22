@@ -375,19 +375,19 @@ typedef struct dmrgo_pdu_vnap_continuation_t dmrgo_pdu_vnap_continuation_t;
 typedef struct dmrgo_pdu_vote_now_parms_t dmrgo_pdu_vote_now_parms_t;
 /* Go: layer3.CdefParms. CdefParms is the Channel Definition Parameters (Cdeftype 0) information element, which carries the absolute TX and RX frequencies in 58 bits. */
 typedef struct dmrgo_layer3_cdef_parms_t dmrgo_layer3_cdef_parms_t;
-/* Go: layer3.DataServiceOptions. DataServiceOptions is the 7-bit Service_Options of a Tier III packet data service request, in the high bits of the octet as for VoiceServiceOptions. */
+/* Go: layer3.DataServiceOptions. DataServiceOptions is the 7-bit Service_Options of a Tier III packet data service request, with Field and an Of function as for VoiceServiceOptions. */
 typedef struct dmrgo_layer3_data_service_options_t dmrgo_layer3_data_service_options_t;
-/* Go: layer3.DiversionServiceOptions. DiversionServiceOptions is the 7-bit Service_Options of a Tier III call diversion request, in the high bits of the octet as for VoiceServiceOptions. */
+/* Go: layer3.DiversionServiceOptions. DiversionServiceOptions is the 7-bit Service_Options of a Tier III call diversion request, with Field and an Of function as for VoiceServiceOptions. */
 typedef struct dmrgo_layer3_diversion_service_options_t dmrgo_layer3_diversion_service_options_t;
-/* Go: layer3.PollingServiceOptions. PollingServiceOptions is the 7-bit Service_Options of a Tier III UDT short data polling request, in the high bits of the octet as for VoiceServiceOptions. */
+/* Go: layer3.PollingServiceOptions. PollingServiceOptions is the 7-bit Service_Options of a Tier III UDT short data polling request, with Field and an Of function as for VoiceServiceOptions. */
 typedef struct dmrgo_layer3_polling_service_options_t dmrgo_layer3_polling_service_options_t;
-/* Go: layer3.RegistrationServiceOptions. RegistrationServiceOptions is the 7-bit Service_Options of a Tier III registration request, in the high bits of the octet as for VoiceServiceOptions (ETSI TS 102 361-4 clause 7.2.13.4, Table 7.55). */
+/* Go: layer3.RegistrationServiceOptions. RegistrationServiceOptions is the 7-bit Service_Options of a Tier III registration request, with Field and an Of function as for VoiceServiceOptions (ETSI TS 102 361-4 clause 7.2.13.4, Table 7.55). */
 typedef struct dmrgo_layer3_registration_service_options_t dmrgo_layer3_registration_service_options_t;
 /* Go: layer3.ServiceOptions. ServiceOptions is the Service Options information element (ETSI TS 102 361-2 clause 7.2.1). */
 typedef struct dmrgo_layer3_service_options_t dmrgo_layer3_service_options_t;
-/* Go: layer3.ShortDataServiceOptions. ShortDataServiceOptions is the 7-bit Service_Options of a Tier III UDT short data or DGNA request, in the high bits of the octet as for VoiceServiceOptions. */
+/* Go: layer3.ShortDataServiceOptions. ShortDataServiceOptions is the 7-bit Service_Options of a Tier III UDT short data or DGNA request, with Field and an Of function as for VoiceServiceOptions. */
 typedef struct dmrgo_layer3_short_data_service_options_t dmrgo_layer3_short_data_service_options_t;
-/* Go: layer3.StatusServiceOptions. StatusServiceOptions is the 7-bit Service_Options of a Tier III status transport request, in the high bits of the octet as for VoiceServiceOptions. */
+/* Go: layer3.StatusServiceOptions. StatusServiceOptions is the 7-bit Service_Options of a Tier III status transport request, with Field and an Of function as for VoiceServiceOptions. */
 typedef struct dmrgo_layer3_status_service_options_t dmrgo_layer3_status_service_options_t;
 /* Go: layer3.VoiceServiceOptions. VoiceServiceOptions is the 7-bit Service_Options of a Tier III voice service request, such as a C_RAND for a talkgroup or individual voice call. */
 typedef struct dmrgo_layer3_voice_service_options_t dmrgo_layer3_voice_service_options_t;
@@ -9512,10 +9512,12 @@ int dmrgo_layer3_cdef_parms_tx_frequency_hz(const dmrgo_layer3_cdef_parms_t *sel
 int dmrgo_layer3_cdef_parms_tx_frequency_mhz(const dmrgo_layer3_cdef_parms_t *self, double *out);
 /* Go: layer3.DataServiceOptions.Encode. Encode encodes a DataServiceOptions. */
 int dmrgo_layer3_data_service_options_encode(const dmrgo_layer3_data_service_options_t *self, uint8_t out[1]);
-/* Go: layer3.DataServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
+/* Go: layer3.DataServiceOptions.Field. Field returns s as the 7-bit ServiceOptions of a C_RAND, in the low bits of the octet, with the errors of Encode. */
 int dmrgo_layer3_data_service_options_field(const dmrgo_layer3_data_service_options_t *self, uint8_t *out);
 /* Go: layer3.DataServiceOptions.String. String returns the fields of s as text, for printing. */
 int dmrgo_layer3_data_service_options_string(const dmrgo_layer3_data_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: layer3.DataServiceOptionsOf. DataServiceOptionsOf decodes a DataServiceOptions from the 7-bit ServiceOptions of a C_RAND in the low bits of field, as Field returns it. */
+int dmrgo_layer3_data_service_options_of(uint8_t field, dmrgo_layer3_data_service_options_t *out);
 /* Go: layer3.DecodeCdefParms. DecodeCdefParms decodes a CdefParms. */
 int dmrgo_layer3_decode_cdef_parms(const uint8_t data[8], dmrgo_layer3_cdef_parms_t *out);
 /* Go: layer3.DecodeDataServiceOptions. DecodeDataServiceOptions decodes a DataServiceOptions. */
@@ -9536,26 +9538,32 @@ int dmrgo_layer3_decode_status_service_options(const uint8_t data[1], dmrgo_laye
 int dmrgo_layer3_decode_voice_service_options(const uint8_t data[1], dmrgo_layer3_voice_service_options_t *out);
 /* Go: layer3.DiversionServiceOptions.Encode. Encode encodes a DiversionServiceOptions. */
 int dmrgo_layer3_diversion_service_options_encode(const dmrgo_layer3_diversion_service_options_t *self, uint8_t out[1]);
-/* Go: layer3.DiversionServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
+/* Go: layer3.DiversionServiceOptions.Field. Field returns s as the 7-bit ServiceOptions of a C_RAND, in the low bits of the octet, with the errors of Encode. */
 int dmrgo_layer3_diversion_service_options_field(const dmrgo_layer3_diversion_service_options_t *self, uint8_t *out);
 /* Go: layer3.DiversionServiceOptions.String. String returns the fields of s as text, for printing. */
 int dmrgo_layer3_diversion_service_options_string(const dmrgo_layer3_diversion_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: layer3.DiversionServiceOptionsOf. DiversionServiceOptionsOf decodes a DiversionServiceOptions from the 7-bit ServiceOptions of a C_RAND in the low bits of field, as Field returns it. */
+int dmrgo_layer3_diversion_service_options_of(uint8_t field, dmrgo_layer3_diversion_service_options_t *out);
 /* Go: layer3.MotorolaServiceOptions. MotorolaServiceOptions returns the Service Options octet 0x20 seen in Motorola IPSC voice traffic: no flag set and only the first Reserved bit (0x20) set, so Reserved is 2. */
 int dmrgo_layer3_motorola_service_options(dmrgo_layer3_service_options_t *out);
 /* Go: layer3.PollingServiceOptions.Encode. Encode encodes a PollingServiceOptions. */
 int dmrgo_layer3_polling_service_options_encode(const dmrgo_layer3_polling_service_options_t *self, uint8_t out[1]);
-/* Go: layer3.PollingServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
+/* Go: layer3.PollingServiceOptions.Field. Field returns s as the 7-bit ServiceOptions of a C_RAND, in the low bits of the octet, with the errors of Encode. */
 int dmrgo_layer3_polling_service_options_field(const dmrgo_layer3_polling_service_options_t *self, uint8_t *out);
 /* Go: layer3.PollingServiceOptions.String. String returns the fields of s as text, for printing. */
 int dmrgo_layer3_polling_service_options_string(const dmrgo_layer3_polling_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: layer3.PollingServiceOptionsOf. PollingServiceOptionsOf decodes a PollingServiceOptions from the 7-bit ServiceOptions of a C_RAND in the low bits of field, as Field returns it. */
+int dmrgo_layer3_polling_service_options_of(uint8_t field, dmrgo_layer3_polling_service_options_t *out);
 /* Go: layer3.PositionAccuracy.String. */
 int dmrgo_layer3_position_accuracy_string(dmrgo_layer3_position_accuracy_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.RegistrationServiceOptions.Encode. Encode encodes a RegistrationServiceOptions. */
 int dmrgo_layer3_registration_service_options_encode(const dmrgo_layer3_registration_service_options_t *self, uint8_t out[1]);
-/* Go: layer3.RegistrationServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
+/* Go: layer3.RegistrationServiceOptions.Field. Field returns s as the 7-bit ServiceOptions of a C_RAND, in the low bits of the octet, with the errors of Encode. */
 int dmrgo_layer3_registration_service_options_field(const dmrgo_layer3_registration_service_options_t *self, uint8_t *out);
 /* Go: layer3.RegistrationServiceOptions.String. String returns the fields of s as text, for printing. */
 int dmrgo_layer3_registration_service_options_string(const dmrgo_layer3_registration_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: layer3.RegistrationServiceOptionsOf. RegistrationServiceOptionsOf decodes a RegistrationServiceOptions from the 7-bit ServiceOptions of a C_RAND in the low bits of field, as Field returns it. */
+int dmrgo_layer3_registration_service_options_of(uint8_t field, dmrgo_layer3_registration_service_options_t *out);
 /* Go: layer3.ServiceOptions.Encode. Encode encodes a ServiceOptions. */
 int dmrgo_layer3_service_options_encode(const dmrgo_layer3_service_options_t *self, uint8_t out[1]);
 /* Go: layer3.ServiceOptions.Field. Field returns s as the 8-bit Service Options field, the octet of Encode, with the errors of Encode. */
@@ -9564,26 +9572,32 @@ int dmrgo_layer3_service_options_field(const dmrgo_layer3_service_options_t *sel
 int dmrgo_layer3_service_options_string(const dmrgo_layer3_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.ShortDataServiceOptions.Encode. Encode encodes a ShortDataServiceOptions. */
 int dmrgo_layer3_short_data_service_options_encode(const dmrgo_layer3_short_data_service_options_t *self, uint8_t out[1]);
-/* Go: layer3.ShortDataServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
+/* Go: layer3.ShortDataServiceOptions.Field. Field returns s as the 7-bit ServiceOptions of a C_RAND, in the low bits of the octet, with the errors of Encode. */
 int dmrgo_layer3_short_data_service_options_field(const dmrgo_layer3_short_data_service_options_t *self, uint8_t *out);
 /* Go: layer3.ShortDataServiceOptions.String. String returns the fields of s as text, for printing. */
 int dmrgo_layer3_short_data_service_options_string(const dmrgo_layer3_short_data_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: layer3.ShortDataServiceOptionsOf. ShortDataServiceOptionsOf decodes a ShortDataServiceOptions from the 7-bit ServiceOptions of a C_RAND in the low bits of field, as Field returns it. */
+int dmrgo_layer3_short_data_service_options_of(uint8_t field, dmrgo_layer3_short_data_service_options_t *out);
 /* Go: layer3.SourceType.String. */
 int dmrgo_layer3_source_type_string(dmrgo_layer3_source_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.StatusServiceOptions.Encode. Encode encodes a StatusServiceOptions. */
 int dmrgo_layer3_status_service_options_encode(const dmrgo_layer3_status_service_options_t *self, uint8_t out[1]);
-/* Go: layer3.StatusServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
+/* Go: layer3.StatusServiceOptions.Field. Field returns s as the 7-bit ServiceOptions of a C_RAND, in the low bits of the octet, with the errors of Encode. */
 int dmrgo_layer3_status_service_options_field(const dmrgo_layer3_status_service_options_t *self, uint8_t *out);
 /* Go: layer3.StatusServiceOptions.String. String returns the fields of s as text, for printing. */
 int dmrgo_layer3_status_service_options_string(const dmrgo_layer3_status_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: layer3.StatusServiceOptionsOf. StatusServiceOptionsOf decodes a StatusServiceOptions from the 7-bit ServiceOptions of a C_RAND in the low bits of field, as Field returns it. */
+int dmrgo_layer3_status_service_options_of(uint8_t field, dmrgo_layer3_status_service_options_t *out);
 /* Go: layer3.TalkerAliasDataFormat.String. */
 int dmrgo_layer3_talker_alias_data_format_string(dmrgo_layer3_talker_alias_data_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.VoiceServiceOptions.Encode. Encode encodes a VoiceServiceOptions. */
 int dmrgo_layer3_voice_service_options_encode(const dmrgo_layer3_voice_service_options_t *self, uint8_t out[1]);
-/* Go: layer3.VoiceServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
+/* Go: layer3.VoiceServiceOptions.Field. Field returns s as the 7-bit ServiceOptions of a C_RAND, in the low bits of the octet, with the errors of Encode. */
 int dmrgo_layer3_voice_service_options_field(const dmrgo_layer3_voice_service_options_t *self, uint8_t *out);
 /* Go: layer3.VoiceServiceOptions.String. String returns the fields of s as text, for printing. */
 int dmrgo_layer3_voice_service_options_string(const dmrgo_layer3_voice_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: layer3.VoiceServiceOptionsOf. VoiceServiceOptionsOf decodes a VoiceServiceOptions from the 7-bit ServiceOptions of a C_RAND in the low bits of field, as Field returns it. */
+int dmrgo_layer3_voice_service_options_of(uint8_t field, dmrgo_layer3_voice_service_options_t *out);
 /* dmrgo_location_decoder_new makes a zero location.Decoder. */
 int dmrgo_location_decoder_new(dmrgo_location_decoder_t **out);
 /* dmrgo_location_decoder_free frees the handle. self may be NULL. */

@@ -178,6 +178,9 @@ func GenerateFile(pdus []parse.PDUStruct, pkgName string) (*File, error) {
 			return nil, fmt.Errorf("generating encode for %s: %w", pdu.Name, err)
 		}
 		f.Line()
+		if pdu.FieldName != "" {
+			emitField(f, pdu)
+		}
 		emitString(f, pdu, false)
 		if pdu.UnionField() != nil {
 			if err := emitUnion(f, pdu, ev); err != nil {
@@ -901,6 +904,28 @@ func emitDelegateDecode(g *Group, field parse.Field, pdu parse.PDUStruct) {
 	g.Add(decl)
 	addAll(g, copyBits(idOf(tmpVar), 0, dataBuf, field.BitStart, width))
 	g.Add(target).Op("=").Add(call)
+}
+
+func emitField(f *File, pdu parse.PDUStruct) {
+	n := pdu.InputSize
+	pad := 8 - n
+	of := pdu.Name + "Of"
+	bits := strconv.Itoa(n) + "-bit"
+	comment(f, "Field returns s as the "+bits+" "+pdu.FieldName+", in the low bits of the octet, with the errors of Encode. "+of+" is its inverse."+docCite(pdu))
+	f.Func().Params(Id("s").Id(pdu.Name)).Id("Field").Params().Params(Uint8(), Error()).Block(
+		List(Id("b"), Err()).Op(":=").Id("s").Dot(encodeFnName).Call(),
+		Return(Id("b").Index(Lit(0)).Op(">>").Lit(pad), Err()),
+	)
+	f.Line()
+	high := "the high " + strconv.Itoa(pad) + " bits"
+	if pad == 1 {
+		high = "the high bit"
+	}
+	comment(f, of+" decodes "+article(pdu.Name)+" "+pdu.Name+" from the "+bits+" "+pdu.FieldName+" in the low bits of field, as Field returns it. It ignores "+high+" of field."+docCite(pdu))
+	f.Func().Id(of).Params(Id("field").Uint8()).Id(pdu.Name).Block(
+		Return(Id(pdu.DecodeFuncName(pdu.Name)).Call(Index(Lit(1)).Byte().Values(Id("field").Op("<<").Lit(pad)))),
+	)
+	f.Line()
 }
 
 func emitEncode(f *File, pdu parse.PDUStruct, ev *errVars) error {
