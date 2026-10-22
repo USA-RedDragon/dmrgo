@@ -161,6 +161,30 @@ func TestPositionTrackerLCSSAfterGuessFromHeader(t *testing.T) {
 	}
 }
 
+func TestPositionTrackerSequenceLostAfterGuess(t *testing.T) {
+	t.Parallel()
+
+	frames := [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame{vocoder.AMBESilence(), vocoder.AMBESilence(), vocoder.AMBESilence()}
+	build := func(pos enums.VoiceBurstType, lcss enums.LCSS) layer2.RawBurst {
+		r, err := layer2.BuildVoiceBurst(frames, pos, pdu.EmbeddedSignalling{ColorCode: 1, LCSS: lcss}, [4]byte{}, layer2.SyncSourceBS)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return r
+	}
+	c, b := build(enums.VoiceBurstC, enums.LCSSContinuationFragment), build(enums.VoiceBurstB, enums.LCSSFirstFragment)
+	var tr layer2.PositionTracker
+	h := layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeVoiceLCHeader, HasDataType: true, Seq: 0, HasSeq: true}
+	var hdr layer2.RawBurst
+	tr.Place(&hdr, &h)
+	h = layer2.Hint{Kind: layer2.KindVoice, Seq: 4, HasSeq: true}
+	tr.Place(&c, &h)
+	h = layer2.Hint{Kind: layer2.KindVoice, Seq: 7, HasSeq: true}
+	if lost, _ := tr.Place(&b, &h); h.VoiceBurst != enums.VoiceBurstB || lost != 2 {
+		t.Fatalf("B three sequence numbers after a guessed burst: %v lost %d", h.VoiceBurst, lost)
+	}
+}
+
 func TestPositionTrackerMisuse(t *testing.T) {
 	t.Parallel()
 
