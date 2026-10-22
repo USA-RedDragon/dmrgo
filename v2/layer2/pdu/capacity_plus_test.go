@@ -448,3 +448,23 @@ func TestCapacityPlusSegmentString(t *testing.T) {
 		}
 	}
 }
+
+func TestCapacityPlusCSBKString(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		op         pdu.CSBKOpcode
+		name, view string
+	}{
+		{pdu.CSBKCapacityPlusSiteStatus, "Capacity Plus Site Status", "CapacityPlusSiteStatusPDU{"},
+		{pdu.CSBKCapacityPlusNeighbors, "Capacity Plus Neighbors", "CapacityPlusNeighborsPDU{"},
+		{pdu.CSBKCapacityPlusDataRevertAnnouncement, "Capacity Plus Data Revert Announcement", "CapacityPlusDataRevertAnnouncementPDU{"},
+		{pdu.CSBKCapacityPlusPreamble, "", "CapacityPlusPreamblePDU{"},
+		{pdu.CSBKCapacityPlusDataRevertGrant, "", "CapacityPlusDataRevertGrantPDU{"},
+	} {
+		c := pdu.CSBK{Opcode: tc.op, FID: enums.FIDMotorola, RawPayload: [8]byte{0xC4, 1, 2, 3, 4, 5, 6, 7}}
+		s := c.String()
+		if strings.Contains(s, "Unknown CSBKOpcode") || !strings.Contains(s, tc.name) || !strings.Contains(s, tc.view) {
+			t.Errorf("opcode %#x: %s", byte(tc.op), s)
+		}
+	}
+}

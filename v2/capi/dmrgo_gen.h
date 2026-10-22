@@ -8997,7 +8997,7 @@ int dmrgo_pdu_csbk_bytes_reseal(dmrgo_pdu_csbk_bytes_t *self);
 int dmrgo_pdu_csbk_bytes_set_addresses(dmrgo_pdu_csbk_bytes_t *self, uint32_t target, uint32_t source);
 /* Go: pdu.CSBKBytes.SetGroup. SetGroup writes the flag that Group returns. It returns DMRGO_ERR_PDU_NO_GROUP_FLAG, and changes nothing, for a CSBK for which Group returns no flag. */
 int dmrgo_pdu_csbk_bytes_set_group(dmrgo_pdu_csbk_bytes_t *self, bool group);
-/* Go: pdu.CSBKOpcode.String. String returns the name of the CSBKOpcode. */
+/* Go: pdu.CSBKOpcode.String. String returns the name of the CSBKOpcode, or of the Capacity Plus opcode (FID 0x10) for a value that has no standard opcode. */
 int dmrgo_pdu_csbk_opcode_string(dmrgo_pdu_csbk_opcode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.CallTimerParms.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_call_timer_parms_string(const dmrgo_pdu_call_timer_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
