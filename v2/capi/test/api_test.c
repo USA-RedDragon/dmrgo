@@ -424,7 +424,10 @@ static void test_in_out(void) {
 	uint8_t pkt[256];
 	size_t n = 0;
 	OK(dmrgo_sms_append_packet(pkt, sizeof pkt, &n, NULL, &t, false, &h));
-	CHECK(n > 20 && h.data.has_unconfirmed_data_header && h.data.unconfirmed_data_header.llid_destination == 5678);
+	dmrgo_pdu_unconfirmed_data_header_t uh = {0};
+	bool uok = false;
+	OK(dmrgo_pdu_data_header_as_unconfirmed(&h.data, &uh, &uok));
+	CHECK(n > 20 && uok && uh.llid_destination == 5678);
 
 	uint8_t key[100];
 	memset(key, 'k', sizeof key);
