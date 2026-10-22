@@ -28,7 +28,9 @@ var (
 	// Short LC. The partial Short LC is discarded.
 	ErrShortLCSequence = errors.New("layer2: short LC fragment out of sequence")
 	// ErrColorCodeMismatch is returned, wrapped, by DecodeFromBytesWith when the
-	// burst's color code differs from DecodeOptions.ColorCode.
+	// burst's color code differs from DecodeOptions.ColorCode, and by
+	// Burst.Encode for a data burst with an EMB whose color code differs
+	// from its slot type.
 	ErrColorCodeMismatch = errors.New("layer2: color code mismatch")
 	// ErrVoiceTerminated is returned by VoiceTransmitter methods called after
 	// Terminate.
@@ -37,16 +39,32 @@ var (
 	// SetHint methods of the transports for a data type that the call cannot
 	// carry: Data of another data type than the slot type, or a data type
 	// that is not BPTC(196,96) coded for BuildDataBurst, and wrapped by
-	// MMDVMHostSeal for a data type that MMDVMHost discards.
+	// MMDVMHostSeal for a data type that MMDVMHost discards. Burst.Encode
+	// and the builders return it wrapped for a data burst without Data, for
+	// a decoded payload of another data type than the slot type, and for
+	// Data that is not a PDU type of package pdu.
 	ErrDataType = errors.New("layer2: the data burst cannot carry this data type")
 	// ErrSyncSource is returned by the builders and the voice transmitter
-	// for a SyncSource that is not one of its values.
+	// for a SyncSource that is not one of its values, and wrapped by
+	// VoiceTransmitter.SetReverseChannel for a transmission that is not
+	// BS-sourced.
 	ErrSyncSource = errors.New("layer2: unknown sync source")
 	// ErrVoicePosition is returned, wrapped or as is, for a voice burst
 	// position that is not one of its values, or that is not A to F where
 	// the call needs a burst of a superframe.
 	ErrVoicePosition = errors.New("layer2: voice burst position out of range")
-	errNotPDU        = errors.New("layer2: data is not a PDU type of package pdu")
+	// ErrKind is returned, wrapped, for a burst kind that the call
+	// cannot take: by DecodeFromBytesWith for a DecodeOptions.Kind that is
+	// not one of its values, by Burst.Encode for a Kind that does not
+	// encode, and by the SetHint and SetRawBurst methods of the transports
+	// for a kind other than KindVoice and KindData.
+	ErrKind = errors.New("layer2: the call cannot take this burst kind")
+	// ErrSyncPattern is returned, wrapped, by RawBurst.SetSync for
+	// a value that is not a SYNC pattern of ETSI TS 102 361-1 Table 9.2, and
+	// by Burst.Encode for a SYNC pattern that the Kind of the burst cannot
+	// carry.
+	ErrSyncPattern       = errors.New("layer2: the burst cannot carry this SYNC pattern")
+	errNotPDU      error = &wrapError{"layer2: data is not a PDU type of package pdu", ErrDataType}
 )
 
 type wrapError struct {
@@ -97,18 +115,18 @@ func (e colorCodeMismatchError) Unwrap() error {
 }
 
 var (
-	errDataBurstNoSync       = errors.New("layer2: a data burst needs a data SYNC pattern; only a decoded data burst with an EMB has SyncNone")
-	errNoData                = errors.New("layer2: data burst has no Data")
-	errRCNotOutbound         = errors.New("layer2: only a BS-sourced voice burst F carries a reverse channel")
-	errUnknownKind           = errors.New("layer2: unknown burst kind")
-	errKindNoEncode          = errors.New("layer2: the burst kind does not encode")
-	errKindSync              = errors.New("layer2: the burst kind cannot carry its SYNC pattern")
+	errDataBurstNoSync error = &wrapError{"layer2: a data burst needs a data SYNC pattern; only a decoded data burst with an EMB has SyncNone", ErrSyncPattern}
+	errNoData          error = &wrapError{"layer2: data burst has no Data", ErrDataType}
+	errRCNotOutbound   error = &wrapError{"layer2: only a BS-sourced voice burst F carries a reverse channel", ErrSyncSource}
+	errUnknownKind     error = &wrapError{"layer2: unknown burst kind", ErrKind}
+	errKindNoEncode    error = &wrapError{"layer2: the burst kind does not encode", ErrKind}
+	errKindSync        error = &wrapError{"layer2: the burst kind cannot carry its SYNC pattern", ErrSyncPattern}
 	errNotAToF         error = &wrapError{"the voice burst position is not A to F", ErrVoicePosition}
-	errEMBColorCode          = errors.New("layer2: a data burst with an EMB needs the color code of its slot type")
-	errPayloadType           = errors.New("layer2: the decoded payload has another data type than the slot type; set Data")
+	errEMBColorCode    error = &wrapError{"layer2: a data burst with an EMB needs the color code of its slot type", ErrColorCodeMismatch}
+	errPayloadType     error = &wrapError{"layer2: the decoded payload has another data type than the slot type; set Data", ErrDataType}
 	errDataPDUType     error = &wrapError{"the data burst cannot carry Data of another data type", ErrDataType}
 	errNotBPTC         error = &wrapError{"the data type is not BPTC(196,96) coded", ErrDataType}
-	errSyncPattern           = errors.New("layer2: not a Table 9.2 SYNC pattern")
+	errSyncPattern     error = &wrapError{"layer2: not a Table 9.2 SYNC pattern", ErrSyncPattern}
 	errMMDVMHostData   error = &wrapError{"MMDVMHost discards bursts of this data type", ErrDataType}
 
 	errBurstBPTCReservedRange    = &dmrgo.FieldRangeError{Type: "Burst", Field: "BPTCReserved", Bits: 3}
