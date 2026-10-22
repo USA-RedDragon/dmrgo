@@ -35,9 +35,9 @@
 // whose CRC fails. A monitor that feeds a burst to several machines, with
 // voice.Receiver and data.Receiver, decodes it once with
 // layer2.Burst.DecodeFromBytesWith and calls Decoded on each, as the
-// example of voice.Receiver.Decoded shows. A Requester and a Responder take the state of the
-// channel from Channel; until the first report the channel counts as idle,
-// as it is for a network transport.
+// example of voice.Receiver.Decoded shows. A Requester and a Responder
+// take the state of the channel from Channel; until the first report the
+// channel counts as idle, as it is for a network transport.
 //
 // The Motorola radio check and call alert have no public spec. Their
 // layouts, and the timing of their answers, come from captures of an
