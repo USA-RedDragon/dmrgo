@@ -36,9 +36,8 @@ var (
 	// ErrTimeout is returned when the chip does not reply within
 	// Config.Timeout.
 	ErrTimeout = errors.New("dvsi: device timed out")
-	// ErrPort is returned for a nil Port, and when a Port returns a byte
-	// count outside 0 to the length of the buffer, or a Write returns 0
-	// bytes and no error.
+	// ErrPort is returned when a Port returns a byte count outside 0 to the
+	// length of the buffer, or a Write returns 0 bytes and no error.
 	ErrPort = errors.New("dvsi: port returned a bad byte count")
 	// ErrClosed is returned when a closed Codec is used.
 	ErrClosed = errors.New("dvsi: codec is closed")
