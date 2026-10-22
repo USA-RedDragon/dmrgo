@@ -29,7 +29,7 @@ const (
 	// gives the coding of the text.
 	FormatDefinedData
 	// FormatHytera is the short data packet that AnyTone radios send in
-	// H-SMS mode: DD format 1 and the HyteraText layout.
+	// H-SMS mode: DD format 1 (BCD) and the HyteraText layout.
 	FormatHytera
 )
 
@@ -85,8 +85,13 @@ type Text struct {
 // data, to dst as UTF-8, and returns
 // dst and the Text, whose Body points into dst. It finds the format from
 // the header and the UDP port: TMS on port 4007, IP or AnyTone text on
-// port 5016, and defined data. It returns ErrNotText for a packet in none
-// of these formats and for defined data with DD format binary, the errors
+// port 5016, and defined data. Defined data with DD format BCD is
+// FormatHytera when it has the HyteraText layout: an even length of at
+// least 6 octets, 2 octets and then a UTF-16LE text of at least one
+// character that ends in 00 00, with only 00 octets after it. Other BCD
+// data is FormatDefinedData; BCD digits that end in six or more 0 digits
+// can have that layout too. It returns ErrNotText for a packet in none of
+// these formats and for defined data with DD format binary, the errors
 // of the ip, tms and shortdata packages for a message that does not
 // decode, and dmrgo.ErrNilArgument for a nil h. It allocates only to grow dst.
 func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
@@ -105,7 +110,7 @@ func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 		if pad := int(d.BitPadding / 8); pad <= len(data) {
 			data = data[:len(data)-pad]
 		}
-		if d.DefinedData == enums.DDBCD {
+		if d.DefinedData == enums.DDBCD && hyteraLayout(data) {
 			ht, err := shortdata.DecodeHyteraText(data)
 			if err != nil {
 				return dst, Text{}, err
@@ -132,6 +137,28 @@ func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 		return decodeIP(dst, c.SAP, data, t)
 	}
 	return dst, Text{}, ErrNotText
+}
+
+func hyteraLayout(data []byte) bool {
+	if len(data) < 6 || len(data)%2 != 0 || data[2] == 0 && data[3] == 0 {
+		return false
+	}
+	end := -1
+	for i := 4; i < len(data); i += 2 {
+		if data[i] == 0 && data[i+1] == 0 {
+			end = i
+			break
+		}
+	}
+	if end < 0 {
+		return false
+	}
+	for _, c := range data[end+2:] {
+		if c != 0 {
+			return false
+		}
+	}
+	return true
 }
 
 func decodeIP(dst []byte, sap enums.SAP, data []byte, t Text) ([]byte, Text, error) {
@@ -197,10 +224,12 @@ type Header struct {
 // IPv4 header (SAP IP based packet data) with the radio addresses of
 // network t.Network and a group address with prefix t.GroupPrefix, and a
 // confirmed packet when confirmed is set. A TMS text starts with a CR LF.
+// BCD digits that would have the HyteraText layout get an octet FF, the
+// end of the digits, so that Decode reads them as FormatDefinedData.
 // It returns dst unchanged and ErrFormat for an unknown format and for
-// FormatDefinedData with DD format binary, which holds no text, or BCD,
-// which Decode reads as FormatHytera, dmrgo.ErrNilArgument for a nil t or h, or the
-// errors of the packages that build the message. It allocates only to
+// FormatDefinedData with DD format binary, which holds no text,
+// dmrgo.ErrNilArgument for a nil t or h, or the errors of the packages
+// that build the message. It allocates only to
 // grow dst.
 func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error) {
 	if t == nil || h == nil {
@@ -211,11 +240,14 @@ func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error
 	var err error
 	switch t.Format {
 	case FormatDefinedData:
-		if t.DD == enums.DDBCD || t.DD == enums.DDBinary {
+		if t.DD == enums.DDBinary {
 			return dst[:n], ErrFormat
 		}
 		if dst, err = shortdata.AppendText(dst, t.DD, t.Body); err != nil {
 			return dst[:n], err
+		}
+		if t.DD == enums.DDBCD && hyteraLayout(dst[n:]) {
+			dst = append(dst, 0xFF)
 		}
 		if err = h.Data.SetDefinedData(definedHeader(t, t.DD, confirmed)); err != nil {
 			return dst[:n], err

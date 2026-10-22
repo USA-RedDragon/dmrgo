@@ -188,10 +188,8 @@ func TestErrors(t *testing.T) {
 	if _, err := sms.AppendPacket(nil, &sms.Text{Format: 99}, false, &h); !errors.Is(err, sms.ErrFormat) {
 		t.Errorf("format 99: %v", err)
 	}
-	for _, dd := range []enums.DDFormat{enums.DDBCD, enums.DDBinary} {
-		if b, err := sms.AppendPacket([]byte("x"), &sms.Text{Format: sms.FormatDefinedData, DD: dd, Body: []byte("1")}, false, &h); !errors.Is(err, sms.ErrFormat) || string(b) != "x" {
-			t.Errorf("%s text built: %q, %v", dd, b, err)
-		}
+	if b, err := sms.AppendPacket([]byte("x"), &sms.Text{Format: sms.FormatDefinedData, DD: enums.DDBinary, Body: []byte("1")}, false, &h); !errors.Is(err, sms.ErrFormat) || string(b) != "x" {
+		t.Errorf("binary text built: %q, %v", b, err)
 	}
 	bin := setHeader(t, (*pdu.DataHeader).SetDefinedData, pdu.DefinedDataHeader{DefinedData: enums.DDBinary})
 	if _, _, err := sms.Decode(nil, &bin, []byte("Hi")); !errors.Is(err, sms.ErrNotText) {
@@ -199,6 +197,48 @@ func TestErrors(t *testing.T) {
 	}
 	if sms.FormatHytera.String() != "Hytera" || sms.Format(9).String() != "Format(9)" {
 		t.Error("names")
+	}
+}
+
+func TestBCDShortData(t *testing.T) {
+	t.Parallel()
+
+	for _, tt := range []struct {
+		digits, data string
+	}{
+		{"5551234", "5551234f"},
+		{"*31#", "a31b"},
+		{"1234560000000000", "1234560000000000ff"},
+		{"0000", "0000"},
+	} {
+		in := sms.Text{Format: sms.FormatDefinedData, DD: enums.DDBCD, Source: 3191868, Destination: 3140598, Body: []byte(tt.digits)}
+		var h sms.Header
+		out, err := sms.AppendPacket(nil, &in, false, &h)
+		if err != nil || hex.EncodeToString(out) != tt.data || h.Data.DefinedDataHeader == nil || h.Data.DefinedDataHeader.DefinedData != enums.DDBCD {
+			t.Fatalf("%s: %x, %v", tt.digits, out, err)
+		}
+		_, got, err := sms.Decode(nil, &h.Data, out)
+		if err != nil || got.Format != sms.FormatDefinedData || got.DD != enums.DDBCD || string(got.Body) != tt.digits {
+			t.Errorf("%s: decoded %+v %q, %v", tt.digits, got, got.Body, err)
+		}
+	}
+	hsms := unhex(t, appcapture.HSMS)
+	h := pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{DefinedData: enums.DDBCD}}
+	for _, tt := range []struct {
+		data   []byte
+		format sms.Format
+	}{
+		{hsms, sms.FormatHytera},
+		{append(append([]byte{}, hsms...), 0, 0), sms.FormatHytera},
+		{append(append([]byte{}, hsms...), 1), sms.FormatDefinedData},
+		{append(append([]byte{}, hsms...), 0, 1), sms.FormatDefinedData},
+		{hsms[:len(hsms)-2], sms.FormatDefinedData},
+		{unhex(t, "000041000000"), sms.FormatHytera},
+		{unhex(t, "000000000000"), sms.FormatDefinedData},
+	} {
+		if _, got, err := sms.Decode(nil, &h, tt.data); err != nil || got.Format != tt.format {
+			t.Errorf("%x: %v, %v, want %v", tt.data, got.Format, err, tt.format)
+		}
 	}
 }
 
