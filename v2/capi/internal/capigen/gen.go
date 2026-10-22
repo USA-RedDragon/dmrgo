@@ -214,6 +214,13 @@ func (g *gen) fnDoc(o *types.Func, goName string) string {
 	if len(errs) > 0 {
 		d += " " + strings.ReplaceAll(strings.Join(errs, " "), "*/", "* /")
 	}
+	if r := o.Signature().Recv(); r != nil && r.Name() != "" {
+		code := "DMRGO_ERR_ARG"
+		if k := g.kindOf(derefType(r.Type())); k == kHandle || k == kOpen {
+			code = "DMRGO_ERR_HANDLE"
+		}
+		d = regexp.MustCompile(`DMRGO_ERR_NIL_RECEIVER for a nil `+regexp.QuoteMeta(r.Name())+`\b`).ReplaceAllString(d, code+" for a NULL self")
+	}
 	if strings.HasPrefix(d, head) {
 		d = head + g.selDocs(d[len(head):], o)
 	}

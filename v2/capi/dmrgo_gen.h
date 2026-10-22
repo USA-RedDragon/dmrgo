@@ -9172,7 +9172,7 @@ int dmrgo_pdu_full_link_control_as_talker_alias_header(const dmrgo_pdu_full_link
 int dmrgo_pdu_full_link_control_as_terminator_data_link_control(const dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_flc_terminator_data_link_control_t *p, bool *ok);
 /* Go: pdu.FullLinkControl.AsUnitToUnit. AsUnitToUnit decodes RawPayload as an FLCUnitToUnit payload. */
 int dmrgo_pdu_full_link_control_as_unit_to_unit(const dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_flc_unit_to_unit_t *p, bool *ok);
-/* Go: pdu.FullLinkControl.Bytes. Bytes returns the 72 LC bits of s packed most significant bit first, without RS(12,9) parity. It ignores BurstDataType and returns the errors that Encode returns for the fields, and DMRGO_ERR_NIL_RECEIVER for a nil s. */
+/* Go: pdu.FullLinkControl.Bytes. Bytes returns the 72 LC bits of s packed most significant bit first, without RS(12,9) parity. It ignores BurstDataType and returns the errors that Encode returns for the fields, and DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_pdu_full_link_control_bytes(const dmrgo_pdu_full_link_control_t *self, uint8_t out[9]);
 /* Go: pdu.FullLinkControl.Call. Call returns the call of a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC: group for FLCO 0, the 24-bit target and the source. */
 int dmrgo_pdu_full_link_control_call(const dmrgo_pdu_full_link_control_t *self, bool *group, uint32_t *target, uint32_t *source, bool *ok);
@@ -9690,7 +9690,7 @@ int dmrgo_ars_header_string(const dmrgo_ars_header_t *self, char *out, size_t ou
 int dmrgo_ars_message_append_binary(const dmrgo_ars_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ars.Message.DeviceID. DeviceID returns the radio ID that Device holds, and false when Device is empty, holds a character that is not a digit or a number over 24 bits. */
 int dmrgo_ars_message_device_id(const dmrgo_ars_message_t *self, uint32_t *value, bool *ok);
-/* Go: ars.Message.SetDeviceID. SetDeviceID appends the radio ID id to dst in decimal ASCII digits, points Device at them and returns dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when id does not fit in 24 bits, and DMRGO_ERR_NIL_RECEIVER for a nil m. */
+/* Go: ars.Message.SetDeviceID. SetDeviceID appends the radio ID id to dst in decimal ASCII digits, points Device at them and returns dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when id does not fit in 24 bits, and DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_ars_message_set_device_id(dmrgo_ars_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, uint32_t id, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ars.Message.String. String returns the fields of s as text, for printing. */
 int dmrgo_ars_message_string(const dmrgo_ars_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -9840,17 +9840,17 @@ int dmrgo_sms_ip_text_text_utf8(const dmrgo_sms_ip_text_t *self, uint8_t *dst, s
 int dmrgo_dmrd_append_free_dmr_static(uint32_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, dmrgo_enums_slot_t s);
 /* Go: dmrd.Bridge.AppendBinary. AppendBinary appends the packet b to dst in the form of self->version, with self->signature as it is: sign the packet afterward with package dmrdauth. A nil b gives DMRGO_ERR_NIL_RECEIVER. */
 int dmrgo_dmrd_bridge_append_binary(const dmrgo_dmrd_bridge_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: dmrd.BridgeControl.AppendBinary. AppendBinary appends the packet c to dst, with self->signature as it is. It returns dst unchanged and an error for another Command, and a DMRGO_ERR_FIELD_RANGE when TalkGroup does not fit in 24 bits, and DMRGO_ERR_NIL_RECEIVER for a nil c. */
+/* Go: dmrd.BridgeControl.AppendBinary. AppendBinary appends the packet c to dst, with self->signature as it is. It returns dst unchanged and an error for another Command, and a DMRGO_ERR_FIELD_RANGE when TalkGroup does not fit in 24 bits, and DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_dmrd_bridge_control_append_binary(const dmrgo_dmrd_bridge_control_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.Classify. Classify returns the command of packet p in dialect d by its tag, or CommandUnknown when no tag of d matches. */
 int dmrgo_dmrd_classify(const uint8_t *p, size_t p_len, dmrgo_dmrd_dialect_t d, dmrgo_dmrd_command_t *out);
 /* Go: dmrd.Command.String. String returns the tag of the command. */
 int dmrgo_dmrd_command_string(dmrgo_dmrd_command_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: dmrd.Control.AppendBinary. AppendBinary appends the message c in dialect d to dst. It returns dst unchanged and an error when d has no such message, or when Text is set on a message without text, and DMRGO_ERR_NIL_RECEIVER for a nil c. */
+/* Go: dmrd.Control.AppendBinary. AppendBinary appends the message c in dialect d to dst. It returns dst unchanged and an error when d has no such message, or when Text is set on a message without text, and DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_dmrd_control_append_binary(const dmrgo_dmrd_control_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_dmrd_dialect_t d);
 /* Go: dmrd.Control.LoginSalt. LoginSalt returns the salt of the acknowledgement c that answers RPTL: the 4 octets of a DialectMMDVM RPTACK, or Salt of a DialectHBRP MSTACK with HasSalt. */
 int dmrgo_dmrd_control_login_salt(const dmrgo_dmrd_control_t *self, uint32_t *salt, bool *ok);
-/* Go: dmrd.DMRPlusOptions.AppendText. AppendText appends the options that are not OptionAbsent to dst as a DMR+ startup options text, each followed by a semicolon, in the order of the fields. It returns dst unchanged and DMRGO_ERR_NIL_RECEIVER for a nil o, and no other error. */
+/* Go: dmrd.DMRPlusOptions.AppendText. AppendText appends the options that are not OptionAbsent to dst as a DMR+ startup options text, each followed by a semicolon, in the order of the fields. It returns dst unchanged and DMRGO_ERR_ARG for a NULL self, and no other error. */
 int dmrgo_dmrd_dmr_plus_options_append_text(const dmrgo_dmrd_dmr_plus_options_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.Data.AppendBinary. AppendBinary appends the 53, 55 or 71 octets of s to dst: Size selects the length, and 0 means 53. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error when Size is not one of the lengths. */
 int dmrgo_dmrd_data_append_binary(const dmrgo_dmrd_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
@@ -9858,7 +9858,7 @@ int dmrgo_dmrd_data_append_binary(const dmrgo_dmrd_data_t *self, uint8_t *dst, s
 int dmrgo_dmrd_data_call(const dmrgo_dmrd_data_t *self, bool *group, uint32_t *target, uint32_t *source);
 /* Go: dmrd.Data.Hint. Hint returns what the packet tells about its burst, for the service machines: the slot, the voice position or data type, the sequence number (8 bits), the stream ID, and now, the time at which the packet arrived, as At. */
 int dmrgo_dmrd_data_hint(const dmrgo_dmrd_data_t *self, dmrgo_duration_t now, dmrgo_layer2_hint_t *out);
-/* Go: dmrd.Data.SetCall. SetCall sets Private, Destination and Source from the call: group is the reverse of Private. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when target or source does not fit in 24 bits, and DMRGO_ERR_NIL_RECEIVER for a nil d. */
+/* Go: dmrd.Data.SetCall. SetCall sets Private, Destination and Source from the call: group is the reverse of Private. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when target or source does not fit in 24 bits, and DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_dmrd_data_set_call(dmrgo_dmrd_data_t *self, bool group, uint32_t target, uint32_t source);
 /* Go: dmrd.Data.SetHint. SetHint sets Frame and Value from what h says the burst is, as a machine Output gives it: KindVoice with a VoiceBurst of A to F, or KindData with a DataType. The position and data type errors wrap DMRGO_ERR_LAYER2_VOICE_POSITION and DMRGO_ERR_LAYER2_DATA_TYPE. */
 int dmrgo_dmrd_data_set_hint(dmrgo_dmrd_data_t *self, const dmrgo_layer2_hint_t *h);
@@ -10026,7 +10026,7 @@ int dmrgo_dmrd_parse_dmr_plus_options(const uint8_t *text, size_t text_len, dmrg
 int dmrgo_dmrd_parse_free_dmr_options(const uint8_t *text, size_t text_len, dmrgo_dmrd_free_dmr_options_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: dmrd.Position.AppendBinary. AppendBinary appends the 14 or 18 octets of s to dst: Size selects the length, and 0 means 14. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error when Size is not one of the lengths. */
 int dmrgo_dmrd_position_append_binary(const dmrgo_dmrd_position_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: dmrd.Position.LC. LC decodes the position as the GPS Info Full LC it came from: FLCO GPS Info, standard FID, and Data. It returns DMRGO_ERR_NIL_RECEIVER for a nil p. */
+/* Go: dmrd.Position.LC. LC decodes the position as the GPS Info Full LC it came from: FLCO GPS Info, standard FID, and Data. It returns DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_dmrd_position_lc(const dmrgo_dmrd_position_t *self, dmrgo_pdu_full_link_control_t *out);
 /* Go: dmrd.Position.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_position_string(const dmrgo_dmrd_position_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -10034,13 +10034,13 @@ int dmrgo_dmrd_position_string(const dmrgo_dmrd_position_t *self, char *out, siz
 int dmrgo_dmrd_repeater_id(const uint8_t *p, size_t p_len, dmrgo_dmrd_dialect_t d, uint32_t *id, bool *ok);
 /* Go: dmrd.TalkerAlias.AppendBinary. AppendBinary appends the 15 or 19 octets of s to dst: Size selects the length, and 0 means 15. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error when Size is not one of the lengths. */
 int dmrgo_dmrd_talker_alias_append_binary(const dmrgo_dmrd_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: dmrd.TalkerAlias.LC. LC decodes the talker alias block as the Full LC it came from: FLCO Talker Alias Header plus Type, standard FID, and Data. It returns an error when Type is above 3, and DMRGO_ERR_NIL_RECEIVER for a nil t. */
+/* Go: dmrd.TalkerAlias.LC. LC decodes the talker alias block as the Full LC it came from: FLCO Talker Alias Header plus Type, standard FID, and Data. It returns an error when Type is above 3, and DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_dmrd_talker_alias_lc(const dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_full_link_control_t *out);
 /* Go: dmrd.TalkerAlias.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_talker_alias_string(const dmrgo_dmrd_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_dmrdauth_bridge_key_free frees the handle. self may be NULL. */
 int dmrgo_dmrdauth_bridge_key_free(dmrgo_dmrdauth_bridge_key_t *self);
-/* Go: dmrdauth.BridgeKey.SignInPlace. SignInPlace writes the signature of the OpenBridge packet p, as dmrgo_dmrd_bridge_append_binary and dmrgo_dmrd_bridge_control_append_binary encode it with space for the signature, into its last octets: HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over the octets before the hash of a DMRE packet. It changes nothing and returns an error when the packet is none of these, and DMRGO_ERR_NIL_RECEIVER for a nil b. */
+/* Go: dmrdauth.BridgeKey.SignInPlace. SignInPlace writes the signature of the OpenBridge packet p, as dmrgo_dmrd_bridge_append_binary and dmrgo_dmrd_bridge_control_append_binary encode it with space for the signature, into its last octets: HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over the octets before the hash of a DMRE packet. It changes nothing and returns an error when the packet is none of these, and DMRGO_ERR_HANDLE for a NULL self. */
 int dmrgo_dmrdauth_bridge_key_sign_in_place(dmrgo_dmrdauth_bridge_key_t *self, uint8_t *p, size_t p_len);
 /* dmrgo_dmrdauth_bridge_key_verify_need sets *items and *arena to the room that dmrgo_dmrdauth_bridge_key_verify needs for these arguments, without a change to the handle. */
 int dmrgo_dmrdauth_bridge_key_verify_need(dmrgo_dmrdauth_bridge_key_t *self, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
@@ -10152,13 +10152,13 @@ int dmrgo_hytera_frame_call(const dmrgo_hytera_frame_t *self, bool *group, uint3
 int dmrgo_hytera_frame_has_burst(const dmrgo_hytera_frame_t *self, bool *out);
 /* Go: hytera.Frame.Hint. Hint returns what the frame tells about its burst, for the service machines: the slot, the voice position or data type from SlotType, and the sequence number (8 bits), and now, the time at which the frame arrived, as At. */
 int dmrgo_hytera_frame_hint(const dmrgo_hytera_frame_t *self, dmrgo_duration_t now, dmrgo_layer2_hint_t *out);
-/* Go: hytera.Frame.SetCall. SetCall sets CallType to 0x01 for a group call and 0x00 for a private call, as a Hytera repeater sends them, and Destination and Source. It returns a DMRGO_ERR_FIELD_RANGE when target or source does not fit in 24 bits, and DMRGO_ERR_NIL_RECEIVER for a nil f, and then changes nothing. */
+/* Go: hytera.Frame.SetCall. SetCall sets CallType to 0x01 for a group call and 0x00 for a private call, as a Hytera repeater sends them, and Destination and Source. It returns a DMRGO_ERR_FIELD_RANGE when target or source does not fit in 24 bits, and DMRGO_ERR_ARG for a NULL self, and then changes nothing. */
 int dmrgo_hytera_frame_set_call(dmrgo_hytera_frame_t *self, bool group, uint32_t target, uint32_t source);
 /* Go: hytera.Frame.SetHint. SetHint sets SlotType from what h says the burst is, as a machine Output gives it: KindVoice with a VoiceBurst of A to F, or KindData with a DataType. The position and data type errors wrap DMRGO_ERR_LAYER2_VOICE_POSITION and DMRGO_ERR_LAYER2_DATA_TYPE. */
 int dmrgo_hytera_frame_set_hint(dmrgo_hytera_frame_t *self, const dmrgo_layer2_hint_t *h);
-/* Go: hytera.Heartbeat.AppendBinary. AppendBinary appends the heartbeat, or the keepalive, to dst. It returns DMRGO_ERR_NIL_RECEIVER for a nil h. */
+/* Go: hytera.Heartbeat.AppendBinary. AppendBinary appends the heartbeat, or the keepalive, to dst. It returns DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_hytera_heartbeat_append_binary(const dmrgo_hytera_heartbeat_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: hytera.P2P.AppendBinary. AppendBinary appends the command and its body to dst. It returns DMRGO_ERR_NIL_RECEIVER for a nil c. */
+/* Go: hytera.P2P.AppendBinary. AppendBinary appends the command and its body to dst. It returns DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_hytera_p2p_append_binary(const dmrgo_hytera_p2p_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hytera.P2P.RedirectPort. RedirectPort returns the UDP port of a redirect: a body that ends in FF 01 and the port, little-endian. */
 int dmrgo_hytera_p2p_redirect_port(const dmrgo_hytera_p2p_t *self, uint16_t *port, bool *ok);
@@ -10184,11 +10184,11 @@ int dmrgo_ipsc_call_info_privacy(dmrgo_ipsc_call_info_t self, bool *out);
 int dmrgo_ipsc_call_info_set_end(dmrgo_ipsc_call_info_t *self, bool on);
 /* Go: ipsc.CallInfo.SetPrivacy. SetPrivacy writes bit 7, the call is encrypted. */
 int dmrgo_ipsc_call_info_set_privacy(dmrgo_ipsc_call_info_t *self, bool on);
-/* Go: ipsc.CallInfo.SetSlot. SetSlot writes bit 5: set for Slot2, clear for Slot1. It returns an error, and changes nothing, for another slot, and DMRGO_ERR_NIL_RECEIVER for a nil c. */
+/* Go: ipsc.CallInfo.SetSlot. SetSlot writes bit 5: set for Slot2, clear for Slot1. It returns an error, and changes nothing, for another slot, and DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_ipsc_call_info_set_slot(dmrgo_ipsc_call_info_t *self, dmrgo_enums_slot_t s);
 /* Go: ipsc.CallInfo.Slot. Slot returns Slot2 for bit 5 and Slot1 otherwise. */
 int dmrgo_ipsc_call_info_slot(dmrgo_ipsc_call_info_t self, dmrgo_enums_slot_t *out);
-/* Go: ipsc.Control.AppendBinary. AppendBinary appends the packet c to dst, without the authentication trailer. It returns dst unchanged and an error for an opcode that is not a peer control packet, and DMRGO_ERR_NIL_RECEIVER for a nil c. */
+/* Go: ipsc.Control.AppendBinary. AppendBinary appends the packet c to dst, without the authentication trailer. It returns dst unchanged and an error for an opcode that is not a peer control packet, and DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_ipsc_control_append_binary(const dmrgo_ipsc_control_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ipsc.DecodeControl. DecodeControl decodes the peer control packet p, without the authentication trailer (see package ipscauth). It returns DMRGO_ERR_IPSC_COMMAND for another opcode, and DMRGO_ERR_IPSC_SHORT or DMRGO_ERR_IPSC_LENGTH for a length that does not match the opcode. */
 int dmrgo_ipsc_decode_control(const uint8_t *p, size_t p_len, dmrgo_ipsc_control_t *out);
@@ -10226,7 +10226,7 @@ int dmrgo_ipsc_peer_list_entry(dmrgo_ipsc_peer_list_t *self, int64_t i, dmrgo_ip
 int dmrgo_ipsc_peer_list_len(dmrgo_ipsc_peer_list_t *self, int64_t *out);
 /* Go: ipsc.PeerListOf. It copies p into *out, which does not keep p. It returns DMRGO_ERR_IPSC_COMMAND for another opcode, DMRGO_ERR_IPSC_SHORT, and DMRGO_ERR_IPSC_LENGTH when the length field does not match the packet or is not a multiple of 11. */
 int dmrgo_ipsc_peer_list_of(const uint8_t *p, size_t p_len, dmrgo_ipsc_peer_list_t *out);
-/* Go: ipsc.Raw.AppendBinary. AppendBinary appends r to dst. It returns dst unchanged and DMRGO_ERR_NIL_RECEIVER for a nil r, and no other error. */
+/* Go: ipsc.Raw.AppendBinary. AppendBinary appends r to dst. It returns dst unchanged and DMRGO_ERR_ARG for a NULL self, and no other error. */
 int dmrgo_ipsc_raw_append_binary(const dmrgo_ipsc_raw_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ipsc.Stream.Fill. Fill sets CallSeq, CallControl and the RTP header of u: Flags 0x80, the marker bit on the first packet of the call, PayloadType 0x5D, or 0x5E with the end flag of Info on the last packet, and Seq and Timestamp. u may be NULL. */
 int dmrgo_ipsc_stream_fill(dmrgo_ipsc_stream_t *self, dmrgo_ipsc_user_t *u, bool last);
@@ -10242,7 +10242,7 @@ int dmrgo_ipsc_user_hint(const dmrgo_ipsc_user_t *self, dmrgo_duration_t now, dm
 int dmrgo_ipsc_user_is_voice(const dmrgo_ipsc_user_t *self, bool *out);
 /* Go: ipsc.User.RawBurst. RawBurst rebuilds the 264-bit burst of the packet. */
 int dmrgo_ipsc_user_raw_burst(const dmrgo_ipsc_user_t *self, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
-/* Go: ipsc.User.SetCall. SetCall sets Destination, Source and the group or private opcode of the call. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when target or source does not fit in 24 bits, and DMRGO_ERR_NIL_RECEIVER for a nil u. */
+/* Go: ipsc.User.SetCall. SetCall sets Destination, Source and the group or private opcode of the call. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when target or source does not fit in 24 bits, and DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_ipsc_user_set_call(dmrgo_ipsc_user_t *self, bool group, uint32_t target, uint32_t source);
 /* Go: ipsc.User.SetRawBurst. SetRawBurst sets Burst and Voice or Data from the 264-bit burst raw and what h says it is, as a machine Output gives it, in the form an XPR 8400 sends: KindVoice with a VoiceBurst of A to F, which picks the layout (the full LC of burst E stays as it is in self->voice.lc), or KindData with a DataType. The position and data type errors wrap DMRGO_ERR_LAYER2_VOICE_POSITION and DMRGO_ERR_LAYER2_DATA_TYPE. */
 int dmrgo_ipsc_user_set_raw_burst(dmrgo_ipsc_user_t *self, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_fec_result_t *out);
@@ -10252,7 +10252,7 @@ int dmrgo_ipsc_func_user_opcode(bool group, bool data, dmrgo_ipsc_opcode_t *out)
 int dmrgo_ipscauth_key_free(dmrgo_ipscauth_key_t *self);
 /* dmrgo_ipscauth_key_sign_need sets *items and *arena to the room that dmrgo_ipscauth_key_sign needs for these arguments, without a change to the handle. */
 int dmrgo_ipscauth_key_sign_need(dmrgo_ipscauth_key_t *self, size_t *items, size_t *arena);
-/* Go: ipscauth.Key.Sign. Sign appends the authentication trailer of the packet in dst to dst. It returns dst unchanged and DMRGO_ERR_NIL_RECEIVER for a nil k. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscauth_key_sign_need gives (DMRGO_IPSCAUTH_KEY_SIGN_MAX_ITEMS items). */
+/* Go: ipscauth.Key.Sign. Sign appends the authentication trailer of the packet in dst to dst. It returns dst unchanged and DMRGO_ERR_HANDLE for a NULL self. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscauth_key_sign_need gives (DMRGO_IPSCAUTH_KEY_SIGN_MAX_ITEMS items). */
 int dmrgo_ipscauth_key_sign(dmrgo_ipscauth_key_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_ipscauth_key_verify_need sets *items and *arena to the room that dmrgo_ipscauth_key_verify needs for these arguments, without a change to the handle. */
 int dmrgo_ipscauth_key_verify_need(dmrgo_ipscauth_key_t *self, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
@@ -10294,11 +10294,11 @@ int dmrgo_ipscsession_master_peers(dmrgo_ipscsession_master_t *self, int64_t *ou
 int dmrgo_ipscsession_master_reset(dmrgo_ipscsession_master_t *self);
 /* dmrgo_ipscsession_master_sign_need sets *items and *arena to the room that dmrgo_ipscsession_master_sign needs for these arguments, without a change to the handle. */
 int dmrgo_ipscsession_master_sign_need(dmrgo_ipscsession_master_t *self, size_t *items, size_t *arena);
-/* Go: ipscsession.Master.Sign. Sign appends the authentication trailer of the packet in dst to dst when the config has Auth, and returns dst as it is without. It returns dst unchanged and DMRGO_ERR_NIL_RECEIVER for a nil m. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_master_sign_need gives (DMRGO_IPSCSESSION_MASTER_SIGN_MAX_ITEMS items). */
+/* Go: ipscsession.Master.Sign. Sign appends the authentication trailer of the packet in dst to dst when the config has Auth, and returns dst as it is without. It returns dst unchanged and DMRGO_ERR_HANDLE for a NULL self. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_master_sign_need gives (DMRGO_IPSCSESSION_MASTER_SIGN_MAX_ITEMS items). */
 int dmrgo_ipscsession_master_sign(dmrgo_ipscsession_master_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_ipscsession_master_sign_for_need sets *items and *arena to the room that dmrgo_ipscsession_master_sign_for needs for these arguments, without a change to the handle. */
 int dmrgo_ipscsession_master_sign_for_need(dmrgo_ipscsession_master_t *self, uint32_t id, size_t *items, size_t *arena);
-/* Go: ipscsession.Master.SignFor. SignFor appends the authentication trailer of the packet in dst for the registered peer id to dst: with the own key of the peer when it registered with one, and else as Sign does. It returns dst unchanged and DMRGO_ERR_NIL_RECEIVER for a nil m. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_master_sign_for_need gives (DMRGO_IPSCSESSION_MASTER_SIGN_FOR_MAX_ITEMS items). */
+/* Go: ipscsession.Master.SignFor. SignFor appends the authentication trailer of the packet in dst for the registered peer id to dst: with the own key of the peer when it registered with one, and else as Sign does. It returns dst unchanged and DMRGO_ERR_HANDLE for a NULL self. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_master_sign_for_need gives (DMRGO_IPSCSESSION_MASTER_SIGN_FOR_MAX_ITEMS items). */
 int dmrgo_ipscsession_master_sign_for(dmrgo_ipscsession_master_t *self, uint32_t id, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ipscsession.Master.State. State returns StateRunning, or StateIdle after Close and for a Master that NewMaster did not make. */
 int dmrgo_ipscsession_master_state(dmrgo_ipscsession_master_t *self, dmrgo_ipscsession_state_t *out);
@@ -10340,7 +10340,7 @@ int dmrgo_ipscsession_peer_peers(dmrgo_ipscsession_peer_t *self, int64_t *out);
 int dmrgo_ipscsession_peer_reset(dmrgo_ipscsession_peer_t *self);
 /* dmrgo_ipscsession_peer_sign_need sets *items and *arena to the room that dmrgo_ipscsession_peer_sign needs for these arguments, without a change to the handle. */
 int dmrgo_ipscsession_peer_sign_need(dmrgo_ipscsession_peer_t *self, size_t *items, size_t *arena);
-/* Go: ipscsession.Peer.Sign. Sign appends the authentication trailer of the packet in dst to dst when the config has Auth, and returns dst as it is without. It returns dst unchanged and DMRGO_ERR_NIL_RECEIVER for a nil p. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_peer_sign_need gives (DMRGO_IPSCSESSION_PEER_SIGN_MAX_ITEMS items). */
+/* Go: ipscsession.Peer.Sign. Sign appends the authentication trailer of the packet in dst to dst when the config has Auth, and returns dst as it is without. It returns dst unchanged and DMRGO_ERR_HANDLE for a NULL self. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_peer_sign_need gives (DMRGO_IPSCSESSION_PEER_SIGN_MAX_ITEMS items). */
 int dmrgo_ipscsession_peer_sign(dmrgo_ipscsession_peer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ipscsession.Peer.State. State returns the state of the Peer. */
 int dmrgo_ipscsession_peer_state(dmrgo_ipscsession_peer_t *self, dmrgo_ipscsession_state_t *out);
@@ -10396,7 +10396,7 @@ int dmrgo_mmdvm_dmr_data_append_binary(const dmrgo_mmdvm_dmr_data_t *self, uint8
 int dmrgo_mmdvm_dmr_data_command(const dmrgo_mmdvm_dmr_data_t *self, dmrgo_mmdvm_command_t *out);
 /* Go: mmdvm.DMRData.Hint. Hint returns what the frame tells about its burst, for the service machines: the slot, and from Control the data type, voice burst A, or voice bursts B to F from N 1 to 5. */
 int dmrgo_mmdvm_dmr_data_hint(const dmrgo_mmdvm_dmr_data_t *self, dmrgo_layer2_hint_t *out);
-/* Go: mmdvm.DMRData.SetHint. SetHint sets Control from what h says the burst is, as a machine Output gives it: ControlDataSync with the data type for KindData, ControlVoiceSync for voice burst A, and N 1 to 5 for voice bursts B to F. It returns an error, and changes nothing, for another kind, a position that is not A to F, a KindData hint without a data type, or a data type above 15, and DMRGO_ERR_NIL_RECEIVER for a nil d. */
+/* Go: mmdvm.DMRData.SetHint. SetHint sets Control from what h says the burst is, as a machine Output gives it: ControlDataSync with the data type for KindData, ControlVoiceSync for voice burst A, and N 1 to 5 for voice bursts B to F. It returns an error, and changes nothing, for another kind, a position that is not A to F, a KindData hint without a data type, or a data type above 15, and DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_mmdvm_dmr_data_set_hint(dmrgo_mmdvm_dmr_data_t *self, const dmrgo_layer2_hint_t *h);
 /* Go: mmdvm.DMRShortLC.AppendBinary. AppendBinary appends the 9 octets of s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit. */
 int dmrgo_mmdvm_dmr_short_lc_append_binary(const dmrgo_mmdvm_dmr_short_lc_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
@@ -10408,7 +10408,7 @@ int dmrgo_mmdvm_dmr_short_lc_string(const dmrgo_mmdvm_dmr_short_lc_t *self, char
 int dmrgo_mmdvm_dmr_start_append_binary(const dmrgo_mmdvm_dmr_start_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.DMRStart.String. String returns the fields of s as text, for printing. */
 int dmrgo_mmdvm_dmr_start_string(const dmrgo_mmdvm_dmr_start_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: mmdvm.Debug.AppendBinary. AppendBinary appends the payload to dst: the text and the numbers. It returns dst unchanged and an error when Command is not a debug command, and DMRGO_ERR_NIL_RECEIVER for a nil d. */
+/* Go: mmdvm.Debug.AppendBinary. AppendBinary appends the payload to dst: the text and the numbers. It returns dst unchanged and an error when Command is not a debug command, and DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_mmdvm_debug_append_binary(const dmrgo_mmdvm_debug_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.Debug.Count. Count returns the number of numbers: 0 for CommandDebug1 and CommandDebugDump and a nil d, up to 4 for CommandDebug5. */
 int dmrgo_mmdvm_debug_count(const dmrgo_mmdvm_debug_t *self, int64_t *out);
