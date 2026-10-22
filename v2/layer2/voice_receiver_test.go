@@ -35,7 +35,7 @@ func receiveAll(t *testing.T, raws []layer2.RawBurst) received {
 	got := received{lcs: map[int]pdu.FullLinkControl{}, errs: map[int]error{}, badLCs: map[int]pdu.FullLinkControl{}}
 	for i, raw := range raws {
 		b, _ := layer2.NewBurstFromBytes(raw)
-		lc, ok, err := r.Receive(b)
+		lc, ok, err := r.Receive(b, nil)
 		got.positions = append(got.positions, b.VoiceBurst)
 		if ok {
 			got.lcs[i] = lc
@@ -156,7 +156,7 @@ func TestVoiceReceiver_EmbeddedLCBitError(t *testing.T) {
 	var lcs, uncorrectable int
 	for _, raw := range raws {
 		b, _ := layer2.NewBurstFromBytes(raw)
-		_, ok, err := r.Receive(b)
+		_, ok, err := r.Receive(b, nil)
 		if ok {
 			lcs++
 		}
@@ -169,13 +169,45 @@ func TestVoiceReceiver_EmbeddedLCBitError(t *testing.T) {
 	}
 }
 
+func TestVoiceReceiver_SequenceOverWrongEMB(t *testing.T) {
+	t.Parallel()
+
+	raws := transmission(t, groupLC(enums.FIDStandardized), 6)
+	c := raws[3]
+	emb := c.EMB()
+	emb.LCSS = enums.LCSSFirstFragment
+	if err := c.SetEMB(emb); err != nil {
+		t.Fatal(err)
+	}
+	seq := []layer2.RawBurst{raws[1], raws[2], c, raws[4], raws[5], raws[6]}
+	var r layer2.VoiceReceiver
+	var got []enums.VoiceBurstType
+	lcs := 0
+	for i, raw := range seq {
+		b := must(layer2.NewBurstFromBytes(raw))
+		h := layer2.Hint{Seq: uint16(10 + i), HasSeq: true}
+		_, ok, err := r.Receive(b, &h)
+		if err != nil {
+			t.Errorf("burst %d: %v", i, err)
+		}
+		if ok {
+			lcs++
+		}
+		got = append(got, b.VoiceBurst)
+	}
+	checkPositions(t, got, "ABCDEF")
+	if lcs != 1 {
+		t.Errorf("%d LCs, want 1", lcs)
+	}
+}
+
 func TestVoiceReceiver_DataBurstResets(t *testing.T) {
 	t.Parallel()
 
 	raws := transmission(t, groupLC(enums.FIDStandardized), 6)
 	seq := []layer2.RawBurst{raws[1], raws[2], raws[7], raws[3], raws[6]}
 	got := receiveAll(t, seq)
-	checkPositions(t, got.positions, "AB---")
+	checkPositions(t, got.positions, "AB--F")
 	if !errors.Is(got.errs[2], layer2.ErrEmbeddedLCSequence) || len(got.errs) != 1 {
 		t.Errorf("errors %v, want ErrEmbeddedLCSequence at the terminator", got.errs)
 	}

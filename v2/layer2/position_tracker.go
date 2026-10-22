@@ -108,15 +108,7 @@ func (t *PositionTracker) Place(raw *RawBurst, h *Hint) (lost int, p Placement) 
 	if t == nil || h == nil {
 		return 0, PlacementInOrder
 	}
-	if h.HasStream {
-		if t.hasStream && h.Stream != t.stream {
-			*t = PositionTracker{}
-		}
-		t.stream, t.hasStream = h.Stream, true
-	}
-	if h.SyncLost {
-		t.known = false
-	}
+	t.hint(h)
 	if raw == nil {
 		if h.End == EndStrong {
 			t.end()
@@ -149,6 +141,20 @@ func (t *PositionTracker) Place(raw *RawBurst, h *Hint) (lost int, p Placement) 
 		t.end()
 	}
 	return lost, p
+}
+
+func (t *PositionTracker) hint(h *Hint) (newCall bool) {
+	if h.HasStream {
+		if t.hasStream && h.Stream != t.stream {
+			*t = PositionTracker{}
+			newCall = true
+		}
+		t.stream, t.hasStream = h.Stream, true
+	}
+	if h.SyncLost {
+		t.known = false
+	}
+	return newCall
 }
 
 func (t *PositionTracker) end() {

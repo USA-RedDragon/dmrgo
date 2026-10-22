@@ -71,7 +71,7 @@ func receive(bursts []layer2.RawBurst) (inbound, error) {
 		if err := b.DecodeFromBytes(p); err != nil {
 			return in, fmt.Errorf("burst %d: %w", i, err)
 		}
-		if _, _, err := rx.Receive(&b); err != nil {
+		if _, _, err := rx.Receive(&b, nil); err != nil {
 			return in, fmt.Errorf("burst %d: %w", i, err)
 		}
 		switch b.Kind {
@@ -125,7 +125,7 @@ func verify(bursts []layer2.RawBurst) (verified, error) {
 		if err := b.DecodeFromBytes(p); err != nil {
 			return v, fmt.Errorf("rewritten burst %d: %w", i, err)
 		}
-		lc, ok, err := rx.Receive(&b)
+		lc, ok, err := rx.Receive(&b, nil)
 		if err != nil {
 			return v, fmt.Errorf("rewritten burst %d: %w", i, err)
 		}

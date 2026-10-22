@@ -382,7 +382,7 @@ func checkVoiceTransmitter(t *testing.T, lcv []byte, ccv, srcv byte, framesv []b
 		if err != nil {
 			t.Fatalf("voice burst %d: %v", i, err)
 		}
-		emb, ok, err := rx.Receive(&b)
+		emb, ok, err := rx.Receive(&b, nil)
 		if wantPos := enums.VoiceBurstA + enums.VoiceBurstType((i-headers)%6); b.VoiceBurst != wantPos {
 			t.Fatalf("voice burst %d at %v, want %v", i-headers, b.VoiceBurst, wantPos)
 		}

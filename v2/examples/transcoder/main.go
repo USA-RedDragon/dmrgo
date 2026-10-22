@@ -51,7 +51,7 @@ func receive(bursts []layer2.RawBurst) (call, error) {
 		if err := b.DecodeFromBytes(raw); err != nil {
 			return c, fmt.Errorf("burst %d: %w", i, err)
 		}
-		_, ok, err := rx.Receive(b)
+		_, ok, err := rx.Receive(b, nil)
 		if err != nil {
 			return c, fmt.Errorf("burst %d: %w", i, err)
 		}

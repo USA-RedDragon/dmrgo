@@ -91,7 +91,7 @@ func receive(captured []layer2.RawBurst) (rxStats, error) {
 			return s, err
 		}
 		s.fec = s.fec.Combine(b.FEC.Aggregate())
-		lc, ok, err := rx.Receive(&b)
+		lc, ok, err := rx.Receive(&b, nil)
 		if err != nil {
 			return s, err
 		}

@@ -88,7 +88,7 @@ func TestBurstRoundTrip(t *testing.T) {
 				rx.Reset()
 				continue
 			}
-			lc, ok, err := rx.Receive(b)
+			lc, ok, err := rx.Receive(b, nil)
 			if err != nil {
 				t.Fatalf("mode %d burst %d: %v", mode, i, err)
 			}

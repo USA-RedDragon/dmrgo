@@ -163,7 +163,7 @@ typedef struct dmrgo_layer2_position_tracker_t dmrgo_layer2_position_tracker_t;
 typedef struct dmrgo_layer2_raw_burst_t dmrgo_layer2_raw_burst_t;
 /* Go: layer2.ShortLCAssembler. ShortLCAssembler collects the signalling payloads of 4 CACHs and decodes the Short LC PDU they carry. */
 typedef struct dmrgo_layer2_short_lc_assembler_t dmrgo_layer2_short_lc_assembler_t;
-/* Go: layer2.VoiceReceiver. VoiceReceiver tracks the superframe position of the voice bursts of one logical channel and reassembles the embedded Full LC of bursts B to E. */
+/* Go: layer2.VoiceReceiver. VoiceReceiver places the voice bursts of one logical channel in their superframe with a PositionTracker and reassembles the embedded Full LC of bursts B to E with an EmbeddedLCAssembler, by the rules of the package doc. */
 typedef struct dmrgo_layer2_voice_receiver_t dmrgo_layer2_voice_receiver_t;
 /* Go: layer2.VoiceTransmitter. VoiceTransmitter builds the bursts of one voice transmission from a stream of 72-bit vocoder slots. */
 typedef struct dmrgo_layer2_voice_transmitter_t dmrgo_layer2_voice_transmitter_t;
@@ -8497,9 +8497,9 @@ int dmrgo_layer2_sync_source_of(dmrgo_enums_sync_pattern_t p, dmrgo_layer2_sync_
 int dmrgo_layer2_voice_receiver_new(dmrgo_layer2_voice_receiver_t **out);
 /* dmrgo_layer2_voice_receiver_free frees the handle. self may be NULL. */
 int dmrgo_layer2_voice_receiver_free(dmrgo_layer2_voice_receiver_t *self);
-/* Go: layer2.VoiceReceiver.Receive. Receive takes the next decoded burst of the logical channel, in order, and sets b.VoiceBurst to its superframe position as the package doc describes. When burst E completes an embedded LC, Receive returns it with ok set, or with DMRGO_ERR_LAYER2_EMBEDDED_LC_UNCORRECTABLE. It returns DMRGO_ERR_LAYER2_EMBEDDED_LC_SEQUENCE when the burst discards a partial embedded LC. b may be NULL. */
-int dmrgo_layer2_voice_receiver_receive(dmrgo_layer2_voice_receiver_t *self, dmrgo_layer2_burst_t *b, dmrgo_pdu_full_link_control_t *lc, bool *ok);
-/* Go: layer2.VoiceReceiver.Reset. Reset forgets the superframe position and any partial embedded LC. */
+/* Go: layer2.VoiceReceiver.Receive. Receive takes the next decoded burst b of the logical channel with its Hint h, and sets b.VoiceBurst to its superframe position, as PositionTracker.PlaceDecoded places it with one step per burst. When burst E completes an embedded LC, Receive returns it with ok set, or with DMRGO_ERR_LAYER2_EMBEDDED_LC_UNCORRECTABLE. It returns DMRGO_ERR_LAYER2_EMBEDDED_LC_SEQUENCE when the burst discards a partial embedded LC. b and h may be NULL. */
+int dmrgo_layer2_voice_receiver_receive(dmrgo_layer2_voice_receiver_t *self, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, dmrgo_pdu_full_link_control_t *lc, bool *ok);
+/* Go: layer2.VoiceReceiver.Reset. Reset forgets the call and any partial embedded LC. */
 int dmrgo_layer2_voice_receiver_reset(dmrgo_layer2_voice_receiver_t *self);
 /* dmrgo_layer2_voice_transmitter_free frees the handle. self may be NULL. */
 int dmrgo_layer2_voice_transmitter_free(dmrgo_layer2_voice_transmitter_t *self);

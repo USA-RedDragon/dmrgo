@@ -146,7 +146,7 @@ func checkVoiceReceiver(t *testing.T, in *voiceFuzzInput, bursts []layer2.RawBur
 			if err := b.DecodeFromBytes(raw); err != nil {
 				continue
 			}
-			_, _, _ = rx.Receive(b)
+			_, _, _ = rx.Receive(b, nil)
 			tr = broken
 			continue
 		case 0x40:
@@ -160,7 +160,7 @@ func checkVoiceReceiver(t *testing.T, in *voiceFuzzInput, bursts []layer2.RawBur
 			if b.Kind != layer2.KindData {
 				t.Fatalf("burst %d: kind %v, sent a data burst", i, b.Kind)
 			}
-			if _, done, err := rx.Receive(b); done || err != nil && !errors.Is(err, layer2.ErrEmbeddedLCSequence) {
+			if _, done, err := rx.Receive(b, nil); done || err != nil && !errors.Is(err, layer2.ErrEmbeddedLCSequence) {
 				t.Fatalf("burst %d: data burst done %v err %v", i, done, err)
 			}
 			tr = voiceTrack{}
@@ -169,7 +169,7 @@ func checkVoiceReceiver(t *testing.T, in *voiceFuzzInput, bursts []layer2.RawBur
 		if b.Kind != layer2.KindVoice || b.VoiceSlots != voiceSlotsOf(in, voiceIdx) {
 			t.Fatalf("burst %d: kind %v slots %x, sent %v %x", i, b.Kind, b.VoiceSlots, pos, voiceSlotsOf(in, voiceIdx))
 		}
-		lc, done, err := rx.Receive(b)
+		lc, done, err := rx.Receive(b, nil)
 		checkPosition(t, i, b.VoiceBurst, pos, tr.clean)
 		if pos == enums.VoiceBurstA || pos == enums.VoiceBurstB || pos == enums.VoiceBurstE {
 			tr.clean = true

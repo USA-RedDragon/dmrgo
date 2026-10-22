@@ -59,23 +59,24 @@
 // VoiceTransmitter builds the bursts from the slots and pads the last
 // superframe with a silence slot.
 //
-// VoiceReceiver sets the superframe position of each voice burst and
-// reassembles the embedded LC. A burst with a voice SYNC pattern is burst A.
-// A burst with LCSS First is burst B and a burst with LCSS Last is burst E,
-// so a lost burst A does not lose the superframe. Any other embedded
-// signalling burst takes the position after the previous burst when its LCSS
-// fits that position, and VoiceBurstUnknown otherwise. A burst with an
-// uncorrectable EMB takes the position after the previous burst. A data
-// burst or a burst with the reserved SYNC pattern ends the transmission and
-// resets the receiver. A standalone RC burst leaves the receiver unchanged.
-// A lost burst inside a superframe can shift the positions of the bursts
-// after it until the next burst A, B or E.
+// PositionTracker places voice bursts in their superframe from what a
+// transport gives and what the burst carries, strongest first: the position
+// in the Hint, the voice SYNC of burst A, the sequence number of the Hint,
+// and the LCSS of the EMB, with LCSS First at burst B and LCSS Last at
+// burst E, so a lost burst A does not lose the superframe. After a placed
+// burst, a sequence number that follows the last one places the burst over
+// its LCSS, because a repeater sends a wrong EMB on a weak signal. Without
+// a sequence number, a burst takes the position after the previous burst
+// when its LCSS fits that position, and VoiceBurstUnknown otherwise; a burst
+// with an uncorrectable EMB takes the position after the previous burst. A
+// voice LC header or PI header puts the next burst at A, a terminator or an
+// EndStrong Hint ends the call, a SyncLost Hint forgets the position, and a new stream ID starts a new call. A standalone RC burst
+// changes nothing. voice.Receiver uses these rules. A bridge that forwards
+// each packet to a transport that needs the position, such as IPSC to
+// HomeBrew DMRD, calls PositionTracker.Place.
 //
-// PositionTracker places voice bursts packet by packet from what a
-// transport gives: the position or sequence number of the Hint, the voice
-// SYNC and the LCSS, as voice.Receiver does. A bridge that forwards each
-// packet to a transport that needs the position, such as IPSC to HomeBrew
-// DMRD, uses it.
+// VoiceReceiver places decoded bursts by the same rules, ends the call on
+// any data burst, and reassembles the embedded LC of bursts B to E.
 //
 // # CACH and Short LC
 //

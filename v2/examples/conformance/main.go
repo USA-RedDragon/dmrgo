@@ -154,7 +154,7 @@ func checkVoice(t *tally, i int, b *layer2.Burst, rb layer2.RawBurst, rx *layer2
 			t.failf(i, "RawBurst EMB %v, Burst %v", emb, b.EmbeddedSignalling)
 		}
 	}
-	lc, ok, err := rx.Receive(b)
+	lc, ok, err := rx.Receive(b, nil)
 	if err != nil {
 		t.failf(i, "voice receiver: %v", err)
 		return

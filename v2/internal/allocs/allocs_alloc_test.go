@@ -155,7 +155,7 @@ func TestAllocsVoiceSuperframe(t *testing.T) {
 		out, _ = tx.AppendFrames(out[:0], frames...)
 		for _, raw := range out {
 			if rb.DecodeFromBytesWith(raw, &layer2.DecodeOptions{Kind: layer2.KindVoice}) == nil {
-				_, _, _ = rx.Receive(&rb)
+				_, _, _ = rx.Receive(&rb, nil)
 			}
 		}
 	})
