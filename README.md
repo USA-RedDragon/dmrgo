@@ -408,8 +408,8 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 5.4.2 | Confirmed IP Data SDL | verified | 8/8 passed | `v2/data/errors.go`, `v2/data/event.go`, `v2/data/message.go`, `v2/data/receiver.go`, `v2/data/sender.go` |
 | 5.4.3 | Confirmed data MSCs | verified | 17/17 passed | `v2/data/receiver.go`, `v2/data/sender.go` |
 | 5.4.4 | Sliding window confirmed data | verified | 6/6 passed | `v2/data/errors.go`, `v2/data/receiver.go`, `v2/data/sender.go` |
-| 5.5 | UDP/IPv4 data | verified | 10/10 passed | `v2/layer2/pdu/udp_ipv4_compressed.go`, `v2/enums/said.go`, `v2/enums/daid.go`, `v2/enums/spid.go`, `v2/enums/dpid.go`, `v2/ip/datagram.go`, `v2/ip/errors.go`, `v2/ip/ipv4.go`, `v2/ip/port.go` |
-| 5.6 | UDP/IPv4 header compression | verified | 6/6 passed | `v2/layer2/pdu/udp_ipv4_compressed.go`, `v2/layer2/packet/assembler.go`, `v2/enums/said.go`, `v2/enums/daid.go`, `v2/enums/spid.go`, `v2/enums/dpid.go` |
+| 5.5 | UDP/IPv4 data | verified | 9/9 passed | `v2/layer2/pdu/udp_ipv4_compressed.go`, `v2/enums/said.go`, `v2/enums/daid.go`, `v2/enums/spid.go`, `v2/enums/dpid.go`, `v2/ip/datagram.go`, `v2/ip/errors.go`, `v2/ip/ipv4.go`, `v2/ip/port.go` |
+| 5.6 | UDP/IPv4 header compression | verified | 6/6 passed | `v2/layer2/pdu/udp_ipv4_compressed.go`, `v2/layer2/packet/assembler.go`, `v2/enums/said.go`, `v2/enums/daid.go`, `v2/enums/spid.go`, `v2/enums/dpid.go`, `v2/ip/port.go` |
 | 6.1 | Defined Data | verified | 6/6 passed | `v2/layer2/pdu/data_header.go`, `v2/enums/dd_format.go`, `v2/shortdata/errors.go`, `v2/shortdata/text.go` |
 | 6.2 | Raw data | verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
 | 6.3 | Status/precoded data | verified | 1/1 passed | `v2/layer2/pdu/data_header.go` |
