@@ -66,6 +66,12 @@ func fuzzTalkerAlias(t *testing.T, alias string, format, order uint8, extra []by
 	}
 	got, err := pdu.TalkerAlias(&header, blocks...)
 	if tf == layer3.TalkerAliasUTF8 && !utf8.ValidString(alias) {
+		if k, ok := cutUTF8(alias); ok {
+			if err != nil || got != alias[:k] {
+				t.Fatalf("TalkerAlias of cut UTF-8 %q: %q %v", alias, got, err)
+			}
+			return
+		}
 		if !errors.Is(err, pdu.ErrTalkerAliasInvalidUTF8) {
 			t.Fatalf("TalkerAlias of invalid UTF-8 %q: %q %v", alias, got, err)
 		}
@@ -167,4 +173,13 @@ func fuzzSysCode(t *testing.T, v uint16, model uint8, net, site uint16, par uint
 			t.Fatalf("AddressHash(%06x) = %02x, reference %02x", id, h, want)
 		}
 	}
+}
+
+func cutUTF8(s string) (int, bool) {
+	for k := len(s) - 1; k >= max(0, len(s)-utf8.UTFMax+1); k-- {
+		if utf8.RuneStart(s[k]) {
+			return k, !utf8.FullRuneInString(s[k:]) && utf8.ValidString(s[:k])
+		}
+	}
+	return 0, false
 }

@@ -11,7 +11,8 @@ var (
 	// header and three blocks.
 	ErrTalkerAliasLength = errors.New("pdu: talker alias too long")
 	// ErrTalkerAliasInvalidUTF8 is returned when the Code Units of a UTF-8
-	// talker alias are not valid UTF-8.
+	// talker alias are not valid UTF-8, except for a last character that
+	// is not complete.
 	ErrTalkerAliasInvalidUTF8 = errors.New("pdu: talker alias is not valid UTF-8")
 	// ErrNoAddresses is returned by the SetAddresses methods when the PDU
 	// has no address fields: its FLCO, opcode or format has none.
