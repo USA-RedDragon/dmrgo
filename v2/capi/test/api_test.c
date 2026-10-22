@@ -193,9 +193,10 @@ static void test_self_writes(void) {
 	ev.message.payload_len = sizeof payload;
 	dmrgo_ip_icmp_message_t icmp = 0;
 	uint8_t ptr = 0;
-	int rc = dmrgo_data_event_icmp(&ev, 1500, &icmp, &ptr);
+	bool iok = true;
+	int rc = dmrgo_data_event_icmp(&ev, 1500, &icmp, &ptr, &iok);
 	CHECK(rc != DMRGO_ERR_SHORT && rc != DMRGO_ERR_PANIC);
-	CHECK(dmrgo_data_event_icmp(&ev, 1500, &icmp, &ptr) == rc);
+	CHECK(dmrgo_data_event_icmp(&ev, 1500, &icmp, &ptr, &iok) == rc);
 	CHECK(ev.message.payload == payload);
 
 	dmrgo_trunkauth_entry_t ent = {0};
@@ -414,7 +415,7 @@ static void test_in_out(void) {
 	dmrgo_sms_header_t h = {0};
 	uint8_t pkt[256];
 	size_t n = 0;
-	OK(dmrgo_sms_append_packet(pkt, sizeof pkt, &n, NULL, &t, false, &h));
+	OK(dmrgo_sms_append_packet(pkt, sizeof pkt, &n, NULL, &t, &h));
 	dmrgo_pdu_unconfirmed_data_header_t uh = {0};
 	bool uok = false;
 	OK(dmrgo_pdu_data_header_as_unconfirmed(&h.data, &uh, &uok));
