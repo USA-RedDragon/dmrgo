@@ -5332,7 +5332,6 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DATA_SENDER_CANCEL_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
 #define DMRGO_DATA_SENDER_DECODED_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
 #define DMRGO_DATA_SENDER_TICK_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
-#define DMRGO_DMRD_AUTH_BRIDGE_KEY_SIGN_MAX_ITEMS (0)
 #define DMRGO_DVSI_CODEC_PRODUCT_MAX_ITEMS (DMRGO_DVSI_MAX_PRODUCT_LEN)
 #define DMRGO_DVSI_CODEC_VERSION_MAX_ITEMS (DMRGO_DVSI_MAX_VERSION_LEN)
 #define DMRGO_ERR_ARS_LENGTH (-154)
@@ -9893,13 +9892,11 @@ int dmrgo_dmrd_talker_alias_lc(const dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_
 int dmrgo_dmrd_talker_alias_string(const dmrgo_dmrd_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_dmrd_auth_bridge_key_free frees the handle. self may be NULL. */
 int dmrgo_dmrd_auth_bridge_key_free(dmrgo_dmrd_auth_bridge_key_t *self);
-/* dmrgo_dmrd_auth_bridge_key_sign_need sets *items and *arena to the room that dmrgo_dmrd_auth_bridge_key_sign needs for these arguments, without a change to the handle. */
-int dmrgo_dmrd_auth_bridge_key_sign_need(dmrgo_dmrd_auth_bridge_key_t *self, size_t *items, size_t *arena);
-/* Go: auth.BridgeKey.Sign. Sign writes the signature of the OpenBridge packet in dst, as dmrd.Bridge.AppendBinary and dmrd.BridgeControl.AppendBinary encode it with space for the signature, into its last octets, and returns dst: HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over the octets before the hash of a DMRE packet. It returns dst unchanged and an error when the packet is none of these, and DMRGO_ERR_NIL_RECEIVER for a nil b. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_auth_bridge_key_sign_need gives (DMRGO_DMRD_AUTH_BRIDGE_KEY_SIGN_MAX_ITEMS items). */
-int dmrgo_dmrd_auth_bridge_key_sign(dmrgo_dmrd_auth_bridge_key_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: auth.BridgeKey.SignInPlace. SignInPlace writes the signature of the OpenBridge packet p, as dmrd.Bridge.AppendBinary and dmrd.BridgeControl.AppendBinary encode it with space for the signature, into its last octets: HMAC-SHA1 over the first 53 octets of a version 1 packet and over the tag (and talkgroup and stream of BCSQ, or only the version octet of BCVE) of a control packet, and keyed BLAKE2b-128 over the octets before the hash of a DMRE packet. It changes nothing and returns an error when the packet is none of these, and DMRGO_ERR_NIL_RECEIVER for a nil b. */
+int dmrgo_dmrd_auth_bridge_key_sign_in_place(dmrgo_dmrd_auth_bridge_key_t *self, uint8_t *p, size_t p_len);
 /* dmrgo_dmrd_auth_bridge_key_verify_need sets *items and *arena to the room that dmrgo_dmrd_auth_bridge_key_verify needs for these arguments, without a change to the handle. */
 int dmrgo_dmrd_auth_bridge_key_verify_need(dmrgo_dmrd_auth_bridge_key_t *self, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
-/* Go: auth.BridgeKey.Verify. Verify reports whether the OpenBridge packet p carries the signature of the key, as Sign would write it, and then returns p without its signature. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_auth_bridge_key_verify_need gives. */
+/* Go: auth.BridgeKey.Verify. Verify reports whether the OpenBridge packet p carries the signature of the key, as SignInPlace would write it, and then returns p without its signature. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_auth_bridge_key_verify_need gives. */
 int dmrgo_dmrd_auth_bridge_key_verify(dmrgo_dmrd_auth_bridge_key_t *self, const uint8_t *p, size_t p_len, uint8_t *body, size_t body_cap, size_t *body_len, size_t *body_need, bool *ok);
 /* Go: auth.NewBridgeKey. NewBridgeKey returns a BridgeKey for key, the passphrase of the OpenBridge link as plain octets. */
 int dmrgo_dmrd_auth_new_bridge_key(const uint8_t *key, size_t key_len, dmrgo_dmrd_auth_bridge_key_t **out);
@@ -9915,8 +9912,8 @@ int dmrgo_dmrdsession_bridge_deadline(dmrgo_dmrdsession_bridge_t *self, dmrgo_du
 int dmrgo_dmrdsession_bridge_packet_need(dmrgo_dmrdsession_bridge_t *self, dmrgo_duration_t now, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
 /* Go: dmrdsession.Bridge.Packet. Packet takes the packet p from the peer. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrdsession_bridge_packet_need gives. */
 int dmrgo_dmrdsession_bridge_packet(dmrgo_dmrdsession_bridge_t *self, dmrgo_duration_t now, const uint8_t *p, size_t p_len, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: dmrdsession.Bridge.Sign. Sign writes the signature of the OpenBridge packet p, as auth.BridgeKey.Sign does. */
-int dmrgo_dmrdsession_bridge_sign(dmrgo_dmrdsession_bridge_t *self, uint8_t *p, size_t p_len);
+/* Go: dmrdsession.Bridge.SignInPlace. SignInPlace writes the signature of the OpenBridge packet p into its last octets, as auth.BridgeKey.SignInPlace does. */
+int dmrgo_dmrdsession_bridge_sign_in_place(dmrgo_dmrdsession_bridge_t *self, uint8_t *p, size_t p_len);
 /* Go: dmrdsession.Bridge.State. State returns StateRunning when the peer sent a packet with a good signature within Timeout, and StateIdle before that and after. */
 int dmrgo_dmrdsession_bridge_state(dmrgo_dmrdsession_bridge_t *self, dmrgo_dmrdsession_state_t *out);
 /* dmrgo_dmrdsession_bridge_tick_need sets *items and *arena to the room that dmrgo_dmrdsession_bridge_tick needs for these arguments, without a change to the handle. */
@@ -10143,11 +10140,11 @@ int dmrgo_ipscsession_master_peers(dmrgo_ipscsession_master_t *self, int64_t *ou
 int dmrgo_ipscsession_master_reset(dmrgo_ipscsession_master_t *self);
 /* dmrgo_ipscsession_master_sign_need sets *items and *arena to the room that dmrgo_ipscsession_master_sign needs for these arguments, without a change to the handle. */
 int dmrgo_ipscsession_master_sign_need(dmrgo_ipscsession_master_t *self, size_t *items, size_t *arena);
-/* Go: ipscsession.Master.Sign. Sign appends the authentication trailer of the packet in dst to dst when the config has Auth, and returns dst as it is without. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_master_sign_need gives (DMRGO_IPSCSESSION_MASTER_SIGN_MAX_ITEMS items). */
+/* Go: ipscsession.Master.Sign. Sign appends the authentication trailer of the packet in dst to dst when the config has Auth, and returns dst as it is without. It returns dst unchanged and DMRGO_ERR_NIL_RECEIVER for a nil m. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_master_sign_need gives (DMRGO_IPSCSESSION_MASTER_SIGN_MAX_ITEMS items). */
 int dmrgo_ipscsession_master_sign(dmrgo_ipscsession_master_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_ipscsession_master_sign_for_need sets *items and *arena to the room that dmrgo_ipscsession_master_sign_for needs for these arguments, without a change to the handle. */
 int dmrgo_ipscsession_master_sign_for_need(dmrgo_ipscsession_master_t *self, uint32_t id, size_t *items, size_t *arena);
-/* Go: ipscsession.Master.SignFor. SignFor appends the authentication trailer of the packet in dst for the registered peer id to dst: with the key of the peer when it registered through PacketWithKey or AdoptWithKey, and else as Sign does. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_master_sign_for_need gives (DMRGO_IPSCSESSION_MASTER_SIGN_FOR_MAX_ITEMS items). */
+/* Go: ipscsession.Master.SignFor. SignFor appends the authentication trailer of the packet in dst for the registered peer id to dst: with the key of the peer when it registered through PacketWithKey or AdoptWithKey, and else as Sign does. It returns dst unchanged and DMRGO_ERR_NIL_RECEIVER for a nil m. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_master_sign_for_need gives (DMRGO_IPSCSESSION_MASTER_SIGN_FOR_MAX_ITEMS items). */
 int dmrgo_ipscsession_master_sign_for(dmrgo_ipscsession_master_t *self, uint32_t id, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ipscsession.Master.State. State returns StateRunning, or StateIdle after Close and for a Master that NewMaster did not make. */
 int dmrgo_ipscsession_master_state(dmrgo_ipscsession_master_t *self, dmrgo_ipscsession_state_t *out);
@@ -10187,7 +10184,7 @@ int dmrgo_ipscsession_peer_peers(dmrgo_ipscsession_peer_t *self, int64_t *out);
 int dmrgo_ipscsession_peer_reset(dmrgo_ipscsession_peer_t *self);
 /* dmrgo_ipscsession_peer_sign_need sets *items and *arena to the room that dmrgo_ipscsession_peer_sign needs for these arguments, without a change to the handle. */
 int dmrgo_ipscsession_peer_sign_need(dmrgo_ipscsession_peer_t *self, size_t *items, size_t *arena);
-/* Go: ipscsession.Peer.Sign. Sign appends the authentication trailer of the packet in dst to dst when the config has Auth, and returns dst as it is without. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_peer_sign_need gives (DMRGO_IPSCSESSION_PEER_SIGN_MAX_ITEMS items). */
+/* Go: ipscsession.Peer.Sign. Sign appends the authentication trailer of the packet in dst to dst when the config has Auth, and returns dst as it is without. It returns dst unchanged and DMRGO_ERR_NIL_RECEIVER for a nil p. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_peer_sign_need gives (DMRGO_IPSCSESSION_PEER_SIGN_MAX_ITEMS items). */
 int dmrgo_ipscsession_peer_sign(dmrgo_ipscsession_peer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ipscsession.Peer.State. State returns the state of the Peer. */
 int dmrgo_ipscsession_peer_state(dmrgo_ipscsession_peer_t *self, dmrgo_ipscsession_state_t *out);

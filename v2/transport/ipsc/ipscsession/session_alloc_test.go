@@ -59,10 +59,10 @@ func TestAllocsSession(t *testing.T) {
 			drain()
 			now += ipscsession.AliveDefault
 		}
-		voice = a.Sign(append(voice[:0], 0x80, 0, 0, 0, 2, 1))
+		voice = must(a.Sign(append(voice[:0], 0x80, 0, 0, 0, 2, 1)))
 		ao = b.Packet(0, aAddr, voice, ao[:0])
 		ao = m.AdoptWithKey(now, cAddr, 4, 0x6a, ipsc.Flags{}, key, ao[:0])
-		ao = m.PacketWithKey(now, cAddr, key, m.SignFor(4, append(voice[:0], 0x80, 0, 0, 0, 4, 1)), ao[:0])
+		ao = m.PacketWithKey(now, cAddr, key, must(m.SignFor(4, append(voice[:0], 0x80, 0, 0, 0, 4, 1))), ao[:0])
 		ao = m.Adopt(now, cAddr, 4, 0x6a, ipsc.Flags{}, ao[:0])
 	}
 	run()

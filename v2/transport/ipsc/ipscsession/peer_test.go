@@ -211,7 +211,7 @@ func TestMasterDropsAuth(t *testing.T) {
 
 	key, _ := ipscKey()
 	m, _ := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1, Auth: true, Key: key})
-	reg := m.Sign(ctl(ipsc.OpRegisterRequest, 7))
+	reg := must(m.Sign(ctl(ipsc.OpRegisterRequest, 7)))
 	bad := append([]byte(nil), reg...)
 	bad[len(bad)-1] ^= 1
 	for _, pk := range [][]byte{bad, ctl(ipsc.OpRegisterRequest, 7), {1, 2}} {

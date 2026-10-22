@@ -64,7 +64,7 @@ func TestMasterKeysOfPeers(t *testing.T) {
 		t.Fatalf("peer a events %v", kinds(n.ev[a]))
 	}
 	voice := []byte{byte(ipsc.OpGroupVoice), 0, 0, 0, 2, 1}
-	signed := pa.Sign(append([]byte(nil), voice...))
+	signed := must(pa.Sign(append([]byte(nil), voice...)))
 	if out := m.PacketWithKey(time.Minute, a, ka, signed, nil); len(out) != 1 || out[0].Kind != ipscsession.OutputData {
 		t.Fatalf("voice with its key %+v", out)
 	}
@@ -74,7 +74,7 @@ func TestMasterKeysOfPeers(t *testing.T) {
 	if out := m.Packet(time.Minute, a, voice, nil); !isDrop(out, 2, ipscsession.ReasonAuth) {
 		t.Fatalf("voice of a keyed peer without its key %+v", out)
 	}
-	toB := m.SignFor(3, append([]byte(nil), 0x80, 0, 0, 0, 1, 7))
+	toB := must(m.SignFor(3, append([]byte(nil), 0x80, 0, 0, 0, 1, 7)))
 	if out := pb.Packet(0, masterAddr, toB, nil); len(out) != 1 || out[0].Kind != ipscsession.OutputData {
 		t.Fatalf("SignFor %+v", out)
 	}
@@ -94,14 +94,14 @@ func TestMasterKeyedAndSharedLists(t *testing.T) {
 	key, _ := ipscKey()
 	own, _ := auth.ParseKey("cccc")
 	m, _ := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1, Auth: true, Key: key})
-	m.Packet(0, xprAddr, m.Sign(ctl(ipsc.OpRegisterRequest, 7)), nil)
+	m.Packet(0, xprAddr, must(m.Sign(ctl(ipsc.OpRegisterRequest, 7))), nil)
 	m.AdoptWithKey(0, other, 8, 0x6a, ipsc.Flags{}, own, nil)
-	out := m.Packet(0, xprAddr, m.Sign(ctl(ipsc.OpPeerListRequest, 7)), nil)
+	out := m.Packet(0, xprAddr, must(m.Sign(ctl(ipsc.OpPeerListRequest, 7))), nil)
 	list, err := ipsc.PeerListOf(out[0].Packet[:len(out[0].Packet)-auth.TrailerLen])
 	if len(out) != 1 || err != nil || list.Len() != 1 || list.Entry(0).ID != 7 {
 		t.Fatalf("shared list %+v %v", out, err)
 	}
-	out = m.PacketWithKey(0, other, own, m.SignFor(8, ctl(ipsc.OpPeerListRequest, 8)), nil)
+	out = m.PacketWithKey(0, other, own, must(m.SignFor(8, ctl(ipsc.OpPeerListRequest, 8))), nil)
 	list, err = ipsc.PeerListOf(out[0].Packet[:len(out[0].Packet)-auth.TrailerLen])
 	if len(out) != 1 || out[0].Addr != other || err != nil || list.Len() != 1 || list.Entry(0).ID != 8 {
 		t.Fatalf("own list %+v %v", out, err)

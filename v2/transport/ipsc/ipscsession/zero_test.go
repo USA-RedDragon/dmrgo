@@ -1,8 +1,10 @@
 package ipscsession_test
 
 import (
+	"errors"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession"
 )
@@ -32,9 +34,20 @@ func TestZeroValues(t *testing.T) {
 	if p.State() != ipscsession.StateIdle || m.State() != ipscsession.StateIdle || p.Peers() != 0 || m.Peers() != 0 {
 		t.Fatal("zero state")
 	}
-	if got := p.Sign([]byte{1}); len(got) != 1 {
+	if got, err := p.Sign([]byte{1}); err != nil || len(got) != 1 {
 		t.Fatal("zero Peer signed")
 	}
 	p.Reset()
 	m.Reset()
+	var np *ipscsession.Peer
+	var nm *ipscsession.Master
+	if got, err := np.Sign([]byte{1}); !errors.Is(err, dmrgo.ErrNilReceiver) || len(got) != 1 {
+		t.Fatalf("nil Peer Sign %x, %v", got, err)
+	}
+	if got, err := nm.Sign([]byte{1}); !errors.Is(err, dmrgo.ErrNilReceiver) || len(got) != 1 {
+		t.Fatalf("nil Master Sign %x, %v", got, err)
+	}
+	if got, err := nm.SignFor(7, []byte{1}); !errors.Is(err, dmrgo.ErrNilReceiver) || len(got) != 1 {
+		t.Fatalf("nil Master SignFor %x, %v", got, err)
+	}
 }

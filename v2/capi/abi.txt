@@ -470,7 +470,6 @@ sym #define DMRGO_DMRDSESSION_STATE_OPTIONS ((dmrgo_dmrdsession_state_t)5)
 sym #define DMRGO_DMRDSESSION_STATE_RUNNING ((dmrgo_dmrdsession_state_t)6)
 sym #define DMRGO_DMRDSESSION_STATE_WAIT ((dmrgo_dmrdsession_state_t)1)
 sym #define DMRGO_DMRDSESSION_TIMEOUT_DEFAULT INT64_C(60000000000)
-sym #define DMRGO_DMRD_AUTH_BRIDGE_KEY_SIGN_MAX_ITEMS (0)
 sym #define DMRGO_DMRD_AUTH_KEY_LEN 20
 sym #define DMRGO_DMRD_COMMAND_BCKA ((dmrgo_dmrd_command_t)25)
 sym #define DMRGO_DMRD_COMMAND_BCSQ ((dmrgo_dmrd_command_t)26)
@@ -1620,8 +1619,7 @@ sym int dmrgo_data_sender_tick_need(dmrgo_data_sender_t *self, dmrgo_duration_t 
 sym int dmrgo_data_state_string(dmrgo_data_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_dmrd_append_free_dmr_static(uint32_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, dmrgo_enums_slot_t s);
 sym int dmrgo_dmrd_auth_bridge_key_free(dmrgo_dmrd_auth_bridge_key_t *self);
-sym int dmrgo_dmrd_auth_bridge_key_sign(dmrgo_dmrd_auth_bridge_key_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-sym int dmrgo_dmrd_auth_bridge_key_sign_need(dmrgo_dmrd_auth_bridge_key_t *self, size_t *items, size_t *arena);
+sym int dmrgo_dmrd_auth_bridge_key_sign_in_place(dmrgo_dmrd_auth_bridge_key_t *self, uint8_t *p, size_t p_len);
 sym int dmrgo_dmrd_auth_bridge_key_verify(dmrgo_dmrd_auth_bridge_key_t *self, const uint8_t *p, size_t p_len, uint8_t *body, size_t body_cap, size_t *body_len, size_t *body_need, bool *ok);
 sym int dmrgo_dmrd_auth_bridge_key_verify_need(dmrgo_dmrd_auth_bridge_key_t *self, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
 sym int dmrgo_dmrd_auth_new_bridge_key(const uint8_t *key, size_t key_len, dmrgo_dmrd_auth_bridge_key_t **out);
@@ -1729,7 +1727,7 @@ sym int dmrgo_dmrdsession_bridge_deadline(dmrgo_dmrdsession_bridge_t *self, dmrg
 sym int dmrgo_dmrdsession_bridge_free(dmrgo_dmrdsession_bridge_t *self);
 sym int dmrgo_dmrdsession_bridge_packet(dmrgo_dmrdsession_bridge_t *self, dmrgo_duration_t now, const uint8_t *p, size_t p_len, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_dmrdsession_bridge_packet_need(dmrgo_dmrdsession_bridge_t *self, dmrgo_duration_t now, const uint8_t *p, size_t p_len, size_t *items, size_t *arena);
-sym int dmrgo_dmrdsession_bridge_sign(dmrgo_dmrdsession_bridge_t *self, uint8_t *p, size_t p_len);
+sym int dmrgo_dmrdsession_bridge_sign_in_place(dmrgo_dmrdsession_bridge_t *self, uint8_t *p, size_t p_len);
 sym int dmrgo_dmrdsession_bridge_state(dmrgo_dmrdsession_bridge_t *self, dmrgo_dmrdsession_state_t *out);
 sym int dmrgo_dmrdsession_bridge_tick(dmrgo_dmrdsession_bridge_t *self, dmrgo_duration_t now, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_dmrdsession_bridge_tick_need(dmrgo_dmrdsession_bridge_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);

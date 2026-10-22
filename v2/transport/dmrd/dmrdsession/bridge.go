@@ -62,7 +62,7 @@ func NewBridge(cfg *BridgeConfig) (*Bridge, error) {
 		timeout:   orDefault(cfg.Timeout, TimeoutDefault),
 	}
 	b.bcka, _ = (&dmrd.BridgeControl{Command: dmrd.CommandBCKA}).AppendBinary(nil)
-	if _, err := b.key.Sign(b.bcka); err != nil {
+	if err := b.key.SignInPlace(b.bcka); err != nil {
 		return nil, err
 	}
 	return b, nil
@@ -78,10 +78,10 @@ func (b *Bridge) State() State {
 	return b.state
 }
 
-// Sign writes the signature of the OpenBridge packet p, as
-// auth.BridgeKey.Sign does. It returns an error for a Bridge that NewBridge
-// did not make. It does not allocate.
-func (b *Bridge) Sign(p []byte) error {
+// SignInPlace writes the signature of the OpenBridge packet p into its last
+// octets, as auth.BridgeKey.SignInPlace does. It returns an error for a
+// Bridge that NewBridge did not make. It does not allocate.
+func (b *Bridge) SignInPlace(p []byte) error {
 	if b == nil {
 		return dmrgo.ErrNilReceiver
 	}
@@ -89,8 +89,7 @@ func (b *Bridge) Sign(p []byte) error {
 	if b.key == nil {
 		return errNoKey
 	}
-	_, err := b.key.Sign(p)
-	return err
+	return b.key.SignInPlace(p)
 }
 
 // Deadline returns the time at which the Bridge needs a Tick. ok is false

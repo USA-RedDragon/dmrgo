@@ -511,9 +511,9 @@ func tinyDMRDOps(t *testing.T) []tinyOp {
 	}}, {"dmrd/auth", func() {
 		tok, _ := auth.Token(dmrd.DialectHBRP, 0x0A7ED498, []byte("DL5DI"))
 		_ = auth.VerifyToken(dmrd.DialectHBRP, 0x0A7ED498, []byte("DL5DI"), tok[:])
-		_, _ = signer.Sign(bridge)
+		_ = signer.SignInPlace(bridge)
 		_, _ = signer.Verify(bridge)
-		_, _ = signer.Sign(dmre)
+		_ = signer.SignInPlace(dmre)
 		_, _ = signer.Verify(dmre)
 	}}}
 }

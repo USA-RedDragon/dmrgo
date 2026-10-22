@@ -80,7 +80,7 @@ func checkSession(t *testing.T, data []byte) {
 			pk := data[:size]
 			data = data[size:]
 			if useAuth {
-				pk = m.Sign(append([]byte(nil), pk...))
+				pk = must(m.Sign(append([]byte(nil), pk...)))
 			}
 			n := len(out)
 			out = p.Tick(now, out)
@@ -95,7 +95,7 @@ func checkSession(t *testing.T, data []byte) {
 			out = m.Packet(now, from, pk, out)
 			check(n, m.MaxOutputs())
 			n = len(out)
-			out = m.PacketWithKey(now, from, key, m.SignFor(9, append([]byte(nil), pk...)), out)
+			out = m.PacketWithKey(now, from, key, must(m.SignFor(9, append([]byte(nil), pk...))), out)
 			check(n, m.MaxOutputs())
 			n = len(out)
 			if len(pk) > 4 && pk[4]&1 == 1 {

@@ -9,6 +9,13 @@ func ipscKey() ([20]byte, error) {
 	return auth.ParseKey("0123456789abcdef")
 }
 
+func must(b []byte, err error) []byte {
+	if err != nil {
+		panic(err)
+	}
+	return b
+}
+
 func kinds(out []ipscsession.Output) []ipscsession.OutputKind {
 	k := make([]ipscsession.OutputKind, len(out))
 	for i, o := range out {

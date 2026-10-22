@@ -13,9 +13,9 @@ func TestAllocsAuth(t *testing.T) {
 	n := testing.AllocsPerRun(100, func() {
 		tok, _ := auth.Token(dmrd.DialectHBRP, 0x0A7ED498, []byte("DL5DI"))
 		_ = auth.VerifyToken(dmrd.DialectHBRP, 0x0A7ED498, []byte("DL5DI"), tok[:])
-		_, _ = b.Sign(v1)
+		_ = b.SignInPlace(v1)
 		_, _ = b.Verify(v1)
-		_, _ = b.Sign(v5)
+		_ = b.SignInPlace(v5)
 		_, _ = b.Verify(v5)
 	})
 	if n != 0 {

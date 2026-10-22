@@ -476,7 +476,7 @@ func TestBridgeKeepalive(t *testing.T) {
 	}
 	sq := dmrd.BridgeControl{Command: dmrd.CommandBCSQ, TalkGroup: 91, Stream: 7}
 	p, _ := sq.AppendBinary(nil)
-	if err := a.Sign(p); err != nil {
+	if err := a.SignInPlace(p); err != nil {
 		t.Fatal(err)
 	}
 	out = b.Packet(31*s, p, nil)
@@ -488,7 +488,7 @@ func TestBridgeKeepalive(t *testing.T) {
 	if _, ok := plain.Deadline(); ok || len(plain.Tick(0, nil)) != 0 {
 		t.Fatal("plain bridge has a keepalive")
 	}
-	if err := plain.Sign([]byte("RPTL")); err == nil {
+	if err := plain.SignInPlace([]byte("RPTL")); err == nil {
 		t.Fatal("signed a packet that is not OpenBridge")
 	}
 }

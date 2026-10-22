@@ -125,29 +125,31 @@ func (m *Master) PeerAt(i int) PeerInfo {
 }
 
 // Sign appends the authentication trailer of the packet in dst to dst
-// when the config has Auth, and returns dst as it is without. It
-// allocates only when dst has no room for auth.TrailerLen more octets.
-func (m *Master) Sign(dst []byte) []byte {
+// when the config has Auth, and returns dst as it is without. It returns
+// dst unchanged and dmrgo.ErrNilReceiver for a nil m. It allocates only
+// when dst has no room for auth.TrailerLen more octets.
+func (m *Master) Sign(dst []byte) ([]byte, error) {
 	if m == nil {
-		return dst
+		return dst, dmrgo.ErrNilReceiver
 	}
 
-	return m.l.sign(dst, nil)
+	return m.l.sign(dst, nil), nil
 }
 
 // SignFor appends the authentication trailer of the packet in dst for the
 // registered peer id to dst: with the key of the peer when it registered
 // through PacketWithKey or AdoptWithKey, and else as Sign does. It
-// allocates only when dst has no room for auth.TrailerLen more octets.
-func (m *Master) SignFor(id uint32, dst []byte) []byte {
+// returns dst unchanged and dmrgo.ErrNilReceiver for a nil m. It allocates
+// only when dst has no room for auth.TrailerLen more octets.
+func (m *Master) SignFor(id uint32, dst []byte) ([]byte, error) {
 	if m == nil {
-		return dst
+		return dst, dmrgo.ErrNilReceiver
 	}
 
 	if i := m.l.find(id); i >= 0 {
-		return m.l.sign(dst, m.l.peers[i].keyOf())
+		return m.l.sign(dst, m.l.peers[i].keyOf()), nil
 	}
-	return m.l.sign(dst, nil)
+	return m.l.sign(dst, nil), nil
 }
 
 // Reset forgets every peer without a packet and runs the Master again
