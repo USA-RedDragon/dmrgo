@@ -43,7 +43,9 @@ func TestCapacity(t *testing.T) {
 	if m.Blocks != n || m.DataType != enums.DataTypeRate12 {
 		t.Errorf("Blocks %d DataType %v, want %d Rate12", m.Blocks, m.DataType, n)
 	}
-	ack, err := packet.NewResponse(confirmed().ConfirmedDataHeader, packet.ResponseACK, nil)
+	h := confirmed()
+	c, _ := h.AsConfirmed()
+	ack, err := packet.NewResponse(&c, packet.ResponseACK, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
