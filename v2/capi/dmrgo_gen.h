@@ -3865,7 +3865,7 @@ struct dmrgo_dmrdsession_output_t {
 	size_t packet_len;
 	/* Command is the command of OutputData and OutputMessage. */
 	dmrgo_dmrd_command_t command;
-	/* ID is the repeater ID of OutputLogin, OutputUp, OutputDown and OutputPong at a Master. */
+	/* ID is the repeater ID of the session: a Master sets it in every output but OutputSend, a Peer only in OutputUp, and a Bridge in none. */
 	uint32_t id;
 	/* Reason tells why for OutputDown. */
 	dmrgo_dmrdsession_reason_t reason;
@@ -4128,9 +4128,9 @@ struct dmrgo_ipscsession_output_t {
 	/* Packet is the packet of OutputSend and OutputData. It holds at most MaxPacket octets. */
 	uint8_t *packet;
 	size_t packet_len;
-	/* Addr is where to send OutputSend, and the address of the peer of OutputUp and OutputData. */
+	/* Addr is where to send OutputSend, and the address of the peer or master of every other output but OutputPeers. */
 	dmrgo_ipscsession_addr_t addr;
-	/* ID is the peer or master ID of OutputUp, OutputDown and OutputData. */
+	/* ID is the peer or master ID of OutputUp, OutputDown and OutputData, and of OutputDropped when the packet has one. */
 	uint32_t id;
 	/* Reason tells why for OutputDown and OutputDropped. */
 	dmrgo_ipscsession_reason_t reason;
