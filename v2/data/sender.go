@@ -309,9 +309,11 @@ type Sender struct {
 // message of the window, its packet.Assembler, its table of links and its
 // Burst.
 func NewSender(cfg *SenderConfig) (*Sender, error) {
-	if cfg == nil {
-		cfg = &SenderConfig{}
+	var conf SenderConfig
+	if cfg != nil {
+		conf = *cfg
 	}
+	cfg = &conf
 	if cfg.ColorCode > 15 {
 		return nil, errColorCode
 	}

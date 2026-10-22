@@ -127,7 +127,7 @@ func NewFollower(cfg *FollowerConfig) (*Follower, error) {
 
 func (f *Follower) init(cfg *FollowerConfig) error {
 	if cfg == nil {
-		cfg = &FollowerConfig{}
+		return f.init(&FollowerConfig{})
 	}
 	if cfg.HuntLen < 0 || cfg.HuntLen > MaxChannels {
 		return errHunt

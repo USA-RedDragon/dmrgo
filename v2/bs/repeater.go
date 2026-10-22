@@ -205,9 +205,11 @@ type Repeater struct {
 // Repeater, a voice.Receiver and a voice.Transmitter per slot, the data
 // queues, and the scratch Burst unless cfg.Scratch is set.
 func New(cfg *Config) (*Repeater, error) {
-	if cfg == nil {
-		cfg = &Config{}
+	var conf Config
+	if cfg != nil {
+		conf = *cfg
 	}
+	cfg = &conf
 	r := &Repeater{mode: cfg.Mode, cc: cfg.ColorCode, activation: cfg.Activation, cach: cfg.CACH && cfg.Mode == ModeRF,
 		callHang: orDefault(cfg.CallHang, constants.TCallHang), dataHang: orDefault(cfg.DataHang, constants.TDataHangtime),
 		inactivity: orDefault(cfg.Inactivity, DefaultInactivity), lost: orDefault(cfg.Lost, voice.DefaultLost),

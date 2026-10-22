@@ -85,9 +85,11 @@ var _ vocoder.AppendDecoder = (*Codec)(nil)
 // a field, and the errors of port. It allocates the Codec and the product
 // and version strings.
 func New(port Port, cfg *Config) (*Codec, error) {
-	if cfg == nil {
-		cfg = &Config{}
+	var conf Config
+	if cfg != nil {
+		conf = *cfg
 	}
+	cfg = &conf
 	if port == nil {
 		return nil, ErrPort
 	}

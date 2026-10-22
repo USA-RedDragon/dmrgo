@@ -111,9 +111,11 @@ type Interrupter struct {
 // the Interrupter, and its
 // Burst unless cfg.Scratch is set. (ETSI TS 102 361-2 clause 6.3.5)
 func NewInterrupter(cfg *InterrupterConfig) (*Interrupter, error) {
-	if cfg == nil {
-		cfg = &InterrupterConfig{}
+	var conf InterrupterConfig
+	if cfg != nil {
+		conf = *cfg
 	}
+	cfg = &conf
 	switch {
 	case cfg.ColorCode > 15:
 		return nil, errColorCode

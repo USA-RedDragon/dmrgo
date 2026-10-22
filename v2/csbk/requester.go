@@ -146,9 +146,11 @@ type Requester struct {
 // 15, an unknown Source or Retries above MaxRetries. It allocates the
 // Requester, and its Burst unless cfg.Scratch is set.
 func NewRequester(cfg *RequesterConfig) (*Requester, error) {
-	if cfg == nil {
-		cfg = &RequesterConfig{}
+	var conf RequesterConfig
+	if cfg != nil {
+		conf = *cfg
 	}
+	cfg = &conf
 	if cfg.ColorCode > 15 {
 		return nil, errColorCode
 	}

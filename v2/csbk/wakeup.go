@@ -82,9 +82,11 @@ type Wakeup struct {
 // of range. It allocates the Wakeup, and its Burst unless cfg.Scratch is
 // set.
 func NewWakeup(cfg *WakeupConfig) (*Wakeup, error) {
-	if cfg == nil {
-		cfg = &WakeupConfig{}
+	var conf WakeupConfig
+	if cfg != nil {
+		conf = *cfg
 	}
+	cfg = &conf
 	if cfg.ColorCode > 15 {
 		return nil, errColorCode
 	}

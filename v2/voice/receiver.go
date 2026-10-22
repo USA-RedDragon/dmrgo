@@ -88,9 +88,11 @@ type Receiver struct {
 // above 15. It allocates the Receiver, and its Burst unless cfg.Scratch is
 // set.
 func NewReceiver(cfg *ReceiverConfig) (*Receiver, error) {
-	if cfg == nil {
-		cfg = &ReceiverConfig{}
+	var conf ReceiverConfig
+	if cfg != nil {
+		conf = *cfg
 	}
+	cfg = &conf
 	r := &Receiver{lostAfter: cfg.Lost, hang: cfg.Hang, strict: cfg.Strict, b: cfg.Scratch}
 	if cfg.ColorCode != nil {
 		if *cfg.ColorCode > 15 {
