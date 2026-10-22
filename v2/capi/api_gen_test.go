@@ -161,6 +161,8 @@ var entryPoints = map[string]any{
 	"dmrgo_data_sender_deadline":                                       dmrgo_data_sender_deadline,
 	"dmrgo_data_sender_decoded_need":                                   dmrgo_data_sender_decoded_need,
 	"dmrgo_data_sender_decoded":                                        dmrgo_data_sender_decoded,
+	"dmrgo_data_sender_lost_need":                                      dmrgo_data_sender_lost_need,
+	"dmrgo_data_sender_lost":                                           dmrgo_data_sender_lost,
 	"dmrgo_data_sender_reset":                                          dmrgo_data_sender_reset,
 	"dmrgo_data_sender_send":                                           dmrgo_data_sender_send,
 	"dmrgo_data_sender_state":                                          dmrgo_data_sender_state,

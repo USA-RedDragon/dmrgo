@@ -1429,6 +1429,10 @@ struct dmrgo_data_sender_config_t {
 	int64_t window;
 	/* Seed seeds the random holdoff. Two Senders with the same seed hold off for the same times, so give each radio its own seed. */
 	uint64_t seed;
+	/* Slot is the TDMA slot of the Sender, which it puts in the Hint of each burst it sends. SlotUnknown leaves it unknown. */
+	dmrgo_enums_slot_t slot;
+	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the Sender keep to the Due times. */
+	dmrgo_duration_t lead;
 };
 
 struct dmrgo_data_output_t {
@@ -1436,7 +1440,7 @@ struct dmrgo_data_output_t {
 	dmrgo_data_output_kind_t kind;
 	/* Burst is the burst to send. */
 	dmrgo_layer2_raw_burst_t burst;
-	/* Hint is what the burst is, for a transport: KindData with the data type of the burst. Its Slot is SlotUnknown. */
+	/* Hint is what the burst is, for a transport: KindData with the data type of the burst and the SenderConfig.Slot. */
 	dmrgo_layer2_hint_t hint;
 	/* Due is the time at which the burst goes on air, 60 ms after the one before it. */
 	dmrgo_duration_t due;
@@ -5394,6 +5398,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DATA_SENDER_BURST_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
 #define DMRGO_DATA_SENDER_CANCEL_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
 #define DMRGO_DATA_SENDER_DECODED_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
+#define DMRGO_DATA_SENDER_LOST_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
 #define DMRGO_DATA_SENDER_TICK_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
 #define DMRGO_DVSI_CODEC_PRODUCT_MAX_ITEMS (DMRGO_DVSI_MAX_PRODUCT_LEN)
 #define DMRGO_DVSI_CODEC_VERSION_MAX_ITEMS (DMRGO_DVSI_MAX_VERSION_LEN)
@@ -8003,7 +8008,7 @@ int dmrgo_data_event_icmp(const dmrgo_data_event_t *self, int64_t mtu, dmrgo_ip_
 int dmrgo_data_event_kind_string(dmrgo_data_event_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: data.NewReceiver. NewReceiver returns a Receiver for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source, or a MaxBlocks, Peers, MaxFragment or MaxMessage out of range. cfg may be NULL. */
 int dmrgo_data_new_receiver(const dmrgo_data_receiver_config_t *cfg, dmrgo_data_receiver_t **out);
-/* Go: data.NewSender. NewSender returns a Sender for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source or Access, or a Preambles, Retries, MaxBlocks, Peers or Window out of range. cfg may be NULL. */
+/* Go: data.NewSender. NewSender returns a Sender for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source or Access, a Preambles, Retries, MaxBlocks, Peers or Window out of range, a negative Lead, or a Slot other than SlotUnknown, Slot1 or Slot2. cfg may be NULL. */
 int dmrgo_data_new_sender(const dmrgo_data_sender_config_t *cfg, dmrgo_data_sender_t **out);
 /* Go: data.Output.ICMP. ICMP returns the ICMP error message that the OutputDone o of a message of the IP bearer service reports to the IP layer: ip.ICMPHostUnreachable for a message that used all its tries on air (ResultRetryLimit), that could not finish before SenderConfig.TxLimit (ResultTimeLimit), or that got a NACK for the full memory of the recipient. */
 int dmrgo_data_output_icmp(const dmrgo_data_output_t *self, dmrgo_ip_icmp_message_t *m, bool *ok);
@@ -8053,9 +8058,13 @@ int dmrgo_data_sender_deadline(dmrgo_data_sender_t *self, dmrgo_duration_t *at, 
 int dmrgo_data_sender_decoded_need(dmrgo_data_sender_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, size_t *items, size_t *arena);
 /* Go: data.Sender.Decoded. Decoded takes the response to the confirmed messages in progress from the decoded burst b, as Burst does. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_sender_decoded_need gives (DMRGO_DATA_SENDER_DECODED_MAX_ITEMS items). b may be NULL. */
 int dmrgo_data_sender_decoded(dmrgo_data_sender_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* dmrgo_data_sender_lost_need sets *items and *arena to the room that dmrgo_data_sender_lost needs for these arguments, without a change to the handle. */
+int dmrgo_data_sender_lost_need(dmrgo_data_sender_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+/* Go: data.Sender.Lost. Lost tells the Sender that the transport lost the signal: the channel counts as idle. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_sender_lost_need gives (DMRGO_DATA_SENDER_LOST_MAX_ITEMS items). */
+int dmrgo_data_sender_lost(dmrgo_data_sender_t *self, dmrgo_duration_t now, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: data.Sender.Reset. Reset ends every message without outputs and forgets the sequence numbers of every link and the channel state. */
 int dmrgo_data_sender_reset(dmrgo_data_sender_t *self);
-/* Go: data.Sender.Send. Send starts the message m at now, or queues it in the sliding window. Send returns DMRGO_ERR_DATA_BUSY for any other message while a message is in progress, DMRGO_ERR_NIL_ARGUMENT for a nil m, a DMRGO_ERR_CONFIG for another header (Field "Header"), a P_HEAD in m.Proprietary (Field "Proprietary") or a confirmed message to a group (Field "Header.Group"), an error on a zero Sender, and the errors of packet.Builder.Segment, such as DMRGO_ERR_PACKET_NO_ROOM for a message of more than SenderConfig.MaxBlocks blocks and DMRGO_ERR_PACKET_RATE. m may be NULL. */
+/* Go: data.Sender.Send. Send starts the message m at now, or queues it in the sliding window. Send returns DMRGO_ERR_DATA_BUSY for any other message while a message is in progress, DMRGO_ERR_NIL_ARGUMENT for a nil m, a DMRGO_ERR_CONFIG for another header (Field "Header"), a P_HEAD in m.Proprietary (Field "Proprietary") or a confirmed message to a group (Field "Header.Group"), DMRGO_ERR_ZERO_VALUE on a zero Sender, and the errors of packet.Builder.Segment, such as DMRGO_ERR_PACKET_NO_ROOM for a message of more than SenderConfig.MaxBlocks blocks and DMRGO_ERR_PACKET_RATE. m may be NULL. */
 int dmrgo_data_sender_send(dmrgo_data_sender_t *self, dmrgo_duration_t now, const dmrgo_data_message_t *m);
 /* Go: data.Sender.State. State returns the state of the Sender. */
 int dmrgo_data_sender_state(dmrgo_data_sender_t *self, dmrgo_data_sender_state_t *out);

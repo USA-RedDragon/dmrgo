@@ -101,6 +101,13 @@ type SenderConfig struct {
 	// Seed seeds the random holdoff. Two Senders with the same seed hold
 	// off for the same times, so give each radio its own seed.
 	Seed uint64
+	// Slot is the TDMA slot of the Sender, which it puts in the Hint of
+	// each burst it sends. SlotUnknown leaves it unknown.
+	Slot enums.Slot
+	// Lead makes Tick emit a burst this long before its Due time, so that
+	// an RF FIFO can be filled ahead. 0 means at Due; it must not be
+	// negative. The timers of the Sender keep to the Due times.
+	Lead time.Duration
 }
 
 // OutputKind is the kind of an Output.
@@ -177,7 +184,7 @@ type Output struct {
 	// Burst is the burst to send.
 	Burst layer2.RawBurst
 	// Hint is what the burst is, for a transport: KindData with the data
-	// type of the burst. Its Slot is SlotUnknown.
+	// type of the burst and the SenderConfig.Slot.
 	Hint layer2.Hint
 	// Due is the time at which the burst goes on air, 60 ms after the one
 	// before it.
@@ -271,6 +278,8 @@ type Sender struct {
 	txLimit      time.Duration
 	retries      int
 	resync       bool
+	slot         enums.Slot
+	lead         time.Duration
 	rng          pcg.Source
 	peers        peers
 
@@ -303,8 +312,9 @@ type Sender struct {
 
 // NewSender returns a Sender for cfg. A nil cfg means the zero
 // SenderConfig. It returns a *dmrgo.ConfigError for a color code above 15, an
-// unknown Source or Access, or a Preambles, Retries, MaxBlocks, Peers or
-// Window out of range. It allocates the Sender, a packet.Builder for each
+// unknown Source or Access, a Preambles, Retries, MaxBlocks, Peers or
+// Window out of range, a negative Lead, or a Slot other than SlotUnknown,
+// Slot1 or Slot2. It allocates the Sender, a packet.Builder for each
 // message of the window, its packet.Assembler, its table of links and its
 // Burst.
 func NewSender(cfg *SenderConfig) (*Sender, error) {
@@ -321,6 +331,12 @@ func NewSender(cfg *SenderConfig) (*Sender, error) {
 	}
 	if cfg.Access > enums.AccessImpolite {
 		return nil, errAccess
+	}
+	if cfg.Lead < 0 {
+		return nil, errLead
+	}
+	if cfg.Slot != enums.SlotUnknown && cfg.Slot != enums.Slot1 && cfg.Slot != enums.Slot2 {
+		return nil, errSlot
 	}
 	preambles := cfg.Preambles
 	switch {
@@ -358,6 +374,8 @@ func NewSender(cfg *SenderConfig) (*Sender, error) {
 		txLimit:      defaultDuration(cfg.TxLimit, constants.TDataTxLimit),
 		retries:      retries,
 		resync:       cfg.Resync,
+		slot:         cfg.Slot,
+		lead:         cfg.Lead,
 		rng:          pcg.New(cfg.Seed),
 		peers:        peers{list: make([]peer, n)},
 		b:            layer2.NewBurst(),
@@ -414,7 +432,7 @@ func (s *Sender) State() SenderState {
 // dmrgo.ErrNilArgument for a nil m, a *dmrgo.ConfigError for another
 // header (Field "Header"), a P_HEAD in m.Proprietary (Field
 // "Proprietary") or a confirmed message to a group (Field
-// "Header.Group"), an error on a zero Sender, and the errors of
+// "Header.Group"), dmrgo.ErrZeroValue on a zero Sender, and the errors of
 // packet.Builder.Segment, such as packet.ErrNoRoom for a message of more
 // than SenderConfig.MaxBlocks blocks and packet.ErrRate. (ETSI TS 102 361-3
 // clauses 5.4 and 5.4.4)
@@ -424,7 +442,7 @@ func (s *Sender) Send(now time.Duration, m *Message) error {
 	}
 	switch {
 	case s.asm == nil:
-		return errZero
+		return dmrgo.ErrZeroValue
 	case m == nil:
 		return dmrgo.ErrNilArgument
 	case s.n >= len(s.slots) || s.n > 0 && !s.joins(m):
@@ -555,7 +573,7 @@ func (s *Sender) start(now time.Duration) {
 	s.load()
 	switch {
 	case s.access == enums.AccessImpolite || !s.busy:
-		s.state, s.due = SenderSending, now
+		s.state, s.due = SenderSending, now+s.lead
 	default:
 		s.state, s.waitUntil = SenderWaiting, now+s.idleSearch
 	}
@@ -579,7 +597,7 @@ func (s *Sender) Channel(now time.Duration, busy bool) {
 	}
 	s.busy = busy
 	if !busy && s.state == SenderWaiting {
-		s.state, s.due = SenderSending, now
+		s.state, s.due = SenderSending, now+s.lead
 	}
 }
 
@@ -753,6 +771,17 @@ func (s *Sender) finish(k int, result Result, dst []Output) []Output {
 	return dst
 }
 
+// Lost tells the Sender that the transport lost the signal: the channel
+// counts as idle. It runs the timers as Tick does and appends the outputs
+// to dst. It allocates only when dst has no room for MaxOutputs outputs.
+func (s *Sender) Lost(now time.Duration, dst []Output) []Output {
+	if s == nil {
+		return dst
+	}
+	s.Channel(now, false)
+	return s.Tick(now, dst)
+}
+
 // Deadline returns the time at which the Sender needs a Tick. ok is false
 // when no timer runs.
 func (s *Sender) Deadline() (at time.Duration, ok bool) {
@@ -765,7 +794,7 @@ func (s *Sender) Deadline() (at time.Duration, ok bool) {
 	case SenderHoldoff:
 		at = s.holdUntil
 	case SenderSending:
-		return s.due, true
+		return s.due - s.lead, true
 	case SenderWaitResponse:
 		return s.respUntil, true
 	case SenderIdle:
@@ -810,7 +839,7 @@ func (s *Sender) timers(now time.Duration, dst []Output) []Output {
 				s.state, s.waitUntil = SenderWaiting, at+s.idleSearch
 				continue
 			}
-			s.state, s.due = SenderSending, at
+			s.state, s.due = SenderSending, at+s.lead
 		case SenderSending:
 			return s.send(dst)
 		case SenderWaitResponse:
@@ -882,7 +911,7 @@ func (s *Sender) send(dst []Output) []Output {
 	var o *Output
 	dst, o = appendOutput(dst, OutputBurst, s.due)
 	o.Burst, o.Try = raw, uint8(min(e.tries, MaxRetries)&0xFF)
-	o.Hint = layer2.Hint{Kind: layer2.KindData, DataType: raw.SlotType().DataType, HasDataType: true}
+	o.Hint = layer2.Hint{Slot: s.slot, Kind: layer2.KindData, DataType: raw.SlotType().DataType, HasDataType: true}
 	if e.cHead {
 		o.Seq = e.ns
 	}
