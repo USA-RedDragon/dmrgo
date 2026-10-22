@@ -17,13 +17,7 @@ func decodeMotorolaRadioCheckPDU(data [8]byte) MotorolaRadioCheckPDU {
 	return result
 }
 
-// Encode encodes a MotorolaRadioCheckPDU. It returns the 64 bits packed, the
-// first bit in the most significant bit of byte 0.
-func (s *MotorolaRadioCheckPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+func (s *MotorolaRadioCheckPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	data[0] = byte(uint64(s.Reserved))
 	if s.Answer {
@@ -67,13 +61,7 @@ func decodeMotorolaCallAlertPDU(data [8]byte) MotorolaCallAlertPDU {
 	return result
 }
 
-// Encode encodes a MotorolaCallAlertPDU. It returns the 64 bits packed, the
-// first bit in the most significant bit of byte 0.
-func (s *MotorolaCallAlertPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+func (s *MotorolaCallAlertPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	_valReserved := uint64(s.Reserved)
 	data[0] = byte(_valReserved >> 8)
@@ -113,13 +101,7 @@ func decodeMotorolaCallAlertAckPDU(data [8]byte) MotorolaCallAlertAckPDU {
 	return result
 }
 
-// Encode encodes a MotorolaCallAlertAckPDU. It returns the 64 bits packed,
-// the first bit in the most significant bit of byte 0.
-func (s *MotorolaCallAlertAckPDU) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+func (s *MotorolaCallAlertAckPDU) encode() ([8]byte, error) {
 	var data [8]byte
 	data[0] = byte(uint64(s.Request))
 	data[1] = byte(uint64(s.Reserved))

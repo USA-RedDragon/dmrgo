@@ -443,7 +443,7 @@ func TestCSBK_Opcode0x38_TDGrantMI(t *testing.T) {
 	if ((grant.TargetAddress>>0)&1) != 1 || ((grant.SourceAddress>>0)&1) != 1 {
 		t.Error("TargetAddress/SourceAddress last bit should be set")
 	}
-	csbk.RawPayload = must(grant.Encode())
+	csbk.RawPayload = must(pdu.EncodePayload(&grant))
 	if must(csbk.Encode()) != infoBits {
 		t.Error("RawPayload from the grant Encode does not round trip")
 	}

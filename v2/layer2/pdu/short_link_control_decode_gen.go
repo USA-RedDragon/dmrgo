@@ -23,14 +23,8 @@ func decodeShortLCNullMessage(data [3]byte) ShortLCNullMessage {
 	return result
 }
 
-// Encode encodes a ShortLCNullMessage. It returns the 24 bits packed, the
-// first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-2 clause 7.1.3.1)
-func (s *ShortLCNullMessage) Encode() ([3]byte, error) {
-	if s == nil {
-		return [3]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-2 clause 7.1.3.1
+func (s *ShortLCNullMessage) encode() ([3]byte, error) {
 	var data [3]byte
 	if uint64(s.Reserved)>>24 != 0 {
 		return [3]byte{}, errShortLCNullMessageReservedRange
@@ -62,14 +56,8 @@ func decodeShortLCActivityUpdate(data [3]byte) ShortLCActivityUpdate {
 	return result
 }
 
-// Encode encodes a ShortLCActivityUpdate. It returns the 24 bits packed, the
-// first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-2 clause 7.1.3.2)
-func (s *ShortLCActivityUpdate) Encode() ([3]byte, error) {
-	if s == nil {
-		return [3]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-2 clause 7.1.3.2
+func (s *ShortLCActivityUpdate) encode() ([3]byte, error) {
 	var data [3]byte
 	if uint64(s.TS1ActivityID)>>4 != 0 {
 		return [3]byte{}, errShortLCActivityUpdateTS1ActivityIDRange
@@ -104,14 +92,8 @@ func decodeShortLCCSysParms(data [3]byte) ShortLCCSysParms {
 	return result
 }
 
-// Encode encodes a ShortLCCSysParms. It returns the 24 bits packed, the
-// first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.2.1)
-func (s *ShortLCCSysParms) Encode() ([3]byte, error) {
-	if s == nil {
-		return [3]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.2.1
+func (s *ShortLCCSysParms) encode() ([3]byte, error) {
 	var data [3]byte
 	if uint64(s.MODEL)>>2 != 0 {
 		return [3]byte{}, errShortLCCSysParmsMODELRange
@@ -155,14 +137,8 @@ func decodeShortLCPSysParms(data [3]byte) ShortLCPSysParms {
 	return result
 }
 
-// Encode encodes a ShortLCPSysParms. It returns the 24 bits packed, the
-// first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.1.2.2)
-func (s *ShortLCPSysParms) Encode() ([3]byte, error) {
-	if s == nil {
-		return [3]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.1.2.2
+func (s *ShortLCPSysParms) encode() ([3]byte, error) {
 	var data [3]byte
 	if uint64(s.MODEL)>>2 != 0 {
 		return [3]byte{}, errShortLCPSysParmsMODELRange
@@ -266,13 +242,14 @@ func (s *ShortLC) AsNullMessage() (p ShortLCNullMessage, ok bool) {
 
 // SetNullMessage makes s carry p as a ShortLCNullMessage payload: it sets
 // SLCO to enums.SLCONullMessage and RawPayload, and keeps the other fields.
-// It returns the error of p.Encode, and then leaves s as it is.
+// It returns a *dmrgo.FieldRangeError when a field of p does not fit its
+// bits, and then leaves s as it is.
 func (s *ShortLC) SetNullMessage(p ShortLCNullMessage) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -296,13 +273,14 @@ func (s *ShortLC) AsActivityUpdate() (p ShortLCActivityUpdate, ok bool) {
 
 // SetActivityUpdate makes s carry p as a ShortLCActivityUpdate payload: it
 // sets SLCO to enums.SLCOActivityUpdate and RawPayload, and keeps the other
-// fields. It returns the error of p.Encode, and then leaves s as it is.
+// fields. It returns a *dmrgo.FieldRangeError when a field of p does not fit
+// its bits, and then leaves s as it is.
 func (s *ShortLC) SetActivityUpdate(p ShortLCActivityUpdate) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -326,13 +304,14 @@ func (s *ShortLC) AsCSysParms() (p ShortLCCSysParms, ok bool) {
 
 // SetCSysParms makes s carry p as a ShortLCCSysParms payload: it sets SLCO
 // to enums.SLCOCSysParms and RawPayload, and keeps the other fields. It
-// returns the error of p.Encode, and then leaves s as it is.
+// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
+// and then leaves s as it is.
 func (s *ShortLC) SetCSysParms(p ShortLCCSysParms) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -356,13 +335,14 @@ func (s *ShortLC) AsPSysParms() (p ShortLCPSysParms, ok bool) {
 
 // SetPSysParms makes s carry p as a ShortLCPSysParms payload: it sets SLCO
 // to enums.SLCOPSysParms and RawPayload, and keeps the other fields. It
-// returns the error of p.Encode, and then leaves s as it is.
+// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
+// and then leaves s as it is.
 func (s *ShortLC) SetPSysParms(p ShortLCPSysParms) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}

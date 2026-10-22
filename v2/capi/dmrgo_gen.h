@@ -8614,42 +8614,24 @@ int dmrgo_packet_response_data_encode(const dmrgo_packet_response_data_t *self, 
 int dmrgo_packet_response_data_retry_blocks(const dmrgo_packet_response_data_t *self, int64_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: packet.ResponseOf. ResponseOf returns the Response of a C_RHEAD, with the errors of NewResponseCode, and an error for a nil h. h may be NULL. */
 int dmrgo_packet_response_of(const dmrgo_pdu_response_packet_header_t *h, dmrgo_packet_response_t *out);
-/* Go: pdu.AckInboundPDU.Encode. Encode encodes an AckInboundPDU. */
-int dmrgo_pdu_ack_inbound_pdu_encode(const dmrgo_pdu_ack_inbound_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.AckInboundPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_ack_inbound_pdu_string(const dmrgo_pdu_ack_inbound_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.AckInboundPayloadPDU.Encode. Encode encodes an AckInboundPayloadPDU. */
-int dmrgo_pdu_ack_inbound_payload_pdu_encode(const dmrgo_pdu_ack_inbound_payload_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.AckInboundPayloadPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_ack_inbound_payload_pdu_string(const dmrgo_pdu_ack_inbound_payload_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.AckOutboundPDU.Encode. Encode encodes an AckOutboundPDU. */
-int dmrgo_pdu_ack_outbound_pdu_encode(const dmrgo_pdu_ack_outbound_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.AckOutboundPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_ack_outbound_pdu_string(const dmrgo_pdu_ack_outbound_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.AckOutboundPayloadPDU.Encode. Encode encodes an AckOutboundPayloadPDU. */
-int dmrgo_pdu_ack_outbound_payload_pdu_encode(const dmrgo_pdu_ack_outbound_payload_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.AckOutboundPayloadPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_ack_outbound_payload_pdu_string(const dmrgo_pdu_ack_outbound_payload_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.AckvitationPDU.Encode. Encode encodes an AckvitationPDU. */
-int dmrgo_pdu_ackvitation_pdu_encode(const dmrgo_pdu_ackvitation_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.AckvitationPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_ackvitation_pdu_string(const dmrgo_pdu_ackvitation_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.AddressHash. AddressHash returns the 8-bit hash of a 24-bit address, as in the HashTS1 and HashTS2 fields of the Activity Update Short LC and the Hashed Source Address. It returns a DMRGO_ERR_FIELD_RANGE when id does not fit in 24 bits. */
 int dmrgo_pdu_address_hash(uint32_t id, uint8_t *out);
-/* Go: pdu.AdjacentSiteParms.Encode. Encode encodes an AdjacentSiteParms. */
-int dmrgo_pdu_adjacent_site_parms_encode(const dmrgo_pdu_adjacent_site_parms_t *self, uint8_t out[8]);
 /* Go: pdu.AdjacentSiteParms.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_adjacent_site_parms_string(const dmrgo_pdu_adjacent_site_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.AhoyPDU.Encode. Encode encodes an AhoyPDU. */
-int dmrgo_pdu_ahoy_pdu_encode(const dmrgo_pdu_ahoy_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.AhoyPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_ahoy_pdu_string(const dmrgo_pdu_ahoy_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.AlohaPDU.Encode. Encode encodes an AlohaPDU. */
-int dmrgo_pdu_aloha_pdu_encode(const dmrgo_pdu_aloha_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.AlohaPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_aloha_pdu_string(const dmrgo_pdu_aloha_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.AnnWDTSCCParms.Encode. Encode encodes an AnnWDTSCCParms. */
-int dmrgo_pdu_ann_wd_tscc_parms_encode(const dmrgo_pdu_ann_wd_tscc_parms_t *self, uint8_t out[8]);
 /* Go: pdu.AnnWDTSCCParms.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_ann_wd_tscc_parms_string(const dmrgo_pdu_ann_wd_tscc_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.AppendTalkerAlias. AppendTalkerAlias appends the alias that TalkerAlias returns to dst as UTF-8 and returns the extended slice, with the errors of TalkerAlias. With DMRGO_ERR_PDU_TALKER_ALIAS_INCOMPLETE it returns dst unchanged. header may be NULL. */
@@ -8660,8 +8642,6 @@ int dmrgo_pdu_bcap_continuation_data_type(const dmrgo_pdu_bcap_continuation_t *s
 int dmrgo_pdu_bcap_continuation_encode(const dmrgo_pdu_bcap_continuation_t *self, uint8_t out[12]);
 /* Go: pdu.BCAPContinuation.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_bcap_continuation_string(const dmrgo_pdu_bcap_continuation_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.BSOutboundActivationPDU.Encode. Encode encodes a BSOutboundActivationPDU. */
-int dmrgo_pdu_bs_outbound_activation_pdu_encode(const dmrgo_pdu_bs_outbound_activation_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.BSOutboundActivationPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_bs_outbound_activation_pdu_string(const dmrgo_pdu_bs_outbound_activation_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.BlockCRCOK. BlockCRCOK reports whether octets 10 and 11 of the single-block payload b hold the CRC that Seal writes for dt. */
@@ -8682,12 +8662,8 @@ int dmrgo_pdu_broadcast_pdu_as_local_time(const dmrgo_pdu_broadcast_pdu_t *self,
 int dmrgo_pdu_broadcast_pdu_as_mass_reg(const dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_mass_reg_parms_t *v, bool *ok);
 /* Go: pdu.BroadcastPDU.AsVoteNow. AsVoteNow returns p as Vote_Now parameters, as AsAnnWDTSCC does. */
 int dmrgo_pdu_broadcast_pdu_as_vote_now(const dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_vote_now_parms_t *v, bool *ok);
-/* Go: pdu.BroadcastPDU.Encode. Encode encodes a BroadcastPDU. */
-int dmrgo_pdu_broadcast_pdu_encode(const dmrgo_pdu_broadcast_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.BroadcastPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_broadcast_pdu_string(const dmrgo_pdu_broadcast_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.BroadcastTalkgroupVoiceGrantPDU.Encode. Encode encodes a BroadcastTalkgroupVoiceGrantPDU. */
-int dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_encode(const dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.BroadcastTalkgroupVoiceGrantPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_string(const dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.CGAPContinuation.DataType. DataType returns enums.DataTypeMBCContinuation. */
@@ -8776,69 +8752,69 @@ int dmrgo_pdu_csbk_as_unit_to_unit_voice_service_request(const dmrgo_pdu_csbk_t 
 int dmrgo_pdu_csbk_data_type(const dmrgo_pdu_csbk_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.CSBK.Encode. Encode encodes a CSBK. */
 int dmrgo_pdu_csbk_encode(const dmrgo_pdu_csbk_t *self, uint8_t out[12]);
-/* Go: pdu.CSBK.SetAckInbound. SetAckInbound makes s carry p as an AckInboundPDU payload: it sets Opcode to CSBKAckInbound, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetAckInbound. SetAckInbound makes s carry p as an AckInboundPDU payload: it sets Opcode to CSBKAckInbound, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_ack_inbound(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_ack_inbound_pdu_t *p);
-/* Go: pdu.CSBK.SetAckInboundPayload. SetAckInboundPayload makes s carry p as an AckInboundPayloadPDU payload: it sets Opcode to CSBKAckInboundPayload, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetAckInboundPayload. SetAckInboundPayload makes s carry p as an AckInboundPayloadPDU payload: it sets Opcode to CSBKAckInboundPayload, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_ack_inbound_payload(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_ack_inbound_payload_pdu_t *p);
-/* Go: pdu.CSBK.SetAckOutbound. SetAckOutbound makes s carry p as an AckOutboundPDU payload: it sets Opcode to CSBKAckOutbound, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetAckOutbound. SetAckOutbound makes s carry p as an AckOutboundPDU payload: it sets Opcode to CSBKAckOutbound, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_ack_outbound(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_ack_outbound_pdu_t *p);
-/* Go: pdu.CSBK.SetAckOutboundPayload. SetAckOutboundPayload makes s carry p as an AckOutboundPayloadPDU payload: it sets Opcode to CSBKAckOutboundPayload, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetAckOutboundPayload. SetAckOutboundPayload makes s carry p as an AckOutboundPayloadPDU payload: it sets Opcode to CSBKAckOutboundPayload, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_ack_outbound_payload(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_ack_outbound_payload_pdu_t *p);
-/* Go: pdu.CSBK.SetAckvitation. SetAckvitation makes s carry p as an AckvitationPDU payload: it sets Opcode to CSBKAckvitation, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetAckvitation. SetAckvitation makes s carry p as an AckvitationPDU payload: it sets Opcode to CSBKAckvitation, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_ackvitation(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_ackvitation_pdu_t *p);
 /* Go: pdu.CSBK.SetAddresses. SetAddresses sets the target and source addresses of a CSBK for which Addresses returns ok. It returns DMRGO_ERR_PDU_NO_ADDRESSES for other CSBKs and a DMRGO_ERR_FIELD_RANGE when an address does not fit in 24 bits, and then changes nothing. */
 int dmrgo_pdu_csbk_set_addresses(dmrgo_pdu_csbk_t *self, uint32_t target, uint32_t source);
-/* Go: pdu.CSBK.SetAhoy. SetAhoy makes s carry p as an AhoyPDU payload: it sets Opcode to CSBKAhoy, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetAhoy. SetAhoy makes s carry p as an AhoyPDU payload: it sets Opcode to CSBKAhoy, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_ahoy(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_ahoy_pdu_t *p);
-/* Go: pdu.CSBK.SetAloha. SetAloha makes s carry p as an AlohaPDU payload: it sets Opcode to CSBKAloha, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetAloha. SetAloha makes s carry p as an AlohaPDU payload: it sets Opcode to CSBKAloha, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_aloha(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_aloha_pdu_t *p);
 /* Go: pdu.CSBK.SetBSOutboundActivation. SetBSOutboundActivation makes s a standard FID BS_Dwn_Act CSBK that carries p: it sets Opcode, FID, Hint0x38 and RawPayload, and keeps the other fields. */
 int dmrgo_pdu_csbk_set_bs_outbound_activation(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_bs_outbound_activation_pdu_t *p);
-/* Go: pdu.CSBK.SetBroadcast. SetBroadcast makes s carry p as a BroadcastPDU payload: it sets Opcode to CSBKBroadcast, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetBroadcast. SetBroadcast makes s carry p as a BroadcastPDU payload: it sets Opcode to CSBKBroadcast, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_broadcast(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_broadcast_pdu_t *p);
-/* Go: pdu.CSBK.SetBroadcastTalkgroupVoiceGrant. SetBroadcastTalkgroupVoiceGrant makes s carry p as a BroadcastTalkgroupVoiceGrantPDU payload: it sets Opcode to CSBKBroadcastTalkgroupVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetBroadcastTalkgroupVoiceGrant. SetBroadcastTalkgroupVoiceGrant makes s carry p as a BroadcastTalkgroupVoiceGrantPDU payload: it sets Opcode to CSBKBroadcastTalkgroupVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_broadcast_talkgroup_voice_grant(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t *p);
-/* Go: pdu.CSBK.SetChannelTiming. SetChannelTiming makes s carry p as a ChannelTimingPDU payload: it sets Opcode to CSBKChannelTiming, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetChannelTiming. SetChannelTiming makes s carry p as a ChannelTimingPDU payload: it sets Opcode to CSBKChannelTiming, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_channel_timing(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_channel_timing_pdu_t *p);
-/* Go: pdu.CSBK.SetClear. SetClear makes s carry p as a ClearPDU payload: it sets Opcode to CSBKClear, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetClear. SetClear makes s carry p as a ClearPDU payload: it sets Opcode to CSBKClear, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_clear(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_clear_pdu_t *p);
-/* Go: pdu.CSBK.SetDuplexPrivateDataGrant. SetDuplexPrivateDataGrant makes s carry p as a DuplexPrivateDataGrantPDU payload: it sets Opcode to CSBKDuplexPrivateDataGrant, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetDuplexPrivateDataGrant. SetDuplexPrivateDataGrant makes s carry p as a DuplexPrivateDataGrantPDU payload: it sets Opcode to CSBKDuplexPrivateDataGrant, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_duplex_private_data_grant(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_duplex_private_data_grant_pdu_t *p);
-/* Go: pdu.CSBK.SetDuplexPrivateVoiceGrant. SetDuplexPrivateVoiceGrant makes s carry p as a DuplexPrivateVoiceGrantPDU payload: it sets Opcode to CSBKDuplexPrivateVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetDuplexPrivateVoiceGrant. SetDuplexPrivateVoiceGrant makes s carry p as a DuplexPrivateVoiceGrantPDU payload: it sets Opcode to CSBKDuplexPrivateVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_duplex_private_voice_grant(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_duplex_private_voice_grant_pdu_t *p);
-/* Go: pdu.CSBK.SetMaintenance. SetMaintenance makes s carry p as a MaintenancePDU payload: it sets Opcode to CSBKMaintenance, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetMaintenance. SetMaintenance makes s carry p as a MaintenancePDU payload: it sets Opcode to CSBKMaintenance, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_maintenance(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_maintenance_pdu_t *p);
-/* Go: pdu.CSBK.SetMotorolaCallAlert. SetMotorolaCallAlert makes s carry p as a MotorolaCallAlertPDU payload: it sets Opcode to CSBKMotorolaCallAlert, FID to enums.FIDMotorola and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetMotorolaCallAlert. SetMotorolaCallAlert makes s carry p as a MotorolaCallAlertPDU payload: it sets Opcode to CSBKMotorolaCallAlert, FID to enums.FIDMotorola and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_motorola_call_alert(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_motorola_call_alert_pdu_t *p);
-/* Go: pdu.CSBK.SetMotorolaCallAlertAck. SetMotorolaCallAlertAck makes s carry p as a MotorolaCallAlertAckPDU payload: it sets Opcode to CSBKMotorolaCallAlertAck, FID to enums.FIDMotorola and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetMotorolaCallAlertAck. SetMotorolaCallAlertAck makes s carry p as a MotorolaCallAlertAckPDU payload: it sets Opcode to CSBKMotorolaCallAlertAck, FID to enums.FIDMotorola and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_motorola_call_alert_ack(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_motorola_call_alert_ack_pdu_t *p);
-/* Go: pdu.CSBK.SetMotorolaRadioCheck. SetMotorolaRadioCheck makes s carry p as a MotorolaRadioCheckPDU payload: it sets Opcode to CSBKMotorolaRadioCheck, FID to enums.FIDMotorola and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetMotorolaRadioCheck. SetMotorolaRadioCheck makes s carry p as a MotorolaRadioCheckPDU payload: it sets Opcode to CSBKMotorolaRadioCheck, FID to enums.FIDMotorola and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_motorola_radio_check(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_motorola_radio_check_pdu_t *p);
-/* Go: pdu.CSBK.SetMove. SetMove makes s carry p as a MovePDU payload: it sets Opcode to CSBKMove, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetMove. SetMove makes s carry p as a MovePDU payload: it sets Opcode to CSBKMove, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_move(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_move_pdu_t *p);
-/* Go: pdu.CSBK.SetNegativeAcknowledgement. SetNegativeAcknowledgement makes s carry p as a NegativeAcknowledgementPDU payload: it sets Opcode to CSBKNegativeAcknowledgement, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetNegativeAcknowledgement. SetNegativeAcknowledgement makes s carry p as a NegativeAcknowledgementPDU payload: it sets Opcode to CSBKNegativeAcknowledgement, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_negative_acknowledgement(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_negative_acknowledgement_pdu_t *p);
-/* Go: pdu.CSBK.SetPreamble. SetPreamble makes s carry p as a PreamblePDU payload: it sets Opcode to CSBKPreamble, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetPreamble. SetPreamble makes s carry p as a PreamblePDU payload: it sets Opcode to CSBKPreamble, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_preamble(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_preamble_pdu_t *p);
-/* Go: pdu.CSBK.SetPrivateDataGrant. SetPrivateDataGrant makes s carry p as a PrivateDataGrantPDU payload: it sets Opcode to CSBKPrivateDataGrant, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetPrivateDataGrant. SetPrivateDataGrant makes s carry p as a PrivateDataGrantPDU payload: it sets Opcode to CSBKPrivateDataGrant, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_private_data_grant(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_private_data_grant_pdu_t *p);
-/* Go: pdu.CSBK.SetPrivateDataGrantMultiItem. SetPrivateDataGrantMultiItem makes s carry p as a PrivateDataGrantMultiItemPDU payload: it sets Opcode to CSBKPrivateDataGrantMultiItem, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetPrivateDataGrantMultiItem. SetPrivateDataGrantMultiItem makes s carry p as a PrivateDataGrantMultiItemPDU payload: it sets Opcode to CSBKPrivateDataGrantMultiItem, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_private_data_grant_multi_item(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_private_data_grant_multi_item_pdu_t *p);
-/* Go: pdu.CSBK.SetPrivateVoiceGrant. SetPrivateVoiceGrant makes s carry p as a PrivateVoiceGrantPDU payload: it sets Opcode to CSBKPrivateVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetPrivateVoiceGrant. SetPrivateVoiceGrant makes s carry p as a PrivateVoiceGrantPDU payload: it sets Opcode to CSBKPrivateVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_private_voice_grant(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_private_voice_grant_pdu_t *p);
-/* Go: pdu.CSBK.SetProtect. SetProtect makes s carry p as a ProtectPDU payload: it sets Opcode to CSBKProtect, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetProtect. SetProtect makes s carry p as a ProtectPDU payload: it sets Opcode to CSBKProtect, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_protect(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_protect_pdu_t *p);
-/* Go: pdu.CSBK.SetRandomAccess. SetRandomAccess makes s carry p as a RandomAccessPDU payload: it sets Opcode to CSBKRandomAccess, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetRandomAccess. SetRandomAccess makes s carry p as a RandomAccessPDU payload: it sets Opcode to CSBKRandomAccess, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_random_access(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_random_access_pdu_t *p);
-/* Go: pdu.CSBK.SetTalkgroupDataGrant. SetTalkgroupDataGrant makes s carry p as a TalkgroupDataGrantPDU payload: it sets Opcode to CSBKTalkgroupDataGrant, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetTalkgroupDataGrant. SetTalkgroupDataGrant makes s carry p as a TalkgroupDataGrantPDU payload: it sets Opcode to CSBKTalkgroupDataGrant, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_talkgroup_data_grant(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_talkgroup_data_grant_pdu_t *p);
 /* Go: pdu.CSBK.SetTalkgroupDataGrantMultiItem. SetTalkgroupDataGrantMultiItem makes s a standard FID TD_GRANT_MI CSBK that carries p, as SetBSOutboundActivation does. */
 int dmrgo_pdu_csbk_set_talkgroup_data_grant_multi_item(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t *p);
-/* Go: pdu.CSBK.SetTalkgroupVoiceGrant. SetTalkgroupVoiceGrant makes s carry p as a TalkgroupVoiceGrantPDU payload: it sets Opcode to CSBKTalkgroupVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetTalkgroupVoiceGrant. SetTalkgroupVoiceGrant makes s carry p as a TalkgroupVoiceGrantPDU payload: it sets Opcode to CSBKTalkgroupVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_talkgroup_voice_grant(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_talkgroup_voice_grant_pdu_t *p);
-/* Go: pdu.CSBK.SetUnitToUnitVoiceServiceAnswerResponse. SetUnitToUnitVoiceServiceAnswerResponse makes s carry p as a UnitToUnitVoiceServiceAnswerResponsePDU payload: it sets Opcode to CSBKUnitToUnitVoiceServiceAnswerResponse, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetUnitToUnitVoiceServiceAnswerResponse. SetUnitToUnitVoiceServiceAnswerResponse makes s carry p as a UnitToUnitVoiceServiceAnswerResponsePDU payload: it sets Opcode to CSBKUnitToUnitVoiceServiceAnswerResponse, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_unit_to_unit_voice_service_answer_response(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t *p);
-/* Go: pdu.CSBK.SetUnitToUnitVoiceServiceRequest. SetUnitToUnitVoiceServiceRequest makes s carry p as a UnitToUnitVoiceServiceRequestPDU payload: it sets Opcode to CSBKUnitToUnitVoiceServiceRequest, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.CSBK.SetUnitToUnitVoiceServiceRequest. SetUnitToUnitVoiceServiceRequest makes s carry p as a UnitToUnitVoiceServiceRequestPDU payload: it sets Opcode to CSBKUnitToUnitVoiceServiceRequest, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_csbk_set_unit_to_unit_voice_service_request(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t *p);
 /* Go: pdu.CSBK.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_csbk_string(const dmrgo_pdu_csbk_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -8860,8 +8836,6 @@ int dmrgo_pdu_csbk_bytes_set_addresses(dmrgo_pdu_csbk_bytes_t *self, uint32_t ta
 int dmrgo_pdu_csbk_bytes_set_group(dmrgo_pdu_csbk_bytes_t *self, bool group, bool *out);
 /* Go: pdu.CSBKOpcode.String. String returns the name of the CSBKOpcode. */
 int dmrgo_pdu_csbk_opcode_string(dmrgo_pdu_csbk_opcode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.CallTimerParms.Encode. Encode encodes a CallTimerParms. */
-int dmrgo_pdu_call_timer_parms_encode(const dmrgo_pdu_call_timer_parms_t *self, uint8_t out[8]);
 /* Go: pdu.CallTimerParms.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_call_timer_parms_string(const dmrgo_pdu_call_timer_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.CapacityPlusActivity.RadioTarget. RadioTarget returns the target radio of a private voice or data call on lsn. */
@@ -8870,34 +8844,20 @@ int dmrgo_pdu_capacity_plus_activity_radio_target(const dmrgo_pdu_capacity_plus_
 int dmrgo_pdu_capacity_plus_activity_talkgroup(const dmrgo_pdu_capacity_plus_activity_t *self, uint8_t lsn, uint8_t *tg, bool *ok);
 /* Go: pdu.CapacityPlusChannel. CapacityPlusChannel returns the repeater and timeslot of a logical slot number: LSN 1 and 2 are timeslots 1 and 2 of repeater 1, LSN 3 and 4 of repeater 2, and so on. */
 int dmrgo_pdu_capacity_plus_channel(uint8_t lsn, uint8_t *repeater, dmrgo_enums_slot_t *slot, bool *ok);
-/* Go: pdu.CapacityPlusDataRevertAnnouncementPDU.Encode. Encode encodes a CapacityPlusDataRevertAnnouncementPDU. */
-int dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_encode(const dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.CapacityPlusDataRevertAnnouncementPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_string(const dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.CapacityPlusDataRevertGrantPDU.Encode. Encode encodes a CapacityPlusDataRevertGrantPDU. */
-int dmrgo_pdu_capacity_plus_data_revert_grant_pdu_encode(const dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.CapacityPlusDataRevertGrantPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_capacity_plus_data_revert_grant_pdu_string(const dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.CapacityPlusGroupVoiceGrant.Encode. Encode encodes a CapacityPlusGroupVoiceGrant. */
-int dmrgo_pdu_capacity_plus_group_voice_grant_encode(const dmrgo_pdu_capacity_plus_group_voice_grant_t *self, uint8_t out[7]);
 /* Go: pdu.CapacityPlusGroupVoiceGrant.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_capacity_plus_group_voice_grant_string(const dmrgo_pdu_capacity_plus_group_voice_grant_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.CapacityPlusNeighborsPDU.Encode. Encode encodes a CapacityPlusNeighborsPDU. */
-int dmrgo_pdu_capacity_plus_neighbors_pdu_encode(const dmrgo_pdu_capacity_plus_neighbors_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.CapacityPlusNeighborsPDU.Neighbor. Neighbor returns the site number and rest LSN of neighbor i, from 0. */
 int dmrgo_pdu_capacity_plus_neighbors_pdu_neighbor(const dmrgo_pdu_capacity_plus_neighbors_pdu_t *self, int64_t i, uint8_t *site, uint8_t *rest_lsn, bool *ok);
 /* Go: pdu.CapacityPlusNeighborsPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_capacity_plus_neighbors_pdu_string(const dmrgo_pdu_capacity_plus_neighbors_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.CapacityPlusPreamblePDU.Encode. Encode encodes a CapacityPlusPreamblePDU. */
-int dmrgo_pdu_capacity_plus_preamble_pdu_encode(const dmrgo_pdu_capacity_plus_preamble_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.CapacityPlusPreamblePDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_capacity_plus_preamble_pdu_string(const dmrgo_pdu_capacity_plus_preamble_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.CapacityPlusPrivateVoiceGrant.Encode. Encode encodes a CapacityPlusPrivateVoiceGrant. */
-int dmrgo_pdu_capacity_plus_private_voice_grant_encode(const dmrgo_pdu_capacity_plus_private_voice_grant_t *self, uint8_t out[7]);
 /* Go: pdu.CapacityPlusPrivateVoiceGrant.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_capacity_plus_private_voice_grant_string(const dmrgo_pdu_capacity_plus_private_voice_grant_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.CapacityPlusRestChannel.Encode. Encode encodes a CapacityPlusRestChannel. */
-int dmrgo_pdu_capacity_plus_rest_channel_encode(const dmrgo_pdu_capacity_plus_rest_channel_t *self, uint8_t out[3]);
 /* Go: pdu.CapacityPlusRestChannel.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_capacity_plus_rest_channel_string(const dmrgo_pdu_capacity_plus_rest_channel_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.CapacityPlusSegment.String. String returns the name of the CapacityPlusSegment. */
@@ -8912,24 +8872,14 @@ int dmrgo_pdu_capacity_plus_site_status_assembler_activity(dmrgo_pdu_capacity_pl
 int dmrgo_pdu_capacity_plus_site_status_assembler_add(dmrgo_pdu_capacity_plus_site_status_assembler_t *self, const dmrgo_pdu_capacity_plus_site_status_pdu_t *p, bool *out);
 /* Go: pdu.CapacityPlusSiteStatusAssembler.Reset. Reset drops the partial or complete status. */
 int dmrgo_pdu_capacity_plus_site_status_assembler_reset(dmrgo_pdu_capacity_plus_site_status_assembler_t *self);
-/* Go: pdu.CapacityPlusSiteStatusPDU.Encode. Encode encodes a CapacityPlusSiteStatusPDU. */
-int dmrgo_pdu_capacity_plus_site_status_pdu_encode(const dmrgo_pdu_capacity_plus_site_status_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.CapacityPlusSiteStatusPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_capacity_plus_site_status_pdu_string(const dmrgo_pdu_capacity_plus_site_status_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.ChanFreqParms.Encode. Encode encodes a ChanFreqParms. */
-int dmrgo_pdu_chan_freq_parms_encode(const dmrgo_pdu_chan_freq_parms_t *self, uint8_t out[8]);
 /* Go: pdu.ChanFreqParms.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_chan_freq_parms_string(const dmrgo_pdu_chan_freq_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.ChannelTimingPDU.Encode. Encode encodes a ChannelTimingPDU. */
-int dmrgo_pdu_channel_timing_pdu_encode(const dmrgo_pdu_channel_timing_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.ChannelTimingPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_channel_timing_pdu_string(const dmrgo_pdu_channel_timing_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.ClearPDU.Encode. Encode encodes a ClearPDU. */
-int dmrgo_pdu_clear_pdu_encode(const dmrgo_pdu_clear_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.ClearPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_clear_pdu_string(const dmrgo_pdu_clear_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.ConfirmedDataHeader.Encode. Encode encodes a ConfirmedDataHeader. */
-int dmrgo_pdu_confirmed_data_header_encode(const dmrgo_pdu_confirmed_data_header_t *self, uint8_t out[10]);
 /* Go: pdu.ConfirmedDataHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_confirmed_data_header_string(const dmrgo_pdu_confirmed_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.DataHeader.Addresses. Addresses returns the destination LLID as target and the source LLID of the header. */
@@ -8960,21 +8910,21 @@ int dmrgo_pdu_data_header_encode(const dmrgo_pdu_data_header_t *self, uint8_t ou
 int dmrgo_pdu_data_header_format(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_format_t *out);
 /* Go: pdu.DataHeader.SetAddresses. SetAddresses sets the destination and source LLIDs of the header. It returns DMRGO_ERR_PDU_NO_ADDRESSES for a proprietary header and a header of an unknown format, and a DMRGO_ERR_FIELD_RANGE when an LLID does not fit in 24 bits, and then changes nothing. */
 int dmrgo_pdu_data_header_set_addresses(dmrgo_pdu_data_header_t *self, uint32_t destination, uint32_t source);
-/* Go: pdu.DataHeader.SetConfirmedDataHeader. SetConfirmedDataHeader makes s carry p as a ConfirmedDataHeader payload: it sets RawPayload, and keeps the other fields. */
+/* Go: pdu.DataHeader.SetConfirmedDataHeader. SetConfirmedDataHeader makes s carry p as a ConfirmedDataHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits and an error when the payload does not meet the conditions of AsConfirmedDataHeader, and then leaves s as it is. */
 int dmrgo_pdu_data_header_set_confirmed_data_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_confirmed_data_header_t *p);
-/* Go: pdu.DataHeader.SetDefinedDataHeader. SetDefinedDataHeader makes s carry p as a DefinedDataHeader payload: it sets RawPayload, and keeps the other fields. */
+/* Go: pdu.DataHeader.SetDefinedDataHeader. SetDefinedDataHeader makes s carry p as a DefinedDataHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits and an error when the payload does not meet the conditions of AsDefinedDataHeader, and then leaves s as it is. */
 int dmrgo_pdu_data_header_set_defined_data_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_defined_data_header_t *p);
-/* Go: pdu.DataHeader.SetProprietaryHeader. SetProprietaryHeader makes s carry p as a ProprietaryHeader payload: it sets RawPayload, and keeps the other fields. */
+/* Go: pdu.DataHeader.SetProprietaryHeader. SetProprietaryHeader makes s carry p as a ProprietaryHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits and an error when the payload does not meet the conditions of AsProprietaryHeader, and then leaves s as it is. */
 int dmrgo_pdu_data_header_set_proprietary_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_proprietary_header_t *p);
-/* Go: pdu.DataHeader.SetRawDataHeader. SetRawDataHeader makes s carry p as a RawDataHeader payload: it sets RawPayload, and keeps the other fields. */
+/* Go: pdu.DataHeader.SetRawDataHeader. SetRawDataHeader makes s carry p as a RawDataHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits and an error when the payload does not meet the conditions of AsRawDataHeader, and then leaves s as it is. */
 int dmrgo_pdu_data_header_set_raw_data_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_raw_data_header_t *p);
-/* Go: pdu.DataHeader.SetResponsePacketHeader. SetResponsePacketHeader makes s carry p as a ResponsePacketHeader payload: it sets RawPayload, and keeps the other fields. */
+/* Go: pdu.DataHeader.SetResponsePacketHeader. SetResponsePacketHeader makes s carry p as a ResponsePacketHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits and an error when the payload does not meet the conditions of AsResponsePacketHeader, and then leaves s as it is. */
 int dmrgo_pdu_data_header_set_response_packet_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_response_packet_header_t *p);
-/* Go: pdu.DataHeader.SetStatusPrecodedHeader. SetStatusPrecodedHeader makes s carry p as a StatusPrecodedHeader payload: it sets RawPayload, and keeps the other fields. */
+/* Go: pdu.DataHeader.SetStatusPrecodedHeader. SetStatusPrecodedHeader makes s carry p as a StatusPrecodedHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits and an error when the payload does not meet the conditions of AsStatusPrecodedHeader, and then leaves s as it is. */
 int dmrgo_pdu_data_header_set_status_precoded_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_status_precoded_header_t *p);
-/* Go: pdu.DataHeader.SetUDTHeader. SetUDTHeader makes s carry p as a UDTHeader payload: it sets RawPayload, and keeps the other fields. */
+/* Go: pdu.DataHeader.SetUDTHeader. SetUDTHeader makes s carry p as a UDTHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits and an error when the payload does not meet the conditions of AsUDTHeader, and then leaves s as it is. */
 int dmrgo_pdu_data_header_set_udt_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_udt_header_t *p);
-/* Go: pdu.DataHeader.SetUnconfirmedDataHeader. SetUnconfirmedDataHeader makes s carry p as an UnconfirmedDataHeader payload: it sets RawPayload, and keeps the other fields. */
+/* Go: pdu.DataHeader.SetUnconfirmedDataHeader. SetUnconfirmedDataHeader makes s carry p as an UnconfirmedDataHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits and an error when the payload does not meet the conditions of AsUnconfirmedDataHeader, and then leaves s as it is. */
 int dmrgo_pdu_data_header_set_unconfirmed_data_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_unconfirmed_data_header_t *p);
 /* Go: pdu.DataHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_data_header_string(const dmrgo_pdu_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -9032,16 +8982,10 @@ int dmrgo_pdu_decode_tact(const uint8_t data[1], dmrgo_pdu_tact_t *out);
 int dmrgo_pdu_decode_udp_ipv4_compressed_header(const uint8_t data[9], dmrgo_pdu_udp_ipv4_compressed_header_t *out);
 /* Go: pdu.DecodeUnifiedSingleBlockData. DecodeUnifiedSingleBlockData decodes a UnifiedSingleBlockData. */
 int dmrgo_pdu_decode_unified_single_block_data(const uint8_t data[12], dmrgo_pdu_unified_single_block_data_t *out);
-/* Go: pdu.DefinedDataHeader.Encode. Encode encodes a DefinedDataHeader. */
-int dmrgo_pdu_defined_data_header_encode(const dmrgo_pdu_defined_data_header_t *self, uint8_t out[10]);
 /* Go: pdu.DefinedDataHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_defined_data_header_string(const dmrgo_pdu_defined_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.DuplexPrivateDataGrantPDU.Encode. Encode encodes a DuplexPrivateDataGrantPDU. */
-int dmrgo_pdu_duplex_private_data_grant_pdu_encode(const dmrgo_pdu_duplex_private_data_grant_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.DuplexPrivateDataGrantPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_duplex_private_data_grant_pdu_string(const dmrgo_pdu_duplex_private_data_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.DuplexPrivateVoiceGrantPDU.Encode. Encode encodes a DuplexPrivateVoiceGrantPDU. */
-int dmrgo_pdu_duplex_private_voice_grant_pdu_encode(const dmrgo_pdu_duplex_private_voice_grant_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.DuplexPrivateVoiceGrantPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_duplex_private_voice_grant_pdu_string(const dmrgo_pdu_duplex_private_voice_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.EMBInfo.Codeword. Codeword returns the 16-bit QR(16,7,6) codeword of e, the 7 information bits followed by the 9 parity bits, first bit most significant (ETSI TS 102 361-1 clause B.3.2). */
@@ -9070,28 +9014,16 @@ int dmrgo_pdu_embedded_signalling_string(const dmrgo_pdu_embedded_signalling_t *
 int dmrgo_pdu_encode_talker_alias(const char *alias, size_t alias_len, dmrgo_layer3_talker_alias_data_format_t format, dmrgo_pdu_full_link_control_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.EncodeTalkerAliasInto. EncodeTalkerAliasInto writes the LCs that EncodeTalkerAlias returns into dst and returns their number, with the errors of EncodeTalkerAlias. */
 int dmrgo_pdu_encode_talker_alias_into(dmrgo_pdu_full_link_control_t dst[4], const char *alias, size_t alias_len, dmrgo_layer3_talker_alias_data_format_t format, int64_t *out);
-/* Go: pdu.FLCGPSInfo.Encode. Encode encodes an FLCGPSInfo. */
-int dmrgo_pdu_flc_gps_info_encode(const dmrgo_pdu_flc_gps_info_t *self, uint8_t out[7]);
 /* Go: pdu.FLCGPSInfo.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_flc_gps_info_string(const dmrgo_pdu_flc_gps_info_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.FLCGroupVoice.Encode. Encode encodes an FLCGroupVoice. */
-int dmrgo_pdu_flc_group_voice_encode(const dmrgo_pdu_flc_group_voice_t *self, uint8_t out[7]);
 /* Go: pdu.FLCGroupVoice.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_flc_group_voice_string(const dmrgo_pdu_flc_group_voice_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.FLCTalkerAliasBlock.Encode. Encode encodes an FLCTalkerAliasBlock. */
-int dmrgo_pdu_flc_talker_alias_block_encode(const dmrgo_pdu_flc_talker_alias_block_t *self, uint8_t out[7]);
 /* Go: pdu.FLCTalkerAliasBlock.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_flc_talker_alias_block_string(const dmrgo_pdu_flc_talker_alias_block_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.FLCTalkerAliasHeader.Encode. Encode encodes an FLCTalkerAliasHeader. */
-int dmrgo_pdu_flc_talker_alias_header_encode(const dmrgo_pdu_flc_talker_alias_header_t *self, uint8_t out[7]);
 /* Go: pdu.FLCTalkerAliasHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_flc_talker_alias_header_string(const dmrgo_pdu_flc_talker_alias_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.FLCTerminatorDataLinkControl.Encode. Encode encodes an FLCTerminatorDataLinkControl. */
-int dmrgo_pdu_flc_terminator_data_link_control_encode(const dmrgo_pdu_flc_terminator_data_link_control_t *self, uint8_t out[7]);
 /* Go: pdu.FLCTerminatorDataLinkControl.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_flc_terminator_data_link_control_string(const dmrgo_pdu_flc_terminator_data_link_control_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.FLCUnitToUnit.Encode. Encode encodes an FLCUnitToUnit. */
-int dmrgo_pdu_flc_unit_to_unit_encode(const dmrgo_pdu_flc_unit_to_unit_t *self, uint8_t out[7]);
 /* Go: pdu.FLCUnitToUnit.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_flc_unit_to_unit_string(const dmrgo_pdu_flc_unit_to_unit_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.Format.String. String returns a human-readable name for a DataHeader Format. */
@@ -9128,22 +9060,20 @@ int dmrgo_pdu_full_link_control_encode(const dmrgo_pdu_full_link_control_t *self
 int dmrgo_pdu_full_link_control_service_options(const dmrgo_pdu_full_link_control_t *self, dmrgo_layer3_service_options_t *so, bool *ok);
 /* Go: pdu.FullLinkControl.SetAddresses. SetAddresses sets the target and source addresses of a Grp_V_Ch_Usr or UU_V_Ch_Usr LC of any FID in RawPayload. It returns DMRGO_ERR_PDU_NO_ADDRESSES for other FLCOs and a DMRGO_ERR_FIELD_RANGE when an address does not fit in 24 bits, and then changes nothing. */
 int dmrgo_pdu_full_link_control_set_addresses(dmrgo_pdu_full_link_control_t *self, uint32_t target, uint32_t source);
-/* Go: pdu.FullLinkControl.SetGPSInfo. SetGPSInfo makes s carry p as an FLCGPSInfo payload: it sets FLCO to enums.FLCOGPSInfo, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.FullLinkControl.SetGPSInfo. SetGPSInfo makes s carry p as an FLCGPSInfo payload: it sets FLCO to enums.FLCOGPSInfo, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_full_link_control_set_gps_info(dmrgo_pdu_full_link_control_t *self, const dmrgo_pdu_flc_gps_info_t *p);
-/* Go: pdu.FullLinkControl.SetGroupVoice. SetGroupVoice makes s carry p as an FLCGroupVoice payload: it sets FLCO to enums.FLCOGroupVoiceChannelUser, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.FullLinkControl.SetGroupVoice. SetGroupVoice makes s carry p as an FLCGroupVoice payload: it sets FLCO to enums.FLCOGroupVoiceChannelUser, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_full_link_control_set_group_voice(dmrgo_pdu_full_link_control_t *self, const dmrgo_pdu_flc_group_voice_t *p);
-/* Go: pdu.FullLinkControl.SetTalkerAliasBlock. SetTalkerAliasBlock makes s carry p as an FLCTalkerAliasBlock payload: it sets FLCO to flco, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.FullLinkControl.SetTalkerAliasBlock. SetTalkerAliasBlock makes s carry p as an FLCTalkerAliasBlock payload: it sets FLCO to flco, FID to 0 and RawPayload, and keeps the other fields. It returns an error when flco is not enums.FLCOTalkerAliasBlock1, enums.FLCOTalkerAliasBlock2 or enums.FLCOTalkerAliasBlock3 and a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_full_link_control_set_talker_alias_block(dmrgo_pdu_full_link_control_t *self, dmrgo_enums_flco_t flco, const dmrgo_pdu_flc_talker_alias_block_t *p);
-/* Go: pdu.FullLinkControl.SetTalkerAliasHeader. SetTalkerAliasHeader makes s carry p as an FLCTalkerAliasHeader payload: it sets FLCO to enums.FLCOTalkerAliasHeader, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.FullLinkControl.SetTalkerAliasHeader. SetTalkerAliasHeader makes s carry p as an FLCTalkerAliasHeader payload: it sets FLCO to enums.FLCOTalkerAliasHeader, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_full_link_control_set_talker_alias_header(dmrgo_pdu_full_link_control_t *self, const dmrgo_pdu_flc_talker_alias_header_t *p);
-/* Go: pdu.FullLinkControl.SetTerminatorDataLinkControl. SetTerminatorDataLinkControl makes s carry p as an FLCTerminatorDataLinkControl payload: it sets FLCO to enums.FLCOTerminatorDataLinkControl, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.FullLinkControl.SetTerminatorDataLinkControl. SetTerminatorDataLinkControl makes s carry p as an FLCTerminatorDataLinkControl payload: it sets FLCO to enums.FLCOTerminatorDataLinkControl, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_full_link_control_set_terminator_data_link_control(dmrgo_pdu_full_link_control_t *self, const dmrgo_pdu_flc_terminator_data_link_control_t *p);
-/* Go: pdu.FullLinkControl.SetUnitToUnit. SetUnitToUnit makes s carry p as an FLCUnitToUnit payload: it sets FLCO to enums.FLCOUnitToUnitVoiceChannelUser, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.FullLinkControl.SetUnitToUnit. SetUnitToUnit makes s carry p as an FLCUnitToUnit payload: it sets FLCO to enums.FLCOUnitToUnitVoiceChannelUser, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_full_link_control_set_unit_to_unit(dmrgo_pdu_full_link_control_t *self, const dmrgo_pdu_flc_unit_to_unit_t *p);
 /* Go: pdu.FullLinkControl.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_full_link_control_string(const dmrgo_pdu_full_link_control_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.GenSiteParms.Encode. Encode encodes a GenSiteParms. */
-int dmrgo_pdu_gen_site_parms_encode(const dmrgo_pdu_gen_site_parms_t *self, uint8_t out[8]);
 /* Go: pdu.GenSiteParms.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_gen_site_parms_string(const dmrgo_pdu_gen_site_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.IsPRFill. IsPRFill reports whether the 96 information bits info, packed as PRFillBits returns them, are the PR FILL bits of Table D.2. */
@@ -9180,8 +9110,6 @@ int dmrgo_pdu_lc_bytes_set_protect_flag(dmrgo_pdu_lc_bytes_t *self, bool pf);
 int dmrgo_pdu_lc_bytes_set_reserved(dmrgo_pdu_lc_bytes_t *self, bool r);
 /* Go: pdu.LCBytes.SetServiceOptions. SetServiceOptions writes so into octet 2 of a Grp_V_Ch_Usr or UU_V_Ch_Usr LC. It returns DMRGO_ERR_PDU_NO_SERVICE_OPTIONS for other FLCOs and a nil l, and a DMRGO_ERR_FIELD_RANGE when a field of so does not fit its bits, and then changes nothing. */
 int dmrgo_pdu_lc_bytes_set_service_options(dmrgo_pdu_lc_bytes_t *self, const dmrgo_layer3_service_options_t *so);
-/* Go: pdu.LocalTimeParms.Encode. Encode encodes a LocalTimeParms. */
-int dmrgo_pdu_local_time_parms_encode(const dmrgo_pdu_local_time_parms_t *self, uint8_t out[8]);
 /* Go: pdu.LocalTimeParms.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_local_time_parms_string(const dmrgo_pdu_local_time_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.MBCContinuation.AsBCAP. AsBCAP decodes the block as the BC_AP continuation of a C_BCAST MBC (ETSI TS 102 361-4 Table 7.21), as AsCGAP does. */
@@ -9222,25 +9150,25 @@ int dmrgo_pdu_mbc_header_as_talkgroup_voice_grant(const dmrgo_pdu_mbc_header_t *
 int dmrgo_pdu_mbc_header_data_type(const dmrgo_pdu_mbc_header_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.MBCHeader.Encode. Encode encodes an MBCHeader. */
 int dmrgo_pdu_mbc_header_encode(const dmrgo_pdu_mbc_header_t *self, uint8_t out[12]);
-/* Go: pdu.MBCHeader.SetBroadcast. SetBroadcast makes s carry p as a BroadcastPDU payload: it sets Opcode to CSBKBroadcast, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.MBCHeader.SetBroadcast. SetBroadcast makes s carry p as a BroadcastPDU payload: it sets Opcode to CSBKBroadcast, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_mbc_header_set_broadcast(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_broadcast_pdu_t *p);
-/* Go: pdu.MBCHeader.SetBroadcastTalkgroupVoiceGrant. SetBroadcastTalkgroupVoiceGrant makes s carry p as a BroadcastTalkgroupVoiceGrantPDU payload: it sets Opcode to CSBKBroadcastTalkgroupVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.MBCHeader.SetBroadcastTalkgroupVoiceGrant. SetBroadcastTalkgroupVoiceGrant makes s carry p as a BroadcastTalkgroupVoiceGrantPDU payload: it sets Opcode to CSBKBroadcastTalkgroupVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_mbc_header_set_broadcast_talkgroup_voice_grant(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t *p);
-/* Go: pdu.MBCHeader.SetDuplexPrivateDataGrant. SetDuplexPrivateDataGrant makes s carry p as a DuplexPrivateDataGrantPDU payload: it sets Opcode to CSBKDuplexPrivateDataGrant, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.MBCHeader.SetDuplexPrivateDataGrant. SetDuplexPrivateDataGrant makes s carry p as a DuplexPrivateDataGrantPDU payload: it sets Opcode to CSBKDuplexPrivateDataGrant, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_mbc_header_set_duplex_private_data_grant(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_duplex_private_data_grant_pdu_t *p);
-/* Go: pdu.MBCHeader.SetDuplexPrivateVoiceGrant. SetDuplexPrivateVoiceGrant makes s carry p as a DuplexPrivateVoiceGrantPDU payload: it sets Opcode to CSBKDuplexPrivateVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.MBCHeader.SetDuplexPrivateVoiceGrant. SetDuplexPrivateVoiceGrant makes s carry p as a DuplexPrivateVoiceGrantPDU payload: it sets Opcode to CSBKDuplexPrivateVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_mbc_header_set_duplex_private_voice_grant(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_duplex_private_voice_grant_pdu_t *p);
-/* Go: pdu.MBCHeader.SetMove. SetMove makes s carry p as a MovePDU payload: it sets Opcode to CSBKMove, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.MBCHeader.SetMove. SetMove makes s carry p as a MovePDU payload: it sets Opcode to CSBKMove, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_mbc_header_set_move(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_move_pdu_t *p);
-/* Go: pdu.MBCHeader.SetPrivateDataGrant. SetPrivateDataGrant makes s carry p as a PrivateDataGrantPDU payload: it sets Opcode to CSBKPrivateDataGrant, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.MBCHeader.SetPrivateDataGrant. SetPrivateDataGrant makes s carry p as a PrivateDataGrantPDU payload: it sets Opcode to CSBKPrivateDataGrant, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_mbc_header_set_private_data_grant(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_private_data_grant_pdu_t *p);
-/* Go: pdu.MBCHeader.SetPrivateDataGrantMultiItem. SetPrivateDataGrantMultiItem makes s carry p as a PrivateDataGrantMultiItemPDU payload: it sets Opcode to CSBKPrivateDataGrantMultiItem, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.MBCHeader.SetPrivateDataGrantMultiItem. SetPrivateDataGrantMultiItem makes s carry p as a PrivateDataGrantMultiItemPDU payload: it sets Opcode to CSBKPrivateDataGrantMultiItem, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_mbc_header_set_private_data_grant_multi_item(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_private_data_grant_multi_item_pdu_t *p);
-/* Go: pdu.MBCHeader.SetPrivateVoiceGrant. SetPrivateVoiceGrant makes s carry p as a PrivateVoiceGrantPDU payload: it sets Opcode to CSBKPrivateVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.MBCHeader.SetPrivateVoiceGrant. SetPrivateVoiceGrant makes s carry p as a PrivateVoiceGrantPDU payload: it sets Opcode to CSBKPrivateVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_mbc_header_set_private_voice_grant(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_private_voice_grant_pdu_t *p);
-/* Go: pdu.MBCHeader.SetTalkgroupDataGrant. SetTalkgroupDataGrant makes s carry p as a TalkgroupDataGrantPDU payload: it sets Opcode to CSBKTalkgroupDataGrant, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.MBCHeader.SetTalkgroupDataGrant. SetTalkgroupDataGrant makes s carry p as a TalkgroupDataGrantPDU payload: it sets Opcode to CSBKTalkgroupDataGrant, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_mbc_header_set_talkgroup_data_grant(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_talkgroup_data_grant_pdu_t *p);
-/* Go: pdu.MBCHeader.SetTalkgroupVoiceGrant. SetTalkgroupVoiceGrant makes s carry p as a TalkgroupVoiceGrantPDU payload: it sets Opcode to CSBKTalkgroupVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. */
+/* Go: pdu.MBCHeader.SetTalkgroupVoiceGrant. SetTalkgroupVoiceGrant makes s carry p as a TalkgroupVoiceGrantPDU payload: it sets Opcode to CSBKTalkgroupVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_mbc_header_set_talkgroup_voice_grant(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_talkgroup_voice_grant_pdu_t *p);
 /* Go: pdu.MBCHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_mbc_header_string(const dmrgo_pdu_mbc_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -9252,34 +9180,20 @@ int dmrgo_pdu_mvap_continuation_data_type(const dmrgo_pdu_mvap_continuation_t *s
 int dmrgo_pdu_mvap_continuation_encode(const dmrgo_pdu_mvap_continuation_t *self, uint8_t out[12]);
 /* Go: pdu.MVAPContinuation.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_mvap_continuation_string(const dmrgo_pdu_mvap_continuation_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.MaintenancePDU.Encode. Encode encodes a MaintenancePDU. */
-int dmrgo_pdu_maintenance_pdu_encode(const dmrgo_pdu_maintenance_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.MaintenancePDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_maintenance_pdu_string(const dmrgo_pdu_maintenance_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.MassRegParms.Encode. Encode encodes a MassRegParms. */
-int dmrgo_pdu_mass_reg_parms_encode(const dmrgo_pdu_mass_reg_parms_t *self, uint8_t out[8]);
 /* Go: pdu.MassRegParms.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_mass_reg_parms_string(const dmrgo_pdu_mass_reg_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.MotorolaCallAlertAckPDU.Encode. Encode encodes a MotorolaCallAlertAckPDU. */
-int dmrgo_pdu_motorola_call_alert_ack_pdu_encode(const dmrgo_pdu_motorola_call_alert_ack_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.MotorolaCallAlertAckPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_motorola_call_alert_ack_pdu_string(const dmrgo_pdu_motorola_call_alert_ack_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.MotorolaCallAlertPDU.Encode. Encode encodes a MotorolaCallAlertPDU. */
-int dmrgo_pdu_motorola_call_alert_pdu_encode(const dmrgo_pdu_motorola_call_alert_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.MotorolaCallAlertPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_motorola_call_alert_pdu_string(const dmrgo_pdu_motorola_call_alert_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.MotorolaRadioCheckPDU.Addresses. Addresses returns the target and source of the CSBK that carries p: the checked radio and the requester for a request, and the reverse for an answer. */
 int dmrgo_pdu_motorola_radio_check_pdu_addresses(const dmrgo_pdu_motorola_radio_check_pdu_t *self, uint32_t *target, uint32_t *source, bool *ok);
-/* Go: pdu.MotorolaRadioCheckPDU.Encode. Encode encodes a MotorolaRadioCheckPDU. */
-int dmrgo_pdu_motorola_radio_check_pdu_encode(const dmrgo_pdu_motorola_radio_check_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.MotorolaRadioCheckPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_motorola_radio_check_pdu_string(const dmrgo_pdu_motorola_radio_check_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.MovePDU.Encode. Encode encodes a MovePDU. */
-int dmrgo_pdu_move_pdu_encode(const dmrgo_pdu_move_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.MovePDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_move_pdu_string(const dmrgo_pdu_move_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.NegativeAcknowledgementPDU.Encode. Encode encodes a NegativeAcknowledgementPDU. */
-int dmrgo_pdu_negative_acknowledgement_pdu_encode(const dmrgo_pdu_negative_acknowledgement_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.NegativeAcknowledgementPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_negative_acknowledgement_pdu_string(const dmrgo_pdu_negative_acknowledgement_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.NetworkModel.NetBits. NetBits returns the width of the NET field for the model. It returns a DMRGO_ERR_FIELD_RANGE when m does not fit in 2 bits. */
@@ -9306,32 +9220,18 @@ int dmrgo_pdu_pr_fill_encode(const dmrgo_pdu_pr_fill_t *self, uint8_t out[12]);
 int dmrgo_pdu_pr_fill_string(const dmrgo_pdu_pr_fill_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.PRFillBits. PRFillBits returns a copy of the 96 pseudo-random fill bits from Table D.2, packed, the first bit in the most significant bit of byte 0. */
 int dmrgo_pdu_pr_fill_bits(uint8_t out[12]);
-/* Go: pdu.PreamblePDU.Encode. Encode encodes a PreamblePDU. */
-int dmrgo_pdu_preamble_pdu_encode(const dmrgo_pdu_preamble_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.PreamblePDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_preamble_pdu_string(const dmrgo_pdu_preamble_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.PrivateDataGrantMultiItemPDU.Encode. Encode encodes a PrivateDataGrantMultiItemPDU. */
-int dmrgo_pdu_private_data_grant_multi_item_pdu_encode(const dmrgo_pdu_private_data_grant_multi_item_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.PrivateDataGrantMultiItemPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_private_data_grant_multi_item_pdu_string(const dmrgo_pdu_private_data_grant_multi_item_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.PrivateDataGrantPDU.Encode. Encode encodes a PrivateDataGrantPDU. */
-int dmrgo_pdu_private_data_grant_pdu_encode(const dmrgo_pdu_private_data_grant_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.PrivateDataGrantPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_private_data_grant_pdu_string(const dmrgo_pdu_private_data_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.PrivateVoiceGrantPDU.Encode. Encode encodes a PrivateVoiceGrantPDU. */
-int dmrgo_pdu_private_voice_grant_pdu_encode(const dmrgo_pdu_private_voice_grant_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.PrivateVoiceGrantPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_private_voice_grant_pdu_string(const dmrgo_pdu_private_voice_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.ProprietaryHeader.Encode. Encode encodes a ProprietaryHeader. */
-int dmrgo_pdu_proprietary_header_encode(const dmrgo_pdu_proprietary_header_t *self, uint8_t out[10]);
 /* Go: pdu.ProprietaryHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_proprietary_header_string(const dmrgo_pdu_proprietary_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.ProtectPDU.Encode. Encode encodes a ProtectPDU. */
-int dmrgo_pdu_protect_pdu_encode(const dmrgo_pdu_protect_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.ProtectPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_protect_pdu_string(const dmrgo_pdu_protect_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.RandomAccessPDU.Encode. Encode encodes a RandomAccessPDU. */
-int dmrgo_pdu_random_access_pdu_encode(const dmrgo_pdu_random_access_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.RandomAccessPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_random_access_pdu_string(const dmrgo_pdu_random_access_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.Rate12Data.ConfirmedCRC9. ConfirmedCRC9 returns the received (masked) CRC-9 of a confirmed block. */
@@ -9382,14 +9282,10 @@ int dmrgo_pdu_rate34_data_encode(const dmrgo_pdu_rate34_data_t *self, uint8_t ou
 int dmrgo_pdu_rate34_data_set_confirmed(dmrgo_pdu_rate34_data_t *self, uint8_t dbsn, const uint8_t user_data[16]);
 /* Go: pdu.Rate34Data.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_rate34_data_string(const dmrgo_pdu_rate34_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.RawDataHeader.Encode. Encode encodes a RawDataHeader. */
-int dmrgo_pdu_raw_data_header_encode(const dmrgo_pdu_raw_data_header_t *self, uint8_t out[10]);
 /* Go: pdu.RawDataHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_raw_data_header_string(const dmrgo_pdu_raw_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.RegWindowTime. RegWindowTime returns TReg_Window, the time in which an MS makes its registration for the Reg_Window w, and false for 0, which cancels the mass registration, or a w over 15 (ETSI TS 102 361-4 clause 6.4.5.1, Table 6.12). */
 int dmrgo_pdu_reg_window_time(uint8_t w, dmrgo_duration_t *duration, bool *ok);
-/* Go: pdu.ResponsePacketHeader.Encode. Encode encodes a ResponsePacketHeader. */
-int dmrgo_pdu_response_packet_header_encode(const dmrgo_pdu_response_packet_header_t *self, uint8_t out[10]);
 /* Go: pdu.ResponsePacketHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_response_packet_header_string(const dmrgo_pdu_response_packet_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.ReverseChannel.Encode. Encode encodes an RC PDU into its 11 information bits: the 4-bit RC command and the CRC-7 masked with CRC7MaskRC, packed as DecodeReverseChannel takes them, with the low 5 bits of byte 1 0. */
@@ -9414,22 +9310,18 @@ int dmrgo_pdu_short_lc_as_null_message(const dmrgo_pdu_short_lc_t *self, dmrgo_p
 int dmrgo_pdu_short_lc_as_p_sys_parms(const dmrgo_pdu_short_lc_t *self, dmrgo_pdu_short_lc_p_sys_parms_t *p, bool *ok);
 /* Go: pdu.ShortLC.Encode. Encode encodes a ShortLC. */
 int dmrgo_pdu_short_lc_encode(const dmrgo_pdu_short_lc_t *self, uint8_t out[5]);
-/* Go: pdu.ShortLC.SetActivityUpdate. SetActivityUpdate makes s carry p as a ShortLCActivityUpdate payload: it sets SLCO to enums.SLCOActivityUpdate and RawPayload, and keeps the other fields. */
+/* Go: pdu.ShortLC.SetActivityUpdate. SetActivityUpdate makes s carry p as a ShortLCActivityUpdate payload: it sets SLCO to enums.SLCOActivityUpdate and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_short_lc_set_activity_update(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_activity_update_t *p);
-/* Go: pdu.ShortLC.SetCSysParms. SetCSysParms makes s carry p as a ShortLCCSysParms payload: it sets SLCO to enums.SLCOCSysParms and RawPayload, and keeps the other fields. */
+/* Go: pdu.ShortLC.SetCSysParms. SetCSysParms makes s carry p as a ShortLCCSysParms payload: it sets SLCO to enums.SLCOCSysParms and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_short_lc_set_c_sys_parms(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_c_sys_parms_t *p);
-/* Go: pdu.ShortLC.SetNullMessage. SetNullMessage makes s carry p as a ShortLCNullMessage payload: it sets SLCO to enums.SLCONullMessage and RawPayload, and keeps the other fields. */
+/* Go: pdu.ShortLC.SetNullMessage. SetNullMessage makes s carry p as a ShortLCNullMessage payload: it sets SLCO to enums.SLCONullMessage and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_short_lc_set_null_message(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_null_message_t *p);
-/* Go: pdu.ShortLC.SetPSysParms. SetPSysParms makes s carry p as a ShortLCPSysParms payload: it sets SLCO to enums.SLCOPSysParms and RawPayload, and keeps the other fields. */
+/* Go: pdu.ShortLC.SetPSysParms. SetPSysParms makes s carry p as a ShortLCPSysParms payload: it sets SLCO to enums.SLCOPSysParms and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_short_lc_set_p_sys_parms(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_p_sys_parms_t *p);
 /* Go: pdu.ShortLC.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_short_lc_string(const dmrgo_pdu_short_lc_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.ShortLCActivityUpdate.Encode. Encode encodes a ShortLCActivityUpdate. */
-int dmrgo_pdu_short_lc_activity_update_encode(const dmrgo_pdu_short_lc_activity_update_t *self, uint8_t out[3]);
 /* Go: pdu.ShortLCActivityUpdate.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_short_lc_activity_update_string(const dmrgo_pdu_short_lc_activity_update_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.ShortLCCSysParms.Encode. Encode encodes a ShortLCCSysParms. */
-int dmrgo_pdu_short_lc_c_sys_parms_encode(const dmrgo_pdu_short_lc_c_sys_parms_t *self, uint8_t out[3]);
 /* Go: pdu.ShortLCCSysParms.NetID. NetID returns the network ID based on the MODEL field: Tiny 9 bits, Small 7 bits, Large 4 bits, Huge 2 bits. It returns a DMRGO_ERR_FIELD_RANGE when MODEL or NetSiteRaw does not fit its bits. */
 int dmrgo_pdu_short_lc_c_sys_parms_net_id(const dmrgo_pdu_short_lc_c_sys_parms_t *self, uint16_t *out);
 /* Go: pdu.ShortLCCSysParms.SetSysCode. SetSysCode sets MODEL and NetSiteRaw from c. */
@@ -9440,12 +9332,8 @@ int dmrgo_pdu_short_lc_c_sys_parms_site_id(const dmrgo_pdu_short_lc_c_sys_parms_
 int dmrgo_pdu_short_lc_c_sys_parms_string(const dmrgo_pdu_short_lc_c_sys_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.ShortLCCSysParms.SysCode. SysCode returns the MODEL, NET and SITE carried in the C_SYS_Parms. It returns a DMRGO_ERR_FIELD_RANGE when MODEL or NetSiteRaw does not fit its bits. */
 int dmrgo_pdu_short_lc_c_sys_parms_sys_code(const dmrgo_pdu_short_lc_c_sys_parms_t *self, dmrgo_pdu_sys_code_t *out);
-/* Go: pdu.ShortLCNullMessage.Encode. Encode encodes a ShortLCNullMessage. */
-int dmrgo_pdu_short_lc_null_message_encode(const dmrgo_pdu_short_lc_null_message_t *self, uint8_t out[3]);
 /* Go: pdu.ShortLCNullMessage.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_short_lc_null_message_string(const dmrgo_pdu_short_lc_null_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.ShortLCPSysParms.Encode. Encode encodes a ShortLCPSysParms. */
-int dmrgo_pdu_short_lc_p_sys_parms_encode(const dmrgo_pdu_short_lc_p_sys_parms_t *self, uint8_t out[3]);
 /* Go: pdu.ShortLCPSysParms.NetID. NetID returns the network ID based on the MODEL field (ETSI TS 102 361-4 Table 6.5), with the errors of ShortLCCSysParms.NetID. */
 int dmrgo_pdu_short_lc_p_sys_parms_net_id(const dmrgo_pdu_short_lc_p_sys_parms_t *self, uint16_t *out);
 /* Go: pdu.ShortLCPSysParms.SetSysCode. SetSysCode sets MODEL and NetSiteRaw from c. */
@@ -9474,8 +9362,6 @@ int dmrgo_pdu_slot_type_info_set_color_code(dmrgo_pdu_slot_type_info_t *self, dm
 int dmrgo_pdu_slot_type_info_set_data_type(dmrgo_pdu_slot_type_info_t *self, dmrgo_enums_data_type_t dt);
 /* Go: pdu.SlotTypeInfo.SlotType. SlotType returns the fields of s as a SlotType with a zero FEC result. */
 int dmrgo_pdu_slot_type_info_slot_type(dmrgo_pdu_slot_type_info_t self, dmrgo_pdu_slot_type_t *out);
-/* Go: pdu.StatusPrecodedHeader.Encode. Encode encodes a StatusPrecodedHeader. */
-int dmrgo_pdu_status_precoded_header_encode(const dmrgo_pdu_status_precoded_header_t *self, uint8_t out[10]);
 /* Go: pdu.StatusPrecodedHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_status_precoded_header_string(const dmrgo_pdu_status_precoded_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.SysCode.NetSite. NetSite returns the 12 NET and SITE bits as in the NetSiteRaw field of ShortLCCSysParms and ShortLCPSysParms. */
@@ -9514,16 +9400,10 @@ int dmrgo_pdu_talker_alias_assembler_append_add(dmrgo_pdu_talker_alias_assembler
 int dmrgo_pdu_talker_alias_assembler_reset(dmrgo_pdu_talker_alias_assembler_t *self);
 /* Go: pdu.TalkerAliasBlocks. TalkerAliasBlocks returns the number of Talker Alias block LCs (0 to 3) that follow a header with the given format and length in Code Units (ETSI TS 102 361-2 clause 5.4.3). */
 int dmrgo_pdu_talker_alias_blocks(dmrgo_layer3_talker_alias_data_format_t format, int64_t length, int64_t *out);
-/* Go: pdu.TalkgroupDataGrantMultiItemPDU.Encode. Encode encodes a TalkgroupDataGrantMultiItemPDU. */
-int dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_encode(const dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.TalkgroupDataGrantMultiItemPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_string(const dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.TalkgroupDataGrantPDU.Encode. Encode encodes a TalkgroupDataGrantPDU. */
-int dmrgo_pdu_talkgroup_data_grant_pdu_encode(const dmrgo_pdu_talkgroup_data_grant_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.TalkgroupDataGrantPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_talkgroup_data_grant_pdu_string(const dmrgo_pdu_talkgroup_data_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.TalkgroupVoiceGrantPDU.Encode. Encode encodes a TalkgroupVoiceGrantPDU. */
-int dmrgo_pdu_talkgroup_voice_grant_pdu_encode(const dmrgo_pdu_talkgroup_voice_grant_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.TalkgroupVoiceGrantPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_talkgroup_voice_grant_pdu_string(const dmrgo_pdu_talkgroup_voice_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.UDPIPv4CompressedHeader.Encode. Encode encodes a UDPIPv4CompressedHeader. */
@@ -9532,14 +9412,10 @@ int dmrgo_pdu_udp_ipv4_compressed_header_encode(const dmrgo_pdu_udp_ipv4_compres
 int dmrgo_pdu_udp_ipv4_compressed_header_octets(const dmrgo_pdu_udp_ipv4_compressed_header_t *self, int64_t *out);
 /* Go: pdu.UDPIPv4CompressedHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_udp_ipv4_compressed_header_string(const dmrgo_pdu_udp_ipv4_compressed_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.UDTHeader.Encode. Encode encodes a UDTHeader. */
-int dmrgo_pdu_udt_header_encode(const dmrgo_pdu_udt_header_t *self, uint8_t out[10]);
 /* Go: pdu.UDTHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_udt_header_string(const dmrgo_pdu_udt_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.UDTOpcode.String. String returns the alias of a UDT opcode. */
 int dmrgo_pdu_udt_opcode_string(dmrgo_pdu_udt_opcode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.UnconfirmedDataHeader.Encode. Encode encodes an UnconfirmedDataHeader. */
-int dmrgo_pdu_unconfirmed_data_header_encode(const dmrgo_pdu_unconfirmed_data_header_t *self, uint8_t out[10]);
 /* Go: pdu.UnconfirmedDataHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_unconfirmed_data_header_string(const dmrgo_pdu_unconfirmed_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.UnifiedSingleBlockData.DataType. DataType returns enums.DataTypeUnifiedSingleBlock. */
@@ -9548,12 +9424,8 @@ int dmrgo_pdu_unified_single_block_data_data_type(const dmrgo_pdu_unified_single
 int dmrgo_pdu_unified_single_block_data_encode(const dmrgo_pdu_unified_single_block_data_t *self, uint8_t out[12]);
 /* Go: pdu.UnifiedSingleBlockData.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_unified_single_block_data_string(const dmrgo_pdu_unified_single_block_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.UnitToUnitVoiceServiceAnswerResponsePDU.Encode. Encode encodes a UnitToUnitVoiceServiceAnswerResponsePDU. */
-int dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_encode(const dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.UnitToUnitVoiceServiceAnswerResponsePDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_string(const dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.UnitToUnitVoiceServiceRequestPDU.Encode. Encode encodes a UnitToUnitVoiceServiceRequestPDU. */
-int dmrgo_pdu_unit_to_unit_voice_service_request_pdu_encode(const dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.UnitToUnitVoiceServiceRequestPDU.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_unit_to_unit_voice_service_request_pdu_string(const dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.VNAPContinuation.DataType. DataType returns enums.DataTypeMBCContinuation. */
@@ -9562,8 +9434,6 @@ int dmrgo_pdu_vnap_continuation_data_type(const dmrgo_pdu_vnap_continuation_t *s
 int dmrgo_pdu_vnap_continuation_encode(const dmrgo_pdu_vnap_continuation_t *self, uint8_t out[12]);
 /* Go: pdu.VNAPContinuation.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_vnap_continuation_string(const dmrgo_pdu_vnap_continuation_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.VoteNowParms.Encode. Encode encodes a VoteNowParms. */
-int dmrgo_pdu_vote_now_parms_encode(const dmrgo_pdu_vote_now_parms_t *self, uint8_t out[8]);
 /* Go: pdu.VoteNowParms.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_vote_now_parms_string(const dmrgo_pdu_vote_now_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.AdditionalInformationField.String. */

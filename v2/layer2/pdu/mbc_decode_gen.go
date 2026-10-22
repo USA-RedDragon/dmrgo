@@ -111,14 +111,14 @@ func (s *MBCHeader) AsPrivateVoiceGrant() (p PrivateVoiceGrantPDU, ok bool) {
 
 // SetPrivateVoiceGrant makes s carry p as a PrivateVoiceGrantPDU payload: it
 // sets Opcode to CSBKPrivateVoiceGrant, FID to 0 and RawPayload, and keeps
-// the other fields. It returns the error of p.Encode, and then leaves s as
-// it is.
+// the other fields. It returns a *dmrgo.FieldRangeError when a field of p
+// does not fit its bits, and then leaves s as it is.
 func (s *MBCHeader) SetPrivateVoiceGrant(p PrivateVoiceGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -144,14 +144,15 @@ func (s *MBCHeader) AsTalkgroupVoiceGrant() (p TalkgroupVoiceGrantPDU, ok bool) 
 
 // SetTalkgroupVoiceGrant makes s carry p as a TalkgroupVoiceGrantPDU
 // payload: it sets Opcode to CSBKTalkgroupVoiceGrant, FID to 0 and
-// RawPayload, and keeps the other fields. It returns the error of p.Encode,
-// and then leaves s as it is.
+// RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *MBCHeader) SetTalkgroupVoiceGrant(p TalkgroupVoiceGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -178,14 +179,14 @@ func (s *MBCHeader) AsBroadcastTalkgroupVoiceGrant() (p BroadcastTalkgroupVoiceG
 // SetBroadcastTalkgroupVoiceGrant makes s carry p as a
 // BroadcastTalkgroupVoiceGrantPDU payload: it sets Opcode to
 // CSBKBroadcastTalkgroupVoiceGrant, FID to 0 and RawPayload, and keeps the
-// other fields. It returns the error of p.Encode, and then leaves s as it
-// is.
+// other fields. It returns a *dmrgo.FieldRangeError when a field of p does
+// not fit its bits, and then leaves s as it is.
 func (s *MBCHeader) SetBroadcastTalkgroupVoiceGrant(p BroadcastTalkgroupVoiceGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -210,14 +211,14 @@ func (s *MBCHeader) AsPrivateDataGrant() (p PrivateDataGrantPDU, ok bool) {
 
 // SetPrivateDataGrant makes s carry p as a PrivateDataGrantPDU payload: it
 // sets Opcode to CSBKPrivateDataGrant, FID to 0 and RawPayload, and keeps
-// the other fields. It returns the error of p.Encode, and then leaves s as
-// it is.
+// the other fields. It returns a *dmrgo.FieldRangeError when a field of p
+// does not fit its bits, and then leaves s as it is.
 func (s *MBCHeader) SetPrivateDataGrant(p PrivateDataGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -242,14 +243,14 @@ func (s *MBCHeader) AsTalkgroupDataGrant() (p TalkgroupDataGrantPDU, ok bool) {
 
 // SetTalkgroupDataGrant makes s carry p as a TalkgroupDataGrantPDU payload:
 // it sets Opcode to CSBKTalkgroupDataGrant, FID to 0 and RawPayload, and
-// keeps the other fields. It returns the error of p.Encode, and then leaves
-// s as it is.
+// keeps the other fields. It returns a *dmrgo.FieldRangeError when a field
+// of p does not fit its bits, and then leaves s as it is.
 func (s *MBCHeader) SetTalkgroupDataGrant(p TalkgroupDataGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -275,14 +276,15 @@ func (s *MBCHeader) AsDuplexPrivateVoiceGrant() (p DuplexPrivateVoiceGrantPDU, o
 
 // SetDuplexPrivateVoiceGrant makes s carry p as a DuplexPrivateVoiceGrantPDU
 // payload: it sets Opcode to CSBKDuplexPrivateVoiceGrant, FID to 0 and
-// RawPayload, and keeps the other fields. It returns the error of p.Encode,
-// and then leaves s as it is.
+// RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *MBCHeader) SetDuplexPrivateVoiceGrant(p DuplexPrivateVoiceGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -308,14 +310,15 @@ func (s *MBCHeader) AsDuplexPrivateDataGrant() (p DuplexPrivateDataGrantPDU, ok 
 
 // SetDuplexPrivateDataGrant makes s carry p as a DuplexPrivateDataGrantPDU
 // payload: it sets Opcode to CSBKDuplexPrivateDataGrant, FID to 0 and
-// RawPayload, and keeps the other fields. It returns the error of p.Encode,
-// and then leaves s as it is.
+// RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *MBCHeader) SetDuplexPrivateDataGrant(p DuplexPrivateDataGrantPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -342,14 +345,14 @@ func (s *MBCHeader) AsPrivateDataGrantMultiItem() (p PrivateDataGrantMultiItemPD
 // SetPrivateDataGrantMultiItem makes s carry p as a
 // PrivateDataGrantMultiItemPDU payload: it sets Opcode to
 // CSBKPrivateDataGrantMultiItem, FID to 0 and RawPayload, and keeps the
-// other fields. It returns the error of p.Encode, and then leaves s as it
-// is.
+// other fields. It returns a *dmrgo.FieldRangeError when a field of p does
+// not fit its bits, and then leaves s as it is.
 func (s *MBCHeader) SetPrivateDataGrantMultiItem(p PrivateDataGrantMultiItemPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -373,14 +376,15 @@ func (s *MBCHeader) AsMove() (p MovePDU, ok bool) {
 }
 
 // SetMove makes s carry p as a MovePDU payload: it sets Opcode to CSBKMove,
-// FID to 0 and RawPayload, and keeps the other fields. It returns the error
-// of p.Encode, and then leaves s as it is.
+// FID to 0 and RawPayload, and keeps the other fields. It returns a
+// *dmrgo.FieldRangeError when a field of p does not fit its bits, and then
+// leaves s as it is.
 func (s *MBCHeader) SetMove(p MovePDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -405,13 +409,14 @@ func (s *MBCHeader) AsBroadcast() (p BroadcastPDU, ok bool) {
 
 // SetBroadcast makes s carry p as a BroadcastPDU payload: it sets Opcode to
 // CSBKBroadcast, FID to 0 and RawPayload, and keeps the other fields. It
-// returns the error of p.Encode, and then leaves s as it is.
+// returns a *dmrgo.FieldRangeError when a field of p does not fit its bits,
+// and then leaves s as it is.
 func (s *MBCHeader) SetBroadcast(p BroadcastPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	raw, err := p.Encode()
+	raw, err := p.encode()
 	if err != nil {
 		return err
 	}

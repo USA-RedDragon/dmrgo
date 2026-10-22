@@ -376,7 +376,7 @@ func TestCapacityPlusVoiceGrants(t *testing.T) {
 	t.Parallel()
 	so := layer3.ServiceOptions{IsEmergency: true}
 	g := pdu.CapacityPlusGroupVoiceGrant{ServiceOptions: so, GroupAddress: 14, RestLSN: 17, SourceAddress: 1400}
-	payload := must(g.Encode())
+	payload := must(pdu.EncodePayload(&g))
 	lc := pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader, FLCO: pdu.FLCOCapacityPlusGroupVoiceGrant, FID: enums.FIDMotorola, RawPayload: payload}
 	raw := must(lc.Encode())
 	back := pdu.DecodeFullLinkControl(raw, enums.DataTypeVoiceLCHeader)
@@ -394,7 +394,7 @@ func TestCapacityPlusVoiceGrants(t *testing.T) {
 	}
 
 	p := pdu.CapacityPlusPrivateVoiceGrant{TargetAddress: 21001, RestLSN: 4, SourceAddress: 21002}
-	lc = pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader, FLCO: pdu.FLCOCapacityPlusPrivateVoiceGrant, FID: enums.FIDMotorola, RawPayload: must(p.Encode())}
+	lc = pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader, FLCO: pdu.FLCOCapacityPlusPrivateVoiceGrant, FID: enums.FIDMotorola, RawPayload: must(pdu.EncodePayload(&p))}
 	back = pdu.DecodeFullLinkControl(must(lc.Encode()), enums.DataTypeVoiceLCHeader)
 	if got, ok := back.AsCapacityPlusPrivateVoiceGrant(); !ok || got != p {
 		t.Errorf("private grant %+v %t, want %+v", got, ok, p)
@@ -403,7 +403,7 @@ func TestCapacityPlusVoiceGrants(t *testing.T) {
 	if _, ok := std.AsCapacityPlusGroupVoiceGrant(); ok {
 		t.Error("standard FID read as a Capacity Plus grant")
 	}
-	if _, err := (&pdu.CapacityPlusGroupVoiceGrant{RestLSN: 32}).Encode(); err == nil {
+	if _, err := pdu.EncodePayload(&pdu.CapacityPlusGroupVoiceGrant{RestLSN: 32}); err == nil {
 		t.Error("RestLSN 32 encodes")
 	}
 }
@@ -411,7 +411,7 @@ func TestCapacityPlusVoiceGrants(t *testing.T) {
 func TestCapacityPlusDataRevertGrant(t *testing.T) {
 	t.Parallel()
 	p := pdu.CapacityPlusDataRevertGrantPDU{TargetAddress: 42, Window: 7, Superframe: 2}
-	c := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKCapacityPlusDataRevertGrant, FID: enums.FIDMotorola, RawPayload: must(p.Encode())}
+	c := pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKCapacityPlusDataRevertGrant, FID: enums.FIDMotorola, RawPayload: must(pdu.EncodePayload(&p))}
 	back := pdu.DecodeCSBK(must(c.Encode()))
 	if got, ok := back.AsCapacityPlusDataRevertGrant(); !ok || got != p {
 		t.Errorf("grant %+v %t, want %+v", got, ok, p)

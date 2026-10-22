@@ -62,7 +62,7 @@ func (p *BroadcastPDU) AsAnnWDTSCC() (v AnnWDTSCCParms, ok bool) {
 	if p == nil {
 		return AnnWDTSCCParms{}, false
 	}
-	b, err := p.Encode()
+	b, err := p.encode()
 	if err != nil || p.AnnouncementType != enums.AnnouncementAnnWDTSCC {
 		return v, false
 	}
@@ -74,7 +74,7 @@ func (p *BroadcastPDU) AsChanFreq() (v ChanFreqParms, ok bool) {
 	if p == nil {
 		return ChanFreqParms{}, false
 	}
-	b, err := p.Encode()
+	b, err := p.encode()
 	if err != nil || p.AnnouncementType != enums.AnnouncementChanFreq {
 		return v, false
 	}
@@ -87,7 +87,7 @@ func (p *BroadcastPDU) AsAdjacentSite() (v AdjacentSiteParms, ok bool) {
 	if p == nil {
 		return AdjacentSiteParms{}, false
 	}
-	b, err := p.Encode()
+	b, err := p.encode()
 	if err != nil || p.AnnouncementType != enums.AnnouncementAdjacentSite {
 		return v, false
 	}
@@ -197,7 +197,7 @@ func (p *BroadcastPDU) AsCallTimer() (v CallTimerParms, ok bool) {
 		return CallTimerParms{}, false
 	}
 
-	b, err := p.Encode()
+	b, err := p.encode()
 	if err != nil || p.AnnouncementType != enums.AnnouncementCallTimer {
 		return v, false
 	}
@@ -210,7 +210,7 @@ func (p *BroadcastPDU) AsVoteNow() (v VoteNowParms, ok bool) {
 		return VoteNowParms{}, false
 	}
 
-	b, err := p.Encode()
+	b, err := p.encode()
 	if err != nil || p.AnnouncementType != enums.AnnouncementVoteNow {
 		return v, false
 	}
@@ -223,7 +223,7 @@ func (p *BroadcastPDU) AsLocalTime() (v LocalTimeParms, ok bool) {
 		return LocalTimeParms{}, false
 	}
 
-	b, err := p.Encode()
+	b, err := p.encode()
 	if err != nil || p.AnnouncementType != enums.AnnouncementLocalTime {
 		return v, false
 	}
@@ -236,7 +236,7 @@ func (p *BroadcastPDU) AsMassReg() (v MassRegParms, ok bool) {
 		return MassRegParms{}, false
 	}
 
-	b, err := p.Encode()
+	b, err := p.encode()
 	if err != nil || p.AnnouncementType != enums.AnnouncementMassReg {
 		return v, false
 	}
@@ -249,7 +249,7 @@ func (p *BroadcastPDU) AsGenSite() (v GenSiteParms, ok bool) {
 		return GenSiteParms{}, false
 	}
 
-	b, err := p.Encode()
+	b, err := p.encode()
 	if err != nil || p.AnnouncementType != enums.AnnouncementGenSiteParams {
 		return v, false
 	}

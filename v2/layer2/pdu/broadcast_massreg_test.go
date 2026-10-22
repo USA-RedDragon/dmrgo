@@ -16,7 +16,7 @@ func TestBroadcastPDU_AsMassReg_Table7_76(t *testing.T) {
 	if !ok || got != want {
 		t.Errorf("AsMassReg = %+v, %v, want %+v", got, ok, want)
 	}
-	enc, err := got.Encode()
+	enc, err := pdu.EncodePayload(&got)
 	if err != nil {
 		t.Fatal(err)
 	}

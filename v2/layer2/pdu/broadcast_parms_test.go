@@ -80,7 +80,7 @@ func TestBroadcastPDU_AsCallTimer(t *testing.T) {
 	if !ok || got != want {
 		t.Errorf("AsCallTimer = %+v, %v, want %+v", got, ok, want)
 	}
-	checkBroadcastEncode(t, &b, must(got.Encode()))
+	checkBroadcastEncode(t, &b, must(pdu.EncodePayload(&got)))
 }
 
 func TestBroadcastPDU_AsVoteNow(t *testing.T) {
@@ -94,7 +94,7 @@ func TestBroadcastPDU_AsVoteNow(t *testing.T) {
 	if !ok || got != want {
 		t.Errorf("AsVoteNow = %+v, %v, want %+v", got, ok, want)
 	}
-	checkBroadcastEncode(t, &b, must(got.Encode()))
+	checkBroadcastEncode(t, &b, must(pdu.EncodePayload(&got)))
 }
 
 func TestBroadcastPDU_AsLocalTime(t *testing.T) {
@@ -119,7 +119,7 @@ func TestBroadcastPDU_AsLocalTime(t *testing.T) {
 			if !ok || got != want {
 				t.Errorf("AsLocalTime = %+v, %v, want %+v", got, ok, want)
 			}
-			checkBroadcastEncode(t, &b, must(got.Encode()))
+			checkBroadcastEncode(t, &b, must(pdu.EncodePayload(&got)))
 		})
 	}
 }
@@ -132,7 +132,7 @@ func TestBroadcastPDU_AsMassReg(t *testing.T) {
 	if !ok || got != want {
 		t.Errorf("AsMassReg = %+v, %v, want %+v", got, ok, want)
 	}
-	checkBroadcastEncode(t, &b, must(got.Encode()))
+	checkBroadcastEncode(t, &b, must(pdu.EncodePayload(&got)))
 }
 
 func TestBroadcastPDU_AsGenSite(t *testing.T) {
@@ -143,7 +143,7 @@ func TestBroadcastPDU_AsGenSite(t *testing.T) {
 	if !ok || got != want {
 		t.Errorf("AsGenSite = %+v, %v, want %+v", got, ok, want)
 	}
-	checkBroadcastEncode(t, &b, must(got.Encode()))
+	checkBroadcastEncode(t, &b, must(pdu.EncodePayload(&got)))
 	if _, ok := b.AsMassReg(); ok {
 		t.Error("AsMassReg: ok for Gen_Site_Params")
 	}
@@ -151,7 +151,7 @@ func TestBroadcastPDU_AsGenSite(t *testing.T) {
 
 func checkBroadcastEncode(t *testing.T, b *pdu.BroadcastPDU, got [8]byte) {
 	t.Helper()
-	if want := must(b.Encode()); got != want {
+	if want := must(pdu.EncodePayload(b)); got != want {
 		t.Errorf("parameters encode as %x, C_BCAST as %x", got, want)
 	}
 }
@@ -173,7 +173,7 @@ func broadcastSeeds(add func(typ uint8, p1 uint16, reg bool, backoff uint8, sys 
 
 func fuzzBroadcastParms(t *testing.T, typ uint8, p1 uint16, reg bool, backoff uint8, sys uint16, p2 uint32) {
 	b := pdu.BroadcastPDU{AnnouncementType: enums.AnnouncementType(typ), BroadcastParms1: p1, Reg: reg, Backoff: backoff, SysIdentCode: sys, BroadcastParms2: p2}
-	want, err := b.Encode()
+	want, err := pdu.EncodePayload(&b)
 	views := 0
 	check := func(ok bool, enc func() ([8]byte, error)) {
 		if !ok {
@@ -185,15 +185,15 @@ func fuzzBroadcastParms(t *testing.T, typ uint8, p1 uint16, reg bool, backoff ui
 		}
 	}
 	v1, ok1 := b.AsCallTimer()
-	check(ok1, v1.Encode)
+	check(ok1, func() ([8]byte, error) { return pdu.EncodePayload(&v1) })
 	v2, ok2 := b.AsVoteNow()
-	check(ok2, v2.Encode)
+	check(ok2, func() ([8]byte, error) { return pdu.EncodePayload(&v2) })
 	v3, ok3 := b.AsLocalTime()
-	check(ok3, v3.Encode)
+	check(ok3, func() ([8]byte, error) { return pdu.EncodePayload(&v3) })
 	v4, ok4 := b.AsMassReg()
-	check(ok4, v4.Encode)
+	check(ok4, func() ([8]byte, error) { return pdu.EncodePayload(&v4) })
 	v5, ok5 := b.AsGenSite()
-	check(ok5, v5.Encode)
+	check(ok5, func() ([8]byte, error) { return pdu.EncodePayload(&v5) })
 	known := typ >= 1 && typ <= 7 && typ != 5 && typ != 6
 	if views > 1 || err == nil && known != (views == 1) {
 		t.Fatalf("%+v: %d views", b, views)

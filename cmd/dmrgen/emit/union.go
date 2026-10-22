@@ -216,7 +216,7 @@ func emitSet(f *File, pdu parse.PDUStruct, union *parse.Field, v parse.Variant, 
 			errs = append(errs, "an error when "+sc.param+" is not "+orList(sc.cond.Values))
 		}
 	}
-	errs = append(errs, "the error of p.Encode")
+	errs = append(errs, "a *dmrgo.FieldRangeError when a field of p does not fit its bits")
 	if check {
 		errs = append(errs, "an error when the payload does not meet the conditions of As"+v.Name)
 	}
@@ -236,7 +236,7 @@ func emitSet(f *File, pdu parse.PDUStruct, union *parse.Field, v parse.Variant, 
 			name := "err" + pdu.Name + v.Name + sc.cond.Field
 			b.If(Op("!").Parens(cond)).Block(Return(ev.get(name, errorsNew(pdu.Name+".Set"+v.Name+": "+sc.param+" is not "+orList(sc.cond.Values)))))
 		}
-		b.List(Id("raw"), Err()).Op(":=").Id("p").Dot(encodeFnName).Call()
+		b.List(Id("raw"), Err()).Op(":=").Id("p").Dot(pdu.EncodeFuncName(v.Type)).Call()
 		b.If(Err().Op("!=").Nil()).Block(Return(Err()))
 		dst := "s"
 		if check {

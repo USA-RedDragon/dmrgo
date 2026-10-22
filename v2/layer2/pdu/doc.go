@@ -10,7 +10,7 @@
 // disagree. AsX decodes RawPayload as the payload X and reports false when
 // the opcode selects another payload. SetX encodes the payload X into
 // RawPayload and sets the opcode that selects it. The payloads have no DecodeX
-// of their own. No decode allocates. (ETSI TS 102 361-1 clause 9)
+// or Encode of their own. No decode allocates. (ETSI TS 102 361-1 clause 9)
 //
 // # Bit order
 //

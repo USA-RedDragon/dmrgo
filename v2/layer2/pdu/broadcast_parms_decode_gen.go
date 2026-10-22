@@ -34,14 +34,8 @@ func decodeAnnWDTSCCParms(data [8]byte) AnnWDTSCCParms {
 	return result
 }
 
-// Encode encodes an AnnWDTSCCParms. It returns the 64 bits packed, the first
-// bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.2.19.1, Table 7.69)
-func (s *AnnWDTSCCParms) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.2.19.1, Table 7.69
+func (s *AnnWDTSCCParms) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [8]byte{}, errAnnWDTSCCParmsAnnouncementTypeRange
@@ -117,14 +111,8 @@ func decodeChanFreqParms(data [8]byte) ChanFreqParms {
 	return result
 }
 
-// Encode encodes a ChanFreqParms. It returns the 64 bits packed, the first
-// bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 V1.12.1 clause 7.2.19.6, Table 7.78)
-func (s *ChanFreqParms) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 V1.12.1 clause 7.2.19.6, Table 7.78
+func (s *ChanFreqParms) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [8]byte{}, errChanFreqParmsAnnouncementTypeRange
@@ -189,14 +177,8 @@ func decodeAdjacentSiteParms(data [8]byte) AdjacentSiteParms {
 	return result
 }
 
-// Encode encodes an AdjacentSiteParms. It returns the 64 bits packed, the
-// first bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 V1.12.1 clause 7.2.19.7, Table 7.79)
-func (s *AdjacentSiteParms) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 V1.12.1 clause 7.2.19.7, Table 7.79
+func (s *AdjacentSiteParms) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [8]byte{}, errAdjacentSiteParmsAnnouncementTypeRange
@@ -270,14 +252,8 @@ func decodeCallTimerParms(data [8]byte) CallTimerParms {
 	return result
 }
 
-// Encode encodes a CallTimerParms. It returns the 64 bits packed, the first
-// bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.2.19.2, Table 7.70)
-func (s *CallTimerParms) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.2.19.2, Table 7.70
+func (s *CallTimerParms) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [8]byte{}, errCallTimerParmsAnnouncementTypeRange
@@ -347,14 +323,8 @@ func decodeVoteNowParms(data [8]byte) VoteNowParms {
 	return result
 }
 
-// Encode encodes a VoteNowParms. It returns the 64 bits packed, the first
-// bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.2.19.3, Table 7.71)
-func (s *VoteNowParms) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.2.19.3, Table 7.71
+func (s *VoteNowParms) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [8]byte{}, errVoteNowParmsAnnouncementTypeRange
@@ -434,14 +404,8 @@ func decodeLocalTimeParms(data [8]byte) LocalTimeParms {
 	return result
 }
 
-// Encode encodes a LocalTimeParms. It returns the 64 bits packed, the first
-// bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.2.19.4, Tables 7.73 to 7.75)
-func (s *LocalTimeParms) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.2.19.4, Tables 7.73 to 7.75
+func (s *LocalTimeParms) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [8]byte{}, errLocalTimeParmsAnnouncementTypeRange
@@ -531,14 +495,8 @@ func decodeMassRegParms(data [8]byte) MassRegParms {
 	return result
 }
 
-// Encode encodes a MassRegParms. It returns the 64 bits packed, the first
-// bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 clause 7.2.19.5, Tables 7.76 and 7.77)
-func (s *MassRegParms) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 clause 7.2.19.5, Tables 7.76 and 7.77
+func (s *MassRegParms) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [8]byte{}, errMassRegParmsAnnouncementTypeRange
@@ -607,15 +565,8 @@ func decodeGenSiteParms(data [8]byte) GenSiteParms {
 	return result
 }
 
-// Encode encodes a GenSiteParms. It returns the 64 bits packed, the first
-// bit in the most significant bit of byte 0.
-// (ETSI TS 102 361-4 V1.12.1 clauses 7.2.19.8, 7.2.40 and 7.2.41,
-// Tables 7.80, 7.101 and 7.102)
-func (s *GenSiteParms) Encode() ([8]byte, error) {
-	if s == nil {
-		return [8]byte{}, dmrgo.ErrNilReceiver
-	}
-
+// ETSI TS 102 361-4 V1.12.1 clauses 7.2.19.8, 7.2.40 and 7.2.41, Tables 7.80, 7.101 and 7.102
+func (s *GenSiteParms) encode() ([8]byte, error) {
 	var data [8]byte
 	if uint64(s.AnnouncementType)>>5 != 0 {
 		return [8]byte{}, errGenSiteParmsAnnouncementTypeRange

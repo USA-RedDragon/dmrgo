@@ -537,7 +537,7 @@ func (s *CSBK) SetBSOutboundActivation(p BSOutboundActivationPDU) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
-	payload, err := p.Encode()
+	payload, err := p.encode()
 	if err != nil {
 		return err
 	}
@@ -551,7 +551,7 @@ func (s *CSBK) SetTalkgroupDataGrantMultiItem(p TalkgroupDataGrantMultiItemPDU) 
 	if s == nil {
 		return dmrgo.ErrNilReceiver
 	}
-	payload, err := p.Encode()
+	payload, err := p.encode()
 	if err != nil {
 		return err
 	}

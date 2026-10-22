@@ -910,9 +910,14 @@ func emitEncode(f *File, pdu parse.PDUStruct, ev *errVars) error {
 	}
 	enc := encoder{pdu: pdu, bytes: packedSize(outputSize), errs: ev}
 
-	comment(f, "Encode encodes "+docObject(pdu)+" "+encodeDoc(outputSize)+docCite(pdu))
+	name := pdu.EncodeFuncName(pdu.Name)
+	if name == encodeFnName {
+		comment(f, "Encode encodes "+docObject(pdu)+" "+encodeDoc(outputSize)+docCite(pdu))
+	} else if pdu.SpecRef != "" {
+		f.Comment(pdu.SpecRef)
+	}
 	var genErr error
-	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id(encodeFnName).Params().Params(
+	f.Func().Params(Id("s").Op("*").Id(pdu.Name)).Id(name).Params().Params(
 		Index(Lit(enc.bytes)).Byte(),
 		Error(),
 	).BlockFunc(func(g *Group) {
@@ -1062,16 +1067,23 @@ func (e encoder) delegate(g *Group, field parse.Field) {
 	if field.Stride > 0 {
 		start := Lit(field.BitStart).Op("+").Id("_i").Op("*").Lit(field.Stride)
 		g.For(Id("_i").Op(":=").Lit(0), Id("_i").Op("<").Lit(field.ArrayLen), Id("_i").Op("++")).Block(
-			List(Id("_elemBytes"), Err()).Op(":=").Add(source.Clone().Index(Id("_i"))).Dot(encodeFnName).Call(),
+			List(Id("_elemBytes"), Err()).Op(":=").Add(source.Clone().Index(Id("_i"))).Dot(e.delegateEncode(field)).Call(),
 			If(Err().Op("!=").Nil()).Block(e.fail(Err())),
 			Qual(bitsPkg, "Copy").Call(Id("data").Index(Empty(), Empty()), start, Id("_elemBytes").Index(Empty(), Empty()), Lit(0), Lit(field.Stride)),
 		)
 		return
 	}
 	tmpVar := "_" + strings.ToLower(field.Name[:1]) + field.Name[1:] + "Bytes"
-	g.List(Id(tmpVar), Err()).Op(":=").Add(source.Clone()).Dot(encodeFnName).Call()
+	g.List(Id(tmpVar), Err()).Op(":=").Add(source.Clone()).Dot(e.delegateEncode(field)).Call()
 	g.If(Err().Op("!=").Nil()).Block(e.fail(Err()))
 	addAll(g, copyBits(dataBuf, field.BitStart, idOf(tmpVar), 0, field.BitEnd-field.BitStart+1))
+}
+
+func (e encoder) delegateEncode(field parse.Field) string {
+	if field.IsQualified {
+		return encodeFnName
+	}
+	return e.pdu.EncodeFuncName(field.TypeName)
 }
 
 func (e encoder) raw(g *Group, field parse.Field) {
