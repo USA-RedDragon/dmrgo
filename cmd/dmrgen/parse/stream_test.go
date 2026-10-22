@@ -27,6 +27,8 @@ func TestParseRejectsBadStreams(t *testing.T) {
 		{"two lengths", "// dmr:stream\ntype T struct {\n A uint16 " + tag("u16,length") + "\n B uint16 " + tag("u16,length") + "\n}", "at most one length"},
 		{"length signed", "// dmr:stream\ntype T struct {\n A int16 " + tag("i16,length") + "\n}", "length cannot be signed"},
 		{"scale type", "// dmr:stream\ntype T struct {\n A int32 " + tag("i32,scale:90/31") + "\n}", "scale needs a float64"},
+		{"signmag unsigned", "// dmr:stream\ntype T struct {\n A float64 " + tag("u32,signmag,scale:90/31") + "\n}", "signmag needs a signed scaled integer"},
+		{"signmag unscaled", "// dmr:stream\ntype T struct {\n A int32 " + tag("i32,signmag") + "\n}", "signmag needs a signed scaled integer"},
 		{"float varint type", "// dmr:stream\ntype T struct {\n A uint8 " + tag("ufloatvar") + "\n}", "float varint needs float64"},
 		{"text on int", "// dmr:stream\ntype T struct {\n A uint8 " + tag("u8,utf16le") + "\n}", "need a byte string kind"},
 		{"bound path", "// dmr:stream\n// dmr:bound A.Len\ntype T struct {\n A uint8 " + tag("u8") + "\n}", "must name a field of a frame field"},

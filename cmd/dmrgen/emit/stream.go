@@ -159,6 +159,13 @@ func (s streamGen) decodeValue(g *Group, f parse.StreamField, target *Statement)
 		raw := readInt(f.Octets, f.LE, dataAt)
 		var v *Statement
 		switch {
+		case f.SKind == parse.StreamFixed && f.SignMag:
+			sign := 8*f.Octets - 1
+			g.Id(tmp).Op(":=").Add(raw)
+			g.Add(target.Clone()).Op("=").Float64().Call(Id(tmp).Op("&").Lit(uint64(1)<<sign - 1)).Op("*").Parens(Id(scaleText(f)))
+			g.If(Id(tmp).Op(">>").Lit(sign).Op("!=").Lit(0)).Block(target.Clone().Op("=").Op("-").Add(target.Clone()))
+			g.Id("_o").Op("+=").Lit(f.Octets)
+			return nil
 		case f.SKind == parse.StreamFixed && f.SignedInt:
 			v = Float64().Call(signedValue(f.Octets, Parens(raw))).Op("*").Parens(Id(scaleText(f)))
 		case f.SKind == parse.StreamFixed:
@@ -544,6 +551,18 @@ func (e streamEnc) encodeValue(g *Group, f parse.StreamField, src *Statement) er
 		appendInt(g, f.Octets, f.LE, Id(tmp))
 	case parse.StreamFixed:
 		w := 8 * f.Octets
+		if f.SignMag {
+			hiRaw := math.Ldexp(1, w-1) - 1
+			scale := float64(f.ScaleNum) / math.Ldexp(1, f.ScaleExp)
+			lo, hi := -hiRaw*scale, hiRaw*scale
+			g.Id(tmp).Op(":=").Qual("math", "Round").Call(Qual("math", "Abs").Call(src.Clone()).Op("/").Parens(Id(scaleText(f))))
+			g.If(Op("!").Parens(Id(tmp).Op("<=").Lit(hiRaw))).Block(e.rangeErr(f, w, true, &lo, &hi))
+			raw := tmp + "Raw"
+			g.Id(raw).Op(":=").Uint64().Call(Id(tmp))
+			g.If(src.Clone().Op("<").Lit(0).Op("&&").Id(raw).Op("!=").Lit(0)).Block(Id(raw).Op("|=").Lit(uint64(1) << (w - 1)))
+			appendInt(g, f.Octets, f.LE, Id(raw))
+			return nil
+		}
 		var loRaw, hiRaw float64
 		if f.SignedInt {
 			loRaw, hiRaw = -math.Ldexp(1, w-1), math.Ldexp(1, w-1)-1

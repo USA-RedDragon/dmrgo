@@ -38,6 +38,8 @@ type Toks struct {
 	HasID  bool    ` + "`dmr:\"-\"`" + `
 	Lat    float64 ` + "`dmr:\"i32,scale:90/31,token:0x66\"`" + `
 	HasLat bool    ` + "`dmr:\"-\"`" + `
+	South    float64 ` + "`dmr:\"i32,signmag,scale:90/31,token:0x67\"`" + `
+	HasSouth bool    ` + "`dmr:\"-\"`" + `
 	OK     bool    ` + "`dmr:\"flag,token:0x38\"`" + `
 }
 `
@@ -70,6 +72,10 @@ func TestStreamCode(t *testing.T) {
 		"result.HasID = true",
 		"return 0, ErrToken",
 		"result.Lat = float64(int64((uint64(data[_o])<<24|uint64(data[_o+1])<<16|uint64(data[_o+2])<<8|uint64(data[_o+3]))<<32)>>32) * (90.0 / (1 << 31))",
+		"result.South = float64(_vSouth&uint64(0x7fffffff)) * (90.0 / (1 << 31))",
+		"result.South = -result.South",
+		"_vSouth := math.Round(math.Abs(s.South) / (90.0 / (1 << 31)))",
+		"_vSouthRaw |= uint64(0x80000000)",
 		"func (s *Msg) AppendBinary(dst []byte) ([]byte, error) {",
 		"func (s *Msg) NameUTF8(dst []byte) []byte {",
 		"func (s *Msg) SetNameUTF8(dst, text []byte) []byte {",
