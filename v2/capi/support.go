@@ -267,15 +267,15 @@ func (o *outc) setArena(p unsafe.Pointer, n C.size_t) {
 }
 
 func (o *outc) take(size, align int) unsafe.Pointer {
+	if size == 0 {
+		return nil
+	}
 	base := uintptr(unsafe.Pointer(unsafe.SliceData(o.arena)))
 	off := o.need
 	if pad := int((base + uintptr(off)) % uintptr(align)); pad != 0 {
 		off += align - pad
 	}
 	o.need = off + size
-	if size == 0 {
-		return nil
-	}
 	o.slack += align - 1
 	if o.need > len(o.arena) {
 		o.short = true
