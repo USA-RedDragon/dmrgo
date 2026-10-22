@@ -37,9 +37,9 @@ func testStream(t *testing.T, r *rand.Rand) []byte {
 }
 
 var testConfigs = []Config{
-	{Threshold: -1, Period: SlotPeriod},
-	{Threshold: -1, CACH: true},
-	{Threshold: 0, MaxMisses: 1},
+	{Period: SlotPeriod},
+	{CACH: true},
+	{Threshold: -1, MaxMisses: 1},
 }
 
 func TestFramer_BufferBound(t *testing.T) {

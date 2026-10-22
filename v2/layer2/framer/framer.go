@@ -1,9 +1,9 @@
 package framer
 
 import (
-	"errors"
 	"math/bits"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	ibits "github.com/USA-RedDragon/dmrgo/v2/internal/bits"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
@@ -26,9 +26,7 @@ const (
 	MaxPeriod = 1 << 16
 )
 
-// ErrPeriod is returned by New for a Config.Period over MaxPeriod. Match it
-// with errors.Is.
-var ErrPeriod = errors.New("framer: Period is over MaxPeriod")
+var errPeriod = &dmrgo.ConfigError{Type: "framer", Field: "Period"}
 
 var syncPatterns = [...]enums.SyncPattern{
 	enums.SyncBSSourcedVoice,
@@ -68,8 +66,10 @@ func nearest(window uint64) (enums.SyncPattern, int) {
 // pattern. stream holds the bits packed, the first bit in the most
 // significant bit of stream[0], and start and Match.Offset are bit indexes.
 // The bits of stream after the first nbits are ignored, and nbits is
-// clamped to [0, 8*len(stream)]. A negative threshold means
-// layer2.DefaultSyncThreshold. ok is false when there is none.
+// clamped to [0, 8*len(stream)]. A threshold of 0 means
+// layer2.DefaultSyncThreshold, and a negative threshold accepts only an
+// exact SYNC, as layer2.DecodeOptions.SyncThreshold does. ok is false when
+// there is none.
 func Search(stream []byte, nbits, start, threshold int) (m Match, ok bool) {
 	return search(stream, clampBits(stream, nbits), start, threshold)
 }
@@ -79,8 +79,11 @@ func clampBits(stream []byte, nbits int) int {
 }
 
 func search(stream []byte, n, start, threshold int) (m Match, ok bool) {
-	if threshold < 0 {
+	switch {
+	case threshold == 0:
 		threshold = layer2.DefaultSyncThreshold
+	case threshold < 0:
+		threshold = 0
 	}
 	start = max(start, 0)
 	if start > n-SyncBits {
@@ -116,21 +119,22 @@ type Burst struct {
 	// CACH is the CACH decoded from the 24 bits before the burst when
 	// HasCACH is set.
 	CACH layer2.CACH
-	// Channel is the TDMA channel, 1 or 2, or 0 when unknown. It comes
-	// from the TC bit of the CACH, from a direct mode TDMA SYNC pattern,
-	// or from the channel of the previous burst.
-	Channel int
+	// Slot is the TDMA channel, or enums.SlotUnknown. It comes from the TC
+	// bit of the CACH, from a direct mode TDMA SYNC pattern, or from the
+	// channel of the previous burst.
+	Slot enums.Slot
 }
 
 // Config configures a Framer.
 type Config struct {
-	// Threshold is the largest SYNC distance accepted. 0 accepts only an
-	// exact SYNC, and a negative value means layer2.DefaultSyncThreshold.
+	// Threshold is the largest SYNC distance accepted. 0 means
+	// layer2.DefaultSyncThreshold, and a negative value accepts only an
+	// exact SYNC, as layer2.DecodeOptions.SyncThreshold does.
 	Threshold int
 	// Period is the number of bits from one burst to the next while
-	// locked. 0 means OutboundPeriod, a Period under layer2.BurstBits
-	// means layer2.BurstBits, and at most MaxPeriod. Use SlotPeriod for the bursts of a single
-	// TDMA channel, such as one inbound or direct mode channel.
+	// locked, from layer2.BurstBits to MaxPeriod. 0 means OutboundPeriod.
+	// Use SlotPeriod for the bursts of a single TDMA channel, such as one
+	// inbound or direct mode channel.
 	Period int
 	// CACH decodes the 24 bits before each burst as a CACH, for a BS
 	// outbound stream.
@@ -154,11 +158,12 @@ type Framer struct {
 	next    int
 	misses  int
 	search  int
-	channel int
+	channel enums.Slot
 }
 
 // New returns a Framer for cfg. A nil cfg means the zero Config. It
-// returns ErrPeriod for a Period over MaxPeriod. It allocates the stream
+// returns a *dmrgo.ConfigError for a Period that is not 0 and not from
+// layer2.BurstBits to MaxPeriod. It allocates the stream
 // buffer, which holds at most a CACH and a burst between writes, with room
 // for one more Period of bits.
 func New(c *Config) (*Framer, error) {
@@ -166,17 +171,17 @@ func New(c *Config) (*Framer, error) {
 	if c != nil {
 		cfg = *c
 	}
-	if cfg.Period > MaxPeriod {
-		return nil, ErrPeriod
-	}
-	if cfg.Threshold < 0 {
-		cfg.Threshold = layer2.DefaultSyncThreshold
+	switch {
+	case cfg.Period == 0:
+		cfg.Period = OutboundPeriod
+	case cfg.Period < layer2.BurstBits || cfg.Period > MaxPeriod:
+		return nil, errPeriod
 	}
 	switch {
-	case cfg.Period <= 0:
-		cfg.Period = OutboundPeriod
-	case cfg.Period < layer2.BurstBits:
-		cfg.Period = layer2.BurstBits
+	case cfg.Threshold == 0:
+		cfg.Threshold = layer2.DefaultSyncThreshold
+	case cfg.Threshold < 0:
+		cfg.Threshold = 0
 	}
 	if cfg.MaxMisses <= 0 {
 		cfg.MaxMisses = DefaultMaxMisses
@@ -245,7 +250,7 @@ func (f *Framer) appendPiece(dst []Burst, stream []byte, from, k int) []Burst {
 				f.search = max(f.search, n-SyncBits+1)
 				break
 			}
-			f.locked, f.next, f.misses, f.channel = true, m.Offset-SyncOffset, 0, 0
+			f.locked, f.next, f.misses, f.channel = true, m.Offset-SyncOffset, 0, enums.SlotUnknown
 		}
 		if f.next+layer2.BurstBits > n {
 			break
@@ -267,17 +272,14 @@ func (f *Framer) cut() Burst {
 	} else {
 		f.misses = 0
 	}
-	switch {
-	case f.channel == 0:
-	case f.cfg.Period%SlotPeriod == 0:
-	default:
-		f.channel = 3 - f.channel
+	if f.cfg.Period%SlotPeriod != 0 {
+		f.channel = f.channel.Other()
 	}
 	switch b.Sync {
 	case enums.SyncTDMA1Voice, enums.SyncTDMA1Data:
-		f.channel = 1
+		f.channel = enums.Slot1
 	case enums.SyncTDMA2Voice, enums.SyncTDMA2Data:
-		f.channel = 2
+		f.channel = enums.Slot2
 	case enums.SyncBSSourcedVoice, enums.SyncBSSourcedData, enums.SyncMSSourcedVoice, enums.SyncMSSourcedData,
 		enums.SyncMSSourcedRC, enums.SyncReserved, enums.SyncNone:
 	}
@@ -286,13 +288,13 @@ func (f *Framer) cut() Burst {
 		ibits.Copy(c[:], 0, f.buf, start-layer2.CACHBits, layer2.CACHBits)
 		b.CACH, b.HasCACH = layer2.DecodeCACHField(c), true
 		if !b.CACH.TACT.FEC.Uncorrectable {
-			f.channel = 1
+			f.channel = enums.Slot1
 			if b.CACH.TACT.TDMAChannel {
-				f.channel = 2
+				f.channel = enums.Slot2
 			}
 		}
 	}
-	b.Channel = f.channel
+	b.Slot = f.channel
 	f.next += f.cfg.Period
 	if f.misses > f.cfg.MaxMisses {
 		f.locked = false

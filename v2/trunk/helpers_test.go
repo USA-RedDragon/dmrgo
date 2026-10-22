@@ -124,14 +124,14 @@ func readCapture(t testing.TB, path string) []capture {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fr, err := framer.New(&framer.Config{CACH: true, Threshold: -1})
+	fr, err := framer.New(&framer.Config{CACH: true})
 	if err != nil {
 		t.Fatal(err)
 	}
 	bursts := fr.Write(stream, len(stream)*8)
 	caps := make([]capture, 0, len(bursts))
 	for _, b := range bursts {
-		c := capture{at: time.Duration(b.Offset) * time.Second / 9600, raw: b.Data, hint: layer2.Hint{Slot: enums.Slot(b.Channel)}}
+		c := capture{at: time.Duration(b.Offset) * time.Second / 9600, raw: b.Data, hint: layer2.Hint{Slot: b.Slot}}
 		if b.HasCACH {
 			var cc [3]byte
 			bits.Copy(cc[:], 0, stream, int(b.Offset)-layer2.CACHBits, layer2.CACHBits)

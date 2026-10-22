@@ -1213,7 +1213,7 @@ func out_layer2_framer_Burst(d *C.dmrgo_framer_burst_t, s *g_layer2_framer.Burst
 	d.distance = C.int64_t(s.Distance)
 	d.has_cach = C.bool(s.HasCACH)
 	out_layer2_CACH(&d.cach, &s.CACH, oc)
-	d.channel = C.int64_t(s.Channel)
+	d.slot = C.dmrgo_enums_slot_t(s.Slot)
 }
 
 func in_layer2_framer_Config(s *C.dmrgo_framer_config_t) (d g_layer2_framer.Config) {
@@ -5256,7 +5256,7 @@ func in_layer2_framer_Burst(s *C.dmrgo_framer_burst_t) (d g_layer2_framer.Burst)
 	d.Distance = int(s.distance)
 	d.HasCACH = bool(s.has_cach)
 	d.CACH = in_layer2_CACH(&s.cach)
-	d.Channel = int(s.channel)
+	d.Slot = g_enums.Slot(s.slot)
 	return
 }
 
@@ -48140,188 +48140,186 @@ func errCode1(e error) C.int {
 		return -129
 	case g_layer2.ErrVoiceTerminated:
 		return -130
-	case g_layer2_framer.ErrPeriod:
-		return -131
 	case g_layer2_packet.ErrBlocksMissing:
-		return -132
+		return -131
 	case g_layer2_packet.ErrFormat:
-		return -133
+		return -132
 	case g_layer2_packet.ErrHeaderCRC:
-		return -134
+		return -133
 	case g_layer2_packet.ErrMessageCRC:
-		return -135
+		return -134
 	case g_layer2_packet.ErrNoFirstTry:
-		return -136
+		return -135
 	case g_layer2_packet.ErrNoHeader:
-		return -137
+		return -136
 	case g_layer2_packet.ErrNoRetryBlocks:
-		return -138
+		return -137
 	case g_layer2_packet.ErrRate:
-		return -139
+		return -138
 	case g_layer2_packet.ErrRateChange:
-		return -140
+		return -139
 	case g_layer2_packet.ErrResponseData:
-		return -141
+		return -140
 	case g_layer2_packet.ErrTooLong:
-		return -142
+		return -141
 	case g_layer2_packet.ErrUnexpectedRetry:
-		return -143
+		return -142
 	case g_layer2_pdu.ErrCapacityPlusIncomplete:
-		return -144
+		return -143
 	case g_layer2_pdu.ErrCapacityPlusSequence:
-		return -145
+		return -144
 	case g_layer2_pdu.ErrNoAddresses:
-		return -146
+		return -145
 	case g_layer2_pdu.ErrNoFullLCMask:
-		return -147
+		return -146
 	case g_layer2_pdu.ErrNoGroupFlag:
-		return -148
+		return -147
 	case g_layer2_pdu.ErrNoServiceOptions:
-		return -149
+		return -148
 	case g_layer2_pdu.ErrTalkerAliasIncomplete:
-		return -150
+		return -149
 	case g_layer2_pdu.ErrTalkerAliasInvalidUTF8:
-		return -151
+		return -150
 	case g_layer2_pdu.ErrTalkerAliasLength:
-		return -152
+		return -151
 	case g_layer2_pdu.ErrWrongOpcode:
-		return -153
+		return -152
 	case g_location.ErrNoFix:
-		return -154
+		return -153
 	case g_mototrbo_ars.ErrLength:
-		return -155
+		return -154
 	case g_mototrbo_ars.ErrShort:
-		return -156
+		return -155
 	case g_mototrbo_lrrp.ErrLength:
-		return -157
+		return -156
 	case g_mototrbo_lrrp.ErrShort:
-		return -158
+		return -157
 	case g_mototrbo_lrrp.ErrToken:
-		return -159
+		return -158
 	case g_mototrbo_lrrp.ErrVarint:
-		return -160
+		return -159
 	case g_mototrbo_tms.ErrLength:
-		return -161
+		return -160
 	case g_mototrbo_tms.ErrShort:
-		return -162
+		return -161
 	case g_nmea.ErrChecksum:
-		return -163
+		return -162
 	case g_nmea.ErrField:
-		return -164
+		return -163
 	case g_nmea.ErrSentence:
-		return -165
+		return -164
 	case g_shortdata.ErrCharacter:
-		return -166
+		return -165
 	case g_shortdata.ErrFormat:
-		return -167
+		return -166
 	case g_shortdata.ErrLength:
-		return -168
+		return -167
 	case g_shortdata.ErrShort:
-		return -169
+		return -168
 	case g_sms.ErrFormat:
-		return -170
+		return -169
 	case g_sms.ErrLength:
-		return -171
+		return -170
 	case g_sms.ErrNil:
-		return -172
+		return -171
 	case g_sms.ErrNotText:
-		return -173
+		return -172
 	case g_sms.ErrShort:
-		return -174
+		return -173
 	case g_sms.ErrSignature:
-		return -175
+		return -174
 	case g_transport_dmrd.ErrCommand:
-		return -176
+		return -175
 	case g_transport_dmrd.ErrLength:
-		return -177
+		return -176
 	case g_transport_dmrd.ErrShort:
-		return -178
+		return -177
 	case g_transport_dmrd.ErrSignature:
-		return -179
+		return -178
 	case g_transport_dmrd.ErrText:
-		return -180
+		return -179
 	case g_transport_hytera.ErrCode:
-		return -181
+		return -180
 	case g_transport_hytera.ErrLength:
-		return -182
+		return -181
 	case g_transport_hytera.ErrShort:
-		return -183
+		return -182
 	case g_transport_hytera.ErrSignature:
-		return -184
+		return -183
 	case g_transport_ipsc.ErrCommand:
-		return -185
+		return -184
 	case g_transport_ipsc.ErrLength:
-		return -186
+		return -185
 	case g_transport_ipsc.ErrShort:
-		return -187
+		return -186
 	case g_transport_mmdvm.ErrCommand:
-		return -188
+		return -187
 	case g_transport_mmdvm.ErrLength:
-		return -189
+		return -188
 	case g_transport_mmdvm.ErrShort:
-		return -190
+		return -189
 	case g_trunk.ErrBusy:
-		return -191
+		return -190
 	case g_trunk.ErrChannelNumber:
-		return -192
+		return -191
 	case g_trunk.ErrNoCall:
-		return -195
-	case g_trunk.ErrNotOnControl:
-		return -193
-	case g_trunk.ErrNotRegistered:
 		return -194
+	case g_trunk.ErrNotOnControl:
+		return -192
+	case g_trunk.ErrNotRegistered:
+		return -193
 	case g_trunk.ErrPlanFull:
-		return -196
+		return -195
 	case g_trunk.ErrStunned:
-		return -197
+		return -196
 	case g_trunk.ErrUDTCharacter:
-		return -198
+		return -197
 	case g_trunk.ErrUDTFormat:
-		return -199
+		return -198
 	case g_trunk.ErrUDTLength:
-		return -200
+		return -199
 	case g_vocoder_codec2.ErrClosed:
-		return -201
+		return -200
 	case g_vocoder_codec2.ErrFrameLength:
-		return -202
+		return -201
 	case g_vocoder_codec2.ErrUnavailable:
-		return -203
+		return -202
 	case g_vocoder_codec2.ErrUnsupportedMode:
-		return -204
+		return -203
 	case g_vocoder_dvsi.ErrBits:
-		return -205
+		return -204
 	case g_vocoder_dvsi.ErrChannel:
-		return -206
+		return -205
 	case g_vocoder_dvsi.ErrClosed:
-		return -207
+		return -206
 	case g_vocoder_dvsi.ErrField:
-		return -208
+		return -207
 	case g_vocoder_dvsi.ErrIncomplete:
-		return -209
+		return -208
 	case g_vocoder_dvsi.ErrLength:
-		return -210
+		return -209
 	case g_vocoder_dvsi.ErrParity:
-		return -211
+		return -210
 	case g_vocoder_dvsi.ErrPort:
-		return -212
+		return -211
 	case g_vocoder_dvsi.ErrSamples:
-		return -213
+		return -212
 	case g_vocoder_dvsi.ErrStart:
-		return -214
+		return -213
 	case g_vocoder_dvsi.ErrStatus:
-		return -215
+		return -214
 	case g_vocoder_dvsi.ErrTimeout:
-		return -216
+		return -215
 	case g_vocoder_dvsi.ErrType:
-		return -217
+		return -216
 	case g_voice.ErrBusy:
-		return -218
+		return -217
 	case g_voice.ErrNotActive:
-		return -219
+		return -218
 	case g_voice.ErrQueueFull:
-		return -220
+		return -219
 	case g_voice.ErrTimedOut:
-		return -221
+		return -220
 	}
 	switch e.(type) {
 	case *g_dmrgo.ConfigError:
@@ -48443,186 +48441,184 @@ func codeErr(code C.int) error {
 	case -130:
 		return g_layer2.ErrVoiceTerminated
 	case -131:
-		return g_layer2_framer.ErrPeriod
-	case -132:
 		return g_layer2_packet.ErrBlocksMissing
-	case -133:
+	case -132:
 		return g_layer2_packet.ErrFormat
-	case -134:
+	case -133:
 		return g_layer2_packet.ErrHeaderCRC
-	case -135:
+	case -134:
 		return g_layer2_packet.ErrMessageCRC
-	case -136:
+	case -135:
 		return g_layer2_packet.ErrNoFirstTry
-	case -137:
+	case -136:
 		return g_layer2_packet.ErrNoHeader
-	case -138:
+	case -137:
 		return g_layer2_packet.ErrNoRetryBlocks
-	case -139:
+	case -138:
 		return g_layer2_packet.ErrRate
-	case -140:
+	case -139:
 		return g_layer2_packet.ErrRateChange
-	case -141:
+	case -140:
 		return g_layer2_packet.ErrResponseData
-	case -142:
+	case -141:
 		return g_layer2_packet.ErrTooLong
-	case -143:
+	case -142:
 		return g_layer2_packet.ErrUnexpectedRetry
-	case -144:
+	case -143:
 		return g_layer2_pdu.ErrCapacityPlusIncomplete
-	case -145:
+	case -144:
 		return g_layer2_pdu.ErrCapacityPlusSequence
-	case -146:
+	case -145:
 		return g_layer2_pdu.ErrNoAddresses
-	case -147:
+	case -146:
 		return g_layer2_pdu.ErrNoFullLCMask
-	case -148:
+	case -147:
 		return g_layer2_pdu.ErrNoGroupFlag
-	case -149:
+	case -148:
 		return g_layer2_pdu.ErrNoServiceOptions
-	case -150:
+	case -149:
 		return g_layer2_pdu.ErrTalkerAliasIncomplete
-	case -151:
+	case -150:
 		return g_layer2_pdu.ErrTalkerAliasInvalidUTF8
-	case -152:
+	case -151:
 		return g_layer2_pdu.ErrTalkerAliasLength
-	case -153:
+	case -152:
 		return g_layer2_pdu.ErrWrongOpcode
-	case -154:
+	case -153:
 		return g_location.ErrNoFix
-	case -155:
+	case -154:
 		return g_mototrbo_ars.ErrLength
-	case -156:
+	case -155:
 		return g_mototrbo_ars.ErrShort
-	case -157:
+	case -156:
 		return g_mototrbo_lrrp.ErrLength
-	case -158:
+	case -157:
 		return g_mototrbo_lrrp.ErrShort
-	case -159:
+	case -158:
 		return g_mototrbo_lrrp.ErrToken
-	case -160:
+	case -159:
 		return g_mototrbo_lrrp.ErrVarint
-	case -161:
+	case -160:
 		return g_mototrbo_tms.ErrLength
-	case -162:
+	case -161:
 		return g_mototrbo_tms.ErrShort
-	case -163:
+	case -162:
 		return g_nmea.ErrChecksum
-	case -164:
+	case -163:
 		return g_nmea.ErrField
-	case -165:
+	case -164:
 		return g_nmea.ErrSentence
-	case -166:
+	case -165:
 		return g_shortdata.ErrCharacter
-	case -167:
+	case -166:
 		return g_shortdata.ErrFormat
-	case -168:
+	case -167:
 		return g_shortdata.ErrLength
-	case -169:
+	case -168:
 		return g_shortdata.ErrShort
-	case -170:
+	case -169:
 		return g_sms.ErrFormat
-	case -171:
+	case -170:
 		return g_sms.ErrLength
-	case -172:
+	case -171:
 		return g_sms.ErrNil
-	case -173:
+	case -172:
 		return g_sms.ErrNotText
-	case -174:
+	case -173:
 		return g_sms.ErrShort
-	case -175:
+	case -174:
 		return g_sms.ErrSignature
-	case -176:
+	case -175:
 		return g_transport_dmrd.ErrCommand
-	case -177:
+	case -176:
 		return g_transport_dmrd.ErrLength
-	case -178:
+	case -177:
 		return g_transport_dmrd.ErrShort
-	case -179:
+	case -178:
 		return g_transport_dmrd.ErrSignature
-	case -180:
+	case -179:
 		return g_transport_dmrd.ErrText
-	case -181:
+	case -180:
 		return g_transport_hytera.ErrCode
-	case -182:
+	case -181:
 		return g_transport_hytera.ErrLength
-	case -183:
+	case -182:
 		return g_transport_hytera.ErrShort
-	case -184:
+	case -183:
 		return g_transport_hytera.ErrSignature
-	case -185:
+	case -184:
 		return g_transport_ipsc.ErrCommand
-	case -186:
+	case -185:
 		return g_transport_ipsc.ErrLength
-	case -187:
+	case -186:
 		return g_transport_ipsc.ErrShort
-	case -188:
+	case -187:
 		return g_transport_mmdvm.ErrCommand
-	case -189:
+	case -188:
 		return g_transport_mmdvm.ErrLength
-	case -190:
+	case -189:
 		return g_transport_mmdvm.ErrShort
-	case -191:
+	case -190:
 		return g_trunk.ErrBusy
-	case -192:
+	case -191:
 		return g_trunk.ErrChannelNumber
-	case -195:
-		return g_trunk.ErrNoCall
-	case -193:
-		return g_trunk.ErrNotOnControl
 	case -194:
+		return g_trunk.ErrNoCall
+	case -192:
+		return g_trunk.ErrNotOnControl
+	case -193:
 		return g_trunk.ErrNotRegistered
-	case -196:
+	case -195:
 		return g_trunk.ErrPlanFull
-	case -197:
+	case -196:
 		return g_trunk.ErrStunned
-	case -198:
+	case -197:
 		return g_trunk.ErrUDTCharacter
-	case -199:
+	case -198:
 		return g_trunk.ErrUDTFormat
-	case -200:
+	case -199:
 		return g_trunk.ErrUDTLength
-	case -201:
+	case -200:
 		return g_vocoder_codec2.ErrClosed
-	case -202:
+	case -201:
 		return g_vocoder_codec2.ErrFrameLength
-	case -203:
+	case -202:
 		return g_vocoder_codec2.ErrUnavailable
-	case -204:
+	case -203:
 		return g_vocoder_codec2.ErrUnsupportedMode
-	case -205:
+	case -204:
 		return g_vocoder_dvsi.ErrBits
-	case -206:
+	case -205:
 		return g_vocoder_dvsi.ErrChannel
-	case -207:
+	case -206:
 		return g_vocoder_dvsi.ErrClosed
-	case -208:
+	case -207:
 		return g_vocoder_dvsi.ErrField
-	case -209:
+	case -208:
 		return g_vocoder_dvsi.ErrIncomplete
-	case -210:
+	case -209:
 		return g_vocoder_dvsi.ErrLength
-	case -211:
+	case -210:
 		return g_vocoder_dvsi.ErrParity
-	case -212:
+	case -211:
 		return g_vocoder_dvsi.ErrPort
-	case -213:
+	case -212:
 		return g_vocoder_dvsi.ErrSamples
-	case -214:
+	case -213:
 		return g_vocoder_dvsi.ErrStart
-	case -215:
+	case -214:
 		return g_vocoder_dvsi.ErrStatus
-	case -216:
+	case -215:
 		return g_vocoder_dvsi.ErrTimeout
-	case -217:
+	case -216:
 		return g_vocoder_dvsi.ErrType
-	case -218:
+	case -217:
 		return g_voice.ErrBusy
-	case -219:
+	case -218:
 		return g_voice.ErrNotActive
-	case -220:
+	case -219:
 		return g_voice.ErrQueueFull
-	case -221:
+	case -220:
 		return g_voice.ErrTimedOut
 	}
 	return codeError(code)
