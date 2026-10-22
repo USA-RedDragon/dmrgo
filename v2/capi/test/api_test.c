@@ -1138,6 +1138,35 @@ static void test_dvsi(void) {
 	CHECK(dmrgo_dvsi_port_free(port) == DMRGO_ERR_HANDLE);
 }
 
+static int part_read(void *user, uint8_t *p, size_t n, int64_t *out) {
+	(void)user;
+	memset(p, 0xAA, n < 3 ? n : 3);
+	*out = 3;
+	return DMRGO_ERR_DVSI_CLOSED;
+}
+
+static int part_write(void *user, const uint8_t *p, size_t n, int64_t *out) {
+	(void)user;
+	(void)p;
+	*out = (int64_t)n + 1;
+	return DMRGO_OK;
+}
+
+static void test_port_counts(void) {
+	dmrgo_dvsi_port_vtable_t vt = {sizeof vt, 0, part_read, part_write};
+	dmrgo_dvsi_port_t *port = NULL;
+	OK(dmrgo_dvsi_port_from_vtable(&vt, &port));
+	uint8_t b[8] = {0};
+	int64_t n = 0;
+	CHECK(dmrgo_dvsi_port_read(port, b, sizeof b, &n) == DMRGO_ERR_DVSI_CLOSED);
+	CHECK(n == 3 && b[2] == 0xAA);
+	n = -1;
+	CHECK(dmrgo_dvsi_port_write(port, b, sizeof b, &n) == DMRGO_ERR_BOUND);
+	CHECK(n == 0);
+	OK(dmrgo_dvsi_port_free(port));
+	printf("port counts: a read or write count stands with its error, and a count past p_len is DMRGO_ERR_BOUND\n");
+}
+
 int main(int argc, char **argv) {
 	if (argc != 2) {
 		fprintf(stderr, "usage: %s parrot_kerchunk.bin\n", argv[0]);
@@ -1172,6 +1201,7 @@ int main(int argc, char **argv) {
 	test_positive_status();
 	test_failed_results();
 	test_dvsi();
+	test_port_counts();
 	if (failures) {
 		fprintf(stderr, "%d checks failed\n", failures);
 		return 1;

@@ -5276,9 +5276,9 @@ struct dmrgo_dvsi_port_vtable_t {
 	/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. A function that returns an error gives zero results. */
 	size_t size;
 	DMRGO_USER_T user;
-	/* Read reads bytes from the chip into p. */
+	/* Read reads bytes from the chip into p. *out is the count of bytes that the function read or wrote, from 0 to p_len, and the library takes it also when the function returns an error; a count out of that range gives DMRGO_ERR_BOUND. */
 	int (*read)(DMRGO_USER_T user, uint8_t *p, size_t p_len, int64_t *out);
-	/* Write writes the bytes of p to the chip. */
+	/* Write writes the bytes of p to the chip. *out is the count of bytes that the function read or wrote, from 0 to p_len, and the library takes it also when the function returns an error; a count out of that range gives DMRGO_ERR_BOUND. */
 	int (*write)(DMRGO_USER_T user, const uint8_t *p, size_t p_len, int64_t *out);
 };
 

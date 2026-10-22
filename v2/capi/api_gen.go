@@ -4487,9 +4487,11 @@ func (c *vt_vocoder_dvsi_Port) Read(q0 []byte) (o0 int, o1 error) {
 	}
 	if code != C.DMRGO_OK {
 		o1 = codeErr(code)
-		return
 	}
 	o0 = int(c.m0r0)
+	if o0 < 0 || o0 > len(q0) {
+		o0, o1 = 0, codeErr(C.DMRGO_ERR_BOUND)
+	}
 	return
 }
 
@@ -4504,9 +4506,11 @@ func (c *vt_vocoder_dvsi_Port) Write(q0 []byte) (o0 int, o1 error) {
 	}
 	if code != C.DMRGO_OK {
 		o1 = codeErr(code)
-		return
 	}
 	o0 = int(c.m1r0)
+	if o0 < 0 || o0 > len(q0) {
+		o0, o1 = 0, codeErr(C.DMRGO_ERR_BOUND)
+	}
 	return
 }
 
