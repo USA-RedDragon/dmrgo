@@ -8365,7 +8365,7 @@ int dmrgo_layer2_end_hint_string(dmrgo_layer2_end_hint_t self, char *out, size_t
 int dmrgo_layer2_kind_string(dmrgo_layer2_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer2.MMDVMHostAccepts. MMDVMHostAccepts reports whether MMDVMHost (g4klx/MMDVMHost 0acb758) uses a data burst of dataType from the network, given the 96-bit BPTC(196,96) payload that RawBurst.BPTCPayload returns. */
 int dmrgo_layer2_mmdvm_host_accepts(dmrgo_enums_data_type_t data_type, const uint8_t payload[12], bool *out);
-/* Go: layer2.MMDVMHostSeal. MMDVMHostSeal rewrites the parity or CRC of the BPTC(196,96) payload p of a burst of dataType, after the caller edited p, so that MMDVMHostAccepts(dataType, *p) holds. p may be NULL. */
+/* Go: layer2.MMDVMHostSeal. MMDVMHostSeal rewrites the parity or CRC of the BPTC(196,96) payload p of a burst of dataType, after the caller edited p, so that MMDVMHostAccepts(dataType, *p) holds. For a data type that MMDVMHost discards it returns an error that wraps DMRGO_ERR_LAYER2_DATA_TYPE, and for a nil p DMRGO_ERR_NIL_ARGUMENT; both leave p as it is. p may be NULL. */
 int dmrgo_layer2_mmdvm_host_seal(dmrgo_enums_data_type_t data_type, uint8_t p[12]);
 /* Go: layer2.NewBurst. NewBurst returns a new Burst. */
 int dmrgo_layer2_new_burst(dmrgo_layer2_burst_t **out);
