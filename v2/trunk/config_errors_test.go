@@ -10,6 +10,7 @@ import (
 
 func TestNewTSCC_ConfigErrors(t *testing.T) {
 	t.Parallel()
+	var ce *dmrgo.ConfigError
 	for name, edit := range map[string]func(c *trunk.TSCCConfig){
 		"Channel CHNULL":       func(c *trunk.TSCCConfig) { c.Channel = trunk.ChannelNull },
 		"Channel over 12 bits": func(c *trunk.TSCCConfig) { c.Channel = 5000 },
@@ -22,13 +23,22 @@ func TestNewTSCC_ConfigErrors(t *testing.T) {
 	} {
 		cfg := tsccConfig()
 		edit(cfg)
-		var ce *dmrgo.ConfigError
 		if _, err := trunk.NewTSCC(cfg); !errors.As(err, &ce) {
 			t.Errorf("%s: NewTSCC = %v, want a *dmrgo.ConfigError", name, err)
 		}
 	}
 	if _, err := trunk.NewTSCC(tsccConfig()); err != nil {
 		t.Errorf("NewTSCC = %v", err)
+	}
+	zero := tsccConfig()
+	zero.PayloadLen = 0
+	for _, c := range []*trunk.TSCCConfig{nil, zero} {
+		if _, err := trunk.NewTSCC(c); !errors.As(err, &ce) || ce.Field != "PayloadLen" {
+			t.Errorf("NewTSCC(%v) = %v, want the PayloadLen error", c == nil, err)
+		}
+	}
+	if _, err := trunk.NewMS(nil); !errors.As(err, &ce) || ce.Field != "Address" {
+		t.Errorf("NewMS(nil) = %v, want the Address error", err)
 	}
 }
 
