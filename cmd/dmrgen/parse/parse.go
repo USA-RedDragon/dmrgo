@@ -567,27 +567,8 @@ func parseDirective(pdu *PDUStruct, text string, baseTypes map[string]string) er
 			return errors.New("duplicate dmr:fec directive")
 		}
 		pdu.FEC = &FECDirective{Codec: arg}
-	case "dmr:crc":
-		if _, ok := CRCWidths[arg]; !ok {
-			return fmt.Errorf("unknown CRC algorithm %q", arg)
-		}
-		if pdu.CRC == nil {
-			pdu.CRC = &CRCDirective{}
-		}
-		if pdu.CRC.Algorithm != "" {
-			return errors.New("duplicate dmr:crc directive")
-		}
-		pdu.CRC.Algorithm = arg
-	case "dmr:crc_mask":
-		mask, err := parseHex(arg, 16)
-		if err != nil || mask > math.MaxUint16 {
-			return fmt.Errorf("invalid dmr:crc_mask %q: %w", arg, err)
-		}
-		if pdu.CRC == nil {
-			pdu.CRC = &CRCDirective{}
-		}
-		pdu.CRC.Mask = uint16(mask)
-		pdu.CRC.HasMask = true
+	case "dmr:crc", "dmr:crc_mask":
+		return parseCRCDirective(pdu, name, arg)
 	case "dmr:input_size":
 		size, err := strconv.Atoi(arg)
 		if err != nil || size <= 0 {
@@ -735,6 +716,29 @@ func parseGetter(arg string, baseTypes map[string]string) (Field, error) {
 	f.Doc = strings.Join(parts[3:], " ")
 	f.Getter = true
 	return f, nil
+}
+
+func parseCRCDirective(pdu *PDUStruct, name, arg string) error {
+	if pdu.CRC == nil {
+		pdu.CRC = &CRCDirective{}
+	}
+	if name == "dmr:crc_mask" {
+		mask, err := parseHex(arg, 16)
+		if err != nil || mask > math.MaxUint16 {
+			return fmt.Errorf("invalid dmr:crc_mask %q: %w", arg, err)
+		}
+		pdu.CRC.Mask = uint16(mask)
+		pdu.CRC.HasMask = true
+		return nil
+	}
+	if _, ok := CRCWidths[arg]; !ok {
+		return fmt.Errorf("unknown CRC algorithm %q", arg)
+	}
+	if pdu.CRC.Algorithm != "" {
+		return errors.New("duplicate dmr:crc directive")
+	}
+	pdu.CRC.Algorithm = arg
+	return nil
 }
 
 func parseConst(arg string) (ConstDirective, error) {
