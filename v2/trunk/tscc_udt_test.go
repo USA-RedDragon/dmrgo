@@ -72,7 +72,7 @@ func TestTSCC_ShortData(t *testing.T) {
 	if s, err := got.Text(nil); err != nil || string(s) != "trunked short data" || b.ms.UDT().Header.LLIDSource != 3120001 {
 		t.Errorf("B got %q %v", s, err)
 	}
-	if e, ok := s.event(trunk.TSCCDelivered); !ok || e.Address != 3120001 || e.Call.Target != 3120002 {
+	if e, ok := s.event(trunk.TSCCDelivered); !ok || e.Address != 3120001 || e.Grant.Target != 3120002 {
 		t.Errorf("TSCCDelivered %+v %v", e, ok)
 	}
 
@@ -100,7 +100,7 @@ func TestTSCC_ShortData(t *testing.T) {
 	if err := s.tscc.SendShortData(s.now, false, 3120003, &text); !errors.Is(err, trunk.ErrBusy) {
 		t.Errorf("second download %v", err)
 	}
-	if e := waitEvent(s, trunk.TSCCDelivered); e.Address != constants.GatewaySDMI || e.Call.Target != 3120003 {
+	if e := waitEvent(s, trunk.TSCCDelivered); e.Address != constants.GatewaySDMI || e.Grant.Target != 3120003 {
 		t.Errorf("gateway delivered %+v", e)
 	}
 	if _, ok := has(c.log, trunk.OutputUDT); !ok {
@@ -128,7 +128,7 @@ func TestTSCC_Polling(t *testing.T) {
 	if _, ok := has(b.log, trunk.OutputPolled); !ok {
 		t.Error("B saw no poll")
 	}
-	if e := waitEvent(s, trunk.TSCCDelivered); e.Address != 3120001 || e.Call.Target != 3120002 {
+	if e := waitEvent(s, trunk.TSCCDelivered); e.Address != 3120001 || e.Grant.Target != 3120002 {
 		t.Errorf("TSCCDelivered %+v", e)
 	}
 
@@ -276,8 +276,8 @@ func TestTSCC_Duplex(t *testing.T) {
 	gb, _ := has(b.log, trunk.OutputGrant)
 	_ = gb
 	start := waitEvent(s, trunk.TSCCCallStart)
-	if start.Call.Service != enums.ServiceKindDuplexVoice || ga.Grant.Service != enums.ServiceKindDuplexVoice {
-		t.Errorf("duplex grant %+v", start.Call)
+	if start.Grant.Service != enums.ServiceKindDuplexVoice || ga.Grant.Service != enums.ServiceKindDuplexVoice {
+		t.Errorf("duplex grant %+v", start.Grant)
 	}
 	s.mout = a.ms.EndCall(s.now, s.mout[:0])
 	s.msOutputs(a, s.mout)

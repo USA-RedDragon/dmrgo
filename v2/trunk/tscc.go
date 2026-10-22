@@ -124,9 +124,10 @@ const (
 	TSCCRegistered
 	// TSCCDeregistered reports that the MS Address de-registered.
 	TSCCDeregistered
-	// TSCCCallStart reports the grant of Call.
+	// TSCCCallStart reports the grant in Grant.
 	TSCCCallStart
-	// TSCCCallEnd reports that the TSCC cleared Call, with Reason.
+	// TSCCCallEnd reports that the TSCC cleared the call of Grant, with
+	// Reason.
 	TSCCCallEnd
 	// TSCCRefused reports a C_NACKD with Ack to the MS Address.
 	TSCCRefused
@@ -137,7 +138,7 @@ const (
 	// without one: a wrong PSN gets Reg_Denied for a right key.
 	TSCCAuthChallenge
 	// TSCCDelivered reports that a UDT short data, polling or DGNA
-	// transfer from Address to Call.Target completed, with the final
+	// transfer from Address to Grant.Target completed, with the final
 	// acknowledgement in Ack.
 	TSCCDelivered
 	// TSCCUDT reports the UDT from the MS Address that answers
@@ -150,7 +151,7 @@ const (
 	// diversion. Diverted returns it.
 	TSCCDiversion
 	// TSCCStatus reports a status call with Status between the parties in
-	// Call, and the answer of the called MS in Ack. Reason is
+	// Grant, and the answer of the called MS in Ack. Reason is
 	// ReasonTimeout when the called MS did not answer.
 	TSCCStatus
 	// TSCCStun reports the end of Stun or Kill for the MS Address: Stun
@@ -158,9 +159,9 @@ const (
 	// ReasonTimeout when no answer came, and ReasonAuthentication when the
 	// authentication failed.
 	TSCCStun
-	// TSCCInterrupt reports the end of a transmit interrupt of Call for the
-	// MS Address, or for the TSCC when Address is 0. Reason is
-	// ReasonTimeout when the transmission did not stop.
+	// TSCCInterrupt reports the end of a transmit interrupt of the call of
+	// Grant for the MS Address, or for the TSCC when Address is 0. Reason
+	// is ReasonTimeout when the transmission did not stop.
 	TSCCInterrupt
 	// TSCCIPAdvice reports the IP connection advice of the MS Address, in
 	// IP, IPv6 and Remove.
@@ -228,9 +229,9 @@ type TSCCOutput struct {
 	// Ack is the reason of TSCCRefused and TSCCDelivered, and the answer of
 	// the MS for TSCCStatus and TSCCStun.
 	Ack enums.AckReason
-	// Call is the call of TSCCCallStart, TSCCCallEnd and TSCCInterrupt,
+	// Grant is the call of TSCCCallStart, TSCCCallEnd and TSCCInterrupt,
 	// and the parties of TSCCStatus.
-	Call Grant
+	Grant Grant
 	// Reason tells why for TSCCCallEnd, TSCCStatus, TSCCStun and
 	// TSCCInterrupt.
 	Reason Reason
@@ -643,7 +644,7 @@ func (t *TSCC) grant(now time.Duration, group bool, target, source uint32, out [
 		for range t.cfg.GrantRepeats {
 			t.sendGrant(i)
 		}
-		return append(out, TSCCOutput{Kind: TSCCCallStart, Call: g})
+		return append(out, TSCCOutput{Kind: TSCCCallStart, Grant: g})
 	}
 	return t.refuse(source, enums.AckReasonSysBusyRefused, out)
 }
@@ -828,7 +829,7 @@ func (t *TSCC) carrier(c int, out []TSCCOutput) []TSCCOutput {
 		if cs.clears == 0 {
 			g, reason := cs.grant, cs.endReason
 			*cs = callSlot{}
-			out = append(out, TSCCOutput{Kind: TSCCCallEnd, Call: g, Reason: reason})
+			out = append(out, TSCCOutput{Kind: TSCCCallEnd, Grant: g, Reason: reason})
 		}
 		return t.emit(1+c, ch, p, enums.DataTypeCSBK, false, out)
 	case cs.active && cs.hasRelay:

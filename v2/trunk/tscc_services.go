@@ -414,7 +414,7 @@ func (t *TSCC) svcAnswer(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOutp
 		if st == StatusPoll {
 			st = Status(a.ResponseInfo)
 		}
-		return append(out, TSCCOutput{Kind: TSCCStatus, Call: Grant{Service: enums.ServiceKindStatusTransport, Target: src, Source: op.from}, Status: st, Ack: r}), true
+		return append(out, TSCCOutput{Kind: TSCCStatus, Grant: Grant{Service: enums.ServiceKindStatusTransport, Target: src, Source: op.from}, Status: st, Ack: r}), true
 	}
 	return out, false
 }
@@ -472,7 +472,7 @@ func (t *TSCC) statusRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSC
 		}
 		t.statusAhoy(o.Group, target, src, st, r.ServiceOptions)
 		t.ackFrom(src, enums.AckReasonMessageAccepted, 0, 0)
-		return append(out, TSCCOutput{Kind: TSCCStatus, Call: Grant{Service: enums.ServiceKindStatusTransport, Group: true, Target: target, Source: src}, Status: st, Ack: enums.AckReasonMessageAccepted})
+		return append(out, TSCCOutput{Kind: TSCCStatus, Grant: Grant{Service: enums.ServiceKindStatusTransport, Group: true, Target: target, Source: src}, Status: st, Ack: enums.AckReasonMessageAccepted})
 	}
 	for i := range t.svc.status {
 		if t.svc.status[i].used && t.svc.status[i].caller == src {
@@ -684,7 +684,7 @@ func (t *TSCC) svcTimers(now time.Duration, out []TSCCOutput) []TSCCOutput {
 		if op.caller != 0 {
 			t.ackFrom(op.caller, enums.AckReasonMSAwayRefused, 0, op.called)
 		}
-		out = append(out, TSCCOutput{Kind: TSCCStatus, Call: Grant{Service: enums.ServiceKindStatusTransport, Target: op.called, Source: op.from}, Status: op.status, Reason: ReasonTimeout})
+		out = append(out, TSCCOutput{Kind: TSCCStatus, Grant: Grant{Service: enums.ServiceKindStatusTransport, Target: op.called, Source: op.from}, Status: op.status, Reason: ReasonTimeout})
 	}
 	for i := range s.supl {
 		if op := &s.supl[i]; op.used && now >= op.until && len(out)+2 <= limit {
@@ -715,7 +715,7 @@ func (t *TSCC) rcCheck(now time.Duration, i int, out []TSCCOutput) []TSCCOutput 
 	switch {
 	case ceased:
 		op.on = false
-		out = append(out, TSCCOutput{Kind: TSCCInterrupt, Address: op.by, Call: cs.grant})
+		out = append(out, TSCCOutput{Kind: TSCCInterrupt, Address: op.by, Grant: cs.grant})
 		if op.end {
 			return t.startClear(i, op.reason, out)
 		}
@@ -724,7 +724,7 @@ func (t *TSCC) rcCheck(now time.Duration, i int, out []TSCCOutput) []TSCCOutput 
 		}
 	case op.left == 0 && now >= op.next:
 		op.on = false
-		out = append(out, TSCCOutput{Kind: TSCCInterrupt, Address: op.by, Call: cs.grant, Reason: ReasonTimeout})
+		out = append(out, TSCCOutput{Kind: TSCCInterrupt, Address: op.by, Grant: cs.grant, Reason: ReasonTimeout})
 		if op.reason == ReasonCallTimer {
 			return t.startClear(i, ReasonCallTimer, out)
 		}

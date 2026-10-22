@@ -5084,8 +5084,8 @@ struct dmrgo_trunk_tscc_output_t {
 	uint32_t address;
 	/* Ack is the reason of TSCCRefused and TSCCDelivered, and the answer of the MS for TSCCStatus and TSCCStun. */
 	dmrgo_enums_ack_reason_t ack;
-	/* Call is the call of TSCCCallStart, TSCCCallEnd and TSCCInterrupt, and the parties of TSCCStatus. */
-	dmrgo_trunk_grant_t call;
+	/* Grant is the call of TSCCCallStart, TSCCCallEnd and TSCCInterrupt, and the parties of TSCCStatus. */
+	dmrgo_trunk_grant_t grant;
 	/* Reason tells why for TSCCCallEnd, TSCCStatus, TSCCStun and TSCCInterrupt. */
 	dmrgo_trunk_reason_t reason;
 	/* Challenge is the 24-bit challenge of TSCCAuthChallenge. */
@@ -7474,11 +7474,11 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_TSCC_AUTH_CHALLENGE ((dmrgo_trunk_tscc_output_kind_t)7)
 /* Go: trunk.TSCCBurst. TSCCBurst is an outbound burst with its CACH for Channel and Slot. */
 #define DMRGO_TRUNK_TSCC_BURST ((dmrgo_trunk_tscc_output_kind_t)1)
-/* Go: trunk.TSCCCallEnd. TSCCCallEnd reports that the TSCC cleared Call, with Reason. */
+/* Go: trunk.TSCCCallEnd. TSCCCallEnd reports that the TSCC cleared the call of Grant, with Reason. */
 #define DMRGO_TRUNK_TSCC_CALL_END ((dmrgo_trunk_tscc_output_kind_t)5)
-/* Go: trunk.TSCCCallStart. TSCCCallStart reports the grant of Call. */
+/* Go: trunk.TSCCCallStart. TSCCCallStart reports the grant in Grant. */
 #define DMRGO_TRUNK_TSCC_CALL_START ((dmrgo_trunk_tscc_output_kind_t)4)
-/* Go: trunk.TSCCDelivered. TSCCDelivered reports that a UDT short data, polling or DGNA transfer from Address to Call.Target completed, with the final acknowledgement in Ack. */
+/* Go: trunk.TSCCDelivered. TSCCDelivered reports that a UDT short data, polling or DGNA transfer from Address to Grant.Target completed, with the final acknowledgement in Ack. */
 #define DMRGO_TRUNK_TSCC_DELIVERED ((dmrgo_trunk_tscc_output_kind_t)8)
 /* Go: trunk.TSCCDeregistered. TSCCDeregistered reports that the MS Address de-registered. */
 #define DMRGO_TRUNK_TSCC_DEREGISTERED ((dmrgo_trunk_tscc_output_kind_t)3)
@@ -7486,13 +7486,13 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_TSCC_DIVERSION ((dmrgo_trunk_tscc_output_kind_t)11)
 /* Go: trunk.TSCCIPAdvice. TSCCIPAdvice reports the IP connection advice of the MS Address, in IP, IPv6 and Remove. */
 #define DMRGO_TRUNK_TSCC_IP_ADVICE ((dmrgo_trunk_tscc_output_kind_t)15)
-/* Go: trunk.TSCCInterrupt. TSCCInterrupt reports the end of a transmit interrupt of Call for the MS Address, or for the TSCC when Address is 0. */
+/* Go: trunk.TSCCInterrupt. TSCCInterrupt reports the end of a transmit interrupt of the call of Grant for the MS Address, or for the TSCC when Address is 0. */
 #define DMRGO_TRUNK_TSCC_INTERRUPT ((dmrgo_trunk_tscc_output_kind_t)14)
 /* Go: trunk.TSCCRefused. TSCCRefused reports a C_NACKD with Ack to the MS Address. */
 #define DMRGO_TRUNK_TSCC_REFUSED ((dmrgo_trunk_tscc_output_kind_t)6)
 /* Go: trunk.TSCCRegistered. TSCCRegistered reports that the MS Address registered. */
 #define DMRGO_TRUNK_TSCC_REGISTERED ((dmrgo_trunk_tscc_output_kind_t)2)
-/* Go: trunk.TSCCStatus. TSCCStatus reports a status call with Status between the parties in Call, and the answer of the called MS in Ack. */
+/* Go: trunk.TSCCStatus. TSCCStatus reports a status call with Status between the parties in Grant, and the answer of the called MS in Ack. */
 #define DMRGO_TRUNK_TSCC_STATUS ((dmrgo_trunk_tscc_output_kind_t)12)
 /* Go: trunk.TSCCStun. TSCCStun reports the end of Stun or Kill for the MS Address: Stun tells the action and Ack holds the final answer of the MS. */
 #define DMRGO_TRUNK_TSCC_STUN ((dmrgo_trunk_tscc_output_kind_t)13)
