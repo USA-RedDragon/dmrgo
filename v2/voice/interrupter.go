@@ -29,6 +29,9 @@ type InterrupterConfig struct {
 	// (ETSI TS 102 361-1 clause 6.4.2 and Table 9.19, ETSI TS 102 361-2
 	// clause 6.3.5)
 	ColorCode enums.ColorCode
+	// Slot is the TDMA slot of the machine, which it puts in the Hint of
+	// each burst it sends. SlotUnknown leaves it unknown.
+	Slot enums.Slot
 	// Wait is T_RCtimer, the wait for the Terminator with LC after each
 	// try. 0 means constants.TRCTimer (600 ms), and a negative value waits
 	// until the terminator or Cancel. (ETSI TS 102 361-2 clause A.1)
@@ -89,6 +92,7 @@ func (s InterrupterState) String() string {
 // clause 6.3.5)
 type Interrupter struct {
 	cc      enums.ColorCode
+	slot    enums.Slot
 	wait    time.Duration
 	retries int
 	repeats int
@@ -108,9 +112,9 @@ type Interrupter struct {
 
 // NewInterrupter returns an Interrupter for cfg. A nil cfg means the zero
 // InterrupterConfig. It returns a *dmrgo.ConfigError for a color code
-// above 15, Retries above MaxRetries, or Repeats out of range. It allocates
-// the Interrupter, and its
-// Burst unless cfg.Scratch is set. (ETSI TS 102 361-2 clause 6.3.5)
+// above 15, a Slot that is not an enums.Slot value, Retries above
+// MaxRetries, or Repeats out of range. It allocates the Interrupter, and
+// its Burst unless cfg.Scratch is set. (ETSI TS 102 361-2 clause 6.3.5)
 func NewInterrupter(cfg *InterrupterConfig) (*Interrupter, error) {
 	var conf InterrupterConfig
 	if cfg != nil {
@@ -120,12 +124,14 @@ func NewInterrupter(cfg *InterrupterConfig) (*Interrupter, error) {
 	switch {
 	case cfg.ColorCode > 15:
 		return nil, errColorCode
+	case cfg.Slot > enums.Slot2:
+		return nil, errSlot
 	case cfg.Retries > MaxRetries:
 		return nil, errRetries
 	case cfg.Repeats < 0 || cfg.Repeats > MaxRepeats:
 		return nil, errRepeats
 	}
-	i := &Interrupter{cc: cfg.ColorCode, wait: cfg.Wait, retries: cfg.Retries, repeats: max(cfg.Repeats, 1), b: cfg.Scratch}
+	i := &Interrupter{cc: cfg.ColorCode, slot: cfg.Slot, wait: cfg.Wait, retries: cfg.Retries, repeats: max(cfg.Repeats, 1), b: cfg.Scratch}
 	switch {
 	case i.retries == 0:
 		i.retries = 1
@@ -291,7 +297,7 @@ func (i *Interrupter) Tick(now time.Duration, dst []Output) []Output {
 	}
 	var o *Output
 	dst, o = appendOutput(dst, OutputBurst, i.due)
-	o.Burst, o.Hint = i.rc, layer2.Hint{Kind: layer2.KindReverseChannel}
+	o.Burst, o.Hint = i.rc, layer2.Hint{Slot: i.slot, Kind: layer2.KindReverseChannel}
 	i.sent++
 	if i.sent < i.repeats {
 		i.due += slotPeriod
