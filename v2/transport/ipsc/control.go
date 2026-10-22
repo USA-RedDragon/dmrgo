@@ -75,10 +75,11 @@ func DecodeControl(p []byte) (Control, error) {
 }
 
 // AppendBinary appends the packet c to dst, without the authentication
-// trailer. An OpPeerListReply appends only its header, with ListLen; use
-// AppendPeerListReply for the entries. It returns dst unchanged and an
-// error for an opcode that is not a peer control packet, and
-// dmrgo.ErrNilReceiver for a nil c. It allocates only to grow dst.
+// trailer. Control holds no peer entries, so an OpPeerListReply appends an
+// empty list, and with a ListLen other than 0 it returns dst unchanged and
+// an error: use AppendPeerListReply for the entries. It returns dst
+// unchanged and an error for an opcode that is not a peer control packet,
+// and dmrgo.ErrNilReceiver for a nil c. It allocates only to grow dst.
 func (c *Control) AppendBinary(dst []byte) ([]byte, error) {
 	if c == nil {
 		return dst, dmrgo.ErrNilReceiver
@@ -104,8 +105,10 @@ func (c Control) appendBinary(dst []byte) ([]byte, error) {
 		m := ctlModeFlags{Opcode: c.Opcode, ID: c.ID, Mode: c.Mode, Flags: c.Flags}
 		return m.AppendBinary(dst)
 	case OpPeerListReply:
-		return append(dst, byte(OpPeerListReply), byte(c.ID>>24&0xFF), byte(c.ID>>16&0xFF), byte(c.ID>>8&0xFF), byte(c.ID&0xFF),
-			byte(c.ListLen>>8), byte(c.ListLen&0xFF)), nil
+		if c.ListLen != 0 {
+			return dst, errPeerList
+		}
+		return AppendPeerListReply(dst, c.ID, nil), nil
 	default:
 	}
 	return dst, errOpcode

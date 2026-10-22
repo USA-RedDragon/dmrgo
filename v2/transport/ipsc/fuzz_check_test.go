@@ -40,12 +40,12 @@ func checkPacket(t *testing.T, p []byte) {
 		}
 	}
 	if c, err := ipsc.DecodeControl(p); err == nil {
-		want := p
-		if c.Opcode == ipsc.OpPeerListReply {
-			want = p[:7]
-		}
 		out, err := c.AppendBinary(nil)
-		if err != nil || !bytes.Equal(out, want) {
+		if c.Opcode == ipsc.OpPeerListReply && c.ListLen != 0 {
+			if err == nil || len(out) != 0 {
+				t.Fatalf("control peer list %x: %x %v", p, out, err)
+			}
+		} else if err != nil || !bytes.Equal(out, p) {
 			t.Fatalf("control round trip %x: %x %v", p, out, err)
 		}
 	}
