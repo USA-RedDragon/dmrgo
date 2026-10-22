@@ -1203,7 +1203,7 @@ struct dmrgo_csbk_timing_config_t {
 	size_t size;
 	/* ID is MS_ID, the 20-bit identifier of the radio in its wide area timing identifier, from 1 to DMRGO_CSBK_MAX_TIMING_ID. The Timing picks a new one when another radio uses it (ETSI TS 102 361-2 clause 6.2.3.7). */
 	uint32_t id;
-	/* DynamicID is MS_DI, the leader preference of the radio from 0 to DMRGO_CSBK_MAX_DYNAMIC_ID. 0 means the radio is not eligible to be the leader. (ETSI TS 102 361-2 clause 7.2.9) */
+	/* DynamicID is MS_DI, the leader preference of the radio from 0 to DMRGO_CSBK_MAX_DYNAMIC_ID. 0 means the radio is not eligible to be the leader. (ETSI TS 102 361-2 clause 7.2.9) When a radio without a leader hears one with the same DynamicID, other than 0, the one with the higher WATID (DynamicID and ID) becomes the leader. This is a tie-break of dmrgo: ETSI TS 102 361-2 clause 6.2.3.7 has both radios send CT_CSBK_Req, so that neither ever appoints a leader. */
 	uint8_t dynamic_id;
 	/* Slot is the provisioned time slot, DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2. It selects the TDMA direct mode SYNC of the CT_CSBKs, and is the Slot of the Hint of each burst. (ETSI TS 102 361-2 clause 6.2) */
 	dmrgo_enums_slot_t slot;

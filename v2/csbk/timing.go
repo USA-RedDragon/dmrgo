@@ -49,7 +49,11 @@ type TimingConfig struct {
 	ID uint32
 	// DynamicID is MS_DI, the leader preference of the radio from 0 to
 	// MaxDynamicID. 0 means the radio is not eligible to be the leader.
-	// (ETSI TS 102 361-2 clause 7.2.9)
+	// (ETSI TS 102 361-2 clause 7.2.9) When a radio without a leader hears
+	// one with the same DynamicID, other than 0, the one with the higher
+	// WATID (DynamicID and ID) becomes the leader. This is a tie-break of
+	// dmrgo: ETSI TS 102 361-2 clause 6.2.3.7 has both radios send
+	// CT_CSBK_Req, so that neither ever appoints a leader.
 	DynamicID uint8
 	// Slot is the provisioned time slot, enums.Slot1 or enums.Slot2. It
 	// selects the TDMA direct mode SYNC of the CT_CSBKs, and is the Slot of
@@ -407,7 +411,7 @@ func (m *Timing) evaluate(now time.Duration, rx *pdu.ChannelTimingPDU, octets pd
 	if m.lwatid == 0 {
 		dst = m.take(now, octets, dst)
 		switch {
-		case lw == 0 && rx.SourceDynamicIdentifier > m.di:
+		case lw == 0 && m.higher(rx.SourceDynamicIdentifier, sw):
 			m.appoint(now, sw)
 		case lw == 0:
 			if m.pend == ctNone {
@@ -567,6 +571,11 @@ func (m *Timing) newID() {
 			return
 		}
 	}
+}
+
+// ETSI TS 102 361-2 clause 6.2.3.7
+func (m *Timing) higher(di uint8, sw uint32) bool {
+	return di > m.di || di == m.di && di != 0 && sw > m.watid()
 }
 
 func (m *Timing) watid() uint32 {

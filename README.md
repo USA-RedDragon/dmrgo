@@ -370,7 +370,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 5.4.2 | Inband positioning data service | verified | 1/1 passed | `v2/layer2/pdu/full_link_control.go` |
 | 5.4.3 | Inband talker alias data service | verified | 5/5 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer3/talker_alias_data_format.go`, `v2/layer2/pdu/talker_alias.go` |
 | 6.1 | Transmit timeout | verified | 2/2 passed | `v2/constants/constants.go` |
-| 6.2 | TDMA direct mode wide area timing | verified | 17/17 passed | `v2/csbk/timing.go` |
+| 6.2 | TDMA direct mode wide area timing | verified | 18/18 passed | `v2/csbk/timing.go` |
 | 6.3.1 | Reverse Channel Transmitter Interrupt: Repeater Mode | unimplemented | - | - |
 | 6.3.2 | Reverse Channel Transmitter Interrupt: Direct Mode | unimplemented | - | - |
 | 6.3.3 | Voice Interrupt | verified | 2/2 passed | `v2/voice/transmitter.go` |
