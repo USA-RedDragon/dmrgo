@@ -150,9 +150,10 @@ func (w *Wakeup) Wake(now time.Duration, bs, source uint32) error {
 
 // OutboundSync tells the Wakeup that the BS outbound is on air, as the
 // caller sees it, and appends an OutputDone with ResultAnswered to dst
-// while a wakeup runs. It allocates only when dst has no room for
+// while a wakeup runs. It does not run the timers, so now only gives the
+// shape of the other methods. It allocates only when dst has no room for
 // MaxOutputs outputs.
-func (w *Wakeup) OutboundSync(dst []Output) []Output {
+func (w *Wakeup) OutboundSync(_ time.Duration, dst []Output) []Output {
 	if w == nil {
 		return dst
 	}
@@ -204,7 +205,7 @@ func (w *Wakeup) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst 
 	if b.Kind == layer2.KindData && (b.SlotType.FEC.Uncorrectable || b.SlotType.ColorCode != w.cc) {
 		return dst
 	}
-	return w.OutboundSync(dst)
+	return w.OutboundSync(now, dst)
 }
 
 // Lost tells the Wakeup that the transport lost the signal. It runs the

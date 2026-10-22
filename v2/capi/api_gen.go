@@ -11138,7 +11138,7 @@ func dmrgo_csbk_wakeup_lost(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duratio
 }
 
 //export dmrgo_csbk_wakeup_outbound_sync_need
-func dmrgo_csbk_wakeup_outbound_sync_need(c_self *C.dmrgo_csbk_wakeup_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_wakeup_outbound_sync_need(c_self *C.dmrgo_csbk_wakeup_t, c_p0 C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Wakeup(c_self)
 	_ = h
@@ -11152,7 +11152,7 @@ func dmrgo_csbk_wakeup_outbound_sync_need(c_self *C.dmrgo_csbk_wakeup_t, c_items
 }
 
 //export dmrgo_csbk_wakeup_outbound_sync
-func dmrgo_csbk_wakeup_outbound_sync(c_self *C.dmrgo_csbk_wakeup_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_wakeup_outbound_sync(c_self *C.dmrgo_csbk_wakeup_t, c_p0 C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
@@ -11173,7 +11173,7 @@ func dmrgo_csbk_wakeup_outbound_sync(c_self *C.dmrgo_csbk_wakeup_t, c_dst *C.dmr
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.OutboundSync(a_dst)
+	r0 := h.v.OutboundSync(time.Duration(c_p0), a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{
