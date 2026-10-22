@@ -5194,6 +5194,8 @@ struct dmrgo_trunk_tscc_config_t {
 	bool ip;
 	/* Supplementary takes the supplementary_user data of call requests and passes it to the called party before the call. Without it the TSCC sets up the call without the data. (ETSI TS 102 361-4 clause 6.4.13) */
 	bool supplementary;
+	/* Lead makes Tick emit the bursts of a slot this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due. */
+	dmrgo_duration_t lead;
 };
 
 struct dmrgo_trunk_tscc_output_t {
@@ -5207,6 +5209,8 @@ struct dmrgo_trunk_tscc_output_t {
 	uint8_t cach[3];
 	/* Burst is the burst of TSCCBurst. */
 	dmrgo_layer2_raw_burst_t burst;
+	/* Due is the start of the 30 ms slot of TSCCBurst, the time at which it goes on air. */
+	dmrgo_duration_t due;
 	/* Hint is what Burst is, for a transport: Slot, and KindData with the data type, or for a relayed burst what the TSCC decoded of it: the kind, the data type, and voice burst A from its SYNC. */
 	dmrgo_layer2_hint_t hint;
 	/* Address is the MS of TSCCRegistered, TSCCDeregistered, TSCCRefused, TSCCDelivered, TSCCUDT, TSCCDiversion, TSCCStun, TSCCInterrupt and TSCCIPAdvice. */
@@ -10721,7 +10725,7 @@ int dmrgo_trunk_stun_action_string(dmrgo_trunk_stun_action_t self, char *out, si
 int dmrgo_trunk_tscc_free(dmrgo_trunk_tscc_t *self);
 /* Go: trunk.TSCC.AssignGroups. AssignGroups sends the DGNA talkgroups of a from the gateway DGNAI to the MS target, in the UDT outbound phase of ETSI TS 102 361-4 clause 6.6.8.2.2. */
 int dmrgo_trunk_tscc_assign_groups(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint32_t target, const dmrgo_trunk_appended_t *a);
-/* Go: trunk.TSCC.Deadline. Deadline returns the time of the next Tick: the TSCC sends one burst per 30 ms slot. */
+/* Go: trunk.TSCC.Deadline. Deadline returns the time of the next Tick: the start of the next 30 ms slot minus TSCCConfig.Lead, or 0 before the first Tick. */
 int dmrgo_trunk_tscc_deadline(dmrgo_trunk_tscc_t *self, dmrgo_duration_t *at, bool *ok);
 /* Go: trunk.TSCC.Diverted. Diverted returns the call diversion that the MS addr set, with the services that it diverts and the diversion address. */
 int dmrgo_trunk_tscc_diverted(dmrgo_trunk_tscc_t *self, uint32_t addr, dmrgo_layer3_diversion_service_options_t *opts, dmrgo_trunk_appended_t *to, bool *ok);
@@ -10747,11 +10751,13 @@ int dmrgo_trunk_tscc_registered(dmrgo_trunk_tscc_t *self, uint32_t addr, bool *o
 int dmrgo_trunk_tscc_send_short_data(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, bool group, uint32_t target, const dmrgo_trunk_appended_t *a);
 /* Go: trunk.TSCC.SendStatus. SendStatus sends the status s from source, an MS or a gateway such as DISPATI, to the talkgroup or MS target with a C_AHOY. */
 int dmrgo_trunk_tscc_send_status(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, bool group, uint32_t target, uint32_t source, dmrgo_trunk_status_t s);
+/* Go: trunk.TSCC.Skipped. Skipped returns the number of slots that Tick did not send because it came more than one slot late. */
+int dmrgo_trunk_tscc_skipped(dmrgo_trunk_tscc_t *self, int64_t *out);
 /* Go: trunk.TSCC.Stun. Stun asks the MS addr to stop, or with revive to give back, its user services, with a C_AHOY from STUNI. */
 int dmrgo_trunk_tscc_stun(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint32_t addr, bool revive);
 /* dmrgo_trunk_tscc_tick_need sets *items and *arena to the room that dmrgo_trunk_tscc_tick needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_tscc_tick_need(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
-/* Go: trunk.TSCC.Tick. Tick sends the outbound bursts of one 30 ms slot: on the TSCC a queued PDU or a C_ALOHA, and on each payload channel with a call the relayed inbound burst, P_CLEAR or an idle burst, each with its CACH. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_tscc_tick_need gives (DMRGO_TRUNK_TSCC_TICK_MAX_ITEMS items). */
+/* Go: trunk.TSCC.Tick. Tick runs the call timers that are due at now and sends the outbound bursts of the slot that is due: on the TSCC a queued PDU or a C_ALOHA, and on each payload channel with a call the relayed inbound burst, P_CLEAR or an idle burst, each with its CACH. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_tscc_tick_need gives (DMRGO_TRUNK_TSCC_TICK_MAX_ITEMS items). */
 int dmrgo_trunk_tscc_tick(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, dmrgo_trunk_tscc_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.TSCC.UDT. UDT returns a copy of the UDT that the TSCC received for itself with the last TSCCUDT, such as the answer to PollShortData. */
 int dmrgo_trunk_tscc_udt(dmrgo_trunk_tscc_t *self, dmrgo_trunk_udt_t *u, bool *ok);

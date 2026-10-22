@@ -21,8 +21,10 @@
 // Grant.Call to voice.Receiver.Expect and feeds the bursts of the granted
 // slot to that Receiver. An MS sends the bursts of OutputBurst at their
 // Due time, and the voice of its own calls with a voice.Transmitter. A
-// TSCC takes the inbound bursts of its carriers and sends one burst with
-// its CACH per carrier and 30 ms slot on Tick.
+// TSCC takes the inbound bursts of its carriers and keeps a 30 ms slot
+// clock from its first Tick: a Tick at or after Deadline sends one burst
+// with its CACH per carrier for the slot that is due, with the start of
+// the slot in TSCCOutput.Due.
 //
 // An MS also uses the UDT services: UDT short data, UDT and USBD polling,
 // call diversion and DGNA, and makes full-duplex and Ambient Listening
