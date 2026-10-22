@@ -56,11 +56,11 @@ func TalkerAliasBlocks(format layer3.TalkerAliasDataFormat, length int) int {
 
 // TalkerAlias returns the alias carried by a Talker Alias header and its
 // blocks, given in order block 1, 2, 3. Only the blocks that the header
-// length calls for are used. It returns ErrTalkerAliasIncomplete when fewer
-// blocks are given or header or a block is nil, and
-// ErrTalkerAliasInvalidUTF8, with the alias, when the Code Units of the
-// UTF-8 format are not valid UTF-8. When only the last character of a UTF-8
-// alias is not complete, as when a sender cuts a long alias to fit, it
+// length calls for are used. It returns dmrgo.ErrNilArgument for a nil
+// header, ErrTalkerAliasIncomplete when fewer blocks are given or a block is
+// nil, and ErrTalkerAliasInvalidUTF8, with the alias, when the Code Units of
+// the UTF-8 format are not valid UTF-8. When only the last character of a
+// UTF-8 alias is not complete, as when a sender cuts a long alias to fit, it
 // removes that character and returns the rest with no error. It allocates
 // the string; AppendTalkerAlias does not.
 func TalkerAlias(header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBlock) (string, error) {
@@ -71,8 +71,8 @@ func TalkerAlias(header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBlock) (
 
 // AppendTalkerAlias appends the alias that TalkerAlias returns to dst as
 // UTF-8 and returns the extended slice, with the errors of TalkerAlias. With
-// ErrTalkerAliasIncomplete it returns dst unchanged. It allocates only when
-// dst has no room.
+// dmrgo.ErrNilArgument and ErrTalkerAliasIncomplete it returns dst
+// unchanged. It allocates only when dst has no room.
 func AppendTalkerAlias(dst []byte, header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBlock) ([]byte, error) {
 	var buf [TalkerAliasMaxText]byte
 	n, err := talkerAliasText(&buf, header, blocks...)
@@ -81,7 +81,7 @@ func AppendTalkerAlias(dst []byte, header *FLCTalkerAliasHeader, blocks ...*FLCT
 
 func talkerAliasText(dst *[TalkerAliasMaxText]byte, header *FLCTalkerAliasHeader, blocks ...*FLCTalkerAliasBlock) (int, error) {
 	if header == nil {
-		return 0, ErrTalkerAliasIncomplete
+		return 0, dmrgo.ErrNilArgument
 	}
 	format := header.TalkerAliasDataFormat
 	n := TalkerAliasBlocks(format, int(header.TalkerAliasDataLength))
