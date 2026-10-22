@@ -394,7 +394,7 @@ func (u *User) RawBurst(cc enums.ColorCode, src layer2.SyncSource) (layer2.RawBu
 		if u.Voice.Layout == VoiceLayoutA {
 			voice, _, ok := src.SyncPatterns()
 			if !ok {
-				return layer2.RawBurst{}, errBurst
+				return layer2.RawBurst{}, errBurstSync
 			}
 			err := r.SetSync(voice)
 			return r, err
@@ -426,8 +426,11 @@ func (u *User) RawBurst(cc enums.ColorCode, src layer2.SyncSource) (layer2.RawBu
 func rawBurstOf(d *Payload, src layer2.SyncSource) (layer2.RawBurst, error) {
 	st, ok := d.SlotType()
 	_, sync, known := src.SyncPatterns()
-	if !ok || !known {
-		return layer2.RawBurst{}, errBurst
+	switch {
+	case !known:
+		return layer2.RawBurst{}, errBurstSync
+	case !ok:
+		return layer2.RawBurst{}, errBurstSlotType
 	}
 	var r layer2.RawBurst
 	info := [25]byte(d.Octets[:25])

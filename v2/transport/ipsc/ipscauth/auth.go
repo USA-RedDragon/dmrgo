@@ -7,8 +7,6 @@
 package ipscauth
 
 import (
-	"errors"
-
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/digest"
 )
@@ -16,9 +14,7 @@ import (
 // TrailerLen is the length of the authentication trailer in octets.
 const TrailerLen = 10
 
-var (
-	errKeyText = errors.New("ipscauth: key is not up to 40 hex digits")
-)
+var errKeyText = &dmrgo.FieldRangeError{Type: "ipscauth", Field: "ParseKey", Bits: 160}
 
 // Key holds an IPSC authentication key and the HMAC state that signing
 // with it needs. It is not safe for concurrent use.
@@ -28,8 +24,8 @@ type Key struct {
 
 // ParseKey parses the hex key of a MOTOTRBO or DMRlink configuration: up
 // to 40 hex digits, padded on the left with zeros to 20 octets as DMRlink
-// does. It returns an error for more than 40 digits or a character that is
-// not a hex digit, and does not allocate.
+// does. It returns a *dmrgo.FieldRangeError for more than 40 digits or a
+// character that is not a hex digit, and does not allocate.
 func ParseKey(s string) ([20]byte, error) {
 	var k [20]byte
 	if len(s) > 40 {
