@@ -118,7 +118,7 @@ func TestAppendPacketMatchesRadios(t *testing.T) {
 	}
 	for _, tt := range tests {
 		var h sms.Header
-		out, err := sms.AppendPacket([]byte("x"), &tt.text, false, &h)
+		out, err := sms.AppendPacket([]byte("x"), &tt.text, &h)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -139,9 +139,9 @@ func TestRoundTrip(t *testing.T) {
 
 	for _, f := range []sms.Format{sms.FormatTMS, sms.FormatIP, sms.FormatAnyTone, sms.FormatDefinedData, sms.FormatHytera} {
 		for _, confirmed := range []bool{false, true} {
-			in := sms.Text{Format: f, Source: 1234, Destination: 99, Group: confirmed, DD: enums.DDUTF16LE, Sequence: 7, AckRequired: true, Body: []byte("Grüße €")}
+			in := sms.Text{Format: f, Source: 1234, Destination: 99, Group: confirmed, Confirmed: confirmed, DD: enums.DDUTF16LE, Sequence: 7, AckRequired: true, Body: []byte("Grüße €")}
 			var h sms.Header
-			out, err := sms.AppendPacket(nil, &in, confirmed, &h)
+			out, err := sms.AppendPacket(nil, &in, &h)
 			if err != nil {
 				t.Fatalf("%s: %v", f, err)
 			}
@@ -150,7 +150,7 @@ func TestRoundTrip(t *testing.T) {
 			if err != nil {
 				t.Fatalf("%s: %v", f, err)
 			}
-			if got.Format != f || string(got.Body) != string(in.Body) || got.Source != 1234 || got.Destination != 99 || got.Group != confirmed {
+			if got.Format != f || string(got.Body) != string(in.Body) || got.Source != 1234 || got.Destination != 99 || got.Group != confirmed || got.Confirmed != confirmed {
 				t.Errorf("%s: %+v %q", f, got, got.Body)
 			}
 			if f == sms.FormatTMS && (got.Sequence != 7 || !got.AckRequired) {
@@ -185,10 +185,10 @@ func TestErrors(t *testing.T) {
 		t.Error("cut packet decoded")
 	}
 	var h sms.Header
-	if _, err := sms.AppendPacket(nil, &sms.Text{Format: 99}, false, &h); !errors.Is(err, sms.ErrFormat) {
+	if _, err := sms.AppendPacket(nil, &sms.Text{Format: 99}, &h); !errors.Is(err, sms.ErrFormat) {
 		t.Errorf("format 99: %v", err)
 	}
-	if b, err := sms.AppendPacket([]byte("x"), &sms.Text{Format: sms.FormatDefinedData, DD: enums.DDBinary, Body: []byte("1")}, false, &h); !errors.Is(err, sms.ErrFormat) || string(b) != "x" {
+	if b, err := sms.AppendPacket([]byte("x"), &sms.Text{Format: sms.FormatDefinedData, DD: enums.DDBinary, Body: []byte("1")}, &h); !errors.Is(err, sms.ErrFormat) || string(b) != "x" {
 		t.Errorf("binary text built: %q, %v", b, err)
 	}
 	bin := setHeader(t, (*pdu.DataHeader).SetDefinedData, pdu.DefinedDataHeader{DefinedData: enums.DDBinary})
@@ -213,7 +213,7 @@ func TestBCDShortData(t *testing.T) {
 	} {
 		in := sms.Text{Format: sms.FormatDefinedData, DD: enums.DDBCD, Source: 3191868, Destination: 3140598, Body: []byte(tt.digits)}
 		var h sms.Header
-		out, err := sms.AppendPacket(nil, &in, false, &h)
+		out, err := sms.AppendPacket(nil, &in, &h)
 		if err != nil || hex.EncodeToString(out) != tt.data || h.Data.DefinedDataHeader == nil || h.Data.DefinedDataHeader.DefinedData != enums.DDBCD {
 			t.Fatalf("%s: %x, %v", tt.digits, out, err)
 		}
@@ -255,7 +255,8 @@ func TestAppendPacketAnyToneNUL(t *testing.T) {
 	for _, tt := range tests {
 		in := sms.Text{Format: sms.FormatAnyTone, Source: 3140598, Destination: 3191868, Body: []byte(tt.body)}
 		var h sms.Header
-		out, err := sms.AppendPacket(nil, &in, true, &h)
+		in.Confirmed = true
+		out, err := sms.AppendPacket(nil, &in, &h)
 		if err != nil {
 			t.Fatal(err)
 		}

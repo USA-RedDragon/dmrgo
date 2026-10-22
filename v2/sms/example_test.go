@@ -14,7 +14,7 @@ var header sms.Header
 // it into rate 1/2 blocks and reads the text back.
 func Example() {
 	t := sms.Text{Format: sms.FormatTMS, Source: 3191868, Destination: 3140598, Body: []byte("Hello")}
-	data, err := sms.AppendPacket(nil, &t, false, &header)
+	data, err := sms.AppendPacket(nil, &t, &header)
 	if err != nil {
 		fmt.Println(err)
 		return

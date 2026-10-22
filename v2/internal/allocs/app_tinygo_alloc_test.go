@@ -39,7 +39,7 @@ func tinyAppOps(t *testing.T) []tinyOp {
 	a := tinyOK(ars.DecodeMessage(reg))
 	loc := tinyOK(hex.DecodeString("071a22042468ace0341f4dbc778051118ecd8d118ad47b00636c0006"))
 	smsMsg := packet.Message{Header: tinyUnconfirmed(pdu.UnconfirmedDataHeader{SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3140598, LLIDSource: 3191868}), Data: tmsIP}
-	smsText := sms.Text{Format: sms.FormatTMS, Source: 1, Destination: 2, Body: []byte("Hello")}
+	smsText := sms.Text{Format: sms.FormatTMS, Source: 1, Destination: 2, Confirmed: true, Body: []byte("Hello")}
 	gpsMsg := packet.Message{Header: tinyUnconfirmed(pdu.UnconfirmedDataHeader{SAP: enums.SAPUDPIPHeaderCompression}), Data: gps}
 	hdapMsg := []byte{0x11, 0x00, 0x03, 0x00, 0x04, 0x0a, 0x00, 0x00, 0x50, 0xd1, 0x03}
 	hm := tinyOK(hdap.DecodeMessage(hdapMsg))
@@ -63,7 +63,7 @@ func tinyAppOps(t *testing.T) []tinyOp {
 		{"lrrp.DecodeMessageInto", func() { err = lrrp.DecodeMessageInto(&tinyLRRP, loc) }},
 		{"lrrp.Message.AppendBinary", func() { _, err = tinyLRRP.AppendBinary(buf[:0]) }},
 		{"sms.Decode", func() { _, _, err = sms.Decode(buf[:0], &smsMsg.Header, smsMsg.Data) }},
-		{"sms.AppendPacket", func() { _, err = sms.AppendPacket(buf[:0], &smsText, true, &tinySMSHeader) }},
+		{"sms.AppendPacket", func() { _, err = sms.AppendPacket(buf[:0], &smsText, &tinySMSHeader) }},
 		{"location.Decoder.Decode", func() { _, err = tinyLocation.Decode(&gpsMsg.Header, gpsMsg.Data) }},
 		{"hdap.DecodeMessage", func() { _, err = hdap.DecodeMessage(hdapMsg) }},
 		{"hdap.Message.AppendBinary", func() { _, err = hm.AppendBinary(buf[:0]) }},

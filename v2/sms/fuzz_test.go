@@ -52,7 +52,7 @@ func fuzzDecode(t *testing.T, defined bool, code uint8, data []byte) {
 		t.Fatalf("Decode(%t, %d, %x) = %+v", defined, code, data, got)
 	}
 	var h sms.Header
-	enc, err := sms.AppendPacket(nil, &got, false, &h)
+	enc, err := sms.AppendPacket(nil, &got, &h)
 	if errors.Is(err, shortdata.ErrCharacter) && bytes.ContainsRune(got.Body, utf8.RuneError) {
 		return
 	}

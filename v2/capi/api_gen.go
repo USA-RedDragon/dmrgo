@@ -3063,6 +3063,7 @@ func in_sms_Text(s *C.dmrgo_sms_text_t) (d g_sms.Text) {
 	d.Source = uint32(s.source)
 	d.Destination = uint32(s.destination)
 	d.Group = bool(s.group)
+	d.Confirmed = bool(s.confirmed)
 	d.Network = uint8(s.network)
 	d.GroupPrefix = uint8(s.group_prefix)
 	d.DD = g_enums.DDFormat(s.dd)
@@ -3083,6 +3084,7 @@ func out_sms_Text(d *C.dmrgo_sms_text_t, s *g_sms.Text, oc *outc) {
 	d.source = C.uint32_t(s.Source)
 	d.destination = C.uint32_t(s.Destination)
 	d.group = C.bool(s.Group)
+	d.confirmed = C.bool(s.Confirmed)
 	d.network = C.uint8_t(s.Network)
 	d.group_prefix = C.uint8_t(s.GroupPrefix)
 	d.dd = C.dmrgo_enums_dd_format_t(s.DD)
@@ -33128,7 +33130,7 @@ func dmrgo_sms_anytone_text_text_utf8(c_self *C.dmrgo_sms_anytone_text_t, c_dst 
 }
 
 //export dmrgo_sms_append_packet
-func dmrgo_sms_append_packet(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_t *C.dmrgo_sms_text_t, c_confirmed C.bool, c_h *C.dmrgo_sms_header_t) (rc C.int) {
+func dmrgo_sms_append_packet(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_t *C.dmrgo_sms_text_t, c_h *C.dmrgo_sms_header_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
@@ -33152,7 +33154,7 @@ func dmrgo_sms_append_packet(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.
 		a_h = in_sms_Header(&(*c_h))
 		p_h = &a_h
 	}
-	r0, r1 := g_sms.AppendPacket(a_dst, p_t, bool(c_confirmed), p_h)
+	r0, r1 := g_sms.AppendPacket(a_dst, p_t, p_h)
 	var ws_h C.dmrgo_sms_header_t
 	if c_h != nil {
 		ws_h = *c_h

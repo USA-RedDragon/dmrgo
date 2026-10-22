@@ -18,7 +18,8 @@ func TestAllocs(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		if _, err := sms.AppendPacket(out, &text, true, &h); err != nil {
+		text.Confirmed = true
+		if _, err := sms.AppendPacket(out, &text, &h); err != nil {
 			panic(err)
 		}
 	})
