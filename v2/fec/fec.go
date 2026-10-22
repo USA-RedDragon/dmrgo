@@ -50,18 +50,19 @@ func (r Result) HasErrors() bool {
 // BERCalculator accumulates Results into an overall bit error rate. The
 // zero value is an empty calculator.
 type BERCalculator struct {
-	totalBitsChecked int
-	totalErrors      int
-	uncorrectable    int
+	totalBitsChecked uint64
+	totalErrors      uint64
+	uncorrectable    uint64
 }
 
-// Add incorporates a single Result into the running BER calculation.
+// Add incorporates a single Result into the running BER calculation. It
+// ignores a Result with a negative count.
 func (b *BERCalculator) Add(result Result) {
-	if b == nil {
+	if b == nil || result.BitsChecked < 0 || result.ErrorsCorrected < 0 {
 		return
 	}
-	b.totalBitsChecked += result.BitsChecked
-	b.totalErrors += result.ErrorsCorrected
+	b.totalBitsChecked += uint64(result.BitsChecked)
+	b.totalErrors += uint64(result.ErrorsCorrected)
 	if result.Uncorrectable {
 		b.uncorrectable++
 	}
@@ -89,7 +90,7 @@ func (b *BERCalculator) BER() float64 {
 }
 
 // TotalErrors returns the total number of corrected errors accumulated.
-func (b *BERCalculator) TotalErrors() int {
+func (b *BERCalculator) TotalErrors() uint64 {
 	if b == nil {
 		return 0
 	}
@@ -97,7 +98,7 @@ func (b *BERCalculator) TotalErrors() int {
 }
 
 // TotalBitsChecked returns the total number of FEC-protected bits accumulated.
-func (b *BERCalculator) TotalBitsChecked() int {
+func (b *BERCalculator) TotalBitsChecked() uint64 {
 	if b == nil {
 		return 0
 	}
@@ -107,7 +108,7 @@ func (b *BERCalculator) TotalBitsChecked() int {
 // Uncorrectable returns the number of accumulated results with
 // Uncorrectable set. The corrected errors and bits of such a result count
 // toward the BER, but its uncorrected errors are unknown.
-func (b *BERCalculator) Uncorrectable() int {
+func (b *BERCalculator) Uncorrectable() uint64 {
 	if b == nil {
 		return 0
 	}

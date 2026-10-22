@@ -8169,11 +8169,11 @@ int dmrgo_fec_ber_calculator_ber(dmrgo_fec_ber_calculator_t *self, double *out);
 /* Go: fec.BERCalculator.Reset. Reset clears the accumulated BER state. */
 int dmrgo_fec_ber_calculator_reset(dmrgo_fec_ber_calculator_t *self);
 /* Go: fec.BERCalculator.TotalBitsChecked. TotalBitsChecked returns the total number of FEC-protected bits accumulated. */
-int dmrgo_fec_ber_calculator_total_bits_checked(dmrgo_fec_ber_calculator_t *self, int64_t *out);
+int dmrgo_fec_ber_calculator_total_bits_checked(dmrgo_fec_ber_calculator_t *self, uint64_t *out);
 /* Go: fec.BERCalculator.TotalErrors. TotalErrors returns the total number of corrected errors accumulated. */
-int dmrgo_fec_ber_calculator_total_errors(dmrgo_fec_ber_calculator_t *self, int64_t *out);
+int dmrgo_fec_ber_calculator_total_errors(dmrgo_fec_ber_calculator_t *self, uint64_t *out);
 /* Go: fec.BERCalculator.Uncorrectable. Uncorrectable returns the number of accumulated results with Uncorrectable set. */
-int dmrgo_fec_ber_calculator_uncorrectable(dmrgo_fec_ber_calculator_t *self, int64_t *out);
+int dmrgo_fec_ber_calculator_uncorrectable(dmrgo_fec_ber_calculator_t *self, uint64_t *out);
 /* Go: fec.BurstFECStats.Aggregate. Aggregate returns combined stats across all FEC layers in this burst. */
 int dmrgo_fec_burst_fec_stats_aggregate(const dmrgo_fec_burst_fec_stats_t *self, dmrgo_fec_result_t *out);
 /* Go: fec.Result.Combine. Combine returns the result of two decode steps over disjoint bits, or of a correcting step and a detecting step on its output: the bit counts add and Uncorrectable is set if either step set it. */

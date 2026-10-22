@@ -62,7 +62,7 @@ func checkBER(t *testing.T, r [5]fec.Result) {
 	}
 
 	var each, burst fec.BERCalculator
-	unc := 0
+	var unc uint64
 	for _, x := range r {
 		each.Add(x)
 		if x.Uncorrectable {
@@ -71,21 +71,20 @@ func checkBER(t *testing.T, r [5]fec.Result) {
 	}
 	burst.AddBurst(stats)
 	burst.AddBurst(stats)
-	if burst.TotalBitsChecked() != 2*agg.BitsChecked || burst.TotalErrors() != 2*agg.ErrorsCorrected {
+	if burst.TotalBitsChecked() != 2*uint64(agg.BitsChecked) || burst.TotalErrors() != 2*uint64(agg.ErrorsCorrected) {
 		t.Fatalf("AddBurst twice: %d errors / %d bits, Aggregate %+v", burst.TotalErrors(), burst.TotalBitsChecked(), agg)
 	}
-	wantUnc := 0
+	var wantUnc uint64
 	if agg.Uncorrectable {
 		wantUnc = 2
 	}
 	if burst.Uncorrectable() != wantUnc {
 		t.Fatalf("AddBurst twice: Uncorrectable() = %d, want %d", burst.Uncorrectable(), wantUnc)
 	}
-	totalBits := 0
-	totalErrs := 0
+	var totalBits, totalErrs uint64
 	for _, x := range r {
-		totalBits += x.BitsChecked
-		totalErrs += x.ErrorsCorrected
+		totalBits += uint64(x.BitsChecked)
+		totalErrs += uint64(x.ErrorsCorrected)
 	}
 	if each.TotalBitsChecked() != totalBits || each.TotalErrors() != totalErrs || each.Uncorrectable() != unc {
 		t.Fatalf("Add: %d errors / %d bits / %d uncorrectable, want %d / %d / %d",

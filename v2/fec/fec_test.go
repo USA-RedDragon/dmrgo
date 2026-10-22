@@ -21,7 +21,7 @@ func TestBERCalculator_AddBurstMatchesAggregate(t *testing.T) {
 	b.AddBurst(stats)
 
 	agg := stats.Aggregate()
-	if b.TotalBitsChecked() != agg.BitsChecked || b.TotalErrors() != agg.ErrorsCorrected {
+	if b.TotalBitsChecked() != uint64(agg.BitsChecked) || b.TotalErrors() != uint64(agg.ErrorsCorrected) {
 		t.Errorf("AddBurst totals %d/%d, Aggregate %d/%d",
 			b.TotalErrors(), b.TotalBitsChecked(), agg.ErrorsCorrected, agg.BitsChecked)
 	}
@@ -70,6 +70,11 @@ func TestBERCalculator_Uncorrectable(t *testing.T) {
 	b.AddBurst(fec.BurstFECStats{PDU: fec.Result{Uncorrectable: true}})
 	if got := b.Uncorrectable(); got != 2 {
 		t.Errorf("Uncorrectable() = %d, want 2", got)
+	}
+	b.Add(fec.Result{BitsChecked: -1, ErrorsCorrected: 1, Uncorrectable: true})
+	b.Add(fec.Result{BitsChecked: 1, ErrorsCorrected: -1})
+	if b.TotalBitsChecked() != 48 || b.TotalErrors() != 1 || b.Uncorrectable() != 2 {
+		t.Errorf("negative counts were added: %d / %d / %d", b.TotalErrors(), b.TotalBitsChecked(), b.Uncorrectable())
 	}
 	b.Reset()
 	if b.Uncorrectable() != 0 {
