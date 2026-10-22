@@ -5334,7 +5334,7 @@ struct dmrgo_voice_output_t {
 	dmrgo_duration_t due;
 	/* Hint is what the burst is, for a transport: DMRGO_LAYER2_KIND_VOICE with the superframe position, or DMRGO_LAYER2_KIND_DATA with the data type of a header, PI Header or terminator, or DMRGO_LAYER2_KIND_REVERSE_CHANNEL. Its Slot is the Slot of the config. */
 	dmrgo_layer2_hint_t hint;
-	/* Fill reports a voice burst with silence in place of voice that was not queued in time, or that pads the last superframe. The fills that Relay queues for lost bursts are voice and do not set it. */
+	/* Fill reports a voice burst with a fill in place of voice that was not queued in time, or with silence that pads the last superframe. The fills that Relay queues for bursts that the Receiver reports lost are voice and do not set it. */
 	bool fill;
 	/* Reason is why the transmission ended: DMRGO_VOICE_END_TERMINATOR after a normal end, DMRGO_VOICE_END_LOST for a relayed call that was lost, DMRGO_VOICE_END_TIMEOUT after T_TO. */
 	dmrgo_voice_end_reason_t reason;
