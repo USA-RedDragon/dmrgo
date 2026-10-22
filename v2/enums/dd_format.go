@@ -66,5 +66,5 @@ func (f DDFormat) String() string {
 	case f == DDUTF32LE:
 		return "UTF-32LE"
 	}
-	return "Reserved DD(" + text.Int(int64(f)) + ")"
+	return "DDFormat(" + text.Int(int64(f)) + ")"
 }

@@ -1,7 +1,6 @@
 package enums_test
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -65,7 +64,7 @@ func TestServiceKind_Table7_49(t *testing.T) {
 		if got := k.NeedsPayloadChannel(); got != payload[k] {
 			t.Errorf("%v.NeedsPayloadChannel() = %v", k, got)
 		}
-		if s := k.String(); s == "" || (k == 12) != strings.HasPrefix(s, "Reserved") {
+		if s := k.String(); s == "" || (k == 12) != (s == "ServiceKind(12)") {
 			t.Errorf("ServiceKind(%d).String() = %q", k, s)
 		}
 	}

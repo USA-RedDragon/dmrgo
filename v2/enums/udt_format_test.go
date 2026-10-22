@@ -7,7 +7,7 @@ func TestUDTFormat_Table7_88(t *testing.T) {
 	for f, want := range map[UDTFormat]string{
 		UDTBinary: "Binary", UDTAddress: "Address", UDTBCD: "BCD", UDTISO7: "ISO 7 bit", UDTISO8: "ISO 8 bit",
 		UDTNMEA: "NMEA", UDTIP: "IP", UDTUTF16BE: "UTF-16BE", UDTManufacturer1: "Manufacturer Specific",
-		UDTManufacturer2: "Manufacturer Specific", UDTMixed: "Mixed", UDTLIP: "LIP", 0b1100: "Reserved UDT Format(12)",
+		UDTManufacturer2: "Manufacturer Specific", UDTMixed: "Mixed", UDTLIP: "LIP", 0b1100: "UDTFormat(12)",
 	} {
 		if got := f.String(); got != want {
 			t.Errorf("UDTFormat %d: %q, want %q", uint8(f), got, want)

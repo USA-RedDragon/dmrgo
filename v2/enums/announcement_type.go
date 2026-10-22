@@ -45,6 +45,6 @@ func (a AnnouncementType) String() string {
 	case AnnouncementManufacturerSpecific1, AnnouncementManufacturerSpecific2:
 		return manufacturerSpecificName
 	default:
-		return "Reserved AnnouncementType(" + text.Int(int64(a)) + ")"
+		return "AnnouncementType(" + text.Int(int64(a)) + ")"
 	}
 }

@@ -1,5 +1,7 @@
 package enums
 
+import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
+
 // Slot is a TDMA channel of a carrier, also called a time slot. The values
 // match the Channel field of a framer burst. The zero value is SlotUnknown.
 // (ETSI TS 102 361-1 clause 5.1.1)
@@ -27,7 +29,8 @@ func (s Slot) Other() Slot {
 	return SlotUnknown
 }
 
-// String returns "TS1", "TS2" or "Unknown".
+// String returns "TS1", "TS2", or "Unknown" for SlotUnknown. It returns
+// Slot(n) for a value over 2, and allocates only for it.
 func (s Slot) String() string {
 	switch s {
 	case Slot1:
@@ -35,6 +38,7 @@ func (s Slot) String() string {
 	case Slot2:
 		return "TS2"
 	case SlotUnknown:
+		return unknownName
 	}
-	return unknownName
+	return "Slot(" + text.Int(int64(s)) + ")"
 }

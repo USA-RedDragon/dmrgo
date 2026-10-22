@@ -87,6 +87,6 @@ func (sync SyncPattern) String() string {
 	case SyncReserved:
 		return reservedName
 	default:
-		return "Unknown SyncPattern 0x" + text.Digits(uint64(sync), 12, 4)
+		return "SyncPattern(" + text.Uint(uint64(sync)) + ")"
 	}
 }

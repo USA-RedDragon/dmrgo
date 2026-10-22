@@ -88,7 +88,7 @@ func TestSyncPatternString_Unknown(t *testing.T) {
 	t.Parallel()
 
 	got := (SyncPattern(0x123456789ABC)).String()
-	if got != "Unknown SyncPattern 0x123456789abc" {
+	if got != "SyncPattern(20015998343868)" {
 		t.Errorf("unknown.String() = %q", got)
 	}
 }

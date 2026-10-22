@@ -70,7 +70,8 @@ const (
 	AckWACK AckType = 0b11 // C_WACK, more signalling follows
 )
 
-// String returns "NACK", "ACK", "QACK" or "WACK".
+// String returns "NACK", "ACK", "QACK" or "WACK". It returns AckType(n)
+// for a value over 3, and allocates only for it.
 func (t AckType) String() string {
 	switch t {
 	case AckNACK:
@@ -82,7 +83,7 @@ func (t AckType) String() string {
 	case AckWACK:
 		return "WACK"
 	}
-	return unknownName
+	return "AckType(" + text.Int(int64(t)) + ")"
 }
 
 // Type returns the acknowledgement type of r.
@@ -97,7 +98,7 @@ func (r AckReason) FromTS() bool {
 }
 
 // String returns the mnemonic of r. It allocates only for a value without
-// one.
+// a constant.
 func (r AckReason) String() string {
 	if name := r.tsName(); name != "" {
 		return name
@@ -105,7 +106,7 @@ func (r AckReason) String() string {
 	if name := r.msName(); name != "" {
 		return name
 	}
-	return "AckReason(" + text.Digits(uint64(r), 8, 1) + ")"
+	return "AckReason(" + text.Int(int64(r)) + ")"
 }
 
 func (r AckReason) tsName() string {

@@ -81,7 +81,7 @@ func TestUDPIPv4CompressedHeader_Ports(t *testing.T) {
 		{enums.SPIDExtendedHeader, enums.DPIDLocationProtocol, 7, 0x1111, 5017},
 		{enums.SPIDTextMessage, enums.DPIDExtendedHeader, 7, 5016, 0x1111},
 		{enums.SPIDLocationProtocol, enums.DPIDTextMessage, 5, 5017, 5016},
-		{enums.SPIDManufacturerSpecific, enums.DPIDManufacturerSpecific, 5, 0, 0},
+		{enums.SPID(95), enums.DPID(95), 5, 0, 0},
 	}
 	for _, tt := range tests {
 		h := pdu.UDPIPv4CompressedHeader{SPID: tt.spid, DPID: tt.dpid, ExtendedHeader1: 0x1111, ExtendedHeader2: 0x2222}

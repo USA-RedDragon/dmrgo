@@ -13,7 +13,7 @@ func TestSAP_String(t *testing.T) {
 		SAPAddressResolutionProtocol: "Address Resolution Protocol (ARP)",
 		SAPProprietaryPacketData:     "Proprietary Packet data",
 		SAPShortData:                 "Short Data",
-		1:                            "Reserved SAP(1)",
+		1:                            "SAP(1)",
 	} {
 		if got := sap.String(); got != want {
 			t.Errorf("SAP %d: %q, want %q", uint8(sap), got, want)

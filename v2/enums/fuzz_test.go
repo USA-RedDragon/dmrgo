@@ -3,6 +3,7 @@ package enums_test
 import (
 	"errors"
 	"math/bits"
+	"strconv"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
@@ -74,7 +75,7 @@ func checkByteEnums(t *testing.T, b uint8) {
 		t.Fatalf("Slot %d Other %d", b, o)
 	}
 	dt := enums.DataType(b)
-	if dt.IsReserved() && (dt.IsBPTC() || dt.CarriesFullLC() || dt.String() != "Reserved") || dt.CarriesFullLC() && !dt.IsBPTC() {
+	if dt.IsReserved() && (dt.IsBPTC() || dt.CarriesFullLC() || dt.String() != "DataType("+strconv.Itoa(int(b))+")") || dt.CarriesFullLC() && !dt.IsBPTC() {
 		t.Fatalf("DataType %d: reserved %t, BPTC %t, Full LC %t, %q", b, dt.IsReserved(), dt.IsBPTC(), dt.CarriesFullLC(), dt.String())
 	}
 }

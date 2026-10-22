@@ -43,5 +43,5 @@ func (a ActivityID) String() string {
 	case ActivityEmergencyIndividualVoice:
 		return "Emergency Individual Voice"
 	}
-	return "Reserved ActivityID(" + text.Int(int64(a)) + ")"
+	return "ActivityID(" + text.Int(int64(a)) + ")"
 }

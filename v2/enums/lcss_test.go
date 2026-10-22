@@ -30,8 +30,8 @@ func TestLCSSString_Unknown(t *testing.T) {
 	t.Parallel()
 
 	got := (LCSS(99)).String()
-	if got != unknownName {
-		t.Errorf("(99).String() = %q, want %q", got, unknownName)
+	if got != "LCSS(99)" {
+		t.Errorf("(99).String() = %q", got)
 	}
 }
 

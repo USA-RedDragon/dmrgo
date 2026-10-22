@@ -44,11 +44,11 @@ func (f UDTFormat) String() string {
 	case UDTUTF16BE:
 		return "UTF-16BE"
 	case UDTManufacturer1, UDTManufacturer2:
-		return "Manufacturer Specific"
+		return manufacturerSpecificName
 	case UDTMixed:
 		return "Mixed"
 	case UDTLIP:
 		return "LIP"
 	}
-	return "Reserved UDT Format(" + text.Int(int64(f)) + ")"
+	return "UDTFormat(" + text.Int(int64(f)) + ")"
 }

@@ -73,11 +73,11 @@ func TestVoiceBurstTypeLCSS(t *testing.T) {
 	}
 }
 
-func TestVoiceBurstTypeString_InvalidReturnsUnknown(t *testing.T) {
+func TestVoiceBurstTypeString_Invalid(t *testing.T) {
 	t.Parallel()
 
 	got := (VoiceBurstType(99)).String()
-	if got != unknownName {
-		t.Errorf("(99).String() = %q, want %q", got, unknownName)
+	if got != "VoiceBurstType(99)" {
+		t.Errorf("(99).String() = %q", got)
 	}
 }
