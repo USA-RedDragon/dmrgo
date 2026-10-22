@@ -251,7 +251,7 @@ func TestRegression_RewriteEmbedded(t *testing.T) {
 		}
 		var b layer2.Burst
 		_ = b.DecodeFromBytes(o.Burst)
-		lc, ok, _ := vt.Receive(&b)
+		lc, ok, _ := vt.Receive(&b, nil)
 		if gv, isGV := lc.AsGroupVoice(); ok && isGV && gv.GroupAddress != 3100 {
 			t.Errorf("embedded LC at %v: target %d, want 3100", o.Due, gv.GroupAddress)
 		}

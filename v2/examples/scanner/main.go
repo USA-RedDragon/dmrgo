@@ -226,7 +226,7 @@ func (c *channel) receive(w io.Writer, b *layer2.Burst) {
 			}
 		}
 	}
-	lc, ok, err := c.rx.Receive(b)
+	lc, ok, err := c.rx.Receive(b, nil)
 	if err != nil && !errors.Is(err, layer2.ErrEmbeddedLCSequence) {
 		c.lcErrors++
 	}

@@ -2179,7 +2179,7 @@ sym int dmrgo_layer2_sync_source_of(dmrgo_enums_sync_pattern_t p, dmrgo_layer2_s
 sym int dmrgo_layer2_sync_source_sync_patterns(dmrgo_layer2_sync_source_t self, dmrgo_enums_sync_pattern_t *voice, dmrgo_enums_sync_pattern_t *data, bool *ok);
 sym int dmrgo_layer2_voice_receiver_free(dmrgo_layer2_voice_receiver_t *self);
 sym int dmrgo_layer2_voice_receiver_new(dmrgo_layer2_voice_receiver_t **out);
-sym int dmrgo_layer2_voice_receiver_receive(dmrgo_layer2_voice_receiver_t *self, dmrgo_layer2_burst_t *b, dmrgo_pdu_full_link_control_t *lc, bool *ok);
+sym int dmrgo_layer2_voice_receiver_receive(dmrgo_layer2_voice_receiver_t *self, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, dmrgo_pdu_full_link_control_t *lc, bool *ok);
 sym int dmrgo_layer2_voice_receiver_reset(dmrgo_layer2_voice_receiver_t *self);
 sym int dmrgo_layer2_voice_transmitter_add_burst(dmrgo_layer2_voice_transmitter_t *self, const uint8_t slots[3][9], dmrgo_layer2_raw_burst_t *out);
 sym int dmrgo_layer2_voice_transmitter_add_frames(dmrgo_layer2_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *frames, size_t frames_len, dmrgo_layer2_raw_burst_t *out, size_t out_cap, size_t *out_len, size_t *out_need);

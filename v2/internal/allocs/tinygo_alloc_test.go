@@ -177,7 +177,7 @@ func tinyVoiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 		{"layer2.VoiceTransmitter.AppendFrames", func() { _, err = tx.AppendFrames(buf[:0], frames[:layer2.VoiceSlotsPerBurst]...) }},
 		{"layer2.VoiceReceiver.Receive", func() {
 			for i := range bursts {
-				_, _, err = rx.Receive(&bursts[i])
+				_, _, err = rx.Receive(&bursts[i], nil)
 			}
 		}},
 		{"layer2.EncodeEmbeddedLC", func() { frags = layer2.EncodeEmbeddedLC(lc9) }},

@@ -17944,7 +17944,7 @@ func dmrgo_layer2_voice_receiver_free(c_self *C.dmrgo_layer2_voice_receiver_t) (
 }
 
 //export dmrgo_layer2_voice_receiver_receive
-func dmrgo_layer2_voice_receiver_receive(c_self *C.dmrgo_layer2_voice_receiver_t, c_b *C.dmrgo_layer2_burst_t, c_lc *C.dmrgo_pdu_full_link_control_t, c_ok *C.bool) (rc C.int) {
+func dmrgo_layer2_voice_receiver_receive(c_self *C.dmrgo_layer2_voice_receiver_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_lc *C.dmrgo_pdu_full_link_control_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_layer2_VoiceReceiver(c_self)
@@ -17952,7 +17952,13 @@ func dmrgo_layer2_voice_receiver_receive(c_self *C.dmrgo_layer2_voice_receiver_t
 	if c_b != nil {
 		a_b = get_layer2_Burst(c_b).v
 	}
-	r0, r1, r2 := h.v.Receive(a_b)
+	var a_h g_layer2.Hint
+	var p_h *g_layer2.Hint
+	if c_h != nil {
+		a_h = in_layer2_Hint(&(*c_h))
+		p_h = &a_h
+	}
+	r0, r1, r2 := h.v.Receive(a_b, p_h)
 	_ = r0
 	_ = r1
 	if c_lc != nil {
