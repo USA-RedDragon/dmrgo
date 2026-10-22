@@ -522,13 +522,12 @@ func (m *MS) EndCall(now time.Duration, dst []Output) []Output {
 
 // Burst decodes the burst raw with what the Hint h says about it, and the
 // CACH field before it, in transmit order, when cach is not nil, as
-// Follower.Burst does, runs the
-// random access and the requests, and appends the outputs to dst. On the
-// TSCC the MS counts TDMA frames by the bursts of its Slot, so h.Slot
-// should be set; random access needs the CACH, for its AT bit. A nil raw
-// is a transport frame without a burst: with Hint.SyncLost it does what
-// Lost does, else it runs the timers. It allocates only when dst has no
-// room for MaxOutputs outputs.
+// Follower.Burst does, runs the random access and the requests, and appends
+// the outputs to dst. On the TSCC the MS counts TDMA frames by the bursts of
+// its Slot, so h.Slot should be set; random access needs the CACH, for its
+// AT bit. A nil raw is a transport frame without a burst: with Hint.SyncLost
+// it does what Lost does, else it runs the timers. It allocates only when
+// dst has no room for MaxOutputs outputs.
 func (m *MS) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
 	if m == nil || m.f.ctl.b == nil {
 		return dst

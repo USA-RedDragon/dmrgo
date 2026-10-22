@@ -112,10 +112,10 @@ type Follower struct {
 }
 
 // NewFollower returns a Follower for cfg. A nil cfg means the zero
-// FollowerConfig. It returns a *dmrgo.ConfigError for a TalkgroupsLen out
-// of range, a talkgroup over 24 bits, a negative SysErrors, or a SysCode whose fields
-// do not fit. It allocates the Follower, and its
-// Burst unless cfg.Scratch is set.
+// FollowerConfig. It returns a *dmrgo.ConfigError for a TalkgroupsLen out of
+// range, a talkgroup over 24 bits, a negative SysErrors, or a SysCode whose
+// fields do not fit. It allocates the Follower, and its Burst unless
+// cfg.Scratch is set.
 func NewFollower(cfg *FollowerConfig) (*Follower, error) {
 	f := &Follower{}
 	if err := f.init(cfg); err != nil {
