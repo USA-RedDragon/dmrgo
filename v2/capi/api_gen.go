@@ -47062,6 +47062,71 @@ func dmrgo_voice_interrupter_interrupt(c_self *C.dmrgo_voice_interrupter_t, c_no
 	return C.DMRGO_OK
 }
 
+//export dmrgo_voice_interrupter_lost_need
+func dmrgo_voice_interrupter_lost_need(c_self *C.dmrgo_voice_interrupter_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_voice_Interrupter(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_voice.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_interrupter_lost
+func dmrgo_voice_interrupter_lost(c_self *C.dmrgo_voice_interrupter_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_voice_Interrupter(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_voice.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Lost(time.Duration(c_now), a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_voice_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_voice_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
 //export dmrgo_voice_interrupter_reset
 func dmrgo_voice_interrupter_reset(c_self *C.dmrgo_voice_interrupter_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -48065,6 +48130,71 @@ func dmrgo_voice_transmitter_frames(c_self *C.dmrgo_voice_transmitter_t, c_f *C.
 	if r0 != nil {
 		return setErr(r0)
 	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_transmitter_lost_need
+func dmrgo_voice_transmitter_lost_need(c_self *C.dmrgo_voice_transmitter_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_voice_Transmitter(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_voice.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_transmitter_lost
+func dmrgo_voice_transmitter_lost(c_self *C.dmrgo_voice_transmitter_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_voice_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_voice_Transmitter(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_voice.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Lost(time.Duration(c_now), a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_voice_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_voice_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
 	return C.DMRGO_OK
 }
 

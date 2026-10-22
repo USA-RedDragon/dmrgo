@@ -1598,6 +1598,8 @@ DMRGO_1 {
 		dmrgo_voice_interrupter_decoded_need;
 		dmrgo_voice_interrupter_free;
 		dmrgo_voice_interrupter_interrupt;
+		dmrgo_voice_interrupter_lost;
+		dmrgo_voice_interrupter_lost_need;
 		dmrgo_voice_interrupter_reset;
 		dmrgo_voice_interrupter_state;
 		dmrgo_voice_interrupter_state_string;
@@ -1632,6 +1634,8 @@ DMRGO_1 {
 		dmrgo_voice_transmitter_frame;
 		dmrgo_voice_transmitter_frames;
 		dmrgo_voice_transmitter_free;
+		dmrgo_voice_transmitter_lost;
+		dmrgo_voice_transmitter_lost_need;
 		dmrgo_voice_transmitter_relay;
 		dmrgo_voice_transmitter_reset;
 		dmrgo_voice_transmitter_reverse_channel;

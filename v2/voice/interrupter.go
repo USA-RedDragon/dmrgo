@@ -260,6 +260,13 @@ func (i *Interrupter) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint,
 	return dst
 }
 
+// Lost takes a transport event without a burst, such as an MMDVM
+// TAG_LOST. It only runs the timers, as Tick does. It allocates only when
+// dst has no room for MaxOutputs outputs.
+func (i *Interrupter) Lost(now time.Duration, dst []Output) []Output {
+	return i.Tick(now, dst)
+}
+
 // Tick runs the timers that are due at now and appends their outputs to
 // dst: at most one standalone RC burst, with Position
 // enums.VoiceBurstUnknown, and OutputInterruptFailed when T_RCtimer ran out

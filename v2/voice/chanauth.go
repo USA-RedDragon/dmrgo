@@ -78,6 +78,13 @@ func (t *Transmitter) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint,
 	return dst
 }
 
+// Lost takes a transport event without a burst, such as an MMDVM
+// TAG_LOST. The Transmitter only sends, so Lost only runs the timers, as
+// Tick does. It allocates only when dst has no room for MaxOutputs outputs.
+func (t *Transmitter) Lost(now time.Duration, dst []Output) []Output {
+	return t.Tick(now, dst)
+}
+
 func (t *Transmitter) grant(at time.Duration) {
 	t.state, t.start, t.due, t.sent, t.authWaiting = TransmitterHeader, at, at, 0, false
 }

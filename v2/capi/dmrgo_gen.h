@@ -5527,9 +5527,11 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_VOICE_INTERRUPTER_BURST_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 #define DMRGO_VOICE_INTERRUPTER_CANCEL_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 #define DMRGO_VOICE_INTERRUPTER_DECODED_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
+#define DMRGO_VOICE_INTERRUPTER_LOST_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 #define DMRGO_VOICE_INTERRUPTER_TICK_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 #define DMRGO_VOICE_TRANSMITTER_BURST_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 #define DMRGO_VOICE_TRANSMITTER_DECODED_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
+#define DMRGO_VOICE_TRANSMITTER_LOST_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 #define DMRGO_VOICE_TRANSMITTER_TICK_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 
 /* Go: bs.ActivationAny. ActivationAny wakes up on any valid burst with the own color code, or on any network burst ("MS established timing"). */
@@ -10857,6 +10859,10 @@ int dmrgo_voice_interrupter_decoded_need(dmrgo_voice_interrupter_t *self, dmrgo_
 int dmrgo_voice_interrupter_decoded(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: voice.Interrupter.Interrupt. Interrupt starts an interrupt request with the RC command cmd, whose first standalone RC burst is due at now: enums.RCCeaseTransmissionRequest for a radio that is party to the call, enums.RCCeaseTransmissionCommand for an emergency call. It returns DMRGO_ERR_VOICE_INTERRUPT_BUSY while a request runs, and a DMRGO_ERR_CONFIG for another command. */
 int dmrgo_voice_interrupter_interrupt(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_enums_rc_command_t cmd);
+/* dmrgo_voice_interrupter_lost_need sets *items and *arena to the room that dmrgo_voice_interrupter_lost needs for these arguments, without a change to the handle. */
+int dmrgo_voice_interrupter_lost_need(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+/* Go: voice.Interrupter.Lost. Lost takes a transport event without a burst, such as an MMDVM TAG_LOST. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_interrupter_lost_need gives (DMRGO_VOICE_INTERRUPTER_LOST_MAX_ITEMS items). */
+int dmrgo_voice_interrupter_lost(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: voice.Interrupter.Reset. Reset ends any interrupt request without an output. */
 int dmrgo_voice_interrupter_reset(dmrgo_voice_interrupter_t *self);
 /* Go: voice.Interrupter.State. State returns the state of the Interrupter. */
@@ -10925,7 +10931,11 @@ int dmrgo_voice_transmitter_dropped(dmrgo_voice_transmitter_t *self, int64_t *ou
 int dmrgo_voice_transmitter_frame(dmrgo_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *f);
 /* Go: voice.Transmitter.Frames. Frames queues AMBE+2 frames as Frame does. */
 int dmrgo_voice_transmitter_frames(dmrgo_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *f, size_t f_len);
-/* Go: voice.Transmitter.Relay. Relay takes an event of a Receiver and sends the call again: a CallStart starts it with its headers, voice is queued, a PI Header is sent after the headers, and a CallEnd ends it. It returns DMRGO_ERR_VOICE_BUSY for a CallStart while a call that is not ending runs, and an error for a nil e. e may be NULL. */
+/* dmrgo_voice_transmitter_lost_need sets *items and *arena to the room that dmrgo_voice_transmitter_lost needs for these arguments, without a change to the handle. */
+int dmrgo_voice_transmitter_lost_need(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+/* Go: voice.Transmitter.Lost. Lost takes a transport event without a burst, such as an MMDVM TAG_LOST. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_transmitter_lost_need gives (DMRGO_VOICE_TRANSMITTER_LOST_MAX_ITEMS items). */
+int dmrgo_voice_transmitter_lost(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: voice.Transmitter.Relay. Relay takes an event of a Receiver and sends the call again: a CallStart starts it with its headers, voice is queued, a PI Header is sent after the headers, and a CallEnd ends it. It returns DMRGO_ERR_VOICE_BUSY for a CallStart while a call that is not ending runs, and DMRGO_ERR_NIL_ARGUMENT for a nil e. e may be NULL. */
 int dmrgo_voice_transmitter_relay(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, const dmrgo_voice_event_t *e);
 /* Go: voice.Transmitter.Reset. Reset ends any transmission without an output, empties the queue and forgets the channel state. */
 int dmrgo_voice_transmitter_reset(dmrgo_voice_transmitter_t *self);
