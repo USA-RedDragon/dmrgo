@@ -13,8 +13,7 @@ import (
 // the next slot of that channel, a TDMA frame later: the next but one
 // slot of a direct channel (ETSI TS 102 361-1 clause 5.2.1.7), and the
 // inbound slot of the channel on the aligned timing of a BS, which starts
-// with its outbound slot (ETSI TS 102 361-1 clause 5.1.1, Table 5.1 and
-// Figure 5.23).
+// with its outbound slot (ETSI TS 102 361-1 clause 5.1.1, Table 5.1).
 func onAnswerGrid(t0, due time.Duration) bool {
 	return due >= t0+csbk.BurstInterval && (due-t0)%csbk.BurstInterval == 0
 }
@@ -98,6 +97,40 @@ func TestResponder_PoliteAnswerSlotGrid(t *testing.T) {
 		}
 		if !onAnswerGrid(t0, due) {
 			t.Errorf("seed %d: NACK_Rsp after a holdoff due %v, not a TDMA frame after the request at %v", seed, due, t0)
+		}
+	}
+}
+
+// On the offset channel timing of a BS the inbound slot of a logical
+// channel starts half a TDMA frame after its outbound slot (ETSI TS 102
+// 361-1 clause 5.1.1, Table 5.1).
+func TestResponder_OffsetAnswerSlotGrid(t *testing.T) {
+	t.Parallel()
+	t0 := time.Second
+	for _, tt := range []struct {
+		lead time.Duration
+		idle time.Duration
+		want time.Duration
+	}{
+		{0, 0, t0 + 90*ms},
+		{60 * ms, 0, t0 + 90*ms},
+		{100 * ms, 0, t0 + 150*ms},
+		{0, t0 + 75*ms, t0 + 90*ms},
+		{0, t0 + 100*ms, t0 + 150*ms},
+	} {
+		r := mustResponder(t, &csbk.ResponderConfig{Address: 1002, ColorCode: 1, Source: layer2.SyncSourceMS, Lead: tt.lead, Offset: true})
+		if tt.idle != 0 {
+			r.Channel(0, true)
+		}
+		req := requestAt(t, t0)
+		r.Burst(t0, &req, layer2.Hint{}, nil)
+		if tt.idle != 0 {
+			r.Channel(tt.idle, false)
+		}
+		at, ok := r.Deadline()
+		out := r.Tick(at, nil)
+		if !ok || len(out) != 1 || out[0].Kind != csbk.OutputBurst || out[0].Due != tt.want || (out[0].Due-t0-30*ms)%csbk.BurstInterval != 0 {
+			t.Errorf("lead %v idle %v: %+v, want due %v", tt.lead, tt.idle, out, tt.want)
 		}
 	}
 }

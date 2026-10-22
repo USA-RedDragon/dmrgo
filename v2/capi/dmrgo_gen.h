@@ -1219,6 +1219,8 @@ struct dmrgo_csbk_responder_config_t {
 	dmrgo_duration_t lead;
 	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. DMRGO_ENUMS_SLOT_UNKNOWN leaves it unknown. */
 	dmrgo_enums_slot_t slot;
+	/* Offset puts the answers on the offset channel timing of a BS, in which the inbound slot of a logical channel starts half a TDMA frame after its outbound slot: the answer starts 90 ms after the start of the request, and then on that grid. The zero value is the aligned channel timing of a BS, and a direct channel, where it starts 60 ms after. (ETSI TS 102 361-1 clause 5.1.1, Table 5.1) */
+	bool offset;
 };
 
 struct dmrgo_csbk_timing_config_t {

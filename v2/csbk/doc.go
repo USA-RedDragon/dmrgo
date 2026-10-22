@@ -11,11 +11,17 @@
 // after the constructor no method allocates. Deadline tells when a machine
 // needs a Tick, and each Tick emits at most one burst, 60 ms after the
 // burst before it. now is the start of the received burst; Due is the
-// start of the burst to send. A Responder answers in the next slot of the
-// logical channel of the request, a TDMA frame after its start: the next
-// but one slot of a direct channel, and on the aligned channel timing of a
-// BS the inbound slot of the channel, which starts with its outbound slot
-// (ETSI TS 102 361-1 clauses 5.1.1 and 5.2.1.7, Table 5.1 and Figure 5.23).
+// start of the burst to send. A Responder answers in a slot of the
+// logical channel of the request, a TDMA frame or more after its start: the
+// next but one slot of a direct channel, and on the aligned channel timing
+// of a BS the inbound slot of the channel, which starts with its outbound
+// slot (ETSI TS 102 361-1 clauses 5.1.1 and 5.2.1.7, Table 5.1). On the
+// offset channel timing of a BS, ResponderConfig.Offset, the inbound slot
+// of the channel starts half a TDMA frame after its outbound slot. Its
+// first slot after the request starts 30 ms after it, which leaves no time
+// to decode the request, so the answer goes in the slot after that, 90 ms
+// after the request. ETSI gives no answer delay; this is the choice of
+// dmrgo.
 //
 //   - Requester sends a CSBK, after Pre_CSBKs when asked, with the channel
 //     access of the request: polite or impolite, the idle search T_IdleSrch

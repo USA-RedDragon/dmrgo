@@ -259,6 +259,7 @@ func in_csbk_ResponderConfig(s *C.dmrgo_csbk_responder_config_t) (d g_csbk.Respo
 	}
 	d.Lead = time.Duration(s.lead)
 	d.Slot = g_enums.Slot(s.slot)
+	d.Offset = bool(s.offset)
 	return
 }
 
@@ -4853,6 +4854,7 @@ func out_csbk_ResponderConfig(d *C.dmrgo_csbk_responder_config_t, s *g_csbk.Resp
 	d.scratch = nil
 	d.lead = C.dmrgo_duration_t(s.Lead)
 	d.slot = C.dmrgo_enums_slot_t(s.Slot)
+	d.offset = C.bool(s.Offset)
 }
 
 func fromC_csbk_ResponderConfig(s *C.dmrgo_csbk_responder_config_t) g_csbk.ResponderConfig {
