@@ -257,7 +257,7 @@ func TestPeerRunning(t *testing.T) {
 		t.Fatalf("beacon %v", kinds(out))
 	}
 	out = p.Packet(70*s, ctl(dmrd.CommandMSTNAK, 1234), nil)
-	if len(out) != 1 || out[0].Reason != dmrdsession.ReasonRefused || out[0].State != dmrdsession.StateRunning || p.State() != dmrdsession.StateLogin {
+	if len(out) != 1 || out[0].Reason != dmrdsession.ReasonRefused || out[0].State != dmrdsession.StateRunning || p.State() != dmrdsession.StateWait {
 		t.Fatalf("nak %+v %v", out, p.State())
 	}
 	if at, _ := p.Deadline(); at != 80*s {
@@ -281,6 +281,24 @@ func TestPeerRunning(t *testing.T) {
 	p.Reset()
 	if at, ok := p.Deadline(); !ok || at != 0 {
 		t.Fatal("reset")
+	}
+}
+
+func TestPeerNAKsOfOneSession(t *testing.T) {
+	t.Parallel()
+
+	s := time.Second
+	p := runningPeer(t)
+	if out := p.Packet(70*s, ctl(dmrd.CommandMSTNAK, 1234), nil); count(out, dmrdsession.OutputDown) != 1 {
+		t.Fatalf("nak %v", kinds(out))
+	}
+	for range 3 {
+		if out := p.Packet(70*s, ctl(dmrd.CommandMSTNAK, 1234), nil); len(out) != 0 {
+			t.Fatalf("nak of a packet of the session that ended: %v %v", kinds(out), p.State())
+		}
+	}
+	if at, _ := p.Deadline(); at != 80*s {
+		t.Fatalf("login again at %v", at)
 	}
 }
 
