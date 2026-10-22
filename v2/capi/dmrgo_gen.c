@@ -259,6 +259,7 @@ void dmrgo__fail(int code) {
 	size_t n = strlen(m);
 	last.code = code;
 	last.kind = 0;
+	last.chain_len = 0;
 	last.msg_len = n;
 	if (n > sizeof last.msg - 1)
 		n = sizeof last.msg - 1;

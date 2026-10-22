@@ -1425,6 +1425,7 @@ sym hand const char *dmrgo_strerror(int status);
 sym hand enum dmrgo_status { DMRGO_OK = 0, DMRGO_ERR_HANDLE = -2, DMRGO_ERR_ARG = -3, DMRGO_ERR_SHORT = -6, DMRGO_ERR_PANIC = -7, DMRGO_ERR_OTHER = -8, DMRGO_ERR_BOUND = -9 };
 sym hand int dmrgo_abi_version(void);
 sym hand int dmrgo_last_error_code(void);
+sym hand int dmrgo_last_error_is(int status, bool *out);
 sym hand int dmrgo_last_error_message(char *buf, size_t cap, size_t *len, size_t *need);
 sym hand int dmrgo_version(char *buf, size_t cap, size_t *len, size_t *need);
 sym int dmrgo_ars_decode_message(const uint8_t *data, size_t data_len, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);

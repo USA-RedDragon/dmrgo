@@ -52,6 +52,8 @@ static inline int dmrgo_dvsi_port_vtable_t__write(const dmrgo_dvsi_port_vtable_t
 typedef struct dmrgo__last_t {
 	int code;
 	int kind;
+	int chain_len;
+	int chain[16];
 	size_t msg_len;
 	char msg[512];
 	union {

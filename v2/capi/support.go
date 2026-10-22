@@ -118,10 +118,72 @@ func setLast(code C.int, msg string) C.int {
 	l := C.dmrgo__last()
 	l.code = code
 	l.kind = 0
+	l.chain_len = 0
 	l.msg_len = C.size_t(len(msg))
 	b := unsafe.Slice((*byte)(unsafe.Pointer(&l.msg[0])), len(l.msg))
 	b[copy(b[:len(b)-1], msg)] = 0
 	return code
+}
+
+func errWalk(err error, f func(C.int) bool) bool {
+	for e := err; e != nil; {
+		if c := errCode1(e); c != C.DMRGO_ERR_OTHER && f(c) {
+			return true
+		}
+		switch u := e.(type) {
+		case interface{ Unwrap() []error }:
+			for _, x := range u.Unwrap() {
+				if errWalk(x, f) {
+					return true
+				}
+			}
+			return false
+		case interface{ Unwrap() error }:
+			e = u.Unwrap()
+		default:
+			return false
+		}
+	}
+	return false
+}
+
+func errCode(err error) C.int {
+	code := C.int(C.DMRGO_ERR_OTHER)
+	errWalk(err, func(c C.int) bool {
+		code = c
+		return true
+	})
+	return code
+}
+
+func setChain(err error) {
+	l := C.dmrgo__last()
+	errWalk(err, func(c C.int) bool {
+		for _, x := range l.chain[:l.chain_len] {
+			if x == c {
+				return false
+			}
+		}
+		if int(l.chain_len) < len(l.chain) {
+			l.chain[l.chain_len] = c
+			l.chain_len++
+		}
+		return false
+	})
+}
+
+//export dmrgo_last_error_is
+func dmrgo_last_error_is(code C.int, out *C.bool) C.int {
+	if out == nil {
+		return C.DMRGO_ERR_ARG
+	}
+	l := C.dmrgo__last()
+	is := code != C.DMRGO_OK && code == l.code
+	for _, x := range l.chain[:l.chain_len] {
+		is = is || x == code
+	}
+	*out = C.bool(is)
+	return C.DMRGO_OK
 }
 
 type outc struct {

@@ -198,6 +198,27 @@ static void test_self_writes(void) {
 	printf("self: read-only calls take a const self and no arena\n");
 }
 
+static void test_error_is(void) {
+	dmrgo_pdu_rate12_data_t blk = {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}};
+	dmrgo_packet_response_data_t rd;
+	CHECK(dmrgo_packet_decode_response_data(&blk, 1, &rd) == DMRGO_ERR_PACKET_RESPONSE_DATA);
+	bool is = false;
+	OK(dmrgo_last_error_is(DMRGO_ERR_PACKET_RESPONSE_DATA, &is));
+	CHECK(is);
+	OK(dmrgo_last_error_is(DMRGO_ERR_FEC_UNCORRECTABLE, &is));
+	CHECK(is);
+	OK(dmrgo_last_error_is(DMRGO_ERR_PACKET_FORMAT, &is));
+	CHECK(!is);
+	CHECK(dmrgo_last_error_is(DMRGO_ERR_FEC_UNCORRECTABLE, NULL) == DMRGO_ERR_ARG);
+	CHECK(dmrgo_last_error_code() == DMRGO_ERR_PACKET_RESPONSE_DATA);
+	CHECK(dmrgo_layer2_new_burst(NULL) == DMRGO_ERR_ARG);
+	OK(dmrgo_last_error_is(DMRGO_ERR_FEC_UNCORRECTABLE, &is));
+	CHECK(!is);
+	OK(dmrgo_last_error_is(DMRGO_ERR_ARG, &is));
+	CHECK(is);
+	printf("error is: wrapped errors are visible through dmrgo_last_error_is\n");
+}
+
 static void test_bad_args(void) {
 	dmrgo_ars_message_t am = {0};
 	uint8_t out[4];
@@ -815,6 +836,7 @@ int main(int argc, char **argv) {
 	test_self_writes();
 	test_in_out();
 	test_bad_args();
+	test_error_is();
 	test_tx();
 	test_voice_capture(argv[1]);
 	test_vocoder();
