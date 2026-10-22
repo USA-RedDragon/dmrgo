@@ -5032,10 +5032,8 @@ struct dmrgo_trunk_follower_config_t {
 	/* SysCode, when set, is the system to follow: a TSCC with another MODEL, NET or SITE is skipped. Nil follows the first TSCC found. */
 	bool has_sys_code;
 	dmrgo_pdu_sys_code_t sys_code;
-	/* Hunt holds the first HuntLen channel numbers of the hunt list. With a hunt list the Follower asks for each channel in turn with OutputTune until it finds a TSCC, and an Ann_WD_TSCC broadcast adds and withdraws channels. With HuntLen 0 the consumer keeps the receiver on one TSCC, which is then channel CHNULL. */
-	uint16_t hunt[64];
-	/* HuntLen is the number of entries of Hunt in use. */
-	int64_t hunt_len;
+	/* Hunt, when set, is the hunt list. The Follower copies it, asks for each channel in turn with OutputTune until it finds a TSCC, and adds and withdraws channels on an Ann_WD_TSCC broadcast. With a nil or empty Hunt the consumer keeps the receiver on one TSCC, which is then channel CHNULL. */
+	dmrgo_trunk_hunt_list_t *hunt;
 	/* Plan, when set, is the channel plan to start from. The Follower copies it and adds the channels that CG_AP and Chan_Freq announce. */
 	dmrgo_trunk_channel_plan_t *plan;
 	/* Talkgroups holds the first TalkgroupsLen 24-bit talkgroups to follow. TalkgroupsLen 0 follows every talkgroup. */
@@ -5081,10 +5079,8 @@ struct dmrgo_trunk_ms_config_t {
 	/* SysCode, when set, is the system to use, as in FollowerConfig. */
 	bool has_sys_code;
 	dmrgo_pdu_sys_code_t sys_code;
-	/* Hunt holds the first HuntLen channel numbers of the hunt list. */
-	uint16_t hunt[64];
-	/* HuntLen is the number of entries of Hunt in use. */
-	int64_t hunt_len;
+	/* Hunt, when set, is the hunt list, as in FollowerConfig. */
+	dmrgo_trunk_hunt_list_t *hunt;
 	/* Plan, when set, is the channel plan to start from. */
 	dmrgo_trunk_channel_plan_t *plan;
 	/* Slot is the TDMA channel of the TSCC on which the MS makes random access. SlotUnknown means enums.Slot1. */
@@ -5570,7 +5566,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_PACKET_NO_FIRST_TRY (-122)
 #define DMRGO_ERR_PACKET_NO_HEADER (-123)
 #define DMRGO_ERR_PACKET_NO_RETRY_BLOCKS (-124)
-#define DMRGO_ERR_PACKET_NO_ROOM (-241)
+#define DMRGO_ERR_PACKET_NO_ROOM (-240)
 #define DMRGO_ERR_PACKET_RATE (-125)
 #define DMRGO_ERR_PACKET_RATE_CHANGE (-126)
 #define DMRGO_ERR_PACKET_RESPONSE_DATA (-127)
@@ -5610,7 +5606,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_VOCODER_REGISTRY_FULL (-141)
 #define DMRGO_ERR_VOCODER_UNKNOWN_CODEC (-142)
 #define DMRGO_ERR_VOICE_BUSY (-147)
-#define DMRGO_ERR_VOICE_INTERRUPT_BUSY (-240)
+#define DMRGO_ERR_VOICE_INTERRUPT_BUSY (-241)
 #define DMRGO_ERR_VOICE_NOT_ACTIVE (-148)
 #define DMRGO_ERR_VOICE_QUEUE_FULL (-149)
 #define DMRGO_ERR_VOICE_TIMED_OUT (-150)

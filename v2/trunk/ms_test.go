@@ -212,7 +212,7 @@ func TestMS_Called(t *testing.T) {
 func TestNewMS_Errors(t *testing.T) {
 	t.Parallel()
 	var ce *dmrgo.ConfigError
-	for _, cfg := range []*trunk.MSConfig{nil, {}, {Address: 0xFFFFFF}, {Address: 1, HuntLen: 65}} {
+	for _, cfg := range []*trunk.MSConfig{nil, {}, {Address: 0xFFFFFF}} {
 		if _, err := trunk.NewMS(cfg); !errors.As(err, &ce) {
 			t.Errorf("NewMS(%+v) = %v, want a *dmrgo.ConfigError", cfg, err)
 		}

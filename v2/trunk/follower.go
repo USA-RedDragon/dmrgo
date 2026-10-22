@@ -20,14 +20,12 @@ type FollowerConfig struct {
 	// SysCode, when set, is the system to follow: a TSCC with another
 	// MODEL, NET or SITE is skipped. Nil follows the first TSCC found.
 	SysCode *pdu.SysCode
-	// Hunt holds the first HuntLen channel numbers of the hunt list. With
-	// a hunt list the Follower asks for each channel in turn with
-	// OutputTune until it finds a TSCC, and an Ann_WD_TSCC broadcast adds
-	// and withdraws channels. With HuntLen 0 the consumer keeps the
-	// receiver on one TSCC, which is then channel CHNULL.
-	Hunt [MaxChannels]uint16
-	// HuntLen is the number of entries of Hunt in use.
-	HuntLen int
+	// Hunt, when set, is the hunt list. The Follower copies it, asks for
+	// each channel in turn with OutputTune until it finds a TSCC, and adds
+	// and withdraws channels on an Ann_WD_TSCC broadcast. With a nil or
+	// empty Hunt the consumer keeps the receiver on one TSCC, which is then
+	// channel CHNULL.
+	Hunt *HuntList
 	// Plan, when set, is the channel plan to start from. The Follower
 	// copies it and adds the channels that CG_AP and Chan_Freq announce.
 	Plan *ChannelPlan
@@ -113,9 +111,8 @@ type Follower struct {
 }
 
 // NewFollower returns a Follower for cfg. A nil cfg means the zero
-// FollowerConfig. It returns a *dmrgo.ConfigError for a HuntLen or
-// TalkgroupsLen out of range, a hunt list channel that names no channel, a
-// talkgroup over 24 bits, a negative SysErrors, or a SysCode whose fields
+// FollowerConfig. It returns a *dmrgo.ConfigError for a TalkgroupsLen out
+// of range, a talkgroup over 24 bits, a negative SysErrors, or a SysCode whose fields
 // do not fit. It allocates the Follower, and its
 // Burst unless cfg.Scratch is set.
 func NewFollower(cfg *FollowerConfig) (*Follower, error) {
@@ -129,9 +126,6 @@ func NewFollower(cfg *FollowerConfig) (*Follower, error) {
 func (f *Follower) init(cfg *FollowerConfig) error {
 	if cfg == nil {
 		return f.init(&FollowerConfig{})
-	}
-	if cfg.HuntLen < 0 || cfg.HuntLen > MaxChannels {
-		return errHunt
 	}
 	if cfg.TalkgroupsLen < 0 || cfg.TalkgroupsLen > MaxTalkgroups {
 		return errTalkgroups
@@ -157,12 +151,10 @@ func (f *Follower) init(cfg *FollowerConfig) error {
 	if cfg.Plan != nil {
 		f.ctl.plan = *cfg.Plan
 	}
-	for i := range cfg.HuntLen {
-		if f.ctl.hunt.Add(HuntEntry{Channel: cfg.Hunt[i]}) != nil {
-			return errHunt
-		}
+	if cfg.Hunt != nil {
+		f.ctl.hunt = *cfg.Hunt
 	}
-	f.ctl.useHunt = cfg.HuntLen > 0
+	f.ctl.useHunt = f.ctl.hunt.Len() > 0
 	if f.noSignal == 0 {
 		f.noSignal = constants.TNoSignalDefault
 	}

@@ -16,7 +16,7 @@ func TestNilBurst(t *testing.T) {
 	if err := plan.AddRule(trunk.ChannelRule{First: 1, Last: 100, RXHz: 451_000_000, StepHz: 12_500, TXOffsetHz: 5_000_000}); err != nil {
 		t.Fatal(err)
 	}
-	f, err := trunk.NewFollower(&trunk.FollowerConfig{SysCode: &testSys, Plan: &plan, Hunt: [trunk.MaxChannels]uint16{1}, HuntLen: 1})
+	f, err := trunk.NewFollower(&trunk.FollowerConfig{SysCode: &testSys, Plan: &plan, Hunt: huntList(t, 1)})
 	if err != nil {
 		t.Fatal(err)
 	}

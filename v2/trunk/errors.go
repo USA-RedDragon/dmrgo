@@ -48,7 +48,6 @@ var (
 )
 
 var (
-	errHunt          error = &dmrgo.ConfigError{Type: pkgName, Field: "Hunt"}
 	errTalkgroups    error = &dmrgo.ConfigError{Type: pkgName, Field: "Talkgroups"}
 	errSysCode       error = &dmrgo.ConfigError{Type: pkgName, Field: "SysCode"}
 	errAddress       error = &dmrgo.ConfigError{Type: pkgName, Field: "Address"}

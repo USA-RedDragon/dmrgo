@@ -14,7 +14,7 @@ import (
 func TestAllocsFollower(t *testing.T) {
 	caps := readCapture(t, "testdata/t3cc.bits")
 	pool := newPool(t)
-	f, err := trunk.NewFollower(&trunk.FollowerConfig{Hunt: [trunk.MaxChannels]uint16{1}, HuntLen: 1})
+	f, err := trunk.NewFollower(&trunk.FollowerConfig{Hunt: huntList(t, 1)})
 	if err != nil {
 		t.Fatal(err)
 	}
