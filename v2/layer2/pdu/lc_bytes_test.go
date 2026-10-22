@@ -172,7 +172,7 @@ func TestLCBytes_EditsKeepOtherBits(t *testing.T) {
 			if _, _, ok := l.Addresses(); ok {
 				t.Fatalf("%x: Addresses ok for FLCO %d", orig, orig.FLCO())
 			}
-			if err := l.SetGroup(true); !errors.Is(err, pdu.ErrNoAddresses) || l != orig {
+			if err := l.SetGroup(true); !errors.Is(err, pdu.ErrNoGroupFlag) || l != orig {
 				t.Fatalf("%x: SetGroup accepted FLCO %d", orig, orig.FLCO())
 			}
 			continue
@@ -264,7 +264,7 @@ func TestLCBytes_SetServiceOptionsRange(t *testing.T) {
 		t.Errorf("GPS LC: %v", err)
 	}
 	var nilLC *pdu.LCBytes
-	if err := nilLC.SetServiceOptions(layer3.ServiceOptions{}); !errors.Is(err, pdu.ErrNoServiceOptions) {
+	if err := nilLC.SetServiceOptions(layer3.ServiceOptions{}); !errors.Is(err, dmrgo.ErrNilReceiver) {
 		t.Errorf("nil LCBytes: %v", err)
 	}
 	if err := l.SetServiceOptions(layer3.ServiceOptions{IsEmergency: true}); err != nil || !soOK(l, layer3.ServiceOptions{IsEmergency: true}) {
@@ -279,7 +279,7 @@ func TestLCBytes_CallOtherFLCO(t *testing.T) {
 	if g, _, _, ok := l.Call(); g || ok {
 		t.Errorf("GPS LC: Call %t %t", g, ok)
 	}
-	if err := l.SetGroup(true); !errors.Is(err, pdu.ErrNoAddresses) {
+	if err := l.SetGroup(true); !errors.Is(err, pdu.ErrNoGroupFlag) {
 		t.Errorf("GPS LC: SetGroup %v", err)
 	}
 }

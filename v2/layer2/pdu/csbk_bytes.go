@@ -127,22 +127,22 @@ func (c *CSBKBytes) Group() (group, ok bool) {
 }
 
 // SetGroup writes the flag that Group returns. It does not update the CRC;
-// call Reseal. It returns false, and changes nothing, for a CSBK for which
-// Group returns no flag.
-func (c *CSBKBytes) SetGroup(group bool) bool {
+// call Reseal. It returns ErrNoGroupFlag, and changes nothing, for a CSBK
+// for which Group returns no flag.
+func (c *CSBKBytes) SetGroup(group bool) error {
 	if c == nil {
-		return false
+		return dmrgo.ErrNilReceiver
 	}
 	o, m, ok := c.groupBit()
 	if !ok {
-		return false
+		return ErrNoGroupFlag
 	}
 	if group {
 		c[o] |= m
 	} else {
 		c[o] &^= m
 	}
-	return true
+	return nil
 }
 
 // CRCOK reports whether octets 10 and 11 hold the CRC of octets 0 to 9 with
