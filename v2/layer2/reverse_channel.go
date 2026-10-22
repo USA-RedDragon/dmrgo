@@ -1,6 +1,7 @@
 package layer2
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -20,8 +21,12 @@ func DecodeEmbeddedRC(data [4]byte) pdu.ReverseChannel {
 
 // EncodeEmbeddedRC encodes a Reverse Channel PDU into the 32 transmit bits
 // of the embedded signalling data field, packed as DecodeEmbeddedRC takes
-// them. It returns an error when the RC command does not fit in 4 bits.
+// them. It returns an error when the RC command does not fit in 4 bits, and
+// dmrgo.ErrNilArgument for a nil rc.
 func EncodeEmbeddedRC(rc *pdu.ReverseChannel) ([4]byte, error) {
+	if rc == nil {
+		return [4]byte{}, dmrgo.ErrNilArgument
+	}
 	info, err := rc.Encode()
 	if err != nil {
 		return [4]byte{}, err

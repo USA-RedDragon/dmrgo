@@ -8470,11 +8470,11 @@ int dmrgo_layer2_embedded_lc_assembler_free(dmrgo_layer2_embedded_lc_assembler_t
 int dmrgo_layer2_embedded_lc_assembler_add(dmrgo_layer2_embedded_lc_assembler_t *self, const uint8_t frag[4], dmrgo_enums_lcss_t lcss, uint8_t lc[9], dmrgo_fec_result_t *res, bool *done);
 /* Go: layer2.EmbeddedLCAssembler.Reset. Reset discards any partial LC. */
 int dmrgo_layer2_embedded_lc_assembler_reset(dmrgo_layer2_embedded_lc_assembler_t *self);
-/* Go: layer2.EncodeEmbeddedFullLinkControl. EncodeEmbeddedFullLinkControl returns the four embedded signalling fields, in burst order B to E, that carry lc. lc may be NULL. */
+/* Go: layer2.EncodeEmbeddedFullLinkControl. EncodeEmbeddedFullLinkControl returns the four embedded signalling fields, in burst order B to E, that carry lc. It returns DMRGO_ERR_NIL_ARGUMENT for a nil lc. lc may be NULL. */
 int dmrgo_layer2_encode_embedded_full_link_control(const dmrgo_pdu_full_link_control_t *lc, uint8_t out[4][4]);
 /* Go: layer2.EncodeEmbeddedLC. EncodeEmbeddedLC returns the four 32-bit embedded signalling fields, in burst order B to E, that carry the 9-octet LC lc, in the form dmrgo_layer2_raw_burst_set_embedded_data takes. */
 int dmrgo_layer2_encode_embedded_lc(const uint8_t lc[9], uint8_t out[4][4]);
-/* Go: layer2.EncodeEmbeddedRC. EncodeEmbeddedRC encodes a Reverse Channel PDU into the 32 transmit bits of the embedded signalling data field, packed as DecodeEmbeddedRC takes them. rc may be NULL. */
+/* Go: layer2.EncodeEmbeddedRC. EncodeEmbeddedRC encodes a Reverse Channel PDU into the 32 transmit bits of the embedded signalling data field, packed as DecodeEmbeddedRC takes them. It returns an error when the RC command does not fit in 4 bits, and DMRGO_ERR_NIL_ARGUMENT for a nil rc. rc may be NULL. */
 int dmrgo_layer2_encode_embedded_rc(const dmrgo_pdu_reverse_channel_t *rc, uint8_t out[4]);
 /* Go: layer2.EncodeShortLCToCACH. EncodeShortLCToCACH encodes a Short LC PDU into the 4 CACH fields that carry it, in transmit order. slc may be NULL. */
 int dmrgo_layer2_encode_short_lc_to_cach(const dmrgo_pdu_short_lc_t *slc, const dmrgo_pdu_tact_t *tact, uint8_t out[4][3]);
