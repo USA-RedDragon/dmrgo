@@ -25,26 +25,26 @@ func TestNext(t *testing.T) {
 		name string
 		p    []byte
 		n    int
-		st   mmdvm.Status
+		st   mmdvm.NextResult
 		cmd  mmdvm.Command
 		pl   []byte
 	}{
-		{"empty", nil, 0, mmdvm.StatusMore, 0, nil},
-		{"start only", []byte{0xE0}, 0, mmdvm.StatusMore, 0, nil},
-		{"partial", []byte{0xE0, 4, 0x70}, 0, mmdvm.StatusMore, 0, nil},
-		{"ack", []byte{0xE0, 4, 0x70, 2, 0xE0}, 4, mmdvm.StatusFrame, mmdvm.CommandAck, []byte{2}},
-		{"no payload", []byte{0xE0, 3, 1}, 3, mmdvm.StatusFrame, mmdvm.CommandGetStatus, []byte{}},
-		{"junk", []byte{1, 2, 0xE0, 3}, 2, mmdvm.StatusSkip, 0, nil},
-		{"all junk", []byte{1, 2, 3}, 3, mmdvm.StatusSkip, 0, nil},
-		{"length 2", []byte{0xE0, 2, 0, 0}, 1, mmdvm.StatusSkip, 0, nil},
-		{"long partial", []byte{0xE0, 0}, 0, mmdvm.StatusMore, 0, nil},
-		{"long 255", []byte{0xE0, 0, 0, 0}, 1, mmdvm.StatusSkip, 0, nil},
-		{"long", lf, 304, mmdvm.StatusFrame, mmdvm.CommandFMData, long},
-		{"long short", lf[:303], 0, mmdvm.StatusMore, 0, nil},
+		{"empty", nil, 0, mmdvm.NextMore, 0, nil},
+		{"start only", []byte{0xE0}, 0, mmdvm.NextMore, 0, nil},
+		{"partial", []byte{0xE0, 4, 0x70}, 0, mmdvm.NextMore, 0, nil},
+		{"ack", []byte{0xE0, 4, 0x70, 2, 0xE0}, 4, mmdvm.NextFrame, mmdvm.CommandAck, []byte{2}},
+		{"no payload", []byte{0xE0, 3, 1}, 3, mmdvm.NextFrame, mmdvm.CommandGetStatus, []byte{}},
+		{"junk", []byte{1, 2, 0xE0, 3}, 2, mmdvm.NextSkip, 0, nil},
+		{"all junk", []byte{1, 2, 3}, 3, mmdvm.NextSkip, 0, nil},
+		{"length 2", []byte{0xE0, 2, 0, 0}, 1, mmdvm.NextSkip, 0, nil},
+		{"long partial", []byte{0xE0, 0}, 0, mmdvm.NextMore, 0, nil},
+		{"long 255", []byte{0xE0, 0, 0, 0}, 1, mmdvm.NextSkip, 0, nil},
+		{"long", lf, 304, mmdvm.NextFrame, mmdvm.CommandFMData, long},
+		{"long short", lf[:303], 0, mmdvm.NextMore, 0, nil},
 	}
 	for _, c := range cases {
 		f, n, st := mmdvm.Next(c.p)
-		if n != c.n || st != c.st || st == mmdvm.StatusFrame && (f.Command != c.cmd || !bytes.Equal(f.Payload, c.pl)) {
+		if n != c.n || st != c.st || st == mmdvm.NextFrame && (f.Command != c.cmd || !bytes.Equal(f.Payload, c.pl)) {
 			t.Errorf("%s: %+v %d %v", c.name, f, n, st)
 		}
 	}

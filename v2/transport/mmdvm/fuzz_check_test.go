@@ -30,16 +30,16 @@ func checkStream(t *testing.T, p []byte) {
 	t.Helper()
 	for len(p) > 0 {
 		f, n, st := mmdvm.Next(p)
-		if st == mmdvm.StatusMore {
+		if st == mmdvm.NextMore {
 			return
 		}
 		if n <= 0 || n > len(p) {
 			t.Fatalf("%x: n %d", p, n)
 		}
-		if st == mmdvm.StatusFrame {
+		if st == mmdvm.NextFrame {
 			back, err := mmdvm.AppendFrame(nil, f.Command, f.Payload)
 			g, m, gst := mmdvm.Next(back)
-			if err != nil || gst != mmdvm.StatusFrame || m != len(back) || g.Command != f.Command || !bytes.Equal(g.Payload, f.Payload) {
+			if err != nil || gst != mmdvm.NextFrame || m != len(back) || g.Command != f.Command || !bytes.Equal(g.Payload, f.Payload) {
 				t.Fatalf("frame %x: %x %v", p[:n], back, err)
 			}
 			if p[1] != 0 && !bytes.Equal(back, p[:n]) {

@@ -52,7 +52,7 @@ func TestCapturedFramesRoundTrip(t *testing.T) {
 		}
 		for i, c := range frames {
 			f, n, st := mmdvm.Next(stream)
-			if st != mmdvm.StatusFrame || n != len(c.p) {
+			if st != mmdvm.NextFrame || n != len(c.p) {
 				t.Fatalf("%s %d: %v %d", file.name, i, st, n)
 			}
 			stream = stream[n:]
