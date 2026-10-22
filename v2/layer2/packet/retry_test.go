@@ -82,8 +82,8 @@ func TestAssembler_FirstHeaderLost(t *testing.T) {
 	if err != nil || m == nil {
 		t.Fatalf("later try: %v %v", m, err)
 	}
-	if len(m.Data) != len(data)+pad || !bytes.Equal(m.Data[:len(data)], data) || get(t, &m.Header, (*pdu.DataHeader).AsConfirmed).FullMessageFlag {
-		t.Fatalf("data %x, want %x and %d pad octets", m.Data, data, pad)
+	if !bytes.Equal(m.Data, data) || m.BadCRC || get(t, &m.Header, (*pdu.DataHeader).AsConfirmed).FullMessageFlag {
+		t.Fatalf("data %x, want %x without the %d pad octets", m.Data, data, pad)
 	}
 }
 

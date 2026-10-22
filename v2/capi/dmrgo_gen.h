@@ -1307,7 +1307,7 @@ struct dmrgo_data_message_t {
 	dmrgo_pdu_proprietary_header_t proprietary;
 	/* Rate is the data type of the blocks: DMRGO_ENUMS_DATA_TYPE_RATE12, DMRGO_ENUMS_DATA_TYPE_RATE34 or DMRGO_ENUMS_DATA_TYPE_RATE1. For dmrgo_data_sender_send the zero value means DMRGO_ENUMS_DATA_TYPE_RATE12. */
 	dmrgo_enums_data_type_t rate;
-	/* Payload is the user data, without the pad octets and the message CRC. A packet whose first header was lost keeps its pad octets, as only a first try counts them. It holds at most MaxMessage octets (ETSI TS 102 361-1 clause 9.3.20). */
+	/* Payload is the user data, without the pad octets and the message CRC. A packet whose first header was lost keeps its pad octets, as only a first try counts them, unless a later try resent every block, as dmrgo_packet_message_t.data describes. It holds at most MaxMessage octets (ETSI TS 102 361-1 clause 9.3.20). */
 	uint8_t *payload;
 	size_t payload_len;
 	/* BadCRC reports a packet whose CRC failed, which a Receiver delivers only with dmrgo_data_receiver_config_t.accept_bad_crc. */
@@ -2128,7 +2128,7 @@ struct dmrgo_packet_message_t {
 	dmrgo_enums_data_type_t data_type;
 	/* Blocks is the number of data blocks that Data was built from, 0 for a packet without data blocks, such as a header-only response, or one whose blocks all failed their FEC. */
 	int64_t blocks;
-	/* Data is the user data. The pad octets of a U_HEAD or C_HEAD packet are removed when the header is a first try (Full Message Flag set). A packet that a later try started, because the first header was lost, keeps them, as only a first try counts them. A DD_HEAD or R_HEAD packet has Bit Padding/8 octets removed on every try, as its retries keep the Bit Padding of the first try. It holds at most 3048 bytes: 127 blocks of at most 24 octets. (ETSI TS 102 361-1 clause 9.3.20, clause 9.3.44) */
+	/* Data is the user data. The pad octets of a U_HEAD or C_HEAD packet are removed when the header is a first try (Full Message Flag set). A packet that a later try started, because the first header was lost, has them removed too when every DBSN from 0 to one less than the Blocks to Follow of the header that started it arrived, in that try or a later one, and the message CRC holds: such a header, as a sender sends it after no response or a NACK, keeps the Pad Octet Count of the first try, though ETSI TS 102 361-1 clause 9.3.20 has a receiver read it only on a first try. Otherwise a packet that a later try started keeps them. A DD_HEAD or R_HEAD packet has Bit Padding/8 octets removed on every try, as its retries keep the Bit Padding of the first try. It holds at most 3048 bytes: 127 blocks of at most 24 octets. (ETSI TS 102 361-1 clause 9.3.20, clause 9.3.44) */
 	uint8_t *data;
 	size_t data_len;
 	/* CRC is the received message CRC. */

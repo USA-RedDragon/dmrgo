@@ -398,8 +398,8 @@ func (s *session) samePacket(m *packet.Message) bool {
 	}
 	pad := s.pad
 	switch f := m.Header.Format(); {
-	case f == pdu.FormatShortDataDefined || f == pdu.FormatShortDataRawOrStatusPrecoded,
-		fullFlag(&m.Header) && (f == pdu.FormatUnconfirmed || f == pdu.FormatConfirmed):
+	case f == pdu.FormatShortDataDefined || f == pdu.FormatShortDataRawOrStatusPrecoded, f == pdu.FormatConfirmed,
+		fullFlag(&m.Header) && f == pdu.FormatUnconfirmed:
 		pad = 0
 	}
 	return len(m.Data) == len(s.payload)+pad && bytes.Equal(m.Data[:len(s.payload)], s.payload) &&
