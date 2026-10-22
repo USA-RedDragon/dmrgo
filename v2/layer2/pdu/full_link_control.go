@@ -14,7 +14,7 @@ import (
 //
 //dmr:fec reed_solomon_12_9_4
 //dmr:input BurstDataType
-//dmr:fec_mask BurstDataType enums.DataTypeVoiceLCHeader=0x969696 enums.DataTypeTerminatorWithLC=0x999999
+//dmr:fec_mask BurstDataType err:ErrNoFullLCMask enums.DataTypeVoiceLCHeader=0x969696 enums.DataTypeTerminatorWithLC=0x999999
 //dmr:dispatch_if FID==0
 //dmr:variant GroupVoice FLCGroupVoice FLCO=enums.FLCOGroupVoiceChannelUser
 //dmr:variant UnitToUnit FLCUnitToUnit FLCO=enums.FLCOUnitToUnitVoiceChannelUser

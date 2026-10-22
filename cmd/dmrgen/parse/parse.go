@@ -174,6 +174,7 @@ type FECMask struct {
 type FECMaskDirective struct {
 	Field string    // name of the selector field
 	Masks []FECMask // mask per selector value
+	Err   string    // from err:Name, the exported error that Encode returns for a value without a mask
 }
 
 // ConstDirective is a dmr:const directive: bits that Encode sets to a fixed
@@ -272,6 +273,10 @@ type PDUStruct struct {
 	// dmr:subpdu structs without a CRC or FEC of the package, whose Encode
 	// is the unexported encode method that the parent calls.
 	UnexportedEncode map[string]bool
+
+	// Types holds the structs of the package by name, for the variant
+	// types. SetUnexportedDecode fills it.
+	Types map[string]*PDUStruct
 }
 
 // EncodeFuncName returns the name of the encode method of the struct
@@ -359,6 +364,7 @@ func SetUnexportedDecode(pdus []PDUStruct) error {
 	for i := range pdus {
 		pdus[i].UnexportedDecode = sub
 		pdus[i].UnexportedEncode = enc
+		pdus[i].Types = byName
 	}
 	return nil
 }
@@ -749,6 +755,13 @@ func parseFECMask(arg string) (*FECMaskDirective, error) {
 	}
 	dir := &FECMaskDirective{Field: parts[0]}
 	for _, p := range parts[1:] {
+		if name, ok := strings.CutPrefix(p, "err:"); ok {
+			if !token.IsExported(name) || dir.Err != "" {
+				return nil, fmt.Errorf("dmr:fec_mask entry %q is not one exported error name", p)
+			}
+			dir.Err = name
+			continue
+		}
 		val, maskStr, ok := strings.Cut(p, "=")
 		if !ok || val == "" {
 			return nil, fmt.Errorf("dmr:fec_mask entry %q is not Value=Mask", p)

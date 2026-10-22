@@ -25,11 +25,15 @@
 //
 // # Setters
 //
-// A setter returns an error only when the type of its argument can hold a
-// value that does not fit the field. LCBytes.SetFID takes a full octet and
-// returns nothing, and LCBytes.SetFLCO returns an error because an FLCO is
-// a 6-bit field in a uint8 type. The error is a *dmrgo.FieldRangeError,
-// and the setter then changes nothing.
+// A setter returns an error only when its argument can hold a value that the
+// PDU cannot carry, and then changes nothing. LCBytes.SetFID takes a full
+// octet and returns nothing. The errors are:
+//   - a *dmrgo.FieldRangeError when a value does not fit its field, such as an
+//     FLCO over 6 bits for LCBytes.SetFLCO, a field of the payload of a SetX
+//     method, or the AppendedBlocks 0 of DataHeader.SetRawDataHeader;
+//   - ErrWrongOpcode when a SetX method that takes the opcode gets one that
+//     does not select X;
+//   - ErrNoAddresses and ErrNoServiceOptions when the PDU has no such field.
 //
 // # FEC results
 //

@@ -1016,7 +1016,11 @@ func emitPackedFECEncode(g *Group, enc encoder, codec *FECCodecInfo) error {
 
 	var noMask Code
 	if pdu.FECMask != nil {
-		noMask = enc.fail(enc.errs.get("err"+pdu.Name+pdu.FECMask.Field+"Mask", errorsNew(pdu.Name+"."+pdu.FECMask.Field+": no FEC mask for the value")))
+		var maskErr Code = Id(pdu.FECMask.Err)
+		if pdu.FECMask.Err == "" {
+			maskErr = enc.errs.get("err"+pdu.Name+pdu.FECMask.Field+"Mask", errorsNew(pdu.Name+"."+pdu.FECMask.Field+": no FEC mask for the value"))
+		}
+		noMask = enc.fail(maskErr)
 	}
 	if err := emitFECMask(g, pdu, codec, Id("s"), "_encoded", noMask); err != nil {
 		return err
