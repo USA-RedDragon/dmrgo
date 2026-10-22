@@ -1,6 +1,8 @@
 package layer2
 
 import (
+	"time"
+
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
@@ -34,6 +36,12 @@ type Hint struct {
 	// means 16, as for an RTP sequence number. The DMRD sequence number of
 	// HomeBrew has 8.
 	SeqBits uint8
+	// At is the time at which the packet arrived, on the clock of the
+	// caller, as the now of the session machines. 0 means not known, as for
+	// a replay without times. PositionTracker counts the 60 ms burst periods
+	// since the burst before it to find the bursts lost after a sync loss, or
+	// fewer than the missing sequence numbers.
+	At time.Duration
 	// Stream is the transport stream ID. HasStream reports whether it is
 	// set.
 	Stream uint32

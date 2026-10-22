@@ -1,6 +1,8 @@
 package layer2
 
 import (
+	"time"
+
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -9,6 +11,9 @@ import (
 const lateWindow = 32
 
 const maxPlaceSteps = 1 << 16
+
+// ETSI TS 102 361-1 clause 4.2.2
+const burstPeriod = 60 * time.Millisecond
 
 // Placement is how a PositionTracker took a burst.
 type Placement uint8
@@ -51,12 +56,24 @@ func (p Placement) String() string {
 // without that evidence, or where the sequence number predicts a burst A
 // that has no SYNC. After a header, the LCSS comes first until it or the
 // SYNC places a burst, because the sequence number also counts lost headers.
-// A bridge that forwards each packet as it comes, such as IPSC to HomeBrew
+// The number of bursts lost before a placed burst is the count that fits its
+// position and is nearest to an estimate, with ties to the smaller count.
+// The estimate is the missing sequence numbers. With Hint.At, the 60 ms burst
+// periods since the burst before it, less one, take its place after a
+// SyncLost Hint, and lower it when the position of the burst before is
+// known. The periods run on a clock that the earliest arrivals of the call
+// set, so that a late or bunched packet does not move it. After a header the
+// burst can also follow bursts that came before the header, as after the
+// header that a repeater makes for a late entry; then the count is the
+// estimate. A SyncLost Hint with Hint.At keeps the position for the count. A
+// bridge that forwards each packet as it comes, such as IPSC to HomeBrew
 // DMRD, calls Place for each packet of a slot, so that the voice bursts that
 // the source does not mark get a position. The zero PositionTracker is ready
 // to use. It is not safe for concurrent use.
 // (ETSI TS 102 361-1 clause 5.1.2.1, clause 9.3.5)
 type PositionTracker struct {
+	off       time.Duration
+	count     int
 	stream    uint32
 	seq       uint16
 	pos       int8
@@ -66,6 +83,8 @@ type PositionTracker struct {
 	anchored  bool
 	hasSeq    bool
 	hasStream bool
+	signal    bool
+	clock     bool
 }
 
 // Reset forgets the call.
@@ -97,7 +116,8 @@ func (t *PositionTracker) Forget() {
 // position, or to VoiceBurstUnknown when it cannot place it. A new stream
 // ID starts a new call. A voice LC header or PI header puts the next burst
 // at A, a terminator or an EndStrong hint ends the call, and a SyncLost or
-// EndWeak hint forgets the position. h.Kind KindUnknown takes a burst with
+// EndWeak hint forgets the position, which a SyncLost hint with At keeps
+// only to count the bursts lost. h.Kind KindUnknown takes a burst with
 // a data SYNC as data and any other as voice. Place returns the number of
 // bursts lost before raw and how it took raw. A duplicate or late burst
 // gets the position that its sequence number gives, and does not move the
@@ -113,6 +133,11 @@ func (t *PositionTracker) Place(raw *RawBurst, h *Hint) (lost int, p Placement) 
 	}
 	t.hint(h)
 	if raw == nil {
+		if t.signal && h.HasSeq && t.hasSeq {
+			if _, p := t.seqGap(h); p == PlacementInOrder {
+				t.seq = h.Seq
+			}
+		}
 		if h.End == EndStrong {
 			t.end()
 		}
@@ -155,7 +180,8 @@ func (t *PositionTracker) hint(h *Hint) (newCall bool) {
 		t.stream, t.hasStream = h.Stream, true
 	}
 	if h.SyncLost {
-		t.known = false
+		t.signal = t.clock && h.At != 0
+		t.known = t.known && t.signal
 	}
 	return newCall
 }
@@ -178,6 +204,10 @@ func (t *PositionTracker) Header(h *Hint) {
 		return
 	}
 	t.pos = VoiceBurstsPerSuperframe - 1
+	t.count = -1
+	if h.At != 0 {
+		t.off, t.clock = h.At+burstPeriod, true
+	}
 	if h.HasSeq {
 		t.known, t.seq, t.hasSeq = true, h.Seq, true
 		return
@@ -223,27 +253,18 @@ func (t *PositionTracker) place(c cue, h *Hint, steps int) (lost int, p Placemen
 		steps = gap
 	}
 	if steps > maxPlaceSteps {
-		t.known, t.header = false, false
+		t.known, t.header, t.signal = false, false, false
+	}
+	base, signal := int(t.pos), t.signal
+	reliable := t.known && (t.anchored || !t.started)
+	if signal {
+		t.known = false
 	}
 	idx := t.position(c, steps, gap > 0)
-	missedA := gap > 0 && t.known && (t.anchored || !t.started) && idx == 1 && (int(t.pos)+steps)%VoiceBurstsPerSuperframe == 0
-	switch {
-	case gap > 0 && missedA:
-		lost = gap
-	case gap > 0 && t.known && !t.started && idx >= 0:
-		lost = headerLost(idx, int(t.pos), gap)
-	case gap > 0:
-		lost = gap - 1
-	case idx >= 0 && (t.known || t.header):
-		lost = (idx - int(t.pos) - 1 + 2*VoiceBurstsPerSuperframe) % VoiceBurstsPerSuperframe
-		if !h.HasSeq {
-			lost = nearestLost(lost, steps-1)
-		}
-	case !h.HasSeq:
-		lost = steps - 1
-	}
+	lost = t.lostBefore(h, idx, base, gap, steps, reliable, signal)
 	t.anchored = idx >= 0 && (c.fixed || c.byEMB && idx == int(c.emb) || t.known && t.anchored)
-	t.known, t.header, t.started = idx >= 0, false, true
+	t.known, t.header, t.started, t.signal = idx >= 0, false, true, false
+	t.tick(h, lost)
 	t.pos = int8(idx & 7)
 	if h.HasSeq {
 		t.seq, t.hasSeq = h.Seq, true
@@ -253,6 +274,31 @@ func (t *PositionTracker) place(c cue, h *Hint, steps int) (lost int, p Placemen
 		h.VoiceBurst = v
 	}
 	return lost, PlacementInOrder
+}
+
+func (t *PositionTracker) lostBefore(h *Hint, idx, base, gap, steps int, reliable, signal bool) int {
+	est, timed := t.elapsed(h)
+	want := gap - 1
+	if timed && (signal || reliable && est < want) {
+		want = est
+	}
+	switch {
+	case gap > 0 && idx >= 0 && reliable:
+		return fitLost(idx, base, want, !t.started)
+	case gap > 0:
+		return max(want, 0)
+	case !h.HasSeq && signal && timed && idx >= 0 && reliable:
+		return fitLost(idx, base, est, false)
+	case idx >= 0 && (t.known || t.header):
+		lost := (idx - base - 1 + 2*VoiceBurstsPerSuperframe) % VoiceBurstsPerSuperframe
+		if !h.HasSeq {
+			lost = nearestLost(lost, steps-1)
+		}
+		return lost
+	case !h.HasSeq:
+		return steps - 1
+	}
+	return 0
 }
 
 func (t *PositionTracker) seqGap(h *Hint) (int, Placement) {
@@ -355,12 +401,43 @@ func embCue(emb pdu.EmbeddedSignalling) cue {
 	return cue{cont: true}
 }
 
-func headerLost(idx, pos, gap int) int {
-	r := (idx - pos - 1 + 2*VoiceBurstsPerSuperframe) % VoiceBurstsPerSuperframe
-	if r > gap-1 {
-		return gap - 1
+func (t *PositionTracker) elapsed(h *Hint) (int, bool) {
+	if h.At == 0 || !t.clock {
+		return 0, false
 	}
-	return r + VoiceBurstsPerSuperframe*((gap-1-r)/VoiceBurstsPerSuperframe)
+	d := h.At - t.off + burstPeriod/2
+	n := d / burstPeriod
+	if d%burstPeriod < 0 {
+		n--
+	}
+	e := n - time.Duration(t.count) - 1
+	return int(max(min(e, maxPlaceSteps), -maxPlaceSteps)), true
+}
+
+func (t *PositionTracker) tick(h *Hint, lost int) {
+	t.count = min(t.count+lost+1, 1<<30)
+	if h.At == 0 {
+		return
+	}
+	if o := h.At - time.Duration(t.count)*burstPeriod; !t.clock || o < t.off {
+		t.off = o
+	}
+	t.clock = true
+}
+
+func fitLost(idx, base, want int, afterHeader bool) int {
+	r := (idx - base - 1 + 2*VoiceBurstsPerSuperframe) % VoiceBurstsPerSuperframe
+	if want <= r {
+		if afterHeader && r-want >= want-(r-VoiceBurstsPerSuperframe) {
+			return max(want, 0)
+		}
+		return r
+	}
+	lo := r + VoiceBurstsPerSuperframe*((want-r)/VoiceBurstsPerSuperframe)
+	if want-lo <= VoiceBurstsPerSuperframe/2 {
+		return lo
+	}
+	return lo + VoiceBurstsPerSuperframe
 }
 
 func nearestLost(gap, est int) int {
