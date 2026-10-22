@@ -159,6 +159,15 @@ func TestFullLinkControl_String(t *testing.T) {
 	if !strings.Contains(str, "Group Voice Channel User") {
 		t.Errorf("ToString missing FLCO name, got: %s", str)
 	}
+	if !strings.HasPrefix(str, "FullLinkControl{ BurstDataType: Voice LC Header, ProtectFlag: ") {
+		t.Errorf("header LC: %s", str)
+	}
+	lc, err := pdu.NewVoiceLCBytes(true, 9, 3120101, layer3.ServiceOptions{})
+	noErr(err)
+	emb := pdu.DecodeFullLinkControlBytes(lc)
+	if s := emb.String(); strings.Contains(s, "BurstDataType") || !strings.HasPrefix(s, "FullLinkControl{ ProtectFlag: ") {
+		t.Errorf("embedded LC without a burst data type: %s", s)
+	}
 }
 
 func TestFullLinkControl_ServiceOptions_RoundTrip(t *testing.T) {

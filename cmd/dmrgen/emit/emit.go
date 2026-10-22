@@ -773,6 +773,24 @@ func emitStringConcat(g *Group, t *stringText, pdu parse.PDUStruct, union *parse
 		switch {
 		case union != nil && field.Name == fecFieldName:
 			continue
+		case field.Skip && pdu.FECMask != nil && field.Name == pdu.FECMask.Field:
+			add()
+			var cond *Statement
+			for _, m := range pdu.FECMask.Masks {
+				c := Id("s").Dot(field.Name).Op("==").Add(emitDispatchConstant(m.Value, pdu))
+				if cond == nil {
+					cond = c
+				} else {
+					cond = cond.Op("||").Add(c)
+				}
+			}
+			if cond != nil && t.field(field, pdu, sep) {
+				if sep == "" {
+					t.str(", ")
+				}
+				g.If(cond).Block(Id("_ret").Op("+=").Add(t.code()))
+			}
+			continue
 		case field.Skip:
 		case field.Union:
 			continue
