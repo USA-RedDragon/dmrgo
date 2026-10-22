@@ -1,9 +1,11 @@
 package pdu_test
 
 import (
+	"errors"
 	"math/rand"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -12,10 +14,7 @@ func TestDecodeFullLinkControlBytes_Capture(t *testing.T) {
 	t.Parallel()
 
 	lc := hex9(t, "03000000270630b43c")
-	f, err := pdu.DecodeFullLinkControlBytes(lc)
-	if err != nil {
-		t.Fatal(err)
-	}
+	f := pdu.DecodeFullLinkControlBytes(lc)
 	if _, ok := f.AsUnitToUnit(); f.FLCO != enums.FLCOUnitToUnitVoiceChannelUser || f.FID != enums.FIDStandardized || !ok {
 		t.Fatalf("decoded %s", f.String())
 	}
@@ -36,24 +35,16 @@ func TestDecodeFullLinkControlBytes_RoundTripsRandom(t *testing.T) {
 	t.Parallel()
 
 	rng := rand.New(rand.NewSource(7))
-	fails := 0
 	for range 20000 {
 		var lc [9]byte
 		rng.Read(lc[:])
 		if rng.Intn(2) == 0 {
 			lc[1] = 0
 		}
-		f, err := pdu.DecodeFullLinkControlBytes(lc)
-		if err != nil {
-			fails++
-			continue
-		}
+		f := pdu.DecodeFullLinkControlBytes(lc)
 		if got := must(f.Bytes()); got != lc {
 			t.Fatalf("lc %x: Bytes %x", lc, got)
 		}
-	}
-	if fails != 0 {
-		t.Errorf("%d LCs do not round trip", fails)
 	}
 }
 
@@ -68,5 +59,14 @@ func TestFullLinkControlBytes_IgnoresBurstDataType(t *testing.T) {
 	}
 	if want := hex9(t, "00000000005b2f5147"); got != want {
 		t.Fatalf("Bytes %x, want %x", got, want)
+	}
+}
+
+func TestFullLinkControlBytes_NilReceiver(t *testing.T) {
+	t.Parallel()
+
+	var f *pdu.FullLinkControl
+	if _, err := f.Bytes(); !errors.Is(err, dmrgo.ErrNilReceiver) {
+		t.Errorf("nil Bytes: %v", err)
 	}
 }

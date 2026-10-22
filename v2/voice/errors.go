@@ -37,7 +37,6 @@ var (
 	errRepeats     error = &dmrgo.ConfigError{Type: pkgName, Field: "Repeats"}
 	errCommand     error = &dmrgo.ConfigError{Type: pkgName, Field: "Command"}
 	errChanAuth    error = &dmrgo.ConfigError{Type: pkgName, Field: "ChanAuth"}
-	errCall        error = &dmrgo.ConfigError{Type: pkgName, Field: "Call"}
 	errTalkerAlias error = &dmrgo.ConfigError{Type: pkgName, Field: "TalkerAlias"}
 	errGPS         error = &dmrgo.ConfigError{Type: pkgName, Field: "GPS"}
 )

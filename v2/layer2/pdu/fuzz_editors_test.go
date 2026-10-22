@@ -98,10 +98,7 @@ func fuzzPDUEditors(t *testing.T, kind uint8, data []byte, target, source uint32
 
 func checkLCBytes(t *testing.T, l pdu.LCBytes, target, source uint32, group bool, v uint8) {
 	t.Helper()
-	dec, err := pdu.DecodeFullLinkControlBytes(l)
-	if err != nil {
-		t.Fatalf("DecodeFullLinkControlBytes(%x): %v", l, err)
-	}
+	dec := pdu.DecodeFullLinkControlBytes(l)
 	if dec.FLCO != l.FLCO() || dec.FID != l.FID() || dec.ProtectFlag != l.ProtectFlag() || dec.Reserved != l.Reserved() {
 		t.Fatalf("LCBytes %x header fields differ from FullLinkControl %s", l, dec.String())
 	}

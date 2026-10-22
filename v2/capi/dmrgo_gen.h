@@ -9050,7 +9050,7 @@ int dmrgo_pdu_full_link_control_as_talker_alias_header(const dmrgo_pdu_full_link
 int dmrgo_pdu_full_link_control_as_terminator_data_link_control(const dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_flc_terminator_data_link_control_t *p, bool *ok);
 /* Go: pdu.FullLinkControl.AsUnitToUnit. AsUnitToUnit decodes RawPayload as an FLCUnitToUnit payload. */
 int dmrgo_pdu_full_link_control_as_unit_to_unit(const dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_flc_unit_to_unit_t *p, bool *ok);
-/* Go: pdu.FullLinkControl.Bytes. Bytes returns the 72 LC bits of s packed most significant bit first, without RS(12,9) parity. */
+/* Go: pdu.FullLinkControl.Bytes. Bytes returns the 72 LC bits of s packed most significant bit first, without RS(12,9) parity. It ignores BurstDataType and returns the errors that Encode returns for the fields, and DMRGO_ERR_NIL_RECEIVER for a nil s. */
 int dmrgo_pdu_full_link_control_bytes(const dmrgo_pdu_full_link_control_t *self, uint8_t out[9]);
 /* Go: pdu.FullLinkControl.Call. Call returns the call of a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC: group for FLCO 0, the 24-bit target and the source. */
 int dmrgo_pdu_full_link_control_call(const dmrgo_pdu_full_link_control_t *self, bool *group, uint32_t *target, uint32_t *source, bool *ok);

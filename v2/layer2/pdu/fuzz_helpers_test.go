@@ -30,9 +30,8 @@ func fuzzTalkerAlias(t *testing.T, alias string, format, order uint8, extra []by
 	lcs, err := pdu.EncodeTalkerAlias(alias, tf)
 	var a pdu.TalkerAliasAssembler
 	for i := 0; i+9 <= len(extra); i += 9 {
-		if lc, err := pdu.DecodeFullLinkControlBytes([9]byte(extra[i : i+9])); err == nil {
-			_, _, _ = a.Add(&lc)
-		}
+		lc := pdu.DecodeFullLinkControlBytes([9]byte(extra[i : i+9]))
+		_, _, _ = a.Add(&lc)
 	}
 	if err != nil {
 		return

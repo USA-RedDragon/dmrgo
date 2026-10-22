@@ -543,10 +543,7 @@ func (t *Transmitter) setLC(c *Call) error {
 		}
 		lc.SetFID(c.FID)
 	}
-	var err error
-	if t.lc, err = pdu.DecodeFullLinkControlBytes(lc); err != nil {
-		return errCall
-	}
+	t.lc = pdu.DecodeFullLinkControlBytes(lc)
 	c.LC = lc
 	return nil
 }

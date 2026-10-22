@@ -24127,16 +24127,13 @@ func dmrgo_pdu_decode_full_link_control_bytes(c_lc *C.uint8_t, c_out *C.dmrgo_pd
 	if c_lc == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1 := g_layer2_pdu.DecodeFullLinkControlBytes(*(*[9]byte)(unsafe.Pointer(c_lc)))
+	r0 := g_layer2_pdu.DecodeFullLinkControlBytes(*(*[9]byte)(unsafe.Pointer(c_lc)))
 	_ = r0
 	if c_out != nil {
 		out_layer2_pdu_FullLinkControl(&(*c_out), &r0, oc)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r1 != nil {
-		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }

@@ -613,10 +613,7 @@ func (r *Receiver) collect(b *layer2.Burst, idx, lost int) (pdu.LCBytes, bool) {
 }
 
 func (r *Receiver) embedded(lc pdu.LCBytes, out []Event) []Event {
-	var err error
-	if r.lc, err = pdu.DecodeFullLinkControlBytes(lc); err != nil {
-		return out
-	}
+	r.lc = pdu.DecodeFullLinkControlBytes(lc)
 	var e *Event
 	out, e = appendEvent(out, EventEmbedded, &r.call)
 	e.LC = r.lc

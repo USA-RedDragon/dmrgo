@@ -30,10 +30,7 @@ func TestLCBytes_Capture(t *testing.T) {
 	if got := hex.EncodeToString(l[:]); got != "00000000005b2f5147" {
 		t.Fatalf("edited LC %s", got)
 	}
-	f, err := pdu.DecodeFullLinkControlBytes(l)
-	if err != nil {
-		t.Fatal(err)
-	}
+	f := pdu.DecodeFullLinkControlBytes(l)
 	if _, isGroup := f.AsGroupVoice(); !isGroup {
 		t.Fatalf("decoded %s", f.String())
 	}
@@ -187,10 +184,7 @@ func TestLCBytes_EditsKeepOtherBits(t *testing.T) {
 			t.Fatalf("%x: SetAddresses accepts 25 bits", orig)
 		}
 
-		want, err := pdu.DecodeFullLinkControlBytes(orig)
-		if err != nil {
-			t.Fatal(err)
-		}
+		want := pdu.DecodeFullLinkControlBytes(orig)
 		noErr(want.SetAddresses(tgt, src))
 		if must(want.Bytes()) != [9]byte(l) {
 			t.Fatalf("%x: LCBytes.SetAddresses %x, FullLinkControl.SetAddresses %x", orig, l, must(want.Bytes()))
