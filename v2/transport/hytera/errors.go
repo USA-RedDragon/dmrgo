@@ -20,20 +20,23 @@ var (
 	ErrSignature = errors.New("hytera: packet does not have the octets of its message")
 	// ErrCode is returned when a slot or color code field is not one of its
 	// values: 1111 or 2222 for the slot, one nibble four times for the color
-	// code.
+	// code, and wrapped by Frame.AppendBinary for a Slot other than Slot1
+	// and Slot2.
 	ErrCode = errors.New("hytera: slot or color code field is not one of its values")
 )
 
+const frameType = "Frame"
+
 var (
-	errSlot  = errors.New("hytera: Frame.Slot is not Slot1 or Slot2")
-	errColor = errors.New("hytera: Frame.ColorCode is above 15")
-	errKind  = errors.New("hytera: SetHint: kind is not KindVoice or KindData")
+	errSlot error = &wrapError{"hytera: Frame.Slot is not Slot1 or Slot2", ErrCode}
+	errKind error = &wrapError{"hytera: SetHint: kind is not KindVoice or KindData", layer2.ErrKind}
 
 	errKindVoice error = &wrapError{"hytera: SetHint: voice position is not A to F", layer2.ErrVoicePosition}
 	errKindData  error = &wrapError{"hytera: SetHint: no data type, or one that has no slot type", layer2.ErrDataType}
 
-	errFrameDestinationRange = &dmrgo.FieldRangeError{Type: "Frame", Field: "Destination", Bits: 24}
-	errFrameSourceRange      = &dmrgo.FieldRangeError{Type: "Frame", Field: "Source", Bits: 24}
+	errFrameColorCodeRange   = &dmrgo.FieldRangeError{Type: frameType, Field: "ColorCode", Bits: 4}
+	errFrameDestinationRange = &dmrgo.FieldRangeError{Type: frameType, Field: "Destination", Bits: 24}
+	errFrameSourceRange      = &dmrgo.FieldRangeError{Type: frameType, Field: "Source", Bits: 24}
 )
 
 type wrapError struct {
