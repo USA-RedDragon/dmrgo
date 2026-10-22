@@ -23,7 +23,7 @@ func ipHeader(t testing.TB, group bool, sap enums.SAP) pdu.DataHeader {
 func TestOutputICMPGroup(t *testing.T) {
 	t.Parallel()
 	for _, group := range []bool{false, true} {
-		s := newSender(t, &data.SenderConfig{TxLimit: 300 * time.Millisecond})
+		s := newSender(t, &data.SenderConfig{Preambles: -1, TxLimit: 300 * time.Millisecond})
 		s.Channel(0, true)
 		m := &data.Message{Header: ipHeader(t, group, enums.SAPIPBasedPacketData), Rate: enums.DataTypeRate12, Payload: payload(40)}
 		if err := s.Send(0, m); err != nil {

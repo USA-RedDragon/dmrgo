@@ -11,8 +11,9 @@ import (
 )
 
 // ExampleSender sends a confirmed message to a Receiver. The air between
-// them loses the third burst of the first try, so the Receiver asks for
-// that block again with a SACK, and the Sender resends only that block.
+// them loses the third burst after the preambles of the first try, so the
+// Receiver asks for that block again with a SACK, and the Sender resends
+// only that block.
 func ExampleSender() {
 	tx, err := data.NewSender(&data.SenderConfig{Source: layer2.SyncSourceMS, ColorCode: 1})
 	if err != nil {
@@ -48,7 +49,7 @@ func ExampleSender() {
 		replies = replies[:0]
 		for _, o := range tx.Tick(now, outputs[:0]) {
 			sent++
-			if sent == 3 {
+			if sent == data.DefaultPreambles+3 {
 				continue
 			}
 			for _, e := range rx.Burst(o.Due, &o.Burst, layer2.Hint{}, events[:0]) {

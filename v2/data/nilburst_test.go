@@ -19,7 +19,7 @@ func TestNilBurst(t *testing.T) {
 			t.Errorf("Receiver %+v: %d events in Idle", h, len(ev))
 		}
 	}
-	tx, err := data.NewSender(&data.SenderConfig{Source: layer2.SyncSourceMS, ColorCode: 1})
+	tx, err := data.NewSender(&data.SenderConfig{Preambles: -1, Source: layer2.SyncSourceMS, ColorCode: 1})
 	if err != nil {
 		t.Fatal(err)
 	}

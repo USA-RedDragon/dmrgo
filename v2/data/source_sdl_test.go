@@ -31,13 +31,13 @@ func TestSenderSourceSDL(t *testing.T) {
 		icmp   bool
 	}{
 		{
-			name: "idle channel, ACK",
+			name: "idle channel, ACK", cfg: data.SenderConfig{Preambles: -1},
 			steps: []step{{0, "send", data.SenderSending}, {150 * ms, "tick", data.SenderWaitResponse},
 				{200 * ms, "ack", data.SenderIdle}},
 			result: data.ResultDelivered,
 		},
 		{
-			name: "busy, idle search, holdoff, idle", cfg: data.SenderConfig{Holdoff: 100 * ms},
+			name: "busy, idle search, holdoff, idle", cfg: data.SenderConfig{Preambles: -1, Holdoff: 100 * ms},
 			steps: []step{
 				{0, "busy", data.SenderIdle}, {0, "send", data.SenderWaiting},
 				{540 * ms, "tick", data.SenderHoldoff}, {560 * ms, "idle", data.SenderHoldoff},
@@ -47,7 +47,7 @@ func TestSenderSourceSDL(t *testing.T) {
 			result: data.ResultDelivered,
 		},
 		{
-			name: "holdoff back to the idle search", cfg: data.SenderConfig{Holdoff: 100 * ms},
+			name: "holdoff back to the idle search", cfg: data.SenderConfig{Preambles: -1, Holdoff: 100 * ms},
 			steps: []step{
 				{0, "busy", data.SenderIdle}, {0, "send", data.SenderWaiting},
 				{540 * ms, "tick", data.SenderHoldoff}, {640 * ms, "tick", data.SenderWaiting},
@@ -56,13 +56,13 @@ func TestSenderSourceSDL(t *testing.T) {
 			result: data.ResultCancelled,
 		},
 		{
-			name: "T_DataTxLmt in Qualify_Idle", cfg: data.SenderConfig{TxLimit: 300 * ms},
+			name: "T_DataTxLmt in Qualify_Idle", cfg: data.SenderConfig{Preambles: -1, TxLimit: 300 * ms},
 			steps: []step{{0, "busy", data.SenderIdle}, {0, "send", data.SenderWaiting},
 				{300 * ms, "tick", data.SenderIdle}},
 			result: data.ResultTimeLimit, icmp: true,
 		},
 		{
-			name: "T_DataTxLmt in Holdoff", cfg: data.SenderConfig{TxLimit: 600 * ms, Holdoff: time.Second, Seed: 1},
+			name: "T_DataTxLmt in Holdoff", cfg: data.SenderConfig{Preambles: -1, TxLimit: 600 * ms, Holdoff: time.Second, Seed: 1},
 			steps: []step{
 				{0, "busy", data.SenderIdle}, {0, "send", data.SenderWaiting},
 				{540 * ms, "tick", data.SenderHoldoff}, {590 * ms, "tick", data.SenderHoldoff},
@@ -71,7 +71,7 @@ func TestSenderSourceSDL(t *testing.T) {
 			result: data.ResultTimeLimit, icmp: true,
 		},
 		{
-			name: "SACK with tries left", cfg: data.SenderConfig{Retries: 2},
+			name: "SACK with tries left", cfg: data.SenderConfig{Preambles: -1, Retries: 2},
 			steps: []step{
 				{0, "send", data.SenderSending}, {150 * ms, "tick", data.SenderWaitResponse},
 				{160 * ms, "busy", data.SenderWaitResponse}, {200 * ms, "sack", data.SenderWaiting},
@@ -81,13 +81,13 @@ func TestSenderSourceSDL(t *testing.T) {
 			result: data.ResultDelivered,
 		},
 		{
-			name: "SACK at N_RtryLmt", cfg: data.SenderConfig{Retries: 1},
+			name: "SACK at N_RtryLmt", cfg: data.SenderConfig{Preambles: -1, Retries: 1},
 			steps: []step{{0, "send", data.SenderSending}, {150 * ms, "tick", data.SenderWaitResponse},
 				{200 * ms, "sack", data.SenderIdle}},
 			result: data.ResultRetryLimit, icmp: true,
 		},
 		{
-			name: "T_RspnsWait with tries left", cfg: data.SenderConfig{Retries: 2},
+			name: "T_RspnsWait with tries left", cfg: data.SenderConfig{Preambles: -1, Retries: 2},
 			steps: []step{
 				{0, "send", data.SenderSending}, {150 * ms, "tick", data.SenderWaitResponse},
 				{150 * ms, "busy", data.SenderWaitResponse}, {360 * ms, "tick", data.SenderWaiting},
@@ -96,7 +96,7 @@ func TestSenderSourceSDL(t *testing.T) {
 			result: data.ResultCancelled,
 		},
 		{
-			name: "T_RspnsWait at N_RtryLmt", cfg: data.SenderConfig{Retries: 1},
+			name: "T_RspnsWait at N_RtryLmt", cfg: data.SenderConfig{Preambles: -1, Retries: 1},
 			steps: []step{{0, "send", data.SenderSending}, {150 * ms, "tick", data.SenderWaitResponse},
 				{360 * ms, "tick", data.SenderIdle}},
 			result: data.ResultRetryLimit, icmp: true,

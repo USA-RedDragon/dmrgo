@@ -412,6 +412,7 @@ sym #define DMRGO_DATA_DEFAULT_LOST 90000000
 sym #define DMRGO_DATA_DEFAULT_MAX_FRAGMENT 1500
 sym #define DMRGO_DATA_DEFAULT_MAX_MESSAGE 1500
 sym #define DMRGO_DATA_DEFAULT_PEERS 8
+sym #define DMRGO_DATA_DEFAULT_PREAMBLES 5
 sym #define DMRGO_DATA_END_IDLE ((dmrgo_data_end_reason_t)2)
 sym #define DMRGO_DATA_END_QUIET ((dmrgo_data_end_reason_t)1)
 sym #define DMRGO_DATA_END_SUPERSEDED ((dmrgo_data_end_reason_t)6)
