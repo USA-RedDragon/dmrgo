@@ -11394,7 +11394,7 @@ func dmrgo_data_end_reason_string(c_self C.dmrgo_data_end_reason_t, c_out *C.cha
 }
 
 //export dmrgo_data_event_icmp
-func dmrgo_data_event_icmp(c_self *C.dmrgo_data_event_t, c_mtu C.int64_t, c_m *C.dmrgo_ip_icmp_message_t, c_pointer *C.uint8_t) (rc C.int) {
+func dmrgo_data_event_icmp(c_self *C.dmrgo_data_event_t, c_mtu C.int64_t, c_m *C.dmrgo_ip_icmp_message_t, c_pointer *C.uint8_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -11406,17 +11406,18 @@ func dmrgo_data_event_icmp(c_self *C.dmrgo_data_event_t, c_mtu C.int64_t, c_m *C
 	r0, r1, r2 := x.ICMP(int(c_mtu))
 	_ = r0
 	_ = r1
+	_ = r2
 	if c_m != nil {
 		*c_m = C.dmrgo_ip_icmp_message_t(r0)
 	}
 	if c_pointer != nil {
 		*c_pointer = C.uint8_t(r1)
 	}
+	if c_ok != nil {
+		*c_ok = C.bool(r2)
+	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r2 != nil {
-		return setErr(r2)
 	}
 	return C.DMRGO_OK
 }
@@ -11506,7 +11507,7 @@ func dmrgo_data_new_sender(c_cfg *C.dmrgo_data_sender_config_t, c_out **C.dmrgo_
 }
 
 //export dmrgo_data_output_icmp
-func dmrgo_data_output_icmp(c_self *C.dmrgo_data_output_t, c_out *C.dmrgo_ip_icmp_message_t) (rc C.int) {
+func dmrgo_data_output_icmp(c_self *C.dmrgo_data_output_t, c_m *C.dmrgo_ip_icmp_message_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -11516,14 +11517,15 @@ func dmrgo_data_output_icmp(c_self *C.dmrgo_data_output_t, c_out *C.dmrgo_ip_icm
 	x = in_data_Output(&(*c_self))
 	r0, r1 := x.ICMP()
 	_ = r0
-	if c_out != nil {
-		*c_out = C.dmrgo_ip_icmp_message_t(r0)
+	_ = r1
+	if c_m != nil {
+		*c_m = C.dmrgo_ip_icmp_message_t(r0)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r1 != nil {
-		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }

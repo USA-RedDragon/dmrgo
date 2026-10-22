@@ -228,8 +228,7 @@ func TestSenderWindowLoopback(t *testing.T) {
 			t.Errorf("%s: delivered %q, want %q", c.name, l.got, c.got)
 		}
 		for _, o := range l.done {
-			m, err := o.ICMP()
-			ok := err == nil
+			m, ok := o.ICMP()
 			want := o.Result == data.ResultRetryLimit || o.Result == data.ResultRefused
 			if ok != want || ok && m != ip.ICMPHostUnreachable {
 				t.Errorf("%s: %v gives ICMP %v %v", c.name, o.Result, m, ok)
