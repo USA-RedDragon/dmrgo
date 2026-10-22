@@ -40,10 +40,10 @@ func (f FrameType) String() string {
 // is the same in every dialect; DMRGateway and MMDVMHost add the BER and
 // RSSI octets (55 octets), and DMRGateway with trunking adds a UUID (71
 // octets). DMRGateway drops a 53-octet packet from its master and from
-// MMDVMHost without a word, so set Size 55 to send to it. (DMRGateway
+// MMDVMHost without a word, so the zero Size writes 55 octets. (DMRGateway
 // d751e20 DMRNetwork.cpp and MMDVMNetwork.cpp)
 //
-//dmr:frame 53 55 71
+//dmr:frame 53 55* 71
 //dmr:magic 0-31="DMRD"
 type Data struct {
 	// Seq is the sequence number of the packet in its stream; it wraps after 255.
@@ -75,7 +75,10 @@ type Data struct {
 	RSSI uint8 `dmr:"bits:432-439"`
 	// UUID is the trunking UUID of DMRGateway (71 octets).
 	UUID [16]byte `dmr:"bits:440-567,packed"`
-	// Size is the length of the packet: 53, 55 or 71, or 0 for 53.
+	// Size is the length of the packet: 53, 55 or 71, or 0 for 55, as
+	// MMDVMHost and DMRGateway send it. DMRGateway, HBlink4, DroidStar, xlxd
+	// and urfd drop a DMRD of 53 octets, and FreeDMR sends one on as a DMRE
+	// that its OpenBridge peers drop.
 	Size uint8 `dmr:"-"`
 }
 

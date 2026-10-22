@@ -3783,7 +3783,7 @@ struct dmrgo_dmrd_data_t {
 	uint8_t rssi;
 	/* UUID is the trunking UUID of DMRGateway (71 octets). */
 	uint8_t uuid[16];
-	/* Size is the length of the packet: 53, 55 or 71, or 0 for 53. */
+	/* Size is the length of the packet: 53, 55 or 71, or 0 for 55, as MMDVMHost and DMRGateway send it. DMRGateway, HBlink4, DroidStar, xlxd and urfd drop a DMRD of 53 octets, and FreeDMR sends one on as a DMRE that its OpenBridge peers drop. */
 	uint8_t size;
 };
 
@@ -9897,7 +9897,7 @@ int dmrgo_dmrd_control_append_binary(const dmrgo_dmrd_control_t *self, uint8_t *
 int dmrgo_dmrd_control_login_salt(const dmrgo_dmrd_control_t *self, uint32_t *salt, bool *ok);
 /* Go: dmrd.DMRPlusOptions.AppendText. AppendText appends the options that are not DMRGO_DMRD_OPTION_ABSENT to dst as a DMR+ startup options text, each followed by a semicolon, in the order of the fields. It returns dst unchanged and DMRGO_ERR_ARG for a NULL self, and no other error. */
 int dmrgo_dmrd_dmr_plus_options_append_text(const dmrgo_dmrd_dmr_plus_options_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: dmrd.Data.AppendBinary. AppendBinary appends the 53, 55 or 71 octets of s to dst: Size selects the length, and 0 means 53. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error when Size is not one of the lengths. */
+/* Go: dmrd.Data.AppendBinary. AppendBinary appends the 53, 55 or 71 octets of s to dst: Size selects the length, and 0 means 55. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error when Size is not one of the lengths. */
 int dmrgo_dmrd_data_append_binary(const dmrgo_dmrd_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.Data.Call. Call returns the call of the packet: group is the reverse of Private, target is Destination and source is Source. */
 int dmrgo_dmrd_data_call(const dmrgo_dmrd_data_t *self, bool *group, uint32_t *target, uint32_t *source);

@@ -41,6 +41,7 @@ func TestParseRejectsBadLayouts(t *testing.T) {
 		{"open size not last", "// dmr:frame 1+ 2\ntype T struct {\n Size uint8 " + tag("-") + "\n A uint8 " + tag("bits:0-7") + "\n B uint8 " + tag("bits:8-15") + "\n}", "only the last size"},
 		{"tail of an open frame", "// dmr:frame 1 3+\ntype T struct {\n Size uint8 " + tag("-") + "\n A uint8 " + tag("bits:0-7") + "\n B [2]byte " + tag("bits:8-23,packed,tail") + "\n}", "cannot end an open"},
 		{"sizes not ascending", "// dmr:frame 2 1\ntype T struct {\n A uint8 " + tag("bits:0-7") + "\n}", "ascending"},
+		{"two default sizes", "// dmr:frame 1* 2*\ntype T struct {\n Size uint8 " + tag("-") + "\n A uint8 " + tag("bits:0-7") + "\n B uint8 " + tag("bits:8-15") + "\n}", "more than one default"},
 		{"frame with crc", "// dmr:frame 3\n// dmr:crc crc_ccitt\ntype T struct {\n FEC fec.Result " + tag("-") + "\n A uint8 " + tag("bits:0-7") + "\n}", "cannot have dmr:fec or dmr:crc"},
 		{"view without size", "// dmr:view V\ntype T struct {\n A uint8 " + tag("bits:0-7") + "\n}", "wants a type name and a size"},
 	}
@@ -67,8 +68,12 @@ func TestParseFrame(t *testing.T) {
 
 	pdus := mustParse(t, "// dmr:frame 6 8\n// dmr:magic 0-15=\"DM\"\ntype T struct {\n Size uint8 "+tag("-")+"\n A uint32 "+tag("bits:16-47,le")+"\n B uint16 "+tag("bits:48-63,dec")+"\n}")
 	p := pdus[0]
-	if p.Frame == nil || len(p.Frame.Sizes) != 2 || p.Frame.SizeField != "Size" {
+	if p.Frame == nil || len(p.Frame.Sizes) != 2 || p.Frame.SizeField != "Size" || p.Frame.Default != 6 {
 		t.Fatalf("frame %+v", p.Frame)
+	}
+	marked := mustParse(t, "// dmr:frame 6 8*\ntype T struct {\n Size uint8 "+tag("-")+"\n A uint32 "+tag("bits:0-31")+"\n B uint16 "+tag("bits:32-47")+"\n C uint16 "+tag("bits:48-63")+"\n}")
+	if f := marked[0].Frame; f == nil || f.Default != 8 || len(f.Sizes) != 2 || f.Sizes[1] != 8 {
+		t.Fatalf("marked frame %+v", f)
 	}
 	if p.InputSize != 64 {
 		t.Fatalf("input size %d, want 64", p.InputSize)

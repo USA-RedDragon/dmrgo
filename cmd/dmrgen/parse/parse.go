@@ -195,6 +195,7 @@ type FrameDirective struct {
 	Sizes     []int  // allowed frame lengths in octets, ascending
 	SizeField string // the dmr:"-" field that holds the length, when there is more than one
 	Open      bool   // a + after the last size: a longer frame decodes too, its octets after the last size are ignored, and Size 0 means the last size
+	Default   int    // the length that a zero SizeField means: the size marked with *, else the first
 }
 
 // ViewDirective is a dmr:view directive.

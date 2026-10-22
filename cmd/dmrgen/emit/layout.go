@@ -311,10 +311,7 @@ func readLayoutInt(g *Group, field parse.Field, tmp string, textFail func() *Sta
 func emitFrameEncode(f *File, pdu parse.PDUStruct, ev *errVars) {
 	sizes := pdu.Frame.Sizes
 	enc := encoder{pdu: pdu, bytes: sizes[len(sizes)-1], errs: ev, frame: true}
-	def := sizes[0]
-	if pdu.Frame.Open {
-		def = sizes[len(sizes)-1]
-	}
+	def := pdu.Frame.Default
 	doc := "AppendBinary appends the " + sizesText(sizes) + " of s to dst"
 	if sf := pdu.Frame.SizeField; sf != "" {
 		doc += ": " + sf + " selects the length, and 0 means " + strconv.Itoa(def)
