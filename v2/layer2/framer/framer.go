@@ -71,7 +71,17 @@ func nearest(window uint64) (enums.SyncPattern, int) {
 // exact SYNC, as layer2.DecodeOptions.SyncThreshold does. ok is false when
 // there is none.
 func Search(stream []byte, nbits, start, threshold int) (m Match, ok bool) {
-	return search(stream, clampBits(stream, nbits), start, threshold)
+	return search(stream, clampBits(stream, nbits), start, syncThreshold(threshold))
+}
+
+func syncThreshold(t int) int {
+	switch {
+	case t == 0:
+		return layer2.DefaultSyncThreshold
+	case t < 0:
+		return 0
+	}
+	return t
 }
 
 func clampBits(stream []byte, nbits int) int {
@@ -79,12 +89,6 @@ func clampBits(stream []byte, nbits int) int {
 }
 
 func search(stream []byte, n, start, threshold int) (m Match, ok bool) {
-	switch {
-	case threshold == 0:
-		threshold = layer2.DefaultSyncThreshold
-	case threshold < 0:
-		threshold = 0
-	}
 	start = max(start, 0)
 	if start > n-SyncBits {
 		return Match{}, false
@@ -177,12 +181,7 @@ func New(c *Config) (*Framer, error) {
 	case cfg.Period < layer2.BurstBits || cfg.Period > MaxPeriod:
 		return nil, errPeriod
 	}
-	switch {
-	case cfg.Threshold == 0:
-		cfg.Threshold = layer2.DefaultSyncThreshold
-	case cfg.Threshold < 0:
-		cfg.Threshold = 0
-	}
+	cfg.Threshold = syncThreshold(cfg.Threshold)
 	if cfg.MaxMisses <= 0 {
 		cfg.MaxMisses = DefaultMaxMisses
 	}
