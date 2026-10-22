@@ -50,7 +50,7 @@ typedef struct dmrgo_bs_output_t dmrgo_bs_output_t;
 typedef struct dmrgo_bs_repeater_t dmrgo_bs_repeater_t;
 /* Go: bs.Source. Source is where an inbound burst came from. */
 typedef struct dmrgo_bs_source_t dmrgo_bs_source_t;
-/* Go: csbk.Match. Match describes the answer that ends a request of Requester.Request: a CSBK with feature set FID and one of the first N Opcodes, addressed from the target of the request to its source. */
+/* Go: csbk.Match. Match describes the answer that ends a request of dmrgo_csbk_requester_request: a CSBK with feature set FID and one of the first N Opcodes, addressed from the target of the request to its source. */
 typedef struct dmrgo_csbk_match_t dmrgo_csbk_match_t;
 /* Go: csbk.Output. Output is one result of a machine. */
 typedef struct dmrgo_csbk_output_t dmrgo_csbk_output_t;
@@ -88,7 +88,7 @@ typedef struct dmrgo_data_output_t dmrgo_data_output_t;
 typedef struct dmrgo_data_receiver_t dmrgo_data_receiver_t;
 /* Go: data.ReceiverConfig. ReceiverConfig configures NewReceiver. */
 typedef struct dmrgo_data_receiver_config_t dmrgo_data_receiver_config_t;
-/* Go: data.Sender. Sender sends data messages on one logical channel: the preamble CSBKs, the header and the blocks of each try, one burst per Tick, 60 ms apart, after the channel access of SenderConfig.Access. */
+/* Go: data.Sender. Sender sends data messages on one logical channel: the preamble CSBKs, the header and the blocks of each try, one burst per Tick, 60 ms apart, after the channel access of dmrgo_data_sender_config_t.access. */
 typedef struct dmrgo_data_sender_t dmrgo_data_sender_t;
 /* Go: data.SenderConfig. SenderConfig configures NewSender. */
 typedef struct dmrgo_data_sender_config_t dmrgo_data_sender_config_t;
@@ -277,7 +277,7 @@ typedef struct dmrgo_pdu_flc_unit_to_unit_t dmrgo_pdu_flc_unit_to_unit_t;
 typedef struct dmrgo_pdu_full_link_control_t dmrgo_pdu_full_link_control_t;
 /* Go: pdu.GenSiteParms. GenSiteParms is the C_BCAST payload with AnnouncementType Gen_Site_Params, which broadcasts the current site information and the network information (ETSI TS 102 361-4 V1.12.1 clauses 7.2.19.8, 7.2.40 and 7.2.41, Tables 7.80, 7.101 and 7.102). */
 typedef struct dmrgo_pdu_gen_site_parms_t dmrgo_pdu_gen_site_parms_t;
-/* Go: pdu.LCBytes. LCBytes is the 72 LC bits of a Full LC without RS(12,9) parity, as FullLinkControl.Bytes returns them. */
+/* Go: pdu.LCBytes. LCBytes is the 72 LC bits of a Full LC without RS(12,9) parity, as dmrgo_pdu_full_link_control_bytes returns them. */
 typedef struct dmrgo_pdu_lc_bytes_t dmrgo_pdu_lc_bytes_t;
 /* Go: pdu.LocalTimeParms. LocalTimeParms is the C_BCAST payload with AnnouncementType Local_Time, which broadcasts the local date and time and the offset from UTC (ETSI TS 102 361-4 clause 7.2.19.4, Tables 7.73 to 7.75). */
 typedef struct dmrgo_pdu_local_time_parms_t dmrgo_pdu_local_time_parms_t;
@@ -449,11 +449,11 @@ typedef struct dmrgo_dmrd_bridge_t dmrgo_dmrd_bridge_t;
 typedef struct dmrgo_dmrd_bridge_control_t dmrgo_dmrd_bridge_control_t;
 /* Go: dmrd.Control. Control is a login, keepalive, close, beacon, report, options or local link message: every message of a dialect but DMRD, DMRA, DMRG, RPTC and the OpenBridge messages. */
 typedef struct dmrgo_dmrd_control_t dmrgo_dmrd_control_t;
-/* Go: dmrd.DMRPlusOptions. DMRPlusOptions is the DMR+ startup options text that a repeater sends in Control.Text of an RPTO, for example "StartRef=4013;RelinkTime=15;UserLink=1;TS1_1=262;TS1_2=1;". */
+/* Go: dmrd.DMRPlusOptions. DMRPlusOptions is the DMR+ startup options text that a repeater sends in dmrgo_dmrd_control_t.text of an RPTO, for example "StartRef=4013;RelinkTime=15;UserLink=1;TS1_1=262;TS1_2=1;". */
 typedef struct dmrgo_dmrd_dmr_plus_options_t dmrgo_dmrd_dmr_plus_options_t;
 /* Go: dmrd.Data. Data is a DMRD packet: one burst with its call fields. */
 typedef struct dmrgo_dmrd_data_t dmrgo_dmrd_data_t;
-/* Go: dmrd.FreeDMROptions. FreeDMROptions is the FreeDMR options text that a repeater or hotspot sends in Control.Text of an RPTO, for example "TS1=91,2350;TS2=;DIAL=0;VOICE=1;TIMER=10;". */
+/* Go: dmrd.FreeDMROptions. FreeDMROptions is the FreeDMR options text that a repeater or hotspot sends in dmrgo_dmrd_control_t.text of an RPTO, for example "TS1=91,2350;TS2=;DIAL=0;VOICE=1;TIMER=10;". */
 typedef struct dmrgo_dmrd_free_dmr_options_t dmrgo_dmrd_free_dmr_options_t;
 /* Go: dmrd.HBRPConfig. HBRPConfig is the 306-octet RPTC configuration message of DialectHBRP, as a view. */
 typedef struct dmrgo_dmrd_hbrp_config_t dmrgo_dmrd_hbrp_config_t;
@@ -646,13 +646,13 @@ typedef struct dmrgo_dvsi_port_t dmrgo_dvsi_port_t;
 typedef struct dmrgo_dvsi_port_vtable_t dmrgo_dvsi_port_vtable_t;
 /* Go: voice.Call. Call is the identity of a voice call, from its LC. */
 typedef struct dmrgo_voice_call_t dmrgo_voice_call_t;
-/* Go: voice.CallOptions. CallOptions are per-call settings of Transmitter.Start. */
+/* Go: voice.CallOptions. CallOptions are per-call settings of dmrgo_voice_transmitter_start. */
 typedef struct dmrgo_voice_call_options_t dmrgo_voice_call_options_t;
 /* Go: voice.Event. Event is one result of a Receiver. */
 typedef struct dmrgo_voice_event_t dmrgo_voice_event_t;
 /* Go: voice.FrameQuality. FrameQuality is the FEC result of one 72-bit AMBE+2 vocoder slot. */
 typedef struct dmrgo_voice_frame_quality_t dmrgo_voice_frame_quality_t;
-/* Go: voice.Interrupter. Interrupter is the radio that interrupts the voice call of another radio: it sends a Tier 2 RC command in standalone RC bursts on the reverse channel of the call, waits T_RCtimer for the Terminator with LC of the call, and tries again up to InterrupterConfig.Retries times. */
+/* Go: voice.Interrupter. Interrupter is the radio that interrupts the voice call of another radio: it sends a Tier 2 RC command in standalone RC bursts on the reverse channel of the call, waits T_RCtimer for the Terminator with LC of the call, and tries again up to dmrgo_voice_interrupter_config_t.retries times. */
 typedef struct dmrgo_voice_interrupter_t dmrgo_voice_interrupter_t;
 /* Go: voice.InterrupterConfig. InterrupterConfig configures NewInterrupter. */
 typedef struct dmrgo_voice_interrupter_config_t dmrgo_voice_interrupter_config_t;
@@ -827,7 +827,7 @@ typedef uint8_t dmrgo_location_format_t;
 typedef uint8_t dmrgo_ars_encoding_t;
 /* Go: ars.Event. Event is the 2-bit event of a device registration. */
 typedef uint8_t dmrgo_ars_event_t;
-/* Go: ars.FailureReason. FailureReason is the reason in Response.Value of an answer whose Header.AckRequired marks a failure. */
+/* Go: ars.FailureReason. FailureReason is the reason in dmrgo_ars_response_t.value of an answer whose dmrgo_ars_header_t.ack_required marks a failure. */
 typedef uint8_t dmrgo_ars_failure_reason_t;
 /* Go: ars.Type. Type is the 4-bit PDU type of a message. */
 typedef uint8_t dmrgo_ars_type_t;
@@ -1085,7 +1085,7 @@ struct dmrgo_voice_call_t {
 	dmrgo_pdu_lc_bytes_t lc;
 	/* Origin is where the Receiver learned the call. */
 	dmrgo_voice_origin_t origin;
-	/* Stream is Hint.Stream when the transport gives one, else 0. */
+	/* Stream is dmrgo_layer2_hint_t.stream when the transport gives one, else 0. */
 	uint32_t stream;
 };
 
@@ -1130,7 +1130,7 @@ struct dmrgo_csbk_match_t {
 struct dmrgo_csbk_preambles_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
-	/* Scratch, when set, is the Burst that Burst decodes into, as for RequesterConfig.Scratch. */
+	/* Scratch, when set, is the Burst that Burst decodes into, as for dmrgo_csbk_requester_config_t.scratch. */
 	dmrgo_layer2_burst_t *scratch;
 };
 
@@ -1184,7 +1184,7 @@ struct dmrgo_csbk_responder_config_t {
 	dmrgo_duration_t holdoff_max;
 	/* Seed seeds the generator of the random holdoff. */
 	uint64_t seed;
-	/* Scratch, when set, is the Burst that Burst decodes into, as for RequesterConfig.Scratch. */
+	/* Scratch, when set, is the Burst that Burst decodes into, as for dmrgo_csbk_requester_config_t.scratch. */
 	dmrgo_layer2_burst_t *scratch;
 	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. */
 	dmrgo_duration_t lead;
@@ -1203,7 +1203,7 @@ struct dmrgo_csbk_timing_config_t {
 	dmrgo_enums_slot_t slot;
 	/* Seed seeds the generator of CT_RHOT and of new identifiers, so that the same inputs give the same outputs. Radios on one channel need different seeds. (ETSI TS 102 361-2 clause 6.2) */
 	uint64_t seed;
-	/* Scratch, when set, is the Burst that Burst decodes into, as for RequesterConfig.Scratch. (ETSI TS 102 361-2 clause 6.2) */
+	/* Scratch, when set, is the Burst that Burst decodes into, as for dmrgo_csbk_requester_config_t.scratch. (ETSI TS 102 361-2 clause 6.2) */
 	dmrgo_layer2_burst_t *scratch;
 	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. */
 	dmrgo_duration_t lead;
@@ -1218,7 +1218,7 @@ struct dmrgo_csbk_wakeup_config_t {
 	dmrgo_duration_t sync_wait;
 	/* Attempts is N_Wakeup, the most BS_Dwn_Act bursts. 0 means DefaultWakeups; at most MaxRetries. */
 	int64_t attempts;
-	/* Scratch, when set, is the Burst that Burst decodes into, as for RequesterConfig.Scratch. */
+	/* Scratch, when set, is the Burst that Burst decodes into, as for dmrgo_csbk_requester_config_t.scratch. */
 	dmrgo_layer2_burst_t *scratch;
 	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. */
 	dmrgo_duration_t lead;
@@ -1303,12 +1303,12 @@ struct dmrgo_data_message_t {
 	/* Proprietary is the P_HEAD sent as the second header, or nil. */
 	bool has_proprietary;
 	dmrgo_pdu_proprietary_header_t proprietary;
-	/* Rate is the data type of the blocks: DMRGO_ENUMS_DATA_TYPE_RATE12, DMRGO_ENUMS_DATA_TYPE_RATE34 or DMRGO_ENUMS_DATA_TYPE_RATE1. For Sender.Send the zero value means DMRGO_ENUMS_DATA_TYPE_RATE12. */
+	/* Rate is the data type of the blocks: DMRGO_ENUMS_DATA_TYPE_RATE12, DMRGO_ENUMS_DATA_TYPE_RATE34 or DMRGO_ENUMS_DATA_TYPE_RATE1. For dmrgo_data_sender_send the zero value means DMRGO_ENUMS_DATA_TYPE_RATE12. */
 	dmrgo_enums_data_type_t rate;
 	/* Payload is the user data, without the pad octets and the message CRC. A packet whose first header was lost keeps its pad octets, as only a first try counts them. It holds at most MaxMessage octets (ETSI TS 102 361-1 clause 9.3.20). */
 	uint8_t *payload;
 	size_t payload_len;
-	/* BadCRC reports a packet whose CRC failed, which a Receiver delivers only with ReceiverConfig.AcceptBadCRC. */
+	/* BadCRC reports a packet whose CRC failed, which a Receiver delivers only with dmrgo_data_receiver_config_t.accept_bad_crc. */
 	bool bad_crc;
 	/* Fragmented reports a packet that continues a message of several fragments, with an FSN of 1 to 7 in its low bits, and so is not a whole message. The first fragment, FSN 0000, is delivered as a whole message, because repeaters and radios also send single packets with FSN 0000; EventReassembled then carries the whole message. */
 	bool fragmented;
@@ -1388,11 +1388,11 @@ struct dmrgo_data_receiver_config_t {
 	int64_t max_message;
 	/* Peers is the number of links whose receive sequence number VI the Receiver keeps. 0 means DefaultPeers; at most MaxPeers. When the table is full, the link heard least recently is dropped (ETSI TS 102 361-1 clause 9.3.24). */
 	int64_t peers;
-	/* Lost is the time without a burst, while a packet waits for blocks, after which the slots that passed count as lost blocks, one each 60 ms. 0 means DefaultLost, and a negative value counts lost blocks only from the transport sequence number and at the end of the call. A network transport with jitter sets Hint.Seq and a longer Lost. */
+	/* Lost is the time without a burst, while a packet waits for blocks, after which the slots that passed count as lost blocks, one each 60 ms. 0 means DefaultLost, and a negative value counts lost blocks only from the transport sequence number and at the end of the call. A network transport with jitter sets dmrgo_layer2_hint_t.seq and a longer Lost. */
 	dmrgo_duration_t lost;
 	/* Hang is the time without a burst after which a data call ends with EndQuiet. 0 means DefaultHang, and a negative value turns the timer off. */
 	dmrgo_duration_t hang;
-	/* AcceptBadCRC delivers packets whose CRC failed, with Message.BadCRC set, as dmrgo_packet_assembler_set_accept_bad_crc describes. A confirmed packet still gets a NACK, so that a good copy can follow. */
+	/* AcceptBadCRC delivers packets whose CRC failed, with dmrgo_data_message_t.bad_crc set, as dmrgo_packet_assembler_set_accept_bad_crc describes. A confirmed packet still gets a NACK, so that a good copy can follow. */
 	bool accept_bad_crc;
 	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one, because a Receiver is done with it when its method returns. Make it with dmrgo_layer2_new_burst. NULL means the Receiver makes its own. */
 	dmrgo_layer2_burst_t *scratch;
@@ -1440,13 +1440,13 @@ struct dmrgo_data_output_t {
 	dmrgo_data_output_kind_t kind;
 	/* Burst is the burst to send. */
 	dmrgo_layer2_raw_burst_t burst;
-	/* Hint is what the burst is, for a transport: KindData with the data type of the burst and the SenderConfig.Slot. */
+	/* Hint is what the burst is, for a transport: KindData with the data type of the burst and the dmrgo_data_sender_config_t.slot. */
 	dmrgo_layer2_hint_t hint;
 	/* Due is the time at which the burst goes on air, 60 ms after the one before it. */
 	dmrgo_duration_t due;
 	/* Try is the transmission that the burst belongs to, or that ended the message: 1 for the first. */
 	uint8_t try_;
-	/* Seq is the N(S) of the C_HEAD message that the burst belongs to or that ended. Messages to one link take N(S) 0, 1, 2 and so on modulo 8 in the order of Send, so with SenderConfig.Window above 1 Seq tells which message an OutputDone ends. It is 0 for other messages. */
+	/* Seq is the N(S) of the C_HEAD message that the burst belongs to or that ended. Messages to one link take N(S) 0, 1, 2 and so on modulo 8 in the order of Send, so with dmrgo_data_sender_config_t.window above 1 Seq tells which message an OutputDone ends. It is 0 for other messages. */
 	uint8_t seq;
 	/* Result is how the message ended. */
 	dmrgo_data_result_t result;
@@ -1844,7 +1844,7 @@ struct dmrgo_pdu_full_link_control_t {
 	dmrgo_enums_flco_t flco;
 	/* FID is the Feature set ID; the As methods apply only to the standard FID 0, and RawPayload holds the payload of any FID. */
 	dmrgo_enums_fid_t fid;
-	/* FEC is the RS(12,9) result; MMDVMHost accepts only an LC with FEC.ErrorsCorrected 0 (dmrgo_layer2_mmdvm_host_accepts). */
+	/* FEC is the RS(12,9) result; MMDVMHost accepts only an LC with dmrgo_pdu_full_link_control_t.fec.errors_corrected 0 (dmrgo_layer2_mmdvm_host_accepts). */
 	dmrgo_fec_result_t fec;
 	/* RawPayload holds LC bits 16 to 71, the payload that FLCO and FID select, packed most significant bit first: bit 16 is the top bit of byte 0, so the bytes are LC octets 2 to 8. */
 	uint8_t raw_payload[7];
@@ -2054,13 +2054,13 @@ struct dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t {
 struct dmrgo_layer2_voice_transmitter_options_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
-	/* LC is the Full LC of the call. The Voice LC Header and the Terminator with LC carry it, with its FID, and so does the embedded LC unless EmbeddedLC or SetEmbeddedLC replaces it. LC.BurstDataType is ignored. */
+	/* LC is the Full LC of the call. The Voice LC Header and the Terminator with LC carry it, with its FID, and so does the embedded LC unless EmbeddedLC or SetEmbeddedLC replaces it. dmrgo_layer2_voice_transmitter_options_t.lc.burst_data_type is ignored. */
 	dmrgo_pdu_full_link_control_t lc;
 	/* ColorCode is the color code of the slot types and EMBs. */
 	dmrgo_enums_color_code_t color_code;
 	/* Source selects the SYNC patterns. The zero value is SyncSourceBS. */
 	dmrgo_layer2_sync_source_t source;
-	/* Silence is the 72-bit slot that pads the last superframe, packed as RawBurst.VoiceSlots returns it. The zero value means dmrgo_vocoder_ambe_silence_slot(). A Codec2 caller sets its own. */
+	/* Silence is the 72-bit slot that pads the last superframe, packed as dmrgo_layer2_raw_burst_voice_slots returns it. The zero value means dmrgo_vocoder_ambe_silence_slot(). A Codec2 caller sets its own. */
 	uint8_t silence[9];
 	/* PIHeader, when set, adds a PI Header burst after the Voice LC Header (ETSI TS 102 361-1 clause 5.1.2.2, clause 6.2). */
 	bool has_pi_header;
@@ -2134,7 +2134,7 @@ struct dmrgo_packet_message_t {
 	/* Response is the decoded C_RDATA of a SACK response packet, or nil. */
 	bool has_response;
 	dmrgo_packet_response_data_t response;
-	/* BadCRC reports that the message CRC failed, that the Pad Octet Count of a first try or the Bit Padding/8 is more than the octets before the CRC, or, with Assembler.AcceptBadCRC, that Data holds a confirmed block whose CRC-9 failed. (ETSI TS 102 361-1 clause 9.3.22) */
+	/* BadCRC reports that the message CRC failed, that the Pad Octet Count of a first try or the Bit Padding/8 is more than the octets before the CRC, or, with dmrgo_packet_assembler_set_accept_bad_crc, that Data holds a confirmed block whose CRC-9 failed. (ETSI TS 102 361-1 clause 9.3.22) */
 	bool bad_crc;
 };
 
@@ -3371,7 +3371,7 @@ struct dmrgo_ars_registration_t {
 struct dmrgo_ars_response_t {
 	/* Extension reports that a further header octet follows. */
 	bool extension;
-	/* Value is the refresh time of a successful device registration, in units of 30 minutes, 0 for none. When Header.AckRequired marks a failure it is the FailureReason. */
+	/* Value is the refresh time of a successful device registration, in units of 30 minutes, 0 for none. When dmrgo_ars_header_t.ack_required marks a failure it is the FailureReason. */
 	uint8_t value;
 };
 
@@ -3380,7 +3380,7 @@ struct dmrgo_ars_message_t {
 	uint16_t length;
 	/* Header is the first header octet. */
 	dmrgo_ars_header_t header;
-	/* Registration is the second header octet of a device or user registration with Header.Extension set. */
+	/* Registration is the second header octet of a device or user registration with dmrgo_ars_message_t.header.extension set. */
 	dmrgo_ars_registration_t registration;
 	/* Device is the identifier of the radio in a registration: its radio ID in decimal ASCII digits. */
 	uint8_t *device;
@@ -3391,7 +3391,7 @@ struct dmrgo_ars_message_t {
 	/* Password is the password of a registration. */
 	uint8_t *password;
 	size_t password_len;
-	/* Response is the second header octet of an answer with Header.Extension set. */
+	/* Response is the second header octet of an answer with dmrgo_ars_message_t.header.extension set. */
 	dmrgo_ars_response_t response;
 	/* Extra holds the octets after the fields that the package knows. */
 	uint8_t *extra;
@@ -3612,11 +3612,11 @@ struct dmrgo_tms_message_t {
 	/* Address is the address field, empty in the radio to radio messages that are known. */
 	uint8_t *address;
 	size_t address_len;
-	/* Capability is the octet after the address of an availability message with Header.Extension set; its low 2 bits give the capability of the device. */
+	/* Capability is the octet after the address of an availability message with dmrgo_tms_message_t.header.extension set; its low 2 bits give the capability of the device. */
 	uint8_t capability;
-	/* SequenceLow is the first extension octet of a text message or an acknowledgement, when Header.Extension is set. */
+	/* SequenceLow is the first extension octet of a text message or an acknowledgement, when dmrgo_tms_message_t.header.extension is set. */
 	dmrgo_tms_sequence_low_t sequence_low;
-	/* SequenceHigh is the second extension octet, when SequenceLow.Extension is set. */
+	/* SequenceHigh is the second extension octet, when dmrgo_tms_message_t.sequence_low.extension is set. */
 	dmrgo_tms_sequence_high_t sequence_high;
 	/* Text is the text in UTF-16LE. Radios start it with a CR LF. */
 	uint8_t *text;
@@ -4142,7 +4142,7 @@ struct dmrgo_ipsc_user_t {
 	dmrgo_ipsc_call_info_t info;
 	/* RTP is the RTP header. */
 	dmrgo_ipsc_rtp_t rtp;
-	/* Burst is octet 30. Compare Burst.Type, which drops the slot 2 bit. */
+	/* Burst is octet 30. Compare dmrgo_ipsc_burst_type_type on dmrgo_ipsc_user_t.burst, which drops the slot 2 bit. */
 	dmrgo_ipsc_burst_type_t burst;
 	/* Voice is the burst of a voice packet. */
 	dmrgo_ipsc_voice_t voice;
@@ -4926,7 +4926,7 @@ struct dmrgo_trunk_site_t {
 struct dmrgo_trunk_udt_t {
 	/* Header is the C_UDTHD header. Its UAB plus one is the number of appended blocks. */
 	dmrgo_pdu_udt_header_t header;
-	/* Data holds the 12*(Header.UAB+1)-2 octets of the appended blocks before the CRC of the last block. */
+	/* Data holds the 12*(dmrgo_trunk_udt_t.header.uab+1)-2 octets of the appended blocks before the CRC of the last block. */
 	uint8_t data[46];
 	/* CRCOK reports whether the CRC of the last block checks. */
 	bool crc_ok;
@@ -5228,9 +5228,9 @@ struct dmrgo_voice_call_options_t {
 	/* GPS, when set, is sent in the embedded LC of every other superframe, after the talker alias. */
 	bool has_gps;
 	dmrgo_pdu_flc_gps_info_t gps;
-	/* InCall reports that the radio is party to the call on the channel, or that the call is a response that the channel solicited. Such a call starts whatever the channel state and TransmitterConfig.Access. (ETSI TS 102 361-1 clauses 5.2.1.6 and 5.2.2.2.7) */
+	/* InCall reports that the radio is party to the call on the channel, or that the call is a response that the channel solicited. Such a call starts whatever the channel state and dmrgo_voice_transmitter_config_t.access. (ETSI TS 102 361-1 clauses 5.2.1.6 and 5.2.2.2.7) */
 	bool in_call;
-	/* HangTime reports that the BS sends call or channel hang time bursts. With TransmitterConfig.ChanAuth set, a call that is not impolite then starts with the channel authorization. (ETSI TS 102 361-2 clause 5.1.1.6) */
+	/* HangTime reports that the BS sends call or channel hang time bursts. With dmrgo_voice_transmitter_config_t.chan_auth set, a call that is not impolite then starts with the channel authorization. (ETSI TS 102 361-2 clause 5.1.1.6) */
 	bool hang_time;
 };
 
@@ -5355,7 +5355,7 @@ struct dmrgo_voice_transmitter_config_t {
 	dmrgo_duration_t idle_search;
 	/* Interruptible makes Interrupt end the call on a Cease Transmission Request. A Cease Transmission Command ends it whatever this says. (ETSI TS 102 361-2 clauses 6.3.3 and 6.3.4) */
 	bool interruptible;
-	/* ChanAuth is T_MS_ChanAuth, the wait for the BS to repeat the ChanAuth PDU of a call that starts in hang time, CallOptions.HangTime. 0 means no channel authorization; DMRGO_CONSTANTS_TMS_CHAN_AUTH and DMRGO_CONSTANTS_TMS_CHAN_AUTH_MULTI_SITE are the recommended values. (ETSI TS 102 361-2 clause 5.1.1.6.2) */
+	/* ChanAuth is T_MS_ChanAuth, the wait for the BS to repeat the ChanAuth PDU of a call that starts in hang time, dmrgo_voice_call_options_t.hang_time. 0 means no channel authorization; DMRGO_CONSTANTS_TMS_CHAN_AUTH and DMRGO_CONSTANTS_TMS_CHAN_AUTH_MULTI_SITE are the recommended values. (ETSI TS 102 361-2 clause 5.1.1.6.2) */
 	dmrgo_duration_t chan_auth;
 	/* HoldoffMax is the upper end of the random holdoff before a new channel authorization try. 0 means DefaultHoldoffMax, and a negative value means no holdoff. (ETSI TS 102 361-2 clause 5.1.1.6.2) */
 	dmrgo_duration_t holdoff_max;
@@ -5625,11 +5625,11 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_BS_OUTPUT_REJECTED ((dmrgo_bs_output_kind_t)4)
 /* Go: bs.ReasonHangTime. ReasonHangTime is a call to another target in the call hang time of the slot (ETSI TS 102 361-1 clause 5.2.1.4). */
 #define DMRGO_BS_REASON_HANG_TIME ((dmrgo_bs_reason_t)2)
-/* Go: bs.ReasonRejected. ReasonRejected is a call that the caller refused with Repeater.Reject. */
+/* Go: bs.ReasonRejected. ReasonRejected is a call that the caller refused with dmrgo_bs_repeater_reject. */
 #define DMRGO_BS_REASON_REJECTED ((dmrgo_bs_reason_t)4)
 /* Go: bs.ReasonSlotBusy. ReasonSlotBusy is a slot that another source owns. */
 #define DMRGO_BS_REASON_SLOT_BUSY ((dmrgo_bs_reason_t)1)
-/* Go: bs.ReasonTimeout. ReasonTimeout is a call that ran longer than Config.Timeout. */
+/* Go: bs.ReasonTimeout. ReasonTimeout is a call that ran longer than dmrgo_bs_config_t.timeout. */
 #define DMRGO_BS_REASON_TIMEOUT ((dmrgo_bs_reason_t)3)
 /* Go: bs.ServiceData. ServiceData is a data transfer: a data header and its blocks. */
 #define DMRGO_BS_SERVICE_DATA ((dmrgo_bs_service_t)1)
@@ -5663,7 +5663,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_BS_STATE_REPEATING_SLOT1 ((dmrgo_bs_state_t)2)
 /* Go: bs.StateRepeatingSlot2. StateRepeatingSlot2 repeats slot 2. */
 #define DMRGO_BS_STATE_REPEATING_SLOT2 ((dmrgo_bs_state_t)3)
-/* Go: bs.ToNetwork. ToNetwork sends the burst to the network: in ModeNetwork to the peers other than Output.From, in ModeRF to the network that the hotspot or repeater is linked to. */
+/* Go: bs.ToNetwork. ToNetwork sends the burst to the network: in ModeNetwork to the peers other than dmrgo_bs_output_t.from, in ModeRF to the network that the hotspot or repeater is linked to. */
 #define DMRGO_BS_TO_NETWORK ((dmrgo_bs_dest_t)2)
 /* Go: bs.ToRF. ToRF sends the burst on the outbound channel. */
 #define DMRGO_BS_TO_RF ((dmrgo_bs_dest_t)1)
@@ -5877,7 +5877,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_CSBK_MAX_TIMING_ID 1048575
 /* Go: csbk.OACSUDeny. OACSUDeny answers UU_Ans_Rsp with Deny. */
 #define DMRGO_CSBK_OACSU_DENY ((dmrgo_csbk_oacsu_answer_t)1)
-/* Go: csbk.OACSUNotSupported. OACSUNotSupported answers the Feature Not Supported NACK_Rsp, unless ResponderConfig.NoFNS is set. */
+/* Go: csbk.OACSUNotSupported. OACSUNotSupported answers the Feature Not Supported NACK_Rsp, unless dmrgo_csbk_responder_config_t.no_fns is set. */
 #define DMRGO_CSBK_OACSU_NOT_SUPPORTED ((dmrgo_csbk_oacsu_answer_t)2)
 /* Go: csbk.OACSUProceed. OACSUProceed answers UU_Ans_Rsp with Proceed. */
 #define DMRGO_CSBK_OACSU_PROCEED ((dmrgo_csbk_oacsu_answer_t)0)
@@ -5929,7 +5929,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_CSBK_RESULT_REFUSED ((dmrgo_csbk_result_t)2)
 /* Go: csbk.ServiceCallAlert. ServiceCallAlert is the Motorola call alert (FID 0x10, opcode 0x1F), answered by the call alert acknowledgement (opcode 0x20). */
 #define DMRGO_CSBK_SERVICE_CALL_ALERT ((dmrgo_csbk_service_t)3)
-/* Go: csbk.ServiceCustom. ServiceCustom is a request that Requester.Request sends with a Match. */
+/* Go: csbk.ServiceCustom. ServiceCustom is a request that dmrgo_csbk_requester_request sends with a Match. */
 #define DMRGO_CSBK_SERVICE_CUSTOM ((dmrgo_csbk_service_t)0)
 /* Go: csbk.ServiceOACSU. ServiceOACSU is the presence check of an OACSU individual call: UU_V_Req, answered by UU_Ans_Rsp (ETSI TS 102 361-2 clause 5.2.2). */
 #define DMRGO_CSBK_SERVICE_OACSU ((dmrgo_csbk_service_t)1)
@@ -5961,9 +5961,9 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DATA_DEFAULT_IDLE_SEARCH 540000000
 /* Go: data.DefaultLost. DefaultLost is the time without a burst, while a packet waits for blocks, after which a Receiver counts the blocks of the slots that passed as lost: one and a half slot periods. */
 #define DMRGO_DATA_DEFAULT_LOST 90000000
-/* Go: data.DefaultMaxFragment. DefaultMaxFragment is the largest payload of one packet that a Receiver takes when ReceiverConfig.MaxFragment is 0, n_DFragMax (ETSI TS 102 361-1 clause F.2). */
+/* Go: data.DefaultMaxFragment. DefaultMaxFragment is the largest payload of one packet that a Receiver takes when dmrgo_data_receiver_config_t.max_fragment is 0, n_DFragMax (ETSI TS 102 361-1 clause F.2). */
 #define DMRGO_DATA_DEFAULT_MAX_FRAGMENT 1500
-/* Go: data.DefaultMaxMessage. DefaultMaxMessage is the largest message that a Receiver joins from fragments when ReceiverConfig.MaxMessage is 0. */
+/* Go: data.DefaultMaxMessage. DefaultMaxMessage is the largest message that a Receiver joins from fragments when dmrgo_data_receiver_config_t.max_message is 0. */
 #define DMRGO_DATA_DEFAULT_MAX_MESSAGE 1500
 /* Go: data.DefaultPeers. DefaultPeers is the number of links whose sequence number a Receiver or a Sender keeps. */
 #define DMRGO_DATA_DEFAULT_PEERS 8
@@ -5971,13 +5971,13 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DATA_DEFAULT_PREAMBLES 5
 /* Go: data.EndIdle. EndIdle is an idle burst after the last packet. */
 #define DMRGO_DATA_END_IDLE ((dmrgo_data_end_reason_t)2)
-/* Go: data.EndQuiet. EndQuiet is a time of ReceiverConfig.Hang without a burst. */
+/* Go: data.EndQuiet. EndQuiet is a time of dmrgo_data_receiver_config_t.hang without a burst. */
 #define DMRGO_DATA_END_QUIET ((dmrgo_data_end_reason_t)1)
 /* Go: data.EndSuperseded. EndSuperseded is a header or preamble of other parties. */
 #define DMRGO_DATA_END_SUPERSEDED ((dmrgo_data_end_reason_t)6)
-/* Go: data.EndSyncLost. EndSyncLost is a transport that lost the signal: Hint.SyncLost or Receiver.Lost. */
+/* Go: data.EndSyncLost. EndSyncLost is a transport that lost the signal: dmrgo_layer2_hint_t.sync_lost or dmrgo_data_receiver_lost. */
 #define DMRGO_DATA_END_SYNC_LOST ((dmrgo_data_end_reason_t)4)
-/* Go: data.EndTransport. EndTransport is the end flag of the transport, Hint.End EndStrong. */
+/* Go: data.EndTransport. EndTransport is the end flag of the transport, dmrgo_layer2_hint_t.end EndStrong. */
 #define DMRGO_DATA_END_TRANSPORT ((dmrgo_data_end_reason_t)5)
 /* Go: data.EndVoice. EndVoice is a voice burst or a Voice LC Header. */
 #define DMRGO_DATA_END_VOICE ((dmrgo_data_end_reason_t)3)
@@ -5997,7 +5997,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DATA_MAX_BLOCKS 127
 /* Go: data.MaxEvents. MaxEvents is the most events that one call of a Receiver method appends. */
 #define DMRGO_DATA_MAX_EVENTS 14
-/* Go: data.MaxMessage. MaxMessage is the most octets of ReceiverConfig.MaxFragment and ReceiverConfig.MaxMessage. */
+/* Go: data.MaxMessage. MaxMessage is the most octets of dmrgo_data_receiver_config_t.max_fragment and dmrgo_data_receiver_config_t.max_message. */
 #define DMRGO_DATA_MAX_MESSAGE 65535
 /* Go: data.MaxOutputs. MaxOutputs is the most outputs that one call of a Sender method appends: one burst and the end of each message of a window. */
 #define DMRGO_DATA_MAX_OUTPUTS 9
@@ -6019,11 +6019,11 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DATA_RESULT_DELIVERED ((dmrgo_data_result_t)2)
 /* Go: data.ResultRefused. ResultRefused is a confirmed message that got a NACK that a resend cannot fix: illegal format, memory full, undeliverable, invalid user, or FSN out of sequence. */
 #define DMRGO_DATA_RESULT_REFUSED ((dmrgo_data_result_t)3)
-/* Go: data.ResultRetryLimit. ResultRetryLimit is a confirmed message that got no ACK in SenderConfig.Retries transmissions. */
+/* Go: data.ResultRetryLimit. ResultRetryLimit is a confirmed message that got no ACK in dmrgo_data_sender_config_t.retries transmissions. */
 #define DMRGO_DATA_RESULT_RETRY_LIMIT ((dmrgo_data_result_t)4)
 /* Go: data.ResultSent. ResultSent is an unconfirmed message whose last burst was sent. */
 #define DMRGO_DATA_RESULT_SENT ((dmrgo_data_result_t)1)
-/* Go: data.ResultTimeLimit. ResultTimeLimit is a message that could not finish before SenderConfig.TxLimit. */
+/* Go: data.ResultTimeLimit. ResultTimeLimit is a message that could not finish before dmrgo_data_sender_config_t.tx_limit. */
 #define DMRGO_DATA_RESULT_TIME_LIMIT ((dmrgo_data_result_t)5)
 /* Go: data.SenderHoldoff. SenderHoldoff waits for the random holdoff after a busy channel. */
 #define DMRGO_DATA_SENDER_HOLDOFF ((dmrgo_data_sender_state_t)2)
@@ -6619,7 +6619,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_LAYER2_VOICE_SLOTS_PER_BURST 3
 /* Go: framer.DefaultMaxMisses. DefaultMaxMisses is the default number of bursts without a SYNC that a locked Framer emits before it loses lock. */
 #define DMRGO_FRAMER_DEFAULT_MAX_MISSES 12
-/* Go: framer.MaxPeriod. MaxPeriod is the largest Config.Period. */
+/* Go: framer.MaxPeriod. MaxPeriod is the largest dmrgo_framer_config_t.period. */
 #define DMRGO_FRAMER_MAX_PERIOD 65536
 /* Go: framer.OutboundPeriod. OutboundPeriod is the bit period of bursts in a BS outbound stream: one CACH and one burst. */
 #define DMRGO_FRAMER_OUTBOUND_PERIOD 288
@@ -6999,9 +6999,9 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DMRD_OPTION_SET ((dmrgo_dmrd_option_state_t)2)
 /* Go: dmrdauth.KeyLen. KeyLen is the length of an OpenBridge key in octets. */
 #define DMRGO_DMRDAUTH_KEY_LEN 20
-/* Go: dmrdsession.KeepaliveDefault. KeepaliveDefault is the default BridgeConfig.Keepalive, the BCKA period of FreeDMR. */
+/* Go: dmrdsession.KeepaliveDefault. KeepaliveDefault is the default dmrgo_dmrdsession_bridge_config_t.keepalive, the BCKA period of FreeDMR. */
 #define DMRGO_DMRDSESSION_KEEPALIVE_DEFAULT INT64_C(10000000000)
-/* Go: dmrdsession.LoginTimeoutDefault. LoginTimeoutDefault is the default MasterConfig.LoginTimeout: the PING_TIME of 5 s times the MAX_MISSED of 3 after which an HBlink3 master drops a repeater, logged in or not. */
+/* Go: dmrdsession.LoginTimeoutDefault. LoginTimeoutDefault is the default dmrgo_dmrdsession_master_config_t.login_timeout: the PING_TIME of 5 s times the MAX_MISSED of 3 after which an HBlink3 master drops a repeater, logged in or not. */
 #define DMRGO_DMRDSESSION_LOGIN_TIMEOUT_DEFAULT INT64_C(15000000000)
 /* Go: dmrdsession.MaxOptions. MaxOptions is the longest RPTO options text in octets that DMRGateway sends. */
 #define DMRGO_DMRDSESSION_MAX_OPTIONS 291
@@ -7009,21 +7009,21 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DMRDSESSION_MAX_OUTPUTS 4
 /* Go: dmrdsession.MaxPacket. MaxPacket is the longest packet in octets that the machines take. */
 #define DMRGO_DMRDSESSION_MAX_PACKET 512
-/* Go: dmrdsession.OutputConfig. OutputConfig reports the RPTC of the repeater in Output.ID at a Master, in Output.Packet. */
+/* Go: dmrdsession.OutputConfig. OutputConfig reports the RPTC of the repeater in dmrgo_dmrdsession_output_t.id at a Master, in dmrgo_dmrdsession_output_t.packet. */
 #define DMRGO_DMRDSESSION_OUTPUT_CONFIG ((dmrgo_dmrdsession_output_kind_t)5)
-/* Go: dmrdsession.OutputData. OutputData is a DMRD, DMRA or DMRG packet, or for a Bridge a DMRD or DMRE packet with a good signature, in Output.Packet, with its command in Output.Command. */
+/* Go: dmrdsession.OutputData. OutputData is a DMRD, DMRA or DMRG packet, or for a Bridge a DMRD or DMRE packet with a good signature, in dmrgo_dmrdsession_output_t.packet, with its command in dmrgo_dmrdsession_output_t.command. */
 #define DMRGO_DMRDSESSION_OUTPUT_DATA ((dmrgo_dmrdsession_output_kind_t)7)
 /* Go: dmrdsession.OutputDown. OutputDown reports that the session ended. */
 #define DMRGO_DMRDSESSION_OUTPUT_DOWN ((dmrgo_dmrdsession_output_kind_t)3)
-/* Go: dmrdsession.OutputLogin. OutputLogin reports the RPTL of the repeater in Output.ID at a Master. */
+/* Go: dmrdsession.OutputLogin. OutputLogin reports the RPTL of the repeater in dmrgo_dmrdsession_output_t.id at a Master. */
 #define DMRGO_DMRDSESSION_OUTPUT_LOGIN ((dmrgo_dmrdsession_output_kind_t)4)
-/* Go: dmrdsession.OutputMessage. OutputMessage is another message of a logged-in session for the consumer, in Output.Packet with its command in Output.Command: an RPTSBKN at a Peer, an RPTG, RPTRSSI or RPTINTR at a Master, or a BCSQ, BCST or BCVE at a Bridge. */
+/* Go: dmrdsession.OutputMessage. OutputMessage is another message of a logged-in session for the consumer, in dmrgo_dmrdsession_output_t.packet with its command in dmrgo_dmrdsession_output_t.command: an RPTSBKN at a Peer, an RPTG, RPTRSSI or RPTINTR at a Master, or a BCSQ, BCST or BCVE at a Bridge. */
 #define DMRGO_DMRDSESSION_OUTPUT_MESSAGE ((dmrgo_dmrdsession_output_kind_t)8)
-/* Go: dmrdsession.OutputOptions. OutputOptions reports the RPTO options text that the Master accepted, in Output.Packet. */
+/* Go: dmrdsession.OutputOptions. OutputOptions reports the RPTO options text that the Master accepted, in dmrgo_dmrdsession_output_t.packet. */
 #define DMRGO_DMRDSESSION_OUTPUT_OPTIONS ((dmrgo_dmrdsession_output_kind_t)6)
-/* Go: dmrdsession.OutputPong. OutputPong reports a ping of the repeater in Output.ID that the Master answered with a pong, so the consumer can keep the time of the last ping. */
+/* Go: dmrdsession.OutputPong. OutputPong reports a ping of the repeater in dmrgo_dmrdsession_output_t.id that the Master answered with a pong, so the consumer can keep the time of the last ping. */
 #define DMRGO_DMRDSESSION_OUTPUT_PONG ((dmrgo_dmrdsession_output_kind_t)9)
-/* Go: dmrdsession.OutputSend. OutputSend is a packet in Output.Packet to send to the other side. */
+/* Go: dmrdsession.OutputSend. OutputSend is a packet in dmrgo_dmrdsession_output_t.packet to send to the other side. */
 #define DMRGO_DMRDSESSION_OUTPUT_SEND ((dmrgo_dmrdsession_output_kind_t)1)
 /* Go: dmrdsession.OutputUp. OutputUp reports that the login is complete. */
 #define DMRGO_DMRDSESSION_OUTPUT_UP ((dmrgo_dmrdsession_output_kind_t)2)
@@ -7039,7 +7039,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DMRDSESSION_REASON_STOPPED ((dmrgo_dmrdsession_reason_t)4)
 /* Go: dmrdsession.ReasonTimeout. ReasonTimeout is Timeout without a reply or a packet. */
 #define DMRGO_DMRDSESSION_REASON_TIMEOUT ((dmrgo_dmrdsession_reason_t)1)
-/* Go: dmrdsession.RetryDefault. RetryDefault is the default PeerConfig.Retry: the time between two sends of a login step, and between two pings. */
+/* Go: dmrdsession.RetryDefault. RetryDefault is the default dmrgo_dmrdsession_peer_config_t.retry: the time between two sends of a login step, and between two pings. */
 #define DMRGO_DMRDSESSION_RETRY_DEFAULT INT64_C(10000000000)
 /* Go: dmrdsession.StateAuth. StateAuth is a Peer that sent RPTK, or a Master that sent the salt. */
 #define DMRGO_DMRDSESSION_STATE_AUTH ((dmrgo_dmrdsession_state_t)3)
@@ -7055,7 +7055,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DMRDSESSION_STATE_RUNNING ((dmrgo_dmrdsession_state_t)6)
 /* Go: dmrdsession.StateWait. StateWait is a Peer that waits to log in again. */
 #define DMRGO_DMRDSESSION_STATE_WAIT ((dmrgo_dmrdsession_state_t)1)
-/* Go: dmrdsession.TimeoutDefault. TimeoutDefault is the default PeerConfig.Timeout and MasterConfig.Timeout. */
+/* Go: dmrdsession.TimeoutDefault. TimeoutDefault is the default dmrgo_dmrdsession_peer_config_t.timeout and dmrgo_dmrdsession_master_config_t.timeout. */
 #define DMRGO_DMRDSESSION_TIMEOUT_DEFAULT INT64_C(60000000000)
 /* Go: hytera.FrameLen. FrameLen is the length of a DMR frame in octets. */
 #define DMRGO_HYTERA_FRAME_LEN 72
@@ -7183,11 +7183,11 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_IPSC_VOICE_LAYOUT_E ((dmrgo_ipsc_voice_layout_t)3)
 /* Go: ipscauth.TrailerLen. TrailerLen is the length of the authentication trailer in octets. */
 #define DMRGO_IPSCAUTH_TRAILER_LEN 10
-/* Go: ipscsession.AliveDefault. AliveDefault is the default PeerConfig.Alive, the ALIVE_TIMER of DMRlink. */
+/* Go: ipscsession.AliveDefault. AliveDefault is the default dmrgo_ipscsession_peer_config_t.alive, the ALIVE_TIMER of DMRlink. */
 #define DMRGO_IPSCSESSION_ALIVE_DEFAULT INT64_C(5000000000)
 /* Go: ipscsession.MaxControl. MaxControl is the longest link control packet in octets other than a peer list, with its authentication trailer. */
 #define DMRGO_IPSCSESSION_MAX_CONTROL 26
-/* Go: ipscsession.MaxMissedDefault. MaxMissedDefault is the default PeerConfig.MaxMissed, the MAX_MISSED of DMRlink. */
+/* Go: ipscsession.MaxMissedDefault. MaxMissedDefault is the default dmrgo_ipscsession_peer_config_t.max_missed, the MAX_MISSED of DMRlink. */
 #define DMRGO_IPSCSESSION_MAX_MISSED_DEFAULT 20
 /* Go: ipscsession.MaxPacket. MaxPacket is the longest packet in octets that the machines take or send, with its authentication trailer. */
 #define DMRGO_IPSCSESSION_MAX_PACKET 1500
@@ -7197,17 +7197,17 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_IPSCSESSION_MAX_PEERS_LIMIT 134
 /* Go: ipscsession.ModeDefault. ModeDefault is the mode that a Peer or Master sends when its config leaves Mode zero: operational, digital, and both slots linked. */
 #define DMRGO_IPSCSESSION_MODE_DEFAULT ((dmrgo_ipsc_mode_t)106)
-/* Go: ipscsession.OutputData. OutputData is a packet other than a link control packet, such as a voice or data packet, from Output.ID at Output.Addr, in Output.Packet without the authentication trailer. */
+/* Go: ipscsession.OutputData. OutputData is a packet other than a link control packet, such as a voice or data packet, from dmrgo_ipscsession_output_t.id at dmrgo_ipscsession_output_t.addr, in dmrgo_ipscsession_output_t.packet without the authentication trailer. */
 #define DMRGO_IPSCSESSION_OUTPUT_DATA ((dmrgo_ipscsession_output_kind_t)5)
-/* Go: ipscsession.OutputDown. OutputDown reports that the link with Output.ID is down. */
+/* Go: ipscsession.OutputDown. OutputDown reports that the link with dmrgo_ipscsession_output_t.id is down. */
 #define DMRGO_IPSCSESSION_OUTPUT_DOWN ((dmrgo_ipscsession_output_kind_t)3)
-/* Go: ipscsession.OutputDropped. OutputDropped reports a packet from Output.Addr that a Master dropped, with the sender ID in Output.ID when the packet has one. */
+/* Go: ipscsession.OutputDropped. OutputDropped reports a packet from dmrgo_ipscsession_output_t.addr that a Master dropped, with the sender ID in dmrgo_ipscsession_output_t.id when the packet has one. */
 #define DMRGO_IPSCSESSION_OUTPUT_DROPPED ((dmrgo_ipscsession_output_kind_t)6)
 /* Go: ipscsession.OutputPeers. OutputPeers reports a new peer list at a Peer, which Peers and PeerAt return. */
 #define DMRGO_IPSCSESSION_OUTPUT_PEERS ((dmrgo_ipscsession_output_kind_t)4)
-/* Go: ipscsession.OutputSend. OutputSend is a packet in Output.Packet to send to Output.Addr, with its authentication trailer when the config has Auth. */
+/* Go: ipscsession.OutputSend. OutputSend is a packet in dmrgo_ipscsession_output_t.packet to send to dmrgo_ipscsession_output_t.addr, with its authentication trailer when the config has Auth. */
 #define DMRGO_IPSCSESSION_OUTPUT_SEND ((dmrgo_ipscsession_output_kind_t)1)
-/* Go: ipscsession.OutputUp. OutputUp reports that the link with Output.ID at Output.Addr is up: at a Peer, the registration with the master or with another peer; at a Master, the registration of a peer. */
+/* Go: ipscsession.OutputUp. OutputUp reports that the link with dmrgo_ipscsession_output_t.id at dmrgo_ipscsession_output_t.addr is up: at a Peer, the registration with the master or with another peer; at a Master, the registration of a peer. */
 #define DMRGO_IPSCSESSION_OUTPUT_UP ((dmrgo_ipscsession_output_kind_t)2)
 /* Go: ipscsession.ReasonAddress. ReasonAddress is a de-registration request from an address other than the one the peer registered from. */
 #define DMRGO_IPSCSESSION_REASON_ADDRESS ((dmrgo_ipscsession_reason_t)9)
@@ -7235,7 +7235,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_IPSCSESSION_STATE_REGISTERING ((dmrgo_ipscsession_state_t)1)
 /* Go: ipscsession.StateRunning. StateRunning is a registered Peer, or a running Master. */
 #define DMRGO_IPSCSESSION_STATE_RUNNING ((dmrgo_ipscsession_state_t)2)
-/* Go: ipscsession.TimeoutDefault. TimeoutDefault is the default MasterConfig.Timeout, after which DMRlink drops a silent peer. */
+/* Go: ipscsession.TimeoutDefault. TimeoutDefault is the default dmrgo_ipscsession_master_config_t.timeout, after which DMRlink drops a silent peer. */
 #define DMRGO_IPSCSESSION_TIMEOUT_DEFAULT INT64_C(120000000000)
 /* Go: mmdvm.CPUAtmel. The CPU values. */
 #define DMRGO_MMDVM_CPU_ATMEL ((dmrgo_mmdvm_cpu_t)0)
@@ -7401,13 +7401,13 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_MMDVM_NEXT_MORE ((dmrgo_mmdvm_next_result_t)1)
 /* Go: mmdvm.NextSkip. NextSkip is octets that do not start a frame, to drop. */
 #define DMRGO_MMDVM_NEXT_SKIP ((dmrgo_mmdvm_next_result_t)2)
-/* Go: trunk.CapacityPlusNoSignalDefault. CapacityPlusNoSignalDefault is the default CapacityPlusConfig.NoSignal: more than twice the 2 s beacon period of an idle rest channel. */
+/* Go: trunk.CapacityPlusNoSignalDefault. CapacityPlusNoSignalDefault is the default dmrgo_trunk_capacity_plus_config_t.no_signal: more than twice the 2 s beacon period of an idle rest channel. */
 #define DMRGO_TRUNK_CAPACITY_PLUS_NO_SIGNAL_DEFAULT INT64_C(5000000000)
 /* Go: trunk.ChannelAbsolute. ChannelAbsolute is the channel number of a grant or C_MOVE whose frequencies follow in a CG_AP or MV_AP block (ETSI TS 102 361-4 clause 7.1.1.1.1). */
 #define DMRGO_TRUNK_CHANNEL_ABSOLUTE 4095
 /* Go: trunk.ChannelNull. ChannelNull is CHNULL, the channel number that names no channel (ETSI TS 102 361-4 clause 7.2.19.1). */
 #define DMRGO_TRUNK_CHANNEL_NULL 0
-/* Go: trunk.DefaultMaxBERPermille. DefaultMaxBERPermille is the bit error rate of the TSCC, in parts per thousand of the FEC-checked bits of the last 32 TSCC bursts, above which an MS leaves the TSCC, when MSConfig.MaxBERPermille is 0. */
+/* Go: trunk.DefaultMaxBERPermille. DefaultMaxBERPermille is the bit error rate of the TSCC, in parts per thousand of the FEC-checked bits of the last 32 TSCC bursts, above which an MS leaves the TSCC, when dmrgo_trunk_ms_config_t.max_ber_permille is 0. */
 #define DMRGO_TRUNK_DEFAULT_MAX_BER_PERMILLE 50
 /* Go: trunk.MaxAppendedOctets. MaxAppendedOctets is the most octets of appended data in a UDT: four blocks of 12 octets, less the CRC of the last block. */
 #define DMRGO_TRUNK_MAX_APPENDED_OCTETS 46
@@ -7419,7 +7419,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_MAX_DIVERSIONS 16
 /* Go: trunk.MaxDynamicGroups. MaxDynamicGroups is the number of DGNA talkgroups of an MS: 15 of the DGNA_Address mode and one of the DGNA_Alias mode (ETSI TS 102 361-4 clause 6.6.8.0). */
 #define DMRGO_TRUNK_MAX_DYNAMIC_GROUPS 16
-/* Go: trunk.MaxLead. MaxLead is the bound of TSCCConfig.Lead: a Lead must be less than it. */
+/* Go: trunk.MaxLead. MaxLead is the bound of dmrgo_trunk_tscc_config_t.lead: a Lead must be less than it. */
 #define DMRGO_TRUNK_MAX_LEAD 1000000000
 /* Go: trunk.MaxNeighbors. MaxNeighbors is the number of adjacent sites that a Site keeps. */
 #define DMRGO_TRUNK_MAX_NEIGHBORS 8
@@ -7431,49 +7431,49 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_MAX_RULES 4
 /* Go: trunk.MaxTSCCOutputs. MaxTSCCOutputs is the most outputs that one call of a TSCC method appends: one burst for the TSCC, one burst and one call end for each payload channel, and the events, such as a refusal for each authentication challenge and call set-up that times out. */
 #define DMRGO_TRUNK_MAX_TSCC_OUTPUTS 43
-/* Go: trunk.MaxTalkgroups. MaxTalkgroups is the size of FollowerConfig.Talkgroups. */
+/* Go: trunk.MaxTalkgroups. MaxTalkgroups is the size of dmrgo_trunk_follower_config_t.talkgroups. */
 #define DMRGO_TRUNK_MAX_TALKGROUPS 32
 /* Go: trunk.OutputAccepted. OutputAccepted reports that the TSCC accepted a request of the MS that needs no payload channel, such as a status call, a transmit interrupt or an IP connection advice. */
 #define DMRGO_TRUNK_OUTPUT_ACCEPTED ((dmrgo_trunk_output_kind_t)19)
-/* Go: trunk.OutputAhoy. OutputAhoy reports a C_AHOY for the MS, with the call in Output.Grant: an individual call that the MS answers, or a radio check. */
+/* Go: trunk.OutputAhoy. OutputAhoy reports a C_AHOY for the MS, with the call in dmrgo_trunk_output_t.grant: an individual call that the MS answers, or a radio check. */
 #define DMRGO_TRUNK_OUTPUT_AHOY ((dmrgo_trunk_output_kind_t)9)
-/* Go: trunk.OutputAmbient. OutputAmbient reports that the MS joined the Ambient Listening Service call of Output.Grant: it transmits without an action of its user until it ends the call at T_ALS or T_ALS_E. */
+/* Go: trunk.OutputAmbient. OutputAmbient reports that the MS joined the Ambient Listening Service call of dmrgo_trunk_output_t.grant: it transmits without an action of its user until it ends the call at T_ALS or T_ALS_E. */
 #define DMRGO_TRUNK_OUTPUT_AMBIENT ((dmrgo_trunk_output_kind_t)17)
-/* Go: trunk.OutputAuthChallenge. OutputAuthChallenge reports the authentication challenge of the TSCC in Output.Challenge. */
+/* Go: trunk.OutputAuthChallenge. OutputAuthChallenge reports the authentication challenge of the TSCC in dmrgo_trunk_output_t.challenge. */
 #define DMRGO_TRUNK_OUTPUT_AUTH_CHALLENGE ((dmrgo_trunk_output_kind_t)13)
-/* Go: trunk.OutputBurst. OutputBurst is a burst for the MS to transmit in Output.Slot at Output.Due. */
+/* Go: trunk.OutputBurst. OutputBurst is a burst for the MS to transmit in dmrgo_trunk_output_t.slot at dmrgo_trunk_output_t.due. */
 #define DMRGO_TRUNK_OUTPUT_BURST ((dmrgo_trunk_output_kind_t)6)
-/* Go: trunk.OutputCallEnd. OutputCallEnd reports that the machine left the payload channel of Output.Grant. */
+/* Go: trunk.OutputCallEnd. OutputCallEnd reports that the machine left the payload channel of dmrgo_trunk_output_t.grant. */
 #define DMRGO_TRUNK_OUTPUT_CALL_END ((dmrgo_trunk_output_kind_t)5)
-/* Go: trunk.OutputDelivered. OutputDelivered reports that the TSCC completed a UDT short data, polling, call diversion or DGNA request of the MS, with the reason in Output.Ack. */
+/* Go: trunk.OutputDelivered. OutputDelivered reports that the TSCC completed a UDT short data, polling, call diversion or DGNA request of the MS, with the reason in dmrgo_trunk_output_t.ack. */
 #define DMRGO_TRUNK_OUTPUT_DELIVERED ((dmrgo_trunk_output_kind_t)14)
-/* Go: trunk.OutputGrant. OutputGrant reports a channel grant in Output.Grant, whether or not the machine follows it. */
+/* Go: trunk.OutputGrant. OutputGrant reports a channel grant in dmrgo_trunk_output_t.grant, whether or not the machine follows it. */
 #define DMRGO_TRUNK_OUTPUT_GRANT ((dmrgo_trunk_output_kind_t)4)
-/* Go: trunk.OutputGroups. OutputGroups reports that a DGNA transfer changed the talkgroups that MS.Groups returns. */
+/* Go: trunk.OutputGroups. OutputGroups reports that a DGNA transfer changed the talkgroups that dmrgo_trunk_ms_groups returns. */
 #define DMRGO_TRUNK_OUTPUT_GROUPS ((dmrgo_trunk_output_kind_t)16)
 /* Go: trunk.OutputLost. OutputLost reports that the machine lost the TSCC. */
 #define DMRGO_TRUNK_OUTPUT_LOST ((dmrgo_trunk_output_kind_t)3)
-/* Go: trunk.OutputPolled. OutputPolled reports that the TSCC polled the MS, with a C_AHOY from Output.Grant.Source or with a USBD Poll Request, and that the MS sent its poll response or refused the poll. */
+/* Go: trunk.OutputPolled. OutputPolled reports that the TSCC polled the MS, with a C_AHOY from dmrgo_trunk_output_t.grant.source or with a USBD Poll Request, and that the MS sent its poll response or refused the poll. */
 #define DMRGO_TRUNK_OUTPUT_POLLED ((dmrgo_trunk_output_kind_t)15)
 /* Go: trunk.OutputPowerOff. OutputPowerOff reports that the MS de-registered, or gave up after T_Dereg, and may be switched off. */
 #define DMRGO_TRUNK_OUTPUT_POWER_OFF ((dmrgo_trunk_output_kind_t)12)
-/* Go: trunk.OutputProtect. OutputProtect reports a P_PROTECT for the MS on its payload channel, with its kind in Output.Protect. */
+/* Go: trunk.OutputProtect. OutputProtect reports a P_PROTECT for the MS on its payload channel, with its kind in dmrgo_trunk_output_t.protect. */
 #define DMRGO_TRUNK_OUTPUT_PROTECT ((dmrgo_trunk_output_kind_t)11)
 /* Go: trunk.OutputRefused. OutputRefused reports that the TSCC refused a request of the MS, or that the request failed. */
 #define DMRGO_TRUNK_OUTPUT_REFUSED ((dmrgo_trunk_output_kind_t)8)
 /* Go: trunk.OutputRegistered. OutputRegistered reports that the TSCC accepted the registration of the MS. */
 #define DMRGO_TRUNK_OUTPUT_REGISTERED ((dmrgo_trunk_output_kind_t)7)
-/* Go: trunk.OutputReverseChannel. OutputReverseChannel reports the RC command in Output.RC on the payload channel of the MS. */
+/* Go: trunk.OutputReverseChannel. OutputReverseChannel reports the RC command in dmrgo_trunk_output_t.rc on the payload channel of the MS. */
 #define DMRGO_TRUNK_OUTPUT_REVERSE_CHANNEL ((dmrgo_trunk_output_kind_t)21)
 /* Go: trunk.OutputSite. OutputSite reports that the machine confirmed a TSCC, or that the system parameters of the TSCC changed. */
 #define DMRGO_TRUNK_OUTPUT_SITE ((dmrgo_trunk_output_kind_t)2)
-/* Go: trunk.OutputSleep. OutputSleep reports that the MS may switch its receiver off until Output.Due, its next power save frame. */
+/* Go: trunk.OutputSleep. OutputSleep reports that the MS may switch its receiver off until dmrgo_trunk_output_t.due, its next power save frame. */
 #define DMRGO_TRUNK_OUTPUT_SLEEP ((dmrgo_trunk_output_kind_t)22)
-/* Go: trunk.OutputStatus. OutputStatus reports a status in Output.Status: a status call to the MS or to one of its talkgroups, with the parties in Output.Grant, or the answer to a status poll of the MS, from Output.Grant.Source. */
+/* Go: trunk.OutputStatus. OutputStatus reports a status in dmrgo_trunk_output_t.status: a status call to the MS or to one of its talkgroups, with the parties in dmrgo_trunk_output_t.grant, or the answer to a status poll of the MS, from dmrgo_trunk_output_t.grant.source. */
 #define DMRGO_TRUNK_OUTPUT_STATUS ((dmrgo_trunk_output_kind_t)18)
-/* Go: trunk.OutputStun. OutputStun reports that the TSCC stunned, revived or killed the MS, with the action in Output.Stun. */
+/* Go: trunk.OutputStun. OutputStun reports that the TSCC stunned, revived or killed the MS, with the action in dmrgo_trunk_output_t.stun. */
 #define DMRGO_TRUNK_OUTPUT_STUN ((dmrgo_trunk_output_kind_t)20)
-/* Go: trunk.OutputTune. OutputTune asks the consumer to tune the receiver, and the transmitter of an MS, to Output.Tune. */
+/* Go: trunk.OutputTune. OutputTune asks the consumer to tune the receiver, and the transmitter of an MS, to dmrgo_trunk_output_t.tune. */
 #define DMRGO_TRUNK_OUTPUT_TUNE ((dmrgo_trunk_output_kind_t)1)
 /* Go: trunk.OutputUDT. OutputUDT reports a UDT delivery, which UDT returns until the next call of the machine. */
 #define DMRGO_TRUNK_OUTPUT_UDT ((dmrgo_trunk_output_kind_t)10)
@@ -7499,7 +7499,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_REASON_MAINTENANCE ((dmrgo_trunk_reason_t)6)
 /* Go: trunk.ReasonMove. ReasonMove is a C_MOVE to another TSCC. */
 #define DMRGO_TRUNK_REASON_MOVE ((dmrgo_trunk_reason_t)11)
-/* Go: trunk.ReasonNack. ReasonNack is a C_NACKD for the request, with its reason in Output.Ack. */
+/* Go: trunk.ReasonNack. ReasonNack is a C_NACKD for the request, with its reason in dmrgo_trunk_output_t.ack. */
 #define DMRGO_TRUNK_REASON_NACK ((dmrgo_trunk_reason_t)7)
 /* Go: trunk.ReasonNoAnswer. ReasonNoAnswer is a random access that got no answer after the most attempts, or after TRand_TC. */
 #define DMRGO_TRUNK_REASON_NO_ANSWER ((dmrgo_trunk_reason_t)8)
@@ -7547,7 +7547,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_TSCC_CALL_END ((dmrgo_trunk_tscc_output_kind_t)5)
 /* Go: trunk.TSCCCallStart. TSCCCallStart reports the grant in Grant. */
 #define DMRGO_TRUNK_TSCC_CALL_START ((dmrgo_trunk_tscc_output_kind_t)4)
-/* Go: trunk.TSCCDelivered. TSCCDelivered reports that a UDT short data, polling or DGNA transfer from Address to Grant.Target completed, with the final acknowledgement in Ack. */
+/* Go: trunk.TSCCDelivered. TSCCDelivered reports that a UDT short data, polling or DGNA transfer from Address to dmrgo_trunk_grant_t.target completed, with the final acknowledgement in Ack. */
 #define DMRGO_TRUNK_TSCC_DELIVERED ((dmrgo_trunk_tscc_output_kind_t)8)
 /* Go: trunk.TSCCDeregistered. TSCCDeregistered reports that the MS Address de-registered. */
 #define DMRGO_TRUNK_TSCC_DEREGISTERED ((dmrgo_trunk_tscc_output_kind_t)3)
@@ -7583,7 +7583,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_CODEC2_MODE3200 ((dmrgo_codec2_mode_t)3200)
 /* Go: codec2.ModeAuto. decode the mode that the frames of each call show, encode Mode2400 */
 #define DMRGO_CODEC2_MODE_AUTO ((dmrgo_codec2_mode_t)0)
-/* Go: dvsi.DefaultTimeout. DefaultTimeout is the time a Codec waits for a reply when Config.Timeout is zero. */
+/* Go: dvsi.DefaultTimeout. DefaultTimeout is the time a Codec waits for a reply when dmrgo_dvsi_config_t.timeout is zero. */
 #define DMRGO_DVSI_DEFAULT_TIMEOUT 500000000
 /* Go: dvsi.FieldChannel0. the next fields are for channel 0 */
 #define DMRGO_DVSI_FIELD_CHANNEL0 ((dmrgo_dvsi_field_t)64)
@@ -7641,9 +7641,9 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_VOICE_DEFAULT_HOLDOFF_MAX 1000000000
 /* Go: voice.DefaultIdleSearch. DefaultIdleSearch is the idle search timer T_IdleSrch of a polite call, the most that ETSI TS 102 361-1 clause F.1 allows. */
 #define DMRGO_VOICE_DEFAULT_IDLE_SEARCH 540000000
-/* Go: voice.DefaultLost. DefaultLost is the time without a burst after which a Receiver ends a call, when ReceiverConfig.Lost is 0. */
+/* Go: voice.DefaultLost. DefaultLost is the time without a burst after which a Receiver ends a call, when dmrgo_voice_receiver_config_t.lost is 0. */
 #define DMRGO_VOICE_DEFAULT_LOST 1000000000
-/* Go: voice.DefaultQueue. DefaultQueue is the number of vocoder slots that a Transmitter buffers when TransmitterConfig.Queue is 0: three bursts. */
+/* Go: voice.DefaultQueue. DefaultQueue is the number of vocoder slots that a Transmitter buffers when dmrgo_voice_transmitter_config_t.queue is 0: three bursts. */
 #define DMRGO_VOICE_DEFAULT_QUEUE 9
 /* Go: voice.EndDataSync. EndDataSync is a data burst other than a terminator. */
 #define DMRGO_VOICE_END_DATA_SYNC ((dmrgo_voice_end_reason_t)2)
@@ -7653,19 +7653,19 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_VOICE_END_IDLE ((dmrgo_voice_end_reason_t)3)
 /* Go: voice.EndInterrupted. EndInterrupted is a call of a Transmitter that a Tier 2 RC command ended (ETSI TS 102 361-2 clause 6.3). */
 #define DMRGO_VOICE_END_INTERRUPTED ((dmrgo_voice_end_reason_t)10)
-/* Go: voice.EndLost. EndLost is a time of ReceiverConfig.Lost without a burst. */
+/* Go: voice.EndLost. EndLost is a time of dmrgo_voice_receiver_config_t.lost without a burst. */
 #define DMRGO_VOICE_END_LOST ((dmrgo_voice_end_reason_t)4)
 /* Go: voice.EndNoOutbound. EndNoOutbound is a call of a Transmitter that began in hang time with no outbound burst at all until T_MS_ChanAuth ran out: the BS is asleep or out of range. */
 #define DMRGO_VOICE_END_NO_OUTBOUND ((dmrgo_voice_end_reason_t)11)
 /* Go: voice.EndSuperseded. EndSuperseded is a new call: an LC with other addresses, or another transport stream. */
 #define DMRGO_VOICE_END_SUPERSEDED ((dmrgo_voice_end_reason_t)7)
-/* Go: voice.EndSyncLost. EndSyncLost is a transport that lost the signal: Hint.SyncLost or Receiver.Lost. */
+/* Go: voice.EndSyncLost. EndSyncLost is a transport that lost the signal: dmrgo_layer2_hint_t.sync_lost or dmrgo_voice_receiver_lost. */
 #define DMRGO_VOICE_END_SYNC_LOST ((dmrgo_voice_end_reason_t)5)
 /* Go: voice.EndTerminator. EndTerminator is a Terminator with LC. */
 #define DMRGO_VOICE_END_TERMINATOR ((dmrgo_voice_end_reason_t)1)
 /* Go: voice.EndTimeout. EndTimeout is the transmit timeout T_TO of a Transmitter (ETSI TS 102 361-2 clause 6.1). */
 #define DMRGO_VOICE_END_TIMEOUT ((dmrgo_voice_end_reason_t)8)
-/* Go: voice.EndTransport. EndTransport is the end flag of the transport, Hint.End EndStrong. */
+/* Go: voice.EndTransport. EndTransport is the end flag of the transport, dmrgo_layer2_hint_t.end EndStrong. */
 #define DMRGO_VOICE_END_TRANSPORT ((dmrgo_voice_end_reason_t)6)
 /* Go: voice.EventCallEnd. EventCallEnd ends a call. */
 #define DMRGO_VOICE_EVENT_CALL_END ((dmrgo_voice_event_kind_t)6)
@@ -7705,7 +7705,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_VOICE_MAX_TERMINATORS 64
 /* Go: voice.OriginEmbedded. OriginEmbedded is the embedded LC of bursts B to E (late entry). */
 #define DMRGO_VOICE_ORIGIN_EMBEDDED ((dmrgo_voice_origin_t)2)
-/* Go: voice.OriginExpected. OriginExpected is the call that Receiver.Expect gave, for voice that came without an LC, such as after a Tier III grant. */
+/* Go: voice.OriginExpected. OriginExpected is the call that dmrgo_voice_receiver_expect gave, for voice that came without an LC, such as after a Tier III grant. */
 #define DMRGO_VOICE_ORIGIN_EXPECTED ((dmrgo_voice_origin_t)4)
 /* Go: voice.OriginHeader. OriginHeader is a Voice LC Header. */
 #define DMRGO_VOICE_ORIGIN_HEADER ((dmrgo_voice_origin_t)1)
@@ -7770,7 +7770,7 @@ int dmrgo_bs_cach_next(dmrgo_bs_cach_t *self, dmrgo_enums_slot_t tc, bool busy, 
 int dmrgo_bs_cach_reset(dmrgo_bs_cach_t *self);
 /* Go: bs.ChannelAuth.String. String returns the name of the channel authorization. */
 int dmrgo_bs_channel_auth_string(dmrgo_bs_channel_auth_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: bs.CheckSlot. CheckSlot returns DMRGO_ERR_BS_SLOT for a slot other than DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2, the slots that Repeater.Inbound and Repeater.Lost drop. */
+/* Go: bs.CheckSlot. CheckSlot returns DMRGO_ERR_BS_SLOT for a slot other than DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2, the slots that dmrgo_bs_repeater_inbound and dmrgo_bs_repeater_lost drop. */
 int dmrgo_bs_check_slot(dmrgo_enums_slot_t s);
 /* Go: bs.Mode.String. String returns the name of the mode. */
 int dmrgo_bs_mode_string(dmrgo_bs_mode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -7806,7 +7806,7 @@ int dmrgo_bs_repeater_slot_state(dmrgo_bs_repeater_t *self, dmrgo_enums_slot_t s
 int dmrgo_bs_repeater_state(dmrgo_bs_repeater_t *self, dmrgo_bs_state_t *out);
 /* dmrgo_bs_repeater_tick_need sets *items and *arena to the room that dmrgo_bs_repeater_tick needs for these arguments, without a change to the handle. */
 int dmrgo_bs_repeater_tick_need(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
-/* Go: bs.Repeater.Tick. Tick runs the timers that are due at now and, in ModeRF while keyed, appends the next outbound burst when now has reached its Due time minus Config.Lead. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_bs_repeater_tick_need gives (DMRGO_BS_REPEATER_TICK_MAX_ITEMS items). */
+/* Go: bs.Repeater.Tick. Tick runs the timers that are due at now and, in ModeRF while keyed, appends the next outbound burst when now has reached its Due time minus dmrgo_bs_config_t.lead. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_bs_repeater_tick_need gives (DMRGO_BS_REPEATER_TICK_MAX_ITEMS items). */
 int dmrgo_bs_repeater_tick(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, dmrgo_bs_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: bs.Service.String. String returns the name of the service. */
 int dmrgo_bs_service_string(dmrgo_bs_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -7902,7 +7902,7 @@ int dmrgo_csbk_responder_free(dmrgo_csbk_responder_t *self);
 int dmrgo_csbk_responder_burst_need(dmrgo_csbk_responder_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 /* Go: csbk.Responder.Burst. Burst decodes the burst raw with what the Hint h says about it, runs it through the Responder as Decoded does, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_responder_burst_need gives (DMRGO_CSBK_RESPONDER_BURST_MAX_ITEMS items). raw may be NULL. */
 int dmrgo_csbk_responder_burst(dmrgo_csbk_responder_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: csbk.Responder.Channel. Channel reports whether the logical channel is busy, as Requester.Channel does. */
+/* Go: csbk.Responder.Channel. Channel reports whether the logical channel is busy, as dmrgo_csbk_requester_channel does. */
 int dmrgo_csbk_responder_channel(dmrgo_csbk_responder_t *self, dmrgo_duration_t now, bool busy);
 /* Go: csbk.Responder.Deadline. Deadline returns the time at which the Responder needs a Tick. */
 int dmrgo_csbk_responder_deadline(dmrgo_csbk_responder_t *self, dmrgo_duration_t *at, bool *ok);
@@ -8010,7 +8010,7 @@ int dmrgo_data_event_kind_string(dmrgo_data_event_kind_t self, char *out, size_t
 int dmrgo_data_new_receiver(const dmrgo_data_receiver_config_t *cfg, dmrgo_data_receiver_t **out);
 /* Go: data.NewSender. NewSender returns a Sender for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source or Access, a Preambles, Retries, MaxBlocks, Peers or Window out of range, a negative Lead, or a Slot other than SlotUnknown, Slot1 or Slot2. cfg may be NULL. */
 int dmrgo_data_new_sender(const dmrgo_data_sender_config_t *cfg, dmrgo_data_sender_t **out);
-/* Go: data.Output.ICMP. ICMP returns the ICMP error message that the OutputDone o of a message of the IP bearer service reports to the IP layer: DMRGO_IP_ICMP_HOST_UNREACHABLE for a message that used all its tries on air (ResultRetryLimit), that could not finish before SenderConfig.TxLimit (ResultTimeLimit), or that got a NACK for the full memory of the recipient. */
+/* Go: data.Output.ICMP. ICMP returns the ICMP error message that the OutputDone o of a message of the IP bearer service reports to the IP layer: DMRGO_IP_ICMP_HOST_UNREACHABLE for a message that used all its tries on air (ResultRetryLimit), that could not finish before dmrgo_data_sender_config_t.tx_limit (ResultTimeLimit), or that got a NACK for the full memory of the recipient. */
 int dmrgo_data_output_icmp(const dmrgo_data_output_t *self, dmrgo_ip_icmp_message_t *m, bool *ok);
 /* Go: data.OutputKind.String. String returns the name of the kind. */
 int dmrgo_data_output_kind_string(dmrgo_data_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -8036,7 +8036,7 @@ int dmrgo_data_receiver_reset(dmrgo_data_receiver_t *self);
 int dmrgo_data_receiver_state(dmrgo_data_receiver_t *self, dmrgo_data_state_t *out);
 /* dmrgo_data_receiver_tick_need sets *items and *arena to the room that dmrgo_data_receiver_tick needs for these arguments, without a change to the handle. */
 int dmrgo_data_receiver_tick_need(dmrgo_data_receiver_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
-/* Go: data.Receiver.Tick. Tick runs the timers that are due at now and appends their events to dst: lost blocks after ReceiverConfig.Lost, which can complete a packet and send its SACK, and the end of the call after ReceiverConfig.Hang. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_receiver_tick_need gives. */
+/* Go: data.Receiver.Tick. Tick runs the timers that are due at now and appends their events to dst: lost blocks after dmrgo_data_receiver_config_t.lost, which can complete a packet and send its SACK, and the end of the call after dmrgo_data_receiver_config_t.hang. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_receiver_tick_need gives. */
 int dmrgo_data_receiver_tick(dmrgo_data_receiver_t *self, dmrgo_duration_t now, dmrgo_data_event_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: data.Result.String. String returns the name of the result. */
 int dmrgo_data_result_string(dmrgo_data_result_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -8064,7 +8064,7 @@ int dmrgo_data_sender_lost_need(dmrgo_data_sender_t *self, dmrgo_duration_t now,
 int dmrgo_data_sender_lost(dmrgo_data_sender_t *self, dmrgo_duration_t now, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: data.Sender.Reset. Reset ends every message without outputs and forgets the sequence numbers of every link and the channel state. */
 int dmrgo_data_sender_reset(dmrgo_data_sender_t *self);
-/* Go: data.Sender.Send. Send starts the message m at now, or queues it in the sliding window. Send returns DMRGO_ERR_DATA_BUSY for any other message while a message is in progress, DMRGO_ERR_NIL_ARGUMENT for a nil m, a DMRGO_ERR_CONFIG for another header (Field "Header"), a P_HEAD in m->proprietary (Field "Proprietary") or a confirmed message to a group (Field "Header.Group"), DMRGO_ERR_ZERO_VALUE on a zero Sender, and the errors of dmrgo_packet_builder_segment, such as DMRGO_ERR_PACKET_NO_ROOM for a message of more than SenderConfig.MaxBlocks blocks and DMRGO_ERR_PACKET_RATE. m may be NULL. */
+/* Go: data.Sender.Send. Send starts the message m at now, or queues it in the sliding window. Send returns DMRGO_ERR_DATA_BUSY for any other message while a message is in progress, DMRGO_ERR_NIL_ARGUMENT for a nil m, a DMRGO_ERR_CONFIG for another header (Field "Header"), a P_HEAD in m->proprietary (Field "Proprietary") or a confirmed message to a group (Field "Header.Group"), DMRGO_ERR_ZERO_VALUE on a zero Sender, and the errors of dmrgo_packet_builder_segment, such as DMRGO_ERR_PACKET_NO_ROOM for a message of more than dmrgo_data_sender_config_t.max_blocks blocks and DMRGO_ERR_PACKET_RATE. m may be NULL. */
 int dmrgo_data_sender_send(dmrgo_data_sender_t *self, dmrgo_duration_t now, const dmrgo_data_message_t *m);
 /* Go: data.Sender.State. State returns the state of the Sender. */
 int dmrgo_data_sender_state(dmrgo_data_sender_t *self, dmrgo_data_sender_state_t *out);
@@ -8288,7 +8288,7 @@ int dmrgo_hdap_tmp_message_set_text_utf8(dmrgo_hdap_tmp_message_t *self, uint8_t
 int dmrgo_hdap_tmp_message_string(const dmrgo_hdap_tmp_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.TMPMessage.TextUTF8. TextUTF8 appends Text, UTF-16LE text, to dst as UTF-8 and returns dst. */
 int dmrgo_hdap_tmp_message_text_utf8(const dmrgo_hdap_tmp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: hdap.TMPOpcode. TMPOpcode returns the text message protocol (TMP) opcode of the flags f and the service type t, the inverse of Opcode.TMP. It returns a DMRGO_ERR_FIELD_RANGE when f->reserved does not fit in 6 bits. */
+/* Go: hdap.TMPOpcode. TMPOpcode returns the text message protocol (TMP) opcode of the flags f and the service type t, the inverse of dmrgo_hdap_opcode_tmp. It returns a DMRGO_ERR_FIELD_RANGE when f->reserved does not fit in 6 bits. */
 int dmrgo_hdap_tmp_opcode(const dmrgo_hdap_tmp_flags_t *f, dmrgo_hdap_tmp_type_t t, dmrgo_hdap_opcode_t *out);
 /* Go: hdap.TMPType.String. String returns the name of t. */
 int dmrgo_hdap_tmp_type_string(dmrgo_hdap_tmp_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -8330,7 +8330,7 @@ int dmrgo_ip_icmp_message_code(dmrgo_ip_icmp_message_t self, uint8_t *out);
 int dmrgo_ip_icmp_message_string(dmrgo_ip_icmp_message_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ip.ICMPMessage.Type. Type returns the ICMP Type of m. */
 int dmrgo_ip_icmp_message_type(dmrgo_ip_icmp_message_t self, uint8_t *out);
-/* Go: ip.IPv4.AppendBinary. AppendBinary appends s to dst, with Header.TotalLength set to the length of the data. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE or another error when a field does not fit. */
+/* Go: ip.IPv4.AppendBinary. AppendBinary appends s to dst, with dmrgo_ip_ipv4_t.header.total_length set to the length of the data. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE or another error when a field does not fit. */
 int dmrgo_ip_ipv4_append_binary(const dmrgo_ip_ipv4_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ip.IPv4.String. String returns the fields of s as text, for printing. */
 int dmrgo_ip_ipv4_string(const dmrgo_ip_ipv4_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -8352,7 +8352,7 @@ int dmrgo_ip_radio_address(uint8_t network, uint32_t id, uint8_t out[4]);
 int dmrgo_ip_radio_id(const uint8_t addr[4], uint32_t *out);
 /* Go: ip.SPIDPort. SPIDPort returns the UDP port of spid: PortText for SPIDTextMessage and PortLocation for SPIDLocationProtocol. */
 int dmrgo_ip_spid_port(dmrgo_enums_spid_t spid, dmrgo_ip_port_t *out);
-/* Go: ip.UDP.AppendBinary. AppendBinary appends s to dst, with Header.Length set to the length of the data. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE or another error when a field does not fit. */
+/* Go: ip.UDP.AppendBinary. AppendBinary appends s to dst, with dmrgo_ip_udp_t.header.length set to the length of the data. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE or another error when a field does not fit. */
 int dmrgo_ip_udp_append_binary(const dmrgo_ip_udp_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ip.UDP.String. String returns the fields of s as text, for printing. */
 int dmrgo_ip_udp_string(const dmrgo_ip_udp_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -8390,9 +8390,9 @@ int dmrgo_layer2_burst_set_sync_distance(dmrgo_layer2_burst_t *self, int64_t v);
 int dmrgo_layer2_burst_get_voice_burst(dmrgo_layer2_burst_t *self, dmrgo_enums_voice_burst_type_t *out);
 /* Go: layer2.Burst.VoiceBurst. VoiceBurst is the superframe position of a voice burst. */
 int dmrgo_layer2_burst_set_voice_burst(dmrgo_layer2_burst_t *self, dmrgo_enums_voice_burst_type_t v);
-/* Go: layer2.Burst.VoiceSlots. VoiceSlots holds the three 72-bit vocoder slots of a voice burst as received, before any FEC, packed as RawBurst.VoiceSlots returns them. */
+/* Go: layer2.Burst.VoiceSlots. VoiceSlots holds the three 72-bit vocoder slots of a voice burst as received, before any FEC, packed as dmrgo_layer2_raw_burst_voice_slots returns them. */
 int dmrgo_layer2_burst_get_voice_slots(dmrgo_layer2_burst_t *self, uint8_t out[3][9]);
-/* Go: layer2.Burst.VoiceSlots. VoiceSlots holds the three 72-bit vocoder slots of a voice burst as received, before any FEC, packed as RawBurst.VoiceSlots returns them. */
+/* Go: layer2.Burst.VoiceSlots. VoiceSlots holds the three 72-bit vocoder slots of a voice burst as received, before any FEC, packed as dmrgo_layer2_raw_burst_voice_slots returns them. */
 int dmrgo_layer2_burst_set_voice_slots(dmrgo_layer2_burst_t *self, const uint8_t v[3][9]);
 /* Go: layer2.Burst.SlotType. SlotType is the slot type of a data burst. */
 int dmrgo_layer2_burst_get_slot_type(dmrgo_layer2_burst_t *self, dmrgo_pdu_slot_type_t *out);
@@ -8406,9 +8406,9 @@ int dmrgo_layer2_burst_set_bptc_reserved(dmrgo_layer2_burst_t *self, uint8_t v);
 int dmrgo_layer2_burst_get_embedded_signalling(dmrgo_layer2_burst_t *self, dmrgo_pdu_embedded_signalling_t *out);
 /* Go: layer2.Burst.EmbeddedSignalling. EmbeddedSignalling is the EMB of a burst with HasEmbeddedSignalling. */
 int dmrgo_layer2_burst_set_embedded_signalling(dmrgo_layer2_burst_t *self, const dmrgo_pdu_embedded_signalling_t *v);
-/* Go: layer2.Burst.EmbeddedSignallingData. EmbeddedSignallingData is the 32-bit embedded data field of a burst with HasEmbeddedSignalling, packed as RawBurst.EmbeddedData returns it. */
+/* Go: layer2.Burst.EmbeddedSignallingData. EmbeddedSignallingData is the 32-bit embedded data field of a burst with HasEmbeddedSignalling, packed as dmrgo_layer2_raw_burst_embedded_data returns it. */
 int dmrgo_layer2_burst_get_embedded_signalling_data(dmrgo_layer2_burst_t *self, uint8_t out[4]);
-/* Go: layer2.Burst.EmbeddedSignallingData. EmbeddedSignallingData is the 32-bit embedded data field of a burst with HasEmbeddedSignalling, packed as RawBurst.EmbeddedData returns it. */
+/* Go: layer2.Burst.EmbeddedSignallingData. EmbeddedSignallingData is the 32-bit embedded data field of a burst with HasEmbeddedSignalling, packed as dmrgo_layer2_raw_burst_embedded_data returns it. */
 int dmrgo_layer2_burst_set_embedded_signalling_data(dmrgo_layer2_burst_t *self, const uint8_t v[4]);
 /* Go: layer2.Burst.ReverseChannel. ReverseChannel is the RC PDU of a burst with HasReverseChannel. */
 int dmrgo_layer2_burst_get_reverse_channel(dmrgo_layer2_burst_t *self, dmrgo_pdu_reverse_channel_t *out);
@@ -8430,7 +8430,7 @@ int dmrgo_layer2_burst_ambe_frames(dmrgo_layer2_burst_t *self, dmrgo_vocoder_amb
 int dmrgo_layer2_burst_decode_from_bytes(dmrgo_layer2_burst_t *self, const dmrgo_layer2_raw_burst_t *data);
 /* Go: layer2.Burst.DecodeFromBytesWith. DecodeFromBytesWith decodes data into the burst with receive-side options; a nil opts means the zero DecodeOptions. The error is DMRGO_ERR_LAYER2_RESERVED_DATA_TYPE, DMRGO_ERR_LAYER2_COLOR_CODE_MISMATCH, an error for invalid options, or a join of these, and the burst is populated also when an error is returned. opts may be NULL. */
 int dmrgo_layer2_burst_decode_from_bytes_with(dmrgo_layer2_burst_t *self, const dmrgo_layer2_raw_burst_t *data, const dmrgo_layer2_decode_options_t *opts);
-/* Go: layer2.Burst.Encode. Encode returns the burst in transmit bit order, as the package doc describes. It returns an error for KindUnknown, a SyncPattern that does not fit the kind, a missing Data, or a Data whose data type is not SlotType.DataType, and a DMRGO_ERR_FIELD_RANGE for a field value that does not fit its bits or a padding bit that is set. */
+/* Go: layer2.Burst.Encode. Encode returns the burst in transmit bit order, as the package doc describes. It returns an error for KindUnknown, a SyncPattern that does not fit the kind, a missing Data, or a Data whose data type is not dmrgo_pdu_slot_type_t.data_type, and a DMRGO_ERR_FIELD_RANGE for a field value that does not fit its bits or a padding bit that is set. */
 int dmrgo_layer2_burst_encode(dmrgo_layer2_burst_t *self, dmrgo_layer2_raw_burst_t *out);
 /* Go: layer2.Burst.HasEmbeddedSignalling. HasEmbeddedSignalling reports whether the burst carries an EMB and an embedded data field: a voice or data burst without a SYNC pattern, or a standalone RC burst. */
 int dmrgo_layer2_burst_has_embedded_signalling(dmrgo_layer2_burst_t *self, bool *out);
@@ -8456,9 +8456,9 @@ int dmrgo_layer2_decode_cach(const uint8_t bits[3], dmrgo_layer2_cach_t *out);
 int dmrgo_layer2_decode_cach_field(const uint8_t on_air[3], dmrgo_layer2_cach_t *out);
 /* Go: layer2.DecodeEmbeddedFullLinkControl. DecodeEmbeddedFullLinkControl decodes a Full LC from the four embedded signalling fields f of bursts B to E, as DecodeEmbeddedLC(f) does. */
 int dmrgo_layer2_decode_embedded_full_link_control(const uint8_t f[4][4], dmrgo_pdu_full_link_control_t *out);
-/* Go: layer2.DecodeEmbeddedLC. DecodeEmbeddedLC decodes the 9 LC octets from the embedded signalling fields f of bursts B to E, as RawBurst.EmbeddedData returns them. */
+/* Go: layer2.DecodeEmbeddedLC. DecodeEmbeddedLC decodes the 9 LC octets from the embedded signalling fields f of bursts B to E, as dmrgo_layer2_raw_burst_embedded_data returns them. */
 int dmrgo_layer2_decode_embedded_lc(const uint8_t f[4][4], uint8_t data[9], dmrgo_fec_result_t *fec);
-/* Go: layer2.DecodeEmbeddedRC. DecodeEmbeddedRC decodes a Reverse Channel PDU from the 32-bit embedded signalling data field, packed, the first bit in the most significant bit of byte 0, as RawBurst.EmbeddedData returns it. */
+/* Go: layer2.DecodeEmbeddedRC. DecodeEmbeddedRC decodes a Reverse Channel PDU from the 32-bit embedded signalling data field, packed, the first bit in the most significant bit of byte 0, as dmrgo_layer2_raw_burst_embedded_data returns it. */
 int dmrgo_layer2_decode_embedded_rc(const uint8_t data[4], dmrgo_pdu_reverse_channel_t *out);
 /* dmrgo_layer2_embedded_lc_assembler_new makes a zero dmrgo_layer2_embedded_lc_assembler_t. */
 int dmrgo_layer2_embedded_lc_assembler_new(dmrgo_layer2_embedded_lc_assembler_t **out);
@@ -8470,7 +8470,7 @@ int dmrgo_layer2_embedded_lc_assembler_add(dmrgo_layer2_embedded_lc_assembler_t 
 int dmrgo_layer2_embedded_lc_assembler_reset(dmrgo_layer2_embedded_lc_assembler_t *self);
 /* Go: layer2.EncodeEmbeddedFullLinkControl. EncodeEmbeddedFullLinkControl returns the four embedded signalling fields, in burst order B to E, that carry lc. lc may be NULL. */
 int dmrgo_layer2_encode_embedded_full_link_control(const dmrgo_pdu_full_link_control_t *lc, uint8_t out[4][4]);
-/* Go: layer2.EncodeEmbeddedLC. EncodeEmbeddedLC returns the four 32-bit embedded signalling fields, in burst order B to E, that carry the 9-octet LC lc, in the form RawBurst.SetEmbeddedData takes. */
+/* Go: layer2.EncodeEmbeddedLC. EncodeEmbeddedLC returns the four 32-bit embedded signalling fields, in burst order B to E, that carry the 9-octet LC lc, in the form dmrgo_layer2_raw_burst_set_embedded_data takes. */
 int dmrgo_layer2_encode_embedded_lc(const uint8_t lc[9], uint8_t out[4][4]);
 /* Go: layer2.EncodeEmbeddedRC. EncodeEmbeddedRC encodes a Reverse Channel PDU into the 32 transmit bits of the embedded signalling data field, packed as DecodeEmbeddedRC takes them. rc may be NULL. */
 int dmrgo_layer2_encode_embedded_rc(const dmrgo_pdu_reverse_channel_t *rc, uint8_t out[4]);
@@ -8480,7 +8480,7 @@ int dmrgo_layer2_encode_short_lc_to_cach(const dmrgo_pdu_short_lc_t *slc, const 
 int dmrgo_layer2_end_hint_string(dmrgo_layer2_end_hint_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer2.Kind.String. String returns the name of the kind. */
 int dmrgo_layer2_kind_string(dmrgo_layer2_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: layer2.MMDVMHostAccepts. MMDVMHostAccepts reports whether MMDVMHost (g4klx/MMDVMHost 0acb758) uses a data burst of dataType from the network, given the 96-bit BPTC(196,96) payload that RawBurst.BPTCPayload returns. */
+/* Go: layer2.MMDVMHostAccepts. MMDVMHostAccepts reports whether MMDVMHost (g4klx/MMDVMHost 0acb758) uses a data burst of dataType from the network, given the 96-bit BPTC(196,96) payload that dmrgo_layer2_raw_burst_bptc_payload returns. */
 int dmrgo_layer2_mmdvm_host_accepts(dmrgo_enums_data_type_t data_type, const uint8_t payload[12], bool *out);
 /* Go: layer2.MMDVMHostSeal. MMDVMHostSeal rewrites the parity or CRC of the BPTC(196,96) payload p of a burst of dataType, after the caller edited p, so that MMDVMHostAccepts(dataType, *p) holds. For a data type that MMDVMHost discards it returns an error that wraps DMRGO_ERR_LAYER2_DATA_TYPE, and for a nil p DMRGO_ERR_NIL_ARGUMENT; both leave p as it is. p may be NULL. */
 int dmrgo_layer2_mmdvm_host_seal(dmrgo_enums_data_type_t data_type, uint8_t p[12]);
@@ -8506,13 +8506,13 @@ int dmrgo_layer2_position_tracker_place(dmrgo_layer2_position_tracker_t *self, c
 int dmrgo_layer2_position_tracker_place_decoded(dmrgo_layer2_position_tracker_t *self, dmrgo_layer2_burst_t *b, dmrgo_layer2_hint_t *h, int64_t steps, int64_t *lost, dmrgo_layer2_placement_t *p);
 /* Go: layer2.PositionTracker.Reset. Reset forgets the call. */
 int dmrgo_layer2_position_tracker_reset(dmrgo_layer2_position_tracker_t *self);
-/* Go: layer2.RawBurst.AMBEFrames. AMBEFrames decodes the three voice slots as AMBE+2 frames with dmrgo_vocoder_decode_ambe72, as Burst.AMBEFrames does, and returns them with the combined FEC result. */
+/* Go: layer2.RawBurst.AMBEFrames. AMBEFrames decodes the three voice slots as AMBE+2 frames with dmrgo_vocoder_decode_ambe72, as dmrgo_layer2_burst_ambe_frames does, and returns them with the combined FEC result. */
 int dmrgo_layer2_raw_burst_ambe_frames(const dmrgo_layer2_raw_burst_t *self, dmrgo_vocoder_ambe_frame_t ambe_frames[3], dmrgo_fec_result_t *fec);
 /* Go: layer2.RawBurst.AMBEVoice. AMBEVoice decodes the three voice slots as AMBEFrames does and packs the frames into the 19-octet IPSC AMBE payload, with the bad flags of frames 2 and 3 set from their FEC results, as dmrgo_vocoder_pack_ambe_voice_flags does. */
 int dmrgo_layer2_raw_burst_ambe_voice(const dmrgo_layer2_raw_burst_t *self, uint8_t p[19], bool bad[3], dmrgo_fec_result_t *res);
 /* Go: layer2.RawBurst.BPTCPayload. BPTCPayload decodes the 196 information bits as BPTC(196,96) and returns the 96 data bits packed most significant bit first, before any CRC or RS(12,9) check. */
 int dmrgo_layer2_raw_burst_bptc_payload(const dmrgo_layer2_raw_burst_t *self, uint8_t data[12], dmrgo_fec_result_t *fec);
-/* Go: layer2.RawBurst.BPTCReserved. BPTCReserved decodes the 196 information bits as BPTC(196,96) and returns the reserved bits R(0) to R(2) after FEC correction, R(i) in bit i as Burst.BPTCReserved holds them, with the BPTC result. */
+/* Go: layer2.RawBurst.BPTCReserved. BPTCReserved decodes the 196 information bits as BPTC(196,96) and returns the reserved bits R(0) to R(2) after FEC correction, R(i) in bit i as dmrgo_layer2_burst_set_bptc_reserved holds them, with the BPTC result. */
 int dmrgo_layer2_raw_burst_bptc_reserved(const dmrgo_layer2_raw_burst_t *self, uint8_t *value, dmrgo_fec_result_t *fec);
 /* Go: layer2.RawBurst.EMB. EMB decodes the QR(16,7) embedded signalling in burst bits 108 to 115 and 148 to 155 of a voice burst B to F or a data burst without a SYNC pattern. */
 int dmrgo_layer2_raw_burst_emb(const dmrgo_layer2_raw_burst_t *self, dmrgo_pdu_embedded_signalling_t *out);
@@ -8580,7 +8580,7 @@ int dmrgo_layer2_sync_source_of(dmrgo_enums_sync_pattern_t p, dmrgo_layer2_sync_
 int dmrgo_layer2_voice_receiver_new(dmrgo_layer2_voice_receiver_t **out);
 /* dmrgo_layer2_voice_receiver_free frees the handle. self may be NULL. */
 int dmrgo_layer2_voice_receiver_free(dmrgo_layer2_voice_receiver_t *self);
-/* Go: layer2.VoiceReceiver.Receive. Receive takes the next decoded burst b of the logical channel with its Hint h, and sets the voice_burst of b to its superframe position, as PositionTracker.PlaceDecoded places it with one step per burst. When burst E completes an embedded LC, Receive returns it with ok set, or with DMRGO_ERR_LAYER2_EMBEDDED_LC_UNCORRECTABLE. It returns DMRGO_ERR_LAYER2_EMBEDDED_LC_SEQUENCE when the burst discards a partial embedded LC. b and h may be NULL. */
+/* Go: layer2.VoiceReceiver.Receive. Receive takes the next decoded burst b of the logical channel with its Hint h, and sets the voice_burst of b to its superframe position, as dmrgo_layer2_position_tracker_place_decoded places it with one step per burst. When burst E completes an embedded LC, Receive returns it with ok set, or with DMRGO_ERR_LAYER2_EMBEDDED_LC_UNCORRECTABLE. It returns DMRGO_ERR_LAYER2_EMBEDDED_LC_SEQUENCE when the burst discards a partial embedded LC. b and h may be NULL. */
 int dmrgo_layer2_voice_receiver_receive(dmrgo_layer2_voice_receiver_t *self, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, dmrgo_pdu_full_link_control_t *lc, bool *ok);
 /* Go: layer2.VoiceReceiver.Reset. Reset forgets the call and any partial embedded LC. */
 int dmrgo_layer2_voice_receiver_reset(dmrgo_layer2_voice_receiver_t *self);
@@ -8622,7 +8622,7 @@ int dmrgo_layer2_voice_transmitter_headers(dmrgo_layer2_voice_transmitter_t *sel
 int dmrgo_layer2_voice_transmitter_pi_header(dmrgo_layer2_voice_transmitter_t *self, dmrgo_layer2_raw_burst_t *b, bool *ok);
 /* Go: layer2.VoiceTransmitter.Reset. Reset starts a new transmission with opts, as NewVoiceTransmitter does, in the storage of t, so that a caller can keep one VoiceTransmitter for many calls. opts may be NULL. */
 int dmrgo_layer2_voice_transmitter_reset(dmrgo_layer2_voice_transmitter_t *self, const dmrgo_layer2_voice_transmitter_options_t *opts);
-/* Go: layer2.VoiceTransmitter.SetEmbeddedFragments. SetEmbeddedFragments sets the four embedded signalling fields of bursts B to E of the next superframe that starts, as RawBurst.EmbeddedData returns them, so a bridge can pass received fragments through unchanged. */
+/* Go: layer2.VoiceTransmitter.SetEmbeddedFragments. SetEmbeddedFragments sets the four embedded signalling fields of bursts B to E of the next superframe that starts, as dmrgo_layer2_raw_burst_embedded_data returns them, so a bridge can pass received fragments through unchanged. */
 int dmrgo_layer2_voice_transmitter_set_embedded_fragments(dmrgo_layer2_voice_transmitter_t *self, const uint8_t f[4][4]);
 /* Go: layer2.VoiceTransmitter.SetEmbeddedLC. SetEmbeddedLC sets the embedded LC of the next superframe that starts. */
 int dmrgo_layer2_voice_transmitter_set_embedded_lc(dmrgo_layer2_voice_transmitter_t *self, const dmrgo_pdu_full_link_control_t *lc);
@@ -8660,7 +8660,7 @@ int dmrgo_packet_assembler_set_accept_bad_crc(dmrgo_packet_assembler_t *self, bo
 int dmrgo_packet_assembler_free(dmrgo_packet_assembler_t *self);
 /* dmrgo_packet_assembler_add_need sets *items and *arena to the room that dmrgo_packet_assembler_add needs for these arguments, without a change to the handle. */
 int dmrgo_packet_assembler_add_need(dmrgo_packet_assembler_t *self, const dmrgo_layer2_data_t *d, size_t *items, size_t *arena);
-/* Go: packet.Assembler.Add. Add adds a decoded PDU: a *dmrgo_pdu_data_header_t, *dmrgo_pdu_rate12_data_t, *dmrgo_pdu_rate34_data_t or *dmrgo_pdu_rate1_data_t, and ignores other PDUs. done is true when the packet is complete, with its Message; on DMRGO_ERR_PACKET_MESSAGE_CRC the Message is returned too. A header with FEC.Uncorrectable set returns DMRGO_ERR_PACKET_HEADER_CRC and changes nothing. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_packet_assembler_add_need gives. */
+/* Go: packet.Assembler.Add. Add adds a decoded PDU: a *dmrgo_pdu_data_header_t, *dmrgo_pdu_rate12_data_t, *dmrgo_pdu_rate34_data_t or *dmrgo_pdu_rate1_data_t, and ignores other PDUs. done is true when the packet is complete, with its Message; on DMRGO_ERR_PACKET_MESSAGE_CRC the Message is returned too. A header with dmrgo_pdu_data_header_t.fec.uncorrectable set returns DMRGO_ERR_PACKET_HEADER_CRC and changes nothing. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_packet_assembler_add_need gives. */
 int dmrgo_packet_assembler_add(dmrgo_packet_assembler_t *self, const dmrgo_layer2_data_t *d, dmrgo_packet_message_t *message, bool *ok, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* dmrgo_packet_assembler_add_burst_need sets *items and *arena to the room that dmrgo_packet_assembler_add_burst needs for these arguments, without a change to the handle. */
 int dmrgo_packet_assembler_add_burst_need(dmrgo_packet_assembler_t *self, dmrgo_layer2_burst_t *b, size_t *items, size_t *arena);
@@ -8936,7 +8936,7 @@ int dmrgo_pdu_csbk_set_unit_to_unit_voice_service_answer_response(dmrgo_pdu_csbk
 int dmrgo_pdu_csbk_set_unit_to_unit_voice_service_request(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t *p);
 /* Go: pdu.CSBK.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_csbk_string(const dmrgo_pdu_csbk_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.CSBKBytes.Addresses. Addresses returns the 24-bit target and source addresses of the CSBKs for which CSBK.Addresses returns them, and ok false for every other CSBK. */
+/* Go: pdu.CSBKBytes.Addresses. Addresses returns the 24-bit target and source addresses of the CSBKs for which dmrgo_pdu_csbk_addresses returns them, and ok false for every other CSBK. */
 int dmrgo_pdu_csbk_bytes_addresses(const dmrgo_pdu_csbk_bytes_t *self, uint32_t *target, uint32_t *source, bool *ok);
 /* Go: pdu.CSBKBytes.CRCOK. CRCOK reports whether octets 10 and 11 hold the CRC of octets 0 to 9 with the CSBK mask, as BlockCRCOK does. */
 int dmrgo_pdu_csbk_bytes_crc_ok(const dmrgo_pdu_csbk_bytes_t *self, bool *out);
@@ -9460,15 +9460,15 @@ int dmrgo_pdu_short_lc_c_sys_parms_string(const dmrgo_pdu_short_lc_c_sys_parms_t
 int dmrgo_pdu_short_lc_c_sys_parms_sys_code(const dmrgo_pdu_short_lc_c_sys_parms_t *self, dmrgo_pdu_sys_code_t *out);
 /* Go: pdu.ShortLCNullMessage.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_short_lc_null_message_string(const dmrgo_pdu_short_lc_null_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.ShortLCPSysParms.NetID. NetID returns the network ID based on the MODEL field (ETSI TS 102 361-4 Table 6.5), with the errors of ShortLCCSysParms.NetID. */
+/* Go: pdu.ShortLCPSysParms.NetID. NetID returns the network ID based on the MODEL field (ETSI TS 102 361-4 Table 6.5), with the errors of dmrgo_pdu_short_lc_c_sys_parms_net_id. */
 int dmrgo_pdu_short_lc_p_sys_parms_net_id(const dmrgo_pdu_short_lc_p_sys_parms_t *self, uint16_t *out);
 /* Go: pdu.ShortLCPSysParms.SetSysCode. SetSysCode sets MODEL and NetSiteRaw from c. */
 int dmrgo_pdu_short_lc_p_sys_parms_set_sys_code(dmrgo_pdu_short_lc_p_sys_parms_t *self, const dmrgo_pdu_sys_code_t *c);
-/* Go: pdu.ShortLCPSysParms.SiteID. SiteID returns the site ID based on the MODEL field (ETSI TS 102 361-4 Table 6.5), with the errors of ShortLCCSysParms.NetID. */
+/* Go: pdu.ShortLCPSysParms.SiteID. SiteID returns the site ID based on the MODEL field (ETSI TS 102 361-4 Table 6.5), with the errors of dmrgo_pdu_short_lc_c_sys_parms_net_id. */
 int dmrgo_pdu_short_lc_p_sys_parms_site_id(const dmrgo_pdu_short_lc_p_sys_parms_t *self, uint16_t *out);
 /* Go: pdu.ShortLCPSysParms.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_short_lc_p_sys_parms_string(const dmrgo_pdu_short_lc_p_sys_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.ShortLCPSysParms.SysCode. SysCode returns the MODEL, NET and SITE carried in the P_SYS_Parms, with the errors of ShortLCCSysParms.SysCode. */
+/* Go: pdu.ShortLCPSysParms.SysCode. SysCode returns the MODEL, NET and SITE carried in the P_SYS_Parms, with the errors of dmrgo_pdu_short_lc_c_sys_parms_sys_code. */
 int dmrgo_pdu_short_lc_p_sys_parms_sys_code(const dmrgo_pdu_short_lc_p_sys_parms_t *self, dmrgo_pdu_sys_code_t *out);
 /* Go: pdu.SlotType.Encode. Encode encodes a SlotType. */
 int dmrgo_pdu_slot_type_encode(const dmrgo_pdu_slot_type_t *self, uint8_t out[3]);
@@ -9944,13 +9944,13 @@ int dmrgo_dmrd_hbrp_config_url(const dmrgo_dmrd_hbrp_config_t *self, uint8_t *ou
 int dmrgo_dmrd_hbrp_config_of(const uint8_t *p, size_t p_len, dmrgo_dmrd_hbrp_config_t *out, bool *out_ok);
 /* Go: dmrd.LocalPosition.AppendBinary. AppendBinary appends the 14 octets of s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit. */
 int dmrgo_dmrd_local_position_append_binary(const dmrgo_dmrd_local_position_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: dmrd.LocalPosition.LC. LC decodes the position as Position.LC does. */
+/* Go: dmrd.LocalPosition.LC. LC decodes the position as dmrgo_dmrd_position_lc does. */
 int dmrgo_dmrd_local_position_lc(const dmrgo_dmrd_local_position_t *self, dmrgo_pdu_full_link_control_t *out);
 /* Go: dmrd.LocalPosition.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_local_position_string(const dmrgo_dmrd_local_position_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.LocalTalkerAlias.AppendBinary. AppendBinary appends the 15 octets of s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit. */
 int dmrgo_dmrd_local_talker_alias_append_binary(const dmrgo_dmrd_local_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: dmrd.LocalTalkerAlias.LC. LC decodes the talker alias block as TalkerAlias.LC does. */
+/* Go: dmrd.LocalTalkerAlias.LC. LC decodes the talker alias block as dmrgo_dmrd_talker_alias_lc does. */
 int dmrgo_dmrd_local_talker_alias_lc(const dmrgo_dmrd_local_talker_alias_t *self, dmrgo_pdu_full_link_control_t *out);
 /* Go: dmrd.LocalTalkerAlias.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_local_talker_alias_string(const dmrgo_dmrd_local_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -10586,7 +10586,7 @@ int dmrgo_trunk_follower_decoded_need(dmrgo_trunk_follower_t *self, dmrgo_durati
 int dmrgo_trunk_follower_decoded(dmrgo_trunk_follower_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.Follower.Hunt. Hunt returns the hunt list, with the changes of Ann_WD_TSCC broadcasts. */
 int dmrgo_trunk_follower_hunt(dmrgo_trunk_follower_t *self, dmrgo_trunk_hunt_list_t *out);
-/* Go: trunk.Follower.Lookup. Lookup returns the channel with number n from the channel plan, as ChannelPlan.Lookup does. */
+/* Go: trunk.Follower.Lookup. Lookup returns the channel with number n from the channel plan, as dmrgo_trunk_channel_plan_lookup does. */
 int dmrgo_trunk_follower_lookup(dmrgo_trunk_follower_t *self, uint16_t n, dmrgo_trunk_channel_t *c, bool *ok);
 /* dmrgo_trunk_follower_lost_need sets *items and *arena to the room that dmrgo_trunk_follower_lost needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_follower_lost_need(dmrgo_trunk_follower_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
@@ -10640,7 +10640,7 @@ int dmrgo_trunk_ms_auth_response_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t n
 int dmrgo_trunk_ms_auth_response(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, uint32_t response, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_trunk_ms_burst_need sets *items and *arena to the room that dmrgo_trunk_ms_burst needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_burst_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], size_t *items, size_t *arena);
-/* Go: trunk.MS.Burst. Burst decodes the burst raw with what the Hint h says about it, and the CACH field before it, in transmit order, when cach is not nil, as Follower.Burst does, runs the random access and the requests, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_burst_need gives (DMRGO_TRUNK_MS_BURST_MAX_ITEMS items). raw and cach may be NULL. */
+/* Go: trunk.MS.Burst. Burst decodes the burst raw with what the Hint h says about it, and the CACH field before it, in transmit order, when cach is not nil, as dmrgo_trunk_follower_burst does, runs the random access and the requests, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_burst_need gives (DMRGO_TRUNK_MS_BURST_MAX_ITEMS items). raw and cach may be NULL. */
 int dmrgo_trunk_ms_burst(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.MS.Busy. Busy reports whether a registration, de-registration or call request runs. */
 int dmrgo_trunk_ms_busy(dmrgo_trunk_ms_t *self, bool *out);
@@ -10684,7 +10684,7 @@ int dmrgo_trunk_ms_interrupt(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, bool 
 int dmrgo_trunk_ms_killed(dmrgo_trunk_ms_t *self, bool *out);
 /* dmrgo_trunk_ms_lost_need sets *items and *arena to the room that dmrgo_trunk_ms_lost needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_lost_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
-/* Go: trunk.MS.Lost. Lost tells the MS that the receiver lost the signal, as Follower.Lost does. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_lost_need gives (DMRGO_TRUNK_MS_LOST_MAX_ITEMS items). */
+/* Go: trunk.MS.Lost. Lost tells the MS that the receiver lost the signal, as dmrgo_trunk_follower_lost does. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_lost_need gives (DMRGO_TRUNK_MS_LOST_MAX_ITEMS items). */
 int dmrgo_trunk_ms_lost(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.MS.Off. Off reports whether the MS completed PowerOff or a TSCC killed it. */
 int dmrgo_trunk_ms_off(dmrgo_trunk_ms_t *self, bool *out);
@@ -10728,7 +10728,7 @@ int dmrgo_trunk_ms_stunned(dmrgo_trunk_ms_t *self, bool *out);
 int dmrgo_trunk_ms_tick_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: trunk.MS.Tick. Tick runs the timers that are due at now and appends their outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_tick_need gives (DMRGO_TRUNK_MS_TICK_MAX_ITEMS items). */
 int dmrgo_trunk_ms_tick(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: trunk.MS.UDT. UDT returns a copy of the UDT delivery of the last OutputUDT, as Follower.UDT does. */
+/* Go: trunk.MS.UDT. UDT returns a copy of the UDT delivery of the last OutputUDT, as dmrgo_trunk_follower_udt does. */
 int dmrgo_trunk_ms_udt(dmrgo_trunk_ms_t *self, dmrgo_trunk_udt_t *u, bool *ok);
 /* Go: trunk.NMEALong.Encode. Encode encodes an NMEALong. */
 int dmrgo_trunk_nmea_long_encode(const dmrgo_trunk_nmea_long_t *self, uint8_t out[22]);
@@ -10758,7 +10758,7 @@ int dmrgo_trunk_stun_action_string(dmrgo_trunk_stun_action_t self, char *out, si
 int dmrgo_trunk_tscc_free(dmrgo_trunk_tscc_t *self);
 /* Go: trunk.TSCC.AssignGroups. AssignGroups sends the DGNA talkgroups of a from the gateway DGNAI to the MS target, in the UDT outbound phase of ETSI TS 102 361-4 clause 6.6.8.2.2. It returns the errors of SendShortData, and DMRGO_ERR_TRUNK_UDT_FORMAT for another format. a may be NULL. */
 int dmrgo_trunk_tscc_assign_groups(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint32_t target, const dmrgo_trunk_appended_t *a);
-/* Go: trunk.TSCC.Deadline. Deadline returns the time of the next Tick: the start of the next 30 ms slot minus TSCCConfig.Lead, or 0 before the first Tick. */
+/* Go: trunk.TSCC.Deadline. Deadline returns the time of the next Tick: the start of the next 30 ms slot minus dmrgo_trunk_tscc_config_t.lead, or 0 before the first Tick. */
 int dmrgo_trunk_tscc_deadline(dmrgo_trunk_tscc_t *self, dmrgo_duration_t *at, bool *ok);
 /* Go: trunk.TSCC.Diverted. Diverted returns the call diversion that the MS addr set, with the services that it diverts and the diversion address. */
 int dmrgo_trunk_tscc_diverted(dmrgo_trunk_tscc_t *self, uint32_t addr, dmrgo_layer3_diversion_service_options_t *opts, dmrgo_trunk_appended_t *to, bool *ok);
@@ -10954,7 +10954,7 @@ int dmrgo_voice_interrupter_deadline(dmrgo_voice_interrupter_t *self, dmrgo_dura
 int dmrgo_voice_interrupter_decoded_need(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, size_t *items, size_t *arena);
 /* Go: voice.Interrupter.Decoded. Decoded takes the decoded burst b of the call, which may be nil, and appends the outputs to dst: OutputInterrupted when b is a Terminator with LC after the first standalone RC burst went out. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_interrupter_decoded_need gives (DMRGO_VOICE_INTERRUPTER_DECODED_MAX_ITEMS items). b may be NULL. */
 int dmrgo_voice_interrupter_decoded(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: voice.Interrupter.Interrupt. Interrupt starts an interrupt request with the RC command cmd, whose first standalone RC burst is due at now plus InterrupterConfig.Lead: DMRGO_ENUMS_RC_CEASE_TRANSMISSION_REQUEST for a radio that is party to the call, DMRGO_ENUMS_RC_CEASE_TRANSMISSION_COMMAND for an emergency call. It returns DMRGO_ERR_VOICE_INTERRUPT_BUSY while a request runs, and a DMRGO_ERR_CONFIG for another command. */
+/* Go: voice.Interrupter.Interrupt. Interrupt starts an interrupt request with the RC command cmd, whose first standalone RC burst is due at now plus dmrgo_voice_interrupter_config_t.lead: DMRGO_ENUMS_RC_CEASE_TRANSMISSION_REQUEST for a radio that is party to the call, DMRGO_ENUMS_RC_CEASE_TRANSMISSION_COMMAND for an emergency call. It returns DMRGO_ERR_VOICE_INTERRUPT_BUSY while a request runs, and a DMRGO_ERR_CONFIG for another command. */
 int dmrgo_voice_interrupter_interrupt(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_enums_rc_command_t cmd);
 /* dmrgo_voice_interrupter_lost_need sets *items and *arena to the room that dmrgo_voice_interrupter_lost needs for these arguments, without a change to the handle. */
 int dmrgo_voice_interrupter_lost_need(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
@@ -11004,7 +11004,7 @@ int dmrgo_voice_receiver_reset(dmrgo_voice_receiver_t *self);
 int dmrgo_voice_receiver_state(dmrgo_voice_receiver_t *self, dmrgo_voice_state_t *out);
 /* dmrgo_voice_receiver_tick_need sets *items and *arena to the room that dmrgo_voice_receiver_tick needs for these arguments, without a change to the handle. */
 int dmrgo_voice_receiver_tick_need(dmrgo_voice_receiver_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
-/* Go: voice.Receiver.Tick. Tick runs the timers that are due at now and appends their events to dst: the end of a call after ReceiverConfig.Lost without a burst, and the end of the hang time. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_receiver_tick_need gives. */
+/* Go: voice.Receiver.Tick. Tick runs the timers that are due at now and appends their events to dst: the end of a call after dmrgo_voice_receiver_config_t.lost without a burst, and the end of the hang time. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_receiver_tick_need gives. */
 int dmrgo_voice_receiver_tick(dmrgo_voice_receiver_t *self, dmrgo_duration_t now, dmrgo_voice_event_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: voice.State.String. String returns the name of the state. */
 int dmrgo_voice_state_string(dmrgo_voice_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -11016,7 +11016,7 @@ int dmrgo_voice_transmitter_burst_need(dmrgo_voice_transmitter_t *self, dmrgo_du
 int dmrgo_voice_transmitter_burst(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: voice.Transmitter.Channel. Channel reports whether the logical channel is busy, from the activity that the caller sees on it, such as the AT bit of the CACH, the carrier, or a call with its own color code. */
 int dmrgo_voice_transmitter_channel(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, bool busy);
-/* Go: voice.Transmitter.Deadline. Deadline returns the time at which the Transmitter needs a Tick: the Due time of the next burst minus TransmitterConfig.Lead. */
+/* Go: voice.Transmitter.Deadline. Deadline returns the time at which the Transmitter needs a Tick: the Due time of the next burst minus dmrgo_voice_transmitter_config_t.lead. */
 int dmrgo_voice_transmitter_deadline(dmrgo_voice_transmitter_t *self, dmrgo_duration_t *at, bool *ok);
 /* dmrgo_voice_transmitter_decoded_need sets *items and *arena to the room that dmrgo_voice_transmitter_decoded needs for these arguments, without a change to the handle. */
 int dmrgo_voice_transmitter_decoded_need(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, size_t *items, size_t *arena);
@@ -11048,7 +11048,7 @@ int dmrgo_voice_transmitter_state(dmrgo_voice_transmitter_t *self, dmrgo_voice_t
 int dmrgo_voice_transmitter_stop(dmrgo_voice_transmitter_t *self);
 /* dmrgo_voice_transmitter_tick_need sets *items and *arena to the room that dmrgo_voice_transmitter_tick needs for these arguments, without a change to the handle. */
 int dmrgo_voice_transmitter_tick_need(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
-/* Go: voice.Transmitter.Tick. Tick appends the next burst when now has reached its Due time minus TransmitterConfig.Lead, and OutputEnded after the last terminator, or with EndDenied for a polite call that the channel denied for T_IdleSrch. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_transmitter_tick_need gives (DMRGO_VOICE_TRANSMITTER_TICK_MAX_ITEMS items). */
+/* Go: voice.Transmitter.Tick. Tick appends the next burst when now has reached its Due time minus dmrgo_voice_transmitter_config_t.lead, and OutputEnded after the last terminator, or with EndDenied for a polite call that the channel denied for T_IdleSrch. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_transmitter_tick_need gives (DMRGO_VOICE_TRANSMITTER_TICK_MAX_ITEMS items). */
 int dmrgo_voice_transmitter_tick(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: voice.Transmitter.VocoderSlot. VocoderSlot queues one 72-bit vocoder slot of any codec, packed as dmrgo_layer2_raw_burst_voice_slots returns it, as Frame does. */
 int dmrgo_voice_transmitter_vocoder_slot(dmrgo_voice_transmitter_t *self, const uint8_t s[9]);

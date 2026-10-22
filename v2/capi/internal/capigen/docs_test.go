@@ -48,3 +48,37 @@ func TestNilC(t *testing.T) {
 		}
 	}
 }
+
+func TestChainRefs(t *testing.T) {
+	t.Parallel()
+
+	refs := map[string]string{
+		"trunk.Output.Grant":    "dmrgo_trunk_output_t.grant",
+		"trunk.Grant.Source":    "dmrgo_trunk_grant_t.source",
+		"ipsc.User.Burst":       "dmrgo_ipsc_user_t.burst",
+		"ipsc.BurstType.Type":   "dmrgo_ipsc_burst_type_type",
+		"layer2.Burst.SlotType": "dmrgo_layer2_burst_set_slot_type",
+		"pdu.SlotType.DataType": "dmrgo_pdu_slot_type_t.data_type",
+	}
+	chainRefs(refs, map[string][][]string{
+		"trunk.Output.Grant.Source":      {{"trunk.Output.Grant", "trunk.Grant.Source"}},
+		"ipsc.User.Burst.Type":           {{"ipsc.User.Burst", "ipsc.BurstType.Type"}},
+		"layer2.Burst.SlotType.DataType": {{"layer2.Burst.SlotType", "pdu.SlotType.DataType"}, {"pdu.SlotType.DataType"}},
+		"trunk.Output.Grant.Missing":     {{"trunk.Output.Grant", "trunk.Grant.Missing"}},
+	})
+	for name, want := range map[string]string{
+		"trunk.Output.Grant.Source":      "dmrgo_trunk_output_t.grant.source",
+		"ipsc.User.Burst.Type":           "dmrgo_ipsc_burst_type_type on dmrgo_ipsc_user_t.burst",
+		"layer2.Burst.SlotType.DataType": "dmrgo_pdu_slot_type_t.data_type",
+		"trunk.Output.Grant.Missing":     "",
+	} {
+		if got := refs[name]; got != want {
+			t.Errorf("refs[%q] = %q, want %q", name, got, want)
+		}
+	}
+	in := "/* From trunk.Output.Grant.Source or trunk.Output.Grant.Missing. */"
+	want := "/* From dmrgo_trunk_output_t.grant.source or dmrgo_trunk_output_t.grant.Missing. */"
+	if got := cDocs(in, refs); got != want {
+		t.Errorf("cDocs(%q) = %q, want %q", in, got, want)
+	}
+}

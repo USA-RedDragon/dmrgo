@@ -31,6 +31,7 @@ type loader struct {
 	info map[*types.Package]*types.Info
 	eff  map[effKey]*effect
 	vals map[types.Object]ast.Expr
+	refs map[string][][]string
 }
 
 func newLoader(root string) *loader {
@@ -41,7 +42,7 @@ func newLoader(root string) *loader {
 	return &loader{
 		ctx: ctx, root: root, fset: fset, std: importer.ForCompiler(fset, "source", nil),
 		pkgs: map[string]*types.Package{}, docs: map[types.Object]string{}, full: map[types.Object]string{}, busy: map[string]bool{},
-		decl: map[*types.Func]*ast.FuncDecl{}, info: map[*types.Package]*types.Info{}, eff: map[effKey]*effect{}, vals: map[types.Object]ast.Expr{},
+		decl: map[*types.Func]*ast.FuncDecl{}, info: map[*types.Package]*types.Info{}, eff: map[effKey]*effect{}, vals: map[types.Object]ast.Expr{}, refs: map[string][][]string{},
 	}
 }
 
@@ -98,12 +99,14 @@ func (l *loader) load(p string) (*types.Package, error) {
 }
 
 func (l *loader) collectDocs(files []*ast.File, info *types.Info) {
+	var in *types.Named
 	set := func(id *ast.Ident, docs ...*ast.CommentGroup) {
 		for _, d := range docs {
 			if d != nil {
 				if o := info.Defs[id]; o != nil {
-					l.docs[o] = firstSentence(d.Text())
-					l.full[o] = strings.Join(strings.Fields(d.Text()), " ")
+					text := l.qualify(d.Text(), o.Pkg(), in)
+					l.docs[o] = firstSentence(text)
+					l.full[o] = strings.Join(strings.Fields(text), " ")
 				}
 				return
 			}
@@ -113,18 +116,24 @@ func (l *loader) collectDocs(files []*ast.File, info *types.Info) {
 		for _, d := range f.Decls {
 			switch d := d.(type) {
 			case *ast.FuncDecl:
+				if fn, ok := info.Defs[d.Name].(*types.Func); ok && fn.Signature().Recv() != nil {
+					in, _ = derefType(fn.Signature().Recv().Type()).(*types.Named)
+				}
 				set(d.Name, d.Doc)
+				in = nil
 			case *ast.GenDecl:
 				for _, s := range d.Specs {
 					switch s := s.(type) {
 					case *ast.TypeSpec:
 						set(s.Name, s.Doc, d.Doc)
 						if st, ok := s.Type.(*ast.StructType); ok {
+							in, _ = info.Defs[s.Name].Type().(*types.Named)
 							for _, fl := range st.Fields.List {
 								for _, n := range fl.Names {
 									set(n, fl.Doc, fl.Comment)
 								}
 							}
+							in = nil
 						}
 						if it, ok := s.Type.(*ast.InterfaceType); ok {
 							for _, m := range it.Methods.List {
