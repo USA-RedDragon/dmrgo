@@ -66,7 +66,7 @@ func ExampleInterrupter() {
 	for now := time.Duration(0); now < time.Second; now += 30 * time.Millisecond {
 		for _, o := range in.Tick(now, out[:0]) {
 			if b.DecodeFromBytes(o.Burst) == nil {
-				fmt.Println(b.ReverseChannel.RCCommand, tx.Interrupt(b.ReverseChannel))
+				fmt.Println(b.ReverseChannel.RCCommand, tx.ReverseChannel(b.ReverseChannel))
 			}
 		}
 		for _, o := range tx.Tick(now, out[:0]) {

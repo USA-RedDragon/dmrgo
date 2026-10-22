@@ -6,14 +6,17 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2"
 )
 
-// Errors of a Transmitter. Match them with errors.Is.
+// Errors of a Transmitter and an Interrupter. Match them with errors.Is.
 
 const pkgName = "voice"
 
 var (
 	// ErrBusy is returned by Start, and by Relay for a CallStart, while a
-	// transmission runs, and by Interrupter.Interrupt while a request runs.
+	// transmission runs.
 	ErrBusy = errors.New("voice: transmission in progress")
+	// ErrInterruptBusy is returned by Interrupter.Interrupt while a request
+	// runs.
+	ErrInterruptBusy = errors.New("voice: interrupt request in progress")
 	// ErrQueueFull is returned when the queue of vocoder slots is full.
 	ErrQueueFull = errors.New("voice: queue full")
 	// ErrNotActive is returned for voice when no call takes it: before

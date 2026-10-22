@@ -242,9 +242,9 @@ func (s TransmitterState) String() string {
 
 // Transmitter makes the bursts of one voice transmission on one logical
 // channel, one per Tick, 60 ms apart. In source mode, Start begins a call
-// and Frame, Frames, Slot and Slots queue its voice. In relay mode, Relay
-// takes the events of a Receiver and sends the call again with the local
-// color code and SYNC. Make it with NewTransmitter. A Transmitter is not
+// and Frame, Frames, VocoderSlot and VocoderSlots queue its voice. In relay
+// mode, Relay takes the events of a Receiver and sends the call again with
+// the local color code and SYNC. Make it with NewTransmitter. A Transmitter is not
 // safe for concurrent use and must not be copied.
 type Transmitter struct {
 	cc          enums.ColorCode
@@ -468,8 +468,8 @@ func (t *Transmitter) Channel(now time.Duration, busy bool) {
 	}
 }
 
-// Interrupt takes a Tier 2 RC command that the reverse channel of the call
-// carried, and reports whether the Transmitter ends the call for it. A
+// ReverseChannel takes a Tier 2 RC command that the reverse channel of the
+// call carried, and reports whether the Transmitter ends the call for it. A
 // Cease Transmission Command always ends a call on air, and a Cease
 // Transmission Request ends it when TransmitterConfig.Interruptible is
 // set. The queued voice is dropped, the last superframe is padded with
@@ -477,7 +477,7 @@ func (t *Transmitter) Channel(now time.Duration, busy bool) {
 // command sees the Terminator with LC; OutputEnded has EndInterrupted. An
 // RC PDU whose CRC fails, a reserved command, a relayed call and a call
 // that is not on air are ignored. (ETSI TS 102 361-2 clause 6.3)
-func (t *Transmitter) Interrupt(rc pdu.ReverseChannel) bool {
+func (t *Transmitter) ReverseChannel(rc pdu.ReverseChannel) bool {
 	if t == nil {
 		return false
 	}
@@ -592,7 +592,7 @@ func (t *Transmitter) Frame(f vocoder.AMBEFrame) error {
 	if err != nil {
 		return err
 	}
-	return t.Slot(slot)
+	return t.VocoderSlot(slot)
 }
 
 // Frames queues AMBE+2 frames as Frame does. On an error the frames
@@ -610,9 +610,9 @@ func (t *Transmitter) Frames(f ...vocoder.AMBEFrame) error {
 	return nil
 }
 
-// Slot queues one 72-bit vocoder slot of any codec, packed as
+// VocoderSlot queues one 72-bit vocoder slot of any codec, packed as
 // layer2.RawBurst.VoiceSlots returns it, as Frame does.
-func (t *Transmitter) Slot(s [9]byte) error {
+func (t *Transmitter) VocoderSlot(s [9]byte) error {
 	if t == nil {
 		return dmrgo.ErrNilReceiver
 	}
@@ -630,14 +630,14 @@ func (t *Transmitter) Slot(s [9]byte) error {
 	return nil
 }
 
-// Slots queues 72-bit vocoder slots as Slot does.
-func (t *Transmitter) Slots(s ...[9]byte) error {
+// VocoderSlots queues 72-bit vocoder slots as VocoderSlot does.
+func (t *Transmitter) VocoderSlots(s ...[9]byte) error {
 	if t == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
 	for i := range s {
-		if err := t.Slot(s[i]); err != nil {
+		if err := t.VocoderSlot(s[i]); err != nil {
 			return err
 		}
 	}

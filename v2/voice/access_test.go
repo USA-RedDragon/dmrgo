@@ -117,7 +117,7 @@ func TestTransmitter_AccessStop(t *testing.T) {
 	if err := tx.Start(0, voice.Call{Target: 2, Source: 1}, nil); !errors.Is(err, voice.ErrBusy) {
 		t.Fatalf("Start while waiting: %v", err)
 	}
-	if tx.Interrupt(pdu.ReverseChannel{RCCommand: enums.RCCeaseTransmissionCommand}) {
+	if tx.ReverseChannel(pdu.ReverseChannel{RCCommand: enums.RCCeaseTransmissionCommand}) {
 		t.Fatal("Interrupt took a call that is not on air")
 	}
 	tx.Stop()
@@ -131,7 +131,7 @@ func TestTransmitter_AccessStop(t *testing.T) {
 }
 
 // ETSI TS 102 361-2 clauses 6.3.3 and 6.3.4
-func TestTransmitter_Interrupt(t *testing.T) {
+func TestTransmitter_ReverseChannel(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -163,7 +163,7 @@ func TestTransmitter_Interrupt(t *testing.T) {
 				}
 			}
 			out := drain(t, tx, 1+tc.after)
-			if got := tx.Interrupt(tc.rc); got != tc.want {
+			if got := tx.ReverseChannel(tc.rc); got != tc.want {
 				t.Fatalf("Interrupt = %v", got)
 			}
 			if !tc.want {
@@ -173,7 +173,7 @@ func TestTransmitter_Interrupt(t *testing.T) {
 			want := voice.EndTerminator
 			if tc.want {
 				want = voice.EndInterrupted
-				if tx.Interrupt(tc.rc) {
+				if tx.ReverseChannel(tc.rc) {
 					t.Fatal("Interrupt after the end")
 				}
 			}
@@ -196,14 +196,14 @@ func TestTransmitter_InterruptEnding(t *testing.T) {
 	}
 	tx.Stop()
 	out := drain(t, tx, 3)
-	if tx.State() != voice.TransmitterEnding || !tx.Interrupt(pdu.ReverseChannel{RCCommand: enums.RCCeaseTransmissionCommand}) {
+	if tx.State() != voice.TransmitterEnding || !tx.ReverseChannel(pdu.ReverseChannel{RCCommand: enums.RCCeaseTransmissionCommand}) {
 		t.Fatalf("state %v", tx.State())
 	}
 	out = append(out, drain(t, tx, 10)...)
 	if shape(out) != "hABCDEFttt." || out[len(out)-1].Reason != voice.EndInterrupted {
 		t.Fatalf("outputs %s, end %v", shape(out), out[len(out)-1].Reason)
 	}
-	if tx.Interrupt(pdu.ReverseChannel{RCCommand: enums.RCCeaseTransmissionCommand}) {
+	if tx.ReverseChannel(pdu.ReverseChannel{RCCommand: enums.RCCeaseTransmissionCommand}) {
 		t.Fatal("Interrupt of an idle Transmitter")
 	}
 }

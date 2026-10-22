@@ -48068,27 +48068,6 @@ func dmrgo_voice_transmitter_frames(c_self *C.dmrgo_voice_transmitter_t, c_f *C.
 	return C.DMRGO_OK
 }
 
-//export dmrgo_voice_transmitter_interrupt
-func dmrgo_voice_transmitter_interrupt(c_self *C.dmrgo_voice_transmitter_t, c_rc *C.dmrgo_pdu_reverse_channel_t, c_out *C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_voice_Transmitter(c_self)
-	if c_rc == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var a_rc g_layer2_pdu.ReverseChannel
-	a_rc = in_layer2_pdu_ReverseChannel(&(*c_rc))
-	r0 := h.v.Interrupt(a_rc)
-	_ = r0
-	if c_out != nil {
-		*c_out = C.bool(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_voice_transmitter_relay
 func dmrgo_voice_transmitter_relay(c_self *C.dmrgo_voice_transmitter_t, c_now C.dmrgo_duration_t, c_e *C.dmrgo_voice_event_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -48122,6 +48101,27 @@ func dmrgo_voice_transmitter_reset(c_self *C.dmrgo_voice_transmitter_t) (rc C.in
 	return C.DMRGO_OK
 }
 
+//export dmrgo_voice_transmitter_reverse_channel
+func dmrgo_voice_transmitter_reverse_channel(c_self *C.dmrgo_voice_transmitter_t, c_rc *C.dmrgo_pdu_reverse_channel_t, c_out *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Transmitter(c_self)
+	if c_rc == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_rc g_layer2_pdu.ReverseChannel
+	a_rc = in_layer2_pdu_ReverseChannel(&(*c_rc))
+	r0 := h.v.ReverseChannel(a_rc)
+	_ = r0
+	if c_out != nil {
+		*c_out = C.bool(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_voice_transmitter_room
 func dmrgo_voice_transmitter_room(c_self *C.dmrgo_voice_transmitter_t, c_out *C.int64_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -48134,47 +48134,6 @@ func dmrgo_voice_transmitter_room(c_self *C.dmrgo_voice_transmitter_t, c_out *C.
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_voice_transmitter_slot
-func dmrgo_voice_transmitter_slot(c_self *C.dmrgo_voice_transmitter_t, c_s *C.uint8_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_voice_Transmitter(c_self)
-	if c_s == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := h.v.Slot(*(*[9]byte)(unsafe.Pointer(c_s)))
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_voice_transmitter_slots
-func dmrgo_voice_transmitter_slots(c_self *C.dmrgo_voice_transmitter_t, c_s *C.uint8_t, c_s_len C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if !lenOK(unsafe.Pointer(c_s), c_s_len, unsafe.Sizeof(*c_s)) {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	h := get_voice_Transmitter(c_self)
-	if c_s == nil && c_s_len > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var a_s [][9]byte
-	a_s = cSlice[[9]byte](unsafe.Pointer(c_s), c_s_len)
-	r0 := h.v.Slots(a_s...)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }
@@ -48300,6 +48259,47 @@ func dmrgo_voice_transmitter_tick(c_self *C.dmrgo_voice_transmitter_t, c_now C.d
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_transmitter_vocoder_slot
+func dmrgo_voice_transmitter_vocoder_slot(c_self *C.dmrgo_voice_transmitter_t, c_s *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_voice_Transmitter(c_self)
+	if c_s == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := h.v.VocoderSlot(*(*[9]byte)(unsafe.Pointer(c_s)))
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_voice_transmitter_vocoder_slots
+func dmrgo_voice_transmitter_vocoder_slots(c_self *C.dmrgo_voice_transmitter_t, c_s *C.uint8_t, c_s_len C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_s), c_s_len, unsafe.Sizeof(*c_s)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_voice_Transmitter(c_self)
+	if c_s == nil && c_s_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_s [][9]byte
+	a_s = cSlice[[9]byte](unsafe.Pointer(c_s), c_s_len)
+	r0 := h.v.VocoderSlots(a_s...)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
+	}
 	return C.DMRGO_OK
 }
 
@@ -48558,12 +48558,14 @@ func errCode1(e error) C.int {
 		return -217
 	case g_voice.ErrBusy:
 		return -218
-	case g_voice.ErrNotActive:
+	case g_voice.ErrInterruptBusy:
 		return -219
-	case g_voice.ErrQueueFull:
+	case g_voice.ErrNotActive:
 		return -220
-	case g_voice.ErrTimedOut:
+	case g_voice.ErrQueueFull:
 		return -221
+	case g_voice.ErrTimedOut:
+		return -222
 	}
 	switch e.(type) {
 	case *g_dmrgo.ConfigError:
@@ -48861,10 +48863,12 @@ func codeErr(code C.int) error {
 	case -218:
 		return g_voice.ErrBusy
 	case -219:
-		return g_voice.ErrNotActive
+		return g_voice.ErrInterruptBusy
 	case -220:
-		return g_voice.ErrQueueFull
+		return g_voice.ErrNotActive
 	case -221:
+		return g_voice.ErrQueueFull
+	case -222:
 		return g_voice.ErrTimedOut
 	}
 	return codeError(code)

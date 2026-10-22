@@ -249,10 +249,12 @@ const char *dmrgo__gen_strerror(int status) {
 	case -218:
 		return "voice: transmission in progress";
 	case -219:
-		return "voice: no call takes voice";
+		return "voice: interrupt request in progress";
 	case -220:
-		return "voice: queue full";
+		return "voice: no call takes voice";
 	case -221:
+		return "voice: queue full";
+	case -222:
 		return "voice: transmit timeout";
 	}
 	return "unknown status";

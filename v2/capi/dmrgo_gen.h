@@ -5474,9 +5474,10 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_TRUNK_UDT_FORMAT (-199)
 #define DMRGO_ERR_TRUNK_UDT_LENGTH (-200)
 #define DMRGO_ERR_VOICE_BUSY (-218)
-#define DMRGO_ERR_VOICE_NOT_ACTIVE (-219)
-#define DMRGO_ERR_VOICE_QUEUE_FULL (-220)
-#define DMRGO_ERR_VOICE_TIMED_OUT (-221)
+#define DMRGO_ERR_VOICE_INTERRUPT_BUSY (-219)
+#define DMRGO_ERR_VOICE_NOT_ACTIVE (-220)
+#define DMRGO_ERR_VOICE_QUEUE_FULL (-221)
+#define DMRGO_ERR_VOICE_TIMED_OUT (-222)
 #define DMRGO_ERR_ZERO_VALUE (-104)
 #define DMRGO_IPSCAUTH_KEY_SIGN_MAX_ITEMS (DMRGO_IPSCAUTH_TRAILER_LEN)
 #define DMRGO_IPSCSESSION_MASTER_SIGN_FOR_MAX_ITEMS (DMRGO_IPSCAUTH_TRAILER_LEN)
@@ -10854,7 +10855,7 @@ int dmrgo_voice_interrupter_deadline(dmrgo_voice_interrupter_t *self, dmrgo_dura
 int dmrgo_voice_interrupter_decoded_need(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, size_t *items, size_t *arena);
 /* Go: voice.Interrupter.Decoded. Decoded takes the decoded burst b of the call, which may be nil, and appends the outputs to dst: OutputInterrupted when b is a Terminator with LC after the first standalone RC burst went out. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_interrupter_decoded_need gives (DMRGO_VOICE_INTERRUPTER_DECODED_MAX_ITEMS items). b may be NULL. */
 int dmrgo_voice_interrupter_decoded(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: voice.Interrupter.Interrupt. Interrupt starts an interrupt request with the RC command cmd, whose first standalone RC burst is due at now: enums.RCCeaseTransmissionRequest for a radio that is party to the call, enums.RCCeaseTransmissionCommand for an emergency call. It returns DMRGO_ERR_VOICE_BUSY while a request runs, and a DMRGO_ERR_CONFIG for another command. */
+/* Go: voice.Interrupter.Interrupt. Interrupt starts an interrupt request with the RC command cmd, whose first standalone RC burst is due at now: enums.RCCeaseTransmissionRequest for a radio that is party to the call, enums.RCCeaseTransmissionCommand for an emergency call. It returns DMRGO_ERR_VOICE_INTERRUPT_BUSY while a request runs, and a DMRGO_ERR_CONFIG for another command. */
 int dmrgo_voice_interrupter_interrupt(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_enums_rc_command_t cmd);
 /* Go: voice.Interrupter.Reset. Reset ends any interrupt request without an output. */
 int dmrgo_voice_interrupter_reset(dmrgo_voice_interrupter_t *self);
@@ -10924,18 +10925,14 @@ int dmrgo_voice_transmitter_dropped(dmrgo_voice_transmitter_t *self, int64_t *ou
 int dmrgo_voice_transmitter_frame(dmrgo_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *f);
 /* Go: voice.Transmitter.Frames. Frames queues AMBE+2 frames as Frame does. */
 int dmrgo_voice_transmitter_frames(dmrgo_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *f, size_t f_len);
-/* Go: voice.Transmitter.Interrupt. Interrupt takes a Tier 2 RC command that the reverse channel of the call carried, and reports whether the Transmitter ends the call for it. */
-int dmrgo_voice_transmitter_interrupt(dmrgo_voice_transmitter_t *self, const dmrgo_pdu_reverse_channel_t *rc, bool *out);
 /* Go: voice.Transmitter.Relay. Relay takes an event of a Receiver and sends the call again: a CallStart starts it with its headers, voice is queued, a PI Header is sent after the headers, and a CallEnd ends it. It returns DMRGO_ERR_VOICE_BUSY for a CallStart while a call that is not ending runs, and an error for a nil e. e may be NULL. */
 int dmrgo_voice_transmitter_relay(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, const dmrgo_voice_event_t *e);
 /* Go: voice.Transmitter.Reset. Reset ends any transmission without an output, empties the queue and forgets the channel state. */
 int dmrgo_voice_transmitter_reset(dmrgo_voice_transmitter_t *self);
+/* Go: voice.Transmitter.ReverseChannel. ReverseChannel takes a Tier 2 RC command that the reverse channel of the call carried, and reports whether the Transmitter ends the call for it. */
+int dmrgo_voice_transmitter_reverse_channel(dmrgo_voice_transmitter_t *self, const dmrgo_pdu_reverse_channel_t *rc, bool *out);
 /* Go: voice.Transmitter.Room. Room returns the number of vocoder slots that the queue can take. */
 int dmrgo_voice_transmitter_room(dmrgo_voice_transmitter_t *self, int64_t *out);
-/* Go: voice.Transmitter.Slot. Slot queues one 72-bit vocoder slot of any codec, packed as layer2.RawBurst.VoiceSlots returns it, as Frame does. */
-int dmrgo_voice_transmitter_slot(dmrgo_voice_transmitter_t *self, const uint8_t s[9]);
-/* Go: voice.Transmitter.Slots. Slots queues 72-bit vocoder slots as Slot does. */
-int dmrgo_voice_transmitter_slots(dmrgo_voice_transmitter_t *self, const uint8_t (*s)[9], size_t s_len);
 /* Go: voice.Transmitter.Start. Start begins the call c, whose first burst is due at the time at. Start returns DMRGO_ERR_VOICE_BUSY while a transmission runs, and a DMRGO_ERR_CONFIG when c does not make an LC. opts may be NULL. */
 int dmrgo_voice_transmitter_start(dmrgo_voice_transmitter_t *self, dmrgo_duration_t at, const dmrgo_voice_call_t *c, const dmrgo_voice_call_options_t *opts);
 /* Go: voice.Transmitter.State. State returns the state of the Transmitter. */
@@ -10946,6 +10943,10 @@ int dmrgo_voice_transmitter_stop(dmrgo_voice_transmitter_t *self);
 int dmrgo_voice_transmitter_tick_need(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: voice.Transmitter.Tick. Tick appends the next burst when now has reached its Due time minus TransmitterConfig.Lead, and OutputEnded after the last terminator, or with EndDenied for a polite call that the channel denied for T_IdleSrch. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_transmitter_tick_need gives (DMRGO_VOICE_TRANSMITTER_TICK_MAX_ITEMS items). */
 int dmrgo_voice_transmitter_tick(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: voice.Transmitter.VocoderSlot. VocoderSlot queues one 72-bit vocoder slot of any codec, packed as layer2.RawBurst.VoiceSlots returns it, as Frame does. */
+int dmrgo_voice_transmitter_vocoder_slot(dmrgo_voice_transmitter_t *self, const uint8_t s[9]);
+/* Go: voice.Transmitter.VocoderSlots. VocoderSlots queues 72-bit vocoder slots as VocoderSlot does. */
+int dmrgo_voice_transmitter_vocoder_slots(dmrgo_voice_transmitter_t *self, const uint8_t (*s)[9], size_t s_len);
 /* Go: voice.TransmitterState.String. String returns the name of the state. */
 int dmrgo_voice_transmitter_state_string(dmrgo_voice_transmitter_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 

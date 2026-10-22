@@ -86,15 +86,15 @@ func controlScript(t testing.TB, p []layer2.RawBurst, in []byte) {
 		case 0:
 			_ = tx.Start(now, voice.Call{Group: true, Target: 9, Source: 3120005}, &voice.CallOptions{InCall: arg&0x10 != 0, HangTime: arg&0x20 != 0})
 		case 1:
-			_ = tx.Slot(vocoder.AMBESilenceSlot())
+			_ = tx.VocoderSlot(vocoder.AMBESilenceSlot())
 		case 2:
 			tx.Channel(now, arg&0x10 != 0)
 		case 3:
 			out = tx.Burst(now, &raw, layer2.Hint{}, out)
 		case 4:
-			_ = tx.Interrupt(b.ReverseChannel)
+			_ = tx.ReverseChannel(b.ReverseChannel)
 			if b.DecodeFromBytes(raw) == nil {
-				_ = tx.Interrupt(b.ReverseChannel)
+				_ = tx.ReverseChannel(b.ReverseChannel)
 			}
 		case 5:
 			tx.Stop()
