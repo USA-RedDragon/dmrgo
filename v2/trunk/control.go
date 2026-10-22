@@ -44,6 +44,7 @@ type control struct {
 	b          *layer2.Burst
 	pre        bool
 	preOK      bool
+	valid      bool
 	opts       layer2.DecodeOptions
 	slc        layer2.ShortLCAssembler
 	pending    pendingKind
@@ -69,18 +70,20 @@ type control struct {
 }
 
 func (c *control) decode(raw *layer2.RawBurst, h *layer2.Hint) bool {
-	if c.pre {
-		return c.preOK
+	switch {
+	case c.pre:
+		c.valid = c.preOK
+	case raw == nil || c.b == nil:
+		c.valid = false
+	default:
+		c.opts.Kind = h.Kind
+		c.opts.VoiceBurst = enums.VoiceBurstUnknown
+		if h.Kind == layer2.KindVoice {
+			c.opts.VoiceBurst = h.VoiceBurst
+		}
+		c.valid = c.b.DecodeFromBytesWith(*raw, &c.opts) == nil
 	}
-	if raw == nil || c.b == nil {
-		return false
-	}
-	c.opts.Kind = h.Kind
-	c.opts.VoiceBurst = enums.VoiceBurstUnknown
-	if h.Kind == layer2.KindVoice {
-		c.opts.VoiceBurst = h.VoiceBurst
-	}
-	return c.b.DecodeFromBytesWith(*raw, &c.opts) == nil
+	return c.valid
 }
 
 func (c *control) cach(cc *layer2.CACH) bool {
@@ -110,7 +113,7 @@ func (c *control) okData() bool {
 
 func (c *control) dataOK() bool {
 	b := c.b
-	if b.Kind != layer2.KindData || b.FEC.SlotType.Uncorrectable || b.FEC.Payload.Uncorrectable {
+	if !c.valid || b.Kind != layer2.KindData || b.FEC.SlotType.Uncorrectable || b.FEC.Payload.Uncorrectable {
 		return false
 	}
 	ras := c.acceptRAS && b.BPTCReserved&rasFlag != 0 && b.FEC.Payload.ErrorsCorrected == 0

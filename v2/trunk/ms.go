@@ -536,7 +536,7 @@ func (m *MS) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach 
 	if m.off {
 		return dst
 	}
-	if raw == nil || m.f.ctl.b == nil {
+	if raw == nil {
 		if h.SyncLost {
 			return m.Lost(now, dst)
 		}
@@ -561,9 +561,6 @@ func (m *MS) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, cach *[3
 		return dst
 	}
 	prev := m.f.ctl.b
-	if prev == nil {
-		return m.timers(now, dst)
-	}
 	if b != nil {
 		m.f.ctl.b = b
 	}
