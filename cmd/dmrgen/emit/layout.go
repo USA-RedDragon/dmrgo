@@ -112,11 +112,21 @@ func emitFrameDecode(f *File, pdu parse.PDUStruct) {
 	if pdu.Payload {
 		noun = " from data, a payload of "
 	}
-	doc = strings.TrimSuffix(doc, ".") + noun + sizesText(sizes) + ". It returns "
+	open, last := pdu.Frame.Open, sizes[len(sizes)-1]
+	text := sizesText(sizes)
+	if open {
+		text += " or more"
+	}
+	doc = strings.TrimSuffix(doc, ".") + noun + text + ". It returns "
 	conds := []string{errShort + " when data is shorter than " + octetsText(sizes[0])}
-	if len(sizes) == 1 {
+	gaps := last-sizes[0]+1 != len(sizes)
+	switch {
+	case open && gaps:
+		conds = append(conds, errLength+" when it is shorter than "+octetsText(last)+" and its length is not one of these")
+	case open:
+	case len(sizes) == 1:
 		conds = append(conds, errLength+" when it is longer")
-	} else {
+	default:
 		conds = append(conds, errLength+" when its length is not one of these")
 	}
 	if len(pdu.Magic) > 0 {
@@ -125,26 +135,43 @@ func emitFrameDecode(f *File, pdu parse.PDUStruct) {
 	if hasTextEncoding(pdu) {
 		conds = append(conds, errText+" when a text number holds a character that is not a digit")
 	}
-	doc += strings.Join(conds[:len(conds)-1], ", ") + " and " + conds[len(conds)-1] + ". It does not keep data."
+	if len(conds) == 1 {
+		doc += conds[0] + "."
+	} else {
+		doc += strings.Join(conds[:len(conds)-1], ", ") + " and " + conds[len(conds)-1] + "."
+	}
+	if open {
+		doc += " It ignores the octets after the first " + strconv.Itoa(last) + "."
+	}
+	doc += " It does not keep data."
 	if token.IsExported(name) {
 		comment(f, doc+docCite(pdu))
 	}
 	zero := Id(pdu.Name).Values()
 	f.Func().Id(name).Params(Id("data").Index().Byte()).Params(Id(pdu.Name), Error()).BlockFunc(func(g *Group) {
-		if len(sizes) == 1 {
+		switch {
+		case len(sizes) == 1:
 			g.If(Len(Id("data")).Op("<").Lit(sizes[0])).Block(Return(zero, Id(errShort)))
-			g.If(Len(Id("data")).Op("!=").Lit(sizes[0])).Block(Return(zero, Id(errLength)))
-		} else {
+			if !open {
+				g.If(Len(Id("data")).Op("!=").Lit(sizes[0])).Block(Return(zero, Id(errLength)))
+			}
+		case open && !gaps:
+			g.If(Len(Id("data")).Op("<").Lit(sizes[0])).Block(Return(zero, Id(errShort)))
+		default:
 			g.Switch(Len(Id("data"))).BlockFunc(func(sw *Group) {
 				vals := make([]Code, len(sizes))
 				for i, s := range sizes {
 					vals[i] = Lit(s)
 				}
 				sw.Case(vals...)
-				sw.Default().Block(
-					If(Len(Id("data")).Op("<").Lit(sizes[0])).Block(Return(zero, Id(errShort))),
-					Return(zero, Id(errLength)),
-				)
+				sw.Default().BlockFunc(func(d *Group) {
+					d.If(Len(Id("data")).Op("<").Lit(sizes[0])).Block(Return(zero, Id(errShort)))
+					if open {
+						d.If(Len(Id("data")).Op("<").Lit(last)).Block(Return(zero, Id(errLength)))
+					} else {
+						d.Return(zero, Id(errLength))
+					}
+				})
 			})
 		}
 		for _, m := range pdu.Magic {
@@ -162,7 +189,11 @@ func emitFrameDecode(f *File, pdu parse.PDUStruct) {
 		g.Var().Id("result").Id(pdu.Name)
 		if sf := pdu.Frame.SizeField; sf != "" {
 			field := pdu.FieldByName(sf)
-			g.Id("result").Dot(sf).Op("=").Add(qualType(*field, pdu)).Call(Len(Id("data")))
+			n := Len(Id("data"))
+			if open {
+				n = Min(Len(Id("data")), Lit(last))
+			}
+			g.Id("result").Dot(sf).Op("=").Add(qualType(*field, pdu)).Call(n)
 		}
 		fail := func() *Statement { return Return(zero, Id(errText)) }
 		for _, grp := range sizeGroups(pdu) {

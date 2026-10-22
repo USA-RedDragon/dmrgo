@@ -220,15 +220,12 @@ func (s *StatusV1) String() string {
 	return "StatusV1{ M17: " + text.Bool(s.M17) + ", POCSAG: " + text.Bool(s.POCSAG) + ", NXDN: " + text.Bool(s.NXDN) + ", P25: " + text.Bool(s.P25) + ", YSF: " + text.Bool(s.YSF) + ", DMR: " + text.Bool(s.DMR) + ", DStar: " + text.Bool(s.DStar) + ", State: " + text.Int(int64(s.State)) + ", CD: " + text.Bool(s.CD) + ", DACOverflow: " + text.Bool(s.DACOverflow) + ", Lockout: " + text.Bool(s.Lockout) + ", TXOverflow: " + text.Bool(s.TXOverflow) + ", RXOverflow: " + text.Bool(s.RXOverflow) + ", ADCOverflow: " + text.Bool(s.ADCOverflow) + ", TX: " + text.Bool(s.TX) + ", DStarSpace: " + text.Int(int64(s.DStarSpace)) + ", DMRSpace1: " + text.Int(int64(s.DMRSpace1)) + ", DMRSpace2: " + text.Int(int64(s.DMRSpace2)) + ", YSFSpace: " + text.Int(int64(s.YSFSpace)) + ", P25Space: " + text.Int(int64(s.P25Space)) + ", NXDNSpace: " + text.Int(int64(s.NXDNSpace)) + ", POCSAGSpace: " + text.Int(int64(s.POCSAGSpace)) + ", M17Space: " + text.Int(int64(s.M17Space)) + " }"
 }
 
-// DecodeConfigV2 decodes a ConfigV2 from data, a payload of 37 octets. It
-// returns ErrShort when data is shorter than 37 octets and ErrLength when it
-// is longer. It does not keep data.
+// DecodeConfigV2 decodes a ConfigV2 from data, a payload of 37 octets or
+// more. It returns ErrShort when data is shorter than 37 octets. It ignores
+// the octets after the first 37. It does not keep data.
 func DecodeConfigV2(data []byte) (ConfigV2, error) {
 	if len(data) < 37 {
 		return ConfigV2{}, ErrShort
-	}
-	if len(data) != 37 {
-		return ConfigV2{}, ErrLength
 	}
 	var result ConfigV2
 	result.Simplex = data[0]&0x80 != 0
@@ -383,15 +380,12 @@ func (s *ConfigV2) String() string {
 	return "ConfigV2{ Simplex: " + text.Bool(s.Simplex) + ", UseCOSAsLockout: " + text.Bool(s.UseCOSAsLockout) + ", Debug: " + text.Bool(s.Debug) + ", YSFLoDev: " + text.Bool(s.YSFLoDev) + ", PTTInvert: " + text.Bool(s.PTTInvert) + ", TXInvert: " + text.Bool(s.TXInvert) + ", RXInvert: " + text.Bool(s.RXInvert) + ", FM: " + text.Bool(s.FM) + ", NXDN: " + text.Bool(s.NXDN) + ", P25: " + text.Bool(s.P25) + ", YSF: " + text.Bool(s.YSF) + ", DMR: " + text.Bool(s.DMR) + ", DStar: " + text.Bool(s.DStar) + ", POCSAG: " + text.Bool(s.POCSAG) + ", TXDelay: " + text.Int(int64(s.TXDelay)) + ", State: " + text.Int(int64(s.State)) + ", TXDCOffset: " + text.Int(int64(s.TXDCOffset)) + ", RXDCOffset: " + text.Int(int64(s.RXDCOffset)) + ", RXLevel: " + text.Int(int64(s.RXLevel)) + ", CWIDTXLevel: " + text.Int(int64(s.CWIDTXLevel)) + ", DStarTXLevel: " + text.Int(int64(s.DStarTXLevel)) + ", DMRTXLevel: " + text.Int(int64(s.DMRTXLevel)) + ", YSFTXLevel: " + text.Int(int64(s.YSFTXLevel)) + ", P25TXLevel: " + text.Int(int64(s.P25TXLevel)) + ", NXDNTXLevel: " + text.Int(int64(s.NXDNTXLevel)) + ", POCSAGTXLevel: " + text.Int(int64(s.POCSAGTXLevel)) + ", FMTXLevel: " + text.Int(int64(s.FMTXLevel)) + ", YSFTXHang: " + text.Int(int64(s.YSFTXHang)) + ", P25TXHang: " + text.Int(int64(s.P25TXHang)) + ", NXDNTXHang: " + text.Int(int64(s.NXDNTXHang)) + ", DMRTrunking: " + text.Bool(s.DMRTrunking) + ", DMRColorCode: " + text.Int(int64(s.DMRColorCode)) + ", DMRDelay: " + text.Int(int64(s.DMRDelay)) + ", OscOffset: " + text.Int(int64(s.OscOffset)) + " }"
 }
 
-// DecodeConfigV1 decodes a ConfigV1 from data, a payload of 23 octets. It
-// returns ErrShort when data is shorter than 23 octets and ErrLength when it
-// is longer. It does not keep data.
+// DecodeConfigV1 decodes a ConfigV1 from data, a payload of 23 octets or
+// more. It returns ErrShort when data is shorter than 23 octets. It ignores
+// the octets after the first 23. It does not keep data.
 func DecodeConfigV1(data []byte) (ConfigV1, error) {
 	if len(data) < 23 {
 		return ConfigV1{}, ErrShort
-	}
-	if len(data) != 23 {
-		return ConfigV1{}, ErrLength
 	}
 	var result ConfigV1
 	result.Simplex = data[0]&0x80 != 0

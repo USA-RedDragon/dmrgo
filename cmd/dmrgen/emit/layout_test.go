@@ -104,6 +104,40 @@ func TestFrameDecimalNul(t *testing.T) {
 	}
 }
 
+const openFrameSrc = `// Open is a frame that a longer payload also holds.
+// dmr:frame 2+
+type Open struct {
+	A uint16 ` + "`dmr:\"bits:0-15\"`" + `
+}
+
+// Grow is a frame of several sizes that a longer payload also holds.
+// dmr:frame 1 3+
+type Grow struct {
+	A    uint8  ` + "`dmr:\"bits:0-7\"`" + `
+	B    uint16 ` + "`dmr:\"bits:8-23\"`" + `
+	Size uint8  ` + "`dmr:\"-\"`" + `
+}
+`
+
+func TestFrameOpenAcceptsLonger(t *testing.T) {
+	t.Parallel()
+
+	out := mustGenerate(t, openFrameSrc)
+	assertContains(t, strings.ReplaceAll(out, "\n// ", " "),
+		"a frame of 2 octets or more. It returns ErrShort when data is shorter than 2 octets. It ignores the octets after the first 2.",
+		"a frame of 1 or 3 octets or more. It returns ErrShort when data is shorter than 1 octet and ErrLength when it is shorter than 3 octets and its length is not one of these.",
+	)
+	assertContains(t, out,
+		"if len(data) < 2 {\n\t\treturn Open{}, ErrShort\n\t}\n\tvar result Open",
+		"case 1, 3:",
+		"if len(data) < 3 {\n\t\t\treturn Grow{}, ErrLength\n\t\t}",
+		"result.Size = uint8(min(len(data), 3))",
+	)
+	if strings.Contains(out, "return Open{}, ErrLength") {
+		t.Errorf("open frame still returns ErrLength:\n%s", out)
+	}
+}
+
 func TestFrameEncodings(t *testing.T) {
 	t.Parallel()
 

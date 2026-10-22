@@ -41,7 +41,7 @@ func (s streamGen) nested(f parse.StreamField) (parse.PDUStruct, error) {
 	}
 	switch f.SKind {
 	case parse.StreamFrame:
-		if p.Frame == nil || len(p.Frame.Sizes) != 1 {
+		if p.Frame == nil || len(p.Frame.Sizes) != 1 || p.Frame.Open {
 			return p, fmt.Errorf("field %s: %s must be a dmr:frame of one size", f.Name, f.TypeName)
 		}
 	case parse.StreamNested:
