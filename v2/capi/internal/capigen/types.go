@@ -120,7 +120,10 @@ func snakeWords(s string) string {
 }
 
 func acronyms(w string) []string {
-	known := []string{"CRC", "OK", "FLC", "GPS", "UDP", "IP", "IPv4", "IPv6", "TSCC", "USBD", "UDT", "LIP", "WD", "LC", "C", "P"}
+	known := []string{"CRC", "OK", "FLC", "GPS", "UDP", "IP", "IPv4", "IPv6", "TSCC", "USBD", "UDT", "LIP", "WD", "LC", "C", "P",
+		"FID", "DMR", "EMC", "HYT", "JVC", "FLCO", "SLCO", "SAP", "TCP", "BCD", "ISO", "NMEA", "UTF16BE", "CSBK", "BS",
+		"FM", "M17", "EOT", "RSSI", "LDU", "CPU", "NXP", "ST", "DAID", "SAID", "USB", "NACK", "FSN", "RC", "EMB", "TMS", "MS", "DMRP", "RCP",
+		"TX", "RX", "CWID", "YSF", "NXDN", "POCSAG", "DC"}
 	if slices.Contains(known, w) || !strings.ContainsFunc(w, unicode.IsUpper) {
 		return []string{w}
 	}

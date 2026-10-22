@@ -1589,7 +1589,7 @@ func out_layer2_pdu_CallTimerParms(d *C.dmrgo_pdu_call_timer_parms_t, s *g_layer
 	d.reg = C.bool(s.Reg)
 	d.backoff = C.uint8_t(s.Backoff)
 	d.sys_ident_code = C.uint16_t(s.SysIdentCode)
-	d.msms_timer = C.uint16_t(s.MSMSTimer)
+	d.ms_ms_timer = C.uint16_t(s.MSMSTimer)
 	d.line_timer = C.uint16_t(s.LineTimer)
 }
 
@@ -2184,7 +2184,7 @@ func in_layer2_pdu_CallTimerParms(s *C.dmrgo_pdu_call_timer_parms_t) (d g_layer2
 	d.Reg = bool(s.reg)
 	d.Backoff = uint8(s.backoff)
 	d.SysIdentCode = uint16(s.sys_ident_code)
-	d.MSMSTimer = uint16(s.msms_timer)
+	d.MSMSTimer = uint16(s.ms_ms_timer)
 	d.LineTimer = uint16(s.line_timer)
 	return
 }
@@ -3480,24 +3480,24 @@ func in_transport_mmdvm_ConfigV1(s *C.dmrgo_mmdvm_config_v1_t) (d g_transport_mm
 	d.TXDelay = uint8(s.tx_delay)
 	d.State = g_transport_mmdvm.Mode(s.state)
 	d.RXLevel = uint8(s.rx_level)
-	d.CWIDTXLevel = uint8(s.cwidtx_level)
+	d.CWIDTXLevel = uint8(s.cwid_tx_level)
 	d.DMRColorCode = g_enums.ColorCode(s.dmr_color_code)
 	d.DMRDelay = uint8(s.dmr_delay)
 	d.OscOffset = uint8(s.osc_offset)
 	d.DStarTXLevel = uint8(s.d_star_tx_level)
-	d.DMRTXLevel = uint8(s.dmrtx_level)
-	d.YSFTXLevel = uint8(s.ysftx_level)
-	d.P25TXLevel = uint8(s.p25tx_level)
-	d.TXDCOffset = uint8(s.txdc_offset)
-	d.RXDCOffset = uint8(s.rxdc_offset)
-	d.NXDNTXLevel = uint8(s.nxdntx_level)
-	d.YSFTXHang = uint8(s.ysftx_hang)
-	d.POCSAGTXLevel = uint8(s.pocsagtx_level)
-	d.FMTXLevel = uint8(s.fmtx_level)
-	d.P25TXHang = uint8(s.p25tx_hang)
-	d.NXDNTXHang = uint8(s.nxdntx_hang)
-	d.M17TXLevel = uint8(s.m17tx_level)
-	d.M17TXHang = uint8(s.m17tx_hang)
+	d.DMRTXLevel = uint8(s.dmr_tx_level)
+	d.YSFTXLevel = uint8(s.ysf_tx_level)
+	d.P25TXLevel = uint8(s.p25_tx_level)
+	d.TXDCOffset = uint8(s.tx_dc_offset)
+	d.RXDCOffset = uint8(s.rx_dc_offset)
+	d.NXDNTXLevel = uint8(s.nxdn_tx_level)
+	d.YSFTXHang = uint8(s.ysf_tx_hang)
+	d.POCSAGTXLevel = uint8(s.pocsag_tx_level)
+	d.FMTXLevel = uint8(s.fm_tx_level)
+	d.P25TXHang = uint8(s.p25_tx_hang)
+	d.NXDNTXHang = uint8(s.nxdn_tx_hang)
+	d.M17TXLevel = uint8(s.m17_tx_level)
+	d.M17TXHang = uint8(s.m17_tx_hang)
 	return
 }
 
@@ -3518,20 +3518,20 @@ func in_transport_mmdvm_ConfigV2(s *C.dmrgo_mmdvm_config_v2_t) (d g_transport_mm
 	d.POCSAG = bool(s.pocsag)
 	d.TXDelay = uint8(s.tx_delay)
 	d.State = g_transport_mmdvm.Mode(s.state)
-	d.TXDCOffset = uint8(s.txdc_offset)
-	d.RXDCOffset = uint8(s.rxdc_offset)
+	d.TXDCOffset = uint8(s.tx_dc_offset)
+	d.RXDCOffset = uint8(s.rx_dc_offset)
 	d.RXLevel = uint8(s.rx_level)
-	d.CWIDTXLevel = uint8(s.cwidtx_level)
+	d.CWIDTXLevel = uint8(s.cwid_tx_level)
 	d.DStarTXLevel = uint8(s.d_star_tx_level)
-	d.DMRTXLevel = uint8(s.dmrtx_level)
-	d.YSFTXLevel = uint8(s.ysftx_level)
-	d.P25TXLevel = uint8(s.p25tx_level)
-	d.NXDNTXLevel = uint8(s.nxdntx_level)
-	d.POCSAGTXLevel = uint8(s.pocsagtx_level)
-	d.FMTXLevel = uint8(s.fmtx_level)
-	d.YSFTXHang = uint8(s.ysftx_hang)
-	d.P25TXHang = uint8(s.p25tx_hang)
-	d.NXDNTXHang = uint8(s.nxdntx_hang)
+	d.DMRTXLevel = uint8(s.dmr_tx_level)
+	d.YSFTXLevel = uint8(s.ysf_tx_level)
+	d.P25TXLevel = uint8(s.p25_tx_level)
+	d.NXDNTXLevel = uint8(s.nxdn_tx_level)
+	d.POCSAGTXLevel = uint8(s.pocsag_tx_level)
+	d.FMTXLevel = uint8(s.fm_tx_level)
+	d.YSFTXHang = uint8(s.ysf_tx_hang)
+	d.P25TXHang = uint8(s.p25_tx_hang)
+	d.NXDNTXHang = uint8(s.nxdn_tx_hang)
 	d.DMRTrunking = bool(s.dmr_trunking)
 	d.DMRColorCode = g_enums.ColorCode(s.dmr_color_code)
 	d.DMRDelay = uint8(s.dmr_delay)
@@ -3580,24 +3580,24 @@ func out_transport_mmdvm_ConfigV1(d *C.dmrgo_mmdvm_config_v1_t, s *g_transport_m
 	d.tx_delay = C.uint8_t(s.TXDelay)
 	d.state = C.dmrgo_mmdvm_mode_t(s.State)
 	d.rx_level = C.uint8_t(s.RXLevel)
-	d.cwidtx_level = C.uint8_t(s.CWIDTXLevel)
+	d.cwid_tx_level = C.uint8_t(s.CWIDTXLevel)
 	d.dmr_color_code = C.dmrgo_enums_color_code_t(s.DMRColorCode)
 	d.dmr_delay = C.uint8_t(s.DMRDelay)
 	d.osc_offset = C.uint8_t(s.OscOffset)
 	d.d_star_tx_level = C.uint8_t(s.DStarTXLevel)
-	d.dmrtx_level = C.uint8_t(s.DMRTXLevel)
-	d.ysftx_level = C.uint8_t(s.YSFTXLevel)
-	d.p25tx_level = C.uint8_t(s.P25TXLevel)
-	d.txdc_offset = C.uint8_t(s.TXDCOffset)
-	d.rxdc_offset = C.uint8_t(s.RXDCOffset)
-	d.nxdntx_level = C.uint8_t(s.NXDNTXLevel)
-	d.ysftx_hang = C.uint8_t(s.YSFTXHang)
-	d.pocsagtx_level = C.uint8_t(s.POCSAGTXLevel)
-	d.fmtx_level = C.uint8_t(s.FMTXLevel)
-	d.p25tx_hang = C.uint8_t(s.P25TXHang)
-	d.nxdntx_hang = C.uint8_t(s.NXDNTXHang)
-	d.m17tx_level = C.uint8_t(s.M17TXLevel)
-	d.m17tx_hang = C.uint8_t(s.M17TXHang)
+	d.dmr_tx_level = C.uint8_t(s.DMRTXLevel)
+	d.ysf_tx_level = C.uint8_t(s.YSFTXLevel)
+	d.p25_tx_level = C.uint8_t(s.P25TXLevel)
+	d.tx_dc_offset = C.uint8_t(s.TXDCOffset)
+	d.rx_dc_offset = C.uint8_t(s.RXDCOffset)
+	d.nxdn_tx_level = C.uint8_t(s.NXDNTXLevel)
+	d.ysf_tx_hang = C.uint8_t(s.YSFTXHang)
+	d.pocsag_tx_level = C.uint8_t(s.POCSAGTXLevel)
+	d.fm_tx_level = C.uint8_t(s.FMTXLevel)
+	d.p25_tx_hang = C.uint8_t(s.P25TXHang)
+	d.nxdn_tx_hang = C.uint8_t(s.NXDNTXHang)
+	d.m17_tx_level = C.uint8_t(s.M17TXLevel)
+	d.m17_tx_hang = C.uint8_t(s.M17TXHang)
 }
 
 func out_transport_mmdvm_ConfigV2(d *C.dmrgo_mmdvm_config_v2_t, s *g_transport_mmdvm.ConfigV2, oc *outc) {
@@ -3618,20 +3618,20 @@ func out_transport_mmdvm_ConfigV2(d *C.dmrgo_mmdvm_config_v2_t, s *g_transport_m
 	d.pocsag = C.bool(s.POCSAG)
 	d.tx_delay = C.uint8_t(s.TXDelay)
 	d.state = C.dmrgo_mmdvm_mode_t(s.State)
-	d.txdc_offset = C.uint8_t(s.TXDCOffset)
-	d.rxdc_offset = C.uint8_t(s.RXDCOffset)
+	d.tx_dc_offset = C.uint8_t(s.TXDCOffset)
+	d.rx_dc_offset = C.uint8_t(s.RXDCOffset)
 	d.rx_level = C.uint8_t(s.RXLevel)
-	d.cwidtx_level = C.uint8_t(s.CWIDTXLevel)
+	d.cwid_tx_level = C.uint8_t(s.CWIDTXLevel)
 	d.d_star_tx_level = C.uint8_t(s.DStarTXLevel)
-	d.dmrtx_level = C.uint8_t(s.DMRTXLevel)
-	d.ysftx_level = C.uint8_t(s.YSFTXLevel)
-	d.p25tx_level = C.uint8_t(s.P25TXLevel)
-	d.nxdntx_level = C.uint8_t(s.NXDNTXLevel)
-	d.pocsagtx_level = C.uint8_t(s.POCSAGTXLevel)
-	d.fmtx_level = C.uint8_t(s.FMTXLevel)
-	d.ysftx_hang = C.uint8_t(s.YSFTXHang)
-	d.p25tx_hang = C.uint8_t(s.P25TXHang)
-	d.nxdntx_hang = C.uint8_t(s.NXDNTXHang)
+	d.dmr_tx_level = C.uint8_t(s.DMRTXLevel)
+	d.ysf_tx_level = C.uint8_t(s.YSFTXLevel)
+	d.p25_tx_level = C.uint8_t(s.P25TXLevel)
+	d.nxdn_tx_level = C.uint8_t(s.NXDNTXLevel)
+	d.pocsag_tx_level = C.uint8_t(s.POCSAGTXLevel)
+	d.fm_tx_level = C.uint8_t(s.FMTXLevel)
+	d.ysf_tx_hang = C.uint8_t(s.YSFTXHang)
+	d.p25_tx_hang = C.uint8_t(s.P25TXHang)
+	d.nxdn_tx_hang = C.uint8_t(s.NXDNTXHang)
 	d.dmr_trunking = C.bool(s.DMRTrunking)
 	d.dmr_color_code = C.dmrgo_enums_color_code_t(s.DMRColorCode)
 	d.dmr_delay = C.uint8_t(s.DMRDelay)
@@ -17956,8 +17956,8 @@ func dmrgo_layer2_raw_burst_set_standalone_rc_data(c_self *C.dmrgo_layer2_raw_bu
 	return C.DMRGO_OK
 }
 
-//export dmrgo_layer2_raw_burst_set_standalone_rcemb
-func dmrgo_layer2_raw_burst_set_standalone_rcemb(c_self *C.dmrgo_layer2_raw_burst_t, c_e *C.dmrgo_pdu_embedded_signalling_t) (rc C.int) {
+//export dmrgo_layer2_raw_burst_set_standalone_rc_emb
+func dmrgo_layer2_raw_burst_set_standalone_rc_emb(c_self *C.dmrgo_layer2_raw_burst_t, c_e *C.dmrgo_pdu_embedded_signalling_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -18048,8 +18048,8 @@ func dmrgo_layer2_raw_burst_standalone_rc_data(c_self *C.dmrgo_layer2_raw_burst_
 	return C.DMRGO_OK
 }
 
-//export dmrgo_layer2_raw_burst_standalone_rcemb
-func dmrgo_layer2_raw_burst_standalone_rcemb(c_self *C.dmrgo_layer2_raw_burst_t, c_out *C.dmrgo_pdu_embedded_signalling_t) (rc C.int) {
+//export dmrgo_layer2_raw_burst_standalone_rc_emb
+func dmrgo_layer2_raw_burst_standalone_rc_emb(c_self *C.dmrgo_layer2_raw_burst_t, c_out *C.dmrgo_pdu_embedded_signalling_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {

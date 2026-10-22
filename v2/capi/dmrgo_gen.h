@@ -2442,7 +2442,7 @@ struct dmrgo_pdu_call_timer_parms_t {
 	/* system identity code (C_SYScode) of the TSCC */
 	uint16_t sys_ident_code;
 	/* T_MS-MS_TIMER, 1 to 4094, 4095 for infinity */
-	uint16_t msms_timer;
+	uint16_t ms_ms_timer;
 	/* T_MS-LINE_TIMER, 1 to 4094, 4095 for infinity */
 	uint16_t line_timer;
 };
@@ -4352,7 +4352,7 @@ struct dmrgo_mmdvm_config_v1_t {
 	/* RXLevel is the RX level. */
 	uint8_t rx_level;
 	/* CWIDTXLevel is the CW ID TX level. */
-	uint8_t cwidtx_level;
+	uint8_t cwid_tx_level;
 	/* DMRColorCode is the DMR color code, 0 to 15. */
 	dmrgo_enums_color_code_t dmr_color_code;
 	/* DMRDelay is the DMR delay in symbols. */
@@ -4362,31 +4362,31 @@ struct dmrgo_mmdvm_config_v1_t {
 	/* DStarTXLevel is the D-Star TX level. */
 	uint8_t d_star_tx_level;
 	/* DMRTXLevel is the DMR TX level. */
-	uint8_t dmrtx_level;
+	uint8_t dmr_tx_level;
 	/* YSFTXLevel is the YSF TX level. */
-	uint8_t ysftx_level;
+	uint8_t ysf_tx_level;
 	/* P25TXLevel is the P25 TX level. */
-	uint8_t p25tx_level;
+	uint8_t p25_tx_level;
 	/* TXDCOffset is the TX DC offset plus 128. */
-	uint8_t txdc_offset;
+	uint8_t tx_dc_offset;
 	/* RXDCOffset is the RX DC offset plus 128. */
-	uint8_t rxdc_offset;
+	uint8_t rx_dc_offset;
 	/* NXDNTXLevel is the NXDN TX level. */
-	uint8_t nxdntx_level;
+	uint8_t nxdn_tx_level;
 	/* YSFTXHang is the YSF TX hang time in seconds. */
-	uint8_t ysftx_hang;
+	uint8_t ysf_tx_hang;
 	/* POCSAGTXLevel is the POCSAG TX level. */
-	uint8_t pocsagtx_level;
+	uint8_t pocsag_tx_level;
 	/* FMTXLevel is the FM TX level; MMDVM_HS does not read it. */
-	uint8_t fmtx_level;
+	uint8_t fm_tx_level;
 	/* P25TXHang is the P25 TX hang time in seconds. */
-	uint8_t p25tx_hang;
+	uint8_t p25_tx_hang;
 	/* NXDNTXHang is the NXDN TX hang time in seconds. */
-	uint8_t nxdntx_hang;
+	uint8_t nxdn_tx_hang;
 	/* M17TXLevel is the M17 TX level (MMDVM_HS), 0 from MMDVMHost 9384d68. */
-	uint8_t m17tx_level;
+	uint8_t m17_tx_level;
 	/* M17TXHang is the M17 TX hang time in seconds from the MMDVMHost of Pi-Star, 0 from MMDVMHost 9384d68; MMDVM_HS does not read it. */
-	uint8_t m17tx_hang;
+	uint8_t m17_tx_hang;
 };
 
 struct dmrgo_mmdvm_config_v2_t {
@@ -4423,33 +4423,33 @@ struct dmrgo_mmdvm_config_v2_t {
 	/* State is the state to start in, DMRGO_MMDVM_MODE_IDLE from MMDVMHost. */
 	dmrgo_mmdvm_mode_t state;
 	/* TXDCOffset is the TX DC offset plus 128. */
-	uint8_t txdc_offset;
+	uint8_t tx_dc_offset;
 	/* RXDCOffset is the RX DC offset plus 128. */
-	uint8_t rxdc_offset;
+	uint8_t rx_dc_offset;
 	/* RXLevel is the RX level. */
 	uint8_t rx_level;
 	/* CWIDTXLevel is the CW ID TX level. */
-	uint8_t cwidtx_level;
+	uint8_t cwid_tx_level;
 	/* DStarTXLevel is the D-Star TX level. */
 	uint8_t d_star_tx_level;
 	/* DMRTXLevel is the DMR TX level. */
-	uint8_t dmrtx_level;
+	uint8_t dmr_tx_level;
 	/* YSFTXLevel is the YSF TX level. */
-	uint8_t ysftx_level;
+	uint8_t ysf_tx_level;
 	/* P25TXLevel is the P25 TX level. */
-	uint8_t p25tx_level;
+	uint8_t p25_tx_level;
 	/* NXDNTXLevel is the NXDN TX level. */
-	uint8_t nxdntx_level;
+	uint8_t nxdn_tx_level;
 	/* POCSAGTXLevel is the POCSAG TX level. */
-	uint8_t pocsagtx_level;
+	uint8_t pocsag_tx_level;
 	/* FMTXLevel is the FM TX level. */
-	uint8_t fmtx_level;
+	uint8_t fm_tx_level;
 	/* YSFTXHang is the YSF TX hang time in seconds. */
-	uint8_t ysftx_hang;
+	uint8_t ysf_tx_hang;
 	/* P25TXHang is the P25 TX hang time in seconds. */
-	uint8_t p25tx_hang;
+	uint8_t p25_tx_hang;
 	/* NXDNTXHang is the NXDN TX hang time in seconds. */
-	uint8_t nxdntx_hang;
+	uint8_t nxdn_tx_hang;
 	/* DMRTrunking makes the modem a DMR Tier III control channel. */
 	bool dmr_trunking;
 	/* DMRColorCode is the DMR color code, 0 to 15. */
@@ -5914,7 +5914,7 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: constants.TMSLineTimerMax. TMSLineTimerMax is the longest finite MS to line call timer (T_MS-LINE_TIMER), token 4094 (ETSI TS 102 361-4 Table A.5). */
 #define DMRGO_CONSTANTS_TMS_LINE_TIMER_MAX INT64_C(238560000000000)
 /* Go: constants.TMSMSTimerMax. TMSMSTimerMax is the longest finite MS to MS call timer (T_MS-MS_TIMER), token 4094 (ETSI TS 102 361-4 Table A.4). */
-#define DMRGO_CONSTANTS_TMSMS_TIMER_MAX INT64_C(238560000000000)
+#define DMRGO_CONSTANTS_TMS_MS_TIMER_MAX INT64_C(238560000000000)
 /* Go: constants.TNPTimerDefault. TNPTimerDefault is the default TNP_Timer, the timeout for a calling MS waiting for a call that does not require a payload channel. */
 #define DMRGO_CONSTANTS_TNP_TIMER_DEFAULT INT64_C(5000000000)
 /* Go: constants.TNoSignalDefault. TNoSignalDefault is the default T_Nosig, the timeout for entering hunting procedures if no TSCC is received. */
@@ -6276,7 +6276,7 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: enums.DAIDRadioNetwork. radio network */
 #define DMRGO_ENUMS_DAID_RADIO_NETWORK ((dmrgo_enums_daid_t)0)
 /* Go: enums.DAIDUSBEthernetNetwork. USB or Ethernet network */
-#define DMRGO_ENUMS_DAIDUSB_ETHERNET_NETWORK ((dmrgo_enums_daid_t)1)
+#define DMRGO_ENUMS_DAID_USB_ETHERNET_NETWORK ((dmrgo_enums_daid_t)1)
 /* Go: enums.DD7Bit. 7-bit characters */
 #define DMRGO_ENUMS_DD_7BIT ((dmrgo_enums_dd_format_t)2)
 /* Go: enums.DDBCD. BCD */
@@ -6362,19 +6362,19 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: enums.FIDAselsan. ASELSAN */
 #define DMRGO_ENUMS_FID_ASELSAN ((dmrgo_enums_fid_t)9)
 /* Go: enums.FIDDMRAssociation. DMR Association */
-#define DMRGO_ENUMS_FIDDMR_ASSOCIATION ((dmrgo_enums_fid_t)11)
+#define DMRGO_ENUMS_FID_DMR_ASSOCIATION ((dmrgo_enums_fid_t)11)
 /* Go: enums.FIDEMC. EMC */
-#define DMRGO_ENUMS_FIDEMC ((dmrgo_enums_fid_t)19)
+#define DMRGO_ENUMS_FID_EMC ((dmrgo_enums_fid_t)19)
 /* Go: enums.FIDEMC2. EMC, second ID */
-#define DMRGO_ENUMS_FIDEMC2 ((dmrgo_enums_fid_t)28)
+#define DMRGO_ENUMS_FID_EMC2 ((dmrgo_enums_fid_t)28)
 /* Go: enums.FIDFlydeMicro. Flyde Micro */
 #define DMRGO_ENUMS_FID_FLYDE_MICRO ((dmrgo_enums_fid_t)4)
 /* Go: enums.FIDHYTScienceTech. HYT Science Tech */
-#define DMRGO_ENUMS_FIDHYT_SCIENCE_TECH ((dmrgo_enums_fid_t)8)
+#define DMRGO_ENUMS_FID_HYT_SCIENCE_TECH ((dmrgo_enums_fid_t)8)
 /* Go: enums.FIDHYTScienceTech2. HYT Science Tech, second ID */
-#define DMRGO_ENUMS_FIDHYT_SCIENCE_TECH2 ((dmrgo_enums_fid_t)104)
+#define DMRGO_ENUMS_FID_HYT_SCIENCE_TECH2 ((dmrgo_enums_fid_t)104)
 /* Go: enums.FIDJVCKenwood. JVC Kenwood */
-#define DMRGO_ENUMS_FIDJVC_KENWOOD ((dmrgo_enums_fid_t)32)
+#define DMRGO_ENUMS_FID_JVC_KENWOOD ((dmrgo_enums_fid_t)32)
 /* Go: enums.FIDKirisun. Kirisun */
 #define DMRGO_ENUMS_FID_KIRISUN ((dmrgo_enums_fid_t)10)
 /* Go: enums.FIDMotorola. Motorola */
@@ -6396,7 +6396,7 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: enums.FIDVertexStandard. Vertex Standard */
 #define DMRGO_ENUMS_FID_VERTEX_STANDARD ((dmrgo_enums_fid_t)119)
 /* Go: enums.FLCOGPSInfo. GPS_Info */
-#define DMRGO_ENUMS_FLCOGPS_INFO ((dmrgo_enums_flco_t)8)
+#define DMRGO_ENUMS_FLCO_GPS_INFO ((dmrgo_enums_flco_t)8)
 /* Go: enums.FLCOGroupVoiceChannelUser. Grp_V_Ch_Usr, group voice channel user */
 #define DMRGO_ENUMS_FLCO_GROUP_VOICE_CHANNEL_USER ((dmrgo_enums_flco_t)0)
 /* Go: enums.FLCOTalkerAliasBlock1. Talker_Alias_blk1 */
@@ -6442,29 +6442,29 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: enums.SAIDRadioNetwork. radio network */
 #define DMRGO_ENUMS_SAID_RADIO_NETWORK ((dmrgo_enums_said_t)0)
 /* Go: enums.SAIDUSBEthernetNetwork. USB or Ethernet network */
-#define DMRGO_ENUMS_SAIDUSB_ETHERNET_NETWORK ((dmrgo_enums_said_t)1)
+#define DMRGO_ENUMS_SAID_USB_ETHERNET_NETWORK ((dmrgo_enums_said_t)1)
 /* Go: enums.SAPAddressResolutionProtocol. Address Resolution Protocol (ARP) */
 #define DMRGO_ENUMS_SAP_ADDRESS_RESOLUTION_PROTOCOL ((dmrgo_enums_sap_t)5)
 /* Go: enums.SAPIPBasedPacketData. IP based packet data */
-#define DMRGO_ENUMS_SAPIP_BASED_PACKET_DATA ((dmrgo_enums_sap_t)4)
+#define DMRGO_ENUMS_SAP_IP_BASED_PACKET_DATA ((dmrgo_enums_sap_t)4)
 /* Go: enums.SAPProprietaryPacketData. proprietary packet data */
 #define DMRGO_ENUMS_SAP_PROPRIETARY_PACKET_DATA ((dmrgo_enums_sap_t)9)
 /* Go: enums.SAPShortData. short data */
 #define DMRGO_ENUMS_SAP_SHORT_DATA ((dmrgo_enums_sap_t)10)
 /* Go: enums.SAPTCPIPHeaderCompression. TCP/IP header compression */
-#define DMRGO_ENUMS_SAPTCPIP_HEADER_COMPRESSION ((dmrgo_enums_sap_t)2)
+#define DMRGO_ENUMS_SAP_TCP_IP_HEADER_COMPRESSION ((dmrgo_enums_sap_t)2)
 /* Go: enums.SAPUDPIPHeaderCompression. UDP/IP header compression */
-#define DMRGO_ENUMS_SAPUDPIP_HEADER_COMPRESSION ((dmrgo_enums_sap_t)3)
+#define DMRGO_ENUMS_SAP_UDP_IP_HEADER_COMPRESSION ((dmrgo_enums_sap_t)3)
 /* Go: enums.SAPUnifiedDataTransport. Unified Data Transport (UDT) */
 #define DMRGO_ENUMS_SAP_UNIFIED_DATA_TRANSPORT ((dmrgo_enums_sap_t)0)
 /* Go: enums.SLCOActivityUpdate. Act_Updt, activity update */
 #define DMRGO_ENUMS_SLCO_ACTIVITY_UPDATE ((dmrgo_enums_slco_t)1)
 /* Go: enums.SLCOCSysParms. C_SYS_Parms (ETSI TS 102 361-4 clause 7.1.2) */
-#define DMRGO_ENUMS_SLCOC_SYS_PARMS ((dmrgo_enums_slco_t)2)
+#define DMRGO_ENUMS_SLCO_C_SYS_PARMS ((dmrgo_enums_slco_t)2)
 /* Go: enums.SLCONullMessage. Nul_Msg, null message */
 #define DMRGO_ENUMS_SLCO_NULL_MESSAGE ((dmrgo_enums_slco_t)0)
 /* Go: enums.SLCOPSysParms. P_SYS_Parms (ETSI TS 102 361-4 clause 7.1.2) */
-#define DMRGO_ENUMS_SLCOP_SYS_PARMS ((dmrgo_enums_slco_t)3)
+#define DMRGO_ENUMS_SLCO_P_SYS_PARMS ((dmrgo_enums_slco_t)3)
 /* Go: enums.SPIDExtendedHeader. port number in the extended header */
 #define DMRGO_ENUMS_SPID_EXTENDED_HEADER ((dmrgo_enums_spid_t)0)
 /* Go: enums.SPIDLocationProtocol. Port 5017 */
@@ -6540,15 +6540,15 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: enums.UDTAddress. MS or talkgroup addresses */
 #define DMRGO_ENUMS_UDT_ADDRESS ((dmrgo_enums_udt_format_t)1)
 /* Go: enums.UDTBCD. 4-bit BCD digits */
-#define DMRGO_ENUMS_UDTBCD ((dmrgo_enums_udt_format_t)2)
+#define DMRGO_ENUMS_UDT_BCD ((dmrgo_enums_udt_format_t)2)
 /* Go: enums.UDTBinary. binary */
 #define DMRGO_ENUMS_UDT_BINARY ((dmrgo_enums_udt_format_t)0)
 /* Go: enums.UDTIP. IP address */
 #define DMRGO_ENUMS_UDT_IP ((dmrgo_enums_udt_format_t)6)
 /* Go: enums.UDTISO7. ISO/IEC 646 7-bit characters */
-#define DMRGO_ENUMS_UDTISO7 ((dmrgo_enums_udt_format_t)3)
+#define DMRGO_ENUMS_UDT_ISO7 ((dmrgo_enums_udt_format_t)3)
 /* Go: enums.UDTISO8. ISO/IEC 8859 8-bit characters */
-#define DMRGO_ENUMS_UDTISO8 ((dmrgo_enums_udt_format_t)4)
+#define DMRGO_ENUMS_UDT_ISO8 ((dmrgo_enums_udt_format_t)4)
 /* Go: enums.UDTLIP. Location Information Protocol (LIP) */
 #define DMRGO_ENUMS_UDT_LIP ((dmrgo_enums_udt_format_t)11)
 /* Go: enums.UDTManufacturer1. manufacturer specific */
@@ -6558,9 +6558,9 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: enums.UDTMixed. one address and UTF-16BE characters */
 #define DMRGO_ENUMS_UDT_MIXED ((dmrgo_enums_udt_format_t)10)
 /* Go: enums.UDTNMEA. NMEA (IEC 61162-1) location */
-#define DMRGO_ENUMS_UDTNMEA ((dmrgo_enums_udt_format_t)5)
+#define DMRGO_ENUMS_UDT_NMEA ((dmrgo_enums_udt_format_t)5)
 /* Go: enums.UDTUTF16BE. UTF-16BE characters */
-#define DMRGO_ENUMS_UDTUTF16BE ((dmrgo_enums_udt_format_t)7)
+#define DMRGO_ENUMS_UDT_UTF16BE ((dmrgo_enums_udt_format_t)7)
 /* Go: enums.VoiceBurstA. burst A, which carries the voice SYNC */
 #define DMRGO_ENUMS_VOICE_BURST_A ((dmrgo_enums_voice_burst_type_t)1)
 /* Go: enums.VoiceBurstB. burst B */
@@ -6728,7 +6728,7 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: packet.ResponseACK. ResponseACK acknowledges all blocks of all packets up to NI. */
 #define DMRGO_PACKET_RESPONSE_ACK ((dmrgo_packet_response_t)1)
 /* Go: packet.ResponseNACKFSNOutOfSequence. ResponseNACKFSNOutOfSequence rejects a packet whose FSN is out of sequence. */
-#define DMRGO_PACKET_RESPONSE_NACKFSN_OUT_OF_SEQUENCE ((dmrgo_packet_response_t)11)
+#define DMRGO_PACKET_RESPONSE_NACK_FSN_OUT_OF_SEQUENCE ((dmrgo_packet_response_t)11)
 /* Go: packet.ResponseNACKIllegalFormat. ResponseNACKIllegalFormat rejects a packet with an illegal format. */
 #define DMRGO_PACKET_RESPONSE_NACK_ILLEGAL_FORMAT ((dmrgo_packet_response_t)8)
 /* Go: packet.ResponseNACKInvalidUser. ResponseNACKInvalidUser rejects a user the system disallows. */
@@ -6760,7 +6760,7 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: pdu.CSBKAloha. C_ALOHA */
 #define DMRGO_PDU_CSBK_ALOHA ((dmrgo_pdu_csbk_opcode_t)25)
 /* Go: pdu.CSBKBSOutboundActivation. BS_Dwn_Act, same value as DMRGO_PDU_CSBK_TALKGROUP_DATA_GRANT_MULTI_ITEM */
-#define DMRGO_PDU_CSBKBS_OUTBOUND_ACTIVATION ((dmrgo_pdu_csbk_opcode_t)56)
+#define DMRGO_PDU_CSBK_BS_OUTBOUND_ACTIVATION ((dmrgo_pdu_csbk_opcode_t)56)
 /* Go: pdu.CSBKBroadcast. C_BCAST */
 #define DMRGO_PDU_CSBK_BROADCAST ((dmrgo_pdu_csbk_opcode_t)40)
 /* Go: pdu.CSBKBroadcastTalkgroupVoiceGrant. BTV_GRANT */
@@ -6809,7 +6809,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_PDU_CSBK_RANDOM_ACCESS ((dmrgo_pdu_csbk_opcode_t)31)
 /* Go: pdu.CSBKTalkgroupDataGrant. TD_GRANT */
 #define DMRGO_PDU_CSBK_TALKGROUP_DATA_GRANT ((dmrgo_pdu_csbk_opcode_t)52)
-/* Go: pdu.CSBKTalkgroupDataGrantMultiItem. TD_GRANT_MI, same value as DMRGO_PDU_CSBKBS_OUTBOUND_ACTIVATION */
+/* Go: pdu.CSBKTalkgroupDataGrantMultiItem. TD_GRANT_MI, same value as DMRGO_PDU_CSBK_BS_OUTBOUND_ACTIVATION */
 #define DMRGO_PDU_CSBK_TALKGROUP_DATA_GRANT_MULTI_ITEM ((dmrgo_pdu_csbk_opcode_t)56)
 /* Go: pdu.CSBKTalkgroupVoiceGrant. TV_GRANT */
 #define DMRGO_PDU_CSBK_TALKGROUP_VOICE_GRANT ((dmrgo_pdu_csbk_opcode_t)49)
@@ -7336,9 +7336,9 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: mmdvm.CPUAtmel. The CPU values. */
 #define DMRGO_MMDVM_CPU_ATMEL ((dmrgo_mmdvm_cpu_t)0)
 /* Go: mmdvm.CPUNXP. The CPU values. */
-#define DMRGO_MMDVM_CPUNXP ((dmrgo_mmdvm_cpu_t)1)
+#define DMRGO_MMDVM_CPU_NXP ((dmrgo_mmdvm_cpu_t)1)
 /* Go: mmdvm.CPUST. The CPU values. */
-#define DMRGO_MMDVM_CPUST ((dmrgo_mmdvm_cpu_t)2)
+#define DMRGO_MMDVM_CPU_ST ((dmrgo_mmdvm_cpu_t)2)
 /* Go: mmdvm.CapDMR. The Capabilities bits. */
 #define DMRGO_MMDVM_CAP_DMR ((dmrgo_mmdvm_capabilities_t)2)
 /* Go: mmdvm.CapDStar. The Capabilities bits. */
@@ -7398,7 +7398,7 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: mmdvm.CommandFMData. The Command values of the MMDVM and MMDVM_HS firmware. */
 #define DMRGO_MMDVM_COMMAND_FM_DATA ((dmrgo_mmdvm_command_t)101)
 /* Go: mmdvm.CommandFMEOT. The Command values of the MMDVM and MMDVM_HS firmware. */
-#define DMRGO_MMDVM_COMMAND_FMEOT ((dmrgo_mmdvm_command_t)103)
+#define DMRGO_MMDVM_COMMAND_FM_EOT ((dmrgo_mmdvm_command_t)103)
 /* Go: mmdvm.CommandFMParams1. The Command values of the MMDVM and MMDVM_HS firmware. */
 #define DMRGO_MMDVM_COMMAND_FM_PARAMS1 ((dmrgo_mmdvm_command_t)96)
 /* Go: mmdvm.CommandFMParams2. The Command values of the MMDVM and MMDVM_HS firmware. */
@@ -7408,7 +7408,7 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: mmdvm.CommandFMParams4. The Command values of the MMDVM and MMDVM_HS firmware. */
 #define DMRGO_MMDVM_COMMAND_FM_PARAMS4 ((dmrgo_mmdvm_command_t)99)
 /* Go: mmdvm.CommandFMRSSI. The Command values of the MMDVM and MMDVM_HS firmware. */
-#define DMRGO_MMDVM_COMMAND_FMRSSI ((dmrgo_mmdvm_command_t)104)
+#define DMRGO_MMDVM_COMMAND_FM_RSSI ((dmrgo_mmdvm_command_t)104)
 /* Go: mmdvm.CommandFMStatus. The Command values of the MMDVM and MMDVM_HS firmware. */
 #define DMRGO_MMDVM_COMMAND_FM_STATUS ((dmrgo_mmdvm_command_t)102)
 /* Go: mmdvm.CommandGetStatus. The Command values of the MMDVM and MMDVM_HS firmware. */
@@ -7418,7 +7418,7 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: mmdvm.CommandI2CData. The Command values of the MMDVM and MMDVM_HS firmware. */
 #define DMRGO_MMDVM_COMMAND_I2C_DATA ((dmrgo_mmdvm_command_t)129)
 /* Go: mmdvm.CommandM17EOT. The Command values of the MMDVM and MMDVM_HS firmware. */
-#define DMRGO_MMDVM_COMMAND_M17EOT ((dmrgo_mmdvm_command_t)73)
+#define DMRGO_MMDVM_COMMAND_M17_EOT ((dmrgo_mmdvm_command_t)73)
 /* Go: mmdvm.CommandM17LinkSetup. The Command values of the MMDVM and MMDVM_HS firmware. */
 #define DMRGO_MMDVM_COMMAND_M17_LINK_SETUP ((dmrgo_mmdvm_command_t)69)
 /* Go: mmdvm.CommandM17Lost. The Command values of the MMDVM and MMDVM_HS firmware. */
@@ -7436,7 +7436,7 @@ struct dmrgo_voice_transmitter_config_t {
 /* Go: mmdvm.CommandP25Header. The Command values of the MMDVM and MMDVM_HS firmware. */
 #define DMRGO_MMDVM_COMMAND_P25_HEADER ((dmrgo_mmdvm_command_t)48)
 /* Go: mmdvm.CommandP25LDU. The Command values of the MMDVM and MMDVM_HS firmware. */
-#define DMRGO_MMDVM_COMMAND_P25LDU ((dmrgo_mmdvm_command_t)49)
+#define DMRGO_MMDVM_COMMAND_P25_LDU ((dmrgo_mmdvm_command_t)49)
 /* Go: mmdvm.CommandP25Lost. The Command values of the MMDVM and MMDVM_HS firmware. */
 #define DMRGO_MMDVM_COMMAND_P25_LOST ((dmrgo_mmdvm_command_t)50)
 /* Go: mmdvm.CommandPOCSAGData. The Command values of the MMDVM and MMDVM_HS firmware. */
@@ -8661,7 +8661,7 @@ int dmrgo_layer2_raw_burst_set_slot_type(dmrgo_layer2_raw_burst_t *self, const d
 /* Go: layer2.RawBurst.SetStandaloneRCData. SetStandaloneRCData writes d into the RC bits of a standalone RC burst. */
 int dmrgo_layer2_raw_burst_set_standalone_rc_data(dmrgo_layer2_raw_burst_t *self, const uint8_t d[4]);
 /* Go: layer2.RawBurst.SetStandaloneRCEMB. SetStandaloneRCEMB encodes e into the EMB bits of a standalone RC burst, as SetEMB does, with the errors of SetEMB. */
-int dmrgo_layer2_raw_burst_set_standalone_rcemb(dmrgo_layer2_raw_burst_t *self, const dmrgo_pdu_embedded_signalling_t *e);
+int dmrgo_layer2_raw_burst_set_standalone_rc_emb(dmrgo_layer2_raw_burst_t *self, const dmrgo_pdu_embedded_signalling_t *e);
 /* Go: layer2.RawBurst.SetSync. SetSync writes the SYNC pattern p into burst bits 108 to 155. */
 int dmrgo_layer2_raw_burst_set_sync(dmrgo_layer2_raw_burst_t *self, dmrgo_enums_sync_pattern_t p);
 /* Go: layer2.RawBurst.SetVoiceSlots. SetVoiceSlots writes the three vocoder slots s into the voice bits. */
@@ -8671,7 +8671,7 @@ int dmrgo_layer2_raw_burst_slot_type(const dmrgo_layer2_raw_burst_t *self, dmrgo
 /* Go: layer2.RawBurst.StandaloneRCData. StandaloneRCData returns the 32 FEC coded RC bits of a standalone RC burst, burst bits 92 to 107 and 156 to 171, in the order that DecodeEmbeddedRC takes. */
 int dmrgo_layer2_raw_burst_standalone_rc_data(const dmrgo_layer2_raw_burst_t *self, uint8_t out[4]);
 /* Go: layer2.RawBurst.StandaloneRCEMB. StandaloneRCEMB decodes the EMB of a standalone inbound RC burst, burst bits 84 to 91 and 172 to 179 (ETSI TS 102 361-1 clause 6.4.1, Figure 6.7). */
-int dmrgo_layer2_raw_burst_standalone_rcemb(const dmrgo_layer2_raw_burst_t *self, dmrgo_pdu_embedded_signalling_t *out);
+int dmrgo_layer2_raw_burst_standalone_rc_emb(const dmrgo_layer2_raw_burst_t *self, dmrgo_pdu_embedded_signalling_t *out);
 /* Go: layer2.RawBurst.Sync. Sync returns the SYNC pattern nearest to burst bits 108 to 155 and its Hamming distance, as dmrgo_enums_nearest_sync_pattern does. */
 int dmrgo_layer2_raw_burst_sync(const dmrgo_layer2_raw_burst_t *self, dmrgo_enums_sync_pattern_t *sync_pattern, int64_t *n);
 /* Go: layer2.RawBurst.VoiceSlots. VoiceSlots returns the three 72-bit vocoder slots of a voice burst as they are on air, before any FEC. */
@@ -9296,7 +9296,7 @@ int dmrgo_pdu_full_link_control_encode(const dmrgo_pdu_full_link_control_t *self
 int dmrgo_pdu_full_link_control_service_options(const dmrgo_pdu_full_link_control_t *self, dmrgo_layer3_service_options_t *so, bool *ok);
 /* Go: pdu.FullLinkControl.SetAddresses. SetAddresses sets the target and source addresses of a Grp_V_Ch_Usr or UU_V_Ch_Usr LC of any FID in RawPayload. It returns DMRGO_ERR_PDU_NO_ADDRESSES for other FLCOs and a DMRGO_ERR_FIELD_RANGE when an address does not fit in 24 bits, and then changes nothing. */
 int dmrgo_pdu_full_link_control_set_addresses(dmrgo_pdu_full_link_control_t *self, uint32_t target, uint32_t source);
-/* Go: pdu.FullLinkControl.SetGPSInfo. SetGPSInfo makes s carry p as an FLCGPSInfo payload: it sets FLCO to DMRGO_ENUMS_FLCOGPS_INFO, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.FullLinkControl.SetGPSInfo. SetGPSInfo makes s carry p as an FLCGPSInfo payload: it sets FLCO to DMRGO_ENUMS_FLCO_GPS_INFO, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_full_link_control_set_gps_info(dmrgo_pdu_full_link_control_t *self, const dmrgo_pdu_flc_gps_info_t *p);
 /* Go: pdu.FullLinkControl.SetGroupVoice. SetGroupVoice makes s carry p as an FLCGroupVoice payload: it sets FLCO to DMRGO_ENUMS_FLCO_GROUP_VOICE_CHANNEL_USER, FID to 0 and RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_full_link_control_set_group_voice(dmrgo_pdu_full_link_control_t *self, const dmrgo_pdu_flc_group_voice_t *p);
@@ -9552,11 +9552,11 @@ int dmrgo_pdu_short_lc_as_p_sys_parms(const dmrgo_pdu_short_lc_t *self, dmrgo_pd
 int dmrgo_pdu_short_lc_encode(const dmrgo_pdu_short_lc_t *self, uint8_t out[5]);
 /* Go: pdu.ShortLC.SetActivityUpdate. SetActivityUpdate makes s carry p as a ShortLCActivityUpdate payload: it sets SLCO to DMRGO_ENUMS_SLCO_ACTIVITY_UPDATE and RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_short_lc_set_activity_update(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_activity_update_t *p);
-/* Go: pdu.ShortLC.SetCSysParms. SetCSysParms makes s carry p as a ShortLCCSysParms payload: it sets SLCO to DMRGO_ENUMS_SLCOC_SYS_PARMS and RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.ShortLC.SetCSysParms. SetCSysParms makes s carry p as a ShortLCCSysParms payload: it sets SLCO to DMRGO_ENUMS_SLCO_C_SYS_PARMS and RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_short_lc_set_c_sys_parms(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_c_sys_parms_t *p);
 /* Go: pdu.ShortLC.SetNullMessage. SetNullMessage makes s carry p as a ShortLCNullMessage payload: it sets SLCO to DMRGO_ENUMS_SLCO_NULL_MESSAGE and RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_short_lc_set_null_message(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_null_message_t *p);
-/* Go: pdu.ShortLC.SetPSysParms. SetPSysParms makes s carry p as a ShortLCPSysParms payload: it sets SLCO to DMRGO_ENUMS_SLCOP_SYS_PARMS and RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+/* Go: pdu.ShortLC.SetPSysParms. SetPSysParms makes s carry p as a ShortLCPSysParms payload: it sets SLCO to DMRGO_ENUMS_SLCO_P_SYS_PARMS and RawPayload, and keeps FEC. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
 int dmrgo_pdu_short_lc_set_p_sys_parms(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_p_sys_parms_t *p);
 /* Go: pdu.ShortLC.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_short_lc_string(const dmrgo_pdu_short_lc_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -10626,9 +10626,9 @@ int dmrgo_trunk_appended_set_mixed(dmrgo_trunk_appended_t *self, bool one_key, u
 int dmrgo_trunk_appended_set_nmea_long(dmrgo_trunk_appended_t *self, const dmrgo_trunk_nmea_long_t *n);
 /* Go: trunk.Appended.SetNMEAShort. SetNMEAShort sets a to the Short NMEA format of n in one block. It returns the errors of dmrgo_trunk_nmea_short_encode, and DMRGO_ERR_NIL_ARGUMENT for a NULL n. n may be NULL. */
 int dmrgo_trunk_appended_set_nmea_short(dmrgo_trunk_appended_t *self, const dmrgo_trunk_nmea_short_t *n);
-/* Go: trunk.Appended.SetText. SetText sets a to the UTF-8 text in the format f: DMRGO_ENUMS_UDTISO7 (up to 52 characters of ISO/IEC 646), DMRGO_ENUMS_UDTISO8 (up to 46 characters of ISO/IEC 8859-1) or DMRGO_ENUMS_UDTUTF16BE (up to 23 UTF-16 code units). It returns DMRGO_ERR_TRUNK_UDT_FORMAT for another format, DMRGO_ERR_TRUNK_UDT_LENGTH for an empty or a too long text, and DMRGO_ERR_TRUNK_UDT_CHARACTER for a character that the format cannot hold. */
+/* Go: trunk.Appended.SetText. SetText sets a to the UTF-8 text in the format f: DMRGO_ENUMS_UDT_ISO7 (up to 52 characters of ISO/IEC 646), DMRGO_ENUMS_UDT_ISO8 (up to 46 characters of ISO/IEC 8859-1) or DMRGO_ENUMS_UDT_UTF16BE (up to 23 UTF-16 code units). It returns DMRGO_ERR_TRUNK_UDT_FORMAT for another format, DMRGO_ERR_TRUNK_UDT_LENGTH for an empty or a too long text, and DMRGO_ERR_TRUNK_UDT_CHARACTER for a character that the format cannot hold. */
 int dmrgo_trunk_appended_set_text(dmrgo_trunk_appended_t *self, dmrgo_enums_udt_format_t f, const uint8_t *text, size_t text_len);
-/* Go: trunk.Appended.Text. Text appends the text of a to dst as UTF-8 and returns dst, for the formats DMRGO_ENUMS_UDTISO7, DMRGO_ENUMS_UDTISO8 (read as ISO/IEC 8859-1), DMRGO_ENUMS_UDTUTF16BE and DMRGO_ENUMS_UDT_MIXED (the text after the address). It returns DMRGO_ERR_TRUNK_UDT_FORMAT for another format and DMRGO_ERR_TRUNK_UDT_LENGTH for a PadNibble over the size of the blocks. */
+/* Go: trunk.Appended.Text. Text appends the text of a to dst as UTF-8 and returns dst, for the formats DMRGO_ENUMS_UDT_ISO7, DMRGO_ENUMS_UDT_ISO8 (read as ISO/IEC 8859-1), DMRGO_ENUMS_UDT_UTF16BE and DMRGO_ENUMS_UDT_MIXED (the text after the address). It returns DMRGO_ERR_TRUNK_UDT_FORMAT for another format and DMRGO_ERR_TRUNK_UDT_LENGTH for a PadNibble over the size of the blocks. */
 int dmrgo_trunk_appended_text(const dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_trunk_authenticator_free frees the handle. self may be NULL. */
 int dmrgo_trunk_authenticator_free(dmrgo_trunk_authenticator_t *self);

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
@@ -49,6 +50,7 @@ func TestGenerated(t *testing.T) {
 		t.Errorf("dmrgo_gen.h comments name Go identifiers: %q", m)
 	}
 	checkDocRefs(t, out)
+	checkWordSplits(t, out)
 	protoDoc := regexp.MustCompile(`(?m)^/\* Go: .*\*/\nint dmrgo_`)
 	goErr := regexp.MustCompile(`\bErr[A-Z]\w*`)
 	for _, d := range protoDoc.FindAll(out.H, -1) {
@@ -173,5 +175,48 @@ func checkGoWords(t *testing.T, out *capigen.Output, comments [][]byte) {
 	}
 	if len(nilBad) > 0 {
 		t.Errorf("dmrgo_gen.h has %d comments that say nil, which C calls NULL, such as %q", len(nilBad), nilBad[:min(len(nilBad), 3)])
+	}
+}
+
+func checkWordSplits(t *testing.T, out *capigen.Output) {
+	t.Helper()
+	single := map[string]bool{"allmsi": true, "msid": true, "tsccas": true}
+	vocab := map[string]bool{}
+	for _, n := range regexp.MustCompile(`\b(?:dmrgo|DMRGO)_\w+`).FindAll(out.H, -1) {
+		for _, w := range strings.Split(strings.ToLower(string(n)), "_") {
+			vocab[w] = true
+		}
+	}
+	known := func(w string) bool {
+		return vocab[w] || vocab[strings.TrimRight(w, "0123456789")]
+	}
+	split := func(w string) bool {
+		for i := 2; i <= len(w)-2; i++ {
+			if b := w[i:]; vocab[w[:i]] && b[0] >= 'a' && b[0] <= 'z' && known(b) {
+				return true
+			}
+		}
+		return false
+	}
+	caps := regexp.MustCompile(`[A-Z][A-Z0-9]{3,}`)
+	var bad []string
+	for _, e := range out.Exports {
+		var runs []string
+		for _, r := range caps.FindAllString(e.Go[strings.LastIndex(e.Go, ".")+1:], -1) {
+			runs = append(runs, strings.ToLower(r))
+		}
+		for _, c := range e.C {
+			for _, w := range strings.FieldsFunc(strings.ToLower(c), func(r rune) bool { return (r < 'a' || r > 'z') && (r < '0' || r > '9') }) {
+				if len(w) >= 4 && !single[w] && slices.ContainsFunc(runs, func(r string) bool { return strings.Contains(r, w) }) && split(w) {
+					bad = append(bad, c)
+					break
+				}
+			}
+		}
+	}
+	slices.Sort(bad)
+	bad = slices.Compact(bad)
+	if len(bad) > 0 {
+		t.Errorf("dmrgo_gen.h has %d names with two words run together, such as %q", len(bad), bad[:min(len(bad), 20)])
 	}
 }
