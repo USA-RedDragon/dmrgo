@@ -192,6 +192,11 @@ func TestErrors(t *testing.T) {
 	if b, err := sms.AppendPacket([]byte("x"), &sms.Text{Format: sms.FormatDefinedData, DD: enums.DDBinary, Body: []byte("1")}, &h); !errors.Is(err, sms.ErrFormat) || string(b) != "x" {
 		t.Errorf("binary text built: %q, %v", b, err)
 	}
+	for _, body := range []string{"", "\x00", "\x00A", "A\x00B"} {
+		if b, err := sms.AppendPacket([]byte("x"), &sms.Text{Format: sms.FormatHytera, Body: []byte(body)}, &h); !errors.Is(err, sms.ErrFormat) || string(b) != "x" {
+			t.Errorf("Hytera %q built: %x, %v", body, b, err)
+		}
+	}
 	bin := setHeader(t, (*pdu.DataHeader).SetDefinedData, pdu.DefinedDataHeader{DefinedData: enums.DDBinary})
 	if _, _, err := sms.Decode(nil, &bin, []byte("Hi")); !errors.Is(err, sms.ErrNotText) {
 		t.Errorf("binary: %v", err)

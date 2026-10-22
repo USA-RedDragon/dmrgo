@@ -82,6 +82,9 @@ func fuzzDecode(t *testing.T, defined bool, code uint8, raw []byte, from, to uin
 	if errors.Is(err, shortdata.ErrCharacter) && bytes.ContainsRune(got.Body, utf8.RuneError) {
 		return
 	}
+	if errors.Is(err, sms.ErrFormat) && len(got.Body) == 0 && got.Format == sms.FormatHytera {
+		return
+	}
 	if err != nil {
 		t.Fatalf("AppendPacket(%+v): %v", got, err)
 	}
