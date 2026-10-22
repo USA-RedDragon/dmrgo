@@ -123,7 +123,22 @@ func validateEncoding(f *Field) error {
 	if err := validateModifierKinds(f); err != nil {
 		return err
 	}
+	if err := validateRange(f); err != nil {
+		return err
+	}
 	return validateDigits(f)
+}
+
+func validateRange(f *Field) error {
+	integer := f.Kind == FieldUint || f.Kind == FieldInt || f.Kind == FieldEnum
+	switch {
+	case !f.HasRange:
+	case !integer || f.Encoding != EncodingBits || f.Bias != 0 || f.Signed:
+		return errors.New("min and max require an unsigned integer field without le, dec, hex or bias")
+	case f.Min > f.Max:
+		return errors.New("min is above max")
+	}
+	return nil
 }
 
 func validateModifierKinds(f *Field) error {
@@ -203,14 +218,21 @@ func validateLayout(pdu *PDUStruct, maxBit int) error {
 			return errors.New("dmr:magic requires dmr:frame or dmr:view")
 		}
 		for _, f := range pdu.Fields {
-			if f.Encoding != EncodingBits || f.Bias != 0 || f.Swap16 || f.Text {
-				return fmt.Errorf("field %s: le, dec, hex, bias, swap16 and text require dmr:frame or dmr:view", f.Name)
+			if f.Encoding != EncodingBits || f.Bias != 0 || f.Swap16 || f.Text || f.HasRange {
+				return fmt.Errorf("field %s: le, dec, hex, bias, min, max, swap16 and text require dmr:frame or dmr:view", f.Name)
 			}
 		}
 		return nil
 	}
 	if pdu.Frame != nil && pdu.View != nil {
 		return errors.New("dmr:frame and dmr:view cannot be combined")
+	}
+	if pdu.View != nil {
+		for _, f := range pdu.Fields {
+			if f.HasRange {
+				return fmt.Errorf("field %s: min and max require dmr:frame", f.Name)
+			}
+		}
 	}
 	switch {
 	case pdu.FEC != nil, pdu.CRC != nil, pdu.FECMask != nil:

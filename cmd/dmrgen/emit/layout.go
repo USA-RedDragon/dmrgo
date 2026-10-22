@@ -104,7 +104,34 @@ func minSize(pdu parse.PDUStruct, f parse.Field) int {
 	return pdu.Frame.Sizes[len(pdu.Frame.Sizes)-1]
 }
 
-func emitFrameDecode(f *File, pdu parse.PDUStruct) {
+func rangeText(pdu parse.PDUStruct) string {
+	var parts []string
+	for _, f := range pdu.Fields {
+		if f.Skip || f.NoEncode || !f.HasRange {
+			continue
+		}
+		sep := " to "
+		if f.Max == f.Min+1 {
+			sep = " or "
+		}
+		parts = append(parts, f.Name+" is not "+strconv.FormatUint(f.Min, 10)+sep+strconv.FormatUint(f.Max, 10))
+	}
+	return strings.Join(parts, " or ")
+}
+
+func rangeCond(field parse.Field, v *Statement) *Statement {
+	hi := Uint64().Call(v.Clone()).Op(">").Id(strconv.FormatUint(field.Max, 10))
+	if field.Min == 0 {
+		return hi
+	}
+	return Uint64().Call(v.Clone()).Op("<").Id(strconv.FormatUint(field.Min, 10)).Op("||").Add(hi)
+}
+
+func fieldRangeErr(ev *errVars, pdu parse.PDUStruct, field parse.Field) Code {
+	return rangeErr(ev, pdu, field, Lit(float64(field.Min)), Lit(float64(field.Max)))
+}
+
+func emitFrameDecode(f *File, pdu parse.PDUStruct, ev *errVars) {
 	sizes := pdu.Frame.Sizes
 	name := pdu.DecodeFuncName(pdu.Name)
 	doc := name + " decodes " + docObject(pdu)
@@ -134,6 +161,9 @@ func emitFrameDecode(f *File, pdu parse.PDUStruct) {
 	}
 	if hasTextEncoding(pdu) {
 		conds = append(conds, errText+" when a text number holds a character that is not a digit")
+	}
+	if r := rangeText(pdu); r != "" {
+		conds = append(conds, "a *dmrgo.FieldRangeError when "+r)
 	}
 	if len(conds) == 1 {
 		doc += conds[0] + "."
@@ -197,15 +227,21 @@ func emitFrameDecode(f *File, pdu parse.PDUStruct) {
 		}
 		fail := func() *Statement { return Return(zero, Id(errText)) }
 		for _, grp := range sizeGroups(pdu) {
+			dec := func(b *Group, field parse.Field) {
+				emitLayoutFieldDecode(b, field, pdu, fail)
+				if field.HasRange {
+					b.If(rangeCond(field, Id("result").Dot(field.Name))).Block(Return(zero, fieldRangeErr(ev, pdu, field)))
+				}
+			}
 			if grp.size == 0 {
 				for _, field := range grp.fields {
-					emitLayoutFieldDecode(g, field, pdu, fail)
+					dec(g, field)
 				}
 				continue
 			}
 			g.If(Len(Id("data")).Op(">=").Lit(grp.size)).BlockFunc(func(b *Group) {
 				for _, field := range grp.fields {
-					emitLayoutFieldDecode(b, field, pdu, fail)
+					dec(b, field)
 				}
 			})
 		}
@@ -367,6 +403,9 @@ func emitFrameEncode(f *File, pdu parse.PDUStruct, ev *errVars) {
 
 func (e encoder) layoutField(g *Group, field parse.Field) {
 	source := Id("s").Dot(field.Name)
+	if field.HasRange {
+		g.If(rangeCond(field, source)).Block(e.fail(fieldRangeErr(e.errs, e.pdu, field)))
+	}
 	switch {
 	case field.Kind == parse.FieldPacked && field.Encoding == parse.EncodingHex:
 		a := field.BitStart / 8

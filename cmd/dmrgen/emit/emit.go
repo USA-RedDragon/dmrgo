@@ -162,7 +162,7 @@ func GenerateFile(pdus []parse.PDUStruct, pkgName string) (*File, error) {
 			f.Line()
 			continue
 		case pdu.Frame != nil:
-			emitFrameDecode(f, pdu)
+			emitFrameDecode(f, pdu, ev)
 			f.Line()
 			emitFrameEncode(f, pdu, ev)
 			f.Line()
@@ -1007,9 +1007,13 @@ func (e encoder) fail(err Code) *Statement {
 }
 
 func (e encoder) failRange(field parse.Field, lo, hi Code) *Statement {
+	return e.fail(rangeErr(e.errs, e.pdu, field, lo, hi))
+}
+
+func rangeErr(ev *errVars, pdu parse.PDUStruct, field parse.Field, lo, hi Code) Code {
 	signed := field.Signed || field.Kind == parse.FieldLongitude || field.Kind == parse.FieldLatitude
 	values := Dict{
-		Id("Type"):  Lit(e.pdu.Name),
+		Id("Type"):  Lit(pdu.Name),
 		Id("Field"): Lit(field.Name),
 		Id("Bits"):  Lit(field.BitWidth),
 	}
@@ -1020,7 +1024,7 @@ func (e encoder) failRange(field parse.Field, lo, hi Code) *Statement {
 		values[Id("Min")], values[Id("Max")] = lo, hi
 	}
 	def := Op("&").Qual(rootPkg, "FieldRangeError").Values(values)
-	return e.fail(e.errs.get("err"+e.pdu.Name+field.Name+"Range", def))
+	return ev.get("err"+pdu.Name+field.Name+"Range", def)
 }
 
 func (e encoder) fields(g *Group) {
@@ -1161,7 +1165,7 @@ func (e encoder) integer(g *Group, field parse.Field) {
 		g.If(Int64().Call(source.Clone()).Op("<").Lit(lo).Op("||").Int64().Call(source.Clone()).Op(">").Lit(hi)).Block(
 			e.failRange(field, nil, nil),
 		)
-	case needsRangeCheck(field):
+	case needsRangeCheck(field) && (!field.HasRange || field.Max>>w != 0):
 		g.If(Uint64().Call(source.Clone()).Op(">>").Lit(w).Op("!=").Lit(0)).Block(
 			e.failRange(field, nil, nil),
 		)

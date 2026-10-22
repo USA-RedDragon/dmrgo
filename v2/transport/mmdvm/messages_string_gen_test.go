@@ -80,15 +80,6 @@ func TestNakStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*Nak).String, (*Nak).fmtString)
 }
 
-func (s *DMRStart) fmtString() string {
-	return fmt.Sprintf("DMRStart{ TX: %t }", s.TX)
-}
-
-func TestDMRStartStringMatchesFmt(t *testing.T) {
-	t.Parallel()
-	texttest.Check(t, (*DMRStart).String, (*DMRStart).fmtString)
-}
-
 func (s *DMRAbort) fmtString() string {
 	return fmt.Sprintf("DMRAbort{ Slot: %v }", s.Slot)
 }

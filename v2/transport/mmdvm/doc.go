@@ -13,7 +13,9 @@
 // Frame.
 //
 // Decode functions never allocate and never panic. They return the static
-// errors ErrShort, ErrLength and ErrCommand, which errors.Is matches.
+// errors ErrShort, ErrLength and ErrCommand, which errors.Is matches, and a
+// static *dmrgo.FieldRangeError for a field value that the firmware NAKs,
+// such as a color code above 15.
 //
 // (MMDVMHost 9384d68 Modem.cpp; MMDVM 046e1df SerialPort.cpp, DMRSlotRX.cpp,
 // DMRIdleRX.cpp and DMRTX.cpp; MMDVM_HS bf66faf SerialPort.cpp)

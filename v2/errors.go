@@ -22,9 +22,10 @@ var ErrZeroValue = errors.New("dmrgo: zero value; make it with its constructor")
 
 // FieldRangeError is the error of an encoder or setter when a field value
 // does not fit in its on-air bits, when a padding bit of a packed field is
-// set, or for a coordinate when it is outside [Min, Max]. Each field has one
-// static FieldRangeError, so a call that fails does not allocate; it does
-// not hold the value that failed.
+// set, or for a coordinate or a narrowed integer when it is outside [Min,
+// Max]. The mmdvm decoders also return it for a value that the modem
+// firmware refuses. Each field has one static FieldRangeError, so a call
+// that fails does not allocate; it does not hold the value that failed.
 type FieldRangeError struct {
 	// Type and Field name the PDU type and its field, such as
 	// "FLCGroupVoice" and "GroupAddress". For a value that a method takes,
@@ -36,8 +37,9 @@ type FieldRangeError struct {
 	Bits int
 	// Signed is true for a two's complement field.
 	Signed bool
-	// Min and Max are the range of a coordinate field; both are 0 for an
-	// integer field.
+	// Min and Max are the range of a coordinate field, or of an integer
+	// field that takes fewer values than its bits hold; both are 0 for
+	// another field.
 	Min, Max float64
 }
 

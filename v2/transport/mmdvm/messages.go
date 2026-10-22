@@ -1,6 +1,10 @@
 package mmdvm
 
-import "github.com/USA-RedDragon/dmrgo/v2/enums"
+import (
+	"github.com/USA-RedDragon/dmrgo/v2"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
+)
 
 // StatusV2 is the payload of a CommandGetStatus reply of protocol 2 (MMDVM
 // firmware): the modem state, its flags and the free space of each TX
@@ -117,7 +121,9 @@ type StatusV1 struct {
 
 // ConfigV2 is the payload of a CommandSetConfig frame of protocol 2, as
 // MMDVMHost setConfig2 writes it and the MMDVM firmware reads it. Levels
-// are 0 to 255 for 0 to 100 percent.
+// are 0 to 255 for 0 to 100 percent. The firmware NAKs a TXDelay above 50
+// or a DMRColorCode above 15 (MMDVM 046e1df SerialPort.cpp lines 378 to 380
+// and 471 to 473).
 //
 //dmr:frame 37+
 //dmr:payload
@@ -160,7 +166,7 @@ type ConfigV2 struct {
 	// POCSAG enables POCSAG.
 	POCSAG bool `dmr:"bit:23"`
 	// TXDelay is the TX delay in units of 10 ms, at most 50.
-	TXDelay uint8 `dmr:"bits:24-31"`
+	TXDelay uint8 `dmr:"bits:24-31,max:50"`
 	// State is the state to start in, ModeIdle from MMDVMHost.
 	State Mode `dmr:"bits:32-39"`
 	// TXDCOffset is the TX DC offset plus 128.
@@ -194,7 +200,7 @@ type ConfigV2 struct {
 	// DMRTrunking makes the modem a DMR Tier III control channel.
 	DMRTrunking bool `dmr:"bit:200"`
 	// DMRColorCode is the DMR color code, 0 to 15.
-	DMRColorCode enums.ColorCode `dmr:"bits:208-215"`
+	DMRColorCode enums.ColorCode `dmr:"bits:208-215,max:15"`
 	// DMRDelay is the DMR delay in symbols.
 	DMRDelay uint8 `dmr:"bits:216-223"`
 	// OscOffset is 128; the field was the oscillator offset.
@@ -204,7 +210,9 @@ type ConfigV2 struct {
 // ConfigV1 is the payload of a CommandSetConfig frame of protocol 1, as
 // MMDVMHost setConfig1 writes it and the MMDVM_HS firmware reads it.
 // Levels are 0 to 255 for 0 to 100 percent. MMDVMCal cf37046 sends one
-// octet more, which the firmware and DecodeConfigV1 ignore.
+// octet more, which the firmware and DecodeConfigV1 ignore. The firmware
+// NAKs a TXDelay above 50 or a DMRColorCode above 15 (MMDVM_HS bf66faf
+// SerialPort.cpp lines 258 to 260 and 281 to 283).
 //
 //dmr:frame 23+
 //dmr:payload
@@ -239,8 +247,8 @@ type ConfigV1 struct {
 	DMR bool `dmr:"bit:14"`
 	// DStar enables D-Star.
 	DStar bool `dmr:"bit:15"`
-	// TXDelay is the TX delay in units of 10 ms.
-	TXDelay uint8 `dmr:"bits:16-23"`
+	// TXDelay is the TX delay in units of 10 ms, at most 50.
+	TXDelay uint8 `dmr:"bits:16-23,max:50"`
 	// State is the state to start in, ModeIdle from MMDVMHost.
 	State Mode `dmr:"bits:24-31"`
 	// RXLevel is the RX level.
@@ -248,7 +256,7 @@ type ConfigV1 struct {
 	// CWIDTXLevel is the CW ID TX level.
 	CWIDTXLevel uint8 `dmr:"bits:40-47"`
 	// DMRColorCode is the DMR color code, 0 to 15.
-	DMRColorCode enums.ColorCode `dmr:"bits:48-55"`
+	DMRColorCode enums.ColorCode `dmr:"bits:48-55,max:15"`
 	// DMRDelay is the DMR delay in symbols.
 	DMRDelay uint8 `dmr:"bits:56-63"`
 	// OscOffset is 128; the field was the oscillator offset.
@@ -339,24 +347,61 @@ type Nak struct {
 }
 
 // DMRStart is the payload of a CommandDMRStart frame: it starts or stops
-// the duplex transmitter.
-//
-//dmr:frame 1
-//dmr:payload
-//dmr:const 0-6=0
+// the duplex transmitter. The octet is 0x01 to start and 0x00 to stop; the
+// firmware NAKs another value (MMDVM 046e1df SerialPort.cpp lines 1098 to
+// 1117, MMDVM_HS bf66faf SerialPort.cpp lines 769 to 790).
 type DMRStart struct {
 	// TX starts the transmitter; false stops it.
-	TX bool `dmr:"bit:7"`
+	TX bool
+}
+
+// DecodeDMRStart decodes a DMRStart from data, a payload of 1 octet. It
+// returns ErrShort when data is shorter than 1 octet, ErrLength when it is
+// longer and a *dmrgo.FieldRangeError when the octet is not 0x00 or 0x01.
+// It does not keep data.
+func DecodeDMRStart(data []byte) (DMRStart, error) {
+	switch {
+	case len(data) < 1:
+		return DMRStart{}, ErrShort
+	case len(data) != 1:
+		return DMRStart{}, ErrLength
+	case data[0] > 1:
+		return DMRStart{}, errDMRStartTXRange
+	}
+	return DMRStart{TX: data[0] == 1}, nil
+}
+
+// AppendBinary appends the 1 octet of s to dst. It allocates only to grow
+// dst.
+func (s *DMRStart) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+	if s.TX {
+		return append(dst, 1), nil
+	}
+	return append(dst, 0), nil
+}
+
+// String returns the fields of s as text, for printing. It allocates the
+// string.
+func (s *DMRStart) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+	return "DMRStart{ TX: " + text.Bool(s.TX) + " }"
 }
 
 // DMRAbort is the payload of a CommandDMRAbort frame: it drops the queued
-// bursts of one slot.
+// bursts of one slot. The firmware NAKs a slot other than 1 or 2 (MMDVM
+// 046e1df DMRTX.cpp lines 242 to 261, MMDVM_HS bf66faf DMRTX.cpp lines 189
+// to 206).
 //
 //dmr:frame 1
 //dmr:payload
 type DMRAbort struct {
 	// Slot is the slot, Slot1 (1) or Slot2 (2).
-	Slot enums.Slot `dmr:"bits:0-7,enum"`
+	Slot enums.Slot `dmr:"bits:0-7,enum,min:1,max:2"`
 }
 
 // DMRShortLC is the payload of a CommandDMRShortLC frame: the Short LC that

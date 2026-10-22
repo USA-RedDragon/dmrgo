@@ -38,7 +38,7 @@ typedef int64_t dmrgo_duration_t;
 
 /* Go: dmrgo.ConfigError. ConfigError is the error of a constructor, and of a machine method that takes a config, option or argument field, for a field with a value out of range. */
 typedef struct dmrgo_config_error_t dmrgo_config_error_t;
-/* Go: dmrgo.FieldRangeError. FieldRangeError is the error of an encoder or setter when a field value does not fit in its on-air bits, when a padding bit of a packed field is set, or for a coordinate when it is outside [Min, Max]. */
+/* Go: dmrgo.FieldRangeError. FieldRangeError is the error of an encoder or setter when a field value does not fit in its on-air bits, when a padding bit of a packed field is set, or for a coordinate or a narrowed integer when it is outside [Min, Max]. */
 typedef struct dmrgo_field_range_error_t dmrgo_field_range_error_t;
 /* Go: bs.CACH. CACH makes the CACH field that goes before each outbound burst: the TACT with the TC bit, the AT bit and the LCSS, and one fragment of a Short LC. */
 typedef struct dmrgo_bs_cach_t dmrgo_bs_cach_t;
@@ -958,9 +958,9 @@ struct dmrgo_field_range_error_t {
 	int64_t bits;
 	/* Signed is true for a two's complement field. */
 	bool signed_;
-	/* Min and Max are the range of a coordinate field; both are 0 for an integer field. */
+	/* Min and Max are the range of a coordinate field, or of an integer field that takes fewer values than its bits hold; both are 0 for another field. */
 	double min;
-	/* Min and Max are the range of a coordinate field; both are 0 for an integer field. */
+	/* Min and Max are the range of a coordinate field, or of an integer field that takes fewer values than its bits hold; both are 0 for another field. */
 	double max;
 };
 
@@ -4345,7 +4345,7 @@ struct dmrgo_mmdvm_config_v1_t {
 	bool dmr;
 	/* DStar enables D-Star. */
 	bool d_star;
-	/* TXDelay is the TX delay in units of 10 ms. */
+	/* TXDelay is the TX delay in units of 10 ms, at most 50. */
 	uint8_t tx_delay;
 	/* State is the state to start in, DMRGO_MMDVM_MODE_IDLE from MMDVMHost. */
 	dmrgo_mmdvm_mode_t state;
@@ -10520,7 +10520,7 @@ int dmrgo_mmdvm_dmr_short_lc_append_binary(const dmrgo_mmdvm_dmr_short_lc_t *sel
 int dmrgo_mmdvm_dmr_short_lc_short_lc(const dmrgo_mmdvm_dmr_short_lc_t *self, dmrgo_pdu_short_lc_t *out);
 /* Go: mmdvm.DMRShortLC.String. String returns the fields of s as text, for printing. */
 int dmrgo_mmdvm_dmr_short_lc_string(const dmrgo_mmdvm_dmr_short_lc_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: mmdvm.DMRStart.AppendBinary. AppendBinary appends the 1 octet of s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit. */
+/* Go: mmdvm.DMRStart.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
 int dmrgo_mmdvm_dmr_start_append_binary(const dmrgo_mmdvm_dmr_start_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.DMRStart.String. String returns the fields of s as text, for printing. */
 int dmrgo_mmdvm_dmr_start_string(const dmrgo_mmdvm_dmr_start_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -10530,11 +10530,11 @@ int dmrgo_mmdvm_debug_append_binary(const dmrgo_mmdvm_debug_t *self, uint8_t *ds
 int dmrgo_mmdvm_debug_count(const dmrgo_mmdvm_debug_t *self, int64_t *out);
 /* Go: mmdvm.DecodeAck. DecodeAck decodes an Ack from data, a payload of 1 octet. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 1 octet and DMRGO_ERR_MMDVM_LENGTH when it is longer. */
 int dmrgo_mmdvm_decode_ack(const uint8_t *data, size_t data_len, dmrgo_mmdvm_ack_t *out);
-/* Go: mmdvm.DecodeConfigV1. DecodeConfigV1 decodes a ConfigV1 from data, a payload of 23 octets or more. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 23 octets. */
+/* Go: mmdvm.DecodeConfigV1. DecodeConfigV1 decodes a ConfigV1 from data, a payload of 23 octets or more. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 23 octets and a DMRGO_ERR_FIELD_RANGE when TXDelay is not 0 to 50 or DMRColorCode is not 0 to 15. */
 int dmrgo_mmdvm_decode_config_v1(const uint8_t *data, size_t data_len, dmrgo_mmdvm_config_v1_t *out);
-/* Go: mmdvm.DecodeConfigV2. DecodeConfigV2 decodes a ConfigV2 from data, a payload of 37 octets or more. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 37 octets. */
+/* Go: mmdvm.DecodeConfigV2. DecodeConfigV2 decodes a ConfigV2 from data, a payload of 37 octets or more. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 37 octets and a DMRGO_ERR_FIELD_RANGE when TXDelay is not 0 to 50 or DMRColorCode is not 0 to 15. */
 int dmrgo_mmdvm_decode_config_v2(const uint8_t *data, size_t data_len, dmrgo_mmdvm_config_v2_t *out);
-/* Go: mmdvm.DecodeDMRAbort. DecodeDMRAbort decodes a DMRAbort from data, a payload of 1 octet. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 1 octet and DMRGO_ERR_MMDVM_LENGTH when it is longer. */
+/* Go: mmdvm.DecodeDMRAbort. DecodeDMRAbort decodes a DMRAbort from data, a payload of 1 octet. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 1 octet, DMRGO_ERR_MMDVM_LENGTH when it is longer and a DMRGO_ERR_FIELD_RANGE when Slot is not 1 or 2. */
 int dmrgo_mmdvm_decode_dmr_abort(const uint8_t *data, size_t data_len, dmrgo_mmdvm_dmr_abort_t *out);
 /* Go: mmdvm.DecodeDMRAloha. DecodeDMRAloha decodes a DMRAloha from data, a payload of 33 octets. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 33 octets and DMRGO_ERR_MMDVM_LENGTH when it is longer. */
 int dmrgo_mmdvm_decode_dmr_aloha(const uint8_t *data, size_t data_len, dmrgo_mmdvm_dmr_aloha_t *out);
@@ -10542,7 +10542,7 @@ int dmrgo_mmdvm_decode_dmr_aloha(const uint8_t *data, size_t data_len, dmrgo_mmd
 int dmrgo_mmdvm_decode_dmr_data(const dmrgo_mmdvm_frame_t *f, dmrgo_mmdvm_dmr_data_t *out);
 /* Go: mmdvm.DecodeDMRShortLC. DecodeDMRShortLC decodes a DMRShortLC from data, a payload of 9 octets. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 9 octets and DMRGO_ERR_MMDVM_LENGTH when it is longer. */
 int dmrgo_mmdvm_decode_dmr_short_lc(const uint8_t *data, size_t data_len, dmrgo_mmdvm_dmr_short_lc_t *out);
-/* Go: mmdvm.DecodeDMRStart. DecodeDMRStart decodes a DMRStart from data, a payload of 1 octet. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 1 octet and DMRGO_ERR_MMDVM_LENGTH when it is longer. */
+/* Go: mmdvm.DecodeDMRStart. DecodeDMRStart decodes a DMRStart from data, a payload of 1 octet. It returns DMRGO_ERR_MMDVM_SHORT when data is shorter than 1 octet, DMRGO_ERR_MMDVM_LENGTH when it is longer and a DMRGO_ERR_FIELD_RANGE when the octet is not 0x00 or 0x01. */
 int dmrgo_mmdvm_decode_dmr_start(const uint8_t *data, size_t data_len, dmrgo_mmdvm_dmr_start_t *out);
 /* Go: mmdvm.DecodeDebug. DecodeDebug decodes a debug frame. It returns DMRGO_ERR_MMDVM_COMMAND for another command, and DMRGO_ERR_MMDVM_SHORT for a payload shorter than its numbers. */
 int dmrgo_mmdvm_decode_debug(const dmrgo_mmdvm_frame_t *f, dmrgo_mmdvm_debug_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);

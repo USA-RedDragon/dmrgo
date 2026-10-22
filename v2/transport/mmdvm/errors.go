@@ -1,6 +1,10 @@
 package mmdvm
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/USA-RedDragon/dmrgo/v2"
+)
 
 // Errors of the decoders. Each is a static value, so a decode that fails
 // does not allocate. Match them with errors.Is.
@@ -21,4 +25,6 @@ var (
 	errHintVoice    = errors.New("mmdvm: SetHint: voice position is not A to F")
 	errHintData     = errors.New("mmdvm: SetHint: no data type, or it does not fit in 4 bits")
 	errHintKind     = errors.New("mmdvm: SetHint: kind is not KindVoice or KindData")
+
+	errDMRStartTXRange = &dmrgo.FieldRangeError{Type: "DMRStart", Field: "TX", Bits: 8, Min: 0, Max: 1}
 )
