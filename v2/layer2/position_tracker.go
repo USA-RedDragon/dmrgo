@@ -226,7 +226,7 @@ func (t *PositionTracker) place(c cue, h *Hint, steps int) (lost int, p Placemen
 		t.known, t.header = false, false
 	}
 	idx := t.position(c, steps, gap > 0)
-	missedA := gap > 0 && t.known && idx == 1 && (int(t.pos)+steps)%VoiceBurstsPerSuperframe == 0
+	missedA := gap > 0 && t.known && (t.anchored || !t.started) && idx == 1 && (int(t.pos)+steps)%VoiceBurstsPerSuperframe == 0
 	switch {
 	case gap > 0 && missedA:
 		lost = gap
