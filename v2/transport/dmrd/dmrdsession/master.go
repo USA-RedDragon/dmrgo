@@ -4,12 +4,10 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
+	"github.com/USA-RedDragon/dmrgo/v2/internal/digest"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
 )
-
-// MaxPassword is the longest password in octets that Master.Admit keeps.
-const MaxPassword = 128
 
 // MasterConfig configures NewMaster.
 type MasterConfig struct {
@@ -39,8 +37,7 @@ type Master struct {
 	state     State
 	id        uint32
 	salt      uint32
-	pass      [MaxPassword]byte
-	passLen   int
+	tok       [32]byte
 	timeoutAt time.Duration
 	noCopy    noCopy
 }
@@ -93,7 +90,7 @@ func (m *Master) Reset() {
 		return
 	}
 
-	m.state, m.id, m.salt, m.passLen = StateIdle, 0, 0, 0
+	m.state, m.id, m.salt, m.tok = StateIdle, 0, 0, [32]byte{}
 }
 
 // Deadline returns the time at which the Master needs a Tick. ok is false
@@ -146,13 +143,13 @@ func (m *Master) Resume(now time.Duration, id uint32, dst []Output) []Output {
 	if m.state != StateIdle {
 		dst = m.down(dst, ReasonLogin)
 	}
-	m.id, m.state, m.passLen, m.timeoutAt = id, StateRunning, 0, after(now, m.timeout)
+	m.id, m.state, m.tok, m.timeoutAt = id, StateRunning, [32]byte{}, after(now, m.timeout)
 	return append(dst, Output{Kind: OutputUp, ID: id})
 }
 
 // Admit answers the RPTL of OutputLogin with the salt, which the caller
-// draws at random, and keeps the password of the repeater, of which it
-// uses at most MaxPassword octets, to check the RPTK. It does nothing in
+// draws at random, and keeps the login token of the salt and the password
+// of the repeater, of any length, to check the RPTK. It does nothing in
 // another state. It allocates only when dst has no room for MaxOutputs
 // outputs.
 func (m *Master) Admit(now time.Duration, salt uint32, password []byte, dst []Output) []Output {
@@ -164,7 +161,7 @@ func (m *Master) Admit(now time.Duration, salt uint32, password []byte, dst []Ou
 		return dst
 	}
 	m.salt = salt
-	m.passLen = copy(m.pass[:], password)
+	m.tok, _ = auth.Token(m.dialect, salt, password)
 	m.state = StateAuth
 	return m.challenge(dst)
 }
@@ -201,7 +198,7 @@ func (m *Master) Close(now time.Duration, dst []Output) []Output {
 
 func (m *Master) down(dst []Output, r Reason) []Output {
 	dst = append(dst, Output{Kind: OutputDown, ID: m.id, Reason: r, State: m.state})
-	m.state, m.passLen = StateIdle, 0
+	m.state, m.tok = StateIdle, [32]byte{}
 	return dst
 }
 
@@ -304,7 +301,7 @@ func (m *Master) token(now time.Duration, b []byte, dst []Output) []Output {
 	if (m.state != StateAuth && m.state != StateConfig) || k.ID != m.id {
 		return m.nak(dst, k.ID)
 	}
-	if !auth.VerifyToken(m.dialect, m.salt, m.pass[:m.passLen], k.Token[:]) {
+	if !digest.Equal(m.tok[:], k.Token[:]) {
 		dst = m.nak(dst, k.ID)
 		return m.down(dst, ReasonRefused)
 	}
@@ -361,7 +358,7 @@ func (m *Master) config(now time.Duration, b []byte, dst []Output) []Output {
 	dst = m.acked(dst)
 	dst = append(dst, Output{Kind: OutputConfig, Packet: b, ID: m.id})
 	if m.state == StateConfig {
-		m.state, m.passLen = StateRunning, 0
+		m.state, m.tok = StateRunning, [32]byte{}
 		dst = append(dst, Output{Kind: OutputUp, ID: m.id})
 	}
 	return dst
