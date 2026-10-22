@@ -112,6 +112,55 @@ func TestPositionTrackerHeaderAndStream(t *testing.T) {
 	}
 }
 
+func TestPositionTrackerLCSSAfterLostHeader(t *testing.T) {
+	t.Parallel()
+
+	frames := [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame{vocoder.AMBESilence(), vocoder.AMBESilence(), vocoder.AMBESilence()}
+	b, err := layer2.BuildVoiceBurst(frames, enums.VoiceBurstB, pdu.EmbeddedSignalling{ColorCode: 1, LCSS: enums.LCSSFirstFragment}, [4]byte{}, layer2.SyncSourceBS)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sf := superframe(t)
+	var tr layer2.PositionTracker
+	h := layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeVoiceLCHeader, HasDataType: true, Seq: 0, HasSeq: true}
+	var hdr layer2.RawBurst
+	tr.Place(&hdr, &h)
+	h = layer2.Hint{Kind: layer2.KindVoice, Seq: 3, HasSeq: true}
+	if lost, _ := tr.Place(&b, &h); h.VoiceBurst != enums.VoiceBurstB || lost != 1 {
+		t.Fatalf("B after a lost PI Header and a lost A: %v lost %d", h.VoiceBurst, lost)
+	}
+	h = layer2.Hint{Kind: layer2.KindVoice, Seq: 4, HasSeq: true}
+	if lost, _ := tr.Place(&sf[2], &h); h.VoiceBurst != enums.VoiceBurstC || lost != 0 {
+		t.Fatalf("C after B: %v lost %d", h.VoiceBurst, lost)
+	}
+}
+
+func TestPositionTrackerLCSSAfterGuessFromHeader(t *testing.T) {
+	t.Parallel()
+
+	frames := [layer2.VoiceSlotsPerBurst]vocoder.AMBEFrame{vocoder.AMBESilence(), vocoder.AMBESilence(), vocoder.AMBESilence()}
+	build := func(pos enums.VoiceBurstType, lcss enums.LCSS) layer2.RawBurst {
+		r, err := layer2.BuildVoiceBurst(frames, pos, pdu.EmbeddedSignalling{ColorCode: 1, LCSS: lcss}, [4]byte{}, layer2.SyncSourceBS)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return r
+	}
+	c, d, e := build(enums.VoiceBurstC, enums.LCSSContinuationFragment), build(enums.VoiceBurstD, enums.LCSSContinuationFragment), build(enums.VoiceBurstE, enums.LCSSLastFragment)
+	var tr layer2.PositionTracker
+	h := layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeVoiceLCHeader, HasDataType: true, Seq: 0, HasSeq: true}
+	var hdr layer2.RawBurst
+	tr.Place(&hdr, &h)
+	h = layer2.Hint{Kind: layer2.KindVoice, Seq: 4, HasSeq: true}
+	tr.Place(&c, &h)
+	h = layer2.Hint{Kind: layer2.KindVoice, Seq: 5, HasSeq: true}
+	tr.Place(&d, &h)
+	h = layer2.Hint{Kind: layer2.KindVoice, Seq: 6, HasSeq: true}
+	if lost, _ := tr.Place(&e, &h); h.VoiceBurst != enums.VoiceBurstE || lost != 0 {
+		t.Fatalf("E after a lost PI Header, A and B: %v lost %d", h.VoiceBurst, lost)
+	}
+}
+
 func TestPositionTrackerMisuse(t *testing.T) {
 	t.Parallel()
 

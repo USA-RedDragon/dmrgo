@@ -41,18 +41,20 @@ func (p Placement) String() string {
 }
 
 // PositionTracker places the voice bursts of one logical channel in their
-// superframe, packet by packet, as voice.Receiver does: from the position
-// in the Hint, the voice SYNC of burst A, the LCSS of the EMB of bursts B
-// to F, and the sequence number of the Hint, or one step per burst without
-// one. The position in the Hint and the voice SYNC come first. After a
-// placed burst, a sequence number that follows the last one places the
-// burst over its LCSS, because a repeater sends a wrong EMB on a weak
-// signal; the LCSS places a burst only without that evidence, or where the
-// sequence number predicts a burst A that has no SYNC. A bridge that
-// forwards each packet as it comes, such as IPSC to
-// HomeBrew DMRD, calls Place for each packet of a slot, so that the voice
-// bursts that the source does not mark get a position. The zero
-// PositionTracker is ready to use. It is not safe for concurrent use.
+// superframe, packet by packet, as voice.Receiver does: from the position in
+// the Hint, the voice SYNC of burst A, the LCSS of the EMB of bursts B to F,
+// and the sequence number of the Hint, or one step per burst without one.
+// The position in the Hint and the voice SYNC come first. Once the Hint, the
+// voice SYNC or the LCSS has placed a burst of the call, a sequence number
+// that follows the last one places the burst over its LCSS, because a
+// repeater sends a wrong EMB on a weak signal; the LCSS places a burst only
+// without that evidence, or where the sequence number predicts a burst A
+// that has no SYNC. After a header, the LCSS comes first until it or the
+// SYNC places a burst, because the sequence number also counts lost headers.
+// A bridge that forwards each packet as it comes, such as IPSC to HomeBrew
+// DMRD, calls Place for each packet of a slot, so that the voice bursts that
+// the source does not mark get a position. The zero PositionTracker is ready
+// to use. It is not safe for concurrent use.
 // (ETSI TS 102 361-1 clause 5.1.2.1, clause 9.3.5)
 type PositionTracker struct {
 	stream    uint32
@@ -61,6 +63,7 @@ type PositionTracker struct {
 	known     bool
 	header    bool
 	started   bool
+	anchored  bool
 	hasSeq    bool
 	hasStream bool
 }
@@ -227,6 +230,8 @@ func (t *PositionTracker) place(c cue, h *Hint, steps int) (lost int, p Placemen
 	switch {
 	case gap > 0 && missedA:
 		lost = gap
+	case gap > 0 && t.known && !t.started && idx >= 0:
+		lost = headerLost(idx, int(t.pos), gap)
 	case gap > 0:
 		lost = gap - 1
 	case idx >= 0 && (t.known || t.header):
@@ -237,6 +242,7 @@ func (t *PositionTracker) place(c cue, h *Hint, steps int) (lost int, p Placemen
 	case !h.HasSeq:
 		lost = steps - 1
 	}
+	t.anchored = idx >= 0 && (c.fixed || c.byEMB && idx == int(c.emb) || t.known && t.anchored)
 	t.known, t.header, t.started = idx >= 0, false, true
 	t.pos = int8(idx & 7)
 	if h.HasSeq {
@@ -292,15 +298,14 @@ func (t *PositionTracker) position(c cue, steps int, bySeq bool) int {
 		return int(c.pos)
 	}
 	pred := (int(t.pos) + steps) % VoiceBurstsPerSuperframe
+	seq := t.known && bySeq
 	switch {
-	case t.known && bySeq && pred == 0 && c.byEMB:
+	case c.byEMB && (!seq || !t.anchored || pred == 0):
 		return int(c.emb)
-	case t.known && bySeq && pred == 0:
+	case seq && pred == 0:
 		return 1
-	case t.known && bySeq:
+	case seq:
 		return pred
-	case c.byEMB:
-		return int(c.emb)
 	case !t.known || pred == 0 || c.cont && pred != 2 && pred != 3:
 		return -1
 	}
@@ -348,6 +353,14 @@ func embCue(emb pdu.EmbeddedSignalling) cue {
 	case enums.LCSSContinuationFragment:
 	}
 	return cue{cont: true}
+}
+
+func headerLost(idx, pos, gap int) int {
+	r := (idx - pos - 1 + 2*VoiceBurstsPerSuperframe) % VoiceBurstsPerSuperframe
+	if r > gap-1 {
+		return gap - 1
+	}
+	return r + VoiceBurstsPerSuperframe*((gap-1-r)/VoiceBurstsPerSuperframe)
 }
 
 func nearestLost(gap, est int) int {
