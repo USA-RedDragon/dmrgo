@@ -69,12 +69,12 @@ var (
 	// CapacityPlusSiteStatusAssembler.Add for a continuation or last block
 	// without a first block, and for a status longer than
 	// CapacityPlusMaxBlocks blocks. The assembler drops the partial status.
-	ErrCapacityPlusSequence = errors.New("capacity plus site status block out of sequence")
+	ErrCapacityPlusSequence = errors.New("pdu: capacity plus site status block out of sequence")
 	// ErrCapacityPlusIncomplete is returned by
 	// CapacityPlusSiteStatusAssembler.Activity when no status is complete,
 	// and when a bitmap names more talkgroups or radios than the status
 	// holds. The activity then holds what the status does hold.
-	ErrCapacityPlusIncomplete = errors.New("capacity plus site status incomplete")
+	ErrCapacityPlusIncomplete = errors.New("pdu: capacity plus site status incomplete")
 )
 
 // CapacityPlusChannel returns the repeater and timeslot of a logical slot

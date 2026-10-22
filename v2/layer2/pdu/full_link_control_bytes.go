@@ -67,4 +67,4 @@ func (s *FullLinkControl) Bytes() ([9]byte, error) {
 	return [9]byte(cw[:9]), nil
 }
 
-var errRoundTrip = errors.New("the full LC does not encode back to the same octets")
+var errRoundTrip = errors.New("pdu: the full LC does not encode back to the same octets")
