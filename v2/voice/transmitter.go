@@ -70,7 +70,8 @@ type TransmitterConfig struct {
 	// late entry can send its headers first.
 	Queue int
 	// Lead makes Tick emit a burst this long before its Due time, so that
-	// an RF FIFO can be filled ahead. 0 means at Due.
+	// an RF FIFO can be filled ahead. 0 means at Due; it must not be
+	// negative.
 	Lead time.Duration
 	// Access is the channel access policy of Start. A polite call waits
 	// up to IdleSearch for Channel to report an idle channel and ends with
@@ -367,6 +368,8 @@ func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 		return nil, errAccess
 	case cfg.ChanAuth < 0:
 		return nil, errChanAuth
+	case cfg.Lead < 0:
+		return nil, errLead
 	case !ok:
 		return nil, errSource
 	case t.headers < 0 || t.headers > MaxHeaders:

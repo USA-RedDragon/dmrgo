@@ -92,7 +92,8 @@ type Config struct {
 	// value means vocoder.AMBESilenceSlot.
 	Silence [9]byte
 	// Lead makes Tick emit an outbound burst this long before its Due time
-	// in ModeRF, so that a transmit FIFO can be filled ahead.
+	// in ModeRF, so that a transmit FIFO can be filled ahead. 0 means at
+	// Due; it must not be negative.
 	Lead time.Duration
 	// ChannelAuth selects the channel authorization of RF access in the
 	// call and channel hang time in ModeRF. ModeNetwork ignores it. (ETSI
@@ -241,6 +242,8 @@ func New(cfg *Config) (*Repeater, error) {
 		return nil, errDataQueue
 	case cfg.ChannelAuth > ChannelAuthMultiSite:
 		return nil, errChanAuth
+	case cfg.Lead < 0:
+		return nil, errLead
 	}
 	if r.lost < 0 {
 		r.lost = voice.DefaultLost

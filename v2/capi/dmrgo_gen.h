@@ -993,7 +993,7 @@ struct dmrgo_bs_config_t {
 	int64_t data_queue;
 	/* Silence is the 72-bit vocoder slot that fills lost voice. The zero value means vocoder.AMBESilenceSlot. */
 	uint8_t silence[9];
-	/* Lead makes Tick emit an outbound burst this long before its Due time in ModeRF, so that a transmit FIFO can be filled ahead. */
+	/* Lead makes Tick emit an outbound burst this long before its Due time in ModeRF, so that a transmit FIFO can be filled ahead. 0 means at Due; it must not be negative. */
 	dmrgo_duration_t lead;
 	/* ChannelAuth selects the channel authorization of RF access in the call and channel hang time in ModeRF. ModeNetwork ignores it. (ETSI TS 102 361-2 clause 5.1.1.6) */
 	dmrgo_bs_channel_auth_t channel_auth;
@@ -5315,7 +5315,7 @@ struct dmrgo_voice_transmitter_config_t {
 	dmrgo_duration_t timeout;
 	/* Queue is the number of vocoder slots buffered. 0 means DefaultQueue; at most MaxQueue. It must hold Headers+1 bursts, so that a relayed late entry can send its headers first. */
 	int64_t queue;
-	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due. */
+	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. */
 	dmrgo_duration_t lead;
 	/* Access is the channel access policy of Start. A polite call waits up to IdleSearch for Channel to report an idle channel and ends with EndDenied when it does not; an impolite call starts at once. Relay ignores it. The zero value is polite to own color code. (ETSI TS 102 361-1 clauses 5.2.1.6 and 5.2.2) */
 	dmrgo_enums_access_t access;

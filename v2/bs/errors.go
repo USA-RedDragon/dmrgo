@@ -29,4 +29,5 @@ var (
 	errDataQueue   error = &dmrgo.ConfigError{Type: "bs", Field: "DataQueue"}
 	errTerminators error = &dmrgo.ConfigError{Type: "bs", Field: "Terminators"}
 	errChanAuth    error = &dmrgo.ConfigError{Type: "bs", Field: "ChannelAuth"}
+	errLead        error = &dmrgo.ConfigError{Type: "bs", Field: "Lead"}
 )

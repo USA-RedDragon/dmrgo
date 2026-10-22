@@ -366,7 +366,7 @@ func TestTransmitter_Errors(t *testing.T) {
 	t.Parallel()
 
 	for _, cfg := range []voice.TransmitterConfig{
-		{ColorCode: 16}, {Source: layer2.SyncSource(9)}, {Headers: 9}, {Terminators: 65}, {Headers: 3, Queue: 9}, {Queue: voice.MaxQueue + 1},
+		{ColorCode: 16}, {Source: layer2.SyncSource(9)}, {Headers: 9}, {Terminators: 65}, {Headers: 3, Queue: 9}, {Queue: voice.MaxQueue + 1}, {Lead: -1},
 	} {
 		var ce *dmrgo.ConfigError
 		if _, err := voice.NewTransmitter(&cfg); !errors.As(err, &ce) {
