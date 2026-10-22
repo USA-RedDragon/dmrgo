@@ -3435,12 +3435,13 @@ func in_transport_ipsc_ipscsession_MasterConfig(s *C.dmrgo_ipscsession_master_co
 	d.ID = uint32(s.id)
 	d.Mode = g_transport_ipsc.Mode(s.mode)
 	d.Flags = *(*g_transport_ipsc.Flags)(unsafe.Pointer(&s.flags))
-	d.Version = *(*[4]byte)(unsafe.Pointer(&s.version))
 	d.Auth = bool(s.auth)
 	d.Key = *(*[20]byte)(unsafe.Pointer(&s.key))
 	d.Timeout = time.Duration(s.timeout)
 	d.MaxPeers = int(s.max_peers)
 	d.AdoptKnown = bool(s.adopt_known)
+	d.RegisterVersion = *(*[4]byte)(unsafe.Pointer(&s.register_version))
+	d.AliveVersion = *(*[4]byte)(unsafe.Pointer(&s.alive_version))
 	return
 }
 
@@ -3448,13 +3449,14 @@ func in_transport_ipsc_ipscsession_PeerConfig(s *C.dmrgo_ipscsession_peer_config
 	d.ID = uint32(s.id)
 	d.Mode = g_transport_ipsc.Mode(s.mode)
 	d.Flags = *(*g_transport_ipsc.Flags)(unsafe.Pointer(&s.flags))
-	d.Version = *(*[4]byte)(unsafe.Pointer(&s.version))
 	d.Master = *(*g_transport_ipsc_ipscsession.Addr)(unsafe.Pointer(&s.master))
 	d.Auth = bool(s.auth)
 	d.Key = *(*[20]byte)(unsafe.Pointer(&s.key))
 	d.Alive = time.Duration(s.alive)
 	d.MaxMissed = int(s.max_missed)
 	d.MaxPeers = int(s.max_peers)
+	d.RegisterVersion = *(*[4]byte)(unsafe.Pointer(&s.register_version))
+	d.AliveVersion = *(*[4]byte)(unsafe.Pointer(&s.alive_version))
 	return
 }
 
@@ -6762,12 +6764,13 @@ func out_transport_ipsc_ipscsession_MasterConfig(d *C.dmrgo_ipscsession_master_c
 	d.id = C.uint32_t(s.ID)
 	d.mode = C.dmrgo_ipsc_mode_t(s.Mode)
 	*(*g_transport_ipsc.Flags)(unsafe.Pointer(&d.flags)) = s.Flags
-	*(*[4]byte)(unsafe.Pointer(&d.version)) = s.Version
 	d.auth = C.bool(s.Auth)
 	*(*[20]byte)(unsafe.Pointer(&d.key)) = s.Key
 	d.timeout = C.dmrgo_duration_t(s.Timeout)
 	d.max_peers = C.int64_t(s.MaxPeers)
 	d.adopt_known = C.bool(s.AdoptKnown)
+	*(*[4]byte)(unsafe.Pointer(&d.register_version)) = s.RegisterVersion
+	*(*[4]byte)(unsafe.Pointer(&d.alive_version)) = s.AliveVersion
 }
 
 func fromC_transport_ipsc_ipscsession_MasterConfig(s *C.dmrgo_ipscsession_master_config_t) g_transport_ipsc_ipscsession.MasterConfig {
@@ -6793,13 +6796,14 @@ func out_transport_ipsc_ipscsession_PeerConfig(d *C.dmrgo_ipscsession_peer_confi
 	d.id = C.uint32_t(s.ID)
 	d.mode = C.dmrgo_ipsc_mode_t(s.Mode)
 	*(*g_transport_ipsc.Flags)(unsafe.Pointer(&d.flags)) = s.Flags
-	*(*[4]byte)(unsafe.Pointer(&d.version)) = s.Version
 	*(*g_transport_ipsc_ipscsession.Addr)(unsafe.Pointer(&d.master)) = s.Master
 	d.auth = C.bool(s.Auth)
 	*(*[20]byte)(unsafe.Pointer(&d.key)) = s.Key
 	d.alive = C.dmrgo_duration_t(s.Alive)
 	d.max_missed = C.int64_t(s.MaxMissed)
 	d.max_peers = C.int64_t(s.MaxPeers)
+	*(*[4]byte)(unsafe.Pointer(&d.register_version)) = s.RegisterVersion
+	*(*[4]byte)(unsafe.Pointer(&d.alive_version)) = s.AliveVersion
 }
 
 func fromC_transport_ipsc_ipscsession_PeerConfig(s *C.dmrgo_ipscsession_peer_config_t) g_transport_ipsc_ipscsession.PeerConfig {
@@ -39319,6 +39323,21 @@ func dmrgo_ipscsession_addr_of(c_ip *C.uint8_t, c_ip_len C.size_t, c_port C.int6
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ipscsession_alive_version_default
+func dmrgo_ipscsession_alive_version_default(c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_transport_ipsc_ipscsession.AliveVersionDefault()
+	_ = r0
+	if c_out != nil {
+		*(*[4]byte)(unsafe.Pointer(&(*(*[4]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ipscsession_master_free
 func dmrgo_ipscsession_master_free(c_self *C.dmrgo_ipscsession_master_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -40583,6 +40602,21 @@ func dmrgo_ipscsession_reason_string(c_self C.dmrgo_ipscsession_reason_t, c_out 
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ipscsession_register_version_default
+func dmrgo_ipscsession_register_version_default(c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	r0 := g_transport_ipsc_ipscsession.RegisterVersionDefault()
+	_ = r0
+	if c_out != nil {
+		*(*[4]byte)(unsafe.Pointer(&(*(*[4]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ipscsession_state_string
 func dmrgo_ipscsession_state_string(c_self C.dmrgo_ipscsession_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -40596,21 +40630,6 @@ func dmrgo_ipscsession_state_string(c_self C.dmrgo_ipscsession_state_t, c_out *C
 	r0 := g_transport_ipsc_ipscsession.State(c_self).String()
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_ipscsession_version_default
-func dmrgo_ipscsession_version_default(c_out *C.uint8_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	r0 := g_transport_ipsc_ipscsession.VersionDefault()
-	_ = r0
-	if c_out != nil {
-		*(*[4]byte)(unsafe.Pointer(&(*(*[4]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}

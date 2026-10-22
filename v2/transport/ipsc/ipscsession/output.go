@@ -28,9 +28,17 @@ const (
 	ModeDefault ipsc.Mode = 0x6A
 )
 
-// VersionDefault returns the protocol version that a Peer or Master sends
-// when its config leaves Version zero, as DMRlink sends it.
-func VersionDefault() [4]byte {
+// RegisterVersionDefault returns the protocol version that a Peer or
+// Master sends in a register request or reply (0x90, 0x91, 0x94, 0x95)
+// when its config leaves RegisterVersion zero, as an XPR 8400 sends it.
+func RegisterVersionDefault() [4]byte {
+	return [4]byte{0x04, 0x08, 0x04, 0x00}
+}
+
+// AliveVersionDefault returns the protocol version that a Peer or Master
+// sends in a keepalive request or reply (0x96, 0x97) when its config
+// leaves AliveVersion zero, as an XPR 8400 sends it.
+func AliveVersionDefault() [4]byte {
 	return [4]byte{0x04, 0x02, 0x04, 0x01}
 }
 
@@ -244,24 +252,28 @@ func (*noCopy) Lock() {}
 func (*noCopy) Unlock() {}
 
 type link struct {
-	id      uint32
-	mode    ipsc.Mode
-	flags   ipsc.Flags
-	version [4]byte
-	key     *ipscauth.Key
-	peers   []entry
-	n       int
-	list    []ipsc.PeerEntry
-	mac     digest.HMACSHA1
+	id           uint32
+	mode         ipsc.Mode
+	flags        ipsc.Flags
+	regVersion   [4]byte
+	aliveVersion [4]byte
+	key          *ipscauth.Key
+	peers        []entry
+	n            int
+	list         []ipsc.PeerEntry
+	mac          digest.HMACSHA1
 }
 
-func newLink(id uint32, mode ipsc.Mode, flags ipsc.Flags, version [4]byte, useAuth bool, key [20]byte, maxPeers int) link {
-	l := link{id: id, mode: mode, flags: flags, version: version}
+func newLink(id uint32, mode ipsc.Mode, flags ipsc.Flags, regVersion, aliveVersion [4]byte, useAuth bool, key [20]byte, maxPeers int) link {
+	l := link{id: id, mode: mode, flags: flags, regVersion: regVersion, aliveVersion: aliveVersion}
 	if l.mode == 0 {
 		l.mode = ModeDefault
 	}
-	if l.version == [4]byte{} {
-		l.version = VersionDefault()
+	if l.regVersion == [4]byte{} {
+		l.regVersion = RegisterVersionDefault()
+	}
+	if l.aliveVersion == [4]byte{} {
+		l.aliveVersion = AliveVersionDefault()
 	}
 	if useAuth {
 		l.key = ipscauth.NewKey(key)

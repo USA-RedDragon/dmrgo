@@ -4095,7 +4095,7 @@ struct dmrgo_ipsc_control_t {
 	uint16_t peers;
 	/* ListLen is the length in octets of the peer list of a DMRGO_IPSC_OP_PEER_LIST_REPLY, 11 for each peer. */
 	uint16_t list_len;
-	/* Version is the protocol version (0x90, 0x91, 0x94 to 0x97), for example 04 02 04 01. */
+	/* Version is the protocol version (0x90, 0x91, 0x94 to 0x97). An XPR 8400 sends 04 08 04 00 in a register request and 04 02 04 01 in a keepalive request. */
 	uint8_t version[4];
 };
 
@@ -4243,8 +4243,6 @@ struct dmrgo_ipscsession_master_config_t {
 	dmrgo_ipsc_mode_t mode;
 	/* Flags is the flags that the master sends. The zero Flags means voice and data calls. The Master sets DMRGO_IPSC_FLAG_MASTER_PEER, and DMRGO_IPSC_FLAG_AUTH with Auth. */
 	dmrgo_ipsc_flags_t flags;
-	/* Version is the protocol version that the master sends. Zero means VersionDefault. */
-	uint8_t version[4];
 	/* Auth turns on the HMAC-SHA1 trailer with Key: the Master drops a packet without a good trailer and signs what it sends. */
 	bool auth;
 	/* Key is the authentication key (see dmrgo_ipscauth_parse_key). */
@@ -4255,6 +4253,10 @@ struct dmrgo_ipscsession_master_config_t {
 	int64_t max_peers;
 	/* AdoptKnown makes Packet adopt a peer that is not registered, as Adopt does, when the trailer of its packet proves the key of the config or the key that the caller passed, so that a peer that registered with another Master needs no Adopt call. Without a key it does nothing. */
 	bool adopt_known;
+	/* RegisterVersion is the protocol version that the master sends in a register request or reply (0x90, 0x91, 0x94, 0x95). Zero means RegisterVersionDefault. */
+	uint8_t register_version[4];
+	/* AliveVersion is the protocol version that the master sends in a keepalive request or reply (0x96, 0x97). Zero means AliveVersionDefault. */
+	uint8_t alive_version[4];
 };
 
 struct dmrgo_ipscsession_peer_config_t {
@@ -4266,8 +4268,6 @@ struct dmrgo_ipscsession_peer_config_t {
 	dmrgo_ipsc_mode_t mode;
 	/* Flags is the flags that the peer sends. The zero Flags means voice and data calls. The Peer sets DMRGO_IPSC_FLAG_AUTH with Auth. */
 	dmrgo_ipsc_flags_t flags;
-	/* Version is the protocol version that the peer sends. Zero means VersionDefault. */
-	uint8_t version[4];
 	/* Master is the address of the master. */
 	dmrgo_ipscsession_addr_t master;
 	/* Auth turns on the HMAC-SHA1 trailer with Key: the Peer drops a packet without a good trailer and signs what it sends. */
@@ -4280,6 +4280,10 @@ struct dmrgo_ipscsession_peer_config_t {
 	int64_t max_missed;
 	/* MaxPeers is the most other peers that the Peer keeps from the peer list. 0 means DMRGO_IPSCSESSION_MAX_PEERS_DEFAULT. */
 	int64_t max_peers;
+	/* RegisterVersion is the protocol version that the peer sends in a register request or reply (0x90, 0x91, 0x94, 0x95). Zero means RegisterVersionDefault. */
+	uint8_t register_version[4];
+	/* AliveVersion is the protocol version that the peer sends in a keepalive request or reply (0x96, 0x97). Zero means AliveVersionDefault. */
+	uint8_t alive_version[4];
 };
 
 struct dmrgo_mmdvm_ack_t {
@@ -10311,6 +10315,8 @@ int dmrgo_ipscauth_new_key(const uint8_t k[20], dmrgo_ipscauth_key_t **out);
 int dmrgo_ipscauth_parse_key(const char *s, size_t s_len, uint8_t out[20]);
 /* Go: ipscsession.AddrOf. AddrOf returns the Addr of the IP address ip and the UDP port port, as a UDP socket address holds them: ip is 4 octets, or 16 octets of an IPv4-mapped IPv6 address. */
 int dmrgo_ipscsession_addr_of(const uint8_t *ip, size_t ip_len, int64_t port, dmrgo_ipscsession_addr_t *a, bool *ok);
+/* Go: ipscsession.AliveVersionDefault. AliveVersionDefault returns the protocol version that a Peer or Master sends in a keepalive request or reply (0x96, 0x97) when its config leaves AliveVersion zero, as an XPR 8400 sends it. */
+int dmrgo_ipscsession_alive_version_default(uint8_t out[4]);
 /* dmrgo_ipscsession_master_free frees the handle. self may be NULL. */
 int dmrgo_ipscsession_master_free(dmrgo_ipscsession_master_t *self);
 /* dmrgo_ipscsession_master_adopt_need sets *items and *arena to the room that dmrgo_ipscsession_master_adopt needs for these arguments, without a change to the handle. */
@@ -10397,10 +10403,10 @@ int dmrgo_ipscsession_peer_tick_need(dmrgo_ipscsession_peer_t *self, dmrgo_durat
 int dmrgo_ipscsession_peer_tick(dmrgo_ipscsession_peer_t *self, dmrgo_duration_t now, dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ipscsession.Reason.String. String returns the name of the Reason. */
 int dmrgo_ipscsession_reason_string(dmrgo_ipscsession_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: ipscsession.RegisterVersionDefault. RegisterVersionDefault returns the protocol version that a Peer or Master sends in a register request or reply (0x90, 0x91, 0x94, 0x95) when its config leaves RegisterVersion zero, as an XPR 8400 sends it. */
+int dmrgo_ipscsession_register_version_default(uint8_t out[4]);
 /* Go: ipscsession.State.String. String returns the name of the State. */
 int dmrgo_ipscsession_state_string(dmrgo_ipscsession_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: ipscsession.VersionDefault. VersionDefault returns the protocol version that a Peer or Master sends when its config leaves Version zero, as DMRlink sends it. */
-int dmrgo_ipscsession_version_default(uint8_t out[4]);
 /* Go: mmdvm.Ack.AppendBinary. AppendBinary appends the 1 octet of s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit. */
 int dmrgo_mmdvm_ack_append_binary(const dmrgo_mmdvm_ack_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.Ack.String. String returns the fields of s as text, for printing. */

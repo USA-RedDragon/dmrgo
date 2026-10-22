@@ -590,6 +590,7 @@ DMRGO_1 {
 		dmrgo_ipscauth_new_key;
 		dmrgo_ipscauth_parse_key;
 		dmrgo_ipscsession_addr_of;
+		dmrgo_ipscsession_alive_version_default;
 		dmrgo_ipscsession_master_adopt;
 		dmrgo_ipscsession_master_adopt_need;
 		dmrgo_ipscsession_master_close;
@@ -633,8 +634,8 @@ DMRGO_1 {
 		dmrgo_ipscsession_peer_tick;
 		dmrgo_ipscsession_peer_tick_need;
 		dmrgo_ipscsession_reason_string;
+		dmrgo_ipscsession_register_version_default;
 		dmrgo_ipscsession_state_string;
-		dmrgo_ipscsession_version_default;
 		dmrgo_last_error_code;
 		dmrgo_last_error_is;
 		dmrgo_last_error_message;

@@ -55,7 +55,7 @@ func TestMasterReplaysXPR8400(t *testing.T) {
 	t.Parallel()
 
 	lines := readXPR(t)
-	m, err := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1, Flags: ipsc.Flags{0, 0, 0, 0x1d}})
+	m, err := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1, Flags: ipsc.Flags{0, 0, 0, 0x1d}, RegisterVersion: [4]byte{4, 2, 4, 1}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,19 +91,42 @@ func TestMasterReplaysXPR8400(t *testing.T) {
 	}
 }
 
+func TestMasterSendsXPR8400Versions(t *testing.T) {
+	t.Parallel()
+
+	lines := readXPR(t)
+	m, err := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	const xpr = 0x0004ce2e
+	reg, alive := xprPacket(t, lines, ipsc.OpRegisterRequest, xpr), xprPacket(t, lines, ipsc.OpAliveRequest, xpr)
+	peerReg, _ := (&ipsc.Control{Opcode: ipsc.OpPeerRegisterRequest, ID: xpr, Version: [4]byte(reg[10:14])}).AppendBinary(nil)
+	for _, step := range []struct {
+		in   []byte
+		at   int
+		want []byte
+	}{{reg, 12, reg[10:14]}, {alive, 10, alive[10:14]}, {peerReg, 5, reg[10:14]}} {
+		s := sends(m.Packet(time.Second, xprAddr, step.in, nil, nil))
+		if len(s) != 1 || len(s[0]) < step.at+4 || !bytes.Equal(s[0][step.at:step.at+4], step.want) {
+			t.Fatalf("%x: %x, want version %x", step.in, s, step.want)
+		}
+	}
+}
+
 func TestPeerReplaysXPR8400(t *testing.T) {
 	t.Parallel()
 
 	lines := readXPR(t)
 	const xpr = 0x0004ce2e
-	p, err := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: xpr, Flags: ipsc.Flags{0, 0, 0x80, 0xdc}, Version: [4]byte{4, 2, 4, 1}, Master: masterAddr})
+	p, err := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: xpr, Flags: ipsc.Flags{0, 0, 0x80, 0xdc}, Master: masterAddr})
 	if err != nil {
 		t.Fatal(err)
 	}
 	reg := sends(p.Tick(0, nil))
 	var want []byte
 	for _, pk := range lines {
-		if len(reg) == 1 && ipsc.Opcode(pk[0]) == ipsc.OpRegisterRequest && bytes.Equal(reg[0][:10], pk[:10]) {
+		if len(reg) == 1 && ipsc.Opcode(pk[0]) == ipsc.OpRegisterRequest && bytes.Equal(reg[0], pk) {
 			want = pk
 		}
 	}

@@ -2051,6 +2051,7 @@ sym int dmrgo_ipscauth_key_verify_need(dmrgo_ipscauth_key_t *self, const uint8_t
 sym int dmrgo_ipscauth_new_key(const uint8_t k[20], dmrgo_ipscauth_key_t **out);
 sym int dmrgo_ipscauth_parse_key(const char *s, size_t s_len, uint8_t out[20]);
 sym int dmrgo_ipscsession_addr_of(const uint8_t *ip, size_t ip_len, int64_t port, dmrgo_ipscsession_addr_t *a, bool *ok);
+sym int dmrgo_ipscsession_alive_version_default(uint8_t out[4]);
 sym int dmrgo_ipscsession_master_adopt(dmrgo_ipscsession_master_t *self, dmrgo_duration_t now, const dmrgo_ipscsession_addr_t *from, uint32_t id, const uint8_t key[20], dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ipscsession_master_adopt_need(dmrgo_ipscsession_master_t *self, dmrgo_duration_t now, const dmrgo_ipscsession_addr_t *from, uint32_t id, const uint8_t key[20], size_t *items, size_t *arena);
 sym int dmrgo_ipscsession_master_close(dmrgo_ipscsession_master_t *self, dmrgo_duration_t now, dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
@@ -2094,8 +2095,8 @@ sym int dmrgo_ipscsession_peer_state(dmrgo_ipscsession_peer_t *self, dmrgo_ipscs
 sym int dmrgo_ipscsession_peer_tick(dmrgo_ipscsession_peer_t *self, dmrgo_duration_t now, dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ipscsession_peer_tick_need(dmrgo_ipscsession_peer_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 sym int dmrgo_ipscsession_reason_string(dmrgo_ipscsession_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_ipscsession_register_version_default(uint8_t out[4]);
 sym int dmrgo_ipscsession_state_string(dmrgo_ipscsession_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-sym int dmrgo_ipscsession_version_default(uint8_t out[4]);
 sym int dmrgo_layer2_build_burst(const dmrgo_layer2_data_t *d, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
 sym int dmrgo_layer2_build_data_burst(const uint8_t p[12], dmrgo_enums_data_type_t dt, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
 sym int dmrgo_layer2_build_rate1_data_burst(const uint8_t p[24], dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
@@ -3333,9 +3334,9 @@ type struct dmrgo_ipsc_stream_t { uint8_t call_seq; uint32_t call_control; uint1
 type struct dmrgo_ipsc_user_t { dmrgo_ipsc_opcode_t opcode; uint32_t id; uint8_t call_seq; uint32_t source; uint32_t destination; uint8_t priority; uint32_t call_control; dmrgo_ipsc_call_info_t info; dmrgo_ipsc_rtp_t rtp; dmrgo_ipsc_burst_type_t burst; dmrgo_ipsc_voice_t voice; dmrgo_ipsc_payload_t data; };
 type struct dmrgo_ipsc_voice_t { dmrgo_ipsc_voice_layout_t layout; uint8_t length; uint8_t control; uint8_t ambe[19]; uint8_t embedded[4]; uint8_t lc[9]; dmrgo_pdu_emb_info_t emb; };
 type struct dmrgo_ipscsession_addr_t { uint8_t ip[4]; uint16_t port; };
-type struct dmrgo_ipscsession_master_config_t { size_t size; uint32_t id; dmrgo_ipsc_mode_t mode; dmrgo_ipsc_flags_t flags; uint8_t version[4]; bool auth; uint8_t key[20]; dmrgo_duration_t timeout; int64_t max_peers; bool adopt_known; };
+type struct dmrgo_ipscsession_master_config_t { size_t size; uint32_t id; dmrgo_ipsc_mode_t mode; dmrgo_ipsc_flags_t flags; bool auth; uint8_t key[20]; dmrgo_duration_t timeout; int64_t max_peers; bool adopt_known; uint8_t register_version[4]; uint8_t alive_version[4]; };
 type struct dmrgo_ipscsession_output_t { dmrgo_ipscsession_output_kind_t kind; uint8_t *packet; size_t packet_len; dmrgo_ipscsession_addr_t addr; uint32_t id; dmrgo_ipscsession_reason_t reason; };
-type struct dmrgo_ipscsession_peer_config_t { size_t size; uint32_t id; dmrgo_ipsc_mode_t mode; dmrgo_ipsc_flags_t flags; uint8_t version[4]; dmrgo_ipscsession_addr_t master; bool auth; uint8_t key[20]; dmrgo_duration_t alive; int64_t max_missed; int64_t max_peers; };
+type struct dmrgo_ipscsession_peer_config_t { size_t size; uint32_t id; dmrgo_ipsc_mode_t mode; dmrgo_ipsc_flags_t flags; dmrgo_ipscsession_addr_t master; bool auth; uint8_t key[20]; dmrgo_duration_t alive; int64_t max_missed; int64_t max_peers; uint8_t register_version[4]; uint8_t alive_version[4]; };
 type struct dmrgo_ipscsession_peer_info_t { uint32_t id; dmrgo_ipscsession_addr_t addr; dmrgo_ipsc_mode_t mode; dmrgo_ipsc_flags_t flags; bool up; };
 type struct dmrgo_layer2_cach_t { dmrgo_pdu_tact_t tact; uint8_t payload[3]; };
 type struct dmrgo_layer2_data_t { uint32_t tag; union { dmrgo_pdu_bcap_continuation_t pdu_bcap_continuation; dmrgo_pdu_cgap_continuation_t pdu_cgap_continuation; dmrgo_pdu_csbk_t pdu_csbk; dmrgo_pdu_data_header_t pdu_data_header; dmrgo_pdu_full_link_control_t pdu_full_link_control; dmrgo_pdu_mbc_continuation_t pdu_mbc_continuation; dmrgo_pdu_mbc_header_t pdu_mbc_header; dmrgo_pdu_mvap_continuation_t pdu_mvap_continuation; dmrgo_pdu_pi_header_t pdu_pi_header; dmrgo_pdu_pr_fill_t pdu_pr_fill; dmrgo_pdu_rate12_data_t pdu_rate12_data; dmrgo_pdu_rate1_data_t pdu_rate1_data; dmrgo_pdu_rate34_data_t pdu_rate34_data; dmrgo_pdu_unified_single_block_data_t pdu_unified_single_block_data; dmrgo_pdu_vnap_continuation_t pdu_vnap_continuation; } v; };

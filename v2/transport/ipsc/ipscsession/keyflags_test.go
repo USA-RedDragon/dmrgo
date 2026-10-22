@@ -15,7 +15,7 @@ func TestKeyedRepliesCarryAuthFlag(t *testing.T) {
 	lines := readXPR(t)
 	const xpr = 0x0004ce2e
 	key, _ := ipscauth.ParseKey("1234")
-	m, _ := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1})
+	m, _ := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1, RegisterVersion: [4]byte{4, 2, 4, 1}})
 	signer := ipscauth.NewKey(key)
 	for _, step := range []struct{ in, want ipsc.Opcode }{{ipsc.OpRegisterRequest, ipsc.OpRegisterReply}, {ipsc.OpAliveRequest, ipsc.OpAliveReply}} {
 		in, _ := signer.Sign(append([]byte(nil), xprPacket(t, lines, step.in, xpr)...))
