@@ -1,6 +1,7 @@
 package packet
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -11,11 +12,11 @@ import (
 // color code colorCode and the data SYNC pattern of src. It returns an error
 // when the header or a block does not encode, a block has another data type,
 // or src is unknown, and a *dmrgo.FieldRangeError when colorCode does not fit
-// in 4 bits. A nil p returns ErrFormat. It allocates the slice;
+// in 4 bits. A nil p returns dmrgo.ErrNilArgument. It allocates the slice;
 // AppendBursts does not.
 func Bursts(p *Packet, colorCode enums.ColorCode, src layer2.SyncSource) ([]layer2.RawBurst, error) {
 	if p == nil {
-		return nil, ErrFormat
+		return nil, dmrgo.ErrNilArgument
 	}
 	out, err := AppendBursts(make([]layer2.RawBurst, 0, 1+len(p.Blocks)), p, colorCode, src)
 	if err != nil {
@@ -29,7 +30,7 @@ func Bursts(p *Packet, colorCode enums.ColorCode, src layer2.SyncSource) ([]laye
 // an error. It allocates only when dst has no room.
 func AppendBursts(dst []layer2.RawBurst, p *Packet, colorCode enums.ColorCode, src layer2.SyncSource) ([]layer2.RawBurst, error) {
 	if p == nil {
-		return dst, ErrFormat
+		return dst, dmrgo.ErrNilArgument
 	}
 	n := len(dst)
 	raw, err := layer2.BuildBurst(&p.Header, colorCode, src)
