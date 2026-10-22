@@ -6904,8 +6904,6 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_DMRDSESSION_MAX_OUTPUTS 4
 /* Go: dmrdsession.MaxPacket. MaxPacket is the longest packet in octets that the machines take. */
 #define DMRGO_DMRDSESSION_MAX_PACKET 512
-/* Go: dmrdsession.MaxPassword. MaxPassword is the longest password in octets that Master.Admit keeps. */
-#define DMRGO_DMRDSESSION_MAX_PASSWORD 128
 /* Go: dmrdsession.OutputConfig. OutputConfig reports the RPTC that the Master accepted, in Output.Packet. */
 #define DMRGO_DMRDSESSION_OUTPUT_CONFIG ((dmrgo_dmrdsession_output_kind_t)5)
 /* Go: dmrdsession.OutputData. OutputData is a DMRD, DMRA or DMRG packet, or for a Bridge a DMRD or DMRE packet with a good signature, in Output.Packet, with its command in Output.Command. */
@@ -9929,7 +9927,7 @@ int dmrgo_dmrdsession_bridge_tick(dmrgo_dmrdsession_bridge_t *self, dmrgo_durati
 int dmrgo_dmrdsession_master_free(dmrgo_dmrdsession_master_t *self);
 /* dmrgo_dmrdsession_master_admit_need sets *items and *arena to the room that dmrgo_dmrdsession_master_admit needs for these arguments, without a change to the handle. */
 int dmrgo_dmrdsession_master_admit_need(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, uint32_t salt, const uint8_t *password, size_t password_len, size_t *items, size_t *arena);
-/* Go: dmrdsession.Master.Admit. Admit answers the RPTL of OutputLogin with the salt, which the caller draws at random, and keeps the password of the repeater, of which it uses at most MaxPassword octets, to check the RPTK. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrdsession_master_admit_need gives. */
+/* Go: dmrdsession.Master.Admit. Admit answers the RPTL of OutputLogin with the salt, which the caller draws at random, and keeps the login token of the salt and the password of the repeater, of any length, to check the RPTK. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrdsession_master_admit_need gives. */
 int dmrgo_dmrdsession_master_admit(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, uint32_t salt, const uint8_t *password, size_t password_len, dmrgo_dmrdsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* dmrgo_dmrdsession_master_close_need sets *items and *arena to the room that dmrgo_dmrdsession_master_close needs for these arguments, without a change to the handle. */
 int dmrgo_dmrdsession_master_close_need(dmrgo_dmrdsession_master_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);

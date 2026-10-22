@@ -446,7 +446,6 @@ sym #define DMRGO_DMRDSESSION_LOGIN_TIMEOUT_DEFAULT INT64_C(15000000000)
 sym #define DMRGO_DMRDSESSION_MAX_OPTIONS 291
 sym #define DMRGO_DMRDSESSION_MAX_OUTPUTS 4
 sym #define DMRGO_DMRDSESSION_MAX_PACKET 512
-sym #define DMRGO_DMRDSESSION_MAX_PASSWORD 128
 sym #define DMRGO_DMRDSESSION_OUTPUT_CONFIG ((dmrgo_dmrdsession_output_kind_t)5)
 sym #define DMRGO_DMRDSESSION_OUTPUT_DATA ((dmrgo_dmrdsession_output_kind_t)7)
 sym #define DMRGO_DMRDSESSION_OUTPUT_DOWN ((dmrgo_dmrdsession_output_kind_t)3)

@@ -2,6 +2,7 @@ package dmrdsession_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -43,6 +44,24 @@ func TestMasterLoginTimeout(t *testing.T) {
 	var ce *dmrgo.ConfigError
 	if _, err := dmrdsession.NewMaster(&dmrdsession.MasterConfig{Dialect: dmrd.DialectMMDVM, LoginTimeout: -1}); !errors.As(err, &ce) {
 		t.Fatalf("negative LoginTimeout: %v", err)
+	}
+}
+
+func TestMasterLongPassword(t *testing.T) {
+	t.Parallel()
+
+	pass := strings.Repeat("p", 200)
+	for _, d := range []dmrd.Dialect{dmrd.DialectMMDVM, dmrd.DialectHBRP} {
+		l := newLink(t, d, "", pass, pass)
+		l.advance(l.now)
+		if l.peer.State() != dmrdsession.StateRunning || l.master.State() != dmrdsession.StateRunning {
+			t.Fatalf("%v: 200-octet password: states %v %v", d, l.peer.State(), l.master.State())
+		}
+		l = newLink(t, d, "", pass, pass[:199]+"q")
+		l.advance(l.now)
+		if l.master.State() == dmrdsession.StateRunning {
+			t.Fatalf("%v: a password that differs in octet 200 logged in", d)
+		}
 	}
 }
 
