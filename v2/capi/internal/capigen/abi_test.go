@@ -73,7 +73,11 @@ func TestLockSizedGrowth(t *testing.T) {
 		line string
 		brk  bool
 	}{
-		{"type struct x_t { size_t size; int a; int b; };", false},
+		{"type struct x_t { size_t size; int a; int64_t b; };", false},
+		{"type struct x_t { size_t size; int a; char *b; uint8_t c[3]; };", false},
+		{"type struct x_t { size_t size; int a; int b; };", true},
+		{"type struct x_t { size_t size; int a; uint8_t b[2]; int64_t c; };", true},
+		{"type struct x_t { size_t size; int a; bool b; };", true},
 		{"type struct x_t { size_t size; int b; int a; };", true},
 		{"type struct x_t { size_t size; };", true},
 	} {
