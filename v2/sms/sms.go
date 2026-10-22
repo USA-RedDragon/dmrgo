@@ -329,6 +329,7 @@ func AppendPacket(dst []byte, t *Text, h *Header) ([]byte, error) {
 		}
 	default:
 		var e IPText
+		p0 = len(dst)
 		dst = e.SetTextUTF8(dst, t.Body)
 	}
 	d.Payload = dst[p0:]

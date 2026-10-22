@@ -290,3 +290,19 @@ func TestAppendPacketAnyToneNUL(t *testing.T) {
 		}
 	}
 }
+
+func TestAppendPacketAfterDst(t *testing.T) {
+	t.Parallel()
+
+	for _, f := range []sms.Format{sms.FormatTMS, sms.FormatIP, sms.FormatAnyTone, sms.FormatDefinedData, sms.FormatHytera} {
+		in := sms.Text{Format: f, Source: 1, Destination: 2, DD: enums.DDUTF16LE, Body: []byte("hi")}
+		var h sms.Header
+		out, err := sms.AppendPacket([]byte("xyz"), &in, &h)
+		if err != nil || string(out[:3]) != "xyz" {
+			t.Fatalf("%s: %x, %v", f, out, err)
+		}
+		if _, got, err := sms.Decode(nil, &h.Data, out[3:]); err != nil || got.Format != f || string(got.Body) != "hi" {
+			t.Errorf("%s: decoded %+v %q, %v", f, got, got.Body, err)
+		}
+	}
+}
