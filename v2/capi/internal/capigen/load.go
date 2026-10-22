@@ -27,6 +27,9 @@ type loader struct {
 	docs map[types.Object]string
 	full map[types.Object]string
 	busy map[string]bool
+	decl map[*types.Func]*ast.FuncDecl
+	info map[*types.Package]*types.Info
+	eff  map[effKey]*effect
 }
 
 func newLoader(root string) *loader {
@@ -37,6 +40,7 @@ func newLoader(root string) *loader {
 	return &loader{
 		ctx: ctx, root: root, fset: fset, std: importer.ForCompiler(fset, "source", nil),
 		pkgs: map[string]*types.Package{}, docs: map[types.Object]string{}, full: map[types.Object]string{}, busy: map[string]bool{},
+		decl: map[*types.Func]*ast.FuncDecl{}, info: map[*types.Package]*types.Info{}, eff: map[effKey]*effect{},
 	}
 }
 
@@ -70,13 +74,24 @@ func (l *loader) load(p string) (*types.Package, error) {
 		}
 		files = append(files, af)
 	}
-	info := &types.Info{Defs: map[*ast.Ident]types.Object{}}
+	info := &types.Info{Defs: map[*ast.Ident]types.Object{}, Uses: map[*ast.Ident]types.Object{},
+		Types: map[ast.Expr]types.TypeAndValue{}, Selections: map[*ast.SelectorExpr]*types.Selection{}}
 	conf := types.Config{Importer: l, Sizes: types.SizesFor("gc", "amd64"), FakeImportC: true}
 	pkg, err := conf.Check(p, l.fset, files, info)
 	if err != nil {
 		return nil, err
 	}
 	l.collectDocs(files, info)
+	for _, f := range files {
+		for _, d := range f.Decls {
+			if fd, ok := d.(*ast.FuncDecl); ok && fd.Body != nil {
+				if fn, ok := info.Defs[fd.Name].(*types.Func); ok {
+					l.decl[fn] = fd
+				}
+			}
+		}
+	}
+	l.info[pkg] = info
 	l.pkgs[p] = pkg
 	return pkg, nil
 }

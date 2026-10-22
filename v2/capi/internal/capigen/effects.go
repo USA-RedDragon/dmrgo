@@ -1,0 +1,789 @@
+package capigen
+
+import (
+	"go/ast"
+	"go/token"
+	"go/types"
+	"strings"
+)
+
+type effKey struct {
+	fn    *types.Func
+	param int
+}
+
+const (
+	eSet uint8 = 1 << iota
+	eElem
+)
+
+type effect struct {
+	all bool
+	ret bool
+	f   map[string]uint8
+}
+
+func (e *effect) mark(field string, bits uint8) {
+	if bits == 0 {
+		return
+	}
+	if e.f == nil {
+		e.f = map[string]uint8{}
+	}
+	e.f[field] |= bits
+}
+
+func (e *effect) get(field string) uint8 {
+	if e.all {
+		return eSet | eElem
+	}
+	return e.f[field]
+}
+
+func (e *effect) bits() uint8 {
+	if e.all {
+		return eSet | eElem
+	}
+	var b uint8
+	for _, v := range e.f {
+		b |= v
+	}
+	return b
+}
+
+func (e *effect) any() bool {
+	return e.all || len(e.f) > 0
+}
+
+type apath struct {
+	field  string
+	deeper bool
+	copy   bool
+	box    bool
+}
+
+type analyzer struct {
+	l       *loader
+	info    *types.Info
+	eff     *effect
+	root    types.Object
+	aliases map[types.Object]apath
+	parent  map[ast.Node]ast.Node
+	resVars map[types.Object]bool
+}
+
+// effects reports what fn can change, as seen by its caller, through its
+// parameter param (-1 for the receiver): for a struct or a pointer to one,
+// the fields that it sets (eSet) or whose elements it writes in place
+// (eElem); for a slice or another pointer, eElem under "" when it writes
+// through it. A body that the analysis cannot see changes everything.
+func (l *loader) effects(fn *types.Func, param int) *effect {
+	fn = fn.Origin()
+	k := effKey{fn, param}
+	if e, ok := l.eff[k]; ok {
+		return e
+	}
+	all := &effect{all: true, ret: true}
+	l.eff[k] = all
+	fd := l.decl[fn]
+	if fd == nil {
+		return all
+	}
+	info := l.info[fn.Pkg()]
+	id := paramIdent(fd, param)
+	if id == nil && param >= 0 && fn.Signature().Variadic() && param >= fn.Signature().Params().Len() {
+		return l.effects(fn, fn.Signature().Params().Len()-1)
+	}
+	if id == nil || id.Name == "_" {
+		l.eff[k] = &effect{}
+		return l.eff[k]
+	}
+	obj := info.Defs[id]
+	if obj == nil {
+		return all
+	}
+	a := &analyzer{l: l, info: info, eff: &effect{}, root: obj, aliases: map[types.Object]apath{obj: {}}, parent: map[ast.Node]ast.Node{}, resVars: map[types.Object]bool{}}
+	if fd.Type.Results != nil {
+		for _, f := range fd.Type.Results.List {
+			for _, n := range f.Names {
+				if o := info.Defs[n]; o != nil {
+					a.resVars[o] = true
+				}
+			}
+		}
+	}
+	ast.Inspect(fd.Body, func(n ast.Node) bool {
+		if n == nil {
+			return false
+		}
+		ast.Inspect(n, func(c ast.Node) bool {
+			if c == n {
+				return true
+			}
+			if c != nil {
+				a.parent[c] = n
+			}
+			return false
+		})
+		return true
+	})
+	for {
+		before := len(a.aliases)
+		a.eff = &effect{}
+		ast.Inspect(fd.Body, func(n ast.Node) bool {
+			if id, ok := n.(*ast.Ident); ok {
+				if o := info.Uses[id]; o != nil {
+					if p, ok := a.aliases[o]; ok {
+						a.use(id, p)
+					}
+				}
+			}
+			return !a.eff.all
+		})
+		if len(a.aliases) == before || a.eff.all {
+			break
+		}
+	}
+	l.eff[k] = a.eff
+	return a.eff
+}
+
+func paramIdent(fd *ast.FuncDecl, param int) *ast.Ident {
+	if param < 0 {
+		if fd.Recv == nil || len(fd.Recv.List) == 0 || len(fd.Recv.List[0].Names) == 0 {
+			return nil
+		}
+		return fd.Recv.List[0].Names[0]
+	}
+	i := 0
+	for _, f := range fd.Type.Params.List {
+		if len(f.Names) == 0 {
+			i++
+			continue
+		}
+		for _, n := range f.Names {
+			if i == param {
+				return n
+			}
+			i++
+		}
+	}
+	return nil
+}
+
+func isRef(t types.Type) bool {
+	switch u := t.Underlying().(type) {
+	case *types.Slice, *types.Pointer, *types.Map, *types.Chan, *types.Signature, *types.Interface:
+		return true
+	case *types.Struct:
+		for f := range u.Fields() {
+			if isRef(f.Type()) {
+				return true
+			}
+		}
+	case *types.Array:
+		return isRef(u.Elem())
+	case *types.Tuple:
+		for v := range u.Variables() {
+			if isRef(v.Type()) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func isPtr(t types.Type) bool {
+	_, ok := t.Underlying().(*types.Pointer)
+	return ok
+}
+
+func (a *analyzer) typeOf(e ast.Expr) types.Type {
+	if tv, ok := a.info.Types[e]; ok {
+		return tv.Type
+	}
+	if id, ok := e.(*ast.Ident); ok {
+		if o := a.info.Uses[id]; o != nil {
+			return o.Type()
+		}
+		if o := a.info.Defs[id]; o != nil {
+			return o.Type()
+		}
+	}
+	return nil
+}
+
+func (a *analyzer) isType(e ast.Expr) bool {
+	tv, ok := a.info.Types[e]
+	return ok && tv.IsType()
+}
+
+func structOf(t types.Type) *types.Struct {
+	if t == nil {
+		return nil
+	}
+	if p, ok := t.Underlying().(*types.Pointer); ok {
+		t = p.Elem()
+	}
+	s, _ := t.Underlying().(*types.Struct)
+	return s
+}
+
+func (a *analyzer) rootStruct() *types.Struct {
+	return structOf(a.root.Type())
+}
+
+func (a *analyzer) use(id *ast.Ident, p apath) {
+	var top ast.Expr = id
+	structRoot := p.field == "" && !p.deeper && !p.box && structOf(a.info.Uses[id].Type()) != nil
+	for top != nil {
+	climb:
+		for {
+			switch x := a.parent[top].(type) {
+			case *ast.ParenExpr:
+				top = x
+				continue
+			case *ast.SelectorExpr:
+				if x.X != top {
+					break climb
+				}
+				sel := a.info.Selections[x]
+				if sel == nil {
+					break climb
+				}
+				if sel.Kind() == types.FieldVal {
+					if structRoot {
+						p.field = x.Sel.Name
+					} else {
+						p.deeper = true
+					}
+					structRoot = false
+					top = x
+					continue
+				}
+				top = a.methodCall(x, sel, p)
+				if top == nil {
+					return
+				}
+				p.deeper = true
+				structRoot = false
+				continue
+			case *ast.IndexExpr:
+				if x.X == top {
+					p.deeper = true
+					structRoot = false
+					top = x
+					continue
+				}
+			case *ast.SliceExpr:
+				if x.X == top {
+					top = x
+					continue
+				}
+			case *ast.StarExpr:
+				top = x
+				continue
+			case *ast.UnaryExpr:
+				if x.Op == token.AND && x.X == top {
+					top = x
+					continue
+				}
+			case *ast.CallExpr:
+				if len(x.Args) == 1 && x.Args[0] == top && a.isType(x.Fun) {
+					structRoot = false
+					top = x
+					continue
+				}
+			case *ast.TypeAssertExpr:
+				if x.X == top {
+					top = x
+					continue
+				}
+			case *ast.KeyValueExpr:
+				if t := a.typeOf(top); x.Value == top && t != nil && isRef(t) {
+					top = x
+					continue
+				}
+			case *ast.CompositeLit:
+				if t := a.typeOf(top); t == nil || !isRef(t) {
+					if _, ok := top.(*ast.KeyValueExpr); !ok {
+						break
+					}
+				}
+				p.copy, p.box = true, true
+				structRoot = false
+				top = x
+				continue
+			}
+			break
+		}
+		next := a.context(top, id, p)
+		if next == nil {
+			return
+		}
+		top = next
+		p.deeper = true
+		structRoot = false
+	}
+}
+
+func (a *analyzer) throughRef(e ast.Expr, id *ast.Ident, box bool) bool {
+	for e != nil && e != ast.Expr(id) {
+		switch x := e.(type) {
+		case *ast.ParenExpr:
+			e = x.X
+		case *ast.SelectorExpr:
+			if t := a.typeOf(x.X); t != nil && isPtr(t) && !(box && ast.Unparen(x.X) == ast.Expr(id)) {
+				return true
+			}
+			e = x.X
+		case *ast.IndexExpr:
+			if t := a.typeOf(x.X); t != nil {
+				switch t.Underlying().(type) {
+				case *types.Slice, *types.Map, *types.Pointer:
+					return true
+				}
+			}
+			e = x.X
+		case *ast.SliceExpr:
+			if t := a.typeOf(x.X); t != nil {
+				if _, ok := t.Underlying().(*types.Slice); ok {
+					return true
+				}
+			}
+			e = x.X
+		case *ast.StarExpr:
+			if box && ast.Unparen(x.X) == ast.Expr(id) {
+				e = x.X
+				continue
+			}
+			return true
+		case *ast.UnaryExpr:
+			e = x.X
+		default:
+			return true
+		}
+	}
+	return false
+}
+
+func (a *analyzer) write(p apath, lhs ast.Expr, id *ast.Ident) {
+	if p.copy {
+		if lhs != nil && !a.throughRef(lhs, id, p.box) {
+			return
+		}
+		if p.field == "" && a.rootStruct() != nil {
+			a.eff.all = true
+			return
+		}
+		a.eff.mark(p.field, eElem)
+		return
+	}
+	if lhs != nil && ast.Unparen(lhs) == ast.Expr(id) {
+		return
+	}
+	if p.field == "" {
+		if a.rootStruct() != nil {
+			a.eff.all = true
+			return
+		}
+		a.eff.mark("", eElem)
+		return
+	}
+	if !p.deeper {
+		a.eff.mark(p.field, eSet)
+		return
+	}
+	if a.fieldIsSlice(p.field) {
+		a.eff.mark(p.field, eElem)
+		return
+	}
+	a.eff.mark(p.field, eSet)
+}
+
+func (a *analyzer) fieldIsSlice(name string) bool {
+	s := a.rootStruct()
+	if s == nil {
+		return false
+	}
+	for f := range s.Fields() {
+		if f.Name() == name {
+			_, ok := f.Type().Underlying().(*types.Slice)
+			return ok
+		}
+	}
+	return false
+}
+
+func (a *analyzer) escape(p apath) {
+	if p.field == "" {
+		if a.rootStruct() != nil {
+			a.eff.all = true
+			return
+		}
+		a.eff.mark("", eElem)
+		return
+	}
+	if p.copy {
+		a.eff.mark(p.field, eElem)
+		return
+	}
+	a.eff.mark(p.field, eSet|eElem)
+}
+
+func (a *analyzer) localRoot(e ast.Expr) (*types.Var, bool) {
+	direct := true
+	for {
+		switch x := e.(type) {
+		case *ast.ParenExpr:
+			e = x.X
+			continue
+		case *ast.SelectorExpr:
+			if t := a.typeOf(x.X); t == nil || isPtr(t) {
+				return nil, false
+			}
+			e, direct = x.X, false
+			continue
+		case *ast.IndexExpr:
+			if t := a.typeOf(x.X); t == nil {
+				return nil, false
+			} else if _, ok := t.Underlying().(*types.Array); !ok {
+				return nil, false
+			}
+			e, direct = x.X, false
+			continue
+		case *ast.Ident:
+			if x.Name == "_" {
+				return nil, false
+			}
+			o := a.info.Defs[x]
+			if o == nil {
+				o = a.info.Uses[x]
+			}
+			v, ok := o.(*types.Var)
+			if !ok || v.Parent() == nil || v.Pkg() == nil || v.Parent() == v.Pkg().Scope() {
+				return nil, false
+			}
+			return v, direct
+		}
+		return nil, false
+	}
+}
+
+func (a *analyzer) alias(lhs, rhs ast.Expr, p apath) {
+	t := a.typeOf(rhs)
+	if t == nil || !isRef(t) {
+		return
+	}
+	v, direct := a.localRoot(lhs)
+	if v == nil {
+		return
+	}
+	if a.resVars[v] {
+		a.eff.ret = true
+	}
+	if !direct {
+		p.copy, p.box = true, true
+	} else {
+		switch v.Type().Underlying().(type) {
+		case *types.Struct, *types.Array:
+			if p.field == "" && !p.deeper && !p.box && types.Identical(v.Type(), derefType(a.root.Type())) {
+				p.copy = true
+			} else {
+				p.copy, p.box = true, true
+			}
+		}
+	}
+	if _, ok := a.aliases[v]; !ok {
+		a.aliases[v] = p
+	}
+}
+
+func derefType(t types.Type) types.Type {
+	if p, ok := t.Underlying().(*types.Pointer); ok {
+		return p.Elem()
+	}
+	return t
+}
+
+func (a *analyzer) context(top ast.Expr, id *ast.Ident, p apath) ast.Expr {
+	for n := a.parent[top]; n != nil; n = a.parent[n] {
+		if _, ok := n.(*ast.FuncLit); ok {
+			a.escape(p)
+			return nil
+		}
+	}
+	switch x := a.parent[top].(type) {
+	case *ast.AssignStmt:
+		for _, l := range x.Lhs {
+			if l == top {
+				a.write(p, top, id)
+				return nil
+			}
+		}
+		for i, r := range x.Rhs {
+			if r != top {
+				continue
+			}
+			if len(x.Lhs) == len(x.Rhs) {
+				a.alias(x.Lhs[i], top, p)
+				return nil
+			}
+		}
+	case *ast.IncDecStmt:
+		a.write(p, top, id)
+	case *ast.ValueSpec:
+		for i, v := range x.Values {
+			if v == top && i < len(x.Names) {
+				a.alias(x.Names[i], top, p)
+			}
+		}
+	case *ast.RangeStmt:
+		if x.X == top {
+			if x.Value != nil {
+				q := p
+				q.deeper = true
+				a.alias(x.Value, x.Value, q)
+			}
+			return nil
+		}
+		if x.Tok == token.ASSIGN {
+			a.write(p, top, id)
+		}
+	case *ast.CallExpr:
+		for i, arg := range x.Args {
+			if arg != top {
+				continue
+			}
+			if a.argCall(x, i, p, id) {
+				return a.results(x, p)
+			}
+			return nil
+		}
+	case *ast.ReturnStmt:
+		a.eff.ret = true
+	}
+	return nil
+}
+
+func (a *analyzer) argRef(arg ast.Expr, id *ast.Ident, p apath) ast.Expr {
+	if !p.copy || id == nil {
+		return nil
+	}
+	if a.throughRef(arg, id, p.box) {
+		return nil
+	}
+	return arg
+}
+
+func (a *analyzer) results(call *ast.CallExpr, p apath) ast.Expr {
+	t := a.typeOf(call)
+	if t == nil || !isRef(t) {
+		return nil
+	}
+	if tu, ok := t.(*types.Tuple); ok {
+		q := p
+		q.deeper = true
+		switch x := a.parent[call].(type) {
+		case *ast.AssignStmt:
+			if len(x.Rhs) == 1 {
+				for i, l := range x.Lhs {
+					if i < tu.Len() && isRef(tu.At(i).Type()) {
+						a.alias(l, l, q)
+					}
+				}
+			}
+		case *ast.ValueSpec:
+			if len(x.Values) == 1 {
+				for i, l := range x.Names {
+					if i < tu.Len() && isRef(tu.At(i).Type()) {
+						a.alias(l, l, q)
+					}
+				}
+			}
+		}
+		return nil
+	}
+	return call
+}
+
+func (a *analyzer) callee(call *ast.CallExpr) (*types.Func, *types.Builtin) {
+	switch f := ast.Unparen(call.Fun).(type) {
+	case *ast.Ident:
+		switch o := a.info.Uses[f].(type) {
+		case *types.Func:
+			return o, nil
+		case *types.Builtin:
+			return nil, o
+		}
+	case *ast.SelectorExpr:
+		if sel := a.info.Selections[f]; sel != nil {
+			if fn, ok := sel.Obj().(*types.Func); ok {
+				return fn, nil
+			}
+			return nil, nil
+		}
+		if fn, ok := a.info.Uses[f.Sel].(*types.Func); ok {
+			return fn, nil
+		}
+	case *ast.IndexExpr:
+		if id, ok := f.X.(*ast.Ident); ok {
+			if fn, ok := a.info.Uses[id].(*types.Func); ok {
+				return fn, nil
+			}
+		}
+	}
+	return nil, nil
+}
+
+func (a *analyzer) argCall(call *ast.CallExpr, i int, p apath, id *ast.Ident) bool {
+	if t := a.typeOf(call.Args[i]); t != nil && !isRef(t) {
+		return false
+	}
+	fn, b := a.callee(call)
+	if b != nil {
+		switch b.Name() {
+		case "copy", "append", "clear":
+			if i == 0 {
+				q := p
+				q.deeper = true
+				a.write(q, a.argRef(call.Args[0], id, p), id)
+			}
+		}
+		return b.Name() == "append" && i == 0
+	}
+	if fn == nil {
+		a.escape(p)
+		return true
+	}
+	if sel, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr); ok {
+		if s := a.info.Selections[sel]; s != nil && types.IsInterface(s.Recv()) {
+			a.escape(p)
+			return true
+		}
+	}
+	params := fn.Signature().Params()
+	pt := params.At(min(i, params.Len()-1)).Type()
+	if p.copy && !a.throughRef(call.Args[i], id, p.box) && !isPtr(pt) {
+		if _, ok := pt.Underlying().(*types.Slice); ok {
+			return false
+		}
+	}
+	if a.l.decl[fn.Origin()] != nil {
+		e := a.l.effects(fn, i)
+		a.apply(e, p, pt)
+		return e.ret
+	}
+	if stdWrites(fn, i) {
+		a.escape(p)
+		return true
+	}
+	return i == 0
+}
+
+func (a *analyzer) methodCall(x *ast.SelectorExpr, sel *types.Selection, p apath) ast.Expr {
+	fn, ok := sel.Obj().(*types.Func)
+	call, isCall := a.parent[x].(*ast.CallExpr)
+	if !ok || !isCall || call.Fun != x {
+		a.escape(p)
+		return nil
+	}
+	rt := fn.Signature().Recv().Type()
+	ret := true
+	switch {
+	case types.IsInterface(sel.Recv()):
+		a.escape(p)
+	case !isRef(rt):
+		ret = false
+	case a.l.decl[fn.Origin()] != nil:
+		e := a.l.effects(fn, -1)
+		a.apply(e, p, rt)
+		ret = e.ret
+	case stdWrites(fn, -1):
+		a.escape(p)
+	}
+	if !ret {
+		return nil
+	}
+	return a.results(call, p)
+}
+
+func (a *analyzer) apply(e *effect, p apath, pt types.Type) {
+	if !e.any() {
+		return
+	}
+	byRef := isPtr(pt)
+	if _, ok := pt.Underlying().(*types.Slice); ok {
+		if e.get("")&eElem != 0 {
+			q := p
+			q.deeper = true
+			a.write(q, nil, nil)
+		}
+		return
+	}
+	mask := eSet | eElem
+	if !byRef || p.copy {
+		mask = eElem
+	}
+	if p.field == "" && !p.deeper && a.rootStruct() != nil && structOf(pt) != nil {
+		if e.all {
+			if mask == eSet|eElem {
+				a.eff.all = true
+			} else {
+				a.escape(p)
+			}
+			return
+		}
+		for f, bits := range e.f {
+			if bits&mask == 0 {
+				continue
+			}
+			if p.copy {
+				a.eff.mark(f, eElem)
+			} else {
+				a.eff.mark(f, bits&mask)
+			}
+		}
+		return
+	}
+	if e.bits()&mask != 0 {
+		q := p
+		q.deeper = true
+		a.write(q, nil, nil)
+	}
+}
+
+func stdWrites(fn *types.Func, i int) bool {
+	pkg := ""
+	if fn.Pkg() != nil {
+		pkg = fn.Pkg().Path()
+	}
+	name := fn.Name()
+	recv := fn.Signature().Recv() != nil
+	switch pkg {
+	case "fmt":
+		return strings.Contains(name, "scan") || strings.Contains(name, "Scan") || strings.HasPrefix(name, "Append") && i == 0
+	case "strings", "errors", "math", "math/bits", "unicode", "hash/crc32", "hash/crc64", "hash/adler32", "bytes", "time", "unicode/utf16":
+		if recv {
+			return strings.HasPrefix(name, "Read") && i == 0
+		}
+		return false
+	case "strconv":
+		return strings.HasPrefix(name, "Append") && i == 0
+	case "unicode/utf8":
+		return (name == "EncodeRune" || name == "AppendRune") && i == 0
+	case "encoding/binary":
+		if name == "Read" {
+			return true
+		}
+		return (strings.HasPrefix(name, "Put") || strings.HasPrefix(name, "Append")) && i == 0
+	case "slices":
+		switch name {
+		case "Equal", "EqualFunc", "Compare", "CompareFunc", "Index", "IndexFunc", "Contains", "ContainsFunc", "Clone", "Max", "MaxFunc",
+			"Min", "MinFunc", "IsSorted", "IsSortedFunc", "BinarySearch", "BinarySearchFunc", "All", "Values", "Backward":
+			return false
+		}
+		return i == 0
+	}
+	return true
+}
