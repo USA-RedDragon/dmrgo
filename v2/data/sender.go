@@ -50,7 +50,11 @@ type SenderConfig struct {
 	// channel idle (ETSI TS 102 361-1 clause 5.2.1.6).
 	Access enums.Access
 	// Preambles is the number of preamble CSBKs before the header of each
-	// try, so that a radio in power save wakes up. 0 means
+	// try, so that a radio in power save wakes up. A try that starts
+	// within DefaultHang of a response from the target sends at most one,
+	// as the target is still in the data call, and one Pre_CSBK is the
+	// ChanAuth PDU of data in channel hangtime (ETSI TS 102 361-2 clause
+	// 5.1.1.6.0). 0 means
 	// DefaultPreambles, and a negative value sends none; at most
 	// MaxPreambles.
 	Preambles int
@@ -284,6 +288,9 @@ type Sender struct {
 	source       layer2.SyncSource
 	access       enums.Access
 	preambles    int
+	pre          int
+	heard        bool
+	heardAt      time.Duration
 	idleSearch   time.Duration
 	holdoff      time.Duration
 	responseWait time.Duration
@@ -507,7 +514,7 @@ func (s *Sender) Send(now time.Duration, m *Message) error {
 	switch {
 	case s.n == 1:
 		s.asm.Reset()
-		s.start(now)
+		s.start(now, false)
 	case !s.closed && s.state != SenderWaitResponse:
 		s.join(s.n - 1)
 	}
@@ -577,14 +584,15 @@ func (s *Sender) join(k int) {
 	s.win = k + 1
 }
 
-func (s *Sender) start(now time.Duration) {
+func (s *Sender) start(now time.Duration, awake bool) {
 	s.win, s.cur, s.idx, s.closed = 0, 0, 0, false
 	s.limitAt = s.slots[s.ord[0]].limitAt
 	for k := range s.n {
 		s.join(k)
 		s.limitAt = min(s.limitAt, s.slots[s.ord[k]].limitAt)
 	}
-	s.load()
+	s.heard, s.heardAt = awake, now
+	s.prepare(now)
 	switch {
 	case s.access == enums.AccessImpolite || !s.busy:
 		s.state, s.due = SenderSending, now+s.lead
@@ -593,11 +601,19 @@ func (s *Sender) start(now time.Duration) {
 	}
 }
 
+func (s *Sender) prepare(now time.Duration) {
+	s.pre = s.preambles
+	if s.heard && now-s.heardAt <= DefaultHang {
+		s.pre = min(s.preambles, 1)
+	}
+	s.load()
+}
+
 func (s *Sender) load() {
 	e := &s.slots[s.ord[s.cur]]
 	s.total = 1 + len(e.try.Blocks)
 	if s.cur == 0 {
-		s.total += s.preambles
+		s.total += s.pre
 	}
 }
 
@@ -611,6 +627,7 @@ func (s *Sender) Channel(now time.Duration, busy bool) {
 	}
 	s.busy = busy
 	if !busy && s.state == SenderWaiting {
+		s.prepare(now)
 		s.state, s.due = SenderSending, now+s.lead
 	}
 }
@@ -752,7 +769,7 @@ func (s *Sender) answered(now time.Duration, code packet.Response, j int, status
 	if renumber {
 		s.link.seq = (status + 1 + uint8(w&7)) & 7
 	}
-	return s.next(now, dst)
+	return s.next(now, true, dst)
 }
 
 func (s *Sender) again(e *slot, rd *packet.ResponseData) {
@@ -770,7 +787,7 @@ func (s *Sender) again(e *slot, rd *packet.ResponseData) {
 	e.try = p
 }
 
-func (s *Sender) next(now time.Duration, dst []Output) []Output {
+func (s *Sender) next(now time.Duration, awake bool, dst []Output) []Output {
 	for k := 0; k < s.n; {
 		e := &s.slots[s.ord[k]]
 		switch {
@@ -783,7 +800,7 @@ func (s *Sender) next(now time.Duration, dst []Output) []Output {
 		}
 	}
 	if s.n > 0 {
-		s.start(now)
+		s.start(now, awake)
 	}
 	return dst
 }
@@ -878,6 +895,7 @@ func (s *Sender) timers(now time.Duration, dst []Output) []Output {
 				s.state, s.waitUntil = SenderWaiting, at+s.idleSearch
 				continue
 			}
+			s.prepare(at)
 			s.state, s.due = SenderSending, at+s.lead
 		case SenderSending:
 			return s.send(dst)
@@ -885,7 +903,7 @@ func (s *Sender) timers(now time.Duration, dst []Output) []Output {
 			for k := range s.win {
 				s.again(&s.slots[s.ord[k]], nil)
 			}
-			dst = s.next(at, dst)
+			dst = s.next(at, false, dst)
 		case SenderIdle:
 			return dst
 		}
@@ -915,7 +933,7 @@ func (s *Sender) send(dst []Output) []Output {
 	e := &s.slots[s.ord[s.cur]]
 	pre := 0
 	if s.cur == 0 {
-		pre = s.preambles
+		pre = s.pre
 	}
 	var d layer2.Data
 	var err error
