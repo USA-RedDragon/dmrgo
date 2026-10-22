@@ -16,6 +16,9 @@ type WakeupConfig struct {
 	// ColorCode is the color code of the BS, of the slot type of the
 	// BS_Dwn_Act bursts and of the outbound that ends the wakeup.
 	ColorCode enums.ColorCode
+	// Slot is the TDMA slot of the machine, which it puts in the Hint of
+	// each burst it sends. SlotUnknown leaves it unknown.
+	Slot enums.Slot
 	// SyncWait is T_SyncWu, the wait for the outbound after each BS_Dwn_Act.
 	// 0 means DefaultSyncWait, and a negative value waits until the
 	// outbound or Cancel.
@@ -70,6 +73,7 @@ type Wakeup struct {
 	syncWait time.Duration
 	attempts int
 	lead     time.Duration
+	slot     enums.Slot
 	d        decoder
 
 	state     WakeupState
@@ -85,7 +89,8 @@ type Wakeup struct {
 
 // NewWakeup returns a Wakeup for cfg. A nil cfg means the zero WakeupConfig.
 // It returns a *dmrgo.ConfigError for a color code above 15, Attempts out
-// of range or a negative Lead. It allocates the Wakeup, and its Burst unless cfg.Scratch is
+// of range, a negative Lead, or a Slot other than SlotUnknown, Slot1 or
+// Slot2. It allocates the Wakeup, and its Burst unless cfg.Scratch is
 // set.
 func NewWakeup(cfg *WakeupConfig) (*Wakeup, error) {
 	var conf WakeupConfig
@@ -102,7 +107,10 @@ func NewWakeup(cfg *WakeupConfig) (*Wakeup, error) {
 	if cfg.Lead < 0 {
 		return nil, errLead
 	}
-	w := &Wakeup{cc: cfg.ColorCode, syncWait: cfg.SyncWait, attempts: cfg.Attempts, lead: cfg.Lead}
+	if err := checkSlot(cfg.Slot); err != nil {
+		return nil, err
+	}
+	w := &Wakeup{cc: cfg.ColorCode, syncWait: cfg.SyncWait, attempts: cfg.Attempts, lead: cfg.Lead, slot: cfg.Slot}
 	if w.syncWait == 0 {
 		w.syncWait = DefaultSyncWait
 	}
@@ -250,7 +258,7 @@ func (w *Wakeup) Tick(now time.Duration, dst []Output) []Output {
 	var o *Output
 	dst, o = appendOutput(dst, OutputBurst)
 	o.Burst, o.Due = b, w.due
-	o.Hint = layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeCSBK, HasDataType: true}
+	o.Hint = csbkHint(w.slot)
 	w.sent++
 	w.state, w.waitUntil = WakeupWaiting, w.due+w.syncWait
 	return dst

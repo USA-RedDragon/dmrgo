@@ -7,6 +7,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/csbk"
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
@@ -220,6 +221,54 @@ func TestLead(t *testing.T) {
 		var ce *dmrgo.ConfigError
 		if !errors.As(err, &ce) || ce.Field != "Lead" {
 			t.Errorf("negative Lead: %v", err)
+		}
+	}
+}
+
+func TestHintSlot(t *testing.T) {
+	t.Parallel()
+
+	q := mustRequester(t, &csbk.RequesterConfig{Slot: enums.Slot2})
+	if err := q.RequestRadioCheck(0, 2, 1, nil); err != nil {
+		t.Fatal(err)
+	}
+	w, err := csbk.NewWakeup(&csbk.WakeupConfig{Slot: enums.Slot1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Wake(0, 1, 2); err != nil {
+		t.Fatal(err)
+	}
+	m, err := csbk.NewTiming(&csbk.TimingConfig{ID: 1, Slot: enums.Slot2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := m.Join(0); err != nil {
+		t.Fatal(err)
+	}
+	for name, tt := range map[string]struct {
+		out  []csbk.Output
+		slot enums.Slot
+	}{
+		"Requester":  {q.Tick(0, nil), enums.Slot2},
+		"Wakeup":     {w.Tick(0, nil), enums.Slot1},
+		"Terminator": {m.Terminator(0, nil), enums.Slot2},
+	} {
+		if len(tt.out) != 1 {
+			t.Fatalf("%s: %d outputs", name, len(tt.out))
+		}
+		if h := tt.out[0].Hint; h.Slot != tt.slot || h.Kind != layer2.KindData || !h.HasDataType || h.DataType != enums.DataTypeCSBK {
+			t.Errorf("%s: Hint %+v", name, h)
+		}
+	}
+	for _, err := range []error{
+		func() error { _, err := csbk.NewRequester(&csbk.RequesterConfig{Slot: 3}); return err }(),
+		func() error { _, err := csbk.NewResponder(&csbk.ResponderConfig{Address: 1, Slot: 3}); return err }(),
+		func() error { _, err := csbk.NewWakeup(&csbk.WakeupConfig{Slot: 3}); return err }(),
+	} {
+		var ce *dmrgo.ConfigError
+		if !errors.As(err, &ce) || ce.Field != "Slot" {
+			t.Errorf("Slot 3: %v", err)
 		}
 	}
 }

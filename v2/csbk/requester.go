@@ -20,6 +20,9 @@ type RequesterConfig struct {
 	// Source selects the SYNC pattern: layer2.SyncSourceBS, the zero value,
 	// for a repeater outbound, layer2.SyncSourceMS for a radio.
 	Source layer2.SyncSource
+	// Slot is the TDMA slot of the machine, which it puts in the Hint of
+	// each burst it sends. SlotUnknown leaves it unknown.
+	Slot enums.Slot
 	// AckWait is T_AckWait, the wait for the answer after each try. 0 means
 	// constants.TAckWait (360 ms), and DefaultMotorolaAckWait for the
 	// Motorola radio check and call alert. A negative value waits until an
@@ -146,7 +149,8 @@ type Requester struct {
 
 // NewRequester returns a Requester for cfg. A nil cfg means the zero
 // RequesterConfig. It returns a *dmrgo.ConfigError for a color code above
-// 15, an unknown Source, Retries above MaxRetries or a negative Lead. It allocates the
+// 15, an unknown Source, Retries above MaxRetries, a negative Lead or a
+// Slot other than SlotUnknown, Slot1 or Slot2. It allocates the
 // Requester, and its Burst unless cfg.Scratch is set.
 func NewRequester(cfg *RequesterConfig) (*Requester, error) {
 	var conf RequesterConfig
@@ -166,6 +170,9 @@ func NewRequester(cfg *RequesterConfig) (*Requester, error) {
 	if cfg.Lead < 0 {
 		return nil, errLead
 	}
+	if err := checkSlot(cfg.Slot); err != nil {
+		return nil, err
+	}
 	q := &Requester{ackWait: cfg.AckWait, retries: cfg.Retries}
 	switch {
 	case q.retries == 0:
@@ -174,7 +181,7 @@ func NewRequester(cfg *RequesterConfig) (*Requester, error) {
 		q.retries = 0
 	}
 	q.s.init(cfg.ColorCode, cfg.Source, cfg.IdleSearch, cfg.HoldoffMax, cfg.Seed)
-	q.s.lead = cfg.Lead
+	q.s.lead, q.s.slot = cfg.Lead, cfg.Slot
 	q.d = newDecoder(cfg.Scratch)
 	return q, nil
 }

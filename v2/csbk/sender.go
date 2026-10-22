@@ -34,6 +34,7 @@ type sender struct {
 	idleSearch time.Duration
 	holdoffMax time.Duration
 	lead       time.Duration
+	slot       enums.Slot
 	rng        pcg.Source
 	busy       bool
 
@@ -132,7 +133,7 @@ func (s *sender) tick(now time.Duration, out []Output) ([]Output, sendEvent) {
 	var o *Output
 	out, o = appendOutput(out, OutputBurst)
 	o.Burst, o.Due = b, s.due
-	o.Hint = layer2.Hint{Kind: layer2.KindData, DataType: enums.DataTypeCSBK, HasDataType: true}
+	o.Hint = csbkHint(s.slot)
 	s.sent++
 	if s.sent > s.preambles {
 		s.state = sendIdle
@@ -149,4 +150,15 @@ func (s *sender) preamble(cbf int) pdu.CSBKBytes {
 	}
 	octets, _ := s.pre.Encode()
 	return pdu.CSBKBytes(octets)
+}
+
+func csbkHint(s enums.Slot) layer2.Hint {
+	return layer2.Hint{Slot: s, Kind: layer2.KindData, DataType: enums.DataTypeCSBK, HasDataType: true}
+}
+
+func checkSlot(s enums.Slot) error {
+	if s != enums.SlotUnknown && s != enums.Slot1 && s != enums.Slot2 {
+		return errSlot
+	}
+	return nil
 }
