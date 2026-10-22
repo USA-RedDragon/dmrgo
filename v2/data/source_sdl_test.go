@@ -1,7 +1,6 @@
 package data_test
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -143,11 +142,15 @@ func TestSenderSourceSDL(t *testing.T) {
 			t.Errorf("%s: dones %+v", c.name, done)
 			continue
 		}
-		if m, err := done[0].ICMP(); (err == nil) != c.icmp || err == nil && m != ip.ICMPHostUnreachable {
-			t.Errorf("%s: ICMP %v %v", c.name, m, err)
+		if m, ok := done[0].ICMP(); ok != c.icmp || ok && m != ip.ICMPHostUnreachable {
+			t.Errorf("%s: ICMP %v %v", c.name, m, ok)
 		}
 	}
-	if m, err := (&data.Output{Kind: data.OutputBurst}).ICMP(); !errors.Is(err, ip.ErrNoICMP) {
+	if m, ok := (&data.Output{Kind: data.OutputBurst}).ICMP(); ok {
 		t.Errorf("burst gives ICMP %v", m)
+	}
+	var none *data.Output
+	if _, ok := none.ICMP(); ok {
+		t.Error("nil Output gives an ICMP message")
 	}
 }

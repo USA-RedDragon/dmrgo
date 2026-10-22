@@ -7978,16 +7978,16 @@ int dmrgo_csbk_wakeup_wake(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, uint
 int dmrgo_csbk_wakeup_state_string(dmrgo_csbk_wakeup_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: data.EndReason.String. String returns the name of the reason. */
 int dmrgo_data_end_reason_string(dmrgo_data_end_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: data.Event.ICMP. ICMP returns the ICMP error message that a radio sends about the IPv4 packet of the EventDelivered or EventReassembled e, for an accessory interface with the MTU mtu, as ip.CheckIPv4 does. It returns DMRGO_ERR_IP_NO_ICMP when the packet needs no error message, for any other event or SAP than IP based packet data, and for a packet that came in a group call, which is a link layer broadcast (RFC 1122 clause 3.2.2). */
-int dmrgo_data_event_icmp(const dmrgo_data_event_t *self, int64_t mtu, dmrgo_ip_icmp_message_t *m, uint8_t *pointer);
+/* Go: data.Event.ICMP. ICMP returns the ICMP error message that a radio sends about the IPv4 packet of the EventDelivered or EventReassembled e, for an accessory interface with the MTU mtu, as ip.CheckIPv4 does. */
+int dmrgo_data_event_icmp(const dmrgo_data_event_t *self, int64_t mtu, dmrgo_ip_icmp_message_t *m, uint8_t *pointer, bool *ok);
 /* Go: data.EventKind.String. String returns the name of the kind. */
 int dmrgo_data_event_kind_string(dmrgo_data_event_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: data.NewReceiver. NewReceiver returns a Receiver for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source, or a MaxBlocks, Peers, MaxFragment or MaxMessage out of range. cfg may be NULL. */
 int dmrgo_data_new_receiver(const dmrgo_data_receiver_config_t *cfg, dmrgo_data_receiver_t **out);
 /* Go: data.NewSender. NewSender returns a Sender for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source or Access, or a Preambles, Retries, MaxBlocks, Peers or Window out of range. cfg may be NULL. */
 int dmrgo_data_new_sender(const dmrgo_data_sender_config_t *cfg, dmrgo_data_sender_t **out);
-/* Go: data.Output.ICMP. ICMP returns the ICMP error message that the OutputDone o of a message of the IP bearer service reports to the IP layer: ip.ICMPHostUnreachable for a message that used all its tries on air (ResultRetryLimit), that could not finish before SenderConfig.TxLimit (ResultTimeLimit), or that got a NACK for the full memory of the recipient. It returns DMRGO_ERR_IP_NO_ICMP for any other output, and for a message to a talkgroup, which goes as a link layer broadcast (RFC 1122 clause 3.2.2), and DMRGO_ERR_NIL_RECEIVER for a nil o. */
-int dmrgo_data_output_icmp(const dmrgo_data_output_t *self, dmrgo_ip_icmp_message_t *out);
+/* Go: data.Output.ICMP. ICMP returns the ICMP error message that the OutputDone o of a message of the IP bearer service reports to the IP layer: ip.ICMPHostUnreachable for a message that used all its tries on air (ResultRetryLimit), that could not finish before SenderConfig.TxLimit (ResultTimeLimit), or that got a NACK for the full memory of the recipient. */
+int dmrgo_data_output_icmp(const dmrgo_data_output_t *self, dmrgo_ip_icmp_message_t *m, bool *ok);
 /* Go: data.OutputKind.String. String returns the name of the kind. */
 int dmrgo_data_output_kind_string(dmrgo_data_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_data_receiver_free frees the handle. self may be NULL. */

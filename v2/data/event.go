@@ -3,7 +3,6 @@ package data
 import (
 	"time"
 
-	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
@@ -159,24 +158,20 @@ type Event struct {
 
 // ICMP returns the ICMP error message that a radio sends about the IPv4
 // packet of the EventDelivered or EventReassembled e, for an accessory
-// interface with the MTU mtu, as ip.CheckIPv4 does. It returns
-// ip.ErrNoICMP when the packet needs no error message, for any other
-// event or SAP than IP based packet data, and for a packet that came in a
-// group call, which is a link layer broadcast (RFC 1122 clause 3.2.2). It
-// does not allocate. (ETSI TS 102 361-3 clause 5.2, Table 5.1)
-func (e *Event) ICMP(mtu int) (m ip.ICMPMessage, pointer uint8, err error) {
+// interface with the MTU mtu, as ip.CheckIPv4 does. ok is false when the
+// packet needs no error message, for any other event or SAP than IP based
+// packet data, for a packet that came in a group call, which is a link
+// layer broadcast (RFC 1122 clause 3.2.2), and for a nil e. It does not
+// allocate. (ETSI TS 102 361-3 clause 5.2, Table 5.1)
+func (e *Event) ICMP(mtu int) (m ip.ICMPMessage, pointer uint8, ok bool) {
 	if e == nil {
-		return 0, 0, dmrgo.ErrNilReceiver
+		return 0, 0, false
 	}
 	h := &e.Message.Header
 	if e.Kind != EventDelivered && e.Kind != EventReassembled || e.Call.Group || groupOf(h) || sapOf(h) != enums.SAPIPBasedPacketData {
-		return 0, 0, ip.ErrNoICMP
+		return 0, 0, false
 	}
-	m, pointer, ok := ip.CheckIPv4(e.Message.Payload, mtu)
-	if !ok {
-		return 0, 0, ip.ErrNoICMP
-	}
-	return m, pointer, nil
+	return ip.CheckIPv4(e.Message.Payload, mtu)
 }
 
 // State is the state of a Receiver.

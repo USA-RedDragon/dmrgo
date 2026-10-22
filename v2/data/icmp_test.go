@@ -2,7 +2,6 @@ package data_test
 
 import (
 	"encoding/hex"
-	"errors"
 	"testing"
 	"time"
 
@@ -33,9 +32,9 @@ func TestOutputICMPGroup(t *testing.T) {
 		if len(out) != 1 || out[0].Result != data.ResultTimeLimit || out[0].Group != group {
 			t.Fatalf("group %v: outputs %+v", group, out)
 		}
-		icmp, err := out[0].ICMP()
-		if group && !errors.Is(err, ip.ErrNoICMP) || !group && (err != nil || icmp != ip.ICMPHostUnreachable) {
-			t.Errorf("group %v: ICMP %v, %v", group, icmp, err)
+		icmp, ok := out[0].ICMP()
+		if ok == group || !group && icmp != ip.ICMPHostUnreachable {
+			t.Errorf("group %v: ICMP %v, %v", group, icmp, ok)
 		}
 	}
 }
@@ -63,9 +62,9 @@ func TestEventICMP(t *testing.T) {
 			Call:    data.Call{Group: c.call, Target: 9, Source: 3120001},
 			Message: data.Message{Header: ipHeader(t, c.group, c.sap), Payload: bad},
 		}
-		m, pointer, err := e.ICMP(576)
-		if c.ok && (err != nil || m != ip.ICMPBadHeader || pointer != 0) || !c.ok && !errors.Is(err, ip.ErrNoICMP) {
-			t.Errorf("%s: %v %d %v", c.name, m, pointer, err)
+		m, pointer, ok := e.ICMP(576)
+		if ok != c.ok || c.ok && (m != ip.ICMPBadHeader || pointer != 0) {
+			t.Errorf("%s: %v %d %v", c.name, m, pointer, ok)
 		}
 	}
 	tms, err := hex.DecodeString(appcapture.TMS)
@@ -73,7 +72,11 @@ func TestEventICMP(t *testing.T) {
 		t.Fatal(err)
 	}
 	e := data.Event{Kind: data.EventDelivered, Message: data.Message{Header: ipHeader(t, false, enums.SAPIPBasedPacketData), Payload: tms}}
-	if _, _, err := e.ICMP(576); !errors.Is(err, ip.ErrNoICMP) {
-		t.Errorf("good packet: %v", err)
+	if _, _, ok := e.ICMP(576); ok {
+		t.Error("good packet gives an ICMP message")
+	}
+	var none *data.Event
+	if _, _, ok := none.ICMP(576); ok {
+		t.Error("nil Event gives an ICMP message")
 	}
 }
