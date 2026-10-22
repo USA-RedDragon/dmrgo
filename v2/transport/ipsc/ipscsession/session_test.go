@@ -183,7 +183,7 @@ func TestPeerReplaysXPR8400(t *testing.T) {
 		t.Fatalf("register %x, want %x", reg, want)
 	}
 	out := p.Packet(0, masterAddr, xprPacket(t, lines, ipsc.OpRegisterReply, 1), nil)
-	if len(out) != 1 || out[0].Kind != ipscsession.OutputUp || out[0].ID != 1 {
+	if len(out) != 2 || out[0].Kind != ipscsession.OutputUp || out[0].ID != 1 || !bytes.Equal(out[1].Packet, xprPacket(t, lines, ipsc.OpPeerListRequest, xpr)) {
 		t.Fatalf("reply %+v", out)
 	}
 	s := sends(p.Tick(5*time.Second, nil))

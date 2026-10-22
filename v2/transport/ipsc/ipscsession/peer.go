@@ -297,14 +297,16 @@ func (p *Peer) Tick(now time.Duration, dst []Output) []Output {
 
 // Packet takes the packet p from the address from. The registration reply
 // of the master, from the address of the master, registers the Peer with
-// OutputUp. The keepalive reply of the master, the peer to peer replies
-// and any packet of the master or of a peer of the list count as a reply
-// to the keepalive. A peer list replaces the peers, with OutputDown
-// and ReasonList for each peer that it leaves out, and OutputPeers. The
-// registration request and keepalive of a peer of the list get their
-// replies, and its registration reply brings its link up with OutputUp.
-// A de-registration request of the master or of a peer takes its link
-// down with ReasonClosed. Any other packet of the master or of a peer of
+// OutputUp and sends the peer list request at once. The keepalive reply of
+// the master, the peer to peer replies and any packet of the master or of
+// a peer of the list count as a reply to the keepalive. A peer list
+// replaces the peers, with OutputDown and ReasonList for each peer that it
+// leaves out, and OutputPeers, and sends the peer registration request at
+// once to each peer whose link is not up. The registration request and
+// keepalive of a peer of the list get their replies, and its registration
+// reply brings its link up with OutputUp. A de-registration request of the
+// master or of a peer takes its link down with ReasonClosed; after the
+// master's the Peer sends its registration request again at once. Any other packet of the master or of a peer of
 // the list gives OutputData. The Peer drops a packet without a good
 // trailer with Auth, and a packet of a sender it does not know. It
 // allocates only when dst has no room for MaxOutputs outputs.
@@ -349,7 +351,8 @@ func (p *Peer) registered(from Addr, raw *ipsc.Raw, body []byte, dst []Output) [
 		dst = append(dst, Output{Kind: OutputDown, ID: p.masterID, Addr: p.master, Reason: ReasonClosed})
 	}
 	p.state, p.masterID, p.haveList = StateRunning, raw.ID, false
-	return append(dst, Output{Kind: OutputUp, ID: raw.ID, Addr: from})
+	dst = append(dst, Output{Kind: OutputUp, ID: raw.ID, Addr: from})
+	return send(dst, p.l.appendControl(p.txList[:0], ipsc.Control{Opcode: ipsc.OpPeerListRequest, ID: p.l.id}, nil), p.master)
 }
 
 func (p *Peer) fromMaster(from Addr, raw *ipsc.Raw, body []byte, dst []Output) []Output {
@@ -362,7 +365,8 @@ func (p *Peer) fromMaster(from Addr, raw *ipsc.Raw, body []byte, dst []Output) [
 			return dst
 		}
 		p.state, p.outstanding, p.haveList = StateRegistering, 0, false
-		return append(dst, Output{Kind: OutputDown, ID: raw.ID, Addr: from, Reason: ReasonClosed})
+		dst = append(dst, Output{Kind: OutputDown, ID: raw.ID, Addr: from, Reason: ReasonClosed})
+		return send(dst, p.l.appendControl(p.tx[:0], ipsc.Control{Opcode: ipsc.OpRegisterRequest, ID: p.l.id, Mode: p.l.mode, Flags: p.l.flags, Version: p.l.regVersion}, nil), p.master)
 	case ipsc.OpPeerAliveRequest, ipsc.OpPeerRegisterRequest:
 		return p.answer(raw.Opcode, body, from, dst)
 	default:
@@ -462,7 +466,17 @@ func (p *Peer) peerList(body []byte, dst []Output) []Output {
 		p.l.peers[i].info = PeerInfo{ID: pe.ID, Addr: Addr{IP: pe.IP, Port: pe.Port}, Mode: pe.Mode}
 	}
 	p.haveList = true
-	return append(dst, Output{Kind: OutputPeers})
+	dst = append(dst, Output{Kind: OutputPeers})
+	var reg []byte
+	for i := range p.l.n {
+		if e := &p.l.peers[i]; !e.info.Up {
+			if reg == nil {
+				reg = p.l.appendControl(p.txReg[:0], ipsc.Control{Opcode: ipsc.OpPeerRegisterRequest, ID: p.l.id, Version: p.l.regVersion}, nil)
+			}
+			dst = send(dst, reg, e.info.Addr)
+		}
+	}
+	return dst
 }
 
 func listed(list ipsc.PeerList, id uint32) (ipsc.PeerEntry, bool) {

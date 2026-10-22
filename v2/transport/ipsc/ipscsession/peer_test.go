@@ -50,7 +50,7 @@ func TestPeerRegistration(t *testing.T) {
 		t.Fatal("second registration reply")
 	}
 	list := ipsc.AppendPeerListReply(nil, 1, []ipsc.PeerEntry{{ID: 9, IP: masterAddr.IP}, {ID: 7, IP: other.IP, Port: other.Port, Mode: 0x6a}})
-	if out := p.Packet(0, masterAddr, list, nil); len(out) != 1 || p.Peers() != 1 || p.PeerAt(0).ID != 7 || p.PeerAt(-1).ID != 0 || !peerOK(p.Peer(7)) || peerOK(p.Peer(8)) {
+	if out := p.Packet(0, masterAddr, list, nil); len(out) != 2 || !sentTo(out, ipsc.OpPeerRegisterRequest, other) || p.Peers() != 1 || p.PeerAt(0).ID != 7 || p.PeerAt(-1).ID != 0 || !peerOK(p.Peer(7)) || peerOK(p.Peer(8)) {
 		t.Fatalf("list %v %d", kinds(out), p.Peers())
 	}
 	voice := []byte{byte(ipsc.OpGroupVoice), 0, 0, 0, 7, 1}
@@ -102,7 +102,7 @@ func TestPeerListAndLeave(t *testing.T) {
 	p.Packet(0, other, ctl(ipsc.OpPeerRegisterReply, 7), nil)
 	list := ipsc.AppendPeerListReply(nil, 1, []ipsc.PeerEntry{{ID: 7, IP: moved.IP, Port: moved.Port}})
 	out := p.Packet(0, masterAddr, list, nil)
-	if len(out) != 2 || out[0].Reason != ipscsession.ReasonList || p.PeerAt(0).Addr != moved || p.PeerAt(0).Up {
+	if len(out) != 3 || out[0].Reason != ipscsession.ReasonList || !sentTo(out, ipsc.OpPeerRegisterRequest, moved) || p.PeerAt(0).Addr != moved || p.PeerAt(0).Up {
 		t.Fatalf("moved peer %+v", out)
 	}
 	p.Packet(0, moved, ctl(ipsc.OpPeerRegisterReply, 7), nil)
@@ -118,7 +118,7 @@ func TestPeerListAndLeave(t *testing.T) {
 		t.Fatal("new master ID")
 	}
 	out = p.Packet(0, masterAddr, ctl(ipsc.OpRegisterReply, 3), nil)
-	if len(out) != 2 || out[0].Kind != ipscsession.OutputDown || out[1].Kind != ipscsession.OutputUp {
+	if len(out) != 3 || out[0].Kind != ipscsession.OutputDown || out[1].Kind != ipscsession.OutputUp || !sentTo(out, ipsc.OpPeerListRequest, masterAddr) {
 		t.Fatalf("master ID change %v", kinds(out))
 	}
 	list = ipsc.AppendPeerListReply(nil, 3, []ipsc.PeerEntry{{ID: 7, IP: moved.IP, Port: moved.Port}})
@@ -129,7 +129,7 @@ func TestPeerListAndLeave(t *testing.T) {
 		t.Fatalf("peer leaves %+v", out)
 	}
 	out = p.Packet(0, masterAddr, ctl(ipsc.OpDeregisterRequest, 3), nil)
-	if len(out) != 1 || out[0].Reason != ipscsession.ReasonClosed || p.State() != ipscsession.StateRegistering {
+	if len(out) != 2 || out[0].Reason != ipscsession.ReasonClosed || !sentTo(out, ipsc.OpRegisterRequest, masterAddr) || p.State() != ipscsession.StateRegistering {
 		t.Fatalf("master leaves %+v", out)
 	}
 	if out = p.Close(0, nil); len(out) != 0 || p.State() != ipscsession.StateIdle {
