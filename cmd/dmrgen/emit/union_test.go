@@ -178,7 +178,7 @@ func TestUnionString(t *testing.T) {
 			"\t} else if v, ok := s.AsB(); ok {\n\t\t_ret += v.String()\n"+
 			"\t} else {\n\t\t_ret += \"Raw: \" + text.Hex(s.Raw[:])\n\t}\n"+
 			"\t_ret += \" }\"\n\treturn _ret\n}",
-		"\t_ret += \"Mode: \" + text.Bool(s.Mode) + \", Kind: \" + text.Int(int64(s.Kind())) + \", Count: \" + text.Int(int64(s.Count())) + \", Flag: \" + text.Bool(s.Flag()) + \", \"\n"+
+		"\t_ret += \"Mode: \" + text.Bool(s.Mode) + \", \"\n"+
 			"\tif v, ok := s.AsX(); ok {",
 		"} else if v, ok := s.AsZ(); ok {\n\t\t_ret += v.String()\n\t} else {\n\t\t_ret += \"Raw: \" + text.Hex(s.Raw[:])\n\t}",
 	)

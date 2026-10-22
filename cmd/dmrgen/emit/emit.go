@@ -768,6 +768,8 @@ func emitStringConcat(g *Group, t *stringText, pdu parse.PDUStruct, union *parse
 	sep := ""
 	for _, field := range pdu.Fields {
 		switch {
+		case union != nil && field.Name == fecFieldName:
+			continue
 		case field.Skip:
 		case field.Union:
 			continue
@@ -795,11 +797,9 @@ func emitStringConcat(g *Group, t *stringText, pdu parse.PDUStruct, union *parse
 		g.Return(Id("_ret"))
 		return
 	}
-	for _, getter := range pdu.Getters {
-		if t.field(getter, pdu, sep) {
-			n++
-			sep = ", "
-		}
+	if fec := pdu.FieldByName(fecFieldName); fec != nil && t.field(*fec, pdu, sep) {
+		n++
+		sep = ", "
 	}
 	if sep != "" {
 		t.str(", ")

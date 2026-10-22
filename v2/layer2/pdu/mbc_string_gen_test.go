@@ -10,7 +10,7 @@ import (
 
 func (s *MBCHeader) fmtString() string {
 	_ret := "MBCHeader{ "
-	_ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, FID: %d, ", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.FID)
+	_ret += fmt.Sprintf("LastBlock: %t, ProtectFlag: %t, Opcode: %v, FID: %v, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.LastBlock, s.ProtectFlag, s.Opcode, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 	if v, ok := s.AsPrivateVoiceGrant(); ok {
 		_ret += v.String()
 	} else if v, ok := s.AsTalkgroupVoiceGrant(); ok {
