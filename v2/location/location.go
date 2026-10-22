@@ -202,6 +202,9 @@ func fromReport(f Fix, m *lrrp.Message) (Fix, error) {
 		f.RequestID[0], f.RequestIDLength = r.ShortRequestID, 1
 	}
 	f.Speed, f.HasSpeed = r.Speed, r.HasSpeed
+	if !r.HasSpeed && r.HasSpeedWhole {
+		f.Speed, f.HasSpeed = float64(r.SpeedWhole), true
+	}
 	f.Course, f.HasCourse = float64(r.Direction)*2, r.HasDirection
 	if r.HasTime {
 		t := &r.Time

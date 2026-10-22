@@ -153,6 +153,19 @@ func TestSouthernLatitudeEncode(t *testing.T) {
 	}
 }
 
+func TestToken6B(t *testing.T) {
+	t.Parallel()
+
+	m := new(lrrp.Message)
+	if err := lrrp.DecodeMessageInto(m, unhex(t, "1315232f341f4ad07b2e66474326660a4d56e46b0b5620")); err != nil {
+		t.Fatal(err)
+	}
+	r := &m.Report
+	if !r.HasPoint2D || !near(r.Point2D.Latitude, 50.106308, 1e-6) || !r.HasSpeedWhole || r.SpeedWhole != 11 || !r.HasDirection || r.Direction != 0x20 {
+		t.Errorf("report %s", m.String())
+	}
+}
+
 func TestErrors(t *testing.T) {
 	t.Parallel()
 

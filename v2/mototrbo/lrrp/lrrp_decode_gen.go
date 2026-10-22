@@ -630,6 +630,20 @@ func decodeReportAt(result *Report, data []byte, _o int) (int, error) {
 			}
 			_o = _onPoint3DAccuracy
 			result.HasPoint3DAccuracy = true
+		case 0x6B:
+			_vSpeedWhole, _on, _st := wire.Uintvar(data, _o)
+			if _st != wire.OK {
+				if _st == wire.Short {
+					return 0, ErrShort
+				}
+				return 0, ErrVarint
+			}
+			if _vSpeedWhole>>32 != 0 {
+				return 0, ErrVarint
+			}
+			result.SpeedWhole = uint32(_vSpeedWhole)
+			_o = _on
+			result.HasSpeedWhole = true
 		case 0x6C:
 			_vSpeed, _on, _st := wire.Ufloatvar(data, _o)
 			if _st != wire.OK {
@@ -756,6 +770,10 @@ func (s *Report) AppendBinary(dst []byte) ([]byte, error) {
 			return dst[:_n], _errPoint3DAccuracy
 		}
 	}
+	if s.HasSpeedWhole {
+		dst = append(dst, 0x6B)
+		dst = wire.AppendUintvar(dst, uint64(s.SpeedWhole))
+	}
 	if s.HasSpeed {
 		dst = append(dst, 0x6C)
 		if !wire.FloatvarFits(s.Speed, false) {
@@ -780,7 +798,7 @@ func (s *Report) String() string {
 		return "<nil>"
 	}
 
-	return "Report{ RequestID: " + text.Bytes(s.RequestID[:]) + ", ShortRequestID: " + text.Int(int64(s.ShortRequestID)) + ", Time: " + s.Time.String() + ", ProtocolVersion: " + text.Int(int64(s.ProtocolVersion)) + ", Result: " + s.Result.String() + ", Success: " + text.Bool(s.Success) + ", Error: " + s.Error.String() + ", Circle2D: " + s.Circle2D.String() + ", Circle3D: " + s.Circle3D.String() + ", Direction: " + text.Int(int64(s.Direction)) + ", LevelOfConfidence: " + text.Int(int64(s.LevelOfConfidence)) + ", Point2D: " + s.Point2D.String() + ", Point3D: " + s.Point3D.String() + ", Point3DAccuracy: " + s.Point3DAccuracy.String() + ", Speed: " + text.Fixed(s.Speed) + ", VerticalSpeed: " + text.Fixed(s.VerticalSpeed) + " }"
+	return "Report{ RequestID: " + text.Bytes(s.RequestID[:]) + ", ShortRequestID: " + text.Int(int64(s.ShortRequestID)) + ", Time: " + s.Time.String() + ", ProtocolVersion: " + text.Int(int64(s.ProtocolVersion)) + ", Result: " + s.Result.String() + ", Success: " + text.Bool(s.Success) + ", Error: " + s.Error.String() + ", Circle2D: " + s.Circle2D.String() + ", Circle3D: " + s.Circle3D.String() + ", Direction: " + text.Int(int64(s.Direction)) + ", LevelOfConfidence: " + text.Int(int64(s.LevelOfConfidence)) + ", Point2D: " + s.Point2D.String() + ", Point3D: " + s.Point3D.String() + ", Point3DAccuracy: " + s.Point3DAccuracy.String() + ", SpeedWhole: " + text.Int(int64(s.SpeedWhole)) + ", Speed: " + text.Fixed(s.Speed) + ", VerticalSpeed: " + text.Fixed(s.VerticalSpeed) + " }"
 }
 
 func decodeRequestAt(result *Request, data []byte, _o int) (int, error) {

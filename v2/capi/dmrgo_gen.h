@@ -3558,6 +3558,9 @@ struct dmrgo_lrrp_report_t {
 	/* Point3DAccuracy is a position with an altitude and its accuracy. */
 	dmrgo_lrrp_point3d_accuracy_t point3d_accuracy;
 	bool has_point3d_accuracy;
+	/* SpeedWhole is the horizontal speed in whole meters per second, which some radios send in place of Speed. */
+	uint32_t speed_whole;
+	bool has_speed_whole;
 	/* Speed is the horizontal speed in meters per second. */
 	double speed;
 	bool has_speed;
