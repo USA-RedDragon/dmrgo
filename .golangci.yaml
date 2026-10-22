@@ -148,6 +148,10 @@ linters:
         linters:
           - gomoddirectives
         text: local replacement
+      - path: v2/capi/abi2?\.go$
+        linters:
+          - gocritic
+        text: ^dupSubExpr
       # Lookup tables of the FEC decoders, which TinyGo keeps in flash.
       - path: v2/internal/(fec/golay/golay_20_8_7|fec/quadraticresidue/quadratic_residue_16_7_6)\.go$
         linters:

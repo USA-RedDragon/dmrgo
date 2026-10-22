@@ -3775,12 +3775,6 @@ struct dmrgo_nmea_rmc_t {
 	uint8_t mode;
 };
 
-
-
-
-
-
-
 struct dmrgo_shortdata_hytera_text_t {
 	/* Field is a 16-bit value before the text whose meaning is not known: it was 00 00 in four captures and 45 00 in one. Decode keeps it as it is. */
 	uint16_t field;

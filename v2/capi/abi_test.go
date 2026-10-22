@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"testing"
 )
 
@@ -84,13 +83,10 @@ func FuzzABIFramer(f *testing.F) {
 }
 
 func FuzzABI(f *testing.F) {
-	if err != nil {
-		f.Fatal(err)
-	}
 	for k := range uint8(10) {
 		f.Add(uint64(k), k)
 	}
-	families := []func(uint64) error{voiceABI, layer2txABI, framerABI, talkerAliasABI, codec2ABI, packetABI, bsABI, csbkABI,
+	families := []func(uint64) error{voiceABI, layer2txABI, framerABI, talkerAliasABI, codec2ABI, packetABI, bsABI, csbkABI}
 	f.Fuzz(func(t *testing.T, seed uint64, family uint8) {
 		if err := families[int(family)%len(families)](seed); err != nil {
 			t.Fatal(err)

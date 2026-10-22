@@ -4,13 +4,11 @@
 
 #include "dmrgo.h"
 
-
 void *dmrgo__ptr(uintptr_t h) { return (void *)(h * 16 + 0x100000u); }
 
 const char *dmrgo__gen_strerror(int status);
 
 int dmrgo_abi_version(void) { return DMRGO_ABI_VERSION; }
-
 
 const char *dmrgo_strerror(int status) {
 	switch (status) {

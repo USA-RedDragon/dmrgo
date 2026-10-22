@@ -1402,6 +1402,7 @@ sym #define DMRGO_VOICE_TRANSMITTER_TICK_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 sym #define DMRGO_VOICE_TRANSMITTER_TIMED_OUT ((dmrgo_voice_transmitter_state_t)4)
 sym #define DMRGO_VOICE_TRANSMITTER_VOICE ((dmrgo_voice_transmitter_state_t)2)
 sym hand const char *dmrgo_strerror(int status);
+sym hand enum dmrgo_status { DMRGO_OK = 0, DMRGO_ERR_HANDLE = -2, DMRGO_ERR_ARG = -3, DMRGO_ERR_SHORT = -6, DMRGO_ERR_PANIC = -7, DMRGO_ERR_OTHER = -8, DMRGO_ERR_BOUND = -9 };
 sym hand int dmrgo_abi_version(void);
 sym hand int dmrgo_last_error_code(void);
 sym hand int dmrgo_last_error_message(char *buf, size_t cap, size_t *len, size_t *need);

@@ -433,12 +433,19 @@ static void test_last_error(void) {
 	size_t sneed = 0;
 	CHECK(dmrgo_enums_data_type_string(DMRGO_ENUMS_DATA_TYPE_CSBK, small, sizeof small, &n, &sneed) == DMRGO_ERR_SHORT);
 	CHECK(dmrgo_last_error_code() == DMRGO_ERR_SHORT && n == 1 && sneed > 2);
-	cfg.tier = 9;
+	dmrgo_voice_transmitter_config_t cfg;
+	memset(&cfg, 0, sizeof cfg);
+	cfg.color_code = 16;
+	cfg.source = DMRGO_LAYER2_SYNC_SOURCE_MS;
+	dmrgo_voice_transmitter_t *vt = NULL;
+	CHECK(dmrgo_voice_new_transmitter(&cfg, &vt) == DMRGO_ERR_CONFIG_ERROR && vt == NULL);
 	dmrgo_config_error_t ce = {0};
 	bool ok = false;
 	OK(dmrgo_config_error_last(&ce, &ok));
+	CHECK(ok && ce.type__len == 5 && memcmp(ce.type_, "voice", 5) == 0 && ce.field_len == 9 && memcmp(ce.field, "ColorCode", 9) == 0);
 	char msg[256];
 	OK(dmrgo_last_error_message(msg, sizeof msg, &n, NULL));
+	CHECK(strcmp(msg, "voice: ColorCode is out of range") == 0);
 	CHECK(strcmp(dmrgo_strerror(DMRGO_ERR_PDU_NO_ADDRESSES), "pdu.ErrNoAddresses") == 0);
 }
 
@@ -664,8 +671,8 @@ static void test_dvsi(void) {
 }
 
 int main(int argc, char **argv) {
-	if (argc != 3) {
-		fprintf(stderr, "usage: %s weak.cu8 parrot_kerchunk.bin\n", argv[0]);
+	if (argc != 2) {
+		fprintf(stderr, "usage: %s parrot_kerchunk.bin\n", argv[0]);
 		return 2;
 	}
 	test_version();
@@ -673,8 +680,7 @@ int main(int argc, char **argv) {
 	test_pdu();
 	test_layer2();
 	test_tx();
-	test_voice_capture(argv[2]);
-	test_rx(argv[1]);
+	test_voice_capture(argv[1]);
 	test_vocoder();
 	test_last_error();
 	test_partial();
