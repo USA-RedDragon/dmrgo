@@ -75,6 +75,11 @@ type Receiver struct {
 	lc       pdu.FullLinkControl
 	alias    pdu.TalkerAliasAssembler
 	text     [pdu.TalkerAliasMaxText]byte
+	held     pdu.FullLinkControl
+	heldText [pdu.TalkerAliasMaxText]byte
+	heldN    int
+	hasHeld  bool
+	heldTA   bool
 	noCopy   noCopy
 }
 
@@ -121,6 +126,7 @@ func (r *Receiver) Reset() {
 	r.track = tracker{}
 	r.fragNext = 0
 	r.alias.Reset()
+	r.hasHeld, r.heldTA = false, false
 }
 
 // State returns the state of the Receiver.
@@ -458,6 +464,16 @@ func (r *Receiver) startCall(now time.Duration, c *Call, out []Event) []Event {
 	r.state, r.last = StateInCall, now
 	r.hasExpect = false
 	out, _ = appendEvent(out, EventCallStart, &r.call)
+	if keep && r.hasHeld {
+		var e *Event
+		out, e = appendEvent(out, EventEmbedded, &r.call)
+		e.LC = r.held
+		if r.heldTA {
+			out, e = appendEvent(out, EventTalkerAlias, &r.call)
+			e.Text = r.heldText[:r.heldN]
+		}
+	}
+	r.hasHeld, r.heldTA = false, false
 	return out
 }
 
@@ -517,6 +533,7 @@ func (r *Receiver) voice(now time.Duration, b *layer2.Burst, raw *layer2.RawBurs
 		r.track = tracker{}
 		r.fragNext = 0
 		r.alias.Reset()
+		r.hasHeld, r.heldTA = false, false
 		r.stats = Stats{}
 		r.start = now
 		if r.hasExpect && now < r.expectUntil {
@@ -610,6 +627,14 @@ func (r *Receiver) collect(b *layer2.Burst, idx, lost int) (pdu.LCBytes, bool) {
 
 func (r *Receiver) embedded(lc pdu.LCBytes, out []Event) []Event {
 	r.lc = pdu.DecodeFullLinkControlBytes(lc)
+	if r.state == StateLateEntry {
+		r.held, r.hasHeld = r.lc, true
+		n, ok, err := r.alias.AddInto(&r.text, &r.lc)
+		if ok && err == nil {
+			r.heldText, r.heldN, r.heldTA = r.text, n, true
+		}
+		return out
+	}
 	var e *Event
 	out, e = appendEvent(out, EventEmbedded, &r.call)
 	e.LC = r.lc
