@@ -54,6 +54,7 @@ func TestReceiver_EmbeddedData(t *testing.T) {
 func TestReceiver_XPR8400(t *testing.T) {
 	t.Parallel()
 
+	f, err := os.Open("../bs/testdata/xpr8400_bs_voice.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
