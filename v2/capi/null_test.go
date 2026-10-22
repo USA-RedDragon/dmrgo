@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"slices"
 	"testing"
+	"unsafe"
 )
 
 const errPanic = -4
@@ -47,9 +48,9 @@ func TestNullArguments(t *testing.T) {
 }
 
 // TestHugeLengths calls every generated entry point with each unsigned
-// argument, such as a length or a capacity, at its largest value and each
-// pointer argument pointing to zeroed memory, and fails for each call that
-// returns DMRGO_ERR_PANIC.
+// argument, such as a length or a capacity, at its largest value, each
+// pointer argument pointing to zeroed memory and each arena pointing to a
+// buffer, and fails for each call that returns DMRGO_ERR_PANIC.
 func TestHugeLengths(t *testing.T) {
 	t.Parallel()
 
@@ -74,6 +75,8 @@ func TestHugeLengths(t *testing.T) {
 						args[i] = p
 					}
 				}
+			case reflect.UnsafePointer:
+				args[i] = reflect.ValueOf(unsafe.Pointer(&make([]byte, 4096)[0]))
 			default:
 			}
 		}
