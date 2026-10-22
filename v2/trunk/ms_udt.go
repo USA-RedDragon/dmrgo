@@ -206,7 +206,7 @@ func (m *MS) AssignGroups(now time.Duration, target uint32, a *Appended) error {
 	}
 
 	if a == nil {
-		return errNil
+		return dmrgo.ErrNilArgument
 	}
 	if a.Format != enums.UDTAddress && a.Format != enums.UDTMixed {
 		return ErrUDTFormat

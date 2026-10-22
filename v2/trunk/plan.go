@@ -99,7 +99,7 @@ func (p *ChannelPlan) AddCdef(c *layer3.CdefParms) error {
 	}
 
 	if c == nil {
-		return errNil
+		return dmrgo.ErrNilArgument
 	}
 	return p.Add(Channel{Number: c.Channel, RXHz: c.RXFrequencyHz(), TXHz: c.TXFrequencyHz()})
 }
