@@ -3,6 +3,7 @@ package ip
 import (
 	"encoding/binary"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
@@ -141,11 +142,11 @@ func udpSum(src, dst [4]byte, udp []byte) uint16 {
 // AppendIPv4 appends d to dst as an IPv4 packet with a UDP datagram, and
 // computes both checksums. The header has no options, and a TTL of 0 is
 // sent as 64. It returns dst unchanged and an error when the datagram is
-// longer than 65515 octets or d is nil. It allocates only to grow dst.
+// longer than 65515 octets, or dmrgo.ErrNilArgument for a nil d. It allocates only to grow dst.
 // (ETSI TS 102 361-3 clause 5.5)
 func AppendIPv4(dst []byte, d *Datagram) ([]byte, error) {
 	if d == nil {
-		return dst, errNil
+		return dst, dmrgo.ErrNilArgument
 	}
 	n := len(dst)
 	u := UDP{Header: UDPHeader{SourcePort: d.SourcePort, DestinationPort: d.DestinationPort}, Payload: d.Payload}
@@ -184,11 +185,11 @@ func AppendIPv4(dst []byte, d *Datagram) ([]byte, error) {
 // AppendCompressed appends d to dst with a compressed UDP/IPv4 header. A
 // port of 5016 or 5017 is sent as its port identifier, any other port in an
 // extended header. It returns dst unchanged and a *dmrgo.FieldRangeError
-// when SAID or DAID does not fit, and an error for a nil d. It allocates
+// when SAID or DAID does not fit, and dmrgo.ErrNilArgument for a nil d. It allocates
 // only to grow dst. (ETSI TS 102 361-3 clause 7.2.3)
 func AppendCompressed(dst []byte, d *Datagram) ([]byte, error) {
 	if d == nil {
-		return dst, errNil
+		return dst, dmrgo.ErrNilArgument
 	}
 	h := pdu.UDPIPv4CompressedHeader{IPv4Identification: d.ID, SAID: d.SAID, DAID: d.DAID}
 	var ext [2]uint16

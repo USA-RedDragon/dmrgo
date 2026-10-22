@@ -3,6 +3,7 @@ package ip
 import (
 	"encoding/binary"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
@@ -159,12 +160,12 @@ func DecodeICMPPacket(data []byte) (ICMPPacket, error) {
 // about another ICMP message, such as an Echo Request, is allowed. The
 // Original does not tell whether a packet came as a link layer broadcast,
 // a DMR group call; data.Output.ICMP and data.Event.ICMP refuse those. It
-// returns another error when the
+// returns dmrgo.ErrNilArgument for a nil c, and another error when the
 // packet is longer than 65535 octets. It allocates only to grow dst.
 // (ETSI TS 102 361-3 clause 5.2)
 func AppendICMPPacket(dst []byte, c *ICMPPacket) ([]byte, error) {
 	if c == nil {
-		return dst, errNilICMP
+		return dst, dmrgo.ErrNilArgument
 	}
 	orig := c.Original
 	if len(orig) >= 20 && orig[0]>>4 == 4 {

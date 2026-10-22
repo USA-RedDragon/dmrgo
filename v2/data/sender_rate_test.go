@@ -41,8 +41,7 @@ func TestSenderZeroRateIsRate12(t *testing.T) {
 func TestSenderNilMessage(t *testing.T) {
 	t.Parallel()
 	s := newSender(t, nil)
-	var ce *dmrgo.ConfigError
-	if err := s.Send(0, nil); !errors.As(err, &ce) || ce.Field != "Header" {
+	if err := s.Send(0, nil); !errors.Is(err, dmrgo.ErrNilArgument) {
 		t.Errorf("Send(nil): %v", err)
 	}
 	if s.State() != data.SenderIdle {

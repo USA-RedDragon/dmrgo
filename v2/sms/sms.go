@@ -1,6 +1,7 @@
 package sms
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
 	"github.com/USA-RedDragon/dmrgo/v2/ip"
@@ -87,10 +88,10 @@ type Text struct {
 // port 5016, and defined data. It returns ErrNotText for a packet in none
 // of these formats and for defined data with DD format binary, the errors
 // of the ip, tms and shortdata packages for a message that does not
-// decode, and ErrNil for a nil h. It allocates only to grow dst.
+// decode, and dmrgo.ErrNilArgument for a nil h. It allocates only to grow dst.
 func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 	if h == nil {
-		return dst, Text{}, ErrNil
+		return dst, Text{}, dmrgo.ErrNilArgument
 	}
 	n := len(dst)
 	var t Text
@@ -198,12 +199,12 @@ type Header struct {
 // confirmed packet when confirmed is set. A TMS text starts with a CR LF.
 // It returns dst unchanged and ErrFormat for an unknown format and for
 // FormatDefinedData with DD format binary, which holds no text, or BCD,
-// which Decode reads as FormatHytera, ErrNil for a nil t or h, or the
+// which Decode reads as FormatHytera, dmrgo.ErrNilArgument for a nil t or h, or the
 // errors of the packages that build the message. It allocates only to
 // grow dst.
 func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error) {
 	if t == nil || h == nil {
-		return dst, ErrNil
+		return dst, dmrgo.ErrNilArgument
 	}
 	n := len(dst)
 	h.Data = pdu.DataHeader{}
