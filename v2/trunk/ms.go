@@ -78,11 +78,12 @@ type MSConfig struct {
 	// DMRLA is the number of most significant SITE bits in the SYS_AREA of
 	// the registration and denied records. 0 means constants.DMRLADefault.
 	DMRLA int
-	// MinLevelHunt, when set, is the signal level that Quality reports
-	// below which the MS does not confirm a TSCC, as L_Lower_SHort.
+	// MinLevelHunt, when set, is the signal level below which the MS does
+	// not confirm a TSCC, as L_Lower_SHort, in the unit of the levels that
+	// the consumer passes to Quality.
 	MinLevelHunt *int
 	// MinLevelIdle, when set, is the signal level below which the MS
-	// leaves a confirmed TSCC.
+	// leaves a confirmed TSCC, in the unit of MinLevelHunt.
 	MinLevelIdle *int
 	// MaxBERPermille is the bit error rate of the TSCC above which the MS
 	// leaves it. 0 means DefaultMaxBERPermille, and a negative value turns
@@ -458,11 +459,11 @@ func (m *MS) PowerOff(now time.Duration, dst []Output) []Output {
 	return dst
 }
 
-// Quality gives the MS the signal level of the TSCC, in the units of
-// MSConfig.MinLevelHunt and MinLevelIdle, for the confirmation of a TSCC
-// and for leaving it (ETSI TS 102 361-4 clauses 6.3.2.3 and 6.3.3.1). It
+// Quality gives the MS the signal level of the TSCC, for the confirmation
+// of a TSCC and for leaving it. level is in a unit that the consumer picks,
+// such as dBm, the same as MSConfig.MinLevelHunt and MinLevelIdle. It
 // appends the outputs to dst, and allocates only when dst has no room for
-// MaxOutputs outputs.
+// MaxOutputs outputs. (ETSI TS 102 361-4 clauses 6.3.2.3 and 6.3.3.1)
 func (m *MS) Quality(now time.Duration, level int, dst []Output) []Output {
 	if m == nil || m.f.ctl.b == nil {
 		return dst

@@ -9,8 +9,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
-// MaxOutputs is the most outputs that one call of a Follower or MS method
-// appends.
+// MaxOutputs is the most outputs that one call of a Follower, MS or
+// CapacityPlusFollower method appends.
 const MaxOutputs = 10
 
 // OutputKind is the kind of an Output.
@@ -343,7 +343,7 @@ type Output struct {
 	// Burst is the burst of OutputBurst.
 	Burst layer2.RawBurst
 	// Hint is what Burst is, for a transport: its Slot and KindData with
-	// enums.DataTypeCSBK.
+	// the data type of the burst.
 	Hint layer2.Hint
 	// Slot is the TDMA channel of OutputBurst.
 	Slot enums.Slot

@@ -8,7 +8,8 @@
 //
 // The machines are state machines without I/O. Each method takes the time
 // now, on a monotonic clock that the caller picks, and appends outputs to a
-// slice of the caller. A slice with capacity MaxOutputs never grows, and
+// slice of the caller. A slice with capacity MaxOutputs for a Follower, MS
+// or CapacityPlusFollower, or MaxTSCCOutputs for a TSCC, never grows, and
 // after the constructor no method allocates. Deadline tells when a machine
 // needs a Tick.
 //

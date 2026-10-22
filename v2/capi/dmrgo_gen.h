@@ -4745,7 +4745,7 @@ struct dmrgo_trunk_output_t {
 	dmrgo_enums_ack_reason_t ack;
 	/* Burst is the burst of OutputBurst. */
 	dmrgo_layer2_raw_burst_t burst;
-	/* Hint is what Burst is, for a transport: its Slot and KindData with enums.DataTypeCSBK. */
+	/* Hint is what Burst is, for a transport: its Slot and KindData with the data type of the burst. */
 	dmrgo_layer2_hint_t hint;
 	/* Slot is the TDMA channel of OutputBurst. */
 	dmrgo_enums_slot_t slot;
@@ -4981,10 +4981,10 @@ struct dmrgo_trunk_ms_config_t {
 	dmrgo_duration_t denied_life;
 	/* DMRLA is the number of most significant SITE bits in the SYS_AREA of the registration and denied records. 0 means constants.DMRLADefault. */
 	int64_t dmrla;
-	/* MinLevelHunt, when set, is the signal level that Quality reports below which the MS does not confirm a TSCC, as L_Lower_SHort. */
+	/* MinLevelHunt, when set, is the signal level below which the MS does not confirm a TSCC, as L_Lower_SHort, in the unit of the levels that the consumer passes to Quality. */
 	bool has_min_level_hunt;
 	int64_t min_level_hunt;
-	/* MinLevelIdle, when set, is the signal level below which the MS leaves a confirmed TSCC. */
+	/* MinLevelIdle, when set, is the signal level below which the MS leaves a confirmed TSCC, in the unit of MinLevelHunt. */
 	bool has_min_level_idle;
 	int64_t min_level_idle;
 	/* MaxBERPermille is the bit error rate of the TSCC above which the MS leaves it. 0 means DefaultMaxBERPermille, and a negative value turns the check off. */
@@ -7364,7 +7364,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_MAX_DYNAMIC_GROUPS 16
 /* Go: trunk.MaxNeighbors. MaxNeighbors is the number of adjacent sites that a Site keeps. */
 #define DMRGO_TRUNK_MAX_NEIGHBORS 8
-/* Go: trunk.MaxOutputs. MaxOutputs is the most outputs that one call of a Follower or MS method appends. */
+/* Go: trunk.MaxOutputs. MaxOutputs is the most outputs that one call of a Follower, MS or CapacityPlusFollower method appends. */
 #define DMRGO_TRUNK_MAX_OUTPUTS 10
 /* Go: trunk.MaxPayloadChannels. MaxPayloadChannels is the most payload channels of a TSCC. */
 #define DMRGO_TRUNK_MAX_PAYLOAD_CHANNELS 16
@@ -10627,7 +10627,7 @@ int dmrgo_trunk_ms_power_off(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, dmrgo
 int dmrgo_trunk_ms_power_save_offset(dmrgo_trunk_ms_t *self, uint8_t *out);
 /* dmrgo_trunk_ms_quality_need sets *items and *arena to the room that dmrgo_trunk_ms_quality needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_quality_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, int64_t level, size_t *items, size_t *arena);
-/* Go: trunk.MS.Quality. Quality gives the MS the signal level of the TSCC, in the units of MSConfig.MinLevelHunt and MinLevelIdle, for the confirmation of a TSCC and for leaving it (ETSI TS 102 361-4 clauses 6.3.2.3 and 6.3.3.1). It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_quality_need gives (DMRGO_TRUNK_MS_QUALITY_MAX_ITEMS items). */
+/* Go: trunk.MS.Quality. Quality gives the MS the signal level of the TSCC, for the confirmation of a TSCC and for leaving it. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_quality_need gives (DMRGO_TRUNK_MS_QUALITY_MAX_ITEMS items). */
 int dmrgo_trunk_ms_quality(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, int64_t level, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.MS.Registered. Registered reports whether the MS holds a registration record for the SYS_AREA of the TSCC that it is on. */
 int dmrgo_trunk_ms_registered(dmrgo_trunk_ms_t *self, bool *out);
