@@ -201,7 +201,7 @@ func EncodeTalkerAlias(alias string, format layer3.TalkerAliasDataFormat) ([]Ful
 // returns an error for a nil dst.
 func EncodeTalkerAliasInto(dst *[talkerAliasMaxBlocks + 1]FullLinkControl, alias string, format layer3.TalkerAliasDataFormat) (int, error) {
 	if dst == nil {
-		return 0, errNil
+		return 0, dmrgo.ErrNilArgument
 	}
 	var units [talkerAliasMaxUnits]uint16
 	count, err := talkerAliasUnits(&units, alias, format)
@@ -294,7 +294,7 @@ func (a *TalkerAliasAssembler) AddInto(dst *[TalkerAliasMaxText]byte, lc *FullLi
 		return 0, false, dmrgo.ErrNilReceiver
 	}
 	if dst == nil {
-		return 0, false, errNil
+		return 0, false, dmrgo.ErrNilArgument
 	}
 	if lc == nil {
 		return 0, false, nil

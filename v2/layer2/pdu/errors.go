@@ -16,7 +16,6 @@ var (
 	// ErrNoAddresses is returned by the SetAddresses methods when the PDU
 	// has no address fields: its FLCO, opcode or format has none.
 	ErrNoAddresses = errors.New("pdu: PDU has no address fields")
-	errNil         = errors.New("pdu: nil pointer argument")
 	// ErrWrongOpcode is returned by a SetX method that takes the opcode,
 	// such as FullLinkControl.SetTalkerAliasBlock, when the opcode does not
 	// select the payload X.

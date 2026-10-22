@@ -110,7 +110,7 @@ func fullLCMask(dt enums.DataType) ([3]byte, error) {
 // data types, and for a nil p, it returns an error and leaves p unchanged.
 func Seal(p *[12]byte, dt enums.DataType) error {
 	if p == nil {
-		return errNil
+		return dmrgo.ErrNilArgument
 	}
 	if dt.CarriesFullLC() {
 		lc := LCBytes(p[:9])

@@ -44,7 +44,7 @@ var errReverseChannelRCCommandRange = &dmrgo.FieldRangeError{Type: "ReverseChann
 // does not fit in 4 bits or rc is nil.
 func (rc *ReverseChannel) Encode() ([2]byte, error) {
 	if rc == nil {
-		return [2]byte{}, errNil
+		return [2]byte{}, dmrgo.ErrNilReceiver
 	}
 	if rc.RCCommand > 0x0F {
 		return [2]byte{}, errReverseChannelRCCommandRange
