@@ -17,9 +17,11 @@
 // packet. A block that does not arrive counts as lost: from the transport
 // sequence number when the Hint has one, else from the time, one block per
 // 60 ms slot. So the last block of an attempt that is lost on air still
-// ends the attempt. With ReceiverConfig.Respond, it answers a confirmed
-// packet to its own address with an ACK, a SACK for the blocks that failed,
-// or a NACK. The sequence rule depends on the layer. A packet of the IP
+// ends the attempt. A C_HEAD packet is confirmed, and a DD_HEAD or R_HEAD
+// packet is confirmed when its Response Requested flag (A) is set, with or
+// without SARQ (ETSI TS 102 361-3 clause 6.4, Table 6.5). With
+// ReceiverConfig.Respond, it answers a confirmed packet to its own address
+// with an ACK, a SACK for the blocks that failed, or a NACK. The sequence rule depends on the layer. A packet of the IP
 // bearer service (SAP UDP/IP header compression, IP based packet data or
 // ARP, in the header or in the P_HEAD after it) gets no N(S) check: each
 // valid packet is delivered and gets an ACK, so a packet sent again after a

@@ -391,8 +391,10 @@ func (s *Sender) State() SenderState {
 // caller can reuse them. It sets the block count, pad octets and Full
 // Message Flag, and for a C_HEAD N(S) from the link, S (with
 // SenderConfig.Resync), FSN 1000, a message in one fragment, and the
-// Response Requested flag on the last message of a window only. It sets
-// the Response Requested flag of a short data header with SARQ set. With
+// Response Requested flag on the last message of a window only. A DD_HEAD
+// or R_HEAD message is confirmed when its Response Requested flag (A) is
+// set, and Send sets A when SARQ is set, as A 0 with SARQ 1 is reserved
+// (ETSI TS 102 361-3 clause 6.4, Table 6.5). With
 // SenderConfig.Window above 1, a C_HEAD message of the IP bearer service
 // to the link of the messages in progress joins them while fewer than
 // Window are in progress: it goes in the window on air when the last
@@ -486,13 +488,13 @@ func sendHeader(h *pdu.DataHeader, e *slot) (pdu.ConfirmedDataHeader, error) {
 	if d, ok := h.AsDefinedData(); ok {
 		d.FullMessageFlag = true
 		d.ResponseRequested = d.ResponseRequested || d.SARQ
-		e.confirmed = d.SARQ
+		e.confirmed = d.ResponseRequested
 		return pdu.ConfirmedDataHeader{}, h.SetDefinedData(d)
 	}
 	if r, ok := h.AsRawData(); ok {
 		r.FullMessageFlag = true
 		r.ResponseRequested = r.ResponseRequested || r.SARQ
-		e.confirmed = r.SARQ
+		e.confirmed = r.ResponseRequested
 		return pdu.ConfirmedDataHeader{}, h.SetRawData(r)
 	}
 	return pdu.ConfirmedDataHeader{}, errHeader
