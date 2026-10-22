@@ -235,8 +235,6 @@
 //     LCBytes.Codeword for a data type without an RS(12,9) Full LC mask.
 //   - pdu.ErrNoServiceOptions: returned by LCBytes.SetServiceOptions for an
 //     LC without a Service Options field.
-//   - framer.ErrPeriod: returned by framer.New for a Period over
-//     framer.MaxPeriod.
 //   - voice.ErrBusy, voice.ErrQueueFull, voice.ErrNotActive,
 //     voice.ErrTimedOut: returned by voice.Transmitter.
 //   - voice.ErrInterruptBusy: returned by voice.Interrupter.Interrupt while
@@ -258,8 +256,8 @@
 //   - ip.ErrNoICMP: returned by ip.AppendICMPPacket for a packet that must
 //     not get an ICMP error message.
 //   - sms.ErrShort, sms.ErrLength, sms.ErrSignature, sms.ErrNotText,
-//     sms.ErrFormat, sms.ErrNil: returned by package sms, which also returns the
-//     errors of the ip, tms and shortdata packages.
+//     sms.ErrFormat: returned by package sms, which also returns the errors
+//     of the ip, tms and shortdata packages.
 //   - shortdata.ErrShort, shortdata.ErrLength, shortdata.ErrFormat,
 //     shortdata.ErrCharacter: returned by package shortdata.
 //   - location.ErrNoFix, location.ErrNoPosition: returned for a packet
