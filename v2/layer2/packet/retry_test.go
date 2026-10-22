@@ -16,18 +16,18 @@ func laterTry(t *testing.T, p packet.Packet, blocks []int) packet.Packet {
 	t.Helper()
 	h := p.Header
 	n := uint8(len(blocks))
-	if c, ok := h.AsConfirmedDataHeader(); ok {
+	if c, ok := h.AsConfirmed(); ok {
 		c.FullMessageFlag, c.BlocksToFollow = false, n
-		mustSet(t, h.SetConfirmedDataHeader(c))
-	} else if c, ok := h.AsUnconfirmedDataHeader(); ok {
+		mustSet(t, h.SetConfirmed(c))
+	} else if c, ok := h.AsUnconfirmed(); ok {
 		c.FullMessageFlag, c.BlocksToFollow = false, n
-		mustSet(t, h.SetUnconfirmedDataHeader(c))
-	} else if c, ok := h.AsDefinedDataHeader(); ok {
+		mustSet(t, h.SetUnconfirmed(c))
+	} else if c, ok := h.AsDefinedData(); ok {
 		c.FullMessageFlag, c.AppendedBlocks = false, n
-		mustSet(t, h.SetDefinedDataHeader(c))
-	} else if c, ok := h.AsRawDataHeader(); ok {
+		mustSet(t, h.SetDefinedData(c))
+	} else if c, ok := h.AsRawData(); ok {
 		c.FullMessageFlag, c.AppendedBlocks = false, n
-		mustSet(t, h.SetRawDataHeader(c))
+		mustSet(t, h.SetRawData(c))
 	} else {
 		t.Fatalf("header %v", h.Format())
 	}
@@ -68,7 +68,7 @@ func TestAssembler_FirstHeaderLost(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	pad := int(get(t, &p.Header, (*pdu.DataHeader).AsConfirmedDataHeader).PadOctetCount)
+	pad := int(get(t, &p.Header, (*pdu.DataHeader).AsConfirmed).PadOctetCount)
 	if pad == 0 {
 		t.Fatal("test needs pad octets")
 	}
@@ -82,7 +82,7 @@ func TestAssembler_FirstHeaderLost(t *testing.T) {
 	if err != nil || m == nil {
 		t.Fatalf("later try: %v %v", m, err)
 	}
-	if len(m.Data) != len(data)+pad || !bytes.Equal(m.Data[:len(data)], data) || get(t, &m.Header, (*pdu.DataHeader).AsConfirmedDataHeader).FullMessageFlag {
+	if len(m.Data) != len(data)+pad || !bytes.Equal(m.Data[:len(data)], data) || get(t, &m.Header, (*pdu.DataHeader).AsConfirmed).FullMessageFlag {
 		t.Fatalf("data %x, want %x and %d pad octets", m.Data, data, pad)
 	}
 }
@@ -140,7 +140,7 @@ func TestAssembler_UnexpectedRetry(t *testing.T) {
 	}
 	other := confirmedHeader()
 	other.SendSequenceNumber = 6
-	q, err := packet.NewPacket(header(t, (*pdu.DataHeader).SetConfirmedDataHeader, other), payload(30), enums.DataTypeRate12)
+	q, err := packet.NewPacket(header(t, (*pdu.DataHeader).SetConfirmed, other), payload(30), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -170,9 +170,9 @@ func TestAssembler_ShortDataRetry(t *testing.T) {
 	t.Parallel()
 
 	headers := map[string]pdu.DataHeader{
-		"DD_HEAD": header(t, (*pdu.DataHeader).SetDefinedDataHeader, pdu.DefinedDataHeader{
+		"DD_HEAD": header(t, (*pdu.DataHeader).SetDefinedData, pdu.DefinedDataHeader{
 			SAP: enums.SAPShortData, LLIDDestination: 1, LLIDSource: 2, DefinedData: 2, SARQ: true, FullMessageFlag: true}),
-		"R_HEAD": header(t, (*pdu.DataHeader).SetRawDataHeader, pdu.RawDataHeader{
+		"R_HEAD": header(t, (*pdu.DataHeader).SetRawData, pdu.RawDataHeader{
 			SAP: enums.SAPShortData, AppendedBlocks: 1, LLIDDestination: 1, LLIDSource: 2, SourcePort: 1, DestinationPort: 2, SARQ: true, FullMessageFlag: true}),
 	}
 	for name, h := range headers {
@@ -231,7 +231,7 @@ func TestAssembler_OrphanRetry(t *testing.T) {
 	next := confirmedHeader()
 	next.SendSequenceNumber = 6
 	data := payload(40)
-	q, err := packet.NewPacket(header(t, (*pdu.DataHeader).SetConfirmedDataHeader, next), data, enums.DataTypeRate12)
+	q, err := packet.NewPacket(header(t, (*pdu.DataHeader).SetConfirmed, next), data, enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}

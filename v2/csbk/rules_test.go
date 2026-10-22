@@ -331,7 +331,7 @@ func TestPreamblesData(t *testing.T) {
 		return &b
 	}
 	var h pdu.DataHeader
-	if err := h.SetUnconfirmedDataHeader(pdu.UnconfirmedDataHeader{LLIDDestination: 2, LLIDSource: 1, BlocksToFollow: 1}); err != nil {
+	if err := h.SetUnconfirmed(pdu.UnconfirmedDataHeader{LLIDDestination: 2, LLIDSource: 1, BlocksToFollow: 1}); err != nil {
 		t.Fatal(err)
 	}
 	header, err := layer2.BuildBurst(&h, 1, layer2.SyncSourceMS)

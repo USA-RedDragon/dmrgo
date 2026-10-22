@@ -23357,8 +23357,8 @@ func dmrgo_pdu_data_header_addresses(c_self *C.dmrgo_pdu_data_header_t, c_target
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_data_header_as_confirmed_data_header
-func dmrgo_pdu_data_header_as_confirmed_data_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_confirmed_data_header_t, c_ok *C.bool) (rc C.int) {
+//export dmrgo_pdu_data_header_as_confirmed
+func dmrgo_pdu_data_header_as_confirmed(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_confirmed_data_header_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -23366,7 +23366,7 @@ func dmrgo_pdu_data_header_as_confirmed_data_header(c_self *C.dmrgo_pdu_data_hea
 	}
 	var x g_layer2_pdu.DataHeader
 	x = in_layer2_pdu_DataHeader(&(*c_self))
-	r0, r1 := x.AsConfirmedDataHeader()
+	r0, r1 := x.AsConfirmed()
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -23381,8 +23381,8 @@ func dmrgo_pdu_data_header_as_confirmed_data_header(c_self *C.dmrgo_pdu_data_hea
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_data_header_as_defined_data_header
-func dmrgo_pdu_data_header_as_defined_data_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_defined_data_header_t, c_ok *C.bool) (rc C.int) {
+//export dmrgo_pdu_data_header_as_defined_data
+func dmrgo_pdu_data_header_as_defined_data(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_defined_data_header_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -23390,7 +23390,7 @@ func dmrgo_pdu_data_header_as_defined_data_header(c_self *C.dmrgo_pdu_data_heade
 	}
 	var x g_layer2_pdu.DataHeader
 	x = in_layer2_pdu_DataHeader(&(*c_self))
-	r0, r1 := x.AsDefinedDataHeader()
+	r0, r1 := x.AsDefinedData()
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -23405,8 +23405,8 @@ func dmrgo_pdu_data_header_as_defined_data_header(c_self *C.dmrgo_pdu_data_heade
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_data_header_as_proprietary_header
-func dmrgo_pdu_data_header_as_proprietary_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_proprietary_header_t, c_ok *C.bool) (rc C.int) {
+//export dmrgo_pdu_data_header_as_proprietary
+func dmrgo_pdu_data_header_as_proprietary(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_proprietary_header_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -23414,7 +23414,7 @@ func dmrgo_pdu_data_header_as_proprietary_header(c_self *C.dmrgo_pdu_data_header
 	}
 	var x g_layer2_pdu.DataHeader
 	x = in_layer2_pdu_DataHeader(&(*c_self))
-	r0, r1 := x.AsProprietaryHeader()
+	r0, r1 := x.AsProprietary()
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -23429,8 +23429,8 @@ func dmrgo_pdu_data_header_as_proprietary_header(c_self *C.dmrgo_pdu_data_header
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_data_header_as_raw_data_header
-func dmrgo_pdu_data_header_as_raw_data_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_raw_data_header_t, c_ok *C.bool) (rc C.int) {
+//export dmrgo_pdu_data_header_as_raw_data
+func dmrgo_pdu_data_header_as_raw_data(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_raw_data_header_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -23438,7 +23438,7 @@ func dmrgo_pdu_data_header_as_raw_data_header(c_self *C.dmrgo_pdu_data_header_t,
 	}
 	var x g_layer2_pdu.DataHeader
 	x = in_layer2_pdu_DataHeader(&(*c_self))
-	r0, r1 := x.AsRawDataHeader()
+	r0, r1 := x.AsRawData()
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -23453,8 +23453,8 @@ func dmrgo_pdu_data_header_as_raw_data_header(c_self *C.dmrgo_pdu_data_header_t,
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_data_header_as_response_packet_header
-func dmrgo_pdu_data_header_as_response_packet_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_response_packet_header_t, c_ok *C.bool) (rc C.int) {
+//export dmrgo_pdu_data_header_as_response
+func dmrgo_pdu_data_header_as_response(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_response_packet_header_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -23462,7 +23462,7 @@ func dmrgo_pdu_data_header_as_response_packet_header(c_self *C.dmrgo_pdu_data_he
 	}
 	var x g_layer2_pdu.DataHeader
 	x = in_layer2_pdu_DataHeader(&(*c_self))
-	r0, r1 := x.AsResponsePacketHeader()
+	r0, r1 := x.AsResponse()
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -23477,8 +23477,8 @@ func dmrgo_pdu_data_header_as_response_packet_header(c_self *C.dmrgo_pdu_data_he
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_data_header_as_status_precoded_header
-func dmrgo_pdu_data_header_as_status_precoded_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_status_precoded_header_t, c_ok *C.bool) (rc C.int) {
+//export dmrgo_pdu_data_header_as_status_precoded
+func dmrgo_pdu_data_header_as_status_precoded(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_status_precoded_header_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -23486,7 +23486,7 @@ func dmrgo_pdu_data_header_as_status_precoded_header(c_self *C.dmrgo_pdu_data_he
 	}
 	var x g_layer2_pdu.DataHeader
 	x = in_layer2_pdu_DataHeader(&(*c_self))
-	r0, r1 := x.AsStatusPrecodedHeader()
+	r0, r1 := x.AsStatusPrecoded()
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -23501,8 +23501,8 @@ func dmrgo_pdu_data_header_as_status_precoded_header(c_self *C.dmrgo_pdu_data_he
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_data_header_as_udt_header
-func dmrgo_pdu_data_header_as_udt_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_udt_header_t, c_ok *C.bool) (rc C.int) {
+//export dmrgo_pdu_data_header_as_udt
+func dmrgo_pdu_data_header_as_udt(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_udt_header_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -23510,7 +23510,7 @@ func dmrgo_pdu_data_header_as_udt_header(c_self *C.dmrgo_pdu_data_header_t, c_p 
 	}
 	var x g_layer2_pdu.DataHeader
 	x = in_layer2_pdu_DataHeader(&(*c_self))
-	r0, r1 := x.AsUDTHeader()
+	r0, r1 := x.AsUDT()
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -23525,8 +23525,8 @@ func dmrgo_pdu_data_header_as_udt_header(c_self *C.dmrgo_pdu_data_header_t, c_p 
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_data_header_as_unconfirmed_data_header
-func dmrgo_pdu_data_header_as_unconfirmed_data_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_unconfirmed_data_header_t, c_ok *C.bool) (rc C.int) {
+//export dmrgo_pdu_data_header_as_unconfirmed
+func dmrgo_pdu_data_header_as_unconfirmed(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_unconfirmed_data_header_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -23534,7 +23534,7 @@ func dmrgo_pdu_data_header_as_unconfirmed_data_header(c_self *C.dmrgo_pdu_data_h
 	}
 	var x g_layer2_pdu.DataHeader
 	x = in_layer2_pdu_DataHeader(&(*c_self))
-	r0, r1 := x.AsUnconfirmedDataHeader()
+	r0, r1 := x.AsUnconfirmed()
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -23707,8 +23707,8 @@ func dmrgo_pdu_data_header_set_addresses(c_self *C.dmrgo_pdu_data_header_t, c_de
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_data_header_set_confirmed_data_header
-func dmrgo_pdu_data_header_set_confirmed_data_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_confirmed_data_header_t) (rc C.int) {
+//export dmrgo_pdu_data_header_set_confirmed
+func dmrgo_pdu_data_header_set_confirmed(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_confirmed_data_header_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -23721,7 +23721,7 @@ func dmrgo_pdu_data_header_set_confirmed_data_header(c_self *C.dmrgo_pdu_data_he
 	}
 	var a_p g_layer2_pdu.ConfirmedDataHeader
 	a_p = in_layer2_pdu_ConfirmedDataHeader(&(*c_p))
-	r0 := x.SetConfirmedDataHeader(a_p)
+	r0 := x.SetConfirmed(a_p)
 	var ws_self C.dmrgo_pdu_data_header_t
 	ws_self = *c_self
 	*(*[10]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
@@ -23735,8 +23735,8 @@ func dmrgo_pdu_data_header_set_confirmed_data_header(c_self *C.dmrgo_pdu_data_he
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_data_header_set_defined_data_header
-func dmrgo_pdu_data_header_set_defined_data_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_defined_data_header_t) (rc C.int) {
+//export dmrgo_pdu_data_header_set_defined_data
+func dmrgo_pdu_data_header_set_defined_data(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_defined_data_header_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -23749,7 +23749,7 @@ func dmrgo_pdu_data_header_set_defined_data_header(c_self *C.dmrgo_pdu_data_head
 	}
 	var a_p g_layer2_pdu.DefinedDataHeader
 	a_p = in_layer2_pdu_DefinedDataHeader(&(*c_p))
-	r0 := x.SetDefinedDataHeader(a_p)
+	r0 := x.SetDefinedData(a_p)
 	var ws_self C.dmrgo_pdu_data_header_t
 	ws_self = *c_self
 	*(*[10]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
@@ -23763,8 +23763,8 @@ func dmrgo_pdu_data_header_set_defined_data_header(c_self *C.dmrgo_pdu_data_head
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_data_header_set_proprietary_header
-func dmrgo_pdu_data_header_set_proprietary_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_proprietary_header_t) (rc C.int) {
+//export dmrgo_pdu_data_header_set_proprietary
+func dmrgo_pdu_data_header_set_proprietary(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_proprietary_header_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -23775,7 +23775,7 @@ func dmrgo_pdu_data_header_set_proprietary_header(c_self *C.dmrgo_pdu_data_heade
 	if c_p == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := x.SetProprietaryHeader(*(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(c_p)))
+	r0 := x.SetProprietary(*(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(c_p)))
 	var ws_self C.dmrgo_pdu_data_header_t
 	ws_self = *c_self
 	*(*[10]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
@@ -23789,8 +23789,8 @@ func dmrgo_pdu_data_header_set_proprietary_header(c_self *C.dmrgo_pdu_data_heade
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_data_header_set_raw_data_header
-func dmrgo_pdu_data_header_set_raw_data_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_raw_data_header_t) (rc C.int) {
+//export dmrgo_pdu_data_header_set_raw_data
+func dmrgo_pdu_data_header_set_raw_data(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_raw_data_header_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -23803,7 +23803,7 @@ func dmrgo_pdu_data_header_set_raw_data_header(c_self *C.dmrgo_pdu_data_header_t
 	}
 	var a_p g_layer2_pdu.RawDataHeader
 	a_p = in_layer2_pdu_RawDataHeader(&(*c_p))
-	r0 := x.SetRawDataHeader(a_p)
+	r0 := x.SetRawData(a_p)
 	var ws_self C.dmrgo_pdu_data_header_t
 	ws_self = *c_self
 	*(*[10]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
@@ -23817,8 +23817,8 @@ func dmrgo_pdu_data_header_set_raw_data_header(c_self *C.dmrgo_pdu_data_header_t
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_data_header_set_response_packet_header
-func dmrgo_pdu_data_header_set_response_packet_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_response_packet_header_t) (rc C.int) {
+//export dmrgo_pdu_data_header_set_response
+func dmrgo_pdu_data_header_set_response(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_response_packet_header_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -23831,7 +23831,7 @@ func dmrgo_pdu_data_header_set_response_packet_header(c_self *C.dmrgo_pdu_data_h
 	}
 	var a_p g_layer2_pdu.ResponsePacketHeader
 	a_p = in_layer2_pdu_ResponsePacketHeader(&(*c_p))
-	r0 := x.SetResponsePacketHeader(a_p)
+	r0 := x.SetResponse(a_p)
 	var ws_self C.dmrgo_pdu_data_header_t
 	ws_self = *c_self
 	*(*[10]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
@@ -23845,8 +23845,8 @@ func dmrgo_pdu_data_header_set_response_packet_header(c_self *C.dmrgo_pdu_data_h
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_data_header_set_status_precoded_header
-func dmrgo_pdu_data_header_set_status_precoded_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_status_precoded_header_t) (rc C.int) {
+//export dmrgo_pdu_data_header_set_status_precoded
+func dmrgo_pdu_data_header_set_status_precoded(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_status_precoded_header_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -23859,7 +23859,7 @@ func dmrgo_pdu_data_header_set_status_precoded_header(c_self *C.dmrgo_pdu_data_h
 	}
 	var a_p g_layer2_pdu.StatusPrecodedHeader
 	a_p = in_layer2_pdu_StatusPrecodedHeader(&(*c_p))
-	r0 := x.SetStatusPrecodedHeader(a_p)
+	r0 := x.SetStatusPrecoded(a_p)
 	var ws_self C.dmrgo_pdu_data_header_t
 	ws_self = *c_self
 	*(*[10]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
@@ -23873,8 +23873,8 @@ func dmrgo_pdu_data_header_set_status_precoded_header(c_self *C.dmrgo_pdu_data_h
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_data_header_set_udt_header
-func dmrgo_pdu_data_header_set_udt_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_udt_header_t) (rc C.int) {
+//export dmrgo_pdu_data_header_set_udt
+func dmrgo_pdu_data_header_set_udt(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_udt_header_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -23887,7 +23887,7 @@ func dmrgo_pdu_data_header_set_udt_header(c_self *C.dmrgo_pdu_data_header_t, c_p
 	}
 	var a_p g_layer2_pdu.UDTHeader
 	a_p = in_layer2_pdu_UDTHeader(&(*c_p))
-	r0 := x.SetUDTHeader(a_p)
+	r0 := x.SetUDT(a_p)
 	var ws_self C.dmrgo_pdu_data_header_t
 	ws_self = *c_self
 	*(*[10]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
@@ -23901,8 +23901,8 @@ func dmrgo_pdu_data_header_set_udt_header(c_self *C.dmrgo_pdu_data_header_t, c_p
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_data_header_set_unconfirmed_data_header
-func dmrgo_pdu_data_header_set_unconfirmed_data_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_unconfirmed_data_header_t) (rc C.int) {
+//export dmrgo_pdu_data_header_set_unconfirmed
+func dmrgo_pdu_data_header_set_unconfirmed(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_unconfirmed_data_header_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -23915,7 +23915,7 @@ func dmrgo_pdu_data_header_set_unconfirmed_data_header(c_self *C.dmrgo_pdu_data_
 	}
 	var a_p g_layer2_pdu.UnconfirmedDataHeader
 	a_p = in_layer2_pdu_UnconfirmedDataHeader(&(*c_p))
-	r0 := x.SetUnconfirmedDataHeader(a_p)
+	r0 := x.SetUnconfirmed(a_p)
 	var ws_self C.dmrgo_pdu_data_header_t
 	ws_self = *c_self
 	*(*[10]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
@@ -25912,8 +25912,8 @@ func dmrgo_pdu_local_time_parms_string(c_self *C.dmrgo_pdu_local_time_parms_t, c
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_mbc_continuation_as_bcap
-func dmrgo_pdu_mbc_continuation_as_bcap(c_self *C.dmrgo_pdu_mbc_continuation_t, c_out *C.dmrgo_pdu_bcap_continuation_t) (rc C.int) {
+//export dmrgo_pdu_mbc_continuation_bcap
+func dmrgo_pdu_mbc_continuation_bcap(c_self *C.dmrgo_pdu_mbc_continuation_t, c_out *C.dmrgo_pdu_bcap_continuation_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -25921,7 +25921,7 @@ func dmrgo_pdu_mbc_continuation_as_bcap(c_self *C.dmrgo_pdu_mbc_continuation_t, 
 	}
 	var x g_layer2_pdu.MBCContinuation
 	x = in_layer2_pdu_MBCContinuation(&(*c_self))
-	r0 := x.AsBCAP()
+	r0 := x.BCAP()
 	_ = r0
 	if c_out != nil {
 		out_layer2_pdu_BCAPContinuation(&(*c_out), &r0, oc)
@@ -25932,8 +25932,8 @@ func dmrgo_pdu_mbc_continuation_as_bcap(c_self *C.dmrgo_pdu_mbc_continuation_t, 
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_mbc_continuation_as_cgap
-func dmrgo_pdu_mbc_continuation_as_cgap(c_self *C.dmrgo_pdu_mbc_continuation_t, c_out *C.dmrgo_pdu_cgap_continuation_t) (rc C.int) {
+//export dmrgo_pdu_mbc_continuation_cgap
+func dmrgo_pdu_mbc_continuation_cgap(c_self *C.dmrgo_pdu_mbc_continuation_t, c_out *C.dmrgo_pdu_cgap_continuation_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -25941,50 +25941,10 @@ func dmrgo_pdu_mbc_continuation_as_cgap(c_self *C.dmrgo_pdu_mbc_continuation_t, 
 	}
 	var x g_layer2_pdu.MBCContinuation
 	x = in_layer2_pdu_MBCContinuation(&(*c_self))
-	r0 := x.AsCGAP()
+	r0 := x.CGAP()
 	_ = r0
 	if c_out != nil {
 		out_layer2_pdu_CGAPContinuation(&(*c_out), &r0, oc)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_pdu_mbc_continuation_as_mvap
-func dmrgo_pdu_mbc_continuation_as_mvap(c_self *C.dmrgo_pdu_mbc_continuation_t, c_out *C.dmrgo_pdu_mvap_continuation_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_layer2_pdu.MBCContinuation
-	x = in_layer2_pdu_MBCContinuation(&(*c_self))
-	r0 := x.AsMVAP()
-	_ = r0
-	if c_out != nil {
-		out_layer2_pdu_MVAPContinuation(&(*c_out), &r0, oc)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_pdu_mbc_continuation_as_vnap
-func dmrgo_pdu_mbc_continuation_as_vnap(c_self *C.dmrgo_pdu_mbc_continuation_t, c_out *C.dmrgo_pdu_vnap_continuation_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_layer2_pdu.MBCContinuation
-	x = in_layer2_pdu_MBCContinuation(&(*c_self))
-	r0 := x.AsVNAP()
-	_ = r0
-	if c_out != nil {
-		out_layer2_pdu_VNAPContinuation(&(*c_out), &r0, oc)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -26035,6 +25995,26 @@ func dmrgo_pdu_mbc_continuation_encode(c_self *C.dmrgo_pdu_mbc_continuation_t, c
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_mbc_continuation_mvap
+func dmrgo_pdu_mbc_continuation_mvap(c_self *C.dmrgo_pdu_mbc_continuation_t, c_out *C.dmrgo_pdu_mvap_continuation_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCContinuation
+	x = in_layer2_pdu_MBCContinuation(&(*c_self))
+	r0 := x.MVAP()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_MVAPContinuation(&(*c_out), &r0, oc)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_mbc_continuation_string
 func dmrgo_pdu_mbc_continuation_string(c_self *C.dmrgo_pdu_mbc_continuation_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -26053,6 +26033,26 @@ func dmrgo_pdu_mbc_continuation_string(c_self *C.dmrgo_pdu_mbc_continuation_t, c
 	r0 := x.String()
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_continuation_vnap
+func dmrgo_pdu_mbc_continuation_vnap(c_self *C.dmrgo_pdu_mbc_continuation_t, c_out *C.dmrgo_pdu_vnap_continuation_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCContinuation
+	x = in_layer2_pdu_MBCContinuation(&(*c_self))
+	r0 := x.VNAP()
+	_ = r0
+	if c_out != nil {
+		out_layer2_pdu_VNAPContinuation(&(*c_out), &r0, oc)
+	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}

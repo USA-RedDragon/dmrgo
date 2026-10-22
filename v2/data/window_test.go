@@ -43,7 +43,7 @@ func header(t testing.TB, raw layer2.RawBurst) *pdu.DataHeader {
 
 func responseStatus(t testing.TB, raw layer2.RawBurst) uint8 {
 	t.Helper()
-	rh, ok := header(t, raw).AsResponsePacketHeader()
+	rh, ok := header(t, raw).AsResponse()
 	if !ok {
 		t.Fatal("header is not a C_RHEAD")
 	}
@@ -338,12 +338,12 @@ func TestSenderWindowJoin(t *testing.T) {
 	}
 	ack := response(t, packet.ResponseACK, nil)
 	h := header(t, ack[0])
-	rh, ok := h.AsResponsePacketHeader()
+	rh, ok := h.AsResponse()
 	if !ok {
 		t.Fatal("ACK header is not a C_RHEAD")
 	}
 	rh.ResponseStatus = 1
-	if err := h.SetResponsePacketHeader(rh); err != nil {
+	if err := h.SetResponse(rh); err != nil {
 		t.Fatal(err)
 	}
 	raw, err := layer2.BuildBurst(h, 0, layer2.SyncSourceBS)

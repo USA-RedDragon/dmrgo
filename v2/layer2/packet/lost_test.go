@@ -69,9 +69,9 @@ func TestAssembler_LostConfirmedBlock(t *testing.T) {
 	}
 
 	h := p.Header
-	c := get(t, &h, (*pdu.DataHeader).AsConfirmedDataHeader)
+	c := get(t, &h, (*pdu.DataHeader).AsConfirmed)
 	c.BlocksToFollow = 1
-	mustSet(t, h.SetConfirmedDataHeader(c))
+	mustSet(t, h.SetConfirmed(c))
 	if m, err := add(rx, encodeHeader(t, &h)); m != nil || err != nil {
 		t.Fatalf("retry header: %v %v", m, err)
 	}

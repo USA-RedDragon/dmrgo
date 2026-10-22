@@ -13,7 +13,7 @@ import (
 
 func ExampleNewPacket() {
 	var header pdu.DataHeader
-	err := header.SetUnconfirmedDataHeader(pdu.UnconfirmedDataHeader{
+	err := header.SetUnconfirmed(pdu.UnconfirmedDataHeader{
 		SAP:             enums.SAPShortData,
 		LLIDDestination: 91,
 		LLIDSource:      3120000,
@@ -28,7 +28,7 @@ func ExampleNewPacket() {
 		fmt.Println(err)
 		return
 	}
-	h, _ := p.Header.AsUnconfirmedDataHeader()
+	h, _ := p.Header.AsUnconfirmed()
 	fmt.Println(len(p.Blocks), h.BlocksToFollow, h.PadOctetCount)
 
 	a := packet.NewAssembler(127)
@@ -60,7 +60,7 @@ func ExampleMessage_UDPIPv4() {
 	}
 	sentence := "$GPRMC,200037.000,A,3412.7300,N,10850.0000,E,0.00,121.00,021225,,,A*60\r\n"
 	var header pdu.DataHeader
-	err = header.SetUnconfirmedDataHeader(pdu.UnconfirmedDataHeader{
+	err = header.SetUnconfirmed(pdu.UnconfirmedDataHeader{
 		SAP:             enums.SAPUDPIPHeaderCompression,
 		LLIDDestination: 3140598,
 		LLIDSource:      3191868,

@@ -72,7 +72,7 @@ func setHeader[P any](t testing.TB, set func(*pdu.DataHeader, P) error, p P) pdu
 func ipMessage(t testing.TB, s string) packet.Message {
 	t.Helper()
 	return packet.Message{
-		Header: setHeader(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{
+		Header: setHeader(t, (*pdu.DataHeader).SetUnconfirmed, pdu.UnconfirmedDataHeader{
 			SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3140598, LLIDSource: 3191868, FullMessageFlag: true,
 		}),
 		Data: unhex(t, s),
@@ -123,7 +123,7 @@ func TestAppendPacketMatchesRadios(t *testing.T) {
 			t.Fatal(err)
 		}
 		want := unhex(t, tt.want)
-		if u, ok := h.Data.AsUnconfirmedDataHeader(); out[0] != 'x' || !ok || u.SAP != enums.SAPIPBasedPacketData ||
+		if u, ok := h.Data.AsUnconfirmed(); out[0] != 'x' || !ok || u.SAP != enums.SAPIPBasedPacketData ||
 			u.LLIDSource != 3191868 {
 			t.Fatalf("%s: header %s", tt.text.Format, h.Data.String())
 		}
@@ -164,19 +164,19 @@ func TestErrors(t *testing.T) {
 	t.Parallel()
 
 	m := ipMessage(t, appcapture.GPS)
-	u, ok := m.Header.AsUnconfirmedDataHeader()
+	u, ok := m.Header.AsUnconfirmed()
 	if !ok {
 		t.Fatal("GPS header is not a U_HEAD")
 	}
 	u.SAP = enums.SAPUDPIPHeaderCompression
-	if err := m.Header.SetUnconfirmedDataHeader(u); err != nil {
+	if err := m.Header.SetUnconfirmed(u); err != nil {
 		t.Fatal(err)
 	}
 	if _, _, err := sms.Decode(nil, &m.Header, m.Data); !errors.Is(err, sms.ErrNotText) {
 		t.Errorf("GPS: %v", err)
 	}
 	ack := ipMessage(t, appcapture.TMS)
-	resp := setHeader(t, (*pdu.DataHeader).SetResponsePacketHeader, pdu.ResponsePacketHeader{})
+	resp := setHeader(t, (*pdu.DataHeader).SetResponse, pdu.ResponsePacketHeader{})
 	if _, _, err := sms.Decode(nil, &resp, nil); !errors.Is(err, sms.ErrNotText) {
 		t.Errorf("response: %v", err)
 	}
@@ -193,7 +193,7 @@ func TestErrors(t *testing.T) {
 			t.Errorf("%s text built: %q, %v", dd, b, err)
 		}
 	}
-	bin := setHeader(t, (*pdu.DataHeader).SetDefinedDataHeader, pdu.DefinedDataHeader{DefinedData: enums.DDBinary})
+	bin := setHeader(t, (*pdu.DataHeader).SetDefinedData, pdu.DefinedDataHeader{DefinedData: enums.DDBinary})
 	if _, _, err := sms.Decode(nil, &bin, []byte("Hi")); !errors.Is(err, sms.ErrNotText) {
 		t.Errorf("binary: %v", err)
 	}

@@ -225,7 +225,7 @@ func sealBPTC(t *testing.T, p *[12]byte, dt enums.DataType) bool {
 func checkMBCViews(t *testing.T, in, out [12]byte) {
 	t.Helper()
 	c := pdu.DecodeMBCContinuation(in)
-	cgap, mvap, bcap, vnap := c.AsCGAP(), c.AsMVAP(), c.AsBCAP(), c.AsVNAP()
+	cgap, mvap, bcap, vnap := c.CGAP(), c.MVAP(), c.BCAP(), c.VNAP()
 	views := [...][12]byte{must(cgap.Encode()), must(mvap.Encode()), must(bcap.Encode()), must(vnap.Encode())}
 	crcs := [...]fec.Result{cgap.FEC, mvap.FEC, bcap.FEC, vnap.FEC}
 	crcOK := pdu.MBCLastBlockCRCOK([][12]byte{out})

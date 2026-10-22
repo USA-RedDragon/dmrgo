@@ -85,7 +85,7 @@ func TestBurstEncode_HandBuiltData(t *testing.T) {
 	wantU.LLIDDestination = 1 << 23
 	wantU.LLIDSource = 1 << 22
 	header := &pdu.DataHeader{}
-	mustSet(header.SetUnconfirmedDataHeader(wantU))
+	mustSet(header.SetUnconfirmed(wantU))
 	r12 := &pdu.Rate12Data{Data: [12]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}}
 	r34 := &pdu.Rate34Data{Data: [18]byte{0xFF, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 0xAA}}
 	r1 := &pdu.Rate1Data{Data: [24]byte{0x80, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 0x01}}
@@ -115,7 +115,7 @@ func TestBurstEncode_HandBuiltData(t *testing.T) {
 		}},
 		{enums.DataTypeDataHeader, header, func(t *testing.T, got layer2.Data) {
 			g, ok := got.(*pdu.DataHeader)
-			if u, uok := g.AsUnconfirmedDataHeader(); !ok || g.Format() != pdu.FormatUnconfirmed || !uok || u != wantU {
+			if u, uok := g.AsUnconfirmed(); !ok || g.Format() != pdu.FormatUnconfirmed || !uok || u != wantU {
 				t.Errorf("got %+v", got)
 			}
 		}},

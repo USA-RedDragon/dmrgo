@@ -284,7 +284,7 @@ func (s *responseStore) build(to *pdu.ConfirmedDataHeader, r Response, data *Res
 		header.BlocksToFollow = uint8(n & 0xFF)
 	}
 	var h pdu.DataHeader
-	if err := h.SetResponsePacketHeader(header); err != nil {
+	if err := h.SetResponse(header); err != nil {
 		return Packet{}, err
 	}
 	return Packet{Header: h, Blocks: blocks}, nil

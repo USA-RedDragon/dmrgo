@@ -101,7 +101,7 @@ func unconfirmed(w io.Writer) error {
 	payload := append(udpHeader[:], text...)
 
 	var h pdu.DataHeader
-	if err := h.SetUnconfirmedDataHeader(pdu.UnconfirmedDataHeader{
+	if err := h.SetUnconfirmed(pdu.UnconfirmedDataHeader{
 		SAP: enums.SAPUDPIPHeaderCompression, LLIDDestination: dst, LLIDSource: src, FullMessageFlag: true}); err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func unconfirmed(w io.Writer) error {
 		return fmt.Errorf("payload %x, want %x", m.Data, payload)
 	}
 	got := pdu.DecodeUDPIPv4CompressedHeader([9]byte(m.Data[:9]))
-	u, ok := m.Header.AsUnconfirmedDataHeader()
+	u, ok := m.Header.AsUnconfirmed()
 	if !ok {
 		return fmt.Errorf("header format %s, want unconfirmed", m.Header.Format())
 	}
@@ -134,7 +134,7 @@ func unconfirmed(w io.Writer) error {
 func confirmed(w io.Writer) error {
 	lip := []byte("LIP: 41.878,-87.629,hdg=90,v=12")
 	var h pdu.DataHeader
-	if err := h.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{
+	if err := h.SetConfirmed(pdu.ConfirmedDataHeader{
 		ResponseRequested: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: dst, LLIDSource: src,
 		FullMessageFlag: true, ReSynchronizeFlag: true, SendSequenceNumber: 3, FragmentSequenceNumber: 8}); err != nil {
 		return err
@@ -196,7 +196,7 @@ func confirmed(w io.Writer) error {
 	if !bytes.Equal(m.Data, lip) {
 		return fmt.Errorf("payload %q, want %q", m.Data, lip)
 	}
-	ch, ok := m.Header.AsConfirmedDataHeader()
+	ch, ok := m.Header.AsConfirmed()
 	if !ok {
 		return fmt.Errorf("header format %s, want confirmed", m.Header.Format())
 	}
@@ -237,7 +237,7 @@ func receive(a *packet.Assembler, bursts []layer2.RawBurst) (packet.Message, err
 }
 
 func responseOf(h *pdu.DataHeader) (packet.Response, error) {
-	r, ok := h.AsResponsePacketHeader()
+	r, ok := h.AsResponse()
 	if !ok {
 		return 0, fmt.Errorf("header format %s, want response", h.Format())
 	}

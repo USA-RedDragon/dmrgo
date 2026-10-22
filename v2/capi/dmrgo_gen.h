@@ -8886,22 +8886,22 @@ int dmrgo_pdu_clear_pdu_string(const dmrgo_pdu_clear_pdu_t *self, char *out, siz
 int dmrgo_pdu_confirmed_data_header_string(const dmrgo_pdu_confirmed_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.DataHeader.Addresses. Addresses returns the destination LLID as target and the source LLID of the header. */
 int dmrgo_pdu_data_header_addresses(const dmrgo_pdu_data_header_t *self, uint32_t *target, uint32_t *source, bool *ok);
-/* Go: pdu.DataHeader.AsConfirmedDataHeader. AsConfirmedDataHeader decodes RawPayload as a ConfirmedDataHeader payload. */
-int dmrgo_pdu_data_header_as_confirmed_data_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_confirmed_data_header_t *p, bool *ok);
-/* Go: pdu.DataHeader.AsDefinedDataHeader. AsDefinedDataHeader decodes RawPayload as a DefinedDataHeader payload. */
-int dmrgo_pdu_data_header_as_defined_data_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_defined_data_header_t *p, bool *ok);
-/* Go: pdu.DataHeader.AsProprietaryHeader. AsProprietaryHeader decodes RawPayload as a ProprietaryHeader payload. */
-int dmrgo_pdu_data_header_as_proprietary_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_proprietary_header_t *p, bool *ok);
-/* Go: pdu.DataHeader.AsRawDataHeader. AsRawDataHeader decodes RawPayload as a RawDataHeader payload. */
-int dmrgo_pdu_data_header_as_raw_data_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_raw_data_header_t *p, bool *ok);
-/* Go: pdu.DataHeader.AsResponsePacketHeader. AsResponsePacketHeader decodes RawPayload as a ResponsePacketHeader payload. */
-int dmrgo_pdu_data_header_as_response_packet_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_response_packet_header_t *p, bool *ok);
-/* Go: pdu.DataHeader.AsStatusPrecodedHeader. AsStatusPrecodedHeader decodes RawPayload as a StatusPrecodedHeader payload. */
-int dmrgo_pdu_data_header_as_status_precoded_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_status_precoded_header_t *p, bool *ok);
-/* Go: pdu.DataHeader.AsUDTHeader. AsUDTHeader decodes RawPayload as a UDTHeader payload. */
-int dmrgo_pdu_data_header_as_udt_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_udt_header_t *p, bool *ok);
-/* Go: pdu.DataHeader.AsUnconfirmedDataHeader. AsUnconfirmedDataHeader decodes RawPayload as an UnconfirmedDataHeader payload. */
-int dmrgo_pdu_data_header_as_unconfirmed_data_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_unconfirmed_data_header_t *p, bool *ok);
+/* Go: pdu.DataHeader.AsConfirmed. AsConfirmed decodes RawPayload as a ConfirmedDataHeader payload. */
+int dmrgo_pdu_data_header_as_confirmed(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_confirmed_data_header_t *p, bool *ok);
+/* Go: pdu.DataHeader.AsDefinedData. AsDefinedData decodes RawPayload as a DefinedDataHeader payload. */
+int dmrgo_pdu_data_header_as_defined_data(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_defined_data_header_t *p, bool *ok);
+/* Go: pdu.DataHeader.AsProprietary. AsProprietary decodes RawPayload as a ProprietaryHeader payload. */
+int dmrgo_pdu_data_header_as_proprietary(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_proprietary_header_t *p, bool *ok);
+/* Go: pdu.DataHeader.AsRawData. AsRawData decodes RawPayload as a RawDataHeader payload. */
+int dmrgo_pdu_data_header_as_raw_data(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_raw_data_header_t *p, bool *ok);
+/* Go: pdu.DataHeader.AsResponse. AsResponse decodes RawPayload as a ResponsePacketHeader payload. */
+int dmrgo_pdu_data_header_as_response(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_response_packet_header_t *p, bool *ok);
+/* Go: pdu.DataHeader.AsStatusPrecoded. AsStatusPrecoded decodes RawPayload as a StatusPrecodedHeader payload. */
+int dmrgo_pdu_data_header_as_status_precoded(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_status_precoded_header_t *p, bool *ok);
+/* Go: pdu.DataHeader.AsUDT. AsUDT decodes RawPayload as a UDTHeader payload. */
+int dmrgo_pdu_data_header_as_udt(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_udt_header_t *p, bool *ok);
+/* Go: pdu.DataHeader.AsUnconfirmed. AsUnconfirmed decodes RawPayload as an UnconfirmedDataHeader payload. */
+int dmrgo_pdu_data_header_as_unconfirmed(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_unconfirmed_data_header_t *p, bool *ok);
 /* Go: pdu.DataHeader.BlocksToFollow. BlocksToFollow returns the number of blocks after the header: the Blocks to Follow of a U_HEAD, C_HEAD or C_RHEAD, the Appended Blocks of a DD_HEAD or R_HEAD, UAB plus one for a UDT_HEAD, and 0 for an SP_HEAD. */
 int dmrgo_pdu_data_header_blocks_to_follow(const dmrgo_pdu_data_header_t *self, int64_t *n, bool *ok);
 /* Go: pdu.DataHeader.DataType. DataType returns enums.DataTypeDataHeader. */
@@ -8916,22 +8916,22 @@ int dmrgo_pdu_data_header_full_message(const dmrgo_pdu_data_header_t *self, bool
 int dmrgo_pdu_data_header_sap(const dmrgo_pdu_data_header_t *self, dmrgo_enums_sap_t *sap, bool *ok);
 /* Go: pdu.DataHeader.SetAddresses. SetAddresses sets the destination and source LLIDs of the header. It returns DMRGO_ERR_PDU_NO_ADDRESSES for a proprietary header and a header of an unknown format, and a DMRGO_ERR_FIELD_RANGE when an LLID does not fit in 24 bits, and then changes nothing. */
 int dmrgo_pdu_data_header_set_addresses(dmrgo_pdu_data_header_t *self, uint32_t destination, uint32_t source);
-/* Go: pdu.DataHeader.SetConfirmedDataHeader. SetConfirmedDataHeader makes s carry p as a ConfirmedDataHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
-int dmrgo_pdu_data_header_set_confirmed_data_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_confirmed_data_header_t *p);
-/* Go: pdu.DataHeader.SetDefinedDataHeader. SetDefinedDataHeader makes s carry p as a DefinedDataHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
-int dmrgo_pdu_data_header_set_defined_data_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_defined_data_header_t *p);
-/* Go: pdu.DataHeader.SetProprietaryHeader. SetProprietaryHeader makes s carry p as a ProprietaryHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
-int dmrgo_pdu_data_header_set_proprietary_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_proprietary_header_t *p);
-/* Go: pdu.DataHeader.SetRawDataHeader. SetRawDataHeader makes s carry p as a RawDataHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits or p.AppendedBlocks is 0, and then leaves s as it is. */
-int dmrgo_pdu_data_header_set_raw_data_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_raw_data_header_t *p);
-/* Go: pdu.DataHeader.SetResponsePacketHeader. SetResponsePacketHeader makes s carry p as a ResponsePacketHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
-int dmrgo_pdu_data_header_set_response_packet_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_response_packet_header_t *p);
-/* Go: pdu.DataHeader.SetStatusPrecodedHeader. SetStatusPrecodedHeader makes s carry p as a StatusPrecodedHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
-int dmrgo_pdu_data_header_set_status_precoded_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_status_precoded_header_t *p);
-/* Go: pdu.DataHeader.SetUDTHeader. SetUDTHeader makes s carry p as a UDTHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
-int dmrgo_pdu_data_header_set_udt_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_udt_header_t *p);
-/* Go: pdu.DataHeader.SetUnconfirmedDataHeader. SetUnconfirmedDataHeader makes s carry p as an UnconfirmedDataHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
-int dmrgo_pdu_data_header_set_unconfirmed_data_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_unconfirmed_data_header_t *p);
+/* Go: pdu.DataHeader.SetConfirmed. SetConfirmed makes s carry p as a ConfirmedDataHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+int dmrgo_pdu_data_header_set_confirmed(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_confirmed_data_header_t *p);
+/* Go: pdu.DataHeader.SetDefinedData. SetDefinedData makes s carry p as a DefinedDataHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+int dmrgo_pdu_data_header_set_defined_data(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_defined_data_header_t *p);
+/* Go: pdu.DataHeader.SetProprietary. SetProprietary makes s carry p as a ProprietaryHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+int dmrgo_pdu_data_header_set_proprietary(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_proprietary_header_t *p);
+/* Go: pdu.DataHeader.SetRawData. SetRawData makes s carry p as a RawDataHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits or p.AppendedBlocks is 0, and then leaves s as it is. */
+int dmrgo_pdu_data_header_set_raw_data(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_raw_data_header_t *p);
+/* Go: pdu.DataHeader.SetResponse. SetResponse makes s carry p as a ResponsePacketHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+int dmrgo_pdu_data_header_set_response(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_response_packet_header_t *p);
+/* Go: pdu.DataHeader.SetStatusPrecoded. SetStatusPrecoded makes s carry p as a StatusPrecodedHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+int dmrgo_pdu_data_header_set_status_precoded(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_status_precoded_header_t *p);
+/* Go: pdu.DataHeader.SetUDT. SetUDT makes s carry p as a UDTHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+int dmrgo_pdu_data_header_set_udt(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_udt_header_t *p);
+/* Go: pdu.DataHeader.SetUnconfirmed. SetUnconfirmed makes s carry p as an UnconfirmedDataHeader payload: it sets RawPayload, and keeps the other fields. It returns a DMRGO_ERR_FIELD_RANGE when a field of p does not fit its bits, and then leaves s as it is. */
+int dmrgo_pdu_data_header_set_unconfirmed(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_unconfirmed_data_header_t *p);
 /* Go: pdu.DataHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_data_header_string(const dmrgo_pdu_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.DataHeaderBytes.Addresses. Addresses returns the destination LLID (octets 2 to 4) as target and the source LLID (octets 5 to 7) of the header. */
@@ -9118,20 +9118,20 @@ int dmrgo_pdu_lc_bytes_set_reserved(dmrgo_pdu_lc_bytes_t *self, bool r);
 int dmrgo_pdu_lc_bytes_set_service_options(dmrgo_pdu_lc_bytes_t *self, const dmrgo_layer3_service_options_t *so);
 /* Go: pdu.LocalTimeParms.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_local_time_parms_string(const dmrgo_pdu_local_time_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.MBCContinuation.AsBCAP. AsBCAP decodes the block as the BC_AP continuation of a C_BCAST MBC (ETSI TS 102 361-4 Table 7.21), as AsCGAP does. */
-int dmrgo_pdu_mbc_continuation_as_bcap(const dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_bcap_continuation_t *out);
-/* Go: pdu.MBCContinuation.AsCGAP. AsCGAP decodes the block as the CG_AP continuation of a grant MBC. */
-int dmrgo_pdu_mbc_continuation_as_cgap(const dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_cgap_continuation_t *out);
-/* Go: pdu.MBCContinuation.AsMVAP. AsMVAP decodes the block as the MV_AP continuation of a C_MOVE MBC (ETSI TS 102 361-4 Table 7.18), as AsCGAP does. */
-int dmrgo_pdu_mbc_continuation_as_mvap(const dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_mvap_continuation_t *out);
-/* Go: pdu.MBCContinuation.AsVNAP. AsVNAP decodes the block as the VN_AP continuation of a C_BCAST Vote_Now MBC (ETSI TS 102 361-4 Table 7.72), as AsCGAP does. */
-int dmrgo_pdu_mbc_continuation_as_vnap(const dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_vnap_continuation_t *out);
+/* Go: pdu.MBCContinuation.BCAP. BCAP decodes the block as the BC_AP continuation of a C_BCAST MBC (ETSI TS 102 361-4 Table 7.21), as CGAP does. */
+int dmrgo_pdu_mbc_continuation_bcap(const dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_bcap_continuation_t *out);
+/* Go: pdu.MBCContinuation.CGAP. CGAP decodes the block as the CG_AP continuation of a grant MBC. */
+int dmrgo_pdu_mbc_continuation_cgap(const dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_cgap_continuation_t *out);
 /* Go: pdu.MBCContinuation.DataType. DataType returns enums.DataTypeMBCContinuation. */
 int dmrgo_pdu_mbc_continuation_data_type(const dmrgo_pdu_mbc_continuation_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.MBCContinuation.Encode. Encode encodes an MBCContinuation. */
 int dmrgo_pdu_mbc_continuation_encode(const dmrgo_pdu_mbc_continuation_t *self, uint8_t out[12]);
+/* Go: pdu.MBCContinuation.MVAP. MVAP decodes the block as the MV_AP continuation of a C_MOVE MBC (ETSI TS 102 361-4 Table 7.18), as CGAP does. */
+int dmrgo_pdu_mbc_continuation_mvap(const dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_mvap_continuation_t *out);
 /* Go: pdu.MBCContinuation.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_mbc_continuation_string(const dmrgo_pdu_mbc_continuation_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: pdu.MBCContinuation.VNAP. VNAP decodes the block as the VN_AP continuation of a C_BCAST Vote_Now MBC (ETSI TS 102 361-4 Table 7.72), as CGAP does. */
+int dmrgo_pdu_mbc_continuation_vnap(const dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_vnap_continuation_t *out);
 /* Go: pdu.MBCHeader.AsBroadcast. AsBroadcast decodes RawPayload as a BroadcastPDU payload. */
 int dmrgo_pdu_mbc_header_as_broadcast(const dmrgo_pdu_mbc_header_t *self, dmrgo_pdu_broadcast_pdu_t *p, bool *ok);
 /* Go: pdu.MBCHeader.AsBroadcastTalkgroupVoiceGrant. AsBroadcastTalkgroupVoiceGrant decodes RawPayload as a BroadcastTalkgroupVoiceGrantPDU payload. */

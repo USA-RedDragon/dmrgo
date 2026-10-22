@@ -19,7 +19,7 @@ var decoder location.Decoder
 func ExampleDecoder_Decode() {
 	data, _ := hex.DecodeString(appcapture.GPS)
 	m := packet.Message{Data: data}
-	if err := m.Header.SetUnconfirmedDataHeader(pdu.UnconfirmedDataHeader{
+	if err := m.Header.SetUnconfirmed(pdu.UnconfirmedDataHeader{
 		SAP: enums.SAPUDPIPHeaderCompression, LLIDDestination: 3140598, LLIDSource: 3191868,
 	}); err != nil {
 		fmt.Println(err)
@@ -53,7 +53,7 @@ func ExampleDecoder_Decode_hytera() {
 		return
 	}
 	var h pdu.DataHeader
-	if err := h.SetUnconfirmedDataHeader(pdu.UnconfirmedDataHeader{
+	if err := h.SetUnconfirmed(pdu.UnconfirmedDataHeader{
 		SAP: enums.SAPIPBasedPacketData, LLIDDestination: 1, LLIDSource: 80,
 	}); err != nil {
 		fmt.Println(err)

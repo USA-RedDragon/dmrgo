@@ -77,38 +77,38 @@ func (s *MBCContinuation) packed() [12]byte {
 	return data
 }
 
-// AsCGAP decodes the block as the CG_AP continuation of a grant MBC. The FEC
+// CGAP decodes the block as the CG_AP continuation of a grant MBC. The FEC
 // field of the result reports the last-block CRC, which applies only when
 // this is the one continuation block of the MBC.
 // (ETSI TS 102 361-4 Table 7.16)
-func (s *MBCContinuation) AsCGAP() CGAPContinuation {
+func (s *MBCContinuation) CGAP() CGAPContinuation {
 	if s == nil {
 		return CGAPContinuation{}
 	}
 	return decodeCGAPContinuation(s.packed())
 }
 
-// AsMVAP decodes the block as the MV_AP continuation of a C_MOVE MBC (ETSI TS
-// 102 361-4 Table 7.18), as AsCGAP does.
-func (s *MBCContinuation) AsMVAP() MVAPContinuation {
+// MVAP decodes the block as the MV_AP continuation of a C_MOVE MBC (ETSI TS
+// 102 361-4 Table 7.18), as CGAP does.
+func (s *MBCContinuation) MVAP() MVAPContinuation {
 	if s == nil {
 		return MVAPContinuation{}
 	}
 	return decodeMVAPContinuation(s.packed())
 }
 
-// AsBCAP decodes the block as the BC_AP continuation of a C_BCAST MBC (ETSI
-// TS 102 361-4 Table 7.21), as AsCGAP does.
-func (s *MBCContinuation) AsBCAP() BCAPContinuation {
+// BCAP decodes the block as the BC_AP continuation of a C_BCAST MBC (ETSI
+// TS 102 361-4 Table 7.21), as CGAP does.
+func (s *MBCContinuation) BCAP() BCAPContinuation {
 	if s == nil {
 		return BCAPContinuation{}
 	}
 	return decodeBCAPContinuation(s.packed())
 }
 
-// AsVNAP decodes the block as the VN_AP continuation of a C_BCAST Vote_Now
-// MBC (ETSI TS 102 361-4 Table 7.72), as AsCGAP does.
-func (s *MBCContinuation) AsVNAP() VNAPContinuation {
+// VNAP decodes the block as the VN_AP continuation of a C_BCAST Vote_Now
+// MBC (ETSI TS 102 361-4 Table 7.72), as CGAP does.
+func (s *MBCContinuation) VNAP() VNAPContinuation {
 	if s == nil {
 		return VNAPContinuation{}
 	}

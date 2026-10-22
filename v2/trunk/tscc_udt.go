@@ -414,7 +414,7 @@ func (t *TSCC) download(a *Appended, to, from uint32, group, supp, ack bool, op 
 		LLIDSource: from, PadNibble: a.PadNibble, UAB: uab(a.Blocks), SupplementaryFlag: supp, Opcode: op,
 	}
 	var dh pdu.DataHeader
-	if dh.SetUDTHeader(u.hdr) != nil {
+	if dh.SetUDT(u.hdr) != nil {
 		return
 	}
 	p, err := dh.Encode()
@@ -454,7 +454,7 @@ func (t *TSCC) udtInbound(now time.Duration, s enums.Slot, out []TSCCOutput) ([]
 	u := &t.u
 	switch d := t.b.Data.(type) {
 	case *pdu.DataHeader:
-		h, ok := d.AsUDTHeader()
+		h, ok := d.AsUDT()
 		u.inOn = false
 		if !ok || h.Opcode != pdu.UDTOpcodeInboundHeader && h.Opcode != pdu.UDTOpcodeDGNAInboundHeader {
 			return out, true

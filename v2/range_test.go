@@ -298,7 +298,7 @@ func TestSetAddressesErrors(t *testing.T) {
 	noErr(pre.SetPreamble(pdu.PreamblePDU{TargetAddress: 1, SourceAddress: 2}))
 	csbkb := pdu.CSBKBytes(must(pre.Encode()))
 	var hdr pdu.DataHeader
-	noErr(hdr.SetUnconfirmedDataHeader(pdu.UnconfirmedDataHeader{LLIDDestination: 1, LLIDSource: 2}))
+	noErr(hdr.SetUnconfirmed(pdu.UnconfirmedDataHeader{LLIDDestination: 1, LLIDSource: 2}))
 	hdrb := pdu.DataHeaderBytes(must(hdr.Encode()))
 	setters := []setter{
 		{"LCBytes", "LCBytes", "TargetAddress", "SourceAddress", func(a, b uint32) (bool, error) {
@@ -341,7 +341,7 @@ func TestSetAddressesErrors(t *testing.T) {
 			return h == hdr, err
 		}, func() error {
 			var h pdu.DataHeader
-			noErr(h.SetProprietaryHeader(pdu.ProprietaryHeader{}))
+			noErr(h.SetProprietary(pdu.ProprietaryHeader{}))
 			return h.SetAddresses(1, 2)
 		}},
 		{"DataHeaderBytes", "DataHeaderBytes", "LLIDDestination", "LLIDSource", func(a, b uint32) (bool, error) {

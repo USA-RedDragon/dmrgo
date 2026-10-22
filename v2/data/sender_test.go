@@ -336,7 +336,7 @@ func TestSenderOtherResponse(t *testing.T) {
 func TestSenderUnconfirmed(t *testing.T) {
 	t.Parallel()
 	s := newSender(t, &data.SenderConfig{Preambles: 3, Source: layer2.SyncSourceMS, ColorCode: 1})
-	m := &data.Message{Header: setHeader(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{
+	m := &data.Message{Header: setHeader(t, (*pdu.DataHeader).SetUnconfirmed, pdu.UnconfirmedDataHeader{
 		Group: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: 9, LLIDSource: srcID}), Rate: enums.DataTypeRate34, Payload: payload(40)}
 	if err := s.Send(time.Second, m); err != nil {
 		t.Fatal(err)
@@ -419,7 +419,7 @@ func TestSenderErrors(t *testing.T) {
 	s := newSender(t, &data.SenderConfig{MaxBlocks: 2})
 	group := message(t, 10)
 	editConfirmed(t, &group.Header, func(c *pdu.ConfirmedDataHeader) { c.Group = true })
-	udt := &data.Message{Header: setHeader(t, (*pdu.DataHeader).SetUDTHeader, pdu.UDTHeader{})}
+	udt := &data.Message{Header: setHeader(t, (*pdu.DataHeader).SetUDT, pdu.UDTHeader{})}
 	prop := message(t, 10)
 	prop.Proprietary = &pdu.ProprietaryHeader{}
 	for _, c := range []struct {

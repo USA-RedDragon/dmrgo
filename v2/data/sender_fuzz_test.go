@@ -38,9 +38,9 @@ func txPool(t testing.TB) []layer2.RawBurst {
 
 func txMessages(t testing.TB) []*data.Message {
 	t.Helper()
-	u := &data.Message{Header: setHeader(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{
+	u := &data.Message{Header: setHeader(t, (*pdu.DataHeader).SetUnconfirmed, pdu.UnconfirmedDataHeader{
 		LLIDDestination: dstID, LLIDSource: srcID}), Rate: enums.DataTypeRate1, Payload: payload(30)}
-	dd := &data.Message{Header: setHeader(t, (*pdu.DataHeader).SetDefinedDataHeader, pdu.DefinedDataHeader{
+	dd := &data.Message{Header: setHeader(t, (*pdu.DataHeader).SetDefinedData, pdu.DefinedDataHeader{
 		LLIDDestination: dstID, LLIDSource: srcID, SARQ: true}), Rate: enums.DataTypeRate12, Payload: payload(20)}
 	return []*data.Message{message(t, 60), message(t, 10), u, dd, message(t, 500)}
 }

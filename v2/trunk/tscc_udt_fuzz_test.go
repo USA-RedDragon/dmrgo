@@ -22,7 +22,7 @@ func upload(t testing.TB, h pdu.UDTHeader, a *trunk.Appended) []layer2.RawBurst 
 		copy(blocks[i][:], a.Data[12*i:min(12*i+12, trunk.MaxAppendedOctets)])
 	}
 	pdu.SetMBCLastBlockCRC(blocks)
-	hdr, err := layer2.BuildBurst(withPDU(t, &pdu.DataHeader{}, (*pdu.DataHeader).SetUDTHeader, h), testCC, layer2.SyncSourceMS)
+	hdr, err := layer2.BuildBurst(withPDU(t, &pdu.DataHeader{}, (*pdu.DataHeader).SetUDT, h), testCC, layer2.SyncSourceMS)
 	if err != nil {
 		t.Fatal(err)
 	}

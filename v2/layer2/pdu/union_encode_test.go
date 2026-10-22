@@ -14,13 +14,13 @@ func TestSetRawDataHeaderRejectsNoAppendedBlocks(t *testing.T) {
 
 	dh := pdu.DataHeader{RawPayload: [10]byte{1, 2, 3}}
 	before := dh
-	err := dh.SetRawDataHeader(pdu.RawDataHeader{})
+	err := dh.SetRawData(pdu.RawDataHeader{})
 	var rangeErr *dmrgo.FieldRangeError
 	if !errors.As(err, &rangeErr) || rangeErr.Type != "RawDataHeader" || rangeErr.Field != "AppendedBlocks" || rangeErr.Min != 1 || rangeErr.Max != 63 {
-		t.Fatalf("SetRawDataHeader AB 0: %v", err)
+		t.Fatalf("SetRawData AB 0: %v", err)
 	}
 	if dh != before {
-		t.Errorf("SetRawDataHeader changed the header on an error: %v", dh)
+		t.Errorf("SetRawData changed the header on an error: %v", dh)
 	}
 }
 
@@ -61,11 +61,11 @@ func TestEncodeAcceptsMatchingPayload(t *testing.T) {
 	}
 
 	var dh pdu.DataHeader
-	if err := dh.SetRawDataHeader(pdu.RawDataHeader{AppendedBlocks: 3}); err != nil {
+	if err := dh.SetRawData(pdu.RawDataHeader{AppendedBlocks: 3}); err != nil {
 		t.Fatal(err)
 	}
 	gotDH := pdu.DecodeDataHeader(must(dh.Encode()))
-	if r, ok := gotDH.AsRawDataHeader(); !ok || r.AppendedBlocks != 3 {
+	if r, ok := gotDH.AsRawData(); !ok || r.AppendedBlocks != 3 {
 		t.Errorf("R_HEAD round trip = %+v, %v", r, ok)
 	}
 

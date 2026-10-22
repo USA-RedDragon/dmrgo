@@ -441,7 +441,7 @@ func (s *Sender) Send(now time.Duration, m *Message) error {
 		c.ReSynchronizeFlag = false
 	}
 	if e.cHead {
-		if err := h.SetConfirmedDataHeader(c); err != nil {
+		if err := h.SetConfirmed(c); err != nil {
 			return err
 		}
 	}
@@ -468,12 +468,12 @@ func (s *Sender) Send(now time.Duration, m *Message) error {
 }
 
 func sendHeader(h *pdu.DataHeader, e *slot) (pdu.ConfirmedDataHeader, error) {
-	if u, ok := h.AsUnconfirmedDataHeader(); ok {
+	if u, ok := h.AsUnconfirmed(); ok {
 		u.FullMessageFlag = true
 		e.confirmed = false
-		return pdu.ConfirmedDataHeader{}, h.SetUnconfirmedDataHeader(u)
+		return pdu.ConfirmedDataHeader{}, h.SetUnconfirmed(u)
 	}
-	if c, ok := h.AsConfirmedDataHeader(); ok {
+	if c, ok := h.AsConfirmed(); ok {
 		if c.Group {
 			return c, errMessageGroup
 		}
@@ -481,23 +481,23 @@ func sendHeader(h *pdu.DataHeader, e *slot) (pdu.ConfirmedDataHeader, error) {
 		e.confirmed = true
 		return c, nil
 	}
-	if d, ok := h.AsDefinedDataHeader(); ok {
+	if d, ok := h.AsDefinedData(); ok {
 		d.FullMessageFlag = true
 		d.ResponseRequested = d.ResponseRequested || d.SARQ
 		e.confirmed = d.SARQ
-		return pdu.ConfirmedDataHeader{}, h.SetDefinedDataHeader(d)
+		return pdu.ConfirmedDataHeader{}, h.SetDefinedData(d)
 	}
-	if r, ok := h.AsRawDataHeader(); ok {
+	if r, ok := h.AsRawData(); ok {
 		r.FullMessageFlag = true
 		r.ResponseRequested = r.ResponseRequested || r.SARQ
 		e.confirmed = r.SARQ
-		return pdu.ConfirmedDataHeader{}, h.SetRawDataHeader(r)
+		return pdu.ConfirmedDataHeader{}, h.SetRawData(r)
 	}
 	return pdu.ConfirmedDataHeader{}, errHeader
 }
 
 func (s *Sender) joins(m *Message) bool {
-	c, ok := m.Header.AsConfirmedDataHeader()
+	c, ok := m.Header.AsConfirmed()
 	if !s.slots[s.ord[0]].windowed || !ok {
 		return false
 	}
@@ -519,9 +519,9 @@ func (s *Sender) free() int {
 
 func (s *Sender) join(k int) {
 	e := &s.slots[s.ord[k]]
-	if c, ok := e.pkt.Header.AsConfirmedDataHeader(); e.tries == 0 && e.cHead && ok && s.link != nil {
+	if c, ok := e.pkt.Header.AsConfirmed(); e.tries == 0 && e.cHead && ok && s.link != nil {
 		e.ns, c.SendSequenceNumber = s.link.seq, s.link.seq
-		if e.pkt.Header.SetConfirmedDataHeader(c) == nil {
+		if e.pkt.Header.SetConfirmed(c) == nil {
 			e.try.Header = e.pkt.Header
 		}
 		s.link.seq = (s.link.seq + 1) & 7
@@ -628,7 +628,7 @@ func (s *Sender) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst 
 	if !done {
 		return dst
 	}
-	rh, ok := m.Header.AsResponsePacketHeader()
+	rh, ok := m.Header.AsResponse()
 	if !ok || rh.LLIDDestination != s.call.Source || rh.LLIDSource != s.call.Target {
 		return dst
 	}
@@ -662,9 +662,9 @@ func (s *Sender) answered(now time.Duration, code packet.Response, j int, rd *pa
 		e.last, e.hasLast = code, true
 		switch {
 		case code == packet.ResponseNACKOutOfSequence:
-			if c, ok := e.pkt.Header.AsConfirmedDataHeader(); s.resync && e.cHead && ok {
+			if c, ok := e.pkt.Header.AsConfirmed(); s.resync && e.cHead && ok {
 				c.ReSynchronizeFlag = true
-				_ = e.pkt.Header.SetConfirmedDataHeader(c)
+				_ = e.pkt.Header.SetConfirmed(c)
 			}
 			e.try = e.pkt
 			k++
@@ -845,10 +845,10 @@ func (s *Sender) send(dst []Output) []Output {
 		})
 		d = &s.csbk
 	case s.idx == pre:
-		if c, ok := e.try.Header.AsConfirmedDataHeader(); e.cHead && ok {
+		if c, ok := e.try.Header.AsConfirmed(); e.cHead && ok {
 			c.ResponseRequested = s.cur == s.win-1
 			s.closed = s.closed || c.ResponseRequested
-			err = e.try.Header.SetConfirmedDataHeader(c)
+			err = e.try.Header.SetConfirmed(c)
 		}
 		d = &e.try.Header
 	default:

@@ -15,7 +15,7 @@ import (
 
 func ipHeader(t testing.TB, group bool, sap enums.SAP) pdu.DataHeader {
 	t.Helper()
-	return setHeader(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{
+	return setHeader(t, (*pdu.DataHeader).SetUnconfirmed, pdu.UnconfirmedDataHeader{
 		SAP: sap, Group: group, LLIDDestination: 9, LLIDSource: 3120001,
 	})
 }

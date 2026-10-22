@@ -111,7 +111,7 @@ func TestAllocsPacketAssembly(t *testing.T) {
 func TestAllocsPacketRetry(t *testing.T) {
 	b := packet.NewBuilder(127)
 	var h pdu.DataHeader
-	if err := h.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{SAP: 4, LLIDDestination: 2, LLIDSource: 1, FullMessageFlag: true}); err != nil {
+	if err := h.SetConfirmed(pdu.ConfirmedDataHeader{SAP: 4, LLIDDestination: 2, LLIDSource: 1, FullMessageFlag: true}); err != nil {
 		t.Fatal(err)
 	}
 	p, err := b.Segment(h, make([]byte, 100), enums.DataTypeRate12)

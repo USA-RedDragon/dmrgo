@@ -96,7 +96,7 @@ func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 	var t Text
 	target, source, _ := h.Addresses()
 	t.Source, t.Destination = source, target
-	if d, ok := h.AsDefinedDataHeader(); ok {
+	if d, ok := h.AsDefinedData(); ok {
 		t.Group, t.DD = d.Group, d.DefinedData
 		if d.DefinedData == enums.DDBinary {
 			return dst, Text{}, ErrNotText
@@ -122,11 +122,11 @@ func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 		t.Body = dst[n:]
 		return dst, t, nil
 	}
-	if u, ok := h.AsUnconfirmedDataHeader(); ok {
+	if u, ok := h.AsUnconfirmed(); ok {
 		t.Group = u.Group
 		return decodeIP(dst, u.SAP, data, t)
 	}
-	if c, ok := h.AsConfirmedDataHeader(); ok {
+	if c, ok := h.AsConfirmed(); ok {
 		t.Group = c.Group
 		return decodeIP(dst, c.SAP, data, t)
 	}
@@ -216,7 +216,7 @@ func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error
 		if dst, err = shortdata.AppendText(dst, t.DD, t.Body); err != nil {
 			return dst[:n], err
 		}
-		if err = h.Data.SetDefinedDataHeader(definedHeader(t, t.DD, confirmed)); err != nil {
+		if err = h.Data.SetDefinedData(definedHeader(t, t.DD, confirmed)); err != nil {
 			return dst[:n], err
 		}
 		return dst, nil
@@ -228,7 +228,7 @@ func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error
 			return dst[:n], err
 		}
 		k := copy(dst[n:], dst[p0:])
-		if err = h.Data.SetDefinedDataHeader(definedHeader(t, enums.DDBCD, confirmed)); err != nil {
+		if err = h.Data.SetDefinedData(definedHeader(t, enums.DDBCD, confirmed)); err != nil {
 			return dst[:n], err
 		}
 		return dst[:n+k], nil
@@ -287,10 +287,10 @@ func AppendPacket(dst []byte, t *Text, confirmed bool, h *Header) ([]byte, error
 	}
 	k := copy(dst[n:], dst[i0:])
 	if confirmed {
-		err = h.Data.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{Group: t.Group, ResponseRequested: true, SAP: enums.SAPIPBasedPacketData,
+		err = h.Data.SetConfirmed(pdu.ConfirmedDataHeader{Group: t.Group, ResponseRequested: true, SAP: enums.SAPIPBasedPacketData,
 			LLIDDestination: t.Destination, LLIDSource: t.Source, FullMessageFlag: true})
 	} else {
-		err = h.Data.SetUnconfirmedDataHeader(pdu.UnconfirmedDataHeader{Group: t.Group, SAP: enums.SAPIPBasedPacketData,
+		err = h.Data.SetUnconfirmed(pdu.UnconfirmedDataHeader{Group: t.Group, SAP: enums.SAPIPBasedPacketData,
 			LLIDDestination: t.Destination, LLIDSource: t.Source, FullMessageFlag: true})
 	}
 	if err != nil {

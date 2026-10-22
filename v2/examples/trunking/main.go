@@ -189,7 +189,7 @@ func mbcGrant(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	gotCGAP := gotCont.AsCGAP()
+	gotCGAP := gotCont.CGAP()
 	if err := gotCGAP.FEC.Err(); err != nil {
 		return fmt.Errorf("MBC last block CRC: %w", err)
 	}

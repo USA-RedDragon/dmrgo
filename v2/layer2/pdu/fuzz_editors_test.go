@@ -10,22 +10,22 @@ import (
 )
 
 func dataHeaderGroup(h *pdu.DataHeader) (group, ok bool) {
-	if p, ok := h.AsUnconfirmedDataHeader(); ok {
+	if p, ok := h.AsUnconfirmed(); ok {
 		return p.Group, true
 	}
-	if p, ok := h.AsConfirmedDataHeader(); ok {
+	if p, ok := h.AsConfirmed(); ok {
 		return p.Group, true
 	}
-	if p, ok := h.AsDefinedDataHeader(); ok {
+	if p, ok := h.AsDefinedData(); ok {
 		return p.Group, true
 	}
-	if p, ok := h.AsRawDataHeader(); ok {
+	if p, ok := h.AsRawData(); ok {
 		return p.Group, true
 	}
-	if p, ok := h.AsStatusPrecodedHeader(); ok {
+	if p, ok := h.AsStatusPrecoded(); ok {
 		return p.Group, true
 	}
-	if p, ok := h.AsUDTHeader(); ok {
+	if p, ok := h.AsUDT(); ok {
 		return p.Group, true
 	}
 	return false, false
@@ -34,24 +34,24 @@ func dataHeaderGroup(h *pdu.DataHeader) (group, ok bool) {
 func setDataHeaderGroup(t *testing.T, h *pdu.DataHeader, group bool) {
 	t.Helper()
 	var err error
-	if p, ok := h.AsUnconfirmedDataHeader(); ok {
+	if p, ok := h.AsUnconfirmed(); ok {
 		p.Group = group
-		err = h.SetUnconfirmedDataHeader(p)
-	} else if p, ok := h.AsConfirmedDataHeader(); ok {
+		err = h.SetUnconfirmed(p)
+	} else if p, ok := h.AsConfirmed(); ok {
 		p.Group = group
-		err = h.SetConfirmedDataHeader(p)
-	} else if p, ok := h.AsDefinedDataHeader(); ok {
+		err = h.SetConfirmed(p)
+	} else if p, ok := h.AsDefinedData(); ok {
 		p.Group = group
-		err = h.SetDefinedDataHeader(p)
-	} else if p, ok := h.AsRawDataHeader(); ok {
+		err = h.SetDefinedData(p)
+	} else if p, ok := h.AsRawData(); ok {
 		p.Group = group
-		err = h.SetRawDataHeader(p)
-	} else if p, ok := h.AsStatusPrecodedHeader(); ok {
+		err = h.SetRawData(p)
+	} else if p, ok := h.AsStatusPrecoded(); ok {
 		p.Group = group
-		err = h.SetStatusPrecodedHeader(p)
-	} else if p, ok := h.AsUDTHeader(); ok {
+		err = h.SetStatusPrecoded(p)
+	} else if p, ok := h.AsUDT(); ok {
 		p.Group = group
-		err = h.SetUDTHeader(p)
+		err = h.SetUDT(p)
 	}
 	if err != nil {
 		t.Fatalf("set Group of %s: %v", h.String(), err)

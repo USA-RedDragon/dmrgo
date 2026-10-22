@@ -553,7 +553,7 @@ func (m *MS) ackU(due time.Duration, slot enums.Slot, r enums.AckReason, to uint
 func (m *MS) sendUDT(due time.Duration, slot enums.Slot, a *Appended, to uint32, group, div, supp bool, op pdu.UDTOpcode, out []Output) []Output {
 	u := &m.u
 	var dh pdu.DataHeader
-	err := dh.SetUDTHeader(pdu.UDTHeader{
+	err := dh.SetUDT(pdu.UDTHeader{
 		Group: group, ResponseRequested: op == pdu.UDTOpcodeDGNAInboundHeader, OptionFlag: div, SAP: enums.SAPUnifiedDataTransport,
 		UDTFormat: a.Format, LLIDDestination: to, LLIDSource: m.addr, PadNibble: a.PadNibble, UAB: uab(a.Blocks), SupplementaryFlag: supp,
 		Opcode: op,
