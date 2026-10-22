@@ -2861,6 +2861,8 @@ func out_mototrbo_lrrp_Report(d *C.dmrgo_lrrp_report_t, s *g_mototrbo_lrrp.Repor
 	d.has_error = C.bool(s.HasError)
 	*(*g_mototrbo_lrrp.Circle2D)(unsafe.Pointer(&d.circle2d)) = s.Circle2D
 	d.has_circle2d = C.bool(s.HasCircle2D)
+	*(*g_mototrbo_lrrp.Circle3DWhole)(unsafe.Pointer(&d.circle3d_whole)) = s.Circle3DWhole
+	d.has_circle3d_whole = C.bool(s.HasCircle3DWhole)
 	*(*g_mototrbo_lrrp.Circle3D)(unsafe.Pointer(&d.circle3d)) = s.Circle3D
 	d.has_circle3d = C.bool(s.HasCircle3D)
 	d.direction = C.uint8_t(s.Direction)
@@ -2869,6 +2871,8 @@ func out_mototrbo_lrrp_Report(d *C.dmrgo_lrrp_report_t, s *g_mototrbo_lrrp.Repor
 	d.has_level_of_confidence = C.bool(s.HasLevelOfConfidence)
 	*(*g_mototrbo_lrrp.Point2D)(unsafe.Pointer(&d.point2d)) = s.Point2D
 	d.has_point2d = C.bool(s.HasPoint2D)
+	*(*g_mototrbo_lrrp.Point3DWhole)(unsafe.Pointer(&d.point3d_whole)) = s.Point3DWhole
+	d.has_point3d_whole = C.bool(s.HasPoint3DWhole)
 	*(*g_mototrbo_lrrp.Point3D)(unsafe.Pointer(&d.point3d)) = s.Point3D
 	d.has_point3d = C.bool(s.HasPoint3D)
 	*(*g_mototrbo_lrrp.Point3DAccuracy)(unsafe.Pointer(&d.point3d_accuracy)) = s.Point3DAccuracy
@@ -2938,6 +2942,8 @@ func in_mototrbo_lrrp_Report(s *C.dmrgo_lrrp_report_t) (d g_mototrbo_lrrp.Report
 	d.HasError = bool(s.has_error)
 	d.Circle2D = *(*g_mototrbo_lrrp.Circle2D)(unsafe.Pointer(&s.circle2d))
 	d.HasCircle2D = bool(s.has_circle2d)
+	d.Circle3DWhole = *(*g_mototrbo_lrrp.Circle3DWhole)(unsafe.Pointer(&s.circle3d_whole))
+	d.HasCircle3DWhole = bool(s.has_circle3d_whole)
 	d.Circle3D = *(*g_mototrbo_lrrp.Circle3D)(unsafe.Pointer(&s.circle3d))
 	d.HasCircle3D = bool(s.has_circle3d)
 	d.Direction = uint8(s.direction)
@@ -2946,6 +2952,8 @@ func in_mototrbo_lrrp_Report(s *C.dmrgo_lrrp_report_t) (d g_mototrbo_lrrp.Report
 	d.HasLevelOfConfidence = bool(s.has_level_of_confidence)
 	d.Point2D = *(*g_mototrbo_lrrp.Point2D)(unsafe.Pointer(&s.point2d))
 	d.HasPoint2D = bool(s.has_point2d)
+	d.Point3DWhole = *(*g_mototrbo_lrrp.Point3DWhole)(unsafe.Pointer(&s.point3d_whole))
+	d.HasPoint3DWhole = bool(s.has_point3d_whole)
 	d.Point3D = *(*g_mototrbo_lrrp.Point3D)(unsafe.Pointer(&s.point3d))
 	d.HasPoint3D = bool(s.has_point3d)
 	d.Point3DAccuracy = *(*g_mototrbo_lrrp.Point3DAccuracy)(unsafe.Pointer(&s.point3d_accuracy))
@@ -6136,6 +6144,28 @@ func fromC_mototrbo_lrrp_Circle3D(s *C.dmrgo_lrrp_circle3d_t) g_mototrbo_lrrp.Ci
 	return in_mototrbo_lrrp_Circle3D(s)
 }
 
+func in_mototrbo_lrrp_Circle3DWhole(s *C.dmrgo_lrrp_circle3d_whole_t) (d g_mototrbo_lrrp.Circle3DWhole) {
+	d.Latitude = float64(s.latitude)
+	d.Longitude = float64(s.longitude)
+	d.Radius = uint32(s.radius)
+	d.Altitude = int32(s.altitude)
+	d.AltitudeAccuracy = uint32(s.altitude_accuracy)
+	return
+}
+
+func out_mototrbo_lrrp_Circle3DWhole(d *C.dmrgo_lrrp_circle3d_whole_t, s *g_mototrbo_lrrp.Circle3DWhole, oc *outc) {
+	_ = oc
+	d.latitude = C.double(s.Latitude)
+	d.longitude = C.double(s.Longitude)
+	d.radius = C.uint32_t(s.Radius)
+	d.altitude = C.int32_t(s.Altitude)
+	d.altitude_accuracy = C.uint32_t(s.AltitudeAccuracy)
+}
+
+func fromC_mototrbo_lrrp_Circle3DWhole(s *C.dmrgo_lrrp_circle3d_whole_t) g_mototrbo_lrrp.Circle3DWhole {
+	return in_mototrbo_lrrp_Circle3DWhole(s)
+}
+
 func fromC_mototrbo_lrrp_Message(s *C.dmrgo_lrrp_message_t) g_mototrbo_lrrp.Message {
 	return in_mototrbo_lrrp_Message(s)
 }
@@ -6196,6 +6226,24 @@ func out_mototrbo_lrrp_Point3DAccuracy(d *C.dmrgo_lrrp_point3d_accuracy_t, s *g_
 
 func fromC_mototrbo_lrrp_Point3DAccuracy(s *C.dmrgo_lrrp_point3d_accuracy_t) g_mototrbo_lrrp.Point3DAccuracy {
 	return in_mototrbo_lrrp_Point3DAccuracy(s)
+}
+
+func in_mototrbo_lrrp_Point3DWhole(s *C.dmrgo_lrrp_point3d_whole_t) (d g_mototrbo_lrrp.Point3DWhole) {
+	d.Latitude = float64(s.latitude)
+	d.Longitude = float64(s.longitude)
+	d.Altitude = int32(s.altitude)
+	return
+}
+
+func out_mototrbo_lrrp_Point3DWhole(d *C.dmrgo_lrrp_point3d_whole_t, s *g_mototrbo_lrrp.Point3DWhole, oc *outc) {
+	_ = oc
+	d.latitude = C.double(s.Latitude)
+	d.longitude = C.double(s.Longitude)
+	d.altitude = C.int32_t(s.Altitude)
+}
+
+func fromC_mototrbo_lrrp_Point3DWhole(s *C.dmrgo_lrrp_point3d_whole_t) g_mototrbo_lrrp.Point3DWhole {
+	return in_mototrbo_lrrp_Point3DWhole(s)
 }
 
 func fromC_mototrbo_lrrp_Report(s *C.dmrgo_lrrp_report_t) g_mototrbo_lrrp.Report {
@@ -31802,6 +31850,61 @@ func dmrgo_lrrp_circle3d_string(c_self *C.dmrgo_lrrp_circle3d_t, c_out *C.char, 
 	return C.DMRGO_OK
 }
 
+//export dmrgo_lrrp_circle3d_whole_append_binary
+func dmrgo_lrrp_circle3d_whole_append_binary(c_self *C.dmrgo_lrrp_circle3d_whole_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_lrrp.Circle3DWhole
+	x = *(*g_mototrbo_lrrp.Circle3DWhole)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lrrp_circle3d_whole_string
+func dmrgo_lrrp_circle3d_whole_string(c_self *C.dmrgo_lrrp_circle3d_whole_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_lrrp.Circle3DWhole
+	x = *(*g_mototrbo_lrrp.Circle3DWhole)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_lrrp_decode_message_into
 func dmrgo_lrrp_decode_message_into(c_m *C.dmrgo_lrrp_message_t, c_data *C.uint8_t, c_data_len C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -32135,6 +32238,61 @@ func dmrgo_lrrp_point3d_accuracy_string(c_self *C.dmrgo_lrrp_point3d_accuracy_t,
 	}
 	var x g_mototrbo_lrrp.Point3DAccuracy
 	x = *(*g_mototrbo_lrrp.Point3DAccuracy)(unsafe.Pointer(&(*c_self)))
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lrrp_point3d_whole_append_binary
+func dmrgo_lrrp_point3d_whole_append_binary(c_self *C.dmrgo_lrrp_point3d_whole_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_lrrp.Point3DWhole
+	x = *(*g_mototrbo_lrrp.Point3DWhole)(unsafe.Pointer(&(*c_self)))
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+	a_dst := full_dst[:*c_dst_len]
+	r0, r1 := x.AppendBinary(a_dst)
+	_ = r0
+	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lrrp_point3d_whole_string
+func dmrgo_lrrp_point3d_whole_string(c_self *C.dmrgo_lrrp_point3d_whole_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_mototrbo_lrrp.Point3DWhole
+	x = *(*g_mototrbo_lrrp.Point3DWhole)(unsafe.Pointer(&(*c_self)))
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}

@@ -220,6 +220,12 @@ func fromReport(f Fix, m *lrrp.Message) (Fix, error) {
 	case r.HasPoint3D:
 		p := &r.Point3D
 		f.Latitude, f.Longitude, f.Altitude, f.HasAltitude = p.Latitude, p.Longitude, p.Altitude, true
+	case r.HasCircle3DWhole:
+		c := &r.Circle3DWhole
+		f.Latitude, f.Longitude, f.Radius, f.HasRadius, f.Altitude, f.HasAltitude = c.Latitude, c.Longitude, float64(c.Radius), true, float64(c.Altitude), true
+	case r.HasPoint3DWhole:
+		p := &r.Point3DWhole
+		f.Latitude, f.Longitude, f.Altitude, f.HasAltitude = p.Latitude, p.Longitude, float64(p.Altitude), true
 	case r.HasCircle2D:
 		c := &r.Circle2D
 		f.Latitude, f.Longitude, f.Radius, f.HasRadius = c.Latitude, c.Longitude, c.Radius, true

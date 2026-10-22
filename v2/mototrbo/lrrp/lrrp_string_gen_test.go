@@ -44,6 +44,24 @@ func TestPoint3DStringMatchesFmt(t *testing.T) {
 	texttest.Check(t, (*Point3D).String, (*Point3D).fmtString)
 }
 
+func (s *Point3DWhole) fmtString() string {
+	return fmt.Sprintf("Point3DWhole{ Latitude: %f, Longitude: %f, Altitude: %d }", s.Latitude, s.Longitude, s.Altitude)
+}
+
+func TestPoint3DWholeStringMatchesFmt(t *testing.T) {
+	t.Parallel()
+	texttest.Check(t, (*Point3DWhole).String, (*Point3DWhole).fmtString)
+}
+
+func (s *Circle3DWhole) fmtString() string {
+	return fmt.Sprintf("Circle3DWhole{ Latitude: %f, Longitude: %f, Radius: %d, Altitude: %d, AltitudeAccuracy: %d }", s.Latitude, s.Longitude, s.Radius, s.Altitude, s.AltitudeAccuracy)
+}
+
+func TestCircle3DWholeStringMatchesFmt(t *testing.T) {
+	t.Parallel()
+	texttest.Check(t, (*Circle3DWhole).String, (*Circle3DWhole).fmtString)
+}
+
 func (s *Point3DAccuracy) fmtString() string {
 	return fmt.Sprintf("Point3DAccuracy{ Latitude: %f, Longitude: %f, Altitude: %f, AltitudeAccuracy: %f }", s.Latitude, s.Longitude, s.Altitude, s.AltitudeAccuracy)
 }
@@ -72,7 +90,7 @@ func TestOperationErrorStringMatchesFmt(t *testing.T) {
 }
 
 func (s *Report) fmtString() string {
-	return fmt.Sprintf("Report{ RequestID: %v, ShortRequestID: %d, Time: %s, ProtocolVersion: %d, Result: %v, Success: %t, Error: %s, Circle2D: %s, Circle3D: %s, Direction: %d, LevelOfConfidence: %d, Point2D: %s, Point3D: %s, Point3DAccuracy: %s, SpeedWhole: %d, Speed: %f, VerticalSpeed: %f }", s.RequestID, s.ShortRequestID, s.Time.String(), s.ProtocolVersion, s.Result, s.Success, s.Error.String(), s.Circle2D.String(), s.Circle3D.String(), s.Direction, s.LevelOfConfidence, s.Point2D.String(), s.Point3D.String(), s.Point3DAccuracy.String(), s.SpeedWhole, s.Speed, s.VerticalSpeed)
+	return fmt.Sprintf("Report{ RequestID: %v, ShortRequestID: %d, Time: %s, ProtocolVersion: %d, Result: %v, Success: %t, Error: %s, Circle2D: %s, Circle3DWhole: %s, Circle3D: %s, Direction: %d, LevelOfConfidence: %d, Point2D: %s, Point3DWhole: %s, Point3D: %s, Point3DAccuracy: %s, SpeedWhole: %d, Speed: %f, VerticalSpeed: %f }", s.RequestID, s.ShortRequestID, s.Time.String(), s.ProtocolVersion, s.Result, s.Success, s.Error.String(), s.Circle2D.String(), s.Circle3DWhole.String(), s.Circle3D.String(), s.Direction, s.LevelOfConfidence, s.Point2D.String(), s.Point3DWhole.String(), s.Point3D.String(), s.Point3DAccuracy.String(), s.SpeedWhole, s.Speed, s.VerticalSpeed)
 }
 
 func TestReportStringMatchesFmt(t *testing.T) {

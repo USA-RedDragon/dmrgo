@@ -272,6 +272,166 @@ func (s *Point3D) String() string {
 	return "Point3D{ Latitude: " + text.Fixed(s.Latitude) + ", Longitude: " + text.Fixed(s.Longitude) + ", Altitude: " + text.Fixed(s.Altitude) + " }"
 }
 
+func decodePoint3DWholeAt(result *Point3DWhole, data []byte, _o int) (int, error) {
+	if len(data)-_o < 4 {
+		return 0, ErrShort
+	}
+	_vLatitude := uint64(data[_o])<<24 | uint64(data[_o+1])<<16 | uint64(data[_o+2])<<8 | uint64(data[_o+3])
+	result.Latitude = float64(_vLatitude&uint64(0x7fffffff)) * (90.0 / (1 << 31))
+	if _vLatitude>>31 != 0 {
+		result.Latitude = -result.Latitude
+	}
+	_o += 4
+	if len(data)-_o < 4 {
+		return 0, ErrShort
+	}
+	result.Longitude = float64(int64((uint64(data[_o])<<24|uint64(data[_o+1])<<16|uint64(data[_o+2])<<8|uint64(data[_o+3]))<<32)>>32) * (360.0 / (1 << 32))
+	_o += 4
+	_vAltitude, _, _on, _st := wire.Sintvar(data, _o)
+	if _st != wire.OK {
+		if _st == wire.Short {
+			return 0, ErrShort
+		}
+		return 0, ErrVarint
+	}
+	if _vAltitude < int64(-2147483648) || _vAltitude > int64(2147483647) {
+		return 0, ErrVarint
+	}
+	result.Altitude = int32(_vAltitude)
+	_o = _on
+	return _o, nil
+}
+
+// AppendBinary appends s to dst. It returns dst unchanged and a
+// *dmrgo.FieldRangeError or another error when a field does not fit. It
+// allocates only to grow dst.
+func (s *Point3DWhole) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
+	_n := len(dst)
+	_vLatitude := math.Round(math.Abs(s.Latitude) / (90.0 / (1 << 31)))
+	if !(_vLatitude <= 2.147483648e+09) {
+		return dst[:_n], errPoint3DWholeLatitudeRange
+	}
+	_vLatitudeRaw := uint64(min(_vLatitude, 2.147483647e+09))
+	if s.Latitude < 0 && _vLatitudeRaw != 0 {
+		_vLatitudeRaw |= uint64(0x80000000)
+	}
+	dst = append(dst, byte(_vLatitudeRaw>>24), byte(_vLatitudeRaw>>16), byte(_vLatitudeRaw>>8), byte(_vLatitudeRaw))
+	_vLongitude := math.Round(s.Longitude / (360.0 / (1 << 32)))
+	if !(_vLongitude >= -2.147483648e+09 && _vLongitude <= 2.147483647e+09) {
+		return dst[:_n], errPoint3DWholeLongitudeRange
+	}
+	dst = append(dst, byte(uint64(int64(_vLongitude))>>24), byte(uint64(int64(_vLongitude))>>16), byte(uint64(int64(_vLongitude))>>8), byte(uint64(int64(_vLongitude))))
+	dst = wire.AppendSintvar(dst, int64(s.Altitude), false)
+	return dst, nil
+}
+
+// String returns the fields of s as text, for printing. It allocates the
+// string.
+func (s *Point3DWhole) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
+	return "Point3DWhole{ Latitude: " + text.Fixed(s.Latitude) + ", Longitude: " + text.Fixed(s.Longitude) + ", Altitude: " + text.Int(int64(s.Altitude)) + " }"
+}
+
+func decodeCircle3DWholeAt(result *Circle3DWhole, data []byte, _o int) (int, error) {
+	if len(data)-_o < 4 {
+		return 0, ErrShort
+	}
+	_vLatitude := uint64(data[_o])<<24 | uint64(data[_o+1])<<16 | uint64(data[_o+2])<<8 | uint64(data[_o+3])
+	result.Latitude = float64(_vLatitude&uint64(0x7fffffff)) * (90.0 / (1 << 31))
+	if _vLatitude>>31 != 0 {
+		result.Latitude = -result.Latitude
+	}
+	_o += 4
+	if len(data)-_o < 4 {
+		return 0, ErrShort
+	}
+	result.Longitude = float64(int64((uint64(data[_o])<<24|uint64(data[_o+1])<<16|uint64(data[_o+2])<<8|uint64(data[_o+3]))<<32)>>32) * (360.0 / (1 << 32))
+	_o += 4
+	_vRadius, _on, _st := wire.Uintvar(data, _o)
+	if _st != wire.OK {
+		if _st == wire.Short {
+			return 0, ErrShort
+		}
+		return 0, ErrVarint
+	}
+	if _vRadius>>32 != 0 {
+		return 0, ErrVarint
+	}
+	result.Radius = uint32(_vRadius)
+	_o = _on
+	_vAltitude, _, _on, _st := wire.Sintvar(data, _o)
+	if _st != wire.OK {
+		if _st == wire.Short {
+			return 0, ErrShort
+		}
+		return 0, ErrVarint
+	}
+	if _vAltitude < int64(-2147483648) || _vAltitude > int64(2147483647) {
+		return 0, ErrVarint
+	}
+	result.Altitude = int32(_vAltitude)
+	_o = _on
+	_vAltitudeAccuracy, _on, _st := wire.Uintvar(data, _o)
+	if _st != wire.OK {
+		if _st == wire.Short {
+			return 0, ErrShort
+		}
+		return 0, ErrVarint
+	}
+	if _vAltitudeAccuracy>>32 != 0 {
+		return 0, ErrVarint
+	}
+	result.AltitudeAccuracy = uint32(_vAltitudeAccuracy)
+	_o = _on
+	return _o, nil
+}
+
+// AppendBinary appends s to dst. It returns dst unchanged and a
+// *dmrgo.FieldRangeError or another error when a field does not fit. It
+// allocates only to grow dst.
+func (s *Circle3DWhole) AppendBinary(dst []byte) ([]byte, error) {
+	if s == nil {
+		return dst, dmrgo.ErrNilReceiver
+	}
+
+	_n := len(dst)
+	_vLatitude := math.Round(math.Abs(s.Latitude) / (90.0 / (1 << 31)))
+	if !(_vLatitude <= 2.147483648e+09) {
+		return dst[:_n], errCircle3DWholeLatitudeRange
+	}
+	_vLatitudeRaw := uint64(min(_vLatitude, 2.147483647e+09))
+	if s.Latitude < 0 && _vLatitudeRaw != 0 {
+		_vLatitudeRaw |= uint64(0x80000000)
+	}
+	dst = append(dst, byte(_vLatitudeRaw>>24), byte(_vLatitudeRaw>>16), byte(_vLatitudeRaw>>8), byte(_vLatitudeRaw))
+	_vLongitude := math.Round(s.Longitude / (360.0 / (1 << 32)))
+	if !(_vLongitude >= -2.147483648e+09 && _vLongitude <= 2.147483647e+09) {
+		return dst[:_n], errCircle3DWholeLongitudeRange
+	}
+	dst = append(dst, byte(uint64(int64(_vLongitude))>>24), byte(uint64(int64(_vLongitude))>>16), byte(uint64(int64(_vLongitude))>>8), byte(uint64(int64(_vLongitude))))
+	dst = wire.AppendUintvar(dst, uint64(s.Radius))
+	dst = wire.AppendSintvar(dst, int64(s.Altitude), false)
+	dst = wire.AppendUintvar(dst, uint64(s.AltitudeAccuracy))
+	return dst, nil
+}
+
+// String returns the fields of s as text, for printing. It allocates the
+// string.
+func (s *Circle3DWhole) String() string {
+	if s == nil {
+		return "<nil>"
+	}
+
+	return "Circle3DWhole{ Latitude: " + text.Fixed(s.Latitude) + ", Longitude: " + text.Fixed(s.Longitude) + ", Radius: " + text.Int(int64(s.Radius)) + ", Altitude: " + text.Int(int64(s.Altitude)) + ", AltitudeAccuracy: " + text.Int(int64(s.AltitudeAccuracy)) + " }"
+}
+
 func decodePoint3DAccuracyAt(result *Point3DAccuracy, data []byte, _o int) (int, error) {
 	if len(data)-_o < 4 {
 		return 0, ErrShort
@@ -588,6 +748,13 @@ func decodeReportAt(result *Report, data []byte, _o int) (int, error) {
 			}
 			_o = _onCircle2D
 			result.HasCircle2D = true
+		case 0x53:
+			_onCircle3DWhole, _err := decodeCircle3DWholeAt(&result.Circle3DWhole, data, _o)
+			if _err != nil {
+				return 0, _err
+			}
+			_o = _onCircle3DWhole
+			result.HasCircle3DWhole = true
 		case 0x55:
 			_onCircle3D, _err := decodeCircle3DAt(&result.Circle3D, data, _o)
 			if _err != nil {
@@ -616,6 +783,13 @@ func decodeReportAt(result *Report, data []byte, _o int) (int, error) {
 			}
 			_o = _onPoint2D
 			result.HasPoint2D = true
+		case 0x67:
+			_onPoint3DWhole, _err := decodePoint3DWholeAt(&result.Point3DWhole, data, _o)
+			if _err != nil {
+				return 0, _err
+			}
+			_o = _onPoint3DWhole
+			result.HasPoint3DWhole = true
 		case 0x69:
 			_onPoint3D, _err := decodePoint3DAt(&result.Point3D, data, _o)
 			if _err != nil {
@@ -728,6 +902,14 @@ func (s *Report) AppendBinary(dst []byte) ([]byte, error) {
 			return dst[:_n], _errCircle2D
 		}
 	}
+	if s.HasCircle3DWhole {
+		dst = append(dst, 0x53)
+		var _errCircle3DWhole error
+		dst, _errCircle3DWhole = s.Circle3DWhole.AppendBinary(dst)
+		if _errCircle3DWhole != nil {
+			return dst[:_n], _errCircle3DWhole
+		}
+	}
 	if s.HasCircle3D {
 		dst = append(dst, 0x55)
 		var _errCircle3D error
@@ -752,6 +934,14 @@ func (s *Report) AppendBinary(dst []byte) ([]byte, error) {
 		dst, _errPoint2D = s.Point2D.AppendBinary(dst)
 		if _errPoint2D != nil {
 			return dst[:_n], _errPoint2D
+		}
+	}
+	if s.HasPoint3DWhole {
+		dst = append(dst, 0x67)
+		var _errPoint3DWhole error
+		dst, _errPoint3DWhole = s.Point3DWhole.AppendBinary(dst)
+		if _errPoint3DWhole != nil {
+			return dst[:_n], _errPoint3DWhole
 		}
 	}
 	if s.HasPoint3D {
@@ -798,7 +988,7 @@ func (s *Report) String() string {
 		return "<nil>"
 	}
 
-	return "Report{ RequestID: " + text.Bytes(s.RequestID[:]) + ", ShortRequestID: " + text.Int(int64(s.ShortRequestID)) + ", Time: " + s.Time.String() + ", ProtocolVersion: " + text.Int(int64(s.ProtocolVersion)) + ", Result: " + s.Result.String() + ", Success: " + text.Bool(s.Success) + ", Error: " + s.Error.String() + ", Circle2D: " + s.Circle2D.String() + ", Circle3D: " + s.Circle3D.String() + ", Direction: " + text.Int(int64(s.Direction)) + ", LevelOfConfidence: " + text.Int(int64(s.LevelOfConfidence)) + ", Point2D: " + s.Point2D.String() + ", Point3D: " + s.Point3D.String() + ", Point3DAccuracy: " + s.Point3DAccuracy.String() + ", SpeedWhole: " + text.Int(int64(s.SpeedWhole)) + ", Speed: " + text.Fixed(s.Speed) + ", VerticalSpeed: " + text.Fixed(s.VerticalSpeed) + " }"
+	return "Report{ RequestID: " + text.Bytes(s.RequestID[:]) + ", ShortRequestID: " + text.Int(int64(s.ShortRequestID)) + ", Time: " + s.Time.String() + ", ProtocolVersion: " + text.Int(int64(s.ProtocolVersion)) + ", Result: " + s.Result.String() + ", Success: " + text.Bool(s.Success) + ", Error: " + s.Error.String() + ", Circle2D: " + s.Circle2D.String() + ", Circle3DWhole: " + s.Circle3DWhole.String() + ", Circle3D: " + s.Circle3D.String() + ", Direction: " + text.Int(int64(s.Direction)) + ", LevelOfConfidence: " + text.Int(int64(s.LevelOfConfidence)) + ", Point2D: " + s.Point2D.String() + ", Point3DWhole: " + s.Point3DWhole.String() + ", Point3D: " + s.Point3D.String() + ", Point3DAccuracy: " + s.Point3DAccuracy.String() + ", SpeedWhole: " + text.Int(int64(s.SpeedWhole)) + ", Speed: " + text.Fixed(s.Speed) + ", VerticalSpeed: " + text.Fixed(s.VerticalSpeed) + " }"
 }
 
 func decodeRequestAt(result *Request, data []byte, _o int) (int, error) {
@@ -1202,6 +1392,38 @@ var (
 		Field:  "Altitude",
 		Signed: true,
 		Type:   "Point3D",
+	}
+	errPoint3DWholeLatitudeRange = &dmrgo.FieldRangeError{
+		Bits:   32,
+		Field:  "Latitude",
+		Max:    90.0,
+		Min:    -90.0,
+		Signed: true,
+		Type:   "Point3DWhole",
+	}
+	errPoint3DWholeLongitudeRange = &dmrgo.FieldRangeError{
+		Bits:   32,
+		Field:  "Longitude",
+		Max:    179.99999991618097,
+		Min:    -180.0,
+		Signed: true,
+		Type:   "Point3DWhole",
+	}
+	errCircle3DWholeLatitudeRange = &dmrgo.FieldRangeError{
+		Bits:   32,
+		Field:  "Latitude",
+		Max:    90.0,
+		Min:    -90.0,
+		Signed: true,
+		Type:   "Circle3DWhole",
+	}
+	errCircle3DWholeLongitudeRange = &dmrgo.FieldRangeError{
+		Bits:   32,
+		Field:  "Longitude",
+		Max:    179.99999991618097,
+		Min:    -180.0,
+		Signed: true,
+		Type:   "Circle3DWhole",
 	}
 	errPoint3DAccuracyLatitudeRange = &dmrgo.FieldRangeError{
 		Bits:   32,

@@ -834,6 +834,8 @@ DMRGO_1 {
 		dmrgo_lrrp_circle2d_string;
 		dmrgo_lrrp_circle3d_append_binary;
 		dmrgo_lrrp_circle3d_string;
+		dmrgo_lrrp_circle3d_whole_append_binary;
+		dmrgo_lrrp_circle3d_whole_string;
 		dmrgo_lrrp_decode_message_into;
 		dmrgo_lrrp_document_id_string;
 		dmrgo_lrrp_message_append_binary;
@@ -846,6 +848,8 @@ DMRGO_1 {
 		dmrgo_lrrp_point3d_accuracy_string;
 		dmrgo_lrrp_point3d_append_binary;
 		dmrgo_lrrp_point3d_string;
+		dmrgo_lrrp_point3d_whole_append_binary;
+		dmrgo_lrrp_point3d_whole_string;
 		dmrgo_lrrp_report_append_binary;
 		dmrgo_lrrp_report_string;
 		dmrgo_lrrp_request_append_binary;
