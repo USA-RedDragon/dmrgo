@@ -8,41 +8,41 @@ type DocumentID uint8
 
 // The DocumentID values.
 const (
-	ImmediateRequest  DocumentID = 0x05 // ask for one position
-	ImmediateReport   DocumentID = 0x07 // the answer to an ImmediateRequest
-	TriggeredRequest  DocumentID = 0x09 // ask for positions on a trigger, such as a period
-	TriggeredAnswer   DocumentID = 0x0B // the answer to a TriggeredRequest
-	TriggeredReport   DocumentID = 0x0D // a position that a trigger sent
-	StopRequest       DocumentID = 0x0F // stop a TriggeredRequest
-	StopAnswer        DocumentID = 0x11 // the answer to a StopRequest
-	UnsolicitedReport DocumentID = 0x13 // a position sent without a request
-	ProtocolRequest   DocumentID = 0x14 // ask for the protocol version
-	ProtocolReport    DocumentID = 0x15 // the answer to a ProtocolRequest
+	DocumentImmediateRequest  DocumentID = 0x05 // ask for one position
+	DocumentImmediateReport   DocumentID = 0x07 // the answer to a DocumentImmediateRequest
+	DocumentTriggeredRequest  DocumentID = 0x09 // ask for positions on a trigger, such as a period
+	DocumentTriggeredAnswer   DocumentID = 0x0B // the answer to a DocumentTriggeredRequest
+	DocumentTriggeredReport   DocumentID = 0x0D // a position that a trigger sent
+	DocumentStopRequest       DocumentID = 0x0F // stop a DocumentTriggeredRequest
+	DocumentStopAnswer        DocumentID = 0x11 // the answer to a DocumentStopRequest
+	DocumentUnsolicitedReport DocumentID = 0x13 // a position sent without a request
+	DocumentProtocolRequest   DocumentID = 0x14 // ask for the protocol version
+	DocumentProtocolReport    DocumentID = 0x15 // the answer to a DocumentProtocolRequest
 )
 
 // String returns the name of d. It allocates only for a value without a
 // name.
 func (d DocumentID) String() string {
 	switch d {
-	case ImmediateRequest:
+	case DocumentImmediateRequest:
 		return "Immediate Location Request"
-	case ImmediateReport:
+	case DocumentImmediateReport:
 		return "Immediate Location Report"
-	case TriggeredRequest:
+	case DocumentTriggeredRequest:
 		return "Triggered Location Request"
-	case TriggeredAnswer:
+	case DocumentTriggeredAnswer:
 		return "Triggered Location Answer"
-	case TriggeredReport:
+	case DocumentTriggeredReport:
 		return "Triggered Location Report"
-	case StopRequest:
+	case DocumentStopRequest:
 		return "Triggered Location Stop Request"
-	case StopAnswer:
+	case DocumentStopAnswer:
 		return "Triggered Location Stop Answer"
-	case UnsolicitedReport:
+	case DocumentUnsolicitedReport:
 		return "Unsolicited Location Report"
-	case ProtocolRequest:
+	case DocumentProtocolRequest:
 		return "Location Protocol Request"
-	case ProtocolReport:
+	case DocumentProtocolReport:
 		return "Location Protocol Report"
 	}
 	return "DocumentID(" + text.Int(int64(d)) + ")"
@@ -259,7 +259,7 @@ type Message struct {
 	// Length is the number of octets after it. AppendBinary sets it.
 	Length uint32 `dmr:"uintvar,length"`
 	// Request holds the tokens of a request document.
-	Request Request `dmr:"tokens,if:Document==ImmediateRequest|TriggeredRequest|StopRequest|ProtocolRequest"`
+	Request Request `dmr:"tokens,if:Document==DocumentImmediateRequest|DocumentTriggeredRequest|DocumentStopRequest|DocumentProtocolRequest"`
 	// Report holds the tokens of a report or answer document.
-	Report Report `dmr:"tokens,if:Document!=ImmediateRequest|TriggeredRequest|StopRequest|ProtocolRequest"`
+	Report Report `dmr:"tokens,if:Document!=DocumentImmediateRequest|DocumentTriggeredRequest|DocumentStopRequest|DocumentProtocolRequest"`
 }

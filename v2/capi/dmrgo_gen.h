@@ -6819,26 +6819,26 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ARS_TYPE_USER_DEREGISTRATION ((dmrgo_ars_type_t)6)
 /* Go: ars.TypeUserRegistration. a user logs on at a radio */
 #define DMRGO_ARS_TYPE_USER_REGISTRATION ((dmrgo_ars_type_t)5)
-/* Go: lrrp.ImmediateReport. the answer to an ImmediateRequest */
-#define DMRGO_LRRP_IMMEDIATE_REPORT ((dmrgo_lrrp_document_id_t)7)
-/* Go: lrrp.ImmediateRequest. ask for one position */
-#define DMRGO_LRRP_IMMEDIATE_REQUEST ((dmrgo_lrrp_document_id_t)5)
-/* Go: lrrp.ProtocolReport. the answer to a ProtocolRequest */
-#define DMRGO_LRRP_PROTOCOL_REPORT ((dmrgo_lrrp_document_id_t)21)
-/* Go: lrrp.ProtocolRequest. ask for the protocol version */
-#define DMRGO_LRRP_PROTOCOL_REQUEST ((dmrgo_lrrp_document_id_t)20)
-/* Go: lrrp.StopAnswer. the answer to a StopRequest */
-#define DMRGO_LRRP_STOP_ANSWER ((dmrgo_lrrp_document_id_t)17)
-/* Go: lrrp.StopRequest. stop a TriggeredRequest */
-#define DMRGO_LRRP_STOP_REQUEST ((dmrgo_lrrp_document_id_t)15)
-/* Go: lrrp.TriggeredAnswer. the answer to a TriggeredRequest */
-#define DMRGO_LRRP_TRIGGERED_ANSWER ((dmrgo_lrrp_document_id_t)11)
-/* Go: lrrp.TriggeredReport. a position that a trigger sent */
-#define DMRGO_LRRP_TRIGGERED_REPORT ((dmrgo_lrrp_document_id_t)13)
-/* Go: lrrp.TriggeredRequest. ask for positions on a trigger, such as a period */
-#define DMRGO_LRRP_TRIGGERED_REQUEST ((dmrgo_lrrp_document_id_t)9)
-/* Go: lrrp.UnsolicitedReport. a position sent without a request */
-#define DMRGO_LRRP_UNSOLICITED_REPORT ((dmrgo_lrrp_document_id_t)19)
+/* Go: lrrp.DocumentImmediateReport. the answer to a DocumentImmediateRequest */
+#define DMRGO_LRRP_DOCUMENT_IMMEDIATE_REPORT ((dmrgo_lrrp_document_id_t)7)
+/* Go: lrrp.DocumentImmediateRequest. ask for one position */
+#define DMRGO_LRRP_DOCUMENT_IMMEDIATE_REQUEST ((dmrgo_lrrp_document_id_t)5)
+/* Go: lrrp.DocumentProtocolReport. the answer to a DocumentProtocolRequest */
+#define DMRGO_LRRP_DOCUMENT_PROTOCOL_REPORT ((dmrgo_lrrp_document_id_t)21)
+/* Go: lrrp.DocumentProtocolRequest. ask for the protocol version */
+#define DMRGO_LRRP_DOCUMENT_PROTOCOL_REQUEST ((dmrgo_lrrp_document_id_t)20)
+/* Go: lrrp.DocumentStopAnswer. the answer to a DocumentStopRequest */
+#define DMRGO_LRRP_DOCUMENT_STOP_ANSWER ((dmrgo_lrrp_document_id_t)17)
+/* Go: lrrp.DocumentStopRequest. stop a DocumentTriggeredRequest */
+#define DMRGO_LRRP_DOCUMENT_STOP_REQUEST ((dmrgo_lrrp_document_id_t)15)
+/* Go: lrrp.DocumentTriggeredAnswer. the answer to a DocumentTriggeredRequest */
+#define DMRGO_LRRP_DOCUMENT_TRIGGERED_ANSWER ((dmrgo_lrrp_document_id_t)11)
+/* Go: lrrp.DocumentTriggeredReport. a position that a trigger sent */
+#define DMRGO_LRRP_DOCUMENT_TRIGGERED_REPORT ((dmrgo_lrrp_document_id_t)13)
+/* Go: lrrp.DocumentTriggeredRequest. ask for positions on a trigger, such as a period */
+#define DMRGO_LRRP_DOCUMENT_TRIGGERED_REQUEST ((dmrgo_lrrp_document_id_t)9)
+/* Go: lrrp.DocumentUnsolicitedReport. a position sent without a request */
+#define DMRGO_LRRP_DOCUMENT_UNSOLICITED_REPORT ((dmrgo_lrrp_document_id_t)19)
 /* Go: tms.EncodingNone. no coding given */
 #define DMRGO_TMS_ENCODING_NONE ((dmrgo_tms_encoding_t)0)
 /* Go: tms.EncodingUTF16LE. UTF-16LE (UCS-2) */

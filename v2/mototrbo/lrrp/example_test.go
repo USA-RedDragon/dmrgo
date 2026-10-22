@@ -27,7 +27,7 @@ func ExampleDecodeMessageInto() {
 // ExampleMessage_AppendBinary builds a request for a position every 60
 // seconds.
 func ExampleMessage_AppendBinary() {
-	m := &lrrp.Message{Document: lrrp.TriggeredRequest}
+	m := &lrrp.Message{Document: lrrp.DocumentTriggeredRequest}
 	m.Request.RequestID, m.Request.HasRequestID = []byte{0x24, 0x68, 0xac, 0xe0}, true
 	m.Request.Periodic = true
 	m.Request.Interval, m.Request.HasInterval = 60, true
