@@ -261,17 +261,24 @@ type slot struct {
 // the header and the blocks of each try, one burst per Tick, 60 ms apart,
 // after the channel access of SenderConfig.Access. For a confirmed message
 // it waits for the response and resends: the blocks that a SACK asks for,
-// the whole packet after a NACK for a bad CRC or no response, and the
-// whole packet again as a first try after a NACK for N(S) out of sequence,
-// which some radios send for a lost block. When the Status of a NACK for
-// N(S) out of sequence, the VI of the receiver, is not the N(S) of the
-// message and SenderConfig.Resync is off, the message takes N(S) VI + 1
-// and the messages after it follow on, so that a message that never
-// arrived does not stop the link (ETSI TS 102 361-1 clause 9.3.24, Table
-// 8.3). It sends one message at a time, or with SenderConfig.Window a
-// sliding window of C_HEAD messages of the IP bearer service to one link.
-// Make it with NewSender. A Sender is not safe for concurrent use and must
-// not be copied; go vet reports a copy.
+// the whole packet after a NACK for a bad CRC or no response, and the whole
+// packet again as a first try after a NACK for N(S) out of sequence, which
+// some radios send for a lost block. When the Status of a NACK for N(S) out
+// of sequence, the VI of the receiver, is not the N(S) of the message but
+// is the N(S) of the last message to the link that got an ACK, or no
+// message got one yet, and SenderConfig.Resync is off, the message takes
+// N(S) VI + 1 and the messages after it follow on, so that a message that
+// never arrived does not stop the link. ETSI TS 102 361-1 clause 9.3.24
+// says that the transmitter does not increment N(S) for an automatic retry,
+// and gives only the S flag, which clause 9.3.23 keeps for registration
+// messages, to resynchronize; without one of the two a link stays stopped,
+// so here the Sender departs from clause 9.3.24 and the retry takes the
+// N(S) that the receiver asks for (Table 8.3). So a late copy of such a
+// NACK, after the renumbered message got its ACK, does not renumber again.
+// It sends one message at a time, or with SenderConfig.Window a sliding
+// window of C_HEAD messages of the IP bearer service to one link. Make it
+// with NewSender. A Sender is not safe for concurrent use and must not be
+// copied; go vet reports a copy.
 type Sender struct {
 	cc           enums.ColorCode
 	source       layer2.SyncSource
@@ -700,7 +707,8 @@ func (s *Sender) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst 
 
 func (s *Sender) answered(now time.Duration, code packet.Response, j int, status uint8, rd *packet.ResponseData, dst []Output) []Output {
 	w, k := s.win, 0
-	renumber := code == packet.ResponseNACKOutOfSequence && !s.resync && s.link != nil && status != s.slots[s.ord[0]].ns
+	renumber := code == packet.ResponseNACKOutOfSequence && !s.resync && s.link != nil && status != s.slots[s.ord[0]].ns &&
+		(!s.link.hasAcked || status == s.link.acked)
 	for i := range w {
 		e := &s.slots[s.ord[k]]
 		e.last, e.hasLast = code, true
@@ -717,6 +725,9 @@ func (s *Sender) answered(now time.Duration, code packet.Response, j int, status
 			e.try = e.pkt
 			k++
 		case i < j || i == j && code == packet.ResponseACK:
+			if e.cHead && s.link != nil {
+				s.link.acked, s.link.hasAcked = e.ns, true
+			}
 			dst = s.finish(k, ResultDelivered, dst)
 		case i > j || code == packet.ResponseNACKPacketCRC:
 			s.again(e, nil)
