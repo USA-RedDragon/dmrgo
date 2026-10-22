@@ -109,9 +109,9 @@ func TestUnionSetParameterDoesNotShadowLocals(t *testing.T) {
 	X uint8 `+"`dmr:\"bits:0-7\"`"+`
 }
 
-// dmr:variant A Sub Raw=1|2
-// dmr:variant B Sub S=1|2
-// dmr:variant C Sub Err=1|2
+// dmr:variant A Sub K==3 Raw=1|2
+// dmr:variant B Sub K==4 S=1|2
+// dmr:variant C Sub K==5 Err=1|2
 // dmr:variant D Sub T=1|2 K==1
 // dmr:variant E Sub P=1|2 K==2
 type U struct {

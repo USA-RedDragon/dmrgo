@@ -35,6 +35,8 @@ const (
 )
 
 const (
+	litTrue     = "true"
+	litFalse    = "false"
 	typeBool    = "bool"
 	typeUint    = "uint"
 	typeInt     = "int"
@@ -369,7 +371,7 @@ func File(filePath string) ([]PDUStruct, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parsing %s: %w", filePath, err)
 	}
-	return parseAST(node, filePath, packageBaseTypes(filePath, node))
+	return parseAST(node, filePath, packageBaseTypes(filePath, node), newConstValues(node, filePath, true))
 }
 
 // Source parses Go source text; only types declared in src are resolved.
@@ -381,10 +383,10 @@ func Source(fileName, src string) ([]PDUStruct, error) {
 	}
 	types := map[string]string{}
 	collectBaseTypes(node, types)
-	return parseAST(node, fileName, types)
+	return parseAST(node, fileName, types, newConstValues(node, fileName, false))
 }
 
-func parseAST(node *ast.File, filePath string, baseTypes map[string]string) ([]PDUStruct, error) {
+func parseAST(node *ast.File, filePath string, baseTypes map[string]string, consts *constValues) ([]PDUStruct, error) {
 	var result []PDUStruct
 	for _, decl := range node.Decls {
 		genDecl, ok := decl.(*ast.GenDecl)
@@ -406,6 +408,9 @@ func parseAST(node *ast.File, filePath string, baseTypes map[string]string) ([]P
 			}
 			if !found {
 				continue
+			}
+			if err := checkOverlaps(&pdu, consts); err != nil {
+				return nil, fmt.Errorf("struct %s: %w", typeSpec.Name.Name, err)
 			}
 			pdu.Package = node.Name.Name
 			pdu.SourceFile = filepath.Base(filePath)
@@ -760,7 +765,7 @@ func parseGuard(spec string) (*Guard, error) {
 	if g.Field == "" {
 		return nil, fmt.Errorf("missing field name: %q", spec)
 	}
-	if g.Value != "true" && g.Value != "false" {
+	if g.Value != litTrue && g.Value != litFalse {
 		if _, err := strconv.Atoi(g.Value); err != nil {
 			return nil, fmt.Errorf("value %q must be true, false, or a decimal integer", g.Value)
 		}
@@ -1178,7 +1183,7 @@ func checkCond(pdu *PDUStruct, c VariantCond, getters []Field) error {
 		return fmt.Errorf("field %q is dmr:\"-\" and not a dmr:input, so it is never set during decode", c.Field)
 	case f.Union:
 		return fmt.Errorf("field %q is the union field", c.Field)
-	case c.Guard != nil && (f.GoType == typeBool) != (c.Guard.Value == "true" || c.Guard.Value == "false"):
+	case c.Guard != nil && (f.GoType == typeBool) != (c.Guard.Value == litTrue || c.Guard.Value == litFalse):
 		return fmt.Errorf("value %s does not match type %s of %s", c.Guard.Value, f.GoType, c.Field)
 	case c.Guard == nil && f.GoType == typeBool:
 		return fmt.Errorf("bool field %s needs %s==true or %s==false", c.Field, c.Field, c.Field)
