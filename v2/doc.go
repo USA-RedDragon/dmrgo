@@ -229,6 +229,10 @@
 //     returned, some wrapped, by the burst builders and by the SetHint and
 //     SetRawBurst methods of the transports for a data type, sync source or
 //     voice position that the call cannot take.
+//   - layer2.ErrKind, layer2.ErrSyncPattern: returned wrapped by the burst
+//     decoders, Burst.Encode and RawBurst.SetSync, and ErrKind by the
+//     SetHint and SetRawBurst methods of the transports, for a burst kind
+//     or SYNC pattern that the call cannot take.
 //   - packet.ErrNoHeader, packet.ErrRateChange, packet.ErrRate,
 //     packet.ErrFormat, packet.ErrTooLong, packet.ErrNoRoom,
 //     packet.ErrResponseData, packet.ErrUnexpectedRetry,
