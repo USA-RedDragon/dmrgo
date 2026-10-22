@@ -6885,7 +6885,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_SMS_FORMAT_ANYTONE ((dmrgo_sms_format_t)3)
 /* Go: sms.FormatDefinedData. FormatDefinedData is a short data packet (DD_HEAD) whose DD format gives the coding of the text. */
 #define DMRGO_SMS_FORMAT_DEFINED_DATA ((dmrgo_sms_format_t)4)
-/* Go: sms.FormatHytera. FormatHytera is the short data packet that AnyTone radios send in H-SMS mode: DD format 1 and the HyteraText layout. */
+/* Go: sms.FormatHytera. FormatHytera is the short data packet that AnyTone radios send in H-SMS mode: DD format 1 (BCD) and the HyteraText layout. */
 #define DMRGO_SMS_FORMAT_HYTERA ((dmrgo_sms_format_t)5)
 /* Go: sms.FormatIP. FormatIP is an ETSI text message to UDP port 5016 in UTF-16BE. */
 #define DMRGO_SMS_FORMAT_IP ((dmrgo_sms_format_t)2)
@@ -9786,7 +9786,7 @@ int dmrgo_sms_anytone_text_set_text_utf8(dmrgo_sms_anytone_text_t *self, uint8_t
 int dmrgo_sms_anytone_text_string(const dmrgo_sms_anytone_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: sms.AnyToneText.TextUTF8. TextUTF8 appends Text, UTF-16LE text, to dst as UTF-8 and returns dst. */
 int dmrgo_sms_anytone_text_text_utf8(const dmrgo_sms_anytone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: sms.AppendPacket. AppendPacket appends the user data of t in its format to dst, sets h to the data header to send it with, and returns dst. It returns dst unchanged and DMRGO_ERR_SMS_FORMAT for an unknown format and for FormatDefinedData with DD format binary, which holds no text, or BCD, which Decode reads as FormatHytera, DMRGO_ERR_NIL_ARGUMENT for a nil t or h, or the errors of the packages that build the message. t and h may be NULL. */
+/* Go: sms.AppendPacket. AppendPacket appends the user data of t in its format to dst, sets h to the data header to send it with, and returns dst. It returns dst unchanged and DMRGO_ERR_SMS_FORMAT for an unknown format and for FormatDefinedData with DD format binary, which holds no text, DMRGO_ERR_NIL_ARGUMENT for a nil t or h, or the errors of the packages that build the message. t and h may be NULL. */
 int dmrgo_sms_append_packet(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_sms_text_t *t, bool confirmed, dmrgo_sms_header_t *h);
 /* Go: sms.Decode. Decode appends the text of a data packet, with header h and user data data, to dst as UTF-8, and returns dst and the Text, whose Body points into dst. It returns DMRGO_ERR_SMS_NOT_TEXT for a packet in none of these formats and for defined data with DD format binary, the errors of the ip, tms and shortdata packages for a message that does not decode, and DMRGO_ERR_NIL_ARGUMENT for a nil h. h may be NULL. */
 int dmrgo_sms_decode(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_pdu_data_header_t *h, const uint8_t *data, size_t data_len, dmrgo_sms_text_t *text, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
