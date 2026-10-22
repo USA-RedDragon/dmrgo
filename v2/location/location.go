@@ -136,9 +136,9 @@ func (d *Decoder) fromDatagram(f Fix, dg *ip.Datagram) (Fix, error) {
 		}
 		f.Format, f.Valid = FormatNMEA, r.Valid
 		f.Latitude, f.Longitude = r.Latitude, r.Longitude
-		f.Speed, f.HasSpeed = r.Speed*knot, true
-		f.Course, f.HasCourse = r.Course, true
-		if r.Day != 0 {
+		f.Speed, f.HasSpeed = r.Speed*knot, r.HasSpeed
+		f.Course, f.HasCourse = r.Course, r.HasCourse
+		if r.HasDate && r.HasTime {
 			f.Year, f.Month, f.Day = r.Year, r.Month, r.Day
 			f.Hour, f.Minute, f.Second = r.Hour, r.Minute, r.Second
 			f.HasTime = true

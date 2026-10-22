@@ -4,7 +4,7 @@
 package nmea
 
 // RMC is a Recommended Minimum Specific GNSS Data sentence ($--RMC). An
-// empty field gives 0.
+// empty field gives 0, and the Has fields tell an empty field from 0.
 type RMC struct {
 	// Talker is the talker ID, such as "GP" for GPS or "GN" for more than
 	// one satellite system.
@@ -18,6 +18,8 @@ type RMC struct {
 	// Millisecond is the fraction of Second, from the first three digits
 	// after the decimal point.
 	Millisecond uint16
+	// HasTime reports a UTC time field that is not empty.
+	HasTime bool
 	// Valid reports status A. Status V, a warning of the receiver, gives
 	// false.
 	Valid bool
@@ -25,16 +27,24 @@ type RMC struct {
 	Latitude float64
 	// Longitude is in degrees, east positive.
 	Longitude float64
+	// HasPosition reports a latitude and a longitude that are not empty.
+	HasPosition bool
 	// Speed is the speed over ground in knots.
 	Speed float64
+	// HasSpeed reports a speed field that is not empty.
+	HasSpeed bool
 	// Course is the course over ground in degrees true.
 	Course float64
+	// HasCourse reports a course field that is not empty.
+	HasCourse bool
 	// Day is the day of the UTC date, 1 to 31.
 	Day uint8
 	// Month is the month of the UTC date, 1 to 12.
 	Month uint8
 	// Year is 2000 plus the two-digit year of the UTC date.
 	Year uint16
+	// HasDate reports a UTC date field that is not empty.
+	HasDate bool
 	// MagneticVariation is in degrees, east positive.
 	MagneticVariation float64
 	// Mode is the mode indicator of NMEA 0183 2.3 and later, such as 'A'
@@ -127,19 +137,23 @@ func (r *RMC) parse(s []byte, sep *spans, fields int) error {
 	if r.Latitude, ok = coordinate(s, lo, hi, hemiLo, hemiHi, 2, 'N', 'S'); !ok {
 		return ErrField
 	}
+	latEmpty := lo == hi
 	lo, hi = sep.at(5)
 	hemiLo, hemiHi = sep.at(6)
 	if r.Longitude, ok = coordinate(s, lo, hi, hemiLo, hemiHi, 3, 'E', 'W'); !ok {
 		return ErrField
 	}
+	r.HasPosition = !latEmpty && lo != hi
 	lo, hi = sep.at(7)
 	if r.Speed, ok = decimal(s, lo, hi); !ok {
 		return ErrField
 	}
+	r.HasSpeed = lo != hi
 	lo, hi = sep.at(8)
 	if r.Course, ok = decimal(s, lo, hi); !ok || r.Course > 360 {
 		return ErrField
 	}
+	r.HasCourse = lo != hi
 	lo, hi = sep.at(9)
 	if !r.parseDate(s, lo, hi) {
 		return ErrField
@@ -177,7 +191,7 @@ func (r *RMC) parseTime(s []byte, lo, hi int) bool {
 	if !okH || !okM || !okS || h > 23 || m > 59 || sec > 60 {
 		return false
 	}
-	r.Hour, r.Minute, r.Second = h, m, sec
+	r.Hour, r.Minute, r.Second, r.HasTime = h, m, sec, true
 	if hi-lo == 6 {
 		return true
 	}
@@ -207,7 +221,7 @@ func (r *RMC) parseDate(s []byte, lo, hi int) bool {
 	if hi-lo != 6 || !okD || !okM || !okY || d < 1 || d > 31 || m < 1 || m > 12 {
 		return false
 	}
-	r.Day, r.Month, r.Year = d, m, 2000+uint16(y)
+	r.Day, r.Month, r.Year, r.HasDate = d, m, 2000+uint16(y), true
 	return true
 }
 
