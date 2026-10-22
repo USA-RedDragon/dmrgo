@@ -1,5 +1,7 @@
 package dmrd
 
+import "github.com/USA-RedDragon/dmrgo/v2"
+
 // OptionState is whether a DMR+ startup option is in the options text.
 type OptionState uint8
 
@@ -111,10 +113,11 @@ func optionIndex(key []byte) int {
 
 // AppendText appends the options that are not OptionAbsent to dst as a DMR+
 // startup options text, each followed by a semicolon, in the order of the
-// fields. It allocates only to grow dst.
-func (o *DMRPlusOptions) AppendText(dst []byte) []byte {
+// fields. It returns dst unchanged and dmrgo.ErrNilReceiver for a nil o,
+// and no other error. It allocates only to grow dst.
+func (o *DMRPlusOptions) AppendText(dst []byte) ([]byte, error) {
 	if o == nil {
-		return dst
+		return dst, dmrgo.ErrNilReceiver
 	}
 
 	dst = appendOption(dst, "StartRef", o.StartRef)
@@ -128,7 +131,7 @@ func (o *DMRPlusOptions) AppendText(dst []byte) []byte {
 		dst = append(dst, byte('1'+i))
 		dst = appendValue(dst, o.TS1[i])
 	}
-	return dst
+	return dst, nil
 }
 
 func appendOption(dst []byte, key string, v OptionValue) []byte {

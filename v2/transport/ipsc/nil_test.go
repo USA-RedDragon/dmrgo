@@ -31,7 +31,7 @@ func TestNilReceivers(t *testing.T) {
 		t.Errorf("nil PeerList %d, %+v", n, e)
 	}
 	var r *ipsc.Raw
-	if out := r.AppendBinary([]byte{1}); len(out) != 1 {
-		t.Errorf("nil Raw AppendBinary %x", out)
+	if out, err := r.AppendBinary([]byte{1}); !errors.Is(err, dmrgo.ErrNilReceiver) || len(out) != 1 {
+		t.Errorf("nil Raw AppendBinary %x, %v", out, err)
 	}
 }
