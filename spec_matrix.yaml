@@ -1089,11 +1089,13 @@ documents:
               - TestTrellis34_MaximumLikelihood
               - TestTrellis34_SingleDibitErrors
               - TestTrellis34_TwoDibitDistance
-              - TestTrellis34_NonzeroFinalStateFlagged
+              - TestTrellis34_NonzeroFinalStateNotFlagged
+              - TestTrellis34_TwoBitErrorsMatchML
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
               - TestRate34OverTheAir
               - TestRate34SingleDibitErrors
+              - TestRate34TailErrorNotFlagged
 
       - section: "B.2.5"
         title: "Rate 1 coded data"
