@@ -251,6 +251,8 @@
 //     when the opcode does not select the payload X.
 //   - pdu.ErrNoFullLCMask: returned by FullLinkControl.Encode and
 //     LCBytes.Codeword for a data type without an RS(12,9) Full LC mask.
+//   - pdu.ErrNoBlockCRC: returned wrapped by pdu.Seal for a data type
+//     without a Full LC mask or a single-block CRC-CCITT.
 //   - pdu.ErrNoServiceOptions: returned by LCBytes.SetServiceOptions for an
 //     LC without a Service Options field.
 //   - voice.ErrBusy, voice.ErrQueueFull, voice.ErrNotActive,
