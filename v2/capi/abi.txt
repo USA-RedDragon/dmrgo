@@ -1968,7 +1968,6 @@ sym int dmrgo_ip_icmp_message_code(dmrgo_ip_icmp_message_t self, uint8_t *out);
 sym int dmrgo_ip_icmp_message_string(dmrgo_ip_icmp_message_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_ip_icmp_message_type(dmrgo_ip_icmp_message_t self, uint8_t *out);
 sym int dmrgo_ip_icmp_string(const dmrgo_ip_icmp_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-sym int dmrgo_ip_id(const uint8_t addr[4], uint32_t *out);
 sym int dmrgo_ip_ipv4_append_binary(const dmrgo_ip_ipv4_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_ip_ipv4_header_append_binary(const dmrgo_ip_ipv4_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_ip_ipv4_header_string(const dmrgo_ip_ipv4_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -1978,6 +1977,7 @@ sym int dmrgo_ip_port_spid(dmrgo_ip_port_t p, dmrgo_enums_spid_t *spid, bool *ok
 sym int dmrgo_ip_port_string(dmrgo_ip_port_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_ip_protocol_string(dmrgo_ip_protocol_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_ip_radio_address(uint8_t network, uint32_t id, uint8_t out[4]);
+sym int dmrgo_ip_radio_id(const uint8_t addr[4], uint32_t *out);
 sym int dmrgo_ip_spid_port(dmrgo_enums_spid_t spid, dmrgo_ip_port_t *out);
 sym int dmrgo_ip_udp_append_binary(const dmrgo_ip_udp_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_ip_udp_header_append_binary(const dmrgo_ip_udp_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);

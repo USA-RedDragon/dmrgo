@@ -48,8 +48,8 @@ func TestDecodeCapturedIPv4(t *testing.T) {
 			if d.Source != ip.RadioAddress(ip.DefaultNetwork, 3191868) || d.Destination != ip.RadioAddress(ip.DefaultNetwork, 3140598) {
 				t.Errorf("addresses %v to %v", d.Source, d.Destination)
 			}
-			if ip.ID(d.Source) != 3191868 {
-				t.Errorf("ID(%v) = %d", d.Source, ip.ID(d.Source))
+			if ip.RadioID(d.Source) != 3191868 {
+				t.Errorf("RadioID(%v) = %d", d.Source, ip.RadioID(d.Source))
 			}
 			if d.SourcePort != tt.port || d.DestinationPort != tt.port || d.ID != tt.id || d.TTL != tt.ttl || d.Compressed {
 				t.Errorf("got %+v", d)
@@ -190,7 +190,7 @@ func TestAddresses(t *testing.T) {
 	if got := ip.GroupAddress(225, 9); got != [4]byte{225, 0, 0, 9} {
 		t.Errorf("GroupAddress = %v", got)
 	}
-	if got := ip.RadioAddress(13, 0x123456); got != [4]byte{13, 0x12, 0x34, 0x56} || ip.ID(got) != 0x123456 {
+	if got := ip.RadioAddress(13, 0x123456); got != [4]byte{13, 0x12, 0x34, 0x56} || ip.RadioID(got) != 0x123456 {
 		t.Errorf("RadioAddress = %v", got)
 	}
 }

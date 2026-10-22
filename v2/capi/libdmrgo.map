@@ -523,7 +523,6 @@ DMRGO_1 {
 		dmrgo_ip_icmp_message_string;
 		dmrgo_ip_icmp_message_type;
 		dmrgo_ip_icmp_string;
-		dmrgo_ip_id;
 		dmrgo_ip_ipv4_append_binary;
 		dmrgo_ip_ipv4_header_append_binary;
 		dmrgo_ip_ipv4_header_string;
@@ -533,6 +532,7 @@ DMRGO_1 {
 		dmrgo_ip_port_string;
 		dmrgo_ip_protocol_string;
 		dmrgo_ip_radio_address;
+		dmrgo_ip_radio_id;
 		dmrgo_ip_spid_port;
 		dmrgo_ip_udp_append_binary;
 		dmrgo_ip_udp_header_append_binary;

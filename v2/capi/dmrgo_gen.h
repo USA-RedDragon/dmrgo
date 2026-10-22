@@ -8270,8 +8270,6 @@ int dmrgo_ip_icmp_message_code(dmrgo_ip_icmp_message_t self, uint8_t *out);
 int dmrgo_ip_icmp_message_string(dmrgo_ip_icmp_message_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ip.ICMPMessage.Type. Type returns the ICMP Type of m. */
 int dmrgo_ip_icmp_message_type(dmrgo_ip_icmp_message_t self, uint8_t *out);
-/* Go: ip.ID. ID returns the 24-bit radio or group ID of the address addr: its last three octets. */
-int dmrgo_ip_id(const uint8_t addr[4], uint32_t *out);
 /* Go: ip.IPv4.AppendBinary. AppendBinary appends s to dst, with Header.TotalLength set to the length of the data. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE or another error when a field does not fit. */
 int dmrgo_ip_ipv4_append_binary(const dmrgo_ip_ipv4_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ip.IPv4.String. String returns the fields of s as text, for printing. */
@@ -8290,6 +8288,8 @@ int dmrgo_ip_port_spid(dmrgo_ip_port_t p, dmrgo_enums_spid_t *spid, bool *ok);
 int dmrgo_ip_protocol_string(dmrgo_ip_protocol_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ip.RadioAddress. RadioAddress returns the IPv4 address of the radio with the 24-bit radio ID id: network.x.y.z. */
 int dmrgo_ip_radio_address(uint8_t network, uint32_t id, uint8_t out[4]);
+/* Go: ip.RadioID. RadioID returns the 24-bit radio or group ID of the address addr, its last three octets: the inverse of RadioAddress and GroupAddress. */
+int dmrgo_ip_radio_id(const uint8_t addr[4], uint32_t *out);
 /* Go: ip.SPIDPort. SPIDPort returns the UDP port of spid: PortText for SPIDTextMessage and PortLocation for SPIDLocationProtocol. */
 int dmrgo_ip_spid_port(dmrgo_enums_spid_t spid, dmrgo_ip_port_t *out);
 /* Go: ip.UDP.AppendBinary. AppendBinary appends s to dst, with Header.Length set to the length of the data. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE or another error when a field does not fit. */
