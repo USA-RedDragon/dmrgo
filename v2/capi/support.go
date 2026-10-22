@@ -370,6 +370,9 @@ func putAppend[E any](full []E, fill int, need *C.size_t, src []E, oc *outc) int
 
 //export dmrgo_last_error_message
 func dmrgo_last_error_message(buf *C.char, capx C.size_t, n, need *C.size_t) C.int {
+	if !lenOK(unsafe.Pointer(buf), capx, 1) {
+		return C.DMRGO_ERR_ARG
+	}
 	l := C.dmrgo__last()
 	msg := unsafe.String((*byte)(unsafe.Pointer(&l.msg[0])), min(int(l.msg_len), len(l.msg)-1))
 	oc := &outc{}

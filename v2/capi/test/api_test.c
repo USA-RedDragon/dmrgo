@@ -837,6 +837,18 @@ static void test_last_error(void) {
 	CHECK(strcmp(dmrgo_strerror(DMRGO_ERR_PDU_NO_ADDRESSES), "pdu: PDU has no address fields") == 0);
 }
 
+static void test_huge_message_cap(void) {
+	CHECK(dmrgo_layer2_new_burst(NULL) == DMRGO_ERR_ARG);
+	char buf[64];
+	size_t n = 7, need = 0;
+	CHECK(dmrgo_last_error_message(buf, SIZE_MAX, &n, &need) == DMRGO_ERR_ARG);
+	CHECK(dmrgo_last_error_message(buf, (size_t)PTRDIFF_MAX + 1, &n, &need) == DMRGO_ERR_ARG);
+	CHECK(dmrgo_last_error_message(NULL, 5, &n, &need) == DMRGO_ERR_ARG);
+	CHECK(dmrgo_last_error_code() == DMRGO_ERR_ARG);
+	OK(dmrgo_last_error_message(buf, sizeof buf, &n, &need));
+	CHECK(strcmp(buf, dmrgo_strerror(DMRGO_ERR_ARG)) == 0);
+}
+
 static void test_partial(void) {
 	dmrgo_layer2_voice_transmitter_options_t opts;
 	memset(&opts, 0, sizeof opts);
@@ -1077,6 +1089,7 @@ int main(int argc, char **argv) {
 	test_voice_capture(argv[1]);
 	test_vocoder();
 	test_last_error();
+	test_huge_message_cap();
 	test_partial();
 	test_small_user();
 	test_handle_errors();

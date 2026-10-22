@@ -142,8 +142,9 @@ int dmrgo_last_error_is(int status, bool *out);
 /* dmrgo_last_error_message writes the message of the last error that a
  * function returned on this thread, as a result string. The library keeps
  * the first 511 bytes of a message; it returns DMRGO_ERR_SHORT when the
- * message was cut there or does not fit cap. A function that succeeds does
- * not clear it. */
+ * message was cut there or does not fit cap, and DMRGO_ERR_ARG, with the last
+ * error kept, for a bad buf and cap. A function that succeeds does not clear
+ * it. */
 int dmrgo_last_error_message(char *buf, size_t cap, size_t *len, size_t *need);
 
 /* dmrgo_strerror returns a static message for a status code. */
