@@ -80,8 +80,6 @@ func tinyCallerOps(t *testing.T) (stored, local []tinyOp) {
 // a local of the caller, and does not when it is in storage that outlives
 // the call.
 func TestTinyGoCallerStorage(t *testing.T) {
-	t.Parallel()
-
 	stored, local := tinyCallerOps(t)
 	for _, op := range stored {
 		if b, n := tinyAlloc(op.run); b != 0 {
