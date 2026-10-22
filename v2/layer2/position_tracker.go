@@ -8,6 +8,8 @@ import (
 
 const lateWindow = 32
 
+const maxPlaceSteps = 1 << 16
+
 // Placement is how a PositionTracker took a burst.
 type Placement uint8
 
@@ -179,7 +181,9 @@ func (t *PositionTracker) Header(h *Hint) {
 // takes b as steps bursts after the one before it when h has no sequence
 // number, as a receiver that counts 60 ms slots does; Place takes 1. It
 // sets h.VoiceBurst, and returns the bursts lost before b and how it took
-// b. A nil t, b or h is a no-op, and steps below 1 count as 1.
+// b. A nil t, b or h is a no-op, and steps below 1 count as 1. Steps over
+// 65536, about 65 minutes of bursts, forget the superframe position first,
+// as Forget does.
 func (t *PositionTracker) PlaceDecoded(b *Burst, h *Hint, steps int) (lost int, p Placement) {
 	if t == nil {
 		return 0, 0
@@ -208,6 +212,9 @@ func (t *PositionTracker) place(c cue, h *Hint, steps int) (lost int, p Placemen
 	steps = max(steps, 1)
 	if gap > 0 {
 		steps = gap
+	}
+	if steps > maxPlaceSteps {
+		t.known, t.header = false, false
 	}
 	idx := t.position(c, steps, gap > 0)
 	missedA := gap > 0 && t.known && idx == 1 && (int(t.pos)+steps)%VoiceBurstsPerSuperframe == 0
@@ -341,9 +348,8 @@ func nearestLost(gap, est int) int {
 	if gap > est+2 {
 		return est
 	}
-	n := gap
-	for n+VoiceBurstsPerSuperframe/2 < est {
-		n += VoiceBurstsPerSuperframe
+	if d := est - VoiceBurstsPerSuperframe/2 - gap; d > 0 {
+		return gap + VoiceBurstsPerSuperframe*((d-1)/VoiceBurstsPerSuperframe+1)
 	}
-	return n
+	return gap
 }
