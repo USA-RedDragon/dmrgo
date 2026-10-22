@@ -3,7 +3,8 @@ CXX ?= c++
 BUILD ?= build
 ABI := $(shell sed -n 's/^abi //p' abi.txt)
 SONAME := libdmrgo.so.$(ABI)
-LDFLAGS := -extldflags=-Wl,-soname,$(SONAME),--version-script=$(CURDIR)/libdmrgo.map
+VERSION ?= $(shell git describe --tags --match 'v2.*' --always --dirty 2>/dev/null)
+LDFLAGS := -X main.version=$(VERSION) -extldflags=-Wl,-soname,$(SONAME),--version-script=$(CURDIR)/libdmrgo.map
 SRC := $(wildcard *.go *.c *.h) abi.txt libdmrgo.map go.mod
 RUN = $(1)/api_test ../layer2/testdata/parrot_kerchunk.bin
 
@@ -25,7 +26,7 @@ $(BUILD)/check2/$(SONAME): $(SRC)
 	GOEXPERIMENT=cgocheck2 go build -buildmode=c-shared -ldflags='$(LDFLAGS)' -o $@ .
 
 $(BUILD)/%_test: test/%_test.c dmrgo.h dmrgo_gen.h $(BUILD)/libdmrgo.so
-	$(CC) -std=c11 -Wall -Wextra -Werror -pedantic -o $@ $< -I. -L$(BUILD) -ldmrgo -Wl,-rpath,'$$ORIGIN'
+	$(CC) -std=c11 -Wall -Wextra -Werror -pedantic -DDMRGO_TEST_VERSION='"$(VERSION)"' -o $@ $< -I. -L$(BUILD) -ldmrgo -Wl,-rpath,'$$ORIGIN'
 
 test: $(BUILD)/api_test $(BUILD)/stack/$(SONAME) $(BUILD)/check2/$(SONAME)
 	echo '#include "dmrgo.h"' | $(CXX) -std=c++11 -Wall -Wextra -Werror -pedantic -fsyntax-only -I. -x c++ -

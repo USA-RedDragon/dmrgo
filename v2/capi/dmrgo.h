@@ -113,8 +113,10 @@ enum dmrgo_status {
  * way that breaks a program built against an older one. */
 int dmrgo_abi_version(void);
 
-/* dmrgo_version writes the version of the dmrgo module that the library
- * was built from. */
+/* dmrgo_version writes the version of dmrgo that the library was built
+ * from: the v2 tag, as git describe gives it, when make builds it, else
+ * (devel) and the commit. libdmrgo has no version of its own beyond that
+ * and DMRGO_ABI_VERSION: the capi module is never tagged. */
 int dmrgo_version(char *buf, size_t cap, size_t *len, size_t *need);
 
 /* dmrgo_last_error_code returns the status code of the last error that a
