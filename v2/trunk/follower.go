@@ -542,7 +542,7 @@ func (f *Follower) payload(now time.Duration, ok bool, h *layer2.Hint, out []Out
 	case enums.DataTypeCSBK:
 		c, isCSBK := b.Data.(*pdu.CSBK)
 		cl, isClear := c.AsClear()
-		if isCSBK && f.ctl.dataOK() && c.FID == enums.FIDStandardized && isClear && f.clears(&cl) {
+		if isCSBK && c != nil && f.ctl.dataOK() && c.FID == enums.FIDStandardized && isClear && f.clears(&cl) {
 			f.cleared, f.clearedAt, f.hasClear = f.call, now, true
 			out = f.leave(now, ReasonClear, out)
 			if ch := cl.PhysicalChannel; ch != ChannelNull && ch != ChannelAbsolute && ch != f.ctl.site.Channel {

@@ -129,20 +129,32 @@ func (c *control) tscc(now time.Duration, slot enums.Slot) tsccEvent {
 	}
 	switch d := c.b.Data.(type) {
 	case *pdu.CSBK:
+		if d == nil {
+			return eventNone
+		}
 		c.pending = pendingNone
 		if d.FID != enums.FIDStandardized {
 			return eventNone
 		}
 		return c.csbk(now, d)
 	case *pdu.MBCHeader:
+		if d == nil {
+			return eventNone
+		}
 		c.pending = pendingNone
 		if d.FID != enums.FIDStandardized {
 			return eventNone
 		}
 		return c.mbcHeader(d, slot)
 	case *pdu.MBCContinuation:
+		if d == nil {
+			return eventNone
+		}
 		return c.mbcContinuation(now, d, slot)
 	case *pdu.DataHeader:
+		if d == nil {
+			return eventNone
+		}
 		c.pending, c.udtOn = pendingNone, false
 		if h, ok := d.AsUDT(); ok && (h.Opcode == pdu.UDTOpcodeOutboundHeader || h.Opcode == pdu.UDTOpcodeDGNAOutboundHeader) {
 			c.udtRx, c.udtN = UDT{Header: h}, 0
@@ -150,6 +162,9 @@ func (c *control) tscc(now time.Duration, slot enums.Slot) tsccEvent {
 		}
 		return eventTSCC
 	case *pdu.Rate12Data:
+		if d == nil {
+			return eventNone
+		}
 		return c.udtBlock(d, slot)
 	}
 	return eventNone

@@ -165,12 +165,12 @@ func (a *Assembler) InProgress() bool {
 // not decode, is ignored. A data block whose FEC.PDU or FEC.Payload result
 // is uncorrectable, such as a rate 3/4 block whose trellis decode failed,
 // is counted but not used, as Lost counts it, so the message CRC or the
-// SACK catches it. A nil b is ignored.
+// SACK catches it. A nil b, or a b whose Data is a nil pointer, is ignored.
 func (a *Assembler) AddBurst(b *layer2.Burst) (Message, bool, error) {
 	if a == nil {
 		return Message{}, false, dmrgo.ErrNilReceiver
 	}
-	if b == nil || b.Kind != layer2.KindData || b.Data == nil {
+	if b == nil || b.Kind != layer2.KindData || nilData(b.Data) {
 		return Message{}, false, nil
 	}
 	if _, ok := blockOf(b.Data); ok && (b.FEC.PDU.Uncorrectable || b.FEC.Payload.Uncorrectable) {
@@ -222,6 +222,22 @@ func (a *Assembler) Add(d layer2.Data) (Message, bool, error) {
 	default:
 		return Message{}, false, nil
 	}
+}
+
+func nilData(d layer2.Data) bool {
+	switch v := d.(type) {
+	case nil:
+		return true
+	case *pdu.DataHeader:
+		return v == nil
+	case *pdu.Rate12Data:
+		return v == nil
+	case *pdu.Rate34Data:
+		return v == nil
+	case *pdu.Rate1Data:
+		return v == nil
+	}
+	return false
 }
 
 func (a *Assembler) addHeader(h *pdu.DataHeader) (Message, bool, error) {

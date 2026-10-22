@@ -80,11 +80,11 @@ func (m *MS) addressed(now time.Duration, h *layer2.Hint, out []Output) []Output
 	if !m.f.ctl.okData() {
 		return out
 	}
-	if u, ok := m.f.ctl.b.Data.(*pdu.UnifiedSingleBlockData); ok {
+	if u, ok := m.f.ctl.b.Data.(*pdu.UnifiedSingleBlockData); ok && u != nil {
 		return m.usbdPoll(now, u, h, out)
 	}
 	c, ok := m.f.ctl.b.Data.(*pdu.CSBK)
-	if !ok || c.FID != enums.FIDStandardized {
+	if !ok || c == nil || c.FID != enums.FIDStandardized {
 		return out
 	}
 	if o, done := m.svcCSBK(now, c, h, out); done {
@@ -261,7 +261,7 @@ func (m *MS) payload(now time.Duration, h *layer2.Hint, out []Output) []Output {
 		return out
 	}
 	c, ok := m.f.ctl.b.Data.(*pdu.CSBK)
-	if !ok || c.FID != enums.FIDStandardized {
+	if !ok || c == nil || c.FID != enums.FIDStandardized {
 		return out
 	}
 	if p, ok := c.AsProtect(); ok {

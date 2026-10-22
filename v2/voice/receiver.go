@@ -376,7 +376,7 @@ func rawOf(b *layer2.Burst, raw *layer2.RawBurst) layer2.RawBurst {
 
 func lcOctets(b *layer2.Burst) (pdu.LCBytes, bool) {
 	fl, ok := b.Data.(*pdu.FullLinkControl)
-	if !ok || fl.FEC.Uncorrectable {
+	if !ok || fl == nil || fl.FEC.Uncorrectable {
 		return pdu.LCBytes{}, false
 	}
 	octets, err := fl.Bytes()

@@ -261,9 +261,13 @@ func (f *CapacityPlusFollower) burst(now time.Duration, raw *layer2.RawBurst, b 
 	}
 	switch d := f.b.Data.(type) {
 	case *pdu.CSBK:
-		return f.csbk(now, d, dst)
+		if d != nil {
+			return f.csbk(now, d, dst)
+		}
 	case *pdu.FullLinkControl:
-		return f.fullLC(now, d, slot, dst)
+		if d != nil {
+			return f.fullLC(now, d, slot, dst)
+		}
 	}
 	return dst
 }
