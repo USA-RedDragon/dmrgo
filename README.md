@@ -386,7 +386,7 @@ Each row is a clause or a subclause. A clause that is only partly implemented is
 | 7.2.6 | Additional Information Field | verified | 5/5 passed | `v2/layer3/additional_information_field.go`, `v2/layer2/pdu/csbk.go` |
 | 7.2.7 | CSBK Blocks to Follow (CBF) | verified | 4/4 passed | `v2/layer2/pdu/csbk.go`, `v2/csbk/preambles.go` |
 | 7.2.8 | Identifier (ID) | verified | 3/3 passed | `v2/layer2/pdu/full_link_control.go`, `v2/layer2/pdu/csbk.go` |
-| 7.2.15 | Position Error | verified | 3/3 passed | `v2/layer3/position_error.go` |
+| 7.2.15 | Position Error | verified | 3/3 passed | `v2/layer3/position_accuracy.go` |
 | 7.2.16 | Longitude | verified | 5/5 passed | `v2/layer2/pdu/full_link_control.go` |
 | 7.2.17 | Latitude | verified | 5/5 passed | `v2/layer2/pdu/full_link_control.go` |
 | 7.2.18 | Talker Alias Data Format | verified | 3/3 passed | `v2/layer3/talker_alias_data_format.go` |

@@ -272,7 +272,7 @@ func DecodeLIPShortReport(data [10]byte) LIPShortReport {
 	result.TimeElapsed = uint8(uint64(data[0]) >> 4 & 0x3)
 	result.Longitude = float64(int32(uint32((uint64(data[0])<<24|uint64(data[1])<<16|uint64(data[2])<<8|uint64(data[3]))>>3&0x1FFFFFF)<<7)>>7) * 360.0 / (1 << 25)
 	result.Latitude = float64(int32(uint32((uint64(data[3])<<24|uint64(data[4])<<16|uint64(data[5])<<8|uint64(data[6]))>>3&0xFFFFFF)<<8)>>8) * 180.0 / (1 << 24)
-	result.PositionError = layer3.PositionError(uint64(data[6]) & 0x7)
+	result.PositionError = layer3.PositionAccuracy(uint64(data[6]) & 0x7)
 	result.Velocity = uint8(uint64(data[7]) >> 1)
 	result.Direction = uint8((uint64(data[7])<<8 | uint64(data[8])) >> 5 & 0xF)
 	result.AdditionalType = data[8]&0x10 != 0
@@ -423,7 +423,7 @@ func DecodeUSBDLIPResponse(data [10]byte) USBDLIPResponse {
 	result.TimeElapsed = uint8(uint64(data[0]) >> 6)
 	result.Longitude = float64(int32(uint32((uint64(data[0])<<24|uint64(data[1])<<16|uint64(data[2])<<8|uint64(data[3]))>>5&0x1FFFFFF)<<7)>>7) * 360.0 / (1 << 25)
 	result.Latitude = float64(int32(uint32((uint64(data[3])<<24|uint64(data[4])<<16|uint64(data[5])<<8|uint64(data[6]))>>5&0xFFFFFF)<<8)>>8) * 180.0 / (1 << 24)
-	result.PositionError = layer3.PositionError(uint64(data[6]) >> 2 & 0x7)
+	result.PositionError = layer3.PositionAccuracy(uint64(data[6]) >> 2 & 0x7)
 	result.Velocity = uint8((uint64(data[6])<<8 | uint64(data[7])) >> 3 & 0x7F)
 	result.Direction = uint8((uint64(data[7])<<8 | uint64(data[8])) >> 7 & 0xF)
 	result.Reason = uint8(uint64(data[8]) >> 4 & 0x7)

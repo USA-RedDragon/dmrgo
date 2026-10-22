@@ -60,7 +60,7 @@ func fuzzLayer3(t *testing.T, data []byte) {
 
 	for _, s := range []string{
 		layer3.SourceType(in[0]).String(),
-		layer3.PositionError(in[0]).String(),
+		layer3.PositionAccuracy(in[0]).String(),
 		layer3.AdditionalInformationField(in[0]).String(),
 		layer3.TalkerAliasDataFormat(in[0]).String(),
 	} {

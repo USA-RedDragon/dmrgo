@@ -935,7 +935,7 @@ var entryPoints = map[string]any{
 	"dmrgo_layer3_polling_service_options_encode":                      dmrgo_layer3_polling_service_options_encode,
 	"dmrgo_layer3_polling_service_options_field":                       dmrgo_layer3_polling_service_options_field,
 	"dmrgo_layer3_polling_service_options_string":                      dmrgo_layer3_polling_service_options_string,
-	"dmrgo_layer3_position_error_string":                               dmrgo_layer3_position_error_string,
+	"dmrgo_layer3_position_accuracy_string":                            dmrgo_layer3_position_accuracy_string,
 	"dmrgo_layer3_registration_service_options_encode":                 dmrgo_layer3_registration_service_options_encode,
 	"dmrgo_layer3_registration_service_options_field":                  dmrgo_layer3_registration_service_options_field,
 	"dmrgo_layer3_registration_service_options_string":                 dmrgo_layer3_registration_service_options_string,

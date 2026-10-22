@@ -3941,7 +3941,7 @@ func out_trunk_LIPShortReport(d *C.dmrgo_trunk_lip_short_report_t, s *g_trunk.LI
 	d.time_elapsed = C.uint8_t(s.TimeElapsed)
 	d.longitude = C.double(s.Longitude)
 	d.latitude = C.double(s.Latitude)
-	d.position_error = C.dmrgo_layer3_position_error_t(s.PositionError)
+	d.position_error = C.dmrgo_layer3_position_accuracy_t(s.PositionError)
 	d.velocity = C.uint8_t(s.Velocity)
 	d.direction = C.uint8_t(s.Direction)
 	d.additional_type = C.bool(s.AdditionalType)
@@ -4025,7 +4025,7 @@ func in_trunk_LIPShortReport(s *C.dmrgo_trunk_lip_short_report_t) (d g_trunk.LIP
 	d.TimeElapsed = uint8(s.time_elapsed)
 	d.Longitude = float64(s.longitude)
 	d.Latitude = float64(s.latitude)
-	d.PositionError = g_layer3.PositionError(s.position_error)
+	d.PositionError = g_layer3.PositionAccuracy(s.position_error)
 	d.Velocity = uint8(s.velocity)
 	d.Direction = uint8(s.direction)
 	d.AdditionalType = bool(s.additional_type)
@@ -5529,7 +5529,7 @@ func fromC_layer2_pdu_EmbeddedSignalling(s *C.dmrgo_pdu_embedded_signalling_t) g
 
 func in_layer2_pdu_FLCGPSInfo(s *C.dmrgo_pdu_flc_gps_info_t) (d g_layer2_pdu.FLCGPSInfo) {
 	d.Reserved = uint8(s.reserved)
-	d.PositionError = g_layer3.PositionError(s.position_error)
+	d.PositionError = g_layer3.PositionAccuracy(s.position_error)
 	d.Longitude = float64(s.longitude)
 	d.Latitude = float64(s.latitude)
 	return
@@ -5538,7 +5538,7 @@ func in_layer2_pdu_FLCGPSInfo(s *C.dmrgo_pdu_flc_gps_info_t) (d g_layer2_pdu.FLC
 func out_layer2_pdu_FLCGPSInfo(d *C.dmrgo_pdu_flc_gps_info_t, s *g_layer2_pdu.FLCGPSInfo, oc *outc) {
 	_ = oc
 	d.reserved = C.uint8_t(s.Reserved)
-	d.position_error = C.dmrgo_layer3_position_error_t(s.PositionError)
+	d.position_error = C.dmrgo_layer3_position_accuracy_t(s.PositionError)
 	d.longitude = C.double(s.Longitude)
 	d.latitude = C.double(s.Latitude)
 }
@@ -7204,7 +7204,7 @@ func in_trunk_USBDLIPResponse(s *C.dmrgo_trunk_usbd_lip_response_t) (d g_trunk.U
 	d.TimeElapsed = uint8(s.time_elapsed)
 	d.Longitude = float64(s.longitude)
 	d.Latitude = float64(s.latitude)
-	d.PositionError = g_layer3.PositionError(s.position_error)
+	d.PositionError = g_layer3.PositionAccuracy(s.position_error)
 	d.Velocity = uint8(s.velocity)
 	d.Direction = uint8(s.direction)
 	d.Reason = uint8(s.reason)
@@ -7217,7 +7217,7 @@ func out_trunk_USBDLIPResponse(d *C.dmrgo_trunk_usbd_lip_response_t, s *g_trunk.
 	d.time_elapsed = C.uint8_t(s.TimeElapsed)
 	d.longitude = C.double(s.Longitude)
 	d.latitude = C.double(s.Latitude)
-	d.position_error = C.dmrgo_layer3_position_error_t(s.PositionError)
+	d.position_error = C.dmrgo_layer3_position_accuracy_t(s.PositionError)
 	d.velocity = C.uint8_t(s.Velocity)
 	d.direction = C.uint8_t(s.Direction)
 	d.reason = C.uint8_t(s.Reason)
@@ -30232,8 +30232,8 @@ func dmrgo_layer3_polling_service_options_string(c_self *C.dmrgo_layer3_polling_
 	return C.DMRGO_OK
 }
 
-//export dmrgo_layer3_position_error_string
-func dmrgo_layer3_position_error_string(c_self C.dmrgo_layer3_position_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+//export dmrgo_layer3_position_accuracy_string
+func dmrgo_layer3_position_accuracy_string(c_self C.dmrgo_layer3_position_accuracy_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
@@ -30242,7 +30242,7 @@ func dmrgo_layer3_position_error_string(c_self C.dmrgo_layer3_position_error_t, 
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := g_layer3.PositionError(c_self).String()
+	r0 := g_layer3.PositionAccuracy(c_self).String()
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
