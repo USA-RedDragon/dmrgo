@@ -236,6 +236,7 @@ The example prints its counts on the serial console once a second.
 - A minor release can add a value to an enum type, so give a switch over an enum a default case.
 - The minimum Go version rises only in a minor release, and the release notes say so.
 - libdmrgo, the C API, has its own ABI number (`DMRGO_ABI_VERSION`) and soname (`libdmrgo.so.N`). It is built from the `v2` tag, and `v2/capi` has no tags of its own. A change that breaks C code that compiles against `dmrgo.h`, or a program that links an older libdmrgo, gives a new ABI number and soname. v2.0.0 has ABI 1.
+- A config, options or vtable struct of the C API whose first member is `size_t size` is sized. The caller sets `size` to `sizeof` the struct, and the library reads only the members that `size` covers and takes the rest as zero. Thus a minor release can add members at the end of such a struct without a new ABI number, and a program built against older headers works with the newer library. Other structs have a fixed layout.
 
 ## Tooling
 
