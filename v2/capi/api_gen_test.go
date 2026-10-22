@@ -1246,6 +1246,7 @@ var entryPoints = map[string]any{
 	"dmrgo_ipsc_auth_key_verify":                                       dmrgo_ipsc_auth_key_verify,
 	"dmrgo_ipsc_auth_new_key":                                          dmrgo_ipsc_auth_new_key,
 	"dmrgo_ipsc_auth_parse_key":                                        dmrgo_ipsc_auth_parse_key,
+	"dmrgo_ipscsession_addr_of":                                        dmrgo_ipscsession_addr_of,
 	"dmrgo_ipscsession_master_free":                                    dmrgo_ipscsession_master_free,
 	"dmrgo_ipscsession_master_adopt_need":                              dmrgo_ipscsession_master_adopt_need,
 	"dmrgo_ipscsession_master_adopt":                                   dmrgo_ipscsession_master_adopt,

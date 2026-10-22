@@ -38571,6 +38571,33 @@ func dmrgo_ipsc_auth_parse_key(c_s *C.char, c_s_len C.size_t, c_out *C.uint8_t) 
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ipscsession_addr_of
+func dmrgo_ipscsession_addr_of(c_ip *C.uint8_t, c_ip_len C.size_t, c_port C.int64_t, c_a *C.dmrgo_ipscsession_addr_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_ip), c_ip_len, unsafe.Sizeof(*c_ip)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_ip == nil && c_ip_len > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_ip []byte
+	a_ip = cSlice[byte](unsafe.Pointer(c_ip), c_ip_len)
+	r0, r1 := g_transport_ipsc_ipscsession.AddrOf(a_ip, int(c_port))
+	_ = r0
+	_ = r1
+	if c_a != nil {
+		*(*g_transport_ipsc_ipscsession.Addr)(unsafe.Pointer(&(*c_a))) = r0
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ipscsession_master_free
 func dmrgo_ipscsession_master_free(c_self *C.dmrgo_ipscsession_master_t) (rc C.int) {
 	defer recoverTo(&rc)

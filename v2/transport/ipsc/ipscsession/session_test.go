@@ -144,7 +144,7 @@ type node struct {
 	peer *ipscsession.Peer
 }
 
-type net struct {
+type ipscNet struct {
 	t       *testing.T
 	master  *ipscsession.Master
 	nodes   []*node
@@ -160,7 +160,7 @@ type packet struct {
 	p        []byte
 }
 
-func (n *net) out(from ipscsession.Addr, out []ipscsession.Output) {
+func (n *ipscNet) out(from ipscsession.Addr, out []ipscsession.Output) {
 	for _, o := range out {
 		if o.Kind == ipscsession.OutputSend {
 			if !n.silence[from] {
@@ -172,7 +172,7 @@ func (n *net) out(from ipscsession.Addr, out []ipscsession.Output) {
 	}
 }
 
-func (n *net) pump() {
+func (n *ipscNet) pump() {
 	for range 10000 {
 		if len(n.queue) == 0 {
 			return
@@ -195,7 +195,7 @@ func (n *net) pump() {
 	n.t.Fatal("network does not settle")
 }
 
-func (n *net) run(to time.Duration) {
+func (n *ipscNet) run(to time.Duration) {
 	for n.now < to {
 		next := to
 		if at, ok := n.master.Deadline(); ok && at < next {
@@ -228,14 +228,14 @@ func count(out []ipscsession.Output, k ipscsession.OutputKind, r ipscsession.Rea
 	return c
 }
 
-func newNet(t *testing.T) *net {
+func newNet(t *testing.T) *ipscNet {
 	t.Helper()
 	key, _ := ipscKey()
 	m, err := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1, Auth: true, Key: key, Timeout: 60 * time.Second})
 	if err != nil {
 		t.Fatal(err)
 	}
-	n := &net{t: t, master: m, events: map[ipscsession.Addr][]ipscsession.Output{}, deaf: map[ipscsession.Addr]bool{}, silence: map[ipscsession.Addr]bool{}}
+	n := &ipscNet{t: t, master: m, events: map[ipscsession.Addr][]ipscsession.Output{}, deaf: map[ipscsession.Addr]bool{}, silence: map[ipscsession.Addr]bool{}}
 	for i := range 3 {
 		addr := ipscsession.Addr{IP: [4]byte{10, 0, 0, byte(i + 2)}, Port: 50000}
 		p, err := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: uint32(100 + i), Master: masterAddr, Auth: true, Key: key, MaxMissed: 3})

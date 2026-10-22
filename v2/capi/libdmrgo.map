@@ -578,6 +578,7 @@ DMRGO_1 {
 		dmrgo_ipsc_user_raw_burst;
 		dmrgo_ipsc_user_set_call;
 		dmrgo_ipsc_user_set_raw_burst;
+		dmrgo_ipscsession_addr_of;
 		dmrgo_ipscsession_master_adopt;
 		dmrgo_ipscsession_master_adopt_need;
 		dmrgo_ipscsession_master_close;

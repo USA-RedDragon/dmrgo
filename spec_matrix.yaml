@@ -67,6 +67,7 @@ ignore_files:
   - v2/transport/ipsc/errors.go
   - v2/transport/ipsc/layout.go
   - v2/transport/ipsc/stream.go
+  - v2/transport/ipsc/ipscsession/addr.go
   - v2/transport/ipsc/ipscsession/bound.go
   - v2/transport/ipsc/ipscsession/errors.go
   - v2/transport/ipsc/ipscsession/master.go
