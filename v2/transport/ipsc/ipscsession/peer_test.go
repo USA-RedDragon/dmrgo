@@ -22,9 +22,9 @@ func listedPeer(t *testing.T) *ipscsession.Peer {
 	t.Helper()
 	p, _ := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 9, Master: masterAddr, MaxMissed: 2})
 	p.Tick(0, nil)
-	p.Packet(masterAddr, ctl(ipsc.OpRegisterReply, 1), nil)
+	p.Packet(0, masterAddr, ctl(ipsc.OpRegisterReply, 1), nil)
 	list := ipsc.AppendPeerListReply(nil, 1, []ipsc.PeerEntry{{ID: 9, IP: masterAddr.IP}, {ID: 7, IP: other.IP, Port: other.Port, Mode: 0x6a}})
-	p.Packet(masterAddr, list, nil)
+	p.Packet(0, masterAddr, list, nil)
 	if p.Peers() != 1 {
 		t.Fatal(p.Peers())
 	}
@@ -35,29 +35,29 @@ func TestPeerRegistration(t *testing.T) {
 	t.Parallel()
 
 	p, _ := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 9, Master: masterAddr, MaxMissed: 2})
-	if out := p.Packet(masterAddr, ctl(ipsc.OpRegisterReply, 1), nil); len(out) != 0 {
+	if out := p.Packet(0, masterAddr, ctl(ipsc.OpRegisterReply, 1), nil); len(out) != 0 {
 		t.Fatal("packet before the first Tick")
 	}
 	p.Tick(0, nil)
-	if out := p.Packet(other, ctl(ipsc.OpRegisterReply, 1), nil); len(out) != 0 {
+	if out := p.Packet(0, other, ctl(ipsc.OpRegisterReply, 1), nil); len(out) != 0 {
 		t.Fatal("registration reply from another address")
 	}
-	if out := p.Packet(masterAddr, ctl(ipsc.OpPeerListReply, 1), nil); len(out) != 0 {
+	if out := p.Packet(0, masterAddr, ctl(ipsc.OpPeerListReply, 1), nil); len(out) != 0 {
 		t.Fatal("packet of the master before registration")
 	}
-	p.Packet(masterAddr, ctl(ipsc.OpRegisterReply, 1), nil)
-	if out := p.Packet(masterAddr, ctl(ipsc.OpRegisterReply, 1), nil); len(out) != 0 {
+	p.Packet(0, masterAddr, ctl(ipsc.OpRegisterReply, 1), nil)
+	if out := p.Packet(0, masterAddr, ctl(ipsc.OpRegisterReply, 1), nil); len(out) != 0 {
 		t.Fatal("second registration reply")
 	}
 	list := ipsc.AppendPeerListReply(nil, 1, []ipsc.PeerEntry{{ID: 9, IP: masterAddr.IP}, {ID: 7, IP: other.IP, Port: other.Port, Mode: 0x6a}})
-	if out := p.Packet(masterAddr, list, nil); len(out) != 1 || p.Peers() != 1 || p.PeerAt(0).ID != 7 || p.PeerAt(-1).ID != 0 {
+	if out := p.Packet(0, masterAddr, list, nil); len(out) != 1 || p.Peers() != 1 || p.PeerAt(0).ID != 7 || p.PeerAt(-1).ID != 0 {
 		t.Fatalf("list %v %d", kinds(out), p.Peers())
 	}
 	voice := []byte{byte(ipsc.OpGroupVoice), 0, 0, 0, 7, 1}
-	if out := p.Packet(other, voice, nil); len(out) != 1 || out[0].Kind != ipscsession.OutputData {
+	if out := p.Packet(0, other, voice, nil); len(out) != 1 || out[0].Kind != ipscsession.OutputData {
 		t.Fatalf("voice of a listed peer before its link is up %v", kinds(out))
 	}
-	if out := p.Packet(other, ctl(ipsc.OpPeerRegisterRequest, 7), nil); len(out) != 1 || ipsc.Opcode(out[0].Packet[0]) != ipsc.OpPeerRegisterReply || out[0].Addr != other {
+	if out := p.Packet(0, other, ctl(ipsc.OpPeerRegisterRequest, 7), nil); len(out) != 1 || ipsc.Opcode(out[0].Packet[0]) != ipsc.OpPeerRegisterReply || out[0].Addr != other {
 		t.Fatalf("peer registration %v", kinds(out))
 	}
 }
@@ -71,25 +71,25 @@ func TestPeerLinks(t *testing.T) {
 	if len(out) != 2 || ipsc.Opcode(out[1].Packet[0]) != ipsc.OpPeerRegisterRequest || out[1].Addr != other {
 		t.Fatalf("tick %x", sends(out))
 	}
-	if out = p.Packet(other, ctl(ipsc.OpPeerRegisterReply, 7), nil); len(out) != 1 || out[0].Kind != ipscsession.OutputUp {
+	if out = p.Packet(0, other, ctl(ipsc.OpPeerRegisterReply, 7), nil); len(out) != 1 || out[0].Kind != ipscsession.OutputUp {
 		t.Fatalf("peer up %v", kinds(out))
 	}
-	p.Packet(other, ctl(ipsc.OpPeerRegisterReply, 7), nil)
-	if out = p.Packet(other, ctl(ipsc.OpPeerAliveRequest, 7), nil); len(out) != 1 || ipsc.Opcode(out[0].Packet[0]) != ipsc.OpPeerAliveReply {
+	p.Packet(0, other, ctl(ipsc.OpPeerRegisterReply, 7), nil)
+	if out = p.Packet(0, other, ctl(ipsc.OpPeerAliveRequest, 7), nil); len(out) != 1 || ipsc.Opcode(out[0].Packet[0]) != ipsc.OpPeerAliveReply {
 		t.Fatalf("peer keepalive %v", kinds(out))
 	}
 	for _, op := range []ipsc.Opcode{ipsc.OpStatus, ipsc.OpAliveReply, ipsc.OpPeerAliveReply, ipsc.OpRegisterRequest} {
-		if out = p.Packet(masterAddr, ctl(op, 1), nil); len(out) != 0 {
+		if out = p.Packet(0, masterAddr, ctl(op, 1), nil); len(out) != 0 {
 			t.Fatalf("%v from the master", op)
 		}
 	}
-	if out = p.Packet(masterAddr, ctl(ipsc.OpPeerAliveRequest, 1), nil); len(out) != 1 {
+	if out = p.Packet(0, masterAddr, ctl(ipsc.OpPeerAliveRequest, 1), nil); len(out) != 1 {
 		t.Fatal("peer keepalive of the master")
 	}
-	if out = p.Packet(other, ctl(ipsc.OpRegisterRequest, 7), nil); len(out) != 0 {
+	if out = p.Packet(0, other, ctl(ipsc.OpRegisterRequest, 7), nil); len(out) != 0 {
 		t.Fatal("registration request to a peer")
 	}
-	if out = p.Packet(other, ctl(ipsc.OpGroupVoice, 99), nil); len(out) != 0 {
+	if out = p.Packet(0, other, ctl(ipsc.OpGroupVoice, 99), nil); len(out) != 0 {
 		t.Fatal("packet of an unknown sender")
 	}
 }
@@ -99,13 +99,13 @@ func TestPeerListAndLeave(t *testing.T) {
 
 	s := time.Second
 	p := listedPeer(t)
-	p.Packet(other, ctl(ipsc.OpPeerRegisterReply, 7), nil)
+	p.Packet(0, other, ctl(ipsc.OpPeerRegisterReply, 7), nil)
 	list := ipsc.AppendPeerListReply(nil, 1, []ipsc.PeerEntry{{ID: 7, IP: moved.IP, Port: moved.Port}})
-	out := p.Packet(masterAddr, list, nil)
+	out := p.Packet(0, masterAddr, list, nil)
 	if len(out) != 2 || out[0].Reason != ipscsession.ReasonList || p.PeerAt(0).Addr != moved || p.PeerAt(0).Up {
 		t.Fatalf("moved peer %+v", out)
 	}
-	p.Packet(moved, ctl(ipsc.OpPeerRegisterReply, 7), nil)
+	p.Packet(0, moved, ctl(ipsc.OpPeerRegisterReply, 7), nil)
 	out = nil
 	for now := 10 * s; now <= 25*s; now += 5 * s {
 		out = p.Tick(now, out)
@@ -113,32 +113,32 @@ func TestPeerListAndLeave(t *testing.T) {
 	if count(out, ipscsession.OutputDown, ipscsession.ReasonTimeout) != 2 || p.State() != ipscsession.StateRegistering {
 		t.Fatalf("missed keepalives %+v", out)
 	}
-	p.Packet(masterAddr, ctl(ipsc.OpRegisterReply, 2), nil)
+	p.Packet(0, masterAddr, ctl(ipsc.OpRegisterReply, 2), nil)
 	if id, _ := p.Master(); id != 2 {
 		t.Fatal("new master ID")
 	}
-	out = p.Packet(masterAddr, ctl(ipsc.OpRegisterReply, 3), nil)
+	out = p.Packet(0, masterAddr, ctl(ipsc.OpRegisterReply, 3), nil)
 	if len(out) != 2 || out[0].Kind != ipscsession.OutputDown || out[1].Kind != ipscsession.OutputUp {
 		t.Fatalf("master ID change %v", kinds(out))
 	}
 	list = ipsc.AppendPeerListReply(nil, 3, []ipsc.PeerEntry{{ID: 7, IP: moved.IP, Port: moved.Port}})
-	p.Packet(masterAddr, list, nil)
-	p.Packet(moved, ctl(ipsc.OpPeerRegisterReply, 7), nil)
-	out = p.Packet(moved, ctl(ipsc.OpDeregisterRequest, 7), nil)
+	p.Packet(0, masterAddr, list, nil)
+	p.Packet(0, moved, ctl(ipsc.OpPeerRegisterReply, 7), nil)
+	out = p.Packet(0, moved, ctl(ipsc.OpDeregisterRequest, 7), nil)
 	if len(out) != 1 || out[0].Reason != ipscsession.ReasonClosed || p.Peers() != 0 {
 		t.Fatalf("peer leaves %+v", out)
 	}
-	out = p.Packet(masterAddr, ctl(ipsc.OpDeregisterRequest, 3), nil)
+	out = p.Packet(0, masterAddr, ctl(ipsc.OpDeregisterRequest, 3), nil)
 	if len(out) != 1 || out[0].Reason != ipscsession.ReasonClosed || p.State() != ipscsession.StateRegistering {
 		t.Fatalf("master leaves %+v", out)
 	}
-	if out = p.Close(nil); len(out) != 0 || p.State() != ipscsession.StateIdle {
+	if out = p.Close(0, nil); len(out) != 0 || p.State() != ipscsession.StateIdle {
 		t.Fatalf("close while registering %v", kinds(out))
 	}
-	if out = p.Close(nil); len(out) != 0 {
+	if out = p.Close(0, nil); len(out) != 0 {
 		t.Fatal("second close")
 	}
-	if out = p.Packet(masterAddr, ctl(ipsc.OpRegisterReply, 3), nil); len(out) != 0 {
+	if out = p.Packet(0, masterAddr, ctl(ipsc.OpRegisterReply, 3), nil); len(out) != 0 {
 		t.Fatal("packet after close")
 	}
 }
@@ -180,8 +180,8 @@ func TestMasterTransitions(t *testing.T) {
 	if len(out) != 2 || out[0].ID != 8 || out[0].Reason != ipscsession.ReasonTimeout || out[1].Addr != xprAddr {
 		t.Fatalf("expiry %+v", out)
 	}
-	m.Close(nil)
-	if out = m.Packet(11*time.Second, xprAddr, ctl(ipsc.OpRegisterRequest, 7), nil); len(out) != 0 || len(m.Tick(time.Hour, nil)) != 0 || len(m.Close(nil)) != 0 {
+	m.Close(0, nil)
+	if out = m.Packet(11*time.Second, xprAddr, ctl(ipsc.OpRegisterRequest, 7), nil); len(out) != 0 || len(m.Tick(time.Hour, nil)) != 0 || len(m.Close(0, nil)) != 0 {
 		t.Fatal("master after close")
 	}
 	if _, ok := m.Deadline(); ok {
@@ -194,9 +194,9 @@ func TestPeerListFullTable(t *testing.T) {
 
 	p, _ := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 9, Master: masterAddr, MaxPeers: 1})
 	p.Tick(0, nil)
-	p.Packet(masterAddr, ctl(ipsc.OpRegisterReply, 1), nil)
-	p.Packet(masterAddr, ipsc.AppendPeerListReply(nil, 1, []ipsc.PeerEntry{{ID: 200, IP: other.IP, Port: 1}}), nil)
-	p.Packet(masterAddr, ipsc.AppendPeerListReply(nil, 1, []ipsc.PeerEntry{{ID: 300, IP: moved.IP, Port: 2}}), nil)
+	p.Packet(0, masterAddr, ctl(ipsc.OpRegisterReply, 1), nil)
+	p.Packet(0, masterAddr, ipsc.AppendPeerListReply(nil, 1, []ipsc.PeerEntry{{ID: 200, IP: other.IP, Port: 1}}), nil)
+	p.Packet(0, masterAddr, ipsc.AppendPeerListReply(nil, 1, []ipsc.PeerEntry{{ID: 300, IP: moved.IP, Port: 2}}), nil)
 	if p.Peers() != 1 || p.PeerAt(0).ID != 300 || p.PeerAt(0).Addr != (ipscsession.Addr{IP: moved.IP, Port: 2}) {
 		t.Fatalf("peers %d %+v", p.Peers(), p.PeerAt(0))
 	}

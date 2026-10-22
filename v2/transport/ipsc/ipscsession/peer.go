@@ -184,7 +184,7 @@ func (p *Peer) Reset() {
 // whose link is up, as DMRlink does when it leaves, reports OutputDown
 // with ReasonStopped for the master, and stops the Peer until Reset. It
 // allocates only when dst has no room for MaxOutputs outputs.
-func (p *Peer) Close(dst []Output) []Output {
+func (p *Peer) Close(now time.Duration, dst []Output) []Output {
 	if p == nil {
 		return dst
 	}
@@ -289,7 +289,7 @@ func (p *Peer) Tick(now time.Duration, dst []Output) []Output {
 // the list gives OutputData. The Peer drops a packet without a good
 // trailer with Auth, and a packet of a sender it does not know. It
 // allocates only when dst has no room for MaxOutputs outputs.
-func (p *Peer) Packet(from Addr, b []byte, dst []Output) []Output {
+func (p *Peer) Packet(now time.Duration, from Addr, b []byte, dst []Output) []Output {
 	if p == nil {
 		return dst
 	}

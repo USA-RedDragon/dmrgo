@@ -42,9 +42,9 @@ func TestAllocsSession(t *testing.T) {
 			case masterAddr:
 				queue(masterAddr, m.Packet(now, e.from, e.b[:e.n], ao[:0]))
 			case aAddr:
-				queue(aAddr, a.Packet(e.from, e.b[:e.n], ao[:0]))
+				queue(aAddr, a.Packet(0, e.from, e.b[:e.n], ao[:0]))
 			case bAddr:
-				queue(bAddr, b.Packet(e.from, e.b[:e.n], ao[:0]))
+				queue(bAddr, b.Packet(0, e.from, e.b[:e.n], ao[:0]))
 			}
 		}
 		head, tail = 0, 0
@@ -60,7 +60,7 @@ func TestAllocsSession(t *testing.T) {
 			now += ipscsession.AliveDefault
 		}
 		voice = a.Sign(append(voice[:0], 0x80, 0, 0, 0, 2, 1))
-		ao = b.Packet(aAddr, voice, ao[:0])
+		ao = b.Packet(0, aAddr, voice, ao[:0])
 		ao = m.AdoptWithKey(now, cAddr, 4, 0x6a, ipsc.Flags{}, key, ao[:0])
 		ao = m.PacketWithKey(now, cAddr, key, m.SignFor(4, append(voice[:0], 0x80, 0, 0, 0, 4, 1)), ao[:0])
 		ao = m.Adopt(now, cAddr, 4, 0x6a, ipsc.Flags{}, ao[:0])

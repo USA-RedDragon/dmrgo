@@ -27,7 +27,7 @@ func Example() {
 					continue
 				}
 				fmt.Println("master sends", ipsc.Opcode(r.Packet[0]))
-				for _, e := range peer.Packet(masterAddr, r.Packet, nil) {
+				for _, e := range peer.Packet(0, masterAddr, r.Packet, nil) {
 					fmt.Println("peer event", e.Kind, e.ID)
 				}
 			}

@@ -82,7 +82,7 @@ func TestLoopback(t *testing.T) {
 		if o := l.peer.Packet(l.now, pkt, nil); len(o) != 1 || o[0].Kind != dmrdsession.OutputData {
 			t.Fatalf("peer data %v", kinds(o))
 		}
-		l.fromPeer(l.peer.Close(nil))
+		l.fromPeer(l.peer.Close(0, nil))
 		l.pump()
 		sameKinds(t, eventKinds(l), dmrdsession.OutputDown, dmrdsession.OutputDown)
 		if l.events[0].Reason != dmrdsession.ReasonStopped || l.events[1].Reason != dmrdsession.ReasonClosed || l.master.State() != dmrdsession.StateIdle {
@@ -270,7 +270,7 @@ func TestPeerRunning(t *testing.T) {
 	if out = p.Packet(81*s, ctl(dmrd.CommandMSTNAK, 1234), nil); len(out) != 0 {
 		t.Fatal("nak while waiting")
 	}
-	out = p.Close(nil)
+	out = p.Close(0, nil)
 	if len(out) != 0 || p.State() != dmrdsession.StateIdle {
 		t.Fatalf("close while waiting %v", kinds(out))
 	}
@@ -299,7 +299,7 @@ func TestHBRPSpecToken(t *testing.T) {
 	m, _ := dmrdsession.NewMaster(&dmrdsession.MasterConfig{Dialect: dmrd.DialectHBRP})
 	out := m.Packet(0, []byte("RPTL00040178"), nil)
 	sameKinds(t, kinds(out), dmrdsession.OutputLogin)
-	out = m.Admit(0x0A7ED498, []byte("DL5DI"), nil)
+	out = m.Admit(0, 0x0A7ED498, []byte("DL5DI"), nil)
 	if len(out) != 1 || string(out[0].Packet) != "MSTACK000401780A7ED498" {
 		t.Fatalf("salt %q", sends(out))
 	}
@@ -352,10 +352,10 @@ func TestMasterBeforeLogin(t *testing.T) {
 	if out := m.Packet(0, ctl(dmrd.CommandRPTCL, 5), nil); len(out) != 0 {
 		t.Fatal("RPTCL before login")
 	}
-	if out := m.Admit(1, nil, nil); len(out) != 0 {
+	if out := m.Admit(0, 1, nil, nil); len(out) != 0 {
 		t.Fatal("admit before login")
 	}
-	if out := m.Refuse(nil); len(out) != 0 {
+	if out := m.Refuse(0, nil); len(out) != 0 {
 		t.Fatal("refuse before login")
 	}
 }
@@ -374,7 +374,7 @@ func TestMasterLogin(t *testing.T) {
 	if out := m.Packet(s, ctl(dmrd.CommandRPTL, 5), nil); len(out) != 0 {
 		t.Fatal("second RPTL while waiting for Admit")
 	}
-	salt := sends(m.Admit(7, []byte("pw"), nil))
+	salt := sends(m.Admit(0, 7, []byte("pw"), nil))
 	if again := sends(m.Packet(2*s, ctl(dmrd.CommandRPTL, 5), nil)); len(again) != 1 || !bytes.Equal(again[0], salt[0]) {
 		t.Fatal("RPTL again does not get the same salt")
 	}
@@ -421,14 +421,14 @@ func TestMasterRefusals(t *testing.T) {
 		return len(out) == 1 && command(t, out[0].Packet, d) == dmrd.CommandMSTNAK
 	}
 	m.Packet(40*s, ctl(dmrd.CommandRPTL, 5), nil)
-	m.Admit(8, []byte("pw"), nil)
+	m.Admit(0, 8, []byte("pw"), nil)
 	bad, _ := auth.Token(d, 8, []byte("px"))
 	out := m.Packet(41*s, rptk(5, bad), nil)
 	if len(out) != 2 || out[1].Reason != dmrdsession.ReasonRefused || m.State() != dmrdsession.StateIdle {
 		t.Fatalf("bad token %+v", out)
 	}
 	m.Packet(42*s, ctl(dmrd.CommandRPTL, 5), nil)
-	out = m.Refuse(nil)
+	out = m.Refuse(0, nil)
 	if len(out) != 2 || !nak(out[:1]) || out[1].State != dmrdsession.StateLogin {
 		t.Fatalf("refuse %+v", out)
 	}
@@ -437,7 +437,7 @@ func TestMasterRefusals(t *testing.T) {
 	if len(out) != 2 || out[0].Reason != dmrdsession.ReasonLogin || out[1].ID != 9 || m.ID() != 9 {
 		t.Fatalf("new login %+v", out)
 	}
-	out = m.Close(nil)
+	out = m.Close(0, nil)
 	if len(out) != 2 || command(t, out[0].Packet, d) != dmrd.CommandMSTCL || out[1].Reason != dmrdsession.ReasonStopped {
 		t.Fatalf("close %+v", out)
 	}
