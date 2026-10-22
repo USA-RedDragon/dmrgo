@@ -1402,6 +1402,7 @@ sym #define DMRGO_VOICE_INTERRUPTER_BURST_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 sym #define DMRGO_VOICE_INTERRUPTER_CANCEL_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 sym #define DMRGO_VOICE_INTERRUPTER_DECODED_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 sym #define DMRGO_VOICE_INTERRUPTER_IDLE ((dmrgo_voice_interrupter_state_t)0)
+sym #define DMRGO_VOICE_INTERRUPTER_LOST_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 sym #define DMRGO_VOICE_INTERRUPTER_SENDING ((dmrgo_voice_interrupter_state_t)1)
 sym #define DMRGO_VOICE_INTERRUPTER_TICK_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 sym #define DMRGO_VOICE_INTERRUPTER_WAITING ((dmrgo_voice_interrupter_state_t)2)
@@ -1433,6 +1434,7 @@ sym #define DMRGO_VOICE_TRANSMITTER_DECODED_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 sym #define DMRGO_VOICE_TRANSMITTER_ENDING ((dmrgo_voice_transmitter_state_t)3)
 sym #define DMRGO_VOICE_TRANSMITTER_HEADER ((dmrgo_voice_transmitter_state_t)1)
 sym #define DMRGO_VOICE_TRANSMITTER_IDLE ((dmrgo_voice_transmitter_state_t)0)
+sym #define DMRGO_VOICE_TRANSMITTER_LOST_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 sym #define DMRGO_VOICE_TRANSMITTER_TICK_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 sym #define DMRGO_VOICE_TRANSMITTER_TIMED_OUT ((dmrgo_voice_transmitter_state_t)4)
 sym #define DMRGO_VOICE_TRANSMITTER_VOICE ((dmrgo_voice_transmitter_state_t)2)
@@ -3035,6 +3037,8 @@ sym int dmrgo_voice_interrupter_decoded(dmrgo_voice_interrupter_t *self, dmrgo_d
 sym int dmrgo_voice_interrupter_decoded_need(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, size_t *items, size_t *arena);
 sym int dmrgo_voice_interrupter_free(dmrgo_voice_interrupter_t *self);
 sym int dmrgo_voice_interrupter_interrupt(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_enums_rc_command_t cmd);
+sym int dmrgo_voice_interrupter_lost(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_voice_interrupter_lost_need(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 sym int dmrgo_voice_interrupter_reset(dmrgo_voice_interrupter_t *self);
 sym int dmrgo_voice_interrupter_state(dmrgo_voice_interrupter_t *self, dmrgo_voice_interrupter_state_t *out);
 sym int dmrgo_voice_interrupter_state_string(dmrgo_voice_interrupter_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -3069,6 +3073,8 @@ sym int dmrgo_voice_transmitter_dropped(dmrgo_voice_transmitter_t *self, int64_t
 sym int dmrgo_voice_transmitter_frame(dmrgo_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *f);
 sym int dmrgo_voice_transmitter_frames(dmrgo_voice_transmitter_t *self, const dmrgo_vocoder_ambe_frame_t *f, size_t f_len);
 sym int dmrgo_voice_transmitter_free(dmrgo_voice_transmitter_t *self);
+sym int dmrgo_voice_transmitter_lost(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_voice_transmitter_lost_need(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 sym int dmrgo_voice_transmitter_relay(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, const dmrgo_voice_event_t *e);
 sym int dmrgo_voice_transmitter_reset(dmrgo_voice_transmitter_t *self);
 sym int dmrgo_voice_transmitter_reverse_channel(dmrgo_voice_transmitter_t *self, const dmrgo_pdu_reverse_channel_t *rc, bool *out);
