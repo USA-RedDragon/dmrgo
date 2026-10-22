@@ -5,10 +5,12 @@ import (
 	"encoding/hex"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
@@ -167,4 +169,116 @@ func receiverPositions(t *testing.T, packets [][]byte) string {
 		sb.WriteByte(letter)
 	}
 	return sb.String()
+}
+
+func renumber(t *testing.T, packets [][]byte, from int, by uint16) [][]byte {
+	t.Helper()
+	out := slices.Clone(packets)
+	for i := from; i < len(out); i++ {
+		u, err := ipsc.DecodeUser(out[i])
+		if err != nil {
+			t.Fatal(err)
+		}
+		u.RTP.Seq -= by
+		if out[i], err = u.AppendBinary(nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return out
+}
+
+func TestReceiverLostAfterXPRHeader(t *testing.T) {
+	t.Parallel()
+
+	sync := readWeak(t, "synclost")
+	for _, c := range []struct {
+		name    string
+		packets [][]byte
+		want    string
+	}{
+		{"call", sync[:8], "A0B0C0D0E0F0"},
+		{"A lost", drop(sync[:8], 2), "B1C0D0E0F0"},
+		{"late entry header of a relay, then E", renumber(t, drop(sync[:8], 2, 3, 4, 5), 2, 4), "E0F0"},
+		{"A skipped", renumber(t, drop(sync[:8], 2), 2, 1), "B1C0D0E0F0"},
+		{"six lost, then A skipped", renumber(t, drop(sync[:14], 2, 3, 4, 5, 6, 7, 8), 2, 1), "B7C0D0E0F0"},
+	} {
+		r, err := voice.NewReceiver(&voice.ReceiverConfig{Lost: -1, Hang: -1})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var sb strings.Builder
+		var ev []voice.Event
+		now := time.Duration(0)
+		for _, p := range c.packets {
+			u, err := ipsc.DecodeUser(p)
+			if err != nil {
+				t.Fatal(err)
+			}
+			raw, err := u.RawBurst(1, layer2.SyncSourceBS)
+			if err != nil {
+				t.Fatal(err)
+			}
+			now += 60 * time.Millisecond
+			ev = r.Burst(now, &raw, u.Hint(0), ev[:0])
+			for _, e := range ev {
+				if i, ok := e.Position.Index(); ok && e.Kind == voice.EventVoice {
+					sb.WriteByte("ABCDEF"[i])
+					sb.WriteString(strconv.Itoa(int(e.Lost)))
+				}
+			}
+		}
+		if got := sb.String(); got != c.want {
+			t.Errorf("%s: %s, want %s", c.name, got, c.want)
+		}
+	}
+}
+
+func TestPositionTrackerXPRSyncLoss(t *testing.T) {
+	t.Parallel()
+
+	sync := readWeak(t, "synclost")
+	for _, c := range []struct {
+		name    string
+		periods int
+		jitter  time.Duration
+		want    int
+	}{
+		{"no times", 0, 0, 1},
+		{"one superframe", 6, 0, 5},
+		{"two superframes", 12, 0, 11},
+		{"two superframes, A 75 ms late", 12, 75 * time.Millisecond, 11},
+		{"two superframes, A 75 ms early", 12, -75 * time.Millisecond, 11},
+	} {
+		var tr layer2.PositionTracker
+		lost := -1
+		for i, p := range sync[:17] {
+			u, err := ipsc.DecodeUser(p)
+			if err != nil {
+				t.Fatal(err)
+			}
+			now := time.Second + time.Duration(i)*60*time.Millisecond
+			if i == 16 {
+				now = time.Second + time.Duration(14+c.periods)*60*time.Millisecond + c.jitter
+			}
+			if c.periods == 0 {
+				now = 0
+			}
+			h := u.Hint(now)
+			raw, err := u.RawBurst(1, layer2.SyncSourceBS)
+			if err != nil {
+				tr.Place(nil, &h)
+				continue
+			}
+			n, _ := tr.Place(&raw, &h)
+			if i == 16 {
+				lost = n
+				if h.VoiceBurst != enums.VoiceBurstA {
+					t.Fatalf("%s: %v after the sync loss", c.name, h.VoiceBurst)
+				}
+			}
+		}
+		if lost != c.want {
+			t.Errorf("%s: lost %d, want %d", c.name, lost, c.want)
+		}
+	}
 }
