@@ -4094,7 +4094,7 @@ struct dmrgo_ipsc_user_t {
 	dmrgo_ipsc_call_info_t info;
 	/* RTP is the RTP header. */
 	dmrgo_ipsc_rtp_t rtp;
-	/* Burst is octet 30. */
+	/* Burst is octet 30. Compare Burst.Type, which drops the slot 2 bit. */
 	dmrgo_ipsc_burst_type_t burst;
 	/* Voice is the burst of a voice packet. */
 	dmrgo_ipsc_voice_t voice;
@@ -10030,6 +10030,12 @@ int dmrgo_hytera_service_string(dmrgo_hytera_service_t self, char *out, size_t o
 int dmrgo_hytera_slot_type_string(dmrgo_hytera_slot_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ipsc.AppendPeerListReply. AppendPeerListReply appends an OpPeerListReply of master with entries to dst. */
 int dmrgo_ipsc_append_peer_list_reply(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, uint32_t master, const dmrgo_ipsc_peer_entry_t *entries, size_t entries_len);
+/* Go: ipsc.BurstType.DataType. DataType returns the DMR data type of a data burst, 0x00 to 0x08. */
+int dmrgo_ipsc_burst_type_data_type(dmrgo_ipsc_burst_type_t self, dmrgo_enums_data_type_t *out0, bool *out1);
+/* Go: ipsc.BurstType.String. String returns the name of b: the data type, Voice, SyncLost or Raw, with " slot 2" when bit 7 is set. */
+int dmrgo_ipsc_burst_type_string(dmrgo_ipsc_burst_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: ipsc.BurstType.Type. Type returns b without bit 7, the slot 2 bit of voice and BurstSyncLost, for a comparison with BurstVoice, BurstSyncLost, BurstRaw and the data types. */
+int dmrgo_ipsc_burst_type_type(dmrgo_ipsc_burst_type_t self, dmrgo_ipsc_burst_type_t *out);
 /* Go: ipsc.CallInfo.End. End reports bit 6, the end flag. */
 int dmrgo_ipsc_call_info_end(dmrgo_ipsc_call_info_t self, bool *out);
 /* Go: ipsc.CallInfo.Privacy. Privacy reports bit 7: the call is encrypted. */

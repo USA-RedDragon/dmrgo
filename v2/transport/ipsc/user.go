@@ -128,7 +128,7 @@ type User struct {
 	Info CallInfo
 	// RTP is the RTP header.
 	RTP RTP
-	// Burst is octet 30.
+	// Burst is octet 30. Compare Burst.Type, which drops the slot 2 bit.
 	Burst BurstType
 	// Voice is the burst of a voice packet.
 	Voice Voice
@@ -169,7 +169,7 @@ func (u *User) SetCall(group bool, target, source uint32) error {
 }
 
 // IsVoice reports whether u carries a voice burst. It is false for a nil u.
-func (u *User) IsVoice() bool { return u != nil && u.Burst&0x7F == BurstVoice }
+func (u *User) IsVoice() bool { return u != nil && u.Burst.Type() == BurstVoice }
 
 // DecodeUser decodes the user packet p, without the authentication trailer
 // (see package auth). It returns ErrCommand for another opcode, ErrShort,
@@ -352,7 +352,7 @@ func (u *User) Hint() layer2.Hint {
 		if u.Info.End() {
 			h.End = layer2.EndWeak
 		}
-	case u.Burst&0x7F == BurstSyncLost:
+	case u.Burst.Type() == BurstSyncLost:
 		h.SyncLost = true
 	case u.Burst < 0x10:
 		h.Kind, h.DataType, h.HasDataType = layer2.KindData, enums.DataType(u.Burst), true
