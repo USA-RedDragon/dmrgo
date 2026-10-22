@@ -11,7 +11,17 @@
 // slice of the caller. A slice with capacity MaxOutputs for a Follower, MS
 // or CapacityPlusFollower, or MaxTSCCOutputs for a TSCC, never grows, and
 // after the constructor no method allocates. Deadline tells when a machine
-// needs a Tick.
+// needs a Tick. now is the start of the received burst; Due is the start
+// of the burst to send. On the slot grid of ETSI TS 102 361-1 clauses 4.2
+// and 5.1.1 and Figure 5.23, inbound time slot 1 or 2 starts 30 ms after
+// outbound time slot 1 or 2. The inbound slot of a logical channel starts
+// with its outbound slot on an aligned timing channel, and 30 ms after it
+// on an offset timing channel, as the C_ALOHA of the TSCC and the grant of
+// a payload channel tell (Table 5.1). An MS sends an answer in the next
+// TDMA frame after the end of the PDU that asks for it, and the AT bit of
+// the CACH 30 ms before an inbound slot tells if it is withdrawn from
+// random access (ETSI TS 102 361-1 clause 4.5, ETSI TS 102 361-4 clause
+// 6.2.1.1.3).
 //
 // The consumer owns the radio. An OutputTune asks it to tune to a channel
 // number, with the frequencies from the ChannelPlan when they are known.

@@ -393,28 +393,28 @@ func (m *MS) ahoyAny(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Ou
 	case m.udtRequest() && m.u.ahoyFrom != 0 && a.SourceAddress == m.u.ahoyFrom &&
 		(kind == m.u.ahoyKind || m.req == reqDivert):
 		m.ra, m.waitAnswer, m.reqUntil = raIdle, true, now+m.answerTO()
-		return m.sendUDT(now+frame, slot, &m.u.send, m.u.sendTo, m.u.sendGrp, m.u.sendDiv, false, m.u.sendOp, out)
+		return m.sendUDT(m.replyDue(now), slot, &m.u.send, m.u.sendTo, m.u.sendGrp, m.u.sendDiv, false, m.u.sendOp, out)
 	case kind == enums.ServiceKindShortDataPolling && m.req == reqNone:
 		out = append(out, Output{Kind: OutputPolled, Grant: Grant{Service: kind, Target: m.addr, Source: a.SourceAddress}})
 		if !m.u.hasPoll {
-			return m.ackU(now+frame, slot, enums.AckReasonMSNotSupported, a.SourceAddress, out)
+			return m.ackU(m.replyDue(now), slot, enums.AckReasonMSNotSupported, a.SourceAddress, out)
 		}
-		return m.sendUDT(now+frame, slot, &m.u.poll, a.SourceAddress, false, false, false, pdu.UDTOpcodeInboundHeader, out)
+		return m.sendUDT(m.replyDue(now), slot, &m.u.poll, a.SourceAddress, false, false, false, pdu.UDTOpcodeInboundHeader, out)
 	case kind == enums.ServiceKindDuplexVoice && m.req == reqNone:
 		out = append(out, Output{Kind: OutputAhoy, Grant: Grant{Service: kind, Target: a.TargetAddress, Source: a.SourceAddress}})
 		if m.u.noDuplex {
-			return m.ackU(now+frame, slot, enums.AckReasonMSDuplexNotSupported, a.SourceAddress, out)
+			return m.ackU(m.replyDue(now), slot, enums.AckReasonMSDuplexNotSupported, a.SourceAddress, out)
 		}
 		m.pending, m.pendingEnd = true, now+m.pendingTO
-		return m.ackU(now+frame, slot, enums.AckReasonMSAccepted, a.SourceAddress, out)
+		return m.ackU(m.replyDue(now), slot, enums.AckReasonMSAccepted, a.SourceAddress, out)
 	case kind == enums.ServiceKindIndividualVoice && a.ALS && m.req == reqNone:
 		out = append(out, Output{Kind: OutputAhoy, Grant: Grant{Service: kind, Target: a.TargetAddress, Source: a.SourceAddress}})
 		if !m.u.ambient {
-			return m.ackU(now+frame, slot, enums.AckReasonMSNotSupported, a.SourceAddress, out)
+			return m.ackU(m.replyDue(now), slot, enums.AckReasonMSNotSupported, a.SourceAddress, out)
 		}
 		m.u.alsWait, m.u.alsEnd, m.u.alsFrom = true, now+constants.TALSRequestLifeSpanDefault, a.SourceAddress
 		m.pending, m.pendingEnd = true, now+m.pendingTO
-		return m.ackU(now+frame, slot, enums.AckReasonMessageAccepted, a.SourceAddress, out)
+		return m.ackU(m.replyDue(now), slot, enums.AckReasonMessageAccepted, a.SourceAddress, out)
 	}
 	return m.ahoy(now, a, h, out)
 }
@@ -449,7 +449,7 @@ func (m *MS) udtIn(now time.Duration, out []Output) []Output {
 			return out
 		}
 		out = append(out, Output{Kind: OutputGroups})
-		return m.ackU(now+frame, slot, enums.AckReasonMSAccepted, h.LLIDSource, out)
+		return m.ackU(m.replyDue(now), slot, enums.AckReasonMSAccepted, h.LLIDSource, out)
 	case h.SupplementaryFlag && h.LLIDSource == constants.GatewayDIVERTI:
 		if m.req != reqNone && m.req != reqDereg && m.req != reqRegister {
 			return m.fail(ReasonDiverted, 0, out)
@@ -458,11 +458,11 @@ func (m *MS) udtIn(now time.Duration, out []Output) []Output {
 	case m.req == reqPoll && h.LLIDSource == m.target:
 		m.done()
 		out = append(out, Output{Kind: OutputDelivered, Ack: enums.AckReasonMSAccepted})
-		return m.ackU(now+frame, slot, enums.AckReasonMSAccepted, h.LLIDSource, out)
+		return m.ackU(m.replyDue(now), slot, enums.AckReasonMSAccepted, h.LLIDSource, out)
 	case h.SupplementaryFlag:
 		return out
 	}
-	return m.ackU(now+frame, slot, enums.AckReasonMSAccepted, h.LLIDSource, out)
+	return m.ackU(m.replyDue(now), slot, enums.AckReasonMSAccepted, h.LLIDSource, out)
 }
 
 func (m *MS) assign(a *Appended) bool {
@@ -555,10 +555,7 @@ func (m *MS) usbdPoll(now time.Duration, p *pdu.UnifiedSingleBlockData, h *layer
 	if slot == enums.SlotUnknown {
 		slot = m.slot
 	}
-	due := now + frame*time.Duration(1+r.ResponseDelay)
-	if m.f.ctl.site.Offset {
-		due += slotLength
-	}
+	due := m.replyDue(now) + frame*time.Duration(r.ResponseDelay)
 	out = append(out, Output{Kind: OutputPolled, Grant: Grant{Service: enums.ServiceKindShortDataPolling, Target: m.addr}})
 	if !m.u.hasUSBD || m.u.usbd.ServiceType != p.ServiceType {
 		return m.ackU(due, slot, enums.AckReasonMSNotSupported, constants.GatewayTSI, out)

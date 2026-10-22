@@ -38,10 +38,17 @@ func (s *exampleSite) send(d layer2.Data) {
 		c.LastBlock = true
 	}
 	raw, _ := layer2.BuildBurst(d, 1, layer2.SyncSourceBS)
+	s.burst(&raw)
+}
+
+func (s *exampleSite) burst(raw *layer2.RawBurst) {
 	free := [3]byte{}
-	s.out = s.ms.Burst(s.now, &raw, layer2.Hint{Slot: enums.Slot1}, &free, s.out[:0])
-	s.now += 60 * time.Millisecond
+	s.out = s.ms.Burst(s.now, raw, layer2.Hint{Slot: enums.Slot1}, &free, s.out[:0])
 	s.print()
+	idle, _ := layer2.BuildDataBurst(pdu.PRFillBits(), enums.DataTypeIdle, 1, layer2.SyncSourceBS)
+	s.out = s.ms.Burst(s.now+30*time.Millisecond, &idle, layer2.Hint{Slot: enums.Slot2}, &free, s.out[:0])
+	s.print()
+	s.now += 60 * time.Millisecond
 }
 
 func (s *exampleSite) print() {
@@ -76,10 +83,7 @@ func (s *exampleSite) udt(h pdu.UDTHeader, a *trunk.Appended) {
 	pdu.SetMBCLastBlockCRC(blocks)
 	for i := range blocks {
 		raw, _ := layer2.BuildDataBurst(blocks[i], enums.DataTypeRate12, 1, layer2.SyncSourceBS)
-		free := [3]byte{}
-		s.out = s.ms.Burst(s.now, &raw, layer2.Hint{Slot: enums.Slot1}, &free, s.out[:0])
-		s.now += 60 * time.Millisecond
-		s.print()
+		s.burst(&raw)
 	}
 }
 

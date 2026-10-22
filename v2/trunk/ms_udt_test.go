@@ -215,7 +215,7 @@ func TestMS_ShortDataRefusedAndTimeout(t *testing.T) {
 		t.Fatalf("deadline %v %v, want TNP_Timer", at, ok)
 	}
 	end := r.now + constants.TNPTimerDefault
-	for r.now < end-60*time.Millisecond {
+	for r.now+slot < end-60*time.Millisecond {
 		wantKinds(t, "C_ALOHA while waiting", r.feed(aloha(t), &idle))
 	}
 	out = r.feed(aloha(t), &idle)

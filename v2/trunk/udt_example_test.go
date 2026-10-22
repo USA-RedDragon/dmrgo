@@ -42,8 +42,10 @@ func ExampleMS_SendShortData() {
 	done := bs(exampleCSBK((*pdu.CSBK).SetAckOutbound, pdu.AckOutboundPDU{
 		ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: 3120001}))
 
+	idle, _ := layer2.BuildDataBurst(pdu.PRFillBits(), enums.DataTypeIdle, 1, layer2.SyncSourceBS)
+
 	ms, _ := trunk.NewMS(&trunk.MSConfig{Address: 3120001, NoRegistration: true})
-	out := make([]trunk.Output, 0, trunk.MaxOutputs)
+	out := make([]trunk.Output, 0, 2*trunk.MaxOutputs)
 	free := [3]byte{}
 	now := time.Duration(0)
 	var a trunk.Appended
@@ -53,6 +55,7 @@ func ExampleMS_SendShortData() {
 			_ = ms.SendShortData(now, false, 3120002, &a, layer3.ShortDataServiceOptions{})
 		}
 		out = ms.Burst(now, &raw, layer2.Hint{Slot: enums.Slot1}, &free, out[:0])
+		out = ms.Burst(now+30*time.Millisecond, &idle, layer2.Hint{Slot: enums.Slot2}, &free, out)
 		for _, o := range out {
 			switch o.Kind {
 			case trunk.OutputBurst:

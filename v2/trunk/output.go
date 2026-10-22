@@ -347,7 +347,8 @@ type Output struct {
 	Hint layer2.Hint
 	// Slot is the TDMA channel of OutputBurst.
 	Slot enums.Slot
-	// Due is the time at which to transmit OutputBurst.
+	// Due is the start of the inbound slot of OutputBurst, the time at
+	// which to transmit it.
 	Due time.Duration
 	// Protect is the kind of OutputProtect.
 	Protect enums.ProtectKind

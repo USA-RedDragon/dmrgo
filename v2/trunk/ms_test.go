@@ -40,7 +40,18 @@ func newRig(t *testing.T, cfg *trunk.MSConfig) *msRig {
 func (r *msRig) feed(raw layer2.RawBurst, cach *[3]byte) []trunk.Output {
 	r.now += 60 * time.Millisecond
 	r.out = r.ms.Burst(r.now, &raw, layer2.Hint{Slot: enums.Slot1}, cach, r.out[:0])
+	ts2 := idleBurst(r.t)
+	r.out = r.ms.Burst(r.now+slot, &ts2, layer2.Hint{Slot: enums.Slot2}, cach, r.out)
 	return r.out
+}
+
+func idleBurst(t testing.TB) layer2.RawBurst {
+	t.Helper()
+	raw, err := layer2.BuildDataBurst(pdu.PRFillBits(), enums.DataTypeIdle, testCC, layer2.SyncSourceBS)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return raw
 }
 
 func ack(t testing.TB, r enums.AckReason) layer2.RawBurst {
@@ -107,7 +118,7 @@ func TestMS_RegisterAndCall(t *testing.T) {
 	for i := range constants.NMaint {
 		mt, ok := sent(t, &out[i]).AsMaintenance()
 		if !ok || mt.TargetAddress != 9 || mt.SourceAddress != msAddr || out[i].Slot != enums.Slot2 ||
-			out[i].Due != r.now+time.Duration(i)*60*time.Millisecond {
+			out[i].Due != r.now+slot+time.Duration(i)*60*time.Millisecond {
 			t.Errorf("P_MAINT %d: %v %+v due %v slot %v", i, ok, mt, out[i].Due, out[i].Slot)
 		}
 	}

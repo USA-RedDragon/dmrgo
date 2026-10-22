@@ -41,10 +41,29 @@ func (m *MS) frame(now time.Duration, cach *layer2.CACH, out []Output) []Output 
 		return out
 	case raWaitSlot:
 	}
-	m.frames--
-	if m.frames > 0 {
+	if m.frames == 0 {
+		m.backoff()
 		return out
 	}
+	m.frames--
+	if m.frames > 0 || !m.f.ctl.site.Offset {
+		return out
+	}
+	return m.access(now, cach, out)
+}
+
+// otherFrame takes the CACH before a burst of the other TDMA channel. On an
+// aligned timing TSCC it has the AT bit of the inbound slot of the logical
+// channel of the MS, 30 ms later (ETSI TS 102 361-1 clauses 4.2, 4.5 and
+// 5.1.1, ETSI TS 102 361-4 clause 6.2.1.1.3).
+func (m *MS) otherFrame(now time.Duration, cach *layer2.CACH, out []Output) []Output {
+	if m.ra != raWaitSlot || m.frames != 0 || m.f.ctl.site.Offset {
+		return out
+	}
+	return m.access(now, cach, out)
+}
+
+func (m *MS) access(now time.Duration, cach *layer2.CACH, out []Output) []Output {
 	if cach == nil || cach.TACT.FEC.Uncorrectable || cach.TACT.AccessType {
 		m.backoff()
 		return out
@@ -57,8 +76,8 @@ func (m *MS) frame(now time.Duration, cach *layer2.CACH, out []Output) []Output 
 	err := m.tx.SetRandomAccess(pdu.RandomAccessPDU{ServiceOptions: m.options, ProxyFlag: m.u.proxy, Reserved: m.u.reserved | m.svc.raExtra, ServiceKind: uint8(m.kind),
 		TargetAddress: m.target, SourceAddress: m.addr})
 	m.retries++
-	m.ra, m.frames = raWaitResp, m.f.ctl.site.Access.NRandWait.Frames()+1
-	return m.send(err, now+frame, m.slot, out)
+	m.ra, m.frames = raWaitResp, m.f.ctl.site.Access.NRandWait.Frames()+2
+	return m.send(err, now+slotLength, m.slot, out)
 }
 
 func (m *MS) invited() bool {
@@ -194,7 +213,7 @@ func (m *MS) isChallenge(a *pdu.AhoyPDU) bool {
 }
 
 func (m *MS) challenged(now time.Duration, c uint32, slot enums.Slot, payload bool, out []Output) []Output {
-	m.auth = authChallenge{on: true, payload: payload, slot: slot, due: now + frame}
+	m.auth = authChallenge{on: true, payload: payload, slot: slot, due: m.replyDue(now)}
 	if m.req != reqNone && m.req != reqDereg {
 		m.ra, m.waitAnswer, m.reqUntil = raIdle, true, now+m.answerTO()
 	}
@@ -252,7 +271,7 @@ func (m *MS) ahoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Outpu
 		return out
 	}
 	out = append(out, Output{Kind: OutputAhoy, Grant: Grant{Service: kind, Group: a.Group, Target: a.TargetAddress, Source: a.SourceAddress}})
-	return m.sendAck(now+frame, slot, pdu.AckInboundPDU{ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: a.SourceAddress, AdditionalInfo: m.addr}, out)
+	return m.sendAck(m.replyDue(now), slot, pdu.AckInboundPDU{ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: a.SourceAddress, AdditionalInfo: m.addr}, out)
 }
 
 func (m *MS) payload(now time.Duration, h *layer2.Hint, out []Output) []Output {
@@ -287,7 +306,7 @@ func (m *MS) payload(now time.Duration, h *layer2.Hint, out []Output) []Output {
 		out = append(out, Output{Kind: OutputAhoy, Grant: Grant{Service: enums.ServiceKindRegistration, Group: a.Group, Target: a.TargetAddress, Source: a.SourceAddress}})
 		m.tx = pdu.CSBK{LastBlock: true}
 		err := m.tx.SetAckInboundPayload(pdu.AckInboundPayloadPDU{ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: a.SourceAddress, AdditionalInfo: m.addr})
-		return m.send(err, now+frame, g.Slot, out)
+		return m.send(err, m.replyDue(now), g.Slot, out)
 	}
 	return out
 }

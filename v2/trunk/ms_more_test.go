@@ -243,6 +243,7 @@ func TestMS_RandomTimeout(t *testing.T) {
 	wantKinds(t, "C_RAND", r.feed(a, &idle), trunk.OutputBurst)
 	wantKinds(t, "NWait frame 1, after TRand_TC", r.feed(a, &idle))
 	wantKinds(t, "NWait frame 2", r.feed(a, &idle))
+	wantKinds(t, "NWait frame 3", r.feed(a, &idle))
 	out := r.feed(a, &idle)
 	wantKinds(t, "end of NWait", out, trunk.OutputRefused, trunk.OutputLost)
 	if out[0].Reason != trunk.ReasonNoAnswer {
