@@ -22,10 +22,11 @@ type abiLock struct {
 	used  map[string]bool
 	pfx   map[string]string
 	upfx  map[string]bool
+	gone  map[string]int
 }
 
 func parseLock(b []byte) (*abiLock, error) {
-	l := &abiLock{abi: 1, codes: map[string]int{}, tags: map[string]int{}, lines: map[string]bool{}, used: map[string]bool{}, pfx: map[string]string{}, upfx: map[string]bool{}}
+	l := &abiLock{abi: 1, codes: map[string]int{}, tags: map[string]int{}, lines: map[string]bool{}, used: map[string]bool{}, pfx: map[string]string{}, upfx: map[string]bool{}, gone: map[string]int{}}
 	sc := bufio.NewScanner(bytes.NewReader(b))
 	sc.Buffer(nil, 1<<24)
 	for sc.Scan() {
@@ -53,6 +54,12 @@ func parseLock(b []byte) (*abiLock, error) {
 			}
 		case lockPre:
 			l.pre = true
+		case "retired":
+			n, err := strconv.Atoi(f[len(f)-1])
+			if err != nil || len(f) < 4 {
+				return nil, fmt.Errorf("abi lock: %q", line)
+			}
+			l.gone[strings.Join(f[1:len(f)-1], " ")] = n
 		case "prefix":
 			if len(f) != 3 {
 				return nil, fmt.Errorf("abi lock: %q", line)
@@ -76,8 +83,33 @@ func (l *abiLock) code(name string) int {
 	for _, v := range l.codes {
 		c = min(c, v-1)
 	}
+	for k, v := range l.gone {
+		if strings.HasPrefix(k, lockCode+" ") {
+			c = min(c, v-1)
+		}
+	}
 	l.codes[name] = c
 	return c
+}
+
+// renumber gives a lock with the prerelease marker gapless codes in the
+// order of names, from firstCode down, and tags in name order from 1 for
+// each union. After the release the numbers only grow.
+func (l *abiLock) renumber(names []string, tags map[string][]string) {
+	if !l.pre {
+		return
+	}
+	l.codes = map[string]int{}
+	for i, n := range names {
+		l.codes[n] = firstCode - i
+	}
+	l.tags = map[string]int{}
+	for u, ns := range tags {
+		for i, n := range ns {
+			l.tags[u+" "+n] = i + 1
+		}
+	}
+	l.gone = map[string]int{}
 }
 
 func (l *abiLock) prefix(path string, rule func() string) (string, error) {
@@ -105,6 +137,11 @@ func (l *abiLock) tag(union, name string) int {
 	t := 1
 	for k, v := range l.tags {
 		if strings.HasPrefix(k, union+" ") {
+			t = max(t, v+1)
+		}
+	}
+	for k, v := range l.gone {
+		if strings.HasPrefix(k, "tag "+union+" ") {
 			t = max(t, v+1)
 		}
 	}
@@ -150,8 +187,14 @@ func (l *abiLock) render(syms []string, allowBreak bool) ([]byte, []string, erro
 			f := strings.Fields(b)
 			switch f[0] {
 			case lockCode:
+				if !l.pre {
+					l.gone[b] = l.codes[f[1]]
+				}
 				delete(l.codes, f[1])
 			case "tag":
+				if !l.pre {
+					l.gone[b] = l.tags[f[1]+" "+f[2]]
+				}
 				delete(l.tags, f[1]+" "+f[2])
 			}
 		}
@@ -172,6 +215,14 @@ func (l *abiLock) render(syms []string, allowBreak bool) ([]byte, []string, erro
 	slices.SortFunc(cs, func(a, b kv) int { return b.v - a.v })
 	for _, c := range cs {
 		fmt.Fprintf(&b, "code %s %d\n", c.k, c.v)
+	}
+	var gs []string
+	for k, v := range l.gone {
+		gs = append(gs, fmt.Sprintf("retired %s %d", k, v))
+	}
+	slices.Sort(gs)
+	for _, g := range gs {
+		b.WriteString(g + "\n")
 	}
 	var ps []string
 	for p := range l.upfx {

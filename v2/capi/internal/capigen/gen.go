@@ -11,7 +11,9 @@ package capigen
 import (
 	"bytes"
 	"fmt"
+	"go/ast"
 	"go/constant"
+	"go/token"
 	"go/format"
 	"go/types"
 	"path/filepath"
@@ -70,6 +72,7 @@ type memo struct {
 
 type errEntry struct {
 	name  string
+	text  string
 	code  string
 	goRef string
 	ti    *tinfo
@@ -133,6 +136,7 @@ func Generate(capiDir string, lock []byte, opt Options) (*Output, error) {
 		g.prefix(p)
 	}
 	g.classify()
+	al.renumber(g.codeNames())
 	for name := range g.closed {
 		found := false
 		for _, ti := range g.order {
@@ -227,12 +231,12 @@ func (g *gen) object(p *types.Package, o types.Object) error {
 	case *types.Var:
 		e := Export{Go: gn, Kind: "var"}
 		if isError(o.Type()) {
-			c := "DMRGO_ERR_" + strings.ToUpper(strings.TrimPrefix(g.prefix(p), "dmrgo_")+snake(strings.TrimPrefix(o.Name(), "Err")))
+			c := g.varCode(p, o.Name())
 			if err := g.claim(c, gn); err != nil {
 				return err
 			}
 			e.C = []string{c}
-			g.errs = append(g.errs, errEntry{code: c, goRef: g.qual(p) + "." + o.Name(), name: p.Name() + "." + o.Name()})
+			g.errs = append(g.errs, errEntry{code: c, goRef: g.qual(p) + "." + o.Name(), name: p.Name() + "." + o.Name(), text: g.errText(o, 0)})
 		} else {
 			e.Err = "exported var of type " + o.Type().String()
 		}
@@ -254,6 +258,105 @@ func (g *gen) object(p *types.Package, o types.Object) error {
 		return g.typeObject(o, gn)
 	}
 	return nil
+}
+
+func (g *gen) varCode(p *types.Package, name string) string {
+	return "DMRGO_ERR_" + strings.ToUpper(strings.TrimPrefix(g.prefix(p), "dmrgo_")+snake(strings.TrimPrefix(name, "Err")))
+}
+
+func (g *gen) typeCode(ti *tinfo) string {
+	return "DMRGO_ERR_" + strings.TrimSuffix(strings.ToUpper(strings.TrimPrefix(ti.base, "dmrgo_")), "_ERROR")
+}
+
+func isErrType(ti *tinfo) bool {
+	return ti.kind == kValue && (types.Implements(ti.named, errorIface()) || types.Implements(types.NewPointer(ti.named), errorIface()))
+}
+
+// codeNames lists the error codes of the API in package order, and by name
+// in a package, and the tags of each union by name.
+func (g *gen) codeNames() ([]string, map[string][]string) {
+	var names []string
+	for _, p := range g.pkgs {
+		var ns []string
+		sc := p.Scope()
+		for _, n := range sc.Names() {
+			switch o := sc.Lookup(n).(type) {
+			case *types.Var:
+				if o.Exported() && isError(o.Type()) {
+					ns = append(ns, g.varCode(p, n))
+				}
+			case *types.TypeName:
+				if ti := g.infos[o]; ti != nil && o.Exported() && isErrType(ti) {
+					ns = append(ns, g.typeCode(ti))
+				}
+			}
+		}
+		slices.Sort(ns)
+		names = append(names, ns...)
+	}
+	tags := map[string][]string{}
+	for _, ti := range g.order {
+		if ti.kind != kClosed {
+			continue
+		}
+		var ts []string
+		for _, im := range ti.impls {
+			ts = append(ts, g.tagName(ti, g.info(im)))
+		}
+		slices.Sort(ts)
+		tags[ti.c] = ts
+	}
+	return names, tags
+}
+
+// errText is the message of the error var o, from its errors.New or
+// fmt.Errorf literal, or its package and name.
+func (g *gen) errText(o types.Object, depth int) string {
+	fallback := o.Pkg().Name() + ": " + strings.ReplaceAll(snake(strings.TrimPrefix(o.Name(), "Err")), "_", " ")
+	call, ok := g.l.vals[o].(*ast.CallExpr)
+	if !ok || len(call.Args) == 0 || depth > 4 {
+		return fallback
+	}
+	lit, ok := call.Args[0].(*ast.BasicLit)
+	if !ok || lit.Kind != token.STRING {
+		return fallback
+	}
+	f, err := strconv.Unquote(lit.Value)
+	if err != nil {
+		return fallback
+	}
+	info := g.l.info[o.Pkg()]
+	args := call.Args[1:]
+	var b strings.Builder
+	for i := 0; i < len(f); i++ {
+		if f[i] != '%' || i+1 >= len(f) {
+			b.WriteByte(f[i])
+			continue
+		}
+		i++
+		if f[i] == '%' {
+			b.WriteByte('%')
+			continue
+		}
+		if len(args) == 0 {
+			continue
+		}
+		a := args[0]
+		args = args[1:]
+		var id *ast.Ident
+		switch x := a.(type) {
+		case *ast.Ident:
+			id = x
+		case *ast.SelectorExpr:
+			id = x.Sel
+		}
+		if id != nil {
+			if v, ok := info.Uses[id].(*types.Var); ok && isError(v.Type()) && v.Pkg() != nil {
+				b.WriteString(g.errText(v, depth+1))
+			}
+		}
+	}
+	return b.String()
 }
 
 func (g *gen) funcName(p *types.Package, name string) string {
@@ -506,11 +609,13 @@ func (g *gen) errorType(ti *tinfo, gn string) error {
 	if !val && !ptr {
 		return nil
 	}
-	code := "DMRGO_ERR_" + strings.ToUpper(strings.TrimPrefix(ti.base, "dmrgo_"))
+	code := g.typeCode(ti)
 	if err := g.claim(code, gn); err != nil {
 		return err
 	}
-	g.errs = append(g.errs, errEntry{code: code, ti: ti, ptr: ptr && !val, val: val, name: ti.obj.Pkg().Name() + "." + ti.obj.Name()})
+	words := strings.ReplaceAll(snake(strings.TrimSuffix(ti.obj.Name(), "Error")), "_", " ")
+	g.errs = append(g.errs, errEntry{code: code, ti: ti, ptr: ptr && !val, val: val, name: ti.obj.Pkg().Name() + "." + ti.obj.Name(),
+		text: ti.obj.Pkg().Name() + ": " + words + " error"})
 	for i := range g.exports {
 		if g.exports[i].Go == gn && g.exports[i].Kind == lockType && g.exports[i].Err == "" {
 			g.exports[i].C = append(g.exports[i].C, code)
@@ -670,7 +775,7 @@ func (g *gen) errorsGo() {
 	g.goFuncs.WriteString(w.String())
 	lines(&g.genC, "const char *dmrgo__gen_strerror(int status) {", "\tswitch (status) {")
 	for _, e := range g.errs {
-		lines(&g.genC, fmt.Sprintf("\tcase %d:", g.lock.code(e.code)), "\t\treturn "+cString(e.name)+";")
+		lines(&g.genC, fmt.Sprintf("\tcase %d:", g.lock.code(e.code)), "\t\treturn "+cString(e.text)+";")
 	}
 	lines(&g.genC, "\t}", "\treturn \"unknown status\";", "}", "")
 	lines(&g.genC, "static _Thread_local dmrgo__last_t last;", "", "dmrgo__last_t *dmrgo__last(void) { return &last; }", "",

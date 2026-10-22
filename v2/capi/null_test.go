@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-const errPanic = -7
+const errPanic = -4
 
 const zeroedLen = 256
 

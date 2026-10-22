@@ -30,6 +30,7 @@ type loader struct {
 	decl map[*types.Func]*ast.FuncDecl
 	info map[*types.Package]*types.Info
 	eff  map[effKey]*effect
+	vals map[types.Object]ast.Expr
 }
 
 func newLoader(root string) *loader {
@@ -40,7 +41,7 @@ func newLoader(root string) *loader {
 	return &loader{
 		ctx: ctx, root: root, fset: fset, std: importer.ForCompiler(fset, "source", nil),
 		pkgs: map[string]*types.Package{}, docs: map[types.Object]string{}, full: map[types.Object]string{}, busy: map[string]bool{},
-		decl: map[*types.Func]*ast.FuncDecl{}, info: map[*types.Package]*types.Info{}, eff: map[effKey]*effect{},
+		decl: map[*types.Func]*ast.FuncDecl{}, info: map[*types.Package]*types.Info{}, eff: map[effKey]*effect{}, vals: map[types.Object]ast.Expr{},
 	}
 }
 
@@ -133,8 +134,13 @@ func (l *loader) collectDocs(files []*ast.File, info *types.Info) {
 							}
 						}
 					case *ast.ValueSpec:
-						for _, n := range s.Names {
+						for i, n := range s.Names {
 							set(n, s.Doc, s.Comment, d.Doc)
+							if len(s.Values) == len(s.Names) {
+								if o := info.Defs[n]; o != nil {
+									l.vals[o] = s.Values[i]
+								}
+							}
 						}
 					}
 				}

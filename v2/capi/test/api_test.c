@@ -48,8 +48,8 @@ static void test_version(void) {
 
 static void test_errors(void) {
 	dmrgo_enums_color_code_t cc = 0;
-	CHECK(dmrgo_enums_new_color_code(16, &cc) == DMRGO_ERR_FIELD_RANGE_ERROR);
-	CHECK(dmrgo_last_error_code() == DMRGO_ERR_FIELD_RANGE_ERROR);
+	CHECK(dmrgo_enums_new_color_code(16, &cc) == DMRGO_ERR_FIELD_RANGE);
+	CHECK(dmrgo_last_error_code() == DMRGO_ERR_FIELD_RANGE);
 	dmrgo_field_range_error_t e = {0};
 	bool ok = false;
 	OK(dmrgo_field_range_error_last(&e, &ok));
@@ -58,7 +58,7 @@ static void test_errors(void) {
 	size_t n = 0;
 	OK(dmrgo_last_error_message(msg, sizeof msg, &n, NULL));
 	CHECK(n > 0 && strstr(msg, "4 bits") != NULL);
-	CHECK(strcmp(dmrgo_strerror(DMRGO_ERR_FIELD_RANGE_ERROR), "dmrgo.FieldRangeError") == 0);
+	CHECK(strcmp(dmrgo_strerror(DMRGO_ERR_FIELD_RANGE), "dmrgo: field range error") == 0);
 	OK(dmrgo_enums_new_color_code(7, &cc));
 	CHECK(cc == 7);
 
@@ -216,6 +216,9 @@ static void test_error_is(void) {
 	CHECK(!is);
 	OK(dmrgo_last_error_is(DMRGO_ERR_ARG, &is));
 	CHECK(is);
+	CHECK(DMRGO_ERR_HANDLE == -1 && DMRGO_ERR_ARG == -2 && DMRGO_ERR_SHORT == -3 && DMRGO_ERR_PANIC == -4 && DMRGO_ERR_OTHER == -5 && DMRGO_ERR_BOUND == -6);
+	CHECK(DMRGO_ERR_CONFIG == -100 && DMRGO_ERR_FIELD_RANGE == -101);
+	CHECK(strcmp(dmrgo_strerror(DMRGO_ERR_PACKET_MESSAGE_CRC), "message CRC-32 does not match: fec: uncorrectable") == 0);
 	printf("error is: wrapped errors are visible through dmrgo_last_error_is\n");
 }
 
@@ -598,7 +601,7 @@ static void test_last_error(void) {
 	cfg.color_code = 16;
 	cfg.source = DMRGO_LAYER2_SYNC_SOURCE_MS;
 	dmrgo_voice_transmitter_t *vt = NULL;
-	CHECK(dmrgo_voice_new_transmitter(&cfg, &vt) == DMRGO_ERR_CONFIG_ERROR && vt == NULL);
+	CHECK(dmrgo_voice_new_transmitter(&cfg, &vt) == DMRGO_ERR_CONFIG && vt == NULL);
 	dmrgo_config_error_t ce = {0};
 	bool ok = false;
 	OK(dmrgo_config_error_last(&ce, &ok));
@@ -606,7 +609,7 @@ static void test_last_error(void) {
 	char msg[256];
 	OK(dmrgo_last_error_message(msg, sizeof msg, &n, NULL));
 	CHECK(strcmp(msg, "voice: ColorCode is out of range") == 0);
-	CHECK(strcmp(dmrgo_strerror(DMRGO_ERR_PDU_NO_ADDRESSES), "pdu.ErrNoAddresses") == 0);
+	CHECK(strcmp(dmrgo_strerror(DMRGO_ERR_PDU_NO_ADDRESSES), "PDU has no address fields") == 0);
 }
 
 static void test_partial(void) {
