@@ -597,6 +597,67 @@ func in_data_Event(s *C.dmrgo_data_event_t, st *st_data_Event) (d g_data.Event) 
 	return
 }
 
+type st_data_ReceiverConfig struct {
+	p_ColorCode g_enums.ColorCode
+}
+
+func in_data_ReceiverConfig(s *C.dmrgo_data_receiver_config_t, st *st_data_ReceiverConfig) (d g_data.ReceiverConfig) {
+	if s.has_color_code {
+		st.p_ColorCode = g_enums.ColorCode(s.color_code)
+		d.ColorCode = &st.p_ColorCode
+	} else {
+		d.ColorCode = nil
+	}
+	d.Address = uint32(s.address)
+	d.Respond = bool(s.respond)
+	d.Source = g_layer2.SyncSource(s.source)
+	d.ResponseDelay = time.Duration(s.response_delay)
+	d.MaxBlocks = int(s.max_blocks)
+	d.MaxFragment = int(s.max_fragment)
+	d.MaxMessage = int(s.max_message)
+	d.Peers = int(s.peers)
+	d.Lost = time.Duration(s.lost)
+	d.Hang = time.Duration(s.hang)
+	d.AcceptBadCRC = bool(s.accept_bad_crc)
+	d.Scratch = nil
+	if s.scratch != nil {
+		d.Scratch = get_layer2_Burst(s.scratch).v
+	}
+	return
+}
+
+func in_data_SenderConfig(s *C.dmrgo_data_sender_config_t) (d g_data.SenderConfig) {
+	d.ColorCode = g_enums.ColorCode(s.color_code)
+	d.Source = g_layer2.SyncSource(s.source)
+	d.Access = g_enums.Access(s.access)
+	d.Preambles = int(s.preambles)
+	d.IdleSearch = time.Duration(s.idle_search)
+	d.Holdoff = time.Duration(s.holdoff)
+	d.ResponseWait = time.Duration(s.response_wait)
+	d.TxLimit = time.Duration(s.tx_limit)
+	d.Retries = int(s.retries)
+	d.MaxBlocks = int(s.max_blocks)
+	d.Peers = int(s.peers)
+	d.Resync = bool(s.resync)
+	d.Window = int(s.window)
+	d.Seed = uint64(s.seed)
+	return
+}
+
+func in_data_Output(s *C.dmrgo_data_output_t) (d g_data.Output) {
+	d.Kind = g_data.OutputKind(s.kind)
+	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	d.Hint = in_layer2_Hint(&s.hint)
+	d.Due = time.Duration(s.due)
+	d.Try = uint8(s.try_)
+	d.Seq = uint8(s.seq)
+	d.Result = g_data.Result(s.result)
+	d.Response = g_layer2_packet.Response(s.response)
+	d.HasResponse = bool(s.has_response)
+	d.Group = bool(s.group)
+	return
+}
+
 func out_data_Call(d *C.dmrgo_data_call_t, s *g_data.Call, oc *outc) {
 	_ = oc
 	d.group = C.bool(s.Group)
@@ -823,67 +884,6 @@ func out_data_Event(d *C.dmrgo_data_event_t, s *g_data.Event, oc *outc) {
 	d.due = C.dmrgo_duration_t(s.Due)
 	d.reason = C.dmrgo_data_end_reason_t(s.Reason)
 	*(*g_data.Stats)(unsafe.Pointer(&d.stats)) = s.Stats
-}
-
-type st_data_ReceiverConfig struct {
-	p_ColorCode g_enums.ColorCode
-}
-
-func in_data_ReceiverConfig(s *C.dmrgo_data_receiver_config_t, st *st_data_ReceiverConfig) (d g_data.ReceiverConfig) {
-	if s.has_color_code {
-		st.p_ColorCode = g_enums.ColorCode(s.color_code)
-		d.ColorCode = &st.p_ColorCode
-	} else {
-		d.ColorCode = nil
-	}
-	d.Address = uint32(s.address)
-	d.Respond = bool(s.respond)
-	d.Source = g_layer2.SyncSource(s.source)
-	d.ResponseDelay = time.Duration(s.response_delay)
-	d.MaxBlocks = int(s.max_blocks)
-	d.MaxFragment = int(s.max_fragment)
-	d.MaxMessage = int(s.max_message)
-	d.Peers = int(s.peers)
-	d.Lost = time.Duration(s.lost)
-	d.Hang = time.Duration(s.hang)
-	d.AcceptBadCRC = bool(s.accept_bad_crc)
-	d.Scratch = nil
-	if s.scratch != nil {
-		d.Scratch = get_layer2_Burst(s.scratch).v
-	}
-	return
-}
-
-func in_data_SenderConfig(s *C.dmrgo_data_sender_config_t) (d g_data.SenderConfig) {
-	d.ColorCode = g_enums.ColorCode(s.color_code)
-	d.Source = g_layer2.SyncSource(s.source)
-	d.Access = g_enums.Access(s.access)
-	d.Preambles = int(s.preambles)
-	d.IdleSearch = time.Duration(s.idle_search)
-	d.Holdoff = time.Duration(s.holdoff)
-	d.ResponseWait = time.Duration(s.response_wait)
-	d.TxLimit = time.Duration(s.tx_limit)
-	d.Retries = int(s.retries)
-	d.MaxBlocks = int(s.max_blocks)
-	d.Peers = int(s.peers)
-	d.Resync = bool(s.resync)
-	d.Window = int(s.window)
-	d.Seed = uint64(s.seed)
-	return
-}
-
-func in_data_Output(s *C.dmrgo_data_output_t) (d g_data.Output) {
-	d.Kind = g_data.OutputKind(s.kind)
-	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
-	d.Hint = in_layer2_Hint(&s.hint)
-	d.Due = time.Duration(s.due)
-	d.Try = uint8(s.try_)
-	d.Seq = uint8(s.seq)
-	d.Result = g_data.Result(s.result)
-	d.Response = g_layer2_packet.Response(s.response)
-	d.HasResponse = bool(s.has_response)
-	d.Group = bool(s.group)
-	return
 }
 
 func out_data_Output(d *C.dmrgo_data_output_t, s *g_data.Output, oc *outc) {
@@ -3024,21 +3024,6 @@ func in_layer2_pdu_AdjacentSiteParms(s *C.dmrgo_pdu_adjacent_site_parms_t) (d g_
 	return
 }
 
-func out_layer2_pdu_AdjacentSiteParms(d *C.dmrgo_pdu_adjacent_site_parms_t, s *g_layer2_pdu.AdjacentSiteParms, oc *outc) {
-	_ = oc
-	d.announcement_type = C.dmrgo_enums_announcement_type_t(s.AnnouncementType)
-	d.adjacent_sys_code = C.uint16_t(s.AdjacentSysCode)
-	d.reg = C.bool(s.Reg)
-	d.backoff = C.uint8_t(s.Backoff)
-	d.sys_ident_code = C.uint16_t(s.SysIdentCode)
-	d.has_active_conn = C.bool(s.HasActiveConn)
-	d.active_conn = C.bool(s.ActiveConn)
-	d.confirmed_priority = C.uint8_t(s.ConfirmedPriority)
-	d.adjacent_priority = C.uint8_t(s.AdjacentPriority)
-	d.reserved = C.uint8_t(s.Reserved)
-	d.channel = C.uint16_t(s.Channel)
-}
-
 func in_layer2_pdu_AnnWDTSCCParms(s *C.dmrgo_pdu_ann_wd_tscc_parms_t) (d g_layer2_pdu.AnnWDTSCCParms) {
 	d.AnnouncementType = g_enums.AnnouncementType(s.announcement_type)
 	d.Reserved = uint8(s.reserved)
@@ -3052,6 +3037,21 @@ func in_layer2_pdu_AnnWDTSCCParms(s *C.dmrgo_pdu_ann_wd_tscc_parms_t) (d g_layer
 	d.Channel1 = uint16(s.channel1)
 	d.Channel2 = uint16(s.channel2)
 	return
+}
+
+func out_layer2_pdu_AdjacentSiteParms(d *C.dmrgo_pdu_adjacent_site_parms_t, s *g_layer2_pdu.AdjacentSiteParms, oc *outc) {
+	_ = oc
+	d.announcement_type = C.dmrgo_enums_announcement_type_t(s.AnnouncementType)
+	d.adjacent_sys_code = C.uint16_t(s.AdjacentSysCode)
+	d.reg = C.bool(s.Reg)
+	d.backoff = C.uint8_t(s.Backoff)
+	d.sys_ident_code = C.uint16_t(s.SysIdentCode)
+	d.has_active_conn = C.bool(s.HasActiveConn)
+	d.active_conn = C.bool(s.ActiveConn)
+	d.confirmed_priority = C.uint8_t(s.ConfirmedPriority)
+	d.adjacent_priority = C.uint8_t(s.AdjacentPriority)
+	d.reserved = C.uint8_t(s.Reserved)
+	d.channel = C.uint16_t(s.Channel)
 }
 
 func out_layer2_pdu_AnnWDTSCCParms(d *C.dmrgo_pdu_ann_wd_tscc_parms_t, s *g_layer2_pdu.AnnWDTSCCParms, oc *outc) {
@@ -3245,16 +3245,6 @@ func in_layer2_pdu_CapacityPlusGroupVoiceGrant(s *C.dmrgo_pdu_capacity_plus_grou
 	return
 }
 
-func out_layer2_pdu_CapacityPlusGroupVoiceGrant(d *C.dmrgo_pdu_capacity_plus_group_voice_grant_t, s *g_layer2_pdu.CapacityPlusGroupVoiceGrant, oc *outc) {
-	_ = oc
-	out_layer3_ServiceOptions(&d.service_options, &s.ServiceOptions, oc)
-	d.reserved = C.uint16_t(s.Reserved)
-	d.group_address = C.uint8_t(s.GroupAddress)
-	d.reserved2 = C.uint8_t(s.Reserved2)
-	d.rest_lsn = C.uint8_t(s.RestLSN)
-	d.source_address = C.uint16_t(s.SourceAddress)
-}
-
 func in_layer2_pdu_CapacityPlusNeighborsPDU(s *C.dmrgo_pdu_capacity_plus_neighbors_pdu_t) (d g_layer2_pdu.CapacityPlusNeighborsPDU) {
 	d.Segment = g_layer2_pdu.CapacityPlusSegment(s.segment)
 	d.Slot2 = bool(s.slot2)
@@ -3287,15 +3277,6 @@ func in_layer2_pdu_CapacityPlusPrivateVoiceGrant(s *C.dmrgo_pdu_capacity_plus_pr
 	return
 }
 
-func out_layer2_pdu_CapacityPlusPrivateVoiceGrant(d *C.dmrgo_pdu_capacity_plus_private_voice_grant_t, s *g_layer2_pdu.CapacityPlusPrivateVoiceGrant, oc *outc) {
-	_ = oc
-	out_layer3_ServiceOptions(&d.service_options, &s.ServiceOptions, oc)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.reserved = C.uint8_t(s.Reserved)
-	d.rest_lsn = C.uint8_t(s.RestLSN)
-	d.source_address = C.uint16_t(s.SourceAddress)
-}
-
 func in_layer2_pdu_CapacityPlusSiteStatusPDU(s *C.dmrgo_pdu_capacity_plus_site_status_pdu_t) (d g_layer2_pdu.CapacityPlusSiteStatusPDU) {
 	d.Segment = g_layer2_pdu.CapacityPlusSegment(s.segment)
 	d.Slot2 = bool(s.slot2)
@@ -3313,6 +3294,25 @@ func in_layer2_pdu_ChanFreqParms(s *C.dmrgo_pdu_chan_freq_parms_t) (d g_layer2_p
 	d.Reserved2 = uint16(s.reserved2)
 	d.Channel = uint16(s.channel)
 	return
+}
+
+func out_layer2_pdu_CapacityPlusGroupVoiceGrant(d *C.dmrgo_pdu_capacity_plus_group_voice_grant_t, s *g_layer2_pdu.CapacityPlusGroupVoiceGrant, oc *outc) {
+	_ = oc
+	out_layer3_ServiceOptions(&d.service_options, &s.ServiceOptions, oc)
+	d.reserved = C.uint16_t(s.Reserved)
+	d.group_address = C.uint8_t(s.GroupAddress)
+	d.reserved2 = C.uint8_t(s.Reserved2)
+	d.rest_lsn = C.uint8_t(s.RestLSN)
+	d.source_address = C.uint16_t(s.SourceAddress)
+}
+
+func out_layer2_pdu_CapacityPlusPrivateVoiceGrant(d *C.dmrgo_pdu_capacity_plus_private_voice_grant_t, s *g_layer2_pdu.CapacityPlusPrivateVoiceGrant, oc *outc) {
+	_ = oc
+	out_layer3_ServiceOptions(&d.service_options, &s.ServiceOptions, oc)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.reserved = C.uint8_t(s.Reserved)
+	d.rest_lsn = C.uint8_t(s.RestLSN)
+	d.source_address = C.uint16_t(s.SourceAddress)
 }
 
 func in_layer2_pdu_GenSiteParms(s *C.dmrgo_pdu_gen_site_parms_t) (d g_layer2_pdu.GenSiteParms) {
@@ -3849,13 +3849,6 @@ func in_sms_AnyToneText(s *C.dmrgo_sms_anytone_text_t) (d g_sms.AnyToneText) {
 	return
 }
 
-func out_sms_AnyToneText(d *C.dmrgo_sms_anytone_text_t, s *g_sms.AnyToneText, oc *outc) {
-	_ = oc
-	d.prefix = C.uint32_t(s.Prefix)
-	d.text = (*C.uint8_t)(arenaCopy(oc, s.Text))
-	d.text_len = C.size_t(len(s.Text))
-}
-
 func in_sms_Text(s *C.dmrgo_sms_text_t) (d g_sms.Text) {
 	d.Format = g_sms.Format(s.format)
 	d.Source = uint32(s.source)
@@ -3892,6 +3885,13 @@ func out_sms_Text(d *C.dmrgo_sms_text_t, s *g_sms.Text, oc *outc) {
 	d.ack_required = C.bool(s.AckRequired)
 	d.body = (*C.uint8_t)(arenaCopy(oc, s.Body))
 	d.body_len = C.size_t(len(s.Body))
+}
+
+func out_sms_AnyToneText(d *C.dmrgo_sms_anytone_text_t, s *g_sms.AnyToneText, oc *outc) {
+	_ = oc
+	d.prefix = C.uint32_t(s.Prefix)
+	d.text = (*C.uint8_t)(arenaCopy(oc, s.Text))
+	d.text_len = C.size_t(len(s.Text))
 }
 
 func out_sms_IPText(d *C.dmrgo_sms_ip_text_t, s *g_sms.IPText, oc *outc) {
@@ -3934,6 +3934,16 @@ func in_transport_dmrd_Bridge(s *C.dmrgo_dmrd_bridge_t) (d g_transport_dmrd.Brid
 	return
 }
 
+func in_transport_dmrd_Control(s *C.dmrgo_dmrd_control_t) (d g_transport_dmrd.Control) {
+	d.Command = g_transport_dmrd.Command(s.command)
+	d.ID = uint32(s.id)
+	d.Salt = uint32(s.salt)
+	d.HasSalt = bool(s.has_salt)
+	d.Token = *(*[32]byte)(unsafe.Pointer(&s.token))
+	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
+	return
+}
+
 func out_transport_dmrd_Data(d *C.dmrgo_dmrd_data_t, s *g_transport_dmrd.Data, oc *outc) {
 	_ = oc
 	d.seq = C.uint8_t(s.Seq)
@@ -3961,16 +3971,6 @@ func out_transport_dmrd_Bridge(d *C.dmrgo_dmrd_bridge_t, s *g_transport_dmrd.Bri
 	d.source_repeater = C.uint32_t(s.SourceRepeater)
 	d.hops = C.uint8_t(s.Hops)
 	*(*[20]byte)(unsafe.Pointer(&d.signature)) = s.Signature
-}
-
-func in_transport_dmrd_Control(s *C.dmrgo_dmrd_control_t) (d g_transport_dmrd.Control) {
-	d.Command = g_transport_dmrd.Command(s.command)
-	d.ID = uint32(s.id)
-	d.Salt = uint32(s.salt)
-	d.HasSalt = bool(s.has_salt)
-	d.Token = *(*[32]byte)(unsafe.Pointer(&s.token))
-	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
-	return
 }
 
 func out_transport_dmrd_Control(d *C.dmrgo_dmrd_control_t, s *g_transport_dmrd.Control, oc *outc) {
@@ -4254,6 +4254,66 @@ func in_transport_mmdvm_ConfigV1(s *C.dmrgo_mmdvm_config_v1_t) (d g_transport_mm
 	return
 }
 
+func in_transport_mmdvm_ConfigV2(s *C.dmrgo_mmdvm_config_v2_t) (d g_transport_mmdvm.ConfigV2) {
+	d.Simplex = bool(s.simplex)
+	d.UseCOSAsLockout = bool(s.use_cos_as_lockout)
+	d.Debug = bool(s.debug)
+	d.YSFLoDev = bool(s.ysf_lo_dev)
+	d.PTTInvert = bool(s.ptt_invert)
+	d.TXInvert = bool(s.tx_invert)
+	d.RXInvert = bool(s.rx_invert)
+	d.FM = bool(s.fm)
+	d.NXDN = bool(s.nxdn)
+	d.P25 = bool(s.p25)
+	d.YSF = bool(s.ysf)
+	d.DMR = bool(s.dmr)
+	d.DStar = bool(s.d_star)
+	d.POCSAG = bool(s.pocsag)
+	d.TXDelay = uint8(s.tx_delay)
+	d.State = g_transport_mmdvm.Mode(s.state)
+	d.TXDCOffset = uint8(s.txdc_offset)
+	d.RXDCOffset = uint8(s.rxdc_offset)
+	d.RXLevel = uint8(s.rx_level)
+	d.CWIDTXLevel = uint8(s.cwidtx_level)
+	d.DStarTXLevel = uint8(s.d_star_tx_level)
+	d.DMRTXLevel = uint8(s.dmrtx_level)
+	d.YSFTXLevel = uint8(s.ysftx_level)
+	d.P25TXLevel = uint8(s.p25tx_level)
+	d.NXDNTXLevel = uint8(s.nxdntx_level)
+	d.POCSAGTXLevel = uint8(s.pocsagtx_level)
+	d.FMTXLevel = uint8(s.fmtx_level)
+	d.YSFTXHang = uint8(s.ysftx_hang)
+	d.P25TXHang = uint8(s.p25tx_hang)
+	d.NXDNTXHang = uint8(s.nxdntx_hang)
+	d.DMRTrunking = bool(s.dmr_trunking)
+	d.DMRColorCode = g_enums.ColorCode(s.dmr_color_code)
+	d.DMRDelay = uint8(s.dmr_delay)
+	d.OscOffset = uint8(s.osc_offset)
+	return
+}
+
+func in_transport_mmdvm_DMRData(s *C.dmrgo_mmdvm_dmr_data_t) (d g_transport_mmdvm.DMRData) {
+	d.Slot = g_enums.Slot(s.slot)
+	d.Lost = bool(s.lost)
+	d.Control = g_transport_mmdvm.Control(s.control)
+	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
+	d.RSSI = uint16(s.rssi)
+	d.HasRSSI = bool(s.has_rssi)
+	return
+}
+
+func in_transport_mmdvm_DMRStart(s *C.dmrgo_mmdvm_dmr_start_t) (d g_transport_mmdvm.DMRStart) {
+	d.TX = bool(s.tx)
+	return
+}
+
+func in_transport_mmdvm_Debug(s *C.dmrgo_mmdvm_debug_t) (d g_transport_mmdvm.Debug) {
+	d.Command = g_transport_mmdvm.Command(s.command)
+	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
+	d.N = *(*[4]int16)(unsafe.Pointer(&s.n))
+	return
+}
+
 func out_transport_mmdvm_ConfigV1(d *C.dmrgo_mmdvm_config_v1_t, s *g_transport_mmdvm.ConfigV1, oc *outc) {
 	_ = oc
 	d.simplex = C.bool(s.Simplex)
@@ -4291,44 +4351,6 @@ func out_transport_mmdvm_ConfigV1(d *C.dmrgo_mmdvm_config_v1_t, s *g_transport_m
 	d.nxdntx_hang = C.uint8_t(s.NXDNTXHang)
 	d.m17tx_level = C.uint8_t(s.M17TXLevel)
 	d.m17tx_hang = C.uint8_t(s.M17TXHang)
-}
-
-func in_transport_mmdvm_ConfigV2(s *C.dmrgo_mmdvm_config_v2_t) (d g_transport_mmdvm.ConfigV2) {
-	d.Simplex = bool(s.simplex)
-	d.UseCOSAsLockout = bool(s.use_cos_as_lockout)
-	d.Debug = bool(s.debug)
-	d.YSFLoDev = bool(s.ysf_lo_dev)
-	d.PTTInvert = bool(s.ptt_invert)
-	d.TXInvert = bool(s.tx_invert)
-	d.RXInvert = bool(s.rx_invert)
-	d.FM = bool(s.fm)
-	d.NXDN = bool(s.nxdn)
-	d.P25 = bool(s.p25)
-	d.YSF = bool(s.ysf)
-	d.DMR = bool(s.dmr)
-	d.DStar = bool(s.d_star)
-	d.POCSAG = bool(s.pocsag)
-	d.TXDelay = uint8(s.tx_delay)
-	d.State = g_transport_mmdvm.Mode(s.state)
-	d.TXDCOffset = uint8(s.txdc_offset)
-	d.RXDCOffset = uint8(s.rxdc_offset)
-	d.RXLevel = uint8(s.rx_level)
-	d.CWIDTXLevel = uint8(s.cwidtx_level)
-	d.DStarTXLevel = uint8(s.d_star_tx_level)
-	d.DMRTXLevel = uint8(s.dmrtx_level)
-	d.YSFTXLevel = uint8(s.ysftx_level)
-	d.P25TXLevel = uint8(s.p25tx_level)
-	d.NXDNTXLevel = uint8(s.nxdntx_level)
-	d.POCSAGTXLevel = uint8(s.pocsagtx_level)
-	d.FMTXLevel = uint8(s.fmtx_level)
-	d.YSFTXHang = uint8(s.ysftx_hang)
-	d.P25TXHang = uint8(s.p25tx_hang)
-	d.NXDNTXHang = uint8(s.nxdntx_hang)
-	d.DMRTrunking = bool(s.dmr_trunking)
-	d.DMRColorCode = g_enums.ColorCode(s.dmr_color_code)
-	d.DMRDelay = uint8(s.dmr_delay)
-	d.OscOffset = uint8(s.osc_offset)
-	return
 }
 
 func out_transport_mmdvm_ConfigV2(d *C.dmrgo_mmdvm_config_v2_t, s *g_transport_mmdvm.ConfigV2, oc *outc) {
@@ -4369,13 +4391,9 @@ func out_transport_mmdvm_ConfigV2(d *C.dmrgo_mmdvm_config_v2_t, s *g_transport_m
 	d.osc_offset = C.uint8_t(s.OscOffset)
 }
 
-func in_transport_mmdvm_DMRData(s *C.dmrgo_mmdvm_dmr_data_t) (d g_transport_mmdvm.DMRData) {
-	d.Slot = g_enums.Slot(s.slot)
-	d.Lost = bool(s.lost)
-	d.Control = g_transport_mmdvm.Control(s.control)
-	d.Burst = *(*g_layer2.RawBurst)(unsafe.Pointer(&s.burst))
-	d.RSSI = uint16(s.rssi)
-	d.HasRSSI = bool(s.has_rssi)
+func in_transport_mmdvm_Frame(s *C.dmrgo_mmdvm_frame_t) (d g_transport_mmdvm.Frame) {
+	d.Command = g_transport_mmdvm.Command(s.command)
+	d.Payload = unsafe.Slice((*byte)(unsafe.Pointer(s.payload)), int(s.payload_len))
 	return
 }
 
@@ -4389,27 +4407,9 @@ func out_transport_mmdvm_DMRData(d *C.dmrgo_mmdvm_dmr_data_t, s *g_transport_mmd
 	d.has_rssi = C.bool(s.HasRSSI)
 }
 
-func in_transport_mmdvm_DMRStart(s *C.dmrgo_mmdvm_dmr_start_t) (d g_transport_mmdvm.DMRStart) {
-	d.TX = bool(s.tx)
-	return
-}
-
 func out_transport_mmdvm_DMRStart(d *C.dmrgo_mmdvm_dmr_start_t, s *g_transport_mmdvm.DMRStart, oc *outc) {
 	_ = oc
 	d.tx = C.bool(s.TX)
-}
-
-func in_transport_mmdvm_Debug(s *C.dmrgo_mmdvm_debug_t) (d g_transport_mmdvm.Debug) {
-	d.Command = g_transport_mmdvm.Command(s.command)
-	d.Text = unsafe.Slice((*byte)(unsafe.Pointer(s.text)), int(s.text_len))
-	d.N = *(*[4]int16)(unsafe.Pointer(&s.n))
-	return
-}
-
-func in_transport_mmdvm_Frame(s *C.dmrgo_mmdvm_frame_t) (d g_transport_mmdvm.Frame) {
-	d.Command = g_transport_mmdvm.Command(s.command)
-	d.Payload = unsafe.Slice((*byte)(unsafe.Pointer(s.payload)), int(s.payload_len))
-	return
 }
 
 func out_transport_mmdvm_Debug(d *C.dmrgo_mmdvm_debug_t, s *g_transport_mmdvm.Debug, oc *outc) {
@@ -4548,14 +4548,6 @@ func in_trunk_Appended(s *C.dmrgo_trunk_appended_t) (d g_trunk.Appended) {
 	return
 }
 
-func out_trunk_Appended(d *C.dmrgo_trunk_appended_t, s *g_trunk.Appended, oc *outc) {
-	_ = oc
-	d.format = C.dmrgo_enums_udt_format_t(s.Format)
-	d.pad_nibble = C.uint8_t(s.PadNibble)
-	d.blocks = C.int64_t(s.Blocks)
-	*(*[46]byte)(unsafe.Pointer(&d.data)) = s.Data
-}
-
 func out_trunk_AddressList(d *C.dmrgo_trunk_address_list_t, s *g_trunk.AddressList, oc *outc) {
 	_ = oc
 	d.one_key = C.bool(s.OneKey)
@@ -4602,6 +4594,14 @@ func out_trunk_NMEAShort(d *C.dmrgo_trunk_nmea_short_t, s *g_trunk.NMEAShort, oc
 	d.hours = C.uint8_t(s.Hours)
 	d.minutes = C.uint8_t(s.Minutes)
 	d.ten_seconds = C.uint8_t(s.TenSeconds)
+}
+
+func out_trunk_Appended(d *C.dmrgo_trunk_appended_t, s *g_trunk.Appended, oc *outc) {
+	_ = oc
+	d.format = C.dmrgo_enums_udt_format_t(s.Format)
+	d.pad_nibble = C.uint8_t(s.PadNibble)
+	d.blocks = C.int64_t(s.Blocks)
+	*(*[46]byte)(unsafe.Pointer(&d.data)) = s.Data
 }
 
 func in_trunk_NMEALong(s *C.dmrgo_trunk_nmea_long_t) (d g_trunk.NMEALong) {
@@ -5011,12 +5011,6 @@ func in_trunk_USBDPollRequest(s *C.dmrgo_trunk_usbd_poll_request_t) (d g_trunk.U
 func in_trunk_auth_Keys(s *C.dmrgo_trunk_auth_keys_t) (d g_trunk_auth.Keys) {
 	d.Entries = unsafe.Slice((*g_trunk_auth.Entry)(unsafe.Pointer(s.entries)), int(s.entries_len))
 	return
-}
-
-func out_trunk_auth_Keys(d *C.dmrgo_trunk_auth_keys_t, s *g_trunk_auth.Keys, oc *outc) {
-	_ = oc
-	d.entries = (*C.dmrgo_trunk_auth_entry_t)(arenaCopy(oc, s.Entries))
-	d.entries_len = C.size_t(len(s.Entries))
 }
 
 type vt_vocoder_Codec struct {
@@ -8034,6 +8028,12 @@ func fromC_trunk_auth_Key(s *C.dmrgo_trunk_auth_key_t) g_trunk_auth.Key {
 	return in_trunk_auth_Key(s)
 }
 
+func out_trunk_auth_Keys(d *C.dmrgo_trunk_auth_keys_t, s *g_trunk_auth.Keys, oc *outc) {
+	_ = oc
+	d.entries = (*C.dmrgo_trunk_auth_entry_t)(arenaCopy(oc, s.Entries))
+	d.entries_len = C.size_t(len(s.Entries))
+}
+
 func fromC_trunk_auth_Keys(s *C.dmrgo_trunk_auth_keys_t) g_trunk_auth.Keys {
 	return in_trunk_auth_Keys(s)
 }
@@ -8833,16 +8833,9 @@ func new_voice_Transmitter(v *g_voice.Transmitter) *C.dmrgo_voice_transmitter_t 
 }
 
 //export dmrgo_config_error_error
-func dmrgo_config_error_error(c_self *C.dmrgo_config_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_config_error_error(c_self *C.dmrgo_config_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -8852,17 +8845,10 @@ func dmrgo_config_error_error(c_self *C.dmrgo_config_error_t, c_out *C.char, c_o
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.Error()
-	out_dmrgo_ConfigError(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
@@ -8881,16 +8867,9 @@ func dmrgo_config_error_last(c_out *C.dmrgo_config_error_t, c_ok *C.bool) C.int 
 }
 
 //export dmrgo_field_range_error_error
-func dmrgo_field_range_error_error(c_self *C.dmrgo_field_range_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_field_range_error_error(c_self *C.dmrgo_field_range_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -8900,17 +8879,10 @@ func dmrgo_field_range_error_error(c_self *C.dmrgo_field_range_error_t, c_out *C
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.Error()
-	out_dmrgo_FieldRangeError(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
@@ -11843,16 +11815,9 @@ func dmrgo_data_end_reason_string(c_self C.dmrgo_data_end_reason_t, c_out *C.cha
 }
 
 //export dmrgo_data_event_icmp
-func dmrgo_data_event_icmp(c_self *C.dmrgo_data_event_t, c_mtu C.int64_t, c_m *C.dmrgo_ip_icmp_message_t, c_pointer *C.uint8_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_data_event_icmp(c_self *C.dmrgo_data_event_t, c_mtu C.int64_t, c_m *C.dmrgo_ip_icmp_message_t, c_pointer *C.uint8_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -11860,7 +11825,6 @@ func dmrgo_data_event_icmp(c_self *C.dmrgo_data_event_t, c_mtu C.int64_t, c_m *C
 	var xs st_data_Event
 	x = in_data_Event(&(*c_self), &xs)
 	r0, r1, r2 := x.ICMP(int(c_mtu))
-	out_data_Event(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_m != nil {
@@ -11869,14 +11833,8 @@ func dmrgo_data_event_icmp(c_self *C.dmrgo_data_event_t, c_mtu C.int64_t, c_m *C
 	if c_pointer != nil {
 		*c_pointer = C.uint8_t(r1)
 	}
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	if r2 != nil {
 		return setErr(r2)
@@ -11967,7 +11925,6 @@ func dmrgo_data_output_icmp(c_self *C.dmrgo_data_output_t, c_out *C.dmrgo_ip_icm
 	var x g_data.Output
 	x = in_data_Output(&(*c_self))
 	r0, r1 := x.ICMP()
-	out_data_Output(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_ip_icmp_message_t(r0)
@@ -14079,7 +14036,6 @@ func dmrgo_hdap_gps_data_append_binary(c_self *C.dmrgo_hdap_gps_data_t, c_dst *C
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_hytera_hdap.GPSData)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -14102,7 +14058,6 @@ func dmrgo_hdap_gps_data_latitude(c_self *C.dmrgo_hdap_gps_data_t, c_out *C.doub
 	var x g_hytera_hdap.GPSData
 	x = *(*g_hytera_hdap.GPSData)(unsafe.Pointer(&(*c_self)))
 	r0 := x.Latitude()
-	*(*g_hytera_hdap.GPSData)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.double(r0)
@@ -14123,7 +14078,6 @@ func dmrgo_hdap_gps_data_longitude(c_self *C.dmrgo_hdap_gps_data_t, c_out *C.dou
 	var x g_hytera_hdap.GPSData
 	x = *(*g_hytera_hdap.GPSData)(unsafe.Pointer(&(*c_self)))
 	r0 := x.Longitude()
-	*(*g_hytera_hdap.GPSData)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.double(r0)
@@ -14147,7 +14101,6 @@ func dmrgo_hdap_gps_data_string(c_self *C.dmrgo_hdap_gps_data_t, c_out *C.char, 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_hytera_hdap.GPSData)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -14166,7 +14119,6 @@ func dmrgo_hdap_gps_data_valid(c_self *C.dmrgo_hdap_gps_data_t, c_out *C.bool) (
 	var x g_hytera_hdap.GPSData
 	x = *(*g_hytera_hdap.GPSData)(unsafe.Pointer(&(*c_self)))
 	r0 := x.Valid()
-	*(*g_hytera_hdap.GPSData)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.bool(r0)
@@ -14193,7 +14145,6 @@ func dmrgo_hdap_header_append_binary(c_self *C.dmrgo_hdap_header_t, c_dst *C.uin
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_hytera_hdap_Header(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -14219,7 +14170,6 @@ func dmrgo_hdap_header_string(c_self *C.dmrgo_hdap_header_t, c_out *C.char, c_ou
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_hytera_hdap_Header(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -14244,7 +14194,6 @@ func dmrgo_hdap_lp_answer_append_binary(c_self *C.dmrgo_hdap_lp_answer_t, c_dst 
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_hytera_hdap.LPAnswer)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -14270,7 +14219,6 @@ func dmrgo_hdap_lp_answer_string(c_self *C.dmrgo_hdap_lp_answer_t, c_out *C.char
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_hytera_hdap.LPAnswer)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -14295,7 +14243,6 @@ func dmrgo_hdap_lp_emergency_append_binary(c_self *C.dmrgo_hdap_lp_emergency_t, 
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_hytera_hdap.LPEmergency)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -14321,7 +14268,6 @@ func dmrgo_hdap_lp_emergency_string(c_self *C.dmrgo_hdap_lp_emergency_t, c_out *
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_hytera_hdap.LPEmergency)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -14346,7 +14292,6 @@ func dmrgo_hdap_lp_report_append_binary(c_self *C.dmrgo_hdap_lp_report_t, c_dst 
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_hytera_hdap.LPReport)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -14372,7 +14317,6 @@ func dmrgo_hdap_lp_report_string(c_self *C.dmrgo_hdap_lp_report_t, c_out *C.char
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_hytera_hdap.LPReport)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -14397,7 +14341,6 @@ func dmrgo_hdap_lp_request_append_binary(c_self *C.dmrgo_hdap_lp_request_t, c_ds
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_hytera_hdap.LPRequest)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -14423,7 +14366,6 @@ func dmrgo_hdap_lp_request_string(c_self *C.dmrgo_hdap_lp_request_t, c_out *C.ch
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_hytera_hdap.LPRequest)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -14433,16 +14375,9 @@ func dmrgo_hdap_lp_request_string(c_self *C.dmrgo_hdap_lp_request_t, c_out *C.ch
 }
 
 //export dmrgo_hdap_message_append_binary
-func dmrgo_hdap_message_append_binary(c_self *C.dmrgo_hdap_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_hdap_message_append_binary(c_self *C.dmrgo_hdap_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14455,19 +14390,12 @@ func dmrgo_hdap_message_append_binary(c_self *C.dmrgo_hdap_message_t, c_dst *C.u
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_hytera_hdap_Message(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -14475,80 +14403,48 @@ func dmrgo_hdap_message_append_binary(c_self *C.dmrgo_hdap_message_t, c_dst *C.u
 }
 
 //export dmrgo_hdap_message_checksum_ok
-func dmrgo_hdap_message_checksum_ok(c_self *C.dmrgo_hdap_message_t, c_out *C.bool, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_hdap_message_checksum_ok(c_self *C.dmrgo_hdap_message_t, c_out *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_hytera_hdap.Message
 	x = in_hytera_hdap_Message(&(*c_self))
 	r0 := x.ChecksumOK()
-	out_hytera_hdap_Message(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.bool(r0)
 	}
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
 
 //export dmrgo_hdap_message_seal
-func dmrgo_hdap_message_seal(c_self *C.dmrgo_hdap_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_hdap_message_seal(c_self *C.dmrgo_hdap_message_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_hytera_hdap.Message
 	x = in_hytera_hdap_Message(&(*c_self))
 	x.Seal()
-	out_hytera_hdap_Message(&(*c_self), &x, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
+	ws_self := *c_self
+	ws_self.checksum = C.uint8_t(x.Checksum)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
+	*c_self = ws_self
 	return C.DMRGO_OK
 }
 
 //export dmrgo_hdap_message_string
-func dmrgo_hdap_message_string(c_self *C.dmrgo_hdap_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_hdap_message_string(c_self *C.dmrgo_hdap_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14558,17 +14454,10 @@ func dmrgo_hdap_message_string(c_self *C.dmrgo_hdap_message_t, c_out *C.char, c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_hytera_hdap_Message(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
@@ -14605,7 +14494,6 @@ func dmrgo_hdap_rrs_answer_append_binary(c_self *C.dmrgo_hdap_rrs_answer_t, c_ds
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_hytera_hdap.RRSAnswer)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -14631,7 +14519,6 @@ func dmrgo_hdap_rrs_answer_string(c_self *C.dmrgo_hdap_rrs_answer_t, c_out *C.ch
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_hytera_hdap.RRSAnswer)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -14656,7 +14543,6 @@ func dmrgo_hdap_rrs_check_answer_append_binary(c_self *C.dmrgo_hdap_rrs_check_an
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_hytera_hdap.RRSCheckAnswer)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -14682,7 +14568,6 @@ func dmrgo_hdap_rrs_check_answer_string(c_self *C.dmrgo_hdap_rrs_check_answer_t,
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_hytera_hdap.RRSCheckAnswer)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -14707,7 +14592,6 @@ func dmrgo_hdap_rrs_radio_append_binary(c_self *C.dmrgo_hdap_rrs_radio_t, c_dst 
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_hytera_hdap.RRSRadio)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -14733,7 +14617,6 @@ func dmrgo_hdap_rrs_radio_string(c_self *C.dmrgo_hdap_rrs_radio_t, c_out *C.char
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_hytera_hdap.RRSRadio)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -14774,7 +14657,6 @@ func dmrgo_hdap_tmp_answer_append_binary(c_self *C.dmrgo_hdap_tmp_answer_t, c_ds
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_hytera_hdap.TMPAnswer)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -14800,7 +14682,6 @@ func dmrgo_hdap_tmp_answer_string(c_self *C.dmrgo_hdap_tmp_answer_t, c_out *C.ch
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_hytera_hdap.TMPAnswer)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -14825,7 +14706,6 @@ func dmrgo_hdap_tmp_flags_append_binary(c_self *C.dmrgo_hdap_tmp_flags_t, c_dst 
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_hytera_hdap_TMPFlags(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -14851,7 +14731,6 @@ func dmrgo_hdap_tmp_flags_string(c_self *C.dmrgo_hdap_tmp_flags_t, c_out *C.char
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_hytera_hdap_TMPFlags(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -14876,7 +14755,6 @@ func dmrgo_hdap_tmp_group_answer_append_binary(c_self *C.dmrgo_hdap_tmp_group_an
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_hytera_hdap.TMPGroupAnswer)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -14902,7 +14780,6 @@ func dmrgo_hdap_tmp_group_answer_string(c_self *C.dmrgo_hdap_tmp_group_answer_t,
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_hytera_hdap.TMPGroupAnswer)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -14912,16 +14789,9 @@ func dmrgo_hdap_tmp_group_answer_string(c_self *C.dmrgo_hdap_tmp_group_answer_t,
 }
 
 //export dmrgo_hdap_tmp_message_append_binary
-func dmrgo_hdap_tmp_message_append_binary(c_self *C.dmrgo_hdap_tmp_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_hdap_tmp_message_append_binary(c_self *C.dmrgo_hdap_tmp_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -14934,19 +14804,12 @@ func dmrgo_hdap_tmp_message_append_binary(c_self *C.dmrgo_hdap_tmp_message_t, c_
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_hytera_hdap_TMPMessage(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -14981,7 +14844,9 @@ func dmrgo_hdap_tmp_message_set_text_utf8(c_self *C.dmrgo_hdap_tmp_message_t, c_
 	var a_text []byte
 	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
 	r0 := x.SetTextUTF8(a_dst, a_text)
-	out_hytera_hdap_TMPMessage(&(*c_self), &x, oc)
+	ws_self := *c_self
+	ws_self.text = (*C.uint8_t)(arenaCopy(oc, x.Text))
+	ws_self.text_len = C.size_t(len(x.Text))
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if c_arena_need != nil {
@@ -14990,6 +14855,7 @@ func dmrgo_hdap_tmp_message_set_text_utf8(c_self *C.dmrgo_hdap_tmp_message_t, c_
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	*c_dst_len = C.size_t(nf_dst)
 	if c_arena_len != nil {
 		*c_arena_len = C.size_t(oc.need)
@@ -14998,16 +14864,9 @@ func dmrgo_hdap_tmp_message_set_text_utf8(c_self *C.dmrgo_hdap_tmp_message_t, c_
 }
 
 //export dmrgo_hdap_tmp_message_string
-func dmrgo_hdap_tmp_message_string(c_self *C.dmrgo_hdap_tmp_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_hdap_tmp_message_string(c_self *C.dmrgo_hdap_tmp_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15017,32 +14876,18 @@ func dmrgo_hdap_tmp_message_string(c_self *C.dmrgo_hdap_tmp_message_t, c_out *C.
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_hytera_hdap_TMPMessage(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
 
 //export dmrgo_hdap_tmp_message_text_utf8
-func dmrgo_hdap_tmp_message_text_utf8(c_self *C.dmrgo_hdap_tmp_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_hdap_tmp_message_text_utf8(c_self *C.dmrgo_hdap_tmp_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15055,19 +14900,12 @@ func dmrgo_hdap_tmp_message_text_utf8(c_self *C.dmrgo_hdap_tmp_message_t, c_dst 
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0 := x.TextUTF8(a_dst)
-	out_hytera_hdap_TMPMessage(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	return C.DMRGO_OK
 }
 
@@ -15432,16 +15270,9 @@ func dmrgo_ip_group_address(c_prefix C.uint8_t, c_group C.uint32_t, c_out *C.uin
 }
 
 //export dmrgo_ip_icmp_append_binary
-func dmrgo_ip_icmp_append_binary(c_self *C.dmrgo_ip_icmp_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_ip_icmp_append_binary(c_self *C.dmrgo_ip_icmp_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15454,19 +15285,12 @@ func dmrgo_ip_icmp_append_binary(c_self *C.dmrgo_ip_icmp_t, c_dst *C.uint8_t, c_
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_ip_ICMP(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -15474,16 +15298,9 @@ func dmrgo_ip_icmp_append_binary(c_self *C.dmrgo_ip_icmp_t, c_dst *C.uint8_t, c_
 }
 
 //export dmrgo_ip_icmp_string
-func dmrgo_ip_icmp_string(c_self *C.dmrgo_ip_icmp_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_ip_icmp_string(c_self *C.dmrgo_ip_icmp_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15493,17 +15310,10 @@ func dmrgo_ip_icmp_string(c_self *C.dmrgo_ip_icmp_t, c_out *C.char, c_out_cap C.
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_ip_ICMP(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
@@ -15524,7 +15334,6 @@ func dmrgo_ip_icmp_header_append_binary(c_self *C.dmrgo_ip_icmp_header_t, c_dst 
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_ip.ICMPHeader)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -15550,7 +15359,6 @@ func dmrgo_ip_icmp_header_string(c_self *C.dmrgo_ip_icmp_header_t, c_out *C.char
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_ip.ICMPHeader)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -15624,16 +15432,9 @@ func dmrgo_ip_id(c_addr *C.uint8_t, c_out *C.uint32_t) (rc C.int) {
 }
 
 //export dmrgo_ip_ipv4_append_binary
-func dmrgo_ip_ipv4_append_binary(c_self *C.dmrgo_ip_ipv4_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_ip_ipv4_append_binary(c_self *C.dmrgo_ip_ipv4_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15646,19 +15447,12 @@ func dmrgo_ip_ipv4_append_binary(c_self *C.dmrgo_ip_ipv4_t, c_dst *C.uint8_t, c_
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_ip_IPv4(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -15666,16 +15460,9 @@ func dmrgo_ip_ipv4_append_binary(c_self *C.dmrgo_ip_ipv4_t, c_dst *C.uint8_t, c_
 }
 
 //export dmrgo_ip_ipv4_string
-func dmrgo_ip_ipv4_string(c_self *C.dmrgo_ip_ipv4_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_ip_ipv4_string(c_self *C.dmrgo_ip_ipv4_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15685,17 +15472,10 @@ func dmrgo_ip_ipv4_string(c_self *C.dmrgo_ip_ipv4_t, c_out *C.char, c_out_cap C.
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_ip_IPv4(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
@@ -15716,7 +15496,6 @@ func dmrgo_ip_ipv4_header_append_binary(c_self *C.dmrgo_ip_ipv4_header_t, c_dst 
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_ip_IPv4Header(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -15742,7 +15521,6 @@ func dmrgo_ip_ipv4_header_string(c_self *C.dmrgo_ip_ipv4_header_t, c_out *C.char
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_ip_IPv4Header(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -15852,16 +15630,9 @@ func dmrgo_ip_spid_port(c_spid C.dmrgo_enums_spid_t, c_out *C.dmrgo_ip_port_t) (
 }
 
 //export dmrgo_ip_udp_append_binary
-func dmrgo_ip_udp_append_binary(c_self *C.dmrgo_ip_udp_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_ip_udp_append_binary(c_self *C.dmrgo_ip_udp_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15874,19 +15645,12 @@ func dmrgo_ip_udp_append_binary(c_self *C.dmrgo_ip_udp_t, c_dst *C.uint8_t, c_ds
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_ip_UDP(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -15894,16 +15658,9 @@ func dmrgo_ip_udp_append_binary(c_self *C.dmrgo_ip_udp_t, c_dst *C.uint8_t, c_ds
 }
 
 //export dmrgo_ip_udp_string
-func dmrgo_ip_udp_string(c_self *C.dmrgo_ip_udp_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_ip_udp_string(c_self *C.dmrgo_ip_udp_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -15913,17 +15670,10 @@ func dmrgo_ip_udp_string(c_self *C.dmrgo_ip_udp_t, c_out *C.char, c_out_cap C.si
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_ip_UDP(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
@@ -15944,7 +15694,6 @@ func dmrgo_ip_udp_header_append_binary(c_self *C.dmrgo_ip_udp_header_t, c_dst *C
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_ip.UDPHeader)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -15970,7 +15719,6 @@ func dmrgo_ip_udp_header_string(c_self *C.dmrgo_ip_udp_header_t, c_out *C.char, 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_ip.UDPHeader)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -16767,7 +16515,6 @@ func dmrgo_layer2_cach_encode(c_self *C.dmrgo_layer2_cach_t, c_out *C.uint8_t) (
 	var x g_layer2.CACH
 	x = in_layer2_CACH(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_CACH(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[3]byte)(unsafe.Pointer(&(*(*[3]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -17515,6 +17262,11 @@ func dmrgo_layer2_position_tracker_place(c_self *C.dmrgo_layer2_position_tracker
 		p_h = &a_h
 	}
 	r0, r1 := h.v.Place((*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), p_h)
+	var ws_h C.dmrgo_layer2_hint_t
+	if c_h != nil {
+		ws_h = *c_h
+		ws_h.voice_burst = C.dmrgo_enums_voice_burst_type_t(a_h.VoiceBurst)
+	}
 	_ = r0
 	_ = r1
 	if c_lost != nil {
@@ -17525,6 +17277,9 @@ func dmrgo_layer2_position_tracker_place(c_self *C.dmrgo_layer2_position_tracker
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_h != nil {
+		*c_h = ws_h
 	}
 	return C.DMRGO_OK
 }
@@ -17545,6 +17300,11 @@ func dmrgo_layer2_position_tracker_place_decoded(c_self *C.dmrgo_layer2_position
 		p_h = &a_h
 	}
 	r0, r1 := h.v.PlaceDecoded(a_b, p_h, int(c_steps))
+	var ws_h C.dmrgo_layer2_hint_t
+	if c_h != nil {
+		ws_h = *c_h
+		ws_h.voice_burst = C.dmrgo_enums_voice_burst_type_t(a_h.VoiceBurst)
+	}
 	_ = r0
 	_ = r1
 	if c_lost != nil {
@@ -17555,6 +17315,9 @@ func dmrgo_layer2_position_tracker_place_decoded(c_self *C.dmrgo_layer2_position
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_h != nil {
+		*c_h = ws_h
 	}
 	return C.DMRGO_OK
 }
@@ -20109,16 +19872,9 @@ func dmrgo_packet_decode_response_data(c_blocks *C.dmrgo_pdu_rate12_data_t, c_bl
 }
 
 //export dmrgo_packet_message_udp_ipv4
-func dmrgo_packet_message_udp_ipv4(c_self *C.dmrgo_packet_message_t, c_header *C.dmrgo_pdu_udp_ipv4_compressed_header_t, c_payload *C.uint8_t, c_payload_cap C.size_t, c_payload_len *C.size_t, c_payload_need *C.size_t, c_ok *C.bool, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_packet_message_udp_ipv4(c_self *C.dmrgo_packet_message_t, c_header *C.dmrgo_pdu_udp_ipv4_compressed_header_t, c_payload *C.uint8_t, c_payload_cap C.size_t, c_payload_len *C.size_t, c_payload_need *C.size_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20129,7 +19885,6 @@ func dmrgo_packet_message_udp_ipv4(c_self *C.dmrgo_packet_message_t, c_header *C
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0, r1, r2 := x.UDPIPv4()
-	out_layer2_packet_Message(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	_ = r2
@@ -20140,14 +19895,8 @@ func dmrgo_packet_message_udp_ipv4(c_self *C.dmrgo_packet_message_t, c_header *C
 	if c_ok != nil {
 		*c_ok = C.bool(r2)
 	}
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
@@ -20355,7 +20104,6 @@ func dmrgo_packet_response_data_append_encode(c_self *C.dmrgo_packet_response_da
 	full_dst := unsafe.Slice((*g_layer2_pdu.Rate12Data)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendEncode(a_dst, int(c_blocks))
-	out_layer2_packet_ResponseData(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -20383,7 +20131,6 @@ func dmrgo_packet_response_data_append_retry_blocks(c_self *C.dmrgo_packet_respo
 	nf_dst := int(*c_dst_len)
 	var a_dst []int
 	r0 := x.AppendRetryBlocks(a_dst)
-	out_layer2_packet_ResponseData(&(*c_self), &x, oc)
 	_ = r0
 	{
 		base := nf_dst
@@ -20421,7 +20168,6 @@ func dmrgo_packet_response_data_encode(c_self *C.dmrgo_packet_response_data_t, c
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0, r1 := x.Encode(int(c_blocks))
-	out_layer2_packet_ResponseData(&(*c_self), &x, oc)
 	_ = r0
 	{
 		src := r0
@@ -20461,7 +20207,6 @@ func dmrgo_packet_response_data_retry_blocks(c_self *C.dmrgo_packet_response_dat
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.RetryBlocks()
-	out_layer2_packet_ResponseData(&(*c_self), &x, oc)
 	_ = r0
 	{
 		src := r0
@@ -20519,7 +20264,6 @@ func dmrgo_pdu_ack_inbound_pdu_encode(c_self *C.dmrgo_pdu_ack_inbound_pdu_t, c_o
 	var x g_layer2_pdu.AckInboundPDU
 	x = in_layer2_pdu_AckInboundPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_AckInboundPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -20546,7 +20290,6 @@ func dmrgo_pdu_ack_inbound_pdu_string(c_self *C.dmrgo_pdu_ack_inbound_pdu_t, c_o
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_AckInboundPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -20565,7 +20308,6 @@ func dmrgo_pdu_ack_inbound_payload_pdu_encode(c_self *C.dmrgo_pdu_ack_inbound_pa
 	var x g_layer2_pdu.AckInboundPayloadPDU
 	x = in_layer2_pdu_AckInboundPayloadPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_AckInboundPayloadPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -20592,7 +20334,6 @@ func dmrgo_pdu_ack_inbound_payload_pdu_string(c_self *C.dmrgo_pdu_ack_inbound_pa
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_AckInboundPayloadPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -20611,7 +20352,6 @@ func dmrgo_pdu_ack_outbound_pdu_encode(c_self *C.dmrgo_pdu_ack_outbound_pdu_t, c
 	var x g_layer2_pdu.AckOutboundPDU
 	x = in_layer2_pdu_AckOutboundPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_AckOutboundPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -20638,7 +20378,6 @@ func dmrgo_pdu_ack_outbound_pdu_string(c_self *C.dmrgo_pdu_ack_outbound_pdu_t, c
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_AckOutboundPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -20657,7 +20396,6 @@ func dmrgo_pdu_ack_outbound_payload_pdu_encode(c_self *C.dmrgo_pdu_ack_outbound_
 	var x g_layer2_pdu.AckOutboundPayloadPDU
 	x = in_layer2_pdu_AckOutboundPayloadPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_AckOutboundPayloadPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -20684,7 +20422,6 @@ func dmrgo_pdu_ack_outbound_payload_pdu_string(c_self *C.dmrgo_pdu_ack_outbound_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_AckOutboundPayloadPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -20703,7 +20440,6 @@ func dmrgo_pdu_ackvitation_pdu_encode(c_self *C.dmrgo_pdu_ackvitation_pdu_t, c_o
 	var x g_layer2_pdu.AckvitationPDU
 	x = in_layer2_pdu_AckvitationPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_AckvitationPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -20730,7 +20466,6 @@ func dmrgo_pdu_ackvitation_pdu_string(c_self *C.dmrgo_pdu_ackvitation_pdu_t, c_o
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_AckvitationPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -20767,7 +20502,6 @@ func dmrgo_pdu_adjacent_site_parms_encode(c_self *C.dmrgo_pdu_adjacent_site_parm
 	var x g_layer2_pdu.AdjacentSiteParms
 	x = in_layer2_pdu_AdjacentSiteParms(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_AdjacentSiteParms(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -20794,7 +20528,6 @@ func dmrgo_pdu_adjacent_site_parms_string(c_self *C.dmrgo_pdu_adjacent_site_parm
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_AdjacentSiteParms(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -20813,7 +20546,6 @@ func dmrgo_pdu_ahoy_pdu_encode(c_self *C.dmrgo_pdu_ahoy_pdu_t, c_out *C.uint8_t)
 	var x g_layer2_pdu.AhoyPDU
 	x = in_layer2_pdu_AhoyPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_AhoyPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -20840,7 +20572,6 @@ func dmrgo_pdu_ahoy_pdu_string(c_self *C.dmrgo_pdu_ahoy_pdu_t, c_out *C.char, c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_AhoyPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -20859,7 +20590,6 @@ func dmrgo_pdu_aloha_pdu_encode(c_self *C.dmrgo_pdu_aloha_pdu_t, c_out *C.uint8_
 	var x g_layer2_pdu.AlohaPDU
 	x = in_layer2_pdu_AlohaPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_AlohaPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -20886,7 +20616,6 @@ func dmrgo_pdu_aloha_pdu_string(c_self *C.dmrgo_pdu_aloha_pdu_t, c_out *C.char, 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_AlohaPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -20905,7 +20634,6 @@ func dmrgo_pdu_ann_wd_tscc_parms_encode(c_self *C.dmrgo_pdu_ann_wd_tscc_parms_t,
 	var x g_layer2_pdu.AnnWDTSCCParms
 	x = in_layer2_pdu_AnnWDTSCCParms(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_AnnWDTSCCParms(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -20932,7 +20660,6 @@ func dmrgo_pdu_ann_wd_tscc_parms_string(c_self *C.dmrgo_pdu_ann_wd_tscc_parms_t,
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_AnnWDTSCCParms(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -20994,7 +20721,6 @@ func dmrgo_pdu_bcap_continuation_data_type(c_self *C.dmrgo_pdu_bcap_continuation
 	var x g_layer2_pdu.BCAPContinuation
 	x = in_layer2_pdu_BCAPContinuation(&(*c_self))
 	r0 := x.DataType()
-	out_layer2_pdu_BCAPContinuation(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_enums_data_type_t(r0)
@@ -21015,7 +20741,6 @@ func dmrgo_pdu_bcap_continuation_encode(c_self *C.dmrgo_pdu_bcap_continuation_t,
 	var x g_layer2_pdu.BCAPContinuation
 	x = in_layer2_pdu_BCAPContinuation(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_BCAPContinuation(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[12]byte)(unsafe.Pointer(&(*(*[12]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -21042,7 +20767,6 @@ func dmrgo_pdu_bcap_continuation_string(c_self *C.dmrgo_pdu_bcap_continuation_t,
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_BCAPContinuation(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -21061,7 +20785,6 @@ func dmrgo_pdu_bs_outbound_activation_pdu_encode(c_self *C.dmrgo_pdu_bs_outbound
 	var x g_layer2_pdu.BSOutboundActivationPDU
 	x = *(*g_layer2_pdu.BSOutboundActivationPDU)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Encode()
-	*(*g_layer2_pdu.BSOutboundActivationPDU)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -21088,7 +20811,6 @@ func dmrgo_pdu_bs_outbound_activation_pdu_string(c_self *C.dmrgo_pdu_bs_outbound
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_layer2_pdu.BSOutboundActivationPDU)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -21125,7 +20847,6 @@ func dmrgo_pdu_broadcast_pdu_as_adjacent_site(c_self *C.dmrgo_pdu_broadcast_pdu_
 	var x g_layer2_pdu.BroadcastPDU
 	x = in_layer2_pdu_BroadcastPDU(&(*c_self))
 	r0, r1 := x.AsAdjacentSite()
-	out_layer2_pdu_BroadcastPDU(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_v != nil {
@@ -21150,7 +20871,6 @@ func dmrgo_pdu_broadcast_pdu_as_ann_wd_tscc(c_self *C.dmrgo_pdu_broadcast_pdu_t,
 	var x g_layer2_pdu.BroadcastPDU
 	x = in_layer2_pdu_BroadcastPDU(&(*c_self))
 	r0, r1 := x.AsAnnWDTSCC()
-	out_layer2_pdu_BroadcastPDU(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_v != nil {
@@ -21175,7 +20895,6 @@ func dmrgo_pdu_broadcast_pdu_as_call_timer(c_self *C.dmrgo_pdu_broadcast_pdu_t, 
 	var x g_layer2_pdu.BroadcastPDU
 	x = in_layer2_pdu_BroadcastPDU(&(*c_self))
 	r0, r1 := x.AsCallTimer()
-	out_layer2_pdu_BroadcastPDU(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_v != nil {
@@ -21200,7 +20919,6 @@ func dmrgo_pdu_broadcast_pdu_as_chan_freq(c_self *C.dmrgo_pdu_broadcast_pdu_t, c
 	var x g_layer2_pdu.BroadcastPDU
 	x = in_layer2_pdu_BroadcastPDU(&(*c_self))
 	r0, r1 := x.AsChanFreq()
-	out_layer2_pdu_BroadcastPDU(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_v != nil {
@@ -21225,7 +20943,6 @@ func dmrgo_pdu_broadcast_pdu_as_gen_site(c_self *C.dmrgo_pdu_broadcast_pdu_t, c_
 	var x g_layer2_pdu.BroadcastPDU
 	x = in_layer2_pdu_BroadcastPDU(&(*c_self))
 	r0, r1 := x.AsGenSite()
-	out_layer2_pdu_BroadcastPDU(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_v != nil {
@@ -21250,7 +20967,6 @@ func dmrgo_pdu_broadcast_pdu_as_local_time(c_self *C.dmrgo_pdu_broadcast_pdu_t, 
 	var x g_layer2_pdu.BroadcastPDU
 	x = in_layer2_pdu_BroadcastPDU(&(*c_self))
 	r0, r1 := x.AsLocalTime()
-	out_layer2_pdu_BroadcastPDU(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_v != nil {
@@ -21275,7 +20991,6 @@ func dmrgo_pdu_broadcast_pdu_as_mass_reg(c_self *C.dmrgo_pdu_broadcast_pdu_t, c_
 	var x g_layer2_pdu.BroadcastPDU
 	x = in_layer2_pdu_BroadcastPDU(&(*c_self))
 	r0, r1 := x.AsMassReg()
-	out_layer2_pdu_BroadcastPDU(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_v != nil {
@@ -21300,7 +21015,6 @@ func dmrgo_pdu_broadcast_pdu_as_vote_now(c_self *C.dmrgo_pdu_broadcast_pdu_t, c_
 	var x g_layer2_pdu.BroadcastPDU
 	x = in_layer2_pdu_BroadcastPDU(&(*c_self))
 	r0, r1 := x.AsVoteNow()
-	out_layer2_pdu_BroadcastPDU(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_v != nil {
@@ -21325,7 +21039,6 @@ func dmrgo_pdu_broadcast_pdu_encode(c_self *C.dmrgo_pdu_broadcast_pdu_t, c_out *
 	var x g_layer2_pdu.BroadcastPDU
 	x = in_layer2_pdu_BroadcastPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_BroadcastPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -21352,7 +21065,6 @@ func dmrgo_pdu_broadcast_pdu_string(c_self *C.dmrgo_pdu_broadcast_pdu_t, c_out *
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_BroadcastPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -21371,7 +21083,6 @@ func dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_encode(c_self *C.dmrgo_pdu_br
 	var x g_layer2_pdu.BroadcastTalkgroupVoiceGrantPDU
 	x = in_layer2_pdu_BroadcastTalkgroupVoiceGrantPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_BroadcastTalkgroupVoiceGrantPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -21398,7 +21109,6 @@ func dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_string(c_self *C.dmrgo_pdu_br
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_BroadcastTalkgroupVoiceGrantPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -21417,7 +21127,6 @@ func dmrgo_pdu_cgap_continuation_data_type(c_self *C.dmrgo_pdu_cgap_continuation
 	var x g_layer2_pdu.CGAPContinuation
 	x = in_layer2_pdu_CGAPContinuation(&(*c_self))
 	r0 := x.DataType()
-	out_layer2_pdu_CGAPContinuation(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_enums_data_type_t(r0)
@@ -21438,7 +21147,6 @@ func dmrgo_pdu_cgap_continuation_encode(c_self *C.dmrgo_pdu_cgap_continuation_t,
 	var x g_layer2_pdu.CGAPContinuation
 	x = in_layer2_pdu_CGAPContinuation(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_CGAPContinuation(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[12]byte)(unsafe.Pointer(&(*(*[12]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -21465,7 +21173,6 @@ func dmrgo_pdu_cgap_continuation_string(c_self *C.dmrgo_pdu_cgap_continuation_t,
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_CGAPContinuation(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -21508,7 +21215,6 @@ func dmrgo_pdu_csbk_addresses(c_self *C.dmrgo_pdu_csbk_t, c_target *C.uint32_t, 
 	var xs st_layer2_pdu_CSBK
 	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
 	r0, r1, r2 := x.Addresses()
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	_ = r2
@@ -21538,7 +21244,6 @@ func dmrgo_pdu_csbk_as_bs_outbound_activation(c_self *C.dmrgo_pdu_csbk_t, c_p *C
 	var xs st_layer2_pdu_CSBK
 	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
 	r0, r1 := x.AsBSOutboundActivation()
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -21564,7 +21269,6 @@ func dmrgo_pdu_csbk_as_capacity_plus_data_revert_announcement(c_self *C.dmrgo_pd
 	var xs st_layer2_pdu_CSBK
 	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
 	r0, r1 := x.AsCapacityPlusDataRevertAnnouncement()
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -21590,7 +21294,6 @@ func dmrgo_pdu_csbk_as_capacity_plus_data_revert_grant(c_self *C.dmrgo_pdu_csbk_
 	var xs st_layer2_pdu_CSBK
 	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
 	r0, r1 := x.AsCapacityPlusDataRevertGrant()
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -21616,7 +21319,6 @@ func dmrgo_pdu_csbk_as_capacity_plus_neighbors(c_self *C.dmrgo_pdu_csbk_t, c_p *
 	var xs st_layer2_pdu_CSBK
 	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
 	r0, r1 := x.AsCapacityPlusNeighbors()
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -21642,7 +21344,6 @@ func dmrgo_pdu_csbk_as_capacity_plus_preamble(c_self *C.dmrgo_pdu_csbk_t, c_p *C
 	var xs st_layer2_pdu_CSBK
 	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
 	r0, r1 := x.AsCapacityPlusPreamble()
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -21668,7 +21369,6 @@ func dmrgo_pdu_csbk_as_capacity_plus_site_status(c_self *C.dmrgo_pdu_csbk_t, c_p
 	var xs st_layer2_pdu_CSBK
 	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
 	r0, r1 := x.AsCapacityPlusSiteStatus()
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -21694,7 +21394,6 @@ func dmrgo_pdu_csbk_as_motorola_call_alert(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dm
 	var xs st_layer2_pdu_CSBK
 	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
 	r0, r1 := x.AsMotorolaCallAlert()
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -21720,7 +21419,6 @@ func dmrgo_pdu_csbk_as_motorola_call_alert_ack(c_self *C.dmrgo_pdu_csbk_t, c_p *
 	var xs st_layer2_pdu_CSBK
 	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
 	r0, r1 := x.AsMotorolaCallAlertAck()
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -21746,7 +21444,6 @@ func dmrgo_pdu_csbk_as_motorola_radio_check(c_self *C.dmrgo_pdu_csbk_t, c_p *C.d
 	var xs st_layer2_pdu_CSBK
 	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
 	r0, r1 := x.AsMotorolaRadioCheck()
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -21772,7 +21469,6 @@ func dmrgo_pdu_csbk_as_talkgroup_data_grant_multi_item(c_self *C.dmrgo_pdu_csbk_
 	var xs st_layer2_pdu_CSBK
 	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
 	r0, r1 := x.AsTalkgroupDataGrantMultiItem()
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -21798,7 +21494,6 @@ func dmrgo_pdu_csbk_data_type(c_self *C.dmrgo_pdu_csbk_t, c_out *C.dmrgo_enums_d
 	var xs st_layer2_pdu_CSBK
 	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
 	r0 := x.DataType()
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_enums_data_type_t(r0)
@@ -21820,7 +21515,6 @@ func dmrgo_pdu_csbk_encode(c_self *C.dmrgo_pdu_csbk_t, c_out *C.uint8_t) (rc C.i
 	var xs st_layer2_pdu_CSBK
 	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
 	r0, r1 := x.Encode()
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[12]byte)(unsafe.Pointer(&(*(*[12]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -21845,10 +21539,12 @@ func dmrgo_pdu_csbk_set_addresses(c_self *C.dmrgo_pdu_csbk_t, c_target C.uint32_
 	var xs st_layer2_pdu_CSBK
 	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
 	r0 := x.SetAddresses(uint32(c_target), uint32(c_source))
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
+	ws_self := *c_self
+	out_layer2_pdu_CSBK(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -21869,10 +21565,12 @@ func dmrgo_pdu_csbk_set_bs_outbound_activation(c_self *C.dmrgo_pdu_csbk_t, c_p *
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetBSOutboundActivation(*(*g_layer2_pdu.BSOutboundActivationPDU)(unsafe.Pointer(c_p)))
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
+	ws_self := *c_self
+	out_layer2_pdu_CSBK(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -21893,10 +21591,12 @@ func dmrgo_pdu_csbk_set_motorola_call_alert(c_self *C.dmrgo_pdu_csbk_t, c_p *C.d
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetMotorolaCallAlert(*(*g_layer2_pdu.MotorolaCallAlertPDU)(unsafe.Pointer(c_p)))
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
+	ws_self := *c_self
+	out_layer2_pdu_CSBK(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -21917,10 +21617,12 @@ func dmrgo_pdu_csbk_set_motorola_call_alert_ack(c_self *C.dmrgo_pdu_csbk_t, c_p 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetMotorolaCallAlertAck(*(*g_layer2_pdu.MotorolaCallAlertAckPDU)(unsafe.Pointer(c_p)))
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
+	ws_self := *c_self
+	out_layer2_pdu_CSBK(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -21943,10 +21645,12 @@ func dmrgo_pdu_csbk_set_motorola_radio_check(c_self *C.dmrgo_pdu_csbk_t, c_p *C.
 	var a_p g_layer2_pdu.MotorolaRadioCheckPDU
 	a_p = in_layer2_pdu_MotorolaRadioCheckPDU(&(*c_p))
 	r0 := x.SetMotorolaRadioCheck(a_p)
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
+	ws_self := *c_self
+	out_layer2_pdu_CSBK(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -21969,10 +21673,12 @@ func dmrgo_pdu_csbk_set_talkgroup_data_grant_multi_item(c_self *C.dmrgo_pdu_csbk
 	var a_p g_layer2_pdu.TalkgroupDataGrantMultiItemPDU
 	a_p = in_layer2_pdu_TalkgroupDataGrantMultiItemPDU(&(*c_p))
 	r0 := x.SetTalkgroupDataGrantMultiItem(a_p)
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
+	ws_self := *c_self
+	out_layer2_pdu_CSBK(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -21993,7 +21699,6 @@ func dmrgo_pdu_csbk_string(c_self *C.dmrgo_pdu_csbk_t, c_out *C.char, c_out_cap 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_CSBK(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -22200,7 +21905,6 @@ func dmrgo_pdu_call_timer_parms_encode(c_self *C.dmrgo_pdu_call_timer_parms_t, c
 	var x g_layer2_pdu.CallTimerParms
 	x = in_layer2_pdu_CallTimerParms(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_CallTimerParms(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -22227,7 +21931,6 @@ func dmrgo_pdu_call_timer_parms_string(c_self *C.dmrgo_pdu_call_timer_parms_t, c
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_CallTimerParms(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -22246,7 +21949,6 @@ func dmrgo_pdu_capacity_plus_activity_radio_target(c_self *C.dmrgo_pdu_capacity_
 	var x g_layer2_pdu.CapacityPlusActivity
 	x = *(*g_layer2_pdu.CapacityPlusActivity)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.RadioTarget(uint8(c_lsn))
-	*(*g_layer2_pdu.CapacityPlusActivity)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	_ = r1
 	if c_radio != nil {
@@ -22271,7 +21973,6 @@ func dmrgo_pdu_capacity_plus_activity_talkgroup(c_self *C.dmrgo_pdu_capacity_plu
 	var x g_layer2_pdu.CapacityPlusActivity
 	x = *(*g_layer2_pdu.CapacityPlusActivity)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Talkgroup(uint8(c_lsn))
-	*(*g_layer2_pdu.CapacityPlusActivity)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	_ = r1
 	if c_tg != nil {
@@ -22319,7 +22020,6 @@ func dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_encode(c_self *C.dmrgo
 	var x g_layer2_pdu.CapacityPlusDataRevertAnnouncementPDU
 	x = *(*g_layer2_pdu.CapacityPlusDataRevertAnnouncementPDU)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Encode()
-	*(*g_layer2_pdu.CapacityPlusDataRevertAnnouncementPDU)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -22346,7 +22046,6 @@ func dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_string(c_self *C.dmrgo
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_layer2_pdu.CapacityPlusDataRevertAnnouncementPDU)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -22365,7 +22064,6 @@ func dmrgo_pdu_capacity_plus_data_revert_grant_pdu_encode(c_self *C.dmrgo_pdu_ca
 	var x g_layer2_pdu.CapacityPlusDataRevertGrantPDU
 	x = *(*g_layer2_pdu.CapacityPlusDataRevertGrantPDU)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Encode()
-	*(*g_layer2_pdu.CapacityPlusDataRevertGrantPDU)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -22392,7 +22090,6 @@ func dmrgo_pdu_capacity_plus_data_revert_grant_pdu_string(c_self *C.dmrgo_pdu_ca
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_layer2_pdu.CapacityPlusDataRevertGrantPDU)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -22411,7 +22108,6 @@ func dmrgo_pdu_capacity_plus_group_voice_grant_encode(c_self *C.dmrgo_pdu_capaci
 	var x g_layer2_pdu.CapacityPlusGroupVoiceGrant
 	x = in_layer2_pdu_CapacityPlusGroupVoiceGrant(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_CapacityPlusGroupVoiceGrant(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[7]byte)(unsafe.Pointer(&(*(*[7]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -22438,7 +22134,6 @@ func dmrgo_pdu_capacity_plus_group_voice_grant_string(c_self *C.dmrgo_pdu_capaci
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_CapacityPlusGroupVoiceGrant(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -22457,7 +22152,6 @@ func dmrgo_pdu_capacity_plus_neighbors_pdu_encode(c_self *C.dmrgo_pdu_capacity_p
 	var x g_layer2_pdu.CapacityPlusNeighborsPDU
 	x = in_layer2_pdu_CapacityPlusNeighborsPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_CapacityPlusNeighborsPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -22481,7 +22175,6 @@ func dmrgo_pdu_capacity_plus_neighbors_pdu_neighbor(c_self *C.dmrgo_pdu_capacity
 	var x g_layer2_pdu.CapacityPlusNeighborsPDU
 	x = in_layer2_pdu_CapacityPlusNeighborsPDU(&(*c_self))
 	r0, r1, r2 := x.Neighbor(int(c_i))
-	out_layer2_pdu_CapacityPlusNeighborsPDU(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	_ = r2
@@ -22513,7 +22206,6 @@ func dmrgo_pdu_capacity_plus_neighbors_pdu_string(c_self *C.dmrgo_pdu_capacity_p
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_CapacityPlusNeighborsPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -22532,7 +22224,6 @@ func dmrgo_pdu_capacity_plus_preamble_pdu_encode(c_self *C.dmrgo_pdu_capacity_pl
 	var x g_layer2_pdu.CapacityPlusPreamblePDU
 	x = in_layer2_pdu_CapacityPlusPreamblePDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_CapacityPlusPreamblePDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -22559,7 +22250,6 @@ func dmrgo_pdu_capacity_plus_preamble_pdu_string(c_self *C.dmrgo_pdu_capacity_pl
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_CapacityPlusPreamblePDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -22578,7 +22268,6 @@ func dmrgo_pdu_capacity_plus_private_voice_grant_encode(c_self *C.dmrgo_pdu_capa
 	var x g_layer2_pdu.CapacityPlusPrivateVoiceGrant
 	x = in_layer2_pdu_CapacityPlusPrivateVoiceGrant(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_CapacityPlusPrivateVoiceGrant(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[7]byte)(unsafe.Pointer(&(*(*[7]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -22605,7 +22294,6 @@ func dmrgo_pdu_capacity_plus_private_voice_grant_string(c_self *C.dmrgo_pdu_capa
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_CapacityPlusPrivateVoiceGrant(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -22624,7 +22312,6 @@ func dmrgo_pdu_capacity_plus_rest_channel_encode(c_self *C.dmrgo_pdu_capacity_pl
 	var x g_layer2_pdu.CapacityPlusRestChannel
 	x = *(*g_layer2_pdu.CapacityPlusRestChannel)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Encode()
-	*(*g_layer2_pdu.CapacityPlusRestChannel)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[3]byte)(unsafe.Pointer(&(*(*[3]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -22651,7 +22338,6 @@ func dmrgo_pdu_capacity_plus_rest_channel_string(c_self *C.dmrgo_pdu_capacity_pl
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_layer2_pdu.CapacityPlusRestChannel)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -22763,7 +22449,6 @@ func dmrgo_pdu_capacity_plus_site_status_pdu_encode(c_self *C.dmrgo_pdu_capacity
 	var x g_layer2_pdu.CapacityPlusSiteStatusPDU
 	x = in_layer2_pdu_CapacityPlusSiteStatusPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_CapacityPlusSiteStatusPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -22790,7 +22475,6 @@ func dmrgo_pdu_capacity_plus_site_status_pdu_string(c_self *C.dmrgo_pdu_capacity
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_CapacityPlusSiteStatusPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -22809,7 +22493,6 @@ func dmrgo_pdu_chan_freq_parms_encode(c_self *C.dmrgo_pdu_chan_freq_parms_t, c_o
 	var x g_layer2_pdu.ChanFreqParms
 	x = in_layer2_pdu_ChanFreqParms(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_ChanFreqParms(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -22836,7 +22519,6 @@ func dmrgo_pdu_chan_freq_parms_string(c_self *C.dmrgo_pdu_chan_freq_parms_t, c_o
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_ChanFreqParms(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -22855,7 +22537,6 @@ func dmrgo_pdu_channel_timing_pdu_encode(c_self *C.dmrgo_pdu_channel_timing_pdu_
 	var x g_layer2_pdu.ChannelTimingPDU
 	x = in_layer2_pdu_ChannelTimingPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_ChannelTimingPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -22882,7 +22563,6 @@ func dmrgo_pdu_channel_timing_pdu_string(c_self *C.dmrgo_pdu_channel_timing_pdu_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_ChannelTimingPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -22901,7 +22581,6 @@ func dmrgo_pdu_clear_pdu_encode(c_self *C.dmrgo_pdu_clear_pdu_t, c_out *C.uint8_
 	var x g_layer2_pdu.ClearPDU
 	x = in_layer2_pdu_ClearPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_ClearPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -22928,7 +22607,6 @@ func dmrgo_pdu_clear_pdu_string(c_self *C.dmrgo_pdu_clear_pdu_t, c_out *C.char, 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_ClearPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -22947,7 +22625,6 @@ func dmrgo_pdu_confirmed_data_header_encode(c_self *C.dmrgo_pdu_confirmed_data_h
 	var x g_layer2_pdu.ConfirmedDataHeader
 	x = in_layer2_pdu_ConfirmedDataHeader(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_ConfirmedDataHeader(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[10]byte)(unsafe.Pointer(&(*(*[10]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -22974,7 +22651,6 @@ func dmrgo_pdu_confirmed_data_header_string(c_self *C.dmrgo_pdu_confirmed_data_h
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_ConfirmedDataHeader(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -22994,7 +22670,6 @@ func dmrgo_pdu_data_header_addresses(c_self *C.dmrgo_pdu_data_header_t, c_target
 	var xs st_layer2_pdu_DataHeader
 	x = in_layer2_pdu_DataHeader(&(*c_self), &xs)
 	r0, r1, r2 := x.Addresses()
-	out_layer2_pdu_DataHeader(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	_ = r2
@@ -23024,7 +22699,6 @@ func dmrgo_pdu_data_header_data_type(c_self *C.dmrgo_pdu_data_header_t, c_out *C
 	var xs st_layer2_pdu_DataHeader
 	x = in_layer2_pdu_DataHeader(&(*c_self), &xs)
 	r0 := x.DataType()
-	out_layer2_pdu_DataHeader(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_enums_data_type_t(r0)
@@ -23046,7 +22720,6 @@ func dmrgo_pdu_data_header_encode(c_self *C.dmrgo_pdu_data_header_t, c_out *C.ui
 	var xs st_layer2_pdu_DataHeader
 	x = in_layer2_pdu_DataHeader(&(*c_self), &xs)
 	r0, r1 := x.Encode()
-	out_layer2_pdu_DataHeader(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[12]byte)(unsafe.Pointer(&(*(*[12]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -23071,10 +22744,60 @@ func dmrgo_pdu_data_header_set_addresses(c_self *C.dmrgo_pdu_data_header_t, c_de
 	var xs st_layer2_pdu_DataHeader
 	x = in_layer2_pdu_DataHeader(&(*c_self), &xs)
 	r0 := x.SetAddresses(uint32(c_destination), uint32(c_source))
-	out_layer2_pdu_DataHeader(&(*c_self), &x, oc)
+	ws_self := *c_self
+	if x.UnconfirmedDataHeader != nil {
+		ws_self.has_unconfirmed_data_header = true
+		out_layer2_pdu_UnconfirmedDataHeader(&ws_self.unconfirmed_data_header, &(*x.UnconfirmedDataHeader), oc)
+	} else {
+		ws_self.has_unconfirmed_data_header = false
+		ws_self.unconfirmed_data_header = C.dmrgo_pdu_unconfirmed_data_header_t{}
+	}
+	if x.ConfirmedDataHeader != nil {
+		ws_self.has_confirmed_data_header = true
+		out_layer2_pdu_ConfirmedDataHeader(&ws_self.confirmed_data_header, &(*x.ConfirmedDataHeader), oc)
+	} else {
+		ws_self.has_confirmed_data_header = false
+		ws_self.confirmed_data_header = C.dmrgo_pdu_confirmed_data_header_t{}
+	}
+	if x.ResponsePacketHeader != nil {
+		ws_self.has_response_packet_header = true
+		out_layer2_pdu_ResponsePacketHeader(&ws_self.response_packet_header, &(*x.ResponsePacketHeader), oc)
+	} else {
+		ws_self.has_response_packet_header = false
+		ws_self.response_packet_header = C.dmrgo_pdu_response_packet_header_t{}
+	}
+	if x.DefinedDataHeader != nil {
+		ws_self.has_defined_data_header = true
+		out_layer2_pdu_DefinedDataHeader(&ws_self.defined_data_header, &(*x.DefinedDataHeader), oc)
+	} else {
+		ws_self.has_defined_data_header = false
+		ws_self.defined_data_header = C.dmrgo_pdu_defined_data_header_t{}
+	}
+	if x.StatusPrecodedHeader != nil {
+		ws_self.has_status_precoded_header = true
+		out_layer2_pdu_StatusPrecodedHeader(&ws_self.status_precoded_header, &(*x.StatusPrecodedHeader), oc)
+	} else {
+		ws_self.has_status_precoded_header = false
+		ws_self.status_precoded_header = C.dmrgo_pdu_status_precoded_header_t{}
+	}
+	if x.RawDataHeader != nil {
+		ws_self.has_raw_data_header = true
+		out_layer2_pdu_RawDataHeader(&ws_self.raw_data_header, &(*x.RawDataHeader), oc)
+	} else {
+		ws_self.has_raw_data_header = false
+		ws_self.raw_data_header = C.dmrgo_pdu_raw_data_header_t{}
+	}
+	if x.UDTHeader != nil {
+		ws_self.has_udt_header = true
+		out_layer2_pdu_UDTHeader(&ws_self.udt_header, &(*x.UDTHeader), oc)
+	} else {
+		ws_self.has_udt_header = false
+		ws_self.udt_header = C.dmrgo_pdu_udt_header_t{}
+	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -23095,7 +22818,6 @@ func dmrgo_pdu_data_header_string(c_self *C.dmrgo_pdu_data_header_t, c_out *C.ch
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_DataHeader(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -23799,7 +23521,6 @@ func dmrgo_pdu_defined_data_header_encode(c_self *C.dmrgo_pdu_defined_data_heade
 	var x g_layer2_pdu.DefinedDataHeader
 	x = in_layer2_pdu_DefinedDataHeader(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_DefinedDataHeader(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[10]byte)(unsafe.Pointer(&(*(*[10]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -23826,7 +23547,6 @@ func dmrgo_pdu_defined_data_header_string(c_self *C.dmrgo_pdu_defined_data_heade
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_DefinedDataHeader(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -23845,7 +23565,6 @@ func dmrgo_pdu_duplex_private_data_grant_pdu_encode(c_self *C.dmrgo_pdu_duplex_p
 	var x g_layer2_pdu.DuplexPrivateDataGrantPDU
 	x = in_layer2_pdu_DuplexPrivateDataGrantPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_DuplexPrivateDataGrantPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -23872,7 +23591,6 @@ func dmrgo_pdu_duplex_private_data_grant_pdu_string(c_self *C.dmrgo_pdu_duplex_p
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_DuplexPrivateDataGrantPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -23891,7 +23609,6 @@ func dmrgo_pdu_duplex_private_voice_grant_pdu_encode(c_self *C.dmrgo_pdu_duplex_
 	var x g_layer2_pdu.DuplexPrivateVoiceGrantPDU
 	x = in_layer2_pdu_DuplexPrivateVoiceGrantPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_DuplexPrivateVoiceGrantPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -23918,7 +23635,6 @@ func dmrgo_pdu_duplex_private_voice_grant_pdu_string(c_self *C.dmrgo_pdu_duplex_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_DuplexPrivateVoiceGrantPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -24060,7 +23776,6 @@ func dmrgo_pdu_embedded_signalling_encode(c_self *C.dmrgo_pdu_embedded_signallin
 	var x g_layer2_pdu.EmbeddedSignalling
 	x = in_layer2_pdu_EmbeddedSignalling(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_EmbeddedSignalling(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[2]byte)(unsafe.Pointer(&(*(*[2]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -24084,7 +23799,6 @@ func dmrgo_pdu_embedded_signalling_info(c_self *C.dmrgo_pdu_embedded_signalling_
 	var x g_layer2_pdu.EmbeddedSignalling
 	x = in_layer2_pdu_EmbeddedSignalling(&(*c_self))
 	r0, r1 := x.Info()
-	out_layer2_pdu_EmbeddedSignalling(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_pdu_emb_info_t(r0)
@@ -24111,7 +23825,6 @@ func dmrgo_pdu_embedded_signalling_string(c_self *C.dmrgo_pdu_embedded_signallin
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_EmbeddedSignalling(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -24209,7 +23922,6 @@ func dmrgo_pdu_flc_gps_info_encode(c_self *C.dmrgo_pdu_flc_gps_info_t, c_out *C.
 	var x g_layer2_pdu.FLCGPSInfo
 	x = *(*g_layer2_pdu.FLCGPSInfo)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Encode()
-	*(*g_layer2_pdu.FLCGPSInfo)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[7]byte)(unsafe.Pointer(&(*(*[7]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -24236,7 +23948,6 @@ func dmrgo_pdu_flc_gps_info_string(c_self *C.dmrgo_pdu_flc_gps_info_t, c_out *C.
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_layer2_pdu.FLCGPSInfo)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -24255,7 +23966,6 @@ func dmrgo_pdu_flc_group_voice_encode(c_self *C.dmrgo_pdu_flc_group_voice_t, c_o
 	var x g_layer2_pdu.FLCGroupVoice
 	x = in_layer2_pdu_FLCGroupVoice(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_FLCGroupVoice(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[7]byte)(unsafe.Pointer(&(*(*[7]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -24282,7 +23992,6 @@ func dmrgo_pdu_flc_group_voice_string(c_self *C.dmrgo_pdu_flc_group_voice_t, c_o
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_FLCGroupVoice(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -24301,7 +24010,6 @@ func dmrgo_pdu_flc_talker_alias_block_encode(c_self *C.dmrgo_pdu_flc_talker_alia
 	var x g_layer2_pdu.FLCTalkerAliasBlock
 	x = *(*g_layer2_pdu.FLCTalkerAliasBlock)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Encode()
-	*(*g_layer2_pdu.FLCTalkerAliasBlock)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[7]byte)(unsafe.Pointer(&(*(*[7]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -24328,7 +24036,6 @@ func dmrgo_pdu_flc_talker_alias_block_string(c_self *C.dmrgo_pdu_flc_talker_alia
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_layer2_pdu.FLCTalkerAliasBlock)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -24347,7 +24054,6 @@ func dmrgo_pdu_flc_talker_alias_header_encode(c_self *C.dmrgo_pdu_flc_talker_ali
 	var x g_layer2_pdu.FLCTalkerAliasHeader
 	x = in_layer2_pdu_FLCTalkerAliasHeader(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_FLCTalkerAliasHeader(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[7]byte)(unsafe.Pointer(&(*(*[7]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -24374,7 +24080,6 @@ func dmrgo_pdu_flc_talker_alias_header_string(c_self *C.dmrgo_pdu_flc_talker_ali
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_FLCTalkerAliasHeader(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -24393,7 +24098,6 @@ func dmrgo_pdu_flc_terminator_data_link_control_encode(c_self *C.dmrgo_pdu_flc_t
 	var x g_layer2_pdu.FLCTerminatorDataLinkControl
 	x = in_layer2_pdu_FLCTerminatorDataLinkControl(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_FLCTerminatorDataLinkControl(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[7]byte)(unsafe.Pointer(&(*(*[7]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -24420,7 +24124,6 @@ func dmrgo_pdu_flc_terminator_data_link_control_string(c_self *C.dmrgo_pdu_flc_t
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_FLCTerminatorDataLinkControl(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -24439,7 +24142,6 @@ func dmrgo_pdu_flc_unit_to_unit_encode(c_self *C.dmrgo_pdu_flc_unit_to_unit_t, c
 	var x g_layer2_pdu.FLCUnitToUnit
 	x = in_layer2_pdu_FLCUnitToUnit(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_FLCUnitToUnit(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[7]byte)(unsafe.Pointer(&(*(*[7]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -24466,7 +24168,6 @@ func dmrgo_pdu_flc_unit_to_unit_string(c_self *C.dmrgo_pdu_flc_unit_to_unit_t, c
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_FLCUnitToUnit(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -24520,7 +24221,6 @@ func dmrgo_pdu_full_link_control_addresses(c_self *C.dmrgo_pdu_full_link_control
 	var xs st_layer2_pdu_FullLinkControl
 	x = in_layer2_pdu_FullLinkControl(&(*c_self), &xs)
 	r0, r1, r2 := x.Addresses()
-	out_layer2_pdu_FullLinkControl(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	_ = r2
@@ -24550,7 +24250,6 @@ func dmrgo_pdu_full_link_control_as_capacity_plus_group_voice_grant(c_self *C.dm
 	var xs st_layer2_pdu_FullLinkControl
 	x = in_layer2_pdu_FullLinkControl(&(*c_self), &xs)
 	r0, r1 := x.AsCapacityPlusGroupVoiceGrant()
-	out_layer2_pdu_FullLinkControl(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -24576,7 +24275,6 @@ func dmrgo_pdu_full_link_control_as_capacity_plus_private_voice_grant(c_self *C.
 	var xs st_layer2_pdu_FullLinkControl
 	x = in_layer2_pdu_FullLinkControl(&(*c_self), &xs)
 	r0, r1 := x.AsCapacityPlusPrivateVoiceGrant()
-	out_layer2_pdu_FullLinkControl(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -24602,7 +24300,6 @@ func dmrgo_pdu_full_link_control_bytes(c_self *C.dmrgo_pdu_full_link_control_t, 
 	var xs st_layer2_pdu_FullLinkControl
 	x = in_layer2_pdu_FullLinkControl(&(*c_self), &xs)
 	r0, r1 := x.Bytes()
-	out_layer2_pdu_FullLinkControl(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[9]byte)(unsafe.Pointer(&(*(*[9]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -24627,7 +24324,6 @@ func dmrgo_pdu_full_link_control_data_type(c_self *C.dmrgo_pdu_full_link_control
 	var xs st_layer2_pdu_FullLinkControl
 	x = in_layer2_pdu_FullLinkControl(&(*c_self), &xs)
 	r0 := x.DataType()
-	out_layer2_pdu_FullLinkControl(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_enums_data_type_t(r0)
@@ -24649,7 +24345,6 @@ func dmrgo_pdu_full_link_control_encode(c_self *C.dmrgo_pdu_full_link_control_t,
 	var xs st_layer2_pdu_FullLinkControl
 	x = in_layer2_pdu_FullLinkControl(&(*c_self), &xs)
 	r0, r1 := x.Encode()
-	out_layer2_pdu_FullLinkControl(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[12]byte)(unsafe.Pointer(&(*(*[12]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -24674,7 +24369,6 @@ func dmrgo_pdu_full_link_control_service_options(c_self *C.dmrgo_pdu_full_link_c
 	var xs st_layer2_pdu_FullLinkControl
 	x = in_layer2_pdu_FullLinkControl(&(*c_self), &xs)
 	r0, r1 := x.ServiceOptions()
-	out_layer2_pdu_FullLinkControl(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_so != nil {
@@ -24700,10 +24394,26 @@ func dmrgo_pdu_full_link_control_set_addresses(c_self *C.dmrgo_pdu_full_link_con
 	var xs st_layer2_pdu_FullLinkControl
 	x = in_layer2_pdu_FullLinkControl(&(*c_self), &xs)
 	r0 := x.SetAddresses(uint32(c_target), uint32(c_source))
-	out_layer2_pdu_FullLinkControl(&(*c_self), &x, oc)
+	ws_self := *c_self
+	if x.GroupVoice != nil {
+		ws_self.has_group_voice = true
+		out_layer2_pdu_FLCGroupVoice(&ws_self.group_voice, &(*x.GroupVoice), oc)
+	} else {
+		ws_self.has_group_voice = false
+		ws_self.group_voice = C.dmrgo_pdu_flc_group_voice_t{}
+	}
+	if x.UnitToUnit != nil {
+		ws_self.has_unit_to_unit = true
+		out_layer2_pdu_FLCUnitToUnit(&ws_self.unit_to_unit, &(*x.UnitToUnit), oc)
+	} else {
+		ws_self.has_unit_to_unit = false
+		ws_self.unit_to_unit = C.dmrgo_pdu_flc_unit_to_unit_t{}
+	}
+	*(*[7]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -24724,7 +24434,6 @@ func dmrgo_pdu_full_link_control_string(c_self *C.dmrgo_pdu_full_link_control_t,
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_FullLinkControl(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -24764,7 +24473,6 @@ func dmrgo_pdu_gen_site_parms_encode(c_self *C.dmrgo_pdu_gen_site_parms_t, c_out
 	var x g_layer2_pdu.GenSiteParms
 	x = in_layer2_pdu_GenSiteParms(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_GenSiteParms(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -24791,7 +24499,6 @@ func dmrgo_pdu_gen_site_parms_string(c_self *C.dmrgo_pdu_gen_site_parms_t, c_out
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_GenSiteParms(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -25154,7 +24861,6 @@ func dmrgo_pdu_local_time_parms_encode(c_self *C.dmrgo_pdu_local_time_parms_t, c
 	var x g_layer2_pdu.LocalTimeParms
 	x = in_layer2_pdu_LocalTimeParms(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_LocalTimeParms(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -25181,7 +24887,6 @@ func dmrgo_pdu_local_time_parms_string(c_self *C.dmrgo_pdu_local_time_parms_t, c
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_LocalTimeParms(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -25200,7 +24905,6 @@ func dmrgo_pdu_mbc_continuation_as_bcap(c_self *C.dmrgo_pdu_mbc_continuation_t, 
 	var x g_layer2_pdu.MBCContinuation
 	x = in_layer2_pdu_MBCContinuation(&(*c_self))
 	r0 := x.AsBCAP()
-	out_layer2_pdu_MBCContinuation(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		out_layer2_pdu_BCAPContinuation(&(*c_out), &r0, oc)
@@ -25221,7 +24925,6 @@ func dmrgo_pdu_mbc_continuation_as_cgap(c_self *C.dmrgo_pdu_mbc_continuation_t, 
 	var x g_layer2_pdu.MBCContinuation
 	x = in_layer2_pdu_MBCContinuation(&(*c_self))
 	r0 := x.AsCGAP()
-	out_layer2_pdu_MBCContinuation(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		out_layer2_pdu_CGAPContinuation(&(*c_out), &r0, oc)
@@ -25242,7 +24945,6 @@ func dmrgo_pdu_mbc_continuation_as_mvap(c_self *C.dmrgo_pdu_mbc_continuation_t, 
 	var x g_layer2_pdu.MBCContinuation
 	x = in_layer2_pdu_MBCContinuation(&(*c_self))
 	r0 := x.AsMVAP()
-	out_layer2_pdu_MBCContinuation(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		out_layer2_pdu_MVAPContinuation(&(*c_out), &r0, oc)
@@ -25263,7 +24965,6 @@ func dmrgo_pdu_mbc_continuation_as_vnap(c_self *C.dmrgo_pdu_mbc_continuation_t, 
 	var x g_layer2_pdu.MBCContinuation
 	x = in_layer2_pdu_MBCContinuation(&(*c_self))
 	r0 := x.AsVNAP()
-	out_layer2_pdu_MBCContinuation(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		out_layer2_pdu_VNAPContinuation(&(*c_out), &r0, oc)
@@ -25284,7 +24985,6 @@ func dmrgo_pdu_mbc_continuation_data_type(c_self *C.dmrgo_pdu_mbc_continuation_t
 	var x g_layer2_pdu.MBCContinuation
 	x = in_layer2_pdu_MBCContinuation(&(*c_self))
 	r0 := x.DataType()
-	out_layer2_pdu_MBCContinuation(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_enums_data_type_t(r0)
@@ -25305,7 +25005,6 @@ func dmrgo_pdu_mbc_continuation_encode(c_self *C.dmrgo_pdu_mbc_continuation_t, c
 	var x g_layer2_pdu.MBCContinuation
 	x = in_layer2_pdu_MBCContinuation(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_MBCContinuation(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[12]byte)(unsafe.Pointer(&(*(*[12]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -25332,7 +25031,6 @@ func dmrgo_pdu_mbc_continuation_string(c_self *C.dmrgo_pdu_mbc_continuation_t, c
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_MBCContinuation(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -25352,7 +25050,6 @@ func dmrgo_pdu_mbc_header_data_type(c_self *C.dmrgo_pdu_mbc_header_t, c_out *C.d
 	var xs st_layer2_pdu_MBCHeader
 	x = in_layer2_pdu_MBCHeader(&(*c_self), &xs)
 	r0 := x.DataType()
-	out_layer2_pdu_MBCHeader(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_enums_data_type_t(r0)
@@ -25374,7 +25071,6 @@ func dmrgo_pdu_mbc_header_encode(c_self *C.dmrgo_pdu_mbc_header_t, c_out *C.uint
 	var xs st_layer2_pdu_MBCHeader
 	x = in_layer2_pdu_MBCHeader(&(*c_self), &xs)
 	r0, r1 := x.Encode()
-	out_layer2_pdu_MBCHeader(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[12]byte)(unsafe.Pointer(&(*(*[12]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -25402,7 +25098,6 @@ func dmrgo_pdu_mbc_header_string(c_self *C.dmrgo_pdu_mbc_header_t, c_out *C.char
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_MBCHeader(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -25462,7 +25157,6 @@ func dmrgo_pdu_mvap_continuation_data_type(c_self *C.dmrgo_pdu_mvap_continuation
 	var x g_layer2_pdu.MVAPContinuation
 	x = in_layer2_pdu_MVAPContinuation(&(*c_self))
 	r0 := x.DataType()
-	out_layer2_pdu_MVAPContinuation(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_enums_data_type_t(r0)
@@ -25483,7 +25177,6 @@ func dmrgo_pdu_mvap_continuation_encode(c_self *C.dmrgo_pdu_mvap_continuation_t,
 	var x g_layer2_pdu.MVAPContinuation
 	x = in_layer2_pdu_MVAPContinuation(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_MVAPContinuation(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[12]byte)(unsafe.Pointer(&(*(*[12]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -25510,7 +25203,6 @@ func dmrgo_pdu_mvap_continuation_string(c_self *C.dmrgo_pdu_mvap_continuation_t,
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_MVAPContinuation(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -25529,7 +25221,6 @@ func dmrgo_pdu_maintenance_pdu_encode(c_self *C.dmrgo_pdu_maintenance_pdu_t, c_o
 	var x g_layer2_pdu.MaintenancePDU
 	x = in_layer2_pdu_MaintenancePDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_MaintenancePDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -25556,7 +25247,6 @@ func dmrgo_pdu_maintenance_pdu_string(c_self *C.dmrgo_pdu_maintenance_pdu_t, c_o
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_MaintenancePDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -25575,7 +25265,6 @@ func dmrgo_pdu_mass_reg_parms_encode(c_self *C.dmrgo_pdu_mass_reg_parms_t, c_out
 	var x g_layer2_pdu.MassRegParms
 	x = in_layer2_pdu_MassRegParms(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_MassRegParms(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -25602,7 +25291,6 @@ func dmrgo_pdu_mass_reg_parms_string(c_self *C.dmrgo_pdu_mass_reg_parms_t, c_out
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_MassRegParms(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -25621,7 +25309,6 @@ func dmrgo_pdu_motorola_call_alert_ack_pdu_encode(c_self *C.dmrgo_pdu_motorola_c
 	var x g_layer2_pdu.MotorolaCallAlertAckPDU
 	x = *(*g_layer2_pdu.MotorolaCallAlertAckPDU)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Encode()
-	*(*g_layer2_pdu.MotorolaCallAlertAckPDU)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -25648,7 +25335,6 @@ func dmrgo_pdu_motorola_call_alert_ack_pdu_string(c_self *C.dmrgo_pdu_motorola_c
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_layer2_pdu.MotorolaCallAlertAckPDU)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -25667,7 +25353,6 @@ func dmrgo_pdu_motorola_call_alert_pdu_encode(c_self *C.dmrgo_pdu_motorola_call_
 	var x g_layer2_pdu.MotorolaCallAlertPDU
 	x = *(*g_layer2_pdu.MotorolaCallAlertPDU)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Encode()
-	*(*g_layer2_pdu.MotorolaCallAlertPDU)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -25694,7 +25379,6 @@ func dmrgo_pdu_motorola_call_alert_pdu_string(c_self *C.dmrgo_pdu_motorola_call_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_layer2_pdu.MotorolaCallAlertPDU)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -25713,7 +25397,6 @@ func dmrgo_pdu_motorola_radio_check_pdu_addresses(c_self *C.dmrgo_pdu_motorola_r
 	var x g_layer2_pdu.MotorolaRadioCheckPDU
 	x = in_layer2_pdu_MotorolaRadioCheckPDU(&(*c_self))
 	r0, r1, r2 := x.Addresses()
-	out_layer2_pdu_MotorolaRadioCheckPDU(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	_ = r2
@@ -25742,7 +25425,6 @@ func dmrgo_pdu_motorola_radio_check_pdu_encode(c_self *C.dmrgo_pdu_motorola_radi
 	var x g_layer2_pdu.MotorolaRadioCheckPDU
 	x = in_layer2_pdu_MotorolaRadioCheckPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_MotorolaRadioCheckPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -25769,7 +25451,6 @@ func dmrgo_pdu_motorola_radio_check_pdu_string(c_self *C.dmrgo_pdu_motorola_radi
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_MotorolaRadioCheckPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -25788,7 +25469,6 @@ func dmrgo_pdu_move_pdu_encode(c_self *C.dmrgo_pdu_move_pdu_t, c_out *C.uint8_t)
 	var x g_layer2_pdu.MovePDU
 	x = in_layer2_pdu_MovePDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_MovePDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -25815,7 +25495,6 @@ func dmrgo_pdu_move_pdu_string(c_self *C.dmrgo_pdu_move_pdu_t, c_out *C.char, c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_MovePDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -25834,7 +25513,6 @@ func dmrgo_pdu_negative_acknowledgement_pdu_encode(c_self *C.dmrgo_pdu_negative_
 	var x g_layer2_pdu.NegativeAcknowledgementPDU
 	x = *(*g_layer2_pdu.NegativeAcknowledgementPDU)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Encode()
-	*(*g_layer2_pdu.NegativeAcknowledgementPDU)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -25861,7 +25539,6 @@ func dmrgo_pdu_negative_acknowledgement_pdu_string(c_self *C.dmrgo_pdu_negative_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_layer2_pdu.NegativeAcknowledgementPDU)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -25980,7 +25657,6 @@ func dmrgo_pdu_pi_header_data_type(c_self *C.dmrgo_pdu_pi_header_t, c_out *C.dmr
 	var x g_layer2_pdu.PIHeader
 	x = in_layer2_pdu_PIHeader(&(*c_self))
 	r0 := x.DataType()
-	out_layer2_pdu_PIHeader(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_enums_data_type_t(r0)
@@ -26001,7 +25677,6 @@ func dmrgo_pdu_pi_header_encode(c_self *C.dmrgo_pdu_pi_header_t, c_out *C.uint8_
 	var x g_layer2_pdu.PIHeader
 	x = in_layer2_pdu_PIHeader(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_PIHeader(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[12]byte)(unsafe.Pointer(&(*(*[12]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -26028,7 +25703,6 @@ func dmrgo_pdu_pi_header_string(c_self *C.dmrgo_pdu_pi_header_t, c_out *C.char, 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_PIHeader(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -26047,7 +25721,6 @@ func dmrgo_pdu_pr_fill_data_type(c_self *C.dmrgo_pdu_pr_fill_t, c_out *C.dmrgo_e
 	var x g_layer2_pdu.PRFill
 	x = in_layer2_pdu_PRFill(&(*c_self))
 	r0 := x.DataType()
-	out_layer2_pdu_PRFill(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_enums_data_type_t(r0)
@@ -26068,7 +25741,6 @@ func dmrgo_pdu_pr_fill_encode(c_self *C.dmrgo_pdu_pr_fill_t, c_out *C.uint8_t) (
 	var x g_layer2_pdu.PRFill
 	x = in_layer2_pdu_PRFill(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_PRFill(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[12]byte)(unsafe.Pointer(&(*(*[12]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -26095,7 +25767,6 @@ func dmrgo_pdu_pr_fill_string(c_self *C.dmrgo_pdu_pr_fill_t, c_out *C.char, c_ou
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_PRFill(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -26129,7 +25800,6 @@ func dmrgo_pdu_preamble_pdu_encode(c_self *C.dmrgo_pdu_preamble_pdu_t, c_out *C.
 	var x g_layer2_pdu.PreamblePDU
 	x = in_layer2_pdu_PreamblePDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_PreamblePDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -26156,7 +25826,6 @@ func dmrgo_pdu_preamble_pdu_string(c_self *C.dmrgo_pdu_preamble_pdu_t, c_out *C.
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_PreamblePDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -26175,7 +25844,6 @@ func dmrgo_pdu_private_data_grant_multi_item_pdu_encode(c_self *C.dmrgo_pdu_priv
 	var x g_layer2_pdu.PrivateDataGrantMultiItemPDU
 	x = in_layer2_pdu_PrivateDataGrantMultiItemPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_PrivateDataGrantMultiItemPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -26202,7 +25870,6 @@ func dmrgo_pdu_private_data_grant_multi_item_pdu_string(c_self *C.dmrgo_pdu_priv
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_PrivateDataGrantMultiItemPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -26221,7 +25888,6 @@ func dmrgo_pdu_private_data_grant_pdu_encode(c_self *C.dmrgo_pdu_private_data_gr
 	var x g_layer2_pdu.PrivateDataGrantPDU
 	x = in_layer2_pdu_PrivateDataGrantPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_PrivateDataGrantPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -26248,7 +25914,6 @@ func dmrgo_pdu_private_data_grant_pdu_string(c_self *C.dmrgo_pdu_private_data_gr
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_PrivateDataGrantPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -26267,7 +25932,6 @@ func dmrgo_pdu_private_voice_grant_pdu_encode(c_self *C.dmrgo_pdu_private_voice_
 	var x g_layer2_pdu.PrivateVoiceGrantPDU
 	x = in_layer2_pdu_PrivateVoiceGrantPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_PrivateVoiceGrantPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -26294,7 +25958,6 @@ func dmrgo_pdu_private_voice_grant_pdu_string(c_self *C.dmrgo_pdu_private_voice_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_PrivateVoiceGrantPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -26313,7 +25976,6 @@ func dmrgo_pdu_proprietary_header_encode(c_self *C.dmrgo_pdu_proprietary_header_
 	var x g_layer2_pdu.ProprietaryHeader
 	x = *(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Encode()
-	*(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[10]byte)(unsafe.Pointer(&(*(*[10]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -26340,7 +26002,6 @@ func dmrgo_pdu_proprietary_header_string(c_self *C.dmrgo_pdu_proprietary_header_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -26359,7 +26020,6 @@ func dmrgo_pdu_protect_pdu_encode(c_self *C.dmrgo_pdu_protect_pdu_t, c_out *C.ui
 	var x g_layer2_pdu.ProtectPDU
 	x = in_layer2_pdu_ProtectPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_ProtectPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -26386,7 +26046,6 @@ func dmrgo_pdu_protect_pdu_string(c_self *C.dmrgo_pdu_protect_pdu_t, c_out *C.ch
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_ProtectPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -26405,7 +26064,6 @@ func dmrgo_pdu_random_access_pdu_encode(c_self *C.dmrgo_pdu_random_access_pdu_t,
 	var x g_layer2_pdu.RandomAccessPDU
 	x = in_layer2_pdu_RandomAccessPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_RandomAccessPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -26432,7 +26090,6 @@ func dmrgo_pdu_random_access_pdu_string(c_self *C.dmrgo_pdu_random_access_pdu_t,
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_RandomAccessPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -26451,7 +26108,6 @@ func dmrgo_pdu_rate12_data_confirmed_crc9(c_self *C.dmrgo_pdu_rate12_data_t, c_o
 	var x g_layer2_pdu.Rate12Data
 	x = *(*g_layer2_pdu.Rate12Data)(unsafe.Pointer(&(*c_self)))
 	r0 := x.ConfirmedCRC9()
-	*(*g_layer2_pdu.Rate12Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.uint16_t(r0)
@@ -26472,7 +26128,6 @@ func dmrgo_pdu_rate12_data_confirmed_crc9_ok(c_self *C.dmrgo_pdu_rate12_data_t, 
 	var x g_layer2_pdu.Rate12Data
 	x = *(*g_layer2_pdu.Rate12Data)(unsafe.Pointer(&(*c_self)))
 	r0 := x.ConfirmedCRC9OK()
-	*(*g_layer2_pdu.Rate12Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.bool(r0)
@@ -26493,7 +26148,6 @@ func dmrgo_pdu_rate12_data_confirmed_dbsn(c_self *C.dmrgo_pdu_rate12_data_t, c_o
 	var x g_layer2_pdu.Rate12Data
 	x = *(*g_layer2_pdu.Rate12Data)(unsafe.Pointer(&(*c_self)))
 	r0 := x.ConfirmedDBSN()
-	*(*g_layer2_pdu.Rate12Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.uint8_t(r0)
@@ -26514,7 +26168,6 @@ func dmrgo_pdu_rate12_data_confirmed_user_data(c_self *C.dmrgo_pdu_rate12_data_t
 	var x g_layer2_pdu.Rate12Data
 	x = *(*g_layer2_pdu.Rate12Data)(unsafe.Pointer(&(*c_self)))
 	r0 := x.ConfirmedUserData()
-	*(*g_layer2_pdu.Rate12Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[10]byte)(unsafe.Pointer(&(*(*[10]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -26535,7 +26188,6 @@ func dmrgo_pdu_rate12_data_data_type(c_self *C.dmrgo_pdu_rate12_data_t, c_out *C
 	var x g_layer2_pdu.Rate12Data
 	x = *(*g_layer2_pdu.Rate12Data)(unsafe.Pointer(&(*c_self)))
 	r0 := x.DataType()
-	*(*g_layer2_pdu.Rate12Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_enums_data_type_t(r0)
@@ -26556,7 +26208,6 @@ func dmrgo_pdu_rate12_data_encode(c_self *C.dmrgo_pdu_rate12_data_t, c_out *C.ui
 	var x g_layer2_pdu.Rate12Data
 	x = *(*g_layer2_pdu.Rate12Data)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Encode()
-	*(*g_layer2_pdu.Rate12Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[12]byte)(unsafe.Pointer(&(*(*[12]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -26583,10 +26234,12 @@ func dmrgo_pdu_rate12_data_set_confirmed(c_self *C.dmrgo_pdu_rate12_data_t, c_db
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetConfirmed(uint8(c_dbsn), *(*[10]byte)(unsafe.Pointer(c_user_data)))
-	*(*g_layer2_pdu.Rate12Data)(unsafe.Pointer(&(*c_self))) = x
+	ws_self := *c_self
+	*(*[12]byte)(unsafe.Pointer(&ws_self.data)) = x.Data
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -26606,7 +26259,6 @@ func dmrgo_pdu_rate12_data_string(c_self *C.dmrgo_pdu_rate12_data_t, c_out *C.ch
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_layer2_pdu.Rate12Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -26625,7 +26277,6 @@ func dmrgo_pdu_rate1_data_confirmed_crc9(c_self *C.dmrgo_pdu_rate1_data_t, c_out
 	var x g_layer2_pdu.Rate1Data
 	x = *(*g_layer2_pdu.Rate1Data)(unsafe.Pointer(&(*c_self)))
 	r0 := x.ConfirmedCRC9()
-	*(*g_layer2_pdu.Rate1Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.uint16_t(r0)
@@ -26646,7 +26297,6 @@ func dmrgo_pdu_rate1_data_confirmed_crc9_ok(c_self *C.dmrgo_pdu_rate1_data_t, c_
 	var x g_layer2_pdu.Rate1Data
 	x = *(*g_layer2_pdu.Rate1Data)(unsafe.Pointer(&(*c_self)))
 	r0 := x.ConfirmedCRC9OK()
-	*(*g_layer2_pdu.Rate1Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.bool(r0)
@@ -26667,7 +26317,6 @@ func dmrgo_pdu_rate1_data_confirmed_dbsn(c_self *C.dmrgo_pdu_rate1_data_t, c_out
 	var x g_layer2_pdu.Rate1Data
 	x = *(*g_layer2_pdu.Rate1Data)(unsafe.Pointer(&(*c_self)))
 	r0 := x.ConfirmedDBSN()
-	*(*g_layer2_pdu.Rate1Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.uint8_t(r0)
@@ -26688,7 +26337,6 @@ func dmrgo_pdu_rate1_data_confirmed_user_data(c_self *C.dmrgo_pdu_rate1_data_t, 
 	var x g_layer2_pdu.Rate1Data
 	x = *(*g_layer2_pdu.Rate1Data)(unsafe.Pointer(&(*c_self)))
 	r0 := x.ConfirmedUserData()
-	*(*g_layer2_pdu.Rate1Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[22]byte)(unsafe.Pointer(&(*(*[22]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -26709,7 +26357,6 @@ func dmrgo_pdu_rate1_data_data_type(c_self *C.dmrgo_pdu_rate1_data_t, c_out *C.d
 	var x g_layer2_pdu.Rate1Data
 	x = *(*g_layer2_pdu.Rate1Data)(unsafe.Pointer(&(*c_self)))
 	r0 := x.DataType()
-	*(*g_layer2_pdu.Rate1Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_enums_data_type_t(r0)
@@ -26730,7 +26377,6 @@ func dmrgo_pdu_rate1_data_encode(c_self *C.dmrgo_pdu_rate1_data_t, c_out *C.uint
 	var x g_layer2_pdu.Rate1Data
 	x = *(*g_layer2_pdu.Rate1Data)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Encode()
-	*(*g_layer2_pdu.Rate1Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[24]byte)(unsafe.Pointer(&(*(*[24]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -26757,10 +26403,12 @@ func dmrgo_pdu_rate1_data_set_confirmed(c_self *C.dmrgo_pdu_rate1_data_t, c_dbsn
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetConfirmed(uint8(c_dbsn), *(*[22]byte)(unsafe.Pointer(c_user_data)))
-	*(*g_layer2_pdu.Rate1Data)(unsafe.Pointer(&(*c_self))) = x
+	ws_self := *c_self
+	*(*[24]byte)(unsafe.Pointer(&ws_self.data)) = x.Data
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -26780,7 +26428,6 @@ func dmrgo_pdu_rate1_data_string(c_self *C.dmrgo_pdu_rate1_data_t, c_out *C.char
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_layer2_pdu.Rate1Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -26799,7 +26446,6 @@ func dmrgo_pdu_rate34_data_confirmed_crc9(c_self *C.dmrgo_pdu_rate34_data_t, c_o
 	var x g_layer2_pdu.Rate34Data
 	x = *(*g_layer2_pdu.Rate34Data)(unsafe.Pointer(&(*c_self)))
 	r0 := x.ConfirmedCRC9()
-	*(*g_layer2_pdu.Rate34Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.uint16_t(r0)
@@ -26820,7 +26466,6 @@ func dmrgo_pdu_rate34_data_confirmed_crc9_ok(c_self *C.dmrgo_pdu_rate34_data_t, 
 	var x g_layer2_pdu.Rate34Data
 	x = *(*g_layer2_pdu.Rate34Data)(unsafe.Pointer(&(*c_self)))
 	r0 := x.ConfirmedCRC9OK()
-	*(*g_layer2_pdu.Rate34Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.bool(r0)
@@ -26841,7 +26486,6 @@ func dmrgo_pdu_rate34_data_confirmed_dbsn(c_self *C.dmrgo_pdu_rate34_data_t, c_o
 	var x g_layer2_pdu.Rate34Data
 	x = *(*g_layer2_pdu.Rate34Data)(unsafe.Pointer(&(*c_self)))
 	r0 := x.ConfirmedDBSN()
-	*(*g_layer2_pdu.Rate34Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.uint8_t(r0)
@@ -26862,7 +26506,6 @@ func dmrgo_pdu_rate34_data_confirmed_user_data(c_self *C.dmrgo_pdu_rate34_data_t
 	var x g_layer2_pdu.Rate34Data
 	x = *(*g_layer2_pdu.Rate34Data)(unsafe.Pointer(&(*c_self)))
 	r0 := x.ConfirmedUserData()
-	*(*g_layer2_pdu.Rate34Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[16]byte)(unsafe.Pointer(&(*(*[16]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -26883,7 +26526,6 @@ func dmrgo_pdu_rate34_data_data_type(c_self *C.dmrgo_pdu_rate34_data_t, c_out *C
 	var x g_layer2_pdu.Rate34Data
 	x = *(*g_layer2_pdu.Rate34Data)(unsafe.Pointer(&(*c_self)))
 	r0 := x.DataType()
-	*(*g_layer2_pdu.Rate34Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_enums_data_type_t(r0)
@@ -26904,7 +26546,6 @@ func dmrgo_pdu_rate34_data_encode(c_self *C.dmrgo_pdu_rate34_data_t, c_out *C.ui
 	var x g_layer2_pdu.Rate34Data
 	x = *(*g_layer2_pdu.Rate34Data)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Encode()
-	*(*g_layer2_pdu.Rate34Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[18]byte)(unsafe.Pointer(&(*(*[18]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -26931,10 +26572,12 @@ func dmrgo_pdu_rate34_data_set_confirmed(c_self *C.dmrgo_pdu_rate34_data_t, c_db
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetConfirmed(uint8(c_dbsn), *(*[16]byte)(unsafe.Pointer(c_user_data)))
-	*(*g_layer2_pdu.Rate34Data)(unsafe.Pointer(&(*c_self))) = x
+	ws_self := *c_self
+	*(*[18]byte)(unsafe.Pointer(&ws_self.data)) = x.Data
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -26954,7 +26597,6 @@ func dmrgo_pdu_rate34_data_string(c_self *C.dmrgo_pdu_rate34_data_t, c_out *C.ch
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_layer2_pdu.Rate34Data)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -26973,7 +26615,6 @@ func dmrgo_pdu_raw_data_header_encode(c_self *C.dmrgo_pdu_raw_data_header_t, c_o
 	var x g_layer2_pdu.RawDataHeader
 	x = in_layer2_pdu_RawDataHeader(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_RawDataHeader(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[10]byte)(unsafe.Pointer(&(*(*[10]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -27000,7 +26641,6 @@ func dmrgo_pdu_raw_data_header_string(c_self *C.dmrgo_pdu_raw_data_header_t, c_o
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_RawDataHeader(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -27038,7 +26678,6 @@ func dmrgo_pdu_response_packet_header_encode(c_self *C.dmrgo_pdu_response_packet
 	var x g_layer2_pdu.ResponsePacketHeader
 	x = in_layer2_pdu_ResponsePacketHeader(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_ResponsePacketHeader(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[10]byte)(unsafe.Pointer(&(*(*[10]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -27065,7 +26704,6 @@ func dmrgo_pdu_response_packet_header_string(c_self *C.dmrgo_pdu_response_packet
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_ResponsePacketHeader(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -27084,7 +26722,6 @@ func dmrgo_pdu_reverse_channel_encode(c_self *C.dmrgo_pdu_reverse_channel_t, c_o
 	var x g_layer2_pdu.ReverseChannel
 	x = in_layer2_pdu_ReverseChannel(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_ReverseChannel(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[2]byte)(unsafe.Pointer(&(*(*[2]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -27111,7 +26748,6 @@ func dmrgo_pdu_reverse_channel_string(c_self *C.dmrgo_pdu_reverse_channel_t, c_o
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_ReverseChannel(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -27177,7 +26813,6 @@ func dmrgo_pdu_short_lc_as_capacity_plus_rest_channel(c_self *C.dmrgo_pdu_short_
 	var xs st_layer2_pdu_ShortLC
 	x = in_layer2_pdu_ShortLC(&(*c_self), &xs)
 	r0, r1 := x.AsCapacityPlusRestChannel()
-	out_layer2_pdu_ShortLC(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_p != nil {
@@ -27203,7 +26838,6 @@ func dmrgo_pdu_short_lc_encode(c_self *C.dmrgo_pdu_short_lc_t, c_out *C.uint8_t)
 	var xs st_layer2_pdu_ShortLC
 	x = in_layer2_pdu_ShortLC(&(*c_self), &xs)
 	r0, r1 := x.Encode()
-	out_layer2_pdu_ShortLC(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[5]byte)(unsafe.Pointer(&(*(*[5]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -27231,7 +26865,6 @@ func dmrgo_pdu_short_lc_string(c_self *C.dmrgo_pdu_short_lc_t, c_out *C.char, c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_ShortLC(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -27250,7 +26883,6 @@ func dmrgo_pdu_short_lc_activity_update_encode(c_self *C.dmrgo_pdu_short_lc_acti
 	var x g_layer2_pdu.ShortLCActivityUpdate
 	x = *(*g_layer2_pdu.ShortLCActivityUpdate)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Encode()
-	*(*g_layer2_pdu.ShortLCActivityUpdate)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[3]byte)(unsafe.Pointer(&(*(*[3]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -27277,7 +26909,6 @@ func dmrgo_pdu_short_lc_activity_update_string(c_self *C.dmrgo_pdu_short_lc_acti
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_layer2_pdu.ShortLCActivityUpdate)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -27296,7 +26927,6 @@ func dmrgo_pdu_short_lc_c_sys_parms_encode(c_self *C.dmrgo_pdu_short_lc_c_sys_pa
 	var x g_layer2_pdu.ShortLCCSysParms
 	x = in_layer2_pdu_ShortLCCSysParms(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_ShortLCCSysParms(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[3]byte)(unsafe.Pointer(&(*(*[3]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -27320,7 +26950,6 @@ func dmrgo_pdu_short_lc_c_sys_parms_net_id(c_self *C.dmrgo_pdu_short_lc_c_sys_pa
 	var x g_layer2_pdu.ShortLCCSysParms
 	x = in_layer2_pdu_ShortLCCSysParms(&(*c_self))
 	r0, r1 := x.NetID()
-	out_layer2_pdu_ShortLCCSysParms(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.uint16_t(r0)
@@ -27347,10 +26976,13 @@ func dmrgo_pdu_short_lc_c_sys_parms_set_sys_code(c_self *C.dmrgo_pdu_short_lc_c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetSysCode(*(*g_layer2_pdu.SysCode)(unsafe.Pointer(c_c)))
-	out_layer2_pdu_ShortLCCSysParms(&(*c_self), &x, oc)
+	ws_self := *c_self
+	ws_self.model = C.uint8_t(x.MODEL)
+	ws_self.net_site_raw = C.uint16_t(x.NetSiteRaw)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -27367,7 +26999,6 @@ func dmrgo_pdu_short_lc_c_sys_parms_site_id(c_self *C.dmrgo_pdu_short_lc_c_sys_p
 	var x g_layer2_pdu.ShortLCCSysParms
 	x = in_layer2_pdu_ShortLCCSysParms(&(*c_self))
 	r0, r1 := x.SiteID()
-	out_layer2_pdu_ShortLCCSysParms(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.uint16_t(r0)
@@ -27394,7 +27025,6 @@ func dmrgo_pdu_short_lc_c_sys_parms_string(c_self *C.dmrgo_pdu_short_lc_c_sys_pa
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_ShortLCCSysParms(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -27413,7 +27043,6 @@ func dmrgo_pdu_short_lc_c_sys_parms_sys_code(c_self *C.dmrgo_pdu_short_lc_c_sys_
 	var x g_layer2_pdu.ShortLCCSysParms
 	x = in_layer2_pdu_ShortLCCSysParms(&(*c_self))
 	r0, r1 := x.SysCode()
-	out_layer2_pdu_ShortLCCSysParms(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*g_layer2_pdu.SysCode)(unsafe.Pointer(&(*c_out))) = r0
@@ -27437,7 +27066,6 @@ func dmrgo_pdu_short_lc_null_message_encode(c_self *C.dmrgo_pdu_short_lc_null_me
 	var x g_layer2_pdu.ShortLCNullMessage
 	x = *(*g_layer2_pdu.ShortLCNullMessage)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Encode()
-	*(*g_layer2_pdu.ShortLCNullMessage)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[3]byte)(unsafe.Pointer(&(*(*[3]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -27464,7 +27092,6 @@ func dmrgo_pdu_short_lc_null_message_string(c_self *C.dmrgo_pdu_short_lc_null_me
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_layer2_pdu.ShortLCNullMessage)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -27483,7 +27110,6 @@ func dmrgo_pdu_short_lc_p_sys_parms_encode(c_self *C.dmrgo_pdu_short_lc_p_sys_pa
 	var x g_layer2_pdu.ShortLCPSysParms
 	x = in_layer2_pdu_ShortLCPSysParms(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_ShortLCPSysParms(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[3]byte)(unsafe.Pointer(&(*(*[3]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -27507,7 +27133,6 @@ func dmrgo_pdu_short_lc_p_sys_parms_net_id(c_self *C.dmrgo_pdu_short_lc_p_sys_pa
 	var x g_layer2_pdu.ShortLCPSysParms
 	x = in_layer2_pdu_ShortLCPSysParms(&(*c_self))
 	r0, r1 := x.NetID()
-	out_layer2_pdu_ShortLCPSysParms(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.uint16_t(r0)
@@ -27534,10 +27159,13 @@ func dmrgo_pdu_short_lc_p_sys_parms_set_sys_code(c_self *C.dmrgo_pdu_short_lc_p_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetSysCode(*(*g_layer2_pdu.SysCode)(unsafe.Pointer(c_c)))
-	out_layer2_pdu_ShortLCPSysParms(&(*c_self), &x, oc)
+	ws_self := *c_self
+	ws_self.model = C.uint8_t(x.MODEL)
+	ws_self.net_site_raw = C.uint16_t(x.NetSiteRaw)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -27554,7 +27182,6 @@ func dmrgo_pdu_short_lc_p_sys_parms_site_id(c_self *C.dmrgo_pdu_short_lc_p_sys_p
 	var x g_layer2_pdu.ShortLCPSysParms
 	x = in_layer2_pdu_ShortLCPSysParms(&(*c_self))
 	r0, r1 := x.SiteID()
-	out_layer2_pdu_ShortLCPSysParms(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.uint16_t(r0)
@@ -27581,7 +27208,6 @@ func dmrgo_pdu_short_lc_p_sys_parms_string(c_self *C.dmrgo_pdu_short_lc_p_sys_pa
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_ShortLCPSysParms(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -27600,7 +27226,6 @@ func dmrgo_pdu_short_lc_p_sys_parms_sys_code(c_self *C.dmrgo_pdu_short_lc_p_sys_
 	var x g_layer2_pdu.ShortLCPSysParms
 	x = in_layer2_pdu_ShortLCPSysParms(&(*c_self))
 	r0, r1 := x.SysCode()
-	out_layer2_pdu_ShortLCPSysParms(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*g_layer2_pdu.SysCode)(unsafe.Pointer(&(*c_out))) = r0
@@ -27645,7 +27270,6 @@ func dmrgo_pdu_slot_type_encode(c_self *C.dmrgo_pdu_slot_type_t, c_out *C.uint8_
 	var x g_layer2_pdu.SlotType
 	x = in_layer2_pdu_SlotType(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_SlotType(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[3]byte)(unsafe.Pointer(&(*(*[3]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -27669,7 +27293,6 @@ func dmrgo_pdu_slot_type_info(c_self *C.dmrgo_pdu_slot_type_t, c_out *C.dmrgo_pd
 	var x g_layer2_pdu.SlotType
 	x = in_layer2_pdu_SlotType(&(*c_self))
 	r0, r1 := x.Info()
-	out_layer2_pdu_SlotType(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_pdu_slot_type_info_t(r0)
@@ -27696,7 +27319,6 @@ func dmrgo_pdu_slot_type_string(c_self *C.dmrgo_pdu_slot_type_t, c_out *C.char, 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_SlotType(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -27809,7 +27431,6 @@ func dmrgo_pdu_status_precoded_header_encode(c_self *C.dmrgo_pdu_status_precoded
 	var x g_layer2_pdu.StatusPrecodedHeader
 	x = in_layer2_pdu_StatusPrecodedHeader(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_StatusPrecodedHeader(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[10]byte)(unsafe.Pointer(&(*(*[10]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -27836,7 +27457,6 @@ func dmrgo_pdu_status_precoded_header_string(c_self *C.dmrgo_pdu_status_precoded
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_StatusPrecodedHeader(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -27924,10 +27544,12 @@ func dmrgo_pdu_sys_code_unpack(c_self *C.dmrgo_pdu_sys_code_t, c_v C.uint16_t) (
 	var x g_layer2_pdu.SysCode
 	x = *(*g_layer2_pdu.SysCode)(unsafe.Pointer(&(*c_self)))
 	x.Unpack(uint16(c_v))
-	*(*g_layer2_pdu.SysCode)(unsafe.Pointer(&(*c_self))) = x
+	ws_self := *c_self
+	*(*g_layer2_pdu.SysCode)(unsafe.Pointer(&ws_self)) = x
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	return C.DMRGO_OK
 }
 
@@ -27941,10 +27563,12 @@ func dmrgo_pdu_sys_code_unpack14(c_self *C.dmrgo_pdu_sys_code_t, c_v C.uint16_t)
 	var x g_layer2_pdu.SysCode
 	x = *(*g_layer2_pdu.SysCode)(unsafe.Pointer(&(*c_self)))
 	r0 := x.Unpack14(uint16(c_v))
-	*(*g_layer2_pdu.SysCode)(unsafe.Pointer(&(*c_self))) = x
+	ws_self := *c_self
+	*(*g_layer2_pdu.SysCode)(unsafe.Pointer(&ws_self)) = x
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -27961,7 +27585,6 @@ func dmrgo_pdu_tact_encode(c_self *C.dmrgo_pdu_tact_t, c_out *C.uint8_t) (rc C.i
 	var x g_layer2_pdu.TACT
 	x = in_layer2_pdu_TACT(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_TACT(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[1]byte)(unsafe.Pointer(&(*(*[1]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -28008,7 +27631,6 @@ func dmrgo_pdu_tact_string(c_self *C.dmrgo_pdu_tact_t, c_out *C.char, c_out_cap 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_TACT(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -28278,7 +27900,6 @@ func dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_encode(c_self *C.dmrgo_pdu_ta
 	var x g_layer2_pdu.TalkgroupDataGrantMultiItemPDU
 	x = in_layer2_pdu_TalkgroupDataGrantMultiItemPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_TalkgroupDataGrantMultiItemPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -28305,7 +27926,6 @@ func dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_string(c_self *C.dmrgo_pdu_ta
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_TalkgroupDataGrantMultiItemPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -28324,7 +27944,6 @@ func dmrgo_pdu_talkgroup_data_grant_pdu_encode(c_self *C.dmrgo_pdu_talkgroup_dat
 	var x g_layer2_pdu.TalkgroupDataGrantPDU
 	x = in_layer2_pdu_TalkgroupDataGrantPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_TalkgroupDataGrantPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -28351,7 +27970,6 @@ func dmrgo_pdu_talkgroup_data_grant_pdu_string(c_self *C.dmrgo_pdu_talkgroup_dat
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_TalkgroupDataGrantPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -28370,7 +27988,6 @@ func dmrgo_pdu_talkgroup_voice_grant_pdu_encode(c_self *C.dmrgo_pdu_talkgroup_vo
 	var x g_layer2_pdu.TalkgroupVoiceGrantPDU
 	x = in_layer2_pdu_TalkgroupVoiceGrantPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_TalkgroupVoiceGrantPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -28397,7 +28014,6 @@ func dmrgo_pdu_talkgroup_voice_grant_pdu_string(c_self *C.dmrgo_pdu_talkgroup_vo
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_TalkgroupVoiceGrantPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -28416,7 +28032,6 @@ func dmrgo_pdu_udp_ipv4_compressed_header_encode(c_self *C.dmrgo_pdu_udp_ipv4_co
 	var x g_layer2_pdu.UDPIPv4CompressedHeader
 	x = *(*g_layer2_pdu.UDPIPv4CompressedHeader)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Encode()
-	*(*g_layer2_pdu.UDPIPv4CompressedHeader)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[9]byte)(unsafe.Pointer(&(*(*[9]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -28440,7 +28055,6 @@ func dmrgo_pdu_udp_ipv4_compressed_header_octets(c_self *C.dmrgo_pdu_udp_ipv4_co
 	var x g_layer2_pdu.UDPIPv4CompressedHeader
 	x = *(*g_layer2_pdu.UDPIPv4CompressedHeader)(unsafe.Pointer(&(*c_self)))
 	r0 := x.Octets()
-	*(*g_layer2_pdu.UDPIPv4CompressedHeader)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.int64_t(r0)
@@ -28464,7 +28078,6 @@ func dmrgo_pdu_udp_ipv4_compressed_header_string(c_self *C.dmrgo_pdu_udp_ipv4_co
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_layer2_pdu.UDPIPv4CompressedHeader)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -28483,7 +28096,6 @@ func dmrgo_pdu_udt_header_encode(c_self *C.dmrgo_pdu_udt_header_t, c_out *C.uint
 	var x g_layer2_pdu.UDTHeader
 	x = in_layer2_pdu_UDTHeader(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_UDTHeader(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[10]byte)(unsafe.Pointer(&(*(*[10]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -28510,7 +28122,6 @@ func dmrgo_pdu_udt_header_string(c_self *C.dmrgo_pdu_udt_header_t, c_out *C.char
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_UDTHeader(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -28545,7 +28156,6 @@ func dmrgo_pdu_unconfirmed_data_header_encode(c_self *C.dmrgo_pdu_unconfirmed_da
 	var x g_layer2_pdu.UnconfirmedDataHeader
 	x = in_layer2_pdu_UnconfirmedDataHeader(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_UnconfirmedDataHeader(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[10]byte)(unsafe.Pointer(&(*(*[10]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -28572,7 +28182,6 @@ func dmrgo_pdu_unconfirmed_data_header_string(c_self *C.dmrgo_pdu_unconfirmed_da
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_UnconfirmedDataHeader(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -28591,7 +28200,6 @@ func dmrgo_pdu_unified_single_block_data_data_type(c_self *C.dmrgo_pdu_unified_s
 	var x g_layer2_pdu.UnifiedSingleBlockData
 	x = in_layer2_pdu_UnifiedSingleBlockData(&(*c_self))
 	r0 := x.DataType()
-	out_layer2_pdu_UnifiedSingleBlockData(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_enums_data_type_t(r0)
@@ -28612,7 +28220,6 @@ func dmrgo_pdu_unified_single_block_data_encode(c_self *C.dmrgo_pdu_unified_sing
 	var x g_layer2_pdu.UnifiedSingleBlockData
 	x = in_layer2_pdu_UnifiedSingleBlockData(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_UnifiedSingleBlockData(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[12]byte)(unsafe.Pointer(&(*(*[12]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -28639,7 +28246,6 @@ func dmrgo_pdu_unified_single_block_data_string(c_self *C.dmrgo_pdu_unified_sing
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_UnifiedSingleBlockData(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -28658,7 +28264,6 @@ func dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_encode(c_self *C.d
 	var x g_layer2_pdu.UnitToUnitVoiceServiceAnswerResponsePDU
 	x = in_layer2_pdu_UnitToUnitVoiceServiceAnswerResponsePDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_UnitToUnitVoiceServiceAnswerResponsePDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -28685,7 +28290,6 @@ func dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_string(c_self *C.d
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_UnitToUnitVoiceServiceAnswerResponsePDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -28704,7 +28308,6 @@ func dmrgo_pdu_unit_to_unit_voice_service_request_pdu_encode(c_self *C.dmrgo_pdu
 	var x g_layer2_pdu.UnitToUnitVoiceServiceRequestPDU
 	x = in_layer2_pdu_UnitToUnitVoiceServiceRequestPDU(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_UnitToUnitVoiceServiceRequestPDU(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -28731,7 +28334,6 @@ func dmrgo_pdu_unit_to_unit_voice_service_request_pdu_string(c_self *C.dmrgo_pdu
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_UnitToUnitVoiceServiceRequestPDU(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -28750,7 +28352,6 @@ func dmrgo_pdu_vnap_continuation_data_type(c_self *C.dmrgo_pdu_vnap_continuation
 	var x g_layer2_pdu.VNAPContinuation
 	x = in_layer2_pdu_VNAPContinuation(&(*c_self))
 	r0 := x.DataType()
-	out_layer2_pdu_VNAPContinuation(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.dmrgo_enums_data_type_t(r0)
@@ -28771,7 +28372,6 @@ func dmrgo_pdu_vnap_continuation_encode(c_self *C.dmrgo_pdu_vnap_continuation_t,
 	var x g_layer2_pdu.VNAPContinuation
 	x = in_layer2_pdu_VNAPContinuation(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_VNAPContinuation(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[12]byte)(unsafe.Pointer(&(*(*[12]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -28798,7 +28398,6 @@ func dmrgo_pdu_vnap_continuation_string(c_self *C.dmrgo_pdu_vnap_continuation_t,
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_VNAPContinuation(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -28817,7 +28416,6 @@ func dmrgo_pdu_vote_now_parms_encode(c_self *C.dmrgo_pdu_vote_now_parms_t, c_out
 	var x g_layer2_pdu.VoteNowParms
 	x = in_layer2_pdu_VoteNowParms(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer2_pdu_VoteNowParms(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -28844,7 +28442,6 @@ func dmrgo_pdu_vote_now_parms_string(c_self *C.dmrgo_pdu_vote_now_parms_t, c_out
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer2_pdu_VoteNowParms(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -28879,7 +28476,6 @@ func dmrgo_layer3_cdef_parms_encode(c_self *C.dmrgo_layer3_cdef_parms_t, c_out *
 	var x g_layer3.CdefParms
 	x = *(*g_layer3.CdefParms)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Encode()
-	*(*g_layer3.CdefParms)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[8]byte)(unsafe.Pointer(&(*(*[8]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -28903,7 +28499,6 @@ func dmrgo_layer3_cdef_parms_rx_frequency_hz(c_self *C.dmrgo_layer3_cdef_parms_t
 	var x g_layer3.CdefParms
 	x = *(*g_layer3.CdefParms)(unsafe.Pointer(&(*c_self)))
 	r0 := x.RXFrequencyHz()
-	*(*g_layer3.CdefParms)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.uint64_t(r0)
@@ -28924,7 +28519,6 @@ func dmrgo_layer3_cdef_parms_rx_frequency_mhz(c_self *C.dmrgo_layer3_cdef_parms_
 	var x g_layer3.CdefParms
 	x = *(*g_layer3.CdefParms)(unsafe.Pointer(&(*c_self)))
 	r0 := x.RXFrequencyMHz()
-	*(*g_layer3.CdefParms)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.double(r0)
@@ -28948,7 +28542,6 @@ func dmrgo_layer3_cdef_parms_string(c_self *C.dmrgo_layer3_cdef_parms_t, c_out *
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_layer3.CdefParms)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -28967,7 +28560,6 @@ func dmrgo_layer3_cdef_parms_tx_frequency_hz(c_self *C.dmrgo_layer3_cdef_parms_t
 	var x g_layer3.CdefParms
 	x = *(*g_layer3.CdefParms)(unsafe.Pointer(&(*c_self)))
 	r0 := x.TXFrequencyHz()
-	*(*g_layer3.CdefParms)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.uint64_t(r0)
@@ -28988,7 +28580,6 @@ func dmrgo_layer3_cdef_parms_tx_frequency_mhz(c_self *C.dmrgo_layer3_cdef_parms_
 	var x g_layer3.CdefParms
 	x = *(*g_layer3.CdefParms)(unsafe.Pointer(&(*c_self)))
 	r0 := x.TXFrequencyMHz()
-	*(*g_layer3.CdefParms)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.double(r0)
@@ -29009,7 +28600,6 @@ func dmrgo_layer3_data_service_options_encode(c_self *C.dmrgo_layer3_data_servic
 	var x g_layer3.DataServiceOptions
 	x = in_layer3_DataServiceOptions(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer3_DataServiceOptions(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[1]byte)(unsafe.Pointer(&(*(*[1]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -29059,7 +28649,6 @@ func dmrgo_layer3_data_service_options_string(c_self *C.dmrgo_layer3_data_servic
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer3_DataServiceOptions(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -29240,7 +28829,6 @@ func dmrgo_layer3_diversion_service_options_encode(c_self *C.dmrgo_layer3_divers
 	var x g_layer3.DiversionServiceOptions
 	x = in_layer3_DiversionServiceOptions(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer3_DiversionServiceOptions(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[1]byte)(unsafe.Pointer(&(*(*[1]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -29290,7 +28878,6 @@ func dmrgo_layer3_diversion_service_options_string(c_self *C.dmrgo_layer3_divers
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer3_DiversionServiceOptions(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -29324,7 +28911,6 @@ func dmrgo_layer3_polling_service_options_encode(c_self *C.dmrgo_layer3_polling_
 	var x g_layer3.PollingServiceOptions
 	x = in_layer3_PollingServiceOptions(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer3_PollingServiceOptions(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[1]byte)(unsafe.Pointer(&(*(*[1]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -29374,7 +28960,6 @@ func dmrgo_layer3_polling_service_options_string(c_self *C.dmrgo_layer3_polling_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer3_PollingServiceOptions(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -29409,7 +28994,6 @@ func dmrgo_layer3_registration_service_options_encode(c_self *C.dmrgo_layer3_reg
 	var x g_layer3.RegistrationServiceOptions
 	x = in_layer3_RegistrationServiceOptions(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer3_RegistrationServiceOptions(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[1]byte)(unsafe.Pointer(&(*(*[1]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -29459,7 +29043,6 @@ func dmrgo_layer3_registration_service_options_string(c_self *C.dmrgo_layer3_reg
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer3_RegistrationServiceOptions(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -29478,7 +29061,6 @@ func dmrgo_layer3_service_options_encode(c_self *C.dmrgo_layer3_service_options_
 	var x g_layer3.ServiceOptions
 	x = in_layer3_ServiceOptions(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer3_ServiceOptions(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[1]byte)(unsafe.Pointer(&(*(*[1]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -29528,7 +29110,6 @@ func dmrgo_layer3_service_options_string(c_self *C.dmrgo_layer3_service_options_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer3_ServiceOptions(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -29547,7 +29128,6 @@ func dmrgo_layer3_short_data_service_options_encode(c_self *C.dmrgo_layer3_short
 	var x g_layer3.ShortDataServiceOptions
 	x = in_layer3_ShortDataServiceOptions(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer3_ShortDataServiceOptions(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[1]byte)(unsafe.Pointer(&(*(*[1]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -29597,7 +29177,6 @@ func dmrgo_layer3_short_data_service_options_string(c_self *C.dmrgo_layer3_short
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer3_ShortDataServiceOptions(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -29632,7 +29211,6 @@ func dmrgo_layer3_status_service_options_encode(c_self *C.dmrgo_layer3_status_se
 	var x g_layer3.StatusServiceOptions
 	x = in_layer3_StatusServiceOptions(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer3_StatusServiceOptions(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[1]byte)(unsafe.Pointer(&(*(*[1]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -29682,7 +29260,6 @@ func dmrgo_layer3_status_service_options_string(c_self *C.dmrgo_layer3_status_se
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer3_StatusServiceOptions(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -29717,7 +29294,6 @@ func dmrgo_layer3_voice_service_options_encode(c_self *C.dmrgo_layer3_voice_serv
 	var x g_layer3.VoiceServiceOptions
 	x = in_layer3_VoiceServiceOptions(&(*c_self))
 	r0, r1 := x.Encode()
-	out_layer3_VoiceServiceOptions(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[1]byte)(unsafe.Pointer(&(*(*[1]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -29767,7 +29343,6 @@ func dmrgo_layer3_voice_service_options_string(c_self *C.dmrgo_layer3_voice_serv
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_layer3_VoiceServiceOptions(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -29912,7 +29487,6 @@ func dmrgo_ars_header_append_binary(c_self *C.dmrgo_ars_header_t, c_dst *C.uint8
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_mototrbo_ars_Header(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -29938,7 +29512,6 @@ func dmrgo_ars_header_string(c_self *C.dmrgo_ars_header_t, c_out *C.char, c_out_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_mototrbo_ars_Header(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -29948,16 +29521,9 @@ func dmrgo_ars_header_string(c_self *C.dmrgo_ars_header_t, c_out *C.char, c_out_
 }
 
 //export dmrgo_ars_message_append_binary
-func dmrgo_ars_message_append_binary(c_self *C.dmrgo_ars_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_ars_message_append_binary(c_self *C.dmrgo_ars_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -29970,19 +29536,12 @@ func dmrgo_ars_message_append_binary(c_self *C.dmrgo_ars_message_t, c_dst *C.uin
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_mototrbo_ars_Message(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -29990,23 +29549,15 @@ func dmrgo_ars_message_append_binary(c_self *C.dmrgo_ars_message_t, c_dst *C.uin
 }
 
 //export dmrgo_ars_message_device_id
-func dmrgo_ars_message_device_id(c_self *C.dmrgo_ars_message_t, c_value *C.uint32_t, c_ok *C.bool, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_ars_message_device_id(c_self *C.dmrgo_ars_message_t, c_value *C.uint32_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_mototrbo_ars.Message
 	x = in_mototrbo_ars_Message(&(*c_self))
 	r0, r1 := x.DeviceID()
-	out_mototrbo_ars_Message(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_value != nil {
@@ -30015,14 +29566,8 @@ func dmrgo_ars_message_device_id(c_self *C.dmrgo_ars_message_t, c_value *C.uint3
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
 	}
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
@@ -30050,7 +29595,9 @@ func dmrgo_ars_message_set_device_id(c_self *C.dmrgo_ars_message_t, c_dst *C.uin
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0 := x.SetDeviceID(a_dst, uint32(c_id))
-	out_mototrbo_ars_Message(&(*c_self), &x, oc)
+	ws_self := *c_self
+	ws_self.device = (*C.uint8_t)(arenaCopy(oc, x.Device))
+	ws_self.device_len = C.size_t(len(x.Device))
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if c_arena_need != nil {
@@ -30059,6 +29606,7 @@ func dmrgo_ars_message_set_device_id(c_self *C.dmrgo_ars_message_t, c_dst *C.uin
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	*c_dst_len = C.size_t(nf_dst)
 	if c_arena_len != nil {
 		*c_arena_len = C.size_t(oc.need)
@@ -30067,16 +29615,9 @@ func dmrgo_ars_message_set_device_id(c_self *C.dmrgo_ars_message_t, c_dst *C.uin
 }
 
 //export dmrgo_ars_message_string
-func dmrgo_ars_message_string(c_self *C.dmrgo_ars_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_ars_message_string(c_self *C.dmrgo_ars_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30086,17 +29627,10 @@ func dmrgo_ars_message_string(c_self *C.dmrgo_ars_message_t, c_out *C.char, c_ou
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_mototrbo_ars_Message(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
@@ -30235,7 +29769,6 @@ func dmrgo_ars_registration_append_binary(c_self *C.dmrgo_ars_registration_t, c_
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_mototrbo_ars_Registration(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -30261,7 +29794,6 @@ func dmrgo_ars_registration_string(c_self *C.dmrgo_ars_registration_t, c_out *C.
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_mototrbo_ars_Registration(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -30286,7 +29818,6 @@ func dmrgo_ars_response_append_binary(c_self *C.dmrgo_ars_response_t, c_dst *C.u
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_mototrbo_ars_Response(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -30312,7 +29843,6 @@ func dmrgo_ars_response_string(c_self *C.dmrgo_ars_response_t, c_out *C.char, c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_mototrbo_ars_Response(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -30353,7 +29883,6 @@ func dmrgo_lrrp_circle2d_append_binary(c_self *C.dmrgo_lrrp_circle2d_t, c_dst *C
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_mototrbo_lrrp.Circle2D)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -30379,7 +29908,6 @@ func dmrgo_lrrp_circle2d_string(c_self *C.dmrgo_lrrp_circle2d_t, c_out *C.char, 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_mototrbo_lrrp.Circle2D)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -30404,7 +29932,6 @@ func dmrgo_lrrp_circle3d_append_binary(c_self *C.dmrgo_lrrp_circle3d_t, c_dst *C
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_mototrbo_lrrp.Circle3D)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -30430,7 +29957,6 @@ func dmrgo_lrrp_circle3d_string(c_self *C.dmrgo_lrrp_circle3d_t, c_out *C.char, 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_mototrbo_lrrp.Circle3D)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -30440,9 +29966,16 @@ func dmrgo_lrrp_circle3d_string(c_self *C.dmrgo_lrrp_circle3d_t, c_out *C.char, 
 }
 
 //export dmrgo_lrrp_decode_message_into
-func dmrgo_lrrp_decode_message_into(c_m *C.dmrgo_lrrp_message_t, c_data *C.uint8_t, c_data_len C.size_t) (rc C.int) {
+func dmrgo_lrrp_decode_message_into(c_m *C.dmrgo_lrrp_message_t, c_data *C.uint8_t, c_data_len C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if c_arena_len != nil {
+		if *c_arena_len > c_arena_cap {
+			return fail(C.DMRGO_ERR_ARG)
+		}
+		oc.need = int(*c_arena_len)
+	}
+	oc.setArena(c_arena, c_arena_cap)
 	var a_m g_mototrbo_lrrp.Message
 	var p_m *g_mototrbo_lrrp.Message
 	if c_m != nil {
@@ -30455,8 +29988,22 @@ func dmrgo_lrrp_decode_message_into(c_m *C.dmrgo_lrrp_message_t, c_data *C.uint8
 	var a_data []byte
 	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
 	r0 := g_mototrbo_lrrp.DecodeMessageInto(p_m, a_data)
+	var ws_m C.dmrgo_lrrp_message_t
+	if c_m != nil {
+		ws_m = *c_m
+		out_mototrbo_lrrp_Message(&ws_m, &a_m, oc)
+	}
+	if c_arena_need != nil {
+		*c_arena_need = C.size_t(oc.reported())
+	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if c_m != nil {
+		*c_m = ws_m
+	}
+	if c_arena_len != nil {
+		*c_arena_len = C.size_t(oc.need)
 	}
 	if r0 != nil {
 		return setErr(r0)
@@ -30481,16 +30028,9 @@ func dmrgo_lrrp_document_id_string(c_self C.dmrgo_lrrp_document_id_t, c_out *C.c
 }
 
 //export dmrgo_lrrp_message_append_binary
-func dmrgo_lrrp_message_append_binary(c_self *C.dmrgo_lrrp_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_lrrp_message_append_binary(c_self *C.dmrgo_lrrp_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30503,19 +30043,12 @@ func dmrgo_lrrp_message_append_binary(c_self *C.dmrgo_lrrp_message_t, c_dst *C.u
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_mototrbo_lrrp_Message(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -30523,16 +30056,9 @@ func dmrgo_lrrp_message_append_binary(c_self *C.dmrgo_lrrp_message_t, c_dst *C.u
 }
 
 //export dmrgo_lrrp_message_string
-func dmrgo_lrrp_message_string(c_self *C.dmrgo_lrrp_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_lrrp_message_string(c_self *C.dmrgo_lrrp_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30542,32 +30068,18 @@ func dmrgo_lrrp_message_string(c_self *C.dmrgo_lrrp_message_t, c_out *C.char, c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_mototrbo_lrrp_Message(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
 
 //export dmrgo_lrrp_operation_error_append_binary
-func dmrgo_lrrp_operation_error_append_binary(c_self *C.dmrgo_lrrp_operation_error_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_lrrp_operation_error_append_binary(c_self *C.dmrgo_lrrp_operation_error_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30580,19 +30092,12 @@ func dmrgo_lrrp_operation_error_append_binary(c_self *C.dmrgo_lrrp_operation_err
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_mototrbo_lrrp_OperationError(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -30600,16 +30105,9 @@ func dmrgo_lrrp_operation_error_append_binary(c_self *C.dmrgo_lrrp_operation_err
 }
 
 //export dmrgo_lrrp_operation_error_string
-func dmrgo_lrrp_operation_error_string(c_self *C.dmrgo_lrrp_operation_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_lrrp_operation_error_string(c_self *C.dmrgo_lrrp_operation_error_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30619,17 +30117,10 @@ func dmrgo_lrrp_operation_error_string(c_self *C.dmrgo_lrrp_operation_error_t, c
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_mototrbo_lrrp_OperationError(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
@@ -30650,7 +30141,6 @@ func dmrgo_lrrp_point2d_append_binary(c_self *C.dmrgo_lrrp_point2d_t, c_dst *C.u
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_mototrbo_lrrp.Point2D)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -30676,7 +30166,6 @@ func dmrgo_lrrp_point2d_string(c_self *C.dmrgo_lrrp_point2d_t, c_out *C.char, c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_mototrbo_lrrp.Point2D)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -30701,7 +30190,6 @@ func dmrgo_lrrp_point3d_append_binary(c_self *C.dmrgo_lrrp_point3d_t, c_dst *C.u
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_mototrbo_lrrp.Point3D)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -30727,7 +30215,6 @@ func dmrgo_lrrp_point3d_string(c_self *C.dmrgo_lrrp_point3d_t, c_out *C.char, c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_mototrbo_lrrp.Point3D)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -30752,7 +30239,6 @@ func dmrgo_lrrp_point3d_accuracy_append_binary(c_self *C.dmrgo_lrrp_point3d_accu
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_mototrbo_lrrp.Point3DAccuracy)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -30778,7 +30264,6 @@ func dmrgo_lrrp_point3d_accuracy_string(c_self *C.dmrgo_lrrp_point3d_accuracy_t,
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_mototrbo_lrrp.Point3DAccuracy)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -30788,16 +30273,9 @@ func dmrgo_lrrp_point3d_accuracy_string(c_self *C.dmrgo_lrrp_point3d_accuracy_t,
 }
 
 //export dmrgo_lrrp_report_append_binary
-func dmrgo_lrrp_report_append_binary(c_self *C.dmrgo_lrrp_report_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_lrrp_report_append_binary(c_self *C.dmrgo_lrrp_report_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30810,19 +30288,12 @@ func dmrgo_lrrp_report_append_binary(c_self *C.dmrgo_lrrp_report_t, c_dst *C.uin
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_mototrbo_lrrp_Report(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -30830,16 +30301,9 @@ func dmrgo_lrrp_report_append_binary(c_self *C.dmrgo_lrrp_report_t, c_dst *C.uin
 }
 
 //export dmrgo_lrrp_report_string
-func dmrgo_lrrp_report_string(c_self *C.dmrgo_lrrp_report_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_lrrp_report_string(c_self *C.dmrgo_lrrp_report_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30849,32 +30313,18 @@ func dmrgo_lrrp_report_string(c_self *C.dmrgo_lrrp_report_t, c_out *C.char, c_ou
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_mototrbo_lrrp_Report(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
 
 //export dmrgo_lrrp_request_append_binary
-func dmrgo_lrrp_request_append_binary(c_self *C.dmrgo_lrrp_request_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_lrrp_request_append_binary(c_self *C.dmrgo_lrrp_request_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30887,19 +30337,12 @@ func dmrgo_lrrp_request_append_binary(c_self *C.dmrgo_lrrp_request_t, c_dst *C.u
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_mototrbo_lrrp_Request(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -30907,16 +30350,9 @@ func dmrgo_lrrp_request_append_binary(c_self *C.dmrgo_lrrp_request_t, c_dst *C.u
 }
 
 //export dmrgo_lrrp_request_string
-func dmrgo_lrrp_request_string(c_self *C.dmrgo_lrrp_request_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_lrrp_request_string(c_self *C.dmrgo_lrrp_request_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -30926,17 +30362,10 @@ func dmrgo_lrrp_request_string(c_self *C.dmrgo_lrrp_request_t, c_out *C.char, c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_mototrbo_lrrp_Request(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
@@ -30957,7 +30386,6 @@ func dmrgo_lrrp_time_append_binary(c_self *C.dmrgo_lrrp_time_t, c_dst *C.uint8_t
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_mototrbo_lrrp.Time)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -30983,7 +30411,6 @@ func dmrgo_lrrp_time_string(c_self *C.dmrgo_lrrp_time_t, c_out *C.char, c_out_ca
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_mototrbo_lrrp.Time)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -31060,7 +30487,6 @@ func dmrgo_tms_header_append_binary(c_self *C.dmrgo_tms_header_t, c_dst *C.uint8
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_mototrbo_tms_Header(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -31086,7 +30512,6 @@ func dmrgo_tms_header_string(c_self *C.dmrgo_tms_header_t, c_out *C.char, c_out_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_mototrbo_tms_Header(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -31096,16 +30521,9 @@ func dmrgo_tms_header_string(c_self *C.dmrgo_tms_header_t, c_out *C.char, c_out_
 }
 
 //export dmrgo_tms_message_append_binary
-func dmrgo_tms_message_append_binary(c_self *C.dmrgo_tms_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_tms_message_append_binary(c_self *C.dmrgo_tms_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31118,19 +30536,12 @@ func dmrgo_tms_message_append_binary(c_self *C.dmrgo_tms_message_t, c_dst *C.uin
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_mototrbo_tms_Message(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -31138,23 +30549,15 @@ func dmrgo_tms_message_append_binary(c_self *C.dmrgo_tms_message_t, c_dst *C.uin
 }
 
 //export dmrgo_tms_message_sequence
-func dmrgo_tms_message_sequence(c_self *C.dmrgo_tms_message_t, c_value *C.uint8_t, c_ok *C.bool, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_tms_message_sequence(c_self *C.dmrgo_tms_message_t, c_value *C.uint8_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_mototrbo_tms.Message
 	x = in_mototrbo_tms_Message(&(*c_self))
 	r0, r1 := x.Sequence()
-	out_mototrbo_tms_Message(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_value != nil {
@@ -31163,14 +30566,8 @@ func dmrgo_tms_message_sequence(c_self *C.dmrgo_tms_message_t, c_value *C.uint8_
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
 	}
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
@@ -31203,7 +30600,9 @@ func dmrgo_tms_message_set_text_utf8(c_self *C.dmrgo_tms_message_t, c_dst *C.uin
 	var a_text []byte
 	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
 	r0 := x.SetTextUTF8(a_dst, a_text)
-	out_mototrbo_tms_Message(&(*c_self), &x, oc)
+	ws_self := *c_self
+	ws_self.text = (*C.uint8_t)(arenaCopy(oc, x.Text))
+	ws_self.text_len = C.size_t(len(x.Text))
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if c_arena_need != nil {
@@ -31212,6 +30611,7 @@ func dmrgo_tms_message_set_text_utf8(c_self *C.dmrgo_tms_message_t, c_dst *C.uin
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	*c_dst_len = C.size_t(nf_dst)
 	if c_arena_len != nil {
 		*c_arena_len = C.size_t(oc.need)
@@ -31220,16 +30620,9 @@ func dmrgo_tms_message_set_text_utf8(c_self *C.dmrgo_tms_message_t, c_dst *C.uin
 }
 
 //export dmrgo_tms_message_string
-func dmrgo_tms_message_string(c_self *C.dmrgo_tms_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_tms_message_string(c_self *C.dmrgo_tms_message_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31239,32 +30632,18 @@ func dmrgo_tms_message_string(c_self *C.dmrgo_tms_message_t, c_out *C.char, c_ou
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_mototrbo_tms_Message(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
 
 //export dmrgo_tms_message_text_utf8
-func dmrgo_tms_message_text_utf8(c_self *C.dmrgo_tms_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_tms_message_text_utf8(c_self *C.dmrgo_tms_message_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31277,19 +30656,12 @@ func dmrgo_tms_message_text_utf8(c_self *C.dmrgo_tms_message_t, c_dst *C.uint8_t
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0 := x.TextUTF8(a_dst)
-	out_mototrbo_tms_Message(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	return C.DMRGO_OK
 }
 
@@ -31371,7 +30743,6 @@ func dmrgo_tms_sequence_high_append_binary(c_self *C.dmrgo_tms_sequence_high_t, 
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_mototrbo_tms_SequenceHigh(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -31397,7 +30768,6 @@ func dmrgo_tms_sequence_high_string(c_self *C.dmrgo_tms_sequence_high_t, c_out *
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_mototrbo_tms_SequenceHigh(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -31422,7 +30792,6 @@ func dmrgo_tms_sequence_low_append_binary(c_self *C.dmrgo_tms_sequence_low_t, c_
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_mototrbo_tms_SequenceLow(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -31448,7 +30817,6 @@ func dmrgo_tms_sequence_low_string(c_self *C.dmrgo_tms_sequence_low_t, c_out *C.
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_mototrbo_tms_SequenceLow(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -31561,16 +30929,9 @@ func dmrgo_shortdata_decode_hytera_text(c_data *C.uint8_t, c_data_len C.size_t, 
 }
 
 //export dmrgo_shortdata_hytera_text_append_binary
-func dmrgo_shortdata_hytera_text_append_binary(c_self *C.dmrgo_shortdata_hytera_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_shortdata_hytera_text_append_binary(c_self *C.dmrgo_shortdata_hytera_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31583,19 +30944,12 @@ func dmrgo_shortdata_hytera_text_append_binary(c_self *C.dmrgo_shortdata_hytera_
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_shortdata_HyteraText(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -31630,7 +30984,9 @@ func dmrgo_shortdata_hytera_text_set_text_utf8(c_self *C.dmrgo_shortdata_hytera_
 	var a_text []byte
 	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
 	r0 := x.SetTextUTF8(a_dst, a_text)
-	out_shortdata_HyteraText(&(*c_self), &x, oc)
+	ws_self := *c_self
+	ws_self.text = (*C.uint8_t)(arenaCopy(oc, x.Text))
+	ws_self.text_len = C.size_t(len(x.Text))
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if c_arena_need != nil {
@@ -31639,6 +30995,7 @@ func dmrgo_shortdata_hytera_text_set_text_utf8(c_self *C.dmrgo_shortdata_hytera_
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	*c_dst_len = C.size_t(nf_dst)
 	if c_arena_len != nil {
 		*c_arena_len = C.size_t(oc.need)
@@ -31647,16 +31004,9 @@ func dmrgo_shortdata_hytera_text_set_text_utf8(c_self *C.dmrgo_shortdata_hytera_
 }
 
 //export dmrgo_shortdata_hytera_text_string
-func dmrgo_shortdata_hytera_text_string(c_self *C.dmrgo_shortdata_hytera_text_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_shortdata_hytera_text_string(c_self *C.dmrgo_shortdata_hytera_text_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31666,32 +31016,18 @@ func dmrgo_shortdata_hytera_text_string(c_self *C.dmrgo_shortdata_hytera_text_t,
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_shortdata_HyteraText(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
 
 //export dmrgo_shortdata_hytera_text_text_utf8
-func dmrgo_shortdata_hytera_text_text_utf8(c_self *C.dmrgo_shortdata_hytera_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_shortdata_hytera_text_text_utf8(c_self *C.dmrgo_shortdata_hytera_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31704,19 +31040,12 @@ func dmrgo_shortdata_hytera_text_text_utf8(c_self *C.dmrgo_shortdata_hytera_text
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0 := x.TextUTF8(a_dst)
-	out_shortdata_HyteraText(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	return C.DMRGO_OK
 }
 
@@ -31749,16 +31078,9 @@ func dmrgo_shortdata_text(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.siz
 }
 
 //export dmrgo_sms_anytone_text_append_binary
-func dmrgo_sms_anytone_text_append_binary(c_self *C.dmrgo_sms_anytone_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_sms_anytone_text_append_binary(c_self *C.dmrgo_sms_anytone_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31771,19 +31093,12 @@ func dmrgo_sms_anytone_text_append_binary(c_self *C.dmrgo_sms_anytone_text_t, c_
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_sms_AnyToneText(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -31818,7 +31133,9 @@ func dmrgo_sms_anytone_text_set_text_utf8(c_self *C.dmrgo_sms_anytone_text_t, c_
 	var a_text []byte
 	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
 	r0 := x.SetTextUTF8(a_dst, a_text)
-	out_sms_AnyToneText(&(*c_self), &x, oc)
+	ws_self := *c_self
+	ws_self.text = (*C.uint8_t)(arenaCopy(oc, x.Text))
+	ws_self.text_len = C.size_t(len(x.Text))
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if c_arena_need != nil {
@@ -31827,6 +31144,7 @@ func dmrgo_sms_anytone_text_set_text_utf8(c_self *C.dmrgo_sms_anytone_text_t, c_
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	*c_dst_len = C.size_t(nf_dst)
 	if c_arena_len != nil {
 		*c_arena_len = C.size_t(oc.need)
@@ -31835,16 +31153,9 @@ func dmrgo_sms_anytone_text_set_text_utf8(c_self *C.dmrgo_sms_anytone_text_t, c_
 }
 
 //export dmrgo_sms_anytone_text_string
-func dmrgo_sms_anytone_text_string(c_self *C.dmrgo_sms_anytone_text_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_sms_anytone_text_string(c_self *C.dmrgo_sms_anytone_text_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31854,32 +31165,18 @@ func dmrgo_sms_anytone_text_string(c_self *C.dmrgo_sms_anytone_text_t, c_out *C.
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_sms_AnyToneText(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
 
 //export dmrgo_sms_anytone_text_text_utf8
-func dmrgo_sms_anytone_text_text_utf8(c_self *C.dmrgo_sms_anytone_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_sms_anytone_text_text_utf8(c_self *C.dmrgo_sms_anytone_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -31892,19 +31189,12 @@ func dmrgo_sms_anytone_text_text_utf8(c_self *C.dmrgo_sms_anytone_text_t, c_dst 
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0 := x.TextUTF8(a_dst)
-	out_sms_AnyToneText(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	return C.DMRGO_OK
 }
 
@@ -31932,12 +31222,20 @@ func dmrgo_sms_append_packet(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.
 		p_h = &a_h
 	}
 	r0, r1 := g_sms.AppendPacket(a_dst, p_t, bool(c_confirmed), p_h)
+	var ws_h C.dmrgo_sms_header_t
+	if c_h != nil {
+		ws_h = *c_h
+		out_layer2_pdu_DataHeader(&ws_h.data, &a_h.Data, oc)
+	}
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
+	if c_h != nil {
+		*c_h = ws_h
+	}
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -32085,16 +31383,9 @@ func dmrgo_sms_format_string(c_self C.dmrgo_sms_format_t, c_out *C.char, c_out_c
 }
 
 //export dmrgo_sms_ip_text_append_binary
-func dmrgo_sms_ip_text_append_binary(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_sms_ip_text_append_binary(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32107,19 +31398,12 @@ func dmrgo_sms_ip_text_append_binary(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uin
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_sms_IPText(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -32154,7 +31438,9 @@ func dmrgo_sms_ip_text_set_text_utf8(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uin
 	var a_text []byte
 	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
 	r0 := x.SetTextUTF8(a_dst, a_text)
-	out_sms_IPText(&(*c_self), &x, oc)
+	ws_self := *c_self
+	ws_self.text = (*C.uint8_t)(arenaCopy(oc, x.Text))
+	ws_self.text_len = C.size_t(len(x.Text))
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if c_arena_need != nil {
@@ -32163,6 +31449,7 @@ func dmrgo_sms_ip_text_set_text_utf8(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uin
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	*c_dst_len = C.size_t(nf_dst)
 	if c_arena_len != nil {
 		*c_arena_len = C.size_t(oc.need)
@@ -32171,16 +31458,9 @@ func dmrgo_sms_ip_text_set_text_utf8(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uin
 }
 
 //export dmrgo_sms_ip_text_string
-func dmrgo_sms_ip_text_string(c_self *C.dmrgo_sms_ip_text_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_sms_ip_text_string(c_self *C.dmrgo_sms_ip_text_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32190,32 +31470,18 @@ func dmrgo_sms_ip_text_string(c_self *C.dmrgo_sms_ip_text_t, c_out *C.char, c_ou
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_sms_IPText(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }
 
 //export dmrgo_sms_ip_text_text_utf8
-func dmrgo_sms_ip_text_text_utf8(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_sms_ip_text_text_utf8(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -32228,19 +31494,12 @@ func dmrgo_sms_ip_text_text_utf8(c_self *C.dmrgo_sms_ip_text_t, c_dst *C.uint8_t
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0 := x.TextUTF8(a_dst)
-	out_sms_IPText(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
-	}
 	return C.DMRGO_OK
 }
 
@@ -32285,7 +31544,6 @@ func dmrgo_dmrd_bridge_append_binary(c_self *C.dmrgo_dmrd_bridge_t, c_dst *C.uin
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_transport_dmrd_Bridge(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -33034,7 +32292,6 @@ func dmrgo_dmrd_dmr_plus_options_append_text(c_self *C.dmrgo_dmrd_dmr_plus_optio
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0 := x.AppendText(a_dst)
-	*(*g_transport_dmrd.DMRPlusOptions)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -33060,7 +32317,6 @@ func dmrgo_dmrd_data_append_binary(c_self *C.dmrgo_dmrd_data_t, c_dst *C.uint8_t
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_transport_dmrd_Data(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -33083,7 +32339,6 @@ func dmrgo_dmrd_data_call(c_self *C.dmrgo_dmrd_data_t, c_group *C.bool, c_target
 	var x g_transport_dmrd.Data
 	x = in_transport_dmrd_Data(&(*c_self))
 	r0, r1, r2 := x.Call()
-	out_transport_dmrd_Data(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	_ = r2
@@ -33112,7 +32367,6 @@ func dmrgo_dmrd_data_hint(c_self *C.dmrgo_dmrd_data_t, c_out *C.dmrgo_layer2_hin
 	var x g_transport_dmrd.Data
 	x = in_transport_dmrd_Data(&(*c_self))
 	r0 := x.Hint()
-	out_transport_dmrd_Data(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		out_layer2_Hint(&(*c_out), &r0, oc)
@@ -33133,10 +32387,14 @@ func dmrgo_dmrd_data_set_call(c_self *C.dmrgo_dmrd_data_t, c_group C.bool, c_tar
 	var x g_transport_dmrd.Data
 	x = in_transport_dmrd_Data(&(*c_self))
 	r0 := x.SetCall(bool(c_group), uint32(c_target), uint32(c_source))
-	out_transport_dmrd_Data(&(*c_self), &x, oc)
+	ws_self := *c_self
+	ws_self.source = C.uint32_t(x.Source)
+	ws_self.destination = C.uint32_t(x.Destination)
+	ws_self.private_ = C.bool(x.Private)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -33158,10 +32416,14 @@ func dmrgo_dmrd_data_set_hint(c_self *C.dmrgo_dmrd_data_t, c_h *C.dmrgo_layer2_h
 	var a_h g_layer2.Hint
 	a_h = in_layer2_Hint(&(*c_h))
 	r0 := x.SetHint(a_h)
-	out_transport_dmrd_Data(&(*c_self), &x, oc)
+	ws_self := *c_self
+	ws_self.slot = C.dmrgo_enums_slot_t(x.Slot)
+	ws_self.frame = C.dmrgo_dmrd_frame_type_t(x.Frame)
+	ws_self.value = C.uint8_t(x.Value)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -33181,7 +32443,6 @@ func dmrgo_dmrd_data_string(c_self *C.dmrgo_dmrd_data_t, c_out *C.char, c_out_ca
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_transport_dmrd_Data(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -34028,7 +33289,6 @@ func dmrgo_dmrd_local_position_append_binary(c_self *C.dmrgo_dmrd_local_position
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_transport_dmrd.LocalPosition)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -34051,7 +33311,6 @@ func dmrgo_dmrd_local_position_lc(c_self *C.dmrgo_dmrd_local_position_t, c_out *
 	var x g_transport_dmrd.LocalPosition
 	x = *(*g_transport_dmrd.LocalPosition)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.LC()
-	*(*g_transport_dmrd.LocalPosition)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		out_layer2_pdu_FullLinkControl(&(*c_out), &r0, oc)
@@ -34084,7 +33343,6 @@ func dmrgo_dmrd_local_position_lc_into(c_self *C.dmrgo_dmrd_local_position_t, c_
 		a_pl = get_layer2_pdu_FullLinkControlPayloads(c_pl).v
 	}
 	r0 := x.LCInto(p_dst, a_pl)
-	*(*g_transport_dmrd.LocalPosition)(unsafe.Pointer(&(*c_self))) = x
 	if c_dst != nil {
 		out_layer2_pdu_FullLinkControl(&(*c_dst), &a_dst, oc)
 	}
@@ -34110,7 +33368,6 @@ func dmrgo_dmrd_local_position_string(c_self *C.dmrgo_dmrd_local_position_t, c_o
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_transport_dmrd.LocalPosition)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -34135,7 +33392,6 @@ func dmrgo_dmrd_local_talker_alias_append_binary(c_self *C.dmrgo_dmrd_local_talk
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_transport_dmrd.LocalTalkerAlias)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -34158,7 +33414,6 @@ func dmrgo_dmrd_local_talker_alias_lc(c_self *C.dmrgo_dmrd_local_talker_alias_t,
 	var x g_transport_dmrd.LocalTalkerAlias
 	x = *(*g_transport_dmrd.LocalTalkerAlias)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.LC()
-	*(*g_transport_dmrd.LocalTalkerAlias)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		out_layer2_pdu_FullLinkControl(&(*c_out), &r0, oc)
@@ -34191,7 +33446,6 @@ func dmrgo_dmrd_local_talker_alias_lc_into(c_self *C.dmrgo_dmrd_local_talker_ali
 		a_p = get_layer2_pdu_FullLinkControlPayloads(c_p).v
 	}
 	r0 := x.LCInto(p_dst, a_p)
-	*(*g_transport_dmrd.LocalTalkerAlias)(unsafe.Pointer(&(*c_self))) = x
 	if c_dst != nil {
 		out_layer2_pdu_FullLinkControl(&(*c_dst), &a_dst, oc)
 	}
@@ -34217,7 +33471,6 @@ func dmrgo_dmrd_local_talker_alias_string(c_self *C.dmrgo_dmrd_local_talker_alia
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_transport_dmrd.LocalTalkerAlias)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -34301,7 +33554,6 @@ func dmrgo_dmrd_position_append_binary(c_self *C.dmrgo_dmrd_position_t, c_dst *C
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_transport_dmrd.Position)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -34324,7 +33576,6 @@ func dmrgo_dmrd_position_lc(c_self *C.dmrgo_dmrd_position_t, c_out *C.dmrgo_pdu_
 	var x g_transport_dmrd.Position
 	x = *(*g_transport_dmrd.Position)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.LC()
-	*(*g_transport_dmrd.Position)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		out_layer2_pdu_FullLinkControl(&(*c_out), &r0, oc)
@@ -34357,7 +33608,6 @@ func dmrgo_dmrd_position_lc_into(c_self *C.dmrgo_dmrd_position_t, c_dst *C.dmrgo
 		a_pl = get_layer2_pdu_FullLinkControlPayloads(c_pl).v
 	}
 	r0 := x.LCInto(p_dst, a_pl)
-	*(*g_transport_dmrd.Position)(unsafe.Pointer(&(*c_self))) = x
 	if c_dst != nil {
 		out_layer2_pdu_FullLinkControl(&(*c_dst), &a_dst, oc)
 	}
@@ -34383,7 +33633,6 @@ func dmrgo_dmrd_position_string(c_self *C.dmrgo_dmrd_position_t, c_out *C.char, 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_transport_dmrd.Position)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -34408,7 +33657,6 @@ func dmrgo_dmrd_talker_alias_append_binary(c_self *C.dmrgo_dmrd_talker_alias_t, 
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_transport_dmrd.TalkerAlias)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -34431,7 +33679,6 @@ func dmrgo_dmrd_talker_alias_lc(c_self *C.dmrgo_dmrd_talker_alias_t, c_out *C.dm
 	var x g_transport_dmrd.TalkerAlias
 	x = *(*g_transport_dmrd.TalkerAlias)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.LC()
-	*(*g_transport_dmrd.TalkerAlias)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		out_layer2_pdu_FullLinkControl(&(*c_out), &r0, oc)
@@ -34464,7 +33711,6 @@ func dmrgo_dmrd_talker_alias_lc_into(c_self *C.dmrgo_dmrd_talker_alias_t, c_dst 
 		a_p = get_layer2_pdu_FullLinkControlPayloads(c_p).v
 	}
 	r0 := x.LCInto(p_dst, a_p)
-	*(*g_transport_dmrd.TalkerAlias)(unsafe.Pointer(&(*c_self))) = x
 	if c_dst != nil {
 		out_layer2_pdu_FullLinkControl(&(*c_dst), &a_dst, oc)
 	}
@@ -34490,7 +33736,6 @@ func dmrgo_dmrd_talker_alias_string(c_self *C.dmrgo_dmrd_talker_alias_t, c_out *
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_transport_dmrd.TalkerAlias)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -36116,7 +35361,6 @@ func dmrgo_hytera_frame_append_binary(c_self *C.dmrgo_hytera_frame_t, c_dst *C.u
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -36139,7 +35383,6 @@ func dmrgo_hytera_frame_call(c_self *C.dmrgo_hytera_frame_t, c_group *C.bool, c_
 	var x g_transport_hytera.Frame
 	x = *(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self)))
 	r0, r1, r2 := x.Call()
-	*(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	_ = r1
 	_ = r2
@@ -36188,7 +35431,6 @@ func dmrgo_hytera_frame_hint(c_self *C.dmrgo_hytera_frame_t, c_out *C.dmrgo_laye
 	var x g_transport_hytera.Frame
 	x = *(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self)))
 	r0 := x.Hint()
-	*(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		out_layer2_Hint(&(*c_out), &r0, oc)
@@ -36209,10 +35451,14 @@ func dmrgo_hytera_frame_set_call(c_self *C.dmrgo_hytera_frame_t, c_group C.bool,
 	var x g_transport_hytera.Frame
 	x = *(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self)))
 	r0 := x.SetCall(bool(c_group), uint32(c_target), uint32(c_source))
-	*(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self))) = x
+	ws_self := *c_self
+	ws_self.call_type = C.uint8_t(x.CallType)
+	ws_self.destination = C.uint32_t(x.Destination)
+	ws_self.source = C.uint32_t(x.Source)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -36234,10 +35480,13 @@ func dmrgo_hytera_frame_set_hint(c_self *C.dmrgo_hytera_frame_t, c_h *C.dmrgo_la
 	var a_h g_layer2.Hint
 	a_h = in_layer2_Hint(&(*c_h))
 	r0 := x.SetHint(a_h)
-	*(*g_transport_hytera.Frame)(unsafe.Pointer(&(*c_self))) = x
+	ws_self := *c_self
+	ws_self.slot = C.dmrgo_enums_slot_t(x.Slot)
+	ws_self.slot_type = C.dmrgo_hytera_slot_type_t(x.SlotType)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -36738,7 +35987,6 @@ func dmrgo_ipsc_payload_rssi(c_self *C.dmrgo_ipsc_payload_t, c_value *C.uint16_t
 	var x g_transport_ipsc.Payload
 	x = in_transport_ipsc_Payload(&(*c_self))
 	r0, r1 := x.RSSI()
-	out_transport_ipsc_Payload(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_value != nil {
@@ -36763,7 +36011,6 @@ func dmrgo_ipsc_payload_slot_type(c_self *C.dmrgo_ipsc_payload_t, c_slot_type_in
 	var x g_transport_ipsc.Payload
 	x = in_transport_ipsc_Payload(&(*c_self))
 	r0, r1 := x.SlotType()
-	out_transport_ipsc_Payload(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_slot_type_info != nil {
@@ -36885,9 +36132,24 @@ func dmrgo_ipsc_stream_fill(c_self *C.dmrgo_ipsc_stream_t, c_u *C.dmrgo_ipsc_use
 		p_u = &a_u
 	}
 	x.Fill(p_u, bool(c_last))
-	*(*g_transport_ipsc.Stream)(unsafe.Pointer(&(*c_self))) = x
+	ws_self := *c_self
+	ws_self.seq = C.uint16_t(x.Seq)
+	ws_self.timestamp = C.uint32_t(x.Timestamp)
+	ws_self.sent = C.uint32_t(x.Sent)
+	var ws_u C.dmrgo_ipsc_user_t
+	if c_u != nil {
+		ws_u = *c_u
+		ws_u.call_seq = C.uint8_t(a_u.CallSeq)
+		ws_u.call_control = C.uint32_t(a_u.CallControl)
+		ws_u.info = C.dmrgo_ipsc_call_info_t(a_u.Info)
+		out_transport_ipsc_RTP(&ws_u.rtp, &a_u.RTP, oc)
+	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if c_u != nil {
+		*c_u = ws_u
 	}
 	return C.DMRGO_OK
 }
@@ -36902,10 +36164,13 @@ func dmrgo_ipsc_stream_skip(c_self *C.dmrgo_ipsc_stream_t, c_n C.uint16_t) (rc C
 	var x g_transport_ipsc.Stream
 	x = *(*g_transport_ipsc.Stream)(unsafe.Pointer(&(*c_self)))
 	x.Skip(uint16(c_n))
-	*(*g_transport_ipsc.Stream)(unsafe.Pointer(&(*c_self))) = x
+	ws_self := *c_self
+	ws_self.seq = C.uint16_t(x.Seq)
+	ws_self.timestamp = C.uint32_t(x.Timestamp)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	return C.DMRGO_OK
 }
 
@@ -36925,7 +36190,6 @@ func dmrgo_ipsc_user_append_binary(c_self *C.dmrgo_ipsc_user_t, c_dst *C.uint8_t
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_transport_ipsc_User(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -36948,7 +36212,6 @@ func dmrgo_ipsc_user_call(c_self *C.dmrgo_ipsc_user_t, c_group *C.bool, c_target
 	var x g_transport_ipsc.User
 	x = in_transport_ipsc_User(&(*c_self))
 	r0, r1, r2 := x.Call()
-	out_transport_ipsc_User(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	_ = r2
@@ -36977,7 +36240,6 @@ func dmrgo_ipsc_user_hint(c_self *C.dmrgo_ipsc_user_t, c_out *C.dmrgo_layer2_hin
 	var x g_transport_ipsc.User
 	x = in_transport_ipsc_User(&(*c_self))
 	r0 := x.Hint()
-	out_transport_ipsc_User(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		out_layer2_Hint(&(*c_out), &r0, oc)
@@ -37018,7 +36280,6 @@ func dmrgo_ipsc_user_raw_burst(c_self *C.dmrgo_ipsc_user_t, c_cc C.dmrgo_enums_c
 	var x g_transport_ipsc.User
 	x = in_transport_ipsc_User(&(*c_self))
 	r0, r1 := x.RawBurst(g_enums.ColorCode(c_cc), g_layer2.SyncSource(c_src))
-	out_transport_ipsc_User(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*g_layer2.RawBurst)(unsafe.Pointer(&(*c_out))) = r0
@@ -37042,10 +36303,14 @@ func dmrgo_ipsc_user_set_call(c_self *C.dmrgo_ipsc_user_t, c_group C.bool, c_tar
 	var x g_transport_ipsc.User
 	x = in_transport_ipsc_User(&(*c_self))
 	r0 := x.SetCall(bool(c_group), uint32(c_target), uint32(c_source))
-	out_transport_ipsc_User(&(*c_self), &x, oc)
+	ws_self := *c_self
+	ws_self.opcode = C.dmrgo_ipsc_opcode_t(x.Opcode)
+	ws_self.source = C.uint32_t(x.Source)
+	ws_self.destination = C.uint32_t(x.Destination)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -37070,7 +36335,11 @@ func dmrgo_ipsc_user_set_raw_burst(c_self *C.dmrgo_ipsc_user_t, c_raw *C.dmrgo_l
 	var a_h g_layer2.Hint
 	a_h = in_layer2_Hint(&(*c_h))
 	r0, r1 := x.SetRawBurst(*(*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h)
-	out_transport_ipsc_User(&(*c_self), &x, oc)
+	ws_self := *c_self
+	ws_self.info = C.dmrgo_ipsc_call_info_t(x.Info)
+	ws_self.burst = C.dmrgo_ipsc_burst_type_t(x.Burst)
+	*(*g_transport_ipsc.Voice)(unsafe.Pointer(&ws_self.voice)) = x.Voice
+	out_transport_ipsc_Payload(&ws_self.data, &x.Data, oc)
 	_ = r0
 	if c_out != nil {
 		out_fec_Result(&(*c_out), &r0, oc)
@@ -37078,6 +36347,7 @@ func dmrgo_ipsc_user_set_raw_burst(c_self *C.dmrgo_ipsc_user_t, c_raw *C.dmrgo_l
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r1 != nil {
 		return setErr(r1)
 	}
@@ -38641,7 +37911,6 @@ func dmrgo_mmdvm_ack_append_binary(c_self *C.dmrgo_mmdvm_ack_t, c_dst *C.uint8_t
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_transport_mmdvm.Ack)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -38667,7 +37936,6 @@ func dmrgo_mmdvm_ack_string(c_self *C.dmrgo_mmdvm_ack_t, c_out *C.char, c_out_ca
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_transport_mmdvm.Ack)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -38751,7 +38019,6 @@ func dmrgo_mmdvm_config_v1_append_binary(c_self *C.dmrgo_mmdvm_config_v1_t, c_ds
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_transport_mmdvm_ConfigV1(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -38777,7 +38044,6 @@ func dmrgo_mmdvm_config_v1_string(c_self *C.dmrgo_mmdvm_config_v1_t, c_out *C.ch
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_transport_mmdvm_ConfigV1(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -38802,7 +38068,6 @@ func dmrgo_mmdvm_config_v2_append_binary(c_self *C.dmrgo_mmdvm_config_v2_t, c_ds
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_transport_mmdvm_ConfigV2(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -38828,7 +38093,6 @@ func dmrgo_mmdvm_config_v2_string(c_self *C.dmrgo_mmdvm_config_v2_t, c_out *C.ch
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_transport_mmdvm_ConfigV2(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -38928,7 +38192,6 @@ func dmrgo_mmdvm_dmr_abort_append_binary(c_self *C.dmrgo_mmdvm_dmr_abort_t, c_ds
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_transport_mmdvm.DMRAbort)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -38954,7 +38217,6 @@ func dmrgo_mmdvm_dmr_abort_string(c_self *C.dmrgo_mmdvm_dmr_abort_t, c_out *C.ch
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_transport_mmdvm.DMRAbort)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -38979,7 +38241,6 @@ func dmrgo_mmdvm_dmr_aloha_append_binary(c_self *C.dmrgo_mmdvm_dmr_aloha_t, c_ds
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_transport_mmdvm.DMRAloha)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -39005,7 +38266,6 @@ func dmrgo_mmdvm_dmr_aloha_string(c_self *C.dmrgo_mmdvm_dmr_aloha_t, c_out *C.ch
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_transport_mmdvm.DMRAloha)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -39030,7 +38290,6 @@ func dmrgo_mmdvm_dmr_data_append_binary(c_self *C.dmrgo_mmdvm_dmr_data_t, c_dst 
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_transport_mmdvm_DMRData(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -39073,7 +38332,6 @@ func dmrgo_mmdvm_dmr_data_hint(c_self *C.dmrgo_mmdvm_dmr_data_t, c_out *C.dmrgo_
 	var x g_transport_mmdvm.DMRData
 	x = in_transport_mmdvm_DMRData(&(*c_self))
 	r0 := x.Hint()
-	out_transport_mmdvm_DMRData(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		out_layer2_Hint(&(*c_out), &r0, oc)
@@ -39099,10 +38357,14 @@ func dmrgo_mmdvm_dmr_data_set_hint(c_self *C.dmrgo_mmdvm_dmr_data_t, c_h *C.dmrg
 	var a_h g_layer2.Hint
 	a_h = in_layer2_Hint(&(*c_h))
 	r0 := x.SetHint(a_h)
-	out_transport_mmdvm_DMRData(&(*c_self), &x, oc)
+	ws_self := *c_self
+	ws_self.slot = C.dmrgo_enums_slot_t(x.Slot)
+	ws_self.lost = C.bool(x.Lost)
+	ws_self.control = C.dmrgo_mmdvm_control_t(x.Control)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -39125,7 +38387,6 @@ func dmrgo_mmdvm_dmr_short_lc_append_binary(c_self *C.dmrgo_mmdvm_dmr_short_lc_t
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_transport_mmdvm.DMRShortLC)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -39199,7 +38460,6 @@ func dmrgo_mmdvm_dmr_short_lc_string(c_self *C.dmrgo_mmdvm_dmr_short_lc_t, c_out
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_transport_mmdvm.DMRShortLC)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -39224,7 +38484,6 @@ func dmrgo_mmdvm_dmr_start_append_binary(c_self *C.dmrgo_mmdvm_dmr_start_t, c_ds
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_transport_mmdvm_DMRStart(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -39250,7 +38509,6 @@ func dmrgo_mmdvm_dmr_start_string(c_self *C.dmrgo_mmdvm_dmr_start_t, c_out *C.ch
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_transport_mmdvm_DMRStart(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -39710,7 +38968,6 @@ func dmrgo_mmdvm_nak_append_binary(c_self *C.dmrgo_mmdvm_nak_t, c_dst *C.uint8_t
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_transport_mmdvm.Nak)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -39736,7 +38993,6 @@ func dmrgo_mmdvm_nak_string(c_self *C.dmrgo_mmdvm_nak_t, c_out *C.char, c_out_ca
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_transport_mmdvm.Nak)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -39827,7 +39083,6 @@ func dmrgo_mmdvm_set_freq_append_binary(c_self *C.dmrgo_mmdvm_set_freq_t, c_dst 
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_transport_mmdvm.SetFreq)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -39853,7 +39108,6 @@ func dmrgo_mmdvm_set_freq_string(c_self *C.dmrgo_mmdvm_set_freq_t, c_out *C.char
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_transport_mmdvm.SetFreq)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -39878,7 +39132,6 @@ func dmrgo_mmdvm_set_mode_append_binary(c_self *C.dmrgo_mmdvm_set_mode_t, c_dst 
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	*(*g_transport_mmdvm.SetMode)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -39904,7 +39157,6 @@ func dmrgo_mmdvm_set_mode_string(c_self *C.dmrgo_mmdvm_set_mode_t, c_out *C.char
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_transport_mmdvm.SetMode)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -39929,7 +39181,6 @@ func dmrgo_mmdvm_status_v1_append_binary(c_self *C.dmrgo_mmdvm_status_v1_t, c_ds
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_transport_mmdvm_StatusV1(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -39955,7 +39206,6 @@ func dmrgo_mmdvm_status_v1_string(c_self *C.dmrgo_mmdvm_status_v1_t, c_out *C.ch
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_transport_mmdvm_StatusV1(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -39980,7 +39230,6 @@ func dmrgo_mmdvm_status_v2_append_binary(c_self *C.dmrgo_mmdvm_status_v2_t, c_ds
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.AppendBinary(a_dst)
-	out_transport_mmdvm_StatusV2(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -40006,7 +39255,6 @@ func dmrgo_mmdvm_status_v2_string(c_self *C.dmrgo_mmdvm_status_v2_t, c_out *C.ch
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_transport_mmdvm_StatusV2(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -40053,7 +39301,6 @@ func dmrgo_trunk_access_applies(c_self *C.dmrgo_trunk_access_t, c_ms C.uint32_t,
 	var x g_trunk.Access
 	x = *(*g_trunk.Access)(unsafe.Pointer(&(*c_self)))
 	r0 := x.Applies(uint32(c_ms), bool(c_emergency))
-	*(*g_trunk.Access)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*c_out = C.bool(r0)
@@ -40074,7 +39321,6 @@ func dmrgo_trunk_appended_addresses(c_self *C.dmrgo_trunk_appended_t, c_out *C.d
 	var x g_trunk.Appended
 	x = in_trunk_Appended(&(*c_self))
 	r0, r1 := x.Addresses()
-	out_trunk_Appended(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		out_trunk_AddressList(&(*c_out), &r0, oc)
@@ -40104,7 +39350,6 @@ func dmrgo_trunk_appended_binary(c_self *C.dmrgo_trunk_appended_t, c_dst *C.uint
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1, r2 := x.Binary(a_dst)
-	out_trunk_Appended(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
@@ -40137,7 +39382,6 @@ func dmrgo_trunk_appended_digits(c_self *C.dmrgo_trunk_appended_t, c_dst *C.uint
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.Digits(a_dst)
-	out_trunk_Appended(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -40160,7 +39404,6 @@ func dmrgo_trunk_appended_ip(c_self *C.dmrgo_trunk_appended_t, c_ip *C.uint8_t, 
 	var x g_trunk.Appended
 	x = in_trunk_Appended(&(*c_self))
 	r0, r1, r2 := x.IP()
-	out_trunk_Appended(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_ip != nil {
@@ -40194,7 +39437,6 @@ func dmrgo_trunk_appended_lip(c_self *C.dmrgo_trunk_appended_t, c_dst *C.uint8_t
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.LIP(a_dst)
-	out_trunk_Appended(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -40217,7 +39459,6 @@ func dmrgo_trunk_appended_mixed(c_self *C.dmrgo_trunk_appended_t, c_addr *C.uint
 	var x g_trunk.Appended
 	x = in_trunk_Appended(&(*c_self))
 	r0, r1, r2 := x.Mixed()
-	out_trunk_Appended(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_addr != nil {
@@ -40245,7 +39486,6 @@ func dmrgo_trunk_appended_nmea_long(c_self *C.dmrgo_trunk_appended_t, c_out *C.d
 	var x g_trunk.Appended
 	x = in_trunk_Appended(&(*c_self))
 	r0, r1 := x.NMEALong()
-	out_trunk_Appended(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		out_trunk_NMEALong(&(*c_out), &r0, oc)
@@ -40269,7 +39509,6 @@ func dmrgo_trunk_appended_nmea_short(c_self *C.dmrgo_trunk_appended_t, c_out *C.
 	var x g_trunk.Appended
 	x = in_trunk_Appended(&(*c_self))
 	r0, r1 := x.NMEAShort()
-	out_trunk_Appended(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		out_trunk_NMEAShort(&(*c_out), &r0, oc)
@@ -40298,10 +39537,12 @@ func dmrgo_trunk_appended_set_addresses(c_self *C.dmrgo_trunk_appended_t, c_one_
 	var a_list []uint32
 	a_list = unsafe.Slice((*uint32)(unsafe.Pointer(c_list)), int(c_list_len))
 	r0 := x.SetAddresses(bool(c_one_key), a_list)
-	out_trunk_Appended(&(*c_self), &x, oc)
+	ws_self := *c_self
+	out_trunk_Appended(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -40323,10 +39564,12 @@ func dmrgo_trunk_appended_set_binary(c_self *C.dmrgo_trunk_appended_t, c_b *C.ui
 	var a_b []byte
 	a_b = unsafe.Slice((*byte)(unsafe.Pointer(c_b)), int(c_b_len))
 	r0 := x.SetBinary(a_b, int(c_n))
-	out_trunk_Appended(&(*c_self), &x, oc)
+	ws_self := *c_self
+	out_trunk_Appended(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -40348,10 +39591,12 @@ func dmrgo_trunk_appended_set_digits(c_self *C.dmrgo_trunk_appended_t, c_digits 
 	var a_digits []byte
 	a_digits = unsafe.Slice((*byte)(unsafe.Pointer(c_digits)), int(c_digits_len))
 	r0 := x.SetDigits(a_digits)
-	out_trunk_Appended(&(*c_self), &x, oc)
+	ws_self := *c_self
+	out_trunk_Appended(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -40371,10 +39616,12 @@ func dmrgo_trunk_appended_set_ip(c_self *C.dmrgo_trunk_appended_t, c_ip *C.uint8
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	x.SetIP(*(*[16]byte)(unsafe.Pointer(c_ip)), bool(c_v6))
-	out_trunk_Appended(&(*c_self), &x, oc)
+	ws_self := *c_self
+	out_trunk_Appended(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	return C.DMRGO_OK
 }
 
@@ -40393,10 +39640,12 @@ func dmrgo_trunk_appended_set_lip(c_self *C.dmrgo_trunk_appended_t, c_pdu *C.uin
 	var a_pdu []byte
 	a_pdu = unsafe.Slice((*byte)(unsafe.Pointer(c_pdu)), int(c_pdu_len))
 	r0 := x.SetLIP(a_pdu)
-	out_trunk_Appended(&(*c_self), &x, oc)
+	ws_self := *c_self
+	out_trunk_Appended(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -40418,10 +39667,12 @@ func dmrgo_trunk_appended_set_mixed(c_self *C.dmrgo_trunk_appended_t, c_one_key 
 	var a_text []byte
 	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
 	r0 := x.SetMixed(bool(c_one_key), uint32(c_addr), a_text)
-	out_trunk_Appended(&(*c_self), &x, oc)
+	ws_self := *c_self
+	out_trunk_Appended(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -40444,10 +39695,12 @@ func dmrgo_trunk_appended_set_nmea_long(c_self *C.dmrgo_trunk_appended_t, c_n *C
 		p_n = &a_n
 	}
 	r0 := x.SetNMEALong(p_n)
-	out_trunk_Appended(&(*c_self), &x, oc)
+	ws_self := *c_self
+	out_trunk_Appended(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -40470,10 +39723,12 @@ func dmrgo_trunk_appended_set_nmea_short(c_self *C.dmrgo_trunk_appended_t, c_n *
 		p_n = &a_n
 	}
 	r0 := x.SetNMEAShort(p_n)
-	out_trunk_Appended(&(*c_self), &x, oc)
+	ws_self := *c_self
+	out_trunk_Appended(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -40495,10 +39750,12 @@ func dmrgo_trunk_appended_set_text(c_self *C.dmrgo_trunk_appended_t, c_f C.dmrgo
 	var a_text []byte
 	a_text = unsafe.Slice((*byte)(unsafe.Pointer(c_text)), int(c_text_len))
 	r0 := x.SetText(g_enums.UDTFormat(c_f), a_text)
-	out_trunk_Appended(&(*c_self), &x, oc)
+	ws_self := *c_self
+	out_trunk_Appended(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
+	*c_self = ws_self
 	if r0 != nil {
 		return setErr(r0)
 	}
@@ -40521,7 +39778,6 @@ func dmrgo_trunk_appended_text(c_self *C.dmrgo_trunk_appended_t, c_dst *C.uint8_
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
 	r0, r1 := x.Text(a_dst)
-	out_trunk_Appended(&(*c_self), &x, oc)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
@@ -41453,7 +40709,6 @@ func dmrgo_trunk_grant_call(c_self *C.dmrgo_trunk_grant_t, c_out *C.dmrgo_voice_
 	var x g_trunk.Grant
 	x = in_trunk_Grant(&(*c_self))
 	r0 := x.Call()
-	out_trunk_Grant(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		out_voice_Call(&(*c_out), &r0, oc)
@@ -41474,7 +40729,6 @@ func dmrgo_trunk_grant_data(c_self *C.dmrgo_trunk_grant_t, c_out *C.bool) (rc C.
 	var x g_trunk.Grant
 	x = in_trunk_Grant(&(*c_self))
 	r0 := x.Data()
-	out_trunk_Grant(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*c_out = C.bool(r0)
@@ -41584,7 +40838,6 @@ func dmrgo_trunk_lip_short_report_encode(c_self *C.dmrgo_trunk_lip_short_report_
 	var x g_trunk.LIPShortReport
 	x = in_trunk_LIPShortReport(&(*c_self))
 	r0, r1 := x.Encode()
-	out_trunk_LIPShortReport(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[10]byte)(unsafe.Pointer(&(*(*[10]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -41611,7 +40864,6 @@ func dmrgo_trunk_lip_short_report_string(c_self *C.dmrgo_trunk_lip_short_report_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_trunk_LIPShortReport(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -42779,7 +42031,6 @@ func dmrgo_trunk_nmea_long_encode(c_self *C.dmrgo_trunk_nmea_long_t, c_out *C.ui
 	var x g_trunk.NMEALong
 	x = in_trunk_NMEALong(&(*c_self))
 	r0, r1 := x.Encode()
-	out_trunk_NMEALong(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[22]byte)(unsafe.Pointer(&(*(*[22]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -42806,7 +42057,6 @@ func dmrgo_trunk_nmea_long_string(c_self *C.dmrgo_trunk_nmea_long_t, c_out *C.ch
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_trunk_NMEALong(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -42825,7 +42075,6 @@ func dmrgo_trunk_nmea_short_encode(c_self *C.dmrgo_trunk_nmea_short_t, c_out *C.
 	var x g_trunk.NMEAShort
 	x = in_trunk_NMEAShort(&(*c_self))
 	r0, r1 := x.Encode()
-	out_trunk_NMEAShort(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[10]byte)(unsafe.Pointer(&(*(*[10]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -42852,7 +42101,6 @@ func dmrgo_trunk_nmea_short_string(c_self *C.dmrgo_trunk_nmea_short_t, c_out *C.
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_trunk_NMEAShort(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -43613,7 +42861,6 @@ func dmrgo_trunk_usbd_lip_response_encode(c_self *C.dmrgo_trunk_usbd_lip_respons
 	var x g_trunk.USBDLIPResponse
 	x = *(*g_trunk.USBDLIPResponse)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Encode()
-	*(*g_trunk.USBDLIPResponse)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	if c_out != nil {
 		*(*[10]byte)(unsafe.Pointer(&(*(*[10]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -43640,7 +42887,6 @@ func dmrgo_trunk_usbd_lip_response_string(c_self *C.dmrgo_trunk_usbd_lip_respons
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	*(*g_trunk.USBDLIPResponse)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -43659,7 +42905,6 @@ func dmrgo_trunk_usbd_poll_request_encode(c_self *C.dmrgo_trunk_usbd_poll_reques
 	var x g_trunk.USBDPollRequest
 	x = in_trunk_USBDPollRequest(&(*c_self))
 	r0, r1 := x.Encode()
-	out_trunk_USBDPollRequest(&(*c_self), &x, oc)
 	_ = r0
 	if c_out != nil {
 		*(*[10]byte)(unsafe.Pointer(&(*(*[10]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
@@ -43686,7 +42931,6 @@ func dmrgo_trunk_usbd_poll_request_string(c_self *C.dmrgo_trunk_usbd_poll_reques
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
-	out_trunk_USBDPollRequest(&(*c_self), &x, oc)
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -43705,7 +42949,6 @@ func dmrgo_trunk_auth_key_response(c_self *C.dmrgo_trunk_auth_key_t, c_addr C.ui
 	var x g_trunk_auth.Key
 	x = *(*g_trunk_auth.Key)(unsafe.Pointer(&(*c_self)))
 	r0, r1 := x.Response(uint32(c_addr), uint32(c_challenge))
-	*(*g_trunk_auth.Key)(unsafe.Pointer(&(*c_self))) = x
 	_ = r0
 	_ = r1
 	if c_response != nil {
@@ -43721,23 +42964,15 @@ func dmrgo_trunk_auth_key_response(c_self *C.dmrgo_trunk_auth_key_t, c_addr C.ui
 }
 
 //export dmrgo_trunk_auth_keys_response
-func dmrgo_trunk_auth_keys_response(c_self *C.dmrgo_trunk_auth_keys_t, c_addr C.uint32_t, c_challenge C.uint32_t, c_response *C.uint32_t, c_ok *C.bool, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_auth_keys_response(c_self *C.dmrgo_trunk_auth_keys_t, c_addr C.uint32_t, c_challenge C.uint32_t, c_response *C.uint32_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	if c_arena_len != nil {
-		if *c_arena_len > c_arena_cap {
-			return fail(C.DMRGO_ERR_ARG)
-		}
-		oc.need = int(*c_arena_len)
-	}
-	oc.setArena(c_arena, c_arena_cap)
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_trunk_auth.Keys
 	x = in_trunk_auth_Keys(&(*c_self))
 	r0, r1 := x.Response(uint32(c_addr), uint32(c_challenge))
-	out_trunk_auth_Keys(&(*c_self), &x, oc)
 	_ = r0
 	_ = r1
 	if c_response != nil {
@@ -43746,14 +42981,8 @@ func dmrgo_trunk_auth_keys_response(c_self *C.dmrgo_trunk_auth_keys_t, c_addr C.
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
 	}
-	if c_arena_need != nil {
-		*c_arena_need = C.size_t(oc.reported())
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if c_arena_len != nil {
-		*c_arena_len = C.size_t(oc.need)
 	}
 	return C.DMRGO_OK
 }

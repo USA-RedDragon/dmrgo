@@ -13,6 +13,8 @@ type sliceOut struct {
 }
 
 type sigmap struct {
+	fn         *types.Func
+	pidx       int
 	arena      bool
 	arenaTypes []types.Type
 	slices     []sliceOut
@@ -229,8 +231,13 @@ func (g *gen) mapPtrParam(sm *sigmap, n string, e types.Type, dst bool) error {
 	if dst {
 		sm.arena = sm.arena || g.needsArena(e)
 	}
+	eff := sm.paramEffects(g)
 	if g.alias(e) {
-		sm.cps = append(sm.cps, d)
+		if dst || eff.any() {
+			sm.cps = append(sm.cps, d)
+		} else {
+			sm.cps = append(sm.cps, constDecl(d))
+		}
 		sm.args = append(sm.args, "(*"+g.goType(e)+")(unsafe.Pointer("+cn+"))")
 		return nil
 	}
@@ -250,7 +257,11 @@ func (g *gen) mapPtrParam(sm *sigmap, n string, e types.Type, dst bool) error {
 		sm.args = append(sm.args, "p_"+n)
 		return nil
 	}
-	sm.cps = append(sm.cps, constDecl(d))
+	if eff.any() {
+		sm.cps = append(sm.cps, d)
+	} else {
+		sm.cps = append(sm.cps, constDecl(d))
+	}
 	st, err := g.storage(e)
 	if err != nil {
 		return err
@@ -266,6 +277,9 @@ func (g *gen) mapPtrParam(sm *sigmap, n string, e types.Type, dst bool) error {
 	}
 	lines(&sm.pre, "p_"+n+" = &"+a, "}")
 	sm.args = append(sm.args, "p_"+n)
+	if err := g.writeBack(sm, e, eff, cn, a, true); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -319,7 +333,10 @@ func (g *gen) mapSliceParam(sm *sigmap, n string, sl *types.Slice, owner *tinfo,
 		sm.args = append(sm.args, a)
 		return nil
 	}
-	if g.fillBuf && g.alias(e) {
+	if eff := sm.paramEffects(g); eff.get("")&eElem != 0 && !g.alias(e) {
+		return fmt.Errorf("a Go call that writes the elements of a []%s", e)
+	}
+	if g.fillBuf && g.alias(e) || sm.paramEffects(g).get("")&eElem != 0 {
 		sm.cps = append(sm.cps, ed, "size_t "+n+"_len")
 	} else {
 		sm.cps = append(sm.cps, constDecl(ed), "size_t "+n+"_len")
@@ -624,8 +641,12 @@ func (g *gen) mapRecv(sm *sigmap, recv *tinfo, rk recvKind, call string) (string
 		if err := g.needDeps(recv.named); err != nil {
 			return "", err
 		}
+		var eff *effect
+		if rk == rValPtr {
+			eff = g.methodEffects(-1)
+		}
 		d := recv.c + " *" + self
-		if rk != rValPtr {
+		if eff == nil || !eff.any() {
 			d = "const " + d
 		}
 		addSelf(d, ptr, true)
@@ -642,26 +663,36 @@ func (g *gen) mapRecv(sm *sigmap, recv *tinfo, rk recvKind, call string) (string
 		if err := g.inVal(&sm.pre, recv.named, "x", "(*c_self)", sv, 0); err != nil {
 			return "", err
 		}
-		if rk == rValPtr {
-			sm.arena = sm.arena || g.needsArena(recv.named)
-			if err := g.outVal(&sm.after, recv.named, "(*c_self)", "x", 0); err != nil {
+		if eff != nil {
+			if err := g.writeBack(sm, recv.named, eff, "c_self", "x", false); err != nil {
 				return "", err
 			}
 		}
 		return "x." + call, nil
 	case rEnumPtr:
-		addSelf(recv.c+" *"+self, ptr, true)
+		eff := g.methodEffects(-1)
+		d := recv.c + " *" + self
+		if !eff.any() {
+			d = "const " + d
+		}
+		addSelf(d, ptr, true)
 		if g.alias(recv.named) {
 			return "(*" + g.goType(recv.named) + ")(unsafe.Pointer(c_self))." + call, nil
 		}
 		lines(&sm.pre, "x := "+g.goType(recv.named)+"(*c_self)")
-		lines(&sm.after, "*c_self = C."+recv.c+"(x)")
+		if eff.any() {
+			lines(&sm.commit, "*c_self = C."+recv.c+"(x)")
+		}
 		return "x." + call, nil
 	case rEnum:
 		addSelf(recv.c+" "+self, "c_self C."+recv.c, false)
 		return g.goType(recv.named) + "(c_self)." + call, nil
 	case rArrPtr:
-		addSelf(recv.c+" *"+self, ptr, true)
+		d := recv.c + " *" + self
+		if !g.methodEffects(-1).any() {
+			d = "const " + d
+		}
+		addSelf(d, ptr, true)
 		return "(*" + g.goType(recv.named) + ")(unsafe.Pointer(c_self))." + call, nil
 	case rArrVal:
 		addSelf("const "+recv.c+" *"+self, ptr, true)
@@ -700,12 +731,16 @@ func (g *gen) wrapper(cname, doc string, recv *tinfo, rk recvKind, call string, 
 		reserved = append(reserved, "user")
 	}
 	pnames, names := g.sigNames(sig, g.curMethod, reserved...)
+	if ld == nil {
+		sm.fn = g.curFn
+	}
 	for i := 0; i < params.Len(); i++ {
 		p := params.At(i)
 		var ar *int
 		if i == appendIdx {
 			ar = &appendRes
 		}
+		sm.pidx = i
 		if err := g.mapParam(&sm, pnames[i], p.Type(), p.Name() == dstName, owner, ar); err != nil {
 			return "", "", fmt.Errorf("param %s: %w", p.Name(), err)
 		}
@@ -772,6 +807,103 @@ func (g *gen) wrapper(cname, doc string, recv *tinfo, rk recvKind, call string, 
 	}
 	proto := "int " + cname + "(" + strings.Join(cps, ", ") + ");"
 	return w.String(), g.protoDoc(doc) + proto + "\n", nil
+}
+
+func (sm *sigmap) paramEffects(g *gen) *effect {
+	if sm.fn == nil {
+		return &effect{}
+	}
+	return g.cVisible(sm.fn.Signature().Params().At(min(sm.pidx, sm.fn.Signature().Params().Len()-1)).Type(), g.l.effects(sm.fn, sm.pidx))
+}
+
+func (g *gen) methodEffects(param int) *effect {
+	if g.curFn == nil {
+		return &effect{}
+	}
+	return g.cVisible(g.curFn.Signature().Recv().Type(), g.l.effects(g.curFn, param))
+}
+
+// cVisible keeps the part of e that the C form of a value of type t can
+// see: the exported fields of a struct that are not handles.
+func (g *gen) cVisible(t types.Type, e *effect) *effect {
+	s := structOf(t)
+	if s == nil || e.all {
+		return e
+	}
+	out := &effect{ret: e.ret}
+	for f := range s.Fields() {
+		bits := e.get(f.Name())
+		if bits == 0 || !f.Exported() {
+			continue
+		}
+		ft := f.Type()
+		if p, ok := ft.(*types.Pointer); ok {
+			ft = p.Elem()
+		}
+		if _, isH := g.handleC(ft); isH {
+			continue
+		}
+		out.mark(f.Name(), bits)
+	}
+	return out
+}
+
+func (g *gen) writeBack(sm *sigmap, t types.Type, eff *effect, cvar, govar string, nullable bool) error {
+	ws := "ws_" + strings.TrimPrefix(cvar, "c_")
+	ref, ct := "*"+cvar, g.cgoTypeOf(t)
+	if _, ok := t.(*types.Array); ok {
+		ref = "*(*" + ct + ")(unsafe.Pointer(" + cvar + "))"
+	}
+	var w strings.Builder
+	ti := g.info(t)
+	staged := false
+	if ti != nil && ti.kind == kValue && !eff.all {
+		ms, err := g.members(ti)
+		if err != nil {
+			return err
+		}
+		for _, m := range ms {
+			ft := m.field.Type()
+			bits := eff.get(m.field.Name())
+			if bits&eSet == 0 && (bits&eElem == 0 || isSliceAlias(g, ft)) {
+				continue
+			}
+			if err := g.outField(&w, ft, ws, m.name, govar+"."+m.field.Name()); err != nil {
+				return err
+			}
+			sm.arena = sm.arena || g.needsArena(ft)
+			staged = true
+		}
+	} else if eff.any() {
+		if err := g.outVal(&w, t, ws, govar, 0); err != nil {
+			return err
+		}
+		sm.arena = sm.arena || g.needsArena(t)
+		staged = true
+	}
+	if !staged {
+		return nil
+	}
+	if nullable {
+		lines(&sm.after, "var "+ws+" "+ct, "if "+cvar+" != nil {", ws+" = "+ref)
+		sm.after.WriteString(w.String())
+		lines(&sm.after, "}")
+		lines(&sm.commit, "if "+cvar+" != nil {", ref+" = "+ws, "}")
+		return nil
+	}
+	lines(&sm.after, ws+" := "+ref)
+	sm.after.WriteString(w.String())
+	lines(&sm.commit, ref+" = "+ws)
+	return nil
+}
+
+func (g *gen) cgoTypeOf(t types.Type) string {
+	if _, ok := t.(*types.Array); ok {
+		c, _ := g.cgoArray(t)
+		return c
+	}
+	c, _ := g.ctype(t)
+	return g.cgoType(c)
 }
 
 func (g *gen) protoDoc(doc string) string {

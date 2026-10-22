@@ -136,6 +136,106 @@ static void test_names(void) {
 	printf("names: C names without Go keywords, blanks or split units\n");
 }
 
+static void test_self_writes(void) {
+	uint8_t pay[4] = {1, 2, 3, 4};
+	dmrgo_hdap_message_t hm = {0};
+	hm.payload = pay;
+	hm.payload_len = sizeof pay;
+	bool ok = true;
+	OK(dmrgo_hdap_message_checksum_ok(&hm, &ok));
+	OK(dmrgo_hdap_message_checksum_ok(&hm, &ok));
+	CHECK(hm.payload == pay && hm.payload_len == 4);
+	OK(dmrgo_hdap_message_seal(&hm));
+	OK(dmrgo_hdap_message_checksum_ok(&hm, &ok));
+	CHECK(ok && hm.payload == pay);
+
+	uint8_t dev[7] = {'r', 'a', 'd', 'i', 'o', '0', '1'};
+	dmrgo_ars_message_t am = {0};
+	am.header.type = DMRGO_ARS_TYPE_DEVICE_REGISTRATION;
+	am.device = dev;
+	am.device_len = sizeof dev;
+	uint8_t out[64];
+	size_t n = 0, need = 0;
+	OK(dmrgo_ars_message_append_binary(&am, out, sizeof out, &n, &need));
+	size_t first = n;
+	n = 0;
+	OK(dmrgo_ars_message_append_binary(&am, out, sizeof out, &n, &need));
+	CHECK(n == first && n > 7 && am.device == dev && am.device_len == 7);
+	n = 0;
+	CHECK(dmrgo_ars_message_append_binary(&am, out, 2, &n, &need) == DMRGO_ERR_SHORT);
+	CHECK(n == 0 && am.device == dev);
+	CHECK(dmrgo_ars_message_append_binary(&am, out, 2, &n, &need) == DMRGO_ERR_SHORT);
+
+	dmrgo_ars_message_t sm = am;
+	unsigned char ar[64];
+	size_t al = 0;
+	n = 0;
+	CHECK(dmrgo_ars_message_set_device_id(&sm, out, sizeof out, &n, &need, 1234, ar, 2, &al, NULL) == DMRGO_ERR_SHORT);
+	CHECK(sm.device == dev && sm.device_len == 7 && al == 0);
+	n = 0;
+	OK(dmrgo_ars_message_set_device_id(&sm, out, sizeof out, &n, &need, 1234, ar, sizeof ar, &al, NULL));
+	CHECK(sm.device != dev && sm.device_len == 4 && memcmp(sm.device, "1234", 4) == 0);
+
+	uint8_t payload[40] = {0x45};
+	dmrgo_data_event_t ev = {0};
+	ev.kind = DMRGO_DATA_EVENT_DELIVERED;
+	ev.message.payload = payload;
+	ev.message.payload_len = sizeof payload;
+	dmrgo_ip_icmp_message_t icmp = 0;
+	uint8_t ptr = 0;
+	int rc = dmrgo_data_event_icmp(&ev, 1500, &icmp, &ptr);
+	CHECK(rc != DMRGO_ERR_SHORT && rc != DMRGO_ERR_PANIC);
+	CHECK(dmrgo_data_event_icmp(&ev, 1500, &icmp, &ptr) == rc);
+	CHECK(ev.message.payload == payload);
+
+	dmrgo_trunk_auth_entry_t ent = {0};
+	ent.addr = 99;
+	dmrgo_trunk_auth_keys_t keys = {&ent, 1};
+	uint32_t resp = 0;
+	OK(dmrgo_trunk_auth_keys_response(&keys, 99, 7, &resp, &ok));
+	OK(dmrgo_trunk_auth_keys_response(&keys, 99, 7, &resp, &ok));
+	CHECK(ok && keys.entries == &ent && keys.entries_len == 1);
+	printf("self: read-only calls take a const self and no arena\n");
+}
+
+static void test_in_out(void) {
+	static const uint8_t report[] = {0x07, 0x1a, 0x22, 0x04, 0x24, 0x68, 0xac, 0xe0, 0x34, 0x1f, 0x4d, 0xbc, 0x77, 0x80, 0x51,
+		0x11, 0x8e, 0xcd, 0x8d, 0x11, 0x8a, 0xd4, 0x7b, 0x00, 0x63, 0x6c, 0x00, 0x06};
+	dmrgo_lrrp_message_t m = {0};
+	unsigned char ar[256];
+	size_t al = 0;
+	OK(dmrgo_lrrp_decode_message_into(&m, report, sizeof report, ar, sizeof ar, &al, NULL));
+	CHECK(m.document != 0 && m.report.has_circle2d && m.report.has_request_id && m.report.request_id_len == 4);
+
+	dmrgo_sms_text_t t = {0};
+	t.format = DMRGO_SMS_FORMAT_IP;
+	t.source = 1234;
+	t.destination = 5678;
+	uint8_t body[2] = {'h', 'i'};
+	t.body = body;
+	t.body_len = sizeof body;
+	dmrgo_sms_header_t h = {0};
+	uint8_t pkt[256];
+	size_t n = 0;
+	OK(dmrgo_sms_append_packet(pkt, sizeof pkt, &n, NULL, &t, false, &h));
+	CHECK(n > 20 && h.data.has_unconfirmed_data_header && h.data.unconfirmed_data_header.llid_destination == 5678);
+
+	uint8_t key[100];
+	memset(key, 'k', sizeof key);
+	dmrgo_dmrd_session_bridge_config_t bc = {0};
+	bc.key = key;
+	bc.key_len = sizeof key;
+	dmrgo_dmrd_session_bridge_t *br = NULL;
+	OK(dmrgo_dmrd_session_new_bridge(&bc, &br));
+	uint8_t p[73] = {'D', 'M', 'R', 'D'};
+	for (int i = 4; i < 53; i++)
+		p[i] = (uint8_t)i;
+	OK(dmrgo_dmrd_session_bridge_sign(br, p, sizeof p));
+	CHECK(p[53] == 0x07 && p[54] == 0x4d && p[55] == 0x5e && p[56] == 0xc7);
+	OK(dmrgo_dmrd_session_bridge_free(br));
+	printf("in/out: Go writes through pointer and slice arguments reach C\n");
+}
+
 static void test_layer2(void) {
 	dmrgo_layer2_data_t data = {0};
 	data.tag = DMRGO_LAYER2_DATA_PDU_CSBK;
@@ -223,7 +323,8 @@ static void test_tx(void) {
 		dmrgo_layer2_hint_t h = {0};
 		memset(ev, 0xab, sizeof ev);
 		used = 0;
-		OK(dmrgo_voice_receiver_burst(rx, (int64_t)(i + 1) * 60000000, &bursts[i], &h, ev, DMRGO_VOICE_MAX_EVENTS, &m, NULL, arena, sizeof arena, &used, NULL));
+		const dmrgo_layer2_raw_burst_t *raw = &bursts[i];
+		OK(dmrgo_voice_receiver_burst(rx, (int64_t)(i + 1) * 60000000, raw, &h, ev, DMRGO_VOICE_MAX_EVENTS, &m, NULL, arena, sizeof arena, &used, NULL));
 		for (size_t j = 0; j < m; j++) {
 			if (ev[j].kind == DMRGO_VOICE_EVENT_CALL_START) {
 				starts++;
@@ -689,6 +790,8 @@ int main(int argc, char **argv) {
 	test_pdu();
 	test_layer2();
 	test_names();
+	test_self_writes();
+	test_in_out();
 	test_tx();
 	test_voice_capture(argv[1]);
 	test_vocoder();

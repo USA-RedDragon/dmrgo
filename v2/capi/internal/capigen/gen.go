@@ -91,6 +91,7 @@ type gen struct {
 	usedHandles map[*tinfo]bool
 	scratch     map[*tinfo][]string
 	curMethod   *types.Func
+	curFn       *types.Func
 	fillBuf     bool
 	curRecv     *tinfo
 	unbounded   []string
@@ -240,8 +241,13 @@ func (g *gen) object(p *types.Package, o types.Object) error {
 		e := Export{Go: gn, Kind: "func"}
 		if o.Signature().TypeParams().Len() > 0 {
 			e.Err = "generic func"
-		} else if err := g.addFunc(&e, g.funcName(p, o.Name()), g.doc(o, gn), nil, rNone, g.qual(p)+"."+o.Name(), o.Signature(), nil); err != nil {
-			return err
+		} else {
+			g.curFn = o
+			err := g.addFunc(&e, g.funcName(p, o.Name()), g.doc(o, gn), nil, rNone, g.qual(p)+"."+o.Name(), o.Signature(), nil)
+			g.curFn = nil
+			if err != nil {
+				return err
+			}
 		}
 		g.exports = append(g.exports, e)
 	case *types.TypeName:
@@ -334,9 +340,12 @@ func (g *gen) typeObject(o *types.TypeName, gn string) error {
 		if why != "" {
 			me.Err = why
 		} else {
-			g.curMethod, g.curRecv, g.fillBuf = m, ti, isRead(m)
+			g.curMethod, g.curRecv, g.fillBuf, g.curFn = m, ti, isRead(m), m
+			if ti.kind == kOpen {
+				g.curFn = nil
+			}
 			err := g.addFunc(&me, ti.base+"_"+snake(m.Name()), g.doc(m, gn+"."+m.Name()), ti, rk, m.Name(), m.Signature(), nil)
-			g.curMethod, g.curRecv, g.fillBuf = nil, nil, false
+			g.curMethod, g.curRecv, g.fillBuf, g.curFn = nil, nil, false, nil
 			if err != nil {
 				return err
 			}

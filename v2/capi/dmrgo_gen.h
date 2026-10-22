@@ -7743,11 +7743,11 @@ struct dmrgo_voice_transmitter_config_t {
 #ifndef DMRGO_NO_PROTOTYPES
 
 /* Go: dmrgo.ConfigError.Error. Error returns the message of e. */
-int dmrgo_config_error_error(dmrgo_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_config_error_error(const dmrgo_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_config_error_last sets *ok when the last error of this thread holds a dmrgo.ConfigError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
 int dmrgo_config_error_last(dmrgo_config_error_t *out, bool *ok);
 /* Go: dmrgo.FieldRangeError.Error. Error returns the message of e. */
-int dmrgo_field_range_error_error(dmrgo_field_range_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_field_range_error_error(const dmrgo_field_range_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_field_range_error_last sets *ok when the last error of this thread holds a dmrgo.FieldRangeError and copies it to *out. Its strings point into thread-local memory that the next failed call on the thread reuses. */
 int dmrgo_field_range_error_last(dmrgo_field_range_error_t *out, bool *ok);
 /* Go: bs.Activation.String. String returns the name of the activation. */
@@ -7779,9 +7779,9 @@ int dmrgo_bs_repeater_free(dmrgo_bs_repeater_t *self);
 /* Go: bs.Repeater.Deadline. Deadline returns the time at which the Repeater needs a Tick. */
 int dmrgo_bs_repeater_deadline(dmrgo_bs_repeater_t *self, dmrgo_duration_t *at, bool *ok);
 /* dmrgo_bs_repeater_inbound_need sets *items and *arena to the room that dmrgo_bs_repeater_inbound needs for these arguments, without a change to the handle. */
-int dmrgo_bs_repeater_inbound_need(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const dmrgo_bs_source_t *from, size_t *items, size_t *arena);
+int dmrgo_bs_repeater_inbound_need(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const dmrgo_bs_source_t *from, size_t *items, size_t *arena);
 /* Go: bs.Repeater.Inbound. Inbound takes a burst received on slot h.Slot from the source from, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_bs_repeater_inbound_need gives (DMRGO_BS_REPEATER_INBOUND_MAX_ITEMS items). */
-int dmrgo_bs_repeater_inbound(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const dmrgo_bs_source_t *from, dmrgo_bs_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_bs_repeater_inbound(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const dmrgo_bs_source_t *from, dmrgo_bs_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_bs_repeater_lost_need sets *items and *arena to the room that dmrgo_bs_repeater_lost needs for these arguments, without a change to the handle. */
 int dmrgo_bs_repeater_lost_need(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, dmrgo_enums_slot_t s, const dmrgo_bs_source_t *from, size_t *items, size_t *arena);
 /* Go: bs.Repeater.Lost. Lost tells the Repeater that the transport lost the signal of slot s, such as an MMDVM TAG_LOST. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_bs_repeater_lost_need gives (DMRGO_BS_REPEATER_LOST_MAX_ITEMS items). */
@@ -7821,9 +7821,9 @@ int dmrgo_csbk_output_kind_string(dmrgo_csbk_output_kind_t self, char *out, size
 /* dmrgo_csbk_preambles_free frees the handle. self may be NULL. */
 int dmrgo_csbk_preambles_free(dmrgo_csbk_preambles_t *self);
 /* dmrgo_csbk_preambles_burst_need sets *items and *arena to the room that dmrgo_csbk_preambles_burst needs for these arguments, without a change to the handle. */
-int dmrgo_csbk_preambles_burst_need(dmrgo_csbk_preambles_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+int dmrgo_csbk_preambles_burst_need(dmrgo_csbk_preambles_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 /* Go: csbk.Preambles.Burst. Burst decodes the burst raw with what the Hint h says about it, runs it through the Preambles as Decoded does, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_preambles_burst_need gives (DMRGO_CSBK_PREAMBLES_BURST_MAX_ITEMS items). */
-int dmrgo_csbk_preambles_burst(dmrgo_csbk_preambles_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_csbk_preambles_burst(dmrgo_csbk_preambles_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: csbk.Preambles.Deadline. Deadline returns the time at which the Preambles needs a Tick. */
 int dmrgo_csbk_preambles_deadline(dmrgo_csbk_preambles_t *self, dmrgo_duration_t *at, bool *ok);
 /* dmrgo_csbk_preambles_decoded_need sets *items and *arena to the room that dmrgo_csbk_preambles_decoded needs for these arguments, without a change to the handle. */
@@ -7849,9 +7849,9 @@ int dmrgo_csbk_reason_string(dmrgo_csbk_reason_t self, char *out, size_t out_cap
 /* dmrgo_csbk_requester_free frees the handle. self may be NULL. */
 int dmrgo_csbk_requester_free(dmrgo_csbk_requester_t *self);
 /* dmrgo_csbk_requester_burst_need sets *items and *arena to the room that dmrgo_csbk_requester_burst needs for these arguments, without a change to the handle. */
-int dmrgo_csbk_requester_burst_need(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+int dmrgo_csbk_requester_burst_need(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 /* Go: csbk.Requester.Burst. Burst decodes the burst raw with what the Hint h says about it, runs it through the Requester as Decoded does, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_requester_burst_need gives (DMRGO_CSBK_REQUESTER_BURST_MAX_ITEMS items). */
-int dmrgo_csbk_requester_burst(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_csbk_requester_burst(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_csbk_requester_cancel_need sets *items and *arena to the room that dmrgo_csbk_requester_cancel needs for these arguments, without a change to the handle. */
 int dmrgo_csbk_requester_cancel_need(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: csbk.Requester.Cancel. Cancel ends the request, and appends an OutputDone with ResultCanceled to dst while one runs. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_requester_cancel_need gives (DMRGO_CSBK_REQUESTER_CANCEL_MAX_ITEMS items). */
@@ -7889,9 +7889,9 @@ int dmrgo_csbk_requester_state_string(dmrgo_csbk_requester_state_t self, char *o
 /* dmrgo_csbk_responder_free frees the handle. self may be NULL. */
 int dmrgo_csbk_responder_free(dmrgo_csbk_responder_t *self);
 /* dmrgo_csbk_responder_burst_need sets *items and *arena to the room that dmrgo_csbk_responder_burst needs for these arguments, without a change to the handle. */
-int dmrgo_csbk_responder_burst_need(dmrgo_csbk_responder_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+int dmrgo_csbk_responder_burst_need(dmrgo_csbk_responder_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 /* Go: csbk.Responder.Burst. Burst decodes the burst raw with what the Hint h says about it, runs it through the Responder as Decoded does, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_responder_burst_need gives (DMRGO_CSBK_RESPONDER_BURST_MAX_ITEMS items). */
-int dmrgo_csbk_responder_burst(dmrgo_csbk_responder_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_csbk_responder_burst(dmrgo_csbk_responder_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: csbk.Responder.Channel. Channel reports whether the logical channel is busy, as Requester.Channel does. */
 int dmrgo_csbk_responder_channel(dmrgo_csbk_responder_t *self, dmrgo_duration_t now, bool busy);
 /* Go: csbk.Responder.Deadline. Deadline returns the time at which the Responder needs a Tick. */
@@ -7919,9 +7919,9 @@ int dmrgo_csbk_service_string(dmrgo_csbk_service_t self, char *out, size_t out_c
 /* dmrgo_csbk_timing_free frees the handle. self may be NULL. */
 int dmrgo_csbk_timing_free(dmrgo_csbk_timing_t *self);
 /* dmrgo_csbk_timing_burst_need sets *items and *arena to the room that dmrgo_csbk_timing_burst needs for these arguments, without a change to the handle. */
-int dmrgo_csbk_timing_burst_need(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+int dmrgo_csbk_timing_burst_need(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 /* Go: csbk.Timing.Burst. Burst decodes the burst raw with what the Hint h says about it, runs it through the Timing as Decoded does, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_timing_burst_need gives (DMRGO_CSBK_TIMING_BURST_MAX_ITEMS items). */
-int dmrgo_csbk_timing_burst(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_csbk_timing_burst(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: csbk.Timing.Channel. Channel reports whether the frequency has RF activity on either slot. */
 int dmrgo_csbk_timing_channel(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, bool busy);
 /* Go: csbk.Timing.Deadline. Deadline returns the time at which the Timing needs a Tick. */
@@ -7951,9 +7951,9 @@ int dmrgo_csbk_timing_state_string(dmrgo_csbk_timing_state_t self, char *out, si
 /* dmrgo_csbk_wakeup_free frees the handle. self may be NULL. */
 int dmrgo_csbk_wakeup_free(dmrgo_csbk_wakeup_t *self);
 /* dmrgo_csbk_wakeup_burst_need sets *items and *arena to the room that dmrgo_csbk_wakeup_burst needs for these arguments, without a change to the handle. */
-int dmrgo_csbk_wakeup_burst_need(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+int dmrgo_csbk_wakeup_burst_need(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 /* Go: csbk.Wakeup.Burst. Burst decodes the burst raw with what the Hint h says about it, runs it through the Wakeup as Decoded does, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_wakeup_burst_need gives (DMRGO_CSBK_WAKEUP_BURST_MAX_ITEMS items). */
-int dmrgo_csbk_wakeup_burst(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_csbk_wakeup_burst(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_csbk_wakeup_cancel_need sets *items and *arena to the room that dmrgo_csbk_wakeup_cancel needs for these arguments, without a change to the handle. */
 int dmrgo_csbk_wakeup_cancel_need(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: csbk.Wakeup.Cancel. Cancel ends the wakeup, and appends an OutputDone with ResultCanceled to dst while one runs. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_wakeup_cancel_need gives (DMRGO_CSBK_WAKEUP_CANCEL_MAX_ITEMS items). */
@@ -7987,7 +7987,7 @@ int dmrgo_csbk_wakeup_state_string(dmrgo_csbk_wakeup_state_t self, char *out, si
 /* Go: data.EndReason.String. String returns the name of the reason. */
 int dmrgo_data_end_reason_string(dmrgo_data_end_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: data.Event.ICMP. ICMP returns the ICMP error message that a radio sends about the IPv4 packet of the EventDelivered or EventReassembled e, for an accessory interface with the MTU mtu, as ip.CheckIPv4 does. */
-int dmrgo_data_event_icmp(dmrgo_data_event_t *self, int64_t mtu, dmrgo_ip_icmp_message_t *m, uint8_t *pointer, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_data_event_icmp(const dmrgo_data_event_t *self, int64_t mtu, dmrgo_ip_icmp_message_t *m, uint8_t *pointer);
 /* Go: data.EventKind.String. String returns the name of the kind. */
 int dmrgo_data_event_kind_string(dmrgo_data_event_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: data.NewReceiver. NewReceiver returns a Receiver for cfg. */
@@ -7995,15 +7995,15 @@ int dmrgo_data_new_receiver(const dmrgo_data_receiver_config_t *cfg, dmrgo_data_
 /* Go: data.NewSender. NewSender returns a Sender for cfg. */
 int dmrgo_data_new_sender(const dmrgo_data_sender_config_t *cfg, dmrgo_data_sender_t **out);
 /* Go: data.Output.ICMP. ICMP returns the ICMP error message that the OutputDone o of a message of the IP bearer service reports to the IP layer: ip.ICMPHostUnreachable for a message that used all its tries on air (ResultRetryLimit), that could not finish before SenderConfig.TxLimit (ResultTimeLimit), or that got a NACK for the full memory of the recipient. */
-int dmrgo_data_output_icmp(dmrgo_data_output_t *self, dmrgo_ip_icmp_message_t *out);
+int dmrgo_data_output_icmp(const dmrgo_data_output_t *self, dmrgo_ip_icmp_message_t *out);
 /* Go: data.OutputKind.String. String returns the name of the kind. */
 int dmrgo_data_output_kind_string(dmrgo_data_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_data_receiver_free frees the handle. self may be NULL. */
 int dmrgo_data_receiver_free(dmrgo_data_receiver_t *self);
 /* dmrgo_data_receiver_burst_need sets *items and *arena to the room that dmrgo_data_receiver_burst needs for these arguments, without a change to the handle. */
-int dmrgo_data_receiver_burst_need(dmrgo_data_receiver_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+int dmrgo_data_receiver_burst_need(dmrgo_data_receiver_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 /* Go: data.Receiver.Burst. Burst decodes the burst raw with what the Hint h says about it, runs it through the Receiver as Decoded does, and appends the events to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_receiver_burst_need gives. */
-int dmrgo_data_receiver_burst(dmrgo_data_receiver_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_data_event_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_data_receiver_burst(dmrgo_data_receiver_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_data_event_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: data.Receiver.Deadline. Deadline returns the time at which the Receiver needs a Tick. */
 int dmrgo_data_receiver_deadline(dmrgo_data_receiver_t *self, dmrgo_duration_t *at, bool *ok);
 /* dmrgo_data_receiver_decoded_need sets *items and *arena to the room that dmrgo_data_receiver_decoded needs for these arguments, without a change to the handle. */
@@ -8027,9 +8027,9 @@ int dmrgo_data_result_string(dmrgo_data_result_t self, char *out, size_t out_cap
 /* dmrgo_data_sender_free frees the handle. self may be NULL. */
 int dmrgo_data_sender_free(dmrgo_data_sender_t *self);
 /* dmrgo_data_sender_burst_need sets *items and *arena to the room that dmrgo_data_sender_burst needs for these arguments, without a change to the handle. */
-int dmrgo_data_sender_burst_need(dmrgo_data_sender_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+int dmrgo_data_sender_burst_need(dmrgo_data_sender_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 /* Go: data.Sender.Burst. Burst decodes the burst raw and takes the response to the confirmed messages in progress from it: a response packet from the target of the messages to their source. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_sender_burst_need gives (DMRGO_DATA_SENDER_BURST_MAX_ITEMS items). */
-int dmrgo_data_sender_burst(dmrgo_data_sender_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_data_sender_burst(dmrgo_data_sender_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_data_sender_cancel_need sets *items and *arena to the room that dmrgo_data_sender_cancel needs for these arguments, without a change to the handle. */
 int dmrgo_data_sender_cancel_need(dmrgo_data_sender_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: data.Sender.Cancel. Cancel ends every message in progress with ResultCancelled and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_data_sender_cancel_need gives (DMRGO_DATA_SENDER_CANCEL_MAX_ITEMS items). */
@@ -8193,79 +8193,79 @@ int dmrgo_hdap_decode_tmp_group_answer(const uint8_t *data, size_t data_len, dmr
 /* Go: hdap.DecodeTMPMessage. DecodeTMPMessage decodes a TMPMessage from data. */
 int dmrgo_hdap_decode_tmp_message(const uint8_t *data, size_t data_len, dmrgo_hdap_tmp_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: hdap.GPSData.AppendBinary. AppendBinary appends the 40 octets of s to dst. */
-int dmrgo_hdap_gps_data_append_binary(dmrgo_hdap_gps_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_hdap_gps_data_append_binary(const dmrgo_hdap_gps_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hdap.GPSData.Latitude. Latitude returns the latitude in degrees, north positive. */
-int dmrgo_hdap_gps_data_latitude(dmrgo_hdap_gps_data_t *self, double *out);
+int dmrgo_hdap_gps_data_latitude(const dmrgo_hdap_gps_data_t *self, double *out);
 /* Go: hdap.GPSData.Longitude. Longitude returns the longitude in degrees, east positive. */
-int dmrgo_hdap_gps_data_longitude(dmrgo_hdap_gps_data_t *self, double *out);
+int dmrgo_hdap_gps_data_longitude(const dmrgo_hdap_gps_data_t *self, double *out);
 /* Go: hdap.GPSData.String. String returns the fields of s as text, for printing. */
-int dmrgo_hdap_gps_data_string(dmrgo_hdap_gps_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_hdap_gps_data_string(const dmrgo_hdap_gps_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.GPSData.Valid. Valid reports a position from a fix: Status 'A'. */
-int dmrgo_hdap_gps_data_valid(dmrgo_hdap_gps_data_t *self, bool *out);
+int dmrgo_hdap_gps_data_valid(const dmrgo_hdap_gps_data_t *self, bool *out);
 /* Go: hdap.Header.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
-int dmrgo_hdap_header_append_binary(dmrgo_hdap_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_hdap_header_append_binary(const dmrgo_hdap_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hdap.Header.String. String returns the fields of s as text, for printing. */
-int dmrgo_hdap_header_string(dmrgo_hdap_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_hdap_header_string(const dmrgo_hdap_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.LPAnswer.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_hdap_lp_answer_append_binary(dmrgo_hdap_lp_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_hdap_lp_answer_append_binary(const dmrgo_hdap_lp_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hdap.LPAnswer.String. String returns the fields of s as text, for printing. */
-int dmrgo_hdap_lp_answer_string(dmrgo_hdap_lp_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_hdap_lp_answer_string(const dmrgo_hdap_lp_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.LPEmergency.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_hdap_lp_emergency_append_binary(dmrgo_hdap_lp_emergency_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_hdap_lp_emergency_append_binary(const dmrgo_hdap_lp_emergency_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hdap.LPEmergency.String. String returns the fields of s as text, for printing. */
-int dmrgo_hdap_lp_emergency_string(dmrgo_hdap_lp_emergency_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_hdap_lp_emergency_string(const dmrgo_hdap_lp_emergency_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.LPReport.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_hdap_lp_report_append_binary(dmrgo_hdap_lp_report_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_hdap_lp_report_append_binary(const dmrgo_hdap_lp_report_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hdap.LPReport.String. String returns the fields of s as text, for printing. */
-int dmrgo_hdap_lp_report_string(dmrgo_hdap_lp_report_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_hdap_lp_report_string(const dmrgo_hdap_lp_report_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.LPRequest.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_hdap_lp_request_append_binary(dmrgo_hdap_lp_request_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_hdap_lp_request_append_binary(const dmrgo_hdap_lp_request_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hdap.LPRequest.String. String returns the fields of s as text, for printing. */
-int dmrgo_hdap_lp_request_string(dmrgo_hdap_lp_request_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_hdap_lp_request_string(const dmrgo_hdap_lp_request_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.Message.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_hdap_message_append_binary(dmrgo_hdap_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_hdap_message_append_binary(const dmrgo_hdap_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hdap.Message.ChecksumOK. ChecksumOK reports whether Checksum matches the opcode, the length and the payload. */
-int dmrgo_hdap_message_checksum_ok(dmrgo_hdap_message_t *self, bool *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_hdap_message_checksum_ok(const dmrgo_hdap_message_t *self, bool *out);
 /* Go: hdap.Message.Seal. Seal sets Checksum: the sum of the octets of the opcode, the length and the payload, inverted, plus 0x33. */
-int dmrgo_hdap_message_seal(dmrgo_hdap_message_t *self, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_hdap_message_seal(dmrgo_hdap_message_t *self);
 /* Go: hdap.Message.String. String returns the fields of s as text, for printing. */
-int dmrgo_hdap_message_string(dmrgo_hdap_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_hdap_message_string(const dmrgo_hdap_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.Opcode.String. String returns the name of o. */
 int dmrgo_hdap_opcode_string(dmrgo_hdap_opcode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.RRSAnswer.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_hdap_rrs_answer_append_binary(dmrgo_hdap_rrs_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_hdap_rrs_answer_append_binary(const dmrgo_hdap_rrs_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hdap.RRSAnswer.String. String returns the fields of s as text, for printing. */
-int dmrgo_hdap_rrs_answer_string(dmrgo_hdap_rrs_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_hdap_rrs_answer_string(const dmrgo_hdap_rrs_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.RRSCheckAnswer.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_hdap_rrs_check_answer_append_binary(dmrgo_hdap_rrs_check_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_hdap_rrs_check_answer_append_binary(const dmrgo_hdap_rrs_check_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hdap.RRSCheckAnswer.String. String returns the fields of s as text, for printing. */
-int dmrgo_hdap_rrs_check_answer_string(dmrgo_hdap_rrs_check_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_hdap_rrs_check_answer_string(const dmrgo_hdap_rrs_check_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.RRSRadio.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_hdap_rrs_radio_append_binary(dmrgo_hdap_rrs_radio_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_hdap_rrs_radio_append_binary(const dmrgo_hdap_rrs_radio_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hdap.RRSRadio.String. String returns the fields of s as text, for printing. */
-int dmrgo_hdap_rrs_radio_string(dmrgo_hdap_rrs_radio_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_hdap_rrs_radio_string(const dmrgo_hdap_rrs_radio_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.Service.String. String returns the name of s. */
 int dmrgo_hdap_service_string(dmrgo_hdap_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.TMPAnswer.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_hdap_tmp_answer_append_binary(dmrgo_hdap_tmp_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_hdap_tmp_answer_append_binary(const dmrgo_hdap_tmp_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hdap.TMPAnswer.String. String returns the fields of s as text, for printing. */
-int dmrgo_hdap_tmp_answer_string(dmrgo_hdap_tmp_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_hdap_tmp_answer_string(const dmrgo_hdap_tmp_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.TMPFlags.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
-int dmrgo_hdap_tmp_flags_append_binary(dmrgo_hdap_tmp_flags_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_hdap_tmp_flags_append_binary(const dmrgo_hdap_tmp_flags_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hdap.TMPFlags.String. String returns the fields of s as text, for printing. */
-int dmrgo_hdap_tmp_flags_string(dmrgo_hdap_tmp_flags_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_hdap_tmp_flags_string(const dmrgo_hdap_tmp_flags_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.TMPGroupAnswer.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_hdap_tmp_group_answer_append_binary(dmrgo_hdap_tmp_group_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_hdap_tmp_group_answer_append_binary(const dmrgo_hdap_tmp_group_answer_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hdap.TMPGroupAnswer.String. String returns the fields of s as text, for printing. */
-int dmrgo_hdap_tmp_group_answer_string(dmrgo_hdap_tmp_group_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_hdap_tmp_group_answer_string(const dmrgo_hdap_tmp_group_answer_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.TMPMessage.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_hdap_tmp_message_append_binary(dmrgo_hdap_tmp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_hdap_tmp_message_append_binary(const dmrgo_hdap_tmp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hdap.TMPMessage.SetTextUTF8. SetTextUTF8 appends text, UTF-8, to dst as UTF-16LE, points Text at the appended octets and returns dst. */
 int dmrgo_hdap_tmp_message_set_text_utf8(dmrgo_hdap_tmp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: hdap.TMPMessage.String. String returns the fields of s as text, for printing. */
-int dmrgo_hdap_tmp_message_string(dmrgo_hdap_tmp_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_hdap_tmp_message_string(const dmrgo_hdap_tmp_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: hdap.TMPMessage.TextUTF8. TextUTF8 appends Text, UTF-16LE text, to dst as UTF-8 and returns dst. */
-int dmrgo_hdap_tmp_message_text_utf8(dmrgo_hdap_tmp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_hdap_tmp_message_text_utf8(const dmrgo_hdap_tmp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hdap.TMPType.String. String returns the name of t. */
 int dmrgo_hdap_tmp_type_string(dmrgo_hdap_tmp_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ip.AppendCompressed. AppendCompressed appends d to dst with a compressed UDP/IPv4 header. */
@@ -8277,7 +8277,7 @@ int dmrgo_ip_append_ipv4(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *
 /* Go: ip.CheckIPv4. CheckIPv4 returns the ICMP error message that a radio sends for the IPv4 packet data that it received for an accessory interface with the MTU mtu: ICMPBadHeader with the octet in error when the header is not a valid IPv4 header, or ICMPFragmentationNeeded when the packet is longer than mtu and has the DF flag set. */
 int dmrgo_ip_check_ipv4(const uint8_t *data, size_t data_len, int64_t mtu, dmrgo_ip_icmp_message_t *m, uint8_t *pointer, bool *ok);
 /* Go: ip.CompressedPorts. CompressedPorts returns the UDP source and destination ports of a compressed UDP/IPv4 header: the port of the SPID or DPID, or the port in an Extended Header when the SPID or DPID is 0. */
-int dmrgo_ip_compressed_ports(dmrgo_pdu_udp_ipv4_compressed_header_t *h, dmrgo_ip_port_t *source, dmrgo_ip_port_t *destination);
+int dmrgo_ip_compressed_ports(const dmrgo_pdu_udp_ipv4_compressed_header_t *h, dmrgo_ip_port_t *source, dmrgo_ip_port_t *destination);
 /* Go: ip.DPIDPort. DPIDPort returns the UDP port of dpid: PortText for DPIDTextMessage and PortLocation for DPIDLocationProtocol. */
 int dmrgo_ip_dpid_port(dmrgo_enums_dpid_t dpid, dmrgo_ip_port_t *out);
 /* Go: ip.Decode. Decode decodes the UDP datagram at the start of data, the user data of a packet with the given SAP. */
@@ -8293,13 +8293,13 @@ int dmrgo_ip_decode_udp(const uint8_t *data, size_t data_len, dmrgo_ip_udp_t *ou
 /* Go: ip.GroupAddress. GroupAddress returns the IPv4 multicast address of the group with the 24-bit ID group: prefix.x.y.z, where prefix is a class D octet from 224 to 239, such as 225. */
 int dmrgo_ip_group_address(uint8_t prefix, uint32_t group, uint8_t out[4]);
 /* Go: ip.ICMP.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_ip_icmp_append_binary(dmrgo_ip_icmp_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_ip_icmp_append_binary(const dmrgo_ip_icmp_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ip.ICMP.String. String returns the fields of s as text, for printing. */
-int dmrgo_ip_icmp_string(dmrgo_ip_icmp_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_ip_icmp_string(const dmrgo_ip_icmp_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ip.ICMPHeader.AppendBinary. AppendBinary appends the 8 octets of s to dst. */
-int dmrgo_ip_icmp_header_append_binary(dmrgo_ip_icmp_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_ip_icmp_header_append_binary(const dmrgo_ip_icmp_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ip.ICMPHeader.String. String returns the fields of s as text, for printing. */
-int dmrgo_ip_icmp_header_string(dmrgo_ip_icmp_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_ip_icmp_header_string(const dmrgo_ip_icmp_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ip.ICMPMessage.Code. Code returns the ICMP Code of m. */
 int dmrgo_ip_icmp_message_code(dmrgo_ip_icmp_message_t self, uint8_t *out);
 /* Go: ip.ICMPMessage.String. String returns the Table 5.1 name of m. */
@@ -8309,13 +8309,13 @@ int dmrgo_ip_icmp_message_type(dmrgo_ip_icmp_message_t self, uint8_t *out);
 /* Go: ip.ID. ID returns the 24-bit radio or group ID of the address addr: its last three octets. */
 int dmrgo_ip_id(const uint8_t addr[4], uint32_t *out);
 /* Go: ip.IPv4.AppendBinary. AppendBinary appends s to dst, with Header.TotalLength set to the length of the data. */
-int dmrgo_ip_ipv4_append_binary(dmrgo_ip_ipv4_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_ip_ipv4_append_binary(const dmrgo_ip_ipv4_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ip.IPv4.String. String returns the fields of s as text, for printing. */
-int dmrgo_ip_ipv4_string(dmrgo_ip_ipv4_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_ip_ipv4_string(const dmrgo_ip_ipv4_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ip.IPv4Header.AppendBinary. AppendBinary appends the 20 octets of s to dst. */
-int dmrgo_ip_ipv4_header_append_binary(dmrgo_ip_ipv4_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_ip_ipv4_header_append_binary(const dmrgo_ip_ipv4_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ip.IPv4Header.String. String returns the fields of s as text, for printing. */
-int dmrgo_ip_ipv4_header_string(dmrgo_ip_ipv4_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_ip_ipv4_header_string(const dmrgo_ip_ipv4_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ip.Port.String. String returns the name of p, or its number when it has no name. */
 int dmrgo_ip_port_string(dmrgo_ip_port_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ip.PortDPID. PortDPID returns the DPID of the UDP port p. */
@@ -8329,13 +8329,13 @@ int dmrgo_ip_radio_address(uint8_t network, uint32_t id, uint8_t out[4]);
 /* Go: ip.SPIDPort. SPIDPort returns the UDP port of spid: PortText for SPIDTextMessage and PortLocation for SPIDLocationProtocol. */
 int dmrgo_ip_spid_port(dmrgo_enums_spid_t spid, dmrgo_ip_port_t *out);
 /* Go: ip.UDP.AppendBinary. AppendBinary appends s to dst, with Header.Length set to the length of the data. */
-int dmrgo_ip_udp_append_binary(dmrgo_ip_udp_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_ip_udp_append_binary(const dmrgo_ip_udp_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ip.UDP.String. String returns the fields of s as text, for printing. */
-int dmrgo_ip_udp_string(dmrgo_ip_udp_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_ip_udp_string(const dmrgo_ip_udp_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ip.UDPHeader.AppendBinary. AppendBinary appends the 8 octets of s to dst. */
-int dmrgo_ip_udp_header_append_binary(dmrgo_ip_udp_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_ip_udp_header_append_binary(const dmrgo_ip_udp_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ip.UDPHeader.String. String returns the fields of s as text, for printing. */
-int dmrgo_ip_udp_header_string(dmrgo_ip_udp_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_ip_udp_header_string(const dmrgo_ip_udp_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer2.BuildBurst. BuildBurst returns the data burst that carries d, with a slot type of color code cc and data type d.DataType() and the data SYNC pattern of src. */
 int dmrgo_layer2_build_burst(const dmrgo_layer2_data_t *d, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
 /* Go: layer2.BuildDataBurst. BuildDataBurst returns a data burst that carries the BPTC(196,96) payload p, which must already carry its CRC or parity (see pdu.Seal), with a slot type of color code cc and data type dt and the data SYNC pattern of src. */
@@ -8417,7 +8417,7 @@ int dmrgo_layer2_burst_set_ambe_frames(dmrgo_layer2_burst_t *self, const dmrgo_v
 /* Go: layer2.Burst.String. String returns a string representation of the burst. */
 int dmrgo_layer2_burst_string(dmrgo_layer2_burst_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer2.CACH.Encode. Encode encodes a CACH struct into a 24-bit field in logical order, packed as DecodeCACH takes it. */
-int dmrgo_layer2_cach_encode(dmrgo_layer2_cach_t *self, uint8_t out[3]);
+int dmrgo_layer2_cach_encode(const dmrgo_layer2_cach_t *self, uint8_t out[3]);
 /* Go: layer2.CACHDeinterleave. CACHDeinterleave converts a 24-bit CACH field from transmit order to the logical order that DecodeCACH takes: AT, TC, LCSS, Hamming parity, then the 17 payload bits. */
 int dmrgo_layer2_cach_deinterleave(const uint8_t tx[3], uint8_t out[3]);
 /* Go: layer2.CACHInterleave. CACHInterleave converts a 24-bit CACH field from logical order to transmit order. */
@@ -8483,9 +8483,9 @@ int dmrgo_layer2_position_tracker_forget(dmrgo_layer2_position_tracker_t *self);
 /* Go: layer2.PositionTracker.Header. Header tells the tracker that a voice LC header or PI header with Hint h came before the first voice burst of the call, so that the next burst is burst A. */
 int dmrgo_layer2_position_tracker_header(dmrgo_layer2_position_tracker_t *self, const dmrgo_layer2_hint_t *h);
 /* Go: layer2.PositionTracker.Place. Place takes the burst raw of one packet with its Hint h, as a transport gives them, and sets h.VoiceBurst of a voice burst to its superframe position, or to VoiceBurstUnknown when it cannot place it. */
-int dmrgo_layer2_position_tracker_place(dmrgo_layer2_position_tracker_t *self, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, int64_t *lost, dmrgo_layer2_placement_t *p);
+int dmrgo_layer2_position_tracker_place(dmrgo_layer2_position_tracker_t *self, const dmrgo_layer2_raw_burst_t *raw, dmrgo_layer2_hint_t *h, int64_t *lost, dmrgo_layer2_placement_t *p);
 /* Go: layer2.PositionTracker.PlaceDecoded. PlaceDecoded places the decoded voice burst b with Hint h by the same rules as Place, for a receiver that has decoded the burst already. */
-int dmrgo_layer2_position_tracker_place_decoded(dmrgo_layer2_position_tracker_t *self, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, int64_t steps, int64_t *lost, dmrgo_layer2_placement_t *p);
+int dmrgo_layer2_position_tracker_place_decoded(dmrgo_layer2_position_tracker_t *self, dmrgo_layer2_burst_t *b, dmrgo_layer2_hint_t *h, int64_t steps, int64_t *lost, dmrgo_layer2_placement_t *p);
 /* Go: layer2.PositionTracker.Reset. Reset forgets the call. */
 int dmrgo_layer2_position_tracker_reset(dmrgo_layer2_position_tracker_t *self);
 /* Go: layer2.RawBurst.AMBEFrames. AMBEFrames decodes the three voice slots as AMBE+2 frames with vocoder.DecodeAMBE72, as Burst.AMBEFrames does, and returns them with the combined FEC result. */
@@ -8695,7 +8695,7 @@ int dmrgo_packet_bursts(const dmrgo_packet_t *p, dmrgo_enums_color_code_t color_
 /* Go: packet.DecodeResponseData. DecodeResponseData decodes one or two C_RDATA blocks and checks their CRC. */
 int dmrgo_packet_decode_response_data(const dmrgo_pdu_rate12_data_t *blocks, size_t blocks_len, dmrgo_packet_response_data_t *out);
 /* Go: packet.Message.UDPIPv4. UDPIPv4 decodes the compressed UDP/IPv4 header at the start of Data and returns it with the application data that follows it, which points into Data. */
-int dmrgo_packet_message_udp_ipv4(dmrgo_packet_message_t *self, dmrgo_pdu_udp_ipv4_compressed_header_t *header, uint8_t *payload, size_t payload_cap, size_t *payload_len, size_t *payload_need, bool *ok, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_packet_message_udp_ipv4(const dmrgo_packet_message_t *self, dmrgo_pdu_udp_ipv4_compressed_header_t *header, uint8_t *payload, size_t payload_cap, size_t *payload_len, size_t *payload_need, bool *ok);
 /* Go: packet.NewAssembler. NewAssembler returns an Assembler for packets of up to maxBlocks data blocks of any rate. */
 int dmrgo_packet_new_assembler(int64_t max_blocks, dmrgo_packet_assembler_t **out);
 /* Go: packet.NewBuilder. NewBuilder returns a Builder for packets of up to maxBlocks data blocks of any rate. */
@@ -8713,125 +8713,125 @@ int dmrgo_packet_response_string(dmrgo_packet_response_t self, char *out, size_t
 /* Go: packet.Response.Type. Type returns the 3-bit Type. */
 int dmrgo_packet_response_type(dmrgo_packet_response_t self, uint8_t *out);
 /* Go: packet.ResponseData.AppendEncode. AppendEncode appends the C_RDATA blocks that Encode returns to dst and returns the extended slice. */
-int dmrgo_packet_response_data_append_encode(dmrgo_packet_response_data_t *self, dmrgo_pdu_rate12_data_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t blocks);
+int dmrgo_packet_response_data_append_encode(const dmrgo_packet_response_data_t *self, dmrgo_pdu_rate12_data_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t blocks);
 /* Go: packet.ResponseData.AppendRetryBlocks. AppendRetryBlocks appends the DBSNs flagged for retry to dst in ascending order and returns the extended slice. */
-int dmrgo_packet_response_data_append_retry_blocks(dmrgo_packet_response_data_t *self, int64_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_packet_response_data_append_retry_blocks(const dmrgo_packet_response_data_t *self, int64_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: packet.ResponseData.Encode. Encode returns the rate 1/2 C_RDATA blocks for a packet of the given number of blocks: one block with 64 flags, or two blocks with 127 flags when blocks is over 64. */
-int dmrgo_packet_response_data_encode(dmrgo_packet_response_data_t *self, int64_t blocks, dmrgo_pdu_rate12_data_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_packet_response_data_encode(const dmrgo_packet_response_data_t *self, int64_t blocks, dmrgo_pdu_rate12_data_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: packet.ResponseData.RetryBlocks. RetryBlocks returns the DBSNs flagged for retry in ascending order. */
-int dmrgo_packet_response_data_retry_blocks(dmrgo_packet_response_data_t *self, int64_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_packet_response_data_retry_blocks(const dmrgo_packet_response_data_t *self, int64_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: packet.ResponseOf. ResponseOf returns the Response of a C_RHEAD, with the errors of NewResponseCode, and an error for a nil h. */
 int dmrgo_packet_response_of(const dmrgo_pdu_response_packet_header_t *h, dmrgo_packet_response_t *out);
 /* Go: pdu.AckInboundPDU.Encode. Encode encodes an AckInboundPDU. */
-int dmrgo_pdu_ack_inbound_pdu_encode(dmrgo_pdu_ack_inbound_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_ack_inbound_pdu_encode(const dmrgo_pdu_ack_inbound_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.AckInboundPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_ack_inbound_pdu_string(dmrgo_pdu_ack_inbound_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_ack_inbound_pdu_string(const dmrgo_pdu_ack_inbound_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.AckInboundPayloadPDU.Encode. Encode encodes an AckInboundPayloadPDU. */
-int dmrgo_pdu_ack_inbound_payload_pdu_encode(dmrgo_pdu_ack_inbound_payload_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_ack_inbound_payload_pdu_encode(const dmrgo_pdu_ack_inbound_payload_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.AckInboundPayloadPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_ack_inbound_payload_pdu_string(dmrgo_pdu_ack_inbound_payload_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_ack_inbound_payload_pdu_string(const dmrgo_pdu_ack_inbound_payload_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.AckOutboundPDU.Encode. Encode encodes an AckOutboundPDU. */
-int dmrgo_pdu_ack_outbound_pdu_encode(dmrgo_pdu_ack_outbound_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_ack_outbound_pdu_encode(const dmrgo_pdu_ack_outbound_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.AckOutboundPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_ack_outbound_pdu_string(dmrgo_pdu_ack_outbound_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_ack_outbound_pdu_string(const dmrgo_pdu_ack_outbound_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.AckOutboundPayloadPDU.Encode. Encode encodes an AckOutboundPayloadPDU. */
-int dmrgo_pdu_ack_outbound_payload_pdu_encode(dmrgo_pdu_ack_outbound_payload_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_ack_outbound_payload_pdu_encode(const dmrgo_pdu_ack_outbound_payload_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.AckOutboundPayloadPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_ack_outbound_payload_pdu_string(dmrgo_pdu_ack_outbound_payload_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_ack_outbound_payload_pdu_string(const dmrgo_pdu_ack_outbound_payload_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.AckvitationPDU.Encode. Encode encodes an AckvitationPDU. */
-int dmrgo_pdu_ackvitation_pdu_encode(dmrgo_pdu_ackvitation_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_ackvitation_pdu_encode(const dmrgo_pdu_ackvitation_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.AckvitationPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_ackvitation_pdu_string(dmrgo_pdu_ackvitation_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_ackvitation_pdu_string(const dmrgo_pdu_ackvitation_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.AddressHash. AddressHash returns the 8-bit hash of a 24-bit address, as in the HashTS1 and HashTS2 fields of the Activity Update Short LC and the Hashed Source Address. */
 int dmrgo_pdu_address_hash(uint32_t id, uint8_t *out);
 /* Go: pdu.AdjacentSiteParms.Encode. Encode encodes an AdjacentSiteParms. */
-int dmrgo_pdu_adjacent_site_parms_encode(dmrgo_pdu_adjacent_site_parms_t *self, uint8_t out[8]);
+int dmrgo_pdu_adjacent_site_parms_encode(const dmrgo_pdu_adjacent_site_parms_t *self, uint8_t out[8]);
 /* Go: pdu.AdjacentSiteParms.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_adjacent_site_parms_string(dmrgo_pdu_adjacent_site_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_adjacent_site_parms_string(const dmrgo_pdu_adjacent_site_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.AhoyPDU.Encode. Encode encodes an AhoyPDU. */
-int dmrgo_pdu_ahoy_pdu_encode(dmrgo_pdu_ahoy_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_ahoy_pdu_encode(const dmrgo_pdu_ahoy_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.AhoyPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_ahoy_pdu_string(dmrgo_pdu_ahoy_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_ahoy_pdu_string(const dmrgo_pdu_ahoy_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.AlohaPDU.Encode. Encode encodes an AlohaPDU. */
-int dmrgo_pdu_aloha_pdu_encode(dmrgo_pdu_aloha_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_aloha_pdu_encode(const dmrgo_pdu_aloha_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.AlohaPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_aloha_pdu_string(dmrgo_pdu_aloha_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_aloha_pdu_string(const dmrgo_pdu_aloha_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.AnnWDTSCCParms.Encode. Encode encodes an AnnWDTSCCParms. */
-int dmrgo_pdu_ann_wd_tscc_parms_encode(dmrgo_pdu_ann_wd_tscc_parms_t *self, uint8_t out[8]);
+int dmrgo_pdu_ann_wd_tscc_parms_encode(const dmrgo_pdu_ann_wd_tscc_parms_t *self, uint8_t out[8]);
 /* Go: pdu.AnnWDTSCCParms.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_ann_wd_tscc_parms_string(dmrgo_pdu_ann_wd_tscc_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_ann_wd_tscc_parms_string(const dmrgo_pdu_ann_wd_tscc_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.AppendTalkerAlias. AppendTalkerAlias appends the alias that TalkerAlias returns to dst as UTF-8 and returns the extended slice, with the errors of TalkerAlias. */
 int dmrgo_pdu_append_talker_alias(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_pdu_flc_talker_alias_header_t *header, const dmrgo_pdu_flc_talker_alias_block_t *blocks, size_t blocks_len);
 /* Go: pdu.BCAPContinuation.DataType. DataType returns enums.DataTypeMBCContinuation. */
-int dmrgo_pdu_bcap_continuation_data_type(dmrgo_pdu_bcap_continuation_t *self, dmrgo_enums_data_type_t *out);
+int dmrgo_pdu_bcap_continuation_data_type(const dmrgo_pdu_bcap_continuation_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.BCAPContinuation.Encode. Encode encodes a BCAPContinuation. */
-int dmrgo_pdu_bcap_continuation_encode(dmrgo_pdu_bcap_continuation_t *self, uint8_t out[12]);
+int dmrgo_pdu_bcap_continuation_encode(const dmrgo_pdu_bcap_continuation_t *self, uint8_t out[12]);
 /* Go: pdu.BCAPContinuation.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_bcap_continuation_string(dmrgo_pdu_bcap_continuation_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_bcap_continuation_string(const dmrgo_pdu_bcap_continuation_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.BSOutboundActivationPDU.Encode. Encode encodes a BSOutboundActivationPDU. */
-int dmrgo_pdu_bs_outbound_activation_pdu_encode(dmrgo_pdu_bs_outbound_activation_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_bs_outbound_activation_pdu_encode(const dmrgo_pdu_bs_outbound_activation_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.BSOutboundActivationPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_bs_outbound_activation_pdu_string(dmrgo_pdu_bs_outbound_activation_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_bs_outbound_activation_pdu_string(const dmrgo_pdu_bs_outbound_activation_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.BlockCRCOK. BlockCRCOK reports whether octets 10 and 11 of the single-block payload b hold the CRC that Seal writes for dt. */
 int dmrgo_pdu_block_crc_ok(const uint8_t b[12], dmrgo_enums_data_type_t dt, bool *out);
 /* Go: pdu.BroadcastPDU.AsAdjacentSite. AsAdjacentSite returns p as Adjacent_Site parameters, as AsAnnWDTSCC does. */
-int dmrgo_pdu_broadcast_pdu_as_adjacent_site(dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_adjacent_site_parms_t *v, bool *ok);
+int dmrgo_pdu_broadcast_pdu_as_adjacent_site(const dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_adjacent_site_parms_t *v, bool *ok);
 /* Go: pdu.BroadcastPDU.AsAnnWDTSCC. AsAnnWDTSCC returns p as Ann_WD_TSCC parameters. */
-int dmrgo_pdu_broadcast_pdu_as_ann_wd_tscc(dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_ann_wd_tscc_parms_t *v, bool *ok);
+int dmrgo_pdu_broadcast_pdu_as_ann_wd_tscc(const dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_ann_wd_tscc_parms_t *v, bool *ok);
 /* Go: pdu.BroadcastPDU.AsCallTimer. AsCallTimer returns p as CallTimer_Parms parameters, as AsAnnWDTSCC does. */
-int dmrgo_pdu_broadcast_pdu_as_call_timer(dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_call_timer_parms_t *v, bool *ok);
+int dmrgo_pdu_broadcast_pdu_as_call_timer(const dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_call_timer_parms_t *v, bool *ok);
 /* Go: pdu.BroadcastPDU.AsChanFreq. AsChanFreq returns p as Chan_Freq parameters, as AsAnnWDTSCC does. */
-int dmrgo_pdu_broadcast_pdu_as_chan_freq(dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_chan_freq_parms_t *v, bool *ok);
+int dmrgo_pdu_broadcast_pdu_as_chan_freq(const dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_chan_freq_parms_t *v, bool *ok);
 /* Go: pdu.BroadcastPDU.AsGenSite. AsGenSite returns p as Gen_Site_Params parameters, as AsAnnWDTSCC does. */
-int dmrgo_pdu_broadcast_pdu_as_gen_site(dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_gen_site_parms_t *v, bool *ok);
+int dmrgo_pdu_broadcast_pdu_as_gen_site(const dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_gen_site_parms_t *v, bool *ok);
 /* Go: pdu.BroadcastPDU.AsLocalTime. AsLocalTime returns p as Local_Time parameters, as AsAnnWDTSCC does. */
-int dmrgo_pdu_broadcast_pdu_as_local_time(dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_local_time_parms_t *v, bool *ok);
+int dmrgo_pdu_broadcast_pdu_as_local_time(const dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_local_time_parms_t *v, bool *ok);
 /* Go: pdu.BroadcastPDU.AsMassReg. AsMassReg returns p as MassReg parameters, as AsAnnWDTSCC does. */
-int dmrgo_pdu_broadcast_pdu_as_mass_reg(dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_mass_reg_parms_t *v, bool *ok);
+int dmrgo_pdu_broadcast_pdu_as_mass_reg(const dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_mass_reg_parms_t *v, bool *ok);
 /* Go: pdu.BroadcastPDU.AsVoteNow. AsVoteNow returns p as Vote_Now parameters, as AsAnnWDTSCC does. */
-int dmrgo_pdu_broadcast_pdu_as_vote_now(dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_vote_now_parms_t *v, bool *ok);
+int dmrgo_pdu_broadcast_pdu_as_vote_now(const dmrgo_pdu_broadcast_pdu_t *self, dmrgo_pdu_vote_now_parms_t *v, bool *ok);
 /* Go: pdu.BroadcastPDU.Encode. Encode encodes a BroadcastPDU. */
-int dmrgo_pdu_broadcast_pdu_encode(dmrgo_pdu_broadcast_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_broadcast_pdu_encode(const dmrgo_pdu_broadcast_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.BroadcastPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_broadcast_pdu_string(dmrgo_pdu_broadcast_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_broadcast_pdu_string(const dmrgo_pdu_broadcast_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.BroadcastTalkgroupVoiceGrantPDU.Encode. Encode encodes a BroadcastTalkgroupVoiceGrantPDU. */
-int dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_encode(dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_encode(const dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.BroadcastTalkgroupVoiceGrantPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_string(dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_string(const dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.CGAPContinuation.DataType. DataType returns enums.DataTypeMBCContinuation. */
-int dmrgo_pdu_cgap_continuation_data_type(dmrgo_pdu_cgap_continuation_t *self, dmrgo_enums_data_type_t *out);
+int dmrgo_pdu_cgap_continuation_data_type(const dmrgo_pdu_cgap_continuation_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.CGAPContinuation.Encode. Encode encodes a CGAPContinuation. */
-int dmrgo_pdu_cgap_continuation_encode(dmrgo_pdu_cgap_continuation_t *self, uint8_t out[12]);
+int dmrgo_pdu_cgap_continuation_encode(const dmrgo_pdu_cgap_continuation_t *self, uint8_t out[12]);
 /* Go: pdu.CGAPContinuation.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_cgap_continuation_string(dmrgo_pdu_cgap_continuation_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_cgap_continuation_string(const dmrgo_pdu_cgap_continuation_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.CRCMask. CRCMask returns the Data Type CRC Mask for dt and its width in bits: 24 for an RS(12,9) parity, 16 for a CRC-CCITT and 9 for a CRC-9. */
 int dmrgo_pdu_crc_mask(dmrgo_enums_data_type_t dt, uint32_t *mask, int64_t *width, bool *ok);
 /* Go: pdu.CSBK.Addresses. Addresses returns the 24-bit target and source addresses of a CSBK whose payload carries both: the TargetAddress and SourceAddress fields of the payload, or the same bits of RawPayload for opcode 0x38. */
-int dmrgo_pdu_csbk_addresses(dmrgo_pdu_csbk_t *self, uint32_t *target, uint32_t *source, bool *ok);
+int dmrgo_pdu_csbk_addresses(const dmrgo_pdu_csbk_t *self, uint32_t *target, uint32_t *source, bool *ok);
 /* Go: pdu.CSBK.AsBSOutboundActivation. AsBSOutboundActivation decodes the RawPayload of a standard FID CSBK with opcode 0x38 as a BS_Dwn_Act PDU. */
-int dmrgo_pdu_csbk_as_bs_outbound_activation(dmrgo_pdu_csbk_t *self, dmrgo_pdu_bs_outbound_activation_pdu_t *p, bool *ok);
+int dmrgo_pdu_csbk_as_bs_outbound_activation(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_bs_outbound_activation_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.AsCapacityPlusDataRevertAnnouncement. AsCapacityPlusDataRevertAnnouncement decodes the RawPayload of an enhanced data revert window announcement CSBK. */
-int dmrgo_pdu_csbk_as_capacity_plus_data_revert_announcement(dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t *p, bool *ok);
+int dmrgo_pdu_csbk_as_capacity_plus_data_revert_announcement(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.AsCapacityPlusDataRevertGrant. AsCapacityPlusDataRevertGrant decodes the RawPayload of an enhanced data revert window grant CSBK. */
-int dmrgo_pdu_csbk_as_capacity_plus_data_revert_grant(dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t *p, bool *ok);
+int dmrgo_pdu_csbk_as_capacity_plus_data_revert_grant(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.AsCapacityPlusNeighbors. AsCapacityPlusNeighbors decodes the RawPayload of a Linked Capacity Plus neighbor report CSBK. */
-int dmrgo_pdu_csbk_as_capacity_plus_neighbors(dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_neighbors_pdu_t *p, bool *ok);
+int dmrgo_pdu_csbk_as_capacity_plus_neighbors(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_neighbors_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.AsCapacityPlusPreamble. AsCapacityPlusPreamble decodes the RawPayload of a Capacity Plus preamble CSBK. */
-int dmrgo_pdu_csbk_as_capacity_plus_preamble(dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_preamble_pdu_t *p, bool *ok);
+int dmrgo_pdu_csbk_as_capacity_plus_preamble(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_preamble_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.AsCapacityPlusSiteStatus. AsCapacityPlusSiteStatus decodes the RawPayload of a Capacity Plus site status CSBK. */
-int dmrgo_pdu_csbk_as_capacity_plus_site_status(dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_site_status_pdu_t *p, bool *ok);
+int dmrgo_pdu_csbk_as_capacity_plus_site_status(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_site_status_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.AsMotorolaCallAlert. AsMotorolaCallAlert decodes the RawPayload of a Motorola call alert CSBK. */
-int dmrgo_pdu_csbk_as_motorola_call_alert(dmrgo_pdu_csbk_t *self, dmrgo_pdu_motorola_call_alert_pdu_t *p, bool *ok);
+int dmrgo_pdu_csbk_as_motorola_call_alert(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_motorola_call_alert_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.AsMotorolaCallAlertAck. AsMotorolaCallAlertAck decodes the RawPayload of a Motorola call alert acknowledgement CSBK. */
-int dmrgo_pdu_csbk_as_motorola_call_alert_ack(dmrgo_pdu_csbk_t *self, dmrgo_pdu_motorola_call_alert_ack_pdu_t *p, bool *ok);
+int dmrgo_pdu_csbk_as_motorola_call_alert_ack(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_motorola_call_alert_ack_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.AsMotorolaRadioCheck. AsMotorolaRadioCheck decodes the RawPayload of a Motorola radio check CSBK. */
-int dmrgo_pdu_csbk_as_motorola_radio_check(dmrgo_pdu_csbk_t *self, dmrgo_pdu_motorola_radio_check_pdu_t *p, bool *ok);
+int dmrgo_pdu_csbk_as_motorola_radio_check(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_motorola_radio_check_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.AsTalkgroupDataGrantMultiItem. AsTalkgroupDataGrantMultiItem decodes the RawPayload of a standard FID CSBK with opcode 0x38 as a TD_GRANT_MI PDU. */
-int dmrgo_pdu_csbk_as_talkgroup_data_grant_multi_item(dmrgo_pdu_csbk_t *self, dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t *p, bool *ok);
+int dmrgo_pdu_csbk_as_talkgroup_data_grant_multi_item(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.DataType. DataType returns enums.DataTypeCSBK. */
-int dmrgo_pdu_csbk_data_type(dmrgo_pdu_csbk_t *self, dmrgo_enums_data_type_t *out);
+int dmrgo_pdu_csbk_data_type(const dmrgo_pdu_csbk_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.CSBK.Encode. Encode encodes a CSBK. */
-int dmrgo_pdu_csbk_encode(dmrgo_pdu_csbk_t *self, uint8_t out[12]);
+int dmrgo_pdu_csbk_encode(const dmrgo_pdu_csbk_t *self, uint8_t out[12]);
 /* Go: pdu.CSBK.SetAddresses. SetAddresses sets the target and source addresses of a CSBK for which Addresses returns ok. */
 int dmrgo_pdu_csbk_set_addresses(dmrgo_pdu_csbk_t *self, uint32_t target, uint32_t source);
 /* Go: pdu.CSBK.SetBSOutboundActivation. SetBSOutboundActivation makes s a standard FID BS_Dwn_Act CSBK that carries p: it sets Opcode, FID, Hint0x38 and RawPayload, clears the payload fields and keeps LastBlock and ProtectFlag. */
@@ -8845,7 +8845,7 @@ int dmrgo_pdu_csbk_set_motorola_radio_check(dmrgo_pdu_csbk_t *self, const dmrgo_
 /* Go: pdu.CSBK.SetTalkgroupDataGrantMultiItem. SetTalkgroupDataGrantMultiItem makes s a standard FID TD_GRANT_MI CSBK that carries p, as SetBSOutboundActivation does. */
 int dmrgo_pdu_csbk_set_talkgroup_data_grant_multi_item(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t *p);
 /* Go: pdu.CSBK.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_csbk_string(dmrgo_pdu_csbk_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_csbk_string(const dmrgo_pdu_csbk_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.CSBKBytes.Addresses. Addresses returns the 24-bit target and source addresses of the CSBKs for which CSBK.Addresses returns them, and ok false for every other CSBK. */
 int dmrgo_pdu_csbk_bytes_addresses(const dmrgo_pdu_csbk_bytes_t *self, uint32_t *target, uint32_t *source, bool *ok);
 /* Go: pdu.CSBKBytes.CRCOK. CRCOK reports whether octets 10 and 11 hold the CRC of octets 0 to 9 with the CSBK mask, as BlockCRCOK does. */
@@ -8869,45 +8869,45 @@ int dmrgo_pdu_csbk_payloads_new(dmrgo_pdu_csbk_payloads_t **out);
 /* dmrgo_pdu_csbk_payloads_free frees the handle. self may be NULL. */
 int dmrgo_pdu_csbk_payloads_free(dmrgo_pdu_csbk_payloads_t *self);
 /* Go: pdu.CallTimerParms.Encode. Encode encodes a CallTimerParms. */
-int dmrgo_pdu_call_timer_parms_encode(dmrgo_pdu_call_timer_parms_t *self, uint8_t out[8]);
+int dmrgo_pdu_call_timer_parms_encode(const dmrgo_pdu_call_timer_parms_t *self, uint8_t out[8]);
 /* Go: pdu.CallTimerParms.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_call_timer_parms_string(dmrgo_pdu_call_timer_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_call_timer_parms_string(const dmrgo_pdu_call_timer_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.CapacityPlusActivity.RadioTarget. RadioTarget returns the target radio of a private voice or data call on lsn. */
-int dmrgo_pdu_capacity_plus_activity_radio_target(dmrgo_pdu_capacity_plus_activity_t *self, uint8_t lsn, uint16_t *radio, bool *ok);
+int dmrgo_pdu_capacity_plus_activity_radio_target(const dmrgo_pdu_capacity_plus_activity_t *self, uint8_t lsn, uint16_t *radio, bool *ok);
 /* Go: pdu.CapacityPlusActivity.Talkgroup. Talkgroup returns the talkgroup of a group call on lsn. */
-int dmrgo_pdu_capacity_plus_activity_talkgroup(dmrgo_pdu_capacity_plus_activity_t *self, uint8_t lsn, uint8_t *tg, bool *ok);
+int dmrgo_pdu_capacity_plus_activity_talkgroup(const dmrgo_pdu_capacity_plus_activity_t *self, uint8_t lsn, uint8_t *tg, bool *ok);
 /* Go: pdu.CapacityPlusChannel. CapacityPlusChannel returns the repeater and timeslot of a logical slot number: LSN 1 and 2 are timeslots 1 and 2 of repeater 1, LSN 3 and 4 of repeater 2, and so on. */
 int dmrgo_pdu_capacity_plus_channel(uint8_t lsn, uint8_t *repeater, dmrgo_enums_slot_t *slot, bool *ok);
 /* Go: pdu.CapacityPlusDataRevertAnnouncementPDU.Encode. Encode encodes a CapacityPlusDataRevertAnnouncementPDU. */
-int dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_encode(dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_encode(const dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.CapacityPlusDataRevertAnnouncementPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_string(dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_string(const dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.CapacityPlusDataRevertGrantPDU.Encode. Encode encodes a CapacityPlusDataRevertGrantPDU. */
-int dmrgo_pdu_capacity_plus_data_revert_grant_pdu_encode(dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_capacity_plus_data_revert_grant_pdu_encode(const dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.CapacityPlusDataRevertGrantPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_capacity_plus_data_revert_grant_pdu_string(dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_capacity_plus_data_revert_grant_pdu_string(const dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.CapacityPlusGroupVoiceGrant.Encode. Encode encodes a CapacityPlusGroupVoiceGrant. */
-int dmrgo_pdu_capacity_plus_group_voice_grant_encode(dmrgo_pdu_capacity_plus_group_voice_grant_t *self, uint8_t out[7]);
+int dmrgo_pdu_capacity_plus_group_voice_grant_encode(const dmrgo_pdu_capacity_plus_group_voice_grant_t *self, uint8_t out[7]);
 /* Go: pdu.CapacityPlusGroupVoiceGrant.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_capacity_plus_group_voice_grant_string(dmrgo_pdu_capacity_plus_group_voice_grant_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_capacity_plus_group_voice_grant_string(const dmrgo_pdu_capacity_plus_group_voice_grant_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.CapacityPlusNeighborsPDU.Encode. Encode encodes a CapacityPlusNeighborsPDU. */
-int dmrgo_pdu_capacity_plus_neighbors_pdu_encode(dmrgo_pdu_capacity_plus_neighbors_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_capacity_plus_neighbors_pdu_encode(const dmrgo_pdu_capacity_plus_neighbors_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.CapacityPlusNeighborsPDU.Neighbor. Neighbor returns the site number and rest LSN of neighbor i, from 0. */
-int dmrgo_pdu_capacity_plus_neighbors_pdu_neighbor(dmrgo_pdu_capacity_plus_neighbors_pdu_t *self, int64_t i, uint8_t *site, uint8_t *rest_lsn, bool *ok);
+int dmrgo_pdu_capacity_plus_neighbors_pdu_neighbor(const dmrgo_pdu_capacity_plus_neighbors_pdu_t *self, int64_t i, uint8_t *site, uint8_t *rest_lsn, bool *ok);
 /* Go: pdu.CapacityPlusNeighborsPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_capacity_plus_neighbors_pdu_string(dmrgo_pdu_capacity_plus_neighbors_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_capacity_plus_neighbors_pdu_string(const dmrgo_pdu_capacity_plus_neighbors_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.CapacityPlusPreamblePDU.Encode. Encode encodes a CapacityPlusPreamblePDU. */
-int dmrgo_pdu_capacity_plus_preamble_pdu_encode(dmrgo_pdu_capacity_plus_preamble_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_capacity_plus_preamble_pdu_encode(const dmrgo_pdu_capacity_plus_preamble_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.CapacityPlusPreamblePDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_capacity_plus_preamble_pdu_string(dmrgo_pdu_capacity_plus_preamble_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_capacity_plus_preamble_pdu_string(const dmrgo_pdu_capacity_plus_preamble_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.CapacityPlusPrivateVoiceGrant.Encode. Encode encodes a CapacityPlusPrivateVoiceGrant. */
-int dmrgo_pdu_capacity_plus_private_voice_grant_encode(dmrgo_pdu_capacity_plus_private_voice_grant_t *self, uint8_t out[7]);
+int dmrgo_pdu_capacity_plus_private_voice_grant_encode(const dmrgo_pdu_capacity_plus_private_voice_grant_t *self, uint8_t out[7]);
 /* Go: pdu.CapacityPlusPrivateVoiceGrant.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_capacity_plus_private_voice_grant_string(dmrgo_pdu_capacity_plus_private_voice_grant_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_capacity_plus_private_voice_grant_string(const dmrgo_pdu_capacity_plus_private_voice_grant_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.CapacityPlusRestChannel.Encode. Encode encodes a CapacityPlusRestChannel. */
-int dmrgo_pdu_capacity_plus_rest_channel_encode(dmrgo_pdu_capacity_plus_rest_channel_t *self, uint8_t out[3]);
+int dmrgo_pdu_capacity_plus_rest_channel_encode(const dmrgo_pdu_capacity_plus_rest_channel_t *self, uint8_t out[3]);
 /* Go: pdu.CapacityPlusRestChannel.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_capacity_plus_rest_channel_string(dmrgo_pdu_capacity_plus_rest_channel_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_capacity_plus_rest_channel_string(const dmrgo_pdu_capacity_plus_rest_channel_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.CapacityPlusSegment.String. String returns the name of the CapacityPlusSegment. */
 int dmrgo_pdu_capacity_plus_segment_string(dmrgo_pdu_capacity_plus_segment_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_pdu_capacity_plus_site_status_assembler_new makes a zero pdu.CapacityPlusSiteStatusAssembler. */
@@ -8921,35 +8921,35 @@ int dmrgo_pdu_capacity_plus_site_status_assembler_add(dmrgo_pdu_capacity_plus_si
 /* Go: pdu.CapacityPlusSiteStatusAssembler.Reset. Reset drops the partial or complete status. */
 int dmrgo_pdu_capacity_plus_site_status_assembler_reset(dmrgo_pdu_capacity_plus_site_status_assembler_t *self);
 /* Go: pdu.CapacityPlusSiteStatusPDU.Encode. Encode encodes a CapacityPlusSiteStatusPDU. */
-int dmrgo_pdu_capacity_plus_site_status_pdu_encode(dmrgo_pdu_capacity_plus_site_status_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_capacity_plus_site_status_pdu_encode(const dmrgo_pdu_capacity_plus_site_status_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.CapacityPlusSiteStatusPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_capacity_plus_site_status_pdu_string(dmrgo_pdu_capacity_plus_site_status_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_capacity_plus_site_status_pdu_string(const dmrgo_pdu_capacity_plus_site_status_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.ChanFreqParms.Encode. Encode encodes a ChanFreqParms. */
-int dmrgo_pdu_chan_freq_parms_encode(dmrgo_pdu_chan_freq_parms_t *self, uint8_t out[8]);
+int dmrgo_pdu_chan_freq_parms_encode(const dmrgo_pdu_chan_freq_parms_t *self, uint8_t out[8]);
 /* Go: pdu.ChanFreqParms.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_chan_freq_parms_string(dmrgo_pdu_chan_freq_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_chan_freq_parms_string(const dmrgo_pdu_chan_freq_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.ChannelTimingPDU.Encode. Encode encodes a ChannelTimingPDU. */
-int dmrgo_pdu_channel_timing_pdu_encode(dmrgo_pdu_channel_timing_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_channel_timing_pdu_encode(const dmrgo_pdu_channel_timing_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.ChannelTimingPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_channel_timing_pdu_string(dmrgo_pdu_channel_timing_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_channel_timing_pdu_string(const dmrgo_pdu_channel_timing_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.ClearPDU.Encode. Encode encodes a ClearPDU. */
-int dmrgo_pdu_clear_pdu_encode(dmrgo_pdu_clear_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_clear_pdu_encode(const dmrgo_pdu_clear_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.ClearPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_clear_pdu_string(dmrgo_pdu_clear_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_clear_pdu_string(const dmrgo_pdu_clear_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.ConfirmedDataHeader.Encode. Encode encodes a ConfirmedDataHeader. */
-int dmrgo_pdu_confirmed_data_header_encode(dmrgo_pdu_confirmed_data_header_t *self, uint8_t out[10]);
+int dmrgo_pdu_confirmed_data_header_encode(const dmrgo_pdu_confirmed_data_header_t *self, uint8_t out[10]);
 /* Go: pdu.ConfirmedDataHeader.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_confirmed_data_header_string(dmrgo_pdu_confirmed_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_confirmed_data_header_string(const dmrgo_pdu_confirmed_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.DataHeader.Addresses. Addresses returns the destination LLID as target and the source LLID of the header that is set. */
-int dmrgo_pdu_data_header_addresses(dmrgo_pdu_data_header_t *self, uint32_t *target, uint32_t *source, bool *ok);
+int dmrgo_pdu_data_header_addresses(const dmrgo_pdu_data_header_t *self, uint32_t *target, uint32_t *source, bool *ok);
 /* Go: pdu.DataHeader.DataType. DataType returns enums.DataTypeDataHeader. */
-int dmrgo_pdu_data_header_data_type(dmrgo_pdu_data_header_t *self, dmrgo_enums_data_type_t *out);
+int dmrgo_pdu_data_header_data_type(const dmrgo_pdu_data_header_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.DataHeader.Encode. Encode encodes a DataHeader. */
-int dmrgo_pdu_data_header_encode(dmrgo_pdu_data_header_t *self, uint8_t out[12]);
+int dmrgo_pdu_data_header_encode(const dmrgo_pdu_data_header_t *self, uint8_t out[12]);
 /* Go: pdu.DataHeader.SetAddresses. SetAddresses sets the destination and source LLIDs of the header that is set. */
 int dmrgo_pdu_data_header_set_addresses(dmrgo_pdu_data_header_t *self, uint32_t destination, uint32_t source);
 /* Go: pdu.DataHeader.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_data_header_string(dmrgo_pdu_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_data_header_string(const dmrgo_pdu_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.DataHeaderBytes.Addresses. Addresses returns the destination LLID (octets 2 to 4) as target and the source LLID (octets 5 to 7) of the header. */
 int dmrgo_pdu_data_header_bytes_addresses(const dmrgo_pdu_data_header_bytes_t *self, uint32_t *target, uint32_t *source, bool *ok);
 /* Go: pdu.DataHeaderBytes.CRCOK. CRCOK reports whether octets 10 and 11 hold the CRC of octets 0 to 9 with the Data Header mask, as BlockCRCOK does. */
@@ -9021,17 +9021,17 @@ int dmrgo_pdu_decode_udp_ipv4_compressed_header(const uint8_t data[9], dmrgo_pdu
 /* Go: pdu.DecodeUnifiedSingleBlockData. DecodeUnifiedSingleBlockData decodes a UnifiedSingleBlockData. */
 int dmrgo_pdu_decode_unified_single_block_data(const uint8_t data[12], dmrgo_pdu_unified_single_block_data_t *out);
 /* Go: pdu.DefinedDataHeader.Encode. Encode encodes a DefinedDataHeader. */
-int dmrgo_pdu_defined_data_header_encode(dmrgo_pdu_defined_data_header_t *self, uint8_t out[10]);
+int dmrgo_pdu_defined_data_header_encode(const dmrgo_pdu_defined_data_header_t *self, uint8_t out[10]);
 /* Go: pdu.DefinedDataHeader.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_defined_data_header_string(dmrgo_pdu_defined_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_defined_data_header_string(const dmrgo_pdu_defined_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.DuplexPrivateDataGrantPDU.Encode. Encode encodes a DuplexPrivateDataGrantPDU. */
-int dmrgo_pdu_duplex_private_data_grant_pdu_encode(dmrgo_pdu_duplex_private_data_grant_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_duplex_private_data_grant_pdu_encode(const dmrgo_pdu_duplex_private_data_grant_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.DuplexPrivateDataGrantPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_duplex_private_data_grant_pdu_string(dmrgo_pdu_duplex_private_data_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_duplex_private_data_grant_pdu_string(const dmrgo_pdu_duplex_private_data_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.DuplexPrivateVoiceGrantPDU.Encode. Encode encodes a DuplexPrivateVoiceGrantPDU. */
-int dmrgo_pdu_duplex_private_voice_grant_pdu_encode(dmrgo_pdu_duplex_private_voice_grant_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_duplex_private_voice_grant_pdu_encode(const dmrgo_pdu_duplex_private_voice_grant_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.DuplexPrivateVoiceGrantPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_duplex_private_voice_grant_pdu_string(dmrgo_pdu_duplex_private_voice_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_duplex_private_voice_grant_pdu_string(const dmrgo_pdu_duplex_private_voice_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.EMBInfo.Codeword. Codeword returns the 16-bit QR(16,7,6) codeword of e, the 7 information bits followed by the 9 parity bits, first bit most significant (ETSI TS 102 361-1 clause B.3.2). */
 int dmrgo_pdu_emb_info_codeword(dmrgo_pdu_emb_info_t self, uint16_t *out);
 /* Go: pdu.EMBInfo.ColorCode. ColorCode returns the 4-bit color code, bits 7 to 4. */
@@ -9049,69 +9049,69 @@ int dmrgo_pdu_emb_info_set_lcss(dmrgo_pdu_emb_info_t *self, dmrgo_enums_lcss_t l
 /* Go: pdu.EMBInfo.SetPI. SetPI writes the Pre-emption and power control Indicator into bit 3. */
 int dmrgo_pdu_emb_info_set_pi(dmrgo_pdu_emb_info_t *self, bool pi);
 /* Go: pdu.EmbeddedSignalling.Encode. Encode encodes an EmbeddedSignalling. */
-int dmrgo_pdu_embedded_signalling_encode(dmrgo_pdu_embedded_signalling_t *self, uint8_t out[2]);
+int dmrgo_pdu_embedded_signalling_encode(const dmrgo_pdu_embedded_signalling_t *self, uint8_t out[2]);
 /* Go: pdu.EmbeddedSignalling.Info. Info returns the information bits of s as an EMBInfo with bit 0 clear: the color code, the PI and the LCSS. */
-int dmrgo_pdu_embedded_signalling_info(dmrgo_pdu_embedded_signalling_t *self, dmrgo_pdu_emb_info_t *out);
+int dmrgo_pdu_embedded_signalling_info(const dmrgo_pdu_embedded_signalling_t *self, dmrgo_pdu_emb_info_t *out);
 /* Go: pdu.EmbeddedSignalling.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_embedded_signalling_string(dmrgo_pdu_embedded_signalling_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_embedded_signalling_string(const dmrgo_pdu_embedded_signalling_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.EncodeTalkerAlias. EncodeTalkerAlias returns the Talker Alias header LC and the block LCs that carry alias in the given format, with the SFID. */
 int dmrgo_pdu_encode_talker_alias(const char *alias, size_t alias_len, dmrgo_layer3_talker_alias_data_format_t format, dmrgo_pdu_full_link_control_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.EncodeTalkerAliasInto. EncodeTalkerAliasInto writes the LCs that EncodeTalkerAlias returns into dst and returns their number, with the errors of EncodeTalkerAlias. */
 int dmrgo_pdu_encode_talker_alias_into(dmrgo_pdu_full_link_control_t dst[4], dmrgo_pdu_full_link_control_payloads_t *const p[4], const char *alias, size_t alias_len, dmrgo_layer3_talker_alias_data_format_t format, int64_t *out);
 /* Go: pdu.FLCGPSInfo.Encode. Encode encodes an FLCGPSInfo. */
-int dmrgo_pdu_flc_gps_info_encode(dmrgo_pdu_flc_gps_info_t *self, uint8_t out[7]);
+int dmrgo_pdu_flc_gps_info_encode(const dmrgo_pdu_flc_gps_info_t *self, uint8_t out[7]);
 /* Go: pdu.FLCGPSInfo.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_flc_gps_info_string(dmrgo_pdu_flc_gps_info_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_flc_gps_info_string(const dmrgo_pdu_flc_gps_info_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.FLCGroupVoice.Encode. Encode encodes an FLCGroupVoice. */
-int dmrgo_pdu_flc_group_voice_encode(dmrgo_pdu_flc_group_voice_t *self, uint8_t out[7]);
+int dmrgo_pdu_flc_group_voice_encode(const dmrgo_pdu_flc_group_voice_t *self, uint8_t out[7]);
 /* Go: pdu.FLCGroupVoice.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_flc_group_voice_string(dmrgo_pdu_flc_group_voice_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_flc_group_voice_string(const dmrgo_pdu_flc_group_voice_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.FLCTalkerAliasBlock.Encode. Encode encodes an FLCTalkerAliasBlock. */
-int dmrgo_pdu_flc_talker_alias_block_encode(dmrgo_pdu_flc_talker_alias_block_t *self, uint8_t out[7]);
+int dmrgo_pdu_flc_talker_alias_block_encode(const dmrgo_pdu_flc_talker_alias_block_t *self, uint8_t out[7]);
 /* Go: pdu.FLCTalkerAliasBlock.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_flc_talker_alias_block_string(dmrgo_pdu_flc_talker_alias_block_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_flc_talker_alias_block_string(const dmrgo_pdu_flc_talker_alias_block_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.FLCTalkerAliasHeader.Encode. Encode encodes an FLCTalkerAliasHeader. */
-int dmrgo_pdu_flc_talker_alias_header_encode(dmrgo_pdu_flc_talker_alias_header_t *self, uint8_t out[7]);
+int dmrgo_pdu_flc_talker_alias_header_encode(const dmrgo_pdu_flc_talker_alias_header_t *self, uint8_t out[7]);
 /* Go: pdu.FLCTalkerAliasHeader.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_flc_talker_alias_header_string(dmrgo_pdu_flc_talker_alias_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_flc_talker_alias_header_string(const dmrgo_pdu_flc_talker_alias_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.FLCTerminatorDataLinkControl.Encode. Encode encodes an FLCTerminatorDataLinkControl. */
-int dmrgo_pdu_flc_terminator_data_link_control_encode(dmrgo_pdu_flc_terminator_data_link_control_t *self, uint8_t out[7]);
+int dmrgo_pdu_flc_terminator_data_link_control_encode(const dmrgo_pdu_flc_terminator_data_link_control_t *self, uint8_t out[7]);
 /* Go: pdu.FLCTerminatorDataLinkControl.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_flc_terminator_data_link_control_string(dmrgo_pdu_flc_terminator_data_link_control_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_flc_terminator_data_link_control_string(const dmrgo_pdu_flc_terminator_data_link_control_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.FLCUnitToUnit.Encode. Encode encodes an FLCUnitToUnit. */
-int dmrgo_pdu_flc_unit_to_unit_encode(dmrgo_pdu_flc_unit_to_unit_t *self, uint8_t out[7]);
+int dmrgo_pdu_flc_unit_to_unit_encode(const dmrgo_pdu_flc_unit_to_unit_t *self, uint8_t out[7]);
 /* Go: pdu.FLCUnitToUnit.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_flc_unit_to_unit_string(dmrgo_pdu_flc_unit_to_unit_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_flc_unit_to_unit_string(const dmrgo_pdu_flc_unit_to_unit_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.Format.String. String returns a human-readable name for a DataHeader Format. */
 int dmrgo_pdu_format_string(dmrgo_pdu_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.FullLCParityOK. FullLCParityOK reports whether the RS(12,9) parity of the codeword cw, with the mask of dt removed, equals the parity of its 9 LC octets. */
 int dmrgo_pdu_full_lc_parity_ok(const uint8_t cw[12], dmrgo_enums_data_type_t dt, bool *out);
 /* Go: pdu.FullLinkControl.Addresses. Addresses returns the 24-bit target and source addresses of a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC. */
-int dmrgo_pdu_full_link_control_addresses(dmrgo_pdu_full_link_control_t *self, uint32_t *target, uint32_t *source, bool *ok);
+int dmrgo_pdu_full_link_control_addresses(const dmrgo_pdu_full_link_control_t *self, uint32_t *target, uint32_t *source, bool *ok);
 /* Go: pdu.FullLinkControl.AsCapacityPlusGroupVoiceGrant. AsCapacityPlusGroupVoiceGrant decodes the RawPayload of a Capacity Plus group voice call grant. */
-int dmrgo_pdu_full_link_control_as_capacity_plus_group_voice_grant(dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_capacity_plus_group_voice_grant_t *p, bool *ok);
+int dmrgo_pdu_full_link_control_as_capacity_plus_group_voice_grant(const dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_capacity_plus_group_voice_grant_t *p, bool *ok);
 /* Go: pdu.FullLinkControl.AsCapacityPlusPrivateVoiceGrant. AsCapacityPlusPrivateVoiceGrant decodes the RawPayload of a Capacity Plus private voice call grant. */
-int dmrgo_pdu_full_link_control_as_capacity_plus_private_voice_grant(dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_capacity_plus_private_voice_grant_t *p, bool *ok);
+int dmrgo_pdu_full_link_control_as_capacity_plus_private_voice_grant(const dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_capacity_plus_private_voice_grant_t *p, bool *ok);
 /* Go: pdu.FullLinkControl.Bytes. Bytes returns the 72 LC bits of s packed most significant bit first, without RS(12,9) parity. */
-int dmrgo_pdu_full_link_control_bytes(dmrgo_pdu_full_link_control_t *self, uint8_t out[9]);
+int dmrgo_pdu_full_link_control_bytes(const dmrgo_pdu_full_link_control_t *self, uint8_t out[9]);
 /* Go: pdu.FullLinkControl.DataType. DataType returns BurstDataType. */
-int dmrgo_pdu_full_link_control_data_type(dmrgo_pdu_full_link_control_t *self, dmrgo_enums_data_type_t *out);
+int dmrgo_pdu_full_link_control_data_type(const dmrgo_pdu_full_link_control_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.FullLinkControl.Encode. Encode encodes a FullLinkControl. */
-int dmrgo_pdu_full_link_control_encode(dmrgo_pdu_full_link_control_t *self, uint8_t out[12]);
+int dmrgo_pdu_full_link_control_encode(const dmrgo_pdu_full_link_control_t *self, uint8_t out[12]);
 /* Go: pdu.FullLinkControl.ServiceOptions. ServiceOptions returns the Service Options of a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC. */
-int dmrgo_pdu_full_link_control_service_options(dmrgo_pdu_full_link_control_t *self, dmrgo_layer3_service_options_t *so, bool *ok);
+int dmrgo_pdu_full_link_control_service_options(const dmrgo_pdu_full_link_control_t *self, dmrgo_layer3_service_options_t *so, bool *ok);
 /* Go: pdu.FullLinkControl.SetAddresses. SetAddresses sets the target and source addresses of a Grp_V_Ch_Usr or UU_V_Ch_Usr LC: in GroupVoice or UnitToUnit for the standard FID, and in RawPayload for any other FID. */
 int dmrgo_pdu_full_link_control_set_addresses(dmrgo_pdu_full_link_control_t *self, uint32_t target, uint32_t source);
 /* Go: pdu.FullLinkControl.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_full_link_control_string(dmrgo_pdu_full_link_control_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_full_link_control_string(const dmrgo_pdu_full_link_control_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_pdu_full_link_control_payloads_new makes a zero pdu.FullLinkControlPayloads. */
 int dmrgo_pdu_full_link_control_payloads_new(dmrgo_pdu_full_link_control_payloads_t **out);
 /* dmrgo_pdu_full_link_control_payloads_free frees the handle. self may be NULL. */
 int dmrgo_pdu_full_link_control_payloads_free(dmrgo_pdu_full_link_control_payloads_t *self);
 /* Go: pdu.GenSiteParms.Encode. Encode encodes a GenSiteParms. */
-int dmrgo_pdu_gen_site_parms_encode(dmrgo_pdu_gen_site_parms_t *self, uint8_t out[8]);
+int dmrgo_pdu_gen_site_parms_encode(const dmrgo_pdu_gen_site_parms_t *self, uint8_t out[8]);
 /* Go: pdu.GenSiteParms.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_gen_site_parms_string(dmrgo_pdu_gen_site_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_gen_site_parms_string(const dmrgo_pdu_gen_site_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.IsPRFill. IsPRFill reports whether the 96 information bits info, packed as PRFillBits returns them, are the PR FILL bits of Table D.2. */
 int dmrgo_pdu_is_pr_fill(const uint8_t info[12], bool *out);
 /* Go: pdu.LCBytes.Addresses. Addresses returns the 24-bit target (octets 3 to 5) and source (octets 6 to 8) addresses of a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC. */
@@ -9149,29 +9149,29 @@ int dmrgo_pdu_lc_bytes_set_reserved(dmrgo_pdu_lc_bytes_t *self, bool r);
 /* Go: pdu.LCBytes.SetServiceOptions. SetServiceOptions writes so into octet 2 of a Grp_V_Ch_Usr or UU_V_Ch_Usr LC. */
 int dmrgo_pdu_lc_bytes_set_service_options(dmrgo_pdu_lc_bytes_t *self, const dmrgo_layer3_service_options_t *so);
 /* Go: pdu.LocalTimeParms.Encode. Encode encodes a LocalTimeParms. */
-int dmrgo_pdu_local_time_parms_encode(dmrgo_pdu_local_time_parms_t *self, uint8_t out[8]);
+int dmrgo_pdu_local_time_parms_encode(const dmrgo_pdu_local_time_parms_t *self, uint8_t out[8]);
 /* Go: pdu.LocalTimeParms.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_local_time_parms_string(dmrgo_pdu_local_time_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_local_time_parms_string(const dmrgo_pdu_local_time_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.MBCContinuation.AsBCAP. AsBCAP decodes the block as the BC_AP continuation of a C_BCAST MBC (ETSI TS 102 361-4 Table 7.21), as AsCGAP does. */
-int dmrgo_pdu_mbc_continuation_as_bcap(dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_bcap_continuation_t *out);
+int dmrgo_pdu_mbc_continuation_as_bcap(const dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_bcap_continuation_t *out);
 /* Go: pdu.MBCContinuation.AsCGAP. AsCGAP decodes the block as the CG_AP continuation of a grant MBC. */
-int dmrgo_pdu_mbc_continuation_as_cgap(dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_cgap_continuation_t *out);
+int dmrgo_pdu_mbc_continuation_as_cgap(const dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_cgap_continuation_t *out);
 /* Go: pdu.MBCContinuation.AsMVAP. AsMVAP decodes the block as the MV_AP continuation of a C_MOVE MBC (ETSI TS 102 361-4 Table 7.18), as AsCGAP does. */
-int dmrgo_pdu_mbc_continuation_as_mvap(dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_mvap_continuation_t *out);
+int dmrgo_pdu_mbc_continuation_as_mvap(const dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_mvap_continuation_t *out);
 /* Go: pdu.MBCContinuation.AsVNAP. AsVNAP decodes the block as the VN_AP continuation of a C_BCAST Vote_Now MBC (ETSI TS 102 361-4 Table 7.72), as AsCGAP does. */
-int dmrgo_pdu_mbc_continuation_as_vnap(dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_vnap_continuation_t *out);
+int dmrgo_pdu_mbc_continuation_as_vnap(const dmrgo_pdu_mbc_continuation_t *self, dmrgo_pdu_vnap_continuation_t *out);
 /* Go: pdu.MBCContinuation.DataType. DataType returns enums.DataTypeMBCContinuation. */
-int dmrgo_pdu_mbc_continuation_data_type(dmrgo_pdu_mbc_continuation_t *self, dmrgo_enums_data_type_t *out);
+int dmrgo_pdu_mbc_continuation_data_type(const dmrgo_pdu_mbc_continuation_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.MBCContinuation.Encode. Encode encodes an MBCContinuation. */
-int dmrgo_pdu_mbc_continuation_encode(dmrgo_pdu_mbc_continuation_t *self, uint8_t out[12]);
+int dmrgo_pdu_mbc_continuation_encode(const dmrgo_pdu_mbc_continuation_t *self, uint8_t out[12]);
 /* Go: pdu.MBCContinuation.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_mbc_continuation_string(dmrgo_pdu_mbc_continuation_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_mbc_continuation_string(const dmrgo_pdu_mbc_continuation_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.MBCHeader.DataType. DataType returns enums.DataTypeMBCHeader. */
-int dmrgo_pdu_mbc_header_data_type(dmrgo_pdu_mbc_header_t *self, dmrgo_enums_data_type_t *out);
+int dmrgo_pdu_mbc_header_data_type(const dmrgo_pdu_mbc_header_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.MBCHeader.Encode. Encode encodes an MBCHeader. */
-int dmrgo_pdu_mbc_header_encode(dmrgo_pdu_mbc_header_t *self, uint8_t out[12]);
+int dmrgo_pdu_mbc_header_encode(const dmrgo_pdu_mbc_header_t *self, uint8_t out[12]);
 /* Go: pdu.MBCHeader.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_mbc_header_string(dmrgo_pdu_mbc_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_mbc_header_string(const dmrgo_pdu_mbc_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_pdu_mbc_header_payloads_new makes a zero pdu.MBCHeaderPayloads. */
 int dmrgo_pdu_mbc_header_payloads_new(dmrgo_pdu_mbc_header_payloads_t **out);
 /* dmrgo_pdu_mbc_header_payloads_free frees the handle. self may be NULL. */
@@ -9179,41 +9179,41 @@ int dmrgo_pdu_mbc_header_payloads_free(dmrgo_pdu_mbc_header_payloads_t *self);
 /* Go: pdu.MBCLastBlockCRCOK. MBCLastBlockCRCOK reports whether bits 80 to 95 of the last of blocks hold the last-block CRC-CCITT that SetMBCLastBlockCRC writes. */
 int dmrgo_pdu_mbc_last_block_crc_ok(const uint8_t (*blocks)[12], size_t blocks_len, bool *out);
 /* Go: pdu.MVAPContinuation.DataType. DataType returns enums.DataTypeMBCContinuation. */
-int dmrgo_pdu_mvap_continuation_data_type(dmrgo_pdu_mvap_continuation_t *self, dmrgo_enums_data_type_t *out);
+int dmrgo_pdu_mvap_continuation_data_type(const dmrgo_pdu_mvap_continuation_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.MVAPContinuation.Encode. Encode encodes an MVAPContinuation. */
-int dmrgo_pdu_mvap_continuation_encode(dmrgo_pdu_mvap_continuation_t *self, uint8_t out[12]);
+int dmrgo_pdu_mvap_continuation_encode(const dmrgo_pdu_mvap_continuation_t *self, uint8_t out[12]);
 /* Go: pdu.MVAPContinuation.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_mvap_continuation_string(dmrgo_pdu_mvap_continuation_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_mvap_continuation_string(const dmrgo_pdu_mvap_continuation_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.MaintenancePDU.Encode. Encode encodes a MaintenancePDU. */
-int dmrgo_pdu_maintenance_pdu_encode(dmrgo_pdu_maintenance_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_maintenance_pdu_encode(const dmrgo_pdu_maintenance_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.MaintenancePDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_maintenance_pdu_string(dmrgo_pdu_maintenance_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_maintenance_pdu_string(const dmrgo_pdu_maintenance_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.MassRegParms.Encode. Encode encodes a MassRegParms. */
-int dmrgo_pdu_mass_reg_parms_encode(dmrgo_pdu_mass_reg_parms_t *self, uint8_t out[8]);
+int dmrgo_pdu_mass_reg_parms_encode(const dmrgo_pdu_mass_reg_parms_t *self, uint8_t out[8]);
 /* Go: pdu.MassRegParms.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_mass_reg_parms_string(dmrgo_pdu_mass_reg_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_mass_reg_parms_string(const dmrgo_pdu_mass_reg_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.MotorolaCallAlertAckPDU.Encode. Encode encodes a MotorolaCallAlertAckPDU. */
-int dmrgo_pdu_motorola_call_alert_ack_pdu_encode(dmrgo_pdu_motorola_call_alert_ack_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_motorola_call_alert_ack_pdu_encode(const dmrgo_pdu_motorola_call_alert_ack_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.MotorolaCallAlertAckPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_motorola_call_alert_ack_pdu_string(dmrgo_pdu_motorola_call_alert_ack_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_motorola_call_alert_ack_pdu_string(const dmrgo_pdu_motorola_call_alert_ack_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.MotorolaCallAlertPDU.Encode. Encode encodes a MotorolaCallAlertPDU. */
-int dmrgo_pdu_motorola_call_alert_pdu_encode(dmrgo_pdu_motorola_call_alert_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_motorola_call_alert_pdu_encode(const dmrgo_pdu_motorola_call_alert_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.MotorolaCallAlertPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_motorola_call_alert_pdu_string(dmrgo_pdu_motorola_call_alert_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_motorola_call_alert_pdu_string(const dmrgo_pdu_motorola_call_alert_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.MotorolaRadioCheckPDU.Addresses. Addresses returns the target and source of the CSBK that carries p: the checked radio and the requester for a request, and the reverse for an answer. */
-int dmrgo_pdu_motorola_radio_check_pdu_addresses(dmrgo_pdu_motorola_radio_check_pdu_t *self, uint32_t *target, uint32_t *source, bool *ok);
+int dmrgo_pdu_motorola_radio_check_pdu_addresses(const dmrgo_pdu_motorola_radio_check_pdu_t *self, uint32_t *target, uint32_t *source, bool *ok);
 /* Go: pdu.MotorolaRadioCheckPDU.Encode. Encode encodes a MotorolaRadioCheckPDU. */
-int dmrgo_pdu_motorola_radio_check_pdu_encode(dmrgo_pdu_motorola_radio_check_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_motorola_radio_check_pdu_encode(const dmrgo_pdu_motorola_radio_check_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.MotorolaRadioCheckPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_motorola_radio_check_pdu_string(dmrgo_pdu_motorola_radio_check_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_motorola_radio_check_pdu_string(const dmrgo_pdu_motorola_radio_check_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.MovePDU.Encode. Encode encodes a MovePDU. */
-int dmrgo_pdu_move_pdu_encode(dmrgo_pdu_move_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_move_pdu_encode(const dmrgo_pdu_move_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.MovePDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_move_pdu_string(dmrgo_pdu_move_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_move_pdu_string(const dmrgo_pdu_move_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.NegativeAcknowledgementPDU.Encode. Encode encodes a NegativeAcknowledgementPDU. */
-int dmrgo_pdu_negative_acknowledgement_pdu_encode(dmrgo_pdu_negative_acknowledgement_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_negative_acknowledgement_pdu_encode(const dmrgo_pdu_negative_acknowledgement_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.NegativeAcknowledgementPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_negative_acknowledgement_pdu_string(dmrgo_pdu_negative_acknowledgement_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_negative_acknowledgement_pdu_string(const dmrgo_pdu_negative_acknowledgement_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.NetworkModel.NetBits. NetBits returns the width of the NET field for the model. */
 int dmrgo_pdu_network_model_net_bits(dmrgo_pdu_network_model_t self, int64_t *out);
 /* Go: pdu.NetworkModel.SiteBits. SiteBits returns the width of the SITE field for the model, with the errors of NetBits. */
@@ -9225,163 +9225,163 @@ int dmrgo_pdu_new_voice_lc(bool group, uint32_t target, uint32_t source, const d
 /* Go: pdu.NewVoiceLCBytes. NewVoiceLCBytes returns the LC octets of the voice call LC that NewVoiceLC returns: octet 0 holds the FLCO with PF and Reserved clear, octet 1 the standard FID, octet 2 the octet of so.Encode and octets 3 to 8 the addresses. */
 int dmrgo_pdu_new_voice_lc_bytes(bool group, uint32_t target, uint32_t source, const dmrgo_layer3_service_options_t *so, dmrgo_pdu_lc_bytes_t *out);
 /* Go: pdu.PIHeader.DataType. DataType returns enums.DataTypePIHeader. */
-int dmrgo_pdu_pi_header_data_type(dmrgo_pdu_pi_header_t *self, dmrgo_enums_data_type_t *out);
+int dmrgo_pdu_pi_header_data_type(const dmrgo_pdu_pi_header_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.PIHeader.Encode. Encode encodes a PIHeader. */
-int dmrgo_pdu_pi_header_encode(dmrgo_pdu_pi_header_t *self, uint8_t out[12]);
+int dmrgo_pdu_pi_header_encode(const dmrgo_pdu_pi_header_t *self, uint8_t out[12]);
 /* Go: pdu.PIHeader.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_pi_header_string(dmrgo_pdu_pi_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_pi_header_string(const dmrgo_pdu_pi_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.PRFill.DataType. DataType returns enums.DataTypeIdle. */
-int dmrgo_pdu_pr_fill_data_type(dmrgo_pdu_pr_fill_t *self, dmrgo_enums_data_type_t *out);
+int dmrgo_pdu_pr_fill_data_type(const dmrgo_pdu_pr_fill_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.PRFill.Encode. Encode returns PRFillBits and a nil error. */
-int dmrgo_pdu_pr_fill_encode(dmrgo_pdu_pr_fill_t *self, uint8_t out[12]);
+int dmrgo_pdu_pr_fill_encode(const dmrgo_pdu_pr_fill_t *self, uint8_t out[12]);
 /* Go: pdu.PRFill.String. String returns a string representation of the PR FILL PDU. */
-int dmrgo_pdu_pr_fill_string(dmrgo_pdu_pr_fill_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_pr_fill_string(const dmrgo_pdu_pr_fill_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.PRFillBits. PRFillBits returns a copy of the 96 pseudo-random fill bits from Table D.2, packed, the first bit in the most significant bit of byte 0. */
 int dmrgo_pdu_pr_fill_bits(uint8_t out[12]);
 /* Go: pdu.PreamblePDU.Encode. Encode encodes a PreamblePDU. */
-int dmrgo_pdu_preamble_pdu_encode(dmrgo_pdu_preamble_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_preamble_pdu_encode(const dmrgo_pdu_preamble_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.PreamblePDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_preamble_pdu_string(dmrgo_pdu_preamble_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_preamble_pdu_string(const dmrgo_pdu_preamble_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.PrivateDataGrantMultiItemPDU.Encode. Encode encodes a PrivateDataGrantMultiItemPDU. */
-int dmrgo_pdu_private_data_grant_multi_item_pdu_encode(dmrgo_pdu_private_data_grant_multi_item_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_private_data_grant_multi_item_pdu_encode(const dmrgo_pdu_private_data_grant_multi_item_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.PrivateDataGrantMultiItemPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_private_data_grant_multi_item_pdu_string(dmrgo_pdu_private_data_grant_multi_item_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_private_data_grant_multi_item_pdu_string(const dmrgo_pdu_private_data_grant_multi_item_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.PrivateDataGrantPDU.Encode. Encode encodes a PrivateDataGrantPDU. */
-int dmrgo_pdu_private_data_grant_pdu_encode(dmrgo_pdu_private_data_grant_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_private_data_grant_pdu_encode(const dmrgo_pdu_private_data_grant_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.PrivateDataGrantPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_private_data_grant_pdu_string(dmrgo_pdu_private_data_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_private_data_grant_pdu_string(const dmrgo_pdu_private_data_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.PrivateVoiceGrantPDU.Encode. Encode encodes a PrivateVoiceGrantPDU. */
-int dmrgo_pdu_private_voice_grant_pdu_encode(dmrgo_pdu_private_voice_grant_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_private_voice_grant_pdu_encode(const dmrgo_pdu_private_voice_grant_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.PrivateVoiceGrantPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_private_voice_grant_pdu_string(dmrgo_pdu_private_voice_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_private_voice_grant_pdu_string(const dmrgo_pdu_private_voice_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.ProprietaryHeader.Encode. Encode encodes a ProprietaryHeader. */
-int dmrgo_pdu_proprietary_header_encode(dmrgo_pdu_proprietary_header_t *self, uint8_t out[10]);
+int dmrgo_pdu_proprietary_header_encode(const dmrgo_pdu_proprietary_header_t *self, uint8_t out[10]);
 /* Go: pdu.ProprietaryHeader.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_proprietary_header_string(dmrgo_pdu_proprietary_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_proprietary_header_string(const dmrgo_pdu_proprietary_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.ProtectPDU.Encode. Encode encodes a ProtectPDU. */
-int dmrgo_pdu_protect_pdu_encode(dmrgo_pdu_protect_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_protect_pdu_encode(const dmrgo_pdu_protect_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.ProtectPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_protect_pdu_string(dmrgo_pdu_protect_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_protect_pdu_string(const dmrgo_pdu_protect_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.RandomAccessPDU.Encode. Encode encodes a RandomAccessPDU. */
-int dmrgo_pdu_random_access_pdu_encode(dmrgo_pdu_random_access_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_random_access_pdu_encode(const dmrgo_pdu_random_access_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.RandomAccessPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_random_access_pdu_string(dmrgo_pdu_random_access_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_random_access_pdu_string(const dmrgo_pdu_random_access_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.Rate12Data.ConfirmedCRC9. ConfirmedCRC9 returns the received (masked) CRC-9 of a confirmed block. */
-int dmrgo_pdu_rate12_data_confirmed_crc9(dmrgo_pdu_rate12_data_t *self, uint16_t *out);
+int dmrgo_pdu_rate12_data_confirmed_crc9(const dmrgo_pdu_rate12_data_t *self, uint16_t *out);
 /* Go: pdu.Rate12Data.ConfirmedCRC9OK. ConfirmedCRC9OK reports whether the CRC-9 of a confirmed block is valid. */
-int dmrgo_pdu_rate12_data_confirmed_crc9_ok(dmrgo_pdu_rate12_data_t *self, bool *out);
+int dmrgo_pdu_rate12_data_confirmed_crc9_ok(const dmrgo_pdu_rate12_data_t *self, bool *out);
 /* Go: pdu.Rate12Data.ConfirmedDBSN. ConfirmedDBSN returns the Data Block Serial Number of a confirmed block. */
-int dmrgo_pdu_rate12_data_confirmed_dbsn(dmrgo_pdu_rate12_data_t *self, uint8_t *out);
+int dmrgo_pdu_rate12_data_confirmed_dbsn(const dmrgo_pdu_rate12_data_t *self, uint8_t *out);
 /* Go: pdu.Rate12Data.ConfirmedUserData. ConfirmedUserData returns the 10 user data octets of a confirmed block. */
-int dmrgo_pdu_rate12_data_confirmed_user_data(dmrgo_pdu_rate12_data_t *self, uint8_t out[10]);
+int dmrgo_pdu_rate12_data_confirmed_user_data(const dmrgo_pdu_rate12_data_t *self, uint8_t out[10]);
 /* Go: pdu.Rate12Data.DataType. DataType returns enums.DataTypeRate12. */
-int dmrgo_pdu_rate12_data_data_type(dmrgo_pdu_rate12_data_t *self, dmrgo_enums_data_type_t *out);
+int dmrgo_pdu_rate12_data_data_type(const dmrgo_pdu_rate12_data_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.Rate12Data.Encode. Encode encodes a Rate12Data. */
-int dmrgo_pdu_rate12_data_encode(dmrgo_pdu_rate12_data_t *self, uint8_t out[12]);
+int dmrgo_pdu_rate12_data_encode(const dmrgo_pdu_rate12_data_t *self, uint8_t out[12]);
 /* Go: pdu.Rate12Data.SetConfirmed. SetConfirmed fills Data as a confirmed block (Table 9.15A) and computes the masked CRC-9. */
 int dmrgo_pdu_rate12_data_set_confirmed(dmrgo_pdu_rate12_data_t *self, uint8_t dbsn, const uint8_t user_data[10]);
 /* Go: pdu.Rate12Data.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_rate12_data_string(dmrgo_pdu_rate12_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_rate12_data_string(const dmrgo_pdu_rate12_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.Rate1Data.ConfirmedCRC9. ConfirmedCRC9 returns the received (masked) CRC-9 of a confirmed block. */
-int dmrgo_pdu_rate1_data_confirmed_crc9(dmrgo_pdu_rate1_data_t *self, uint16_t *out);
+int dmrgo_pdu_rate1_data_confirmed_crc9(const dmrgo_pdu_rate1_data_t *self, uint16_t *out);
 /* Go: pdu.Rate1Data.ConfirmedCRC9OK. ConfirmedCRC9OK reports whether the CRC-9 of a confirmed block is valid. */
-int dmrgo_pdu_rate1_data_confirmed_crc9_ok(dmrgo_pdu_rate1_data_t *self, bool *out);
+int dmrgo_pdu_rate1_data_confirmed_crc9_ok(const dmrgo_pdu_rate1_data_t *self, bool *out);
 /* Go: pdu.Rate1Data.ConfirmedDBSN. ConfirmedDBSN returns the Data Block Serial Number of a confirmed block. */
-int dmrgo_pdu_rate1_data_confirmed_dbsn(dmrgo_pdu_rate1_data_t *self, uint8_t *out);
+int dmrgo_pdu_rate1_data_confirmed_dbsn(const dmrgo_pdu_rate1_data_t *self, uint8_t *out);
 /* Go: pdu.Rate1Data.ConfirmedUserData. ConfirmedUserData returns the 22 user data octets of a confirmed block. */
-int dmrgo_pdu_rate1_data_confirmed_user_data(dmrgo_pdu_rate1_data_t *self, uint8_t out[22]);
+int dmrgo_pdu_rate1_data_confirmed_user_data(const dmrgo_pdu_rate1_data_t *self, uint8_t out[22]);
 /* Go: pdu.Rate1Data.DataType. DataType returns enums.DataTypeRate1. */
-int dmrgo_pdu_rate1_data_data_type(dmrgo_pdu_rate1_data_t *self, dmrgo_enums_data_type_t *out);
+int dmrgo_pdu_rate1_data_data_type(const dmrgo_pdu_rate1_data_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.Rate1Data.Encode. Encode encodes a Rate1Data. */
-int dmrgo_pdu_rate1_data_encode(dmrgo_pdu_rate1_data_t *self, uint8_t out[24]);
+int dmrgo_pdu_rate1_data_encode(const dmrgo_pdu_rate1_data_t *self, uint8_t out[24]);
 /* Go: pdu.Rate1Data.SetConfirmed. SetConfirmed fills Data as a confirmed block (Table 9.18) and computes the masked CRC-9. */
 int dmrgo_pdu_rate1_data_set_confirmed(dmrgo_pdu_rate1_data_t *self, uint8_t dbsn, const uint8_t user_data[22]);
 /* Go: pdu.Rate1Data.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_rate1_data_string(dmrgo_pdu_rate1_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_rate1_data_string(const dmrgo_pdu_rate1_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.Rate34Data.ConfirmedCRC9. ConfirmedCRC9 returns the received (masked) CRC-9 of a confirmed block. */
-int dmrgo_pdu_rate34_data_confirmed_crc9(dmrgo_pdu_rate34_data_t *self, uint16_t *out);
+int dmrgo_pdu_rate34_data_confirmed_crc9(const dmrgo_pdu_rate34_data_t *self, uint16_t *out);
 /* Go: pdu.Rate34Data.ConfirmedCRC9OK. ConfirmedCRC9OK reports whether the CRC-9 of a confirmed block is valid. */
-int dmrgo_pdu_rate34_data_confirmed_crc9_ok(dmrgo_pdu_rate34_data_t *self, bool *out);
+int dmrgo_pdu_rate34_data_confirmed_crc9_ok(const dmrgo_pdu_rate34_data_t *self, bool *out);
 /* Go: pdu.Rate34Data.ConfirmedDBSN. ConfirmedDBSN returns the Data Block Serial Number of a confirmed block. */
-int dmrgo_pdu_rate34_data_confirmed_dbsn(dmrgo_pdu_rate34_data_t *self, uint8_t *out);
+int dmrgo_pdu_rate34_data_confirmed_dbsn(const dmrgo_pdu_rate34_data_t *self, uint8_t *out);
 /* Go: pdu.Rate34Data.ConfirmedUserData. ConfirmedUserData returns the 16 user data octets of a confirmed block. */
-int dmrgo_pdu_rate34_data_confirmed_user_data(dmrgo_pdu_rate34_data_t *self, uint8_t out[16]);
+int dmrgo_pdu_rate34_data_confirmed_user_data(const dmrgo_pdu_rate34_data_t *self, uint8_t out[16]);
 /* Go: pdu.Rate34Data.DataType. DataType returns enums.DataTypeRate34. */
-int dmrgo_pdu_rate34_data_data_type(dmrgo_pdu_rate34_data_t *self, dmrgo_enums_data_type_t *out);
+int dmrgo_pdu_rate34_data_data_type(const dmrgo_pdu_rate34_data_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.Rate34Data.Encode. Encode encodes a Rate34Data. */
-int dmrgo_pdu_rate34_data_encode(dmrgo_pdu_rate34_data_t *self, uint8_t out[18]);
+int dmrgo_pdu_rate34_data_encode(const dmrgo_pdu_rate34_data_t *self, uint8_t out[18]);
 /* Go: pdu.Rate34Data.SetConfirmed. SetConfirmed fills Data as a confirmed block (Table 9.11) and computes the masked CRC-9. */
 int dmrgo_pdu_rate34_data_set_confirmed(dmrgo_pdu_rate34_data_t *self, uint8_t dbsn, const uint8_t user_data[16]);
 /* Go: pdu.Rate34Data.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_rate34_data_string(dmrgo_pdu_rate34_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_rate34_data_string(const dmrgo_pdu_rate34_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.RawDataHeader.Encode. Encode encodes a RawDataHeader. */
-int dmrgo_pdu_raw_data_header_encode(dmrgo_pdu_raw_data_header_t *self, uint8_t out[10]);
+int dmrgo_pdu_raw_data_header_encode(const dmrgo_pdu_raw_data_header_t *self, uint8_t out[10]);
 /* Go: pdu.RawDataHeader.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_raw_data_header_string(dmrgo_pdu_raw_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_raw_data_header_string(const dmrgo_pdu_raw_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.RegWindowTime. RegWindowTime returns TReg_Window, the time in which an MS makes its registration for the Reg_Window w, and false for 0, which cancels the mass registration, or a w over 15 (ETSI TS 102 361-4 clause 6.4.5.1, Table 6.12). */
 int dmrgo_pdu_reg_window_time(uint8_t w, dmrgo_duration_t *duration, bool *ok);
 /* Go: pdu.ResponsePacketHeader.Encode. Encode encodes a ResponsePacketHeader. */
-int dmrgo_pdu_response_packet_header_encode(dmrgo_pdu_response_packet_header_t *self, uint8_t out[10]);
+int dmrgo_pdu_response_packet_header_encode(const dmrgo_pdu_response_packet_header_t *self, uint8_t out[10]);
 /* Go: pdu.ResponsePacketHeader.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_response_packet_header_string(dmrgo_pdu_response_packet_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_response_packet_header_string(const dmrgo_pdu_response_packet_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.ReverseChannel.Encode. Encode encodes an RC PDU into its 11 information bits: the 4-bit RC command and the CRC-7 masked with CRC7MaskRC, packed as DecodeReverseChannel takes them, with the low 5 bits of byte 1 0. */
-int dmrgo_pdu_reverse_channel_encode(dmrgo_pdu_reverse_channel_t *self, uint8_t out[2]);
+int dmrgo_pdu_reverse_channel_encode(const dmrgo_pdu_reverse_channel_t *self, uint8_t out[2]);
 /* Go: pdu.ReverseChannel.String. String returns a human-readable string representation of the RC PDU. */
-int dmrgo_pdu_reverse_channel_string(dmrgo_pdu_reverse_channel_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_reverse_channel_string(const dmrgo_pdu_reverse_channel_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.Seal. Seal rewrites the check bits of the BPTC(196,96) payload p of a burst of dt: the masked RS(12,9) parity in octets 9 to 11 for a Voice LC Header or Terminator with LC, and the masked CRC-CCITT of octets 0 to 9 in octets 10 and 11 for a PI Header, CSBK, MBC Header, Data Header or USBD. */
 int dmrgo_pdu_seal(uint8_t p[12], dmrgo_enums_data_type_t dt);
 /* Go: pdu.ServiceType.String. String returns a human-readable name for a ServiceType. */
 int dmrgo_pdu_service_type_string(dmrgo_pdu_service_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.SetMBCLastBlockCRC. SetMBCLastBlockCRC writes the last-block CRC-CCITT into bits 80 to 95 of the last of blocks, which holds every continuation block of the MBC in order, packed as MBCLastBlockCRCOK takes them. */
-int dmrgo_pdu_set_mbc_last_block_crc(const uint8_t (*blocks)[12], size_t blocks_len);
+int dmrgo_pdu_set_mbc_last_block_crc(uint8_t (*blocks)[12], size_t blocks_len);
 /* Go: pdu.ShortLC.AsCapacityPlusRestChannel. AsCapacityPlusRestChannel decodes the RawPayload of a Capacity Plus rest channel Short LC. */
-int dmrgo_pdu_short_lc_as_capacity_plus_rest_channel(dmrgo_pdu_short_lc_t *self, dmrgo_pdu_capacity_plus_rest_channel_t *p, bool *ok);
+int dmrgo_pdu_short_lc_as_capacity_plus_rest_channel(const dmrgo_pdu_short_lc_t *self, dmrgo_pdu_capacity_plus_rest_channel_t *p, bool *ok);
 /* Go: pdu.ShortLC.Encode. Encode encodes a ShortLC. */
-int dmrgo_pdu_short_lc_encode(dmrgo_pdu_short_lc_t *self, uint8_t out[5]);
+int dmrgo_pdu_short_lc_encode(const dmrgo_pdu_short_lc_t *self, uint8_t out[5]);
 /* Go: pdu.ShortLC.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_short_lc_string(dmrgo_pdu_short_lc_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_short_lc_string(const dmrgo_pdu_short_lc_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.ShortLCActivityUpdate.Encode. Encode encodes a ShortLCActivityUpdate. */
-int dmrgo_pdu_short_lc_activity_update_encode(dmrgo_pdu_short_lc_activity_update_t *self, uint8_t out[3]);
+int dmrgo_pdu_short_lc_activity_update_encode(const dmrgo_pdu_short_lc_activity_update_t *self, uint8_t out[3]);
 /* Go: pdu.ShortLCActivityUpdate.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_short_lc_activity_update_string(dmrgo_pdu_short_lc_activity_update_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_short_lc_activity_update_string(const dmrgo_pdu_short_lc_activity_update_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.ShortLCCSysParms.Encode. Encode encodes a ShortLCCSysParms. */
-int dmrgo_pdu_short_lc_c_sys_parms_encode(dmrgo_pdu_short_lc_c_sys_parms_t *self, uint8_t out[3]);
+int dmrgo_pdu_short_lc_c_sys_parms_encode(const dmrgo_pdu_short_lc_c_sys_parms_t *self, uint8_t out[3]);
 /* Go: pdu.ShortLCCSysParms.NetID. NetID returns the network ID based on the MODEL field: Tiny 9 bits, Small 7 bits, Large 4 bits, Huge 2 bits. */
-int dmrgo_pdu_short_lc_c_sys_parms_net_id(dmrgo_pdu_short_lc_c_sys_parms_t *self, uint16_t *out);
+int dmrgo_pdu_short_lc_c_sys_parms_net_id(const dmrgo_pdu_short_lc_c_sys_parms_t *self, uint16_t *out);
 /* Go: pdu.ShortLCCSysParms.SetSysCode. SetSysCode sets MODEL and NetSiteRaw from c. */
 int dmrgo_pdu_short_lc_c_sys_parms_set_sys_code(dmrgo_pdu_short_lc_c_sys_parms_t *self, const dmrgo_pdu_sys_code_t *c);
 /* Go: pdu.ShortLCCSysParms.SiteID. SiteID returns the site ID based on the MODEL field: Tiny 3 bits, Small 5 bits, Large 8 bits, Huge 10 bits. */
-int dmrgo_pdu_short_lc_c_sys_parms_site_id(dmrgo_pdu_short_lc_c_sys_parms_t *self, uint16_t *out);
+int dmrgo_pdu_short_lc_c_sys_parms_site_id(const dmrgo_pdu_short_lc_c_sys_parms_t *self, uint16_t *out);
 /* Go: pdu.ShortLCCSysParms.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_short_lc_c_sys_parms_string(dmrgo_pdu_short_lc_c_sys_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_short_lc_c_sys_parms_string(const dmrgo_pdu_short_lc_c_sys_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.ShortLCCSysParms.SysCode. SysCode returns the MODEL, NET and SITE carried in the C_SYS_Parms. */
-int dmrgo_pdu_short_lc_c_sys_parms_sys_code(dmrgo_pdu_short_lc_c_sys_parms_t *self, dmrgo_pdu_sys_code_t *out);
+int dmrgo_pdu_short_lc_c_sys_parms_sys_code(const dmrgo_pdu_short_lc_c_sys_parms_t *self, dmrgo_pdu_sys_code_t *out);
 /* Go: pdu.ShortLCNullMessage.Encode. Encode encodes a ShortLCNullMessage. */
-int dmrgo_pdu_short_lc_null_message_encode(dmrgo_pdu_short_lc_null_message_t *self, uint8_t out[3]);
+int dmrgo_pdu_short_lc_null_message_encode(const dmrgo_pdu_short_lc_null_message_t *self, uint8_t out[3]);
 /* Go: pdu.ShortLCNullMessage.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_short_lc_null_message_string(dmrgo_pdu_short_lc_null_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_short_lc_null_message_string(const dmrgo_pdu_short_lc_null_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.ShortLCPSysParms.Encode. Encode encodes a ShortLCPSysParms. */
-int dmrgo_pdu_short_lc_p_sys_parms_encode(dmrgo_pdu_short_lc_p_sys_parms_t *self, uint8_t out[3]);
+int dmrgo_pdu_short_lc_p_sys_parms_encode(const dmrgo_pdu_short_lc_p_sys_parms_t *self, uint8_t out[3]);
 /* Go: pdu.ShortLCPSysParms.NetID. NetID returns the network ID based on the MODEL field (ETSI TS 102 361-4 Table 6.5), with the errors of ShortLCCSysParms.NetID. */
-int dmrgo_pdu_short_lc_p_sys_parms_net_id(dmrgo_pdu_short_lc_p_sys_parms_t *self, uint16_t *out);
+int dmrgo_pdu_short_lc_p_sys_parms_net_id(const dmrgo_pdu_short_lc_p_sys_parms_t *self, uint16_t *out);
 /* Go: pdu.ShortLCPSysParms.SetSysCode. SetSysCode sets MODEL and NetSiteRaw from c. */
 int dmrgo_pdu_short_lc_p_sys_parms_set_sys_code(dmrgo_pdu_short_lc_p_sys_parms_t *self, const dmrgo_pdu_sys_code_t *c);
 /* Go: pdu.ShortLCPSysParms.SiteID. SiteID returns the site ID based on the MODEL field (ETSI TS 102 361-4 Table 6.5), with the errors of ShortLCCSysParms.NetID. */
-int dmrgo_pdu_short_lc_p_sys_parms_site_id(dmrgo_pdu_short_lc_p_sys_parms_t *self, uint16_t *out);
+int dmrgo_pdu_short_lc_p_sys_parms_site_id(const dmrgo_pdu_short_lc_p_sys_parms_t *self, uint16_t *out);
 /* Go: pdu.ShortLCPSysParms.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_short_lc_p_sys_parms_string(dmrgo_pdu_short_lc_p_sys_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_short_lc_p_sys_parms_string(const dmrgo_pdu_short_lc_p_sys_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.ShortLCPSysParms.SysCode. SysCode returns the MODEL, NET and SITE carried in the P_SYS_Parms, with the errors of ShortLCCSysParms.SysCode. */
-int dmrgo_pdu_short_lc_p_sys_parms_sys_code(dmrgo_pdu_short_lc_p_sys_parms_t *self, dmrgo_pdu_sys_code_t *out);
+int dmrgo_pdu_short_lc_p_sys_parms_sys_code(const dmrgo_pdu_short_lc_p_sys_parms_t *self, dmrgo_pdu_sys_code_t *out);
 /* dmrgo_pdu_short_lc_payloads_new makes a zero pdu.ShortLCPayloads. */
 int dmrgo_pdu_short_lc_payloads_new(dmrgo_pdu_short_lc_payloads_t **out);
 /* dmrgo_pdu_short_lc_payloads_free frees the handle. self may be NULL. */
 int dmrgo_pdu_short_lc_payloads_free(dmrgo_pdu_short_lc_payloads_t *self);
 /* Go: pdu.SlotType.Encode. Encode encodes a SlotType. */
-int dmrgo_pdu_slot_type_encode(dmrgo_pdu_slot_type_t *self, uint8_t out[3]);
+int dmrgo_pdu_slot_type_encode(const dmrgo_pdu_slot_type_t *self, uint8_t out[3]);
 /* Go: pdu.SlotType.Info. Info returns the information bits of s as a SlotTypeInfo: the color code and the data type. */
-int dmrgo_pdu_slot_type_info(dmrgo_pdu_slot_type_t *self, dmrgo_pdu_slot_type_info_t *out);
+int dmrgo_pdu_slot_type_info(const dmrgo_pdu_slot_type_t *self, dmrgo_pdu_slot_type_info_t *out);
 /* Go: pdu.SlotType.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_slot_type_string(dmrgo_pdu_slot_type_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_slot_type_string(const dmrgo_pdu_slot_type_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.SlotTypeInfo.Codeword. Codeword returns the 20-bit Golay(20,8) codeword of s in the low 20 bits: the 8 information bits followed by the 12 parity bits, first bit most significant (ETSI TS 102 361-1 clause B.3.1). */
 int dmrgo_pdu_slot_type_info_codeword(dmrgo_pdu_slot_type_info_t self, uint32_t *out);
 /* Go: pdu.SlotTypeInfo.ColorCode. ColorCode returns the 4-bit color code, the high 4 bits. */
@@ -9395,9 +9395,9 @@ int dmrgo_pdu_slot_type_info_set_data_type(dmrgo_pdu_slot_type_info_t *self, dmr
 /* Go: pdu.SlotTypeInfo.SlotType. SlotType returns the fields of s as a SlotType with a zero FEC result. */
 int dmrgo_pdu_slot_type_info_slot_type(dmrgo_pdu_slot_type_info_t self, dmrgo_pdu_slot_type_t *out);
 /* Go: pdu.StatusPrecodedHeader.Encode. Encode encodes a StatusPrecodedHeader. */
-int dmrgo_pdu_status_precoded_header_encode(dmrgo_pdu_status_precoded_header_t *self, uint8_t out[10]);
+int dmrgo_pdu_status_precoded_header_encode(const dmrgo_pdu_status_precoded_header_t *self, uint8_t out[10]);
 /* Go: pdu.StatusPrecodedHeader.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_status_precoded_header_string(dmrgo_pdu_status_precoded_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_status_precoded_header_string(const dmrgo_pdu_status_precoded_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.SysCode.NetSite. NetSite returns the 12 NET and SITE bits as in the NetSiteRaw field of ShortLCCSysParms and ShortLCPSysParms. */
 int dmrgo_pdu_sys_code_net_site(const dmrgo_pdu_sys_code_t *self, uint16_t *out);
 /* Go: pdu.SysCode.Pack. Pack returns the 16-bit C_SYScode, as in the SysIdentCode field of C_ALOHA and C_BCAST. */
@@ -9409,11 +9409,11 @@ int dmrgo_pdu_sys_code_unpack(dmrgo_pdu_sys_code_t *self, uint16_t v);
 /* Go: pdu.SysCode.Unpack14. Unpack14 sets s to the fields of the 14-bit CACH form v of a C_SYScode, with Par 0. */
 int dmrgo_pdu_sys_code_unpack14(dmrgo_pdu_sys_code_t *self, uint16_t v);
 /* Go: pdu.TACT.Encode. Encode encodes a TACT. */
-int dmrgo_pdu_tact_encode(dmrgo_pdu_tact_t *self, uint8_t out[1]);
+int dmrgo_pdu_tact_encode(const dmrgo_pdu_tact_t *self, uint8_t out[1]);
 /* Go: pdu.TACT.Slot. Slot returns the TDMA channel that TDMAChannel gives for the next outbound burst: enums.Slot2 when it is set, else enums.Slot1, in the form that bs.CACH.Next takes. */
 int dmrgo_pdu_tact_slot(const dmrgo_pdu_tact_t *self, dmrgo_enums_slot_t *out);
 /* Go: pdu.TACT.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_tact_string(dmrgo_pdu_tact_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_tact_string(const dmrgo_pdu_tact_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.TalkerAlias. TalkerAlias returns the alias carried by a Talker Alias header and its blocks, given in order block 1, 2, 3. */
 int dmrgo_pdu_talker_alias(const dmrgo_pdu_flc_talker_alias_header_t *header, const dmrgo_pdu_flc_talker_alias_block_t *blocks, size_t blocks_len, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_pdu_talker_alias_assembler_new makes a zero pdu.TalkerAliasAssembler. */
@@ -9435,77 +9435,77 @@ int dmrgo_pdu_talker_alias_assembler_reset(dmrgo_pdu_talker_alias_assembler_t *s
 /* Go: pdu.TalkerAliasBlocks. TalkerAliasBlocks returns the number of Talker Alias block LCs (0 to 3) that follow a header with the given format and length in Code Units (ETSI TS 102 361-2 clause 5.4.3). */
 int dmrgo_pdu_talker_alias_blocks(dmrgo_layer3_talker_alias_data_format_t format, int64_t length, int64_t *out);
 /* Go: pdu.TalkgroupDataGrantMultiItemPDU.Encode. Encode encodes a TalkgroupDataGrantMultiItemPDU. */
-int dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_encode(dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_encode(const dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.TalkgroupDataGrantMultiItemPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_string(dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_string(const dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.TalkgroupDataGrantPDU.Encode. Encode encodes a TalkgroupDataGrantPDU. */
-int dmrgo_pdu_talkgroup_data_grant_pdu_encode(dmrgo_pdu_talkgroup_data_grant_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_talkgroup_data_grant_pdu_encode(const dmrgo_pdu_talkgroup_data_grant_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.TalkgroupDataGrantPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_talkgroup_data_grant_pdu_string(dmrgo_pdu_talkgroup_data_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_talkgroup_data_grant_pdu_string(const dmrgo_pdu_talkgroup_data_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.TalkgroupVoiceGrantPDU.Encode. Encode encodes a TalkgroupVoiceGrantPDU. */
-int dmrgo_pdu_talkgroup_voice_grant_pdu_encode(dmrgo_pdu_talkgroup_voice_grant_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_talkgroup_voice_grant_pdu_encode(const dmrgo_pdu_talkgroup_voice_grant_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.TalkgroupVoiceGrantPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_talkgroup_voice_grant_pdu_string(dmrgo_pdu_talkgroup_voice_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_talkgroup_voice_grant_pdu_string(const dmrgo_pdu_talkgroup_voice_grant_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.UDPIPv4CompressedHeader.Encode. Encode encodes a UDPIPv4CompressedHeader. */
-int dmrgo_pdu_udp_ipv4_compressed_header_encode(dmrgo_pdu_udp_ipv4_compressed_header_t *self, uint8_t out[9]);
+int dmrgo_pdu_udp_ipv4_compressed_header_encode(const dmrgo_pdu_udp_ipv4_compressed_header_t *self, uint8_t out[9]);
 /* Go: pdu.UDPIPv4CompressedHeader.Octets. Octets returns the length of the compressed header: 5 octets, plus 2 for each port that an Extended Header carries because its SPID or DPID is 0. */
-int dmrgo_pdu_udp_ipv4_compressed_header_octets(dmrgo_pdu_udp_ipv4_compressed_header_t *self, int64_t *out);
+int dmrgo_pdu_udp_ipv4_compressed_header_octets(const dmrgo_pdu_udp_ipv4_compressed_header_t *self, int64_t *out);
 /* Go: pdu.UDPIPv4CompressedHeader.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_udp_ipv4_compressed_header_string(dmrgo_pdu_udp_ipv4_compressed_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_udp_ipv4_compressed_header_string(const dmrgo_pdu_udp_ipv4_compressed_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.UDTHeader.Encode. Encode encodes a UDTHeader. */
-int dmrgo_pdu_udt_header_encode(dmrgo_pdu_udt_header_t *self, uint8_t out[10]);
+int dmrgo_pdu_udt_header_encode(const dmrgo_pdu_udt_header_t *self, uint8_t out[10]);
 /* Go: pdu.UDTHeader.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_udt_header_string(dmrgo_pdu_udt_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_udt_header_string(const dmrgo_pdu_udt_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.UDTOpcode.String. String returns the alias of a UDT opcode. */
 int dmrgo_pdu_udt_opcode_string(dmrgo_pdu_udt_opcode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.UnconfirmedDataHeader.Encode. Encode encodes an UnconfirmedDataHeader. */
-int dmrgo_pdu_unconfirmed_data_header_encode(dmrgo_pdu_unconfirmed_data_header_t *self, uint8_t out[10]);
+int dmrgo_pdu_unconfirmed_data_header_encode(const dmrgo_pdu_unconfirmed_data_header_t *self, uint8_t out[10]);
 /* Go: pdu.UnconfirmedDataHeader.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_unconfirmed_data_header_string(dmrgo_pdu_unconfirmed_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_unconfirmed_data_header_string(const dmrgo_pdu_unconfirmed_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.UnifiedSingleBlockData.DataType. DataType returns enums.DataTypeUnifiedSingleBlock. */
-int dmrgo_pdu_unified_single_block_data_data_type(dmrgo_pdu_unified_single_block_data_t *self, dmrgo_enums_data_type_t *out);
+int dmrgo_pdu_unified_single_block_data_data_type(const dmrgo_pdu_unified_single_block_data_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.UnifiedSingleBlockData.Encode. Encode encodes a UnifiedSingleBlockData. */
-int dmrgo_pdu_unified_single_block_data_encode(dmrgo_pdu_unified_single_block_data_t *self, uint8_t out[12]);
+int dmrgo_pdu_unified_single_block_data_encode(const dmrgo_pdu_unified_single_block_data_t *self, uint8_t out[12]);
 /* Go: pdu.UnifiedSingleBlockData.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_unified_single_block_data_string(dmrgo_pdu_unified_single_block_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_unified_single_block_data_string(const dmrgo_pdu_unified_single_block_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.UnitToUnitVoiceServiceAnswerResponsePDU.Encode. Encode encodes a UnitToUnitVoiceServiceAnswerResponsePDU. */
-int dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_encode(dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_encode(const dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.UnitToUnitVoiceServiceAnswerResponsePDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_string(dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_string(const dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.UnitToUnitVoiceServiceRequestPDU.Encode. Encode encodes a UnitToUnitVoiceServiceRequestPDU. */
-int dmrgo_pdu_unit_to_unit_voice_service_request_pdu_encode(dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t *self, uint8_t out[8]);
+int dmrgo_pdu_unit_to_unit_voice_service_request_pdu_encode(const dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t *self, uint8_t out[8]);
 /* Go: pdu.UnitToUnitVoiceServiceRequestPDU.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_unit_to_unit_voice_service_request_pdu_string(dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_unit_to_unit_voice_service_request_pdu_string(const dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.VNAPContinuation.DataType. DataType returns enums.DataTypeMBCContinuation. */
-int dmrgo_pdu_vnap_continuation_data_type(dmrgo_pdu_vnap_continuation_t *self, dmrgo_enums_data_type_t *out);
+int dmrgo_pdu_vnap_continuation_data_type(const dmrgo_pdu_vnap_continuation_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.VNAPContinuation.Encode. Encode encodes a VNAPContinuation. */
-int dmrgo_pdu_vnap_continuation_encode(dmrgo_pdu_vnap_continuation_t *self, uint8_t out[12]);
+int dmrgo_pdu_vnap_continuation_encode(const dmrgo_pdu_vnap_continuation_t *self, uint8_t out[12]);
 /* Go: pdu.VNAPContinuation.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_vnap_continuation_string(dmrgo_pdu_vnap_continuation_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_vnap_continuation_string(const dmrgo_pdu_vnap_continuation_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.VoteNowParms.Encode. Encode encodes a VoteNowParms. */
-int dmrgo_pdu_vote_now_parms_encode(dmrgo_pdu_vote_now_parms_t *self, uint8_t out[8]);
+int dmrgo_pdu_vote_now_parms_encode(const dmrgo_pdu_vote_now_parms_t *self, uint8_t out[8]);
 /* Go: pdu.VoteNowParms.String. String returns the fields of s as text, for printing. */
-int dmrgo_pdu_vote_now_parms_string(dmrgo_pdu_vote_now_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_pdu_vote_now_parms_string(const dmrgo_pdu_vote_now_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.AdditionalInformationField.String. */
 int dmrgo_layer3_additional_information_field_string(dmrgo_layer3_additional_information_field_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.CdefParms.Encode. Encode encodes a CdefParms. */
-int dmrgo_layer3_cdef_parms_encode(dmrgo_layer3_cdef_parms_t *self, uint8_t out[8]);
+int dmrgo_layer3_cdef_parms_encode(const dmrgo_layer3_cdef_parms_t *self, uint8_t out[8]);
 /* Go: layer3.CdefParms.RXFrequencyHz. RXFrequencyHz returns the receive frequency in Hz, RXMHz MHz plus RXKHz steps of 125 Hz. */
-int dmrgo_layer3_cdef_parms_rx_frequency_hz(dmrgo_layer3_cdef_parms_t *self, uint64_t *out);
+int dmrgo_layer3_cdef_parms_rx_frequency_hz(const dmrgo_layer3_cdef_parms_t *self, uint64_t *out);
 /* Go: layer3.CdefParms.RXFrequencyMHz. RXFrequencyMHz returns the receive frequency in MHz, RXMHz plus RXKHz times 0.000125 (ETSI TS 102 361-4 Annex C). */
-int dmrgo_layer3_cdef_parms_rx_frequency_mhz(dmrgo_layer3_cdef_parms_t *self, double *out);
+int dmrgo_layer3_cdef_parms_rx_frequency_mhz(const dmrgo_layer3_cdef_parms_t *self, double *out);
 /* Go: layer3.CdefParms.String. String returns the fields of s as text, for printing. */
-int dmrgo_layer3_cdef_parms_string(dmrgo_layer3_cdef_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_layer3_cdef_parms_string(const dmrgo_layer3_cdef_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.CdefParms.TXFrequencyHz. TXFrequencyHz returns the transmit frequency in Hz, TXMHz MHz plus TXKHz steps of 125 Hz. */
-int dmrgo_layer3_cdef_parms_tx_frequency_hz(dmrgo_layer3_cdef_parms_t *self, uint64_t *out);
+int dmrgo_layer3_cdef_parms_tx_frequency_hz(const dmrgo_layer3_cdef_parms_t *self, uint64_t *out);
 /* Go: layer3.CdefParms.TXFrequencyMHz. TXFrequencyMHz returns the transmit frequency in MHz, TXMHz plus TXKHz times 0.000125 (ETSI TS 102 361-4 Annex C). */
-int dmrgo_layer3_cdef_parms_tx_frequency_mhz(dmrgo_layer3_cdef_parms_t *self, double *out);
+int dmrgo_layer3_cdef_parms_tx_frequency_mhz(const dmrgo_layer3_cdef_parms_t *self, double *out);
 /* Go: layer3.DataServiceOptions.Encode. Encode encodes a DataServiceOptions. */
-int dmrgo_layer3_data_service_options_encode(dmrgo_layer3_data_service_options_t *self, uint8_t out[1]);
+int dmrgo_layer3_data_service_options_encode(const dmrgo_layer3_data_service_options_t *self, uint8_t out[1]);
 /* Go: layer3.DataServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
 int dmrgo_layer3_data_service_options_field(const dmrgo_layer3_data_service_options_t *self, uint8_t *out);
 /* Go: layer3.DataServiceOptions.String. String returns the fields of s as text, for printing. */
-int dmrgo_layer3_data_service_options_string(dmrgo_layer3_data_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_layer3_data_service_options_string(const dmrgo_layer3_data_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.DecodeCdefParms. DecodeCdefParms decodes a CdefParms. */
 int dmrgo_layer3_decode_cdef_parms(const uint8_t data[8], dmrgo_layer3_cdef_parms_t *out);
 /* Go: layer3.DecodeDataServiceOptions. DecodeDataServiceOptions decodes a DataServiceOptions. */
@@ -9525,55 +9525,55 @@ int dmrgo_layer3_decode_status_service_options(const uint8_t data[1], dmrgo_laye
 /* Go: layer3.DecodeVoiceServiceOptions. DecodeVoiceServiceOptions decodes a VoiceServiceOptions. */
 int dmrgo_layer3_decode_voice_service_options(const uint8_t data[1], dmrgo_layer3_voice_service_options_t *out);
 /* Go: layer3.DiversionServiceOptions.Encode. Encode encodes a DiversionServiceOptions. */
-int dmrgo_layer3_diversion_service_options_encode(dmrgo_layer3_diversion_service_options_t *self, uint8_t out[1]);
+int dmrgo_layer3_diversion_service_options_encode(const dmrgo_layer3_diversion_service_options_t *self, uint8_t out[1]);
 /* Go: layer3.DiversionServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
 int dmrgo_layer3_diversion_service_options_field(const dmrgo_layer3_diversion_service_options_t *self, uint8_t *out);
 /* Go: layer3.DiversionServiceOptions.String. String returns the fields of s as text, for printing. */
-int dmrgo_layer3_diversion_service_options_string(dmrgo_layer3_diversion_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_layer3_diversion_service_options_string(const dmrgo_layer3_diversion_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.MotorolaServiceOptions. MotorolaServiceOptions returns the Service Options octet 0x20 seen in Motorola IPSC voice traffic: no flag set and only the first Reserved bit (0x20) set, so Reserved is 2. */
 int dmrgo_layer3_motorola_service_options(dmrgo_layer3_service_options_t *out);
 /* Go: layer3.PollingServiceOptions.Encode. Encode encodes a PollingServiceOptions. */
-int dmrgo_layer3_polling_service_options_encode(dmrgo_layer3_polling_service_options_t *self, uint8_t out[1]);
+int dmrgo_layer3_polling_service_options_encode(const dmrgo_layer3_polling_service_options_t *self, uint8_t out[1]);
 /* Go: layer3.PollingServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
 int dmrgo_layer3_polling_service_options_field(const dmrgo_layer3_polling_service_options_t *self, uint8_t *out);
 /* Go: layer3.PollingServiceOptions.String. String returns the fields of s as text, for printing. */
-int dmrgo_layer3_polling_service_options_string(dmrgo_layer3_polling_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_layer3_polling_service_options_string(const dmrgo_layer3_polling_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.PositionError.String. */
 int dmrgo_layer3_position_error_string(dmrgo_layer3_position_error_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.RegistrationServiceOptions.Encode. Encode encodes a RegistrationServiceOptions. */
-int dmrgo_layer3_registration_service_options_encode(dmrgo_layer3_registration_service_options_t *self, uint8_t out[1]);
+int dmrgo_layer3_registration_service_options_encode(const dmrgo_layer3_registration_service_options_t *self, uint8_t out[1]);
 /* Go: layer3.RegistrationServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
 int dmrgo_layer3_registration_service_options_field(const dmrgo_layer3_registration_service_options_t *self, uint8_t *out);
 /* Go: layer3.RegistrationServiceOptions.String. String returns the fields of s as text, for printing. */
-int dmrgo_layer3_registration_service_options_string(dmrgo_layer3_registration_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_layer3_registration_service_options_string(const dmrgo_layer3_registration_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.ServiceOptions.Encode. Encode encodes a ServiceOptions. */
-int dmrgo_layer3_service_options_encode(dmrgo_layer3_service_options_t *self, uint8_t out[1]);
+int dmrgo_layer3_service_options_encode(const dmrgo_layer3_service_options_t *self, uint8_t out[1]);
 /* Go: layer3.ServiceOptions.Field. Field returns s as the 8-bit Service Options field, the octet of Encode, with the errors of Encode. */
 int dmrgo_layer3_service_options_field(const dmrgo_layer3_service_options_t *self, uint8_t *out);
 /* Go: layer3.ServiceOptions.String. String returns the fields of s as text, for printing. */
-int dmrgo_layer3_service_options_string(dmrgo_layer3_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_layer3_service_options_string(const dmrgo_layer3_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.ShortDataServiceOptions.Encode. Encode encodes a ShortDataServiceOptions. */
-int dmrgo_layer3_short_data_service_options_encode(dmrgo_layer3_short_data_service_options_t *self, uint8_t out[1]);
+int dmrgo_layer3_short_data_service_options_encode(const dmrgo_layer3_short_data_service_options_t *self, uint8_t out[1]);
 /* Go: layer3.ShortDataServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
 int dmrgo_layer3_short_data_service_options_field(const dmrgo_layer3_short_data_service_options_t *self, uint8_t *out);
 /* Go: layer3.ShortDataServiceOptions.String. String returns the fields of s as text, for printing. */
-int dmrgo_layer3_short_data_service_options_string(dmrgo_layer3_short_data_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_layer3_short_data_service_options_string(const dmrgo_layer3_short_data_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.SourceType.String. */
 int dmrgo_layer3_source_type_string(dmrgo_layer3_source_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.StatusServiceOptions.Encode. Encode encodes a StatusServiceOptions. */
-int dmrgo_layer3_status_service_options_encode(dmrgo_layer3_status_service_options_t *self, uint8_t out[1]);
+int dmrgo_layer3_status_service_options_encode(const dmrgo_layer3_status_service_options_t *self, uint8_t out[1]);
 /* Go: layer3.StatusServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
 int dmrgo_layer3_status_service_options_field(const dmrgo_layer3_status_service_options_t *self, uint8_t *out);
 /* Go: layer3.StatusServiceOptions.String. String returns the fields of s as text, for printing. */
-int dmrgo_layer3_status_service_options_string(dmrgo_layer3_status_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_layer3_status_service_options_string(const dmrgo_layer3_status_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.TalkerAliasDataFormat.String. */
 int dmrgo_layer3_talker_alias_data_format_string(dmrgo_layer3_talker_alias_data_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: layer3.VoiceServiceOptions.Encode. Encode encodes a VoiceServiceOptions. */
-int dmrgo_layer3_voice_service_options_encode(dmrgo_layer3_voice_service_options_t *self, uint8_t out[1]);
+int dmrgo_layer3_voice_service_options_encode(const dmrgo_layer3_voice_service_options_t *self, uint8_t out[1]);
 /* Go: layer3.VoiceServiceOptions.Field. Field returns s as the 7-bit ServiceOptions field of a C_RAND, with the errors of Encode. */
 int dmrgo_layer3_voice_service_options_field(const dmrgo_layer3_voice_service_options_t *self, uint8_t *out);
 /* Go: layer3.VoiceServiceOptions.String. String returns the fields of s as text, for printing. */
-int dmrgo_layer3_voice_service_options_string(dmrgo_layer3_voice_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_layer3_voice_service_options_string(const dmrgo_layer3_voice_service_options_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_location_decoder_new makes a zero location.Decoder. */
 int dmrgo_location_decoder_new(dmrgo_location_decoder_t **out);
 /* dmrgo_location_decoder_free frees the handle. self may be NULL. */
@@ -9587,17 +9587,17 @@ int dmrgo_ars_decode_message(const uint8_t *data, size_t data_len, dmrgo_ars_mes
 /* Go: ars.Event.String. String returns the name of e. */
 int dmrgo_ars_event_string(dmrgo_ars_event_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ars.Header.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
-int dmrgo_ars_header_append_binary(dmrgo_ars_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_ars_header_append_binary(const dmrgo_ars_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ars.Header.String. String returns the fields of s as text, for printing. */
-int dmrgo_ars_header_string(dmrgo_ars_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_ars_header_string(const dmrgo_ars_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ars.Message.AppendBinary. AppendBinary appends s to dst, with Length set to the length of the data. */
-int dmrgo_ars_message_append_binary(dmrgo_ars_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_ars_message_append_binary(const dmrgo_ars_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ars.Message.DeviceID. DeviceID returns the radio ID that Device holds, and false when Device is empty, holds a character that is not a digit or a number over 24 bits. */
-int dmrgo_ars_message_device_id(dmrgo_ars_message_t *self, uint32_t *value, bool *ok, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_ars_message_device_id(const dmrgo_ars_message_t *self, uint32_t *value, bool *ok);
 /* Go: ars.Message.SetDeviceID. SetDeviceID appends the radio ID id to dst in decimal ASCII digits, points Device at them and returns dst. */
 int dmrgo_ars_message_set_device_id(dmrgo_ars_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, uint32_t id, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ars.Message.String. String returns the fields of s as text, for printing. */
-int dmrgo_ars_message_string(dmrgo_ars_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_ars_message_string(const dmrgo_ars_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ars.NewAck. NewAck returns the answer to a successful device registration, with the refresh time in units of 30 minutes, 0 for none. */
 int dmrgo_ars_new_ack(uint8_t refresh, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ars.NewFailure. NewFailure returns the answer to a device registration that failed, with the reason that Response describes. */
@@ -9607,89 +9607,89 @@ int dmrgo_ars_new_query(dmrgo_ars_message_t *out, void *arena, size_t arena_cap,
 /* Go: ars.NewRegistration. NewRegistration returns a device registration with the header bits that radios send. */
 int dmrgo_ars_new_registration(dmrgo_ars_event_t event, dmrgo_ars_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: ars.Registration.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
-int dmrgo_ars_registration_append_binary(dmrgo_ars_registration_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_ars_registration_append_binary(const dmrgo_ars_registration_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ars.Registration.String. String returns the fields of s as text, for printing. */
-int dmrgo_ars_registration_string(dmrgo_ars_registration_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_ars_registration_string(const dmrgo_ars_registration_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ars.Response.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
-int dmrgo_ars_response_append_binary(dmrgo_ars_response_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_ars_response_append_binary(const dmrgo_ars_response_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ars.Response.String. String returns the fields of s as text, for printing. */
-int dmrgo_ars_response_string(dmrgo_ars_response_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_ars_response_string(const dmrgo_ars_response_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ars.Type.String. String returns the name of t. */
 int dmrgo_ars_type_string(dmrgo_ars_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.Circle2D.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_lrrp_circle2d_append_binary(dmrgo_lrrp_circle2d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_lrrp_circle2d_append_binary(const dmrgo_lrrp_circle2d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Circle2D.String. String returns the fields of s as text, for printing. */
-int dmrgo_lrrp_circle2d_string(dmrgo_lrrp_circle2d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_lrrp_circle2d_string(const dmrgo_lrrp_circle2d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.Circle3D.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_lrrp_circle3d_append_binary(dmrgo_lrrp_circle3d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_lrrp_circle3d_append_binary(const dmrgo_lrrp_circle3d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Circle3D.String. String returns the fields of s as text, for printing. */
-int dmrgo_lrrp_circle3d_string(dmrgo_lrrp_circle3d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_lrrp_circle3d_string(const dmrgo_lrrp_circle3d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.DecodeMessageInto. DecodeMessageInto decodes a Message from data. */
-int dmrgo_lrrp_decode_message_into(const dmrgo_lrrp_message_t *m, const uint8_t *data, size_t data_len);
+int dmrgo_lrrp_decode_message_into(dmrgo_lrrp_message_t *m, const uint8_t *data, size_t data_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: lrrp.DocumentID.String. String returns the name of d. */
 int dmrgo_lrrp_document_id_string(dmrgo_lrrp_document_id_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.Message.AppendBinary. AppendBinary appends s to dst, with Length set to the length of the data. */
-int dmrgo_lrrp_message_append_binary(dmrgo_lrrp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_lrrp_message_append_binary(const dmrgo_lrrp_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Message.String. String returns the fields of s as text, for printing. */
-int dmrgo_lrrp_message_string(dmrgo_lrrp_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_lrrp_message_string(const dmrgo_lrrp_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.OperationError.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_lrrp_operation_error_append_binary(dmrgo_lrrp_operation_error_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_lrrp_operation_error_append_binary(const dmrgo_lrrp_operation_error_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.OperationError.String. String returns the fields of s as text, for printing. */
-int dmrgo_lrrp_operation_error_string(dmrgo_lrrp_operation_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_lrrp_operation_error_string(const dmrgo_lrrp_operation_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.Point2D.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_lrrp_point2d_append_binary(dmrgo_lrrp_point2d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_lrrp_point2d_append_binary(const dmrgo_lrrp_point2d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Point2D.String. String returns the fields of s as text, for printing. */
-int dmrgo_lrrp_point2d_string(dmrgo_lrrp_point2d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_lrrp_point2d_string(const dmrgo_lrrp_point2d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.Point3D.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_lrrp_point3d_append_binary(dmrgo_lrrp_point3d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_lrrp_point3d_append_binary(const dmrgo_lrrp_point3d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Point3D.String. String returns the fields of s as text, for printing. */
-int dmrgo_lrrp_point3d_string(dmrgo_lrrp_point3d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_lrrp_point3d_string(const dmrgo_lrrp_point3d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.Point3DAccuracy.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_lrrp_point3d_accuracy_append_binary(dmrgo_lrrp_point3d_accuracy_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_lrrp_point3d_accuracy_append_binary(const dmrgo_lrrp_point3d_accuracy_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Point3DAccuracy.String. String returns the fields of s as text, for printing. */
-int dmrgo_lrrp_point3d_accuracy_string(dmrgo_lrrp_point3d_accuracy_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_lrrp_point3d_accuracy_string(const dmrgo_lrrp_point3d_accuracy_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.Report.AppendBinary. AppendBinary appends s to dst: each field that is set, as its token and value, in the order of the fields. */
-int dmrgo_lrrp_report_append_binary(dmrgo_lrrp_report_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_lrrp_report_append_binary(const dmrgo_lrrp_report_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Report.String. String returns the fields of s as text, for printing. */
-int dmrgo_lrrp_report_string(dmrgo_lrrp_report_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_lrrp_report_string(const dmrgo_lrrp_report_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.Request.AppendBinary. AppendBinary appends s to dst: each field that is set, as its token and value, in the order of the fields. */
-int dmrgo_lrrp_request_append_binary(dmrgo_lrrp_request_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_lrrp_request_append_binary(const dmrgo_lrrp_request_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Request.String. String returns the fields of s as text, for printing. */
-int dmrgo_lrrp_request_string(dmrgo_lrrp_request_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_lrrp_request_string(const dmrgo_lrrp_request_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: lrrp.Time.AppendBinary. AppendBinary appends the 5 octets of s to dst. */
-int dmrgo_lrrp_time_append_binary(dmrgo_lrrp_time_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_lrrp_time_append_binary(const dmrgo_lrrp_time_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Time.String. String returns the fields of s as text, for printing. */
-int dmrgo_lrrp_time_string(dmrgo_lrrp_time_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_lrrp_time_string(const dmrgo_lrrp_time_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: tms.DecodeMessage. DecodeMessage decodes a Message from data. */
 int dmrgo_tms_decode_message(const uint8_t *data, size_t data_len, dmrgo_tms_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: tms.Encoding.String. String returns the name of e. */
 int dmrgo_tms_encoding_string(dmrgo_tms_encoding_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: tms.Header.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
-int dmrgo_tms_header_append_binary(dmrgo_tms_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_tms_header_append_binary(const dmrgo_tms_header_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: tms.Header.String. String returns the fields of s as text, for printing. */
-int dmrgo_tms_header_string(dmrgo_tms_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_tms_header_string(const dmrgo_tms_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: tms.Message.AppendBinary. AppendBinary appends s to dst, with Length set to the length of the data. */
-int dmrgo_tms_message_append_binary(dmrgo_tms_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_tms_message_append_binary(const dmrgo_tms_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: tms.Message.Sequence. Sequence returns the 7-bit sequence number of a text message or an acknowledgement, and false when the message has none. */
-int dmrgo_tms_message_sequence(dmrgo_tms_message_t *self, uint8_t *value, bool *ok, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_tms_message_sequence(const dmrgo_tms_message_t *self, uint8_t *value, bool *ok);
 /* Go: tms.Message.SetTextUTF8. SetTextUTF8 appends text, UTF-8, to dst as UTF-16LE, points Text at the appended octets and returns dst. */
 int dmrgo_tms_message_set_text_utf8(dmrgo_tms_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: tms.Message.String. String returns the fields of s as text, for printing. */
-int dmrgo_tms_message_string(dmrgo_tms_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_tms_message_string(const dmrgo_tms_message_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: tms.Message.TextUTF8. TextUTF8 appends Text, UTF-16LE text, to dst as UTF-8 and returns dst. */
-int dmrgo_tms_message_text_utf8(dmrgo_tms_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_tms_message_text_utf8(const dmrgo_tms_message_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: tms.NewAck. NewAck returns the acknowledgement of the text message with sequence number seq. */
 int dmrgo_tms_new_ack(uint8_t seq, dmrgo_tms_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: tms.NewText. NewText returns a text message with sequence number seq, with the header bits that radios send: both extension octets and the UTF-16LE encoding. */
 int dmrgo_tms_new_text(uint8_t seq, bool ack_required, dmrgo_tms_message_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: tms.SequenceHigh.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
-int dmrgo_tms_sequence_high_append_binary(dmrgo_tms_sequence_high_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_tms_sequence_high_append_binary(const dmrgo_tms_sequence_high_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: tms.SequenceHigh.String. String returns the fields of s as text, for printing. */
-int dmrgo_tms_sequence_high_string(dmrgo_tms_sequence_high_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_tms_sequence_high_string(const dmrgo_tms_sequence_high_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: tms.SequenceLow.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
-int dmrgo_tms_sequence_low_append_binary(dmrgo_tms_sequence_low_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_tms_sequence_low_append_binary(const dmrgo_tms_sequence_low_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: tms.SequenceLow.String. String returns the fields of s as text, for printing. */
-int dmrgo_tms_sequence_low_string(dmrgo_tms_sequence_low_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_tms_sequence_low_string(const dmrgo_tms_sequence_low_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: tms.Type.String. String returns the name of t. */
 int dmrgo_tms_type_string(dmrgo_tms_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: nmea.ParseRMC. ParseRMC decodes one RMC sentence from s, from the $ to the two hex digits of the checksum, with an optional CR LF or LF after them. */
@@ -9699,25 +9699,25 @@ int dmrgo_shortdata_append_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, s
 /* Go: shortdata.DecodeHyteraText. DecodeHyteraText decodes a HyteraText from data. */
 int dmrgo_shortdata_decode_hytera_text(const uint8_t *data, size_t data_len, dmrgo_shortdata_hytera_text_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: shortdata.HyteraText.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_shortdata_hytera_text_append_binary(dmrgo_shortdata_hytera_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_shortdata_hytera_text_append_binary(const dmrgo_shortdata_hytera_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: shortdata.HyteraText.SetTextUTF8. SetTextUTF8 appends text, UTF-8, to dst as UTF-16LE, then a NUL character, points Text at the appended octets and returns dst. */
 int dmrgo_shortdata_hytera_text_set_text_utf8(dmrgo_shortdata_hytera_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: shortdata.HyteraText.String. String returns the fields of s as text, for printing. */
-int dmrgo_shortdata_hytera_text_string(dmrgo_shortdata_hytera_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_shortdata_hytera_text_string(const dmrgo_shortdata_hytera_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: shortdata.HyteraText.TextUTF8. TextUTF8 appends Text, UTF-16LE text, to dst as UTF-8 and returns dst. */
-int dmrgo_shortdata_hytera_text_text_utf8(dmrgo_shortdata_hytera_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_shortdata_hytera_text_text_utf8(const dmrgo_shortdata_hytera_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: shortdata.Text. Text appends the text in data, coded as format says, to dst as UTF-8 and returns dst. */
 int dmrgo_shortdata_text(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_enums_dd_format_t format, const uint8_t *data, size_t data_len);
 /* Go: sms.AnyToneText.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_sms_anytone_text_append_binary(dmrgo_sms_anytone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_sms_anytone_text_append_binary(const dmrgo_sms_anytone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: sms.AnyToneText.SetTextUTF8. SetTextUTF8 appends text, UTF-8, to dst as UTF-16LE, then a NUL character, points Text at the appended octets and returns dst. */
 int dmrgo_sms_anytone_text_set_text_utf8(dmrgo_sms_anytone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: sms.AnyToneText.String. String returns the fields of s as text, for printing. */
-int dmrgo_sms_anytone_text_string(dmrgo_sms_anytone_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_sms_anytone_text_string(const dmrgo_sms_anytone_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: sms.AnyToneText.TextUTF8. TextUTF8 appends Text, UTF-16LE text, to dst as UTF-8 and returns dst. */
-int dmrgo_sms_anytone_text_text_utf8(dmrgo_sms_anytone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_sms_anytone_text_text_utf8(const dmrgo_sms_anytone_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: sms.AppendPacket. AppendPacket appends the user data of t in its format to dst, sets h to the data header to send it with, and returns dst. */
-int dmrgo_sms_append_packet(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_sms_text_t *t, bool confirmed, const dmrgo_sms_header_t *h);
+int dmrgo_sms_append_packet(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_sms_text_t *t, bool confirmed, dmrgo_sms_header_t *h);
 /* Go: sms.Decode. Decode appends the text of a data packet, with header h and user data data, to dst as UTF-8, and returns dst and the Text, whose Body points into dst. */
 int dmrgo_sms_decode(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const dmrgo_pdu_data_header_t *h, const uint8_t *data, size_t data_len, dmrgo_sms_text_t *text, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: sms.DecodeAnyToneText. DecodeAnyToneText decodes an AnyToneText from data. */
@@ -9727,17 +9727,17 @@ int dmrgo_sms_decode_ip_text(const uint8_t *data, size_t data_len, dmrgo_sms_ip_
 /* Go: sms.Format.String. String returns the name of f. */
 int dmrgo_sms_format_string(dmrgo_sms_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: sms.IPText.AppendBinary. AppendBinary appends s to dst. */
-int dmrgo_sms_ip_text_append_binary(dmrgo_sms_ip_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_sms_ip_text_append_binary(const dmrgo_sms_ip_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: sms.IPText.SetTextUTF8. SetTextUTF8 appends text, UTF-8, to dst as UTF-16BE, points Text at the appended octets and returns dst. */
 int dmrgo_sms_ip_text_set_text_utf8(dmrgo_sms_ip_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: sms.IPText.String. String returns the fields of s as text, for printing. */
-int dmrgo_sms_ip_text_string(dmrgo_sms_ip_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_sms_ip_text_string(const dmrgo_sms_ip_text_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: sms.IPText.TextUTF8. TextUTF8 appends Text, UTF-16BE text, to dst as UTF-8 and returns dst. */
-int dmrgo_sms_ip_text_text_utf8(dmrgo_sms_ip_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_sms_ip_text_text_utf8(const dmrgo_sms_ip_text_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.AppendFreeDMRStatic. AppendFreeDMRStatic appends to dst the static talkgroups of slot s in a FreeDMR options text, as FreeDMR reads them: the DMR+ keys TS1_1 to TS1_9 (TS2_1 to TS2_9 for slot 2) when TS1_1 is there, else the comma list of TS1 or TS1_STATIC. */
 int dmrgo_dmrd_append_free_dmr_static(uint32_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t *text, size_t text_len, dmrgo_enums_slot_t s);
 /* Go: dmrd.Bridge.AppendBinary. AppendBinary appends the packet b to dst in the form of b.Version, with b.Signature as it is: sign the packet afterward with package auth. */
-int dmrgo_dmrd_bridge_append_binary(dmrgo_dmrd_bridge_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_dmrd_bridge_append_binary(const dmrgo_dmrd_bridge_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.BridgeControl.AppendBinary. AppendBinary appends the packet c to dst, with c.Signature as it is. */
 int dmrgo_dmrd_bridge_control_append_binary(const dmrgo_dmrd_bridge_control_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.Classify. Classify returns the command of packet p in dialect d by its tag, or CommandUnknown when no tag of d matches. */
@@ -9745,27 +9745,27 @@ int dmrgo_dmrd_classify(const uint8_t *p, size_t p_len, dmrgo_dmrd_dialect_t d, 
 /* Go: dmrd.Command.String. String returns the tag of the command. */
 int dmrgo_dmrd_command_string(dmrgo_dmrd_command_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.Config.Callsign. Callsign returns the callsign of the repeater. */
-int dmrgo_dmrd_config_callsign(dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_config_callsign(const dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.Config.ColorCode. ColorCode returns the color code, 2 digits. */
-int dmrgo_dmrd_config_color_code(dmrgo_dmrd_config_t *self, dmrgo_enums_color_code_t *out);
+int dmrgo_dmrd_config_color_code(const dmrgo_dmrd_config_t *self, dmrgo_enums_color_code_t *out);
 /* Go: dmrd.Config.Description. Description returns the description of the repeater as free text. */
-int dmrgo_dmrd_config_description(dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_config_description(const dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.Config.Height. Height returns the antenna height above ground in meters, 3 digits. */
-int dmrgo_dmrd_config_height(dmrgo_dmrd_config_t *self, uint16_t *out);
+int dmrgo_dmrd_config_height(const dmrgo_dmrd_config_t *self, uint16_t *out);
 /* Go: dmrd.Config.ID. ID returns the repeater ID. */
-int dmrgo_dmrd_config_id(dmrgo_dmrd_config_t *self, uint32_t *out);
+int dmrgo_dmrd_config_id(const dmrgo_dmrd_config_t *self, uint32_t *out);
 /* Go: dmrd.Config.Latitude. Latitude returns the latitude as text, 8 characters, North positive. */
-int dmrgo_dmrd_config_latitude(dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_config_latitude(const dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.Config.Location. Location returns the location of the repeater as free text. */
-int dmrgo_dmrd_config_location(dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_config_location(const dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.Config.Longitude. Longitude returns the longitude as text, 9 characters, East positive. */
-int dmrgo_dmrd_config_longitude(dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_config_longitude(const dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.Config.PackageID. PackageID returns the package and its version. */
-int dmrgo_dmrd_config_package_id(dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_config_package_id(const dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.Config.Power. Power returns the transmit power in dBm, 2 digits. */
-int dmrgo_dmrd_config_power(dmrgo_dmrd_config_t *self, uint8_t *out);
+int dmrgo_dmrd_config_power(const dmrgo_dmrd_config_t *self, uint8_t *out);
 /* Go: dmrd.Config.RXFrequency. RXFrequency returns the receive frequency in Hz, 9 digits. */
-int dmrgo_dmrd_config_rx_frequency(dmrgo_dmrd_config_t *self, uint32_t *out);
+int dmrgo_dmrd_config_rx_frequency(const dmrgo_dmrd_config_t *self, uint32_t *out);
 /* Go: dmrd.Config.Reset. Reset sets c to an empty Config: the fixed octets, spaces in the text fields and zero in the number fields. */
 int dmrgo_dmrd_config_reset(dmrgo_dmrd_config_t *self);
 /* Go: dmrd.Config.SetCallsign. SetCallsign sets the callsign of the repeater. */
@@ -9799,31 +9799,31 @@ int dmrgo_dmrd_config_set_tx_frequency(dmrgo_dmrd_config_t *self, uint32_t v);
 /* Go: dmrd.Config.SetURL. SetURL sets the web page of the repeater. */
 int dmrgo_dmrd_config_set_url(dmrgo_dmrd_config_t *self, const uint8_t *v, size_t v_len);
 /* Go: dmrd.Config.Slots. Slots returns the slots digit: 1 or 2 for one slot, 3 for both in duplex, 4 for simplex (DMO). */
-int dmrgo_dmrd_config_slots(dmrgo_dmrd_config_t *self, uint8_t *out);
+int dmrgo_dmrd_config_slots(const dmrgo_dmrd_config_t *self, uint8_t *out);
 /* Go: dmrd.Config.SoftwareID. SoftwareID returns the software and its version. */
-int dmrgo_dmrd_config_software_id(dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_config_software_id(const dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.Config.TXFrequency. TXFrequency returns the transmit frequency in Hz, 9 digits. */
-int dmrgo_dmrd_config_tx_frequency(dmrgo_dmrd_config_t *self, uint32_t *out);
+int dmrgo_dmrd_config_tx_frequency(const dmrgo_dmrd_config_t *self, uint32_t *out);
 /* Go: dmrd.Config.URL. URL returns the web page of the repeater. */
-int dmrgo_dmrd_config_url(dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_config_url(const dmrgo_dmrd_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.ConfigOf. ConfigOf returns p as a Config without a copy, so the Config is valid as long as p is. */
 int dmrgo_dmrd_config_of(const uint8_t *p, size_t p_len, dmrgo_dmrd_config_t *out, bool *out_ok);
 /* Go: dmrd.Control.AppendBinary. AppendBinary appends the message c in dialect d to dst. */
 int dmrgo_dmrd_control_append_binary(const dmrgo_dmrd_control_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_dmrd_dialect_t d);
 /* Go: dmrd.DMRPlusOptions.AppendText. AppendText appends the options that are not OptionAbsent to dst as a DMR+ startup options text, each followed by a semicolon, in the order of the fields. */
-int dmrgo_dmrd_dmr_plus_options_append_text(dmrgo_dmrd_dmr_plus_options_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_dmrd_dmr_plus_options_append_text(const dmrgo_dmrd_dmr_plus_options_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.Data.AppendBinary. AppendBinary appends the 53, 55 or 71 octets of s to dst: Size selects the length, and 0 means 53. */
-int dmrgo_dmrd_data_append_binary(dmrgo_dmrd_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_dmrd_data_append_binary(const dmrgo_dmrd_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.Data.Call. Call returns the call of the packet: group is the reverse of Private, target is Destination and source is Source. */
-int dmrgo_dmrd_data_call(dmrgo_dmrd_data_t *self, bool *group, uint32_t *target, uint32_t *source);
+int dmrgo_dmrd_data_call(const dmrgo_dmrd_data_t *self, bool *group, uint32_t *target, uint32_t *source);
 /* Go: dmrd.Data.Hint. Hint returns what the packet tells about its burst, for the service machines: the slot, the voice position or data type, the sequence number (8 bits) and the stream ID. */
-int dmrgo_dmrd_data_hint(dmrgo_dmrd_data_t *self, dmrgo_layer2_hint_t *out);
+int dmrgo_dmrd_data_hint(const dmrgo_dmrd_data_t *self, dmrgo_layer2_hint_t *out);
 /* Go: dmrd.Data.SetCall. SetCall sets Private, Destination and Source from the call: group is the reverse of Private. */
 int dmrgo_dmrd_data_set_call(dmrgo_dmrd_data_t *self, bool group, uint32_t target, uint32_t source);
 /* Go: dmrd.Data.SetHint. SetHint sets Frame and Value from what h says the burst is, as a machine Output gives it: KindVoice with a VoiceBurst of A to F, or KindData with a DataType. */
 int dmrgo_dmrd_data_set_hint(dmrgo_dmrd_data_t *self, const dmrgo_layer2_hint_t *h);
 /* Go: dmrd.Data.String. String returns the fields of s as text, for printing. */
-int dmrgo_dmrd_data_string(dmrgo_dmrd_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_data_string(const dmrgo_dmrd_data_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.DecodeBridge. DecodeBridge decodes the OpenBridge data packet p: a 73-octet DMRD or an 85 or 89-octet DMRE packet. */
 int dmrgo_dmrd_decode_bridge(const uint8_t *p, size_t p_len, dmrgo_dmrd_bridge_t *out);
 /* Go: dmrd.DecodeBridgeControl. DecodeBridgeControl decodes the FreeDMR OpenBridge control packet p. */
@@ -9845,27 +9845,27 @@ int dmrgo_dmrd_dialect_string(dmrgo_dmrd_dialect_t self, char *out, size_t out_c
 /* Go: dmrd.FrameType.String. String returns the name of the frame type. */
 int dmrgo_dmrd_frame_type_string(dmrgo_dmrd_frame_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.HBRPConfig.Callsign. Callsign returns the callsign of the repeater. */
-int dmrgo_dmrd_hbrp_config_callsign(dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_hbrp_config_callsign(const dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.HBRPConfig.ColorCode. ColorCode returns the color code, 2 digits. */
-int dmrgo_dmrd_hbrp_config_color_code(dmrgo_dmrd_hbrp_config_t *self, dmrgo_enums_color_code_t *out);
+int dmrgo_dmrd_hbrp_config_color_code(const dmrgo_dmrd_hbrp_config_t *self, dmrgo_enums_color_code_t *out);
 /* Go: dmrd.HBRPConfig.Description. Description returns the description of the repeater as free text. */
-int dmrgo_dmrd_hbrp_config_description(dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_hbrp_config_description(const dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.HBRPConfig.Height. Height returns the antenna height above ground in meters, 3 digits. */
-int dmrgo_dmrd_hbrp_config_height(dmrgo_dmrd_hbrp_config_t *self, uint16_t *out);
+int dmrgo_dmrd_hbrp_config_height(const dmrgo_dmrd_hbrp_config_t *self, uint16_t *out);
 /* Go: dmrd.HBRPConfig.ID. ID returns the repeater ID, 8 hex digits. */
-int dmrgo_dmrd_hbrp_config_id(dmrgo_dmrd_hbrp_config_t *self, uint32_t *out);
+int dmrgo_dmrd_hbrp_config_id(const dmrgo_dmrd_hbrp_config_t *self, uint32_t *out);
 /* Go: dmrd.HBRPConfig.Latitude. Latitude returns the latitude as text, 8 characters, North positive. */
-int dmrgo_dmrd_hbrp_config_latitude(dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_hbrp_config_latitude(const dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.HBRPConfig.Location. Location returns the location of the repeater as free text. */
-int dmrgo_dmrd_hbrp_config_location(dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_hbrp_config_location(const dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.HBRPConfig.Longitude. Longitude returns the longitude as text, 9 characters, East positive. */
-int dmrgo_dmrd_hbrp_config_longitude(dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_hbrp_config_longitude(const dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.HBRPConfig.PackageID. PackageID returns the package and its version. */
-int dmrgo_dmrd_hbrp_config_package_id(dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_hbrp_config_package_id(const dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.HBRPConfig.Power. Power returns the transmit power in dBm, 2 digits. */
-int dmrgo_dmrd_hbrp_config_power(dmrgo_dmrd_hbrp_config_t *self, uint8_t *out);
+int dmrgo_dmrd_hbrp_config_power(const dmrgo_dmrd_hbrp_config_t *self, uint8_t *out);
 /* Go: dmrd.HBRPConfig.RXFrequency. RXFrequency returns the receive frequency in Hz, 9 digits. */
-int dmrgo_dmrd_hbrp_config_rx_frequency(dmrgo_dmrd_hbrp_config_t *self, uint32_t *out);
+int dmrgo_dmrd_hbrp_config_rx_frequency(const dmrgo_dmrd_hbrp_config_t *self, uint32_t *out);
 /* Go: dmrd.HBRPConfig.Reset. Reset sets c to an empty HBRPConfig: the fixed octets, spaces in the text fields and zero in the number fields. */
 int dmrgo_dmrd_hbrp_config_reset(dmrgo_dmrd_hbrp_config_t *self);
 /* Go: dmrd.HBRPConfig.SetCallsign. SetCallsign sets the callsign of the repeater. */
@@ -9897,49 +9897,49 @@ int dmrgo_dmrd_hbrp_config_set_tx_frequency(dmrgo_dmrd_hbrp_config_t *self, uint
 /* Go: dmrd.HBRPConfig.SetURL. SetURL sets the web page of the repeater. */
 int dmrgo_dmrd_hbrp_config_set_url(dmrgo_dmrd_hbrp_config_t *self, const uint8_t *v, size_t v_len);
 /* Go: dmrd.HBRPConfig.SoftwareID. SoftwareID returns the software and its version. */
-int dmrgo_dmrd_hbrp_config_software_id(dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_hbrp_config_software_id(const dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.HBRPConfig.TXFrequency. TXFrequency returns the transmit frequency in Hz, 9 digits. */
-int dmrgo_dmrd_hbrp_config_tx_frequency(dmrgo_dmrd_hbrp_config_t *self, uint32_t *out);
+int dmrgo_dmrd_hbrp_config_tx_frequency(const dmrgo_dmrd_hbrp_config_t *self, uint32_t *out);
 /* Go: dmrd.HBRPConfig.URL. URL returns the web page of the repeater. */
-int dmrgo_dmrd_hbrp_config_url(dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_hbrp_config_url(const dmrgo_dmrd_hbrp_config_t *self, uint8_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.HBRPConfigOf. HBRPConfigOf returns p as an HBRPConfig without a copy, with the errors of ConfigOf. */
 int dmrgo_dmrd_hbrp_config_of(const uint8_t *p, size_t p_len, dmrgo_dmrd_hbrp_config_t *out, bool *out_ok);
 /* Go: dmrd.LocalPosition.AppendBinary. AppendBinary appends the 14 octets of s to dst. */
-int dmrgo_dmrd_local_position_append_binary(dmrgo_dmrd_local_position_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_dmrd_local_position_append_binary(const dmrgo_dmrd_local_position_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.LocalPosition.LC. LC decodes the position as Position.LC does. */
-int dmrgo_dmrd_local_position_lc(dmrgo_dmrd_local_position_t *self, dmrgo_pdu_full_link_control_t *out);
+int dmrgo_dmrd_local_position_lc(const dmrgo_dmrd_local_position_t *self, dmrgo_pdu_full_link_control_t *out);
 /* Go: dmrd.LocalPosition.LCInto. LCInto decodes the position into dst as Position.LCInto does. */
-int dmrgo_dmrd_local_position_lc_into(dmrgo_dmrd_local_position_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *pl);
+int dmrgo_dmrd_local_position_lc_into(const dmrgo_dmrd_local_position_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *pl);
 /* Go: dmrd.LocalPosition.String. String returns the fields of s as text, for printing. */
-int dmrgo_dmrd_local_position_string(dmrgo_dmrd_local_position_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_local_position_string(const dmrgo_dmrd_local_position_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.LocalTalkerAlias.AppendBinary. AppendBinary appends the 15 octets of s to dst. */
-int dmrgo_dmrd_local_talker_alias_append_binary(dmrgo_dmrd_local_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_dmrd_local_talker_alias_append_binary(const dmrgo_dmrd_local_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.LocalTalkerAlias.LC. LC decodes the talker alias block as TalkerAlias.LC does. */
-int dmrgo_dmrd_local_talker_alias_lc(dmrgo_dmrd_local_talker_alias_t *self, dmrgo_pdu_full_link_control_t *out);
+int dmrgo_dmrd_local_talker_alias_lc(const dmrgo_dmrd_local_talker_alias_t *self, dmrgo_pdu_full_link_control_t *out);
 /* Go: dmrd.LocalTalkerAlias.LCInto. LCInto decodes the block into dst as TalkerAlias.LCInto does. */
-int dmrgo_dmrd_local_talker_alias_lc_into(dmrgo_dmrd_local_talker_alias_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *p);
+int dmrgo_dmrd_local_talker_alias_lc_into(const dmrgo_dmrd_local_talker_alias_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *p);
 /* Go: dmrd.LocalTalkerAlias.String. String returns the fields of s as text, for printing. */
-int dmrgo_dmrd_local_talker_alias_string(dmrgo_dmrd_local_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_local_talker_alias_string(const dmrgo_dmrd_local_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.ParseDMRPlusOptions. ParseDMRPlusOptions parses a DMR+ startup options text: Key=Value pairs separated by semicolons, with spaces around them ignored. */
 int dmrgo_dmrd_parse_dmr_plus_options(const uint8_t *text, size_t text_len, dmrgo_dmrd_dmr_plus_options_t *out);
 /* Go: dmrd.ParseFreeDMROptions. ParseFreeDMROptions parses a FreeDMR options text as FreeDMR does: Key=Value pairs separated by semicolons, keys in the exact case, the last pair of a key wins, and pairs with no "=" or more than one are skipped. */
 int dmrgo_dmrd_parse_free_dmr_options(const uint8_t *text, size_t text_len, dmrgo_dmrd_free_dmr_options_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: dmrd.Position.AppendBinary. AppendBinary appends the 14 or 18 octets of s to dst: Size selects the length, and 0 means 14. */
-int dmrgo_dmrd_position_append_binary(dmrgo_dmrd_position_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_dmrd_position_append_binary(const dmrgo_dmrd_position_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.Position.LC. LC decodes the position as the GPS Info Full LC it came from: FLCO GPS Info, standard FID, and Data. */
-int dmrgo_dmrd_position_lc(dmrgo_dmrd_position_t *self, dmrgo_pdu_full_link_control_t *out);
+int dmrgo_dmrd_position_lc(const dmrgo_dmrd_position_t *self, dmrgo_pdu_full_link_control_t *out);
 /* Go: dmrd.Position.LCInto. LCInto decodes the position into dst as LC does, with the payload struct in pl as pdu.DecodeFullLinkControlBytesInto places it. */
-int dmrgo_dmrd_position_lc_into(dmrgo_dmrd_position_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *pl);
+int dmrgo_dmrd_position_lc_into(const dmrgo_dmrd_position_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *pl);
 /* Go: dmrd.Position.String. String returns the fields of s as text, for printing. */
-int dmrgo_dmrd_position_string(dmrgo_dmrd_position_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_position_string(const dmrgo_dmrd_position_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.TalkerAlias.AppendBinary. AppendBinary appends the 15 or 19 octets of s to dst: Size selects the length, and 0 means 15. */
-int dmrgo_dmrd_talker_alias_append_binary(dmrgo_dmrd_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_dmrd_talker_alias_append_binary(const dmrgo_dmrd_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.TalkerAlias.LC. LC decodes the talker alias block as the Full LC it came from: FLCO Talker Alias Header plus Type, standard FID, and Data. */
-int dmrgo_dmrd_talker_alias_lc(dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_full_link_control_t *out);
+int dmrgo_dmrd_talker_alias_lc(const dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_full_link_control_t *out);
 /* Go: dmrd.TalkerAlias.LCInto. LCInto decodes the block into dst as LC does, with the payload struct in p as pdu.DecodeFullLinkControlBytesInto places it. */
-int dmrgo_dmrd_talker_alias_lc_into(dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *p);
+int dmrgo_dmrd_talker_alias_lc_into(const dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *p);
 /* Go: dmrd.TalkerAlias.String. String returns the fields of s as text, for printing. */
-int dmrgo_dmrd_talker_alias_string(dmrgo_dmrd_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_dmrd_talker_alias_string(const dmrgo_dmrd_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_dmrd_auth_bridge_key_free frees the handle. self may be NULL. */
 int dmrgo_dmrd_auth_bridge_key_free(dmrgo_dmrd_auth_bridge_key_t *self);
 /* dmrgo_dmrd_auth_bridge_key_sign_need sets *items and *arena to the room that dmrgo_dmrd_auth_bridge_key_sign needs for these arguments, without a change to the handle. */
@@ -9965,7 +9965,7 @@ int dmrgo_dmrd_session_bridge_packet_need(dmrgo_dmrd_session_bridge_t *self, dmr
 /* Go: session.Bridge.Packet. Packet takes the packet p from the peer. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_dmrd_session_bridge_packet_need gives. */
 int dmrgo_dmrd_session_bridge_packet(dmrgo_dmrd_session_bridge_t *self, dmrgo_duration_t now, const uint8_t *p, size_t p_len, dmrgo_dmrd_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: session.Bridge.Sign. Sign writes the signature of the OpenBridge packet p, as auth.BridgeKey.Sign does. */
-int dmrgo_dmrd_session_bridge_sign(dmrgo_dmrd_session_bridge_t *self, const uint8_t *p, size_t p_len);
+int dmrgo_dmrd_session_bridge_sign(dmrgo_dmrd_session_bridge_t *self, uint8_t *p, size_t p_len);
 /* Go: session.Bridge.State. State returns StateRunning when the peer sent a packet with a good signature within Timeout, and StateIdle before that and after. */
 int dmrgo_dmrd_session_bridge_state(dmrgo_dmrd_session_bridge_t *self, dmrgo_dmrd_session_state_t *out);
 /* dmrgo_dmrd_session_bridge_tick_need sets *items and *arena to the room that dmrgo_dmrd_session_bridge_tick needs for these arguments, without a change to the handle. */
@@ -10009,7 +10009,7 @@ int dmrgo_dmrd_session_master_tick(dmrgo_dmrd_session_master_t *self, dmrgo_dura
 /* Go: session.NewBridge. NewBridge returns a Bridge for cfg. */
 int dmrgo_dmrd_session_new_bridge(const dmrgo_dmrd_session_bridge_config_t *cfg, dmrgo_dmrd_session_bridge_t **out);
 /* Go: session.NewMaster. NewMaster returns a Master for cfg in StateIdle. */
-int dmrgo_dmrd_session_new_master(dmrgo_dmrd_session_master_config_t *cfg, dmrgo_dmrd_session_master_t **out);
+int dmrgo_dmrd_session_new_master(const dmrgo_dmrd_session_master_config_t *cfg, dmrgo_dmrd_session_master_t **out);
 /* Go: session.NewPeer. NewPeer returns a Peer for cfg. */
 int dmrgo_dmrd_session_new_peer(const dmrgo_dmrd_session_peer_config_t *cfg, dmrgo_dmrd_session_peer_t **out);
 /* Go: session.OutputKind.String. String returns the name of the OutputKind. */
@@ -10045,13 +10045,13 @@ int dmrgo_hytera_decode_heartbeat(const uint8_t *p, size_t p_len, dmrgo_hytera_h
 /* Go: hytera.DecodeP2P. DecodeP2P decodes the P2P command p. */
 int dmrgo_hytera_decode_p2p(const uint8_t *p, size_t p_len, dmrgo_hytera_p2p_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: hytera.Frame.AppendBinary. AppendBinary appends the 72-octet frame to dst. */
-int dmrgo_hytera_frame_append_binary(dmrgo_hytera_frame_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_hytera_frame_append_binary(const dmrgo_hytera_frame_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: hytera.Frame.Call. Call returns the call of the frame: target is Destination and source is Source. */
-int dmrgo_hytera_frame_call(dmrgo_hytera_frame_t *self, bool *group, uint32_t *target, uint32_t *source);
+int dmrgo_hytera_frame_call(const dmrgo_hytera_frame_t *self, bool *group, uint32_t *target, uint32_t *source);
 /* Go: hytera.Frame.HasBurst. HasBurst reports whether Burst holds a burst: false for SlotTypeSync and SlotTypeWakeup, whose payload is not an ETSI burst. */
 int dmrgo_hytera_frame_has_burst(const dmrgo_hytera_frame_t *self, bool *out);
 /* Go: hytera.Frame.Hint. Hint returns what the frame tells about its burst, for the service machines: the slot, the voice position or data type from SlotType, and the sequence number (8 bits). */
-int dmrgo_hytera_frame_hint(dmrgo_hytera_frame_t *self, dmrgo_layer2_hint_t *out);
+int dmrgo_hytera_frame_hint(const dmrgo_hytera_frame_t *self, dmrgo_layer2_hint_t *out);
 /* Go: hytera.Frame.SetCall. SetCall sets CallType to 0x01 for a group call and 0x00 for a private call, as a Hytera repeater sends them, and Destination and Source. */
 int dmrgo_hytera_frame_set_call(dmrgo_hytera_frame_t *self, bool group, uint32_t target, uint32_t source);
 /* Go: hytera.Frame.SetHint. SetHint sets SlotType from what h says the burst is, as a machine Output gives it: KindVoice with a VoiceBurst of A to F, or KindData with a DataType. */
@@ -10107,9 +10107,9 @@ int dmrgo_ipsc_mode_ts2(dmrgo_ipsc_mode_t self, uint8_t *out);
 /* Go: ipsc.Opcode.String. String returns the name of the opcode. */
 int dmrgo_ipsc_opcode_string(dmrgo_ipsc_opcode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: ipsc.Payload.RSSI. RSSI returns the last two trailer octets and whether the packet has them. */
-int dmrgo_ipsc_payload_rssi(dmrgo_ipsc_payload_t *self, uint16_t *value, bool *ok);
+int dmrgo_ipsc_payload_rssi(const dmrgo_ipsc_payload_t *self, uint16_t *value, bool *ok);
 /* Go: ipsc.Payload.SlotType. SlotType returns the slot type octet of the trailer and whether the packet has one. */
-int dmrgo_ipsc_payload_slot_type(dmrgo_ipsc_payload_t *self, dmrgo_pdu_slot_type_info_t *slot_type_info, bool *ok);
+int dmrgo_ipsc_payload_slot_type(const dmrgo_ipsc_payload_t *self, dmrgo_pdu_slot_type_info_t *slot_type_info, bool *ok);
 /* dmrgo_ipsc_peer_list_free frees the handle. self may be NULL. */
 int dmrgo_ipsc_peer_list_free(dmrgo_ipsc_peer_list_t *self);
 /* Go: ipsc.PeerList.Entry. Entry returns entry i, or the zero PeerEntry when i is not below Len. */
@@ -10121,19 +10121,19 @@ int dmrgo_ipsc_peer_list_of(const uint8_t *p, size_t p_len, dmrgo_ipsc_peer_list
 /* Go: ipsc.Raw.AppendBinary. AppendBinary appends r to dst. */
 int dmrgo_ipsc_raw_append_binary(const dmrgo_ipsc_raw_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ipsc.Stream.Fill. Fill sets CallSeq, CallControl and the RTP header of u: Flags 0x80, the marker bit on the first packet of the call, PayloadType 0x5D, or 0x5E with the end flag of Info on the last packet, and Seq and Timestamp. */
-int dmrgo_ipsc_stream_fill(dmrgo_ipsc_stream_t *self, const dmrgo_ipsc_user_t *u, bool last);
+int dmrgo_ipsc_stream_fill(dmrgo_ipsc_stream_t *self, dmrgo_ipsc_user_t *u, bool last);
 /* Go: ipsc.Stream.Skip. Skip counts Seq up by n and Timestamp by 480 for each of n bursts that were lost, so that the next packet shows the gap. */
 int dmrgo_ipsc_stream_skip(dmrgo_ipsc_stream_t *self, uint16_t n);
 /* Go: ipsc.User.AppendBinary. AppendBinary appends the packet u to dst, without the authentication trailer. */
-int dmrgo_ipsc_user_append_binary(dmrgo_ipsc_user_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_ipsc_user_append_binary(const dmrgo_ipsc_user_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ipsc.User.Call. Call returns the call of the packet: group for OpGroupVoice and OpGroupData, target is Destination and source is Source. */
-int dmrgo_ipsc_user_call(dmrgo_ipsc_user_t *self, bool *group, uint32_t *target, uint32_t *source);
+int dmrgo_ipsc_user_call(const dmrgo_ipsc_user_t *self, bool *group, uint32_t *target, uint32_t *source);
 /* Go: ipsc.User.Hint. Hint returns what the packet tells about its burst, for the service machines: the slot from the call info, the RTP sequence number (16 bits), the call control as the stream, burst A or E from the voice layout (a layer2.PositionTracker places B, C, D and F), the data type of a data packet, EndWeak for the end flag on a voice packet, EndStrong on a terminator or a data packet, and SyncLost for BurstSyncLost. */
-int dmrgo_ipsc_user_hint(dmrgo_ipsc_user_t *self, dmrgo_layer2_hint_t *out);
+int dmrgo_ipsc_user_hint(const dmrgo_ipsc_user_t *self, dmrgo_layer2_hint_t *out);
 /* Go: ipsc.User.IsVoice. IsVoice reports whether u carries a voice burst. */
 int dmrgo_ipsc_user_is_voice(const dmrgo_ipsc_user_t *self, bool *out);
 /* Go: ipsc.User.RawBurst. RawBurst rebuilds the 264-bit burst of the packet. */
-int dmrgo_ipsc_user_raw_burst(dmrgo_ipsc_user_t *self, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
+int dmrgo_ipsc_user_raw_burst(const dmrgo_ipsc_user_t *self, dmrgo_enums_color_code_t cc, dmrgo_layer2_sync_source_t src, dmrgo_layer2_raw_burst_t *out);
 /* Go: ipsc.User.SetCall. SetCall sets Destination, Source and the group or private opcode of the call. */
 int dmrgo_ipsc_user_set_call(dmrgo_ipsc_user_t *self, bool group, uint32_t target, uint32_t source);
 /* Go: ipsc.User.SetRawBurst. SetRawBurst sets Burst and Voice or Data from the 264-bit burst raw and what h says it is, as a machine Output gives it, in the form an XPR 8400 sends: KindVoice with a VoiceBurst of A to F, which picks the layout (the full LC of burst E stays as it is in u.Voice.LC), or KindData with a DataType. */
@@ -10245,9 +10245,9 @@ int dmrgo_ipsc_session_state_string(dmrgo_ipsc_session_state_t self, char *out, 
 /* Go: session.VersionDefault. VersionDefault returns the protocol version that a Peer or Master sends when its config leaves Version zero, as DMRlink sends it. */
 int dmrgo_ipsc_session_version_default(uint8_t out[4]);
 /* Go: mmdvm.Ack.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
-int dmrgo_mmdvm_ack_append_binary(dmrgo_mmdvm_ack_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_mmdvm_ack_append_binary(const dmrgo_mmdvm_ack_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.Ack.String. String returns the fields of s as text, for printing. */
-int dmrgo_mmdvm_ack_string(dmrgo_mmdvm_ack_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_mmdvm_ack_string(const dmrgo_mmdvm_ack_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: mmdvm.AppendFrame. AppendFrame appends a frame of c with payload to dst: the short form up to 255 octets in all, the long form above. */
 int dmrgo_mmdvm_append_frame(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_mmdvm_command_t c, const uint8_t *payload, size_t payload_len);
 /* Go: mmdvm.Capabilities.Has. Has reports whether c has every bit of m. */
@@ -10255,13 +10255,13 @@ int dmrgo_mmdvm_capabilities_has(dmrgo_mmdvm_capabilities_t self, dmrgo_mmdvm_ca
 /* Go: mmdvm.Command.String. String returns the name of the command. */
 int dmrgo_mmdvm_command_string(dmrgo_mmdvm_command_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: mmdvm.ConfigV1.AppendBinary. AppendBinary appends the 23 octets of s to dst. */
-int dmrgo_mmdvm_config_v1_append_binary(dmrgo_mmdvm_config_v1_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_mmdvm_config_v1_append_binary(const dmrgo_mmdvm_config_v1_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.ConfigV1.String. String returns the fields of s as text, for printing. */
-int dmrgo_mmdvm_config_v1_string(dmrgo_mmdvm_config_v1_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_mmdvm_config_v1_string(const dmrgo_mmdvm_config_v1_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: mmdvm.ConfigV2.AppendBinary. AppendBinary appends the 37 octets of s to dst. */
-int dmrgo_mmdvm_config_v2_append_binary(dmrgo_mmdvm_config_v2_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_mmdvm_config_v2_append_binary(const dmrgo_mmdvm_config_v2_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.ConfigV2.String. String returns the fields of s as text, for printing. */
-int dmrgo_mmdvm_config_v2_string(dmrgo_mmdvm_config_v2_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_mmdvm_config_v2_string(const dmrgo_mmdvm_config_v2_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: mmdvm.Control.DataSync. DataSync reports a burst with a data SYNC. */
 int dmrgo_mmdvm_control_data_sync(dmrgo_mmdvm_control_t self, bool *out);
 /* Go: mmdvm.Control.DataType. DataType returns the data type of a burst with a data SYNC: the low nibble. */
@@ -10273,33 +10273,33 @@ int dmrgo_mmdvm_control_n(dmrgo_mmdvm_control_t self, uint8_t *out);
 /* Go: mmdvm.Control.VoiceSync. VoiceSync reports voice burst A. */
 int dmrgo_mmdvm_control_voice_sync(dmrgo_mmdvm_control_t self, bool *out);
 /* Go: mmdvm.DMRAbort.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
-int dmrgo_mmdvm_dmr_abort_append_binary(dmrgo_mmdvm_dmr_abort_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_mmdvm_dmr_abort_append_binary(const dmrgo_mmdvm_dmr_abort_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.DMRAbort.String. String returns the fields of s as text, for printing. */
-int dmrgo_mmdvm_dmr_abort_string(dmrgo_mmdvm_dmr_abort_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_mmdvm_dmr_abort_string(const dmrgo_mmdvm_dmr_abort_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: mmdvm.DMRAloha.AppendBinary. AppendBinary appends the 33 octets of s to dst. */
-int dmrgo_mmdvm_dmr_aloha_append_binary(dmrgo_mmdvm_dmr_aloha_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_mmdvm_dmr_aloha_append_binary(const dmrgo_mmdvm_dmr_aloha_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.DMRAloha.String. String returns the fields of s as text, for printing. */
-int dmrgo_mmdvm_dmr_aloha_string(dmrgo_mmdvm_dmr_aloha_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_mmdvm_dmr_aloha_string(const dmrgo_mmdvm_dmr_aloha_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: mmdvm.DMRData.AppendBinary. AppendBinary appends the payload to dst: nothing for a lost frame, else the control octet, the burst and the RSSI when HasRSSI is set. */
-int dmrgo_mmdvm_dmr_data_append_binary(dmrgo_mmdvm_dmr_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_mmdvm_dmr_data_append_binary(const dmrgo_mmdvm_dmr_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.DMRData.Command. Command returns the command of the frame: CommandDMRData1 or CommandDMRData2, or CommandDMRLost1 or CommandDMRLost2 when Lost is set. */
 int dmrgo_mmdvm_dmr_data_command(const dmrgo_mmdvm_dmr_data_t *self, dmrgo_mmdvm_command_t *out);
 /* Go: mmdvm.DMRData.Hint. Hint returns what the frame tells about its burst, for the service machines: the slot, and from Control the data type, voice burst A, or voice bursts B to F from N 1 to 5. */
-int dmrgo_mmdvm_dmr_data_hint(dmrgo_mmdvm_dmr_data_t *self, dmrgo_layer2_hint_t *out);
+int dmrgo_mmdvm_dmr_data_hint(const dmrgo_mmdvm_dmr_data_t *self, dmrgo_layer2_hint_t *out);
 /* Go: mmdvm.DMRData.SetHint. SetHint sets Control from what h says the burst is, as a machine Output gives it: ControlDataSync with the data type for KindData, ControlVoiceSync for voice burst A, and N 1 to 5 for voice bursts B to F. */
 int dmrgo_mmdvm_dmr_data_set_hint(dmrgo_mmdvm_dmr_data_t *self, const dmrgo_layer2_hint_t *h);
 /* Go: mmdvm.DMRShortLC.AppendBinary. AppendBinary appends the 9 octets of s to dst. */
-int dmrgo_mmdvm_dmr_short_lc_append_binary(dmrgo_mmdvm_dmr_short_lc_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_mmdvm_dmr_short_lc_append_binary(const dmrgo_mmdvm_dmr_short_lc_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.DMRShortLC.ShortLC. ShortLC decodes the Short LC that s carries. */
 int dmrgo_mmdvm_dmr_short_lc_short_lc(const dmrgo_mmdvm_dmr_short_lc_t *self, dmrgo_pdu_short_lc_t *out);
 /* Go: mmdvm.DMRShortLC.ShortLCInto. ShortLCInto decodes the Short LC that s carries into dst, with the payload struct in p as pdu.DecodeShortLCInto places it, and the FEC field as ShortLC sets it. */
 int dmrgo_mmdvm_dmr_short_lc_short_lc_into(const dmrgo_mmdvm_dmr_short_lc_t *self, dmrgo_pdu_short_lc_t *dst, dmrgo_pdu_short_lc_payloads_t *p);
 /* Go: mmdvm.DMRShortLC.String. String returns the fields of s as text, for printing. */
-int dmrgo_mmdvm_dmr_short_lc_string(dmrgo_mmdvm_dmr_short_lc_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_mmdvm_dmr_short_lc_string(const dmrgo_mmdvm_dmr_short_lc_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: mmdvm.DMRStart.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
-int dmrgo_mmdvm_dmr_start_append_binary(dmrgo_mmdvm_dmr_start_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_mmdvm_dmr_start_append_binary(const dmrgo_mmdvm_dmr_start_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.DMRStart.String. String returns the fields of s as text, for printing. */
-int dmrgo_mmdvm_dmr_start_string(dmrgo_mmdvm_dmr_start_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_mmdvm_dmr_start_string(const dmrgo_mmdvm_dmr_start_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: mmdvm.Debug.AppendBinary. AppendBinary appends the payload to dst: the text and the numbers. */
 int dmrgo_mmdvm_debug_append_binary(const dmrgo_mmdvm_debug_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.Debug.Count. Count returns the number of numbers: 0 for CommandDebug1 and CommandDebugDump, up to 4 for CommandDebug5. */
@@ -10337,49 +10337,49 @@ int dmrgo_mmdvm_decode_version(const uint8_t *p, size_t p_len, dmrgo_mmdvm_versi
 /* Go: mmdvm.Mode.String. String returns the name of the mode. */
 int dmrgo_mmdvm_mode_string(dmrgo_mmdvm_mode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: mmdvm.Nak.AppendBinary. AppendBinary appends the 2 octets of s to dst. */
-int dmrgo_mmdvm_nak_append_binary(dmrgo_mmdvm_nak_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_mmdvm_nak_append_binary(const dmrgo_mmdvm_nak_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.Nak.String. String returns the fields of s as text, for printing. */
-int dmrgo_mmdvm_nak_string(dmrgo_mmdvm_nak_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_mmdvm_nak_string(const dmrgo_mmdvm_nak_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: mmdvm.NewDMRShortLC. NewDMRShortLC returns the CommandDMRShortLC payload that carries slc: its BPTC coding, the 4 CACH fragments of 17 bits one after the other, as MMDVMHost CDMRShortLC encodes it. */
 int dmrgo_mmdvm_new_dmr_short_lc(const dmrgo_pdu_short_lc_t *slc, dmrgo_mmdvm_dmr_short_lc_t *out);
 /* Go: mmdvm.Next. Next finds the frame at the start of p, as the firmware and MMDVMHost read the stream. */
 int dmrgo_mmdvm_next(const uint8_t *p, size_t p_len, dmrgo_mmdvm_frame_t *f, int64_t *n, dmrgo_mmdvm_status_t *st, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: mmdvm.SetFreq.AppendBinary. AppendBinary appends the 9, 10 or 14 octets of s to dst: Size selects the length, and 0 means 9. */
-int dmrgo_mmdvm_set_freq_append_binary(dmrgo_mmdvm_set_freq_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_mmdvm_set_freq_append_binary(const dmrgo_mmdvm_set_freq_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.SetFreq.String. String returns the fields of s as text, for printing. */
-int dmrgo_mmdvm_set_freq_string(dmrgo_mmdvm_set_freq_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_mmdvm_set_freq_string(const dmrgo_mmdvm_set_freq_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: mmdvm.SetMode.AppendBinary. AppendBinary appends the 1 octet of s to dst. */
-int dmrgo_mmdvm_set_mode_append_binary(dmrgo_mmdvm_set_mode_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_mmdvm_set_mode_append_binary(const dmrgo_mmdvm_set_mode_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.SetMode.String. String returns the fields of s as text, for printing. */
-int dmrgo_mmdvm_set_mode_string(dmrgo_mmdvm_set_mode_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_mmdvm_set_mode_string(const dmrgo_mmdvm_set_mode_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: mmdvm.StatusV1.AppendBinary. AppendBinary appends the 11 octets of s to dst. */
-int dmrgo_mmdvm_status_v1_append_binary(dmrgo_mmdvm_status_v1_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_mmdvm_status_v1_append_binary(const dmrgo_mmdvm_status_v1_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.StatusV1.String. String returns the fields of s as text, for printing. */
-int dmrgo_mmdvm_status_v1_string(dmrgo_mmdvm_status_v1_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_mmdvm_status_v1_string(const dmrgo_mmdvm_status_v1_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: mmdvm.StatusV2.AppendBinary. AppendBinary appends the 17 octets of s to dst. */
-int dmrgo_mmdvm_status_v2_append_binary(dmrgo_mmdvm_status_v2_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_mmdvm_status_v2_append_binary(const dmrgo_mmdvm_status_v2_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.StatusV2.String. String returns the fields of s as text, for printing. */
-int dmrgo_mmdvm_status_v2_string(dmrgo_mmdvm_status_v2_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_mmdvm_status_v2_string(const dmrgo_mmdvm_status_v2_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: mmdvm.Version.AppendBinary. AppendBinary appends the payload to dst: for protocol 2 the protocol, the capabilities, the CPU, the UDID and the description, else the protocol and the description. */
 int dmrgo_mmdvm_version_append_binary(const dmrgo_mmdvm_version_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.Access.Applies. Applies reports whether the C_ALOHA population subdivision lets the MS with address ms make a random access (ETSI TS 102 361-4 clause 6.2.1.1.1). */
-int dmrgo_trunk_access_applies(dmrgo_trunk_access_t *self, uint32_t ms, bool emergency, bool *out);
+int dmrgo_trunk_access_applies(const dmrgo_trunk_access_t *self, uint32_t ms, bool emergency, bool *out);
 /* Go: trunk.Appended.Addresses. Addresses returns the addresses of a in the address format. */
-int dmrgo_trunk_appended_addresses(dmrgo_trunk_appended_t *self, dmrgo_trunk_address_list_t *out);
+int dmrgo_trunk_appended_addresses(const dmrgo_trunk_appended_t *self, dmrgo_trunk_address_list_t *out);
 /* Go: trunk.Appended.Binary. Binary appends the data of a in the binary format to dst, packed most significant bit first, and returns dst and the number of bits. */
-int dmrgo_trunk_appended_binary(dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t *n);
+int dmrgo_trunk_appended_binary(const dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t *n);
 /* Go: trunk.Appended.Digits. Digits appends the dialled digits of a in the BCD format to dst as the characters '0' to '9', '*' and '#', and returns dst. */
-int dmrgo_trunk_appended_digits(dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_trunk_appended_digits(const dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.Appended.IP. IP returns the IP address of a in the IP format, and whether it is IPv6. */
-int dmrgo_trunk_appended_ip(dmrgo_trunk_appended_t *self, uint8_t ip[16], bool *v6);
+int dmrgo_trunk_appended_ip(const dmrgo_trunk_appended_t *self, uint8_t ip[16], bool *v6);
 /* Go: trunk.Appended.LIP. LIP appends the octets of the LIP PDU of a to dst and returns dst. */
-int dmrgo_trunk_appended_lip(dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_trunk_appended_lip(const dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.Appended.Mixed. Mixed returns the address of a in the mixed format, and whether it is the One-key_talkgroup of DGNA. */
-int dmrgo_trunk_appended_mixed(dmrgo_trunk_appended_t *self, uint32_t *addr, bool *one_key);
+int dmrgo_trunk_appended_mixed(const dmrgo_trunk_appended_t *self, uint32_t *addr, bool *one_key);
 /* Go: trunk.Appended.NMEALong. NMEALong returns the Long NMEA Format Specified of a. */
-int dmrgo_trunk_appended_nmea_long(dmrgo_trunk_appended_t *self, dmrgo_trunk_nmea_long_t *out);
+int dmrgo_trunk_appended_nmea_long(const dmrgo_trunk_appended_t *self, dmrgo_trunk_nmea_long_t *out);
 /* Go: trunk.Appended.NMEAShort. NMEAShort returns the Short NMEA format of a. */
-int dmrgo_trunk_appended_nmea_short(dmrgo_trunk_appended_t *self, dmrgo_trunk_nmea_short_t *out);
+int dmrgo_trunk_appended_nmea_short(const dmrgo_trunk_appended_t *self, dmrgo_trunk_nmea_short_t *out);
 /* Go: trunk.Appended.SetAddresses. SetAddresses sets a to the 1 to 15 addresses of list in the address format, in the fewest blocks that hold them. */
 int dmrgo_trunk_appended_set_addresses(dmrgo_trunk_appended_t *self, bool one_key, const uint32_t *list, size_t list_len);
 /* Go: trunk.Appended.SetBinary. SetBinary sets a to the first n bits of b, packed most significant bit first, in the binary format with the end marker for variable length data: a 0 bit after the data and 1 bits to the end of the last block. */
@@ -10399,7 +10399,7 @@ int dmrgo_trunk_appended_set_nmea_short(dmrgo_trunk_appended_t *self, const dmrg
 /* Go: trunk.Appended.SetText. SetText sets a to the UTF-8 text in the format f: enums.UDTISO7 (up to 52 characters of ISO/IEC 646), enums.UDTISO8 (up to 46 characters of ISO/IEC 8859-1) or enums.UDTUTF16BE (up to 23 UTF-16 code units). */
 int dmrgo_trunk_appended_set_text(dmrgo_trunk_appended_t *self, dmrgo_enums_udt_format_t f, const uint8_t *text, size_t text_len);
 /* Go: trunk.Appended.Text. Text appends the text of a to dst as UTF-8 and returns dst, for the formats enums.UDTISO7, enums.UDTISO8 (read as ISO/IEC 8859-1), enums.UDTUTF16BE and enums.UDTMixed (the text after the address). */
-int dmrgo_trunk_appended_text(dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_trunk_appended_text(const dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_trunk_authenticator_free frees the handle. self may be NULL. */
 int dmrgo_trunk_authenticator_free(dmrgo_trunk_authenticator_t *self);
 /* Go: trunk.Authenticator.Response. Response returns the response of the MS addr to challenge. */
@@ -10409,9 +10409,9 @@ int dmrgo_trunk_authenticator_from_vtable(const dmrgo_trunk_authenticator_vtable
 /* dmrgo_trunk_capacity_plus_follower_free frees the handle. self may be NULL. */
 int dmrgo_trunk_capacity_plus_follower_free(dmrgo_trunk_capacity_plus_follower_t *self);
 /* dmrgo_trunk_capacity_plus_follower_burst_need sets *items and *arena to the room that dmrgo_trunk_capacity_plus_follower_burst needs for these arguments, without a change to the handle. */
-int dmrgo_trunk_capacity_plus_follower_burst_need(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, uint8_t cach[3], size_t *items, size_t *arena);
+int dmrgo_trunk_capacity_plus_follower_burst_need(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], size_t *items, size_t *arena);
 /* Go: trunk.CapacityPlusFollower.Burst. Burst decodes the burst raw with what the Hint h says about it, and the CACH field before it when cach is not nil, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_capacity_plus_follower_burst_need gives (DMRGO_TRUNK_CAPACITY_PLUS_FOLLOWER_BURST_MAX_ITEMS items). */
-int dmrgo_trunk_capacity_plus_follower_burst(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, uint8_t cach[3], dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_trunk_capacity_plus_follower_burst(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.CapacityPlusFollower.Call. Call returns the grant of the call that the Follower follows. */
 int dmrgo_trunk_capacity_plus_follower_call(dmrgo_trunk_capacity_plus_follower_t *self, dmrgo_trunk_grant_t *g, bool *ok);
 /* Go: trunk.CapacityPlusFollower.Deadline. Deadline returns the time at which the Follower needs a Tick. */
@@ -10439,7 +10439,7 @@ int dmrgo_trunk_channel_plan_free(dmrgo_trunk_channel_plan_t *self);
 /* Go: trunk.ChannelPlan.Add. Add adds c to the plan, or replaces the entry with the same number. */
 int dmrgo_trunk_channel_plan_add(dmrgo_trunk_channel_plan_t *self, const dmrgo_trunk_channel_t *c);
 /* Go: trunk.ChannelPlan.AddCdef. AddCdef adds the channel of the CdefParms of a CG_AP, MV_AP or BC_AP block to the plan, as Add does. */
-int dmrgo_trunk_channel_plan_add_cdef(dmrgo_trunk_channel_plan_t *self, dmrgo_layer3_cdef_parms_t *c);
+int dmrgo_trunk_channel_plan_add_cdef(dmrgo_trunk_channel_plan_t *self, const dmrgo_layer3_cdef_parms_t *c);
 /* Go: trunk.ChannelPlan.AddRule. AddRule adds r to the plan. */
 int dmrgo_trunk_channel_plan_add_rule(dmrgo_trunk_channel_plan_t *self, const dmrgo_trunk_channel_rule_t *r);
 /* Go: trunk.ChannelPlan.Len. Len returns the number of entries that Add made. */
@@ -10459,9 +10459,9 @@ int dmrgo_trunk_decode_usbd_poll_request(const uint8_t data[10], dmrgo_trunk_usb
 /* dmrgo_trunk_follower_free frees the handle. self may be NULL. */
 int dmrgo_trunk_follower_free(dmrgo_trunk_follower_t *self);
 /* dmrgo_trunk_follower_burst_need sets *items and *arena to the room that dmrgo_trunk_follower_burst needs for these arguments, without a change to the handle. */
-int dmrgo_trunk_follower_burst_need(dmrgo_trunk_follower_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, uint8_t cach[3], size_t *items, size_t *arena);
+int dmrgo_trunk_follower_burst_need(dmrgo_trunk_follower_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], size_t *items, size_t *arena);
 /* Go: trunk.Follower.Burst. Burst decodes the burst raw with what the Hint h says about it, and the CACH field before it when cach is not nil, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_follower_burst_need gives (DMRGO_TRUNK_FOLLOWER_BURST_MAX_ITEMS items). */
-int dmrgo_trunk_follower_burst(dmrgo_trunk_follower_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, uint8_t cach[3], dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_trunk_follower_burst(dmrgo_trunk_follower_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.Follower.Call. Call returns the grant of the call that the Follower follows. */
 int dmrgo_trunk_follower_call(dmrgo_trunk_follower_t *self, dmrgo_trunk_grant_t *g, bool *ok);
 /* Go: trunk.Follower.Deadline. Deadline returns the time at which the Follower needs a Tick. */
@@ -10489,9 +10489,9 @@ int dmrgo_trunk_follower_tick(dmrgo_trunk_follower_t *self, dmrgo_duration_t now
 /* Go: trunk.Follower.UDT. UDT returns the UDT delivery of the last OutputUDT. */
 int dmrgo_trunk_follower_udt(dmrgo_trunk_follower_t *self, dmrgo_trunk_udt_t **out);
 /* Go: trunk.Grant.Call. Call returns the voice.Call of a voice grant, for voice.Receiver.Expect. */
-int dmrgo_trunk_grant_call(dmrgo_trunk_grant_t *self, dmrgo_voice_call_t *out);
+int dmrgo_trunk_grant_call(const dmrgo_trunk_grant_t *self, dmrgo_voice_call_t *out);
 /* Go: trunk.Grant.Data. Data reports whether the grant is for packet data. */
-int dmrgo_trunk_grant_data(dmrgo_trunk_grant_t *self, bool *out);
+int dmrgo_trunk_grant_data(const dmrgo_trunk_grant_t *self, bool *out);
 /* dmrgo_trunk_hunt_list_new makes a zero trunk.HuntList. */
 int dmrgo_trunk_hunt_list_new(dmrgo_trunk_hunt_list_t **out);
 /* dmrgo_trunk_hunt_list_free frees the handle. self may be NULL. */
@@ -10505,9 +10505,9 @@ int dmrgo_trunk_hunt_list_len(dmrgo_trunk_hunt_list_t *self, int64_t *out);
 /* Go: trunk.HuntList.Withdraw. Withdraw removes the channel from the list and keeps the order of the others. */
 int dmrgo_trunk_hunt_list_withdraw(dmrgo_trunk_hunt_list_t *self, uint16_t channel, bool *out);
 /* Go: trunk.LIPShortReport.Encode. Encode encodes an LIPShortReport. */
-int dmrgo_trunk_lip_short_report_encode(dmrgo_trunk_lip_short_report_t *self, uint8_t out[10]);
+int dmrgo_trunk_lip_short_report_encode(const dmrgo_trunk_lip_short_report_t *self, uint8_t out[10]);
 /* Go: trunk.LIPShortReport.String. String returns the fields of s as text, for printing. */
-int dmrgo_trunk_lip_short_report_string(dmrgo_trunk_lip_short_report_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_trunk_lip_short_report_string(const dmrgo_trunk_lip_short_report_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_trunk_ms_free frees the handle. self may be NULL. */
 int dmrgo_trunk_ms_free(dmrgo_trunk_ms_t *self);
 /* Go: trunk.MS.AdviseIP. AdviseIP sends an IP connection advice: a registration by random access with IP_Inform, and the address by UDT when the TSCC asks for it with a C_AHOY from IPI. */
@@ -10521,9 +10521,9 @@ int dmrgo_trunk_ms_auth_response_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t n
 /* Go: trunk.MS.AuthResponse. AuthResponse sends response, the answer to the challenge of the last OutputAuthChallenge that auth.Response computes, to the TSCC: a C_ACKU, or a P_ACKU on a payload channel, with reason Authentication Response, in the slot after the challenge. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_auth_response_need gives (DMRGO_TRUNK_MS_AUTH_RESPONSE_MAX_ITEMS items). */
 int dmrgo_trunk_ms_auth_response(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, uint32_t response, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_trunk_ms_burst_need sets *items and *arena to the room that dmrgo_trunk_ms_burst needs for these arguments, without a change to the handle. */
-int dmrgo_trunk_ms_burst_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, uint8_t cach[3], size_t *items, size_t *arena);
+int dmrgo_trunk_ms_burst_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], size_t *items, size_t *arena);
 /* Go: trunk.MS.Burst. Burst decodes the burst raw with what the Hint h says about it, and the CACH field before it, in transmit order, when cach is not nil, as Follower.Burst does, runs the random access and the requests, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_burst_need gives (DMRGO_TRUNK_MS_BURST_MAX_ITEMS items). */
-int dmrgo_trunk_ms_burst(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, uint8_t cach[3], dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_trunk_ms_burst(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const uint8_t cach[3], dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.MS.Busy. Busy reports whether a registration, de-registration or call request runs. */
 int dmrgo_trunk_ms_busy(dmrgo_trunk_ms_t *self, bool *out);
 /* Go: trunk.MS.Call. Call asks the TSCC for a voice call to the talkgroup or MS target, by random access. */
@@ -10609,13 +10609,13 @@ int dmrgo_trunk_ms_tick(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, dmrgo_trun
 /* Go: trunk.MS.UDT. UDT returns the UDT delivery of the last OutputUDT, as Follower.UDT does. */
 int dmrgo_trunk_ms_udt(dmrgo_trunk_ms_t *self, dmrgo_trunk_udt_t **out);
 /* Go: trunk.NMEALong.Encode. Encode encodes an NMEALong. */
-int dmrgo_trunk_nmea_long_encode(dmrgo_trunk_nmea_long_t *self, uint8_t out[22]);
+int dmrgo_trunk_nmea_long_encode(const dmrgo_trunk_nmea_long_t *self, uint8_t out[22]);
 /* Go: trunk.NMEALong.String. String returns the fields of s as text, for printing. */
-int dmrgo_trunk_nmea_long_string(dmrgo_trunk_nmea_long_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_trunk_nmea_long_string(const dmrgo_trunk_nmea_long_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: trunk.NMEAShort.Encode. Encode encodes an NMEAShort. */
-int dmrgo_trunk_nmea_short_encode(dmrgo_trunk_nmea_short_t *self, uint8_t out[10]);
+int dmrgo_trunk_nmea_short_encode(const dmrgo_trunk_nmea_short_t *self, uint8_t out[10]);
 /* Go: trunk.NMEAShort.String. String returns the fields of s as text, for printing. */
-int dmrgo_trunk_nmea_short_string(dmrgo_trunk_nmea_short_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_trunk_nmea_short_string(const dmrgo_trunk_nmea_short_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: trunk.NewCapacityPlusFollower. NewCapacityPlusFollower returns a CapacityPlusFollower for cfg. */
 int dmrgo_trunk_new_capacity_plus_follower(const dmrgo_trunk_capacity_plus_config_t *cfg, dmrgo_trunk_capacity_plus_follower_t **out);
 /* Go: trunk.NewFollower. NewFollower returns a Follower for cfg. */
@@ -10643,9 +10643,9 @@ int dmrgo_trunk_tscc_diverted(dmrgo_trunk_tscc_t *self, uint32_t addr, dmrgo_lay
 /* Go: trunk.TSCC.ExpectAuth. ExpectAuth sets response as the answer that the TSCC accepts from the MS addr to the challenge of the last TSCCAuthChallenge for addr. */
 int dmrgo_trunk_tscc_expect_auth(dmrgo_trunk_tscc_t *self, uint32_t addr, uint32_t response);
 /* dmrgo_trunk_tscc_inbound_need sets *items and *arena to the room that dmrgo_trunk_tscc_inbound needs for these arguments, without a change to the handle. */
-int dmrgo_trunk_tscc_inbound_need(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+int dmrgo_trunk_tscc_inbound_need(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint16_t ch, dmrgo_enums_slot_t s, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 /* Go: trunk.TSCC.Inbound. Inbound takes the burst raw that the TSCC received on the inbound channel of carrier ch in slot s, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_tscc_inbound_need gives (DMRGO_TRUNK_TSCC_INBOUND_MAX_ITEMS items). */
-int dmrgo_trunk_tscc_inbound(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_trunk_tscc_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_trunk_tscc_inbound(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint16_t ch, dmrgo_enums_slot_t s, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_trunk_tscc_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: trunk.TSCC.Interrupt. Interrupt sends the RC command cmd to the MS that transmits on slot s of the payload channel ch, in the embedded signalling of the other slot of the carrier. */
 int dmrgo_trunk_tscc_interrupt(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint16_t ch, dmrgo_enums_slot_t s, dmrgo_enums_rc_command_t cmd);
 /* Go: trunk.TSCC.Kill. Kill asks the MS addr to disable itself for good, with a C_AHOY from KILLI, as Stun does. */
@@ -10695,17 +10695,17 @@ int dmrgo_trunk_udt_free(dmrgo_trunk_udt_t *self);
 /* Go: trunk.UDT.Appended. Appended returns the appended data of u, with the UDT Format and the pad nibbles of its header. */
 int dmrgo_trunk_udt_appended(dmrgo_trunk_udt_t *self, dmrgo_trunk_appended_t *out);
 /* Go: trunk.USBDLIPResponse.Encode. Encode encodes a USBDLIPResponse. */
-int dmrgo_trunk_usbd_lip_response_encode(dmrgo_trunk_usbd_lip_response_t *self, uint8_t out[10]);
+int dmrgo_trunk_usbd_lip_response_encode(const dmrgo_trunk_usbd_lip_response_t *self, uint8_t out[10]);
 /* Go: trunk.USBDLIPResponse.String. String returns the fields of s as text, for printing. */
-int dmrgo_trunk_usbd_lip_response_string(dmrgo_trunk_usbd_lip_response_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_trunk_usbd_lip_response_string(const dmrgo_trunk_usbd_lip_response_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: trunk.USBDPollRequest.Encode. Encode encodes a USBDPollRequest. */
-int dmrgo_trunk_usbd_poll_request_encode(dmrgo_trunk_usbd_poll_request_t *self, uint8_t out[10]);
+int dmrgo_trunk_usbd_poll_request_encode(const dmrgo_trunk_usbd_poll_request_t *self, uint8_t out[10]);
 /* Go: trunk.USBDPollRequest.String. String returns the fields of s as text, for printing. */
-int dmrgo_trunk_usbd_poll_request_string(dmrgo_trunk_usbd_poll_request_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+int dmrgo_trunk_usbd_poll_request_string(const dmrgo_trunk_usbd_poll_request_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: auth.Key.Response. Response returns the response of the MS to challenge, as the package function Response computes it, and true, for any address. */
-int dmrgo_trunk_auth_key_response(dmrgo_trunk_auth_key_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
+int dmrgo_trunk_auth_key_response(const dmrgo_trunk_auth_key_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
 /* Go: auth.Keys.Response. Response returns the response of the MS addr to challenge, and false when Entries has no key for addr or k is nil. */
-int dmrgo_trunk_auth_keys_response(dmrgo_trunk_auth_keys_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_trunk_auth_keys_response(const dmrgo_trunk_auth_keys_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
 /* Go: auth.Response. Response returns the 24-bit response to the challenge for the key K: the octets 257 to 259 of the RC4 keystream keyed with the 3 octets of the challenge, most significant first, and the 16 octets of K, exclusive-or psn. */
 int dmrgo_trunk_auth_response(uint32_t challenge, const uint8_t key[16], uint32_t psn, uint32_t *out);
 /* Go: vocoder.AMBESilence. AMBESilence returns the AMBE+2 frame of silence that MMDVMHost sends to fill a voice burst (DMR_SILENCE_DATA); EncodeAMBE72 of it is the slot B9E881526173002A6B. */
@@ -10831,9 +10831,9 @@ int dmrgo_voice_event_kind_string(dmrgo_voice_event_kind_t self, char *out, size
 /* dmrgo_voice_interrupter_free frees the handle. self may be NULL. */
 int dmrgo_voice_interrupter_free(dmrgo_voice_interrupter_t *self);
 /* dmrgo_voice_interrupter_burst_need sets *items and *arena to the room that dmrgo_voice_interrupter_burst needs for these arguments, without a change to the handle. */
-int dmrgo_voice_interrupter_burst_need(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+int dmrgo_voice_interrupter_burst_need(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 /* Go: voice.Interrupter.Burst. Burst decodes the burst raw of the call with what the Hint h says about it, runs it through the Interrupter as Decoded does, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_interrupter_burst_need gives (DMRGO_VOICE_INTERRUPTER_BURST_MAX_ITEMS items). */
-int dmrgo_voice_interrupter_burst(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_voice_interrupter_burst(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: voice.Interrupter.Cancel. Cancel ends the interrupt request without an output. */
 int dmrgo_voice_interrupter_cancel(dmrgo_voice_interrupter_t *self);
 /* Go: voice.Interrupter.Deadline. Deadline returns the time at which the Interrupter needs a Tick. */
@@ -10867,9 +10867,9 @@ int dmrgo_voice_output_kind_string(dmrgo_voice_output_kind_t self, char *out, si
 /* dmrgo_voice_receiver_free frees the handle. self may be NULL. */
 int dmrgo_voice_receiver_free(dmrgo_voice_receiver_t *self);
 /* dmrgo_voice_receiver_burst_need sets *items and *arena to the room that dmrgo_voice_receiver_burst needs for these arguments, without a change to the handle. */
-int dmrgo_voice_receiver_burst_need(dmrgo_voice_receiver_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+int dmrgo_voice_receiver_burst_need(dmrgo_voice_receiver_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 /* Go: voice.Receiver.Burst. Burst decodes the burst raw with what the Hint h says about it, runs it through the Receiver as Decoded does, and appends the events to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_receiver_burst_need gives. */
-int dmrgo_voice_receiver_burst(dmrgo_voice_receiver_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_voice_event_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_voice_receiver_burst(dmrgo_voice_receiver_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_voice_event_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: voice.Receiver.Deadline. Deadline returns the time at which the Receiver needs a Tick. */
 int dmrgo_voice_receiver_deadline(dmrgo_voice_receiver_t *self, dmrgo_duration_t *at, bool *ok);
 /* dmrgo_voice_receiver_decoded_need sets *items and *arena to the room that dmrgo_voice_receiver_decoded needs for these arguments, without a change to the handle. */
@@ -10895,9 +10895,9 @@ int dmrgo_voice_state_string(dmrgo_voice_state_t self, char *out, size_t out_cap
 /* dmrgo_voice_transmitter_free frees the handle. self may be NULL. */
 int dmrgo_voice_transmitter_free(dmrgo_voice_transmitter_t *self);
 /* dmrgo_voice_transmitter_burst_need sets *items and *arena to the room that dmrgo_voice_transmitter_burst needs for these arguments, without a change to the handle. */
-int dmrgo_voice_transmitter_burst_need(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
+int dmrgo_voice_transmitter_burst_need(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 /* Go: voice.Transmitter.Burst. Burst decodes the outbound burst raw with what the Hint h says about it, runs it through the Transmitter as Decoded does, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_transmitter_burst_need gives (DMRGO_VOICE_TRANSMITTER_BURST_MAX_ITEMS items). */
-int dmrgo_voice_transmitter_burst(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_voice_transmitter_burst(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: voice.Transmitter.Channel. Channel reports whether the logical channel is busy, from the activity that the caller sees on it, such as the AT bit of the CACH, the carrier, or a call with its own color code. */
 int dmrgo_voice_transmitter_channel(dmrgo_voice_transmitter_t *self, dmrgo_duration_t now, bool busy);
 /* Go: voice.Transmitter.Deadline. Deadline returns the time at which the Transmitter needs a Tick: the Due time of the next burst minus TransmitterConfig.Lead. */
