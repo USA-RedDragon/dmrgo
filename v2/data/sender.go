@@ -633,8 +633,10 @@ func (s *Sender) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, d
 }
 
 // Decoded takes the response to the confirmed messages in progress from
-// the decoded burst b, as Burst does. A nil b only runs the timers. For a
-// sliding window, the Status of the response is the N(S) of a message of
+// the decoded burst b, as Burst does. A nil b only runs the timers. An ACK
+// or SACK for a C_HEAD message whose Status is not the N(S) of the message
+// answers an earlier message, and is ignored (ETSI TS 102 361-1 Table 8.3).
+// For a sliding window, the Status of the response is the N(S) of a message of
 // the window: an ACK delivers the messages up to that one, a SACK delivers
 // the messages before it and resends its blocks that the SACK flags, and a
 // NACK delivers the messages before it and resends it or ends it as
@@ -670,7 +672,10 @@ func (s *Sender) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst 
 		return dst
 	}
 	j := 0
-	if s.win > 1 {
+	switch e := &s.slots[s.ord[0]]; {
+	case s.win <= 1 && e.cHead && (code == packet.ResponseACK || code == packet.ResponseSACK) && rh.ResponseStatus != e.ns:
+		return dst
+	case s.win > 1:
 		j = -1
 		for k := range s.win {
 			if s.slots[s.ord[k]].ns == rh.ResponseStatus {
