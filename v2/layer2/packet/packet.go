@@ -163,12 +163,17 @@ func (b *Builder) Segment(header pdu.DataHeader, payload []byte, rate enums.Data
 // block i of p for each DBSN i that rd flags, in DBSN order. A nil rd resends
 // every block, as after a NACK or a missing response. The header keeps N(S)
 // and the other fields of the first try. p is a C_HEAD, or a DD_HEAD or
-// R_HEAD with SARQ set, with the blocks Segment makes. Retry returns an error
-// that wraps ErrFormat for another header, and ErrNoRetryBlocks when rd flags
-// no block of p. The Packet points to the blocks of p and to storage of b,
-// apart from that of Segment and NewResponse, and is valid until the next
-// Retry. It returns an error for a nil p. (ETSI TS 102 361-1 clause
-// 9.3.20, ETSI TS 102 361-3 clause 5.4)
+// R_HEAD with SARQ set, with the blocks Segment makes. For a DD_HEAD or
+// R_HEAD with Response Requested (A) set and SARQ clear, which is confirmed
+// on the whole message only, rd must be nil, and Retry resends the header
+// of p as it is, with the Full Message Flag set, and every block of p
+// (ETSI TS 102 361-3 clause 6.0, Table 6.5). Retry returns an error that
+// wraps ErrFormat for another header or for a non-nil rd with such a
+// header, and ErrNoRetryBlocks when rd flags no block of p. The Packet
+// points to the blocks of p and to storage of b, apart from that of Segment
+// and NewResponse, and is valid until the next Retry. It returns an error
+// for a nil p. (ETSI TS 102 361-1 clause 9.3.20, ETSI TS 102 361-3 clause
+// 5.4)
 func (b *Builder) Retry(p *Packet, rd *ResponseData) (Packet, error) {
 	if b == nil {
 		return Packet{}, dmrgo.ErrNilReceiver
@@ -183,17 +188,21 @@ func (b *Builder) Retry(p *Packet, rd *ResponseData) (Packet, error) {
 			n++
 		}
 	}
-	count := uint8(n & 0x7F)
-	switch {
-	case !selective(&h):
+	sel := selective(&h)
+	switch confirmed, _ := isConfirmed(&h); {
+	case !confirmed:
 		return Packet{}, errRetryFormat
+	case !sel && rd != nil:
+		return Packet{}, errSelectiveFormat
 	case n == 0:
 		return Packet{}, ErrNoRetryBlocks
 	case n > len(b.retry.blocks):
 		return Packet{}, ErrNoRoom
 	}
-	if err := retryHeader(&h, count); err != nil {
-		return Packet{}, err
+	if sel {
+		if err := retryHeader(&h, uint8(n&0x7F)); err != nil {
+			return Packet{}, err
+		}
 	}
 	j := 0
 	for i, blk := range p.Blocks {
