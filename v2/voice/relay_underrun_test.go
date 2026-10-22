@@ -106,6 +106,25 @@ func TestRegression_RelayUnderrunThenLostRepeatsOnce(t *testing.T) {
 	}
 }
 
+func TestRegression_RelayFillsLeaveRoomForVoice(t *testing.T) {
+	t.Parallel()
+
+	tx := newTransmitter(t, &voice.TransmitterConfig{Queue: voice.MaxQueue})
+	c := rcall()
+	if err := tx.Relay(0, &voice.Event{Kind: voice.EventCallStart, Call: c}); err != nil {
+		t.Fatal(err)
+	}
+	for _, lost := range []uint8{0, 255} {
+		e := voice.Event{Kind: voice.EventVoice, Call: c, Burst: vburst(t, 0), Position: enums.VoiceBurstA, Lost: lost}
+		if err := tx.Relay(0, &e); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if tx.Dropped() != 0 {
+		t.Errorf("%d bursts dropped: the fills for Lost 255 left no room for the burst", tx.Dropped())
+	}
+}
+
 func TestRegression_RelayPendingCallRepeatsLastSlot(t *testing.T) {
 	t.Parallel()
 
