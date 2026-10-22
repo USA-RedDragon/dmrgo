@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -134,8 +135,84 @@ func (g *nopanicGen) fill(v reflect.Value, depth int) {
 			}
 			return out
 		}))
-	case reflect.Interface, reflect.Chan, reflect.UnsafePointer, reflect.Invalid:
+	case reflect.Interface:
+		im := nopanicImpls(t)
+		if depth <= 0 || len(im) == 0 || g.rng.IntN(3) == 0 {
+			return
+		}
+		it := im[g.rng.IntN(len(im))]
+		if it.Kind() == reflect.Pointer && g.rng.IntN(3) == 0 {
+			v.Set(reflect.Zero(it))
+			return
+		}
+		v.Set(g.value(it, depth-1, false))
+	case reflect.Chan, reflect.UnsafePointer, reflect.Invalid:
 	}
+}
+
+var nopanicTypes = sync.OnceValue(func() []reflect.Type {
+	seen := map[reflect.Type]bool{}
+	var walk func(t reflect.Type)
+	walk = func(t reflect.Type) {
+		if seen[t] {
+			return
+		}
+		seen[t] = true
+		switch t.Kind() {
+		case reflect.Pointer, reflect.Slice, reflect.Array:
+			walk(t.Elem())
+		case reflect.Map:
+			walk(t.Key())
+			walk(t.Elem())
+		case reflect.Struct:
+			for i := range t.NumField() {
+				walk(t.Field(i).Type)
+			}
+		case reflect.Func:
+			for i := range t.NumIn() {
+				walk(t.In(i))
+			}
+			for i := range t.NumOut() {
+				walk(t.Out(i))
+			}
+		case reflect.Invalid, reflect.Bool, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr,
+			reflect.Float32, reflect.Float64, reflect.Complex64, reflect.Complex128, reflect.Chan,
+			reflect.Interface, reflect.String, reflect.UnsafePointer:
+		}
+	}
+	for _, f := range api {
+		walk(reflect.TypeOf(f))
+	}
+	var ts []reflect.Type
+	for t := range seen {
+		if t.Name() != "" && t.Kind() != reflect.Interface && strings.HasPrefix(t.PkgPath(), "github.com/USA-RedDragon/dmrgo/v2") && !strings.Contains(t.PkgPath(), "/internal") {
+			ts = append(ts, t)
+		}
+	}
+	slices.SortFunc(ts, func(a, b reflect.Type) int { return strings.Compare(a.String(), b.String()) })
+	return ts
+})
+
+var nopanicImplCache sync.Map
+
+func nopanicImpls(t reflect.Type) []reflect.Type {
+	if v, ok := nopanicImplCache.Load(t); ok {
+		if im, ok := v.([]reflect.Type); ok {
+			return im
+		}
+	}
+	var im []reflect.Type
+	for _, c := range nopanicTypes() {
+		if c.Implements(t) {
+			im = append(im, c)
+		}
+		if p := reflect.PointerTo(c); p.Implements(t) {
+			im = append(im, p)
+		}
+	}
+	nopanicImplCache.Store(t, im)
+	return im
 }
 
 func (g *nopanicGen) construct(c reflect.Value) (v reflect.Value) {
@@ -206,9 +283,10 @@ func nopanicName(f any) string {
 
 // TestNoPanic calls every exported function and method of the library,
 // except the internal packages, with zero values, nil pointers and random
-// values of their arguments, on a receiver that is nil, a zero value, made by
-// a constructor or holds random exported fields, and fails for each call that
-// panics or hangs.
+// values of their arguments, with an interface argument or field that is
+// nil, a typed nil pointer or a value of a library type, on a receiver that
+// is nil, a zero value, made by a constructor or holds random exported
+// fields, and fails for each call that panics or hangs.
 func TestNoPanic(t *testing.T) {
 	t.Parallel()
 
