@@ -313,7 +313,9 @@ func (a *TalkerAliasAssembler) AddInto(dst *[TalkerAliasMaxText]byte, lc *FullLi
 		if !a.hasBlock[i] || a.blocks[i] != b {
 			a.blocks[i] = b
 			a.hasBlock[i] = true
-			a.completed = false
+			if !a.hasHeader || i < TalkerAliasBlocks(a.header.TalkerAliasDataFormat, int(a.header.TalkerAliasDataLength)) {
+				a.completed = false
+			}
 		}
 	} else {
 		return 0, false, nil
