@@ -562,6 +562,7 @@ DMRGO_1 {
 		dmrgo_ipsc_peer_list_entry;
 		dmrgo_ipsc_peer_list_free;
 		dmrgo_ipsc_peer_list_len;
+		dmrgo_ipsc_peer_list_new;
 		dmrgo_ipsc_peer_list_of;
 		dmrgo_ipsc_raw_append_binary;
 		dmrgo_ipsc_session_master_adopt;

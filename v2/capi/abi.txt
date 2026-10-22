@@ -1989,6 +1989,7 @@ sym int dmrgo_ipsc_payload_slot_type(const dmrgo_ipsc_payload_t *self, dmrgo_pdu
 sym int dmrgo_ipsc_peer_list_entry(dmrgo_ipsc_peer_list_t *self, int64_t i, dmrgo_ipsc_peer_entry_t *out);
 sym int dmrgo_ipsc_peer_list_free(dmrgo_ipsc_peer_list_t *self);
 sym int dmrgo_ipsc_peer_list_len(dmrgo_ipsc_peer_list_t *self, int64_t *out);
+sym int dmrgo_ipsc_peer_list_new(dmrgo_ipsc_peer_list_t **out);
 sym int dmrgo_ipsc_peer_list_of(const uint8_t *p, size_t p_len, dmrgo_ipsc_peer_list_t *out);
 sym int dmrgo_ipsc_raw_append_binary(const dmrgo_ipsc_raw_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_ipsc_session_master_adopt(dmrgo_ipsc_session_master_t *self, dmrgo_duration_t now, const dmrgo_ipsc_session_addr_t *from, uint32_t id, dmrgo_ipsc_mode_t mode, const dmrgo_ipsc_flags_t *flags, dmrgo_ipsc_session_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);

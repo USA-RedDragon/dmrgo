@@ -10184,6 +10184,8 @@ int dmrgo_ipsc_opcode_string(dmrgo_ipsc_opcode_t self, char *out, size_t out_cap
 int dmrgo_ipsc_payload_rssi(const dmrgo_ipsc_payload_t *self, uint16_t *value, bool *ok);
 /* Go: ipsc.Payload.SlotType. SlotType returns the slot type octet of the trailer and whether the packet has one. */
 int dmrgo_ipsc_payload_slot_type(const dmrgo_ipsc_payload_t *self, dmrgo_pdu_slot_type_info_t *slot_type_info, bool *ok);
+/* dmrgo_ipsc_peer_list_new makes a zero ipsc.PeerList. */
+int dmrgo_ipsc_peer_list_new(dmrgo_ipsc_peer_list_t **out);
 /* dmrgo_ipsc_peer_list_free frees the handle. self may be NULL. */
 int dmrgo_ipsc_peer_list_free(dmrgo_ipsc_peer_list_t *self);
 /* Go: ipsc.PeerList.Entry. Entry returns entry i, or the zero PeerEntry when i is not below Len. */
@@ -10560,7 +10562,7 @@ int dmrgo_trunk_follower_state(dmrgo_trunk_follower_t *self, dmrgo_trunk_state_t
 int dmrgo_trunk_follower_tick_need(dmrgo_trunk_follower_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: trunk.Follower.Tick. Tick runs the timers that are due at now and appends their outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_follower_tick_need gives (DMRGO_TRUNK_FOLLOWER_TICK_MAX_ITEMS items). */
 int dmrgo_trunk_follower_tick(dmrgo_trunk_follower_t *self, dmrgo_duration_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: trunk.Follower.UDT. UDT returns the UDT delivery of the last OutputUDT. */
+/* Go: trunk.Follower.UDT. UDT returns the UDT delivery of the last OutputUDT. In C, *out is a new handle to a copy, which does not change with self; free it with dmrgo_trunk_udt_free. */
 int dmrgo_trunk_follower_udt(dmrgo_trunk_follower_t *self, dmrgo_trunk_udt_t **out);
 /* Go: trunk.Grant.Call. Call returns the voice.Call of a voice grant, for voice.Receiver.Expect. */
 int dmrgo_trunk_grant_call(const dmrgo_trunk_grant_t *self, dmrgo_voice_call_t *out);
@@ -10680,7 +10682,7 @@ int dmrgo_trunk_ms_stunned(dmrgo_trunk_ms_t *self, bool *out);
 int dmrgo_trunk_ms_tick_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: trunk.MS.Tick. Tick runs the timers that are due at now and appends their outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_tick_need gives (DMRGO_TRUNK_MS_TICK_MAX_ITEMS items). */
 int dmrgo_trunk_ms_tick(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: trunk.MS.UDT. UDT returns the UDT delivery of the last OutputUDT, as Follower.UDT does. */
+/* Go: trunk.MS.UDT. UDT returns the UDT delivery of the last OutputUDT, as Follower.UDT does. In C, *out is a new handle to a copy, which does not change with self; free it with dmrgo_trunk_udt_free. */
 int dmrgo_trunk_ms_udt(dmrgo_trunk_ms_t *self, dmrgo_trunk_udt_t **out);
 /* Go: trunk.NMEALong.Encode. Encode encodes an NMEALong. */
 int dmrgo_trunk_nmea_long_encode(const dmrgo_trunk_nmea_long_t *self, uint8_t out[22]);
@@ -10742,7 +10744,7 @@ int dmrgo_trunk_tscc_stun(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint32
 int dmrgo_trunk_tscc_tick_need(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: trunk.TSCC.Tick. Tick sends the outbound bursts of one 30 ms slot: on the TSCC a queued PDU or a C_ALOHA, and on each payload channel with a call the relayed inbound burst, P_CLEAR or an idle burst, each with its CACH. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_tscc_tick_need gives (DMRGO_TRUNK_TSCC_TICK_MAX_ITEMS items). */
 int dmrgo_trunk_tscc_tick(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, dmrgo_trunk_tscc_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: trunk.TSCC.UDT. UDT returns the UDT that the TSCC received for itself with the last TSCCUDT, such as the answer to PollShortData. */
+/* Go: trunk.TSCC.UDT. UDT returns the UDT that the TSCC received for itself with the last TSCCUDT, such as the answer to PollShortData. In C, *out is a new handle to a copy, which does not change with self; free it with dmrgo_trunk_udt_free. */
 int dmrgo_trunk_tscc_udt(dmrgo_trunk_tscc_t *self, dmrgo_trunk_udt_t **out);
 /* Go: trunk.TSCC.USBD. USBD returns the USBD Poll Response of the last TSCCUSBD. */
 int dmrgo_trunk_tscc_usbd(dmrgo_trunk_tscc_t *self, dmrgo_pdu_unified_single_block_data_t *out);
