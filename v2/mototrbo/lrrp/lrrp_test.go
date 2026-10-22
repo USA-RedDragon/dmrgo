@@ -93,7 +93,7 @@ func TestTRBOnetRequests(t *testing.T) {
 		t.Errorf("distance request %s", m.String())
 	}
 	m = decode(t, "09082203000002"+"344a02")
-	if m.Request.TriggerCondition != 2 {
+	if m.Request.TriggerCondition != lrrp.TriggerEmergency {
 		t.Errorf("emergency request %s", m.String())
 	}
 }
@@ -154,5 +154,16 @@ func TestNames(t *testing.T) {
 
 	if lrrp.DocumentTriggeredReport.String() != "Triggered Location Report" || lrrp.DocumentID(2).String() != "DocumentID(2)" {
 		t.Error("names")
+	}
+	for r, want := range map[lrrp.ResultCode]string{
+		lrrp.ResultSuccess: "Success", lrrp.ResultInvalidCommand: "Invalid Command", lrrp.ResultNoGPS: "No GPS",
+		lrrp.ResultDuplicateRequest: "Duplicate Request", lrrp.ResultGPSInitializing: "GPS Initializing", 5: "ResultCode(5)",
+	} {
+		if r.String() != want {
+			t.Errorf("%d: %s", r, r.String())
+		}
+	}
+	if lrrp.TriggerEmergency.String() != "Emergency" || lrrp.TriggerCondition(1).String() != "TriggerCondition(1)" {
+		t.Error("TriggerCondition names")
 	}
 }

@@ -48,6 +48,58 @@ func (d DocumentID) String() string {
 	return "DocumentID(" + text.Int(int64(d)) + ")"
 }
 
+// ResultCode is the result code of an answer or report (tokens 0x37 and
+// 0x39). The named values are the codes that open implementations know.
+type ResultCode uint32
+
+// The ResultCode values.
+const (
+	ResultSuccess          ResultCode = 0x00  // the request succeeded
+	ResultInvalidCommand   ResultCode = 0x0A  // the radio does not understand the request
+	ResultNoGPS            ResultCode = 0x10  // the radio has no GPS fix
+	ResultDuplicateRequest ResultCode = 0x16  // the request ID is already in use
+	ResultGPSInitializing  ResultCode = 0x200 // the GPS receiver has no good fix yet
+)
+
+// String returns the name of r. It allocates only for a value without a
+// name.
+func (r ResultCode) String() string {
+	switch r {
+	case ResultSuccess:
+		return "Success"
+	case ResultInvalidCommand:
+		return "Invalid Command"
+	case ResultNoGPS:
+		return "No GPS"
+	case ResultDuplicateRequest:
+		return "Duplicate Request"
+	case ResultGPSInitializing:
+		return "GPS Initializing"
+	}
+	return "ResultCode(" + text.Int(int64(r)) + ")"
+}
+
+// TriggerCondition is the condition of a triggered request that sends a
+// report (token 0x4A). The named values are the conditions that captures
+// show.
+type TriggerCondition uint32
+
+// The TriggerCondition values.
+const (
+	// TriggerEmergency sends a report when the radio declares an
+	// emergency.
+	TriggerEmergency TriggerCondition = 2
+)
+
+// String returns the name of c. It allocates only for a value without a
+// name.
+func (c TriggerCondition) String() string {
+	if c == TriggerEmergency {
+		return "Emergency"
+	}
+	return "TriggerCondition(" + text.Int(int64(c)) + ")"
+}
+
 // Time is the UTC time of a position (token 0x34).
 //
 //dmr:frame 5
@@ -139,8 +191,8 @@ type Circle3D struct {
 //
 //dmr:stream
 type OperationError struct {
-	// Code is the result code, such as 0x10 for no GPS fix.
-	Code uint32 `dmr:"uintvar"`
+	// Code is the result code.
+	Code ResultCode `dmr:"uintvar"`
 	// Info is the text of the error.
 	Info []byte `dmr:"lvvar"`
 }
@@ -163,8 +215,8 @@ type Report struct {
 	ProtocolVersion    uint32 `dmr:"uintvar,token:0x36"`
 	HasProtocolVersion bool   `dmr:"-"`
 	// Result is the result code of the request.
-	Result    uint32 `dmr:"uintvar,token:0x37"`
-	HasResult bool   `dmr:"-"`
+	Result    ResultCode `dmr:"uintvar,token:0x37"`
+	HasResult bool       `dmr:"-"`
 	// Success reports a request that succeeded.
 	Success bool `dmr:"flag,token:0x38"`
 	// Error is the result of a request that failed.
@@ -221,10 +273,9 @@ type Request struct {
 	// Distance is the distance of a distance trigger, in meters.
 	Distance    uint32 `dmr:"uintvar,token:0x78"`
 	HasDistance bool   `dmr:"-"`
-	// TriggerCondition is the condition that sends a report, such as 2 for
-	// an emergency.
-	TriggerCondition    uint32 `dmr:"uintvar,token:0x4A"`
-	HasTriggerCondition bool   `dmr:"-"`
+	// TriggerCondition is the condition that sends a report.
+	TriggerCondition    TriggerCondition `dmr:"uintvar,token:0x4A"`
+	HasTriggerCondition bool             `dmr:"-"`
 	// ProtocolVersion is the requested protocol version.
 	ProtocolVersion    uint32 `dmr:"uintvar,token:0x3F"`
 	HasProtocolVersion bool   `dmr:"-"`

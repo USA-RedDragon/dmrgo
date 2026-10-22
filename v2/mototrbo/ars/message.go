@@ -68,15 +68,15 @@ func NewAck(refresh uint8) (Message, error) {
 }
 
 // NewFailure returns the answer to a device registration that failed, with
-// the reason that Response describes. It returns a *dmrgo.FieldRangeError
-// when reason does not fit in 7 bits.
-func NewFailure(reason uint8) (Message, error) {
+// the reason reason. It returns a *dmrgo.FieldRangeError when reason does
+// not fit in 7 bits.
+func NewFailure(reason FailureReason) (Message, error) {
 	if reason > 127 {
 		return Message{}, errValue
 	}
 	return Message{
 		Header:   Header{Extension: true, AckRequired: true, Priority: true, Control: true, Type: TypeAck},
-		Response: Response{Value: reason},
+		Response: Response{Value: uint8(reason)},
 	}, nil
 }
 

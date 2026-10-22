@@ -2738,7 +2738,7 @@ func out_mototrbo_ars_Registration(d *C.dmrgo_ars_registration_t, s *g_mototrbo_
 	_ = oc
 	d.extension = C.bool(s.Extension)
 	d.event = C.dmrgo_ars_event_t(s.Event)
-	d.encoding = C.uint8_t(s.Encoding)
+	d.encoding = C.dmrgo_ars_encoding_t(s.Encoding)
 }
 
 func out_mototrbo_ars_Response(d *C.dmrgo_ars_response_t, s *g_mototrbo_ars.Response, oc *outc) {
@@ -2775,7 +2775,7 @@ func in_mototrbo_ars_Header(s *C.dmrgo_ars_header_t) (d g_mototrbo_ars.Header) {
 func in_mototrbo_ars_Registration(s *C.dmrgo_ars_registration_t) (d g_mototrbo_ars.Registration) {
 	d.Extension = bool(s.extension)
 	d.Event = g_mototrbo_ars.Event(s.event)
-	d.Encoding = uint8(s.encoding)
+	d.Encoding = g_mototrbo_ars.Encoding(s.encoding)
 	return
 }
 
@@ -2810,7 +2810,7 @@ func out_mototrbo_lrrp_Request(d *C.dmrgo_lrrp_request_t, s *g_mototrbo_lrrp.Req
 	d.has_interval = C.bool(s.HasInterval)
 	d.distance = C.uint32_t(s.Distance)
 	d.has_distance = C.bool(s.HasDistance)
-	d.trigger_condition = C.uint32_t(s.TriggerCondition)
+	d.trigger_condition = C.dmrgo_lrrp_trigger_condition_t(s.TriggerCondition)
 	d.has_trigger_condition = C.bool(s.HasTriggerCondition)
 	d.protocol_version = C.uint32_t(s.ProtocolVersion)
 	d.has_protocol_version = C.bool(s.HasProtocolVersion)
@@ -2827,7 +2827,7 @@ func out_mototrbo_lrrp_Request(d *C.dmrgo_lrrp_request_t, s *g_mototrbo_lrrp.Req
 
 func out_mototrbo_lrrp_OperationError(d *C.dmrgo_lrrp_operation_error_t, s *g_mototrbo_lrrp.OperationError, oc *outc) {
 	_ = oc
-	d.code = C.uint32_t(s.Code)
+	d.code = C.dmrgo_lrrp_result_code_t(s.Code)
 	d.info = (*C.uint8_t)(arenaCopy(oc, s.Info))
 	d.info_len = C.size_t(len(s.Info))
 }
@@ -2843,7 +2843,7 @@ func out_mototrbo_lrrp_Report(d *C.dmrgo_lrrp_report_t, s *g_mototrbo_lrrp.Repor
 	d.has_time = C.bool(s.HasTime)
 	d.protocol_version = C.uint32_t(s.ProtocolVersion)
 	d.has_protocol_version = C.bool(s.HasProtocolVersion)
-	d.result = C.uint32_t(s.Result)
+	d.result = C.dmrgo_lrrp_result_code_t(s.Result)
 	d.has_result = C.bool(s.HasResult)
 	d.success = C.bool(s.Success)
 	out_mototrbo_lrrp_OperationError(&d.error, &s.Error, oc)
@@ -2887,7 +2887,7 @@ func in_mototrbo_lrrp_Request(s *C.dmrgo_lrrp_request_t) (d g_mototrbo_lrrp.Requ
 	d.HasInterval = bool(s.has_interval)
 	d.Distance = uint32(s.distance)
 	d.HasDistance = bool(s.has_distance)
-	d.TriggerCondition = uint32(s.trigger_condition)
+	d.TriggerCondition = g_mototrbo_lrrp.TriggerCondition(s.trigger_condition)
 	d.HasTriggerCondition = bool(s.has_trigger_condition)
 	d.ProtocolVersion = uint32(s.protocol_version)
 	d.HasProtocolVersion = bool(s.has_protocol_version)
@@ -2904,7 +2904,7 @@ func in_mototrbo_lrrp_Request(s *C.dmrgo_lrrp_request_t) (d g_mototrbo_lrrp.Requ
 }
 
 func in_mototrbo_lrrp_OperationError(s *C.dmrgo_lrrp_operation_error_t) (d g_mototrbo_lrrp.OperationError) {
-	d.Code = uint32(s.code)
+	d.Code = g_mototrbo_lrrp.ResultCode(s.code)
 	d.Info = cSlice[byte](unsafe.Pointer(s.info), s.info_len)
 	return
 }
@@ -2918,7 +2918,7 @@ func in_mototrbo_lrrp_Report(s *C.dmrgo_lrrp_report_t) (d g_mototrbo_lrrp.Report
 	d.HasTime = bool(s.has_time)
 	d.ProtocolVersion = uint32(s.protocol_version)
 	d.HasProtocolVersion = bool(s.has_protocol_version)
-	d.Result = uint32(s.result)
+	d.Result = g_mototrbo_lrrp.ResultCode(s.result)
 	d.HasResult = bool(s.has_result)
 	d.Success = bool(s.success)
 	d.Error = in_mototrbo_lrrp_OperationError(&s.error)
@@ -31072,6 +31072,25 @@ func dmrgo_ars_decode_message(c_data *C.uint8_t, c_data_len C.size_t, c_out *C.d
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ars_encoding_string
+func dmrgo_ars_encoding_string(c_self C.dmrgo_ars_encoding_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_mototrbo_ars.Encoding(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ars_event_string
 func dmrgo_ars_event_string(c_self C.dmrgo_ars_event_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -31083,6 +31102,25 @@ func dmrgo_ars_event_string(c_self C.dmrgo_ars_event_t, c_out *C.char, c_out_cap
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := g_mototrbo_ars.Event(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ars_failure_reason_string
+func dmrgo_ars_failure_reason_string(c_self C.dmrgo_ars_failure_reason_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_mototrbo_ars.FailureReason(c_self).String()
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -31309,7 +31347,7 @@ func dmrgo_ars_new_ack(c_refresh C.uint8_t, c_out *C.dmrgo_ars_message_t, c_aren
 }
 
 //export dmrgo_ars_new_failure
-func dmrgo_ars_new_failure(c_reason C.uint8_t, c_out *C.dmrgo_ars_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_ars_new_failure(c_reason C.dmrgo_ars_failure_reason_t, c_out *C.dmrgo_ars_message_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if !lenOK(unsafe.Pointer(c_arena), c_arena_cap, 1) {
@@ -31322,7 +31360,7 @@ func dmrgo_ars_new_failure(c_reason C.uint8_t, c_out *C.dmrgo_ars_message_t, c_a
 		oc.need = int(*c_arena_len)
 	}
 	oc.setArena(c_arena, c_arena_cap)
-	r0, r1 := g_mototrbo_ars.NewFailure(uint8(c_reason))
+	r0, r1 := g_mototrbo_ars.NewFailure(g_mototrbo_ars.FailureReason(c_reason))
 	_ = r0
 	if c_out != nil {
 		out_mototrbo_ars_Message(&(*c_out), &r0, oc)
@@ -32098,6 +32136,25 @@ func dmrgo_lrrp_request_string(c_self *C.dmrgo_lrrp_request_t, c_out *C.char, c_
 	return C.DMRGO_OK
 }
 
+//export dmrgo_lrrp_result_code_string
+func dmrgo_lrrp_result_code_string(c_self C.dmrgo_lrrp_result_code_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_mototrbo_lrrp.ResultCode(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_lrrp_time_append_binary
 func dmrgo_lrrp_time_append_binary(c_self *C.dmrgo_lrrp_time_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -32145,6 +32202,25 @@ func dmrgo_lrrp_time_string(c_self *C.dmrgo_lrrp_time_t, c_out *C.char, c_out_ca
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_lrrp_trigger_condition_string
+func dmrgo_lrrp_trigger_condition_string(c_self C.dmrgo_lrrp_trigger_condition_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_mototrbo_lrrp.TriggerCondition(c_self).String()
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {

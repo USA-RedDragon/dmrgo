@@ -63,7 +63,7 @@ func TestCircle3DStringMatchesFmt(t *testing.T) {
 }
 
 func (s *OperationError) fmtString() string {
-	return fmt.Sprintf("OperationError{ Code: %d, Info: %v }", s.Code, s.Info)
+	return fmt.Sprintf("OperationError{ Code: %v, Info: %v }", s.Code, s.Info)
 }
 
 func TestOperationErrorStringMatchesFmt(t *testing.T) {
@@ -72,7 +72,7 @@ func TestOperationErrorStringMatchesFmt(t *testing.T) {
 }
 
 func (s *Report) fmtString() string {
-	return fmt.Sprintf("Report{ RequestID: %v, ShortRequestID: %d, Time: %s, ProtocolVersion: %d, Result: %d, Success: %t, Error: %s, Circle2D: %s, Circle3D: %s, Direction: %d, LevelOfConfidence: %d, Point2D: %s, Point3D: %s, Point3DAccuracy: %s, Speed: %f, VerticalSpeed: %f }", s.RequestID, s.ShortRequestID, s.Time.String(), s.ProtocolVersion, s.Result, s.Success, s.Error.String(), s.Circle2D.String(), s.Circle3D.String(), s.Direction, s.LevelOfConfidence, s.Point2D.String(), s.Point3D.String(), s.Point3DAccuracy.String(), s.Speed, s.VerticalSpeed)
+	return fmt.Sprintf("Report{ RequestID: %v, ShortRequestID: %d, Time: %s, ProtocolVersion: %d, Result: %v, Success: %t, Error: %s, Circle2D: %s, Circle3D: %s, Direction: %d, LevelOfConfidence: %d, Point2D: %s, Point3D: %s, Point3DAccuracy: %s, Speed: %f, VerticalSpeed: %f }", s.RequestID, s.ShortRequestID, s.Time.String(), s.ProtocolVersion, s.Result, s.Success, s.Error.String(), s.Circle2D.String(), s.Circle3D.String(), s.Direction, s.LevelOfConfidence, s.Point2D.String(), s.Point3D.String(), s.Point3DAccuracy.String(), s.Speed, s.VerticalSpeed)
 }
 
 func TestReportStringMatchesFmt(t *testing.T) {
@@ -81,7 +81,7 @@ func TestReportStringMatchesFmt(t *testing.T) {
 }
 
 func (s *Request) fmtString() string {
-	return fmt.Sprintf("Request{ RequestID: %v, ShortRequestID: %d, Periodic: %t, OneShot: %t, Interval: %d, Distance: %d, TriggerCondition: %d, ProtocolVersion: %d, Accuracy: %t, AccuracyAndTime: %t, Time: %t, Altitude: %t, Speed: %t, Direction: %t, VerticalSpeed: %t, LevelOfConfidence: %d }", s.RequestID, s.ShortRequestID, s.Periodic, s.OneShot, s.Interval, s.Distance, s.TriggerCondition, s.ProtocolVersion, s.Accuracy, s.AccuracyAndTime, s.Time, s.Altitude, s.Speed, s.Direction, s.VerticalSpeed, s.LevelOfConfidence)
+	return fmt.Sprintf("Request{ RequestID: %v, ShortRequestID: %d, Periodic: %t, OneShot: %t, Interval: %d, Distance: %d, TriggerCondition: %v, ProtocolVersion: %d, Accuracy: %t, AccuracyAndTime: %t, Time: %t, Altitude: %t, Speed: %t, Direction: %t, VerticalSpeed: %t, LevelOfConfidence: %d }", s.RequestID, s.ShortRequestID, s.Periodic, s.OneShot, s.Interval, s.Distance, s.TriggerCondition, s.ProtocolVersion, s.Accuracy, s.AccuracyAndTime, s.Time, s.Altitude, s.Speed, s.Direction, s.VerticalSpeed, s.LevelOfConfidence)
 }
 
 func TestRequestStringMatchesFmt(t *testing.T) {

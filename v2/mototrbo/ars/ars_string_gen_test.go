@@ -18,7 +18,7 @@ func TestHeaderStringMatchesFmt(t *testing.T) {
 }
 
 func (s *Registration) fmtString() string {
-	return fmt.Sprintf("Registration{ Extension: %t, Event: %v, Encoding: %d }", s.Extension, s.Event, s.Encoding)
+	return fmt.Sprintf("Registration{ Extension: %t, Event: %v, Encoding: %v }", s.Extension, s.Event, s.Encoding)
 }
 
 func TestRegistrationStringMatchesFmt(t *testing.T) {

@@ -75,7 +75,7 @@ func decodeRegistration(data []byte) (Registration, error) {
 	var result Registration
 	result.Extension = data[0]&0x80 != 0
 	result.Event = Event(uint64(data[0]) >> 5 & 0x3)
-	result.Encoding = uint8(uint64(data[0]) & 0x1F)
+	result.Encoding = Encoding(uint64(data[0]) & 0x1F)
 	return result, nil
 }
 
@@ -113,7 +113,7 @@ func (s *Registration) String() string {
 		return "<nil>"
 	}
 
-	return "Registration{ Extension: " + text.Bool(s.Extension) + ", Event: " + s.Event.String() + ", Encoding: " + text.Int(int64(s.Encoding)) + " }"
+	return "Registration{ Extension: " + text.Bool(s.Extension) + ", Event: " + s.Event.String() + ", Encoding: " + s.Encoding.String() + " }"
 }
 
 func decodeResponse(data []byte) (Response, error) {
