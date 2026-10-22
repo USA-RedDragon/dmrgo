@@ -301,3 +301,17 @@ func TestRegression_BadGPS(t *testing.T) {
 		t.Errorf("Start with a GPS LC that does not encode: %v", err)
 	}
 }
+
+func TestRegression_DefaultQueueHoldsHeaders(t *testing.T) {
+	t.Parallel()
+
+	for h := range voice.MaxHeaders + 1 {
+		tx, err := voice.NewTransmitter(&voice.TransmitterConfig{Headers: h})
+		if err != nil {
+			t.Fatalf("Headers %d with the default Queue: %v", h, err)
+		}
+		if want := layer2.VoiceSlotsPerBurst * (max(h, 1) + 2); tx.Room() != want {
+			t.Errorf("Headers %d: default Queue %d, want %d", h, tx.Room(), want)
+		}
+	}
+}

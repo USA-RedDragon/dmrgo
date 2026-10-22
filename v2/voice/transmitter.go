@@ -26,7 +26,8 @@ const (
 	// MaxTerminators is the most Terminators with LC at the end of a call.
 	MaxTerminators = 64
 	// DefaultQueue is the number of vocoder slots that a Transmitter
-	// buffers when TransmitterConfig.Queue is 0: three bursts.
+	// buffers when TransmitterConfig.Queue is 0 and TransmitterConfig.Headers
+	// is 0 or 1: three bursts. In general the default is Headers+2 bursts.
 	DefaultQueue = 9
 	// MaxQueue is the most vocoder slots that a Transmitter buffers.
 	MaxQueue = 3 * 64
@@ -69,9 +70,10 @@ type TransmitterConfig struct {
 	// Timeout is the transmit timeout T_TO. 0 means constants.TTO (180 s),
 	// and a negative value turns it off (ETSI TS 102 361-2 clause 6.1).
 	Timeout time.Duration
-	// Queue is the number of vocoder slots buffered. 0 means DefaultQueue;
-	// at most MaxQueue. It must hold Headers+1 bursts, so that a relayed
-	// late entry can send its headers first.
+	// Queue is the number of vocoder slots buffered. 0 means Headers+2
+	// bursts, DefaultQueue for 0 or 1 Headers; at most MaxQueue. It must
+	// hold Headers+1 bursts, so that a relayed late entry can send its
+	// headers first.
 	Queue int
 	// Lead makes Tick emit a burst this long before its Due time, so that
 	// an RF FIFO can be filled ahead. 0 means at Due; it must not be
@@ -361,7 +363,7 @@ func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 	}
 	queue := cfg.Queue
 	if queue == 0 {
-		queue = DefaultQueue
+		queue = layer2.VoiceSlotsPerBurst * (max(t.headers, 1) + 2)
 	}
 	switch _, _, ok := cfg.Source.SyncPatterns(); {
 	case cfg.ColorCode > 15:
