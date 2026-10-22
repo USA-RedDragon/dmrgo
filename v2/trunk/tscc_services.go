@@ -304,8 +304,9 @@ func (t *TSCC) Stun(now time.Duration, addr uint32, revive bool) error {
 }
 
 // Kill asks the MS addr to disable itself for good, with a C_AHOY from
-// KILLI, as Stun does. The MS authenticates the TSCC first, so it needs
-// TSCCConfig.Auth (ETSI TS 102 361-4 clause 6.4.10).
+// KILLI, as Stun does. The MS authenticates the TSCC first: without
+// TSCCConfig.Auth the TSCC cannot answer, and TSCCStun reports
+// ReasonAuthentication. (ETSI TS 102 361-4 clause 6.4.10)
 func (t *TSCC) Kill(now time.Duration, addr uint32) error {
 	if t == nil {
 		return dmrgo.ErrNilReceiver
