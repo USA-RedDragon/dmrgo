@@ -276,7 +276,7 @@ func must[T any](v T, err error) T {
 func TestNew(t *testing.T) {
 	t.Parallel()
 	for _, cfg := range []bs.Config{{ColorCode: 16}, {Mode: 2}, {Activation: 2}, {Pending: bs.MaxPending + 1},
-		{Headers: 9}, {Terminators: 65}, {DataQueue: bs.MaxDataQueue + 1}} {
+		{Headers: 9}, {Terminators: 65}, {DataQueue: bs.MaxDataQueue + 1}, {Lead: -1}} {
 		var ce *dmrgo.ConfigError
 		if _, err := bs.New(&cfg); !errors.As(err, &ce) {
 			t.Errorf("New(%+v) = %v, want a *dmrgo.ConfigError", cfg, err)
