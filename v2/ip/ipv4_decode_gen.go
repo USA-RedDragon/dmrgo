@@ -5,7 +5,7 @@
 package ip
 
 import (
-	"errors"
+	"fmt"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
@@ -332,7 +332,7 @@ var (
 		Field: "FragmentOffset",
 		Type:  "IPv4Header",
 	}
-	errIPv4OptionsLength          = errors.New("IPv4.Options: length does not match Header.IHL")
+	errIPv4OptionsLength          = fmt.Errorf("%w: IPv4.Options: length does not match Header.IHL", ErrLength)
 	errIPv4HeaderTotalLengthRange = &dmrgo.FieldRangeError{
 		Bits:  16,
 		Field: "Header.TotalLength",

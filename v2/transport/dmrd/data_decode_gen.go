@@ -3,7 +3,7 @@
 package dmrd
 
 import (
-	"errors"
+	"fmt"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
@@ -51,8 +51,9 @@ func DecodeData(data []byte) (Data, error) {
 
 // AppendBinary appends the 53, 55 or 71 octets of s to dst: Size selects the
 // length, and 0 means 55. It returns dst unchanged and a
-// *dmrgo.FieldRangeError when a field does not fit, or an error when Size is
-// not one of the lengths. It allocates only to grow dst.
+// *dmrgo.FieldRangeError when a field does not fit, or an error that wraps
+// ErrLength when Size is not one of the lengths. It allocates only to grow
+// dst.
 func (s *Data) AppendBinary(dst []byte) ([]byte, error) {
 	if s == nil {
 		return dst, dmrgo.ErrNilReceiver
@@ -140,7 +141,7 @@ func (s *Data) String() string {
 }
 
 var (
-	errDataSize        = errors.New("Data.Size: not one of 53, 55 or 71 octets")
+	errDataSize        = fmt.Errorf("%w: Data.Size: not one of 53, 55 or 71 octets", ErrLength)
 	errDataSourceRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "Source",

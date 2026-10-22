@@ -9971,7 +9971,7 @@ int dmrgo_dmrd_control_append_binary(const dmrgo_dmrd_control_t *self, uint8_t *
 int dmrgo_dmrd_control_login_salt(const dmrgo_dmrd_control_t *self, uint32_t *salt, bool *ok);
 /* Go: dmrd.DMRPlusOptions.AppendText. AppendText appends the options that are not DMRGO_DMRD_OPTION_ABSENT to dst as a DMR+ startup options text, each followed by a semicolon, in the order of the fields. It returns dst unchanged and DMRGO_ERR_ARG for a NULL self, and no other error. */
 int dmrgo_dmrd_dmr_plus_options_append_text(const dmrgo_dmrd_dmr_plus_options_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: dmrd.Data.AppendBinary. AppendBinary appends the 53, 55 or 71 octets of s to dst: Size selects the length, and 0 means 55. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error when Size is not one of the lengths. */
+/* Go: dmrd.Data.AppendBinary. AppendBinary appends the 53, 55 or 71 octets of s to dst: Size selects the length, and 0 means 55. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error that wraps DMRGO_ERR_DMRD_LENGTH when Size is not one of the lengths. */
 int dmrgo_dmrd_data_append_binary(const dmrgo_dmrd_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.Data.Call. Call returns the call of the packet: group is the reverse of Private, target is Destination and source is Source. */
 int dmrgo_dmrd_data_call(const dmrgo_dmrd_data_t *self, bool *group, uint32_t *target, uint32_t *source);
@@ -10143,7 +10143,7 @@ int dmrgo_dmrd_mmdvm_config_of(const uint8_t *p, size_t p_len, dmrgo_dmrd_mmdvm_
 int dmrgo_dmrd_parse_dmr_plus_options(const uint8_t *text, size_t text_len, dmrgo_dmrd_dmr_plus_options_t *out);
 /* Go: dmrd.ParseFreeDMROptions. ParseFreeDMROptions parses a FreeDMR options text as FreeDMR does: Key=Value pairs separated by semicolons, keys in the exact case, the last pair of a key wins, and pairs with no "=" or more than one are skipped. It returns DMRGO_ERR_DMRD_TEXT and no options for a text longer than DMRGO_DMRD_MAX_FREE_DMR_OPTIONS_LEN, and DMRGO_ERR_DMRD_TEXT with all the valid options when a value is not a number, or is out of range for a 0 or 1 option or DirectDialSlot. */
 int dmrgo_dmrd_parse_free_dmr_options(const uint8_t *text, size_t text_len, dmrgo_dmrd_free_dmr_options_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: dmrd.Position.AppendBinary. AppendBinary appends the 14 or 18 octets of s to dst: Size selects the length, and 0 means 14. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error when Size is not one of the lengths. */
+/* Go: dmrd.Position.AppendBinary. AppendBinary appends the 14 or 18 octets of s to dst: Size selects the length, and 0 means 14. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error that wraps DMRGO_ERR_DMRD_LENGTH when Size is not one of the lengths. */
 int dmrgo_dmrd_position_append_binary(const dmrgo_dmrd_position_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.Position.LC. LC decodes the position as the GPS Info Full LC it came from: FLCO GPS Info, standard FID, and Data. It returns DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_dmrd_position_lc(const dmrgo_dmrd_position_t *self, dmrgo_pdu_full_link_control_t *out);
@@ -10151,7 +10151,7 @@ int dmrgo_dmrd_position_lc(const dmrgo_dmrd_position_t *self, dmrgo_pdu_full_lin
 int dmrgo_dmrd_position_string(const dmrgo_dmrd_position_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.RepeaterID. RepeaterID returns the repeater ID of the message p of dialect d, by its command as Classify gives it: the repeater of a DMRD, DMRA or DMRG, the ID of an RPTC, and the ID of every control message that carries one. */
 int dmrgo_dmrd_repeater_id(const uint8_t *p, size_t p_len, dmrgo_dmrd_dialect_t d, uint32_t *id, bool *ok);
-/* Go: dmrd.TalkerAlias.AppendBinary. AppendBinary appends the 15 or 19 octets of s to dst: Size selects the length, and 0 means 15. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error when Size is not one of the lengths. */
+/* Go: dmrd.TalkerAlias.AppendBinary. AppendBinary appends the 15 or 19 octets of s to dst: Size selects the length, and 0 means 15. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error that wraps DMRGO_ERR_DMRD_LENGTH when Size is not one of the lengths. */
 int dmrgo_dmrd_talker_alias_append_binary(const dmrgo_dmrd_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.TalkerAlias.LC. LC decodes the talker alias block as the Full LC it came from: FLCO Talker Alias Header plus Type, standard FID, and Data. It returns an error when Type is above 3, and DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_dmrd_talker_alias_lc(const dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_full_link_control_t *out);
@@ -10573,7 +10573,7 @@ int dmrgo_mmdvm_nak_string(const dmrgo_mmdvm_nak_t *self, char *out, size_t out_
 int dmrgo_mmdvm_new_dmr_short_lc(const dmrgo_pdu_short_lc_t *slc, dmrgo_mmdvm_dmr_short_lc_t *out);
 /* Go: mmdvm.Next. Next finds the frame at the start of p, as the firmware and MMDVMHost read the stream. */
 int dmrgo_mmdvm_next(const uint8_t *p, size_t p_len, dmrgo_mmdvm_frame_t *f, int64_t *n, dmrgo_mmdvm_next_result_t *r, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: mmdvm.SetFreq.AppendBinary. AppendBinary appends the 9, 10 or 14 octets of s to dst: Size selects the length, and 0 means 14. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error when Size is not one of the lengths. */
+/* Go: mmdvm.SetFreq.AppendBinary. AppendBinary appends the 9, 10 or 14 octets of s to dst: Size selects the length, and 0 means 14. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error that wraps DMRGO_ERR_MMDVM_LENGTH when Size is not one of the lengths. */
 int dmrgo_mmdvm_set_freq_append_binary(const dmrgo_mmdvm_set_freq_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.SetFreq.String. String returns the fields of s as text, for printing. */
 int dmrgo_mmdvm_set_freq_string(const dmrgo_mmdvm_set_freq_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -10581,7 +10581,7 @@ int dmrgo_mmdvm_set_freq_string(const dmrgo_mmdvm_set_freq_t *self, char *out, s
 int dmrgo_mmdvm_set_mode_append_binary(const dmrgo_mmdvm_set_mode_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.SetMode.String. String returns the fields of s as text, for printing. */
 int dmrgo_mmdvm_set_mode_string(const dmrgo_mmdvm_set_mode_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: mmdvm.StatusV1.AppendBinary. AppendBinary appends the 7, 8, 9, 10 or 11 octets of s to dst: Size selects the length, and 0 means 11. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error when Size is not one of the lengths. */
+/* Go: mmdvm.StatusV1.AppendBinary. AppendBinary appends the 7, 8, 9, 10 or 11 octets of s to dst: Size selects the length, and 0 means 11. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error that wraps DMRGO_ERR_MMDVM_LENGTH when Size is not one of the lengths. */
 int dmrgo_mmdvm_status_v1_append_binary(const dmrgo_mmdvm_status_v1_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.StatusV1.String. String returns the fields of s as text, for printing. */
 int dmrgo_mmdvm_status_v1_string(const dmrgo_mmdvm_status_v1_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

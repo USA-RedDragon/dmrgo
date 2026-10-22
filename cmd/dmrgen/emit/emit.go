@@ -241,6 +241,10 @@ func errorsNew(text string) Code {
 	return Qual("errors", "New").Call(Lit(text))
 }
 
+func lengthError(text string) Code {
+	return Qual("fmt", "Errorf").Call(Lit("%w: "+text), Id(errLength))
+}
+
 func docObject(pdu parse.PDUStruct) string {
 	return article(pdu.Name) + " " + pdu.Name + "."
 }
