@@ -618,10 +618,10 @@ func (r *Receiver) readHeader(dh *pdu.DataHeader) {
 		r.cur.fsn = c.FragmentSequenceNumber
 	} else if d, ok := dh.AsDefinedData(); ok {
 		r.cur.sap, r.cur.blocks, r.cur.full = d.SAP, d.AppendedBlocks, d.FullMessageFlag
-		r.cur.answer = d.ResponseRequested && d.SARQ
+		r.cur.answer = d.ResponseRequested
 	} else if d, ok := dh.AsRawData(); ok {
 		r.cur.sap, r.cur.blocks, r.cur.full = d.SAP, d.AppendedBlocks, d.FullMessageFlag
-		r.cur.answer = d.ResponseRequested && d.SARQ
+		r.cur.answer = d.ResponseRequested
 	} else if p, ok := dh.AsResponse(); ok {
 		r.cur.sap, r.cur.blocks = p.SAP, p.BlocksToFollow
 	} else if p, ok := dh.AsStatusPrecoded(); ok {
