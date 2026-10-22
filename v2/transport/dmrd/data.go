@@ -39,7 +39,9 @@ func (f FrameType) String() string {
 // Data is a DMRD packet: one burst with its call fields. The 53-octet core
 // is the same in every dialect; DMRGateway and MMDVMHost add the BER and
 // RSSI octets (55 octets), and DMRGateway with trunking adds a UUID (71
-// octets).
+// octets). DMRGateway drops a 53-octet packet from its master and from
+// MMDVMHost without a word, so set Size 55 to send to it. (DMRGateway
+// d751e20 DMRNetwork.cpp and MMDVMNetwork.cpp)
 //
 //dmr:frame 53 55 71
 //dmr:magic 0-31="DMRD"
