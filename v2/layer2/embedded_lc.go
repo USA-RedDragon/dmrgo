@@ -140,7 +140,11 @@ func embeddedLCChecksum(info [10]byte, result fec.Result) ([9]byte, fec.Result) 
 
 // EncodeEmbeddedFullLinkControl returns the four embedded signalling
 // fields, in burst order B to E, that carry lc. lc.BurstDataType is ignored.
+// It returns dmrgo.ErrNilArgument for a nil lc.
 func EncodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4][4]byte, error) {
+	if lc == nil {
+		return [4][4]byte{}, dmrgo.ErrNilArgument
+	}
 	frags, err := encodeEmbeddedFullLinkControl(lc)
 	return fragmentOctets(frags), err
 }
