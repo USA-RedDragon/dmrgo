@@ -1585,8 +1585,8 @@ sym int dmrgo_csbk_wakeup_decoded_need(dmrgo_csbk_wakeup_t *self, dmrgo_duration
 sym int dmrgo_csbk_wakeup_free(dmrgo_csbk_wakeup_t *self);
 sym int dmrgo_csbk_wakeup_lost(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_csbk_wakeup_lost_need(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
-sym int dmrgo_csbk_wakeup_outbound_sync(dmrgo_csbk_wakeup_t *self, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-sym int dmrgo_csbk_wakeup_outbound_sync_need(dmrgo_csbk_wakeup_t *self, size_t *items, size_t *arena);
+sym int dmrgo_csbk_wakeup_outbound_sync(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t p0, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_csbk_wakeup_outbound_sync_need(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
 sym int dmrgo_csbk_wakeup_reset(dmrgo_csbk_wakeup_t *self);
 sym int dmrgo_csbk_wakeup_state(dmrgo_csbk_wakeup_t *self, dmrgo_csbk_wakeup_state_t *out);
 sym int dmrgo_csbk_wakeup_state_string(dmrgo_csbk_wakeup_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

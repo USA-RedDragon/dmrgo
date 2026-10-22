@@ -7894,9 +7894,9 @@ int dmrgo_csbk_wakeup_lost_need(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now,
 /* Go: csbk.Wakeup.Lost. Lost tells the Wakeup that the transport lost the signal. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_wakeup_lost_need gives (DMRGO_CSBK_WAKEUP_LOST_MAX_ITEMS items). */
 int dmrgo_csbk_wakeup_lost(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_csbk_wakeup_outbound_sync_need sets *items and *arena to the room that dmrgo_csbk_wakeup_outbound_sync needs for these arguments, without a change to the handle. */
-int dmrgo_csbk_wakeup_outbound_sync_need(dmrgo_csbk_wakeup_t *self, size_t *items, size_t *arena);
+int dmrgo_csbk_wakeup_outbound_sync_need(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
 /* Go: csbk.Wakeup.OutboundSync. OutboundSync tells the Wakeup that the BS outbound is on air, as the caller sees it, and appends an OutputDone with ResultAnswered to dst while a wakeup runs. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_wakeup_outbound_sync_need gives (DMRGO_CSBK_WAKEUP_OUTBOUND_SYNC_MAX_ITEMS items). */
-int dmrgo_csbk_wakeup_outbound_sync(dmrgo_csbk_wakeup_t *self, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_csbk_wakeup_outbound_sync(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t p0, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: csbk.Wakeup.Reset. Reset ends any wakeup without an output. */
 int dmrgo_csbk_wakeup_reset(dmrgo_csbk_wakeup_t *self);
 /* Go: csbk.Wakeup.State. State returns the state of the Wakeup. */

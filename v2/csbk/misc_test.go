@@ -115,7 +115,7 @@ func TestResetAndLost(t *testing.T) {
 	if err := w.Wake(0, 1, 2); err != nil {
 		t.Fatal(err)
 	}
-	if out := w.OutboundSync(nil); len(out) != 0 {
+	if out := w.OutboundSync(0, nil); len(out) != 0 {
 		t.Error("outbound before the first BS_Dwn_Act ended the wakeup")
 	}
 	if out := w.Lost(0, nil); len(out) != 1 {
