@@ -496,8 +496,11 @@ func (m *MS) Cancel(now time.Duration, dst []Output) []Output {
 }
 
 // EndCall ends the own call on the payload channel: it appends the N_Maint
-// P_MAINT DISCON bursts, one per TDMA frame from now, and returns to the
-// TSCC (ETSI TS 102 361-4 clause 6.6.2.3). It does nothing outside the own
+// P_MAINT DISCON bursts, one per TDMA frame from the first slot of the call
+// at or after now, and returns to the TSCC (ETSI TS 102 361-4 clause
+// 6.6.2.3). The slot times come from the bursts of the call slot that the
+// MS took with h.Slot set; before the first of them the first burst is due
+// at now. It does nothing outside the own
 // call, and allocates only when dst has no room for MaxOutputs outputs.
 func (m *MS) EndCall(now time.Duration, dst []Output) []Output {
 	if m == nil || m.f.ctl.b == nil {
@@ -513,10 +516,16 @@ func (m *MS) EndCall(now time.Duration, dst []Output) []Output {
 	if to == m.addr {
 		to = g.Source
 	}
+	due := now
+	if at := m.f.slotAt; m.f.hasSlotAt && now > at {
+		if r := (now - at) % frame; r != 0 {
+			due = now + frame - r
+		}
+	}
 	m.tx = pdu.CSBK{LastBlock: true}
 	err := m.tx.SetMaintenance(pdu.MaintenancePDU{TargetAddress: to, SourceAddress: m.addr})
 	for i := range constants.NMaint {
-		dst = m.send(err, now+time.Duration(i)*frame, g.Slot, dst)
+		dst = m.send(err, due+time.Duration(i)*frame, g.Slot, dst)
 	}
 	m.ownCall = false
 	return m.f.leave(now, ReasonMaintenance, dst)

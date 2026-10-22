@@ -10670,7 +10670,7 @@ int dmrgo_trunk_ms_decoded(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, dmrgo_l
 int dmrgo_trunk_ms_divert(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, uint32_t gateway, const dmrgo_layer3_diversion_service_options_t *opts, const dmrgo_trunk_appended_t *a);
 /* dmrgo_trunk_ms_end_call_need sets *items and *arena to the room that dmrgo_trunk_ms_end_call needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_end_call_need(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
-/* Go: trunk.MS.EndCall. EndCall ends the own call on the payload channel: it appends the N_Maint P_MAINT DISCON bursts, one per TDMA frame from now, and returns to the TSCC (ETSI TS 102 361-4 clause 6.6.2.3). It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_end_call_need gives (DMRGO_TRUNK_MS_END_CALL_MAX_ITEMS items). */
+/* Go: trunk.MS.EndCall. EndCall ends the own call on the payload channel: it appends the N_Maint P_MAINT DISCON bursts, one per TDMA frame from the first slot of the call at or after now, and returns to the TSCC (ETSI TS 102 361-4 clause 6.6.2.3). It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_trunk_ms_end_call_need gives (DMRGO_TRUNK_MS_END_CALL_MAX_ITEMS items). */
 int dmrgo_trunk_ms_end_call(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, dmrgo_trunk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_trunk_ms_group_alias_need sets *items and *arena to the room that dmrgo_trunk_ms_group_alias needs for these arguments, without a change to the handle. */
 int dmrgo_trunk_ms_group_alias_need(dmrgo_trunk_ms_t *self, uint32_t tg, size_t *items, size_t *arena);
