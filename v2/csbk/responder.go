@@ -83,6 +83,13 @@ type ResponderConfig struct {
 	// Access is the channel access policy of the answers. The zero value
 	// is polite to own color code.
 	Access enums.Access
+	// Offset puts the answers on the offset channel timing of a BS, in
+	// which the inbound slot of a logical channel starts half a TDMA frame
+	// after its outbound slot: the answer starts 90 ms after the start of
+	// the request, and then on that grid. The zero value is the aligned
+	// channel timing of a BS, and a direct channel, where it starts 60 ms
+	// after. (ETSI TS 102 361-1 clause 5.1.1, Table 5.1)
+	Offset bool
 	// OACSU is the answer to UU_V_Req. The zero value is OACSUProceed.
 	OACSU OACSUAnswer
 	// NoRadioCheck leaves Motorola radio checks without an answer and
@@ -130,6 +137,7 @@ type Responder struct {
 	noRadio     bool
 	noAlert     bool
 	noFNS       bool
+	offset      bool
 	s           sender
 	d           decoder
 	service     Service
@@ -163,7 +171,7 @@ func NewResponder(cfg *ResponderConfig) (*Responder, error) {
 	if _, _, ok := cfg.Source.SyncPatterns(); !ok {
 		return nil, errSource
 	}
-	r := &Responder{address: cfg.Address, oacsu: cfg.OACSU, noRadio: cfg.NoRadioCheck, noAlert: cfg.NoCallAlert, noFNS: cfg.NoFNS}
+	r := &Responder{address: cfg.Address, oacsu: cfg.OACSU, noRadio: cfg.NoRadioCheck, noAlert: cfg.NoCallAlert, noFNS: cfg.NoFNS, offset: cfg.Offset}
 	r.s.init(cfg.ColorCode, cfg.Source, cfg.IdleSearch, cfg.HoldoffMax, cfg.Seed)
 	r.s.access, r.s.lead, r.s.slot = cfg.Access, cfg.Lead, cfg.Slot
 	r.d = newDecoder(cfg.Scratch)
@@ -250,6 +258,9 @@ func (r *Responder) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, d
 	r.service, r.reqTarget, r.reqSource = svc, target, source
 	r.s.timeCritical = timeCritical
 	r.s.grid, r.s.hasGrid = now+BurstInterval, true
+	if r.offset {
+		r.s.grid += BurstInterval / 2
+	}
 	r.s.start(now, answer, source, target, false, 0)
 	return dst
 }
