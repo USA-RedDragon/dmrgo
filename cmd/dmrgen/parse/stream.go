@@ -77,6 +77,7 @@ type StreamField struct {
 	LE        bool // le
 	SignedInt bool
 	SignMag   bool // signmag: the top bit is the sign and the rest the magnitude
+	Wrap      bool // wrap: an angle of one full turn, whose top value is its bottom one
 	ScaleNum  uint64
 	ScaleExp  int
 	Prec      int // fraction octets that AppendBinary writes for a float varint
@@ -288,6 +289,8 @@ func applyStreamModifier(sf *StreamField, mod string) error {
 		sf.LE = true
 	case "signmag":
 		sf.SignMag = true
+	case "wrap":
+		sf.Wrap = true
 	case "utf16le":
 		sf.Text = TextUTF16LE
 	case "utf16be":
@@ -503,6 +506,8 @@ func checkStreamModifiers(sf *StreamField) error {
 		return errors.New("le needs an integer kind")
 	case sf.SignMag && (sf.SKind != StreamFixed || !sf.SignedInt):
 		return errors.New("signmag needs a signed scaled integer")
+	case sf.Wrap && (sf.SKind != StreamFixed || !sf.SignedInt || sf.SignMag):
+		return errors.New("wrap needs a two's complement scaled integer")
 	case sf.Nul && sf.Text == TextNone:
 		return errors.New("nul needs utf16le or utf16be")
 	case sf.Text != TextNone && sf.SKind != StreamBytes:

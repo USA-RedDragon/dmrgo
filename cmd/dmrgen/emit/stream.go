@@ -572,6 +572,10 @@ func (e streamEnc) encodeValue(g *Group, f parse.StreamField, src *Statement) er
 		scale := float64(f.ScaleNum) / math.Ldexp(1, f.ScaleExp)
 		lo, hi := loRaw*scale, hiRaw*scale
 		g.Id(tmp).Op(":=").Qual("math", "Round").Call(src.Clone().Op("/").Parens(Id(scaleText(f))))
+		if f.Wrap {
+			hi = (hiRaw + 1) * scale
+			g.If(Id(tmp).Op("==").Lit(hiRaw + 1)).Block(Id(tmp).Op("=").Lit(loRaw))
+		}
 		g.If(Op("!").Parens(Id(tmp).Op(">=").Lit(loRaw).Op("&&").Id(tmp).Op("<=").Lit(hiRaw))).Block(e.rangeErr(f, w, f.SignedInt, &lo, &hi))
 		if f.SignedInt {
 			appendInt(g, f.Octets, f.LE, Uint64().Call(Int64().Call(Id(tmp))))

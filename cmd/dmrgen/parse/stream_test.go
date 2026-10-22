@@ -28,6 +28,8 @@ func TestParseRejectsBadStreams(t *testing.T) {
 		{"length signed", "// dmr:stream\ntype T struct {\n A int16 " + tag("i16,length") + "\n}", "length cannot be signed"},
 		{"scale type", "// dmr:stream\ntype T struct {\n A int32 " + tag("i32,scale:90/31") + "\n}", "scale needs a float64"},
 		{"signmag unsigned", "// dmr:stream\ntype T struct {\n A float64 " + tag("u32,signmag,scale:90/31") + "\n}", "signmag needs a signed scaled integer"},
+		{"wrap signmag", "// dmr:stream\ntype T struct {\n A float64 " + tag("i32,signmag,wrap,scale:90/31") + "\n}", "wrap needs a two's complement scaled integer"},
+		{"wrap unsigned", "// dmr:stream\ntype T struct {\n A float64 " + tag("u32,wrap,scale:360/32") + "\n}", "wrap needs a two's complement scaled integer"},
 		{"signmag unscaled", "// dmr:stream\ntype T struct {\n A int32 " + tag("i32,signmag") + "\n}", "signmag needs a signed scaled integer"},
 		{"float varint type", "// dmr:stream\ntype T struct {\n A uint8 " + tag("ufloatvar") + "\n}", "float varint needs float64"},
 		{"text on int", "// dmr:stream\ntype T struct {\n A uint8 " + tag("u8,utf16le") + "\n}", "need a byte string kind"},

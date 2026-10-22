@@ -121,6 +121,9 @@ func (s *Point2D) AppendBinary(dst []byte) ([]byte, error) {
 	}
 	dst = append(dst, byte(_vLatitudeRaw>>24), byte(_vLatitudeRaw>>16), byte(_vLatitudeRaw>>8), byte(_vLatitudeRaw))
 	_vLongitude := math.Round(s.Longitude / (360.0 / (1 << 32)))
+	if _vLongitude == 2.147483648e+09 {
+		_vLongitude = -2.147483648e+09
+	}
 	if !(_vLongitude >= -2.147483648e+09 && _vLongitude <= 2.147483647e+09) {
 		return dst[:_n], errPoint2DLongitudeRange
 	}
@@ -184,6 +187,9 @@ func (s *Circle2D) AppendBinary(dst []byte) ([]byte, error) {
 	}
 	dst = append(dst, byte(_vLatitudeRaw>>24), byte(_vLatitudeRaw>>16), byte(_vLatitudeRaw>>8), byte(_vLatitudeRaw))
 	_vLongitude := math.Round(s.Longitude / (360.0 / (1 << 32)))
+	if _vLongitude == 2.147483648e+09 {
+		_vLongitude = -2.147483648e+09
+	}
 	if !(_vLongitude >= -2.147483648e+09 && _vLongitude <= 2.147483647e+09) {
 		return dst[:_n], errCircle2DLongitudeRange
 	}
@@ -251,6 +257,9 @@ func (s *Point3D) AppendBinary(dst []byte) ([]byte, error) {
 	}
 	dst = append(dst, byte(_vLatitudeRaw>>24), byte(_vLatitudeRaw>>16), byte(_vLatitudeRaw>>8), byte(_vLatitudeRaw))
 	_vLongitude := math.Round(s.Longitude / (360.0 / (1 << 32)))
+	if _vLongitude == 2.147483648e+09 {
+		_vLongitude = -2.147483648e+09
+	}
 	if !(_vLongitude >= -2.147483648e+09 && _vLongitude <= 2.147483647e+09) {
 		return dst[:_n], errPoint3DLongitudeRange
 	}
@@ -321,6 +330,9 @@ func (s *Point3DWhole) AppendBinary(dst []byte) ([]byte, error) {
 	}
 	dst = append(dst, byte(_vLatitudeRaw>>24), byte(_vLatitudeRaw>>16), byte(_vLatitudeRaw>>8), byte(_vLatitudeRaw))
 	_vLongitude := math.Round(s.Longitude / (360.0 / (1 << 32)))
+	if _vLongitude == 2.147483648e+09 {
+		_vLongitude = -2.147483648e+09
+	}
 	if !(_vLongitude >= -2.147483648e+09 && _vLongitude <= 2.147483647e+09) {
 		return dst[:_n], errPoint3DWholeLongitudeRange
 	}
@@ -412,6 +424,9 @@ func (s *Circle3DWhole) AppendBinary(dst []byte) ([]byte, error) {
 	}
 	dst = append(dst, byte(_vLatitudeRaw>>24), byte(_vLatitudeRaw>>16), byte(_vLatitudeRaw>>8), byte(_vLatitudeRaw))
 	_vLongitude := math.Round(s.Longitude / (360.0 / (1 << 32)))
+	if _vLongitude == 2.147483648e+09 {
+		_vLongitude = -2.147483648e+09
+	}
 	if !(_vLongitude >= -2.147483648e+09 && _vLongitude <= 2.147483647e+09) {
 		return dst[:_n], errCircle3DWholeLongitudeRange
 	}
@@ -487,6 +502,9 @@ func (s *Point3DAccuracy) AppendBinary(dst []byte) ([]byte, error) {
 	}
 	dst = append(dst, byte(_vLatitudeRaw>>24), byte(_vLatitudeRaw>>16), byte(_vLatitudeRaw>>8), byte(_vLatitudeRaw))
 	_vLongitude := math.Round(s.Longitude / (360.0 / (1 << 32)))
+	if _vLongitude == 2.147483648e+09 {
+		_vLongitude = -2.147483648e+09
+	}
 	if !(_vLongitude >= -2.147483648e+09 && _vLongitude <= 2.147483647e+09) {
 		return dst[:_n], errPoint3DAccuracyLongitudeRange
 	}
@@ -576,6 +594,9 @@ func (s *Circle3D) AppendBinary(dst []byte) ([]byte, error) {
 	}
 	dst = append(dst, byte(_vLatitudeRaw>>24), byte(_vLatitudeRaw>>16), byte(_vLatitudeRaw>>8), byte(_vLatitudeRaw))
 	_vLongitude := math.Round(s.Longitude / (360.0 / (1 << 32)))
+	if _vLongitude == 2.147483648e+09 {
+		_vLongitude = -2.147483648e+09
+	}
 	if !(_vLongitude >= -2.147483648e+09 && _vLongitude <= 2.147483647e+09) {
 		return dst[:_n], errCircle3DLongitudeRange
 	}
@@ -1345,7 +1366,7 @@ var (
 	errPoint2DLongitudeRange = &dmrgo.FieldRangeError{
 		Bits:   32,
 		Field:  "Longitude",
-		Max:    179.99999991618097,
+		Max:    180.0,
 		Min:    -180.0,
 		Signed: true,
 		Type:   "Point2D",
@@ -1361,7 +1382,7 @@ var (
 	errCircle2DLongitudeRange = &dmrgo.FieldRangeError{
 		Bits:   32,
 		Field:  "Longitude",
-		Max:    179.99999991618097,
+		Max:    180.0,
 		Min:    -180.0,
 		Signed: true,
 		Type:   "Circle2D",
@@ -1382,7 +1403,7 @@ var (
 	errPoint3DLongitudeRange = &dmrgo.FieldRangeError{
 		Bits:   32,
 		Field:  "Longitude",
-		Max:    179.99999991618097,
+		Max:    180.0,
 		Min:    -180.0,
 		Signed: true,
 		Type:   "Point3D",
@@ -1404,7 +1425,7 @@ var (
 	errPoint3DWholeLongitudeRange = &dmrgo.FieldRangeError{
 		Bits:   32,
 		Field:  "Longitude",
-		Max:    179.99999991618097,
+		Max:    180.0,
 		Min:    -180.0,
 		Signed: true,
 		Type:   "Point3DWhole",
@@ -1420,7 +1441,7 @@ var (
 	errCircle3DWholeLongitudeRange = &dmrgo.FieldRangeError{
 		Bits:   32,
 		Field:  "Longitude",
-		Max:    179.99999991618097,
+		Max:    180.0,
 		Min:    -180.0,
 		Signed: true,
 		Type:   "Circle3DWhole",
@@ -1436,7 +1457,7 @@ var (
 	errPoint3DAccuracyLongitudeRange = &dmrgo.FieldRangeError{
 		Bits:   32,
 		Field:  "Longitude",
-		Max:    179.99999991618097,
+		Max:    180.0,
 		Min:    -180.0,
 		Signed: true,
 		Type:   "Point3DAccuracy",
@@ -1463,7 +1484,7 @@ var (
 	errCircle3DLongitudeRange = &dmrgo.FieldRangeError{
 		Bits:   32,
 		Field:  "Longitude",
-		Max:    179.99999991618097,
+		Max:    180.0,
 		Min:    -180.0,
 		Signed: true,
 		Type:   "Circle3D",
