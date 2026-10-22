@@ -9,7 +9,7 @@ import (
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
 
-// DecodeStatusV2 decodes a StatusV2 from data, a frame of 17 octets. It
+// DecodeStatusV2 decodes a StatusV2 from data, a payload of 17 octets. It
 // returns ErrShort when data is shorter than 17 octets and ErrLength when it
 // is longer. It does not keep data.
 func DecodeStatusV2(data []byte) (StatusV2, error) {
@@ -104,7 +104,7 @@ func (s *StatusV2) String() string {
 	return "StatusV2{ State: " + text.Int(int64(s.State)) + ", CD: " + text.Bool(s.CD) + ", DACOverflow: " + text.Bool(s.DACOverflow) + ", Lockout: " + text.Bool(s.Lockout) + ", TXOverflow: " + text.Bool(s.TXOverflow) + ", RXOverflow: " + text.Bool(s.RXOverflow) + ", ADCOverflow: " + text.Bool(s.ADCOverflow) + ", TX: " + text.Bool(s.TX) + ", DStarSpace: " + text.Int(int64(s.DStarSpace)) + ", DMRSpace1: " + text.Int(int64(s.DMRSpace1)) + ", DMRSpace2: " + text.Int(int64(s.DMRSpace2)) + ", YSFSpace: " + text.Int(int64(s.YSFSpace)) + ", P25Space: " + text.Int(int64(s.P25Space)) + ", NXDNSpace: " + text.Int(int64(s.NXDNSpace)) + ", FMSpace: " + text.Int(int64(s.FMSpace)) + ", POCSAGSpace: " + text.Int(int64(s.POCSAGSpace)) + " }"
 }
 
-// DecodeStatusV1 decodes a StatusV1 from data, a frame of 11 octets. It
+// DecodeStatusV1 decodes a StatusV1 from data, a payload of 11 octets. It
 // returns ErrShort when data is shorter than 11 octets and ErrLength when it
 // is longer. It does not keep data.
 func DecodeStatusV1(data []byte) (StatusV1, error) {
@@ -220,7 +220,7 @@ func (s *StatusV1) String() string {
 	return "StatusV1{ M17: " + text.Bool(s.M17) + ", POCSAG: " + text.Bool(s.POCSAG) + ", NXDN: " + text.Bool(s.NXDN) + ", P25: " + text.Bool(s.P25) + ", YSF: " + text.Bool(s.YSF) + ", DMR: " + text.Bool(s.DMR) + ", DStar: " + text.Bool(s.DStar) + ", State: " + text.Int(int64(s.State)) + ", CD: " + text.Bool(s.CD) + ", DACOverflow: " + text.Bool(s.DACOverflow) + ", Lockout: " + text.Bool(s.Lockout) + ", TXOverflow: " + text.Bool(s.TXOverflow) + ", RXOverflow: " + text.Bool(s.RXOverflow) + ", ADCOverflow: " + text.Bool(s.ADCOverflow) + ", TX: " + text.Bool(s.TX) + ", DStarSpace: " + text.Int(int64(s.DStarSpace)) + ", DMRSpace1: " + text.Int(int64(s.DMRSpace1)) + ", DMRSpace2: " + text.Int(int64(s.DMRSpace2)) + ", YSFSpace: " + text.Int(int64(s.YSFSpace)) + ", P25Space: " + text.Int(int64(s.P25Space)) + ", NXDNSpace: " + text.Int(int64(s.NXDNSpace)) + ", POCSAGSpace: " + text.Int(int64(s.POCSAGSpace)) + ", M17Space: " + text.Int(int64(s.M17Space)) + " }"
 }
 
-// DecodeConfigV2 decodes a ConfigV2 from data, a frame of 37 octets. It
+// DecodeConfigV2 decodes a ConfigV2 from data, a payload of 37 octets. It
 // returns ErrShort when data is shorter than 37 octets and ErrLength when it
 // is longer. It does not keep data.
 func DecodeConfigV2(data []byte) (ConfigV2, error) {
@@ -383,7 +383,7 @@ func (s *ConfigV2) String() string {
 	return "ConfigV2{ Simplex: " + text.Bool(s.Simplex) + ", UseCOSAsLockout: " + text.Bool(s.UseCOSAsLockout) + ", Debug: " + text.Bool(s.Debug) + ", YSFLoDev: " + text.Bool(s.YSFLoDev) + ", PTTInvert: " + text.Bool(s.PTTInvert) + ", TXInvert: " + text.Bool(s.TXInvert) + ", RXInvert: " + text.Bool(s.RXInvert) + ", FM: " + text.Bool(s.FM) + ", NXDN: " + text.Bool(s.NXDN) + ", P25: " + text.Bool(s.P25) + ", YSF: " + text.Bool(s.YSF) + ", DMR: " + text.Bool(s.DMR) + ", DStar: " + text.Bool(s.DStar) + ", POCSAG: " + text.Bool(s.POCSAG) + ", TXDelay: " + text.Int(int64(s.TXDelay)) + ", State: " + text.Int(int64(s.State)) + ", TXDCOffset: " + text.Int(int64(s.TXDCOffset)) + ", RXDCOffset: " + text.Int(int64(s.RXDCOffset)) + ", RXLevel: " + text.Int(int64(s.RXLevel)) + ", CWIDTXLevel: " + text.Int(int64(s.CWIDTXLevel)) + ", DStarTXLevel: " + text.Int(int64(s.DStarTXLevel)) + ", DMRTXLevel: " + text.Int(int64(s.DMRTXLevel)) + ", YSFTXLevel: " + text.Int(int64(s.YSFTXLevel)) + ", P25TXLevel: " + text.Int(int64(s.P25TXLevel)) + ", NXDNTXLevel: " + text.Int(int64(s.NXDNTXLevel)) + ", POCSAGTXLevel: " + text.Int(int64(s.POCSAGTXLevel)) + ", FMTXLevel: " + text.Int(int64(s.FMTXLevel)) + ", YSFTXHang: " + text.Int(int64(s.YSFTXHang)) + ", P25TXHang: " + text.Int(int64(s.P25TXHang)) + ", NXDNTXHang: " + text.Int(int64(s.NXDNTXHang)) + ", DMRTrunking: " + text.Bool(s.DMRTrunking) + ", DMRColorCode: " + text.Int(int64(s.DMRColorCode)) + ", DMRDelay: " + text.Int(int64(s.DMRDelay)) + ", OscOffset: " + text.Int(int64(s.OscOffset)) + " }"
 }
 
-// DecodeConfigV1 decodes a ConfigV1 from data, a frame of 23 octets. It
+// DecodeConfigV1 decodes a ConfigV1 from data, a payload of 23 octets. It
 // returns ErrShort when data is shorter than 23 octets and ErrLength when it
 // is longer. It does not keep data.
 func DecodeConfigV1(data []byte) (ConfigV1, error) {
@@ -526,9 +526,9 @@ func (s *ConfigV1) String() string {
 	return "ConfigV1{ Simplex: " + text.Bool(s.Simplex) + ", UseCOSAsLockout: " + text.Bool(s.UseCOSAsLockout) + ", Debug: " + text.Bool(s.Debug) + ", YSFLoDev: " + text.Bool(s.YSFLoDev) + ", PTTInvert: " + text.Bool(s.PTTInvert) + ", TXInvert: " + text.Bool(s.TXInvert) + ", RXInvert: " + text.Bool(s.RXInvert) + ", M17: " + text.Bool(s.M17) + ", POCSAG: " + text.Bool(s.POCSAG) + ", NXDN: " + text.Bool(s.NXDN) + ", P25: " + text.Bool(s.P25) + ", YSF: " + text.Bool(s.YSF) + ", DMR: " + text.Bool(s.DMR) + ", DStar: " + text.Bool(s.DStar) + ", TXDelay: " + text.Int(int64(s.TXDelay)) + ", State: " + text.Int(int64(s.State)) + ", RXLevel: " + text.Int(int64(s.RXLevel)) + ", CWIDTXLevel: " + text.Int(int64(s.CWIDTXLevel)) + ", DMRColorCode: " + text.Int(int64(s.DMRColorCode)) + ", DMRDelay: " + text.Int(int64(s.DMRDelay)) + ", OscOffset: " + text.Int(int64(s.OscOffset)) + ", DStarTXLevel: " + text.Int(int64(s.DStarTXLevel)) + ", DMRTXLevel: " + text.Int(int64(s.DMRTXLevel)) + ", YSFTXLevel: " + text.Int(int64(s.YSFTXLevel)) + ", P25TXLevel: " + text.Int(int64(s.P25TXLevel)) + ", TXDCOffset: " + text.Int(int64(s.TXDCOffset)) + ", RXDCOffset: " + text.Int(int64(s.RXDCOffset)) + ", NXDNTXLevel: " + text.Int(int64(s.NXDNTXLevel)) + ", YSFTXHang: " + text.Int(int64(s.YSFTXHang)) + ", POCSAGTXLevel: " + text.Int(int64(s.POCSAGTXLevel)) + ", FMTXLevel: " + text.Int(int64(s.FMTXLevel)) + ", P25TXHang: " + text.Int(int64(s.P25TXHang)) + ", NXDNTXHang: " + text.Int(int64(s.NXDNTXHang)) + ", M17TXLevel: " + text.Int(int64(s.M17TXLevel)) + ", M17TXHang: " + text.Int(int64(s.M17TXHang)) + " }"
 }
 
-// DecodeSetFreq decodes a SetFreq from data, a frame of 9, 10 or 14 octets.
-// It returns ErrShort when data is shorter than 9 octets and ErrLength when
-// its length is not one of these. It does not keep data.
+// DecodeSetFreq decodes a SetFreq from data, a payload of 9, 10 or 14
+// octets. It returns ErrShort when data is shorter than 9 octets and
+// ErrLength when its length is not one of these. It does not keep data.
 func DecodeSetFreq(data []byte) (SetFreq, error) {
 	switch len(data) {
 	case 9, 10, 14:
@@ -616,9 +616,9 @@ func (s *SetFreq) String() string {
 	return "SetFreq{ Reserved: " + text.Int(int64(s.Reserved)) + ", RX: " + text.Int(int64(s.RX)) + ", TX: " + text.Int(int64(s.TX)) + ", RFLevel: " + text.Int(int64(s.RFLevel)) + ", POCSAG: " + text.Int(int64(s.POCSAG)) + " }"
 }
 
-// DecodeSetMode decodes a SetMode from data, a frame of 1 octet. It returns
-// ErrShort when data is shorter than 1 octet and ErrLength when it is
-// longer. It does not keep data.
+// DecodeSetMode decodes a SetMode from data, a payload of 1 octet. It
+// returns ErrShort when data is shorter than 1 octet and ErrLength when it
+// is longer. It does not keep data.
 func DecodeSetMode(data []byte) (SetMode, error) {
 	if len(data) < 1 {
 		return SetMode{}, ErrShort
@@ -658,7 +658,7 @@ func (s *SetMode) String() string {
 	return "SetMode{ Mode: " + text.Int(int64(s.Mode)) + " }"
 }
 
-// DecodeAck decodes an Ack from data, a frame of 1 octet. It returns
+// DecodeAck decodes an Ack from data, a payload of 1 octet. It returns
 // ErrShort when data is shorter than 1 octet and ErrLength when it is
 // longer. It does not keep data.
 func DecodeAck(data []byte) (Ack, error) {
@@ -700,7 +700,7 @@ func (s *Ack) String() string {
 	return "Ack{ Command: " + text.Int(int64(s.Command)) + " }"
 }
 
-// DecodeNak decodes a Nak from data, a frame of 2 octets. It returns
+// DecodeNak decodes a Nak from data, a payload of 2 octets. It returns
 // ErrShort when data is shorter than 2 octets and ErrLength when it is
 // longer. It does not keep data.
 func DecodeNak(data []byte) (Nak, error) {
@@ -744,7 +744,7 @@ func (s *Nak) String() string {
 	return "Nak{ Command: " + text.Int(int64(s.Command)) + ", Reason: " + text.Int(int64(s.Reason)) + " }"
 }
 
-// DecodeDMRStart decodes a DMRStart from data, a frame of 1 octet. It
+// DecodeDMRStart decodes a DMRStart from data, a payload of 1 octet. It
 // returns ErrShort when data is shorter than 1 octet and ErrLength when it
 // is longer. It does not keep data.
 func DecodeDMRStart(data []byte) (DMRStart, error) {
@@ -789,7 +789,7 @@ func (s *DMRStart) String() string {
 	return "DMRStart{ TX: " + text.Bool(s.TX) + " }"
 }
 
-// DecodeDMRAbort decodes a DMRAbort from data, a frame of 1 octet. It
+// DecodeDMRAbort decodes a DMRAbort from data, a payload of 1 octet. It
 // returns ErrShort when data is shorter than 1 octet and ErrLength when it
 // is longer. It does not keep data.
 func DecodeDMRAbort(data []byte) (DMRAbort, error) {
@@ -834,7 +834,7 @@ func (s *DMRAbort) String() string {
 	return "DMRAbort{ Slot: " + s.Slot.String() + " }"
 }
 
-// DecodeDMRShortLC decodes a DMRShortLC from data, a frame of 9 octets. It
+// DecodeDMRShortLC decodes a DMRShortLC from data, a payload of 9 octets. It
 // returns ErrShort when data is shorter than 9 octets and ErrLength when it
 // is longer. It does not keep data.
 func DecodeDMRShortLC(data []byte) (DMRShortLC, error) {

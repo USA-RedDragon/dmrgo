@@ -7,6 +7,7 @@ import "github.com/USA-RedDragon/dmrgo/v2/enums"
 // buffer.
 //
 //dmr:frame 17
+//dmr:payload
 //dmr:const 8-8=0
 //dmr:const 16-23=0
 //dmr:const 72-79=0
@@ -53,6 +54,7 @@ type StatusV2 struct {
 // free space of each TX buffer.
 //
 //dmr:frame 11
+//dmr:payload
 //dmr:const 1-1=0
 //dmr:const 16-16=0
 type StatusV1 struct {
@@ -112,6 +114,7 @@ type StatusV1 struct {
 // are 0 to 255 for 0 to 100 percent.
 //
 //dmr:frame 37
+//dmr:payload
 //dmr:const 1-1=0
 //dmr:const 8-9=0
 //dmr:const 16-22=0
@@ -197,6 +200,7 @@ type ConfigV2 struct {
 // Levels are 0 to 255 for 0 to 100 percent.
 //
 //dmr:frame 23
+//dmr:payload
 //dmr:const 1-1=0
 //dmr:const 8-8=0
 type ConfigV1 struct {
@@ -279,6 +283,7 @@ type ConfigV1 struct {
 // frequency.
 //
 //dmr:frame 9 10 14
+//dmr:payload
 type SetFreq struct {
 	// Reserved is octet 0, 0x00 from MMDVMHost.
 	Reserved uint8 `dmr:"bits:0-7"`
@@ -297,6 +302,7 @@ type SetFreq struct {
 // SetMode is the payload of a CommandSetMode frame.
 //
 //dmr:frame 1
+//dmr:payload
 type SetMode struct {
 	// Mode is the mode to change to.
 	Mode Mode `dmr:"bits:0-7"`
@@ -305,6 +311,7 @@ type SetMode struct {
 // Ack is the payload of a CommandAck frame from the modem.
 //
 //dmr:frame 1
+//dmr:payload
 type Ack struct {
 	// Command is the command that the modem accepted.
 	Command Command `dmr:"bits:0-7"`
@@ -313,6 +320,7 @@ type Ack struct {
 // Nak is the payload of a CommandNak frame from the modem.
 //
 //dmr:frame 2
+//dmr:payload
 type Nak struct {
 	// Command is the command that the modem refused.
 	Command Command `dmr:"bits:0-7"`
@@ -325,6 +333,7 @@ type Nak struct {
 // the duplex transmitter.
 //
 //dmr:frame 1
+//dmr:payload
 //dmr:const 0-6=0
 type DMRStart struct {
 	// TX starts the transmitter; false stops it.
@@ -335,6 +344,7 @@ type DMRStart struct {
 // bursts of one slot.
 //
 //dmr:frame 1
+//dmr:payload
 type DMRAbort struct {
 	// Slot is the slot, Slot1 (1) or Slot2 (2).
 	Slot enums.Slot `dmr:"bits:0-7,enum"`
@@ -345,6 +355,7 @@ type DMRAbort struct {
 // NewDMRShortLC builds it from a pdu.ShortLC, and ShortLC decodes it.
 //
 //dmr:frame 9
+//dmr:payload
 type DMRShortLC struct {
 	// LC is the 68 coded and interleaved bits of the Short LC, first bit
 	// first, then 4 unused bits.

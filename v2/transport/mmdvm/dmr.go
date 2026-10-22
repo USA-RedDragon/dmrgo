@@ -206,6 +206,7 @@ func (d *DMRData) SetHint(h layer2.Hint) error {
 // type to the configured color code.
 //
 //dmr:frame 33
+//dmr:payload
 type DMRAloha struct {
 	// Burst is the 33-octet burst in transmit bit order.
 	Burst layer2.RawBurst `dmr:"bits:0-263,packed"`
