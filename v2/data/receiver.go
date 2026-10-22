@@ -438,7 +438,7 @@ func (r *Receiver) lose(at time.Duration, n int, out []Event) []Event {
 		}
 		m, done, err := r.asm.Lost()
 		if done || errors.Is(err, packet.ErrBlocksMissing) {
-			out = r.complete(at, &m, done, err, out)
+			out = r.complete(max(r.cur.lastBlock, at-r.delay), &m, done, err, out)
 		}
 	}
 	r.settle()
