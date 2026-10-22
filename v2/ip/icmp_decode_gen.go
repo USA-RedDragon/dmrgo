@@ -62,8 +62,7 @@ func (s *ICMPHeader) String() string {
 }
 
 // DecodeICMP decodes an ICMP from data. It returns ErrShort when data ends
-// inside a field and ErrLength when a length does not match the data. It
-// does not copy: the byte string fields point into data.
+// inside a field. It does not copy: the byte string fields point into data.
 // (ETSI TS 102 361-3 clause 5.2)
 func DecodeICMP(data []byte) (ICMP, error) {
 	var v ICMP
