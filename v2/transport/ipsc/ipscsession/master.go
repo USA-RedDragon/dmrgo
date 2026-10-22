@@ -17,9 +17,14 @@ type MasterConfig struct {
 	// and data calls. The Master sets ipsc.FlagMasterPeer, and
 	// ipsc.FlagAuth with Auth.
 	Flags ipsc.Flags
-	// Version is the protocol version that the master sends. Zero means
-	// VersionDefault.
-	Version [4]byte
+	// RegisterVersion is the protocol version that the master sends in a
+	// register request or reply (0x90, 0x91, 0x94, 0x95). Zero means
+	// RegisterVersionDefault.
+	RegisterVersion [4]byte
+	// AliveVersion is the protocol version that the master sends in a
+	// keepalive request or reply (0x96, 0x97). Zero means
+	// AliveVersionDefault.
+	AliveVersion [4]byte
 	// Auth turns on the HMAC-SHA1 trailer with Key: the Master drops a
 	// packet without a good trailer and signs what it sends.
 	Auth bool
@@ -80,7 +85,7 @@ func NewMaster(cfg *MasterConfig) (*Master, error) {
 	}
 	flags.Set(ipsc.FlagMasterPeer, true)
 	return &Master{
-		l:          newLink(cfg.ID, cfg.Mode, flags, cfg.Version, cfg.Auth, cfg.Key, n),
+		l:          newLink(cfg.ID, cfg.Mode, flags, cfg.RegisterVersion, cfg.AliveVersion, cfg.Auth, cfg.Key, n),
 		timeout:    orDefault(cfg.Timeout, TimeoutDefault),
 		maxPeers:   n,
 		adoptKnown: cfg.AdoptKnown,
@@ -374,7 +379,7 @@ func (m *Master) registered(now time.Duration, from Addr, i int, raw *ipsc.Raw, 
 			dst = m.listToAll(dst)
 		}
 	case ipsc.OpPeerRegisterRequest:
-		dst = send(dst, m.l.appendControl(m.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerRegisterReply, ID: m.l.id, Version: m.l.version}, e.keyOf()), from)
+		dst = send(dst, m.l.appendControl(m.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerRegisterReply, ID: m.l.id, Version: m.l.regVersion}, e.keyOf()), from)
 	case ipsc.OpPeerAliveRequest:
 		dst = send(dst, m.l.appendControl(m.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerAliveReply, ID: m.l.id, Mode: m.l.mode, Flags: m.flagsFor(e.keyOf())}, e.keyOf()), from)
 	case ipsc.OpPeerRegisterReply, ipsc.OpPeerAliveReply:
@@ -439,8 +444,9 @@ func (m *Master) register(now time.Duration, from Addr, c *ipsc.Control, i int, 
 		}
 	}
 	dst = m.keep(dst, now, i, PeerInfo{ID: c.ID, Addr: from, Mode: c.Mode, Flags: c.Flags, Up: true}, key)
-	r := ipsc.Control{Opcode: op, ID: m.l.id, Mode: m.l.mode, Flags: m.flagsFor(key), Version: m.l.version}
+	r := ipsc.Control{Opcode: op, ID: m.l.id, Mode: m.l.mode, Flags: m.flagsFor(key), Version: m.l.aliveVersion}
 	if op == ipsc.OpRegisterReply {
+		r.Version = m.l.regVersion
 		r.Peers = uint16(m.l.shared() & 0xFFFF)
 		if key != nil {
 			r.Peers = 1

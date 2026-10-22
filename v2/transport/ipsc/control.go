@@ -18,8 +18,9 @@ type Control struct {
 	// ListLen is the length in octets of the peer list of an
 	// OpPeerListReply, 11 for each peer.
 	ListLen uint16
-	// Version is the protocol version (0x90, 0x91, 0x94 to 0x97), for
-	// example 04 02 04 01.
+	// Version is the protocol version (0x90, 0x91, 0x94 to 0x97). An XPR
+	// 8400 sends 04 08 04 00 in a register request and 04 02 04 01 in a
+	// keepalive request.
 	Version [4]byte
 }
 

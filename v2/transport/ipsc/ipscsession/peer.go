@@ -16,9 +16,14 @@ type PeerConfig struct {
 	// Flags is the flags that the peer sends. The zero Flags means voice
 	// and data calls. The Peer sets ipsc.FlagAuth with Auth.
 	Flags ipsc.Flags
-	// Version is the protocol version that the peer sends. Zero means
-	// VersionDefault.
-	Version [4]byte
+	// RegisterVersion is the protocol version that the peer sends in a
+	// register request or reply (0x90, 0x91, 0x94, 0x95). Zero means
+	// RegisterVersionDefault.
+	RegisterVersion [4]byte
+	// AliveVersion is the protocol version that the peer sends in a
+	// keepalive request or reply (0x96, 0x97). Zero means
+	// AliveVersionDefault.
+	AliveVersion [4]byte
 	// Master is the address of the master.
 	Master Addr
 	// Auth turns on the HMAC-SHA1 trailer with Key: the Peer drops a
@@ -94,7 +99,7 @@ func NewPeer(cfg *PeerConfig) (*Peer, error) {
 		missed = MaxMissedDefault
 	}
 	return &Peer{
-		l:         newLink(cfg.ID, cfg.Mode, flags, cfg.Version, cfg.Auth, cfg.Key, n),
+		l:         newLink(cfg.ID, cfg.Mode, flags, cfg.RegisterVersion, cfg.AliveVersion, cfg.Auth, cfg.Key, n),
 		master:    cfg.Master,
 		alive:     orDefault(cfg.Alive, AliveDefault),
 		maxMissed: missed,
@@ -256,11 +261,11 @@ func (p *Peer) Tick(now time.Duration, dst []Output) []Output {
 		dst = append(dst, Output{Kind: OutputDown, ID: p.masterID, Addr: p.master, Reason: ReasonTimeout})
 		p.state, p.outstanding = StateRegistering, 0
 	}
-	op := ipsc.OpAliveRequest
+	op, version := ipsc.OpAliveRequest, p.l.aliveVersion
 	if p.state == StateRegistering {
-		op = ipsc.OpRegisterRequest
+		op, version = ipsc.OpRegisterRequest, p.l.regVersion
 	}
-	dst = send(dst, p.l.appendControl(p.tx[:0], ipsc.Control{Opcode: op, ID: p.l.id, Mode: p.l.mode, Flags: p.l.flags, Version: p.l.version}, nil), p.master)
+	dst = send(dst, p.l.appendControl(p.tx[:0], ipsc.Control{Opcode: op, ID: p.l.id, Mode: p.l.mode, Flags: p.l.flags, Version: version}, nil), p.master)
 	if p.state == StateRunning {
 		p.outstanding++
 		if !p.haveList {
@@ -276,7 +281,7 @@ func (p *Peer) Tick(now time.Duration, dst []Output) []Output {
 		}
 		if !e.info.Up {
 			if reg == nil {
-				reg = p.l.appendControl(p.txReg[:0], ipsc.Control{Opcode: ipsc.OpPeerRegisterRequest, ID: p.l.id, Version: p.l.version}, nil)
+				reg = p.l.appendControl(p.txReg[:0], ipsc.Control{Opcode: ipsc.OpPeerRegisterRequest, ID: p.l.id, Version: p.l.regVersion}, nil)
 			}
 			dst = send(dst, reg, e.info.Addr)
 			continue
@@ -420,7 +425,7 @@ func (p *Peer) answer(op ipsc.Opcode, body []byte, from Addr, dst []Output) []Ou
 		return dst
 	}
 	if op == ipsc.OpPeerRegisterRequest {
-		return send(dst, p.l.appendControl(p.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerRegisterReply, ID: p.l.id, Version: p.l.version}, nil), from)
+		return send(dst, p.l.appendControl(p.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerRegisterReply, ID: p.l.id, Version: p.l.regVersion}, nil), from)
 	}
 	return send(dst, p.l.appendControl(p.tx[:0], ipsc.Control{Opcode: ipsc.OpPeerAliveReply, ID: p.l.id, Mode: p.l.mode, Flags: p.l.flags}, nil), from)
 }
