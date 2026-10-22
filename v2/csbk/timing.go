@@ -339,8 +339,15 @@ func (m *Timing) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, d
 // radio takes the slot timing of b, and starts, keeps or cancels the
 // CT_CSBK that the radio sends. The SYNC of b, or else h.Slot, tells the
 // slot of b; a burst of unknown slot counts as one in the provisioned
-// slot. The CT_CSBKs of the radio go on the slot timing that it took,
-// after b. A CSBK whose CRC fails is dropped. It allocates only when dst
+// slot. The CT_CSBKs of the radio go in its provisioned slot on the slot
+// timing that it took, and none starts before the slot of the last CT_CSBK
+// heard ends, 30 ms after now: now is the start of that burst, which fills
+// its slot. So the beacon that a radio sends at once when a CT_CSBK
+// appoints it the leader (ETSI TS 102 361-2 clause 6.2.3.7) goes in the
+// first slot that can carry it: 30 ms after the CT_CSBK when it came in the
+// other slot, and 60 ms after it when it came in the provisioned slot. ETSI
+// gives no earliest time for "immediately"; this is the choice of dmrgo. A
+// CSBK whose CRC fails is dropped. It allocates only when dst
 // has no room for MaxOutputs outputs. (ETSI TS 102 361-2 clauses 6.2.2.1,
 // 6.2.2.2 and 6.2.3.2 to 6.2.3.11)
 func (m *Timing) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, dst []Output) []Output {
