@@ -148,6 +148,83 @@ func (l *loader) effects(fn *types.Func, param int) *effect {
 	return a.eff
 }
 
+// overwrites reports whether fn replaces all of *param (-1 for the
+// receiver) before it reads it: after its nil checks, its first statement
+// that uses param is *param = v, and v does not use param.
+func (l *loader) overwrites(fn *types.Func, param int) bool {
+	fn = fn.Origin()
+	fd := l.decl[fn]
+	if fd == nil {
+		return false
+	}
+	info := l.info[fn.Pkg()]
+	id := paramIdent(fd, param)
+	if id == nil {
+		return false
+	}
+	obj := info.Defs[id]
+	if obj == nil {
+		return false
+	}
+	uses := func(n ast.Node) bool {
+		found := false
+		ast.Inspect(n, func(x ast.Node) bool {
+			if i, ok := x.(*ast.Ident); ok && info.Uses[i] == obj {
+				found = true
+			}
+			return !found
+		})
+		return found
+	}
+	for _, st := range fd.Body.List {
+		if !uses(st) {
+			continue
+		}
+		if ifs, ok := st.(*ast.IfStmt); ok && ifs.Init == nil && ifs.Else == nil && nilCheck(ifs.Cond, obj, info) && len(ifs.Body.List) > 0 {
+			if _, ok := ifs.Body.List[len(ifs.Body.List)-1].(*ast.ReturnStmt); ok && !uses(ifs.Body) {
+				continue
+			}
+		}
+		as, ok := st.(*ast.AssignStmt)
+		if !ok || len(as.Lhs) != 1 || len(as.Rhs) != 1 || as.Tok != token.ASSIGN {
+			return false
+		}
+		star, ok := ast.Unparen(as.Lhs[0]).(*ast.StarExpr)
+		if !ok {
+			return false
+		}
+		if x, ok := ast.Unparen(star.X).(*ast.Ident); !ok || info.Uses[x] != obj {
+			return false
+		}
+		return !uses(as.Rhs[0])
+	}
+	return false
+}
+
+func nilCheck(e ast.Expr, obj types.Object, info *types.Info) bool {
+	switch x := ast.Unparen(e).(type) {
+	case *ast.BinaryExpr:
+		switch x.Op {
+		case token.LOR, token.LAND:
+			return nilCheck(x.X, obj, info) && nilCheck(x.Y, obj, info)
+		case token.EQL, token.NEQ:
+			l, lok := ast.Unparen(x.X).(*ast.Ident)
+			r, rok := ast.Unparen(x.Y).(*ast.Ident)
+			if lok && rok && (info.Uses[l] == obj && r.Name == "nil" || info.Uses[r] == obj && l.Name == "nil") {
+				return true
+			}
+		}
+	}
+	found := false
+	ast.Inspect(e, func(n ast.Node) bool {
+		if i, ok := n.(*ast.Ident); ok && info.Uses[i] == obj {
+			found = true
+		}
+		return !found
+	})
+	return !found
+}
+
 func paramIdent(fd *ast.FuncDecl, param int) *ast.Ident {
 	if param < 0 {
 		if fd.Recv == nil || len(fd.Recv.List) == 0 || len(fd.Recv.List[0].Names) == 0 {

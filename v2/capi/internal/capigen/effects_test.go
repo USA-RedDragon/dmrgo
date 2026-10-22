@@ -77,4 +77,7 @@ func TestEffects(t *testing.T) {
 			t.Errorf("%s param %d: effects %s, want %s", c.name, c.param, got, c.want)
 		}
 	}
+	if !l.overwrites(fn("DecodeInto"), 0) || l.overwrites(fn("ReadFirst"), 0) || l.overwrites(fn("Into"), 0) {
+		t.Error("overwrites: DecodeInto sets all of m first; ReadFirst and Into do not")
+	}
 }
