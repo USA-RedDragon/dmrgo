@@ -9,7 +9,8 @@ import (
 // burst, as layer2.RawBurst.BPTCPayload returns it. Its methods read or write
 // one field in place and leave every other bit as it is. The setters do not
 // update the CRC: call Reseal after the last edit, or the header fails its
-// CRC check. (ETSI TS 102 361-1 clause 9.2)
+// CRC check. The zero value reads as a UDT_HEAD with LLIDs 0, as the zero
+// DataHeader does. (ETSI TS 102 361-1 clause 9.2)
 type DataHeaderBytes [12]byte
 
 // Format returns the Format, the low 4 bits of octet 0.
