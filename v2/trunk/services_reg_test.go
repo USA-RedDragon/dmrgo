@@ -181,6 +181,12 @@ func TestSupplementary_VoiceCall(t *testing.T) {
 	if err := a.ms.SetSupplementary(&trunk.Appended{Blocks: 5}); !errors.Is(err, trunk.ErrUDTLength) {
 		t.Errorf("SetSupplementary of 5 blocks = %v", err)
 	}
+	if err := a.ms.SetSupplementary(&trunk.Appended{Format: 16, Blocks: 1}); !errors.Is(err, trunk.ErrUDTFormat) {
+		t.Errorf("SetSupplementary of Format 16 = %v", err)
+	}
+	if err := a.ms.SetSupplementary(&trunk.Appended{Blocks: 1, PadNibble: 32}); !errors.Is(err, trunk.ErrUDTLength) {
+		t.Errorf("SetSupplementary of PadNibble 32 = %v", err)
+	}
 	if err := a.ms.SetSupplementary(nil); err != nil {
 		t.Errorf("SetSupplementary(nil) = %v", err)
 	}

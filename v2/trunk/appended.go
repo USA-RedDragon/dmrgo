@@ -74,8 +74,11 @@ func (a *Appended) reset(f enums.UDTFormat, blocks int) {
 }
 
 func (a *Appended) size() (int, error) {
-	if a == nil || a.Blocks < 1 || a.Blocks > 4 {
+	switch {
+	case a == nil || a.Blocks < 1 || a.Blocks > 4 || a.PadNibble > 31:
 		return 0, ErrUDTLength
+	case a.Format > 15:
+		return 0, ErrUDTFormat
 	}
 	return appendedBits(a.Blocks), nil
 }
