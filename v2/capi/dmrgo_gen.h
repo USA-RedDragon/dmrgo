@@ -999,7 +999,7 @@ struct dmrgo_bs_config_t {
 	dmrgo_duration_t pending_age;
 	/* DataQueue is the number of data and CSBK bursts per slot that wait for the outbound channel in ModeRF. 0 means DefaultDataQueue, at most MaxDataQueue. */
 	int64_t data_queue;
-	/* Silence is the 72-bit vocoder slot that fills lost voice. The zero value means dmrgo_vocoder_ambe_silence_slot. */
+	/* Silence is the 72-bit vocoder slot that fills lost voice. The zero value means dmrgo_vocoder_ambe_silence_slot. A call with a FID other than DMRGO_ENUMS_FID_STANDARDIZED and DMRGO_ENUMS_FID_MOTOROLA, such as a Codec2 call, repeats its last vocoder slot instead, as dmrgo_voice_transmitter_config_t says. */
 	uint8_t silence[9];
 	/* Lead makes Tick emit an outbound burst this long before its Due time in ModeRF, so that a transmit FIFO can be filled ahead. 0 means at Due; it must not be negative. */
 	dmrgo_duration_t lead;
@@ -5337,7 +5337,7 @@ struct dmrgo_voice_transmitter_config_t {
 	dmrgo_enums_color_code_t color_code;
 	/* Source selects the SYNC patterns: DMRGO_LAYER2_SYNC_SOURCE_BS, the zero value, for a repeater outbound, DMRGO_LAYER2_SYNC_SOURCE_MS for a radio. */
 	dmrgo_layer2_sync_source_t source;
-	/* Silence is the 72-bit slot that fills a burst when no voice is queued, and pads the last superframe, packed as dmrgo_layer2_raw_burst_voice_slots returns it. The zero value means dmrgo_vocoder_ambe_silence_slot(). A Codec2 caller sets its own. */
+	/* Silence is the 72-bit slot that fills a burst when no voice is queued, and pads the last superframe, packed as dmrgo_layer2_raw_burst_voice_slots returns it. The zero value means dmrgo_vocoder_ambe_silence_slot(). A Codec2 caller sets its own. A relayed call with a FID other than DMRGO_ENUMS_FID_STANDARDIZED and DMRGO_ENUMS_FID_MOTOROLA, such as a Codec2 call, repeats its last vocoder slot in place of Silence once it has one, as MMDVMHost does, because the silence of one codec is noise to another. */
 	uint8_t silence[9];
 	/* Headers is the number of Voice LC Headers before burst A. 0 means 1, as ETSI TS 102 361-1 clause 5.1.2.2 gives; at most MaxHeaders. MMDVMHost sends 3 as a duplex repeater. */
 	int64_t headers;
