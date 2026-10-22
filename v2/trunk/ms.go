@@ -533,6 +533,38 @@ func (m *MS) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach 
 		}
 		return m.timers(now, dst)
 	}
+	return m.burst(now, raw, h, cach, dst)
+}
+
+// Decoded runs the decoded burst b through the MS as Burst does, with
+// the Hint h and the CACH field cach. A nil b is a burst that did not
+// decode, so only h and cach apply; for a transport frame without a burst
+// call Burst with a nil raw. A monitor that feeds a burst to several
+// machines decodes it once with layer2.Burst.DecodeFromBytesWith and calls
+// Decoded on each. It allocates only when dst has no room for MaxOutputs
+// outputs.
+func (m *MS) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
+	if m == nil {
+		return dst
+	}
+
+	if m.off {
+		return dst
+	}
+	prev := m.f.ctl.b
+	if prev == nil {
+		return m.timers(now, dst)
+	}
+	if b != nil {
+		m.f.ctl.b = b
+	}
+	m.f.ctl.pre, m.f.ctl.preOK = true, b != nil
+	dst = m.burst(now, nil, h, cach, dst)
+	m.f.ctl.b, m.f.ctl.pre = prev, false
+	return dst
+}
+
+func (m *MS) burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
 	var c *layer2.CACH
 	if cach != nil {
 		m.f.cach = layer2.DecodeCACHField(*cach)

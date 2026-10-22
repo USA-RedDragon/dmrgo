@@ -42,6 +42,8 @@ type control struct {
 	hasWant    bool
 	useHunt    bool
 	b          *layer2.Burst
+	pre        bool
+	preOK      bool
 	opts       layer2.DecodeOptions
 	slc        layer2.ShortLCAssembler
 	pending    pendingKind
@@ -67,6 +69,9 @@ type control struct {
 }
 
 func (c *control) decode(raw *layer2.RawBurst, h *layer2.Hint) bool {
+	if c.pre {
+		return c.preOK
+	}
 	if raw == nil || c.b == nil {
 		return false
 	}

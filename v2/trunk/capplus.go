@@ -196,7 +196,33 @@ func (f *CapacityPlusFollower) Burst(now time.Duration, raw *layer2.RawBurst, h 
 		return dst
 	}
 
-	if raw == nil {
+	return f.burst(now, raw, nil, false, h, cach, dst)
+}
+
+// Decoded runs the decoded burst b through the Follower as Burst does, with
+// the Hint h and the CACH field cach. A nil b is a burst that did not
+// decode, so only h and cach apply; for a transport frame without a burst
+// call Burst with a nil raw. A monitor that feeds a burst to several
+// machines decodes it once with layer2.Burst.DecodeFromBytesWith and calls
+// Decoded on each. It allocates only when dst has no room for MaxOutputs
+// outputs.
+func (f *CapacityPlusFollower) Decoded(now time.Duration, b *layer2.Burst, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
+	if f == nil {
+		return dst
+	}
+
+	if b == nil {
+		return f.burst(now, nil, nil, true, h, cach, dst)
+	}
+	prev := f.b
+	f.b = b
+	dst = f.burst(now, nil, b, true, h, cach, dst)
+	f.b = prev
+	return dst
+}
+
+func (f *CapacityPlusFollower) burst(now time.Duration, raw *layer2.RawBurst, b *layer2.Burst, decoded bool, h layer2.Hint, cach *[3]byte, dst []Output) []Output {
+	if raw == nil && !decoded {
 		if h.SyncLost {
 			return f.Lost(now, dst)
 		}
@@ -213,13 +239,18 @@ func (f *CapacityPlusFollower) Burst(now time.Duration, raw *layer2.RawBurst, h 
 		}
 		dst = f.shortLC(now, &f.cach, dst)
 	}
-	f.opts.Kind = h.Kind
-	f.opts.VoiceBurst = enums.VoiceBurstUnknown
-	if h.Kind == layer2.KindVoice {
-		f.opts.VoiceBurst = h.VoiceBurst
-	}
-	if f.b == nil || f.b.DecodeFromBytesWith(*raw, &f.opts) != nil {
+	if decoded && b == nil {
 		return dst
+	}
+	if b == nil {
+		f.opts.Kind = h.Kind
+		f.opts.VoiceBurst = enums.VoiceBurstUnknown
+		if h.Kind == layer2.KindVoice {
+			f.opts.VoiceBurst = h.VoiceBurst
+		}
+		if f.b == nil || f.b.DecodeFromBytesWith(*raw, &f.opts) != nil {
+			return dst
+		}
 	}
 	if f.state == StatePayload && slot == f.call.Slot {
 		f.payload(now)
