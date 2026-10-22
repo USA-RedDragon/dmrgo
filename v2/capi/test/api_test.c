@@ -965,6 +965,7 @@ static void test_dvsi(void) {
 	dmrgo_dvsi_config_t cfg = {.size = sizeof cfg};
 	dmrgo_dvsi_codec_t *codec = NULL;
 	OK(dmrgo_dvsi_new(port, &cfg, &codec));
+	OK(dmrgo_dvsi_port_free(port));
 	char name[DMRGO_DVSI_MAX_PRODUCT_LEN + 1];
 	size_t nl = 0;
 	OK(dmrgo_dvsi_codec_product(codec, name, sizeof name, &nl, NULL));
@@ -983,7 +984,7 @@ static void test_dvsi(void) {
 	OK(dmrgo_dvsi_codec_close(codec));
 	CHECK((n = 0, dmrgo_dvsi_codec_decode(codec, pcm, 160, &n, NULL, chip_slot)) == DMRGO_ERR_DVSI_CLOSED);
 	OK(dmrgo_dvsi_codec_free(codec));
-	OK(dmrgo_dvsi_port_free(port));
+	CHECK(dmrgo_dvsi_port_free(port) == DMRGO_ERR_HANDLE);
 }
 
 int main(int argc, char **argv) {
