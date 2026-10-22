@@ -255,6 +255,23 @@ func payloadCheck(pdu parse.PDUStruct, union *parse.Field, v parse.Variant, c pa
 	return false, nil
 }
 
+func keptText(pdu parse.PDUStruct, set []string) string {
+	var kept []string
+	for _, f := range pdu.Fields {
+		if f.Union || slices.ContainsFunc(set, func(t string) bool { return strings.HasPrefix(t, f.Name+" to ") }) {
+			continue
+		}
+		kept = append(kept, f.Name)
+	}
+	switch {
+	case len(kept) == 0:
+		return ""
+	case len(kept) == 1:
+		return ", and keeps " + kept[0]
+	}
+	return ", and keeps the other fields"
+}
+
 func emitSet(f *File, pdu parse.PDUStruct, union *parse.Field, v parse.Variant, ev *errVars) error {
 	var sets []setCond
 	var pres []preCheck
@@ -294,7 +311,7 @@ func emitSet(f *File, pdu parse.PDUStruct, union *parse.Field, v parse.Variant, 
 		}
 	}
 	texts = append(texts, union.Name)
-	doc := "Set" + v.Name + " makes s carry p as " + article(v.Type) + " " + v.Type + " payload: it sets " + andList(texts) + ", and keeps the other fields."
+	doc := "Set" + v.Name + " makes s carry p as " + article(v.Type) + " " + v.Type + " payload: it sets " + andList(texts) + keptText(pdu, texts) + "."
 	var errs []string
 	for _, sc := range sets {
 		if sc.param != "" {

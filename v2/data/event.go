@@ -133,9 +133,8 @@ type Stats struct {
 }
 
 // Event is one result of a Receiver. Fields that do not apply to Kind are
-// zero. Message.Payload, the sub-headers of Message.Header and Retry point
-// into the storage of the Receiver and are valid until its next method
-// call.
+// zero. Message.Payload and Retry point into the storage of the Receiver
+// and are valid until its next method call.
 type Event struct {
 	// Kind is the kind of the event.
 	Kind EventKind
