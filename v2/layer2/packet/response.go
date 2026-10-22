@@ -178,7 +178,7 @@ func (r *ResponseData) encodeInto(dst *[2]pdu.Rate12Data, blocks int) (int, erro
 		buf[i] = 0xFF
 	}
 	for i := 0; i < flags; i++ {
-		if i < blocks && r.Retry[i] {
+		if i < blocks && r != nil && r.Retry[i] {
 			buf[i/8] &^= 1 << (i % 8)
 		}
 	}
@@ -246,8 +246,6 @@ func (b *Builder) NewResponse(to *pdu.ConfirmedDataHeader, r Response, data *Res
 	return b.resp.build(to, r, data)
 }
 
-var noResponseData ResponseData
-
 type responseStore struct {
 	header pdu.ResponsePacketHeader
 	rate12 [2]pdu.Rate12Data
@@ -275,9 +273,6 @@ func (s *responseStore) build(to *pdu.ConfirmedDataHeader, r Response, data *Res
 	}
 	var blocks []layer2.Data
 	if r == ResponseSACK {
-		if data == nil {
-			data = &noResponseData
-		}
 		n, err := data.encodeInto(&s.rate12, int(to.BlocksToFollow))
 		if err != nil {
 			return Packet{}, err
