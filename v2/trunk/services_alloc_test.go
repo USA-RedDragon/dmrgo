@@ -52,7 +52,8 @@ func TestAllocsMSServices(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := make([]trunk.Output, 0, trunk.MaxOutputs)
-	data := []byte("supplementary")
+	var supl trunk.Appended
+	_ = supl.SetText(enums.UDTISO8, []byte("supplementary"))
 	now := time.Duration(0)
 	var cach [3]byte
 	allocs := testing.AllocsPerRun(5, func() {
@@ -62,7 +63,7 @@ func TestAllocsMSServices(t *testing.T) {
 			out = ms.Burst(now, &pool[i], layer2.Hint{Slot: enums.Slot1}, &cach, out[:0])
 			_ = ms.SendStatus(now, false, 3120002, 3)
 			_ = ms.PollStatus(now, 3120002)
-			_ = ms.SetSupplementary(1, data)
+			_ = ms.SetSupplementary(&supl)
 			_ = ms.SetStatus(4)
 			_ = ms.AdviseIP(now, [16]byte{1}, false, false)
 			out, _ = ms.Interrupt(now, false, out[:0])

@@ -242,13 +242,17 @@ func ExampleMS_SetSupplementary() {
 		switch {
 		case i == 1 && o.Kind == trunk.OutputUDT:
 			u, _ := s.ms[1].UDT()
-			fmt.Printf("MS 1 got %q\n", u.Data[:9])
+			a := u.Appended()
+			text, _ := a.Text(nil)
+			fmt.Printf("MS 1 got %q\n", text)
 		case i == 1 && o.Kind == trunk.OutputGrant:
 			fmt.Println("MS 1 got the grant from", o.Grant.Source)
 		default:
 		}
 	}
-	_ = s.ms[0].SetSupplementary(3, []byte("room 4711"))
+	var a trunk.Appended
+	_ = a.SetText(enums.UDTISO7, []byte("room 4711"))
+	_ = s.ms[0].SetSupplementary(&a)
 	_ = s.ms[0].Call(s.now, false, 3120002, layer3.VoiceServiceOptions{IsSuppData: true})
 	s.run(3 * time.Second)
 	// Output:

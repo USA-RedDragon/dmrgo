@@ -58,7 +58,6 @@ var (
 	errRegistrations error = &dmrgo.ConfigError{Type: pkgName, Field: "MaxRegistrations"}
 	errPowerSave     error = &dmrgo.ConfigError{Type: pkgName, Field: "PowerSave"}
 	errStatus        error = &dmrgo.ConfigError{Type: pkgName, Field: "status"}
-	errSupplementary error = &dmrgo.ConfigError{Type: pkgName, Field: "supplementary data"}
 	errLead          error = &dmrgo.ConfigError{Type: pkgName, Field: "Lead"}
 	errChannel       error = &dmrgo.ConfigError{Type: pkgName, Field: "Channel"}
 	errRepeats       error = &dmrgo.ConfigError{Type: pkgName, Field: "Repeats"}
