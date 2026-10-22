@@ -93,7 +93,7 @@ type Decoder struct {
 // with a position to UDP port 3003. It returns ErrNoFix for a packet in
 // none of these formats, for a standard answer whose Result is not 0, for
 // an HDAP position out of range, dmrgo.ErrNilArgument for a nil h, and the errors of the ip,
-// lrrp, nmea and hytera packages for a message that does not decode, and
+// lrrp, nmea and hdap packages for a message that does not decode, and
 // the Fix with ip.ErrChecksum for a position whose IPv4 or UDP checksum
 // does not match, as the block CRCs of the packet already checked its
 // octets. It
