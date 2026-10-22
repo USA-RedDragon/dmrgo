@@ -9118,6 +9118,8 @@ int dmrgo_pdu_full_link_control_as_terminator_data_link_control(const dmrgo_pdu_
 int dmrgo_pdu_full_link_control_as_unit_to_unit(const dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_flc_unit_to_unit_t *p, bool *ok);
 /* Go: pdu.FullLinkControl.Bytes. Bytes returns the 72 LC bits of s packed most significant bit first, without RS(12,9) parity. */
 int dmrgo_pdu_full_link_control_bytes(const dmrgo_pdu_full_link_control_t *self, uint8_t out[9]);
+/* Go: pdu.FullLinkControl.Call. Call returns the call of a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC: group for FLCO 0, the 24-bit target and the source. */
+int dmrgo_pdu_full_link_control_call(const dmrgo_pdu_full_link_control_t *self, bool *group, uint32_t *target, uint32_t *source, bool *ok);
 /* Go: pdu.FullLinkControl.DataType. DataType returns BurstDataType. */
 int dmrgo_pdu_full_link_control_data_type(const dmrgo_pdu_full_link_control_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.FullLinkControl.Encode. Encode encodes a FullLinkControl. */
@@ -9156,8 +9158,6 @@ int dmrgo_pdu_lc_bytes_codeword(const dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_da
 int dmrgo_pdu_lc_bytes_fid(const dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_fid_t *out);
 /* Go: pdu.LCBytes.FLCO. FLCO returns the 6-bit FLCO, bits 2 to 7 of octet 0. */
 int dmrgo_pdu_lc_bytes_flco(const dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_flco_t *out);
-/* Go: pdu.LCBytes.Group. Group reports whether the FLCO is Grp_V_Ch_Usr (0). */
-int dmrgo_pdu_lc_bytes_group(const dmrgo_pdu_lc_bytes_t *self, bool *group, bool *ok);
 /* Go: pdu.LCBytes.ProtectFlag. ProtectFlag returns the PF bit, bit 0 of octet 0. */
 int dmrgo_pdu_lc_bytes_protect_flag(const dmrgo_pdu_lc_bytes_t *self, bool *out);
 /* Go: pdu.LCBytes.Reserved. Reserved returns the Reserved bit, bit 1 of octet 0. */
@@ -9172,8 +9172,8 @@ int dmrgo_pdu_lc_bytes_set_call(dmrgo_pdu_lc_bytes_t *self, bool group, uint32_t
 int dmrgo_pdu_lc_bytes_set_fid(dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_fid_t fid);
 /* Go: pdu.LCBytes.SetFLCO. SetFLCO writes f into the FLCO and keeps the PF and Reserved bits. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when f does not fit in 6 bits. */
 int dmrgo_pdu_lc_bytes_set_flco(dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_flco_t f);
-/* Go: pdu.LCBytes.SetGroup. SetGroup sets the FLCO to Grp_V_Ch_Usr (0) when group is true and to UU_V_Ch_Usr (3) when it is false, and keeps every other bit, so the Service Options and addresses carry over. */
-int dmrgo_pdu_lc_bytes_set_group(dmrgo_pdu_lc_bytes_t *self, bool group, bool *out);
+/* Go: pdu.LCBytes.SetGroup. SetGroup sets the FLCO to Grp_V_Ch_Usr (0) when group is true and to UU_V_Ch_Usr (3) when it is false, and keeps every other bit, so the Service Options and addresses carry over. It returns DMRGO_ERR_PDU_NO_ADDRESSES, and changes nothing, unless the FLCO is already one of the two. */
+int dmrgo_pdu_lc_bytes_set_group(dmrgo_pdu_lc_bytes_t *self, bool group);
 /* Go: pdu.LCBytes.SetProtectFlag. SetProtectFlag writes the PF bit, bit 0 of octet 0. */
 int dmrgo_pdu_lc_bytes_set_protect_flag(dmrgo_pdu_lc_bytes_t *self, bool pf);
 /* Go: pdu.LCBytes.SetReserved. SetReserved writes the Reserved bit, bit 1 of octet 0. */

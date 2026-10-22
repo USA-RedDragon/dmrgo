@@ -25924,6 +25924,38 @@ func dmrgo_pdu_full_link_control_bytes(c_self *C.dmrgo_pdu_full_link_control_t, 
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_full_link_control_call
+func dmrgo_pdu_full_link_control_call(c_self *C.dmrgo_pdu_full_link_control_t, c_group *C.bool, c_target *C.uint32_t, c_source *C.uint32_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FullLinkControl
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
+	r0, r1, r2, r3 := x.Call()
+	_ = r0
+	_ = r1
+	_ = r2
+	_ = r3
+	if c_group != nil {
+		*c_group = C.bool(r0)
+	}
+	if c_target != nil {
+		*c_target = C.uint32_t(r1)
+	}
+	if c_source != nil {
+		*c_source = C.uint32_t(r2)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r3)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_full_link_control_data_type
 func dmrgo_pdu_full_link_control_data_type(c_self *C.dmrgo_pdu_full_link_control_t, c_out *C.dmrgo_enums_data_type_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -26392,28 +26424,6 @@ func dmrgo_pdu_lc_bytes_flco(c_self *C.dmrgo_pdu_lc_bytes_t, c_out *C.dmrgo_enum
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_lc_bytes_group
-func dmrgo_pdu_lc_bytes_group(c_self *C.dmrgo_pdu_lc_bytes_t, c_group *C.bool, c_ok *C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0, r1 := (*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self))).Group()
-	_ = r0
-	_ = r1
-	if c_group != nil {
-		*c_group = C.bool(r0)
-	}
-	if c_ok != nil {
-		*c_ok = C.bool(r1)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_pdu_lc_bytes_protect_flag
 func dmrgo_pdu_lc_bytes_protect_flag(c_self *C.dmrgo_pdu_lc_bytes_t, c_out *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -26538,19 +26548,18 @@ func dmrgo_pdu_lc_bytes_set_flco(c_self *C.dmrgo_pdu_lc_bytes_t, c_f C.dmrgo_enu
 }
 
 //export dmrgo_pdu_lc_bytes_set_group
-func dmrgo_pdu_lc_bytes_set_group(c_self *C.dmrgo_pdu_lc_bytes_t, c_group C.bool, c_out *C.bool) (rc C.int) {
+func dmrgo_pdu_lc_bytes_set_group(c_self *C.dmrgo_pdu_lc_bytes_t, c_group C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := (*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self)).SetGroup(bool(c_group))
-	_ = r0
-	if c_out != nil {
-		*c_out = C.bool(r0)
-	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
+	}
+	if r0 != nil {
+		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }

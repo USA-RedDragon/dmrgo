@@ -54,6 +54,14 @@ func (s *FullLinkControl) Addresses() (target, source uint32, ok bool) {
 	return uint24(s.RawPayload[1:4]), uint24(s.RawPayload[4:7]), true
 }
 
+// Call returns the call of a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3)
+// LC: group for FLCO 0, the 24-bit target and the source. ok is false for
+// other FLCOs. It reads RawPayload for any FID, as Addresses does.
+func (s *FullLinkControl) Call() (group bool, target, source uint32, ok bool) {
+	target, source, ok = s.Addresses()
+	return ok && s.FLCO == enums.FLCOGroupVoiceChannelUser, target, source, ok
+}
+
 // SetAddresses sets the target and source addresses of a Grp_V_Ch_Usr or
 // UU_V_Ch_Usr LC of any FID in RawPayload. It returns ErrNoAddresses for
 // other FLCOs and a *dmrgo.FieldRangeError when an address does not fit in

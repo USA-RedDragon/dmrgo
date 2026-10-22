@@ -2609,6 +2609,7 @@ sym int dmrgo_pdu_full_link_control_as_talker_alias_header(const dmrgo_pdu_full_
 sym int dmrgo_pdu_full_link_control_as_terminator_data_link_control(const dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_flc_terminator_data_link_control_t *p, bool *ok);
 sym int dmrgo_pdu_full_link_control_as_unit_to_unit(const dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_flc_unit_to_unit_t *p, bool *ok);
 sym int dmrgo_pdu_full_link_control_bytes(const dmrgo_pdu_full_link_control_t *self, uint8_t out[9]);
+sym int dmrgo_pdu_full_link_control_call(const dmrgo_pdu_full_link_control_t *self, bool *group, uint32_t *target, uint32_t *source, bool *ok);
 sym int dmrgo_pdu_full_link_control_data_type(const dmrgo_pdu_full_link_control_t *self, dmrgo_enums_data_type_t *out);
 sym int dmrgo_pdu_full_link_control_encode(const dmrgo_pdu_full_link_control_t *self, uint8_t out[12]);
 sym int dmrgo_pdu_full_link_control_service_options(const dmrgo_pdu_full_link_control_t *self, dmrgo_layer3_service_options_t *so, bool *ok);
@@ -2628,7 +2629,6 @@ sym int dmrgo_pdu_lc_bytes_call(const dmrgo_pdu_lc_bytes_t *self, bool *group, u
 sym int dmrgo_pdu_lc_bytes_codeword(const dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_data_type_t dt, uint8_t out[12]);
 sym int dmrgo_pdu_lc_bytes_fid(const dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_fid_t *out);
 sym int dmrgo_pdu_lc_bytes_flco(const dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_flco_t *out);
-sym int dmrgo_pdu_lc_bytes_group(const dmrgo_pdu_lc_bytes_t *self, bool *group, bool *ok);
 sym int dmrgo_pdu_lc_bytes_protect_flag(const dmrgo_pdu_lc_bytes_t *self, bool *out);
 sym int dmrgo_pdu_lc_bytes_reserved(const dmrgo_pdu_lc_bytes_t *self, bool *out);
 sym int dmrgo_pdu_lc_bytes_service_options(const dmrgo_pdu_lc_bytes_t *self, dmrgo_layer3_service_options_t *so, bool *ok);
@@ -2636,7 +2636,7 @@ sym int dmrgo_pdu_lc_bytes_set_addresses(dmrgo_pdu_lc_bytes_t *self, uint32_t ta
 sym int dmrgo_pdu_lc_bytes_set_call(dmrgo_pdu_lc_bytes_t *self, bool group, uint32_t target, uint32_t source);
 sym int dmrgo_pdu_lc_bytes_set_fid(dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_fid_t fid);
 sym int dmrgo_pdu_lc_bytes_set_flco(dmrgo_pdu_lc_bytes_t *self, dmrgo_enums_flco_t f);
-sym int dmrgo_pdu_lc_bytes_set_group(dmrgo_pdu_lc_bytes_t *self, bool group, bool *out);
+sym int dmrgo_pdu_lc_bytes_set_group(dmrgo_pdu_lc_bytes_t *self, bool group);
 sym int dmrgo_pdu_lc_bytes_set_protect_flag(dmrgo_pdu_lc_bytes_t *self, bool pf);
 sym int dmrgo_pdu_lc_bytes_set_reserved(dmrgo_pdu_lc_bytes_t *self, bool r);
 sym int dmrgo_pdu_lc_bytes_set_service_options(dmrgo_pdu_lc_bytes_t *self, const dmrgo_layer3_service_options_t *so);
