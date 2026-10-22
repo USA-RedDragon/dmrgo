@@ -73,7 +73,7 @@ func (k ServiceKind) String() string {
 	case ServiceKindCancelCall:
 		return "Cancel Call"
 	}
-	return "Reserved ServiceKind(" + text.Int(int64(k)) + ")"
+	return "ServiceKind(" + text.Int(int64(k)) + ")"
 }
 
 // ServiceFunction is the 2-bit Service_Function of a C_ALOHA, which tells
@@ -112,7 +112,8 @@ func (f ServiceFunction) Invites(k ServiceKind) bool {
 	return false
 }
 
-// String returns the name of the ServiceFunction.
+// String returns the name of the ServiceFunction. It allocates only for a
+// value over 3.
 func (f ServiceFunction) String() string {
 	switch f {
 	case ServiceFunctionAll:
@@ -124,7 +125,7 @@ func (f ServiceFunction) String() string {
 	case ServiceFunctionRegistration:
 		return "Registration Only"
 	}
-	return unknownName
+	return "ServiceFunction(" + text.Int(int64(f)) + ")"
 }
 
 // NRandWait is the 4-bit NRand_Wait of a C_ALOHA, the code for the number

@@ -49,8 +49,8 @@ func TestFIDString_UnknownID(t *testing.T) {
 	if name == "" {
 		t.Error("FID.String for unknown ID should return non-empty string")
 	}
-	if !strings.Contains(name, "Unknown") {
-		t.Errorf("(0xFF).String() = %q, want to contain 'Unknown'", name)
+	if name != "FID(255)" {
+		t.Errorf("(0xFF).String() = %q, want FID(255)", name)
 	}
 }
 
@@ -61,8 +61,8 @@ func TestFID_RoundTrip(t *testing.T) {
 	for _, id := range validIDs {
 		fsid := FID(id)
 		name := fsid.String()
-		if strings.Contains(name, "Unknown") {
-			t.Errorf("Valid FID %d maps to 'Unknown' name", id)
+		if strings.HasPrefix(name, "FID(") {
+			t.Errorf("FID %d has no name", id)
 		}
 	}
 }

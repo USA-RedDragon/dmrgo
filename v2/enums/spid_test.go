@@ -15,9 +15,9 @@ func TestSPIDString(t *testing.T) {
 		{enums.SPIDExtendedHeader, "Extended Header"},
 		{enums.SPIDTextMessage, "Text Message (5016)"},
 		{enums.SPIDLocationProtocol, "Location Protocol (5017)"},
-		{enums.SPID(50), "Reserved"},
-		{enums.SPIDManufacturerSpecific, "Manufacturer Specific"},
-		{enums.SPID(127), "Manufacturer Specific"},
+		{enums.SPID(50), "SPID(50)"},
+		{enums.SPID(95), "SPID(95)"},
+		{enums.SPID(127), "SPID(127)"},
 	}
 	for _, tt := range tests {
 		if got := tt.spid.String(); got != tt.expected {

@@ -25,7 +25,7 @@ func TestRCCommand_String_CeaseTransmissionRequest(t *testing.T) {
 func TestRCCommand_String_Reserved(t *testing.T) {
 	t.Parallel()
 	name := (enums.RCCommand(0b0110)).String()
-	if name != "Reserved RCCommand(6)" {
+	if name != "RCCommand(6)" {
 		t.Errorf("reserved value should not match known names, got %q", name)
 	}
 }

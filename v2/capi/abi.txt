@@ -574,7 +574,6 @@ sym #define DMRGO_ENUMS_ANNOUNCEMENT_MASS_REG ((dmrgo_enums_announcement_type_t)
 sym #define DMRGO_ENUMS_ANNOUNCEMENT_VOTE_NOW ((dmrgo_enums_announcement_type_t)2)
 sym #define DMRGO_ENUMS_DAIDUSB_ETHERNET_NETWORK ((dmrgo_enums_daid_t)1)
 sym #define DMRGO_ENUMS_DAID_GROUP_NETWORK ((dmrgo_enums_daid_t)2)
-sym #define DMRGO_ENUMS_DAID_MANUFACTURER_SPECIFIC ((dmrgo_enums_daid_t)12)
 sym #define DMRGO_ENUMS_DAID_RADIO_NETWORK ((dmrgo_enums_daid_t)0)
 sym #define DMRGO_ENUMS_DATA_TYPE_CSBK ((dmrgo_enums_data_type_t)3)
 sym #define DMRGO_ENUMS_DATA_TYPE_DATA_HEADER ((dmrgo_enums_data_type_t)6)
@@ -616,7 +615,6 @@ sym #define DMRGO_ENUMS_DDUTF8 ((dmrgo_enums_dd_format_t)18)
 sym #define DMRGO_ENUMS_DD_BINARY ((dmrgo_enums_dd_format_t)0)
 sym #define DMRGO_ENUMS_DPID_EXTENDED_HEADER ((dmrgo_enums_dpid_t)0)
 sym #define DMRGO_ENUMS_DPID_LOCATION_PROTOCOL ((dmrgo_enums_dpid_t)2)
-sym #define DMRGO_ENUMS_DPID_MANUFACTURER_SPECIFIC ((dmrgo_enums_dpid_t)95)
 sym #define DMRGO_ENUMS_DPID_TEXT_MESSAGE ((dmrgo_enums_dpid_t)1)
 sym #define DMRGO_ENUMS_FIDDMR_ASSOCIATION ((dmrgo_enums_fid_t)11)
 sym #define DMRGO_ENUMS_FIDEMC ((dmrgo_enums_fid_t)19)
@@ -659,7 +657,6 @@ sym #define DMRGO_ENUMS_RC_HIGHEST_POWER ((dmrgo_enums_rc_command_t)2)
 sym #define DMRGO_ENUMS_RC_INCREASE_POWER ((dmrgo_enums_rc_command_t)0)
 sym #define DMRGO_ENUMS_RC_LOWEST_POWER ((dmrgo_enums_rc_command_t)3)
 sym #define DMRGO_ENUMS_SAIDUSB_ETHERNET_NETWORK ((dmrgo_enums_said_t)1)
-sym #define DMRGO_ENUMS_SAID_MANUFACTURER_SPECIFIC ((dmrgo_enums_said_t)12)
 sym #define DMRGO_ENUMS_SAID_RADIO_NETWORK ((dmrgo_enums_said_t)0)
 sym #define DMRGO_ENUMS_SAPIP_BASED_PACKET_DATA ((dmrgo_enums_sap_t)4)
 sym #define DMRGO_ENUMS_SAPTCPIP_HEADER_COMPRESSION ((dmrgo_enums_sap_t)2)
@@ -696,7 +693,6 @@ sym #define DMRGO_ENUMS_SLOT2 ((dmrgo_enums_slot_t)2)
 sym #define DMRGO_ENUMS_SLOT_UNKNOWN ((dmrgo_enums_slot_t)0)
 sym #define DMRGO_ENUMS_SPID_EXTENDED_HEADER ((dmrgo_enums_spid_t)0)
 sym #define DMRGO_ENUMS_SPID_LOCATION_PROTOCOL ((dmrgo_enums_spid_t)2)
-sym #define DMRGO_ENUMS_SPID_MANUFACTURER_SPECIFIC ((dmrgo_enums_spid_t)95)
 sym #define DMRGO_ENUMS_SPID_TEXT_MESSAGE ((dmrgo_enums_spid_t)1)
 sym #define DMRGO_ENUMS_SYNC_BS_SOURCED_DATA ((dmrgo_enums_sync_pattern_t)UINT64_C(0xdff57d75df5d))
 sym #define DMRGO_ENUMS_SYNC_BS_SOURCED_VOICE ((dmrgo_enums_sync_pattern_t)UINT64_C(0x755fd7df75f7))
@@ -1767,12 +1763,14 @@ sym int dmrgo_enums_ack_type_string(dmrgo_enums_ack_type_t self, char *out, size
 sym int dmrgo_enums_activity_id_string(dmrgo_enums_activity_id_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_announcement_type_string(dmrgo_enums_announcement_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_backoff_frames(dmrgo_enums_backoff_t self, int64_t *out);
+sym int dmrgo_enums_daid_is_manufacturer_specific(dmrgo_enums_daid_t self, bool *out);
 sym int dmrgo_enums_daid_string(dmrgo_enums_daid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_data_type_carries_full_lc(dmrgo_enums_data_type_t self, bool *out);
 sym int dmrgo_enums_data_type_is_bptc(dmrgo_enums_data_type_t self, bool *out);
 sym int dmrgo_enums_data_type_is_reserved(dmrgo_enums_data_type_t self, bool *out);
 sym int dmrgo_enums_data_type_string(dmrgo_enums_data_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_dd_format_string(dmrgo_enums_dd_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_enums_dpid_is_manufacturer_specific(dmrgo_enums_dpid_t self, bool *out);
 sym int dmrgo_enums_dpid_string(dmrgo_enums_dpid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_dpid_to_port(dmrgo_enums_dpid_t dpid, uint16_t *out);
 sym int dmrgo_enums_fid_string(dmrgo_enums_fid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -1783,6 +1781,7 @@ sym int dmrgo_enums_nearest_sync_pattern(const uint8_t field[6], dmrgo_enums_syn
 sym int dmrgo_enums_new_color_code(uint8_t v, dmrgo_enums_color_code_t *out);
 sym int dmrgo_enums_protect_kind_string(dmrgo_enums_protect_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_rc_command_string(dmrgo_enums_rc_command_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_enums_said_is_manufacturer_specific(dmrgo_enums_said_t self, bool *out);
 sym int dmrgo_enums_said_string(dmrgo_enums_said_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_sap_string(dmrgo_enums_sap_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_service_function_invites(dmrgo_enums_service_function_t self, dmrgo_enums_service_kind_t k, bool *out);
@@ -1792,6 +1791,7 @@ sym int dmrgo_enums_service_kind_string(dmrgo_enums_service_kind_t self, char *o
 sym int dmrgo_enums_slco_string(dmrgo_enums_slco_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_slot_other(dmrgo_enums_slot_t self, dmrgo_enums_slot_t *out);
 sym int dmrgo_enums_slot_string(dmrgo_enums_slot_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_enums_spid_is_manufacturer_specific(dmrgo_enums_spid_t self, bool *out);
 sym int dmrgo_enums_spid_string(dmrgo_enums_spid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_enums_spid_to_port(dmrgo_enums_spid_t spid, uint16_t *out);
 sym int dmrgo_enums_sync_pattern_string(dmrgo_enums_sync_pattern_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

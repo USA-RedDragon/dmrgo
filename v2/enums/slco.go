@@ -28,8 +28,5 @@ func (slco SLCO) String() string {
 	case SLCOPSysParms:
 		return "P_SYS_Parms"
 	}
-	if slco >= 0b1100 && slco <= 0b1111 {
-		return "Manufacturer Selectable SLCO(" + text.Int(int64(slco)) + ")"
-	}
-	return "Reserved SLCO(" + text.Int(int64(slco)) + ")"
+	return "SLCO(" + text.Int(int64(slco)) + ")"
 }

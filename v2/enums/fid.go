@@ -73,5 +73,5 @@ func (fsid FID) String() string {
 		return "Vertex Standard UK"
 	}
 
-	return "Unknown FID: " + text.Int(int64(fsid))
+	return "FID(" + text.Int(int64(fsid)) + ")"
 }

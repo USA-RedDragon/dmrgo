@@ -1,5 +1,7 @@
 package enums
 
+import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
+
 // VoiceBurstType is the position of a voice burst in a voice superframe. The
 // zero value is VoiceBurstUnknown. (ETSI TS 102 361-1 clause 5.1.2.1)
 type VoiceBurstType uint8
@@ -55,7 +57,8 @@ func (v VoiceBurstType) LCSS() (lcss LCSS, ok bool) {
 	return 0, false
 }
 
-// String returns the name of a voice burst type.
+// String returns the name of a voice burst type. It allocates only for a
+// value over VoiceBurstF.
 func (v VoiceBurstType) String() string {
 	switch v {
 	case VoiceBurstUnknown:
@@ -73,5 +76,5 @@ func (v VoiceBurstType) String() string {
 	case VoiceBurstF:
 		return "F"
 	}
-	return unknownName
+	return "VoiceBurstType(" + text.Int(int64(v)) + ")"
 }

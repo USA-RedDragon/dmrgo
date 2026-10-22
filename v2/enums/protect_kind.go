@@ -1,5 +1,7 @@
 package enums
 
+import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
+
 // ProtectKind is the 3-bit Protect_Kind of a P_PROTECT. Values without a
 // constant are reserved. (ETSI TS 102 361-4 V1.12.1 clause 7.2.21,
 // Table 7.82)
@@ -13,7 +15,8 @@ const (
 	ProtectEnablePTTOneMS  ProtectKind = 0b011 // EN_PTT_ONE_MS: only the addressed MS may transmit
 )
 
-// String returns the alias of the ProtectKind.
+// String returns the alias of the ProtectKind. It allocates only for a
+// value without a constant.
 func (k ProtectKind) String() string {
 	switch k {
 	case ProtectDisablePTT:
@@ -25,5 +28,5 @@ func (k ProtectKind) String() string {
 	case ProtectEnablePTTOneMS:
 		return "EN_PTT_ONE_MS"
 	}
-	return reservedName
+	return "ProtectKind(" + text.Int(int64(k)) + ")"
 }

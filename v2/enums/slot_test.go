@@ -12,7 +12,7 @@ func TestSlotString(t *testing.T) {
 		{SlotUnknown, unknownName},
 		{Slot1, "TS1"},
 		{Slot2, "TS2"},
-		{Slot(3), unknownName},
+		{Slot(3), "Slot(3)"},
 	}
 	for _, tt := range tests {
 		if got := tt.slot.String(); got != tt.want {
@@ -44,10 +44,10 @@ func TestAccessString(t *testing.T) {
 		access Access
 		want   string
 	}{
-		{AccessPoliteOwnCC, "Polite to own Colour Code"},
+		{AccessPoliteOwnCC, "Polite to own Color Code"},
 		{AccessPoliteAll, "Polite to all"},
 		{AccessImpolite, "Impolite"},
-		{Access(9), unknownName},
+		{Access(9), "Access(9)"},
 	}
 	for _, tt := range tests {
 		if got := tt.access.String(); got != tt.want {

@@ -1,6 +1,9 @@
 package enums
 
-import "testing"
+import (
+	"strconv"
+	"testing"
+)
 
 func TestDataTypeString_AllTypes(t *testing.T) {
 	t.Parallel()
@@ -21,7 +24,7 @@ func TestDataTypeString_AllTypes(t *testing.T) {
 		{DataTypeIdle, "Idle"},
 		{DataTypeRate1, "Rate 1"},
 		{DataTypeUnifiedSingleBlock, "Unified Single Block"},
-		{DataTypeReserved, "Reserved"},
+		{DataTypeReserved, "DataType(12)"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.expected, func(t *testing.T) {
@@ -39,8 +42,8 @@ func TestDataTypeString_Unknown(t *testing.T) {
 	t.Parallel()
 
 	got := (DataType(99)).String()
-	if got != "Unknown" {
-		t.Errorf("(99).String() = %q, want %q", got, "Unknown")
+	if got != "DataType(99)" {
+		t.Errorf("(99).String() = %q", got)
 	}
 }
 
@@ -90,8 +93,8 @@ func TestDataType_IsReserved(t *testing.T) {
 		if got := dt.IsReserved(); got != want {
 			t.Errorf("DataType(%d).IsReserved() = %v, want %v", dt, got, want)
 		}
-		if want && dt.String() != "Reserved" {
-			t.Errorf("(%d).String() = %q, want Reserved", dt, dt.String())
+		if want && dt.String() != "DataType("+strconv.Itoa(int(dt))+")" {
+			t.Errorf("(%d).String() = %q", dt, dt.String())
 		}
 	}
 }

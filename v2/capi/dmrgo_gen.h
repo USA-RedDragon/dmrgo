@@ -6193,8 +6193,6 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ENUMS_ANNOUNCEMENT_VOTE_NOW ((dmrgo_enums_announcement_type_t)2)
 /* Go: enums.DAIDGroupNetwork. group network */
 #define DMRGO_ENUMS_DAID_GROUP_NETWORK ((dmrgo_enums_daid_t)2)
-/* Go: enums.DAIDManufacturerSpecific. first manufacturer specific value */
-#define DMRGO_ENUMS_DAID_MANUFACTURER_SPECIFIC ((dmrgo_enums_daid_t)12)
 /* Go: enums.DAIDRadioNetwork. radio network */
 #define DMRGO_ENUMS_DAID_RADIO_NETWORK ((dmrgo_enums_daid_t)0)
 /* Go: enums.DAIDUSBEthernetNetwork. USB or Ethernet network */
@@ -6253,8 +6251,6 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ENUMS_DPID_EXTENDED_HEADER ((dmrgo_enums_dpid_t)0)
 /* Go: enums.DPIDLocationProtocol. Port 5017 */
 #define DMRGO_ENUMS_DPID_LOCATION_PROTOCOL ((dmrgo_enums_dpid_t)2)
-/* Go: enums.DPIDManufacturerSpecific. first manufacturer specific value */
-#define DMRGO_ENUMS_DPID_MANUFACTURER_SPECIFIC ((dmrgo_enums_dpid_t)95)
 /* Go: enums.DPIDTextMessage. Port 5016 */
 #define DMRGO_ENUMS_DPID_TEXT_MESSAGE ((dmrgo_enums_dpid_t)1)
 /* Go: enums.DataTypeCSBK. CSBK */
@@ -6275,7 +6271,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ENUMS_DATA_TYPE_RATE12 ((dmrgo_enums_data_type_t)7)
 /* Go: enums.DataTypeRate34. Rate 3/4 Data */
 #define DMRGO_ENUMS_DATA_TYPE_RATE34 ((dmrgo_enums_data_type_t)8)
-/* Go: enums.DataTypeReserved. first reserved value, 1100 */
+/* Go: enums.DataTypeReserved. DataTypeReserved is 12, the lowest of the reserved values 12 to 15. */
 #define DMRGO_ENUMS_DATA_TYPE_RESERVED ((dmrgo_enums_data_type_t)12)
 /* Go: enums.DataTypeTerminatorWithLC. Terminator with LC */
 #define DMRGO_ENUMS_DATA_TYPE_TERMINATOR_WITH_LC ((dmrgo_enums_data_type_t)2)
@@ -6363,8 +6359,6 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ENUMS_RC_INCREASE_POWER ((dmrgo_enums_rc_command_t)0)
 /* Go: enums.RCLowestPower. set power to lowest, Tier III */
 #define DMRGO_ENUMS_RC_LOWEST_POWER ((dmrgo_enums_rc_command_t)3)
-/* Go: enums.SAIDManufacturerSpecific. first manufacturer specific value */
-#define DMRGO_ENUMS_SAID_MANUFACTURER_SPECIFIC ((dmrgo_enums_said_t)12)
 /* Go: enums.SAIDRadioNetwork. radio network */
 #define DMRGO_ENUMS_SAID_RADIO_NETWORK ((dmrgo_enums_said_t)0)
 /* Go: enums.SAIDUSBEthernetNetwork. USB or Ethernet network */
@@ -6395,8 +6389,6 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ENUMS_SPID_EXTENDED_HEADER ((dmrgo_enums_spid_t)0)
 /* Go: enums.SPIDLocationProtocol. Port 5017 */
 #define DMRGO_ENUMS_SPID_LOCATION_PROTOCOL ((dmrgo_enums_spid_t)2)
-/* Go: enums.SPIDManufacturerSpecific. first manufacturer specific value */
-#define DMRGO_ENUMS_SPID_MANUFACTURER_SPECIFIC ((dmrgo_enums_spid_t)95)
 /* Go: enums.SPIDTextMessage. Port 5016 */
 #define DMRGO_ENUMS_SPID_TEXT_MESSAGE ((dmrgo_enums_spid_t)1)
 /* Go: enums.ServiceFunctionAll. ServiceFunctionAll invites random access for all services. */
@@ -8078,11 +8070,15 @@ int dmrgo_enums_activity_id_string(dmrgo_enums_activity_id_t self, char *out, si
 int dmrgo_enums_announcement_type_string(dmrgo_enums_announcement_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.Backoff.Frames. Frames returns the number of TDMA frames of the backoff number (ETSI TS 102 361-4 Table 6.3). */
 int dmrgo_enums_backoff_frames(dmrgo_enums_backoff_t self, int64_t *out);
-/* Go: enums.DAID.String. */
+/* Go: enums.DAID.IsManufacturerSpecific. IsManufacturerSpecific reports whether daid is one of the manufacturer specific values 12 to 15. */
+int dmrgo_enums_daid_is_manufacturer_specific(dmrgo_enums_daid_t self, bool *out);
+/* Go: enums.DAID.String. String returns the name of the DAID. */
 int dmrgo_enums_daid_string(dmrgo_enums_daid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.DDFormat.String. String returns the name of f. */
 int dmrgo_enums_dd_format_string(dmrgo_enums_dd_format_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: enums.DPID.String. */
+/* Go: enums.DPID.IsManufacturerSpecific. IsManufacturerSpecific reports whether dpid is one of the manufacturer specific values 95 to 127. */
+int dmrgo_enums_dpid_is_manufacturer_specific(dmrgo_enums_dpid_t self, bool *out);
+/* Go: enums.DPID.String. String returns the name of the DPID. */
 int dmrgo_enums_dpid_string(dmrgo_enums_dpid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.DPIDToPort. DPIDToPort returns the UDP port of dpid. */
 int dmrgo_enums_dpid_to_port(dmrgo_enums_dpid_t dpid, uint16_t *out);
@@ -8092,13 +8088,13 @@ int dmrgo_enums_data_type_carries_full_lc(dmrgo_enums_data_type_t self, bool *ou
 int dmrgo_enums_data_type_is_bptc(dmrgo_enums_data_type_t self, bool *out);
 /* Go: enums.DataType.IsReserved. IsReserved reports whether dt is one of the reserved values 12 to 15 (DataTypeReserved and above) (ETSI TS 102 361-1 Table 9.22). */
 int dmrgo_enums_data_type_is_reserved(dmrgo_enums_data_type_t self, bool *out);
-/* Go: enums.DataType.String. */
+/* Go: enums.DataType.String. String returns the name of the DataType. */
 int dmrgo_enums_data_type_string(dmrgo_enums_data_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.FID.String. String returns the name of the FID. */
 int dmrgo_enums_fid_string(dmrgo_enums_fid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: enums.FLCO.String. */
+/* Go: enums.FLCO.String. String returns the name of the FLCO. */
 int dmrgo_enums_flco_string(dmrgo_enums_flco_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: enums.LCSS.String. */
+/* Go: enums.LCSS.String. String returns the name of the LCSS. */
 int dmrgo_enums_lcss_string(dmrgo_enums_lcss_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.NRandWait.Frames. Frames returns the number of TDMA frames, NWait, of the code (ETSI TS 102 361-4 Table 6.2). */
 int dmrgo_enums_n_rand_wait_frames(dmrgo_enums_n_rand_wait_t self, int64_t *out);
@@ -8110,13 +8106,17 @@ int dmrgo_enums_new_color_code(uint8_t v, dmrgo_enums_color_code_t *out);
 int dmrgo_enums_protect_kind_string(dmrgo_enums_protect_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.RCCommand.String. String returns the name of the RCCommand. */
 int dmrgo_enums_rc_command_string(dmrgo_enums_rc_command_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: enums.SAID.String. */
+/* Go: enums.SAID.IsManufacturerSpecific. IsManufacturerSpecific reports whether said is one of the manufacturer specific values 12 to 15. */
+int dmrgo_enums_said_is_manufacturer_specific(dmrgo_enums_said_t self, bool *out);
+/* Go: enums.SAID.String. String returns the name of the SAID. */
 int dmrgo_enums_said_string(dmrgo_enums_said_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.SAP.String. String returns the name of the SAP. */
 int dmrgo_enums_sap_string(dmrgo_enums_sap_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.SLCO.String. String returns the name of the SLCO. */
 int dmrgo_enums_slco_string(dmrgo_enums_slco_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: enums.SPID.String. */
+/* Go: enums.SPID.IsManufacturerSpecific. IsManufacturerSpecific reports whether spid is one of the manufacturer specific values 95 to 127. */
+int dmrgo_enums_spid_is_manufacturer_specific(dmrgo_enums_spid_t self, bool *out);
+/* Go: enums.SPID.String. String returns the name of the SPID. */
 int dmrgo_enums_spid_string(dmrgo_enums_spid_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.SPIDToPort. SPIDToPort returns the UDP port of spid. */
 int dmrgo_enums_spid_to_port(dmrgo_enums_spid_t spid, uint16_t *out);
@@ -8130,7 +8130,7 @@ int dmrgo_enums_service_kind_needs_payload_channel(dmrgo_enums_service_kind_t se
 int dmrgo_enums_service_kind_string(dmrgo_enums_service_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.Slot.Other. Other returns the other TDMA channel of the carrier: Slot2 for Slot1 and Slot1 for Slot2. */
 int dmrgo_enums_slot_other(dmrgo_enums_slot_t self, dmrgo_enums_slot_t *out);
-/* Go: enums.Slot.String. String returns "TS1", "TS2" or "Unknown". */
+/* Go: enums.Slot.String. String returns "TS1", "TS2", or "Unknown" for SlotUnknown. */
 int dmrgo_enums_slot_string(dmrgo_enums_slot_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: enums.SyncPattern.String. String returns the name of the SyncPattern. */
 int dmrgo_enums_sync_pattern_string(dmrgo_enums_sync_pattern_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

@@ -1,10 +1,6 @@
 package enums
 
-const (
-	unknownName              = "Unknown"
-	reservedName             = "Reserved"
-	manufacturerSpecificName = "Manufacturer Specific"
-)
+import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
 // DAID is the 4-bit Destination IP Address Identifier of a UDP/IPv4
 // compressed header. Values 3 to 11 are reserved and 12 to 15 are
@@ -13,24 +9,27 @@ type DAID uint8
 
 // The DAID values.
 const (
-	DAIDRadioNetwork         DAID = 0  // radio network
-	DAIDUSBEthernetNetwork   DAID = 1  // USB or Ethernet network
-	DAIDGroupNetwork         DAID = 2  // group network
-	DAIDManufacturerSpecific DAID = 12 // first manufacturer specific value
+	DAIDRadioNetwork       DAID = 0 // radio network
+	DAIDUSBEthernetNetwork DAID = 1 // USB or Ethernet network
+	DAIDGroupNetwork       DAID = 2 // group network
 )
 
+// String returns the name of the DAID. It allocates only for a value
+// without a constant.
 func (daid DAID) String() string {
-	switch {
-	case daid == DAIDRadioNetwork:
+	switch daid {
+	case DAIDRadioNetwork:
 		return "Radio Network"
-	case daid == DAIDUSBEthernetNetwork:
+	case DAIDUSBEthernetNetwork:
 		return "USB/Ethernet Network"
-	case daid == DAIDGroupNetwork:
+	case DAIDGroupNetwork:
 		return "Group Network"
-	case daid >= 3 && daid <= 11:
-		return reservedName
-	case daid >= 12 && daid <= 15:
-		return manufacturerSpecificName
 	}
-	return unknownName
+	return "DAID(" + text.Int(int64(daid)) + ")"
+}
+
+// IsManufacturerSpecific reports whether daid is one of the manufacturer
+// specific values 12 to 15.
+func (daid DAID) IsManufacturerSpecific() bool {
+	return daid >= 12 && daid <= 15
 }

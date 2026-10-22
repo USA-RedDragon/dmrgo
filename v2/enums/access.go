@@ -1,5 +1,7 @@
 package enums
 
+import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
+
 // Access is the channel access policy of a transmission. The zero value is
 // AccessPoliteOwnCC. (ETSI TS 102 361-1 clause 5.2.1.6)
 type Access uint8
@@ -16,15 +18,16 @@ const (
 	AccessImpolite
 )
 
-// String returns the clause 5.2.1.6 name of the policy.
+// String returns the clause 5.2.1.6 name of the policy. It allocates only
+// for a value without a constant.
 func (a Access) String() string {
 	switch a {
 	case AccessPoliteOwnCC:
-		return "Polite to own Colour Code"
+		return "Polite to own Color Code"
 	case AccessPoliteAll:
 		return "Polite to all"
 	case AccessImpolite:
 		return "Impolite"
 	}
-	return unknownName
+	return "Access(" + text.Int(int64(a)) + ")"
 }

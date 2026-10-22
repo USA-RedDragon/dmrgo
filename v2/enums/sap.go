@@ -37,5 +37,5 @@ func (s SAP) String() string {
 	case SAPShortData:
 		return "Short Data"
 	}
-	return "Reserved SAP(" + text.Int(int64(s)) + ")"
+	return "SAP(" + text.Int(int64(s)) + ")"
 }

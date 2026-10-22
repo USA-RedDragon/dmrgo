@@ -1,8 +1,21 @@
 // Package enums defines the enumerated information elements of ETSI TS 102
 // 361: data types, SYNC patterns, FLCO, SLCO, FID, LCSS, the address and
 // port identifiers of the compressed headers and others. Each type converts
-// from its on-air value with a plain cast and prints with String.
+// from its on-air value with a plain cast.
+//
+// Each type with named values prints with String: a value with a constant
+// prints its name, and any other value prints as TypeName(n), with n in
+// decimal, such as SAP(1). ColorCode, NRandWait and Backoff have no named
+// values and no String method.
 package enums
+
+import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
+
+const (
+	unknownName              = "Unknown"
+	reservedName             = "Reserved"
+	manufacturerSpecificName = "Manufacturer Specific"
+)
 
 // DataType is the 4-bit Data Type of a slot type: the content of a general
 // data burst (ETSI TS 102 361-1 clause 9.3.6, Table 9.22).
@@ -22,7 +35,10 @@ const (
 	DataTypeIdle                               // Idle
 	DataTypeRate1                              // Rate 1 Data
 	DataTypeUnifiedSingleBlock                 // Unified Single Block Data
-	DataTypeReserved                           // first reserved value, 1100
+	// DataTypeReserved is 12, the lowest of the reserved values 12 to 15.
+	// It marks the start of the range that IsReserved reports, and String
+	// prints it as DataType(12).
+	DataTypeReserved
 )
 
 // IsReserved reports whether dt is one of the reserved values 12 to 15
@@ -51,6 +67,9 @@ func (dt DataType) CarriesFullLC() bool {
 	return dt == DataTypeVoiceLCHeader || dt == DataTypeTerminatorWithLC
 }
 
+// String returns the name of the DataType. It returns DataType(n) for a
+// reserved value, DataTypeReserved included, and for a value over 15, and
+// allocates only for them.
 func (dt DataType) String() string {
 	switch dt {
 	case DataTypePIHeader:
@@ -78,11 +97,6 @@ func (dt DataType) String() string {
 	case DataTypeUnifiedSingleBlock:
 		return "Unified Single Block"
 	case DataTypeReserved:
-		return "Reserved"
-	default:
-		if dt.IsReserved() {
-			return "Reserved"
-		}
-		return "Unknown"
 	}
+	return "DataType(" + text.Int(int64(dt)) + ")"
 }

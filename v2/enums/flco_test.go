@@ -17,7 +17,7 @@ func TestFLCOString(t *testing.T) {
 		{FLCOTalkerAliasBlock3, "Talker Alias Block 3"},
 		{FLCOGPSInfo, "GPS Info"},
 		{FLCOTerminatorDataLinkControl, "Terminator Data Link Control"},
-		{FLCO(0xFF), "Unknown"},
+		{FLCO(0xFF), "FLCO(255)"},
 	}
 
 	for _, tt := range tests {
