@@ -592,7 +592,7 @@ func (m *MS) svcBurst(now time.Duration, before State, h *layer2.Hint, out []Out
 	}
 	if m.f.state == StatePayload && before == StatePayload && h.Slot != enums.SlotUnknown && h.Slot != m.f.call.Slot {
 		b := c.b
-		if b.HasReverseChannel() && !b.FEC.EMB.Uncorrectable && !b.FEC.RC.Uncorrectable &&
+		if c.valid && b.HasReverseChannel() && !b.FEC.EMB.Uncorrectable && !b.FEC.RC.Uncorrectable &&
 			(!m.f.call.HasColorCode || b.EmbeddedSignalling.ColorCode == m.f.call.ColorCode) {
 			out = append(out, Output{Kind: OutputReverseChannel, RC: b.ReverseChannel.RCCommand, Grant: m.f.call})
 		}

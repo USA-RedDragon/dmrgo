@@ -7,6 +7,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
 )
 
@@ -60,5 +61,20 @@ func TestDecoded_MatchesBurst(t *testing.T) {
 		c1, _ := trunk.NewCapacityPlusFollower(nil)
 		c2, _ := trunk.NewCapacityPlusFollower(nil)
 		checkDecoded(t, "CapacityPlusFollower "+path, caps, c1, c2)
+	}
+}
+
+func TestMS_DecodedNilDoesNotReplay(t *testing.T) {
+	t.Parallel()
+	r := newRig(t, &trunk.MSConfig{Address: msAddr, NoRegistration: true})
+	r.feed(aloha(t), &idle)
+	ahoy := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{
+		ServiceKind: uint8(enums.ServiceIndividualVoice), TargetAddress: msAddr, SourceAddress: 3120002}}, testCC)
+	wantKinds(t, "C_AHOY", r.feed(ahoy, &busy), trunk.OutputAhoy, trunk.OutputBurst)
+	for i := range 3 {
+		r.now += 60 * time.Millisecond
+		if out := r.ms.Decoded(r.now, nil, layer2.Hint{Slot: enums.Slot1}, &busy, nil); len(out) != 0 {
+			t.Fatalf("Decoded(nil) %d: %+v", i, out)
+		}
 	}
 }
