@@ -8045,9 +8045,9 @@ int dmrgo_csbk_timing_channel(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, b
 /* Go: csbk.Timing.Deadline. Deadline returns the time at which the Timing needs a Tick. */
 int dmrgo_csbk_timing_deadline(dmrgo_csbk_timing_t *self, dmrgo_duration_t *at, bool *ok);
 /* dmrgo_csbk_timing_decoded_need sets *items and *arena to the room that dmrgo_csbk_timing_decoded needs for these arguments, without a change to the handle. */
-int dmrgo_csbk_timing_decoded_need(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, size_t *items, size_t *arena);
+int dmrgo_csbk_timing_decoded_need(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 /* Go: csbk.Timing.Decoded. Decoded takes the decoded burst b, which may be NULL, from either slot, and evaluates a CT_CSBK in it: it appends DMRGO_CSBK_OUTPUT_TIMING to dst when the radio takes the slot timing of b, and starts, keeps or cancels the CT_CSBK that the radio sends. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_timing_decoded_need gives (DMRGO_CSBK_TIMING_DECODED_MAX_ITEMS items). b may be NULL. */
-int dmrgo_csbk_timing_decoded(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_csbk_timing_decoded(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: csbk.Timing.Join. Join starts the Timing for a radio that arrives on the channel, which knows no leader and no timing and waits DMRGO_CONSTANTS_NO_LEADER for the CT_CSBKs of other radios before it asks for them. It returns DMRGO_ERR_ZERO_VALUE on a zero Timing. */
 int dmrgo_csbk_timing_join(dmrgo_csbk_timing_t *self, dmrgo_duration_t now);
 /* Go: csbk.Timing.Leader. Leader returns the dynamic identifier and the identifier of the wide area timing leader. */

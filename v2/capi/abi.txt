@@ -1594,8 +1594,8 @@ sym int dmrgo_csbk_timing_burst(dmrgo_csbk_timing_t *self, dmrgo_duration_t now,
 sym int dmrgo_csbk_timing_burst_need(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 sym int dmrgo_csbk_timing_channel(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, bool busy);
 sym int dmrgo_csbk_timing_deadline(dmrgo_csbk_timing_t *self, dmrgo_duration_t *at, bool *ok);
-sym int dmrgo_csbk_timing_decoded(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-sym int dmrgo_csbk_timing_decoded_need(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, size_t *items, size_t *arena);
+sym int dmrgo_csbk_timing_decoded(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_csbk_timing_decoded_need(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 sym int dmrgo_csbk_timing_free(dmrgo_csbk_timing_t *self);
 sym int dmrgo_csbk_timing_join(dmrgo_csbk_timing_t *self, dmrgo_duration_t now);
 sym int dmrgo_csbk_timing_leader(dmrgo_csbk_timing_t *self, uint8_t *dynamic_id, uint32_t *id, bool *ok);

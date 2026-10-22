@@ -10689,21 +10689,21 @@ func dmrgo_csbk_timing_deadline(c_self *C.dmrgo_csbk_timing_t, c_at *C.dmrgo_dur
 }
 
 //export dmrgo_csbk_timing_decoded_need
-func dmrgo_csbk_timing_decoded_need(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_hint *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_timing_decoded_need(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Timing(c_self)
 	var a_b *g_layer2.Burst
 	if c_b != nil {
 		a_b = get_layer2_Burst(c_b).v
 	}
-	if c_hint == nil {
+	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	var a_hint g_layer2.Hint
-	a_hint = in_layer2_Hint(&(*c_hint))
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
 	_ = h
 	_ = a_b
-	_ = a_hint
+	_ = a_h
 	if c_items != nil {
 		*c_items = C.size_t(max(0, int(g_csbk.MaxOutputs)))
 	}
@@ -10714,7 +10714,7 @@ func dmrgo_csbk_timing_decoded_need(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo
 }
 
 //export dmrgo_csbk_timing_decoded
-func dmrgo_csbk_timing_decoded(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_hint *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_timing_decoded(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
@@ -10725,11 +10725,11 @@ func dmrgo_csbk_timing_decoded(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_dura
 	if c_b != nil {
 		a_b = get_layer2_Burst(c_b).v
 	}
-	if c_hint == nil {
+	if c_h == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	var a_hint g_layer2.Hint
-	a_hint = in_layer2_Hint(&(*c_hint))
+	var a_h g_layer2.Hint
+	a_h = in_layer2_Hint(&(*c_h))
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -10744,7 +10744,7 @@ func dmrgo_csbk_timing_decoded(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_dura
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.Decoded(time.Duration(c_now), a_b, a_hint, a_dst)
+	r0 := h.v.Decoded(time.Duration(c_now), a_b, a_h, a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{
