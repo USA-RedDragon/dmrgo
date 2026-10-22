@@ -354,7 +354,7 @@ func emitFrameEncode(f *File, pdu parse.PDUStruct, ev *errVars) {
 	}
 	doc += ". It returns dst unchanged and a *dmrgo.FieldRangeError when a field does not fit"
 	if pdu.Frame.SizeField != "" {
-		doc += ", or an error when " + pdu.Frame.SizeField + " is not one of the lengths"
+		doc += ", or an error that wraps " + errLength + " when " + pdu.Frame.SizeField + " is not one of the lengths"
 	}
 	doc += ". It allocates only to grow dst."
 	comment(f, doc+docCite(pdu))
@@ -370,7 +370,7 @@ func emitFrameEncode(f *File, pdu parse.PDUStruct, ev *errVars) {
 						sw.Case(Lit(s)).Block(Id("_size").Op("=").Lit(s))
 					}
 				}
-				sw.Default().Block(Return(Id("dst"), ev.get("err"+pdu.Name+"Size", errorsNew(pdu.Name+"."+sf+": not one of "+sizesText(sizes)))))
+				sw.Default().Block(Return(Id("dst"), ev.get("err"+pdu.Name+"Size", lengthError(pdu.Name+"."+sf+": not one of "+sizesText(sizes)))))
 			})
 			size = Id("_size")
 		}

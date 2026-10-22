@@ -631,7 +631,7 @@ func (e streamEnc) encodeBytes(g *Group, f parse.StreamField, src *Statement) er
 		}
 		ex = addOffset(ex, f.Expr.Add)
 		msg := e.pdu.Name + "." + f.Name + ": length does not match " + f.Expr.Path
-		g.If(Len(src.Clone()).Op("!=").Add(ex)).Block(e.fail(e.errs.get("err"+e.pdu.Name+f.Name+"Length", errorsNew(msg))))
+		g.If(Len(src.Clone()).Op("!=").Add(ex)).Block(e.fail(e.errs.get("err"+e.pdu.Name+f.Name+"Length", lengthError(msg))))
 	case parse.LengthRest:
 	}
 	g.Id("dst").Op("=").Append(Id("dst"), src.Clone().Op("..."))

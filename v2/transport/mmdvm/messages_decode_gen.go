@@ -3,7 +3,7 @@
 package mmdvm
 
 import (
-	"errors"
+	"fmt"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
@@ -149,8 +149,9 @@ func DecodeStatusV1(data []byte) (StatusV1, error) {
 
 // AppendBinary appends the 7, 8, 9, 10 or 11 octets of s to dst: Size
 // selects the length, and 0 means 11. It returns dst unchanged and a
-// *dmrgo.FieldRangeError when a field does not fit, or an error when Size is
-// not one of the lengths. It allocates only to grow dst.
+// *dmrgo.FieldRangeError when a field does not fit, or an error that wraps
+// ErrLength when Size is not one of the lengths. It allocates only to grow
+// dst.
 func (s *StatusV1) AppendBinary(dst []byte) ([]byte, error) {
 	if s == nil {
 		return dst, dmrgo.ErrNilReceiver
@@ -606,8 +607,9 @@ func DecodeSetFreq(data []byte) (SetFreq, error) {
 
 // AppendBinary appends the 9, 10 or 14 octets of s to dst: Size selects the
 // length, and 0 means 14. It returns dst unchanged and a
-// *dmrgo.FieldRangeError when a field does not fit, or an error when Size is
-// not one of the lengths. It allocates only to grow dst.
+// *dmrgo.FieldRangeError when a field does not fit, or an error that wraps
+// ErrLength when Size is not one of the lengths. It allocates only to grow
+// dst.
 func (s *SetFreq) AppendBinary(dst []byte) ([]byte, error) {
 	if s == nil {
 		return dst, dmrgo.ErrNilReceiver
@@ -882,7 +884,7 @@ func (s *DMRShortLC) String() string {
 }
 
 var (
-	errStatusV1Size         = errors.New("StatusV1.Size: not one of 7, 8, 9, 10 or 11 octets")
+	errStatusV1Size         = fmt.Errorf("%w: StatusV1.Size: not one of 7, 8, 9, 10 or 11 octets", ErrLength)
 	errConfigV2TXDelayRange = &dmrgo.FieldRangeError{
 		Bits:  8,
 		Field: "TXDelay",
@@ -911,7 +913,7 @@ var (
 		Min:   0.0,
 		Type:  "ConfigV1",
 	}
-	errSetFreqSize       = errors.New("SetFreq.Size: not one of 9, 10 or 14 octets")
+	errSetFreqSize       = fmt.Errorf("%w: SetFreq.Size: not one of 9, 10 or 14 octets", ErrLength)
 	errDMRAbortSlotRange = &dmrgo.FieldRangeError{
 		Bits:  8,
 		Field: "Slot",

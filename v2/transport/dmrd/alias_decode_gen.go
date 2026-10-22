@@ -3,7 +3,7 @@
 package dmrd
 
 import (
-	"errors"
+	"fmt"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	text "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 )
@@ -35,8 +35,9 @@ func DecodeTalkerAlias(data []byte) (TalkerAlias, error) {
 
 // AppendBinary appends the 15 or 19 octets of s to dst: Size selects the
 // length, and 0 means 15. It returns dst unchanged and a
-// *dmrgo.FieldRangeError when a field does not fit, or an error when Size is
-// not one of the lengths. It allocates only to grow dst.
+// *dmrgo.FieldRangeError when a field does not fit, or an error that wraps
+// ErrLength when Size is not one of the lengths. It allocates only to grow
+// dst.
 func (s *TalkerAlias) AppendBinary(dst []byte) ([]byte, error) {
 	if s == nil {
 		return dst, dmrgo.ErrNilReceiver
@@ -172,8 +173,9 @@ func DecodePosition(data []byte) (Position, error) {
 
 // AppendBinary appends the 14 or 18 octets of s to dst: Size selects the
 // length, and 0 means 14. It returns dst unchanged and a
-// *dmrgo.FieldRangeError when a field does not fit, or an error when Size is
-// not one of the lengths. It allocates only to grow dst.
+// *dmrgo.FieldRangeError when a field does not fit, or an error that wraps
+// ErrLength when Size is not one of the lengths. It allocates only to grow
+// dst.
 func (s *Position) AppendBinary(dst []byte) ([]byte, error) {
 	if s == nil {
 		return dst, dmrgo.ErrNilReceiver
@@ -281,7 +283,7 @@ func (s *LocalPosition) String() string {
 }
 
 var (
-	errTalkerAliasSize        = errors.New("TalkerAlias.Size: not one of 15 or 19 octets")
+	errTalkerAliasSize        = fmt.Errorf("%w: TalkerAlias.Size: not one of 15 or 19 octets", ErrLength)
 	errTalkerAliasSourceRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "Source",
@@ -292,7 +294,7 @@ var (
 		Field: "Source",
 		Type:  "LocalTalkerAlias",
 	}
-	errPositionSize        = errors.New("Position.Size: not one of 14 or 18 octets")
+	errPositionSize        = fmt.Errorf("%w: Position.Size: not one of 14 or 18 octets", ErrLength)
 	errPositionSourceRange = &dmrgo.FieldRangeError{
 		Bits:  24,
 		Field: "Source",
