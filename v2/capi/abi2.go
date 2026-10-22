@@ -2,6 +2,7 @@ package main
 
 /*
 #include <stdlib.h>
+#define DMRGO_USER_T uintptr_t
 #include "dmrgo.h"
 */
 import "C"

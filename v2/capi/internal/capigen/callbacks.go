@@ -108,7 +108,7 @@ func (g *gen) emitFn(f *fnInfo) error {
 	all := append([]string{userParam}, cps...)
 	g.fwd = append(g.fwd, "typedef struct "+f.c+" "+f.c+";")
 	var b strings.Builder
-	lines(&b, "struct "+f.c+" {", "\tint (*fn)("+strings.Join(all, ", ")+");", "\tvoid *user;", "};", "")
+	lines(&b, "struct "+f.c+" {", "\tint (*fn)("+strings.Join(all, ", ")+");", "\tDMRGO_USER_T user;", "};", "")
 	g.hStructs.WriteString(b.String())
 	g.abiTypes = append(g.abiTypes, "type "+strings.Join(strings.Fields(b.String()), " "))
 	var names []string
@@ -125,14 +125,14 @@ func (g *gen) emitFn(f *fnInfo) error {
 	}
 	var w strings.Builder
 	exp := fmt.Sprintf("dmrgo__fn%d", f.k)
-	code, _, werr := g.wrapper(exp, "", nil, rNone, "fv", f.sig, &lead{c: []string{userParam}, gop: []string{"user unsafe.Pointer"}, pre: "fv := lookup[" + gs + "](user)\n"})
+	code, _, werr := g.wrapper(exp, "", nil, rNone, "fv", f.sig, &lead{c: []string{userParam}, gop: []string{"user C.uintptr_t"}, pre: "fv := hvalue[" + gs + "](uintptr(user))\n"})
 	if werr == nil {
 		f.out = fmt.Sprintf("fnout%d", f.k)
 		g.goFuncs.WriteString(code)
 		lines(&g.genC, fmt.Sprintf("void *dmrgo__fnptr%d(void) { return (void *)%s; }", f.k, exp), "")
 		lines(&g.preamble, fmt.Sprintf("void *dmrgo__fnptr%d(void);", f.k))
 		lines(&w, "func "+f.out+"(v "+gs+") C."+f.c+" {", "if v == nil {", "return C."+f.c+"{}", "}",
-			fmt.Sprintf("return C.%s{fn: (*[0]byte)(C.dmrgo__fnptr%d()), user: newHandle(v)}", f.c, f.k), "}", "")
+			fmt.Sprintf("return C.%s{fn: (*[0]byte)(C.dmrgo__fnptr%d()), user: newUser(v)}", f.c, f.k), "}", "")
 	}
 	lines(&w, fmt.Sprintf("type cb%d struct {", f.k), "f C."+f.c)
 	for _, fl := range fields {
@@ -140,7 +140,7 @@ func (g *gen) emitFn(f *fnInfo) error {
 	}
 	lines(&w, "}", "", "func "+f.in+"(p C."+f.c+") "+gs+" {", "if p.fn == nil {", "return nil", "}")
 	if werr == nil {
-		lines(&w, fmt.Sprintf("if unsafe.Pointer(p.fn) == C.dmrgo__fnptr%d() {", f.k), "return lookup["+gs+"](p.user)", "}")
+		lines(&w, fmt.Sprintf("if unsafe.Pointer(p.fn) == C.dmrgo__fnptr%d() {", f.k), "return hvalue["+gs+"](uintptr(p.user))", "}")
 	}
 	lines(&w, fmt.Sprintf("c := &cb%d{f: p}", f.k), "return c.call", "}", "")
 	w.WriteString(fmt.Sprintf("func (c *cb%d) call", f.k) + body)
@@ -387,9 +387,9 @@ func (g *gen) vtable(ti *tinfo) (string, string, error) {
 	var gw strings.Builder
 	var fields []string
 	var methods strings.Builder
-	lines(&hb, "struct "+vt+" {", "\t/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. */", "\tsize_t size;", "\tvoid *user;")
+	lines(&hb, "struct "+vt+" {", "\t/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. */", "\tsize_t size;", "\tDMRGO_USER_T user;")
 	var plain strings.Builder
-	lines(&plain, "struct "+vt+" {", "\tsize_t size;", "\tvoid *user;")
+	lines(&plain, "struct "+vt+" {", "\tsize_t size;", "\tDMRGO_USER_T user;")
 	ms := make([]*types.Func, 0, iface.NumMethods())
 	for i := 0; i < iface.NumMethods(); i++ {
 		ms = append(ms, iface.Method(i))

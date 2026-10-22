@@ -14,7 +14,7 @@ type kind int
 
 const (
 	dstName   = "dst"
-	userParam = "void *user"
+	userParam = "DMRGO_USER_T user"
 	cFalse    = "false"
 	cBool     = "bool"
 	cFloat    = "float"

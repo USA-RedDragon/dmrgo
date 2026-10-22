@@ -3191,7 +3191,7 @@ type struct dmrgo_dmrd_session_peer_config_t { size_t size; dmrgo_dmrd_dialect_t
 type struct dmrgo_dmrd_talker_alias_t { uint32_t repeater; uint32_t source; uint8_t type; uint8_t data[7]; uint8_t size; };
 type struct dmrgo_dvsi_config_t { size_t size; int64_t channel; dmrgo_duration_t timeout; bool no_reset; bool no_parity; };
 type struct dmrgo_dvsi_packet_t { dmrgo_dvsi_packet_type_t type; uint8_t *fields; size_t fields_len; };
-type struct dmrgo_dvsi_port_vtable_t { size_t size; void *user; int (*read)(void *user, uint8_t *p, size_t p_len, int64_t *out); int (*write)(void *user, const uint8_t *p, size_t p_len, int64_t *out); };
+type struct dmrgo_dvsi_port_vtable_t { size_t size; DMRGO_USER_T user; int (*read)(DMRGO_USER_T user, uint8_t *p, size_t p_len, int64_t *out); int (*write)(DMRGO_USER_T user, const uint8_t *p, size_t p_len, int64_t *out); };
 type struct dmrgo_fec_burst_fec_stats_t { dmrgo_fec_result_t slot_type; dmrgo_fec_result_t emb; dmrgo_fec_result_t payload; dmrgo_fec_result_t pdu; dmrgo_fec_result_t rc; };
 type struct dmrgo_fec_result_t { int64_t bits_checked; int64_t errors_corrected; bool uncorrectable; };
 type struct dmrgo_field_range_error_t { char *type; size_t type_len; char *field; size_t field_len; int64_t bits; bool signed_; double min; double max; };
@@ -3242,7 +3242,7 @@ type struct dmrgo_layer2_data_t { uint32_t tag; union { dmrgo_pdu_bcap_continuat
 type struct dmrgo_layer2_decode_options_t { size_t size; int64_t sync_threshold; bool has_color_code; dmrgo_enums_color_code_t color_code; dmrgo_layer2_kind_t kind; dmrgo_enums_voice_burst_type_t voice_burst; bool has_data_type; dmrgo_enums_data_type_t data_type; };
 type struct dmrgo_layer2_hint_t { dmrgo_enums_slot_t slot; dmrgo_layer2_kind_t kind; dmrgo_enums_voice_burst_type_t voice_burst; dmrgo_enums_data_type_t data_type; bool has_data_type; uint16_t seq; bool has_seq; uint8_t seq_bits; uint32_t stream; bool has_stream; dmrgo_layer2_end_hint_t end; bool sync_lost; };
 type struct dmrgo_layer2_raw_burst_t { uint8_t v[33]; };
-type struct dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t { int (*fn)(void *user, int64_t superframe, dmrgo_pdu_full_link_control_t *out, bool *out_ok); void *user; };
+type struct dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t { int (*fn)(DMRGO_USER_T user, int64_t superframe, dmrgo_pdu_full_link_control_t *out, bool *out_ok); DMRGO_USER_T user; };
 type struct dmrgo_layer2_voice_transmitter_options_t { size_t size; dmrgo_pdu_full_link_control_t lc; dmrgo_enums_color_code_t color_code; dmrgo_layer2_sync_source_t source; uint8_t silence[9]; bool has_pi_header; dmrgo_pdu_pi_header_t pi_header; dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t embedded_lc; };
 type struct dmrgo_layer3_cdef_parms_t { uint16_t channel; uint16_t tx_mhz; uint16_t tx_khz; uint16_t rx_mhz; uint16_t rx_khz; };
 type struct dmrgo_layer3_data_service_options_t { bool is_emergency; bool is_privacy; bool is_supp_data; bool hi_rate; bool multi_item; uint8_t priority_level; };
@@ -3390,7 +3390,7 @@ type struct dmrgo_trunk_appended_t { dmrgo_enums_udt_format_t format; uint8_t pa
 type struct dmrgo_trunk_auth_entry_t { uint32_t addr; dmrgo_trunk_auth_key_t key; };
 type struct dmrgo_trunk_auth_key_t { uint8_t k[16]; uint32_t psn; };
 type struct dmrgo_trunk_auth_keys_t { dmrgo_trunk_auth_entry_t *entries; size_t entries_len; };
-type struct dmrgo_trunk_authenticator_vtable_t { size_t size; void *user; int (*response)(void *user, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok); };
+type struct dmrgo_trunk_authenticator_vtable_t { size_t size; DMRGO_USER_T user; int (*response)(DMRGO_USER_T user, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok); };
 type struct dmrgo_trunk_capacity_plus_config_t { size_t size; dmrgo_trunk_channel_plan_t *plan; uint32_t talkgroups[32]; int64_t talkgroups_len; bool individual; bool no_follow; dmrgo_duration_t no_signal; dmrgo_duration_t inactive; dmrgo_duration_t hangtime; dmrgo_layer2_burst_t *scratch; };
 type struct dmrgo_trunk_channel_rule_t { uint16_t first; uint16_t last; uint64_t rx_hz; uint64_t step_hz; int64_t tx_offset_hz; };
 type struct dmrgo_trunk_channel_t { uint16_t number; uint64_t rx_hz; uint64_t tx_hz; };
@@ -3411,7 +3411,7 @@ type struct dmrgo_trunk_tune_t { uint16_t channel; dmrgo_enums_slot_t slot; uint
 type struct dmrgo_trunk_usbd_lip_response_t { uint8_t time_elapsed; double longitude; double latitude; dmrgo_layer3_position_error_t position_error; uint8_t velocity; uint8_t direction; uint8_t reason; uint8_t hashed_source; };
 type struct dmrgo_trunk_usbd_poll_request_t { uint8_t response_delay; bool payload_contents; bool reserved; uint64_t parameters; uint32_t target; };
 type struct dmrgo_vocoder_ambe_frame_t { uint8_t v[7]; };
-type struct dmrgo_vocoder_codec_vtable_t { size_t size; void *user; int (*close)(void *user); int (*decode)(void *user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]); int (*encode)(void *user, const int16_t *pcm, size_t pcm_len, uint8_t out[9]); int (*fid)(void *user, dmrgo_enums_fid_t *out); int (*frame_samples)(void *user, int64_t *out); int (*silence)(void *user, uint8_t out[9]); int (*reset)(void *user); };
+type struct dmrgo_vocoder_codec_vtable_t { size_t size; DMRGO_USER_T user; int (*close)(DMRGO_USER_T user); int (*decode)(DMRGO_USER_T user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]); int (*encode)(DMRGO_USER_T user, const int16_t *pcm, size_t pcm_len, uint8_t out[9]); int (*fid)(DMRGO_USER_T user, dmrgo_enums_fid_t *out); int (*frame_samples)(DMRGO_USER_T user, int64_t *out); int (*silence)(DMRGO_USER_T user, uint8_t out[9]); int (*reset)(DMRGO_USER_T user); };
 type struct dmrgo_voice_call_options_t { size_t size; bool has_pi_header; dmrgo_pdu_pi_header_t pi_header; char *talker_alias; size_t talker_alias_len; dmrgo_layer3_talker_alias_data_format_t talker_alias_format; bool has_gps; dmrgo_pdu_flc_gps_info_t gps; bool in_call; bool hang_time; };
 type struct dmrgo_voice_call_t { bool group; uint32_t target; uint32_t source; dmrgo_layer3_service_options_t options; dmrgo_enums_fid_t fid; dmrgo_pdu_lc_bytes_t lc; dmrgo_voice_origin_t origin; uint32_t stream; };
 type struct dmrgo_voice_event_t { dmrgo_voice_event_kind_t kind; dmrgo_voice_call_t call; dmrgo_enums_voice_burst_type_t position; dmrgo_layer2_raw_burst_t burst; dmrgo_voice_frame_quality_t frames[3]; uint8_t lost; dmrgo_pdu_full_link_control_t lc; uint8_t *text; size_t text_len; dmrgo_voice_end_reason_t reason; dmrgo_voice_stats_t stats; };

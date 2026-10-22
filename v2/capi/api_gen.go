@@ -4,6 +4,7 @@ package main
 
 /*
 #define DMRGO_NO_PROTOTYPES
+#define DMRGO_USER_T uintptr_t
 #include "dmrgo.h"
 #include "dmrgo_gen_internal.h"
 
@@ -2710,7 +2711,7 @@ func fnout0(v func(superframe int) *g_layer2_pdu.FullLinkControl) C.dmrgo_layer2
 	if v == nil {
 		return C.dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t{}
 	}
-	return C.dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t{fn: (*[0]byte)(C.dmrgo__fnptr0()), user: newHandle(v)}
+	return C.dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t{fn: (*[0]byte)(C.dmrgo__fnptr0()), user: newUser(v)}
 }
 
 type cb0 struct {
@@ -2726,7 +2727,7 @@ func fnin0(p C.dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t) func(sup
 		return nil
 	}
 	if unsafe.Pointer(p.fn) == C.dmrgo__fnptr0() {
-		return lookup[func(superframe int) *g_layer2_pdu.FullLinkControl](p.user)
+		return hvalue[func(superframe int) *g_layer2_pdu.FullLinkControl](uintptr(p.user))
 	}
 	c := &cb0{f: p}
 	return c.call
@@ -17736,10 +17737,10 @@ func dmrgo_layer2_new_burst_from_bytes(c_data *C.dmrgo_layer2_raw_burst_t, c_out
 }
 
 //export dmrgo__fn0
-func dmrgo__fn0(user unsafe.Pointer, c_superframe C.int64_t, c_out *C.dmrgo_pdu_full_link_control_t, c_out_ok *C.bool) (rc C.int) {
+func dmrgo__fn0(user C.uintptr_t, c_superframe C.int64_t, c_out *C.dmrgo_pdu_full_link_control_t, c_out_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
-	fv := lookup[func(superframe int) *g_layer2_pdu.FullLinkControl](user)
+	fv := hvalue[func(superframe int) *g_layer2_pdu.FullLinkControl](uintptr(user))
 	r0 := fv(int(c_superframe))
 	_ = r0
 	if c_out_ok != nil {
