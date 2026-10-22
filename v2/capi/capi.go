@@ -6,6 +6,14 @@
 //
 // go build -buildmode=c-shared builds the library without them.
 //
+// make static writes build/static/libdmrgo.a, one object in which only the
+// functions of libdmrgo.map are global, so that the Go runtime and the
+// internals of libdmrgo do not clash with the symbols of the program. A
+// program links it with -lpthread, -lm and the codec2 library:
+//
+//	make static
+//	cc prog.c -I. build/static/libdmrgo.a $(pkg-config --libs codec2) -lpthread -lm
+//
 // Its own module keeps cgo and the C toolchain out of the dmrgo module.
 package main
 
