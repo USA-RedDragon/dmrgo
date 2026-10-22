@@ -17,11 +17,11 @@ func TestAllocsMMDVM(t *testing.T) {
 		p := stream
 		for len(p) > 0 {
 			f, n, st := mmdvm.Next(p)
-			if st == mmdvm.StatusMore {
+			if st == mmdvm.NextMore {
 				break
 			}
 			p = p[n:]
-			if st != mmdvm.StatusFrame {
+			if st != mmdvm.NextFrame {
 				continue
 			}
 			if d, err := mmdvm.DecodeDMRData(f); err == nil {

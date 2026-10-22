@@ -13,7 +13,7 @@ func ExampleNext() {
 	p, _ := hex.DecodeString("e00301" + "e0251a0020580b4015ec0f6871000d005c4d5d7f77fd757361a416203d5235242181850277")
 	for len(p) > 0 {
 		f, n, st := mmdvm.Next(p)
-		if st != mmdvm.StatusFrame {
+		if st != mmdvm.NextFrame {
 			break
 		}
 		p = p[n:]

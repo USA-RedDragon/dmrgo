@@ -1162,9 +1162,9 @@ sym #define DMRGO_MMDVM_MODE_NXDN ((dmrgo_mmdvm_mode_t)5)
 sym #define DMRGO_MMDVM_MODE_P25 ((dmrgo_mmdvm_mode_t)4)
 sym #define DMRGO_MMDVM_MODE_POCSAG ((dmrgo_mmdvm_mode_t)6)
 sym #define DMRGO_MMDVM_MODE_YSF ((dmrgo_mmdvm_mode_t)3)
-sym #define DMRGO_MMDVM_STATUS_FRAME ((dmrgo_mmdvm_status_t)0)
-sym #define DMRGO_MMDVM_STATUS_MORE ((dmrgo_mmdvm_status_t)1)
-sym #define DMRGO_MMDVM_STATUS_SKIP ((dmrgo_mmdvm_status_t)2)
+sym #define DMRGO_MMDVM_NEXT_FRAME ((dmrgo_mmdvm_next_result_t)0)
+sym #define DMRGO_MMDVM_NEXT_MORE ((dmrgo_mmdvm_next_result_t)1)
+sym #define DMRGO_MMDVM_NEXT_SKIP ((dmrgo_mmdvm_next_result_t)2)
 sym #define DMRGO_PACKET_ASSEMBLER_APPEND_MISSING_MAX_ITEMS (127)
 sym #define DMRGO_PACKET_ASSEMBLER_MISSING_MAX_ITEMS (127)
 sym #define DMRGO_PACKET_RESPONSE_ACK ((dmrgo_packet_response_t)1)
@@ -2313,7 +2313,7 @@ sym int dmrgo_mmdvm_mode_string(dmrgo_mmdvm_mode_t self, char *out, size_t out_c
 sym int dmrgo_mmdvm_nak_append_binary(const dmrgo_mmdvm_nak_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_mmdvm_nak_string(const dmrgo_mmdvm_nak_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_mmdvm_new_dmr_short_lc(const dmrgo_pdu_short_lc_t *slc, dmrgo_mmdvm_dmr_short_lc_t *out);
-sym int dmrgo_mmdvm_next(const uint8_t *p, size_t p_len, dmrgo_mmdvm_frame_t *f, int64_t *n, dmrgo_mmdvm_status_t *st, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+sym int dmrgo_mmdvm_next(const uint8_t *p, size_t p_len, dmrgo_mmdvm_frame_t *f, int64_t *n, dmrgo_mmdvm_next_result_t *r, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_mmdvm_set_freq_append_binary(const dmrgo_mmdvm_set_freq_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_mmdvm_set_freq_string(const dmrgo_mmdvm_set_freq_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_mmdvm_set_mode_append_binary(const dmrgo_mmdvm_set_mode_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
@@ -3161,7 +3161,7 @@ sym typedef uint8_t dmrgo_mmdvm_command_t;
 sym typedef uint8_t dmrgo_mmdvm_control_t;
 sym typedef uint8_t dmrgo_mmdvm_cpu_t;
 sym typedef uint8_t dmrgo_mmdvm_mode_t;
-sym typedef uint8_t dmrgo_mmdvm_status_t;
+sym typedef uint8_t dmrgo_mmdvm_next_result_t;
 sym typedef uint8_t dmrgo_packet_response_t;
 sym typedef uint8_t dmrgo_pdu_capacity_plus_segment_t;
 sym typedef uint8_t dmrgo_pdu_csbk_opcode_t;

@@ -554,11 +554,11 @@ func tinyDigestOps() []tinyOp {
 func tinyMMDVMRun(stream, buf, out []byte) ([]byte, []byte) {
 	for len(stream) > 0 {
 		f, n, st := mmdvm.Next(stream)
-		if st == mmdvm.StatusMore {
+		if st == mmdvm.NextMore {
 			break
 		}
 		stream = stream[n:]
-		if st != mmdvm.StatusFrame {
+		if st != mmdvm.NextFrame {
 			continue
 		}
 		if d, err := mmdvm.DecodeDMRData(f); err == nil {

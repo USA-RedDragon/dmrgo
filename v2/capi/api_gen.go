@@ -41078,7 +41078,7 @@ func dmrgo_mmdvm_new_dmr_short_lc(c_slc *C.dmrgo_pdu_short_lc_t, c_out *C.dmrgo_
 }
 
 //export dmrgo_mmdvm_next
-func dmrgo_mmdvm_next(c_p *C.uint8_t, c_p_len C.size_t, c_f *C.dmrgo_mmdvm_frame_t, c_n *C.int64_t, c_st *C.dmrgo_mmdvm_status_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_mmdvm_next(c_p *C.uint8_t, c_p_len C.size_t, c_f *C.dmrgo_mmdvm_frame_t, c_n *C.int64_t, c_r *C.dmrgo_mmdvm_next_result_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if !lenOK(unsafe.Pointer(c_p), c_p_len, unsafe.Sizeof(*c_p)) {
@@ -41109,8 +41109,8 @@ func dmrgo_mmdvm_next(c_p *C.uint8_t, c_p_len C.size_t, c_f *C.dmrgo_mmdvm_frame
 	if c_n != nil {
 		*c_n = C.int64_t(r1)
 	}
-	if c_st != nil {
-		*c_st = C.dmrgo_mmdvm_status_t(r2)
+	if c_r != nil {
+		*c_r = C.dmrgo_mmdvm_next_result_t(r2)
 	}
 	if c_arena_need != nil {
 		*c_arena_need = C.size_t(oc.reported())

@@ -879,8 +879,8 @@ typedef uint8_t dmrgo_mmdvm_command_t;
 typedef uint8_t dmrgo_mmdvm_control_t;
 /* Go: mmdvm.Mode. Mode is a mode of the modem, or a calibration state in a status reply. */
 typedef uint8_t dmrgo_mmdvm_mode_t;
-/* Go: mmdvm.Status. Status is the result of Next. */
-typedef uint8_t dmrgo_mmdvm_status_t;
+/* Go: mmdvm.NextResult. NextResult is the result of Next. */
+typedef uint8_t dmrgo_mmdvm_next_result_t;
 /* Go: trunk.OutputKind. OutputKind is the kind of an Output. */
 typedef uint8_t dmrgo_trunk_output_kind_t;
 /* Go: trunk.Reason. Reason tells why a machine lost a TSCC, left a payload channel or failed a request. */
@@ -7293,12 +7293,12 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_MMDVM_MODE_POCSAG ((dmrgo_mmdvm_mode_t)6)
 /* Go: mmdvm.ModeYSF. The Mode values. */
 #define DMRGO_MMDVM_MODE_YSF ((dmrgo_mmdvm_mode_t)3)
-/* Go: mmdvm.StatusFrame. StatusFrame is a whole frame. */
-#define DMRGO_MMDVM_STATUS_FRAME ((dmrgo_mmdvm_status_t)0)
-/* Go: mmdvm.StatusMore. StatusMore is the start of a frame that needs more octets. */
-#define DMRGO_MMDVM_STATUS_MORE ((dmrgo_mmdvm_status_t)1)
-/* Go: mmdvm.StatusSkip. StatusSkip is octets that do not start a frame, to drop. */
-#define DMRGO_MMDVM_STATUS_SKIP ((dmrgo_mmdvm_status_t)2)
+/* Go: mmdvm.NextFrame. NextFrame is a whole frame. */
+#define DMRGO_MMDVM_NEXT_FRAME ((dmrgo_mmdvm_next_result_t)0)
+/* Go: mmdvm.NextMore. NextMore is the start of a frame that needs more octets. */
+#define DMRGO_MMDVM_NEXT_MORE ((dmrgo_mmdvm_next_result_t)1)
+/* Go: mmdvm.NextSkip. NextSkip is octets that do not start a frame, to drop. */
+#define DMRGO_MMDVM_NEXT_SKIP ((dmrgo_mmdvm_next_result_t)2)
 /* Go: trunk.CapacityPlusNoSignalDefault. CapacityPlusNoSignalDefault is the default CapacityPlusConfig.NoSignal: more than twice the 2 s beacon period of an idle rest channel. */
 #define DMRGO_TRUNK_CAPACITY_PLUS_NO_SIGNAL_DEFAULT INT64_C(5000000000)
 /* Go: trunk.ChannelAbsolute. ChannelAbsolute is the channel number of a grant or C_MOVE whose frequencies follow in a CG_AP or MV_AP block (ETSI TS 102 361-4 clause 7.1.1.1.1). */
@@ -10309,7 +10309,7 @@ int dmrgo_mmdvm_nak_string(const dmrgo_mmdvm_nak_t *self, char *out, size_t out_
 /* Go: mmdvm.NewDMRShortLC. NewDMRShortLC returns the CommandDMRShortLC payload that carries slc: its BPTC coding, the 4 CACH fragments of 17 bits one after the other, as MMDVMHost CDMRShortLC encodes it. It returns the errors of slc.Encode, and DMRGO_ERR_NIL_ARGUMENT for a nil slc (ETSI TS 102 361-1 clause 7.1.4, Annex B.2.3). slc may be NULL. */
 int dmrgo_mmdvm_new_dmr_short_lc(const dmrgo_pdu_short_lc_t *slc, dmrgo_mmdvm_dmr_short_lc_t *out);
 /* Go: mmdvm.Next. Next finds the frame at the start of p, as the firmware and MMDVMHost read the stream. */
-int dmrgo_mmdvm_next(const uint8_t *p, size_t p_len, dmrgo_mmdvm_frame_t *f, int64_t *n, dmrgo_mmdvm_status_t *st, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+int dmrgo_mmdvm_next(const uint8_t *p, size_t p_len, dmrgo_mmdvm_frame_t *f, int64_t *n, dmrgo_mmdvm_next_result_t *r, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: mmdvm.SetFreq.AppendBinary. AppendBinary appends the 9, 10 or 14 octets of s to dst: Size selects the length, and 0 means 9. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error when Size is not one of the lengths. */
 int dmrgo_mmdvm_set_freq_append_binary(const dmrgo_mmdvm_set_freq_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.SetFreq.String. String returns the fields of s as text, for printing. */
