@@ -3,6 +3,7 @@ package session
 import (
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
 )
@@ -44,16 +45,21 @@ type Master struct {
 	noCopy    noCopy
 }
 
-// NewMaster returns a Master for cfg in StateIdle. It returns a
-// *ConfigError for a nil cfg, a Dialect other than DialectMMDVM or
-// DialectHBRP, or a negative Timeout or LoginTimeout. It allocates the
+// NewMaster returns a Master for cfg in StateIdle. It returns
+// dmrgo.ErrNilArgument for a nil cfg and a *dmrgo.ConfigError for a
+// Dialect other than DialectMMDVM or DialectHBRP, or a negative Timeout or
+// LoginTimeout. It allocates the
 // Master.
 func NewMaster(cfg *MasterConfig) (*Master, error) {
-	if cfg == nil || (cfg.Dialect != dmrd.DialectMMDVM && cfg.Dialect != dmrd.DialectHBRP) {
+	switch {
+	case cfg == nil:
+		return nil, dmrgo.ErrNilArgument
+	case cfg.Dialect != dmrd.DialectMMDVM && cfg.Dialect != dmrd.DialectHBRP:
 		return nil, errDialect
-	}
-	if cfg.Timeout < 0 || cfg.LoginTimeout < 0 {
-		return nil, errTimer
+	case cfg.Timeout < 0:
+		return nil, errTimeout
+	case cfg.LoginTimeout < 0:
+		return nil, errLoginTimeout
 	}
 	return &Master{
 		dialect:      cfg.Dialect,

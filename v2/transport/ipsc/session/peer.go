@@ -3,6 +3,7 @@ package session
 import (
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
 )
 
@@ -63,15 +64,18 @@ type Peer struct {
 	noCopy      noCopy
 }
 
-// NewPeer returns a Peer for cfg. It returns a *ConfigError for a nil
-// cfg, a negative Alive or MaxMissed, or a MaxPeers above MaxPeersLimit. It
+// NewPeer returns a Peer for cfg. It returns dmrgo.ErrNilArgument for a nil
+// cfg and a *dmrgo.ConfigError for a negative Alive or MaxMissed, or a
+// MaxPeers outside [0, MaxPeersLimit]. It
 // allocates the Peer, its peer table and its key.
 func NewPeer(cfg *PeerConfig) (*Peer, error) {
-	if cfg == nil {
-		return nil, errID
-	}
-	if cfg.Alive < 0 || cfg.MaxMissed < 0 {
-		return nil, errTimer
+	switch {
+	case cfg == nil:
+		return nil, dmrgo.ErrNilArgument
+	case cfg.Alive < 0:
+		return nil, errAlive
+	case cfg.MaxMissed < 0:
+		return nil, errMaxMissed
 	}
 	if cfg.MaxPeers < 0 || cfg.MaxPeers > MaxPeersLimit {
 		return nil, errMaxPeers

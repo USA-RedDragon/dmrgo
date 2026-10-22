@@ -44,11 +44,16 @@ type Bridge struct {
 	noCopy  noCopy
 }
 
-// NewBridge returns a Bridge for cfg. It returns a *ConfigError for a nil
-// cfg or a negative timer. It allocates the Bridge and its key.
+// NewBridge returns a Bridge for cfg. It returns dmrgo.ErrNilArgument for a
+// nil cfg and a *dmrgo.ConfigError for a negative Keepalive or Timeout. It allocates the Bridge and its key.
 func NewBridge(cfg *BridgeConfig) (*Bridge, error) {
-	if cfg == nil || cfg.Keepalive < 0 || cfg.Timeout < 0 {
-		return nil, errTimer
+	switch {
+	case cfg == nil:
+		return nil, dmrgo.ErrNilArgument
+	case cfg.Keepalive < 0:
+		return nil, errKeepalive
+	case cfg.Timeout < 0:
+		return nil, errTimeout
 	}
 	b := &Bridge{
 		key:       auth.NewBridgeKey(cfg.Key),

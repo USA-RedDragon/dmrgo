@@ -10,6 +10,11 @@ import (
 // error when it is called on a nil pointer. Match it with errors.Is.
 var ErrNilReceiver = errors.New("dmrgo: method called on a nil receiver")
 
+// ErrNilArgument is returned by a function or method of the library that
+// returns an error when a pointer, func or interface argument it needs is
+// nil. Match it with errors.Is.
+var ErrNilArgument = errors.New("dmrgo: nil argument")
+
 // FieldRangeError is the error of an encoder or setter when a field value
 // does not fit in its on-air bits, when a padding bit of a packed field is
 // set, or for a coordinate when it is outside [Min, Max]. Each field has one

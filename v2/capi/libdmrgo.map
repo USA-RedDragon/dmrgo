@@ -303,8 +303,6 @@
 		dmrgo_dmrd_session_bridge_state;
 		dmrgo_dmrd_session_bridge_tick;
 		dmrgo_dmrd_session_bridge_tick_need;
-		dmrgo_dmrd_session_config_error_error;
-		dmrgo_dmrd_session_config_error_last;
 		dmrgo_dmrd_session_master_admit;
 		dmrgo_dmrd_session_master_admit_need;
 		dmrgo_dmrd_session_master_close;
@@ -568,8 +566,6 @@
 		dmrgo_ipsc_peer_list_len;
 		dmrgo_ipsc_peer_list_of;
 		dmrgo_ipsc_raw_append_binary;
-		dmrgo_ipsc_session_config_error_error;
-		dmrgo_ipsc_session_config_error_last;
 		dmrgo_ipsc_session_master_adopt;
 		dmrgo_ipsc_session_master_adopt_need;
 		dmrgo_ipsc_session_master_adopt_with_key;
