@@ -1121,28 +1121,24 @@ func (r *Repeater) dataBlock(now time.Duration, s *slot, raw *layer2.RawBurst, d
 	}
 	var out layer2.RawBurst
 	var err error
+	bad := false
 	switch dt {
 	case enums.DataTypeRate34:
 		p, res := r.rate34(raw)
-		if res.Uncorrectable {
-			return dst
-		}
+		bad = res.Uncorrectable
 		out, err = layer2.BuildRate34DataBurst(p, r.cc, layer2.SyncSourceBS)
 	case enums.DataTypeRate1:
 		p, _ := raw.Rate1Payload()
 		out, err = layer2.BuildRate1DataBurst(p, r.cc, layer2.SyncSourceBS)
 	default:
 		p, res := r.bptc(raw)
-		if res.Uncorrectable {
-			return dst
-		}
+		bad = res.Uncorrectable
 		out, err = layer2.BuildDataBurst(p, dt, r.cc, layer2.SyncSourceBS)
 	}
-	if err != nil {
-		return dst
-	}
 	s.last = now
-	dst = r.send(now, s, out, dt, from, dst)
+	if err == nil && !bad {
+		dst = r.send(now, s, out, dt, from, dst)
+	}
 	if s.dataLeft > 0 {
 		s.dataLeft--
 		if s.dataLeft == 0 {
