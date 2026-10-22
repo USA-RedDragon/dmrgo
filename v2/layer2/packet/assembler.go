@@ -26,10 +26,15 @@ type Message struct {
 	Blocks int
 	// Data is the user data. The pad octets of a U_HEAD or C_HEAD packet are
 	// removed when the header is a first try (Full Message Flag set). A packet
-	// that a later try started, because the first header was lost, keeps them,
-	// as only a first try counts them. A DD_HEAD or R_HEAD packet has Bit
-	// Padding/8 octets removed on every try, as its retries keep the Bit
-	// Padding of the first try.
+	// that a later try started, because the first header was lost, has them
+	// removed too when every DBSN from 0 to one less than the Blocks to Follow
+	// of the header that started it arrived, in that try or a later one, and
+	// the message CRC holds: such a header, as a sender sends it after no
+	// response or a NACK, keeps the Pad Octet Count of the first try, though
+	// ETSI TS 102 361-1 clause 9.3.20 has a receiver read it only on a first
+	// try. Otherwise a packet that a later try started keeps them. A DD_HEAD
+	// or R_HEAD packet has Bit Padding/8 octets removed on every try, as its
+	// retries keep the Bit Padding of the first try.
 	// It holds at most 3048 bytes: 127 blocks of at most 24 octets.
 	// (ETSI TS 102 361-1 clause 9.3.20, clause 9.3.44)
 	Data []byte
@@ -462,12 +467,15 @@ func (a *Assembler) fill(m *Message, buf []byte, complete bool) error {
 	n := len(buf) - crcOctets
 	m.CRC = binary.LittleEndian.Uint32(buf[n:])
 	m.Data = buf[:n]
-	if fullMessage(&m.Header) || shortData(&m.Header) {
-		pad := padOf(&m.Header)
+	crcOK := checkMessageCRC(buf)
+	switch pad := padOf(&m.Header); {
+	case fullMessage(&m.Header) || shortData(&m.Header):
 		m.Data = buf[:max(n-pad, 0)]
 		m.BadCRC = m.BadCRC || pad > n
+	case complete && crcOK && pad <= n:
+		m.Data = buf[:n-pad]
 	}
-	if !checkMessageCRC(buf) {
+	if !crcOK {
 		m.BadCRC = true
 	}
 	if !complete || m.BadCRC {

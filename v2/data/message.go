@@ -23,8 +23,9 @@ type Message struct {
 	Rate enums.DataType
 	// Payload is the user data, without the pad octets and the message CRC.
 	// A packet whose first header was lost keeps its pad octets, as only a
-	// first try counts them. It holds at most MaxMessage octets (ETSI TS
-	// 102 361-1 clause 9.3.20).
+	// first try counts them, unless a later try resent every block, as
+	// packet.Message.Data describes. It holds at most MaxMessage octets
+	// (ETSI TS 102 361-1 clause 9.3.20).
 	Payload []byte
 	// BadCRC reports a packet whose CRC failed, which a Receiver delivers
 	// only with ReceiverConfig.AcceptBadCRC.
