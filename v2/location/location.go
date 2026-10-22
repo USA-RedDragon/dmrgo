@@ -1,6 +1,7 @@
 package location
 
 import (
+	"encoding/binary"
 	"errors"
 
 	"github.com/USA-RedDragon/dmrgo/v2"
@@ -75,6 +76,17 @@ type Fix struct {
 	Year                             uint16
 	Month, Day, Hour, Minute, Second uint8
 	HasTime                          bool
+	// Result is the result code of the answer, when HasResult is set: an
+	// lrrp.ResultCode for FormatLRRP, and the Result of a standard answer
+	// for FormatHDAP. 0 is success.
+	Result    uint32
+	HasResult bool
+	// RequestID holds the identifier of the request that the report
+	// answers, in its first RequestIDLength octets: the LRRP request ID,
+	// or the RequestID of an HDAP answer or condition report, big-endian.
+	// An LRRP request ID longer than 16 octets gives RequestIDLength 0.
+	RequestID       [16]byte
+	RequestIDLength uint8
 }
 
 const knot = 1852.0 / 3600
@@ -88,16 +100,20 @@ type Decoder struct {
 }
 
 // Decode returns the position in a data packet, with header h and user
-// data data: an NMEA RMC sentence to UDP port 10110, an LRRP report with a
-// position to UDP port 4001, or a Hytera HDAP location protocol message
-// with a position to UDP port 3003. It returns ErrNoFix for a packet in
-// none of these formats, for a standard answer whose Result is not 0, for
-// an HDAP position out of range, dmrgo.ErrNilArgument for a nil h, and the errors of the ip,
-// lrrp, nmea and hdap packages for a message that does not decode, and
-// the Fix with ip.ErrChecksum for a position whose IPv4 or UDP checksum
-// does not match, as the block CRCs of the packet already checked its
-// octets. It
-// does not check the HDAP checksum. It does not allocate.
+// data data: an NMEA RMC sentence to UDP port 10110, an LRRP report or
+// answer to UDP port 4001, or a Hytera HDAP location protocol answer or
+// report to UDP port 3003. For a report or answer without a position,
+// such as the answer of a radio without a GNSS fix, an NMEA sentence with
+// an empty position or an HDAP standard answer whose Result is not 0, it
+// returns the Fix, with its Format, addresses, Result, RequestID and the
+// fields that the message has, and ErrNoPosition. It returns ErrNoFix for
+// a packet in none of these formats, for an LRRP request and for an HDAP
+// position out of range, dmrgo.ErrNilArgument for a nil h, the errors of
+// the ip, lrrp, nmea and hdap packages for a message that does not decode,
+// and the Fix with ip.ErrChecksum for a position whose IPv4 or UDP
+// checksum does not match, as the block CRCs of the packet already
+// checked its octets. It does not check the HDAP checksum. It does not
+// allocate.
 func (d *Decoder) Decode(h *pdu.DataHeader, data []byte) (Fix, error) {
 	if d == nil {
 		return Fix{}, dmrgo.ErrNilReceiver
@@ -121,7 +137,10 @@ func (d *Decoder) Decode(h *pdu.DataHeader, data []byte) (Fix, error) {
 	target, source, _ := h.Addresses()
 	f.Source, f.Destination = source, target
 	f, err := d.fromDatagram(f, &dg)
-	if err != nil {
+	switch {
+	case errors.Is(err, ErrNoPosition):
+		return f, err
+	case err != nil:
 		return Fix{}, err
 	}
 	return f, sumErr
@@ -134,8 +153,7 @@ func (d *Decoder) fromDatagram(f Fix, dg *ip.Datagram) (Fix, error) {
 		if err != nil {
 			return Fix{}, err
 		}
-		f.Format, f.Valid = FormatNMEA, r.Valid
-		f.Latitude, f.Longitude = r.Latitude, r.Longitude
+		f.Format = FormatNMEA
 		f.Speed, f.HasSpeed = r.Speed*knot, r.HasSpeed
 		f.Course, f.HasCourse = r.Course, r.HasCourse
 		if r.HasDate && r.HasTime {
@@ -143,15 +161,17 @@ func (d *Decoder) fromDatagram(f Fix, dg *ip.Datagram) (Fix, error) {
 			f.Hour, f.Minute, f.Second = r.Hour, r.Minute, r.Second
 			f.HasTime = true
 		}
+		if !r.HasPosition {
+			return f, ErrNoPosition
+		}
+		f.Valid = r.Valid
+		f.Latitude, f.Longitude = r.Latitude, r.Longitude
 		return f, nil
 	case ip.PortLRRP:
 		if err := lrrp.DecodeMessageInto(&d.report, dg.Payload); err != nil {
 			return Fix{}, err
 		}
-		if !fromReport(&f, &d.report) {
-			return Fix{}, ErrNoFix
-		}
-		return f, nil
+		return fromReport(f, &d.report)
 	case ip.PortHyteraLocation:
 		return fromHDAP(f, dg.Payload)
 	default:
@@ -159,13 +179,35 @@ func (d *Decoder) fromDatagram(f Fix, dg *ip.Datagram) (Fix, error) {
 	}
 }
 
-func fromReport(f *Fix, m *lrrp.Message) bool {
+func fromReport(f Fix, m *lrrp.Message) (Fix, error) {
 	switch m.Document {
 	case lrrp.DocumentImmediateRequest, lrrp.DocumentTriggeredRequest, lrrp.DocumentStopRequest, lrrp.DocumentProtocolRequest:
-		return false
+		return Fix{}, ErrNoFix
 	default:
 	}
 	r := &m.Report
+	f.Format = FormatLRRP
+	switch {
+	case r.HasResult:
+		f.Result, f.HasResult = uint32(r.Result), true
+	case r.HasError:
+		f.Result, f.HasResult = uint32(r.Error.Code), true
+	case r.Success:
+		f.HasResult = true
+	}
+	switch {
+	case r.HasRequestID && len(r.RequestID) <= len(f.RequestID):
+		copy(f.RequestID[:], r.RequestID)
+		f.RequestIDLength = uint8(len(r.RequestID) & 0x1F)
+	case r.HasShortRequestID:
+		f.RequestID[0], f.RequestIDLength = r.ShortRequestID, 1
+	}
+	f.Speed, f.HasSpeed = r.Speed, r.HasSpeed
+	f.Course, f.HasCourse = float64(r.Direction)*2, r.HasDirection
+	if r.HasTime {
+		t := &r.Time
+		f.Year, f.Month, f.Day, f.Hour, f.Minute, f.Second, f.HasTime = t.Year, t.Month, t.Day, t.Hour, t.Minute, t.Second, true
+	}
 	switch {
 	case r.HasCircle3D:
 		c := &r.Circle3D
@@ -182,16 +224,10 @@ func fromReport(f *Fix, m *lrrp.Message) bool {
 	case r.HasPoint2D:
 		f.Latitude, f.Longitude = r.Point2D.Latitude, r.Point2D.Longitude
 	default:
-		return false
+		return f, ErrNoPosition
 	}
-	f.Format, f.Valid = FormatLRRP, true
-	f.Speed, f.HasSpeed = r.Speed, r.HasSpeed
-	f.Course, f.HasCourse = float64(r.Direction)*2, r.HasDirection
-	if r.HasTime {
-		t := &r.Time
-		f.Year, f.Month, f.Day, f.Hour, f.Minute, f.Second, f.HasTime = t.Year, t.Month, t.Day, t.Hour, t.Minute, t.Second, true
-	}
-	return true
+	f.Valid = true
+	return f, nil
 }
 
 func fromHDAP(f Fix, data []byte) (Fix, error) {
@@ -209,8 +245,11 @@ func fromHDAP(f Fix, data []byte) (Fix, error) {
 		if err != nil {
 			return Fix{}, err
 		}
+		f.Format, f.Result, f.HasResult = FormatHDAP, uint32(a.Result), true
+		binary.BigEndian.PutUint32(f.RequestID[:], a.RequestID)
+		f.RequestIDLength = 4
 		if a.Result != 0 {
-			return Fix{}, ErrNoFix
+			return f, ErrNoPosition
 		}
 		g = a.GPS
 	case hdap.LPConditionReport:
@@ -218,6 +257,8 @@ func fromHDAP(f Fix, data []byte) (Fix, error) {
 		if err != nil {
 			return Fix{}, err
 		}
+		binary.BigEndian.PutUint32(f.RequestID[:], r.RequestID)
+		f.RequestIDLength = 4
 		g = r.GPS
 	case hdap.LPEmergencyReport:
 		e, err := hdap.DecodeLPEmergency(m.Payload)

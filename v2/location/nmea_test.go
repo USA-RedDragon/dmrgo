@@ -1,6 +1,7 @@
 package location_test
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -44,5 +45,10 @@ func TestNMEAEmptyFields(t *testing.T) {
 	f, err = d.Decode(&m.Header, m.Data)
 	if err != nil || f.HasTime || !f.HasSpeed || !f.HasCourse || f.Course != 90 {
 		t.Errorf("no time: %+v, %v", f, err)
+	}
+	m = nmeaPacket(t, "GPRMC,,V,,,,,,,230394,,")
+	f, err = d.Decode(&m.Header, m.Data)
+	if !errors.Is(err, location.ErrNoPosition) || f.Format != location.FormatNMEA || f.Source != 5 || f.Valid || f.HasTime || f.HasSpeed {
+		t.Errorf("no position: %+v, %v", f, err)
 	}
 }

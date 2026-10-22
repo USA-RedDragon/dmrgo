@@ -262,9 +262,10 @@
 //     errors of the ip, tms and shortdata packages.
 //   - shortdata.ErrShort, shortdata.ErrLength, shortdata.ErrFormat,
 //     shortdata.ErrCharacter: returned by package shortdata.
-//   - location.ErrNoFix: returned for a packet without a position. Package
-//     location also returns the errors of the ip, lrrp, nmea and hdap
-//     packages.
+//   - location.ErrNoFix, location.ErrNoPosition: returned for a packet
+//     that is not a location report, and with the Fix for a report
+//     without a position. Package location also returns the errors of the
+//     ip, lrrp, nmea and hdap packages.
 //   - nmea.ErrSentence, nmea.ErrChecksum, nmea.ErrField: returned by
 //     nmea.ParseRMC.
 //   - ars.ErrShort, ars.ErrLength, tms.ErrShort, tms.ErrLength,
