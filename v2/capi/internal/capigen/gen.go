@@ -657,7 +657,6 @@ func (g *gen) fields(ti *tinfo, s *types.Struct, gn string, typeErr error) error
 			typeErr = err
 		}
 	}
-	mi := 0
 	for f := range s.Fields() {
 		if !f.Exported() {
 			continue
@@ -671,8 +670,8 @@ func (g *gen) fields(ti *tinfo, s *types.Struct, gn string, typeErr error) error
 		case typeErr != nil:
 			fe.Err = typeErr.Error()
 		default:
-			fe.C = []string{ti.c + "." + ms[mi].name}
-			mi++
+			i := slices.IndexFunc(ms, func(m member) bool { return m.field == f })
+			fe.C = []string{ti.c + "." + ms[i].name}
 		}
 		g.exports = append(g.exports, fe)
 	}
@@ -1119,7 +1118,9 @@ func (g *gen) finish(opt Options) (*Output, error) {
 	if terr != nil {
 		return nil, terr
 	}
-	out := &Output{Test: test, Go: src, H: []byte(cDocs(h.String(), cRefs(g.exports))), Internal: ib.Bytes(), C: cb.Bytes(), Lock: lockOut, Map: mb.Bytes(), Exports: g.exports, Broken: broken, Unbounded: g.unbounded}
+	refs := cRefs(g.exports)
+	chainRefs(refs, g.l.refs)
+	out := &Output{Test: test, Go: src, H: []byte(cDocs(h.String(), refs)), Internal: ib.Bytes(), C: cb.Bytes(), Lock: lockOut, Map: mb.Bytes(), Exports: g.exports, Broken: broken, Unbounded: g.unbounded}
 	if ferr != nil {
 		return out, fmt.Errorf("gofmt: %w", ferr)
 	}

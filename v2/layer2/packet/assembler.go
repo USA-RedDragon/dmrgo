@@ -194,8 +194,8 @@ func (a *Assembler) Lost() (Message, bool, error) {
 // Add adds a decoded PDU: a *pdu.DataHeader, *pdu.Rate12Data,
 // *pdu.Rate34Data or *pdu.Rate1Data, and ignores other PDUs. done is true
 // when the packet is complete, with its Message; on ErrMessageCRC the
-// Message is returned too. A header with FEC.Uncorrectable set returns
-// ErrHeaderCRC and changes nothing. The package doc gives the rules for
+// Message is returned too. A header with pdu.DataHeader.FEC.Uncorrectable
+// set returns ErrHeaderCRC and changes nothing. The package doc gives the rules for
 // headers.
 func (a *Assembler) Add(d layer2.Data) (Message, bool, error) {
 	if a == nil {
