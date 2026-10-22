@@ -78,7 +78,8 @@ func TestXPR8400PacketsRoundTrip(t *testing.T) {
 			}
 		default:
 			r, err := ipsc.DecodeRaw(c.p)
-			if err != nil || !bytes.Equal(r.AppendBinary(nil), c.p) {
+			out, aerr := r.AppendBinary(nil)
+			if err != nil || aerr != nil || !bytes.Equal(out, c.p) {
 				t.Fatalf("%x: raw %v", c.p, err)
 			}
 		}

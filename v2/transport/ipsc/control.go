@@ -199,13 +199,14 @@ func DecodeRaw(p []byte) (Raw, error) {
 	return Raw{Opcode: m.Opcode, ID: m.ID, Body: p[5:]}, nil
 }
 
-// AppendBinary appends r to dst. A nil r appends nothing. It allocates
-// only to grow dst.
-func (r *Raw) AppendBinary(dst []byte) []byte {
+// AppendBinary appends r to dst. It returns dst unchanged and
+// dmrgo.ErrNilReceiver for a nil r, and no other error. It allocates only
+// to grow dst.
+func (r *Raw) AppendBinary(dst []byte) ([]byte, error) {
 	if r == nil {
-		return dst
+		return dst, dmrgo.ErrNilReceiver
 	}
 	m := ctlID{Opcode: r.Opcode, ID: r.ID}
 	dst, _ = m.AppendBinary(dst)
-	return append(dst, r.Body...)
+	return append(dst, r.Body...), nil
 }

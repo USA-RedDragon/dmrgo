@@ -64,7 +64,8 @@ func checkPacket(t *testing.T, p []byte) {
 	_, _ = dmrd.DecodePosition(p)
 	_, _ = dmrd.DecodeLocalPosition(p)
 	if o, err := dmrd.ParseDMRPlusOptions(p); err == nil {
-		again, err := dmrd.ParseDMRPlusOptions(o.AppendText(nil))
+		text, _ := o.AppendText(nil)
+		again, err := dmrd.ParseDMRPlusOptions(text)
 		if err != nil || again != o {
 			t.Fatalf("options %q: %+v %v", p, again, err)
 		}

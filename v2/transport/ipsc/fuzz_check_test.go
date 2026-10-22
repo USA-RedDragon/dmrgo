@@ -54,7 +54,9 @@ func checkPacket(t *testing.T, p []byte) {
 			_ = l.Entry(i)
 		}
 	}
-	if r, err := ipsc.DecodeRaw(p); err == nil && !bytes.Equal(r.AppendBinary(nil), p) {
-		t.Fatalf("raw round trip %x", p)
+	if r, err := ipsc.DecodeRaw(p); err == nil {
+		if out, aerr := r.AppendBinary(nil); aerr != nil || !bytes.Equal(out, p) {
+			t.Fatalf("raw round trip %x", p)
+		}
 	}
 }

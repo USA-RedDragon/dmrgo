@@ -20,7 +20,7 @@ func TestDMRPlusOptionsExample(t *testing.T) {
 	if o != want {
 		t.Fatalf("%+v", o)
 	}
-	if got := string(o.AppendText(nil)); got != text {
+	if got, err := o.AppendText(nil); err != nil || string(got) != text {
 		t.Fatalf("%q", got)
 	}
 }
@@ -35,7 +35,7 @@ func TestDMRPlusOptionsClearAndUnknown(t *testing.T) {
 	if o.StartRef.State != dmrd.OptionClear || o.TS1[2] != (dmrd.OptionValue{State: dmrd.OptionSet, Value: 7}) || o.UserLink.State != dmrd.OptionAbsent {
 		t.Fatalf("%+v", o)
 	}
-	if got := string(o.AppendText([]byte("x"))); got != "xStartRef=;TS1_3=7;" {
+	if got, err := o.AppendText([]byte("x")); err != nil || string(got) != "xStartRef=;TS1_3=7;" {
 		t.Fatalf("%q", got)
 	}
 	for _, bad := range []string{"StartRef=12a", "UserLink=4294967296"} {

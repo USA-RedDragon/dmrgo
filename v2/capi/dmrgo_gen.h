@@ -9710,7 +9710,7 @@ int dmrgo_dmrd_command_string(dmrgo_dmrd_command_t self, char *out, size_t out_c
 int dmrgo_dmrd_control_append_binary(const dmrgo_dmrd_control_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, dmrgo_dmrd_dialect_t d);
 /* Go: dmrd.Control.LoginSalt. LoginSalt returns the salt of the acknowledgement c that answers RPTL: the 4 octets of a DialectMMDVM RPTACK, or Salt of a DialectHBRP MSTACK with HasSalt. */
 int dmrgo_dmrd_control_login_salt(const dmrgo_dmrd_control_t *self, uint32_t *salt, bool *ok);
-/* Go: dmrd.DMRPlusOptions.AppendText. AppendText appends the options that are not OptionAbsent to dst as a DMR+ startup options text, each followed by a semicolon, in the order of the fields. */
+/* Go: dmrd.DMRPlusOptions.AppendText. AppendText appends the options that are not OptionAbsent to dst as a DMR+ startup options text, each followed by a semicolon, in the order of the fields. It returns dst unchanged and DMRGO_ERR_NIL_RECEIVER for a nil o, and no other error. */
 int dmrgo_dmrd_dmr_plus_options_append_text(const dmrgo_dmrd_dmr_plus_options_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.Data.AppendBinary. AppendBinary appends the 53, 55 or 71 octets of s to dst: Size selects the length, and 0 means 53. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error when Size is not one of the lengths. */
 int dmrgo_dmrd_data_append_binary(const dmrgo_dmrd_data_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
@@ -10086,7 +10086,7 @@ int dmrgo_ipsc_peer_list_entry(dmrgo_ipsc_peer_list_t *self, int64_t i, dmrgo_ip
 int dmrgo_ipsc_peer_list_len(dmrgo_ipsc_peer_list_t *self, int64_t *out);
 /* Go: ipsc.PeerListOf. It copies p into *out, which does not keep p. It returns DMRGO_ERR_IPSC_COMMAND for another opcode, DMRGO_ERR_IPSC_SHORT, and DMRGO_ERR_IPSC_LENGTH when the length field does not match the packet or is not a multiple of 11. */
 int dmrgo_ipsc_peer_list_of(const uint8_t *p, size_t p_len, dmrgo_ipsc_peer_list_t *out);
-/* Go: ipsc.Raw.AppendBinary. AppendBinary appends r to dst. */
+/* Go: ipsc.Raw.AppendBinary. AppendBinary appends r to dst. It returns dst unchanged and DMRGO_ERR_NIL_RECEIVER for a nil r, and no other error. */
 int dmrgo_ipsc_raw_append_binary(const dmrgo_ipsc_raw_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ipsc.Stream.Fill. Fill sets CallSeq, CallControl and the RTP header of u: Flags 0x80, the marker bit on the first packet of the call, PayloadType 0x5D, or 0x5E with the end flag of Info on the last packet, and Seq and Timestamp. u may be NULL. */
 int dmrgo_ipsc_stream_fill(dmrgo_ipsc_stream_t *self, dmrgo_ipsc_user_t *u, bool last);

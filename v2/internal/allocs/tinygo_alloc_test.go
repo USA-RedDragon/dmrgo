@@ -504,7 +504,7 @@ func tinyDMRDOps(t *testing.T) []tinyOp {
 		buf, _ = c.AppendBinary(buf[:0], dmrd.DialectHBRP)
 		_ = dmrd.Classify(pkt, dmrd.DialectMMDVM)
 		o, _ := dmrd.ParseDMRPlusOptions(opts)
-		buf = o.AppendText(buf[:0])
+		buf, _ = o.AppendText(buf[:0])
 	}}, {"dmrd bridge", func() {
 		buf = tinyBridgeRun(dmre, buf)
 		buf = tinyBridgeRun(bridge, buf)

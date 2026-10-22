@@ -33285,13 +33285,16 @@ func dmrgo_dmrd_dmr_plus_options_append_text(c_self *C.dmrgo_dmrd_dmr_plus_optio
 	nf_dst := int(*c_dst_len)
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
-	r0 := x.AppendText(a_dst)
+	r0, r1 := x.AppendText(a_dst)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
 	return C.DMRGO_OK
 }
 
@@ -38121,13 +38124,16 @@ func dmrgo_ipsc_raw_append_binary(c_self *C.dmrgo_ipsc_raw_t, c_dst *C.uint8_t, 
 	nf_dst := int(*c_dst_len)
 	full_dst := unsafe.Slice((*byte)(unsafe.Pointer(c_dst)), int(c_dst_cap))
 	a_dst := full_dst[:*c_dst_len]
-	r0 := x.AppendBinary(a_dst)
+	r0, r1 := x.AppendBinary(a_dst)
 	_ = r0
 	nf_dst = putAppend(full_dst, nf_dst, c_dst_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
+	if r1 != nil {
+		return setErr(r1)
+	}
 	return C.DMRGO_OK
 }
 
