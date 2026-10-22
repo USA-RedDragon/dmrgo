@@ -330,14 +330,13 @@ func (p *Peer) acked(now time.Duration, m *dmrd.Control, b []byte, dst []Output)
 	}
 	switch p.state {
 	case StateLogin:
-		switch {
-		case p.dialect == dmrd.DialectMMDVM:
-			p.salt = m.ID
-		case m.HasSalt:
-			p.salt = m.Salt
-			copy(p.saltText[:], b[14:])
-		default:
+		salt, ok := m.LoginSalt()
+		if !ok {
 			return dst
+		}
+		p.salt = salt
+		if p.dialect == dmrd.DialectHBRP {
+			copy(p.saltText[:], b[14:])
 		}
 		p.state = StateAuth
 	case StateAuth:

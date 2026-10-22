@@ -233,10 +233,7 @@ func (m *Master) ack() dmrd.Command {
 }
 
 func (m *Master) challenge(dst []Output) []Output {
-	if m.dialect == dmrd.DialectHBRP {
-		return send(dst, appendControl(m.tx[:0], m.dialect, dmrd.Control{Command: dmrd.CommandMSTACK, ID: m.id, Salt: m.salt, HasSalt: true}))
-	}
-	return send(dst, appendControl(m.tx[:0], m.dialect, dmrd.Control{Command: dmrd.CommandRPTACK, ID: m.salt}))
+	return send(dst, appendControl(m.tx[:0], m.dialect, dmrd.Control{Command: m.ack(), ID: m.id, Salt: m.salt, HasSalt: true}))
 }
 
 func (m *Master) acked(dst []Output) []Output {
