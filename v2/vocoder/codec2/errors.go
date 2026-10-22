@@ -5,7 +5,9 @@ import "errors"
 // Errors returned by the package. Match them with errors.Is.
 var (
 	// ErrUnavailable is returned when the package was built without
-	// libcodec2 (CGO_ENABLED=0, -tags nocodec2 or TinyGo).
+	// libcodec2 (CGO_ENABLED=0, -tags nocodec2 or TinyGo), and wrapped by
+	// New when libcodec2 cannot make a state for a mode or has another
+	// frame size for it.
 	ErrUnavailable = errors.New("codec2: built without libcodec2")
 	// ErrUnsupportedMode is returned for a Mode other than Mode2400 or Mode3200.
 	ErrUnsupportedMode = errors.New("codec2: unsupported mode")

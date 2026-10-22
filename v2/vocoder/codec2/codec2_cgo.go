@@ -9,7 +9,6 @@ package codec2
 import "C"
 
 import (
-	"errors"
 	"runtime"
 	"sync"
 	"unsafe"
@@ -21,9 +20,22 @@ import (
 var libMu sync.Mutex
 
 var (
-	errCreate    = errors.New("codec2: codec2_create failed")
-	errFrameSize = errors.New("codec2: libcodec2 has another frame size for the mode")
+	errCreate    error = &wrapError{"codec2: codec2_create failed", ErrUnavailable}
+	errFrameSize error = &wrapError{"codec2: libcodec2 has another frame size for the mode", ErrUnavailable}
 )
+
+type wrapError struct {
+	msg string
+	err error
+}
+
+func (e *wrapError) Error() string {
+	return e.msg
+}
+
+func (e *wrapError) Unwrap() error {
+	return e.err
+}
 
 // Codec is a Codec2 vocoder.Codec with separate libcodec2 encoder and decoder
 // states. A Codec is not safe for concurrent use; separate Codecs may be used
@@ -73,9 +85,10 @@ func (m Mode) cmode() C.int {
 
 // New creates a Codec2 codec with the given configuration. It returns
 // ErrUnsupportedMode for a Mode other than ModeAuto, Mode2400 or Mode3200,
-// and an error when libcodec2 cannot create a codec state. It allocates the
-// Codec, and libcodec2 allocates its states: for ModeAuto a decoder state for
-// each mode. A nil cfg means the zero Config.
+// and an error that wraps ErrUnavailable when libcodec2 cannot create a
+// codec state. It allocates the Codec, and libcodec2 allocates its states:
+// for ModeAuto a decoder state for each mode. A nil cfg means the zero
+// Config.
 func New(p *Config) (*Codec, error) {
 	var cfg Config
 	if p != nil {
