@@ -17,7 +17,8 @@
 // local color code, and data, CSBK and header bursts from their corrected
 // payload. After a voice call it holds the slot for the call hang time and
 // sends Terminators with the call LC, and after confirmed data it sends
-// TD_LC for the data hang time. In RF mode it makes one outbound burst
+// TD_LC for the data hang time. The Pre_CSBKs before data or a CSBK
+// hold the slot for their source. In RF mode it makes one outbound burst
 // every 30 ms: the repeated traffic, hang time bursts or Idle bursts, and
 // the CACH with the TC bit, the AT bit and the Short LC (Activity Update or
 // Null). It wakes up on BS_Dwn_Act or any valid burst and hibernates after

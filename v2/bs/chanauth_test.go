@@ -343,7 +343,7 @@ func TestChanAuthMatch(t *testing.T) {
 		t.Fatalf("other source: %v", st)
 	}
 	d.in(1300*time.Millisecond, enums.Slot1, rf, preCSBK(t, 3120005))
-	if st := d.r.SlotState(enums.Slot1); st != bs.SlotIdle {
+	if st := d.r.SlotState(enums.Slot1); st != bs.SlotPreamble {
 		t.Fatalf("matching Pre_CSBK: %v", st)
 	}
 

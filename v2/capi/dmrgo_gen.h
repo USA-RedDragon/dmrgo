@@ -989,7 +989,7 @@ struct dmrgo_bs_config_t {
 	dmrgo_duration_t data_hang;
 	/* Inactivity is T_MSInactiv. 0 means DMRGO_BS_DEFAULT_INACTIVITY. A negative value keeps the transmitter on once it wakes up. */
 	dmrgo_duration_t inactivity;
-	/* Lost is the time without a burst from the owner of a slot after which its call ends. 0 means DMRGO_VOICE_DEFAULT_LOST (1 s). */
+	/* Lost is the time without a burst from the owner of a slot after which its call or its Pre_CSBKs end. 0 means DMRGO_VOICE_DEFAULT_LOST (1 s). */
 	dmrgo_duration_t lost;
 	/* Timeout is the longest call. 0 means DMRGO_CONSTANTS_TTO (180 s). A longer call ends with a Terminator and the rest of it is dropped. */
 	dmrgo_duration_t timeout;
@@ -5686,6 +5686,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_BS_SLOT_DATA_HANG ((dmrgo_bs_slot_state_t)4)
 /* Go: bs.SlotIdle. SlotIdle is the channel hang time: the slot is free and gets Idle bursts. */
 #define DMRGO_BS_SLOT_IDLE ((dmrgo_bs_slot_state_t)0)
+/* Go: bs.SlotPreamble. SlotPreamble repeats the Pre_CSBKs of one source before its data or CSBK. */
+#define DMRGO_BS_SLOT_PREAMBLE ((dmrgo_bs_slot_state_t)8)
 /* Go: bs.SlotRejected. SlotRejected drops a call that timed out or was rejected until it ends. */
 #define DMRGO_BS_SLOT_REJECTED ((dmrgo_bs_slot_state_t)5)
 /* Go: bs.SlotTime. SlotTime is the time of one outbound burst with its CACH, and the period of Tick in DMRGO_BS_MODE_RF (ETSI TS 102 361-1 clause 4.2.2). */

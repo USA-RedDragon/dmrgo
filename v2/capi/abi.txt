@@ -224,6 +224,7 @@ sym #define DMRGO_BS_SLOT_CHAN_AUTH_SELECT ((dmrgo_bs_slot_state_t)6)
 sym #define DMRGO_BS_SLOT_DATA ((dmrgo_bs_slot_state_t)2)
 sym #define DMRGO_BS_SLOT_DATA_HANG ((dmrgo_bs_slot_state_t)4)
 sym #define DMRGO_BS_SLOT_IDLE ((dmrgo_bs_slot_state_t)0)
+sym #define DMRGO_BS_SLOT_PREAMBLE ((dmrgo_bs_slot_state_t)8)
 sym #define DMRGO_BS_SLOT_REJECTED ((dmrgo_bs_slot_state_t)5)
 sym #define DMRGO_BS_SLOT_TIME 30000000
 sym #define DMRGO_BS_SLOT_VOICE ((dmrgo_bs_slot_state_t)1)

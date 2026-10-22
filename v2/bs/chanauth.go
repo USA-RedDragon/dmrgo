@@ -26,7 +26,7 @@ func (r *Repeater) authorize(now time.Duration, s *slot, b *layer2.Burst, raw *l
 		return dst, true
 	case SlotIdle, SlotCallHang:
 		s.authed = false
-	case SlotData, SlotDataHang:
+	case SlotData, SlotDataHang, SlotPreamble:
 		return dst, false
 	case SlotVoice, SlotRejected:
 		if s.authed && from == s.authFrom {

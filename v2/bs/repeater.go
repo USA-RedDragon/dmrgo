@@ -65,7 +65,7 @@ type Config struct {
 	// value keeps the transmitter on once it wakes up.
 	Inactivity time.Duration
 	// Lost is the time without a burst from the owner of a slot after which
-	// its call ends. 0 means voice.DefaultLost (1 s).
+	// its call or its Pre_CSBKs end. 0 means voice.DefaultLost (1 s).
 	Lost time.Duration
 	// Timeout is the longest call. 0 means constants.TTO (180 s). A longer
 	// call ends with a Terminator and the rest of it is dropped.
@@ -315,7 +315,8 @@ func (r *Repeater) State() State {
 	if !r.keyed && r.mode == ModeRF {
 		return StateHibernating
 	}
-	b1, b2 := r.slots[0].repeating(), r.slots[1].repeating()
+	b1 := r.slots[0].repeating() || r.slots[0].state == SlotPreamble
+	b2 := r.slots[1].repeating() || r.slots[1].state == SlotPreamble
 	switch {
 	case b1 && b2:
 		return StateRepeatingBoth
@@ -553,6 +554,9 @@ func (r *Repeater) Lost(now time.Duration, s enums.Slot, from Source, dst []Outp
 			dst = r.endData(now, sl, voice.EndSyncLost, dst)
 		}
 	}
+	if sl.owner == from && sl.state == SlotPreamble {
+		sl.state = SlotIdle
+	}
 	return r.flush(now, dst)
 }
 
@@ -628,7 +632,7 @@ func (r *Repeater) Deadline() (at time.Duration, ok bool) {
 			d.add(t)
 		}
 		switch s.state {
-		case SlotVoice, SlotData, SlotRejected:
+		case SlotVoice, SlotData, SlotRejected, SlotPreamble:
 			d.add(s.last + r.lost)
 		case SlotCallHang, SlotDataHang:
 			d.add(s.hangUntil)
@@ -680,6 +684,10 @@ func (r *Repeater) timers(now time.Duration, dst []Output) []Output {
 			if now >= s.authUntil {
 				r.authEnd(now, s)
 			}
+		case SlotPreamble:
+			if now >= s.last+r.lost {
+				s.state = SlotIdle
+			}
 		case SlotIdle:
 		}
 		n := 0
@@ -711,7 +719,7 @@ func (r *Repeater) quiet() bool {
 
 func (r *Repeater) admit(now time.Duration, s *slot, from Source, lc *pdu.LCBytes, dst []Output) (bool, []Output) {
 	switch s.state {
-	case SlotVoice, SlotData, SlotRejected:
+	case SlotVoice, SlotData, SlotRejected, SlotPreamble:
 		if s.owner == from {
 			return true, dst
 		}
@@ -856,6 +864,7 @@ func (r *Repeater) single(now time.Duration, s *slot, raw *layer2.RawBurst, dt e
 	if !ok {
 		return dst
 	}
+	r.preamble(now, s, &cb, dt, from)
 	if s.repeating() {
 		s.last = now
 	}
@@ -864,6 +873,33 @@ func (r *Repeater) single(now time.Duration, s *slot, raw *layer2.RawBurst, dt e
 		return dst
 	}
 	return r.send(now, s, out, dt, from, dst)
+}
+
+// ETSI TS 102 361-1 clause 6.3, MMDVMHost DMRSlot.cpp:582
+func (r *Repeater) preamble(now time.Duration, s *slot, c *pdu.CSBKBytes, dt enums.DataType, from Source) {
+	pre := dt == enums.DataTypeCSBK && c.FID() == enums.FIDStandardized && c.Opcode() == pdu.CSBKPreamble
+	switch {
+	case s.state == SlotPreamble && !pre:
+		s.state = SlotIdle
+		return
+	case !pre || s.repeating():
+		return
+	}
+	target, source, _ := c.Addresses()
+	group, _ := c.Group()
+	s.state, s.owner, s.service, s.last = SlotPreamble, from, ServiceData, now
+	s.call, s.hasCall = voice.Call{Group: group, Target: target, Source: source}, true
+	s.hash = hashOf(target)
+	switch data := c[2]&0x80 != 0; {
+	case data && group:
+		s.activity = enums.ActivityGroupData
+	case data:
+		s.activity = enums.ActivityIndividualData
+	case group:
+		s.activity = enums.ActivityGroupCSBK
+	default:
+		s.activity = enums.ActivityIndividualCSBK
+	}
 }
 
 func (r *Repeater) dataHeader(now time.Duration, s *slot, raw *layer2.RawBurst, from Source, dst []Output) []Output {

@@ -317,6 +317,7 @@ documents:
           - v2/layer2/cach.go
           - v2/layer2/pdu/tact.go
           - v2/bs/cach.go
+          - v2/bs/repeater.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2
             names:
@@ -329,6 +330,9 @@ documents:
             names:
               - TestCACH
               - TestXPR8400Outbound
+              - TestPreambleBusy
+              - TestPreambleTimeout
+              - TestPreambleCSBK
 
       - section: "6.4"
         title: "Reverse Channel"
