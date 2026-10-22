@@ -439,10 +439,20 @@ func (r *Repeater) colorCode(b *layer2.Burst) bool {
 	return true
 }
 
+func unusable(s *slot, b *layer2.Burst, from Source) bool {
+	switch {
+	case b == nil:
+		return true
+	case b.Kind == layer2.KindData:
+		return b.SlotType.FEC.Uncorrectable
+	}
+	return from.RF && b.Kind == layer2.KindVoice && !b.HasEmbeddedSignalling() && (s.owner != from || s.state != SlotVoice)
+}
+
 func (r *Repeater) inbound(now time.Duration, raw *layer2.RawBurst, b, orig *layer2.Burst, hp *layer2.Hint, from Source, dst []Output) []Output {
 	s := r.slot(hp.Slot)
 	h := *hp
-	if b != nil && b.Kind == layer2.KindData && b.SlotType.FEC.Uncorrectable {
+	if unusable(s, b, from) {
 		b = nil
 	}
 	wakeup := b != nil && r.isWakeup(b, raw)
