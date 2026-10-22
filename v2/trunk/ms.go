@@ -40,10 +40,8 @@ type MSConfig struct {
 	TalkgroupsLen int
 	// SysCode, when set, is the system to use, as in FollowerConfig.
 	SysCode *pdu.SysCode
-	// Hunt holds the first HuntLen channel numbers of the hunt list.
-	Hunt [MaxChannels]uint16
-	// HuntLen is the number of entries of Hunt in use.
-	HuntLen int
+	// Hunt, when set, is the hunt list, as in FollowerConfig.
+	Hunt *HuntList
 	// Plan, when set, is the channel plan to start from.
 	Plan *ChannelPlan
 	// Slot is the TDMA channel of the TSCC on which the MS makes random
@@ -238,7 +236,7 @@ func NewMS(cfg *MSConfig) (*MS, error) {
 		regTO: cfg.RegTimeout, pendingTO: cfg.Pending, deregTO: cfg.Dereg, deniedTO: cfg.DeniedLife, dmrla: cfg.DMRLA, maxBER: cfg.MaxBERPermille,
 	}
 	err := m.f.init(&FollowerConfig{
-		SysCode: cfg.SysCode, Hunt: cfg.Hunt, HuntLen: cfg.HuntLen, Plan: cfg.Plan, Talkgroups: cfg.Talkgroups,
+		SysCode: cfg.SysCode, Hunt: cfg.Hunt, Plan: cfg.Plan, Talkgroups: cfg.Talkgroups,
 		TalkgroupsLen: cfg.TalkgroupsLen, Individual: true, Data: true, NoSignal: cfg.NoSignal, Inactive: cfg.Inactive,
 		Hangtime: cfg.Hangtime, AcceptRAS: cfg.AcceptRAS, Scratch: cfg.Scratch,
 	})

@@ -4874,8 +4874,10 @@ func in_trunk_FollowerConfig(s *C.dmrgo_trunk_follower_config_t, st *st_trunk_Fo
 	} else {
 		d.SysCode = nil
 	}
-	d.Hunt = *(*[64]uint16)(unsafe.Pointer(&s.hunt))
-	d.HuntLen = int(s.hunt_len)
+	d.Hunt = nil
+	if s.hunt != nil {
+		d.Hunt = get_trunk_HuntList(s.hunt).v
+	}
 	d.Plan = nil
 	if s.plan != nil {
 		d.Plan = get_trunk_ChannelPlan(s.plan).v
@@ -4913,8 +4915,10 @@ func in_trunk_MSConfig(s *C.dmrgo_trunk_ms_config_t, st *st_trunk_MSConfig) (d g
 	} else {
 		d.SysCode = nil
 	}
-	d.Hunt = *(*[64]uint16)(unsafe.Pointer(&s.hunt))
-	d.HuntLen = int(s.hunt_len)
+	d.Hunt = nil
+	if s.hunt != nil {
+		d.Hunt = get_trunk_HuntList(s.hunt).v
+	}
 	d.Plan = nil
 	if s.plan != nil {
 		d.Plan = get_trunk_ChannelPlan(s.plan).v
@@ -7941,8 +7945,10 @@ func out_trunk_FollowerConfig(d *C.dmrgo_trunk_follower_config_t, s *g_trunk.Fol
 		d.has_sys_code = false
 		d.sys_code = C.dmrgo_pdu_sys_code_t{}
 	}
-	*(*[64]uint16)(unsafe.Pointer(&d.hunt)) = s.Hunt
-	d.hunt_len = C.int64_t(s.HuntLen)
+	if s.Hunt != nil {
+		panic(argPanic{})
+	}
+	d.hunt = nil
 	if s.Plan != nil {
 		panic(argPanic{})
 	}
@@ -7992,8 +7998,10 @@ func out_trunk_MSConfig(d *C.dmrgo_trunk_ms_config_t, s *g_trunk.MSConfig, oc *o
 		d.has_sys_code = false
 		d.sys_code = C.dmrgo_pdu_sys_code_t{}
 	}
-	*(*[64]uint16)(unsafe.Pointer(&d.hunt)) = s.Hunt
-	d.hunt_len = C.int64_t(s.HuntLen)
+	if s.Hunt != nil {
+		panic(argPanic{})
+	}
+	d.hunt = nil
 	if s.Plan != nil {
 		panic(argPanic{})
 	}
@@ -47389,7 +47397,7 @@ func errCode(err error) C.int {
 		case g_layer2_packet.ErrNoRetryBlocks:
 			return -124
 		case g_layer2_packet.ErrNoRoom:
-			return -241
+			return -240
 		case g_layer2_packet.ErrRate:
 			return -125
 		case g_layer2_packet.ErrRateChange:
@@ -47553,7 +47561,7 @@ func errCode(err error) C.int {
 		case g_voice.ErrBusy:
 			return -147
 		case g_voice.ErrInterruptBusy:
-			return -240
+			return -241
 		case g_voice.ErrNotActive:
 			return -148
 		case g_voice.ErrQueueFull:
@@ -47681,7 +47689,7 @@ func codeErr(code C.int) error {
 		return g_layer2_packet.ErrNoHeader
 	case -124:
 		return g_layer2_packet.ErrNoRetryBlocks
-	case -241:
+	case -240:
 		return g_layer2_packet.ErrNoRoom
 	case -125:
 		return g_layer2_packet.ErrRate
@@ -47845,7 +47853,7 @@ func codeErr(code C.int) error {
 		return g_vocoder_dvsi.ErrType
 	case -147:
 		return g_voice.ErrBusy
-	case -240:
+	case -241:
 		return g_voice.ErrInterruptBusy
 	case -148:
 		return g_voice.ErrNotActive

@@ -22,9 +22,9 @@ func newPool(t testing.TB) burstPool {
 }
 
 func runFollower(t *testing.T, pool burstPool, in []byte) {
-	cfg := trunk.FollowerConfig{Hunt: [trunk.MaxChannels]uint16{1, 2, 3}, NoFollow: false}
+	cfg := trunk.FollowerConfig{Hunt: huntList(t, 1, 2, 3), NoFollow: false}
 	if len(in) > 0 {
-		cfg.HuntLen = int(in[0] & 3)
+		cfg.Hunt = huntList(t, []uint16{1, 2, 3}[:in[0]&3]...)
 		cfg.Individual = in[0]&4 != 0
 		cfg.Data = in[0]&8 != 0
 		cfg.NoFollow = in[0]&16 != 0

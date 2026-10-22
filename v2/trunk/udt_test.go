@@ -68,7 +68,7 @@ func TestFollower_UDT(t *testing.T) {
 
 func TestFollower_ClearToAnotherTSCC(t *testing.T) {
 	t.Parallel()
-	f, err := trunk.NewFollower(&trunk.FollowerConfig{Hunt: [trunk.MaxChannels]uint16{1}, HuntLen: 1})
+	f, err := trunk.NewFollower(&trunk.FollowerConfig{Hunt: huntList(t, 1)})
 	if err != nil {
 		t.Fatal(err)
 	}

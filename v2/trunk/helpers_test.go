@@ -148,3 +148,14 @@ func udtOf(u trunk.UDT, ok bool) *trunk.UDT {
 	}
 	return &u
 }
+
+func huntList(t testing.TB, channels ...uint16) *trunk.HuntList {
+	t.Helper()
+	var l trunk.HuntList
+	for _, c := range channels {
+		if err := l.Add(trunk.HuntEntry{Channel: c}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return &l
+}
