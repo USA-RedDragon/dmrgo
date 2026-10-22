@@ -147,6 +147,34 @@ func TestClassify(t *testing.T) {
 	}
 }
 
+func TestLoginSalt(t *testing.T) {
+	t.Parallel()
+
+	ack, _ := dmrd.DecodeControl([]byte("RPTACK\x0a\x7e\xd4\x98"), dmrd.DialectMMDVM)
+	if s, ok := ack.LoginSalt(); !ok || s != 0x0A7ED498 || ack.HasSalt {
+		t.Errorf("MMDVM RPTACK salt %x %v %+v", s, ok, ack)
+	}
+	mst, _ := dmrd.DecodeControl([]byte("MSTACK000401780A7ED498"), dmrd.DialectHBRP)
+	if s, ok := mst.LoginSalt(); !ok || s != 0x0A7ED498 {
+		t.Errorf("HBRP MSTACK salt %x %v", s, ok)
+	}
+	short, _ := dmrd.DecodeControl([]byte("MSTACK00040178"), dmrd.DialectHBRP)
+	if _, ok := short.LoginSalt(); ok {
+		t.Error("HBRP MSTACK without a salt")
+	}
+	if _, ok := (&dmrd.Control{Command: dmrd.CommandRPTPING, ID: 1}).LoginSalt(); ok {
+		t.Error("RPTPING salt")
+	}
+	var nilc *dmrd.Control
+	if _, ok := nilc.LoginSalt(); ok {
+		t.Error("nil Control salt")
+	}
+	out, err := (&dmrd.Control{Command: dmrd.CommandRPTACK, ID: 5, Salt: 0x0A7ED498, HasSalt: true}).AppendBinary(nil, dmrd.DialectMMDVM)
+	if err != nil || string(out) != "RPTACK\x0a\x7e\xd4\x98" {
+		t.Errorf("MMDVM RPTACK with HasSalt %q %v", out, err)
+	}
+}
+
 func TestRepeaterID(t *testing.T) {
 	t.Parallel()
 

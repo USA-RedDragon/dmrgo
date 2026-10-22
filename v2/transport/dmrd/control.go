@@ -8,11 +8,15 @@ import "github.com/USA-RedDragon/dmrgo/v2"
 type Control struct {
 	// Command is the message.
 	Command Command
-	// ID is the repeater ID. In a DialectMMDVM RPTACK that answers RPTL it
-	// holds the salt instead, as DMRGateway reads it.
+	// ID is the repeater ID. In a DialectMMDVM RPTACK it is the 4 octets
+	// after the tag, which are the salt in the RPTACK that answers RPTL, as
+	// DMRGateway reads them; LoginSalt returns them.
 	ID uint32
-	// Salt is the salt of a DialectHBRP MSTACK that answers RPTL. HasSalt
-	// reports whether the message carries it.
+	// Salt is the salt of the acknowledgement that answers RPTL, with
+	// HasSalt: the DialectHBRP MSTACK in both directions, and the
+	// DialectMMDVM RPTACK for an encoder, which then writes Salt in place
+	// of ID. A decoder cannot tell that RPTACK from another one, so it
+	// leaves Salt zero there; use LoginSalt.
 	Salt uint32
 	// HasSalt reports whether Salt is set.
 	HasSalt bool
@@ -80,6 +84,21 @@ func DecodeControl(p []byte, d Dialect) (Control, error) {
 	return m, nil
 }
 
+// LoginSalt returns the salt of the acknowledgement c that answers RPTL:
+// the 4 octets of a DialectMMDVM RPTACK, or Salt of a DialectHBRP MSTACK
+// with HasSalt. ok is false for another message and for a nil c.
+func (c *Control) LoginSalt() (salt uint32, ok bool) {
+	switch {
+	case c == nil:
+		return 0, false
+	case c.Command == CommandRPTACK && c.HasSalt, c.Command == CommandMSTACK && c.HasSalt:
+		return c.Salt, true
+	case c.Command == CommandRPTACK:
+		return c.ID, true
+	}
+	return 0, false
+}
+
 func decodeBin(p []byte, n int) (uint32, error) {
 	switch n {
 	case 4:
@@ -115,7 +134,8 @@ func decodeHex(p []byte, n int) (uint32, error) {
 }
 
 // AppendBinary appends the message c in dialect d to dst. HasSalt selects
-// the long form of a DialectHBRP MSTACK. It returns dst unchanged and an
+// the long form of a DialectHBRP MSTACK, and Salt in place of ID in a
+// DialectMMDVM RPTACK. It returns dst unchanged and an
 // error when d has no such message, or when Text is set on a message
 // without text, and dmrgo.ErrNilReceiver for a nil c. It allocates only to
 // grow dst.
@@ -147,7 +167,11 @@ func (c Control) appendBinary(dst []byte, d Dialect) ([]byte, error) {
 	case shapeTag, shapeText:
 		dst = append(dst, t...)
 	case shapeBinID, shapeBinIDText:
-		dst, err = appendBin(dst, t, c.ID)
+		id := c.ID
+		if c.HasSalt && c.Command == CommandRPTACK {
+			id = c.Salt
+		}
+		dst, err = appendBin(dst, t, id)
 	case shapeBinIDToken:
 		m := binIDToken{ID: c.ID, Token: c.Token}
 		copy(m.Tag[:], t)
