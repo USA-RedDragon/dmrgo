@@ -54,6 +54,10 @@ func TestStrings(t *testing.T) {
 		{csbk.WakeupSending.String(), "Sending"},
 		{csbk.WakeupWaiting.String(), "Waiting"},
 		{csbk.WakeupState(9).String(), "WakeupState(9)"},
+		{csbk.ResponderIdle.String(), "Idle"},
+		{csbk.ResponderAccess.String(), "Access"},
+		{csbk.ResponderSending.String(), "Sending"},
+		{csbk.ResponderState(9).String(), "ResponderState(9)"},
 		{(&dmrgo.ConfigError{Type: "csbk", Field: "Retries"}).Error(), "csbk: Retries is out of range"},
 	} {
 		if tt.got != tt.want {
@@ -86,7 +90,7 @@ func TestResetAndLost(t *testing.T) {
 	}
 	r.Burst(0, burstOf(t, injectedRadioCheck, layer2.SyncSourceBS), layer2.Hint{}, nil)
 	r.Reset()
-	if r.Pending() {
+	if r.State() != csbk.ResponderIdle {
 		t.Error("Reset left an answer")
 	}
 

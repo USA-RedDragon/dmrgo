@@ -110,8 +110,9 @@ DMRGO_1 {
 		dmrgo_csbk_responder_free;
 		dmrgo_csbk_responder_lost;
 		dmrgo_csbk_responder_lost_need;
-		dmrgo_csbk_responder_pending;
 		dmrgo_csbk_responder_reset;
+		dmrgo_csbk_responder_state;
+		dmrgo_csbk_responder_state_string;
 		dmrgo_csbk_responder_tick;
 		dmrgo_csbk_responder_tick_need;
 		dmrgo_csbk_result_string;
@@ -125,6 +126,8 @@ DMRGO_1 {
 		dmrgo_csbk_timing_free;
 		dmrgo_csbk_timing_join;
 		dmrgo_csbk_timing_leader;
+		dmrgo_csbk_timing_lost;
+		dmrgo_csbk_timing_lost_need;
 		dmrgo_csbk_timing_reset;
 		dmrgo_csbk_timing_state;
 		dmrgo_csbk_timing_state_string;

@@ -48,7 +48,7 @@ func (s WakeupState) String() string {
 	case WakeupIdle:
 		return idleName
 	case WakeupSending:
-		return "Sending"
+		return sendingName
 	case WakeupWaiting:
 		return "Waiting"
 	}

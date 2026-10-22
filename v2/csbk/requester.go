@@ -102,9 +102,9 @@ func (s RequesterState) String() string {
 	case RequesterIdle:
 		return idleName
 	case RequesterAccess:
-		return "Access"
+		return accessName
 	case RequesterSending:
-		return "Sending"
+		return sendingName
 	case RequesterWaiting:
 		return "Waiting"
 	}

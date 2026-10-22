@@ -697,6 +697,8 @@ typedef uint8_t dmrgo_csbk_preambles_state_t;
 typedef uint8_t dmrgo_csbk_reason_t;
 /* Go: csbk.RequesterState. RequesterState is the state of a Requester. */
 typedef uint8_t dmrgo_csbk_requester_state_t;
+/* Go: csbk.ResponderState. ResponderState is the state of a Responder. */
+typedef uint8_t dmrgo_csbk_responder_state_t;
 /* Go: csbk.Result. Result is how a request or a wakeup ended. */
 typedef uint8_t dmrgo_csbk_result_t;
 /* Go: csbk.Service. Service is the CSBK service of a request or an answer. */
@@ -5326,6 +5328,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_CSBK_RESPONDER_TICK_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 #define DMRGO_CSBK_TIMING_BURST_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 #define DMRGO_CSBK_TIMING_DECODED_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
+#define DMRGO_CSBK_TIMING_LOST_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 #define DMRGO_CSBK_TIMING_TERMINATOR_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 #define DMRGO_CSBK_TIMING_TICK_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
 #define DMRGO_CSBK_WAKEUP_BURST_MAX_ITEMS (DMRGO_CSBK_MAX_OUTPUTS)
@@ -5840,6 +5843,12 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_CSBK_REQUESTER_SENDING ((dmrgo_csbk_requester_state_t)2)
 /* Go: csbk.RequesterWaiting. RequesterWaiting waits T_AckWait for the answer. */
 #define DMRGO_CSBK_REQUESTER_WAITING ((dmrgo_csbk_requester_state_t)3)
+/* Go: csbk.ResponderAccess. ResponderAccess waits for an idle channel or the end of a holdoff before it sends the answer. */
+#define DMRGO_CSBK_RESPONDER_ACCESS ((dmrgo_csbk_responder_state_t)1)
+/* Go: csbk.ResponderIdle. ResponderIdle has no answer to send. */
+#define DMRGO_CSBK_RESPONDER_IDLE ((dmrgo_csbk_responder_state_t)0)
+/* Go: csbk.ResponderSending. ResponderSending sends the answer at the next Tick. */
+#define DMRGO_CSBK_RESPONDER_SENDING ((dmrgo_csbk_responder_state_t)2)
 /* Go: csbk.ResultAnswered. ResultAnswered is an answer that accepts: UU_Ans_Rsp with Proceed, a radio check answer, a call alert acknowledgement, an answer that the Match of a custom request accepts, or, for a wakeup, the BS outbound. */
 #define DMRGO_CSBK_RESULT_ANSWERED ((dmrgo_csbk_result_t)1)
 /* Go: csbk.ResultCanceled. ResultCanceled is a request that Cancel ended. */
@@ -7809,14 +7818,16 @@ int dmrgo_csbk_responder_decoded(dmrgo_csbk_responder_t *self, dmrgo_duration_t 
 int dmrgo_csbk_responder_lost_need(dmrgo_csbk_responder_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: csbk.Responder.Lost. Lost tells the Responder that the transport lost the signal: the channel counts as idle. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_responder_lost_need gives (DMRGO_CSBK_RESPONDER_LOST_MAX_ITEMS items). */
 int dmrgo_csbk_responder_lost(dmrgo_csbk_responder_t *self, dmrgo_duration_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: csbk.Responder.Pending. Pending reports whether an answer waits to go out. */
-int dmrgo_csbk_responder_pending(dmrgo_csbk_responder_t *self, bool *out);
 /* Go: csbk.Responder.Reset. Reset drops the pending answer and forgets the channel state. */
 int dmrgo_csbk_responder_reset(dmrgo_csbk_responder_t *self);
+/* Go: csbk.Responder.State. State returns the state of the Responder. */
+int dmrgo_csbk_responder_state(dmrgo_csbk_responder_t *self, dmrgo_csbk_responder_state_t *out);
 /* dmrgo_csbk_responder_tick_need sets *items and *arena to the room that dmrgo_csbk_responder_tick needs for these arguments, without a change to the handle. */
 int dmrgo_csbk_responder_tick_need(dmrgo_csbk_responder_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: csbk.Responder.Tick. Tick runs the timers that are due at now and appends their outputs to dst: the burst of the answer, or an OutputDone with ResultDenied for a time critical answer that the channel denied. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_responder_tick_need gives (DMRGO_CSBK_RESPONDER_TICK_MAX_ITEMS items). */
 int dmrgo_csbk_responder_tick(dmrgo_csbk_responder_t *self, dmrgo_duration_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: csbk.ResponderState.String. String returns the name of the state. */
+int dmrgo_csbk_responder_state_string(dmrgo_csbk_responder_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: csbk.Result.String. String returns the name of the result. */
 int dmrgo_csbk_result_string(dmrgo_csbk_result_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: csbk.Service.String. String returns the name of the service. */
@@ -7839,6 +7850,10 @@ int dmrgo_csbk_timing_decoded(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, d
 int dmrgo_csbk_timing_join(dmrgo_csbk_timing_t *self, dmrgo_duration_t now);
 /* Go: csbk.Timing.Leader. Leader returns the dynamic identifier and the identifier of the wide area timing leader. */
 int dmrgo_csbk_timing_leader(dmrgo_csbk_timing_t *self, uint8_t *dynamic_id, uint32_t *id, bool *ok);
+/* dmrgo_csbk_timing_lost_need sets *items and *arena to the room that dmrgo_csbk_timing_lost needs for these arguments, without a change to the handle. */
+int dmrgo_csbk_timing_lost_need(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+/* Go: csbk.Timing.Lost. Lost tells the Timing that the transport lost the signal. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_timing_lost_need gives (DMRGO_CSBK_TIMING_LOST_MAX_ITEMS items). */
+int dmrgo_csbk_timing_lost(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: csbk.Timing.Reset. Reset stops the Timing until the next Join and forgets the channel state. */
 int dmrgo_csbk_timing_reset(dmrgo_csbk_timing_t *self);
 /* Go: csbk.Timing.State. State returns the state of the Timing. */

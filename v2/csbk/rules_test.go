@@ -270,7 +270,7 @@ func TestResponderFNS(t *testing.T) {
 	}
 	r := mustResponder(t, &csbk.ResponderConfig{Address: 9})
 	for _, b := range []layer2.RawBurst{ahoy(9, true), ahoy(10, false)} {
-		if out := r.Burst(0, &b, layer2.Hint{}, nil); len(out) != 0 || r.Pending() {
+		if out := r.Burst(0, &b, layer2.Hint{}, nil); len(out) != 0 || r.State() != csbk.ResponderIdle {
 			t.Errorf("answered %v", kinds(out))
 		}
 	}
@@ -293,8 +293,8 @@ func TestResponderFNS(t *testing.T) {
 	}
 
 	quiet := mustResponder(t, &csbk.ResponderConfig{Address: 9, NoFNS: true})
-	if out := quiet.Burst(0, &good, layer2.Hint{}, nil); len(out) != 1 || quiet.Pending() {
-		t.Errorf("NoFNS: %v, pending %t", kinds(out), quiet.Pending())
+	if out := quiet.Burst(0, &good, layer2.Hint{}, nil); len(out) != 1 || quiet.State() != csbk.ResponderIdle {
+		t.Errorf("NoFNS: %v, pending %t", kinds(out), quiet.State() != csbk.ResponderIdle)
 	}
 }
 
