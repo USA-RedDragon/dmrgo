@@ -1,6 +1,7 @@
 package layer2
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
@@ -40,10 +41,11 @@ func (a *ShortLCAssembler) Count() int {
 // fragment LCSS is not used in the CACH, so either discards the partial
 // Short LC; Add then returns ErrShortLCSequence when fragments were
 // discarded. A fragment out of order also discards the partial Short LC and
-// returns ErrShortLCSequence. A nil a does nothing. Add does not allocate.
+// returns ErrShortLCSequence. A nil a returns dmrgo.ErrNilReceiver. Add
+// does not allocate.
 func (a *ShortLCAssembler) Add(c CACH) (slc pdu.ShortLC, done bool, err error) {
 	if a == nil {
-		return slc, false, nil
+		return slc, false, dmrgo.ErrNilReceiver
 	}
 	if done, err = a.add(c); err != nil || !done {
 		return slc, false, err

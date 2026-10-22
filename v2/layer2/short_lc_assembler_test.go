@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/bits"
@@ -334,7 +335,7 @@ func TestShortLCAssembler_Nil(t *testing.T) {
 	}
 	for i, f := range fragments {
 		c := cachOf(shortLCSequence[i], f)
-		if _, done, err := nilAsm.Add(c); done || err != nil {
+		if _, done, err := nilAsm.Add(c); done || !errors.Is(err, dmrgo.ErrNilReceiver) {
 			t.Fatalf("nil Add: %t %v", done, err)
 		}
 	}

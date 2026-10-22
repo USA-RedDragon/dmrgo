@@ -52,7 +52,7 @@ func NewResponseCode(class, typ uint8) (Response, error) {
 // NewResponseCode, and an error for a nil h.
 func ResponseOf(h *pdu.ResponsePacketHeader) (Response, error) {
 	if h == nil {
-		return 0, errNil
+		return 0, dmrgo.ErrNilArgument
 	}
 	return NewResponseCode(h.ResponseClass, h.ResponseType)
 }
@@ -254,7 +254,7 @@ type responseStore struct {
 
 func (s *responseStore) build(to *pdu.ConfirmedDataHeader, r Response, data *ResponseData) (Packet, error) {
 	if to == nil {
-		return Packet{}, errNil
+		return Packet{}, dmrgo.ErrNilArgument
 	}
 	if r>>5 != 0 {
 		return Packet{}, errResponseClassRange

@@ -8449,7 +8449,7 @@ int dmrgo_layer2_raw_burst_voice_slots(const dmrgo_layer2_raw_burst_t *self, uin
 int dmrgo_layer2_short_lc_assembler_new(dmrgo_layer2_short_lc_assembler_t **out);
 /* dmrgo_layer2_short_lc_assembler_free frees the handle. self may be NULL. */
 int dmrgo_layer2_short_lc_assembler_free(dmrgo_layer2_short_lc_assembler_t *self);
-/* Go: layer2.ShortLCAssembler.Add. Add adds a decoded CACH and returns the Short LC when the CACH completes it, with done set. A CACH whose TACT is uncorrectable has no LCSS, and a Single fragment LCSS is not used in the CACH, so either discards the partial Short LC; Add then returns DMRGO_ERR_LAYER2_SHORT_LC_SEQUENCE when fragments were discarded. A fragment out of order also discards the partial Short LC and returns DMRGO_ERR_LAYER2_SHORT_LC_SEQUENCE. */
+/* Go: layer2.ShortLCAssembler.Add. Add adds a decoded CACH and returns the Short LC when the CACH completes it, with done set. A CACH whose TACT is uncorrectable has no LCSS, and a Single fragment LCSS is not used in the CACH, so either discards the partial Short LC; Add then returns DMRGO_ERR_LAYER2_SHORT_LC_SEQUENCE when fragments were discarded. A fragment out of order also discards the partial Short LC and returns DMRGO_ERR_LAYER2_SHORT_LC_SEQUENCE. A nil a returns DMRGO_ERR_NIL_RECEIVER. */
 int dmrgo_layer2_short_lc_assembler_add(dmrgo_layer2_short_lc_assembler_t *self, const dmrgo_layer2_cach_t *c, dmrgo_pdu_short_lc_t *slc, bool *done);
 /* Go: layer2.ShortLCAssembler.Count. Count returns the number of fragments accumulated so far, 0 for a nil a. */
 int dmrgo_layer2_short_lc_assembler_count(dmrgo_layer2_short_lc_assembler_t *self, int64_t *out);

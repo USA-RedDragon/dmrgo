@@ -1,6 +1,7 @@
 package layer2
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/fec/bptc"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
@@ -20,7 +21,7 @@ var shortLCFragmentLCSS = [4]enums.LCSS{
 func EncodeShortLCToCACH(slc *pdu.ShortLC, tact pdu.TACT) ([4][3]byte, error) {
 	var out [4][3]byte
 	if slc == nil {
-		return out, errNil
+		return out, dmrgo.ErrNilArgument
 	}
 	info, err := slc.Encode()
 	if err != nil {

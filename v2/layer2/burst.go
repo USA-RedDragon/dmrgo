@@ -750,7 +750,7 @@ func encodeData(d Data, dataType enums.DataType, anyType bool) (enums.DataType, 
 func pduInfo(d Data, info *[25]byte) (enums.DataType, bool, error) {
 	switch p := d.(type) {
 	case nil:
-		return 0, false, errNilData
+		return 0, false, dmrgo.ErrNilArgument
 	case *pdu.Rate34Data:
 		if p != nil {
 			var c [18]byte
