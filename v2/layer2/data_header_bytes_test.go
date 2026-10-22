@@ -63,7 +63,7 @@ func TestDataHeaderBytes_SMSCaptures(t *testing.T) {
 			newG := !gotG
 			e := h
 			_, hasGroup := h.Group()
-			if e.SetAddresses(newT, newS) != nil || e.SetGroup(newG) != hasGroup {
+			if e.SetAddresses(newT, newS) != nil || (e.SetGroup(newG) == nil) != hasGroup {
 				t.Fatalf("%s burst %d: SetAddresses or SetGroup refused for %s", name, i, h.Format())
 			}
 			if !hasGroup {
@@ -129,7 +129,7 @@ func TestDataHeaderBytes_Formats(t *testing.T) {
 		if ok != tt.llids || gok != tt.gi || group != tt.gi || (ok && (tgt != 0x120000 || src != 0x34)) {
 			t.Errorf("format %d: Addresses %x %x %t, Group %t %t", tt.format, tgt, src, ok, group, gok)
 		}
-		if h.SetGroup(false) != tt.gi || (!tt.gi && h != orig) {
+		if (h.SetGroup(false) == nil) != tt.gi || (!tt.gi && h != orig) {
 			t.Errorf("format %d: SetGroup", tt.format)
 		}
 		h = orig

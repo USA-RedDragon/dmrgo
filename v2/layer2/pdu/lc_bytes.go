@@ -135,11 +135,14 @@ func (l *LCBytes) ServiceOptions() (so layer3.ServiceOptions, ok bool) {
 // l, and a *dmrgo.FieldRangeError when a field of so does not fit its bits,
 // and then changes nothing.
 func (l *LCBytes) SetServiceOptions(so layer3.ServiceOptions) error {
+	if l == nil {
+		return dmrgo.ErrNilReceiver
+	}
 	octet, err := so.Field()
 	if err != nil {
 		return err
 	}
-	if l == nil || !l.isVoiceChannelUser() {
+	if !l.isVoiceChannelUser() {
 		return ErrNoServiceOptions
 	}
 	l[2] = octet
@@ -222,14 +225,14 @@ func (l *LCBytes) SetCall(group bool, target, source uint32) error {
 
 // SetGroup sets the FLCO to Grp_V_Ch_Usr (0) when group is true and to
 // UU_V_Ch_Usr (3) when it is false, and keeps every other bit, so the
-// Service Options and addresses carry over. It returns ErrNoAddresses, and
+// Service Options and addresses carry over. It returns ErrNoGroupFlag, and
 // changes nothing, unless the FLCO is already one of the two.
 func (l *LCBytes) SetGroup(group bool) error {
 	if l == nil {
 		return dmrgo.ErrNilReceiver
 	}
 	if !l.isVoiceChannelUser() {
-		return ErrNoAddresses
+		return ErrNoGroupFlag
 	}
 	f := enums.FLCOUnitToUnitVoiceChannelUser
 	if group {

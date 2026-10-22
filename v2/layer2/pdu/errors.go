@@ -26,6 +26,9 @@ var (
 	// LCBytes.Codeword for a data type other than DataTypeVoiceLCHeader and
 	// DataTypeTerminatorWithLC, which have no RS(12,9) Full LC mask.
 	ErrNoFullLCMask = errors.New("the data type has no RS(12,9) Full LC mask")
+	// ErrNoGroupFlag is returned by the SetGroup methods when the PDU has
+	// no group or individual flag: its FLCO, opcode or format has none.
+	ErrNoGroupFlag = errors.New("PDU has no group or individual flag")
 	// ErrNoServiceOptions is returned by LCBytes.SetServiceOptions when the
 	// FLCO of the LC has no Service Options field.
 	ErrNoServiceOptions = errors.New("pdu: PDU has no Service Options field")

@@ -82,21 +82,21 @@ func (h *DataHeaderBytes) Group() (group, ok bool) {
 }
 
 // SetGroup writes the flag that Group returns. It does not update the CRC;
-// call Reseal. It returns false, and changes nothing, for a header for
-// which Group returns no flag.
-func (h *DataHeaderBytes) SetGroup(group bool) bool {
+// call Reseal. It returns ErrNoGroupFlag, and changes nothing, for a header
+// for which Group returns no flag.
+func (h *DataHeaderBytes) SetGroup(group bool) error {
 	if h == nil {
-		return false
+		return dmrgo.ErrNilReceiver
 	}
 	if !h.hasGroupFlag() {
-		return false
+		return ErrNoGroupFlag
 	}
 	if group {
 		h[0] |= 0x80
 	} else {
 		h[0] &^= 0x80
 	}
-	return true
+	return nil
 }
 
 // CRCOK reports whether octets 10 and 11 hold the CRC of octets 0 to 9 with

@@ -56,7 +56,7 @@ func TestCSBKBytes_ReproducerPreamble(t *testing.T) {
 	if res.Uncorrectable {
 		t.Fatal("DecodeCSBK fails the CRC")
 	}
-	if c.SetAddresses(9, 0x23383B) != nil || !c.SetGroup(true) {
+	if c.SetAddresses(9, 0x23383B) != nil || c.SetGroup(true) != nil {
 		t.Fatal("edit refused")
 	}
 	c.Reseal()
@@ -109,7 +109,7 @@ func TestCSBKBytes_MatchesCSBK(t *testing.T) {
 			t.Fatalf("%x: SetAddresses accepts 25 bits", orig)
 		}
 		g := rng.Intn(2) == 0
-		if c.SetGroup(g) != wgok {
+		if (c.SetGroup(g) == nil) != wgok {
 			t.Fatalf("%x: SetGroup ok differs from Group", orig)
 		}
 		setCSBKGroup(&want, g)

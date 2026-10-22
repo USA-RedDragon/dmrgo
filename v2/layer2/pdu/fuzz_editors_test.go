@@ -127,7 +127,7 @@ func checkLCBytes(t *testing.T, l pdu.LCBytes, target, source uint32, group bool
 	if group {
 		wantFLCO = enums.FLCOGroupVoiceChannelUser
 	}
-	if err := e.SetGroup(group); (err == nil) != gok || gok && e.FLCO() != wantFLCO || !gok && !errors.Is(err, pdu.ErrNoAddresses) {
+	if err := e.SetGroup(group); (err == nil) != gok || gok && e.FLCO() != wantFLCO || !gok && !errors.Is(err, pdu.ErrNoGroupFlag) {
 		t.Fatalf("LCBytes %x SetGroup(%t) gives FLCO %d", l, group, e.FLCO())
 	}
 	checkLCBytesSetters(t, l, group, v)
@@ -185,7 +185,7 @@ func checkCSBKBytes(t *testing.T, c pdu.CSBKBytes, target, source uint32, group 
 	if (errB == nil) != (errS == nil) || errB != nil && e != c {
 		t.Fatalf("CSBKBytes %x SetAddresses(%x, %x) = %v, CSBK %v", c, target, source, errB, errS)
 	}
-	if e.SetGroup(group) != wgok {
+	if (e.SetGroup(group) == nil) != wgok {
 		t.Fatalf("CSBKBytes %x SetGroup ok differs from Group", c)
 	}
 	setCSBKGroup(&want, group)
@@ -218,7 +218,7 @@ func checkDataHeaderBytes(t *testing.T, h pdu.DataHeaderBytes, target, source ui
 	if (errB == nil) != (errS == nil) || errB != nil && e != h {
 		t.Fatalf("DataHeaderBytes %x SetAddresses(%x, %x) = %v, DataHeader %v", h, target, source, errB, errS)
 	}
-	if e.SetGroup(group) != wgok {
+	if (e.SetGroup(group) == nil) != wgok {
 		t.Fatalf("DataHeaderBytes %x SetGroup ok differs from Group", h)
 	}
 	setDataHeaderGroup(t, &want, group)
