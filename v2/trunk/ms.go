@@ -222,8 +222,9 @@ type MS struct {
 
 // NewMS returns an MS for cfg. It returns a *dmrgo.ConfigError for an
 // Address out of range, a Slot that is not SlotUnknown, Slot1 or Slot2, and
-// for the errors of NewFollower. It allocates the
-// MS, and its Burst unless cfg.Scratch is set.
+// for the errors of NewFollower. A nil cfg has no Address, so it returns
+// the error of Address. It allocates the MS, and its Burst unless
+// cfg.Scratch is set.
 func NewMS(cfg *MSConfig) (*MS, error) {
 	if cfg == nil || cfg.Address == 0 || cfg.Address > maxAddress {
 		return nil, errAddress

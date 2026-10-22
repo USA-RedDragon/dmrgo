@@ -59,6 +59,7 @@ var (
 	errPowerSave     error = &dmrgo.ConfigError{Type: pkgName, Field: "PowerSave"}
 	errStatus        error = &dmrgo.ConfigError{Type: pkgName, Field: "status"}
 	errLead          error = &dmrgo.ConfigError{Type: pkgName, Field: "Lead"}
+	errPayloadLen    error = &dmrgo.ConfigError{Type: pkgName, Field: "PayloadLen"}
 	errChannel       error = &dmrgo.ConfigError{Type: pkgName, Field: "Channel"}
 	errRepeats       error = &dmrgo.ConfigError{Type: pkgName, Field: "Repeats"}
 	errSlot          error = &dmrgo.ConfigError{Type: pkgName, Field: "Slot"}

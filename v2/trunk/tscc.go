@@ -353,11 +353,12 @@ type TSCC struct {
 // SysCode whose fields do not fit, a color code over 15, a Channel that
 // names no channel, a PayloadLen out of range, a payload channel that names
 // no channel, repeats another or is Channel, a negative GrantRepeats or
-// ClearRepeats, a Lead out of range, or a MaxRegistrations out of range.
+// ClearRepeats, a Lead out of range, or a MaxRegistrations out of range. A
+// nil cfg has no payload channels, so it returns the error of PayloadLen.
 // It allocates the TSCC and its registration table.
 func NewTSCC(cfg *TSCCConfig) (*TSCC, error) {
 	if cfg == nil {
-		return nil, errChannels
+		return nil, errPayloadLen
 	}
 	t := &TSCC{cfg: *cfg, slot: enums.Slot2}
 	c := &t.cfg
@@ -373,7 +374,7 @@ func NewTSCC(cfg *TSCCConfig) (*TSCC, error) {
 		return nil, errChannel
 	}
 	if c.PayloadLen < 1 || c.PayloadLen > MaxPayloadChannels {
-		return nil, errChannels
+		return nil, errPayloadLen
 	}
 	for i := range c.PayloadLen {
 		ch := c.Payload[i]
