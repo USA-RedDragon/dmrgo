@@ -5204,13 +5204,13 @@ struct dmrgo_voice_frame_quality_t {
 
 struct dmrgo_voice_stats_t {
 	/* Bursts is the number of voice bursts of the call. */
-	uint16_t bursts;
+	uint32_t bursts;
 	/* Lost is the number of voice bursts that did not arrive. */
-	uint16_t lost;
+	uint32_t lost;
 	/* Duplicates is the number of bursts dropped as copies of an earlier one, voice bursts and Voice LC Headers. */
-	uint16_t duplicates;
+	uint32_t duplicates;
 	/* Late is the number of voice bursts dropped because their sequence number was behind the last one. */
-	uint16_t late;
+	uint32_t late;
 	/* BitsChecked is the number of vocoder bits that the AMBE+2 FEC covered. */
 	uint32_t bits_checked;
 	/* BitErrors is the number of bit errors that the AMBE+2 FEC corrected. BitErrors / BitsChecked is the bit error rate, as fec.BERCalculator counts it. */
