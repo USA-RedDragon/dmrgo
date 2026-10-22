@@ -332,10 +332,7 @@ func checkConfirmed(t *testing.T, in [12]byte) {
 
 func checkFullLCBytes(t *testing.T, lc [9]byte) {
 	t.Helper()
-	v, err := pdu.DecodeFullLinkControlBytes(lc)
-	if err != nil {
-		return
-	}
+	v := pdu.DecodeFullLinkControlBytes(lc)
 	_ = v.String()
 	b, err := v.Bytes()
 	if err != nil {

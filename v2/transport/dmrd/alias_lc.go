@@ -8,7 +8,7 @@ import (
 // LC decodes the talker alias block as the Full LC it came from: FLCO
 // Talker Alias Header plus Type, standard FID, and Data. A 15-octet packet
 // gives the 3 octets that came, and 0 in the others. It returns an error
-// when Type is above 3 or the LC does not decode, and for a nil t. It
+// when Type is above 3, and for a nil t. It
 // does not allocate (ETSI TS 102 361-2 clauses 7.1.1.4 and 7.1.1.5).
 func (t *TalkerAlias) LC() (pdu.FullLinkControl, error) {
 	if t == nil {
@@ -27,9 +27,8 @@ func (t *LocalTalkerAlias) LC() (pdu.FullLinkControl, error) {
 
 // LC decodes the position as the GPS Info Full LC it came from: FLCO GPS
 // Info, standard FID, and Data. A 14-octet packet gives the 3 octets that
-// came, and 0 in the others. It returns an error when the LC does not
-// decode, and for a nil p. It does not allocate (ETSI TS 102 361-2
-// clause 7.1.1.3).
+// came, and 0 in the others. It returns an error for a nil p. It does not
+// allocate (ETSI TS 102 361-2 clause 7.1.1.3).
 func (p *Position) LC() (pdu.FullLinkControl, error) {
 	if p == nil {
 		return pdu.FullLinkControl{}, errNilMessage
@@ -55,5 +54,5 @@ func aliasLC(typ uint8, data *[7]byte) (pdu.FullLinkControl, error) {
 func lcOf(f enums.FLCO, data *[7]byte) (pdu.FullLinkControl, error) {
 	lc := [9]byte{byte(f), byte(enums.FIDStandardized)}
 	copy(lc[2:], data[:])
-	return pdu.DecodeFullLinkControlBytes(lc)
+	return pdu.DecodeFullLinkControlBytes(lc), nil
 }

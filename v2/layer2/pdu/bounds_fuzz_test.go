@@ -30,10 +30,8 @@ func runTalkerAliasBounds(t *testing.T, alias string, raw []byte) {
 		}
 	}
 	for off := 0; off+9 <= len(raw); off += 9 {
-		lc, err := pdu.DecodeFullLinkControlBytes([9]byte(raw[off : off+9]))
-		if err == nil {
-			check(&lc)
-		}
+		lc := pdu.DecodeFullLinkControlBytes([9]byte(raw[off : off+9]))
+		check(&lc)
 	}
 }
 

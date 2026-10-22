@@ -69,7 +69,7 @@ func BenchmarkPDUBytes(b *testing.B) {
 		{"DecodeCSBK", func(i int) { _ = pdu.DecodeCSBK(csbk[i]) }},
 		{"CSBKEncode", func(int) { _, _ = csbkPDU.Encode() }},
 		{"DecodeFullLCCodeword", func(i int) { _, _, _ = pdu.DecodeFullLCCodeword(lc[i], enums.DataTypeVoiceLCHeader) }},
-		{"DecodeFullLinkControlBytes", func(i int) { _, _ = pdu.DecodeFullLinkControlBytes([9]byte(lc[i][:9])) }},
+		{"DecodeFullLinkControlBytes", func(i int) { _ = pdu.DecodeFullLinkControlBytes([9]byte(lc[i][:9])) }},
 		{"FullLinkControlEncode", func(int) { _, _ = lcPDU.Encode() }},
 		{"Seal", func(i int) { _ = pdu.Seal(&csbk[i], enums.DataTypeCSBK) }},
 		{"BlockCRCOK", func(i int) { _ = pdu.BlockCRCOK(csbk[i], enums.DataTypeCSBK) }},
