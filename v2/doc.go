@@ -36,8 +36,21 @@
 // After construction (NewBurstFromBytes, NewVoiceTransmitter, framer.New,
 // packet.NewAssembler and the like), the hot path allocates nothing: decode,
 // encode, build, receive and assemble calls, with gc and with TinyGo at the
-// default stack size of a microcontroller target. Errors are static values,
-// so a call that fails does not allocate either. A call that returns a fresh
+// default stack size of a microcontroller target. On TinyGo a value that
+// the caller passes by pointer, such as the Data of layer2.BuildBurst, the
+// Packet of packet.AppendBursts, the options of
+// layer2.VoiceTransmitter.Reset or a block for packet.Assembler.Add, must
+// not be a local variable of the caller: TinyGo moves such a local to the
+// heap, 12 to 96 bytes per call. Keep it in a package-level variable or in
+// a struct allocated once:
+//
+//	var lc pdu.FullLinkControl // not a local of send
+//
+//	func send() (layer2.RawBurst, error) {
+//		return layer2.BuildBurst(&lc, 1, layer2.SyncSourceBS)
+//	}
+//
+// Errors are static values, so a call that fails does not allocate either. A call that returns a fresh
 // slice or string allocates it, and its doc says so. Each has a form that
 // writes into storage of the caller, such as the Append forms. A
 // layer2.Burst keeps its decoded Data until the next decode into it, so it
