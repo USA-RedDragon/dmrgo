@@ -447,6 +447,7 @@ sym #define DMRGO_DATA_SENDER_CANCEL_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
 sym #define DMRGO_DATA_SENDER_DECODED_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
 sym #define DMRGO_DATA_SENDER_HOLDOFF ((dmrgo_data_sender_state_t)2)
 sym #define DMRGO_DATA_SENDER_IDLE ((dmrgo_data_sender_state_t)0)
+sym #define DMRGO_DATA_SENDER_LOST_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
 sym #define DMRGO_DATA_SENDER_SENDING ((dmrgo_data_sender_state_t)3)
 sym #define DMRGO_DATA_SENDER_TICK_MAX_ITEMS (DMRGO_DATA_MAX_OUTPUTS)
 sym #define DMRGO_DATA_SENDER_WAITING ((dmrgo_data_sender_state_t)1)
@@ -1645,6 +1646,8 @@ sym int dmrgo_data_sender_deadline(dmrgo_data_sender_t *self, dmrgo_duration_t *
 sym int dmrgo_data_sender_decoded(dmrgo_data_sender_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 sym int dmrgo_data_sender_decoded_need(dmrgo_data_sender_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, size_t *items, size_t *arena);
 sym int dmrgo_data_sender_free(dmrgo_data_sender_t *self);
+sym int dmrgo_data_sender_lost(dmrgo_data_sender_t *self, dmrgo_duration_t now, dmrgo_data_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_data_sender_lost_need(dmrgo_data_sender_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 sym int dmrgo_data_sender_reset(dmrgo_data_sender_t *self);
 sym int dmrgo_data_sender_send(dmrgo_data_sender_t *self, dmrgo_duration_t now, const dmrgo_data_message_t *m);
 sym int dmrgo_data_sender_state(dmrgo_data_sender_t *self, dmrgo_data_sender_state_t *out);
@@ -3262,7 +3265,7 @@ type struct dmrgo_data_event_t { dmrgo_data_event_kind_t kind; dmrgo_data_call_t
 type struct dmrgo_data_message_t { dmrgo_pdu_data_header_t header; bool has_proprietary; dmrgo_pdu_proprietary_header_t proprietary; dmrgo_enums_data_type_t rate; uint8_t *payload; size_t payload_len; bool bad_crc; bool fragmented; uint16_t fragments; };
 type struct dmrgo_data_output_t { dmrgo_data_output_kind_t kind; dmrgo_layer2_raw_burst_t burst; dmrgo_layer2_hint_t hint; dmrgo_duration_t due; uint8_t try_; uint8_t seq; dmrgo_data_result_t result; dmrgo_packet_response_t response; bool has_response; bool group; };
 type struct dmrgo_data_receiver_config_t { size_t size; bool has_color_code; dmrgo_enums_color_code_t color_code; uint32_t address; bool respond; dmrgo_layer2_sync_source_t source; dmrgo_duration_t response_delay; int64_t max_blocks; int64_t max_fragment; int64_t max_message; int64_t peers; dmrgo_duration_t lost; dmrgo_duration_t hang; bool accept_bad_crc; dmrgo_layer2_burst_t *scratch; };
-type struct dmrgo_data_sender_config_t { size_t size; dmrgo_enums_color_code_t color_code; dmrgo_layer2_sync_source_t source; dmrgo_enums_access_t access; int64_t preambles; dmrgo_duration_t idle_search; dmrgo_duration_t holdoff; dmrgo_duration_t response_wait; dmrgo_duration_t tx_limit; int64_t retries; int64_t max_blocks; int64_t peers; bool resync; int64_t window; uint64_t seed; };
+type struct dmrgo_data_sender_config_t { size_t size; dmrgo_enums_color_code_t color_code; dmrgo_layer2_sync_source_t source; dmrgo_enums_access_t access; int64_t preambles; dmrgo_duration_t idle_search; dmrgo_duration_t holdoff; dmrgo_duration_t response_wait; dmrgo_duration_t tx_limit; int64_t retries; int64_t max_blocks; int64_t peers; bool resync; int64_t window; uint64_t seed; dmrgo_enums_slot_t slot; dmrgo_duration_t lead; };
 type struct dmrgo_data_stats_t { uint16_t packets; uint16_t delivered; uint16_t blocks; uint16_t lost; uint16_t header_crc; uint16_t bad_crc; uint16_t duplicates; uint16_t out_of_sequence; uint16_t dropped; dmrgo_duration_t duration; };
 type struct dmrgo_dmrd_bridge_control_t { dmrgo_dmrd_command_t command; uint32_t talk_group; uint32_t stream; uint8_t version; uint8_t signature[20]; };
 type struct dmrgo_dmrd_bridge_t { uint8_t version; dmrgo_dmrd_data_t data; uint64_t time; uint32_t source_server; uint32_t source_repeater; uint8_t hops; uint8_t signature[20]; };

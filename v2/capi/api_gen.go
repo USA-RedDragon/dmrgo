@@ -434,6 +434,8 @@ func in_data_SenderConfig(s *C.dmrgo_data_sender_config_t) (d g_data.SenderConfi
 	d.Resync = bool(s.resync)
 	d.Window = int(s.window)
 	d.Seed = uint64(s.seed)
+	d.Slot = g_enums.Slot(s.slot)
+	d.Lead = time.Duration(s.lead)
 	return
 }
 
@@ -4904,6 +4906,8 @@ func out_data_SenderConfig(d *C.dmrgo_data_sender_config_t, s *g_data.SenderConf
 	d.resync = C.bool(s.Resync)
 	d.window = C.int64_t(s.Window)
 	d.seed = C.uint64_t(s.Seed)
+	d.slot = C.dmrgo_enums_slot_t(s.Slot)
+	d.lead = C.dmrgo_duration_t(s.Lead)
 }
 
 func fromC_data_SenderConfig(s *C.dmrgo_data_sender_config_t) g_data.SenderConfig {
@@ -12291,6 +12295,71 @@ func dmrgo_data_sender_decoded(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_dura
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	r0 := h.v.Decoded(time.Duration(c_now), a_b, a_hint, a_dst)
+	_ = r0
+	h.sc0 = r0[:0]
+	{
+		base := nf_dst
+		total := base + len(r0)
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(total)
+		}
+		if total > int(c_dst_cap) {
+			oc.short = true
+		} else {
+			cs := unsafe.Slice((*C.dmrgo_data_output_t)(unsafe.Pointer(c_dst)), int(c_dst_cap))
+			for i := range r0 {
+				out_data_Output(&cs[base+i], &r0[i], oc)
+			}
+			nf_dst = total
+		}
+	}
+	if oc.short {
+		return setLast(C.DMRGO_ERR_BOUND, "dmrgo: an output passed the bound of its _need function; the call took effect")
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_sender_lost_need
+func dmrgo_data_sender_lost_need(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	h := get_data_Sender(c_self)
+	_ = h
+	if c_items != nil {
+		*c_items = C.size_t(max(0, int(g_data.MaxOutputs)))
+	}
+	if c_arena != nil {
+		*c_arena = C.size_t(0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_data_sender_lost
+func dmrgo_data_sender_lost(c_self *C.dmrgo_data_sender_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_data_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	h := get_data_Sender(c_self)
+	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	nf_dst := int(*c_dst_len)
+	a_dst := h.sc0[:0]
+	need_items := max(0, int(g_data.MaxOutputs))
+	need_arena := 0
+	_ = need_arena
+	if int(c_dst_cap)-nf_dst < need_items {
+		if c_dst_need != nil {
+			*c_dst_need = C.size_t(nf_dst + need_items)
+		}
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	r0 := h.v.Lost(time.Duration(c_now), a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{

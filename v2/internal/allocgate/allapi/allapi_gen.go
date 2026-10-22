@@ -159,6 +159,7 @@ var api = [...]any{
 	(*data.Sender).Channel,
 	(*data.Sender).Deadline,
 	(*data.Sender).Decoded,
+	(*data.Sender).Lost,
 	(*data.Sender).Reset,
 	(*data.Sender).Send,
 	(*data.Sender).State,

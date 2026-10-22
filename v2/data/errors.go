@@ -10,8 +10,6 @@ import (
 // it with errors.Is.
 var ErrBusy = errors.New("data: message in progress")
 
-var errZero = errors.New("data: zero Sender; make it with NewSender")
-
 const pkgName = "data"
 
 var (
@@ -28,4 +26,6 @@ var (
 	errProprietary  error = &dmrgo.ConfigError{Type: pkgName, Field: "Proprietary"}
 	errWindow       error = &dmrgo.ConfigError{Type: pkgName, Field: "Window"}
 	errMessageGroup error = &dmrgo.ConfigError{Type: pkgName, Field: "Header.Group"}
+	errLead         error = &dmrgo.ConfigError{Type: pkgName, Field: "Lead"}
+	errSlot         error = &dmrgo.ConfigError{Type: pkgName, Field: "Slot"}
 )
