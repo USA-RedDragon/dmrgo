@@ -500,7 +500,10 @@ func (t *TSCC) statusRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSC
 }
 
 func (t *TSCC) statusAhoy(group bool, target, source uint32, st Status, opts uint8) {
-	a := pdu.AhoyPDU{ServiceOptsMirror: opts&0x60 | uint8(st)>>2, Group: group, UAB: uint8(st) & 3,
+	o := layer3.StatusServiceOptionsOf(opts)
+	o.StatusHigh = uint8(st) >> 2
+	mirror, _ := o.Field()
+	a := pdu.AhoyPDU{ServiceOptsMirror: mirror, Group: group, UAB: uint8(st) & 3,
 		ServiceKind: uint8(enums.ServiceKindStatusTransport), TargetAddress: target, SourceAddress: source}
 	if group {
 		for range statusSends {

@@ -406,7 +406,7 @@ func (m *MS) replySlot(h *layer2.Hint) enums.Slot {
 
 func (m *MS) statusAhoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Output) []Output {
 	s := &m.svc
-	st := Status(a.ServiceOptsMirror&0x1F)<<2 | Status(a.UAB)
+	st := Status(layer3.StatusServiceOptionsOf(a.ServiceOptsMirror).StatusHigh)<<2 | Status(a.UAB)
 	g := Grant{Service: enums.ServiceKindStatusTransport, Group: a.Group, Target: a.TargetAddress, Source: a.SourceAddress}
 	repeat := s.hasStat && now-s.lastStatAt < statusHold && s.lastStatV == st && s.lastStat.Target == g.Target && s.lastStat.Source == g.Source
 	s.lastStat, s.lastStatV, s.lastStatAt, s.hasStat = g, st, now, true
