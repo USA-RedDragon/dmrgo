@@ -639,7 +639,6 @@ typedef struct dmrgo_vocoder_append_decoder_vtable_t dmrgo_vocoder_append_decode
 /* Go: vocoder.Codec. Codec converts between 8 kHz 16-bit mono PCM and the 72 raw on-air bits of one of the three vocoder frames of a DMR voice burst, packed, the first bit in the most significant bit of byte 0, as layer2.RawBurst.VoiceSlots returns them. */
 typedef struct dmrgo_vocoder_codec_t dmrgo_vocoder_codec_t;
 typedef struct dmrgo_vocoder_codec_vtable_t dmrgo_vocoder_codec_vtable_t;
-typedef struct dmrgo_vocoder_register_factory_fn_t dmrgo_vocoder_register_factory_fn_t;
 /* Go: codec2.Codec. Codec is a Codec2 vocoder.Codec with separate libcodec2 encoder and decoder states. */
 typedef struct dmrgo_codec2_codec_t dmrgo_codec2_codec_t;
 /* Go: codec2.Config. Config selects how a Codec encodes and decodes. */
@@ -5245,11 +5244,6 @@ struct dmrgo_vocoder_codec_vtable_t {
 	int (*silence)(uintptr_t user, uint8_t out[9]);
 };
 
-struct dmrgo_vocoder_register_factory_fn_t {
-	int (*fn)(uintptr_t user, dmrgo_vocoder_codec_t **out);
-	uintptr_t user;
-};
-
 struct dmrgo_codec2_config_t {
 	/* Mode is the Codec2 bit rate. Zero is ModeAuto: the decoder detects Mode2400 or Mode3200 from the padding of the frames of each call, and the encoder uses Mode2400. */
 	dmrgo_codec2_mode_t mode;
@@ -5570,10 +5564,6 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_ERR_TRUNK_UDT_CHARACTER (-216)
 #define DMRGO_ERR_TRUNK_UDT_FORMAT (-217)
 #define DMRGO_ERR_TRUNK_UDT_LENGTH (-218)
-#define DMRGO_ERR_VOCODER_DUPLICATE_CODEC (-139)
-#define DMRGO_ERR_VOCODER_NIL_FACTORY (-140)
-#define DMRGO_ERR_VOCODER_REGISTRY_FULL (-141)
-#define DMRGO_ERR_VOCODER_UNKNOWN_CODEC (-142)
 #define DMRGO_ERR_VOICE_BUSY (-147)
 #define DMRGO_ERR_VOICE_NOT_ACTIVE (-148)
 #define DMRGO_ERR_VOICE_QUEUE_FULL (-149)
@@ -7598,8 +7588,6 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_AUTH_KEY_LEN 16
 /* Go: auth.MaxChallenge. MaxChallenge is the largest challenge that a TSCC sends in the Source Address of a C_AHOY. */
 #define DMRGO_TRUNK_AUTH_MAX_CHALLENGE 16776415
-/* Go: vocoder.MaxCodecs. MaxCodecs is the number of codec factories that Register can hold. */
-#define DMRGO_VOCODER_MAX_CODECS 8
 /* Go: codec2.DefaultFID. DefaultFID is the Full LC Feature set ID QRadioLink sends for Codec2 calls. */
 #define DMRGO_CODEC2_DEFAULT_FID ((dmrgo_enums_feature_set_id_t)194)
 /* Go: codec2.FrameSamples. FrameSamples is the number of 8 kHz PCM samples in one Codec2 frame. */
@@ -7610,8 +7598,6 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_CODEC2_MODE3200 ((dmrgo_codec2_mode_t)3200)
 /* Go: codec2.ModeAuto. decode the mode that the frames of each call show, encode Mode2400 */
 #define DMRGO_CODEC2_MODE_AUTO ((dmrgo_codec2_mode_t)0)
-/* Go: codec2.Name. Name is the name to register the codec under in the vocoder registry. */
-#define DMRGO_CODEC2_NAME "codec2"
 /* Go: dvsi.DefaultTimeout. DefaultTimeout is the time a Codec waits for a reply when Config.Timeout is zero. */
 #define DMRGO_DVSI_DEFAULT_TIMEOUT 500000000
 /* Go: dvsi.FieldChannel0. the next fields are for channel 0 */
@@ -10769,8 +10755,6 @@ int dmrgo_vocoder_append_decoder_frame_samples(dmrgo_vocoder_append_decoder_t *s
 int dmrgo_vocoder_append_decoder_silence(dmrgo_vocoder_append_decoder_t *self, uint8_t out[9]);
 /* dmrgo_vocoder_append_decoder_from_vtable makes a AppendDecoder whose methods call the functions of vt with vt->user. */
 int dmrgo_vocoder_append_decoder_from_vtable(const dmrgo_vocoder_append_decoder_vtable_t *vt, dmrgo_vocoder_append_decoder_t **out);
-/* Go: vocoder.AppendNames. AppendNames appends the sorted names of the registered codecs to dst and returns the extended slice. */
-int dmrgo_vocoder_append_names(dmrgo_string_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* dmrgo_vocoder_codec_free frees the handle. self may be NULL. */
 int dmrgo_vocoder_codec_free(dmrgo_vocoder_codec_t *self);
 /* Go: vocoder.Codec.Close. */
@@ -10793,16 +10777,10 @@ int dmrgo_vocoder_codec_from_vtable(const dmrgo_vocoder_codec_vtable_t *vt, dmrg
 int dmrgo_vocoder_decode_ambe72(const uint8_t slot[9], dmrgo_vocoder_ambe_frame_t *out0, dmrgo_fec_result_t *out1);
 /* Go: vocoder.EncodeAMBE72. EncodeAMBE72 applies the AMBE+2 frame FEC to 49 vocoder information bits and returns the 72 on-air bits of one vocoder frame, packed, the first bit in the most significant bit of byte 0: Golay(24,12) on the first 12 bits, PN-scrambled Golay(23,12) on the next 12, the last 25 bits unprotected, interleaved into the slot. */
 int dmrgo_vocoder_encode_ambe72(const dmrgo_vocoder_ambe_frame_t *info, uint8_t out[9]);
-/* Go: vocoder.Names. Names returns the sorted names of the registered codecs. */
-int dmrgo_vocoder_names(dmrgo_string_t *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: vocoder.New. New creates a codec with the factory registered under name. */
-int dmrgo_vocoder_new(const char *name, size_t name_len, dmrgo_vocoder_codec_t **out);
 /* Go: vocoder.PackAMBEVoice. PackAMBEVoice packs the three frames of a voice burst into the 19-byte IPSC AMBE payload. */
 int dmrgo_vocoder_pack_ambe_voice(const dmrgo_vocoder_ambe_frame_t frames[3], uint8_t out[19]);
 /* Go: vocoder.PackAMBEVoiceFlags. PackAMBEVoiceFlags is PackAMBEVoice that also sets bit 49 when bad[1] is true and bit 99 when bad[2] is true, to flag frames 2 and 3 as bad. */
 int dmrgo_vocoder_pack_ambe_voice_flags(const dmrgo_vocoder_ambe_frame_t frames[3], const bool bad[3], uint8_t out[19]);
-/* Go: vocoder.Register. Register makes a codec factory available under name. */
-int dmrgo_vocoder_register(const char *name, size_t name_len, dmrgo_vocoder_register_factory_fn_t factory);
 /* Go: vocoder.UnpackAMBEVoice. UnpackAMBEVoice is the reverse of PackAMBEVoice. */
 int dmrgo_vocoder_unpack_ambe_voice(const uint8_t data[19], dmrgo_vocoder_ambe_frame_t out[3]);
 /* Go: vocoder.UnpackAMBEVoiceFlags. UnpackAMBEVoiceFlags is the reverse of PackAMBEVoiceFlags. */
@@ -10835,8 +10813,6 @@ int dmrgo_codec2_codec_reset(dmrgo_codec2_codec_t *self);
 int dmrgo_codec2_codec_silence(dmrgo_codec2_codec_t *self, uint8_t out[9]);
 /* Go: codec2.New. New creates a Codec2 codec with the given configuration. */
 int dmrgo_codec2_new(const dmrgo_codec2_config_t *p, dmrgo_codec2_codec_t **out);
-/* Go: codec2.NewFactory. NewFactory returns a vocoder codec factory that creates a Codec with cfg. */
-int dmrgo_codec2_new_factory(const dmrgo_codec2_config_t *cfg, dmrgo_vocoder_register_factory_fn_t *out);
 /* Go: dvsi.AppendChannel. AppendChannel appends a channel packet that asks the chip to decode bits channel bits, packed MSB first in data, which must hold (bits+7)/8 bytes (AMBE-3000R manual Table 106). */
 int dmrgo_dvsi_append_channel(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t channel, const uint8_t *data, size_t data_len, int64_t bits, bool parity);
 /* Go: dvsi.AppendParityMode. AppendParityMode appends a control packet with a PKT_PARITYMODE field that turns the parity field of later packets on or off. */

@@ -8,8 +8,6 @@ const char *dmrgo_strerror(int status);
 
 void *dmrgo__fnptr0(void) { return (void *)dmrgo__fn0; }
 
-void *dmrgo__fnptr1(void) { return (void *)dmrgo__fn1; }
-
 const char *dmrgo__gen_strerror(int status) {
 	switch (status) {
 	case -227:
@@ -206,14 +204,6 @@ const char *dmrgo__gen_strerror(int status) {
 		return "trunk.ErrUDTFormat";
 	case -218:
 		return "trunk.ErrUDTLength";
-	case -139:
-		return "vocoder.ErrDuplicateCodec";
-	case -140:
-		return "vocoder.ErrNilFactory";
-	case -141:
-		return "vocoder.ErrRegistryFull";
-	case -142:
-		return "vocoder.ErrUnknownCodec";
 	case -143:
 		return "codec2.ErrClosed";
 	case -144:

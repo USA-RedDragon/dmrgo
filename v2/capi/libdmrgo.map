@@ -59,7 +59,6 @@
 		dmrgo_codec2_codec_reset;
 		dmrgo_codec2_codec_silence;
 		dmrgo_codec2_new;
-		dmrgo_codec2_new_factory;
 		dmrgo_config_error_error;
 		dmrgo_config_error_last;
 		dmrgo_csbk_new_preambles;
@@ -1546,7 +1545,6 @@
 		dmrgo_vocoder_append_decoder_free;
 		dmrgo_vocoder_append_decoder_from_vtable;
 		dmrgo_vocoder_append_decoder_silence;
-		dmrgo_vocoder_append_names;
 		dmrgo_vocoder_codec_close;
 		dmrgo_vocoder_codec_decode;
 		dmrgo_vocoder_codec_decode_need;
@@ -1558,11 +1556,8 @@
 		dmrgo_vocoder_codec_silence;
 		dmrgo_vocoder_decode_ambe72;
 		dmrgo_vocoder_encode_ambe72;
-		dmrgo_vocoder_names;
-		dmrgo_vocoder_new;
 		dmrgo_vocoder_pack_ambe_voice;
 		dmrgo_vocoder_pack_ambe_voice_flags;
-		dmrgo_vocoder_register;
 		dmrgo_vocoder_unpack_ambe_voice;
 		dmrgo_vocoder_unpack_ambe_voice_flags;
 		dmrgo_voice_end_reason_string;

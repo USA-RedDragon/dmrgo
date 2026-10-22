@@ -17,13 +17,6 @@
 // Codec2 mode, so by default (ModeAuto) the decoder detects it from the
 // padding: Mode2400 leaves bytes 6 to 8 zero and Mode3200 only byte 8.
 //
-// The package does not register itself. A program that creates codecs by
-// name registers it once, before vocoder.New:
-//
-//	if err := vocoder.Register(codec2.Name, codec2.NewFactory(nil)); err != nil {
-//		return err
-//	}
-//
 // libcodec2 is licensed under the GNU LGPL 2.1. This package links it
 // dynamically and contains none of its source. A program that links
 // libcodec2 statically must meet the LGPL terms for that copy.

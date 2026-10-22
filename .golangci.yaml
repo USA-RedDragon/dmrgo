@@ -109,12 +109,11 @@ linters:
         linters:
           - gochecknoglobals
         text: ^(syncPatterns|cachDeinterleaveTable|cachInterleaveTable|allSyncPatterns|voiceSyncPatterns|dataSyncPatterns|shortLCFragmentLCSS) is a global variable
-      # The codec registry is process-wide, like the database/sql driver
-      # registry, and libcodec2 keeps process-wide state that one mutex guards.
-      - path: v2/vocoder/(codec\.go|codec2/codec2_cgo\.go)$
+      # libcodec2 keeps process-wide state that one mutex guards.
+      - path: v2/vocoder/codec2/codec2_cgo\.go$
         linters:
           - gochecknoglobals
-        text: ^(codecs is a global variable|libMu is a global variable)
+        text: ^libMu is a global variable
       # Read-only static values that a call returns or points to, so that it
       # does not allocate: the zero options and response data for a nil
       # argument.

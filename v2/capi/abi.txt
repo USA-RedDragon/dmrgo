@@ -32,10 +32,6 @@ code DMRGO_ERR_TRUNK_CHANNEL_NUMBER -135
 code DMRGO_ERR_TRUNK_NOT_ON_CONTROL -136
 code DMRGO_ERR_TRUNK_NOT_REGISTERED -137
 code DMRGO_ERR_TRUNK_PLAN_FULL -138
-code DMRGO_ERR_VOCODER_DUPLICATE_CODEC -139
-code DMRGO_ERR_VOCODER_NIL_FACTORY -140
-code DMRGO_ERR_VOCODER_REGISTRY_FULL -141
-code DMRGO_ERR_VOCODER_UNKNOWN_CODEC -142
 code DMRGO_ERR_CODEC2_CLOSED -143
 code DMRGO_ERR_CODEC2_FRAME_LENGTH -144
 code DMRGO_ERR_CODEC2_UNAVAILABLE -145
@@ -197,7 +193,6 @@ sym #define DMRGO_CODEC2_FRAME_SAMPLES 160
 sym #define DMRGO_CODEC2_MODE2400 ((dmrgo_codec2_mode_t)2400)
 sym #define DMRGO_CODEC2_MODE3200 ((dmrgo_codec2_mode_t)3200)
 sym #define DMRGO_CODEC2_MODE_AUTO ((dmrgo_codec2_mode_t)0)
-sym #define DMRGO_CODEC2_NAME "codec2"
 sym #define DMRGO_CONSTANTS_ADDRESS_NULL 0
 sym #define DMRGO_CONSTANTS_ALL_MSID 16777215
 sym #define DMRGO_CONSTANTS_ALL_MSID_LOCAL 16777213
@@ -847,10 +842,6 @@ sym #define DMRGO_ERR_TRUNK_STUNNED (-220)
 sym #define DMRGO_ERR_TRUNK_UDT_CHARACTER (-216)
 sym #define DMRGO_ERR_TRUNK_UDT_FORMAT (-217)
 sym #define DMRGO_ERR_TRUNK_UDT_LENGTH (-218)
-sym #define DMRGO_ERR_VOCODER_DUPLICATE_CODEC (-139)
-sym #define DMRGO_ERR_VOCODER_NIL_FACTORY (-140)
-sym #define DMRGO_ERR_VOCODER_REGISTRY_FULL (-141)
-sym #define DMRGO_ERR_VOCODER_UNKNOWN_CODEC (-142)
 sym #define DMRGO_ERR_VOICE_BUSY (-147)
 sym #define DMRGO_ERR_VOICE_NOT_ACTIVE (-148)
 sym #define DMRGO_ERR_VOICE_QUEUE_FULL (-149)
@@ -1339,7 +1330,6 @@ sym #define DMRGO_TRUNK_TSCC_REGISTERED ((dmrgo_trunk_tscc_output_kind_t)2)
 sym #define DMRGO_TRUNK_TSCC_STATUS ((dmrgo_trunk_tscc_output_kind_t)12)
 sym #define DMRGO_TRUNK_TSCC_STUN ((dmrgo_trunk_tscc_output_kind_t)13)
 sym #define DMRGO_TRUNK_TSCC_TICK_MAX_ITEMS (DMRGO_TRUNK_MAX_TSCC_OUTPUTS)
-sym #define DMRGO_VOCODER_MAX_CODECS 8
 sym #define DMRGO_VOICE_DEFAULT_HOLDOFF_MAX 1000000000
 sym #define DMRGO_VOICE_DEFAULT_IDLE_SEARCH 540000000
 sym #define DMRGO_VOICE_DEFAULT_LOST 1000000000
@@ -1463,7 +1453,6 @@ sym int dmrgo_codec2_codec_mode(dmrgo_codec2_codec_t *self, dmrgo_codec2_mode_t 
 sym int dmrgo_codec2_codec_reset(dmrgo_codec2_codec_t *self);
 sym int dmrgo_codec2_codec_silence(dmrgo_codec2_codec_t *self, uint8_t out[9]);
 sym int dmrgo_codec2_new(const dmrgo_codec2_config_t *p, dmrgo_codec2_codec_t **out);
-sym int dmrgo_codec2_new_factory(const dmrgo_codec2_config_t *cfg, dmrgo_vocoder_register_factory_fn_t *out);
 sym int dmrgo_config_error_error(dmrgo_config_error_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_config_error_last(dmrgo_config_error_t *out, bool *ok);
 sym int dmrgo_csbk_new_preambles(const dmrgo_csbk_preambles_config_t *cfg, dmrgo_csbk_preambles_t **out);
@@ -2946,7 +2935,6 @@ sym int dmrgo_vocoder_append_decoder_frame_samples(dmrgo_vocoder_append_decoder_
 sym int dmrgo_vocoder_append_decoder_free(dmrgo_vocoder_append_decoder_t *self);
 sym int dmrgo_vocoder_append_decoder_from_vtable(const dmrgo_vocoder_append_decoder_vtable_t *vt, dmrgo_vocoder_append_decoder_t **out);
 sym int dmrgo_vocoder_append_decoder_silence(dmrgo_vocoder_append_decoder_t *self, uint8_t out[9]);
-sym int dmrgo_vocoder_append_names(dmrgo_string_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_vocoder_codec_close(dmrgo_vocoder_codec_t *self);
 sym int dmrgo_vocoder_codec_decode(dmrgo_vocoder_codec_t *self, const uint8_t slot[9], int16_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_vocoder_codec_decode_need(dmrgo_vocoder_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
@@ -2958,11 +2946,8 @@ sym int dmrgo_vocoder_codec_from_vtable(const dmrgo_vocoder_codec_vtable_t *vt, 
 sym int dmrgo_vocoder_codec_silence(dmrgo_vocoder_codec_t *self, uint8_t out[9]);
 sym int dmrgo_vocoder_decode_ambe72(const uint8_t slot[9], dmrgo_vocoder_ambe_frame_t *out0, dmrgo_fec_result_t *out1);
 sym int dmrgo_vocoder_encode_ambe72(const dmrgo_vocoder_ambe_frame_t *info, uint8_t out[9]);
-sym int dmrgo_vocoder_names(dmrgo_string_t *out, size_t out_cap, size_t *out_len, size_t *out_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-sym int dmrgo_vocoder_new(const char *name, size_t name_len, dmrgo_vocoder_codec_t **out);
 sym int dmrgo_vocoder_pack_ambe_voice(const dmrgo_vocoder_ambe_frame_t frames[3], uint8_t out[19]);
 sym int dmrgo_vocoder_pack_ambe_voice_flags(const dmrgo_vocoder_ambe_frame_t frames[3], const bool bad[3], uint8_t out[19]);
-sym int dmrgo_vocoder_register(const char *name, size_t name_len, dmrgo_vocoder_register_factory_fn_t factory);
 sym int dmrgo_vocoder_unpack_ambe_voice(const uint8_t data[19], dmrgo_vocoder_ambe_frame_t out[3]);
 sym int dmrgo_vocoder_unpack_ambe_voice_flags(const uint8_t data[19], dmrgo_vocoder_ambe_frame_t frames[3], bool bad[3]);
 sym int dmrgo_voice_end_reason_string(dmrgo_voice_end_reason_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -3409,7 +3394,6 @@ type struct dmrgo_trunk_usbdlip_response_t { uint8_t time_elapsed; double longit
 type struct dmrgo_vocoder_ambe_frame_t { uint8_t v[7]; };
 type struct dmrgo_vocoder_append_decoder_vtable_t { uintptr_t user; int (*append_decode)(uintptr_t user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]); int (*close)(uintptr_t user); int (*decode)(uintptr_t user, const uint8_t slot[9], int16_t *out, size_t out_cap, size_t *out_len, size_t *out_need); int (*encode)(uintptr_t user, const int16_t *pcm, size_t pcm_len, uint8_t out[9]); int (*fid)(uintptr_t user, dmrgo_enums_feature_set_id_t *out); int (*frame_samples)(uintptr_t user, int64_t *out); int (*silence)(uintptr_t user, uint8_t out[9]); };
 type struct dmrgo_vocoder_codec_vtable_t { uintptr_t user; int (*close)(uintptr_t user); int (*decode)(uintptr_t user, const uint8_t slot[9], int16_t *out, size_t out_cap, size_t *out_len, size_t *out_need); int (*encode)(uintptr_t user, const int16_t *pcm, size_t pcm_len, uint8_t out[9]); int (*fid)(uintptr_t user, dmrgo_enums_feature_set_id_t *out); int (*frame_samples)(uintptr_t user, int64_t *out); int (*silence)(uintptr_t user, uint8_t out[9]); };
-type struct dmrgo_vocoder_register_factory_fn_t { int (*fn)(uintptr_t user, dmrgo_vocoder_codec_t **out); uintptr_t user; };
 type struct dmrgo_voice_call_options_t { bool has_pi_header; dmrgo_pdu_pi_header_t pi_header; char *talker_alias; size_t talker_alias_len; dmrgo_layer3_talker_alias_data_format_t talker_alias_format; bool has_gps; dmrgo_pdu_flc_gps_info_t gps; bool in_call; bool hang_time; };
 type struct dmrgo_voice_call_t { bool group; uint32_t target; uint32_t source; dmrgo_layer3_service_options_t options; dmrgo_enums_feature_set_id_t fid; dmrgo_pdu_lc_bytes_t lc; dmrgo_voice_origin_t origin; uint32_t stream; };
 type struct dmrgo_voice_event_t { dmrgo_voice_event_kind_t kind; dmrgo_voice_call_t call; dmrgo_enums_voice_burst_type_t position; dmrgo_layer2_raw_burst_t burst; dmrgo_voice_frame_quality_t frames[3]; uint8_t lost; dmrgo_pdu_full_link_control_t lc; uint8_t *text; size_t text_len; dmrgo_voice_end_reason_t reason; dmrgo_voice_stats_t stats; };

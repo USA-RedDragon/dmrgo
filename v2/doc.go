@@ -211,9 +211,6 @@
 //     returned by its decoders.
 //   - mmdvm.ErrShort, mmdvm.ErrLength, mmdvm.ErrCommand: returned by the
 //     transport/mmdvm decoders.
-//   - vocoder.ErrUnknownCodec, vocoder.ErrDuplicateCodec,
-//     vocoder.ErrNilFactory, vocoder.ErrRegistryFull: returned by the
-//     codec registry.
 //   - codec2.ErrUnavailable, codec2.ErrUnsupportedMode,
 //     codec2.ErrFrameLength, codec2.ErrClosed: returned by the Codec2
 //     Codec.

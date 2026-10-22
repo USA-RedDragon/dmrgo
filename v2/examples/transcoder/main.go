@@ -172,10 +172,7 @@ func rms(pcm []int16) float64 {
 }
 
 func codec2Call(w io.Writer, captured *pdu.FullLinkControl) error {
-	if err := vocoder.Register(codec2.Name, codec2.NewFactory(nil)); err != nil && !errors.Is(err, vocoder.ErrDuplicateCodec) {
-		return err
-	}
-	enc, err := vocoder.New(codec2.Name)
+	enc, err := codec2.New(nil)
 	if errors.Is(err, codec2.ErrUnavailable) {
 		_, _ = fmt.Fprintln(w, "codec2 unavailable, skipping")
 		return nil
@@ -218,7 +215,7 @@ func codec2Call(w io.Writer, captured *pdu.FullLinkControl) error {
 	_, _ = fmt.Fprintf(w, "codec2: %d frames -> %d bursts, rx FID %#x, %d -> %d, %d embedded LCs, slots equal %t\n",
 		len(slots), len(bursts), uint8(c.lc.FID), rsrc, rdst, c.embLCs, same)
 
-	dec, err := vocoder.New(codec2.Name)
+	dec, err := codec2.New(nil)
 	if err != nil {
 		return err
 	}
