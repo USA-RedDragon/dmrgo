@@ -45220,7 +45220,7 @@ func dmrgo_trunk_udt_get_data(c_self *C.dmrgo_trunk_udt_t, c_out *C.uint8_t) (rc
 	r0 := h.v.Data
 	_ = r0
 	if c_out != nil {
-		*(*[48]byte)(unsafe.Pointer(&(*(*[48]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+		*(*[46]byte)(unsafe.Pointer(&(*(*[46]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -45236,35 +45236,7 @@ func dmrgo_trunk_udt_set_data(c_self *C.dmrgo_trunk_udt_t, c_v *C.uint8_t) (rc C
 	if c_v == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	h.v.Data = *(*[48]byte)(unsafe.Pointer(c_v))
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_trunk_udt_get_len
-func dmrgo_trunk_udt_get_len(c_self *C.dmrgo_trunk_udt_t, c_out *C.int64_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_trunk_UDT(c_self)
-	r0 := h.v.Len
-	_ = r0
-	if c_out != nil {
-		*c_out = C.int64_t(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_trunk_udt_set_len
-func dmrgo_trunk_udt_set_len(c_self *C.dmrgo_trunk_udt_t, c_v C.int64_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_trunk_UDT(c_self)
-	h.v.Len = int(c_v)
+	h.v.Data = *(*[46]byte)(unsafe.Pointer(c_v))
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}

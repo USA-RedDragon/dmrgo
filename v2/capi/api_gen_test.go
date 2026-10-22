@@ -1514,8 +1514,6 @@ var entryPoints = map[string]any{
 	"dmrgo_trunk_udt_set_header":                                       dmrgo_trunk_udt_set_header,
 	"dmrgo_trunk_udt_get_data":                                         dmrgo_trunk_udt_get_data,
 	"dmrgo_trunk_udt_set_data":                                         dmrgo_trunk_udt_set_data,
-	"dmrgo_trunk_udt_get_len":                                          dmrgo_trunk_udt_get_len,
-	"dmrgo_trunk_udt_set_len":                                          dmrgo_trunk_udt_set_len,
 	"dmrgo_trunk_udt_get_crc_ok":                                       dmrgo_trunk_udt_get_crc_ok,
 	"dmrgo_trunk_udt_set_crc_ok":                                       dmrgo_trunk_udt_set_crc_ok,
 	"dmrgo_trunk_udt_free":                                             dmrgo_trunk_udt_free,

@@ -57,11 +57,11 @@ func TestFollower_UDT(t *testing.T) {
 		}
 		wantKinds(t, "UDT", out, trunk.OutputUDT)
 		u := f.UDT()
-		if u.CRCOK == damage || u.Len != 22 || u.Header.LLIDDestination != msAddr || u.Header.LLIDSource != 3120002 {
+		if u.CRCOK == damage || u.Header.AppendedBlocks != 1 || u.Header.LLIDDestination != msAddr || u.Header.LLIDSource != 3120002 {
 			t.Errorf("damage %v: UDT %+v", damage, u)
 		}
 		if !damage && string(u.Data[:19]) != "hello trunked world" {
-			t.Errorf("UDT data %q", u.Data[:u.Len])
+			t.Errorf("UDT data %q", u.Data[:22])
 		}
 	}
 }

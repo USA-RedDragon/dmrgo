@@ -64,13 +64,15 @@ type tsccUDT struct {
 	ops  [maxUDTOps]udtOp
 	divs [MaxDiversions]diversion
 
-	inSlot enums.Slot
-	in     UDT
-	inWant int
-	inOn   bool
-	inAt   enums.Slot
-	got    UDT
-	usbd   pdu.UnifiedSingleBlockData
+	inSlot   enums.Slot
+	in       UDT
+	inWant   int
+	inN      int
+	inBlocks [4][12]byte
+	inOn     bool
+	inAt     enums.Slot
+	got      UDT
+	usbd     pdu.UnifiedSingleBlockData
 
 	down     [5][12]byte
 	downDT   [5]enums.DataType
@@ -459,7 +461,7 @@ func (t *TSCC) udtInbound(now time.Duration, s enums.Slot, out []TSCCOutput) ([]
 		if !ok || h.Opcode != pdu.UDTOpcodeInboundHeader && h.Opcode != pdu.UDTOpcodeDGNAInboundHeader {
 			return out, true
 		}
-		u.in = UDT{Header: h}
+		u.in, u.inN = UDT{Header: h}, 0
 		u.inWant, u.inOn, u.inAt = int(h.UAB)+1, true, s
 		t.wake(h.LLIDSource, now)
 		return out, true
@@ -467,16 +469,15 @@ func (t *TSCC) udtInbound(now time.Duration, s enums.Slot, out []TSCCOutput) ([]
 		if !u.inOn || s != u.inAt {
 			return out, true
 		}
-		in := &u.in
-		in.blocks[in.n] = d.Data
-		copy(in.Data[in.n*12:], d.Data[:])
-		in.n++
-		if in.n < u.inWant {
+		u.inBlocks[u.inN] = d.Data
+		copy(u.in.Data[u.inN*12:], d.Data[:])
+		u.inN++
+		if u.inN < u.inWant {
 			return out, true
 		}
 		u.inOn = false
-		in.Len = in.n*12 - 2
-		in.CRCOK = pdu.MBCLastBlockCRCOK(in.blocks[:in.n])
+		clear(u.in.Data[12*u.inN-2:])
+		u.in.CRCOK = pdu.MBCLastBlockCRCOK(u.inBlocks[:u.inN])
 		return t.uploaded(now, out), true
 	case *pdu.UnifiedSingleBlockData:
 		u.usbd = *d
