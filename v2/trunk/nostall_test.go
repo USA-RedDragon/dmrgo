@@ -6,9 +6,51 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2"
+	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 	"github.com/USA-RedDragon/dmrgo/v2/trunk"
 )
+
+func TestTSCC_AnswersARepeatedRandomAccess(t *testing.T) {
+	t.Parallel()
+	for _, kind := range []enums.ServiceKind{enums.ServiceKindIndividualVoice, enums.ServiceKindStatusTransport} {
+		cfg := tsccConfig()
+		cfg.Reg = false
+		ts, err := trunk.NewTSCC(cfg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ra := msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetRandomAccess, pdu.RandomAccessPDU{
+			ServiceKind: uint8(kind), TargetAddress: 3120002, SourceAddress: 3120001}))
+		now := time.Duration(0)
+		waits := func() int {
+			n := 0
+			for range 20 {
+				for _, o := range ts.Tick(now, nil) {
+					b, err := layer2.NewBurstFromBytes(o.Burst)
+					if o.Kind != trunk.TSCCBurst || o.Channel != tsccChannel || err != nil {
+						continue
+					}
+					if c, ok := b.Data.(*pdu.CSBK); ok {
+						if a, ok := c.AsAckOutbound(); ok && a.TargetAddress == 3120001 && enums.AckReason(a.ReasonCode) == enums.AckReasonWait {
+							n++
+						}
+					}
+				}
+				now += 30 * time.Millisecond
+			}
+			return n
+		}
+		ts.Tick(now, nil)
+		for try := 1; try <= 2; try++ {
+			ts.Inbound(now, tsccChannel, &ra, layer2.Hint{Slot: enums.Slot1}, nil)
+			if n := waits(); n == 0 {
+				t.Errorf("%v: random access %d got no C_ACKD WAIT", kind, try)
+			}
+		}
+	}
+}
 
 func TestTSCC_UploadDuringDownloadWaitsForIt(t *testing.T) {
 	t.Parallel()
