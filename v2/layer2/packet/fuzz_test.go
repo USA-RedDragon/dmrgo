@@ -383,7 +383,9 @@ func (s *session) samePacket(m *packet.Message) bool {
 		return false
 	}
 	pad := s.pad
-	if fullFlag(&m.Header) && (m.Header.Format() == pdu.FormatUnconfirmed || m.Header.Format() == pdu.FormatConfirmed) {
+	switch f := m.Header.Format(); {
+	case f == pdu.FormatShortDataDefined || f == pdu.FormatShortDataRawOrStatusPrecoded,
+		fullFlag(&m.Header) && (f == pdu.FormatUnconfirmed || f == pdu.FormatConfirmed):
 		pad = 0
 	}
 	return len(m.Data) == len(s.payload)+pad && bytes.Equal(m.Data[:len(s.payload)], s.payload) &&
@@ -399,7 +401,12 @@ func (s *session) wellFormed(m *packet.Message) bool {
 		return false
 	}
 	pad := 0
-	if h := m.Header; fullFlag(&h) {
+	h := m.Header
+	if d, ok := h.AsDefinedData(); ok {
+		pad = int(d.BitPadding / 8)
+	} else if r, ok := h.AsRawData(); ok {
+		pad = int(r.BitPadding / 8)
+	} else if fullFlag(&h) {
 		if u, ok := h.AsUnconfirmed(); ok {
 			pad = int(u.PadOctetCount)
 		} else if c, ok := h.AsConfirmed(); ok {
