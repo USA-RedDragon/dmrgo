@@ -368,11 +368,17 @@ type block struct {
 func blockOf(d layer2.Data) (block, bool) {
 	switch b := d.(type) {
 	case *pdu.Rate12Data:
-		return block{enums.DataTypeRate12, b.Data[:]}, true
+		if b != nil {
+			return block{enums.DataTypeRate12, b.Data[:]}, true
+		}
 	case *pdu.Rate34Data:
-		return block{enums.DataTypeRate34, b.Data[:]}, true
+		if b != nil {
+			return block{enums.DataTypeRate34, b.Data[:]}, true
+		}
 	case *pdu.Rate1Data:
-		return block{enums.DataTypeRate1, b.Data[:]}, true
+		if b != nil {
+			return block{enums.DataTypeRate1, b.Data[:]}, true
+		}
 	}
 	return block{}, false
 }
