@@ -2019,6 +2019,7 @@ sym int dmrgo_ipscsession_master_max_output_octets(dmrgo_ipscsession_master_t *s
 sym int dmrgo_ipscsession_master_max_outputs(dmrgo_ipscsession_master_t *self, int64_t *out);
 sym int dmrgo_ipscsession_master_packet(dmrgo_ipscsession_master_t *self, dmrgo_duration_t now, const dmrgo_ipscsession_addr_t *from, const uint8_t *p, size_t p_len, const uint8_t key[20], dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ipscsession_master_packet_need(dmrgo_ipscsession_master_t *self, dmrgo_duration_t now, const dmrgo_ipscsession_addr_t *from, const uint8_t *p, size_t p_len, const uint8_t key[20], size_t *items, size_t *arena);
+sym int dmrgo_ipscsession_master_peer(dmrgo_ipscsession_master_t *self, uint32_t id, dmrgo_ipscsession_peer_info_t *info, bool *ok);
 sym int dmrgo_ipscsession_master_peer_at(dmrgo_ipscsession_master_t *self, int64_t i, dmrgo_ipscsession_peer_info_t *out);
 sym int dmrgo_ipscsession_master_peers(dmrgo_ipscsession_master_t *self, int64_t *out);
 sym int dmrgo_ipscsession_master_reset(dmrgo_ipscsession_master_t *self);
@@ -2041,6 +2042,7 @@ sym int dmrgo_ipscsession_peer_max_output_octets(dmrgo_ipscsession_peer_t *self,
 sym int dmrgo_ipscsession_peer_max_outputs(dmrgo_ipscsession_peer_t *self, int64_t *out);
 sym int dmrgo_ipscsession_peer_packet(dmrgo_ipscsession_peer_t *self, dmrgo_duration_t now, const dmrgo_ipscsession_addr_t *from, const uint8_t *b, size_t b_len, dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 sym int dmrgo_ipscsession_peer_packet_need(dmrgo_ipscsession_peer_t *self, dmrgo_duration_t now, const dmrgo_ipscsession_addr_t *from, const uint8_t *b, size_t b_len, size_t *items, size_t *arena);
+sym int dmrgo_ipscsession_peer_peer(dmrgo_ipscsession_peer_t *self, uint32_t id, dmrgo_ipscsession_peer_info_t *info, bool *ok);
 sym int dmrgo_ipscsession_peer_peer_at(dmrgo_ipscsession_peer_t *self, int64_t i, dmrgo_ipscsession_peer_info_t *out);
 sym int dmrgo_ipscsession_peer_peers(dmrgo_ipscsession_peer_t *self, int64_t *out);
 sym int dmrgo_ipscsession_peer_reset(dmrgo_ipscsession_peer_t *self);

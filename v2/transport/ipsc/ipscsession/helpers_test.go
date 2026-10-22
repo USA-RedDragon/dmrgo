@@ -16,6 +16,10 @@ func must(b []byte, err error) []byte {
 	return b
 }
 
+func peerOK(_ ipscsession.PeerInfo, ok bool) bool {
+	return ok
+}
+
 func kinds(out []ipscsession.Output) []ipscsession.OutputKind {
 	k := make([]ipscsession.OutputKind, len(out))
 	for i, o := range out {

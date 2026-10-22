@@ -38933,6 +38933,26 @@ func dmrgo_ipscsession_master_packet(c_self *C.dmrgo_ipscsession_master_t, c_now
 	return C.DMRGO_OK
 }
 
+//export dmrgo_ipscsession_master_peer
+func dmrgo_ipscsession_master_peer(c_self *C.dmrgo_ipscsession_master_t, c_id C.uint32_t, c_info *C.dmrgo_ipscsession_peer_info_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_transport_ipsc_ipscsession_Master(c_self)
+	r0, r1 := h.v.Peer(uint32(c_id))
+	_ = r0
+	_ = r1
+	if c_info != nil {
+		out_transport_ipsc_ipscsession_PeerInfo(&(*c_info), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_ipscsession_master_peer_at
 func dmrgo_ipscsession_master_peer_at(c_self *C.dmrgo_ipscsession_master_t, c_i C.int64_t, c_out *C.dmrgo_ipscsession_peer_info_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -39560,6 +39580,26 @@ func dmrgo_ipscsession_peer_packet(c_self *C.dmrgo_ipscsession_peer_t, c_now C.d
 	*c_dst_len = C.size_t(nf_dst)
 	if c_arena_len != nil {
 		*c_arena_len = C.size_t(oc.need)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ipscsession_peer_peer
+func dmrgo_ipscsession_peer_peer(c_self *C.dmrgo_ipscsession_peer_t, c_id C.uint32_t, c_info *C.dmrgo_ipscsession_peer_info_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_transport_ipsc_ipscsession_Peer(c_self)
+	r0, r1 := h.v.Peer(uint32(c_id))
+	_ = r0
+	_ = r1
+	if c_info != nil {
+		out_transport_ipsc_ipscsession_PeerInfo(&(*c_info), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
 	}
 	return C.DMRGO_OK
 }

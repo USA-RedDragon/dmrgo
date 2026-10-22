@@ -10142,6 +10142,8 @@ int dmrgo_ipscsession_master_max_outputs(dmrgo_ipscsession_master_t *self, int64
 int dmrgo_ipscsession_master_packet_need(dmrgo_ipscsession_master_t *self, dmrgo_duration_t now, const dmrgo_ipscsession_addr_t *from, const uint8_t *p, size_t p_len, const uint8_t key[20], size_t *items, size_t *arena);
 /* Go: ipscsession.Master.Packet. Packet takes the packet p from the address from. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_master_packet_need gives. key may be NULL. */
 int dmrgo_ipscsession_master_packet(dmrgo_ipscsession_master_t *self, dmrgo_duration_t now, const dmrgo_ipscsession_addr_t *from, const uint8_t *p, size_t p_len, const uint8_t key[20], dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ipscsession.Master.Peer. Peer returns the registered peer id. */
+int dmrgo_ipscsession_master_peer(dmrgo_ipscsession_master_t *self, uint32_t id, dmrgo_ipscsession_peer_info_t *info, bool *ok);
 /* Go: ipscsession.Master.PeerAt. PeerAt returns registered peer i, or the zero PeerInfo when i is not below Peers. */
 int dmrgo_ipscsession_master_peer_at(dmrgo_ipscsession_master_t *self, int64_t i, dmrgo_ipscsession_peer_info_t *out);
 /* Go: ipscsession.Master.Peers. Peers returns the number of registered peers. */
@@ -10186,6 +10188,8 @@ int dmrgo_ipscsession_peer_max_outputs(dmrgo_ipscsession_peer_t *self, int64_t *
 int dmrgo_ipscsession_peer_packet_need(dmrgo_ipscsession_peer_t *self, dmrgo_duration_t now, const dmrgo_ipscsession_addr_t *from, const uint8_t *b, size_t b_len, size_t *items, size_t *arena);
 /* Go: ipscsession.Peer.Packet. Packet takes the packet p from the address from. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_ipscsession_peer_packet_need gives. */
 int dmrgo_ipscsession_peer_packet(dmrgo_ipscsession_peer_t *self, dmrgo_duration_t now, const dmrgo_ipscsession_addr_t *from, const uint8_t *b, size_t b_len, dmrgo_ipscsession_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
+/* Go: ipscsession.Peer.Peer. Peer returns the peer id of the list. */
+int dmrgo_ipscsession_peer_peer(dmrgo_ipscsession_peer_t *self, uint32_t id, dmrgo_ipscsession_peer_info_t *info, bool *ok);
 /* Go: ipscsession.Peer.PeerAt. PeerAt returns peer i of the list, or the zero PeerInfo when i is not below Peers. */
 int dmrgo_ipscsession_peer_peer_at(dmrgo_ipscsession_peer_t *self, int64_t i, dmrgo_ipscsession_peer_info_t *out);
 /* Go: ipscsession.Peer.Peers. Peers returns the number of other peers that the Peer knows from the peer list. */

@@ -50,7 +50,7 @@ func TestPeerRegistration(t *testing.T) {
 		t.Fatal("second registration reply")
 	}
 	list := ipsc.AppendPeerListReply(nil, 1, []ipsc.PeerEntry{{ID: 9, IP: masterAddr.IP}, {ID: 7, IP: other.IP, Port: other.Port, Mode: 0x6a}})
-	if out := p.Packet(0, masterAddr, list, nil); len(out) != 1 || p.Peers() != 1 || p.PeerAt(0).ID != 7 || p.PeerAt(-1).ID != 0 {
+	if out := p.Packet(0, masterAddr, list, nil); len(out) != 1 || p.Peers() != 1 || p.PeerAt(0).ID != 7 || p.PeerAt(-1).ID != 0 || !peerOK(p.Peer(7)) || peerOK(p.Peer(8)) {
 		t.Fatalf("list %v %d", kinds(out), p.Peers())
 	}
 	voice := []byte{byte(ipsc.OpGroupVoice), 0, 0, 0, 7, 1}

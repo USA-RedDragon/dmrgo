@@ -158,6 +158,19 @@ func (p *Peer) PeerAt(i int) PeerInfo {
 	return p.l.peers[i].info
 }
 
+// Peer returns the peer id of the list. ok is false when the list does not
+// have id.
+func (p *Peer) Peer(id uint32) (info PeerInfo, ok bool) {
+	if p == nil {
+		return PeerInfo{}, false
+	}
+
+	if i := p.l.find(id); i >= 0 {
+		return p.l.peers[i].info, true
+	}
+	return PeerInfo{}, false
+}
+
 // Sign appends the authentication trailer of the packet in dst to dst
 // when the config has Auth, and returns dst as it is without. It returns
 // dst unchanged and dmrgo.ErrNilReceiver for a nil p. It allocates only
