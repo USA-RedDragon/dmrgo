@@ -8,258 +8,254 @@ const char *dmrgo_strerror(int status);
 
 void *dmrgo__fnptr0(void) { return (void *)dmrgo__fn0; }
 
-void *dmrgo__fnptr1(void) { return (void *)dmrgo__fn1; }
-
 const char *dmrgo__gen_strerror(int status) {
 	switch (status) {
-	case -227:
-		return "dmrgo.ConfigError";
-	case -238:
-		return "dmrgo.ErrNilArgument";
-	case -228:
-		return "dmrgo.ErrNilReceiver";
-	case -239:
-		return "dmrgo.ErrZeroValue";
 	case -100:
-		return "dmrgo.FieldRangeError";
+		return "dmrgo: config error";
+	case -102:
+		return "dmrgo: nil argument";
+	case -103:
+		return "dmrgo: method called on a nil receiver";
+	case -104:
+		return "dmrgo: zero value; make it with its constructor";
+	case -101:
+		return "dmrgo: field range error";
+	case -105:
+		return "bs: slot must be 1 or 2";
+	case -106:
+		return "csbk: request in progress";
 	case -107:
-		return "bs.ErrSlot";
+		return "csbk: CSBK without target and source addresses";
 	case -108:
-		return "csbk.ErrBusy";
+		return "data: message in progress";
 	case -109:
-		return "csbk.ErrNoAddresses";
-	case -169:
-		return "data.ErrBusy";
+		return "fec: uncorrectable";
 	case -110:
-		return "fec.ErrUncorrectable";
-	case -229:
-		return "hdap.ErrLength";
-	case -230:
-		return "hdap.ErrShort";
-	case -231:
-		return "hdap.ErrSignature";
-	case -232:
-		return "hdap.ErrText";
-	case -172:
-		return "ip.ErrChecksum";
-	case -173:
-		return "ip.ErrFragment";
-	case -174:
-		return "ip.ErrLength";
-	case -237:
-		return "ip.ErrNoICMP";
-	case -175:
-		return "ip.ErrProtocol";
-	case -176:
-		return "ip.ErrSAP";
-	case -177:
-		return "ip.ErrShort";
-	case -178:
-		return "ip.ErrVersion";
+		return "hdap: length does not match the message";
 	case -111:
-		return "layer2.ErrColorCodeMismatch";
-	case -224:
-		return "layer2.ErrDataType";
+		return "hdap: message too short";
 	case -112:
-		return "layer2.ErrEmbeddedLCSequence";
+		return "hdap: fixed octet does not match";
 	case -113:
-		return "layer2.ErrEmbeddedLCUncorrectable";
+		return "hdap: number holds a character that is not a digit";
 	case -114:
-		return "layer2.ErrReservedDataType";
+		return "ip: checksum does not match";
+	case -115:
+		return "ip: packet is a fragment";
 	case -116:
-		return "layer2.ErrShortLCSequence";
-	case -225:
-		return "layer2.ErrSyncSource";
-	case -226:
-		return "layer2.ErrVoicePosition";
+		return "ip: length does not match the packet";
 	case -117:
-		return "layer2.ErrVoiceTerminated";
+		return "ip: no ICMP error message about this packet";
 	case -118:
-		return "packet.ErrBlocksMissing";
+		return "ip: packet carries another protocol";
 	case -119:
-		return "packet.ErrFormat";
+		return "ip: SAP does not carry IP";
 	case -120:
-		return "packet.ErrHeaderCRC";
+		return "ip: packet too short";
 	case -121:
-		return "packet.ErrMessageCRC";
+		return "ip: not an IPv4 packet";
 	case -122:
-		return "packet.ErrNoFirstTry";
+		return "layer2: color code mismatch";
 	case -123:
-		return "packet.ErrNoHeader";
+		return "layer2: the data burst cannot carry this data type";
 	case -124:
-		return "packet.ErrNoRetryBlocks";
-	case -240:
-		return "packet.ErrNoRoom";
+		return "layer2: embedded LC fragment out of sequence";
 	case -125:
-		return "packet.ErrRate";
+		return "layer2: embedded lc uncorrectable";
 	case -126:
-		return "packet.ErrRateChange";
+		return "layer2: reserved data type";
 	case -127:
-		return "packet.ErrResponseData";
+		return "layer2: short LC fragment out of sequence";
 	case -128:
-		return "packet.ErrTooLong";
+		return "layer2: unknown sync source";
 	case -129:
-		return "packet.ErrUnexpectedRetry";
-	case -170:
-		return "pdu.ErrCapacityPlusIncomplete";
-	case -171:
-		return "pdu.ErrCapacityPlusSequence";
+		return "layer2: voice burst position out of range";
 	case -130:
-		return "pdu.ErrNoAddresses";
-	case -234:
-		return "pdu.ErrNoServiceOptions";
+		return "layer2: voice transmission already terminated";
 	case -131:
-		return "pdu.ErrTalkerAliasIncomplete";
+		return "packet: confirmed blocks failed CRC-9: fec: uncorrectable";
 	case -132:
-		return "pdu.ErrTalkerAliasInvalidUTF8";
+		return "packet: header format does not carry segmented data";
 	case -133:
-		return "pdu.ErrTalkerAliasLength";
-	case -196:
-		return "location.ErrNoFix";
-	case -185:
-		return "ars.ErrLength";
-	case -186:
-		return "ars.ErrShort";
-	case -187:
-		return "lrrp.ErrLength";
-	case -188:
-		return "lrrp.ErrShort";
-	case -189:
-		return "lrrp.ErrToken";
-	case -190:
-		return "lrrp.ErrVarint";
-	case -183:
-		return "tms.ErrLength";
-	case -184:
-		return "tms.ErrShort";
-	case -152:
-		return "nmea.ErrChecksum";
-	case -153:
-		return "nmea.ErrField";
-	case -154:
-		return "nmea.ErrSentence";
-	case -179:
-		return "shortdata.ErrCharacter";
-	case -180:
-		return "shortdata.ErrFormat";
-	case -181:
-		return "shortdata.ErrLength";
-	case -182:
-		return "shortdata.ErrShort";
-	case -191:
-		return "sms.ErrFormat";
-	case -192:
-		return "sms.ErrLength";
-	case -222:
-		return "sms.ErrNil";
-	case -193:
-		return "sms.ErrNotText";
-	case -194:
-		return "sms.ErrShort";
-	case -195:
-		return "sms.ErrSignature";
-	case -201:
-		return "dmrd.ErrCommand";
-	case -202:
-		return "dmrd.ErrLength";
-	case -203:
-		return "dmrd.ErrShort";
-	case -204:
-		return "dmrd.ErrSignature";
-	case -205:
-		return "dmrd.ErrText";
-	case -233:
-		return "hytera.ErrCode";
-	case -197:
-		return "hytera.ErrLength";
-	case -198:
-		return "hytera.ErrShort";
-	case -199:
-		return "hytera.ErrSignature";
-	case -210:
-		return "ipsc.ErrCommand";
-	case -211:
-		return "ipsc.ErrLength";
-	case -212:
-		return "ipsc.ErrShort";
-	case -213:
-		return "mmdvm.ErrCommand";
-	case -214:
-		return "mmdvm.ErrLength";
-	case -215:
-		return "mmdvm.ErrShort";
+		return "packet: data header CRC does not match: fec: uncorrectable";
 	case -134:
-		return "trunk.ErrBusy";
+		return "packet: message CRC-32 does not match: fec: uncorrectable";
 	case -135:
-		return "trunk.ErrChannelNumber";
-	case -219:
-		return "trunk.ErrNoCall";
+		return "packet: packet started from a later try";
 	case -136:
-		return "trunk.ErrNotOnControl";
+		return "packet: data block without a header";
 	case -137:
-		return "trunk.ErrNotRegistered";
+		return "packet: response data flags no block to resend";
 	case -138:
-		return "trunk.ErrPlanFull";
-	case -220:
-		return "trunk.ErrStunned";
-	case -216:
-		return "trunk.ErrUDTCharacter";
-	case -217:
-		return "trunk.ErrUDTFormat";
-	case -218:
-		return "trunk.ErrUDTLength";
+		return "packet: packet has more blocks than the storage holds";
 	case -139:
-		return "vocoder.ErrDuplicateCodec";
+		return "packet: data type is not rate 1/2, 3/4 or 1 coded";
 	case -140:
-		return "vocoder.ErrNilFactory";
+		return "packet: data type changed within a packet";
 	case -141:
-		return "vocoder.ErrRegistryFull";
+		return "packet: invalid response data blocks";
 	case -142:
-		return "vocoder.ErrUnknownCodec";
+		return "packet: payload needs too many blocks";
 	case -143:
-		return "codec2.ErrClosed";
+		return "packet: later try of a packet that is not in progress";
 	case -144:
-		return "codec2.ErrFrameLength";
+		return "pdu: capacity plus site status incomplete";
 	case -145:
-		return "codec2.ErrUnavailable";
+		return "pdu: capacity plus site status block out of sequence";
 	case -146:
-		return "codec2.ErrUnsupportedMode";
-	case -155:
-		return "dvsi.ErrBits";
-	case -156:
-		return "dvsi.ErrChannel";
-	case -157:
-		return "dvsi.ErrClosed";
-	case -158:
-		return "dvsi.ErrField";
-	case -159:
-		return "dvsi.ErrIncomplete";
-	case -160:
-		return "dvsi.ErrLength";
-	case -161:
-		return "dvsi.ErrParity";
-	case -162:
-		return "dvsi.ErrPort";
-	case -163:
-		return "dvsi.ErrSamples";
-	case -164:
-		return "dvsi.ErrStart";
-	case -165:
-		return "dvsi.ErrStatus";
-	case -166:
-		return "dvsi.ErrTimeout";
-	case -167:
-		return "dvsi.ErrType";
+		return "pdu: PDU has no address fields";
 	case -147:
-		return "voice.ErrBusy";
-	case -241:
-		return "voice.ErrInterruptBusy";
+		return "pdu: the data type has no RS(12,9) Full LC mask";
 	case -148:
-		return "voice.ErrNotActive";
+		return "pdu: PDU has no group or individual flag";
 	case -149:
-		return "voice.ErrQueueFull";
+		return "pdu: PDU has no Service Options field";
 	case -150:
-		return "voice.ErrTimedOut";
+		return "pdu: talker alias blocks missing";
+	case -151:
+		return "pdu: talker alias is not valid UTF-8";
+	case -152:
+		return "pdu: talker alias too long";
+	case -153:
+		return "pdu: the opcode does not select the payload";
+	case -154:
+		return "location: packet carries no position";
+	case -155:
+		return "ars: length does not match the message";
+	case -156:
+		return "ars: message too short";
+	case -157:
+		return "lrrp: length does not match the message";
+	case -158:
+		return "lrrp: message too short";
+	case -159:
+		return "lrrp: unknown token";
+	case -160:
+		return "lrrp: number does not fit its field";
+	case -161:
+		return "tms: length does not match the message";
+	case -162:
+		return "tms: message too short";
+	case -163:
+		return "nmea: checksum is missing or does not match";
+	case -164:
+		return "nmea: field is malformed or out of range";
+	case -165:
+		return "nmea: not an RMC sentence";
+	case -166:
+		return "shortdata: character does not fit the DD format";
+	case -167:
+		return "shortdata: DD format is not a supported text coding";
+	case -168:
+		return "shortdata: length does not match the data";
+	case -169:
+		return "shortdata: data too short";
+	case -170:
+		return "sms: unknown format";
+	case -171:
+		return "sms: length does not match the payload";
+	case -172:
+		return "sms: nil argument";
+	case -173:
+		return "sms: packet is not a text message";
+	case -174:
+		return "sms: payload too short";
+	case -175:
+		return "sms: AnyTone text without its prefix";
+	case -176:
+		return "dmrd: packet is not a message of this kind";
+	case -177:
+		return "dmrd: packet length does not match its message";
+	case -178:
+		return "dmrd: packet too short";
+	case -179:
+		return "dmrd: packet does not have the octets of its message";
+	case -180:
+		return "dmrd: number holds a character that is not a digit";
+	case -181:
+		return "hytera: slot or color code field is not one of its values";
+	case -182:
+		return "hytera: packet length does not match its message";
+	case -183:
+		return "hytera: packet too short";
+	case -184:
+		return "hytera: packet does not have the octets of its message";
+	case -185:
+		return "ipsc: packet is not a message of this kind";
+	case -186:
+		return "ipsc: packet length does not match its message";
+	case -187:
+		return "ipsc: packet too short";
+	case -188:
+		return "mmdvm: frame is not a message of this kind";
+	case -189:
+		return "mmdvm: payload length does not match its message";
+	case -190:
+		return "mmdvm: payload too short";
+	case -191:
+		return "trunk: request in progress";
+	case -192:
+		return "trunk: channel number out of range";
+	case -195:
+		return "trunk: no call";
+	case -193:
+		return "trunk: not on a TSCC";
+	case -194:
+		return "trunk: not registered";
+	case -196:
+		return "trunk: table full";
+	case -197:
+		return "trunk: stunned";
+	case -198:
+		return "trunk: character out of range for the UDT format";
+	case -199:
+		return "trunk: appended data in another UDT format";
+	case -200:
+		return "trunk: appended data length out of range";
+	case -201:
+		return "codec2: codec is closed";
+	case -202:
+		return "codec2: wrong number of samples";
+	case -203:
+		return "codec2: built without libcodec2";
+	case -204:
+		return "codec2: unsupported mode";
+	case -205:
+		return "dvsi: bad number of channel bits";
+	case -206:
+		return "dvsi: bad channel";
+	case -207:
+		return "dvsi: codec is closed";
+	case -208:
+		return "dvsi: bad field";
+	case -209:
+		return "dvsi: incomplete packet";
+	case -210:
+		return "dvsi: bad packet length";
+	case -211:
+		return "dvsi: bad parity";
+	case -212:
+		return "dvsi: port returned a bad byte count";
+	case -213:
+		return "dvsi: bad number of samples";
+	case -214:
+		return "dvsi: no start byte";
+	case -215:
+		return "dvsi: device reported an error";
+	case -216:
+		return "dvsi: device timed out";
+	case -217:
+		return "dvsi: unknown packet type";
+	case -218:
+		return "voice: transmission in progress";
+	case -219:
+		return "voice: interrupt request in progress";
+	case -220:
+		return "voice: no call takes voice";
+	case -221:
+		return "voice: queue full";
+	case -222:
+		return "voice: transmit timeout";
 	}
 	return "unknown status";
 }
@@ -273,6 +269,7 @@ void dmrgo__fail(int code) {
 	size_t n = strlen(m);
 	last.code = code;
 	last.kind = 0;
+	last.chain_len = 0;
 	last.msg_len = n;
 	if (n > sizeof last.msg - 1)
 		n = sizeof last.msg - 1;

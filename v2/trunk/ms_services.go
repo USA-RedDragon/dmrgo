@@ -17,10 +17,6 @@ const (
 	reqIP
 )
 
-// MaxSupplementary is the most octets of supplementary_user data: four
-// appended UDT blocks less the CRC (ETSI TS 102 361-4 clause 6.4.13).
-const MaxSupplementary = 4*12 - 2
-
 const (
 	counterBlock = 120 * time.Millisecond
 	psFrame      = 4 * counterBlock
@@ -56,9 +52,8 @@ type msSvc struct {
 	ipv6     bool
 	ipRemove bool
 
-	supl    [MaxSupplementary]byte
-	suplLen int
-	suplFmt uint8
+	supl    Appended
+	hasSupl bool
 
 	psRQ       uint8
 	psOffset   uint8
@@ -95,7 +90,7 @@ func (m *MS) initSvc(cfg *MSConfig) error {
 func (m *MS) resetSvc() {
 	s := &m.svc
 	s.stunWait, s.intOn, s.asleep, s.hasCounter, s.massOn, s.hasStat = false, false, false, false, false, false
-	s.psOffset, s.suplLen = 0, 0
+	s.psOffset, s.hasSupl = 0, false
 	m.f.noFollow, m.off = s.stunned, s.killed
 }
 
@@ -155,22 +150,26 @@ func (m *MS) SetStatus(s Status) error {
 	return nil
 }
 
-// SetSupplementary sets the supplementary_user data of the next request
-// that asks for it: a SendStatus, or a Call or CallData with IsSuppData.
-// The MS uploads it when the TSCC asks for it with a C_AHOY from SUPLI.
-// format is the UDT_Format of the data. Empty data clears it. It returns a
-// *dmrgo.ConfigError for data over MaxSupplementary octets or a format over 15.
-// (ETSI TS 102 361-4 clause 6.4.13)
-func (m *MS) SetSupplementary(format uint8, data []byte) error {
+// SetSupplementary sets the appended data a as the supplementary_user data
+// of the next request that asks for it: a SendStatus, or a Call or CallData
+// with IsSuppData. The MS uploads it when the TSCC asks for it with a
+// C_AHOY from SUPLI, and keeps a copy until then. A nil a clears it. It
+// returns ErrUDTLength for an a with Blocks out of range. (ETSI TS 102 361-4
+// clause 6.4.13)
+func (m *MS) SetSupplementary(a *Appended) error {
 	if m == nil {
 		return dmrgo.ErrNilReceiver
 	}
 
-	if len(data) > MaxSupplementary || format > 15 {
-		return errSupplementary
-	}
 	s := &m.svc
-	s.suplFmt, s.suplLen = format, copy(s.supl[:], data)
+	if a == nil {
+		s.hasSupl = false
+		return nil
+	}
+	if _, err := a.size(); err != nil {
+		return err
+	}
+	s.supl, s.hasSupl = *a, true
 	return nil
 }
 
@@ -203,7 +202,7 @@ func (m *MS) PollStatus(now time.Duration, target uint32) error {
 }
 
 func (m *MS) statusRequest(now time.Duration, req request, group bool, target uint32, st Status) error {
-	o := layer3.StatusServiceOptions{Group: group, IsSuppData: m.svc.suplLen > 0, StatusHigh: uint8(st) >> 2}
+	o := layer3.StatusServiceOptions{Group: group, IsSuppData: m.svc.hasSupl, StatusHigh: uint8(st) >> 2}
 	field, _ := o.Field()
 	if err := m.request(now, enums.ServiceKindStatusTransport, target, field, false); err != nil {
 		return err
@@ -220,8 +219,8 @@ func (m *MS) svcStart(options uint8) {
 func (m *MS) suplExtra(options uint8) uint8 {
 	s := &m.svc
 	var v uint8
-	if s.suplLen > 0 {
-		v = uint8((s.suplLen+1)/12&3) << 2
+	if s.hasSupl {
+		v = uab(s.supl.Blocks) << 2
 	}
 	switch m.kind {
 	case enums.ServiceKindIndividualVoice, enums.ServiceKindTalkgroupVoice, enums.ServiceKindIndividualPacketData, enums.ServiceKindTalkgroupPacketData:
@@ -365,13 +364,15 @@ func (m *MS) svcAhoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Ou
 		}
 		return m.svcUpload(now, m.replySlot(h), constants.GatewayIPI, 6, s.ip[:n], out), true
 	case !a.Group && a.SourceAddress == constants.GatewaySUPLI:
-		if m.req != reqCall && m.req != reqStatus || s.suplLen == 0 {
+		if m.req != reqCall && m.req != reqStatus || !s.hasSupl {
 			return out, true
 		}
 		m.ra, m.waitAnswer, m.reqUntil = raIdle, true, now+m.answerTO()
-		n := min(s.suplLen, (int(a.UAB)+1)*12-2)
-		out = m.svcUpload(now, m.replySlot(h), constants.GatewaySUPLI, s.suplFmt, s.supl[:n], out)
-		s.suplLen = 0
+		if n := int(a.UAB) + 1; n < s.supl.Blocks {
+			s.supl.Blocks, s.supl.PadNibble = n, 0
+		}
+		out = m.sendUDT(now+frame, m.replySlot(h), &s.supl, constants.GatewaySUPLI, false, false, true, pdu.UDTOpcodeInboundHeader, out)
+		s.hasSupl = false
 		return out, true
 	case kind == enums.ServiceKindStatusTransport:
 		if s.stunned {

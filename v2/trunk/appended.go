@@ -581,7 +581,7 @@ func (u *UDT) Appended() Appended {
 		return Appended{}
 	}
 
-	a := Appended{Format: u.Header.UDTFormat, PadNibble: u.Header.PadNibble, Blocks: int(u.Header.AppendedBlocks&3) + 1}
+	a := Appended{Format: u.Header.UDTFormat, PadNibble: u.Header.PadNibble, Blocks: int(u.Header.UAB&3) + 1}
 	copy(a.Data[:], u.Data[:12*a.Blocks-2])
 	return a
 }

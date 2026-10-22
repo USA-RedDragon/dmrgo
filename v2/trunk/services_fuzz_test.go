@@ -84,7 +84,7 @@ func runMSServices(t *testing.T, pool burstPool, in []byte) {
 			out = ms.Tick(now, out[:0])
 		case 5:
 			_ = ms.SendStatus(now, arg&1 != 0, uint32(arg)+1, trunk.Status(arg>>1))
-			_ = ms.SetSupplementary(arg&15, []byte{arg, arg})
+			_ = ms.SetSupplementary(&trunk.Appended{Format: enums.UDTFormat(arg & 15), Blocks: int(arg >> 4 & 7), Data: [trunk.MaxAppendedOctets]byte{arg, arg}})
 			out = out[:0]
 		case 6:
 			_ = ms.PollStatus(now, uint32(arg)+1)

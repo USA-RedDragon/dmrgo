@@ -395,10 +395,10 @@ const (
 // UDT is a Unified Data Transport delivery of a TSCC: a C_UDTHD header
 // and its 1 to 4 appended rate 1/2 blocks (ETSI TS 102 361-4 clause 6.5).
 type UDT struct {
-	// Header is the C_UDTHD header. Its AppendedBlocks plus one is the
+	// Header is the C_UDTHD header. Its UAB plus one is the
 	// number of appended blocks.
 	Header pdu.UDTHeader
-	// Data holds the 12*(Header.AppendedBlocks+1)-2 octets of the appended
+	// Data holds the 12*(Header.UAB+1)-2 octets of the appended
 	// blocks before the CRC of the last block.
 	Data [MaxAppendedOctets]byte
 	// CRCOK reports whether the CRC of the last block checks.

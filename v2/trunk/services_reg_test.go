@@ -1,6 +1,7 @@
 package trunk_test
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -147,7 +148,7 @@ func TestSupplementary_VoiceCall(t *testing.T) {
 	s := registeredSim(t, cfg, threeMS()...)
 	a, b, c := s.ms[0], s.ms[1], s.ms[2]
 	data := []byte("call me back on 4711")
-	if err := a.ms.SetSupplementary(4, data); err != nil {
+	if err := a.ms.SetSupplementary(isoText(t, data)); err != nil {
 		t.Fatal(err)
 	}
 	if err := a.ms.Call(s.now, false, 3120003, layer3.VoiceServiceOptions{IsSuppData: true}); err != nil {
@@ -167,7 +168,7 @@ func TestSupplementary_VoiceCall(t *testing.T) {
 
 	s = registeredSim(t, cfg, threeMS()...)
 	a, b = s.ms[0], s.ms[1]
-	if err := a.ms.SetSupplementary(4, data[:5]); err != nil {
+	if err := a.ms.SetSupplementary(isoText(t, data[:5])); err != nil {
 		t.Fatal(err)
 	}
 	if err := a.ms.Call(s.now, true, 9, layer3.VoiceServiceOptions{IsSuppData: true}); err != nil {
@@ -177,11 +178,11 @@ func TestSupplementary_VoiceCall(t *testing.T) {
 	if _, ok := has(b.log, trunk.OutputUDT); !ok {
 		t.Error("B got no supplementary data of the talkgroup call")
 	}
-	if err := a.ms.SetSupplementary(16, nil); err == nil {
-		t.Error("SetSupplementary format 16: no error")
+	if err := a.ms.SetSupplementary(&trunk.Appended{Blocks: 5}); !errors.Is(err, trunk.ErrUDTLength) {
+		t.Errorf("SetSupplementary of 5 blocks = %v", err)
 	}
-	if err := a.ms.SetSupplementary(0, make([]byte, trunk.MaxSupplementary+1)); err == nil {
-		t.Error("SetSupplementary: no error for too much data")
+	if err := a.ms.SetSupplementary(nil); err != nil {
+		t.Errorf("SetSupplementary(nil) = %v", err)
 	}
 }
 
@@ -189,7 +190,7 @@ func TestSupplementary_NotOffered(t *testing.T) {
 	t.Parallel()
 	s := registeredSim(t, tsccConfig(), threeMS()...)
 	a, c := s.ms[0], s.ms[2]
-	if err := a.ms.SetSupplementary(4, []byte("x")); err != nil {
+	if err := a.ms.SetSupplementary(isoText(t, []byte("x"))); err != nil {
 		t.Fatal(err)
 	}
 	if err := a.ms.Call(s.now, false, 3120003, layer3.VoiceServiceOptions{IsSuppData: true}); err != nil {
@@ -230,4 +231,13 @@ func TestMS_RegistrationResponseInfo(t *testing.T) {
 			t.Errorf("%s: registered %v, offset %d, asleep %v", tt.name, r.ms.Registered(), r.ms.PowerSaveOffset(), r.ms.Asleep())
 		}
 	}
+}
+
+func isoText(t *testing.T, text []byte) *trunk.Appended {
+	t.Helper()
+	var a trunk.Appended
+	if err := a.SetText(enums.UDTISO8, text); err != nil {
+		t.Fatal(err)
+	}
+	return &a
 }
