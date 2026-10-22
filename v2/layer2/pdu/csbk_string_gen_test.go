@@ -325,6 +325,16 @@ func (s *CSBK) fmtString() string {
 		_ret += v.String()
 	} else if v, ok := s.AsTalkgroupDataGrantMultiItem(); ok {
 		_ret += v.String()
+	} else if v, ok := s.AsCapacityPlusSiteStatus(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsCapacityPlusNeighbors(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsCapacityPlusPreamble(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsCapacityPlusDataRevertAnnouncement(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsCapacityPlusDataRevertGrant(); ok {
+		_ret += v.String()
 	} else {
 		_ret += fmt.Sprintf("RawPayload: %x", s.RawPayload)
 	}

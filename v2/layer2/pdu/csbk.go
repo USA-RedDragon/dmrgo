@@ -46,8 +46,9 @@ const (
 	CSBKMove                                 CSBKOpcode = 0b00111001 // C_MOVE
 )
 
-// String returns the name of the CSBKOpcode. It allocates only for a value
-// without a name.
+// String returns the name of the CSBKOpcode, or of the Capacity Plus opcode
+// (FID 0x10) for a value that has no standard opcode. It allocates only for
+// a value without a name.
 func (opcode CSBKOpcode) String() string {
 	switch opcode {
 	case CSBKBSOutboundActivation:
@@ -105,8 +106,21 @@ func (opcode CSBKOpcode) String() string {
 	case CSBKMove:
 		return "C_MOVE PDU"
 	default:
-		return "Unknown CSBKOpcode: " + text.Digits(uint64(opcode), 8, 1)
+		return opcode.vendorString()
 	}
+}
+
+func (opcode CSBKOpcode) vendorString() string {
+	if opcode == CSBKCapacityPlusSiteStatus {
+		return "Capacity Plus Site Status (FID 0x10)"
+	}
+	if opcode == CSBKCapacityPlusNeighbors {
+		return "Capacity Plus Neighbors (FID 0x10)"
+	}
+	if opcode == CSBKCapacityPlusDataRevertAnnouncement {
+		return "Capacity Plus Data Revert Announcement (FID 0x10)"
+	}
+	return "Unknown CSBKOpcode: " + text.Digits(uint64(opcode), 8, 1)
 }
 
 // BSOutboundActivationPDU is the BS outbound activation (BS_Dwn_Act) CSBK
@@ -462,6 +476,11 @@ const (
 //dmr:reset Hint0x38=Opcode0x38Unknown
 //dmr:string_as BSOutboundActivation
 //dmr:string_as TalkgroupDataGrantMultiItem
+//dmr:string_as CapacityPlusSiteStatus
+//dmr:string_as CapacityPlusNeighbors
+//dmr:string_as CapacityPlusPreamble
+//dmr:string_as CapacityPlusDataRevertAnnouncement
+//dmr:string_as CapacityPlusDataRevertGrant
 //dmr:variant UnitToUnitVoiceServiceRequest UnitToUnitVoiceServiceRequestPDU Opcode=CSBKUnitToUnitVoiceServiceRequest
 //dmr:variant UnitToUnitVoiceServiceAnswerResponse UnitToUnitVoiceServiceAnswerResponsePDU Opcode=CSBKUnitToUnitVoiceServiceAnswerResponse
 //dmr:variant NegativeAcknowledgement NegativeAcknowledgementPDU Opcode=CSBKNegativeAcknowledgement
