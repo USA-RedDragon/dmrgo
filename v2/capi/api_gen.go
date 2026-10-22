@@ -49487,5 +49487,8 @@ func codeErr(code C.int) error {
 	case -222:
 		return g_voice.ErrTimedOut
 	}
+	if code > 0 {
+		return statusError(code)
+	}
 	return codeError(code)
 }

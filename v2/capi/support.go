@@ -33,6 +33,12 @@ func (e codeError) Error() string {
 	return fmt.Sprintf("dmrgo: C status %d: %s", int(e), C.GoString(C.dmrgo_strerror(C.int(e))))
 }
 
+type statusError C.int
+
+func (e statusError) Error() string {
+	return fmt.Sprintf("dmrgo: C status %d is not a status of the C API", int(e))
+}
+
 func recoverTo(rc *C.int) {
 	r := recover()
 	switch v := r.(type) {

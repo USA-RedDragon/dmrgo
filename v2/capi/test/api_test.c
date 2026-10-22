@@ -684,6 +684,30 @@ static int liar_decode(void *user, int16_t *dst, size_t cap, size_t *len, size_t
 	return 0;
 }
 
+static int positive_encode(void *user, const int16_t *pcm, size_t n, uint8_t out[9]) {
+	(void)user;
+	(void)pcm;
+	(void)n;
+	(void)out;
+	return 7;
+}
+
+static void test_positive_status(void) {
+	dmrgo_vocoder_codec_vtable_t vt = {sizeof vt, 0, NULL, NULL, positive_encode, NULL, c_frame_samples, NULL, NULL};
+	dmrgo_vocoder_codec_t *c = NULL;
+	OK(dmrgo_vocoder_codec_from_vtable(&vt, &c));
+	int16_t pcm[160] = {0};
+	uint8_t out[9];
+	CHECK(dmrgo_vocoder_codec_encode(c, pcm, 160, out) == DMRGO_ERR_OTHER);
+	CHECK(dmrgo_last_error_code() == DMRGO_ERR_OTHER);
+	char msg[128];
+	size_t n = 0;
+	OK(dmrgo_last_error_message(msg, sizeof msg, &n, NULL));
+	CHECK(strstr(msg, "status 7") != NULL);
+	OK(dmrgo_vocoder_codec_free(c));
+	printf("positive status: a vtable status above 0 is DMRGO_ERR_OTHER\n");
+}
+
 static void test_liar(void) {
 	dmrgo_vocoder_codec_vtable_t vt = {sizeof vt, 0, c_close, liar_decode, c_encode, c_fid, c_frame_samples, c_silence, c_reset};
 	dmrgo_vocoder_codec_t *c = NULL;
@@ -1014,6 +1038,7 @@ int main(int argc, char **argv) {
 	test_small_user();
 	test_handle_errors();
 	test_liar();
+	test_positive_status();
 	test_dvsi();
 	if (failures) {
 		fprintf(stderr, "%d checks failed\n", failures);
