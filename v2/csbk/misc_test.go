@@ -195,22 +195,39 @@ func TestLead(t *testing.T) {
 	}
 	for name, m := range map[string]machine{"Requester": q, "Wakeup": w} {
 		at, ok := m.Deadline()
-		if !ok || at != time.Second-lead {
+		if !ok || at != time.Second {
 			t.Fatalf("%s: Deadline %v %t", name, at, ok)
 		}
 		if out := m.Tick(at-1, nil); len(out) != 0 {
 			t.Fatalf("%s: burst before Due minus Lead", name)
 		}
 		out := m.Tick(at, nil)
-		if len(out) != 1 || out[0].Kind != csbk.OutputBurst || out[0].Due != time.Second {
+		if len(out) != 1 || out[0].Kind != csbk.OutputBurst || out[0].Due != time.Second+lead {
 			t.Fatalf("%s: %+v", name, out)
 		}
 	}
-	if at, ok := q.Deadline(); !ok || at != time.Second+csbk.BurstInterval-lead {
+	if at, ok := q.Deadline(); !ok || at != time.Second+csbk.BurstInterval {
 		t.Errorf("Requester: second burst deadline %v", at)
 	}
-	if at, ok := w.Deadline(); !ok || at != time.Second+csbk.DefaultSyncWait {
+	if at, ok := w.Deadline(); !ok || at != time.Second+lead+csbk.DefaultSyncWait {
 		t.Errorf("Wakeup: T_SyncWu deadline %v, want it from Due", at)
+	}
+	out := q.Tick(time.Second+csbk.BurstInterval, nil)
+	if len(out) != 1 || out[0].Due != time.Second+lead+csbk.BurstInterval {
+		t.Fatalf("Requester: second burst %+v", out)
+	}
+	wait := out[0].Due + csbk.DefaultMotorolaAckWait
+	if at, ok := q.Deadline(); !ok || at != wait {
+		t.Fatalf("Requester: T_AckWait deadline %v, want %v", at, wait)
+	}
+	out = q.Tick(wait, nil)
+	if len(out) != 1 || out[0].Kind != csbk.OutputBurst || out[0].Due != wait+lead {
+		t.Fatalf("Requester: retry %+v, want Due %v", out, wait+lead)
+	}
+	at, _ := w.Deadline()
+	out = w.Tick(at, nil)
+	if len(out) != 1 || out[0].Kind != csbk.OutputBurst || out[0].Due != at+lead {
+		t.Fatalf("Wakeup: retry %+v, want Due %v", out, at+lead)
 	}
 	for _, err := range []error{
 		func() error { _, err := csbk.NewRequester(&csbk.RequesterConfig{Lead: -1}); return err }(),

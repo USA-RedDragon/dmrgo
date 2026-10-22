@@ -477,8 +477,8 @@ func (t *Transmitter) Channel(now time.Duration, busy bool) {
 		return
 	}
 	t.state = TransmitterHeader
-	if now > t.due {
-		t.start, t.due = now, now
+	if now+t.lead > t.due {
+		t.start, t.due = now+t.lead, now+t.lead
 	}
 }
 

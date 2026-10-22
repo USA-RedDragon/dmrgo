@@ -517,9 +517,7 @@ func (q *Requester) Tick(now time.Duration, dst []Output) []Output {
 			return q.done(dst, ResultNoAnswer, nil)
 		}
 		q.s.start(q.waitUntil, q.req, q.target, q.source, q.group, q.retryPreambles)
-		if q.s.due < now {
-			q.s.due = now
-		}
+		q.s.due = max(q.s.due, now+q.s.lead)
 		q.sync()
 	}
 	if q.state != RequesterAccess && q.state != RequesterSending {

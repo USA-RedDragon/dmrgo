@@ -391,3 +391,21 @@ func flip(in []input, seed uint64) []input {
 	}
 	return out
 }
+
+func TestLeadKey(t *testing.T) {
+	t.Parallel()
+	const lead = 20 * time.Millisecond
+	r := newRepeater(t, &bs.Config{Mode: bs.ModeRF, ColorCode: 1, CACH: true, Lead: lead})
+	in := call(t, 1, 9, 3191868, 1, enums.Slot1, rf, 0)
+	out := r.Inbound(0, &in[0].raw, layer2.Hint{Slot: enums.Slot1}, rf, nil)
+	out = r.Tick(0, out)
+	for _, o := range out {
+		if o.Kind == bs.OutputBurst {
+			if o.Due != lead {
+				t.Fatalf("first burst Due %v, want %v", o.Due, lead)
+			}
+			return
+		}
+	}
+	t.Fatalf("no burst at Tick(0): %+v", out)
+}

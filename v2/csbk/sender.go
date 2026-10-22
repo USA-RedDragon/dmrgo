@@ -71,7 +71,7 @@ func (s *sender) start(now time.Duration, c pdu.CSBKBytes, target, source uint32
 
 func (s *sender) qualify(at, now time.Duration) {
 	if s.access == enums.AccessImpolite || !s.busy {
-		s.state, s.due = sendBursts, now
+		s.state, s.due = sendBursts, now+s.lead
 		return
 	}
 	s.state, s.timer = sendQualify, at
@@ -87,7 +87,7 @@ func (s *sender) stop() {
 func (s *sender) channel(now time.Duration, busy bool) {
 	s.busy = busy
 	if s.state == sendQualify && !busy {
-		s.state, s.due = sendBursts, now
+		s.state, s.due = sendBursts, now+s.lead
 	}
 }
 
