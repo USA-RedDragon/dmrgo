@@ -31,9 +31,10 @@ type Message struct {
 	CRC uint32
 	// Response is the decoded C_RDATA of a SACK response packet, or nil.
 	Response *ResponseData
-	// BadCRC reports that the message CRC failed, or, with
+	// BadCRC reports that the message CRC failed, that the Pad Octet Count
+	// of a first try is more than the octets before the CRC, or, with
 	// Assembler.AcceptBadCRC, that Data holds a confirmed block whose CRC-9
-	// failed.
+	// failed. (ETSI TS 102 361-1 clause 9.3.22)
 	BadCRC bool
 }
 
@@ -450,7 +451,9 @@ func (a *Assembler) fill(m *Message, buf []byte, complete bool) error {
 	m.CRC = binary.LittleEndian.Uint32(buf[n:])
 	m.Data = buf[:n]
 	if fullMessage(&m.Header) {
-		m.Data = buf[:max(n-padOf(&m.Header), 0)]
+		pad := padOf(&m.Header)
+		m.Data = buf[:max(n-pad, 0)]
+		m.BadCRC = m.BadCRC || pad > n
 	}
 	if !checkMessageCRC(buf) {
 		m.BadCRC = true

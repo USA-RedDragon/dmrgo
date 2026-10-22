@@ -135,3 +135,23 @@ func TestAssembler_AllBlocksLost(t *testing.T) {
 		}
 	}
 }
+
+func TestAssembler_PadOverBlocks(t *testing.T) {
+	t.Parallel()
+
+	p, err := packet.NewPacket(unconfirmed(), make([]byte, 1), enums.DataTypeRate1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, accept := range []bool{false, true} {
+		a := packet.NewAssembler(127)
+		a.AcceptBadCRC = accept
+		if m, err := add(a, encodeHeader(t, &p.Header)); m != nil || err != nil {
+			t.Fatalf("header: %v %v", m, err)
+		}
+		m, err := add(a, &pdu.Rate12Data{})
+		if m == nil || !m.BadCRC || len(m.Data) != 0 || accept != (err == nil) || !accept && !errors.Is(err, packet.ErrMessageCRC) {
+			t.Fatalf("AcceptBadCRC %v: got %v %+v", accept, err, m)
+		}
+	}
+}
