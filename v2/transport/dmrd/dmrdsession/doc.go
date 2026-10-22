@@ -22,10 +22,11 @@
 // Retry, pings every Retry when logged in, and logs in again after Timeout
 // without a reply, after MSTNAK and after MSTCL. The Master answers each
 // step, asks the consumer with OutputLogin and OutputConfig before it
-// answers the RPTL and the RPTC, takes the RPTO of a logged-in repeater with an RPTACK, as
-// DMRGateway waits for it before it sends traffic, answers a packet from a
-// repeater that is not logged in with MSTNAK, and ends the session after
-// LoginTimeout without a packet during the login and Timeout after it.
+// answers the RPTL and the RPTC, takes the RPTO of a logged-in repeater
+// with an RPTACK, as DMRGateway waits for it before it sends traffic,
+// answers a packet from a repeater that is not logged in with MSTNAK, and
+// ends the session after LoginTimeout without a packet during the login and
+// Timeout after it.
 //
 // (DMRGateway ee79d38 DMRNetwork.cpp clock; MMDVMHost 7008c62
 // DMRDirectNetwork.cpp clock; DL5DI, G4KLX and DG1HT, IPSC Protocol Specs
