@@ -200,8 +200,13 @@ func TestAssembler_PayloadFECFailed(t *testing.T) {
 			gm, gmiss, gerr := send(true)
 			wm, wmiss, werr := send(false)
 			if !errors.Is(gerr, werr) || (gm == nil) != (wm == nil) || gm != nil && !bytes.Equal(gm.Data, wm.Data) || !slices.Equal(gmiss, wmiss) {
-				t.Fatalf("confirmed %v AcceptBadCRC %v: %v %+v %v, want as Lost: %v %+v %v", hdr.ConfirmedDataHeader != nil, accept, gerr, gm, gmiss, werr, wm, wmiss)
+				t.Fatalf("confirmed %v AcceptBadCRC %v: %v %+v %v, want as Lost: %v %+v %v", hasConfirmed(hdr), accept, gerr, gm, gmiss, werr, wm, wmiss)
 			}
 		}
 	}
+}
+
+func hasConfirmed(h pdu.DataHeader) bool {
+	_, ok := h.AsConfirmed()
+	return ok
 }

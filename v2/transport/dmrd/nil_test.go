@@ -6,7 +6,6 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 )
 
@@ -33,24 +32,16 @@ func TestNilReceivers(t *testing.T) {
 	if _, err := ta.LC(); !errors.Is(err, dmrgo.ErrNilReceiver) {
 		t.Errorf("nil TalkerAlias LC %v", err)
 	}
-	var lc pdu.FullLinkControl
-	var pl pdu.FullLinkControlPayloads
-	if err := ta.LCInto(&lc, &pl); !errors.Is(err, dmrgo.ErrNilReceiver) {
-		t.Errorf("nil TalkerAlias LCInto %v", err)
-	}
 	var lta *dmrd.LocalTalkerAlias
 	if _, err := lta.LC(); !errors.Is(err, dmrgo.ErrNilReceiver) {
 		t.Errorf("nil LocalTalkerAlias LC %v", err)
 	}
 	var pos *dmrd.Position
-	if err := pos.LCInto(&lc, &pl); !errors.Is(err, dmrgo.ErrNilReceiver) {
-		t.Errorf("nil Position LCInto %v", err)
+	if _, err := pos.LC(); !errors.Is(err, dmrgo.ErrNilReceiver) {
+		t.Errorf("nil Position LC %v", err)
 	}
 	var lp *dmrd.LocalPosition
 	if _, err := lp.LC(); !errors.Is(err, dmrgo.ErrNilReceiver) {
 		t.Errorf("nil LocalPosition LC %v", err)
-	}
-	if err := (&dmrd.Position{}).LCInto(nil, &pl); !errors.Is(err, dmrgo.ErrNilArgument) {
-		t.Errorf("Position LCInto nil dst %v", err)
 	}
 }
