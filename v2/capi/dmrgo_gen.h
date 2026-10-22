@@ -4809,6 +4809,12 @@ struct dmrgo_trunk_authenticator_vtable_t {
 	int (*response)(DMRGO_USER_T user, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
 };
 
+struct dmrgo_trunk_auth_keys_t {
+	/* Entries holds the key of each MS. The first entry for an address wins. */
+	dmrgo_trunk_auth_entry_t *entries;
+	size_t entries_len;
+};
+
 struct dmrgo_trunk_capacity_plus_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
@@ -5262,12 +5268,6 @@ struct dmrgo_trunk_auth_entry_t {
 	uint32_t addr;
 	/* Key is the key of the MS. */
 	dmrgo_trunk_auth_key_t key;
-};
-
-struct dmrgo_trunk_auth_keys_t {
-	/* Entries holds the key of each MS. The first entry for an address wins. */
-	dmrgo_trunk_auth_entry_t *entries;
-	size_t entries_len;
 };
 
 struct dmrgo_vocoder_codec_vtable_t {
@@ -10482,6 +10482,10 @@ int dmrgo_trunk_authenticator_free(dmrgo_trunk_authenticator_t *self);
 int dmrgo_trunk_authenticator_response(dmrgo_trunk_authenticator_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
 /* dmrgo_trunk_authenticator_from_vtable makes a Authenticator whose methods call the functions of vt with vt->user. */
 int dmrgo_trunk_authenticator_from_vtable(const dmrgo_trunk_authenticator_vtable_t *vt, dmrgo_trunk_authenticator_t **out);
+/* dmrgo_trunk_auth_key_as_authenticator makes a trunk.Authenticator from self, which it copies. */
+int dmrgo_trunk_auth_key_as_authenticator(const dmrgo_trunk_auth_key_t *self, dmrgo_trunk_authenticator_t **out);
+/* dmrgo_trunk_auth_keys_as_authenticator makes a trunk.Authenticator from self, which it copies. */
+int dmrgo_trunk_auth_keys_as_authenticator(const dmrgo_trunk_auth_keys_t *self, dmrgo_trunk_authenticator_t **out);
 /* dmrgo_trunk_capacity_plus_follower_free frees the handle. self may be NULL. */
 int dmrgo_trunk_capacity_plus_follower_free(dmrgo_trunk_capacity_plus_follower_t *self);
 /* dmrgo_trunk_capacity_plus_follower_burst_need sets *items and *arena to the room that dmrgo_trunk_capacity_plus_follower_burst needs for these arguments, without a change to the handle. */
@@ -10808,6 +10812,10 @@ int dmrgo_vocoder_codec_reset(dmrgo_vocoder_codec_t *self);
 int dmrgo_vocoder_codec_silence(dmrgo_vocoder_codec_t *self, uint8_t out[9]);
 /* dmrgo_vocoder_codec_from_vtable makes a Codec whose methods call the functions of vt with vt->user. */
 int dmrgo_vocoder_codec_from_vtable(const dmrgo_vocoder_codec_vtable_t *vt, dmrgo_vocoder_codec_t **out);
+/* dmrgo_codec2_codec_as_codec makes a vocoder.Codec from self, which it shares; free both handles. */
+int dmrgo_codec2_codec_as_codec(dmrgo_codec2_codec_t *self, dmrgo_vocoder_codec_t **out);
+/* dmrgo_dvsi_codec_as_codec makes a vocoder.Codec from self, which it shares; free both handles. */
+int dmrgo_dvsi_codec_as_codec(dmrgo_dvsi_codec_t *self, dmrgo_vocoder_codec_t **out);
 /* Go: vocoder.DecodeAMBE72. DecodeAMBE72 reverses EncodeAMBE72 and corrects the bit errors that the Golay codes allow. */
 int dmrgo_vocoder_decode_ambe72(const uint8_t slot[9], dmrgo_vocoder_ambe_frame_t *ambe_frame, dmrgo_fec_result_t *fec);
 /* Go: vocoder.EncodeAMBE72. EncodeAMBE72 applies the AMBE+2 frame FEC to 49 vocoder information bits and returns the 72 on-air bits of one vocoder frame, packed, the first bit in the most significant bit of byte 0: Golay(24,12) on the first 12 bits, PN-scrambled Golay(23,12) on the next 12, the last 25 bits unprotected, interleaved into the slot. */

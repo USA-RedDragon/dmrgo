@@ -14,6 +14,7 @@ import "C"
 import (
 	"fmt"
 	"math"
+	"reflect"
 	"runtime/cgo"
 	"runtime/debug"
 	"strings"
@@ -156,6 +157,46 @@ func setLast(code C.int, msg string) C.int {
 	b := unsafe.Slice((*byte)(unsafe.Pointer(&l.msg[0])), len(l.msg))
 	b[copy(b[:len(b)-1], msg)] = 0
 	return code
+}
+
+func cloneDeep[T any](v T) T {
+	rv := reflect.ValueOf(&v).Elem()
+	cloneValue(rv)
+	return v
+}
+
+func cloneValue(v reflect.Value) {
+	switch v.Kind() {
+	case reflect.Slice:
+		if v.IsNil() || !v.CanSet() {
+			return
+		}
+		n := reflect.MakeSlice(v.Type(), v.Len(), v.Len())
+		reflect.Copy(n, v)
+		for i := range n.Len() {
+			cloneValue(n.Index(i))
+		}
+		v.Set(n)
+	case reflect.Pointer:
+		if v.IsNil() || !v.CanSet() {
+			return
+		}
+		n := reflect.New(v.Type().Elem())
+		n.Elem().Set(v.Elem())
+		cloneValue(n.Elem())
+		v.Set(n)
+	case reflect.Struct:
+		for i := range v.NumField() {
+			if f := v.Field(i); f.CanSet() {
+				cloneValue(f)
+			}
+		}
+	case reflect.Array:
+		for i := range v.Len() {
+			cloneValue(v.Index(i))
+		}
+	default:
+	}
 }
 
 func errWalk(err error, f func(C.int) bool) bool {

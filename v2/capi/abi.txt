@@ -1472,6 +1472,7 @@ sym int dmrgo_bs_repeater_tick_need(dmrgo_bs_repeater_t *self, dmrgo_duration_t 
 sym int dmrgo_bs_service_string(dmrgo_bs_service_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_bs_slot_state_string(dmrgo_bs_slot_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_bs_state_string(dmrgo_bs_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+sym int dmrgo_codec2_codec_as_codec(dmrgo_codec2_codec_t *self, dmrgo_vocoder_codec_t **out);
 sym int dmrgo_codec2_codec_close(dmrgo_codec2_codec_t *self);
 sym int dmrgo_codec2_codec_decode(dmrgo_codec2_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
 sym int dmrgo_codec2_codec_decode_mode(dmrgo_codec2_codec_t *self, dmrgo_codec2_mode_t *out);
@@ -1770,6 +1771,7 @@ sym int dmrgo_dvsi_append_query(uint8_t *dst, size_t dst_cap, size_t *dst_len, s
 sym int dmrgo_dvsi_append_rate_dmr(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t channel, bool parity);
 sym int dmrgo_dvsi_append_reset(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, bool parity);
 sym int dmrgo_dvsi_append_speech(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t channel, const int16_t *pcm, size_t pcm_len, bool parity);
+sym int dmrgo_dvsi_codec_as_codec(dmrgo_dvsi_codec_t *self, dmrgo_vocoder_codec_t **out);
 sym int dmrgo_dvsi_codec_close(dmrgo_dvsi_codec_t *self);
 sym int dmrgo_dvsi_codec_decode(dmrgo_dvsi_codec_t *self, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
 sym int dmrgo_dvsi_codec_decode_need(dmrgo_dvsi_codec_t *self, const uint8_t slot[9], size_t *items, size_t *arena);
@@ -2798,7 +2800,9 @@ sym int dmrgo_trunk_appended_set_nmea_long(dmrgo_trunk_appended_t *self, const d
 sym int dmrgo_trunk_appended_set_nmea_short(dmrgo_trunk_appended_t *self, const dmrgo_trunk_nmea_short_t *n);
 sym int dmrgo_trunk_appended_set_text(dmrgo_trunk_appended_t *self, dmrgo_enums_udt_format_t f, const uint8_t *text, size_t text_len);
 sym int dmrgo_trunk_appended_text(const dmrgo_trunk_appended_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+sym int dmrgo_trunk_auth_key_as_authenticator(const dmrgo_trunk_auth_key_t *self, dmrgo_trunk_authenticator_t **out);
 sym int dmrgo_trunk_auth_key_response(const dmrgo_trunk_auth_key_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
+sym int dmrgo_trunk_auth_keys_as_authenticator(const dmrgo_trunk_auth_keys_t *self, dmrgo_trunk_authenticator_t **out);
 sym int dmrgo_trunk_auth_keys_response(const dmrgo_trunk_auth_keys_t *self, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
 sym int dmrgo_trunk_auth_response(uint32_t challenge, const uint8_t key[16], uint32_t psn, uint32_t *out);
 sym int dmrgo_trunk_authenticator_free(dmrgo_trunk_authenticator_t *self);
