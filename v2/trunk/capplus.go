@@ -433,7 +433,7 @@ func (f *CapacityPlusFollower) csbk(now time.Duration, c *pdu.CSBK, out []Output
 		f.site, f.hasSite = p.Site, true
 		return f.restSeen(now, p.RestLSN, out)
 	}
-	if p, ok := c.AsCapacityPlusPreamble(); ok && f.state != StatePayload {
+	if p, ok := c.AsCapacityPlusPreamble(); ok && f.state != StatePayload && p.RestLSN != 0 && p.RestLSN <= pdu.CapacityPlusMaxLSN {
 		f.rest = p.RestLSN
 		if f.state == StateControl {
 			f.lastRest = now

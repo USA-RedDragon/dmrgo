@@ -273,6 +273,28 @@ func TestCapacityPlusFollower_LateEntryTune(t *testing.T) {
 	}
 }
 
+func TestCapacityPlusFollower_PreambleRestOutOfRange(t *testing.T) {
+	t.Parallel()
+	for _, rest := range []uint8{0, 17, 31} {
+		f, err := trunk.NewCapacityPlusFollower(&trunk.CapacityPlusConfig{Plan: capPlusPlan(t)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		h := layer2.Hint{Slot: enums.Slot1}
+		raw := capPlusStatusBurst(t, false, 1)
+		f.Burst(0, &raw, h, nil, nil)
+		c := &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKCapacityPlusPreamble, FID: enums.FIDMotorola, RawPayload: [8]byte{0x80, 1, 0, 0, 0xFF, rest, 0x07, 0xED}}
+		if p, ok := c.AsCapacityPlusPreamble(); !ok || p.RestLSN != rest {
+			t.Fatalf("preamble %+v %t", p, ok)
+		}
+		raw = bsBurst(t, c, testCC)
+		f.Burst(slot, &raw, h, nil, nil)
+		if lsn, ok := f.RestLSN(); lsn != 1 || !ok {
+			t.Errorf("rest %d: RestLSN %d %t, want 1", rest, lsn, ok)
+		}
+	}
+}
+
 func TestCapacityPlusFollower_Config(t *testing.T) {
 	t.Parallel()
 	if _, err := trunk.NewCapacityPlusFollower(&trunk.CapacityPlusConfig{TalkgroupsLen: trunk.MaxTalkgroups + 1}); err == nil {
