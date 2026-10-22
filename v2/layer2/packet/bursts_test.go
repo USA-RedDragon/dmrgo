@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2"
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/packet"
@@ -71,11 +72,11 @@ func TestBursts(t *testing.T) {
 	if _, err := packet.Bursts(&p, 1, layer2.SyncSourceBS); err == nil {
 		t.Error("Bursts accepted a nil *pdu.Rate12Data")
 	}
-	if _, err := packet.Bursts(nil, 1, layer2.SyncSourceBS); !errors.Is(err, packet.ErrFormat) {
+	if _, err := packet.Bursts(nil, 1, layer2.SyncSourceBS); !errors.Is(err, dmrgo.ErrNilArgument) {
 		t.Errorf("nil Packet: %v", err)
 	}
 	dst := make([]layer2.RawBurst, 1, 4)
-	if out, err := packet.AppendBursts(dst, nil, 1, layer2.SyncSourceBS); !errors.Is(err, packet.ErrFormat) || len(out) != 1 {
+	if out, err := packet.AppendBursts(dst, nil, 1, layer2.SyncSourceBS); !errors.Is(err, dmrgo.ErrNilArgument) || len(out) != 1 {
 		t.Errorf("AppendBursts nil Packet: %d bursts, %v", len(out), err)
 	}
 }
