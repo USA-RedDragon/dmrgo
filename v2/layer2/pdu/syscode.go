@@ -215,7 +215,7 @@ const (
 
 var (
 	errSysCode14Range        = &dmrgo.FieldRangeError{Type: sysCodeType, Field: "Unpack14", Bits: 14}
-	errNetworkModelRange     = &dmrgo.FieldRangeError{Type: "pdu", Field: "NetworkModel", Bits: 2}
+	errNetworkModelRange     = &dmrgo.FieldRangeError{Type: errType, Field: "NetworkModel", Bits: 2}
 	errSysCodeModelRange     = &dmrgo.FieldRangeError{Type: sysCodeType, Field: sysCodeModel, Bits: 2}
 	errSysCodeParRange       = &dmrgo.FieldRangeError{Type: sysCodeType, Field: "Par", Bits: 2}
 	errSysCodeNetRangeTiny   = &dmrgo.FieldRangeError{Type: sysCodeType, Field: sysCodeNet, Bits: 9}

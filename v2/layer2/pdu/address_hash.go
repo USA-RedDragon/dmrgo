@@ -20,4 +20,4 @@ func AddressHash(id uint32) (uint8, error) {
 	return crc.CRC8(b[:], 24), nil
 }
 
-var errAddressHashRange = &dmrgo.FieldRangeError{Type: "pdu", Field: "AddressHash", Bits: 24}
+var errAddressHashRange = &dmrgo.FieldRangeError{Type: errType, Field: "AddressHash", Bits: 24}

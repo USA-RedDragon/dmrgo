@@ -239,7 +239,8 @@
 //     packet.ErrNoFirstTry, packet.ErrNoRetryBlocks: returned by packet
 //     segmentation and reassembly.
 //   - pdu.ErrTalkerAliasIncomplete, pdu.ErrTalkerAliasLength,
-//     pdu.ErrTalkerAliasInvalidUTF8: returned by the talker alias functions.
+//     pdu.ErrTalkerAliasInvalidUTF8, pdu.ErrTalkerAliasCharacter: returned
+//     by the talker alias functions.
 //   - pdu.ErrCapacityPlusSequence, pdu.ErrCapacityPlusIncomplete: returned
 //     by the Capacity Plus site status assembler.
 //   - pdu.ErrNoAddresses: returned by the SetAddresses methods for a PDU
