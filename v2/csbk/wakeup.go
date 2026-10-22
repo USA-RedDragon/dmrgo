@@ -23,6 +23,10 @@ type WakeupConfig struct {
 	// Attempts is N_Wakeup, the most BS_Dwn_Act bursts. 0 means
 	// DefaultWakeups; at most MaxRetries.
 	Attempts int
+	// Lead makes Tick emit a burst this long before its Due time, so that
+	// an RF FIFO can be filled ahead. 0 means at Due; it must not be
+	// negative. The timers of the machine keep to the Due times.
+	Lead time.Duration
 	// Scratch, when set, is the Burst that Burst decodes into, as for
 	// RequesterConfig.Scratch.
 	Scratch *layer2.Burst
@@ -65,6 +69,7 @@ type Wakeup struct {
 	cc       enums.ColorCode
 	syncWait time.Duration
 	attempts int
+	lead     time.Duration
 	d        decoder
 
 	state     WakeupState
@@ -79,8 +84,8 @@ type Wakeup struct {
 }
 
 // NewWakeup returns a Wakeup for cfg. A nil cfg means the zero WakeupConfig.
-// It returns a *dmrgo.ConfigError for a color code above 15 or Attempts out
-// of range. It allocates the Wakeup, and its Burst unless cfg.Scratch is
+// It returns a *dmrgo.ConfigError for a color code above 15, Attempts out
+// of range or a negative Lead. It allocates the Wakeup, and its Burst unless cfg.Scratch is
 // set.
 func NewWakeup(cfg *WakeupConfig) (*Wakeup, error) {
 	var conf WakeupConfig
@@ -94,7 +99,10 @@ func NewWakeup(cfg *WakeupConfig) (*Wakeup, error) {
 	if cfg.Attempts < 0 || cfg.Attempts > MaxRetries {
 		return nil, errAttempts
 	}
-	w := &Wakeup{cc: cfg.ColorCode, syncWait: cfg.SyncWait, attempts: cfg.Attempts}
+	if cfg.Lead < 0 {
+		return nil, errLead
+	}
+	w := &Wakeup{cc: cfg.ColorCode, syncWait: cfg.SyncWait, attempts: cfg.Attempts, lead: cfg.Lead}
 	if w.syncWait == 0 {
 		w.syncWait = DefaultSyncWait
 	}
@@ -232,7 +240,7 @@ func (w *Wakeup) Tick(now time.Duration, dst []Output) []Output {
 		}
 		w.state, w.due = WakeupSending, max(w.waitUntil, now)
 	}
-	if w.state != WakeupSending || now < w.due {
+	if w.state != WakeupSending || now < w.due-w.lead {
 		return dst
 	}
 	b, err := layer2.BuildDataBurst(w.csbk, enums.DataTypeCSBK, w.cc, layer2.SyncSourceMS)
@@ -256,7 +264,7 @@ func (w *Wakeup) Deadline() (at time.Duration, ok bool) {
 	}
 	switch w.state {
 	case WakeupSending:
-		return w.due, true
+		return w.due - w.lead, true
 	case WakeupWaiting:
 		return w.waitUntil, w.syncWait >= 0
 	case WakeupIdle:

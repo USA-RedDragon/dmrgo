@@ -233,6 +233,7 @@ func in_csbk_RequesterConfig(s *C.dmrgo_csbk_requester_config_t) (d g_csbk.Reque
 	if s.scratch != nil {
 		d.Scratch = get_layer2_Burst(s.scratch).v
 	}
+	d.Lead = time.Duration(s.lead)
 	return
 }
 
@@ -252,6 +253,7 @@ func in_csbk_ResponderConfig(s *C.dmrgo_csbk_responder_config_t) (d g_csbk.Respo
 	if s.scratch != nil {
 		d.Scratch = get_layer2_Burst(s.scratch).v
 	}
+	d.Lead = time.Duration(s.lead)
 	return
 }
 
@@ -264,6 +266,7 @@ func in_csbk_TimingConfig(s *C.dmrgo_csbk_timing_config_t) (d g_csbk.TimingConfi
 	if s.scratch != nil {
 		d.Scratch = get_layer2_Burst(s.scratch).v
 	}
+	d.Lead = time.Duration(s.lead)
 	return
 }
 
@@ -275,6 +278,7 @@ func in_csbk_WakeupConfig(s *C.dmrgo_csbk_wakeup_config_t) (d g_csbk.WakeupConfi
 	if s.scratch != nil {
 		d.Scratch = get_layer2_Burst(s.scratch).v
 	}
+	d.Lead = time.Duration(s.lead)
 	return
 }
 
@@ -4727,6 +4731,7 @@ func out_csbk_RequesterConfig(d *C.dmrgo_csbk_requester_config_t, s *g_csbk.Requ
 		panic(argPanic{})
 	}
 	d.scratch = nil
+	d.lead = C.dmrgo_duration_t(s.Lead)
 }
 
 func fromC_csbk_RequesterConfig(s *C.dmrgo_csbk_requester_config_t) g_csbk.RequesterConfig {
@@ -4751,6 +4756,7 @@ func out_csbk_ResponderConfig(d *C.dmrgo_csbk_responder_config_t, s *g_csbk.Resp
 		panic(argPanic{})
 	}
 	d.scratch = nil
+	d.lead = C.dmrgo_duration_t(s.Lead)
 }
 
 func fromC_csbk_ResponderConfig(s *C.dmrgo_csbk_responder_config_t) g_csbk.ResponderConfig {
@@ -4768,6 +4774,7 @@ func out_csbk_TimingConfig(d *C.dmrgo_csbk_timing_config_t, s *g_csbk.TimingConf
 		panic(argPanic{})
 	}
 	d.scratch = nil
+	d.lead = C.dmrgo_duration_t(s.Lead)
 }
 
 func fromC_csbk_TimingConfig(s *C.dmrgo_csbk_timing_config_t) g_csbk.TimingConfig {
@@ -4784,6 +4791,7 @@ func out_csbk_WakeupConfig(d *C.dmrgo_csbk_wakeup_config_t, s *g_csbk.WakeupConf
 		panic(argPanic{})
 	}
 	d.scratch = nil
+	d.lead = C.dmrgo_duration_t(s.Lead)
 }
 
 func fromC_csbk_WakeupConfig(s *C.dmrgo_csbk_wakeup_config_t) g_csbk.WakeupConfig {
@@ -8370,6 +8378,9 @@ func dmrgo_bs_repeater_decoded_need(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo
 func dmrgo_bs_repeater_decoded(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_duration_t, c_b *C.dmrgo_layer2_burst_t, c_h *C.dmrgo_layer2_hint_t, c_from *C.dmrgo_bs_source_t, c_dst *C.dmrgo_bs_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_bs_Repeater(c_self)
 	var a_b *g_layer2.Burst
 	if c_b != nil {
@@ -10283,6 +10294,9 @@ func dmrgo_csbk_responder_tick(c_self *C.dmrgo_csbk_responder_t, c_now C.dmrgo_d
 func dmrgo_csbk_responder_state_string(c_self C.dmrgo_csbk_responder_state_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_out), c_out_cap, unsafe.Sizeof(*c_out)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -10594,6 +10608,9 @@ func dmrgo_csbk_timing_lost_need(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_du
 func dmrgo_csbk_timing_lost(c_self *C.dmrgo_csbk_timing_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
+	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
+		return fail(C.DMRGO_ERR_ARG)
+	}
 	h := get_csbk_Timing(c_self)
 	if c_dst_len == nil || *c_dst_len > c_dst_cap || (c_dst == nil && c_dst_cap > 0) {
 		return fail(C.DMRGO_ERR_ARG)
@@ -11138,7 +11155,7 @@ func dmrgo_csbk_wakeup_lost(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duratio
 }
 
 //export dmrgo_csbk_wakeup_outbound_sync_need
-func dmrgo_csbk_wakeup_outbound_sync_need(c_self *C.dmrgo_csbk_wakeup_t, c_p0 C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_csbk_wakeup_outbound_sync_need(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duration_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_csbk_Wakeup(c_self)
 	_ = h
@@ -11152,7 +11169,7 @@ func dmrgo_csbk_wakeup_outbound_sync_need(c_self *C.dmrgo_csbk_wakeup_t, c_p0 C.
 }
 
 //export dmrgo_csbk_wakeup_outbound_sync
-func dmrgo_csbk_wakeup_outbound_sync(c_self *C.dmrgo_csbk_wakeup_t, c_p0 C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_csbk_wakeup_outbound_sync(c_self *C.dmrgo_csbk_wakeup_t, c_now C.dmrgo_duration_t, c_dst *C.dmrgo_csbk_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if !lenOK(unsafe.Pointer(c_dst), c_dst_cap, unsafe.Sizeof(*c_dst)) {
@@ -11173,7 +11190,7 @@ func dmrgo_csbk_wakeup_outbound_sync(c_self *C.dmrgo_csbk_wakeup_t, c_p0 C.dmrgo
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.OutboundSync(time.Duration(c_p0), a_dst)
+	r0 := h.v.OutboundSync(time.Duration(c_now), a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{

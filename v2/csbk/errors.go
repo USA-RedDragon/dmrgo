@@ -33,4 +33,5 @@ var (
 	errID         error = &dmrgo.ConfigError{Type: pkgName, Field: "ID"}
 	errDynamicID  error = &dmrgo.ConfigError{Type: pkgName, Field: "DynamicID"}
 	errSlot       error = &dmrgo.ConfigError{Type: pkgName, Field: "Slot"}
+	errLead       error = &dmrgo.ConfigError{Type: pkgName, Field: "Lead"}
 )

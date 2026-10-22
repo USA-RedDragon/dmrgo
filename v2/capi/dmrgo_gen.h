@@ -1145,6 +1145,8 @@ struct dmrgo_csbk_requester_config_t {
 	uint64_t seed;
 	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one, because a machine is done with it when its method returns. Make it with layer2.NewBurst. Nil means the Requester makes its own. */
 	dmrgo_layer2_burst_t *scratch;
+	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. */
+	dmrgo_duration_t lead;
 };
 
 struct dmrgo_csbk_responder_config_t {
@@ -1174,6 +1176,8 @@ struct dmrgo_csbk_responder_config_t {
 	uint64_t seed;
 	/* Scratch, when set, is the Burst that Burst decodes into, as for RequesterConfig.Scratch. */
 	dmrgo_layer2_burst_t *scratch;
+	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. */
+	dmrgo_duration_t lead;
 };
 
 struct dmrgo_csbk_timing_config_t {
@@ -1189,6 +1193,8 @@ struct dmrgo_csbk_timing_config_t {
 	uint64_t seed;
 	/* Scratch, when set, is the Burst that Burst decodes into, as for RequesterConfig.Scratch. (ETSI TS 102 361-2 clause 6.2) */
 	dmrgo_layer2_burst_t *scratch;
+	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. */
+	dmrgo_duration_t lead;
 };
 
 struct dmrgo_csbk_wakeup_config_t {
@@ -1202,6 +1208,8 @@ struct dmrgo_csbk_wakeup_config_t {
 	int64_t attempts;
 	/* Scratch, when set, is the Burst that Burst decodes into, as for RequesterConfig.Scratch. */
 	dmrgo_layer2_burst_t *scratch;
+	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. */
+	dmrgo_duration_t lead;
 };
 
 struct dmrgo_pdu_csbk_bytes_t {
@@ -7695,7 +7703,7 @@ int dmrgo_bs_repeater_free(dmrgo_bs_repeater_t *self);
 int dmrgo_bs_repeater_deadline(dmrgo_bs_repeater_t *self, dmrgo_duration_t *at, bool *ok);
 /* dmrgo_bs_repeater_decoded_need sets *items and *arena to the room that dmrgo_bs_repeater_decoded needs for these arguments, without a change to the handle. */
 int dmrgo_bs_repeater_decoded_need(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, const dmrgo_bs_source_t *from, size_t *items, size_t *arena);
-/* Go: bs.Repeater.Decoded. Decoded takes the burst b, received on slot h.Slot from the source from and decoded by the caller, which may be nil for a burst that did not decode, and runs it through the Repeater as Inbound does. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_bs_repeater_decoded_need gives (DMRGO_BS_REPEATER_DECODED_MAX_ITEMS items). */
+/* Go: bs.Repeater.Decoded. Decoded takes the burst b, received on slot h.Slot from the source from and decoded by the caller, which may be nil for a burst that did not decode, and runs it through the Repeater as Inbound does. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_bs_repeater_decoded_need gives (DMRGO_BS_REPEATER_DECODED_MAX_ITEMS items). b may be NULL. */
 int dmrgo_bs_repeater_decoded(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *h, const dmrgo_bs_source_t *from, dmrgo_bs_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_bs_repeater_inbound_need sets *items and *arena to the room that dmrgo_bs_repeater_inbound needs for these arguments, without a change to the handle. */
 int dmrgo_bs_repeater_inbound_need(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const dmrgo_bs_source_t *from, size_t *items, size_t *arena);
@@ -7705,7 +7713,7 @@ int dmrgo_bs_repeater_inbound(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, c
 int dmrgo_bs_repeater_lost_need(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, dmrgo_enums_slot_t s, const dmrgo_bs_source_t *from, size_t *items, size_t *arena);
 /* Go: bs.Repeater.Lost. Lost tells the Repeater that the transport lost the signal of slot s, such as an MMDVM TAG_LOST. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_bs_repeater_lost_need gives (DMRGO_BS_REPEATER_LOST_MAX_ITEMS items). */
 int dmrgo_bs_repeater_lost(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, dmrgo_enums_slot_t s, const dmrgo_bs_source_t *from, dmrgo_bs_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: bs.Repeater.Reject. Reject refuses the call on slot s, as for an access rule of the caller, typically on its OutputCallStart. It returns DMRGO_ERR_BS_SLOT for a slot other than Slot1 or Slot2, and does nothing for a slot without a call. */
+/* Go: bs.Repeater.Reject. Reject refuses the call on slot s, as for an access rule of the caller, typically on its OutputCallStart. It returns DMRGO_ERR_ZERO_VALUE on a zero Repeater and DMRGO_ERR_BS_SLOT for a slot other than Slot1 or Slot2, and does nothing for a slot without a call. */
 int dmrgo_bs_repeater_reject(dmrgo_bs_repeater_t *self, dmrgo_enums_slot_t s);
 /* Go: bs.Repeater.Reset. Reset ends every call without outputs, empties the queues and puts the Repeater in StateHibernating, or keyed in ModeNetwork. */
 int dmrgo_bs_repeater_reset(dmrgo_bs_repeater_t *self);
@@ -7725,13 +7733,13 @@ int dmrgo_bs_slot_state_string(dmrgo_bs_slot_state_t self, char *out, size_t out
 int dmrgo_bs_state_string(dmrgo_bs_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: csbk.NewPreambles. NewPreambles returns a Preambles for cfg. cfg may be NULL. */
 int dmrgo_csbk_new_preambles(const dmrgo_csbk_preambles_config_t *cfg, dmrgo_csbk_preambles_t **out);
-/* Go: csbk.NewRequester. NewRequester returns a Requester for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source or Retries above MaxRetries. cfg may be NULL. */
+/* Go: csbk.NewRequester. NewRequester returns a Requester for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source, Retries above MaxRetries or a negative Lead. cfg may be NULL. */
 int dmrgo_csbk_new_requester(const dmrgo_csbk_requester_config_t *cfg, dmrgo_csbk_requester_t **out);
-/* Go: csbk.NewResponder. NewResponder returns a Responder for cfg. It returns a DMRGO_ERR_CONFIG for a nil cfg, an Address of 0 or above 24 bits, a color code above 15, an unknown Source, Access or OACSU. cfg may be NULL. */
+/* Go: csbk.NewResponder. NewResponder returns a Responder for cfg. It returns a DMRGO_ERR_CONFIG for a nil cfg, an Address of 0 or above 24 bits, a color code above 15, an unknown Source, Access or OACSU, or a negative Lead. cfg may be NULL. */
 int dmrgo_csbk_new_responder(const dmrgo_csbk_responder_config_t *cfg, dmrgo_csbk_responder_t **out);
-/* Go: csbk.NewTiming. NewTiming returns a Timing for cfg. It returns a DMRGO_ERR_CONFIG for a nil cfg, an ID of 0 or above MaxTimingID, a DynamicID above MaxDynamicID or a Slot other than Slot1 or Slot2. cfg may be NULL. */
+/* Go: csbk.NewTiming. NewTiming returns a Timing for cfg. It returns a DMRGO_ERR_CONFIG for a nil cfg, an ID of 0 or above MaxTimingID, a DynamicID above MaxDynamicID, a Slot other than Slot1 or Slot2 or a negative Lead. cfg may be NULL. */
 int dmrgo_csbk_new_timing(const dmrgo_csbk_timing_config_t *cfg, dmrgo_csbk_timing_t **out);
-/* Go: csbk.NewWakeup. NewWakeup returns a Wakeup for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15 or Attempts out of range. cfg may be NULL. */
+/* Go: csbk.NewWakeup. NewWakeup returns a Wakeup for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, Attempts out of range or a negative Lead. cfg may be NULL. */
 int dmrgo_csbk_new_wakeup(const dmrgo_csbk_wakeup_config_t *cfg, dmrgo_csbk_wakeup_t **out);
 /* Go: csbk.OACSUAnswer.String. String returns the name of the answer. */
 int dmrgo_csbk_oacsu_answer_string(dmrgo_csbk_oacsu_answer_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
@@ -7894,9 +7902,9 @@ int dmrgo_csbk_wakeup_lost_need(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now,
 /* Go: csbk.Wakeup.Lost. Lost tells the Wakeup that the transport lost the signal. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_wakeup_lost_need gives (DMRGO_CSBK_WAKEUP_LOST_MAX_ITEMS items). */
 int dmrgo_csbk_wakeup_lost(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* dmrgo_csbk_wakeup_outbound_sync_need sets *items and *arena to the room that dmrgo_csbk_wakeup_outbound_sync needs for these arguments, without a change to the handle. */
-int dmrgo_csbk_wakeup_outbound_sync_need(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t p0, size_t *items, size_t *arena);
+int dmrgo_csbk_wakeup_outbound_sync_need(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: csbk.Wakeup.OutboundSync. OutboundSync tells the Wakeup that the BS outbound is on air, as the caller sees it, and appends an OutputDone with ResultAnswered to dst while a wakeup runs. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_wakeup_outbound_sync_need gives (DMRGO_CSBK_WAKEUP_OUTBOUND_SYNC_MAX_ITEMS items). */
-int dmrgo_csbk_wakeup_outbound_sync(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t p0, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+int dmrgo_csbk_wakeup_outbound_sync(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: csbk.Wakeup.Reset. Reset ends any wakeup without an output. */
 int dmrgo_csbk_wakeup_reset(dmrgo_csbk_wakeup_t *self);
 /* Go: csbk.Wakeup.State. State returns the state of the Wakeup. */

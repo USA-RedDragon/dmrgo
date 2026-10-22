@@ -103,6 +103,10 @@ type ResponderConfig struct {
 	HoldoffMax time.Duration
 	// Seed seeds the generator of the random holdoff.
 	Seed uint64
+	// Lead makes Tick emit a burst this long before its Due time, so that
+	// an RF FIFO can be filled ahead. 0 means at Due; it must not be
+	// negative. The timers of the machine keep to the Due times.
+	Lead time.Duration
 	// Scratch, when set, is the Burst that Burst decodes into, as for
 	// RequesterConfig.Scratch.
 	Scratch *layer2.Burst
@@ -132,7 +136,7 @@ type Responder struct {
 
 // NewResponder returns a Responder for cfg. It returns a *dmrgo.ConfigError
 // for a nil cfg, an Address of 0 or above 24 bits, a color code above 15, an
-// unknown Source, Access or OACSU. It allocates the Responder, and its Burst
+// unknown Source, Access or OACSU, or a negative Lead. It allocates the Responder, and its Burst
 // unless cfg.Scratch is set.
 func NewResponder(cfg *ResponderConfig) (*Responder, error) {
 	switch {
@@ -144,13 +148,15 @@ func NewResponder(cfg *ResponderConfig) (*Responder, error) {
 		return nil, errAccess
 	case cfg.OACSU > OACSUNotSupported:
 		return nil, errOACSU
+	case cfg.Lead < 0:
+		return nil, errLead
 	}
 	if _, _, ok := cfg.Source.SyncPatterns(); !ok {
 		return nil, errSource
 	}
 	r := &Responder{address: cfg.Address, oacsu: cfg.OACSU, noRadio: cfg.NoRadioCheck, noAlert: cfg.NoCallAlert, noFNS: cfg.NoFNS}
 	r.s.init(cfg.ColorCode, cfg.Source, cfg.IdleSearch, cfg.HoldoffMax, cfg.Seed)
-	r.s.access = cfg.Access
+	r.s.access, r.s.lead = cfg.Access, cfg.Lead
 	r.d = newDecoder(cfg.Scratch)
 	return r, nil
 }

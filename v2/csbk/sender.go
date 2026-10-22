@@ -33,6 +33,7 @@ type sender struct {
 	src        layer2.SyncSource
 	idleSearch time.Duration
 	holdoffMax time.Duration
+	lead       time.Duration
 	rng        pcg.Source
 	busy       bool
 
@@ -94,7 +95,7 @@ func (s *sender) deadline() (time.Duration, bool) {
 	case sendQualify, sendHoldoff:
 		return s.timer, true
 	case sendBursts:
-		return s.due, true
+		return s.due - s.lead, true
 	case sendIdle:
 	}
 	return 0, false
@@ -116,7 +117,7 @@ func (s *sender) tick(now time.Duration, out []Output) ([]Output, sendEvent) {
 			s.timer += holdoff(&s.rng, s.holdoffMax)
 		}
 	}
-	if s.state != sendBursts || now < s.due {
+	if s.state != sendBursts || now < s.due-s.lead {
 		return out, sendNothing
 	}
 	c := s.csbk

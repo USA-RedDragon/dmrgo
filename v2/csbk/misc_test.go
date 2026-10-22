@@ -176,3 +176,50 @@ func TestZeroMachines(t *testing.T) {
 		}
 	}
 }
+
+func TestLead(t *testing.T) {
+	t.Parallel()
+
+	const lead = 20 * ms
+	q := mustRequester(t, &csbk.RequesterConfig{Lead: lead})
+	if err := q.RequestRadioCheck(time.Second, 2, 1, &csbk.RequestOptions{Preambles: 1}); err != nil {
+		t.Fatal(err)
+	}
+	w, err := csbk.NewWakeup(&csbk.WakeupConfig{Lead: lead})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Wake(time.Second, 1, 2); err != nil {
+		t.Fatal(err)
+	}
+	for name, m := range map[string]machine{"Requester": q, "Wakeup": w} {
+		at, ok := m.Deadline()
+		if !ok || at != time.Second-lead {
+			t.Fatalf("%s: Deadline %v %t", name, at, ok)
+		}
+		if out := m.Tick(at-1, nil); len(out) != 0 {
+			t.Fatalf("%s: burst before Due minus Lead", name)
+		}
+		out := m.Tick(at, nil)
+		if len(out) != 1 || out[0].Kind != csbk.OutputBurst || out[0].Due != time.Second {
+			t.Fatalf("%s: %+v", name, out)
+		}
+	}
+	if at, ok := q.Deadline(); !ok || at != time.Second+csbk.BurstInterval-lead {
+		t.Errorf("Requester: second burst deadline %v", at)
+	}
+	if at, ok := w.Deadline(); !ok || at != time.Second+csbk.DefaultSyncWait {
+		t.Errorf("Wakeup: T_SyncWu deadline %v, want it from Due", at)
+	}
+	for _, err := range []error{
+		func() error { _, err := csbk.NewRequester(&csbk.RequesterConfig{Lead: -1}); return err }(),
+		func() error { _, err := csbk.NewResponder(&csbk.ResponderConfig{Address: 1, Lead: -1}); return err }(),
+		func() error { _, err := csbk.NewWakeup(&csbk.WakeupConfig{Lead: -1}); return err }(),
+		func() error { _, err := csbk.NewTiming(&csbk.TimingConfig{ID: 1, Slot: 1, Lead: -1}); return err }(),
+	} {
+		var ce *dmrgo.ConfigError
+		if !errors.As(err, &ce) || ce.Field != "Lead" {
+			t.Errorf("negative Lead: %v", err)
+		}
+	}
+}
