@@ -11,14 +11,18 @@
 //	if err != nil {
 //		return err
 //	}
-//	if lc, ok := burst.Data.(*pdu.FullLinkControl); ok && !burst.FEC.PDU.Uncorrectable {
+//	if err := burst.FEC.Aggregate().Err(); err != nil {
+//		return err
+//	}
+//	if lc, ok := burst.Data.(*pdu.FullLinkControl); ok {
 //		target, source, _ := lc.Addresses()
 //		fmt.Println(source, target)
 //	}
 //
-// An FEC or CRC failure is not an error. Burst.FEC reports it, and Burst.Data
-// still holds the decoded PDU. Call Err on a fec.Result, such as
-// burst.FEC.Aggregate().Err(), to get fec.ErrUncorrectable instead.
+// An FEC or CRC failure is not an error of NewBurstFromBytes. Burst.FEC
+// reports it, and Burst.Data still holds the decoded PDU. Err on a
+// fec.Result, such as burst.FEC.Aggregate().Err(), gives
+// fec.ErrUncorrectable for it.
 //
 // Burst.Encode writes a decoded burst back to 33 bytes, unchanged until its
 // fields change. Burst.Data is a layer2.Data: a PDU whose DataType must match
@@ -101,6 +105,8 @@
 //   - trunk: the Tier III channel tables, a Follower that follows the
 //     calls of a trunked site, an MS that registers and makes calls, and a
 //     TSCC that runs a single site.
+//   - trunk/auth: the answer of an MS to the authentication challenge of a
+//     TSCC.
 //
 // Applications in data packets:
 //
@@ -114,8 +120,8 @@
 //     report in a data packet.
 //   - mototrbo/ars, mototrbo/lrrp, mototrbo/tms: the MOTOTRBO registration,
 //     location and text message services.
-//   - hytera: the Hytera DMR Application Protocol (HDAP) with its radio
-//     registration, location and text message services.
+//   - hytera/hdap: the Hytera DMR Application Protocol (HDAP) with its
+//     radio registration, location and text message services.
 //
 // Networks and modems:
 //
@@ -124,8 +130,12 @@
 //     DMRGateway link and OpenBridge.
 //   - transport/dmrd/auth: the login token of transport/dmrd and the
 //     signatures of OpenBridge.
+//   - transport/dmrd/session: the login, keepalive and retry sessions of
+//     transport/dmrd, without I/O.
 //   - transport/ipsc: Motorola IP Site Connect.
 //   - transport/ipsc/auth: the authentication trailer of IPSC packets.
+//   - transport/ipsc/session: the registration, peer list and keepalives of
+//     IPSC, without I/O.
 //   - transport/hytera: Hytera IP Multi-Site Connect.
 //   - transport/mmdvm: the serial protocol of an MMDVM modem.
 //
@@ -176,6 +186,10 @@
 //     by the Capacity Plus site status assembler.
 //   - pdu.ErrNoAddresses: returned by the SetAddresses methods for a PDU
 //     without address fields.
+//   - pdu.ErrNoServiceOptions: returned by LCBytes.SetServiceOptions for an
+//     LC without a Service Options field.
+//   - framer.ErrPeriod: returned by framer.New for a Period over
+//     framer.MaxPeriod.
 //   - voice.ErrBusy, voice.ErrQueueFull, voice.ErrNotActive,
 //     voice.ErrTimedOut: returned by voice.Transmitter.
 //   - data.ErrBusy: returned by data.Sender.Send while a message is in
@@ -184,13 +198,18 @@
 //     csbk machines.
 //   - bs.ErrSlot: returned for a slot other than 1 or 2.
 //   - trunk.ErrChannelNumber, trunk.ErrPlanFull, trunk.ErrBusy,
-//     trunk.ErrNotOnControl, trunk.ErrNotRegistered: returned by the
-//     channel tables and the requests of the trunk machines.
+//     trunk.ErrNotOnControl, trunk.ErrNotRegistered, trunk.ErrStunned,
+//     trunk.ErrNoCall: returned by the channel tables and the requests of
+//     the trunk machines.
+//   - trunk.ErrUDTFormat, trunk.ErrUDTLength, trunk.ErrUDTCharacter:
+//     returned for the appended data of a UDT.
 //   - ip.ErrShort, ip.ErrLength, ip.ErrVersion, ip.ErrProtocol,
 //     ip.ErrFragment, ip.ErrSAP, ip.ErrChecksum: returned by the ip
 //     decoders.
+//   - ip.ErrNoICMP: returned by ip.AppendICMPPacket and package data for a
+//     packet that gets no ICMP error message.
 //   - sms.ErrShort, sms.ErrLength, sms.ErrSignature, sms.ErrNotText,
-//     sms.ErrFormat: returned by package sms, which also returns the
+//     sms.ErrFormat, sms.ErrNil: returned by package sms, which also returns the
 //     errors of the ip, tms and shortdata packages.
 //   - shortdata.ErrShort, shortdata.ErrLength, shortdata.ErrFormat,
 //     shortdata.ErrCharacter: returned by package shortdata.
@@ -207,8 +226,8 @@
 //     dmrd.ErrCommand: returned by the transport/dmrd decoders.
 //   - ipsc.ErrShort, ipsc.ErrLength, ipsc.ErrCommand: returned by the
 //     transport/ipsc decoders.
-//   - ErrShort, ErrLength, ErrSignature and ErrCode of transport/hytera:
-//     returned by its decoders.
+//   - hytera.ErrShort, hytera.ErrLength, hytera.ErrSignature,
+//     hytera.ErrCode: returned by the transport/hytera decoders.
 //   - mmdvm.ErrShort, mmdvm.ErrLength, mmdvm.ErrCommand: returned by the
 //     transport/mmdvm decoders.
 //   - codec2.ErrUnavailable, codec2.ErrUnsupportedMode,
