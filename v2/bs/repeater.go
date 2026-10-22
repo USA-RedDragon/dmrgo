@@ -163,6 +163,7 @@ type slot struct {
 	authVoice  bool
 	authPrev   SlotState
 	authUntil  time.Duration
+	authed     bool
 }
 
 // Repeater is the base station of one carrier with two slots, as the
@@ -791,6 +792,7 @@ func (r *Repeater) events(now time.Duration, s *slot, ev []voice.Event, dst []Ou
 				continue
 			}
 			s.state, s.call, s.hasCall = SlotVoice, e.Call, true
+			s.authed = s.authed && e.Call.Source == s.authSource
 			s.activity, s.hash = activityOf(&e.Call), hashOf(e.Call.Target)
 			if s.tx.Relay(now, e) != nil {
 				s.tx.Reset()
@@ -817,6 +819,7 @@ func (r *Repeater) endVoice(now time.Duration, s *slot, reason voice.EndReason, 
 	}
 	rejected := s.state == SlotRejected
 	s.state = SlotIdle
+	s.authed = s.authed && reason == voice.EndSuperseded
 	if !s.hasCall {
 		return dst
 	}
