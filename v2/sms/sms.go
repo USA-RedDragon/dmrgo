@@ -23,7 +23,10 @@ const (
 	// radios send in M-SMS mode. AppendPacket sends no NUL after the text.
 	FormatTMS Format = iota + 1
 	// FormatIP is an ETSI text message to UDP port 5016 in UTF-16BE.
-	// AppendPacket sends no NUL after the text.
+	// The payload has no prefix, and AppendPacket sends no NUL after the
+	// text, as ETSI TS 102 361-3 clause 5.7.1 gives it. An AnyTone
+	// radio in its DMR Standard mode reads this format as UTF-16LE after
+	// the octets 00 0d 00 0a. Use FormatAnyTone to text an AnyTone radio.
 	FormatIP
 	// FormatAnyTone is the text to UDP port 5016 that AnyTone radios send
 	// in DMR Standard mode. AppendPacket sends one UTF-16 NUL after the
