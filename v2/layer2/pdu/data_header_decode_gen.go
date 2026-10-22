@@ -138,7 +138,7 @@ func (s *DataHeader) String() string {
 	}
 
 	_ret := "DataHeader{ "
-	_ret += "FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, Format: " + text.Int(int64(s.Format())) + ", appendedBlocks: " + text.Int(int64(s.appendedBlocks())) + ", "
+	_ret += "FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, "
 	if v, ok := s.AsUnconfirmed(); ok {
 		_ret += v.String()
 	} else if v, ok := s.AsConfirmed(); ok {

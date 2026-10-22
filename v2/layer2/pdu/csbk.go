@@ -492,11 +492,11 @@ const (
 //dmr:variant MotorolaCallAlert MotorolaCallAlertPDU Opcode=CSBKMotorolaCallAlert FID=enums.FIDMotorola
 //dmr:variant MotorolaCallAlertAck MotorolaCallAlertAckPDU Opcode=CSBKMotorolaCallAlertAck FID=enums.FIDMotorola
 type CSBK struct {
-	LastBlock   bool       `dmr:"bit:0"`     // LB bit, true for the last block
-	ProtectFlag bool       `dmr:"bit:1"`     // PF bit
-	Opcode      CSBKOpcode `dmr:"bits:2-7"`  // CSBKO, selects the payload
-	FID         enums.FID  `dmr:"bits:8-15"` // feature set ID, selects the payload with Opcode
-	FEC         fec.Result `dmr:"-"`         // result of the CRC check
+	LastBlock   bool       `dmr:"bit:0"`          // LB bit, true for the last block
+	ProtectFlag bool       `dmr:"bit:1"`          // PF bit
+	Opcode      CSBKOpcode `dmr:"bits:2-7,enum"`  // CSBKO, selects the payload
+	FID         enums.FID  `dmr:"bits:8-15,enum"` // feature set ID, selects the payload with Opcode
+	FEC         fec.Result `dmr:"-"`              // result of the CRC check
 	// Hint0x38 is the likely meaning of opcode 0x38. DecodeCSBK leaves it
 	// Opcode0x38Unknown. layer2.Burst sets it from the SYNC of the burst,
 	// which a network relay can rewrite. Each SetX resets it, except the two

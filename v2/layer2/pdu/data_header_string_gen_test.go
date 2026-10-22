@@ -19,7 +19,7 @@ func TestUnconfirmedDataHeaderStringMatchesFmt(t *testing.T) {
 
 func (s *DataHeader) fmtString() string {
 	_ret := "DataHeader{ "
-	_ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, Format: %d, appendedBlocks: %d, ", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.Format(), s.appendedBlocks())
+	_ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
 	if v, ok := s.AsUnconfirmed(); ok {
 		_ret += v.String()
 	} else if v, ok := s.AsConfirmed(); ok {

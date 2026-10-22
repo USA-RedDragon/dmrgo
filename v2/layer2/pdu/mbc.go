@@ -28,11 +28,11 @@ import (
 //dmr:variant Move MovePDU Opcode=CSBKMove
 //dmr:variant Broadcast BroadcastPDU Opcode=CSBKBroadcast
 type MBCHeader struct {
-	FEC         fec.Result `dmr:"-"`         // result of the CRC check
-	LastBlock   bool       `dmr:"bit:0"`     // LB bit, false in an MBC header
-	ProtectFlag bool       `dmr:"bit:1"`     // PF bit
-	Opcode      CSBKOpcode `dmr:"bits:2-7"`  // CSBKO, selects the payload
-	FID         enums.FID  `dmr:"bits:8-15"` // feature set ID, only the standard FID has As methods
+	FEC         fec.Result `dmr:"-"`              // result of the CRC check
+	LastBlock   bool       `dmr:"bit:0"`          // LB bit, false in an MBC header
+	ProtectFlag bool       `dmr:"bit:1"`          // PF bit
+	Opcode      CSBKOpcode `dmr:"bits:2-7,enum"`  // CSBKO, selects the payload
+	FID         enums.FID  `dmr:"bits:8-15,enum"` // feature set ID, only the standard FID has As methods
 
 	// RawPayload holds header octets 2 to 9 (bits 16 to 79), the payload
 	// that Opcode and FID select.

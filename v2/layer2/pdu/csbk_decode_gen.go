@@ -1719,7 +1719,7 @@ func (s *CSBK) String() string {
 	}
 
 	_ret := "CSBK{ "
-	_ret += "LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + ", FID: " + text.Int(int64(s.FID)) + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, "
+	_ret += "LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + s.Opcode.String() + ", FID: " + s.FID.String() + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, "
 	if v, ok := s.AsUnitToUnitVoiceServiceRequest(); ok {
 		_ret += v.String()
 	} else if v, ok := s.AsUnitToUnitVoiceServiceAnswerResponse(); ok {
