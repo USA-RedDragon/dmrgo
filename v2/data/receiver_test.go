@@ -563,6 +563,8 @@ func TestNewReceiverErrors(t *testing.T) {
 		{data.ReceiverConfig{MaxBlocks: 128}, "MaxBlocks"},
 		{data.ReceiverConfig{MaxBlocks: -1}, "MaxBlocks"},
 		{data.ReceiverConfig{Peers: data.MaxPeers + 1}, "Peers"},
+		{data.ReceiverConfig{MaxFragment: data.MaxMessage + 1}, "MaxFragment"},
+		{data.ReceiverConfig{MaxMessage: -1}, "MaxMessage"},
 	} {
 		_, err := data.NewReceiver(&c.cfg)
 		var ce *dmrgo.ConfigError

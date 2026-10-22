@@ -25,6 +25,7 @@ var (
 	errPreambles    error = &dmrgo.ConfigError{Type: pkgName, Field: "Preambles"}
 	errRetries      error = &dmrgo.ConfigError{Type: pkgName, Field: "Retries"}
 	errHeader       error = &dmrgo.ConfigError{Type: pkgName, Field: "Header"}
+	errProprietary  error = &dmrgo.ConfigError{Type: pkgName, Field: "Proprietary"}
 	errWindow       error = &dmrgo.ConfigError{Type: pkgName, Field: "Window"}
 	errMessageGroup error = &dmrgo.ConfigError{Type: pkgName, Field: "Header.Group"}
 )

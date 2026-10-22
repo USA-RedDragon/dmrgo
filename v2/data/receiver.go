@@ -222,7 +222,8 @@ func (w *window) failed() int {
 
 // NewReceiver returns a Receiver for cfg. A nil cfg means the zero
 // ReceiverConfig. It returns a *dmrgo.ConfigError for a color code above 15,
-// an unknown Source, or a MaxBlocks or Peers out of range. It allocates the
+// an unknown Source, or a MaxBlocks, Peers, MaxFragment or MaxMessage out
+// of range. It allocates the
 // Receiver, its packet.Assembler, its table of links, and its Burst unless
 // cfg.Scratch is set.
 func NewReceiver(cfg *ReceiverConfig) (*Receiver, error) {
