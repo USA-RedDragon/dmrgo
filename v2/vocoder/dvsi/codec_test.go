@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/dvsisim"
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
@@ -311,7 +312,7 @@ func TestCodecPortErrors(t *testing.T) {
 	if _, err := dvsi.New(&brokenPort{}, &dvsi.Config{Channel: 3}); !errors.Is(err, dvsi.ErrChannel) {
 		t.Errorf("New on channel 3 = %v", err)
 	}
-	if _, err := dvsi.New(nil, nil); !errors.Is(err, dvsi.ErrPort) {
+	if _, err := dvsi.New(nil, nil); !errors.Is(err, dmrgo.ErrNilArgument) {
 		t.Errorf("New with a nil Port = %v", err)
 	}
 	checkSim(t, dp.Device)
