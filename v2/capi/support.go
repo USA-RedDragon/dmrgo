@@ -2,6 +2,7 @@ package main
 
 /*
 #define DMRGO_NO_PROTOTYPES
+#define DMRGO_USER_T uintptr_t
 #include "dmrgo.h"
 #include "dmrgo_gen_internal.h"
 
@@ -60,6 +61,21 @@ func lookup[T any](p unsafe.Pointer) T {
 		panic(handlePanic{})
 	}
 	return v
+}
+
+func hvalue[T any](h uintptr) T {
+	if h == 0 {
+		panic(handlePanic{})
+	}
+	v, ok := cgo.Handle(h).Value().(T)
+	if !ok {
+		panic(handlePanic{})
+	}
+	return v
+}
+
+func newUser(v any) C.uintptr_t {
+	return C.uintptr_t(cgo.NewHandle(v))
 }
 
 func newHandle(v any) unsafe.Pointer {

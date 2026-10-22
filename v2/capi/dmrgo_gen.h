@@ -13,6 +13,11 @@ extern "C" {
 
 #define DMRGO_ABI_VERSION 1
 
+/* DMRGO_USER_T is the type of the user value of a callback or vtable. The library builds with uintptr_t, which has the same size and passing. */
+#ifndef DMRGO_USER_T
+#define DMRGO_USER_T void *
+#endif
+
 typedef struct dmrgo_complex64_t {
 	float re;
 	float im;
@@ -2885,8 +2890,8 @@ struct dmrgo_layer2_cach_t {
 };
 
 struct dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t {
-	int (*fn)(void *user, int64_t superframe, dmrgo_pdu_full_link_control_t *out, bool *out_ok);
-	void *user;
+	int (*fn)(DMRGO_USER_T user, int64_t superframe, dmrgo_pdu_full_link_control_t *out, bool *out_ok);
+	DMRGO_USER_T user;
 };
 
 struct dmrgo_layer2_voice_transmitter_options_t {
@@ -4799,9 +4804,9 @@ struct dmrgo_trunk_nmea_short_t {
 struct dmrgo_trunk_authenticator_vtable_t {
 	/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. */
 	size_t size;
-	void *user;
+	DMRGO_USER_T user;
 	/* Response returns the response of the MS addr to challenge. */
-	int (*response)(void *user, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
+	int (*response)(DMRGO_USER_T user, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok);
 };
 
 struct dmrgo_trunk_capacity_plus_config_t {
@@ -5268,20 +5273,20 @@ struct dmrgo_trunk_auth_keys_t {
 struct dmrgo_vocoder_codec_vtable_t {
 	/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. */
 	size_t size;
-	void *user;
-	int (*close)(void *user);
+	DMRGO_USER_T user;
+	int (*close)(DMRGO_USER_T user);
 	/* Decode decodes one 72-bit frame, appends its FrameSamples samples to dst and returns the extended slice. */
-	int (*decode)(void *user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
+	int (*decode)(DMRGO_USER_T user, int16_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, const uint8_t slot[9]);
 	/* Encode encodes exactly FrameSamples samples into one 72-bit frame. */
-	int (*encode)(void *user, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
+	int (*encode)(DMRGO_USER_T user, const int16_t *pcm, size_t pcm_len, uint8_t out[9]);
 	/* FID returns the Feature set ID to send in the Full LC of calls that use this codec. */
-	int (*fid)(void *user, dmrgo_enums_fid_t *out);
+	int (*fid)(DMRGO_USER_T user, dmrgo_enums_fid_t *out);
 	/* FrameSamples returns the number of PCM samples in one frame. */
-	int (*frame_samples)(void *user, int64_t *out);
+	int (*frame_samples)(DMRGO_USER_T user, int64_t *out);
 	/* Silence returns a frame that decodes to silence, for padding the last burst of a call. */
-	int (*silence)(void *user, uint8_t out[9]);
+	int (*silence)(DMRGO_USER_T user, uint8_t out[9]);
 	/* Reset starts a new call: the decoder drops what it learned from the frames of the call before, such as a detected mode. */
-	int (*reset)(void *user);
+	int (*reset)(DMRGO_USER_T user);
 };
 
 struct dmrgo_codec2_config_t {
@@ -5317,11 +5322,11 @@ struct dmrgo_dvsi_packet_t {
 struct dmrgo_dvsi_port_vtable_t {
 	/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. */
 	size_t size;
-	void *user;
+	DMRGO_USER_T user;
 	/* Read reads bytes from the chip into p. */
-	int (*read)(void *user, uint8_t *p, size_t p_len, int64_t *out);
+	int (*read)(DMRGO_USER_T user, uint8_t *p, size_t p_len, int64_t *out);
 	/* Write writes the bytes of p to the chip. */
-	int (*write)(void *user, const uint8_t *p, size_t p_len, int64_t *out);
+	int (*write)(DMRGO_USER_T user, const uint8_t *p, size_t p_len, int64_t *out);
 };
 
 struct dmrgo_voice_call_options_t {
