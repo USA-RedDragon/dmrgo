@@ -25,16 +25,19 @@ const (
 	// FormatIP is an ETSI text message to UDP port 5016: the text in
 	// UTF-16BE, with no prefix and no NUL, as ETSI TS 102 361-3 clause
 	// 5.7.1 gives it and as one Hytera radio sends it. AppendPacket sends
-	// no NUL after the text. A DA-7X2 in DMR Standard mode shows the text
-	// of this format as UTF-16LE. Use FormatAnyTone to text an AnyTone
+	// no NUL after the text. Do not send this format to an AnyTone radio:
+	// a BTECH DA-7X2 with firmware V1.05d2 locks up when the user views a
+	// text of this format, and a DA-7X2 with its first D890UV firmware
+	// shows the text as UTF-16LE. Use FormatAnyTone to text an AnyTone
 	// radio.
 	FormatIP
 	// FormatAnyTone is the text to UDP port 5016 that AnyTone radios send
 	// in DMR Standard mode: the octets 00 0d 00 0a, then the text in
-	// UTF-16LE. A DA-7X2 with D890UV firmware ends the text with a UTF-16
-	// NUL; a 6X2 Pro and a D878 do not. AppendPacket sends one UTF-16 NUL
-	// after the text, as a DA-7X2 shows old characters after a text
-	// without it.
+	// UTF-16LE. A DA-7X2 ends the text with a UTF-16 NUL, with its first
+	// D890UV firmware and with firmware V1.05d2; a 6X2 Pro and a D878 do
+	// not. AppendPacket sends one UTF-16 NUL after the text, as a DA-7X2
+	// with D890UV firmware shows old characters after a text without it.
+	// Firmware V1.05d2 shows a text correctly without the NUL.
 	FormatAnyTone
 	// FormatDefinedData is a short data packet (DD_HEAD) whose DD format
 	// gives the coding of the text. AppendPacket sends no NUL after the
