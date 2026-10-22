@@ -6,6 +6,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/nmea"
 )
 
+// ExampleParseRMC parses an RMC sentence and rejects a sentence with
+// a bad checksum.
 func ExampleParseRMC() {
 	r, err := nmea.ParseRMC([]byte("$GPRMC,200037.000,A,3412.7300,N,10850.0000,E,0.00,121.00,021225,,,A*60\r\n"))
 	if err != nil {

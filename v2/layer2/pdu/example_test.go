@@ -7,6 +7,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
+// ExampleLCBytes_Codeword encodes a Full LC codeword, checks its
+// parity and corrects one bit error.
 func ExampleLCBytes_Codeword() {
 	lc := pdu.LCBytes{0x00, 0x00, 0x00, 0x00, 0x00, 0x5b, 0x00, 0x30, 0x39}
 	cw, err := lc.Codeword(enums.DataTypeVoiceLCHeader)
@@ -28,6 +30,7 @@ func ExampleLCBytes_Codeword() {
 	// true 1
 }
 
+// ExampleDecodeCSBK encodes a preamble CSBK and decodes it back.
 func ExampleDecodeCSBK() {
 	in := pdu.CSBK{LastBlock: true}
 	err := in.SetPreamble(pdu.PreamblePDU{Group: true, CSBKBlocksToFollow: 2, TargetAddress: 91, SourceAddress: 3120000})

@@ -6,6 +6,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
+// ExampleDecodeServiceOptions decodes a service options octet and
+// encodes it back.
 func ExampleDecodeServiceOptions() {
 	so := layer3.DecodeServiceOptions([1]byte{0x83})
 	fmt.Println(so.IsEmergency, so.IsBroadcast, so.PriorityLevel)

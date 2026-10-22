@@ -19,6 +19,8 @@ func voiceLCHeader() [33]byte {
 	}
 }
 
+// ExampleNewBurstFromBytes decodes a Voice LC Header burst, reads
+// the addresses of its Full LC and encodes it back to the same bytes.
 func ExampleNewBurstFromBytes() {
 	burst, err := layer2.NewBurstFromBytes(voiceLCHeader())
 	if err != nil {
@@ -38,6 +40,8 @@ func ExampleNewBurstFromBytes() {
 	// unchanged: true
 }
 
+// ExampleBurst_DecodeFromBytesWith rejects a burst with a color code
+// that is not the expected one.
 func ExampleBurst_DecodeFromBytesWith() {
 	cc := enums.ColorCode(7)
 	var b layer2.Burst
@@ -47,6 +51,8 @@ func ExampleBurst_DecodeFromBytesWith() {
 	// true layer2: color code mismatch: burst has 1, want 7
 }
 
+// ExampleRawBurst reads the SYNC, the slot type and the BPTC payload of
+// a burst without a full decode.
 func ExampleRawBurst() {
 	r := layer2.RawBurst(voiceLCHeader())
 	sync, dist := r.Sync()
@@ -59,6 +65,8 @@ func ExampleRawBurst() {
 	// 03000000270630b43c5dcfc1 0
 }
 
+// ExampleBuildDataBurst builds a Terminator with LC burst from a
+// Full LC codeword and decodes it back.
 func ExampleBuildDataBurst() {
 	lc := pdu.LCBytes{0x00, 0x00, 0x00, 0x00, 0x00, 0x5b, 0x00, 0x30, 0x39}
 	cw, err := lc.Codeword(enums.DataTypeTerminatorWithLC)
@@ -79,6 +87,8 @@ func ExampleBuildDataBurst() {
 	// Terminator With LC false 12345 91
 }
 
+// ExampleVoiceTransmitter builds the bursts of a short group voice
+// call: the header, one superframe of silence and the terminator.
 func ExampleVoiceTransmitter() {
 	var lc pdu.FullLinkControl
 	if err := lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3120000}); err != nil {

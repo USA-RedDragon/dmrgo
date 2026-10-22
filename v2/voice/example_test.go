@@ -9,6 +9,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/voice"
 )
 
+// ExampleReceiver decodes a recorded voice call and reports its start,
+// its end and the end of the session.
 func ExampleReceiver() {
 	data, err := os.ReadFile("../layer2/testdata/parrot_kerchunk.bin")
 	if err != nil {

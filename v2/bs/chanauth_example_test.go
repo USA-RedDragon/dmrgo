@@ -12,6 +12,9 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/vocoder"
 )
 
+// ExampleConfig_channelAuth shows a repeater with single site channel
+// authentication. It puts a call in the ChanAuth state and counts the
+// Voice LC Headers that it sends on slot 1.
 func ExampleConfig_channelAuth() {
 	r, err := bs.New(&bs.Config{ColorCode: 1, CACH: true, CallHang: -1, ChannelAuth: bs.ChannelAuthSingleSite})
 	if err != nil {

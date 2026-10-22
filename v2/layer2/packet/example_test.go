@@ -11,6 +11,8 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/nmea"
 )
 
+// ExampleNewPacket splits a short data message into blocks and
+// assembles the blocks back into the message.
 func ExampleNewPacket() {
 	var header pdu.DataHeader
 	err := header.SetUnconfirmed(pdu.UnconfirmedDataHeader{
@@ -51,6 +53,8 @@ func ExampleNewPacket() {
 	// "hello, DMR"
 }
 
+// ExampleMessage_UDPIPv4 sends an NMEA RMC sentence in a packet
+// with a compressed UDP/IPv4 header and reads the position back.
 func ExampleMessage_UDPIPv4() {
 	udp := pdu.UDPIPv4CompressedHeader{IPv4Identification: 1, ExtendedHeader1: 10110, ExtendedHeader2: 10110}
 	raw, err := udp.Encode()
