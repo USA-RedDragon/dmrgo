@@ -79,7 +79,7 @@ func (s *serviceSite) run(d time.Duration) {
 				keep = append(keep, b)
 				continue
 			}
-			s.tout = s.tscc.Inbound(s.now, b.ch, b.slot, &b.raw, layer2.Hint{}, s.tout[:0])
+			s.tout = s.tscc.Inbound(s.now, b.ch, &b.raw, layer2.Hint{Slot: b.slot}, s.tout[:0])
 			s.tsccOut()
 		}
 		s.air = keep

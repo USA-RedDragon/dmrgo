@@ -56,7 +56,8 @@ func TestNilBurst(t *testing.T) {
 	for _, h := range []layer2.Hint{{}, {SyncLost: true}} {
 		_ = cp.Burst(0, nil, h, nil, out[:0])
 		_ = ms.Burst(0, nil, h, nil, out[:0])
-		if o := tscc.Inbound(0, 1, enums.Slot1, nil, h, nil); len(o) != 0 {
+		h.Slot = enums.Slot1
+		if o := tscc.Inbound(0, 1, nil, h, nil); len(o) != 0 {
 			t.Errorf("TSCC.Inbound of nil: %d outputs", len(o))
 		}
 	}

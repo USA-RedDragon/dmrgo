@@ -101,7 +101,7 @@ func runTSCCUDT(t *testing.T, pool burstPool, in []byte) {
 		switch kind % 4 {
 		case 0, 1:
 			raw := pool[int(arg)%len(pool)]
-			out = ts.Inbound(now, ch, enums.Slot(1+arg>>7), &raw, layer2.Hint{}, out[:0])
+			out = ts.Inbound(now, ch, &raw, layer2.Hint{Slot: enums.Slot(1+arg>>7)}, out[:0])
 		case 2:
 			for range int(arg % 8) {
 				now += 30 * time.Millisecond

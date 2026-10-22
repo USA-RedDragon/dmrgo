@@ -43532,7 +43532,7 @@ func dmrgo_trunk_tscc_expect_auth(c_self *C.dmrgo_trunk_tscc_t, c_addr C.uint32_
 }
 
 //export dmrgo_trunk_tscc_inbound_need
-func dmrgo_trunk_tscc_inbound_need(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_t, c_ch C.uint16_t, c_s C.dmrgo_enums_slot_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
+func dmrgo_trunk_tscc_inbound_need(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_t, c_ch C.uint16_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_items *C.size_t, c_arena *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	h := get_trunk_TSCC(c_self)
 	if c_h == nil {
@@ -43552,7 +43552,7 @@ func dmrgo_trunk_tscc_inbound_need(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_d
 }
 
 //export dmrgo_trunk_tscc_inbound
-func dmrgo_trunk_tscc_inbound(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_t, c_ch C.uint16_t, c_s C.dmrgo_enums_slot_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_trunk_tscc_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
+func dmrgo_trunk_tscc_inbound(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_duration_t, c_ch C.uint16_t, c_raw *C.dmrgo_layer2_raw_burst_t, c_h *C.dmrgo_layer2_hint_t, c_dst *C.dmrgo_trunk_tscc_output_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_trunk_TSCC(c_self)
@@ -43575,7 +43575,7 @@ func dmrgo_trunk_tscc_inbound(c_self *C.dmrgo_trunk_tscc_t, c_now C.dmrgo_durati
 		}
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	r0 := h.v.Inbound(time.Duration(c_now), uint16(c_ch), g_enums.Slot(c_s), (*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h, a_dst)
+	r0 := h.v.Inbound(time.Duration(c_now), uint16(c_ch), (*g_layer2.RawBurst)(unsafe.Pointer(c_raw)), a_h, a_dst)
 	_ = r0
 	h.sc0 = r0[:0]
 	{

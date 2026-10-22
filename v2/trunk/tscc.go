@@ -416,19 +416,21 @@ func (t *TSCC) Deadline() (at time.Duration, ok bool) {
 }
 
 // Inbound takes the burst raw that the TSCC received on the inbound
-// channel of carrier ch in slot s, and appends the outputs to dst. On the
-// TSCC it answers C_RAND, C_ACKU and C_NACKU; on a payload slot it keeps
-// the burst for the relay of the call and ends the call on P_MAINT. A nil
-// raw, a transport frame without a burst, does nothing. It allocates only
-// when dst has no room for MaxTSCCOutputs outputs.
-func (t *TSCC) Inbound(now time.Duration, ch uint16, s enums.Slot, raw *layer2.RawBurst, h layer2.Hint, dst []TSCCOutput) []TSCCOutput {
+// channel of carrier ch in the slot h.Slot, and appends the outputs to dst.
+// On the TSCC it answers C_RAND, C_ACKU and C_NACKU; on a payload slot it
+// keeps the burst for the relay of the call and ends the call on P_MAINT.
+// A nil raw, a transport frame without a burst, and a burst with Slot
+// SlotUnknown do nothing. It allocates only when dst has no room for
+// MaxTSCCOutputs outputs.
+func (t *TSCC) Inbound(now time.Duration, ch uint16, raw *layer2.RawBurst, h layer2.Hint, dst []TSCCOutput) []TSCCOutput {
 	if t == nil {
 		return dst
 	}
 
 	out := dst
+	s := h.Slot
 	opts := layer2.DecodeOptions{Kind: h.Kind}
-	if raw == nil || t.b == nil || t.b.DecodeFromBytesWith(*raw, &opts) != nil {
+	if s != enums.Slot1 && s != enums.Slot2 || raw == nil || t.b == nil || t.b.DecodeFromBytesWith(*raw, &opts) != nil {
 		return out
 	}
 	if ch != t.cfg.Channel {
