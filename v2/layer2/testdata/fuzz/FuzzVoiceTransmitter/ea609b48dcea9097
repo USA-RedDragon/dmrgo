@@ -1,0 +1,5 @@
+go test fuzz v1
+[]byte("#2\xffz2\xff\xffx")
+byte('\a')
+byte('\x01')
+[]byte("0000000")

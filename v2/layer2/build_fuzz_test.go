@@ -337,7 +337,7 @@ func checkVoiceTransmitter(t *testing.T, lcv []byte, ccv, srcv byte, framesv []b
 	}
 	_, encErr := lc.Encode()
 	tx, err := layer2.NewVoiceTransmitter(opts)
-	_, _, srcOK := opts.Source.SyncPatterns()
+	voiceSync, _, srcOK := opts.Source.SyncPatterns()
 	if wantErr := encErr != nil || opts.ColorCode > 15 || !srcOK; wantErr != (err != nil) {
 		t.Fatalf("NewVoiceTransmitter(LC %s, color code %d, source %d): %v", lc.String(), opts.ColorCode, opts.Source, err)
 	}
@@ -379,11 +379,15 @@ func checkVoiceTransmitter(t *testing.T, lcv []byte, ccv, srcv byte, framesv []b
 		case i < headers:
 			continue
 		}
-		if err != nil {
+		wantPos := enums.VoiceBurstA + enums.VoiceBurstType((i-headers)%6)
+		if err := b.DecodeFromBytesWith(r, &layer2.DecodeOptions{Kind: layer2.KindVoice, VoiceBurst: wantPos}); err != nil {
 			t.Fatalf("voice burst %d: %v", i, err)
 		}
+		if wantPos == enums.VoiceBurstA && (b.SyncPattern != voiceSync || b.SyncDistance != 0) {
+			t.Fatalf("voice burst %d has SYNC %v at %d, want %v", i-headers, b.SyncPattern, b.SyncDistance, voiceSync)
+		}
 		emb, ok, err := rx.Receive(&b, nil)
-		if wantPos := enums.VoiceBurstA + enums.VoiceBurstType((i-headers)%6); b.VoiceBurst != wantPos {
+		if b.VoiceBurst != wantPos {
 			t.Fatalf("voice burst %d at %v, want %v", i-headers, b.VoiceBurst, wantPos)
 		}
 		if b.VoiceBurst == enums.VoiceBurstE {
