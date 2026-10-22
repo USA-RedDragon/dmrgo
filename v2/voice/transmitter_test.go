@@ -94,8 +94,9 @@ func TestTransmitter_Golden(t *testing.T) {
 			t.Fatal(err)
 		}
 		c := voice.Call{Group: true, LC: octets}
-		c.Target, c.Source, _ = pdu.LCBytes(octets).Addresses()
-		c.Options, _ = pdu.LCBytes(octets).ServiceOptions()
+		lcb := pdu.LCBytes(octets)
+		c.Target, c.Source, _ = lcb.Addresses()
+		c.Options, _ = lcb.ServiceOptions()
 		var opts *voice.CallOptions
 		if name == "pi" {
 			var pb layer2.Burst

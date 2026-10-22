@@ -43,7 +43,8 @@ func TestNoFullLCMask(t *testing.T) {
 	if _, err := lc.Encode(); !errors.Is(err, pdu.ErrNoFullLCMask) {
 		t.Errorf("Encode with no BurstDataType: %v", err)
 	}
-	if _, err := (pdu.LCBytes{}).Codeword(enums.DataTypeCSBK); !errors.Is(err, pdu.ErrNoFullLCMask) {
+	lcb := pdu.LCBytes{}
+	if _, err := lcb.Codeword(enums.DataTypeCSBK); !errors.Is(err, pdu.ErrNoFullLCMask) {
 		t.Errorf("Codeword for a CSBK: %v", err)
 	}
 }

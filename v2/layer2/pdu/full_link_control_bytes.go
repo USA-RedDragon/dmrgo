@@ -11,7 +11,8 @@ import (
 // zero values; set BurstDataType before Encode. Every bit of lc is kept, so
 // Bytes returns lc.
 func DecodeFullLinkControlBytes(lc [9]byte) FullLinkControl {
-	cw, _ := LCBytes(lc).Codeword(enums.DataTypeVoiceLCHeader)
+	l := LCBytes(lc)
+	cw, _ := l.Codeword(enums.DataTypeVoiceLCHeader)
 	f := DecodeFullLinkControl(cw, enums.DataTypeVoiceLCHeader)
 	f.BurstDataType = 0
 	f.FEC = fec.Result{}

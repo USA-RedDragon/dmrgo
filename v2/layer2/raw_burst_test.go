@@ -302,7 +302,8 @@ func TestRawBurst_StandaloneRC(t *testing.T) {
 func TestBuildDataBurst_MatchesExistingBuilders(t *testing.T) {
 	t.Parallel()
 
-	cw := must(pdu.LCBytes(capturedEmbeddedLC).Codeword(enums.DataTypeVoiceLCHeader))
+	lcb := pdu.LCBytes(capturedEmbeddedLC)
+	cw := must(lcb.Codeword(enums.DataTypeVoiceLCHeader))
 	for cc := enums.ColorCode(0); cc < 16; cc++ {
 		got := must(layer2.BuildDataBurst(cw, enums.DataTypeVoiceLCHeader, cc, layer2.SyncSourceBS))
 		want := must(lcBurst(cw, enums.DataTypeVoiceLCHeader, cc))

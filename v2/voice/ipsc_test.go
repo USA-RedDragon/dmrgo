@@ -51,7 +51,8 @@ func ipscInputs(t *testing.T, packets []string, noEMB bool) []input {
 			if d[30]&0x7F == 0x02 {
 				dt = enums.DataTypeTerminatorWithLC
 			}
-			cw, err := pdu.LCBytes(d[38:47]).Codeword(dt)
+			lcb := pdu.LCBytes(d[38:47])
+			cw, err := lcb.Codeword(dt)
 			if err != nil {
 				t.Fatal(err)
 			}

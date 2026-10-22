@@ -1,6 +1,7 @@
 package pdu
 
 import (
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/fec"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/crc"
@@ -44,12 +45,15 @@ func CRCMask(dt enums.DataType) (mask uint32, width int, ok bool) {
 // followed by its RS(12,9) parity XORed with the mask of dt. It returns an
 // error unless dt.CarriesFullLC reports true.
 // (ETSI TS 102 361-1 clause 9.1.6, clause B.3.6)
-func (l LCBytes) Codeword(dt enums.DataType) ([12]byte, error) {
+func (l *LCBytes) Codeword(dt enums.DataType) ([12]byte, error) {
+	if l == nil {
+		return [12]byte{}, dmrgo.ErrNilReceiver
+	}
 	mask, err := fullLCMask(dt)
 	if err != nil {
 		return [12]byte{}, err
 	}
-	cw := reedsolomon.Encode(l)
+	cw := reedsolomon.Encode(*l)
 	for i := 9; i < 12; i++ {
 		cw[i] ^= mask[i-9]
 	}
@@ -62,7 +66,8 @@ func (l LCBytes) Codeword(dt enums.DataType) ([12]byte, error) {
 // (CRS129::check). It returns false unless dt is DataTypeVoiceLCHeader or
 // DataTypeTerminatorWithLC.
 func FullLCParityOK(cw [12]byte, dt enums.DataType) bool {
-	want, err := LCBytes(cw[:9]).Codeword(dt)
+	lc := LCBytes(cw[:9])
+	want, err := lc.Codeword(dt)
 	return err == nil && want == cw
 }
 
@@ -108,7 +113,8 @@ func Seal(p *[12]byte, dt enums.DataType) error {
 		return errNil
 	}
 	if dt.CarriesFullLC() {
-		cw, err := LCBytes(p[:9]).Codeword(dt)
+		lc := LCBytes(p[:9])
+		cw, err := lc.Codeword(dt)
 		if err != nil {
 			return err
 		}
