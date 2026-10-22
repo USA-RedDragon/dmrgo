@@ -317,6 +317,10 @@ func (g *gen) callNeeds(sm *sigmap, sig *types.Signature) (needs, error) {
 		n.items, n.itemsC = "max(0, "+goExpr+")", cExpr
 	}
 	var parts []string
+	if sm.arena && len(sm.slices) == 1 && len(sm.arenaTypes) == 0 && recv != nil && g.recvMethod(recv, "MaxOutputOctets") {
+		n.arena = "max(0, int(h.v.MaxOutputOctets())) + 16*" + n.items
+		return n, nil
+	}
 	if sm.arena {
 		if len(sm.slices) == 1 {
 			per, err := g.elemArena(sm.slices[0].e, "", m.Pkg())

@@ -315,6 +315,24 @@ static void test_authenticator(void) {
 	printf("authenticator: a Key or Keys makes a trunk.Authenticator\n");
 }
 
+static void test_ipsc_bound(void) {
+	dmrgo_ipsc_session_master_config_t cfg = {.size = sizeof cfg};
+	cfg.id = 1;
+	dmrgo_ipsc_session_master_t *m = NULL;
+	OK(dmrgo_ipsc_session_new_master(&cfg, &m));
+	dmrgo_ipsc_session_addr_t from = {{10, 0, 0, 2}, 50000};
+	uint8_t p[16] = {0x90};
+	size_t items = 0, arena = 0;
+	OK(dmrgo_ipsc_session_master_packet_need(m, 0, &from, p, sizeof p, &items, &arena));
+	CHECK(items == 32 && arena > 0 && arena < 4096);
+	dmrgo_ipsc_session_output_t out[32];
+	unsigned char ar[4096];
+	size_t n = 0, al = 0;
+	OK(dmrgo_ipsc_session_master_packet(m, 0, &from, p, sizeof p, out, 32, &n, NULL, ar, sizeof ar, &al, NULL));
+	OK(dmrgo_ipsc_session_master_free(m));
+	printf("ipsc: the master arena bound counts a shared packet once\n");
+}
+
 static void test_error_is(void) {
 	dmrgo_pdu_rate12_data_t blk = {{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}};
 	dmrgo_packet_response_data_t rd;
@@ -965,6 +983,7 @@ int main(int argc, char **argv) {
 	test_sized();
 	test_udt_copy();
 	test_authenticator();
+	test_ipsc_bound();
 	test_tx();
 	test_voice_capture(argv[1]);
 	test_vocoder();

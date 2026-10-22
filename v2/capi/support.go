@@ -270,6 +270,7 @@ type outc struct {
 	arena  []byte
 	need   int
 	slack  int
+	seen   map[[2]uintptr]unsafe.Pointer
 }
 
 func (o *outc) reported() int {
@@ -306,9 +307,20 @@ func (o *outc) take(size, align int) unsafe.Pointer {
 
 func arenaCopy[E any](o *outc, s []E) unsafe.Pointer {
 	var z E
+	var key [2]uintptr
+	if len(s) > 0 {
+		key = [2]uintptr{uintptr(unsafe.Pointer(&s[0])), uintptr(len(s)) * unsafe.Sizeof(z)}
+		if p, ok := o.seen[key]; ok {
+			return p
+		}
+	}
 	p := o.take(len(s)*int(unsafe.Sizeof(z)), int(unsafe.Alignof(z)))
 	if p != nil {
 		copy(unsafe.Slice((*E)(p), len(s)), s)
+		if o.seen == nil {
+			o.seen = map[[2]uintptr]unsafe.Pointer{}
+		}
+		o.seen[key] = p
 	}
 	return p
 }

@@ -575,6 +575,7 @@ DMRGO_1 {
 		dmrgo_ipsc_session_master_close_need;
 		dmrgo_ipsc_session_master_deadline;
 		dmrgo_ipsc_session_master_free;
+		dmrgo_ipsc_session_master_max_output_octets;
 		dmrgo_ipsc_session_master_max_outputs;
 		dmrgo_ipsc_session_master_packet;
 		dmrgo_ipsc_session_master_packet_need;
@@ -598,6 +599,7 @@ DMRGO_1 {
 		dmrgo_ipsc_session_peer_deadline;
 		dmrgo_ipsc_session_peer_free;
 		dmrgo_ipsc_session_peer_master;
+		dmrgo_ipsc_session_peer_max_output_octets;
 		dmrgo_ipsc_session_peer_max_outputs;
 		dmrgo_ipsc_session_peer_packet;
 		dmrgo_ipsc_session_peer_packet_need;
