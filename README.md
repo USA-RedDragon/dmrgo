@@ -146,6 +146,16 @@ The programs in [v2/examples](v2/examples) run offline on the captures in `v2/la
 
 The hot path does not allocate. After construction, decoding, encoding, building, receiving and assembling bursts and packets make no heap allocations, with gc (Go 1.24 or later) and with TinyGo. Errors are static values, so a failed call does not allocate either.
 
+On TinyGo this holds only when the values that you pass by pointer are not local variables of your function. TinyGo moves such a local to the heap, 12 to 96 bytes per call, for `layer2.BuildBurst(&lc, ...)`, `packet.AppendBursts(dst, &p, ...)`, `layer2.VoiceTransmitter.Reset(&opts)` and `packet.Assembler.Add` of a local block. Keep those values in package-level variables or in a struct that you allocate once:
+
+```go
+var lc pdu.FullLinkControl // package level, not a local of send
+
+func send() (layer2.RawBurst, error) {
+	return layer2.BuildBurst(&lc, 1, layer2.SyncSourceBS)
+}
+```
+
 The table lists every place where the library can allocate. [v2/internal/allocgate](v2/internal/allocgate) generates it and fails when the README differs.
 
 <!-- allocgate:begin -->
@@ -227,7 +237,7 @@ tinygo flash -target=pico ./examples/tinygo
 The example prints its counts on the serial console once a second.
 
 - CI builds [v2/examples/tinygo](v2/examples/tinygo/main.go) for the Raspberry Pi Pico and runs the library tests with TinyGo.
-- Decode and encode make no heap garbage at the default stack size of these targets (8 KB). TinyGo puts each local variable larger than 256 bytes on the heap, and the library has no such local on those paths.
+- Decode and encode make no heap garbage at the default stack size of these targets (8 KB). TinyGo puts each local variable larger than 256 bytes on the heap, and the library has no such local on those paths. TinyGo also puts on the heap a local of the caller whose address goes into the library, so keep such values in package-level or heap storage, as [Allocation](#allocation) shows.
 - `vocoder/codec2` always uses its stub, so `codec2.New` returns `codec2.ErrUnavailable`.
 
 ## Versioning
