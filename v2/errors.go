@@ -15,6 +15,11 @@ var ErrNilReceiver = errors.New("dmrgo: method called on a nil receiver")
 // nil. Match it with errors.Is.
 var ErrNilArgument = errors.New("dmrgo: nil argument")
 
+// ErrZeroValue is returned by a method of a state machine that starts work,
+// such as Start, Request or Send, when the machine is a zero value and not
+// made with its constructor. Match it with errors.Is.
+var ErrZeroValue = errors.New("dmrgo: zero value; make it with its constructor")
+
 // FieldRangeError is the error of an encoder or setter when a field value
 // does not fit in its on-air bits, when a padding bit of a packed field is
 // set, or for a coordinate when it is outside [Min, Max]. Each field has one

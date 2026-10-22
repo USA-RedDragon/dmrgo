@@ -168,6 +168,9 @@
 //   - ErrNilReceiver: a method was called on a nil pointer.
 //   - ErrNilArgument: a function or method got a nil pointer, func or
 //     interface argument that it needs.
+//   - ErrZeroValue: a method that starts work, such as Start, Request or
+//     Send, was called on a zero state machine. The other methods of a zero
+//     machine do nothing.
 //   - fec.ErrUncorrectable: an FEC or CRC check failed. It is wrapped by
 //     layer2.ErrEmbeddedLCUncorrectable, packet.ErrMessageCRC and
 //     packet.ErrBlocksMissing, which layer2.VoiceReceiver and

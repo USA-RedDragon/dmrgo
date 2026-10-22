@@ -16,241 +16,243 @@ const char *dmrgo__gen_strerror(int status) {
 		return "dmrgo: nil argument";
 	case -103:
 		return "dmrgo: method called on a nil receiver";
+	case -104:
+		return "dmrgo: zero value; make it with its constructor";
 	case -101:
 		return "dmrgo: field range error";
-	case -104:
-		return "bs: slot must be 1 or 2";
 	case -105:
-		return "csbk: request in progress";
+		return "bs: slot must be 1 or 2";
 	case -106:
-		return "csbk: CSBK without target and source addresses";
+		return "csbk: request in progress";
 	case -107:
-		return "data: message in progress";
+		return "csbk: CSBK without target and source addresses";
 	case -108:
-		return "fec: uncorrectable";
+		return "data: message in progress";
 	case -109:
-		return "hdap: length does not match the message";
+		return "fec: uncorrectable";
 	case -110:
-		return "hdap: message too short";
+		return "hdap: length does not match the message";
 	case -111:
-		return "hdap: fixed octet does not match";
+		return "hdap: message too short";
 	case -112:
-		return "hdap: number holds a character that is not a digit";
+		return "hdap: fixed octet does not match";
 	case -113:
-		return "ip: checksum does not match";
+		return "hdap: number holds a character that is not a digit";
 	case -114:
-		return "ip: packet is a fragment";
+		return "ip: checksum does not match";
 	case -115:
-		return "ip: length does not match the packet";
+		return "ip: packet is a fragment";
 	case -116:
-		return "ip: no ICMP error message about this packet";
+		return "ip: length does not match the packet";
 	case -117:
-		return "ip: packet carries another protocol";
+		return "ip: no ICMP error message about this packet";
 	case -118:
-		return "ip: SAP does not carry IP";
+		return "ip: packet carries another protocol";
 	case -119:
-		return "ip: packet too short";
+		return "ip: SAP does not carry IP";
 	case -120:
-		return "ip: not an IPv4 packet";
+		return "ip: packet too short";
 	case -121:
-		return "layer2: color code mismatch";
+		return "ip: not an IPv4 packet";
 	case -122:
-		return "layer2: the data burst cannot carry this data type";
+		return "layer2: color code mismatch";
 	case -123:
-		return "layer2: embedded LC fragment out of sequence";
+		return "layer2: the data burst cannot carry this data type";
 	case -124:
-		return "layer2: embedded lc uncorrectable";
+		return "layer2: embedded LC fragment out of sequence";
 	case -125:
-		return "layer2: reserved data type";
+		return "layer2: embedded lc uncorrectable";
 	case -126:
-		return "layer2: short LC fragment out of sequence";
+		return "layer2: reserved data type";
 	case -127:
-		return "layer2: unknown sync source";
+		return "layer2: short LC fragment out of sequence";
 	case -128:
-		return "layer2: voice burst position out of range";
+		return "layer2: unknown sync source";
 	case -129:
-		return "layer2: voice transmission already terminated";
+		return "layer2: voice burst position out of range";
 	case -130:
-		return "framer: Period is over MaxPeriod";
+		return "layer2: voice transmission already terminated";
 	case -131:
-		return "packet: confirmed blocks failed CRC-9: fec: uncorrectable";
+		return "framer: Period is over MaxPeriod";
 	case -132:
-		return "packet: header format does not carry segmented data";
+		return "packet: confirmed blocks failed CRC-9: fec: uncorrectable";
 	case -133:
-		return "packet: data header CRC does not match: fec: uncorrectable";
+		return "packet: header format does not carry segmented data";
 	case -134:
-		return "packet: message CRC-32 does not match: fec: uncorrectable";
+		return "packet: data header CRC does not match: fec: uncorrectable";
 	case -135:
-		return "packet: packet started from a later try";
+		return "packet: message CRC-32 does not match: fec: uncorrectable";
 	case -136:
-		return "packet: data block without a header";
+		return "packet: packet started from a later try";
 	case -137:
-		return "packet: response data flags no block to resend";
+		return "packet: data block without a header";
 	case -138:
-		return "packet: data type is not rate 1/2, 3/4 or 1 coded";
+		return "packet: response data flags no block to resend";
 	case -139:
-		return "packet: data type changed within a packet";
+		return "packet: data type is not rate 1/2, 3/4 or 1 coded";
 	case -140:
-		return "packet: invalid response data blocks";
+		return "packet: data type changed within a packet";
 	case -141:
-		return "packet: payload needs too many blocks";
+		return "packet: invalid response data blocks";
 	case -142:
-		return "packet: later try of a packet that is not in progress";
+		return "packet: payload needs too many blocks";
 	case -143:
-		return "pdu: capacity plus site status incomplete";
+		return "packet: later try of a packet that is not in progress";
 	case -144:
-		return "pdu: capacity plus site status block out of sequence";
+		return "pdu: capacity plus site status incomplete";
 	case -145:
-		return "pdu: PDU has no address fields";
+		return "pdu: capacity plus site status block out of sequence";
 	case -146:
-		return "pdu: the data type has no RS(12,9) Full LC mask";
+		return "pdu: PDU has no address fields";
 	case -147:
-		return "pdu: PDU has no group or individual flag";
+		return "pdu: the data type has no RS(12,9) Full LC mask";
 	case -148:
-		return "pdu: PDU has no Service Options field";
+		return "pdu: PDU has no group or individual flag";
 	case -149:
-		return "pdu: talker alias blocks missing";
+		return "pdu: PDU has no Service Options field";
 	case -150:
-		return "pdu: talker alias is not valid UTF-8";
+		return "pdu: talker alias blocks missing";
 	case -151:
-		return "pdu: talker alias too long";
+		return "pdu: talker alias is not valid UTF-8";
 	case -152:
-		return "pdu: the opcode does not select the payload";
+		return "pdu: talker alias too long";
 	case -153:
-		return "location: packet carries no position";
+		return "pdu: the opcode does not select the payload";
 	case -154:
-		return "ars: length does not match the message";
+		return "location: packet carries no position";
 	case -155:
-		return "ars: message too short";
+		return "ars: length does not match the message";
 	case -156:
-		return "lrrp: length does not match the message";
+		return "ars: message too short";
 	case -157:
-		return "lrrp: message too short";
+		return "lrrp: length does not match the message";
 	case -158:
-		return "lrrp: unknown token";
+		return "lrrp: message too short";
 	case -159:
-		return "lrrp: number does not fit its field";
+		return "lrrp: unknown token";
 	case -160:
-		return "tms: length does not match the message";
+		return "lrrp: number does not fit its field";
 	case -161:
-		return "tms: message too short";
+		return "tms: length does not match the message";
 	case -162:
-		return "nmea: checksum is missing or does not match";
+		return "tms: message too short";
 	case -163:
-		return "nmea: field is malformed or out of range";
+		return "nmea: checksum is missing or does not match";
 	case -164:
-		return "nmea: not an RMC sentence";
+		return "nmea: field is malformed or out of range";
 	case -165:
-		return "shortdata: character does not fit the DD format";
+		return "nmea: not an RMC sentence";
 	case -166:
-		return "shortdata: DD format is not a supported text coding";
+		return "shortdata: character does not fit the DD format";
 	case -167:
-		return "shortdata: length does not match the data";
+		return "shortdata: DD format is not a supported text coding";
 	case -168:
-		return "shortdata: data too short";
+		return "shortdata: length does not match the data";
 	case -169:
-		return "sms: unknown format";
+		return "shortdata: data too short";
 	case -170:
-		return "sms: length does not match the payload";
+		return "sms: unknown format";
 	case -171:
-		return "sms: nil argument";
+		return "sms: length does not match the payload";
 	case -172:
-		return "sms: packet is not a text message";
+		return "sms: nil argument";
 	case -173:
-		return "sms: payload too short";
+		return "sms: packet is not a text message";
 	case -174:
-		return "sms: AnyTone text without its prefix";
+		return "sms: payload too short";
 	case -175:
-		return "dmrd: packet is not a message of this kind";
+		return "sms: AnyTone text without its prefix";
 	case -176:
-		return "dmrd: packet length does not match its message";
+		return "dmrd: packet is not a message of this kind";
 	case -177:
-		return "dmrd: packet too short";
+		return "dmrd: packet length does not match its message";
 	case -178:
-		return "dmrd: packet does not have the octets of its message";
+		return "dmrd: packet too short";
 	case -179:
-		return "dmrd: number holds a character that is not a digit";
+		return "dmrd: packet does not have the octets of its message";
 	case -180:
-		return "hytera: slot or color code field is not one of its values";
+		return "dmrd: number holds a character that is not a digit";
 	case -181:
-		return "hytera: packet length does not match its message";
+		return "hytera: slot or color code field is not one of its values";
 	case -182:
-		return "hytera: packet too short";
+		return "hytera: packet length does not match its message";
 	case -183:
-		return "hytera: packet does not have the octets of its message";
+		return "hytera: packet too short";
 	case -184:
-		return "ipsc: packet is not a message of this kind";
+		return "hytera: packet does not have the octets of its message";
 	case -185:
-		return "ipsc: packet length does not match its message";
+		return "ipsc: packet is not a message of this kind";
 	case -186:
-		return "ipsc: packet too short";
+		return "ipsc: packet length does not match its message";
 	case -187:
-		return "mmdvm: frame is not a message of this kind";
+		return "ipsc: packet too short";
 	case -188:
-		return "mmdvm: payload length does not match its message";
+		return "mmdvm: frame is not a message of this kind";
 	case -189:
-		return "mmdvm: payload too short";
+		return "mmdvm: payload length does not match its message";
 	case -190:
-		return "trunk: request in progress";
+		return "mmdvm: payload too short";
 	case -191:
-		return "trunk: channel number out of range";
-	case -194:
-		return "trunk: no call";
+		return "trunk: request in progress";
 	case -192:
-		return "trunk: not on a TSCC";
-	case -193:
-		return "trunk: not registered";
+		return "trunk: channel number out of range";
 	case -195:
-		return "trunk: table full";
+		return "trunk: no call";
+	case -193:
+		return "trunk: not on a TSCC";
+	case -194:
+		return "trunk: not registered";
 	case -196:
-		return "trunk: stunned";
+		return "trunk: table full";
 	case -197:
-		return "trunk: character out of range for the UDT format";
+		return "trunk: stunned";
 	case -198:
-		return "trunk: appended data in another UDT format";
+		return "trunk: character out of range for the UDT format";
 	case -199:
-		return "trunk: appended data length out of range";
+		return "trunk: appended data in another UDT format";
 	case -200:
-		return "codec2: codec is closed";
+		return "trunk: appended data length out of range";
 	case -201:
-		return "codec2: wrong number of samples";
+		return "codec2: codec is closed";
 	case -202:
-		return "codec2: built without libcodec2";
+		return "codec2: wrong number of samples";
 	case -203:
-		return "codec2: unsupported mode";
+		return "codec2: built without libcodec2";
 	case -204:
-		return "dvsi: bad number of channel bits";
+		return "codec2: unsupported mode";
 	case -205:
-		return "dvsi: bad channel";
+		return "dvsi: bad number of channel bits";
 	case -206:
-		return "dvsi: codec is closed";
+		return "dvsi: bad channel";
 	case -207:
-		return "dvsi: bad field";
+		return "dvsi: codec is closed";
 	case -208:
-		return "dvsi: incomplete packet";
+		return "dvsi: bad field";
 	case -209:
-		return "dvsi: bad packet length";
+		return "dvsi: incomplete packet";
 	case -210:
-		return "dvsi: bad parity";
+		return "dvsi: bad packet length";
 	case -211:
-		return "dvsi: port returned a bad byte count";
+		return "dvsi: bad parity";
 	case -212:
-		return "dvsi: bad number of samples";
+		return "dvsi: port returned a bad byte count";
 	case -213:
-		return "dvsi: no start byte";
+		return "dvsi: bad number of samples";
 	case -214:
-		return "dvsi: device reported an error";
+		return "dvsi: no start byte";
 	case -215:
-		return "dvsi: device timed out";
+		return "dvsi: device reported an error";
 	case -216:
-		return "dvsi: unknown packet type";
+		return "dvsi: device timed out";
 	case -217:
-		return "voice: transmission in progress";
+		return "dvsi: unknown packet type";
 	case -218:
-		return "voice: no call takes voice";
+		return "voice: transmission in progress";
 	case -219:
-		return "voice: queue full";
+		return "voice: no call takes voice";
 	case -220:
+		return "voice: queue full";
+	case -221:
 		return "voice: transmit timeout";
 	}
 	return "unknown status";
