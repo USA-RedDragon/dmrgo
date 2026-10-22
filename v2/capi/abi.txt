@@ -304,10 +304,10 @@ sym #define DMRGO_CONSTANTS_TBS_INACTIVE_DEFAULT INT64_C(60000000000)
 sym #define DMRGO_CONSTANTS_TD_HANGTIME_DEFAULT INT64_C(4000000000)
 sym #define DMRGO_CONSTANTS_TD_INACTIVE_DEFAULT INT64_C(5000000000)
 sym #define DMRGO_CONSTANTS_TD_ITEM_DEFAULT INT64_C(30000000000)
-sym #define DMRGO_CONSTANTS_TMSMS_TIMER_MAX INT64_C(238560000000000)
 sym #define DMRGO_CONSTANTS_TMS_CHAN_AUTH 180000000
 sym #define DMRGO_CONSTANTS_TMS_CHAN_AUTH_MULTI_SITE 360000000
 sym #define DMRGO_CONSTANTS_TMS_LINE_TIMER_MAX INT64_C(238560000000000)
+sym #define DMRGO_CONSTANTS_TMS_MS_TIMER_MAX INT64_C(238560000000000)
 sym #define DMRGO_CONSTANTS_TNP_TIMER_DEFAULT INT64_C(5000000000)
 sym #define DMRGO_CONSTANTS_TP_TIMER_DEFAULT INT64_C(10000000000)
 sym #define DMRGO_CONSTANTS_TRC_TIMER 600000000
@@ -627,9 +627,9 @@ sym #define DMRGO_ENUMS_ANNOUNCEMENT_MANUFACTURER_SPECIFIC1 ((dmrgo_enums_announ
 sym #define DMRGO_ENUMS_ANNOUNCEMENT_MANUFACTURER_SPECIFIC2 ((dmrgo_enums_announcement_type_t)31)
 sym #define DMRGO_ENUMS_ANNOUNCEMENT_MASS_REG ((dmrgo_enums_announcement_type_t)4)
 sym #define DMRGO_ENUMS_ANNOUNCEMENT_VOTE_NOW ((dmrgo_enums_announcement_type_t)2)
-sym #define DMRGO_ENUMS_DAIDUSB_ETHERNET_NETWORK ((dmrgo_enums_daid_t)1)
 sym #define DMRGO_ENUMS_DAID_GROUP_NETWORK ((dmrgo_enums_daid_t)2)
 sym #define DMRGO_ENUMS_DAID_RADIO_NETWORK ((dmrgo_enums_daid_t)0)
+sym #define DMRGO_ENUMS_DAID_USB_ETHERNET_NETWORK ((dmrgo_enums_daid_t)1)
 sym #define DMRGO_ENUMS_DATA_TYPE_CSBK ((dmrgo_enums_data_type_t)3)
 sym #define DMRGO_ENUMS_DATA_TYPE_DATA_HEADER ((dmrgo_enums_data_type_t)6)
 sym #define DMRGO_ENUMS_DATA_TYPE_IDLE ((dmrgo_enums_data_type_t)9)
@@ -671,14 +671,14 @@ sym #define DMRGO_ENUMS_DD_UTF8 ((dmrgo_enums_dd_format_t)18)
 sym #define DMRGO_ENUMS_DPID_EXTENDED_HEADER ((dmrgo_enums_dpid_t)0)
 sym #define DMRGO_ENUMS_DPID_LOCATION_PROTOCOL ((dmrgo_enums_dpid_t)2)
 sym #define DMRGO_ENUMS_DPID_TEXT_MESSAGE ((dmrgo_enums_dpid_t)1)
-sym #define DMRGO_ENUMS_FIDDMR_ASSOCIATION ((dmrgo_enums_fid_t)11)
-sym #define DMRGO_ENUMS_FIDEMC ((dmrgo_enums_fid_t)19)
-sym #define DMRGO_ENUMS_FIDEMC2 ((dmrgo_enums_fid_t)28)
-sym #define DMRGO_ENUMS_FIDHYT_SCIENCE_TECH ((dmrgo_enums_fid_t)8)
-sym #define DMRGO_ENUMS_FIDHYT_SCIENCE_TECH2 ((dmrgo_enums_fid_t)104)
-sym #define DMRGO_ENUMS_FIDJVC_KENWOOD ((dmrgo_enums_fid_t)32)
 sym #define DMRGO_ENUMS_FID_ASELSAN ((dmrgo_enums_fid_t)9)
+sym #define DMRGO_ENUMS_FID_DMR_ASSOCIATION ((dmrgo_enums_fid_t)11)
+sym #define DMRGO_ENUMS_FID_EMC ((dmrgo_enums_fid_t)19)
+sym #define DMRGO_ENUMS_FID_EMC2 ((dmrgo_enums_fid_t)28)
 sym #define DMRGO_ENUMS_FID_FLYDE_MICRO ((dmrgo_enums_fid_t)4)
+sym #define DMRGO_ENUMS_FID_HYT_SCIENCE_TECH ((dmrgo_enums_fid_t)8)
+sym #define DMRGO_ENUMS_FID_HYT_SCIENCE_TECH2 ((dmrgo_enums_fid_t)104)
+sym #define DMRGO_ENUMS_FID_JVC_KENWOOD ((dmrgo_enums_fid_t)32)
 sym #define DMRGO_ENUMS_FID_KIRISUN ((dmrgo_enums_fid_t)10)
 sym #define DMRGO_ENUMS_FID_MOTOROLA ((dmrgo_enums_fid_t)16)
 sym #define DMRGO_ENUMS_FID_PROD_EL ((dmrgo_enums_fid_t)5)
@@ -689,7 +689,7 @@ sym #define DMRGO_ENUMS_FID_STANDARDIZED ((dmrgo_enums_fid_t)0)
 sym #define DMRGO_ENUMS_FID_TAIT ((dmrgo_enums_fid_t)88)
 sym #define DMRGO_ENUMS_FID_TRIDENT_MICRO_SYSTEMS ((dmrgo_enums_fid_t)6)
 sym #define DMRGO_ENUMS_FID_VERTEX_STANDARD ((dmrgo_enums_fid_t)119)
-sym #define DMRGO_ENUMS_FLCOGPS_INFO ((dmrgo_enums_flco_t)8)
+sym #define DMRGO_ENUMS_FLCO_GPS_INFO ((dmrgo_enums_flco_t)8)
 sym #define DMRGO_ENUMS_FLCO_GROUP_VOICE_CHANNEL_USER ((dmrgo_enums_flco_t)0)
 sym #define DMRGO_ENUMS_FLCO_TALKER_ALIAS_BLOCK1 ((dmrgo_enums_flco_t)5)
 sym #define DMRGO_ENUMS_FLCO_TALKER_ALIAS_BLOCK2 ((dmrgo_enums_flco_t)6)
@@ -711,14 +711,14 @@ sym #define DMRGO_ENUMS_RC_DECREASE_POWER ((dmrgo_enums_rc_command_t)1)
 sym #define DMRGO_ENUMS_RC_HIGHEST_POWER ((dmrgo_enums_rc_command_t)2)
 sym #define DMRGO_ENUMS_RC_INCREASE_POWER ((dmrgo_enums_rc_command_t)0)
 sym #define DMRGO_ENUMS_RC_LOWEST_POWER ((dmrgo_enums_rc_command_t)3)
-sym #define DMRGO_ENUMS_SAIDUSB_ETHERNET_NETWORK ((dmrgo_enums_said_t)1)
 sym #define DMRGO_ENUMS_SAID_RADIO_NETWORK ((dmrgo_enums_said_t)0)
-sym #define DMRGO_ENUMS_SAPIP_BASED_PACKET_DATA ((dmrgo_enums_sap_t)4)
-sym #define DMRGO_ENUMS_SAPTCPIP_HEADER_COMPRESSION ((dmrgo_enums_sap_t)2)
-sym #define DMRGO_ENUMS_SAPUDPIP_HEADER_COMPRESSION ((dmrgo_enums_sap_t)3)
+sym #define DMRGO_ENUMS_SAID_USB_ETHERNET_NETWORK ((dmrgo_enums_said_t)1)
 sym #define DMRGO_ENUMS_SAP_ADDRESS_RESOLUTION_PROTOCOL ((dmrgo_enums_sap_t)5)
+sym #define DMRGO_ENUMS_SAP_IP_BASED_PACKET_DATA ((dmrgo_enums_sap_t)4)
 sym #define DMRGO_ENUMS_SAP_PROPRIETARY_PACKET_DATA ((dmrgo_enums_sap_t)9)
 sym #define DMRGO_ENUMS_SAP_SHORT_DATA ((dmrgo_enums_sap_t)10)
+sym #define DMRGO_ENUMS_SAP_TCP_IP_HEADER_COMPRESSION ((dmrgo_enums_sap_t)2)
+sym #define DMRGO_ENUMS_SAP_UDP_IP_HEADER_COMPRESSION ((dmrgo_enums_sap_t)3)
 sym #define DMRGO_ENUMS_SAP_UNIFIED_DATA_TRANSPORT ((dmrgo_enums_sap_t)0)
 sym #define DMRGO_ENUMS_SERVICE_FUNCTION_ALL ((dmrgo_enums_service_function_t)0)
 sym #define DMRGO_ENUMS_SERVICE_FUNCTION_NO_PAYLOAD ((dmrgo_enums_service_function_t)2)
@@ -739,10 +739,10 @@ sym #define DMRGO_ENUMS_SERVICE_KIND_SUPPLEMENTARY ((dmrgo_enums_service_kind_t)
 sym #define DMRGO_ENUMS_SERVICE_KIND_TALKGROUP_PACKET_DATA ((dmrgo_enums_service_kind_t)3)
 sym #define DMRGO_ENUMS_SERVICE_KIND_TALKGROUP_SHORT_DATA ((dmrgo_enums_service_kind_t)5)
 sym #define DMRGO_ENUMS_SERVICE_KIND_TALKGROUP_VOICE ((dmrgo_enums_service_kind_t)1)
-sym #define DMRGO_ENUMS_SLCOC_SYS_PARMS ((dmrgo_enums_slco_t)2)
-sym #define DMRGO_ENUMS_SLCOP_SYS_PARMS ((dmrgo_enums_slco_t)3)
 sym #define DMRGO_ENUMS_SLCO_ACTIVITY_UPDATE ((dmrgo_enums_slco_t)1)
+sym #define DMRGO_ENUMS_SLCO_C_SYS_PARMS ((dmrgo_enums_slco_t)2)
 sym #define DMRGO_ENUMS_SLCO_NULL_MESSAGE ((dmrgo_enums_slco_t)0)
+sym #define DMRGO_ENUMS_SLCO_P_SYS_PARMS ((dmrgo_enums_slco_t)3)
 sym #define DMRGO_ENUMS_SLOT1 ((dmrgo_enums_slot_t)1)
 sym #define DMRGO_ENUMS_SLOT2 ((dmrgo_enums_slot_t)2)
 sym #define DMRGO_ENUMS_SLOT_UNKNOWN ((dmrgo_enums_slot_t)0)
@@ -760,18 +760,18 @@ sym #define DMRGO_ENUMS_SYNC_TDMA1_DATA ((dmrgo_enums_sync_pattern_t)UINT64_C(0x
 sym #define DMRGO_ENUMS_SYNC_TDMA1_VOICE ((dmrgo_enums_sync_pattern_t)UINT64_C(0x5d577f7757ff))
 sym #define DMRGO_ENUMS_SYNC_TDMA2_DATA ((dmrgo_enums_sync_pattern_t)UINT64_C(0xd7557f5ff7f5))
 sym #define DMRGO_ENUMS_SYNC_TDMA2_VOICE ((dmrgo_enums_sync_pattern_t)UINT64_C(0x7dffd5f55d5f))
-sym #define DMRGO_ENUMS_UDTBCD ((dmrgo_enums_udt_format_t)2)
-sym #define DMRGO_ENUMS_UDTISO7 ((dmrgo_enums_udt_format_t)3)
-sym #define DMRGO_ENUMS_UDTISO8 ((dmrgo_enums_udt_format_t)4)
-sym #define DMRGO_ENUMS_UDTNMEA ((dmrgo_enums_udt_format_t)5)
-sym #define DMRGO_ENUMS_UDTUTF16BE ((dmrgo_enums_udt_format_t)7)
 sym #define DMRGO_ENUMS_UDT_ADDRESS ((dmrgo_enums_udt_format_t)1)
+sym #define DMRGO_ENUMS_UDT_BCD ((dmrgo_enums_udt_format_t)2)
 sym #define DMRGO_ENUMS_UDT_BINARY ((dmrgo_enums_udt_format_t)0)
 sym #define DMRGO_ENUMS_UDT_IP ((dmrgo_enums_udt_format_t)6)
+sym #define DMRGO_ENUMS_UDT_ISO7 ((dmrgo_enums_udt_format_t)3)
+sym #define DMRGO_ENUMS_UDT_ISO8 ((dmrgo_enums_udt_format_t)4)
 sym #define DMRGO_ENUMS_UDT_LIP ((dmrgo_enums_udt_format_t)11)
 sym #define DMRGO_ENUMS_UDT_MANUFACTURER1 ((dmrgo_enums_udt_format_t)8)
 sym #define DMRGO_ENUMS_UDT_MANUFACTURER2 ((dmrgo_enums_udt_format_t)9)
 sym #define DMRGO_ENUMS_UDT_MIXED ((dmrgo_enums_udt_format_t)10)
+sym #define DMRGO_ENUMS_UDT_NMEA ((dmrgo_enums_udt_format_t)5)
+sym #define DMRGO_ENUMS_UDT_UTF16BE ((dmrgo_enums_udt_format_t)7)
 sym #define DMRGO_ENUMS_VOICE_BURST_A ((dmrgo_enums_voice_burst_type_t)1)
 sym #define DMRGO_ENUMS_VOICE_BURST_B ((dmrgo_enums_voice_burst_type_t)2)
 sym #define DMRGO_ENUMS_VOICE_BURST_C ((dmrgo_enums_voice_burst_type_t)3)
@@ -1142,18 +1142,18 @@ sym #define DMRGO_MMDVM_COMMAND_D_STAR_DATA ((dmrgo_mmdvm_command_t)17)
 sym #define DMRGO_MMDVM_COMMAND_D_STAR_EOT ((dmrgo_mmdvm_command_t)19)
 sym #define DMRGO_MMDVM_COMMAND_D_STAR_HEADER ((dmrgo_mmdvm_command_t)16)
 sym #define DMRGO_MMDVM_COMMAND_D_STAR_LOST ((dmrgo_mmdvm_command_t)18)
-sym #define DMRGO_MMDVM_COMMAND_FMEOT ((dmrgo_mmdvm_command_t)103)
-sym #define DMRGO_MMDVM_COMMAND_FMRSSI ((dmrgo_mmdvm_command_t)104)
 sym #define DMRGO_MMDVM_COMMAND_FM_DATA ((dmrgo_mmdvm_command_t)101)
+sym #define DMRGO_MMDVM_COMMAND_FM_EOT ((dmrgo_mmdvm_command_t)103)
 sym #define DMRGO_MMDVM_COMMAND_FM_PARAMS1 ((dmrgo_mmdvm_command_t)96)
 sym #define DMRGO_MMDVM_COMMAND_FM_PARAMS2 ((dmrgo_mmdvm_command_t)97)
 sym #define DMRGO_MMDVM_COMMAND_FM_PARAMS3 ((dmrgo_mmdvm_command_t)98)
 sym #define DMRGO_MMDVM_COMMAND_FM_PARAMS4 ((dmrgo_mmdvm_command_t)99)
+sym #define DMRGO_MMDVM_COMMAND_FM_RSSI ((dmrgo_mmdvm_command_t)104)
 sym #define DMRGO_MMDVM_COMMAND_FM_STATUS ((dmrgo_mmdvm_command_t)102)
 sym #define DMRGO_MMDVM_COMMAND_GET_STATUS ((dmrgo_mmdvm_command_t)1)
 sym #define DMRGO_MMDVM_COMMAND_GET_VERSION ((dmrgo_mmdvm_command_t)0)
 sym #define DMRGO_MMDVM_COMMAND_I2C_DATA ((dmrgo_mmdvm_command_t)129)
-sym #define DMRGO_MMDVM_COMMAND_M17EOT ((dmrgo_mmdvm_command_t)73)
+sym #define DMRGO_MMDVM_COMMAND_M17_EOT ((dmrgo_mmdvm_command_t)73)
 sym #define DMRGO_MMDVM_COMMAND_M17_LINK_SETUP ((dmrgo_mmdvm_command_t)69)
 sym #define DMRGO_MMDVM_COMMAND_M17_LOST ((dmrgo_mmdvm_command_t)72)
 sym #define DMRGO_MMDVM_COMMAND_M17_PACKET ((dmrgo_mmdvm_command_t)71)
@@ -1161,8 +1161,8 @@ sym #define DMRGO_MMDVM_COMMAND_M17_STREAM ((dmrgo_mmdvm_command_t)70)
 sym #define DMRGO_MMDVM_COMMAND_NAK ((dmrgo_mmdvm_command_t)127)
 sym #define DMRGO_MMDVM_COMMAND_NXDN_DATA ((dmrgo_mmdvm_command_t)64)
 sym #define DMRGO_MMDVM_COMMAND_NXDN_LOST ((dmrgo_mmdvm_command_t)65)
-sym #define DMRGO_MMDVM_COMMAND_P25LDU ((dmrgo_mmdvm_command_t)49)
 sym #define DMRGO_MMDVM_COMMAND_P25_HEADER ((dmrgo_mmdvm_command_t)48)
+sym #define DMRGO_MMDVM_COMMAND_P25_LDU ((dmrgo_mmdvm_command_t)49)
 sym #define DMRGO_MMDVM_COMMAND_P25_LOST ((dmrgo_mmdvm_command_t)50)
 sym #define DMRGO_MMDVM_COMMAND_POCSAG_DATA ((dmrgo_mmdvm_command_t)80)
 sym #define DMRGO_MMDVM_COMMAND_QSO_INFO ((dmrgo_mmdvm_command_t)145)
@@ -1178,9 +1178,9 @@ sym #define DMRGO_MMDVM_COMMAND_YSF_LOST ((dmrgo_mmdvm_command_t)33)
 sym #define DMRGO_MMDVM_CONTROL_DATA_SYNC ((dmrgo_mmdvm_control_t)64)
 sym #define DMRGO_MMDVM_CONTROL_IDLE ((dmrgo_mmdvm_control_t)128)
 sym #define DMRGO_MMDVM_CONTROL_VOICE_SYNC ((dmrgo_mmdvm_control_t)32)
-sym #define DMRGO_MMDVM_CPUNXP ((dmrgo_mmdvm_cpu_t)1)
-sym #define DMRGO_MMDVM_CPUST ((dmrgo_mmdvm_cpu_t)2)
 sym #define DMRGO_MMDVM_CPU_ATMEL ((dmrgo_mmdvm_cpu_t)0)
+sym #define DMRGO_MMDVM_CPU_NXP ((dmrgo_mmdvm_cpu_t)1)
+sym #define DMRGO_MMDVM_CPU_ST ((dmrgo_mmdvm_cpu_t)2)
 sym #define DMRGO_MMDVM_DMR_DATA_LEN 34
 sym #define DMRGO_MMDVM_FRAME_START 224
 sym #define DMRGO_MMDVM_MAX_FRAME_LEN 510
@@ -1199,7 +1199,7 @@ sym #define DMRGO_MMDVM_NEXT_SKIP ((dmrgo_mmdvm_next_result_t)2)
 sym #define DMRGO_PACKET_ASSEMBLER_APPEND_MISSING_MAX_ITEMS (127)
 sym #define DMRGO_PACKET_ASSEMBLER_MISSING_MAX_ITEMS (127)
 sym #define DMRGO_PACKET_RESPONSE_ACK ((dmrgo_packet_response_t)1)
-sym #define DMRGO_PACKET_RESPONSE_NACKFSN_OUT_OF_SEQUENCE ((dmrgo_packet_response_t)11)
+sym #define DMRGO_PACKET_RESPONSE_NACK_FSN_OUT_OF_SEQUENCE ((dmrgo_packet_response_t)11)
 sym #define DMRGO_PACKET_RESPONSE_NACK_ILLEGAL_FORMAT ((dmrgo_packet_response_t)8)
 sym #define DMRGO_PACKET_RESPONSE_NACK_INVALID_USER ((dmrgo_packet_response_t)14)
 sym #define DMRGO_PACKET_RESPONSE_NACK_MEMORY_FULL ((dmrgo_packet_response_t)10)
@@ -1214,7 +1214,6 @@ sym #define DMRGO_PDU_CAPACITY_PLUS_SEGMENT_FIRST ((dmrgo_pdu_capacity_plus_segm
 sym #define DMRGO_PDU_CAPACITY_PLUS_SEGMENT_LAST ((dmrgo_pdu_capacity_plus_segment_t)1)
 sym #define DMRGO_PDU_CAPACITY_PLUS_SEGMENT_SINGLE ((dmrgo_pdu_capacity_plus_segment_t)3)
 sym #define DMRGO_PDU_CRC7_MASK_RC 122
-sym #define DMRGO_PDU_CSBKBS_OUTBOUND_ACTIVATION ((dmrgo_pdu_csbk_opcode_t)56)
 sym #define DMRGO_PDU_CSBK_ACKVITATION ((dmrgo_pdu_csbk_opcode_t)30)
 sym #define DMRGO_PDU_CSBK_ACK_INBOUND ((dmrgo_pdu_csbk_opcode_t)33)
 sym #define DMRGO_PDU_CSBK_ACK_INBOUND_PAYLOAD ((dmrgo_pdu_csbk_opcode_t)35)
@@ -1224,6 +1223,7 @@ sym #define DMRGO_PDU_CSBK_AHOY ((dmrgo_pdu_csbk_opcode_t)28)
 sym #define DMRGO_PDU_CSBK_ALOHA ((dmrgo_pdu_csbk_opcode_t)25)
 sym #define DMRGO_PDU_CSBK_BROADCAST ((dmrgo_pdu_csbk_opcode_t)40)
 sym #define DMRGO_PDU_CSBK_BROADCAST_TALKGROUP_VOICE_GRANT ((dmrgo_pdu_csbk_opcode_t)50)
+sym #define DMRGO_PDU_CSBK_BS_OUTBOUND_ACTIVATION ((dmrgo_pdu_csbk_opcode_t)56)
 sym #define DMRGO_PDU_CSBK_CAPACITY_PLUS_DATA_REVERT_ANNOUNCEMENT ((dmrgo_pdu_csbk_opcode_t)41)
 sym #define DMRGO_PDU_CSBK_CAPACITY_PLUS_DATA_REVERT_GRANT ((dmrgo_pdu_csbk_opcode_t)42)
 sym #define DMRGO_PDU_CSBK_CAPACITY_PLUS_NEIGHBORS ((dmrgo_pdu_csbk_opcode_t)59)
@@ -2207,12 +2207,12 @@ sym int dmrgo_layer2_raw_burst_set_rate1_payload(dmrgo_layer2_raw_burst_t *self,
 sym int dmrgo_layer2_raw_burst_set_rate34_payload(dmrgo_layer2_raw_burst_t *self, const uint8_t p[18]);
 sym int dmrgo_layer2_raw_burst_set_slot_type(dmrgo_layer2_raw_burst_t *self, const dmrgo_pdu_slot_type_t *st);
 sym int dmrgo_layer2_raw_burst_set_standalone_rc_data(dmrgo_layer2_raw_burst_t *self, const uint8_t d[4]);
-sym int dmrgo_layer2_raw_burst_set_standalone_rcemb(dmrgo_layer2_raw_burst_t *self, const dmrgo_pdu_embedded_signalling_t *e);
+sym int dmrgo_layer2_raw_burst_set_standalone_rc_emb(dmrgo_layer2_raw_burst_t *self, const dmrgo_pdu_embedded_signalling_t *e);
 sym int dmrgo_layer2_raw_burst_set_sync(dmrgo_layer2_raw_burst_t *self, dmrgo_enums_sync_pattern_t p);
 sym int dmrgo_layer2_raw_burst_set_voice_slots(dmrgo_layer2_raw_burst_t *self, const uint8_t s[3][9]);
 sym int dmrgo_layer2_raw_burst_slot_type(const dmrgo_layer2_raw_burst_t *self, dmrgo_pdu_slot_type_t *out);
 sym int dmrgo_layer2_raw_burst_standalone_rc_data(const dmrgo_layer2_raw_burst_t *self, uint8_t out[4]);
-sym int dmrgo_layer2_raw_burst_standalone_rcemb(const dmrgo_layer2_raw_burst_t *self, dmrgo_pdu_embedded_signalling_t *out);
+sym int dmrgo_layer2_raw_burst_standalone_rc_emb(const dmrgo_layer2_raw_burst_t *self, dmrgo_pdu_embedded_signalling_t *out);
 sym int dmrgo_layer2_raw_burst_sync(const dmrgo_layer2_raw_burst_t *self, dmrgo_enums_sync_pattern_t *sync_pattern, int64_t *n);
 sym int dmrgo_layer2_raw_burst_voice_slots(const dmrgo_layer2_raw_burst_t *self, uint8_t out[3][9]);
 sym int dmrgo_layer2_short_lc_assembler_add(dmrgo_layer2_short_lc_assembler_t *self, const dmrgo_layer2_cach_t *c, dmrgo_pdu_short_lc_t *slc, bool *done);
@@ -3395,8 +3395,8 @@ type struct dmrgo_lrrp_report_t { uint8_t *request_id; size_t request_id_len; bo
 type struct dmrgo_lrrp_request_t { uint8_t *request_id; size_t request_id_len; bool has_request_id; uint8_t short_request_id; bool has_short_request_id; bool periodic; bool one_shot; uint32_t interval; bool has_interval; uint32_t distance; bool has_distance; dmrgo_lrrp_trigger_condition_t trigger_condition; bool has_trigger_condition; uint32_t protocol_version; bool has_protocol_version; bool accuracy; bool accuracy_and_time; bool time; bool altitude; bool speed; bool direction; bool vertical_speed; uint8_t level_of_confidence; bool has_level_of_confidence; };
 type struct dmrgo_lrrp_time_t { uint16_t year; uint8_t month; uint8_t day; uint8_t hour; uint8_t minute; uint8_t second; };
 type struct dmrgo_mmdvm_ack_t { dmrgo_mmdvm_command_t command; };
-type struct dmrgo_mmdvm_config_v1_t { bool simplex; bool use_cos_as_lockout; bool debug; bool ysf_lo_dev; bool ptt_invert; bool tx_invert; bool rx_invert; bool m17; bool pocsag; bool nxdn; bool p25; bool ysf; bool dmr; bool d_star; uint8_t tx_delay; dmrgo_mmdvm_mode_t state; uint8_t rx_level; uint8_t cwidtx_level; dmrgo_enums_color_code_t dmr_color_code; uint8_t dmr_delay; uint8_t osc_offset; uint8_t d_star_tx_level; uint8_t dmrtx_level; uint8_t ysftx_level; uint8_t p25tx_level; uint8_t txdc_offset; uint8_t rxdc_offset; uint8_t nxdntx_level; uint8_t ysftx_hang; uint8_t pocsagtx_level; uint8_t fmtx_level; uint8_t p25tx_hang; uint8_t nxdntx_hang; uint8_t m17tx_level; uint8_t m17tx_hang; };
-type struct dmrgo_mmdvm_config_v2_t { bool simplex; bool use_cos_as_lockout; bool debug; bool ysf_lo_dev; bool ptt_invert; bool tx_invert; bool rx_invert; bool fm; bool nxdn; bool p25; bool ysf; bool dmr; bool d_star; bool pocsag; uint8_t tx_delay; dmrgo_mmdvm_mode_t state; uint8_t txdc_offset; uint8_t rxdc_offset; uint8_t rx_level; uint8_t cwidtx_level; uint8_t d_star_tx_level; uint8_t dmrtx_level; uint8_t ysftx_level; uint8_t p25tx_level; uint8_t nxdntx_level; uint8_t pocsagtx_level; uint8_t fmtx_level; uint8_t ysftx_hang; uint8_t p25tx_hang; uint8_t nxdntx_hang; bool dmr_trunking; dmrgo_enums_color_code_t dmr_color_code; uint8_t dmr_delay; uint8_t osc_offset; };
+type struct dmrgo_mmdvm_config_v1_t { bool simplex; bool use_cos_as_lockout; bool debug; bool ysf_lo_dev; bool ptt_invert; bool tx_invert; bool rx_invert; bool m17; bool pocsag; bool nxdn; bool p25; bool ysf; bool dmr; bool d_star; uint8_t tx_delay; dmrgo_mmdvm_mode_t state; uint8_t rx_level; uint8_t cwid_tx_level; dmrgo_enums_color_code_t dmr_color_code; uint8_t dmr_delay; uint8_t osc_offset; uint8_t d_star_tx_level; uint8_t dmr_tx_level; uint8_t ysf_tx_level; uint8_t p25_tx_level; uint8_t tx_dc_offset; uint8_t rx_dc_offset; uint8_t nxdn_tx_level; uint8_t ysf_tx_hang; uint8_t pocsag_tx_level; uint8_t fm_tx_level; uint8_t p25_tx_hang; uint8_t nxdn_tx_hang; uint8_t m17_tx_level; uint8_t m17_tx_hang; };
+type struct dmrgo_mmdvm_config_v2_t { bool simplex; bool use_cos_as_lockout; bool debug; bool ysf_lo_dev; bool ptt_invert; bool tx_invert; bool rx_invert; bool fm; bool nxdn; bool p25; bool ysf; bool dmr; bool d_star; bool pocsag; uint8_t tx_delay; dmrgo_mmdvm_mode_t state; uint8_t tx_dc_offset; uint8_t rx_dc_offset; uint8_t rx_level; uint8_t cwid_tx_level; uint8_t d_star_tx_level; uint8_t dmr_tx_level; uint8_t ysf_tx_level; uint8_t p25_tx_level; uint8_t nxdn_tx_level; uint8_t pocsag_tx_level; uint8_t fm_tx_level; uint8_t ysf_tx_hang; uint8_t p25_tx_hang; uint8_t nxdn_tx_hang; bool dmr_trunking; dmrgo_enums_color_code_t dmr_color_code; uint8_t dmr_delay; uint8_t osc_offset; };
 type struct dmrgo_mmdvm_debug_t { dmrgo_mmdvm_command_t command; uint8_t *text; size_t text_len; int16_t n[4]; };
 type struct dmrgo_mmdvm_dmr_abort_t { dmrgo_enums_slot_t slot; };
 type struct dmrgo_mmdvm_dmr_aloha_t { dmrgo_layer2_raw_burst_t burst; };
@@ -3427,7 +3427,7 @@ type struct dmrgo_pdu_bcap_continuation_t { dmrgo_fec_result_t fec; bool last_bl
 type struct dmrgo_pdu_broadcast_pdu_t { dmrgo_enums_announcement_type_t announcement_type; uint16_t broadcast_parms1; bool reg; uint8_t backoff; uint16_t sys_ident_code; uint32_t broadcast_parms2; };
 type struct dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t { uint16_t physical_channel; bool logical_channel; bool late_entry; bool emergency; bool offset; uint32_t target_address; uint32_t source_address; };
 type struct dmrgo_pdu_bs_outbound_activation_pdu_t { uint16_t reserved; uint32_t bs_address; uint32_t source_address; };
-type struct dmrgo_pdu_call_timer_parms_t { dmrgo_enums_announcement_type_t announcement_type; uint16_t emergency_timer; uint8_t packet_timer; bool reg; uint8_t backoff; uint16_t sys_ident_code; uint16_t msms_timer; uint16_t line_timer; };
+type struct dmrgo_pdu_call_timer_parms_t { dmrgo_enums_announcement_type_t announcement_type; uint16_t emergency_timer; uint8_t packet_timer; bool reg; uint8_t backoff; uint16_t sys_ident_code; uint16_t ms_ms_timer; uint16_t line_timer; };
 type struct dmrgo_pdu_capacity_plus_activity_t { uint8_t rest_lsn; uint16_t voice; uint8_t talkgroups[16]; uint8_t options; uint16_t radio; uint16_t radios[16]; };
 type struct dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t { uint8_t reserved; uint16_t target_address; uint8_t window; uint8_t superframe; uint8_t flags; uint16_t reserved2; };
 type struct dmrgo_pdu_capacity_plus_data_revert_grant_pdu_t { uint8_t reserved; uint16_t target_address; uint8_t window; uint8_t superframe; uint32_t reserved2; };
