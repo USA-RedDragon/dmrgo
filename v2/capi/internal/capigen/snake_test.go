@@ -41,6 +41,12 @@ func TestSnake(t *testing.T) {
 		"TSCCUDT":                       "tscc_udt",
 		"TSCCUSBD":                      "tscc_usbd",
 		"USBDLIPResponse":               "usbd_lip_response",
+		"DDFormat":                      "dd_format",
+		"DDBinary":                      "dd_binary",
+		"DDBCD":                         "dd_bcd",
+		"DD7Bit":                        "dd_7bit",
+		"DDISO8859Part1":                "dd_iso8859_part1",
+		"DDUTF16BE":                     "dd_utf16be",
 	} {
 		if got := snake(in); got != want {
 			t.Errorf("snake(%q) = %q, want %q", in, got, want)
