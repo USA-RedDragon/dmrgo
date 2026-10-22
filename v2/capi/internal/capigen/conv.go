@@ -840,6 +840,7 @@ func (g *gen) cUnion(ti *tinfo) error {
 		lines(&b, "\t\t"+ii.c+" "+strings.TrimPrefix(ii.base, "dmrgo_")+";")
 	}
 	lines(&b, "\t} v;", "};", "")
+	g.unions = append(g.unions, ti.c)
 	for _, im := range ti.impls {
 		ii := g.info(im)
 		g.defines = append(g.defines, fmt.Sprintf("#define %s %d", g.tagName(ti, ii), g.lock.tag(ti.c, g.tagName(ti, ii))))

@@ -285,16 +285,21 @@ func (o *outc) take(size, align int) unsafe.Pointer {
 	return unsafe.Pointer(&o.arena[off])
 }
 
+func alignOf[E any]() uintptr {
+	var z E
+	return max(unsafe.Alignof(z), cAlign((*E)(nil)))
+}
+
 func arenaCopy[E any](o *outc, s []E) unsafe.Pointer {
 	var z E
 	var key [3]uintptr
 	if len(s) > 0 {
-		key = [3]uintptr{uintptr(unsafe.Pointer(&s[0])), uintptr(len(s)) * unsafe.Sizeof(z), unsafe.Alignof(z)}
+		key = [3]uintptr{uintptr(unsafe.Pointer(&s[0])), uintptr(len(s)) * unsafe.Sizeof(z), alignOf[E]()}
 		if p, ok := o.seen[key]; ok {
 			return p
 		}
 	}
-	p := o.take(len(s)*int(unsafe.Sizeof(z)), int(unsafe.Alignof(z)))
+	p := o.take(len(s)*int(unsafe.Sizeof(z)), int(alignOf[E]()))
 	if p != nil {
 		copy(unsafe.Slice((*E)(p), len(s)), s)
 		if o.seen == nil {
@@ -307,7 +312,7 @@ func arenaCopy[E any](o *outc, s []E) unsafe.Pointer {
 
 func arenaTake[E any](o *outc, n int) []E {
 	var z E
-	p := o.take(n*int(unsafe.Sizeof(z)), int(unsafe.Alignof(z)))
+	p := o.take(n*int(unsafe.Sizeof(z)), int(alignOf[E]()))
 	if p == nil {
 		return nil
 	}
