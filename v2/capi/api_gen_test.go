@@ -28,6 +28,7 @@ var entryPoints = map[string]any{
 	"dmrgo_bs_repeater_decoded":                                        dmrgo_bs_repeater_decoded,
 	"dmrgo_bs_repeater_inbound_need":                                   dmrgo_bs_repeater_inbound_need,
 	"dmrgo_bs_repeater_inbound":                                        dmrgo_bs_repeater_inbound,
+	"dmrgo_bs_repeater_jitter_stats":                                   dmrgo_bs_repeater_jitter_stats,
 	"dmrgo_bs_repeater_lost_need":                                      dmrgo_bs_repeater_lost_need,
 	"dmrgo_bs_repeater_lost":                                           dmrgo_bs_repeater_lost,
 	"dmrgo_bs_repeater_reject":                                         dmrgo_bs_repeater_reject,

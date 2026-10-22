@@ -30,4 +30,5 @@ var (
 	errTerminators error = &dmrgo.ConfigError{Type: "bs", Field: "Terminators"}
 	errChanAuth    error = &dmrgo.ConfigError{Type: "bs", Field: "ChannelAuth"}
 	errLead        error = &dmrgo.ConfigError{Type: "bs", Field: "Lead"}
+	errJitter      error = &dmrgo.ConfigError{Type: "bs", Field: "Jitter"}
 )

@@ -1025,6 +1025,8 @@ struct dmrgo_bs_config_t {
 	dmrgo_duration_t chan_auth_select;
 	/* Scratch, when set, is the Burst that the Repeater decodes into. It can be shared with other machines on the same thread, because the Repeater is done with it when its method returns. NULL means the Repeater makes its own. */
 	dmrgo_layer2_burst_t *scratch;
+	/* Jitter is the playout delay of the network jitter buffer of each slot, a dmrgo_voice_jitter_t, which puts the bursts from a network source back in the order of dmrgo_layer2_hint_t.seq and plays them this long after the first burst of a stream arrived, as the Jitter of MMDVMHost does. 0 means DMRGO_VOICE_DEFAULT_JITTER (360 ms), and a negative value turns the buffer off, so that each burst is taken as it comes. At most DMRGO_VOICE_MAX_JITTER. RF bursts, and bursts without dmrgo_layer2_hint_t.has_seq, are taken as they come. In DMRGO_BS_MODE_RF the Repeater takes a burst from the buffer up to one burst period and Lead before its time, because the outbound channel takes the voice of a slot that far ahead. The dmrgo_voice_jitter_t doc gives the rules for late, lost and duplicate bursts, stalls and new streams. */
+	dmrgo_duration_t jitter;
 };
 
 struct dmrgo_layer2_raw_burst_t {
@@ -1132,6 +1134,17 @@ struct dmrgo_bs_output_t {
 	dmrgo_voice_end_reason_t end;
 	/* Reason is why the source was refused. */
 	dmrgo_bs_reason_t reason;
+};
+
+struct dmrgo_voice_jitter_stats_t {
+	/* Late is the number of packets dropped as late: those that Push returned DMRGO_VOICE_JITTER_LATE for, and buffered packets that a later packet made late, at the start of the playout or when it moved earlier. */
+	uint32_t late;
+	/* Duplicates is the number of packets that Push returned DMRGO_VOICE_JITTER_DUPLICATE for. */
+	uint32_t duplicates;
+	/* Overflows is the number of packets that Push returned DMRGO_VOICE_JITTER_OVERFLOW for. */
+	uint32_t overflows;
+	/* Resyncs is the number of times the playout started again after a stall longer than the delay, a jump of the sequence number, or a Pop that came more than the delay after a Due time. */
+	uint32_t resyncs;
 };
 
 struct dmrgo_csbk_match_t {
@@ -5382,17 +5395,6 @@ struct dmrgo_voice_jitter_packet_t {
 	dmrgo_duration_t due;
 };
 
-struct dmrgo_voice_jitter_stats_t {
-	/* Late is the number of packets dropped as late: those that Push returned DMRGO_VOICE_JITTER_LATE for, and buffered packets that a later packet made late, at the start of the playout or when it moved earlier. */
-	uint32_t late;
-	/* Duplicates is the number of packets that Push returned DMRGO_VOICE_JITTER_DUPLICATE for. */
-	uint32_t duplicates;
-	/* Overflows is the number of packets that Push returned DMRGO_VOICE_JITTER_OVERFLOW for. */
-	uint32_t overflows;
-	/* Resyncs is the number of times the playout started again after a stall longer than the delay, a jump of the sequence number, or a Pop that came more than the delay after a Due time. */
-	uint32_t resyncs;
-};
-
 struct dmrgo_voice_jitter_config_t {
 	/* size is sizeof the struct, which the caller sets: the library reads only the members that it covers, as zero for the rest. */
 	size_t size;
@@ -7894,6 +7896,8 @@ int dmrgo_bs_repeater_decoded(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, d
 int dmrgo_bs_repeater_inbound_need(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const dmrgo_bs_source_t *from, size_t *items, size_t *arena);
 /* Go: bs.Repeater.Inbound. Inbound takes a burst received on slot h->slot from the source from, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_bs_repeater_inbound_need gives (DMRGO_BS_REPEATER_INBOUND_MAX_ITEMS items). raw may be NULL. */
 int dmrgo_bs_repeater_inbound(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, const dmrgo_bs_source_t *from, dmrgo_bs_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
+/* Go: bs.Repeater.JitterStats. JitterStats returns the counts of the jitter buffer of slot s, or zero counts for a slot other than DMRGO_ENUMS_SLOT1 or DMRGO_ENUMS_SLOT2 or when dmrgo_bs_config_t.jitter turned the buffer off. */
+int dmrgo_bs_repeater_jitter_stats(dmrgo_bs_repeater_t *self, dmrgo_enums_slot_t s, dmrgo_voice_jitter_stats_t *out);
 /* dmrgo_bs_repeater_lost_need sets *items and *arena to the room that dmrgo_bs_repeater_lost needs for these arguments, without a change to the handle. */
 int dmrgo_bs_repeater_lost_need(dmrgo_bs_repeater_t *self, dmrgo_duration_t now, dmrgo_enums_slot_t s, const dmrgo_bs_source_t *from, size_t *items, size_t *arena);
 /* Go: bs.Repeater.Lost. Lost tells the Repeater that the transport lost the signal of slot s, such as an MMDVM TAG_LOST. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_bs_repeater_lost_need gives (DMRGO_BS_REPEATER_LOST_MAX_ITEMS items). */

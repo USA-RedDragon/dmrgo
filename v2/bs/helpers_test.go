@@ -32,8 +32,12 @@ func call(t testing.TB, cc enums.ColorCode, target, source uint32, superframes i
 	}
 	out := tx.AppendHeaders(nil)
 	for i := range superframes * layer2.VoiceBurstsPerSuperframe * layer2.VoiceSlotsPerBurst {
-		var v [9]byte
-		v[i%72/8] = 0x80 >> (i % 8)
+		var f vocoder.AMBEFrame
+		f[i%49/8] = 0x80 >> (i % 49 % 8)
+		v, err := vocoder.EncodeAMBE72(f)
+		if err != nil {
+			t.Fatal(err)
+		}
 		if out, err = tx.AppendSlots(out, v); err != nil {
 			t.Fatal(err)
 		}

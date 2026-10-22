@@ -127,6 +127,7 @@ func in_bs_Config(s *C.dmrgo_bs_config_t) (d g_bs.Config) {
 	if s.scratch != nil {
 		d.Scratch = get_layer2_Burst(s.scratch).v
 	}
+	d.Jitter = time.Duration(s.jitter)
 	return
 }
 
@@ -4720,6 +4721,7 @@ func out_bs_Config(d *C.dmrgo_bs_config_t, s *g_bs.Config, oc *outc) {
 		panic(argPanic{})
 	}
 	d.scratch = nil
+	d.jitter = C.dmrgo_duration_t(s.Jitter)
 }
 
 func fromC_bs_Config(s *C.dmrgo_bs_config_t) g_bs.Config {
@@ -8727,6 +8729,22 @@ func dmrgo_bs_repeater_inbound(c_self *C.dmrgo_bs_repeater_t, c_now C.dmrgo_dura
 		return fail(C.DMRGO_ERR_SHORT)
 	}
 	*c_dst_len = C.size_t(nf_dst)
+	return C.DMRGO_OK
+}
+
+//export dmrgo_bs_repeater_jitter_stats
+func dmrgo_bs_repeater_jitter_stats(c_self *C.dmrgo_bs_repeater_t, c_s C.dmrgo_enums_slot_t, c_out *C.dmrgo_voice_jitter_stats_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	h := get_bs_Repeater(c_self)
+	r0 := h.v.JitterStats(g_enums.Slot(c_s))
+	_ = r0
+	if c_out != nil {
+		*(*g_voice.JitterStats)(unsafe.Pointer(&(*c_out))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
 	return C.DMRGO_OK
 }
 
