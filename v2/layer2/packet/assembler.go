@@ -84,11 +84,13 @@ type Assembler struct {
 	// CRC" setting of some radios does. The Message then has BadCRC set and
 	// comes with no error. A confirmed block with a bad CRC-9 fills its DBSN
 	// until a good copy arrives, and an attempt in which every DBSN arrived
-	// completes the packet. A block that was lost or whose FEC failed is
-	// still missing, and a header must still pass its CRC, because the
+	// completes the packet. A block that was lost, or whose FEC failed in
+	// the PDU or in the payload of the burst (see AddBurst), is still
+	// missing, and a header must still pass its CRC, because the
 	// addresses must be right. AcceptBadCRC does not apply to a packet that
-	// a later try started, whose size only a good message CRC confirms. False, the default, returns ErrMessageCRC
-	// and ErrBlocksMissing as the CRCs require. Reset keeps AcceptBadCRC.
+	// a later try started, whose size only a good message CRC confirms.
+	// False, the default, returns ErrMessageCRC and ErrBlocksMissing as the
+	// CRCs require. Reset keeps AcceptBadCRC.
 	AcceptBadCRC bool
 
 	msg       Message
@@ -147,9 +149,10 @@ func (a *Assembler) InProgress() bool {
 }
 
 // AddBurst adds a decoded burst. A burst that is not data, or whose data did
-// not decode, is ignored. A data block with an uncorrectable FEC result is
-// counted but not used, so the message CRC or CRC-9 catches it. A nil b is
-// ignored.
+// not decode, is ignored. A data block whose FEC.PDU or FEC.Payload result
+// is uncorrectable, such as a rate 3/4 block whose trellis decode failed,
+// is counted but not used, as Lost counts it, so the message CRC or the
+// SACK catches it. A nil b is ignored.
 func (a *Assembler) AddBurst(b *layer2.Burst) (Message, bool, error) {
 	if a == nil {
 		return Message{}, false, dmrgo.ErrNilReceiver
@@ -157,7 +160,7 @@ func (a *Assembler) AddBurst(b *layer2.Burst) (Message, bool, error) {
 	if b == nil || b.Kind != layer2.KindData || b.Data == nil {
 		return Message{}, false, nil
 	}
-	if _, ok := blockOf(b.Data); ok && b.FEC.PDU.Uncorrectable {
+	if _, ok := blockOf(b.Data); ok && (b.FEC.PDU.Uncorrectable || b.FEC.Payload.Uncorrectable) {
 		return a.addBlock(block{}, false)
 	}
 	return a.Add(b.Data)

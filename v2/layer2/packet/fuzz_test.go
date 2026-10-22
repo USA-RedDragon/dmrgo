@@ -473,9 +473,9 @@ func (s *session) classify(raw layer2.RawBurst, sent int) event {
 	if s.burst.DecodeFromBytes(raw) != nil || s.burst.Kind != layer2.KindData || s.burst.Data == nil {
 		return e
 	}
-	if enc, err := s.burst.Encode(); err == nil && enc == s.air[sent] && !s.burst.FEC.PDU.Uncorrectable {
+	if enc, err := s.burst.Encode(); err == nil && enc == s.air[sent] && !s.burst.FEC.PDU.Uncorrectable && !s.burst.FEC.Payload.Uncorrectable {
 		e.class = eventIntact
-	} else if sent != 0 && s.burst.FEC.PDU.Uncorrectable && s.burst.Data.DataType() == s.rate {
+	} else if sent != 0 && (s.burst.FEC.PDU.Uncorrectable || s.burst.FEC.Payload.Uncorrectable) && s.burst.Data.DataType() == s.rate {
 		e.class = eventLost
 	}
 	return e
