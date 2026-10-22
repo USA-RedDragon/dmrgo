@@ -33,12 +33,15 @@ type RequesterConfig struct {
 	// most MaxRetries.
 	Retries int
 	// IdleSearch is T_IdleSrch, the wait for an idle channel before a
-	// polite try. 0 means DefaultIdleSearch, and a negative value does not
-	// wait.
+	// polite time critical try. 0 means DefaultIdleSearch, and a negative
+	// value does not wait.
 	IdleSearch time.Duration
 	// HoldoffMax is the upper end of the random holdoff T_Holdoff of a
-	// request that is not time critical. 0 means DefaultHoldoffMax, and a
-	// negative value means no holdoff.
+	// request that is not time critical: a polite try on a busy channel
+	// waits a random holdoff, and then another while the channel stays
+	// busy. 0 means DefaultHoldoffMax, and a negative value means no
+	// holdoff: the try waits for an idle channel. (ETSI TS 102 361-1
+	// clause 5.2.2.3)
 	HoldoffMax time.Duration
 	// Seed seeds the generator of the random holdoff, so that the same
 	// inputs give the same outputs. Requesters on one channel need

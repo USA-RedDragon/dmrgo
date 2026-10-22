@@ -71,13 +71,19 @@ func (s *sender) start(now time.Duration, c pdu.CSBKBytes, target, source uint32
 }
 
 func (s *sender) qualify(at, now time.Duration) {
-	if s.access == enums.AccessImpolite || !s.busy {
+	switch {
+	case s.access == enums.AccessImpolite || !s.busy:
 		s.state, s.due = sendBursts, now+s.lead
-		return
-	}
-	s.state, s.timer = sendQualify, at
-	if s.idleSearch > 0 {
-		s.timer += s.idleSearch
+	case s.timeCritical:
+		s.state, s.timer = sendQualify, at
+		if s.idleSearch > 0 {
+			s.timer += s.idleSearch
+		}
+	case s.holdoffMax < 0:
+		s.state = sendWait
+	default:
+		s.state = sendHoldoff
+		s.timer = max(at, now) + max(holdoff(&s.rng, s.holdoffMax), 1)
 	}
 }
 
@@ -108,18 +114,12 @@ func (s *sender) tick(now time.Duration, out []Output) ([]Output, sendEvent) {
 		if (s.state != sendQualify && s.state != sendHoldoff) || now < s.timer {
 			break
 		}
-		switch {
-		case s.state == sendHoldoff:
+		if s.state == sendHoldoff {
 			s.qualify(s.timer, now)
-		case s.timeCritical:
-			s.state = sendIdle
-			return out, sendDenied
-		case s.holdoffMax < 0:
-			s.state = sendWait
-		default:
-			s.state = sendHoldoff
-			s.timer = max(s.timer, now) + max(holdoff(&s.rng, s.holdoffMax), 1)
+			continue
 		}
+		s.state = sendIdle
+		return out, sendDenied
 	}
 	if s.state != sendBursts || now < s.due-s.lead {
 		return out, sendNothing

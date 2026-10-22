@@ -1147,9 +1147,9 @@ struct dmrgo_csbk_requester_config_t {
 	dmrgo_duration_t ack_wait;
 	/* Retries is N_CSBKRetry, the number of tries after the first. 0 means DMRGO_CONSTANTS_NCSBK_RETRY (1), a negative value means none, and it is at most DMRGO_CSBK_MAX_RETRIES. */
 	int64_t retries;
-	/* IdleSearch is T_IdleSrch, the wait for an idle channel before a polite try. 0 means DMRGO_CSBK_DEFAULT_IDLE_SEARCH, and a negative value does not wait. */
+	/* IdleSearch is T_IdleSrch, the wait for an idle channel before a polite time critical try. 0 means DMRGO_CSBK_DEFAULT_IDLE_SEARCH, and a negative value does not wait. */
 	dmrgo_duration_t idle_search;
-	/* HoldoffMax is the upper end of the random holdoff T_Holdoff of a request that is not time critical. 0 means DMRGO_CSBK_DEFAULT_HOLDOFF_MAX, and a negative value means no holdoff. */
+	/* HoldoffMax is the upper end of the random holdoff T_Holdoff of a request that is not time critical: a polite try on a busy channel waits a random holdoff, and then another while the channel stays busy. 0 means DMRGO_CSBK_DEFAULT_HOLDOFF_MAX, and a negative value means no holdoff: the try waits for an idle channel. (ETSI TS 102 361-1 clause 5.2.2.3) */
 	dmrgo_duration_t holdoff_max;
 	/* Seed seeds the generator of the random holdoff, so that the same inputs give the same outputs. Requesters on one channel need different seeds. */
 	uint64_t seed;
@@ -1180,9 +1180,9 @@ struct dmrgo_csbk_responder_config_t {
 	bool no_call_alert;
 	/* NoFNS leaves standard CSBKs that the Responder does not support without the Feature Not Supported NACK_Rsp, which is mandatory for an MS. Their DMRGO_CSBK_OUTPUT_REQUEST stays. (ETSI TS 102 361-2 clause 5.1.2) */
 	bool no_fns;
-	/* IdleSearch is T_IdleSrch, the wait for an idle channel before a polite answer. 0 means DMRGO_CSBK_DEFAULT_IDLE_SEARCH, and a negative value does not wait. */
+	/* IdleSearch is T_IdleSrch, the wait for an idle channel before a polite answer other than NACK_Rsp. 0 means DMRGO_CSBK_DEFAULT_IDLE_SEARCH, and a negative value does not wait. */
 	dmrgo_duration_t idle_search;
-	/* HoldoffMax is the upper end of the random holdoff T_Holdoff of a NACK_Rsp. 0 means DMRGO_CSBK_DEFAULT_HOLDOFF_MAX, and a negative value means no holdoff. */
+	/* HoldoffMax is the upper end of the random holdoff T_Holdoff of a NACK_Rsp: a polite NACK_Rsp on a busy channel waits a random holdoff, and then another while the channel stays busy. 0 means DMRGO_CSBK_DEFAULT_HOLDOFF_MAX, and a negative value means no holdoff: the NACK_Rsp waits for an idle channel. (ETSI TS 102 361-2 clause 5.1.2.2) */
 	dmrgo_duration_t holdoff_max;
 	/* Seed seeds the generator of the random holdoff. */
 	uint64_t seed;
