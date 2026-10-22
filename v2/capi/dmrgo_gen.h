@@ -10643,7 +10643,7 @@ int dmrgo_trunk_ms_send_status(dmrgo_trunk_ms_t *self, dmrgo_duration_t now, boo
 int dmrgo_trunk_ms_set_poll_response(dmrgo_trunk_ms_t *self, const dmrgo_trunk_appended_t *a);
 /* Go: trunk.MS.SetStatus. SetStatus sets the status with which the MS answers a status poll. It returns a DMRGO_ERR_CONFIG for a status over 126. */
 int dmrgo_trunk_ms_set_status(dmrgo_trunk_ms_t *self, dmrgo_trunk_status_t s);
-/* Go: trunk.MS.SetSupplementary. SetSupplementary sets the appended data a as the supplementary_user data of the next request that asks for it: a SendStatus, or a Call or CallData with IsSuppData. It returns DMRGO_ERR_TRUNK_UDT_LENGTH for an a with Blocks out of range. a may be NULL. */
+/* Go: trunk.MS.SetSupplementary. SetSupplementary sets the appended data a as the supplementary_user data of the next request that asks for it: a SendStatus, or a Call or CallData with IsSuppData. It returns DMRGO_ERR_TRUNK_UDT_LENGTH for an a with Blocks or PadNibble out of range, and DMRGO_ERR_TRUNK_UDT_FORMAT for a Format over 15. a may be NULL. */
 int dmrgo_trunk_ms_set_supplementary(dmrgo_trunk_ms_t *self, const dmrgo_trunk_appended_t *a);
 /* Go: trunk.MS.SetUSBDResponse. SetUSBDResponse sets the Poll Response that the MS sends to a USBD Poll Request of the same Service Type for it, such as a USBDLIPResponse in its Payload. p may be NULL. */
 int dmrgo_trunk_ms_set_usbd_response(dmrgo_trunk_ms_t *self, const dmrgo_pdu_unified_single_block_data_t *p);
@@ -10673,7 +10673,7 @@ int dmrgo_trunk_new_capacity_plus_follower(const dmrgo_trunk_capacity_plus_confi
 int dmrgo_trunk_new_follower(const dmrgo_trunk_follower_config_t *cfg, dmrgo_trunk_follower_t **out);
 /* Go: trunk.NewMS. NewMS returns an MS for cfg. It returns a DMRGO_ERR_CONFIG for an Address out of range, a Slot that is not SlotUnknown, Slot1 or Slot2, and for the errors of NewFollower. cfg may be NULL. */
 int dmrgo_trunk_new_ms(const dmrgo_trunk_ms_config_t *cfg, dmrgo_trunk_ms_t **out);
-/* Go: trunk.NewTSCC. NewTSCC returns a TSCC for cfg. It returns a DMRGO_ERR_CONFIG for a SysCode whose fields do not fit, a color code over 15, a Channel that names no channel, a PayloadLen out of range, a payload channel that names no channel, repeats another or is Channel, a negative GrantRepeats, ClearRepeats or Lead, or a MaxRegistrations out of range. cfg may be NULL. */
+/* Go: trunk.NewTSCC. NewTSCC returns a TSCC for cfg. It returns a DMRGO_ERR_CONFIG for a SysCode whose fields do not fit, a color code over 15, a Channel that names no channel, a PayloadLen out of range, a payload channel that names no channel, repeats another or is Channel, a negative GrantRepeats or ClearRepeats, a Lead out of range, or a MaxRegistrations out of range. cfg may be NULL. */
 int dmrgo_trunk_new_tscc(const dmrgo_trunk_tscc_config_t *cfg, dmrgo_trunk_tscc_t **out);
 /* Go: trunk.OutputKind.String. String returns the name of the OutputKind. */
 int dmrgo_trunk_output_kind_string(dmrgo_trunk_output_kind_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
