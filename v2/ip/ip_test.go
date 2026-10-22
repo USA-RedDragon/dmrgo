@@ -111,7 +111,7 @@ func TestDecodeErrors(t *testing.T) {
 	mod := func(f func(b []byte) []byte) []byte { return f(append([]byte{}, good...)) }
 	tests := []struct {
 		name string
-		sap  enums.ServiceAccessPointID
+		sap  enums.SAP
 		data []byte
 		want error
 	}{

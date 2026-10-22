@@ -47,7 +47,7 @@ func (c *Codec) Reset() {
 }
 
 // FID returns zero.
-func (c *Codec) FID() enums.FeatureSetID {
+func (c *Codec) FID() enums.FID {
 	if c == nil {
 		return 0
 	}

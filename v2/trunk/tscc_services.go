@@ -230,7 +230,7 @@ func (t *TSCC) registration(now time.Duration, r *pdu.RandomAccessPDU, out []TSC
 			out = append(out, TSCCOutput{Kind: TSCCDeregistered, Address: src})
 		}
 		t.psSet(now, src, 0)
-		t.sendAck(src, enums.ReasonRegAccepted)
+		t.sendAck(src, enums.AckReasonRegAccepted)
 		return out
 	}
 	if t.cfg.Authenticate {
@@ -242,9 +242,9 @@ func (t *TSCC) registration(now time.Duration, r *pdu.RandomAccessPDU, out []TSC
 func (t *TSCC) admit(now time.Duration, src uint32, ps uint8, out []TSCCOutput) []TSCCOutput {
 	out, ok := t.register(src, out)
 	if !ok {
-		return t.refuse(src, enums.ReasonRegRefused, out)
+		return t.refuse(src, enums.AckReasonRegRefused, out)
 	}
-	t.ackFrom(src, enums.ReasonRegAccepted, t.psSet(now, src, ps), constants.GatewayREGI)
+	t.ackFrom(src, enums.AckReasonRegAccepted, t.psSet(now, src, ps), constants.GatewayREGI)
 	return out
 }
 
@@ -331,7 +331,7 @@ func (t *TSCC) stun(now time.Duration, addr uint32, act StunAction) error {
 	if act == StunKill {
 		gw = constants.GatewayKILLI
 	}
-	t.sendAhoy(pdu.AhoyPDU{ServiceKindFlag: act == StunRevive, ServiceKind: uint8(enums.ServiceSupplementary), TargetAddress: addr, SourceAddress: gw}, addr, true)
+	t.sendAhoy(pdu.AhoyPDU{ServiceKindFlag: act == StunRevive, ServiceKind: uint8(enums.ServiceKindSupplementary), TargetAddress: addr, SourceAddress: gw}, addr, true)
 	return nil
 }
 
@@ -348,7 +348,7 @@ func (t *TSCC) ackvit(now time.Duration, a *pdu.AckvitationPDU, out []TSCCOutput
 	src := a.SourceAddress
 	t.wake(src, now)
 	i := t.stunIndex(src)
-	if i < 0 || enums.ServiceKind(a.ServiceKind) != enums.ServiceSupplementary {
+	if i < 0 || enums.ServiceKind(a.ServiceKind) != enums.ServiceKindSupplementary {
 		return out
 	}
 	op := &t.svc.stuns[i]
@@ -358,7 +358,7 @@ func (t *TSCC) ackvit(now time.Duration, a *pdu.AckvitationPDU, out []TSCCOutput
 		return append(out, TSCCOutput{Kind: TSCCStun, Address: src, Stun: op.act, Reason: ReasonAuthentication})
 	}
 	op.until = now + t.cfg.AnswerTimeout
-	t.ackFrom(src, enums.ReasonAuthResponseTS, 0, resp)
+	t.ackFrom(src, enums.AckReasonAuthResponseTS, 0, resp)
 	return out
 }
 
@@ -383,7 +383,7 @@ func (t *TSCC) svcAnswer(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOutp
 		op := &s.stuns[i]
 		op.used = false
 		o := TSCCOutput{Kind: TSCCStun, Address: src, Stun: op.act, Ack: r}
-		if r == enums.ReasonRecipientRefused {
+		if r == enums.AckReasonRecipientRefused {
 			o.Reason = ReasonAuthentication
 		}
 		return append(out, o), true
@@ -415,7 +415,7 @@ func (t *TSCC) svcAnswer(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOutp
 		if st == StatusPoll {
 			st = Status(a.ResponseInfo)
 		}
-		return append(out, TSCCOutput{Kind: TSCCStatus, Call: Grant{Service: enums.ServiceStatusTransport, Target: src, Source: op.from}, Status: st, Ack: r}), true
+		return append(out, TSCCOutput{Kind: TSCCStatus, Call: Grant{Service: enums.ServiceKindStatusTransport, Target: src, Source: op.from}, Status: st, Ack: r}), true
 	}
 	return out, false
 }
@@ -442,12 +442,12 @@ func (t *TSCC) svcInbound(now time.Duration, out []TSCCOutput) ([]TSCCOutput, bo
 func (t *TSCC) svcRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutput) ([]TSCCOutput, bool) {
 	t.wake(r.SourceAddress, now)
 	switch enums.ServiceKind(r.ServiceKind) {
-	case enums.ServiceStatusTransport:
+	case enums.ServiceKindStatusTransport:
 		if r.ServiceOptions&0x20 != 0 && t.suplStart(now, r) {
 			return out, true
 		}
 		return t.statusRandom(now, r, out), true
-	case enums.ServiceIndividualVoice, enums.ServiceTalkgroupVoice:
+	case enums.ServiceKindIndividualVoice, enums.ServiceKindTalkgroupVoice:
 		if r.ServiceOptions&0x10 != 0 && t.suplStart(now, r) {
 			return out, true
 		}
@@ -464,15 +464,15 @@ func (t *TSCC) statusRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSC
 		return t.interruptRequest(now, src, target, o.Group, st == StatusTerminate, out)
 	}
 	if t.cfg.Reg && t.regIndex(src) < 0 {
-		return t.refuse(src, enums.ReasonMSNotRegistered, out)
+		return t.refuse(src, enums.AckReasonMSNotRegistered, out)
 	}
 	if o.Group {
 		if st == StatusPoll {
-			return t.refuse(src, enums.ReasonNotSupported, out)
+			return t.refuse(src, enums.AckReasonNotSupported, out)
 		}
 		t.statusAhoy(o.Group, target, src, st, r.ServiceOptions)
-		t.ackFrom(src, enums.ReasonMessageAccepted, 0, 0)
-		return append(out, TSCCOutput{Kind: TSCCStatus, Call: Grant{Service: enums.ServiceStatusTransport, Group: true, Target: target, Source: src}, Status: st, Ack: enums.ReasonMessageAccepted})
+		t.ackFrom(src, enums.AckReasonMessageAccepted, 0, 0)
+		return append(out, TSCCOutput{Kind: TSCCStatus, Call: Grant{Service: enums.ServiceKindStatusTransport, Group: true, Target: target, Source: src}, Status: st, Ack: enums.AckReasonMessageAccepted})
 	}
 	for i := range t.svc.status {
 		if t.svc.status[i].used && t.svc.status[i].caller == src {
@@ -480,18 +480,18 @@ func (t *TSCC) statusRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSC
 		}
 	}
 	if t.cfg.Reg && t.regIndex(target) < 0 {
-		return t.refuse(src, enums.ReasonNoregMSAwayRefused, out)
+		return t.refuse(src, enums.AckReasonNoregMSAwayRefused, out)
 	}
 	if !t.statusStart(now, src, src, target, st, r.ServiceOptions) {
-		return t.refuse(src, enums.ReasonSysBusyRefused, out)
+		return t.refuse(src, enums.AckReasonSysBusyRefused, out)
 	}
-	t.sendAck(src, enums.ReasonWait)
+	t.sendAck(src, enums.AckReasonWait)
 	return out
 }
 
 func (t *TSCC) statusAhoy(group bool, target, source uint32, st Status, opts uint8) {
 	a := pdu.AhoyPDU{ServiceOptsMirror: opts&0x60 | uint8(st)>>2, GroupIndividual: group, AppendedBlocks: uint8(st) & 3,
-		ServiceKind: uint8(enums.ServiceStatusTransport), TargetAddress: target, SourceAddress: source}
+		ServiceKind: uint8(enums.ServiceKindStatusTransport), TargetAddress: target, SourceAddress: source}
 	if group {
 		for range statusSends {
 			t.sendAhoy(a, 0, false)
@@ -550,9 +550,9 @@ func (t *TSCC) interruptRequest(now time.Duration, src, target uint32, group, en
 		}
 	}
 	if !t.cfg.TransmitInterrupt || i < 0 {
-		return t.refuseFrom(src, enums.ReasonNotSupported, constants.GatewayTSI, out)
+		return t.refuseFrom(src, enums.AckReasonNotSupported, constants.GatewayTSI, out)
 	}
-	t.ackFrom(src, enums.ReasonMessageAccepted, 0, constants.GatewayTSI)
+	t.ackFrom(src, enums.AckReasonMessageAccepted, 0, constants.GatewayTSI)
 	reason := ReasonNone
 	if end {
 		reason = ReasonInterrupt
@@ -680,9 +680,9 @@ func (t *TSCC) svcTimers(now time.Duration, out []TSCCOutput) []TSCCOutput {
 		}
 		op.used = false
 		if op.caller != 0 {
-			t.ackFrom(op.caller, enums.ReasonMSAwayRefused, 0, op.called)
+			t.ackFrom(op.caller, enums.AckReasonMSAwayRefused, 0, op.called)
 		}
-		out = append(out, TSCCOutput{Kind: TSCCStatus, Call: Grant{Service: enums.ServiceStatusTransport, Target: op.called, Source: op.from}, Status: op.status, Reason: ReasonTimeout})
+		out = append(out, TSCCOutput{Kind: TSCCStatus, Call: Grant{Service: enums.ServiceKindStatusTransport, Target: op.called, Source: op.from}, Status: op.status, Reason: ReasonTimeout})
 	}
 	for i := range s.supl {
 		if op := &s.supl[i]; op.used && now >= op.until && len(out)+2 <= limit {
@@ -692,7 +692,7 @@ func (t *TSCC) svcTimers(now time.Duration, out []TSCCOutput) []TSCCOutput {
 	for i := range s.ip {
 		if op := &s.ip[i]; op.used && now >= op.until {
 			op.used = false
-			t.ackFrom(op.addr, enums.ReasonIPConnectionFailed, 0, constants.GatewayIPI)
+			t.ackFrom(op.addr, enums.AckReasonIPConnectionFailed, 0, constants.GatewayIPI)
 		}
 	}
 	return out
@@ -736,12 +736,12 @@ func (t *TSCC) ipAdvice(now time.Duration, r *pdu.RandomAccessPDU, o *layer3.Reg
 	if o.Register {
 		var ok bool
 		if out, ok = t.register(src, out); !ok {
-			return t.refuse(src, enums.ReasonRegRefused, out)
+			return t.refuse(src, enums.AckReasonRegRefused, out)
 		}
 		off = t.psSet(now, src, o.PowerSave)
 	}
 	if !t.cfg.IP {
-		return t.refuseFrom(src, enums.ReasonIPConnectionFailed, constants.GatewayIPI, out)
+		return t.refuseFrom(src, enums.AckReasonIPConnectionFailed, constants.GatewayIPI, out)
 	}
 	free := -1
 	for i := range t.svc.ip {
@@ -755,10 +755,10 @@ func (t *TSCC) ipAdvice(now time.Duration, r *pdu.RandomAccessPDU, o *layer3.Reg
 		}
 	}
 	if free < 0 {
-		return t.refuseFrom(src, enums.ReasonIPConnectionFailed, constants.GatewayIPI, out)
+		return t.refuseFrom(src, enums.AckReasonIPConnectionFailed, constants.GatewayIPI, out)
 	}
 	t.svc.ip[free] = ipOp{used: true, addr: src, remove: !o.Register, offset: off, until: now + t.cfg.AnswerTimeout}
-	t.sendAhoy(pdu.AhoyPDU{ServiceOptsMirror: r.ServiceOptions, AppendedBlocks: 1, ServiceKind: uint8(enums.ServiceRegistration), TargetAddress: src, SourceAddress: constants.GatewayIPI}, 0, true)
+	t.sendAhoy(pdu.AhoyPDU{ServiceOptsMirror: r.ServiceOptions, AppendedBlocks: 1, ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: src, SourceAddress: constants.GatewayIPI}, 0, true)
 	return out
 }
 
@@ -775,7 +775,7 @@ func (t *TSCC) svcUploaded(now time.Duration, out []TSCCOutput) []TSCCOutput {
 			}
 			op.used = false
 			if !crcOK || u.Header.UDTFormat != 6 {
-				t.ackFrom(src, enums.ReasonIPConnectionFailed, 0, constants.GatewayIPI)
+				t.ackFrom(src, enums.AckReasonIPConnectionFailed, 0, constants.GatewayIPI)
 				return out
 			}
 			o := TSCCOutput{Kind: TSCCIPAdvice, Address: src, IPv6: u.Header.AppendedBlocks > 0, Remove: op.remove}
@@ -785,7 +785,7 @@ func (t *TSCC) svcUploaded(now time.Duration, out []TSCCOutput) []TSCCOutput {
 			} else {
 				clear(o.IP[4:])
 			}
-			t.ackFrom(src, enums.ReasonRegAccepted, op.offset, constants.GatewayIPI)
+			t.ackFrom(src, enums.AckReasonRegAccepted, op.offset, constants.GatewayIPI)
 			return append(out, o)
 		}
 	case constants.GatewaySUPLI:
@@ -831,8 +831,8 @@ func (t *TSCC) suplStart(now time.Duration, r *pdu.RandomAccessPDU) bool {
 
 func (t *TSCC) suplDownload(now time.Duration, op *suplOp, out []TSCCOutput) []TSCCOutput {
 	r := &op.rand
-	group := enums.ServiceKind(r.ServiceKind) == enums.ServiceTalkgroupVoice ||
-		enums.ServiceKind(r.ServiceKind) == enums.ServiceStatusTransport && r.ServiceOptions&0x40 != 0
+	group := enums.ServiceKind(r.ServiceKind) == enums.ServiceKindTalkgroupVoice ||
+		enums.ServiceKind(r.ServiceKind) == enums.ServiceKindStatusTransport && r.ServiceOptions&0x40 != 0
 	if t.u.downN > 0 {
 		return t.suplContinue(now, op, out)
 	}
@@ -849,7 +849,7 @@ func (t *TSCC) suplDownload(now time.Duration, op *suplOp, out []TSCCOutput) []T
 func (t *TSCC) suplContinue(now time.Duration, op *suplOp, out []TSCCOutput) []TSCCOutput {
 	r := op.rand
 	op.used = false
-	if enums.ServiceKind(r.ServiceKind) == enums.ServiceStatusTransport {
+	if enums.ServiceKind(r.ServiceKind) == enums.ServiceKindStatusTransport {
 		r.ServiceOptions &^= 0x20
 	} else {
 		r.ServiceOptions &^= 0x10

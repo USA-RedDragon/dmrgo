@@ -30,7 +30,7 @@ func decodeSeeds(add func(sap uint8, data []byte)) {
 var decodeErrors = []error{ip.ErrSAP, ip.ErrShort, ip.ErrLength, ip.ErrVersion, ip.ErrProtocol, ip.ErrFragment, ip.ErrChecksum}
 
 func fuzzDecode(t *testing.T, sap uint8, data []byte) {
-	s := enums.ServiceAccessPointID(sap & 0xF)
+	s := enums.SAP(sap & 0xF)
 	d, err := ip.Decode(s, data)
 	if err != nil {
 		known := false

@@ -512,16 +512,16 @@ func (t *TSCC) random(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutpu
 	}
 	src := r.SourceAddress
 	switch enums.ServiceKind(r.ServiceKind) {
-	case enums.ServiceRegistration:
+	case enums.ServiceKindRegistration:
 		return t.registration(now, r, out)
-	case enums.ServiceTalkgroupVoice, enums.ServiceIndividualVoice:
+	case enums.ServiceKindTalkgroupVoice, enums.ServiceKindIndividualVoice:
 	default:
-		return t.refuse(src, enums.ReasonNotSupported, out)
+		return t.refuse(src, enums.AckReasonNotSupported, out)
 	}
 	if t.cfg.Reg && t.regIndex(src) < 0 {
-		return t.refuse(src, enums.ReasonMSNotRegistered, out)
+		return t.refuse(src, enums.AckReasonMSNotRegistered, out)
 	}
-	group := enums.ServiceKind(r.ServiceKind) == enums.ServiceTalkgroupVoice
+	group := enums.ServiceKind(r.ServiceKind) == enums.ServiceKindTalkgroupVoice
 	if i := t.findCall(group, r.TargetAddress, src); i >= 0 {
 		t.sendGrant(i)
 		return out
@@ -530,7 +530,7 @@ func (t *TSCC) random(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutpu
 		return t.grant(now, true, r.TargetAddress, src, out)
 	}
 	if t.cfg.Reg && t.regIndex(r.TargetAddress) < 0 {
-		return t.refuse(src, enums.ReasonNoregMSAwayRefused, out)
+		return t.refuse(src, enums.AckReasonNoregMSAwayRefused, out)
 	}
 	for i := range t.setups {
 		if t.setups[i].used && t.setups[i].caller == src {
@@ -543,14 +543,14 @@ func (t *TSCC) random(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutpu
 			continue
 		}
 		*st = setup{used: true, caller: src, called: r.TargetAddress, until: now + t.cfg.AnswerTimeout, opts: r.ServiceOptions}
-		t.sendAck(src, enums.ReasonWait)
-		t.ahoy = pdu.AhoyPDU{ServiceOptsMirror: r.ServiceOptions, ALS: r.Reserved&alsBit != 0, ServiceKind: uint8(enums.ServiceIndividualVoice),
+		t.sendAck(src, enums.AckReasonWait)
+		t.ahoy = pdu.AhoyPDU{ServiceOptsMirror: r.ServiceOptions, ALS: r.Reserved&alsBit != 0, ServiceKind: uint8(enums.ServiceKindIndividualVoice),
 			TargetAddress: r.TargetAddress, SourceAddress: src}
 		t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &t.ahoy}
 		t.enqueueTo(r.TargetAddress, true)
 		return out
 	}
-	return t.refuse(src, enums.ReasonSysBusyRefused, out)
+	return t.refuse(src, enums.AckReasonSysBusyRefused, out)
 }
 
 func (t *TSCC) challenge(now time.Duration, src uint32, opts, ps uint8, out []TSCCOutput) []TSCCOutput {
@@ -565,11 +565,11 @@ func (t *TSCC) challenge(now time.Duration, src uint32, opts, ps uint8, out []TS
 		}
 	}
 	if w < 0 {
-		return t.refuse(src, enums.ReasonRegRefused, out)
+		return t.refuse(src, enums.AckReasonRegRefused, out)
 	}
 	c := t.rng.Uint32() % (maxChallenge + 1)
 	t.auths[w] = authWait{used: true, addr: src, challenge: c, ps: ps, until: now + t.cfg.AnswerTimeout}
-	t.ahoy = pdu.AhoyPDU{ServiceOptsMirror: opts, ServiceKind: uint8(enums.ServiceRegistration), TargetAddress: src, SourceAddress: c}
+	t.ahoy = pdu.AhoyPDU{ServiceOptsMirror: opts, ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: src, SourceAddress: c}
 	t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &t.ahoy}
 	t.enqueue(true)
 	return append(out, TSCCOutput{Kind: TSCCAuthChallenge, Address: src, Challenge: c})
@@ -600,7 +600,7 @@ func (t *TSCC) authAnswer(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOut
 		ok, ps := w.hasExpect && w.expect == a.TargetAddress, w.ps
 		*w = authWait{}
 		if !ok {
-			return t.refuse(a.AdditionalInfo, enums.ReasonRegDenied, out)
+			return t.refuse(a.AdditionalInfo, enums.AckReasonRegDenied, out)
 		}
 		return t.admit(now, a.AdditionalInfo, ps, out)
 	}
@@ -608,7 +608,7 @@ func (t *TSCC) authAnswer(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOut
 }
 
 func (t *TSCC) answer(now time.Duration, a *pdu.AckInboundPDU, out []TSCCOutput) []TSCCOutput {
-	if enums.AckReason(a.ReasonCode) == enums.ReasonAuthResponseMS {
+	if enums.AckReason(a.ReasonCode) == enums.AckReasonAuthResponseMS {
 		return t.authAnswer(now, a, out)
 	}
 	if o, done := t.udtAck(now, a, out); done {
@@ -638,9 +638,9 @@ func (t *TSCC) grant(now time.Duration, group bool, target, source uint32, out [
 		}
 		g := Grant{Group: group, Target: target, Source: source, Channel: t.cfg.Payload[i/2], Slot: enums.Slot1 + enums.Slot(i%2),
 			ColorCode: t.cfg.ColorCode, HasColorCode: true}
-		g.Opcode, g.Service = pdu.CSBKPrivateVoiceGrant, enums.ServiceIndividualVoice
+		g.Opcode, g.Service = pdu.CSBKPrivateVoiceGrant, enums.ServiceKindIndividualVoice
 		if group {
-			g.Opcode, g.Service = pdu.CSBKTalkgroupVoiceGrant, enums.ServiceTalkgroupVoice
+			g.Opcode, g.Service = pdu.CSBKTalkgroupVoiceGrant, enums.ServiceKindTalkgroupVoice
 		}
 		*cs = callSlot{active: true, grant: g, last: now, lateNext: now + t.cfg.LateEntry}
 		for range t.cfg.GrantRepeats {
@@ -648,7 +648,7 @@ func (t *TSCC) grant(now time.Duration, group bool, target, source uint32, out [
 		}
 		return append(out, TSCCOutput{Kind: TSCCCallStart, Call: g})
 	}
-	return t.refuse(source, enums.ReasonSysBusyRefused, out)
+	return t.refuse(source, enums.AckReasonSysBusyRefused, out)
 }
 
 func (t *TSCC) sendGrant(i int) {
@@ -761,14 +761,14 @@ func (t *TSCC) timers(now time.Duration, out []TSCCOutput) []TSCCOutput {
 		if w := &t.auths[i]; w.used && now >= w.until {
 			addr := w.addr
 			*w = authWait{}
-			out = t.refuse(addr, enums.ReasonRegRefused, out)
+			out = t.refuse(addr, enums.AckReasonRegRefused, out)
 		}
 	}
 	for i := range t.setups {
 		st := &t.setups[i]
 		if st.used && now >= st.until {
 			st.used = false
-			out = t.refuse(st.caller, enums.ReasonMSAwayRefused, out)
+			out = t.refuse(st.caller, enums.AckReasonMSAwayRefused, out)
 		}
 	}
 	for i := range 2 * t.cfg.PayloadLen {

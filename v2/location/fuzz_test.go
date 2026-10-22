@@ -35,7 +35,7 @@ var fuzzDecoder location.Decoder
 
 func fuzzDecode(t *testing.T, sap uint8, data []byte) {
 	m := packet.Message{Header: pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
-		SAP: enums.ServiceAccessPointID(sap & 0xF), LLIDDestination: 2, LLIDSource: 1,
+		SAP: enums.SAP(sap & 0xF), LLIDDestination: 2, LLIDSource: 1,
 	}}, Data: data}
 	f, err := fuzzDecoder.Decode(&m.Header, m.Data)
 	if err != nil {

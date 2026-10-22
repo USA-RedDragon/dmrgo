@@ -121,7 +121,7 @@ type udt struct {
 type current struct {
 	call      Call
 	format    pdu.Format
-	sap       enums.ServiceAccessPointID
+	sap       enums.SAP
 	cc        enums.ColorCode
 	answer    bool
 	full      bool
@@ -852,7 +852,7 @@ const (
 )
 
 // ETSI TS 102 361-1 clauses 9.3.23 and 9.3.24, clause 8.2.2.3 table 8.3
-func (r *Receiver) sequence(sap enums.ServiceAccessPointID) (*peer, int) {
+func (r *Receiver) sequence(sap enums.SAP) (*peer, int) {
 	if ipBearer(sap) {
 		return nil, seqNext
 	}
@@ -872,7 +872,7 @@ func (r *Receiver) sequence(sap enums.ServiceAccessPointID) (*peer, int) {
 }
 
 // ETSI TS 102 361-3 clause 5.4.2.2 figure 5.9, clause 5.4.1.3 table 5.7
-func ipBearer(sap enums.ServiceAccessPointID) bool {
+func ipBearer(sap enums.SAP) bool {
 	switch sap {
 	case enums.SAPUDPIPHeaderCompression, enums.SAPIPBasedPacketData, enums.SAPAddressResolutionProtocol:
 		return true

@@ -84,10 +84,10 @@ func checkNames(t *testing.T, b uint8) {
 	_ = enums.DPIDToPort(enums.DPID(b))
 	_ = enums.SPIDToPort(enums.SPID(b))
 	for _, name := range []string{
-		enums.FLCO(b).String(), enums.FeatureSetID(b).String(), enums.DAID(b).String(), enums.SAID(b).String(),
+		enums.FLCO(b).String(), enums.FID(b).String(), enums.DAID(b).String(), enums.SAID(b).String(),
 		enums.DPID(b).String(), enums.SPID(b).String(),
 		enums.Access(b).String(), enums.ActivityID(b).String(), enums.AnnouncementType(b).String(),
-		enums.LCSS(b).String(), enums.RCCommand(b).String(), enums.ServiceAccessPointID(b).String(),
+		enums.LCSS(b).String(), enums.RCCommand(b).String(), enums.SAP(b).String(),
 		enums.SLCO(b).String(), enums.DataType(b).String(),
 	} {
 		if name == "" {

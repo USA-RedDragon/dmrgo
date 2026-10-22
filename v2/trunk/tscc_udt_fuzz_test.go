@@ -60,12 +60,12 @@ func newTSCCUDTPool(t testing.TB) burstPool {
 		t.Fatal(err)
 	}
 	pool := burstPool{
-		rnd(enums.ServiceIndividualShortData, 0, 0, 3120002), rnd(enums.ServiceTalkgroupShortData, 0, 1, 9),
-		rnd(enums.ServiceShortDataPolling, 0b0101, 0, 3120002), rnd(enums.ServiceCallDiversion, 0b0101000, 0, constants.GatewayMSI),
-		rnd(enums.ServiceCallDiversion, 0b0001000, 0, constants.GatewayTSI), rnd(enums.ServiceSupplementary, 0, 1<<2, constants.GatewayDGNAI),
-		rnd(enums.ServiceDuplexVoice, 0, 0, 3120002), rnd(enums.ServiceDuplexPacketData, 0, 0, 3120002),
-		rnd(enums.ServiceIndividualVoice, 0, 0b0010, 3120002), rnd(enums.ServiceIndividualShortData, 0, 0, constants.GatewayPSTNI),
-		ackU(enums.ReasonMSAccepted, 3120002), ackU(enums.ReasonMSNotSupported, 3120002), ackU(enums.ReasonMSAccepted, 3120001), usbd,
+		rnd(enums.ServiceKindIndividualShortData, 0, 0, 3120002), rnd(enums.ServiceKindTalkgroupShortData, 0, 1, 9),
+		rnd(enums.ServiceKindShortDataPolling, 0b0101, 0, 3120002), rnd(enums.ServiceKindCallDiversion, 0b0101000, 0, constants.GatewayMSI),
+		rnd(enums.ServiceKindCallDiversion, 0b0001000, 0, constants.GatewayTSI), rnd(enums.ServiceKindSupplementary, 0, 1<<2, constants.GatewayDGNAI),
+		rnd(enums.ServiceKindDuplexVoice, 0, 0, 3120002), rnd(enums.ServiceKindDuplexPacketData, 0, 0, 3120002),
+		rnd(enums.ServiceKindIndividualVoice, 0, 0b0010, 3120002), rnd(enums.ServiceKindIndividualShortData, 0, 0, constants.GatewayPSTNI),
+		ackU(enums.AckReasonMSAccepted, 3120002), ackU(enums.AckReasonMSNotSupported, 3120002), ackU(enums.AckReasonMSAccepted, 3120001), usbd,
 		msBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKMaintenance, MaintenancePDU: &pdu.MaintenancePDU{TargetAddress: 3120002, SourceAddress: 3120001}}),
 	}
 	pool = append(pool, upload(t, pdu.UDTHeader{LLIDDestination: 3120002, LLIDSource: 3120001}, &text)...)

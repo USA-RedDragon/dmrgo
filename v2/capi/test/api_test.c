@@ -326,7 +326,7 @@ static int c_silence(uintptr_t user, uint8_t out[9]) {
 	return 0;
 }
 
-static int c_fid(uintptr_t user, dmrgo_enums_feature_set_id_t *out) {
+static int c_fid(uintptr_t user, dmrgo_enums_fid_t *out) {
 	(void)user;
 	*out = 0x42;
 	return 0;
@@ -379,7 +379,7 @@ static void test_vocoder(void) {
 	int64_t fs = 0;
 	OK(dmrgo_vocoder_codec_frame_samples(c, &fs));
 	CHECK(fs == 160);
-	dmrgo_enums_feature_set_id_t fid = 0;
+	dmrgo_enums_fid_t fid = 0;
 	OK(dmrgo_vocoder_codec_fid(c, &fid));
 	CHECK(fid == 0x42);
 	uint8_t slot[9] = {7};

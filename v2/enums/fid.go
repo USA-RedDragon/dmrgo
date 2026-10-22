@@ -2,38 +2,38 @@ package enums
 
 import "github.com/USA-RedDragon/dmrgo/v2/internal/text"
 
-// FeatureSetID is the 8-bit Feature set ID (FID) of a full LC or CSBK. 0 is
+// FID is the 8-bit Feature set ID (FID) of a full LC or CSBK. 0 is
 // the standardized feature set and 4 to 127 identify a manufacturer. ETSI
 // publishes the manufacturer list at
 // http://www.etsi.org/images/files/DMRcodes/dmrs-mfid.xls.
 // (ETSI TS 102 361-1 clause 9.3.5, Table 9.21)
-type FeatureSetID byte
+type FID uint8
 
-// The FeatureSetID values.
+// The FID values.
 const (
-	FIDStandardized        FeatureSetID = 0x0  // standardized feature set
-	FIDFlydeMicro          FeatureSetID = 0x4  // Flyde Micro
-	FIDProdEl              FeatureSetID = 0x5  // PROD-EL
-	FIDTridentMicroSystems FeatureSetID = 0x6  // Trident Micro Systems
-	FIDRadiodata           FeatureSetID = 0x7  // RADIODATA
-	FIDHYTScienceTech      FeatureSetID = 0x8  // HYT Science Tech
-	FIDAselsan             FeatureSetID = 0x9  // ASELSAN
-	FIDKirisun             FeatureSetID = 0xA  // Kirisun
-	FIDDMRAssociation      FeatureSetID = 0xB  // DMR Association
-	FIDMotorola            FeatureSetID = 0x10 // Motorola
-	FIDEMC                 FeatureSetID = 0x13 // EMC
-	FIDEMC2                FeatureSetID = 0x1C // EMC, second ID
-	FIDJVCKenwood          FeatureSetID = 0x20 // JVC Kenwood
-	FIDRadioActivity       FeatureSetID = 0x33 // Radio Activity
-	FIDRadioActivity2      FeatureSetID = 0x3C // Radio Activity, second ID
-	FIDTait                FeatureSetID = 0x58 // Tait
-	FIDHYTScienceTech2     FeatureSetID = 0x68 // HYT Science Tech, second ID
-	FIDVertexStandard      FeatureSetID = 0x77 // Vertex Standard
+	FIDStandardized        FID = 0x0  // standardized feature set
+	FIDFlydeMicro          FID = 0x4  // Flyde Micro
+	FIDProdEl              FID = 0x5  // PROD-EL
+	FIDTridentMicroSystems FID = 0x6  // Trident Micro Systems
+	FIDRadiodata           FID = 0x7  // RADIODATA
+	FIDHYTScienceTech      FID = 0x8  // HYT Science Tech
+	FIDAselsan             FID = 0x9  // ASELSAN
+	FIDKirisun             FID = 0xA  // Kirisun
+	FIDDMRAssociation      FID = 0xB  // DMR Association
+	FIDMotorola            FID = 0x10 // Motorola
+	FIDEMC                 FID = 0x13 // EMC
+	FIDEMC2                FID = 0x1C // EMC, second ID
+	FIDJVCKenwood          FID = 0x20 // JVC Kenwood
+	FIDRadioActivity       FID = 0x33 // Radio Activity
+	FIDRadioActivity2      FID = 0x3C // Radio Activity, second ID
+	FIDTait                FID = 0x58 // Tait
+	FIDHYTScienceTech2     FID = 0x68 // HYT Science Tech, second ID
+	FIDVertexStandard      FID = 0x77 // Vertex Standard
 )
 
-// String returns the name of the FeatureSetID. It allocates only for a value
+// String returns the name of the FID. It allocates only for a value
 // without a name.
-func (fsid FeatureSetID) String() string {
+func (fsid FID) String() string {
 	switch fsid {
 	case FIDStandardized:
 		return "Standardized FID"
@@ -73,5 +73,5 @@ func (fsid FeatureSetID) String() string {
 		return "Vertex Standard UK"
 	}
 
-	return "Unknown FeatureSetID: " + text.Int(int64(fsid))
+	return "Unknown FID: " + text.Int(int64(fsid))
 }

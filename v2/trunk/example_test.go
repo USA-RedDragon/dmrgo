@@ -54,7 +54,7 @@ func ExampleMS_AuthResponse() {
 
 	aloha, _ := layer2.BuildBurst(&pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAloha, AlohaPDU: &pdu.AlohaPDU{}}, 1, layer2.SyncSourceBS)
 	ahoy, _ := layer2.BuildBurst(&pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{
-		ServiceKind: uint8(enums.ServiceRegistration), TargetAddress: 3120001, SourceAddress: 0x7A17C0}}, 1, layer2.SyncSourceBS)
+		ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: 3120001, SourceAddress: 0x7A17C0}}, 1, layer2.SyncSourceBS)
 
 	now := time.Duration(0)
 	for _, raw := range []layer2.RawBurst{aloha, ahoy} {

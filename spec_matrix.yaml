@@ -251,8 +251,6 @@ documents:
               - TestDecodeMatchesReference
           - package: github.com/USA-RedDragon/dmrgo/v2/vocoder
             names:
-              - TestCodecRegistry
-              - TestCodecRegistryFactoryError
               - TestAMBE72RoundTrip
               - TestAMBESilence
               - TestAMBE72CorrectsErrors
@@ -891,17 +889,15 @@ documents:
       - section: "9.3.5"
         title: "Feature set ID (FID)"
         source_files:
-          - v2/enums/feature_set_id.go
+          - v2/enums/fid.go
           - v2/layer2/pdu/full_link_control.go
           - v2/layer2/pdu/csbk.go
         test_functions:
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
-              - TestFeatureSetIDString_KnownIDs
-              - TestFeatureSetIDString_UnknownID
-              - TestFeatureSetID_ValidValues
-              - TestFeatureSetID_InvalidValue
-              - TestFeatureSetID_RoundTrip
+              - TestFIDString_KnownIDs
+              - TestFIDString_UnknownID
+              - TestFID_RoundTrip
           - package: github.com/USA-RedDragon/dmrgo/v2/layer2/pdu
             names:
               - TestCSBK_ManufacturerFIDKeepsRawPayload
@@ -947,8 +943,6 @@ documents:
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
               - TestFLCOString
-              - TestFLCO_ValidValues
-              - TestFLCO_InvalidValue
 
       - section: "9.3.17"
         title: "Data Packet Format (DPF)"
@@ -970,7 +964,7 @@ documents:
               - TestDataHeader_UnconfirmedDecode
           - package: github.com/USA-RedDragon/dmrgo/v2/enums
             names:
-              - TestServiceAccessPointID_String
+              - TestSAP_String
 
       - section: "9.3.19"
         title: "Logical Link ID (LLID)"

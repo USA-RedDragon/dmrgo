@@ -132,11 +132,11 @@ func checkLCBytesSetters(t *testing.T, l pdu.LCBytes, group bool, v uint8) {
 	e = l
 	e.SetProtectFlag(group)
 	e.SetReserved(!group)
-	e.SetFID(enums.FeatureSetID(v))
+	e.SetFID(enums.FID(v))
 	so := layer3.DecodeServiceOptions([1]byte{^v})
 	soErr := e.SetServiceOptions(so)
 	gotSO, soOK := e.ServiceOptions()
-	if e.ProtectFlag() != group || e.Reserved() == group || e.FID() != enums.FeatureSetID(v) || soOK != (soErr == nil) || soOK && gotSO != so || e.FLCO() != l.FLCO() || [6]byte(e[3:]) != [6]byte(l[3:]) {
+	if e.ProtectFlag() != group || e.Reserved() == group || e.FID() != enums.FID(v) || soOK != (soErr == nil) || soOK && gotSO != so || e.FLCO() != l.FLCO() || [6]byte(e[3:]) != [6]byte(l[3:]) {
 		t.Fatalf("LCBytes %x setters give %x", l, e)
 	}
 	for _, dt := range []enums.DataType{enums.DataTypeVoiceLCHeader, enums.DataTypeTerminatorWithLC} {

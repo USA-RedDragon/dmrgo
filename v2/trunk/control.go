@@ -363,42 +363,42 @@ func grantOf(d *pdu.CSBK) (g Grant, ok, absolute bool) {
 	switch {
 	case d.TalkgroupVoiceGrantPDU != nil:
 		p := d.TalkgroupVoiceGrantPDU
-		g.Service, g.Group = enums.ServiceTalkgroupVoice, true
+		g.Service, g.Group = enums.ServiceKindTalkgroupVoice, true
 		g.Channel, g.Slot, g.LateEntry, g.Emergency, g.Offset = p.PhysicalChannel, slotOf(p.LogicalChannel), p.LateEntry, p.Emergency, p.Offset
 		g.Target, g.Source = p.TargetAddress, p.SourceAddress
 	case d.BroadcastTalkgroupVoiceGrantPDU != nil:
 		p := d.BroadcastTalkgroupVoiceGrantPDU
-		g.Service, g.Group = enums.ServiceTalkgroupVoice, true
+		g.Service, g.Group = enums.ServiceKindTalkgroupVoice, true
 		g.Channel, g.Slot, g.LateEntry, g.Emergency, g.Offset = p.PhysicalChannel, slotOf(p.LogicalChannel), p.LateEntry, p.Emergency, p.Offset
 		g.Target, g.Source = p.TargetAddress, p.SourceAddress
 	case d.PrivateVoiceGrantPDU != nil:
 		p := d.PrivateVoiceGrantPDU
-		g.Service = enums.ServiceIndividualVoice
+		g.Service = enums.ServiceKindIndividualVoice
 		g.Channel, g.Slot, g.Emergency, g.Offset = p.PhysicalChannel, slotOf(p.LogicalChannel), p.Emergency, p.Offset
 		g.Target, g.Source = p.TargetAddress, p.SourceAddress
 	case d.DuplexPrivateVoiceGrantPDU != nil:
 		p := d.DuplexPrivateVoiceGrantPDU
-		g.Service = enums.ServiceDuplexVoice
+		g.Service = enums.ServiceKindDuplexVoice
 		g.Channel, g.Slot, g.Emergency = p.PhysicalChannel, slotOf(p.LogicalChannel), p.Emergency
 		g.Target, g.Source = p.TargetAddress, p.SourceAddress
 	case d.TalkgroupDataGrantPDU != nil:
 		p := d.TalkgroupDataGrantPDU
-		g.Service, g.Group = enums.ServiceTalkgroupPacketData, true
+		g.Service, g.Group = enums.ServiceKindTalkgroupPacketData, true
 		g.Channel, g.Slot, g.HiRate, g.Emergency, g.Offset = p.PhysicalChannel, slotOf(p.LogicalChannel), p.HiRate, p.Emergency, p.Offset
 		g.Target, g.Source = p.TargetAddress, p.SourceAddress
 	case d.PrivateDataGrantPDU != nil:
 		p := d.PrivateDataGrantPDU
-		g.Service = enums.ServiceIndividualPacketData
+		g.Service = enums.ServiceKindIndividualPacketData
 		g.Channel, g.Slot, g.HiRate, g.Emergency, g.Offset = p.PhysicalChannel, slotOf(p.LogicalChannel), p.HiRate, p.Emergency, p.Offset
 		g.Target, g.Source = p.TargetAddress, p.SourceAddress
 	case d.PrivateDataGrantMultiItemPDU != nil:
 		p := d.PrivateDataGrantMultiItemPDU
-		g.Service = enums.ServiceIndividualPacketData
+		g.Service = enums.ServiceKindIndividualPacketData
 		g.Channel, g.Slot, g.HiRate, g.Emergency, g.Offset = p.PhysicalChannel, slotOf(p.LogicalChannel), p.HiRate, p.Emergency, p.Offset
 		g.Target, g.Source = p.TargetAddress, p.SourceAddress
 	case d.DuplexPrivateDataGrantPDU != nil:
 		p := d.DuplexPrivateDataGrantPDU
-		g.Service = enums.ServiceDuplexPacketData
+		g.Service = enums.ServiceKindDuplexPacketData
 		g.Channel, g.Slot, g.HiRate, g.Emergency = p.PhysicalChannel, slotOf(p.LogicalChannel), p.HiRate, p.Emergency
 		g.Target, g.Source = p.TargetAddress, p.SourceAddress
 	default:
@@ -406,7 +406,7 @@ func grantOf(d *pdu.CSBK) (g Grant, ok, absolute bool) {
 		if !isMI || d.Hint0x38 != pdu.Opcode0x38TalkgroupDataGrantMultiItem {
 			return g, false, false
 		}
-		g.Service, g.Group = enums.ServiceTalkgroupPacketData, true
+		g.Service, g.Group = enums.ServiceKindTalkgroupPacketData, true
 		g.Channel, g.Slot, g.HiRate, g.Emergency, g.Offset = mi.PhysicalChannel, slotOf(mi.LogicalChannel), mi.HiRate, mi.Emergency, mi.Offset
 		g.Target, g.Source = mi.TargetAddress, mi.SourceAddress
 	}

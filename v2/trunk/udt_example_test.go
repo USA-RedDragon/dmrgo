@@ -38,10 +38,10 @@ func ExampleMS_SendShortData() {
 		return raw
 	}
 	aloha := bs(&pdu.CSBK{Opcode: pdu.CSBKAloha, AlohaPDU: &pdu.AlohaPDU{SysIdentCode: code}})
-	ahoy := bs(&pdu.CSBK{Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{ServiceKind: uint8(enums.ServiceIndividualShortData),
+	ahoy := bs(&pdu.CSBK{Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{ServiceKind: uint8(enums.ServiceKindIndividualShortData),
 		TargetAddress: 3120001, SourceAddress: constants.GatewaySDMI}})
 	done := bs(&pdu.CSBK{Opcode: pdu.CSBKAckOutbound, AckOutboundPDU: &pdu.AckOutboundPDU{
-		ReasonCode: byte(enums.ReasonMSAccepted), TargetAddress: 3120001}})
+		ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: 3120001}})
 
 	ms, _ := trunk.NewMS(&trunk.MSConfig{Address: 3120001, NoRegistration: true})
 	out := make([]trunk.Output, 0, trunk.MaxOutputs)

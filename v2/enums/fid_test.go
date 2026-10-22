@@ -5,11 +5,11 @@ import (
 	"testing"
 )
 
-func TestFeatureSetIDString_KnownIDs(t *testing.T) {
+func TestFIDString_KnownIDs(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		fsid     FeatureSetID
+		fsid     FID
 		contains string
 	}{
 		{FIDStandardized, "Standardized"},
@@ -42,27 +42,27 @@ func TestFeatureSetIDString_KnownIDs(t *testing.T) {
 	}
 }
 
-func TestFeatureSetIDString_UnknownID(t *testing.T) {
+func TestFIDString_UnknownID(t *testing.T) {
 	t.Parallel()
 
-	name := (FeatureSetID(0xFF)).String()
+	name := (FID(0xFF)).String()
 	if name == "" {
-		t.Error("FeatureSetIDToName for unknown ID should return non-empty string")
+		t.Error("FID.String for unknown ID should return non-empty string")
 	}
 	if !strings.Contains(name, "Unknown") {
 		t.Errorf("(0xFF).String() = %q, want to contain 'Unknown'", name)
 	}
 }
 
-func TestFeatureSetID_RoundTrip(t *testing.T) {
+func TestFID_RoundTrip(t *testing.T) {
 	t.Parallel()
 
 	validIDs := []int{0x0, 0x10, 0x20, 0x58, 0x77}
 	for _, id := range validIDs {
-		fsid := FeatureSetID(id)
+		fsid := FID(id)
 		name := fsid.String()
 		if strings.Contains(name, "Unknown") {
-			t.Errorf("Valid FeatureSetID %d maps to 'Unknown' name", id)
+			t.Errorf("Valid FID %d maps to 'Unknown' name", id)
 		}
 	}
 }

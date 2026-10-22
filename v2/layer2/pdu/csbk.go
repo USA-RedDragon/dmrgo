@@ -458,11 +458,11 @@ const (
 //dmr:input_size 96
 //dmr:dispatch_if FID==0
 type CSBK struct {
-	LastBlock   bool               `dmr:"bit:0"`     // LB bit, true for the last block
-	ProtectFlag bool               `dmr:"bit:1"`     // PF bit
-	Opcode      CSBKOpcode         `dmr:"bits:2-7"`  // CSBKO, selects the payload field
-	FID         enums.FeatureSetID `dmr:"bits:8-15"` // feature set ID, only the standard FID has payload fields
-	FEC         fec.Result         `dmr:"-"`         // result of the CRC check
+	LastBlock   bool       `dmr:"bit:0"`     // LB bit, true for the last block
+	ProtectFlag bool       `dmr:"bit:1"`     // PF bit
+	Opcode      CSBKOpcode `dmr:"bits:2-7"`  // CSBKO, selects the payload field
+	FID         enums.FID  `dmr:"bits:8-15"` // feature set ID, only the standard FID has payload fields
+	FEC         fec.Result `dmr:"-"`         // result of the CRC check
 	// Hint0x38 is the likely meaning of opcode 0x38. DecodeCSBK leaves it
 	// Opcode0x38Unknown. layer2.Burst sets it from the SYNC of the burst,
 	// which a network relay can rewrite.

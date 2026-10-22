@@ -381,7 +381,7 @@
 		dmrgo_enums_dd_format_string;
 		dmrgo_enums_dpid_string;
 		dmrgo_enums_dpid_to_port;
-		dmrgo_enums_feature_set_id_string;
+		dmrgo_enums_fid_string;
 		dmrgo_enums_flco_string;
 		dmrgo_enums_lcss_string;
 		dmrgo_enums_n_rand_wait_frames;
@@ -390,7 +390,7 @@
 		dmrgo_enums_protect_kind_string;
 		dmrgo_enums_rc_command_string;
 		dmrgo_enums_said_string;
-		dmrgo_enums_service_access_point_id_string;
+		dmrgo_enums_sap_string;
 		dmrgo_enums_service_function_invites;
 		dmrgo_enums_service_function_string;
 		dmrgo_enums_service_kind_needs_payload_channel;

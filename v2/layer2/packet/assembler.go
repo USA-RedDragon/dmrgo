@@ -46,7 +46,7 @@ func (m *Message) UDPIPv4() (header pdu.UDPIPv4CompressedHeader, payload []byte,
 	if m == nil {
 		return pdu.UDPIPv4CompressedHeader{}, nil, false
 	}
-	var sap enums.ServiceAccessPointID
+	var sap enums.SAP
 	switch {
 	case m.Header.UnconfirmedDataHeader != nil:
 		sap = m.Header.UnconfirmedDataHeader.SAP

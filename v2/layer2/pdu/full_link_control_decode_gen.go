@@ -46,7 +46,7 @@ func DecodeFullLinkControl(data [12]byte, burstDataType enums.DataType) FullLink
 	result.ProtectFlag = data[0]&0x80 != 0
 	result.Reserved = data[0]&0x40 != 0
 	result.FLCO = enums.FLCO(uint64(data[0]) & 0x3F)
-	result.FID = enums.FeatureSetID(uint64(data[1]))
+	result.FID = enums.FID(uint64(data[1]))
 	var _dispatchBytes [7]byte
 	copy(_dispatchBytes[0:7], data[2:9])
 	if result.FID == 0 {
@@ -120,7 +120,7 @@ func DecodeFullLinkControlInto(dst *FullLinkControl, p *FullLinkControlPayloads,
 	result.ProtectFlag = data[0]&0x80 != 0
 	result.Reserved = data[0]&0x40 != 0
 	result.FLCO = enums.FLCO(uint64(data[0]) & 0x3F)
-	result.FID = enums.FeatureSetID(uint64(data[1]))
+	result.FID = enums.FID(uint64(data[1]))
 	var _dispatchBytes [7]byte
 	copy(_dispatchBytes[0:7], data[2:9])
 	if result.FID == 0 {
@@ -251,7 +251,7 @@ func (s *FullLinkControl) Encode() ([12]byte, error) {
 	if _payload != "" {
 		var result FullLinkControl
 		result.FLCO = enums.FLCO(uint64(data[0]) & 0x3F)
-		result.FID = enums.FeatureSetID(uint64(data[1]))
+		result.FID = enums.FID(uint64(data[1]))
 		_want := "RawPayload"
 		if result.FID == 0 {
 			switch result.FLCO {

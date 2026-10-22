@@ -41,7 +41,7 @@ type Datagram struct {
 // the Datagram with ErrChecksum. Octets after the length that the IPv4
 // header gives are ignored, as DMR pads the last block. It does not
 // allocate. (ETSI TS 102 361-3 clauses 5.5 and 5.6)
-func Decode(sap enums.ServiceAccessPointID, data []byte) (Datagram, error) {
+func Decode(sap enums.SAP, data []byte) (Datagram, error) {
 	switch sap {
 	case enums.SAPIPBasedPacketData:
 		return decodeIPv4(data)

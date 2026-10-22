@@ -132,7 +132,7 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 	original := &pdu.FullLinkControl{
 		BurstDataType: enums.DataTypeVoiceLCHeader,
 		FLCO:          enums.FLCO(0b111111),
-		FID:           enums.FeatureSetID(0x7F),
+		FID:           enums.FID(0x7F),
 		RawPayload:    payload,
 	}
 	infoBits := must(original.Encode())
@@ -158,7 +158,7 @@ func TestFLC_UnknownFLCOKeepsRawValues(t *testing.T) {
 func TestFLC_AddressesIgnoreFID(t *testing.T) {
 	t.Parallel()
 
-	for _, fid := range []enums.FeatureSetID{enums.FIDStandardized, enums.FIDMotorola} {
+	for _, fid := range []enums.FID{enums.FIDStandardized, enums.FIDMotorola} {
 		for _, flco := range []enums.FLCO{enums.FLCOGroupVoiceChannelUser, enums.FLCOUnitToUnitVoiceChannelUser} {
 			lc := reedsolomon.Encode([9]byte{byte(flco), byte(fid), 0x00, 0x00, 0x27, 0x06, 0x30, 0xB4, 0x3C})
 			for i := 9; i < 12; i++ {

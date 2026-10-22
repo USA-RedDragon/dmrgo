@@ -115,7 +115,7 @@ func TestIPAdvice(t *testing.T) {
 	if !ok || e.Address != 3120001 || e.IP != ip || e.IPv6 || e.Remove {
 		t.Errorf("TSCCIPAdvice %+v %v", e, ok)
 	}
-	if acc, _ := has(a.log, trunk.OutputAccepted); acc.Ack != enums.ReasonRegAccepted || !a.ms.Registered() {
+	if acc, _ := has(a.log, trunk.OutputAccepted); acc.Ack != enums.AckReasonRegAccepted || !a.ms.Registered() {
 		t.Errorf("accepted %+v, registered %v", acc, a.ms.Registered())
 	}
 
@@ -135,7 +135,7 @@ func TestIPAdvice(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.until(3*time.Second, func() bool { _, ok := has(a.log, trunk.OutputRefused); return ok })
-	if r, _ := has(a.log, trunk.OutputRefused); r.Ack != enums.ReasonIPConnectionFailed || !a.ms.Registered() {
+	if r, _ := has(a.log, trunk.OutputRefused); r.Ack != enums.AckReasonIPConnectionFailed || !a.ms.Registered() {
 		t.Errorf("no IP bearer: %+v, registered %v", r, a.ms.Registered())
 	}
 }
@@ -210,20 +210,20 @@ func TestMS_RegistrationResponseInfo(t *testing.T) {
 		info   uint8
 		offset uint8
 	}{
-		{"Reg_Accepted 0x7F without power save", 0, enums.ReasonRegAccepted, 0x7F, 0},
-		{"Reg_Denied 9 without power save", 0, enums.ReasonRegDenied, 9, 0},
-		{"Reg_Denied 9 with power save", 2, enums.ReasonRegDenied, 9, 0},
-		{"Reg_Accepted 3 with power save", 2, enums.ReasonRegAccepted, 3, 3},
+		{"Reg_Accepted 0x7F without power save", 0, enums.AckReasonRegAccepted, 0x7F, 0},
+		{"Reg_Denied 9 without power save", 0, enums.AckReasonRegDenied, 9, 0},
+		{"Reg_Denied 9 with power save", 2, enums.AckReasonRegDenied, 9, 0},
+		{"Reg_Accepted 3 with power save", 2, enums.AckReasonRegAccepted, 3, 3},
 	} {
 		r := newRig(t, &trunk.MSConfig{Address: msAddr, Seed: 7, PowerSave: tt.ps})
 		a := aloha(t)
 		r.feed(a, &idle)
 		wantKinds(t, tt.name+" C_RAND", r.feed(a, &idle), trunk.OutputBurst)
 		out := r.feed(svcAck(t, tt.reason, tt.info, constants.GatewayREGI), &idle)
-		accepted := tt.reason == enums.ReasonRegAccepted
+		accepted := tt.reason == enums.AckReasonRegAccepted
 		if accepted {
 			wantKinds(t, tt.name, out, trunk.OutputRegistered)
-		} else if len(out) == 0 || out[0].Kind != trunk.OutputRefused || out[0].Ack != enums.ReasonRegDenied {
+		} else if len(out) == 0 || out[0].Kind != trunk.OutputRefused || out[0].Ack != enums.AckReasonRegDenied {
 			t.Errorf("%s: %+v", tt.name, out)
 		}
 		if r.ms.Registered() != accepted || r.ms.PowerSaveOffset() != tt.offset || r.ms.Asleep() {

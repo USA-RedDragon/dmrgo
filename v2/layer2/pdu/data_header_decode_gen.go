@@ -31,7 +31,7 @@ func decodeUnconfirmedDataHeader(data [10]byte) UnconfirmedDataHeader {
 	_tmpPadOctetCount <<= 4
 	_tmpPadOctetCount |= uint64(data[1]) & 0xF
 	result.PadOctetCount = uint8(_tmpPadOctetCount)
-	result.SAP = enums.ServiceAccessPointID(uint64(data[1]) >> 4)
+	result.SAP = enums.SAP(uint64(data[1]) >> 4)
 	result.LLIDDestination = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
 	result.LLIDSource = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	result.FullMessageFlag = data[8]&0x80 != 0
@@ -422,7 +422,7 @@ func decodeConfirmedDataHeader(data [10]byte) ConfirmedDataHeader {
 	_tmpPadOctetCount <<= 4
 	_tmpPadOctetCount |= uint64(data[1]) & 0xF
 	result.PadOctetCount = uint8(_tmpPadOctetCount)
-	result.SAP = enums.ServiceAccessPointID(uint64(data[1]) >> 4)
+	result.SAP = enums.SAP(uint64(data[1]) >> 4)
 	result.LLIDDestination = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
 	result.LLIDSource = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	result.FullMessageFlag = data[8]&0x80 != 0
@@ -513,7 +513,7 @@ func decodeResponsePacketHeader(data [10]byte) ResponsePacketHeader {
 	result.Reserved = data[0]&0x80 != 0
 	result.ResponseRequested = data[0]&0x40 != 0
 	result.Reserved2 = uint8(uint64(data[0]) >> 4 & 0x3)
-	result.SAP = enums.ServiceAccessPointID(uint64(data[1]) >> 4)
+	result.SAP = enums.SAP(uint64(data[1]) >> 4)
 	result.Reserved3 = uint8(uint64(data[1]) & 0xF)
 	result.LLIDDestination = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
 	result.LLIDSource = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
@@ -609,7 +609,7 @@ func decodeDefinedDataHeader(data [10]byte) DefinedDataHeader {
 	_tmpAppendedBlocks <<= 4
 	_tmpAppendedBlocks |= uint64(data[1]) & 0xF
 	result.AppendedBlocks = uint8(_tmpAppendedBlocks)
-	result.SAP = enums.ServiceAccessPointID(uint64(data[1]) >> 4)
+	result.SAP = enums.SAP(uint64(data[1]) >> 4)
 	result.LLIDDestination = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
 	result.LLIDSource = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	result.DefinedData = enums.DDFormat(uint64(data[8]) >> 2)
@@ -693,7 +693,7 @@ func decodeRawDataHeader(data [10]byte) RawDataHeader {
 	_tmpAppendedBlocks <<= 4
 	_tmpAppendedBlocks |= uint64(data[1]) & 0xF
 	result.AppendedBlocks = uint8(_tmpAppendedBlocks)
-	result.SAP = enums.ServiceAccessPointID(uint64(data[1]) >> 4)
+	result.SAP = enums.SAP(uint64(data[1]) >> 4)
 	result.LLIDDestination = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
 	result.LLIDSource = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	result.SourcePort = uint8(uint64(data[8]) >> 5)
@@ -777,7 +777,7 @@ func decodeStatusPrecodedHeader(data [10]byte) StatusPrecodedHeader {
 	var result StatusPrecodedHeader
 	result.Group = data[0]&0x80 != 0
 	result.ResponseRequested = data[0]&0x40 != 0
-	result.SAP = enums.ServiceAccessPointID(uint64(data[1]) >> 4)
+	result.SAP = enums.SAP(uint64(data[1]) >> 4)
 	result.LLIDDestination = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
 	result.LLIDSource = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
 	result.SourcePort = uint8(uint64(data[8]) >> 5)
@@ -857,7 +857,7 @@ func decodeUDTHeader(data [10]byte) UDTHeader {
 	result.ResponseRequested = data[0]&0x40 != 0
 	result.Emergency = data[0]&0x20 != 0
 	result.OptionFlag = data[0]&0x10 != 0
-	result.SAP = enums.ServiceAccessPointID(uint64(data[1]) >> 4)
+	result.SAP = enums.SAP(uint64(data[1]) >> 4)
 	result.UDTFormat = enums.UDTFormat(uint64(data[1]) & 0xF)
 	result.LLIDDestination = uint32(uint64(data[2])<<16 | uint64(data[3])<<8 | uint64(data[4]))
 	result.LLIDSource = uint32(uint64(data[5])<<16 | uint64(data[6])<<8 | uint64(data[7]))
@@ -951,8 +951,8 @@ func (s *UDTHeader) String() string {
 // ETSI TS 102 361-1 clause 9.2.9, Table 9.17
 func decodeProprietaryHeader(data [10]byte) ProprietaryHeader {
 	var result ProprietaryHeader
-	result.SAP = enums.ServiceAccessPointID(uint64(data[0]) >> 4)
-	result.MFID = enums.FeatureSetID(uint64(data[1]))
+	result.SAP = enums.SAP(uint64(data[0]) >> 4)
+	result.MFID = enums.FID(uint64(data[1]))
 	copy(result.ManufacturerData[0:8], data[2:10])
 	return result
 }

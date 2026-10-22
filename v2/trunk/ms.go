@@ -375,9 +375,9 @@ func (m *MS) Call(now time.Duration, group bool, target uint32, opts layer3.Voic
 		return dmrgo.ErrNilReceiver
 	}
 
-	kind := enums.ServiceIndividualVoice
+	kind := enums.ServiceKindIndividualVoice
 	if group {
-		kind = enums.ServiceTalkgroupVoice
+		kind = enums.ServiceKindTalkgroupVoice
 	}
 	field, err := opts.Field()
 	if err != nil {
@@ -394,9 +394,9 @@ func (m *MS) CallData(now time.Duration, group bool, target uint32, opts layer3.
 		return dmrgo.ErrNilReceiver
 	}
 
-	kind := enums.ServiceIndividualPacketData
+	kind := enums.ServiceKindIndividualPacketData
 	if group {
-		kind = enums.ServiceTalkgroupPacketData
+		kind = enums.ServiceKindTalkgroupPacketData
 	}
 	field, err := opts.Field()
 	if err != nil {
@@ -446,7 +446,7 @@ func (m *MS) PowerOff(now time.Duration, dst []Output) []Output {
 	}
 	m.registered = false
 	opts, _ := layer3.RegistrationServiceOptions{}.Field()
-	m.kind = enums.ServiceRegistration
+	m.kind = enums.ServiceKindRegistration
 	m.startAccess(now, reqDereg, constants.GatewayREGI, opts, false)
 	m.deregEnd = now + m.deregTO
 	return dst
@@ -686,7 +686,7 @@ func (m *MS) follow(now time.Duration, before State, out []Output, n int) []Outp
 				}
 			}
 			if m.req == reqNone && !m.noReg && m.f.ctl.site.Reg && !m.Registered() {
-				m.kind = enums.ServiceRegistration
+				m.kind = enums.ServiceKindRegistration
 				m.startAccess(now, reqRegister, constants.GatewayREGI, m.regOptions(), false)
 			}
 		case OutputLost:

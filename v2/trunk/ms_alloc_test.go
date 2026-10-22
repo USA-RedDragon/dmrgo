@@ -14,8 +14,8 @@ import (
 func TestAllocsMS(t *testing.T) {
 	r := newRig(t, &trunk.MSConfig{Address: msAddr, Seed: 3})
 	a := aloha(t)
-	regOK := ack(t, enums.ReasonRegAccepted)
-	wait := ack(t, enums.ReasonWait)
+	regOK := ack(t, enums.AckReasonRegAccepted)
+	wait := ack(t, enums.AckReasonWait)
 	grant := tvGrant(t, 9, 5, true)
 	allocs := testing.AllocsPerRun(5, func() {
 		r.ms.Reset()

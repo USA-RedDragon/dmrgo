@@ -15,11 +15,11 @@ import (
 //dmr:input_size 96
 //dmr:dispatch_if FID==0
 type MBCHeader struct {
-	FEC         fec.Result         `dmr:"-"`         // result of the CRC check
-	LastBlock   bool               `dmr:"bit:0"`     // LB bit, false in an MBC header
-	ProtectFlag bool               `dmr:"bit:1"`     // PF bit
-	Opcode      CSBKOpcode         `dmr:"bits:2-7"`  // CSBKO, selects the payload field
-	FID         enums.FeatureSetID `dmr:"bits:8-15"` // feature set ID, only the standard FID has payload fields
+	FEC         fec.Result `dmr:"-"`         // result of the CRC check
+	LastBlock   bool       `dmr:"bit:0"`     // LB bit, false in an MBC header
+	ProtectFlag bool       `dmr:"bit:1"`     // PF bit
+	Opcode      CSBKOpcode `dmr:"bits:2-7"`  // CSBKO, selects the payload field
+	FID         enums.FID  `dmr:"bits:8-15"` // feature set ID, only the standard FID has payload fields
 
 	PrivateVoiceGrantPDU            *PrivateVoiceGrantPDU            `dmr:"bits:16-79,dispatch:Opcode=CSBKPrivateVoiceGrant"`            // PV_GRANT payload, or nil
 	TalkgroupVoiceGrantPDU          *TalkgroupVoiceGrantPDU          `dmr:"bits:16-79,dispatch:Opcode=CSBKTalkgroupVoiceGrant"`          // TV_GRANT payload, or nil

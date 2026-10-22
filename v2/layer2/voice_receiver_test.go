@@ -78,7 +78,7 @@ func checkPositions(t *testing.T, got []enums.VoiceBurstType, want string) {
 func TestVoiceReceiver_Transmission(t *testing.T) {
 	t.Parallel()
 
-	lc := groupLC(enums.FeatureSetID(0xC2))
+	lc := groupLC(enums.FID(0xC2))
 	raws := transmission(t, lc, 14)
 	got := receiveAll(t, raws)
 	checkPositions(t, got.positions, "-ABCDEFABCDEFABCDEF-")

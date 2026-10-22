@@ -11,51 +11,51 @@ type AckReason uint8
 
 // The AckReason values that a TS sends.
 const (
-	ReasonMessageAccepted       AckReason = 0b0110_0000 // Message_Accepted
-	ReasonStoreForward          AckReason = 0b0110_0001 // Store_Forward
-	ReasonRegAccepted           AckReason = 0b0110_0010 // Reg_Accepted
-	ReasonStatusPollAcceptedTS  AckReason = 0b0110_0011 // accepted for the status polling service
-	ReasonAuthResponseTS        AckReason = 0b0110_0100 // authentication response of the TS
-	ReasonRegSubscription       AckReason = 0b0110_0101 // Reg_Subscription/Attachment service
-	ReasonNotSupported          AckReason = 0b0010_0000 // Not_Supported
-	ReasonPermUserRefused       AckReason = 0b0010_0001 // Perm_User_Refused
-	ReasonTempUserRefused       AckReason = 0b0010_0010 // Temp_User_Refused
-	ReasonTransientSysRefused   AckReason = 0b0010_0011 // Transient_Sys_Refused
-	ReasonNoregMSAwayRefused    AckReason = 0b0010_0100 // NoregMSaway_Refused
-	ReasonMSAwayRefused         AckReason = 0b0010_0101 // MSaway_Refused
-	ReasonDivCauseFail          AckReason = 0b0010_0110 // Div_Cause_Fail
-	ReasonSysBusyRefused        AckReason = 0b0010_0111 // SYSbusy_Refused
-	ReasonSysNotReady           AckReason = 0b0010_1000 // SYS_NotReady
-	ReasonCallCancelRefused     AckReason = 0b0010_1001 // Call_Cancel_Refused
-	ReasonRegRefused            AckReason = 0b0010_1010 // Reg_Refused
-	ReasonRegDenied             AckReason = 0b0010_1011 // Reg_Denied
-	ReasonIPConnectionFailed    AckReason = 0b0010_1100 // IP_Connection_failed
-	ReasonMSNotRegistered       AckReason = 0b0010_1101 // MS_Not_Registered
-	ReasonCalledPartyBusy       AckReason = 0b0010_1110 // Called_Party_Busy
-	ReasonCalledGroupNotAllowed AckReason = 0b0010_1111 // Called_Group_Not_Allowed
-	ReasonUDTUploadCRCError     AckReason = 0b0011_0000 // CRC error in the UDT upload phase
-	ReasonDuplexCongestion      AckReason = 0b0011_0001 // Duplex_Congestion
-	ReasonRefusedUnknownTS      AckReason = 0b0011_1111 // Refused_Reason_Unknown of the TS
-	ReasonQueuedForResource     AckReason = 0b1010_0000 // Queued-for-resource, such as a payload channel
-	ReasonQueuedForBusy         AckReason = 0b1010_0001 // Queued-for-busy, the called party is in another call
-	ReasonWait                  AckReason = 0b1110_0000 // Wait
+	AckReasonMessageAccepted       AckReason = 0b0110_0000 // Message_Accepted
+	AckReasonStoreForward          AckReason = 0b0110_0001 // Store_Forward
+	AckReasonRegAccepted           AckReason = 0b0110_0010 // Reg_Accepted
+	AckReasonStatusPollAcceptedTS  AckReason = 0b0110_0011 // accepted for the status polling service
+	AckReasonAuthResponseTS        AckReason = 0b0110_0100 // authentication response of the TS
+	AckReasonRegSubscription       AckReason = 0b0110_0101 // Reg_Subscription/Attachment service
+	AckReasonNotSupported          AckReason = 0b0010_0000 // Not_Supported
+	AckReasonPermUserRefused       AckReason = 0b0010_0001 // Perm_User_Refused
+	AckReasonTempUserRefused       AckReason = 0b0010_0010 // Temp_User_Refused
+	AckReasonTransientSysRefused   AckReason = 0b0010_0011 // Transient_Sys_Refused
+	AckReasonNoregMSAwayRefused    AckReason = 0b0010_0100 // NoregMSaway_Refused
+	AckReasonMSAwayRefused         AckReason = 0b0010_0101 // MSaway_Refused
+	AckReasonDivCauseFail          AckReason = 0b0010_0110 // Div_Cause_Fail
+	AckReasonSysBusyRefused        AckReason = 0b0010_0111 // SYSbusy_Refused
+	AckReasonSysNotReady           AckReason = 0b0010_1000 // SYS_NotReady
+	AckReasonCallCancelRefused     AckReason = 0b0010_1001 // Call_Cancel_Refused
+	AckReasonRegRefused            AckReason = 0b0010_1010 // Reg_Refused
+	AckReasonRegDenied             AckReason = 0b0010_1011 // Reg_Denied
+	AckReasonIPConnectionFailed    AckReason = 0b0010_1100 // IP_Connection_failed
+	AckReasonMSNotRegistered       AckReason = 0b0010_1101 // MS_Not_Registered
+	AckReasonCalledPartyBusy       AckReason = 0b0010_1110 // Called_Party_Busy
+	AckReasonCalledGroupNotAllowed AckReason = 0b0010_1111 // Called_Group_Not_Allowed
+	AckReasonUDTUploadCRCError     AckReason = 0b0011_0000 // CRC error in the UDT upload phase
+	AckReasonDuplexCongestion      AckReason = 0b0011_0001 // Duplex_Congestion
+	AckReasonRefusedUnknownTS      AckReason = 0b0011_1111 // Refused_Reason_Unknown of the TS
+	AckReasonQueuedForResource     AckReason = 0b1010_0000 // Queued-for-resource, such as a payload channel
+	AckReasonQueuedForBusy         AckReason = 0b1010_0001 // Queued-for-busy, the called party is in another call
+	AckReasonWait                  AckReason = 0b1110_0000 // Wait
 )
 
 // The AckReason values that an MS sends, which a TS can mirror.
 const (
-	ReasonMSAccepted           AckReason = 0b0100_0100 // MS_Accepted
-	ReasonCallBack             AckReason = 0b0100_0101 // CallBack
-	ReasonMSAlerting           AckReason = 0b0100_0110 // MS_ALERTING
-	ReasonStatusPollAcceptedMS AckReason = 0b0100_0111 // accepted for the status polling service
-	ReasonAuthResponseMS       AckReason = 0b0100_1000 // authentication response of the MS
-	ReasonMSNotSupported       AckReason = 0b0000_0000 // MSNot_Supported
-	ReasonLineNotSupported     AckReason = 0b0001_0001 // LineNot_Supported
-	ReasonStackFullRefused     AckReason = 0b0001_0010 // StackFull_Refused
-	ReasonEquipBusyRefused     AckReason = 0b0001_0011 // EquipBusy_Refused
-	ReasonRecipientRefused     AckReason = 0b0001_0100 // Recipient_Refused
-	ReasonCustomRefused        AckReason = 0b0001_0101 // Custom_Refused
-	ReasonMSDuplexNotSupported AckReason = 0b0001_0110 // MS_Duplex_Not_Supported
-	ReasonRefusedUnknownMS     AckReason = 0b0001_1111 // Refused_Reason_Unknown of the MS
+	AckReasonMSAccepted           AckReason = 0b0100_0100 // MS_Accepted
+	AckReasonCallBack             AckReason = 0b0100_0101 // CallBack
+	AckReasonMSAlerting           AckReason = 0b0100_0110 // MS_ALERTING
+	AckReasonStatusPollAcceptedMS AckReason = 0b0100_0111 // accepted for the status polling service
+	AckReasonAuthResponseMS       AckReason = 0b0100_1000 // authentication response of the MS
+	AckReasonMSNotSupported       AckReason = 0b0000_0000 // MSNot_Supported
+	AckReasonLineNotSupported     AckReason = 0b0001_0001 // LineNot_Supported
+	AckReasonStackFullRefused     AckReason = 0b0001_0010 // StackFull_Refused
+	AckReasonEquipBusyRefused     AckReason = 0b0001_0011 // EquipBusy_Refused
+	AckReasonRecipientRefused     AckReason = 0b0001_0100 // Recipient_Refused
+	AckReasonCustomRefused        AckReason = 0b0001_0101 // Custom_Refused
+	AckReasonMSDuplexNotSupported AckReason = 0b0001_0110 // MS_Duplex_Not_Supported
+	AckReasonRefusedUnknownMS     AckReason = 0b0001_1111 // Refused_Reason_Unknown of the MS
 )
 
 // AckType is the type of an acknowledgement, the two most significant bits
@@ -110,61 +110,61 @@ func (r AckReason) String() string {
 
 func (r AckReason) tsName() string {
 	switch r {
-	case ReasonMessageAccepted:
+	case AckReasonMessageAccepted:
 		return "Message_Accepted"
-	case ReasonStoreForward:
+	case AckReasonStoreForward:
 		return "Store_Forward"
-	case ReasonRegAccepted:
+	case AckReasonRegAccepted:
 		return "Reg_Accepted"
-	case ReasonStatusPollAcceptedTS, ReasonStatusPollAcceptedMS:
+	case AckReasonStatusPollAcceptedTS, AckReasonStatusPollAcceptedMS:
 		return "Status_Poll_Accepted"
-	case ReasonAuthResponseTS, ReasonAuthResponseMS:
+	case AckReasonAuthResponseTS, AckReasonAuthResponseMS:
 		return "Authentication_Response"
-	case ReasonRegSubscription:
+	case AckReasonRegSubscription:
 		return "Reg_Subscription"
-	case ReasonNotSupported:
+	case AckReasonNotSupported:
 		return "Not_Supported"
-	case ReasonPermUserRefused:
+	case AckReasonPermUserRefused:
 		return "Perm_User_Refused"
-	case ReasonTempUserRefused:
+	case AckReasonTempUserRefused:
 		return "Temp_User_Refused"
-	case ReasonTransientSysRefused:
+	case AckReasonTransientSysRefused:
 		return "Transient_Sys_Refused"
-	case ReasonNoregMSAwayRefused:
+	case AckReasonNoregMSAwayRefused:
 		return "NoregMSaway_Refused"
-	case ReasonMSAwayRefused:
+	case AckReasonMSAwayRefused:
 		return "MSaway_Refused"
-	case ReasonDivCauseFail:
+	case AckReasonDivCauseFail:
 		return "Div_Cause_Fail"
-	case ReasonSysBusyRefused:
+	case AckReasonSysBusyRefused:
 		return "SYSbusy_Refused"
-	case ReasonSysNotReady:
+	case AckReasonSysNotReady:
 		return "SYS_NotReady"
-	case ReasonCallCancelRefused:
+	case AckReasonCallCancelRefused:
 		return "Call_Cancel_Refused"
-	case ReasonRegRefused:
+	case AckReasonRegRefused:
 		return "Reg_Refused"
-	case ReasonRegDenied:
+	case AckReasonRegDenied:
 		return "Reg_Denied"
-	case ReasonIPConnectionFailed:
+	case AckReasonIPConnectionFailed:
 		return "IP_Connection_failed"
-	case ReasonMSNotRegistered:
+	case AckReasonMSNotRegistered:
 		return "MS_Not_Registered"
-	case ReasonCalledPartyBusy:
+	case AckReasonCalledPartyBusy:
 		return "Called_Party_Busy"
-	case ReasonCalledGroupNotAllowed:
+	case AckReasonCalledGroupNotAllowed:
 		return "Called_Group_Not_Allowed"
-	case ReasonUDTUploadCRCError:
+	case AckReasonUDTUploadCRCError:
 		return "CRC_error_in_the_UDT_Upload_phase"
-	case ReasonDuplexCongestion:
+	case AckReasonDuplexCongestion:
 		return "Duplex_Congestion"
-	case ReasonRefusedUnknownTS, ReasonRefusedUnknownMS:
+	case AckReasonRefusedUnknownTS, AckReasonRefusedUnknownMS:
 		return "Refused_Reason_Unknown"
-	case ReasonQueuedForResource:
+	case AckReasonQueuedForResource:
 		return "Queued-for-resource"
-	case ReasonQueuedForBusy:
+	case AckReasonQueuedForBusy:
 		return "Queued-for-busy"
-	case ReasonWait:
+	case AckReasonWait:
 		return "Wait"
 	default:
 		return ""
@@ -173,25 +173,25 @@ func (r AckReason) tsName() string {
 
 func (r AckReason) msName() string {
 	switch r {
-	case ReasonMSAccepted:
+	case AckReasonMSAccepted:
 		return "MS_Accepted"
-	case ReasonCallBack:
+	case AckReasonCallBack:
 		return "CallBack"
-	case ReasonMSAlerting:
+	case AckReasonMSAlerting:
 		return "MS_ALERTING"
-	case ReasonMSNotSupported:
+	case AckReasonMSNotSupported:
 		return "MSNot_Supported"
-	case ReasonLineNotSupported:
+	case AckReasonLineNotSupported:
 		return "LineNot_Supported"
-	case ReasonStackFullRefused:
+	case AckReasonStackFullRefused:
 		return "StackFull_Refused"
-	case ReasonEquipBusyRefused:
+	case AckReasonEquipBusyRefused:
 		return "EquipBusy_Refused"
-	case ReasonRecipientRefused:
+	case AckReasonRecipientRefused:
 		return "Recipient_Refused"
-	case ReasonCustomRefused:
+	case AckReasonCustomRefused:
 		return "Custom_Refused"
-	case ReasonMSDuplexNotSupported:
+	case AckReasonMSDuplexNotSupported:
 		return "MS_Duplex_Not_Supported"
 	default:
 		return ""

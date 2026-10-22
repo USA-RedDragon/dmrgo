@@ -34,7 +34,7 @@ type Codec struct {
 	enc     *C.struct_CODEC2
 	dec     [2]*C.struct_CODEC2
 	mode    Mode
-	fid     enums.FeatureSetID
+	fid     enums.FID
 	nbytes  int
 	silence [9]byte
 	frame   [72 / 8]byte
@@ -199,7 +199,7 @@ func (c *Codec) Reset() {
 }
 
 // FID returns the configured Feature set ID.
-func (c *Codec) FID() enums.FeatureSetID {
+func (c *Codec) FID() enums.FID {
 	if c == nil {
 		return 0
 	}

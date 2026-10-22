@@ -138,7 +138,7 @@ func TestMBCHeader_EncodeDecodeRoundTrip(t *testing.T) {
 				LastBlock:   tt.lb,
 				ProtectFlag: tt.pf,
 				Opcode:      pdu.CSBKOpcode(tt.opcode),
-				FID:         enums.FeatureSetID(tt.fid),
+				FID:         enums.FID(tt.fid),
 				RawPayload:  data,
 			}
 

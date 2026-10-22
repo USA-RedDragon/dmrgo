@@ -236,7 +236,7 @@ func out_voice_Call(d *C.dmrgo_voice_call_t, s *g_voice.Call, oc *outc) {
 	d.target = C.uint32_t(s.Target)
 	d.source = C.uint32_t(s.Source)
 	out_layer3_ServiceOptions(&d.options, &s.Options, oc)
-	d.fid = C.dmrgo_enums_feature_set_id_t(s.FID)
+	d.fid = C.dmrgo_enums_fid_t(s.FID)
 	*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(&d.lc)) = s.LC
 	d.origin = C.dmrgo_voice_origin_t(s.Origin)
 	d.stream = C.uint32_t(s.Stream)
@@ -342,7 +342,7 @@ func out_csbk_Output(d *C.dmrgo_csbk_output_t, s *g_csbk.Output, oc *outc) {
 }
 
 func in_csbk_Match(s *C.dmrgo_csbk_match_t) (d g_csbk.Match) {
-	d.FID = g_enums.FeatureSetID(s.fid)
+	d.FID = g_enums.FID(s.fid)
 	d.Opcodes = *(*[4]g_layer2_pdu.CSBKOpcode)(unsafe.Pointer(&s.opcodes))
 	d.N = int(s.n)
 	return
@@ -399,7 +399,7 @@ func in_layer2_pdu_UnconfirmedDataHeader(s *C.dmrgo_pdu_unconfirmed_data_header_
 	d.ResponseRequested = bool(s.response_requested)
 	d.Reserved = bool(s.reserved)
 	d.PadOctetCount = uint8(s.pad_octet_count)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.SAP = g_enums.SAP(s.sap)
 	d.LLIDDestination = uint32(s.llid_destination)
 	d.LLIDSource = uint32(s.llid_source)
 	d.FullMessageFlag = bool(s.full_message_flag)
@@ -414,7 +414,7 @@ func in_layer2_pdu_ConfirmedDataHeader(s *C.dmrgo_pdu_confirmed_data_header_t) (
 	d.ResponseRequested = bool(s.response_requested)
 	d.Reserved = bool(s.reserved)
 	d.PadOctetCount = uint8(s.pad_octet_count)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.SAP = g_enums.SAP(s.sap)
 	d.LLIDDestination = uint32(s.llid_destination)
 	d.LLIDSource = uint32(s.llid_source)
 	d.FullMessageFlag = bool(s.full_message_flag)
@@ -429,7 +429,7 @@ func in_layer2_pdu_ResponsePacketHeader(s *C.dmrgo_pdu_response_packet_header_t)
 	d.Reserved = bool(s.reserved)
 	d.ResponseRequested = bool(s.response_requested)
 	d.Reserved2 = uint8(s.reserved2)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.SAP = g_enums.SAP(s.sap)
 	d.Reserved3 = uint8(s.reserved3)
 	d.LLIDDestination = uint32(s.llid_destination)
 	d.LLIDSource = uint32(s.llid_source)
@@ -445,7 +445,7 @@ func in_layer2_pdu_DefinedDataHeader(s *C.dmrgo_pdu_defined_data_header_t) (d g_
 	d.Group = bool(s.group)
 	d.ResponseRequested = bool(s.response_requested)
 	d.AppendedBlocks = uint8(s.appended_blocks)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.SAP = g_enums.SAP(s.sap)
 	d.LLIDDestination = uint32(s.llid_destination)
 	d.LLIDSource = uint32(s.llid_source)
 	d.DefinedData = g_enums.DDFormat(s.defined_data)
@@ -458,7 +458,7 @@ func in_layer2_pdu_DefinedDataHeader(s *C.dmrgo_pdu_defined_data_header_t) (d g_
 func in_layer2_pdu_StatusPrecodedHeader(s *C.dmrgo_pdu_status_precoded_header_t) (d g_layer2_pdu.StatusPrecodedHeader) {
 	d.Group = bool(s.group)
 	d.ResponseRequested = bool(s.response_requested)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.SAP = g_enums.SAP(s.sap)
 	d.LLIDDestination = uint32(s.llid_destination)
 	d.LLIDSource = uint32(s.llid_source)
 	d.SourcePort = uint8(s.source_port)
@@ -471,7 +471,7 @@ func in_layer2_pdu_RawDataHeader(s *C.dmrgo_pdu_raw_data_header_t) (d g_layer2_p
 	d.Group = bool(s.group)
 	d.ResponseRequested = bool(s.response_requested)
 	d.AppendedBlocks = uint8(s.appended_blocks)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.SAP = g_enums.SAP(s.sap)
 	d.LLIDDestination = uint32(s.llid_destination)
 	d.LLIDSource = uint32(s.llid_source)
 	d.SourcePort = uint8(s.source_port)
@@ -487,7 +487,7 @@ func in_layer2_pdu_UDTHeader(s *C.dmrgo_pdu_udt_header_t) (d g_layer2_pdu.UDTHea
 	d.ResponseRequested = bool(s.response_requested)
 	d.Emergency = bool(s.emergency)
 	d.OptionFlag = bool(s.option_flag)
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
+	d.SAP = g_enums.SAP(s.sap)
 	d.UDTFormat = g_enums.UDTFormat(s.udt_format)
 	d.LLIDDestination = uint32(s.llid_destination)
 	d.LLIDSource = uint32(s.llid_source)
@@ -617,7 +617,7 @@ func out_layer2_pdu_UnconfirmedDataHeader(d *C.dmrgo_pdu_unconfirmed_data_header
 	d.response_requested = C.bool(s.ResponseRequested)
 	d.reserved = C.bool(s.Reserved)
 	d.pad_octet_count = C.uint8_t(s.PadOctetCount)
-	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
+	d.sap = C.dmrgo_enums_sap_t(s.SAP)
 	d.llid_destination = C.uint32_t(s.LLIDDestination)
 	d.llid_source = C.uint32_t(s.LLIDSource)
 	d.full_message_flag = C.bool(s.FullMessageFlag)
@@ -632,7 +632,7 @@ func out_layer2_pdu_ConfirmedDataHeader(d *C.dmrgo_pdu_confirmed_data_header_t, 
 	d.response_requested = C.bool(s.ResponseRequested)
 	d.reserved = C.bool(s.Reserved)
 	d.pad_octet_count = C.uint8_t(s.PadOctetCount)
-	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
+	d.sap = C.dmrgo_enums_sap_t(s.SAP)
 	d.llid_destination = C.uint32_t(s.LLIDDestination)
 	d.llid_source = C.uint32_t(s.LLIDSource)
 	d.full_message_flag = C.bool(s.FullMessageFlag)
@@ -647,7 +647,7 @@ func out_layer2_pdu_ResponsePacketHeader(d *C.dmrgo_pdu_response_packet_header_t
 	d.reserved = C.bool(s.Reserved)
 	d.response_requested = C.bool(s.ResponseRequested)
 	d.reserved2 = C.uint8_t(s.Reserved2)
-	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
+	d.sap = C.dmrgo_enums_sap_t(s.SAP)
 	d.reserved3 = C.uint8_t(s.Reserved3)
 	d.llid_destination = C.uint32_t(s.LLIDDestination)
 	d.llid_source = C.uint32_t(s.LLIDSource)
@@ -663,7 +663,7 @@ func out_layer2_pdu_DefinedDataHeader(d *C.dmrgo_pdu_defined_data_header_t, s *g
 	d.group = C.bool(s.Group)
 	d.response_requested = C.bool(s.ResponseRequested)
 	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
-	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
+	d.sap = C.dmrgo_enums_sap_t(s.SAP)
 	d.llid_destination = C.uint32_t(s.LLIDDestination)
 	d.llid_source = C.uint32_t(s.LLIDSource)
 	d.defined_data = C.dmrgo_enums_dd_format_t(s.DefinedData)
@@ -676,7 +676,7 @@ func out_layer2_pdu_StatusPrecodedHeader(d *C.dmrgo_pdu_status_precoded_header_t
 	_ = oc
 	d.group = C.bool(s.Group)
 	d.response_requested = C.bool(s.ResponseRequested)
-	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
+	d.sap = C.dmrgo_enums_sap_t(s.SAP)
 	d.llid_destination = C.uint32_t(s.LLIDDestination)
 	d.llid_source = C.uint32_t(s.LLIDSource)
 	d.source_port = C.uint8_t(s.SourcePort)
@@ -689,7 +689,7 @@ func out_layer2_pdu_RawDataHeader(d *C.dmrgo_pdu_raw_data_header_t, s *g_layer2_
 	d.group = C.bool(s.Group)
 	d.response_requested = C.bool(s.ResponseRequested)
 	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
-	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
+	d.sap = C.dmrgo_enums_sap_t(s.SAP)
 	d.llid_destination = C.uint32_t(s.LLIDDestination)
 	d.llid_source = C.uint32_t(s.LLIDSource)
 	d.source_port = C.uint8_t(s.SourcePort)
@@ -705,7 +705,7 @@ func out_layer2_pdu_UDTHeader(d *C.dmrgo_pdu_udt_header_t, s *g_layer2_pdu.UDTHe
 	d.response_requested = C.bool(s.ResponseRequested)
 	d.emergency = C.bool(s.Emergency)
 	d.option_flag = C.bool(s.OptionFlag)
-	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
+	d.sap = C.dmrgo_enums_sap_t(s.SAP)
 	d.udt_format = C.dmrgo_enums_udt_format_t(s.UDTFormat)
 	d.llid_destination = C.uint32_t(s.LLIDDestination)
 	d.llid_source = C.uint32_t(s.LLIDSource)
@@ -1425,7 +1425,7 @@ func in_layer2_pdu_CSBK(s *C.dmrgo_pdu_csbk_t, st *st_layer2_pdu_CSBK) (d g_laye
 	d.LastBlock = bool(s.last_block)
 	d.ProtectFlag = bool(s.protect_flag)
 	d.Opcode = g_layer2_pdu.CSBKOpcode(s.opcode)
-	d.FID = g_enums.FeatureSetID(s.fid)
+	d.FID = g_enums.FID(s.fid)
 	d.FEC = in_fec_Result(&s.fec)
 	d.Hint0x38 = g_layer2_pdu.Opcode0x38Hint(s.hint0x38)
 	if s.has_unit_to_unit_voice_service_request_pdu {
@@ -1635,7 +1635,7 @@ func in_layer2_pdu_FullLinkControl(s *C.dmrgo_pdu_full_link_control_t, st *st_la
 	d.ProtectFlag = bool(s.protect_flag)
 	d.Reserved = bool(s.reserved)
 	d.FLCO = g_enums.FLCO(s.flco)
-	d.FID = g_enums.FeatureSetID(s.fid)
+	d.FID = g_enums.FID(s.fid)
 	d.FEC = in_fec_Result(&s.fec)
 	if s.has_group_voice {
 		st.p_GroupVoice = in_layer2_pdu_FLCGroupVoice(&s.group_voice)
@@ -1701,7 +1701,7 @@ func in_layer2_pdu_MBCHeader(s *C.dmrgo_pdu_mbc_header_t, st *st_layer2_pdu_MBCH
 	d.LastBlock = bool(s.last_block)
 	d.ProtectFlag = bool(s.protect_flag)
 	d.Opcode = g_layer2_pdu.CSBKOpcode(s.opcode)
-	d.FID = g_enums.FeatureSetID(s.fid)
+	d.FID = g_enums.FID(s.fid)
 	if s.has_private_voice_grant_pdu {
 		st.p_PrivateVoiceGrantPDU = in_layer2_pdu_PrivateVoiceGrantPDU(&s.private_voice_grant_pdu)
 		d.PrivateVoiceGrantPDU = &st.p_PrivateVoiceGrantPDU
@@ -1782,7 +1782,7 @@ func in_layer2_pdu_MVAPContinuation(s *C.dmrgo_pdu_mvap_continuation_t) (d g_lay
 func in_layer2_pdu_PIHeader(s *C.dmrgo_pdu_pi_header_t) (d g_layer2_pdu.PIHeader) {
 	d.FEC = in_fec_Result(&s.fec)
 	d.AlgorithmID = uint8(s.algorithm_id)
-	d.MFID = g_enums.FeatureSetID(s.mfid)
+	d.MFID = g_enums.FID(s.mfid)
 	d.KeyID = uint8(s.key_id)
 	d.MessageIndicator = uint32(s.message_indicator)
 	d.Destination = uint32(s.destination)
@@ -2166,7 +2166,7 @@ func out_layer2_pdu_CSBK(d *C.dmrgo_pdu_csbk_t, s *g_layer2_pdu.CSBK, oc *outc) 
 	d.last_block = C.bool(s.LastBlock)
 	d.protect_flag = C.bool(s.ProtectFlag)
 	d.opcode = C.dmrgo_pdu_csbk_opcode_t(s.Opcode)
-	d.fid = C.dmrgo_enums_feature_set_id_t(s.FID)
+	d.fid = C.dmrgo_enums_fid_t(s.FID)
 	out_fec_Result(&d.fec, &s.FEC, oc)
 	d.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(s.Hint0x38)
 	if s.UnitToUnitVoiceServiceRequestPDU != nil {
@@ -2393,7 +2393,7 @@ func out_layer2_pdu_FullLinkControl(d *C.dmrgo_pdu_full_link_control_t, s *g_lay
 	d.protect_flag = C.bool(s.ProtectFlag)
 	d.reserved = C.bool(s.Reserved)
 	d.flco = C.dmrgo_enums_flco_t(s.FLCO)
-	d.fid = C.dmrgo_enums_feature_set_id_t(s.FID)
+	d.fid = C.dmrgo_enums_fid_t(s.FID)
 	out_fec_Result(&d.fec, &s.FEC, oc)
 	if s.GroupVoice != nil {
 		d.has_group_voice = true
@@ -2452,7 +2452,7 @@ func out_layer2_pdu_MBCHeader(d *C.dmrgo_pdu_mbc_header_t, s *g_layer2_pdu.MBCHe
 	d.last_block = C.bool(s.LastBlock)
 	d.protect_flag = C.bool(s.ProtectFlag)
 	d.opcode = C.dmrgo_pdu_csbk_opcode_t(s.Opcode)
-	d.fid = C.dmrgo_enums_feature_set_id_t(s.FID)
+	d.fid = C.dmrgo_enums_fid_t(s.FID)
 	if s.PrivateVoiceGrantPDU != nil {
 		d.has_private_voice_grant_pdu = true
 		out_layer2_pdu_PrivateVoiceGrantPDU(&d.private_voice_grant_pdu, &(*s.PrivateVoiceGrantPDU), oc)
@@ -2543,7 +2543,7 @@ func out_layer2_pdu_PIHeader(d *C.dmrgo_pdu_pi_header_t, s *g_layer2_pdu.PIHeade
 	_ = oc
 	out_fec_Result(&d.fec, &s.FEC, oc)
 	d.algorithm_id = C.uint8_t(s.AlgorithmID)
-	d.mfid = C.dmrgo_enums_feature_set_id_t(s.MFID)
+	d.mfid = C.dmrgo_enums_fid_t(s.MFID)
 	d.key_id = C.uint8_t(s.KeyID)
 	d.message_indicator = C.uint32_t(s.MessageIndicator)
 	d.destination = C.uint32_t(s.Destination)
@@ -5026,7 +5026,7 @@ type vt_vocoder_Codec struct {
 	m1a1     [9]C.uint8_t
 	m2r0     [9]C.uint8_t
 	m2g0     [9]byte
-	m3r0     C.dmrgo_enums_feature_set_id_t
+	m3r0     C.dmrgo_enums_fid_t
 	m4r0     C.int64_t
 	m6r0     [9]C.uint8_t
 	m6g0     [9]byte
@@ -5094,7 +5094,7 @@ func (c *vt_vocoder_Codec) Encode(q0 []int16) (o0 [9]byte, o1 error) {
 	return
 }
 
-func (c *vt_vocoder_Codec) FID() (o0 g_enums.FeatureSetID) {
+func (c *vt_vocoder_Codec) FID() (o0 g_enums.FID) {
 	oc := &outc{}
 	_ = oc
 	var code C.int
@@ -5103,7 +5103,7 @@ func (c *vt_vocoder_Codec) FID() (o0 g_enums.FeatureSetID) {
 		break
 	}
 	_ = code
-	o0 = g_enums.FeatureSetID(c.m3r0)
+	o0 = g_enums.FID(c.m3r0)
 	return
 }
 
@@ -5158,7 +5158,7 @@ func dmrgo_vocoder_codec_from_vtable(c_vt *C.dmrgo_vocoder_codec_vtable_t, c_out
 
 func in_vocoder_codec2_Config(s *C.dmrgo_codec2_config_t) (d g_vocoder_codec2.Config) {
 	d.Mode = g_vocoder_codec2.Mode(s.mode)
-	d.FID = g_enums.FeatureSetID(s.fid)
+	d.FID = g_enums.FID(s.fid)
 	return
 }
 
@@ -5324,7 +5324,7 @@ func in_voice_Call(s *C.dmrgo_voice_call_t) (d g_voice.Call) {
 	d.Target = uint32(s.target)
 	d.Source = uint32(s.source)
 	d.Options = in_layer3_ServiceOptions(&s.options)
-	d.FID = g_enums.FeatureSetID(s.fid)
+	d.FID = g_enums.FID(s.fid)
 	d.LC = *(*g_layer2_pdu.LCBytes)(unsafe.Pointer(&s.lc))
 	d.Origin = g_voice.Origin(s.origin)
 	d.Stream = uint32(s.stream)
@@ -5448,7 +5448,7 @@ func fromC_bs_Source(s *C.dmrgo_bs_source_t) g_bs.Source {
 
 func out_csbk_Match(d *C.dmrgo_csbk_match_t, s *g_csbk.Match, oc *outc) {
 	_ = oc
-	d.fid = C.dmrgo_enums_feature_set_id_t(s.FID)
+	d.fid = C.dmrgo_enums_fid_t(s.FID)
 	*(*[4]g_layer2_pdu.CSBKOpcode)(unsafe.Pointer(&d.opcodes)) = s.Opcodes
 	d.n = C.int64_t(s.N)
 }
@@ -6491,16 +6491,16 @@ func fromC_layer2_pdu_PrivateVoiceGrantPDU(s *C.dmrgo_pdu_private_voice_grant_pd
 }
 
 func in_layer2_pdu_ProprietaryHeader(s *C.dmrgo_pdu_proprietary_header_t) (d g_layer2_pdu.ProprietaryHeader) {
-	d.SAP = g_enums.ServiceAccessPointID(s.sap)
-	d.MFID = g_enums.FeatureSetID(s.mfid)
+	d.SAP = g_enums.SAP(s.sap)
+	d.MFID = g_enums.FID(s.mfid)
 	d.ManufacturerData = *(*[8]byte)(unsafe.Pointer(&s.manufacturer_data))
 	return
 }
 
 func out_layer2_pdu_ProprietaryHeader(d *C.dmrgo_pdu_proprietary_header_t, s *g_layer2_pdu.ProprietaryHeader, oc *outc) {
 	_ = oc
-	d.sap = C.dmrgo_enums_service_access_point_id_t(s.SAP)
-	d.mfid = C.dmrgo_enums_feature_set_id_t(s.MFID)
+	d.sap = C.dmrgo_enums_sap_t(s.SAP)
+	d.mfid = C.dmrgo_enums_fid_t(s.MFID)
 	*(*[8]byte)(unsafe.Pointer(&d.manufacturer_data)) = s.ManufacturerData
 }
 
@@ -8041,7 +8041,7 @@ func fromC_trunk_auth_Keys(s *C.dmrgo_trunk_auth_keys_t) g_trunk_auth.Keys {
 func out_vocoder_codec2_Config(d *C.dmrgo_codec2_config_t, s *g_vocoder_codec2.Config, oc *outc) {
 	_ = oc
 	d.mode = C.dmrgo_codec2_mode_t(s.Mode)
-	d.fid = C.dmrgo_enums_feature_set_id_t(s.FID)
+	d.fid = C.dmrgo_enums_fid_t(s.FID)
 }
 
 func fromC_vocoder_codec2_Config(s *C.dmrgo_codec2_config_t) g_vocoder_codec2.Config {
@@ -13104,14 +13104,14 @@ func dmrgo_enums_data_type_string(c_self C.dmrgo_enums_data_type_t, c_out *C.cha
 	return C.DMRGO_OK
 }
 
-//export dmrgo_enums_flco_string
-func dmrgo_enums_flco_string(c_self C.dmrgo_enums_flco_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+//export dmrgo_enums_fid_string
+func dmrgo_enums_fid_string(c_self C.dmrgo_enums_fid_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := g_enums.FLCO(c_self).String()
+	r0 := g_enums.FID(c_self).String()
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -13120,14 +13120,14 @@ func dmrgo_enums_flco_string(c_self C.dmrgo_enums_flco_t, c_out *C.char, c_out_c
 	return C.DMRGO_OK
 }
 
-//export dmrgo_enums_feature_set_id_string
-func dmrgo_enums_feature_set_id_string(c_self C.dmrgo_enums_feature_set_id_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+//export dmrgo_enums_flco_string
+func dmrgo_enums_flco_string(c_self C.dmrgo_enums_flco_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := g_enums.FeatureSetID(c_self).String()
+	r0 := g_enums.FLCO(c_self).String()
 	_ = r0
 	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
@@ -13255,6 +13255,22 @@ func dmrgo_enums_said_string(c_self C.dmrgo_enums_said_t, c_out *C.char, c_out_c
 	return C.DMRGO_OK
 }
 
+//export dmrgo_enums_sap_string
+func dmrgo_enums_sap_string(c_self C.dmrgo_enums_sap_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_out == nil && c_out_cap > 0 {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_enums.SAP(c_self).String()
+	_ = r0
+	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_enums_slco_string
 func dmrgo_enums_slco_string(c_self C.dmrgo_enums_slco_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -13296,22 +13312,6 @@ func dmrgo_enums_spid_to_port(c_spid C.dmrgo_enums_spid_t, c_out *C.uint16_t) (r
 	if c_out != nil {
 		*c_out = C.uint16_t(r0)
 	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_enums_service_access_point_id_string
-func dmrgo_enums_service_access_point_id_string(c_self C.dmrgo_enums_service_access_point_id_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_out == nil && c_out_cap > 0 {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := g_enums.ServiceAccessPointID(c_self).String()
-	_ = r0
-	putStr(c_out, c_out_cap, c_out_len, c_out_need, r0, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -15173,7 +15173,7 @@ func dmrgo_ip_check_ipv4(c_data *C.uint8_t, c_data_len C.size_t, c_mtu C.int64_t
 }
 
 //export dmrgo_ip_decode
-func dmrgo_ip_decode(c_sap C.dmrgo_enums_service_access_point_id_t, c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_ip_datagram_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
+func dmrgo_ip_decode(c_sap C.dmrgo_enums_sap_t, c_data *C.uint8_t, c_data_len C.size_t, c_out *C.dmrgo_ip_datagram_t, c_arena unsafe.Pointer, c_arena_cap C.size_t, c_arena_len *C.size_t, c_arena_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_arena_len != nil {
@@ -15188,7 +15188,7 @@ func dmrgo_ip_decode(c_sap C.dmrgo_enums_service_access_point_id_t, c_data *C.ui
 	}
 	var a_data []byte
 	a_data = unsafe.Slice((*byte)(unsafe.Pointer(c_data)), int(c_data_len))
-	r0, r1 := g_ip.Decode(g_enums.ServiceAccessPointID(c_sap), a_data)
+	r0, r1 := g_ip.Decode(g_enums.SAP(c_sap), a_data)
 	_ = r0
 	if c_out != nil {
 		out_ip_Datagram(&(*c_out), &r0, oc)
@@ -21940,7 +21940,7 @@ func dmrgo_pdu_csbk_bytes_crc_ok(c_self *C.dmrgo_pdu_csbk_bytes_t, c_out *C.bool
 }
 
 //export dmrgo_pdu_csbk_bytes_fid
-func dmrgo_pdu_csbk_bytes_fid(c_self *C.dmrgo_pdu_csbk_bytes_t, c_out *C.dmrgo_enums_feature_set_id_t) (rc C.int) {
+func dmrgo_pdu_csbk_bytes_fid(c_self *C.dmrgo_pdu_csbk_bytes_t, c_out *C.dmrgo_enums_fid_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -21949,7 +21949,7 @@ func dmrgo_pdu_csbk_bytes_fid(c_self *C.dmrgo_pdu_csbk_bytes_t, c_out *C.dmrgo_e
 	r0 := (*(*g_layer2_pdu.CSBKBytes)(unsafe.Pointer(c_self))).FID()
 	_ = r0
 	if c_out != nil {
-		*c_out = C.dmrgo_enums_feature_set_id_t(r0)
+		*c_out = C.dmrgo_enums_fid_t(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -24789,7 +24789,7 @@ func dmrgo_pdu_lc_bytes_codeword(c_self *C.dmrgo_pdu_lc_bytes_t, c_dt C.dmrgo_en
 }
 
 //export dmrgo_pdu_lc_bytes_fid
-func dmrgo_pdu_lc_bytes_fid(c_self *C.dmrgo_pdu_lc_bytes_t, c_out *C.dmrgo_enums_feature_set_id_t) (rc C.int) {
+func dmrgo_pdu_lc_bytes_fid(c_self *C.dmrgo_pdu_lc_bytes_t, c_out *C.dmrgo_enums_fid_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
@@ -24798,7 +24798,7 @@ func dmrgo_pdu_lc_bytes_fid(c_self *C.dmrgo_pdu_lc_bytes_t, c_out *C.dmrgo_enums
 	r0 := (*(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self))).FID()
 	_ = r0
 	if c_out != nil {
-		*c_out = C.dmrgo_enums_feature_set_id_t(r0)
+		*c_out = C.dmrgo_enums_fid_t(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -24939,13 +24939,13 @@ func dmrgo_pdu_lc_bytes_set_call(c_self *C.dmrgo_pdu_lc_bytes_t, c_group C.bool,
 }
 
 //export dmrgo_pdu_lc_bytes_set_fid
-func dmrgo_pdu_lc_bytes_set_fid(c_self *C.dmrgo_pdu_lc_bytes_t, c_fid C.dmrgo_enums_feature_set_id_t) (rc C.int) {
+func dmrgo_pdu_lc_bytes_set_fid(c_self *C.dmrgo_pdu_lc_bytes_t, c_fid C.dmrgo_enums_fid_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_self == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self)).SetFID(g_enums.FeatureSetID(c_fid))
+	(*g_layer2_pdu.LCBytes)(unsafe.Pointer(c_self)).SetFID(g_enums.FID(c_fid))
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -43831,14 +43831,14 @@ func dmrgo_vocoder_codec_encode(c_self *C.dmrgo_vocoder_codec_t, c_pcm *C.int16_
 }
 
 //export dmrgo_vocoder_codec_fid
-func dmrgo_vocoder_codec_fid(c_self *C.dmrgo_vocoder_codec_t, c_out *C.dmrgo_enums_feature_set_id_t) (rc C.int) {
+func dmrgo_vocoder_codec_fid(c_self *C.dmrgo_vocoder_codec_t, c_out *C.dmrgo_enums_fid_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_vocoder_Codec(c_self)
 	r0 := h.v.FID()
 	_ = r0
 	if c_out != nil {
-		*c_out = C.dmrgo_enums_feature_set_id_t(r0)
+		*c_out = C.dmrgo_enums_fid_t(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -44147,14 +44147,14 @@ func dmrgo_codec2_codec_encode(c_self *C.dmrgo_codec2_codec_t, c_pcm *C.int16_t,
 }
 
 //export dmrgo_codec2_codec_fid
-func dmrgo_codec2_codec_fid(c_self *C.dmrgo_codec2_codec_t, c_out *C.dmrgo_enums_feature_set_id_t) (rc C.int) {
+func dmrgo_codec2_codec_fid(c_self *C.dmrgo_codec2_codec_t, c_out *C.dmrgo_enums_fid_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_vocoder_codec2_Codec(c_self)
 	r0 := h.v.FID()
 	_ = r0
 	if c_out != nil {
-		*c_out = C.dmrgo_enums_feature_set_id_t(r0)
+		*c_out = C.dmrgo_enums_fid_t(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -44496,14 +44496,14 @@ func dmrgo_dvsi_codec_encode(c_self *C.dmrgo_dvsi_codec_t, c_pcm *C.int16_t, c_p
 }
 
 //export dmrgo_dvsi_codec_fid
-func dmrgo_dvsi_codec_fid(c_self *C.dmrgo_dvsi_codec_t, c_out *C.dmrgo_enums_feature_set_id_t) (rc C.int) {
+func dmrgo_dvsi_codec_fid(c_self *C.dmrgo_dvsi_codec_t, c_out *C.dmrgo_enums_fid_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_vocoder_dvsi_Codec(c_self)
 	r0 := h.v.FID()
 	_ = r0
 	if c_out != nil {
-		*c_out = C.dmrgo_enums_feature_set_id_t(r0)
+		*c_out = C.dmrgo_enums_fid_t(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)

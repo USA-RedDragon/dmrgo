@@ -22,7 +22,7 @@ type Call struct {
 	// Options is the Service Options of the LC.
 	Options layer3.ServiceOptions
 	// FID is the feature set ID of the LC.
-	FID enums.FeatureSetID
+	FID enums.FID
 	// LC is the 9 LC octets as received. It is zero for OriginUnknown and
 	// for an OriginExpected call until a header or embedded LC with the
 	// same addresses arrives.

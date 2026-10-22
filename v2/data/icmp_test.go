@@ -13,7 +13,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 )
 
-func ipHeader(group bool, sap enums.ServiceAccessPointID) pdu.DataHeader {
+func ipHeader(group bool, sap enums.SAP) pdu.DataHeader {
 	return pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
 		SAP: sap, Group: group, LLIDDestination: 9, LLIDSource: 3120001,
 	}}
@@ -47,7 +47,7 @@ func TestEventICMP(t *testing.T) {
 		kind  data.EventKind
 		call  bool
 		group bool
-		sap   enums.ServiceAccessPointID
+		sap   enums.SAP
 		ok    bool
 	}{
 		{"individual", data.EventDelivered, false, false, enums.SAPIPBasedPacketData, true},

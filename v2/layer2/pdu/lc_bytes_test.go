@@ -144,7 +144,7 @@ func TestLCBytes_EditsKeepOtherBits(t *testing.T) {
 			t.Fatalf("%x: SetFLCO changed %x", orig, diffMask(l, orig))
 		}
 		l = orig
-		fid := enums.FeatureSetID(rng.Intn(256))
+		fid := enums.FID(rng.Intn(256))
 		l.SetFID(fid)
 		if l.FID() != fid || !within(diffMask(l, orig), fidBits) {
 			t.Fatalf("%x: SetFID", orig)

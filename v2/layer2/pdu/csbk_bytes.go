@@ -18,8 +18,8 @@ func (c CSBKBytes) Opcode() CSBKOpcode {
 }
 
 // FID returns the Feature set ID, octet 1.
-func (c CSBKBytes) FID() enums.FeatureSetID {
-	return enums.FeatureSetID(c[1])
+func (c CSBKBytes) FID() enums.FID {
+	return enums.FID(c[1])
 }
 
 func (c CSBKBytes) addressOffsets() (target, source int, ok bool) {

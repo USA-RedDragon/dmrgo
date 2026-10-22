@@ -31,8 +31,8 @@ func (lsbCodec) Decode(dst []int16, slot [9]byte) ([]int16, error) {
 
 func (lsbCodec) Reset() {}
 
-func (lsbCodec) Silence() [9]byte        { return [9]byte{} }
-func (lsbCodec) FID() enums.FeatureSetID { return enums.FIDStandardized }
+func (lsbCodec) Silence() [9]byte { return [9]byte{} }
+func (lsbCodec) FID() enums.FID   { return enums.FIDStandardized }
 
 // ExampleCodec implements Codec with a toy codec that keeps the lowest bit
 // of the first 72 samples, and runs one frame through it.

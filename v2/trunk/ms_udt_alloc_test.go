@@ -22,10 +22,10 @@ func TestAllocsMSUDT(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := aloha(t)
-	sdmi := ahoyBurst(t, enums.ServiceIndividualShortData, constants.GatewaySDMI, msAddr, false, 1)
-	poll := ahoyBurst(t, enums.ServiceShortDataPolling, peer, msAddr, false, 0)
+	sdmi := ahoyBurst(t, enums.ServiceKindIndividualShortData, constants.GatewaySDMI, msAddr, false, 1)
+	poll := ahoyBurst(t, enums.ServiceKindShortDataPolling, peer, msAddr, false, 0)
 	usbd := usbdPoll(t, pdu.ServiceTypeLIP, 0, msAddr)
-	done := ack(t, enums.ReasonMSAccepted)
+	done := ack(t, enums.AckReasonMSAccepted)
 	dgna := download(t, pdu.UDTHeader{LLIDDestination: msAddr, LLIDSource: peer, Opcode: pdu.UDTOpcodeDGNAOutboundHeader}, &groups)
 	r.ms.SetPollResponse(&text)
 	r.ms.SetUSBDResponse(&pdu.UnifiedSingleBlockData{ServiceType: pdu.ServiceTypeLIP})
