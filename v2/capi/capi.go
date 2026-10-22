@@ -1,6 +1,10 @@
-// Command capi builds libdmrgo, the C API of dmrgo, declared in dmrgo.h:
+// Command capi builds libdmrgo, the C API of dmrgo, declared in dmrgo.h.
+// make writes build/libdmrgo.so.N with the soname, the symbol versions of
+// libdmrgo.map and the dmrgo_version string, and the link libdmrgo.so:
 //
-//	go build -buildmode=c-shared -o libdmrgo.so .
+//	make
+//
+// go build -buildmode=c-shared builds the library without them.
 //
 // Its own module keeps cgo and the C toolchain out of the dmrgo module.
 package main
