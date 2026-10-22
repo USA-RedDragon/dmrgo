@@ -30,3 +30,28 @@ func Example() {
 	// Output:
 	// 5 blocks, TMS from 3191868: Hello <nil>
 }
+
+// ExampleAppendAck answers a TMS text that asks for an acknowledgement.
+func ExampleAppendAck() {
+	in := sms.Text{Format: sms.FormatTMS, Source: 3191868, Destination: 3140598, Sequence: 3, AckRequired: true, Body: []byte("Hi")}
+	data, err := sms.AppendPacket(nil, &in, &header)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	_, got, err := sms.Decode(nil, &header.Data, data)
+	if err != nil || !got.AckRequired {
+		fmt.Println(got.AckRequired, err)
+		return
+	}
+	var ackHeader sms.Header
+	ack, err := sms.AppendAck(nil, &got, &ackHeader)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	u := ackHeader.Data.UnconfirmedDataHeader
+	fmt.Printf("%d octets from %d to %d\n", len(ack), u.LLIDSource, u.LLIDDestination)
+	// Output:
+	// 33 octets from 3140598 to 3191868
+}

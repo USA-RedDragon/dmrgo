@@ -344,6 +344,51 @@ func AppendPacket(dst []byte, t *Text, h *Header) ([]byte, error) {
 	return dst[:n+k], nil
 }
 
+// AppendAck appends to dst the TMS acknowledgement of the FormatTMS text
+// t, as Decode returns it, sets h to the data header to send it with, and
+// returns dst. Send it when t.AckRequired is set. The acknowledgement goes
+// from t.Destination back to t.Source in network t.Network, from UDP port
+// 4007 to 4007, with the sequence number t.Sequence, in an unconfirmed
+// packet (U_HEAD). It returns dst unchanged and ErrFormat for another
+// format and for a group text, which gets no acknowledgement,
+// dmrgo.ErrNilArgument for a nil t or h, or the errors of the packages
+// that build the message. It allocates only to grow dst.
+func AppendAck(dst []byte, t *Text, h *Header) ([]byte, error) {
+	if t == nil || h == nil {
+		return dst, dmrgo.ErrNilArgument
+	}
+	if t.Format != FormatTMS || t.Group {
+		return dst, ErrFormat
+	}
+	m, err := tms.NewAck(t.Sequence)
+	if err != nil {
+		return dst, err
+	}
+	n := len(dst)
+	if dst, err = m.AppendBinary(dst); err != nil {
+		return dst[:n], err
+	}
+	network := t.Network
+	if network == 0 {
+		network = ip.DefaultNetwork
+	}
+	d := ip.Datagram{
+		Source:      ip.RadioAddress(network, t.Destination),
+		Destination: ip.RadioAddress(network, t.Source),
+		SourcePort:  ip.PortTMS, DestinationPort: ip.PortTMS, TTL: 64,
+		Payload: dst[n:],
+	}
+	i0 := len(dst)
+	if dst, err = ip.AppendIPv4(dst, &d); err != nil {
+		return dst[:n], err
+	}
+	k := copy(dst[n:], dst[i0:])
+	h.unconfirmed = pdu.UnconfirmedDataHeader{SAP: enums.SAPIPBasedPacketData,
+		LLIDDestination: t.Source, LLIDSource: t.Destination, FullMessageFlag: true}
+	h.Data = pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &h.unconfirmed}
+	return dst[:n+k], nil
+}
+
 func definedHeader(t *Text, dd enums.DDFormat) pdu.DefinedDataHeader {
 	return pdu.DefinedDataHeader{
 		Group: t.Group, ResponseRequested: t.Confirmed, SAP: enums.SAPShortData,
