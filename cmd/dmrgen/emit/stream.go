@@ -554,11 +554,11 @@ func (e streamEnc) encodeValue(g *Group, f parse.StreamField, src *Statement) er
 		if f.SignMag {
 			hiRaw := math.Ldexp(1, w-1) - 1
 			scale := float64(f.ScaleNum) / math.Ldexp(1, f.ScaleExp)
-			lo, hi := -hiRaw*scale, hiRaw*scale
+			lo, hi := -(hiRaw+1)*scale, (hiRaw+1)*scale
 			g.Id(tmp).Op(":=").Qual("math", "Round").Call(Qual("math", "Abs").Call(src.Clone()).Op("/").Parens(Id(scaleText(f))))
-			g.If(Op("!").Parens(Id(tmp).Op("<=").Lit(hiRaw))).Block(e.rangeErr(f, w, true, &lo, &hi))
+			g.If(Op("!").Parens(Id(tmp).Op("<=").Lit(hiRaw + 1))).Block(e.rangeErr(f, w, true, &lo, &hi))
 			raw := tmp + "Raw"
-			g.Id(raw).Op(":=").Uint64().Call(Id(tmp))
+			g.Id(raw).Op(":=").Uint64().Call(Min(Id(tmp), Lit(hiRaw)))
 			g.If(src.Clone().Op("<").Lit(0).Op("&&").Id(raw).Op("!=").Lit(0)).Block(Id(raw).Op("|=").Lit(uint64(1) << (w - 1)))
 			appendInt(g, f.Octets, f.LE, Id(raw))
 			return nil

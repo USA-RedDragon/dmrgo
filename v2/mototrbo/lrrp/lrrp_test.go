@@ -140,6 +140,17 @@ func TestSouthernLatitudeEncode(t *testing.T) {
 	if want := unhex(t, "0d0966"+"b02b40f6"+"e147ae14"); !bytes.Equal(out, want) {
 		t.Errorf("-33.8688,-43.2 encodes to %x, want %x", out, want)
 	}
+	for _, lat := range []float64{90, -90} {
+		m.Report.Point2D.Latitude = lat
+		out, err := m.AppendBinary(nil)
+		if err != nil {
+			t.Fatalf("latitude %v: %v", lat, err)
+		}
+		back := new(lrrp.Message)
+		if err := lrrp.DecodeMessageInto(back, out); err != nil || !near(back.Report.Point2D.Latitude, lat, 1e-7) {
+			t.Errorf("latitude %v comes back as %v, %v", lat, back.Report.Point2D.Latitude, err)
+		}
+	}
 }
 
 func TestErrors(t *testing.T) {
