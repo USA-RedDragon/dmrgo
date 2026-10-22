@@ -92,16 +92,16 @@ func checkSession(t *testing.T, data []byte) {
 			out = m.Tick(now, out)
 			check(n, m.MaxOutputs())
 			n = len(out)
-			out = m.Packet(now, from, pk, out)
+			out = m.Packet(now, from, pk, nil, out)
 			check(n, m.MaxOutputs())
 			n = len(out)
-			out = m.PacketWithKey(now, from, key, must(m.SignFor(9, append([]byte(nil), pk...))), out)
+			out = m.Packet(now, from, must(m.SignFor(9, append([]byte(nil), pk...))), &key, out)
 			check(n, m.MaxOutputs())
 			n = len(out)
 			if len(pk) > 4 && pk[4]&1 == 1 {
-				out = m.AdoptWithKey(now, from, uint32(pk[4]), ipsc.Mode(pk[0]), ipsc.Flags{}, key, out)
+				out = m.Adopt(now, from, uint32(pk[4]), &key, out)
 			} else if len(pk) > 4 {
-				out = m.Adopt(now, from, uint32(pk[4]), ipsc.Mode(pk[0]), ipsc.Flags{}, out)
+				out = m.Adopt(now, from, uint32(pk[4]), nil, out)
 			}
 			check(n, m.MaxOutputs())
 		}

@@ -64,7 +64,7 @@ func TestMasterReplaysXPR8400(t *testing.T) {
 		in   ipsc.Opcode
 		want ipsc.Opcode
 	}{{ipsc.OpRegisterRequest, ipsc.OpRegisterReply}, {ipsc.OpPeerListRequest, ipsc.OpPeerListReply}, {ipsc.OpAliveRequest, ipsc.OpAliveReply}} {
-		out := m.Packet(time.Second, xprAddr, xprPacket(t, lines, step.in, xpr), nil)
+		out := m.Packet(time.Second, xprAddr, xprPacket(t, lines, step.in, xpr), nil, nil)
 		s := sends(out)
 		if len(s) != 1 || out[0].Addr != xprAddr || !bytes.Equal(s[0], xprPacket(t, lines, step.want, 1)) {
 			t.Fatalf("%v: %x, want %x", step.in, s, xprPacket(t, lines, step.want, 1))
@@ -73,13 +73,13 @@ func TestMasterReplaysXPR8400(t *testing.T) {
 	if m.Peers() != 1 || m.PeerAt(0).ID != xpr || m.PeerAt(0).Mode != 0x6a || m.PeerAt(5) != (ipscsession.PeerInfo{}) {
 		t.Fatalf("peers %+v", m.PeerAt(0))
 	}
-	if out := m.Packet(time.Second, xprAddr, xprPacket(t, lines, ipsc.OpStatus, xpr), nil); len(out) != 0 {
+	if out := m.Packet(time.Second, xprAddr, xprPacket(t, lines, ipsc.OpStatus, xpr), nil, nil); len(out) != 0 {
 		t.Fatal("status answered")
 	}
 	calls := 0
 	for _, p := range lines {
 		if ipsc.Opcode(p[0]) == ipsc.OpGroupVoice || ipsc.Opcode(p[0]) == ipsc.OpGroupData || ipsc.Opcode(p[0]) == ipsc.OpPrivateData {
-			out := m.Packet(2*time.Second, xprAddr, p, nil)
+			out := m.Packet(2*time.Second, xprAddr, p, nil, nil)
 			if len(out) != 1 || out[0].Kind != ipscsession.OutputData || !bytes.Equal(out[0].Packet, p) || out[0].ID != xpr {
 				t.Fatalf("user packet %x: %v", p, kinds(out))
 			}
@@ -183,7 +183,7 @@ func (n *net) pump() {
 			continue
 		}
 		if q.to == masterAddr {
-			n.out(masterAddr, n.master.Packet(n.now, q.from, q.p, nil))
+			n.out(masterAddr, n.master.Packet(n.now, q.from, q.p, nil, nil))
 			continue
 		}
 		for _, nd := range n.nodes {
@@ -284,7 +284,7 @@ func TestLoopback(t *testing.T) {
 	if out = b.peer.Packet(0, a.addr, voice[:8], nil); len(out) != 0 {
 		t.Fatal("packet without trailer taken")
 	}
-	if out = m.Packet(n.now, a.addr, voice, nil); len(out) != 1 || out[0].Kind != ipscsession.OutputData {
+	if out = m.Packet(n.now, a.addr, voice, nil, nil); len(out) != 1 || out[0].Kind != ipscsession.OutputData {
 		t.Fatalf("master voice %v", kinds(out))
 	}
 }
@@ -355,26 +355,26 @@ func TestMasterKeepaliveRegisters(t *testing.T) {
 
 	alive, _ := (&ipsc.Control{Opcode: ipsc.OpAliveRequest, ID: 7, Mode: 0x6a}).AppendBinary(nil)
 	open, _ := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1})
-	if out := open.Packet(0, xprAddr, alive, nil); !isDrop(out, 7, ipscsession.ReasonUnregistered) {
+	if out := open.Packet(0, xprAddr, alive, nil, nil); !isDrop(out, 7, ipscsession.ReasonUnregistered) {
 		t.Fatal("keepalive of a peer that is not registered taken without Auth")
 	}
 	key, _ := ipscKey()
 	m, _ := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1, Auth: true, Key: key, MaxPeers: 1})
-	out := m.Packet(0, xprAddr, must(m.Sign(append([]byte(nil), alive...))), nil)
+	out := m.Packet(0, xprAddr, must(m.Sign(append([]byte(nil), alive...))), nil, nil)
 	if len(out) != 2 || out[1].Kind != ipscsession.OutputUp {
 		t.Fatalf("authenticated keepalive %v", kinds(out))
 	}
 	other, _ := (&ipsc.Control{Opcode: ipsc.OpRegisterRequest, ID: 8}).AppendBinary(nil)
-	if out = m.Packet(0, masterAddr, must(m.Sign(other)), nil); !isDrop(out, 8, ipscsession.ReasonFull) {
+	if out = m.Packet(0, masterAddr, must(m.Sign(other)), nil, nil); !isDrop(out, 8, ipscsession.ReasonFull) {
 		t.Fatal("registered beyond MaxPeers")
 	}
 	dereg, _ := (&ipsc.Control{Opcode: ipsc.OpDeregisterRequest, ID: 7}).AppendBinary(nil)
-	if out = m.Packet(0, masterAddr, must(m.Sign(dereg)), nil); !isDrop(out, 7, ipscsession.ReasonAddress) || m.Peers() != 1 {
+	if out = m.Packet(0, masterAddr, must(m.Sign(dereg)), nil, nil); !isDrop(out, 7, ipscsession.ReasonAddress) || m.Peers() != 1 {
 		t.Fatal("de-registration from another address")
 	}
 	for _, op := range []ipsc.Opcode{ipsc.OpPeerRegisterRequest, ipsc.OpPeerAliveRequest} {
 		c, _ := (&ipsc.Control{Opcode: op, ID: 7}).AppendBinary(nil)
-		if out = m.Packet(time.Second, xprAddr, must(m.Sign(c)), nil); len(out) != 1 || out[0].Kind != ipscsession.OutputSend {
+		if out = m.Packet(time.Second, xprAddr, must(m.Sign(c)), nil, nil); len(out) != 1 || out[0].Kind != ipscsession.OutputSend {
 			t.Fatalf("%v: %v", op, kinds(out))
 		}
 	}

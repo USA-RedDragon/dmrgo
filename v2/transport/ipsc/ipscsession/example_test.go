@@ -21,7 +21,7 @@ func Example() {
 	for range 2 {
 		for _, o := range peer.Tick(now, nil) {
 			fmt.Println("peer sends", ipsc.Opcode(o.Packet[0]))
-			for _, r := range master.Packet(now, peerAddr, o.Packet, nil) {
+			for _, r := range master.Packet(now, peerAddr, o.Packet, nil, nil) {
 				if r.Kind != ipscsession.OutputSend {
 					fmt.Println("master event", r.Kind, r.ID)
 					continue

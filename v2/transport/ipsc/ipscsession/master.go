@@ -31,6 +31,12 @@ type MasterConfig struct {
 	// MaxPeers is the most peers that the Master registers. 0 means
 	// MaxPeersDefault.
 	MaxPeers int
+	// AdoptKnown makes Packet adopt a peer that is not registered, as
+	// Adopt does, when the trailer of its packet proves the key of the
+	// config or the key that the caller passed, so that a peer that
+	// registered with another Master needs no Adopt call. Without a key it
+	// does nothing.
+	AdoptKnown bool
 }
 
 // Master is the master of an IPSC system, as DMRlink and ipsc2hbrp run
@@ -40,12 +46,13 @@ type MasterConfig struct {
 // with NewMaster; the zero Master takes no packet. A Master is not safe
 // for concurrent use and must not be copied.
 type Master struct {
-	l        link
-	timeout  time.Duration
-	maxPeers int
-	stopped  bool
-	tx       []byte
-	noCopy   noCopy
+	l          link
+	timeout    time.Duration
+	maxPeers   int
+	adoptKnown bool
+	stopped    bool
+	tx         []byte
+	noCopy     noCopy
 }
 
 // NewMaster returns a Master for cfg. It returns dmrgo.ErrNilArgument for a
@@ -73,10 +80,11 @@ func NewMaster(cfg *MasterConfig) (*Master, error) {
 	}
 	flags.Set(ipsc.FlagMasterPeer, true)
 	return &Master{
-		l:        newLink(cfg.ID, cfg.Mode, flags, cfg.Version, cfg.Auth, cfg.Key, n),
-		timeout:  orDefault(cfg.Timeout, TimeoutDefault),
-		maxPeers: n,
-		tx:       make([]byte, 0, MaxPacket),
+		l:          newLink(cfg.ID, cfg.Mode, flags, cfg.Version, cfg.Auth, cfg.Key, n),
+		timeout:    orDefault(cfg.Timeout, TimeoutDefault),
+		maxPeers:   n,
+		adoptKnown: cfg.AdoptKnown,
+		tx:         make([]byte, 0, MaxPacket),
 	}, nil
 }
 
@@ -137,8 +145,8 @@ func (m *Master) Sign(dst []byte) ([]byte, error) {
 }
 
 // SignFor appends the authentication trailer of the packet in dst for the
-// registered peer id to dst: with the key of the peer when it registered
-// through PacketWithKey or AdoptWithKey, and else as Sign does. It
+// registered peer id to dst: with the own key of the peer when it
+// registered with one, and else as Sign does. It
 // returns dst unchanged and dmrgo.ErrNilReceiver for a nil m. It allocates
 // only when dst has no room for auth.TrailerLen more octets.
 func (m *Master) SignFor(id uint32, dst []byte) ([]byte, error) {
@@ -247,45 +255,38 @@ func (m *Master) listToAll(dst []Output) []Output {
 	return dst
 }
 
-// Packet takes the packet p from the address from. A registration request
-// registers the peer and gets the registration reply, with OutputUp for a
-// new peer. A keepalive of a registered peer gets the keepalive reply;
-// with Auth, the keepalive of a peer that is not registered, whose
-// trailer proves the key, registers it, as a repeater keeps sending
-// keepalives for a while after its master restarts. A peer list request
-// sends the peer list to every peer, as DMRlink does. A de-registration
-// request from the address of the peer drops it with ReasonClosed and
-// sends the new list to the rest. The peer to peer registration and
-// keepalive of a registered peer get their replies. Any other packet of a
-// registered peer gives OutputData. Each packet of a registered peer
-// restarts its Timeout. A reply or status packet needs no answer. Any
-// other packet that the Master does not take gives OutputDropped, with
-// ReasonAuth, ReasonMalformed, ReasonUnregistered, ReasonFull or
-// ReasonAddress. A packet of a peer that registered with its own key
-// gives ReasonAuth here; pass it to PacketWithKey. It allocates only when
-// dst has no room for MaxOutputs outputs.
-func (m *Master) Packet(now time.Duration, from Addr, p []byte, dst []Output) []Output {
+// Packet takes the packet p from the address from. key is the own key of
+// the sending peer, which the caller looks up by the peer ID in octets 1
+// to 4 of p, and nil means the key of the config. A peer that registers
+// with its own key keeps it: the Master signs what it sends to the peer
+// with it, and the peer is in a system of its own, so its peer list holds
+// only itself and the lists of the other peers leave it out. This lets
+// one Master serve many repeaters with keys of their own.
+//
+// A registration request registers the peer and gets the registration
+// reply, with OutputUp for a new peer. A keepalive of a registered peer
+// gets the keepalive reply; with a key, the keepalive of a peer that is
+// not registered, whose trailer proves the key, registers it, as a
+// repeater keeps sending keepalives for a while after its master
+// restarts. With MasterConfig.AdoptKnown, any other packet of a peer that
+// is not registered, whose trailer proves the key, adopts the peer as
+// Adopt does, but a de-registration request. A peer list request sends
+// the peer list to every peer, as DMRlink does. A de-registration request
+// from the address of the peer drops it with ReasonClosed and sends the
+// new list to the rest. The peer to peer registration and keepalive of a
+// registered peer get their replies. Any other packet of a registered
+// peer gives OutputData. Each packet of a registered peer restarts its
+// Timeout. A reply or status packet needs no answer. Any other packet
+// that the Master does not take gives OutputDropped, with ReasonAuth,
+// ReasonMalformed, ReasonUnregistered, ReasonFull or ReasonAddress. A
+// packet of a peer that registered with its own key gives ReasonAuth for a
+// nil key. It allocates only when dst has no room for MaxOutputs outputs.
+func (m *Master) Packet(now time.Duration, from Addr, p []byte, key *[20]byte, dst []Output) []Output {
 	if m == nil {
 		return dst
 	}
 
-	return m.packet(now, from, p, nil, dst)
-}
-
-// PacketWithKey takes the packet p from the address from as Packet does,
-// but checks its trailer with key, the own key of the sending peer, which
-// the caller looks up by the peer ID in octets 1 to 4 of p. A peer that
-// registers this way keeps its key: the Master signs what it sends to the
-// peer with it, and the peer is in a system of its own, so its peer list
-// holds only itself and the lists of the other peers leave it out. This
-// lets one Master serve many repeaters with keys of their own. It
-// allocates only when dst has no room for MaxOutputs outputs.
-func (m *Master) PacketWithKey(now time.Duration, from Addr, key [20]byte, p []byte, dst []Output) []Output {
-	if m == nil {
-		return dst
-	}
-
-	return m.packet(now, from, p, &key, dst)
+	return m.packet(now, from, p, key, dst)
 }
 
 func (m *Master) packet(now time.Duration, from Addr, p []byte, key *[20]byte, dst []Output) []Output {
@@ -325,7 +326,12 @@ func (m *Master) packet(now time.Duration, from Addr, p []byte, key *[20]byte, d
 	default:
 	}
 	if i < 0 {
-		return dropped(dst, from, raw.ID, ReasonUnregistered)
+		if !m.adoptKnown || (key == nil && m.l.key == nil) || raw.Opcode == ipsc.OpDeregisterRequest {
+			return dropped(dst, from, raw.ID, ReasonUnregistered)
+		}
+		if dst, i = m.adopt(now, from, raw.ID, key, dst); i < 0 {
+			return dst
+		}
 	}
 	return m.registered(now, from, i, &raw, body, dst)
 }
@@ -365,48 +371,39 @@ func (m *Master) registered(now time.Duration, from Addr, i int, raw *ipsc.Raw, 
 	return dst
 }
 
-// Adopt registers the peer id at from with mode and flags without a
-// registration request and without a reply, for a peer that registered
-// with another Master, such as one of another replica of a server, and
-// now sends its packets here. It reports OutputUp for a new peer,
-// restarts the Timeout of a registered one, and gives OutputDropped with
-// ReasonFull when MaxPeers leaves no room. It allocates only when dst has
-// no room for MaxOutputs outputs.
-func (m *Master) Adopt(now time.Duration, from Addr, id uint32, mode ipsc.Mode, flags ipsc.Flags, dst []Output) []Output {
+// Adopt registers the peer id at from without a registration request and
+// without a reply, for a peer that registered with another Master, such as
+// one of another replica of a server, and now sends its packets here. key
+// is the own key of the peer, as Packet takes it, and nil means the key of
+// the config. A new peer has ModeDefault and zero Flags until its next
+// keepalive. It reports OutputUp for a new peer, restarts the Timeout of a
+// registered one, and gives OutputDropped with ReasonFull when MaxPeers
+// leaves no room. It allocates only when dst has no room for MaxOutputs
+// outputs.
+func (m *Master) Adopt(now time.Duration, from Addr, id uint32, key *[20]byte, dst []Output) []Output {
 	if m == nil {
 		return dst
 	}
 
-	return m.adopt(now, from, id, mode, flags, nil, dst)
-}
-
-// AdoptWithKey adopts the peer id as Adopt does, with key, its own key, as
-// PacketWithKey registers a peer. It allocates only when dst has no room
-// for MaxOutputs outputs.
-func (m *Master) AdoptWithKey(now time.Duration, from Addr, id uint32, mode ipsc.Mode, flags ipsc.Flags, key [20]byte, dst []Output) []Output {
-	if m == nil {
-		return dst
-	}
-
-	return m.adopt(now, from, id, mode, flags, &key, dst)
-}
-
-func (m *Master) adopt(now time.Duration, from Addr, id uint32, mode ipsc.Mode, flags ipsc.Flags, key *[20]byte, dst []Output) []Output {
 	if m.stopped || m.maxPeers == 0 {
 		return dst
 	}
-	i, isNew := m.l.find(id), false
-	if i < 0 {
-		if i = m.l.add(); i < 0 {
-			return dropped(dst, from, id, ReasonFull)
-		}
-		isNew = true
-	}
-	dst = m.keep(dst, now, i, PeerInfo{ID: id, Addr: from, Mode: mode, Flags: flags, Up: true}, key)
-	if isNew {
-		dst = append(dst, Output{Kind: OutputUp, ID: id, Addr: from})
-	}
+	dst, _ = m.adopt(now, from, id, key, dst)
 	return dst
+}
+
+func (m *Master) adopt(now time.Duration, from Addr, id uint32, key *[20]byte, dst []Output) ([]Output, int) {
+	i := m.l.find(id)
+	if i >= 0 {
+		info := m.l.peers[i].info
+		info.Addr, info.Up = from, true
+		return m.keep(dst, now, i, info, key), i
+	}
+	if i = m.l.add(); i < 0 {
+		return dropped(dst, from, id, ReasonFull), -1
+	}
+	dst = m.keep(dst, now, i, PeerInfo{ID: id, Addr: from, Mode: ModeDefault, Up: true}, key)
+	return append(dst, Output{Kind: OutputUp, ID: id, Addr: from}), i
 }
 
 func (m *Master) keep(dst []Output, now time.Duration, i int, info PeerInfo, key *[20]byte) []Output {
