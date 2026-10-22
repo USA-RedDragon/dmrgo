@@ -5033,7 +5033,7 @@ struct dmrgo_trunk_ms_config_t {
 	bool no_duplex;
 	/* Ambient accepts Ambient Listening Service calls to the MS. Without it the MS refuses them with MSNot_Supported. */
 	bool ambient;
-	/* Auth, when set, makes the MS authenticate the TSCC before a stun or revive, and lets it accept a kill, which is always authenticated. Without it the MS refuses a kill as not supported. (ETSI TS 102 361-4 clauses 6.4.9.2 and 6.4.10) */
+	/* Auth, when set, makes the MS authenticate the TSCC before a stun or revive, and lets it accept a kill, which is always authenticated. Without it the MS refuses a kill as not supported. The MS keeps Auth and does not copy what it points to, such as a *trunkauth.Key or a *trunkauth.Keys and its Entries. Do not change it while the MS uses it. (ETSI TS 102 361-4 clauses 6.4.9.2 and 6.4.10) */
 	dmrgo_trunk_authenticator_t *auth;
 	/* NoStun makes the MS refuse a stun or revive as not supported. */
 	bool no_stun;
@@ -5086,7 +5086,7 @@ struct dmrgo_trunk_tscc_config_t {
 	bool authenticate;
 	/* Seed seeds the random choice of the authentication challenges. */
 	uint64_t seed;
-	/* Auth, when set, answers the authentication challenge of an MS before a stun, revive or kill. (ETSI TS 102 361-4 clauses 6.4.9.2 and 6.4.10) */
+	/* Auth, when set, answers the authentication challenge of an MS before a stun, revive or kill. The TSCC keeps Auth and does not copy what it points to, such as a *trunkauth.Keys and its Entries. Do not change it while the TSCC uses it. (ETSI TS 102 361-4 clauses 6.4.9.2 and 6.4.10) */
 	dmrgo_trunk_authenticator_t *auth;
 	/* TransmitInterrupt accepts the transmit interrupt requests of MSs, status calls with StatusInterrupt and StatusTerminate. (ETSI TS 102 361-4 clause 6.4.14.3) */
 	bool transmit_interrupt;

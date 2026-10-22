@@ -107,8 +107,10 @@ type MSConfig struct {
 	Ambient bool
 	// Auth, when set, makes the MS authenticate the TSCC before a stun or
 	// revive, and lets it accept a kill, which is always authenticated.
-	// Without it the MS refuses a kill as not supported. (ETSI TS 102
-	// 361-4 clauses 6.4.9.2 and 6.4.10)
+	// Without it the MS refuses a kill as not supported. The MS keeps Auth
+	// and does not copy what it points to, such as a *trunkauth.Key or a
+	// *trunkauth.Keys and its Entries. Do not change it while the MS uses
+	// it. (ETSI TS 102 361-4 clauses 6.4.9.2 and 6.4.10)
 	Auth Authenticator
 	// NoStun makes the MS refuse a stun or revive as not supported.
 	NoStun bool
