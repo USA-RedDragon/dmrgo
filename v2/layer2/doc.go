@@ -62,21 +62,25 @@
 // PositionTracker places voice bursts in their superframe from what a
 // transport gives and what the burst carries, strongest first: the position
 // in the Hint, the voice SYNC of burst A, the sequence number of the Hint,
-// and the LCSS of the EMB, with LCSS First at burst B and LCSS Last at
-// burst E, so a lost burst A does not lose the superframe. After a placed
+// and the LCSS of the EMB, with LCSS First at burst B, LCSS Last at burst E
+// and LCSS Single at burst F, so a lost burst A does not lose the
+// superframe. After a placed
 // burst, a sequence number that follows the last one places the burst over
 // its LCSS, because a repeater sends a wrong EMB on a weak signal. Without
 // a sequence number, a burst takes the position after the previous burst
 // when its LCSS fits that position, and VoiceBurstUnknown otherwise; a burst
 // with an uncorrectable EMB takes the position after the previous burst. A
 // voice LC header or PI header puts the next burst at A, a terminator or an
-// EndStrong Hint ends the call, a SyncLost Hint forgets the position, and a new stream ID starts a new call. A standalone RC burst
-// changes nothing. voice.Receiver uses these rules. A bridge that forwards
-// each packet to a transport that needs the position, such as IPSC to
-// HomeBrew DMRD, calls PositionTracker.Place.
+// EndStrong Hint ends the call, a SyncLost Hint, or an EndWeak Hint on a
+// placed voice burst, forgets the position, and a new stream ID starts a
+// new call. A standalone RC burst changes nothing. voice.Receiver uses
+// these rules. A bridge that forwards each packet to a transport that needs
+// the position, such as IPSC to HomeBrew DMRD, calls PositionTracker.Place.
 //
 // VoiceReceiver places decoded bursts by the same rules, ends the call on
-// any data burst, and reassembles the embedded LC of bursts B to E.
+// any data burst, and reassembles the embedded LC of bursts B to E. A voice
+// burst without an EMB, such as one with a reserved SYNC, discards the
+// partial LC.
 //
 // # CACH and Short LC
 //
