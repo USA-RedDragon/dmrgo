@@ -195,14 +195,18 @@ func (i *Interrupter) try(at time.Duration) {
 	i.tries++
 }
 
-// Cancel ends the interrupt request without an output.
+// Cancel ends the interrupt request, and appends OutputInterruptCanceled
+// at now to dst while one runs. It does not run the timers. It allocates
+// only when dst has no room for MaxOutputs outputs.
 // (ETSI TS 102 361-2 clause 6.3.5)
-func (i *Interrupter) Cancel() {
-	if i == nil {
-		return
+func (i *Interrupter) Cancel(now time.Duration, dst []Output) []Output {
+	if i == nil || i.state == InterrupterIdle {
+		return dst
 	}
 
 	i.state = InterrupterIdle
+	dst, _ = appendOutput(dst, OutputInterruptCanceled, now)
+	return dst
 }
 
 // Burst decodes the burst raw of the call with what the Hint h says about

@@ -5524,6 +5524,7 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_TSCC_INBOUND_MAX_ITEMS (DMRGO_TRUNK_MAX_TSCC_OUTPUTS)
 #define DMRGO_TRUNK_TSCC_TICK_MAX_ITEMS (DMRGO_TRUNK_MAX_TSCC_OUTPUTS)
 #define DMRGO_VOICE_INTERRUPTER_BURST_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
+#define DMRGO_VOICE_INTERRUPTER_CANCEL_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 #define DMRGO_VOICE_INTERRUPTER_DECODED_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 #define DMRGO_VOICE_INTERRUPTER_TICK_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
 #define DMRGO_VOICE_TRANSMITTER_BURST_MAX_ITEMS (DMRGO_VOICE_MAX_OUTPUTS)
@@ -7640,6 +7641,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_VOICE_OUTPUT_BURST ((dmrgo_voice_output_kind_t)1)
 /* Go: voice.OutputEnded. OutputEnded is the end of the transmission. */
 #define DMRGO_VOICE_OUTPUT_ENDED ((dmrgo_voice_output_kind_t)2)
+/* Go: voice.OutputInterruptCanceled. OutputInterruptCanceled is an interrupt request of an Interrupter that Cancel ended. */
+#define DMRGO_VOICE_OUTPUT_INTERRUPT_CANCELED ((dmrgo_voice_output_kind_t)5)
 /* Go: voice.OutputInterruptFailed. OutputInterruptFailed is an interrupt request of an Interrupter without a Terminator with LC after the last try (ETSI TS 102 361-2 clause 6.3.5). */
 #define DMRGO_VOICE_OUTPUT_INTERRUPT_FAILED ((dmrgo_voice_output_kind_t)4)
 /* Go: voice.OutputInterrupted. OutputInterrupted is the Terminator with LC that ends the call of another radio after the RC command of an Interrupter (ETSI TS 102 361-2 clause 6.3.5). */
@@ -10841,8 +10844,10 @@ int dmrgo_voice_interrupter_free(dmrgo_voice_interrupter_t *self);
 int dmrgo_voice_interrupter_burst_need(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, size_t *items, size_t *arena);
 /* Go: voice.Interrupter.Burst. Burst decodes the burst raw of the call with what the Hint h says about it, runs it through the Interrupter as Decoded does, and appends the outputs to dst. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_interrupter_burst_need gives (DMRGO_VOICE_INTERRUPTER_BURST_MAX_ITEMS items). raw may be NULL. */
 int dmrgo_voice_interrupter_burst(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, const dmrgo_layer2_raw_burst_t *raw, const dmrgo_layer2_hint_t *h, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: voice.Interrupter.Cancel. Cancel ends the interrupt request without an output. */
-int dmrgo_voice_interrupter_cancel(dmrgo_voice_interrupter_t *self);
+/* dmrgo_voice_interrupter_cancel_need sets *items and *arena to the room that dmrgo_voice_interrupter_cancel needs for these arguments, without a change to the handle. */
+int dmrgo_voice_interrupter_cancel_need(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
+/* Go: voice.Interrupter.Cancel. Cancel ends the interrupt request, and appends OutputInterruptCanceled at now to dst while one runs. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_voice_interrupter_cancel_need gives (DMRGO_VOICE_INTERRUPTER_CANCEL_MAX_ITEMS items). */
+int dmrgo_voice_interrupter_cancel(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: voice.Interrupter.Deadline. Deadline returns the time at which the Interrupter needs a Tick. */
 int dmrgo_voice_interrupter_deadline(dmrgo_voice_interrupter_t *self, dmrgo_duration_t *at, bool *ok);
 /* dmrgo_voice_interrupter_decoded_need sets *items and *arena to the room that dmrgo_voice_interrupter_decoded needs for these arguments, without a change to the handle. */

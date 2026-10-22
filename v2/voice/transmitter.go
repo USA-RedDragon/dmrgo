@@ -145,6 +145,9 @@ const (
 	// without a Terminator with LC after the last try (ETSI TS 102 361-2
 	// clause 6.3.5).
 	OutputInterruptFailed
+	// OutputInterruptCanceled is an interrupt request of an Interrupter
+	// that Cancel ended.
+	OutputInterruptCanceled
 )
 
 // String returns the name of the kind. It allocates only for a value without
@@ -159,6 +162,8 @@ func (k OutputKind) String() string {
 		return "Interrupted"
 	case OutputInterruptFailed:
 		return "InterruptFailed"
+	case OutputInterruptCanceled:
+		return "InterruptCanceled"
 	}
 	return fmt.Sprintf("OutputKind(%d)", uint8(k))
 }

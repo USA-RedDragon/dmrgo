@@ -209,9 +209,11 @@ func TestInterrupter_States(t *testing.T) {
 	if at, ok := in.Deadline(); !ok || at != 600*time.Millisecond {
 		t.Fatalf("deadline %v", at)
 	}
-	in.Cancel()
-	if in.State() != voice.InterrupterIdle {
-		t.Fatal("Cancel")
+	if out := in.Cancel(700*time.Millisecond, nil); len(out) != 1 || out[0].Kind != voice.OutputInterruptCanceled || out[0].Due != 700*time.Millisecond || in.State() != voice.InterrupterIdle {
+		t.Fatalf("Cancel: %+v, state %v", out, in.State())
+	}
+	if out := in.Cancel(800*time.Millisecond, nil); len(out) != 0 {
+		t.Fatalf("Cancel when idle: %+v", out)
 	}
 	wait := newInterrupter(t, &voice.InterrupterConfig{Wait: -1})
 	_ = wait.Interrupt(0, enums.RCCeaseTransmissionCommand)
@@ -229,7 +231,7 @@ func TestInterrupter_States(t *testing.T) {
 			t.Errorf("%d: %q", s, s.String())
 		}
 	}
-	for k, want := range map[voice.OutputKind]string{voice.OutputInterrupted: "Interrupted", voice.OutputInterruptFailed: "InterruptFailed"} {
+	for k, want := range map[voice.OutputKind]string{voice.OutputInterrupted: "Interrupted", voice.OutputInterruptFailed: "InterruptFailed", voice.OutputInterruptCanceled: "InterruptCanceled"} {
 		if k.String() != want {
 			t.Errorf("%d: %q", k, k.String())
 		}
