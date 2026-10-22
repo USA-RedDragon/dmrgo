@@ -217,7 +217,7 @@ codec, err := dvsi.New(conn, nil)
 
 ## TinyGo
 
-The library builds with TinyGo 0.41 for microcontrollers (for example RP2040, RP2350, ESP32-C3) and for WebAssembly. TinyGo 0.41 needs Go 1.24 to 1.26 installed.
+The library builds with TinyGo 0.41 and 0.43 for microcontrollers (for example RP2040, RP2350, ESP32-C3) and for WebAssembly. CI uses TinyGo 0.43, which needs Go 1.25 to 1.27 installed. TinyGo 0.41 needs Go 1.24 to 1.26.
 
 ```sh
 cd v2
