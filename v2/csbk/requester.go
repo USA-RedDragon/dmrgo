@@ -113,8 +113,9 @@ func (s RequesterState) String() string {
 
 // Requester sends CSBK requests on one logical channel and waits for their
 // answers, one request at a time, as the package doc describes. Make it
-// with NewRequester. A Requester is not safe for concurrent use and must
-// not be copied; go vet reports a copy.
+// with NewRequester; a zero Requester does nothing, and its request
+// methods return dmrgo.ErrZeroValue. A Requester is not safe for
+// concurrent use and must not be copied; go vet reports a copy.
 type Requester struct {
 	ackWait time.Duration
 	retries int
@@ -194,11 +195,15 @@ func (q *Requester) State() RequesterState {
 // UU_Ans_Rsp. The request is time critical whatever opts says, and its
 // access must be polite. The OutputDone has ResultAnswered when the call may
 // proceed, with impolite access. It returns ErrBusy while a request runs,
+// dmrgo.ErrZeroValue on a zero Requester,
 // and a *dmrgo.ConfigError for an address above 24 bits, impolite access or
 // a Pre_CSBK count out of range. (ETSI TS 102 361-2 clause 5.2.2.3)
 func (q *Requester) RequestOACSU(now time.Duration, target, source uint32, so layer3.ServiceOptions, opts *RequestOptions) error {
 	if q == nil {
 		return dmrgo.ErrNilReceiver
+	}
+	if q.d.b == nil {
+		return dmrgo.ErrZeroValue
 	}
 	var o RequestOptions
 	if opts != nil {
@@ -230,6 +235,9 @@ func (q *Requester) RequestRadioCheck(now time.Duration, target, source uint32, 
 	if q == nil {
 		return dmrgo.ErrNilReceiver
 	}
+	if q.d.b == nil {
+		return dmrgo.ErrZeroValue
+	}
 	var o RequestOptions
 	if opts != nil {
 		o = *opts
@@ -257,6 +265,9 @@ func (q *Requester) RequestCallAlert(now time.Duration, target, source uint32, o
 	if q == nil {
 		return dmrgo.ErrNilReceiver
 	}
+	if q.d.b == nil {
+		return dmrgo.ErrZeroValue
+	}
 	var o RequestOptions
 	if opts != nil {
 		o = *opts
@@ -280,12 +291,16 @@ func (q *Requester) RequestCallAlert(now time.Duration, target, source uint32, o
 // the Last Block bit of c and writes its CRC. The target and source come
 // from c: from CSBKBytes.Addresses for the standard FID, from the payload
 // for the Motorola CSBKs, and from octets 4 to 6 and 7 to 9 for any other
-// FID. It returns ErrBusy while a request runs, ErrNoAddresses for a
+// FID. It returns ErrBusy while a request runs, dmrgo.ErrZeroValue on a
+// zero Requester, ErrNoAddresses for a
 // standard CSBK without both addresses, and a *dmrgo.ConfigError for a Match
 // without opcodes or a Pre_CSBK count out of range.
 func (q *Requester) Request(now time.Duration, c pdu.CSBKBytes, m Match, opts *RequestOptions) error {
 	if q == nil {
 		return dmrgo.ErrNilReceiver
+	}
+	if q.d.b == nil {
+		return dmrgo.ErrZeroValue
 	}
 	var o RequestOptions
 	if opts != nil {

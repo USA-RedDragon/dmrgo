@@ -3,6 +3,7 @@ package csbk
 import (
 	"time"
 
+	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/constants"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/pcg"
@@ -136,7 +137,8 @@ func (t *timer) due(now time.Duration) bool {
 // polite to all, in the provisioned slot with the All Site color code.
 // OutputTiming tells the caller to take the channel slot timing from the
 // CT_CSBK that it passed. Make it with NewTiming and call Join when the
-// radio arrives on the channel. A Timing is not safe for concurrent use and
+// radio arrives on the channel; a zero Timing does nothing, and its Join
+// returns dmrgo.ErrZeroValue. A Timing is not safe for concurrent use and
 // must not be copied; go vet reports a copy. (ETSI TS 102 361-2 clause 6.2)
 type Timing struct {
 	src    layer2.SyncSource
@@ -197,25 +199,24 @@ func NewTiming(cfg *TimingConfig) (*Timing, error) {
 	return m, nil
 }
 
-// Join starts the Timing for a radio that arrives on the channel: at power
-// up and on a change of frequency, but not on a change to the other slot of
-// the same frequency. The radio knows no leader and no timing, and waits
-// NoLeader for the CT_CSBKs of other radios before it asks for them. While
-// it knows no leader, it waits NoLeader again after each CT_CSBK_Req
-// that it sends and then asks again. The standard sets NoLeaderTimer only
-// on arrival (Figure 6.2) and when SyncAge runs out (clause 6.2.3.4) and
-// says nothing of a repeat; the repeat is the choice of this package, so
-// that a radio that asked once, alone on the channel, does not stay in
-// TimingLeaderAndTimingUnknown. (ETSI TS 102 361-2 clauses 6.2.3.1 to
-// 6.2.3.4)
-func (m *Timing) Join(now time.Duration) {
+// Join starts the Timing for a radio that arrives on the channel, which
+// knows no leader and no timing and waits NoLeader for the CT_CSBKs of
+// other radios before it asks for them. While it knows no leader, it asks
+// again NoLeader after each CT_CSBK_Req that it sends. It returns
+// dmrgo.ErrZeroValue on a zero Timing. (ETSI TS 102 361-2 clauses 6.2.3.1
+// to 6.2.3.4)
+func (m *Timing) Join(now time.Duration) error {
 	if m == nil {
-		return
+		return dmrgo.ErrNilReceiver
+	}
+	if m.d.b == nil {
+		return dmrgo.ErrZeroValue
 	}
 
 	m.Reset()
 	m.joined = true
 	m.noLeader.set(now + constants.NoLeader)
+	return nil
 }
 
 // Reset stops the Timing until the next Join and forgets the channel

@@ -7773,11 +7773,11 @@ int dmrgo_csbk_requester_decoded(dmrgo_csbk_requester_t *self, dmrgo_duration_t 
 int dmrgo_csbk_requester_lost_need(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: csbk.Requester.Lost. Lost tells the Requester that the transport lost the signal: the channel counts as idle. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_requester_lost_need gives (DMRGO_CSBK_REQUESTER_LOST_MAX_ITEMS items). */
 int dmrgo_csbk_requester_lost(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: csbk.Requester.Request. Request starts a request with the CSBK c, which m answers. It returns DMRGO_ERR_CSBK_BUSY while a request runs, DMRGO_ERR_CSBK_NO_ADDRESSES for a standard CSBK without both addresses, and a DMRGO_ERR_CONFIG for a Match without opcodes or a Pre_CSBK count out of range. opts may be NULL. */
+/* Go: csbk.Requester.Request. Request starts a request with the CSBK c, which m answers. It returns DMRGO_ERR_CSBK_BUSY while a request runs, DMRGO_ERR_ZERO_VALUE on a zero Requester, DMRGO_ERR_CSBK_NO_ADDRESSES for a standard CSBK without both addresses, and a DMRGO_ERR_CONFIG for a Match without opcodes or a Pre_CSBK count out of range. opts may be NULL. */
 int dmrgo_csbk_requester_request(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, const dmrgo_pdu_csbk_bytes_t *c, const dmrgo_csbk_match_t *m, const dmrgo_csbk_request_options_t *opts);
 /* Go: csbk.Requester.RequestCallAlert. RequestCallAlert starts a Motorola call alert of target by source (FID 0x10, opcode 0x1F), which makes target alert its user. opts may be NULL. */
 int dmrgo_csbk_requester_request_call_alert(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, uint32_t target, uint32_t source, const dmrgo_csbk_request_options_t *opts);
-/* Go: csbk.Requester.RequestOACSU. RequestOACSU starts the presence check of an OACSU individual call from source to target: UU_V_Req with the service options so, answered by UU_Ans_Rsp. It returns DMRGO_ERR_CSBK_BUSY while a request runs, and a DMRGO_ERR_CONFIG for an address above 24 bits, impolite access or a Pre_CSBK count out of range. opts may be NULL. */
+/* Go: csbk.Requester.RequestOACSU. RequestOACSU starts the presence check of an OACSU individual call from source to target: UU_V_Req with the service options so, answered by UU_Ans_Rsp. It returns DMRGO_ERR_CSBK_BUSY while a request runs, DMRGO_ERR_ZERO_VALUE on a zero Requester, and a DMRGO_ERR_CONFIG for an address above 24 bits, impolite access or a Pre_CSBK count out of range. opts may be NULL. */
 int dmrgo_csbk_requester_request_oacsu(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, uint32_t target, uint32_t source, const dmrgo_layer3_service_options_t *so, const dmrgo_csbk_request_options_t *opts);
 /* Go: csbk.Requester.RequestRadioCheck. RequestRadioCheck starts a Motorola radio check of target by source (FID 0x10, opcode 0x24). opts may be NULL. */
 int dmrgo_csbk_requester_request_radio_check(dmrgo_csbk_requester_t *self, dmrgo_duration_t now, uint32_t target, uint32_t source, const dmrgo_csbk_request_options_t *opts);
@@ -7835,7 +7835,7 @@ int dmrgo_csbk_timing_deadline(dmrgo_csbk_timing_t *self, dmrgo_duration_t *at, 
 int dmrgo_csbk_timing_decoded_need(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, size_t *items, size_t *arena);
 /* Go: csbk.Timing.Decoded. Decoded takes the decoded burst b, which may be nil, from either slot, and evaluates a CT_CSBK in it: it appends OutputTiming to dst when the radio takes the slot timing of b, and starts, keeps or cancels the CT_CSBK that the radio sends. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_timing_decoded_need gives (DMRGO_CSBK_TIMING_DECODED_MAX_ITEMS items). b may be NULL. */
 int dmrgo_csbk_timing_decoded(dmrgo_csbk_timing_t *self, dmrgo_duration_t now, dmrgo_layer2_burst_t *b, const dmrgo_layer2_hint_t *hint, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: csbk.Timing.Join. Join starts the Timing for a radio that arrives on the channel: at power up and on a change of frequency, but not on a change to the other slot of the same frequency. */
+/* Go: csbk.Timing.Join. Join starts the Timing for a radio that arrives on the channel, which knows no leader and no timing and waits NoLeader for the CT_CSBKs of other radios before it asks for them. It returns DMRGO_ERR_ZERO_VALUE on a zero Timing. */
 int dmrgo_csbk_timing_join(dmrgo_csbk_timing_t *self, dmrgo_duration_t now);
 /* Go: csbk.Timing.Leader. Leader returns the dynamic identifier and the identifier of the wide area timing leader. */
 int dmrgo_csbk_timing_leader(dmrgo_csbk_timing_t *self, uint8_t *dynamic_id, uint32_t *id, bool *ok);
@@ -7885,7 +7885,7 @@ int dmrgo_csbk_wakeup_state(dmrgo_csbk_wakeup_t *self, dmrgo_csbk_wakeup_state_t
 int dmrgo_csbk_wakeup_tick_need(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, size_t *items, size_t *arena);
 /* Go: csbk.Wakeup.Tick. Tick runs the timers that are due at now and appends their outputs to dst: a BS_Dwn_Act burst, or an OutputDone with ResultNoAnswer after the last T_SyncWu. It returns DMRGO_ERR_SHORT and changes nothing when the room is less than dmrgo_csbk_wakeup_tick_need gives (DMRGO_CSBK_WAKEUP_TICK_MAX_ITEMS items). */
 int dmrgo_csbk_wakeup_tick(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, dmrgo_csbk_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
-/* Go: csbk.Wakeup.Wake. Wake starts the wakeup of the BS with address bs by the radio source. It returns DMRGO_ERR_CSBK_BUSY while a wakeup runs, and a DMRGO_ERR_CONFIG for an address above 24 bits. */
+/* Go: csbk.Wakeup.Wake. Wake starts the wakeup of the BS with address bs by the radio source. It returns DMRGO_ERR_CSBK_BUSY while a wakeup runs, DMRGO_ERR_ZERO_VALUE on a zero Wakeup, and a DMRGO_ERR_CONFIG for an address above 24 bits. */
 int dmrgo_csbk_wakeup_wake(dmrgo_csbk_wakeup_t *self, dmrgo_duration_t now, uint32_t bs, uint32_t source);
 /* Go: csbk.WakeupState.String. String returns the name of the state. */
 int dmrgo_csbk_wakeup_state_string(dmrgo_csbk_wakeup_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

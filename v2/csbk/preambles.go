@@ -46,7 +46,8 @@ func (s PreamblesState) String() string {
 // or data header that follows, joined with the addresses of the Pre_CSBKs,
 // or that nothing followed by the end of the announced blocks. A repeater
 // may send more Pre_CSBKs than the radio did, each with CSBK Blocks to
-// Follow 1; each one moves the end. Make it with NewPreambles. A Preambles
+// Follow 1; each one moves the end. Make it with NewPreambles; a zero
+// Preambles does nothing. A Preambles
 // is not safe for concurrent use and must not be copied; go vet reports a
 // copy. (ETSI TS 102 361-2 clauses 7.1.2.5 and 7.2.7)
 type Preambles struct {
@@ -107,7 +108,7 @@ func (p *Preambles) Burst(now time.Duration, raw *layer2.RawBurst, h layer2.Hint
 // replaces. A CSBK whose CRC fails is dropped. It allocates only when dst
 // has no room for MaxOutputs outputs.
 func (p *Preambles) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, dst []Output) []Output {
-	if p == nil {
+	if p == nil || p.d.b == nil {
 		return dst
 	}
 	dst = p.Tick(now, dst)

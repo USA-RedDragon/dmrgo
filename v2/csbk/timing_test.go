@@ -81,7 +81,9 @@ func newTiming(t *testing.T, id uint32, di uint8, seed uint64) *tdriver {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m.Join(0)
+	if err := m.Join(0); err != nil {
+		t.Fatal(err)
+	}
 	return &tdriver{t: t, m: m, out: make([]csbk.Output, 0, csbk.MaxOutputs)}
 }
 
@@ -664,7 +666,9 @@ func TestTimingConfig(t *testing.T) {
 	if out := m.Burst(0, ctBurst(t, beaconOf(3, 7)), layer2.Hint{}, nil); len(out) != 0 || m.State() != csbk.TimingLeaderAndTimingUnknown {
 		t.Fatal("Burst before Join")
 	}
-	m.Join(0)
+	if err := m.Join(0); err != nil {
+		t.Fatal(err)
+	}
 	if out := m.Decoded(0, nil, layer2.Hint{}, nil); len(out) != 0 {
 		t.Fatal("nil burst")
 	}
