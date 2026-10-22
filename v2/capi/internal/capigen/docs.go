@@ -7,11 +7,12 @@ import (
 )
 
 var (
-	goRef   = regexp.MustCompile(`(?:\b[Aa]n )?\b[a-z][a-z0-9]*(?:\.[A-Z]\w*)+`)
-	typeSel = regexp.MustCompile(`(^|[^\w.])((?:[a-z][a-z0-9]*\.)?)([A-Z]\w*)((?:\.[A-Z]\w*)+)`)
-	goHead  = regexp.MustCompile(`^Go: [\w.]+\.(?:\s|$)`)
-	nilAt   = regexp.MustCompile(`(^|\. )Nil `)
-	goSel   = regexp.MustCompile(`\b([a-z][a-z0-9]*)((?:\.[A-Z]\w*)+)(\(\))?`)
+	goRef     = regexp.MustCompile(`(?:\b[Aa]n )?\b[a-z][a-z0-9]*(?:\.[A-Z]\w*)+`)
+	typeSel   = regexp.MustCompile(`(^|[^\w.])((?:[a-z][a-z0-9]*\.)?)([A-Z]\w*)((?:\.[A-Z]\w*)+)`)
+	goHead    = regexp.MustCompile(`^Go: [\w.]+\.(?:\s|$)`)
+	nilAt     = regexp.MustCompile(`(^|\. )Nil `)
+	goSel     = regexp.MustCompile(`\b([a-z][a-z0-9]*)((?:\.[A-Z]\w*)+)(\(\))?`)
+	goroutine = regexp.MustCompile(`\bgoroutine\b`)
 )
 
 func stdRef(name string) (string, bool) {
@@ -58,7 +59,7 @@ func cDocs(h string, refs map[string]string) string {
 		if j < 0 {
 			break
 		}
-		body := h[i+3 : i+j]
+		body := goroutine.ReplaceAllString(h[i+3:i+j], "thread")
 		head := goHead.FindString(body)
 		b.WriteString(h[:i+3] + head)
 		b.WriteString(goRef.ReplaceAllStringFunc(body[len(head):], func(w string) string {

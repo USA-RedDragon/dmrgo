@@ -1009,7 +1009,7 @@ struct dmrgo_bs_config_t {
 	dmrgo_duration_t chan_auth_response;
 	/* ChanAuthSelect is T_BS_ChanAuthSel of ChannelAuthMultiSite. 0 means DMRGO_CONSTANTS_TBS_CHAN_AUTH_SEL (240 ms). (ETSI TS 102 361-2 clause A.1) */
 	dmrgo_duration_t chan_auth_select;
-	/* Scratch, when set, is the Burst that the Repeater decodes into. It can be shared with other machines on the same goroutine, because the Repeater is done with it when its method returns. NULL means the Repeater makes its own. */
+	/* Scratch, when set, is the Burst that the Repeater decodes into. It can be shared with other machines on the same thread, because the Repeater is done with it when its method returns. NULL means the Repeater makes its own. */
 	dmrgo_layer2_burst_t *scratch;
 };
 
@@ -1153,7 +1153,7 @@ struct dmrgo_csbk_requester_config_t {
 	dmrgo_duration_t holdoff_max;
 	/* Seed seeds the generator of the random holdoff, so that the same inputs give the same outputs. Requesters on one channel need different seeds. */
 	uint64_t seed;
-	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one, because a machine is done with it when its method returns. Make it with dmrgo_layer2_new_burst. NULL means the Requester makes its own. */
+	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one thread can share one, because a machine is done with it when its method returns. Make it with dmrgo_layer2_new_burst. NULL means the Requester makes its own. */
 	dmrgo_layer2_burst_t *scratch;
 	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. */
 	dmrgo_duration_t lead;
@@ -1396,7 +1396,7 @@ struct dmrgo_data_receiver_config_t {
 	dmrgo_duration_t hang;
 	/* AcceptBadCRC delivers packets whose CRC failed, with dmrgo_data_message_t.bad_crc set, as dmrgo_packet_assembler_set_accept_bad_crc describes. A confirmed packet still gets a NACK, so that a good copy can follow. */
 	bool accept_bad_crc;
-	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one, because a Receiver is done with it when its method returns. Make it with dmrgo_layer2_new_burst. NULL means the Receiver makes its own. */
+	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one thread can share one, because a Receiver is done with it when its method returns. Make it with dmrgo_layer2_new_burst. NULL means the Receiver makes its own. */
 	dmrgo_layer2_burst_t *scratch;
 };
 
@@ -5310,7 +5310,7 @@ struct dmrgo_voice_interrupter_config_t {
 	int64_t retries;
 	/* Repeats is the number of standalone RC bursts of each try, 60 ms apart. 0 means 1; at most MaxRepeats. (ETSI TS 102 361-2 clause 6.3.5) */
 	int64_t repeats;
-	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one. NULL means the Interrupter makes its own. (ETSI TS 102 361-2 clause 6.3.5) */
+	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one thread can share one. NULL means the Interrupter makes its own. (ETSI TS 102 361-2 clause 6.3.5) */
 	dmrgo_layer2_burst_t *scratch;
 	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. SlotUnknown leaves it unknown. */
 	dmrgo_enums_slot_t slot;
@@ -5328,7 +5328,7 @@ struct dmrgo_voice_receiver_config_t {
 	dmrgo_duration_t lost;
 	/* Hang is the call hang time, in which a call to the same target continues the session. 0 means DMRGO_CONSTANTS_T_CALL_HANG (3 s), and a negative value turns session tracking off. A broadcast call and a call to DMRGO_CONSTANTS_ALL_MSID have no hang time (ETSI TS 102 361-2 clause 5.3.2.3.2). */
 	dmrgo_duration_t hang;
-	/* Scratch, when set, is the Burst that Burst decodes into. Receivers that run on one goroutine can share one, because a Receiver is done with it when its method returns. Make it with dmrgo_layer2_new_burst, so that no decode allocates. NULL means the Receiver makes its own. */
+	/* Scratch, when set, is the Burst that Burst decodes into. Receivers that run on one thread can share one, because a Receiver is done with it when its method returns. Make it with dmrgo_layer2_new_burst, so that no decode allocates. NULL means the Receiver makes its own. */
 	dmrgo_layer2_burst_t *scratch;
 };
 
@@ -5363,7 +5363,7 @@ struct dmrgo_voice_transmitter_config_t {
 	dmrgo_duration_t holdoff_max;
 	/* Seed seeds the generator of the random holdoff, so that the same inputs give the same outputs. (ETSI TS 102 361-2 clause 5.1.1.6.2) */
 	uint64_t seed;
-	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one. NULL means the Transmitter makes its own when ChanAuth is set. (ETSI TS 102 361-2 clause 5.1.1.6.2) */
+	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one thread can share one. NULL means the Transmitter makes its own when ChanAuth is set. (ETSI TS 102 361-2 clause 5.1.1.6.2) */
 	dmrgo_layer2_burst_t *scratch;
 	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. SlotUnknown leaves it unknown. */
 	dmrgo_enums_slot_t slot;
