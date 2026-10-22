@@ -1,6 +1,8 @@
 package sms
 
 import (
+	"errors"
+
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/text"
@@ -99,7 +101,9 @@ type Text struct {
 // can have that layout too. It returns ErrNotText for a packet in none of
 // these formats and for defined data with DD format binary, the errors
 // of the ip, tms and shortdata packages for a message that does not
-// decode, and dmrgo.ErrNilArgument for a nil h. It allocates only to grow dst.
+// decode, the Text with ip.ErrChecksum for a text whose IPv4 or UDP
+// checksum does not match, as the block CRCs of the packet already
+// checked its octets, and dmrgo.ErrNilArgument for a nil h. It allocates only to grow dst.
 func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 	if h == nil {
 		return dst, Text{}, dmrgo.ErrNilArgument
@@ -169,9 +173,9 @@ func hyteraLayout(data []byte) bool {
 
 func decodeIP(dst []byte, sap enums.SAP, data []byte, t Text) ([]byte, Text, error) {
 	n := len(dst)
-	d, err := ip.Decode(sap, data)
-	if err != nil {
-		return dst, Text{}, err
+	d, sumErr := ip.Decode(sap, data)
+	if sumErr != nil && !errors.Is(sumErr, ip.ErrChecksum) {
+		return dst, Text{}, sumErr
 	}
 	t.Network = d.Source[0]
 	if t.Group {
@@ -216,7 +220,7 @@ func decodeIP(dst []byte, sap enums.SAP, data []byte, t Text) ([]byte, Text, err
 		return dst, Text{}, ErrNotText
 	}
 	t.Body = dst[n:]
-	return dst, t, nil
+	return dst, t, sumErr
 }
 
 // Header holds the data header that AppendPacket builds.
