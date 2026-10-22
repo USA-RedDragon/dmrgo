@@ -181,8 +181,7 @@ func tinyVoiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 			}
 		}},
 		{"layer2.EncodeEmbeddedLC", func() { frags = layer2.EncodeEmbeddedLC(lc9) }},
-		{"layer2.DecodeEmbeddedLC", func() { _, _ = layer2.DecodeEmbeddedLC(frags, false) }},
-		{"layer2.DecodeEmbeddedLC strict", func() { _, _ = layer2.DecodeEmbeddedLC(frags, true) }},
+		{"layer2.DecodeEmbeddedLC", func() { _, _ = layer2.DecodeEmbeddedLC(frags) }},
 		{"layer2.EmbeddedLCAssembler.Add", func() {
 			for i := range frags {
 				_, _, _, err = asm.Add(frags[i], lcss[i])

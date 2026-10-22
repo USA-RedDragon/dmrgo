@@ -416,15 +416,12 @@ func TestEmbeddedLCBytes_Capture(t *testing.T) {
 	if got := layer2.EncodeEmbeddedLC(lc); got != want {
 		t.Fatalf("fragments %x, want %x", got, want)
 	}
-	if got, res := layer2.DecodeEmbeddedLC(want, false); got != lc || res.HasErrors() {
+	if got, res := layer2.DecodeEmbeddedLC(want); got != lc || res.HasErrors() {
 		t.Errorf("decode: %x %+v", got, res)
-	}
-	if got, res := layer2.DecodeEmbeddedLC(want, true); got != lc || res.HasErrors() {
-		t.Errorf("strict decode: %x %+v", got, res)
 	}
 	bad := want
 	bad[2][1] ^= 0x01
-	if got, res := layer2.DecodeEmbeddedLC(bad, false); got != lc || !res.HasErrors() {
+	if got, res := layer2.DecodeEmbeddedLC(bad); got != lc || !res.HasErrors() {
 		t.Errorf("one bit error: %x %+v", got, res)
 	}
 }

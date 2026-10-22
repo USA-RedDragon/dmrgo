@@ -4485,7 +4485,6 @@ func in_voice_ReceiverConfig(s *C.dmrgo_voice_receiver_config_t, st *st_voice_Re
 	}
 	d.Lost = time.Duration(s.lost)
 	d.Hang = time.Duration(s.hang)
-	d.Strict = bool(s.strict)
 	d.Scratch = nil
 	if s.scratch != nil {
 		d.Scratch = get_layer2_Burst(s.scratch).v
@@ -7402,7 +7401,6 @@ func out_voice_ReceiverConfig(d *C.dmrgo_voice_receiver_config_t, s *g_voice.Rec
 	}
 	d.lost = C.dmrgo_duration_t(s.Lost)
 	d.hang = C.dmrgo_duration_t(s.Hang)
-	d.strict = C.bool(s.Strict)
 	if s.Scratch != nil {
 		panic(argPanic{})
 	}
@@ -16716,13 +16714,13 @@ func dmrgo_layer2_decode_cach_field(c_on_air *C.uint8_t, c_out *C.dmrgo_layer2_c
 }
 
 //export dmrgo_layer2_decode_embedded_full_link_control
-func dmrgo_layer2_decode_embedded_full_link_control(c_f *C.uint8_t, c_strict C.bool, c_out *C.dmrgo_pdu_full_link_control_t) (rc C.int) {
+func dmrgo_layer2_decode_embedded_full_link_control(c_f *C.uint8_t, c_out *C.dmrgo_pdu_full_link_control_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_f == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0 := g_layer2.DecodeEmbeddedFullLinkControl(*(*[4][4]byte)(unsafe.Pointer(c_f)), bool(c_strict))
+	r0 := g_layer2.DecodeEmbeddedFullLinkControl(*(*[4][4]byte)(unsafe.Pointer(c_f)))
 	_ = r0
 	if c_out != nil {
 		out_layer2_pdu_FullLinkControl(&(*c_out), &r0, oc)
@@ -16734,13 +16732,13 @@ func dmrgo_layer2_decode_embedded_full_link_control(c_f *C.uint8_t, c_strict C.b
 }
 
 //export dmrgo_layer2_decode_embedded_lc
-func dmrgo_layer2_decode_embedded_lc(c_f *C.uint8_t, c_strict C.bool, c_data *C.uint8_t, c_fec *C.dmrgo_fec_result_t) (rc C.int) {
+func dmrgo_layer2_decode_embedded_lc(c_f *C.uint8_t, c_data *C.uint8_t, c_fec *C.dmrgo_fec_result_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if c_f == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1 := g_layer2.DecodeEmbeddedLC(*(*[4][4]byte)(unsafe.Pointer(c_f)), bool(c_strict))
+	r0, r1 := g_layer2.DecodeEmbeddedLC(*(*[4][4]byte)(unsafe.Pointer(c_f)))
 	_ = r0
 	_ = r1
 	if c_data != nil {
@@ -16767,34 +16765,6 @@ func dmrgo_layer2_decode_embedded_rc(c_data *C.uint8_t, c_out *C.dmrgo_pdu_rever
 	if c_out != nil {
 		out_layer2_pdu_ReverseChannel(&(*c_out), &r0, oc)
 	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_layer2_embedded_lc_assembler_get_strict
-func dmrgo_layer2_embedded_lc_assembler_get_strict(c_self *C.dmrgo_layer2_embedded_lc_assembler_t, c_out *C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_layer2_EmbeddedLCAssembler(c_self)
-	r0 := h.v.Strict
-	_ = r0
-	if c_out != nil {
-		*c_out = C.bool(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_layer2_embedded_lc_assembler_set_strict
-func dmrgo_layer2_embedded_lc_assembler_set_strict(c_self *C.dmrgo_layer2_embedded_lc_assembler_t, c_v C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_layer2_EmbeddedLCAssembler(c_self)
-	h.v.Strict = bool(c_v)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -17946,34 +17916,6 @@ func dmrgo_layer2_sync_source_of(c_p C.dmrgo_enums_sync_pattern_t, c_src *C.dmrg
 	if c_ok != nil {
 		*c_ok = C.bool(r2)
 	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_layer2_voice_receiver_get_strict
-func dmrgo_layer2_voice_receiver_get_strict(c_self *C.dmrgo_layer2_voice_receiver_t, c_out *C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_layer2_VoiceReceiver(c_self)
-	r0 := h.v.Strict
-	_ = r0
-	if c_out != nil {
-		*c_out = C.bool(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_layer2_voice_receiver_set_strict
-func dmrgo_layer2_voice_receiver_set_strict(c_self *C.dmrgo_layer2_voice_receiver_t, c_v C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_layer2_VoiceReceiver(c_self)
-	h.v.Strict = bool(c_v)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}

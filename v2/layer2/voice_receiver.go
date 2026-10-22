@@ -12,10 +12,6 @@ import (
 // zero VoiceReceiver is ready to use. It is not safe for concurrent use.
 // (ETSI TS 102 361-1 clause 5.1.2.1, clause 7.1.3)
 type VoiceReceiver struct {
-	// Strict selects the strict decode of DecodeEmbeddedLC for the embedded
-	// LC. Reset keeps it.
-	Strict bool
-
 	position enums.VoiceBurstType
 	lc       EmbeddedLCAssembler
 }
@@ -25,7 +21,7 @@ func (r *VoiceReceiver) Reset() {
 	if r == nil {
 		return
 	}
-	*r = VoiceReceiver{Strict: r.Strict}
+	*r = VoiceReceiver{}
 }
 
 // Receive takes the next decoded burst of the logical channel, in order, and
@@ -75,7 +71,6 @@ func (r *VoiceReceiver) receive(b *Burst) (lc [9]byte, res fec.Result, done bool
 	if !ok || r.position == enums.VoiceBurstF {
 		return lc, res, false, r.lc.discard()
 	}
-	r.lc.Strict = r.Strict
 	return r.lc.add(fragmentWord(b.EmbeddedSignallingData), lcss)
 }
 

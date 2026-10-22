@@ -325,7 +325,6 @@ var api = [...]any{
 	internal_fec_bptc.Decode196,
 	internal_fec_bptc.DecodeCACH,
 	internal_fec_bptc.DecodeEmbedded,
-	internal_fec_bptc.DecodeEmbeddedStrict,
 	internal_fec_bptc.DecodeEmbeddedWithCheck,
 	internal_fec_bptc.DecodeRows,
 	internal_fec_bptc.DecodeSingleBurst,

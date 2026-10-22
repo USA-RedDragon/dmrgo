@@ -144,7 +144,7 @@ func TestVoiceReceiver_UncorrectableLC(t *testing.T) {
 	}
 }
 
-func TestVoiceReceiver_Strict(t *testing.T) {
+func TestVoiceReceiver_EmbeddedLCBitError(t *testing.T) {
 	t.Parallel()
 
 	lc := groupLC(enums.FIDStandardized)
@@ -152,23 +152,20 @@ func TestVoiceReceiver_Strict(t *testing.T) {
 	all := [264]unpacked.Bit(unpacked.Unpack(raws[2][:]))
 	all[layer2.EmbeddedDataStart+7] ^= 1
 	raws[2] = [33]byte(unpacked.Pack(all[:]))
-	for _, strict := range []bool{false, true} {
-		r := layer2.VoiceReceiver{Strict: strict}
-		r.Reset()
-		var lcs, uncorrectable int
-		for _, raw := range raws {
-			b, _ := layer2.NewBurstFromBytes(raw)
-			_, ok, err := r.Receive(b)
-			if ok {
-				lcs++
-			}
-			if errors.Is(err, layer2.ErrEmbeddedLCUncorrectable) {
-				uncorrectable++
-			}
+	var r layer2.VoiceReceiver
+	var lcs, uncorrectable int
+	for _, raw := range raws {
+		b, _ := layer2.NewBurstFromBytes(raw)
+		_, ok, err := r.Receive(b)
+		if ok {
+			lcs++
 		}
-		if strict && (lcs != 0 || uncorrectable != 1) || !strict && (lcs != 1 || uncorrectable != 0) {
-			t.Errorf("Strict=%v: %d LCs, %d uncorrectable", strict, lcs, uncorrectable)
+		if errors.Is(err, layer2.ErrEmbeddedLCUncorrectable) {
+			uncorrectable++
 		}
+	}
+	if lcs != 1 || uncorrectable != 0 {
+		t.Errorf("%d LCs, %d uncorrectable", lcs, uncorrectable)
 	}
 }
 

@@ -134,28 +134,3 @@ func TestEmbeddedLC_RandomWordsRejected(t *testing.T) {
 		t.Errorf("accepted %d of 2000 random words", accepted)
 	}
 }
-
-func TestEmbeddedLCStrict_RowErrors(t *testing.T) {
-	t.Parallel()
-	info := embeddedLCInfo()
-	fr := encodeEmbedded(info)
-	for p := 0; p < 128; p++ {
-		got, res := decodeEmbeddedStrict(flipEmbedded(fr, p))
-		if p%8 == 7 {
-			if !res.Uncorrectable {
-				t.Fatalf("row 7 error at %d accepted", p)
-			}
-			continue
-		}
-		if got != info || res.Uncorrectable || res.ErrorsCorrected != 1 {
-			t.Fatalf("error at %d: data match=%v result=%+v", p, got == info, res)
-		}
-	}
-	got, res := decodeEmbeddedStrict(flipEmbedded(fr, 0, 9, 18, 27, 36, 45, 54))
-	if got != info || res.Uncorrectable || res.ErrorsCorrected != 7 {
-		t.Fatalf("one error per row: data match=%v result=%+v", got == info, res)
-	}
-	if _, res := decodeEmbeddedStrict(flipEmbedded(fr, 0, 8)); !res.Uncorrectable {
-		t.Fatal("two errors in row 0 accepted")
-	}
-}

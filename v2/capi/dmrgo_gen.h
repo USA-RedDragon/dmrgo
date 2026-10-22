@@ -5283,8 +5283,6 @@ struct dmrgo_voice_receiver_config_t {
 	dmrgo_duration_t lost;
 	/* Hang is the call hang time, in which a call to the same target continues the session. 0 means constants.TCallHang (3 s), and a negative value turns session tracking off. A broadcast call and a call to constants.AllMSID have no hang time (ETSI TS 102 361-2 clause 5.3.2.3.2). */
 	dmrgo_duration_t hang;
-	/* Strict selects the strict embedded LC decode of layer2.DecodeEmbeddedLC. */
-	bool strict;
 	/* Scratch, when set, is the Burst that Burst decodes into. Receivers that run on one goroutine can share one, because a Receiver is done with it when its method returns. Make it with layer2.NewBurst, so that no decode allocates. Nil means the Receiver makes its own. */
 	dmrgo_layer2_burst_t *scratch;
 };
@@ -8373,16 +8371,12 @@ int dmrgo_layer2_data_string(const dmrgo_layer2_data_t *self, char *out, size_t 
 int dmrgo_layer2_decode_cach(const uint8_t bits[3], dmrgo_layer2_cach_t *out);
 /* Go: layer2.DecodeCACHField. DecodeCACHField decodes a 24-bit CACH field in transmit order, as it is received, into its TACT and signalling payload. */
 int dmrgo_layer2_decode_cach_field(const uint8_t on_air[3], dmrgo_layer2_cach_t *out);
-/* Go: layer2.DecodeEmbeddedFullLinkControl. DecodeEmbeddedFullLinkControl decodes a Full LC from the four embedded signalling fields f of bursts B to E, as DecodeEmbeddedLC(f, strict) does. */
-int dmrgo_layer2_decode_embedded_full_link_control(const uint8_t f[4][4], bool strict, dmrgo_pdu_full_link_control_t *out);
+/* Go: layer2.DecodeEmbeddedFullLinkControl. DecodeEmbeddedFullLinkControl decodes a Full LC from the four embedded signalling fields f of bursts B to E, as DecodeEmbeddedLC(f) does. */
+int dmrgo_layer2_decode_embedded_full_link_control(const uint8_t f[4][4], dmrgo_pdu_full_link_control_t *out);
 /* Go: layer2.DecodeEmbeddedLC. DecodeEmbeddedLC decodes the 9 LC octets from the embedded signalling fields f of bursts B to E, as RawBurst.EmbeddedData returns them. */
-int dmrgo_layer2_decode_embedded_lc(const uint8_t f[4][4], bool strict, uint8_t data[9], dmrgo_fec_result_t *fec);
+int dmrgo_layer2_decode_embedded_lc(const uint8_t f[4][4], uint8_t data[9], dmrgo_fec_result_t *fec);
 /* Go: layer2.DecodeEmbeddedRC. DecodeEmbeddedRC decodes a Reverse Channel PDU from the 32-bit embedded signalling data field, packed, the first bit in the most significant bit of byte 0, as RawBurst.EmbeddedData returns it. */
 int dmrgo_layer2_decode_embedded_rc(const uint8_t data[4], dmrgo_pdu_reverse_channel_t *out);
-/* Go: layer2.EmbeddedLCAssembler.Strict. Strict selects the strict decode of DecodeEmbeddedLC. */
-int dmrgo_layer2_embedded_lc_assembler_get_strict(dmrgo_layer2_embedded_lc_assembler_t *self, bool *out);
-/* Go: layer2.EmbeddedLCAssembler.Strict. Strict selects the strict decode of DecodeEmbeddedLC. */
-int dmrgo_layer2_embedded_lc_assembler_set_strict(dmrgo_layer2_embedded_lc_assembler_t *self, bool v);
 /* dmrgo_layer2_embedded_lc_assembler_new makes a zero layer2.EmbeddedLCAssembler. */
 int dmrgo_layer2_embedded_lc_assembler_new(dmrgo_layer2_embedded_lc_assembler_t **out);
 /* dmrgo_layer2_embedded_lc_assembler_free frees the handle. self may be NULL. */
@@ -8499,10 +8493,6 @@ int dmrgo_layer2_short_lc_assembler_reset(dmrgo_layer2_short_lc_assembler_t *sel
 int dmrgo_layer2_sync_source_sync_patterns(dmrgo_layer2_sync_source_t self, dmrgo_enums_sync_pattern_t *voice, dmrgo_enums_sync_pattern_t *data, bool *ok);
 /* Go: layer2.SyncSourceOf. SyncSourceOf returns the source and the burst kind of the SYNC pattern p: KindVoice or KindData for the voice and data patterns, and SyncSourceMS with KindReverseChannel for the MS-sourced RC pattern. */
 int dmrgo_layer2_sync_source_of(dmrgo_enums_sync_pattern_t p, dmrgo_layer2_sync_source_t *src, dmrgo_layer2_kind_t *k, bool *ok);
-/* Go: layer2.VoiceReceiver.Strict. Strict selects the strict decode of DecodeEmbeddedLC for the embedded LC. */
-int dmrgo_layer2_voice_receiver_get_strict(dmrgo_layer2_voice_receiver_t *self, bool *out);
-/* Go: layer2.VoiceReceiver.Strict. Strict selects the strict decode of DecodeEmbeddedLC for the embedded LC. */
-int dmrgo_layer2_voice_receiver_set_strict(dmrgo_layer2_voice_receiver_t *self, bool v);
 /* dmrgo_layer2_voice_receiver_new makes a zero layer2.VoiceReceiver. */
 int dmrgo_layer2_voice_receiver_new(dmrgo_layer2_voice_receiver_t **out);
 /* dmrgo_layer2_voice_receiver_free frees the handle. self may be NULL. */

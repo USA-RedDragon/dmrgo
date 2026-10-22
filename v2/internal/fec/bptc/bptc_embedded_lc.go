@@ -138,40 +138,6 @@ func (s *embeddedLCSearch) leaf(weight int) {
 	s.info = info
 }
 
-// DecodeEmbeddedStrict decodes a full embedded LC as MMDVMHost
-// (CDMREmbeddedData::decodeEmbeddedData) does. It corrects at most one error
-// in each of rows 0 to 6. The LC is uncorrectable when a row has a detected
-// double error or a column parity over all 8 rows fails, so it accepts far
-// fewer LCs with bit errors than DecodeEmbedded.
-func DecodeEmbeddedStrict(fragments [4]uint32) ([10]byte, fec.Result) {
-	rows := embeddedLCMatrix(fragments)
-	received := rows
-	uncorrectable := false
-	for row := 0; row < 7 && !uncorrectable; row++ {
-		syndrome := rowSyndrome16_11(rows[row])
-		if syndrome == 0 {
-			continue
-		}
-		if errPos := hamming16_11_syndrome_table[syndrome]; errPos >= 0 {
-			rows[row] ^= 1 << errPos
-		} else {
-			uncorrectable = true
-		}
-	}
-	if !uncorrectable {
-		var parity uint16
-		for _, r := range rows {
-			parity ^= r
-		}
-		uncorrectable = parity != 0
-	}
-	result := fec.Result{BitsChecked: 128, Uncorrectable: uncorrectable}
-	for row := range rows {
-		result.ErrorsCorrected += bits.OnesCount16(rows[row] ^ received[row])
-	}
-	return embeddedLCInfo(&rows), result
-}
-
 func embeddedLCMatrix(fragments [4]uint32) [8]uint16 {
 	left := transpose8(uint64(fragments[0])<<32 | uint64(fragments[1]))
 	right := transpose8(uint64(fragments[2])<<32 | uint64(fragments[3]))

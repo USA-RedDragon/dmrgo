@@ -37,10 +37,10 @@ func TestTinyGoFuzzSeeds(t *testing.T) {
 		checkShortLCAssembler(t, s.seq, s.slc, s.at, s.tact)
 	}
 	for _, s := range embeddedLCSeeds() {
-		checkEmbeddedLCAssembler(t, s.seq, s.lc, s.at, s.strict)
+		checkEmbeddedLCAssembler(t, s.seq, s.lc, s.at)
 	}
 	for _, s := range embeddedLCCodeSeeds() {
-		checkEmbeddedLCCode(t, s.lc, s.flc, s.flips, s.strict)
+		checkEmbeddedLCCode(t, s.lc, s.flc, s.flips)
 	}
 	for _, s := range rcSeeds {
 		checkEmbeddedRC(t, s.field, s.cmd)

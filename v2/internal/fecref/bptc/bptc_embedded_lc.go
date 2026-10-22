@@ -139,37 +139,6 @@ func (s *embeddedLCSearch) leaf(weight int) {
 	s.info = info
 }
 
-// DecodeEmbeddedStrict decodes a full embedded LC as MMDVMHost
-// (CDMREmbeddedData::decodeEmbeddedData) does. It corrects at most one error
-// in each of rows 0 to 6. The LC is uncorrectable when a row has a detected
-// double error or a column parity over all 8 rows fails, so it accepts far
-// fewer LCs with bit errors than DecodeEmbedded.
-func DecodeEmbeddedStrict(fragments [4][32]unpacked.Bit) ([77]unpacked.Bit, fec.Result) {
-	for i := range fragments {
-		unpacked.Mask(fragments[i][:])
-	}
-	matrix := embeddedLCMatrix(fragments)
-	received := matrix
-	uncorrectable := false
-	for row := 0; row < 7 && !uncorrectable; row++ {
-		syndrome := calculateSyndrome16_11(matrix[row])
-		if syndrome == 0 {
-			continue
-		}
-		if errPos := hamming16_11_syndrome_table[syndrome]; errPos >= 0 {
-			matrix[row][errPos] ^= 1
-		} else {
-			uncorrectable = true
-		}
-	}
-	for col := 0; col < 16 && !uncorrectable; col++ {
-		uncorrectable = columnParity(&matrix, col) != 0
-	}
-	result := embeddedLCResult(&matrix, &received)
-	result.Uncorrectable = uncorrectable
-	return embeddedLCInfo(&matrix), result
-}
-
 func embeddedLCMatrix(fragments [4][32]unpacked.Bit) [8][16]unpacked.Bit {
 	var matrix [8][16]unpacked.Bit
 	for col := 0; col < 16; col++ {
@@ -181,30 +150,12 @@ func embeddedLCMatrix(fragments [4][32]unpacked.Bit) [8][16]unpacked.Bit {
 	return matrix
 }
 
-func embeddedLCResult(matrix, received *[8][16]unpacked.Bit) fec.Result {
-	result := fec.Result{BitsChecked: 128}
-	for row := range matrix {
-		for col := range matrix[row] {
-			result.ErrorsCorrected += int(matrix[row][col] ^ received[row][col])
-		}
-	}
-	return result
-}
-
 func embeddedLCInfo(matrix *[8][16]unpacked.Bit) [77]unpacked.Bit {
 	var info [77]unpacked.Bit
 	for row := 0; row < 7; row++ {
 		copy(info[row*11:row*11+11], matrix[row][:11])
 	}
 	return info
-}
-
-func columnParity(matrix *[8][16]unpacked.Bit, col int) unpacked.Bit {
-	var parity unpacked.Bit
-	for row := range matrix {
-		parity ^= matrix[row][col]
-	}
-	return parity
 }
 
 // EncodeEmbedded encodes 77 information bits (72 LC bits and a 5-bit
