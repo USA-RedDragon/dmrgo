@@ -77,6 +77,9 @@ type ResponderConfig struct {
 	// Source selects the SYNC pattern: layer2.SyncSourceBS, the zero value,
 	// for a repeater outbound, layer2.SyncSourceMS for a radio.
 	Source layer2.SyncSource
+	// Slot is the TDMA slot of the machine, which it puts in the Hint of
+	// each burst it sends. SlotUnknown leaves it unknown.
+	Slot enums.Slot
 	// Access is the channel access policy of the answers. The zero value
 	// is polite to own color code.
 	Access enums.Access
@@ -136,7 +139,8 @@ type Responder struct {
 
 // NewResponder returns a Responder for cfg. It returns a *dmrgo.ConfigError
 // for a nil cfg, an Address of 0 or above 24 bits, a color code above 15, an
-// unknown Source, Access or OACSU, or a negative Lead. It allocates the Responder, and its Burst
+// unknown Source, Access or OACSU, a negative Lead, or a Slot other than
+// SlotUnknown, Slot1 or Slot2. It allocates the Responder, and its Burst
 // unless cfg.Scratch is set.
 func NewResponder(cfg *ResponderConfig) (*Responder, error) {
 	switch {
@@ -150,13 +154,15 @@ func NewResponder(cfg *ResponderConfig) (*Responder, error) {
 		return nil, errOACSU
 	case cfg.Lead < 0:
 		return nil, errLead
+	case checkSlot(cfg.Slot) != nil:
+		return nil, errSlot
 	}
 	if _, _, ok := cfg.Source.SyncPatterns(); !ok {
 		return nil, errSource
 	}
 	r := &Responder{address: cfg.Address, oacsu: cfg.OACSU, noRadio: cfg.NoRadioCheck, noAlert: cfg.NoCallAlert, noFNS: cfg.NoFNS}
 	r.s.init(cfg.ColorCode, cfg.Source, cfg.IdleSearch, cfg.HoldoffMax, cfg.Seed)
-	r.s.access, r.s.lead = cfg.Access, cfg.Lead
+	r.s.access, r.s.lead, r.s.slot = cfg.Access, cfg.Lead, cfg.Slot
 	r.d = newDecoder(cfg.Scratch)
 	return r, nil
 }

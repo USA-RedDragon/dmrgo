@@ -52,7 +52,8 @@ type TimingConfig struct {
 	// (ETSI TS 102 361-2 clause 7.2.9)
 	DynamicID uint8
 	// Slot is the provisioned time slot, enums.Slot1 or enums.Slot2. It
-	// selects the TDMA direct mode SYNC of the CT_CSBKs.
+	// selects the TDMA direct mode SYNC of the CT_CSBKs, and is the Slot of
+	// the Hint of each burst.
 	// (ETSI TS 102 361-2 clause 6.2)
 	Slot enums.Slot
 	// Seed seeds the generator of CT_RHOT and of new identifiers, so that
@@ -146,6 +147,7 @@ func (t *timer) due(now time.Duration) bool {
 // must not be copied; go vet reports a copy. (ETSI TS 102 361-2 clause 6.2)
 type Timing struct {
 	src    layer2.SyncSource
+	slot   enums.Slot
 	lead   time.Duration
 	di     uint8
 	id     uint32
@@ -194,7 +196,7 @@ func NewTiming(cfg *TimingConfig) (*Timing, error) {
 	case cfg.Lead < 0:
 		return nil, errLead
 	}
-	m := &Timing{di: cfg.DynamicID, id: cfg.ID, lead: cfg.Lead, rng: seedPCG(cfg.Seed), d: newDecoder(cfg.Scratch)}
+	m := &Timing{di: cfg.DynamicID, id: cfg.ID, slot: cfg.Slot, lead: cfg.Lead, rng: seedPCG(cfg.Seed), d: newDecoder(cfg.Scratch)}
 	switch cfg.Slot {
 	case enums.Slot1:
 		m.src = layer2.SyncSourceDirectTS1
@@ -305,7 +307,7 @@ func (m *Timing) Terminator(now time.Duration, dst []Output) []Output {
 	}
 	var o *Output
 	dst, o = appendOutput(dst, OutputBurst)
-	o.Service, o.Burst, o.Due = ServiceTiming, b, now
+	o.Service, o.Burst, o.Hint, o.Due = ServiceTiming, b, csbkHint(m.slot), now
 	return dst
 }
 
@@ -727,7 +729,7 @@ func (m *Timing) Tick(now time.Duration, dst []Output) []Output {
 	}
 	var o *Output
 	dst, o = appendOutput(dst, OutputBurst)
-	o.Service, o.Burst, o.Due = ServiceTiming, m.sendBurst, m.sendDue
+	o.Service, o.Burst, o.Hint, o.Due = ServiceTiming, m.sendBurst, csbkHint(m.slot), m.sendDue
 	m.sending--
 	m.sendDue += BurstInterval
 	return dst

@@ -1147,6 +1147,8 @@ struct dmrgo_csbk_requester_config_t {
 	dmrgo_layer2_burst_t *scratch;
 	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. */
 	dmrgo_duration_t lead;
+	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. SlotUnknown leaves it unknown. */
+	dmrgo_enums_slot_t slot;
 };
 
 struct dmrgo_csbk_responder_config_t {
@@ -1178,6 +1180,8 @@ struct dmrgo_csbk_responder_config_t {
 	dmrgo_layer2_burst_t *scratch;
 	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. */
 	dmrgo_duration_t lead;
+	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. SlotUnknown leaves it unknown. */
+	dmrgo_enums_slot_t slot;
 };
 
 struct dmrgo_csbk_timing_config_t {
@@ -1187,7 +1191,7 @@ struct dmrgo_csbk_timing_config_t {
 	uint32_t id;
 	/* DynamicID is MS_DI, the leader preference of the radio from 0 to MaxDynamicID. 0 means the radio is not eligible to be the leader. (ETSI TS 102 361-2 clause 7.2.9) */
 	uint8_t dynamic_id;
-	/* Slot is the provisioned time slot, enums.Slot1 or enums.Slot2. It selects the TDMA direct mode SYNC of the CT_CSBKs. (ETSI TS 102 361-2 clause 6.2) */
+	/* Slot is the provisioned time slot, enums.Slot1 or enums.Slot2. It selects the TDMA direct mode SYNC of the CT_CSBKs, and is the Slot of the Hint of each burst. (ETSI TS 102 361-2 clause 6.2) */
 	dmrgo_enums_slot_t slot;
 	/* Seed seeds the generator of CT_RHOT and of new identifiers, so that the same inputs give the same outputs. Radios on one channel need different seeds. (ETSI TS 102 361-2 clause 6.2) */
 	uint64_t seed;
@@ -1210,6 +1214,8 @@ struct dmrgo_csbk_wakeup_config_t {
 	dmrgo_layer2_burst_t *scratch;
 	/* Lead makes Tick emit a burst this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must not be negative. The timers of the machine keep to the Due times. */
 	dmrgo_duration_t lead;
+	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. SlotUnknown leaves it unknown. */
+	dmrgo_enums_slot_t slot;
 };
 
 struct dmrgo_pdu_csbk_bytes_t {
@@ -1227,7 +1233,7 @@ struct dmrgo_csbk_output_t {
 	dmrgo_csbk_reason_t reason;
 	/* Burst is the burst to send, for OutputBurst. */
 	dmrgo_layer2_raw_burst_t burst;
-	/* Hint is what Burst is, for a transport: KindData with enums.DataTypeCSBK. Its Slot is SlotUnknown. */
+	/* Hint is what Burst is, for a transport: KindData with enums.DataTypeCSBK, and the Slot of the config of the machine. */
 	dmrgo_layer2_hint_t hint;
 	/* Due is the time at which the burst goes on air, 60 ms after the one before it. */
 	dmrgo_duration_t due;
@@ -7733,13 +7739,13 @@ int dmrgo_bs_slot_state_string(dmrgo_bs_slot_state_t self, char *out, size_t out
 int dmrgo_bs_state_string(dmrgo_bs_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: csbk.NewPreambles. NewPreambles returns a Preambles for cfg. cfg may be NULL. */
 int dmrgo_csbk_new_preambles(const dmrgo_csbk_preambles_config_t *cfg, dmrgo_csbk_preambles_t **out);
-/* Go: csbk.NewRequester. NewRequester returns a Requester for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source, Retries above MaxRetries or a negative Lead. cfg may be NULL. */
+/* Go: csbk.NewRequester. NewRequester returns a Requester for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, an unknown Source, Retries above MaxRetries, a negative Lead or a Slot other than SlotUnknown, Slot1 or Slot2. cfg may be NULL. */
 int dmrgo_csbk_new_requester(const dmrgo_csbk_requester_config_t *cfg, dmrgo_csbk_requester_t **out);
-/* Go: csbk.NewResponder. NewResponder returns a Responder for cfg. It returns a DMRGO_ERR_CONFIG for a nil cfg, an Address of 0 or above 24 bits, a color code above 15, an unknown Source, Access or OACSU, or a negative Lead. cfg may be NULL. */
+/* Go: csbk.NewResponder. NewResponder returns a Responder for cfg. It returns a DMRGO_ERR_CONFIG for a nil cfg, an Address of 0 or above 24 bits, a color code above 15, an unknown Source, Access or OACSU, a negative Lead, or a Slot other than SlotUnknown, Slot1 or Slot2. cfg may be NULL. */
 int dmrgo_csbk_new_responder(const dmrgo_csbk_responder_config_t *cfg, dmrgo_csbk_responder_t **out);
 /* Go: csbk.NewTiming. NewTiming returns a Timing for cfg. It returns a DMRGO_ERR_CONFIG for a nil cfg, an ID of 0 or above MaxTimingID, a DynamicID above MaxDynamicID, a Slot other than Slot1 or Slot2 or a negative Lead. cfg may be NULL. */
 int dmrgo_csbk_new_timing(const dmrgo_csbk_timing_config_t *cfg, dmrgo_csbk_timing_t **out);
-/* Go: csbk.NewWakeup. NewWakeup returns a Wakeup for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, Attempts out of range or a negative Lead. cfg may be NULL. */
+/* Go: csbk.NewWakeup. NewWakeup returns a Wakeup for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, Attempts out of range, a negative Lead, or a Slot other than SlotUnknown, Slot1 or Slot2. cfg may be NULL. */
 int dmrgo_csbk_new_wakeup(const dmrgo_csbk_wakeup_config_t *cfg, dmrgo_csbk_wakeup_t **out);
 /* Go: csbk.OACSUAnswer.String. String returns the name of the answer. */
 int dmrgo_csbk_oacsu_answer_string(dmrgo_csbk_oacsu_answer_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);

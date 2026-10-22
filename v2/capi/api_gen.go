@@ -234,6 +234,7 @@ func in_csbk_RequesterConfig(s *C.dmrgo_csbk_requester_config_t) (d g_csbk.Reque
 		d.Scratch = get_layer2_Burst(s.scratch).v
 	}
 	d.Lead = time.Duration(s.lead)
+	d.Slot = g_enums.Slot(s.slot)
 	return
 }
 
@@ -254,6 +255,7 @@ func in_csbk_ResponderConfig(s *C.dmrgo_csbk_responder_config_t) (d g_csbk.Respo
 		d.Scratch = get_layer2_Burst(s.scratch).v
 	}
 	d.Lead = time.Duration(s.lead)
+	d.Slot = g_enums.Slot(s.slot)
 	return
 }
 
@@ -279,6 +281,7 @@ func in_csbk_WakeupConfig(s *C.dmrgo_csbk_wakeup_config_t) (d g_csbk.WakeupConfi
 		d.Scratch = get_layer2_Burst(s.scratch).v
 	}
 	d.Lead = time.Duration(s.lead)
+	d.Slot = g_enums.Slot(s.slot)
 	return
 }
 
@@ -4732,6 +4735,7 @@ func out_csbk_RequesterConfig(d *C.dmrgo_csbk_requester_config_t, s *g_csbk.Requ
 	}
 	d.scratch = nil
 	d.lead = C.dmrgo_duration_t(s.Lead)
+	d.slot = C.dmrgo_enums_slot_t(s.Slot)
 }
 
 func fromC_csbk_RequesterConfig(s *C.dmrgo_csbk_requester_config_t) g_csbk.RequesterConfig {
@@ -4757,6 +4761,7 @@ func out_csbk_ResponderConfig(d *C.dmrgo_csbk_responder_config_t, s *g_csbk.Resp
 	}
 	d.scratch = nil
 	d.lead = C.dmrgo_duration_t(s.Lead)
+	d.slot = C.dmrgo_enums_slot_t(s.Slot)
 }
 
 func fromC_csbk_ResponderConfig(s *C.dmrgo_csbk_responder_config_t) g_csbk.ResponderConfig {
@@ -4792,6 +4797,7 @@ func out_csbk_WakeupConfig(d *C.dmrgo_csbk_wakeup_config_t, s *g_csbk.WakeupConf
 	}
 	d.scratch = nil
 	d.lead = C.dmrgo_duration_t(s.Lead)
+	d.slot = C.dmrgo_enums_slot_t(s.Slot)
 }
 
 func fromC_csbk_WakeupConfig(s *C.dmrgo_csbk_wakeup_config_t) g_csbk.WakeupConfig {
