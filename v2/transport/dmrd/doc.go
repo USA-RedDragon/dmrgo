@@ -15,7 +15,7 @@
 // errors ErrShort, ErrLength, ErrSignature, ErrText and ErrCommand, which
 // errors.Is matches. AppendBinary methods allocate only to grow dst. The
 // login token and the OpenBridge signatures are plain octets in the
-// messages; package auth computes and checks them.
+// messages; package dmrdauth computes and checks them.
 //
 // (DL5DI, G4KLX and DG1HT, IPSC Protocol Specs for homebrew DMR repeater,
 // 2015-07-26; MMDVMHost 9384d68 and DMRGateway ee79d38; BrandMeister Open

@@ -41,11 +41,11 @@ import (
 	shortdata "github.com/USA-RedDragon/dmrgo/v2/shortdata"
 	sms "github.com/USA-RedDragon/dmrgo/v2/sms"
 	transport_dmrd "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
-	transport_dmrd_auth "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
+	transport_dmrd_dmrdauth "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdauth"
 	transport_dmrd_dmrdsession "github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession"
 	transport_hytera "github.com/USA-RedDragon/dmrgo/v2/transport/hytera"
 	transport_ipsc "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
-	transport_ipsc_auth "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
+	transport_ipsc_ipscauth "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscauth"
 	transport_ipsc_ipscsession "github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession"
 	transport_mmdvm "github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm"
 	trunk "github.com/USA-RedDragon/dmrgo/v2/trunk"
@@ -1168,11 +1168,11 @@ var api = [...]any{
 	transport_dmrd.ParseDMRPlusOptions,
 	transport_dmrd.ParseFreeDMROptions,
 	transport_dmrd.RepeaterID,
-	(*transport_dmrd_auth.BridgeKey).SignInPlace,
-	(*transport_dmrd_auth.BridgeKey).Verify,
-	transport_dmrd_auth.NewBridgeKey,
-	transport_dmrd_auth.Token,
-	transport_dmrd_auth.VerifyToken,
+	(*transport_dmrd_dmrdauth.BridgeKey).SignInPlace,
+	(*transport_dmrd_dmrdauth.BridgeKey).Verify,
+	transport_dmrd_dmrdauth.NewBridgeKey,
+	transport_dmrd_dmrdauth.Token,
+	transport_dmrd_dmrdauth.VerifyToken,
 	(*transport_dmrd_dmrdsession.Bridge).Deadline,
 	(*transport_dmrd_dmrdsession.Bridge).Packet,
 	(*transport_dmrd_dmrdsession.Bridge).SignInPlace,
@@ -1254,10 +1254,10 @@ var api = [...]any{
 	transport_ipsc.Opcode.String,
 	transport_ipsc.PeerListOf,
 	transport_ipsc.UserOpcode,
-	(*transport_ipsc_auth.Key).Sign,
-	(*transport_ipsc_auth.Key).Verify,
-	transport_ipsc_auth.NewKey,
-	transport_ipsc_auth.ParseKey,
+	(*transport_ipsc_ipscauth.Key).Sign,
+	(*transport_ipsc_ipscauth.Key).Verify,
+	transport_ipsc_ipscauth.NewKey,
+	transport_ipsc_ipscauth.ParseKey,
 	(*transport_ipsc_ipscsession.Master).Adopt,
 	(*transport_ipsc_ipscsession.Master).Close,
 	(*transport_ipsc_ipscsession.Master).Deadline,

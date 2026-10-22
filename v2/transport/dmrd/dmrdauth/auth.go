@@ -1,4 +1,4 @@
-// Package auth computes and checks the login token of package dmrd and the
+// Package dmrdauth computes and checks the login token of package dmrd and the
 // signatures of OpenBridge packets: SHA-256, HMAC-SHA1 and keyed BLAKE2b.
 // Package dmrd has none of this code, so a program that only encodes and
 // decodes does not link it. Nothing here allocates but NewBridgeKey.
@@ -6,7 +6,7 @@
 // (DMRGateway ee79d38 DMRNetwork.cpp writeAuthorisation; DL5DI, G4KLX and
 // DG1HT, IPSC Protocol Specs for homebrew DMR repeater, 2015-07-26;
 // BrandMeister Open Bridge; HBlink3 1db2730; FreeDMR 546165eb)
-package auth
+package dmrdauth
 
 import (
 	"github.com/USA-RedDragon/dmrgo/v2"

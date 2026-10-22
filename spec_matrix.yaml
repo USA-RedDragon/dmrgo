@@ -39,8 +39,8 @@ ignore_files:
   - v2/layer2/packet/nocopy.go
   - v2/transport/dmrd/alias.go
   - v2/transport/dmrd/alias_lc.go
-  - v2/transport/dmrd/auth/auth.go
-  - v2/transport/dmrd/auth/errors.go
+  - v2/transport/dmrd/dmrdauth/auth.go
+  - v2/transport/dmrd/dmrdauth/errors.go
   - v2/transport/dmrd/bridge.go
   - v2/transport/dmrd/bridge_layout.go
   - v2/transport/dmrd/config.go
@@ -62,7 +62,7 @@ ignore_files:
   - v2/transport/hytera/layout.go
   - v2/transport/hytera/p2p.go
   - v2/transport/hytera/types.go
-  - v2/transport/ipsc/auth/auth.go
+  - v2/transport/ipsc/ipscauth/auth.go
   - v2/transport/ipsc/control.go
   - v2/transport/ipsc/errors.go
   - v2/transport/ipsc/layout.go

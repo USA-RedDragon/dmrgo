@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
-	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscauth"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession"
 )
 
@@ -48,8 +48,8 @@ func TestMasterKeysOfPeers(t *testing.T) {
 
 	a := ipscsession.Addr{IP: [4]byte{10, 0, 0, 2}, Port: 1}
 	b := ipscsession.Addr{IP: [4]byte{10, 0, 0, 3}, Port: 1}
-	ka, _ := auth.ParseKey("aaaa")
-	kb, _ := auth.ParseKey("bbbb")
+	ka, _ := ipscauth.ParseKey("aaaa")
+	kb, _ := ipscauth.ParseKey("bbbb")
 	m, _ := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1})
 	pa, _ := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 2, Master: masterAddr, Auth: true, Key: ka})
 	pb, _ := ipscsession.NewPeer(&ipscsession.PeerConfig{ID: 3, Master: masterAddr, Auth: true, Key: kb})
@@ -93,17 +93,17 @@ func TestMasterKeyedAndSharedLists(t *testing.T) {
 	t.Parallel()
 
 	key, _ := ipscKey()
-	own, _ := auth.ParseKey("cccc")
+	own, _ := ipscauth.ParseKey("cccc")
 	m, _ := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1, Auth: true, Key: key})
 	m.Packet(0, xprAddr, must(m.Sign(ctl(ipsc.OpRegisterRequest, 7))), nil, nil)
 	m.Adopt(0, other, 8, &own, nil)
 	out := m.Packet(0, xprAddr, must(m.Sign(ctl(ipsc.OpPeerListRequest, 7))), nil, nil)
-	list, err := ipsc.PeerListOf(out[0].Packet[:len(out[0].Packet)-auth.TrailerLen])
+	list, err := ipsc.PeerListOf(out[0].Packet[:len(out[0].Packet)-ipscauth.TrailerLen])
 	if len(out) != 1 || err != nil || list.Len() != 1 || list.Entry(0).ID != 7 {
 		t.Fatalf("shared list %+v %v", out, err)
 	}
 	out = m.Packet(0, other, must(m.SignFor(8, ctl(ipsc.OpPeerListRequest, 8))), &own, nil)
-	list, err = ipsc.PeerListOf(out[0].Packet[:len(out[0].Packet)-auth.TrailerLen])
+	list, err = ipsc.PeerListOf(out[0].Packet[:len(out[0].Packet)-ipscauth.TrailerLen])
 	if len(out) != 1 || out[0].Addr != other || err != nil || list.Len() != 1 || list.Entry(0).ID != 8 {
 		t.Fatalf("own list %+v %v", out, err)
 	}
@@ -113,7 +113,7 @@ func TestMasterAdoptKnown(t *testing.T) {
 	t.Parallel()
 
 	key, _ := ipscKey()
-	own, _ := auth.ParseKey("cccc")
+	own, _ := ipscauth.ParseKey("cccc")
 	voice := func(id byte) []byte { return []byte{byte(ipsc.OpGroupVoice), 0, 0, 0, id, 1} }
 	m, _ := ipscsession.NewMaster(&ipscsession.MasterConfig{ID: 1, Auth: true, Key: key, AdoptKnown: true})
 	out := m.Packet(0, xprAddr, must(m.Sign(voice(7))), nil, nil)

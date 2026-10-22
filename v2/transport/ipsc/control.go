@@ -24,7 +24,7 @@ type Control struct {
 }
 
 // DecodeControl decodes the peer control packet p, without the
-// authentication trailer (see package auth). An OpPeerListReply decodes
+// authentication trailer (see package ipscauth). An OpPeerListReply decodes
 // its length; PeerListOf reads its entries. It returns ErrCommand for
 // another opcode, and ErrShort or ErrLength for a length that does not
 // match the opcode. It does not allocate.

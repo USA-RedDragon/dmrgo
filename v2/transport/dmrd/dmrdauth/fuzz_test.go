@@ -1,11 +1,11 @@
 //go:build !tinygo
 
-package auth_test
+package dmrdauth_test
 
 import (
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdauth"
 )
 
 func FuzzBridge(f *testing.F) {
@@ -13,7 +13,7 @@ func FuzzBridge(f *testing.F) {
 	f.Add([]byte("k"), packet("DMRE", 69, 85))
 	f.Add(make([]byte, 70), packet("BCSQ", 11, 31))
 	f.Fuzz(func(t *testing.T, key, p []byte) {
-		b := auth.NewBridgeKey(key)
+		b := dmrdauth.NewBridgeKey(key)
 		err := b.SignInPlace(p)
 		if _, ok := b.Verify(p); err == nil && !ok {
 			t.Fatalf("signed packet does not verify: key %x packet %x", key, p)

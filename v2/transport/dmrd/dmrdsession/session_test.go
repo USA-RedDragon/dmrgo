@@ -10,7 +10,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
-	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdauth"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession"
 )
 
@@ -220,7 +220,7 @@ func TestPeerSteps(t *testing.T) {
 		}
 		p.Tick(0, nil)
 	}
-	tok, _ := auth.Token(dmrd.DialectMMDVM, 99, []byte("pw"))
+	tok, _ := dmrdauth.Token(dmrd.DialectMMDVM, 99, []byte("pw"))
 	p2 := newPeer()
 	out := p2.Packet(s, ack(99), nil)
 	if k, _ := dmrd.DecodeControl(out[0].Packet, dmrd.DialectMMDVM); k.Token != tok {
@@ -338,7 +338,7 @@ func TestMasterBeforeLogin(t *testing.T) {
 	t.Parallel()
 
 	d := dmrd.DialectMMDVM
-	tok, _ := auth.Token(d, 7, []byte("pw"))
+	tok, _ := dmrdauth.Token(d, 7, []byte("pw"))
 	s := time.Second
 	m, _ := dmrdsession.NewMaster(&dmrdsession.MasterConfig{Dialect: d, Timeout: 30 * s})
 	nak := func(out []dmrdsession.Output) bool {
@@ -364,7 +364,7 @@ func TestMasterLogin(t *testing.T) {
 	t.Parallel()
 
 	d := dmrd.DialectMMDVM
-	tok, _ := auth.Token(d, 7, []byte("pw"))
+	tok, _ := dmrdauth.Token(d, 7, []byte("pw"))
 	s := time.Second
 	m, _ := dmrdsession.NewMaster(&dmrdsession.MasterConfig{Dialect: d, Timeout: 30 * s})
 	nak := func(out []dmrdsession.Output) bool {
@@ -433,7 +433,7 @@ func TestMasterRefusals(t *testing.T) {
 	}
 	m.Packet(40*s, ctl(dmrd.CommandRPTL, 5), nil)
 	m.Admit(0, 8, []byte("pw"), nil)
-	bad, _ := auth.Token(d, 8, []byte("px"))
+	bad, _ := dmrdauth.Token(d, 8, []byte("px"))
 	out := m.Packet(41*s, rptk(5, bad), nil)
 	if len(out) != 2 || out[1].Reason != dmrdsession.ReasonRefused || m.State() != dmrdsession.StateIdle {
 		t.Fatalf("bad token %+v", out)

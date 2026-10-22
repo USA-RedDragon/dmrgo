@@ -6,7 +6,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2/internal/digest"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
-	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscauth"
 )
 
 // The defaults of the config fields.
@@ -40,11 +40,11 @@ const MaxPacket = 1500
 
 // MaxControl is the longest link control packet in octets other than a
 // peer list, with its authentication trailer.
-const MaxControl = 16 + auth.TrailerLen
+const MaxControl = 16 + ipscauth.TrailerLen
 
 // MaxPeersLimit is the largest MaxPeers: the most peers whose peer list,
 // with its authentication trailer, fits in MaxPacket.
-const MaxPeersLimit = (MaxPacket - 7 - auth.TrailerLen) / 11
+const MaxPeersLimit = (MaxPacket - 7 - ipscauth.TrailerLen) / 11
 
 // Addr is the IPv4 address and UDP port of an IPSC peer, as a peer list
 // carries it.
@@ -227,7 +227,7 @@ type entry struct {
 	outstanding int
 	keyed       bool
 	key         [20]byte
-	bye         [5 + auth.TrailerLen]byte
+	bye         [5 + ipscauth.TrailerLen]byte
 }
 
 func (e *entry) keyOf() *[20]byte {
@@ -248,7 +248,7 @@ type link struct {
 	mode    ipsc.Mode
 	flags   ipsc.Flags
 	version [4]byte
-	key     *auth.Key
+	key     *ipscauth.Key
 	peers   []entry
 	n       int
 	list    []ipsc.PeerEntry
@@ -264,7 +264,7 @@ func newLink(id uint32, mode ipsc.Mode, flags ipsc.Flags, version [4]byte, useAu
 		l.version = VersionDefault()
 	}
 	if useAuth {
-		l.key = auth.NewKey(key)
+		l.key = ipscauth.NewKey(key)
 		l.flags.Set(ipsc.FlagAuth, true)
 	}
 	l.peers = make([]entry, maxPeers)
@@ -299,12 +299,12 @@ func (l *link) openWith(p []byte, key *[20]byte) ([]byte, Reason) {
 	if len(p) > MaxPacket {
 		return nil, ReasonMalformed
 	}
-	if len(p) < auth.TrailerLen {
+	if len(p) < ipscauth.TrailerLen {
 		return nil, ReasonAuth
 	}
-	body := p[:len(p)-auth.TrailerLen]
+	body := p[:len(p)-ipscauth.TrailerLen]
 	t := l.trailer(body, key)
-	if !digest.Equal(t[:auth.TrailerLen], p[len(body):]) {
+	if !digest.Equal(t[:ipscauth.TrailerLen], p[len(body):]) {
 		return nil, ReasonAuth
 	}
 	if len(body) == 0 {
@@ -327,7 +327,7 @@ func dropped(dst []Output, from Addr, id uint32, r Reason) []Output {
 func (l *link) sign(dst []byte, key *[20]byte) []byte {
 	if key != nil {
 		t := l.trailer(dst, key)
-		return append(dst, t[:auth.TrailerLen]...)
+		return append(dst, t[:ipscauth.TrailerLen]...)
 	}
 	if l.key == nil {
 		return dst

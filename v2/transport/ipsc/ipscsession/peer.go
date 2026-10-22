@@ -24,7 +24,7 @@ type PeerConfig struct {
 	// Auth turns on the HMAC-SHA1 trailer with Key: the Peer drops a
 	// packet without a good trailer and signs what it sends.
 	Auth bool
-	// Key is the authentication key (see auth.ParseKey).
+	// Key is the authentication key (see ipscauth.ParseKey).
 	Key [20]byte
 	// Alive is the keepalive period. 0 means AliveDefault.
 	Alive time.Duration
@@ -174,7 +174,7 @@ func (p *Peer) Peer(id uint32) (info PeerInfo, ok bool) {
 // Sign appends the authentication trailer of the packet in dst to dst
 // when the config has Auth, and returns dst as it is without. It returns
 // dst unchanged and dmrgo.ErrNilReceiver for a nil p. It allocates only
-// when dst has no room for auth.TrailerLen more octets.
+// when dst has no room for ipscauth.TrailerLen more octets.
 func (p *Peer) Sign(dst []byte) ([]byte, error) {
 	if p == nil {
 		return dst, dmrgo.ErrNilReceiver

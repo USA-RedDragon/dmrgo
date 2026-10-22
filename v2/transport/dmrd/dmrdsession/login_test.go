@@ -8,7 +8,7 @@ import (
 
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
-	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdauth"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdsession"
 )
 
@@ -30,7 +30,7 @@ func TestMasterLoginTimeout(t *testing.T) {
 		t.Fatalf("login timeout %+v", out)
 	}
 	m2, _ := dmrdsession.NewMaster(&dmrdsession.MasterConfig{Dialect: dmrd.DialectMMDVM, LoginTimeout: 5 * s, Timeout: 100 * s})
-	tok, _ := auth.Token(dmrd.DialectMMDVM, 7, []byte("pw"))
+	tok, _ := dmrdauth.Token(dmrd.DialectMMDVM, 7, []byte("pw"))
 	m2.Packet(0, ctl(dmrd.CommandRPTL, 5), nil)
 	m2.Admit(0, 7, []byte("pw"), nil)
 	m2.Packet(4*s, rptk(5, tok), nil)
@@ -55,7 +55,7 @@ func TestMasterRefuseConfig(t *testing.T) {
 	t.Parallel()
 
 	m, _ := dmrdsession.NewMaster(&dmrdsession.MasterConfig{Dialect: dmrd.DialectMMDVM})
-	tok, _ := auth.Token(dmrd.DialectMMDVM, 7, []byte("pw"))
+	tok, _ := dmrdauth.Token(dmrd.DialectMMDVM, 7, []byte("pw"))
 	m.Packet(0, ctl(dmrd.CommandRPTL, 5), nil)
 	m.Admit(0, 7, []byte("pw"), nil)
 	m.Packet(0, rptk(5, tok), nil)

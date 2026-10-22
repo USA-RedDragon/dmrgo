@@ -1,12 +1,12 @@
 package ipscsession_test
 
 import (
-	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscauth"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscsession"
 )
 
 func ipscKey() ([20]byte, error) {
-	return auth.ParseKey("0123456789abcdef")
+	return ipscauth.ParseKey("0123456789abcdef")
 }
 
 func must(b []byte, err error) []byte {

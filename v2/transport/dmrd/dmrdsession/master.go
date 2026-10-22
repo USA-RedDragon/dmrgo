@@ -6,7 +6,7 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2"
 	"github.com/USA-RedDragon/dmrgo/v2/internal/digest"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
-	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd/dmrdauth"
 )
 
 // MasterConfig configures NewMaster.
@@ -161,7 +161,7 @@ func (m *Master) Admit(now time.Duration, salt uint32, password []byte, dst []Ou
 	if m.state != StateLogin {
 		return dst
 	}
-	tok, err := auth.Token(m.dialect, salt, password)
+	tok, err := dmrdauth.Token(m.dialect, salt, password)
 	if err != nil {
 		return m.Refuse(now, dst)
 	}

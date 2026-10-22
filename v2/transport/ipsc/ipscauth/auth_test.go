@@ -1,24 +1,24 @@
-package auth_test
+package ipscauth_test
 
 import (
 	"bytes"
 	"encoding/hex"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/auth"
+	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc/ipscauth"
 )
 
 func TestSignMatchesPython(t *testing.T) {
 	t.Parallel()
 
-	k, err := auth.ParseKey("123456789abcdef1234")
+	k, err := ipscauth.ParseKey("123456789abcdef1234")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if hex.EncodeToString(k[:]) != "00000000000000000000000123456789abcdef1234"[2:] {
 		t.Fatalf("key %x", k)
 	}
-	key := auth.NewKey(k)
+	key := ipscauth.NewKey(k)
 	for _, tt := range []struct{ body, trailer string }{
 		{"900004ce2e6a0000805c04080400", "5a09decc4db02fba02dc"},
 		{"96003010af6a000080dc04020401", "712d51b8061daed9d7ce"},
@@ -46,11 +46,11 @@ func TestParseKeyErrors(t *testing.T) {
 	t.Parallel()
 
 	for _, s := range []string{"xyz", "0123456789012345678901234567890123456789A"} {
-		if _, err := auth.ParseKey(s); err == nil {
+		if _, err := ipscauth.ParseKey(s); err == nil {
 			t.Errorf("%q: no error", s)
 		}
 	}
-	k, err := auth.ParseKey("0123456789ABCDEF0123456789abcdef01234567")
+	k, err := ipscauth.ParseKey("0123456789ABCDEF0123456789abcdef01234567")
 	if err != nil || hex.EncodeToString(k[:]) != "0123456789abcdef0123456789abcdef01234567" {
 		t.Fatalf("%x %v", k, err)
 	}
@@ -59,7 +59,7 @@ func TestParseKeyErrors(t *testing.T) {
 func TestKeyNil(t *testing.T) {
 	t.Parallel()
 
-	var k *auth.Key
+	var k *ipscauth.Key
 	if out, err := k.Sign([]byte{1, 2, 3}); err == nil || len(out) != 3 {
 		t.Fatal("nil Key signs")
 	}

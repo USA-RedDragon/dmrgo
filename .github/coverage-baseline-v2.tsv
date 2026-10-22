@@ -216,7 +216,7 @@ v2/sms/nocopy.go	0	0
 v2/sms/sms.go	141	131
 v2/transport/dmrd/alias_decode_gen.go	150	146
 v2/transport/dmrd/alias_lc.go	38	38
-v2/transport/dmrd/auth/auth.go	69	69
+v2/transport/dmrd/dmrdauth/auth.go	69	69
 v2/transport/dmrd/bridge.go	83	74
 v2/transport/dmrd/bridge_layout_decode_gen.go	261	236
 v2/transport/dmrd/config.go	16	15
@@ -239,7 +239,7 @@ v2/transport/hytera/frame.go	102	102
 v2/transport/hytera/layout_decode_gen.go	137	135
 v2/transport/hytera/p2p.go	37	36
 v2/transport/hytera/types.go	22	12
-v2/transport/ipsc/auth/auth.go	30	30
+v2/transport/ipsc/ipscauth/auth.go	30	30
 v2/transport/ipsc/control.go	67	65
 v2/transport/ipsc/errors.go	2	1
 v2/transport/ipsc/layout_decode_gen.go	303	274

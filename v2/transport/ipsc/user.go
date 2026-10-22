@@ -172,7 +172,7 @@ func (u *User) SetCall(group bool, target, source uint32) error {
 func (u *User) IsVoice() bool { return u != nil && u.Burst.Type() == BurstVoice }
 
 // DecodeUser decodes the user packet p, without the authentication trailer
-// (see package auth). It returns ErrCommand for another opcode, ErrShort,
+// (see package ipscauth). It returns ErrCommand for another opcode, ErrShort,
 // and ErrLength when the length does not match a voice layout or a data
 // packet is too short for its payload size. It does not allocate.
 func DecodeUser(p []byte) (User, error) {
