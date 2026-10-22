@@ -111,13 +111,13 @@ func TestTalkerAliasBlocks_Table(t *testing.T) {
 		{layer3.TalkerAliasUTF16, [4]int{3, 6, 10, 13}},
 	}
 	for _, tt := range tests {
-		for n, max := range tt.bounds {
-			if got := pdu.TalkerAliasBlocks(tt.format, max); got != n {
-				t.Errorf("format %d length %d: %d blocks, want %d", tt.format, max, got, n)
+		for n, limit := range tt.bounds {
+			if got := pdu.TalkerAliasBlocks(tt.format, limit); got != n {
+				t.Errorf("format %d length %d: %d blocks, want %d", tt.format, limit, got, n)
 			}
 			if n < 3 {
-				if got := pdu.TalkerAliasBlocks(tt.format, max+1); got != n+1 {
-					t.Errorf("format %d length %d: %d blocks, want %d", tt.format, max+1, got, n+1)
+				if got := pdu.TalkerAliasBlocks(tt.format, limit+1); got != n+1 {
+					t.Errorf("format %d length %d: %d blocks, want %d", tt.format, limit+1, got, n+1)
 				}
 			}
 		}
