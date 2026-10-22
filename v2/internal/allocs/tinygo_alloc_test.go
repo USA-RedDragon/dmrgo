@@ -46,6 +46,12 @@ func tinyOK[T any](v T, err error) T {
 	return v
 }
 
+func tinyUnconfirmed(p pdu.UnconfirmedDataHeader) pdu.DataHeader {
+	var h pdu.DataHeader
+	_ = tinyOK(struct{}{}, h.SetUnconfirmedDataHeader(p))
+	return h
+}
+
 func tinyDataBurst(t *testing.T, r *rand.Rand, dt enums.DataType) layer2.RawBurst {
 	t.Helper()
 	switch dt {
@@ -160,20 +166,18 @@ func tinyVoiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 	frags := layer2.EncodeEmbeddedLC(lc9)
 	lcss := [4]enums.LCSS{enums.LCSSFirstFragment, enums.LCSSContinuationFragment, enums.LCSSContinuationFragment, enums.LCSSLastFragment}
 	var (
-		asm    layer2.EmbeddedLCAssembler
-		rx     layer2.VoiceReceiver
-		flcDst pdu.FullLinkControl
-		flcP   pdu.FullLinkControlPayloads
-		err    error
+		asm layer2.EmbeddedLCAssembler
+		rx  layer2.VoiceReceiver
+		err error
 	)
 	_ = err
 	slot, _ := vocoder.EncodeAMBE72(frames[0])
 	frame := frames[0]
 	return []tinyOp{
 		{"layer2.VoiceTransmitter.AppendFrames", func() { _, err = tx.AppendFrames(buf[:0], frames[:layer2.VoiceSlotsPerBurst]...) }},
-		{"layer2.VoiceReceiver.ReceiveInto", func() {
+		{"layer2.VoiceReceiver.Receive", func() {
 			for i := range bursts {
-				_, err = rx.ReceiveInto(&flcDst, &flcP, &bursts[i])
+				_, _, err = rx.Receive(&bursts[i])
 			}
 		}},
 		{"layer2.EncodeEmbeddedLC", func() { frags = layer2.EncodeEmbeddedLC(lc9) }},
@@ -214,7 +218,8 @@ func tinyServiceOps(t *testing.T, r *rand.Rand) []tinyOp {
 	csbk := tinyDataBurst(t, r, enums.DataTypeCSBK)
 
 	b := packet.NewBuilder(127)
-	h := pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{SAP: 4, LLIDDestination: 2, LLIDSource: 1, FullMessageFlag: true}}
+	var h pdu.DataHeader
+	_ = tinyOK(struct{}{}, h.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{SAP: 4, LLIDDestination: 2, LLIDSource: 1, FullMessageFlag: true}))
 	p := tinyOK(b.Segment(h, make([]byte, 100), enums.DataTypeRate12))
 	var rd packet.ResponseData
 	rd.Retry[2], rd.Retry[5] = true, true
@@ -329,7 +334,8 @@ func tinyCSBKOps(t *testing.T) []tinyOp {
 
 func tinyCACHOps(t *testing.T) []tinyOp {
 	t.Helper()
-	slc := pdu.ShortLC{SLCO: enums.SLCOActivityUpdate, ActivityUpdate: &pdu.ShortLCActivityUpdate{}}
+	var slc pdu.ShortLC
+	_ = tinyOK(struct{}{}, slc.SetActivityUpdate(pdu.ShortLCActivityUpdate{}))
 	tact := pdu.TACT{}
 	fields := tinyOK(layer2.EncodeShortLCToCACH(&slc, tact))
 	var cachs [4]layer2.CACH
@@ -337,11 +343,9 @@ func tinyCACHOps(t *testing.T) []tinyOp {
 		cachs[i] = layer2.DecodeCACHField(fields[i])
 	}
 	var (
-		asm    layer2.ShortLCAssembler
-		gen    bs.CACH
-		slcDst pdu.ShortLC
-		slcP   pdu.ShortLCPayloads
-		err    error
+		asm layer2.ShortLCAssembler
+		gen bs.CACH
+		err error
 	)
 	_ = err
 	return []tinyOp{
@@ -352,9 +356,9 @@ func tinyCACHOps(t *testing.T) []tinyOp {
 				fields[0], err = gen.Next(enums.Slot2, true, &slc)
 			}
 		}},
-		{"layer2.ShortLCAssembler.AddInto", func() {
+		{"layer2.ShortLCAssembler.Add", func() {
 			for _, c := range cachs {
-				_, err = asm.AddInto(&slcDst, &slcP, c)
+				_, _, err = asm.Add(c)
 			}
 		}},
 	}
@@ -389,15 +393,10 @@ func tinyPDUOps(t *testing.T, r *rand.Rand) []tinyOp {
 	var slcBits [5]byte
 	var (
 		csbk   pdu.CSBK
-		csbkP  pdu.CSBKPayloads
 		lc     pdu.FullLinkControl
-		lcP    pdu.FullLinkControlPayloads
 		dh     pdu.DataHeader
-		dhP    pdu.DataHeaderPayloads
 		mbc    pdu.MBCHeader
-		mbcP   pdu.MBCHeaderPayloads
 		slc    pdu.ShortLC
-		slcP   pdu.ShortLCPayloads
 		err    error
 		pi     = pdu.DecodePIHeader(payload(enums.DataTypePIHeader))
 		usbd   = pdu.DecodeUnifiedSingleBlockData(payload(enums.DataTypeUnifiedSingleBlock))
@@ -408,21 +407,21 @@ func tinyPDUOps(t *testing.T, r *rand.Rand) []tinyOp {
 		eBits  [2]byte
 	)
 	_ = err
-	pdu.DecodeCSBKInto(&csbk, &csbkP, csbkBits)
-	pdu.DecodeFullLinkControlInto(&lc, &lcP, lcBits, enums.DataTypeVoiceLCHeader)
-	pdu.DecodeDataHeaderInto(&dh, &dhP, dhBits)
-	pdu.DecodeMBCHeaderInto(&mbc, &mbcP, mbcBits)
-	pdu.DecodeShortLCInto(&slc, &slcP, slcBits)
+	csbk = pdu.DecodeCSBK(csbkBits)
+	lc = pdu.DecodeFullLinkControl(lcBits, enums.DataTypeVoiceLCHeader)
+	dh = pdu.DecodeDataHeader(dhBits)
+	mbc = pdu.DecodeMBCHeader(mbcBits)
+	slc = pdu.DecodeShortLC(slcBits)
 	return []tinyOp{
-		{"layer2/pdu.DecodeCSBKInto", func() { pdu.DecodeCSBKInto(&csbk, &csbkP, csbkBits) }},
+		{"layer2/pdu.DecodeCSBK", func() { csbk = pdu.DecodeCSBK(csbkBits) }},
 		{"layer2/pdu.CSBK.Encode", func() { enc96, err = csbk.Encode() }},
-		{"layer2/pdu.DecodeFullLinkControlInto", func() { pdu.DecodeFullLinkControlInto(&lc, &lcP, lcBits, enums.DataTypeVoiceLCHeader) }},
+		{"layer2/pdu.DecodeFullLinkControl", func() { lc = pdu.DecodeFullLinkControl(lcBits, enums.DataTypeVoiceLCHeader) }},
 		{"layer2/pdu.FullLinkControl.Encode", func() { enc96, err = lc.Encode() }},
-		{"layer2/pdu.DecodeDataHeaderInto", func() { pdu.DecodeDataHeaderInto(&dh, &dhP, dhBits) }},
+		{"layer2/pdu.DecodeDataHeader", func() { dh = pdu.DecodeDataHeader(dhBits) }},
 		{"layer2/pdu.DataHeader.Encode", func() { enc96, err = dh.Encode() }},
-		{"layer2/pdu.DecodeMBCHeaderInto", func() { pdu.DecodeMBCHeaderInto(&mbc, &mbcP, mbcBits) }},
+		{"layer2/pdu.DecodeMBCHeader", func() { mbc = pdu.DecodeMBCHeader(mbcBits) }},
 		{"layer2/pdu.MBCHeader.Encode", func() { enc96, err = mbc.Encode() }},
-		{"layer2/pdu.DecodeShortLCInto", func() { pdu.DecodeShortLCInto(&slc, &slcP, slcBits) }},
+		{"layer2/pdu.DecodeShortLC", func() { slc = pdu.DecodeShortLC(slcBits) }},
 		{"layer2/pdu.ShortLC.Encode", func() { _, err = slc.Encode() }},
 		{"layer2/pdu.PIHeader.Encode", func() { enc96, err = pi.Encode() }},
 		{"layer2/pdu.UnifiedSingleBlockData.Encode", func() { enc96, err = usbd.Encode() }},

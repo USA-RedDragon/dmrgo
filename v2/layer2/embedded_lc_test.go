@@ -31,14 +31,12 @@ func capturedFragments() [4][32]unpacked.Bit {
 }
 
 func capturedLC() pdu.FullLinkControl {
-	return pdu.FullLinkControl{
-		BurstDataType: enums.DataTypeVoiceLCHeader,
-		FLCO:          enums.FLCOUnitToUnitVoiceChannelUser,
-		UnitToUnit: &pdu.FLCUnitToUnit{
-			TargetAddress: 9990,
-			SourceAddress: 3191868,
-		},
-	}
+	lc := pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader}
+	mustSet(lc.SetUnitToUnit(pdu.FLCUnitToUnit{
+		TargetAddress: 9990,
+		SourceAddress: 3191868,
+	}))
+	return lc
 }
 
 func TestEmbeddedLC_DecodeCapture(t *testing.T) {

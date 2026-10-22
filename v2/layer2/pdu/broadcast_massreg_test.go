@@ -20,7 +20,11 @@ func TestBroadcastPDU_AsMassReg_Table7_76(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c, err := (&pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKBroadcast, BroadcastPDU: &b}).Encode()
+	cs := pdu.CSBK{LastBlock: true}
+	if err := cs.SetBroadcast(b); err != nil {
+		t.Fatal(err)
+	}
+	c, err := cs.Encode()
 	if err != nil || [8]byte(c[2:10]) != enc {
 		t.Errorf("MassRegParms encodes as %x, the C_BCAST as %x %v", enc, c[2:10], err)
 	}

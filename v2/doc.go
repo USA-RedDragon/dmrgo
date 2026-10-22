@@ -38,11 +38,10 @@
 // encode, build, receive and assemble calls, with gc and with TinyGo at the
 // default stack size of a microcontroller target. Errors are static values,
 // so a call that fails does not allocate either. A call that returns a fresh
-// slice, string or payload struct allocates it, and its doc says so. Each has
-// a form that writes into storage of the caller, such as pdu.DecodeCSBKInto
-// for pdu.DecodeCSBK and the Append forms. A layer2.Burst keeps its decoded
-// Data and the payload structs that Data points to until the next decode
-// into it, so it must not be copied after its first decode. The README lists
+// slice or string allocates it, and its doc says so. Each has a form that
+// writes into storage of the caller, such as the Append forms. A
+// layer2.Burst keeps its decoded Data until the next decode into it, so it
+// must not be copied after its first decode. The README lists
 // every place where the library can allocate, and the tests in
 // internal/allocgate and internal/allocs check it.
 //

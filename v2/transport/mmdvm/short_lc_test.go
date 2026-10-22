@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/mmdvm"
 )
 
@@ -27,13 +26,6 @@ func TestDMRShortLCFromMMDVMHost(t *testing.T) {
 	if err != nil || back != s {
 		t.Fatalf("NewDMRShortLC: %x %v, want %x", back.LC, err, s.LC)
 	}
-	var into pdu.ShortLC
-	var pl pdu.ShortLCPayloads
-	s.ShortLCInto(&into, &pl)
-	if into.SLCO != slc.SLCO || into.FEC != slc.FEC {
-		t.Fatalf("ShortLCInto: %+v", into)
-	}
-	s.ShortLCInto(nil, &pl)
 	if _, err := mmdvm.NewDMRShortLC(nil); err == nil {
 		t.Fatal("nil Short LC: no error")
 	}

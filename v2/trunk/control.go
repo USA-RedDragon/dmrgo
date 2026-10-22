@@ -44,8 +44,6 @@ type control struct {
 	b          *layer2.Burst
 	opts       layer2.DecodeOptions
 	slc        layer2.ShortLCAssembler
-	slcOut     pdu.ShortLC
-	slcP       pdu.ShortLCPayloads
 	pending    pendingKind
 	pendGrant  Grant
 	pendChan   uint16
@@ -77,11 +75,14 @@ func (c *control) decode(raw *layer2.RawBurst, h *layer2.Hint) bool {
 }
 
 func (c *control) cach(cc *layer2.CACH) bool {
-	done, err := c.slc.AddInto(&c.slcOut, &c.slcP, *cc)
-	if err != nil || !done || c.slcOut.FEC.Uncorrectable || c.slcOut.CSysParms == nil {
+	slc, done, err := c.slc.Add(*cc)
+	if err != nil || !done || slc.FEC.Uncorrectable {
 		return false
 	}
-	p := c.slcOut.CSysParms
+	p, ok := slc.AsCSysParms()
+	if !ok {
+		return false
+	}
 	c.site.SlotCounter, c.counterNew = p.CommonSlotCounter, true
 	code14 := uint16(p.MODEL)<<12 | p.NetSiteRaw
 	if !c.site.HasSysCode {
@@ -131,8 +132,8 @@ func (c *control) tscc(now time.Duration, slot enums.Slot) tsccEvent {
 		return c.mbcContinuation(now, d, slot)
 	case *pdu.DataHeader:
 		c.pending, c.udtOn = pendingNone, false
-		if h := d.UDTHeader; h != nil && (h.Opcode == pdu.UDTOpcodeOutboundHeader || h.Opcode == pdu.UDTOpcodeDGNAOutboundHeader) {
-			c.udt = UDT{Header: *h}
+		if h, ok := d.AsUDTHeader(); ok && (h.Opcode == pdu.UDTOpcodeOutboundHeader || h.Opcode == pdu.UDTOpcodeDGNAOutboundHeader) {
+			c.udt = UDT{Header: h}
 			c.udtWant, c.udtSlot, c.udtOn = int(h.AppendedBlocks)+1, slot, true
 		}
 		return eventTSCC
@@ -160,16 +161,17 @@ func (c *control) udtBlock(d *pdu.Rate12Data, slot enums.Slot) tsccEvent {
 }
 
 func (c *control) csbk(now time.Duration, d *pdu.CSBK) tsccEvent {
-	switch {
-	case d.AlohaPDU != nil:
-		return c.aloha(d.AlohaPDU)
-	case d.BroadcastPDU != nil:
-		return c.broadcast(d.BroadcastPDU)
-	case d.MovePDU != nil:
-		if d.MovePDU.PhysicalChannel == ChannelAbsolute {
+	if a, ok := d.AsAloha(); ok {
+		return c.aloha(&a)
+	}
+	if b, ok := d.AsBroadcast(); ok {
+		return c.broadcast(&b)
+	}
+	if m, ok := d.AsMove(); ok {
+		if m.PhysicalChannel == ChannelAbsolute {
 			return eventTSCC
 		}
-		c.move = *d.MovePDU
+		c.move = m
 		return eventMove
 	}
 	g, ok, absolute := grantOf(d)
@@ -250,23 +252,19 @@ func (c *control) annWD(ch uint16, cc enums.ColorCode, withdraw bool) {
 
 func (c *control) mbcHeader(h *pdu.MBCHeader, slot enums.Slot) tsccEvent {
 	c.pendSlot = slot
-	if h.MovePDU != nil {
-		c.move, c.pending = *h.MovePDU, pendingMove
+	if m, ok := h.AsMove(); ok {
+		c.move, c.pending = m, pendingMove
 		return eventTSCC
 	}
-	if h.BroadcastPDU != nil {
-		ev := c.system(h.BroadcastPDU.SysIdentCode)
-		if v, ok := h.BroadcastPDU.AsChanFreq(); ok && ev != eventOther {
+	if b, ok := h.AsBroadcast(); ok {
+		ev := c.system(b.SysIdentCode)
+		if v, ok := b.AsChanFreq(); ok && ev != eventOther {
 			c.pending, c.pendChan = pendingChanFreq, v.Channel
 		}
 		return ev
 	}
 	cs := &c.cs
-	*cs = pdu.CSBK{Opcode: h.Opcode}
-	cs.PrivateVoiceGrantPDU, cs.TalkgroupVoiceGrantPDU = h.PrivateVoiceGrantPDU, h.TalkgroupVoiceGrantPDU
-	cs.BroadcastTalkgroupVoiceGrantPDU, cs.PrivateDataGrantPDU = h.BroadcastTalkgroupVoiceGrantPDU, h.PrivateDataGrantPDU
-	cs.TalkgroupDataGrantPDU, cs.DuplexPrivateVoiceGrantPDU = h.TalkgroupDataGrantPDU, h.DuplexPrivateVoiceGrantPDU
-	cs.DuplexPrivateDataGrantPDU, cs.PrivateDataGrantMultiItemPDU = h.DuplexPrivateDataGrantPDU, h.PrivateDataGrantMultiItemPDU
+	*cs = pdu.CSBK{Opcode: h.Opcode, FID: h.FID, RawPayload: h.RawPayload}
 	if g, ok, _ := grantOf(cs); ok {
 		c.pending, c.pendGrant = pendingGrant, g
 	}
@@ -360,48 +358,39 @@ func slotOf(ch2 bool) enums.Slot {
 
 func grantOf(d *pdu.CSBK) (g Grant, ok, absolute bool) {
 	g.Opcode = d.Opcode
-	switch {
-	case d.TalkgroupVoiceGrantPDU != nil:
-		p := d.TalkgroupVoiceGrantPDU
+	if p, ok := d.AsTalkgroupVoiceGrant(); ok {
 		g.Service, g.Group = enums.ServiceKindTalkgroupVoice, true
 		g.Channel, g.Slot, g.LateEntry, g.Emergency, g.Offset = p.PhysicalChannel, slotOf(p.LogicalChannel), p.LateEntry, p.Emergency, p.Offset
 		g.Target, g.Source = p.TargetAddress, p.SourceAddress
-	case d.BroadcastTalkgroupVoiceGrantPDU != nil:
-		p := d.BroadcastTalkgroupVoiceGrantPDU
+	} else if p, ok := d.AsBroadcastTalkgroupVoiceGrant(); ok {
 		g.Service, g.Group = enums.ServiceKindTalkgroupVoice, true
 		g.Channel, g.Slot, g.LateEntry, g.Emergency, g.Offset = p.PhysicalChannel, slotOf(p.LogicalChannel), p.LateEntry, p.Emergency, p.Offset
 		g.Target, g.Source = p.TargetAddress, p.SourceAddress
-	case d.PrivateVoiceGrantPDU != nil:
-		p := d.PrivateVoiceGrantPDU
+	} else if p, ok := d.AsPrivateVoiceGrant(); ok {
 		g.Service = enums.ServiceKindIndividualVoice
 		g.Channel, g.Slot, g.Emergency, g.Offset = p.PhysicalChannel, slotOf(p.LogicalChannel), p.Emergency, p.Offset
 		g.Target, g.Source = p.TargetAddress, p.SourceAddress
-	case d.DuplexPrivateVoiceGrantPDU != nil:
-		p := d.DuplexPrivateVoiceGrantPDU
+	} else if p, ok := d.AsDuplexPrivateVoiceGrant(); ok {
 		g.Service = enums.ServiceKindDuplexVoice
 		g.Channel, g.Slot, g.Emergency = p.PhysicalChannel, slotOf(p.LogicalChannel), p.Emergency
 		g.Target, g.Source = p.TargetAddress, p.SourceAddress
-	case d.TalkgroupDataGrantPDU != nil:
-		p := d.TalkgroupDataGrantPDU
+	} else if p, ok := d.AsTalkgroupDataGrant(); ok {
 		g.Service, g.Group = enums.ServiceKindTalkgroupPacketData, true
 		g.Channel, g.Slot, g.HiRate, g.Emergency, g.Offset = p.PhysicalChannel, slotOf(p.LogicalChannel), p.HiRate, p.Emergency, p.Offset
 		g.Target, g.Source = p.TargetAddress, p.SourceAddress
-	case d.PrivateDataGrantPDU != nil:
-		p := d.PrivateDataGrantPDU
+	} else if p, ok := d.AsPrivateDataGrant(); ok {
 		g.Service = enums.ServiceKindIndividualPacketData
 		g.Channel, g.Slot, g.HiRate, g.Emergency, g.Offset = p.PhysicalChannel, slotOf(p.LogicalChannel), p.HiRate, p.Emergency, p.Offset
 		g.Target, g.Source = p.TargetAddress, p.SourceAddress
-	case d.PrivateDataGrantMultiItemPDU != nil:
-		p := d.PrivateDataGrantMultiItemPDU
+	} else if p, ok := d.AsPrivateDataGrantMultiItem(); ok {
 		g.Service = enums.ServiceKindIndividualPacketData
 		g.Channel, g.Slot, g.HiRate, g.Emergency, g.Offset = p.PhysicalChannel, slotOf(p.LogicalChannel), p.HiRate, p.Emergency, p.Offset
 		g.Target, g.Source = p.TargetAddress, p.SourceAddress
-	case d.DuplexPrivateDataGrantPDU != nil:
-		p := d.DuplexPrivateDataGrantPDU
+	} else if p, ok := d.AsDuplexPrivateDataGrant(); ok {
 		g.Service = enums.ServiceKindDuplexPacketData
 		g.Channel, g.Slot, g.HiRate, g.Emergency = p.PhysicalChannel, slotOf(p.LogicalChannel), p.HiRate, p.Emergency
 		g.Target, g.Source = p.TargetAddress, p.SourceAddress
-	default:
+	} else {
 		mi, isMI := d.AsTalkgroupDataGrantMultiItem()
 		if !isMI || d.Hint0x38 != pdu.Opcode0x38TalkgroupDataGrantMultiItem {
 			return g, false, false

@@ -25,7 +25,6 @@
 package pdu
 
 import (
-	"errors"
 	dmrgo "github.com/USA-RedDragon/dmrgo/v2"
 	enums "github.com/USA-RedDragon/dmrgo/v2/enums"
 	crc "github.com/USA-RedDragon/dmrgo/v2/internal/crc"
@@ -1835,8 +1834,7 @@ func (s *MaintenancePDU) String() string {
 }
 
 // DecodeCSBK decodes a CSBK. data holds the 96 bits of the PDU packed, the
-// first bit in the most significant bit of data[0]. It allocates the payload
-// struct that the dispatch field points to; DecodeCSBKInto does not.
+// first bit in the most significant bit of data[0].
 // (ETSI TS 102 361-1 clause 9.1.8)
 func DecodeCSBK(data [12]byte) CSBK {
 	var result CSBK
@@ -1845,232 +1843,8 @@ func DecodeCSBK(data [12]byte) CSBK {
 	result.ProtectFlag = data[0]&0x40 != 0
 	result.Opcode = CSBKOpcode(uint64(data[0]) & 0x3F)
 	result.FID = enums.FID(uint64(data[1]))
-	var _dispatchBytes [8]byte
-	copy(_dispatchBytes[0:8], data[2:10])
-	if result.FID == 0 {
-		switch result.Opcode {
-		case CSBKUnitToUnitVoiceServiceRequest:
-			_decoded := decodeUnitToUnitVoiceServiceRequestPDU(_dispatchBytes)
-			result.UnitToUnitVoiceServiceRequestPDU = &_decoded
-		case CSBKUnitToUnitVoiceServiceAnswerResponse:
-			_decoded := decodeUnitToUnitVoiceServiceAnswerResponsePDU(_dispatchBytes)
-			result.UnitToUnitVoiceServiceAnswerResponsePDU = &_decoded
-		case CSBKNegativeAcknowledgement:
-			_decoded := decodeNegativeAcknowledgementPDU(_dispatchBytes)
-			result.NegativeAcknowledgementPDU = &_decoded
-		case CSBKPreamble:
-			_decoded := decodePreamblePDU(_dispatchBytes)
-			result.PreamblePDU = &_decoded
-		case CSBKChannelTiming:
-			_decoded := decodeChannelTimingPDU(_dispatchBytes)
-			result.ChannelTimingPDU = &_decoded
-		case CSBKPrivateVoiceGrant:
-			_decoded := decodePrivateVoiceGrantPDU(_dispatchBytes)
-			result.PrivateVoiceGrantPDU = &_decoded
-		case CSBKTalkgroupVoiceGrant:
-			_decoded := decodeTalkgroupVoiceGrantPDU(_dispatchBytes)
-			result.TalkgroupVoiceGrantPDU = &_decoded
-		case CSBKBroadcastTalkgroupVoiceGrant:
-			_decoded := decodeBroadcastTalkgroupVoiceGrantPDU(_dispatchBytes)
-			result.BroadcastTalkgroupVoiceGrantPDU = &_decoded
-		case CSBKPrivateDataGrant:
-			_decoded := decodePrivateDataGrantPDU(_dispatchBytes)
-			result.PrivateDataGrantPDU = &_decoded
-		case CSBKTalkgroupDataGrant:
-			_decoded := decodeTalkgroupDataGrantPDU(_dispatchBytes)
-			result.TalkgroupDataGrantPDU = &_decoded
-		case CSBKDuplexPrivateVoiceGrant:
-			_decoded := decodeDuplexPrivateVoiceGrantPDU(_dispatchBytes)
-			result.DuplexPrivateVoiceGrantPDU = &_decoded
-		case CSBKDuplexPrivateDataGrant:
-			_decoded := decodeDuplexPrivateDataGrantPDU(_dispatchBytes)
-			result.DuplexPrivateDataGrantPDU = &_decoded
-		case CSBKPrivateDataGrantMultiItem:
-			_decoded := decodePrivateDataGrantMultiItemPDU(_dispatchBytes)
-			result.PrivateDataGrantMultiItemPDU = &_decoded
-		case CSBKMove:
-			_decoded := decodeMovePDU(_dispatchBytes)
-			result.MovePDU = &_decoded
-		case CSBKAloha:
-			_decoded := decodeAlohaPDU(_dispatchBytes)
-			result.AlohaPDU = &_decoded
-		case CSBKBroadcast:
-			_decoded := decodeBroadcastPDU(_dispatchBytes)
-			result.BroadcastPDU = &_decoded
-		case CSBKClear:
-			_decoded := decodeClearPDU(_dispatchBytes)
-			result.ClearPDU = &_decoded
-		case CSBKProtect:
-			_decoded := decodeProtectPDU(_dispatchBytes)
-			result.ProtectPDU = &_decoded
-		case CSBKAhoy:
-			_decoded := decodeAhoyPDU(_dispatchBytes)
-			result.AhoyPDU = &_decoded
-		case CSBKAckOutbound:
-			_decoded := decodeAckOutboundPDU(_dispatchBytes)
-			result.AckOutboundPDU = &_decoded
-		case CSBKAckInbound:
-			_decoded := decodeAckInboundPDU(_dispatchBytes)
-			result.AckInboundPDU = &_decoded
-		case CSBKAckOutboundPayload:
-			_decoded := decodeAckOutboundPayloadPDU(_dispatchBytes)
-			result.AckOutboundPayloadPDU = &_decoded
-		case CSBKAckInboundPayload:
-			_decoded := decodeAckInboundPayloadPDU(_dispatchBytes)
-			result.AckInboundPayloadPDU = &_decoded
-		case CSBKRandomAccess:
-			_decoded := decodeRandomAccessPDU(_dispatchBytes)
-			result.RandomAccessPDU = &_decoded
-		case CSBKAckvitation:
-			_decoded := decodeAckvitationPDU(_dispatchBytes)
-			result.AckvitationPDU = &_decoded
-		case CSBKMaintenance:
-			_decoded := decodeMaintenancePDU(_dispatchBytes)
-			result.MaintenancePDU = &_decoded
-		default:
-			copy(result.RawPayload[0:8], data[2:10])
-		}
-	} else {
-		copy(result.RawPayload[0:8], data[2:10])
-	}
+	copy(result.RawPayload[0:8], data[2:10])
 	return result
-}
-
-// CSBKPayloads holds one payload struct of each type that
-// a CSBK dispatch field points to, for DecodeCSBKInto.
-// The zero value is ready to use.
-type CSBKPayloads struct {
-	unitToUnitVoiceServiceRequestPDU        UnitToUnitVoiceServiceRequestPDU
-	unitToUnitVoiceServiceAnswerResponsePDU UnitToUnitVoiceServiceAnswerResponsePDU
-	negativeAcknowledgementPDU              NegativeAcknowledgementPDU
-	preamblePDU                             PreamblePDU
-	channelTimingPDU                        ChannelTimingPDU
-	privateVoiceGrantPDU                    PrivateVoiceGrantPDU
-	talkgroupVoiceGrantPDU                  TalkgroupVoiceGrantPDU
-	broadcastTalkgroupVoiceGrantPDU         BroadcastTalkgroupVoiceGrantPDU
-	privateDataGrantPDU                     PrivateDataGrantPDU
-	talkgroupDataGrantPDU                   TalkgroupDataGrantPDU
-	duplexPrivateVoiceGrantPDU              DuplexPrivateVoiceGrantPDU
-	duplexPrivateDataGrantPDU               DuplexPrivateDataGrantPDU
-	privateDataGrantMultiItemPDU            PrivateDataGrantMultiItemPDU
-	movePDU                                 MovePDU
-	alohaPDU                                AlohaPDU
-	broadcastPDU                            BroadcastPDU
-	clearPDU                                ClearPDU
-	protectPDU                              ProtectPDU
-	ahoyPDU                                 AhoyPDU
-	ackOutboundPDU                          AckOutboundPDU
-	ackInboundPDU                           AckInboundPDU
-	ackOutboundPayloadPDU                   AckOutboundPayloadPDU
-	ackInboundPayloadPDU                    AckInboundPayloadPDU
-	randomAccessPDU                         RandomAccessPDU
-	ackvitationPDU                          AckvitationPDU
-	maintenancePDU                          MaintenancePDU
-}
-
-// DecodeCSBKInto decodes data into dst as DecodeCSBK does,
-// but points the dispatch field of dst into p, so it does not allocate.
-// The payload stays valid until the next decode into p. A nil dst or
-// p does nothing.
-func DecodeCSBKInto(dst *CSBK, p *CSBKPayloads, data [12]byte) {
-	if dst == nil || p == nil {
-		return
-	}
-	*dst = CSBK{}
-	result := dst
-	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xA5A5)
-	result.LastBlock = data[0]&0x80 != 0
-	result.ProtectFlag = data[0]&0x40 != 0
-	result.Opcode = CSBKOpcode(uint64(data[0]) & 0x3F)
-	result.FID = enums.FID(uint64(data[1]))
-	var _dispatchBytes [8]byte
-	copy(_dispatchBytes[0:8], data[2:10])
-	if result.FID == 0 {
-		switch result.Opcode {
-		case CSBKUnitToUnitVoiceServiceRequest:
-			p.unitToUnitVoiceServiceRequestPDU = decodeUnitToUnitVoiceServiceRequestPDU(_dispatchBytes)
-			result.UnitToUnitVoiceServiceRequestPDU = &p.unitToUnitVoiceServiceRequestPDU
-		case CSBKUnitToUnitVoiceServiceAnswerResponse:
-			p.unitToUnitVoiceServiceAnswerResponsePDU = decodeUnitToUnitVoiceServiceAnswerResponsePDU(_dispatchBytes)
-			result.UnitToUnitVoiceServiceAnswerResponsePDU = &p.unitToUnitVoiceServiceAnswerResponsePDU
-		case CSBKNegativeAcknowledgement:
-			p.negativeAcknowledgementPDU = decodeNegativeAcknowledgementPDU(_dispatchBytes)
-			result.NegativeAcknowledgementPDU = &p.negativeAcknowledgementPDU
-		case CSBKPreamble:
-			p.preamblePDU = decodePreamblePDU(_dispatchBytes)
-			result.PreamblePDU = &p.preamblePDU
-		case CSBKChannelTiming:
-			p.channelTimingPDU = decodeChannelTimingPDU(_dispatchBytes)
-			result.ChannelTimingPDU = &p.channelTimingPDU
-		case CSBKPrivateVoiceGrant:
-			p.privateVoiceGrantPDU = decodePrivateVoiceGrantPDU(_dispatchBytes)
-			result.PrivateVoiceGrantPDU = &p.privateVoiceGrantPDU
-		case CSBKTalkgroupVoiceGrant:
-			p.talkgroupVoiceGrantPDU = decodeTalkgroupVoiceGrantPDU(_dispatchBytes)
-			result.TalkgroupVoiceGrantPDU = &p.talkgroupVoiceGrantPDU
-		case CSBKBroadcastTalkgroupVoiceGrant:
-			p.broadcastTalkgroupVoiceGrantPDU = decodeBroadcastTalkgroupVoiceGrantPDU(_dispatchBytes)
-			result.BroadcastTalkgroupVoiceGrantPDU = &p.broadcastTalkgroupVoiceGrantPDU
-		case CSBKPrivateDataGrant:
-			p.privateDataGrantPDU = decodePrivateDataGrantPDU(_dispatchBytes)
-			result.PrivateDataGrantPDU = &p.privateDataGrantPDU
-		case CSBKTalkgroupDataGrant:
-			p.talkgroupDataGrantPDU = decodeTalkgroupDataGrantPDU(_dispatchBytes)
-			result.TalkgroupDataGrantPDU = &p.talkgroupDataGrantPDU
-		case CSBKDuplexPrivateVoiceGrant:
-			p.duplexPrivateVoiceGrantPDU = decodeDuplexPrivateVoiceGrantPDU(_dispatchBytes)
-			result.DuplexPrivateVoiceGrantPDU = &p.duplexPrivateVoiceGrantPDU
-		case CSBKDuplexPrivateDataGrant:
-			p.duplexPrivateDataGrantPDU = decodeDuplexPrivateDataGrantPDU(_dispatchBytes)
-			result.DuplexPrivateDataGrantPDU = &p.duplexPrivateDataGrantPDU
-		case CSBKPrivateDataGrantMultiItem:
-			p.privateDataGrantMultiItemPDU = decodePrivateDataGrantMultiItemPDU(_dispatchBytes)
-			result.PrivateDataGrantMultiItemPDU = &p.privateDataGrantMultiItemPDU
-		case CSBKMove:
-			p.movePDU = decodeMovePDU(_dispatchBytes)
-			result.MovePDU = &p.movePDU
-		case CSBKAloha:
-			p.alohaPDU = decodeAlohaPDU(_dispatchBytes)
-			result.AlohaPDU = &p.alohaPDU
-		case CSBKBroadcast:
-			p.broadcastPDU = decodeBroadcastPDU(_dispatchBytes)
-			result.BroadcastPDU = &p.broadcastPDU
-		case CSBKClear:
-			p.clearPDU = decodeClearPDU(_dispatchBytes)
-			result.ClearPDU = &p.clearPDU
-		case CSBKProtect:
-			p.protectPDU = decodeProtectPDU(_dispatchBytes)
-			result.ProtectPDU = &p.protectPDU
-		case CSBKAhoy:
-			p.ahoyPDU = decodeAhoyPDU(_dispatchBytes)
-			result.AhoyPDU = &p.ahoyPDU
-		case CSBKAckOutbound:
-			p.ackOutboundPDU = decodeAckOutboundPDU(_dispatchBytes)
-			result.AckOutboundPDU = &p.ackOutboundPDU
-		case CSBKAckInbound:
-			p.ackInboundPDU = decodeAckInboundPDU(_dispatchBytes)
-			result.AckInboundPDU = &p.ackInboundPDU
-		case CSBKAckOutboundPayload:
-			p.ackOutboundPayloadPDU = decodeAckOutboundPayloadPDU(_dispatchBytes)
-			result.AckOutboundPayloadPDU = &p.ackOutboundPayloadPDU
-		case CSBKAckInboundPayload:
-			p.ackInboundPayloadPDU = decodeAckInboundPayloadPDU(_dispatchBytes)
-			result.AckInboundPayloadPDU = &p.ackInboundPayloadPDU
-		case CSBKRandomAccess:
-			p.randomAccessPDU = decodeRandomAccessPDU(_dispatchBytes)
-			result.RandomAccessPDU = &p.randomAccessPDU
-		case CSBKAckvitation:
-			p.ackvitationPDU = decodeAckvitationPDU(_dispatchBytes)
-			result.AckvitationPDU = &p.ackvitationPDU
-		case CSBKMaintenance:
-			p.maintenancePDU = decodeMaintenancePDU(_dispatchBytes)
-			result.MaintenancePDU = &p.maintenancePDU
-		default:
-			copy(result.RawPayload[0:8], data[2:10])
-		}
-	} else {
-		copy(result.RawPayload[0:8], data[2:10])
-	}
 }
 
 // Encode encodes a CSBK. It returns the 96 bits packed, the first bit in the
@@ -2081,320 +1855,6 @@ func (s *CSBK) Encode() ([12]byte, error) {
 	}
 
 	var data [12]byte
-	_payload := ""
-	if s.UnitToUnitVoiceServiceRequestPDU != nil {
-		_payload = "UnitToUnitVoiceServiceRequestPDU"
-	}
-	if s.UnitToUnitVoiceServiceAnswerResponsePDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "UnitToUnitVoiceServiceAnswerResponsePDU"
-	}
-	if s.NegativeAcknowledgementPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "NegativeAcknowledgementPDU"
-	}
-	if s.PreamblePDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "PreamblePDU"
-	}
-	if s.ChannelTimingPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "ChannelTimingPDU"
-	}
-	if s.PrivateVoiceGrantPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "PrivateVoiceGrantPDU"
-	}
-	if s.TalkgroupVoiceGrantPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "TalkgroupVoiceGrantPDU"
-	}
-	if s.BroadcastTalkgroupVoiceGrantPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "BroadcastTalkgroupVoiceGrantPDU"
-	}
-	if s.PrivateDataGrantPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "PrivateDataGrantPDU"
-	}
-	if s.TalkgroupDataGrantPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "TalkgroupDataGrantPDU"
-	}
-	if s.DuplexPrivateVoiceGrantPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "DuplexPrivateVoiceGrantPDU"
-	}
-	if s.DuplexPrivateDataGrantPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "DuplexPrivateDataGrantPDU"
-	}
-	if s.PrivateDataGrantMultiItemPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "PrivateDataGrantMultiItemPDU"
-	}
-	if s.MovePDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "MovePDU"
-	}
-	if s.AlohaPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "AlohaPDU"
-	}
-	if s.BroadcastPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "BroadcastPDU"
-	}
-	if s.ClearPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "ClearPDU"
-	}
-	if s.ProtectPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "ProtectPDU"
-	}
-	if s.AhoyPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "AhoyPDU"
-	}
-	if s.AckOutboundPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "AckOutboundPDU"
-	}
-	if s.AckInboundPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "AckInboundPDU"
-	}
-	if s.AckOutboundPayloadPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "AckOutboundPayloadPDU"
-	}
-	if s.AckInboundPayloadPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "AckInboundPayloadPDU"
-	}
-	if s.RandomAccessPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "RandomAccessPDU"
-	}
-	if s.AckvitationPDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "AckvitationPDU"
-	}
-	if s.MaintenancePDU != nil {
-		if _payload != "" {
-			return [12]byte{}, errCSBKPayloads
-		}
-		_payload = "MaintenancePDU"
-	}
-	switch {
-	case s.UnitToUnitVoiceServiceRequestPDU != nil:
-		_pduBytes, err := s.UnitToUnitVoiceServiceRequestPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.UnitToUnitVoiceServiceAnswerResponsePDU != nil:
-		_pduBytes, err := s.UnitToUnitVoiceServiceAnswerResponsePDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.NegativeAcknowledgementPDU != nil:
-		_pduBytes, err := s.NegativeAcknowledgementPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.PreamblePDU != nil:
-		_pduBytes, err := s.PreamblePDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.ChannelTimingPDU != nil:
-		_pduBytes, err := s.ChannelTimingPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.PrivateVoiceGrantPDU != nil:
-		_pduBytes, err := s.PrivateVoiceGrantPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.TalkgroupVoiceGrantPDU != nil:
-		_pduBytes, err := s.TalkgroupVoiceGrantPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.BroadcastTalkgroupVoiceGrantPDU != nil:
-		_pduBytes, err := s.BroadcastTalkgroupVoiceGrantPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.PrivateDataGrantPDU != nil:
-		_pduBytes, err := s.PrivateDataGrantPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.TalkgroupDataGrantPDU != nil:
-		_pduBytes, err := s.TalkgroupDataGrantPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.DuplexPrivateVoiceGrantPDU != nil:
-		_pduBytes, err := s.DuplexPrivateVoiceGrantPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.DuplexPrivateDataGrantPDU != nil:
-		_pduBytes, err := s.DuplexPrivateDataGrantPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.PrivateDataGrantMultiItemPDU != nil:
-		_pduBytes, err := s.PrivateDataGrantMultiItemPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.MovePDU != nil:
-		_pduBytes, err := s.MovePDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.AlohaPDU != nil:
-		_pduBytes, err := s.AlohaPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.BroadcastPDU != nil:
-		_pduBytes, err := s.BroadcastPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.ClearPDU != nil:
-		_pduBytes, err := s.ClearPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.ProtectPDU != nil:
-		_pduBytes, err := s.ProtectPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.AhoyPDU != nil:
-		_pduBytes, err := s.AhoyPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.AckOutboundPDU != nil:
-		_pduBytes, err := s.AckOutboundPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.AckInboundPDU != nil:
-		_pduBytes, err := s.AckInboundPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.AckOutboundPayloadPDU != nil:
-		_pduBytes, err := s.AckOutboundPayloadPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.AckInboundPayloadPDU != nil:
-		_pduBytes, err := s.AckInboundPayloadPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.RandomAccessPDU != nil:
-		_pduBytes, err := s.RandomAccessPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.AckvitationPDU != nil:
-		_pduBytes, err := s.AckvitationPDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	case s.MaintenancePDU != nil:
-		_pduBytes, err := s.MaintenancePDU.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[2:10], _pduBytes[0:8])
-	default:
-		copy(data[2:10], s.RawPayload[0:8])
-	}
 	if s.LastBlock {
 		data[0] |= 0x80
 	}
@@ -2409,71 +1869,7 @@ func (s *CSBK) Encode() ([12]byte, error) {
 		return [12]byte{}, errCSBKFIDRange
 	}
 	data[1] = byte(uint64(s.FID))
-	if _payload != "" {
-		var result CSBK
-		result.Opcode = CSBKOpcode(uint64(data[0]) & 0x3F)
-		result.FID = enums.FID(uint64(data[1]))
-		_want := "RawPayload"
-		if result.FID == 0 {
-			switch result.Opcode {
-			case CSBKUnitToUnitVoiceServiceRequest:
-				_want = "UnitToUnitVoiceServiceRequestPDU"
-			case CSBKUnitToUnitVoiceServiceAnswerResponse:
-				_want = "UnitToUnitVoiceServiceAnswerResponsePDU"
-			case CSBKNegativeAcknowledgement:
-				_want = "NegativeAcknowledgementPDU"
-			case CSBKPreamble:
-				_want = "PreamblePDU"
-			case CSBKChannelTiming:
-				_want = "ChannelTimingPDU"
-			case CSBKPrivateVoiceGrant:
-				_want = "PrivateVoiceGrantPDU"
-			case CSBKTalkgroupVoiceGrant:
-				_want = "TalkgroupVoiceGrantPDU"
-			case CSBKBroadcastTalkgroupVoiceGrant:
-				_want = "BroadcastTalkgroupVoiceGrantPDU"
-			case CSBKPrivateDataGrant:
-				_want = "PrivateDataGrantPDU"
-			case CSBKTalkgroupDataGrant:
-				_want = "TalkgroupDataGrantPDU"
-			case CSBKDuplexPrivateVoiceGrant:
-				_want = "DuplexPrivateVoiceGrantPDU"
-			case CSBKDuplexPrivateDataGrant:
-				_want = "DuplexPrivateDataGrantPDU"
-			case CSBKPrivateDataGrantMultiItem:
-				_want = "PrivateDataGrantMultiItemPDU"
-			case CSBKMove:
-				_want = "MovePDU"
-			case CSBKAloha:
-				_want = "AlohaPDU"
-			case CSBKBroadcast:
-				_want = "BroadcastPDU"
-			case CSBKClear:
-				_want = "ClearPDU"
-			case CSBKProtect:
-				_want = "ProtectPDU"
-			case CSBKAhoy:
-				_want = "AhoyPDU"
-			case CSBKAckOutbound:
-				_want = "AckOutboundPDU"
-			case CSBKAckInbound:
-				_want = "AckInboundPDU"
-			case CSBKAckOutboundPayload:
-				_want = "AckOutboundPayloadPDU"
-			case CSBKAckInboundPayload:
-				_want = "AckInboundPayloadPDU"
-			case CSBKRandomAccess:
-				_want = "RandomAccessPDU"
-			case CSBKAckvitation:
-				_want = "AckvitationPDU"
-			case CSBKMaintenance:
-				_want = "MaintenancePDU"
-			}
-		}
-		if _payload != _want {
-			return [12]byte{}, errCSBKPayload
-		}
-	}
+	copy(data[2:10], s.RawPayload[0:8])
 	_crcVal := crc.CCITT(data[:10])
 	data[10] = byte(_crcVal>>8) ^ 0xA5
 	data[11] = byte(_crcVal) ^ 0xA5
@@ -2489,64 +1885,999 @@ func (s *CSBK) String() string {
 
 	_ret := "CSBK{ "
 	_ret += "LastBlock: " + text.Bool(s.LastBlock) + ", ProtectFlag: " + text.Bool(s.ProtectFlag) + ", Opcode: " + text.Int(int64(s.Opcode)) + ", FID: " + text.Int(int64(s.FID)) + ", FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, "
-	switch {
-	case s.UnitToUnitVoiceServiceRequestPDU != nil:
-		_ret += s.UnitToUnitVoiceServiceRequestPDU.String()
-	case s.UnitToUnitVoiceServiceAnswerResponsePDU != nil:
-		_ret += s.UnitToUnitVoiceServiceAnswerResponsePDU.String()
-	case s.NegativeAcknowledgementPDU != nil:
-		_ret += s.NegativeAcknowledgementPDU.String()
-	case s.PreamblePDU != nil:
-		_ret += s.PreamblePDU.String()
-	case s.ChannelTimingPDU != nil:
-		_ret += s.ChannelTimingPDU.String()
-	case s.PrivateVoiceGrantPDU != nil:
-		_ret += s.PrivateVoiceGrantPDU.String()
-	case s.TalkgroupVoiceGrantPDU != nil:
-		_ret += s.TalkgroupVoiceGrantPDU.String()
-	case s.BroadcastTalkgroupVoiceGrantPDU != nil:
-		_ret += s.BroadcastTalkgroupVoiceGrantPDU.String()
-	case s.PrivateDataGrantPDU != nil:
-		_ret += s.PrivateDataGrantPDU.String()
-	case s.TalkgroupDataGrantPDU != nil:
-		_ret += s.TalkgroupDataGrantPDU.String()
-	case s.DuplexPrivateVoiceGrantPDU != nil:
-		_ret += s.DuplexPrivateVoiceGrantPDU.String()
-	case s.DuplexPrivateDataGrantPDU != nil:
-		_ret += s.DuplexPrivateDataGrantPDU.String()
-	case s.PrivateDataGrantMultiItemPDU != nil:
-		_ret += s.PrivateDataGrantMultiItemPDU.String()
-	case s.MovePDU != nil:
-		_ret += s.MovePDU.String()
-	case s.AlohaPDU != nil:
-		_ret += s.AlohaPDU.String()
-	case s.BroadcastPDU != nil:
-		_ret += s.BroadcastPDU.String()
-	case s.ClearPDU != nil:
-		_ret += s.ClearPDU.String()
-	case s.ProtectPDU != nil:
-		_ret += s.ProtectPDU.String()
-	case s.AhoyPDU != nil:
-		_ret += s.AhoyPDU.String()
-	case s.AckOutboundPDU != nil:
-		_ret += s.AckOutboundPDU.String()
-	case s.AckInboundPDU != nil:
-		_ret += s.AckInboundPDU.String()
-	case s.AckOutboundPayloadPDU != nil:
-		_ret += s.AckOutboundPayloadPDU.String()
-	case s.AckInboundPayloadPDU != nil:
-		_ret += s.AckInboundPayloadPDU.String()
-	case s.RandomAccessPDU != nil:
-		_ret += s.RandomAccessPDU.String()
-	case s.AckvitationPDU != nil:
-		_ret += s.AckvitationPDU.String()
-	case s.MaintenancePDU != nil:
-		_ret += s.MaintenancePDU.String()
-	default:
+	if v, ok := s.AsUnitToUnitVoiceServiceRequest(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsUnitToUnitVoiceServiceAnswerResponse(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsNegativeAcknowledgement(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsPreamble(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsChannelTiming(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsPrivateVoiceGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsTalkgroupVoiceGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsBroadcastTalkgroupVoiceGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsPrivateDataGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsTalkgroupDataGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsDuplexPrivateVoiceGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsDuplexPrivateDataGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsPrivateDataGrantMultiItem(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsMove(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsAloha(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsBroadcast(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsClear(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsProtect(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsAhoy(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsAckOutbound(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsAckInbound(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsAckOutboundPayload(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsAckInboundPayload(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsRandomAccess(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsAckvitation(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsMaintenance(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsMotorolaRadioCheck(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsMotorolaCallAlert(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsMotorolaCallAlertAck(); ok {
+		_ret += v.String()
+	} else {
 		_ret += "RawPayload: " + text.Hex(s.RawPayload[:])
 	}
 	_ret += " }"
 	return _ret
+}
+
+// AsUnitToUnitVoiceServiceRequest decodes RawPayload as a
+// UnitToUnitVoiceServiceRequestPDU payload. ok is false unless Opcode is
+// CSBKUnitToUnitVoiceServiceRequest and FID is 0.
+func (s *CSBK) AsUnitToUnitVoiceServiceRequest() (p UnitToUnitVoiceServiceRequestPDU, ok bool) {
+	if s == nil {
+		return UnitToUnitVoiceServiceRequestPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKUnitToUnitVoiceServiceRequest && s.FID == 0) {
+		return p, false
+	}
+	return decodeUnitToUnitVoiceServiceRequestPDU(s.RawPayload), true
+}
+
+// SetUnitToUnitVoiceServiceRequest makes s carry p as a
+// UnitToUnitVoiceServiceRequestPDU payload: it sets Opcode to
+// CSBKUnitToUnitVoiceServiceRequest, FID to 0 and RawPayload, and keeps the
+// other fields. It returns the error of p.Encode, and then leaves s as it
+// is.
+func (s *CSBK) SetUnitToUnitVoiceServiceRequest(p UnitToUnitVoiceServiceRequestPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKUnitToUnitVoiceServiceRequest
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsUnitToUnitVoiceServiceAnswerResponse decodes RawPayload as a
+// UnitToUnitVoiceServiceAnswerResponsePDU payload. ok is false unless Opcode
+// is CSBKUnitToUnitVoiceServiceAnswerResponse and FID is 0.
+func (s *CSBK) AsUnitToUnitVoiceServiceAnswerResponse() (p UnitToUnitVoiceServiceAnswerResponsePDU, ok bool) {
+	if s == nil {
+		return UnitToUnitVoiceServiceAnswerResponsePDU{}, false
+	}
+
+	if !(s.Opcode == CSBKUnitToUnitVoiceServiceAnswerResponse && s.FID == 0) {
+		return p, false
+	}
+	return decodeUnitToUnitVoiceServiceAnswerResponsePDU(s.RawPayload), true
+}
+
+// SetUnitToUnitVoiceServiceAnswerResponse makes s carry p as a
+// UnitToUnitVoiceServiceAnswerResponsePDU payload: it sets Opcode to
+// CSBKUnitToUnitVoiceServiceAnswerResponse, FID to 0 and RawPayload, and
+// keeps the other fields. It returns the error of p.Encode, and then leaves
+// s as it is.
+func (s *CSBK) SetUnitToUnitVoiceServiceAnswerResponse(p UnitToUnitVoiceServiceAnswerResponsePDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKUnitToUnitVoiceServiceAnswerResponse
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsNegativeAcknowledgement decodes RawPayload as a
+// NegativeAcknowledgementPDU payload. ok is false unless Opcode is
+// CSBKNegativeAcknowledgement and FID is 0.
+func (s *CSBK) AsNegativeAcknowledgement() (p NegativeAcknowledgementPDU, ok bool) {
+	if s == nil {
+		return NegativeAcknowledgementPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKNegativeAcknowledgement && s.FID == 0) {
+		return p, false
+	}
+	return decodeNegativeAcknowledgementPDU(s.RawPayload), true
+}
+
+// SetNegativeAcknowledgement makes s carry p as a NegativeAcknowledgementPDU
+// payload: it sets Opcode to CSBKNegativeAcknowledgement, FID to 0 and
+// RawPayload, and keeps the other fields. It returns the error of p.Encode,
+// and then leaves s as it is.
+func (s *CSBK) SetNegativeAcknowledgement(p NegativeAcknowledgementPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKNegativeAcknowledgement
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsPreamble decodes RawPayload as a PreamblePDU payload. ok is false unless
+// Opcode is CSBKPreamble and FID is 0.
+func (s *CSBK) AsPreamble() (p PreamblePDU, ok bool) {
+	if s == nil {
+		return PreamblePDU{}, false
+	}
+
+	if !(s.Opcode == CSBKPreamble && s.FID == 0) {
+		return p, false
+	}
+	return decodePreamblePDU(s.RawPayload), true
+}
+
+// SetPreamble makes s carry p as a PreamblePDU payload: it sets Opcode to
+// CSBKPreamble, FID to 0 and RawPayload, and keeps the other fields. It
+// returns the error of p.Encode, and then leaves s as it is.
+func (s *CSBK) SetPreamble(p PreamblePDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKPreamble
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsChannelTiming decodes RawPayload as a ChannelTimingPDU payload. ok is
+// false unless Opcode is CSBKChannelTiming and FID is 0.
+func (s *CSBK) AsChannelTiming() (p ChannelTimingPDU, ok bool) {
+	if s == nil {
+		return ChannelTimingPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKChannelTiming && s.FID == 0) {
+		return p, false
+	}
+	return decodeChannelTimingPDU(s.RawPayload), true
+}
+
+// SetChannelTiming makes s carry p as a ChannelTimingPDU payload: it sets
+// Opcode to CSBKChannelTiming, FID to 0 and RawPayload, and keeps the other
+// fields. It returns the error of p.Encode, and then leaves s as it is.
+func (s *CSBK) SetChannelTiming(p ChannelTimingPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKChannelTiming
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsPrivateVoiceGrant decodes RawPayload as a PrivateVoiceGrantPDU payload.
+// ok is false unless Opcode is CSBKPrivateVoiceGrant and FID is 0.
+func (s *CSBK) AsPrivateVoiceGrant() (p PrivateVoiceGrantPDU, ok bool) {
+	if s == nil {
+		return PrivateVoiceGrantPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKPrivateVoiceGrant && s.FID == 0) {
+		return p, false
+	}
+	return decodePrivateVoiceGrantPDU(s.RawPayload), true
+}
+
+// SetPrivateVoiceGrant makes s carry p as a PrivateVoiceGrantPDU payload: it
+// sets Opcode to CSBKPrivateVoiceGrant, FID to 0 and RawPayload, and keeps
+// the other fields. It returns the error of p.Encode, and then leaves s as
+// it is.
+func (s *CSBK) SetPrivateVoiceGrant(p PrivateVoiceGrantPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKPrivateVoiceGrant
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsTalkgroupVoiceGrant decodes RawPayload as a TalkgroupVoiceGrantPDU
+// payload. ok is false unless Opcode is CSBKTalkgroupVoiceGrant and FID is
+// 0.
+func (s *CSBK) AsTalkgroupVoiceGrant() (p TalkgroupVoiceGrantPDU, ok bool) {
+	if s == nil {
+		return TalkgroupVoiceGrantPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKTalkgroupVoiceGrant && s.FID == 0) {
+		return p, false
+	}
+	return decodeTalkgroupVoiceGrantPDU(s.RawPayload), true
+}
+
+// SetTalkgroupVoiceGrant makes s carry p as a TalkgroupVoiceGrantPDU
+// payload: it sets Opcode to CSBKTalkgroupVoiceGrant, FID to 0 and
+// RawPayload, and keeps the other fields. It returns the error of p.Encode,
+// and then leaves s as it is.
+func (s *CSBK) SetTalkgroupVoiceGrant(p TalkgroupVoiceGrantPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKTalkgroupVoiceGrant
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsBroadcastTalkgroupVoiceGrant decodes RawPayload as a
+// BroadcastTalkgroupVoiceGrantPDU payload. ok is false unless Opcode is
+// CSBKBroadcastTalkgroupVoiceGrant and FID is 0.
+func (s *CSBK) AsBroadcastTalkgroupVoiceGrant() (p BroadcastTalkgroupVoiceGrantPDU, ok bool) {
+	if s == nil {
+		return BroadcastTalkgroupVoiceGrantPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKBroadcastTalkgroupVoiceGrant && s.FID == 0) {
+		return p, false
+	}
+	return decodeBroadcastTalkgroupVoiceGrantPDU(s.RawPayload), true
+}
+
+// SetBroadcastTalkgroupVoiceGrant makes s carry p as a
+// BroadcastTalkgroupVoiceGrantPDU payload: it sets Opcode to
+// CSBKBroadcastTalkgroupVoiceGrant, FID to 0 and RawPayload, and keeps the
+// other fields. It returns the error of p.Encode, and then leaves s as it
+// is.
+func (s *CSBK) SetBroadcastTalkgroupVoiceGrant(p BroadcastTalkgroupVoiceGrantPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKBroadcastTalkgroupVoiceGrant
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsPrivateDataGrant decodes RawPayload as a PrivateDataGrantPDU payload. ok
+// is false unless Opcode is CSBKPrivateDataGrant and FID is 0.
+func (s *CSBK) AsPrivateDataGrant() (p PrivateDataGrantPDU, ok bool) {
+	if s == nil {
+		return PrivateDataGrantPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKPrivateDataGrant && s.FID == 0) {
+		return p, false
+	}
+	return decodePrivateDataGrantPDU(s.RawPayload), true
+}
+
+// SetPrivateDataGrant makes s carry p as a PrivateDataGrantPDU payload: it
+// sets Opcode to CSBKPrivateDataGrant, FID to 0 and RawPayload, and keeps
+// the other fields. It returns the error of p.Encode, and then leaves s as
+// it is.
+func (s *CSBK) SetPrivateDataGrant(p PrivateDataGrantPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKPrivateDataGrant
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsTalkgroupDataGrant decodes RawPayload as a TalkgroupDataGrantPDU
+// payload. ok is false unless Opcode is CSBKTalkgroupDataGrant and FID is 0.
+func (s *CSBK) AsTalkgroupDataGrant() (p TalkgroupDataGrantPDU, ok bool) {
+	if s == nil {
+		return TalkgroupDataGrantPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKTalkgroupDataGrant && s.FID == 0) {
+		return p, false
+	}
+	return decodeTalkgroupDataGrantPDU(s.RawPayload), true
+}
+
+// SetTalkgroupDataGrant makes s carry p as a TalkgroupDataGrantPDU payload:
+// it sets Opcode to CSBKTalkgroupDataGrant, FID to 0 and RawPayload, and
+// keeps the other fields. It returns the error of p.Encode, and then leaves
+// s as it is.
+func (s *CSBK) SetTalkgroupDataGrant(p TalkgroupDataGrantPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKTalkgroupDataGrant
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsDuplexPrivateVoiceGrant decodes RawPayload as a
+// DuplexPrivateVoiceGrantPDU payload. ok is false unless Opcode is
+// CSBKDuplexPrivateVoiceGrant and FID is 0.
+func (s *CSBK) AsDuplexPrivateVoiceGrant() (p DuplexPrivateVoiceGrantPDU, ok bool) {
+	if s == nil {
+		return DuplexPrivateVoiceGrantPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKDuplexPrivateVoiceGrant && s.FID == 0) {
+		return p, false
+	}
+	return decodeDuplexPrivateVoiceGrantPDU(s.RawPayload), true
+}
+
+// SetDuplexPrivateVoiceGrant makes s carry p as a DuplexPrivateVoiceGrantPDU
+// payload: it sets Opcode to CSBKDuplexPrivateVoiceGrant, FID to 0 and
+// RawPayload, and keeps the other fields. It returns the error of p.Encode,
+// and then leaves s as it is.
+func (s *CSBK) SetDuplexPrivateVoiceGrant(p DuplexPrivateVoiceGrantPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKDuplexPrivateVoiceGrant
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsDuplexPrivateDataGrant decodes RawPayload as a DuplexPrivateDataGrantPDU
+// payload. ok is false unless Opcode is CSBKDuplexPrivateDataGrant and FID
+// is 0.
+func (s *CSBK) AsDuplexPrivateDataGrant() (p DuplexPrivateDataGrantPDU, ok bool) {
+	if s == nil {
+		return DuplexPrivateDataGrantPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKDuplexPrivateDataGrant && s.FID == 0) {
+		return p, false
+	}
+	return decodeDuplexPrivateDataGrantPDU(s.RawPayload), true
+}
+
+// SetDuplexPrivateDataGrant makes s carry p as a DuplexPrivateDataGrantPDU
+// payload: it sets Opcode to CSBKDuplexPrivateDataGrant, FID to 0 and
+// RawPayload, and keeps the other fields. It returns the error of p.Encode,
+// and then leaves s as it is.
+func (s *CSBK) SetDuplexPrivateDataGrant(p DuplexPrivateDataGrantPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKDuplexPrivateDataGrant
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsPrivateDataGrantMultiItem decodes RawPayload as a
+// PrivateDataGrantMultiItemPDU payload. ok is false unless Opcode is
+// CSBKPrivateDataGrantMultiItem and FID is 0.
+func (s *CSBK) AsPrivateDataGrantMultiItem() (p PrivateDataGrantMultiItemPDU, ok bool) {
+	if s == nil {
+		return PrivateDataGrantMultiItemPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKPrivateDataGrantMultiItem && s.FID == 0) {
+		return p, false
+	}
+	return decodePrivateDataGrantMultiItemPDU(s.RawPayload), true
+}
+
+// SetPrivateDataGrantMultiItem makes s carry p as a
+// PrivateDataGrantMultiItemPDU payload: it sets Opcode to
+// CSBKPrivateDataGrantMultiItem, FID to 0 and RawPayload, and keeps the
+// other fields. It returns the error of p.Encode, and then leaves s as it
+// is.
+func (s *CSBK) SetPrivateDataGrantMultiItem(p PrivateDataGrantMultiItemPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKPrivateDataGrantMultiItem
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsMove decodes RawPayload as a MovePDU payload. ok is false unless Opcode
+// is CSBKMove and FID is 0.
+func (s *CSBK) AsMove() (p MovePDU, ok bool) {
+	if s == nil {
+		return MovePDU{}, false
+	}
+
+	if !(s.Opcode == CSBKMove && s.FID == 0) {
+		return p, false
+	}
+	return decodeMovePDU(s.RawPayload), true
+}
+
+// SetMove makes s carry p as a MovePDU payload: it sets Opcode to CSBKMove,
+// FID to 0 and RawPayload, and keeps the other fields. It returns the error
+// of p.Encode, and then leaves s as it is.
+func (s *CSBK) SetMove(p MovePDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKMove
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsAloha decodes RawPayload as an AlohaPDU payload. ok is false unless
+// Opcode is CSBKAloha and FID is 0.
+func (s *CSBK) AsAloha() (p AlohaPDU, ok bool) {
+	if s == nil {
+		return AlohaPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKAloha && s.FID == 0) {
+		return p, false
+	}
+	return decodeAlohaPDU(s.RawPayload), true
+}
+
+// SetAloha makes s carry p as an AlohaPDU payload: it sets Opcode to
+// CSBKAloha, FID to 0 and RawPayload, and keeps the other fields. It returns
+// the error of p.Encode, and then leaves s as it is.
+func (s *CSBK) SetAloha(p AlohaPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKAloha
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsBroadcast decodes RawPayload as a BroadcastPDU payload. ok is false
+// unless Opcode is CSBKBroadcast and FID is 0.
+func (s *CSBK) AsBroadcast() (p BroadcastPDU, ok bool) {
+	if s == nil {
+		return BroadcastPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKBroadcast && s.FID == 0) {
+		return p, false
+	}
+	return decodeBroadcastPDU(s.RawPayload), true
+}
+
+// SetBroadcast makes s carry p as a BroadcastPDU payload: it sets Opcode to
+// CSBKBroadcast, FID to 0 and RawPayload, and keeps the other fields. It
+// returns the error of p.Encode, and then leaves s as it is.
+func (s *CSBK) SetBroadcast(p BroadcastPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKBroadcast
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsClear decodes RawPayload as a ClearPDU payload. ok is false unless
+// Opcode is CSBKClear and FID is 0.
+func (s *CSBK) AsClear() (p ClearPDU, ok bool) {
+	if s == nil {
+		return ClearPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKClear && s.FID == 0) {
+		return p, false
+	}
+	return decodeClearPDU(s.RawPayload), true
+}
+
+// SetClear makes s carry p as a ClearPDU payload: it sets Opcode to
+// CSBKClear, FID to 0 and RawPayload, and keeps the other fields. It returns
+// the error of p.Encode, and then leaves s as it is.
+func (s *CSBK) SetClear(p ClearPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKClear
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsProtect decodes RawPayload as a ProtectPDU payload. ok is false unless
+// Opcode is CSBKProtect and FID is 0.
+func (s *CSBK) AsProtect() (p ProtectPDU, ok bool) {
+	if s == nil {
+		return ProtectPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKProtect && s.FID == 0) {
+		return p, false
+	}
+	return decodeProtectPDU(s.RawPayload), true
+}
+
+// SetProtect makes s carry p as a ProtectPDU payload: it sets Opcode to
+// CSBKProtect, FID to 0 and RawPayload, and keeps the other fields. It
+// returns the error of p.Encode, and then leaves s as it is.
+func (s *CSBK) SetProtect(p ProtectPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKProtect
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsAhoy decodes RawPayload as an AhoyPDU payload. ok is false unless Opcode
+// is CSBKAhoy and FID is 0.
+func (s *CSBK) AsAhoy() (p AhoyPDU, ok bool) {
+	if s == nil {
+		return AhoyPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKAhoy && s.FID == 0) {
+		return p, false
+	}
+	return decodeAhoyPDU(s.RawPayload), true
+}
+
+// SetAhoy makes s carry p as an AhoyPDU payload: it sets Opcode to CSBKAhoy,
+// FID to 0 and RawPayload, and keeps the other fields. It returns the error
+// of p.Encode, and then leaves s as it is.
+func (s *CSBK) SetAhoy(p AhoyPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKAhoy
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsAckOutbound decodes RawPayload as an AckOutboundPDU payload. ok is false
+// unless Opcode is CSBKAckOutbound and FID is 0.
+func (s *CSBK) AsAckOutbound() (p AckOutboundPDU, ok bool) {
+	if s == nil {
+		return AckOutboundPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKAckOutbound && s.FID == 0) {
+		return p, false
+	}
+	return decodeAckOutboundPDU(s.RawPayload), true
+}
+
+// SetAckOutbound makes s carry p as an AckOutboundPDU payload: it sets
+// Opcode to CSBKAckOutbound, FID to 0 and RawPayload, and keeps the other
+// fields. It returns the error of p.Encode, and then leaves s as it is.
+func (s *CSBK) SetAckOutbound(p AckOutboundPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKAckOutbound
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsAckInbound decodes RawPayload as an AckInboundPDU payload. ok is false
+// unless Opcode is CSBKAckInbound and FID is 0.
+func (s *CSBK) AsAckInbound() (p AckInboundPDU, ok bool) {
+	if s == nil {
+		return AckInboundPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKAckInbound && s.FID == 0) {
+		return p, false
+	}
+	return decodeAckInboundPDU(s.RawPayload), true
+}
+
+// SetAckInbound makes s carry p as an AckInboundPDU payload: it sets Opcode
+// to CSBKAckInbound, FID to 0 and RawPayload, and keeps the other fields. It
+// returns the error of p.Encode, and then leaves s as it is.
+func (s *CSBK) SetAckInbound(p AckInboundPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKAckInbound
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsAckOutboundPayload decodes RawPayload as an AckOutboundPayloadPDU
+// payload. ok is false unless Opcode is CSBKAckOutboundPayload and FID is 0.
+func (s *CSBK) AsAckOutboundPayload() (p AckOutboundPayloadPDU, ok bool) {
+	if s == nil {
+		return AckOutboundPayloadPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKAckOutboundPayload && s.FID == 0) {
+		return p, false
+	}
+	return decodeAckOutboundPayloadPDU(s.RawPayload), true
+}
+
+// SetAckOutboundPayload makes s carry p as an AckOutboundPayloadPDU payload:
+// it sets Opcode to CSBKAckOutboundPayload, FID to 0 and RawPayload, and
+// keeps the other fields. It returns the error of p.Encode, and then leaves
+// s as it is.
+func (s *CSBK) SetAckOutboundPayload(p AckOutboundPayloadPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKAckOutboundPayload
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsAckInboundPayload decodes RawPayload as an AckInboundPayloadPDU payload.
+// ok is false unless Opcode is CSBKAckInboundPayload and FID is 0.
+func (s *CSBK) AsAckInboundPayload() (p AckInboundPayloadPDU, ok bool) {
+	if s == nil {
+		return AckInboundPayloadPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKAckInboundPayload && s.FID == 0) {
+		return p, false
+	}
+	return decodeAckInboundPayloadPDU(s.RawPayload), true
+}
+
+// SetAckInboundPayload makes s carry p as an AckInboundPayloadPDU payload:
+// it sets Opcode to CSBKAckInboundPayload, FID to 0 and RawPayload, and
+// keeps the other fields. It returns the error of p.Encode, and then leaves
+// s as it is.
+func (s *CSBK) SetAckInboundPayload(p AckInboundPayloadPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKAckInboundPayload
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsRandomAccess decodes RawPayload as a RandomAccessPDU payload. ok is
+// false unless Opcode is CSBKRandomAccess and FID is 0.
+func (s *CSBK) AsRandomAccess() (p RandomAccessPDU, ok bool) {
+	if s == nil {
+		return RandomAccessPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKRandomAccess && s.FID == 0) {
+		return p, false
+	}
+	return decodeRandomAccessPDU(s.RawPayload), true
+}
+
+// SetRandomAccess makes s carry p as a RandomAccessPDU payload: it sets
+// Opcode to CSBKRandomAccess, FID to 0 and RawPayload, and keeps the other
+// fields. It returns the error of p.Encode, and then leaves s as it is.
+func (s *CSBK) SetRandomAccess(p RandomAccessPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKRandomAccess
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsAckvitation decodes RawPayload as an AckvitationPDU payload. ok is false
+// unless Opcode is CSBKAckvitation and FID is 0.
+func (s *CSBK) AsAckvitation() (p AckvitationPDU, ok bool) {
+	if s == nil {
+		return AckvitationPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKAckvitation && s.FID == 0) {
+		return p, false
+	}
+	return decodeAckvitationPDU(s.RawPayload), true
+}
+
+// SetAckvitation makes s carry p as an AckvitationPDU payload: it sets
+// Opcode to CSBKAckvitation, FID to 0 and RawPayload, and keeps the other
+// fields. It returns the error of p.Encode, and then leaves s as it is.
+func (s *CSBK) SetAckvitation(p AckvitationPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKAckvitation
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsMaintenance decodes RawPayload as a MaintenancePDU payload. ok is false
+// unless Opcode is CSBKMaintenance and FID is 0.
+func (s *CSBK) AsMaintenance() (p MaintenancePDU, ok bool) {
+	if s == nil {
+		return MaintenancePDU{}, false
+	}
+
+	if !(s.Opcode == CSBKMaintenance && s.FID == 0) {
+		return p, false
+	}
+	return decodeMaintenancePDU(s.RawPayload), true
+}
+
+// SetMaintenance makes s carry p as a MaintenancePDU payload: it sets Opcode
+// to CSBKMaintenance, FID to 0 and RawPayload, and keeps the other fields.
+// It returns the error of p.Encode, and then leaves s as it is.
+func (s *CSBK) SetMaintenance(p MaintenancePDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKMaintenance
+	s.FID = 0
+	s.RawPayload = raw
+	return nil
+}
+
+// AsMotorolaRadioCheck decodes RawPayload as a MotorolaRadioCheckPDU
+// payload. ok is false unless Opcode is CSBKMotorolaRadioCheck and FID is
+// enums.FIDMotorola.
+func (s *CSBK) AsMotorolaRadioCheck() (p MotorolaRadioCheckPDU, ok bool) {
+	if s == nil {
+		return MotorolaRadioCheckPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKMotorolaRadioCheck && s.FID == enums.FIDMotorola) {
+		return p, false
+	}
+	return decodeMotorolaRadioCheckPDU(s.RawPayload), true
+}
+
+// SetMotorolaRadioCheck makes s carry p as a MotorolaRadioCheckPDU payload:
+// it sets Opcode to CSBKMotorolaRadioCheck, FID to enums.FIDMotorola and
+// RawPayload, and keeps the other fields. It returns the error of p.Encode,
+// and then leaves s as it is.
+func (s *CSBK) SetMotorolaRadioCheck(p MotorolaRadioCheckPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKMotorolaRadioCheck
+	s.FID = enums.FIDMotorola
+	s.RawPayload = raw
+	return nil
+}
+
+// AsMotorolaCallAlert decodes RawPayload as a MotorolaCallAlertPDU payload.
+// ok is false unless Opcode is CSBKMotorolaCallAlert and FID is
+// enums.FIDMotorola.
+func (s *CSBK) AsMotorolaCallAlert() (p MotorolaCallAlertPDU, ok bool) {
+	if s == nil {
+		return MotorolaCallAlertPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKMotorolaCallAlert && s.FID == enums.FIDMotorola) {
+		return p, false
+	}
+	return decodeMotorolaCallAlertPDU(s.RawPayload), true
+}
+
+// SetMotorolaCallAlert makes s carry p as a MotorolaCallAlertPDU payload: it
+// sets Opcode to CSBKMotorolaCallAlert, FID to enums.FIDMotorola and
+// RawPayload, and keeps the other fields. It returns the error of p.Encode,
+// and then leaves s as it is.
+func (s *CSBK) SetMotorolaCallAlert(p MotorolaCallAlertPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKMotorolaCallAlert
+	s.FID = enums.FIDMotorola
+	s.RawPayload = raw
+	return nil
+}
+
+// AsMotorolaCallAlertAck decodes RawPayload as a MotorolaCallAlertAckPDU
+// payload. ok is false unless Opcode is CSBKMotorolaCallAlertAck and FID is
+// enums.FIDMotorola.
+func (s *CSBK) AsMotorolaCallAlertAck() (p MotorolaCallAlertAckPDU, ok bool) {
+	if s == nil {
+		return MotorolaCallAlertAckPDU{}, false
+	}
+
+	if !(s.Opcode == CSBKMotorolaCallAlertAck && s.FID == enums.FIDMotorola) {
+		return p, false
+	}
+	return decodeMotorolaCallAlertAckPDU(s.RawPayload), true
+}
+
+// SetMotorolaCallAlertAck makes s carry p as a MotorolaCallAlertAckPDU
+// payload: it sets Opcode to CSBKMotorolaCallAlertAck, FID to
+// enums.FIDMotorola and RawPayload, and keeps the other fields. It returns
+// the error of p.Encode, and then leaves s as it is.
+func (s *CSBK) SetMotorolaCallAlertAck(p MotorolaCallAlertAckPDU) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	s.Opcode = CSBKMotorolaCallAlertAck
+	s.FID = enums.FIDMotorola
+	s.RawPayload = raw
+	return nil
 }
 
 var (
@@ -3070,7 +3401,6 @@ var (
 		Field: "SourceAddress",
 		Type:  "MaintenancePDU",
 	}
-	errCSBKPayloads    = errors.New("CSBK: more than one payload field is set")
 	errCSBKOpcodeRange = &dmrgo.FieldRangeError{
 		Bits:  6,
 		Field: "Opcode",
@@ -3081,5 +3411,4 @@ var (
 		Field: "FID",
 		Type:  "CSBK",
 	}
-	errCSBKPayload = errors.New("CSBK: the payload field that is set is not the one that Opcode and FID select")
 )

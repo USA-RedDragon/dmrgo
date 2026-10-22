@@ -77,7 +77,6 @@ type Receiver struct {
 	frags    [4][4]byte
 	fragNext int
 	lc       pdu.FullLinkControl
-	lcp      pdu.FullLinkControlPayloads
 	alias    pdu.TalkerAliasAssembler
 	text     [pdu.TalkerAliasMaxText]byte
 	noCopy   noCopy
@@ -614,7 +613,8 @@ func (r *Receiver) collect(b *layer2.Burst, idx, lost int) (pdu.LCBytes, bool) {
 }
 
 func (r *Receiver) embedded(lc pdu.LCBytes, out []Event) []Event {
-	if pdu.DecodeFullLinkControlBytesInto(&r.lc, &r.lcp, lc) != nil {
+	var err error
+	if r.lc, err = pdu.DecodeFullLinkControlBytes(lc); err != nil {
 		return out
 	}
 	var e *Event

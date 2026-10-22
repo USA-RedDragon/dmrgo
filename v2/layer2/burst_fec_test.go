@@ -11,11 +11,8 @@ import (
 
 func lcHeaderFrame(t *testing.T) [33]byte {
 	t.Helper()
-	lc := pdu.FullLinkControl{
-		BurstDataType: enums.DataTypeVoiceLCHeader,
-		FLCO:          enums.FLCOGroupVoiceChannelUser,
-		GroupVoice:    &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3120101},
-	}
+	lc := pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader}
+	mustSet(lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3120101}))
 	return must(lcBurst(must(lc.Encode()), enums.DataTypeVoiceLCHeader, 1))
 }
 

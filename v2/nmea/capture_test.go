@@ -78,8 +78,8 @@ func TestAnyTonePositionReports(t *testing.T) {
 
 func checkReport(t *testing.T, n int, m *packet.Message, w [3]uint8) {
 	t.Helper()
-	u := m.Header.UnconfirmedDataHeader
-	if u == nil || u.SAP != enums.SAPUDPIPHeaderCompression || u.LLIDDestination != 3140598 || u.LLIDSource != 3191868 || m.Header.AppendedBlocks != 0 {
+	u, ok := m.Header.AsUnconfirmedDataHeader()
+	if !ok || u.SAP != enums.SAPUDPIPHeaderCompression || u.LLIDDestination != 3140598 || u.LLIDSource != 3191868 || m.Header.AppendedBlocks() != 0 {
 		t.Fatalf("report %d: header %s", n, m.Header.String())
 	}
 	udp, payload, ok := m.UDPIPv4()

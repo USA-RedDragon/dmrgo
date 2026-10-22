@@ -193,8 +193,6 @@ type Repeater struct {
 	nextSlot     enums.Slot
 	gen          CACH
 	slc          pdu.ShortLC
-	au           pdu.ShortLCActivityUpdate
-	null         pdu.ShortLCNullMessage
 	idle         layer2.RawBurst
 	lc           pdu.LCBytes
 	noCopy       noCopy
@@ -1015,19 +1013,21 @@ func (r *Repeater) turn(dst []Output) []Output {
 }
 
 func (r *Repeater) shortLC() {
+	r.slc = pdu.ShortLC{}
 	s1, s2 := &r.slots[0], &r.slots[1]
-	if !s1.busy() && !s2.busy() {
-		r.slc = pdu.ShortLC{SLCO: enums.SLCONullMessage, NullMessage: &r.null}
-		return
+	if s1.busy() || s2.busy() {
+		var au pdu.ShortLCActivityUpdate
+		if s1.busy() && s1.hasCall {
+			au.TS1ActivityID, au.HashTS1 = s1.activity, s1.hash
+		}
+		if s2.busy() && s2.hasCall {
+			au.TS2ActivityID, au.HashTS2 = s2.activity, s2.hash
+		}
+		if r.slc.SetActivityUpdate(au) == nil {
+			return
+		}
 	}
-	r.au = pdu.ShortLCActivityUpdate{}
-	if s1.busy() && s1.hasCall {
-		r.au.TS1ActivityID, r.au.HashTS1 = s1.activity, s1.hash
-	}
-	if s2.busy() && s2.hasCall {
-		r.au.TS2ActivityID, r.au.HashTS2 = s2.activity, s2.hash
-	}
-	r.slc = pdu.ShortLC{SLCO: enums.SLCOActivityUpdate, ActivityUpdate: &r.au}
+	_ = r.slc.SetNullMessage(pdu.ShortLCNullMessage{})
 }
 
 func activityOf(c *voice.Call) enums.ActivityID {

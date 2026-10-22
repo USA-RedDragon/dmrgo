@@ -76,6 +76,15 @@ func TestAnyTonePositions(t *testing.T) {
 	}
 }
 
+func setHeader[P any](t testing.TB, set func(*pdu.DataHeader, P) error, p P) pdu.DataHeader {
+	t.Helper()
+	var h pdu.DataHeader
+	if err := set(&h, p); err != nil {
+		t.Fatal(err)
+	}
+	return h
+}
+
 func lrrpPacket(t *testing.T, payload string) packet.Message {
 	t.Helper()
 	p, err := hex.DecodeString(payload)
@@ -88,9 +97,9 @@ func lrrpPacket(t *testing.T, payload string) packet.Message {
 		t.Fatal(err)
 	}
 	return packet.Message{
-		Header: pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
+		Header: setHeader(t, (*pdu.DataHeader).SetConfirmedDataHeader, pdu.ConfirmedDataHeader{
 			SAP: enums.SAPIPBasedPacketData, LLIDDestination: 7, LLIDSource: 5,
-		}},
+		}),
 		Data: data,
 	}
 }
@@ -140,9 +149,9 @@ func hdapPacket(t testing.TB, service hdap.Service, opcode hdap.Opcode, payload 
 		t.Fatal(err)
 	}
 	return packet.Message{
-		Header: pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
+		Header: setHeader(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{
 			SAP: enums.SAPIPBasedPacketData, LLIDDestination: 7, LLIDSource: 5,
-		}},
+		}),
 		Data: data,
 	}
 }
@@ -216,7 +225,7 @@ func TestNotLocation(t *testing.T) {
 	t.Parallel()
 
 	var d location.Decoder
-	m := packet.Message{Header: pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{}}}
+	m := packet.Message{Header: setHeader(t, (*pdu.DataHeader).SetDefinedDataHeader, pdu.DefinedDataHeader{})}
 	if _, err := d.Decode(&m.Header, m.Data); !errors.Is(err, location.ErrNoFix) {
 		t.Errorf("DD_HEAD: %v", err)
 	}

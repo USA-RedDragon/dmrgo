@@ -215,12 +215,10 @@ typedef struct dmrgo_pdu_broadcast_pdu_t dmrgo_pdu_broadcast_pdu_t;
 typedef struct dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t;
 /* Go: pdu.CGAPContinuation. CGAPContinuation is the CG_AP continuation block of a grant MBC (ETSI TS 102 361-4 clause 7.1.1.1.2, Table 7.16). */
 typedef struct dmrgo_pdu_cgap_continuation_t dmrgo_pdu_cgap_continuation_t;
-/* Go: pdu.CSBK. CSBK is the Control Signalling Block (CSBK) PDU (ETSI TS 102 361-1 clause 9.1.8). */
+/* Go: pdu.CSBK. CSBK is the Control Signalling Block (CSBK) PDU. */
 typedef struct dmrgo_pdu_csbk_t dmrgo_pdu_csbk_t;
 /* Go: pdu.CSBKBytes. CSBKBytes is the 12-octet BPTC(196,96) payload of a CSBK burst, as layer2.RawBurst.BPTCPayload returns it: 80 CSBK bits and the CRC-CCITT XORed with the CSBK mask 0xA5A5. */
 typedef struct dmrgo_pdu_csbk_bytes_t dmrgo_pdu_csbk_bytes_t;
-/* Go: pdu.CSBKPayloads. CSBKPayloads holds one payload struct of each type that a CSBK dispatch field points to, for DecodeCSBKInto. */
-typedef struct dmrgo_pdu_csbk_payloads_t dmrgo_pdu_csbk_payloads_t;
 /* Go: pdu.CallTimerParms. CallTimerParms is the C_BCAST payload with AnnouncementType CallTimer_Parms, which sets the call timers of the MSs. */
 typedef struct dmrgo_pdu_call_timer_parms_t dmrgo_pdu_call_timer_parms_t;
 /* Go: pdu.CapacityPlusActivity. CapacityPlusActivity is the channel activity of a Capacity Plus site status: the rest LSN, and per LSN the talkgroup of a group call or the radio of a private voice or data call. */
@@ -251,12 +249,10 @@ typedef struct dmrgo_pdu_channel_timing_pdu_t dmrgo_pdu_channel_timing_pdu_t;
 typedef struct dmrgo_pdu_clear_pdu_t dmrgo_pdu_clear_pdu_t;
 /* Go: pdu.ConfirmedDataHeader. ConfirmedDataHeader is the confirmed data header (C_HEAD) (ETSI TS 102 361-1 clause 9.2.1, Table 9.10). */
 typedef struct dmrgo_pdu_confirmed_data_header_t dmrgo_pdu_confirmed_data_header_t;
-/* Go: pdu.DataHeader. DataHeader is the data header PDU (ETSI TS 102 361-1 clause 9.2). */
+/* Go: pdu.DataHeader. DataHeader is the data header PDU. */
 typedef struct dmrgo_pdu_data_header_t dmrgo_pdu_data_header_t;
 /* Go: pdu.DataHeaderBytes. DataHeaderBytes is the 12-octet BPTC(196,96) payload of a data header burst, as layer2.RawBurst.BPTCPayload returns it. */
 typedef struct dmrgo_pdu_data_header_bytes_t dmrgo_pdu_data_header_bytes_t;
-/* Go: pdu.DataHeaderPayloads. DataHeaderPayloads holds one payload struct of each type that a DataHeader dispatch field points to, for DecodeDataHeaderInto. */
-typedef struct dmrgo_pdu_data_header_payloads_t dmrgo_pdu_data_header_payloads_t;
 /* Go: pdu.DefinedDataHeader. DefinedDataHeader is the defined data header (DD_HEAD) (ETSI TS 102 361-1 clause 9.2.12, Table 9.17C). */
 typedef struct dmrgo_pdu_defined_data_header_t dmrgo_pdu_defined_data_header_t;
 /* Go: pdu.DuplexPrivateDataGrantPDU. DuplexPrivateDataGrantPDU is the duplex private data channel grant (PD_GRANT_DX) CSBK payload (ETSI TS 102 361-4 clause 7.1.1.1.1). */
@@ -277,10 +273,8 @@ typedef struct dmrgo_pdu_flc_talker_alias_header_t dmrgo_pdu_flc_talker_alias_he
 typedef struct dmrgo_pdu_flc_terminator_data_link_control_t dmrgo_pdu_flc_terminator_data_link_control_t;
 /* Go: pdu.FLCUnitToUnit. FLCUnitToUnit is the unit to unit voice channel user (UU_V_Ch_Usr) Full LC payload (ETSI TS 102 361-2 clause 7.1.1.2, Table 7.2). */
 typedef struct dmrgo_pdu_flc_unit_to_unit_t dmrgo_pdu_flc_unit_to_unit_t;
-/* Go: pdu.FullLinkControl. FullLinkControl is the Full Link Control (Full LC) PDU (ETSI TS 102 361-1 clause 9.1.6). */
+/* Go: pdu.FullLinkControl. FullLinkControl is the Full Link Control (Full LC) PDU. */
 typedef struct dmrgo_pdu_full_link_control_t dmrgo_pdu_full_link_control_t;
-/* Go: pdu.FullLinkControlPayloads. FullLinkControlPayloads holds one payload struct of each type that a FullLinkControl dispatch field points to, for DecodeFullLinkControlInto. */
-typedef struct dmrgo_pdu_full_link_control_payloads_t dmrgo_pdu_full_link_control_payloads_t;
 /* Go: pdu.GenSiteParms. GenSiteParms is the C_BCAST payload with AnnouncementType Gen_Site_Params, which broadcasts the current site information and the network information (ETSI TS 102 361-4 V1.12.1 clauses 7.2.19.8, 7.2.40 and 7.2.41, Tables 7.80, 7.101 and 7.102). */
 typedef struct dmrgo_pdu_gen_site_parms_t dmrgo_pdu_gen_site_parms_t;
 /* Go: pdu.LCBytes. LCBytes is the 72 LC bits of a Full LC without RS(12,9) parity, as FullLinkControl.Bytes returns them. */
@@ -289,10 +283,8 @@ typedef struct dmrgo_pdu_lc_bytes_t dmrgo_pdu_lc_bytes_t;
 typedef struct dmrgo_pdu_local_time_parms_t dmrgo_pdu_local_time_parms_t;
 /* Go: pdu.MBCContinuation. MBCContinuation is a continuation block of a Multi Block Control (MBC) PDU. */
 typedef struct dmrgo_pdu_mbc_continuation_t dmrgo_pdu_mbc_continuation_t;
-/* Go: pdu.MBCHeader. MBCHeader is the header block of a Multi Block Control (MBC) PDU (ETSI TS 102 361-1 clause 7.4.1). */
+/* Go: pdu.MBCHeader. MBCHeader is the header block of a Multi Block Control (MBC) PDU. */
 typedef struct dmrgo_pdu_mbc_header_t dmrgo_pdu_mbc_header_t;
-/* Go: pdu.MBCHeaderPayloads. MBCHeaderPayloads holds one payload struct of each type that an MBCHeader dispatch field points to, for DecodeMBCHeaderInto. */
-typedef struct dmrgo_pdu_mbc_header_payloads_t dmrgo_pdu_mbc_header_payloads_t;
 /* Go: pdu.MVAPContinuation. MVAPContinuation is the MV_AP continuation block of a C_MOVE MBC (ETSI TS 102 361-4 clause 7.1.1.1.3.1, Table 7.18). */
 typedef struct dmrgo_pdu_mvap_continuation_t dmrgo_pdu_mvap_continuation_t;
 /* Go: pdu.MaintenancePDU. MaintenancePDU is the maintenance (P_MAINT) CSBK payload (ETSI TS 102 361-4 clause 7.1.1.4.3). */
@@ -349,8 +341,6 @@ typedef struct dmrgo_pdu_short_lc_c_sys_parms_t dmrgo_pdu_short_lc_c_sys_parms_t
 typedef struct dmrgo_pdu_short_lc_null_message_t dmrgo_pdu_short_lc_null_message_t;
 /* Go: pdu.ShortLCPSysParms. ShortLCPSysParms is the P_SYS_Parms Short LC payload. */
 typedef struct dmrgo_pdu_short_lc_p_sys_parms_t dmrgo_pdu_short_lc_p_sys_parms_t;
-/* Go: pdu.ShortLCPayloads. ShortLCPayloads holds one payload struct of each type that a ShortLC dispatch field points to, for DecodeShortLCInto. */
-typedef struct dmrgo_pdu_short_lc_payloads_t dmrgo_pdu_short_lc_payloads_t;
 /* Go: pdu.SlotType. SlotType is the slot type (SLOT) PDU (ETSI TS 102 361-1 clause 9.1.3). */
 typedef struct dmrgo_pdu_slot_type_t dmrgo_pdu_slot_type_t;
 /* Go: pdu.StatusPrecodedHeader. StatusPrecodedHeader is the status or precoded data header (SP_HEAD), which has no appended blocks (ETSI TS 102 361-1 clause 9.2.10, Table 9.17A). */
@@ -959,62 +949,12 @@ struct dmrgo_fec_result_t {
 	bool uncorrectable;
 };
 
-struct dmrgo_pdu_short_lc_null_message_t {
-	/* reserved */
-	uint32_t reserved;
-};
-
-struct dmrgo_pdu_short_lc_activity_update_t {
-	/* activity of timeslot 1 */
-	dmrgo_enums_activity_id_t ts1_activity_id;
-	/* activity of timeslot 2 */
-	dmrgo_enums_activity_id_t ts2_activity_id;
-	/* 8-bit address hash for timeslot 1 */
-	uint8_t hash_ts1;
-	/* 8-bit address hash for timeslot 2 */
-	uint8_t hash_ts2;
-};
-
-struct dmrgo_pdu_short_lc_c_sys_parms_t {
-	/* network model (NetworkModel) */
-	uint8_t model;
-	/* NET and SITE, split by MODEL */
-	uint16_t net_site_raw;
-	/* true when the TSCC requires the MS to register */
-	bool reg;
-	/* 9-bit Common_Slot_Counter */
-	uint16_t common_slot_counter;
-};
-
-struct dmrgo_pdu_short_lc_p_sys_parms_t {
-	/* network model (NetworkModel) */
-	uint8_t model;
-	/* NET and SITE, split by MODEL */
-	uint16_t net_site_raw;
-	/* true when the payload channel is a composite control channel */
-	bool payload_channel_type;
-	/* 9-bit Common_Slot_Counter */
-	uint16_t common_slot_counter;
-};
-
 struct dmrgo_pdu_short_lc_t {
 	/* Short Link Control Opcode (SLCO) */
 	dmrgo_enums_slco_t slco;
 	/* result of the CRC-8 check */
 	dmrgo_fec_result_t fec;
-	/* Null Message payload */
-	bool has_null_message;
-	dmrgo_pdu_short_lc_null_message_t null_message;
-	/* Activity Update payload */
-	bool has_activity_update;
-	dmrgo_pdu_short_lc_activity_update_t activity_update;
-	/* C_SYS_Parms payload */
-	bool has_c_sys_parms;
-	dmrgo_pdu_short_lc_c_sys_parms_t c_sys_parms;
-	/* P_SYS_Parms payload */
-	bool has_p_sys_parms;
-	dmrgo_pdu_short_lc_p_sys_parms_t p_sys_parms;
-	/* RawPayload holds bits 4 to 27 when no payload field is set, packed most significant bit first: bit 4 is the top bit of byte 0. */
+	/* RawPayload holds bits 4 to 27, the payload that SLCO selects, packed most significant bit first: bit 4 is the top bit of byte 0. */
 	uint8_t raw_payload[3];
 };
 
@@ -1317,181 +1257,11 @@ struct dmrgo_data_call_t {
 	uint32_t source;
 };
 
-struct dmrgo_pdu_unconfirmed_data_header_t {
-	/* true when LLIDDestination is a group */
-	bool group;
-	/* Response Requested (A) */
-	bool response_requested;
-	/* reserved */
-	bool reserved;
-	/* Pad Octet Count (POC); bit 3 is the MSB */
-	uint8_t pad_octet_count;
-	/* SAP identifier */
-	dmrgo_enums_sap_t sap;
-	/* destination LLID */
-	uint32_t llid_destination;
-	/* source LLID */
-	uint32_t llid_source;
-	/* Full Message Flag (F) */
-	bool full_message_flag;
-	/* Blocks to Follow (BF) */
-	uint8_t blocks_to_follow;
-	/* reserved */
-	uint8_t reserved2;
-	/* Fragment Sequence Number (FSN) */
-	uint8_t fragment_sequence_number;
-};
-
-struct dmrgo_pdu_confirmed_data_header_t {
-	/* true when LLIDDestination is a group */
-	bool group;
-	/* Response Requested (A) */
-	bool response_requested;
-	/* reserved */
-	bool reserved;
-	/* Pad Octet Count (POC); bit 3 is the MSB */
-	uint8_t pad_octet_count;
-	/* SAP identifier */
-	dmrgo_enums_sap_t sap;
-	/* destination LLID */
-	uint32_t llid_destination;
-	/* source LLID */
-	uint32_t llid_source;
-	/* Full Message Flag (F) */
-	bool full_message_flag;
-	/* Blocks to Follow (BF) */
-	uint8_t blocks_to_follow;
-	/* Re-Synchronize Flag (S) */
-	bool re_synchronize_flag;
-	/* send sequence number N(S) */
-	uint8_t send_sequence_number;
-	/* Fragment Sequence Number (FSN) */
-	uint8_t fragment_sequence_number;
-};
-
-struct dmrgo_pdu_response_packet_header_t {
-	/* reserved */
-	bool reserved;
-	/* Response Requested (A) */
-	bool response_requested;
-	/* reserved */
-	uint8_t reserved2;
-	/* SAP identifier */
-	dmrgo_enums_sap_t sap;
-	/* reserved */
-	uint8_t reserved3;
-	/* destination LLID */
-	uint32_t llid_destination;
-	/* source LLID */
-	uint32_t llid_source;
-	/* Full Message Flag (F) */
-	bool full_message_flag;
-	/* Blocks to Follow (BF) */
-	uint8_t blocks_to_follow;
-	/* response Class (Table 8.2) */
-	uint8_t response_class;
-	/* response Type (Table 8.2) */
-	uint8_t response_type;
-	/* response Status (Table 8.2) */
-	uint8_t response_status;
-};
-
-struct dmrgo_pdu_defined_data_header_t {
-	/* true when LLIDDestination is a group */
-	bool group;
-	/* Response Requested (A) */
-	bool response_requested;
-	/* Appended Blocks (AB); bits 2 and 3 are the MSBs */
-	uint8_t appended_blocks;
-	/* SAP identifier */
-	dmrgo_enums_sap_t sap;
-	/* destination LLID */
-	uint32_t llid_destination;
-	/* source LLID */
-	uint32_t llid_source;
-	/* Defined Data format (DD) */
-	dmrgo_enums_dd_format_t defined_data;
-	/* Selective Automatic Repeat reQuest (SARQ) */
-	bool sarq;
-	/* Full Message Flag (F) */
-	bool full_message_flag;
-	/* Bit Padding field */
-	uint8_t bit_padding;
-};
-
-struct dmrgo_pdu_status_precoded_header_t {
-	/* true when LLIDDestination is a group */
-	bool group;
-	/* Response Requested (A) */
-	bool response_requested;
-	/* SAP identifier */
-	dmrgo_enums_sap_t sap;
-	/* destination LLID */
-	uint32_t llid_destination;
-	/* source LLID */
-	uint32_t llid_source;
-	/* Source Port (SP) */
-	uint8_t source_port;
-	/* Destination Port (DP) */
-	uint8_t destination_port;
-	/* 10-bit Status/Precoded (S_P) value */
-	uint16_t status_precoded;
-};
-
-struct dmrgo_pdu_raw_data_header_t {
-	/* true when LLIDDestination is a group */
-	bool group;
-	/* Response Requested (A) */
-	bool response_requested;
-	/* Appended Blocks (AB); bits 2 and 3 are the MSBs */
-	uint8_t appended_blocks;
-	/* SAP identifier */
-	dmrgo_enums_sap_t sap;
-	/* destination LLID */
-	uint32_t llid_destination;
-	/* source LLID */
-	uint32_t llid_source;
-	/* Source Port (SP) */
-	uint8_t source_port;
-	/* Destination Port (DP) */
-	uint8_t destination_port;
-	/* Selective Automatic Repeat reQuest (SARQ) */
-	bool sarq;
-	/* Full Message Flag (F) */
-	bool full_message_flag;
-	/* Bit Padding field */
-	uint8_t bit_padding;
-};
-
-struct dmrgo_pdu_udt_header_t {
-	/* true when LLIDDestination is a group */
-	bool group;
-	/* Response Requested (A) */
-	bool response_requested;
-	/* emergency in C_UDTHD, reserved in C_UDTHU */
-	bool emergency;
-	/* UDT_Option_Flag in C_UDTHD, UDT_DIV in C_UDTHU */
-	bool option_flag;
-	/* SAP identifier */
-	dmrgo_enums_sap_t sap;
-	/* UDT Format */
-	dmrgo_enums_udt_format_t udt_format;
-	/* destination LLID */
-	uint32_t llid_destination;
-	/* source LLID */
-	uint32_t llid_source;
-	/* number of pad nibbles appended to the user data */
-	uint8_t pad_nibble;
-	/* reserved */
-	bool reserved;
-	/* UDT Appended Blocks (UAB): the number of appended blocks minus one */
-	uint8_t appended_blocks;
-	/* Supplementary Flag (SF): true for supplementary data, false for short data */
-	bool supplementary_flag;
-	/* Protect Flag (PF) */
-	bool protect_flag;
-	/* UDT Opcode (UDTO) */
-	dmrgo_pdu_udt_opcode_t opcode;
+struct dmrgo_pdu_data_header_t {
+	/* result of the header CRC check */
+	dmrgo_fec_result_t fec;
+	/* RawPayload holds header bits 0 to 79, packed most significant bit first: bit 0 is the top bit of byte 0. */
+	uint8_t raw_payload[10];
 };
 
 struct dmrgo_pdu_proprietary_header_t {
@@ -1501,41 +1271,6 @@ struct dmrgo_pdu_proprietary_header_t {
 	dmrgo_enums_fid_t mfid;
 	/* manufacturer data, header octets 2 to 9 */
 	uint8_t manufacturer_data[8];
-};
-
-struct dmrgo_pdu_data_header_t {
-	/* result of the header CRC check */
-	dmrgo_fec_result_t fec;
-	/* Format is the Data Packet Format; Encode returns an error unless Format and the encoded AB select the one header field that is set. */
-	dmrgo_pdu_format_t format;
-	/* decoded Appended Blocks (AB) of a DD_HEAD, R_HEAD or SP_HEAD, 0 for the other formats; Encode ignores it */
-	uint8_t appended_blocks;
-	/* U_HEAD */
-	bool has_unconfirmed_data_header;
-	dmrgo_pdu_unconfirmed_data_header_t unconfirmed_data_header;
-	/* C_HEAD */
-	bool has_confirmed_data_header;
-	dmrgo_pdu_confirmed_data_header_t confirmed_data_header;
-	/* C_RHEAD */
-	bool has_response_packet_header;
-	dmrgo_pdu_response_packet_header_t response_packet_header;
-	/* DD_HEAD */
-	bool has_defined_data_header;
-	dmrgo_pdu_defined_data_header_t defined_data_header;
-	/* SP_HEAD, for a header with no appended blocks */
-	bool has_status_precoded_header;
-	dmrgo_pdu_status_precoded_header_t status_precoded_header;
-	/* R_HEAD; its AppendedBlocks must not be 0 */
-	bool has_raw_data_header;
-	dmrgo_pdu_raw_data_header_t raw_data_header;
-	/* UDT_HEAD */
-	bool has_udt_header;
-	dmrgo_pdu_udt_header_t udt_header;
-	/* P_HEAD */
-	bool has_proprietary_header;
-	dmrgo_pdu_proprietary_header_t proprietary_header;
-	/* RawPayload holds header bits 0 to 79 when no header field is set, packed most significant bit first: bit 0 is the top bit of byte 0. */
-	uint8_t raw_payload[10];
 };
 
 struct dmrgo_data_message_t {
@@ -2053,579 +1788,21 @@ struct dmrgo_pdu_cgap_continuation_t {
 	dmrgo_layer3_cdef_parms_t cdef_parms;
 };
 
-struct dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t {
-	/* service options of the call */
-	dmrgo_layer3_service_options_t service_options;
-	/* reserved, 0 */
-	uint8_t reserved;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit source address */
-	uint32_t source_address;
-};
-
-struct dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t {
-	/* service options of the call */
-	dmrgo_layer3_service_options_t service_options;
-	/* 0x20 for proceed, 0x21 for deny */
-	uint8_t answer_response;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit source address */
-	uint32_t source_address;
-};
-
-struct dmrgo_pdu_negative_acknowledgement_pdu_t {
-	/* tells if SourceAddress is valid */
-	dmrgo_layer3_additional_information_field_t additional_info;
-	/* BS or MS sourced */
-	dmrgo_layer3_source_type_t source_type;
-	/* opcode of the refused service */
-	dmrgo_pdu_csbk_opcode_t service_type;
-	/* reason code, 0x21 when the MS does not support the service */
-	uint8_t reason_code;
-	/* 24-bit source address */
-	uint32_t source_address;
-	/* 24-bit target address */
-	uint32_t target_address;
-};
-
-struct dmrgo_pdu_preamble_pdu_t {
-	/* true when data follows the preambles, false when a CSBK follows */
-	bool data;
-	/* true when TargetAddress is a talkgroup */
-	bool group;
-	/* reserved, 0 */
-	uint8_t reserved;
-	/* number of blocks after this one (CBF) */
-	uint8_t csbk_blocks_to_follow;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit source address */
-	uint32_t source_address;
-};
-
-struct dmrgo_pdu_channel_timing_pdu_t {
-	/* time since the last beacon in 500 ms steps */
-	uint16_t sync_age;
-	/* number of timing hops from the leader, 0 at the leader */
-	uint8_t generation;
-	/* 20-bit ID of the timing leader, 0 when unknown */
-	uint32_t leader_identifier;
-	/* true to appoint a new timing leader */
-	bool new_leader;
-	/* leader preference of the timing leader */
-	uint8_t leader_dynamic_identifier;
-	/* most significant bit of the channel timing opcode */
-	bool channel_timing_op1;
-	/* 20-bit ID of the sending MS */
-	uint32_t source_identifier;
-	/* reserved, 0 */
-	bool reserved;
-	/* leader preference of the sending MS */
-	uint8_t source_dynamic_identifier;
-	/* least significant bit of the channel timing opcode */
-	bool channel_timing_op0;
-};
-
-struct dmrgo_pdu_private_voice_grant_pdu_t {
-	/* 12-bit channel number, 0xFFF when a CGAP block follows */
-	uint16_t physical_channel;
-	/* TDMA channel: false for channel 1, true for channel 2 */
-	bool logical_channel;
-	/* reserved, 0 */
-	bool reserved;
-	/* true for an emergency call */
-	bool emergency;
-	/* true for offset timing, false for aligned timing */
-	bool offset;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit source address */
-	uint32_t source_address;
-};
-
-struct dmrgo_pdu_talkgroup_voice_grant_pdu_t {
-	/* 12-bit channel number, 0xFFF when a CGAP block follows */
-	uint16_t physical_channel;
-	/* TDMA channel: false for channel 1, true for channel 2 */
-	bool logical_channel;
-	/* true when sent after the call set-up (late entry) */
-	bool late_entry;
-	/* true for an emergency call */
-	bool emergency;
-	/* true for offset timing, false for aligned timing */
-	bool offset;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit source address */
-	uint32_t source_address;
-};
-
-struct dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t {
-	/* 12-bit channel number, 0xFFF when a CGAP block follows */
-	uint16_t physical_channel;
-	/* TDMA channel: false for channel 1, true for channel 2 */
-	bool logical_channel;
-	/* true when sent after the call set-up (late entry) */
-	bool late_entry;
-	/* true for an emergency call */
-	bool emergency;
-	/* true for offset timing, false for aligned timing */
-	bool offset;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit source address */
-	uint32_t source_address;
-};
-
-struct dmrgo_pdu_private_data_grant_pdu_t {
-	/* 12-bit channel number, 0xFFF when a CGAP block follows */
-	uint16_t physical_channel;
-	/* TDMA channel: false for channel 1, true for channel 2 */
-	bool logical_channel;
-	/* true for dual slot data, false for single slot data */
-	bool hi_rate;
-	/* true for an emergency call */
-	bool emergency;
-	/* true for offset timing, false for aligned timing */
-	bool offset;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit source address */
-	uint32_t source_address;
-};
-
-struct dmrgo_pdu_talkgroup_data_grant_pdu_t {
-	/* 12-bit channel number, 0xFFF when a CGAP block follows */
-	uint16_t physical_channel;
-	/* TDMA channel: false for channel 1, true for channel 2 */
-	bool logical_channel;
-	/* true for dual slot data, false for single slot data */
-	bool hi_rate;
-	/* true for an emergency call */
-	bool emergency;
-	/* true for offset timing, false for aligned timing */
-	bool offset;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit source address */
-	uint32_t source_address;
-};
-
-struct dmrgo_pdu_duplex_private_voice_grant_pdu_t {
-	/* 12-bit channel number, 0xFFF when a CGAP block follows */
-	uint16_t physical_channel;
-	/* TDMA channel: false for channel 1, true for channel 2 */
-	bool logical_channel;
-	/* reserved, 0 */
-	bool reserved;
-	/* true for an emergency call */
-	bool emergency;
-	/* true when TargetAddress is the calling MS, false when it is the called MS */
-	bool call_direction;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit source address */
-	uint32_t source_address;
-};
-
-struct dmrgo_pdu_duplex_private_data_grant_pdu_t {
-	/* 12-bit channel number, 0xFFF when a CGAP block follows */
-	uint16_t physical_channel;
-	/* TDMA channel: false for channel 1, true for channel 2 */
-	bool logical_channel;
-	/* true for dual slot data, false for single slot data */
-	bool hi_rate;
-	/* true for an emergency call */
-	bool emergency;
-	/* true when TargetAddress is the calling MS, false when it is the called MS */
-	bool call_direction;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit source address */
-	uint32_t source_address;
-};
-
-struct dmrgo_pdu_private_data_grant_multi_item_pdu_t {
-	/* 12-bit channel number, 0xFFF when a CGAP block follows */
-	uint16_t physical_channel;
-	/* TDMA channel: false for channel 1, true for channel 2 */
-	bool logical_channel;
-	/* true for dual slot data, false for single slot data */
-	bool hi_rate;
-	/* true for an emergency call */
-	bool emergency;
-	/* true for offset timing, false for aligned timing */
-	bool offset;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit source address */
-	uint32_t source_address;
-};
-
-struct dmrgo_pdu_move_pdu_t {
-	/* reserved, 0 */
-	uint16_t reserved1;
-	/* address mask, 0 to 24 */
-	uint8_t mask;
-	/* reserved, 0 */
-	uint8_t reserved2;
-	/* true when MSs must register */
-	bool reg;
-	/* backoff number, 1 to 15 (0 is reserved) */
-	uint8_t backoff;
-	/* reserved, 0 */
-	uint8_t reserved3;
-	/* 12-bit TSCC channel number, 0xFFF when an MVAP block follows */
-	uint16_t physical_channel;
-	/* 24-bit individual MS address */
-	uint32_t ms_address;
-};
-
-struct dmrgo_pdu_aloha_pdu_t {
-	/* reserved, 0 */
-	bool reserved1;
-	/* true when the TSCC supports a TSCCAS */
-	bool tsccas;
-	/* true when all channels of the site are timeslot synchronized */
-	bool site_ts_sync;
-	/* version of ETSI TS 102 361-4 that the system complies with */
-	uint8_t version;
-	/* true when the TSCC uses offset timing */
-	bool offset;
-	/* true when the TS has a connection to the network */
-	bool active_conn;
-	/* address mask, 0 to 24 */
-	uint8_t mask;
-	/* services for which random access is invited */
-	uint8_t service_func;
-	/* code for the TDMA frames an MS waits before a random access retry */
-	uint8_t n_rand_wait;
-	/* true when MSs must register */
-	bool reg;
-	/* backoff number, 1 to 15 (0 is reserved) */
-	uint8_t backoff;
-	/* system identity code (C_SYScode) of the TSCC */
-	uint16_t sys_ident_code;
-	/* 24-bit individual MS address */
-	uint32_t ms_address;
-};
-
-struct dmrgo_pdu_broadcast_pdu_t {
-	/* which system parameters are broadcast */
-	dmrgo_enums_announcement_type_t announcement_type;
-	/* 14 bits whose layout depends on AnnouncementType */
-	uint16_t broadcast_parms1;
-	/* true when MSs must register */
-	bool reg;
-	/* backoff number, 1 to 15 (0 is reserved) */
-	uint8_t backoff;
-	/* system identity code (C_SYScode) of the TSCC */
-	uint16_t sys_ident_code;
-	/* 24 bits whose layout depends on AnnouncementType */
-	uint32_t broadcast_parms2;
-};
-
-struct dmrgo_pdu_clear_pdu_t {
-	/* channel number to move to, 0 for the control channel */
-	uint16_t physical_channel;
-	/* reserved, 0 */
-	bool reserved1;
-	/* reserved, 0 */
-	uint8_t reserved2;
-	/* true when TargetAddress is a talkgroup */
-	bool group_individual;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit source address */
-	uint32_t source_address;
-};
-
-struct dmrgo_pdu_protect_pdu_t {
-	/* reserved, 0 */
-	uint16_t reserved;
-	/* 0 DIS_PTT, 1 EN_PTT, 2 ILLEGALLY_PARKED, 3 EN_PTT_ONE_MS */
-	uint8_t protect_kind;
-	/* true when TargetAddress is a talkgroup */
-	bool group_individual;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit source address */
-	uint32_t source_address;
-};
-
-struct dmrgo_pdu_ahoy_pdu_t {
-	/* Service_Options of the request that this answers */
-	uint8_t service_opts_mirror;
-	/* flag whose meaning depends on ServiceKind */
-	bool service_kind_flag;
-	/* true when the caller asked for ambient listening */
-	bool als;
-	/* true when TargetAddress is a talkgroup */
-	bool group_individual;
-	/* number of appended data blocks to send */
-	uint8_t appended_blocks;
-	/* service that this PDU supports */
-	uint8_t service_kind;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit source address, or an authentication challenge */
-	uint32_t source_address;
-};
-
-struct dmrgo_pdu_ack_outbound_pdu_t {
-	/* supplementary response information */
-	uint8_t response_info;
-	/* acknowledgement reason code */
-	uint8_t reason_code;
-	/* reserved, 0 */
-	bool reserved;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit additional information, usually a source address */
-	uint32_t additional_info;
-};
-
-struct dmrgo_pdu_ack_inbound_pdu_t {
-	/* supplementary response information */
-	uint8_t response_info;
-	/* acknowledgement reason code */
-	uint8_t reason_code;
-	/* reserved, 0 */
-	bool reserved;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit additional information, usually a source address */
-	uint32_t additional_info;
-};
-
-struct dmrgo_pdu_ack_outbound_payload_pdu_t {
-	/* supplementary response information */
-	uint8_t response_info;
-	/* acknowledgement reason code */
-	uint8_t reason_code;
-	/* reserved, 0 */
-	bool reserved;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit additional information, usually a source address */
-	uint32_t additional_info;
-};
-
-struct dmrgo_pdu_ack_inbound_payload_pdu_t {
-	/* supplementary response information */
-	uint8_t response_info;
-	/* acknowledgement reason code */
-	uint8_t reason_code;
-	/* reserved, 0 */
-	bool reserved;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit additional information, usually a source address */
-	uint32_t additional_info;
-};
-
-struct dmrgo_pdu_random_access_pdu_t {
-	/* service options of the request */
-	uint8_t service_options;
-	/* true for 21 to 44 gateway digits, false for 1 to 20 */
-	bool proxy_flag;
-	/* 4 bits whose content depends on ServiceKind */
-	uint8_t reserved;
-	/* service requested */
-	uint8_t service_kind;
-	/* 24-bit target or gateway address */
-	uint32_t target_address;
-	/* 24-bit address of the requesting MS */
-	uint32_t source_address;
-};
-
-struct dmrgo_pdu_ackvitation_pdu_t {
-	/* Service_Options_Mirror */
-	uint8_t service_opts_mirror;
-	/* flag whose meaning depends on ServiceKind */
-	bool service_kind_flag;
-	/* reserved, 0 */
-	uint8_t reserved;
-	/* Appended_Blocks, 0 to 3 for 1 to 4 appended data UDTs */
-	uint8_t uab;
-	/* service that this PDU supports */
-	uint8_t service_kind;
-	/* 24-bit target address, or an authentication challenge */
-	uint32_t target_address;
-	/* 24-bit individual MS address */
-	uint32_t source_address;
-};
-
-struct dmrgo_pdu_maintenance_pdu_t {
-	/* reserved, 0 */
-	uint16_t reserved;
-	/* maintenance kind, 0 for DISCON (end of payload channel use) */
-	uint8_t maint_kind;
-	/* reserved, 0 */
-	bool reserved2;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit source address */
-	uint32_t source_address;
-};
-
 struct dmrgo_pdu_csbk_t {
 	/* LB bit, true for the last block */
 	bool last_block;
 	/* PF bit */
 	bool protect_flag;
-	/* CSBKO, selects the payload field */
+	/* CSBKO, selects the payload */
 	dmrgo_pdu_csbk_opcode_t opcode;
-	/* feature set ID, only the standard FID has payload fields */
+	/* feature set ID, selects the payload with Opcode */
 	dmrgo_enums_fid_t fid;
 	/* result of the CRC check */
 	dmrgo_fec_result_t fec;
 	/* Hint0x38 is the likely meaning of opcode 0x38. DecodeCSBK leaves it Opcode0x38Unknown. layer2.Burst sets it from the SYNC of the burst, which a network relay can rewrite. */
 	dmrgo_pdu_opcode0x38_hint_t hint0x38;
-	/* UU_V_Req payload, or nil */
-	bool has_unit_to_unit_voice_service_request_pdu;
-	dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t unit_to_unit_voice_service_request_pdu;
-	/* UU_Ans_Rsp payload, or nil */
-	bool has_unit_to_unit_voice_service_answer_response_pdu;
-	dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t unit_to_unit_voice_service_answer_response_pdu;
-	/* NACK_Rsp payload, or nil */
-	bool has_negative_acknowledgement_pdu;
-	dmrgo_pdu_negative_acknowledgement_pdu_t negative_acknowledgement_pdu;
-	/* Pre_CSBK payload, or nil */
-	bool has_preamble_pdu;
-	dmrgo_pdu_preamble_pdu_t preamble_pdu;
-	/* CT_CSBK payload, or nil */
-	bool has_channel_timing_pdu;
-	dmrgo_pdu_channel_timing_pdu_t channel_timing_pdu;
-	/* PV_GRANT payload, or nil */
-	bool has_private_voice_grant_pdu;
-	dmrgo_pdu_private_voice_grant_pdu_t private_voice_grant_pdu;
-	/* TV_GRANT payload, or nil */
-	bool has_talkgroup_voice_grant_pdu;
-	dmrgo_pdu_talkgroup_voice_grant_pdu_t talkgroup_voice_grant_pdu;
-	/* BTV_GRANT payload, or nil */
-	bool has_broadcast_talkgroup_voice_grant_pdu;
-	dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t broadcast_talkgroup_voice_grant_pdu;
-	/* PD_GRANT payload, or nil */
-	bool has_private_data_grant_pdu;
-	dmrgo_pdu_private_data_grant_pdu_t private_data_grant_pdu;
-	/* TD_GRANT payload, or nil */
-	bool has_talkgroup_data_grant_pdu;
-	dmrgo_pdu_talkgroup_data_grant_pdu_t talkgroup_data_grant_pdu;
-	/* PV_GRANT_DX payload, or nil */
-	bool has_duplex_private_voice_grant_pdu;
-	dmrgo_pdu_duplex_private_voice_grant_pdu_t duplex_private_voice_grant_pdu;
-	/* PD_GRANT_DX payload, or nil */
-	bool has_duplex_private_data_grant_pdu;
-	dmrgo_pdu_duplex_private_data_grant_pdu_t duplex_private_data_grant_pdu;
-	/* PD_GRANT_MI payload, or nil */
-	bool has_private_data_grant_multi_item_pdu;
-	dmrgo_pdu_private_data_grant_multi_item_pdu_t private_data_grant_multi_item_pdu;
-	/* C_MOVE payload, or nil */
-	bool has_move_pdu;
-	dmrgo_pdu_move_pdu_t move_pdu;
-	/* C_ALOHA payload, or nil */
-	bool has_aloha_pdu;
-	dmrgo_pdu_aloha_pdu_t aloha_pdu;
-	/* C_BCAST payload, or nil */
-	bool has_broadcast_pdu;
-	dmrgo_pdu_broadcast_pdu_t broadcast_pdu;
-	/* P_CLEAR payload, or nil */
-	bool has_clear_pdu;
-	dmrgo_pdu_clear_pdu_t clear_pdu;
-	/* P_PROTECT payload, or nil */
-	bool has_protect_pdu;
-	dmrgo_pdu_protect_pdu_t protect_pdu;
-	/* C_AHOY or P_AHOY payload, or nil */
-	bool has_ahoy_pdu;
-	dmrgo_pdu_ahoy_pdu_t ahoy_pdu;
-	/* C_ACKD payload, or nil */
-	bool has_ack_outbound_pdu;
-	dmrgo_pdu_ack_outbound_pdu_t ack_outbound_pdu;
-	/* C_ACKU payload, or nil */
-	bool has_ack_inbound_pdu;
-	dmrgo_pdu_ack_inbound_pdu_t ack_inbound_pdu;
-	/* P_ACKD payload, or nil */
-	bool has_ack_outbound_payload_pdu;
-	dmrgo_pdu_ack_outbound_payload_pdu_t ack_outbound_payload_pdu;
-	/* P_ACKU payload, or nil */
-	bool has_ack_inbound_payload_pdu;
-	dmrgo_pdu_ack_inbound_payload_pdu_t ack_inbound_payload_pdu;
-	/* C_RAND payload, or nil */
-	bool has_random_access_pdu;
-	dmrgo_pdu_random_access_pdu_t random_access_pdu;
-	/* C_ACKVIT payload, or nil */
-	bool has_ackvitation_pdu;
-	dmrgo_pdu_ackvitation_pdu_t ackvitation_pdu;
-	/* P_MAINT payload, or nil */
-	bool has_maintenance_pdu;
-	dmrgo_pdu_maintenance_pdu_t maintenance_pdu;
-	/* RawPayload holds CSBK octets 2 to 9 (bits 16 to 79) when no payload field is set, as for opcode 0x38 or a manufacturer FID. */
+	/* RawPayload holds CSBK octets 2 to 9 (bits 16 to 79), the payload that Opcode and FID select. */
 	uint8_t raw_payload[8];
-};
-
-struct dmrgo_pdu_flc_group_voice_t {
-	/* Service Options */
-	dmrgo_layer3_service_options_t service_options;
-	/* 24-bit group address */
-	uint32_t group_address;
-	/* 24-bit source address */
-	uint32_t source_address;
-};
-
-struct dmrgo_pdu_flc_unit_to_unit_t {
-	/* Service Options */
-	dmrgo_layer3_service_options_t service_options;
-	/* 24-bit target address */
-	uint32_t target_address;
-	/* 24-bit source address */
-	uint32_t source_address;
-};
-
-struct dmrgo_pdu_flc_gps_info_t {
-	/* reserved */
-	uint8_t reserved;
-	/* Position Error */
-	dmrgo_layer3_position_error_t position_error;
-	/* degrees, -180 to 180 */
-	double longitude;
-	/* degrees, -90 to 90 */
-	double latitude;
-};
-
-struct dmrgo_pdu_flc_talker_alias_header_t {
-	/* Talker alias data format */
-	dmrgo_layer3_talker_alias_data_format_t talker_alias_data_format;
-	/* alias length in Code Units */
-	int64_t talker_alias_data_length;
-	/* TalkerAliasData is the 49-bit Talker alias data IE. The 7-bit format uses all 49 bits; the other formats leave the most significant bit unused. */
-	uint64_t talker_alias_data;
-};
-
-struct dmrgo_pdu_flc_talker_alias_block_t {
-	/* 56 bits of Talker alias data */
-	uint8_t talker_alias_data[7];
-};
-
-struct dmrgo_pdu_flc_terminator_data_link_control_t {
-	/* destination LLID */
-	uint32_t llid_destination;
-	/* source LLID */
-	uint32_t llid_source;
-	/* true when LLIDDestination is a group */
-	bool group_or_individual;
-	/* Response Requested (A) */
-	bool response_requested;
-	/* Full Message Flag (F) */
-	bool full_message_flag;
-	/* reserved */
-	bool reserved;
-	/* Re-Synchronize Flag (S) */
-	bool re_synchronize_flag;
-	/* send sequence number N(S) */
-	uint8_t send_sequence_number;
 };
 
 struct dmrgo_pdu_full_link_control_t {
@@ -2635,31 +1812,13 @@ struct dmrgo_pdu_full_link_control_t {
 	bool protect_flag;
 	/* reserved */
 	bool reserved;
-	/* FLCO is the Full Link Control Opcode; Encode returns an error unless FLCO and FID select the one payload field that is set. */
+	/* Full Link Control Opcode (FLCO) */
 	dmrgo_enums_flco_t flco;
-	/* FID is the Feature set ID; the payload fields apply only to the standard FID 0, and RawPayload holds the payload of any other FID. */
+	/* FID is the Feature set ID; the As methods apply only to the standard FID 0, and RawPayload holds the payload of any FID. */
 	dmrgo_enums_fid_t fid;
 	/* FEC is the RS(12,9) result; MMDVMHost accepts only an LC with FEC.ErrorsCorrected 0 (layer2.MMDVMHostAccepts). */
 	dmrgo_fec_result_t fec;
-	/* Grp_V_Ch_Usr payload */
-	bool has_group_voice;
-	dmrgo_pdu_flc_group_voice_t group_voice;
-	/* UU_V_Ch_Usr payload */
-	bool has_unit_to_unit;
-	dmrgo_pdu_flc_unit_to_unit_t unit_to_unit;
-	/* GPS_Info payload */
-	bool has_gps_info;
-	dmrgo_pdu_flc_gps_info_t gps_info;
-	/* Talker_Alias_HDR payload */
-	bool has_talker_alias_header;
-	dmrgo_pdu_flc_talker_alias_header_t talker_alias_header;
-	/* Talker_Alias_BLK1 to BLK3 payload */
-	bool has_talker_alias_block;
-	dmrgo_pdu_flc_talker_alias_block_t talker_alias_block;
-	/* terminator data link control payload */
-	bool has_terminator_data_link_control;
-	dmrgo_pdu_flc_terminator_data_link_control_t terminator_data_link_control;
-	/* RawPayload holds LC bits 16 to 71 when no payload field is set, as for a manufacturer FLCO, packed most significant bit first: bit 16 is the top bit of byte 0, so the bytes are LC octets 2 to 8. */
+	/* RawPayload holds LC bits 16 to 71, the payload that FLCO and FID select, packed most significant bit first: bit 16 is the top bit of byte 0, so the bytes are LC octets 2 to 8. */
 	uint8_t raw_payload[7];
 };
 
@@ -2677,41 +1836,11 @@ struct dmrgo_pdu_mbc_header_t {
 	bool last_block;
 	/* PF bit */
 	bool protect_flag;
-	/* CSBKO, selects the payload field */
+	/* CSBKO, selects the payload */
 	dmrgo_pdu_csbk_opcode_t opcode;
-	/* feature set ID, only the standard FID has payload fields */
+	/* feature set ID, only the standard FID has As methods */
 	dmrgo_enums_fid_t fid;
-	/* PV_GRANT payload, or nil */
-	bool has_private_voice_grant_pdu;
-	dmrgo_pdu_private_voice_grant_pdu_t private_voice_grant_pdu;
-	/* TV_GRANT payload, or nil */
-	bool has_talkgroup_voice_grant_pdu;
-	dmrgo_pdu_talkgroup_voice_grant_pdu_t talkgroup_voice_grant_pdu;
-	/* BTV_GRANT payload, or nil */
-	bool has_broadcast_talkgroup_voice_grant_pdu;
-	dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t broadcast_talkgroup_voice_grant_pdu;
-	/* PD_GRANT payload, or nil */
-	bool has_private_data_grant_pdu;
-	dmrgo_pdu_private_data_grant_pdu_t private_data_grant_pdu;
-	/* TD_GRANT payload, or nil */
-	bool has_talkgroup_data_grant_pdu;
-	dmrgo_pdu_talkgroup_data_grant_pdu_t talkgroup_data_grant_pdu;
-	/* PV_GRANT_DX payload, or nil */
-	bool has_duplex_private_voice_grant_pdu;
-	dmrgo_pdu_duplex_private_voice_grant_pdu_t duplex_private_voice_grant_pdu;
-	/* PD_GRANT_DX payload, or nil */
-	bool has_duplex_private_data_grant_pdu;
-	dmrgo_pdu_duplex_private_data_grant_pdu_t duplex_private_data_grant_pdu;
-	/* PD_GRANT_MI payload, or nil */
-	bool has_private_data_grant_multi_item_pdu;
-	dmrgo_pdu_private_data_grant_multi_item_pdu_t private_data_grant_multi_item_pdu;
-	/* C_MOVE payload, or nil */
-	bool has_move_pdu;
-	dmrgo_pdu_move_pdu_t move_pdu;
-	/* C_BCAST payload, or nil */
-	bool has_broadcast_pdu;
-	dmrgo_pdu_broadcast_pdu_t broadcast_pdu;
-	/* RawPayload holds header octets 2 to 9 (bits 16 to 79) when no payload field is set. */
+	/* RawPayload holds header octets 2 to 9 (bits 16 to 79), the payload that Opcode and FID select. */
 	uint8_t raw_payload[8];
 };
 
@@ -2979,6 +2108,129 @@ struct dmrgo_packet_message_t {
 	bool bad_crc;
 };
 
+struct dmrgo_pdu_confirmed_data_header_t {
+	/* true when LLIDDestination is a group */
+	bool group;
+	/* Response Requested (A) */
+	bool response_requested;
+	/* reserved */
+	bool reserved;
+	/* Pad Octet Count (POC); bit 3 is the MSB */
+	uint8_t pad_octet_count;
+	/* SAP identifier */
+	dmrgo_enums_sap_t sap;
+	/* destination LLID */
+	uint32_t llid_destination;
+	/* source LLID */
+	uint32_t llid_source;
+	/* Full Message Flag (F) */
+	bool full_message_flag;
+	/* Blocks to Follow (BF) */
+	uint8_t blocks_to_follow;
+	/* Re-Synchronize Flag (S) */
+	bool re_synchronize_flag;
+	/* send sequence number N(S) */
+	uint8_t send_sequence_number;
+	/* Fragment Sequence Number (FSN) */
+	uint8_t fragment_sequence_number;
+};
+
+struct dmrgo_pdu_response_packet_header_t {
+	/* reserved */
+	bool reserved;
+	/* Response Requested (A) */
+	bool response_requested;
+	/* reserved */
+	uint8_t reserved2;
+	/* SAP identifier */
+	dmrgo_enums_sap_t sap;
+	/* reserved */
+	uint8_t reserved3;
+	/* destination LLID */
+	uint32_t llid_destination;
+	/* source LLID */
+	uint32_t llid_source;
+	/* Full Message Flag (F) */
+	bool full_message_flag;
+	/* Blocks to Follow (BF) */
+	uint8_t blocks_to_follow;
+	/* response Class (Table 8.2) */
+	uint8_t response_class;
+	/* response Type (Table 8.2) */
+	uint8_t response_type;
+	/* response Status (Table 8.2) */
+	uint8_t response_status;
+};
+
+struct dmrgo_pdu_ack_inbound_pdu_t {
+	/* supplementary response information */
+	uint8_t response_info;
+	/* acknowledgement reason code */
+	uint8_t reason_code;
+	/* reserved, 0 */
+	bool reserved;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit additional information, usually a source address */
+	uint32_t additional_info;
+};
+
+struct dmrgo_pdu_ack_inbound_payload_pdu_t {
+	/* supplementary response information */
+	uint8_t response_info;
+	/* acknowledgement reason code */
+	uint8_t reason_code;
+	/* reserved, 0 */
+	bool reserved;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit additional information, usually a source address */
+	uint32_t additional_info;
+};
+
+struct dmrgo_pdu_ack_outbound_pdu_t {
+	/* supplementary response information */
+	uint8_t response_info;
+	/* acknowledgement reason code */
+	uint8_t reason_code;
+	/* reserved, 0 */
+	bool reserved;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit additional information, usually a source address */
+	uint32_t additional_info;
+};
+
+struct dmrgo_pdu_ack_outbound_payload_pdu_t {
+	/* supplementary response information */
+	uint8_t response_info;
+	/* acknowledgement reason code */
+	uint8_t reason_code;
+	/* reserved, 0 */
+	bool reserved;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit additional information, usually a source address */
+	uint32_t additional_info;
+};
+
+struct dmrgo_pdu_ackvitation_pdu_t {
+	/* Service_Options_Mirror */
+	uint8_t service_opts_mirror;
+	/* flag whose meaning depends on ServiceKind */
+	bool service_kind_flag;
+	/* reserved, 0 */
+	uint8_t reserved;
+	/* Appended_Blocks, 0 to 3 for 1 to 4 appended data UDTs */
+	uint8_t uab;
+	/* service that this PDU supports */
+	uint8_t service_kind;
+	/* 24-bit target address, or an authentication challenge */
+	uint32_t target_address;
+	/* 24-bit individual MS address */
+	uint32_t source_address;
+};
+
 struct dmrgo_pdu_adjacent_site_parms_t {
 	/* AnnouncementAdjacentSite */
 	dmrgo_enums_announcement_type_t announcement_type;
@@ -3002,6 +2254,54 @@ struct dmrgo_pdu_adjacent_site_parms_t {
 	uint8_t reserved;
 	/* CH_ADJ, the 12-bit channel number of the adjacent TSCC */
 	uint16_t channel;
+};
+
+struct dmrgo_pdu_ahoy_pdu_t {
+	/* Service_Options of the request that this answers */
+	uint8_t service_opts_mirror;
+	/* flag whose meaning depends on ServiceKind */
+	bool service_kind_flag;
+	/* true when the caller asked for ambient listening */
+	bool als;
+	/* true when TargetAddress is a talkgroup */
+	bool group_individual;
+	/* number of appended data blocks to send */
+	uint8_t appended_blocks;
+	/* service that this PDU supports */
+	uint8_t service_kind;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit source address, or an authentication challenge */
+	uint32_t source_address;
+};
+
+struct dmrgo_pdu_aloha_pdu_t {
+	/* reserved, 0 */
+	bool reserved1;
+	/* true when the TSCC supports a TSCCAS */
+	bool tsccas;
+	/* true when all channels of the site are timeslot synchronized */
+	bool site_ts_sync;
+	/* version of ETSI TS 102 361-4 that the system complies with */
+	uint8_t version;
+	/* true when the TSCC uses offset timing */
+	bool offset;
+	/* true when the TS has a connection to the network */
+	bool active_conn;
+	/* address mask, 0 to 24 */
+	uint8_t mask;
+	/* services for which random access is invited */
+	uint8_t service_func;
+	/* code for the TDMA frames an MS waits before a random access retry */
+	uint8_t n_rand_wait;
+	/* true when MSs must register */
+	bool reg;
+	/* backoff number, 1 to 15 (0 is reserved) */
+	uint8_t backoff;
+	/* system identity code (C_SYScode) of the TSCC */
+	uint16_t sys_ident_code;
+	/* 24-bit individual MS address */
+	uint32_t ms_address;
 };
 
 struct dmrgo_pdu_ann_wd_tscc_parms_t {
@@ -3029,6 +2329,20 @@ struct dmrgo_pdu_ann_wd_tscc_parms_t {
 	uint16_t channel2;
 };
 
+struct dmrgo_pdu_flc_talker_alias_header_t {
+	/* Talker alias data format */
+	dmrgo_layer3_talker_alias_data_format_t talker_alias_data_format;
+	/* alias length in Code Units */
+	int64_t talker_alias_data_length;
+	/* TalkerAliasData is the 49-bit Talker alias data IE. The 7-bit format uses all 49 bits; the other formats leave the most significant bit unused. */
+	uint64_t talker_alias_data;
+};
+
+struct dmrgo_pdu_flc_talker_alias_block_t {
+	/* 56 bits of Talker alias data */
+	uint8_t talker_alias_data[7];
+};
+
 struct dmrgo_pdu_bs_outbound_activation_pdu_t {
 	/* reserved, 0 */
 	uint16_t reserved;
@@ -3036,6 +2350,21 @@ struct dmrgo_pdu_bs_outbound_activation_pdu_t {
 	uint32_t bs_address;
 	/* 24-bit address of the sending MS */
 	uint32_t source_address;
+};
+
+struct dmrgo_pdu_broadcast_pdu_t {
+	/* which system parameters are broadcast */
+	dmrgo_enums_announcement_type_t announcement_type;
+	/* 14 bits whose layout depends on AnnouncementType */
+	uint16_t broadcast_parms1;
+	/* true when MSs must register */
+	bool reg;
+	/* backoff number, 1 to 15 (0 is reserved) */
+	uint8_t backoff;
+	/* system identity code (C_SYScode) of the TSCC */
+	uint16_t sys_ident_code;
+	/* 24 bits whose layout depends on AnnouncementType */
+	uint32_t broadcast_parms2;
 };
 
 struct dmrgo_pdu_call_timer_parms_t {
@@ -3174,6 +2503,23 @@ struct dmrgo_pdu_vote_now_parms_t {
 	uint16_t channel;
 };
 
+struct dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t {
+	/* 12-bit channel number, 0xFFF when a CGAP block follows */
+	uint16_t physical_channel;
+	/* TDMA channel: false for channel 1, true for channel 2 */
+	bool logical_channel;
+	/* true when sent after the call set-up (late entry) */
+	bool late_entry;
+	/* true for an emergency call */
+	bool emergency;
+	/* true for offset timing, false for aligned timing */
+	bool offset;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit source address */
+	uint32_t source_address;
+};
+
 struct dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t {
 	/* 0 */
 	uint8_t reserved;
@@ -3249,6 +2595,91 @@ struct dmrgo_pdu_capacity_plus_site_status_pdu_t {
 	uint8_t activity[7];
 };
 
+struct dmrgo_pdu_channel_timing_pdu_t {
+	/* time since the last beacon in 500 ms steps */
+	uint16_t sync_age;
+	/* number of timing hops from the leader, 0 at the leader */
+	uint8_t generation;
+	/* 20-bit ID of the timing leader, 0 when unknown */
+	uint32_t leader_identifier;
+	/* true to appoint a new timing leader */
+	bool new_leader;
+	/* leader preference of the timing leader */
+	uint8_t leader_dynamic_identifier;
+	/* most significant bit of the channel timing opcode */
+	bool channel_timing_op1;
+	/* 20-bit ID of the sending MS */
+	uint32_t source_identifier;
+	/* reserved, 0 */
+	bool reserved;
+	/* leader preference of the sending MS */
+	uint8_t source_dynamic_identifier;
+	/* least significant bit of the channel timing opcode */
+	bool channel_timing_op0;
+};
+
+struct dmrgo_pdu_clear_pdu_t {
+	/* channel number to move to, 0 for the control channel */
+	uint16_t physical_channel;
+	/* reserved, 0 */
+	bool reserved1;
+	/* reserved, 0 */
+	uint8_t reserved2;
+	/* true when TargetAddress is a talkgroup */
+	bool group_individual;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit source address */
+	uint32_t source_address;
+};
+
+struct dmrgo_pdu_duplex_private_data_grant_pdu_t {
+	/* 12-bit channel number, 0xFFF when a CGAP block follows */
+	uint16_t physical_channel;
+	/* TDMA channel: false for channel 1, true for channel 2 */
+	bool logical_channel;
+	/* true for dual slot data, false for single slot data */
+	bool hi_rate;
+	/* true for an emergency call */
+	bool emergency;
+	/* true when TargetAddress is the calling MS, false when it is the called MS */
+	bool call_direction;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit source address */
+	uint32_t source_address;
+};
+
+struct dmrgo_pdu_duplex_private_voice_grant_pdu_t {
+	/* 12-bit channel number, 0xFFF when a CGAP block follows */
+	uint16_t physical_channel;
+	/* TDMA channel: false for channel 1, true for channel 2 */
+	bool logical_channel;
+	/* reserved, 0 */
+	bool reserved;
+	/* true for an emergency call */
+	bool emergency;
+	/* true when TargetAddress is the calling MS, false when it is the called MS */
+	bool call_direction;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit source address */
+	uint32_t source_address;
+};
+
+struct dmrgo_pdu_maintenance_pdu_t {
+	/* reserved, 0 */
+	uint16_t reserved;
+	/* maintenance kind, 0 for DISCON (end of payload channel use) */
+	uint8_t maint_kind;
+	/* reserved, 0 */
+	bool reserved2;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit source address */
+	uint32_t source_address;
+};
+
 struct dmrgo_pdu_motorola_call_alert_pdu_t {
 	/* octets 2 and 3, 0 */
 	uint16_t reserved;
@@ -3282,6 +2713,151 @@ struct dmrgo_pdu_motorola_radio_check_pdu_t {
 	uint32_t checked_address;
 };
 
+struct dmrgo_pdu_move_pdu_t {
+	/* reserved, 0 */
+	uint16_t reserved1;
+	/* address mask, 0 to 24 */
+	uint8_t mask;
+	/* reserved, 0 */
+	uint8_t reserved2;
+	/* true when MSs must register */
+	bool reg;
+	/* backoff number, 1 to 15 (0 is reserved) */
+	uint8_t backoff;
+	/* reserved, 0 */
+	uint8_t reserved3;
+	/* 12-bit TSCC channel number, 0xFFF when an MVAP block follows */
+	uint16_t physical_channel;
+	/* 24-bit individual MS address */
+	uint32_t ms_address;
+};
+
+struct dmrgo_pdu_negative_acknowledgement_pdu_t {
+	/* tells if SourceAddress is valid */
+	dmrgo_layer3_additional_information_field_t additional_info;
+	/* BS or MS sourced */
+	dmrgo_layer3_source_type_t source_type;
+	/* opcode of the refused service */
+	dmrgo_pdu_csbk_opcode_t service_type;
+	/* reason code, 0x21 when the MS does not support the service */
+	uint8_t reason_code;
+	/* 24-bit source address */
+	uint32_t source_address;
+	/* 24-bit target address */
+	uint32_t target_address;
+};
+
+struct dmrgo_pdu_preamble_pdu_t {
+	/* true when data follows the preambles, false when a CSBK follows */
+	bool data;
+	/* true when TargetAddress is a talkgroup */
+	bool group;
+	/* reserved, 0 */
+	uint8_t reserved;
+	/* number of blocks after this one (CBF) */
+	uint8_t csbk_blocks_to_follow;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit source address */
+	uint32_t source_address;
+};
+
+struct dmrgo_pdu_private_data_grant_pdu_t {
+	/* 12-bit channel number, 0xFFF when a CGAP block follows */
+	uint16_t physical_channel;
+	/* TDMA channel: false for channel 1, true for channel 2 */
+	bool logical_channel;
+	/* true for dual slot data, false for single slot data */
+	bool hi_rate;
+	/* true for an emergency call */
+	bool emergency;
+	/* true for offset timing, false for aligned timing */
+	bool offset;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit source address */
+	uint32_t source_address;
+};
+
+struct dmrgo_pdu_private_data_grant_multi_item_pdu_t {
+	/* 12-bit channel number, 0xFFF when a CGAP block follows */
+	uint16_t physical_channel;
+	/* TDMA channel: false for channel 1, true for channel 2 */
+	bool logical_channel;
+	/* true for dual slot data, false for single slot data */
+	bool hi_rate;
+	/* true for an emergency call */
+	bool emergency;
+	/* true for offset timing, false for aligned timing */
+	bool offset;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit source address */
+	uint32_t source_address;
+};
+
+struct dmrgo_pdu_private_voice_grant_pdu_t {
+	/* 12-bit channel number, 0xFFF when a CGAP block follows */
+	uint16_t physical_channel;
+	/* TDMA channel: false for channel 1, true for channel 2 */
+	bool logical_channel;
+	/* reserved, 0 */
+	bool reserved;
+	/* true for an emergency call */
+	bool emergency;
+	/* true for offset timing, false for aligned timing */
+	bool offset;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit source address */
+	uint32_t source_address;
+};
+
+struct dmrgo_pdu_protect_pdu_t {
+	/* reserved, 0 */
+	uint16_t reserved;
+	/* 0 DIS_PTT, 1 EN_PTT, 2 ILLEGALLY_PARKED, 3 EN_PTT_ONE_MS */
+	uint8_t protect_kind;
+	/* true when TargetAddress is a talkgroup */
+	bool group_individual;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit source address */
+	uint32_t source_address;
+};
+
+struct dmrgo_pdu_random_access_pdu_t {
+	/* service options of the request */
+	uint8_t service_options;
+	/* true for 21 to 44 gateway digits, false for 1 to 20 */
+	bool proxy_flag;
+	/* 4 bits whose content depends on ServiceKind */
+	uint8_t reserved;
+	/* service requested */
+	uint8_t service_kind;
+	/* 24-bit target or gateway address */
+	uint32_t target_address;
+	/* 24-bit address of the requesting MS */
+	uint32_t source_address;
+};
+
+struct dmrgo_pdu_talkgroup_data_grant_pdu_t {
+	/* 12-bit channel number, 0xFFF when a CGAP block follows */
+	uint16_t physical_channel;
+	/* TDMA channel: false for channel 1, true for channel 2 */
+	bool logical_channel;
+	/* true for dual slot data, false for single slot data */
+	bool hi_rate;
+	/* true for an emergency call */
+	bool emergency;
+	/* true for offset timing, false for aligned timing */
+	bool offset;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit source address */
+	uint32_t source_address;
+};
+
 struct dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t {
 	/* 12-bit channel number, 0xFFF when a CGAP block follows */
 	uint16_t physical_channel;
@@ -3293,6 +2869,45 @@ struct dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t {
 	bool emergency;
 	/* true for offset timing, false for aligned timing */
 	bool offset;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit source address */
+	uint32_t source_address;
+};
+
+struct dmrgo_pdu_talkgroup_voice_grant_pdu_t {
+	/* 12-bit channel number, 0xFFF when a CGAP block follows */
+	uint16_t physical_channel;
+	/* TDMA channel: false for channel 1, true for channel 2 */
+	bool logical_channel;
+	/* true when sent after the call set-up (late entry) */
+	bool late_entry;
+	/* true for an emergency call */
+	bool emergency;
+	/* true for offset timing, false for aligned timing */
+	bool offset;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit source address */
+	uint32_t source_address;
+};
+
+struct dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t {
+	/* service options of the call */
+	dmrgo_layer3_service_options_t service_options;
+	/* 0x20 for proceed, 0x21 for deny */
+	uint8_t answer_response;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit source address */
+	uint32_t source_address;
+};
+
+struct dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t {
+	/* service options of the call */
+	dmrgo_layer3_service_options_t service_options;
+	/* reserved, 0 */
+	uint8_t reserved;
 	/* 24-bit target address */
 	uint32_t target_address;
 	/* 24-bit source address */
@@ -3355,8 +2970,217 @@ struct dmrgo_pdu_capacity_plus_rest_channel_t {
 	uint8_t reserved;
 };
 
+struct dmrgo_pdu_defined_data_header_t {
+	/* true when LLIDDestination is a group */
+	bool group;
+	/* Response Requested (A) */
+	bool response_requested;
+	/* Appended Blocks (AB); bits 2 and 3 are the MSBs */
+	uint8_t appended_blocks;
+	/* SAP identifier */
+	dmrgo_enums_sap_t sap;
+	/* destination LLID */
+	uint32_t llid_destination;
+	/* source LLID */
+	uint32_t llid_source;
+	/* Defined Data format (DD) */
+	dmrgo_enums_dd_format_t defined_data;
+	/* Selective Automatic Repeat reQuest (SARQ) */
+	bool sarq;
+	/* Full Message Flag (F) */
+	bool full_message_flag;
+	/* Bit Padding field */
+	uint8_t bit_padding;
+};
+
+struct dmrgo_pdu_raw_data_header_t {
+	/* true when LLIDDestination is a group */
+	bool group;
+	/* Response Requested (A) */
+	bool response_requested;
+	/* Appended Blocks (AB); bits 2 and 3 are the MSBs */
+	uint8_t appended_blocks;
+	/* SAP identifier */
+	dmrgo_enums_sap_t sap;
+	/* destination LLID */
+	uint32_t llid_destination;
+	/* source LLID */
+	uint32_t llid_source;
+	/* Source Port (SP) */
+	uint8_t source_port;
+	/* Destination Port (DP) */
+	uint8_t destination_port;
+	/* Selective Automatic Repeat reQuest (SARQ) */
+	bool sarq;
+	/* Full Message Flag (F) */
+	bool full_message_flag;
+	/* Bit Padding field */
+	uint8_t bit_padding;
+};
+
+struct dmrgo_pdu_status_precoded_header_t {
+	/* true when LLIDDestination is a group */
+	bool group;
+	/* Response Requested (A) */
+	bool response_requested;
+	/* SAP identifier */
+	dmrgo_enums_sap_t sap;
+	/* destination LLID */
+	uint32_t llid_destination;
+	/* source LLID */
+	uint32_t llid_source;
+	/* Source Port (SP) */
+	uint8_t source_port;
+	/* Destination Port (DP) */
+	uint8_t destination_port;
+	/* 10-bit Status/Precoded (S_P) value */
+	uint16_t status_precoded;
+};
+
+struct dmrgo_pdu_udt_header_t {
+	/* true when LLIDDestination is a group */
+	bool group;
+	/* Response Requested (A) */
+	bool response_requested;
+	/* emergency in C_UDTHD, reserved in C_UDTHU */
+	bool emergency;
+	/* UDT_Option_Flag in C_UDTHD, UDT_DIV in C_UDTHU */
+	bool option_flag;
+	/* SAP identifier */
+	dmrgo_enums_sap_t sap;
+	/* UDT Format */
+	dmrgo_enums_udt_format_t udt_format;
+	/* destination LLID */
+	uint32_t llid_destination;
+	/* source LLID */
+	uint32_t llid_source;
+	/* number of pad nibbles appended to the user data */
+	uint8_t pad_nibble;
+	/* reserved */
+	bool reserved;
+	/* UDT Appended Blocks (UAB): the number of appended blocks minus one */
+	uint8_t appended_blocks;
+	/* Supplementary Flag (SF): true for supplementary data, false for short data */
+	bool supplementary_flag;
+	/* Protect Flag (PF) */
+	bool protect_flag;
+	/* UDT Opcode (UDTO) */
+	dmrgo_pdu_udt_opcode_t opcode;
+};
+
+struct dmrgo_pdu_unconfirmed_data_header_t {
+	/* true when LLIDDestination is a group */
+	bool group;
+	/* Response Requested (A) */
+	bool response_requested;
+	/* reserved */
+	bool reserved;
+	/* Pad Octet Count (POC); bit 3 is the MSB */
+	uint8_t pad_octet_count;
+	/* SAP identifier */
+	dmrgo_enums_sap_t sap;
+	/* destination LLID */
+	uint32_t llid_destination;
+	/* source LLID */
+	uint32_t llid_source;
+	/* Full Message Flag (F) */
+	bool full_message_flag;
+	/* Blocks to Follow (BF) */
+	uint8_t blocks_to_follow;
+	/* reserved */
+	uint8_t reserved2;
+	/* Fragment Sequence Number (FSN) */
+	uint8_t fragment_sequence_number;
+};
+
 struct dmrgo_pdu_data_header_bytes_t {
 	uint8_t v[12];
+};
+
+struct dmrgo_pdu_flc_gps_info_t {
+	/* reserved */
+	uint8_t reserved;
+	/* Position Error */
+	dmrgo_layer3_position_error_t position_error;
+	/* degrees, -180 to 180 */
+	double longitude;
+	/* degrees, -90 to 90 */
+	double latitude;
+};
+
+struct dmrgo_pdu_flc_group_voice_t {
+	/* Service Options */
+	dmrgo_layer3_service_options_t service_options;
+	/* 24-bit group address */
+	uint32_t group_address;
+	/* 24-bit source address */
+	uint32_t source_address;
+};
+
+struct dmrgo_pdu_flc_terminator_data_link_control_t {
+	/* destination LLID */
+	uint32_t llid_destination;
+	/* source LLID */
+	uint32_t llid_source;
+	/* true when LLIDDestination is a group */
+	bool group_or_individual;
+	/* Response Requested (A) */
+	bool response_requested;
+	/* Full Message Flag (F) */
+	bool full_message_flag;
+	/* reserved */
+	bool reserved;
+	/* Re-Synchronize Flag (S) */
+	bool re_synchronize_flag;
+	/* send sequence number N(S) */
+	uint8_t send_sequence_number;
+};
+
+struct dmrgo_pdu_flc_unit_to_unit_t {
+	/* Service Options */
+	dmrgo_layer3_service_options_t service_options;
+	/* 24-bit target address */
+	uint32_t target_address;
+	/* 24-bit source address */
+	uint32_t source_address;
+};
+
+struct dmrgo_pdu_short_lc_activity_update_t {
+	/* activity of timeslot 1 */
+	dmrgo_enums_activity_id_t ts1_activity_id;
+	/* activity of timeslot 2 */
+	dmrgo_enums_activity_id_t ts2_activity_id;
+	/* 8-bit address hash for timeslot 1 */
+	uint8_t hash_ts1;
+	/* 8-bit address hash for timeslot 2 */
+	uint8_t hash_ts2;
+};
+
+struct dmrgo_pdu_short_lc_c_sys_parms_t {
+	/* network model (NetworkModel) */
+	uint8_t model;
+	/* NET and SITE, split by MODEL */
+	uint16_t net_site_raw;
+	/* true when the TSCC requires the MS to register */
+	bool reg;
+	/* 9-bit Common_Slot_Counter */
+	uint16_t common_slot_counter;
+};
+
+struct dmrgo_pdu_short_lc_null_message_t {
+	/* reserved */
+	uint32_t reserved;
+};
+
+struct dmrgo_pdu_short_lc_p_sys_parms_t {
+	/* network model (NetworkModel) */
+	uint8_t model;
+	/* NET and SITE, split by MODEL */
+	uint16_t net_site_raw;
+	/* true when the payload channel is a composite control channel */
+	bool payload_channel_type;
+	/* 9-bit Common_Slot_Counter */
+	uint16_t common_slot_counter;
 };
 
 struct dmrgo_pdu_sys_code_t {
@@ -8506,8 +8330,6 @@ int dmrgo_layer2_decode_cach(const uint8_t bits[3], dmrgo_layer2_cach_t *out);
 int dmrgo_layer2_decode_cach_field(const uint8_t on_air[3], dmrgo_layer2_cach_t *out);
 /* Go: layer2.DecodeEmbeddedFullLinkControl. DecodeEmbeddedFullLinkControl decodes a Full LC from the four embedded signalling fields f of bursts B to E, as DecodeEmbeddedLC(f, strict) does. */
 int dmrgo_layer2_decode_embedded_full_link_control(const uint8_t f[4][4], bool strict, dmrgo_pdu_full_link_control_t *out);
-/* Go: layer2.DecodeEmbeddedFullLinkControlInto. DecodeEmbeddedFullLinkControlInto decodes into dst as DecodeEmbeddedFullLinkControl does, with the payload struct of dst in p as pdu.DecodeFullLinkControlInto places it. p may be NULL. */
-int dmrgo_layer2_decode_embedded_full_link_control_into(dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *p, const uint8_t f[4][4], bool strict);
 /* Go: layer2.DecodeEmbeddedLC. DecodeEmbeddedLC decodes the 9 LC octets from the embedded signalling fields f of bursts B to E, as RawBurst.EmbeddedData returns them. */
 int dmrgo_layer2_decode_embedded_lc(const uint8_t f[4][4], bool strict, uint8_t data[9], dmrgo_fec_result_t *fec);
 /* Go: layer2.DecodeEmbeddedRC. DecodeEmbeddedRC decodes a Reverse Channel PDU from the 32-bit embedded signalling data field, packed, the first bit in the most significant bit of byte 0, as RawBurst.EmbeddedData returns it. */
@@ -8624,8 +8446,6 @@ int dmrgo_layer2_short_lc_assembler_new(dmrgo_layer2_short_lc_assembler_t **out)
 int dmrgo_layer2_short_lc_assembler_free(dmrgo_layer2_short_lc_assembler_t *self);
 /* Go: layer2.ShortLCAssembler.Add. Add adds a decoded CACH and returns the Short LC when the CACH completes it, with done set. A CACH whose TACT is uncorrectable has no LCSS, and a Single fragment LCSS is not used in the CACH, so either discards the partial Short LC; Add then returns DMRGO_ERR_LAYER2_SHORT_LC_SEQUENCE when fragments were discarded. A fragment out of order also discards the partial Short LC and returns DMRGO_ERR_LAYER2_SHORT_LC_SEQUENCE. */
 int dmrgo_layer2_short_lc_assembler_add(dmrgo_layer2_short_lc_assembler_t *self, const dmrgo_layer2_cach_t *c, dmrgo_pdu_short_lc_t *slc, bool *done);
-/* Go: layer2.ShortLCAssembler.AddInto. AddInto adds a decoded CACH as Add does, and decodes a completed Short LC into dst, with its payload struct in p, as pdu.DecodeShortLCInto places it. p may be NULL. */
-int dmrgo_layer2_short_lc_assembler_add_into(dmrgo_layer2_short_lc_assembler_t *self, dmrgo_pdu_short_lc_t *dst, dmrgo_pdu_short_lc_payloads_t *p, const dmrgo_layer2_cach_t *c, bool *done);
 /* Go: layer2.ShortLCAssembler.Count. Count returns the number of fragments accumulated so far, 0 for a nil a. */
 int dmrgo_layer2_short_lc_assembler_count(dmrgo_layer2_short_lc_assembler_t *self, int64_t *out);
 /* Go: layer2.ShortLCAssembler.Reset. Reset clears the assembler state for reuse. */
@@ -8644,8 +8464,6 @@ int dmrgo_layer2_voice_receiver_new(dmrgo_layer2_voice_receiver_t **out);
 int dmrgo_layer2_voice_receiver_free(dmrgo_layer2_voice_receiver_t *self);
 /* Go: layer2.VoiceReceiver.Receive. Receive takes the next decoded burst of the logical channel, in order, and sets b.VoiceBurst to its superframe position as the package doc describes. When burst E completes an embedded LC, Receive returns it with ok set, or with DMRGO_ERR_LAYER2_EMBEDDED_LC_UNCORRECTABLE. It returns DMRGO_ERR_LAYER2_EMBEDDED_LC_SEQUENCE when the burst discards a partial embedded LC. b may be NULL. */
 int dmrgo_layer2_voice_receiver_receive(dmrgo_layer2_voice_receiver_t *self, dmrgo_layer2_burst_t *b, dmrgo_pdu_full_link_control_t *lc, bool *ok);
-/* Go: layer2.VoiceReceiver.ReceiveInto. ReceiveInto takes the next burst as Receive does. When burst E completes an embedded LC, ReceiveInto decodes it into dst, with the payload struct of dst in p as pdu.DecodeFullLinkControlInto places it, and returns ok or DMRGO_ERR_LAYER2_EMBEDDED_LC_UNCORRECTABLE as Receive does. p and b may be NULL. */
-int dmrgo_layer2_voice_receiver_receive_into(dmrgo_layer2_voice_receiver_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *p, dmrgo_layer2_burst_t *b, bool *ok);
 /* Go: layer2.VoiceReceiver.Reset. Reset forgets the superframe position and any partial embedded LC. */
 int dmrgo_layer2_voice_receiver_reset(dmrgo_layer2_voice_receiver_t *self);
 /* dmrgo_layer2_voice_transmitter_free frees the handle. self may be NULL. */
@@ -8776,7 +8594,7 @@ int dmrgo_packet_new_assembler(int64_t max_blocks, dmrgo_packet_assembler_t **ou
 int dmrgo_packet_new_builder(int64_t max_blocks, dmrgo_packet_builder_t **out);
 /* Go: packet.NewPacket. NewPacket splits payload into the data blocks of one packet at the given rate and returns them with a copy of header. It returns an error that wraps DMRGO_ERR_PACKET_RATE, DMRGO_ERR_PACKET_FORMAT or DMRGO_ERR_PACKET_TOO_LONG. */
 int dmrgo_packet_new_packet(const dmrgo_pdu_data_header_t *header, const uint8_t *payload, size_t payload_len, dmrgo_enums_data_type_t rate, dmrgo_packet_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
-/* Go: packet.NewResponse. NewResponse builds the response packet a recipient sends for the confirmed packet with header to. It returns a DMRGO_ERR_FIELD_RANGE when the Class of r does not fit in 2 bits, and an error for a nil to. to and data may be NULL. */
+/* Go: packet.NewResponse. NewResponse builds the response packet a recipient sends for the confirmed packet with header to. It returns a DMRGO_ERR_FIELD_RANGE when the Class of r does not fit in 2 bits or a field of to does not fit in the response header, and an error for a nil to. to and data may be NULL. */
 int dmrgo_packet_new_response(const dmrgo_pdu_confirmed_data_header_t *to, dmrgo_packet_response_t r, const dmrgo_packet_response_data_t *data, dmrgo_packet_t *out, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: packet.NewResponseCode. NewResponseCode returns the Response of a Class and Type. It returns a DMRGO_ERR_FIELD_RANGE when class does not fit in 2 bits or typ in 3. */
 int dmrgo_packet_new_response_code(uint8_t class_, uint8_t typ, dmrgo_packet_response_t *out);
@@ -8882,8 +8700,26 @@ int dmrgo_pdu_cgap_continuation_string(const dmrgo_pdu_cgap_continuation_t *self
 int dmrgo_pdu_crc_mask(dmrgo_enums_data_type_t dt, uint32_t *mask, int64_t *width, bool *ok);
 /* Go: pdu.CSBK.Addresses. Addresses returns the 24-bit target and source addresses of a CSBK whose payload carries both: the TargetAddress and SourceAddress fields of the payload, or the same bits of RawPayload for opcode 0x38. */
 int dmrgo_pdu_csbk_addresses(const dmrgo_pdu_csbk_t *self, uint32_t *target, uint32_t *source, bool *ok);
+/* Go: pdu.CSBK.AsAckInbound. AsAckInbound decodes RawPayload as an AckInboundPDU payload. */
+int dmrgo_pdu_csbk_as_ack_inbound(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_ack_inbound_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsAckInboundPayload. AsAckInboundPayload decodes RawPayload as an AckInboundPayloadPDU payload. */
+int dmrgo_pdu_csbk_as_ack_inbound_payload(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_ack_inbound_payload_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsAckOutbound. AsAckOutbound decodes RawPayload as an AckOutboundPDU payload. */
+int dmrgo_pdu_csbk_as_ack_outbound(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_ack_outbound_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsAckOutboundPayload. AsAckOutboundPayload decodes RawPayload as an AckOutboundPayloadPDU payload. */
+int dmrgo_pdu_csbk_as_ack_outbound_payload(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_ack_outbound_payload_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsAckvitation. AsAckvitation decodes RawPayload as an AckvitationPDU payload. */
+int dmrgo_pdu_csbk_as_ackvitation(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_ackvitation_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsAhoy. AsAhoy decodes RawPayload as an AhoyPDU payload. */
+int dmrgo_pdu_csbk_as_ahoy(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_ahoy_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsAloha. AsAloha decodes RawPayload as an AlohaPDU payload. */
+int dmrgo_pdu_csbk_as_aloha(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_aloha_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.AsBSOutboundActivation. AsBSOutboundActivation decodes the RawPayload of a standard FID CSBK with opcode 0x38 as a BS_Dwn_Act PDU. */
 int dmrgo_pdu_csbk_as_bs_outbound_activation(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_bs_outbound_activation_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsBroadcast. AsBroadcast decodes RawPayload as a BroadcastPDU payload. */
+int dmrgo_pdu_csbk_as_broadcast(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_broadcast_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsBroadcastTalkgroupVoiceGrant. AsBroadcastTalkgroupVoiceGrant decodes RawPayload as a BroadcastTalkgroupVoiceGrantPDU payload. */
+int dmrgo_pdu_csbk_as_broadcast_talkgroup_voice_grant(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.AsCapacityPlusDataRevertAnnouncement. AsCapacityPlusDataRevertAnnouncement decodes the RawPayload of an enhanced data revert window announcement CSBK. */
 int dmrgo_pdu_csbk_as_capacity_plus_data_revert_announcement(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_data_revert_announcement_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.AsCapacityPlusDataRevertGrant. AsCapacityPlusDataRevertGrant decodes the RawPayload of an enhanced data revert window grant CSBK. */
@@ -8894,30 +8730,116 @@ int dmrgo_pdu_csbk_as_capacity_plus_neighbors(const dmrgo_pdu_csbk_t *self, dmrg
 int dmrgo_pdu_csbk_as_capacity_plus_preamble(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_preamble_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.AsCapacityPlusSiteStatus. AsCapacityPlusSiteStatus decodes the RawPayload of a Capacity Plus site status CSBK. */
 int dmrgo_pdu_csbk_as_capacity_plus_site_status(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_capacity_plus_site_status_pdu_t *p, bool *ok);
-/* Go: pdu.CSBK.AsMotorolaCallAlert. AsMotorolaCallAlert decodes the RawPayload of a Motorola call alert CSBK. */
+/* Go: pdu.CSBK.AsChannelTiming. AsChannelTiming decodes RawPayload as a ChannelTimingPDU payload. */
+int dmrgo_pdu_csbk_as_channel_timing(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_channel_timing_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsClear. AsClear decodes RawPayload as a ClearPDU payload. */
+int dmrgo_pdu_csbk_as_clear(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_clear_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsDuplexPrivateDataGrant. AsDuplexPrivateDataGrant decodes RawPayload as a DuplexPrivateDataGrantPDU payload. */
+int dmrgo_pdu_csbk_as_duplex_private_data_grant(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_duplex_private_data_grant_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsDuplexPrivateVoiceGrant. AsDuplexPrivateVoiceGrant decodes RawPayload as a DuplexPrivateVoiceGrantPDU payload. */
+int dmrgo_pdu_csbk_as_duplex_private_voice_grant(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_duplex_private_voice_grant_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsMaintenance. AsMaintenance decodes RawPayload as a MaintenancePDU payload. */
+int dmrgo_pdu_csbk_as_maintenance(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_maintenance_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsMotorolaCallAlert. AsMotorolaCallAlert decodes RawPayload as a MotorolaCallAlertPDU payload. */
 int dmrgo_pdu_csbk_as_motorola_call_alert(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_motorola_call_alert_pdu_t *p, bool *ok);
-/* Go: pdu.CSBK.AsMotorolaCallAlertAck. AsMotorolaCallAlertAck decodes the RawPayload of a Motorola call alert acknowledgement CSBK. */
+/* Go: pdu.CSBK.AsMotorolaCallAlertAck. AsMotorolaCallAlertAck decodes RawPayload as a MotorolaCallAlertAckPDU payload. */
 int dmrgo_pdu_csbk_as_motorola_call_alert_ack(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_motorola_call_alert_ack_pdu_t *p, bool *ok);
-/* Go: pdu.CSBK.AsMotorolaRadioCheck. AsMotorolaRadioCheck decodes the RawPayload of a Motorola radio check CSBK. */
+/* Go: pdu.CSBK.AsMotorolaRadioCheck. AsMotorolaRadioCheck decodes RawPayload as a MotorolaRadioCheckPDU payload. */
 int dmrgo_pdu_csbk_as_motorola_radio_check(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_motorola_radio_check_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsMove. AsMove decodes RawPayload as a MovePDU payload. */
+int dmrgo_pdu_csbk_as_move(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_move_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsNegativeAcknowledgement. AsNegativeAcknowledgement decodes RawPayload as a NegativeAcknowledgementPDU payload. */
+int dmrgo_pdu_csbk_as_negative_acknowledgement(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_negative_acknowledgement_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsPreamble. AsPreamble decodes RawPayload as a PreamblePDU payload. */
+int dmrgo_pdu_csbk_as_preamble(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_preamble_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsPrivateDataGrant. AsPrivateDataGrant decodes RawPayload as a PrivateDataGrantPDU payload. */
+int dmrgo_pdu_csbk_as_private_data_grant(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_private_data_grant_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsPrivateDataGrantMultiItem. AsPrivateDataGrantMultiItem decodes RawPayload as a PrivateDataGrantMultiItemPDU payload. */
+int dmrgo_pdu_csbk_as_private_data_grant_multi_item(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_private_data_grant_multi_item_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsPrivateVoiceGrant. AsPrivateVoiceGrant decodes RawPayload as a PrivateVoiceGrantPDU payload. */
+int dmrgo_pdu_csbk_as_private_voice_grant(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_private_voice_grant_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsProtect. AsProtect decodes RawPayload as a ProtectPDU payload. */
+int dmrgo_pdu_csbk_as_protect(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_protect_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsRandomAccess. AsRandomAccess decodes RawPayload as a RandomAccessPDU payload. */
+int dmrgo_pdu_csbk_as_random_access(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_random_access_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsTalkgroupDataGrant. AsTalkgroupDataGrant decodes RawPayload as a TalkgroupDataGrantPDU payload. */
+int dmrgo_pdu_csbk_as_talkgroup_data_grant(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_talkgroup_data_grant_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.AsTalkgroupDataGrantMultiItem. AsTalkgroupDataGrantMultiItem decodes the RawPayload of a standard FID CSBK with opcode 0x38 as a TD_GRANT_MI PDU. */
 int dmrgo_pdu_csbk_as_talkgroup_data_grant_multi_item(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsTalkgroupVoiceGrant. AsTalkgroupVoiceGrant decodes RawPayload as a TalkgroupVoiceGrantPDU payload. */
+int dmrgo_pdu_csbk_as_talkgroup_voice_grant(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_talkgroup_voice_grant_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsUnitToUnitVoiceServiceAnswerResponse. AsUnitToUnitVoiceServiceAnswerResponse decodes RawPayload as a UnitToUnitVoiceServiceAnswerResponsePDU payload. */
+int dmrgo_pdu_csbk_as_unit_to_unit_voice_service_answer_response(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t *p, bool *ok);
+/* Go: pdu.CSBK.AsUnitToUnitVoiceServiceRequest. AsUnitToUnitVoiceServiceRequest decodes RawPayload as a UnitToUnitVoiceServiceRequestPDU payload. */
+int dmrgo_pdu_csbk_as_unit_to_unit_voice_service_request(const dmrgo_pdu_csbk_t *self, dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t *p, bool *ok);
 /* Go: pdu.CSBK.DataType. DataType returns enums.DataTypeCSBK. */
 int dmrgo_pdu_csbk_data_type(const dmrgo_pdu_csbk_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.CSBK.Encode. Encode encodes a CSBK. */
 int dmrgo_pdu_csbk_encode(const dmrgo_pdu_csbk_t *self, uint8_t out[12]);
+/* Go: pdu.CSBK.SetAckInbound. SetAckInbound makes s carry p as an AckInboundPDU payload: it sets Opcode to CSBKAckInbound, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_ack_inbound(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_ack_inbound_pdu_t *p);
+/* Go: pdu.CSBK.SetAckInboundPayload. SetAckInboundPayload makes s carry p as an AckInboundPayloadPDU payload: it sets Opcode to CSBKAckInboundPayload, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_ack_inbound_payload(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_ack_inbound_payload_pdu_t *p);
+/* Go: pdu.CSBK.SetAckOutbound. SetAckOutbound makes s carry p as an AckOutboundPDU payload: it sets Opcode to CSBKAckOutbound, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_ack_outbound(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_ack_outbound_pdu_t *p);
+/* Go: pdu.CSBK.SetAckOutboundPayload. SetAckOutboundPayload makes s carry p as an AckOutboundPayloadPDU payload: it sets Opcode to CSBKAckOutboundPayload, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_ack_outbound_payload(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_ack_outbound_payload_pdu_t *p);
+/* Go: pdu.CSBK.SetAckvitation. SetAckvitation makes s carry p as an AckvitationPDU payload: it sets Opcode to CSBKAckvitation, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_ackvitation(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_ackvitation_pdu_t *p);
 /* Go: pdu.CSBK.SetAddresses. SetAddresses sets the target and source addresses of a CSBK for which Addresses returns ok. It returns DMRGO_ERR_PDU_NO_ADDRESSES for other CSBKs and a DMRGO_ERR_FIELD_RANGE when an address does not fit in 24 bits, and then changes nothing. */
 int dmrgo_pdu_csbk_set_addresses(dmrgo_pdu_csbk_t *self, uint32_t target, uint32_t source);
-/* Go: pdu.CSBK.SetBSOutboundActivation. SetBSOutboundActivation makes s a standard FID BS_Dwn_Act CSBK that carries p: it sets Opcode, FID, Hint0x38 and RawPayload, clears the payload fields and keeps LastBlock and ProtectFlag. */
+/* Go: pdu.CSBK.SetAhoy. SetAhoy makes s carry p as an AhoyPDU payload: it sets Opcode to CSBKAhoy, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_ahoy(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_ahoy_pdu_t *p);
+/* Go: pdu.CSBK.SetAloha. SetAloha makes s carry p as an AlohaPDU payload: it sets Opcode to CSBKAloha, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_aloha(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_aloha_pdu_t *p);
+/* Go: pdu.CSBK.SetBSOutboundActivation. SetBSOutboundActivation makes s a standard FID BS_Dwn_Act CSBK that carries p: it sets Opcode, FID, Hint0x38 and RawPayload, and keeps the other fields. */
 int dmrgo_pdu_csbk_set_bs_outbound_activation(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_bs_outbound_activation_pdu_t *p);
-/* Go: pdu.CSBK.SetMotorolaCallAlert. SetMotorolaCallAlert makes s a Motorola call alert CSBK that carries p, as SetMotorolaRadioCheck does. */
+/* Go: pdu.CSBK.SetBroadcast. SetBroadcast makes s carry p as a BroadcastPDU payload: it sets Opcode to CSBKBroadcast, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_broadcast(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_broadcast_pdu_t *p);
+/* Go: pdu.CSBK.SetBroadcastTalkgroupVoiceGrant. SetBroadcastTalkgroupVoiceGrant makes s carry p as a BroadcastTalkgroupVoiceGrantPDU payload: it sets Opcode to CSBKBroadcastTalkgroupVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_broadcast_talkgroup_voice_grant(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t *p);
+/* Go: pdu.CSBK.SetChannelTiming. SetChannelTiming makes s carry p as a ChannelTimingPDU payload: it sets Opcode to CSBKChannelTiming, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_channel_timing(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_channel_timing_pdu_t *p);
+/* Go: pdu.CSBK.SetClear. SetClear makes s carry p as a ClearPDU payload: it sets Opcode to CSBKClear, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_clear(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_clear_pdu_t *p);
+/* Go: pdu.CSBK.SetDuplexPrivateDataGrant. SetDuplexPrivateDataGrant makes s carry p as a DuplexPrivateDataGrantPDU payload: it sets Opcode to CSBKDuplexPrivateDataGrant, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_duplex_private_data_grant(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_duplex_private_data_grant_pdu_t *p);
+/* Go: pdu.CSBK.SetDuplexPrivateVoiceGrant. SetDuplexPrivateVoiceGrant makes s carry p as a DuplexPrivateVoiceGrantPDU payload: it sets Opcode to CSBKDuplexPrivateVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_duplex_private_voice_grant(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_duplex_private_voice_grant_pdu_t *p);
+/* Go: pdu.CSBK.SetMaintenance. SetMaintenance makes s carry p as a MaintenancePDU payload: it sets Opcode to CSBKMaintenance, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_maintenance(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_maintenance_pdu_t *p);
+/* Go: pdu.CSBK.SetMotorolaCallAlert. SetMotorolaCallAlert makes s carry p as a MotorolaCallAlertPDU payload: it sets Opcode to CSBKMotorolaCallAlert, FID to enums.FIDMotorola and RawPayload, and keeps the other fields. */
 int dmrgo_pdu_csbk_set_motorola_call_alert(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_motorola_call_alert_pdu_t *p);
-/* Go: pdu.CSBK.SetMotorolaCallAlertAck. SetMotorolaCallAlertAck makes s a Motorola call alert acknowledgement CSBK that carries p, as SetMotorolaRadioCheck does. */
+/* Go: pdu.CSBK.SetMotorolaCallAlertAck. SetMotorolaCallAlertAck makes s carry p as a MotorolaCallAlertAckPDU payload: it sets Opcode to CSBKMotorolaCallAlertAck, FID to enums.FIDMotorola and RawPayload, and keeps the other fields. */
 int dmrgo_pdu_csbk_set_motorola_call_alert_ack(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_motorola_call_alert_ack_pdu_t *p);
-/* Go: pdu.CSBK.SetMotorolaRadioCheck. SetMotorolaRadioCheck makes s a Motorola radio check CSBK that carries p: it sets Opcode, FID and RawPayload, clears the payload fields and keeps LastBlock and ProtectFlag. It returns a DMRGO_ERR_FIELD_RANGE when a field does not fit in its bits, and leaves s as it is on an error. */
+/* Go: pdu.CSBK.SetMotorolaRadioCheck. SetMotorolaRadioCheck makes s carry p as a MotorolaRadioCheckPDU payload: it sets Opcode to CSBKMotorolaRadioCheck, FID to enums.FIDMotorola and RawPayload, and keeps the other fields. */
 int dmrgo_pdu_csbk_set_motorola_radio_check(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_motorola_radio_check_pdu_t *p);
+/* Go: pdu.CSBK.SetMove. SetMove makes s carry p as a MovePDU payload: it sets Opcode to CSBKMove, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_move(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_move_pdu_t *p);
+/* Go: pdu.CSBK.SetNegativeAcknowledgement. SetNegativeAcknowledgement makes s carry p as a NegativeAcknowledgementPDU payload: it sets Opcode to CSBKNegativeAcknowledgement, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_negative_acknowledgement(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_negative_acknowledgement_pdu_t *p);
+/* Go: pdu.CSBK.SetPreamble. SetPreamble makes s carry p as a PreamblePDU payload: it sets Opcode to CSBKPreamble, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_preamble(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_preamble_pdu_t *p);
+/* Go: pdu.CSBK.SetPrivateDataGrant. SetPrivateDataGrant makes s carry p as a PrivateDataGrantPDU payload: it sets Opcode to CSBKPrivateDataGrant, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_private_data_grant(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_private_data_grant_pdu_t *p);
+/* Go: pdu.CSBK.SetPrivateDataGrantMultiItem. SetPrivateDataGrantMultiItem makes s carry p as a PrivateDataGrantMultiItemPDU payload: it sets Opcode to CSBKPrivateDataGrantMultiItem, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_private_data_grant_multi_item(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_private_data_grant_multi_item_pdu_t *p);
+/* Go: pdu.CSBK.SetPrivateVoiceGrant. SetPrivateVoiceGrant makes s carry p as a PrivateVoiceGrantPDU payload: it sets Opcode to CSBKPrivateVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_private_voice_grant(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_private_voice_grant_pdu_t *p);
+/* Go: pdu.CSBK.SetProtect. SetProtect makes s carry p as a ProtectPDU payload: it sets Opcode to CSBKProtect, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_protect(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_protect_pdu_t *p);
+/* Go: pdu.CSBK.SetRandomAccess. SetRandomAccess makes s carry p as a RandomAccessPDU payload: it sets Opcode to CSBKRandomAccess, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_random_access(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_random_access_pdu_t *p);
+/* Go: pdu.CSBK.SetTalkgroupDataGrant. SetTalkgroupDataGrant makes s carry p as a TalkgroupDataGrantPDU payload: it sets Opcode to CSBKTalkgroupDataGrant, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_talkgroup_data_grant(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_talkgroup_data_grant_pdu_t *p);
 /* Go: pdu.CSBK.SetTalkgroupDataGrantMultiItem. SetTalkgroupDataGrantMultiItem makes s a standard FID TD_GRANT_MI CSBK that carries p, as SetBSOutboundActivation does. */
 int dmrgo_pdu_csbk_set_talkgroup_data_grant_multi_item(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t *p);
+/* Go: pdu.CSBK.SetTalkgroupVoiceGrant. SetTalkgroupVoiceGrant makes s carry p as a TalkgroupVoiceGrantPDU payload: it sets Opcode to CSBKTalkgroupVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_talkgroup_voice_grant(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_talkgroup_voice_grant_pdu_t *p);
+/* Go: pdu.CSBK.SetUnitToUnitVoiceServiceAnswerResponse. SetUnitToUnitVoiceServiceAnswerResponse makes s carry p as a UnitToUnitVoiceServiceAnswerResponsePDU payload: it sets Opcode to CSBKUnitToUnitVoiceServiceAnswerResponse, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_unit_to_unit_voice_service_answer_response(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t *p);
+/* Go: pdu.CSBK.SetUnitToUnitVoiceServiceRequest. SetUnitToUnitVoiceServiceRequest makes s carry p as a UnitToUnitVoiceServiceRequestPDU payload: it sets Opcode to CSBKUnitToUnitVoiceServiceRequest, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_csbk_set_unit_to_unit_voice_service_request(dmrgo_pdu_csbk_t *self, const dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t *p);
 /* Go: pdu.CSBK.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_csbk_string(const dmrgo_pdu_csbk_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.CSBKBytes.Addresses. Addresses returns the 24-bit target and source addresses of the CSBKs for which CSBK.Addresses returns them, and ok false for every other CSBK. */
@@ -8938,10 +8860,6 @@ int dmrgo_pdu_csbk_bytes_set_addresses(dmrgo_pdu_csbk_bytes_t *self, uint32_t ta
 int dmrgo_pdu_csbk_bytes_set_group(dmrgo_pdu_csbk_bytes_t *self, bool group, bool *out);
 /* Go: pdu.CSBKOpcode.String. String returns the name of the CSBKOpcode. */
 int dmrgo_pdu_csbk_opcode_string(dmrgo_pdu_csbk_opcode_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_pdu_csbk_payloads_new makes a zero pdu.CSBKPayloads. */
-int dmrgo_pdu_csbk_payloads_new(dmrgo_pdu_csbk_payloads_t **out);
-/* dmrgo_pdu_csbk_payloads_free frees the handle. self may be NULL. */
-int dmrgo_pdu_csbk_payloads_free(dmrgo_pdu_csbk_payloads_t *self);
 /* Go: pdu.CallTimerParms.Encode. Encode encodes a CallTimerParms. */
 int dmrgo_pdu_call_timer_parms_encode(const dmrgo_pdu_call_timer_parms_t *self, uint8_t out[8]);
 /* Go: pdu.CallTimerParms.String. String returns the fields of s as text, for printing. */
@@ -9014,14 +8932,50 @@ int dmrgo_pdu_clear_pdu_string(const dmrgo_pdu_clear_pdu_t *self, char *out, siz
 int dmrgo_pdu_confirmed_data_header_encode(const dmrgo_pdu_confirmed_data_header_t *self, uint8_t out[10]);
 /* Go: pdu.ConfirmedDataHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_confirmed_data_header_string(const dmrgo_pdu_confirmed_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.DataHeader.Addresses. Addresses returns the destination LLID as target and the source LLID of the header that is set. */
+/* Go: pdu.DataHeader.Addresses. Addresses returns the destination LLID as target and the source LLID of the header. */
 int dmrgo_pdu_data_header_addresses(const dmrgo_pdu_data_header_t *self, uint32_t *target, uint32_t *source, bool *ok);
+/* Go: pdu.DataHeader.AppendedBlocks. AppendedBlocks returns the Appended Blocks (AB) of a DD_HEAD, R_HEAD or SP_HEAD. */
+int dmrgo_pdu_data_header_appended_blocks(const dmrgo_pdu_data_header_t *self, uint8_t *out);
+/* Go: pdu.DataHeader.AsConfirmedDataHeader. AsConfirmedDataHeader decodes RawPayload as a ConfirmedDataHeader payload. */
+int dmrgo_pdu_data_header_as_confirmed_data_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_confirmed_data_header_t *p, bool *ok);
+/* Go: pdu.DataHeader.AsDefinedDataHeader. AsDefinedDataHeader decodes RawPayload as a DefinedDataHeader payload. */
+int dmrgo_pdu_data_header_as_defined_data_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_defined_data_header_t *p, bool *ok);
+/* Go: pdu.DataHeader.AsProprietaryHeader. AsProprietaryHeader decodes RawPayload as a ProprietaryHeader payload. */
+int dmrgo_pdu_data_header_as_proprietary_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_proprietary_header_t *p, bool *ok);
+/* Go: pdu.DataHeader.AsRawDataHeader. AsRawDataHeader decodes RawPayload as a RawDataHeader payload. */
+int dmrgo_pdu_data_header_as_raw_data_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_raw_data_header_t *p, bool *ok);
+/* Go: pdu.DataHeader.AsResponsePacketHeader. AsResponsePacketHeader decodes RawPayload as a ResponsePacketHeader payload. */
+int dmrgo_pdu_data_header_as_response_packet_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_response_packet_header_t *p, bool *ok);
+/* Go: pdu.DataHeader.AsStatusPrecodedHeader. AsStatusPrecodedHeader decodes RawPayload as a StatusPrecodedHeader payload. */
+int dmrgo_pdu_data_header_as_status_precoded_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_status_precoded_header_t *p, bool *ok);
+/* Go: pdu.DataHeader.AsUDTHeader. AsUDTHeader decodes RawPayload as a UDTHeader payload. */
+int dmrgo_pdu_data_header_as_udt_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_udt_header_t *p, bool *ok);
+/* Go: pdu.DataHeader.AsUnconfirmedDataHeader. AsUnconfirmedDataHeader decodes RawPayload as an UnconfirmedDataHeader payload. */
+int dmrgo_pdu_data_header_as_unconfirmed_data_header(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_unconfirmed_data_header_t *p, bool *ok);
 /* Go: pdu.DataHeader.DataType. DataType returns enums.DataTypeDataHeader. */
 int dmrgo_pdu_data_header_data_type(const dmrgo_pdu_data_header_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.DataHeader.Encode. Encode encodes a DataHeader. */
 int dmrgo_pdu_data_header_encode(const dmrgo_pdu_data_header_t *self, uint8_t out[12]);
-/* Go: pdu.DataHeader.SetAddresses. SetAddresses sets the destination and source LLIDs of the header that is set. It returns DMRGO_ERR_PDU_NO_ADDRESSES for a proprietary header and when no header is set, and a DMRGO_ERR_FIELD_RANGE when an LLID does not fit in 24 bits, and then changes nothing. */
+/* Go: pdu.DataHeader.Format. Format returns the Data Packet Format (DPF) of the header. */
+int dmrgo_pdu_data_header_format(const dmrgo_pdu_data_header_t *self, dmrgo_pdu_format_t *out);
+/* Go: pdu.DataHeader.SetAddresses. SetAddresses sets the destination and source LLIDs of the header. It returns DMRGO_ERR_PDU_NO_ADDRESSES for a proprietary header and a header of an unknown format, and a DMRGO_ERR_FIELD_RANGE when an LLID does not fit in 24 bits, and then changes nothing. */
 int dmrgo_pdu_data_header_set_addresses(dmrgo_pdu_data_header_t *self, uint32_t destination, uint32_t source);
+/* Go: pdu.DataHeader.SetConfirmedDataHeader. SetConfirmedDataHeader makes s carry p as a ConfirmedDataHeader payload: it sets RawPayload, and keeps the other fields. */
+int dmrgo_pdu_data_header_set_confirmed_data_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_confirmed_data_header_t *p);
+/* Go: pdu.DataHeader.SetDefinedDataHeader. SetDefinedDataHeader makes s carry p as a DefinedDataHeader payload: it sets RawPayload, and keeps the other fields. */
+int dmrgo_pdu_data_header_set_defined_data_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_defined_data_header_t *p);
+/* Go: pdu.DataHeader.SetProprietaryHeader. SetProprietaryHeader makes s carry p as a ProprietaryHeader payload: it sets RawPayload, and keeps the other fields. */
+int dmrgo_pdu_data_header_set_proprietary_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_proprietary_header_t *p);
+/* Go: pdu.DataHeader.SetRawDataHeader. SetRawDataHeader makes s carry p as a RawDataHeader payload: it sets RawPayload, and keeps the other fields. */
+int dmrgo_pdu_data_header_set_raw_data_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_raw_data_header_t *p);
+/* Go: pdu.DataHeader.SetResponsePacketHeader. SetResponsePacketHeader makes s carry p as a ResponsePacketHeader payload: it sets RawPayload, and keeps the other fields. */
+int dmrgo_pdu_data_header_set_response_packet_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_response_packet_header_t *p);
+/* Go: pdu.DataHeader.SetStatusPrecodedHeader. SetStatusPrecodedHeader makes s carry p as a StatusPrecodedHeader payload: it sets RawPayload, and keeps the other fields. */
+int dmrgo_pdu_data_header_set_status_precoded_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_status_precoded_header_t *p);
+/* Go: pdu.DataHeader.SetUDTHeader. SetUDTHeader makes s carry p as a UDTHeader payload: it sets RawPayload, and keeps the other fields. */
+int dmrgo_pdu_data_header_set_udt_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_udt_header_t *p);
+/* Go: pdu.DataHeader.SetUnconfirmedDataHeader. SetUnconfirmedDataHeader makes s carry p as an UnconfirmedDataHeader payload: it sets RawPayload, and keeps the other fields. */
+int dmrgo_pdu_data_header_set_unconfirmed_data_header(dmrgo_pdu_data_header_t *self, const dmrgo_pdu_unconfirmed_data_header_t *p);
 /* Go: pdu.DataHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_data_header_string(const dmrgo_pdu_data_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.DataHeaderBytes.Addresses. Addresses returns the destination LLID (octets 2 to 4) as target and the source LLID (octets 5 to 7) of the header. */
@@ -9038,18 +8992,10 @@ int dmrgo_pdu_data_header_bytes_reseal(dmrgo_pdu_data_header_bytes_t *self);
 int dmrgo_pdu_data_header_bytes_set_addresses(dmrgo_pdu_data_header_bytes_t *self, uint32_t target, uint32_t source);
 /* Go: pdu.DataHeaderBytes.SetGroup. SetGroup writes the flag that Group returns. */
 int dmrgo_pdu_data_header_bytes_set_group(dmrgo_pdu_data_header_bytes_t *self, bool group, bool *out);
-/* dmrgo_pdu_data_header_payloads_new makes a zero pdu.DataHeaderPayloads. */
-int dmrgo_pdu_data_header_payloads_new(dmrgo_pdu_data_header_payloads_t **out);
-/* dmrgo_pdu_data_header_payloads_free frees the handle. self may be NULL. */
-int dmrgo_pdu_data_header_payloads_free(dmrgo_pdu_data_header_payloads_t *self);
 /* Go: pdu.DecodeCSBK. DecodeCSBK decodes a CSBK. */
 int dmrgo_pdu_decode_csbk(const uint8_t data[12], dmrgo_pdu_csbk_t *out);
-/* Go: pdu.DecodeCSBKInto. DecodeCSBKInto decodes data into dst as DecodeCSBK does, but points the dispatch field of dst into p, so it does not allocate. p may be NULL. */
-int dmrgo_pdu_decode_csbk_into(dmrgo_pdu_csbk_t *dst, dmrgo_pdu_csbk_payloads_t *p, const uint8_t data[12]);
 /* Go: pdu.DecodeDataHeader. DecodeDataHeader decodes a DataHeader. */
 int dmrgo_pdu_decode_data_header(const uint8_t data[12], dmrgo_pdu_data_header_t *out);
-/* Go: pdu.DecodeDataHeaderInto. DecodeDataHeaderInto decodes data into dst as DecodeDataHeader does, but points the dispatch field of dst into p, so it does not allocate. p may be NULL. */
-int dmrgo_pdu_decode_data_header_into(dmrgo_pdu_data_header_t *dst, dmrgo_pdu_data_header_payloads_t *p, const uint8_t data[12]);
 /* Go: pdu.DecodeEMBCodeword. DecodeEMBCodeword decodes the 16-bit QR(16,7,6) codeword cw, first bit most significant, as DecodeEmbeddedSignalling does. */
 int dmrgo_pdu_decode_emb_codeword(uint16_t cw, dmrgo_pdu_emb_info_t *emb_info, dmrgo_fec_result_t *fec);
 /* Go: pdu.DecodeEmbeddedSignalling. DecodeEmbeddedSignalling decodes an EmbeddedSignalling. */
@@ -9060,16 +9006,10 @@ int dmrgo_pdu_decode_full_lc_codeword(const uint8_t cw[12], dmrgo_enums_data_typ
 int dmrgo_pdu_decode_full_link_control(const uint8_t data[12], dmrgo_enums_data_type_t burst_data_type, dmrgo_pdu_full_link_control_t *out);
 /* Go: pdu.DecodeFullLinkControlBytes. DecodeFullLinkControlBytes decodes the 72 LC bits lc, without RS(12,9) parity, as a FullLinkControl. */
 int dmrgo_pdu_decode_full_link_control_bytes(const uint8_t lc[9], dmrgo_pdu_full_link_control_t *out);
-/* Go: pdu.DecodeFullLinkControlBytesInto. DecodeFullLinkControlBytesInto decodes lc into dst as DecodeFullLinkControlBytes does, with the payload in p as DecodeFullLinkControlInto has it. p may be NULL. */
-int dmrgo_pdu_decode_full_link_control_bytes_into(dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *p, const uint8_t lc[9]);
-/* Go: pdu.DecodeFullLinkControlInto. DecodeFullLinkControlInto decodes data into dst as DecodeFullLinkControl does, but points the dispatch field of dst into p, so it does not allocate. p may be NULL. */
-int dmrgo_pdu_decode_full_link_control_into(dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *p, const uint8_t data[12], dmrgo_enums_data_type_t burst_data_type);
 /* Go: pdu.DecodeMBCContinuation. DecodeMBCContinuation decodes an MBCContinuation. */
 int dmrgo_pdu_decode_mbc_continuation(const uint8_t data[12], dmrgo_pdu_mbc_continuation_t *out);
 /* Go: pdu.DecodeMBCHeader. DecodeMBCHeader decodes an MBCHeader. */
 int dmrgo_pdu_decode_mbc_header(const uint8_t data[12], dmrgo_pdu_mbc_header_t *out);
-/* Go: pdu.DecodeMBCHeaderInto. DecodeMBCHeaderInto decodes data into dst as DecodeMBCHeader does, but points the dispatch field of dst into p, so it does not allocate. p may be NULL. */
-int dmrgo_pdu_decode_mbc_header_into(dmrgo_pdu_mbc_header_t *dst, dmrgo_pdu_mbc_header_payloads_t *p, const uint8_t data[12]);
 /* Go: pdu.DecodePIHeader. DecodePIHeader decodes a PIHeader. */
 int dmrgo_pdu_decode_pi_header(const uint8_t data[12], dmrgo_pdu_pi_header_t *out);
 /* Go: pdu.DecodeRate12Data. DecodeRate12Data decodes a Rate12Data. */
@@ -9082,8 +9022,6 @@ int dmrgo_pdu_decode_rate34_data(const uint8_t data[18], dmrgo_pdu_rate34_data_t
 int dmrgo_pdu_decode_reverse_channel(const uint8_t info[2], dmrgo_pdu_reverse_channel_t *out);
 /* Go: pdu.DecodeShortLC. DecodeShortLC decodes a ShortLC. */
 int dmrgo_pdu_decode_short_lc(const uint8_t data[5], dmrgo_pdu_short_lc_t *out);
-/* Go: pdu.DecodeShortLCInto. DecodeShortLCInto decodes data into dst as DecodeShortLC does, but points the dispatch field of dst into p, so it does not allocate. p may be NULL. */
-int dmrgo_pdu_decode_short_lc_into(dmrgo_pdu_short_lc_t *dst, dmrgo_pdu_short_lc_payloads_t *p, const uint8_t data[5]);
 /* Go: pdu.DecodeSlotType. DecodeSlotType decodes a SlotType. */
 int dmrgo_pdu_decode_slot_type(const uint8_t data[3], dmrgo_pdu_slot_type_t *out);
 /* Go: pdu.DecodeSlotTypeCodeword. DecodeSlotTypeCodeword decodes the 20-bit Golay(20,8) codeword in the low 20 bits of cw, first bit most significant, as DecodeSlotType does. */
@@ -9130,8 +9068,8 @@ int dmrgo_pdu_embedded_signalling_info(const dmrgo_pdu_embedded_signalling_t *se
 int dmrgo_pdu_embedded_signalling_string(const dmrgo_pdu_embedded_signalling_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.EncodeTalkerAlias. EncodeTalkerAlias returns the Talker Alias header LC and the block LCs that carry alias in the given format, with the SFID. It returns DMRGO_ERR_PDU_TALKER_ALIAS_LENGTH when the alias needs more than 31 Code Units or more than three blocks, and an error when a character is not in the format. */
 int dmrgo_pdu_encode_talker_alias(const char *alias, size_t alias_len, dmrgo_layer3_talker_alias_data_format_t format, dmrgo_pdu_full_link_control_t *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: pdu.EncodeTalkerAliasInto. EncodeTalkerAliasInto writes the LCs that EncodeTalkerAlias returns into dst and returns their number, with the errors of EncodeTalkerAlias. p may be NULL. */
-int dmrgo_pdu_encode_talker_alias_into(dmrgo_pdu_full_link_control_t dst[4], dmrgo_pdu_full_link_control_payloads_t *const p[4], const char *alias, size_t alias_len, dmrgo_layer3_talker_alias_data_format_t format, int64_t *out);
+/* Go: pdu.EncodeTalkerAliasInto. EncodeTalkerAliasInto writes the LCs that EncodeTalkerAlias returns into dst and returns their number, with the errors of EncodeTalkerAlias. */
+int dmrgo_pdu_encode_talker_alias_into(dmrgo_pdu_full_link_control_t dst[4], const char *alias, size_t alias_len, dmrgo_layer3_talker_alias_data_format_t format, int64_t *out);
 /* Go: pdu.FLCGPSInfo.Encode. Encode encodes an FLCGPSInfo. */
 int dmrgo_pdu_flc_gps_info_encode(const dmrgo_pdu_flc_gps_info_t *self, uint8_t out[7]);
 /* Go: pdu.FLCGPSInfo.String. String returns the fields of s as text, for printing. */
@@ -9166,6 +9104,18 @@ int dmrgo_pdu_full_link_control_addresses(const dmrgo_pdu_full_link_control_t *s
 int dmrgo_pdu_full_link_control_as_capacity_plus_group_voice_grant(const dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_capacity_plus_group_voice_grant_t *p, bool *ok);
 /* Go: pdu.FullLinkControl.AsCapacityPlusPrivateVoiceGrant. AsCapacityPlusPrivateVoiceGrant decodes the RawPayload of a Capacity Plus private voice call grant. */
 int dmrgo_pdu_full_link_control_as_capacity_plus_private_voice_grant(const dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_capacity_plus_private_voice_grant_t *p, bool *ok);
+/* Go: pdu.FullLinkControl.AsGPSInfo. AsGPSInfo decodes RawPayload as an FLCGPSInfo payload. */
+int dmrgo_pdu_full_link_control_as_gps_info(const dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_flc_gps_info_t *p, bool *ok);
+/* Go: pdu.FullLinkControl.AsGroupVoice. AsGroupVoice decodes RawPayload as an FLCGroupVoice payload. */
+int dmrgo_pdu_full_link_control_as_group_voice(const dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_flc_group_voice_t *p, bool *ok);
+/* Go: pdu.FullLinkControl.AsTalkerAliasBlock. AsTalkerAliasBlock decodes RawPayload as an FLCTalkerAliasBlock payload. */
+int dmrgo_pdu_full_link_control_as_talker_alias_block(const dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_flc_talker_alias_block_t *p, bool *ok);
+/* Go: pdu.FullLinkControl.AsTalkerAliasHeader. AsTalkerAliasHeader decodes RawPayload as an FLCTalkerAliasHeader payload. */
+int dmrgo_pdu_full_link_control_as_talker_alias_header(const dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_flc_talker_alias_header_t *p, bool *ok);
+/* Go: pdu.FullLinkControl.AsTerminatorDataLinkControl. AsTerminatorDataLinkControl decodes RawPayload as an FLCTerminatorDataLinkControl payload. */
+int dmrgo_pdu_full_link_control_as_terminator_data_link_control(const dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_flc_terminator_data_link_control_t *p, bool *ok);
+/* Go: pdu.FullLinkControl.AsUnitToUnit. AsUnitToUnit decodes RawPayload as an FLCUnitToUnit payload. */
+int dmrgo_pdu_full_link_control_as_unit_to_unit(const dmrgo_pdu_full_link_control_t *self, dmrgo_pdu_flc_unit_to_unit_t *p, bool *ok);
 /* Go: pdu.FullLinkControl.Bytes. Bytes returns the 72 LC bits of s packed most significant bit first, without RS(12,9) parity. */
 int dmrgo_pdu_full_link_control_bytes(const dmrgo_pdu_full_link_control_t *self, uint8_t out[9]);
 /* Go: pdu.FullLinkControl.DataType. DataType returns BurstDataType. */
@@ -9174,14 +9124,22 @@ int dmrgo_pdu_full_link_control_data_type(const dmrgo_pdu_full_link_control_t *s
 int dmrgo_pdu_full_link_control_encode(const dmrgo_pdu_full_link_control_t *self, uint8_t out[12]);
 /* Go: pdu.FullLinkControl.ServiceOptions. ServiceOptions returns the Service Options of a Grp_V_Ch_Usr (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC. */
 int dmrgo_pdu_full_link_control_service_options(const dmrgo_pdu_full_link_control_t *self, dmrgo_layer3_service_options_t *so, bool *ok);
-/* Go: pdu.FullLinkControl.SetAddresses. SetAddresses sets the target and source addresses of a Grp_V_Ch_Usr or UU_V_Ch_Usr LC: in GroupVoice or UnitToUnit for the standard FID, and in RawPayload for any other FID. It returns DMRGO_ERR_PDU_NO_ADDRESSES for other FLCOs and for the standard FID when the payload field of the FLCO is nil (NewVoiceLC and a decode set it), and a DMRGO_ERR_FIELD_RANGE when an address does not fit in 24 bits, and then changes nothing. */
+/* Go: pdu.FullLinkControl.SetAddresses. SetAddresses sets the target and source addresses of a Grp_V_Ch_Usr or UU_V_Ch_Usr LC of any FID in RawPayload. It returns DMRGO_ERR_PDU_NO_ADDRESSES for other FLCOs and a DMRGO_ERR_FIELD_RANGE when an address does not fit in 24 bits, and then changes nothing. */
 int dmrgo_pdu_full_link_control_set_addresses(dmrgo_pdu_full_link_control_t *self, uint32_t target, uint32_t source);
+/* Go: pdu.FullLinkControl.SetGPSInfo. SetGPSInfo makes s carry p as an FLCGPSInfo payload: it sets FLCO to enums.FLCOGPSInfo, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_full_link_control_set_gps_info(dmrgo_pdu_full_link_control_t *self, const dmrgo_pdu_flc_gps_info_t *p);
+/* Go: pdu.FullLinkControl.SetGroupVoice. SetGroupVoice makes s carry p as an FLCGroupVoice payload: it sets FLCO to enums.FLCOGroupVoiceChannelUser, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_full_link_control_set_group_voice(dmrgo_pdu_full_link_control_t *self, const dmrgo_pdu_flc_group_voice_t *p);
+/* Go: pdu.FullLinkControl.SetTalkerAliasBlock. SetTalkerAliasBlock makes s carry p as an FLCTalkerAliasBlock payload: it sets FLCO to flco, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_full_link_control_set_talker_alias_block(dmrgo_pdu_full_link_control_t *self, dmrgo_enums_flco_t flco, const dmrgo_pdu_flc_talker_alias_block_t *p);
+/* Go: pdu.FullLinkControl.SetTalkerAliasHeader. SetTalkerAliasHeader makes s carry p as an FLCTalkerAliasHeader payload: it sets FLCO to enums.FLCOTalkerAliasHeader, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_full_link_control_set_talker_alias_header(dmrgo_pdu_full_link_control_t *self, const dmrgo_pdu_flc_talker_alias_header_t *p);
+/* Go: pdu.FullLinkControl.SetTerminatorDataLinkControl. SetTerminatorDataLinkControl makes s carry p as an FLCTerminatorDataLinkControl payload: it sets FLCO to enums.FLCOTerminatorDataLinkControl, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_full_link_control_set_terminator_data_link_control(dmrgo_pdu_full_link_control_t *self, const dmrgo_pdu_flc_terminator_data_link_control_t *p);
+/* Go: pdu.FullLinkControl.SetUnitToUnit. SetUnitToUnit makes s carry p as an FLCUnitToUnit payload: it sets FLCO to enums.FLCOUnitToUnitVoiceChannelUser, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_full_link_control_set_unit_to_unit(dmrgo_pdu_full_link_control_t *self, const dmrgo_pdu_flc_unit_to_unit_t *p);
 /* Go: pdu.FullLinkControl.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_full_link_control_string(const dmrgo_pdu_full_link_control_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_pdu_full_link_control_payloads_new makes a zero pdu.FullLinkControlPayloads. */
-int dmrgo_pdu_full_link_control_payloads_new(dmrgo_pdu_full_link_control_payloads_t **out);
-/* dmrgo_pdu_full_link_control_payloads_free frees the handle. self may be NULL. */
-int dmrgo_pdu_full_link_control_payloads_free(dmrgo_pdu_full_link_control_payloads_t *self);
 /* Go: pdu.GenSiteParms.Encode. Encode encodes a GenSiteParms. */
 int dmrgo_pdu_gen_site_parms_encode(const dmrgo_pdu_gen_site_parms_t *self, uint8_t out[8]);
 /* Go: pdu.GenSiteParms.String. String returns the fields of s as text, for printing. */
@@ -9240,16 +9198,52 @@ int dmrgo_pdu_mbc_continuation_data_type(const dmrgo_pdu_mbc_continuation_t *sel
 int dmrgo_pdu_mbc_continuation_encode(const dmrgo_pdu_mbc_continuation_t *self, uint8_t out[12]);
 /* Go: pdu.MBCContinuation.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_mbc_continuation_string(const dmrgo_pdu_mbc_continuation_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
+/* Go: pdu.MBCHeader.AsBroadcast. AsBroadcast decodes RawPayload as a BroadcastPDU payload. */
+int dmrgo_pdu_mbc_header_as_broadcast(const dmrgo_pdu_mbc_header_t *self, dmrgo_pdu_broadcast_pdu_t *p, bool *ok);
+/* Go: pdu.MBCHeader.AsBroadcastTalkgroupVoiceGrant. AsBroadcastTalkgroupVoiceGrant decodes RawPayload as a BroadcastTalkgroupVoiceGrantPDU payload. */
+int dmrgo_pdu_mbc_header_as_broadcast_talkgroup_voice_grant(const dmrgo_pdu_mbc_header_t *self, dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t *p, bool *ok);
+/* Go: pdu.MBCHeader.AsDuplexPrivateDataGrant. AsDuplexPrivateDataGrant decodes RawPayload as a DuplexPrivateDataGrantPDU payload. */
+int dmrgo_pdu_mbc_header_as_duplex_private_data_grant(const dmrgo_pdu_mbc_header_t *self, dmrgo_pdu_duplex_private_data_grant_pdu_t *p, bool *ok);
+/* Go: pdu.MBCHeader.AsDuplexPrivateVoiceGrant. AsDuplexPrivateVoiceGrant decodes RawPayload as a DuplexPrivateVoiceGrantPDU payload. */
+int dmrgo_pdu_mbc_header_as_duplex_private_voice_grant(const dmrgo_pdu_mbc_header_t *self, dmrgo_pdu_duplex_private_voice_grant_pdu_t *p, bool *ok);
+/* Go: pdu.MBCHeader.AsMove. AsMove decodes RawPayload as a MovePDU payload. */
+int dmrgo_pdu_mbc_header_as_move(const dmrgo_pdu_mbc_header_t *self, dmrgo_pdu_move_pdu_t *p, bool *ok);
+/* Go: pdu.MBCHeader.AsPrivateDataGrant. AsPrivateDataGrant decodes RawPayload as a PrivateDataGrantPDU payload. */
+int dmrgo_pdu_mbc_header_as_private_data_grant(const dmrgo_pdu_mbc_header_t *self, dmrgo_pdu_private_data_grant_pdu_t *p, bool *ok);
+/* Go: pdu.MBCHeader.AsPrivateDataGrantMultiItem. AsPrivateDataGrantMultiItem decodes RawPayload as a PrivateDataGrantMultiItemPDU payload. */
+int dmrgo_pdu_mbc_header_as_private_data_grant_multi_item(const dmrgo_pdu_mbc_header_t *self, dmrgo_pdu_private_data_grant_multi_item_pdu_t *p, bool *ok);
+/* Go: pdu.MBCHeader.AsPrivateVoiceGrant. AsPrivateVoiceGrant decodes RawPayload as a PrivateVoiceGrantPDU payload. */
+int dmrgo_pdu_mbc_header_as_private_voice_grant(const dmrgo_pdu_mbc_header_t *self, dmrgo_pdu_private_voice_grant_pdu_t *p, bool *ok);
+/* Go: pdu.MBCHeader.AsTalkgroupDataGrant. AsTalkgroupDataGrant decodes RawPayload as a TalkgroupDataGrantPDU payload. */
+int dmrgo_pdu_mbc_header_as_talkgroup_data_grant(const dmrgo_pdu_mbc_header_t *self, dmrgo_pdu_talkgroup_data_grant_pdu_t *p, bool *ok);
+/* Go: pdu.MBCHeader.AsTalkgroupVoiceGrant. AsTalkgroupVoiceGrant decodes RawPayload as a TalkgroupVoiceGrantPDU payload. */
+int dmrgo_pdu_mbc_header_as_talkgroup_voice_grant(const dmrgo_pdu_mbc_header_t *self, dmrgo_pdu_talkgroup_voice_grant_pdu_t *p, bool *ok);
 /* Go: pdu.MBCHeader.DataType. DataType returns enums.DataTypeMBCHeader. */
 int dmrgo_pdu_mbc_header_data_type(const dmrgo_pdu_mbc_header_t *self, dmrgo_enums_data_type_t *out);
 /* Go: pdu.MBCHeader.Encode. Encode encodes an MBCHeader. */
 int dmrgo_pdu_mbc_header_encode(const dmrgo_pdu_mbc_header_t *self, uint8_t out[12]);
+/* Go: pdu.MBCHeader.SetBroadcast. SetBroadcast makes s carry p as a BroadcastPDU payload: it sets Opcode to CSBKBroadcast, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_mbc_header_set_broadcast(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_broadcast_pdu_t *p);
+/* Go: pdu.MBCHeader.SetBroadcastTalkgroupVoiceGrant. SetBroadcastTalkgroupVoiceGrant makes s carry p as a BroadcastTalkgroupVoiceGrantPDU payload: it sets Opcode to CSBKBroadcastTalkgroupVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_mbc_header_set_broadcast_talkgroup_voice_grant(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t *p);
+/* Go: pdu.MBCHeader.SetDuplexPrivateDataGrant. SetDuplexPrivateDataGrant makes s carry p as a DuplexPrivateDataGrantPDU payload: it sets Opcode to CSBKDuplexPrivateDataGrant, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_mbc_header_set_duplex_private_data_grant(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_duplex_private_data_grant_pdu_t *p);
+/* Go: pdu.MBCHeader.SetDuplexPrivateVoiceGrant. SetDuplexPrivateVoiceGrant makes s carry p as a DuplexPrivateVoiceGrantPDU payload: it sets Opcode to CSBKDuplexPrivateVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_mbc_header_set_duplex_private_voice_grant(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_duplex_private_voice_grant_pdu_t *p);
+/* Go: pdu.MBCHeader.SetMove. SetMove makes s carry p as a MovePDU payload: it sets Opcode to CSBKMove, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_mbc_header_set_move(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_move_pdu_t *p);
+/* Go: pdu.MBCHeader.SetPrivateDataGrant. SetPrivateDataGrant makes s carry p as a PrivateDataGrantPDU payload: it sets Opcode to CSBKPrivateDataGrant, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_mbc_header_set_private_data_grant(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_private_data_grant_pdu_t *p);
+/* Go: pdu.MBCHeader.SetPrivateDataGrantMultiItem. SetPrivateDataGrantMultiItem makes s carry p as a PrivateDataGrantMultiItemPDU payload: it sets Opcode to CSBKPrivateDataGrantMultiItem, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_mbc_header_set_private_data_grant_multi_item(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_private_data_grant_multi_item_pdu_t *p);
+/* Go: pdu.MBCHeader.SetPrivateVoiceGrant. SetPrivateVoiceGrant makes s carry p as a PrivateVoiceGrantPDU payload: it sets Opcode to CSBKPrivateVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_mbc_header_set_private_voice_grant(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_private_voice_grant_pdu_t *p);
+/* Go: pdu.MBCHeader.SetTalkgroupDataGrant. SetTalkgroupDataGrant makes s carry p as a TalkgroupDataGrantPDU payload: it sets Opcode to CSBKTalkgroupDataGrant, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_mbc_header_set_talkgroup_data_grant(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_talkgroup_data_grant_pdu_t *p);
+/* Go: pdu.MBCHeader.SetTalkgroupVoiceGrant. SetTalkgroupVoiceGrant makes s carry p as a TalkgroupVoiceGrantPDU payload: it sets Opcode to CSBKTalkgroupVoiceGrant, FID to 0 and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_mbc_header_set_talkgroup_voice_grant(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_talkgroup_voice_grant_pdu_t *p);
 /* Go: pdu.MBCHeader.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_mbc_header_string(const dmrgo_pdu_mbc_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* dmrgo_pdu_mbc_header_payloads_new makes a zero pdu.MBCHeaderPayloads. */
-int dmrgo_pdu_mbc_header_payloads_new(dmrgo_pdu_mbc_header_payloads_t **out);
-/* dmrgo_pdu_mbc_header_payloads_free frees the handle. self may be NULL. */
-int dmrgo_pdu_mbc_header_payloads_free(dmrgo_pdu_mbc_header_payloads_t *self);
 /* Go: pdu.MBCLastBlockCRCOK. MBCLastBlockCRCOK reports whether bits 80 to 95 of the last of blocks hold the last-block CRC-CCITT that SetMBCLastBlockCRC writes. */
 int dmrgo_pdu_mbc_last_block_crc_ok(const uint8_t (*blocks)[12], size_t blocks_len, bool *out);
 /* Go: pdu.MVAPContinuation.DataType. DataType returns enums.DataTypeMBCContinuation. */
@@ -9408,10 +9402,26 @@ int dmrgo_pdu_seal(uint8_t p[12], dmrgo_enums_data_type_t dt);
 int dmrgo_pdu_service_type_string(dmrgo_pdu_service_type_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.SetMBCLastBlockCRC. SetMBCLastBlockCRC writes the last-block CRC-CCITT into bits 80 to 95 of the last of blocks, which holds every continuation block of the MBC in order, packed as MBCLastBlockCRCOK takes them. */
 int dmrgo_pdu_set_mbc_last_block_crc(uint8_t (*blocks)[12], size_t blocks_len);
+/* Go: pdu.ShortLC.AsActivityUpdate. AsActivityUpdate decodes RawPayload as a ShortLCActivityUpdate payload. */
+int dmrgo_pdu_short_lc_as_activity_update(const dmrgo_pdu_short_lc_t *self, dmrgo_pdu_short_lc_activity_update_t *p, bool *ok);
+/* Go: pdu.ShortLC.AsCSysParms. AsCSysParms decodes RawPayload as a ShortLCCSysParms payload. */
+int dmrgo_pdu_short_lc_as_c_sys_parms(const dmrgo_pdu_short_lc_t *self, dmrgo_pdu_short_lc_c_sys_parms_t *p, bool *ok);
 /* Go: pdu.ShortLC.AsCapacityPlusRestChannel. AsCapacityPlusRestChannel decodes the RawPayload of a Capacity Plus rest channel Short LC. */
 int dmrgo_pdu_short_lc_as_capacity_plus_rest_channel(const dmrgo_pdu_short_lc_t *self, dmrgo_pdu_capacity_plus_rest_channel_t *p, bool *ok);
+/* Go: pdu.ShortLC.AsNullMessage. AsNullMessage decodes RawPayload as a ShortLCNullMessage payload. */
+int dmrgo_pdu_short_lc_as_null_message(const dmrgo_pdu_short_lc_t *self, dmrgo_pdu_short_lc_null_message_t *p, bool *ok);
+/* Go: pdu.ShortLC.AsPSysParms. AsPSysParms decodes RawPayload as a ShortLCPSysParms payload. */
+int dmrgo_pdu_short_lc_as_p_sys_parms(const dmrgo_pdu_short_lc_t *self, dmrgo_pdu_short_lc_p_sys_parms_t *p, bool *ok);
 /* Go: pdu.ShortLC.Encode. Encode encodes a ShortLC. */
 int dmrgo_pdu_short_lc_encode(const dmrgo_pdu_short_lc_t *self, uint8_t out[5]);
+/* Go: pdu.ShortLC.SetActivityUpdate. SetActivityUpdate makes s carry p as a ShortLCActivityUpdate payload: it sets SLCO to enums.SLCOActivityUpdate and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_short_lc_set_activity_update(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_activity_update_t *p);
+/* Go: pdu.ShortLC.SetCSysParms. SetCSysParms makes s carry p as a ShortLCCSysParms payload: it sets SLCO to enums.SLCOCSysParms and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_short_lc_set_c_sys_parms(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_c_sys_parms_t *p);
+/* Go: pdu.ShortLC.SetNullMessage. SetNullMessage makes s carry p as a ShortLCNullMessage payload: it sets SLCO to enums.SLCONullMessage and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_short_lc_set_null_message(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_null_message_t *p);
+/* Go: pdu.ShortLC.SetPSysParms. SetPSysParms makes s carry p as a ShortLCPSysParms payload: it sets SLCO to enums.SLCOPSysParms and RawPayload, and keeps the other fields. */
+int dmrgo_pdu_short_lc_set_p_sys_parms(dmrgo_pdu_short_lc_t *self, const dmrgo_pdu_short_lc_p_sys_parms_t *p);
 /* Go: pdu.ShortLC.String. String returns the fields of s as text, for printing. */
 int dmrgo_pdu_short_lc_string(const dmrgo_pdu_short_lc_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.ShortLCActivityUpdate.Encode. Encode encodes a ShortLCActivityUpdate. */
@@ -9446,10 +9456,6 @@ int dmrgo_pdu_short_lc_p_sys_parms_site_id(const dmrgo_pdu_short_lc_p_sys_parms_
 int dmrgo_pdu_short_lc_p_sys_parms_string(const dmrgo_pdu_short_lc_p_sys_parms_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: pdu.ShortLCPSysParms.SysCode. SysCode returns the MODEL, NET and SITE carried in the P_SYS_Parms, with the errors of ShortLCCSysParms.SysCode. */
 int dmrgo_pdu_short_lc_p_sys_parms_sys_code(const dmrgo_pdu_short_lc_p_sys_parms_t *self, dmrgo_pdu_sys_code_t *out);
-/* dmrgo_pdu_short_lc_payloads_new makes a zero pdu.ShortLCPayloads. */
-int dmrgo_pdu_short_lc_payloads_new(dmrgo_pdu_short_lc_payloads_t **out);
-/* dmrgo_pdu_short_lc_payloads_free frees the handle. self may be NULL. */
-int dmrgo_pdu_short_lc_payloads_free(dmrgo_pdu_short_lc_payloads_t *self);
 /* Go: pdu.SlotType.Encode. Encode encodes a SlotType. */
 int dmrgo_pdu_slot_type_encode(const dmrgo_pdu_slot_type_t *self, uint8_t out[3]);
 /* Go: pdu.SlotType.Info. Info returns the information bits of s as a SlotTypeInfo: the color code and the data type. */
@@ -9982,16 +9988,12 @@ int dmrgo_dmrd_hbrp_config_of(const uint8_t *p, size_t p_len, dmrgo_dmrd_hbrp_co
 int dmrgo_dmrd_local_position_append_binary(const dmrgo_dmrd_local_position_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.LocalPosition.LC. LC decodes the position as Position.LC does. */
 int dmrgo_dmrd_local_position_lc(const dmrgo_dmrd_local_position_t *self, dmrgo_pdu_full_link_control_t *out);
-/* Go: dmrd.LocalPosition.LCInto. LCInto decodes the position into dst as Position.LCInto does. pl may be NULL. */
-int dmrgo_dmrd_local_position_lc_into(const dmrgo_dmrd_local_position_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *pl);
 /* Go: dmrd.LocalPosition.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_local_position_string(const dmrgo_dmrd_local_position_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.LocalTalkerAlias.AppendBinary. AppendBinary appends the 15 octets of s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit. */
 int dmrgo_dmrd_local_talker_alias_append_binary(const dmrgo_dmrd_local_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.LocalTalkerAlias.LC. LC decodes the talker alias block as TalkerAlias.LC does. */
 int dmrgo_dmrd_local_talker_alias_lc(const dmrgo_dmrd_local_talker_alias_t *self, dmrgo_pdu_full_link_control_t *out);
-/* Go: dmrd.LocalTalkerAlias.LCInto. LCInto decodes the block into dst as TalkerAlias.LCInto does. p may be NULL. */
-int dmrgo_dmrd_local_talker_alias_lc_into(const dmrgo_dmrd_local_talker_alias_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *p);
 /* Go: dmrd.LocalTalkerAlias.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_local_talker_alias_string(const dmrgo_dmrd_local_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.ParseDMRPlusOptions. ParseDMRPlusOptions parses a DMR+ startup options text: Key=Value pairs separated by semicolons, with spaces around them ignored. It skips pairs with an unknown key or without "=", and returns DMRGO_ERR_DMRD_TEXT, with the options parsed so far, when a value is not a decimal number below 2^32. */
@@ -10002,16 +10004,12 @@ int dmrgo_dmrd_parse_free_dmr_options(const uint8_t *text, size_t text_len, dmrg
 int dmrgo_dmrd_position_append_binary(const dmrgo_dmrd_position_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.Position.LC. LC decodes the position as the GPS Info Full LC it came from: FLCO GPS Info, standard FID, and Data. */
 int dmrgo_dmrd_position_lc(const dmrgo_dmrd_position_t *self, dmrgo_pdu_full_link_control_t *out);
-/* Go: dmrd.Position.LCInto. LCInto decodes the position into dst as LC does, with the payload struct in pl as pdu.DecodeFullLinkControlBytesInto places it. pl may be NULL. */
-int dmrgo_dmrd_position_lc_into(const dmrgo_dmrd_position_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *pl);
 /* Go: dmrd.Position.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_position_string(const dmrgo_dmrd_position_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: dmrd.TalkerAlias.AppendBinary. AppendBinary appends the 15 or 19 octets of s to dst: Size selects the length, and 0 means 15. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit, or an error when Size is not one of the lengths. */
 int dmrgo_dmrd_talker_alias_append_binary(const dmrgo_dmrd_talker_alias_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: dmrd.TalkerAlias.LC. LC decodes the talker alias block as the Full LC it came from: FLCO Talker Alias Header plus Type, standard FID, and Data. */
 int dmrgo_dmrd_talker_alias_lc(const dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_full_link_control_t *out);
-/* Go: dmrd.TalkerAlias.LCInto. LCInto decodes the block into dst as LC does, with the payload struct in p as pdu.DecodeFullLinkControlBytesInto places it. p may be NULL. */
-int dmrgo_dmrd_talker_alias_lc_into(const dmrgo_dmrd_talker_alias_t *self, dmrgo_pdu_full_link_control_t *dst, dmrgo_pdu_full_link_control_payloads_t *p);
 /* Go: dmrd.TalkerAlias.String. String returns the fields of s as text, for printing. */
 int dmrgo_dmrd_talker_alias_string(const dmrgo_dmrd_talker_alias_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* dmrgo_dmrd_auth_bridge_key_free frees the handle. self may be NULL. */
@@ -10372,8 +10370,6 @@ int dmrgo_mmdvm_dmr_data_set_hint(dmrgo_mmdvm_dmr_data_t *self, const dmrgo_laye
 int dmrgo_mmdvm_dmr_short_lc_append_binary(const dmrgo_mmdvm_dmr_short_lc_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: mmdvm.DMRShortLC.ShortLC. ShortLC decodes the Short LC that s carries. */
 int dmrgo_mmdvm_dmr_short_lc_short_lc(const dmrgo_mmdvm_dmr_short_lc_t *self, dmrgo_pdu_short_lc_t *out);
-/* Go: mmdvm.DMRShortLC.ShortLCInto. ShortLCInto decodes the Short LC that s carries into dst, with the payload struct in p as pdu.DecodeShortLCInto places it, and the FEC field as ShortLC sets it. p may be NULL. */
-int dmrgo_mmdvm_dmr_short_lc_short_lc_into(const dmrgo_mmdvm_dmr_short_lc_t *self, dmrgo_pdu_short_lc_t *dst, dmrgo_pdu_short_lc_payloads_t *p);
 /* Go: mmdvm.DMRShortLC.String. String returns the fields of s as text, for printing. */
 int dmrgo_mmdvm_dmr_short_lc_string(const dmrgo_mmdvm_dmr_short_lc_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 /* Go: mmdvm.DMRStart.AppendBinary. AppendBinary appends the 1 octet of s to dst. It returns dst unchanged and a DMRGO_ERR_FIELD_RANGE when a field does not fit. */

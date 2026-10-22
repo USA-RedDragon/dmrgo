@@ -13,7 +13,7 @@ import (
 func TestAllocsSenderLoopback(t *testing.T) {
 	tx := newSender(t, &data.SenderConfig{Preambles: 2, Source: layer2.SyncSourceMS, ColorCode: 1})
 	rx := newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID})
-	m := message(60)
+	m := message(t, 60)
 	out := make([]data.Output, 0, data.MaxOutputs)
 	done := make([]data.Output, 0, data.MaxOutputs)
 	ev := make([]data.Event, 0, data.MaxEvents)
@@ -61,7 +61,7 @@ func TestAllocsSenderLoopback(t *testing.T) {
 func TestAllocsSenderWindow(t *testing.T) {
 	tx := newSender(t, &data.SenderConfig{Window: 3})
 	rx := newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID})
-	msgs := windowMessages(3, 60)
+	msgs := windowMessages(t, 3, 60)
 	out := make([]data.Output, 0, data.MaxOutputs)
 	done := make([]data.Output, 0, data.MaxOutputs)
 	ev := make([]data.Event, 0, data.MaxEvents)
@@ -112,7 +112,7 @@ func TestAllocsSenderWindow(t *testing.T) {
 }
 
 func TestAllocsSenderCorpus(t *testing.T) {
-	p, msgs := txPool(t), txMessages()
+	p, msgs := txPool(t), txMessages(t)
 	for i, in := range append(txSeeds(), corpusFiles(t, "FuzzSender")...) {
 		base := testing.AllocsPerRun(3, func() { checkTxScript(t, in[:min(len(in), 3)], p, msgs) })
 		allocs := testing.AllocsPerRun(3, func() { checkTxScript(t, in, p, msgs) })

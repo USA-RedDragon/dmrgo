@@ -10,14 +10,15 @@ import (
 
 func TestEncodeShortLCToCACH_RoundTrip(t *testing.T) {
 	t.Parallel()
-	slc := pdu.ShortLC{
-		SLCO: enums.SLCOActivityUpdate,
-		ActivityUpdate: &pdu.ShortLCActivityUpdate{
-			TS1ActivityID: enums.ActivityGroupVoice,
-			TS2ActivityID: enums.ActivityGroupCSBK,
-			HashTS1:       0x5A,
-			HashTS2:       0xC3,
-		},
+	want := pdu.ShortLCActivityUpdate{
+		TS1ActivityID: enums.ActivityGroupVoice,
+		TS2ActivityID: enums.ActivityGroupCSBK,
+		HashTS1:       0x5A,
+		HashTS2:       0xC3,
+	}
+	var slc pdu.ShortLC
+	if err := slc.SetActivityUpdate(want); err != nil {
+		t.Fatal(err)
 	}
 	tact := pdu.TACT{AccessType: true, TDMAChannel: true}
 	fields := must(layer2.EncodeShortLCToCACH(&slc, tact))
@@ -46,7 +47,7 @@ func TestEncodeShortLCToCACH_RoundTrip(t *testing.T) {
 	if res.Uncorrectable || res.ErrorsCorrected != 0 {
 		t.Fatalf("complete: %+v", res)
 	}
-	if got.SLCO != slc.SLCO || got.ActivityUpdate == nil || *got.ActivityUpdate != *slc.ActivityUpdate {
+	if au, ok := got.AsActivityUpdate(); got.SLCO != enums.SLCOActivityUpdate || !ok || au != want {
 		t.Errorf("got %s", got.String())
 	}
 }

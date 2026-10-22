@@ -135,9 +135,7 @@ type Requester struct {
 	waitUntil      time.Duration
 
 	build  pdu.CSBK
-	uuReq  pdu.UnitToUnitVoiceServiceRequestPDU
 	dec    pdu.CSBK
-	decP   pdu.CSBKPayloads
 	noCopy noCopy
 }
 
@@ -213,8 +211,10 @@ func (q *Requester) RequestOACSU(now time.Duration, target, source uint32, so la
 	if err := q.check(target, source, &o); err != nil {
 		return err
 	}
-	q.uuReq = pdu.UnitToUnitVoiceServiceRequestPDU{ServiceOptions: so, TargetAddress: target, SourceAddress: source}
-	q.build = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKUnitToUnitVoiceServiceRequest, UnitToUnitVoiceServiceRequestPDU: &q.uuReq}
+	q.build = pdu.CSBK{LastBlock: true}
+	if err := q.build.SetUnitToUnitVoiceServiceRequest(pdu.UnitToUnitVoiceServiceRequestPDU{ServiceOptions: so, TargetAddress: target, SourceAddress: source}); err != nil {
+		return err
+	}
 	octets, err := q.build.Encode()
 	if err != nil {
 		return err
@@ -296,7 +296,7 @@ func (q *Requester) Request(now time.Duration, c pdu.CSBKBytes, m Match, opts *R
 	}
 	c[0] |= 0x80
 	c.Reseal()
-	pdu.DecodeCSBKInto(&q.dec, &q.decP, c)
+	q.dec = pdu.DecodeCSBK(c)
 	target, source, ok := addresses(&q.dec)
 	if !ok {
 		return ErrNoAddresses
@@ -416,8 +416,8 @@ func (q *Requester) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, d
 	if !ok || target != q.source || source != q.target {
 		return dst
 	}
-	if c.FID == enums.FIDStandardized && c.NegativeAcknowledgementPDU != nil {
-		if n := c.NegativeAcknowledgementPDU; n.ServiceType == q.opcode {
+	if n, ok := c.AsNegativeAcknowledgement(); ok {
+		if n.ServiceType == q.opcode {
 			dst = q.done(dst, ResultNACK, &octets)
 			dst[len(dst)-1].Reason = Reason(n.ReasonCode)
 		}
@@ -432,7 +432,7 @@ func (q *Requester) Decoded(now time.Duration, b *layer2.Burst, _ layer2.Hint, d
 func (q *Requester) answer(c *pdu.CSBK) (Result, bool) {
 	switch q.service {
 	case ServiceOACSU:
-		if a := c.UnitToUnitVoiceServiceAnswerResponsePDU; c.FID == enums.FIDStandardized && a != nil {
+		if a, ok := c.AsUnitToUnitVoiceServiceAnswerResponse(); ok {
 			switch a.AnswerResponse {
 			case answerProceed:
 				return ResultAnswered, true

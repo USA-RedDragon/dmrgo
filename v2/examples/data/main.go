@@ -83,7 +83,7 @@ func capture(w io.Writer, path string) error {
 			return fmt.Errorf("message %d: %w", n, err)
 		}
 		fmt.Fprintf(w, "%s: %s %d -> %d, %s, %d octets, CRC %08x, text %q\n",
-			filepath.Base(path), m.Header.Format, t.Source, t.Destination, m.DataType, len(m.Data), m.CRC, t.Body)
+			filepath.Base(path), m.Header.Format(), t.Source, t.Destination, m.DataType, len(m.Data), m.CRC, t.Body)
 	}
 	if n != 1 {
 		return fmt.Errorf("got %d messages, want 1", n)
@@ -100,8 +100,11 @@ func unconfirmed(w io.Writer) error {
 	text := "Hello from dmrgo, unconfirmed SMS test"
 	payload := append(udpHeader[:], text...)
 
-	h := pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
-		SAP: enums.SAPUDPIPHeaderCompression, LLIDDestination: dst, LLIDSource: src, FullMessageFlag: true}}
+	var h pdu.DataHeader
+	if err := h.SetUnconfirmedDataHeader(pdu.UnconfirmedDataHeader{
+		SAP: enums.SAPUDPIPHeaderCompression, LLIDDestination: dst, LLIDSource: src, FullMessageFlag: true}); err != nil {
+		return err
+	}
 	p, err := packet.NewPacket(h, payload, enums.DataTypeRate12)
 	if err != nil {
 		return err
@@ -119,7 +122,10 @@ func unconfirmed(w io.Writer) error {
 		return fmt.Errorf("payload %x, want %x", m.Data, payload)
 	}
 	got := pdu.DecodeUDPIPv4CompressedHeader([9]byte(m.Data[:9]))
-	u := m.Header.UnconfirmedDataHeader
+	u, ok := m.Header.AsUnconfirmedDataHeader()
+	if !ok {
+		return fmt.Errorf("header format %s, want unconfirmed", m.Header.Format())
+	}
 	fmt.Fprintf(w, "unconfirmed: %d bursts, BF=%d POC=%d, port %d, text %q: ok\n",
 		len(bursts), u.BlocksToFollow, u.PadOctetCount, uint16(ip.DPIDPort(got.DPID)), m.Data[9:])
 	return nil
@@ -127,9 +133,12 @@ func unconfirmed(w io.Writer) error {
 
 func confirmed(w io.Writer) error {
 	lip := []byte("LIP: 41.878,-87.629,hdg=90,v=12")
-	h := pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
+	var h pdu.DataHeader
+	if err := h.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{
 		ResponseRequested: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: dst, LLIDSource: src,
-		FullMessageFlag: true, ReSynchronizeFlag: true, SendSequenceNumber: 3, FragmentSequenceNumber: 8}}
+		FullMessageFlag: true, ReSynchronizeFlag: true, SendSequenceNumber: 3, FragmentSequenceNumber: 8}); err != nil {
+		return err
+	}
 	p, err := packet.NewPacket(h, lip, enums.DataTypeRate34)
 	if err != nil {
 		return err
@@ -170,7 +179,7 @@ func confirmed(w io.Writer) error {
 		return errors.New("SACK carries no response data")
 	}
 	retry := rm.Response.RetryBlocks()
-	sackCode, err := packet.ResponseOf(rm.Header.ResponsePacketHeader)
+	sackCode, err := responseOf(&rm.Header)
 	if err != nil {
 		return err
 	}
@@ -187,7 +196,11 @@ func confirmed(w io.Writer) error {
 	if !bytes.Equal(m.Data, lip) {
 		return fmt.Errorf("payload %q, want %q", m.Data, lip)
 	}
-	ack, err := packet.NewResponse(m.Header.ConfirmedDataHeader, packet.ResponseACK, nil)
+	ch, ok := m.Header.AsConfirmedDataHeader()
+	if !ok {
+		return fmt.Errorf("header format %s, want confirmed", m.Header.Format())
+	}
+	ack, err := packet.NewResponse(&ch, packet.ResponseACK, nil)
 	if err != nil {
 		return err
 	}
@@ -200,7 +213,7 @@ func confirmed(w io.Writer) error {
 		return err
 	}
 	ackDst, ackSrc, _ := am.Header.Addresses()
-	ackCode, err := packet.ResponseOf(am.Header.ResponsePacketHeader)
+	ackCode, err := responseOf(&am.Header)
 	if err != nil {
 		return err
 	}
@@ -221,4 +234,12 @@ func receive(a *packet.Assembler, bursts []layer2.RawBurst) (packet.Message, err
 		}
 	}
 	return packet.Message{}, errors.New("packet incomplete")
+}
+
+func responseOf(h *pdu.DataHeader) (packet.Response, error) {
+	r, ok := h.AsResponsePacketHeader()
+	if !ok {
+		return 0, fmt.Errorf("header format %s, want response", h.Format())
+	}
+	return packet.ResponseOf(&r)
 }

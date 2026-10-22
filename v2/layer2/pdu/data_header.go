@@ -24,60 +24,65 @@ type UnconfirmedDataHeader struct {
 	FragmentSequenceNumber uint8     `dmr:"bits:76-79"`   // Fragment Sequence Number (FSN)
 }
 
-// DataHeader is the data header PDU (ETSI TS 102 361-1 clause 9.2).
+// DataHeader is the data header PDU. The Data Packet Format in RawPayload
+// selects its view: AsConfirmedDataHeader, for example, decodes it for
+// FormatConfirmed. (ETSI TS 102 361-1 clause 9.2)
 //
 //dmr:crc crc_ccitt
 //dmr:crc_mask 0xCCCC
 //dmr:input_size 96
+//dmr:get Format Format bits:4-7 the Data Packet Format (DPF) of the header
+//dmr:get AppendedBlocks uint8 bits:2-3+12-15,only:Format=FormatShortDataDefined|FormatShortDataRawOrStatusPrecoded the Appended Blocks (AB) of a DD_HEAD, R_HEAD or SP_HEAD
+//dmr:variant UnconfirmedDataHeader UnconfirmedDataHeader Format=FormatUnconfirmed
+//dmr:variant ConfirmedDataHeader ConfirmedDataHeader Format=FormatConfirmed
+//dmr:variant ResponsePacketHeader ResponsePacketHeader Format=FormatResponsePacket
+//dmr:variant DefinedDataHeader DefinedDataHeader Format=FormatShortDataDefined
+//dmr:variant StatusPrecodedHeader StatusPrecodedHeader Format=FormatShortDataRawOrStatusPrecoded AppendedBlocks==0
+//dmr:variant RawDataHeader RawDataHeader Format=FormatShortDataRawOrStatusPrecoded AppendedBlocks!=0
+//dmr:variant UDTHeader UDTHeader Format=FormatUnifiedDataTransport
+//dmr:variant ProprietaryHeader ProprietaryHeader Format=FormatProprietary
 type DataHeader struct {
 	FEC fec.Result `dmr:"-"` // result of the header CRC check
-	// Format is the Data Packet Format; Encode returns an error unless Format and the encoded AB select the one header field that is set.
-	Format         Format `dmr:"bits:4-7"`
-	AppendedBlocks uint8  `dmr:"bits:2-3+12-15,no_encode,only:Format=FormatShortDataDefined|FormatShortDataRawOrStatusPrecoded"` // decoded Appended Blocks (AB) of a DD_HEAD, R_HEAD or SP_HEAD, 0 for the other formats; Encode ignores it
 
-	UnconfirmedDataHeader *UnconfirmedDataHeader `dmr:"bits:0-79,dispatch:Format=FormatUnconfirmed"`                                         // U_HEAD
-	ConfirmedDataHeader   *ConfirmedDataHeader   `dmr:"bits:0-79,dispatch:Format=FormatConfirmed"`                                           // C_HEAD
-	ResponsePacketHeader  *ResponsePacketHeader  `dmr:"bits:0-79,dispatch:Format=FormatResponsePacket"`                                      // C_RHEAD
-	DefinedDataHeader     *DefinedDataHeader     `dmr:"bits:0-79,dispatch:Format=FormatShortDataDefined"`                                    // DD_HEAD
-	StatusPrecodedHeader  *StatusPrecodedHeader  `dmr:"bits:0-79,dispatch:Format=FormatShortDataRawOrStatusPrecoded,when:AppendedBlocks==0"` // SP_HEAD, for a header with no appended blocks
-	RawDataHeader         *RawDataHeader         `dmr:"bits:0-79,dispatch:Format=FormatShortDataRawOrStatusPrecoded"`                        // R_HEAD; its AppendedBlocks must not be 0
-	UDTHeader             *UDTHeader             `dmr:"bits:0-79,dispatch:Format=FormatUnifiedDataTransport"`                                // UDT_HEAD
-	ProprietaryHeader     *ProprietaryHeader     `dmr:"bits:0-79,dispatch:Format=FormatProprietary"`                                         // P_HEAD
-
-	// RawPayload holds header bits 0 to 79 when no header field is set,
-	// packed most significant bit first: bit 0 is the top bit of byte 0.
-	RawPayload [10]byte `dmr:"bits:0-79,raw,fallback"`
+	// RawPayload holds header bits 0 to 79, packed most significant bit
+	// first: bit 0 is the top bit of byte 0.
+	RawPayload [10]byte `dmr:"bits:0-79,raw,union"`
 }
 
 // Addresses returns the destination LLID as target and the source LLID of
-// the header that is set. ok is false for a proprietary header and when no
-// header is set, and for a nil s.
+// the header. ok is false for a proprietary header, a header of an unknown
+// format and a nil s.
 func (s *DataHeader) Addresses() (target, source uint32, ok bool) {
 	if s == nil {
 		return 0, 0, false
 	}
-	switch {
-	case s.UnconfirmedDataHeader != nil:
-		return s.UnconfirmedDataHeader.LLIDDestination, s.UnconfirmedDataHeader.LLIDSource, true
-	case s.ConfirmedDataHeader != nil:
-		return s.ConfirmedDataHeader.LLIDDestination, s.ConfirmedDataHeader.LLIDSource, true
-	case s.ResponsePacketHeader != nil:
-		return s.ResponsePacketHeader.LLIDDestination, s.ResponsePacketHeader.LLIDSource, true
-	case s.DefinedDataHeader != nil:
-		return s.DefinedDataHeader.LLIDDestination, s.DefinedDataHeader.LLIDSource, true
-	case s.StatusPrecodedHeader != nil:
-		return s.StatusPrecodedHeader.LLIDDestination, s.StatusPrecodedHeader.LLIDSource, true
-	case s.RawDataHeader != nil:
-		return s.RawDataHeader.LLIDDestination, s.RawDataHeader.LLIDSource, true
-	case s.UDTHeader != nil:
-		return s.UDTHeader.LLIDDestination, s.UDTHeader.LLIDSource, true
+	if p, ok := s.AsUnconfirmedDataHeader(); ok {
+		return p.LLIDDestination, p.LLIDSource, true
+	}
+	if p, ok := s.AsConfirmedDataHeader(); ok {
+		return p.LLIDDestination, p.LLIDSource, true
+	}
+	if p, ok := s.AsResponsePacketHeader(); ok {
+		return p.LLIDDestination, p.LLIDSource, true
+	}
+	if p, ok := s.AsDefinedDataHeader(); ok {
+		return p.LLIDDestination, p.LLIDSource, true
+	}
+	if p, ok := s.AsStatusPrecodedHeader(); ok {
+		return p.LLIDDestination, p.LLIDSource, true
+	}
+	if p, ok := s.AsRawDataHeader(); ok {
+		return p.LLIDDestination, p.LLIDSource, true
+	}
+	if p, ok := s.AsUDTHeader(); ok {
+		return p.LLIDDestination, p.LLIDSource, true
 	}
 	return 0, 0, false
 }
 
-// SetAddresses sets the destination and source LLIDs of the header that is
-// set. It returns ErrNoAddresses for a proprietary header and when no header
-// is set, and a *dmrgo.FieldRangeError when an LLID does not fit in 24 bits,
+// SetAddresses sets the destination and source LLIDs of the header. It
+// returns ErrNoAddresses for a proprietary header and a header of an unknown
+// format, and a *dmrgo.FieldRangeError when an LLID does not fit in 24 bits,
 // and then changes nothing.
 func (s *DataHeader) SetAddresses(destination, source uint32) error {
 	if s == nil {
@@ -86,25 +91,35 @@ func (s *DataHeader) SetAddresses(destination, source uint32) error {
 	if err := checkAddresses(destination, source, errDataHeaderTargetRange, errDataHeaderSourceRange); err != nil {
 		return err
 	}
-	switch {
-	case s.UnconfirmedDataHeader != nil:
-		s.UnconfirmedDataHeader.LLIDDestination, s.UnconfirmedDataHeader.LLIDSource = destination, source
-	case s.ConfirmedDataHeader != nil:
-		s.ConfirmedDataHeader.LLIDDestination, s.ConfirmedDataHeader.LLIDSource = destination, source
-	case s.ResponsePacketHeader != nil:
-		s.ResponsePacketHeader.LLIDDestination, s.ResponsePacketHeader.LLIDSource = destination, source
-	case s.DefinedDataHeader != nil:
-		s.DefinedDataHeader.LLIDDestination, s.DefinedDataHeader.LLIDSource = destination, source
-	case s.StatusPrecodedHeader != nil:
-		s.StatusPrecodedHeader.LLIDDestination, s.StatusPrecodedHeader.LLIDSource = destination, source
-	case s.RawDataHeader != nil:
-		s.RawDataHeader.LLIDDestination, s.RawDataHeader.LLIDSource = destination, source
-	case s.UDTHeader != nil:
-		s.UDTHeader.LLIDDestination, s.UDTHeader.LLIDSource = destination, source
-	default:
-		return ErrNoAddresses
+	if p, ok := s.AsUnconfirmedDataHeader(); ok {
+		p.LLIDDestination, p.LLIDSource = destination, source
+		return s.SetUnconfirmedDataHeader(p)
 	}
-	return nil
+	if p, ok := s.AsConfirmedDataHeader(); ok {
+		p.LLIDDestination, p.LLIDSource = destination, source
+		return s.SetConfirmedDataHeader(p)
+	}
+	if p, ok := s.AsResponsePacketHeader(); ok {
+		p.LLIDDestination, p.LLIDSource = destination, source
+		return s.SetResponsePacketHeader(p)
+	}
+	if p, ok := s.AsDefinedDataHeader(); ok {
+		p.LLIDDestination, p.LLIDSource = destination, source
+		return s.SetDefinedDataHeader(p)
+	}
+	if p, ok := s.AsStatusPrecodedHeader(); ok {
+		p.LLIDDestination, p.LLIDSource = destination, source
+		return s.SetStatusPrecodedHeader(p)
+	}
+	if p, ok := s.AsRawDataHeader(); ok {
+		p.LLIDDestination, p.LLIDSource = destination, source
+		return s.SetRawDataHeader(p)
+	}
+	if p, ok := s.AsUDTHeader(); ok {
+		p.LLIDDestination, p.LLIDSource = destination, source
+		return s.SetUDTHeader(p)
+	}
+	return ErrNoAddresses
 }
 
 // Format is the 4-bit Data Packet Format (DPF) of a data header (ETSI TS 102

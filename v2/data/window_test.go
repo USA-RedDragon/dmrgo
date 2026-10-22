@@ -41,11 +41,20 @@ func header(t testing.TB, raw layer2.RawBurst) *pdu.DataHeader {
 	return dh
 }
 
+func responseStatus(t testing.TB, raw layer2.RawBurst) uint8 {
+	t.Helper()
+	rh, ok := header(t, raw).AsResponsePacketHeader()
+	if !ok {
+		t.Fatal("header is not a C_RHEAD")
+	}
+	return rh.ResponseStatus
+}
+
 func (l *winLink) headerOf(o *data.Output) {
 	if o.Burst.SlotType().DataType != enums.DataTypeDataHeader {
 		return
 	}
-	c := header(l.t, o.Burst).ConfirmedDataHeader
+	c := confirmedOf(l.t, header(l.t, o.Burst))
 	s := strconv.Itoa(int(c.SendSequenceNumber))
 	if !c.FullMessageFlag {
 		s += "r"
@@ -83,7 +92,7 @@ func (l *winLink) run(msgs []*data.Message, end time.Duration) {
 					queue = append(queue, pending{e.Due, e.Burst})
 				}
 				if e.Burst.SlotType().DataType == enums.DataTypeDataHeader {
-					st := header(l.t, e.Burst).ResponsePacketHeader.ResponseStatus
+					st := responseStatus(l.t, e.Burst)
 					l.resp = append(l.resp, e.Response.String()+"("+strconv.Itoa(int(st))+")")
 				}
 			case data.EventCallStart, data.EventResponse, data.EventCallEnd, data.EventReassembled:
@@ -134,10 +143,11 @@ func (l *winLink) dones() string {
 	return b.String()
 }
 
-func windowMessages(n, size int) []*data.Message {
+func windowMessages(t testing.TB, n, size int) []*data.Message {
+	t.Helper()
 	msgs := make([]*data.Message, n)
 	for i := range msgs {
-		msgs[i] = message(size)
+		msgs[i] = message(t, size)
 		msgs[i].Payload[0] = byte('a' + i)
 	}
 	return msgs
@@ -199,9 +209,9 @@ func TestSenderWindowLoopback(t *testing.T) {
 			drop: c.drop,
 			lose: c.lose,
 		}
-		msgs := windowMessages(3, 60)
+		msgs := windowMessages(t, 3, 60)
 		if c.big {
-			msgs[1] = message(90)
+			msgs[1] = message(t, 90)
 			msgs[1].Payload[0] = 'b'
 		}
 		l.run(msgs, 20*time.Second)
@@ -235,7 +245,7 @@ func TestSenderDefaultStopAndWait(t *testing.T) {
 		tx: newSender(t, &data.SenderConfig{}),
 		rx: newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID}),
 	}
-	msgs := windowMessages(3, 20)
+	msgs := windowMessages(t, 3, 20)
 	if err := l.tx.Send(0, msgs[0]); err != nil {
 		t.Fatal(err)
 	}
@@ -262,10 +272,10 @@ func TestSenderWindowOfEight(t *testing.T) {
 		tx: newSender(t, &data.SenderConfig{Window: data.MaxWindow}),
 		rx: newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID}),
 	}
-	l.run(windowMessages(3, 20), 5*time.Second)
+	l.run(windowMessages(t, 3, 20), 5*time.Second)
 	l.rx = newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID})
 	l.heads, l.got, l.done, l.resp = nil, nil, nil, nil
-	msgs := windowMessages(8, 20)
+	msgs := windowMessages(t, 8, 20)
 	l.run(msgs, 10*time.Second)
 	if got := strings.Join(l.heads, " "); got != "3 4 5 6 7 0 1 2A" {
 		t.Errorf("headers %q", got)
@@ -278,7 +288,7 @@ func TestSenderWindowOfEight(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if err := l.tx.Send(0, message(10)); !errors.Is(err, data.ErrBusy) {
+	if err := l.tx.Send(0, message(t, 10)); !errors.Is(err, data.ErrBusy) {
 		t.Errorf("ninth Send: %v", err)
 	}
 	if out := l.tx.Cancel(0, nil); len(out) != 8 || out[7].Seq != 2 || out[7].Result != data.ResultCancelled {
@@ -289,7 +299,7 @@ func TestSenderWindowOfEight(t *testing.T) {
 func TestSenderWindowJoin(t *testing.T) {
 	t.Parallel()
 	s := newSender(t, &data.SenderConfig{Window: 4, Preambles: 2})
-	if err := s.Send(0, message(10)); err != nil {
+	if err := s.Send(0, message(t, 10)); err != nil {
 		t.Fatal(err)
 	}
 	var heads []string
@@ -299,27 +309,27 @@ func TestSenderWindowJoin(t *testing.T) {
 			at, _ := s.Deadline()
 			for _, o := range s.Tick(at, out[:0]) {
 				if o.Kind == data.OutputBurst && o.Burst.SlotType().DataType == enums.DataTypeDataHeader {
-					c := header(t, o.Burst).ConfirmedDataHeader
+					c := confirmedOf(t, header(t, o.Burst))
 					heads = append(heads, strconv.Itoa(int(c.SendSequenceNumber))+strconv.FormatBool(c.ResponseRequested))
 				}
 			}
 		}
 	}
 	tick(1)
-	if err := s.Send(0, message(10)); err != nil {
+	if err := s.Send(0, message(t, 10)); err != nil {
 		t.Fatal(err)
 	}
-	other := message(10)
-	other.Header.ConfirmedDataHeader.LLIDDestination = 9
-	short := message(10)
-	short.Header.ConfirmedDataHeader.SAP = enums.SAPShortData
+	other := message(t, 10)
+	editConfirmed(t, &other.Header, func(c *pdu.ConfirmedDataHeader) { c.LLIDDestination = 9 })
+	short := message(t, 10)
+	editConfirmed(t, &short.Header, func(c *pdu.ConfirmedDataHeader) { c.SAP = enums.SAPShortData })
 	for _, m := range []*data.Message{other, short} {
 		if err := s.Send(0, m); !errors.Is(err, data.ErrBusy) {
 			t.Errorf("Send to another link or SAP: %v", err)
 		}
 	}
 	tick(6)
-	if err := s.Send(0, message(10)); err != nil {
+	if err := s.Send(0, message(t, 10)); err != nil {
 		t.Fatal(err)
 	}
 	tick(1)
@@ -328,7 +338,14 @@ func TestSenderWindowJoin(t *testing.T) {
 	}
 	ack := response(t, packet.ResponseACK, nil)
 	h := header(t, ack[0])
-	h.ResponsePacketHeader.ResponseStatus = 1
+	rh, ok := h.AsResponsePacketHeader()
+	if !ok {
+		t.Fatal("ACK header is not a C_RHEAD")
+	}
+	rh.ResponseStatus = 1
+	if err := h.SetResponsePacketHeader(rh); err != nil {
+		t.Fatal(err)
+	}
 	raw, err := layer2.BuildBurst(h, 0, layer2.SyncSourceBS)
 	if err != nil {
 		t.Fatal(err)
@@ -359,9 +376,10 @@ func TestSenderWindowJoin(t *testing.T) {
 
 func windowResponse(t *testing.T, r packet.Response, status uint8, rd *packet.ResponseData) []layer2.RawBurst {
 	t.Helper()
-	h := confirmedHeader(status).ConfirmedDataHeader
+	ch := confirmedHeader(t, status)
+	h := confirmedOf(t, &ch)
 	h.BlocksToFollow = 7
-	p, err := packet.NewResponse(h, r, rd)
+	p, err := packet.NewResponse(&h, r, rd)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -391,7 +409,7 @@ func TestSenderWindowResponses(t *testing.T) {
 		{"other status", windowResponse(t, packet.ResponseACK, 5, nil), "", ""},
 	} {
 		s := newSender(t, &data.SenderConfig{Window: 3, Resync: true})
-		for _, m := range windowMessages(3, 60) {
+		for _, m := range windowMessages(t, 3, 60) {
 			if err := s.Send(0, m); err != nil {
 				t.Fatal(err)
 			}
@@ -428,7 +446,7 @@ func TestSenderWindowResponses(t *testing.T) {
 				blocks++
 				continue
 			}
-			ch := header(t, o.Burst).ConfirmedDataHeader
+			ch := confirmedOf(t, header(t, o.Burst))
 			h := strconv.Itoa(int(ch.SendSequenceNumber))
 			if !ch.FullMessageFlag {
 				h += "r"
@@ -452,10 +470,10 @@ func TestSenderWindowTimeLimit(t *testing.T) {
 	t.Parallel()
 	s := newSender(t, &data.SenderConfig{Window: 3, TxLimit: 300 * time.Millisecond})
 	s.Channel(0, true)
-	if err := s.Send(0, message(10)); err != nil {
+	if err := s.Send(0, message(t, 10)); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.Send(100*time.Millisecond, message(60)); err != nil {
+	if err := s.Send(100*time.Millisecond, message(t, 60)); err != nil {
 		t.Fatal(err)
 	}
 	out := s.Tick(300*time.Millisecond, nil)
@@ -478,9 +496,11 @@ func TestSenderWindowTimeLimit(t *testing.T) {
 func TestReceiverWindow(t *testing.T) {
 	t.Parallel()
 	packetBursts := func(ns uint8, last, partial bool) []layer2.RawBurst {
-		h := confirmedHeader(ns)
-		h.ConfirmedDataHeader.ResponseRequested = last
-		h.ConfirmedDataHeader.FullMessageFlag = !partial
+		h := confirmedHeader(t, ns)
+		editConfirmed(t, &h, func(c *pdu.ConfirmedDataHeader) {
+			c.ResponseRequested = last
+			c.FullMessageFlag = !partial
+		})
 		return build(t, h, payload(60), enums.DataTypeRate12)
 	}
 	for _, c := range []struct {
@@ -526,7 +546,7 @@ func TestReceiverWindow(t *testing.T) {
 			t.Errorf("%s: %s", c.name, kinds(ev))
 			continue
 		}
-		if st := header(t, resp[0].Burst).ResponsePacketHeader.ResponseStatus; st != c.status {
+		if st := responseStatus(t, resp[0].Burst); st != c.status {
 			t.Errorf("%s: status %d, want %d", c.name, st, c.status)
 		}
 		if c.rdata == 0 {

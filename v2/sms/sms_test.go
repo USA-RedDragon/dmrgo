@@ -60,12 +60,21 @@ func received(t testing.TB, name string) packet.Message {
 	return packet.Message{}
 }
 
+func setHeader[P any](t testing.TB, set func(*pdu.DataHeader, P) error, p P) pdu.DataHeader {
+	t.Helper()
+	var h pdu.DataHeader
+	if err := set(&h, p); err != nil {
+		t.Fatal(err)
+	}
+	return h
+}
+
 func ipMessage(t testing.TB, s string) packet.Message {
 	t.Helper()
 	return packet.Message{
-		Header: pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
+		Header: setHeader(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{
 			SAP: enums.SAPIPBasedPacketData, LLIDDestination: 3140598, LLIDSource: 3191868, FullMessageFlag: true,
-		}},
+		}),
 		Data: unhex(t, s),
 	}
 }
@@ -114,8 +123,8 @@ func TestAppendPacketMatchesRadios(t *testing.T) {
 			t.Fatal(err)
 		}
 		want := unhex(t, tt.want)
-		if out[0] != 'x' || h.Data.UnconfirmedDataHeader == nil || h.Data.UnconfirmedDataHeader.SAP != enums.SAPIPBasedPacketData ||
-			h.Data.UnconfirmedDataHeader.LLIDSource != 3191868 {
+		if u, ok := h.Data.AsUnconfirmedDataHeader(); out[0] != 'x' || !ok || u.SAP != enums.SAPIPBasedPacketData ||
+			u.LLIDSource != 3191868 {
 			t.Fatalf("%s: header %s", tt.text.Format, h.Data.String())
 		}
 		got := out[1:]
@@ -155,12 +164,20 @@ func TestErrors(t *testing.T) {
 	t.Parallel()
 
 	m := ipMessage(t, appcapture.GPS)
-	m.Header.UnconfirmedDataHeader.SAP = enums.SAPUDPIPHeaderCompression
+	u, ok := m.Header.AsUnconfirmedDataHeader()
+	if !ok {
+		t.Fatal("GPS header is not a U_HEAD")
+	}
+	u.SAP = enums.SAPUDPIPHeaderCompression
+	if err := m.Header.SetUnconfirmedDataHeader(u); err != nil {
+		t.Fatal(err)
+	}
 	if _, _, err := sms.Decode(nil, &m.Header, m.Data); !errors.Is(err, sms.ErrNotText) {
 		t.Errorf("GPS: %v", err)
 	}
 	ack := ipMessage(t, appcapture.TMS)
-	if _, _, err := sms.Decode(nil, &pdu.DataHeader{Format: pdu.FormatResponsePacket}, nil); !errors.Is(err, sms.ErrNotText) {
+	resp := setHeader(t, (*pdu.DataHeader).SetResponsePacketHeader, pdu.ResponsePacketHeader{})
+	if _, _, err := sms.Decode(nil, &resp, nil); !errors.Is(err, sms.ErrNotText) {
 		t.Errorf("response: %v", err)
 	}
 	ack.Data = ack.Data[:30]
@@ -176,7 +193,7 @@ func TestErrors(t *testing.T) {
 			t.Errorf("%s text built: %q, %v", dd, b, err)
 		}
 	}
-	bin := pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{DefinedData: enums.DDBinary}}
+	bin := setHeader(t, (*pdu.DataHeader).SetDefinedDataHeader, pdu.DefinedDataHeader{DefinedData: enums.DDBinary})
 	if _, _, err := sms.Decode(nil, &bin, []byte("Hi")); !errors.Is(err, sms.ErrNotText) {
 		t.Errorf("binary: %v", err)
 	}

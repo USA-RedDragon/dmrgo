@@ -110,8 +110,10 @@ func TestAllocsPacketAssembly(t *testing.T) {
 
 func TestAllocsPacketRetry(t *testing.T) {
 	b := packet.NewBuilder(127)
-	h := pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
-		SAP: 4, LLIDDestination: 2, LLIDSource: 1, FullMessageFlag: true}}
+	var h pdu.DataHeader
+	if err := h.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{SAP: 4, LLIDDestination: 2, LLIDSource: 1, FullMessageFlag: true}); err != nil {
+		t.Fatal(err)
+	}
 	p, err := b.Segment(h, make([]byte, 100), enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
@@ -148,14 +150,12 @@ func TestAllocsVoiceSuperframe(t *testing.T) {
 	}
 	out := make([]layer2.RawBurst, 0, 2*layer2.VoiceBurstsPerSuperframe)
 	var rx layer2.VoiceReceiver
-	var dst pdu.FullLinkControl
-	var p pdu.FullLinkControlPayloads
 	var rb layer2.Burst
 	assertZero(t, "superframe", func() {
 		out, _ = tx.AppendFrames(out[:0], frames...)
 		for _, raw := range out {
 			if rb.DecodeFromBytesWith(raw, &layer2.DecodeOptions{Kind: layer2.KindVoice}) == nil {
-				_, _ = rx.ReceiveInto(&dst, &p, &rb)
+				_, _, _ = rx.Receive(&rb)
 			}
 		}
 	})

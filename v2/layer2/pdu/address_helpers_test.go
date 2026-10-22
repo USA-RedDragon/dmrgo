@@ -12,13 +12,13 @@ func TestFLC_SetAddresses(t *testing.T) {
 	t.Parallel()
 
 	for _, flco := range []enums.FLCO{enums.FLCOGroupVoiceChannelUser, enums.FLCOUnitToUnitVoiceChannelUser} {
-		lc := pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader, FLCO: flco}
-		if lc.SetAddresses(91, 3191868) == nil {
-			t.Fatalf("FLCO %s: SetAddresses without a payload field succeeded", flco)
-		}
-		lc.GroupVoice, lc.UnitToUnit = &pdu.FLCGroupVoice{}, nil
+		lc := pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader}
+		noErr(lc.SetGroupVoice(pdu.FLCGroupVoice{}))
 		if flco == enums.FLCOUnitToUnitVoiceChannelUser {
-			lc.GroupVoice, lc.UnitToUnit = nil, &pdu.FLCUnitToUnit{}
+			noErr(lc.SetUnitToUnit(pdu.FLCUnitToUnit{}))
+		}
+		if lc.FLCO != flco {
+			t.Fatalf("FLCO %s: Set made FLCO %s", flco, lc.FLCO)
 		}
 		if lc.SetAddresses(91, 3191868) != nil {
 			t.Fatalf("FLCO %s: SetAddresses failed", flco)
@@ -33,8 +33,11 @@ func TestFLC_SetAddresses(t *testing.T) {
 		t.Error("SetAddresses of a GPS Info LC succeeded")
 	}
 	lc = must(pdu.NewVoiceLC(true, 91, 3191868, layer3.ServiceOptions{}))
-	if err := lc.SetAddresses(1<<24, 2); !isRangeError(err, "FullLinkControl", "TargetAddress", 24) || lc.GroupVoice.GroupAddress != 91 {
+	if err := lc.SetAddresses(1<<24, 2); !isRangeError(err, "FullLinkControl", "TargetAddress", 24) {
 		t.Errorf("SetAddresses of a 25-bit target: %v", err)
+	}
+	if p, ok := lc.AsGroupVoice(); !ok || p.GroupAddress != 91 {
+		t.Errorf("a failed SetAddresses changed the LC: %+v %v", p, ok)
 	}
 }
 
@@ -52,7 +55,9 @@ func TestFLC_SetAddressesManufacturerFID(t *testing.T) {
 		if res.Uncorrectable || res.ErrorsCorrected != 0 {
 			t.Fatalf("FLCO %s: FEC %+v", flco, res)
 		}
-		if decoded.GroupVoice != nil || decoded.UnitToUnit != nil || decoded.RawPayload[0] != 1 {
+		_, isGroup := decoded.AsGroupVoice()
+		_, isUnit := decoded.AsUnitToUnit()
+		if isGroup || isUnit || decoded.RawPayload[0] != 1 {
 			t.Errorf("FLCO %s: decoded %v", flco, decoded)
 		}
 		if target, source, ok := decoded.Addresses(); !ok || target != 3120101 || source != 3120001 {
@@ -68,7 +73,8 @@ func TestFLC_SetAddressesManufacturerFID(t *testing.T) {
 func TestDataHeader_Addresses(t *testing.T) {
 	t.Parallel()
 
-	dh := pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{}}
+	var dh pdu.DataHeader
+	noErr(dh.SetConfirmedDataHeader(pdu.ConfirmedDataHeader{}))
 	if dh.SetAddresses(3120002, 3120001) != nil {
 		t.Fatal("SetAddresses failed")
 	}
@@ -76,8 +82,13 @@ func TestDataHeader_Addresses(t *testing.T) {
 	if dst, src, ok := decoded.Addresses(); !ok || dst != 3120002 || src != 3120001 {
 		t.Errorf("Addresses = %d %d %v", dst, src, ok)
 	}
-	var empty pdu.DataHeader
-	if _, _, ok := empty.Addresses(); ok || empty.SetAddresses(1, 2) == nil {
-		t.Error("an empty header has addresses")
+	var proprietary pdu.DataHeader
+	noErr(proprietary.SetProprietaryHeader(pdu.ProprietaryHeader{}))
+	if _, _, ok := proprietary.Addresses(); ok || proprietary.SetAddresses(1, 2) == nil {
+		t.Error("a proprietary header has addresses")
+	}
+	unknown := pdu.DataHeader{RawPayload: [10]byte{0x04}}
+	if _, _, ok := unknown.Addresses(); ok || unknown.SetAddresses(1, 2) == nil {
+		t.Error("a header of an unknown format has addresses")
 	}
 }

@@ -32,24 +32,24 @@ func pool(t testing.TB) []layer2.RawBurst {
 	for _, b := range xpr[:20] {
 		p = append(p, b.raw)
 	}
-	p = append(p, build(t, confirmedHeader(1), payload(50), enums.DataTypeRate1)...)
-	p = append(p, build(t, confirmedHeader(2), payload(30), enums.DataTypeRate12)...)
+	p = append(p, build(t, confirmedHeader(t, 1), payload(50), enums.DataTypeRate1)...)
+	p = append(p, build(t, confirmedHeader(t, 2), payload(30), enums.DataTypeRate12)...)
 	for ns := range uint8(3) {
-		h := confirmedHeader(ns)
-		h.ConfirmedDataHeader.ResponseRequested = ns == 2
+		h := confirmedHeader(t, ns)
+		editConfirmed(t, &h, func(c *pdu.ConfirmedDataHeader) { c.ResponseRequested = ns == 2 })
 		p = append(p, build(t, h, payload(20), enums.DataTypeRate12)...)
 	}
 	for _, h := range []pdu.DataHeader{
-		sapHeader(enums.SAPShortData, 0, false),
-		sapHeader(enums.SAPShortData, 1, false),
-		sapHeader(enums.SAPShortData, 4, false),
-		sapHeader(enums.SAPShortData, 4, true),
-		sapHeader(enums.SAPUDPIPHeaderCompression, 0, false),
+		sapHeader(t, enums.SAPShortData, 0, false),
+		sapHeader(t, enums.SAPShortData, 1, false),
+		sapHeader(t, enums.SAPShortData, 4, false),
+		sapHeader(t, enums.SAPShortData, 4, true),
+		sapHeader(t, enums.SAPUDPIPHeaderCompression, 0, false),
 	} {
 		p = append(p, build(t, h, payload(20), enums.DataTypeRate34)...)
 	}
-	udt := pdu.DataHeader{Format: pdu.FormatUnifiedDataTransport, UDTHeader: &pdu.UDTHeader{
-		LLIDDestination: dstID, LLIDSource: srcID, AppendedBlocks: 0, Opcode: pdu.UDTOpcodeInboundHeader}}
+	udt := setHeader(t, (*pdu.DataHeader).SetUDTHeader, pdu.UDTHeader{
+		LLIDDestination: dstID, LLIDSource: srcID, AppendedBlocks: 0, Opcode: pdu.UDTOpcodeInboundHeader})
 	blocks := [][12]byte{{1, 2, 3}}
 	pdu.SetMBCLastBlockCRC(blocks)
 	for _, d := range []layer2.Data{&udt, &pdu.Rate12Data{Data: blocks[0]}} {

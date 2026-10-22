@@ -150,8 +150,9 @@ func (l *link) run(m *data.Message, end time.Duration) {
 	}
 }
 
-func message(n int) *data.Message {
-	return &data.Message{Header: confirmedHeader(0), Rate: enums.DataTypeRate12, Payload: payload(n)}
+func message(t testing.TB, n int) *data.Message {
+	t.Helper()
+	return &data.Message{Header: confirmedHeader(t, 0), Rate: enums.DataTypeRate12, Payload: payload(n)}
 }
 
 func TestSenderLoopback(t *testing.T) {
@@ -178,8 +179,8 @@ func TestSenderLoopback(t *testing.T) {
 				rx:   newReceiver(t, &data.ReceiverConfig{Respond: true, Address: dstID}),
 				drop: c.drop,
 			}
-			m := message(60)
-			m.Header = sapHeader(sap, 0, false)
+			m := message(t, 60)
+			m.Header = sapHeader(t, sap, 0, false)
 			l.run(m, 10*time.Second)
 			if len(l.done) != 1 || l.done[0].Result != c.result || l.done[0].Try != c.tries {
 				t.Errorf("%s, %v: done %+v", c.name, sap, l.done)
@@ -208,7 +209,7 @@ func TestSenderSequence(t *testing.T) {
 		s := newSender(t, &data.SenderConfig{Resync: resync})
 		ns, sflag := make([]uint8, 0, 3), make([]bool, 0, 3)
 		for range 3 {
-			if err := s.Send(0, message(10)); err != nil {
+			if err := s.Send(0, message(t, 10)); err != nil {
 				t.Fatal(err)
 			}
 			out := drain(t, s, 0)
@@ -220,7 +221,7 @@ func TestSenderSequence(t *testing.T) {
 			if !ok {
 				t.Fatalf("burst carries %T", b.Data)
 			}
-			c := dh.ConfirmedDataHeader
+			c := confirmedOf(t, dh)
 			ns, sflag = append(ns, c.SendSequenceNumber), append(sflag, c.ReSynchronizeFlag)
 			if c.FragmentSequenceNumber != 0b1000 || !c.FullMessageFlag || !c.ResponseRequested {
 				t.Errorf("header %+v", c)
@@ -235,9 +236,10 @@ func TestSenderSequence(t *testing.T) {
 
 func response(t *testing.T, r packet.Response, rd *packet.ResponseData) []layer2.RawBurst {
 	t.Helper()
-	h := confirmedHeader(0).ConfirmedDataHeader
+	ch := confirmedHeader(t, 0)
+	h := confirmedOf(t, &ch)
 	h.BlocksToFollow = 7
-	p, err := packet.NewResponse(h, r, rd)
+	p, err := packet.NewResponse(&h, r, rd)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -267,7 +269,7 @@ func TestSenderResponses(t *testing.T) {
 		{"NACK undeliverable", response(t, packet.ResponseNACKUndeliverable, nil), data.ResultRefused, 0, false},
 	} {
 		s := newSender(t, nil)
-		if err := s.Send(0, message(60)); err != nil {
+		if err := s.Send(0, message(t, 60)); err != nil {
 			t.Fatal(err)
 		}
 		out := drain(t, s, 7*60*time.Millisecond)
@@ -303,7 +305,7 @@ func TestSenderResponses(t *testing.T) {
 		if !ok {
 			t.Fatalf("%s: burst carries %T", c.name, b.Data)
 		}
-		h := dh.ConfirmedDataHeader
+		h := confirmedOf(t, dh)
 		if h.FullMessageFlag != c.full || int(h.BlocksToFollow) != c.resend || h.SendSequenceNumber != 0 {
 			t.Errorf("%s: resend header %+v", c.name, h)
 		}
@@ -313,7 +315,7 @@ func TestSenderResponses(t *testing.T) {
 func TestSenderOtherResponse(t *testing.T) {
 	t.Parallel()
 	s := newSender(t, nil)
-	if err := s.Send(0, message(10)); err != nil {
+	if err := s.Send(0, message(t, 10)); err != nil {
 		t.Fatal(err)
 	}
 	drain(t, s, 60*time.Millisecond)
@@ -334,8 +336,8 @@ func TestSenderOtherResponse(t *testing.T) {
 func TestSenderUnconfirmed(t *testing.T) {
 	t.Parallel()
 	s := newSender(t, &data.SenderConfig{Preambles: 3, Source: layer2.SyncSourceMS, ColorCode: 1})
-	m := &data.Message{Header: pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
-		Group: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: 9, LLIDSource: srcID}}, Rate: enums.DataTypeRate34, Payload: payload(40)}
+	m := &data.Message{Header: setHeader(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{
+		Group: true, SAP: enums.SAPIPBasedPacketData, LLIDDestination: 9, LLIDSource: srcID}), Rate: enums.DataTypeRate34, Payload: payload(40)}
 	if err := s.Send(time.Second, m); err != nil {
 		t.Fatal(err)
 	}
@@ -363,7 +365,7 @@ func TestSenderAccess(t *testing.T) {
 	first := func(cfg *data.SenderConfig, idleAt time.Duration) (time.Duration, data.Result) {
 		s := newSender(t, cfg)
 		s.Channel(0, true)
-		if err := s.Send(0, message(10)); err != nil {
+		if err := s.Send(0, message(t, 10)); err != nil {
 			t.Fatal(err)
 		}
 		out := make([]data.Output, 0, data.MaxOutputs)
@@ -415,10 +417,10 @@ func TestSenderErrors(t *testing.T) {
 		}
 	}
 	s := newSender(t, &data.SenderConfig{MaxBlocks: 2})
-	group := message(10)
-	group.Header.ConfirmedDataHeader.Group = true
-	udt := &data.Message{Header: pdu.DataHeader{Format: pdu.FormatUnifiedDataTransport, UDTHeader: &pdu.UDTHeader{}}}
-	prop := message(10)
+	group := message(t, 10)
+	editConfirmed(t, &group.Header, func(c *pdu.ConfirmedDataHeader) { c.Group = true })
+	udt := &data.Message{Header: setHeader(t, (*pdu.DataHeader).SetUDTHeader, pdu.UDTHeader{})}
+	prop := message(t, 10)
 	prop.Proprietary = &pdu.ProprietaryHeader{}
 	for _, c := range []struct {
 		name string
@@ -428,8 +430,8 @@ func TestSenderErrors(t *testing.T) {
 		{"group", group, &dmrgo.ConfigError{Type: "data", Field: "Header.Group"}},
 		{"UDT", udt, &dmrgo.ConfigError{Type: "data", Field: "Header"}},
 		{"P_HEAD", prop, &dmrgo.ConfigError{Type: "data", Field: "Header"}},
-		{"too long", message(200), packet.ErrTooLong},
-		{"rate", &data.Message{Header: confirmedHeader(0), Rate: enums.DataTypeCSBK}, packet.ErrRate},
+		{"too long", message(t, 200), packet.ErrTooLong},
+		{"rate", &data.Message{Header: confirmedHeader(t, 0), Rate: enums.DataTypeCSBK}, packet.ErrRate},
 	} {
 		err := s.Send(0, c.m)
 		var ce, we *dmrgo.ConfigError
@@ -442,10 +444,10 @@ func TestSenderErrors(t *testing.T) {
 			t.Errorf("%s: %v, want %v", c.name, err, c.want)
 		}
 	}
-	if err := s.Send(0, message(10)); err != nil {
+	if err := s.Send(0, message(t, 10)); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.Send(0, message(10)); !errors.Is(err, data.ErrBusy) {
+	if err := s.Send(0, message(t, 10)); !errors.Is(err, data.ErrBusy) {
 		t.Errorf("second Send: %v", err)
 	}
 	out := s.Cancel(0, nil)

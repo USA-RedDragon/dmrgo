@@ -16,7 +16,7 @@ func TestDecodeFullLinkControlBytes_Capture(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if f.FLCO != enums.FLCOUnitToUnitVoiceChannelUser || f.FID != enums.FIDStandardized || f.UnitToUnit == nil {
+	if _, ok := f.AsUnitToUnit(); f.FLCO != enums.FLCOUnitToUnitVoiceChannelUser || f.FID != enums.FIDStandardized || !ok {
 		t.Fatalf("decoded %s", f.String())
 	}
 	if tgt, src, ok := f.Addresses(); !ok || tgt != 9990 || src != 3191868 {
@@ -60,19 +60,13 @@ func TestDecodeFullLinkControlBytes_RoundTripsRandom(t *testing.T) {
 func TestFullLinkControlBytes_IgnoresBurstDataType(t *testing.T) {
 	t.Parallel()
 
-	f := pdu.FullLinkControl{
-		FLCO:       enums.FLCOGroupVoiceChannelUser,
-		GroupVoice: &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3100999},
-	}
+	var f pdu.FullLinkControl
+	noErr(f.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3100999}))
 	got, err := f.Bytes()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if want := hex9(t, "00000000005b2f5147"); got != want {
 		t.Fatalf("Bytes %x, want %x", got, want)
-	}
-	f.GPSInfo = &pdu.FLCGPSInfo{}
-	if _, err := f.Bytes(); err == nil {
-		t.Fatal("Bytes accepts two payloads")
 	}
 }

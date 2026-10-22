@@ -69,10 +69,10 @@ func TestCSBK_PrivateVoiceGrant_Decode(t *testing.T) {
 	if csbk.Opcode != pdu.CSBKPrivateVoiceGrant {
 		t.Errorf("CSBKOpcode = %08b, want %08b", byte(csbk.Opcode), byte(pdu.CSBKPrivateVoiceGrant))
 	}
-	if csbk.PrivateVoiceGrantPDU == nil {
-		t.Fatal("PrivateVoiceGrantPDU should not be nil")
+	pvg, ok := csbk.AsPrivateVoiceGrant()
+	if !ok {
+		t.Fatal("AsPrivateVoiceGrant is not ok")
 	}
-	pvg := csbk.PrivateVoiceGrantPDU
 	if !pvg.LogicalChannel {
 		t.Error("LogicalChannel should be true")
 	}
@@ -104,19 +104,17 @@ func TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle(t *testing.T) {
 	var sourceAddr [24]unpacked.Bit
 	sourceAddr[12] = 1
 
-	original := &pdu.CSBK{
-		LastBlock: true,
-		Opcode:    pdu.CSBKTalkgroupVoiceGrant,
-		FID:       0x00,
-		TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{
-			PhysicalChannel: 0x0FF,
-			LogicalChannel:  true,
-			LateEntry:       false,
-			Emergency:       true,
-			Offset:          false,
-			TargetAddress:   uint32(unpacked.Uint(targetAddr[:])),
-			SourceAddress:   uint32(unpacked.Uint(sourceAddr[:])),
-		},
+	original := &pdu.CSBK{LastBlock: true}
+	if err := original.SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{
+		PhysicalChannel: 0x0FF,
+		LogicalChannel:  true,
+		LateEntry:       false,
+		Emergency:       true,
+		Offset:          false,
+		TargetAddress:   uint32(unpacked.Uint(targetAddr[:])),
+		SourceAddress:   uint32(unpacked.Uint(sourceAddr[:])),
+	}); err != nil {
+		t.Fatal(err)
 	}
 
 	encoded := must(original.Encode())
@@ -125,10 +123,10 @@ func TestCSBK_TalkgroupVoiceGrant_EncodeDecodeCycle(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if decoded.TalkgroupVoiceGrantPDU == nil {
-		t.Fatal("TalkgroupVoiceGrantPDU should not be nil after decode")
+	tvg, ok := decoded.AsTalkgroupVoiceGrant()
+	if !ok {
+		t.Fatal("AsTalkgroupVoiceGrant is not ok")
 	}
-	tvg := decoded.TalkgroupVoiceGrantPDU
 	if tvg.PhysicalChannel != 0x0FF {
 		t.Errorf("PhysicalChannel = 0x%03X, want 0x0FF", tvg.PhysicalChannel)
 	}
@@ -177,10 +175,10 @@ func TestCSBK_Aloha_Decode(t *testing.T) {
 	if csbk.Opcode != pdu.CSBKAloha {
 		t.Errorf("CSBKOpcode = %08b, want C_ALOHA", byte(csbk.Opcode))
 	}
-	if csbk.AlohaPDU == nil {
-		t.Fatal("AlohaPDU should not be nil")
+	aloha, ok := csbk.AsAloha()
+	if !ok {
+		t.Fatal("AsAloha is not ok")
 	}
-	aloha := csbk.AlohaPDU
 	if !aloha.TSCCAS {
 		t.Error("TSCCAS should be true")
 	}
@@ -246,10 +244,10 @@ func TestCSBK_CBroadcast_Decode(t *testing.T) {
 	if csbk.Opcode != pdu.CSBKBroadcast {
 		t.Errorf("CSBKOpcode = %08b, want C_BCAST", byte(csbk.Opcode))
 	}
-	if csbk.BroadcastPDU == nil {
-		t.Fatal("BroadcastPDU should not be nil")
+	bc, ok := csbk.AsBroadcast()
+	if !ok {
+		t.Fatal("AsBroadcast is not ok")
 	}
-	bc := csbk.BroadcastPDU
 	if bc.AnnouncementType != enums.AnnouncementChanFreq {
 		t.Errorf("AnnouncementType = %d, want %d (ChanFreq)", int(bc.AnnouncementType), int(enums.AnnouncementChanFreq))
 	}
@@ -282,13 +280,14 @@ func TestCSBK_Clear_Decode(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.ClearPDU == nil {
-		t.Fatal("ClearPDU should not be nil")
+	clr, ok := csbk.AsClear()
+	if !ok {
+		t.Fatal("AsClear is not ok")
 	}
-	if csbk.ClearPDU.PhysicalChannel != 0x100 {
-		t.Errorf("PhysicalChannel = 0x%03X, want 0x100", csbk.ClearPDU.PhysicalChannel)
+	if clr.PhysicalChannel != 0x100 {
+		t.Errorf("PhysicalChannel = 0x%03X, want 0x100", clr.PhysicalChannel)
 	}
-	if !csbk.ClearPDU.GroupIndividual {
+	if !clr.GroupIndividual {
 		t.Error("GroupIndividual should be true")
 	}
 }
@@ -315,10 +314,10 @@ func TestCSBK_Ahoy_Decode(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.AhoyPDU == nil {
-		t.Fatal("AhoyPDU should not be nil")
+	ahoy, ok := csbk.AsAhoy()
+	if !ok {
+		t.Fatal("AsAhoy is not ok")
 	}
-	ahoy := csbk.AhoyPDU
 	if ahoy.ServiceOptsMirror != 0x42 {
 		t.Errorf("ServiceOptsMirror = 0x%02X, want 0x42", ahoy.ServiceOptsMirror)
 	}
@@ -357,10 +356,10 @@ func TestCSBK_RandomAccess_Decode(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.RandomAccessPDU == nil {
-		t.Fatal("RandomAccessPDU should not be nil")
+	rand, ok := csbk.AsRandomAccess()
+	if !ok {
+		t.Fatal("AsRandomAccess is not ok")
 	}
-	rand := csbk.RandomAccessPDU
 	if rand.ServiceOptions != 1 {
 		t.Errorf("ServiceOptions = %d, want 1", rand.ServiceOptions)
 	}
@@ -467,8 +466,9 @@ func TestCSBK_AckOutbound_Decode(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.AckOutboundPDU == nil {
-		t.Fatal("AckOutboundPDU should not be nil")
+	_, ok := csbk.AsAckOutbound()
+	if !ok {
+		t.Fatal("AsAckOutbound is not ok")
 	}
 }
 
@@ -496,10 +496,10 @@ func TestCSBK_Move_Decode(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.MovePDU == nil {
-		t.Fatal("MovePDU should not be nil")
+	move, ok := csbk.AsMove()
+	if !ok {
+		t.Fatal("AsMove is not ok")
 	}
-	move := csbk.MovePDU
 	if move.Mask != 31 {
 		t.Errorf("Mask = %d, want 31", move.Mask)
 	}
@@ -530,11 +530,12 @@ func TestCSBK_Maintenance_Decode(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.MaintenancePDU == nil {
-		t.Fatal("MaintenancePDU should not be nil")
+	maintenance, ok := csbk.AsMaintenance()
+	if !ok {
+		t.Fatal("AsMaintenance is not ok")
 	}
-	if csbk.MaintenancePDU.MaintKind != 3 {
-		t.Errorf("MaintKind = %d, want 3", csbk.MaintenancePDU.MaintKind)
+	if maintenance.MaintKind != 3 {
+		t.Errorf("MaintKind = %d, want 3", maintenance.MaintKind)
 	}
 }
 
@@ -557,10 +558,10 @@ func TestCSBK_Ackvitation_Decode(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.AckvitationPDU == nil {
-		t.Fatal("AckvitationPDU should not be nil")
+	ackvit, ok := csbk.AsAckvitation()
+	if !ok {
+		t.Fatal("AsAckvitation is not ok")
 	}
-	ackvit := csbk.AckvitationPDU
 	if ackvit.ServiceOptsMirror != 1 {
 		t.Errorf("ServiceOptsMirror = %d, want 1", ackvit.ServiceOptsMirror)
 	}
@@ -584,19 +585,17 @@ func TestCSBK_PrivateDataGrant_EncodeDecodeCycle(t *testing.T) {
 	var sourceAddr [24]unpacked.Bit
 	sourceAddr[12] = 1
 
-	original := &pdu.CSBK{
-		LastBlock: true,
-		Opcode:    pdu.CSBKPrivateDataGrant,
-		FID:       0x00,
-		PrivateDataGrantPDU: &pdu.PrivateDataGrantPDU{
-			PhysicalChannel: 0x100,
-			LogicalChannel:  true,
-			HiRate:          true,
-			Emergency:       false,
-			Offset:          true,
-			TargetAddress:   uint32(unpacked.Uint(targetAddr[:])),
-			SourceAddress:   uint32(unpacked.Uint(sourceAddr[:])),
-		},
+	original := &pdu.CSBK{LastBlock: true}
+	if err := original.SetPrivateDataGrant(pdu.PrivateDataGrantPDU{
+		PhysicalChannel: 0x100,
+		LogicalChannel:  true,
+		HiRate:          true,
+		Emergency:       false,
+		Offset:          true,
+		TargetAddress:   uint32(unpacked.Uint(targetAddr[:])),
+		SourceAddress:   uint32(unpacked.Uint(sourceAddr[:])),
+	}); err != nil {
+		t.Fatal(err)
 	}
 
 	encoded := must(original.Encode())
@@ -605,10 +604,10 @@ func TestCSBK_PrivateDataGrant_EncodeDecodeCycle(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if decoded.PrivateDataGrantPDU == nil {
-		t.Fatal("PrivateDataGrantPDU should not be nil")
+	pdg, ok := decoded.AsPrivateDataGrant()
+	if !ok {
+		t.Fatal("AsPrivateDataGrant is not ok")
 	}
-	pdg := decoded.PrivateDataGrantPDU
 	if pdg.PhysicalChannel != 0x100 {
 		t.Errorf("PhysicalChannel = 0x%03X, want 0x100", pdg.PhysicalChannel)
 	}
@@ -640,24 +639,22 @@ func TestCSBK_Aloha_EncodeDecodeCycle(t *testing.T) {
 	msAddr[15] = 1
 	msAddr[23] = 1
 
-	original := &pdu.CSBK{
-		LastBlock: true,
-		Opcode:    pdu.CSBKAloha,
-		FID:       0x00,
-		AlohaPDU: &pdu.AlohaPDU{
-			TSCCAS:       true,
-			SiteTSSync:   false,
-			Version:      5,
-			Offset:       true,
-			ActiveConn:   false,
-			Mask:         0b10101,
-			ServiceFunc:  1,
-			NRandWait:    6,
-			Reg:          true,
-			Backoff:      3,
-			SysIdentCode: 0x1234,
-			MSAddress:    uint32(unpacked.Uint(msAddr[:])),
-		},
+	original := &pdu.CSBK{LastBlock: true}
+	if err := original.SetAloha(pdu.AlohaPDU{
+		TSCCAS:       true,
+		SiteTSSync:   false,
+		Version:      5,
+		Offset:       true,
+		ActiveConn:   false,
+		Mask:         0b10101,
+		ServiceFunc:  1,
+		NRandWait:    6,
+		Reg:          true,
+		Backoff:      3,
+		SysIdentCode: 0x1234,
+		MSAddress:    uint32(unpacked.Uint(msAddr[:])),
+	}); err != nil {
+		t.Fatal(err)
 	}
 
 	encoded := must(original.Encode())
@@ -666,10 +663,10 @@ func TestCSBK_Aloha_EncodeDecodeCycle(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if decoded.AlohaPDU == nil {
-		t.Fatal("AlohaPDU should not be nil")
+	a, ok := decoded.AsAloha()
+	if !ok {
+		t.Fatal("AsAloha is not ok")
 	}
-	a := decoded.AlohaPDU
 	if !a.TSCCAS {
 		t.Error("TSCCAS should be true")
 	}
@@ -852,13 +849,14 @@ func TestCSBK_Protect_Decode(t *testing.T) {
 	if fecResult.Uncorrectable {
 		t.Fatal("DecodeCSBK returned uncorrectable FEC")
 	}
-	if csbk.ProtectPDU == nil {
-		t.Fatal("ProtectPDU should not be nil")
+	protect, ok := csbk.AsProtect()
+	if !ok {
+		t.Fatal("AsProtect is not ok")
 	}
-	if csbk.ProtectPDU.ProtectKind != 5 {
-		t.Errorf("ProtectKind = %d, want 5", csbk.ProtectPDU.ProtectKind)
+	if protect.ProtectKind != 5 {
+		t.Errorf("ProtectKind = %d, want 5", protect.ProtectKind)
 	}
-	if !csbk.ProtectPDU.GroupIndividual {
+	if !protect.GroupIndividual {
 		t.Error("GroupIndividual should be true")
 	}
 }

@@ -162,26 +162,12 @@ func encodeEmbeddedFullLinkControl(lc *pdu.FullLinkControl) ([4]uint32, error) {
 // DecodeEmbeddedFullLinkControl decodes a Full LC from the four embedded
 // signalling fields f of bursts B to E, as DecodeEmbeddedLC(f, strict) does.
 // The LC has BurstDataType DataTypeVoiceLCHeader, and its FEC field combines
-// the DecodeEmbeddedLC result and the field decode. It allocates the payload
-// struct of the LC; DecodeEmbeddedFullLinkControlInto does not.
+// the DecodeEmbeddedLC result and the field decode.
 func DecodeEmbeddedFullLinkControl(f [4][4]byte, strict bool) pdu.FullLinkControl {
 	lc, result := decodeEmbeddedLC(fragmentWords(f), strict)
 	flc := pdu.DecodeFullLinkControl(embeddedFullLCCodeword(lc), enums.DataTypeVoiceLCHeader)
 	flc.FEC = combineEmbeddedFEC(result, flc.FEC)
 	return flc
-}
-
-// DecodeEmbeddedFullLinkControlInto decodes into dst as
-// DecodeEmbeddedFullLinkControl does, with the payload struct of dst in p as
-// pdu.DecodeFullLinkControlInto places it. A nil dst or p does nothing. It
-// does not allocate.
-func DecodeEmbeddedFullLinkControlInto(dst *pdu.FullLinkControl, p *pdu.FullLinkControlPayloads, f [4][4]byte, strict bool) {
-	if dst == nil || p == nil {
-		return
-	}
-	lc, result := decodeEmbeddedLC(fragmentWords(f), strict)
-	pdu.DecodeFullLinkControlInto(dst, p, embeddedFullLCCodeword(lc), enums.DataTypeVoiceLCHeader)
-	dst.FEC = combineEmbeddedFEC(result, dst.FEC)
 }
 
 func embeddedFullLCCodeword(lc [9]byte) [12]byte {

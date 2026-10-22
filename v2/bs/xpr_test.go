@@ -158,11 +158,12 @@ func (c *xprCheck) burst(t *testing.T, i int, o *bs.Output) {
 		t.Errorf("burst %d: AT %v before %v", i, cach.TACT.AccessType, o.Slot)
 	}
 	slc, done, err := c.asm.Add(cach)
-	if err != nil || !done || slc.ActivityUpdate == nil {
+	au, ok := slc.AsActivityUpdate()
+	if err != nil || !done || !ok {
 		return
 	}
 	c.activity = true
-	if au := slc.ActivityUpdate; au.TS2ActivityID != enums.ActivityGroupVoice || au.HashTS2 != 63 || au.TS1ActivityID != enums.ActivityNoActivity {
+	if au.TS2ActivityID != enums.ActivityGroupVoice || au.HashTS2 != 63 || au.TS1ActivityID != enums.ActivityNoActivity {
 		t.Errorf("burst %d: Activity Update %v, want the XPR one", i, au)
 	}
 }

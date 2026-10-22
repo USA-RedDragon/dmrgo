@@ -51,12 +51,13 @@ func TestNewBSOutboundActivation(t *testing.T) {
 func TestCSBKSetTalkgroupDataGrantMultiItem(t *testing.T) {
 	t.Parallel()
 
-	c := pdu.CSBK{ProtectFlag: true, AlohaPDU: &pdu.AlohaPDU{}}
+	c := pdu.CSBK{ProtectFlag: true}
+	noErr(c.SetAloha(pdu.AlohaPDU{}))
 	mi := pdu.TalkgroupDataGrantMultiItemPDU{PhysicalChannel: 77, HiRate: true, TargetAddress: 9, SourceAddress: 3120001}
 	if err := c.SetTalkgroupDataGrantMultiItem(mi); err != nil {
 		t.Fatal(err)
 	}
-	if c.AlohaPDU != nil || !c.ProtectFlag || c.Hint0x38 != pdu.Opcode0x38TalkgroupDataGrantMultiItem || c.FID != enums.FIDStandardized {
+	if _, isAloha := c.AsAloha(); isAloha || !c.ProtectFlag || c.Hint0x38 != pdu.Opcode0x38TalkgroupDataGrantMultiItem || c.FID != enums.FIDStandardized {
 		t.Fatalf("CSBK %s", c.String())
 	}
 	got := pdu.DecodeCSBK(must(c.Encode()))
@@ -76,17 +77,18 @@ func TestMBCHeaderDispatch(t *testing.T) {
 	t.Parallel()
 
 	grant := pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF, TargetAddress: 9, SourceAddress: 3120001}
-	h := pdu.MBCHeader{Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &grant}
+	var h pdu.MBCHeader
+	noErr(h.SetTalkgroupVoiceGrant(grant))
+	if h.Opcode != pdu.CSBKTalkgroupVoiceGrant || h.FID != enums.FIDStandardized {
+		t.Fatalf("SetTalkgroupVoiceGrant made opcode %s FID %#x", h.Opcode, uint8(h.FID))
+	}
 	got := pdu.DecodeMBCHeader(must(h.Encode()))
-	if got.FEC.HasErrors() || got.TalkgroupVoiceGrantPDU == nil || *got.TalkgroupVoiceGrantPDU != grant || got.RawPayload != [8]byte{} {
+	if back, ok := got.AsTalkgroupVoiceGrant(); got.FEC.HasErrors() || !ok || back != grant || got.RawPayload != h.RawPayload {
 		t.Fatalf("MBC header %s", got.String())
 	}
-	h.FID = 0x10
-	if _, err := h.Encode(); err == nil {
-		t.Fatal("a manufacturer FID header with a standard payload encodes")
-	}
 	raw := pdu.MBCHeader{Opcode: pdu.CSBKTalkgroupVoiceGrant, FID: 0x10, RawPayload: [8]byte{1, 2, 3}}
-	if got := pdu.DecodeMBCHeader(must(raw.Encode())); got.TalkgroupVoiceGrantPDU != nil || got.RawPayload != raw.RawPayload {
+	got = pdu.DecodeMBCHeader(must(raw.Encode()))
+	if _, ok := got.AsTalkgroupVoiceGrant(); ok || got.RawPayload != raw.RawPayload {
 		t.Fatalf("manufacturer FID header %s", got.String())
 	}
 }

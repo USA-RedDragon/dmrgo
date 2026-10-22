@@ -25,7 +25,10 @@ func TestReceiver_EmbeddedData(t *testing.T) {
 	if err != nil || len(alias) != 2 {
 		t.Fatalf("alias LCs %d: %v", len(alias), err)
 	}
-	gps := pdu.FullLinkControl{FLCO: enums.FLCOGPSInfo, GPSInfo: &pdu.FLCGPSInfo{Longitude: -87.5, Latitude: 41.75}}
+	var gps pdu.FullLinkControl
+	if err := gps.SetGPSInfo(pdu.FLCGPSInfo{Longitude: -87.5, Latitude: 41.75}); err != nil {
+		t.Fatal(err)
+	}
 	hook := func(sf int) *pdu.FullLinkControl {
 		switch sf {
 		case 1, 2:
@@ -42,9 +45,10 @@ func TestReceiver_EmbeddedData(t *testing.T) {
 		t.Fatalf("events %s, want %s", k, want)
 	}
 	m := find(got, voice.EventEmbedded)
+	g, ok := m[2].LC.AsGPSInfo()
 	if m[0].LC.FLCO != enums.FLCOTalkerAliasHeader || m[1].LC.FLCO != enums.FLCOTalkerAliasBlock1 ||
-		m[2].LC.GPSInfo == nil || m[2].LC.GPSInfo.Latitude < 41.7 || m[2].Call.Target != 91 {
-		t.Errorf("embedded %v %v %+v", m[0].LC.FLCO, m[1].LC.FLCO, m[2].LC.GPSInfo)
+		!ok || g.Latitude < 41.7 || m[2].Call.Target != 91 {
+		t.Errorf("embedded %v %v %+v", m[0].LC.FLCO, m[1].LC.FLCO, g)
 	}
 	if ta := find(got, voice.EventTalkerAlias); string(ta[0].Text) != "KI5VMF JACOB" {
 		t.Errorf("alias %q", ta[0].Text)
@@ -242,7 +246,14 @@ func TestReceiver_Hang(t *testing.T) {
 	}
 
 	lc := groupLC(t, 91, 3191868)
-	lc.GroupVoice.ServiceOptions.IsBroadcast = true
+	gv, ok := lc.AsGroupVoice()
+	if !ok {
+		t.Fatalf("groupLC gave %v", lc.FLCO)
+	}
+	gv.ServiceOptions.IsBroadcast = true
+	if err := lc.SetGroupVoice(gv); err != nil {
+		t.Fatal(err)
+	}
 	all := groupLC(t, constants.AllMSID, 3191868)
 	for _, l := range []pdu.FullLinkControl{lc, all} {
 		rx := newReceiver(t, nil)

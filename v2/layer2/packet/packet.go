@@ -90,7 +90,7 @@ func NewPacket(header pdu.DataHeader, payload []byte, rate enums.DataType) (Pack
 
 // Builder builds packets into storage that NewBuilder allocates once, so
 // that it does not allocate. A Packet that a Builder returns points into this
-// storage, through its sub-header and its Blocks, and is valid until the next
+// storage, through its Blocks, and is valid until the next
 // call of the same method on the Builder, except that Retry leaves a Packet
 // from Segment as it is. The zero value has no storage for blocks: Segment
 // and Retry return ErrTooLong for a packet with blocks, and NewResponse
@@ -98,24 +98,20 @@ func NewPacket(header pdu.DataHeader, payload []byte, rate enums.DataType) (Pack
 // after first use; go vet reports a copy. A Builder is not safe for
 // concurrent use.
 type Builder struct {
-	unconfirmed pdu.UnconfirmedDataHeader
-	confirmed   pdu.ConfirmedDataHeader
-	defined     pdu.DefinedDataHeader
-	raw         pdu.RawDataHeader
-	buf         []byte
-	rate12      []pdu.Rate12Data
-	rate34      []pdu.Rate34Data
-	rate1       []pdu.Rate1Data
-	blocks      []layer2.Data
-	retry       retryStore
-	resp        responseStore
-	noCopy      noCopy
+	buf    []byte
+	rate12 []pdu.Rate12Data
+	rate34 []pdu.Rate34Data
+	rate1  []pdu.Rate1Data
+	blocks []layer2.Data
+	retry  retryStore
+	resp   responseStore
+	noCopy noCopy
 }
 
 // NewBuilder returns a Builder for packets of up to maxBlocks data blocks of
 // any rate. It allocates 94 bytes for each block on a 32-bit target and 110
-// on a 64-bit one, on top of the Builder itself, 276 and 368 bytes, so 16
-// blocks take about 1.8 KB on a microcontroller and 127, the most that a
+// on a 64-bit one, on top of the Builder itself, 116 and 208 bytes, so 16
+// blocks take about 1.6 KB on a microcontroller and 127, the most that a
 // header counts, about 12 KB. A maxBlocks over 127 means 127, and one under
 // 0 means 0.
 func NewBuilder(maxBlocks int) *Builder {
@@ -131,10 +127,7 @@ func NewBuilder(maxBlocks int) *Builder {
 }
 
 type retryStore struct {
-	confirmed pdu.ConfirmedDataHeader
-	defined   pdu.DefinedDataHeader
-	raw       pdu.RawDataHeader
-	blocks    []layer2.Data
+	blocks []layer2.Data
 }
 
 // Segment does what NewPacket does, into the storage of b.
@@ -194,18 +187,9 @@ func (b *Builder) Retry(p *Packet, rd *ResponseData) (Packet, error) {
 		return Packet{}, ErrNoRetryBlocks
 	case n > len(b.retry.blocks):
 		return Packet{}, ErrTooLong
-	case h.Format == pdu.FormatConfirmed:
-		b.retry.confirmed = *h.ConfirmedDataHeader
-		b.retry.confirmed.FullMessageFlag, b.retry.confirmed.BlocksToFollow = false, count
-		h.ConfirmedDataHeader = &b.retry.confirmed
-	case h.Format == pdu.FormatShortDataDefined:
-		b.retry.defined = *h.DefinedDataHeader
-		b.retry.defined.FullMessageFlag, b.retry.defined.AppendedBlocks = false, count
-		h.DefinedDataHeader, h.AppendedBlocks = &b.retry.defined, count
-	default:
-		b.retry.raw = *h.RawDataHeader
-		b.retry.raw.FullMessageFlag, b.retry.raw.AppendedBlocks = false, count
-		h.RawDataHeader, h.AppendedBlocks = &b.retry.raw, count
+	}
+	if err := retryHeader(&h, count); err != nil {
+		return Packet{}, err
 	}
 	j := 0
 	for i, blk := range p.Blocks {
@@ -215,6 +199,20 @@ func (b *Builder) Retry(p *Packet, rd *ResponseData) (Packet, error) {
 		}
 	}
 	return Packet{Header: h, Blocks: b.retry.blocks[:n]}, nil
+}
+
+func retryHeader(h *pdu.DataHeader, count uint8) error {
+	if c, ok := h.AsConfirmedDataHeader(); ok {
+		c.FullMessageFlag, c.BlocksToFollow = false, count
+		return h.SetConfirmedDataHeader(c)
+	}
+	if d, ok := h.AsDefinedDataHeader(); ok {
+		d.FullMessageFlag, d.AppendedBlocks = false, count
+		return h.SetDefinedDataHeader(d)
+	}
+	r, _ := h.AsRawDataHeader()
+	r.FullMessageFlag, r.AppendedBlocks = false, count
+	return h.SetRawDataHeader(r)
 }
 
 func (b *Builder) block(i int, chunk []byte, confirmed bool) layer2.Data {
@@ -257,88 +255,94 @@ func (b *Builder) setLayout(h *pdu.DataHeader, n int, rate enums.DataType) (bool
 		return false, err
 	}
 	blocks, pad := layout(n, per)
-	switch h.Format {
-	case pdu.FormatUnconfirmed:
-		b.unconfirmed = *h.UnconfirmedDataHeader
-		b.unconfirmed.BlocksToFollow, b.unconfirmed.PadOctetCount = uint8(blocks&0xFF), uint8(pad&0xFF)
-		h.UnconfirmedDataHeader = &b.unconfirmed
-	case pdu.FormatConfirmed:
-		b.confirmed = *h.ConfirmedDataHeader
-		b.confirmed.BlocksToFollow, b.confirmed.PadOctetCount = uint8(blocks&0xFF), uint8(pad&0xFF)
-		h.ConfirmedDataHeader = &b.confirmed
-	case pdu.FormatShortDataDefined:
-		b.defined = *h.DefinedDataHeader
-		b.defined.AppendedBlocks = uint8(blocks & 0xFF)
-		h.DefinedDataHeader = &b.defined
-		h.AppendedBlocks = b.defined.AppendedBlocks
-	case pdu.FormatShortDataRawOrStatusPrecoded:
-		b.raw = *h.RawDataHeader
-		b.raw.AppendedBlocks = uint8(blocks & 0xFF)
-		h.RawDataHeader = &b.raw
-		h.AppendedBlocks = b.raw.AppendedBlocks
-	case pdu.FormatUnifiedDataTransport, pdu.FormatResponsePacket, pdu.FormatProprietary:
-	}
 	limit := maxBlocks
-	if h.Format == pdu.FormatShortDataDefined || h.Format == pdu.FormatShortDataRawOrStatusPrecoded {
+	if f := h.Format(); f == pdu.FormatShortDataDefined || f == pdu.FormatShortDataRawOrStatusPrecoded {
 		limit = 63
 	}
 	if blocks > limit {
 		return false, ErrTooLong
 	}
+	if err := setBlocks(h, uint8(blocks&0xFF), uint8(pad&0xFF)); err != nil {
+		return false, err
+	}
 	return confirmed, nil
 }
 
+func setBlocks(h *pdu.DataHeader, blocks, pad uint8) error {
+	if u, ok := h.AsUnconfirmedDataHeader(); ok {
+		u.BlocksToFollow, u.PadOctetCount = blocks, pad
+		return h.SetUnconfirmedDataHeader(u)
+	}
+	if c, ok := h.AsConfirmedDataHeader(); ok {
+		c.BlocksToFollow, c.PadOctetCount = blocks, pad
+		return h.SetConfirmedDataHeader(c)
+	}
+	if d, ok := h.AsDefinedDataHeader(); ok {
+		d.AppendedBlocks = blocks
+		return h.SetDefinedDataHeader(d)
+	}
+	if r, ok := h.AsRawDataHeader(); ok {
+		r.AppendedBlocks = blocks
+		return h.SetRawDataHeader(r)
+	}
+	return nil
+}
+
 func isConfirmed(h *pdu.DataHeader) (confirmed, ok bool) {
-	switch {
-	case h.Format == pdu.FormatUnconfirmed && h.UnconfirmedDataHeader != nil:
+	if _, ok := h.AsUnconfirmedDataHeader(); ok {
 		return false, true
-	case h.Format == pdu.FormatConfirmed && h.ConfirmedDataHeader != nil:
+	}
+	if _, ok := h.AsConfirmedDataHeader(); ok {
 		return true, true
-	case h.Format == pdu.FormatShortDataDefined && h.DefinedDataHeader != nil:
-		return h.DefinedDataHeader.SARQ, true
-	case h.Format == pdu.FormatShortDataRawOrStatusPrecoded && h.RawDataHeader != nil:
-		return h.RawDataHeader.SARQ, true
+	}
+	if d, ok := h.AsDefinedDataHeader(); ok {
+		return d.SARQ, true
+	}
+	if r, ok := h.AsRawDataHeader(); ok {
+		return r.SARQ, true
 	}
 	return false, false
 }
 
 func blocksOf(h *pdu.DataHeader) int {
-	switch {
-	case h.UnconfirmedDataHeader != nil && h.Format == pdu.FormatUnconfirmed:
-		return int(h.UnconfirmedDataHeader.BlocksToFollow)
-	case h.ConfirmedDataHeader != nil && h.Format == pdu.FormatConfirmed:
-		return int(h.ConfirmedDataHeader.BlocksToFollow)
-	case h.ResponsePacketHeader != nil && h.Format == pdu.FormatResponsePacket:
-		return int(h.ResponsePacketHeader.BlocksToFollow)
-	case h.DefinedDataHeader != nil && h.Format == pdu.FormatShortDataDefined:
-		return int(h.DefinedDataHeader.AppendedBlocks)
-	case h.RawDataHeader != nil && h.Format == pdu.FormatShortDataRawOrStatusPrecoded:
-		return int(h.RawDataHeader.AppendedBlocks)
+	if u, ok := h.AsUnconfirmedDataHeader(); ok {
+		return int(u.BlocksToFollow)
+	}
+	if c, ok := h.AsConfirmedDataHeader(); ok {
+		return int(c.BlocksToFollow)
+	}
+	if r, ok := h.AsResponsePacketHeader(); ok {
+		return int(r.BlocksToFollow)
+	}
+	if f := h.Format(); f == pdu.FormatShortDataDefined || f == pdu.FormatShortDataRawOrStatusPrecoded {
+		return int(h.AppendedBlocks())
 	}
 	return 0
 }
 
 // ETSI TS 102 361-1 clause 9.3.20
 func fullMessage(h *pdu.DataHeader) bool {
-	switch {
-	case h.UnconfirmedDataHeader != nil && h.Format == pdu.FormatUnconfirmed:
-		return h.UnconfirmedDataHeader.FullMessageFlag
-	case h.ConfirmedDataHeader != nil && h.Format == pdu.FormatConfirmed:
-		return h.ConfirmedDataHeader.FullMessageFlag
-	case h.DefinedDataHeader != nil && h.Format == pdu.FormatShortDataDefined:
-		return h.DefinedDataHeader.FullMessageFlag
-	case h.RawDataHeader != nil && h.Format == pdu.FormatShortDataRawOrStatusPrecoded:
-		return h.RawDataHeader.FullMessageFlag
+	if u, ok := h.AsUnconfirmedDataHeader(); ok {
+		return u.FullMessageFlag
+	}
+	if c, ok := h.AsConfirmedDataHeader(); ok {
+		return c.FullMessageFlag
+	}
+	if d, ok := h.AsDefinedDataHeader(); ok {
+		return d.FullMessageFlag
+	}
+	if r, ok := h.AsRawDataHeader(); ok {
+		return r.FullMessageFlag
 	}
 	return true
 }
 
 func padOf(h *pdu.DataHeader) int {
-	switch {
-	case h.UnconfirmedDataHeader != nil && h.Format == pdu.FormatUnconfirmed:
-		return int(h.UnconfirmedDataHeader.PadOctetCount)
-	case h.ConfirmedDataHeader != nil && h.Format == pdu.FormatConfirmed:
-		return int(h.ConfirmedDataHeader.PadOctetCount)
+	if u, ok := h.AsUnconfirmedDataHeader(); ok {
+		return int(u.PadOctetCount)
+	}
+	if c, ok := h.AsConfirmedDataHeader(); ok {
+		return int(c.PadOctetCount)
 	}
 	return 0
 }

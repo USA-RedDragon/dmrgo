@@ -14,21 +14,21 @@ import (
 
 func svcAhoy(t testing.TB, kind enums.ServiceKind, flag, group bool, mirror, ab uint8, target, source uint32) layer2.RawBurst {
 	t.Helper()
-	return bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{ServiceOptsMirror: mirror, ServiceKindFlag: flag,
-		GroupIndividual: group, AppendedBlocks: ab, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: source}}, testCC)
+	return bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAhoy, pdu.AhoyPDU{ServiceOptsMirror: mirror, ServiceKindFlag: flag,
+		GroupIndividual: group, AppendedBlocks: ab, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: source}), testCC)
 }
 
 func svcAck(t testing.TB, r enums.AckReason, info uint8, from uint32) layer2.RawBurst {
 	t.Helper()
-	return bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckOutbound, AckOutboundPDU: &pdu.AckOutboundPDU{
-		ResponseInfo: info, ReasonCode: byte(r), TargetAddress: msAddr, AdditionalInfo: from}}, testCC)
+	return bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAckOutbound, pdu.AckOutboundPDU{
+		ResponseInfo: info, ReasonCode: byte(r), TargetAddress: msAddr, AdditionalInfo: from}), testCC)
 }
 
 func newMSSvcPool(t testing.TB) burstPool {
 	t.Helper()
 	mass := func(w, mask uint8, addr uint32) layer2.RawBurst {
-		return bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKBroadcast, BroadcastPDU: &pdu.BroadcastPDU{AnnouncementType: enums.AnnouncementMassReg,
-			BroadcastParms1: uint16(w)<<5 | uint16(mask), Reg: true, Backoff: 3, SysIdentCode: sysIdent(t), BroadcastParms2: addr}}, testCC)
+		return bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetBroadcast, pdu.BroadcastPDU{AnnouncementType: enums.AnnouncementMassReg,
+			BroadcastParms1: uint16(w)<<5 | uint16(mask), Reg: true, Backoff: 3, SysIdentCode: sysIdent(t), BroadcastParms2: addr}), testCC)
 	}
 	return append(newMSPool(t),
 		svcAhoy(t, enums.ServiceKindSupplementary, false, false, 0, 0, msAddr, constants.GatewaySTUNI),
@@ -129,12 +129,12 @@ func FuzzMSServices(f *testing.F) {
 func newTSCCSvcPool(t testing.TB) burstPool {
 	t.Helper()
 	rnd := func(kind enums.ServiceKind, opts, res uint8, target uint32) layer2.RawBurst {
-		return msBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKRandomAccess, RandomAccessPDU: &pdu.RandomAccessPDU{
-			ServiceOptions: opts, Reserved: res, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: 3120001}})
+		return msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetRandomAccess, pdu.RandomAccessPDU{
+			ServiceOptions: opts, Reserved: res, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: 3120001}))
 	}
 	ackU := func(r enums.AckReason, target, from uint32) layer2.RawBurst {
-		return msBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInbound, AckInboundPDU: &pdu.AckInboundPDU{
-			ReasonCode: byte(r), TargetAddress: target, AdditionalInfo: from}})
+		return msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAckInbound, pdu.AckInboundPDU{
+			ReasonCode: byte(r), TargetAddress: target, AdditionalInfo: from}))
 	}
 	msData := func(d layer2.Data) layer2.RawBurst {
 		raw, err := layer2.BuildBurst(d, testCC, layer2.SyncSourceMS)
@@ -144,8 +144,8 @@ func newTSCCSvcPool(t testing.TB) burstPool {
 		return raw
 	}
 	head := func(dst uint32, uab uint8) layer2.RawBurst {
-		return msData(&pdu.DataHeader{Format: pdu.FormatUnifiedDataTransport, UDTHeader: &pdu.UDTHeader{UDTFormat: 6,
-			LLIDDestination: dst, LLIDSource: 3120001, AppendedBlocks: uab, SupplementaryFlag: true, Opcode: pdu.UDTOpcodeInboundHeader}})
+		return msData(withPDU(t, &pdu.DataHeader{}, (*pdu.DataHeader).SetUDTHeader, pdu.UDTHeader{UDTFormat: 6,
+			LLIDDestination: dst, LLIDSource: 3120001, AppendedBlocks: uab, SupplementaryFlag: true, Opcode: pdu.UDTOpcodeInboundHeader}))
 	}
 	block := msData(&pdu.Rate12Data{Data: [12]byte{10, 1, 2, 3}})
 	return append(newInboundPool(t),
@@ -159,8 +159,8 @@ func newTSCCSvcPool(t testing.TB) burstPool {
 		ackU(enums.AckReasonMSAccepted, constants.GatewaySTUNI, 3120002),
 		ackU(enums.AckReasonMSAccepted, constants.GatewaySUPLI, 3120002),
 		ackU(enums.AckReasonStatusPollAcceptedMS, 3120001, 3120002),
-		msBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckvitation, AckvitationPDU: &pdu.AckvitationPDU{
-			ServiceKind: uint8(enums.ServiceKindSupplementary), TargetAddress: 77, SourceAddress: 3120002}}),
+		msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAckvitation, pdu.AckvitationPDU{
+			ServiceKind: uint8(enums.ServiceKindSupplementary), TargetAddress: 77, SourceAddress: 3120002})),
 		head(constants.GatewayIPI, 0), head(constants.GatewaySUPLI, 1), block,
 		voiceSuperframe(t)[0], voiceSuperframe(t)[3])
 }

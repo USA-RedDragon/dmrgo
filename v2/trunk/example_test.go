@@ -18,9 +18,12 @@ func ExampleFollower() {
 	out := make([]trunk.Output, 0, trunk.MaxOutputs)
 
 	code, _ := pdu.SysCode{Model: pdu.NetworkModelSmall, Net: 1, Site: 2}.Pack()
-	aloha, _ := layer2.BuildBurst(&pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAloha, AlohaPDU: &pdu.AlohaPDU{SysIdentCode: code}}, 1, layer2.SyncSourceBS)
-	grant, _ := layer2.BuildBurst(&pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{
-		PhysicalChannel: 17, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3120001}}, 1, layer2.SyncSourceBS)
+	alohaCSBK := pdu.CSBK{LastBlock: true}
+	_ = alohaCSBK.SetAloha(pdu.AlohaPDU{SysIdentCode: code})
+	grantCSBK := pdu.CSBK{LastBlock: true}
+	_ = grantCSBK.SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 17, LogicalChannel: true, TargetAddress: 9, SourceAddress: 3120001})
+	aloha, _ := layer2.BuildBurst(&alohaCSBK, 1, layer2.SyncSourceBS)
+	grant, _ := layer2.BuildBurst(&grantCSBK, 1, layer2.SyncSourceBS)
 
 	now := time.Duration(0)
 	for _, raw := range []layer2.RawBurst{aloha, grant} {
@@ -52,9 +55,12 @@ func ExampleMS_AuthResponse() {
 	ms, _ := trunk.NewMS(&trunk.MSConfig{Address: 3120001, NoRegistration: true})
 	out := make([]trunk.Output, 0, trunk.MaxOutputs)
 
-	aloha, _ := layer2.BuildBurst(&pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAloha, AlohaPDU: &pdu.AlohaPDU{}}, 1, layer2.SyncSourceBS)
-	ahoy, _ := layer2.BuildBurst(&pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{
-		ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: 3120001, SourceAddress: 0x7A17C0}}, 1, layer2.SyncSourceBS)
+	alohaCSBK := pdu.CSBK{LastBlock: true}
+	_ = alohaCSBK.SetAloha(pdu.AlohaPDU{})
+	ahoyCSBK := pdu.CSBK{LastBlock: true}
+	_ = ahoyCSBK.SetAhoy(pdu.AhoyPDU{ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: 3120001, SourceAddress: 0x7A17C0})
+	aloha, _ := layer2.BuildBurst(&alohaCSBK, 1, layer2.SyncSourceBS)
+	ahoy, _ := layer2.BuildBurst(&ahoyCSBK, 1, layer2.SyncSourceBS)
 
 	now := time.Duration(0)
 	for _, raw := range []layer2.RawBurst{aloha, ahoy} {
@@ -69,7 +75,10 @@ func ExampleMS_AuthResponse() {
 			if !ok {
 				break
 			}
-			ack := c.AckInboundPDU
+			ack, ok := c.AsAckInbound()
+			if !ok {
+				break
+			}
 			fmt.Printf("challenge %06X, response %06X from %d\n", o.Challenge, ack.TargetAddress, ack.AdditionalInfo)
 			break
 		}

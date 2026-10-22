@@ -47,16 +47,15 @@ func TestShortLCPSysParmsStringMatchesFmt(t *testing.T) {
 func (s *ShortLC) fmtString() string {
 	_ret := "ShortLC{ "
 	_ret += fmt.Sprintf("SLCO: %v, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.SLCO, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
-	switch {
-	case s.NullMessage != nil:
-		_ret += s.NullMessage.String()
-	case s.ActivityUpdate != nil:
-		_ret += s.ActivityUpdate.String()
-	case s.CSysParms != nil:
-		_ret += s.CSysParms.String()
-	case s.PSysParms != nil:
-		_ret += s.PSysParms.String()
-	default:
+	if v, ok := s.AsNullMessage(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsActivityUpdate(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsCSysParms(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsPSysParms(); ok {
+		_ret += v.String()
+	} else {
 		_ret += fmt.Sprintf("RawPayload: %x", s.RawPayload)
 	}
 	_ret += " }"

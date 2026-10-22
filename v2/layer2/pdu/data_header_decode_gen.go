@@ -113,120 +113,13 @@ func (s *UnconfirmedDataHeader) String() string {
 }
 
 // DecodeDataHeader decodes a DataHeader. data holds the 96 bits of the PDU
-// packed, the first bit in the most significant bit of data[0]. It allocates
-// the payload struct that the dispatch field points to; DecodeDataHeaderInto
-// does not. (ETSI TS 102 361-1 clause 9.2)
+// packed, the first bit in the most significant bit of data[0].
+// (ETSI TS 102 361-1 clause 9.2)
 func DecodeDataHeader(data [12]byte) DataHeader {
 	var result DataHeader
 	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xCCCC)
-	result.Format = Format(uint64(data[0]) & 0xF)
-	if result.Format == FormatShortDataDefined || result.Format == FormatShortDataRawOrStatusPrecoded {
-		var _tmpAppendedBlocks uint64
-		_tmpAppendedBlocks = uint64(data[0]) >> 4 & 0x3
-		_tmpAppendedBlocks <<= 4
-		_tmpAppendedBlocks |= uint64(data[1]) & 0xF
-		result.AppendedBlocks = uint8(_tmpAppendedBlocks)
-	}
-	var _dispatchBytes [10]byte
-	copy(_dispatchBytes[0:10], data[0:10])
-	switch result.Format {
-	case FormatUnconfirmed:
-		_decoded := decodeUnconfirmedDataHeader(_dispatchBytes)
-		result.UnconfirmedDataHeader = &_decoded
-	case FormatConfirmed:
-		_decoded := decodeConfirmedDataHeader(_dispatchBytes)
-		result.ConfirmedDataHeader = &_decoded
-	case FormatResponsePacket:
-		_decoded := decodeResponsePacketHeader(_dispatchBytes)
-		result.ResponsePacketHeader = &_decoded
-	case FormatShortDataDefined:
-		_decoded := decodeDefinedDataHeader(_dispatchBytes)
-		result.DefinedDataHeader = &_decoded
-	case FormatShortDataRawOrStatusPrecoded:
-		if result.AppendedBlocks == 0 {
-			_decoded := decodeStatusPrecodedHeader(_dispatchBytes)
-			result.StatusPrecodedHeader = &_decoded
-		} else {
-			_decoded := decodeRawDataHeader(_dispatchBytes)
-			result.RawDataHeader = &_decoded
-		}
-	case FormatUnifiedDataTransport:
-		_decoded := decodeUDTHeader(_dispatchBytes)
-		result.UDTHeader = &_decoded
-	case FormatProprietary:
-		_decoded := decodeProprietaryHeader(_dispatchBytes)
-		result.ProprietaryHeader = &_decoded
-	default:
-		copy(result.RawPayload[0:10], data[0:10])
-	}
+	copy(result.RawPayload[0:10], data[0:10])
 	return result
-}
-
-// DataHeaderPayloads holds one payload struct of each type that
-// a DataHeader dispatch field points to, for DecodeDataHeaderInto.
-// The zero value is ready to use.
-type DataHeaderPayloads struct {
-	unconfirmedDataHeader UnconfirmedDataHeader
-	confirmedDataHeader   ConfirmedDataHeader
-	responsePacketHeader  ResponsePacketHeader
-	definedDataHeader     DefinedDataHeader
-	statusPrecodedHeader  StatusPrecodedHeader
-	rawDataHeader         RawDataHeader
-	udtHeader             UDTHeader
-	proprietaryHeader     ProprietaryHeader
-}
-
-// DecodeDataHeaderInto decodes data into dst as DecodeDataHeader does,
-// but points the dispatch field of dst into p, so it does not allocate.
-// The payload stays valid until the next decode into p. A nil dst or
-// p does nothing.
-func DecodeDataHeaderInto(dst *DataHeader, p *DataHeaderPayloads, data [12]byte) {
-	if dst == nil || p == nil {
-		return
-	}
-	*dst = DataHeader{}
-	result := dst
-	result.FEC.Uncorrectable = !crc.CheckCCITT(data[:10], (uint16(data[10])<<8|uint16(data[11]))^0xCCCC)
-	result.Format = Format(uint64(data[0]) & 0xF)
-	if result.Format == FormatShortDataDefined || result.Format == FormatShortDataRawOrStatusPrecoded {
-		var _tmpAppendedBlocks uint64
-		_tmpAppendedBlocks = uint64(data[0]) >> 4 & 0x3
-		_tmpAppendedBlocks <<= 4
-		_tmpAppendedBlocks |= uint64(data[1]) & 0xF
-		result.AppendedBlocks = uint8(_tmpAppendedBlocks)
-	}
-	var _dispatchBytes [10]byte
-	copy(_dispatchBytes[0:10], data[0:10])
-	switch result.Format {
-	case FormatUnconfirmed:
-		p.unconfirmedDataHeader = decodeUnconfirmedDataHeader(_dispatchBytes)
-		result.UnconfirmedDataHeader = &p.unconfirmedDataHeader
-	case FormatConfirmed:
-		p.confirmedDataHeader = decodeConfirmedDataHeader(_dispatchBytes)
-		result.ConfirmedDataHeader = &p.confirmedDataHeader
-	case FormatResponsePacket:
-		p.responsePacketHeader = decodeResponsePacketHeader(_dispatchBytes)
-		result.ResponsePacketHeader = &p.responsePacketHeader
-	case FormatShortDataDefined:
-		p.definedDataHeader = decodeDefinedDataHeader(_dispatchBytes)
-		result.DefinedDataHeader = &p.definedDataHeader
-	case FormatShortDataRawOrStatusPrecoded:
-		if result.AppendedBlocks == 0 {
-			p.statusPrecodedHeader = decodeStatusPrecodedHeader(_dispatchBytes)
-			result.StatusPrecodedHeader = &p.statusPrecodedHeader
-		} else {
-			p.rawDataHeader = decodeRawDataHeader(_dispatchBytes)
-			result.RawDataHeader = &p.rawDataHeader
-		}
-	case FormatUnifiedDataTransport:
-		p.udtHeader = decodeUDTHeader(_dispatchBytes)
-		result.UDTHeader = &p.udtHeader
-	case FormatProprietary:
-		p.proprietaryHeader = decodeProprietaryHeader(_dispatchBytes)
-		result.ProprietaryHeader = &p.proprietaryHeader
-	default:
-		copy(result.RawPayload[0:10], data[0:10])
-	}
 }
 
 // Encode encodes a DataHeader. It returns the 96 bits packed, the first bit
@@ -237,141 +130,7 @@ func (s *DataHeader) Encode() ([12]byte, error) {
 	}
 
 	var data [12]byte
-	_payload := ""
-	if s.UnconfirmedDataHeader != nil {
-		_payload = "UnconfirmedDataHeader"
-	}
-	if s.ConfirmedDataHeader != nil {
-		if _payload != "" {
-			return [12]byte{}, errDataHeaderPayloads
-		}
-		_payload = "ConfirmedDataHeader"
-	}
-	if s.ResponsePacketHeader != nil {
-		if _payload != "" {
-			return [12]byte{}, errDataHeaderPayloads
-		}
-		_payload = "ResponsePacketHeader"
-	}
-	if s.DefinedDataHeader != nil {
-		if _payload != "" {
-			return [12]byte{}, errDataHeaderPayloads
-		}
-		_payload = "DefinedDataHeader"
-	}
-	if s.StatusPrecodedHeader != nil {
-		if _payload != "" {
-			return [12]byte{}, errDataHeaderPayloads
-		}
-		_payload = "StatusPrecodedHeader"
-	}
-	if s.RawDataHeader != nil {
-		if _payload != "" {
-			return [12]byte{}, errDataHeaderPayloads
-		}
-		_payload = "RawDataHeader"
-	}
-	if s.UDTHeader != nil {
-		if _payload != "" {
-			return [12]byte{}, errDataHeaderPayloads
-		}
-		_payload = "UDTHeader"
-	}
-	if s.ProprietaryHeader != nil {
-		if _payload != "" {
-			return [12]byte{}, errDataHeaderPayloads
-		}
-		_payload = "ProprietaryHeader"
-	}
-	switch {
-	case s.UnconfirmedDataHeader != nil:
-		_pduBytes, err := s.UnconfirmedDataHeader.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[0:10], _pduBytes[0:10])
-	case s.ConfirmedDataHeader != nil:
-		_pduBytes, err := s.ConfirmedDataHeader.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[0:10], _pduBytes[0:10])
-	case s.ResponsePacketHeader != nil:
-		_pduBytes, err := s.ResponsePacketHeader.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[0:10], _pduBytes[0:10])
-	case s.DefinedDataHeader != nil:
-		_pduBytes, err := s.DefinedDataHeader.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[0:10], _pduBytes[0:10])
-	case s.StatusPrecodedHeader != nil:
-		_pduBytes, err := s.StatusPrecodedHeader.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[0:10], _pduBytes[0:10])
-	case s.RawDataHeader != nil:
-		_pduBytes, err := s.RawDataHeader.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[0:10], _pduBytes[0:10])
-	case s.UDTHeader != nil:
-		_pduBytes, err := s.UDTHeader.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[0:10], _pduBytes[0:10])
-	case s.ProprietaryHeader != nil:
-		_pduBytes, err := s.ProprietaryHeader.Encode()
-		if err != nil {
-			return [12]byte{}, err
-		}
-		copy(data[0:10], _pduBytes[0:10])
-	default:
-		copy(data[0:10], s.RawPayload[0:10])
-	}
-	if uint64(s.Format)>>4 != 0 {
-		return [12]byte{}, errDataHeaderFormatRange
-	}
-	data[0] = data[0]&^0x0F | byte(uint64(s.Format))&0x0F
-	if _payload != "" {
-		var result DataHeader
-		result.Format = Format(uint64(data[0]) & 0xF)
-		var _tmpAppendedBlocks uint64
-		_tmpAppendedBlocks = uint64(data[0]) >> 4 & 0x3
-		_tmpAppendedBlocks <<= 4
-		_tmpAppendedBlocks |= uint64(data[1]) & 0xF
-		result.AppendedBlocks = uint8(_tmpAppendedBlocks)
-		_want := "RawPayload"
-		switch result.Format {
-		case FormatUnconfirmed:
-			_want = "UnconfirmedDataHeader"
-		case FormatConfirmed:
-			_want = "ConfirmedDataHeader"
-		case FormatResponsePacket:
-			_want = "ResponsePacketHeader"
-		case FormatShortDataDefined:
-			_want = "DefinedDataHeader"
-		case FormatShortDataRawOrStatusPrecoded:
-			if result.AppendedBlocks == 0 {
-				_want = "StatusPrecodedHeader"
-			} else {
-				_want = "RawDataHeader"
-			}
-		case FormatUnifiedDataTransport:
-			_want = "UDTHeader"
-		case FormatProprietary:
-			_want = "ProprietaryHeader"
-		}
-		if _payload != _want {
-			return [12]byte{}, errDataHeaderPayload
-		}
-	}
+	copy(data[0:10], s.RawPayload[0:10])
 	_crcVal := crc.CCITT(data[:10])
 	data[10] = byte(_crcVal>>8) ^ 0xCC
 	data[11] = byte(_crcVal) ^ 0xCC
@@ -386,29 +145,336 @@ func (s *DataHeader) String() string {
 	}
 
 	_ret := "DataHeader{ "
-	_ret += "FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, Format: " + text.Int(int64(s.Format)) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks)) + ", "
-	switch {
-	case s.UnconfirmedDataHeader != nil:
-		_ret += s.UnconfirmedDataHeader.String()
-	case s.ConfirmedDataHeader != nil:
-		_ret += s.ConfirmedDataHeader.String()
-	case s.ResponsePacketHeader != nil:
-		_ret += s.ResponsePacketHeader.String()
-	case s.DefinedDataHeader != nil:
-		_ret += s.DefinedDataHeader.String()
-	case s.StatusPrecodedHeader != nil:
-		_ret += s.StatusPrecodedHeader.String()
-	case s.RawDataHeader != nil:
-		_ret += s.RawDataHeader.String()
-	case s.UDTHeader != nil:
-		_ret += s.UDTHeader.String()
-	case s.ProprietaryHeader != nil:
-		_ret += s.ProprietaryHeader.String()
-	default:
+	_ret += "FEC: {BitsChecked: " + text.Int(int64(s.FEC.BitsChecked)) + ", ErrorsCorrected: " + text.Int(int64(s.FEC.ErrorsCorrected)) + ", Uncorrectable: " + text.Bool(s.FEC.Uncorrectable) + "}, Format: " + text.Int(int64(s.Format())) + ", AppendedBlocks: " + text.Int(int64(s.AppendedBlocks())) + ", "
+	if v, ok := s.AsUnconfirmedDataHeader(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsConfirmedDataHeader(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsResponsePacketHeader(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsDefinedDataHeader(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsStatusPrecodedHeader(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsRawDataHeader(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsUDTHeader(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsProprietaryHeader(); ok {
+		_ret += v.String()
+	} else {
 		_ret += "RawPayload: " + text.Hex(s.RawPayload[:])
 	}
 	_ret += " }"
 	return _ret
+}
+
+// Format returns the Data Packet Format (DPF) of the header.
+func (s *DataHeader) Format() Format {
+	if s == nil {
+		return 0
+	}
+
+	return Format(uint64(s.RawPayload[0]) & 0xF)
+}
+
+// AppendedBlocks returns the Appended Blocks (AB) of a DD_HEAD, R_HEAD or
+// SP_HEAD. It returns 0 unless Format is FormatShortDataDefined or
+// FormatShortDataRawOrStatusPrecoded.
+func (s *DataHeader) AppendedBlocks() uint8 {
+	if s == nil {
+		return 0
+	}
+
+	if !(s.Format() == FormatShortDataDefined || s.Format() == FormatShortDataRawOrStatusPrecoded) {
+		return 0
+	}
+	v := uint64(s.RawPayload[0]) >> 4 & 0x3
+	v <<= 4
+	v |= uint64(s.RawPayload[1]) & 0xF
+	return uint8(v)
+}
+
+// AsUnconfirmedDataHeader decodes RawPayload as an UnconfirmedDataHeader
+// payload. ok is false unless Format is FormatUnconfirmed.
+func (s *DataHeader) AsUnconfirmedDataHeader() (p UnconfirmedDataHeader, ok bool) {
+	if s == nil {
+		return UnconfirmedDataHeader{}, false
+	}
+
+	if !(s.Format() == FormatUnconfirmed) {
+		return p, false
+	}
+	return decodeUnconfirmedDataHeader(s.RawPayload), true
+}
+
+// SetUnconfirmedDataHeader makes s carry p as an UnconfirmedDataHeader
+// payload: it sets RawPayload, and keeps the other fields. It returns the
+// error of p.Encode and an error when the payload does not meet the
+// conditions of AsUnconfirmedDataHeader, and then leaves s as it is.
+func (s *DataHeader) SetUnconfirmedDataHeader(p UnconfirmedDataHeader) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	t := *s
+	t.RawPayload = raw
+	if _, ok := t.AsUnconfirmedDataHeader(); !ok {
+		return errDataHeaderUnconfirmedDataHeaderPayload
+	}
+	*s = t
+	return nil
+}
+
+// AsConfirmedDataHeader decodes RawPayload as a ConfirmedDataHeader payload.
+// ok is false unless Format is FormatConfirmed.
+func (s *DataHeader) AsConfirmedDataHeader() (p ConfirmedDataHeader, ok bool) {
+	if s == nil {
+		return ConfirmedDataHeader{}, false
+	}
+
+	if !(s.Format() == FormatConfirmed) {
+		return p, false
+	}
+	return decodeConfirmedDataHeader(s.RawPayload), true
+}
+
+// SetConfirmedDataHeader makes s carry p as a ConfirmedDataHeader payload:
+// it sets RawPayload, and keeps the other fields. It returns the error of
+// p.Encode and an error when the payload does not meet the conditions of
+// AsConfirmedDataHeader, and then leaves s as it is.
+func (s *DataHeader) SetConfirmedDataHeader(p ConfirmedDataHeader) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	t := *s
+	t.RawPayload = raw
+	if _, ok := t.AsConfirmedDataHeader(); !ok {
+		return errDataHeaderConfirmedDataHeaderPayload
+	}
+	*s = t
+	return nil
+}
+
+// AsResponsePacketHeader decodes RawPayload as a ResponsePacketHeader
+// payload. ok is false unless Format is FormatResponsePacket.
+func (s *DataHeader) AsResponsePacketHeader() (p ResponsePacketHeader, ok bool) {
+	if s == nil {
+		return ResponsePacketHeader{}, false
+	}
+
+	if !(s.Format() == FormatResponsePacket) {
+		return p, false
+	}
+	return decodeResponsePacketHeader(s.RawPayload), true
+}
+
+// SetResponsePacketHeader makes s carry p as a ResponsePacketHeader payload:
+// it sets RawPayload, and keeps the other fields. It returns the error of
+// p.Encode and an error when the payload does not meet the conditions of
+// AsResponsePacketHeader, and then leaves s as it is.
+func (s *DataHeader) SetResponsePacketHeader(p ResponsePacketHeader) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	t := *s
+	t.RawPayload = raw
+	if _, ok := t.AsResponsePacketHeader(); !ok {
+		return errDataHeaderResponsePacketHeaderPayload
+	}
+	*s = t
+	return nil
+}
+
+// AsDefinedDataHeader decodes RawPayload as a DefinedDataHeader payload. ok
+// is false unless Format is FormatShortDataDefined.
+func (s *DataHeader) AsDefinedDataHeader() (p DefinedDataHeader, ok bool) {
+	if s == nil {
+		return DefinedDataHeader{}, false
+	}
+
+	if !(s.Format() == FormatShortDataDefined) {
+		return p, false
+	}
+	return decodeDefinedDataHeader(s.RawPayload), true
+}
+
+// SetDefinedDataHeader makes s carry p as a DefinedDataHeader payload: it
+// sets RawPayload, and keeps the other fields. It returns the error of
+// p.Encode and an error when the payload does not meet the conditions of
+// AsDefinedDataHeader, and then leaves s as it is.
+func (s *DataHeader) SetDefinedDataHeader(p DefinedDataHeader) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	t := *s
+	t.RawPayload = raw
+	if _, ok := t.AsDefinedDataHeader(); !ok {
+		return errDataHeaderDefinedDataHeaderPayload
+	}
+	*s = t
+	return nil
+}
+
+// AsStatusPrecodedHeader decodes RawPayload as a StatusPrecodedHeader
+// payload. ok is false unless Format is FormatShortDataRawOrStatusPrecoded
+// and AppendedBlocks is 0.
+func (s *DataHeader) AsStatusPrecodedHeader() (p StatusPrecodedHeader, ok bool) {
+	if s == nil {
+		return StatusPrecodedHeader{}, false
+	}
+
+	if !(s.Format() == FormatShortDataRawOrStatusPrecoded && s.AppendedBlocks() == 0) {
+		return p, false
+	}
+	return decodeStatusPrecodedHeader(s.RawPayload), true
+}
+
+// SetStatusPrecodedHeader makes s carry p as a StatusPrecodedHeader payload:
+// it sets RawPayload, and keeps the other fields. It returns the error of
+// p.Encode and an error when the payload does not meet the conditions of
+// AsStatusPrecodedHeader, and then leaves s as it is.
+func (s *DataHeader) SetStatusPrecodedHeader(p StatusPrecodedHeader) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	t := *s
+	t.RawPayload = raw
+	if _, ok := t.AsStatusPrecodedHeader(); !ok {
+		return errDataHeaderStatusPrecodedHeaderPayload
+	}
+	*s = t
+	return nil
+}
+
+// AsRawDataHeader decodes RawPayload as a RawDataHeader payload. ok is false
+// unless Format is FormatShortDataRawOrStatusPrecoded and AppendedBlocks is
+// not 0.
+func (s *DataHeader) AsRawDataHeader() (p RawDataHeader, ok bool) {
+	if s == nil {
+		return RawDataHeader{}, false
+	}
+
+	if !(s.Format() == FormatShortDataRawOrStatusPrecoded && s.AppendedBlocks() != 0) {
+		return p, false
+	}
+	return decodeRawDataHeader(s.RawPayload), true
+}
+
+// SetRawDataHeader makes s carry p as a RawDataHeader payload: it sets
+// RawPayload, and keeps the other fields. It returns the error of p.Encode
+// and an error when the payload does not meet the conditions of
+// AsRawDataHeader, and then leaves s as it is.
+func (s *DataHeader) SetRawDataHeader(p RawDataHeader) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	t := *s
+	t.RawPayload = raw
+	if _, ok := t.AsRawDataHeader(); !ok {
+		return errDataHeaderRawDataHeaderPayload
+	}
+	*s = t
+	return nil
+}
+
+// AsUDTHeader decodes RawPayload as a UDTHeader payload. ok is false unless
+// Format is FormatUnifiedDataTransport.
+func (s *DataHeader) AsUDTHeader() (p UDTHeader, ok bool) {
+	if s == nil {
+		return UDTHeader{}, false
+	}
+
+	if !(s.Format() == FormatUnifiedDataTransport) {
+		return p, false
+	}
+	return decodeUDTHeader(s.RawPayload), true
+}
+
+// SetUDTHeader makes s carry p as a UDTHeader payload: it sets RawPayload,
+// and keeps the other fields. It returns the error of p.Encode and an error
+// when the payload does not meet the conditions of AsUDTHeader, and then
+// leaves s as it is.
+func (s *DataHeader) SetUDTHeader(p UDTHeader) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	t := *s
+	t.RawPayload = raw
+	if _, ok := t.AsUDTHeader(); !ok {
+		return errDataHeaderUDTHeaderPayload
+	}
+	*s = t
+	return nil
+}
+
+// AsProprietaryHeader decodes RawPayload as a ProprietaryHeader payload. ok
+// is false unless Format is FormatProprietary.
+func (s *DataHeader) AsProprietaryHeader() (p ProprietaryHeader, ok bool) {
+	if s == nil {
+		return ProprietaryHeader{}, false
+	}
+
+	if !(s.Format() == FormatProprietary) {
+		return p, false
+	}
+	return decodeProprietaryHeader(s.RawPayload), true
+}
+
+// SetProprietaryHeader makes s carry p as a ProprietaryHeader payload: it
+// sets RawPayload, and keeps the other fields. It returns the error of
+// p.Encode and an error when the payload does not meet the conditions of
+// AsProprietaryHeader, and then leaves s as it is.
+func (s *DataHeader) SetProprietaryHeader(p ProprietaryHeader) error {
+	if s == nil {
+		return dmrgo.ErrNilReceiver
+	}
+
+	raw, err := p.Encode()
+	if err != nil {
+		return err
+	}
+	t := *s
+	t.RawPayload = raw
+	if _, ok := t.AsProprietaryHeader(); !ok {
+		return errDataHeaderProprietaryHeaderPayload
+	}
+	*s = t
+	return nil
 }
 
 // ETSI TS 102 361-1 clause 9.2.1, Table 9.10
@@ -1025,14 +1091,15 @@ var (
 		Field: "FragmentSequenceNumber",
 		Type:  "UnconfirmedDataHeader",
 	}
-	errDataHeaderPayloads    = errors.New("DataHeader: more than one payload field is set")
-	errDataHeaderFormatRange = &dmrgo.FieldRangeError{
-		Bits:  4,
-		Field: "Format",
-		Type:  "DataHeader",
-	}
-	errDataHeaderPayload                     = errors.New("DataHeader: the payload field that is set is not the one that Format and AppendedBlocks select")
-	errConfirmedDataHeaderPadOctetCountRange = &dmrgo.FieldRangeError{
+	errDataHeaderUnconfirmedDataHeaderPayload = errors.New("DataHeader.SetUnconfirmedDataHeader: the payload does not meet the conditions of AsUnconfirmedDataHeader")
+	errDataHeaderConfirmedDataHeaderPayload   = errors.New("DataHeader.SetConfirmedDataHeader: the payload does not meet the conditions of AsConfirmedDataHeader")
+	errDataHeaderResponsePacketHeaderPayload  = errors.New("DataHeader.SetResponsePacketHeader: the payload does not meet the conditions of AsResponsePacketHeader")
+	errDataHeaderDefinedDataHeaderPayload     = errors.New("DataHeader.SetDefinedDataHeader: the payload does not meet the conditions of AsDefinedDataHeader")
+	errDataHeaderStatusPrecodedHeaderPayload  = errors.New("DataHeader.SetStatusPrecodedHeader: the payload does not meet the conditions of AsStatusPrecodedHeader")
+	errDataHeaderRawDataHeaderPayload         = errors.New("DataHeader.SetRawDataHeader: the payload does not meet the conditions of AsRawDataHeader")
+	errDataHeaderUDTHeaderPayload             = errors.New("DataHeader.SetUDTHeader: the payload does not meet the conditions of AsUDTHeader")
+	errDataHeaderProprietaryHeaderPayload     = errors.New("DataHeader.SetProprietaryHeader: the payload does not meet the conditions of AsProprietaryHeader")
+	errConfirmedDataHeaderPadOctetCountRange  = &dmrgo.FieldRangeError{
 		Bits:  5,
 		Field: "PadOctetCount",
 		Type:  "ConfirmedDataHeader",

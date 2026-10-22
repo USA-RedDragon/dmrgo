@@ -36,13 +36,13 @@ func fuzzDecode(t *testing.T, defined bool, code uint8, data []byte) {
 	var m packet.Message
 	m.Data = data
 	if defined {
-		m.Header = pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{
+		m.Header = setHeader(t, (*pdu.DataHeader).SetDefinedDataHeader, pdu.DefinedDataHeader{
 			SAP: enums.SAPShortData, DefinedData: enums.DDFormat(code & 0x3F), LLIDDestination: 2, LLIDSource: 1, BitPadding: uint8(len(data) % 3 * 8),
-		}}
+		})
 	} else {
-		m.Header = pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
+		m.Header = setHeader(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{
 			SAP: enums.SAP(code & 0xF), LLIDDestination: 2, LLIDSource: 1,
-		}}
+		})
 	}
 	out, got, err := sms.Decode(nil, &m.Header, m.Data)
 	if err != nil {

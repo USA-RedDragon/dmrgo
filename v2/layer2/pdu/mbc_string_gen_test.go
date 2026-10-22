@@ -11,28 +11,27 @@ import (
 func (s *MBCHeader) fmtString() string {
 	_ret := "MBCHeader{ "
 	_ret += fmt.Sprintf("FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, LastBlock: %t, ProtectFlag: %t, Opcode: %d, FID: %d, ", s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable, s.LastBlock, s.ProtectFlag, s.Opcode, s.FID)
-	switch {
-	case s.PrivateVoiceGrantPDU != nil:
-		_ret += s.PrivateVoiceGrantPDU.String()
-	case s.TalkgroupVoiceGrantPDU != nil:
-		_ret += s.TalkgroupVoiceGrantPDU.String()
-	case s.BroadcastTalkgroupVoiceGrantPDU != nil:
-		_ret += s.BroadcastTalkgroupVoiceGrantPDU.String()
-	case s.PrivateDataGrantPDU != nil:
-		_ret += s.PrivateDataGrantPDU.String()
-	case s.TalkgroupDataGrantPDU != nil:
-		_ret += s.TalkgroupDataGrantPDU.String()
-	case s.DuplexPrivateVoiceGrantPDU != nil:
-		_ret += s.DuplexPrivateVoiceGrantPDU.String()
-	case s.DuplexPrivateDataGrantPDU != nil:
-		_ret += s.DuplexPrivateDataGrantPDU.String()
-	case s.PrivateDataGrantMultiItemPDU != nil:
-		_ret += s.PrivateDataGrantMultiItemPDU.String()
-	case s.MovePDU != nil:
-		_ret += s.MovePDU.String()
-	case s.BroadcastPDU != nil:
-		_ret += s.BroadcastPDU.String()
-	default:
+	if v, ok := s.AsPrivateVoiceGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsTalkgroupVoiceGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsBroadcastTalkgroupVoiceGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsPrivateDataGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsTalkgroupDataGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsDuplexPrivateVoiceGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsDuplexPrivateDataGrant(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsPrivateDataGrantMultiItem(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsMove(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsBroadcast(); ok {
+		_ret += v.String()
+	} else {
 		_ret += fmt.Sprintf("RawPayload: %x", s.RawPayload)
 	}
 	_ret += " }"

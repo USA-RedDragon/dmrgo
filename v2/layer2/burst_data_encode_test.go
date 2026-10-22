@@ -43,15 +43,22 @@ func TestBurstEncode_EditedLCGoesOnAir(t *testing.T) {
 			if !ok {
 				t.Fatalf("Data is %T", b.Data)
 			}
-			flc.GroupVoice.GroupAddress = 9
-			flc.UnitToUnit = nil
+			gv, ok := flc.AsGroupVoice()
+			if !ok {
+				t.Fatalf("decoded LC %s is not a group voice LC", flc.String())
+			}
+			gv.GroupAddress = 9
+			mustSet(flc.SetGroupVoice(gv))
 
 			got := reencode(t, b)
 			if got.FEC.PDU.Uncorrectable || got.FEC.PDU.ErrorsCorrected != 0 || got.FEC.Payload.ErrorsCorrected != 0 {
 				t.Fatalf("re-encoded LC does not decode clean: %+v", got.FEC)
 			}
 			gotLC, ok := got.Data.(*pdu.FullLinkControl)
-			if !ok || gotLC.GroupVoice == nil || gotLC.GroupVoice.GroupAddress != 9 || gotLC.GroupVoice.SourceAddress != 3191868 {
+			if !ok {
+				t.Fatalf("Data is %T", got.Data)
+			}
+			if g, gok := gotLC.AsGroupVoice(); !gok || g.GroupAddress != 9 || g.SourceAddress != 3191868 {
 				t.Fatalf("decoded LC %s, want group 9", gotLC.String())
 			}
 		})
@@ -65,21 +72,20 @@ func TestBurstEncode_HandBuiltData(t *testing.T) {
 	header0, term := lc, lc
 	header0.BurstDataType = enums.DataTypeVoiceLCHeader
 	term.BurstDataType = enums.DataTypeTerminatorWithLC
-	csbk := &pdu.CSBK{
-		Opcode:      pdu.CSBKPreamble,
-		PreamblePDU: &pdu.PreamblePDU{Group: true, CSBKBlocksToFollow: 2},
+	wantGV, _ := lc.AsGroupVoice()
+	wantPre := pdu.PreamblePDU{Group: true, CSBKBlocksToFollow: 2}
+	csbk := &pdu.CSBK{}
+	mustSet(csbk.SetPreamble(wantPre))
+	wantU := pdu.UnconfirmedDataHeader{
+		Group:           true,
+		SAP:             4,
+		FullMessageFlag: true,
+		BlocksToFollow:  3,
 	}
-	header := &pdu.DataHeader{
-		Format: pdu.FormatUnconfirmed,
-		UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
-			Group:           true,
-			SAP:             4,
-			FullMessageFlag: true,
-			BlocksToFollow:  3,
-		},
-	}
-	header.UnconfirmedDataHeader.LLIDDestination = 1 << 23
-	header.UnconfirmedDataHeader.LLIDSource = 1 << 22
+	wantU.LLIDDestination = 1 << 23
+	wantU.LLIDSource = 1 << 22
+	header := &pdu.DataHeader{}
+	mustSet(header.SetUnconfirmedDataHeader(wantU))
 	r12 := &pdu.Rate12Data{Data: [12]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}}
 	r34 := &pdu.Rate34Data{Data: [18]byte{0xFF, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 0xAA}}
 	r1 := &pdu.Rate1Data{Data: [24]byte{0x80, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 0x01}}
@@ -91,25 +97,25 @@ func TestBurstEncode_HandBuiltData(t *testing.T) {
 	}{
 		{enums.DataTypeVoiceLCHeader, &header0, func(t *testing.T, got layer2.Data) {
 			g, ok := got.(*pdu.FullLinkControl)
-			if !ok || g.GroupVoice == nil || *g.GroupVoice != *lc.GroupVoice || g.DataType() != enums.DataTypeVoiceLCHeader {
+			if gv, gok := g.AsGroupVoice(); !ok || !gok || gv != wantGV || g.DataType() != enums.DataTypeVoiceLCHeader {
 				t.Errorf("got %+v", got)
 			}
 		}},
 		{enums.DataTypeTerminatorWithLC, &term, func(t *testing.T, got layer2.Data) {
 			g, ok := got.(*pdu.FullLinkControl)
-			if !ok || g.GroupVoice == nil || *g.GroupVoice != *lc.GroupVoice || g.DataType() != enums.DataTypeTerminatorWithLC {
+			if gv, gok := g.AsGroupVoice(); !ok || !gok || gv != wantGV || g.DataType() != enums.DataTypeTerminatorWithLC {
 				t.Errorf("got %+v", got)
 			}
 		}},
 		{enums.DataTypeCSBK, csbk, func(t *testing.T, got layer2.Data) {
 			g, ok := got.(*pdu.CSBK)
-			if !ok || g.Opcode != pdu.CSBKPreamble || g.PreamblePDU == nil || *g.PreamblePDU != *csbk.PreamblePDU {
+			if p, pok := g.AsPreamble(); !ok || g.Opcode != pdu.CSBKPreamble || !pok || p != wantPre {
 				t.Errorf("got %+v", got)
 			}
 		}},
 		{enums.DataTypeDataHeader, header, func(t *testing.T, got layer2.Data) {
 			g, ok := got.(*pdu.DataHeader)
-			if !ok || g.Format != pdu.FormatUnconfirmed || g.UnconfirmedDataHeader == nil || *g.UnconfirmedDataHeader != *header.UnconfirmedDataHeader {
+			if u, uok := g.AsUnconfirmedDataHeader(); !ok || g.Format() != pdu.FormatUnconfirmed || !uok || u != wantU {
 				t.Errorf("got %+v", got)
 			}
 		}},

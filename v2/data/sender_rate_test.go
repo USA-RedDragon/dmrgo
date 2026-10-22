@@ -12,13 +12,13 @@ import (
 
 func TestSenderZeroRateIsRate12(t *testing.T) {
 	t.Parallel()
-	zero := message(30)
+	zero := message(t, 30)
 	zero.Rate = 0
 	a, b := newSender(t, nil), newSender(t, nil)
 	if err := a.Send(0, zero); err != nil {
 		t.Fatal(err)
 	}
-	if err := b.Send(0, message(30)); err != nil {
+	if err := b.Send(0, message(t, 30)); err != nil {
 		t.Fatal(err)
 	}
 	got, want := drain(t, a, 2*time.Second), drain(t, b, 2*time.Second)
@@ -33,7 +33,7 @@ func TestSenderZeroRateIsRate12(t *testing.T) {
 	if zero.Rate != 0 {
 		t.Errorf("Send changed m.Rate to %v", zero.Rate)
 	}
-	if message(30).Rate != enums.DataTypeRate12 {
+	if message(t, 30).Rate != enums.DataTypeRate12 {
 		t.Fatal("message() is not rate 1/2")
 	}
 }

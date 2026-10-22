@@ -15,8 +15,8 @@ var table615Key = [auth.KeyLen]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 1
 
 func challengeAhoy(t *testing.T, group, flag bool, target, source uint32) pdu.CSBK {
 	t.Helper()
-	return pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{
-		ServiceOptsMirror: 1, ServiceKindFlag: flag, GroupIndividual: group, ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: target, SourceAddress: source}}
+	return *withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAhoy, pdu.AhoyPDU{
+		ServiceOptsMirror: 1, ServiceKindFlag: flag, GroupIndividual: group, ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: target, SourceAddress: source})
 }
 
 func TestMS_AuthDuringRegistration(t *testing.T) {
@@ -35,10 +35,10 @@ func TestMS_AuthDuringRegistration(t *testing.T) {
 	wantKinds(t, "no random access retry", r.feed(a, &idle))
 	out = r.ms.AuthResponse(r.now, auth.Response(out[0].Challenge, table615Key, 0), r.out[:0])
 	wantKinds(t, "response", out, trunk.OutputBurst)
-	c := sent(t, &out[0])
-	if c.AckInboundPDU == nil || enums.AckReason(c.AckInboundPDU.ReasonCode) != enums.AckReasonAuthResponseMS || c.AckInboundPDU.TargetAddress != 0xE8CA1D ||
-		c.AckInboundPDU.AdditionalInfo != msAddr || c.AckInboundPDU.ResponseInfo != 0 || out[0].Due != at+60*time.Millisecond || out[0].Slot != enums.Slot1 {
-		t.Fatalf("C_ACKU %+v due %v slot %v", c.AckInboundPDU, out[0].Due, out[0].Slot)
+	ackIn, ok := sent(t, &out[0]).AsAckInbound()
+	if !ok || enums.AckReason(ackIn.ReasonCode) != enums.AckReasonAuthResponseMS || ackIn.TargetAddress != 0xE8CA1D ||
+		ackIn.AdditionalInfo != msAddr || ackIn.ResponseInfo != 0 || out[0].Due != at+60*time.Millisecond || out[0].Slot != enums.Slot1 {
+		t.Fatalf("C_ACKU %v %+v due %v slot %v", ok, ackIn, out[0].Due, out[0].Slot)
 	}
 	wantKinds(t, "second response", r.ms.AuthResponse(r.now, 1, r.out[:0]))
 	out = r.feed(ack(t, enums.AckReasonRegAccepted), &idle)
@@ -88,8 +88,8 @@ func TestMS_AuthNotChallenges(t *testing.T) {
 	}
 	out := r.ms.AuthResponse(r.now, 0x123456, r.out[:0])
 	wantKinds(t, "poll response", out, trunk.OutputBurst)
-	if c := sent(t, &out[0]); c.AckInboundPDU == nil || c.AckInboundPDU.TargetAddress != 0x123456 {
-		t.Errorf("C_ACKU %+v", c.AckInboundPDU)
+	if ackIn, ok := sent(t, &out[0]).AsAckInbound(); !ok || ackIn.TargetAddress != 0x123456 {
+		t.Errorf("C_ACKU %v %+v", ok, ackIn)
 	}
 }
 
@@ -103,10 +103,10 @@ func TestMS_AuthOnPayload(t *testing.T) {
 	wantKinds(t, "P_AHOY challenge", out, trunk.OutputAuthChallenge)
 	out = r.ms.AuthResponse(r.now, auth.Response(out[0].Challenge, table615Key, 0x010203), r.out[:0])
 	wantKinds(t, "P_ACKU", out, trunk.OutputBurst)
-	c := sent(t, &out[0])
-	if c.AckInboundPayloadPDU == nil || c.AckInboundPayloadPDU.TargetAddress != 0xE9C81E || enums.AckReason(c.AckInboundPayloadPDU.ReasonCode) != enums.AckReasonAuthResponseMS ||
+	ackP, ok := sent(t, &out[0]).AsAckInboundPayload()
+	if !ok || ackP.TargetAddress != 0xE9C81E || enums.AckReason(ackP.ReasonCode) != enums.AckReasonAuthResponseMS ||
 		out[0].Slot != enums.Slot1 {
-		t.Errorf("P_ACKU %+v slot %v", c.AckInboundPayloadPDU, out[0].Slot)
+		t.Errorf("P_ACKU %v %+v slot %v", ok, ackP, out[0].Slot)
 	}
 }
 

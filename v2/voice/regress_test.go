@@ -245,17 +245,15 @@ func TestRegression_RewriteEmbedded(t *testing.T) {
 	}
 	sent = append(sent, drain(t, tx, 40)...)
 	var vt layer2.VoiceReceiver
-	var lc pdu.FullLinkControl
-	var lcp pdu.FullLinkControlPayloads
 	for _, o := range sent {
 		if o.Kind != voice.OutputBurst || o.Hint.VoiceBurst == enums.VoiceBurstUnknown {
 			continue
 		}
 		var b layer2.Burst
 		_ = b.DecodeFromBytes(o.Burst)
-		ok, _ := vt.ReceiveInto(&lc, &lcp, &b)
-		if ok && lc.GroupVoice != nil && lc.GroupVoice.GroupAddress != 3100 {
-			t.Errorf("embedded LC at %v: target %d, want 3100", o.Due, lc.GroupVoice.GroupAddress)
+		lc, ok, _ := vt.Receive(&b)
+		if gv, isGV := lc.AsGroupVoice(); ok && isGV && gv.GroupAddress != 3100 {
+			t.Errorf("embedded LC at %v: target %d, want 3100", o.Due, gv.GroupAddress)
 		}
 	}
 }

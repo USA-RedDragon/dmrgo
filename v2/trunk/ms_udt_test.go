@@ -17,14 +17,14 @@ const peer = 3120009
 
 func ahoyBurst(t testing.TB, kind enums.ServiceKind, src, dst uint32, als bool, blocks uint8) layer2.RawBurst {
 	t.Helper()
-	return bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{
-		ALS: als, AppendedBlocks: blocks, ServiceKind: uint8(kind), TargetAddress: dst, SourceAddress: src}}, testCC)
+	return bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAhoy, pdu.AhoyPDU{
+		ALS: als, AppendedBlocks: blocks, ServiceKind: uint8(kind), TargetAddress: dst, SourceAddress: src}), testCC)
 }
 
 func ackFrom(t testing.TB, r enums.AckReason, src uint32) layer2.RawBurst {
 	t.Helper()
-	return bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckOutbound, AckOutboundPDU: &pdu.AckOutboundPDU{
-		ReasonCode: byte(r), TargetAddress: msAddr, AdditionalInfo: src}}, testCC)
+	return bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAckOutbound, pdu.AckOutboundPDU{
+		ReasonCode: byte(r), TargetAddress: msAddr, AdditionalInfo: src}), testCC)
 }
 
 func download(t testing.TB, h pdu.UDTHeader, a *trunk.Appended) []layer2.RawBurst {
@@ -39,7 +39,7 @@ func download(t testing.TB, h pdu.UDTHeader, a *trunk.Appended) []layer2.RawBurs
 	}
 	pdu.SetMBCLastBlockCRC(blocks)
 	out := make([]layer2.RawBurst, 0, 1+len(blocks))
-	out = append(out, bsBurst(t, &pdu.DataHeader{Format: pdu.FormatUnifiedDataTransport, UDTHeader: &h}, testCC))
+	out = append(out, bsBurst(t, withPDU(t, &pdu.DataHeader{}, (*pdu.DataHeader).SetUDTHeader, h), testCC))
 	for _, b := range blocks {
 		raw, err := layer2.BuildDataBurst(b, enums.DataTypeRate12, testCC, layer2.SyncSourceBS)
 		if err != nil {
@@ -77,10 +77,13 @@ func uploaded(t *testing.T, out []trunk.Output) (pdu.UDTHeader, trunk.Appended) 
 	t.Helper()
 	b := decoded(t, &out[0])
 	dh, ok := b.Data.(*pdu.DataHeader)
-	if !ok || dh.UDTHeader == nil || dh.FEC.Uncorrectable {
+	if !ok || dh.FEC.Uncorrectable {
 		t.Fatalf("UDT header %T", b.Data)
 	}
-	h := *dh.UDTHeader
+	h, ok := dh.AsUDTHeader()
+	if !ok {
+		t.Fatalf("UDT header format %v", dh.Format())
+	}
 	a := trunk.Appended{Format: h.UDTFormat, PadNibble: h.PadNibble, Blocks: int(h.AppendedBlocks) + 1}
 	if len(out) < 1+a.Blocks {
 		t.Fatalf("%d outputs for %d blocks", len(out), a.Blocks)
@@ -111,10 +114,11 @@ func uploaded(t *testing.T, out []trunk.Output) (pdu.UDTHeader, trunk.Appended) 
 func ackSent(t *testing.T, o *trunk.Output) *pdu.AckInboundPDU {
 	t.Helper()
 	c := sent(t, o)
-	if c.AckInboundPDU == nil {
+	a, ok := c.AsAckInbound()
+	if !ok {
 		t.Fatalf("CSBK %v, want C_ACKU", c.Opcode)
 	}
-	return c.AckInboundPDU
+	return &a
 }
 
 func onTSCC(t *testing.T, cfg *trunk.MSConfig) *msRig {
@@ -133,10 +137,11 @@ func randSent(t *testing.T, r *msRig) *pdu.RandomAccessPDU {
 	out := r.feed(aloha(t), &idle)
 	wantKinds(t, "C_RAND", out, trunk.OutputBurst)
 	c := sent(t, &out[0])
-	if c.RandomAccessPDU == nil {
+	ra, ok := c.AsRandomAccess()
+	if !ok {
 		t.Fatalf("CSBK %v, want C_RAND", c.Opcode)
 	}
-	return c.RandomAccessPDU
+	return &ra
 }
 
 func TestMS_ShortDataSend(t *testing.T) {
@@ -482,11 +487,11 @@ func TestMS_DGNA(t *testing.T) {
 func dxGrant(t testing.TB, data bool, target, source uint32) layer2.RawBurst {
 	t.Helper()
 	if data {
-		return bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKDuplexPrivateDataGrant, DuplexPrivateDataGrantPDU: &pdu.DuplexPrivateDataGrantPDU{
-			PhysicalChannel: 7, TargetAddress: target, SourceAddress: source}}, testCC)
+		return bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetDuplexPrivateDataGrant, pdu.DuplexPrivateDataGrantPDU{
+			PhysicalChannel: 7, TargetAddress: target, SourceAddress: source}), testCC)
 	}
-	return bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKDuplexPrivateVoiceGrant, DuplexPrivateVoiceGrantPDU: &pdu.DuplexPrivateVoiceGrantPDU{
-		PhysicalChannel: 7, LogicalChannel: true, TargetAddress: target, SourceAddress: source}}, testCC)
+	return bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetDuplexPrivateVoiceGrant, pdu.DuplexPrivateVoiceGrantPDU{
+		PhysicalChannel: 7, LogicalChannel: true, TargetAddress: target, SourceAddress: source}), testCC)
 }
 
 func TestMS_Duplex(t *testing.T) {
@@ -517,8 +522,8 @@ func TestMS_Duplex(t *testing.T) {
 		if len(out) != constants.NMaint+2 {
 			t.Fatalf("EndCall %v", kinds(out))
 		}
-		if c := sent(t, &out[0]); c.MaintenancePDU == nil || c.MaintenancePDU.TargetAddress != peer {
-			t.Errorf("duplex P_MAINT %+v", c.MaintenancePDU)
+		if mt, ok := sent(t, &out[0]).AsMaintenance(); !ok || mt.TargetAddress != peer {
+			t.Errorf("duplex P_MAINT %v %+v", ok, mt)
 		}
 	}
 	for _, no := range []bool{false, true} {
@@ -552,11 +557,11 @@ func TestMS_DuplexSlotOfOwnGrant(t *testing.T) {
 			if ts2 {
 				want = enums.Slot2
 			}
-			other := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKDuplexPrivateVoiceGrant, DuplexPrivateVoiceGrantPDU: &pdu.DuplexPrivateVoiceGrantPDU{
-				PhysicalChannel: 7, LogicalChannel: !ts2, CallDirection: !caller, TargetAddress: peer, SourceAddress: msAddr}}, testCC)
+			other := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetDuplexPrivateVoiceGrant, pdu.DuplexPrivateVoiceGrantPDU{
+				PhysicalChannel: 7, LogicalChannel: !ts2, CallDirection: !caller, TargetAddress: peer, SourceAddress: msAddr}), testCC)
 			r.feed(other, &idle)
-			own := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKDuplexPrivateVoiceGrant, DuplexPrivateVoiceGrantPDU: &pdu.DuplexPrivateVoiceGrantPDU{
-				PhysicalChannel: 7, LogicalChannel: ts2, CallDirection: caller, TargetAddress: msAddr, SourceAddress: peer}}, testCC)
+			own := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetDuplexPrivateVoiceGrant, pdu.DuplexPrivateVoiceGrantPDU{
+				PhysicalChannel: 7, LogicalChannel: ts2, CallDirection: caller, TargetAddress: msAddr, SourceAddress: peer}), testCC)
 			out := r.feed(own, &idle)
 			wantKinds(t, "own PV_GRANT_DX", out, trunk.OutputGrant, trunk.OutputTune)
 			if out[0].Grant.Slot != want || out[1].Tune.Slot != want {
@@ -572,8 +577,8 @@ func TestMS_DuplexSlotOfOwnGrant(t *testing.T) {
 
 func pvGrant(t testing.TB, target, source uint32, emergency bool) layer2.RawBurst {
 	t.Helper()
-	return bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKPrivateVoiceGrant, PrivateVoiceGrantPDU: &pdu.PrivateVoiceGrantPDU{
-		PhysicalChannel: 6, Emergency: emergency, TargetAddress: target, SourceAddress: source}}, testCC)
+	return bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetPrivateVoiceGrant, pdu.PrivateVoiceGrantPDU{
+		PhysicalChannel: 6, Emergency: emergency, TargetAddress: target, SourceAddress: source}), testCC)
 }
 
 func TestMS_Ambient(t *testing.T) {
@@ -621,8 +626,9 @@ func TestMS_Ambient(t *testing.T) {
 		if len(out) != constants.NMaint+2 || out[constants.NMaint].Kind != trunk.OutputCallEnd {
 			t.Fatalf("T_ALS end %v", kinds(out))
 		}
-		if c := sent(t, &out[0]); c.MaintenancePDU == nil || c.MaintenancePDU.TargetAddress != peer || c.MaintenancePDU.SourceAddress != msAddr {
-			t.Errorf("T_ALS end %v %+v", c.Opcode, c.MaintenancePDU)
+		c := sent(t, &out[0])
+		if mt, ok := c.AsMaintenance(); !ok || mt.TargetAddress != peer || mt.SourceAddress != msAddr {
+			t.Errorf("T_ALS end %v %+v", c.Opcode, mt)
 		}
 	}
 

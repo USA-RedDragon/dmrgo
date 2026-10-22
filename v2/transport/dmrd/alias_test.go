@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
-	"github.com/USA-RedDragon/dmrgo/v2/layer2/pdu"
 	"github.com/USA-RedDragon/dmrgo/v2/transport/dmrd"
 )
 
@@ -95,20 +94,6 @@ func TestAliasAndPositionLC(t *testing.T) {
 	lp := dmrd.LocalPosition{Source: 3191868, Data: pos.Data}
 	if lc, err := lp.LC(); err != nil || lc.FLCO != enums.FLCOGPSInfo {
 		t.Fatalf("local position: %+v %v", lc, err)
-	}
-	var into pdu.FullLinkControl
-	var pl pdu.FullLinkControlPayloads
-	if err := pos.LCInto(&into, &pl); err != nil || into.FLCO != enums.FLCOGPSInfo {
-		t.Fatalf("position LCInto: %+v %v", into, err)
-	}
-	if err := local.LCInto(&into, &pl); err != nil || into.FLCO != enums.FLCOTalkerAliasHeader {
-		t.Fatalf("alias LCInto: %+v %v", into, err)
-	}
-	if err := m.LCInto(&into, &pl); err == nil {
-		t.Fatal("LCInto Type 4: no error")
-	}
-	if err := lp.LCInto(nil, &pl); err == nil {
-		t.Fatal("LCInto nil dst: no error")
 	}
 	var nt *dmrd.TalkerAlias
 	var nl *dmrd.LocalTalkerAlias

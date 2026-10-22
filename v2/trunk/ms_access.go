@@ -53,12 +53,12 @@ func (m *MS) frame(now time.Duration, cach *layer2.CACH, out []Output) []Output 
 		m.ra = raWaitAloha
 		return out
 	}
-	m.txRand = pdu.RandomAccessPDU{ServiceOptions: m.options, ProxyFlag: m.u.proxy, Reserved: m.u.reserved | m.svc.raExtra, ServiceKind: uint8(m.kind),
-		TargetAddress: m.target, SourceAddress: m.addr}
-	m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKRandomAccess, RandomAccessPDU: &m.txRand}
+	m.tx = pdu.CSBK{LastBlock: true}
+	err := m.tx.SetRandomAccess(pdu.RandomAccessPDU{ServiceOptions: m.options, ProxyFlag: m.u.proxy, Reserved: m.u.reserved | m.svc.raExtra, ServiceKind: uint8(m.kind),
+		TargetAddress: m.target, SourceAddress: m.addr})
 	m.retries++
 	m.ra, m.frames = raWaitResp, m.f.ctl.site.Access.NRandWait.Frames()+1
-	return m.send(now+frame, m.slot, out)
+	return m.send(err, now+frame, m.slot, out)
 }
 
 func (m *MS) invited() bool {
@@ -90,16 +90,22 @@ func (m *MS) addressed(now time.Duration, h *layer2.Hint, out []Output) []Output
 	if o, done := m.svcCSBK(now, c, h, out); done {
 		return o
 	}
-	switch {
-	case c.AlohaPDU != nil:
+	if _, ok := c.AsAloha(); ok {
 		if m.ra == raWaitAloha {
 			m.backoff()
 		}
-	case c.AckOutboundPDU != nil && c.AckOutboundPDU.TargetAddress == m.addr:
-		return m.answer(now, enums.AckReason(c.AckOutboundPDU.ReasonCode), c.AckOutboundPDU.AdditionalInfo, out)
-	case c.AhoyPDU != nil:
-		return m.ahoyAny(now, c.AhoyPDU, h, out)
-	case c.MovePDU != nil && c.MovePDU.PhysicalChannel != ChannelAbsolute:
+		return out
+	}
+	if a, ok := c.AsAckOutbound(); ok {
+		if a.TargetAddress == m.addr {
+			return m.answer(now, enums.AckReason(a.ReasonCode), a.AdditionalInfo, out)
+		}
+		return out
+	}
+	if a, ok := c.AsAhoy(); ok {
+		return m.ahoyAny(now, &a, h, out)
+	}
+	if mv, ok := c.AsMove(); ok && mv.PhysicalChannel != ChannelAbsolute {
 		return m.moved(now, out)
 	}
 	return out
@@ -213,14 +219,14 @@ func (m *MS) AuthResponse(now time.Duration, response uint32, dst []Output) []Ou
 	if m.off || !a.on || now > a.due {
 		return dst
 	}
+	m.tx = pdu.CSBK{LastBlock: true}
+	var err error
 	if a.payload {
-		m.txAckP = pdu.AckInboundPayloadPDU{ReasonCode: byte(enums.AckReasonAuthResponseMS), TargetAddress: response & 0xFFFFFF, AdditionalInfo: m.addr}
-		m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInboundPayload, AckInboundPayloadPDU: &m.txAckP}
+		err = m.tx.SetAckInboundPayload(pdu.AckInboundPayloadPDU{ReasonCode: byte(enums.AckReasonAuthResponseMS), TargetAddress: response & 0xFFFFFF, AdditionalInfo: m.addr})
 	} else {
-		m.txAck = pdu.AckInboundPDU{ReasonCode: byte(enums.AckReasonAuthResponseMS), TargetAddress: response & 0xFFFFFF, AdditionalInfo: m.addr}
-		m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInbound, AckInboundPDU: &m.txAck}
+		err = m.tx.SetAckInbound(pdu.AckInboundPDU{ReasonCode: byte(enums.AckReasonAuthResponseMS), TargetAddress: response & 0xFFFFFF, AdditionalInfo: m.addr})
 	}
-	return m.send(a.due, a.slot, dst)
+	return m.send(err, a.due, a.slot, dst)
 }
 
 func (m *MS) ahoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Output) []Output {
@@ -246,9 +252,7 @@ func (m *MS) ahoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Outpu
 		return out
 	}
 	out = append(out, Output{Kind: OutputAhoy, Grant: Grant{Service: kind, Group: a.GroupIndividual, Target: a.TargetAddress, Source: a.SourceAddress}})
-	m.txAck = pdu.AckInboundPDU{ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: a.SourceAddress, AdditionalInfo: m.addr}
-	m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInbound, AckInboundPDU: &m.txAck}
-	return m.send(now+frame, slot, out)
+	return m.sendAck(now+frame, slot, pdu.AckInboundPDU{ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: a.SourceAddress, AdditionalInfo: m.addr}, out)
 }
 
 func (m *MS) payload(now time.Duration, h *layer2.Hint, out []Output) []Output {
@@ -260,9 +264,7 @@ func (m *MS) payload(now time.Duration, h *layer2.Hint, out []Output) []Output {
 	if !ok || c.FID != enums.FIDStandardized {
 		return out
 	}
-	switch {
-	case c.ProtectPDU != nil:
-		p := c.ProtectPDU
+	if p, ok := c.AsProtect(); ok {
 		kind := enums.ProtectKind(p.ProtectKind)
 		if kind == enums.ProtectIllegallyParked {
 			if m.addr != p.SourceAddress && m.addr != p.TargetAddress {
@@ -275,19 +277,30 @@ func (m *MS) payload(now time.Duration, h *layer2.Hint, out []Output) []Output {
 			kind == enums.ProtectEnablePTTOneMS {
 			return append(out, Output{Kind: OutputProtect, Protect: kind, Grant: *g})
 		}
-	case c.AhoyPDU != nil && m.isChallenge(c.AhoyPDU):
-		return m.challenged(now, c.AhoyPDU.SourceAddress, g.Slot, true, out)
-	case c.AhoyPDU != nil && enums.ServiceKind(c.AhoyPDU.ServiceKind) == enums.ServiceKindRegistration && m.member(c.AhoyPDU.GroupIndividual, c.AhoyPDU.TargetAddress):
-		a := c.AhoyPDU
+		return out
+	}
+	a, ok := c.AsAhoy()
+	switch {
+	case ok && m.isChallenge(&a):
+		return m.challenged(now, a.SourceAddress, g.Slot, true, out)
+	case ok && enums.ServiceKind(a.ServiceKind) == enums.ServiceKindRegistration && m.member(a.GroupIndividual, a.TargetAddress):
 		out = append(out, Output{Kind: OutputAhoy, Grant: Grant{Service: enums.ServiceKindRegistration, Group: a.GroupIndividual, Target: a.TargetAddress, Source: a.SourceAddress}})
-		m.txAckP = pdu.AckInboundPayloadPDU{ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: a.SourceAddress, AdditionalInfo: m.addr}
-		m.tx = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInboundPayload, AckInboundPayloadPDU: &m.txAckP}
-		return m.send(now+frame, g.Slot, out)
+		m.tx = pdu.CSBK{LastBlock: true}
+		err := m.tx.SetAckInboundPayload(pdu.AckInboundPayloadPDU{ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: a.SourceAddress, AdditionalInfo: m.addr})
+		return m.send(err, now+frame, g.Slot, out)
 	}
 	return out
 }
 
-func (m *MS) send(due time.Duration, slot enums.Slot, out []Output) []Output {
+func (m *MS) sendAck(due time.Duration, slot enums.Slot, a pdu.AckInboundPDU, out []Output) []Output {
+	m.tx = pdu.CSBK{LastBlock: true}
+	return m.send(m.tx.SetAckInbound(a), due, slot, out)
+}
+
+func (m *MS) send(err error, due time.Duration, slot enums.Slot, out []Output) []Output {
+	if err != nil {
+		return out
+	}
 	p, err := m.tx.Encode()
 	if err != nil {
 		return out

@@ -81,8 +81,6 @@ type CapacityPlusFollower struct {
 	opts   layer2.DecodeOptions
 	cach   layer2.CACH
 	slc    layer2.ShortLCAssembler
-	slcOut pdu.ShortLC
-	slcP   pdu.ShortLCPayloads
 	status [2]pdu.CapacityPlusSiteStatusAssembler
 
 	state     State
@@ -370,11 +368,11 @@ func (f *CapacityPlusFollower) restSeen(now time.Duration, lsn uint8, out []Outp
 }
 
 func (f *CapacityPlusFollower) shortLC(now time.Duration, cach *layer2.CACH, out []Output) []Output {
-	done, err := f.slc.AddInto(&f.slcOut, &f.slcP, *cach)
-	if err != nil || !done || f.slcOut.FEC.Uncorrectable {
+	slc, done, err := f.slc.Add(*cach)
+	if err != nil || !done || slc.FEC.Uncorrectable {
 		return out
 	}
-	p, ok := f.slcOut.AsCapacityPlusRestChannel()
+	p, ok := slc.AsCapacityPlusRestChannel()
 	if !ok {
 		return out
 	}

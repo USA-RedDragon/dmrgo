@@ -80,9 +80,10 @@ func ExampleBuildDataBurst() {
 }
 
 func ExampleVoiceTransmitter() {
-	lc := pdu.FullLinkControl{
-		FLCO:       enums.FLCOGroupVoiceChannelUser,
-		GroupVoice: &pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3120000},
+	var lc pdu.FullLinkControl
+	if err := lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 91, SourceAddress: 3120000}); err != nil {
+		fmt.Println(err)
+		return
 	}
 	tx, err := layer2.NewVoiceTransmitter(&layer2.VoiceTransmitterOptions{LC: lc, ColorCode: 1, Source: layer2.SyncSourceBS, Silence: vocoder.AMBESilenceSlot()})
 	if err != nil {

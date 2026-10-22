@@ -54,29 +54,33 @@ func callOf(h *pdu.DataHeader) Call {
 }
 
 func sapOf(h *pdu.DataHeader) enums.SAP {
-	switch {
-	case h.UnconfirmedDataHeader != nil:
-		return h.UnconfirmedDataHeader.SAP
-	case h.ConfirmedDataHeader != nil:
-		return h.ConfirmedDataHeader.SAP
+	if p, ok := h.AsUnconfirmedDataHeader(); ok {
+		return p.SAP
+	}
+	if p, ok := h.AsConfirmedDataHeader(); ok {
+		return p.SAP
 	}
 	return enums.SAPUnifiedDataTransport
 }
 
 func groupOf(h *pdu.DataHeader) bool {
-	switch {
-	case h.UnconfirmedDataHeader != nil:
-		return h.UnconfirmedDataHeader.Group
-	case h.ConfirmedDataHeader != nil:
-		return h.ConfirmedDataHeader.Group
-	case h.DefinedDataHeader != nil:
-		return h.DefinedDataHeader.Group
-	case h.RawDataHeader != nil:
-		return h.RawDataHeader.Group
-	case h.StatusPrecodedHeader != nil:
-		return h.StatusPrecodedHeader.Group
-	case h.UDTHeader != nil:
-		return h.UDTHeader.Group
+	if p, ok := h.AsUnconfirmedDataHeader(); ok {
+		return p.Group
+	}
+	if p, ok := h.AsConfirmedDataHeader(); ok {
+		return p.Group
+	}
+	if p, ok := h.AsDefinedDataHeader(); ok {
+		return p.Group
+	}
+	if p, ok := h.AsRawDataHeader(); ok {
+		return p.Group
+	}
+	if p, ok := h.AsStatusPrecodedHeader(); ok {
+		return p.Group
+	}
+	if p, ok := h.AsUDTHeader(); ok {
+		return p.Group
 	}
 	return false
 }

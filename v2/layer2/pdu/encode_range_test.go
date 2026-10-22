@@ -65,12 +65,12 @@ func TestEncode_AcceptsMaximumFieldValues(t *testing.T) {
 func TestEncode_PropagatesNestedErrors(t *testing.T) {
 	t.Parallel()
 
-	_, err := (&pdu.FullLinkControl{
-		BurstDataType: enums.DataTypeVoiceLCHeader,
-		FLCO:          enums.FLCOGroupVoiceChannelUser,
-		GroupVoice:    &pdu.FLCGroupVoice{GroupAddress: 1 << 24},
-	}).Encode()
+	lc := pdu.FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader, FLCO: enums.FLCOUnitToUnitVoiceChannelUser}
+	err := lc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 1 << 24})
 	expectEncodeError(t, err, "FLCGroupVoice.GroupAddress: value does not fit in 24 bits")
+	if lc.FLCO != enums.FLCOUnitToUnitVoiceChannelUser {
+		t.Errorf("SetGroupVoice changed FLCO to %v on an error", lc.FLCO)
+	}
 
 	_, err = (&pdu.FullLinkControl{FLCO: enums.FLCO(64)}).Encode()
 	expectEncodeError(t, err, "FullLinkControl.FLCO: value does not fit in 6 bits")

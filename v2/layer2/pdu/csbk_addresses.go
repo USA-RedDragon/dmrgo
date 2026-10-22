@@ -5,66 +5,6 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
 )
 
-func (s *CSBK) addressFields() (target, source *uint32) {
-	switch {
-	case s.UnitToUnitVoiceServiceRequestPDU != nil:
-		p := s.UnitToUnitVoiceServiceRequestPDU
-		return &p.TargetAddress, &p.SourceAddress
-	case s.UnitToUnitVoiceServiceAnswerResponsePDU != nil:
-		p := s.UnitToUnitVoiceServiceAnswerResponsePDU
-		return &p.TargetAddress, &p.SourceAddress
-	case s.NegativeAcknowledgementPDU != nil:
-		p := s.NegativeAcknowledgementPDU
-		return &p.TargetAddress, &p.SourceAddress
-	case s.PreamblePDU != nil:
-		p := s.PreamblePDU
-		return &p.TargetAddress, &p.SourceAddress
-	case s.PrivateVoiceGrantPDU != nil:
-		p := s.PrivateVoiceGrantPDU
-		return &p.TargetAddress, &p.SourceAddress
-	case s.TalkgroupVoiceGrantPDU != nil:
-		p := s.TalkgroupVoiceGrantPDU
-		return &p.TargetAddress, &p.SourceAddress
-	case s.BroadcastTalkgroupVoiceGrantPDU != nil:
-		p := s.BroadcastTalkgroupVoiceGrantPDU
-		return &p.TargetAddress, &p.SourceAddress
-	case s.PrivateDataGrantPDU != nil:
-		p := s.PrivateDataGrantPDU
-		return &p.TargetAddress, &p.SourceAddress
-	case s.TalkgroupDataGrantPDU != nil:
-		p := s.TalkgroupDataGrantPDU
-		return &p.TargetAddress, &p.SourceAddress
-	case s.DuplexPrivateVoiceGrantPDU != nil:
-		p := s.DuplexPrivateVoiceGrantPDU
-		return &p.TargetAddress, &p.SourceAddress
-	case s.DuplexPrivateDataGrantPDU != nil:
-		p := s.DuplexPrivateDataGrantPDU
-		return &p.TargetAddress, &p.SourceAddress
-	case s.PrivateDataGrantMultiItemPDU != nil:
-		p := s.PrivateDataGrantMultiItemPDU
-		return &p.TargetAddress, &p.SourceAddress
-	case s.ClearPDU != nil:
-		p := s.ClearPDU
-		return &p.TargetAddress, &p.SourceAddress
-	case s.ProtectPDU != nil:
-		p := s.ProtectPDU
-		return &p.TargetAddress, &p.SourceAddress
-	case s.AhoyPDU != nil:
-		p := s.AhoyPDU
-		return &p.TargetAddress, &p.SourceAddress
-	case s.RandomAccessPDU != nil:
-		p := s.RandomAccessPDU
-		return &p.TargetAddress, &p.SourceAddress
-	case s.AckvitationPDU != nil:
-		p := s.AckvitationPDU
-		return &p.TargetAddress, &p.SourceAddress
-	case s.MaintenancePDU != nil:
-		p := s.MaintenancePDU
-		return &p.TargetAddress, &p.SourceAddress
-	}
-	return nil, nil
-}
-
 func (s *CSBK) is0x38() bool {
 	return s.Opcode == CSBKBSOutboundActivation && s.FID == enums.FIDStandardized
 }
@@ -81,11 +21,61 @@ func (s *CSBK) Addresses() (target, source uint32, ok bool) {
 	if s.is0x38() {
 		return uint24(s.RawPayload[2:5]), uint24(s.RawPayload[5:8]), true
 	}
-	t, src := s.addressFields()
-	if t == nil {
-		return 0, 0, false
+	if p, ok := s.AsUnitToUnitVoiceServiceRequest(); ok {
+		return p.TargetAddress, p.SourceAddress, true
 	}
-	return *t, *src, true
+	if p, ok := s.AsUnitToUnitVoiceServiceAnswerResponse(); ok {
+		return p.TargetAddress, p.SourceAddress, true
+	}
+	if p, ok := s.AsNegativeAcknowledgement(); ok {
+		return p.TargetAddress, p.SourceAddress, true
+	}
+	if p, ok := s.AsPreamble(); ok {
+		return p.TargetAddress, p.SourceAddress, true
+	}
+	if p, ok := s.AsPrivateVoiceGrant(); ok {
+		return p.TargetAddress, p.SourceAddress, true
+	}
+	if p, ok := s.AsTalkgroupVoiceGrant(); ok {
+		return p.TargetAddress, p.SourceAddress, true
+	}
+	if p, ok := s.AsBroadcastTalkgroupVoiceGrant(); ok {
+		return p.TargetAddress, p.SourceAddress, true
+	}
+	if p, ok := s.AsPrivateDataGrant(); ok {
+		return p.TargetAddress, p.SourceAddress, true
+	}
+	if p, ok := s.AsTalkgroupDataGrant(); ok {
+		return p.TargetAddress, p.SourceAddress, true
+	}
+	if p, ok := s.AsDuplexPrivateVoiceGrant(); ok {
+		return p.TargetAddress, p.SourceAddress, true
+	}
+	if p, ok := s.AsDuplexPrivateDataGrant(); ok {
+		return p.TargetAddress, p.SourceAddress, true
+	}
+	if p, ok := s.AsPrivateDataGrantMultiItem(); ok {
+		return p.TargetAddress, p.SourceAddress, true
+	}
+	if p, ok := s.AsClear(); ok {
+		return p.TargetAddress, p.SourceAddress, true
+	}
+	if p, ok := s.AsProtect(); ok {
+		return p.TargetAddress, p.SourceAddress, true
+	}
+	if p, ok := s.AsAhoy(); ok {
+		return p.TargetAddress, p.SourceAddress, true
+	}
+	if p, ok := s.AsRandomAccess(); ok {
+		return p.TargetAddress, p.SourceAddress, true
+	}
+	if p, ok := s.AsAckvitation(); ok {
+		return p.TargetAddress, p.SourceAddress, true
+	}
+	if p, ok := s.AsMaintenance(); ok {
+		return p.TargetAddress, p.SourceAddress, true
+	}
+	return 0, 0, false
 }
 
 // SetAddresses sets the target and source addresses of a CSBK for which
@@ -104,10 +94,77 @@ func (s *CSBK) SetAddresses(target, source uint32) error {
 		putUint24(s.RawPayload[5:8], source)
 		return nil
 	}
-	t, src := s.addressFields()
-	if t == nil {
-		return ErrNoAddresses
+	if p, ok := s.AsUnitToUnitVoiceServiceRequest(); ok {
+		p.TargetAddress, p.SourceAddress = target, source
+		return s.SetUnitToUnitVoiceServiceRequest(p)
 	}
-	*t, *src = target, source
-	return nil
+	if p, ok := s.AsUnitToUnitVoiceServiceAnswerResponse(); ok {
+		p.TargetAddress, p.SourceAddress = target, source
+		return s.SetUnitToUnitVoiceServiceAnswerResponse(p)
+	}
+	if p, ok := s.AsNegativeAcknowledgement(); ok {
+		p.TargetAddress, p.SourceAddress = target, source
+		return s.SetNegativeAcknowledgement(p)
+	}
+	if p, ok := s.AsPreamble(); ok {
+		p.TargetAddress, p.SourceAddress = target, source
+		return s.SetPreamble(p)
+	}
+	if p, ok := s.AsPrivateVoiceGrant(); ok {
+		p.TargetAddress, p.SourceAddress = target, source
+		return s.SetPrivateVoiceGrant(p)
+	}
+	if p, ok := s.AsTalkgroupVoiceGrant(); ok {
+		p.TargetAddress, p.SourceAddress = target, source
+		return s.SetTalkgroupVoiceGrant(p)
+	}
+	if p, ok := s.AsBroadcastTalkgroupVoiceGrant(); ok {
+		p.TargetAddress, p.SourceAddress = target, source
+		return s.SetBroadcastTalkgroupVoiceGrant(p)
+	}
+	if p, ok := s.AsPrivateDataGrant(); ok {
+		p.TargetAddress, p.SourceAddress = target, source
+		return s.SetPrivateDataGrant(p)
+	}
+	if p, ok := s.AsTalkgroupDataGrant(); ok {
+		p.TargetAddress, p.SourceAddress = target, source
+		return s.SetTalkgroupDataGrant(p)
+	}
+	if p, ok := s.AsDuplexPrivateVoiceGrant(); ok {
+		p.TargetAddress, p.SourceAddress = target, source
+		return s.SetDuplexPrivateVoiceGrant(p)
+	}
+	if p, ok := s.AsDuplexPrivateDataGrant(); ok {
+		p.TargetAddress, p.SourceAddress = target, source
+		return s.SetDuplexPrivateDataGrant(p)
+	}
+	if p, ok := s.AsPrivateDataGrantMultiItem(); ok {
+		p.TargetAddress, p.SourceAddress = target, source
+		return s.SetPrivateDataGrantMultiItem(p)
+	}
+	if p, ok := s.AsClear(); ok {
+		p.TargetAddress, p.SourceAddress = target, source
+		return s.SetClear(p)
+	}
+	if p, ok := s.AsProtect(); ok {
+		p.TargetAddress, p.SourceAddress = target, source
+		return s.SetProtect(p)
+	}
+	if p, ok := s.AsAhoy(); ok {
+		p.TargetAddress, p.SourceAddress = target, source
+		return s.SetAhoy(p)
+	}
+	if p, ok := s.AsRandomAccess(); ok {
+		p.TargetAddress, p.SourceAddress = target, source
+		return s.SetRandomAccess(p)
+	}
+	if p, ok := s.AsAckvitation(); ok {
+		p.TargetAddress, p.SourceAddress = target, source
+		return s.SetAckvitation(p)
+	}
+	if p, ok := s.AsMaintenance(); ok {
+		p.TargetAddress, p.SourceAddress = target, source
+		return s.SetMaintenance(p)
+	}
+	return ErrNoAddresses
 }

@@ -39,17 +39,12 @@ func pduPath() (func() error, error) {
 		return nil, err
 	}
 	lc.burst_data_type = 1
-	var cp *C.dmrgo_pdu_csbk_payloads_t
-	var lp *C.dmrgo_pdu_full_link_control_payloads_t
-	if err := check(dmrgo_pdu_csbk_payloads_new(&cp), dmrgo_pdu_full_link_control_payloads_new(&lp)); err != nil {
-		return nil, err
-	}
 	var target, source C.uint32_t
 	var ok C.bool
 	return func() error {
-		return check(dmrgo_pdu_csbk_encode(c, &bits[0]), dmrgo_pdu_decode_csbk_into(d, cp, &bits[0]),
+		return check(dmrgo_pdu_csbk_encode(c, &bits[0]), dmrgo_pdu_decode_csbk(&bits[0], d),
 			dmrgo_pdu_csbk_addresses(d, &target, &source, &ok),
-			dmrgo_pdu_full_link_control_encode(lc, &bits[0]), dmrgo_pdu_decode_full_link_control_into(lc2, lp, &bits[0], 1))
+			dmrgo_pdu_full_link_control_encode(lc, &bits[0]), dmrgo_pdu_decode_full_link_control(&bits[0], 1, lc2))
 	}, nil
 }
 

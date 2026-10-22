@@ -7,51 +7,46 @@ import (
 	"github.com/USA-RedDragon/dmrgo/v2/layer3"
 )
 
-// FullLinkControl is the Full Link Control (Full LC) PDU (ETSI TS 102 361-1 clause 9.1.6).
+// FullLinkControl is the Full Link Control (Full LC) PDU. FLCO and FID
+// select the view of RawPayload: AsGroupVoice, for example, decodes it for
+// FLCO enums.FLCOGroupVoiceChannelUser and the standard FID 0.
+// (ETSI TS 102 361-1 clause 9.1.6)
 //
 //dmr:fec reed_solomon_12_9_4
 //dmr:input BurstDataType
 //dmr:fec_mask BurstDataType enums.DataTypeVoiceLCHeader=0x969696 enums.DataTypeTerminatorWithLC=0x999999
 //dmr:dispatch_if FID==0
+//dmr:variant GroupVoice FLCGroupVoice FLCO=enums.FLCOGroupVoiceChannelUser
+//dmr:variant UnitToUnit FLCUnitToUnit FLCO=enums.FLCOUnitToUnitVoiceChannelUser
+//dmr:variant GPSInfo FLCGPSInfo FLCO=enums.FLCOGPSInfo
+//dmr:variant TalkerAliasHeader FLCTalkerAliasHeader FLCO=enums.FLCOTalkerAliasHeader
+//dmr:variant TalkerAliasBlock FLCTalkerAliasBlock FLCO=enums.FLCOTalkerAliasBlock1|enums.FLCOTalkerAliasBlock2|enums.FLCOTalkerAliasBlock3
+//dmr:variant TerminatorDataLinkControl FLCTerminatorDataLinkControl FLCO=enums.FLCOTerminatorDataLinkControl
 type FullLinkControl struct {
 	// BurstDataType selects the RS(12,9) parity mask; Encode returns an error unless it is DataTypeVoiceLCHeader or DataTypeTerminatorWithLC.
 	BurstDataType enums.DataType `dmr:"-"`
-	ProtectFlag   bool           `dmr:"bit:0"` // Protect Flag (PF)
-	Reserved      bool           `dmr:"bit:1"` // reserved
-	// FLCO is the Full Link Control Opcode; Encode returns an error unless FLCO and FID select the one payload field that is set.
-	FLCO enums.FLCO `dmr:"bits:2-7,enum"`
-	// FID is the Feature set ID; the payload fields apply only to the standard FID 0, and RawPayload holds the payload of any other FID.
+	ProtectFlag   bool           `dmr:"bit:0"`         // Protect Flag (PF)
+	Reserved      bool           `dmr:"bit:1"`         // reserved
+	FLCO          enums.FLCO     `dmr:"bits:2-7,enum"` // Full Link Control Opcode (FLCO)
+	// FID is the Feature set ID; the As methods apply only to the standard FID 0, and RawPayload holds the payload of any FID.
 	FID enums.FID `dmr:"bits:8-15,enum"`
 	// FEC is the RS(12,9) result; MMDVMHost accepts only an LC with FEC.ErrorsCorrected 0 (layer2.MMDVMHostAccepts).
 	FEC fec.Result `dmr:"-"`
 
-	GroupVoice                *FLCGroupVoice                `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOGroupVoiceChannelUser"`                                                     // Grp_V_Ch_Usr payload
-	UnitToUnit                *FLCUnitToUnit                `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOUnitToUnitVoiceChannelUser"`                                                // UU_V_Ch_Usr payload
-	GPSInfo                   *FLCGPSInfo                   `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOGPSInfo"`                                                                   // GPS_Info payload
-	TalkerAliasHeader         *FLCTalkerAliasHeader         `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTalkerAliasHeader"`                                                         // Talker_Alias_HDR payload
-	TalkerAliasBlock          *FLCTalkerAliasBlock          `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTalkerAliasBlock1|enums.FLCOTalkerAliasBlock2|enums.FLCOTalkerAliasBlock3"` // Talker_Alias_BLK1 to BLK3 payload
-	TerminatorDataLinkControl *FLCTerminatorDataLinkControl `dmr:"bits:16-71,dispatch:FLCO=enums.FLCOTerminatorDataLinkControl"`                                                 // terminator data link control payload
-
-	// RawPayload holds LC bits 16 to 71 when no payload field is set, as
-	// for a manufacturer FLCO, packed most significant bit first: bit 16
-	// is the top bit of byte 0, so the bytes are LC octets 2 to 8.
-	RawPayload [7]byte `dmr:"bits:16-71,raw,fallback"`
+	// RawPayload holds LC bits 16 to 71, the payload that FLCO and FID
+	// select, packed most significant bit first: bit 16 is the top bit of
+	// byte 0, so the bytes are LC octets 2 to 8.
+	RawPayload [7]byte `dmr:"bits:16-71,raw,union"`
 }
 
 // Addresses returns the 24-bit target and source addresses of a Grp_V_Ch_Usr
-// (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC. It reads RawPayload when no payload
-// field is set, so, as MMDVMHost does, it also returns best-effort addresses
-// from a manufacturer FID LC with these FLCOs. ok is false for other FLCOs.
+// (FLCO 0) or UU_V_Ch_Usr (FLCO 3) LC. It reads RawPayload for any FID, so,
+// as MMDVMHost does, it also returns best-effort addresses from a
+// manufacturer FID LC with these FLCOs. ok is false for other FLCOs.
 // (ETSI TS 102 361-2 Tables 7.1 and 7.2)
 func (s *FullLinkControl) Addresses() (target, source uint32, ok bool) {
 	if s == nil {
 		return 0, 0, false
-	}
-	if s.FLCO == enums.FLCOGroupVoiceChannelUser && s.GroupVoice != nil {
-		return s.GroupVoice.GroupAddress, s.GroupVoice.SourceAddress, true
-	}
-	if s.FLCO == enums.FLCOUnitToUnitVoiceChannelUser && s.UnitToUnit != nil {
-		return s.UnitToUnit.TargetAddress, s.UnitToUnit.SourceAddress, true
 	}
 	if s.FLCO != enums.FLCOGroupVoiceChannelUser && s.FLCO != enums.FLCOUnitToUnitVoiceChannelUser {
 		return 0, 0, false
@@ -60,11 +55,9 @@ func (s *FullLinkControl) Addresses() (target, source uint32, ok bool) {
 }
 
 // SetAddresses sets the target and source addresses of a Grp_V_Ch_Usr or
-// UU_V_Ch_Usr LC: in GroupVoice or UnitToUnit for the standard FID, and in
-// RawPayload for any other FID. It returns ErrNoAddresses for other FLCOs
-// and for the standard FID when the payload field of the FLCO is nil
-// (NewVoiceLC and a decode set it), and a *dmrgo.FieldRangeError when an
-// address does not fit in 24 bits, and then changes nothing.
+// UU_V_Ch_Usr LC of any FID in RawPayload. It returns ErrNoAddresses for
+// other FLCOs and a *dmrgo.FieldRangeError when an address does not fit in
+// 24 bits, and then changes nothing.
 func (s *FullLinkControl) SetAddresses(target, source uint32) error {
 	if s == nil {
 		return dmrgo.ErrNilReceiver
@@ -75,22 +68,8 @@ func (s *FullLinkControl) SetAddresses(target, source uint32) error {
 	if s.FLCO != enums.FLCOGroupVoiceChannelUser && s.FLCO != enums.FLCOUnitToUnitVoiceChannelUser {
 		return ErrNoAddresses
 	}
-	if s.FID != enums.FIDStandardized {
-		putUint24(s.RawPayload[1:4], target)
-		putUint24(s.RawPayload[4:7], source)
-		return nil
-	}
-	if s.FLCO == enums.FLCOGroupVoiceChannelUser {
-		if s.GroupVoice == nil {
-			return ErrNoAddresses
-		}
-		s.GroupVoice.GroupAddress, s.GroupVoice.SourceAddress = target, source
-		return nil
-	}
-	if s.UnitToUnit == nil {
-		return ErrNoAddresses
-	}
-	s.UnitToUnit.TargetAddress, s.UnitToUnit.SourceAddress = target, source
+	putUint24(s.RawPayload[1:4], target)
+	putUint24(s.RawPayload[4:7], source)
 	return nil
 }
 
@@ -98,39 +77,36 @@ func (s *FullLinkControl) SetAddresses(target, source uint32) error {
 // voice call: Grp_V_Ch_Usr when group is true, else UU_V_Ch_Usr, with Service
 // Options so. MMDVMHost sends the zero value and Motorola IPSC
 // layer3.MotorolaServiceOptions. It returns a *dmrgo.FieldRangeError when an
-// address does not fit in 24 bits. It allocates the payload struct of the LC.
-// (ETSI TS 102 361-2 Tables 7.1 and 7.2)
+// address does not fit in 24 bits. (ETSI TS 102 361-2 Tables 7.1 and 7.2)
 func NewVoiceLC(group bool, target, source uint32, so layer3.ServiceOptions) (FullLinkControl, error) {
 	if err := checkAddresses(target, source, errFullLinkControlTargetRange, errFullLinkControlSourceRange); err != nil {
 		return FullLinkControl{}, err
 	}
-	s := FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader, FLCO: enums.FLCOUnitToUnitVoiceChannelUser}
+	s := FullLinkControl{BurstDataType: enums.DataTypeVoiceLCHeader}
+	var err error
 	if group {
-		s.FLCO = enums.FLCOGroupVoiceChannelUser
-		s.GroupVoice = &FLCGroupVoice{ServiceOptions: so, GroupAddress: target, SourceAddress: source}
+		err = s.SetGroupVoice(FLCGroupVoice{ServiceOptions: so, GroupAddress: target, SourceAddress: source})
 	} else {
-		s.UnitToUnit = &FLCUnitToUnit{ServiceOptions: so, TargetAddress: target, SourceAddress: source}
+		err = s.SetUnitToUnit(FLCUnitToUnit{ServiceOptions: so, TargetAddress: target, SourceAddress: source})
+	}
+	if err != nil {
+		return FullLinkControl{}, err
 	}
 	return s, nil
 }
 
 // ServiceOptions returns the Service Options of a Grp_V_Ch_Usr (FLCO 0) or
-// UU_V_Ch_Usr (FLCO 3) LC. Like Addresses, it reads RawPayload when no
-// payload field is set, so it also reads a manufacturer FID LC with these
-// FLCOs. ok is false for other FLCOs.
+// UU_V_Ch_Usr (FLCO 3) LC. Like Addresses, it reads RawPayload for any FID,
+// so it also reads a manufacturer FID LC with these FLCOs. ok is false for
+// other FLCOs.
 func (s *FullLinkControl) ServiceOptions() (so layer3.ServiceOptions, ok bool) {
 	if s == nil {
 		return layer3.ServiceOptions{}, false
 	}
-	switch {
-	case s.FLCO == enums.FLCOGroupVoiceChannelUser && s.GroupVoice != nil:
-		return s.GroupVoice.ServiceOptions, true
-	case s.FLCO == enums.FLCOUnitToUnitVoiceChannelUser && s.UnitToUnit != nil:
-		return s.UnitToUnit.ServiceOptions, true
-	case s.FLCO == enums.FLCOGroupVoiceChannelUser, s.FLCO == enums.FLCOUnitToUnitVoiceChannelUser:
-		return layer3.DecodeServiceOptions([1]byte{s.RawPayload[0]}), true
+	if s.FLCO != enums.FLCOGroupVoiceChannelUser && s.FLCO != enums.FLCOUnitToUnitVoiceChannelUser {
+		return so, false
 	}
-	return so, false
+	return layer3.DecodeServiceOptions([1]byte{s.RawPayload[0]}), true
 }
 
 // FLCGroupVoice is the group voice channel user (Grp_V_Ch_Usr) Full LC payload

@@ -22,7 +22,7 @@ func upload(t testing.TB, h pdu.UDTHeader, a *trunk.Appended) []layer2.RawBurst 
 		copy(blocks[i][:], a.Data[12*i:min(12*i+12, trunk.MaxAppendedOctets)])
 	}
 	pdu.SetMBCLastBlockCRC(blocks)
-	hdr, err := layer2.BuildBurst(&pdu.DataHeader{Format: pdu.FormatUnifiedDataTransport, UDTHeader: &h}, testCC, layer2.SyncSourceMS)
+	hdr, err := layer2.BuildBurst(withPDU(t, &pdu.DataHeader{}, (*pdu.DataHeader).SetUDTHeader, h), testCC, layer2.SyncSourceMS)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,12 +41,12 @@ func upload(t testing.TB, h pdu.UDTHeader, a *trunk.Appended) []layer2.RawBurst 
 func newTSCCUDTPool(t testing.TB) burstPool {
 	t.Helper()
 	rnd := func(kind enums.ServiceKind, opts, rsvd uint8, target uint32) layer2.RawBurst {
-		return msBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKRandomAccess, RandomAccessPDU: &pdu.RandomAccessPDU{
-			ServiceOptions: opts, Reserved: rsvd, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: 3120001}})
+		return msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetRandomAccess, pdu.RandomAccessPDU{
+			ServiceOptions: opts, Reserved: rsvd, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: 3120001}))
 	}
 	ackU := func(r enums.AckReason, info uint32) layer2.RawBurst {
-		return msBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckInbound, AckInboundPDU: &pdu.AckInboundPDU{
-			ReasonCode: byte(r), TargetAddress: 3120001, AdditionalInfo: info}})
+		return msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAckInbound, pdu.AckInboundPDU{
+			ReasonCode: byte(r), TargetAddress: 3120001, AdditionalInfo: info}))
 	}
 	var text, addrs trunk.Appended
 	if err := text.SetText(enums.UDTISO7, []byte("fuzz")); err != nil {
@@ -66,7 +66,7 @@ func newTSCCUDTPool(t testing.TB) burstPool {
 		rnd(enums.ServiceKindDuplexVoice, 0, 0, 3120002), rnd(enums.ServiceKindDuplexPacketData, 0, 0, 3120002),
 		rnd(enums.ServiceKindIndividualVoice, 0, 0b0010, 3120002), rnd(enums.ServiceKindIndividualShortData, 0, 0, constants.GatewayPSTNI),
 		ackU(enums.AckReasonMSAccepted, 3120002), ackU(enums.AckReasonMSNotSupported, 3120002), ackU(enums.AckReasonMSAccepted, 3120001), usbd,
-		msBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKMaintenance, MaintenancePDU: &pdu.MaintenancePDU{TargetAddress: 3120002, SourceAddress: 3120001}}),
+		msBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetMaintenance, pdu.MaintenancePDU{TargetAddress: 3120002, SourceAddress: 3120001})),
 	}
 	pool = append(pool, upload(t, pdu.UDTHeader{LLIDDestination: 3120002, LLIDSource: 3120001}, &text)...)
 	pool = append(pool, upload(t, pdu.UDTHeader{OptionFlag: true, LLIDDestination: constants.GatewayMSI, LLIDSource: 3120001}, &addrs)...)

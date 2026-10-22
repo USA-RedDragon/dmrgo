@@ -12,10 +12,11 @@ var capMaxAdjacentSite = [12]byte{0xA8, 0x00, 0x34, 0xC0, 0x76, 0x98, 0x27, 0xC0
 func TestBroadcastPDU_AsAdjacentSite_CapacityMax(t *testing.T) {
 	t.Parallel()
 	c := pdu.DecodeCSBK(capMaxAdjacentSite)
-	if c.BroadcastPDU == nil {
+	bcast, ok := c.AsBroadcast()
+	if !ok {
 		t.Fatalf("no C_BCAST payload: %v", c.Opcode)
 	}
-	got, ok := c.BroadcastPDU.AsAdjacentSite()
+	got, ok := bcast.AsAdjacentSite()
 	if !ok {
 		t.Fatal("AsAdjacentSite: ok false")
 	}
@@ -36,10 +37,10 @@ func TestBroadcastPDU_AsAdjacentSite_CapacityMax(t *testing.T) {
 	if err := sc.Unpack14(got.AdjacentSysCode); err != nil || sc.Model != pdu.NetworkModelLarge || sc.Net != 6 || sc.Site != 3 {
 		t.Errorf("adjacent SYScode %+v (%v), want Large net 6 site 3", sc, err)
 	}
-	if _, ok := c.BroadcastPDU.AsAnnWDTSCC(); ok {
+	if _, ok := bcast.AsAnnWDTSCC(); ok {
 		t.Error("AsAnnWDTSCC: ok for Adjacent_Site")
 	}
-	if _, ok := c.BroadcastPDU.AsChanFreq(); ok {
+	if _, ok := bcast.AsChanFreq(); ok {
 		t.Error("AsChanFreq: ok for Adjacent_Site")
 	}
 }

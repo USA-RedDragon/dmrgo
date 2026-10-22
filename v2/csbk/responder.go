@@ -97,8 +97,6 @@ type Responder struct {
 	reqTarget   uint32
 	reqSource   uint32
 	build       pdu.CSBK
-	uuAns       pdu.UnitToUnitVoiceServiceAnswerResponsePDU
-	nack        pdu.NegativeAcknowledgementPDU
 	noCopy      noCopy
 	answerReady bool
 }
@@ -234,7 +232,7 @@ func (r *Responder) answerFor(c *pdu.CSBK, target, source uint32) (svc Service, 
 	switch c.Opcode {
 	case pdu.CSBKUnitToUnitVoiceServiceRequest:
 		so := layer3.ServiceOptions{}
-		if p := c.UnitToUnitVoiceServiceRequestPDU; p != nil {
+		if p, ok := c.AsUnitToUnitVoiceServiceRequest(); ok {
 			so = p.ServiceOptions
 		}
 		switch r.oacsu {
@@ -243,8 +241,10 @@ func (r *Responder) answerFor(c *pdu.CSBK, target, source uint32) (svc Service, 
 			if r.oacsu == OACSUDeny {
 				resp = answerDeny
 			}
-			r.uuAns = pdu.UnitToUnitVoiceServiceAnswerResponsePDU{ServiceOptions: so, AnswerResponse: resp, TargetAddress: source, SourceAddress: target}
-			r.build = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKUnitToUnitVoiceServiceAnswerResponse, UnitToUnitVoiceServiceAnswerResponsePDU: &r.uuAns}
+			r.build = pdu.CSBK{LastBlock: true}
+			if r.build.SetUnitToUnitVoiceServiceAnswerResponse(pdu.UnitToUnitVoiceServiceAnswerResponsePDU{ServiceOptions: so, AnswerResponse: resp, TargetAddress: source, SourceAddress: target}) != nil {
+				return ServiceOACSU, answer, true, true
+			}
 			return ServiceOACSU, r.encode(), true, true
 		case OACSUNotSupported:
 		}
@@ -256,11 +256,13 @@ func (r *Responder) answerFor(c *pdu.CSBK, target, source uint32) (svc Service, 
 	if r.noFNS {
 		return ServiceUnsupported, answer, false, true
 	}
-	r.nack = pdu.NegativeAcknowledgementPDU{
+	r.build = pdu.CSBK{LastBlock: true}
+	if r.build.SetNegativeAcknowledgement(pdu.NegativeAcknowledgementPDU{
 		AdditionalInfo: layer3.AdditionalInfoValid, SourceType: layer3.SourceTypeMS,
 		ServiceType: c.Opcode, ReasonCode: byte(ReasonNotSupported), SourceAddress: target, TargetAddress: source,
+	}) != nil {
+		return ServiceUnsupported, answer, false, true
 	}
-	r.build = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKNegativeAcknowledgement, NegativeAcknowledgementPDU: &r.nack}
 	return ServiceUnsupported, r.encode(), false, true
 }
 

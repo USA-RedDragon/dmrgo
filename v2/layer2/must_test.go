@@ -6,3 +6,9 @@ func must[T any](v T, err error) T {
 	}
 	return v
 }
+
+func mustSet(err error) {
+	if err != nil {
+		panic(err)
+	}
+}

@@ -79,8 +79,7 @@ func TestAssembler_HeaderInPlace(t *testing.T) {
 	}
 	a := packet.NewAssembler(127)
 	h := p.Header
-	c := *h.ConfirmedDataHeader
-	h.ConfirmedDataHeader = &c
+	c := get(t, &h, (*pdu.DataHeader).AsConfirmedDataHeader)
 	if _, _, err := a.Add(&h); err != nil {
 		t.Fatal(err)
 	}
@@ -99,6 +98,7 @@ func TestAssembler_HeaderInPlace(t *testing.T) {
 	}
 	c.LLIDSource++
 	c.BlocksToFollow = 2
+	mustSet(t, h.SetConfirmedDataHeader(c))
 	if _, _, err := a.Add(&h); err != nil {
 		t.Fatal(err)
 	}
@@ -106,8 +106,11 @@ func TestAssembler_HeaderInPlace(t *testing.T) {
 		t.Errorf("header of another source taken as a retry, missing %v", got)
 	}
 	resp, err := a.Response()
-	if err != nil || resp.Header.ResponsePacketHeader.LLIDDestination != c.LLIDSource {
-		t.Errorf("response %v %+v", err, resp.Header.ResponsePacketHeader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rh := get(t, &resp.Header, (*pdu.DataHeader).AsResponsePacketHeader); rh.LLIDDestination != c.LLIDSource {
+		t.Errorf("response %+v", rh)
 	}
 }
 
@@ -171,7 +174,7 @@ func TestBuilder(t *testing.T) {
 					}
 					got, err := b.Segment(h, payload(n), rate)
 					if err != nil || !reflect.DeepEqual(got, want) {
-						t.Fatalf("%s %s n=%d: Builder.Segment differs: %v", h.Format.String(), rate.String(), n, err)
+						t.Fatalf("%s %s n=%d: Builder.Segment differs: %v", h.Format().String(), rate.String(), n, err)
 					}
 				}
 			}
@@ -181,7 +184,8 @@ func TestBuilder(t *testing.T) {
 		t.Errorf("rate: %v", err)
 	}
 
-	to := confirmed().ConfirmedDataHeader
+	toHeader := confirmedHeader()
+	to := &toHeader
 	to.BlocksToFollow = 90
 	var rd packet.ResponseData
 	rd.Retry[3], rd.Retry[80] = true, true
@@ -260,7 +264,7 @@ func TestResponseData_Append(t *testing.T) {
 func TestAssembler_ResponseLength(t *testing.T) {
 	t.Parallel()
 
-	h := pdu.DataHeader{Format: pdu.FormatResponsePacket, ResponsePacketHeader: &pdu.ResponsePacketHeader{BlocksToFollow: 3, ResponseClass: 2}}
+	h := header(t, (*pdu.DataHeader).SetResponsePacketHeader, pdu.ResponsePacketHeader{BlocksToFollow: 3, ResponseClass: 2})
 	a := packet.NewAssembler(127)
 	if _, _, err := a.Add(encodeHeader(t, &h)); err != nil {
 		t.Fatal(err)

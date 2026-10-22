@@ -325,15 +325,7 @@ type TSCC struct {
 	caches  [1 + MaxPayloadChannels]bs.CACH
 	b       *layer2.Burst
 	cs      pdu.CSBK
-	aloha   pdu.AlohaPDU
-	ack     pdu.AckOutboundPDU
-	ahoy    pdu.AhoyPDU
-	tv      pdu.TalkgroupVoiceGrantPDU
-	pv      pdu.PrivateVoiceGrantPDU
-	clear   pdu.ClearPDU
 	slc     pdu.ShortLC
-	csys    pdu.ShortLCCSysParms
-	psys    pdu.ShortLCPSysParms
 	u       tsccUDT
 	svc     tsccSvc
 	noCopy  noCopy
@@ -455,11 +447,11 @@ func (t *TSCC) Inbound(now time.Duration, ch uint16, s enums.Slot, raw *layer2.R
 	if !ok || c.FID != enums.FIDStandardized {
 		return out
 	}
-	switch {
-	case c.RandomAccessPDU != nil:
-		return t.random(now, c.RandomAccessPDU, out)
-	case c.AckInboundPDU != nil:
-		return t.answer(now, c.AckInboundPDU, out)
+	if r, ok := c.AsRandomAccess(); ok {
+		return t.random(now, &r, out)
+	}
+	if a, ok := c.AsAckInbound(); ok {
+		return t.answer(now, &a, out)
 	}
 	return out
 }
@@ -478,8 +470,11 @@ func (t *TSCC) payloadIn(now time.Duration, ch uint16, s enums.Slot, raw *layer2
 	if b.Kind == layer2.KindData {
 		switch b.SlotType.DataType {
 		case enums.DataTypeCSBK:
-			if c, ok := b.Data.(*pdu.CSBK); ok && !b.FEC.PDU.Uncorrectable && c.MaintenancePDU != nil &&
-				(c.MaintenancePDU.SourceAddress == cs.grant.Source || duplex(&cs.grant) && c.MaintenancePDU.SourceAddress == cs.grant.Target) {
+			c, ok := b.Data.(*pdu.CSBK)
+			if !ok || b.FEC.PDU.Uncorrectable {
+				return out
+			}
+			if m, ok := c.AsMaintenance(); ok && (m.SourceAddress == cs.grant.Source || duplex(&cs.grant) && m.SourceAddress == cs.grant.Target) {
 				return t.startClear(i, ReasonMaintenance, out)
 			}
 			return out
@@ -544,10 +539,11 @@ func (t *TSCC) random(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOutpu
 		}
 		*st = setup{used: true, caller: src, called: r.TargetAddress, until: now + t.cfg.AnswerTimeout, opts: r.ServiceOptions}
 		t.sendAck(src, enums.AckReasonWait)
-		t.ahoy = pdu.AhoyPDU{ServiceOptsMirror: r.ServiceOptions, ALS: r.Reserved&alsBit != 0, ServiceKind: uint8(enums.ServiceKindIndividualVoice),
-			TargetAddress: r.TargetAddress, SourceAddress: src}
-		t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &t.ahoy}
-		t.enqueueTo(r.TargetAddress, true)
+		t.cs = pdu.CSBK{LastBlock: true}
+		if t.cs.SetAhoy(pdu.AhoyPDU{ServiceOptsMirror: r.ServiceOptions, ALS: r.Reserved&alsBit != 0, ServiceKind: uint8(enums.ServiceKindIndividualVoice),
+			TargetAddress: r.TargetAddress, SourceAddress: src}) == nil {
+			t.enqueueTo(r.TargetAddress, true)
+		}
 		return out
 	}
 	return t.refuse(src, enums.AckReasonSysBusyRefused, out)
@@ -569,9 +565,10 @@ func (t *TSCC) challenge(now time.Duration, src uint32, opts, ps uint8, out []TS
 	}
 	c := t.rng.Uint32() % (maxChallenge + 1)
 	t.auths[w] = authWait{used: true, addr: src, challenge: c, ps: ps, until: now + t.cfg.AnswerTimeout}
-	t.ahoy = pdu.AhoyPDU{ServiceOptsMirror: opts, ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: src, SourceAddress: c}
-	t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &t.ahoy}
-	t.enqueue(true)
+	t.cs = pdu.CSBK{LastBlock: true}
+	if t.cs.SetAhoy(pdu.AhoyPDU{ServiceOptsMirror: opts, ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: src, SourceAddress: c}) == nil {
+		t.enqueue(true)
+	}
 	return append(out, TSCCOutput{Kind: TSCCAuthChallenge, Address: src, Challenge: c})
 }
 
@@ -654,14 +651,16 @@ func (t *TSCC) grant(now time.Duration, group bool, target, source uint32, out [
 func (t *TSCC) sendGrant(i int) {
 	g := &t.calls[i].grant
 	ts2 := g.Slot == enums.Slot2
+	t.cs = pdu.CSBK{LastBlock: true}
+	var err error
 	if g.Group {
-		t.tv = pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: g.Channel, LogicalChannel: ts2, LateEntry: g.LateEntry, TargetAddress: g.Target, SourceAddress: g.Source}
-		t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &t.tv}
+		err = t.cs.SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: g.Channel, LogicalChannel: ts2, LateEntry: g.LateEntry, TargetAddress: g.Target, SourceAddress: g.Source})
 	} else {
-		t.pv = pdu.PrivateVoiceGrantPDU{PhysicalChannel: g.Channel, LogicalChannel: ts2, TargetAddress: g.Target, SourceAddress: g.Source}
-		t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKPrivateVoiceGrant, PrivateVoiceGrantPDU: &t.pv}
+		err = t.cs.SetPrivateVoiceGrant(pdu.PrivateVoiceGrantPDU{PhysicalChannel: g.Channel, LogicalChannel: ts2, TargetAddress: g.Target, SourceAddress: g.Source})
 	}
-	t.enqueue(false)
+	if err == nil {
+		t.enqueue(false)
+	}
 }
 
 func (t *TSCC) refuse(addr uint32, r enums.AckReason, out []TSCCOutput) []TSCCOutput {
@@ -670,9 +669,10 @@ func (t *TSCC) refuse(addr uint32, r enums.AckReason, out []TSCCOutput) []TSCCOu
 }
 
 func (t *TSCC) sendAck(addr uint32, r enums.AckReason) {
-	t.ack = pdu.AckOutboundPDU{ReasonCode: byte(r), TargetAddress: addr}
-	t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAckOutbound, AckOutboundPDU: &t.ack}
-	t.enqueue(false)
+	t.cs = pdu.CSBK{LastBlock: true}
+	if t.cs.SetAckOutbound(pdu.AckOutboundPDU{ReasonCode: byte(r), TargetAddress: addr}) == nil {
+		t.enqueue(false)
+	}
 }
 
 func (t *TSCC) enqueue(reply bool) {
@@ -718,8 +718,10 @@ func (t *TSCC) regIndex(addr uint32) int {
 func (t *TSCC) startClear(i int, reason Reason, out []TSCCOutput) []TSCCOutput {
 	cs := &t.calls[i]
 	g := &cs.grant
-	t.clear = pdu.ClearPDU{GroupIndividual: g.Group, TargetAddress: g.Target, SourceAddress: g.Source}
-	t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKClear, ClearPDU: &t.clear}
+	t.cs = pdu.CSBK{LastBlock: true}
+	if t.cs.SetClear(pdu.ClearPDU{GroupIndividual: g.Group, TargetAddress: g.Target, SourceAddress: g.Source}) != nil {
+		return out
+	}
 	p, err := t.cs.Encode()
 	if err != nil {
 		return out
@@ -799,12 +801,14 @@ func (t *TSCC) control(out []TSCCOutput) []TSCCOutput {
 	}
 	if !ok {
 		dt = enums.DataTypeCSBK
-		t.aloha = pdu.AlohaPDU{SiteTSSync: true, Version: 1, NRandWait: uint8(t.cfg.NRandWait), Reg: t.cfg.Reg, Backoff: uint8(t.cfg.Backoff), SysIdentCode: t.code}
-		t.cs = pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAloha, AlohaPDU: &t.aloha}
-		p, _ = t.cs.Encode()
+		p = [12]byte{}
+		t.cs = pdu.CSBK{LastBlock: true}
+		if t.cs.SetAloha(pdu.AlohaPDU{SiteTSSync: true, Version: 1, NRandWait: uint8(t.cfg.NRandWait), Reg: t.cfg.Reg, Backoff: uint8(t.cfg.Backoff), SysIdentCode: t.code}) == nil {
+			p, _ = t.cs.Encode()
+		}
 	}
-	t.csys = pdu.ShortLCCSysParms{MODEL: uint8(t.cfg.SysCode.Model), NetSiteRaw: t.netSite, Reg: t.cfg.Reg, CommonSlotCounter: t.counter}
-	t.slc = pdu.ShortLC{SLCO: enums.SLCOCSysParms, CSysParms: &t.csys}
+	t.slc = pdu.ShortLC{}
+	_ = t.slc.SetCSysParms(pdu.ShortLCCSysParms{MODEL: uint8(t.cfg.SysCode.Model), NetSiteRaw: t.netSite, Reg: t.cfg.Reg, CommonSlotCounter: t.counter})
 	return t.emit(0, t.cfg.Channel, p, dt, reply, out)
 }
 
@@ -814,8 +818,8 @@ func (t *TSCC) carrier(c int, out []TSCCOutput) []TSCCOutput {
 		return out
 	}
 	cs := &t.calls[2*c+int(t.slot-enums.Slot1)]
-	t.psys = pdu.ShortLCPSysParms{MODEL: uint8(t.cfg.SysCode.Model), NetSiteRaw: t.netSite, CommonSlotCounter: t.counter}
-	t.slc = pdu.ShortLC{SLCO: enums.SLCOPSysParms, PSysParms: &t.psys}
+	t.slc = pdu.ShortLC{}
+	_ = t.slc.SetPSysParms(pdu.ShortLCPSysParms{MODEL: uint8(t.cfg.SysCode.Model), NetSiteRaw: t.netSite, CommonSlotCounter: t.counter})
 	ch := t.cfg.Payload[c]
 	switch {
 	case cs.active && cs.clears > 0:

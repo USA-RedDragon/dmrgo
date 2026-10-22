@@ -460,9 +460,10 @@ func TestBuildBurst_MatchesBurstEncode(t *testing.T) {
 		r1.Data[i] = byte(i * 11)
 	}
 	csbk := must(pdu.NewBSOutboundActivation(310123, 3191868))
+	var mbc pdu.MBCHeader
+	mustSet(mbc.SetTalkgroupVoiceGrant(pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF}))
 	for _, d := range []layer2.Data{
-		&lc, &term, &csbk, &r34, &r1, &pdu.Rate12Data{Data: [12]byte{1, 2, 3}}, &pdu.PRFill{},
-		&pdu.MBCHeader{Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{PhysicalChannel: 0xFFF}},
+		&lc, &term, &csbk, &r34, &r1, &pdu.Rate12Data{Data: [12]byte{1, 2, 3}}, &pdu.PRFill{}, &mbc,
 	} {
 		got, err := layer2.BuildBurst(d, 9, layer2.SyncSourceMS)
 		if err != nil {

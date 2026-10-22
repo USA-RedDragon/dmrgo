@@ -29,8 +29,8 @@ func TestMS_PowerOff(t *testing.T) {
 	wantKinds(t, "PowerOff", r.out)
 	out := r.feed(aloha(t), &idle)
 	wantKinds(t, "de-registration C_RAND", out, trunk.OutputBurst)
-	if c := sent(t, &out[0]); c.RandomAccessPDU.ServiceKind != uint8(enums.ServiceKindRegistration) || c.RandomAccessPDU.ServiceOptions != 0 {
-		t.Fatalf("de-registration %+v", c.RandomAccessPDU)
+	if ra, ok := sent(t, &out[0]).AsRandomAccess(); !ok || ra.ServiceKind != uint8(enums.ServiceKindRegistration) || ra.ServiceOptions != 0 {
+		t.Fatalf("de-registration %v %+v", ok, ra)
 	}
 	wantKinds(t, "Reg_Accepted", r.feed(ack(t, enums.AckReasonRegAccepted), &idle), trunk.OutputPowerOff)
 	if !r.ms.Off() || r.ms.Registered() {
@@ -95,17 +95,17 @@ func TestMS_RadioCheck(t *testing.T) {
 		target uint32
 		answer bool
 	}{{false, msAddr, true}, {true, 9, true}, {true, 10, false}, {false, msAddr + 1, false}} {
-		ahoy := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{
-			ServiceKind: uint8(enums.ServiceKindRegistration), GroupIndividual: tt.group, TargetAddress: tt.target, SourceAddress: constants.GatewayALLMSI}}, testCC)
+		ahoy := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAhoy, pdu.AhoyPDU{
+			ServiceKind: uint8(enums.ServiceKindRegistration), GroupIndividual: tt.group, TargetAddress: tt.target, SourceAddress: constants.GatewayALLMSI}), testCC)
 		out := r.feed(ahoy, &busy)
 		if !tt.answer {
 			wantKinds(t, "radio check for another", out)
 			continue
 		}
 		wantKinds(t, "radio check", out, trunk.OutputAhoy, trunk.OutputBurst)
-		c := sent(t, &out[1])
-		if c.AckInboundPDU == nil || c.AckInboundPDU.TargetAddress != constants.GatewayALLMSI || c.AckInboundPDU.AdditionalInfo != msAddr {
-			t.Errorf("C_ACKU %+v", c.AckInboundPDU)
+		ackIn, ok := sent(t, &out[1]).AsAckInbound()
+		if !ok || ackIn.TargetAddress != constants.GatewayALLMSI || ackIn.AdditionalInfo != msAddr {
+			t.Errorf("C_ACKU %v %+v", ok, ackIn)
 		}
 	}
 }
@@ -115,9 +115,9 @@ func TestMS_Move(t *testing.T) {
 	r := newRig(t, &trunk.MSConfig{Address: msAddr, NoRegistration: true})
 	a := aloha(t)
 	r.feed(a, &idle)
-	other := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKMove, MovePDU: &pdu.MovePDU{Mask: 24, PhysicalChannel: 40, MSAddress: msAddr + 1}}, testCC)
+	other := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetMove, pdu.MovePDU{Mask: 24, PhysicalChannel: 40, MSAddress: msAddr + 1}), testCC)
 	wantKinds(t, "C_MOVE for another MS", r.feed(other, &idle))
-	mv := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKMove, MovePDU: &pdu.MovePDU{Mask: 24, PhysicalChannel: 40, MSAddress: msAddr}}, testCC)
+	mv := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetMove, pdu.MovePDU{Mask: 24, PhysicalChannel: 40, MSAddress: msAddr}), testCC)
 	out := r.feed(mv, &idle)
 	wantKinds(t, "C_MOVE", out, trunk.OutputLost, trunk.OutputTune)
 	if out[0].Reason != trunk.ReasonMove || out[1].Tune.Channel != 40 || r.ms.State() != trunk.StateHunting {
@@ -134,22 +134,22 @@ func TestMS_PayloadProtectAndAhoy(t *testing.T) {
 	r := newRig(t, &trunk.MSConfig{Address: msAddr, NoRegistration: true, Talkgroups: [trunk.MaxTalkgroups]uint32{9}, TalkgroupsLen: 1})
 	r.feed(aloha(t), &idle)
 	wantKinds(t, "TV_GRANT", r.feed(tvGrant(t, 9, 5, false), &idle), trunk.OutputGrant, trunk.OutputTune)
-	dis := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKProtect, ProtectPDU: &pdu.ProtectPDU{
-		ProtectKind: uint8(enums.ProtectDisablePTT), GroupIndividual: true, TargetAddress: 9, SourceAddress: 3120001}}, testCC)
+	dis := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetProtect, pdu.ProtectPDU{
+		ProtectKind: uint8(enums.ProtectDisablePTT), GroupIndividual: true, TargetAddress: 9, SourceAddress: 3120001}), testCC)
 	out := r.feed(dis, nil)
 	wantKinds(t, "DIS_PTT", out, trunk.OutputProtect)
 	if out[0].Protect != enums.ProtectDisablePTT {
 		t.Errorf("Protect %v", out[0].Protect)
 	}
-	pa := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{
-		ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: msAddr, SourceAddress: constants.GatewayALLMSI}}, testCC)
+	pa := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAhoy, pdu.AhoyPDU{
+		ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: msAddr, SourceAddress: constants.GatewayALLMSI}), testCC)
 	out = r.feed(pa, nil)
 	wantKinds(t, "P_AHOY", out, trunk.OutputAhoy, trunk.OutputBurst)
-	if c := sent(t, &out[1]); c.AckInboundPayloadPDU == nil || out[1].Slot != enums.Slot1 {
-		t.Errorf("P_ACKU %+v slot %v", c.AckInboundPayloadPDU, out[1].Slot)
+	if ackP, ok := sent(t, &out[1]).AsAckInboundPayload(); !ok || out[1].Slot != enums.Slot1 {
+		t.Errorf("P_ACKU %v %+v slot %v", ok, ackP, out[1].Slot)
 	}
-	parked := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKProtect, ProtectPDU: &pdu.ProtectPDU{
-		ProtectKind: uint8(enums.ProtectIllegallyParked), GroupIndividual: true, TargetAddress: 9, SourceAddress: 3120005}}, testCC)
+	parked := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetProtect, pdu.ProtectPDU{
+		ProtectKind: uint8(enums.ProtectIllegallyParked), GroupIndividual: true, TargetAddress: 9, SourceAddress: 3120005}), testCC)
 	out = r.feed(parked, nil)
 	wantKinds(t, "ILLEGALLY_PARKED", out, trunk.OutputCallEnd, trunk.OutputTune)
 	if out[0].Reason != trunk.ReasonParked {
@@ -160,8 +160,8 @@ func TestMS_PayloadProtectAndAhoy(t *testing.T) {
 func TestMS_DataCallAndEmergency(t *testing.T) {
 	t.Parallel()
 	r := newRig(t, &trunk.MSConfig{Address: msAddr, NoRegistration: true})
-	regOnly := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKAloha, AlohaPDU: &pdu.AlohaPDU{
-		ServiceFunc: uint8(enums.ServiceFunctionRegistration), NRandWait: 1, Backoff: 2, SysIdentCode: sysIdent(t)}}, testCC)
+	regOnly := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetAloha, pdu.AlohaPDU{
+		ServiceFunc: uint8(enums.ServiceFunctionRegistration), NRandWait: 1, Backoff: 2, SysIdentCode: sysIdent(t)}), testCC)
 	r.feed(regOnly, &idle)
 	if err := r.ms.CallData(r.now, false, 3120002, layer3.DataServiceOptions{}); err != nil {
 		t.Fatal(err)
@@ -178,11 +178,11 @@ func TestMS_DataCallAndEmergency(t *testing.T) {
 		}
 	}
 	wantKinds(t, "data C_RAND after an inviting C_ALOHA", out, trunk.OutputBurst)
-	if c := sent(t, &out[0]); c.RandomAccessPDU.ServiceKind != uint8(enums.ServiceKindIndividualPacketData) {
-		t.Fatalf("C_RAND %+v", c.RandomAccessPDU)
+	if ra, ok := sent(t, &out[0]).AsRandomAccess(); !ok || ra.ServiceKind != uint8(enums.ServiceKindIndividualPacketData) {
+		t.Fatalf("C_RAND %v %+v", ok, ra)
 	}
-	pd := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKPrivateDataGrant, PrivateDataGrantPDU: &pdu.PrivateDataGrantPDU{
-		PhysicalChannel: 7, TargetAddress: 3120002, SourceAddress: msAddr}}, testCC)
+	pd := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetPrivateDataGrant, pdu.PrivateDataGrantPDU{
+		PhysicalChannel: 7, TargetAddress: 3120002, SourceAddress: msAddr}), testCC)
 	wantKinds(t, "PD_GRANT", r.feed(pd, &idle), trunk.OutputGrant, trunk.OutputTune)
 	if r.ms.Busy() {
 		t.Error("busy after the grant")
@@ -195,8 +195,8 @@ func TestMS_DataCallAndEmergency(t *testing.T) {
 	}
 	out = e.feed(regOnly, &idle)
 	wantKinds(t, "emergency C_RAND ignores Service_Function", out, trunk.OutputBurst)
-	if c := sent(t, &out[0]); c.RandomAccessPDU.ServiceOptions&0x40 == 0 {
-		t.Errorf("emergency options %07b", c.RandomAccessPDU.ServiceOptions)
+	if ra, ok := sent(t, &out[0]).AsRandomAccess(); !ok || ra.ServiceOptions&0x40 == 0 {
+		t.Errorf("emergency options %v %07b", ok, ra.ServiceOptions)
 	}
 }
 

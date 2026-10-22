@@ -130,7 +130,7 @@ func (s *session) nextTry() (packet.Packet, bool) {
 		clear(s.good[:])
 	}
 	var rd *packet.ResponseData
-	switch s.p.Header.Format {
+	switch s.p.Header.Format() {
 	case pdu.FormatConfirmed:
 		rd = s.sack()
 	default:
@@ -163,12 +163,13 @@ func (s *session) sack() *packet.ResponseData {
 		s.failf("SACK arrived without response data")
 		return nil
 	}
-	if r, err := packet.ResponseOf(m.Header.ResponsePacketHeader); err != nil || r != packet.ResponseSACK {
+	h, ok := m.Header.AsResponsePacketHeader()
+	if r, err := packet.ResponseOf(&h); !ok || err != nil || r != packet.ResponseSACK {
 		s.failf("response is not a SACK")
 		return nil
 	}
-	c := s.p.Header.ConfirmedDataHeader
-	if h := m.Header.ResponsePacketHeader; h.LLIDDestination != c.LLIDSource || h.LLIDSource != c.LLIDDestination ||
+	c, ok := s.p.Header.AsConfirmedDataHeader()
+	if !ok || h.LLIDDestination != c.LLIDSource || h.LLIDSource != c.LLIDDestination ||
 		h.SAP != c.SAP || h.ResponseStatus != c.SendSequenceNumber {
 		s.failf("SACK header does not answer the packet")
 		return nil
@@ -333,8 +334,8 @@ func (s *session) checkUnconfirmed(m *packet.Message, done bool, err error, last
 
 func (s *session) finish(m *packet.Message) {
 	s.done = true
-	if c := m.Header.ConfirmedDataHeader; c != nil && m.Header.Format == pdu.FormatConfirmed {
-		ack, err := s.rxb.NewResponse(c, packet.ResponseACK, nil)
+	if c, ok := m.Header.AsConfirmedDataHeader(); ok {
+		ack, err := s.rxb.NewResponse(&c, packet.ResponseACK, nil)
 		if err != nil {
 			s.failf("ACK does not build")
 			return
@@ -343,7 +344,8 @@ func (s *session) finish(m *packet.Message) {
 		if s.fail != "" {
 			return
 		}
-		if code, err := packet.ResponseOf(r.Header.ResponsePacketHeader); err != nil || code != packet.ResponseACK || r.Response != nil {
+		rh, ok := r.Header.AsResponsePacketHeader()
+		if code, err := packet.ResponseOf(&rh); !ok || err != nil || code != packet.ResponseACK || r.Response != nil {
 			s.failf("ACK did not arrive as an ACK")
 		}
 	}
@@ -369,7 +371,7 @@ func (s *session) checkResult(m *packet.Message, done bool, err error) {
 }
 
 func (s *session) samePacket(m *packet.Message) bool {
-	if m.Header.Format != s.p.Header.Format || m.DataType != s.rate {
+	if m.Header.Format() != s.p.Header.Format() || m.DataType != s.rate {
 		return false
 	}
 	gotDst, gotSrc, _ := m.Header.Addresses()
@@ -378,7 +380,7 @@ func (s *session) samePacket(m *packet.Message) bool {
 		return false
 	}
 	pad := s.pad
-	if fullFlag(&m.Header) && (m.Header.Format == pdu.FormatUnconfirmed || m.Header.Format == pdu.FormatConfirmed) {
+	if fullFlag(&m.Header) && (m.Header.Format() == pdu.FormatUnconfirmed || m.Header.Format() == pdu.FormatConfirmed) {
 		pad = 0
 	}
 	return len(m.Data) == len(s.payload)+pad && bytes.Equal(m.Data[:len(s.payload)], s.payload) &&
@@ -451,43 +453,46 @@ func dbsnOf(d layer2.Data) int {
 }
 
 func fullFlag(h *pdu.DataHeader) bool {
-	switch {
-	case h.UnconfirmedDataHeader != nil:
-		return h.UnconfirmedDataHeader.FullMessageFlag
-	case h.ConfirmedDataHeader != nil:
-		return h.ConfirmedDataHeader.FullMessageFlag
-	case h.DefinedDataHeader != nil:
-		return h.DefinedDataHeader.FullMessageFlag
-	case h.RawDataHeader != nil:
-		return h.RawDataHeader.FullMessageFlag
+	if u, ok := h.AsUnconfirmedDataHeader(); ok {
+		return u.FullMessageFlag
+	}
+	if c, ok := h.AsConfirmedDataHeader(); ok {
+		return c.FullMessageFlag
+	}
+	if d, ok := h.AsDefinedDataHeader(); ok {
+		return d.FullMessageFlag
+	}
+	if r, ok := h.AsRawDataHeader(); ok {
+		return r.FullMessageFlag
 	}
 	return true
 }
 
-func fuzzHeader(kind uint8, fields uint64, dst, src uint32) pdu.DataHeader {
+func fuzzHeader(t *testing.T, kind uint8, fields uint64, dst, src uint32) pdu.DataHeader {
+	t.Helper()
 	dst, src = dst&0xFFFFFF, src&0xFFFFFF
 	group, resp := kind&0x40 != 0, kind&0x80 != 0
 	sap := enums.SAP(fields & 0xF)
 	switch kind & 3 {
 	case 0:
-		return pdu.DataHeader{Format: pdu.FormatUnconfirmed, UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
+		return header(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, pdu.UnconfirmedDataHeader{
 			Group: group, ResponseRequested: resp, SAP: sap, LLIDDestination: dst, LLIDSource: src,
-			FullMessageFlag: kind&0x20 == 0, FragmentSequenceNumber: uint8(fields>>4) & 0xF}}
+			FullMessageFlag: kind&0x20 == 0, FragmentSequenceNumber: uint8(fields>>4) & 0xF})
 	case 1:
-		return pdu.DataHeader{Format: pdu.FormatConfirmed, ConfirmedDataHeader: &pdu.ConfirmedDataHeader{
+		return header(t, (*pdu.DataHeader).SetConfirmedDataHeader, pdu.ConfirmedDataHeader{
 			Group: group, ResponseRequested: resp, SAP: sap, LLIDDestination: dst, LLIDSource: src,
 			FullMessageFlag: true, ReSynchronizeFlag: fields&0x100 != 0, SendSequenceNumber: uint8(fields>>9) & 7,
-			FragmentSequenceNumber: uint8(fields>>4) & 0xF}}
+			FragmentSequenceNumber: uint8(fields>>4) & 0xF})
 	case 2:
-		return pdu.DataHeader{Format: pdu.FormatShortDataDefined, DefinedDataHeader: &pdu.DefinedDataHeader{
+		return header(t, (*pdu.DataHeader).SetDefinedDataHeader, pdu.DefinedDataHeader{
 			Group: group, ResponseRequested: resp, SAP: sap, LLIDDestination: dst, LLIDSource: src,
 			DefinedData: enums.DDFormat(fields>>12) & 0x3F, SARQ: kind&0x10 != 0, FullMessageFlag: true,
-			BitPadding: uint8(fields >> 18)}}
+			BitPadding: uint8(fields >> 18)})
 	default:
-		return pdu.DataHeader{Format: pdu.FormatShortDataRawOrStatusPrecoded, RawDataHeader: &pdu.RawDataHeader{
-			Group: group, ResponseRequested: resp, SAP: sap, LLIDDestination: dst, LLIDSource: src,
+		return header(t, (*pdu.DataHeader).SetRawDataHeader, pdu.RawDataHeader{
+			Group: group, ResponseRequested: resp, SAP: sap, AppendedBlocks: 1, LLIDDestination: dst, LLIDSource: src,
 			SourcePort: uint8(fields>>12) & 7, DestinationPort: uint8(fields>>15) & 7, SARQ: kind&0x10 != 0,
-			FullMessageFlag: true, BitPadding: uint8(fields >> 18)}}
+			FullMessageFlag: true, BitPadding: uint8(fields >> 18)})
 	}
 }
 
@@ -496,9 +501,9 @@ func (s *session) setup(t *testing.T, kind uint8, fields uint64, dst, src uint32
 	s.rate = [4]enums.DataType{enums.DataTypeRate12, enums.DataTypeRate34, enums.DataTypeRate1, enums.DataTypeRate12}[kind>>2&3]
 	s.cc = enums.ColorCode(fields >> 26 & 0xF)
 	s.src = layer2.SyncSource(fields >> 30 & 3)
-	s.header = fuzzHeader(kind, fields, dst, src)
+	s.header = fuzzHeader(t, kind, fields, dst, src)
 	s.payload = payload
-	s.confirmed = s.header.Format == pdu.FormatConfirmed || kind&0x10 != 0 && kind&3 >= 2
+	s.confirmed = s.header.Format() == pdu.FormatConfirmed || kind&0x10 != 0 && kind&3 >= 2
 	per, err := packet.BlockOctets(s.rate, s.confirmed)
 	if err != nil {
 		t.Fatal(err)
@@ -619,7 +624,8 @@ func builtBursts(t testing.TB, data []byte) []byte {
 	add(p)
 	var rd packet.ResponseData
 	rd.Retry[1] = true
-	sack, err := b.NewResponse(p.Header.ConfirmedDataHeader, packet.ResponseSACK, &rd)
+	to := get(t, &p.Header, (*pdu.DataHeader).AsConfirmedDataHeader)
+	sack, err := b.NewResponse(&to, packet.ResponseSACK, &rd)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -629,17 +635,17 @@ func builtBursts(t testing.TB, data []byte) []byte {
 	}
 	add(retry)
 	add(sack)
-	h := unconfirmed()
-	h.UnconfirmedDataHeader.SAP = enums.SAPProprietaryPacketData
-	u, err := b.Segment(h, data[:20], enums.DataTypeRate12)
+	uh := unconfirmedHeader()
+	uh.SAP = enums.SAPProprietaryPacketData
+	u, err := b.Segment(header(t, (*pdu.DataHeader).SetUnconfirmedDataHeader, uh), data[:20], enums.DataTypeRate12)
 	if err != nil {
 		t.Fatal(err)
 	}
-	head := *u.Header.UnconfirmedDataHeader
+	head := get(t, &u.Header, (*pdu.DataHeader).AsUnconfirmedDataHeader)
 	head.BlocksToFollow++
-	u.Header.UnconfirmedDataHeader = &head
-	for _, d := range append([]layer2.Data{&u.Header, &pdu.DataHeader{Format: pdu.FormatProprietary,
-		ProprietaryHeader: &pdu.ProprietaryHeader{SAP: 9, MFID: 0x10}}}, u.Blocks...) {
+	mustSet(t, u.Header.SetUnconfirmedDataHeader(head))
+	prop := header(t, (*pdu.DataHeader).SetProprietaryHeader, pdu.ProprietaryHeader{SAP: 9, MFID: 0x10})
+	for _, d := range append([]layer2.Data{&u.Header, &prop}, u.Blocks...) {
 		raw, err := layer2.BuildBurst(d, 1, layer2.SyncSourceMS)
 		if err != nil {
 			t.Fatal(err)
@@ -731,7 +737,7 @@ func checkAnyResult(t *testing.T, m *packet.Message, done bool, err error) {
 	default:
 		t.Fatalf("Message data type %v", m.DataType)
 	}
-	if len(m.Data) > 127*24 || m.Header.Format == pdu.FormatResponsePacket && err == nil && m.DataType != 0 && m.Response == nil {
+	if len(m.Data) > 127*24 || m.Header.Format() == pdu.FormatResponsePacket && err == nil && m.DataType != 0 && m.Response == nil {
 		t.Fatalf("Message %+v", m)
 	}
 }

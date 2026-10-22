@@ -29,10 +29,11 @@ func ExampleLCBytes_Codeword() {
 }
 
 func ExampleDecodeCSBK() {
-	in := pdu.CSBK{
-		LastBlock:   true,
-		Opcode:      pdu.CSBKPreamble,
-		PreamblePDU: &pdu.PreamblePDU{Group: true, CSBKBlocksToFollow: 2, TargetAddress: 91, SourceAddress: 3120000},
+	in := pdu.CSBK{LastBlock: true}
+	err := in.SetPreamble(pdu.PreamblePDU{Group: true, CSBKBlocksToFollow: 2, TargetAddress: 91, SourceAddress: 3120000})
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 	bits, err := in.Encode()
 	if err != nil {
@@ -40,7 +41,8 @@ func ExampleDecodeCSBK() {
 		return
 	}
 	out := pdu.DecodeCSBK(bits)
-	fmt.Println(out.FEC.Uncorrectable, out.PreamblePDU.Group, out.PreamblePDU.TargetAddress, out.PreamblePDU.SourceAddress)
+	pre, _ := out.AsPreamble()
+	fmt.Println(out.FEC.Uncorrectable, pre.Group, pre.TargetAddress, pre.SourceAddress)
 	// Output:
 	// false true 91 3120000
 }
@@ -64,7 +66,12 @@ func ExampleBroadcastPDU_AsLocalTime() {
 		return
 	}
 	out := pdu.DecodeCSBK(bits)
-	lt, ok := out.BroadcastPDU.AsLocalTime()
+	bcast, ok := out.AsBroadcast()
+	if !ok {
+		fmt.Println("not a C_BCAST")
+		return
+	}
+	lt, ok := bcast.AsLocalTime()
 	sign := "+"
 	if lt.UTCOffsetLags {
 		sign = "-"

@@ -120,8 +120,8 @@ func TestFollower_GrantClear(t *testing.T) {
 	}
 
 	now += slot
-	late := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{
-		PhysicalChannel: 5, LogicalChannel: true, LateEntry: true, TargetAddress: 9, SourceAddress: 3120001}}, testCC)
+	late := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetTalkgroupVoiceGrant, pdu.TalkgroupVoiceGrantPDU{
+		PhysicalChannel: 5, LogicalChannel: true, LateEntry: true, TargetAddress: 9, SourceAddress: 3120001}), testCC)
 	out = f.Burst(now, &late, layer2.Hint{Slot: enums.Slot2}, nil, out[:0])
 	wantKinds(t, "late entry TV_GRANT of the cleared call", out, trunk.OutputGrant)
 	if f.State() != trunk.StateControl {
@@ -188,16 +188,16 @@ func TestFollower_Filters(t *testing.T) {
 	out = f.Burst(slot, &g, layer2.Hint{}, nil, out[:0])
 	wantKinds(t, "TV_GRANT to another talkgroup", out, trunk.OutputGrant)
 
-	pv := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKPrivateVoiceGrant, PrivateVoiceGrantPDU: &pdu.PrivateVoiceGrantPDU{
-		PhysicalChannel: 4, TargetAddress: 3120002, SourceAddress: 3120001}}, testCC)
+	pv := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetPrivateVoiceGrant, pdu.PrivateVoiceGrantPDU{
+		PhysicalChannel: 4, TargetAddress: 3120002, SourceAddress: 3120001}), testCC)
 	out = f.Burst(2*slot, &pv, layer2.Hint{}, nil, out[:0])
 	wantKinds(t, "PV_GRANT", out, trunk.OutputGrant)
 	if out[0].Grant.Group || out[0].Grant.Service != enums.ServiceKindIndividualVoice {
 		t.Errorf("PV_GRANT %+v", out[0].Grant)
 	}
 
-	wrongCC := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKTalkgroupVoiceGrant, TalkgroupVoiceGrantPDU: &pdu.TalkgroupVoiceGrantPDU{
-		PhysicalChannel: 5, TargetAddress: 9, SourceAddress: 1}}, testCC+1)
+	wrongCC := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetTalkgroupVoiceGrant, pdu.TalkgroupVoiceGrantPDU{
+		PhysicalChannel: 5, TargetAddress: 9, SourceAddress: 1}), testCC+1)
 	out = f.Burst(3*slot, &wrongCC, layer2.Hint{}, nil, out[:0])
 	wantKinds(t, "TV_GRANT with another color code", out)
 
@@ -260,9 +260,9 @@ func TestFollower_Hunt(t *testing.T) {
 		t.Errorf("Site.Channel = %d, want 2", s.Channel)
 	}
 
-	ann := bsBurst(t, &pdu.CSBK{LastBlock: true, Opcode: pdu.CSBKBroadcast, BroadcastPDU: &pdu.BroadcastPDU{
+	ann := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetBroadcast, pdu.BroadcastPDU{
 		AnnouncementType: enums.AnnouncementAnnWDTSCC, BroadcastParms1: 0b0000_0111_0000_01,
-		SysIdentCode: sysIdent(t), BroadcastParms2: 7<<12 | 1}}, testCC)
+		SysIdentCode: sysIdent(t), BroadcastParms2: 7<<12 | 1}), testCC)
 	out = f.Burst(1600*time.Millisecond, &ann, layer2.Hint{}, nil, out[:0])
 	wantKinds(t, "Ann_WD_TSCC", out)
 	h := f.Hunt()

@@ -1,10 +1,5 @@
 package pdu
 
-import (
-	"github.com/USA-RedDragon/dmrgo/v2"
-	"github.com/USA-RedDragon/dmrgo/v2/enums"
-)
-
 // The CSBK opcodes of the Motorola feature set (FID 0x10). No public spec
 // defines them. The layouts of their payloads come from captures of real
 // radios. Each FID has its own opcodes, so these share values with
@@ -64,94 +59,4 @@ type MotorolaCallAlertAckPDU struct {
 	Reserved      uint8  `dmr:"bits:8-15"`  // octet 3, 0
 	TargetAddress uint32 `dmr:"bits:16-39"` // 24-bit address of the radio that sent the call alert
 	SourceAddress uint32 `dmr:"bits:40-63"` // 24-bit address of the alerted radio
-}
-
-// AsMotorolaRadioCheck decodes the RawPayload of a Motorola radio check
-// CSBK. ok is false for another opcode or FID.
-func (s *CSBK) AsMotorolaRadioCheck() (p MotorolaRadioCheckPDU, ok bool) {
-	if s == nil {
-		return MotorolaRadioCheckPDU{}, false
-	}
-	if s.Opcode != CSBKMotorolaRadioCheck || s.FID != enums.FIDMotorola {
-		return p, false
-	}
-	return decodeMotorolaRadioCheckPDU(s.RawPayload), true
-}
-
-// AsMotorolaCallAlert decodes the RawPayload of a Motorola call alert CSBK.
-// ok is false for another opcode or FID.
-func (s *CSBK) AsMotorolaCallAlert() (p MotorolaCallAlertPDU, ok bool) {
-	if s == nil {
-		return MotorolaCallAlertPDU{}, false
-	}
-	if s.Opcode != CSBKMotorolaCallAlert || s.FID != enums.FIDMotorola {
-		return p, false
-	}
-	return decodeMotorolaCallAlertPDU(s.RawPayload), true
-}
-
-// AsMotorolaCallAlertAck decodes the RawPayload of a Motorola call alert
-// acknowledgement CSBK. ok is false for another opcode or FID.
-func (s *CSBK) AsMotorolaCallAlertAck() (p MotorolaCallAlertAckPDU, ok bool) {
-	if s == nil {
-		return MotorolaCallAlertAckPDU{}, false
-	}
-	if s.Opcode != CSBKMotorolaCallAlertAck || s.FID != enums.FIDMotorola {
-		return p, false
-	}
-	return decodeMotorolaCallAlertAckPDU(s.RawPayload), true
-}
-
-// SetMotorolaRadioCheck makes s a Motorola radio check CSBK that carries
-// p: it sets Opcode, FID and RawPayload, clears the payload fields and
-// keeps LastBlock and ProtectFlag. It returns a *dmrgo.FieldRangeError when
-// a field does not fit in its bits, and leaves s as it is on an error.
-func (s *CSBK) SetMotorolaRadioCheck(p MotorolaRadioCheckPDU) error {
-	if s == nil {
-		return dmrgo.ErrNilReceiver
-	}
-	payload, err := p.Encode()
-	if err != nil {
-		return err
-	}
-	s.setMotorola(CSBKMotorolaRadioCheck, payload)
-	return nil
-}
-
-// SetMotorolaCallAlert makes s a Motorola call alert CSBK that carries p,
-// as SetMotorolaRadioCheck does.
-func (s *CSBK) SetMotorolaCallAlert(p MotorolaCallAlertPDU) error {
-	if s == nil {
-		return dmrgo.ErrNilReceiver
-	}
-	payload, err := p.Encode()
-	if err != nil {
-		return err
-	}
-	s.setMotorola(CSBKMotorolaCallAlert, payload)
-	return nil
-}
-
-// SetMotorolaCallAlertAck makes s a Motorola call alert acknowledgement
-// CSBK that carries p, as SetMotorolaRadioCheck does.
-func (s *CSBK) SetMotorolaCallAlertAck(p MotorolaCallAlertAckPDU) error {
-	if s == nil {
-		return dmrgo.ErrNilReceiver
-	}
-	payload, err := p.Encode()
-	if err != nil {
-		return err
-	}
-	s.setMotorola(CSBKMotorolaCallAlertAck, payload)
-	return nil
-}
-
-func (s *CSBK) setMotorola(op CSBKOpcode, payload [8]byte) {
-	*s = CSBK{
-		LastBlock:   s.LastBlock,
-		ProtectFlag: s.ProtectFlag,
-		Opcode:      op,
-		FID:         enums.FIDMotorola,
-		RawPayload:  payload,
-	}
 }

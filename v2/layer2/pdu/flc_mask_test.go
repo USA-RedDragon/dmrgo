@@ -24,11 +24,8 @@ func hex12(t *testing.T, s string) [12]byte {
 func TestFLC_DataTypeMaskAppliedToParity(t *testing.T) {
 	t.Parallel()
 
-	base := pdu.FullLinkControl{
-		FLCO:       enums.FLCOGroupVoiceChannelUser,
-		FID:        enums.FIDStandardized,
-		GroupVoice: &pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3120101},
-	}
+	var base pdu.FullLinkControl
+	noErr(base.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3120101}))
 
 	tests := []struct {
 		dataType enums.DataType
@@ -58,12 +55,8 @@ func TestFLC_EncodeRejectsUnmaskedDataType(t *testing.T) {
 	t.Parallel()
 
 	for _, dt := range []enums.DataType{enums.DataTypePIHeader, enums.DataTypeCSBK, enums.DataTypeIdle} {
-		flc := pdu.FullLinkControl{
-			BurstDataType: dt,
-			FLCO:          enums.FLCOGroupVoiceChannelUser,
-			FID:           enums.FIDStandardized,
-			GroupVoice:    &pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3120101},
-		}
+		flc := pdu.FullLinkControl{BurstDataType: dt}
+		noErr(flc.SetGroupVoice(pdu.FLCGroupVoice{GroupAddress: 9990, SourceAddress: 3120101}))
 		if _, err := flc.Encode(); err == nil {
 			t.Errorf("%s: FullLinkControl.Encode returned no error", dt.String())
 		}
@@ -81,11 +74,12 @@ func TestFLC_DecodeRealVoiceLCHeader(t *testing.T) {
 	if flc.DataType() != enums.DataTypeVoiceLCHeader {
 		t.Errorf("DataType = %v, want Voice LC Header", flc.DataType())
 	}
-	if flc.FLCO != enums.FLCOUnitToUnitVoiceChannelUser || flc.UnitToUnit == nil {
+	uu, ok := flc.AsUnitToUnit()
+	if flc.FLCO != enums.FLCOUnitToUnitVoiceChannelUser || !ok {
 		t.Fatalf("FLCO = %v, want UU_V_Ch_Usr", flc.FLCO)
 	}
-	if flc.UnitToUnit.TargetAddress != 9990 || flc.UnitToUnit.SourceAddress != 3191868 {
-		t.Errorf("target/source = %d/%d, want 9990/3191868", flc.UnitToUnit.TargetAddress, flc.UnitToUnit.SourceAddress)
+	if uu.TargetAddress != 9990 || uu.SourceAddress != 3191868 {
+		t.Errorf("target/source = %d/%d, want 9990/3191868", uu.TargetAddress, uu.SourceAddress)
 	}
 }
 

@@ -11,20 +11,19 @@ import (
 func (s *FullLinkControl) fmtString() string {
 	_ret := "FullLinkControl{ "
 	_ret += fmt.Sprintf("BurstDataType: %v, ProtectFlag: %t, Reserved: %t, FLCO: %v, FID: %v, FEC: {BitsChecked: %d, ErrorsCorrected: %d, Uncorrectable: %t}, ", s.BurstDataType, s.ProtectFlag, s.Reserved, s.FLCO, s.FID, s.FEC.BitsChecked, s.FEC.ErrorsCorrected, s.FEC.Uncorrectable)
-	switch {
-	case s.GroupVoice != nil:
-		_ret += s.GroupVoice.String()
-	case s.UnitToUnit != nil:
-		_ret += s.UnitToUnit.String()
-	case s.GPSInfo != nil:
-		_ret += s.GPSInfo.String()
-	case s.TalkerAliasHeader != nil:
-		_ret += s.TalkerAliasHeader.String()
-	case s.TalkerAliasBlock != nil:
-		_ret += s.TalkerAliasBlock.String()
-	case s.TerminatorDataLinkControl != nil:
-		_ret += s.TerminatorDataLinkControl.String()
-	default:
+	if v, ok := s.AsGroupVoice(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsUnitToUnit(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsGPSInfo(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsTalkerAliasHeader(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsTalkerAliasBlock(); ok {
+		_ret += v.String()
+	} else if v, ok := s.AsTerminatorDataLinkControl(); ok {
+		_ret += v.String()
+	} else {
 		_ret += fmt.Sprintf("RawPayload: %x", s.RawPayload)
 	}
 	_ret += " }"

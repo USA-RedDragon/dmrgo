@@ -33,15 +33,14 @@ func ExampleAppended() {
 func ExampleMS_SendShortData() {
 	code, _ := pdu.SysCode{Model: pdu.NetworkModelSmall, Net: 1, Site: 2}.Pack()
 	bs := func(c *pdu.CSBK) layer2.RawBurst {
-		c.LastBlock = true
 		raw, _ := layer2.BuildBurst(c, 1, layer2.SyncSourceBS)
 		return raw
 	}
-	aloha := bs(&pdu.CSBK{Opcode: pdu.CSBKAloha, AlohaPDU: &pdu.AlohaPDU{SysIdentCode: code}})
-	ahoy := bs(&pdu.CSBK{Opcode: pdu.CSBKAhoy, AhoyPDU: &pdu.AhoyPDU{ServiceKind: uint8(enums.ServiceKindIndividualShortData),
-		TargetAddress: 3120001, SourceAddress: constants.GatewaySDMI}})
-	done := bs(&pdu.CSBK{Opcode: pdu.CSBKAckOutbound, AckOutboundPDU: &pdu.AckOutboundPDU{
-		ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: 3120001}})
+	aloha := bs(exampleCSBK((*pdu.CSBK).SetAloha, pdu.AlohaPDU{SysIdentCode: code}))
+	ahoy := bs(exampleCSBK((*pdu.CSBK).SetAhoy, pdu.AhoyPDU{ServiceKind: uint8(enums.ServiceKindIndividualShortData),
+		TargetAddress: 3120001, SourceAddress: constants.GatewaySDMI}))
+	done := bs(exampleCSBK((*pdu.CSBK).SetAckOutbound, pdu.AckOutboundPDU{
+		ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: 3120001}))
 
 	ms, _ := trunk.NewMS(&trunk.MSConfig{Address: 3120001, NoRegistration: true})
 	out := make([]trunk.Output, 0, trunk.MaxOutputs)

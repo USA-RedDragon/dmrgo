@@ -12,21 +12,23 @@ import (
 )
 
 func ExampleNewPacket() {
-	header := pdu.DataHeader{
-		Format: pdu.FormatUnconfirmed,
-		UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
-			SAP:             enums.SAPShortData,
-			LLIDDestination: 91,
-			LLIDSource:      3120000,
-			FullMessageFlag: true,
-		},
+	var header pdu.DataHeader
+	err := header.SetUnconfirmedDataHeader(pdu.UnconfirmedDataHeader{
+		SAP:             enums.SAPShortData,
+		LLIDDestination: 91,
+		LLIDSource:      3120000,
+		FullMessageFlag: true,
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 	p, err := packet.NewPacket(header, []byte("hello, DMR"), enums.DataTypeRate12)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	h := p.Header.UnconfirmedDataHeader
+	h, _ := p.Header.AsUnconfirmedDataHeader()
 	fmt.Println(len(p.Blocks), h.BlocksToFollow, h.PadOctetCount)
 
 	a := packet.NewAssembler(127)
@@ -57,14 +59,16 @@ func ExampleMessage_UDPIPv4() {
 		return
 	}
 	sentence := "$GPRMC,200037.000,A,3412.7300,N,10850.0000,E,0.00,121.00,021225,,,A*60\r\n"
-	header := pdu.DataHeader{
-		Format: pdu.FormatUnconfirmed,
-		UnconfirmedDataHeader: &pdu.UnconfirmedDataHeader{
-			SAP:             enums.SAPUDPIPHeaderCompression,
-			LLIDDestination: 3140598,
-			LLIDSource:      3191868,
-			FullMessageFlag: true,
-		},
+	var header pdu.DataHeader
+	err = header.SetUnconfirmedDataHeader(pdu.UnconfirmedDataHeader{
+		SAP:             enums.SAPUDPIPHeaderCompression,
+		LLIDDestination: 3140598,
+		LLIDSource:      3191868,
+		FullMessageFlag: true,
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 	p, err := packet.NewPacket(header, append(raw[:], sentence...), enums.DataTypeRate12)
 	if err != nil {

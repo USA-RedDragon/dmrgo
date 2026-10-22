@@ -89,13 +89,6 @@ func out_dmrgo_FieldRangeError(d *C.dmrgo_field_range_error_t, s *g_dmrgo.FieldR
 	d.max = C.double(s.Max)
 }
 
-type st_layer2_pdu_ShortLC struct {
-	p_NullMessage    g_layer2_pdu.ShortLCNullMessage
-	p_ActivityUpdate g_layer2_pdu.ShortLCActivityUpdate
-	p_CSysParms      g_layer2_pdu.ShortLCCSysParms
-	p_PSysParms      g_layer2_pdu.ShortLCPSysParms
-}
-
 func in_fec_Result(s *C.dmrgo_fec_result_t) (d g_fec.Result) {
 	d.BitsChecked = int(s.bits_checked)
 	d.ErrorsCorrected = int(s.errors_corrected)
@@ -103,49 +96,9 @@ func in_fec_Result(s *C.dmrgo_fec_result_t) (d g_fec.Result) {
 	return
 }
 
-func in_layer2_pdu_ShortLCCSysParms(s *C.dmrgo_pdu_short_lc_c_sys_parms_t) (d g_layer2_pdu.ShortLCCSysParms) {
-	d.MODEL = uint8(s.model)
-	d.NetSiteRaw = uint16(s.net_site_raw)
-	d.Reg = bool(s.reg)
-	d.CommonSlotCounter = uint16(s.common_slot_counter)
-	return
-}
-
-func in_layer2_pdu_ShortLCPSysParms(s *C.dmrgo_pdu_short_lc_p_sys_parms_t) (d g_layer2_pdu.ShortLCPSysParms) {
-	d.MODEL = uint8(s.model)
-	d.NetSiteRaw = uint16(s.net_site_raw)
-	d.PayloadChannelType = bool(s.payload_channel_type)
-	d.CommonSlotCounter = uint16(s.common_slot_counter)
-	return
-}
-
-func in_layer2_pdu_ShortLC(s *C.dmrgo_pdu_short_lc_t, st *st_layer2_pdu_ShortLC) (d g_layer2_pdu.ShortLC) {
+func in_layer2_pdu_ShortLC(s *C.dmrgo_pdu_short_lc_t) (d g_layer2_pdu.ShortLC) {
 	d.SLCO = g_enums.SLCO(s.slco)
 	d.FEC = in_fec_Result(&s.fec)
-	if s.has_null_message {
-		st.p_NullMessage = *(*g_layer2_pdu.ShortLCNullMessage)(unsafe.Pointer(&s.null_message))
-		d.NullMessage = &st.p_NullMessage
-	} else {
-		d.NullMessage = nil
-	}
-	if s.has_activity_update {
-		st.p_ActivityUpdate = *(*g_layer2_pdu.ShortLCActivityUpdate)(unsafe.Pointer(&s.activity_update))
-		d.ActivityUpdate = &st.p_ActivityUpdate
-	} else {
-		d.ActivityUpdate = nil
-	}
-	if s.has_c_sys_parms {
-		st.p_CSysParms = in_layer2_pdu_ShortLCCSysParms(&s.c_sys_parms)
-		d.CSysParms = &st.p_CSysParms
-	} else {
-		d.CSysParms = nil
-	}
-	if s.has_p_sys_parms {
-		st.p_PSysParms = in_layer2_pdu_ShortLCPSysParms(&s.p_sys_parms)
-		d.PSysParms = &st.p_PSysParms
-	} else {
-		d.PSysParms = nil
-	}
 	d.RawPayload = *(*[3]byte)(unsafe.Pointer(&s.raw_payload))
 	return
 }
@@ -367,19 +320,7 @@ func in_layer3_ServiceOptions(s *C.dmrgo_layer3_service_options_t) (d g_layer3.S
 	return
 }
 
-type st_layer2_pdu_DataHeader struct {
-	p_UnconfirmedDataHeader g_layer2_pdu.UnconfirmedDataHeader
-	p_ConfirmedDataHeader   g_layer2_pdu.ConfirmedDataHeader
-	p_ResponsePacketHeader  g_layer2_pdu.ResponsePacketHeader
-	p_DefinedDataHeader     g_layer2_pdu.DefinedDataHeader
-	p_StatusPrecodedHeader  g_layer2_pdu.StatusPrecodedHeader
-	p_RawDataHeader         g_layer2_pdu.RawDataHeader
-	p_UDTHeader             g_layer2_pdu.UDTHeader
-	p_ProprietaryHeader     g_layer2_pdu.ProprietaryHeader
-}
-
 type st_data_Message struct {
-	f_Header      st_layer2_pdu_DataHeader
 	p_Proprietary g_layer2_pdu.ProprietaryHeader
 }
 
@@ -395,170 +336,14 @@ func in_data_Call(s *C.dmrgo_data_call_t) (d g_data.Call) {
 	return
 }
 
-func in_layer2_pdu_UnconfirmedDataHeader(s *C.dmrgo_pdu_unconfirmed_data_header_t) (d g_layer2_pdu.UnconfirmedDataHeader) {
-	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.Reserved = bool(s.reserved)
-	d.PadOctetCount = uint8(s.pad_octet_count)
-	d.SAP = g_enums.SAP(s.sap)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.FullMessageFlag = bool(s.full_message_flag)
-	d.BlocksToFollow = uint8(s.blocks_to_follow)
-	d.Reserved2 = uint8(s.reserved2)
-	d.FragmentSequenceNumber = uint8(s.fragment_sequence_number)
-	return
-}
-
-func in_layer2_pdu_ConfirmedDataHeader(s *C.dmrgo_pdu_confirmed_data_header_t) (d g_layer2_pdu.ConfirmedDataHeader) {
-	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.Reserved = bool(s.reserved)
-	d.PadOctetCount = uint8(s.pad_octet_count)
-	d.SAP = g_enums.SAP(s.sap)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.FullMessageFlag = bool(s.full_message_flag)
-	d.BlocksToFollow = uint8(s.blocks_to_follow)
-	d.ReSynchronizeFlag = bool(s.re_synchronize_flag)
-	d.SendSequenceNumber = uint8(s.send_sequence_number)
-	d.FragmentSequenceNumber = uint8(s.fragment_sequence_number)
-	return
-}
-
-func in_layer2_pdu_ResponsePacketHeader(s *C.dmrgo_pdu_response_packet_header_t) (d g_layer2_pdu.ResponsePacketHeader) {
-	d.Reserved = bool(s.reserved)
-	d.ResponseRequested = bool(s.response_requested)
-	d.Reserved2 = uint8(s.reserved2)
-	d.SAP = g_enums.SAP(s.sap)
-	d.Reserved3 = uint8(s.reserved3)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.FullMessageFlag = bool(s.full_message_flag)
-	d.BlocksToFollow = uint8(s.blocks_to_follow)
-	d.ResponseClass = uint8(s.response_class)
-	d.ResponseType = uint8(s.response_type)
-	d.ResponseStatus = uint8(s.response_status)
-	return
-}
-
-func in_layer2_pdu_DefinedDataHeader(s *C.dmrgo_pdu_defined_data_header_t) (d g_layer2_pdu.DefinedDataHeader) {
-	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.AppendedBlocks = uint8(s.appended_blocks)
-	d.SAP = g_enums.SAP(s.sap)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.DefinedData = g_enums.DDFormat(s.defined_data)
-	d.SARQ = bool(s.sarq)
-	d.FullMessageFlag = bool(s.full_message_flag)
-	d.BitPadding = uint8(s.bit_padding)
-	return
-}
-
-func in_layer2_pdu_StatusPrecodedHeader(s *C.dmrgo_pdu_status_precoded_header_t) (d g_layer2_pdu.StatusPrecodedHeader) {
-	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.SAP = g_enums.SAP(s.sap)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.SourcePort = uint8(s.source_port)
-	d.DestinationPort = uint8(s.destination_port)
-	d.StatusPrecoded = uint16(s.status_precoded)
-	return
-}
-
-func in_layer2_pdu_RawDataHeader(s *C.dmrgo_pdu_raw_data_header_t) (d g_layer2_pdu.RawDataHeader) {
-	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.AppendedBlocks = uint8(s.appended_blocks)
-	d.SAP = g_enums.SAP(s.sap)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.SourcePort = uint8(s.source_port)
-	d.DestinationPort = uint8(s.destination_port)
-	d.SARQ = bool(s.sarq)
-	d.FullMessageFlag = bool(s.full_message_flag)
-	d.BitPadding = uint8(s.bit_padding)
-	return
-}
-
-func in_layer2_pdu_UDTHeader(s *C.dmrgo_pdu_udt_header_t) (d g_layer2_pdu.UDTHeader) {
-	d.Group = bool(s.group)
-	d.ResponseRequested = bool(s.response_requested)
-	d.Emergency = bool(s.emergency)
-	d.OptionFlag = bool(s.option_flag)
-	d.SAP = g_enums.SAP(s.sap)
-	d.UDTFormat = g_enums.UDTFormat(s.udt_format)
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.PadNibble = uint8(s.pad_nibble)
-	d.Reserved = bool(s.reserved)
-	d.AppendedBlocks = uint8(s.appended_blocks)
-	d.SupplementaryFlag = bool(s.supplementary_flag)
-	d.ProtectFlag = bool(s.protect_flag)
-	d.Opcode = g_layer2_pdu.UDTOpcode(s.opcode)
-	return
-}
-
-func in_layer2_pdu_DataHeader(s *C.dmrgo_pdu_data_header_t, st *st_layer2_pdu_DataHeader) (d g_layer2_pdu.DataHeader) {
+func in_layer2_pdu_DataHeader(s *C.dmrgo_pdu_data_header_t) (d g_layer2_pdu.DataHeader) {
 	d.FEC = in_fec_Result(&s.fec)
-	d.Format = g_layer2_pdu.Format(s.format)
-	d.AppendedBlocks = uint8(s.appended_blocks)
-	if s.has_unconfirmed_data_header {
-		st.p_UnconfirmedDataHeader = in_layer2_pdu_UnconfirmedDataHeader(&s.unconfirmed_data_header)
-		d.UnconfirmedDataHeader = &st.p_UnconfirmedDataHeader
-	} else {
-		d.UnconfirmedDataHeader = nil
-	}
-	if s.has_confirmed_data_header {
-		st.p_ConfirmedDataHeader = in_layer2_pdu_ConfirmedDataHeader(&s.confirmed_data_header)
-		d.ConfirmedDataHeader = &st.p_ConfirmedDataHeader
-	} else {
-		d.ConfirmedDataHeader = nil
-	}
-	if s.has_response_packet_header {
-		st.p_ResponsePacketHeader = in_layer2_pdu_ResponsePacketHeader(&s.response_packet_header)
-		d.ResponsePacketHeader = &st.p_ResponsePacketHeader
-	} else {
-		d.ResponsePacketHeader = nil
-	}
-	if s.has_defined_data_header {
-		st.p_DefinedDataHeader = in_layer2_pdu_DefinedDataHeader(&s.defined_data_header)
-		d.DefinedDataHeader = &st.p_DefinedDataHeader
-	} else {
-		d.DefinedDataHeader = nil
-	}
-	if s.has_status_precoded_header {
-		st.p_StatusPrecodedHeader = in_layer2_pdu_StatusPrecodedHeader(&s.status_precoded_header)
-		d.StatusPrecodedHeader = &st.p_StatusPrecodedHeader
-	} else {
-		d.StatusPrecodedHeader = nil
-	}
-	if s.has_raw_data_header {
-		st.p_RawDataHeader = in_layer2_pdu_RawDataHeader(&s.raw_data_header)
-		d.RawDataHeader = &st.p_RawDataHeader
-	} else {
-		d.RawDataHeader = nil
-	}
-	if s.has_udt_header {
-		st.p_UDTHeader = in_layer2_pdu_UDTHeader(&s.udt_header)
-		d.UDTHeader = &st.p_UDTHeader
-	} else {
-		d.UDTHeader = nil
-	}
-	if s.has_proprietary_header {
-		st.p_ProprietaryHeader = *(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&s.proprietary_header))
-		d.ProprietaryHeader = &st.p_ProprietaryHeader
-	} else {
-		d.ProprietaryHeader = nil
-	}
 	d.RawPayload = *(*[10]byte)(unsafe.Pointer(&s.raw_payload))
 	return
 }
 
 func in_data_Message(s *C.dmrgo_data_message_t, st *st_data_Message) (d g_data.Message) {
-	d.Header = in_layer2_pdu_DataHeader(&s.header, &st.f_Header)
+	d.Header = in_layer2_pdu_DataHeader(&s.header)
 	if s.has_proprietary {
 		st.p_Proprietary = *(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&s.proprietary))
 		d.Proprietary = &st.p_Proprietary
@@ -673,173 +458,9 @@ func out_fec_Result(d *C.dmrgo_fec_result_t, s *g_fec.Result, oc *outc) {
 	d.uncorrectable = C.bool(s.Uncorrectable)
 }
 
-func out_layer2_pdu_UnconfirmedDataHeader(d *C.dmrgo_pdu_unconfirmed_data_header_t, s *g_layer2_pdu.UnconfirmedDataHeader, oc *outc) {
-	_ = oc
-	d.group = C.bool(s.Group)
-	d.response_requested = C.bool(s.ResponseRequested)
-	d.reserved = C.bool(s.Reserved)
-	d.pad_octet_count = C.uint8_t(s.PadOctetCount)
-	d.sap = C.dmrgo_enums_sap_t(s.SAP)
-	d.llid_destination = C.uint32_t(s.LLIDDestination)
-	d.llid_source = C.uint32_t(s.LLIDSource)
-	d.full_message_flag = C.bool(s.FullMessageFlag)
-	d.blocks_to_follow = C.uint8_t(s.BlocksToFollow)
-	d.reserved2 = C.uint8_t(s.Reserved2)
-	d.fragment_sequence_number = C.uint8_t(s.FragmentSequenceNumber)
-}
-
-func out_layer2_pdu_ConfirmedDataHeader(d *C.dmrgo_pdu_confirmed_data_header_t, s *g_layer2_pdu.ConfirmedDataHeader, oc *outc) {
-	_ = oc
-	d.group = C.bool(s.Group)
-	d.response_requested = C.bool(s.ResponseRequested)
-	d.reserved = C.bool(s.Reserved)
-	d.pad_octet_count = C.uint8_t(s.PadOctetCount)
-	d.sap = C.dmrgo_enums_sap_t(s.SAP)
-	d.llid_destination = C.uint32_t(s.LLIDDestination)
-	d.llid_source = C.uint32_t(s.LLIDSource)
-	d.full_message_flag = C.bool(s.FullMessageFlag)
-	d.blocks_to_follow = C.uint8_t(s.BlocksToFollow)
-	d.re_synchronize_flag = C.bool(s.ReSynchronizeFlag)
-	d.send_sequence_number = C.uint8_t(s.SendSequenceNumber)
-	d.fragment_sequence_number = C.uint8_t(s.FragmentSequenceNumber)
-}
-
-func out_layer2_pdu_ResponsePacketHeader(d *C.dmrgo_pdu_response_packet_header_t, s *g_layer2_pdu.ResponsePacketHeader, oc *outc) {
-	_ = oc
-	d.reserved = C.bool(s.Reserved)
-	d.response_requested = C.bool(s.ResponseRequested)
-	d.reserved2 = C.uint8_t(s.Reserved2)
-	d.sap = C.dmrgo_enums_sap_t(s.SAP)
-	d.reserved3 = C.uint8_t(s.Reserved3)
-	d.llid_destination = C.uint32_t(s.LLIDDestination)
-	d.llid_source = C.uint32_t(s.LLIDSource)
-	d.full_message_flag = C.bool(s.FullMessageFlag)
-	d.blocks_to_follow = C.uint8_t(s.BlocksToFollow)
-	d.response_class = C.uint8_t(s.ResponseClass)
-	d.response_type = C.uint8_t(s.ResponseType)
-	d.response_status = C.uint8_t(s.ResponseStatus)
-}
-
-func out_layer2_pdu_DefinedDataHeader(d *C.dmrgo_pdu_defined_data_header_t, s *g_layer2_pdu.DefinedDataHeader, oc *outc) {
-	_ = oc
-	d.group = C.bool(s.Group)
-	d.response_requested = C.bool(s.ResponseRequested)
-	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
-	d.sap = C.dmrgo_enums_sap_t(s.SAP)
-	d.llid_destination = C.uint32_t(s.LLIDDestination)
-	d.llid_source = C.uint32_t(s.LLIDSource)
-	d.defined_data = C.dmrgo_enums_dd_format_t(s.DefinedData)
-	d.sarq = C.bool(s.SARQ)
-	d.full_message_flag = C.bool(s.FullMessageFlag)
-	d.bit_padding = C.uint8_t(s.BitPadding)
-}
-
-func out_layer2_pdu_StatusPrecodedHeader(d *C.dmrgo_pdu_status_precoded_header_t, s *g_layer2_pdu.StatusPrecodedHeader, oc *outc) {
-	_ = oc
-	d.group = C.bool(s.Group)
-	d.response_requested = C.bool(s.ResponseRequested)
-	d.sap = C.dmrgo_enums_sap_t(s.SAP)
-	d.llid_destination = C.uint32_t(s.LLIDDestination)
-	d.llid_source = C.uint32_t(s.LLIDSource)
-	d.source_port = C.uint8_t(s.SourcePort)
-	d.destination_port = C.uint8_t(s.DestinationPort)
-	d.status_precoded = C.uint16_t(s.StatusPrecoded)
-}
-
-func out_layer2_pdu_RawDataHeader(d *C.dmrgo_pdu_raw_data_header_t, s *g_layer2_pdu.RawDataHeader, oc *outc) {
-	_ = oc
-	d.group = C.bool(s.Group)
-	d.response_requested = C.bool(s.ResponseRequested)
-	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
-	d.sap = C.dmrgo_enums_sap_t(s.SAP)
-	d.llid_destination = C.uint32_t(s.LLIDDestination)
-	d.llid_source = C.uint32_t(s.LLIDSource)
-	d.source_port = C.uint8_t(s.SourcePort)
-	d.destination_port = C.uint8_t(s.DestinationPort)
-	d.sarq = C.bool(s.SARQ)
-	d.full_message_flag = C.bool(s.FullMessageFlag)
-	d.bit_padding = C.uint8_t(s.BitPadding)
-}
-
-func out_layer2_pdu_UDTHeader(d *C.dmrgo_pdu_udt_header_t, s *g_layer2_pdu.UDTHeader, oc *outc) {
-	_ = oc
-	d.group = C.bool(s.Group)
-	d.response_requested = C.bool(s.ResponseRequested)
-	d.emergency = C.bool(s.Emergency)
-	d.option_flag = C.bool(s.OptionFlag)
-	d.sap = C.dmrgo_enums_sap_t(s.SAP)
-	d.udt_format = C.dmrgo_enums_udt_format_t(s.UDTFormat)
-	d.llid_destination = C.uint32_t(s.LLIDDestination)
-	d.llid_source = C.uint32_t(s.LLIDSource)
-	d.pad_nibble = C.uint8_t(s.PadNibble)
-	d.reserved = C.bool(s.Reserved)
-	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
-	d.supplementary_flag = C.bool(s.SupplementaryFlag)
-	d.protect_flag = C.bool(s.ProtectFlag)
-	d.opcode = C.dmrgo_pdu_udt_opcode_t(s.Opcode)
-}
-
 func out_layer2_pdu_DataHeader(d *C.dmrgo_pdu_data_header_t, s *g_layer2_pdu.DataHeader, oc *outc) {
 	_ = oc
 	out_fec_Result(&d.fec, &s.FEC, oc)
-	d.format = C.dmrgo_pdu_format_t(s.Format)
-	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
-	if s.UnconfirmedDataHeader != nil {
-		d.has_unconfirmed_data_header = true
-		out_layer2_pdu_UnconfirmedDataHeader(&d.unconfirmed_data_header, &(*s.UnconfirmedDataHeader), oc)
-	} else {
-		d.has_unconfirmed_data_header = false
-		d.unconfirmed_data_header = C.dmrgo_pdu_unconfirmed_data_header_t{}
-	}
-	if s.ConfirmedDataHeader != nil {
-		d.has_confirmed_data_header = true
-		out_layer2_pdu_ConfirmedDataHeader(&d.confirmed_data_header, &(*s.ConfirmedDataHeader), oc)
-	} else {
-		d.has_confirmed_data_header = false
-		d.confirmed_data_header = C.dmrgo_pdu_confirmed_data_header_t{}
-	}
-	if s.ResponsePacketHeader != nil {
-		d.has_response_packet_header = true
-		out_layer2_pdu_ResponsePacketHeader(&d.response_packet_header, &(*s.ResponsePacketHeader), oc)
-	} else {
-		d.has_response_packet_header = false
-		d.response_packet_header = C.dmrgo_pdu_response_packet_header_t{}
-	}
-	if s.DefinedDataHeader != nil {
-		d.has_defined_data_header = true
-		out_layer2_pdu_DefinedDataHeader(&d.defined_data_header, &(*s.DefinedDataHeader), oc)
-	} else {
-		d.has_defined_data_header = false
-		d.defined_data_header = C.dmrgo_pdu_defined_data_header_t{}
-	}
-	if s.StatusPrecodedHeader != nil {
-		d.has_status_precoded_header = true
-		out_layer2_pdu_StatusPrecodedHeader(&d.status_precoded_header, &(*s.StatusPrecodedHeader), oc)
-	} else {
-		d.has_status_precoded_header = false
-		d.status_precoded_header = C.dmrgo_pdu_status_precoded_header_t{}
-	}
-	if s.RawDataHeader != nil {
-		d.has_raw_data_header = true
-		out_layer2_pdu_RawDataHeader(&d.raw_data_header, &(*s.RawDataHeader), oc)
-	} else {
-		d.has_raw_data_header = false
-		d.raw_data_header = C.dmrgo_pdu_raw_data_header_t{}
-	}
-	if s.UDTHeader != nil {
-		d.has_udt_header = true
-		out_layer2_pdu_UDTHeader(&d.udt_header, &(*s.UDTHeader), oc)
-	} else {
-		d.has_udt_header = false
-		d.udt_header = C.dmrgo_pdu_udt_header_t{}
-	}
-	if s.ProprietaryHeader != nil {
-		d.has_proprietary_header = true
-		*(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&d.proprietary_header)) = (*s.ProprietaryHeader)
-	} else {
-		d.has_proprietary_header = false
-		d.proprietary_header = C.dmrgo_pdu_proprietary_header_t{}
-	}
 	*(*[10]byte)(unsafe.Pointer(&d.raw_payload)) = s.RawPayload
 }
 
@@ -1129,551 +750,24 @@ func in_layer2_pdu_CGAPContinuation(s *C.dmrgo_pdu_cgap_continuation_t) (d g_lay
 	return
 }
 
-type st_layer2_pdu_CSBK struct {
-	p_UnitToUnitVoiceServiceRequestPDU        g_layer2_pdu.UnitToUnitVoiceServiceRequestPDU
-	p_UnitToUnitVoiceServiceAnswerResponsePDU g_layer2_pdu.UnitToUnitVoiceServiceAnswerResponsePDU
-	p_NegativeAcknowledgementPDU              g_layer2_pdu.NegativeAcknowledgementPDU
-	p_PreamblePDU                             g_layer2_pdu.PreamblePDU
-	p_ChannelTimingPDU                        g_layer2_pdu.ChannelTimingPDU
-	p_PrivateVoiceGrantPDU                    g_layer2_pdu.PrivateVoiceGrantPDU
-	p_TalkgroupVoiceGrantPDU                  g_layer2_pdu.TalkgroupVoiceGrantPDU
-	p_BroadcastTalkgroupVoiceGrantPDU         g_layer2_pdu.BroadcastTalkgroupVoiceGrantPDU
-	p_PrivateDataGrantPDU                     g_layer2_pdu.PrivateDataGrantPDU
-	p_TalkgroupDataGrantPDU                   g_layer2_pdu.TalkgroupDataGrantPDU
-	p_DuplexPrivateVoiceGrantPDU              g_layer2_pdu.DuplexPrivateVoiceGrantPDU
-	p_DuplexPrivateDataGrantPDU               g_layer2_pdu.DuplexPrivateDataGrantPDU
-	p_PrivateDataGrantMultiItemPDU            g_layer2_pdu.PrivateDataGrantMultiItemPDU
-	p_MovePDU                                 g_layer2_pdu.MovePDU
-	p_AlohaPDU                                g_layer2_pdu.AlohaPDU
-	p_BroadcastPDU                            g_layer2_pdu.BroadcastPDU
-	p_ClearPDU                                g_layer2_pdu.ClearPDU
-	p_ProtectPDU                              g_layer2_pdu.ProtectPDU
-	p_AhoyPDU                                 g_layer2_pdu.AhoyPDU
-	p_AckOutboundPDU                          g_layer2_pdu.AckOutboundPDU
-	p_AckInboundPDU                           g_layer2_pdu.AckInboundPDU
-	p_AckOutboundPayloadPDU                   g_layer2_pdu.AckOutboundPayloadPDU
-	p_AckInboundPayloadPDU                    g_layer2_pdu.AckInboundPayloadPDU
-	p_RandomAccessPDU                         g_layer2_pdu.RandomAccessPDU
-	p_AckvitationPDU                          g_layer2_pdu.AckvitationPDU
-	p_MaintenancePDU                          g_layer2_pdu.MaintenancePDU
-}
-
-func in_layer2_pdu_UnitToUnitVoiceServiceRequestPDU(s *C.dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t) (d g_layer2_pdu.UnitToUnitVoiceServiceRequestPDU) {
-	d.ServiceOptions = in_layer3_ServiceOptions(&s.service_options)
-	d.Reserved = byte(s.reserved)
-	d.TargetAddress = uint32(s.target_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_UnitToUnitVoiceServiceAnswerResponsePDU(s *C.dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t) (d g_layer2_pdu.UnitToUnitVoiceServiceAnswerResponsePDU) {
-	d.ServiceOptions = in_layer3_ServiceOptions(&s.service_options)
-	d.AnswerResponse = byte(s.answer_response)
-	d.TargetAddress = uint32(s.target_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_PreamblePDU(s *C.dmrgo_pdu_preamble_pdu_t) (d g_layer2_pdu.PreamblePDU) {
-	d.Data = bool(s.data)
-	d.Group = bool(s.group)
-	d.Reserved = uint8(s.reserved)
-	d.CSBKBlocksToFollow = byte(s.csbk_blocks_to_follow)
-	d.TargetAddress = uint32(s.target_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_ChannelTimingPDU(s *C.dmrgo_pdu_channel_timing_pdu_t) (d g_layer2_pdu.ChannelTimingPDU) {
-	d.SyncAge = uint16(s.sync_age)
-	d.Generation = uint8(s.generation)
-	d.LeaderIdentifier = uint32(s.leader_identifier)
-	d.NewLeader = bool(s.new_leader)
-	d.LeaderDynamicIdentifier = uint8(s.leader_dynamic_identifier)
-	d.ChannelTimingOp1 = bool(s.channel_timing_op1)
-	d.SourceIdentifier = uint32(s.source_identifier)
-	d.Reserved = bool(s.reserved)
-	d.SourceDynamicIdentifier = uint8(s.source_dynamic_identifier)
-	d.ChannelTimingOp0 = bool(s.channel_timing_op0)
-	return
-}
-
-func in_layer2_pdu_PrivateVoiceGrantPDU(s *C.dmrgo_pdu_private_voice_grant_pdu_t) (d g_layer2_pdu.PrivateVoiceGrantPDU) {
-	d.PhysicalChannel = uint16(s.physical_channel)
-	d.LogicalChannel = bool(s.logical_channel)
-	d.Reserved = bool(s.reserved)
-	d.Emergency = bool(s.emergency)
-	d.Offset = bool(s.offset)
-	d.TargetAddress = uint32(s.target_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_TalkgroupVoiceGrantPDU(s *C.dmrgo_pdu_talkgroup_voice_grant_pdu_t) (d g_layer2_pdu.TalkgroupVoiceGrantPDU) {
-	d.PhysicalChannel = uint16(s.physical_channel)
-	d.LogicalChannel = bool(s.logical_channel)
-	d.LateEntry = bool(s.late_entry)
-	d.Emergency = bool(s.emergency)
-	d.Offset = bool(s.offset)
-	d.TargetAddress = uint32(s.target_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_BroadcastTalkgroupVoiceGrantPDU(s *C.dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t) (d g_layer2_pdu.BroadcastTalkgroupVoiceGrantPDU) {
-	d.PhysicalChannel = uint16(s.physical_channel)
-	d.LogicalChannel = bool(s.logical_channel)
-	d.LateEntry = bool(s.late_entry)
-	d.Emergency = bool(s.emergency)
-	d.Offset = bool(s.offset)
-	d.TargetAddress = uint32(s.target_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_PrivateDataGrantPDU(s *C.dmrgo_pdu_private_data_grant_pdu_t) (d g_layer2_pdu.PrivateDataGrantPDU) {
-	d.PhysicalChannel = uint16(s.physical_channel)
-	d.LogicalChannel = bool(s.logical_channel)
-	d.HiRate = bool(s.hi_rate)
-	d.Emergency = bool(s.emergency)
-	d.Offset = bool(s.offset)
-	d.TargetAddress = uint32(s.target_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_TalkgroupDataGrantPDU(s *C.dmrgo_pdu_talkgroup_data_grant_pdu_t) (d g_layer2_pdu.TalkgroupDataGrantPDU) {
-	d.PhysicalChannel = uint16(s.physical_channel)
-	d.LogicalChannel = bool(s.logical_channel)
-	d.HiRate = bool(s.hi_rate)
-	d.Emergency = bool(s.emergency)
-	d.Offset = bool(s.offset)
-	d.TargetAddress = uint32(s.target_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_DuplexPrivateVoiceGrantPDU(s *C.dmrgo_pdu_duplex_private_voice_grant_pdu_t) (d g_layer2_pdu.DuplexPrivateVoiceGrantPDU) {
-	d.PhysicalChannel = uint16(s.physical_channel)
-	d.LogicalChannel = bool(s.logical_channel)
-	d.Reserved = bool(s.reserved)
-	d.Emergency = bool(s.emergency)
-	d.CallDirection = bool(s.call_direction)
-	d.TargetAddress = uint32(s.target_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_DuplexPrivateDataGrantPDU(s *C.dmrgo_pdu_duplex_private_data_grant_pdu_t) (d g_layer2_pdu.DuplexPrivateDataGrantPDU) {
-	d.PhysicalChannel = uint16(s.physical_channel)
-	d.LogicalChannel = bool(s.logical_channel)
-	d.HiRate = bool(s.hi_rate)
-	d.Emergency = bool(s.emergency)
-	d.CallDirection = bool(s.call_direction)
-	d.TargetAddress = uint32(s.target_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_PrivateDataGrantMultiItemPDU(s *C.dmrgo_pdu_private_data_grant_multi_item_pdu_t) (d g_layer2_pdu.PrivateDataGrantMultiItemPDU) {
-	d.PhysicalChannel = uint16(s.physical_channel)
-	d.LogicalChannel = bool(s.logical_channel)
-	d.HiRate = bool(s.hi_rate)
-	d.Emergency = bool(s.emergency)
-	d.Offset = bool(s.offset)
-	d.TargetAddress = uint32(s.target_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_MovePDU(s *C.dmrgo_pdu_move_pdu_t) (d g_layer2_pdu.MovePDU) {
-	d.Reserved1 = uint16(s.reserved1)
-	d.Mask = uint8(s.mask)
-	d.Reserved2 = uint8(s.reserved2)
-	d.Reg = bool(s.reg)
-	d.Backoff = uint8(s.backoff)
-	d.Reserved3 = uint8(s.reserved3)
-	d.PhysicalChannel = uint16(s.physical_channel)
-	d.MSAddress = uint32(s.ms_address)
-	return
-}
-
-func in_layer2_pdu_AlohaPDU(s *C.dmrgo_pdu_aloha_pdu_t) (d g_layer2_pdu.AlohaPDU) {
-	d.Reserved1 = bool(s.reserved1)
-	d.TSCCAS = bool(s.tsccas)
-	d.SiteTSSync = bool(s.site_ts_sync)
-	d.Version = uint8(s.version)
-	d.Offset = bool(s.offset)
-	d.ActiveConn = bool(s.active_conn)
-	d.Mask = uint8(s.mask)
-	d.ServiceFunc = uint8(s.service_func)
-	d.NRandWait = uint8(s.n_rand_wait)
-	d.Reg = bool(s.reg)
-	d.Backoff = uint8(s.backoff)
-	d.SysIdentCode = uint16(s.sys_ident_code)
-	d.MSAddress = uint32(s.ms_address)
-	return
-}
-
-func in_layer2_pdu_BroadcastPDU(s *C.dmrgo_pdu_broadcast_pdu_t) (d g_layer2_pdu.BroadcastPDU) {
-	d.AnnouncementType = g_enums.AnnouncementType(s.announcement_type)
-	d.BroadcastParms1 = uint16(s.broadcast_parms1)
-	d.Reg = bool(s.reg)
-	d.Backoff = uint8(s.backoff)
-	d.SysIdentCode = uint16(s.sys_ident_code)
-	d.BroadcastParms2 = uint32(s.broadcast_parms2)
-	return
-}
-
-func in_layer2_pdu_ClearPDU(s *C.dmrgo_pdu_clear_pdu_t) (d g_layer2_pdu.ClearPDU) {
-	d.PhysicalChannel = uint16(s.physical_channel)
-	d.Reserved1 = bool(s.reserved1)
-	d.Reserved2 = uint8(s.reserved2)
-	d.GroupIndividual = bool(s.group_individual)
-	d.TargetAddress = uint32(s.target_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_ProtectPDU(s *C.dmrgo_pdu_protect_pdu_t) (d g_layer2_pdu.ProtectPDU) {
-	d.Reserved = uint16(s.reserved)
-	d.ProtectKind = uint8(s.protect_kind)
-	d.GroupIndividual = bool(s.group_individual)
-	d.TargetAddress = uint32(s.target_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_AhoyPDU(s *C.dmrgo_pdu_ahoy_pdu_t) (d g_layer2_pdu.AhoyPDU) {
-	d.ServiceOptsMirror = uint8(s.service_opts_mirror)
-	d.ServiceKindFlag = bool(s.service_kind_flag)
-	d.ALS = bool(s.als)
-	d.GroupIndividual = bool(s.group_individual)
-	d.AppendedBlocks = uint8(s.appended_blocks)
-	d.ServiceKind = uint8(s.service_kind)
-	d.TargetAddress = uint32(s.target_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_AckOutboundPDU(s *C.dmrgo_pdu_ack_outbound_pdu_t) (d g_layer2_pdu.AckOutboundPDU) {
-	d.ResponseInfo = uint8(s.response_info)
-	d.ReasonCode = byte(s.reason_code)
-	d.Reserved = bool(s.reserved)
-	d.TargetAddress = uint32(s.target_address)
-	d.AdditionalInfo = uint32(s.additional_info)
-	return
-}
-
-func in_layer2_pdu_AckInboundPDU(s *C.dmrgo_pdu_ack_inbound_pdu_t) (d g_layer2_pdu.AckInboundPDU) {
-	d.ResponseInfo = uint8(s.response_info)
-	d.ReasonCode = byte(s.reason_code)
-	d.Reserved = bool(s.reserved)
-	d.TargetAddress = uint32(s.target_address)
-	d.AdditionalInfo = uint32(s.additional_info)
-	return
-}
-
-func in_layer2_pdu_AckOutboundPayloadPDU(s *C.dmrgo_pdu_ack_outbound_payload_pdu_t) (d g_layer2_pdu.AckOutboundPayloadPDU) {
-	d.ResponseInfo = uint8(s.response_info)
-	d.ReasonCode = byte(s.reason_code)
-	d.Reserved = bool(s.reserved)
-	d.TargetAddress = uint32(s.target_address)
-	d.AdditionalInfo = uint32(s.additional_info)
-	return
-}
-
-func in_layer2_pdu_AckInboundPayloadPDU(s *C.dmrgo_pdu_ack_inbound_payload_pdu_t) (d g_layer2_pdu.AckInboundPayloadPDU) {
-	d.ResponseInfo = uint8(s.response_info)
-	d.ReasonCode = byte(s.reason_code)
-	d.Reserved = bool(s.reserved)
-	d.TargetAddress = uint32(s.target_address)
-	d.AdditionalInfo = uint32(s.additional_info)
-	return
-}
-
-func in_layer2_pdu_RandomAccessPDU(s *C.dmrgo_pdu_random_access_pdu_t) (d g_layer2_pdu.RandomAccessPDU) {
-	d.ServiceOptions = uint8(s.service_options)
-	d.ProxyFlag = bool(s.proxy_flag)
-	d.Reserved = uint8(s.reserved)
-	d.ServiceKind = uint8(s.service_kind)
-	d.TargetAddress = uint32(s.target_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_AckvitationPDU(s *C.dmrgo_pdu_ackvitation_pdu_t) (d g_layer2_pdu.AckvitationPDU) {
-	d.ServiceOptsMirror = uint8(s.service_opts_mirror)
-	d.ServiceKindFlag = bool(s.service_kind_flag)
-	d.Reserved = uint8(s.reserved)
-	d.UAB = uint8(s.uab)
-	d.ServiceKind = uint8(s.service_kind)
-	d.TargetAddress = uint32(s.target_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_MaintenancePDU(s *C.dmrgo_pdu_maintenance_pdu_t) (d g_layer2_pdu.MaintenancePDU) {
-	d.Reserved = uint16(s.reserved)
-	d.MaintKind = uint8(s.maint_kind)
-	d.Reserved2 = bool(s.reserved2)
-	d.TargetAddress = uint32(s.target_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_CSBK(s *C.dmrgo_pdu_csbk_t, st *st_layer2_pdu_CSBK) (d g_layer2_pdu.CSBK) {
+func in_layer2_pdu_CSBK(s *C.dmrgo_pdu_csbk_t) (d g_layer2_pdu.CSBK) {
 	d.LastBlock = bool(s.last_block)
 	d.ProtectFlag = bool(s.protect_flag)
 	d.Opcode = g_layer2_pdu.CSBKOpcode(s.opcode)
 	d.FID = g_enums.FID(s.fid)
 	d.FEC = in_fec_Result(&s.fec)
 	d.Hint0x38 = g_layer2_pdu.Opcode0x38Hint(s.hint0x38)
-	if s.has_unit_to_unit_voice_service_request_pdu {
-		st.p_UnitToUnitVoiceServiceRequestPDU = in_layer2_pdu_UnitToUnitVoiceServiceRequestPDU(&s.unit_to_unit_voice_service_request_pdu)
-		d.UnitToUnitVoiceServiceRequestPDU = &st.p_UnitToUnitVoiceServiceRequestPDU
-	} else {
-		d.UnitToUnitVoiceServiceRequestPDU = nil
-	}
-	if s.has_unit_to_unit_voice_service_answer_response_pdu {
-		st.p_UnitToUnitVoiceServiceAnswerResponsePDU = in_layer2_pdu_UnitToUnitVoiceServiceAnswerResponsePDU(&s.unit_to_unit_voice_service_answer_response_pdu)
-		d.UnitToUnitVoiceServiceAnswerResponsePDU = &st.p_UnitToUnitVoiceServiceAnswerResponsePDU
-	} else {
-		d.UnitToUnitVoiceServiceAnswerResponsePDU = nil
-	}
-	if s.has_negative_acknowledgement_pdu {
-		st.p_NegativeAcknowledgementPDU = *(*g_layer2_pdu.NegativeAcknowledgementPDU)(unsafe.Pointer(&s.negative_acknowledgement_pdu))
-		d.NegativeAcknowledgementPDU = &st.p_NegativeAcknowledgementPDU
-	} else {
-		d.NegativeAcknowledgementPDU = nil
-	}
-	if s.has_preamble_pdu {
-		st.p_PreamblePDU = in_layer2_pdu_PreamblePDU(&s.preamble_pdu)
-		d.PreamblePDU = &st.p_PreamblePDU
-	} else {
-		d.PreamblePDU = nil
-	}
-	if s.has_channel_timing_pdu {
-		st.p_ChannelTimingPDU = in_layer2_pdu_ChannelTimingPDU(&s.channel_timing_pdu)
-		d.ChannelTimingPDU = &st.p_ChannelTimingPDU
-	} else {
-		d.ChannelTimingPDU = nil
-	}
-	if s.has_private_voice_grant_pdu {
-		st.p_PrivateVoiceGrantPDU = in_layer2_pdu_PrivateVoiceGrantPDU(&s.private_voice_grant_pdu)
-		d.PrivateVoiceGrantPDU = &st.p_PrivateVoiceGrantPDU
-	} else {
-		d.PrivateVoiceGrantPDU = nil
-	}
-	if s.has_talkgroup_voice_grant_pdu {
-		st.p_TalkgroupVoiceGrantPDU = in_layer2_pdu_TalkgroupVoiceGrantPDU(&s.talkgroup_voice_grant_pdu)
-		d.TalkgroupVoiceGrantPDU = &st.p_TalkgroupVoiceGrantPDU
-	} else {
-		d.TalkgroupVoiceGrantPDU = nil
-	}
-	if s.has_broadcast_talkgroup_voice_grant_pdu {
-		st.p_BroadcastTalkgroupVoiceGrantPDU = in_layer2_pdu_BroadcastTalkgroupVoiceGrantPDU(&s.broadcast_talkgroup_voice_grant_pdu)
-		d.BroadcastTalkgroupVoiceGrantPDU = &st.p_BroadcastTalkgroupVoiceGrantPDU
-	} else {
-		d.BroadcastTalkgroupVoiceGrantPDU = nil
-	}
-	if s.has_private_data_grant_pdu {
-		st.p_PrivateDataGrantPDU = in_layer2_pdu_PrivateDataGrantPDU(&s.private_data_grant_pdu)
-		d.PrivateDataGrantPDU = &st.p_PrivateDataGrantPDU
-	} else {
-		d.PrivateDataGrantPDU = nil
-	}
-	if s.has_talkgroup_data_grant_pdu {
-		st.p_TalkgroupDataGrantPDU = in_layer2_pdu_TalkgroupDataGrantPDU(&s.talkgroup_data_grant_pdu)
-		d.TalkgroupDataGrantPDU = &st.p_TalkgroupDataGrantPDU
-	} else {
-		d.TalkgroupDataGrantPDU = nil
-	}
-	if s.has_duplex_private_voice_grant_pdu {
-		st.p_DuplexPrivateVoiceGrantPDU = in_layer2_pdu_DuplexPrivateVoiceGrantPDU(&s.duplex_private_voice_grant_pdu)
-		d.DuplexPrivateVoiceGrantPDU = &st.p_DuplexPrivateVoiceGrantPDU
-	} else {
-		d.DuplexPrivateVoiceGrantPDU = nil
-	}
-	if s.has_duplex_private_data_grant_pdu {
-		st.p_DuplexPrivateDataGrantPDU = in_layer2_pdu_DuplexPrivateDataGrantPDU(&s.duplex_private_data_grant_pdu)
-		d.DuplexPrivateDataGrantPDU = &st.p_DuplexPrivateDataGrantPDU
-	} else {
-		d.DuplexPrivateDataGrantPDU = nil
-	}
-	if s.has_private_data_grant_multi_item_pdu {
-		st.p_PrivateDataGrantMultiItemPDU = in_layer2_pdu_PrivateDataGrantMultiItemPDU(&s.private_data_grant_multi_item_pdu)
-		d.PrivateDataGrantMultiItemPDU = &st.p_PrivateDataGrantMultiItemPDU
-	} else {
-		d.PrivateDataGrantMultiItemPDU = nil
-	}
-	if s.has_move_pdu {
-		st.p_MovePDU = in_layer2_pdu_MovePDU(&s.move_pdu)
-		d.MovePDU = &st.p_MovePDU
-	} else {
-		d.MovePDU = nil
-	}
-	if s.has_aloha_pdu {
-		st.p_AlohaPDU = in_layer2_pdu_AlohaPDU(&s.aloha_pdu)
-		d.AlohaPDU = &st.p_AlohaPDU
-	} else {
-		d.AlohaPDU = nil
-	}
-	if s.has_broadcast_pdu {
-		st.p_BroadcastPDU = in_layer2_pdu_BroadcastPDU(&s.broadcast_pdu)
-		d.BroadcastPDU = &st.p_BroadcastPDU
-	} else {
-		d.BroadcastPDU = nil
-	}
-	if s.has_clear_pdu {
-		st.p_ClearPDU = in_layer2_pdu_ClearPDU(&s.clear_pdu)
-		d.ClearPDU = &st.p_ClearPDU
-	} else {
-		d.ClearPDU = nil
-	}
-	if s.has_protect_pdu {
-		st.p_ProtectPDU = in_layer2_pdu_ProtectPDU(&s.protect_pdu)
-		d.ProtectPDU = &st.p_ProtectPDU
-	} else {
-		d.ProtectPDU = nil
-	}
-	if s.has_ahoy_pdu {
-		st.p_AhoyPDU = in_layer2_pdu_AhoyPDU(&s.ahoy_pdu)
-		d.AhoyPDU = &st.p_AhoyPDU
-	} else {
-		d.AhoyPDU = nil
-	}
-	if s.has_ack_outbound_pdu {
-		st.p_AckOutboundPDU = in_layer2_pdu_AckOutboundPDU(&s.ack_outbound_pdu)
-		d.AckOutboundPDU = &st.p_AckOutboundPDU
-	} else {
-		d.AckOutboundPDU = nil
-	}
-	if s.has_ack_inbound_pdu {
-		st.p_AckInboundPDU = in_layer2_pdu_AckInboundPDU(&s.ack_inbound_pdu)
-		d.AckInboundPDU = &st.p_AckInboundPDU
-	} else {
-		d.AckInboundPDU = nil
-	}
-	if s.has_ack_outbound_payload_pdu {
-		st.p_AckOutboundPayloadPDU = in_layer2_pdu_AckOutboundPayloadPDU(&s.ack_outbound_payload_pdu)
-		d.AckOutboundPayloadPDU = &st.p_AckOutboundPayloadPDU
-	} else {
-		d.AckOutboundPayloadPDU = nil
-	}
-	if s.has_ack_inbound_payload_pdu {
-		st.p_AckInboundPayloadPDU = in_layer2_pdu_AckInboundPayloadPDU(&s.ack_inbound_payload_pdu)
-		d.AckInboundPayloadPDU = &st.p_AckInboundPayloadPDU
-	} else {
-		d.AckInboundPayloadPDU = nil
-	}
-	if s.has_random_access_pdu {
-		st.p_RandomAccessPDU = in_layer2_pdu_RandomAccessPDU(&s.random_access_pdu)
-		d.RandomAccessPDU = &st.p_RandomAccessPDU
-	} else {
-		d.RandomAccessPDU = nil
-	}
-	if s.has_ackvitation_pdu {
-		st.p_AckvitationPDU = in_layer2_pdu_AckvitationPDU(&s.ackvitation_pdu)
-		d.AckvitationPDU = &st.p_AckvitationPDU
-	} else {
-		d.AckvitationPDU = nil
-	}
-	if s.has_maintenance_pdu {
-		st.p_MaintenancePDU = in_layer2_pdu_MaintenancePDU(&s.maintenance_pdu)
-		d.MaintenancePDU = &st.p_MaintenancePDU
-	} else {
-		d.MaintenancePDU = nil
-	}
 	d.RawPayload = *(*[8]byte)(unsafe.Pointer(&s.raw_payload))
 	return
 }
 
-type st_layer2_pdu_FullLinkControl struct {
-	p_GroupVoice                g_layer2_pdu.FLCGroupVoice
-	p_UnitToUnit                g_layer2_pdu.FLCUnitToUnit
-	p_GPSInfo                   g_layer2_pdu.FLCGPSInfo
-	p_TalkerAliasHeader         g_layer2_pdu.FLCTalkerAliasHeader
-	p_TalkerAliasBlock          g_layer2_pdu.FLCTalkerAliasBlock
-	p_TerminatorDataLinkControl g_layer2_pdu.FLCTerminatorDataLinkControl
-}
-
-func in_layer2_pdu_FLCGroupVoice(s *C.dmrgo_pdu_flc_group_voice_t) (d g_layer2_pdu.FLCGroupVoice) {
-	d.ServiceOptions = in_layer3_ServiceOptions(&s.service_options)
-	d.GroupAddress = uint32(s.group_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_FLCUnitToUnit(s *C.dmrgo_pdu_flc_unit_to_unit_t) (d g_layer2_pdu.FLCUnitToUnit) {
-	d.ServiceOptions = in_layer3_ServiceOptions(&s.service_options)
-	d.TargetAddress = uint32(s.target_address)
-	d.SourceAddress = uint32(s.source_address)
-	return
-}
-
-func in_layer2_pdu_FLCTalkerAliasHeader(s *C.dmrgo_pdu_flc_talker_alias_header_t) (d g_layer2_pdu.FLCTalkerAliasHeader) {
-	d.TalkerAliasDataFormat = g_layer3.TalkerAliasDataFormat(s.talker_alias_data_format)
-	d.TalkerAliasDataLength = int(s.talker_alias_data_length)
-	d.TalkerAliasData = uint64(s.talker_alias_data)
-	return
-}
-
-func in_layer2_pdu_FLCTerminatorDataLinkControl(s *C.dmrgo_pdu_flc_terminator_data_link_control_t) (d g_layer2_pdu.FLCTerminatorDataLinkControl) {
-	d.LLIDDestination = uint32(s.llid_destination)
-	d.LLIDSource = uint32(s.llid_source)
-	d.GroupOrIndividual = bool(s.group_or_individual)
-	d.ResponseRequested = bool(s.response_requested)
-	d.FullMessageFlag = bool(s.full_message_flag)
-	d.Reserved = bool(s.reserved)
-	d.ReSynchronizeFlag = bool(s.re_synchronize_flag)
-	d.SendSequenceNumber = uint8(s.send_sequence_number)
-	return
-}
-
-func in_layer2_pdu_FullLinkControl(s *C.dmrgo_pdu_full_link_control_t, st *st_layer2_pdu_FullLinkControl) (d g_layer2_pdu.FullLinkControl) {
+func in_layer2_pdu_FullLinkControl(s *C.dmrgo_pdu_full_link_control_t) (d g_layer2_pdu.FullLinkControl) {
 	d.BurstDataType = g_enums.DataType(s.burst_data_type)
 	d.ProtectFlag = bool(s.protect_flag)
 	d.Reserved = bool(s.reserved)
 	d.FLCO = g_enums.FLCO(s.flco)
 	d.FID = g_enums.FID(s.fid)
 	d.FEC = in_fec_Result(&s.fec)
-	if s.has_group_voice {
-		st.p_GroupVoice = in_layer2_pdu_FLCGroupVoice(&s.group_voice)
-		d.GroupVoice = &st.p_GroupVoice
-	} else {
-		d.GroupVoice = nil
-	}
-	if s.has_unit_to_unit {
-		st.p_UnitToUnit = in_layer2_pdu_FLCUnitToUnit(&s.unit_to_unit)
-		d.UnitToUnit = &st.p_UnitToUnit
-	} else {
-		d.UnitToUnit = nil
-	}
-	if s.has_gps_info {
-		st.p_GPSInfo = *(*g_layer2_pdu.FLCGPSInfo)(unsafe.Pointer(&s.gps_info))
-		d.GPSInfo = &st.p_GPSInfo
-	} else {
-		d.GPSInfo = nil
-	}
-	if s.has_talker_alias_header {
-		st.p_TalkerAliasHeader = in_layer2_pdu_FLCTalkerAliasHeader(&s.talker_alias_header)
-		d.TalkerAliasHeader = &st.p_TalkerAliasHeader
-	} else {
-		d.TalkerAliasHeader = nil
-	}
-	if s.has_talker_alias_block {
-		st.p_TalkerAliasBlock = *(*g_layer2_pdu.FLCTalkerAliasBlock)(unsafe.Pointer(&s.talker_alias_block))
-		d.TalkerAliasBlock = &st.p_TalkerAliasBlock
-	} else {
-		d.TalkerAliasBlock = nil
-	}
-	if s.has_terminator_data_link_control {
-		st.p_TerminatorDataLinkControl = in_layer2_pdu_FLCTerminatorDataLinkControl(&s.terminator_data_link_control)
-		d.TerminatorDataLinkControl = &st.p_TerminatorDataLinkControl
-	} else {
-		d.TerminatorDataLinkControl = nil
-	}
 	d.RawPayload = *(*[7]byte)(unsafe.Pointer(&s.raw_payload))
 	return
 }
@@ -1684,85 +778,12 @@ func in_layer2_pdu_MBCContinuation(s *C.dmrgo_pdu_mbc_continuation_t) (d g_layer
 	return
 }
 
-type st_layer2_pdu_MBCHeader struct {
-	p_PrivateVoiceGrantPDU            g_layer2_pdu.PrivateVoiceGrantPDU
-	p_TalkgroupVoiceGrantPDU          g_layer2_pdu.TalkgroupVoiceGrantPDU
-	p_BroadcastTalkgroupVoiceGrantPDU g_layer2_pdu.BroadcastTalkgroupVoiceGrantPDU
-	p_PrivateDataGrantPDU             g_layer2_pdu.PrivateDataGrantPDU
-	p_TalkgroupDataGrantPDU           g_layer2_pdu.TalkgroupDataGrantPDU
-	p_DuplexPrivateVoiceGrantPDU      g_layer2_pdu.DuplexPrivateVoiceGrantPDU
-	p_DuplexPrivateDataGrantPDU       g_layer2_pdu.DuplexPrivateDataGrantPDU
-	p_PrivateDataGrantMultiItemPDU    g_layer2_pdu.PrivateDataGrantMultiItemPDU
-	p_MovePDU                         g_layer2_pdu.MovePDU
-	p_BroadcastPDU                    g_layer2_pdu.BroadcastPDU
-}
-
-func in_layer2_pdu_MBCHeader(s *C.dmrgo_pdu_mbc_header_t, st *st_layer2_pdu_MBCHeader) (d g_layer2_pdu.MBCHeader) {
+func in_layer2_pdu_MBCHeader(s *C.dmrgo_pdu_mbc_header_t) (d g_layer2_pdu.MBCHeader) {
 	d.FEC = in_fec_Result(&s.fec)
 	d.LastBlock = bool(s.last_block)
 	d.ProtectFlag = bool(s.protect_flag)
 	d.Opcode = g_layer2_pdu.CSBKOpcode(s.opcode)
 	d.FID = g_enums.FID(s.fid)
-	if s.has_private_voice_grant_pdu {
-		st.p_PrivateVoiceGrantPDU = in_layer2_pdu_PrivateVoiceGrantPDU(&s.private_voice_grant_pdu)
-		d.PrivateVoiceGrantPDU = &st.p_PrivateVoiceGrantPDU
-	} else {
-		d.PrivateVoiceGrantPDU = nil
-	}
-	if s.has_talkgroup_voice_grant_pdu {
-		st.p_TalkgroupVoiceGrantPDU = in_layer2_pdu_TalkgroupVoiceGrantPDU(&s.talkgroup_voice_grant_pdu)
-		d.TalkgroupVoiceGrantPDU = &st.p_TalkgroupVoiceGrantPDU
-	} else {
-		d.TalkgroupVoiceGrantPDU = nil
-	}
-	if s.has_broadcast_talkgroup_voice_grant_pdu {
-		st.p_BroadcastTalkgroupVoiceGrantPDU = in_layer2_pdu_BroadcastTalkgroupVoiceGrantPDU(&s.broadcast_talkgroup_voice_grant_pdu)
-		d.BroadcastTalkgroupVoiceGrantPDU = &st.p_BroadcastTalkgroupVoiceGrantPDU
-	} else {
-		d.BroadcastTalkgroupVoiceGrantPDU = nil
-	}
-	if s.has_private_data_grant_pdu {
-		st.p_PrivateDataGrantPDU = in_layer2_pdu_PrivateDataGrantPDU(&s.private_data_grant_pdu)
-		d.PrivateDataGrantPDU = &st.p_PrivateDataGrantPDU
-	} else {
-		d.PrivateDataGrantPDU = nil
-	}
-	if s.has_talkgroup_data_grant_pdu {
-		st.p_TalkgroupDataGrantPDU = in_layer2_pdu_TalkgroupDataGrantPDU(&s.talkgroup_data_grant_pdu)
-		d.TalkgroupDataGrantPDU = &st.p_TalkgroupDataGrantPDU
-	} else {
-		d.TalkgroupDataGrantPDU = nil
-	}
-	if s.has_duplex_private_voice_grant_pdu {
-		st.p_DuplexPrivateVoiceGrantPDU = in_layer2_pdu_DuplexPrivateVoiceGrantPDU(&s.duplex_private_voice_grant_pdu)
-		d.DuplexPrivateVoiceGrantPDU = &st.p_DuplexPrivateVoiceGrantPDU
-	} else {
-		d.DuplexPrivateVoiceGrantPDU = nil
-	}
-	if s.has_duplex_private_data_grant_pdu {
-		st.p_DuplexPrivateDataGrantPDU = in_layer2_pdu_DuplexPrivateDataGrantPDU(&s.duplex_private_data_grant_pdu)
-		d.DuplexPrivateDataGrantPDU = &st.p_DuplexPrivateDataGrantPDU
-	} else {
-		d.DuplexPrivateDataGrantPDU = nil
-	}
-	if s.has_private_data_grant_multi_item_pdu {
-		st.p_PrivateDataGrantMultiItemPDU = in_layer2_pdu_PrivateDataGrantMultiItemPDU(&s.private_data_grant_multi_item_pdu)
-		d.PrivateDataGrantMultiItemPDU = &st.p_PrivateDataGrantMultiItemPDU
-	} else {
-		d.PrivateDataGrantMultiItemPDU = nil
-	}
-	if s.has_move_pdu {
-		st.p_MovePDU = in_layer2_pdu_MovePDU(&s.move_pdu)
-		d.MovePDU = &st.p_MovePDU
-	} else {
-		d.MovePDU = nil
-	}
-	if s.has_broadcast_pdu {
-		st.p_BroadcastPDU = in_layer2_pdu_BroadcastPDU(&s.broadcast_pdu)
-		d.BroadcastPDU = &st.p_BroadcastPDU
-	} else {
-		d.BroadcastPDU = nil
-	}
 	d.RawPayload = *(*[8]byte)(unsafe.Pointer(&s.raw_payload))
 	return
 }
@@ -1898,270 +919,6 @@ func out_layer2_pdu_CGAPContinuation(d *C.dmrgo_pdu_cgap_continuation_t, s *g_la
 	*(*g_layer3.CdefParms)(unsafe.Pointer(&d.cdef_parms)) = s.CdefParms
 }
 
-func out_layer2_pdu_UnitToUnitVoiceServiceRequestPDU(d *C.dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t, s *g_layer2_pdu.UnitToUnitVoiceServiceRequestPDU, oc *outc) {
-	_ = oc
-	out_layer3_ServiceOptions(&d.service_options, &s.ServiceOptions, oc)
-	d.reserved = C.uint8_t(s.Reserved)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
-func out_layer2_pdu_UnitToUnitVoiceServiceAnswerResponsePDU(d *C.dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t, s *g_layer2_pdu.UnitToUnitVoiceServiceAnswerResponsePDU, oc *outc) {
-	_ = oc
-	out_layer3_ServiceOptions(&d.service_options, &s.ServiceOptions, oc)
-	d.answer_response = C.uint8_t(s.AnswerResponse)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
-func out_layer2_pdu_PreamblePDU(d *C.dmrgo_pdu_preamble_pdu_t, s *g_layer2_pdu.PreamblePDU, oc *outc) {
-	_ = oc
-	d.data = C.bool(s.Data)
-	d.group = C.bool(s.Group)
-	d.reserved = C.uint8_t(s.Reserved)
-	d.csbk_blocks_to_follow = C.uint8_t(s.CSBKBlocksToFollow)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
-func out_layer2_pdu_ChannelTimingPDU(d *C.dmrgo_pdu_channel_timing_pdu_t, s *g_layer2_pdu.ChannelTimingPDU, oc *outc) {
-	_ = oc
-	d.sync_age = C.uint16_t(s.SyncAge)
-	d.generation = C.uint8_t(s.Generation)
-	d.leader_identifier = C.uint32_t(s.LeaderIdentifier)
-	d.new_leader = C.bool(s.NewLeader)
-	d.leader_dynamic_identifier = C.uint8_t(s.LeaderDynamicIdentifier)
-	d.channel_timing_op1 = C.bool(s.ChannelTimingOp1)
-	d.source_identifier = C.uint32_t(s.SourceIdentifier)
-	d.reserved = C.bool(s.Reserved)
-	d.source_dynamic_identifier = C.uint8_t(s.SourceDynamicIdentifier)
-	d.channel_timing_op0 = C.bool(s.ChannelTimingOp0)
-}
-
-func out_layer2_pdu_PrivateVoiceGrantPDU(d *C.dmrgo_pdu_private_voice_grant_pdu_t, s *g_layer2_pdu.PrivateVoiceGrantPDU, oc *outc) {
-	_ = oc
-	d.physical_channel = C.uint16_t(s.PhysicalChannel)
-	d.logical_channel = C.bool(s.LogicalChannel)
-	d.reserved = C.bool(s.Reserved)
-	d.emergency = C.bool(s.Emergency)
-	d.offset = C.bool(s.Offset)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
-func out_layer2_pdu_TalkgroupVoiceGrantPDU(d *C.dmrgo_pdu_talkgroup_voice_grant_pdu_t, s *g_layer2_pdu.TalkgroupVoiceGrantPDU, oc *outc) {
-	_ = oc
-	d.physical_channel = C.uint16_t(s.PhysicalChannel)
-	d.logical_channel = C.bool(s.LogicalChannel)
-	d.late_entry = C.bool(s.LateEntry)
-	d.emergency = C.bool(s.Emergency)
-	d.offset = C.bool(s.Offset)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
-func out_layer2_pdu_BroadcastTalkgroupVoiceGrantPDU(d *C.dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t, s *g_layer2_pdu.BroadcastTalkgroupVoiceGrantPDU, oc *outc) {
-	_ = oc
-	d.physical_channel = C.uint16_t(s.PhysicalChannel)
-	d.logical_channel = C.bool(s.LogicalChannel)
-	d.late_entry = C.bool(s.LateEntry)
-	d.emergency = C.bool(s.Emergency)
-	d.offset = C.bool(s.Offset)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
-func out_layer2_pdu_PrivateDataGrantPDU(d *C.dmrgo_pdu_private_data_grant_pdu_t, s *g_layer2_pdu.PrivateDataGrantPDU, oc *outc) {
-	_ = oc
-	d.physical_channel = C.uint16_t(s.PhysicalChannel)
-	d.logical_channel = C.bool(s.LogicalChannel)
-	d.hi_rate = C.bool(s.HiRate)
-	d.emergency = C.bool(s.Emergency)
-	d.offset = C.bool(s.Offset)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
-func out_layer2_pdu_TalkgroupDataGrantPDU(d *C.dmrgo_pdu_talkgroup_data_grant_pdu_t, s *g_layer2_pdu.TalkgroupDataGrantPDU, oc *outc) {
-	_ = oc
-	d.physical_channel = C.uint16_t(s.PhysicalChannel)
-	d.logical_channel = C.bool(s.LogicalChannel)
-	d.hi_rate = C.bool(s.HiRate)
-	d.emergency = C.bool(s.Emergency)
-	d.offset = C.bool(s.Offset)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
-func out_layer2_pdu_DuplexPrivateVoiceGrantPDU(d *C.dmrgo_pdu_duplex_private_voice_grant_pdu_t, s *g_layer2_pdu.DuplexPrivateVoiceGrantPDU, oc *outc) {
-	_ = oc
-	d.physical_channel = C.uint16_t(s.PhysicalChannel)
-	d.logical_channel = C.bool(s.LogicalChannel)
-	d.reserved = C.bool(s.Reserved)
-	d.emergency = C.bool(s.Emergency)
-	d.call_direction = C.bool(s.CallDirection)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
-func out_layer2_pdu_DuplexPrivateDataGrantPDU(d *C.dmrgo_pdu_duplex_private_data_grant_pdu_t, s *g_layer2_pdu.DuplexPrivateDataGrantPDU, oc *outc) {
-	_ = oc
-	d.physical_channel = C.uint16_t(s.PhysicalChannel)
-	d.logical_channel = C.bool(s.LogicalChannel)
-	d.hi_rate = C.bool(s.HiRate)
-	d.emergency = C.bool(s.Emergency)
-	d.call_direction = C.bool(s.CallDirection)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
-func out_layer2_pdu_PrivateDataGrantMultiItemPDU(d *C.dmrgo_pdu_private_data_grant_multi_item_pdu_t, s *g_layer2_pdu.PrivateDataGrantMultiItemPDU, oc *outc) {
-	_ = oc
-	d.physical_channel = C.uint16_t(s.PhysicalChannel)
-	d.logical_channel = C.bool(s.LogicalChannel)
-	d.hi_rate = C.bool(s.HiRate)
-	d.emergency = C.bool(s.Emergency)
-	d.offset = C.bool(s.Offset)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
-func out_layer2_pdu_MovePDU(d *C.dmrgo_pdu_move_pdu_t, s *g_layer2_pdu.MovePDU, oc *outc) {
-	_ = oc
-	d.reserved1 = C.uint16_t(s.Reserved1)
-	d.mask = C.uint8_t(s.Mask)
-	d.reserved2 = C.uint8_t(s.Reserved2)
-	d.reg = C.bool(s.Reg)
-	d.backoff = C.uint8_t(s.Backoff)
-	d.reserved3 = C.uint8_t(s.Reserved3)
-	d.physical_channel = C.uint16_t(s.PhysicalChannel)
-	d.ms_address = C.uint32_t(s.MSAddress)
-}
-
-func out_layer2_pdu_AlohaPDU(d *C.dmrgo_pdu_aloha_pdu_t, s *g_layer2_pdu.AlohaPDU, oc *outc) {
-	_ = oc
-	d.reserved1 = C.bool(s.Reserved1)
-	d.tsccas = C.bool(s.TSCCAS)
-	d.site_ts_sync = C.bool(s.SiteTSSync)
-	d.version = C.uint8_t(s.Version)
-	d.offset = C.bool(s.Offset)
-	d.active_conn = C.bool(s.ActiveConn)
-	d.mask = C.uint8_t(s.Mask)
-	d.service_func = C.uint8_t(s.ServiceFunc)
-	d.n_rand_wait = C.uint8_t(s.NRandWait)
-	d.reg = C.bool(s.Reg)
-	d.backoff = C.uint8_t(s.Backoff)
-	d.sys_ident_code = C.uint16_t(s.SysIdentCode)
-	d.ms_address = C.uint32_t(s.MSAddress)
-}
-
-func out_layer2_pdu_BroadcastPDU(d *C.dmrgo_pdu_broadcast_pdu_t, s *g_layer2_pdu.BroadcastPDU, oc *outc) {
-	_ = oc
-	d.announcement_type = C.dmrgo_enums_announcement_type_t(s.AnnouncementType)
-	d.broadcast_parms1 = C.uint16_t(s.BroadcastParms1)
-	d.reg = C.bool(s.Reg)
-	d.backoff = C.uint8_t(s.Backoff)
-	d.sys_ident_code = C.uint16_t(s.SysIdentCode)
-	d.broadcast_parms2 = C.uint32_t(s.BroadcastParms2)
-}
-
-func out_layer2_pdu_ClearPDU(d *C.dmrgo_pdu_clear_pdu_t, s *g_layer2_pdu.ClearPDU, oc *outc) {
-	_ = oc
-	d.physical_channel = C.uint16_t(s.PhysicalChannel)
-	d.reserved1 = C.bool(s.Reserved1)
-	d.reserved2 = C.uint8_t(s.Reserved2)
-	d.group_individual = C.bool(s.GroupIndividual)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
-func out_layer2_pdu_ProtectPDU(d *C.dmrgo_pdu_protect_pdu_t, s *g_layer2_pdu.ProtectPDU, oc *outc) {
-	_ = oc
-	d.reserved = C.uint16_t(s.Reserved)
-	d.protect_kind = C.uint8_t(s.ProtectKind)
-	d.group_individual = C.bool(s.GroupIndividual)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
-func out_layer2_pdu_AhoyPDU(d *C.dmrgo_pdu_ahoy_pdu_t, s *g_layer2_pdu.AhoyPDU, oc *outc) {
-	_ = oc
-	d.service_opts_mirror = C.uint8_t(s.ServiceOptsMirror)
-	d.service_kind_flag = C.bool(s.ServiceKindFlag)
-	d.als = C.bool(s.ALS)
-	d.group_individual = C.bool(s.GroupIndividual)
-	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
-	d.service_kind = C.uint8_t(s.ServiceKind)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
-func out_layer2_pdu_AckOutboundPDU(d *C.dmrgo_pdu_ack_outbound_pdu_t, s *g_layer2_pdu.AckOutboundPDU, oc *outc) {
-	_ = oc
-	d.response_info = C.uint8_t(s.ResponseInfo)
-	d.reason_code = C.uint8_t(s.ReasonCode)
-	d.reserved = C.bool(s.Reserved)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.additional_info = C.uint32_t(s.AdditionalInfo)
-}
-
-func out_layer2_pdu_AckInboundPDU(d *C.dmrgo_pdu_ack_inbound_pdu_t, s *g_layer2_pdu.AckInboundPDU, oc *outc) {
-	_ = oc
-	d.response_info = C.uint8_t(s.ResponseInfo)
-	d.reason_code = C.uint8_t(s.ReasonCode)
-	d.reserved = C.bool(s.Reserved)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.additional_info = C.uint32_t(s.AdditionalInfo)
-}
-
-func out_layer2_pdu_AckOutboundPayloadPDU(d *C.dmrgo_pdu_ack_outbound_payload_pdu_t, s *g_layer2_pdu.AckOutboundPayloadPDU, oc *outc) {
-	_ = oc
-	d.response_info = C.uint8_t(s.ResponseInfo)
-	d.reason_code = C.uint8_t(s.ReasonCode)
-	d.reserved = C.bool(s.Reserved)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.additional_info = C.uint32_t(s.AdditionalInfo)
-}
-
-func out_layer2_pdu_AckInboundPayloadPDU(d *C.dmrgo_pdu_ack_inbound_payload_pdu_t, s *g_layer2_pdu.AckInboundPayloadPDU, oc *outc) {
-	_ = oc
-	d.response_info = C.uint8_t(s.ResponseInfo)
-	d.reason_code = C.uint8_t(s.ReasonCode)
-	d.reserved = C.bool(s.Reserved)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.additional_info = C.uint32_t(s.AdditionalInfo)
-}
-
-func out_layer2_pdu_RandomAccessPDU(d *C.dmrgo_pdu_random_access_pdu_t, s *g_layer2_pdu.RandomAccessPDU, oc *outc) {
-	_ = oc
-	d.service_options = C.uint8_t(s.ServiceOptions)
-	d.proxy_flag = C.bool(s.ProxyFlag)
-	d.reserved = C.uint8_t(s.Reserved)
-	d.service_kind = C.uint8_t(s.ServiceKind)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
-func out_layer2_pdu_AckvitationPDU(d *C.dmrgo_pdu_ackvitation_pdu_t, s *g_layer2_pdu.AckvitationPDU, oc *outc) {
-	_ = oc
-	d.service_opts_mirror = C.uint8_t(s.ServiceOptsMirror)
-	d.service_kind_flag = C.bool(s.ServiceKindFlag)
-	d.reserved = C.uint8_t(s.Reserved)
-	d.uab = C.uint8_t(s.UAB)
-	d.service_kind = C.uint8_t(s.ServiceKind)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
-func out_layer2_pdu_MaintenancePDU(d *C.dmrgo_pdu_maintenance_pdu_t, s *g_layer2_pdu.MaintenancePDU, oc *outc) {
-	_ = oc
-	d.reserved = C.uint16_t(s.Reserved)
-	d.maint_kind = C.uint8_t(s.MaintKind)
-	d.reserved2 = C.bool(s.Reserved2)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
 func out_layer2_pdu_CSBK(d *C.dmrgo_pdu_csbk_t, s *g_layer2_pdu.CSBK, oc *outc) {
 	_ = oc
 	d.last_block = C.bool(s.LastBlock)
@@ -2170,222 +927,7 @@ func out_layer2_pdu_CSBK(d *C.dmrgo_pdu_csbk_t, s *g_layer2_pdu.CSBK, oc *outc) 
 	d.fid = C.dmrgo_enums_fid_t(s.FID)
 	out_fec_Result(&d.fec, &s.FEC, oc)
 	d.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(s.Hint0x38)
-	if s.UnitToUnitVoiceServiceRequestPDU != nil {
-		d.has_unit_to_unit_voice_service_request_pdu = true
-		out_layer2_pdu_UnitToUnitVoiceServiceRequestPDU(&d.unit_to_unit_voice_service_request_pdu, &(*s.UnitToUnitVoiceServiceRequestPDU), oc)
-	} else {
-		d.has_unit_to_unit_voice_service_request_pdu = false
-		d.unit_to_unit_voice_service_request_pdu = C.dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t{}
-	}
-	if s.UnitToUnitVoiceServiceAnswerResponsePDU != nil {
-		d.has_unit_to_unit_voice_service_answer_response_pdu = true
-		out_layer2_pdu_UnitToUnitVoiceServiceAnswerResponsePDU(&d.unit_to_unit_voice_service_answer_response_pdu, &(*s.UnitToUnitVoiceServiceAnswerResponsePDU), oc)
-	} else {
-		d.has_unit_to_unit_voice_service_answer_response_pdu = false
-		d.unit_to_unit_voice_service_answer_response_pdu = C.dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t{}
-	}
-	if s.NegativeAcknowledgementPDU != nil {
-		d.has_negative_acknowledgement_pdu = true
-		*(*g_layer2_pdu.NegativeAcknowledgementPDU)(unsafe.Pointer(&d.negative_acknowledgement_pdu)) = (*s.NegativeAcknowledgementPDU)
-	} else {
-		d.has_negative_acknowledgement_pdu = false
-		d.negative_acknowledgement_pdu = C.dmrgo_pdu_negative_acknowledgement_pdu_t{}
-	}
-	if s.PreamblePDU != nil {
-		d.has_preamble_pdu = true
-		out_layer2_pdu_PreamblePDU(&d.preamble_pdu, &(*s.PreamblePDU), oc)
-	} else {
-		d.has_preamble_pdu = false
-		d.preamble_pdu = C.dmrgo_pdu_preamble_pdu_t{}
-	}
-	if s.ChannelTimingPDU != nil {
-		d.has_channel_timing_pdu = true
-		out_layer2_pdu_ChannelTimingPDU(&d.channel_timing_pdu, &(*s.ChannelTimingPDU), oc)
-	} else {
-		d.has_channel_timing_pdu = false
-		d.channel_timing_pdu = C.dmrgo_pdu_channel_timing_pdu_t{}
-	}
-	if s.PrivateVoiceGrantPDU != nil {
-		d.has_private_voice_grant_pdu = true
-		out_layer2_pdu_PrivateVoiceGrantPDU(&d.private_voice_grant_pdu, &(*s.PrivateVoiceGrantPDU), oc)
-	} else {
-		d.has_private_voice_grant_pdu = false
-		d.private_voice_grant_pdu = C.dmrgo_pdu_private_voice_grant_pdu_t{}
-	}
-	if s.TalkgroupVoiceGrantPDU != nil {
-		d.has_talkgroup_voice_grant_pdu = true
-		out_layer2_pdu_TalkgroupVoiceGrantPDU(&d.talkgroup_voice_grant_pdu, &(*s.TalkgroupVoiceGrantPDU), oc)
-	} else {
-		d.has_talkgroup_voice_grant_pdu = false
-		d.talkgroup_voice_grant_pdu = C.dmrgo_pdu_talkgroup_voice_grant_pdu_t{}
-	}
-	if s.BroadcastTalkgroupVoiceGrantPDU != nil {
-		d.has_broadcast_talkgroup_voice_grant_pdu = true
-		out_layer2_pdu_BroadcastTalkgroupVoiceGrantPDU(&d.broadcast_talkgroup_voice_grant_pdu, &(*s.BroadcastTalkgroupVoiceGrantPDU), oc)
-	} else {
-		d.has_broadcast_talkgroup_voice_grant_pdu = false
-		d.broadcast_talkgroup_voice_grant_pdu = C.dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t{}
-	}
-	if s.PrivateDataGrantPDU != nil {
-		d.has_private_data_grant_pdu = true
-		out_layer2_pdu_PrivateDataGrantPDU(&d.private_data_grant_pdu, &(*s.PrivateDataGrantPDU), oc)
-	} else {
-		d.has_private_data_grant_pdu = false
-		d.private_data_grant_pdu = C.dmrgo_pdu_private_data_grant_pdu_t{}
-	}
-	if s.TalkgroupDataGrantPDU != nil {
-		d.has_talkgroup_data_grant_pdu = true
-		out_layer2_pdu_TalkgroupDataGrantPDU(&d.talkgroup_data_grant_pdu, &(*s.TalkgroupDataGrantPDU), oc)
-	} else {
-		d.has_talkgroup_data_grant_pdu = false
-		d.talkgroup_data_grant_pdu = C.dmrgo_pdu_talkgroup_data_grant_pdu_t{}
-	}
-	if s.DuplexPrivateVoiceGrantPDU != nil {
-		d.has_duplex_private_voice_grant_pdu = true
-		out_layer2_pdu_DuplexPrivateVoiceGrantPDU(&d.duplex_private_voice_grant_pdu, &(*s.DuplexPrivateVoiceGrantPDU), oc)
-	} else {
-		d.has_duplex_private_voice_grant_pdu = false
-		d.duplex_private_voice_grant_pdu = C.dmrgo_pdu_duplex_private_voice_grant_pdu_t{}
-	}
-	if s.DuplexPrivateDataGrantPDU != nil {
-		d.has_duplex_private_data_grant_pdu = true
-		out_layer2_pdu_DuplexPrivateDataGrantPDU(&d.duplex_private_data_grant_pdu, &(*s.DuplexPrivateDataGrantPDU), oc)
-	} else {
-		d.has_duplex_private_data_grant_pdu = false
-		d.duplex_private_data_grant_pdu = C.dmrgo_pdu_duplex_private_data_grant_pdu_t{}
-	}
-	if s.PrivateDataGrantMultiItemPDU != nil {
-		d.has_private_data_grant_multi_item_pdu = true
-		out_layer2_pdu_PrivateDataGrantMultiItemPDU(&d.private_data_grant_multi_item_pdu, &(*s.PrivateDataGrantMultiItemPDU), oc)
-	} else {
-		d.has_private_data_grant_multi_item_pdu = false
-		d.private_data_grant_multi_item_pdu = C.dmrgo_pdu_private_data_grant_multi_item_pdu_t{}
-	}
-	if s.MovePDU != nil {
-		d.has_move_pdu = true
-		out_layer2_pdu_MovePDU(&d.move_pdu, &(*s.MovePDU), oc)
-	} else {
-		d.has_move_pdu = false
-		d.move_pdu = C.dmrgo_pdu_move_pdu_t{}
-	}
-	if s.AlohaPDU != nil {
-		d.has_aloha_pdu = true
-		out_layer2_pdu_AlohaPDU(&d.aloha_pdu, &(*s.AlohaPDU), oc)
-	} else {
-		d.has_aloha_pdu = false
-		d.aloha_pdu = C.dmrgo_pdu_aloha_pdu_t{}
-	}
-	if s.BroadcastPDU != nil {
-		d.has_broadcast_pdu = true
-		out_layer2_pdu_BroadcastPDU(&d.broadcast_pdu, &(*s.BroadcastPDU), oc)
-	} else {
-		d.has_broadcast_pdu = false
-		d.broadcast_pdu = C.dmrgo_pdu_broadcast_pdu_t{}
-	}
-	if s.ClearPDU != nil {
-		d.has_clear_pdu = true
-		out_layer2_pdu_ClearPDU(&d.clear_pdu, &(*s.ClearPDU), oc)
-	} else {
-		d.has_clear_pdu = false
-		d.clear_pdu = C.dmrgo_pdu_clear_pdu_t{}
-	}
-	if s.ProtectPDU != nil {
-		d.has_protect_pdu = true
-		out_layer2_pdu_ProtectPDU(&d.protect_pdu, &(*s.ProtectPDU), oc)
-	} else {
-		d.has_protect_pdu = false
-		d.protect_pdu = C.dmrgo_pdu_protect_pdu_t{}
-	}
-	if s.AhoyPDU != nil {
-		d.has_ahoy_pdu = true
-		out_layer2_pdu_AhoyPDU(&d.ahoy_pdu, &(*s.AhoyPDU), oc)
-	} else {
-		d.has_ahoy_pdu = false
-		d.ahoy_pdu = C.dmrgo_pdu_ahoy_pdu_t{}
-	}
-	if s.AckOutboundPDU != nil {
-		d.has_ack_outbound_pdu = true
-		out_layer2_pdu_AckOutboundPDU(&d.ack_outbound_pdu, &(*s.AckOutboundPDU), oc)
-	} else {
-		d.has_ack_outbound_pdu = false
-		d.ack_outbound_pdu = C.dmrgo_pdu_ack_outbound_pdu_t{}
-	}
-	if s.AckInboundPDU != nil {
-		d.has_ack_inbound_pdu = true
-		out_layer2_pdu_AckInboundPDU(&d.ack_inbound_pdu, &(*s.AckInboundPDU), oc)
-	} else {
-		d.has_ack_inbound_pdu = false
-		d.ack_inbound_pdu = C.dmrgo_pdu_ack_inbound_pdu_t{}
-	}
-	if s.AckOutboundPayloadPDU != nil {
-		d.has_ack_outbound_payload_pdu = true
-		out_layer2_pdu_AckOutboundPayloadPDU(&d.ack_outbound_payload_pdu, &(*s.AckOutboundPayloadPDU), oc)
-	} else {
-		d.has_ack_outbound_payload_pdu = false
-		d.ack_outbound_payload_pdu = C.dmrgo_pdu_ack_outbound_payload_pdu_t{}
-	}
-	if s.AckInboundPayloadPDU != nil {
-		d.has_ack_inbound_payload_pdu = true
-		out_layer2_pdu_AckInboundPayloadPDU(&d.ack_inbound_payload_pdu, &(*s.AckInboundPayloadPDU), oc)
-	} else {
-		d.has_ack_inbound_payload_pdu = false
-		d.ack_inbound_payload_pdu = C.dmrgo_pdu_ack_inbound_payload_pdu_t{}
-	}
-	if s.RandomAccessPDU != nil {
-		d.has_random_access_pdu = true
-		out_layer2_pdu_RandomAccessPDU(&d.random_access_pdu, &(*s.RandomAccessPDU), oc)
-	} else {
-		d.has_random_access_pdu = false
-		d.random_access_pdu = C.dmrgo_pdu_random_access_pdu_t{}
-	}
-	if s.AckvitationPDU != nil {
-		d.has_ackvitation_pdu = true
-		out_layer2_pdu_AckvitationPDU(&d.ackvitation_pdu, &(*s.AckvitationPDU), oc)
-	} else {
-		d.has_ackvitation_pdu = false
-		d.ackvitation_pdu = C.dmrgo_pdu_ackvitation_pdu_t{}
-	}
-	if s.MaintenancePDU != nil {
-		d.has_maintenance_pdu = true
-		out_layer2_pdu_MaintenancePDU(&d.maintenance_pdu, &(*s.MaintenancePDU), oc)
-	} else {
-		d.has_maintenance_pdu = false
-		d.maintenance_pdu = C.dmrgo_pdu_maintenance_pdu_t{}
-	}
 	*(*[8]byte)(unsafe.Pointer(&d.raw_payload)) = s.RawPayload
-}
-
-func out_layer2_pdu_FLCGroupVoice(d *C.dmrgo_pdu_flc_group_voice_t, s *g_layer2_pdu.FLCGroupVoice, oc *outc) {
-	_ = oc
-	out_layer3_ServiceOptions(&d.service_options, &s.ServiceOptions, oc)
-	d.group_address = C.uint32_t(s.GroupAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
-func out_layer2_pdu_FLCUnitToUnit(d *C.dmrgo_pdu_flc_unit_to_unit_t, s *g_layer2_pdu.FLCUnitToUnit, oc *outc) {
-	_ = oc
-	out_layer3_ServiceOptions(&d.service_options, &s.ServiceOptions, oc)
-	d.target_address = C.uint32_t(s.TargetAddress)
-	d.source_address = C.uint32_t(s.SourceAddress)
-}
-
-func out_layer2_pdu_FLCTalkerAliasHeader(d *C.dmrgo_pdu_flc_talker_alias_header_t, s *g_layer2_pdu.FLCTalkerAliasHeader, oc *outc) {
-	_ = oc
-	d.talker_alias_data_format = C.dmrgo_layer3_talker_alias_data_format_t(s.TalkerAliasDataFormat)
-	d.talker_alias_data_length = C.int64_t(s.TalkerAliasDataLength)
-	d.talker_alias_data = C.uint64_t(s.TalkerAliasData)
-}
-
-func out_layer2_pdu_FLCTerminatorDataLinkControl(d *C.dmrgo_pdu_flc_terminator_data_link_control_t, s *g_layer2_pdu.FLCTerminatorDataLinkControl, oc *outc) {
-	_ = oc
-	d.llid_destination = C.uint32_t(s.LLIDDestination)
-	d.llid_source = C.uint32_t(s.LLIDSource)
-	d.group_or_individual = C.bool(s.GroupOrIndividual)
-	d.response_requested = C.bool(s.ResponseRequested)
-	d.full_message_flag = C.bool(s.FullMessageFlag)
-	d.reserved = C.bool(s.Reserved)
-	d.re_synchronize_flag = C.bool(s.ReSynchronizeFlag)
-	d.send_sequence_number = C.uint8_t(s.SendSequenceNumber)
 }
 
 func out_layer2_pdu_FullLinkControl(d *C.dmrgo_pdu_full_link_control_t, s *g_layer2_pdu.FullLinkControl, oc *outc) {
@@ -2396,48 +938,6 @@ func out_layer2_pdu_FullLinkControl(d *C.dmrgo_pdu_full_link_control_t, s *g_lay
 	d.flco = C.dmrgo_enums_flco_t(s.FLCO)
 	d.fid = C.dmrgo_enums_fid_t(s.FID)
 	out_fec_Result(&d.fec, &s.FEC, oc)
-	if s.GroupVoice != nil {
-		d.has_group_voice = true
-		out_layer2_pdu_FLCGroupVoice(&d.group_voice, &(*s.GroupVoice), oc)
-	} else {
-		d.has_group_voice = false
-		d.group_voice = C.dmrgo_pdu_flc_group_voice_t{}
-	}
-	if s.UnitToUnit != nil {
-		d.has_unit_to_unit = true
-		out_layer2_pdu_FLCUnitToUnit(&d.unit_to_unit, &(*s.UnitToUnit), oc)
-	} else {
-		d.has_unit_to_unit = false
-		d.unit_to_unit = C.dmrgo_pdu_flc_unit_to_unit_t{}
-	}
-	if s.GPSInfo != nil {
-		d.has_gps_info = true
-		*(*g_layer2_pdu.FLCGPSInfo)(unsafe.Pointer(&d.gps_info)) = (*s.GPSInfo)
-	} else {
-		d.has_gps_info = false
-		d.gps_info = C.dmrgo_pdu_flc_gps_info_t{}
-	}
-	if s.TalkerAliasHeader != nil {
-		d.has_talker_alias_header = true
-		out_layer2_pdu_FLCTalkerAliasHeader(&d.talker_alias_header, &(*s.TalkerAliasHeader), oc)
-	} else {
-		d.has_talker_alias_header = false
-		d.talker_alias_header = C.dmrgo_pdu_flc_talker_alias_header_t{}
-	}
-	if s.TalkerAliasBlock != nil {
-		d.has_talker_alias_block = true
-		*(*g_layer2_pdu.FLCTalkerAliasBlock)(unsafe.Pointer(&d.talker_alias_block)) = (*s.TalkerAliasBlock)
-	} else {
-		d.has_talker_alias_block = false
-		d.talker_alias_block = C.dmrgo_pdu_flc_talker_alias_block_t{}
-	}
-	if s.TerminatorDataLinkControl != nil {
-		d.has_terminator_data_link_control = true
-		out_layer2_pdu_FLCTerminatorDataLinkControl(&d.terminator_data_link_control, &(*s.TerminatorDataLinkControl), oc)
-	} else {
-		d.has_terminator_data_link_control = false
-		d.terminator_data_link_control = C.dmrgo_pdu_flc_terminator_data_link_control_t{}
-	}
 	*(*[7]byte)(unsafe.Pointer(&d.raw_payload)) = s.RawPayload
 }
 
@@ -2454,76 +954,6 @@ func out_layer2_pdu_MBCHeader(d *C.dmrgo_pdu_mbc_header_t, s *g_layer2_pdu.MBCHe
 	d.protect_flag = C.bool(s.ProtectFlag)
 	d.opcode = C.dmrgo_pdu_csbk_opcode_t(s.Opcode)
 	d.fid = C.dmrgo_enums_fid_t(s.FID)
-	if s.PrivateVoiceGrantPDU != nil {
-		d.has_private_voice_grant_pdu = true
-		out_layer2_pdu_PrivateVoiceGrantPDU(&d.private_voice_grant_pdu, &(*s.PrivateVoiceGrantPDU), oc)
-	} else {
-		d.has_private_voice_grant_pdu = false
-		d.private_voice_grant_pdu = C.dmrgo_pdu_private_voice_grant_pdu_t{}
-	}
-	if s.TalkgroupVoiceGrantPDU != nil {
-		d.has_talkgroup_voice_grant_pdu = true
-		out_layer2_pdu_TalkgroupVoiceGrantPDU(&d.talkgroup_voice_grant_pdu, &(*s.TalkgroupVoiceGrantPDU), oc)
-	} else {
-		d.has_talkgroup_voice_grant_pdu = false
-		d.talkgroup_voice_grant_pdu = C.dmrgo_pdu_talkgroup_voice_grant_pdu_t{}
-	}
-	if s.BroadcastTalkgroupVoiceGrantPDU != nil {
-		d.has_broadcast_talkgroup_voice_grant_pdu = true
-		out_layer2_pdu_BroadcastTalkgroupVoiceGrantPDU(&d.broadcast_talkgroup_voice_grant_pdu, &(*s.BroadcastTalkgroupVoiceGrantPDU), oc)
-	} else {
-		d.has_broadcast_talkgroup_voice_grant_pdu = false
-		d.broadcast_talkgroup_voice_grant_pdu = C.dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t{}
-	}
-	if s.PrivateDataGrantPDU != nil {
-		d.has_private_data_grant_pdu = true
-		out_layer2_pdu_PrivateDataGrantPDU(&d.private_data_grant_pdu, &(*s.PrivateDataGrantPDU), oc)
-	} else {
-		d.has_private_data_grant_pdu = false
-		d.private_data_grant_pdu = C.dmrgo_pdu_private_data_grant_pdu_t{}
-	}
-	if s.TalkgroupDataGrantPDU != nil {
-		d.has_talkgroup_data_grant_pdu = true
-		out_layer2_pdu_TalkgroupDataGrantPDU(&d.talkgroup_data_grant_pdu, &(*s.TalkgroupDataGrantPDU), oc)
-	} else {
-		d.has_talkgroup_data_grant_pdu = false
-		d.talkgroup_data_grant_pdu = C.dmrgo_pdu_talkgroup_data_grant_pdu_t{}
-	}
-	if s.DuplexPrivateVoiceGrantPDU != nil {
-		d.has_duplex_private_voice_grant_pdu = true
-		out_layer2_pdu_DuplexPrivateVoiceGrantPDU(&d.duplex_private_voice_grant_pdu, &(*s.DuplexPrivateVoiceGrantPDU), oc)
-	} else {
-		d.has_duplex_private_voice_grant_pdu = false
-		d.duplex_private_voice_grant_pdu = C.dmrgo_pdu_duplex_private_voice_grant_pdu_t{}
-	}
-	if s.DuplexPrivateDataGrantPDU != nil {
-		d.has_duplex_private_data_grant_pdu = true
-		out_layer2_pdu_DuplexPrivateDataGrantPDU(&d.duplex_private_data_grant_pdu, &(*s.DuplexPrivateDataGrantPDU), oc)
-	} else {
-		d.has_duplex_private_data_grant_pdu = false
-		d.duplex_private_data_grant_pdu = C.dmrgo_pdu_duplex_private_data_grant_pdu_t{}
-	}
-	if s.PrivateDataGrantMultiItemPDU != nil {
-		d.has_private_data_grant_multi_item_pdu = true
-		out_layer2_pdu_PrivateDataGrantMultiItemPDU(&d.private_data_grant_multi_item_pdu, &(*s.PrivateDataGrantMultiItemPDU), oc)
-	} else {
-		d.has_private_data_grant_multi_item_pdu = false
-		d.private_data_grant_multi_item_pdu = C.dmrgo_pdu_private_data_grant_multi_item_pdu_t{}
-	}
-	if s.MovePDU != nil {
-		d.has_move_pdu = true
-		out_layer2_pdu_MovePDU(&d.move_pdu, &(*s.MovePDU), oc)
-	} else {
-		d.has_move_pdu = false
-		d.move_pdu = C.dmrgo_pdu_move_pdu_t{}
-	}
-	if s.BroadcastPDU != nil {
-		d.has_broadcast_pdu = true
-		out_layer2_pdu_BroadcastPDU(&d.broadcast_pdu, &(*s.BroadcastPDU), oc)
-	} else {
-		d.has_broadcast_pdu = false
-		d.broadcast_pdu = C.dmrgo_pdu_broadcast_pdu_t{}
-	}
 	*(*[8]byte)(unsafe.Pointer(&d.raw_payload)) = s.RawPayload
 }
 
@@ -2718,7 +1148,6 @@ type cb0 struct {
 	f   C.dmrgo_layer2_voice_transmitter_options_embedded_lc_fn_t
 	r0  C.dmrgo_pdu_full_link_control_t
 	g0  g_layer2_pdu.FullLinkControl
-	s0  st_layer2_pdu_FullLinkControl
 	ok0 C.bool
 }
 
@@ -2744,19 +1173,18 @@ func (c *cb0) call(q0 int) (o0 *g_layer2_pdu.FullLinkControl) {
 	}
 	_ = code
 	if c.ok0 {
-		c.g0 = in_layer2_pdu_FullLinkControl(&c.r0, &c.s0)
+		c.g0 = in_layer2_pdu_FullLinkControl(&c.r0)
 		o0 = &c.g0
 	}
 	return
 }
 
 type st_layer2_VoiceTransmitterOptions struct {
-	f_LC       st_layer2_pdu_FullLinkControl
 	p_PIHeader g_layer2_pdu.PIHeader
 }
 
 func in_layer2_VoiceTransmitterOptions(s *C.dmrgo_layer2_voice_transmitter_options_t, st *st_layer2_VoiceTransmitterOptions) (d g_layer2.VoiceTransmitterOptions) {
-	d.LC = in_layer2_pdu_FullLinkControl(&s.lc, &st.f_LC)
+	d.LC = in_layer2_pdu_FullLinkControl(&s.lc)
 	d.ColorCode = g_enums.ColorCode(s.color_code)
 	d.Source = g_layer2.SyncSource(s.source)
 	d.Silence = *(*[9]byte)(unsafe.Pointer(&s.silence))
@@ -2770,54 +1198,10 @@ func in_layer2_VoiceTransmitterOptions(s *C.dmrgo_layer2_voice_transmitter_optio
 	return
 }
 
-func out_layer2_pdu_ShortLCCSysParms(d *C.dmrgo_pdu_short_lc_c_sys_parms_t, s *g_layer2_pdu.ShortLCCSysParms, oc *outc) {
-	_ = oc
-	d.model = C.uint8_t(s.MODEL)
-	d.net_site_raw = C.uint16_t(s.NetSiteRaw)
-	d.reg = C.bool(s.Reg)
-	d.common_slot_counter = C.uint16_t(s.CommonSlotCounter)
-}
-
-func out_layer2_pdu_ShortLCPSysParms(d *C.dmrgo_pdu_short_lc_p_sys_parms_t, s *g_layer2_pdu.ShortLCPSysParms, oc *outc) {
-	_ = oc
-	d.model = C.uint8_t(s.MODEL)
-	d.net_site_raw = C.uint16_t(s.NetSiteRaw)
-	d.payload_channel_type = C.bool(s.PayloadChannelType)
-	d.common_slot_counter = C.uint16_t(s.CommonSlotCounter)
-}
-
 func out_layer2_pdu_ShortLC(d *C.dmrgo_pdu_short_lc_t, s *g_layer2_pdu.ShortLC, oc *outc) {
 	_ = oc
 	d.slco = C.dmrgo_enums_slco_t(s.SLCO)
 	out_fec_Result(&d.fec, &s.FEC, oc)
-	if s.NullMessage != nil {
-		d.has_null_message = true
-		*(*g_layer2_pdu.ShortLCNullMessage)(unsafe.Pointer(&d.null_message)) = (*s.NullMessage)
-	} else {
-		d.has_null_message = false
-		d.null_message = C.dmrgo_pdu_short_lc_null_message_t{}
-	}
-	if s.ActivityUpdate != nil {
-		d.has_activity_update = true
-		*(*g_layer2_pdu.ShortLCActivityUpdate)(unsafe.Pointer(&d.activity_update)) = (*s.ActivityUpdate)
-	} else {
-		d.has_activity_update = false
-		d.activity_update = C.dmrgo_pdu_short_lc_activity_update_t{}
-	}
-	if s.CSysParms != nil {
-		d.has_c_sys_parms = true
-		out_layer2_pdu_ShortLCCSysParms(&d.c_sys_parms, &(*s.CSysParms), oc)
-	} else {
-		d.has_c_sys_parms = false
-		d.c_sys_parms = C.dmrgo_pdu_short_lc_c_sys_parms_t{}
-	}
-	if s.PSysParms != nil {
-		d.has_p_sys_parms = true
-		out_layer2_pdu_ShortLCPSysParms(&d.p_sys_parms, &(*s.PSysParms), oc)
-	} else {
-		d.has_p_sys_parms = false
-		d.p_sys_parms = C.dmrgo_pdu_short_lc_p_sys_parms_t{}
-	}
 	*(*[3]byte)(unsafe.Pointer(&d.raw_payload)) = s.RawPayload
 }
 
@@ -2847,22 +1231,14 @@ func out_layer2_framer_Match(d *C.dmrgo_framer_match_t, s *g_layer2_framer.Match
 	d.distance = C.int64_t(s.Distance)
 }
 
-type st_layer2_packet_Packet struct {
-	f_Header st_layer2_pdu_DataHeader
-}
-
 type st_layer2_Data struct {
 	v0  g_layer2_pdu.BCAPContinuation
 	v1  g_layer2_pdu.CGAPContinuation
 	v2  g_layer2_pdu.CSBK
-	s2  st_layer2_pdu_CSBK
 	v3  g_layer2_pdu.DataHeader
-	s3  st_layer2_pdu_DataHeader
 	v4  g_layer2_pdu.FullLinkControl
-	s4  st_layer2_pdu_FullLinkControl
 	v5  g_layer2_pdu.MBCContinuation
 	v6  g_layer2_pdu.MBCHeader
-	s6  st_layer2_pdu_MBCHeader
 	v7  g_layer2_pdu.MVAPContinuation
 	v8  g_layer2_pdu.PIHeader
 	v9  g_layer2_pdu.PRFill
@@ -2884,19 +1260,19 @@ func in_layer2_Data(s *C.dmrgo_layer2_data_t, st *st_layer2_Data) (d g_layer2.Da
 		st.v1 = in_layer2_pdu_CGAPContinuation((*C.dmrgo_pdu_cgap_continuation_t)(unsafe.Pointer(&s.v)))
 		d = &st.v1
 	case 3:
-		st.v2 = in_layer2_pdu_CSBK((*C.dmrgo_pdu_csbk_t)(unsafe.Pointer(&s.v)), &st.s2)
+		st.v2 = in_layer2_pdu_CSBK((*C.dmrgo_pdu_csbk_t)(unsafe.Pointer(&s.v)))
 		d = &st.v2
 	case 4:
-		st.v3 = in_layer2_pdu_DataHeader((*C.dmrgo_pdu_data_header_t)(unsafe.Pointer(&s.v)), &st.s3)
+		st.v3 = in_layer2_pdu_DataHeader((*C.dmrgo_pdu_data_header_t)(unsafe.Pointer(&s.v)))
 		d = &st.v3
 	case 5:
-		st.v4 = in_layer2_pdu_FullLinkControl((*C.dmrgo_pdu_full_link_control_t)(unsafe.Pointer(&s.v)), &st.s4)
+		st.v4 = in_layer2_pdu_FullLinkControl((*C.dmrgo_pdu_full_link_control_t)(unsafe.Pointer(&s.v)))
 		d = &st.v4
 	case 6:
 		st.v5 = in_layer2_pdu_MBCContinuation((*C.dmrgo_pdu_mbc_continuation_t)(unsafe.Pointer(&s.v)))
 		d = &st.v5
 	case 7:
-		st.v6 = in_layer2_pdu_MBCHeader((*C.dmrgo_pdu_mbc_header_t)(unsafe.Pointer(&s.v)), &st.s6)
+		st.v6 = in_layer2_pdu_MBCHeader((*C.dmrgo_pdu_mbc_header_t)(unsafe.Pointer(&s.v)))
 		d = &st.v6
 	case 8:
 		st.v7 = in_layer2_pdu_MVAPContinuation((*C.dmrgo_pdu_mvap_continuation_t)(unsafe.Pointer(&s.v)))
@@ -2928,8 +1304,8 @@ func in_layer2_Data(s *C.dmrgo_layer2_data_t, st *st_layer2_Data) (d g_layer2.Da
 	return
 }
 
-func in_layer2_packet_Packet(s *C.dmrgo_packet_t, st *st_layer2_packet_Packet) (d g_layer2_packet.Packet) {
-	d.Header = in_layer2_pdu_DataHeader(&s.header, &st.f_Header)
+func in_layer2_packet_Packet(s *C.dmrgo_packet_t) (d g_layer2_packet.Packet) {
+	d.Header = in_layer2_pdu_DataHeader(&s.header)
 	d.Blocks = nil
 	if s.blocks_len > 0 {
 		cs := cSlice[C.dmrgo_layer2_data_t](unsafe.Pointer(s.blocks), s.blocks_len)
@@ -2983,14 +1359,29 @@ func out_layer2_packet_Packet(d *C.dmrgo_packet_t, s *g_layer2_packet.Packet, oc
 	}
 }
 
+func in_layer2_pdu_ConfirmedDataHeader(s *C.dmrgo_pdu_confirmed_data_header_t) (d g_layer2_pdu.ConfirmedDataHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.Reserved = bool(s.reserved)
+	d.PadOctetCount = uint8(s.pad_octet_count)
+	d.SAP = g_enums.SAP(s.sap)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.FullMessageFlag = bool(s.full_message_flag)
+	d.BlocksToFollow = uint8(s.blocks_to_follow)
+	d.ReSynchronizeFlag = bool(s.re_synchronize_flag)
+	d.SendSequenceNumber = uint8(s.send_sequence_number)
+	d.FragmentSequenceNumber = uint8(s.fragment_sequence_number)
+	return
+}
+
 type st_layer2_packet_Message struct {
-	f_Header      st_layer2_pdu_DataHeader
 	p_Proprietary g_layer2_pdu.ProprietaryHeader
 	p_Response    g_layer2_packet.ResponseData
 }
 
 func in_layer2_packet_Message(s *C.dmrgo_packet_message_t, st *st_layer2_packet_Message) (d g_layer2_packet.Message) {
-	d.Header = in_layer2_pdu_DataHeader(&s.header, &st.f_Header)
+	d.Header = in_layer2_pdu_DataHeader(&s.header)
 	if s.has_proprietary {
 		st.p_Proprietary = *(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&s.proprietary))
 		d.Proprietary = &st.p_Proprietary
@@ -3010,6 +1401,69 @@ func in_layer2_packet_Message(s *C.dmrgo_packet_message_t, st *st_layer2_packet_
 	return
 }
 
+func in_layer2_pdu_ResponsePacketHeader(s *C.dmrgo_pdu_response_packet_header_t) (d g_layer2_pdu.ResponsePacketHeader) {
+	d.Reserved = bool(s.reserved)
+	d.ResponseRequested = bool(s.response_requested)
+	d.Reserved2 = uint8(s.reserved2)
+	d.SAP = g_enums.SAP(s.sap)
+	d.Reserved3 = uint8(s.reserved3)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.FullMessageFlag = bool(s.full_message_flag)
+	d.BlocksToFollow = uint8(s.blocks_to_follow)
+	d.ResponseClass = uint8(s.response_class)
+	d.ResponseType = uint8(s.response_type)
+	d.ResponseStatus = uint8(s.response_status)
+	return
+}
+
+func in_layer2_pdu_AckInboundPDU(s *C.dmrgo_pdu_ack_inbound_pdu_t) (d g_layer2_pdu.AckInboundPDU) {
+	d.ResponseInfo = uint8(s.response_info)
+	d.ReasonCode = byte(s.reason_code)
+	d.Reserved = bool(s.reserved)
+	d.TargetAddress = uint32(s.target_address)
+	d.AdditionalInfo = uint32(s.additional_info)
+	return
+}
+
+func in_layer2_pdu_AckInboundPayloadPDU(s *C.dmrgo_pdu_ack_inbound_payload_pdu_t) (d g_layer2_pdu.AckInboundPayloadPDU) {
+	d.ResponseInfo = uint8(s.response_info)
+	d.ReasonCode = byte(s.reason_code)
+	d.Reserved = bool(s.reserved)
+	d.TargetAddress = uint32(s.target_address)
+	d.AdditionalInfo = uint32(s.additional_info)
+	return
+}
+
+func in_layer2_pdu_AckOutboundPDU(s *C.dmrgo_pdu_ack_outbound_pdu_t) (d g_layer2_pdu.AckOutboundPDU) {
+	d.ResponseInfo = uint8(s.response_info)
+	d.ReasonCode = byte(s.reason_code)
+	d.Reserved = bool(s.reserved)
+	d.TargetAddress = uint32(s.target_address)
+	d.AdditionalInfo = uint32(s.additional_info)
+	return
+}
+
+func in_layer2_pdu_AckOutboundPayloadPDU(s *C.dmrgo_pdu_ack_outbound_payload_pdu_t) (d g_layer2_pdu.AckOutboundPayloadPDU) {
+	d.ResponseInfo = uint8(s.response_info)
+	d.ReasonCode = byte(s.reason_code)
+	d.Reserved = bool(s.reserved)
+	d.TargetAddress = uint32(s.target_address)
+	d.AdditionalInfo = uint32(s.additional_info)
+	return
+}
+
+func in_layer2_pdu_AckvitationPDU(s *C.dmrgo_pdu_ackvitation_pdu_t) (d g_layer2_pdu.AckvitationPDU) {
+	d.ServiceOptsMirror = uint8(s.service_opts_mirror)
+	d.ServiceKindFlag = bool(s.service_kind_flag)
+	d.Reserved = uint8(s.reserved)
+	d.UAB = uint8(s.uab)
+	d.ServiceKind = uint8(s.service_kind)
+	d.TargetAddress = uint32(s.target_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
 func in_layer2_pdu_AdjacentSiteParms(s *C.dmrgo_pdu_adjacent_site_parms_t) (d g_layer2_pdu.AdjacentSiteParms) {
 	d.AnnouncementType = g_enums.AnnouncementType(s.announcement_type)
 	d.AdjacentSysCode = uint16(s.adjacent_sys_code)
@@ -3025,6 +1479,35 @@ func in_layer2_pdu_AdjacentSiteParms(s *C.dmrgo_pdu_adjacent_site_parms_t) (d g_
 	return
 }
 
+func in_layer2_pdu_AhoyPDU(s *C.dmrgo_pdu_ahoy_pdu_t) (d g_layer2_pdu.AhoyPDU) {
+	d.ServiceOptsMirror = uint8(s.service_opts_mirror)
+	d.ServiceKindFlag = bool(s.service_kind_flag)
+	d.ALS = bool(s.als)
+	d.GroupIndividual = bool(s.group_individual)
+	d.AppendedBlocks = uint8(s.appended_blocks)
+	d.ServiceKind = uint8(s.service_kind)
+	d.TargetAddress = uint32(s.target_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
+func in_layer2_pdu_AlohaPDU(s *C.dmrgo_pdu_aloha_pdu_t) (d g_layer2_pdu.AlohaPDU) {
+	d.Reserved1 = bool(s.reserved1)
+	d.TSCCAS = bool(s.tsccas)
+	d.SiteTSSync = bool(s.site_ts_sync)
+	d.Version = uint8(s.version)
+	d.Offset = bool(s.offset)
+	d.ActiveConn = bool(s.active_conn)
+	d.Mask = uint8(s.mask)
+	d.ServiceFunc = uint8(s.service_func)
+	d.NRandWait = uint8(s.n_rand_wait)
+	d.Reg = bool(s.reg)
+	d.Backoff = uint8(s.backoff)
+	d.SysIdentCode = uint16(s.sys_ident_code)
+	d.MSAddress = uint32(s.ms_address)
+	return
+}
+
 func in_layer2_pdu_AnnWDTSCCParms(s *C.dmrgo_pdu_ann_wd_tscc_parms_t) (d g_layer2_pdu.AnnWDTSCCParms) {
 	d.AnnouncementType = g_enums.AnnouncementType(s.announcement_type)
 	d.Reserved = uint8(s.reserved)
@@ -3037,6 +1520,23 @@ func in_layer2_pdu_AnnWDTSCCParms(s *C.dmrgo_pdu_ann_wd_tscc_parms_t) (d g_layer
 	d.SysIdentCode = uint16(s.sys_ident_code)
 	d.Channel1 = uint16(s.channel1)
 	d.Channel2 = uint16(s.channel2)
+	return
+}
+
+func in_layer2_pdu_FLCTalkerAliasHeader(s *C.dmrgo_pdu_flc_talker_alias_header_t) (d g_layer2_pdu.FLCTalkerAliasHeader) {
+	d.TalkerAliasDataFormat = g_layer3.TalkerAliasDataFormat(s.talker_alias_data_format)
+	d.TalkerAliasDataLength = int(s.talker_alias_data_length)
+	d.TalkerAliasData = uint64(s.talker_alias_data)
+	return
+}
+
+func in_layer2_pdu_BroadcastPDU(s *C.dmrgo_pdu_broadcast_pdu_t) (d g_layer2_pdu.BroadcastPDU) {
+	d.AnnouncementType = g_enums.AnnouncementType(s.announcement_type)
+	d.BroadcastParms1 = uint16(s.broadcast_parms1)
+	d.Reg = bool(s.reg)
+	d.Backoff = uint8(s.backoff)
+	d.SysIdentCode = uint16(s.sys_ident_code)
+	d.BroadcastParms2 = uint32(s.broadcast_parms2)
 	return
 }
 
@@ -3153,6 +1653,114 @@ func out_layer2_pdu_VoteNowParms(d *C.dmrgo_pdu_vote_now_parms_t, s *g_layer2_pd
 	d.channel = C.uint16_t(s.Channel)
 }
 
+func in_layer2_pdu_BroadcastTalkgroupVoiceGrantPDU(s *C.dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t) (d g_layer2_pdu.BroadcastTalkgroupVoiceGrantPDU) {
+	d.PhysicalChannel = uint16(s.physical_channel)
+	d.LogicalChannel = bool(s.logical_channel)
+	d.LateEntry = bool(s.late_entry)
+	d.Emergency = bool(s.emergency)
+	d.Offset = bool(s.offset)
+	d.TargetAddress = uint32(s.target_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
+func out_layer2_pdu_AckInboundPDU(d *C.dmrgo_pdu_ack_inbound_pdu_t, s *g_layer2_pdu.AckInboundPDU, oc *outc) {
+	_ = oc
+	d.response_info = C.uint8_t(s.ResponseInfo)
+	d.reason_code = C.uint8_t(s.ReasonCode)
+	d.reserved = C.bool(s.Reserved)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.additional_info = C.uint32_t(s.AdditionalInfo)
+}
+
+func out_layer2_pdu_AckInboundPayloadPDU(d *C.dmrgo_pdu_ack_inbound_payload_pdu_t, s *g_layer2_pdu.AckInboundPayloadPDU, oc *outc) {
+	_ = oc
+	d.response_info = C.uint8_t(s.ResponseInfo)
+	d.reason_code = C.uint8_t(s.ReasonCode)
+	d.reserved = C.bool(s.Reserved)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.additional_info = C.uint32_t(s.AdditionalInfo)
+}
+
+func out_layer2_pdu_AckOutboundPDU(d *C.dmrgo_pdu_ack_outbound_pdu_t, s *g_layer2_pdu.AckOutboundPDU, oc *outc) {
+	_ = oc
+	d.response_info = C.uint8_t(s.ResponseInfo)
+	d.reason_code = C.uint8_t(s.ReasonCode)
+	d.reserved = C.bool(s.Reserved)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.additional_info = C.uint32_t(s.AdditionalInfo)
+}
+
+func out_layer2_pdu_AckOutboundPayloadPDU(d *C.dmrgo_pdu_ack_outbound_payload_pdu_t, s *g_layer2_pdu.AckOutboundPayloadPDU, oc *outc) {
+	_ = oc
+	d.response_info = C.uint8_t(s.ResponseInfo)
+	d.reason_code = C.uint8_t(s.ReasonCode)
+	d.reserved = C.bool(s.Reserved)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.additional_info = C.uint32_t(s.AdditionalInfo)
+}
+
+func out_layer2_pdu_AckvitationPDU(d *C.dmrgo_pdu_ackvitation_pdu_t, s *g_layer2_pdu.AckvitationPDU, oc *outc) {
+	_ = oc
+	d.service_opts_mirror = C.uint8_t(s.ServiceOptsMirror)
+	d.service_kind_flag = C.bool(s.ServiceKindFlag)
+	d.reserved = C.uint8_t(s.Reserved)
+	d.uab = C.uint8_t(s.UAB)
+	d.service_kind = C.uint8_t(s.ServiceKind)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
+}
+
+func out_layer2_pdu_AhoyPDU(d *C.dmrgo_pdu_ahoy_pdu_t, s *g_layer2_pdu.AhoyPDU, oc *outc) {
+	_ = oc
+	d.service_opts_mirror = C.uint8_t(s.ServiceOptsMirror)
+	d.service_kind_flag = C.bool(s.ServiceKindFlag)
+	d.als = C.bool(s.ALS)
+	d.group_individual = C.bool(s.GroupIndividual)
+	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
+	d.service_kind = C.uint8_t(s.ServiceKind)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
+}
+
+func out_layer2_pdu_AlohaPDU(d *C.dmrgo_pdu_aloha_pdu_t, s *g_layer2_pdu.AlohaPDU, oc *outc) {
+	_ = oc
+	d.reserved1 = C.bool(s.Reserved1)
+	d.tsccas = C.bool(s.TSCCAS)
+	d.site_ts_sync = C.bool(s.SiteTSSync)
+	d.version = C.uint8_t(s.Version)
+	d.offset = C.bool(s.Offset)
+	d.active_conn = C.bool(s.ActiveConn)
+	d.mask = C.uint8_t(s.Mask)
+	d.service_func = C.uint8_t(s.ServiceFunc)
+	d.n_rand_wait = C.uint8_t(s.NRandWait)
+	d.reg = C.bool(s.Reg)
+	d.backoff = C.uint8_t(s.Backoff)
+	d.sys_ident_code = C.uint16_t(s.SysIdentCode)
+	d.ms_address = C.uint32_t(s.MSAddress)
+}
+
+func out_layer2_pdu_BroadcastPDU(d *C.dmrgo_pdu_broadcast_pdu_t, s *g_layer2_pdu.BroadcastPDU, oc *outc) {
+	_ = oc
+	d.announcement_type = C.dmrgo_enums_announcement_type_t(s.AnnouncementType)
+	d.broadcast_parms1 = C.uint16_t(s.BroadcastParms1)
+	d.reg = C.bool(s.Reg)
+	d.backoff = C.uint8_t(s.Backoff)
+	d.sys_ident_code = C.uint16_t(s.SysIdentCode)
+	d.broadcast_parms2 = C.uint32_t(s.BroadcastParms2)
+}
+
+func out_layer2_pdu_BroadcastTalkgroupVoiceGrantPDU(d *C.dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t, s *g_layer2_pdu.BroadcastTalkgroupVoiceGrantPDU, oc *outc) {
+	_ = oc
+	d.physical_channel = C.uint16_t(s.PhysicalChannel)
+	d.logical_channel = C.bool(s.LogicalChannel)
+	d.late_entry = C.bool(s.LateEntry)
+	d.emergency = C.bool(s.Emergency)
+	d.offset = C.bool(s.Offset)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
+}
+
 func out_layer2_pdu_CapacityPlusNeighborsPDU(d *C.dmrgo_pdu_capacity_plus_neighbors_pdu_t, s *g_layer2_pdu.CapacityPlusNeighborsPDU, oc *outc) {
 	_ = oc
 	d.segment = C.dmrgo_pdu_capacity_plus_segment_t(s.Segment)
@@ -3184,6 +1792,61 @@ func out_layer2_pdu_CapacityPlusSiteStatusPDU(d *C.dmrgo_pdu_capacity_plus_site_
 	*(*[7]byte)(unsafe.Pointer(&d.activity)) = s.Activity
 }
 
+func out_layer2_pdu_ChannelTimingPDU(d *C.dmrgo_pdu_channel_timing_pdu_t, s *g_layer2_pdu.ChannelTimingPDU, oc *outc) {
+	_ = oc
+	d.sync_age = C.uint16_t(s.SyncAge)
+	d.generation = C.uint8_t(s.Generation)
+	d.leader_identifier = C.uint32_t(s.LeaderIdentifier)
+	d.new_leader = C.bool(s.NewLeader)
+	d.leader_dynamic_identifier = C.uint8_t(s.LeaderDynamicIdentifier)
+	d.channel_timing_op1 = C.bool(s.ChannelTimingOp1)
+	d.source_identifier = C.uint32_t(s.SourceIdentifier)
+	d.reserved = C.bool(s.Reserved)
+	d.source_dynamic_identifier = C.uint8_t(s.SourceDynamicIdentifier)
+	d.channel_timing_op0 = C.bool(s.ChannelTimingOp0)
+}
+
+func out_layer2_pdu_ClearPDU(d *C.dmrgo_pdu_clear_pdu_t, s *g_layer2_pdu.ClearPDU, oc *outc) {
+	_ = oc
+	d.physical_channel = C.uint16_t(s.PhysicalChannel)
+	d.reserved1 = C.bool(s.Reserved1)
+	d.reserved2 = C.uint8_t(s.Reserved2)
+	d.group_individual = C.bool(s.GroupIndividual)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
+}
+
+func out_layer2_pdu_DuplexPrivateDataGrantPDU(d *C.dmrgo_pdu_duplex_private_data_grant_pdu_t, s *g_layer2_pdu.DuplexPrivateDataGrantPDU, oc *outc) {
+	_ = oc
+	d.physical_channel = C.uint16_t(s.PhysicalChannel)
+	d.logical_channel = C.bool(s.LogicalChannel)
+	d.hi_rate = C.bool(s.HiRate)
+	d.emergency = C.bool(s.Emergency)
+	d.call_direction = C.bool(s.CallDirection)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
+}
+
+func out_layer2_pdu_DuplexPrivateVoiceGrantPDU(d *C.dmrgo_pdu_duplex_private_voice_grant_pdu_t, s *g_layer2_pdu.DuplexPrivateVoiceGrantPDU, oc *outc) {
+	_ = oc
+	d.physical_channel = C.uint16_t(s.PhysicalChannel)
+	d.logical_channel = C.bool(s.LogicalChannel)
+	d.reserved = C.bool(s.Reserved)
+	d.emergency = C.bool(s.Emergency)
+	d.call_direction = C.bool(s.CallDirection)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
+}
+
+func out_layer2_pdu_MaintenancePDU(d *C.dmrgo_pdu_maintenance_pdu_t, s *g_layer2_pdu.MaintenancePDU, oc *outc) {
+	_ = oc
+	d.reserved = C.uint16_t(s.Reserved)
+	d.maint_kind = C.uint8_t(s.MaintKind)
+	d.reserved2 = C.bool(s.Reserved2)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
+}
+
 func out_layer2_pdu_MotorolaRadioCheckPDU(d *C.dmrgo_pdu_motorola_radio_check_pdu_t, s *g_layer2_pdu.MotorolaRadioCheckPDU, oc *outc) {
 	_ = oc
 	d.reserved = C.uint8_t(s.Reserved)
@@ -3191,6 +1854,91 @@ func out_layer2_pdu_MotorolaRadioCheckPDU(d *C.dmrgo_pdu_motorola_radio_check_pd
 	d.reserved2 = C.uint8_t(s.Reserved2)
 	d.requester_address = C.uint32_t(s.RequesterAddress)
 	d.checked_address = C.uint32_t(s.CheckedAddress)
+}
+
+func out_layer2_pdu_MovePDU(d *C.dmrgo_pdu_move_pdu_t, s *g_layer2_pdu.MovePDU, oc *outc) {
+	_ = oc
+	d.reserved1 = C.uint16_t(s.Reserved1)
+	d.mask = C.uint8_t(s.Mask)
+	d.reserved2 = C.uint8_t(s.Reserved2)
+	d.reg = C.bool(s.Reg)
+	d.backoff = C.uint8_t(s.Backoff)
+	d.reserved3 = C.uint8_t(s.Reserved3)
+	d.physical_channel = C.uint16_t(s.PhysicalChannel)
+	d.ms_address = C.uint32_t(s.MSAddress)
+}
+
+func out_layer2_pdu_PreamblePDU(d *C.dmrgo_pdu_preamble_pdu_t, s *g_layer2_pdu.PreamblePDU, oc *outc) {
+	_ = oc
+	d.data = C.bool(s.Data)
+	d.group = C.bool(s.Group)
+	d.reserved = C.uint8_t(s.Reserved)
+	d.csbk_blocks_to_follow = C.uint8_t(s.CSBKBlocksToFollow)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
+}
+
+func out_layer2_pdu_PrivateDataGrantPDU(d *C.dmrgo_pdu_private_data_grant_pdu_t, s *g_layer2_pdu.PrivateDataGrantPDU, oc *outc) {
+	_ = oc
+	d.physical_channel = C.uint16_t(s.PhysicalChannel)
+	d.logical_channel = C.bool(s.LogicalChannel)
+	d.hi_rate = C.bool(s.HiRate)
+	d.emergency = C.bool(s.Emergency)
+	d.offset = C.bool(s.Offset)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
+}
+
+func out_layer2_pdu_PrivateDataGrantMultiItemPDU(d *C.dmrgo_pdu_private_data_grant_multi_item_pdu_t, s *g_layer2_pdu.PrivateDataGrantMultiItemPDU, oc *outc) {
+	_ = oc
+	d.physical_channel = C.uint16_t(s.PhysicalChannel)
+	d.logical_channel = C.bool(s.LogicalChannel)
+	d.hi_rate = C.bool(s.HiRate)
+	d.emergency = C.bool(s.Emergency)
+	d.offset = C.bool(s.Offset)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
+}
+
+func out_layer2_pdu_PrivateVoiceGrantPDU(d *C.dmrgo_pdu_private_voice_grant_pdu_t, s *g_layer2_pdu.PrivateVoiceGrantPDU, oc *outc) {
+	_ = oc
+	d.physical_channel = C.uint16_t(s.PhysicalChannel)
+	d.logical_channel = C.bool(s.LogicalChannel)
+	d.reserved = C.bool(s.Reserved)
+	d.emergency = C.bool(s.Emergency)
+	d.offset = C.bool(s.Offset)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
+}
+
+func out_layer2_pdu_ProtectPDU(d *C.dmrgo_pdu_protect_pdu_t, s *g_layer2_pdu.ProtectPDU, oc *outc) {
+	_ = oc
+	d.reserved = C.uint16_t(s.Reserved)
+	d.protect_kind = C.uint8_t(s.ProtectKind)
+	d.group_individual = C.bool(s.GroupIndividual)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
+}
+
+func out_layer2_pdu_RandomAccessPDU(d *C.dmrgo_pdu_random_access_pdu_t, s *g_layer2_pdu.RandomAccessPDU, oc *outc) {
+	_ = oc
+	d.service_options = C.uint8_t(s.ServiceOptions)
+	d.proxy_flag = C.bool(s.ProxyFlag)
+	d.reserved = C.uint8_t(s.Reserved)
+	d.service_kind = C.uint8_t(s.ServiceKind)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
+}
+
+func out_layer2_pdu_TalkgroupDataGrantPDU(d *C.dmrgo_pdu_talkgroup_data_grant_pdu_t, s *g_layer2_pdu.TalkgroupDataGrantPDU, oc *outc) {
+	_ = oc
+	d.physical_channel = C.uint16_t(s.PhysicalChannel)
+	d.logical_channel = C.bool(s.LogicalChannel)
+	d.hi_rate = C.bool(s.HiRate)
+	d.emergency = C.bool(s.Emergency)
+	d.offset = C.bool(s.Offset)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
 }
 
 func out_layer2_pdu_TalkgroupDataGrantMultiItemPDU(d *C.dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t, s *g_layer2_pdu.TalkgroupDataGrantMultiItemPDU, oc *outc) {
@@ -3204,6 +1952,88 @@ func out_layer2_pdu_TalkgroupDataGrantMultiItemPDU(d *C.dmrgo_pdu_talkgroup_data
 	d.source_address = C.uint32_t(s.SourceAddress)
 }
 
+func out_layer2_pdu_TalkgroupVoiceGrantPDU(d *C.dmrgo_pdu_talkgroup_voice_grant_pdu_t, s *g_layer2_pdu.TalkgroupVoiceGrantPDU, oc *outc) {
+	_ = oc
+	d.physical_channel = C.uint16_t(s.PhysicalChannel)
+	d.logical_channel = C.bool(s.LogicalChannel)
+	d.late_entry = C.bool(s.LateEntry)
+	d.emergency = C.bool(s.Emergency)
+	d.offset = C.bool(s.Offset)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
+}
+
+func out_layer2_pdu_UnitToUnitVoiceServiceAnswerResponsePDU(d *C.dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t, s *g_layer2_pdu.UnitToUnitVoiceServiceAnswerResponsePDU, oc *outc) {
+	_ = oc
+	out_layer3_ServiceOptions(&d.service_options, &s.ServiceOptions, oc)
+	d.answer_response = C.uint8_t(s.AnswerResponse)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
+}
+
+func out_layer2_pdu_UnitToUnitVoiceServiceRequestPDU(d *C.dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t, s *g_layer2_pdu.UnitToUnitVoiceServiceRequestPDU, oc *outc) {
+	_ = oc
+	out_layer3_ServiceOptions(&d.service_options, &s.ServiceOptions, oc)
+	d.reserved = C.uint8_t(s.Reserved)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
+}
+
+func in_layer2_pdu_ChannelTimingPDU(s *C.dmrgo_pdu_channel_timing_pdu_t) (d g_layer2_pdu.ChannelTimingPDU) {
+	d.SyncAge = uint16(s.sync_age)
+	d.Generation = uint8(s.generation)
+	d.LeaderIdentifier = uint32(s.leader_identifier)
+	d.NewLeader = bool(s.new_leader)
+	d.LeaderDynamicIdentifier = uint8(s.leader_dynamic_identifier)
+	d.ChannelTimingOp1 = bool(s.channel_timing_op1)
+	d.SourceIdentifier = uint32(s.source_identifier)
+	d.Reserved = bool(s.reserved)
+	d.SourceDynamicIdentifier = uint8(s.source_dynamic_identifier)
+	d.ChannelTimingOp0 = bool(s.channel_timing_op0)
+	return
+}
+
+func in_layer2_pdu_ClearPDU(s *C.dmrgo_pdu_clear_pdu_t) (d g_layer2_pdu.ClearPDU) {
+	d.PhysicalChannel = uint16(s.physical_channel)
+	d.Reserved1 = bool(s.reserved1)
+	d.Reserved2 = uint8(s.reserved2)
+	d.GroupIndividual = bool(s.group_individual)
+	d.TargetAddress = uint32(s.target_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
+func in_layer2_pdu_DuplexPrivateDataGrantPDU(s *C.dmrgo_pdu_duplex_private_data_grant_pdu_t) (d g_layer2_pdu.DuplexPrivateDataGrantPDU) {
+	d.PhysicalChannel = uint16(s.physical_channel)
+	d.LogicalChannel = bool(s.logical_channel)
+	d.HiRate = bool(s.hi_rate)
+	d.Emergency = bool(s.emergency)
+	d.CallDirection = bool(s.call_direction)
+	d.TargetAddress = uint32(s.target_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
+func in_layer2_pdu_DuplexPrivateVoiceGrantPDU(s *C.dmrgo_pdu_duplex_private_voice_grant_pdu_t) (d g_layer2_pdu.DuplexPrivateVoiceGrantPDU) {
+	d.PhysicalChannel = uint16(s.physical_channel)
+	d.LogicalChannel = bool(s.logical_channel)
+	d.Reserved = bool(s.reserved)
+	d.Emergency = bool(s.emergency)
+	d.CallDirection = bool(s.call_direction)
+	d.TargetAddress = uint32(s.target_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
+func in_layer2_pdu_MaintenancePDU(s *C.dmrgo_pdu_maintenance_pdu_t) (d g_layer2_pdu.MaintenancePDU) {
+	d.Reserved = uint16(s.reserved)
+	d.MaintKind = uint8(s.maint_kind)
+	d.Reserved2 = bool(s.reserved2)
+	d.TargetAddress = uint32(s.target_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
 func in_layer2_pdu_MotorolaRadioCheckPDU(s *C.dmrgo_pdu_motorola_radio_check_pdu_t) (d g_layer2_pdu.MotorolaRadioCheckPDU) {
 	d.Reserved = uint8(s.reserved)
 	d.Answer = bool(s.answer)
@@ -3213,12 +2043,124 @@ func in_layer2_pdu_MotorolaRadioCheckPDU(s *C.dmrgo_pdu_motorola_radio_check_pdu
 	return
 }
 
+func in_layer2_pdu_MovePDU(s *C.dmrgo_pdu_move_pdu_t) (d g_layer2_pdu.MovePDU) {
+	d.Reserved1 = uint16(s.reserved1)
+	d.Mask = uint8(s.mask)
+	d.Reserved2 = uint8(s.reserved2)
+	d.Reg = bool(s.reg)
+	d.Backoff = uint8(s.backoff)
+	d.Reserved3 = uint8(s.reserved3)
+	d.PhysicalChannel = uint16(s.physical_channel)
+	d.MSAddress = uint32(s.ms_address)
+	return
+}
+
+func in_layer2_pdu_PreamblePDU(s *C.dmrgo_pdu_preamble_pdu_t) (d g_layer2_pdu.PreamblePDU) {
+	d.Data = bool(s.data)
+	d.Group = bool(s.group)
+	d.Reserved = uint8(s.reserved)
+	d.CSBKBlocksToFollow = byte(s.csbk_blocks_to_follow)
+	d.TargetAddress = uint32(s.target_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
+func in_layer2_pdu_PrivateDataGrantPDU(s *C.dmrgo_pdu_private_data_grant_pdu_t) (d g_layer2_pdu.PrivateDataGrantPDU) {
+	d.PhysicalChannel = uint16(s.physical_channel)
+	d.LogicalChannel = bool(s.logical_channel)
+	d.HiRate = bool(s.hi_rate)
+	d.Emergency = bool(s.emergency)
+	d.Offset = bool(s.offset)
+	d.TargetAddress = uint32(s.target_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
+func in_layer2_pdu_PrivateDataGrantMultiItemPDU(s *C.dmrgo_pdu_private_data_grant_multi_item_pdu_t) (d g_layer2_pdu.PrivateDataGrantMultiItemPDU) {
+	d.PhysicalChannel = uint16(s.physical_channel)
+	d.LogicalChannel = bool(s.logical_channel)
+	d.HiRate = bool(s.hi_rate)
+	d.Emergency = bool(s.emergency)
+	d.Offset = bool(s.offset)
+	d.TargetAddress = uint32(s.target_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
+func in_layer2_pdu_PrivateVoiceGrantPDU(s *C.dmrgo_pdu_private_voice_grant_pdu_t) (d g_layer2_pdu.PrivateVoiceGrantPDU) {
+	d.PhysicalChannel = uint16(s.physical_channel)
+	d.LogicalChannel = bool(s.logical_channel)
+	d.Reserved = bool(s.reserved)
+	d.Emergency = bool(s.emergency)
+	d.Offset = bool(s.offset)
+	d.TargetAddress = uint32(s.target_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
+func in_layer2_pdu_ProtectPDU(s *C.dmrgo_pdu_protect_pdu_t) (d g_layer2_pdu.ProtectPDU) {
+	d.Reserved = uint16(s.reserved)
+	d.ProtectKind = uint8(s.protect_kind)
+	d.GroupIndividual = bool(s.group_individual)
+	d.TargetAddress = uint32(s.target_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
+func in_layer2_pdu_RandomAccessPDU(s *C.dmrgo_pdu_random_access_pdu_t) (d g_layer2_pdu.RandomAccessPDU) {
+	d.ServiceOptions = uint8(s.service_options)
+	d.ProxyFlag = bool(s.proxy_flag)
+	d.Reserved = uint8(s.reserved)
+	d.ServiceKind = uint8(s.service_kind)
+	d.TargetAddress = uint32(s.target_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
+func in_layer2_pdu_TalkgroupDataGrantPDU(s *C.dmrgo_pdu_talkgroup_data_grant_pdu_t) (d g_layer2_pdu.TalkgroupDataGrantPDU) {
+	d.PhysicalChannel = uint16(s.physical_channel)
+	d.LogicalChannel = bool(s.logical_channel)
+	d.HiRate = bool(s.hi_rate)
+	d.Emergency = bool(s.emergency)
+	d.Offset = bool(s.offset)
+	d.TargetAddress = uint32(s.target_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
 func in_layer2_pdu_TalkgroupDataGrantMultiItemPDU(s *C.dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t) (d g_layer2_pdu.TalkgroupDataGrantMultiItemPDU) {
 	d.PhysicalChannel = uint16(s.physical_channel)
 	d.LogicalChannel = bool(s.logical_channel)
 	d.HiRate = bool(s.hi_rate)
 	d.Emergency = bool(s.emergency)
 	d.Offset = bool(s.offset)
+	d.TargetAddress = uint32(s.target_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
+func in_layer2_pdu_TalkgroupVoiceGrantPDU(s *C.dmrgo_pdu_talkgroup_voice_grant_pdu_t) (d g_layer2_pdu.TalkgroupVoiceGrantPDU) {
+	d.PhysicalChannel = uint16(s.physical_channel)
+	d.LogicalChannel = bool(s.logical_channel)
+	d.LateEntry = bool(s.late_entry)
+	d.Emergency = bool(s.emergency)
+	d.Offset = bool(s.offset)
+	d.TargetAddress = uint32(s.target_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
+func in_layer2_pdu_UnitToUnitVoiceServiceAnswerResponsePDU(s *C.dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t) (d g_layer2_pdu.UnitToUnitVoiceServiceAnswerResponsePDU) {
+	d.ServiceOptions = in_layer3_ServiceOptions(&s.service_options)
+	d.AnswerResponse = byte(s.answer_response)
+	d.TargetAddress = uint32(s.target_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
+func in_layer2_pdu_UnitToUnitVoiceServiceRequestPDU(s *C.dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t) (d g_layer2_pdu.UnitToUnitVoiceServiceRequestPDU) {
+	d.ServiceOptions = in_layer3_ServiceOptions(&s.service_options)
+	d.Reserved = byte(s.reserved)
 	d.TargetAddress = uint32(s.target_address)
 	d.SourceAddress = uint32(s.source_address)
 	return
@@ -3297,6 +2239,212 @@ func in_layer2_pdu_ChanFreqParms(s *C.dmrgo_pdu_chan_freq_parms_t) (d g_layer2_p
 	return
 }
 
+func out_layer2_pdu_ConfirmedDataHeader(d *C.dmrgo_pdu_confirmed_data_header_t, s *g_layer2_pdu.ConfirmedDataHeader, oc *outc) {
+	_ = oc
+	d.group = C.bool(s.Group)
+	d.response_requested = C.bool(s.ResponseRequested)
+	d.reserved = C.bool(s.Reserved)
+	d.pad_octet_count = C.uint8_t(s.PadOctetCount)
+	d.sap = C.dmrgo_enums_sap_t(s.SAP)
+	d.llid_destination = C.uint32_t(s.LLIDDestination)
+	d.llid_source = C.uint32_t(s.LLIDSource)
+	d.full_message_flag = C.bool(s.FullMessageFlag)
+	d.blocks_to_follow = C.uint8_t(s.BlocksToFollow)
+	d.re_synchronize_flag = C.bool(s.ReSynchronizeFlag)
+	d.send_sequence_number = C.uint8_t(s.SendSequenceNumber)
+	d.fragment_sequence_number = C.uint8_t(s.FragmentSequenceNumber)
+}
+
+func out_layer2_pdu_DefinedDataHeader(d *C.dmrgo_pdu_defined_data_header_t, s *g_layer2_pdu.DefinedDataHeader, oc *outc) {
+	_ = oc
+	d.group = C.bool(s.Group)
+	d.response_requested = C.bool(s.ResponseRequested)
+	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
+	d.sap = C.dmrgo_enums_sap_t(s.SAP)
+	d.llid_destination = C.uint32_t(s.LLIDDestination)
+	d.llid_source = C.uint32_t(s.LLIDSource)
+	d.defined_data = C.dmrgo_enums_dd_format_t(s.DefinedData)
+	d.sarq = C.bool(s.SARQ)
+	d.full_message_flag = C.bool(s.FullMessageFlag)
+	d.bit_padding = C.uint8_t(s.BitPadding)
+}
+
+func out_layer2_pdu_RawDataHeader(d *C.dmrgo_pdu_raw_data_header_t, s *g_layer2_pdu.RawDataHeader, oc *outc) {
+	_ = oc
+	d.group = C.bool(s.Group)
+	d.response_requested = C.bool(s.ResponseRequested)
+	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
+	d.sap = C.dmrgo_enums_sap_t(s.SAP)
+	d.llid_destination = C.uint32_t(s.LLIDDestination)
+	d.llid_source = C.uint32_t(s.LLIDSource)
+	d.source_port = C.uint8_t(s.SourcePort)
+	d.destination_port = C.uint8_t(s.DestinationPort)
+	d.sarq = C.bool(s.SARQ)
+	d.full_message_flag = C.bool(s.FullMessageFlag)
+	d.bit_padding = C.uint8_t(s.BitPadding)
+}
+
+func out_layer2_pdu_ResponsePacketHeader(d *C.dmrgo_pdu_response_packet_header_t, s *g_layer2_pdu.ResponsePacketHeader, oc *outc) {
+	_ = oc
+	d.reserved = C.bool(s.Reserved)
+	d.response_requested = C.bool(s.ResponseRequested)
+	d.reserved2 = C.uint8_t(s.Reserved2)
+	d.sap = C.dmrgo_enums_sap_t(s.SAP)
+	d.reserved3 = C.uint8_t(s.Reserved3)
+	d.llid_destination = C.uint32_t(s.LLIDDestination)
+	d.llid_source = C.uint32_t(s.LLIDSource)
+	d.full_message_flag = C.bool(s.FullMessageFlag)
+	d.blocks_to_follow = C.uint8_t(s.BlocksToFollow)
+	d.response_class = C.uint8_t(s.ResponseClass)
+	d.response_type = C.uint8_t(s.ResponseType)
+	d.response_status = C.uint8_t(s.ResponseStatus)
+}
+
+func out_layer2_pdu_StatusPrecodedHeader(d *C.dmrgo_pdu_status_precoded_header_t, s *g_layer2_pdu.StatusPrecodedHeader, oc *outc) {
+	_ = oc
+	d.group = C.bool(s.Group)
+	d.response_requested = C.bool(s.ResponseRequested)
+	d.sap = C.dmrgo_enums_sap_t(s.SAP)
+	d.llid_destination = C.uint32_t(s.LLIDDestination)
+	d.llid_source = C.uint32_t(s.LLIDSource)
+	d.source_port = C.uint8_t(s.SourcePort)
+	d.destination_port = C.uint8_t(s.DestinationPort)
+	d.status_precoded = C.uint16_t(s.StatusPrecoded)
+}
+
+func out_layer2_pdu_UDTHeader(d *C.dmrgo_pdu_udt_header_t, s *g_layer2_pdu.UDTHeader, oc *outc) {
+	_ = oc
+	d.group = C.bool(s.Group)
+	d.response_requested = C.bool(s.ResponseRequested)
+	d.emergency = C.bool(s.Emergency)
+	d.option_flag = C.bool(s.OptionFlag)
+	d.sap = C.dmrgo_enums_sap_t(s.SAP)
+	d.udt_format = C.dmrgo_enums_udt_format_t(s.UDTFormat)
+	d.llid_destination = C.uint32_t(s.LLIDDestination)
+	d.llid_source = C.uint32_t(s.LLIDSource)
+	d.pad_nibble = C.uint8_t(s.PadNibble)
+	d.reserved = C.bool(s.Reserved)
+	d.appended_blocks = C.uint8_t(s.AppendedBlocks)
+	d.supplementary_flag = C.bool(s.SupplementaryFlag)
+	d.protect_flag = C.bool(s.ProtectFlag)
+	d.opcode = C.dmrgo_pdu_udt_opcode_t(s.Opcode)
+}
+
+func out_layer2_pdu_UnconfirmedDataHeader(d *C.dmrgo_pdu_unconfirmed_data_header_t, s *g_layer2_pdu.UnconfirmedDataHeader, oc *outc) {
+	_ = oc
+	d.group = C.bool(s.Group)
+	d.response_requested = C.bool(s.ResponseRequested)
+	d.reserved = C.bool(s.Reserved)
+	d.pad_octet_count = C.uint8_t(s.PadOctetCount)
+	d.sap = C.dmrgo_enums_sap_t(s.SAP)
+	d.llid_destination = C.uint32_t(s.LLIDDestination)
+	d.llid_source = C.uint32_t(s.LLIDSource)
+	d.full_message_flag = C.bool(s.FullMessageFlag)
+	d.blocks_to_follow = C.uint8_t(s.BlocksToFollow)
+	d.reserved2 = C.uint8_t(s.Reserved2)
+	d.fragment_sequence_number = C.uint8_t(s.FragmentSequenceNumber)
+}
+
+func in_layer2_pdu_DefinedDataHeader(s *C.dmrgo_pdu_defined_data_header_t) (d g_layer2_pdu.DefinedDataHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.AppendedBlocks = uint8(s.appended_blocks)
+	d.SAP = g_enums.SAP(s.sap)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.DefinedData = g_enums.DDFormat(s.defined_data)
+	d.SARQ = bool(s.sarq)
+	d.FullMessageFlag = bool(s.full_message_flag)
+	d.BitPadding = uint8(s.bit_padding)
+	return
+}
+
+func in_layer2_pdu_RawDataHeader(s *C.dmrgo_pdu_raw_data_header_t) (d g_layer2_pdu.RawDataHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.AppendedBlocks = uint8(s.appended_blocks)
+	d.SAP = g_enums.SAP(s.sap)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.SourcePort = uint8(s.source_port)
+	d.DestinationPort = uint8(s.destination_port)
+	d.SARQ = bool(s.sarq)
+	d.FullMessageFlag = bool(s.full_message_flag)
+	d.BitPadding = uint8(s.bit_padding)
+	return
+}
+
+func in_layer2_pdu_StatusPrecodedHeader(s *C.dmrgo_pdu_status_precoded_header_t) (d g_layer2_pdu.StatusPrecodedHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.SAP = g_enums.SAP(s.sap)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.SourcePort = uint8(s.source_port)
+	d.DestinationPort = uint8(s.destination_port)
+	d.StatusPrecoded = uint16(s.status_precoded)
+	return
+}
+
+func in_layer2_pdu_UDTHeader(s *C.dmrgo_pdu_udt_header_t) (d g_layer2_pdu.UDTHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.Emergency = bool(s.emergency)
+	d.OptionFlag = bool(s.option_flag)
+	d.SAP = g_enums.SAP(s.sap)
+	d.UDTFormat = g_enums.UDTFormat(s.udt_format)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.PadNibble = uint8(s.pad_nibble)
+	d.Reserved = bool(s.reserved)
+	d.AppendedBlocks = uint8(s.appended_blocks)
+	d.SupplementaryFlag = bool(s.supplementary_flag)
+	d.ProtectFlag = bool(s.protect_flag)
+	d.Opcode = g_layer2_pdu.UDTOpcode(s.opcode)
+	return
+}
+
+func in_layer2_pdu_UnconfirmedDataHeader(s *C.dmrgo_pdu_unconfirmed_data_header_t) (d g_layer2_pdu.UnconfirmedDataHeader) {
+	d.Group = bool(s.group)
+	d.ResponseRequested = bool(s.response_requested)
+	d.Reserved = bool(s.reserved)
+	d.PadOctetCount = uint8(s.pad_octet_count)
+	d.SAP = g_enums.SAP(s.sap)
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.FullMessageFlag = bool(s.full_message_flag)
+	d.BlocksToFollow = uint8(s.blocks_to_follow)
+	d.Reserved2 = uint8(s.reserved2)
+	d.FragmentSequenceNumber = uint8(s.fragment_sequence_number)
+	return
+}
+
+func in_layer2_pdu_FLCGroupVoice(s *C.dmrgo_pdu_flc_group_voice_t) (d g_layer2_pdu.FLCGroupVoice) {
+	d.ServiceOptions = in_layer3_ServiceOptions(&s.service_options)
+	d.GroupAddress = uint32(s.group_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
+func in_layer2_pdu_FLCTerminatorDataLinkControl(s *C.dmrgo_pdu_flc_terminator_data_link_control_t) (d g_layer2_pdu.FLCTerminatorDataLinkControl) {
+	d.LLIDDestination = uint32(s.llid_destination)
+	d.LLIDSource = uint32(s.llid_source)
+	d.GroupOrIndividual = bool(s.group_or_individual)
+	d.ResponseRequested = bool(s.response_requested)
+	d.FullMessageFlag = bool(s.full_message_flag)
+	d.Reserved = bool(s.reserved)
+	d.ReSynchronizeFlag = bool(s.re_synchronize_flag)
+	d.SendSequenceNumber = uint8(s.send_sequence_number)
+	return
+}
+
+func in_layer2_pdu_FLCUnitToUnit(s *C.dmrgo_pdu_flc_unit_to_unit_t) (d g_layer2_pdu.FLCUnitToUnit) {
+	d.ServiceOptions = in_layer3_ServiceOptions(&s.service_options)
+	d.TargetAddress = uint32(s.target_address)
+	d.SourceAddress = uint32(s.source_address)
+	return
+}
+
 func out_layer2_pdu_CapacityPlusGroupVoiceGrant(d *C.dmrgo_pdu_capacity_plus_group_voice_grant_t, s *g_layer2_pdu.CapacityPlusGroupVoiceGrant, oc *outc) {
 	_ = oc
 	out_layer3_ServiceOptions(&d.service_options, &s.ServiceOptions, oc)
@@ -3314,6 +2462,39 @@ func out_layer2_pdu_CapacityPlusPrivateVoiceGrant(d *C.dmrgo_pdu_capacity_plus_p
 	d.reserved = C.uint8_t(s.Reserved)
 	d.rest_lsn = C.uint8_t(s.RestLSN)
 	d.source_address = C.uint16_t(s.SourceAddress)
+}
+
+func out_layer2_pdu_FLCGroupVoice(d *C.dmrgo_pdu_flc_group_voice_t, s *g_layer2_pdu.FLCGroupVoice, oc *outc) {
+	_ = oc
+	out_layer3_ServiceOptions(&d.service_options, &s.ServiceOptions, oc)
+	d.group_address = C.uint32_t(s.GroupAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
+}
+
+func out_layer2_pdu_FLCTalkerAliasHeader(d *C.dmrgo_pdu_flc_talker_alias_header_t, s *g_layer2_pdu.FLCTalkerAliasHeader, oc *outc) {
+	_ = oc
+	d.talker_alias_data_format = C.dmrgo_layer3_talker_alias_data_format_t(s.TalkerAliasDataFormat)
+	d.talker_alias_data_length = C.int64_t(s.TalkerAliasDataLength)
+	d.talker_alias_data = C.uint64_t(s.TalkerAliasData)
+}
+
+func out_layer2_pdu_FLCTerminatorDataLinkControl(d *C.dmrgo_pdu_flc_terminator_data_link_control_t, s *g_layer2_pdu.FLCTerminatorDataLinkControl, oc *outc) {
+	_ = oc
+	d.llid_destination = C.uint32_t(s.LLIDDestination)
+	d.llid_source = C.uint32_t(s.LLIDSource)
+	d.group_or_individual = C.bool(s.GroupOrIndividual)
+	d.response_requested = C.bool(s.ResponseRequested)
+	d.full_message_flag = C.bool(s.FullMessageFlag)
+	d.reserved = C.bool(s.Reserved)
+	d.re_synchronize_flag = C.bool(s.ReSynchronizeFlag)
+	d.send_sequence_number = C.uint8_t(s.SendSequenceNumber)
+}
+
+func out_layer2_pdu_FLCUnitToUnit(d *C.dmrgo_pdu_flc_unit_to_unit_t, s *g_layer2_pdu.FLCUnitToUnit, oc *outc) {
+	_ = oc
+	out_layer3_ServiceOptions(&d.service_options, &s.ServiceOptions, oc)
+	d.target_address = C.uint32_t(s.TargetAddress)
+	d.source_address = C.uint32_t(s.SourceAddress)
 }
 
 func in_layer2_pdu_GenSiteParms(s *C.dmrgo_pdu_gen_site_parms_t) (d g_layer2_pdu.GenSiteParms) {
@@ -3358,6 +2539,38 @@ func in_layer2_pdu_MassRegParms(s *C.dmrgo_pdu_mass_reg_parms_t) (d g_layer2_pdu
 	d.Backoff = uint8(s.backoff)
 	d.SysIdentCode = uint16(s.sys_ident_code)
 	d.Address = uint32(s.address)
+	return
+}
+
+func out_layer2_pdu_ShortLCCSysParms(d *C.dmrgo_pdu_short_lc_c_sys_parms_t, s *g_layer2_pdu.ShortLCCSysParms, oc *outc) {
+	_ = oc
+	d.model = C.uint8_t(s.MODEL)
+	d.net_site_raw = C.uint16_t(s.NetSiteRaw)
+	d.reg = C.bool(s.Reg)
+	d.common_slot_counter = C.uint16_t(s.CommonSlotCounter)
+}
+
+func out_layer2_pdu_ShortLCPSysParms(d *C.dmrgo_pdu_short_lc_p_sys_parms_t, s *g_layer2_pdu.ShortLCPSysParms, oc *outc) {
+	_ = oc
+	d.model = C.uint8_t(s.MODEL)
+	d.net_site_raw = C.uint16_t(s.NetSiteRaw)
+	d.payload_channel_type = C.bool(s.PayloadChannelType)
+	d.common_slot_counter = C.uint16_t(s.CommonSlotCounter)
+}
+
+func in_layer2_pdu_ShortLCCSysParms(s *C.dmrgo_pdu_short_lc_c_sys_parms_t) (d g_layer2_pdu.ShortLCCSysParms) {
+	d.MODEL = uint8(s.model)
+	d.NetSiteRaw = uint16(s.net_site_raw)
+	d.Reg = bool(s.reg)
+	d.CommonSlotCounter = uint16(s.common_slot_counter)
+	return
+}
+
+func in_layer2_pdu_ShortLCPSysParms(s *C.dmrgo_pdu_short_lc_p_sys_parms_t) (d g_layer2_pdu.ShortLCPSysParms) {
+	d.MODEL = uint8(s.model)
+	d.NetSiteRaw = uint16(s.net_site_raw)
+	d.PayloadChannelType = bool(s.payload_channel_type)
+	d.CommonSlotCounter = uint16(s.common_slot_counter)
 	return
 }
 
@@ -3864,12 +3077,8 @@ func in_sms_Text(s *C.dmrgo_sms_text_t) (d g_sms.Text) {
 	return
 }
 
-type st_sms_Header struct {
-	f_Data st_layer2_pdu_DataHeader
-}
-
-func in_sms_Header(s *C.dmrgo_sms_header_t, st *st_sms_Header) (d g_sms.Header) {
-	d.Data = in_layer2_pdu_DataHeader(&s.data, &st.f_Data)
+func in_sms_Header(s *C.dmrgo_sms_header_t) (d g_sms.Header) {
+	d.Data = in_layer2_pdu_DataHeader(&s.data)
 	return
 }
 
@@ -5345,17 +4554,13 @@ func in_voice_Call(s *C.dmrgo_voice_call_t) (d g_voice.Call) {
 	return
 }
 
-type st_voice_Event struct {
-	f_LC st_layer2_pdu_FullLinkControl
-}
-
 func in_voice_FrameQuality(s *C.dmrgo_voice_frame_quality_t) (d g_voice.FrameQuality) {
 	d.ErrorsCorrected = uint8(s.errors_corrected)
 	d.Bad = bool(s.bad)
 	return
 }
 
-func in_voice_Event(s *C.dmrgo_voice_event_t, st *st_voice_Event) (d g_voice.Event) {
+func in_voice_Event(s *C.dmrgo_voice_event_t) (d g_voice.Event) {
 	d.Kind = g_voice.EventKind(s.kind)
 	d.Call = in_voice_Call(&s.call)
 	d.Position = g_enums.VoiceBurstType(s.position)
@@ -5364,7 +4569,7 @@ func in_voice_Event(s *C.dmrgo_voice_event_t, st *st_voice_Event) (d g_voice.Eve
 		d.Frames[i0] = in_voice_FrameQuality(&s.frames[i0])
 	}
 	d.Lost = uint8(s.lost)
-	d.LC = in_layer2_pdu_FullLinkControl(&s.lc, &st.f_LC)
+	d.LC = in_layer2_pdu_FullLinkControl(&s.lc)
 	d.Text = cSlice[byte](unsafe.Pointer(s.text), s.text_len)
 	d.Reason = g_voice.EndReason(s.reason)
 	d.Stats = *(*g_voice.Stats)(unsafe.Pointer(&s.stats))
@@ -6102,8 +5307,7 @@ func fromC_layer2_packet_Message(s *C.dmrgo_packet_message_t) g_layer2_packet.Me
 }
 
 func fromC_layer2_packet_Packet(s *C.dmrgo_packet_t) g_layer2_packet.Packet {
-	var st st_layer2_packet_Packet
-	return in_layer2_packet_Packet(s, &st)
+	return in_layer2_packet_Packet(s)
 }
 
 func fromC_layer2_packet_ResponseData(s *C.dmrgo_packet_response_data_t) g_layer2_packet.ResponseData {
@@ -6181,8 +5385,7 @@ func fromC_layer2_pdu_CGAPContinuation(s *C.dmrgo_pdu_cgap_continuation_t) g_lay
 }
 
 func fromC_layer2_pdu_CSBK(s *C.dmrgo_pdu_csbk_t) g_layer2_pdu.CSBK {
-	var st st_layer2_pdu_CSBK
-	return in_layer2_pdu_CSBK(s, &st)
+	return in_layer2_pdu_CSBK(s)
 }
 
 func fromC_layer2_pdu_CallTimerParms(s *C.dmrgo_pdu_call_timer_parms_t) g_layer2_pdu.CallTimerParms {
@@ -6318,8 +5521,7 @@ func fromC_layer2_pdu_ConfirmedDataHeader(s *C.dmrgo_pdu_confirmed_data_header_t
 }
 
 func fromC_layer2_pdu_DataHeader(s *C.dmrgo_pdu_data_header_t) g_layer2_pdu.DataHeader {
-	var st st_layer2_pdu_DataHeader
-	return in_layer2_pdu_DataHeader(s, &st)
+	return in_layer2_pdu_DataHeader(s)
 }
 
 func fromC_layer2_pdu_DefinedDataHeader(s *C.dmrgo_pdu_defined_data_header_t) g_layer2_pdu.DefinedDataHeader {
@@ -6389,8 +5591,7 @@ func fromC_layer2_pdu_FLCUnitToUnit(s *C.dmrgo_pdu_flc_unit_to_unit_t) g_layer2_
 }
 
 func fromC_layer2_pdu_FullLinkControl(s *C.dmrgo_pdu_full_link_control_t) g_layer2_pdu.FullLinkControl {
-	var st st_layer2_pdu_FullLinkControl
-	return in_layer2_pdu_FullLinkControl(s, &st)
+	return in_layer2_pdu_FullLinkControl(s)
 }
 
 func fromC_layer2_pdu_GenSiteParms(s *C.dmrgo_pdu_gen_site_parms_t) g_layer2_pdu.GenSiteParms {
@@ -6406,8 +5607,7 @@ func fromC_layer2_pdu_MBCContinuation(s *C.dmrgo_pdu_mbc_continuation_t) g_layer
 }
 
 func fromC_layer2_pdu_MBCHeader(s *C.dmrgo_pdu_mbc_header_t) g_layer2_pdu.MBCHeader {
-	var st st_layer2_pdu_MBCHeader
-	return in_layer2_pdu_MBCHeader(s, &st)
+	return in_layer2_pdu_MBCHeader(s)
 }
 
 func fromC_layer2_pdu_MVAPContinuation(s *C.dmrgo_pdu_mvap_continuation_t) g_layer2_pdu.MVAPContinuation {
@@ -6567,8 +5767,7 @@ func fromC_layer2_pdu_ReverseChannel(s *C.dmrgo_pdu_reverse_channel_t) g_layer2_
 }
 
 func fromC_layer2_pdu_ShortLC(s *C.dmrgo_pdu_short_lc_t) g_layer2_pdu.ShortLC {
-	var st st_layer2_pdu_ShortLC
-	return in_layer2_pdu_ShortLC(s, &st)
+	return in_layer2_pdu_ShortLC(s)
 }
 
 func in_layer2_pdu_ShortLCActivityUpdate(s *C.dmrgo_pdu_short_lc_activity_update_t) (d g_layer2_pdu.ShortLCActivityUpdate) {
@@ -6999,8 +6198,7 @@ func out_sms_Header(d *C.dmrgo_sms_header_t, s *g_sms.Header, oc *outc) {
 }
 
 func fromC_sms_Header(s *C.dmrgo_sms_header_t) g_sms.Header {
-	var st st_sms_Header
-	return in_sms_Header(s, &st)
+	return in_sms_Header(s)
 }
 
 func fromC_sms_IPText(s *C.dmrgo_sms_ip_text_t) g_sms.IPText {
@@ -8134,8 +7332,7 @@ func fromC_voice_CallOptions(s *C.dmrgo_voice_call_options_t) g_voice.CallOption
 }
 
 func fromC_voice_Event(s *C.dmrgo_voice_event_t) g_voice.Event {
-	var st st_voice_Event
-	return in_voice_Event(s, &st)
+	return in_voice_Event(s)
 }
 
 func fromC_voice_FrameQuality(s *C.dmrgo_voice_frame_quality_t) g_voice.FrameQuality {
@@ -8488,18 +7685,6 @@ func new_layer2_packet_Builder(v *g_layer2_packet.Builder) *C.dmrgo_packet_build
 	return (*C.dmrgo_packet_builder_t)(newHandle(&h_layer2_packet_Builder{v: v}))
 }
 
-type h_layer2_pdu_CSBKPayloads struct {
-	v *g_layer2_pdu.CSBKPayloads
-}
-
-func get_layer2_pdu_CSBKPayloads(p *C.dmrgo_pdu_csbk_payloads_t) *h_layer2_pdu_CSBKPayloads {
-	return lookup[*h_layer2_pdu_CSBKPayloads](unsafe.Pointer(p))
-}
-
-func new_layer2_pdu_CSBKPayloads(v *g_layer2_pdu.CSBKPayloads) *C.dmrgo_pdu_csbk_payloads_t {
-	return (*C.dmrgo_pdu_csbk_payloads_t)(newHandle(&h_layer2_pdu_CSBKPayloads{v: v}))
-}
-
 type h_layer2_pdu_CapacityPlusSiteStatusAssembler struct {
 	v *g_layer2_pdu.CapacityPlusSiteStatusAssembler
 }
@@ -8510,54 +7695,6 @@ func get_layer2_pdu_CapacityPlusSiteStatusAssembler(p *C.dmrgo_pdu_capacity_plus
 
 func new_layer2_pdu_CapacityPlusSiteStatusAssembler(v *g_layer2_pdu.CapacityPlusSiteStatusAssembler) *C.dmrgo_pdu_capacity_plus_site_status_assembler_t {
 	return (*C.dmrgo_pdu_capacity_plus_site_status_assembler_t)(newHandle(&h_layer2_pdu_CapacityPlusSiteStatusAssembler{v: v}))
-}
-
-type h_layer2_pdu_DataHeaderPayloads struct {
-	v *g_layer2_pdu.DataHeaderPayloads
-}
-
-func get_layer2_pdu_DataHeaderPayloads(p *C.dmrgo_pdu_data_header_payloads_t) *h_layer2_pdu_DataHeaderPayloads {
-	return lookup[*h_layer2_pdu_DataHeaderPayloads](unsafe.Pointer(p))
-}
-
-func new_layer2_pdu_DataHeaderPayloads(v *g_layer2_pdu.DataHeaderPayloads) *C.dmrgo_pdu_data_header_payloads_t {
-	return (*C.dmrgo_pdu_data_header_payloads_t)(newHandle(&h_layer2_pdu_DataHeaderPayloads{v: v}))
-}
-
-type h_layer2_pdu_FullLinkControlPayloads struct {
-	v *g_layer2_pdu.FullLinkControlPayloads
-}
-
-func get_layer2_pdu_FullLinkControlPayloads(p *C.dmrgo_pdu_full_link_control_payloads_t) *h_layer2_pdu_FullLinkControlPayloads {
-	return lookup[*h_layer2_pdu_FullLinkControlPayloads](unsafe.Pointer(p))
-}
-
-func new_layer2_pdu_FullLinkControlPayloads(v *g_layer2_pdu.FullLinkControlPayloads) *C.dmrgo_pdu_full_link_control_payloads_t {
-	return (*C.dmrgo_pdu_full_link_control_payloads_t)(newHandle(&h_layer2_pdu_FullLinkControlPayloads{v: v}))
-}
-
-type h_layer2_pdu_MBCHeaderPayloads struct {
-	v *g_layer2_pdu.MBCHeaderPayloads
-}
-
-func get_layer2_pdu_MBCHeaderPayloads(p *C.dmrgo_pdu_mbc_header_payloads_t) *h_layer2_pdu_MBCHeaderPayloads {
-	return lookup[*h_layer2_pdu_MBCHeaderPayloads](unsafe.Pointer(p))
-}
-
-func new_layer2_pdu_MBCHeaderPayloads(v *g_layer2_pdu.MBCHeaderPayloads) *C.dmrgo_pdu_mbc_header_payloads_t {
-	return (*C.dmrgo_pdu_mbc_header_payloads_t)(newHandle(&h_layer2_pdu_MBCHeaderPayloads{v: v}))
-}
-
-type h_layer2_pdu_ShortLCPayloads struct {
-	v *g_layer2_pdu.ShortLCPayloads
-}
-
-func get_layer2_pdu_ShortLCPayloads(p *C.dmrgo_pdu_short_lc_payloads_t) *h_layer2_pdu_ShortLCPayloads {
-	return lookup[*h_layer2_pdu_ShortLCPayloads](unsafe.Pointer(p))
-}
-
-func new_layer2_pdu_ShortLCPayloads(v *g_layer2_pdu.ShortLCPayloads) *C.dmrgo_pdu_short_lc_payloads_t {
-	return (*C.dmrgo_pdu_short_lc_payloads_t)(newHandle(&h_layer2_pdu_ShortLCPayloads{v: v}))
 }
 
 type h_layer2_pdu_TalkerAliasAssembler struct {
@@ -9009,9 +8146,8 @@ func dmrgo_bs_cach_next(c_self *C.dmrgo_bs_cach_t, c_tc C.dmrgo_enums_slot_t, c_
 	h := get_bs_CACH(c_self)
 	var a_slc g_layer2_pdu.ShortLC
 	var p_slc *g_layer2_pdu.ShortLC
-	var s_slc st_layer2_pdu_ShortLC
 	if c_slc != nil {
-		a_slc = in_layer2_pdu_ShortLC(&(*c_slc), &s_slc)
+		a_slc = in_layer2_pdu_ShortLC(&(*c_slc))
 		p_slc = &a_slc
 	}
 	r0, r1 := h.v.Next(g_enums.Slot(c_tc), bool(c_busy), p_slc)
@@ -16330,23 +15466,19 @@ func dmrgo_layer2_build_burst(c_d *C.dmrgo_layer2_data_t, c_cc C.dmrgo_enums_col
 		uv1 := in_layer2_pdu_CGAPContinuation((*C.dmrgo_pdu_cgap_continuation_t)(unsafe.Pointer(&c_d.v)))
 		a_d = &uv1
 	case 3:
-		var us2 st_layer2_pdu_CSBK
-		uv2 := in_layer2_pdu_CSBK((*C.dmrgo_pdu_csbk_t)(unsafe.Pointer(&c_d.v)), &us2)
+		uv2 := in_layer2_pdu_CSBK((*C.dmrgo_pdu_csbk_t)(unsafe.Pointer(&c_d.v)))
 		a_d = &uv2
 	case 4:
-		var us3 st_layer2_pdu_DataHeader
-		uv3 := in_layer2_pdu_DataHeader((*C.dmrgo_pdu_data_header_t)(unsafe.Pointer(&c_d.v)), &us3)
+		uv3 := in_layer2_pdu_DataHeader((*C.dmrgo_pdu_data_header_t)(unsafe.Pointer(&c_d.v)))
 		a_d = &uv3
 	case 5:
-		var us4 st_layer2_pdu_FullLinkControl
-		uv4 := in_layer2_pdu_FullLinkControl((*C.dmrgo_pdu_full_link_control_t)(unsafe.Pointer(&c_d.v)), &us4)
+		uv4 := in_layer2_pdu_FullLinkControl((*C.dmrgo_pdu_full_link_control_t)(unsafe.Pointer(&c_d.v)))
 		a_d = &uv4
 	case 6:
 		uv5 := in_layer2_pdu_MBCContinuation((*C.dmrgo_pdu_mbc_continuation_t)(unsafe.Pointer(&c_d.v)))
 		a_d = &uv5
 	case 7:
-		var us6 st_layer2_pdu_MBCHeader
-		uv6 := in_layer2_pdu_MBCHeader((*C.dmrgo_pdu_mbc_header_t)(unsafe.Pointer(&c_d.v)), &us6)
+		uv6 := in_layer2_pdu_MBCHeader((*C.dmrgo_pdu_mbc_header_t)(unsafe.Pointer(&c_d.v)))
 		a_d = &uv6
 	case 8:
 		uv7 := in_layer2_pdu_MVAPContinuation((*C.dmrgo_pdu_mvap_continuation_t)(unsafe.Pointer(&c_d.v)))
@@ -16845,23 +15977,19 @@ func dmrgo_layer2_burst_set_data(c_self *C.dmrgo_layer2_burst_t, c_v *C.dmrgo_la
 		uv1 := in_layer2_pdu_CGAPContinuation((*C.dmrgo_pdu_cgap_continuation_t)(unsafe.Pointer(&c_v.v)))
 		a_v = &uv1
 	case 3:
-		var us2 st_layer2_pdu_CSBK
-		uv2 := in_layer2_pdu_CSBK((*C.dmrgo_pdu_csbk_t)(unsafe.Pointer(&c_v.v)), &us2)
+		uv2 := in_layer2_pdu_CSBK((*C.dmrgo_pdu_csbk_t)(unsafe.Pointer(&c_v.v)))
 		a_v = &uv2
 	case 4:
-		var us3 st_layer2_pdu_DataHeader
-		uv3 := in_layer2_pdu_DataHeader((*C.dmrgo_pdu_data_header_t)(unsafe.Pointer(&c_v.v)), &us3)
+		uv3 := in_layer2_pdu_DataHeader((*C.dmrgo_pdu_data_header_t)(unsafe.Pointer(&c_v.v)))
 		a_v = &uv3
 	case 5:
-		var us4 st_layer2_pdu_FullLinkControl
-		uv4 := in_layer2_pdu_FullLinkControl((*C.dmrgo_pdu_full_link_control_t)(unsafe.Pointer(&c_v.v)), &us4)
+		uv4 := in_layer2_pdu_FullLinkControl((*C.dmrgo_pdu_full_link_control_t)(unsafe.Pointer(&c_v.v)))
 		a_v = &uv4
 	case 6:
 		uv5 := in_layer2_pdu_MBCContinuation((*C.dmrgo_pdu_mbc_continuation_t)(unsafe.Pointer(&c_v.v)))
 		a_v = &uv5
 	case 7:
-		var us6 st_layer2_pdu_MBCHeader
-		uv6 := in_layer2_pdu_MBCHeader((*C.dmrgo_pdu_mbc_header_t)(unsafe.Pointer(&c_v.v)), &us6)
+		uv6 := in_layer2_pdu_MBCHeader((*C.dmrgo_pdu_mbc_header_t)(unsafe.Pointer(&c_v.v)))
 		a_v = &uv6
 	case 8:
 		uv7 := in_layer2_pdu_MVAPContinuation((*C.dmrgo_pdu_mvap_continuation_t)(unsafe.Pointer(&c_v.v)))
@@ -17174,23 +16302,19 @@ func dmrgo_layer2_data_data_type(c_self *C.dmrgo_layer2_data_t, c_out *C.dmrgo_e
 		uv1 := in_layer2_pdu_CGAPContinuation((*C.dmrgo_pdu_cgap_continuation_t)(unsafe.Pointer(&c_self.v)))
 		x = &uv1
 	case 3:
-		var us2 st_layer2_pdu_CSBK
-		uv2 := in_layer2_pdu_CSBK((*C.dmrgo_pdu_csbk_t)(unsafe.Pointer(&c_self.v)), &us2)
+		uv2 := in_layer2_pdu_CSBK((*C.dmrgo_pdu_csbk_t)(unsafe.Pointer(&c_self.v)))
 		x = &uv2
 	case 4:
-		var us3 st_layer2_pdu_DataHeader
-		uv3 := in_layer2_pdu_DataHeader((*C.dmrgo_pdu_data_header_t)(unsafe.Pointer(&c_self.v)), &us3)
+		uv3 := in_layer2_pdu_DataHeader((*C.dmrgo_pdu_data_header_t)(unsafe.Pointer(&c_self.v)))
 		x = &uv3
 	case 5:
-		var us4 st_layer2_pdu_FullLinkControl
-		uv4 := in_layer2_pdu_FullLinkControl((*C.dmrgo_pdu_full_link_control_t)(unsafe.Pointer(&c_self.v)), &us4)
+		uv4 := in_layer2_pdu_FullLinkControl((*C.dmrgo_pdu_full_link_control_t)(unsafe.Pointer(&c_self.v)))
 		x = &uv4
 	case 6:
 		uv5 := in_layer2_pdu_MBCContinuation((*C.dmrgo_pdu_mbc_continuation_t)(unsafe.Pointer(&c_self.v)))
 		x = &uv5
 	case 7:
-		var us6 st_layer2_pdu_MBCHeader
-		uv6 := in_layer2_pdu_MBCHeader((*C.dmrgo_pdu_mbc_header_t)(unsafe.Pointer(&c_self.v)), &us6)
+		uv6 := in_layer2_pdu_MBCHeader((*C.dmrgo_pdu_mbc_header_t)(unsafe.Pointer(&c_self.v)))
 		x = &uv6
 	case 8:
 		uv7 := in_layer2_pdu_MVAPContinuation((*C.dmrgo_pdu_mvap_continuation_t)(unsafe.Pointer(&c_self.v)))
@@ -17254,23 +16378,19 @@ func dmrgo_layer2_data_string(c_self *C.dmrgo_layer2_data_t, c_out *C.char, c_ou
 		uv1 := in_layer2_pdu_CGAPContinuation((*C.dmrgo_pdu_cgap_continuation_t)(unsafe.Pointer(&c_self.v)))
 		x = &uv1
 	case 3:
-		var us2 st_layer2_pdu_CSBK
-		uv2 := in_layer2_pdu_CSBK((*C.dmrgo_pdu_csbk_t)(unsafe.Pointer(&c_self.v)), &us2)
+		uv2 := in_layer2_pdu_CSBK((*C.dmrgo_pdu_csbk_t)(unsafe.Pointer(&c_self.v)))
 		x = &uv2
 	case 4:
-		var us3 st_layer2_pdu_DataHeader
-		uv3 := in_layer2_pdu_DataHeader((*C.dmrgo_pdu_data_header_t)(unsafe.Pointer(&c_self.v)), &us3)
+		uv3 := in_layer2_pdu_DataHeader((*C.dmrgo_pdu_data_header_t)(unsafe.Pointer(&c_self.v)))
 		x = &uv3
 	case 5:
-		var us4 st_layer2_pdu_FullLinkControl
-		uv4 := in_layer2_pdu_FullLinkControl((*C.dmrgo_pdu_full_link_control_t)(unsafe.Pointer(&c_self.v)), &us4)
+		uv4 := in_layer2_pdu_FullLinkControl((*C.dmrgo_pdu_full_link_control_t)(unsafe.Pointer(&c_self.v)))
 		x = &uv4
 	case 6:
 		uv5 := in_layer2_pdu_MBCContinuation((*C.dmrgo_pdu_mbc_continuation_t)(unsafe.Pointer(&c_self.v)))
 		x = &uv5
 	case 7:
-		var us6 st_layer2_pdu_MBCHeader
-		uv6 := in_layer2_pdu_MBCHeader((*C.dmrgo_pdu_mbc_header_t)(unsafe.Pointer(&c_self.v)), &us6)
+		uv6 := in_layer2_pdu_MBCHeader((*C.dmrgo_pdu_mbc_header_t)(unsafe.Pointer(&c_self.v)))
 		x = &uv6
 	case 8:
 		uv7 := in_layer2_pdu_MVAPContinuation((*C.dmrgo_pdu_mvap_continuation_t)(unsafe.Pointer(&c_self.v)))
@@ -17361,32 +16481,6 @@ func dmrgo_layer2_decode_embedded_full_link_control(c_f *C.uint8_t, c_strict C.b
 	_ = r0
 	if c_out != nil {
 		out_layer2_pdu_FullLinkControl(&(*c_out), &r0, oc)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_layer2_decode_embedded_full_link_control_into
-func dmrgo_layer2_decode_embedded_full_link_control_into(c_dst *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_full_link_control_payloads_t, c_f *C.uint8_t, c_strict C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	var a_dst g_layer2_pdu.FullLinkControl
-	var p_dst *g_layer2_pdu.FullLinkControl
-	if c_dst != nil {
-		p_dst = &a_dst
-	}
-	var a_p *g_layer2_pdu.FullLinkControlPayloads
-	if c_p != nil {
-		a_p = get_layer2_pdu_FullLinkControlPayloads(c_p).v
-	}
-	if c_f == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	g_layer2.DecodeEmbeddedFullLinkControlInto(p_dst, a_p, *(*[4][4]byte)(unsafe.Pointer(c_f)), bool(c_strict))
-	if c_dst != nil {
-		out_layer2_pdu_FullLinkControl(&(*c_dst), &a_dst, oc)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -17531,9 +16625,8 @@ func dmrgo_layer2_encode_embedded_full_link_control(c_lc *C.dmrgo_pdu_full_link_
 	oc := &outc{}
 	var a_lc g_layer2_pdu.FullLinkControl
 	var p_lc *g_layer2_pdu.FullLinkControl
-	var s_lc st_layer2_pdu_FullLinkControl
 	if c_lc != nil {
-		a_lc = in_layer2_pdu_FullLinkControl(&(*c_lc), &s_lc)
+		a_lc = in_layer2_pdu_FullLinkControl(&(*c_lc))
 		p_lc = &a_lc
 	}
 	r0, r1 := g_layer2.EncodeEmbeddedFullLinkControl(p_lc)
@@ -17598,9 +16691,8 @@ func dmrgo_layer2_encode_short_lc_to_cach(c_slc *C.dmrgo_pdu_short_lc_t, c_tact 
 	oc := &outc{}
 	var a_slc g_layer2_pdu.ShortLC
 	var p_slc *g_layer2_pdu.ShortLC
-	var s_slc st_layer2_pdu_ShortLC
 	if c_slc != nil {
-		a_slc = in_layer2_pdu_ShortLC(&(*c_slc), &s_slc)
+		a_slc = in_layer2_pdu_ShortLC(&(*c_slc))
 		p_slc = &a_slc
 	}
 	if c_tact == nil {
@@ -18541,42 +17633,6 @@ func dmrgo_layer2_short_lc_assembler_add(c_self *C.dmrgo_layer2_short_lc_assembl
 	return C.DMRGO_OK
 }
 
-//export dmrgo_layer2_short_lc_assembler_add_into
-func dmrgo_layer2_short_lc_assembler_add_into(c_self *C.dmrgo_layer2_short_lc_assembler_t, c_dst *C.dmrgo_pdu_short_lc_t, c_p *C.dmrgo_pdu_short_lc_payloads_t, c_c *C.dmrgo_layer2_cach_t, c_done *C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_layer2_ShortLCAssembler(c_self)
-	var a_dst g_layer2_pdu.ShortLC
-	var p_dst *g_layer2_pdu.ShortLC
-	if c_dst != nil {
-		p_dst = &a_dst
-	}
-	var a_p *g_layer2_pdu.ShortLCPayloads
-	if c_p != nil {
-		a_p = get_layer2_pdu_ShortLCPayloads(c_p).v
-	}
-	if c_c == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var a_c g_layer2.CACH
-	a_c = in_layer2_CACH(&(*c_c))
-	r0, r1 := h.v.AddInto(p_dst, a_p, a_c)
-	if c_dst != nil {
-		out_layer2_pdu_ShortLC(&(*c_dst), &a_dst, oc)
-	}
-	_ = r0
-	if c_done != nil {
-		*c_done = C.bool(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r1 != nil {
-		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_layer2_short_lc_assembler_count
 func dmrgo_layer2_short_lc_assembler_count(c_self *C.dmrgo_layer2_short_lc_assembler_t, c_out *C.int64_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -18723,41 +17779,6 @@ func dmrgo_layer2_voice_receiver_receive(c_self *C.dmrgo_layer2_voice_receiver_t
 	}
 	if r2 != nil {
 		return setErr(r2)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_layer2_voice_receiver_receive_into
-func dmrgo_layer2_voice_receiver_receive_into(c_self *C.dmrgo_layer2_voice_receiver_t, c_dst *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_full_link_control_payloads_t, c_b *C.dmrgo_layer2_burst_t, c_ok *C.bool) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	h := get_layer2_VoiceReceiver(c_self)
-	var a_dst g_layer2_pdu.FullLinkControl
-	var p_dst *g_layer2_pdu.FullLinkControl
-	if c_dst != nil {
-		p_dst = &a_dst
-	}
-	var a_p *g_layer2_pdu.FullLinkControlPayloads
-	if c_p != nil {
-		a_p = get_layer2_pdu_FullLinkControlPayloads(c_p).v
-	}
-	var a_b *g_layer2.Burst
-	if c_b != nil {
-		a_b = get_layer2_Burst(c_b).v
-	}
-	r0, r1 := h.v.ReceiveInto(p_dst, a_p, a_b)
-	if c_dst != nil {
-		out_layer2_pdu_FullLinkControl(&(*c_dst), &a_dst, oc)
-	}
-	_ = r0
-	if c_ok != nil {
-		*c_ok = C.bool(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r1 != nil {
-		return setErr(r1)
 	}
 	return C.DMRGO_OK
 }
@@ -19305,8 +18326,7 @@ func dmrgo_layer2_voice_transmitter_set_embedded_lc(c_self *C.dmrgo_layer2_voice
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_lc g_layer2_pdu.FullLinkControl
-	var s_lc st_layer2_pdu_FullLinkControl
-	a_lc = in_layer2_pdu_FullLinkControl(&(*c_lc), &s_lc)
+	a_lc = in_layer2_pdu_FullLinkControl(&(*c_lc))
 	r0 := h.v.SetEmbeddedLC(a_lc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -19657,9 +18677,8 @@ func dmrgo_packet_append_bursts(c_dst *C.dmrgo_layer2_raw_burst_t, c_dst_cap C.s
 	a_dst := full_dst[:*c_dst_len]
 	var a_p g_layer2_packet.Packet
 	var p_p *g_layer2_packet.Packet
-	var s_p st_layer2_packet_Packet
 	if c_p != nil {
-		a_p = in_layer2_packet_Packet(&(*c_p), &s_p)
+		a_p = in_layer2_packet_Packet(&(*c_p))
 		p_p = &a_p
 	}
 	r0, r1 := g_layer2_packet.AppendBursts(a_dst, p_p, g_enums.ColorCode(c_color_code), g_layer2.SyncSource(c_src))
@@ -19732,23 +18751,19 @@ func dmrgo_packet_assembler_add_need(c_self *C.dmrgo_packet_assembler_t, c_d *C.
 		uv1 := in_layer2_pdu_CGAPContinuation((*C.dmrgo_pdu_cgap_continuation_t)(unsafe.Pointer(&c_d.v)))
 		a_d = &uv1
 	case 3:
-		var us2 st_layer2_pdu_CSBK
-		uv2 := in_layer2_pdu_CSBK((*C.dmrgo_pdu_csbk_t)(unsafe.Pointer(&c_d.v)), &us2)
+		uv2 := in_layer2_pdu_CSBK((*C.dmrgo_pdu_csbk_t)(unsafe.Pointer(&c_d.v)))
 		a_d = &uv2
 	case 4:
-		var us3 st_layer2_pdu_DataHeader
-		uv3 := in_layer2_pdu_DataHeader((*C.dmrgo_pdu_data_header_t)(unsafe.Pointer(&c_d.v)), &us3)
+		uv3 := in_layer2_pdu_DataHeader((*C.dmrgo_pdu_data_header_t)(unsafe.Pointer(&c_d.v)))
 		a_d = &uv3
 	case 5:
-		var us4 st_layer2_pdu_FullLinkControl
-		uv4 := in_layer2_pdu_FullLinkControl((*C.dmrgo_pdu_full_link_control_t)(unsafe.Pointer(&c_d.v)), &us4)
+		uv4 := in_layer2_pdu_FullLinkControl((*C.dmrgo_pdu_full_link_control_t)(unsafe.Pointer(&c_d.v)))
 		a_d = &uv4
 	case 6:
 		uv5 := in_layer2_pdu_MBCContinuation((*C.dmrgo_pdu_mbc_continuation_t)(unsafe.Pointer(&c_d.v)))
 		a_d = &uv5
 	case 7:
-		var us6 st_layer2_pdu_MBCHeader
-		uv6 := in_layer2_pdu_MBCHeader((*C.dmrgo_pdu_mbc_header_t)(unsafe.Pointer(&c_d.v)), &us6)
+		uv6 := in_layer2_pdu_MBCHeader((*C.dmrgo_pdu_mbc_header_t)(unsafe.Pointer(&c_d.v)))
 		a_d = &uv6
 	case 8:
 		uv7 := in_layer2_pdu_MVAPContinuation((*C.dmrgo_pdu_mvap_continuation_t)(unsafe.Pointer(&c_d.v)))
@@ -19817,23 +18832,19 @@ func dmrgo_packet_assembler_add(c_self *C.dmrgo_packet_assembler_t, c_d *C.dmrgo
 		uv1 := in_layer2_pdu_CGAPContinuation((*C.dmrgo_pdu_cgap_continuation_t)(unsafe.Pointer(&c_d.v)))
 		a_d = &uv1
 	case 3:
-		var us2 st_layer2_pdu_CSBK
-		uv2 := in_layer2_pdu_CSBK((*C.dmrgo_pdu_csbk_t)(unsafe.Pointer(&c_d.v)), &us2)
+		uv2 := in_layer2_pdu_CSBK((*C.dmrgo_pdu_csbk_t)(unsafe.Pointer(&c_d.v)))
 		a_d = &uv2
 	case 4:
-		var us3 st_layer2_pdu_DataHeader
-		uv3 := in_layer2_pdu_DataHeader((*C.dmrgo_pdu_data_header_t)(unsafe.Pointer(&c_d.v)), &us3)
+		uv3 := in_layer2_pdu_DataHeader((*C.dmrgo_pdu_data_header_t)(unsafe.Pointer(&c_d.v)))
 		a_d = &uv3
 	case 5:
-		var us4 st_layer2_pdu_FullLinkControl
-		uv4 := in_layer2_pdu_FullLinkControl((*C.dmrgo_pdu_full_link_control_t)(unsafe.Pointer(&c_d.v)), &us4)
+		uv4 := in_layer2_pdu_FullLinkControl((*C.dmrgo_pdu_full_link_control_t)(unsafe.Pointer(&c_d.v)))
 		a_d = &uv4
 	case 6:
 		uv5 := in_layer2_pdu_MBCContinuation((*C.dmrgo_pdu_mbc_continuation_t)(unsafe.Pointer(&c_d.v)))
 		a_d = &uv5
 	case 7:
-		var us6 st_layer2_pdu_MBCHeader
-		uv6 := in_layer2_pdu_MBCHeader((*C.dmrgo_pdu_mbc_header_t)(unsafe.Pointer(&c_d.v)), &us6)
+		uv6 := in_layer2_pdu_MBCHeader((*C.dmrgo_pdu_mbc_header_t)(unsafe.Pointer(&c_d.v)))
 		a_d = &uv6
 	case 8:
 		uv7 := in_layer2_pdu_MVAPContinuation((*C.dmrgo_pdu_mvap_continuation_t)(unsafe.Pointer(&c_d.v)))
@@ -20346,9 +19357,8 @@ func dmrgo_packet_builder_retry_need(c_self *C.dmrgo_packet_builder_t, c_p *C.dm
 	h := get_layer2_packet_Builder(c_self)
 	var a_p g_layer2_packet.Packet
 	var p_p *g_layer2_packet.Packet
-	var s_p st_layer2_packet_Packet
 	if c_p != nil {
-		a_p = in_layer2_packet_Packet(&(*c_p), &s_p)
+		a_p = in_layer2_packet_Packet(&(*c_p))
 		p_p = &a_p
 	}
 	var a_rd g_layer2_packet.ResponseData
@@ -20386,9 +19396,8 @@ func dmrgo_packet_builder_retry(c_self *C.dmrgo_packet_builder_t, c_p *C.dmrgo_p
 	h := get_layer2_packet_Builder(c_self)
 	var a_p g_layer2_packet.Packet
 	var p_p *g_layer2_packet.Packet
-	var s_p st_layer2_packet_Packet
 	if c_p != nil {
-		a_p = in_layer2_packet_Packet(&(*c_p), &s_p)
+		a_p = in_layer2_packet_Packet(&(*c_p))
 		p_p = &a_p
 	}
 	var a_rd g_layer2_packet.ResponseData
@@ -20435,8 +19444,7 @@ func dmrgo_packet_builder_segment_need(c_self *C.dmrgo_packet_builder_t, c_heade
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_header g_layer2_pdu.DataHeader
-	var s_header st_layer2_pdu_DataHeader
-	a_header = in_layer2_pdu_DataHeader(&(*c_header), &s_header)
+	a_header = in_layer2_pdu_DataHeader(&(*c_header))
 	if c_payload == nil && c_payload_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20476,8 +19484,7 @@ func dmrgo_packet_builder_segment(c_self *C.dmrgo_packet_builder_t, c_header *C.
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_header g_layer2_pdu.DataHeader
-	var s_header st_layer2_pdu_DataHeader
-	a_header = in_layer2_pdu_DataHeader(&(*c_header), &s_header)
+	a_header = in_layer2_pdu_DataHeader(&(*c_header))
 	if c_payload == nil && c_payload_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -20522,9 +19529,8 @@ func dmrgo_packet_bursts(c_p *C.dmrgo_packet_t, c_color_code C.dmrgo_enums_color
 	}
 	var a_p g_layer2_packet.Packet
 	var p_p *g_layer2_packet.Packet
-	var s_p st_layer2_packet_Packet
 	if c_p != nil {
-		a_p = in_layer2_packet_Packet(&(*c_p), &s_p)
+		a_p = in_layer2_packet_Packet(&(*c_p))
 		p_p = &a_p
 	}
 	if c_out_len == nil || (c_out == nil && c_out_cap > 0) {
@@ -20669,8 +19675,7 @@ func dmrgo_packet_new_packet(c_header *C.dmrgo_pdu_data_header_t, c_payload *C.u
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var a_header g_layer2_pdu.DataHeader
-	var s_header st_layer2_pdu_DataHeader
-	a_header = in_layer2_pdu_DataHeader(&(*c_header), &s_header)
+	a_header = in_layer2_pdu_DataHeader(&(*c_header))
 	if c_payload == nil && c_payload_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -21993,8 +20998,7 @@ func dmrgo_pdu_csbk_addresses(c_self *C.dmrgo_pdu_csbk_t, c_target *C.uint32_t, 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	r0, r1, r2 := x.Addresses()
 	_ = r0
 	_ = r1
@@ -22014,6 +21018,174 @@ func dmrgo_pdu_csbk_addresses(c_self *C.dmrgo_pdu_csbk_t, c_target *C.uint32_t, 
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_csbk_as_ack_inbound
+func dmrgo_pdu_csbk_as_ack_inbound(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_ack_inbound_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsAckInbound()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_AckInboundPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_ack_inbound_payload
+func dmrgo_pdu_csbk_as_ack_inbound_payload(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_ack_inbound_payload_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsAckInboundPayload()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_AckInboundPayloadPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_ack_outbound
+func dmrgo_pdu_csbk_as_ack_outbound(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_ack_outbound_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsAckOutbound()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_AckOutboundPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_ack_outbound_payload
+func dmrgo_pdu_csbk_as_ack_outbound_payload(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_ack_outbound_payload_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsAckOutboundPayload()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_AckOutboundPayloadPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_ackvitation
+func dmrgo_pdu_csbk_as_ackvitation(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_ackvitation_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsAckvitation()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_AckvitationPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_ahoy
+func dmrgo_pdu_csbk_as_ahoy(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_ahoy_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsAhoy()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_AhoyPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_aloha
+func dmrgo_pdu_csbk_as_aloha(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_aloha_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsAloha()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_AlohaPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_csbk_as_bs_outbound_activation
 func dmrgo_pdu_csbk_as_bs_outbound_activation(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_bs_outbound_activation_pdu_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -22022,13 +21194,60 @@ func dmrgo_pdu_csbk_as_bs_outbound_activation(c_self *C.dmrgo_pdu_csbk_t, c_p *C
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	r0, r1 := x.AsBSOutboundActivation()
 	_ = r0
 	_ = r1
 	if c_p != nil {
 		*(*g_layer2_pdu.BSOutboundActivationPDU)(unsafe.Pointer(&(*c_p))) = r0
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_broadcast
+func dmrgo_pdu_csbk_as_broadcast(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_broadcast_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsBroadcast()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_BroadcastPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_broadcast_talkgroup_voice_grant
+func dmrgo_pdu_csbk_as_broadcast_talkgroup_voice_grant(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsBroadcastTalkgroupVoiceGrant()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_BroadcastTalkgroupVoiceGrantPDU(&(*c_p), &r0, oc)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -22047,8 +21266,7 @@ func dmrgo_pdu_csbk_as_capacity_plus_data_revert_announcement(c_self *C.dmrgo_pd
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	r0, r1 := x.AsCapacityPlusDataRevertAnnouncement()
 	_ = r0
 	_ = r1
@@ -22072,8 +21290,7 @@ func dmrgo_pdu_csbk_as_capacity_plus_data_revert_grant(c_self *C.dmrgo_pdu_csbk_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	r0, r1 := x.AsCapacityPlusDataRevertGrant()
 	_ = r0
 	_ = r1
@@ -22097,8 +21314,7 @@ func dmrgo_pdu_csbk_as_capacity_plus_neighbors(c_self *C.dmrgo_pdu_csbk_t, c_p *
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	r0, r1 := x.AsCapacityPlusNeighbors()
 	_ = r0
 	_ = r1
@@ -22122,8 +21338,7 @@ func dmrgo_pdu_csbk_as_capacity_plus_preamble(c_self *C.dmrgo_pdu_csbk_t, c_p *C
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	r0, r1 := x.AsCapacityPlusPreamble()
 	_ = r0
 	_ = r1
@@ -22147,13 +21362,132 @@ func dmrgo_pdu_csbk_as_capacity_plus_site_status(c_self *C.dmrgo_pdu_csbk_t, c_p
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	r0, r1 := x.AsCapacityPlusSiteStatus()
 	_ = r0
 	_ = r1
 	if c_p != nil {
 		out_layer2_pdu_CapacityPlusSiteStatusPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_channel_timing
+func dmrgo_pdu_csbk_as_channel_timing(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_channel_timing_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsChannelTiming()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_ChannelTimingPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_clear
+func dmrgo_pdu_csbk_as_clear(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_clear_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsClear()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_ClearPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_duplex_private_data_grant
+func dmrgo_pdu_csbk_as_duplex_private_data_grant(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_duplex_private_data_grant_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsDuplexPrivateDataGrant()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_DuplexPrivateDataGrantPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_duplex_private_voice_grant
+func dmrgo_pdu_csbk_as_duplex_private_voice_grant(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_duplex_private_voice_grant_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsDuplexPrivateVoiceGrant()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_DuplexPrivateVoiceGrantPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_maintenance
+func dmrgo_pdu_csbk_as_maintenance(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_maintenance_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsMaintenance()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_MaintenancePDU(&(*c_p), &r0, oc)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -22172,8 +21506,7 @@ func dmrgo_pdu_csbk_as_motorola_call_alert(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dm
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	r0, r1 := x.AsMotorolaCallAlert()
 	_ = r0
 	_ = r1
@@ -22197,8 +21530,7 @@ func dmrgo_pdu_csbk_as_motorola_call_alert_ack(c_self *C.dmrgo_pdu_csbk_t, c_p *
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	r0, r1 := x.AsMotorolaCallAlertAck()
 	_ = r0
 	_ = r1
@@ -22222,13 +21554,228 @@ func dmrgo_pdu_csbk_as_motorola_radio_check(c_self *C.dmrgo_pdu_csbk_t, c_p *C.d
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	r0, r1 := x.AsMotorolaRadioCheck()
 	_ = r0
 	_ = r1
 	if c_p != nil {
 		out_layer2_pdu_MotorolaRadioCheckPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_move
+func dmrgo_pdu_csbk_as_move(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_move_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsMove()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_MovePDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_negative_acknowledgement
+func dmrgo_pdu_csbk_as_negative_acknowledgement(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_negative_acknowledgement_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsNegativeAcknowledgement()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		*(*g_layer2_pdu.NegativeAcknowledgementPDU)(unsafe.Pointer(&(*c_p))) = r0
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_preamble
+func dmrgo_pdu_csbk_as_preamble(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_preamble_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsPreamble()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_PreamblePDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_private_data_grant
+func dmrgo_pdu_csbk_as_private_data_grant(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_private_data_grant_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsPrivateDataGrant()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_PrivateDataGrantPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_private_data_grant_multi_item
+func dmrgo_pdu_csbk_as_private_data_grant_multi_item(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_private_data_grant_multi_item_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsPrivateDataGrantMultiItem()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_PrivateDataGrantMultiItemPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_private_voice_grant
+func dmrgo_pdu_csbk_as_private_voice_grant(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_private_voice_grant_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsPrivateVoiceGrant()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_PrivateVoiceGrantPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_protect
+func dmrgo_pdu_csbk_as_protect(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_protect_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsProtect()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_ProtectPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_random_access
+func dmrgo_pdu_csbk_as_random_access(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_random_access_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsRandomAccess()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_RandomAccessPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_talkgroup_data_grant
+func dmrgo_pdu_csbk_as_talkgroup_data_grant(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_talkgroup_data_grant_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsTalkgroupDataGrant()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_TalkgroupDataGrantPDU(&(*c_p), &r0, oc)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -22247,13 +21794,84 @@ func dmrgo_pdu_csbk_as_talkgroup_data_grant_multi_item(c_self *C.dmrgo_pdu_csbk_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	r0, r1 := x.AsTalkgroupDataGrantMultiItem()
 	_ = r0
 	_ = r1
 	if c_p != nil {
 		out_layer2_pdu_TalkgroupDataGrantMultiItemPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_talkgroup_voice_grant
+func dmrgo_pdu_csbk_as_talkgroup_voice_grant(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_talkgroup_voice_grant_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsTalkgroupVoiceGrant()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_TalkgroupVoiceGrantPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_unit_to_unit_voice_service_answer_response
+func dmrgo_pdu_csbk_as_unit_to_unit_voice_service_answer_response(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsUnitToUnitVoiceServiceAnswerResponse()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_UnitToUnitVoiceServiceAnswerResponsePDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_as_unit_to_unit_voice_service_request
+func dmrgo_pdu_csbk_as_unit_to_unit_voice_service_request(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	r0, r1 := x.AsUnitToUnitVoiceServiceRequest()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_UnitToUnitVoiceServiceRequestPDU(&(*c_p), &r0, oc)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -22272,8 +21890,7 @@ func dmrgo_pdu_csbk_data_type(c_self *C.dmrgo_pdu_csbk_t, c_out *C.dmrgo_enums_d
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	r0 := x.DataType()
 	_ = r0
 	if c_out != nil {
@@ -22293,8 +21910,7 @@ func dmrgo_pdu_csbk_encode(c_self *C.dmrgo_pdu_csbk_t, c_out *C.uint8_t) (rc C.i
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	r0, r1 := x.Encode()
 	_ = r0
 	if c_out != nil {
@@ -22309,6 +21925,156 @@ func dmrgo_pdu_csbk_encode(c_self *C.dmrgo_pdu_csbk_t, c_out *C.uint8_t) (rc C.i
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_csbk_set_ack_inbound
+func dmrgo_pdu_csbk_set_ack_inbound(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_ack_inbound_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.AckInboundPDU
+	a_p = in_layer2_pdu_AckInboundPDU(&(*c_p))
+	r0 := x.SetAckInbound(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_ack_inbound_payload
+func dmrgo_pdu_csbk_set_ack_inbound_payload(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_ack_inbound_payload_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.AckInboundPayloadPDU
+	a_p = in_layer2_pdu_AckInboundPayloadPDU(&(*c_p))
+	r0 := x.SetAckInboundPayload(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_ack_outbound
+func dmrgo_pdu_csbk_set_ack_outbound(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_ack_outbound_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.AckOutboundPDU
+	a_p = in_layer2_pdu_AckOutboundPDU(&(*c_p))
+	r0 := x.SetAckOutbound(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_ack_outbound_payload
+func dmrgo_pdu_csbk_set_ack_outbound_payload(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_ack_outbound_payload_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.AckOutboundPayloadPDU
+	a_p = in_layer2_pdu_AckOutboundPayloadPDU(&(*c_p))
+	r0 := x.SetAckOutboundPayload(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_ackvitation
+func dmrgo_pdu_csbk_set_ackvitation(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_ackvitation_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.AckvitationPDU
+	a_p = in_layer2_pdu_AckvitationPDU(&(*c_p))
+	r0 := x.SetAckvitation(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_csbk_set_addresses
 func dmrgo_pdu_csbk_set_addresses(c_self *C.dmrgo_pdu_csbk_t, c_target C.uint32_t, c_source C.uint32_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -22317,12 +22083,73 @@ func dmrgo_pdu_csbk_set_addresses(c_self *C.dmrgo_pdu_csbk_t, c_target C.uint32_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	r0 := x.SetAddresses(uint32(c_target), uint32(c_source))
 	var ws_self C.dmrgo_pdu_csbk_t
 	ws_self = *c_self
-	out_layer2_pdu_CSBK(&ws_self, &x, oc)
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_ahoy
+func dmrgo_pdu_csbk_set_ahoy(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_ahoy_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.AhoyPDU
+	a_p = in_layer2_pdu_AhoyPDU(&(*c_p))
+	r0 := x.SetAhoy(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_aloha
+func dmrgo_pdu_csbk_set_aloha(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_aloha_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.AlohaPDU
+	a_p = in_layer2_pdu_AlohaPDU(&(*c_p))
+	r0 := x.SetAloha(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -22341,15 +22168,227 @@ func dmrgo_pdu_csbk_set_bs_outbound_activation(c_self *C.dmrgo_pdu_csbk_t, c_p *
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	if c_p == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetBSOutboundActivation(*(*g_layer2_pdu.BSOutboundActivationPDU)(unsafe.Pointer(c_p)))
 	var ws_self C.dmrgo_pdu_csbk_t
 	ws_self = *c_self
-	out_layer2_pdu_CSBK(&ws_self, &x, oc)
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_broadcast
+func dmrgo_pdu_csbk_set_broadcast(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_broadcast_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.BroadcastPDU
+	a_p = in_layer2_pdu_BroadcastPDU(&(*c_p))
+	r0 := x.SetBroadcast(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_broadcast_talkgroup_voice_grant
+func dmrgo_pdu_csbk_set_broadcast_talkgroup_voice_grant(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.BroadcastTalkgroupVoiceGrantPDU
+	a_p = in_layer2_pdu_BroadcastTalkgroupVoiceGrantPDU(&(*c_p))
+	r0 := x.SetBroadcastTalkgroupVoiceGrant(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_channel_timing
+func dmrgo_pdu_csbk_set_channel_timing(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_channel_timing_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.ChannelTimingPDU
+	a_p = in_layer2_pdu_ChannelTimingPDU(&(*c_p))
+	r0 := x.SetChannelTiming(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_clear
+func dmrgo_pdu_csbk_set_clear(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_clear_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.ClearPDU
+	a_p = in_layer2_pdu_ClearPDU(&(*c_p))
+	r0 := x.SetClear(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_duplex_private_data_grant
+func dmrgo_pdu_csbk_set_duplex_private_data_grant(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_duplex_private_data_grant_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.DuplexPrivateDataGrantPDU
+	a_p = in_layer2_pdu_DuplexPrivateDataGrantPDU(&(*c_p))
+	r0 := x.SetDuplexPrivateDataGrant(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_duplex_private_voice_grant
+func dmrgo_pdu_csbk_set_duplex_private_voice_grant(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_duplex_private_voice_grant_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.DuplexPrivateVoiceGrantPDU
+	a_p = in_layer2_pdu_DuplexPrivateVoiceGrantPDU(&(*c_p))
+	r0 := x.SetDuplexPrivateVoiceGrant(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_maintenance
+func dmrgo_pdu_csbk_set_maintenance(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_maintenance_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.MaintenancePDU
+	a_p = in_layer2_pdu_MaintenancePDU(&(*c_p))
+	r0 := x.SetMaintenance(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -22368,15 +22407,16 @@ func dmrgo_pdu_csbk_set_motorola_call_alert(c_self *C.dmrgo_pdu_csbk_t, c_p *C.d
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	if c_p == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetMotorolaCallAlert(*(*g_layer2_pdu.MotorolaCallAlertPDU)(unsafe.Pointer(c_p)))
 	var ws_self C.dmrgo_pdu_csbk_t
 	ws_self = *c_self
-	out_layer2_pdu_CSBK(&ws_self, &x, oc)
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -22395,15 +22435,16 @@ func dmrgo_pdu_csbk_set_motorola_call_alert_ack(c_self *C.dmrgo_pdu_csbk_t, c_p 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	if c_p == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	r0 := x.SetMotorolaCallAlertAck(*(*g_layer2_pdu.MotorolaCallAlertAckPDU)(unsafe.Pointer(c_p)))
 	var ws_self C.dmrgo_pdu_csbk_t
 	ws_self = *c_self
-	out_layer2_pdu_CSBK(&ws_self, &x, oc)
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -22422,8 +22463,7 @@ func dmrgo_pdu_csbk_set_motorola_radio_check(c_self *C.dmrgo_pdu_csbk_t, c_p *C.
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	if c_p == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -22432,7 +22472,277 @@ func dmrgo_pdu_csbk_set_motorola_radio_check(c_self *C.dmrgo_pdu_csbk_t, c_p *C.
 	r0 := x.SetMotorolaRadioCheck(a_p)
 	var ws_self C.dmrgo_pdu_csbk_t
 	ws_self = *c_self
-	out_layer2_pdu_CSBK(&ws_self, &x, oc)
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_move
+func dmrgo_pdu_csbk_set_move(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_move_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.MovePDU
+	a_p = in_layer2_pdu_MovePDU(&(*c_p))
+	r0 := x.SetMove(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_negative_acknowledgement
+func dmrgo_pdu_csbk_set_negative_acknowledgement(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_negative_acknowledgement_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.SetNegativeAcknowledgement(*(*g_layer2_pdu.NegativeAcknowledgementPDU)(unsafe.Pointer(c_p)))
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_preamble
+func dmrgo_pdu_csbk_set_preamble(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_preamble_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.PreamblePDU
+	a_p = in_layer2_pdu_PreamblePDU(&(*c_p))
+	r0 := x.SetPreamble(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_private_data_grant
+func dmrgo_pdu_csbk_set_private_data_grant(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_private_data_grant_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.PrivateDataGrantPDU
+	a_p = in_layer2_pdu_PrivateDataGrantPDU(&(*c_p))
+	r0 := x.SetPrivateDataGrant(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_private_data_grant_multi_item
+func dmrgo_pdu_csbk_set_private_data_grant_multi_item(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_private_data_grant_multi_item_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.PrivateDataGrantMultiItemPDU
+	a_p = in_layer2_pdu_PrivateDataGrantMultiItemPDU(&(*c_p))
+	r0 := x.SetPrivateDataGrantMultiItem(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_private_voice_grant
+func dmrgo_pdu_csbk_set_private_voice_grant(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_private_voice_grant_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.PrivateVoiceGrantPDU
+	a_p = in_layer2_pdu_PrivateVoiceGrantPDU(&(*c_p))
+	r0 := x.SetPrivateVoiceGrant(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_protect
+func dmrgo_pdu_csbk_set_protect(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_protect_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.ProtectPDU
+	a_p = in_layer2_pdu_ProtectPDU(&(*c_p))
+	r0 := x.SetProtect(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_random_access
+func dmrgo_pdu_csbk_set_random_access(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_random_access_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.RandomAccessPDU
+	a_p = in_layer2_pdu_RandomAccessPDU(&(*c_p))
+	r0 := x.SetRandomAccess(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_talkgroup_data_grant
+func dmrgo_pdu_csbk_set_talkgroup_data_grant(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_talkgroup_data_grant_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.TalkgroupDataGrantPDU
+	a_p = in_layer2_pdu_TalkgroupDataGrantPDU(&(*c_p))
+	r0 := x.SetTalkgroupDataGrant(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -22451,8 +22761,7 @@ func dmrgo_pdu_csbk_set_talkgroup_data_grant_multi_item(c_self *C.dmrgo_pdu_csbk
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	if c_p == nil {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -22461,7 +22770,100 @@ func dmrgo_pdu_csbk_set_talkgroup_data_grant_multi_item(c_self *C.dmrgo_pdu_csbk
 	r0 := x.SetTalkgroupDataGrantMultiItem(a_p)
 	var ws_self C.dmrgo_pdu_csbk_t
 	ws_self = *c_self
-	out_layer2_pdu_CSBK(&ws_self, &x, oc)
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_talkgroup_voice_grant
+func dmrgo_pdu_csbk_set_talkgroup_voice_grant(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_talkgroup_voice_grant_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.TalkgroupVoiceGrantPDU
+	a_p = in_layer2_pdu_TalkgroupVoiceGrantPDU(&(*c_p))
+	r0 := x.SetTalkgroupVoiceGrant(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_unit_to_unit_voice_service_answer_response
+func dmrgo_pdu_csbk_set_unit_to_unit_voice_service_answer_response(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_unit_to_unit_voice_service_answer_response_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.UnitToUnitVoiceServiceAnswerResponsePDU
+	a_p = in_layer2_pdu_UnitToUnitVoiceServiceAnswerResponsePDU(&(*c_p))
+	r0 := x.SetUnitToUnitVoiceServiceAnswerResponse(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_csbk_set_unit_to_unit_voice_service_request
+func dmrgo_pdu_csbk_set_unit_to_unit_voice_service_request(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_unit_to_unit_voice_service_request_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.CSBK
+	x = in_layer2_pdu_CSBK(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.UnitToUnitVoiceServiceRequestPDU
+	a_p = in_layer2_pdu_UnitToUnitVoiceServiceRequestPDU(&(*c_p))
+	r0 := x.SetUnitToUnitVoiceServiceRequest(a_p)
+	var ws_self C.dmrgo_pdu_csbk_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -22483,8 +22885,7 @@ func dmrgo_pdu_csbk_string(c_self *C.dmrgo_pdu_csbk_t, c_out *C.char, c_out_cap 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.CSBK
-	var xs st_layer2_pdu_CSBK
-	x = in_layer2_pdu_CSBK(&(*c_self), &xs)
+	x = in_layer2_pdu_CSBK(&(*c_self))
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -22664,27 +23065,6 @@ func dmrgo_pdu_csbk_opcode_string(c_self C.dmrgo_pdu_csbk_opcode_t, c_out *C.cha
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_pdu_csbk_payloads_new
-func dmrgo_pdu_csbk_payloads_new(c_out **C.dmrgo_pdu_csbk_payloads_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_layer2_pdu_CSBKPayloads(new(g_layer2_pdu.CSBKPayloads))
-	return C.DMRGO_OK
-}
-
-//export dmrgo_pdu_csbk_payloads_free
-func dmrgo_pdu_csbk_payloads_free(c_self *C.dmrgo_pdu_csbk_payloads_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_self == nil {
-		return C.DMRGO_OK
-	}
-	get_layer2_pdu_CSBKPayloads(c_self)
-	deleteHandle(unsafe.Pointer(c_self))
 	return C.DMRGO_OK
 }
 
@@ -23502,8 +23882,7 @@ func dmrgo_pdu_data_header_addresses(c_self *C.dmrgo_pdu_data_header_t, c_target
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.DataHeader
-	var xs st_layer2_pdu_DataHeader
-	x = in_layer2_pdu_DataHeader(&(*c_self), &xs)
+	x = in_layer2_pdu_DataHeader(&(*c_self))
 	r0, r1, r2 := x.Addresses()
 	_ = r0
 	_ = r1
@@ -23523,6 +23902,218 @@ func dmrgo_pdu_data_header_addresses(c_self *C.dmrgo_pdu_data_header_t, c_target
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_data_header_appended_blocks
+func dmrgo_pdu_data_header_appended_blocks(c_self *C.dmrgo_pdu_data_header_t, c_out *C.uint8_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	r0 := x.AppendedBlocks()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint8_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_as_confirmed_data_header
+func dmrgo_pdu_data_header_as_confirmed_data_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_confirmed_data_header_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	r0, r1 := x.AsConfirmedDataHeader()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_ConfirmedDataHeader(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_as_defined_data_header
+func dmrgo_pdu_data_header_as_defined_data_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_defined_data_header_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	r0, r1 := x.AsDefinedDataHeader()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_DefinedDataHeader(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_as_proprietary_header
+func dmrgo_pdu_data_header_as_proprietary_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_proprietary_header_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	r0, r1 := x.AsProprietaryHeader()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		*(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(&(*c_p))) = r0
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_as_raw_data_header
+func dmrgo_pdu_data_header_as_raw_data_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_raw_data_header_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	r0, r1 := x.AsRawDataHeader()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_RawDataHeader(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_as_response_packet_header
+func dmrgo_pdu_data_header_as_response_packet_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_response_packet_header_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	r0, r1 := x.AsResponsePacketHeader()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_ResponsePacketHeader(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_as_status_precoded_header
+func dmrgo_pdu_data_header_as_status_precoded_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_status_precoded_header_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	r0, r1 := x.AsStatusPrecodedHeader()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_StatusPrecodedHeader(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_as_udt_header
+func dmrgo_pdu_data_header_as_udt_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_udt_header_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	r0, r1 := x.AsUDTHeader()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_UDTHeader(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_as_unconfirmed_data_header
+func dmrgo_pdu_data_header_as_unconfirmed_data_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_unconfirmed_data_header_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	r0, r1 := x.AsUnconfirmedDataHeader()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_UnconfirmedDataHeader(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_data_header_data_type
 func dmrgo_pdu_data_header_data_type(c_self *C.dmrgo_pdu_data_header_t, c_out *C.dmrgo_enums_data_type_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -23531,8 +24122,7 @@ func dmrgo_pdu_data_header_data_type(c_self *C.dmrgo_pdu_data_header_t, c_out *C
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.DataHeader
-	var xs st_layer2_pdu_DataHeader
-	x = in_layer2_pdu_DataHeader(&(*c_self), &xs)
+	x = in_layer2_pdu_DataHeader(&(*c_self))
 	r0 := x.DataType()
 	_ = r0
 	if c_out != nil {
@@ -23552,8 +24142,7 @@ func dmrgo_pdu_data_header_encode(c_self *C.dmrgo_pdu_data_header_t, c_out *C.ui
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.DataHeader
-	var xs st_layer2_pdu_DataHeader
-	x = in_layer2_pdu_DataHeader(&(*c_self), &xs)
+	x = in_layer2_pdu_DataHeader(&(*c_self))
 	r0, r1 := x.Encode()
 	_ = r0
 	if c_out != nil {
@@ -23568,6 +24157,26 @@ func dmrgo_pdu_data_header_encode(c_self *C.dmrgo_pdu_data_header_t, c_out *C.ui
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_data_header_format
+func dmrgo_pdu_data_header_format(c_self *C.dmrgo_pdu_data_header_t, c_out *C.dmrgo_pdu_format_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	r0 := x.Format()
+	_ = r0
+	if c_out != nil {
+		*c_out = C.dmrgo_pdu_format_t(r0)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_data_header_set_addresses
 func dmrgo_pdu_data_header_set_addresses(c_self *C.dmrgo_pdu_data_header_t, c_destination C.uint32_t, c_source C.uint32_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -23576,60 +24185,233 @@ func dmrgo_pdu_data_header_set_addresses(c_self *C.dmrgo_pdu_data_header_t, c_de
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.DataHeader
-	var xs st_layer2_pdu_DataHeader
-	x = in_layer2_pdu_DataHeader(&(*c_self), &xs)
+	x = in_layer2_pdu_DataHeader(&(*c_self))
 	r0 := x.SetAddresses(uint32(c_destination), uint32(c_source))
 	var ws_self C.dmrgo_pdu_data_header_t
 	ws_self = *c_self
-	if x.UnconfirmedDataHeader != nil {
-		ws_self.has_unconfirmed_data_header = true
-		out_layer2_pdu_UnconfirmedDataHeader(&ws_self.unconfirmed_data_header, &(*x.UnconfirmedDataHeader), oc)
-	} else {
-		ws_self.has_unconfirmed_data_header = false
-		ws_self.unconfirmed_data_header = C.dmrgo_pdu_unconfirmed_data_header_t{}
+	out_layer2_pdu_DataHeader(&ws_self, &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
 	}
-	if x.ConfirmedDataHeader != nil {
-		ws_self.has_confirmed_data_header = true
-		out_layer2_pdu_ConfirmedDataHeader(&ws_self.confirmed_data_header, &(*x.ConfirmedDataHeader), oc)
-	} else {
-		ws_self.has_confirmed_data_header = false
-		ws_self.confirmed_data_header = C.dmrgo_pdu_confirmed_data_header_t{}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
 	}
-	if x.ResponsePacketHeader != nil {
-		ws_self.has_response_packet_header = true
-		out_layer2_pdu_ResponsePacketHeader(&ws_self.response_packet_header, &(*x.ResponsePacketHeader), oc)
-	} else {
-		ws_self.has_response_packet_header = false
-		ws_self.response_packet_header = C.dmrgo_pdu_response_packet_header_t{}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_set_confirmed_data_header
+func dmrgo_pdu_data_header_set_confirmed_data_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_confirmed_data_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
 	}
-	if x.DefinedDataHeader != nil {
-		ws_self.has_defined_data_header = true
-		out_layer2_pdu_DefinedDataHeader(&ws_self.defined_data_header, &(*x.DefinedDataHeader), oc)
-	} else {
-		ws_self.has_defined_data_header = false
-		ws_self.defined_data_header = C.dmrgo_pdu_defined_data_header_t{}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
 	}
-	if x.StatusPrecodedHeader != nil {
-		ws_self.has_status_precoded_header = true
-		out_layer2_pdu_StatusPrecodedHeader(&ws_self.status_precoded_header, &(*x.StatusPrecodedHeader), oc)
-	} else {
-		ws_self.has_status_precoded_header = false
-		ws_self.status_precoded_header = C.dmrgo_pdu_status_precoded_header_t{}
+	var a_p g_layer2_pdu.ConfirmedDataHeader
+	a_p = in_layer2_pdu_ConfirmedDataHeader(&(*c_p))
+	r0 := x.SetConfirmedDataHeader(a_p)
+	var ws_self C.dmrgo_pdu_data_header_t
+	ws_self = *c_self
+	out_layer2_pdu_DataHeader(&ws_self, &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
 	}
-	if x.RawDataHeader != nil {
-		ws_self.has_raw_data_header = true
-		out_layer2_pdu_RawDataHeader(&ws_self.raw_data_header, &(*x.RawDataHeader), oc)
-	} else {
-		ws_self.has_raw_data_header = false
-		ws_self.raw_data_header = C.dmrgo_pdu_raw_data_header_t{}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
 	}
-	if x.UDTHeader != nil {
-		ws_self.has_udt_header = true
-		out_layer2_pdu_UDTHeader(&ws_self.udt_header, &(*x.UDTHeader), oc)
-	} else {
-		ws_self.has_udt_header = false
-		ws_self.udt_header = C.dmrgo_pdu_udt_header_t{}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_set_defined_data_header
+func dmrgo_pdu_data_header_set_defined_data_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_defined_data_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
 	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.DefinedDataHeader
+	a_p = in_layer2_pdu_DefinedDataHeader(&(*c_p))
+	r0 := x.SetDefinedDataHeader(a_p)
+	var ws_self C.dmrgo_pdu_data_header_t
+	ws_self = *c_self
+	out_layer2_pdu_DataHeader(&ws_self, &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_set_proprietary_header
+func dmrgo_pdu_data_header_set_proprietary_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_proprietary_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.SetProprietaryHeader(*(*g_layer2_pdu.ProprietaryHeader)(unsafe.Pointer(c_p)))
+	var ws_self C.dmrgo_pdu_data_header_t
+	ws_self = *c_self
+	out_layer2_pdu_DataHeader(&ws_self, &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_set_raw_data_header
+func dmrgo_pdu_data_header_set_raw_data_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_raw_data_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.RawDataHeader
+	a_p = in_layer2_pdu_RawDataHeader(&(*c_p))
+	r0 := x.SetRawDataHeader(a_p)
+	var ws_self C.dmrgo_pdu_data_header_t
+	ws_self = *c_self
+	out_layer2_pdu_DataHeader(&ws_self, &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_set_response_packet_header
+func dmrgo_pdu_data_header_set_response_packet_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_response_packet_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.ResponsePacketHeader
+	a_p = in_layer2_pdu_ResponsePacketHeader(&(*c_p))
+	r0 := x.SetResponsePacketHeader(a_p)
+	var ws_self C.dmrgo_pdu_data_header_t
+	ws_self = *c_self
+	out_layer2_pdu_DataHeader(&ws_self, &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_set_status_precoded_header
+func dmrgo_pdu_data_header_set_status_precoded_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_status_precoded_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.StatusPrecodedHeader
+	a_p = in_layer2_pdu_StatusPrecodedHeader(&(*c_p))
+	r0 := x.SetStatusPrecodedHeader(a_p)
+	var ws_self C.dmrgo_pdu_data_header_t
+	ws_self = *c_self
+	out_layer2_pdu_DataHeader(&ws_self, &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_set_udt_header
+func dmrgo_pdu_data_header_set_udt_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_udt_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.UDTHeader
+	a_p = in_layer2_pdu_UDTHeader(&(*c_p))
+	r0 := x.SetUDTHeader(a_p)
+	var ws_self C.dmrgo_pdu_data_header_t
+	ws_self = *c_self
+	out_layer2_pdu_DataHeader(&ws_self, &x, oc)
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_data_header_set_unconfirmed_data_header
+func dmrgo_pdu_data_header_set_unconfirmed_data_header(c_self *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_unconfirmed_data_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.DataHeader
+	x = in_layer2_pdu_DataHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.UnconfirmedDataHeader
+	a_p = in_layer2_pdu_UnconfirmedDataHeader(&(*c_p))
+	r0 := x.SetUnconfirmedDataHeader(a_p)
+	var ws_self C.dmrgo_pdu_data_header_t
+	ws_self = *c_self
+	out_layer2_pdu_DataHeader(&ws_self, &x, oc)
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
@@ -23651,8 +24433,7 @@ func dmrgo_pdu_data_header_string(c_self *C.dmrgo_pdu_data_header_t, c_out *C.ch
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.DataHeader
-	var xs st_layer2_pdu_DataHeader
-	x = in_layer2_pdu_DataHeader(&(*c_self), &xs)
+	x = in_layer2_pdu_DataHeader(&(*c_self))
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -23798,27 +24579,6 @@ func dmrgo_pdu_data_header_bytes_set_group(c_self *C.dmrgo_pdu_data_header_bytes
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_data_header_payloads_new
-func dmrgo_pdu_data_header_payloads_new(c_out **C.dmrgo_pdu_data_header_payloads_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_layer2_pdu_DataHeaderPayloads(new(g_layer2_pdu.DataHeaderPayloads))
-	return C.DMRGO_OK
-}
-
-//export dmrgo_pdu_data_header_payloads_free
-func dmrgo_pdu_data_header_payloads_free(c_self *C.dmrgo_pdu_data_header_payloads_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_self == nil {
-		return C.DMRGO_OK
-	}
-	get_layer2_pdu_DataHeaderPayloads(c_self)
-	deleteHandle(unsafe.Pointer(c_self))
-	return C.DMRGO_OK
-}
-
 //export dmrgo_pdu_decode_csbk
 func dmrgo_pdu_decode_csbk(c_data *C.uint8_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -23837,32 +24597,6 @@ func dmrgo_pdu_decode_csbk(c_data *C.uint8_t, c_out *C.dmrgo_pdu_csbk_t) (rc C.i
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_decode_csbk_into
-func dmrgo_pdu_decode_csbk_into(c_dst *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_csbk_payloads_t, c_data *C.uint8_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	var a_dst g_layer2_pdu.CSBK
-	var p_dst *g_layer2_pdu.CSBK
-	if c_dst != nil {
-		p_dst = &a_dst
-	}
-	var a_p *g_layer2_pdu.CSBKPayloads
-	if c_p != nil {
-		a_p = get_layer2_pdu_CSBKPayloads(c_p).v
-	}
-	if c_data == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	g_layer2_pdu.DecodeCSBKInto(p_dst, a_p, *(*[12]byte)(unsafe.Pointer(c_data)))
-	if c_dst != nil {
-		out_layer2_pdu_CSBK(&(*c_dst), &a_dst, oc)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_pdu_decode_data_header
 func dmrgo_pdu_decode_data_header(c_data *C.uint8_t, c_out *C.dmrgo_pdu_data_header_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -23874,32 +24608,6 @@ func dmrgo_pdu_decode_data_header(c_data *C.uint8_t, c_out *C.dmrgo_pdu_data_hea
 	_ = r0
 	if c_out != nil {
 		out_layer2_pdu_DataHeader(&(*c_out), &r0, oc)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_pdu_decode_data_header_into
-func dmrgo_pdu_decode_data_header_into(c_dst *C.dmrgo_pdu_data_header_t, c_p *C.dmrgo_pdu_data_header_payloads_t, c_data *C.uint8_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	var a_dst g_layer2_pdu.DataHeader
-	var p_dst *g_layer2_pdu.DataHeader
-	if c_dst != nil {
-		p_dst = &a_dst
-	}
-	var a_p *g_layer2_pdu.DataHeaderPayloads
-	if c_p != nil {
-		a_p = get_layer2_pdu_DataHeaderPayloads(c_p).v
-	}
-	if c_data == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	g_layer2_pdu.DecodeDataHeaderInto(p_dst, a_p, *(*[12]byte)(unsafe.Pointer(c_data)))
-	if c_dst != nil {
-		out_layer2_pdu_DataHeader(&(*c_dst), &a_dst, oc)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -24008,61 +24716,6 @@ func dmrgo_pdu_decode_full_link_control_bytes(c_lc *C.uint8_t, c_out *C.dmrgo_pd
 	return C.DMRGO_OK
 }
 
-//export dmrgo_pdu_decode_full_link_control_bytes_into
-func dmrgo_pdu_decode_full_link_control_bytes_into(c_dst *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_full_link_control_payloads_t, c_lc *C.uint8_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	var a_dst g_layer2_pdu.FullLinkControl
-	var p_dst *g_layer2_pdu.FullLinkControl
-	if c_dst != nil {
-		p_dst = &a_dst
-	}
-	var a_p *g_layer2_pdu.FullLinkControlPayloads
-	if c_p != nil {
-		a_p = get_layer2_pdu_FullLinkControlPayloads(c_p).v
-	}
-	if c_lc == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := g_layer2_pdu.DecodeFullLinkControlBytesInto(p_dst, a_p, *(*[9]byte)(unsafe.Pointer(c_lc)))
-	if c_dst != nil {
-		out_layer2_pdu_FullLinkControl(&(*c_dst), &a_dst, oc)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_pdu_decode_full_link_control_into
-func dmrgo_pdu_decode_full_link_control_into(c_dst *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_full_link_control_payloads_t, c_data *C.uint8_t, c_burst_data_type C.dmrgo_enums_data_type_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	var a_dst g_layer2_pdu.FullLinkControl
-	var p_dst *g_layer2_pdu.FullLinkControl
-	if c_dst != nil {
-		p_dst = &a_dst
-	}
-	var a_p *g_layer2_pdu.FullLinkControlPayloads
-	if c_p != nil {
-		a_p = get_layer2_pdu_FullLinkControlPayloads(c_p).v
-	}
-	if c_data == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	g_layer2_pdu.DecodeFullLinkControlInto(p_dst, a_p, *(*[12]byte)(unsafe.Pointer(c_data)), g_enums.DataType(c_burst_data_type))
-	if c_dst != nil {
-		out_layer2_pdu_FullLinkControl(&(*c_dst), &a_dst, oc)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_pdu_decode_mbc_continuation
 func dmrgo_pdu_decode_mbc_continuation(c_data *C.uint8_t, c_out *C.dmrgo_pdu_mbc_continuation_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -24092,32 +24745,6 @@ func dmrgo_pdu_decode_mbc_header(c_data *C.uint8_t, c_out *C.dmrgo_pdu_mbc_heade
 	_ = r0
 	if c_out != nil {
 		out_layer2_pdu_MBCHeader(&(*c_out), &r0, oc)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_pdu_decode_mbc_header_into
-func dmrgo_pdu_decode_mbc_header_into(c_dst *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_mbc_header_payloads_t, c_data *C.uint8_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	var a_dst g_layer2_pdu.MBCHeader
-	var p_dst *g_layer2_pdu.MBCHeader
-	if c_dst != nil {
-		p_dst = &a_dst
-	}
-	var a_p *g_layer2_pdu.MBCHeaderPayloads
-	if c_p != nil {
-		a_p = get_layer2_pdu_MBCHeaderPayloads(c_p).v
-	}
-	if c_data == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	g_layer2_pdu.DecodeMBCHeaderInto(p_dst, a_p, *(*[12]byte)(unsafe.Pointer(c_data)))
-	if c_dst != nil {
-		out_layer2_pdu_MBCHeader(&(*c_dst), &a_dst, oc)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -24226,32 +24853,6 @@ func dmrgo_pdu_decode_short_lc(c_data *C.uint8_t, c_out *C.dmrgo_pdu_short_lc_t)
 	_ = r0
 	if c_out != nil {
 		out_layer2_pdu_ShortLC(&(*c_out), &r0, oc)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_pdu_decode_short_lc_into
-func dmrgo_pdu_decode_short_lc_into(c_dst *C.dmrgo_pdu_short_lc_t, c_p *C.dmrgo_pdu_short_lc_payloads_t, c_data *C.uint8_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	var a_dst g_layer2_pdu.ShortLC
-	var p_dst *g_layer2_pdu.ShortLC
-	if c_dst != nil {
-		p_dst = &a_dst
-	}
-	var a_p *g_layer2_pdu.ShortLCPayloads
-	if c_p != nil {
-		a_p = get_layer2_pdu_ShortLCPayloads(c_p).v
-	}
-	if c_data == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	g_layer2_pdu.DecodeShortLCInto(p_dst, a_p, *(*[5]byte)(unsafe.Pointer(c_data)))
-	if c_dst != nil {
-		out_layer2_pdu_ShortLC(&(*c_dst), &a_dst, oc)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -24728,7 +25329,7 @@ func dmrgo_pdu_encode_talker_alias(c_alias *C.char, c_alias_len C.size_t, c_form
 }
 
 //export dmrgo_pdu_encode_talker_alias_into
-func dmrgo_pdu_encode_talker_alias_into(c_dst *C.dmrgo_pdu_full_link_control_t, c_p **C.dmrgo_pdu_full_link_control_payloads_t, c_alias *C.char, c_alias_len C.size_t, c_format C.dmrgo_layer3_talker_alias_data_format_t, c_out *C.int64_t) (rc C.int) {
+func dmrgo_pdu_encode_talker_alias_into(c_dst *C.dmrgo_pdu_full_link_control_t, c_alias *C.char, c_alias_len C.size_t, c_format C.dmrgo_layer3_talker_alias_data_format_t, c_out *C.int64_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	if !lenOK(unsafe.Pointer(c_alias), c_alias_len, unsafe.Sizeof(*c_alias)) {
@@ -24739,25 +25340,14 @@ func dmrgo_pdu_encode_talker_alias_into(c_dst *C.dmrgo_pdu_full_link_control_t, 
 	if c_dst != nil {
 		p_dst = &a_dst
 	}
-	if c_p == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	hs_p := unsafe.Slice(c_p, 4)
-	var a_p [4]g_layer2_pdu.FullLinkControlPayloads
-	for i := range a_p {
-		a_p[i] = *get_layer2_pdu_FullLinkControlPayloads(hs_p[i]).v
-	}
 	if c_alias == nil && c_alias_len > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
-	r0, r1 := g_layer2_pdu.EncodeTalkerAliasInto(p_dst, &a_p, cStr(c_alias, c_alias_len), g_layer3.TalkerAliasDataFormat(c_format))
+	r0, r1 := g_layer2_pdu.EncodeTalkerAliasInto(p_dst, cStr(c_alias, c_alias_len), g_layer3.TalkerAliasDataFormat(c_format))
 	if c_dst != nil {
 		for i0 := range a_dst {
 			out_layer2_pdu_FullLinkControl(&(*(*[4]C.dmrgo_pdu_full_link_control_t)(unsafe.Pointer(c_dst)))[i0], &a_dst[i0], oc)
 		}
-	}
-	for i := range a_p {
-		*get_layer2_pdu_FullLinkControlPayloads(hs_p[i]).v = a_p[i]
 	}
 	_ = r0
 	if c_out != nil {
@@ -25099,8 +25689,7 @@ func dmrgo_pdu_full_link_control_addresses(c_self *C.dmrgo_pdu_full_link_control
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.FullLinkControl
-	var xs st_layer2_pdu_FullLinkControl
-	x = in_layer2_pdu_FullLinkControl(&(*c_self), &xs)
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
 	r0, r1, r2 := x.Addresses()
 	_ = r0
 	_ = r1
@@ -25128,8 +25717,7 @@ func dmrgo_pdu_full_link_control_as_capacity_plus_group_voice_grant(c_self *C.dm
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.FullLinkControl
-	var xs st_layer2_pdu_FullLinkControl
-	x = in_layer2_pdu_FullLinkControl(&(*c_self), &xs)
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
 	r0, r1 := x.AsCapacityPlusGroupVoiceGrant()
 	_ = r0
 	_ = r1
@@ -25153,13 +25741,156 @@ func dmrgo_pdu_full_link_control_as_capacity_plus_private_voice_grant(c_self *C.
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.FullLinkControl
-	var xs st_layer2_pdu_FullLinkControl
-	x = in_layer2_pdu_FullLinkControl(&(*c_self), &xs)
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
 	r0, r1 := x.AsCapacityPlusPrivateVoiceGrant()
 	_ = r0
 	_ = r1
 	if c_p != nil {
 		out_layer2_pdu_CapacityPlusPrivateVoiceGrant(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_full_link_control_as_gps_info
+func dmrgo_pdu_full_link_control_as_gps_info(c_self *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_flc_gps_info_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FullLinkControl
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
+	r0, r1 := x.AsGPSInfo()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		*(*g_layer2_pdu.FLCGPSInfo)(unsafe.Pointer(&(*c_p))) = r0
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_full_link_control_as_group_voice
+func dmrgo_pdu_full_link_control_as_group_voice(c_self *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_flc_group_voice_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FullLinkControl
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
+	r0, r1 := x.AsGroupVoice()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_FLCGroupVoice(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_full_link_control_as_talker_alias_block
+func dmrgo_pdu_full_link_control_as_talker_alias_block(c_self *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_flc_talker_alias_block_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FullLinkControl
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
+	r0, r1 := x.AsTalkerAliasBlock()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		*(*g_layer2_pdu.FLCTalkerAliasBlock)(unsafe.Pointer(&(*c_p))) = r0
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_full_link_control_as_talker_alias_header
+func dmrgo_pdu_full_link_control_as_talker_alias_header(c_self *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_flc_talker_alias_header_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FullLinkControl
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
+	r0, r1 := x.AsTalkerAliasHeader()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_FLCTalkerAliasHeader(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_full_link_control_as_terminator_data_link_control
+func dmrgo_pdu_full_link_control_as_terminator_data_link_control(c_self *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_flc_terminator_data_link_control_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FullLinkControl
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
+	r0, r1 := x.AsTerminatorDataLinkControl()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_FLCTerminatorDataLinkControl(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_full_link_control_as_unit_to_unit
+func dmrgo_pdu_full_link_control_as_unit_to_unit(c_self *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_flc_unit_to_unit_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FullLinkControl
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
+	r0, r1 := x.AsUnitToUnit()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_FLCUnitToUnit(&(*c_p), &r0, oc)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -25178,8 +25909,7 @@ func dmrgo_pdu_full_link_control_bytes(c_self *C.dmrgo_pdu_full_link_control_t, 
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.FullLinkControl
-	var xs st_layer2_pdu_FullLinkControl
-	x = in_layer2_pdu_FullLinkControl(&(*c_self), &xs)
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
 	r0, r1 := x.Bytes()
 	_ = r0
 	if c_out != nil {
@@ -25202,8 +25932,7 @@ func dmrgo_pdu_full_link_control_data_type(c_self *C.dmrgo_pdu_full_link_control
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.FullLinkControl
-	var xs st_layer2_pdu_FullLinkControl
-	x = in_layer2_pdu_FullLinkControl(&(*c_self), &xs)
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
 	r0 := x.DataType()
 	_ = r0
 	if c_out != nil {
@@ -25223,8 +25952,7 @@ func dmrgo_pdu_full_link_control_encode(c_self *C.dmrgo_pdu_full_link_control_t,
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.FullLinkControl
-	var xs st_layer2_pdu_FullLinkControl
-	x = in_layer2_pdu_FullLinkControl(&(*c_self), &xs)
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
 	r0, r1 := x.Encode()
 	_ = r0
 	if c_out != nil {
@@ -25247,8 +25975,7 @@ func dmrgo_pdu_full_link_control_service_options(c_self *C.dmrgo_pdu_full_link_c
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.FullLinkControl
-	var xs st_layer2_pdu_FullLinkControl
-	x = in_layer2_pdu_FullLinkControl(&(*c_self), &xs)
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
 	r0, r1 := x.ServiceOptions()
 	_ = r0
 	_ = r1
@@ -25272,25 +25999,186 @@ func dmrgo_pdu_full_link_control_set_addresses(c_self *C.dmrgo_pdu_full_link_con
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.FullLinkControl
-	var xs st_layer2_pdu_FullLinkControl
-	x = in_layer2_pdu_FullLinkControl(&(*c_self), &xs)
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
 	r0 := x.SetAddresses(uint32(c_target), uint32(c_source))
 	var ws_self C.dmrgo_pdu_full_link_control_t
 	ws_self = *c_self
-	if x.GroupVoice != nil {
-		ws_self.has_group_voice = true
-		out_layer2_pdu_FLCGroupVoice(&ws_self.group_voice, &(*x.GroupVoice), oc)
-	} else {
-		ws_self.has_group_voice = false
-		ws_self.group_voice = C.dmrgo_pdu_flc_group_voice_t{}
+	*(*[7]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
 	}
-	if x.UnitToUnit != nil {
-		ws_self.has_unit_to_unit = true
-		out_layer2_pdu_FLCUnitToUnit(&ws_self.unit_to_unit, &(*x.UnitToUnit), oc)
-	} else {
-		ws_self.has_unit_to_unit = false
-		ws_self.unit_to_unit = C.dmrgo_pdu_flc_unit_to_unit_t{}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
 	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_full_link_control_set_gps_info
+func dmrgo_pdu_full_link_control_set_gps_info(c_self *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_flc_gps_info_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FullLinkControl
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.SetGPSInfo(*(*g_layer2_pdu.FLCGPSInfo)(unsafe.Pointer(c_p)))
+	var ws_self C.dmrgo_pdu_full_link_control_t
+	ws_self = *c_self
+	ws_self.flco = C.dmrgo_enums_flco_t(x.FLCO)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[7]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_full_link_control_set_group_voice
+func dmrgo_pdu_full_link_control_set_group_voice(c_self *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_flc_group_voice_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FullLinkControl
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.FLCGroupVoice
+	a_p = in_layer2_pdu_FLCGroupVoice(&(*c_p))
+	r0 := x.SetGroupVoice(a_p)
+	var ws_self C.dmrgo_pdu_full_link_control_t
+	ws_self = *c_self
+	ws_self.flco = C.dmrgo_enums_flco_t(x.FLCO)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[7]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_full_link_control_set_talker_alias_block
+func dmrgo_pdu_full_link_control_set_talker_alias_block(c_self *C.dmrgo_pdu_full_link_control_t, c_flco C.dmrgo_enums_flco_t, c_p *C.dmrgo_pdu_flc_talker_alias_block_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FullLinkControl
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.SetTalkerAliasBlock(g_enums.FLCO(c_flco), *(*g_layer2_pdu.FLCTalkerAliasBlock)(unsafe.Pointer(c_p)))
+	var ws_self C.dmrgo_pdu_full_link_control_t
+	ws_self = *c_self
+	ws_self.flco = C.dmrgo_enums_flco_t(x.FLCO)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[7]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_full_link_control_set_talker_alias_header
+func dmrgo_pdu_full_link_control_set_talker_alias_header(c_self *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_flc_talker_alias_header_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FullLinkControl
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.FLCTalkerAliasHeader
+	a_p = in_layer2_pdu_FLCTalkerAliasHeader(&(*c_p))
+	r0 := x.SetTalkerAliasHeader(a_p)
+	var ws_self C.dmrgo_pdu_full_link_control_t
+	ws_self = *c_self
+	ws_self.flco = C.dmrgo_enums_flco_t(x.FLCO)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[7]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_full_link_control_set_terminator_data_link_control
+func dmrgo_pdu_full_link_control_set_terminator_data_link_control(c_self *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_flc_terminator_data_link_control_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FullLinkControl
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.FLCTerminatorDataLinkControl
+	a_p = in_layer2_pdu_FLCTerminatorDataLinkControl(&(*c_p))
+	r0 := x.SetTerminatorDataLinkControl(a_p)
+	var ws_self C.dmrgo_pdu_full_link_control_t
+	ws_self = *c_self
+	ws_self.flco = C.dmrgo_enums_flco_t(x.FLCO)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[7]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_full_link_control_set_unit_to_unit
+func dmrgo_pdu_full_link_control_set_unit_to_unit(c_self *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_flc_unit_to_unit_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.FullLinkControl
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.FLCUnitToUnit
+	a_p = in_layer2_pdu_FLCUnitToUnit(&(*c_p))
+	r0 := x.SetUnitToUnit(a_p)
+	var ws_self C.dmrgo_pdu_full_link_control_t
+	ws_self = *c_self
+	ws_self.flco = C.dmrgo_enums_flco_t(x.FLCO)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
 	*(*[7]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -25313,8 +26201,7 @@ func dmrgo_pdu_full_link_control_string(c_self *C.dmrgo_pdu_full_link_control_t,
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.FullLinkControl
-	var xs st_layer2_pdu_FullLinkControl
-	x = in_layer2_pdu_FullLinkControl(&(*c_self), &xs)
+	x = in_layer2_pdu_FullLinkControl(&(*c_self))
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -25324,27 +26211,6 @@ func dmrgo_pdu_full_link_control_string(c_self *C.dmrgo_pdu_full_link_control_t,
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_pdu_full_link_control_payloads_new
-func dmrgo_pdu_full_link_control_payloads_new(c_out **C.dmrgo_pdu_full_link_control_payloads_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_layer2_pdu_FullLinkControlPayloads(new(g_layer2_pdu.FullLinkControlPayloads))
-	return C.DMRGO_OK
-}
-
-//export dmrgo_pdu_full_link_control_payloads_free
-func dmrgo_pdu_full_link_control_payloads_free(c_self *C.dmrgo_pdu_full_link_control_payloads_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_self == nil {
-		return C.DMRGO_OK
-	}
-	get_layer2_pdu_FullLinkControlPayloads(c_self)
-	deleteHandle(unsafe.Pointer(c_self))
 	return C.DMRGO_OK
 }
 
@@ -25933,6 +26799,246 @@ func dmrgo_pdu_mbc_continuation_string(c_self *C.dmrgo_pdu_mbc_continuation_t, c
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_mbc_header_as_broadcast
+func dmrgo_pdu_mbc_header_as_broadcast(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_broadcast_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	r0, r1 := x.AsBroadcast()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_BroadcastPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_as_broadcast_talkgroup_voice_grant
+func dmrgo_pdu_mbc_header_as_broadcast_talkgroup_voice_grant(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	r0, r1 := x.AsBroadcastTalkgroupVoiceGrant()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_BroadcastTalkgroupVoiceGrantPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_as_duplex_private_data_grant
+func dmrgo_pdu_mbc_header_as_duplex_private_data_grant(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_duplex_private_data_grant_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	r0, r1 := x.AsDuplexPrivateDataGrant()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_DuplexPrivateDataGrantPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_as_duplex_private_voice_grant
+func dmrgo_pdu_mbc_header_as_duplex_private_voice_grant(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_duplex_private_voice_grant_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	r0, r1 := x.AsDuplexPrivateVoiceGrant()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_DuplexPrivateVoiceGrantPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_as_move
+func dmrgo_pdu_mbc_header_as_move(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_move_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	r0, r1 := x.AsMove()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_MovePDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_as_private_data_grant
+func dmrgo_pdu_mbc_header_as_private_data_grant(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_private_data_grant_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	r0, r1 := x.AsPrivateDataGrant()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_PrivateDataGrantPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_as_private_data_grant_multi_item
+func dmrgo_pdu_mbc_header_as_private_data_grant_multi_item(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_private_data_grant_multi_item_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	r0, r1 := x.AsPrivateDataGrantMultiItem()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_PrivateDataGrantMultiItemPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_as_private_voice_grant
+func dmrgo_pdu_mbc_header_as_private_voice_grant(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_private_voice_grant_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	r0, r1 := x.AsPrivateVoiceGrant()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_PrivateVoiceGrantPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_as_talkgroup_data_grant
+func dmrgo_pdu_mbc_header_as_talkgroup_data_grant(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_talkgroup_data_grant_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	r0, r1 := x.AsTalkgroupDataGrant()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_TalkgroupDataGrantPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_as_talkgroup_voice_grant
+func dmrgo_pdu_mbc_header_as_talkgroup_voice_grant(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_talkgroup_voice_grant_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	r0, r1 := x.AsTalkgroupVoiceGrant()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_TalkgroupVoiceGrantPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_mbc_header_data_type
 func dmrgo_pdu_mbc_header_data_type(c_self *C.dmrgo_pdu_mbc_header_t, c_out *C.dmrgo_enums_data_type_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -25941,8 +27047,7 @@ func dmrgo_pdu_mbc_header_data_type(c_self *C.dmrgo_pdu_mbc_header_t, c_out *C.d
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.MBCHeader
-	var xs st_layer2_pdu_MBCHeader
-	x = in_layer2_pdu_MBCHeader(&(*c_self), &xs)
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
 	r0 := x.DataType()
 	_ = r0
 	if c_out != nil {
@@ -25962,8 +27067,7 @@ func dmrgo_pdu_mbc_header_encode(c_self *C.dmrgo_pdu_mbc_header_t, c_out *C.uint
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.MBCHeader
-	var xs st_layer2_pdu_MBCHeader
-	x = in_layer2_pdu_MBCHeader(&(*c_self), &xs)
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
 	r0, r1 := x.Encode()
 	_ = r0
 	if c_out != nil {
@@ -25974,6 +27078,306 @@ func dmrgo_pdu_mbc_header_encode(c_self *C.dmrgo_pdu_mbc_header_t, c_out *C.uint
 	}
 	if r1 != nil {
 		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_set_broadcast
+func dmrgo_pdu_mbc_header_set_broadcast(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_broadcast_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.BroadcastPDU
+	a_p = in_layer2_pdu_BroadcastPDU(&(*c_p))
+	r0 := x.SetBroadcast(a_p)
+	var ws_self C.dmrgo_pdu_mbc_header_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_set_broadcast_talkgroup_voice_grant
+func dmrgo_pdu_mbc_header_set_broadcast_talkgroup_voice_grant(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_broadcast_talkgroup_voice_grant_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.BroadcastTalkgroupVoiceGrantPDU
+	a_p = in_layer2_pdu_BroadcastTalkgroupVoiceGrantPDU(&(*c_p))
+	r0 := x.SetBroadcastTalkgroupVoiceGrant(a_p)
+	var ws_self C.dmrgo_pdu_mbc_header_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_set_duplex_private_data_grant
+func dmrgo_pdu_mbc_header_set_duplex_private_data_grant(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_duplex_private_data_grant_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.DuplexPrivateDataGrantPDU
+	a_p = in_layer2_pdu_DuplexPrivateDataGrantPDU(&(*c_p))
+	r0 := x.SetDuplexPrivateDataGrant(a_p)
+	var ws_self C.dmrgo_pdu_mbc_header_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_set_duplex_private_voice_grant
+func dmrgo_pdu_mbc_header_set_duplex_private_voice_grant(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_duplex_private_voice_grant_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.DuplexPrivateVoiceGrantPDU
+	a_p = in_layer2_pdu_DuplexPrivateVoiceGrantPDU(&(*c_p))
+	r0 := x.SetDuplexPrivateVoiceGrant(a_p)
+	var ws_self C.dmrgo_pdu_mbc_header_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_set_move
+func dmrgo_pdu_mbc_header_set_move(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_move_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.MovePDU
+	a_p = in_layer2_pdu_MovePDU(&(*c_p))
+	r0 := x.SetMove(a_p)
+	var ws_self C.dmrgo_pdu_mbc_header_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_set_private_data_grant
+func dmrgo_pdu_mbc_header_set_private_data_grant(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_private_data_grant_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.PrivateDataGrantPDU
+	a_p = in_layer2_pdu_PrivateDataGrantPDU(&(*c_p))
+	r0 := x.SetPrivateDataGrant(a_p)
+	var ws_self C.dmrgo_pdu_mbc_header_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_set_private_data_grant_multi_item
+func dmrgo_pdu_mbc_header_set_private_data_grant_multi_item(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_private_data_grant_multi_item_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.PrivateDataGrantMultiItemPDU
+	a_p = in_layer2_pdu_PrivateDataGrantMultiItemPDU(&(*c_p))
+	r0 := x.SetPrivateDataGrantMultiItem(a_p)
+	var ws_self C.dmrgo_pdu_mbc_header_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_set_private_voice_grant
+func dmrgo_pdu_mbc_header_set_private_voice_grant(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_private_voice_grant_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.PrivateVoiceGrantPDU
+	a_p = in_layer2_pdu_PrivateVoiceGrantPDU(&(*c_p))
+	r0 := x.SetPrivateVoiceGrant(a_p)
+	var ws_self C.dmrgo_pdu_mbc_header_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_set_talkgroup_data_grant
+func dmrgo_pdu_mbc_header_set_talkgroup_data_grant(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_talkgroup_data_grant_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.TalkgroupDataGrantPDU
+	a_p = in_layer2_pdu_TalkgroupDataGrantPDU(&(*c_p))
+	r0 := x.SetTalkgroupDataGrant(a_p)
+	var ws_self C.dmrgo_pdu_mbc_header_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_set_talkgroup_voice_grant
+func dmrgo_pdu_mbc_header_set_talkgroup_voice_grant(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_talkgroup_voice_grant_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.TalkgroupVoiceGrantPDU
+	a_p = in_layer2_pdu_TalkgroupVoiceGrantPDU(&(*c_p))
+	r0 := x.SetTalkgroupVoiceGrant(a_p)
+	var ws_self C.dmrgo_pdu_mbc_header_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }
@@ -25989,8 +27393,7 @@ func dmrgo_pdu_mbc_header_string(c_self *C.dmrgo_pdu_mbc_header_t, c_out *C.char
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.MBCHeader
-	var xs st_layer2_pdu_MBCHeader
-	x = in_layer2_pdu_MBCHeader(&(*c_self), &xs)
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -26000,27 +27403,6 @@ func dmrgo_pdu_mbc_header_string(c_self *C.dmrgo_pdu_mbc_header_t, c_out *C.char
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
 	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_pdu_mbc_header_payloads_new
-func dmrgo_pdu_mbc_header_payloads_new(c_out **C.dmrgo_pdu_mbc_header_payloads_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_layer2_pdu_MBCHeaderPayloads(new(g_layer2_pdu.MBCHeaderPayloads))
-	return C.DMRGO_OK
-}
-
-//export dmrgo_pdu_mbc_header_payloads_free
-func dmrgo_pdu_mbc_header_payloads_free(c_self *C.dmrgo_pdu_mbc_header_payloads_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_self == nil {
-		return C.DMRGO_OK
-	}
-	get_layer2_pdu_MBCHeaderPayloads(c_self)
-	deleteHandle(unsafe.Pointer(c_self))
 	return C.DMRGO_OK
 }
 
@@ -27780,6 +29162,54 @@ func dmrgo_pdu_set_mbc_last_block_crc(c_blocks *C.uint8_t, c_blocks_len C.size_t
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_short_lc_as_activity_update
+func dmrgo_pdu_short_lc_as_activity_update(c_self *C.dmrgo_pdu_short_lc_t, c_p *C.dmrgo_pdu_short_lc_activity_update_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.ShortLC
+	x = in_layer2_pdu_ShortLC(&(*c_self))
+	r0, r1 := x.AsActivityUpdate()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		*(*g_layer2_pdu.ShortLCActivityUpdate)(unsafe.Pointer(&(*c_p))) = r0
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_short_lc_as_c_sys_parms
+func dmrgo_pdu_short_lc_as_c_sys_parms(c_self *C.dmrgo_pdu_short_lc_t, c_p *C.dmrgo_pdu_short_lc_c_sys_parms_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.ShortLC
+	x = in_layer2_pdu_ShortLC(&(*c_self))
+	r0, r1 := x.AsCSysParms()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_ShortLCCSysParms(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_short_lc_as_capacity_plus_rest_channel
 func dmrgo_pdu_short_lc_as_capacity_plus_rest_channel(c_self *C.dmrgo_pdu_short_lc_t, c_p *C.dmrgo_pdu_capacity_plus_rest_channel_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -27788,13 +29218,60 @@ func dmrgo_pdu_short_lc_as_capacity_plus_rest_channel(c_self *C.dmrgo_pdu_short_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.ShortLC
-	var xs st_layer2_pdu_ShortLC
-	x = in_layer2_pdu_ShortLC(&(*c_self), &xs)
+	x = in_layer2_pdu_ShortLC(&(*c_self))
 	r0, r1 := x.AsCapacityPlusRestChannel()
 	_ = r0
 	_ = r1
 	if c_p != nil {
 		*(*g_layer2_pdu.CapacityPlusRestChannel)(unsafe.Pointer(&(*c_p))) = r0
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_short_lc_as_null_message
+func dmrgo_pdu_short_lc_as_null_message(c_self *C.dmrgo_pdu_short_lc_t, c_p *C.dmrgo_pdu_short_lc_null_message_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.ShortLC
+	x = in_layer2_pdu_ShortLC(&(*c_self))
+	r0, r1 := x.AsNullMessage()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		*(*g_layer2_pdu.ShortLCNullMessage)(unsafe.Pointer(&(*c_p))) = r0
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_short_lc_as_p_sys_parms
+func dmrgo_pdu_short_lc_as_p_sys_parms(c_self *C.dmrgo_pdu_short_lc_t, c_p *C.dmrgo_pdu_short_lc_p_sys_parms_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.ShortLC
+	x = in_layer2_pdu_ShortLC(&(*c_self))
+	r0, r1 := x.AsPSysParms()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_ShortLCPSysParms(&(*c_p), &r0, oc)
 	}
 	if c_ok != nil {
 		*c_ok = C.bool(r1)
@@ -27813,8 +29290,7 @@ func dmrgo_pdu_short_lc_encode(c_self *C.dmrgo_pdu_short_lc_t, c_out *C.uint8_t)
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.ShortLC
-	var xs st_layer2_pdu_ShortLC
-	x = in_layer2_pdu_ShortLC(&(*c_self), &xs)
+	x = in_layer2_pdu_ShortLC(&(*c_self))
 	r0, r1 := x.Encode()
 	_ = r0
 	if c_out != nil {
@@ -27825,6 +29301,118 @@ func dmrgo_pdu_short_lc_encode(c_self *C.dmrgo_pdu_short_lc_t, c_out *C.uint8_t)
 	}
 	if r1 != nil {
 		return setErr(r1)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_short_lc_set_activity_update
+func dmrgo_pdu_short_lc_set_activity_update(c_self *C.dmrgo_pdu_short_lc_t, c_p *C.dmrgo_pdu_short_lc_activity_update_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.ShortLC
+	x = in_layer2_pdu_ShortLC(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.SetActivityUpdate(*(*g_layer2_pdu.ShortLCActivityUpdate)(unsafe.Pointer(c_p)))
+	var ws_self C.dmrgo_pdu_short_lc_t
+	ws_self = *c_self
+	ws_self.slco = C.dmrgo_enums_slco_t(x.SLCO)
+	*(*[3]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_short_lc_set_c_sys_parms
+func dmrgo_pdu_short_lc_set_c_sys_parms(c_self *C.dmrgo_pdu_short_lc_t, c_p *C.dmrgo_pdu_short_lc_c_sys_parms_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.ShortLC
+	x = in_layer2_pdu_ShortLC(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.ShortLCCSysParms
+	a_p = in_layer2_pdu_ShortLCCSysParms(&(*c_p))
+	r0 := x.SetCSysParms(a_p)
+	var ws_self C.dmrgo_pdu_short_lc_t
+	ws_self = *c_self
+	ws_self.slco = C.dmrgo_enums_slco_t(x.SLCO)
+	*(*[3]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_short_lc_set_null_message
+func dmrgo_pdu_short_lc_set_null_message(c_self *C.dmrgo_pdu_short_lc_t, c_p *C.dmrgo_pdu_short_lc_null_message_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.ShortLC
+	x = in_layer2_pdu_ShortLC(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := x.SetNullMessage(*(*g_layer2_pdu.ShortLCNullMessage)(unsafe.Pointer(c_p)))
+	var ws_self C.dmrgo_pdu_short_lc_t
+	ws_self = *c_self
+	ws_self.slco = C.dmrgo_enums_slco_t(x.SLCO)
+	*(*[3]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_short_lc_set_p_sys_parms
+func dmrgo_pdu_short_lc_set_p_sys_parms(c_self *C.dmrgo_pdu_short_lc_t, c_p *C.dmrgo_pdu_short_lc_p_sys_parms_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.ShortLC
+	x = in_layer2_pdu_ShortLC(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.ShortLCPSysParms
+	a_p = in_layer2_pdu_ShortLCPSysParms(&(*c_p))
+	r0 := x.SetPSysParms(a_p)
+	var ws_self C.dmrgo_pdu_short_lc_t
+	ws_self = *c_self
+	ws_self.slco = C.dmrgo_enums_slco_t(x.SLCO)
+	*(*[3]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }
@@ -27840,8 +29428,7 @@ func dmrgo_pdu_short_lc_string(c_self *C.dmrgo_pdu_short_lc_t, c_out *C.char, c_
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.ShortLC
-	var xs st_layer2_pdu_ShortLC
-	x = in_layer2_pdu_ShortLC(&(*c_self), &xs)
+	x = in_layer2_pdu_ShortLC(&(*c_self))
 	if c_out == nil && c_out_cap > 0 {
 		return fail(C.DMRGO_ERR_ARG)
 	}
@@ -28231,27 +29818,6 @@ func dmrgo_pdu_short_lc_p_sys_parms_sys_code(c_self *C.dmrgo_pdu_short_lc_p_sys_
 	if r1 != nil {
 		return setErr(r1)
 	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_pdu_short_lc_payloads_new
-func dmrgo_pdu_short_lc_payloads_new(c_out **C.dmrgo_pdu_short_lc_payloads_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_out == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	*c_out = new_layer2_pdu_ShortLCPayloads(new(g_layer2_pdu.ShortLCPayloads))
-	return C.DMRGO_OK
-}
-
-//export dmrgo_pdu_short_lc_payloads_free
-func dmrgo_pdu_short_lc_payloads_free(c_self *C.dmrgo_pdu_short_lc_payloads_t) (rc C.int) {
-	defer recoverTo(&rc)
-	if c_self == nil {
-		return C.DMRGO_OK
-	}
-	get_layer2_pdu_ShortLCPayloads(c_self)
-	deleteHandle(unsafe.Pointer(c_self))
 	return C.DMRGO_OK
 }
 
@@ -28716,9 +30282,8 @@ func dmrgo_pdu_talker_alias_assembler_add_need(c_self *C.dmrgo_pdu_talker_alias_
 	h := get_layer2_pdu_TalkerAliasAssembler(c_self)
 	var a_lc g_layer2_pdu.FullLinkControl
 	var p_lc *g_layer2_pdu.FullLinkControl
-	var s_lc st_layer2_pdu_FullLinkControl
 	if c_lc != nil {
-		a_lc = in_layer2_pdu_FullLinkControl(&(*c_lc), &s_lc)
+		a_lc = in_layer2_pdu_FullLinkControl(&(*c_lc))
 		p_lc = &a_lc
 	}
 	_ = h
@@ -28742,9 +30307,8 @@ func dmrgo_pdu_talker_alias_assembler_add(c_self *C.dmrgo_pdu_talker_alias_assem
 	h := get_layer2_pdu_TalkerAliasAssembler(c_self)
 	var a_lc g_layer2_pdu.FullLinkControl
 	var p_lc *g_layer2_pdu.FullLinkControl
-	var s_lc st_layer2_pdu_FullLinkControl
 	if c_lc != nil {
-		a_lc = in_layer2_pdu_FullLinkControl(&(*c_lc), &s_lc)
+		a_lc = in_layer2_pdu_FullLinkControl(&(*c_lc))
 		p_lc = &a_lc
 	}
 	if c_alias == nil && c_alias_cap > 0 {
@@ -28785,9 +30349,8 @@ func dmrgo_pdu_talker_alias_assembler_add_into(c_self *C.dmrgo_pdu_talker_alias_
 	h := get_layer2_pdu_TalkerAliasAssembler(c_self)
 	var a_lc g_layer2_pdu.FullLinkControl
 	var p_lc *g_layer2_pdu.FullLinkControl
-	var s_lc st_layer2_pdu_FullLinkControl
 	if c_lc != nil {
-		a_lc = in_layer2_pdu_FullLinkControl(&(*c_lc), &s_lc)
+		a_lc = in_layer2_pdu_FullLinkControl(&(*c_lc))
 		p_lc = &a_lc
 	}
 	r0, r1, r2 := h.v.AddInto((*[93]byte)(unsafe.Pointer(c_dst)), p_lc)
@@ -28814,9 +30377,8 @@ func dmrgo_pdu_talker_alias_assembler_append_add_need(c_self *C.dmrgo_pdu_talker
 	h := get_layer2_pdu_TalkerAliasAssembler(c_self)
 	var a_lc g_layer2_pdu.FullLinkControl
 	var p_lc *g_layer2_pdu.FullLinkControl
-	var s_lc st_layer2_pdu_FullLinkControl
 	if c_lc != nil {
-		a_lc = in_layer2_pdu_FullLinkControl(&(*c_lc), &s_lc)
+		a_lc = in_layer2_pdu_FullLinkControl(&(*c_lc))
 		p_lc = &a_lc
 	}
 	_ = h
@@ -28846,9 +30408,8 @@ func dmrgo_pdu_talker_alias_assembler_append_add(c_self *C.dmrgo_pdu_talker_alia
 	a_dst := full_dst[:*c_dst_len]
 	var a_lc g_layer2_pdu.FullLinkControl
 	var p_lc *g_layer2_pdu.FullLinkControl
-	var s_lc st_layer2_pdu_FullLinkControl
 	if c_lc != nil {
-		a_lc = in_layer2_pdu_FullLinkControl(&(*c_lc), &s_lc)
+		a_lc = in_layer2_pdu_FullLinkControl(&(*c_lc))
 		p_lc = &a_lc
 	}
 	need_items := max(0, int(g_layer2_pdu.TalkerAliasMaxText))
@@ -30474,9 +32035,8 @@ func dmrgo_location_decoder_decode(c_self *C.dmrgo_location_decoder_t, c_h *C.dm
 	h := get_location_Decoder(c_self)
 	var a_h g_layer2_pdu.DataHeader
 	var p_h *g_layer2_pdu.DataHeader
-	var s_h st_layer2_pdu_DataHeader
 	if c_h != nil {
-		a_h = in_layer2_pdu_DataHeader(&(*c_h), &s_h)
+		a_h = in_layer2_pdu_DataHeader(&(*c_h))
 		p_h = &a_h
 	}
 	if c_data == nil && c_data_len > 0 {
@@ -32554,9 +34114,8 @@ func dmrgo_sms_append_packet(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.
 	}
 	var a_h g_sms.Header
 	var p_h *g_sms.Header
-	var s_h st_sms_Header
 	if c_h != nil {
-		a_h = in_sms_Header(&(*c_h), &s_h)
+		a_h = in_sms_Header(&(*c_h))
 		p_h = &a_h
 	}
 	r0, r1 := g_sms.AppendPacket(a_dst, p_t, bool(c_confirmed), p_h)
@@ -32608,9 +34167,8 @@ func dmrgo_sms_decode(c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t,
 	a_dst := full_dst[:*c_dst_len]
 	var a_h g_layer2_pdu.DataHeader
 	var p_h *g_layer2_pdu.DataHeader
-	var s_h st_layer2_pdu_DataHeader
 	if c_h != nil {
-		a_h = in_layer2_pdu_DataHeader(&(*c_h), &s_h)
+		a_h = in_layer2_pdu_DataHeader(&(*c_h))
 		p_h = &a_h
 	}
 	if c_data == nil && c_data_len > 0 {
@@ -34875,37 +36433,6 @@ func dmrgo_dmrd_local_position_lc(c_self *C.dmrgo_dmrd_local_position_t, c_out *
 	return C.DMRGO_OK
 }
 
-//export dmrgo_dmrd_local_position_lc_into
-func dmrgo_dmrd_local_position_lc_into(c_self *C.dmrgo_dmrd_local_position_t, c_dst *C.dmrgo_pdu_full_link_control_t, c_pl *C.dmrgo_pdu_full_link_control_payloads_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_transport_dmrd.LocalPosition
-	x = *(*g_transport_dmrd.LocalPosition)(unsafe.Pointer(&(*c_self)))
-	var a_dst g_layer2_pdu.FullLinkControl
-	var p_dst *g_layer2_pdu.FullLinkControl
-	if c_dst != nil {
-		p_dst = &a_dst
-	}
-	var a_pl *g_layer2_pdu.FullLinkControlPayloads
-	if c_pl != nil {
-		a_pl = get_layer2_pdu_FullLinkControlPayloads(c_pl).v
-	}
-	r0 := x.LCInto(p_dst, a_pl)
-	if c_dst != nil {
-		out_layer2_pdu_FullLinkControl(&(*c_dst), &a_dst, oc)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_dmrd_local_position_string
 func dmrgo_dmrd_local_position_string(c_self *C.dmrgo_dmrd_local_position_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -34980,37 +36507,6 @@ func dmrgo_dmrd_local_talker_alias_lc(c_self *C.dmrgo_dmrd_local_talker_alias_t,
 	}
 	if r1 != nil {
 		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_local_talker_alias_lc_into
-func dmrgo_dmrd_local_talker_alias_lc_into(c_self *C.dmrgo_dmrd_local_talker_alias_t, c_dst *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_full_link_control_payloads_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_transport_dmrd.LocalTalkerAlias
-	x = *(*g_transport_dmrd.LocalTalkerAlias)(unsafe.Pointer(&(*c_self)))
-	var a_dst g_layer2_pdu.FullLinkControl
-	var p_dst *g_layer2_pdu.FullLinkControl
-	if c_dst != nil {
-		p_dst = &a_dst
-	}
-	var a_p *g_layer2_pdu.FullLinkControlPayloads
-	if c_p != nil {
-		a_p = get_layer2_pdu_FullLinkControlPayloads(c_p).v
-	}
-	r0 := x.LCInto(p_dst, a_p)
-	if c_dst != nil {
-		out_layer2_pdu_FullLinkControl(&(*c_dst), &a_dst, oc)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }
@@ -35161,37 +36657,6 @@ func dmrgo_dmrd_position_lc(c_self *C.dmrgo_dmrd_position_t, c_out *C.dmrgo_pdu_
 	return C.DMRGO_OK
 }
 
-//export dmrgo_dmrd_position_lc_into
-func dmrgo_dmrd_position_lc_into(c_self *C.dmrgo_dmrd_position_t, c_dst *C.dmrgo_pdu_full_link_control_t, c_pl *C.dmrgo_pdu_full_link_control_payloads_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_transport_dmrd.Position
-	x = *(*g_transport_dmrd.Position)(unsafe.Pointer(&(*c_self)))
-	var a_dst g_layer2_pdu.FullLinkControl
-	var p_dst *g_layer2_pdu.FullLinkControl
-	if c_dst != nil {
-		p_dst = &a_dst
-	}
-	var a_pl *g_layer2_pdu.FullLinkControlPayloads
-	if c_pl != nil {
-		a_pl = get_layer2_pdu_FullLinkControlPayloads(c_pl).v
-	}
-	r0 := x.LCInto(p_dst, a_pl)
-	if c_dst != nil {
-		out_layer2_pdu_FullLinkControl(&(*c_dst), &a_dst, oc)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_dmrd_position_string
 func dmrgo_dmrd_position_string(c_self *C.dmrgo_dmrd_position_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -35266,37 +36731,6 @@ func dmrgo_dmrd_talker_alias_lc(c_self *C.dmrgo_dmrd_talker_alias_t, c_out *C.dm
 	}
 	if r1 != nil {
 		return setErr(r1)
-	}
-	return C.DMRGO_OK
-}
-
-//export dmrgo_dmrd_talker_alias_lc_into
-func dmrgo_dmrd_talker_alias_lc_into(c_self *C.dmrgo_dmrd_talker_alias_t, c_dst *C.dmrgo_pdu_full_link_control_t, c_p *C.dmrgo_pdu_full_link_control_payloads_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_transport_dmrd.TalkerAlias
-	x = *(*g_transport_dmrd.TalkerAlias)(unsafe.Pointer(&(*c_self)))
-	var a_dst g_layer2_pdu.FullLinkControl
-	var p_dst *g_layer2_pdu.FullLinkControl
-	if c_dst != nil {
-		p_dst = &a_dst
-	}
-	var a_p *g_layer2_pdu.FullLinkControlPayloads
-	if c_p != nil {
-		a_p = get_layer2_pdu_FullLinkControlPayloads(c_p).v
-	}
-	r0 := x.LCInto(p_dst, a_p)
-	if c_dst != nil {
-		out_layer2_pdu_FullLinkControl(&(*c_dst), &a_dst, oc)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	if r0 != nil {
-		return setErr(r0)
 	}
 	return C.DMRGO_OK
 }
@@ -40384,34 +41818,6 @@ func dmrgo_mmdvm_dmr_short_lc_short_lc(c_self *C.dmrgo_mmdvm_dmr_short_lc_t, c_o
 	return C.DMRGO_OK
 }
 
-//export dmrgo_mmdvm_dmr_short_lc_short_lc_into
-func dmrgo_mmdvm_dmr_short_lc_short_lc_into(c_self *C.dmrgo_mmdvm_dmr_short_lc_t, c_dst *C.dmrgo_pdu_short_lc_t, c_p *C.dmrgo_pdu_short_lc_payloads_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_self == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	var x g_transport_mmdvm.DMRShortLC
-	x = *(*g_transport_mmdvm.DMRShortLC)(unsafe.Pointer(&(*c_self)))
-	var a_dst g_layer2_pdu.ShortLC
-	var p_dst *g_layer2_pdu.ShortLC
-	if c_dst != nil {
-		p_dst = &a_dst
-	}
-	var a_p *g_layer2_pdu.ShortLCPayloads
-	if c_p != nil {
-		a_p = get_layer2_pdu_ShortLCPayloads(c_p).v
-	}
-	x.ShortLCInto(p_dst, a_p)
-	if c_dst != nil {
-		out_layer2_pdu_ShortLC(&(*c_dst), &a_dst, oc)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_mmdvm_dmr_short_lc_string
 func dmrgo_mmdvm_dmr_short_lc_string(c_self *C.dmrgo_mmdvm_dmr_short_lc_t, c_out *C.char, c_out_cap C.size_t, c_out_len *C.size_t, c_out_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -41038,9 +42444,8 @@ func dmrgo_mmdvm_new_dmr_short_lc(c_slc *C.dmrgo_pdu_short_lc_t, c_out *C.dmrgo_
 	oc := &outc{}
 	var a_slc g_layer2_pdu.ShortLC
 	var p_slc *g_layer2_pdu.ShortLC
-	var s_slc st_layer2_pdu_ShortLC
 	if c_slc != nil {
-		a_slc = in_layer2_pdu_ShortLC(&(*c_slc), &s_slc)
+		a_slc = in_layer2_pdu_ShortLC(&(*c_slc))
 		p_slc = &a_slc
 	}
 	r0, r1 := g_transport_mmdvm.NewDMRShortLC(p_slc)
@@ -47801,9 +49206,8 @@ func dmrgo_voice_transmitter_relay(c_self *C.dmrgo_voice_transmitter_t, c_now C.
 	h := get_voice_Transmitter(c_self)
 	var a_e g_voice.Event
 	var p_e *g_voice.Event
-	var s_e st_voice_Event
 	if c_e != nil {
-		a_e = in_voice_Event(&(*c_e), &s_e)
+		a_e = in_voice_Event(&(*c_e))
 		p_e = &a_e
 	}
 	r0 := h.v.Relay(time.Duration(c_now), p_e)
