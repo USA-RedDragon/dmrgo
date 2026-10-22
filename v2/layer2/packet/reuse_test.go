@@ -248,11 +248,11 @@ func TestResponseData_Append(t *testing.T) {
 	bad := *want[0]
 	bad.Data[0] ^= 0x80
 	_, err = packet.DecodeResponseData(&bad, want[1])
-	if err == nil || err.Error() != "invalid response data blocks: fec: uncorrectable" {
+	if err == nil || err.Error() != "packet: invalid response data blocks: fec: uncorrectable" {
 		t.Errorf("bad CRC: %v", err)
 	}
 	a := packet.NewAssembler(127)
-	if _, err := a.Response(); err == nil || err.Error() != "header format does not carry segmented data: no confirmed packet in progress" {
+	if _, err := a.Response(); err == nil || err.Error() != "packet: header format does not carry segmented data: no confirmed packet in progress" {
 		t.Errorf("Response: %v", err)
 	}
 }

@@ -337,6 +337,6 @@ func (a *TalkerAliasAssembler) AddInto(dst *[TalkerAliasMaxText]byte, lc *FullLi
 }
 
 var (
-	errCharacterFormat = errors.New("a character of the talker alias is not in its format")
-	errUnknownFormat   = errors.New("unknown talker alias format")
+	errCharacterFormat = errors.New("pdu: a character of the talker alias is not in its format")
+	errUnknownFormat   = errors.New("pdu: unknown talker alias format")
 )
