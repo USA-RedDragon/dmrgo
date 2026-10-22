@@ -2264,9 +2264,9 @@ struct dmrgo_pdu_ahoy_pdu_t {
 	/* true when the caller asked for ambient listening */
 	bool als;
 	/* true when TargetAddress is a talkgroup */
-	bool group_individual;
-	/* number of appended data blocks to send */
-	uint8_t appended_blocks;
+	bool group;
+	/* Appended_Blocks: the number of appended data blocks minus one */
+	uint8_t uab;
 	/* service that this PDU supports */
 	uint8_t service_kind;
 	/* 24-bit target address */
@@ -2333,7 +2333,7 @@ struct dmrgo_pdu_flc_talker_alias_header_t {
 	/* Talker alias data format */
 	dmrgo_layer3_talker_alias_data_format_t talker_alias_data_format;
 	/* alias length in Code Units */
-	int64_t talker_alias_data_length;
+	uint8_t talker_alias_data_length;
 	/* TalkerAliasData is the 49-bit Talker alias data IE. The 7-bit format uses all 49 bits; the other formats leave the most significant bit unused. */
 	uint64_t talker_alias_data;
 };
@@ -2626,7 +2626,7 @@ struct dmrgo_pdu_clear_pdu_t {
 	/* reserved, 0 */
 	uint8_t reserved2;
 	/* true when TargetAddress is a talkgroup */
-	bool group_individual;
+	bool group;
 	/* 24-bit target address */
 	uint32_t target_address;
 	/* 24-bit source address */
@@ -2819,7 +2819,7 @@ struct dmrgo_pdu_protect_pdu_t {
 	/* 0 DIS_PTT, 1 EN_PTT, 2 ILLEGALLY_PARKED, 3 EN_PTT_ONE_MS */
 	uint8_t protect_kind;
 	/* true when TargetAddress is a talkgroup */
-	bool group_individual;
+	bool group;
 	/* 24-bit target address */
 	uint32_t target_address;
 	/* 24-bit source address */
@@ -3123,7 +3123,7 @@ struct dmrgo_pdu_flc_terminator_data_link_control_t {
 	/* source LLID */
 	uint32_t llid_source;
 	/* true when LLIDDestination is a group */
-	bool group_or_individual;
+	bool group;
 	/* Response Requested (A) */
 	bool response_requested;
 	/* Full Message Flag (F) */
@@ -3157,8 +3157,8 @@ struct dmrgo_pdu_short_lc_activity_update_t {
 };
 
 struct dmrgo_pdu_short_lc_c_sys_parms_t {
-	/* network model (NetworkModel) */
-	uint8_t model;
+	/* network model (MODEL) */
+	dmrgo_pdu_network_model_t model;
 	/* NET and SITE, split by MODEL */
 	uint16_t net_site_raw;
 	/* true when the TSCC requires the MS to register */
@@ -3173,8 +3173,8 @@ struct dmrgo_pdu_short_lc_null_message_t {
 };
 
 struct dmrgo_pdu_short_lc_p_sys_parms_t {
-	/* network model (NetworkModel) */
-	uint8_t model;
+	/* network model (MODEL) */
+	dmrgo_pdu_network_model_t model;
 	/* NET and SITE, split by MODEL */
 	uint16_t net_site_raw;
 	/* true when the payload channel is a composite control channel */

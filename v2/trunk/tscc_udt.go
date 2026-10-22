@@ -203,7 +203,7 @@ func (t *TSCC) PollShortData(now time.Duration, target uint32, blocks int) error
 	if !t.addOp(udtOp{kind: opGatewayPoll, stage: stAck, caller: constants.GatewaySDMI, called: target, until: now + t.cfg.AnswerTimeout}) {
 		return ErrBusy
 	}
-	t.sendAhoy(pdu.AhoyPDU{AppendedBlocks: uab(blocks), ServiceKind: uint8(enums.ServiceKindShortDataPolling), TargetAddress: target,
+	t.sendAhoy(pdu.AhoyPDU{UAB: uab(blocks), ServiceKind: uint8(enums.ServiceKindShortDataPolling), TargetAddress: target,
 		SourceAddress: constants.GatewaySDMI}, 0, true)
 	return nil
 }
@@ -307,13 +307,13 @@ func (t *TSCC) udtRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOu
 		if !t.addOp(udtOp{kind: opDGNA, caller: src, until: now + constants.TNPTimerDefault}) {
 			return t.refuse(src, enums.AckReasonSysBusyRefused, out), true
 		}
-		t.sendAhoy(pdu.AhoyPDU{AppendedBlocks: r.Reserved >> 2 & 0b11, ServiceKind: uint8(kind), TargetAddress: src, SourceAddress: constants.GatewayDGNAI}, 0, true)
+		t.sendAhoy(pdu.AhoyPDU{UAB: r.Reserved >> 2 & 0b11, ServiceKind: uint8(kind), TargetAddress: src, SourceAddress: constants.GatewayDGNAI}, 0, true)
 		return out, true
 	case enums.ServiceKindTalkgroupShortData:
 		if !t.addOp(udtOp{kind: opShortData, caller: src, called: r.TargetAddress, group: true, until: now + constants.TNPTimerDefault}) {
 			return t.refuse(src, enums.AckReasonSysBusyRefused, out), true
 		}
-		t.sendAhoy(pdu.AhoyPDU{AppendedBlocks: blocks - 1, ServiceKind: uint8(enums.ServiceKindIndividualShortData), TargetAddress: src,
+		t.sendAhoy(pdu.AhoyPDU{UAB: blocks - 1, ServiceKind: uint8(enums.ServiceKindIndividualShortData), TargetAddress: src,
 			SourceAddress: constants.GatewaySDMI}, 0, true)
 		return out, true
 	case enums.ServiceKindIndividualShortData, enums.ServiceKindShortDataPolling, enums.ServiceKindDuplexVoice, enums.ServiceKindDuplexPacketData:
@@ -336,13 +336,13 @@ func (t *TSCC) udtRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSCCOu
 		return t.refuse(src, enums.AckReasonNoregMSAwayRefused, out), true
 	}
 	op := udtOp{caller: src, called: target, until: now + constants.TNPTimerDefault, svc: kind, opts: r.ServiceOptions}
-	a := pdu.AhoyPDU{ServiceKind: uint8(kind), TargetAddress: src, SourceAddress: constants.GatewaySDMI, AppendedBlocks: blocks - 1}
+	a := pdu.AhoyPDU{ServiceKind: uint8(kind), TargetAddress: src, SourceAddress: constants.GatewaySDMI, UAB: blocks - 1}
 	switch kind {
 	case enums.ServiceKindIndividualShortData:
 		op.kind = opShortData
 	case enums.ServiceKindShortDataPolling:
 		op.kind, op.stage = opPoll, stAck
-		a = pdu.AhoyPDU{ServiceOptsMirror: r.ServiceOptions, AppendedBlocks: blocks - 1, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: src}
+		a = pdu.AhoyPDU{ServiceOptsMirror: r.ServiceOptions, UAB: blocks - 1, ServiceKind: uint8(kind), TargetAddress: target, SourceAddress: src}
 	default:
 		op.kind, op.stage, op.until = opDuplex, stAck, now+t.cfg.AnswerTimeout
 		op.emerg = r.ServiceOptions&0b1000000 != 0

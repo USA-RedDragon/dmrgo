@@ -24,14 +24,14 @@ type ShortLCActivityUpdate struct {
 // ShortLCCSysParms is the C_SYS_Parms Short LC payload. NetID, SiteID and
 // SysCode split NetSiteRaw by MODEL. (ETSI TS 102 361-4 clause 7.1.2.1)
 type ShortLCCSysParms struct {
-	MODEL             uint8  `dmr:"bits:0-1"`   // network model (NetworkModel)
-	NetSiteRaw        uint16 `dmr:"bits:2-13"`  // NET and SITE, split by MODEL
-	Reg               bool   `dmr:"bit:14"`     // true when the TSCC requires the MS to register
-	CommonSlotCounter uint16 `dmr:"bits:15-23"` // 9-bit Common_Slot_Counter
+	Model             NetworkModel `dmr:"bits:0-1"`   // network model (MODEL)
+	NetSiteRaw        uint16       `dmr:"bits:2-13"`  // NET and SITE, split by MODEL
+	Reg               bool         `dmr:"bit:14"`     // true when the TSCC requires the MS to register
+	CommonSlotCounter uint16       `dmr:"bits:15-23"` // 9-bit Common_Slot_Counter
 }
 
 // ETSI TS 102 361-4 Table 6.5
-func netSiteBits(model uint8) int {
+func netSiteBits(model NetworkModel) int {
 	switch model {
 	case 0:
 		return 9
@@ -53,10 +53,10 @@ func (s *ShortLCCSysParms) NetID() (uint16, error) {
 	if s == nil {
 		return 0, dmrgo.ErrNilReceiver
 	}
-	if err := checkNetSite(s.MODEL, s.NetSiteRaw, errShortLCCSysParmsMODELRange, errShortLCCSysParmsNetSiteRawRange); err != nil {
+	if err := checkNetSite(s.Model, s.NetSiteRaw, errShortLCCSysParmsModelRange, errShortLCCSysParmsNetSiteRawRange); err != nil {
 		return 0, err
 	}
-	return netID(s.MODEL, s.NetSiteRaw), nil
+	return netID(s.Model, s.NetSiteRaw), nil
 }
 
 // SiteID returns the site ID based on the MODEL field: Tiny 3 bits, Small 5
@@ -66,27 +66,27 @@ func (s *ShortLCCSysParms) SiteID() (uint16, error) {
 	if s == nil {
 		return 0, dmrgo.ErrNilReceiver
 	}
-	if err := checkNetSite(s.MODEL, s.NetSiteRaw, errShortLCCSysParmsMODELRange, errShortLCCSysParmsNetSiteRawRange); err != nil {
+	if err := checkNetSite(s.Model, s.NetSiteRaw, errShortLCCSysParmsModelRange, errShortLCCSysParmsNetSiteRawRange); err != nil {
 		return 0, err
 	}
-	return siteID(s.MODEL, s.NetSiteRaw), nil
+	return siteID(s.Model, s.NetSiteRaw), nil
 }
 
-func netID(model uint8, netSite uint16) uint16 {
+func netID(model NetworkModel, netSite uint16) uint16 {
 	return netSite >> (netSiteLen - netSiteBits(model))
 }
 
-func siteID(model uint8, netSite uint16) uint16 {
+func siteID(model NetworkModel, netSite uint16) uint16 {
 	return netSite & (1<<(netSiteLen-netSiteBits(model)) - 1)
 }
 
 // ShortLCPSysParms is the P_SYS_Parms Short LC payload. NetID, SiteID and
 // SysCode split NetSiteRaw by MODEL. (ETSI TS 102 361-4 clause 7.1.2.2)
 type ShortLCPSysParms struct {
-	MODEL              uint8  `dmr:"bits:0-1"`   // network model (NetworkModel)
-	NetSiteRaw         uint16 `dmr:"bits:2-13"`  // NET and SITE, split by MODEL
-	PayloadChannelType bool   `dmr:"bit:14"`     // true when the payload channel is a composite control channel
-	CommonSlotCounter  uint16 `dmr:"bits:15-23"` // 9-bit Common_Slot_Counter
+	Model              NetworkModel `dmr:"bits:0-1"`   // network model (MODEL)
+	NetSiteRaw         uint16       `dmr:"bits:2-13"`  // NET and SITE, split by MODEL
+	PayloadChannelType bool         `dmr:"bit:14"`     // true when the payload channel is a composite control channel
+	CommonSlotCounter  uint16       `dmr:"bits:15-23"` // 9-bit Common_Slot_Counter
 }
 
 // NetID returns the network ID based on the MODEL field
@@ -95,10 +95,10 @@ func (s *ShortLCPSysParms) NetID() (uint16, error) {
 	if s == nil {
 		return 0, dmrgo.ErrNilReceiver
 	}
-	if err := checkNetSite(s.MODEL, s.NetSiteRaw, errShortLCPSysParmsMODELRange, errShortLCPSysParmsNetSiteRawRange); err != nil {
+	if err := checkNetSite(s.Model, s.NetSiteRaw, errShortLCPSysParmsModelRange, errShortLCPSysParmsNetSiteRawRange); err != nil {
 		return 0, err
 	}
-	return netID(s.MODEL, s.NetSiteRaw), nil
+	return netID(s.Model, s.NetSiteRaw), nil
 }
 
 // SiteID returns the site ID based on the MODEL field
@@ -107,10 +107,10 @@ func (s *ShortLCPSysParms) SiteID() (uint16, error) {
 	if s == nil {
 		return 0, dmrgo.ErrNilReceiver
 	}
-	if err := checkNetSite(s.MODEL, s.NetSiteRaw, errShortLCPSysParmsMODELRange, errShortLCPSysParmsNetSiteRawRange); err != nil {
+	if err := checkNetSite(s.Model, s.NetSiteRaw, errShortLCPSysParmsModelRange, errShortLCPSysParmsNetSiteRawRange); err != nil {
 		return 0, err
 	}
-	return siteID(s.MODEL, s.NetSiteRaw), nil
+	return siteID(s.Model, s.NetSiteRaw), nil
 }
 
 // ShortLC is the Short Link Control (Short LC) PDU. SLCO selects the view

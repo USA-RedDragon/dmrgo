@@ -146,7 +146,7 @@ type FLCGPSInfo struct {
 // (Talker_Alias_HDR) Full LC payload (ETSI TS 102 361-2 clause 7.1.1.4, Table 7.4).
 type FLCTalkerAliasHeader struct {
 	TalkerAliasDataFormat layer3.TalkerAliasDataFormat `dmr:"bits:0-1,delegate,noptr"` // Talker alias data format
-	TalkerAliasDataLength int                          `dmr:"bits:2-6"`                // alias length in Code Units
+	TalkerAliasDataLength uint8                        `dmr:"bits:2-6"`                // alias length in Code Units
 	// TalkerAliasData is the 49-bit Talker alias data IE. The 7-bit format
 	// uses all 49 bits; the other formats leave the most significant bit
 	// unused.
@@ -164,7 +164,7 @@ type FLCTalkerAliasBlock struct {
 type FLCTerminatorDataLinkControl struct {
 	LLIDDestination    uint32 `dmr:"bits:0-23"`  // destination LLID
 	LLIDSource         uint32 `dmr:"bits:24-47"` // source LLID
-	GroupOrIndividual  bool   `dmr:"bit:48"`     // true when LLIDDestination is a group
+	Group              bool   `dmr:"bit:48"`     // true when LLIDDestination is a group
 	ResponseRequested  bool   `dmr:"bit:49"`     // Response Requested (A)
 	FullMessageFlag    bool   `dmr:"bit:50"`     // Full Message Flag (F)
 	Reserved           bool   `dmr:"bit:51"`     // reserved

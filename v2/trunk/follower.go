@@ -531,7 +531,7 @@ func (f *Follower) clears(p *pdu.ClearPDU) bool {
 	if p.TargetAddress == constants.GatewayALLMSI || p.TargetAddress == constants.AllMSID {
 		return true
 	}
-	if p.GroupIndividual {
+	if p.Group {
 		return f.call.Group && p.TargetAddress == f.call.Target
 	}
 	return !f.call.Group && (p.TargetAddress == f.call.Target || p.TargetAddress == f.call.Source)

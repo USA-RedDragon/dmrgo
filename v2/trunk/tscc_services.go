@@ -490,7 +490,7 @@ func (t *TSCC) statusRandom(now time.Duration, r *pdu.RandomAccessPDU, out []TSC
 }
 
 func (t *TSCC) statusAhoy(group bool, target, source uint32, st Status, opts uint8) {
-	a := pdu.AhoyPDU{ServiceOptsMirror: opts&0x60 | uint8(st)>>2, GroupIndividual: group, AppendedBlocks: uint8(st) & 3,
+	a := pdu.AhoyPDU{ServiceOptsMirror: opts&0x60 | uint8(st)>>2, Group: group, UAB: uint8(st) & 3,
 		ServiceKind: uint8(enums.ServiceKindStatusTransport), TargetAddress: target, SourceAddress: source}
 	if group {
 		for range statusSends {
@@ -760,7 +760,7 @@ func (t *TSCC) ipAdvice(now time.Duration, r *pdu.RandomAccessPDU, o *layer3.Reg
 		return t.refuseFrom(src, enums.AckReasonIPConnectionFailed, constants.GatewayIPI, out)
 	}
 	t.svc.ip[free] = ipOp{used: true, addr: src, remove: !o.Register, offset: off, until: now + t.cfg.AnswerTimeout}
-	t.sendAhoy(pdu.AhoyPDU{ServiceOptsMirror: r.ServiceOptions, AppendedBlocks: 1, ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: src, SourceAddress: constants.GatewayIPI}, 0, true)
+	t.sendAhoy(pdu.AhoyPDU{ServiceOptsMirror: r.ServiceOptions, UAB: 1, ServiceKind: uint8(enums.ServiceKindRegistration), TargetAddress: src, SourceAddress: constants.GatewayIPI}, 0, true)
 	return out
 }
 
@@ -827,7 +827,7 @@ func (t *TSCC) suplStart(now time.Duration, r *pdu.RandomAccessPDU) bool {
 		return false
 	}
 	t.svc.supl[free] = suplOp{used: true, rand: *r, until: now + t.cfg.AnswerTimeout}
-	t.sendAhoy(pdu.AhoyPDU{AppendedBlocks: r.Reserved >> 2, ServiceKind: r.ServiceKind, TargetAddress: r.SourceAddress, SourceAddress: constants.GatewaySUPLI}, 0, true)
+	t.sendAhoy(pdu.AhoyPDU{UAB: r.Reserved >> 2, ServiceKind: r.ServiceKind, TargetAddress: r.SourceAddress, SourceAddress: constants.GatewaySUPLI}, 0, true)
 	return true
 }
 

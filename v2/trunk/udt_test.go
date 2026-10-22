@@ -80,11 +80,11 @@ func TestFollower_ClearToAnotherTSCC(t *testing.T) {
 	out = f.Burst(2*slot, &g, layer2.Hint{}, nil, out[:0])
 	wantKinds(t, "TV_GRANT", out, trunk.OutputGrant, trunk.OutputTune)
 	other := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetClear, pdu.ClearPDU{
-		PhysicalChannel: 33, GroupIndividual: true, TargetAddress: 10, SourceAddress: 1}), testCC)
+		PhysicalChannel: 33, Group: true, TargetAddress: 10, SourceAddress: 1}), testCC)
 	out = f.Burst(3*slot, &other, layer2.Hint{}, nil, out[:0])
 	wantKinds(t, "P_CLEAR for another call", out)
 	cl := bsBurst(t, withPDU(t, &pdu.CSBK{LastBlock: true}, (*pdu.CSBK).SetClear, pdu.ClearPDU{
-		PhysicalChannel: 33, GroupIndividual: true, TargetAddress: 9, SourceAddress: 1}), testCC)
+		PhysicalChannel: 33, Group: true, TargetAddress: 9, SourceAddress: 1}), testCC)
 	out = f.Burst(4*slot, &cl, layer2.Hint{}, nil, out[:0])
 	wantKinds(t, "P_CLEAR to channel 33", out, trunk.OutputCallEnd, trunk.OutputTune)
 	if out[1].Tune.Channel != 33 || f.State() != trunk.StateHunting {

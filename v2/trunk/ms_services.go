@@ -345,15 +345,15 @@ func (m *MS) svcCSBK(now time.Duration, c *pdu.CSBK, h *layer2.Hint, out []Outpu
 
 func (m *MS) svcAhoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Output) ([]Output, bool) {
 	s := &m.svc
-	if !m.member(a.GroupIndividual, a.TargetAddress) || a.SourceAddress == m.addr {
+	if !m.member(a.Group, a.TargetAddress) || a.SourceAddress == m.addr {
 		return out, false
 	}
 	s.awakeEnd, s.asleep = now+s.awake, false
 	kind := enums.ServiceKind(a.ServiceKind)
 	switch {
-	case !a.GroupIndividual && (a.SourceAddress == constants.GatewaySTUNI || a.SourceAddress == constants.GatewayKILLI) && kind == enums.ServiceKindSupplementary:
+	case !a.Group && (a.SourceAddress == constants.GatewaySTUNI || a.SourceAddress == constants.GatewayKILLI) && kind == enums.ServiceKindSupplementary:
 		return m.stunAhoy(now, a, h, out), true
-	case !a.GroupIndividual && a.SourceAddress == constants.GatewayIPI:
+	case !a.Group && a.SourceAddress == constants.GatewayIPI:
 		if m.req != reqIP {
 			return out, true
 		}
@@ -364,12 +364,12 @@ func (m *MS) svcAhoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Ou
 			n = 16
 		}
 		return m.svcUpload(now, m.replySlot(h), constants.GatewayIPI, 6, s.ip[:n], out), true
-	case !a.GroupIndividual && a.SourceAddress == constants.GatewaySUPLI:
+	case !a.Group && a.SourceAddress == constants.GatewaySUPLI:
 		if m.req != reqCall && m.req != reqStatus || s.suplLen == 0 {
 			return out, true
 		}
 		m.ra, m.waitAnswer, m.reqUntil = raIdle, true, now+m.answerTO()
-		n := min(s.suplLen, (int(a.AppendedBlocks)+1)*12-2)
+		n := min(s.suplLen, (int(a.UAB)+1)*12-2)
 		out = m.svcUpload(now, m.replySlot(h), constants.GatewaySUPLI, s.suplFmt, s.supl[:n], out)
 		s.suplLen = 0
 		return out, true
@@ -393,14 +393,14 @@ func (m *MS) replySlot(h *layer2.Hint) enums.Slot {
 
 func (m *MS) statusAhoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Output) []Output {
 	s := &m.svc
-	st := Status(a.ServiceOptsMirror&0x1F)<<2 | Status(a.AppendedBlocks)
-	g := Grant{Service: enums.ServiceKindStatusTransport, Group: a.GroupIndividual, Target: a.TargetAddress, Source: a.SourceAddress}
+	st := Status(a.ServiceOptsMirror&0x1F)<<2 | Status(a.UAB)
+	g := Grant{Service: enums.ServiceKindStatusTransport, Group: a.Group, Target: a.TargetAddress, Source: a.SourceAddress}
 	repeat := s.hasStat && now-s.lastStatAt < statusHold && s.lastStatV == st && s.lastStat.Target == g.Target && s.lastStat.Source == g.Source
 	s.lastStat, s.lastStatV, s.lastStatAt, s.hasStat = g, st, now, true
 	if !repeat {
 		out = append(out, Output{Kind: OutputStatus, Status: st, Grant: g})
 	}
-	if a.GroupIndividual {
+	if a.Group {
 		return out
 	}
 	ack := pdu.AckInboundPDU{ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: a.SourceAddress, AdditionalInfo: m.addr}

@@ -13,13 +13,13 @@ func csbkGroup(c *pdu.CSBK) (group, ok bool) {
 		return p.Group, true
 	}
 	if p, ok := c.AsClear(); ok {
-		return p.GroupIndividual, true
+		return p.Group, true
 	}
 	if p, ok := c.AsProtect(); ok {
-		return p.GroupIndividual, true
+		return p.Group, true
 	}
 	if p, ok := c.AsAhoy(); ok {
-		return p.GroupIndividual, true
+		return p.Group, true
 	}
 	return false, false
 }
@@ -29,13 +29,13 @@ func setCSBKGroup(c *pdu.CSBK, group bool) {
 		p.Group = group
 		noErr(c.SetPreamble(p))
 	} else if p, ok := c.AsClear(); ok {
-		p.GroupIndividual = group
+		p.Group = group
 		noErr(c.SetClear(p))
 	} else if p, ok := c.AsProtect(); ok {
-		p.GroupIndividual = group
+		p.Group = group
 		noErr(c.SetProtect(p))
 	} else if p, ok := c.AsAhoy(); ok {
-		p.GroupIndividual = group
+		p.Group = group
 		noErr(c.SetAhoy(p))
 	}
 }

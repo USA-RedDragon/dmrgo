@@ -126,9 +126,9 @@ func TestSysCode_ShortLCGettersRejectOutOfRange(t *testing.T) {
 		bits             int
 		get              func() (pdu.SysCode, error)
 	}{
-		{"C MODEL", "ShortLCCSysParms", "MODEL", 2, (&pdu.ShortLCCSysParms{MODEL: 4}).SysCode},
+		{"C MODEL", "ShortLCCSysParms", "Model", 2, (&pdu.ShortLCCSysParms{Model: 4}).SysCode},
 		{"C NetSiteRaw", "ShortLCCSysParms", "NetSiteRaw", 12, (&pdu.ShortLCCSysParms{NetSiteRaw: 0x1000}).SysCode},
-		{"P MODEL", "ShortLCPSysParms", "MODEL", 2, (&pdu.ShortLCPSysParms{MODEL: 4}).SysCode},
+		{"P MODEL", "ShortLCPSysParms", "Model", 2, (&pdu.ShortLCPSysParms{Model: 4}).SysCode},
 		{"P NetSiteRaw", "ShortLCPSysParms", "NetSiteRaw", 12, (&pdu.ShortLCPSysParms{NetSiteRaw: 0x1000}).SysCode},
 	} {
 		if _, err := tt.get(); !isRangeError(err, tt.typ, tt.field, tt.bits) {
@@ -144,10 +144,10 @@ func TestSysCode_NetSiteGettersRejectOutOfRange(t *testing.T) {
 		bits             int
 		get              func() (uint16, error)
 	}{
-		{"C NetID MODEL", "ShortLCCSysParms", "MODEL", 2, (&pdu.ShortLCCSysParms{MODEL: 4}).NetID},
+		{"C NetID MODEL", "ShortLCCSysParms", "Model", 2, (&pdu.ShortLCCSysParms{Model: 4}).NetID},
 		{"C SiteID NetSiteRaw", "ShortLCCSysParms", "NetSiteRaw", 12, (&pdu.ShortLCCSysParms{NetSiteRaw: 0x1FFF}).SiteID},
 		{"P NetID NetSiteRaw", "ShortLCPSysParms", "NetSiteRaw", 12, (&pdu.ShortLCPSysParms{NetSiteRaw: 0x1FFF}).NetID},
-		{"P SiteID MODEL", "ShortLCPSysParms", "MODEL", 2, (&pdu.ShortLCPSysParms{MODEL: 7}).SiteID},
+		{"P SiteID MODEL", "ShortLCPSysParms", "Model", 2, (&pdu.ShortLCPSysParms{Model: 7}).SiteID},
 	} {
 		if _, err := tt.get(); !isRangeError(err, tt.typ, tt.field, tt.bits) {
 			t.Errorf("%s: %v, want the FieldRangeError of %s.%s", tt.name, err, tt.typ, tt.field)

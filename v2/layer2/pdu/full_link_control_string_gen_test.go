@@ -81,7 +81,7 @@ func TestFLCTalkerAliasBlockStringMatchesFmt(t *testing.T) {
 }
 
 func (s *FLCTerminatorDataLinkControl) fmtString() string {
-	return fmt.Sprintf("FLCTerminatorDataLinkControl{ LLIDDestination: %d, LLIDSource: %d, GroupOrIndividual: %t, ResponseRequested: %t, FullMessageFlag: %t, Reserved: %t, ReSynchronizeFlag: %t, SendSequenceNumber: %d }", s.LLIDDestination, s.LLIDSource, s.GroupOrIndividual, s.ResponseRequested, s.FullMessageFlag, s.Reserved, s.ReSynchronizeFlag, s.SendSequenceNumber)
+	return fmt.Sprintf("FLCTerminatorDataLinkControl{ LLIDDestination: %d, LLIDSource: %d, Group: %t, ResponseRequested: %t, FullMessageFlag: %t, Reserved: %t, ReSynchronizeFlag: %t, SendSequenceNumber: %d }", s.LLIDDestination, s.LLIDSource, s.Group, s.ResponseRequested, s.FullMessageFlag, s.Reserved, s.ReSynchronizeFlag, s.SendSequenceNumber)
 }
 
 func TestFLCTerminatorDataLinkControlStringMatchesFmt(t *testing.T) {

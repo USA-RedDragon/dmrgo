@@ -360,7 +360,7 @@ func (m *MS) staleAck(from uint32) bool {
 }
 
 func (m *MS) ahoyAny(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Output) []Output {
-	if a.GroupIndividual || a.TargetAddress != m.addr {
+	if a.Group || a.TargetAddress != m.addr {
 		return m.ahoy(now, a, h, out)
 	}
 	slot := h.Slot

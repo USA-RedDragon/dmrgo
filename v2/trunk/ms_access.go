@@ -189,7 +189,7 @@ type authChallenge struct {
 }
 
 func (m *MS) isChallenge(a *pdu.AhoyPDU) bool {
-	return enums.ServiceKind(a.ServiceKind) == enums.ServiceKindRegistration && !a.ServiceKindFlag && !a.GroupIndividual &&
+	return enums.ServiceKind(a.ServiceKind) == enums.ServiceKindRegistration && !a.ServiceKindFlag && !a.Group &&
 		a.TargetAddress == m.addr && a.SourceAddress <= maxChallenge
 }
 
@@ -237,13 +237,13 @@ func (m *MS) ahoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Outpu
 	if m.isChallenge(a) {
 		return m.challenged(now, a.SourceAddress, slot, false, out)
 	}
-	if !m.member(a.GroupIndividual, a.TargetAddress) || m.req != reqNone {
+	if !m.member(a.Group, a.TargetAddress) || m.req != reqNone {
 		return out
 	}
 	kind := enums.ServiceKind(a.ServiceKind)
 	switch kind {
 	case enums.ServiceKindIndividualVoice:
-		if a.GroupIndividual {
+		if a.Group {
 			return out
 		}
 		m.pending, m.pendingEnd = true, now+m.pendingTO
@@ -251,7 +251,7 @@ func (m *MS) ahoy(now time.Duration, a *pdu.AhoyPDU, h *layer2.Hint, out []Outpu
 	default:
 		return out
 	}
-	out = append(out, Output{Kind: OutputAhoy, Grant: Grant{Service: kind, Group: a.GroupIndividual, Target: a.TargetAddress, Source: a.SourceAddress}})
+	out = append(out, Output{Kind: OutputAhoy, Grant: Grant{Service: kind, Group: a.Group, Target: a.TargetAddress, Source: a.SourceAddress}})
 	return m.sendAck(now+frame, slot, pdu.AckInboundPDU{ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: a.SourceAddress, AdditionalInfo: m.addr}, out)
 }
 
@@ -273,7 +273,7 @@ func (m *MS) payload(now time.Duration, h *layer2.Hint, out []Output) []Output {
 			}
 			return out
 		}
-		if p.GroupIndividual && g.Group && p.TargetAddress == g.Target || !p.GroupIndividual && p.TargetAddress == m.addr ||
+		if p.Group && g.Group && p.TargetAddress == g.Target || !p.Group && p.TargetAddress == m.addr ||
 			kind == enums.ProtectEnablePTTOneMS {
 			return append(out, Output{Kind: OutputProtect, Protect: kind, Grant: *g})
 		}
@@ -283,8 +283,8 @@ func (m *MS) payload(now time.Duration, h *layer2.Hint, out []Output) []Output {
 	switch {
 	case ok && m.isChallenge(&a):
 		return m.challenged(now, a.SourceAddress, g.Slot, true, out)
-	case ok && enums.ServiceKind(a.ServiceKind) == enums.ServiceKindRegistration && m.member(a.GroupIndividual, a.TargetAddress):
-		out = append(out, Output{Kind: OutputAhoy, Grant: Grant{Service: enums.ServiceKindRegistration, Group: a.GroupIndividual, Target: a.TargetAddress, Source: a.SourceAddress}})
+	case ok && enums.ServiceKind(a.ServiceKind) == enums.ServiceKindRegistration && m.member(a.Group, a.TargetAddress):
+		out = append(out, Output{Kind: OutputAhoy, Grant: Grant{Service: enums.ServiceKindRegistration, Group: a.Group, Target: a.TargetAddress, Source: a.SourceAddress}})
 		m.tx = pdu.CSBK{LastBlock: true}
 		err := m.tx.SetAckInboundPayload(pdu.AckInboundPayloadPDU{ReasonCode: byte(enums.AckReasonMSAccepted), TargetAddress: a.SourceAddress, AdditionalInfo: m.addr})
 		return m.send(err, now+frame, g.Slot, out)
