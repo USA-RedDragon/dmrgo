@@ -11,8 +11,10 @@
 // events. A slice with capacity MaxOutputs never grows, and after the
 // constructor no method allocates or panics. Deadline tells when a
 // machine needs a Tick. An OutputSend packet points into the machine and
-// is valid until the next call of the machine; an OutputData packet points
-// into the packet that the caller passed in.
+// is valid until the next call of the machine. The packet of OutputConfig,
+// OutputOptions, OutputData and OutputMessage is not a copy: it points
+// into the packet that the caller passed in, and is valid only until the
+// caller reuses that packet.
 //
 // The Peer follows DMRGateway: it sends RPTL, RPTK with the SHA-256 token
 // of the salt and the password, RPTC and, when it has options, RPTO, each

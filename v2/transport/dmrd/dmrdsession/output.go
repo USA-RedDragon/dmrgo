@@ -195,7 +195,11 @@ const (
 )
 
 // Output is one result of a Peer, Master or Bridge. Fields that do not
-// apply to Kind are zero.
+// apply to Kind are zero. The Packet of OutputSend points into the machine
+// and is valid until the next call of the machine. The Packet of
+// OutputConfig, OutputOptions, OutputData and OutputMessage is not a copy:
+// it points into the packet that the caller passed in, and is valid only
+// until the caller reuses that packet.
 type Output struct {
 	// Kind is the kind of the output.
 	Kind OutputKind

@@ -149,8 +149,9 @@ func (b *BridgeKey) SignInPlace(p []byte) error {
 // Verify reports whether the OpenBridge packet p carries the signature of
 // the key, as SignInPlace would write it, and then returns p without its
 // signature. It reports false, with a nil body, otherwise and for a nil b.
-// It returns at most len(p) octets. It compares the signature in constant time,
-// and does not allocate.
+// It returns at most len(p) octets. The body is a sub-slice of p, not a
+// copy, so it changes when p changes. It compares the signature in
+// constant time, and does not allocate.
 func (b *BridgeKey) Verify(p []byte) (body []byte, ok bool) {
 	if b == nil {
 		return nil, false

@@ -80,7 +80,8 @@ func (k *Key) Sign(dst []byte) ([]byte, error) {
 // Verify reports whether the last TrailerLen octets of p are the trailer of
 // the rest, and then returns the rest of p, the packet without its trailer.
 // It reports false, with a nil body, otherwise and for a nil k. It returns
-// at most len(p) octets. It compares the trailer in constant time and
+// at most len(p) octets. The body is a sub-slice of p, not a copy, so it
+// changes when p changes. It compares the trailer in constant time and
 // does not allocate.
 func (k *Key) Verify(p []byte) (body []byte, ok bool) {
 	if k == nil || len(p) < TrailerLen {
