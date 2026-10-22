@@ -279,6 +279,13 @@ func (g *gen) mapPtrParam(sm *sigmap, n string, e types.Type, dst bool) error {
 		sm.args = append(sm.args, "p_"+n)
 		return nil
 	}
+	if eff.any() && sm.fn != nil && g.l.overwrites(sm.fn, sm.pidx) {
+		sm.cps = append(sm.cps, d)
+		lines(&sm.pre, "if "+cn+" != nil {", "p_"+n+" = &"+a, "}")
+		sm.args = append(sm.args, "p_"+n)
+		sm.notes = append(sm.notes, " The call sets all of *"+n+" and does not read it.")
+		return g.writeBack(sm, e, &effect{all: true}, cn, a, true)
+	}
 	if eff.any() {
 		sm.cps = append(sm.cps, d)
 	} else {
@@ -694,6 +701,13 @@ func (g *gen) mapRecv(sm *sigmap, recv *tinfo, rk recvKind, call string) (string
 		if st != "" {
 			lines(&sm.pre, "var xs "+st)
 			sv = "xs"
+		}
+		if eff != nil && eff.any() && !g.isSized(recv.named) && g.l.overwrites(g.curFn, -1) {
+			sm.notes = append(sm.notes, " The call sets all of *self and does not read it.")
+			if err := g.writeBack(sm, recv.named, &effect{all: true}, "c_self", "x", false); err != nil {
+				return "", err
+			}
+			return "x." + call, nil
 		}
 		if err := g.inVal(&sm.pre, recv.named, "x", g.sizedSrc(&sm.pre, recv.named, "c_self", "(*c_self)"), sv, 0); err != nil {
 			return "", err

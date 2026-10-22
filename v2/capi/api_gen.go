@@ -3589,82 +3589,6 @@ func in_mototrbo_ars_Message(s *C.dmrgo_ars_message_t) (d g_mototrbo_ars.Message
 	return
 }
 
-func in_mototrbo_lrrp_Request(s *C.dmrgo_lrrp_request_t) (d g_mototrbo_lrrp.Request) {
-	d.RequestID = cSlice[byte](unsafe.Pointer(s.request_id), s.request_id_len)
-	d.HasRequestID = bool(s.has_request_id)
-	d.ShortRequestID = uint8(s.short_request_id)
-	d.HasShortRequestID = bool(s.has_short_request_id)
-	d.Periodic = bool(s.periodic)
-	d.OneShot = bool(s.one_shot)
-	d.Interval = uint32(s.interval)
-	d.HasInterval = bool(s.has_interval)
-	d.Distance = uint32(s.distance)
-	d.HasDistance = bool(s.has_distance)
-	d.TriggerCondition = uint32(s.trigger_condition)
-	d.HasTriggerCondition = bool(s.has_trigger_condition)
-	d.ProtocolVersion = uint32(s.protocol_version)
-	d.HasProtocolVersion = bool(s.has_protocol_version)
-	d.Accuracy = bool(s.accuracy)
-	d.AccuracyAndTime = bool(s.accuracy_and_time)
-	d.Time = bool(s.time)
-	d.Altitude = bool(s.altitude)
-	d.Speed = bool(s.speed)
-	d.Direction = bool(s.direction)
-	d.VerticalSpeed = bool(s.vertical_speed)
-	d.LevelOfConfidence = uint8(s.level_of_confidence)
-	d.HasLevelOfConfidence = bool(s.has_level_of_confidence)
-	return
-}
-
-func in_mototrbo_lrrp_OperationError(s *C.dmrgo_lrrp_operation_error_t) (d g_mototrbo_lrrp.OperationError) {
-	d.Code = uint32(s.code)
-	d.Info = cSlice[byte](unsafe.Pointer(s.info), s.info_len)
-	return
-}
-
-func in_mototrbo_lrrp_Report(s *C.dmrgo_lrrp_report_t) (d g_mototrbo_lrrp.Report) {
-	d.RequestID = cSlice[byte](unsafe.Pointer(s.request_id), s.request_id_len)
-	d.HasRequestID = bool(s.has_request_id)
-	d.ShortRequestID = uint8(s.short_request_id)
-	d.HasShortRequestID = bool(s.has_short_request_id)
-	d.Time = *(*g_mototrbo_lrrp.Time)(unsafe.Pointer(&s.time))
-	d.HasTime = bool(s.has_time)
-	d.ProtocolVersion = uint32(s.protocol_version)
-	d.HasProtocolVersion = bool(s.has_protocol_version)
-	d.Result = uint32(s.result)
-	d.HasResult = bool(s.has_result)
-	d.Success = bool(s.success)
-	d.Error = in_mototrbo_lrrp_OperationError(&s.error)
-	d.HasError = bool(s.has_error)
-	d.Circle2D = *(*g_mototrbo_lrrp.Circle2D)(unsafe.Pointer(&s.circle2d))
-	d.HasCircle2D = bool(s.has_circle2d)
-	d.Circle3D = *(*g_mototrbo_lrrp.Circle3D)(unsafe.Pointer(&s.circle3d))
-	d.HasCircle3D = bool(s.has_circle3d)
-	d.Direction = uint8(s.direction)
-	d.HasDirection = bool(s.has_direction)
-	d.LevelOfConfidence = uint8(s.level_of_confidence)
-	d.HasLevelOfConfidence = bool(s.has_level_of_confidence)
-	d.Point2D = *(*g_mototrbo_lrrp.Point2D)(unsafe.Pointer(&s.point2d))
-	d.HasPoint2D = bool(s.has_point2d)
-	d.Point3D = *(*g_mototrbo_lrrp.Point3D)(unsafe.Pointer(&s.point3d))
-	d.HasPoint3D = bool(s.has_point3d)
-	d.Point3DAccuracy = *(*g_mototrbo_lrrp.Point3DAccuracy)(unsafe.Pointer(&s.point3d_accuracy))
-	d.HasPoint3DAccuracy = bool(s.has_point3d_accuracy)
-	d.Speed = float64(s.speed)
-	d.HasSpeed = bool(s.has_speed)
-	d.VerticalSpeed = float64(s.vertical_speed)
-	d.HasVerticalSpeed = bool(s.has_vertical_speed)
-	return
-}
-
-func in_mototrbo_lrrp_Message(s *C.dmrgo_lrrp_message_t) (d g_mototrbo_lrrp.Message) {
-	d.Document = g_mototrbo_lrrp.DocumentID(s.document)
-	d.Length = uint32(s.length)
-	d.Request = in_mototrbo_lrrp_Request(&s.request)
-	d.Report = in_mototrbo_lrrp_Report(&s.report)
-	return
-}
-
 func out_mototrbo_lrrp_Request(d *C.dmrgo_lrrp_request_t, s *g_mototrbo_lrrp.Request, oc *outc) {
 	_ = oc
 	d.request_id = (*C.uint8_t)(arenaCopy(oc, s.RequestID))
@@ -3742,6 +3666,82 @@ func out_mototrbo_lrrp_Message(d *C.dmrgo_lrrp_message_t, s *g_mototrbo_lrrp.Mes
 	d.length = C.uint32_t(s.Length)
 	out_mototrbo_lrrp_Request(&d.request, &s.Request, oc)
 	out_mototrbo_lrrp_Report(&d.report, &s.Report, oc)
+}
+
+func in_mototrbo_lrrp_Request(s *C.dmrgo_lrrp_request_t) (d g_mototrbo_lrrp.Request) {
+	d.RequestID = cSlice[byte](unsafe.Pointer(s.request_id), s.request_id_len)
+	d.HasRequestID = bool(s.has_request_id)
+	d.ShortRequestID = uint8(s.short_request_id)
+	d.HasShortRequestID = bool(s.has_short_request_id)
+	d.Periodic = bool(s.periodic)
+	d.OneShot = bool(s.one_shot)
+	d.Interval = uint32(s.interval)
+	d.HasInterval = bool(s.has_interval)
+	d.Distance = uint32(s.distance)
+	d.HasDistance = bool(s.has_distance)
+	d.TriggerCondition = uint32(s.trigger_condition)
+	d.HasTriggerCondition = bool(s.has_trigger_condition)
+	d.ProtocolVersion = uint32(s.protocol_version)
+	d.HasProtocolVersion = bool(s.has_protocol_version)
+	d.Accuracy = bool(s.accuracy)
+	d.AccuracyAndTime = bool(s.accuracy_and_time)
+	d.Time = bool(s.time)
+	d.Altitude = bool(s.altitude)
+	d.Speed = bool(s.speed)
+	d.Direction = bool(s.direction)
+	d.VerticalSpeed = bool(s.vertical_speed)
+	d.LevelOfConfidence = uint8(s.level_of_confidence)
+	d.HasLevelOfConfidence = bool(s.has_level_of_confidence)
+	return
+}
+
+func in_mototrbo_lrrp_OperationError(s *C.dmrgo_lrrp_operation_error_t) (d g_mototrbo_lrrp.OperationError) {
+	d.Code = uint32(s.code)
+	d.Info = cSlice[byte](unsafe.Pointer(s.info), s.info_len)
+	return
+}
+
+func in_mototrbo_lrrp_Report(s *C.dmrgo_lrrp_report_t) (d g_mototrbo_lrrp.Report) {
+	d.RequestID = cSlice[byte](unsafe.Pointer(s.request_id), s.request_id_len)
+	d.HasRequestID = bool(s.has_request_id)
+	d.ShortRequestID = uint8(s.short_request_id)
+	d.HasShortRequestID = bool(s.has_short_request_id)
+	d.Time = *(*g_mototrbo_lrrp.Time)(unsafe.Pointer(&s.time))
+	d.HasTime = bool(s.has_time)
+	d.ProtocolVersion = uint32(s.protocol_version)
+	d.HasProtocolVersion = bool(s.has_protocol_version)
+	d.Result = uint32(s.result)
+	d.HasResult = bool(s.has_result)
+	d.Success = bool(s.success)
+	d.Error = in_mototrbo_lrrp_OperationError(&s.error)
+	d.HasError = bool(s.has_error)
+	d.Circle2D = *(*g_mototrbo_lrrp.Circle2D)(unsafe.Pointer(&s.circle2d))
+	d.HasCircle2D = bool(s.has_circle2d)
+	d.Circle3D = *(*g_mototrbo_lrrp.Circle3D)(unsafe.Pointer(&s.circle3d))
+	d.HasCircle3D = bool(s.has_circle3d)
+	d.Direction = uint8(s.direction)
+	d.HasDirection = bool(s.has_direction)
+	d.LevelOfConfidence = uint8(s.level_of_confidence)
+	d.HasLevelOfConfidence = bool(s.has_level_of_confidence)
+	d.Point2D = *(*g_mototrbo_lrrp.Point2D)(unsafe.Pointer(&s.point2d))
+	d.HasPoint2D = bool(s.has_point2d)
+	d.Point3D = *(*g_mototrbo_lrrp.Point3D)(unsafe.Pointer(&s.point3d))
+	d.HasPoint3D = bool(s.has_point3d)
+	d.Point3DAccuracy = *(*g_mototrbo_lrrp.Point3DAccuracy)(unsafe.Pointer(&s.point3d_accuracy))
+	d.HasPoint3DAccuracy = bool(s.has_point3d_accuracy)
+	d.Speed = float64(s.speed)
+	d.HasSpeed = bool(s.has_speed)
+	d.VerticalSpeed = float64(s.vertical_speed)
+	d.HasVerticalSpeed = bool(s.has_vertical_speed)
+	return
+}
+
+func in_mototrbo_lrrp_Message(s *C.dmrgo_lrrp_message_t) (d g_mototrbo_lrrp.Message) {
+	d.Document = g_mototrbo_lrrp.DocumentID(s.document)
+	d.Length = uint32(s.length)
+	d.Request = in_mototrbo_lrrp_Request(&s.request)
+	d.Report = in_mototrbo_lrrp_Report(&s.report)
+	return
 }
 
 func out_mototrbo_tms_Header(d *C.dmrgo_tms_header_t, s *g_mototrbo_tms.Header, oc *outc) {
@@ -28543,7 +28543,6 @@ func dmrgo_pdu_sys_code_unpack(c_self *C.dmrgo_pdu_sys_code_t, c_v C.uint16_t) (
 		return fail(C.DMRGO_ERR_ARG)
 	}
 	var x g_layer2_pdu.SysCode
-	x = *(*g_layer2_pdu.SysCode)(unsafe.Pointer(&(*c_self)))
 	x.Unpack(uint16(c_v))
 	var ws_self C.dmrgo_pdu_sys_code_t
 	ws_self = *c_self
@@ -31151,7 +31150,6 @@ func dmrgo_lrrp_decode_message_into(c_m *C.dmrgo_lrrp_message_t, c_data *C.uint8
 	var a_m g_mototrbo_lrrp.Message
 	var p_m *g_mototrbo_lrrp.Message
 	if c_m != nil {
-		a_m = in_mototrbo_lrrp_Message(&(*c_m))
 		p_m = &a_m
 	}
 	if c_data == nil && c_data_len > 0 {

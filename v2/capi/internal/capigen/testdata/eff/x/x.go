@@ -70,3 +70,15 @@ func Into(m *M, data []byte) { m.Data = data }
 func Look(m *M) int { return Helper(m) }
 
 func Helper(m *M) int { return m.N }
+
+func DecodeInto(m *M, data []byte) {
+	if m == nil {
+		return
+	}
+	*m = M{Data: data}
+}
+
+func ReadFirst(m *M) {
+	n := m.N
+	*m = M{N: n + 1}
+}

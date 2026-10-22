@@ -9478,7 +9478,7 @@ int dmrgo_pdu_sys_code_net_site(const dmrgo_pdu_sys_code_t *self, uint16_t *out)
 int dmrgo_pdu_sys_code_pack(const dmrgo_pdu_sys_code_t *self, uint16_t *out);
 /* Go: pdu.SysCode.Pack14. Pack14 returns the 14 most significant bits of the C_SYScode, the form in the CACH Short LC. */
 int dmrgo_pdu_sys_code_pack14(const dmrgo_pdu_sys_code_t *self, uint16_t *out);
-/* Go: pdu.SysCode.Unpack. Unpack sets s to the fields of the 16-bit C_SYScode v. */
+/* Go: pdu.SysCode.Unpack. Unpack sets s to the fields of the 16-bit C_SYScode v. The call sets all of *self and does not read it. */
 int dmrgo_pdu_sys_code_unpack(dmrgo_pdu_sys_code_t *self, uint16_t v);
 /* Go: pdu.SysCode.Unpack14. Unpack14 sets s to the fields of the 14-bit CACH form v of a C_SYScode, with Par 0. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, when v does not fit in 14 bits. */
 int dmrgo_pdu_sys_code_unpack14(dmrgo_pdu_sys_code_t *self, uint16_t v);
@@ -9698,7 +9698,7 @@ int dmrgo_lrrp_circle2d_string(const dmrgo_lrrp_circle2d_t *self, char *out, siz
 int dmrgo_lrrp_circle3d_append_binary(const dmrgo_lrrp_circle3d_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: lrrp.Circle3D.String. String returns the fields of s as text, for printing. */
 int dmrgo_lrrp_circle3d_string(const dmrgo_lrrp_circle3d_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: lrrp.DecodeMessageInto. DecodeMessageInto decodes a Message from data. It returns DMRGO_ERR_LRRP_SHORT when data ends inside a field, DMRGO_ERR_LRRP_LENGTH when a length does not match the data and DMRGO_ERR_LRRP_VARINT for a number that does not fit its field. m may be NULL. */
+/* Go: lrrp.DecodeMessageInto. DecodeMessageInto decodes a Message from data. It returns DMRGO_ERR_LRRP_SHORT when data ends inside a field, DMRGO_ERR_LRRP_LENGTH when a length does not match the data and DMRGO_ERR_LRRP_VARINT for a number that does not fit its field. The call sets all of *m and does not read it. m may be NULL. */
 int dmrgo_lrrp_decode_message_into(dmrgo_lrrp_message_t *m, const uint8_t *data, size_t data_len, void *arena, size_t arena_cap, size_t *arena_len, size_t *arena_need);
 /* Go: lrrp.DocumentID.String. String returns the name of d. */
 int dmrgo_lrrp_document_id_string(dmrgo_lrrp_document_id_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
