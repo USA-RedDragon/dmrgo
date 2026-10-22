@@ -4469,6 +4469,7 @@ func in_voice_InterrupterConfig(s *C.dmrgo_voice_interrupter_config_t) (d g_voic
 	if s.scratch != nil {
 		d.Scratch = get_layer2_Burst(s.scratch).v
 	}
+	d.Slot = g_enums.Slot(s.slot)
 	return
 }
 
@@ -4511,6 +4512,7 @@ func in_voice_TransmitterConfig(s *C.dmrgo_voice_transmitter_config_t) (d g_voic
 	if s.scratch != nil {
 		d.Scratch = get_layer2_Burst(s.scratch).v
 	}
+	d.Slot = g_enums.Slot(s.slot)
 	return
 }
 
@@ -7369,6 +7371,7 @@ func out_voice_InterrupterConfig(d *C.dmrgo_voice_interrupter_config_t, s *g_voi
 		panic(argPanic{})
 	}
 	d.scratch = nil
+	d.slot = C.dmrgo_enums_slot_t(s.Slot)
 }
 
 func fromC_voice_InterrupterConfig(s *C.dmrgo_voice_interrupter_config_t) g_voice.InterrupterConfig {
@@ -7459,6 +7462,7 @@ func out_voice_TransmitterConfig(d *C.dmrgo_voice_transmitter_config_t, s *g_voi
 		panic(argPanic{})
 	}
 	d.scratch = nil
+	d.slot = C.dmrgo_enums_slot_t(s.Slot)
 }
 
 func fromC_voice_TransmitterConfig(s *C.dmrgo_voice_transmitter_config_t) g_voice.TransmitterConfig {

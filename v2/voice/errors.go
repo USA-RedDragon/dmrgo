@@ -29,6 +29,7 @@ var (
 
 var (
 	errColorCode   error = &dmrgo.ConfigError{Type: pkgName, Field: "ColorCode"}
+	errSlot        error = &dmrgo.ConfigError{Type: pkgName, Field: "Slot"}
 	errSource      error = &dmrgo.ConfigError{Type: pkgName, Field: "Source"}
 	errHeaders     error = &dmrgo.ConfigError{Type: pkgName, Field: "Headers"}
 	errTerminators error = &dmrgo.ConfigError{Type: pkgName, Field: "Terminators"}

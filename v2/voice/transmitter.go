@@ -44,6 +44,9 @@ const (
 type TransmitterConfig struct {
 	// ColorCode is the color code of the slot types and EMBs.
 	ColorCode enums.ColorCode
+	// Slot is the TDMA slot of the machine, which it puts in the Hint of
+	// each burst it sends. SlotUnknown leaves it unknown.
+	Slot enums.Slot
 	// Source selects the SYNC patterns: layer2.SyncSourceBS, the zero
 	// value, for a repeater outbound, layer2.SyncSourceMS for a radio.
 	Source layer2.SyncSource
@@ -180,7 +183,8 @@ type Output struct {
 	Due time.Duration
 	// Hint is what the burst is, for a transport: KindVoice with the
 	// superframe position, or KindData with the data type of a header, PI
-	// Header or terminator. Its Slot is SlotUnknown.
+	// Header or terminator, or KindReverseChannel. Its Slot is the Slot of
+	// the config.
 	Hint layer2.Hint
 	// Fill reports a voice burst with silence in place of voice that was
 	// not queued in time, or that pads the last superframe. The fills that
@@ -249,6 +253,7 @@ func (s TransmitterState) String() string {
 // Transmitter is not safe for concurrent use and must not be copied.
 type Transmitter struct {
 	cc          enums.ColorCode
+	slot        enums.Slot
 	source      layer2.SyncSource
 	silence     [9]byte
 	headers     int
@@ -327,7 +332,7 @@ func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 		conf = *cfg
 	}
 	cfg = &conf
-	t := &Transmitter{cc: cfg.ColorCode, source: cfg.Source, silence: cfg.Silence, headers: cfg.Headers,
+	t := &Transmitter{cc: cfg.ColorCode, slot: cfg.Slot, source: cfg.Source, silence: cfg.Silence, headers: cfg.Headers,
 		terminators: cfg.Terminators, timeout: cfg.Timeout, lead: cfg.Lead, access: cfg.Access,
 		idleSearch: cfg.IdleSearch, interrupt: cfg.Interruptible, chanAuth: cfg.ChanAuth, holdoffMax: cfg.HoldoffMax,
 		rng: pcg.NewStream(cfg.Seed, pcgStream), scratch: cfg.Scratch}
@@ -356,6 +361,8 @@ func NewTransmitter(cfg *TransmitterConfig) (*Transmitter, error) {
 	switch _, _, ok := cfg.Source.SyncPatterns(); {
 	case cfg.ColorCode > 15:
 		return nil, errColorCode
+	case cfg.Slot > enums.Slot2:
+		return nil, errSlot
 	case cfg.Access > enums.AccessImpolite:
 		return nil, errAccess
 	case cfg.ChanAuth < 0:
@@ -762,13 +769,13 @@ func (t *Transmitter) header(o *Output) {
 	switch {
 	case t.sent >= t.headers && t.piPending() && t.vopts.PIHeader != nil:
 		o.Burst, _ = t.vt.PIHeader()
-		o.Hint = dataHint(enums.DataTypePIHeader)
+		o.Hint = t.dataHint(enums.DataTypePIHeader)
 		t.piSent = true
 	case t.sent >= t.headers && t.piPending():
-		o.Burst, o.Hint = t.relayPI, dataHint(enums.DataTypePIHeader)
+		o.Burst, o.Hint = t.relayPI, t.dataHint(enums.DataTypePIHeader)
 		t.piSent = true
 	default:
-		o.Burst, o.Hint = t.vt.Header(), dataHint(enums.DataTypeVoiceLCHeader)
+		o.Burst, o.Hint = t.vt.Header(), t.dataHint(enums.DataTypeVoiceLCHeader)
 	}
 	t.sent++
 }
@@ -812,7 +819,7 @@ func (t *Transmitter) voice(o *Output) {
 	if b, err := t.vt.AddBurst(t.slots); err == nil {
 		o.Burst = b
 	}
-	o.Hint.Kind = layer2.KindVoice
+	o.Hint.Kind, o.Hint.Slot = layer2.KindVoice, t.slot
 	o.Hint.VoiceBurst, _ = enums.VoiceBurstAt(t.pos)
 	t.pos = (t.pos + 1) % layer2.VoiceBurstsPerSuperframe
 	if !t.timedOut && t.timeout >= 0 && o.Due+slotPeriod-t.start >= t.timeout {
@@ -834,7 +841,7 @@ func (t *Transmitter) startSuperframe() {
 }
 
 func (t *Transmitter) terminator(o *Output, out []Output) []Output {
-	o.Burst, o.Hint = t.vt.Terminator(), dataHint(enums.DataTypeTerminatorWithLC)
+	o.Burst, o.Hint = t.vt.Terminator(), t.dataHint(enums.DataTypeTerminatorWithLC)
 	t.sent++
 	switch {
 	case t.timedOut && t.ended:
@@ -1018,8 +1025,8 @@ func (t *Transmitter) collect(e *Event) {
 	}
 }
 
-func dataHint(dt enums.DataType) layer2.Hint {
-	return layer2.Hint{Kind: layer2.KindData, DataType: dt, HasDataType: true}
+func (t *Transmitter) dataHint(dt enums.DataType) layer2.Hint {
+	return layer2.Hint{Slot: t.slot, Kind: layer2.KindData, DataType: dt, HasDataType: true}
 }
 
 //go:noinline

@@ -5250,7 +5250,7 @@ struct dmrgo_voice_output_t {
 	dmrgo_layer2_raw_burst_t burst;
 	/* Due is the time at which the burst goes on air, 60 ms after the one before it. */
 	dmrgo_duration_t due;
-	/* Hint is what the burst is, for a transport: KindVoice with the superframe position, or KindData with the data type of a header, PI Header or terminator. Its Slot is SlotUnknown. */
+	/* Hint is what the burst is, for a transport: KindVoice with the superframe position, or KindData with the data type of a header, PI Header or terminator, or KindReverseChannel. Its Slot is the Slot of the config. */
 	dmrgo_layer2_hint_t hint;
 	/* Fill reports a voice burst with silence in place of voice that was not queued in time, or that pads the last superframe. The fills that Relay queues for lost bursts are voice and do not set it. */
 	bool fill;
@@ -5271,6 +5271,8 @@ struct dmrgo_voice_interrupter_config_t {
 	int64_t repeats;
 	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one. Nil means the Interrupter makes its own. (ETSI TS 102 361-2 clause 6.3.5) */
 	dmrgo_layer2_burst_t *scratch;
+	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. SlotUnknown leaves it unknown. */
+	dmrgo_enums_slot_t slot;
 };
 
 struct dmrgo_voice_receiver_config_t {
@@ -5320,6 +5322,8 @@ struct dmrgo_voice_transmitter_config_t {
 	uint64_t seed;
 	/* Scratch, when set, is the Burst that Burst decodes into. Machines that run on one goroutine can share one. Nil means the Transmitter makes its own when ChanAuth is set. (ETSI TS 102 361-2 clause 5.1.1.6.2) */
 	dmrgo_layer2_burst_t *scratch;
+	/* Slot is the TDMA slot of the machine, which it puts in the Hint of each burst it sends. SlotUnknown leaves it unknown. */
+	dmrgo_enums_slot_t slot;
 };
 
 #define DMRGO_BS_REPEATER_DECODED_MAX_ITEMS (DMRGO_BS_MAX_OUTPUTS)
@@ -10873,7 +10877,7 @@ int dmrgo_voice_interrupter_tick_need(dmrgo_voice_interrupter_t *self, dmrgo_dur
 int dmrgo_voice_interrupter_tick(dmrgo_voice_interrupter_t *self, dmrgo_duration_t now, dmrgo_voice_output_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: voice.InterrupterState.String. String returns the name of the state. */
 int dmrgo_voice_interrupter_state_string(dmrgo_voice_interrupter_state_t self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
-/* Go: voice.NewInterrupter. NewInterrupter returns an Interrupter for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, Retries above MaxRetries, or Repeats out of range. cfg may be NULL. */
+/* Go: voice.NewInterrupter. NewInterrupter returns an Interrupter for cfg. It returns a DMRGO_ERR_CONFIG for a color code above 15, a Slot that is not an enums.Slot value, Retries above MaxRetries, or Repeats out of range. cfg may be NULL. */
 int dmrgo_voice_new_interrupter(const dmrgo_voice_interrupter_config_t *cfg, dmrgo_voice_interrupter_t **out);
 /* Go: voice.NewReceiver. NewReceiver returns a Receiver for cfg. It returns a DMRGO_ERR_CONFIG when the color code is above 15. cfg may be NULL. */
 int dmrgo_voice_new_receiver(const dmrgo_voice_receiver_config_t *cfg, dmrgo_voice_receiver_t **out);
