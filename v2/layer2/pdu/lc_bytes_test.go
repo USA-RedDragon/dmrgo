@@ -16,7 +16,7 @@ func TestLCBytes_Capture(t *testing.T) {
 	t.Parallel()
 
 	l := pdu.LCBytes(hex9(t, "03000000270630b43c"))
-	if g, ok := l.Group(); l.FLCO() != enums.FLCOUnitToUnitVoiceChannelUser || l.FID() != enums.FIDStandardized || !soOK(l, layer3.ServiceOptions{}) || g || !ok || l.ProtectFlag() {
+	if g, _, _, ok := l.Call(); l.FLCO() != enums.FLCOUnitToUnitVoiceChannelUser || l.FID() != enums.FIDStandardized || !soOK(l, layer3.ServiceOptions{}) || g || !ok || l.ProtectFlag() {
 		t.Fatalf("fields of %x", l)
 	}
 	tgt, src, ok := l.Addresses()
@@ -24,7 +24,7 @@ func TestLCBytes_Capture(t *testing.T) {
 		t.Fatalf("Addresses %d -> %d %t, want 3191868 -> 9990", src, tgt, ok)
 	}
 
-	if !l.SetGroup(true) || l.SetAddresses(91, 3100999) != nil {
+	if l.SetGroup(true) != nil || l.SetAddresses(91, 3100999) != nil {
 		t.Fatal("edit refused")
 	}
 	if got := hex.EncodeToString(l[:]); got != "00000000005b2f5147" {
@@ -46,7 +46,7 @@ func TestLCBytes_Capture(t *testing.T) {
 	}
 
 	orig := pdu.LCBytes(hex9(t, "03000000270630b43c"))
-	if back := pdu.LCBytes([9]byte(cw[:9])); !back.SetGroup(false) || back.SetAddresses(9990, 3191868) != nil || back != orig {
+	if back := pdu.LCBytes([9]byte(cw[:9])); back.SetGroup(false) != nil || back.SetAddresses(9990, 3191868) != nil || back != orig {
 		t.Fatalf("edit back gives %x", back)
 	}
 	vlc, tlc := must(orig.Codeword(enums.DataTypeVoiceLCHeader)), must(orig.Codeword(enums.DataTypeTerminatorWithLC))
@@ -175,7 +175,7 @@ func TestLCBytes_EditsKeepOtherBits(t *testing.T) {
 			if _, _, ok := l.Addresses(); ok {
 				t.Fatalf("%x: Addresses ok for FLCO %d", orig, orig.FLCO())
 			}
-			if l.SetGroup(true) || l != orig {
+			if err := l.SetGroup(true); !errors.Is(err, pdu.ErrNoAddresses) || l != orig {
 				t.Fatalf("%x: SetGroup accepted FLCO %d", orig, orig.FLCO())
 			}
 			continue
@@ -199,7 +199,7 @@ func TestLCBytes_EditsKeepOtherBits(t *testing.T) {
 		l = orig
 		g := rng.Intn(2) == 0
 		set := l.SetGroup(g)
-		if got, ok := l.Group(); !set || !ok || got != g || !within(diffMask(l, orig), flcoBits) {
+		if got, _, _, ok := l.Call(); set != nil || !ok || got != g || !within(diffMask(l, orig), flcoBits) {
 			t.Fatalf("%x: SetGroup(%t) gives %x", orig, g, l)
 		}
 	}
@@ -226,7 +226,10 @@ func TestNewVoiceLC(t *testing.T) {
 		if b := must(f.Bytes()); b != [9]byte(l) {
 			t.Errorf("group %t: NewVoiceLCBytes %x, NewVoiceLC.Bytes %x", group, l, b)
 		}
-		if g, ok := l.Group(); !ok || g != group || !soOK(l, so) {
+		if g, _, _, ok := l.Call(); !ok || g != group || !soOK(l, so) {
+			t.Errorf("group %t: LCBytes %x", group, l)
+		}
+		if g, tgt, src, ok := f.Call(); !ok || g != group || tgt != 91 || src != 3191868 {
 			t.Errorf("group %t: LCBytes %x", group, l)
 		}
 	}
@@ -275,12 +278,15 @@ func TestLCBytes_SetServiceOptionsRange(t *testing.T) {
 	}
 }
 
-func TestLCBytes_GroupOtherFLCO(t *testing.T) {
+func TestLCBytes_CallOtherFLCO(t *testing.T) {
 	t.Parallel()
 
 	l := pdu.LCBytes{byte(enums.FLCOGPSInfo)}
-	if g, ok := l.Group(); g || ok {
-		t.Errorf("GPS LC: Group %t %t", g, ok)
+	if g, _, _, ok := l.Call(); g || ok {
+		t.Errorf("GPS LC: Call %t %t", g, ok)
+	}
+	if err := l.SetGroup(true); !errors.Is(err, pdu.ErrNoAddresses) {
+		t.Errorf("GPS LC: SetGroup %v", err)
 	}
 }
 

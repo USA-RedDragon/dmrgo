@@ -199,30 +199,21 @@ func (l *LCBytes) SetCall(group bool, target, source uint32) error {
 	return nil
 }
 
-// Group reports whether the FLCO is Grp_V_Ch_Usr (0). ok is false unless
-// the FLCO is Grp_V_Ch_Usr or UU_V_Ch_Usr (3).
-func (l LCBytes) Group() (group, ok bool) {
-	if !l.isVoiceChannelUser() {
-		return false, false
-	}
-	return l.FLCO() == enums.FLCOGroupVoiceChannelUser, true
-}
-
 // SetGroup sets the FLCO to Grp_V_Ch_Usr (0) when group is true and to
 // UU_V_Ch_Usr (3) when it is false, and keeps every other bit, so the
-// Service Options and addresses carry over. It returns false, and changes
-// nothing, unless the FLCO is already one of the two.
-func (l *LCBytes) SetGroup(group bool) bool {
+// Service Options and addresses carry over. It returns ErrNoAddresses, and
+// changes nothing, unless the FLCO is already one of the two.
+func (l *LCBytes) SetGroup(group bool) error {
 	if l == nil {
-		return false
+		return dmrgo.ErrNilReceiver
 	}
 	if !l.isVoiceChannelUser() {
-		return false
+		return ErrNoAddresses
 	}
 	f := enums.FLCOUnitToUnitVoiceChannelUser
 	if group {
 		f = enums.FLCOGroupVoiceChannelUser
 	}
 	l[0] = l[0]&0xC0 | byte(f)
-	return true
+	return nil
 }

@@ -1,6 +1,7 @@
 package pdu_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/enums"
@@ -108,9 +109,10 @@ func checkLCBytes(t *testing.T, l pdu.LCBytes, target, source uint32, group bool
 	if gt, gs, gok := l.Addresses(); gt != wt || gs != ws || gok != wok {
 		t.Fatalf("LCBytes %x Addresses %x %x %t, FullLinkControl %x %x %t", l, gt, gs, gok, wt, ws, wok)
 	}
-	g, gok := l.Group()
-	if gok != wok || gok && g != (l.FLCO() == enums.FLCOGroupVoiceChannelUser) {
-		t.Fatalf("LCBytes %x Group %t %t", l, g, gok)
+	g, ct, cs, gok := l.Call()
+	wg, wct, wcs, _ := dec.Call()
+	if gok != wok || g != wg || ct != wct || cs != wcs || gok && g != (l.FLCO() == enums.FLCOGroupVoiceChannelUser) {
+		t.Fatalf("LCBytes %x Call %t %x %x %t, FullLinkControl %t %x %x", l, g, ct, cs, gok, wg, wct, wcs)
 	}
 
 	e, want := l, dec
@@ -128,7 +130,7 @@ func checkLCBytes(t *testing.T, l pdu.LCBytes, target, source uint32, group bool
 	if group {
 		wantFLCO = enums.FLCOGroupVoiceChannelUser
 	}
-	if e.SetGroup(group) != gok || gok && e.FLCO() != wantFLCO {
+	if err := e.SetGroup(group); (err == nil) != gok || gok && e.FLCO() != wantFLCO || !gok && !errors.Is(err, pdu.ErrNoAddresses) {
 		t.Fatalf("LCBytes %x SetGroup(%t) gives FLCO %d", l, group, e.FLCO())
 	}
 	checkLCBytesSetters(t, l, group, v)
