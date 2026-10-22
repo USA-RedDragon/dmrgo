@@ -710,6 +710,22 @@ static int positive_encode(void *user, const int16_t *pcm, size_t n, uint8_t out
 	return 7;
 }
 
+static int negative_encode(void *user, const int16_t *pcm, size_t n, uint8_t out[9]) {
+	(void)user;
+	(void)pcm;
+	(void)n;
+	(void)out;
+	return -9999;
+}
+
+static int range_encode(void *user, const int16_t *pcm, size_t n, uint8_t out[9]) {
+	(void)user;
+	(void)pcm;
+	(void)n;
+	(void)out;
+	return DMRGO_ERR_FIELD_RANGE;
+}
+
 static void test_positive_status(void) {
 	dmrgo_vocoder_codec_vtable_t vt = {sizeof vt, 0, NULL, NULL, positive_encode, NULL, c_frame_samples, NULL, NULL};
 	dmrgo_vocoder_codec_t *c = NULL;
@@ -723,7 +739,18 @@ static void test_positive_status(void) {
 	OK(dmrgo_last_error_message(msg, sizeof msg, &n, NULL));
 	CHECK(strstr(msg, "status 7") != NULL);
 	OK(dmrgo_vocoder_codec_free(c));
-	printf("positive status: a vtable status above 0 is DMRGO_ERR_OTHER\n");
+	vt.encode = negative_encode;
+	OK(dmrgo_vocoder_codec_from_vtable(&vt, &c));
+	CHECK(dmrgo_vocoder_codec_encode(c, pcm, 160, out) == DMRGO_ERR_OTHER);
+	CHECK(dmrgo_last_error_code() == DMRGO_ERR_OTHER);
+	OK(dmrgo_last_error_message(msg, sizeof msg, &n, NULL));
+	CHECK(strstr(msg, "status -9999") != NULL);
+	OK(dmrgo_vocoder_codec_free(c));
+	vt.encode = range_encode;
+	OK(dmrgo_vocoder_codec_from_vtable(&vt, &c));
+	CHECK(dmrgo_vocoder_codec_encode(c, pcm, 160, out) == DMRGO_ERR_FIELD_RANGE);
+	OK(dmrgo_vocoder_codec_free(c));
+	printf("positive status: a vtable status above 0 or unknown is DMRGO_ERR_OTHER\n");
 }
 
 static int known_response(void *user, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok) {
