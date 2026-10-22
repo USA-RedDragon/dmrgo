@@ -155,6 +155,16 @@ type cbuild struct {
 	fields, gp, gr, cargs    []string
 	pre, loopSet, grow, post strings.Builder
 	errName                  string
+	results                  []string
+	resultType               map[string]string
+}
+
+func (b *cbuild) zeroed(field, typ string) {
+	if b.resultType == nil {
+		b.resultType = map[string]string{}
+	}
+	b.results = append(b.results, field)
+	b.resultType[field] = typ
 }
 
 func (g *gen) cbBody(sig *types.Signature, call, fp string) (string, []string, error) {
@@ -179,6 +189,9 @@ func (g *gen) cbBody(sig *types.Signature, call, fp string) (string, []string, e
 		c += ", " + strings.Join(b.cargs, ", ")
 	}
 	lines(&w, "var code C.int", "for {")
+	for _, r := range b.results {
+		lines(&w, "c."+r+" = *new("+b.resultType[r]+")")
+	}
 	w.WriteString(b.loopSet.String())
 	lines(&w, "code = "+c+")")
 	if b.grow.Len() > 0 {
@@ -190,7 +203,7 @@ func (g *gen) cbBody(sig *types.Signature, call, fp string) (string, []string, e
 	if b.errName != "" {
 		lines(&w, "if code != C.DMRGO_OK {", b.errName+" = codeErr(code)", "return", "}")
 	} else {
-		lines(&w, "_ = code")
+		lines(&w, "if code != C.DMRGO_OK {", "return", "}")
 	}
 	w.WriteString(b.post.String())
 	lines(&w, "return", "}", "")
@@ -292,6 +305,7 @@ func (b *cbuild) result(i int, t types.Type, isAppend bool) error {
 	}
 	if c, ok := g.scalar(t); ok {
 		b.fields = append(b.fields, r+" "+g.cgoType(c))
+		b.zeroed(r, g.cgoType(c))
 		b.cargs = append(b.cargs, "&c."+r)
 		lines(&b.post, o+" = "+g.goType(t)+"(c."+r+")")
 		return nil
@@ -315,6 +329,7 @@ func (b *cbuild) result(i int, t types.Type, isAppend bool) error {
 		return err
 	}
 	b.fields = append(b.fields, r+" "+ca, fmt.Sprintf("%sg%d %s", b.fp, i, g.goType(e)))
+	b.zeroed(r, ca)
 	addr := "&c." + r
 	if _, isArr := e.(*types.Array); isArr {
 		addr += "[0]"
@@ -364,6 +379,7 @@ func (b *cbuild) bufResult(i int, t types.Type, o string) error {
 	n := fmt.Sprintf("%sn%d", b.fp, i)
 	b.fields = append(b.fields, bf+" []"+et, n+" C.size_t", n+"need C.size_t")
 	b.cargs = append(b.cargs, "(*"+ge+")(unsafe.Pointer(unsafe.SliceData(c."+bf+")))", "C.size_t(len(c."+bf+"))", "&c."+n, "&c."+n+"need")
+	b.zeroed(n, "C.size_t")
 	lines(&b.loopSet, "c."+n+"need = 0")
 	lines(&b.grow, "if growOK(c."+n+"need, len(c."+bf+")) {", "c."+bf+" = make([]"+et+", c."+n+"need)", "grown = true", "}")
 	if isString(t) {
@@ -387,7 +403,7 @@ func (g *gen) vtable(ti *tinfo) (string, string, error) {
 	var gw strings.Builder
 	var fields []string
 	var methods strings.Builder
-	lines(&hb, "struct "+vt+" {", "\t/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. */", "\tsize_t size;", "\tDMRGO_USER_T user;")
+	lines(&hb, "struct "+vt+" {", "\t/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. A function that returns an error gives zero results. */", "\tsize_t size;", "\tDMRGO_USER_T user;")
 	var plain strings.Builder
 	lines(&plain, "struct "+vt+" {", "\tsize_t size;", "\tDMRGO_USER_T user;")
 	ms := make([]*types.Func, 0, iface.NumMethods())

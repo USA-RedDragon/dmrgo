@@ -708,6 +708,49 @@ static void test_positive_status(void) {
 	printf("positive status: a vtable status above 0 is DMRGO_ERR_OTHER\n");
 }
 
+static int known_response(void *user, uint32_t addr, uint32_t challenge, uint32_t *response, bool *ok) {
+	(void)user;
+	(void)challenge;
+	if (addr != 1)
+		return DMRGO_ERR_OTHER;
+	*response = 111;
+	*ok = true;
+	return DMRGO_OK;
+}
+
+static int fid_calls;
+
+static int fid_once(void *user, dmrgo_enums_fid_t *out) {
+	(void)user;
+	if (fid_calls++)
+		return DMRGO_ERR_OTHER;
+	*out = 0x10;
+	return DMRGO_OK;
+}
+
+static void test_failed_results(void) {
+	dmrgo_trunk_authenticator_vtable_t avt = {sizeof avt, NULL, known_response};
+	dmrgo_trunk_authenticator_t *a = NULL;
+	OK(dmrgo_trunk_authenticator_from_vtable(&avt, &a));
+	uint32_t r = 0;
+	bool ok = false;
+	OK(dmrgo_trunk_authenticator_response(a, 1, 5, &r, &ok));
+	CHECK(ok && r == 111);
+	OK(dmrgo_trunk_authenticator_response(a, 2, 6, &r, &ok));
+	CHECK(!ok && r == 0);
+	OK(dmrgo_trunk_authenticator_free(a));
+	dmrgo_vocoder_codec_vtable_t cvt = {sizeof cvt, NULL, NULL, NULL, NULL, fid_once, NULL, NULL, NULL};
+	dmrgo_vocoder_codec_t *c = NULL;
+	OK(dmrgo_vocoder_codec_from_vtable(&cvt, &c));
+	dmrgo_enums_fid_t fid = 0;
+	OK(dmrgo_vocoder_codec_fid(c, &fid));
+	CHECK(fid == 0x10);
+	OK(dmrgo_vocoder_codec_fid(c, &fid));
+	CHECK(fid == 0);
+	OK(dmrgo_vocoder_codec_free(c));
+	printf("failed results: a vtable function that fails gives zero results, not the last ones\n");
+}
+
 static void test_liar(void) {
 	dmrgo_vocoder_codec_vtable_t vt = {sizeof vt, 0, c_close, liar_decode, c_encode, c_fid, c_frame_samples, c_silence, c_reset};
 	dmrgo_vocoder_codec_t *c = NULL;
@@ -1039,6 +1082,7 @@ int main(int argc, char **argv) {
 	test_handle_errors();
 	test_liar();
 	test_positive_status();
+	test_failed_results();
 	test_dvsi();
 	if (failures) {
 		fprintf(stderr, "%d checks failed\n", failures);

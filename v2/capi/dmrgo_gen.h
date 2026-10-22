@@ -4680,7 +4680,7 @@ struct dmrgo_trunk_nmea_short_t {
 };
 
 struct dmrgo_trunk_authenticator_vtable_t {
-	/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. */
+	/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. A function that returns an error gives zero results. */
 	size_t size;
 	DMRGO_USER_T user;
 	/* Response returns the response of the MS addr to challenge. */
@@ -5158,7 +5158,7 @@ struct dmrgo_trunkauth_entry_t {
 };
 
 struct dmrgo_vocoder_codec_vtable_t {
-	/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. */
+	/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. A function that returns an error gives zero results. */
 	size_t size;
 	DMRGO_USER_T user;
 	int (*close)(DMRGO_USER_T user);
@@ -5207,7 +5207,7 @@ struct dmrgo_dvsi_packet_t {
 };
 
 struct dmrgo_dvsi_port_vtable_t {
-	/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. */
+	/* size is sizeof the struct, which the caller sets. A method that it does not cover, or whose function is NULL, fails with DMRGO_ERR_NO_METHOD, or gives zero results when it has no error. A function that returns an error gives zero results. */
 	size_t size;
 	DMRGO_USER_T user;
 	/* Read reads bytes from the chip into p. */
