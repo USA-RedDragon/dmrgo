@@ -5070,7 +5070,7 @@ struct dmrgo_trunk_tscc_config_t {
 	bool ip;
 	/* Supplementary takes the supplementary_user data of call requests and passes it to the called party before the call. Without it the TSCC sets up the call without the data. (ETSI TS 102 361-4 clause 6.4.13) */
 	bool supplementary;
-	/* Lead makes Tick emit the bursts of a slot this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due. */
+	/* Lead makes Tick emit the bursts of a slot this long before its Due time, so that an RF FIFO can be filled ahead. 0 means at Due; it must be at least 0 and less than MaxLead. The timers of the TSCC keep to the Due times. */
 	dmrgo_duration_t lead;
 };
 
@@ -7362,6 +7362,8 @@ struct dmrgo_voice_transmitter_config_t {
 #define DMRGO_TRUNK_MAX_DIVERSIONS 16
 /* Go: trunk.MaxDynamicGroups. MaxDynamicGroups is the number of DGNA talkgroups of an MS: 15 of the DGNA_Address mode and one of the DGNA_Alias mode (ETSI TS 102 361-4 clause 6.6.8.0). */
 #define DMRGO_TRUNK_MAX_DYNAMIC_GROUPS 16
+/* Go: trunk.MaxLead. MaxLead is the bound of TSCCConfig.Lead: a Lead must be less than it. */
+#define DMRGO_TRUNK_MAX_LEAD 1000000000
 /* Go: trunk.MaxNeighbors. MaxNeighbors is the number of adjacent sites that a Site keeps. */
 #define DMRGO_TRUNK_MAX_NEIGHBORS 8
 /* Go: trunk.MaxOutputs. MaxOutputs is the most outputs that one call of a Follower, MS or CapacityPlusFollower method appends. */
@@ -10711,7 +10713,7 @@ int dmrgo_trunk_tscc_registered(dmrgo_trunk_tscc_t *self, uint32_t addr, bool *o
 int dmrgo_trunk_tscc_send_short_data(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, bool group, uint32_t target, const dmrgo_trunk_appended_t *a);
 /* Go: trunk.TSCC.SendStatus. SendStatus sends the status s from source, an MS or a gateway such as DISPATI, to the talkgroup or MS target with a C_AHOY. It returns DMRGO_ERR_TRUNK_BUSY when too many status calls run, and a DMRGO_ERR_CONFIG for an address out of range or a poll of a talkgroup. */
 int dmrgo_trunk_tscc_send_status(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, bool group, uint32_t target, uint32_t source, dmrgo_trunk_status_t s);
-/* Go: trunk.TSCC.Skipped. Skipped returns the number of slots that Tick did not send because it came more than one slot late. */
+/* Go: trunk.TSCC.Skipped. Skipped returns the number of slots that Tick did not send because it came a slot or more late. */
 int dmrgo_trunk_tscc_skipped(dmrgo_trunk_tscc_t *self, int64_t *out);
 /* Go: trunk.TSCC.Stun. Stun asks the MS addr to stop, or with revive to give back, its user services, with a C_AHOY from STUNI. It returns DMRGO_ERR_TRUNK_BUSY when a stun or kill for addr runs or too many run, and a DMRGO_ERR_CONFIG for an addr out of range. */
 int dmrgo_trunk_tscc_stun(dmrgo_trunk_tscc_t *self, dmrgo_duration_t now, uint32_t addr, bool revive);
