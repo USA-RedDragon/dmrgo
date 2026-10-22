@@ -22,15 +22,19 @@ const (
 	// FormatTMS is a MOTOTRBO text message to UDP port 4007, as AnyTone
 	// radios send in M-SMS mode. AppendPacket sends no NUL after the text.
 	FormatTMS Format = iota + 1
-	// FormatIP is an ETSI text message to UDP port 5016 in UTF-16BE.
-	// The payload has no prefix, and AppendPacket sends no NUL after the
-	// text, as ETSI TS 102 361-3 clause 5.7.1 gives it. An AnyTone
-	// radio in its DMR Standard mode reads this format as UTF-16LE after
-	// the octets 00 0d 00 0a. Use FormatAnyTone to text an AnyTone radio.
+	// FormatIP is an ETSI text message to UDP port 5016: the text in
+	// UTF-16BE, with no prefix and no NUL, as ETSI TS 102 361-3 clause
+	// 5.7.1 gives it and as one Hytera radio sends it. AppendPacket sends
+	// no NUL after the text. A DA-7X2 in DMR Standard mode shows the text
+	// of this format as UTF-16LE. Use FormatAnyTone to text an AnyTone
+	// radio.
 	FormatIP
 	// FormatAnyTone is the text to UDP port 5016 that AnyTone radios send
-	// in DMR Standard mode. AppendPacket sends one UTF-16 NUL after the
-	// text, as the radio shows old characters after a text without it.
+	// in DMR Standard mode: the octets 00 0d 00 0a, then the text in
+	// UTF-16LE. A DA-7X2 with D890UV firmware ends the text with a UTF-16
+	// NUL; a 6X2 Pro and a D878 do not. AppendPacket sends one UTF-16 NUL
+	// after the text, as a DA-7X2 shows old characters after a text
+	// without it.
 	FormatAnyTone
 	// FormatDefinedData is a short data packet (DD_HEAD) whose DD format
 	// gives the coding of the text. AppendPacket sends no NUL after the
@@ -38,7 +42,8 @@ const (
 	FormatDefinedData
 	// FormatHytera is the short data packet that AnyTone radios send in
 	// H-SMS mode: DD format 1 (BCD) and the HyteraText layout. AppendPacket
-	// sends one UTF-16 NUL after the text, as Hytera radios do.
+	// sends one UTF-16 NUL after the text, as AnyTone radios do in H-SMS
+	// mode.
 	FormatHytera
 )
 
@@ -103,20 +108,21 @@ type Text struct {
 // into dst. data is the Data of a packet.Message, without the pad octets
 // that the Bit Padding of a DD_HEAD counts. It finds the format from the
 // header and the UDP port: TMS on port 4007, IP or AnyTone text on port
-// 5016, and defined data. A text on port 5016 is FormatAnyTone when it has
-// the AnyToneText layout: an even length of at least 6 octets that starts
-// with 00 0d 00 0a and ends in 00 00. Other text on port 5016 is FormatIP.
-// Defined data with DD format BCD is FormatHytera when it has the
-// HyteraText layout: an even length of at least 6 octets, 2 octets and then
-// a UTF-16LE text of at least one character that ends in 00 00, with only
-// 00 octets after it. Other BCD data is FormatDefinedData; BCD digits that
-// end in six or more 0 digits can have that layout too. It returns
-// ErrNotText for a packet in none of these formats and for defined data
-// with DD format binary, the errors of the ip, tms and shortdata packages
-// for a message that does not decode, the Text with ip.ErrChecksum for a
-// text whose IPv4 or UDP checksum does not match, as the block CRCs of the
-// packet already checked its octets, and dmrgo.ErrNilArgument for a nil h.
-// It allocates only to grow dst.
+// 5016, and defined data. A text on port 5016 is FormatAnyTone when its
+// payload starts with 00 0d 00 0a, the prefix of AnyToneText, whether or
+// not a NUL ends the text. Other text on port 5016 is FormatIP. An
+// ETSI text that starts with CR LF starts with the same octets, and Decode
+// reads it as FormatAnyTone. Defined data with DD format BCD is
+// FormatHytera when it has the HyteraText layout: an even length of at
+// least 6 octets, 2 octets and then a UTF-16LE text of at least one
+// character that ends in 00 00, with only 00 octets after it. Other BCD
+// data is FormatDefinedData; BCD digits that end in six or more 0 digits
+// can have that layout too. It returns ErrNotText for a packet in none of
+// these formats and for defined data with DD format binary, the errors of
+// the ip, tms and shortdata packages for a message that does not decode,
+// the Text with ip.ErrChecksum for a text whose IPv4 or UDP checksum does
+// not match, as the block CRCs of the packet already checked its octets,
+// and dmrgo.ErrNilArgument for a nil h. It allocates only to grow dst.
 func Decode(dst []byte, h *pdu.DataHeader, data []byte) ([]byte, Text, error) {
 	if h == nil {
 		return dst, Text{}, dmrgo.ErrNilArgument
@@ -253,12 +259,11 @@ type Header struct {
 // and for a FormatHytera text without the HyteraText layout, which Decode
 // reads as FormatDefinedData: a Body that is empty, starts with a NUL, or
 // has a character other than NUL after a NUL, and for a FormatIP text with
-// the AnyToneText layout, which Decode reads as FormatAnyTone: a Body that
-// starts with CR LF and ends in a NUL. Such a text and an AnyTone text give
-// the same octets: the IP text CR LF A NUL and the AnyTone text U+4100 are
-// both 00 0d 00 0a 00 41 00 00. It returns dmrgo.ErrNilArgument for a nil t
-// or h, or the errors of the packages that build the message. It allocates
-// only to grow dst.
+// a Body that starts with CR LF, which Decode reads as FormatAnyTone. Such
+// a text and an AnyTone text can give the same octets: the IP text CR LF A
+// NUL and the AnyTone text U+4100 are both 00 0d 00 0a 00 41 00 00. It
+// returns dmrgo.ErrNilArgument for a nil t or h, or the errors of the
+// packages that build the message. It allocates only to grow dst.
 func AppendPacket(dst []byte, t *Text, h *Header) ([]byte, error) {
 	if t == nil || h == nil {
 		return dst, dmrgo.ErrNilArgument
@@ -414,8 +419,7 @@ func AppendAck(dst []byte, t *Text, h *Header) ([]byte, error) {
 }
 
 func anyToneLayout(p []byte) bool {
-	n := len(p)
-	return n >= 6 && n%2 == 0 && p[0] == 0 && p[1] == 0x0D && p[2] == 0 && p[3] == 0x0A && p[n-2] == 0 && p[n-1] == 0
+	return len(p) >= 4 && p[0] == 0 && p[1] == 0x0D && p[2] == 0 && p[3] == 0x0A
 }
 
 func definedHeader(t *Text, dd enums.DDFormat) pdu.DefinedDataHeader {

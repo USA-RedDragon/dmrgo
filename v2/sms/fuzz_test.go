@@ -28,7 +28,7 @@ func FuzzDecode(f *testing.F) {
 }
 
 func decodeSeeds(add func(defined bool, code uint8, data []byte, from, to uint8, repeat uint16)) {
-	for _, s := range []string{appcapture.TMS, appcapture.DMRText} {
+	for _, s := range []string{appcapture.TMS, appcapture.DMRText, appcapture.D878Text, appcapture.BTECH6X2ProHello1} {
 		b, _ := hex.DecodeString(s)
 		add(false, uint8(enums.SAPIPBasedPacketData), b, 0, 0, 0)
 	}
@@ -39,6 +39,8 @@ func decodeSeeds(add func(defined bool, code uint8, data []byte, from, to uint8,
 	add(true, uint8(enums.DDUTF16BE), []byte{0, 'H', 0, 'i'}, 0, 4, 300)
 	g, _ := hex.DecodeString(appcapture.GPS)
 	add(false, uint8(enums.SAPUDPIPHeaderCompression), g, 0, 0, 0)
+	y, _ := hex.DecodeString(appcapture.HyteraIPText)
+	add(false, uint8(enums.SAPUDPIPHeaderCompression), y, 0, 0, 0)
 }
 
 func expandMessage(data []byte, from, to uint8, repeat uint16) []byte {
