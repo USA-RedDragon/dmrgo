@@ -18,7 +18,7 @@ func ExampleDecode() {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(ip.ID(d.Source), "to", ip.ID(d.Destination), "port", d.DestinationPort, len(d.Payload), "octets")
+	fmt.Println(ip.RadioID(d.Source), "to", ip.RadioID(d.Destination), "port", d.DestinationPort, len(d.Payload), "octets")
 	out, _ := ip.AppendIPv4(nil, &d)
 	fmt.Println(hex.EncodeToString(out) == appcapture.TMS)
 	// Output:
@@ -43,7 +43,7 @@ func ExampleAppendICMPPacket() {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(back.Message, "to", ip.ID(back.Destination), "about", len(back.Original), "octets")
+	fmt.Println(back.Message, "to", ip.RadioID(back.Destination), "about", len(back.Original), "octets")
 	m, pointer, ok := ip.CheckIPv4(tms, 576)
 	fmt.Println(m, pointer, ok)
 	// Output:

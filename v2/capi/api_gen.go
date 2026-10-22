@@ -15371,24 +15371,6 @@ func dmrgo_ip_icmp_message_type(c_self C.dmrgo_ip_icmp_message_t, c_out *C.uint8
 	return C.DMRGO_OK
 }
 
-//export dmrgo_ip_id
-func dmrgo_ip_id(c_addr *C.uint8_t, c_out *C.uint32_t) (rc C.int) {
-	defer recoverTo(&rc)
-	oc := &outc{}
-	if c_addr == nil {
-		return fail(C.DMRGO_ERR_ARG)
-	}
-	r0 := g_ip.ID(*(*[4]byte)(unsafe.Pointer(c_addr)))
-	_ = r0
-	if c_out != nil {
-		*c_out = C.uint32_t(r0)
-	}
-	if oc.short {
-		return fail(C.DMRGO_ERR_SHORT)
-	}
-	return C.DMRGO_OK
-}
-
 //export dmrgo_ip_ipv4_append_binary
 func dmrgo_ip_ipv4_append_binary(c_self *C.dmrgo_ip_ipv4_t, c_dst *C.uint8_t, c_dst_cap C.size_t, c_dst_len *C.size_t, c_dst_need *C.size_t) (rc C.int) {
 	defer recoverTo(&rc)
@@ -15583,6 +15565,24 @@ func dmrgo_ip_radio_address(c_network C.uint8_t, c_id C.uint32_t, c_out *C.uint8
 	_ = r0
 	if c_out != nil {
 		*(*[4]byte)(unsafe.Pointer(&(*(*[4]C.uint8_t)(unsafe.Pointer(c_out))))) = r0
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_ip_radio_id
+func dmrgo_ip_radio_id(c_addr *C.uint8_t, c_out *C.uint32_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_addr == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	r0 := g_ip.RadioID(*(*[4]byte)(unsafe.Pointer(c_addr)))
+	_ = r0
+	if c_out != nil {
+		*c_out = C.uint32_t(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)

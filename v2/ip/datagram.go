@@ -231,8 +231,9 @@ func GroupAddress(prefix uint8, group uint32) [4]byte {
 	return a
 }
 
-// ID returns the 24-bit radio or group ID of the address addr: its last
-// three octets. (ETSI TS 102 361-3 clause 5.1.1)
-func ID(addr [4]byte) uint32 {
+// RadioID returns the 24-bit radio or group ID of the address addr, its
+// last three octets: the inverse of RadioAddress and GroupAddress. (ETSI
+// TS 102 361-3 clause 5.1.1)
+func RadioID(addr [4]byte) uint32 {
 	return uint32(addr[1])<<16 | uint32(addr[2])<<8 | uint32(addr[3])
 }
