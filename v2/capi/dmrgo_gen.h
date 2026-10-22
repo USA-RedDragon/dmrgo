@@ -10999,7 +10999,7 @@ int dmrgo_codec2_codec_mode(dmrgo_codec2_codec_t *self, dmrgo_codec2_mode_t *out
 int dmrgo_codec2_codec_reset(dmrgo_codec2_codec_t *self);
 /* Go: codec2.Codec.Silence. Silence returns 20 ms of digital silence encoded with a fresh encoder state in the mode that Encode uses. */
 int dmrgo_codec2_codec_silence(dmrgo_codec2_codec_t *self, uint8_t out[9]);
-/* Go: codec2.New. New creates a Codec2 codec with the given configuration. It returns DMRGO_ERR_CODEC2_UNSUPPORTED_MODE for a Mode other than DMRGO_CODEC2_MODE_AUTO, DMRGO_CODEC2_MODE2400 or DMRGO_CODEC2_MODE3200, and an error when libcodec2 cannot create a codec state. p may be NULL. */
+/* Go: codec2.New. New creates a Codec2 codec with the given configuration. It returns DMRGO_ERR_CODEC2_UNSUPPORTED_MODE for a Mode other than DMRGO_CODEC2_MODE_AUTO, DMRGO_CODEC2_MODE2400 or DMRGO_CODEC2_MODE3200, and an error that wraps DMRGO_ERR_CODEC2_UNAVAILABLE when libcodec2 cannot create a codec state. p may be NULL. */
 int dmrgo_codec2_new(const dmrgo_codec2_config_t *p, dmrgo_codec2_codec_t **out);
 /* Go: dvsi.AppendChannel. AppendChannel appends a channel packet that asks the chip to decode bits channel bits, packed MSB first in data, which must hold (bits+7)/8 bytes (AMBE-3000R manual Table 106). It returns DMRGO_ERR_DVSI_CHANNEL for a channel outside 0 to DMRGO_DVSI_MAX_CHANNEL and DMRGO_ERR_DVSI_BITS for bits outside DMRGO_DVSI_MIN_BITS to DMRGO_DVSI_MAX_BITS or data of another length, with dst unchanged. */
 int dmrgo_dvsi_append_channel(uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need, int64_t channel, const uint8_t *data, size_t data_len, int64_t bits, bool parity);
