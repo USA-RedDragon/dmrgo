@@ -61,4 +61,8 @@ var (
 	errStatus        error = &dmrgo.ConfigError{Type: pkgName, Field: "status"}
 	errSupplementary error = &dmrgo.ConfigError{Type: pkgName, Field: "supplementary data"}
 	errLead          error = &dmrgo.ConfigError{Type: pkgName, Field: "Lead"}
+	errChannel       error = &dmrgo.ConfigError{Type: pkgName, Field: "Channel"}
+	errRepeats       error = &dmrgo.ConfigError{Type: pkgName, Field: "Repeats"}
+	errSlot          error = &dmrgo.ConfigError{Type: pkgName, Field: "Slot"}
+	errSysErrors     error = &dmrgo.ConfigError{Type: pkgName, Field: "SysErrors"}
 )
