@@ -1515,6 +1515,7 @@ documents:
               - TestTimingLeaderSyncAgeWrap
               - TestTimingBusyChannel
               - TestTimingElection
+              - TestTimingElectionEqualDynamicID
               - TestTimingConfig
 
       - section: "6.3.1"

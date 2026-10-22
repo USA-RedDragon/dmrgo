@@ -417,12 +417,24 @@ func TestTimingNoLeaderEvaluation(t *testing.T) {
 	}
 	a.state(csbk.TimingLeaderAndTimingKnown)
 	b := newTiming(t, 100, 2, 1)
-	b.rx(minute, ctf{sdi: 2, sid: 400})
+	b.rx(minute, ctf{sdi: 2, sid: 40})
 	got = b.txs(b.until(minute + rhotMax + time.Second))
 	if len(got) != 1 || got[0].f != (ctf{sdi: 2, sid: 100}) {
 		t.Fatalf("request %+v", got)
 	}
 	b.state(csbk.TimingLeaderAndTimingUnknown)
+	e := newTiming(t, 100, 2, 1)
+	e.rx(minute, ctf{sdi: 2, sid: 400})
+	got = e.txs(e.until(minute + rhotMax + time.Second))
+	if len(got) != 1 || got[0].f != (ctf{gen: 1, ldi: 2, lid: 400, nl: true, cto: 2, sid: 100}) {
+		t.Fatalf("appoint on equal dynamic identifiers %+v", got)
+	}
+	f := newTiming(t, 100, 0, 1)
+	f.rx(minute, ctf{sid: 400})
+	got = f.txs(f.until(minute + rhotMax + time.Second))
+	if len(got) != 1 || got[0].f != (ctf{sid: 100}) {
+		t.Fatalf("request on dynamic identifiers 0 %+v", got)
+	}
 	c := newTiming(t, 100, 2, 1)
 	c.rx(minute, ctf{gen: 3, ldi: 2, lid: 7, cto: 0, sid: 400})
 	c.state(csbk.TimingLeaderAndTimingUnknown)
@@ -643,6 +655,33 @@ func TestTimingElection(t *testing.T) {
 	if di != 3 {
 		t.Fatalf("leader preference %d", di)
 	}
+}
+
+// ETSI TS 102 361-2 clause 6.2.3.7
+func TestTimingElectionEqualDynamicID(t *testing.T) {
+	t.Parallel()
+
+	radios := []*tdriver{newTiming(t, 11, 2, 1), newTiming(t, 22, 2, 2)}
+	for now := time.Duration(0); now < 12*minute; now += 30 * time.Millisecond {
+		for i, r := range radios {
+			out := r.until(now)
+			other := radios[1-i]
+			for _, o := range out {
+				if o.Kind == csbk.OutputBurst {
+					other.keep(other.m.Burst(o.Due, &o.Burst, layer2.Hint{}, other.out[:0]))
+					other.m.Channel(o.Due, true)
+				}
+			}
+		}
+		for _, r := range radios {
+			if _, ok := r.m.Deadline(); ok {
+				r.m.Channel(now, false)
+			}
+		}
+	}
+	radios[1].state(csbk.TimingLeader)
+	radios[0].state(csbk.TimingLeaderAndTimingKnown)
+	radios[0].leader(2, 22)
 }
 
 func TestTimingConfig(t *testing.T) {
