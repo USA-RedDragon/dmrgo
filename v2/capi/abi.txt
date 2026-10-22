@@ -1812,9 +1812,9 @@ sym int dmrgo_fec_ber_calculator_ber(dmrgo_fec_ber_calculator_t *self, double *o
 sym int dmrgo_fec_ber_calculator_free(dmrgo_fec_ber_calculator_t *self);
 sym int dmrgo_fec_ber_calculator_new(dmrgo_fec_ber_calculator_t **out);
 sym int dmrgo_fec_ber_calculator_reset(dmrgo_fec_ber_calculator_t *self);
-sym int dmrgo_fec_ber_calculator_total_bits_checked(dmrgo_fec_ber_calculator_t *self, int64_t *out);
-sym int dmrgo_fec_ber_calculator_total_errors(dmrgo_fec_ber_calculator_t *self, int64_t *out);
-sym int dmrgo_fec_ber_calculator_uncorrectable(dmrgo_fec_ber_calculator_t *self, int64_t *out);
+sym int dmrgo_fec_ber_calculator_total_bits_checked(dmrgo_fec_ber_calculator_t *self, uint64_t *out);
+sym int dmrgo_fec_ber_calculator_total_errors(dmrgo_fec_ber_calculator_t *self, uint64_t *out);
+sym int dmrgo_fec_ber_calculator_uncorrectable(dmrgo_fec_ber_calculator_t *self, uint64_t *out);
 sym int dmrgo_fec_burst_fec_stats_aggregate(const dmrgo_fec_burst_fec_stats_t *self, dmrgo_fec_result_t *out);
 sym int dmrgo_fec_result_combine(const dmrgo_fec_result_t *self, const dmrgo_fec_result_t *o, dmrgo_fec_result_t *out);
 sym int dmrgo_fec_result_err(const dmrgo_fec_result_t *self);

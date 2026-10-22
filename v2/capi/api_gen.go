@@ -13690,14 +13690,14 @@ func dmrgo_fec_ber_calculator_reset(c_self *C.dmrgo_fec_ber_calculator_t) (rc C.
 }
 
 //export dmrgo_fec_ber_calculator_total_bits_checked
-func dmrgo_fec_ber_calculator_total_bits_checked(c_self *C.dmrgo_fec_ber_calculator_t, c_out *C.int64_t) (rc C.int) {
+func dmrgo_fec_ber_calculator_total_bits_checked(c_self *C.dmrgo_fec_ber_calculator_t, c_out *C.uint64_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_fec_BERCalculator(c_self)
 	r0 := h.v.TotalBitsChecked()
 	_ = r0
 	if c_out != nil {
-		*c_out = C.int64_t(r0)
+		*c_out = C.uint64_t(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -13706,14 +13706,14 @@ func dmrgo_fec_ber_calculator_total_bits_checked(c_self *C.dmrgo_fec_ber_calcula
 }
 
 //export dmrgo_fec_ber_calculator_total_errors
-func dmrgo_fec_ber_calculator_total_errors(c_self *C.dmrgo_fec_ber_calculator_t, c_out *C.int64_t) (rc C.int) {
+func dmrgo_fec_ber_calculator_total_errors(c_self *C.dmrgo_fec_ber_calculator_t, c_out *C.uint64_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_fec_BERCalculator(c_self)
 	r0 := h.v.TotalErrors()
 	_ = r0
 	if c_out != nil {
-		*c_out = C.int64_t(r0)
+		*c_out = C.uint64_t(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -13722,14 +13722,14 @@ func dmrgo_fec_ber_calculator_total_errors(c_self *C.dmrgo_fec_ber_calculator_t,
 }
 
 //export dmrgo_fec_ber_calculator_uncorrectable
-func dmrgo_fec_ber_calculator_uncorrectable(c_self *C.dmrgo_fec_ber_calculator_t, c_out *C.int64_t) (rc C.int) {
+func dmrgo_fec_ber_calculator_uncorrectable(c_self *C.dmrgo_fec_ber_calculator_t, c_out *C.uint64_t) (rc C.int) {
 	defer recoverTo(&rc)
 	oc := &outc{}
 	h := get_fec_BERCalculator(c_self)
 	r0 := h.v.Uncorrectable()
 	_ = r0
 	if c_out != nil {
-		*c_out = C.int64_t(r0)
+		*c_out = C.uint64_t(r0)
 	}
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
