@@ -77,9 +77,10 @@ func DecodeControl(p []byte) (Control, error) {
 // AppendBinary appends the packet c to dst, without the authentication
 // trailer. Control holds no peer entries, so an OpPeerListReply appends an
 // empty list, and with a ListLen other than 0 it returns dst unchanged and
-// an error: use AppendPeerListReply for the entries. It returns dst
-// unchanged and an error for an opcode that is not a peer control packet,
-// and dmrgo.ErrNilReceiver for a nil c. It allocates only to grow dst.
+// an error that wraps ErrLength: use AppendPeerListReply for the entries.
+// It returns dst unchanged and an error that wraps ErrCommand for an opcode
+// that is not a peer control packet, and dmrgo.ErrNilReceiver for a nil c.
+// It allocates only to grow dst.
 func (c *Control) AppendBinary(dst []byte) ([]byte, error) {
 	if c == nil {
 		return dst, dmrgo.ErrNilReceiver

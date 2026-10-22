@@ -10303,11 +10303,11 @@ int dmrgo_ipsc_call_info_privacy(dmrgo_ipsc_call_info_t self, bool *out);
 int dmrgo_ipsc_call_info_set_end(dmrgo_ipsc_call_info_t *self, bool on);
 /* Go: ipsc.CallInfo.SetPrivacy. SetPrivacy writes bit 7, the call is encrypted. */
 int dmrgo_ipsc_call_info_set_privacy(dmrgo_ipsc_call_info_t *self, bool on);
-/* Go: ipsc.CallInfo.SetSlot. SetSlot writes bit 5: set for DMRGO_ENUMS_SLOT2, clear for DMRGO_ENUMS_SLOT1. It returns an error, and changes nothing, for another slot, and DMRGO_ERR_ARG for a NULL self. */
+/* Go: ipsc.CallInfo.SetSlot. SetSlot writes bit 5: set for DMRGO_ENUMS_SLOT2, clear for DMRGO_ENUMS_SLOT1. It returns a DMRGO_ERR_FIELD_RANGE, and changes nothing, for another slot, and DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_ipsc_call_info_set_slot(dmrgo_ipsc_call_info_t *self, dmrgo_enums_slot_t s);
 /* Go: ipsc.CallInfo.Slot. Slot returns DMRGO_ENUMS_SLOT2 for bit 5 and DMRGO_ENUMS_SLOT1 otherwise. */
 int dmrgo_ipsc_call_info_slot(dmrgo_ipsc_call_info_t self, dmrgo_enums_slot_t *out);
-/* Go: ipsc.Control.AppendBinary. AppendBinary appends the packet c to dst, without the authentication trailer. It returns dst unchanged and an error for an opcode that is not a peer control packet, and DMRGO_ERR_ARG for a NULL self. */
+/* Go: ipsc.Control.AppendBinary. AppendBinary appends the packet c to dst, without the authentication trailer. Control holds no peer entries, so a DMRGO_IPSC_OP_PEER_LIST_REPLY appends an empty list, and with a ListLen other than 0 it returns dst unchanged and an error that wraps DMRGO_ERR_IPSC_LENGTH: use AppendPeerListReply for the entries. It returns dst unchanged and an error that wraps DMRGO_ERR_IPSC_COMMAND for an opcode that is not a peer control packet, and DMRGO_ERR_ARG for a NULL self. */
 int dmrgo_ipsc_control_append_binary(const dmrgo_ipsc_control_t *self, uint8_t *dst, size_t dst_cap, size_t *dst_len, size_t *dst_need);
 /* Go: ipsc.DecodeControl. DecodeControl decodes the peer control packet p, without the authentication trailer (see package ipscauth). It returns DMRGO_ERR_IPSC_COMMAND for another opcode, and DMRGO_ERR_IPSC_SHORT or DMRGO_ERR_IPSC_LENGTH for a length that does not match the opcode. */
 int dmrgo_ipsc_decode_control(const uint8_t *p, size_t p_len, dmrgo_ipsc_control_t *out);
@@ -10379,7 +10379,7 @@ int dmrgo_ipscauth_key_verify_need(dmrgo_ipscauth_key_t *self, const uint8_t *p,
 int dmrgo_ipscauth_key_verify(dmrgo_ipscauth_key_t *self, const uint8_t *p, size_t p_len, uint8_t *body, size_t body_cap, size_t *body_len, size_t *body_need, bool *ok);
 /* Go: ipscauth.NewKey. NewKey returns a Key for the 20-octet key k. */
 int dmrgo_ipscauth_new_key(const uint8_t k[20], dmrgo_ipscauth_key_t **out);
-/* Go: ipscauth.ParseKey. ParseKey parses the hex key of a MOTOTRBO or DMRlink configuration: up to 40 hex digits, padded on the left with zeros to 20 octets as DMRlink does. */
+/* Go: ipscauth.ParseKey. ParseKey parses the hex key of a MOTOTRBO or DMRlink configuration: up to 40 hex digits, padded on the left with zeros to 20 octets as DMRlink does. It returns a DMRGO_ERR_FIELD_RANGE for more than 40 digits or a character that is not a hex digit, and does not allocate. */
 int dmrgo_ipscauth_parse_key(const char *s, size_t s_len, uint8_t out[20]);
 /* Go: ipscsession.AddrOf. AddrOf returns the Addr of the IP address ip and the UDP port port, as a UDP socket address holds them: ip is 4 octets, or 16 octets of an IPv4-mapped IPv6 address. */
 int dmrgo_ipscsession_addr_of(const uint8_t *ip, size_t ip_len, int64_t port, dmrgo_ipscsession_addr_t *a, bool *ok);

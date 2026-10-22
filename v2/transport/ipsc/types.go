@@ -185,8 +185,8 @@ func (c *CallInfo) SetEnd(on bool) {
 	}
 }
 
-// SetSlot writes bit 5: set for Slot2, clear for Slot1. It returns an
-// error, and changes nothing, for another slot, and dmrgo.ErrNilReceiver
+// SetSlot writes bit 5: set for Slot2, clear for Slot1. It returns a
+// *dmrgo.FieldRangeError, and changes nothing, for another slot, and dmrgo.ErrNilReceiver
 // for a nil c.
 func (c *CallInfo) SetSlot(s enums.Slot) error {
 	switch {
@@ -196,7 +196,7 @@ func (c *CallInfo) SetSlot(s enums.Slot) error {
 		c.set(0x20, s == enums.Slot2)
 		return nil
 	}
-	return errSlot
+	return errCallInfoSlotRange
 }
 
 func (c *CallInfo) set(bit CallInfo, on bool) {

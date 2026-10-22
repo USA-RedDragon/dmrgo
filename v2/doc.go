@@ -305,8 +305,10 @@
 //     dvsi.ErrBits, dvsi.ErrStatus, dvsi.ErrTimeout, dvsi.ErrPort,
 //     dvsi.ErrClosed: returned by the DVSI packet parser and Codec.
 //
-// The packages dmrdauth and ipscauth export no errors. They return an error for a dialect,
-// key or packet that they do not take.
+// The packages dmrdauth and ipscauth export no errors. dmrdauth returns
+// errors that wrap dmrd.ErrCommand for a dialect or packet that it does not
+// take, and ipscauth.ParseKey a *FieldRangeError for a key that is not up
+// to 40 hex digits.
 //
 // These error types can be matched with errors.As:
 //

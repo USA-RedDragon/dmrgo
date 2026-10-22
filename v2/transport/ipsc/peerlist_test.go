@@ -2,6 +2,7 @@ package ipsc_test
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 
 	"github.com/USA-RedDragon/dmrgo/v2/transport/ipsc"
@@ -30,5 +31,8 @@ func TestControlPeerListReplyRoundTrip(t *testing.T) {
 	}
 	if !bytes.Equal(out, []byte{9}) {
 		t.Fatalf("ListLen 11 with an error appended %x", out)
+	}
+	if !errors.Is(err, ipsc.ErrLength) {
+		t.Fatalf("ListLen 11: %v, want ErrLength", err)
 	}
 }
