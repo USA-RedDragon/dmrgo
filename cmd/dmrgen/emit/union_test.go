@@ -327,3 +327,27 @@ type T struct {
 		t.Errorf("generated a mask error beside err:ErrNoMask\n%s", out)
 	}
 }
+
+func TestUnionResetAndStringAs(t *testing.T) {
+	t.Parallel()
+
+	out := generateUnion(t, `type Sub struct {
+	X uint8 `+"`dmr:\"bits:0-7\"`"+`
+}
+
+// dmr:reset H=HNone
+// dmr:string_as Extra
+// dmr:variant A Sub Op=1
+// dmr:variant B Sub Op=2
+type T struct {
+	H   uint8   `+"`dmr:\"-\"`"+`
+	Op  uint8   `+"`dmr:\"bits:0-7\"`"+`
+	Raw [1]byte `+"`dmr:\"bits:8-15,raw,union\"`"+`
+}`)
+	assertContains(t, out,
+		"\ts.Op = 1\n\ts.H = HNone\n\ts.Raw = raw\n",
+		"H to HNone",
+		"\ts.Op = 2\n\ts.H = HNone\n\ts.Raw = raw\n",
+		"} else if v, ok := s.AsExtra(); ok {",
+	)
+}

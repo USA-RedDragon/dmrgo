@@ -57,7 +57,9 @@
 // CSBK does not say which. Read it with CSBK.AsBSOutboundActivation or
 // CSBK.AsTalkgroupDataGrantMultiItem, and set it with
 // CSBK.SetBSOutboundActivation or CSBK.SetTalkgroupDataGrantMultiItem. When
-// the CSBK comes from a burst, CSBK.Hint0x38 gives the likely meaning.
+// the CSBK comes from a burst, CSBK.Hint0x38 gives the likely meaning, and
+// the As method of the other PDU then reports false. An MBC header with
+// opcode 0x38 is always TD_GRANT_MI (ETSI TS 102 361-4 Table 7.15).
 //
 // Read the radio check, call alert and call alert acknowledgement of the
 // Motorola feature set (FID 0x10) with CSBK.AsMotorolaRadioCheck,

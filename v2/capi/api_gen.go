@@ -21668,6 +21668,7 @@ func dmrgo_pdu_csbk_set_ack_inbound(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -21698,6 +21699,7 @@ func dmrgo_pdu_csbk_set_ack_inbound_payload(c_self *C.dmrgo_pdu_csbk_t, c_p *C.d
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -21728,6 +21730,7 @@ func dmrgo_pdu_csbk_set_ack_outbound(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pd
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -21758,6 +21761,7 @@ func dmrgo_pdu_csbk_set_ack_outbound_payload(c_self *C.dmrgo_pdu_csbk_t, c_p *C.
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -21788,6 +21792,7 @@ func dmrgo_pdu_csbk_set_ackvitation(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -21813,6 +21818,7 @@ func dmrgo_pdu_csbk_set_addresses(c_self *C.dmrgo_pdu_csbk_t, c_target C.uint32_
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -21843,6 +21849,7 @@ func dmrgo_pdu_csbk_set_ahoy(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_ahoy_p
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -21873,6 +21880,7 @@ func dmrgo_pdu_csbk_set_aloha(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_aloha
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -21932,6 +21940,7 @@ func dmrgo_pdu_csbk_set_broadcast(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_b
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -21962,6 +21971,7 @@ func dmrgo_pdu_csbk_set_broadcast_talkgroup_voice_grant(c_self *C.dmrgo_pdu_csbk
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -21992,6 +22002,7 @@ func dmrgo_pdu_csbk_set_channel_timing(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22022,6 +22033,7 @@ func dmrgo_pdu_csbk_set_clear(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_clear
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22052,6 +22064,7 @@ func dmrgo_pdu_csbk_set_duplex_private_data_grant(c_self *C.dmrgo_pdu_csbk_t, c_
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22082,6 +22095,7 @@ func dmrgo_pdu_csbk_set_duplex_private_voice_grant(c_self *C.dmrgo_pdu_csbk_t, c
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22112,6 +22126,7 @@ func dmrgo_pdu_csbk_set_maintenance(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22140,6 +22155,7 @@ func dmrgo_pdu_csbk_set_motorola_call_alert(c_self *C.dmrgo_pdu_csbk_t, c_p *C.d
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22168,6 +22184,7 @@ func dmrgo_pdu_csbk_set_motorola_call_alert_ack(c_self *C.dmrgo_pdu_csbk_t, c_p 
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22198,6 +22215,7 @@ func dmrgo_pdu_csbk_set_motorola_radio_check(c_self *C.dmrgo_pdu_csbk_t, c_p *C.
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22228,6 +22246,7 @@ func dmrgo_pdu_csbk_set_move(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_move_p
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22256,6 +22275,7 @@ func dmrgo_pdu_csbk_set_negative_acknowledgement(c_self *C.dmrgo_pdu_csbk_t, c_p
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22286,6 +22306,7 @@ func dmrgo_pdu_csbk_set_preamble(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_pr
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22316,6 +22337,7 @@ func dmrgo_pdu_csbk_set_private_data_grant(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dm
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22346,6 +22368,7 @@ func dmrgo_pdu_csbk_set_private_data_grant_multi_item(c_self *C.dmrgo_pdu_csbk_t
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22376,6 +22399,7 @@ func dmrgo_pdu_csbk_set_private_voice_grant(c_self *C.dmrgo_pdu_csbk_t, c_p *C.d
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22406,6 +22430,7 @@ func dmrgo_pdu_csbk_set_protect(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_pdu_pro
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22436,6 +22461,7 @@ func dmrgo_pdu_csbk_set_random_access(c_self *C.dmrgo_pdu_csbk_t, c_p *C.dmrgo_p
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22466,6 +22492,7 @@ func dmrgo_pdu_csbk_set_talkgroup_data_grant(c_self *C.dmrgo_pdu_csbk_t, c_p *C.
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22527,6 +22554,7 @@ func dmrgo_pdu_csbk_set_talkgroup_voice_grant(c_self *C.dmrgo_pdu_csbk_t, c_p *C
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22557,6 +22585,7 @@ func dmrgo_pdu_csbk_set_unit_to_unit_voice_service_answer_response(c_self *C.dmr
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -22587,6 +22616,7 @@ func dmrgo_pdu_csbk_set_unit_to_unit_voice_service_request(c_self *C.dmrgo_pdu_c
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
 	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	ws_self.hint0x38 = C.dmrgo_pdu_opcode0x38_hint_t(x.Hint0x38)
 	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
 	if oc.short {
 		return fail(C.DMRGO_ERR_SHORT)
@@ -26193,6 +26223,30 @@ func dmrgo_pdu_mbc_header_as_talkgroup_data_grant(c_self *C.dmrgo_pdu_mbc_header
 	return C.DMRGO_OK
 }
 
+//export dmrgo_pdu_mbc_header_as_talkgroup_data_grant_multi_item
+func dmrgo_pdu_mbc_header_as_talkgroup_data_grant_multi_item(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t, c_ok *C.bool) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	r0, r1 := x.AsTalkgroupDataGrantMultiItem()
+	_ = r0
+	_ = r1
+	if c_p != nil {
+		out_layer2_pdu_TalkgroupDataGrantMultiItemPDU(&(*c_p), &r0, oc)
+	}
+	if c_ok != nil {
+		*c_ok = C.bool(r1)
+	}
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	return C.DMRGO_OK
+}
+
 //export dmrgo_pdu_mbc_header_as_talkgroup_voice_grant
 func dmrgo_pdu_mbc_header_as_talkgroup_voice_grant(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_talkgroup_voice_grant_pdu_t, c_ok *C.bool) (rc C.int) {
 	defer recoverTo(&rc)
@@ -26515,6 +26569,36 @@ func dmrgo_pdu_mbc_header_set_talkgroup_data_grant(c_self *C.dmrgo_pdu_mbc_heade
 	var a_p g_layer2_pdu.TalkgroupDataGrantPDU
 	a_p = in_layer2_pdu_TalkgroupDataGrantPDU(&(*c_p))
 	r0 := x.SetTalkgroupDataGrant(a_p)
+	var ws_self C.dmrgo_pdu_mbc_header_t
+	ws_self = *c_self
+	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)
+	ws_self.fid = C.dmrgo_enums_fid_t(x.FID)
+	*(*[8]byte)(unsafe.Pointer(&ws_self.raw_payload)) = x.RawPayload
+	if oc.short {
+		return fail(C.DMRGO_ERR_SHORT)
+	}
+	*c_self = ws_self
+	if r0 != nil {
+		return setErr(r0)
+	}
+	return C.DMRGO_OK
+}
+
+//export dmrgo_pdu_mbc_header_set_talkgroup_data_grant_multi_item
+func dmrgo_pdu_mbc_header_set_talkgroup_data_grant_multi_item(c_self *C.dmrgo_pdu_mbc_header_t, c_p *C.dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t) (rc C.int) {
+	defer recoverTo(&rc)
+	oc := &outc{}
+	if c_self == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var x g_layer2_pdu.MBCHeader
+	x = in_layer2_pdu_MBCHeader(&(*c_self))
+	if c_p == nil {
+		return fail(C.DMRGO_ERR_ARG)
+	}
+	var a_p g_layer2_pdu.TalkgroupDataGrantMultiItemPDU
+	a_p = in_layer2_pdu_TalkgroupDataGrantMultiItemPDU(&(*c_p))
+	r0 := x.SetTalkgroupDataGrantMultiItem(a_p)
 	var ws_self C.dmrgo_pdu_mbc_header_t
 	ws_self = *c_self
 	ws_self.opcode = C.dmrgo_pdu_csbk_opcode_t(x.Opcode)

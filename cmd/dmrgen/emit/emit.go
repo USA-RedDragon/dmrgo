@@ -810,8 +810,13 @@ func emitStringConcat(g *Group, t *stringText, pdu parse.PDUStruct, union *parse
 	t.str(union.Name + ": ")
 	t.value("%x", src(), Qual(textPkg, "Hex").Call(src().Index(Empty(), Empty())))
 	var chain *Statement
+	names := make([]string, 0, len(pdu.Variants)+len(pdu.StringAs))
 	for _, v := range pdu.Variants {
-		test := []Code{List(Id("v"), Id("ok")).Op(":=").Id("s").Dot("As" + v.Name).Call(), Id("ok")}
+		names = append(names, v.Name)
+	}
+	names = append(names, pdu.StringAs...)
+	for _, name := range names {
+		test := []Code{List(Id("v"), Id("ok")).Op(":=").Id("s").Dot("As" + name).Call(), Id("ok")}
 		body := Id("_ret").Op("+=").Id("v").Dot("String").Call()
 		if chain == nil {
 			chain = If(test...).Block(body)

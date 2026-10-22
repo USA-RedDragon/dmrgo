@@ -2628,6 +2628,7 @@ sym int dmrgo_pdu_mbc_header_as_private_data_grant(const dmrgo_pdu_mbc_header_t 
 sym int dmrgo_pdu_mbc_header_as_private_data_grant_multi_item(const dmrgo_pdu_mbc_header_t *self, dmrgo_pdu_private_data_grant_multi_item_pdu_t *p, bool *ok);
 sym int dmrgo_pdu_mbc_header_as_private_voice_grant(const dmrgo_pdu_mbc_header_t *self, dmrgo_pdu_private_voice_grant_pdu_t *p, bool *ok);
 sym int dmrgo_pdu_mbc_header_as_talkgroup_data_grant(const dmrgo_pdu_mbc_header_t *self, dmrgo_pdu_talkgroup_data_grant_pdu_t *p, bool *ok);
+sym int dmrgo_pdu_mbc_header_as_talkgroup_data_grant_multi_item(const dmrgo_pdu_mbc_header_t *self, dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t *p, bool *ok);
 sym int dmrgo_pdu_mbc_header_as_talkgroup_voice_grant(const dmrgo_pdu_mbc_header_t *self, dmrgo_pdu_talkgroup_voice_grant_pdu_t *p, bool *ok);
 sym int dmrgo_pdu_mbc_header_data_type(const dmrgo_pdu_mbc_header_t *self, dmrgo_enums_data_type_t *out);
 sym int dmrgo_pdu_mbc_header_encode(const dmrgo_pdu_mbc_header_t *self, uint8_t out[12]);
@@ -2640,6 +2641,7 @@ sym int dmrgo_pdu_mbc_header_set_private_data_grant(dmrgo_pdu_mbc_header_t *self
 sym int dmrgo_pdu_mbc_header_set_private_data_grant_multi_item(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_private_data_grant_multi_item_pdu_t *p);
 sym int dmrgo_pdu_mbc_header_set_private_voice_grant(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_private_voice_grant_pdu_t *p);
 sym int dmrgo_pdu_mbc_header_set_talkgroup_data_grant(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_talkgroup_data_grant_pdu_t *p);
+sym int dmrgo_pdu_mbc_header_set_talkgroup_data_grant_multi_item(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_talkgroup_data_grant_multi_item_pdu_t *p);
 sym int dmrgo_pdu_mbc_header_set_talkgroup_voice_grant(dmrgo_pdu_mbc_header_t *self, const dmrgo_pdu_talkgroup_voice_grant_pdu_t *p);
 sym int dmrgo_pdu_mbc_header_string(const dmrgo_pdu_mbc_header_t *self, char *out, size_t out_cap, size_t *out_len, size_t *out_need);
 sym int dmrgo_pdu_mbc_last_block_crc_ok(const uint8_t (*blocks)[12], size_t blocks_len, bool *out);

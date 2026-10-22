@@ -24,6 +24,7 @@ import (
 //dmr:variant DuplexPrivateVoiceGrant DuplexPrivateVoiceGrantPDU Opcode=CSBKDuplexPrivateVoiceGrant
 //dmr:variant DuplexPrivateDataGrant DuplexPrivateDataGrantPDU Opcode=CSBKDuplexPrivateDataGrant
 //dmr:variant PrivateDataGrantMultiItem PrivateDataGrantMultiItemPDU Opcode=CSBKPrivateDataGrantMultiItem
+//dmr:variant TalkgroupDataGrantMultiItem TalkgroupDataGrantMultiItemPDU Opcode=CSBKTalkgroupDataGrantMultiItem
 //dmr:variant Move MovePDU Opcode=CSBKMove
 //dmr:variant Broadcast BroadcastPDU Opcode=CSBKBroadcast
 type MBCHeader struct {

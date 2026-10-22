@@ -39,8 +39,12 @@ func TestBurst_Opcode0x38HintFromSync(t *testing.T) {
 		if got.Hint0x38 != tt.want {
 			t.Errorf("source %d: Hint0x38 = %d, want %d", tt.src, got.Hint0x38, tt.want)
 		}
-		if a, ok := got.AsBSOutboundActivation(); !ok || a != act {
+		isTD := tt.want == pdu.Opcode0x38TalkgroupDataGrantMultiItem
+		if a, ok := got.AsBSOutboundActivation(); ok == isTD || ok && a != act {
 			t.Errorf("source %d: AsBSOutboundActivation = %+v %v", tt.src, a, ok)
+		}
+		if _, ok := got.AsTalkgroupDataGrantMultiItem(); ok != (tt.want != pdu.Opcode0x38BSOutboundActivation) {
+			t.Errorf("source %d: AsTalkgroupDataGrantMultiItem ok %v", tt.src, ok)
 		}
 	}
 }
